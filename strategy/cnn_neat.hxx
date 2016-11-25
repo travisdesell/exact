@@ -14,6 +14,8 @@ using std::numeric_limits;
 #include <random>
 using std::mt19937;
 using std::normal_distribution;
+using std::uniform_int_distribution;
+using std::uniform_real_distribution;
 
 #include <string>
 using std::to_string;
@@ -29,8 +31,8 @@ using std::vector;
 class CNN_NEAT {
     private:
         int population_size;
-        int last_node_innovation_number;
-        int last_edge_innovation_number;
+        int node_innovation_count;
+        int edge_innovation_count;
 
         uniform_int_distribution<long> rng_long;
         uniform_real_distribution<double> rng_double;
@@ -38,39 +40,19 @@ class CNN_NEAT {
         vector <CNN_Node* > all_nodes;
         vector <CNN_Edge* > all_edges;
 
-        vector< CNN_NEAT_Genome* > genomes;
+        vector< CNN_Genome* > genomes;
 
+        int epochs;
+        mt19937 generator;
 
     public:
 
-        CNN_NEAT(const Images &images, int epochs) {
-            unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
-            //unsigned seed = 10;
-            mt19937 generator(seed);
+        CNN_NEAT(const Images &images, int _population_size, int _epochs);
 
-            rng_long = uniform_int_distribution<long>(-numeric_limits<long>::max(), numeric_limits<long>::max());
-            rng_double = uniform_real_distribution<double>(0, 1.0);
+        CNN_Genome* get_best_genome();
 
-            long genome_seed = rng_long(generator);
-            cout << "seeding genome with: " << genome_seed << endl;
-
-            CNN_Node *input_node = new CNN_Node(
-
-
-            CNN_NEAT_Genome *first_genome = new CNN_NEAT_Genome(genome_seed, epochs, all_nodes, all_edges);
-
-            genomes.push_back(first_genome);
-
-            for (uint32_t i = 1; i < population_size; i++) {
-                CNN_NEAT_Genome* genome = generate_mutation();
-
-                genomes.push_back(genome);
-            }
-        }
-
-        CNN_NEAT_Genome* get_best_genome() {
-            return genomes[0];
-        }
+        CNN_Genome* create_mutation();
+        CNN_Genome* create_child();
 };
 
 

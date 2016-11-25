@@ -1,7 +1,14 @@
+#include <algorithm>
+using std::sort;
+using std::upper_bound;
+
 #include <fstream>
 using std::ofstream;
 using std::ifstream;
 using std::ios;
+
+#include <limits>
+using std::numeric_limits;
 
 #include <iomanip>
 using std::setw;
@@ -18,6 +25,8 @@ using std::istream;
 #include <random>
 using std::mt19937;
 using std::normal_distribution;
+using std::uniform_int_distribution;
+using std::uniform_real_distribution;
 
 #include <string>
 using std::string;
@@ -32,7 +41,7 @@ using std::vector;
 #include "cnn_edge.hxx"
 #include "cnn_genome.hxx"
 
-CNN_NEAT_Genome::CNN_NEAT_Genome() {
+CNN_Genome::CNN_Genome() {
     started_from_checkpoint = false;
 }
 
@@ -40,9 +49,11 @@ CNN_NEAT_Genome::CNN_NEAT_Genome() {
 /**
  *  Iniitalize a genome from a set of nodes and edges
  */
-CNN_NEAT_Genome::CNN_NEAT_Genome(int seed, int _epochs, vector<CNN_Node*> _nodes, vector<CNN_Edge*> _edges) {
+CNN_Genome::CNN_Genome(int seed, int _epochs, const vector<CNN_Node*> &_nodes, const vector<CNN_Edge*> &_edges) {
     started_from_checkpoint = false;
     generator = mt19937(seed);
+    rng_double = uniform_real_distribution<double>(0, 1.0);
+    rng_long = uniform_int_distribution<long>(-numeric_limits<long>::max(), numeric_limits<long>::max());
 
     mu = 0.5;
     initial_mu = mu;
@@ -52,15 +63,16 @@ CNN_NEAT_Genome::CNN_NEAT_Genome(int seed, int _epochs, vector<CNN_Node*> _nodes
 
     input_node = NULL;
     nodes.clear();
-    hidden_nodes.clear();
-    output_nodes.clear();
     softmax_nodes.clear();
 
     for (uint32_t i = 0; i < _nodes.size(); i++) {
+        //cout << "copying node: " << i << endl;
         CNN_Node *node_copy = _nodes[i]->copy();
-
+        //cout << "copied node: " << i << endl;
 
         if (node_copy->is_input()) {
+            //cout << "node was input!" << endl;
+
             if (input_node != NULL) {
                 cerr << "ERROR: multiple input nodes in genome." << endl;
                 cerr << "first: " << endl;
@@ -73,20 +85,9 @@ CNN_NEAT_Genome::CNN_NEAT_Genome(int seed, int _epochs, vector<CNN_Node*> _nodes
             input_node = node_copy;
         }
 
-        if (node_copy->is_hidden()) {
-            int depth = node_copy->get_depth();
-
-            while (hidden_nodes.size() < depth - 1) {
-                hidden_nodes.push_back(vector<CNN_Node*>());
-            }
-            hidden_nodes[depth-1].push_back(node_copy);
-        }
-
-        if (node_copy->is_output()) {
-            output_nodes.push_back(node_copy);
-        }
-
         if (node_copy->is_softmax()) {
+            //cout << "node was softmax!" << endl;
+
             softmax_nodes.push_back(node_copy);
         }
 
@@ -95,187 +96,155 @@ CNN_NEAT_Genome::CNN_NEAT_Genome(int seed, int _epochs, vector<CNN_Node*> _nodes
 
     for (uint32_t i = 0; i < _edges.size(); i++) {
         CNN_Edge *edge_copy = _edges[i]->copy();
-        edge_copy->set_nodes(nodes);
+        if (!edge_copy->set_nodes(nodes)) {
+            cerr << "ERROR: filter size didn't match when creating genome!" << endl;
+            cerr << "This should never happen!" << endl;
+            exit(1);
+        }
         edges.push_back( edge_copy );
     }
 
 }
 
-/**
- *  Initialize the initial genotype for the CNN_NEAT algorithm from
- *  a set of training images
- */
-CNN_NEAT_Genome::CNN_NEAT_Genome(int number_classes, int rows, int cols, int seed, int _epochs) {
-    cout << "number classes: " << number_classes << endl;
-    cout << "rows: " << rows << ", cols: " << cols << endl;
+const vector<CNN_Node*> CNN_Genome::get_nodes() const {
+    return nodes;
+}
 
-    started_from_checkpoint = false;
-    generator = mt19937(seed);
+const vector<CNN_Edge*> CNN_Genome::get_edges() const {
+    return edges;
+}
 
-    mu = 0.5;
-    initial_mu = mu;
-    epoch = 0;
-    epochs = _epochs;
-    best_predictions = 0;
+CNN_Node* CNN_Genome::get_node(int node_position) {
+    return nodes.at(node_position);
+}
 
-    int number_weights = 0;
+CNN_Edge* CNN_Genome::get_edge(int edge_position) {
+    return edges.at(edge_position);
+}
 
-    int node_innovation_number = 0;
-    int edge_innovation_number = 0;
+int CNN_Genome::get_number_edges() const {
+    return edges.size();
+}
 
-    input_node = new CNN_Node(node_innovation_number, 0, rows, cols, true /*input*/, false /*output*/, false /*softmax*/);
-    nodes.push_back(input_node);
-    node_innovation_number++;
+int CNN_Genome::get_number_nodes() const {
+    return nodes.size();
+}
 
-    //first layer
-    hidden_nodes.push_back(vector<CNN_Node*>());
-    for (uint32_t i = 0; i < 5; i++) {
-        CNN_Node *output_node = new CNN_Node(node_innovation_number, 1, 10, 10, false /*input*/, true /*output*/, false /*softmax*/);
-        node_innovation_number++;
-
-        nodes.push_back(output_node);
-        hidden_nodes[0].push_back(output_node);
-
-        edges.push_back(new CNN_Edge(input_node, output_node, true, edge_innovation_number, generator));
-        number_weights += edges.back()->get_number_weights();
-        cout << "connecting input_node to hidden_node[0][" << i << "], number weights: " << edges.back()->get_number_weights() << endl;
-        edge_innovation_number++;
-    }
-
-    //second layer
-    hidden_nodes.push_back(vector<CNN_Node*>());
-    for (uint32_t i = 0; i < 31; i++) {
-        CNN_Node *hidden_node = new CNN_Node(node_innovation_number, 2, 5, 5, false /*input*/, false /*output*/, false /*softmax*/);
-        node_innovation_number++;
-
-        nodes.push_back(hidden_node);
-        hidden_nodes[1].push_back(hidden_node);
-    }
-
-    vector<int> input_connections;
-    input_connections.push_back(0);
-    input_connections.push_back(0);
-    input_connections.push_back(0);
-    input_connections.push_back(0);
-    input_connections.push_back(1);
-
-    int output_node = 0;
-
-    for (uint32_t i = 0; i < hidden_nodes[1].size(); i++) {
-        for (uint32_t j = 0; j < input_connections.size(); j++) {
-            if (input_connections[j] == 0) continue;
-
-
-            edges.push_back(new CNN_Edge(hidden_nodes[0][input_connections[j] - 1], hidden_nodes[1][output_node], true, edge_innovation_number, generator));
-            number_weights += edges.back()->get_number_weights();
-            cout << "connecting hidden_node[0][" << input_connections[j] - 1 << "] to hidden_node[1][" << output_node << "], number weights: " << edges.back()->get_number_weights() << endl;
-            edge_innovation_number++;
-
-        }
-        cout << "input connections: ";
-        for (int32_t k = 0; k < input_connections.size(); k++) {
-            cout << setw(3) << input_connections[k];
-        }
-        cout << endl;
-
-        input_connections[input_connections.size() - 1]++;
-        for (int32_t k = input_connections.size() - 1; k >= 0; k--) {
-            if (input_connections[k] > input_connections.size()) {
-
-                int current = k - 1;
-                input_connections[current]++;
-                while (current > 0 && input_connections[current] > (current + 1)) {
-                    current--;
-
-                    input_connections[current]++;
-                }
-
-                for (int32_t l = current + 1; l < input_connections.size(); l++) {
-                    input_connections[l] = input_connections[l - 1] + 1;
-                }
-            }
-        }
-
-        cout << "input connections after increment: ";
-        for (int32_t k = 0; k < input_connections.size(); k++) {
-            cout << setw(3) << input_connections[k];
-        }
-        cout << endl;
-
-        output_node++;
-    }
-
-    for (uint32_t i = 0; i < 10; i++) {
-        CNN_Node *output_node = new CNN_Node(node_innovation_number, 3, 1, 1, false /*input*/, true /*output*/, false /*softmax*/);
-        node_innovation_number++;
-
-        output_nodes.push_back(output_node);
-        nodes.push_back(output_node);
-
-        for (uint32_t j = 0; j < hidden_nodes[1].size(); j++) {
-
-            edges.push_back(new CNN_Edge(hidden_nodes[1][j], output_node, true, edge_innovation_number, generator));
-            number_weights += edges.back()->get_number_weights();
-            cout << "connecting hidden_node[1][" << j << "] to output_node[" << i << "], number_weights: " <<  edges.back()->get_number_weights() << endl;
-            edge_innovation_number++;
-        }
-    }
-
-    for (uint32_t i = 0; i < number_classes; i++) {
-        CNN_Node *softmax_node = new CNN_Node(node_innovation_number, 4, 1, 1, false /*input*/, false /*output*/, true /*softmax*/);
-        node_innovation_number++;
-
-        softmax_nodes.push_back(softmax_node);
-        nodes.push_back(softmax_node);
-
-        for (uint32_t j = 0; j < output_nodes.size(); j++) {
-
-            edges.push_back(new CNN_Edge(output_nodes[j], softmax_node, true, edge_innovation_number, generator));
-            number_weights += edges.back()->get_number_weights();
-            cout << "connecting output_node[" << j << "] to softmax_node[" << i << "], number_weights: " << edges.back()->get_number_weights() << endl;
-            edge_innovation_number++;
-        }
-    }
-
-    /*
-       for (uint32_t i = 0; i < number_classes; i++) {
-       CNN_Node *output_node = new CNN_Node(node_innovation_number, 1, 1, 1, true);
-       node_innovation_number++;
-
-       output_nodes.push_back(output_node);
-       nodes.push_back(output_node);
-
-       edges.push_back(new CNN_Edge(input_node, output_node, true, edge_innovation_number));
-       number_weights += edges.back()->get_number_weights();
-       edge_innovation_number++;
-       }
-
-       for (uint32_t i = 0; i < number_classes; i++) {
-       CNN_Node *softmax_node = new CNN_Node(node_innovation_number, 2, 1, 1, true);
-       node_innovation_number++;
-
-       softmax_nodes.push_back(softmax_node);
-       nodes.push_back(softmax_node);
-
-       for (uint32_t j = 0; j < number_classes; j++) {
-       edges.push_back(new CNN_Edge(output_nodes[j], softmax_node, true, edge_innovation_number));
-       number_weights += edges.back()->get_number_weights();
-       edge_innovation_number++;
-       }
-       }
-       */
-
-    cout << "number_weights: " << number_weights << endl;
+int CNN_Genome::get_number_softmax_nodes() const {
+    return softmax_nodes.size();
 }
 
 
-int CNN_NEAT_Genome::evaluate_image(const Image &image, vector<double> &class_error, bool do_backprop) {
+void CNN_Genome::add_node(CNN_Node* node) {
+    nodes.insert( upper_bound(nodes.begin(), nodes.end(), node, sort_CNN_Nodes_by_depth()), node );
+
+}
+
+void CNN_Genome::add_edge(CNN_Edge* edge) {
+    edges.insert( upper_bound(edges.begin(), edges.end(), edge, sort_CNN_Edges_by_depth()), edge );
+}
+
+bool CNN_Genome::disable_edge(int edge_position) {
+    CNN_Edge *edge = edges.at(edge_position);
+    
+    /*
+    int number_inputs = edge->get_output_node()->get_number_inputs();
+
+    if (number_inputs == 1) {
+        return false;
+    } else if (number_inputs == 0) {
+        cerr << "ERROR: disabling an edge where the target had 0 inputs." << endl;
+        cerr << "\tThis should never happen!" << endl;
+        exit(1);
+    }
+    */
+
+    if (edge->is_disabled()) {
+        cout << "\t\tcould not disable edge " << edge_position << " because it was already disabled!" << endl;
+        return true;
+    } else {
+        cout << "\t\tdisabling edge: " << edge_position << endl;
+        edge->disable();
+        return true;
+    }
+}
+
+void CNN_Genome::resize_edges_around_node(int node_innovation_number) {
+    for (uint32_t i = 0; i < edges.size(); i++) {
+        CNN_Edge *edge = edges[i];
+
+        if (edge->get_input_node()->get_innovation_number() == node_innovation_number) {
+            edge->reinitialize(generator);
+        }
+
+        if (edge->get_output_node()->get_innovation_number() == node_innovation_number) {
+            edge->reinitialize(generator);
+        }
+    }
+}
+
+bool CNN_Genome::sanity_check() const {
+    //check to see if all edge filters are the correct size
+    for (uint32_t i = 0; i < edges.size(); i++) {
+        if (!edges[i]->is_filter_correct()) {
+            cerr << "SANITY CHECK FAILED! edges[" << i << "] had incorrect filter size!" << endl;
+            cerr << edges[i] << endl;
+            return false;
+        }
+    }
+
+    //check to see if total_inputs on each node are correct (equal to non-disabled input edges)
+    for (uint32_t i = 0; i < nodes.size(); i++) {
+        int number_inputs = nodes[i]->get_number_inputs();
+
+        cout << "\t\tcounting inputs for node " << i << " (innovation number: " << nodes[i]->get_innovation_number() << ") -- should find " << number_inputs << endl;
+
+        int counted_inputs = 0;
+        for (uint32_t j = 0; j < edges.size(); j++) {
+            if (edges[j]->is_disabled()) {
+                cout << "\t\t\tedge " << j << " is disabled (" << edges[j]->get_input_innovation_number() << " to " << edges[j]->get_output_innovation_number() << ")" << endl;
+                continue;
+            }
+
+            if (edges[j]->get_output_node()->get_innovation_number() == nodes[i]->get_innovation_number()) {
+                cout << "\t\t\tedge " << j << " (" << edges[j]->get_input_innovation_number() << " to " << edges[j]->get_output_innovation_number() << ") output matches node innovation number" << endl;
+
+                if (edges[j]->get_output_node() != nodes[i]) {
+                    //these should be equal
+                    cerr << "SANITY CHECK FAILED! edges[" << j << "]->output_node had the same innovation number as nodes[" << j << "] but the pointers were not the same!" << endl;
+                    cerr << "EDGE[" << j << "]: " << endl;
+                    cerr << edges[j] << endl << endl;
+                    cerr << "NODE[" << i << "]: " << endl;
+                    cerr << nodes[i] << endl << endl;
+                    return false;
+                }
+                counted_inputs++;
+            } else {
+                cout << "\t\t\tedge " << j << " (" << edges[j]->get_input_innovation_number() << " to " << edges[j]->get_output_innovation_number() << ") output does not match node innovation number" << endl;
+            }
+        }
+
+        if (counted_inputs != number_inputs) {
+            cerr << "SANITY CHECK FAILED! nodes[" << i << "] had total inputs: " << number_inputs << " but " << counted_inputs << " inputs were counted. " << endl;
+            cerr << nodes[i] << endl;
+            return false;
+        }
+    }
+
+    return true;
+}
+
+bool CNN_Genome::outputs_connected() const {
+    //check to see there is a path to from the input to each output
+
+
+    return true;
+}
+
+int CNN_Genome::evaluate_image(const Image &image, vector<double> &class_error, bool do_backprop) {
     int expected_class = image.get_classification();
     int rows = image.get_rows();
     int cols = image.get_cols();
-
-    //sort edges by depth of input node
-    sort(edges.begin(), edges.end(), sort_CNN_Edges_by_depth());
 
     /*
        for (uint32_t i = 0; i < edges.size(); i++) {
@@ -297,12 +266,6 @@ int CNN_NEAT_Genome::evaluate_image(const Image &image, vector<double> &class_er
 
         edges[i]->propagate_forward();
     }
-
-    /*
-       for (uint32_t i = 0; i < output_nodes.size(); i++) {
-       output_nodes[i]->print(cout);
-       }
-       */
 
     //cout << "Before softmax applied: " << endl;
 
@@ -394,12 +357,16 @@ int CNN_NEAT_Genome::evaluate_image(const Image &image, vector<double> &class_er
         for (int32_t i = edges.size() - 1; i >= 0; i--) {
             edges[i]->propagate_backward(mu);
         }
+
+        for (int32_t i = nodes.size() - 1; i >= 0; i--) {
+            nodes[i]->propagate_bias(mu);
+        }
     }
 
     return predicted_class;
 }
 
-void CNN_NEAT_Genome::stochastic_backpropagation(const Images &images, string checkpoint_filename, string output_filename) {
+void CNN_Genome::stochastic_backpropagation(const Images &images, string checkpoint_filename, string output_filename) {
     if (!started_from_checkpoint) {
         backprop_order.clear();
         for (uint32_t i = 0; i < images.get_number_images(); i++) {
@@ -408,7 +375,20 @@ void CNN_NEAT_Genome::stochastic_backpropagation(const Images &images, string ch
         cout << "backprop_order.size(): " << backprop_order.size() << endl;
 
         shuffle(backprop_order.begin(), backprop_order.end(), generator); 
+
+        //TODO: don't initialize weights if using weights from parent
+        cout << "initializing weights and biases!" << endl;
+        for (uint32_t i = 0; i < edges.size(); i++) {
+            edges[i]->initialize_weights(generator);
+        }
+        
+        for (uint32_t i = 0; i < nodes.size(); i++) {
+            nodes[i]->initialize_bias(generator);
+        }
     }
+
+    //sort edges by depth of input node
+    sort(edges.begin(), edges.end(), sort_CNN_Edges_by_depth());
 
     vector<int> class_sizes(images.get_number_classes(), 0);
     for (uint32_t i = 0; i < backprop_order.size(); i++) {
@@ -474,7 +454,7 @@ void CNN_NEAT_Genome::stochastic_backpropagation(const Images &images, string ch
 
 }
 
-void CNN_NEAT_Genome::write_to_file(string filename) {
+void CNN_Genome::write_to_file(string filename) {
     ofstream outfile(filename);
 
     outfile << initial_mu << endl;
@@ -484,6 +464,8 @@ void CNN_NEAT_Genome::write_to_file(string filename) {
     outfile << best_predictions << endl;
 
     outfile << generator << endl;
+    outfile << rng_double << endl;
+    outfile << rng_long << endl;
 
     outfile << nodes.size() << endl;
     for (uint32_t i = 0; i < nodes.size(); i++) {
@@ -496,19 +478,6 @@ void CNN_NEAT_Genome::write_to_file(string filename) {
     }
 
     outfile << input_node->get_innovation_number() << endl;
-
-    outfile << hidden_nodes.size() << endl;
-    for (uint32_t i = 0; i < hidden_nodes.size(); i++) {
-        outfile << hidden_nodes[i].size() << endl;
-        for (uint32_t j = 0; j < hidden_nodes[i].size(); j++) {
-            outfile << hidden_nodes[i][j]->get_innovation_number() << endl;
-        }
-    }
-
-    outfile << output_nodes.size() << endl;
-    for (uint32_t i = 0; i < output_nodes.size(); i++) {
-        outfile << output_nodes[i]->get_innovation_number() << endl;
-    }
 
     outfile << softmax_nodes.size() << endl;
     for (uint32_t i = 0; i < softmax_nodes.size(); i++) {
@@ -525,8 +494,8 @@ void CNN_NEAT_Genome::write_to_file(string filename) {
 }
 
 
-void CNN_NEAT_Genome::read_from_file(string filename) {
-    started_from_checkpoint = true;
+void CNN_Genome::read_from_file(string filename, bool is_checkpoint) {
+    started_from_checkpoint = is_checkpoint;
 
     ifstream infile(filename);
 
@@ -537,6 +506,8 @@ void CNN_NEAT_Genome::read_from_file(string filename) {
     infile >> best_predictions;
 
     infile >> generator;
+    infile >> rng_double;
+    infile >> rng_long;
 
     nodes.clear();
     int number_nodes;
@@ -555,7 +526,11 @@ void CNN_NEAT_Genome::read_from_file(string filename) {
         infile >> edge;
 
         cout << "read edge: " << edge->get_innovation_number() << endl;
-        edge->set_nodes(nodes);
+        if (!edge->set_nodes(nodes)) {
+            cerr << "ERROR: filter size didn't match when reading genome from input file!" << endl;
+            cerr << "This should never happen!" << endl;
+            exit(1);
+        }
 
         edges.push_back(edge);
     }
@@ -565,42 +540,8 @@ void CNN_NEAT_Genome::read_from_file(string filename) {
 
     cout << "input node innovation number: " << input_node_innovation_number << endl;
 
+    //TODO: fix this -- nodes will not be sorted by innovation number!!!!!
     input_node = nodes[input_node_innovation_number];
-
-    hidden_nodes.clear();
-    int number_hidden_layers;
-    infile >> number_hidden_layers;
-    cout << "number hidden layers: " << number_hidden_layers << endl;
-
-    for (uint32_t i = 0; i < number_hidden_layers; i++) {
-        hidden_nodes.push_back(vector<CNN_Node*>());
-
-        int hidden_layer_size;
-        infile >> hidden_layer_size;
-
-        cout << "hidden layer " << i << " size: " << hidden_layer_size << endl;
-
-        for (uint32_t j = 0; j < hidden_layer_size; j++) {
-            int hidden_node_innovation_number;
-            infile >> hidden_node_innovation_number;
-
-            cout << "\thidden node: " << hidden_node_innovation_number << endl;
-
-            hidden_nodes[i].push_back(nodes[hidden_node_innovation_number]);
-        }
-    }
-
-    output_nodes.clear();
-    int number_output_nodes;
-    infile >> number_output_nodes;
-    cout << "number output nodes: " << number_output_nodes << endl;
-
-    for (uint32_t i = 0; i < number_output_nodes; i++) {
-        int output_node_innovation_number;
-        infile >> output_node_innovation_number;
-        cout << "\toutput node: " << output_node_innovation_number << endl;
-        output_nodes.push_back(nodes[output_node_innovation_number]);
-    }
 
     softmax_nodes.clear();
     int number_softmax_nodes;

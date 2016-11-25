@@ -12,6 +12,10 @@ using std::endl;
 using std::ostream;
 using std::istream;
 
+#include <random>
+using std::mt19937;
+
+
 #include <string>
 using std::string;
 
@@ -27,11 +31,16 @@ using std::vector;
 #define RELU_MAX 5
 #define RELU_MAX_LEAK 0.00
 
+#define INPUT_NODE 0
+#define HIDDEN_NODE 1
+#define OUTPUT_NODE 2
+#define SOFTMAX_NODE 3
+
 
 class CNN_Node {
     private:
         int innovation_number;
-        int depth;
+        double depth;
 
         int size_x, size_y;
 
@@ -41,10 +50,10 @@ class CNN_Node {
 
         double **values;
         double **errors;
+        double **bias;
+        double **bias_velocity;
 
-        bool input;
-        bool output;
-        bool softmax;
+        int type;
 
         int total_inputs;
         int inputs_fired;
@@ -52,7 +61,7 @@ class CNN_Node {
     public:
         CNN_Node();
 
-        CNN_Node(int _innovation_number, int _depth, int _size_x, int _size_y, bool _input, bool _output, bool _softmax);
+        CNN_Node(int _innovation_number, double _depth, int _size_x, int _size_y, int type);
 
         CNN_Node* copy() const;
 
@@ -61,13 +70,18 @@ class CNN_Node {
 
         int get_innovation_number() const;
 
-        int get_depth() const;
+        double get_depth() const;
 
         bool is_fixed() const;
         bool is_hidden() const;
         bool is_input() const;
         bool is_output() const;
         bool is_softmax() const;
+
+        void initialize_bias(mt19937 &generator);
+        void reinitialize_bias(mt19937 &generator);
+        
+        void propagate_bias(double mu);
 
         void set_values(const Image &image, int rows, int cols);
         double** get_values();
@@ -84,7 +98,12 @@ class CNN_Node {
 
         double set_value(int y, int x, double value);
 
+        bool modify_size_x(int change, mt19937 &generator);
+        bool modify_size_y(int change, mt19937 &generator);
+
         void add_input();
+        void disable_input();
+        int get_number_inputs() const;
 
         void input_fired();
 
@@ -92,5 +111,10 @@ class CNN_Node {
         friend istream &operator>>(istream &is, CNN_Node* node);
 };
 
+struct sort_CNN_Nodes_by_depth {
+    bool operator()(const CNN_Node *n1, const CNN_Node *n2) {
+        return n1->get_depth() < n2->get_depth();
+    }
+};
 
 #endif

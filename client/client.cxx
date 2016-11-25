@@ -31,17 +31,17 @@ int main(int argc, char** argv) {
 
     Images images(binary_samples_filename);
 
-    CNN_NEAT_Genome *genome = new CNN_NEAT_Genome();
+    CNN_Genome *genome = new CNN_Genome();
 
     ifstream infile(checkpoint_filename);
     if (infile) {
         //start from the checkpoint if it exists
         cout << "starting from checkpoint file: '" << checkpoint_filename << "'" << endl;
-        genome->read_from_file(checkpoint_filename);
+        genome->read_from_file(checkpoint_filename, true);
     } else {
         //start from the input genome file otherwise
         cout << "starting from input file: '" << genome_filename << "'" << endl;
-        genome->read_from_file(genome_filename);
+        genome->read_from_file(genome_filename, false);
     }
 
     genome->stochastic_backpropagation(images, checkpoint_filename, output_filename);

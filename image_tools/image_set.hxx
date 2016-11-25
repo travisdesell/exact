@@ -7,6 +7,9 @@ using std::ifstream;
 #include <iostream>
 using std::ostream;
 
+#include <string>
+using std::string;
+
 #include <vector>
 using std::vector;
 

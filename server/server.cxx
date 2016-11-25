@@ -28,9 +28,10 @@ int main(int argc, char** argv) {
 
     Images images(binary_samples_filename);
 
-    CNN_NEAT cnn_neat(images, 10);
+    CNN_NEAT cnn_neat(images, 50, 20);
+    //cnn_neat.write_genomes_to_directorY(directory);
 
-    CNN_NEAT_Genome *genome = cnn_neat.get_best_genome();
+    CNN_Genome *genome = cnn_neat.get_best_genome();
     genome->write_to_file(output_filename);
 
     return 0;

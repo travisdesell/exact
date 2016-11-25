@@ -28,7 +28,6 @@ using std::vector;
 #include "cnn_edge.hxx"
 #include "cnn_node.hxx"
 
-
 CNN_Edge::CNN_Edge() {
     innovation_number = -1;
 
@@ -39,10 +38,12 @@ CNN_Edge::CNN_Edge() {
     output_node = NULL;
 }
 
-CNN_Edge::CNN_Edge(CNN_Node *_input_node, CNN_Node *_output_node, bool _fixed, int _innovation_number, mt19937 &generator) {
+CNN_Edge::CNN_Edge(CNN_Node *_input_node, CNN_Node *_output_node, bool _fixed, int _innovation_number) {
     fixed = _fixed;
     innovation_number = _innovation_number;
     disabled = false;
+    reverse_filter_x = false;
+    reverse_filter_y = false;
 
     input_node = _input_node;
     output_node = _output_node;
@@ -50,14 +51,30 @@ CNN_Edge::CNN_Edge(CNN_Node *_input_node, CNN_Node *_output_node, bool _fixed, i
     input_node_innovation_number = input_node->get_innovation_number();
     output_node_innovation_number = output_node->get_innovation_number();
 
-    output_node->add_input();
+    if (!disabled) output_node->add_input();
 
-    filter_x = (input_node->get_size_x() - output_node->get_size_x()) + 1;
-    filter_y = (input_node->get_size_y() - output_node->get_size_y()) + 1;
+    if (output_node->get_size_x() <= input_node->get_size_x()) {
+        filter_x = (input_node->get_size_x() - output_node->get_size_x()) + 1;
+    } else {
+        reverse_filter_x = true;
+        filter_x = (output_node->get_size_x() - input_node->get_size_x()) + 1;
+    }
+
+    if (output_node->get_size_y() <= input_node->get_size_y()) {
+        filter_y = (input_node->get_size_y() - output_node->get_size_y()) + 1;
+    } else {
+        reverse_filter_y = true;
+        filter_y = (output_node->get_size_y() - input_node->get_size_y()) + 1;
+    }
+
+    cout << "\t\tcreated edge " << innovation_number << " (node " << input_node_innovation_number << " to " << output_node_innovation_number << ") with filter_x: " << filter_x << " (input: " << input_node->get_size_x() << ", output: " << output_node->get_size_x() << ") and filter_y: " << filter_y << " (input: " << input_node->get_size_y() << ", output: " << output_node->get_size_y() << "), reverse filter: " << reverse_filter_x << ", reverse_filter_y: " << reverse_filter_y << endl;
 
     weights = vector< vector<double> >(filter_y, vector<double>(filter_x, 0.0));
-    weight_update = vector< vector<double> >(filter_y, vector<double>(filter_x, 0.0));
     previous_velocity = vector< vector<double> >(filter_y, vector<double>(filter_x, 0.0));
+}
+
+void CNN_Edge::initialize_weights(mt19937 &generator) {
+    if (disabled) return;
 
     int edge_size = filter_x * filter_y;
     if (edge_size == 1) edge_size = 10;
@@ -68,6 +85,16 @@ CNN_Edge::CNN_Edge(CNN_Node *_input_node, CNN_Node *_output_node, bool _fixed, i
             weights[i][j] = distribution(generator);
         }
     }
+}
+
+void CNN_Edge::reinitialize(mt19937 &generator) {
+    filter_x = (input_node->get_size_x() - output_node->get_size_x()) + 1;
+    filter_y = (input_node->get_size_y() - output_node->get_size_y()) + 1;
+
+    weights = vector< vector<double> >(filter_y, vector<double>(filter_x, 0.0));
+    previous_velocity = vector< vector<double> >(filter_y, vector<double>(filter_x, 0.0));
+
+    initialize_weights(generator);
 }
 
 CNN_Edge* CNN_Edge::copy() const {
@@ -86,14 +113,15 @@ CNN_Edge* CNN_Edge::copy() const {
     copy->filter_x = filter_x;
     copy->filter_y = filter_y;
 
+    copy->reverse_filter_x = reverse_filter_x;
+    copy->reverse_filter_y = reverse_filter_y;
+
     copy->weights = vector< vector<double> >(filter_y, vector<double>(filter_x, 0.0));
-    copy->weight_update = vector< vector<double> >(filter_y, vector<double>(filter_x, 0.0));
     copy->previous_velocity = vector< vector<double> >(filter_y, vector<double>(filter_x, 0.0));
 
     for (uint32_t y = 0; y < weights.size(); y++) {
         for (uint32_t x = 0; x < weights[y].size(); x++) {
             copy->weights[y][x] = weights[y][x];
-            copy->weight_update[y][x] = weight_update[y][x];
             copy->previous_velocity[y][x] = previous_velocity[y][x];
         }
     }
@@ -101,13 +129,88 @@ CNN_Edge* CNN_Edge::copy() const {
     return copy;
 }
 
-void CNN_Edge::set_nodes(const vector<CNN_Node*> nodes) {
-    cout << "nodes.size(): " << nodes.size() << endl;
-    cout << "setting input node: " << input_node_innovation_number << endl;
-    cout << "setting output node: " << output_node_innovation_number << endl;
+bool CNN_Edge::set_nodes(const vector<CNN_Node*> nodes) {
+    //cout << "nodes.size(): " << nodes.size() << endl;
+    //cout << "setting input node: " << input_node_innovation_number << endl;
+    //cout << "setting output node: " << output_node_innovation_number << endl;
 
-    input_node = nodes[input_node_innovation_number];
-    output_node = nodes[output_node_innovation_number];
+    for (uint32_t i = 0; i < nodes.size(); i++) {
+        if (nodes[i]->get_innovation_number() == input_node_innovation_number) {
+            input_node = nodes[i];
+        }
+
+        if (nodes[i]->get_innovation_number() == output_node_innovation_number) {
+            output_node = nodes[i];
+            if (!disabled) output_node->add_input();
+        }
+    }
+
+    if (input_node == NULL) {
+        cerr << "ERROR! Could not find node with input node innovation number " << input_node_innovation_number << endl;
+        cerr << "This should never happen!" << endl;
+        exit(1);
+    }
+
+    if (output_node == NULL) {
+        cerr << "ERROR! Could not find node with output node innovation number " << output_node_innovation_number << endl;
+        cerr << "This should never happen!" << endl;
+        exit(1);
+    }
+
+    if (output_node == input_node) {
+        cerr << "ERROR! Setting nodes and output_node == input_node!" << endl;
+        cerr << "input node innovation number: " << input_node_innovation_number << endl;
+        cerr << "output node innovation number: " << output_node_innovation_number << endl;
+        cerr << "This should never happen!" << endl;
+        exit(1);
+    }
+
+    if (!is_filter_correct()) {
+        return false;
+    }
+
+    return true;
+}
+
+bool CNN_Edge::is_filter_correct() const {
+    cout << "\t\tchecking filter correctness on edge: " << innovation_number << endl;
+    cout << "\t\t\tdisabled? " << disabled << endl;
+    cout << "\t\t\treverse_filter_x? " << reverse_filter_x << ", reverse_filter_y: " << reverse_filter_y << endl;
+    cout << "\t\t\tbetween node " << input_node_innovation_number << " and " << output_node_innovation_number << endl;
+
+    bool is_correct = true;
+    if (reverse_filter_x) {
+        cout << "\t\t\tfilter_x: " << filter_x << ", should be: " << (output_node->get_size_x() - input_node->get_size_x()) + 1 << " (output_x: " << output_node->get_size_x() << " - input_x: " << input_node->get_size_x() << " + 1) " << endl;
+
+        is_correct = is_correct && (filter_x == (output_node->get_size_x() - input_node->get_size_x()) + 1);
+    } else {
+        cout << "\t\t\tfilter_x: " << filter_x << ", should be: " << (input_node->get_size_x() - output_node->get_size_x()) + 1 << " (input_x: " << input_node->get_size_x() << " - output_x: " << output_node->get_size_x() << " + 1) " << endl;
+
+        is_correct = is_correct && (filter_x == (input_node->get_size_x() - output_node->get_size_x()) + 1);
+    }
+
+    if (reverse_filter_y) {
+        cout << "\t\t\tfilter_y: " << filter_y << ", should be: " << (output_node->get_size_y() - input_node->get_size_y()) + 1 << " (output_y: " << output_node->get_size_y() << " - input_y: " << input_node->get_size_y() << " + 1) " << endl;
+
+        is_correct = is_correct && (filter_y == (output_node->get_size_y() - input_node->get_size_y()) + 1);
+    } else {
+        cout << "\t\t\tfilter_y: " << filter_y << ", should be: " << (input_node->get_size_y() - output_node->get_size_y()) + 1 << " (input_y: " << input_node->get_size_y() << " - output_y: " << output_node->get_size_y() << " + 1) " << endl;
+
+        is_correct = is_correct && (filter_y == (input_node->get_size_y() - output_node->get_size_y()) + 1);
+    }
+
+    return is_correct;
+}
+
+void CNN_Edge::disable() {
+    if (!disabled) {
+        disabled = true;
+        output_node->disable_input();
+    }
+}
+
+bool CNN_Edge::is_disabled() const {
+    return disabled;
 }
 
 int CNN_Edge::get_number_weights() const {
@@ -118,12 +221,25 @@ int CNN_Edge::get_innovation_number() const {
     return innovation_number;
 }
 
-const CNN_Node* CNN_Edge::get_input_node() const {
+int CNN_Edge::get_input_innovation_number() const {
+    return input_node_innovation_number;
+}
+
+int CNN_Edge::get_output_innovation_number() const {
+    return output_node_innovation_number;
+}
+
+
+CNN_Node* CNN_Edge::get_input_node() {
     return input_node;
 }
 
-const CNN_Node* CNN_Edge::get_output_node() const {
+CNN_Node* CNN_Edge::get_output_node() {
     return output_node;
+}
+
+bool CNN_Edge::connects(int n1, int n2) const {
+    return (input_node_innovation_number == n1) && (output_node_innovation_number == n2);
 }
 
 void CNN_Edge::print(ostream &out) {
@@ -139,34 +255,80 @@ void CNN_Edge::print(ostream &out) {
 }
 
 void CNN_Edge::propagate_forward() {
+    if (disabled) return;
+
     double **input = input_node->get_values();
     double **output = output_node->get_values();
 
-    if (filter_x != (input_node->get_size_x() - output_node->get_size_x()) + 1) {
-        cerr << "ERRROR: filter_x != input_node->get_size_x: " << input_node->get_size_x() << " - output_node->get_size_x: " << output_node->get_size_x() << " + 1" << endl;
+    /*
+    if (!is_filter_correct()) {
+        cerr << "ERROR: filter_x != input_node->get_size_x: " << input_node->get_size_x() << " - output_node->get_size_x: " << output_node->get_size_x() << " + 1" << endl;
         exit(1);
     }
+    */
 
-    if (filter_y != (input_node->get_size_y() - output_node->get_size_y()) + 1) {
-        cerr << "ERRROR: filter_y != input_node->get_size_y: " << input_node->get_size_y() << " - output_node->get_size_y: " << output_node->get_size_y() << " + 1" << endl;
-        exit(1);
-    }
+    /*
+    cout << "propagating forward!" << endl;
+    cout << "\tinput_x: " << input_node->get_size_x() << endl;
+    cout << "\tinput_y: " << input_node->get_size_y() << endl;
+    cout << "\toutput_x: " << output_node->get_size_x() << endl;
+    cout << "\toutput_y: " << output_node->get_size_y() << endl;
+    cout << "\tfilter_x: " << filter_x << endl;
+    cout << "\tfilter_y: " << filter_y << endl;
+    */
 
-    for (uint32_t k = 0; k < filter_y; k++) {
-        for (uint32_t l = 0; l < filter_x; l++) {
-            weight_update[k][l] = 0.0;
+    if (reverse_filter_x && reverse_filter_y) {
+        for (uint32_t fy = 0; fy < filter_y; fy++) {
+            for (uint32_t fx = 0; fx < filter_x; fx++) {
+                double weight = weights[fy][fx];
+
+                for (uint32_t y = 0; y < input_node->get_size_y(); y++) {
+                    for (uint32_t x = 0; x < input_node->get_size_x(); x++) {
+                        double value = weight * input[y][x];
+                        output[y + fy][x + fx] += value;
+                    }
+                }
+            }
         }
-    }
 
-    for (uint32_t i = 0; i + filter_y - 1 < input_node->get_size_y(); i++) {
-        for (uint32_t j = 0; j + filter_x - 1 < input_node->get_size_x(); j++) {
-            for (uint32_t k = 0; k < filter_y; k++) {
-                for (uint32_t l = 0; l < filter_x; l++) {
-                    double value = weights[k][l] * input[i + k][j + l];
-                    output[i][j] += value;
+    } else if (reverse_filter_x) {
+        for (uint32_t fy = 0; fy < filter_y; fy++) {
+            for (uint32_t fx = 0; fx < filter_x; fx++) {
+                double weight = weights[fy][fx];
 
-                    //                            cout << "weights[" << k << "][" << l <<"]: " << weights[k][l] << " * input[" << i << " + " << k << "][" << j << " + " << l << "] = " << value << endl;
-                    //                            cout << "output[" << i << "][" << j << "]: " << output[i][j] << endl;
+                for (uint32_t y = 0; y < output_node->get_size_y(); y++) {
+                    for (uint32_t x = 0; x < input_node->get_size_x(); x++) {
+                        double value = weight * input[y + fy][x];
+                        output[y][x + fx] += value;
+                    }
+                }
+            }
+        }
+
+    } else if (reverse_filter_y) {
+        for (uint32_t fy = 0; fy < filter_y; fy++) {
+            for (uint32_t fx = 0; fx < filter_x; fx++) {
+                double weight = weights[fy][fx];
+
+                for (uint32_t y = 0; y < input_node->get_size_y(); y++) {
+                    for (uint32_t x = 0; x < output_node->get_size_x(); x++) {
+                        double value = weight * input[y][x + fx];
+                        output[y + fy][x] += value;
+                    }
+                }
+            }
+        }
+
+    } else {
+        for (uint32_t fy = 0; fy < filter_y; fy++) {
+            for (uint32_t fx = 0; fx < filter_x; fx++) {
+                double weight = weights[fy][fx];
+
+                for (uint32_t y = 0; y < output_node->get_size_y(); y++) {
+                    for (uint32_t x = 0; x < output_node->get_size_x(); x++) {
+                        double value = weight * input[y + fy][x + fx];
+                        output[y][x] += value;
+                    }
                 }
             }
         }
@@ -176,56 +338,156 @@ void CNN_Edge::propagate_forward() {
 }
 
 void CNN_Edge::propagate_backward(double mu) {
+    if (disabled) return;
+
     double **input = input_node->get_values();
     double **output_errors = output_node->get_errors();
     double **input_errors = input_node->get_errors();
 
-    for (uint32_t i = 0; i + filter_y - 1 < input_node->get_size_y(); i++) {
-        for (uint32_t j = 0; j + filter_x - 1 < input_node->get_size_x(); j++) {
-            for (uint32_t k = 0; k < filter_y; k++) {
-                for (uint32_t l = 0; l < filter_x; l++) {
-                    double error = output_errors[i][j];
+    double weight, weight_update, error, update, dx, velocity, pv;
 
-                    /*
-                       int error_sign = 1;
-                       if (error < 0) error_sign = -1;
+    if (reverse_filter_x && reverse_filter_y) {
+        //cout << "reverse filter x and y!" << endl;
 
-                       double gradient = 1;
-                       if (input[i][j] * weights[k][l] < RELU_MIN) gradient = RELU_MIN_LEAK;
-                    // else if (input[i][j] * weights[k][l] > RELU_MAX) gradient = RELU_MAX_LEAK;
-                    */
+        for (uint32_t fy = 0; fy < filter_y; fy++) {
+            for (uint32_t fx = 0; fx < filter_x; fx++) {
+                weight_update = 0;
+                weight = weights[fy][fx];
 
-                    double update = input[i + k][j + l] * error;
-                    weight_update[k][l] -= update;
-                    //cout << input_node->get_innovation_number() << " to " << output_node->get_innovation_number() << " -- in: " << input << ", w: " << weights[0][0] << ", err: " << error << ", update: " << weight_update << endl;
+                for (uint32_t y = 0; y < input_node->get_size_y(); y++) {
+                    for (uint32_t x = 0; x < input_node->get_size_x(); x++) {
+                        error = output_errors[y + fy][x + fx];
 
-                    input_errors[i + k][j + l] += error * weights[k][l];
+                        update = input[y][x] * error;
+                        weight_update -= update;
+
+                        input_errors[y][x] += error * weight;
+                    }
                 }
+
+                //double dx = LEARNING_RATE * (weight_update[k][l] / (filter_x * filter_y) + (weights[k][l] * WEIGHT_DECAY));
+                //L2 regularization
+
+                dx = LEARNING_RATE * (weight_update / (filter_x * filter_y) - (weight * WEIGHT_DECAY));
+                //double dx = LEARNING_RATE * (weight_update[k][l] / (filter_x * filter_y));
+
+                //no momemntum
+                //weights[k][l] += dx;
+
+                //momentum
+                pv = previous_velocity[fy][fx];
+                velocity = (mu * pv) - dx;
+                weights[fy][fx] -= -mu * pv + (1 + mu) * velocity;
+                previous_velocity[fy][fx] = velocity;
             }
         }
-    }
 
-    double learning_rate = 0.0005;
-    double weight_decay = 0.0005;
-    for (uint32_t k = 0; k < filter_y; k++) {
-        for (uint32_t l = 0; l < filter_x; l++) {
-            //double dx = learning_rate * (weight_update[k][l] / (filter_x * filter_y) + (weights[k][l] * weight_decay));
-            //L2 regularization
-            double dx = learning_rate * (weight_update[k][l] / (filter_x * filter_y) - (weights[k][l] * weight_decay));
-            //double dx = learning_rate * (weight_update[k][l] / (filter_x * filter_y));
+    } else if (reverse_filter_x) {
+        //cout << "reverse filter x!" << endl;
 
-            //no momemntum
-            //weights[k][l] += dx;
+        for (uint32_t fy = 0; fy < filter_y; fy++) {
+            for (uint32_t fx = 0; fx < filter_x; fx++) {
+                weight_update = 0;
+                weight = weights[fy][fx];
 
-            //momentum
-            double velocity = (mu * previous_velocity[k][l]) - dx;
-            weights[k][l] -= -mu * previous_velocity[k][l] + (1 + mu) * velocity;
-            previous_velocity[k][l] = velocity;
+                for (uint32_t y = 0; y < output_node->get_size_y(); y++) {
+                    for (uint32_t x = 0; x < input_node->get_size_x(); x++) {
+                        error = output_errors[y][x + fx];
 
-            /*
-               if (weights[k][l] < -1) weights[k][l] = -1;
-               if (weights[k][l] > 1) weights[k][l] = 1;
-               */
+                        update = input[y + fy][x] * error;
+                        weight_update -= update;
+
+                        input_errors[y + fy][x] += error * weight;
+                    }
+                }
+
+                //double dx = LEARNING_RATE * (weight_update[k][l] / (filter_x * filter_y) + (weights[k][l] * WEIGHT_DECAY));
+                //L2 regularization
+
+                dx = LEARNING_RATE * (weight_update / (filter_x * filter_y) - (weight * WEIGHT_DECAY));
+                //double dx = LEARNING_RATE * (weight_update[k][l] / (filter_x * filter_y));
+
+                //no momemntum
+                //weights[k][l] += dx;
+
+                //momentum
+                pv = previous_velocity[fy][fx];
+                velocity = (mu * pv) - dx;
+                weights[fy][fx] -= -mu * pv + (1 + mu) * velocity;
+                previous_velocity[fy][fx] = velocity;
+            }
+        }
+
+    } else if (reverse_filter_y) {
+        //cout << "reverse filter y!" << endl;
+
+        for (uint32_t fy = 0; fy < filter_y; fy++) {
+            for (uint32_t fx = 0; fx < filter_x; fx++) {
+                weight_update = 0;
+                weight = weights[fy][fx];
+
+                for (uint32_t y = 0; y < input_node->get_size_y(); y++) {
+                    for (uint32_t x = 0; x < output_node->get_size_x(); x++) {
+                        error = output_errors[y + fy][x];
+
+                        update = input[y][x + fx] * error;
+                        weight_update -= update;
+
+                        input_errors[y][x + fx] += error * weight;
+                    }
+                }
+
+                //double dx = LEARNING_RATE * (weight_update[k][l] / (filter_x * filter_y) + (weights[k][l] * WEIGHT_DECAY));
+                //L2 regularization
+
+                dx = LEARNING_RATE * (weight_update / (filter_x * filter_y) - (weight * WEIGHT_DECAY));
+                //double dx = LEARNING_RATE * (weight_update[k][l] / (filter_x * filter_y));
+
+                //no momemntum
+                //weights[k][l] += dx;
+
+                //momentum
+                pv = previous_velocity[fy][fx];
+                velocity = (mu * pv) - dx;
+                weights[fy][fx] -= -mu * pv + (1 + mu) * velocity;
+                previous_velocity[fy][fx] = velocity;
+            }
+        }
+
+    } else {
+        //cout << "no reverse filter!" << endl;
+
+        for (uint32_t fy = 0; fy < filter_y; fy++) {
+            for (uint32_t fx = 0; fx < filter_x; fx++) {
+                weight_update = 0;
+                weight = weights[fy][fx];
+
+                for (uint32_t y = 0; y < output_node->get_size_y(); y++) {
+                    for (uint32_t x = 0; x < output_node->get_size_x(); x++) {
+                        error = output_errors[y][x];
+
+                        update = input[y + fy][x + fx] * error;
+                        weight_update -= update;
+
+                        input_errors[y + fy][x + fx] += error * weight;
+                    }
+                }
+
+                //double dx = LEARNING_RATE * (weight_update[k][l] / (filter_x * filter_y) + (weights[k][l] * WEIGHT_DECAY));
+                //L2 regularization
+
+                dx = LEARNING_RATE * (weight_update / (filter_x * filter_y) - (weight * WEIGHT_DECAY));
+                //double dx = LEARNING_RATE * (weight_update[k][l] / (filter_x * filter_y));
+
+                //no momemntum
+                //weights[k][l] += dx;
+
+                //momentum
+                pv = previous_velocity[fy][fx];
+                velocity = (mu * pv) - dx;
+                weights[fy][fx] -= -mu * pv + (1 + mu) * velocity;
+                previous_velocity[fy][fx] = velocity;
+            }
         }
     }
 }
@@ -235,6 +497,8 @@ ostream &operator<<(ostream &os, const CNN_Edge* edge) {
     os << edge->input_node_innovation_number << " " << edge->output_node_innovation_number << " ";
     os << edge->filter_x << " " << edge->filter_y << " ";
     os << edge->fixed << " ";
+    os << edge->reverse_filter_x << " ";
+    os << edge->reverse_filter_y << " ";
     os << edge->disabled << endl;
 
     for (uint32_t y = 0; y < edge->filter_y; y++) {
@@ -262,10 +526,11 @@ istream &operator>>(istream &is, CNN_Edge* edge) {
     is >> edge->filter_x;
     is >> edge->filter_y;
     is >> edge->fixed;
+    is >> edge->reverse_filter_x;
+    is >> edge->reverse_filter_y;
     is >> edge->disabled;
 
     edge->weights = vector< vector<double> >(edge->filter_y, vector<double>(edge->filter_x, 0.0));
-    edge->weight_update = vector< vector<double> >(edge->filter_y, vector<double>(edge->filter_x, 0.0));
     edge->previous_velocity = vector< vector<double> >(edge->filter_y, vector<double>(edge->filter_x, 0.0));
 
     for (uint32_t y = 0; y < edge->filter_y; y++) {
