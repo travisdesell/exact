@@ -66,9 +66,7 @@ CNN_Genome::CNN_Genome(int seed, int _epochs, const vector<CNN_Node*> &_nodes, c
     softmax_nodes.clear();
 
     for (uint32_t i = 0; i < _nodes.size(); i++) {
-        //cout << "copying node: " << i << endl;
         CNN_Node *node_copy = _nodes[i]->copy();
-        //cout << "copied node: " << i << endl;
 
         if (node_copy->is_input()) {
             //cout << "node was input!" << endl;
@@ -96,6 +94,7 @@ CNN_Genome::CNN_Genome(int seed, int _epochs, const vector<CNN_Node*> &_nodes, c
 
     for (uint32_t i = 0; i < _edges.size(); i++) {
         CNN_Edge *edge_copy = _edges[i]->copy();
+
         if (!edge_copy->set_nodes(nodes)) {
             cerr << "ERROR: filter size didn't match when creating genome!" << endl;
             cerr << "This should never happen!" << endl;
@@ -197,17 +196,17 @@ bool CNN_Genome::sanity_check() const {
     for (uint32_t i = 0; i < nodes.size(); i++) {
         int number_inputs = nodes[i]->get_number_inputs();
 
-        cout << "\t\tcounting inputs for node " << i << " (innovation number: " << nodes[i]->get_innovation_number() << ") -- should find " << number_inputs << endl;
+        //cout << "\t\tcounting inputs for node " << i << " (innovation number: " << nodes[i]->get_innovation_number() << ") -- should find " << number_inputs << endl;
 
         int counted_inputs = 0;
         for (uint32_t j = 0; j < edges.size(); j++) {
             if (edges[j]->is_disabled()) {
-                cout << "\t\t\tedge " << j << " is disabled (" << edges[j]->get_input_innovation_number() << " to " << edges[j]->get_output_innovation_number() << ")" << endl;
+                //cout << "\t\t\tedge " << j << " is disabled (" << edges[j]->get_input_innovation_number() << " to " << edges[j]->get_output_innovation_number() << ")" << endl;
                 continue;
             }
 
             if (edges[j]->get_output_node()->get_innovation_number() == nodes[i]->get_innovation_number()) {
-                cout << "\t\t\tedge " << j << " (" << edges[j]->get_input_innovation_number() << " to " << edges[j]->get_output_innovation_number() << ") output matches node innovation number" << endl;
+                //cout << "\t\t\tedge " << j << " (" << edges[j]->get_input_innovation_number() << " to " << edges[j]->get_output_innovation_number() << ") output matches node innovation number" << endl;
 
                 if (edges[j]->get_output_node() != nodes[i]) {
                     //these should be equal
@@ -220,7 +219,7 @@ bool CNN_Genome::sanity_check() const {
                 }
                 counted_inputs++;
             } else {
-                cout << "\t\t\tedge " << j << " (" << edges[j]->get_input_innovation_number() << " to " << edges[j]->get_output_innovation_number() << ") output does not match node innovation number" << endl;
+                //cout << "\t\t\tedge " << j << " (" << edges[j]->get_input_innovation_number() << " to " << edges[j]->get_output_innovation_number() << ") output does not match node innovation number" << endl;
             }
         }
 
@@ -237,6 +236,25 @@ bool CNN_Genome::sanity_check() const {
 bool CNN_Genome::outputs_connected() const {
     //check to see there is a path to from the input to each output
 
+    for (uint32_t i = 0; i < nodes.size(); i++) {
+        nodes[i]->set_unvisited();
+    }
+
+    input_node->visit();
+
+    for (uint32_t i = 0; i < edges.size(); i++) {
+        if (!edges[i]->is_disabled()) {
+            if (edges[i]->get_input_node()->is_visited()) {
+                edges[i]->get_output_node()->visit();
+            }
+        }
+    }
+
+    for (uint32_t i = 0; i < softmax_nodes.size(); i++) {
+        if (!softmax_nodes[i]->is_visited()) {
+            return false;
+        }
+    }
 
     return true;
 }
@@ -260,6 +278,12 @@ int CNN_Genome::evaluate_image(const Image &image, vector<double> &class_error, 
     input_node->set_values(image, rows, cols);
 
     //input_node->print(cout);
+    
+    /*
+    for (uint32_t i = 0; i < nodes.size(); i++) {
+        nodes[i]->print(cout);
+    }
+    */
 
     for (uint32_t i = 0; i < edges.size(); i++) {
         //edges[i]->print(cout);
@@ -377,11 +401,11 @@ void CNN_Genome::stochastic_backpropagation(const Images &images, string checkpo
         shuffle(backprop_order.begin(), backprop_order.end(), generator); 
 
         //TODO: don't initialize weights if using weights from parent
-        cout << "initializing weights and biases!" << endl;
+        //cout << "initializing weights and biases!" << endl;
         for (uint32_t i = 0; i < edges.size(); i++) {
             edges[i]->initialize_weights(generator);
         }
-        
+
         for (uint32_t i = 0; i < nodes.size(); i++) {
             nodes[i]->initialize_bias(generator);
         }
@@ -448,15 +472,14 @@ void CNN_Genome::stochastic_backpropagation(const Images &images, string checkpo
         write_to_file(checkpoint_filename);
     } while (epoch < epochs);
 
+    /*
     for (uint32_t j = 0; j < edges.size(); j++) {
         edges[j]->print(cout);
     }
-
+    */
 }
 
-void CNN_Genome::write_to_file(string filename) {
-    ofstream outfile(filename);
-
+void CNN_Genome::write(ostream &outfile) {
     outfile << initial_mu << endl;
     outfile << mu << endl;
     outfile << epoch << endl;
@@ -490,15 +513,9 @@ void CNN_Genome::write_to_file(string filename) {
         outfile << backprop_order[i];
     }
     outfile << endl;
-    outfile.close();
 }
 
-
-void CNN_Genome::read_from_file(string filename, bool is_checkpoint) {
-    started_from_checkpoint = is_checkpoint;
-
-    ifstream infile(filename);
-
+void CNN_Genome::read(istream &infile) {
     infile >> initial_mu;
     infile >> mu;
     infile >> epoch;
@@ -525,7 +542,7 @@ void CNN_Genome::read_from_file(string filename, bool is_checkpoint) {
         CNN_Edge *edge = new CNN_Edge();
         infile >> edge;
 
-        cout << "read edge: " << edge->get_innovation_number() << endl;
+        //cout << "read edge: " << edge->get_innovation_number() << endl;
         if (!edge->set_nodes(nodes)) {
             cerr << "ERROR: filter size didn't match when reading genome from input file!" << endl;
             cerr << "This should never happen!" << endl;
@@ -538,21 +555,34 @@ void CNN_Genome::read_from_file(string filename, bool is_checkpoint) {
     int input_node_innovation_number;
     infile >> input_node_innovation_number;
 
-    cout << "input node innovation number: " << input_node_innovation_number << endl;
+    //cout << "input node innovation number: " << input_node_innovation_number << endl;
 
-    //TODO: fix this -- nodes will not be sorted by innovation number!!!!!
-    input_node = nodes[input_node_innovation_number];
+    for (uint32_t i = 0; i < nodes.size(); i++) {
+        if (nodes[i]->get_innovation_number() == input_node_innovation_number) {
+            input_node = nodes[i];
+            //cout << "input node was in position: " << i << endl;
+            break;
+        }
+    }
 
     softmax_nodes.clear();
     int number_softmax_nodes;
     infile >> number_softmax_nodes;
-    cout << "number softmax nodes: " << number_softmax_nodes << endl;
+    //cout << "number softmax nodes: " << number_softmax_nodes << endl;
 
     for (uint32_t i = 0; i < number_softmax_nodes; i++) {
         int softmax_node_innovation_number;
         infile >> softmax_node_innovation_number;
-        cout << "\tsoftmax node: " << softmax_node_innovation_number << endl;
-        softmax_nodes.push_back(nodes[softmax_node_innovation_number]);
+        //cout << "\tsoftmax node: " << softmax_node_innovation_number << endl;
+
+        for (uint32_t i = 0; i < nodes.size(); i++) {
+            if (nodes[i]->get_innovation_number() == softmax_node_innovation_number) {
+                softmax_nodes.push_back(nodes[i]);
+                //cout << "softmax node " << softmax_node_innovation_number << " was in position: " << i << endl;
+                break;
+            }
+        }
+
     }
 
     backprop_order.clear();
@@ -563,5 +593,18 @@ void CNN_Genome::read_from_file(string filename, bool is_checkpoint) {
         infile >> order;
         backprop_order.push_back(order);
     }
+}
+
+void CNN_Genome::write_to_file(string filename) {
+    ofstream outfile(filename);
+    write(outfile);
+    outfile.close();
+}
+
+void CNN_Genome::read_from_file(string filename, bool is_checkpoint) {
+    started_from_checkpoint = is_checkpoint;
+
+    ifstream infile(filename);
+    read(infile);
     infile.close();
 }

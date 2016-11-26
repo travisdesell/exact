@@ -59,6 +59,7 @@ class CNN_Edge {
         void reinitialize(mt19937 &generator);
 
         void disable();
+        void enable();
         bool is_disabled() const;
 
         bool is_filter_correct() const;

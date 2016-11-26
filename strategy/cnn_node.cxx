@@ -34,6 +34,9 @@ CNN_Node::CNN_Node() {
     innovation_number = -1;
     values = NULL;
     errors = NULL;
+    bias = NULL;
+    bias_velocity = NULL;
+    visited = false;
 }
 
 CNN_Node::CNN_Node(int _innovation_number, double _depth, int _size_x, int _size_y, int _type) {
@@ -45,6 +48,8 @@ CNN_Node::CNN_Node(int _innovation_number, double _depth, int _size_x, int _size
 
     total_inputs = 0;
     inputs_fired = 0;
+
+    visited = false;
 
     values = new double*[size_y];
     for (uint32_t y = 0; y < size_y; y++) {
@@ -92,6 +97,8 @@ CNN_Node* CNN_Node::copy() const {
     copy->total_inputs = 0; //this will be updated when edges are set
     copy->inputs_fired = inputs_fired;
 
+    copy->visited = visited;
+
     copy->values = new double*[size_y];
     for (uint32_t y = 0; y < size_y; y++) {
         copy->values[y] = new double[size_x];
@@ -124,7 +131,6 @@ CNN_Node* CNN_Node::copy() const {
         }
     }
 
-
     return copy;
 }
 
@@ -136,6 +142,7 @@ void CNN_Node::initialize_bias(mt19937 &generator) {
     for (uint32_t i = 0; i < size_y; i++) {
         for (uint32_t j = 0; j < size_x; j++) {
             bias[i][j] = distribution(generator);
+            //cout << "node " << innovation_number << " bias[" << i << "][" << j <<"]: " << bias[i][j] << endl;
         }
     }
 }
@@ -162,6 +169,19 @@ bool CNN_Node::is_output() const {
 
 bool CNN_Node::is_softmax() const {
     return type == SOFTMAX_NODE;
+}
+
+
+bool CNN_Node::is_visited() const {
+    return visited;
+}
+
+void CNN_Node::visit() {
+    visited = true;
+}
+
+void CNN_Node::set_unvisited() {
+    visited = false;
 }
 
 
@@ -216,6 +236,30 @@ void CNN_Node::print(ostream &out) {
         }
         out << endl;
     }
+
+    for (uint32_t i = 0; i < size_y; i++) {
+        out << "    ";
+        for (uint32_t j = 0; j < size_x; j++) {
+            out << setw(10) << setprecision(8) << errors[i][j];
+        }
+        out << endl;
+    }
+
+    for (uint32_t i = 0; i < size_y; i++) {
+        out << "    ";
+        for (uint32_t j = 0; j < size_x; j++) {
+            out << setw(10) << setprecision(8) << bias[i][j];
+        }
+        out << endl;
+    }
+
+    for (uint32_t i = 0; i < size_y; i++) {
+        out << "    ";
+        for (uint32_t j = 0; j < size_x; j++) {
+            out << setw(10) << setprecision(8) << bias_velocity[i][j];
+        }
+        out << endl;
+    }
 }
 
 void CNN_Node::reset() {
@@ -231,6 +275,12 @@ void CNN_Node::reset() {
     for (uint32_t y = 0; y < size_y; y++) {
         for (uint32_t x = 0; x < size_x; x++) {
             errors[y][x] = 0;
+        }
+    }
+
+    for (uint32_t y = 0; y < size_y; y++) {
+        for (uint32_t x = 0; x < size_x; x++) {
+            bias_velocity[y][x] = 0;
         }
     }
 }
@@ -294,10 +344,12 @@ bool CNN_Node::modify_size_x(int change, mt19937 &generator) {
         delete [] values[y];
         delete [] errors[y];
         delete [] bias[y];
+        delete [] bias_velocity[y];
     }
     delete [] values;
     delete [] errors;
     delete [] bias;
+    delete [] bias_velocity;
 
     values = new double*[size_y];
     for (uint32_t y = 0; y < size_y; y++) {
@@ -321,6 +373,13 @@ bool CNN_Node::modify_size_x(int change, mt19937 &generator) {
     }
     initialize_bias(generator);
 
+    bias_velocity = new double*[size_y];
+    for (uint32_t y = 0; y < size_y; y++) {
+        bias_velocity[y] = new double[size_x];
+        for (uint32_t x = 0; x < size_x; x++) {
+            bias_velocity[y][x] = 0.0;
+        }
+    }
 
     return true;
 }
@@ -360,10 +419,12 @@ bool CNN_Node::modify_size_y(int change, mt19937 &generator) {
         delete [] values[y];
         delete [] errors[y];
         delete [] bias[y];
+        delete [] bias_velocity[y];
     }
     delete [] values;
     delete [] errors;
     delete [] bias;
+    delete [] bias_velocity;
 
     values = new double*[size_y];
     for (uint32_t y = 0; y < size_y; y++) {
@@ -387,18 +448,26 @@ bool CNN_Node::modify_size_y(int change, mt19937 &generator) {
     }
     initialize_bias(generator);
 
+    bias_velocity = new double*[size_y];
+    for (uint32_t y = 0; y < size_y; y++) {
+        bias_velocity[y] = new double[size_x];
+        for (uint32_t x = 0; x < size_x; x++) {
+            bias_velocity[y][x] = 0.0;
+        }
+    }
+
     return true;
 }
 
 
 void CNN_Node::add_input() {
     total_inputs++;
-    cout << "\t\tadding input on node: " << innovation_number << ", total inputs: " << total_inputs << endl;
+    //cout << "\t\tadding input on node: " << innovation_number << ", total inputs: " << total_inputs << endl;
 }
 
 void CNN_Node::disable_input() {
     total_inputs--;
-    cout << "\t\tdisabling input on node: " << innovation_number << ", total inputs: " << total_inputs << endl;
+    //cout << "\t\tdisabling input on node: " << innovation_number << ", total inputs: " << total_inputs << endl;
 }
 
 int CNN_Node::get_number_inputs() const {
@@ -419,6 +488,7 @@ void CNN_Node::input_fired() {
             for (uint32_t y = 0; y < size_y; y++) {
                 for (uint32_t x = 0; x < size_x; x++) {
                     values[y][x] += bias[y][x];
+                    //cout << "values for node " << innovation_number << " now " << values[y][x] << " after adding bias: " << bias[y][x] << endl;
 
                     //apply activation function
                     if (values[y][x] <= RELU_MIN) {
@@ -463,12 +533,21 @@ ostream &operator<<(ostream &os, const CNN_Node* node) {
     os << node->size_x << " ";
     os << node->size_y << " ";
     os << node->type << " ";
+    os << node->visited << " ";
     os << node->total_inputs << endl;
 
     for (uint32_t y = 0; y < node->size_y; y++) {
         for (uint32_t x = 0; x < node->size_x; x++) {
             if (y > 0 || x > 0) os << " ";
             os << setprecision(15) << node->bias[y][x];
+        }
+    }
+    os << endl;
+
+    for (uint32_t y = 0; y < node->size_y; y++) {
+        for (uint32_t x = 0; x < node->size_x; x++) {
+            if (y > 0 || x > 0) os << " ";
+            os << setprecision(15) << node->bias_velocity[y][x];
         }
     }
 
@@ -480,12 +559,13 @@ std::istream &operator>>(std::istream &is, CNN_Node* node) {
     is >> node->depth;
     is >> node->size_x;
     is >> node->size_y;
-
     is >> node->type;
-
+    is >> node->visited;
     is >> node->total_inputs;
 
+    node->total_inputs = 0;
     node->inputs_fired = 0;
+    node->visited = false;
 
     node->values = new double*[node->size_y];
     for (uint32_t y = 0; y < node->size_y; y++) {
@@ -509,10 +589,18 @@ std::istream &operator>>(std::istream &is, CNN_Node* node) {
         node->bias[y] = new double[node->size_x];
         for (uint32_t x = 0; x < node->size_x; x++) {
             is >> b;
-            node->bias[y][x] = b;
+            node->bias[y][x] = 0.0;
         }
     }
 
+    node->bias_velocity = new double*[node->size_y];
+    for (uint32_t y = 0; y < node->size_y; y++) {
+        node->bias_velocity[y] = new double[node->size_x];
+        for (uint32_t x = 0; x < node->size_x; x++) {
+            is >> b;
+            node->bias_velocity[y][x] = 0.0;
+        }
+    }
 
     return is;
 }

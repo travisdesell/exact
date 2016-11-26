@@ -14,15 +14,6 @@ using std::vector;
 #include "cnn_edge.hxx"
 
 
-#define MUTATE_DISABLE_EDGE 0
-#define MUTATE_SPLIT_EDGE 1
-#define MUTATE_ADD_EDGE 2
-#define MUTATE_EDGE_STRIDE 3
-#define MUTATE_NODE_SIZE_X 4
-#define MUTATE_NODE_SIZE_Y 5
-#define MUTATE_NODE_POOL_SIZE 6
-
-
 class CNN_Genome {
     private:
         vector<CNN_Node*> nodes;
@@ -81,7 +72,10 @@ class CNN_Genome {
 
         void stochastic_backpropagation(const Images &images, string checkpoint_filename, string output_filename);
 
+        void write(ostream &outfile);
         void write_to_file(string filename);
+
+        void read(istream &infile);
         void read_from_file(string filename, bool is_checkpoint);
 
 };

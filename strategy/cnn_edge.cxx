@@ -67,7 +67,7 @@ CNN_Edge::CNN_Edge(CNN_Node *_input_node, CNN_Node *_output_node, bool _fixed, i
         filter_y = (output_node->get_size_y() - input_node->get_size_y()) + 1;
     }
 
-    cout << "\t\tcreated edge " << innovation_number << " (node " << input_node_innovation_number << " to " << output_node_innovation_number << ") with filter_x: " << filter_x << " (input: " << input_node->get_size_x() << ", output: " << output_node->get_size_x() << ") and filter_y: " << filter_y << " (input: " << input_node->get_size_y() << ", output: " << output_node->get_size_y() << "), reverse filter: " << reverse_filter_x << ", reverse_filter_y: " << reverse_filter_y << endl;
+    //cout << "\t\tcreated edge " << innovation_number << " (node " << input_node_innovation_number << " to " << output_node_innovation_number << ") with filter_x: " << filter_x << " (input: " << input_node->get_size_x() << ", output: " << output_node->get_size_x() << ") and filter_y: " << filter_y << " (input: " << input_node->get_size_y() << ", output: " << output_node->get_size_y() << "), reverse filter: " << reverse_filter_x << ", reverse_filter_y: " << reverse_filter_y << endl;
 
     weights = vector< vector<double> >(filter_y, vector<double>(filter_x, 0.0));
     previous_velocity = vector< vector<double> >(filter_y, vector<double>(filter_x, 0.0));
@@ -85,6 +85,8 @@ void CNN_Edge::initialize_weights(mt19937 &generator) {
             weights[i][j] = distribution(generator);
         }
     }
+
+    //cout << "initialized weights for edge " << innovation_number << ", weights[0][0]: " << weights[0][0] << endl;
 }
 
 void CNN_Edge::reinitialize(mt19937 &generator) {
@@ -173,33 +175,40 @@ bool CNN_Edge::set_nodes(const vector<CNN_Node*> nodes) {
 }
 
 bool CNN_Edge::is_filter_correct() const {
-    cout << "\t\tchecking filter correctness on edge: " << innovation_number << endl;
-    cout << "\t\t\tdisabled? " << disabled << endl;
-    cout << "\t\t\treverse_filter_x? " << reverse_filter_x << ", reverse_filter_y: " << reverse_filter_y << endl;
-    cout << "\t\t\tbetween node " << input_node_innovation_number << " and " << output_node_innovation_number << endl;
+    //cout << "\t\tchecking filter correctness on edge: " << innovation_number << endl;
+    //cout << "\t\t\tdisabled? " << disabled << endl;
+    //cout << "\t\t\treverse_filter_x? " << reverse_filter_x << ", reverse_filter_y: " << reverse_filter_y << endl;
+    //cout << "\t\t\tbetween node " << input_node_innovation_number << " and " << output_node_innovation_number << endl;
 
     bool is_correct = true;
     if (reverse_filter_x) {
-        cout << "\t\t\tfilter_x: " << filter_x << ", should be: " << (output_node->get_size_x() - input_node->get_size_x()) + 1 << " (output_x: " << output_node->get_size_x() << " - input_x: " << input_node->get_size_x() << " + 1) " << endl;
+        //cout << "\t\t\tfilter_x: " << filter_x << ", should be: " << (output_node->get_size_x() - input_node->get_size_x()) + 1 << " (output_x: " << output_node->get_size_x() << " - input_x: " << input_node->get_size_x() << " + 1) " << endl;
 
         is_correct = is_correct && (filter_x == (output_node->get_size_x() - input_node->get_size_x()) + 1);
     } else {
-        cout << "\t\t\tfilter_x: " << filter_x << ", should be: " << (input_node->get_size_x() - output_node->get_size_x()) + 1 << " (input_x: " << input_node->get_size_x() << " - output_x: " << output_node->get_size_x() << " + 1) " << endl;
+        //cout << "\t\t\tfilter_x: " << filter_x << ", should be: " << (input_node->get_size_x() - output_node->get_size_x()) + 1 << " (input_x: " << input_node->get_size_x() << " - output_x: " << output_node->get_size_x() << " + 1) " << endl;
 
         is_correct = is_correct && (filter_x == (input_node->get_size_x() - output_node->get_size_x()) + 1);
     }
 
     if (reverse_filter_y) {
-        cout << "\t\t\tfilter_y: " << filter_y << ", should be: " << (output_node->get_size_y() - input_node->get_size_y()) + 1 << " (output_y: " << output_node->get_size_y() << " - input_y: " << input_node->get_size_y() << " + 1) " << endl;
+        //cout << "\t\t\tfilter_y: " << filter_y << ", should be: " << (output_node->get_size_y() - input_node->get_size_y()) + 1 << " (output_y: " << output_node->get_size_y() << " - input_y: " << input_node->get_size_y() << " + 1) " << endl;
 
         is_correct = is_correct && (filter_y == (output_node->get_size_y() - input_node->get_size_y()) + 1);
     } else {
-        cout << "\t\t\tfilter_y: " << filter_y << ", should be: " << (input_node->get_size_y() - output_node->get_size_y()) + 1 << " (input_y: " << input_node->get_size_y() << " - output_y: " << output_node->get_size_y() << " + 1) " << endl;
+        //cout << "\t\t\tfilter_y: " << filter_y << ", should be: " << (input_node->get_size_y() - output_node->get_size_y()) + 1 << " (input_y: " << input_node->get_size_y() << " - output_y: " << output_node->get_size_y() << " + 1) " << endl;
 
         is_correct = is_correct && (filter_y == (input_node->get_size_y() - output_node->get_size_y()) + 1);
     }
 
     return is_correct;
+}
+
+void CNN_Edge::enable() {
+    if (disabled) {
+        disabled = false;
+        output_node->add_input();
+    }
 }
 
 void CNN_Edge::disable() {
@@ -249,6 +258,14 @@ void CNN_Edge::print(ostream &out) {
         out << "    ";
         for (uint32_t j = 0; j < weights[i].size(); j++) {
             out << setw(9) << setprecision(3) << weights[i][j];
+        }
+        out << endl;
+    }
+
+    for (uint32_t i = 0; i < previous_velocity.size(); i++) {
+        out << "    ";
+        for (uint32_t j = 0; j < previous_velocity[i].size(); j++) {
+            out << setw(9) << setprecision(3) << previous_velocity[i][j];
         }
         out << endl;
     }
@@ -494,8 +511,10 @@ void CNN_Edge::propagate_backward(double mu) {
 
 ostream &operator<<(ostream &os, const CNN_Edge* edge) {
     os << edge->innovation_number << " ";
-    os << edge->input_node_innovation_number << " " << edge->output_node_innovation_number << " ";
-    os << edge->filter_x << " " << edge->filter_y << " ";
+    os << edge->input_node_innovation_number << " ";
+    os << edge->output_node_innovation_number << " ";
+    os << edge->filter_x << " ";
+    os << edge->filter_y << " ";
     os << edge->fixed << " ";
     os << edge->reverse_filter_x << " ";
     os << edge->reverse_filter_y << " ";

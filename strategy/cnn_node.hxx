@@ -58,6 +58,8 @@ class CNN_Node {
         int total_inputs;
         int inputs_fired;
 
+        bool visited;
+
     public:
         CNN_Node();
 
@@ -77,6 +79,10 @@ class CNN_Node {
         bool is_input() const;
         bool is_output() const;
         bool is_softmax() const;
+
+        bool is_visited() const;
+        void visit();
+        void set_unvisited();
 
         void initialize_bias(mt19937 &generator);
         void reinitialize_bias(mt19937 &generator);
