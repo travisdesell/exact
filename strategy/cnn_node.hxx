@@ -65,6 +65,8 @@ class CNN_Node {
 
         CNN_Node(int _innovation_number, double _depth, int _size_x, int _size_y, int type);
 
+        ~CNN_Node();
+
         CNN_Node* copy() const;
 
         int get_size_x() const;

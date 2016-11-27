@@ -1,1 +1,1 @@
-add_library(evo_cnn_image_tools image_set)
+add_library(exact_image_tools image_set)

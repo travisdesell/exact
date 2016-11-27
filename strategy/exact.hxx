@@ -1,5 +1,5 @@
-#ifndef CNN_NEAT_H
-#define CNN_NEAT_H
+#ifndef EXACT_H
+#define EXACT_H
 
 #include <algorithm>
 using std::sort;
@@ -28,7 +28,7 @@ using std::vector;
 #include "cnn_edge.hxx"
 #include "cnn_genome.hxx"
 
-class CNN_NEAT {
+class EXACT {
     private:
         int population_size;
         int node_innovation_count;
@@ -42,17 +42,20 @@ class CNN_NEAT {
 
         vector< CNN_Genome* > genomes;
 
+
         int epochs;
         mt19937 generator;
 
     public:
 
-        CNN_NEAT(const Images &images, int _population_size, int _epochs);
+        EXACT(const Images &images, int _population_size, int _epochs);
 
         CNN_Genome* get_best_genome();
 
         CNN_Genome* create_mutation();
         CNN_Genome* create_child();
+
+        void insert_genome(CNN_Genome* genome);
 };
 
 

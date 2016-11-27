@@ -1,1 +1,1 @@
-add_library(evo_cnn_strategy cnn_node cnn_edge cnn_genome cnn_neat)
+add_library(exact_strategy cnn_node cnn_edge cnn_genome exact)

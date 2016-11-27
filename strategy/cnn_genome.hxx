@@ -30,6 +30,7 @@ class CNN_Genome {
         double mu;
         int epoch;
         int epochs;
+        double best_error;
         int best_predictions;
 
         bool started_from_checkpoint;
@@ -48,6 +49,10 @@ class CNN_Genome {
          *  a set of training images
          */
         CNN_Genome(int number_classes, int rows, int cols, int seed, int _epochs);
+
+        ~CNN_Genome();
+
+        double get_fitness() const;
 
         bool sanity_check() const;
         bool outputs_connected() const;
@@ -78,6 +83,13 @@ class CNN_Genome {
         void read(istream &infile);
         void read_from_file(string filename, bool is_checkpoint);
 
+};
+
+
+struct sort_genomes_by_fitness {
+    bool operator()(CNN_Genome *g1, CNN_Genome *g2) {
+        return g1->get_fitness() < g2->get_fitness();
+    }   
 };
 
 

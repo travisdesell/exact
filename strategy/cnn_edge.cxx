@@ -73,6 +73,12 @@ CNN_Edge::CNN_Edge(CNN_Node *_input_node, CNN_Node *_output_node, bool _fixed, i
     previous_velocity = vector< vector<double> >(filter_y, vector<double>(filter_x, 0.0));
 }
 
+CNN_Edge::~CNN_Edge() {
+    input_node = NULL;
+    output_node = NULL;
+}
+
+
 void CNN_Edge::initialize_weights(mt19937 &generator) {
     if (disabled) return;
 

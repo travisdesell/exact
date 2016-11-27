@@ -54,6 +54,8 @@ class CNN_Edge {
 
         CNN_Edge* copy() const;
 
+        ~CNN_Edge();
+
         bool set_nodes(const vector<CNN_Node*> nodes);
         void initialize_weights(mt19937 &generator);
         void reinitialize(mt19937 &generator);

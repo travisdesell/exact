@@ -14,6 +14,7 @@ using std::numeric_limits;
 using std::setw;
 using std::setprecision;
 using std::fixed;
+using std::left;
 
 #include <iostream>
 using std::cout;
@@ -60,6 +61,7 @@ CNN_Genome::CNN_Genome(int seed, int _epochs, const vector<CNN_Node*> &_nodes, c
     epoch = 0;
     epochs = _epochs;
     best_predictions = 0;
+    best_error = numeric_limits<double>::max();
 
     input_node = NULL;
     nodes.clear();
@@ -103,6 +105,34 @@ CNN_Genome::CNN_Genome(int seed, int _epochs, const vector<CNN_Node*> &_nodes, c
         edges.push_back( edge_copy );
     }
 
+}
+
+
+CNN_Genome::~CNN_Genome() {
+    input_node = NULL;
+
+    while (nodes.size() > 0) {
+        CNN_Node *node = nodes.back();
+        nodes.pop_back();
+
+        delete node;
+    }
+
+    while (edges.size() > 0) {
+        CNN_Edge *edge = edges.back();
+        edges.pop_back();
+
+        delete edge;
+    }
+    
+    while (softmax_nodes.size() > 0) {
+        softmax_nodes.pop_back();
+    }
+    softmax_nodes.clear();
+}
+
+double CNN_Genome::get_fitness() const {
+    return best_error;
 }
 
 const vector<CNN_Node*> CNN_Genome::get_nodes() const {
@@ -409,6 +439,8 @@ void CNN_Genome::stochastic_backpropagation(const Images &images, string checkpo
         for (uint32_t i = 0; i < nodes.size(); i++) {
             nodes[i]->initialize_bias(generator);
         }
+
+        best_error = numeric_limits<double>::max();
     }
 
     //sort edges by depth of input node
@@ -459,9 +491,15 @@ void CNN_Genome::stochastic_backpropagation(const Images &images, string checkpo
             total_error += class_error[j];
             cout << "\tclass " << setw(4) << j << ": " << setw(12) << setprecision(5) << class_error[j] << ", correct_predictions: " << correct_predictions[j] << " of " << class_sizes[j] << endl;
         }
+
+        if (total_error < best_error) {
+            best_error = total_error;
+        }
+
+        cout << "best predictions:          " << best_predictions << " of " << backprop_order.size() << endl;
         cout << "total correct predictions: " << total_predictions << " of " << backprop_order.size() << endl;
-        cout << "best predictions: " << best_predictions << " of " << backprop_order.size() << endl;
-        cout << "total error: " << setw(20) << setprecision(5) << fixed << total_error << endl;
+        cout << "best error:                " << left << setw(20) << setprecision(5) << fixed << best_error << endl;
+        cout << "total error:               " << left << setw(20) << setprecision(5) << fixed << total_error << endl;
         cout << endl;
 
         mu += (1.0 - initial_mu) / epochs;
@@ -484,7 +522,8 @@ void CNN_Genome::write(ostream &outfile) {
     outfile << mu << endl;
     outfile << epoch << endl;
     outfile << epochs << endl;
-    outfile << best_predictions << endl;
+    outfile << setprecision(15) << fixed << best_predictions << endl;
+    outfile << best_error << endl;
 
     outfile << generator << endl;
     outfile << rng_double << endl;
@@ -521,6 +560,7 @@ void CNN_Genome::read(istream &infile) {
     infile >> epoch;
     infile >> epochs;
     infile >> best_predictions;
+    infile >> best_error;
 
     infile >> generator;
     infile >> rng_double;

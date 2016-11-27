@@ -84,6 +84,30 @@ CNN_Node::CNN_Node(int _innovation_number, double _depth, int _size_x, int _size
     }
 }
 
+CNN_Node::~CNN_Node() {
+    for (uint32_t y = 0; y < size_y; y++) {
+        if (values[y] == NULL) {
+            cerr << "ERROR, modifying node size x but values[" << y << "] == NULL" << endl;
+            exit(1);
+        }
+
+        if (errors[y] == NULL) {
+            cerr << "ERROR, modifying node size x but values[" << y << "] == NULL" << endl;
+            exit(1);
+        }
+
+        delete [] values[y];
+        delete [] errors[y];
+        delete [] bias[y];
+        delete [] bias_velocity[y];
+    }
+    delete [] values;
+    delete [] errors;
+    delete [] bias;
+    delete [] bias_velocity;
+}
+
+
 CNN_Node* CNN_Node::copy() const {
     CNN_Node *copy = new CNN_Node();
 
