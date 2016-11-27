@@ -36,6 +36,10 @@ class CNN_Genome {
         bool started_from_checkpoint;
         vector<long> backprop_order;
 
+        string name;
+        string checkpoint_filename;
+        string output_filename;
+
     public:
         CNN_Genome();
 
@@ -75,7 +79,11 @@ class CNN_Genome {
  
         int evaluate_image(const Image &image, vector<double> &class_error, bool do_backprop);
 
-        void stochastic_backpropagation(const Images &images, string checkpoint_filename, string output_filename);
+        void stochastic_backpropagation(const Images &images);
+
+        void set_name(string _name);
+        void set_output_filename(string _output_filename);
+        void set_checkpoint_filename(string _checkpoint_filename);
 
         void write(ostream &outfile);
         void write_to_file(string filename);

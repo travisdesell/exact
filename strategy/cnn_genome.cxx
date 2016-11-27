@@ -43,6 +43,9 @@ using std::vector;
 #include "cnn_genome.hxx"
 
 CNN_Genome::CNN_Genome() {
+    name = "";
+    output_filename = "";
+    checkpoint_filename = "";
     started_from_checkpoint = false;
 }
 
@@ -62,6 +65,10 @@ CNN_Genome::CNN_Genome(int seed, int _epochs, const vector<CNN_Node*> &_nodes, c
     epochs = _epochs;
     best_predictions = 0;
     best_error = numeric_limits<double>::max();
+
+    name = "";
+    output_filename = "";
+    checkpoint_filename = "";
 
     input_node = NULL;
     nodes.clear();
@@ -104,7 +111,6 @@ CNN_Genome::CNN_Genome(int seed, int _epochs, const vector<CNN_Node*> &_nodes, c
         }
         edges.push_back( edge_copy );
     }
-
 }
 
 
@@ -420,13 +426,12 @@ int CNN_Genome::evaluate_image(const Image &image, vector<double> &class_error, 
     return predicted_class;
 }
 
-void CNN_Genome::stochastic_backpropagation(const Images &images, string checkpoint_filename, string output_filename) {
+void CNN_Genome::stochastic_backpropagation(const Images &images) {
     if (!started_from_checkpoint) {
         backprop_order.clear();
         for (uint32_t i = 0; i < images.get_number_images(); i++) {
             backprop_order.push_back(i);
         }
-        cout << "backprop_order.size(): " << backprop_order.size() << endl;
 
         shuffle(backprop_order.begin(), backprop_order.end(), generator); 
 
@@ -475,7 +480,10 @@ void CNN_Genome::stochastic_backpropagation(const Images &images, string checkpo
 
         if (total_predictions > best_predictions) {
             best_predictions = total_predictions;
-            write_to_file(output_filename);
+            
+            if (output_filename.compare("") != 0) {
+                write_to_file(output_filename);
+            }
         }
 
         /*
@@ -484,30 +492,31 @@ void CNN_Genome::stochastic_backpropagation(const Images &images, string checkpo
            }
            */
 
-        cout << "epoch " << epoch << " of " << epochs << endl;
-        cout << "mu: " << mu << endl;
-        cout << "class/prediction error: " << endl;
+        //cout << "epoch " << epoch << " of " << epochs << endl;
+        //cout << "mu: " << mu << endl;
+        //cout << "class/prediction error: " << endl;
         for (uint32_t j = 0; j < class_error.size(); j++) {
             total_error += class_error[j];
-            cout << "\tclass " << setw(4) << j << ": " << setw(12) << setprecision(5) << class_error[j] << ", correct_predictions: " << correct_predictions[j] << " of " << class_sizes[j] << endl;
+            //cout << "\tclass " << setw(4) << j << ": " << setw(12) << setprecision(5) << class_error[j] << ", correct_predictions: " << correct_predictions[j] << " of " << class_sizes[j] << endl;
         }
 
         if (total_error < best_error) {
             best_error = total_error;
         }
 
-        cout << "best predictions:          " << best_predictions << " of " << backprop_order.size() << endl;
-        cout << "total correct predictions: " << total_predictions << " of " << backprop_order.size() << endl;
-        cout << "best error:                " << left << setw(20) << setprecision(5) << fixed << best_error << endl;
-        cout << "total error:               " << left << setw(20) << setprecision(5) << fixed << total_error << endl;
-        cout << endl;
+        cout << "[" << setw(10) << name << "] epoch: " << setw(4) << epoch << " of " << setw(4) << epochs << ", best predictions: " << setw(10) << best_predictions << " of " << setw(10) << backprop_order.size() << ", best error: " << setw(20) << setprecision(5) << fixed << best_error << endl;
+        //cout << "total correct predictions: " << total_predictions << " of " << backprop_order.size() << endl;
+        //cout << "total error:               " << left << setw(20) << setprecision(5) << fixed << total_error << endl;
+        //cout << endl;
 
         mu += (1.0 - initial_mu) / epochs;
         if (mu > 0.9) mu = 0.9;
 
         epoch++;
 
-        write_to_file(checkpoint_filename);
+        if (checkpoint_filename.compare("") != 0) {
+            write_to_file(checkpoint_filename);
+        }
     } while (epoch < epochs);
 
     /*
@@ -516,6 +525,19 @@ void CNN_Genome::stochastic_backpropagation(const Images &images, string checkpo
     }
     */
 }
+
+void CNN_Genome::set_name(string _name) {
+    name = _name;
+}
+
+void CNN_Genome::set_output_filename(string _output_filename) {
+    output_filename = _output_filename;
+}
+
+void CNN_Genome::set_checkpoint_filename(string _checkpoint_filename) {
+    checkpoint_filename = _checkpoint_filename;
+}
+
 
 void CNN_Genome::write(ostream &outfile) {
     outfile << initial_mu << endl;

@@ -83,6 +83,11 @@ CNN_Genome* EXACT::get_best_genome() {
 }
 
 void EXACT::insert_genome(CNN_Genome* genome) {
+    if (genome->get_fitness() < genomes[0]->get_fitness()) {
+        cout << "NEW BEST FITNESS:" << genome->get_fitness() << endl;
+        genome->write_to_file("global_best.txt");
+    }
+
     cout << "inserted genome with best fitness found: " << genome->get_fitness() << endl;
     genomes.insert( upper_bound(genomes.begin(), genomes.end(), genome, sort_genomes_by_fitness()), genome);
 
@@ -208,9 +213,10 @@ CNN_Genome* EXACT::create_mutation() {
 
 
         if (r < edge_split) {
-            cout << "\tSPLITTING EDGE!" << endl;
+            int edge_position = rng_double(generator) * child->get_number_edges();
+            cout << "\tSPLITTING EDGE IN POSITION: " << edge_position << "!" << endl;
 
-            CNN_Edge* edge = child->get_edge(rng_double(generator) * child->get_number_edges());
+            CNN_Edge* edge = child->get_edge(edge_position);
 
             CNN_Node* input_node = edge->get_input_node();
             CNN_Node* output_node = edge->get_output_node();
@@ -222,19 +228,14 @@ CNN_Genome* EXACT::create_mutation() {
             CNN_Node *child_node = new CNN_Node(node_innovation_count, depth, size_x, size_y, HIDDEN_NODE);
             node_innovation_count++;
 
-            //insert the new node into the population in sorted order
-            all_nodes.insert( upper_bound(all_nodes.begin(), all_nodes.end(), child_node, sort_CNN_Nodes_by_depth()), child_node );
-
             //add two new edges, disable the split edge
             cout << "\t\tcreating edge " << edge_innovation_count << endl;
             CNN_Edge *edge1 = new CNN_Edge(input_node, child_node, false, edge_innovation_count);
             edge_innovation_count++;
-            all_edges.insert( upper_bound(all_edges.begin(), all_edges.end(), edge1, sort_CNN_Edges_by_depth()), edge1);
 
             cout << "\t\tcreating edge " << edge_innovation_count << endl;
             CNN_Edge *edge2 = new CNN_Edge(child_node, output_node, false, edge_innovation_count);
             edge_innovation_count++;
-            all_edges.insert( upper_bound(all_edges.begin(), all_edges.end(), edge2, sort_CNN_Edges_by_depth()), edge2);
 
             cout << "\t\tdisabling edge " << edge->get_innovation_number() << endl;
             edge->disable();
@@ -242,6 +243,19 @@ CNN_Genome* EXACT::create_mutation() {
             child->add_node(child_node);
             child->add_edge(edge1);
             child->add_edge(edge2);
+
+            //make sure copies are added to all_edges and all_nodes
+            CNN_Node *node_copy = child_node->copy();
+            CNN_Edge *edge_copy_1 = edge1->copy();
+            CNN_Edge *edge_copy_2 = edge2->copy();
+
+            //insert the new node into the population in sorted order
+            all_nodes.insert( upper_bound(all_nodes.begin(), all_nodes.end(), node_copy, sort_CNN_Nodes_by_depth()), node_copy);
+            edge_copy_1->set_nodes(all_nodes);
+            edge_copy_2->set_nodes(all_nodes);
+
+            all_edges.insert( upper_bound(all_edges.begin(), all_edges.end(), edge_copy_1, sort_CNN_Edges_by_depth()), edge_copy_1);
+            all_edges.insert( upper_bound(all_edges.begin(), all_edges.end(), edge_copy_2, sort_CNN_Edges_by_depth()), edge_copy_2);
 
             modifications++;
 
@@ -284,6 +298,7 @@ CNN_Genome* EXACT::create_mutation() {
                 }
             }
 
+            //TODO: make sure that both nodes exist in the child!!!
             if (!edge_exists) {
                 cout << "\t\tadding edge between node innovation numbers " << node1_innovation_number << " and " << node2_innovation_number << endl;
 

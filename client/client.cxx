@@ -44,7 +44,9 @@ int main(int argc, char** argv) {
         genome->read_from_file(genome_filename, false);
     }
 
-    genome->stochastic_backpropagation(images, checkpoint_filename, output_filename);
+    genome->set_checkpoint_filename(checkpoint_filename);
+    genome->set_output_filename(output_filename);
+    genome->stochastic_backpropagation(images);
 
     return 0;
 }
