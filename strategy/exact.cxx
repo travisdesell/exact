@@ -2,6 +2,13 @@
 using std::sort;
 using std::upper_bound;
 
+#include <iomanip>
+using std::fixed;
+using std::setprecision;
+using std::setw;
+using std::left;
+using std::right;
+
 #include <iostream>
 using std::ostream;
 using std::istream;
@@ -34,8 +41,8 @@ using std::vector;
 EXACT::EXACT(const Images &images, int _population_size, int _epochs) {
     epochs = _epochs;
 
-    //unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
-    unsigned seed = 10;
+    unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
+    //unsigned seed = 10;
 
     generator = mt19937(seed);
     rng_long = uniform_int_distribution<long>(-numeric_limits<long>::max(), numeric_limits<long>::max());
@@ -44,67 +51,212 @@ EXACT::EXACT(const Images &images, int _population_size, int _epochs) {
     node_innovation_count = 0;
     edge_innovation_count = 0;
 
+    inserted_genomes = 0;
+
     population_size = _population_size;
 
-    int total_weights = 0;
-    int rows = images.get_image_rows();
-    int cols = images.get_image_cols();
+    image_rows = images.get_image_rows();
+    image_cols = images.get_image_cols();
+    number_classes = images.get_number_classes();
 
-    CNN_Node *input_node = new CNN_Node(node_innovation_count, 0, rows, cols, INPUT_NODE);
-    node_innovation_count++;
-    all_nodes.push_back(input_node);
+    genomes_generated = 0;
 
-    for (uint32_t i = 0; i < images.get_number_classes(); i++) {
-        CNN_Node *softmax_node = new CNN_Node(node_innovation_count, 1, 1, 1, SOFTMAX_NODE);
-        node_innovation_count++;
-        all_nodes.push_back(softmax_node);
-    }
+    number_mutations = 3;
 
-    for (uint32_t i = 0; i < images.get_number_classes() ; i++) {
-        all_edges.push_back(new CNN_Edge(input_node, all_nodes[i + 1] /*ith softmax node*/, true, edge_innovation_count));
-        total_weights += all_edges.back()->get_number_weights();
-        edge_innovation_count++;
-    }
+    edge_disable = 2.0;
+    edge_enable = 2.0;
+    edge_split = 2.0;
+    edge_add = 2.0;
+    edge_change_stride = 0.0;
+    node_change_size = 2.0;
+    node_change_size_x = 2.0;
+    node_change_size_y = 2.0;
+    node_change_pool_size = 0.0;
 
-    long genome_seed = rng_long(generator);
-    cout << "seeding genome with: " << genome_seed << endl;
+    double total = edge_disable + edge_enable + edge_split + edge_add + edge_change_stride +
+                   node_change_size + node_change_size_x + node_change_size_y + node_change_pool_size;
 
-    CNN_Genome *first_genome = new CNN_Genome(genome_seed, epochs, all_nodes, all_edges);
-    cout << "first genome fitness (before backprop): " << first_genome->get_fitness() << endl;
+    edge_disable /= total;
+    edge_enable /= total;
+    edge_split /= total;
+    edge_add /= total;
+    edge_change_stride /= total;
+    node_change_size /= total;
+    node_change_size_x /= total;
+    node_change_size_y /= total;
+    node_change_pool_size /= total;
 
-    //first_genome->write_to_file("input_cnn.txt");
-    //first_genome->stochastic_backpropagation(images, "test_checkpoint.txt", "test_output.txt");
-
-    genomes.push_back(first_genome);
+    cout << "mutation probabilities: " << endl;
+    cout << "\tedge_disable: " << edge_disable << endl;
+    cout << "\tedge_split: " << edge_split << endl;
+    cout << "\tedge_add: " << edge_add << endl;
+    cout << "\tedge_change_stride: " << edge_change_stride << endl;
+    cout << "\tnode_change_size_x: " << node_change_size_x << endl;
+    cout << "\tnode_change_size_y: " << node_change_size_y << endl;
+    cout << "\tnode_change_pool_size: " << node_change_pool_size << endl;
 }
 
 CNN_Genome* EXACT::get_best_genome() {
     return genomes[0];
 }
 
-void EXACT::insert_genome(CNN_Genome* genome) {
-    if (genome->get_fitness() < genomes[0]->get_fitness()) {
-        cout << "NEW BEST FITNESS:" << genome->get_fitness() << endl;
-        genome->write_to_file("global_best.txt");
+CNN_Genome* EXACT::generate_individual() {
+    CNN_Genome *genome = NULL;
+    if (genomes.size() == 0) {
+        //generate the initial minimal CNN
+        int total_weights = 0;
+
+        CNN_Node *input_node = new CNN_Node(node_innovation_count, 0, image_rows, image_cols, INPUT_NODE);
+        input_node->initialize_bias(generator);
+        input_node->save_best_bias();
+        node_innovation_count++;
+        all_nodes.push_back(input_node);
+
+        for (uint32_t i = 0; i < number_classes; i++) {
+            CNN_Node *softmax_node = new CNN_Node(node_innovation_count, 1, 1, 1, SOFTMAX_NODE);
+            softmax_node->initialize_bias(generator);
+            softmax_node->save_best_bias();
+            node_innovation_count++;
+            all_nodes.push_back(softmax_node);
+        }
+
+        for (uint32_t i = 0; i < number_classes; i++) {
+            CNN_Edge *edge = new CNN_Edge(input_node, all_nodes[i + 1] /*ith softmax node*/, true, edge_innovation_count);
+            edge->initialize_weights(generator);
+            edge->save_best_weights();
+
+            all_edges.push_back(edge);
+
+            total_weights += all_edges.back()->get_number_weights();
+            edge_innovation_count++;
+        }
+
+        long genome_seed = rng_long(generator);
+        //cout << "seeding genome with: " << genome_seed << endl;
+
+        genome = new CNN_Genome(genomes_generated++, genome_seed, epochs, all_nodes, all_edges);
+        //save the weights and bias of the initially generated genome for reuse
+        genome->save_weights();
+        genome->save_bias();
+
+    } else if (genomes.size() <= population_size) {
+        //generate random mutatinos until genomes.size() < population_size
+        while (genome == NULL) {
+            genome = create_mutation();
+
+            if (!genome->outputs_connected()) {
+                cerr << "\tAll softmax nodes were not reachable, deleting genome." << endl;
+                delete genome;
+                genome = NULL;
+            }
+        }
+    } else {
+        //TODO: either generate repropductions or mutations
+
+        while (genome == NULL) {
+            genome = create_mutation();
+
+            if (!genome->outputs_connected()) {
+                cerr << "\tAll softmax nodes were not reachable, deleting genome." << endl;
+                delete genome;
+                genome = NULL;
+            }
+        }
     }
 
-    cout << "inserted genome with best fitness found: " << genome->get_fitness() << endl;
+    if (!genome->sanity_check(SANITY_CHECK_AFTER_GENERATION)) {
+        cerr << "ERROR: genome " << genome->get_generation_id() << " failed sanity check in generate individual!" << endl;
+        exit(1);
+    }
+
+    if (genomes.size() < population_size) {
+        //insert a copy with a bad fitness so we have more things to generate new genomes with
+        CNN_Genome *genome_copy = new CNN_Genome(genomes_generated++, /*new random seed*/ rng_long(generator), epochs, genome->get_nodes(), genome->get_edges());
+
+        //for more variability in the initial population, re-initialize weights and bias for these unevaluated copies
+        genome_copy->initialize_weights();
+        genome_copy->initialize_bias();
+        genome_copy->save_weights();
+        genome_copy->save_bias();
+
+        insert_genome(genome_copy);
+    }
+
+    return genome;
+}
+
+string parse_fitness(double fitness) {
+    if (fitness == numeric_limits<double>::max()) {
+        return "UNEVALUATED";
+    } else {
+        return to_string(fitness);
+    }
+}
+
+void EXACT::insert_genome(CNN_Genome* genome) {
+    inserted_genomes++;
+
+    if (!genome->sanity_check(SANITY_CHECK_BEFORE_INSERT)) {
+        cerr << "ERROR: genome " << genome->get_generation_id() << " failed sanity check before insert!" << endl;
+        exit(1);
+    }
+    cout << "genome " << genome->get_generation_id() << " passed sanity check with fitness: " << parse_fitness(genome->get_fitness()) << endl;
+
+    cout << "genomes evaluated: " << setw(10) << inserted_genomes << ", inserting: " << parse_fitness(genome->get_fitness());
+    if (genomes.size() == 0 || genome->get_fitness() < genomes[0]->get_fitness()) {
+        cout << " -- new best fitness!";
+        genome->write_to_file("global_best.txt");
+    }
+    cout << endl;
+
+    //inorder insert the new individual
     genomes.insert( upper_bound(genomes.begin(), genomes.end(), genome, sort_genomes_by_fitness()), genome);
 
+
+    //delete the worst individual if we've reached the population size
     if (genomes.size() > population_size) {
         CNN_Genome *worst = genomes.back();
-        cout << "deleting worst genome with fitness: " << worst->get_fitness() << endl;
         genomes.pop_back();
-
         delete worst;
     }
     
     cout << "genome fitnesses:" << endl;
     for (uint32_t i = 0; i < genomes.size(); i++) {
-        cout << "\t" << i << " -- " << genomes[i]->get_fitness() << endl;
+        cout << "\t" << setw(4) << i << " -- genome: " << setw(10) << genomes[i]->get_generation_id() << ", "
+             << setw(20) << left << "fitness: " << right << setw(15) << setprecision(5) << fixed << parse_fitness(genomes[i]->get_fitness())
+             << " (" << genomes[i]->get_best_predictions() << " correct) on epoch: " << genomes[i]->get_best_error_epoch() 
+             << ", number enabled edges: " << genomes[i]->get_number_enabled_edges()
+             << ", number nodes: " << genomes[i]->get_number_nodes() << endl;
     }
+    cout << "genome best error: " << endl;
+    for (uint32_t i = 0; i < genomes.size(); i++) {
+        cout << "\t" << setw(4) << i << " -- genome: " << setw(10) << genomes[i]->get_generation_id() << ", ";
+        genomes[i]->print_best_error(cout);
+    }
+
+    cout << "genome correct predictions: " << endl;
+    for (uint32_t i = 0; i < genomes.size(); i++) {
+        cout << "\t" << setw(4) << i << " -- genome: " << setw(10) << genomes[i]->get_generation_id() << ", ";
+        genomes[i]->print_best_predictions(cout);
+    }
+
     cout << endl;
 }
+
+/*
+CNN_Genome* EXACT::create_crossover() {
+    double r1 = rng_double(generator) * genomes.size();
+    double r2 = rng_double(generator) * (genomes.size() - 1);
+    if (r2 == r1) r2++;
+
+    CNN_Genome *parent1 = genomes[r1];
+    CNN_Genome *parent2 = genomes[r2];
+
+    vector< CNN_Node* > child_nodes;
+    vector< CNN_Edge* > child_edges;
+
+}
+*/
 
 CNN_Genome* EXACT::create_mutation() {
     //mutation options:
@@ -118,48 +270,38 @@ CNN_Genome* EXACT::create_mutation() {
     //  2. increase/decrease size_y
     //  3. increase/decrease max_pool (not yet)
 
-    double edge_disable = 1.0;
-    double edge_enable = 2.0;
-    double edge_split = 3.0;
-    double edge_add = 5.0;
-    double edge_change_stride = 0.0;
-    double node_change_size_x = 2.0;
-    double node_change_size_y = 2.0;
-    double node_change_pool_size = 0.0;
-
-    double total = edge_disable + edge_enable + edge_split + edge_add + edge_change_stride +
-                   node_change_size_x + node_change_size_y + node_change_pool_size;
-
-    edge_disable /= total;
-    edge_enable /= total;
-    edge_split /= total;
-    edge_add /= total;
-    edge_change_stride /= total;
-    node_change_size_x /= total;
-    node_change_size_y /= total;
-    node_change_pool_size /= total;
-
-    /*
-    cout << "mutating genome!" << endl;
-    cout << "\tprobabilities: " << endl;
-    cout << "\t\tedge_disable: " << edge_disable << endl;
-    cout << "\t\tedge_split: " << edge_split << endl;
-    cout << "\t\tedge_add: " << edge_add << endl;
-    cout << "\t\tedge_change_stride: " << edge_change_stride << endl;
-    cout << "\t\tnode_change_size_x: " << node_change_size_x << endl;
-    cout << "\t\tnode_change_size_y: " << node_change_size_y << endl;
-    cout << "\t\tnode_change_pool_size: " << node_change_pool_size << endl;
-    */
-
     long child_seed = rng_long(generator);
 
     CNN_Genome *parent = genomes[rng_double(generator) * genomes.size()];
 
-    CNN_Genome *child = new CNN_Genome(child_seed, epochs, parent->get_nodes(), parent->get_edges());
+    cout << "\tgenerating child " << genomes_generated << " from parent genome: " << parent->get_generation_id() << endl;
+
+    CNN_Genome *child = new CNN_Genome(genomes_generated++, child_seed, epochs, parent->get_nodes(), parent->get_edges());
+    if (parent->get_fitness() == numeric_limits<double>::max()) {
+        //This parent has not actually been evaluated (the population is still initializing)
+        //we can set the best_bias and best_weights randomly so that they are used when it
+        //starts up
+
+        cout << "\tparent had not been evaluated yet, but best_bias and best_weights should have been set randomly" << endl;
+
+        /*
+        for (uint32_t i = 0; i < child->get_number_nodes(); i++) {
+            child->get_node(i)->initialize_bias(generator);
+            child->get_node(i)->save_best_bias();
+        }
+
+        for (uint32_t i = 0; i < child->get_number_edges(); i++) {
+            child->get_edge(i)->initialize_weights(generator);
+            child->get_edge(i)->save_best_weights();
+        }
+        */
+    } else {
+        cout << "\tparent had been evaluated! not setting best_bias and best_weights randomly" << endl;
+        cout << "\tparent fitness: " << parent->get_fitness() << endl;
+    }
 
     if (genomes.size() == 1) return child;
 
-    int number_mutations = 1;
     int modifications = 0;
 
     while (modifications < number_mutations) {
@@ -199,9 +341,14 @@ CNN_Genome* EXACT::create_mutation() {
             
             if (disabled_edges.size() > 0) {
                 int edge_position = rng_double(generator) * disabled_edges.size();
+                CNN_Edge* disabled_edge = disabled_edges[edge_position];
 
-                cout << "\t\tenabling edge: " << disabled_edges[edge_position]->get_innovation_number() << endl;
-                disabled_edges[edge_position]->enable();
+                cout << "\t\tenabling edge: " << disabled_edge->get_innovation_number() << " between input node innovation number " << disabled_edge->get_input_node()->get_innovation_number() << " and output node innovation number " << disabled_edge->get_output_node()->get_innovation_number() << endl;
+
+                disabled_edge->enable();
+                //reinitialize weights for re-enabled edge
+                disabled_edge->initialize_weights(generator);
+                disabled_edge->save_best_weights(); //save the random weights so they are reused
                 modifications++;
             } else {
                 cout << "\t\tcould not enable an edge as there were no disabled edges!" << endl;
@@ -226,16 +373,22 @@ CNN_Genome* EXACT::create_mutation() {
             int size_y = (input_node->get_size_y() + output_node->get_size_y()) / 2.0;
 
             CNN_Node *child_node = new CNN_Node(node_innovation_count, depth, size_x, size_y, HIDDEN_NODE);
+            child_node->initialize_bias(generator);
+            child_node->save_best_bias();
             node_innovation_count++;
 
             //add two new edges, disable the split edge
             cout << "\t\tcreating edge " << edge_innovation_count << endl;
             CNN_Edge *edge1 = new CNN_Edge(input_node, child_node, false, edge_innovation_count);
             edge_innovation_count++;
+            edge1->initialize_weights(generator);
+            edge1->save_best_weights(); //save the random weights so they are reused instead of 0
 
             cout << "\t\tcreating edge " << edge_innovation_count << endl;
             CNN_Edge *edge2 = new CNN_Edge(child_node, output_node, false, edge_innovation_count);
             edge_innovation_count++;
+            edge2->initialize_weights(generator);
+            edge2->save_best_weights(); //save the random weights so they are resused instead of 0
 
             cout << "\t\tdisabling edge " << edge->get_innovation_number() << endl;
             edge->disable();
@@ -270,8 +423,8 @@ CNN_Genome* EXACT::create_mutation() {
             CNN_Node *node2;
 
             do {
-                int r1 = rng_double(generator) * all_nodes.size();
-                int r2 = rng_double(generator) * all_nodes.size() - 1;
+                int r1 = rng_double(generator) * child->get_number_nodes();
+                int r2 = rng_double(generator) * child->get_number_nodes() - 1;
 
                 if (r1 == r2) r2++;
 
@@ -281,8 +434,8 @@ CNN_Genome* EXACT::create_mutation() {
                     r2 = temp;
                 }
 
-                node1 = all_nodes[r1];
-                node2 = all_nodes[r2];
+                node1 = child->get_node(r1);
+                node2 = child->get_node(r2);
             } while (node1->get_depth() >= node2->get_depth());
             //after this while loop, node 2 will always be deeper than node 1
 
@@ -291,28 +444,57 @@ CNN_Genome* EXACT::create_mutation() {
 
             //check to see if the edge already exists
             bool edge_exists = false;
+            int all_edges_position = -1;
             for (uint32_t i = 0; i < all_edges.size(); i++) {
                 if (all_edges[i]->connects(node1_innovation_number, node2_innovation_number)) {
                     edge_exists = true;
+                    all_edges_position = i;
                     break;
                 }
             }
 
-            //TODO: make sure that both nodes exist in the child!!!
-            if (!edge_exists) {
+            bool edge_exists_in_child = false;
+            for (uint32_t i = 0; i < child->get_number_edges(); i++) {
+                if (child->get_edge(i)->connects(node1_innovation_number, node2_innovation_number)) {
+                    edge_exists_in_child = true;
+                    break;
+                }
+            }
+
+            if (edge_exists && !edge_exists_in_child) {
+                //edge exists in another genome, copy from all_edges
+                //we know the child has both endpoints because we grabbed node1 and node2 from the child
+                cout << "\t\tcopying edge in position " << all_edges_position << " from all_edges!" << endl;
+                CNN_Edge *edge_copy = all_edges[all_edges_position]->copy();
+
+                //enable the edge in case it was disabled
+                edge_copy->enable();
+                if (!edge_copy->set_nodes(child->get_nodes())) {
+                    cout << "\t\treinitializing weights of copy" << endl;
+                    edge_copy->reinitialize(generator);
+                    edge_copy->save_best_weights();
+                }
+
+                child->add_edge( edge_copy );
+
+                modifications++;
+            } else if (!edge_exists && !edge_exists_in_child) {
+                //edge does not exist at all
                 cout << "\t\tadding edge between node innovation numbers " << node1_innovation_number << " and " << node2_innovation_number << endl;
 
                 CNN_Edge *edge = new CNN_Edge(node1, node2, false, edge_innovation_count);
-                //insert edge in order of depth
-                all_edges.insert( upper_bound(all_edges.begin(), all_edges.end(), edge, sort_CNN_Edges_by_depth()), edge);
                 edge_innovation_count++;
+                //insert edge in order of depth
 
-                CNN_Edge *child_edge = edge->copy();
-                if (!child_edge->set_nodes(child->get_nodes())) {
-                    child_edge->reinitialize(generator);
-                }
+                //enable the edge in case it was disabled
+                edge->enable();
+                edge->initialize_weights(generator);
+                edge->save_best_weights();
+                child->add_edge(edge);
 
-                child->add_edge(child_edge);
+                CNN_Edge *edge_copy = edge->copy();
+                edge_copy->set_nodes(all_nodes);
+                all_edges.insert( upper_bound(all_edges.begin(), all_edges.end(), edge_copy, sort_CNN_Edges_by_depth()), edge_copy);
 
                 modifications++;
             } else {
@@ -332,6 +514,62 @@ CNN_Genome* EXACT::create_mutation() {
         }
         r -= edge_change_stride;
 
+        if (r < node_change_size) {
+            cout << "\tCHANGING NODE SIZE X and Y!" << endl;
+
+            if (child->get_number_softmax_nodes() + 1 == child->get_number_nodes()) {
+                cout << "\t\tno non-input or softmax nodes so cannot change node size" << endl;
+                continue;
+            }
+
+            //should have a value between -2 and 2 (inclusive)
+            int change = (2 * rng_double(generator)) + 1;
+            if (rng_double(generator) < 0.5) change *= -1;
+
+            //make sure we don't change the size of the input node
+            cout << "\t\tnumber nodes: " << child->get_number_nodes() << endl;
+            cout << "\t\tnumber softmax nodes: " << child->get_number_softmax_nodes() << endl;
+            int r = (rng_double(generator) * (child->get_number_nodes() - 1 - child->get_number_softmax_nodes())) + 1;
+            cout << "\t\tr: " << r << endl;
+
+            CNN_Node *modified_node = child->get_node(r);
+            cout << "\t\tselected node: " << r << " with innovation number: " << modified_node->get_innovation_number() << endl;
+
+            if (modified_node->is_input()) {
+                cout << "\t\tmodified node was input, this should never happen!" << endl;
+                exit(1);
+            }
+
+            if (modified_node->is_softmax()) {
+                cout << "\t\tmodified node was softmax, this should never happen!" << endl;
+                exit(1);
+            }
+
+            int previous_size_x = modified_node->get_size_x();
+            int previous_size_y = modified_node->get_size_y();
+            cout << "\t\tsize x before resize: " << previous_size_x << " modifying by change: " << change << endl;
+            cout << "\t\tsize y before resize: " << previous_size_y << " modifying by change: " << change << endl;
+
+            bool modified_x = modified_node->modify_size_x(change, generator);
+            bool modified_y = modified_node->modify_size_y(change, generator);
+
+            if (modified_x || modified_y) {
+                //need to make sure all edges with this as it's input or output get updated
+                cout << "\t\tresizing edges around node: " << modified_node->get_innovation_number() << endl;
+
+                child->resize_edges_around_node( modified_node->get_innovation_number() );
+                modifications++;
+
+                cout << "\t\tmodified size x by " << change << " from " << previous_size_x << " to " << modified_node->get_size_x() << endl;
+                cout << "\t\tmodified size y by " << change << " from " << previous_size_y << " to " << modified_node->get_size_y() << endl;
+            } else {
+                cout << "\t\tmodification resulted in no change" << endl;
+            }
+
+            continue;
+        }
+        r -= node_change_size;
+
         if (r < node_change_size_x) {
             cout << "\tCHANGING NODE SIZE X!" << endl;
 
@@ -348,13 +586,30 @@ CNN_Genome* EXACT::create_mutation() {
             int r = (rng_double(generator) * (child->get_number_nodes() - 1 - child->get_number_softmax_nodes())) + 1;
 
             CNN_Node *modified_node = child->get_node(r);
+            cout << "\t\tselected node: " << r << " with innovation number: " << modified_node->get_innovation_number() << endl;
+
+            if (modified_node->is_input()) {
+                cout << "\t\tmodified node was input, this should never happen!" << endl;
+                exit(1);
+            }
+
+            if (modified_node->is_softmax()) {
+                cout << "\t\tmodified node was softmax, this should never happen!" << endl;
+                exit(1);
+            }
+
+
+            int previous_size_x = modified_node->get_size_x();
+            cout << "\t\tsize x before resize: " << previous_size_x << " modifying by change: " << change << endl;
 
             if (modified_node->modify_size_x(change, generator)) {
                 //need to make sure all edges with this as it's input or output get updated
+                cout << "\t\tresizing edges around node: " << modified_node->get_innovation_number() << endl;
+
                 child->resize_edges_around_node( modified_node->get_innovation_number() );
                 modifications++;
 
-                cout << "\t\tmodified size x by " << change << endl;
+                cout << "\t\tmodified size x by " << change << " from " << previous_size_x << " to " << modified_node->get_size_x() << endl;
             } else {
                 cout << "\t\tmodification resulted in no change" << endl;
             }
@@ -379,13 +634,30 @@ CNN_Genome* EXACT::create_mutation() {
             int r = (rng_double(generator) * (child->get_number_nodes() - 1 - child->get_number_softmax_nodes())) + 1;
 
             CNN_Node *modified_node = child->get_node(r);
+            cout << "\t\tselected node: " << r << " with innovation number: " << modified_node->get_innovation_number() << endl;
+
+            if (modified_node->is_input()) {
+                cout << "\t\tmodified node was input, this should never happen!" << endl;
+                exit(1);
+            }
+
+            if (modified_node->is_softmax()) {
+                cout << "\t\tmodified node was softmax, this should never happen!" << endl;
+                exit(1);
+            }
+
+
+            int previous_size_y = modified_node->get_size_y();
+            cout << "\t\tsize y before resize: " << previous_size_y << " modifying by change: " << change << endl;
 
             if (modified_node->modify_size_y(change, generator)) {
                 //need to make sure all edges with this as it's input or output get updated
+                cout << "\t\tresizing edges around node: " << modified_node->get_innovation_number() << endl;
+
                 child->resize_edges_around_node( modified_node->get_innovation_number() );
                 modifications++;
 
-                cout << "\t\tmodified size y by " << change << endl;
+                cout << "\t\tmodified size y by " << change << " from " << previous_size_y << " to " << modified_node->get_size_y() << endl;
             } else {
                 cout << "\t\tmodification resulted in no change" << endl;
             }
@@ -407,22 +679,6 @@ CNN_Genome* EXACT::create_mutation() {
         cerr << "\tremaining random value (for mutation selection): " << r << endl;
         exit(1);
     }
-
-    if (!child->sanity_check()) {
-        cerr << "ERROR: child failed sanity check!" << endl;
-        exit(1);
-    }
-
-    if (!child->outputs_connected()) {
-        cerr << "\tAll softmax nodes were not reachable, deleting child." << endl;
-        delete child;
-        return NULL;
-    }
-
-    if (genomes.size() < population_size) {
-        //insert a copy with a bad fitness so we have more things to generate new genomes with
-        insert_genome(new CNN_Genome(child_seed, epochs, child->get_nodes(), child->get_edges()));
-     }
 
     return child;
 }

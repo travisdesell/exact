@@ -40,6 +40,7 @@ class CNN_Edge {
 
         int filter_x, filter_y;
         vector< vector<double> > weights;
+        vector< vector<double> > best_weights;
         vector< vector<double> > previous_velocity;
 
         bool fixed;
@@ -56,8 +57,15 @@ class CNN_Edge {
 
         ~CNN_Edge();
 
+        int get_filter_x() const;
+        int get_filter_y() const;
+
+        void save_best_weights();
+        void set_weights_to_best();
+
         bool set_nodes(const vector<CNN_Node*> nodes);
         void initialize_weights(mt19937 &generator);
+        void initialize_velocities();
         void reinitialize(mt19937 &generator);
 
         void disable();
@@ -74,12 +82,16 @@ class CNN_Edge {
 
         bool connects(int n1, int n2) const;
 
+        bool has_zero_weight() const;
+        bool has_zero_best_weight() const;
+
         CNN_Node* get_input_node();
 
         CNN_Node* get_output_node();
 
         void print(ostream &out);
 
+        void backprop_weight_update(int fy, int fx, double weight_update, double weight, double mu);
         void propagate_forward();
         void propagate_backward(double mu);
 

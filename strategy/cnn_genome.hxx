@@ -13,6 +13,8 @@ using std::vector;
 #include "cnn_node.hxx"
 #include "cnn_edge.hxx"
 
+#define SANITY_CHECK_BEFORE_INSERT 0
+#define SANITY_CHECK_AFTER_GENERATION 1
 
 class CNN_Genome {
     private:
@@ -30,35 +32,49 @@ class CNN_Genome {
         double mu;
         int epoch;
         int epochs;
+
+
         double best_error;
         int best_predictions;
+        int best_predictions_epoch;
+        int best_error_epoch;
+
+        vector<double> best_class_error;
+        vector<int> best_correct_predictions;
 
         bool started_from_checkpoint;
         vector<long> backprop_order;
 
+        int generation_id;
         string name;
         string checkpoint_filename;
         string output_filename;
 
     public:
-        CNN_Genome();
+        /**
+         *  Initialize a genome from a file
+         */
+        CNN_Genome(string filename, bool is_checkpoint);
 
         /**
          *  Iniitalize a genome from a set of nodes and edges
          */
-        CNN_Genome(int seed, int _epochs, const vector<CNN_Node*> &_nodes, const vector<CNN_Edge*> &_edges);
-
-        /**
-         *  Initialize the initial genotype for the CNN_NEAT algorithm from
-         *  a set of training images
-         */
-        CNN_Genome(int number_classes, int rows, int cols, int seed, int _epochs);
+        CNN_Genome(int _generation_id, int seed, int _epochs, const vector<CNN_Node*> &_nodes, const vector<CNN_Edge*> &_edges);
 
         ~CNN_Genome();
 
-        double get_fitness() const;
+        void print_best_error(ostream &out) const;
+        void print_best_predictions(ostream &out) const;
 
-        bool sanity_check() const;
+        int get_generation_id() const;
+        double get_fitness() const;
+        int get_best_error_epoch() const;
+        int get_best_predictions() const;
+        int get_epoch() const;
+        int get_total_epochs() const;
+        int get_number_enabled_edges() const;
+
+        bool sanity_check(int type) const;
         bool outputs_connected() const;
 
         const vector<CNN_Node*> get_nodes() const;
@@ -79,7 +95,12 @@ class CNN_Genome {
  
         int evaluate_image(const Image &image, vector<double> &class_error, bool do_backprop);
 
-        void stochastic_backpropagation(const Images &images);
+        void initialize_weights();
+        void initialize_bias();
+
+        void save_weights();
+        void save_bias();
+        void stochastic_backpropagation(const Images &images, bool reset_weights);
 
         void set_name(string _name);
         void set_output_filename(string _output_filename);
@@ -89,8 +110,8 @@ class CNN_Genome {
         void write_to_file(string filename);
 
         void read(istream &infile);
-        void read_from_file(string filename, bool is_checkpoint);
 
+        void print_graphviz(ostream &out) const;
 };
 
 

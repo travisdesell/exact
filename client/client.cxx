@@ -31,22 +31,28 @@ int main(int argc, char** argv) {
 
     Images images(binary_samples_filename);
 
-    CNN_Genome *genome = new CNN_Genome();
+    CNN_Genome *genome = NULL;
 
     ifstream infile(checkpoint_filename);
     if (infile) {
         //start from the checkpoint if it exists
         cout << "starting from checkpoint file: '" << checkpoint_filename << "'" << endl;
-        genome->read_from_file(checkpoint_filename, true);
+
+        genome = new CNN_Genome(checkpoint_filename, true);
     } else {
         //start from the input genome file otherwise
         cout << "starting from input file: '" << genome_filename << "'" << endl;
-        genome->read_from_file(genome_filename, false);
+        genome = new CNN_Genome(genome_filename, false);
     }
+    cout << "parsed intput file" << endl;
+
+    genome->print_graphviz(cout);
 
     genome->set_checkpoint_filename(checkpoint_filename);
     genome->set_output_filename(output_filename);
-    genome->stochastic_backpropagation(images);
+
+    cout << "starting backpropagation!" << endl;
+    genome->stochastic_backpropagation(images, true);
 
     return 0;
 }

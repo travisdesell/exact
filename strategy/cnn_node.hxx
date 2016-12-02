@@ -51,7 +51,9 @@ class CNN_Node {
         double **values;
         double **errors;
         double **bias;
+        double **best_bias;
         double **bias_velocity;
+
 
         int type;
 
@@ -88,7 +90,10 @@ class CNN_Node {
 
         void initialize_bias(mt19937 &generator);
         void reinitialize_bias(mt19937 &generator);
-        
+        void initialize_velocities();
+
+        bool has_zero_bias() const;
+        bool has_zero_best_bias() const;
         void propagate_bias(double mu);
 
         void set_values(const Image &image, int rows, int cols);
@@ -106,12 +111,17 @@ class CNN_Node {
 
         double set_value(int y, int x, double value);
 
+        void save_best_bias();
+        void set_bias_to_best();
+
+        void resize_arrays(int previous_size_x, int previous_size_y);
         bool modify_size_x(int change, mt19937 &generator);
         bool modify_size_y(int change, mt19937 &generator);
 
         void add_input();
         void disable_input();
         int get_number_inputs() const;
+        int get_inputs_fired() const;
 
         void input_fired();
 

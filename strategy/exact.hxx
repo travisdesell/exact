@@ -30,6 +30,10 @@ using std::vector;
 
 class EXACT {
     private:
+        int image_rows;
+        int image_cols;
+        int number_classes;
+
         int population_size;
         int node_innovation_count;
         int edge_innovation_count;
@@ -42,9 +46,23 @@ class EXACT {
 
         vector< CNN_Genome* > genomes;
 
+        int genomes_generated;
+        int inserted_genomes;
 
         int epochs;
         mt19937 generator;
+
+        int number_mutations;
+        double edge_disable;
+        double edge_enable;
+        double edge_split;
+        double edge_add;
+        double edge_change_stride;
+        double node_change_size;
+        double node_change_size_x;
+        double node_change_size_y;
+        double node_change_pool_size;
+
 
     public:
 
@@ -52,6 +70,7 @@ class EXACT {
 
         CNN_Genome* get_best_genome();
 
+        CNN_Genome* generate_individual();
         CNN_Genome* create_mutation();
         CNN_Genome* create_child();
 

@@ -70,12 +70,21 @@ CNN_Edge::CNN_Edge(CNN_Node *_input_node, CNN_Node *_output_node, bool _fixed, i
     //cout << "\t\tcreated edge " << innovation_number << " (node " << input_node_innovation_number << " to " << output_node_innovation_number << ") with filter_x: " << filter_x << " (input: " << input_node->get_size_x() << ", output: " << output_node->get_size_x() << ") and filter_y: " << filter_y << " (input: " << input_node->get_size_y() << ", output: " << output_node->get_size_y() << "), reverse filter: " << reverse_filter_x << ", reverse_filter_y: " << reverse_filter_y << endl;
 
     weights = vector< vector<double> >(filter_y, vector<double>(filter_x, 0.0));
+    best_weights = vector< vector<double> >(filter_y, vector<double>(filter_x, 0.0));
     previous_velocity = vector< vector<double> >(filter_y, vector<double>(filter_x, 0.0));
 }
 
 CNN_Edge::~CNN_Edge() {
     input_node = NULL;
     output_node = NULL;
+}
+
+int CNN_Edge::get_filter_x() const {
+    return filter_x;
+}
+
+int CNN_Edge::get_filter_y() const {
+    return filter_y;
 }
 
 
@@ -89,21 +98,63 @@ void CNN_Edge::initialize_weights(mt19937 &generator) {
     for (uint32_t i = 0; i < weights.size(); i++) {
         for (uint32_t j = 0; j < weights[i].size(); j++) {
             weights[i][j] = distribution(generator);
+            best_weights[i][j] = 0.0;
+            previous_velocity[i][j] = 0.0;
         }
     }
-
     //cout << "initialized weights for edge " << innovation_number << ", weights[0][0]: " << weights[0][0] << endl;
 }
 
+void CNN_Edge::initialize_velocities() {
+    for (uint32_t i = 0; i < weights.size(); i++) {
+        for (uint32_t j = 0; j < weights[i].size(); j++) {
+            previous_velocity[i][j] = 0.0;
+        }
+    }
+}
+
+
 void CNN_Edge::reinitialize(mt19937 &generator) {
-    filter_x = (input_node->get_size_x() - output_node->get_size_x()) + 1;
-    filter_y = (input_node->get_size_y() - output_node->get_size_y()) + 1;
+    //this may have changed from a regular to reverse filter
+    if (output_node->get_size_x() <= input_node->get_size_x()) {
+        reverse_filter_x = false;
+        filter_x = (input_node->get_size_x() - output_node->get_size_x()) + 1;
+    } else {
+        reverse_filter_x = true;
+        filter_x = (output_node->get_size_x() - input_node->get_size_x()) + 1;
+    }
+
+    if (output_node->get_size_y() <= input_node->get_size_y()) {
+        reverse_filter_y = false;
+        filter_y = (input_node->get_size_y() - output_node->get_size_y()) + 1;
+    } else {
+        reverse_filter_y = true;
+        filter_y = (output_node->get_size_y() - input_node->get_size_y()) + 1;
+    }
 
     weights = vector< vector<double> >(filter_y, vector<double>(filter_x, 0.0));
+    best_weights = vector< vector<double> >(filter_y, vector<double>(filter_x, 0.0));
     previous_velocity = vector< vector<double> >(filter_y, vector<double>(filter_x, 0.0));
 
     initialize_weights(generator);
 }
+
+void CNN_Edge::save_best_weights() {
+    for (uint32_t y = 0; y < weights.size(); y++) {
+        for (uint32_t x = 0; x < weights[y].size(); x++) {
+            best_weights[y][x] = weights[y][x];
+        }
+    }
+}
+
+void CNN_Edge::set_weights_to_best() {
+    for (uint32_t y = 0; y < weights.size(); y++) {
+        for (uint32_t x = 0; x < weights[y].size(); x++) {
+            weights[y][x] = best_weights[y][x];
+        }
+    }
+}
+
 
 CNN_Edge* CNN_Edge::copy() const {
     CNN_Edge* copy = new CNN_Edge();
@@ -125,11 +176,13 @@ CNN_Edge* CNN_Edge::copy() const {
     copy->reverse_filter_y = reverse_filter_y;
 
     copy->weights = vector< vector<double> >(filter_y, vector<double>(filter_x, 0.0));
+    copy->best_weights = vector< vector<double> >(filter_y, vector<double>(filter_x, 0.0));
     copy->previous_velocity = vector< vector<double> >(filter_y, vector<double>(filter_x, 0.0));
 
     for (uint32_t y = 0; y < weights.size(); y++) {
         for (uint32_t x = 0; x < weights[y].size(); x++) {
             copy->weights[y][x] = weights[y][x];
+            copy->best_weights[y][x] = best_weights[y][x];
             copy->previous_velocity[y][x] = previous_velocity[y][x];
         }
     }
@@ -257,6 +310,34 @@ bool CNN_Edge::connects(int n1, int n2) const {
     return (input_node_innovation_number == n1) && (output_node_innovation_number == n2);
 }
 
+bool CNN_Edge::has_zero_weight() const {
+    if (disabled) return false;
+
+    double filter_sum = 0.0;
+    for (uint32_t fy = 0; fy < filter_y; fy++) {
+        for (uint32_t fx = 0; fx < filter_x; fx++) {
+            filter_sum += (weights[fy][fx] * weights[fy][fx]);
+        }
+    }
+
+    return filter_sum == 0;
+}
+
+bool CNN_Edge::has_zero_best_weight() const {
+    if (disabled) return false;
+
+    double filter_sum = 0.0;
+    for (uint32_t fy = 0; fy < filter_y; fy++) {
+        for (uint32_t fx = 0; fx < filter_x; fx++) {
+            filter_sum += (best_weights[fy][fx] * best_weights[fy][fx]);
+        }
+    }
+
+    return filter_sum == 0;
+}
+
+
+
 void CNN_Edge::print(ostream &out) {
     out << "CNN_Edge " << innovation_number << " of from node " << input_node->get_innovation_number() << " to node " << output_node->get_innovation_number() << " with filter x: " << filter_x << ", y: " << filter_y << endl;
 
@@ -300,6 +381,32 @@ void CNN_Edge::propagate_forward() {
     cout << "\tfilter_y: " << filter_y << endl;
     */
 
+    for (uint32_t fy = 0; fy < filter_y; fy++) {
+        for (uint32_t fx = 0; fx < filter_x; fx++) {
+            if (isnan(weights[fy][fx])) {
+                cerr << "ERROR in edge " << innovation_number << " propagate forward!" << endl;
+                cerr << "input node innovation number: " << input_node->get_innovation_number() << " at depth: " << input_node->get_depth() << endl;
+                cerr << "output node innovation number: " << output_node->get_innovation_number() << " at depth: " << output_node->get_depth() << endl;
+                cerr << "weights[" << fy << "][" << fx << "] was NAN!" << endl;
+            }
+        }
+    }
+
+    for (uint32_t y = 0; y < input_node->get_size_y(); y++) {
+        for (uint32_t x = 0; x < input_node->get_size_x(); x++) {
+            if (isnan(input[y][x])) {
+                cerr << "ERROR in edge " << innovation_number << " propagate forward!" << endl;
+                cerr << "input[" << y << "][" << x << "] was NAN!" << endl;
+                cerr << "input node innovation number: " << input_node->get_innovation_number() << " at depth: " << input_node->get_depth() << endl;
+                cerr << "output node innovation number: " << output_node->get_innovation_number() << " at depth: " << output_node->get_depth() << endl;
+                input_node->print(cerr);
+                exit(1);
+            }
+        }
+    }
+
+    double previous_output;
+
     if (reverse_filter_x && reverse_filter_y) {
         for (uint32_t fy = 0; fy < filter_y; fy++) {
             for (uint32_t fx = 0; fx < filter_x; fx++) {
@@ -308,7 +415,22 @@ void CNN_Edge::propagate_forward() {
                 for (uint32_t y = 0; y < input_node->get_size_y(); y++) {
                     for (uint32_t x = 0; x < input_node->get_size_x(); x++) {
                         double value = weight * input[y][x];
+
+                        previous_output = output[y + fy][x + fx];
                         output[y + fy][x + fx] += value;
+
+                        if (isnan(output[y + fy][x + fx])) {
+                            cerr << "ERROR in edge " << innovation_number << " propagate forward!" << endl;
+                            cerr << "input node innovation number: " << input_node->get_innovation_number() << " at depth: " << input_node->get_depth() << endl;
+                            cerr << "input node inputs fired: " << input_node->get_inputs_fired() << ", total_inputs: " << input_node->get_number_inputs() << endl;
+                            cerr << "output node innovation number: " << output_node->get_innovation_number() << " at depth: " << output_node->get_depth() << endl;
+                            cerr << "output became NAN!" << endl;
+                            cerr << "output[" << y + fy << "][" << x + fx << "]" << endl;
+                            cerr << "input[" << y << "][" << x << "]" << endl;
+                            cerr << "weight: " << weight << endl;
+                            cerr << "previous output: " << previous_output << endl;
+                            cerr << "value added: " << value << endl;
+                        }
                     }
                 }
             }
@@ -322,7 +444,23 @@ void CNN_Edge::propagate_forward() {
                 for (uint32_t y = 0; y < output_node->get_size_y(); y++) {
                     for (uint32_t x = 0; x < input_node->get_size_x(); x++) {
                         double value = weight * input[y + fy][x];
+
+                        previous_output = output[y][x + fx];
                         output[y][x + fx] += value;
+
+                        if (isnan(output[y][x + fx])) {
+                            cerr << "ERROR in edge " << innovation_number << " propagate forward!" << endl;
+                            cerr << "input node innovation number: " << input_node->get_innovation_number() << " at depth: " << input_node->get_depth() << endl;
+                            cerr << "input node inputs fired: " << input_node->get_inputs_fired() << ", total_inputs: " << input_node->get_number_inputs() << endl;
+                            cerr << "output node innovation number: " << output_node->get_innovation_number() << " at depth: " << output_node->get_depth() << endl;
+                            cerr << "output became NAN!" << endl;
+                            cerr << "output[" << y << "][" << x + fx << "]" << endl;
+                            cerr << "input[" << y + fy << "][" << x << "]" << endl;
+                            cerr << "weight: " << weight << endl;
+                            cerr << "previous output: " << previous_output << endl;
+                            cerr << "value added: " << value << endl;
+                            exit(1);
+                        }
                     }
                 }
             }
@@ -336,7 +474,23 @@ void CNN_Edge::propagate_forward() {
                 for (uint32_t y = 0; y < input_node->get_size_y(); y++) {
                     for (uint32_t x = 0; x < output_node->get_size_x(); x++) {
                         double value = weight * input[y][x + fx];
+
+                        previous_output = output[y + fy][x];
                         output[y + fy][x] += value;
+
+                        if (isnan(output[y + fy][x])) {
+                            cerr << "ERROR in edge " << innovation_number << " propagate forward!" << endl;
+                            cerr << "input node innovation number: " << input_node->get_innovation_number() << " at depth: " << input_node->get_depth() << endl;
+                            cerr << "input node inputs fired: " << input_node->get_inputs_fired() << ", total_inputs: " << input_node->get_number_inputs() << endl;
+                            cerr << "output node innovation number: " << output_node->get_innovation_number() << " at depth: " << output_node->get_depth() << endl;
+                            cerr << "output became NAN!" << endl;
+                            cerr << "output[" << y + fy << "][" << x << "]" << endl;
+                            cerr << "input[" << y << "][" << x + fx << "]" << endl;
+                            cerr << "weight: " << weight << endl;
+                            cerr << "previous output: " << previous_output << endl;
+                            cerr << "value added: " << value << endl;
+                            exit(1);
+                        }
                     }
                 }
             }
@@ -350,14 +504,80 @@ void CNN_Edge::propagate_forward() {
                 for (uint32_t y = 0; y < output_node->get_size_y(); y++) {
                     for (uint32_t x = 0; x < output_node->get_size_x(); x++) {
                         double value = weight * input[y + fy][x + fx];
+
+                        previous_output = output[y][x];
                         output[y][x] += value;
+
+                        if (isnan(output[y][x])) {
+                            cerr << "ERROR in edge " << innovation_number << " propagate forward!" << endl;
+                            cerr << "input node innovation number: " << input_node->get_innovation_number() << " at depth: " << input_node->get_depth() << endl;
+                            cerr << "input node inputs fired: " << input_node->get_inputs_fired() << ", total_inputs: " << input_node->get_number_inputs() << endl;
+                            cerr << "output node innovation number: " << output_node->get_innovation_number() << " at depth: " << output_node->get_depth() << endl;
+                            cerr << "output became NAN!" << endl;
+                            cerr << "output[" << y << "][" << x << "]" << endl;
+                            cerr << "input[" << y + fy << "][" << x + fx << "]" << endl;
+                            cerr << "weight: " << weight << endl;
+                            cerr << "previous output: " << previous_output << endl;
+                            cerr << "value added: " << value << endl;
+                            exit(1);
+                        }
                     }
                 }
             }
         }
     }
 
+    for (uint32_t y = 0; y < output_node->get_size_y(); y++) {
+        for (uint32_t x = 0; x < output_node->get_size_x(); x++) {
+            if (isnan(output[y][x])) {
+                cerr << "ERROR in edge " << innovation_number << " propagate forward!" << endl;
+                cerr << "output[" << y << "][" << x << "] was NAN!" << endl;
+                cerr << "input node innovation number: " << input_node->get_innovation_number() << " at depth: " << input_node->get_depth() << endl;
+                cerr << "output node innovation number: " << output_node->get_innovation_number() << " at depth: " << output_node->get_depth() << endl;
+            }
+        }
+    }
+
     output_node->input_fired();
+}
+
+inline void CNN_Edge::backprop_weight_update(int fy, int fx, double weight_update, double weight, double mu) {
+    double dx, pv, velocity;
+
+    //double dx = LEARNING_RATE * (weight_update[k][l] / (filter_x * filter_y) + (weights[k][l] * WEIGHT_DECAY));
+    //L2 regularization
+
+    dx = LEARNING_RATE * (weight_update / (filter_x * filter_y) - (weight * WEIGHT_DECAY));
+    //double dx = LEARNING_RATE * (weight_update[k][l] / (filter_x * filter_y));
+
+    if (isnan(dx)) {
+        cerr << "ERROR! dx became NAN in backprop weight update" << endl;
+        cerr << "learning rate: " << LEARNING_RATE << endl;
+        cerr << "weight_update: " << weight_update << endl;
+        cerr << "filter_x: " << filter_x << endl;
+        cerr << "filter_y: " << filter_y << endl;
+        cerr << "weight: " << weight << endl;
+        cerr << "weight decay: " << WEIGHT_DECAY << endl;
+        cerr << "mu: " << mu << endl;
+        exit(1);
+    }
+
+    //no momemntum
+    //weights[fy][fx] += dx;
+
+    //momentum
+    pv = previous_velocity[fy][fx];
+    velocity = (mu * pv) - dx;
+    weights[fy][fx] -= -mu * pv + (1 + mu) * velocity;
+    previous_velocity[fy][fx] = velocity;
+
+    if (weights[fy][fx] > 5.0) {
+        weights[fy][fx] = 5.0;
+        previous_velocity[fy][fx] = 0.0;
+    } else if (weights[fy][fx] < -5.0) {
+        weights[fy][fx] = -5.0;
+        previous_velocity[fy][fx] = 0.0;
+    }
 }
 
 void CNN_Edge::propagate_backward(double mu) {
@@ -367,7 +587,8 @@ void CNN_Edge::propagate_backward(double mu) {
     double **output_errors = output_node->get_errors();
     double **input_errors = input_node->get_errors();
 
-    double weight, weight_update, error, update, dx, velocity, pv;
+    double weight, weight_update, error, update;
+    double previous_weight_update;
 
     if (reverse_filter_x && reverse_filter_y) {
         //cout << "reverse filter x and y!" << endl;
@@ -382,26 +603,27 @@ void CNN_Edge::propagate_backward(double mu) {
                         error = output_errors[y + fy][x + fx];
 
                         update = input[y][x] * error;
+                        previous_weight_update = weight_update;
                         weight_update -= update;
+
+                        if (isnan(weight_update)) {
+                            cerr << "ERROR in edge " << innovation_number << " propagate backward!" << endl;
+                            cerr << "input node innovation number: " << input_node->get_innovation_number() << " at depth: " << input_node->get_depth() << endl;
+                            cerr << "input node inputs fired: " << input_node->get_inputs_fired() << ", total_inputs: " << input_node->get_number_inputs() << endl;
+                            cerr << "output node innovation number: " << output_node->get_innovation_number() << " at depth: " << output_node->get_depth() << endl;
+                            cerr << "ERROR! weight update became NAN!" << endl;
+                            cerr << "update: " << update << endl;
+                            cerr << "error: " << error << endl;
+                            cerr << "input: " << input[y][x] << endl;
+                            cerr << "previous weight update: " << previous_weight_update << endl;
+                            cerr << "weight update: " << weight_update << endl;
+                            exit(1);
+                        }
 
                         input_errors[y][x] += error * weight;
                     }
                 }
-
-                //double dx = LEARNING_RATE * (weight_update[k][l] / (filter_x * filter_y) + (weights[k][l] * WEIGHT_DECAY));
-                //L2 regularization
-
-                dx = LEARNING_RATE * (weight_update / (filter_x * filter_y) - (weight * WEIGHT_DECAY));
-                //double dx = LEARNING_RATE * (weight_update[k][l] / (filter_x * filter_y));
-
-                //no momemntum
-                //weights[k][l] += dx;
-
-                //momentum
-                pv = previous_velocity[fy][fx];
-                velocity = (mu * pv) - dx;
-                weights[fy][fx] -= -mu * pv + (1 + mu) * velocity;
-                previous_velocity[fy][fx] = velocity;
+                backprop_weight_update(fy, fx, weight_update, weight, mu);
             }
         }
 
@@ -418,26 +640,29 @@ void CNN_Edge::propagate_backward(double mu) {
                         error = output_errors[y][x + fx];
 
                         update = input[y + fy][x] * error;
+
+                        previous_weight_update = weight_update;
                         weight_update -= update;
+
+                        if (isnan(weight_update)) {
+                            cerr << "ERROR in edge " << innovation_number << " propagate backward!" << endl;
+                            cerr << "input node innovation number: " << input_node->get_innovation_number() << " at depth: " << input_node->get_depth() << endl;
+                            cerr << "input node inputs fired: " << input_node->get_inputs_fired() << ", total_inputs: " << input_node->get_number_inputs() << endl;
+                            cerr << "output node innovation number: " << output_node->get_innovation_number() << " at depth: " << output_node->get_depth() << endl;
+                            cerr << "ERROR! weight update became NAN!" << endl;
+                            cerr << "update: " << update << endl;
+                            cerr << "error: " << error << endl;
+                            cerr << "input: " << input[y + fy][x] << endl;
+                            cerr << "previous weight update: " << previous_weight_update << endl;
+                            cerr << "weight update: " << weight_update << endl;
+                            exit(1);
+                        }
+
 
                         input_errors[y + fy][x] += error * weight;
                     }
                 }
-
-                //double dx = LEARNING_RATE * (weight_update[k][l] / (filter_x * filter_y) + (weights[k][l] * WEIGHT_DECAY));
-                //L2 regularization
-
-                dx = LEARNING_RATE * (weight_update / (filter_x * filter_y) - (weight * WEIGHT_DECAY));
-                //double dx = LEARNING_RATE * (weight_update[k][l] / (filter_x * filter_y));
-
-                //no momemntum
-                //weights[k][l] += dx;
-
-                //momentum
-                pv = previous_velocity[fy][fx];
-                velocity = (mu * pv) - dx;
-                weights[fy][fx] -= -mu * pv + (1 + mu) * velocity;
-                previous_velocity[fy][fx] = velocity;
+                backprop_weight_update(fy, fx, weight_update, weight, mu);
             }
         }
 
@@ -454,26 +679,29 @@ void CNN_Edge::propagate_backward(double mu) {
                         error = output_errors[y + fy][x];
 
                         update = input[y][x + fx] * error;
+
+                        previous_weight_update = weight_update;
                         weight_update -= update;
+
+                        if (isnan(weight_update)) {
+                            cerr << "ERROR in edge " << innovation_number << " propagate backward!" << endl;
+                            cerr << "input node innovation number: " << input_node->get_innovation_number() << " at depth: " << input_node->get_depth() << endl;
+                            cerr << "input node inputs fired: " << input_node->get_inputs_fired() << ", total_inputs: " << input_node->get_number_inputs() << endl;
+                            cerr << "output node innovation number: " << output_node->get_innovation_number() << " at depth: " << output_node->get_depth() << endl;
+                            cerr << "ERROR! weight update became NAN!" << endl;
+                            cerr << "update: " << update << endl;
+                            cerr << "error: " << error << endl;
+                            cerr << "input: " << input[y][x + fx] << endl;
+                            cerr << "previous weight update: " << previous_weight_update << endl;
+                            cerr << "weight update: " << weight_update << endl;
+                            exit(1);
+                        }
+
 
                         input_errors[y][x + fx] += error * weight;
                     }
                 }
-
-                //double dx = LEARNING_RATE * (weight_update[k][l] / (filter_x * filter_y) + (weights[k][l] * WEIGHT_DECAY));
-                //L2 regularization
-
-                dx = LEARNING_RATE * (weight_update / (filter_x * filter_y) - (weight * WEIGHT_DECAY));
-                //double dx = LEARNING_RATE * (weight_update[k][l] / (filter_x * filter_y));
-
-                //no momemntum
-                //weights[k][l] += dx;
-
-                //momentum
-                pv = previous_velocity[fy][fx];
-                velocity = (mu * pv) - dx;
-                weights[fy][fx] -= -mu * pv + (1 + mu) * velocity;
-                previous_velocity[fy][fx] = velocity;
+                backprop_weight_update(fy, fx, weight_update, weight, mu);
             }
         }
 
@@ -490,26 +718,29 @@ void CNN_Edge::propagate_backward(double mu) {
                         error = output_errors[y][x];
 
                         update = input[y + fy][x + fx] * error;
+
+                        previous_weight_update = weight_update;
                         weight_update -= update;
+
+                        if (isnan(weight_update)) {
+                            cerr << "ERROR in edge " << innovation_number << " propagate backward!" << endl;
+                            cerr << "input node innovation number: " << input_node->get_innovation_number() << " at depth: " << input_node->get_depth() << endl;
+                            cerr << "input node inputs fired: " << input_node->get_inputs_fired() << ", total_inputs: " << input_node->get_number_inputs() << endl;
+                            cerr << "output node innovation number: " << output_node->get_innovation_number() << " at depth: " << output_node->get_depth() << endl;
+                            cerr << "ERROR! weight update became NAN!" << endl;
+                            cerr << "update: " << update << endl;
+                            cerr << "error: " << error << endl;
+                            cerr << "input: " << input[y + fy][x + fx] << endl;
+                            cerr << "previous weight update: " << previous_weight_update << endl;
+                            cerr << "weight update: " << weight_update << endl;
+                            exit(1);
+                        }
+
 
                         input_errors[y + fy][x + fx] += error * weight;
                     }
                 }
-
-                //double dx = LEARNING_RATE * (weight_update[k][l] / (filter_x * filter_y) + (weights[k][l] * WEIGHT_DECAY));
-                //L2 regularization
-
-                dx = LEARNING_RATE * (weight_update / (filter_x * filter_y) - (weight * WEIGHT_DECAY));
-                //double dx = LEARNING_RATE * (weight_update[k][l] / (filter_x * filter_y));
-
-                //no momemntum
-                //weights[k][l] += dx;
-
-                //momentum
-                pv = previous_velocity[fy][fx];
-                velocity = (mu * pv) - dx;
-                weights[fy][fx] -= -mu * pv + (1 + mu) * velocity;
-                previous_velocity[fy][fx] = velocity;
+                backprop_weight_update(fy, fx, weight_update, weight, mu);
             }
         }
     }
@@ -537,6 +768,15 @@ ostream &operator<<(ostream &os, const CNN_Edge* edge) {
     for (uint32_t y = 0; y < edge->filter_y; y++) {
         for (uint32_t x = 0; x < edge->filter_x; x++) {
             if (y > 0 || x > 0) os << " ";
+            os << setprecision(15) << edge->best_weights[y][x];
+        }
+    }
+    os << endl;
+
+
+    for (uint32_t y = 0; y < edge->filter_y; y++) {
+        for (uint32_t x = 0; x < edge->filter_x; x++) {
+            if (y > 0 || x > 0) os << " ";
             os << setprecision(15) << edge->previous_velocity[y][x];
         }
     }
@@ -556,11 +796,18 @@ istream &operator>>(istream &is, CNN_Edge* edge) {
     is >> edge->disabled;
 
     edge->weights = vector< vector<double> >(edge->filter_y, vector<double>(edge->filter_x, 0.0));
+    edge->best_weights = vector< vector<double> >(edge->filter_y, vector<double>(edge->filter_x, 0.0));
     edge->previous_velocity = vector< vector<double> >(edge->filter_y, vector<double>(edge->filter_x, 0.0));
 
     for (uint32_t y = 0; y < edge->filter_y; y++) {
         for (uint32_t x = 0; x < edge->filter_x; x++) {
             is >> edge->weights[y][x];
+        }
+    }
+
+    for (uint32_t y = 0; y < edge->filter_y; y++) {
+        for (uint32_t x = 0; x < edge->filter_x; x++) {
+            is >> edge->best_weights[y][x];
         }
     }
 
