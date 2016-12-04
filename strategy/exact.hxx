@@ -49,8 +49,15 @@ class EXACT {
         int genomes_generated;
         int inserted_genomes;
 
-        int epochs;
+        bool reset_edges;
+        int min_epochs;
+        int max_epochs;
+        int improvement_required_epochs;
+
         mt19937 generator;
+
+        double learning_rate;
+        double weight_decay;
 
         int number_mutations;
         double edge_disable;
@@ -66,7 +73,7 @@ class EXACT {
 
     public:
 
-        EXACT(const Images &images, int _population_size, int _epochs);
+        EXACT(const Images &images, int _population_size, int _min_epochs, int _max_epochs, int _improvement_required_epochs, bool _reset_edges);
 
         CNN_Genome* get_best_genome();
 
@@ -75,6 +82,8 @@ class EXACT {
         CNN_Genome* create_child();
 
         void insert_genome(CNN_Genome* genome);
+
+        void print_statistics(ostream &out);
 };
 
 

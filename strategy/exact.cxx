@@ -38,8 +38,11 @@ using std::vector;
 #include "cnn_genome.hxx"
 #include "exact.hxx"
 
-EXACT::EXACT(const Images &images, int _population_size, int _epochs) {
-    epochs = _epochs;
+EXACT::EXACT(const Images &images, int _population_size, int _min_epochs, int _max_epochs, int _improvement_required_epochs, bool _reset_edges) {
+    reset_edges = _reset_edges;
+    min_epochs = _min_epochs;
+    max_epochs = _max_epochs;
+    improvement_required_epochs = _improvement_required_epochs;
 
     unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
     //unsigned seed = 10;
@@ -63,15 +66,34 @@ EXACT::EXACT(const Images &images, int _population_size, int _epochs) {
 
     number_mutations = 3;
 
+    learning_rate = 0.001;
+    weight_decay = 0.001;
+
     edge_disable = 2.0;
     edge_enable = 2.0;
-    edge_split = 2.0;
-    edge_add = 2.0;
+    edge_split = 3.0;
+    edge_add = 4.0;
     edge_change_stride = 0.0;
     node_change_size = 2.0;
-    node_change_size_x = 2.0;
-    node_change_size_y = 2.0;
+    node_change_size_x = 0.0;
+    node_change_size_y = 0.0;
     node_change_pool_size = 0.0;
+
+    cout << "EXACT settings: " << endl;
+    cout << "\tlearning_rate: " << learning_rate << endl;
+    cout << "\tweight_decay: " << weight_decay << endl;
+    cout << "\tmin_epochs: " << min_epochs << endl;
+    cout << "\tmax_epochs: " << max_epochs << endl;
+    cout << "\timprovement_required_epochs: " << improvement_required_epochs << endl;
+    cout << "\tnumber_mutations: " << number_mutations << endl;
+    cout << "\tedge_disable: " << edge_disable << endl;
+    cout << "\tedge_split: " << edge_split << endl;
+    cout << "\tedge_add: " << edge_add << endl;
+    cout << "\tedge_change_stride: " << edge_change_stride << endl;
+    cout << "\tnode_change_size: " << node_change_size << endl;
+    cout << "\tnode_change_size_x: " << node_change_size_x << endl;
+    cout << "\tnode_change_size_y: " << node_change_size_y << endl;
+    cout << "\tnode_change_pool_size: " << node_change_pool_size << endl;
 
     double total = edge_disable + edge_enable + edge_split + edge_add + edge_change_stride +
                    node_change_size + node_change_size_x + node_change_size_y + node_change_pool_size;
@@ -91,6 +113,7 @@ EXACT::EXACT(const Images &images, int _population_size, int _epochs) {
     cout << "\tedge_split: " << edge_split << endl;
     cout << "\tedge_add: " << edge_add << endl;
     cout << "\tedge_change_stride: " << edge_change_stride << endl;
+    cout << "\tnode_change_size: " << node_change_size << endl;
     cout << "\tnode_change_size_x: " << node_change_size_x << endl;
     cout << "\tnode_change_size_y: " << node_change_size_y << endl;
     cout << "\tnode_change_pool_size: " << node_change_pool_size << endl;
@@ -134,7 +157,7 @@ CNN_Genome* EXACT::generate_individual() {
         long genome_seed = rng_long(generator);
         //cout << "seeding genome with: " << genome_seed << endl;
 
-        genome = new CNN_Genome(genomes_generated++, genome_seed, epochs, all_nodes, all_edges);
+        genome = new CNN_Genome(genomes_generated++, genome_seed, min_epochs, max_epochs, improvement_required_epochs, reset_edges, learning_rate, weight_decay, all_nodes, all_edges);
         //save the weights and bias of the initially generated genome for reuse
         genome->save_weights();
         genome->save_bias();
@@ -171,7 +194,7 @@ CNN_Genome* EXACT::generate_individual() {
 
     if (genomes.size() < population_size) {
         //insert a copy with a bad fitness so we have more things to generate new genomes with
-        CNN_Genome *genome_copy = new CNN_Genome(genomes_generated++, /*new random seed*/ rng_long(generator), epochs, genome->get_nodes(), genome->get_edges());
+        CNN_Genome *genome_copy = new CNN_Genome(genomes_generated++, /*new random seed*/ rng_long(generator), min_epochs, max_epochs, improvement_required_epochs, reset_edges, learning_rate, weight_decay, genome->get_nodes(), genome->get_edges());
 
         //for more variability in the initial population, re-initialize weights and bias for these unevaluated copies
         genome_copy->initialize_weights();
@@ -205,7 +228,29 @@ void EXACT::insert_genome(CNN_Genome* genome) {
     cout << "genomes evaluated: " << setw(10) << inserted_genomes << ", inserting: " << parse_fitness(genome->get_fitness());
     if (genomes.size() == 0 || genome->get_fitness() < genomes[0]->get_fitness()) {
         cout << " -- new best fitness!";
-        genome->write_to_file("global_best.txt");
+        genome->write_to_file("global_best_" + to_string(inserted_genomes) + ".txt");
+
+        ofstream gv_file("global_best_" + to_string(inserted_genomes) + ".gv");
+        gv_file << "#EXACT settings: " << endl;
+        gv_file << "#\tlearning_rate: " << learning_rate << endl;
+        gv_file << "#\tweight_decay: " << weight_decay << endl;
+
+        gv_file << "#\tmin_epochs: " << min_epochs << endl;
+        gv_file << "#\tmax_epochs: " << max_epochs << endl;
+        gv_file << "#\timprovement_required_epochs: " << improvement_required_epochs << endl;
+
+        gv_file << "#\tnumber_mutations: " << number_mutations << endl;
+        gv_file << "#\tedge_disable: " << edge_disable << endl;
+        gv_file << "#\tedge_split: " << edge_split << endl;
+        gv_file << "#\tedge_add: " << edge_add << endl;
+        gv_file << "#\tedge_change_stride: " << edge_change_stride << endl;
+        gv_file << "#\tnode_change_size: " << node_change_size << endl;
+        gv_file << "#\tnode_change_size_x: " << node_change_size_x << endl;
+        gv_file << "#\tnode_change_size_y: " << node_change_size_y << endl;
+        gv_file << "#\tnode_change_pool_size: " << node_change_pool_size << endl;
+
+        genome->print_graphviz(gv_file);
+        gv_file.close();
     }
     cout << endl;
 
@@ -276,7 +321,7 @@ CNN_Genome* EXACT::create_mutation() {
 
     cout << "\tgenerating child " << genomes_generated << " from parent genome: " << parent->get_generation_id() << endl;
 
-    CNN_Genome *child = new CNN_Genome(genomes_generated++, child_seed, epochs, parent->get_nodes(), parent->get_edges());
+    CNN_Genome *child = new CNN_Genome(genomes_generated++, child_seed, min_epochs, max_epochs, improvement_required_epochs, reset_edges, learning_rate, weight_decay, parent->get_nodes(), parent->get_edges());
     if (parent->get_fitness() == numeric_limits<double>::max()) {
         //This parent has not actually been evaluated (the population is still initializing)
         //we can set the best_bias and best_weights randomly so that they are used when it
@@ -685,4 +730,24 @@ CNN_Genome* EXACT::create_mutation() {
 
 CNN_Genome* EXACT::create_child() {
     return NULL;
+}
+
+void EXACT::print_statistics(ostream &out) {
+    double min_fitness = numeric_limits<double>::max();
+    double max_fitness = -numeric_limits<double>::max();
+    double avg_fitness = 0.0;
+    
+    for (uint32_t i = 0; i < genomes.size(); i++) {
+        double fitness = genomes[i]->get_fitness();
+
+        avg_fitness += fitness;
+
+        if (fitness < min_fitness) min_fitness = fitness;
+        if (fitness > max_fitness) max_fitness = fitness;
+    }
+    avg_fitness /= genomes.size();
+
+    if (genomes.size() == 0) avg_fitness = 0.0;
+
+    out << parse_fitness(min_fitness) << " " << parse_fitness(avg_fitness) << " " << parse_fitness(max_fitness) << endl;
 }

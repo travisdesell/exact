@@ -541,23 +541,23 @@ void CNN_Edge::propagate_forward() {
     output_node->input_fired();
 }
 
-inline void CNN_Edge::backprop_weight_update(int fy, int fx, double weight_update, double weight, double mu) {
+inline void CNN_Edge::backprop_weight_update(int fy, int fx, double weight_update, double weight, double mu, double learning_rate, double weight_decay) {
     double dx, pv, velocity;
 
-    //double dx = LEARNING_RATE * (weight_update[k][l] / (filter_x * filter_y) + (weights[k][l] * WEIGHT_DECAY));
+    //double dx = learning_rate * (weight_update[k][l] / (filter_x * filter_y) + (weights[k][l] * weight_decay));
     //L2 regularization
 
-    dx = LEARNING_RATE * (weight_update / (filter_x * filter_y) - (weight * WEIGHT_DECAY));
-    //double dx = LEARNING_RATE * (weight_update[k][l] / (filter_x * filter_y));
+    dx = learning_rate * (weight_update / (filter_x * filter_y) - (weight * weight_decay));
+    //double dx = learning_rate * (weight_update[k][l] / (filter_x * filter_y));
 
     if (isnan(dx)) {
         cerr << "ERROR! dx became NAN in backprop weight update" << endl;
-        cerr << "learning rate: " << LEARNING_RATE << endl;
+        cerr << "learning rate: " << learning_rate << endl;
         cerr << "weight_update: " << weight_update << endl;
         cerr << "filter_x: " << filter_x << endl;
         cerr << "filter_y: " << filter_y << endl;
         cerr << "weight: " << weight << endl;
-        cerr << "weight decay: " << WEIGHT_DECAY << endl;
+        cerr << "weight decay: " << weight_decay << endl;
         cerr << "mu: " << mu << endl;
         exit(1);
     }
@@ -580,7 +580,7 @@ inline void CNN_Edge::backprop_weight_update(int fy, int fx, double weight_updat
     }
 }
 
-void CNN_Edge::propagate_backward(double mu) {
+void CNN_Edge::propagate_backward(double mu, double learning_rate, double weight_decay) {
     if (disabled) return;
 
     double **input = input_node->get_values();
@@ -623,7 +623,7 @@ void CNN_Edge::propagate_backward(double mu) {
                         input_errors[y][x] += error * weight;
                     }
                 }
-                backprop_weight_update(fy, fx, weight_update, weight, mu);
+                backprop_weight_update(fy, fx, weight_update, weight, mu, learning_rate, weight_decay);
             }
         }
 
@@ -662,7 +662,7 @@ void CNN_Edge::propagate_backward(double mu) {
                         input_errors[y + fy][x] += error * weight;
                     }
                 }
-                backprop_weight_update(fy, fx, weight_update, weight, mu);
+                backprop_weight_update(fy, fx, weight_update, weight, mu, learning_rate, weight_decay);
             }
         }
 
@@ -701,7 +701,7 @@ void CNN_Edge::propagate_backward(double mu) {
                         input_errors[y][x + fx] += error * weight;
                     }
                 }
-                backprop_weight_update(fy, fx, weight_update, weight, mu);
+                backprop_weight_update(fy, fx, weight_update, weight, mu, learning_rate, weight_decay);
             }
         }
 
@@ -740,7 +740,7 @@ void CNN_Edge::propagate_backward(double mu) {
                         input_errors[y + fy][x + fx] += error * weight;
                     }
                 }
-                backprop_weight_update(fy, fx, weight_update, weight, mu);
+                backprop_weight_update(fy, fx, weight_update, weight, mu, learning_rate, weight_decay);
             }
         }
     }

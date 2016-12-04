@@ -25,8 +25,8 @@ using std::vector;
 #include "image_tools/image_set.hxx"
 #include "cnn_node.hxx"
 
-#define LEARNING_RATE 0.0005
-#define WEIGHT_DECAY 0.0005
+#define LEARNING_RATE 0.0010
+#define WEIGHT_DECAY 0.0010
 
 class CNN_Edge {
     private:
@@ -91,9 +91,9 @@ class CNN_Edge {
 
         void print(ostream &out);
 
-        void backprop_weight_update(int fy, int fx, double weight_update, double weight, double mu);
+        void backprop_weight_update(int fy, int fx, double weight_update, double weight, double mu, double learning_rate, double weight_decay);
         void propagate_forward();
-        void propagate_backward(double mu);
+        void propagate_backward(double mu, double learning_rate, double weight_decay);
 
         friend ostream &operator<<(ostream &os, const CNN_Edge* flight);
         friend istream &operator>>(istream &is, CNN_Edge* flight);

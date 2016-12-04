@@ -94,7 +94,7 @@ class CNN_Node {
 
         bool has_zero_bias() const;
         bool has_zero_best_bias() const;
-        void propagate_bias(double mu);
+        void propagate_bias(double mu, double learning_rate, double weight_decay);
 
         void set_values(const Image &image, int rows, int cols);
         double** get_values();

@@ -1,3 +1,16 @@
+#edge_disable = 1.0;
+#edge_enable = 2.0;     
+#edge_split = 3.0;     
+#edge_add = 5.0;      
+#edge_change_stride = 0.0;       
+#node_change_size_x = 2.0;      
+#node_change_size_y = 2.0;     
+#node_change_pool_size = 0.0;     
+#minimum 20 epochs evaluated before termination
+#terminated after 10 epochs without finding best
+#learning rate 0.001
+#weight decay 0.001
+
 digraph CNN {
 	{
 		rank = source;

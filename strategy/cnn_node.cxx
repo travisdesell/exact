@@ -580,7 +580,7 @@ void CNN_Node::input_fired() {
     }
 }
 
-void CNN_Node::propagate_bias(double mu) {
+void CNN_Node::propagate_bias(double mu, double learning_rate, double weight_decay) {
     double dx, pv, velocity;
 
     for (uint32_t y = 0; y < size_y; y++) {
@@ -588,7 +588,7 @@ void CNN_Node::propagate_bias(double mu) {
             //double dx = LEARNING_RATE * (weight_update[k][l] / (size_x * size_y) + (weights[k][l] * WEIGHT_DECAY));
             //L2 regularization
 
-            dx = LEARNING_RATE * -errors[y][x] - (bias[y][x] * WEIGHT_DECAY);
+            dx = learning_rate * -errors[y][x] - (bias[y][x] * weight_decay);
             //double dx = LEARNING_RATE * (weight_update[k][l] / (size_x * size_y));
 
             //no momemntum

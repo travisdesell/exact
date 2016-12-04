@@ -57,7 +57,7 @@ CNN_Genome::CNN_Genome(string filename, bool is_checkpoint) {
 /**
  *  Iniitalize a genome from a set of nodes and edges
  */
-CNN_Genome::CNN_Genome(int _generation_id, int seed, int _epochs, const vector<CNN_Node*> &_nodes, const vector<CNN_Edge*> &_edges) {
+CNN_Genome::CNN_Genome(int _generation_id, int seed, int _min_epochs, int _max_epochs, int _improvement_required_epochs, bool _reset_edges, double _learning_rate, double _weight_decay, const vector<CNN_Node*> &_nodes, const vector<CNN_Edge*> &_edges) {
     started_from_checkpoint = false;
     generator = mt19937(seed);
     rng_double = uniform_real_distribution<double>(0, 1.0);
@@ -65,8 +65,20 @@ CNN_Genome::CNN_Genome(int _generation_id, int seed, int _epochs, const vector<C
 
     mu = 0.5;
     initial_mu = mu;
+
+    learning_rate = _learning_rate;
+    initial_learning_rate = learning_rate;
+
+    weight_decay = _weight_decay;
+    initial_weight_decay = weight_decay;
+
     epoch = 0;
-    epochs = _epochs;
+    min_epochs = _min_epochs;
+    max_epochs = _max_epochs;
+    improvement_required_epochs = _improvement_required_epochs;
+    reset_edges = _reset_edges;
+
+
     best_predictions = 0;
     best_error = numeric_limits<double>::max();
 
@@ -170,8 +182,8 @@ double CNN_Genome::get_fitness() const {
     return best_error;
 }
 
-int CNN_Genome::get_total_epochs() const {
-    return epochs;
+int CNN_Genome::get_max_epochs() const {
+    return max_epochs;
 }
 
 int CNN_Genome::get_epoch() const {
@@ -506,7 +518,6 @@ int CNN_Genome::evaluate_image(const Image &image, vector<double> &class_error, 
 
         softmax_nodes[i]->set_value(0, 0,  value);
 
-
         //softmax_nodes[i]->print(cout);
 
         double error = 0.0;
@@ -533,11 +544,11 @@ int CNN_Genome::evaluate_image(const Image &image, vector<double> &class_error, 
 
     if (do_backprop) {
         for (int32_t i = edges.size() - 1; i >= 0; i--) {
-            edges[i]->propagate_backward(mu);
+            edges[i]->propagate_backward(mu, learning_rate, weight_decay);
         }
 
         for (int32_t i = nodes.size() - 1; i >= 0; i--) {
-            nodes[i]->propagate_bias(mu);
+            nodes[i]->propagate_bias(mu, learning_rate, weight_decay);
         }
     }
 
@@ -568,7 +579,19 @@ void CNN_Genome::save_bias() {
     }
 }
 
-void CNN_Genome::stochastic_backpropagation(const Images &images, bool reset_weights) {
+void CNN_Genome::set_to_best() {
+    for (uint32_t i = 0; i < edges.size(); i++) {
+        edges[i]->set_weights_to_best();
+        edges[i]->initialize_velocities();
+    }
+
+    for (uint32_t i = 0; i < nodes.size(); i++) {
+        nodes[i]->set_bias_to_best();
+        nodes[i]->initialize_velocities();
+    }
+}
+
+void CNN_Genome::stochastic_backpropagation(const Images &images) {
     if (!started_from_checkpoint) {
         backprop_order.clear();
         for (uint32_t i = 0; i < images.get_number_images(); i++) {
@@ -576,11 +599,10 @@ void CNN_Genome::stochastic_backpropagation(const Images &images, bool reset_wei
         }
 
         shuffle(backprop_order.begin(), backprop_order.end(), generator); 
-        //backprop_order.resize(1000);
+        backprop_order.resize(3000);
 
-        //TODO: don't initialize weights if using weights from parent
         //cout << "initializing weights and biases!" << endl;
-        if (reset_weights) {
+        if (reset_edges) {
             for (uint32_t i = 0; i < edges.size(); i++) {
                 edges[i]->initialize_weights(generator);
             }
@@ -589,16 +611,7 @@ void CNN_Genome::stochastic_backpropagation(const Images &images, bool reset_wei
                 nodes[i]->initialize_bias(generator);
             }
         } else {
-            for (uint32_t i = 0; i < edges.size(); i++) {
-                edges[i]->set_weights_to_best();
-                edges[i]->initialize_velocities();
-            }
-
-            for (uint32_t i = 0; i < nodes.size(); i++) {
-                nodes[i]->set_bias_to_best();
-                nodes[i]->initialize_velocities();
-            }
-
+            set_to_best();
             //double check to make sure none of the bias or weights are all zero
             /*
             for (uint32_t i = 0; i < nodes.size(); i++) {
@@ -685,18 +698,19 @@ void CNN_Genome::stochastic_backpropagation(const Images &images, bool reset_wei
             save_weights();
         }
 
-        cout << "[" << setw(10) << name << ", genome " << setw(5) << generation_id << "] best predictions: " << setw(10) << best_predictions << " of " << setw(10) << backprop_order.size() << ", best error: " << setw(20) << setprecision(5) << fixed << best_error << " on epoch: " << setw(5) << best_error_epoch << ", current epoch: " << setw(4) << epoch << " of " << setw(4) << epochs << endl;
+        cout << "[" << setw(10) << name << ", genome " << setw(5) << generation_id << "] best predictions: " << setw(10) << best_predictions << " of " << setw(10) << backprop_order.size() << ", best error: " << setw(20) << setprecision(5) << fixed << best_error << " on epoch: " << setw(5) << best_error_epoch << ", current epoch: " << setw(4) << epoch << " of " << setw(4) << max_epochs << ", current - best: " << setw(3) << (epoch - best_error_epoch) << ", mu: " << setw(10) << mu << ", learning_rate: " << setw(10) << learning_rate << ", weight_decay: " << setw(10) << weight_decay << endl;
         //cout << "total correct predictions: " << total_predictions << " of " << backprop_order.size() << endl;
         //cout << "total error:               " << left << setw(20) << setprecision(5) << fixed << total_error << endl;
         //cout << endl;
 
-        if (epochs > 0) {
-            mu += (1.0 - initial_mu) / epochs;
-            if (mu > 0.95) mu = 0.9;
-        } else {
-            mu *= 1.010;
-            if (mu > 0.95) mu = 0.9;
-        }
+        mu *= 1.020;
+        if (mu > 0.95) mu = 0.95;
+
+        learning_rate *= .99;
+        if (learning_rate < 0.0001) learning_rate = 0.0001;
+
+        weight_decay *= .99;
+        if (weight_decay < 0.0001) weight_decay = 0.0001;
 
         epoch++;
 
@@ -704,15 +718,12 @@ void CNN_Genome::stochastic_backpropagation(const Images &images, bool reset_wei
             write_to_file(checkpoint_filename);
         }
 
-        if (epochs < 0) {
-            if (epoch > -epochs && (epoch - best_error_epoch) >= 20) {
-                //if the best error was >= 5 epochs ago, quit
-                break;
-            }
-        } else {
-            if (epoch > epochs) {
-                break;
-            }
+        if (epoch > max_epochs) {
+            break;
+        }
+
+        if (epoch > min_epochs && (epoch - best_error_epoch) >= improvement_required_epochs) {
+            break;
         }
 
     } while (true);
@@ -740,10 +751,20 @@ void CNN_Genome::set_checkpoint_filename(string _checkpoint_filename) {
 void CNN_Genome::write(ostream &outfile) {
     outfile << initial_mu << endl;
     outfile << mu << endl;
+    outfile << initial_learning_rate << endl;
+    outfile << learning_rate << endl;
+    outfile << initial_weight_decay << endl;
+    outfile << weight_decay << endl;
+
     outfile << epoch << endl;
-    outfile << epochs << endl;
+    outfile << min_epochs << endl;
+    outfile << max_epochs << endl;
+    outfile << improvement_required_epochs << endl;
+    outfile << reset_edges << endl;
+
+
     outfile << setprecision(15) << fixed << best_predictions << endl;
-    outfile << best_error << endl;
+    outfile << setprecision(15) << fixed << best_error << endl;
     outfile << best_predictions_epoch << endl;;
     outfile << best_error_epoch << endl;;
 
@@ -779,8 +800,17 @@ void CNN_Genome::write(ostream &outfile) {
 void CNN_Genome::read(istream &infile) {
     infile >> initial_mu;
     infile >> mu;
+    infile >> initial_learning_rate;
+    infile >> learning_rate;
+    infile >> initial_weight_decay;
+    infile >> weight_decay;
+
     infile >> epoch;
-    infile >> epochs;
+    infile >> min_epochs;
+    infile >> max_epochs;
+    infile >> improvement_required_epochs;
+    infile >> reset_edges;
+
     infile >> best_predictions;
     infile >> best_error;
     infile >> best_predictions_epoch;

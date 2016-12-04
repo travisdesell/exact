@@ -25,10 +25,25 @@ int main(int argc, char** argv) {
     string output_filename;
     get_argument(arguments, "--output_file", true, output_filename);
 
+    int population_size;
+    get_argument(arguments, "--population_size", true, population_size);
+
+    int min_epochs;
+    get_argument(arguments, "--min_epochs", true, min_epochs);
+
+    int max_epochs;
+    get_argument(arguments, "--max_epochs", true, max_epochs);
+
+    int improvement_required_epochs;
+    get_argument(arguments, "--improvement_required_epochs", true, improvement_required_epochs);
+
+    bool reset_edges;
+    get_argument(arguments, "--reset_edges", true, reset_edges);
+
 
     Images images(binary_samples_filename);
 
-    EXACT exact(images, 50, 10);
+    EXACT exact(images, population_size, min_epochs, max_epochs, improvement_required_epochs, reset_edges);
     //exact..write_genomes_to_directorY(directory);
 
     CNN_Genome *genome = exact.get_best_genome();

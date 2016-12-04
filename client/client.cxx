@@ -43,6 +43,7 @@ int main(int argc, char** argv) {
         //start from the input genome file otherwise
         cout << "starting from input file: '" << genome_filename << "'" << endl;
         genome = new CNN_Genome(genome_filename, false);
+        genome->set_to_best();
     }
     cout << "parsed intput file" << endl;
 
@@ -52,7 +53,7 @@ int main(int argc, char** argv) {
     genome->set_output_filename(output_filename);
 
     cout << "starting backpropagation!" << endl;
-    genome->stochastic_backpropagation(images, true);
+    genome->stochastic_backpropagation(images);
 
     return 0;
 }
