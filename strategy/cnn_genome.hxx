@@ -63,6 +63,7 @@ class CNN_Genome {
          *  Initialize a genome from a file
          */
         CNN_Genome(string filename, bool is_checkpoint);
+        CNN_Genome(istream &in, bool is_checkpoint);
 
         /**
          *  Iniitalize a genome from a set of nodes and edges

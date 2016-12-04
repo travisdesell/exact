@@ -53,6 +53,7 @@ class EXACT {
         int min_epochs;
         int max_epochs;
         int improvement_required_epochs;
+        int max_individuals;
 
         mt19937 generator;
 
@@ -73,7 +74,7 @@ class EXACT {
 
     public:
 
-        EXACT(const Images &images, int _population_size, int _min_epochs, int _max_epochs, int _improvement_required_epochs, bool _reset_edges);
+        EXACT(const Images &images, int _population_size, int _min_epochs, int _max_epochs, int _improvement_required_epochs, bool _reset_edges, int _max_individuals);
 
         CNN_Genome* get_best_genome();
 

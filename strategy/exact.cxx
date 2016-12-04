@@ -38,11 +38,12 @@ using std::vector;
 #include "cnn_genome.hxx"
 #include "exact.hxx"
 
-EXACT::EXACT(const Images &images, int _population_size, int _min_epochs, int _max_epochs, int _improvement_required_epochs, bool _reset_edges) {
+EXACT::EXACT(const Images &images, int _population_size, int _min_epochs, int _max_epochs, int _improvement_required_epochs, bool _reset_edges, int _max_individuals) {
     reset_edges = _reset_edges;
     min_epochs = _min_epochs;
     max_epochs = _max_epochs;
     improvement_required_epochs = _improvement_required_epochs;
+    max_individuals = _max_individuals;
 
     unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
     //unsigned seed = 10;
@@ -124,6 +125,8 @@ CNN_Genome* EXACT::get_best_genome() {
 }
 
 CNN_Genome* EXACT::generate_individual() {
+    if (inserted_genomes >= max_individuals) return NULL;
+
     CNN_Genome *genome = NULL;
     if (genomes.size() == 0) {
         //generate the initial minimal CNN
@@ -736,18 +739,27 @@ void EXACT::print_statistics(ostream &out) {
     double min_fitness = numeric_limits<double>::max();
     double max_fitness = -numeric_limits<double>::max();
     double avg_fitness = 0.0;
-    
+
+    int count = 0;
+
     for (uint32_t i = 0; i < genomes.size(); i++) {
         double fitness = genomes[i]->get_fitness();
 
-        avg_fitness += fitness;
+        if (fitness != numeric_limits<double>::max()) {
+            avg_fitness += fitness;
+            count++;
+        }
 
         if (fitness < min_fitness) min_fitness = fitness;
         if (fitness > max_fitness) max_fitness = fitness;
     }
-    avg_fitness /= genomes.size();
+    avg_fitness /= count;
 
-    if (genomes.size() == 0) avg_fitness = 0.0;
+    if (count == 0) avg_fitness = 0.0;
+    if (min_fitness == numeric_limits<double>::max()) min_fitness = 0;
+    if (max_fitness == numeric_limits<double>::max()) max_fitness = 0;
 
-    out << parse_fitness(min_fitness) << " " << parse_fitness(avg_fitness) << " " << parse_fitness(max_fitness) << endl;
+    out << setw(12) << setprecision(5) << fixed << min_fitness
+        << " " << setw(12) << setprecision(5) << fixed << avg_fitness
+        << " " << setw(12) << setprecision(5) << fixed << max_fitness << endl;
 }

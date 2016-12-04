@@ -54,6 +54,11 @@ CNN_Genome::CNN_Genome(string filename, bool is_checkpoint) {
     infile.close();
 }
 
+CNN_Genome::CNN_Genome(istream &in, bool is_checkpoint) {
+    started_from_checkpoint = is_checkpoint;
+    read(in);
+}
+
 /**
  *  Iniitalize a genome from a set of nodes and edges
  */
@@ -599,7 +604,7 @@ void CNN_Genome::stochastic_backpropagation(const Images &images) {
         }
 
         shuffle(backprop_order.begin(), backprop_order.end(), generator); 
-        backprop_order.resize(3000);
+        backprop_order.resize(1000);
 
         //cout << "initializing weights and biases!" << endl;
         if (reset_edges) {
@@ -768,6 +773,11 @@ void CNN_Genome::write(ostream &outfile) {
     outfile << best_predictions_epoch << endl;;
     outfile << best_error_epoch << endl;;
 
+    outfile << generation_id << endl;
+    //outfile << name << endl;
+    //outfile << checkpoint_filename << endl;
+    //outfile << output_filename << endl;
+
     outfile << generator << endl;
     outfile << rng_double << endl;
     outfile << rng_long << endl;
@@ -815,6 +825,11 @@ void CNN_Genome::read(istream &infile) {
     infile >> best_error;
     infile >> best_predictions_epoch;
     infile >> best_error_epoch;
+
+    infile >> generation_id;
+    //infile >> name;
+    //infile >> checkpoint_filename;
+    //infile >> output_filename;
 
     infile >> generator;
     infile >> rng_double;

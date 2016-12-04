@@ -40,10 +40,13 @@ int main(int argc, char** argv) {
     bool reset_edges;
     get_argument(arguments, "--reset_edges", true, reset_edges);
 
+    int max_individuals;
+    get_argument(arguments, "--max_individuals", true, max_individuals);
+
 
     Images images(binary_samples_filename);
 
-    EXACT exact(images, population_size, min_epochs, max_epochs, improvement_required_epochs, reset_edges);
+    EXACT exact(images, population_size, min_epochs, max_epochs, improvement_required_epochs, reset_edges, max_individuals);
     //exact..write_genomes_to_directorY(directory);
 
     CNN_Genome *genome = exact.get_best_genome();
