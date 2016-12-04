@@ -739,28 +739,52 @@ void EXACT::print_statistics(ostream &out) {
     double min_fitness = numeric_limits<double>::max();
     double max_fitness = -numeric_limits<double>::max();
     double avg_fitness = 0.0;
+    int fitness_count = 0;
 
-    int count = 0;
+    double min_epochs = numeric_limits<double>::max();
+    double max_epochs = -numeric_limits<double>::max();
+    double avg_epochs = 0.0;
+    int epochs_count = 0;
 
     for (uint32_t i = 0; i < genomes.size(); i++) {
         double fitness = genomes[i]->get_fitness();
 
         if (fitness != numeric_limits<double>::max()) {
             avg_fitness += fitness;
-            count++;
+            fitness_count++;
         }
 
         if (fitness < min_fitness) min_fitness = fitness;
         if (fitness > max_fitness) max_fitness = fitness;
-    }
-    avg_fitness /= count;
 
-    if (count == 0) avg_fitness = 0.0;
+        double epochs = genomes[i]->get_best_error_epoch();
+
+        if (epochs != numeric_limits<double>::max()) {
+            avg_epochs += epochs;
+            epochs_count++;
+        }
+
+        if (epochs < min_epochs) min_epochs = epochs;
+        if (epochs > max_epochs) max_epochs = epochs;
+    }
+    avg_fitness /= fitness_count;
+    avg_epochs /= epochs_count;
+
+    if (fitness_count == 0) avg_fitness = 0.0;
     if (min_fitness == numeric_limits<double>::max()) min_fitness = 0;
     if (max_fitness == numeric_limits<double>::max()) max_fitness = 0;
     if (max_fitness == -numeric_limits<double>::max()) max_fitness = 0;
 
+    if (epochs_count == 0) avg_epochs = 0.0;
+    if (min_epochs == numeric_limits<double>::max()) min_epochs = 0;
+    if (max_epochs == numeric_limits<double>::max()) max_epochs = 0;
+    if (max_epochs == -numeric_limits<double>::max()) max_epochs = 0;
+
+
     out << setw(12) << setprecision(5) << fixed << min_fitness
         << " " << setw(12) << setprecision(5) << fixed << avg_fitness
-        << " " << setw(12) << setprecision(5) << fixed << max_fitness << endl;
+        << " " << setw(12) << setprecision(5) << fixed << max_fitness
+        << " " << setw(12) << setprecision(5) << fixed << min_epochs
+        << " " << setw(12) << setprecision(5) << fixed << avg_epochs
+        << " " << setw(12) << setprecision(5) << fixed << max_epochs << endl;
 }
