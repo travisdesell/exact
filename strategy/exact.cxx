@@ -758,6 +758,7 @@ void EXACT::print_statistics(ostream &out) {
     if (count == 0) avg_fitness = 0.0;
     if (min_fitness == numeric_limits<double>::max()) min_fitness = 0;
     if (max_fitness == numeric_limits<double>::max()) max_fitness = 0;
+    if (max_fitness == -numeric_limits<double>::max()) max_fitness = 0;
 
     out << setw(12) << setprecision(5) << fixed << min_fitness
         << " " << setw(12) << setprecision(5) << fixed << avg_fitness

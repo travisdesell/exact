@@ -128,10 +128,12 @@ void receive_terminate_message(int source) {
     MPI_Recv(terminate_message, 1, MPI_INT, source, TERMINATE_TAG, MPI_COMM_WORLD, &status);
 }
 
-void master(const Images &images) {
+void master(const Images &images, int max_rank) {
     string name = "master";
 
     cout << "MAX INT: " << numeric_limits<int>::max() << endl;
+
+    int terminates_sent = 0;
 
     while (true) {
         //wait for a incoming message
@@ -156,6 +158,11 @@ void master(const Images &images) {
                 //send terminate message
                 cout << "[" << setw(10) << name << "] terminating worker: " << source << endl;
                 send_terminate_message(source);
+                terminates_sent++;
+
+                cout << "[" << setw(10) << name << "] sent: " << terminates_sent << " terminates of: " << (max_rank - 1) << endl;
+                if (terminates_sent >= max_rank - 1) return;
+
             } else {
                 //send genome
                 cout << "[" << setw(10) << name << "] sending genome to: " << source << endl;
@@ -256,7 +263,7 @@ int main(int argc, char** argv) {
         exact = new EXACT(images, population_size, min_epochs, max_epochs, improvement_required_epochs, reset_edges, max_individuals);
         poller = new thread(polling_thread, progress_filename);
 
-        master(images);
+        master(images, max_rank);
     } else {
         worker(images, rank);
     }
@@ -264,11 +271,12 @@ int main(int argc, char** argv) {
     finished = true;
 
     if (rank == 0) {
+        cout << "master waiting for poller thread." << endl;
         poller->join();
         delete poller;
     }
 
-    cout << "completed!" << endl;
+    cout << "rank " << rank << " completed!" << endl;
 
     MPI_Finalize();
 
