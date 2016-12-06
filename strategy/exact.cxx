@@ -2,6 +2,8 @@
 using std::sort;
 using std::upper_bound;
 
+#include <chrono>
+
 #include <iomanip>
 using std::fixed;
 using std::setprecision;
@@ -290,21 +292,6 @@ void EXACT::insert_genome(CNN_Genome* genome) {
 
     cout << endl;
 }
-
-/*
-CNN_Genome* EXACT::create_crossover() {
-    double r1 = rng_double(generator) * genomes.size();
-    double r2 = rng_double(generator) * (genomes.size() - 1);
-    if (r2 == r1) r2++;
-
-    CNN_Genome *parent1 = genomes[r1];
-    CNN_Genome *parent2 = genomes[r2];
-
-    vector< CNN_Node* > child_nodes;
-    vector< CNN_Edge* > child_edges;
-
-}
-*/
 
 CNN_Genome* EXACT::create_mutation() {
     //mutation options:
@@ -732,8 +719,26 @@ CNN_Genome* EXACT::create_mutation() {
 }
 
 CNN_Genome* EXACT::create_child() {
-    return NULL;
+    double r1 = rng_double(generator) * genomes.size();
+    double r2 = rng_double(generator) * (genomes.size() - 1);
+    if (r2 == r1) r2++;
+
+    if (r2 > r1) {
+        double tmp = r2;
+        r2 = r1;
+        r1 = tmp;
+    }
+
+    CNN_Genome *parent1 = genomes[r1];
+    CNN_Genome *parent2 = genomes[r2];
+
+    vector< CNN_Node* > child_nodes;
+    vector< CNN_Edge* > child_edges;
+    
+    //parent should have higher fitness
+
 }
+
 
 void EXACT::print_statistics(ostream &out) {
     double min_fitness = numeric_limits<double>::max();

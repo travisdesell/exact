@@ -604,7 +604,7 @@ void CNN_Genome::stochastic_backpropagation(const Images &images) {
         }
 
         shuffle(backprop_order.begin(), backprop_order.end(), generator); 
-        backprop_order.resize(10000);
+        backprop_order.resize(2000);
 
         //cout << "initializing weights and biases!" << endl;
         if (reset_edges) {
@@ -660,55 +660,57 @@ void CNN_Genome::stochastic_backpropagation(const Images &images) {
             evaluate_image(images.get_image(backprop_order[j]), class_error, true);
         }
 
-        double total_error = 0.0;
-        int total_predictions = 0;
-        for (uint32_t j = 0; j < backprop_order.size(); j++) {
-            int predicted_class = evaluate_image(images.get_image(backprop_order[j]), class_error, false);
-            int expected_class = images.get_image(backprop_order[j]).get_classification();
+        if (epoch % improvement_required_epochs == 0) {
+            double total_error = 0.0;
+            int total_predictions = 0;
+            for (uint32_t j = 0; j < backprop_order.size(); j++) {
+                int predicted_class = evaluate_image(images.get_image(backprop_order[j]), class_error, false);
+                int expected_class = images.get_image(backprop_order[j]).get_classification();
 
-            if (predicted_class == expected_class) {
-                correct_predictions[expected_class]++;
-                total_predictions++;
-            }
-        }
-
-        /*
-           for (uint32_t j = 0; j < 10; j++) {
-           edges[j]->print(cout);
-           }
-           */
-
-        //cout << "epoch " << epoch << " of " << epochs << endl;
-        //cout << "mu: " << mu << endl;
-        //cout << "class/prediction error: " << endl;
-        for (uint32_t j = 0; j < class_error.size(); j++) {
-            total_error += class_error[j];
-            //cout << "\tclass " << setw(4) << j << ": " << setw(12) << setprecision(5) << class_error[j] << ", correct_predictions: " << correct_predictions[j] << " of " << class_sizes[j] << endl;
-        }
-
-        if (total_error < best_error) {
-            best_error = total_error;
-            best_error_epoch = epoch;
-            best_predictions = total_predictions;
-            best_predictions_epoch = epoch;
-
-            best_class_error = class_error;
-            best_correct_predictions = correct_predictions;
-
-            if (output_filename.compare("") != 0) {
-                write_to_file(output_filename);
+                if (predicted_class == expected_class) {
+                    correct_predictions[expected_class]++;
+                    total_predictions++;
+                }
             }
 
-            save_bias();
-            save_weights();
+            /*
+               for (uint32_t j = 0; j < 10; j++) {
+               edges[j]->print(cout);
+               }
+               */
+
+            //cout << "epoch " << epoch << " of " << epochs << endl;
+            //cout << "mu: " << mu << endl;
+            //cout << "class/prediction error: " << endl;
+            for (uint32_t j = 0; j < class_error.size(); j++) {
+                total_error += class_error[j];
+                //cout << "\tclass " << setw(4) << j << ": " << setw(12) << setprecision(5) << class_error[j] << ", correct_predictions: " << correct_predictions[j] << " of " << class_sizes[j] << endl;
+            }
+
+            if (total_error < best_error) {
+                best_error = total_error;
+                best_error_epoch = epoch;
+                best_predictions = total_predictions;
+                best_predictions_epoch = epoch;
+
+                best_class_error = class_error;
+                best_correct_predictions = correct_predictions;
+
+                if (output_filename.compare("") != 0) {
+                    write_to_file(output_filename);
+                }
+
+                save_bias();
+                save_weights();
+            }
+
+            cout << "[" << setw(10) << name << ", genome " << setw(5) << generation_id << "] best predictions: " << setw(10) << best_predictions << " of " << setw(10) << backprop_order.size() << ", best error: " << setw(20) << setprecision(5) << fixed << best_error << " on epoch: " << setw(5) << best_error_epoch << ", current epoch: " << setw(4) << epoch << " of " << setw(4) << max_epochs << ", current - best: " << setw(3) << (epoch - best_error_epoch) << ", mu: " << setw(10) << mu << ", learning_rate: " << setw(10) << learning_rate << ", weight_decay: " << setw(10) << weight_decay << endl;
+            //cout << "total correct predictions: " << total_predictions << " of " << backprop_order.size() << endl;
+            //cout << "total error:               " << left << setw(20) << setprecision(5) << fixed << total_error << endl;
+            //cout << endl;
         }
 
-        cout << "[" << setw(10) << name << ", genome " << setw(5) << generation_id << "] best predictions: " << setw(10) << best_predictions << " of " << setw(10) << backprop_order.size() << ", best error: " << setw(20) << setprecision(5) << fixed << best_error << " on epoch: " << setw(5) << best_error_epoch << ", current epoch: " << setw(4) << epoch << " of " << setw(4) << max_epochs << ", current - best: " << setw(3) << (epoch - best_error_epoch) << ", mu: " << setw(10) << mu << ", learning_rate: " << setw(10) << learning_rate << ", weight_decay: " << setw(10) << weight_decay << endl;
-        //cout << "total correct predictions: " << total_predictions << " of " << backprop_order.size() << endl;
-        //cout << "total error:               " << left << setw(20) << setprecision(5) << fixed << total_error << endl;
-        //cout << endl;
-
-        mu *= 1.020;
+        mu *= 1.010;
         if (mu > 0.95) mu = 0.95;
 
         learning_rate *= .99;
@@ -803,6 +805,20 @@ void CNN_Genome::write(ostream &outfile) {
     for (uint32_t i = 0; i < backprop_order.size(); i++) {
         if (i > 0) outfile << " ";
         outfile << backprop_order[i];
+    }
+    outfile << endl;
+
+    outfile << best_class_error.size() << endl;
+    for (uint32_t i = 0; i < best_class_error.size(); i++) {
+        if (i > 0) outfile << " ";
+        outfile << best_class_error[i];
+    }
+    outfile << endl;
+
+    outfile << best_correct_predictions.size() << endl;
+    for (uint32_t i = 0; i < best_correct_predictions.size(); i++) {
+        if (i > 0) outfile << " ";
+        outfile << best_correct_predictions[i];
     }
     outfile << endl;
 }
@@ -905,6 +921,26 @@ void CNN_Genome::read(istream &infile) {
         long order;
         infile >> order;
         backprop_order.push_back(order);
+    }
+
+
+    best_class_error.clear();
+    int error_size;
+    infile >> error_size;
+    for (uint32_t i = 0; i < error_size; i++) {
+        double error;
+        infile >> error;
+        best_class_error.push_back(error);
+    }
+
+
+    best_correct_predictions.clear();
+    int predictions_size;
+    infile >> predictions_size;
+    for (uint32_t i = 0; i < predictions_size; i++) {
+        double predictions;
+        infile >> predictions;
+        best_correct_predictions.push_back(predictions);
     }
 }
 
