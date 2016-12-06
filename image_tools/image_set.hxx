@@ -29,6 +29,11 @@ class Image {
         int get_rows() const;
         int get_cols() const;
 
+        void scale_0_1();
+        double get_pixel_avg() const;
+        double get_pixel_variance(double avg) const;
+        void normalize(double avg, double variance);
+
         void print(ostream &out);
 };
 
@@ -57,6 +62,8 @@ class Images {
         int get_image_cols() const;
 
         const Image& get_image(int image) const;
+
+        void normalize();
 };
 
 #endif

@@ -723,11 +723,15 @@ CNN_Genome* EXACT::create_child() {
     double r2 = rng_double(generator) * (genomes.size() - 1);
     if (r2 == r1) r2++;
 
+    //parent should have higher fitness
     if (r2 > r1) {
         double tmp = r2;
         r2 = r1;
         r1 = tmp;
     }
+
+    double more_fit_parent_crossover = 0.75;
+    double less_fit_parent_crossover = 0.25;
 
     CNN_Genome *parent1 = genomes[r1];
     CNN_Genome *parent2 = genomes[r2];
@@ -735,8 +739,33 @@ CNN_Genome* EXACT::create_child() {
     vector< CNN_Node* > child_nodes;
     vector< CNN_Edge* > child_edges;
     
-    //parent should have higher fitness
 
+    int p1_position = 0;
+    int p2_position = 0;
+   
+    while (p1_position < parent1->get_number_edges() && p2_position < parent2->get_number_edges()) {
+        CNN_Edge* p1_edge = parent1->get_edge(p1_position);
+        CNN_Edge* p2_edge = parent2->get_edge(p2_position);
+
+        int p1_innovation = p1_edge->get_innovation_number();
+        int p2_innovation = p2_edge->get_innovation_number();
+
+        if (p1_innovation == p2_innovation) {
+            child_edges.push_back(p1_edge->copy());
+            //push back surrounding nodes
+        } else if (p1_innovation < p2_innovation) {
+            if (rng_double(generator) < more_fit_parent_crossover) {
+                child_edges.push_back(p1_edge->copy());
+                //push back surrounding nodes
+            }
+        } else {
+            if (rng_double(generator) < less_fit_parent_crossover) {
+                child_edges.push_back(p2_edge->copy());
+            }
+        }
+    }
+
+    return NULL;
 }
 
 

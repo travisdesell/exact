@@ -571,11 +571,11 @@ inline void CNN_Edge::backprop_weight_update(int fy, int fx, double weight_updat
     weights[fy][fx] -= -mu * pv + (1 + mu) * velocity;
     previous_velocity[fy][fx] = velocity;
 
-    if (weights[fy][fx] > 5.0) {
-        weights[fy][fx] = 5.0;
+    if (weights[fy][fx] > 50.0) {
+        weights[fy][fx] = 50.0;
         previous_velocity[fy][fx] = 0.0;
-    } else if (weights[fy][fx] < -5.0) {
-        weights[fy][fx] = -5.0;
+    } else if (weights[fy][fx] < -50.0) {
+        weights[fy][fx] = -50.0;
         previous_velocity[fy][fx] = 0.0;
     }
 }

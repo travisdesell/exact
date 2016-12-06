@@ -337,7 +337,7 @@ void CNN_Node::set_values(const Image &image, int rows, int cols) {
     int current = 0;
     for (uint32_t y = 0; y < size_y; y++) {
         for (uint32_t x = 0; x < size_x; x++) {
-            values[y][x] = image.get_pixel(x, y) / 255.0;
+            values[y][x] = image.get_pixel(x, y);
             current++;
             //cout << setw(5) << values[y][x];
         }
@@ -600,8 +600,8 @@ void CNN_Node::propagate_bias(double mu, double learning_rate, double weight_dec
             bias[y][x] -= -mu * pv + (1 + mu) * velocity;
             bias_velocity[y][x] = velocity;
 
-            if (bias[y][x] < -5.0) bias[y][x] = -5.0;
-            if (bias[y][x] > 5.0) bias[y][x] = 5.0;
+            if (bias[y][x] < -50.0) bias[y][x] = -50.0;
+            if (bias[y][x] > 50.0) bias[y][x] = 50.0;
         }
     }
 }

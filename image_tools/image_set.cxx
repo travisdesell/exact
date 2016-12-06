@@ -1,3 +1,5 @@
+#include <cmath>
+
 #include <fstream>
 using std::ifstream;
 
@@ -58,6 +60,53 @@ int Image::get_rows() const {
 
 int Image::get_cols() const {
     return cols;
+}
+
+void Image::scale_0_1() {
+    for (uint32_t y = 0; y < cols; y++) {
+        for (uint32_t x = 0; x < rows; x++) {
+            pixels[y][x] /= 255.0;
+        }
+    }
+}
+
+double Image::get_pixel_avg() const {
+    double avg = 0.0;
+
+    for (uint32_t y = 0; y < cols; y++) {
+        for (uint32_t x = 0; x < rows; x++) {
+            avg += pixels[y][x];
+        }
+    }
+
+    avg /= (rows * cols);
+
+    return avg;
+}
+
+double Image::get_pixel_variance(double avg) const {
+    double variance = 0.0;
+
+    double tmp;
+    for (uint32_t y = 0; y < cols; y++) {
+        for (uint32_t x = 0; x < rows; x++) {
+            tmp = avg - pixels[y][x];
+            variance += tmp * tmp;
+        }
+    }
+
+    variance /= (rows * cols);
+
+    return variance;
+}
+
+void Image::normalize(double avg, double variance) {
+    for (uint32_t y = 0; y < cols; y++) {
+        for (uint32_t x = 0; x < rows; x++) {
+            pixels[y][x] -= avg;
+            pixels[y][x] /= variance;
+        }
+    }
 }
 
 
@@ -122,6 +171,9 @@ Images::Images(string binary_filename) {
        }
        */
 
+    cout << "normalizing images." << endl;
+    normalize();
+    cout << "normalized." << endl;
 }
 
 int Images::get_class_size(int i) const {
@@ -146,4 +198,32 @@ int Images::get_image_cols() const {
 
 const Image& Images::get_image(int image) const {
     return images[image];
+}
+
+void Images::normalize() {
+
+    double avg = 0.0;
+
+    for (int i = 0; i < number_images; i++) {
+        images[i].scale_0_1();
+        avg += images[i].get_pixel_avg();
+    }
+
+    avg /= number_images;
+    
+    cout << "average pixel value: " << avg << endl;
+
+    double variance = 0.0;
+    for (int i = 0; i < number_images; i++) {
+        variance += images[i].get_pixel_variance(avg);
+    }
+
+    variance /= number_images;
+    cout << "pixel variance: " << variance << endl;
+    double std_dev = sqrt(variance);
+    cout << "pixel standard deviation: " << std_dev << endl;
+
+    for (int i = 0; i < number_images; i++) {
+        images[i].normalize(avg, variance);
+    }
 }
