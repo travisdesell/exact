@@ -57,6 +57,8 @@ class CNN_Edge {
 
         ~CNN_Edge();
 
+        bool equals(CNN_Edge *other) const;
+
         int get_filter_x() const;
         int get_filter_y() const;
 

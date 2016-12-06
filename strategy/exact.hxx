@@ -60,6 +60,10 @@ class EXACT {
         double learning_rate;
         double weight_decay;
 
+        double crossover_rate;
+        double more_fit_parent_crossover;
+        double less_fit_parent_crossover;
+
         int number_mutations;
         double edge_disable;
         double edge_enable;
@@ -76,6 +80,7 @@ class EXACT {
 
         EXACT(const Images &images, int _population_size, int _min_epochs, int _max_epochs, int _improvement_required_epochs, bool _reset_edges, int _max_individuals);
 
+        bool population_contains(CNN_Genome *genome) const;
         CNN_Genome* get_best_genome();
 
         CNN_Genome* generate_individual();

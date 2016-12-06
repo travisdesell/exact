@@ -224,6 +224,6 @@ void Images::normalize() {
     cout << "pixel standard deviation: " << std_dev << endl;
 
     for (int i = 0; i < number_images; i++) {
-        images[i].normalize(avg, variance);
+        images[i].normalize(avg, std_dev);
     }
 }

@@ -162,6 +162,54 @@ CNN_Genome::~CNN_Genome() {
     softmax_nodes.clear();
 }
 
+bool CNN_Genome::equals(CNN_Genome *other) const {
+    for (int i = 0; i < edges.size(); i++) {
+        CNN_Edge *edge = edges[i];
+
+        if (edge->is_disabled()) continue;
+
+        bool found = false;
+
+        for (int j = 0; j < other->get_number_edges(); j++) {
+            CNN_Edge *other_edge = other->get_edge(j);
+
+            if (other_edge->is_disabled()) continue;
+
+            if (edge->get_innovation_number() == other_edge->get_innovation_number()) {
+                found = true;
+
+                if (!edge->equals(other_edge)) return false;
+            }
+        }
+
+        if (!found) return false;
+    }
+
+    //other may have edges not in this genome, need to check this as well
+
+    for (int i = 0; i < other->get_number_edges(); i++) {
+        CNN_Edge *other_edge = other->get_edge(i);
+
+        if (other_edge->is_disabled()) continue;
+
+        bool found = false;
+        
+        for (int j = 0; j < edges.size(); j++) {
+            CNN_Edge* edge = edges[j];
+
+            if (edge->is_disabled()) continue;
+
+            if (edge->get_innovation_number() == other_edge->get_innovation_number()) {
+                found = true;
+            }
+        }
+
+        if (!found) return false;
+    }
+
+    return true;
+}
+
 void CNN_Genome::print_best_error(ostream &out) const {
     cout << left << setw(20) << "class error:" << right;
     for (uint32_t i = 0; i < best_class_error.size(); i++) {
@@ -302,6 +350,26 @@ bool CNN_Genome::sanity_check(int type) const {
             cerr << "SANITY CHECK FAILED! edges[" << i << "] had incorrect filter size!" << endl;
             cerr << edges[i] << endl;
             return false;
+        }
+    }
+
+    //check for duplicate edges
+    for (uint32_t i = 0; i < edges.size(); i++) {
+        for (uint32_t j = i + 1; j < edges.size(); j++) {
+            if (edges[i]->get_innovation_number() == edges[j]->get_innovation_number()) {
+                cerr << "SANITY CHECK FAILED! edges[" << i << "] and edges[" << j << "] have the same innovation number: " << edges[i]->get_innovation_number() << endl;
+                return false;
+            }
+        }
+    }
+
+    //check for duplicate nodes
+    for (uint32_t i = 0; i < nodes.size(); i++) {
+        for (uint32_t j = i + 1; j < nodes.size(); j++) {
+            if (nodes[i]->get_innovation_number() == nodes[j]->get_innovation_number()) {
+                cerr << "SANITY CHECK FAILED! nodes[" << i << "] and nodes[" << j << "] have the same innovation number: " << nodes[i]->get_innovation_number() << endl;
+                return false;
+            }
         }
     }
 
@@ -729,7 +797,7 @@ void CNN_Genome::stochastic_backpropagation(const Images &images) {
             break;
         }
 
-        if (epoch > min_epochs && (epoch - best_error_epoch) >= improvement_required_epochs) {
+        if (epoch > min_epochs && (epoch - best_error_epoch) > improvement_required_epochs) {
             break;
         }
 

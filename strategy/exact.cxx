@@ -67,11 +67,16 @@ EXACT::EXACT(const Images &images, int _population_size, int _min_epochs, int _m
 
     genomes_generated = 0;
 
-    number_mutations = 3;
 
     learning_rate = 0.001;
     weight_decay = 0.001;
 
+    crossover_rate = 0.20;
+    more_fit_parent_crossover = 0.80;
+    less_fit_parent_crossover = 0.50;
+
+
+    number_mutations = 1;
     edge_disable = 2.0;
     edge_enable = 2.0;
     edge_split = 3.0;
@@ -88,15 +93,22 @@ EXACT::EXACT(const Images &images, int _population_size, int _min_epochs, int _m
     cout << "\tmin_epochs: " << min_epochs << endl;
     cout << "\tmax_epochs: " << max_epochs << endl;
     cout << "\timprovement_required_epochs: " << improvement_required_epochs << endl;
-    cout << "\tnumber_mutations: " << number_mutations << endl;
-    cout << "\tedge_disable: " << edge_disable << endl;
-    cout << "\tedge_split: " << edge_split << endl;
-    cout << "\tedge_add: " << edge_add << endl;
-    cout << "\tedge_change_stride: " << edge_change_stride << endl;
-    cout << "\tnode_change_size: " << node_change_size << endl;
-    cout << "\tnode_change_size_x: " << node_change_size_x << endl;
-    cout << "\tnode_change_size_y: " << node_change_size_y << endl;
-    cout << "\tnode_change_pool_size: " << node_change_pool_size << endl;
+
+    cout << "\tcrossover_settings: " << endl;
+    cout << "\t\tcrossover_rate: " << crossover_rate << endl;
+    cout << "\t\tmore_fit_parent_crossover: " << more_fit_parent_crossover << endl;
+    cout << "\t\tless_fit_parent_crossover: " << less_fit_parent_crossover << endl;
+
+    cout << "\tmutation_settings: " << endl;
+    cout << "\t\tnumber_mutations: " << number_mutations << endl;
+    cout << "\t\tedge_disable: " << edge_disable << endl;
+    cout << "\t\tedge_split: " << edge_split << endl;
+    cout << "\t\tedge_add: " << edge_add << endl;
+    cout << "\t\tedge_change_stride: " << edge_change_stride << endl;
+    cout << "\t\tnode_change_size: " << node_change_size << endl;
+    cout << "\t\tnode_change_size_x: " << node_change_size_x << endl;
+    cout << "\t\tnode_change_size_y: " << node_change_size_y << endl;
+    cout << "\t\tnode_change_pool_size: " << node_change_pool_size << endl;
 
     double total = edge_disable + edge_enable + edge_split + edge_add + edge_change_stride +
                    node_change_size + node_change_size_x + node_change_size_y + node_change_pool_size;
@@ -167,7 +179,7 @@ CNN_Genome* EXACT::generate_individual() {
         genome->save_weights();
         genome->save_bias();
 
-    } else if (genomes.size() <= population_size) {
+    } else if (genomes.size() < population_size) {
         //generate random mutatinos until genomes.size() < population_size
         while (genome == NULL) {
             genome = create_mutation();
@@ -179,15 +191,28 @@ CNN_Genome* EXACT::generate_individual() {
             }
         }
     } else {
-        //TODO: either generate repropductions or mutations
+        if (rng_double(generator) < crossover_rate) {
+            //generate a child from crossover
+            while (genome == NULL) {
+                genome = create_child();
 
-        while (genome == NULL) {
-            genome = create_mutation();
+                if (!genome->outputs_connected()) {
+                    cerr << "\tAll softmax nodes were not reachable, deleting genome." << endl;
+                    delete genome;
+                    genome = NULL;
+                }
+            }
 
-            if (!genome->outputs_connected()) {
-                cerr << "\tAll softmax nodes were not reachable, deleting genome." << endl;
-                delete genome;
-                genome = NULL;
+        } else {
+            //generate a mutation
+            while (genome == NULL) {
+                genome = create_mutation();
+
+                if (!genome->outputs_connected()) {
+                    cerr << "\tAll softmax nodes were not reachable, deleting genome." << endl;
+                    delete genome;
+                    genome = NULL;
+                }
             }
         }
     }
@@ -213,6 +238,17 @@ CNN_Genome* EXACT::generate_individual() {
     return genome;
 }
 
+bool EXACT::population_contains(CNN_Genome *genome) const {
+    for (int i = 0; i < genomes.size(); i++) {
+        //we can overwrite genomes that were inserted in the initialization phase
+        //and not evaluated
+        if (genomes[i]->get_fitness() == numeric_limits<double>::max()) continue;
+
+        if (genomes[i]->equals(genome)) return true;
+    }
+    return false;
+}
+
 string parse_fitness(double fitness) {
     if (fitness == numeric_limits<double>::max()) {
         return "UNEVALUATED";
@@ -224,35 +260,49 @@ string parse_fitness(double fitness) {
 void EXACT::insert_genome(CNN_Genome* genome) {
     inserted_genomes++;
 
+    cout << "genomes evaluated: " << setw(10) << inserted_genomes << ", inserting: " << parse_fitness(genome->get_fitness()) << endl;
+
+    if (population_contains(genome)) {
+        cerr << "\tpopulation already contains genome! not inserting." << endl;
+        return;
+    }
+
     if (!genome->sanity_check(SANITY_CHECK_BEFORE_INSERT)) {
         cerr << "ERROR: genome " << genome->get_generation_id() << " failed sanity check before insert!" << endl;
         exit(1);
     }
     cout << "genome " << genome->get_generation_id() << " passed sanity check with fitness: " << parse_fitness(genome->get_fitness()) << endl;
 
-    cout << "genomes evaluated: " << setw(10) << inserted_genomes << ", inserting: " << parse_fitness(genome->get_fitness());
     if (genomes.size() == 0 || genome->get_fitness() < genomes[0]->get_fitness()) {
-        cout << " -- new best fitness!";
+        cout << "new best fitness!" << endl;
+
         genome->write_to_file("global_best_" + to_string(inserted_genomes) + ".txt");
 
         ofstream gv_file("global_best_" + to_string(inserted_genomes) + ".gv");
         gv_file << "#EXACT settings: " << endl;
+
+        gv_file << "#EXACT settings: " << endl;
         gv_file << "#\tlearning_rate: " << learning_rate << endl;
         gv_file << "#\tweight_decay: " << weight_decay << endl;
-
         gv_file << "#\tmin_epochs: " << min_epochs << endl;
         gv_file << "#\tmax_epochs: " << max_epochs << endl;
         gv_file << "#\timprovement_required_epochs: " << improvement_required_epochs << endl;
 
-        gv_file << "#\tnumber_mutations: " << number_mutations << endl;
-        gv_file << "#\tedge_disable: " << edge_disable << endl;
-        gv_file << "#\tedge_split: " << edge_split << endl;
-        gv_file << "#\tedge_add: " << edge_add << endl;
-        gv_file << "#\tedge_change_stride: " << edge_change_stride << endl;
-        gv_file << "#\tnode_change_size: " << node_change_size << endl;
-        gv_file << "#\tnode_change_size_x: " << node_change_size_x << endl;
-        gv_file << "#\tnode_change_size_y: " << node_change_size_y << endl;
-        gv_file << "#\tnode_change_pool_size: " << node_change_pool_size << endl;
+        gv_file << "#\tcrossover_settings: " << endl;
+        gv_file << "#\t\tcrossover_rate: " << crossover_rate << endl;
+        gv_file << "#\t\tmore_fit_parent_crossover: " << more_fit_parent_crossover << endl;
+        gv_file << "#\t\tless_fit_parent_crossover: " << less_fit_parent_crossover << endl;
+
+        gv_file << "#\tmutation_settings: " << endl;
+        gv_file << "#\t\tnumber_mutations: " << number_mutations << endl;
+        gv_file << "#\t\tedge_disable: " << edge_disable << endl;
+        gv_file << "#\t\tedge_split: " << edge_split << endl;
+        gv_file << "#\t\tedge_add: " << edge_add << endl;
+        gv_file << "#\t\tedge_change_stride: " << edge_change_stride << endl;
+        gv_file << "#\t\tnode_change_size: " << node_change_size << endl;
+        gv_file << "#\t\tnode_change_size_x: " << node_change_size_x << endl;
+        gv_file << "#\t\tnode_change_size_y: " << node_change_size_y << endl;
+        gv_file << "#\t\tnode_change_pool_size: " << node_change_pool_size << endl;
 
         genome->print_graphviz(gv_file);
         gv_file.close();
@@ -334,8 +384,6 @@ CNN_Genome* EXACT::create_mutation() {
         cout << "\tparent had been evaluated! not setting best_bias and best_weights randomly" << endl;
         cout << "\tparent fitness: " << parent->get_fitness() << endl;
     }
-
-    if (genomes.size() == 1) return child;
 
     int modifications = 0;
 
@@ -718,7 +766,17 @@ CNN_Genome* EXACT::create_mutation() {
     return child;
 }
 
+void attempt_node_insert(vector<CNN_Node*> &nodes, CNN_Node *node) {
+    for (int i = 0; i < nodes.size(); i++) {
+        if (nodes[i]->get_innovation_number() == node->get_innovation_number()) return;
+    }
+
+    nodes.insert( upper_bound(nodes.begin(), nodes.end(), node, sort_CNN_Nodes_by_depth()), node);
+}
+
+
 CNN_Genome* EXACT::create_child() {
+    cout << "\tCREATING CHILD THROUGH CROSSOVER!" << endl;
     double r1 = rng_double(generator) * genomes.size();
     double r2 = rng_double(generator) * (genomes.size() - 1);
     if (r2 == r1) r2++;
@@ -729,17 +787,16 @@ CNN_Genome* EXACT::create_child() {
         r2 = r1;
         r1 = tmp;
     }
-
-    double more_fit_parent_crossover = 0.75;
-    double less_fit_parent_crossover = 0.25;
+    cout << "\t\tparent positions: " << r1 << " and " << r2 << endl;
 
     CNN_Genome *parent1 = genomes[r1];
     CNN_Genome *parent2 = genomes[r2];
 
+    cout << "\t\tgenerating child " << genomes_generated << " from parents: " << parent1->get_generation_id() << " and " << parent2->get_generation_id() << endl;
+
     vector< CNN_Node* > child_nodes;
     vector< CNN_Edge* > child_edges;
     
-
     int p1_position = 0;
     int p2_position = 0;
    
@@ -752,20 +809,75 @@ CNN_Genome* EXACT::create_child() {
 
         if (p1_innovation == p2_innovation) {
             child_edges.push_back(p1_edge->copy());
+
             //push back surrounding nodes
+            attempt_node_insert(child_nodes, p1_edge->get_input_node());
+            attempt_node_insert(child_nodes, p1_edge->get_output_node());
+
+            p1_position++;
+            p2_position++;
         } else if (p1_innovation < p2_innovation) {
             if (rng_double(generator) < more_fit_parent_crossover) {
                 child_edges.push_back(p1_edge->copy());
+
                 //push back surrounding nodes
+                attempt_node_insert(child_nodes, p1_edge->get_input_node());
+                attempt_node_insert(child_nodes, p1_edge->get_output_node());
             }
+
+            p1_position++;
         } else {
             if (rng_double(generator) < less_fit_parent_crossover) {
                 child_edges.push_back(p2_edge->copy());
+
+                //push back surrounding nodes
+                attempt_node_insert(child_nodes, p2_edge->get_input_node());
+                attempt_node_insert(child_nodes, p2_edge->get_output_node());
             }
+
+            p2_position++;
         }
     }
 
-    return NULL;
+    while (p1_position < parent1->get_number_edges()) {
+        CNN_Edge* p1_edge = parent1->get_edge(p1_position);
+
+        if (rng_double(generator) < more_fit_parent_crossover) {
+            child_edges.push_back(p1_edge->copy());
+
+            //push back surrounding nodes
+            attempt_node_insert(child_nodes, p1_edge->get_input_node());
+            attempt_node_insert(child_nodes, p1_edge->get_output_node());
+        }
+
+        p1_position++;
+    }
+
+    while (p2_position < parent2->get_number_edges()) {
+        CNN_Edge* p2_edge = parent2->get_edge(p2_position);
+
+        if (rng_double(generator) < less_fit_parent_crossover) {
+            child_edges.push_back(p2_edge->copy());
+
+            //push back surrounding nodes
+            attempt_node_insert(child_nodes, p2_edge->get_input_node());
+            attempt_node_insert(child_nodes, p2_edge->get_output_node());
+        }
+
+        p2_position++;
+    }
+
+    sort(child_edges.begin(), child_edges.end(), sort_CNN_Edges_by_depth());
+    sort(child_nodes.begin(), child_nodes.end(), sort_CNN_Nodes_by_depth());
+
+    for (int i = 0; i < child_edges.size(); i++) {
+        child_edges[i]->set_nodes(child_nodes);
+    }
+
+    long genome_seed = rng_long(generator);
+    CNN_Genome *child = new CNN_Genome(genomes_generated++, genome_seed, min_epochs, max_epochs, improvement_required_epochs, reset_edges, learning_rate, weight_decay, child_nodes, child_edges);
+
+    return child;
 }
 
 

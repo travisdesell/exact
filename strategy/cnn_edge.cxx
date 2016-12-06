@@ -79,6 +79,10 @@ CNN_Edge::~CNN_Edge() {
     output_node = NULL;
 }
 
+bool CNN_Edge::equals(CNN_Edge *other) const {
+    return filter_x == other->filter_x && filter_y == other->filter_y && disabled == other->disabled && reverse_filter_x == other->reverse_filter_x && reverse_filter_y == other->reverse_filter_y;
+}
+
 int CNN_Edge::get_filter_x() const {
     return filter_x;
 }

@@ -72,6 +72,8 @@ class CNN_Genome {
 
         ~CNN_Genome();
 
+        bool equals(CNN_Genome *other) const;
+
         void print_best_error(ostream &out) const;
         void print_best_predictions(ostream &out) const;
 
