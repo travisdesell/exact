@@ -44,8 +44,8 @@ EXACT *exact;
 
 bool finished = false;
 
-void polling_thread(string polling_filename) {
-    ofstream polling_file(polling_filename);
+void polling_thread(string output_directory) {
+    ofstream polling_file(output_directory + "/progress.txt");
 
     polling_file << "#" << setw(9) << "minute";
     exact->print_statistics_header(polling_file);
@@ -240,9 +240,6 @@ int main(int argc, char** argv) {
     string output_directory;
     get_argument(arguments, "--output_directory", true, output_directory);
 
-    string progress_filename;
-    get_argument(arguments, "--progress_file", true, progress_filename);
-
     int population_size;
     get_argument(arguments, "--population_size", true, population_size);
 
@@ -267,7 +264,7 @@ int main(int argc, char** argv) {
     
     if (rank == 0) {
         exact = new EXACT(images, population_size, min_epochs, max_epochs, improvement_required_epochs, reset_edges, max_individuals, output_directory);
-        poller = new thread(polling_thread, progress_filename);
+        poller = new thread(polling_thread, output_directory);
 
         master(images, max_rank);
     } else {

@@ -28,6 +28,7 @@ using std::vector;
 #include "cnn_edge.hxx"
 #include "cnn_genome.hxx"
 
+
 class EXACT {
     private:
         string output_directory;
