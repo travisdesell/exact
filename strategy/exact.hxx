@@ -75,6 +75,14 @@ class EXACT {
         double node_change_size_y;
         double node_change_pool_size;
 
+        int inserted_from_disable_edge;
+        int inserted_from_enable_edge;
+        int inserted_from_split_edge;
+        int inserted_from_add_edge;
+        int inserted_from_change_size;
+        int inserted_from_change_size_x;
+        int inserted_from_change_size_y;
+        int inserted_from_crossover;
 
     public:
 
@@ -90,6 +98,7 @@ class EXACT {
         void insert_genome(CNN_Genome* genome);
 
         void print_statistics(ostream &out);
+        void print_statistics_header(ostream &out);
 };
 
 

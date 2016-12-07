@@ -83,7 +83,6 @@ CNN_Genome::CNN_Genome(int _generation_id, int seed, int _min_epochs, int _max_e
     improvement_required_epochs = _improvement_required_epochs;
     reset_edges = _reset_edges;
 
-
     best_predictions = 0;
     best_error = numeric_limits<double>::max();
 
@@ -91,6 +90,16 @@ CNN_Genome::CNN_Genome(int _generation_id, int seed, int _min_epochs, int _max_e
     best_error_epoch = 0;
 
     generation_id = _generation_id;
+
+    generated_by_disable_edge = 0;
+    generated_by_enable_edge = 0;
+    generated_by_split_edge = 0;
+    generated_by_add_edge = 0;
+    generated_by_change_size = 0;
+    generated_by_change_size_x = 0;
+    generated_by_change_size_y = 0;
+    generated_by_crossover = 0;
+
     name = "";
     output_filename = "";
     checkpoint_filename = "";
@@ -672,7 +681,7 @@ void CNN_Genome::stochastic_backpropagation(const Images &images) {
         }
 
         shuffle(backprop_order.begin(), backprop_order.end(), generator); 
-        backprop_order.resize(2000);
+        backprop_order.resize(1000);
 
         //cout << "initializing weights and biases!" << endl;
         if (reset_edges) {
@@ -837,11 +846,19 @@ void CNN_Genome::write(ostream &outfile) {
     outfile << improvement_required_epochs << endl;
     outfile << reset_edges << endl;
 
-
     outfile << setprecision(15) << fixed << best_predictions << endl;
     outfile << setprecision(15) << fixed << best_error << endl;
     outfile << best_predictions_epoch << endl;;
     outfile << best_error_epoch << endl;;
+
+    outfile << generated_by_disable_edge << endl;
+    outfile << generated_by_enable_edge << endl;
+    outfile << generated_by_split_edge << endl;
+    outfile << generated_by_add_edge << endl;
+    outfile << generated_by_change_size << endl;
+    outfile << generated_by_change_size_x << endl;
+    outfile << generated_by_change_size_y << endl;
+    outfile << generated_by_crossover << endl;
 
     outfile << generation_id << endl;
     //outfile << name << endl;
@@ -909,6 +926,15 @@ void CNN_Genome::read(istream &infile) {
     infile >> best_error;
     infile >> best_predictions_epoch;
     infile >> best_error_epoch;
+
+    infile >> generated_by_disable_edge;
+    infile >> generated_by_enable_edge;
+    infile >> generated_by_split_edge;
+    infile >> generated_by_add_edge;
+    infile >> generated_by_change_size;
+    infile >> generated_by_change_size_x;
+    infile >> generated_by_change_size_y;
+    infile >> generated_by_crossover;
 
     infile >> generation_id;
     //infile >> name;
@@ -1073,5 +1099,70 @@ void CNN_Genome::print_graphviz(ostream &out) const {
     }
 
     out << "}" << endl;
+}
+
+void CNN_Genome::set_generated_by_disable_edge() {
+    generated_by_disable_edge++;
+}
+
+void CNN_Genome::set_generated_by_enable_edge() {
+    generated_by_enable_edge++;
+}
+
+void CNN_Genome::set_generated_by_split_edge() {
+    generated_by_split_edge++;
+}
+
+void CNN_Genome::set_generated_by_add_edge() {
+    generated_by_add_edge++;
+}
+
+void CNN_Genome::set_generated_by_change_size() {
+    generated_by_change_size++;
+}
+
+void CNN_Genome::set_generated_by_change_size_x() {
+    generated_by_change_size_x++;
+}
+
+void CNN_Genome::set_generated_by_change_size_y() {
+    generated_by_change_size_y++;
+}
+
+void CNN_Genome::set_generated_by_crossover() {
+    generated_by_crossover++;
+}
+
+
+int CNN_Genome::get_generated_by_disable_edge() {
+    return generated_by_disable_edge;
+}
+
+int CNN_Genome::get_generated_by_enable_edge() {
+    return generated_by_enable_edge;
+}
+
+int CNN_Genome::get_generated_by_split_edge() {
+    return generated_by_split_edge;
+}
+
+int CNN_Genome::get_generated_by_add_edge() {
+    return generated_by_add_edge;
+}
+
+int CNN_Genome::get_generated_by_change_size() {
+    return generated_by_change_size;
+}
+
+int CNN_Genome::get_generated_by_change_size_x() {
+    return generated_by_change_size_x;
+}
+
+int CNN_Genome::get_generated_by_change_size_y() {
+    return generated_by_change_size_y;
+}
+
+int CNN_Genome::get_generated_by_crossover() {
+    return generated_by_crossover;
 }
 
