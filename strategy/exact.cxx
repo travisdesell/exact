@@ -40,7 +40,8 @@ using std::vector;
 #include "cnn_genome.hxx"
 #include "exact.hxx"
 
-EXACT::EXACT(const Images &images, int _population_size, int _min_epochs, int _max_epochs, int _improvement_required_epochs, bool _reset_edges, int _max_individuals) {
+EXACT::EXACT(const Images &images, int _population_size, int _min_epochs, int _max_epochs, int _improvement_required_epochs, bool _reset_edges, int _max_individuals, string _output_directory) {
+    output_directory = _output_directory;
     reset_edges = _reset_edges;
     min_epochs = _min_epochs;
     max_epochs = _max_epochs;
@@ -298,7 +299,7 @@ void EXACT::insert_genome(CNN_Genome* genome) {
     if (genomes.size() == 0 || genome->get_fitness() < genomes[0]->get_fitness()) {
         cout << "new best fitness!" << endl;
 
-        genome->write_to_file("global_best_" + to_string(inserted_genomes) + ".txt");
+        genome->write_to_file(output_directory + "/global_best_" + to_string(inserted_genomes) + ".txt");
 
         ofstream gv_file("global_best_" + to_string(inserted_genomes) + ".gv");
         gv_file << "#EXACT settings: " << endl;
@@ -811,7 +812,7 @@ void attempt_node_insert(vector<CNN_Node*> &nodes, CNN_Node *node) {
         if (nodes[i]->get_innovation_number() == node->get_innovation_number()) return;
     }
 
-    nodes.insert( upper_bound(nodes.begin(), nodes.end(), node, sort_CNN_Nodes_by_depth()), node);
+    nodes.insert( upper_bound(nodes.begin(), nodes.end(), node->copy(), sort_CNN_Nodes_by_depth()), node->copy());
 }
 
 

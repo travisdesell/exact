@@ -47,10 +47,13 @@ bool finished = false;
 void polling_thread(string polling_filename) {
     ofstream polling_file(polling_filename);
 
+    polling_file << "#" << setw(9) << "minute";
+    exact->print_statistics_header(polling_file);
+
     int minute = 0;
     while (true) {
         exact_mutex.lock();
-        polling_file << setw(10) << minute << " ";
+        polling_file << setw(10) << minute;
         exact->print_statistics(polling_file);
         exact_mutex.unlock();
 
@@ -234,6 +237,9 @@ int main(int argc, char** argv) {
     string binary_samples_filename;
     get_argument(arguments, "--samples_file", true, binary_samples_filename);
 
+    string output_directory;
+    get_argument(arguments, "--output_directory", true, output_directory);
+
     string progress_filename;
     get_argument(arguments, "--progress_file", true, progress_filename);
 
@@ -260,7 +266,7 @@ int main(int argc, char** argv) {
     thread* poller = NULL;
     
     if (rank == 0) {
-        exact = new EXACT(images, population_size, min_epochs, max_epochs, improvement_required_epochs, reset_edges, max_individuals);
+        exact = new EXACT(images, population_size, min_epochs, max_epochs, improvement_required_epochs, reset_edges, max_individuals, output_directory);
         poller = new thread(polling_thread, progress_filename);
 
         master(images, max_rank);

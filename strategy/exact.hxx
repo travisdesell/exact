@@ -30,6 +30,8 @@ using std::vector;
 
 class EXACT {
     private:
+        string output_directory;
+
         int image_rows;
         int image_cols;
         int number_classes;
@@ -86,7 +88,7 @@ class EXACT {
 
     public:
 
-        EXACT(const Images &images, int _population_size, int _min_epochs, int _max_epochs, int _improvement_required_epochs, bool _reset_edges, int _max_individuals);
+        EXACT(const Images &images, int _population_size, int _min_epochs, int _max_epochs, int _improvement_required_epochs, bool _reset_edges, int _max_individuals, string _output_directory);
 
         bool population_contains(CNN_Genome *genome) const;
         CNN_Genome* get_best_genome();
