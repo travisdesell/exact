@@ -88,8 +88,8 @@ EXACT::EXACT(const Images &images, int _population_size, int _min_epochs, int _m
     number_mutations = 3;
     edge_disable = 1.0;
     edge_enable = 2.0;
-    edge_split = 3.0;
-    edge_add = 4.0;
+    edge_split = 2.0;
+    edge_add = 2.0;
     edge_change_stride = 0.0;
     node_change_size = 0.0;
     node_change_size_x = 1.0;
