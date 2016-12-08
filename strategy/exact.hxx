@@ -28,8 +28,11 @@ using std::vector;
 #include "cnn_edge.hxx"
 #include "cnn_genome.hxx"
 
+
 class EXACT {
     private:
+        string output_directory;
+
         int image_rows;
         int image_cols;
         int number_classes;
@@ -60,6 +63,10 @@ class EXACT {
         double learning_rate;
         double weight_decay;
 
+        double crossover_rate;
+        double more_fit_parent_crossover;
+        double less_fit_parent_crossover;
+
         int number_mutations;
         double edge_disable;
         double edge_enable;
@@ -71,11 +78,20 @@ class EXACT {
         double node_change_size_y;
         double node_change_pool_size;
 
+        int inserted_from_disable_edge;
+        int inserted_from_enable_edge;
+        int inserted_from_split_edge;
+        int inserted_from_add_edge;
+        int inserted_from_change_size;
+        int inserted_from_change_size_x;
+        int inserted_from_change_size_y;
+        int inserted_from_crossover;
 
     public:
 
-        EXACT(const Images &images, int _population_size, int _min_epochs, int _max_epochs, int _improvement_required_epochs, bool _reset_edges, int _max_individuals);
+        EXACT(const Images &images, int _population_size, int _min_epochs, int _max_epochs, int _improvement_required_epochs, bool _reset_edges, int _max_individuals, string _output_directory);
 
+        bool population_contains(CNN_Genome *genome) const;
         CNN_Genome* get_best_genome();
 
         CNN_Genome* generate_individual();
@@ -85,6 +101,7 @@ class EXACT {
         void insert_genome(CNN_Genome* genome);
 
         void print_statistics(ostream &out);
+        void print_statistics_header(ostream &out);
 };
 
 

@@ -57,6 +57,8 @@ class CNN_Edge {
 
         ~CNN_Edge();
 
+        bool equals(CNN_Edge *other) const;
+
         int get_filter_x() const;
         int get_filter_y() const;
 
@@ -104,6 +106,13 @@ struct sort_CNN_Edges_by_depth {
         return n1->get_input_node()->get_depth() < n2->get_input_node()->get_depth();
     }   
 };
+
+struct sort_CNN_Edges_by_innovation {
+    bool operator()(CNN_Edge *n1, CNN_Edge *n2) {
+        return n1->get_innovation_number() < n2->get_innovation_number();
+    }   
+};
+
 
 
 #endif

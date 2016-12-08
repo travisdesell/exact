@@ -25,6 +25,9 @@ int main(int argc, char** argv) {
     string output_filename;
     get_argument(arguments, "--output_file", true, output_filename);
 
+    string output_directory;
+    get_argument(arguments, "--output_directory", true, output_directory);
+
     int population_size;
     get_argument(arguments, "--population_size", true, population_size);
 
@@ -46,7 +49,7 @@ int main(int argc, char** argv) {
 
     Images images(binary_samples_filename);
 
-    EXACT exact(images, population_size, min_epochs, max_epochs, improvement_required_epochs, reset_edges, max_individuals);
+    EXACT exact(images, population_size, min_epochs, max_epochs, improvement_required_epochs, reset_edges, max_individuals, output_directory);
     //exact..write_genomes_to_directorY(directory);
 
     CNN_Genome *genome = exact.get_best_genome();

@@ -79,6 +79,10 @@ CNN_Edge::~CNN_Edge() {
     output_node = NULL;
 }
 
+bool CNN_Edge::equals(CNN_Edge *other) const {
+    return filter_x == other->filter_x && filter_y == other->filter_y && disabled == other->disabled && reverse_filter_x == other->reverse_filter_x && reverse_filter_y == other->reverse_filter_y;
+}
+
 int CNN_Edge::get_filter_x() const {
     return filter_x;
 }
@@ -571,11 +575,11 @@ inline void CNN_Edge::backprop_weight_update(int fy, int fx, double weight_updat
     weights[fy][fx] -= -mu * pv + (1 + mu) * velocity;
     previous_velocity[fy][fx] = velocity;
 
-    if (weights[fy][fx] > 5.0) {
-        weights[fy][fx] = 5.0;
+    if (weights[fy][fx] > 50.0) {
+        weights[fy][fx] = 50.0;
         previous_velocity[fy][fx] = 0.0;
-    } else if (weights[fy][fx] < -5.0) {
-        weights[fy][fx] = -5.0;
+    } else if (weights[fy][fx] < -50.0) {
+        weights[fy][fx] = -50.0;
         previous_velocity[fy][fx] = 0.0;
     }
 }

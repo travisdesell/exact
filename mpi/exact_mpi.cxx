@@ -44,13 +44,16 @@ EXACT *exact;
 
 bool finished = false;
 
-void polling_thread(string polling_filename) {
-    ofstream polling_file(polling_filename);
+void polling_thread(string output_directory) {
+    ofstream polling_file(output_directory + "/progress.txt");
+
+    polling_file << "#" << setw(9) << "minute";
+    exact->print_statistics_header(polling_file);
 
     int minute = 0;
     while (true) {
         exact_mutex.lock();
-        polling_file << setw(10) << minute << " ";
+        polling_file << setw(10) << minute;
         exact->print_statistics(polling_file);
         exact_mutex.unlock();
 
@@ -128,10 +131,12 @@ void receive_terminate_message(int source) {
     MPI_Recv(terminate_message, 1, MPI_INT, source, TERMINATE_TAG, MPI_COMM_WORLD, &status);
 }
 
-void master(const Images &images) {
+void master(const Images &images, int max_rank) {
     string name = "master";
 
     cout << "MAX INT: " << numeric_limits<int>::max() << endl;
+
+    int terminates_sent = 0;
 
     while (true) {
         //wait for a incoming message
@@ -156,6 +161,11 @@ void master(const Images &images) {
                 //send terminate message
                 cout << "[" << setw(10) << name << "] terminating worker: " << source << endl;
                 send_terminate_message(source);
+                terminates_sent++;
+
+                cout << "[" << setw(10) << name << "] sent: " << terminates_sent << " terminates of: " << (max_rank - 1) << endl;
+                if (terminates_sent >= max_rank - 1) return;
+
             } else {
                 //send genome
                 cout << "[" << setw(10) << name << "] sending genome to: " << source << endl;
@@ -227,8 +237,8 @@ int main(int argc, char** argv) {
     string binary_samples_filename;
     get_argument(arguments, "--samples_file", true, binary_samples_filename);
 
-    string progress_filename;
-    get_argument(arguments, "--progress_file", true, progress_filename);
+    string output_directory;
+    get_argument(arguments, "--output_directory", true, output_directory);
 
     int population_size;
     get_argument(arguments, "--population_size", true, population_size);
@@ -253,10 +263,10 @@ int main(int argc, char** argv) {
     thread* poller = NULL;
     
     if (rank == 0) {
-        exact = new EXACT(images, population_size, min_epochs, max_epochs, improvement_required_epochs, reset_edges, max_individuals);
-        poller = new thread(polling_thread, progress_filename);
+        exact = new EXACT(images, population_size, min_epochs, max_epochs, improvement_required_epochs, reset_edges, max_individuals, output_directory);
+        poller = new thread(polling_thread, output_directory);
 
-        master(images);
+        master(images, max_rank);
     } else {
         worker(images, rank);
     }
@@ -264,11 +274,12 @@ int main(int argc, char** argv) {
     finished = true;
 
     if (rank == 0) {
+        cout << "master waiting for poller thread." << endl;
         poller->join();
         delete poller;
     }
 
-    cout << "completed!" << endl;
+    cout << "rank " << rank << " completed!" << endl;
 
     MPI_Finalize();
 

@@ -6,5 +6,5 @@ if (MPI_FOUND)
     include_directories(${MPI_INCLUDE_PATH})
 
 	add_executable(exact_mpi exact_mpi)
-	target_link_libraries(exact_mpi exact_strategy exact_image_tools ${UNDVC_COMMON_LIBRARY} ${MPI_LIBRARIES} ${MPI_EXTRA})
+	target_link_libraries(exact_mpi exact_strategy exact_image_tools ${UNDVC_COMMON_LIBRARY} ${MPI_LIBRARIES} ${MPI_EXTRA} pthread)
 endif (MPI_FOUND)

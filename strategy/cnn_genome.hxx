@@ -58,6 +58,15 @@ class CNN_Genome {
         string checkpoint_filename;
         string output_filename;
 
+        int generated_by_disable_edge;
+        int generated_by_enable_edge;
+        int generated_by_split_edge;
+        int generated_by_add_edge;
+        int generated_by_change_size;
+        int generated_by_change_size_x;
+        int generated_by_change_size_y;
+        int generated_by_crossover;
+
     public:
         /**
          *  Initialize a genome from a file
@@ -71,6 +80,8 @@ class CNN_Genome {
         CNN_Genome(int _generation_id, int seed, int _min_epochs, int _max_epochs, int _improvement_required_epochs, bool _reset_edges, double _learning_rate, double _weight_decay, const vector<CNN_Node*> &_nodes, const vector<CNN_Edge*> &_edges);
 
         ~CNN_Genome();
+
+        bool equals(CNN_Genome *other) const;
 
         void print_best_error(ostream &out) const;
         void print_best_predictions(ostream &out) const;
@@ -122,6 +133,25 @@ class CNN_Genome {
         void read(istream &infile);
 
         void print_graphviz(ostream &out) const;
+
+        void set_generated_by_disable_edge();
+        void set_generated_by_enable_edge();
+        void set_generated_by_split_edge();
+        void set_generated_by_add_edge();
+        void set_generated_by_change_size();
+        void set_generated_by_change_size_x();
+        void set_generated_by_change_size_y();
+        void set_generated_by_crossover();
+
+        int get_generated_by_disable_edge();
+        int get_generated_by_enable_edge();
+        int get_generated_by_split_edge();
+        int get_generated_by_add_edge();
+        int get_generated_by_change_size();
+        int get_generated_by_change_size_x();
+        int get_generated_by_change_size_y();
+        int get_generated_by_crossover();
+
 };
 
 
