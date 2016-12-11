@@ -12,11 +12,41 @@
 
 #include "strategy/cnn_genome.hxx"
 
+/**
+ *  *  Includes required for BOINC
+ *   */
+#ifdef _BOINC_
+#ifdef _WIN32
+    #include "boinc_win.h"
+    #include "str_util.h"
+#endif
+
+    #include "diagnostics.h"
+    #include "util.h"
+    #include "filesys.h"
+    #include "boinc_api.h"
+    #include "mfile.h"
+#endif
+
 using namespace std;
 
 vector<string> arguments;
 
 int main(int argc, char** argv) {
+#ifdef _BOINC_
+    int retval = 0;
+    #ifdef BOINC_APP_GRAPHICS
+        #if defined(_WIN32) || defined(__APPLE)
+            retval = boinc_init_graphics(worker);
+        #else
+            retval = boinc_init_graphics(worker, argv[0]);
+        #endif
+    #else
+        retval = boinc_init();
+    #endif
+    if (retval) exit(retval);
+#endif
+
     arguments = vector<string>(argv, argv + argc);
 
     string binary_samples_filename;
@@ -43,11 +73,11 @@ int main(int argc, char** argv) {
         //start from the input genome file otherwise
         cout << "starting from input file: '" << genome_filename << "'" << endl;
         genome = new CNN_Genome(genome_filename, false);
-        genome->set_to_best();
+        //genome->set_to_best();
     }
     cout << "parsed intput file" << endl;
 
-    genome->print_graphviz(cout);
+    //genome->print_graphviz(cout);
 
     genome->set_checkpoint_filename(checkpoint_filename);
     genome->set_output_filename(output_filename);
@@ -55,5 +85,22 @@ int main(int argc, char** argv) {
     cout << "starting backpropagation!" << endl;
     genome->stochastic_backpropagation(images);
 
+#ifdef _BOINC_
+    boinc_finish(0);
+#endif
+
     return 0;
 }
+
+#ifdef _WIN32
+int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR Args, int WinMode){
+    LPSTR command_line;
+    char* argv[100];
+    int argc;
+
+    command_line = GetCommandLine();
+    argc = parse_command_line( command_line, argv );
+    return main(argc, argv);
+}
+#endif
+

@@ -548,11 +548,16 @@ void CNN_Edge::propagate_forward() {
 inline void CNN_Edge::backprop_weight_update(int fy, int fx, double weight_update, double weight, double mu, double learning_rate, double weight_decay) {
     double dx, pv, velocity;
 
-    //double dx = learning_rate * (weight_update[k][l] / (filter_x * filter_y) + (weights[k][l] * weight_decay));
-    //L2 regularization
+    /* ADAM:
+     * m = beta1*m + (1-beta1)*dx
+     * v = beta2*v + (1-beta2)*(dx**2)
+     * x += - learning_rate * m / (np.sqrt(v) + eps)
+     */
 
+
+
+    //L2 regularization
     dx = learning_rate * (weight_update / (filter_x * filter_y) - (weight * weight_decay));
-    //double dx = learning_rate * (weight_update[k][l] / (filter_x * filter_y));
 
     if (isnan(dx)) {
         cerr << "ERROR! dx became NAN in backprop weight update" << endl;

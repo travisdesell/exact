@@ -44,12 +44,42 @@ using std::vector;
 #include "cnn_genome.hxx"
 
 /**
+ *  *  Includes required for BOINC
+ *   */
+#ifdef _BOINC_
+#ifdef _WIN32
+    #include "boinc_win.h"
+    #include "str_util.h"
+#endif
+
+    #include "diagnostics.h"
+    #include "util.h"
+    #include "filesys.h"
+    #include "boinc_api.h"
+    #include "mfile.h"
+#endif
+
+/**
  *  Initialize a genome from a file
  */
 CNN_Genome::CNN_Genome(string filename, bool is_checkpoint) {
     started_from_checkpoint = is_checkpoint;
 
-    ifstream infile(filename);
+    //TODO: BOINCIFY THIS
+#ifdef _BOINC_
+    string input_path;
+    int retval = boinc_resolve_filename_s(filename.c_str(), input_path);
+    if (retval) {
+        cerr << "APP: error reading input file (resolving checkpoint file name)" << endl;
+        boinc_finish(1);
+        exit(1);
+    }   
+
+    ifstream infile(input_path.c_str());
+#else
+    ifstream infile(filename.c_str());
+#endif
+
     read(infile);
     infile.close();
 }
@@ -681,7 +711,7 @@ void CNN_Genome::stochastic_backpropagation(const Images &images) {
         }
 
         shuffle(backprop_order.begin(), backprop_order.end(), generator); 
-        backprop_order.resize(1000);
+        //backprop_order.resize(1000);
 
         //cout << "initializing weights and biases!" << endl;
         if (reset_edges) {
@@ -802,13 +832,22 @@ void CNN_Genome::stochastic_backpropagation(const Images &images) {
             write_to_file(checkpoint_filename);
         }
 
+#ifdef _BOINC_
+        //TODO: Update percentage done
+
+        double progress = (double)epoch / (double)max_epochs;
+        boinc_fraction_done(progress);
+#endif
+
         if (epoch > max_epochs) {
             break;
         }
 
+#ifndef _BOINC_
         if (epoch > min_epochs && (epoch - best_error_epoch) > improvement_required_epochs) {
             break;
         }
+#endif
 
     } while (true);
 
@@ -1039,7 +1078,20 @@ void CNN_Genome::read(istream &infile) {
 }
 
 void CNN_Genome::write_to_file(string filename) {
-    ofstream outfile(filename);
+#ifdef _BOINC_
+    string output_path;
+    int retval = boinc_resolve_filename_s(filename.c_str(), output_path);
+    if (retval) {
+        cerr << "APP: error writing checkpoint (resolving checkpoint file name)" << endl;
+        boinc_finish(1);
+        exit(1);
+    }   
+
+    ofstream outfile(output_path.c_str());
+#else
+    ofstream outfile(filename.c_str());
+#endif
+
     write(outfile);
     outfile.close();
 }
