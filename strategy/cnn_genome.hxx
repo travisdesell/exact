@@ -25,8 +25,6 @@ class CNN_Genome {
         vector<CNN_Node*> softmax_nodes;
 
         mt19937 generator;
-        uniform_real_distribution<double> rng_double;
-        uniform_int_distribution<long> rng_long;
 
         double initial_mu;
         double mu;
