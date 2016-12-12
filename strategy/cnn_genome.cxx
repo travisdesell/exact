@@ -47,43 +47,12 @@ using std::vector;
 #include "cnn_genome.hxx"
 
 /**
- *  *  Includes required for BOINC
- *   */
-#ifdef _BOINC_
-#ifdef _WIN32
-    #include "boinc_win.h"
-    #include "str_util.h"
-#endif
-
-    #include "diagnostics.h"
-    #include "util.h"
-    #include "filesys.h"
-    #include "boinc_api.h"
-    #include "mfile.h"
-#endif
-
-/**
  *  Initialize a genome from a file
  */
 CNN_Genome::CNN_Genome(string filename, bool is_checkpoint) {
     started_from_checkpoint = is_checkpoint;
 
-    //TODO: BOINCIFY THIS
-#ifdef _BOINC_
-    string input_path;
-    int retval = 0;
-    //retval = boinc_resolve_filename_s(filename.c_str(), input_path);
-    if (retval) {
-        cerr << "APP: error reading input file (resolving checkpoint file name)" << endl;
-        //boinc_finish(1);
-        exit(1);
-    }   
-
-    ifstream infile(input_path.c_str());
-#else
     ifstream infile(filename.c_str());
-#endif
-
     read(infile);
     infile.close();
 }
@@ -93,14 +62,19 @@ CNN_Genome::CNN_Genome(istream &in, bool is_checkpoint) {
     read(in);
 }
 
+
+void CNN_Genome::set_progress_function(int (*_progress_function)(double)) {
+    progress_function = _progress_function;
+}
+
 /**
  *  Iniitalize a genome from a set of nodes and edges
  */
 CNN_Genome::CNN_Genome(int _generation_id, int seed, int _min_epochs, int _max_epochs, int _improvement_required_epochs, bool _reset_edges, double _learning_rate, double _weight_decay, const vector<CNN_Node*> &_nodes, const vector<CNN_Edge*> &_edges) {
     started_from_checkpoint = false;
     generator = mt19937(seed);
-    rng_double = uniform_real_distribution<double>(0, 1.0);
-    rng_long = uniform_int_distribution<long>(-numeric_limits<long>::max(), numeric_limits<long>::max());
+
+    progress_function = NULL;
 
     mu = 0.5;
     initial_mu = mu;
@@ -850,23 +824,18 @@ void CNN_Genome::stochastic_backpropagation(const Images &images) {
             write_to_file(checkpoint_filename);
         }
 
-#ifdef _BOINC_
-        //TODO: Update percentage done
-
-        double progress = (double)epoch / (double)max_epochs;
-        //boinc_fraction_done(progress);
-#endif
+        if (progress_function != NULL) {
+            double progress = (double)epoch / (double)max_epochs;
+            progress_function(progress);
+        }
 
         if (epoch > max_epochs) {
             break;
         }
 
-#ifndef _BOINC_
         if (epoch > min_epochs && (epoch - best_error_epoch) > improvement_required_epochs) {
             break;
         }
-#endif
-
     } while (true);
 
     /*
@@ -923,8 +892,6 @@ void CNN_Genome::write(ostream &outfile) {
     //outfile << output_filename << endl;
 
     outfile << generator << endl;
-    outfile << rng_double << endl;
-    outfile << rng_long << endl;
 
     outfile << nodes.size() << endl;
     for (uint32_t i = 0; i < nodes.size(); i++) {
@@ -966,63 +933,92 @@ void CNN_Genome::write(ostream &outfile) {
 }
 
 void CNN_Genome::read(istream &infile) {
+    progress_function = NULL;
+
+    bool verbose = true;
+
     infile >> initial_mu;
+    if (verbose) cerr << "read initial mu: " << initial_mu << endl;
     infile >> mu;
+    if (verbose) cerr << "read mu: " << mu << endl;
     infile >> initial_learning_rate;
+    if (verbose) cerr << "read initial_learning_rate: " << initial_learning_rate << endl;
     infile >> learning_rate;
+    if (verbose) cerr << "read learning_rate: " << learning_rate << endl;
     infile >> initial_weight_decay;
+    if (verbose) cerr << "read initial_weight_decay: " << initial_weight_decay << endl;
     infile >> weight_decay;
+    if (verbose) cerr << "read weight_decay: " << weight_decay << endl;
 
     infile >> epoch;
+    if (verbose) cerr << "read epoch: " << epoch << endl;
     infile >> min_epochs;
+    if (verbose) cerr << "read min_epochs: " << min_epochs << endl;
     infile >> max_epochs;
+    if (verbose) cerr << "read max_epochs: " << max_epochs << endl;
     infile >> improvement_required_epochs;
+    if (verbose) cerr << "read improvement_required_epochs: " << improvement_required_epochs << endl;
     infile >> reset_edges;
+    if (verbose) cerr << "read reset_edges: " << reset_edges << endl;
 
     infile >> best_predictions;
+    if (verbose) cerr << "read best_predictions: " << best_predictions << endl;
     infile >> best_error;
+    if (verbose) cerr << "read best_error: " << best_error << endl;
     infile >> best_predictions_epoch;
+    if (verbose) cerr << "read best_predictions_epoch: " << best_predictions_epoch << endl;
     infile >> best_error_epoch;
+    if (verbose) cerr << "read best_error_epoch: " << best_error_epoch << endl;
 
     infile >> generated_by_disable_edge;
+    if (verbose) cerr << "read generated_by_disable_edge: " << generated_by_disable_edge << endl;
     infile >> generated_by_enable_edge;
+    if (verbose) cerr << "read generated_by_enable_edge: " << generated_by_enable_edge << endl;
     infile >> generated_by_split_edge;
+    if (verbose) cerr << "read generated_by_split_edge: " << generated_by_split_edge << endl;
     infile >> generated_by_add_edge;
+    if (verbose) cerr << "read generated_by_add_edge: " << generated_by_add_edge << endl;
     infile >> generated_by_change_size;
+    if (verbose) cerr << "read generated_by_change_size: " << generated_by_change_size << endl;
     infile >> generated_by_change_size_x;
+    if (verbose) cerr << "read generated_by_change_size_x: " << generated_by_change_size_x << endl;
     infile >> generated_by_change_size_y;
+    if (verbose) cerr << "read generated_by_change_size_y: " << generated_by_change_size_x << endl;
     infile >> generated_by_crossover;
+    if (verbose) cerr << "read generated_by_crossover: " << generated_by_crossover << endl;
 
     infile >> generation_id;
+    if (verbose) cerr << "read generation_id: " << generation_id << endl;
     //infile >> name;
     //infile >> checkpoint_filename;
     //infile >> output_filename;
 
     infile >> generator;
-    infile >> rng_double;
-    infile >> rng_long;
+    if (verbose) cerr << "read generator: " << generator << endl;
 
-    //cout << "reading nodes!" << endl;
+    cerr << "reading nodes!" << endl;
     nodes.clear();
     int number_nodes;
     infile >> number_nodes;
+    cerr << "reading " << number_nodes << " nodes." << endl;
     for (uint32_t i = 0; i < number_nodes; i++) {
         CNN_Node *node = new CNN_Node();
         infile >> node;
 
-        //cout << "read node: " << node->get_innovation_number() << endl;
+        cerr << "read node: " << node->get_innovation_number() << endl;
         nodes.push_back(node);
     }
 
-    //cout << "reading edges!" << endl;
+    cerr << "reading edges!" << endl;
     edges.clear();
     int number_edges;
     infile >> number_edges;
+    cerr << "reading " << number_edges << " edges." << endl;
     for (uint32_t i = 0; i < number_edges; i++) {
         CNN_Edge *edge = new CNN_Edge();
         infile >> edge;
 
-        //cout << "read edge: " << edge->get_innovation_number() << endl;
+        cerr << "read edge: " << edge->get_innovation_number() << endl;
         if (!edge->set_nodes(nodes)) {
             cerr << "ERROR: filter size didn't match when reading genome from input file!" << endl;
             cerr << "This should never happen!" << endl;
@@ -1035,12 +1031,12 @@ void CNN_Genome::read(istream &infile) {
     int input_node_innovation_number;
     infile >> input_node_innovation_number;
 
-    //cout << "input node innovation number: " << input_node_innovation_number << endl;
+    cerr << "input node innovation number: " << input_node_innovation_number << endl;
 
     for (uint32_t i = 0; i < nodes.size(); i++) {
         if (nodes[i]->get_innovation_number() == input_node_innovation_number) {
             input_node = nodes[i];
-            //cout << "input node was in position: " << i << endl;
+            cerr << "input node was in position: " << i << endl;
             break;
         }
     }
@@ -1048,23 +1044,24 @@ void CNN_Genome::read(istream &infile) {
     softmax_nodes.clear();
     int number_softmax_nodes;
     infile >> number_softmax_nodes;
-    //cout << "number softmax nodes: " << number_softmax_nodes << endl;
+    cerr << "number softmax nodes: " << number_softmax_nodes << endl;
 
     for (uint32_t i = 0; i < number_softmax_nodes; i++) {
         int softmax_node_innovation_number;
         infile >> softmax_node_innovation_number;
-        //cout << "\tsoftmax node: " << softmax_node_innovation_number << endl;
+        cerr << "\tsoftmax node: " << softmax_node_innovation_number << endl;
 
         for (uint32_t i = 0; i < nodes.size(); i++) {
             if (nodes[i]->get_innovation_number() == softmax_node_innovation_number) {
                 softmax_nodes.push_back(nodes[i]);
-                //cout << "softmax node " << softmax_node_innovation_number << " was in position: " << i << endl;
+                cerr << "softmax node " << softmax_node_innovation_number << " was in position: " << i << endl;
                 break;
             }
         }
 
     }
 
+    cerr << "reading backprop order" << endl;
     backprop_order.clear();
     long order_size;
     infile >> order_size;
@@ -1075,6 +1072,7 @@ void CNN_Genome::read(istream &infile) {
     }
 
 
+    cerr << "reading best class error" << endl;
     best_class_error.clear();
     int error_size;
     infile >> error_size;
@@ -1085,6 +1083,7 @@ void CNN_Genome::read(istream &infile) {
     }
 
 
+    cerr << "reading best correct predictions" << endl;
     best_correct_predictions.clear();
     int predictions_size;
     infile >> predictions_size;
@@ -1094,26 +1093,6 @@ void CNN_Genome::read(istream &infile) {
         best_correct_predictions.push_back(predictions);
     }
 }
-
-/*
-#ifdef _BOINC_
-void CNN_Genome::write_to_file_boinc(string filename) {
-    string output_path;
-    int retval = 0;
-    //retval = boinc_resolve_filename_s(filename.c_str(), output_path);
-    if (retval) {
-        cerr << "APP: error writing checkpoint (resolving checkpoint file name)" << endl;
-        //boinc_finish(1);
-        exit(1);
-    }   
-
-    ofstream outfile(output_path.c_str());
-
-    write(outfile);
-    outfile.close();
-}
-#endif
-*/
 
 void CNN_Genome::write_to_file(string filename) {
     ofstream outfile(filename.c_str());

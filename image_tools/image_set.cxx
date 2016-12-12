@@ -138,9 +138,9 @@ Images::Images(string binary_filename) {
 
     vals_per_pixel = initial_vals[2];
 
-    cout << "number_classes: " << number_classes << endl;
-    cout << "rowscols: " << rowscols << endl;
-    cout << "vals_per_pixel: " << vals_per_pixel << endl;
+    cerr << "number_classes: " << number_classes << endl;
+    cerr << "rowscols: " << rowscols << endl;
+    cerr << "vals_per_pixel: " << vals_per_pixel << endl;
 
     class_sizes = vector<int>(number_classes, 0);
     infile.read( (char*)&class_sizes[0], sizeof(int) * number_classes );
@@ -148,7 +148,7 @@ Images::Images(string binary_filename) {
     int image_size = rowscols * rowscols * vals_per_pixel;
 
     for (int i = 0; i < number_classes; i++) {
-        cout << "reading image set with " << class_sizes[i] << " images." << endl;
+        cerr << "reading image set with " << class_sizes[i] << " images." << endl;
 
         for (uint32_t j = 0; j < class_sizes[i]; j++) {
             images.push_back(Image(infile, image_size, rowscols, rowscols, i));
@@ -158,22 +158,22 @@ Images::Images(string binary_filename) {
 
     infile.close();
 
-    cout << "image_size: " << rowscols << "x" << rowscols << " = " << image_size << endl;
+    cerr << "image_size: " << rowscols << "x" << rowscols << " = " << image_size << endl;
 
-    cout << "read " << images.size() << " images." << endl;
+    cerr << "read " << images.size() << " images." << endl;
     for (int i = 0; i < class_sizes.size(); i++) {
-        cout << "    class " << setw(4) << i << ": " << class_sizes[i] << endl;
+        cerr << "    class " << setw(4) << i << ": " << class_sizes[i] << endl;
     }
 
     /*
        for (int i = 0; i < images.size(); i++) {
-       images[i].print(cout);
+       images[i].print(cerr);
        }
        */
 
-    cout << "normalizing images." << endl;
+    cerr << "normalizing images." << endl;
     normalize();
-    cout << "normalized." << endl;
+    cerr << "normalized." << endl;
 }
 
 int Images::get_class_size(int i) const {
@@ -211,7 +211,7 @@ void Images::normalize() {
 
     avg /= number_images;
     
-    cout << "average pixel value: " << avg << endl;
+    cerr << "average pixel value: " << avg << endl;
 
     double variance = 0.0;
     for (int i = 0; i < number_images; i++) {
@@ -219,9 +219,9 @@ void Images::normalize() {
     }
 
     variance /= number_images;
-    cout << "pixel variance: " << variance << endl;
+    cerr << "pixel variance: " << variance << endl;
     double std_dev = sqrt(variance);
-    cout << "pixel standard deviation: " << std_dev << endl;
+    cerr << "pixel standard deviation: " << std_dev << endl;
 
     for (int i = 0; i < number_images; i++) {
         images[i].normalize(avg, std_dev);
