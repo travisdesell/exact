@@ -28,7 +28,7 @@ using std::ostream;
 using std::istream;
 
 #include <random>
-using std::mt19937;
+using std::minstd_rand0;
 using std::normal_distribution;
 using std::uniform_int_distribution;
 using std::uniform_real_distribution;
@@ -72,7 +72,7 @@ void CNN_Genome::set_progress_function(int (*_progress_function)(double)) {
  */
 CNN_Genome::CNN_Genome(int _generation_id, int seed, int _min_epochs, int _max_epochs, int _improvement_required_epochs, bool _reset_edges, double _learning_rate, double _weight_decay, const vector<CNN_Node*> &_nodes, const vector<CNN_Edge*> &_edges) {
     started_from_checkpoint = false;
-    generator = mt19937(seed);
+    generator = minstd_rand0(seed);
 
     progress_function = NULL;
 
