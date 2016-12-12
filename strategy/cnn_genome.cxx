@@ -44,42 +44,12 @@ using std::vector;
 #include "cnn_genome.hxx"
 
 /**
- *  *  Includes required for BOINC
- *   */
-#ifdef _BOINC_
-#ifdef _WIN32
-    #include "boinc_win.h"
-    #include "str_util.h"
-#endif
-
-    #include "diagnostics.h"
-    #include "util.h"
-    #include "filesys.h"
-    #include "boinc_api.h"
-    #include "mfile.h"
-#endif
-
-/**
  *  Initialize a genome from a file
  */
 CNN_Genome::CNN_Genome(string filename, bool is_checkpoint) {
     started_from_checkpoint = is_checkpoint;
 
-    //TODO: BOINCIFY THIS
-#ifdef _BOINC_
-    string input_path;
-    int retval = boinc_resolve_filename_s(filename.c_str(), input_path);
-    if (retval) {
-        cerr << "APP: error reading input file (resolving checkpoint file name)" << endl;
-        boinc_finish(1);
-        exit(1);
-    }   
-
-    ifstream infile(input_path.c_str());
-#else
     ifstream infile(filename.c_str());
-#endif
-
     read(infile);
     infile.close();
 }
@@ -87,6 +57,11 @@ CNN_Genome::CNN_Genome(string filename, bool is_checkpoint) {
 CNN_Genome::CNN_Genome(istream &in, bool is_checkpoint) {
     started_from_checkpoint = is_checkpoint;
     read(in);
+}
+
+
+void CNN_Genome::set_progress_function(int (*_progress_function)(double)) {
+    progress_function = _progress_function;
 }
 
 /**
@@ -97,6 +72,8 @@ CNN_Genome::CNN_Genome(int _generation_id, int seed, int _min_epochs, int _max_e
     generator = mt19937(seed);
     rng_double = uniform_real_distribution<double>(0, 1.0);
     rng_long = uniform_int_distribution<long>(-numeric_limits<long>::max(), numeric_limits<long>::max());
+
+    progress_function = NULL;
 
     mu = 0.5;
     initial_mu = mu;
@@ -832,23 +809,18 @@ void CNN_Genome::stochastic_backpropagation(const Images &images) {
             write_to_file(checkpoint_filename);
         }
 
-#ifdef _BOINC_
-        //TODO: Update percentage done
-
-        double progress = (double)epoch / (double)max_epochs;
-        boinc_fraction_done(progress);
-#endif
+        if (progress_function != NULL) {
+            double progress = (double)epoch / (double)max_epochs;
+            progress_function(progress);
+        }
 
         if (epoch > max_epochs) {
             break;
         }
 
-#ifndef _BOINC_
         if (epoch > min_epochs && (epoch - best_error_epoch) > improvement_required_epochs) {
             break;
         }
-#endif
-
     } while (true);
 
     /*
@@ -1078,20 +1050,7 @@ void CNN_Genome::read(istream &infile) {
 }
 
 void CNN_Genome::write_to_file(string filename) {
-#ifdef _BOINC_
-    string output_path;
-    int retval = boinc_resolve_filename_s(filename.c_str(), output_path);
-    if (retval) {
-        cerr << "APP: error writing checkpoint (resolving checkpoint file name)" << endl;
-        boinc_finish(1);
-        exit(1);
-    }   
-
-    ofstream outfile(output_path.c_str());
-#else
     ofstream outfile(filename.c_str());
-#endif
-
     write(outfile);
     outfile.close();
 }

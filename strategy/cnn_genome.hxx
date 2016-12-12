@@ -67,6 +67,8 @@ class CNN_Genome {
         int generated_by_change_size_y;
         int generated_by_crossover;
 
+        int (*progress_function)(double);
+
     public:
         /**
          *  Initialize a genome from a file
@@ -85,6 +87,8 @@ class CNN_Genome {
 
         void print_best_error(ostream &out) const;
         void print_best_predictions(ostream &out) const;
+
+        void set_progress_function(int (*_progress_function)(double));
 
         int get_generation_id() const;
         double get_fitness() const;
