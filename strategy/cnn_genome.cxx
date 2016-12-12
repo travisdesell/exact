@@ -2,6 +2,9 @@
 using std::sort;
 using std::upper_bound;
 
+#include <cmath>
+using std::isnan;
+
 #include <fstream>
 using std::ofstream;
 using std::ifstream;
@@ -68,10 +71,11 @@ CNN_Genome::CNN_Genome(string filename, bool is_checkpoint) {
     //TODO: BOINCIFY THIS
 #ifdef _BOINC_
     string input_path;
-    int retval = boinc_resolve_filename_s(filename.c_str(), input_path);
+    int retval = 0;
+    //retval = boinc_resolve_filename_s(filename.c_str(), input_path);
     if (retval) {
         cerr << "APP: error reading input file (resolving checkpoint file name)" << endl;
-        boinc_finish(1);
+        //boinc_finish(1);
         exit(1);
     }   
 
@@ -263,6 +267,20 @@ void CNN_Genome::print_best_predictions(ostream &out) const {
         cout << setw(15) << setprecision(5) << best_correct_predictions[i];
     }
     cout << endl;
+}
+
+int CNN_Genome::get_number_weights() const {
+    int number_weights = 0;
+
+    for (uint32_t i = 0; i < nodes.size(); i++) {
+        number_weights += nodes[i]->get_size_x() * nodes[i]->get_size_y();
+    }
+
+    for (uint32_t i = 0; i < edges.size(); i++) {
+        number_weights += edges[i]->get_filter_x() * edges[i]->get_filter_y();
+    }
+
+    return number_weights;
 }
 
 
@@ -836,7 +854,7 @@ void CNN_Genome::stochastic_backpropagation(const Images &images) {
         //TODO: Update percentage done
 
         double progress = (double)epoch / (double)max_epochs;
-        boinc_fraction_done(progress);
+        //boinc_fraction_done(progress);
 #endif
 
         if (epoch > max_epochs) {
@@ -1077,21 +1095,28 @@ void CNN_Genome::read(istream &infile) {
     }
 }
 
-void CNN_Genome::write_to_file(string filename) {
+/*
 #ifdef _BOINC_
+void CNN_Genome::write_to_file_boinc(string filename) {
     string output_path;
-    int retval = boinc_resolve_filename_s(filename.c_str(), output_path);
+    int retval = 0;
+    //retval = boinc_resolve_filename_s(filename.c_str(), output_path);
     if (retval) {
         cerr << "APP: error writing checkpoint (resolving checkpoint file name)" << endl;
-        boinc_finish(1);
+        //boinc_finish(1);
         exit(1);
     }   
 
     ofstream outfile(output_path.c_str());
-#else
-    ofstream outfile(filename.c_str());
-#endif
 
+    write(outfile);
+    outfile.close();
+}
+#endif
+*/
+
+void CNN_Genome::write_to_file(string filename) {
+    ofstream outfile(filename.c_str());
     write(outfile);
     outfile.close();
 }

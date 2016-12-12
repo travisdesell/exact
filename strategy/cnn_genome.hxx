@@ -86,6 +86,7 @@ class CNN_Genome {
         void print_best_error(ostream &out) const;
         void print_best_predictions(ostream &out) const;
 
+        int get_number_weights() const;
         int get_generation_id() const;
         double get_fitness() const;
         int get_best_error_epoch() const;

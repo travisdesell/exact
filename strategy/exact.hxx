@@ -31,8 +31,11 @@ using std::vector;
 
 class EXACT {
     private:
+        int id;
+
         string output_directory;
 
+        int number_images;
         int image_rows;
         int image_cols;
         int number_classes;
@@ -102,8 +105,9 @@ class EXACT {
 
         void print_statistics(ostream &out);
         void print_statistics_header(ostream &out);
+
+        int get_id() const;
+        int get_number_images() const;
 };
-
-
 
 #endif

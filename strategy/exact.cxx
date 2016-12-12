@@ -42,6 +42,9 @@ using std::vector;
 
 
 EXACT::EXACT(const Images &images, int _population_size, int _min_epochs, int _max_epochs, int _improvement_required_epochs, bool _reset_edges, int _max_individuals, string _output_directory) {
+
+    id = 1;
+
     output_directory = _output_directory;
     reset_edges = _reset_edges;
     min_epochs = _min_epochs;
@@ -63,6 +66,7 @@ EXACT::EXACT(const Images &images, int _population_size, int _min_epochs, int _m
 
     population_size = _population_size;
 
+    number_images = images.get_number_images();
     image_rows = images.get_image_rows();
     image_cols = images.get_image_cols();
     number_classes = images.get_number_classes();
@@ -141,6 +145,14 @@ EXACT::EXACT(const Images &images, int _population_size, int _min_epochs, int _m
     cout << "\tnode_change_size_x: " << node_change_size_x << endl;
     cout << "\tnode_change_size_y: " << node_change_size_y << endl;
     cout << "\tnode_change_pool_size: " << node_change_pool_size << endl;
+}
+
+int EXACT::get_id() const {
+    return id;
+}
+
+int EXACT::get_number_images() const {
+    return number_images;
 }
 
 CNN_Genome* EXACT::get_best_genome() {
