@@ -19,7 +19,7 @@ using std::istream;
 using std::numeric_limits;
 
 #include <random>
-using std::mt19937;
+using std::minstd_rand0;
 using std::normal_distribution;
 using std::uniform_int_distribution;
 using std::uniform_real_distribution;
@@ -55,7 +55,7 @@ EXACT::EXACT(const Images &images, int _population_size, int _min_epochs, int _m
     unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
     //unsigned seed = 10;
 
-    generator = mt19937(seed);
+    generator = minstd_rand0(seed);
     rng_long = uniform_int_distribution<long>(-numeric_limits<long>::max(), numeric_limits<long>::max());
     rng_double = uniform_real_distribution<double>(0, 1.0);
 

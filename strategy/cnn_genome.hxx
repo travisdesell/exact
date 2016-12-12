@@ -2,9 +2,7 @@
 #define CNN_GENOME_H
 
 #include <random>
-using std::mt19937;
-using std::uniform_int_distribution;
-using std::uniform_real_distribution;
+using std::minstd_rand0;
 
 #include <vector>
 using std::vector;
@@ -24,7 +22,7 @@ class CNN_Genome {
         CNN_Node *input_node;
         vector<CNN_Node*> softmax_nodes;
 
-        mt19937 generator;
+        minstd_rand0 generator;
 
         double initial_mu;
         double mu;

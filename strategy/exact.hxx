@@ -12,7 +12,7 @@ using std::istream;
 using std::numeric_limits;
 
 #include <random>
-using std::mt19937;
+using std::minstd_rand0;
 using std::normal_distribution;
 using std::uniform_int_distribution;
 using std::uniform_real_distribution;
@@ -61,7 +61,7 @@ class EXACT {
         int improvement_required_epochs;
         int max_individuals;
 
-        mt19937 generator;
+        minstd_rand0 generator;
 
         double learning_rate;
         double weight_decay;
