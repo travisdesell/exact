@@ -15,7 +15,7 @@ using std::ostream;
 using std::istream;
 
 #include <random>
-using std::mt19937;
+using std::minstd_rand0;
 using std::normal_distribution;
 
 
@@ -156,7 +156,7 @@ CNN_Node* CNN_Node::copy() const {
     return copy;
 }
 
-void CNN_Node::initialize_bias(mt19937 &generator) {
+void CNN_Node::initialize_bias(minstd_rand0 &generator) {
     int bias_size = size_x * size_y;
     if (bias_size == 1) bias_size = 10;
     normal_distribution<double> distribution(0.0, sqrt(2.0 / bias_size));
@@ -463,7 +463,7 @@ void CNN_Node::resize_arrays(int previous_size_x, int previous_size_y) {
 }
 
 
-bool CNN_Node::modify_size_x(int change, mt19937 &generator) {
+bool CNN_Node::modify_size_x(int change, minstd_rand0 &generator) {
     int previous_size_x = size_x;
 
     size_x += change;
@@ -479,7 +479,7 @@ bool CNN_Node::modify_size_x(int change, mt19937 &generator) {
     return true;
 }
 
-bool CNN_Node::modify_size_y(int change, mt19937 &generator) {
+bool CNN_Node::modify_size_y(int change, minstd_rand0 &generator) {
     int previous_size_y = size_y;
 
     size_y += change;

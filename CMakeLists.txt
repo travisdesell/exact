@@ -38,9 +38,15 @@ include_directories(${UNDVC_COMMON_INCLUDE_DIR})
 #UNDVC_COMMON has the FindBOINC.cmake and FindMYSQL.cmake files
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${UNDVC_COMMON_INCLUDE_DIR}/cmake/Modules/")
 
-find_package(Boost)
+find_package(Boost REQUIRED COMPONENTS system filesystem)
+MESSAGE(STATUS "Boost_LIBRARIES: ${Boost_LIBRARIES}")
+MESSAGE(STATUS "Boost_INCLUDE_DIRS: ${Boost_INCLUDE_DIRS}")
+MESSAGE(STATUS "Boost_LIBRARY_DIRS: ${Boost_LIBRARY_DIRS}")
+
 
 find_package(BOINC)
+find_package(MySQL REQUIRED)
+find_package(OpenSSL REQUIRED)
 
 IF (BOINC_APP_FOUND)
     message(STATUS "BOINC APP FOUND!")
@@ -52,13 +58,29 @@ IF (BOINC_APP_FOUND)
 ENDIF (BOINC_APP_FOUND)
 
 
+include_directories(
+	${BOINC_INCLUDE_DIR}
+    ${BOINC_INCLUDE_DIR}/api
+    ${BOINC_INCLUDE_DIR}/db
+    ${BOINC_INCLUDE_DIR}/lib
+    ${BOINC_INCLUDE_DIR}/sched
+    ${BOINC_INCLUDE_DIR}/tools/
+	${MYSQL_INCLUDE_DIR}
+    ${Boost_INCLUDE_DIRS}
+)
+
 include_directories(${Boost_INCLUDE_DIR})
 
 include_directories(${PROJECT_SOURCE_DIR})
 
 add_subdirectory(image_tools)
 add_subdirectory(strategy)
-add_subdirectory(client)
-add_subdirectory(server)
+#add_subdirectory(client)
+
+if (BOINC_SERVER_FOUND)
+    add_subdirectory(server)
+ENDIF(BOINC_SERVER_FOUND)
+
+
 add_subdirectory(multithreaded)
 add_subdirectory(mpi)

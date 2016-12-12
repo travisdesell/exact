@@ -13,7 +13,7 @@ using std::ostream;
 using std::istream;
 
 #include <random>
-using std::mt19937;
+using std::minstd_rand0;
 using std::normal_distribution;
 
 #include <string>
@@ -66,9 +66,9 @@ class CNN_Edge {
         void set_weights_to_best();
 
         bool set_nodes(const vector<CNN_Node*> nodes);
-        void initialize_weights(mt19937 &generator);
+        void initialize_weights(minstd_rand0 &generator);
         void initialize_velocities();
-        void reinitialize(mt19937 &generator);
+        void reinitialize(minstd_rand0 &generator);
 
         void disable();
         void enable();

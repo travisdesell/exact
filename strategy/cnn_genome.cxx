@@ -2,6 +2,9 @@
 using std::sort;
 using std::upper_bound;
 
+#include <cmath>
+using std::isnan;
+
 #include <fstream>
 using std::ofstream;
 using std::ifstream;
@@ -25,7 +28,7 @@ using std::ostream;
 using std::istream;
 
 #include <random>
-using std::mt19937;
+using std::minstd_rand0;
 using std::normal_distribution;
 using std::uniform_int_distribution;
 using std::uniform_real_distribution;
@@ -69,7 +72,7 @@ void CNN_Genome::set_progress_function(int (*_progress_function)(double)) {
  */
 CNN_Genome::CNN_Genome(int _generation_id, int seed, int _min_epochs, int _max_epochs, int _improvement_required_epochs, bool _reset_edges, double _learning_rate, double _weight_decay, const vector<CNN_Node*> &_nodes, const vector<CNN_Edge*> &_edges) {
     started_from_checkpoint = false;
-    generator = mt19937(seed);
+    generator = minstd_rand0(seed);
 
     progress_function = NULL;
 
@@ -238,6 +241,20 @@ void CNN_Genome::print_best_predictions(ostream &out) const {
         cout << setw(15) << setprecision(5) << best_correct_predictions[i];
     }
     cout << endl;
+}
+
+int CNN_Genome::get_number_weights() const {
+    int number_weights = 0;
+
+    for (uint32_t i = 0; i < nodes.size(); i++) {
+        number_weights += nodes[i]->get_size_x() * nodes[i]->get_size_y();
+    }
+
+    for (uint32_t i = 0; i < edges.size(); i++) {
+        number_weights += edges[i]->get_filter_x() * edges[i]->get_filter_y();
+    }
+
+    return number_weights;
 }
 
 

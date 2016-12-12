@@ -13,7 +13,7 @@ using std::ostream;
 using std::istream;
 
 #include <random>
-using std::mt19937;
+using std::minstd_rand0;
 
 
 #include <string>
@@ -88,8 +88,8 @@ class CNN_Node {
         void visit();
         void set_unvisited();
 
-        void initialize_bias(mt19937 &generator);
-        void reinitialize_bias(mt19937 &generator);
+        void initialize_bias(minstd_rand0 &generator);
+        void reinitialize_bias(minstd_rand0 &generator);
         void initialize_velocities();
 
         bool has_zero_bias() const;
@@ -115,8 +115,8 @@ class CNN_Node {
         void set_bias_to_best();
 
         void resize_arrays(int previous_size_x, int previous_size_y);
-        bool modify_size_x(int change, mt19937 &generator);
-        bool modify_size_y(int change, mt19937 &generator);
+        bool modify_size_x(int change, minstd_rand0 &generator);
+        bool modify_size_y(int change, minstd_rand0 &generator);
 
         void add_input();
         void disable_input();

@@ -12,7 +12,7 @@ using std::istream;
 using std::numeric_limits;
 
 #include <random>
-using std::mt19937;
+using std::minstd_rand0;
 using std::normal_distribution;
 using std::uniform_int_distribution;
 using std::uniform_real_distribution;
@@ -31,8 +31,11 @@ using std::vector;
 
 class EXACT {
     private:
+        int id;
+
         string output_directory;
 
+        int number_images;
         int image_rows;
         int image_cols;
         int number_classes;
@@ -58,7 +61,7 @@ class EXACT {
         int improvement_required_epochs;
         int max_individuals;
 
-        mt19937 generator;
+        minstd_rand0 generator;
 
         double learning_rate;
         double weight_decay;
@@ -102,8 +105,9 @@ class EXACT {
 
         void print_statistics(ostream &out);
         void print_statistics_header(ostream &out);
+
+        int get_id() const;
+        int get_number_images() const;
 };
-
-
 
 #endif

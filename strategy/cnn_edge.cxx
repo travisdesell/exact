@@ -1,3 +1,7 @@
+#include <cmath>
+//for isnan
+using std::isnan;
+
 #include <fstream>
 using std::ofstream;
 using std::ifstream;
@@ -15,7 +19,7 @@ using std::ostream;
 using std::istream;
 
 #include <random>
-using std::mt19937;
+using std::minstd_rand0;
 using std::normal_distribution;
 
 #include <string>
@@ -92,7 +96,7 @@ int CNN_Edge::get_filter_y() const {
 }
 
 
-void CNN_Edge::initialize_weights(mt19937 &generator) {
+void CNN_Edge::initialize_weights(minstd_rand0 &generator) {
     if (disabled) return;
 
     int edge_size = filter_x * filter_y;
@@ -118,7 +122,7 @@ void CNN_Edge::initialize_velocities() {
 }
 
 
-void CNN_Edge::reinitialize(mt19937 &generator) {
+void CNN_Edge::reinitialize(minstd_rand0 &generator) {
     //this may have changed from a regular to reverse filter
     if (output_node->get_size_x() <= input_node->get_size_x()) {
         reverse_filter_x = false;
