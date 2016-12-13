@@ -45,8 +45,8 @@ MESSAGE(STATUS "Boost_LIBRARY_DIRS: ${Boost_LIBRARY_DIRS}")
 
 
 find_package(BOINC)
-find_package(MySQL REQUIRED)
-find_package(OpenSSL REQUIRED)
+#find_package(MySQL REQUIRED)
+#find_package(OpenSSL REQUIRED)
 
 IF (BOINC_APP_FOUND)
     message(STATUS "BOINC APP FOUND!")
@@ -75,11 +75,11 @@ include_directories(${PROJECT_SOURCE_DIR})
 
 add_subdirectory(image_tools)
 add_subdirectory(strategy)
-#add_subdirectory(client)
+add_subdirectory(client)
 
-if (BOINC_SERVER_FOUND)
-    add_subdirectory(server)
-ENDIF(BOINC_SERVER_FOUND)
+#if (BOINC_SERVER_FOUND)
+#    add_subdirectory(server)
+#ENDIF(BOINC_SERVER_FOUND)
 
 
 add_subdirectory(multithreaded)
