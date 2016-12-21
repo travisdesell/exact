@@ -27,7 +27,7 @@ Image::Image(ifstream &infile, int size, int _rows, int _cols, int _classificati
     classification = _classification;
 
     pixels = new double*[cols];
-    for (uint32_t i = 0; i < cols; i++) {
+    for (int32_t i = 0; i < cols; i++) {
         pixels[i] = new double[rows];
     }
 
@@ -36,8 +36,8 @@ Image::Image(ifstream &infile, int size, int _rows, int _cols, int _classificati
     infile.read( c_pixels, sizeof(char) * size);
 
     int current = 0;
-    for (uint32_t y = 0; y < cols; y++) {
-        for (uint32_t x = 0; x < rows; x++) {
+    for (int32_t y = 0; y < cols; y++) {
+        for (int32_t x = 0; x < rows; x++) {
             pixels[y][x] = (int)(uint8_t)c_pixels[current];
             current++;
         }
@@ -63,8 +63,8 @@ int Image::get_cols() const {
 }
 
 void Image::scale_0_1() {
-    for (uint32_t y = 0; y < cols; y++) {
-        for (uint32_t x = 0; x < rows; x++) {
+    for (int32_t y = 0; y < cols; y++) {
+        for (int32_t x = 0; x < rows; x++) {
             pixels[y][x] /= 255.0;
         }
     }
@@ -73,8 +73,8 @@ void Image::scale_0_1() {
 double Image::get_pixel_avg() const {
     double avg = 0.0;
 
-    for (uint32_t y = 0; y < cols; y++) {
-        for (uint32_t x = 0; x < rows; x++) {
+    for (int32_t y = 0; y < cols; y++) {
+        for (int32_t x = 0; x < rows; x++) {
             avg += pixels[y][x];
         }
     }
@@ -88,8 +88,8 @@ double Image::get_pixel_variance(double avg) const {
     double variance = 0.0;
 
     double tmp;
-    for (uint32_t y = 0; y < cols; y++) {
-        for (uint32_t x = 0; x < rows; x++) {
+    for (int32_t y = 0; y < cols; y++) {
+        for (int32_t x = 0; x < rows; x++) {
             tmp = avg - pixels[y][x];
             variance += tmp * tmp;
         }
@@ -101,8 +101,8 @@ double Image::get_pixel_variance(double avg) const {
 }
 
 void Image::normalize(double avg, double variance) {
-    for (uint32_t y = 0; y < cols; y++) {
-        for (uint32_t x = 0; x < rows; x++) {
+    for (int32_t y = 0; y < cols; y++) {
+        for (int32_t x = 0; x < rows; x++) {
             pixels[y][x] -= avg;
             pixels[y][x] /= variance;
         }
@@ -112,8 +112,8 @@ void Image::normalize(double avg, double variance) {
 
 void Image::print(ostream &out) {
     out << "Image Class: " << classification << endl;
-    for (uint32_t y = 0; y < cols; y++) {
-        for (uint32_t x = 0; x < rows; x++) {
+    for (int32_t y = 0; y < cols; y++) {
+        for (int32_t x = 0; x < rows; x++) {
             out << setw(7) << pixels[y][x];
         }
         out << endl;
@@ -150,7 +150,7 @@ Images::Images(string binary_filename) {
     for (int i = 0; i < number_classes; i++) {
         cerr << "reading image set with " << class_sizes[i] << " images." << endl;
 
-        for (uint32_t j = 0; j < class_sizes[i]; j++) {
+        for (int32_t j = 0; j < class_sizes[i]; j++) {
             images.push_back(Image(infile, image_size, rowscols, rowscols, i));
         }
     }
@@ -161,7 +161,7 @@ Images::Images(string binary_filename) {
     cerr << "image_size: " << rowscols << "x" << rowscols << " = " << image_size << endl;
 
     cerr << "read " << images.size() << " images." << endl;
-    for (int i = 0; i < class_sizes.size(); i++) {
+    for (int i = 0; i < (int32_t)class_sizes.size(); i++) {
         cerr << "    class " << setw(4) << i << ": " << class_sizes[i] << endl;
     }
 

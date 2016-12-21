@@ -154,6 +154,11 @@ int EXACT::get_id() const {
     return id;
 }
 
+string EXACT::get_search_name() const {
+    return search_name;
+}
+
+
 int EXACT::get_number_images() const {
     return number_images;
 }
@@ -176,7 +181,7 @@ CNN_Genome* EXACT::generate_individual() {
         node_innovation_count++;
         all_nodes.push_back(input_node);
 
-        for (uint32_t i = 0; i < number_classes; i++) {
+        for (int32_t i = 0; i < number_classes; i++) {
             CNN_Node *softmax_node = new CNN_Node(node_innovation_count, 1, 1, 1, SOFTMAX_NODE);
             softmax_node->initialize_bias(generator);
             softmax_node->save_best_bias();
@@ -184,7 +189,7 @@ CNN_Genome* EXACT::generate_individual() {
             all_nodes.push_back(softmax_node);
         }
 
-        for (uint32_t i = 0; i < number_classes; i++) {
+        for (int32_t i = 0; i < number_classes; i++) {
             CNN_Edge *edge = new CNN_Edge(input_node, all_nodes[i + 1] /*ith softmax node*/, true, edge_innovation_count);
             edge->initialize_weights(generator);
             edge->save_best_weights();
@@ -203,7 +208,7 @@ CNN_Genome* EXACT::generate_individual() {
         genome->save_weights();
         genome->save_bias();
 
-    } else if (genomes.size() < population_size) {
+    } else if ((int32_t)genomes.size() < population_size) {
         //generate random mutatinos until genomes.size() < population_size
         while (genome == NULL) {
             genome = create_mutation();
@@ -258,7 +263,7 @@ CNN_Genome* EXACT::generate_individual() {
         exit(1);
     }
 
-    if (genomes.size() < population_size) {
+    if ((int32_t)genomes.size() < population_size) {
         //insert a copy with a bad fitness so we have more things to generate new genomes with
         CNN_Genome *genome_copy = new CNN_Genome(genomes_generated++, /*new random seed*/ rng_long(generator), min_epochs, max_epochs, improvement_required_epochs, reset_edges, learning_rate, weight_decay, genome->get_nodes(), genome->get_edges());
 
@@ -275,7 +280,7 @@ CNN_Genome* EXACT::generate_individual() {
 }
 
 bool EXACT::population_contains(CNN_Genome *genome) const {
-    for (int i = 0; i < genomes.size(); i++) {
+    for (int32_t i = 0; i < (int32_t)genomes.size(); i++) {
         //we can overwrite genomes that were inserted in the initialization phase
         //and not evaluated
         if (genomes[i]->get_fitness() == numeric_limits<double>::max()) continue;
@@ -363,14 +368,14 @@ void EXACT::insert_genome(CNN_Genome* genome) {
     genomes.insert( upper_bound(genomes.begin(), genomes.end(), genome, sort_genomes_by_fitness()), genome);
 
     //delete the worst individual if we've reached the population size
-    if (genomes.size() > population_size) {
+    if ((int32_t)genomes.size() > population_size) {
         CNN_Genome *worst = genomes.back();
         genomes.pop_back();
         delete worst;
     }
     
     cout << "genome fitnesses:" << endl;
-    for (uint32_t i = 0; i < genomes.size(); i++) {
+    for (int32_t i = 0; i < (int32_t)genomes.size(); i++) {
         cout << "\t" << setw(4) << i << " -- genome: " << setw(10) << genomes[i]->get_generation_id() << ", "
              << setw(20) << left << "fitness: " << right << setw(15) << setprecision(5) << fixed << parse_fitness(genomes[i]->get_fitness())
              << " (" << genomes[i]->get_best_predictions() << " correct) on epoch: " << genomes[i]->get_best_error_epoch() 
@@ -378,13 +383,13 @@ void EXACT::insert_genome(CNN_Genome* genome) {
              << ", number nodes: " << genomes[i]->get_number_nodes() << endl;
     }
     cout << "genome best error: " << endl;
-    for (uint32_t i = 0; i < genomes.size(); i++) {
+    for (int32_t i = 0; i < (int32_t)genomes.size(); i++) {
         cout << "\t" << setw(4) << i << " -- genome: " << setw(10) << genomes[i]->get_generation_id() << ", ";
         genomes[i]->print_best_error(cout);
     }
 
     cout << "genome correct predictions: " << endl;
-    for (uint32_t i = 0; i < genomes.size(); i++) {
+    for (int32_t i = 0; i < (int32_t)genomes.size(); i++) {
         cout << "\t" << setw(4) << i << " -- genome: " << setw(10) << genomes[i]->get_generation_id() << ", ";
         genomes[i]->print_best_predictions(cout);
     }
@@ -419,12 +424,12 @@ CNN_Genome* EXACT::create_mutation() {
         cout << "\tparent had not been evaluated yet, but best_bias and best_weights should have been set randomly" << endl;
 
         /*
-        for (uint32_t i = 0; i < child->get_number_nodes(); i++) {
+        for (int32_t i = 0; i < child->get_number_nodes(); i++) {
             child->get_node(i)->initialize_bias(generator);
             child->get_node(i)->save_best_bias();
         }
 
-        for (uint32_t i = 0; i < child->get_number_edges(); i++) {
+        for (int32_t i = 0; i < child->get_number_edges(); i++) {
             child->get_edge(i)->initialize_weights(generator);
             child->get_edge(i)->save_best_weights();
         }
@@ -459,7 +464,7 @@ CNN_Genome* EXACT::create_mutation() {
 
             vector< CNN_Edge* > disabled_edges;
 
-            for (uint32_t i = 0; i < child->get_number_edges(); i++) {
+            for (int32_t i = 0; i < child->get_number_edges(); i++) {
                 CNN_Edge* current = child->get_edge(i);
 
                 if (current == NULL) {
@@ -580,7 +585,7 @@ CNN_Genome* EXACT::create_mutation() {
             //check to see if the edge already exists
             bool edge_exists = false;
             int all_edges_position = -1;
-            for (uint32_t i = 0; i < all_edges.size(); i++) {
+            for (int32_t i = 0; i < (int32_t)all_edges.size(); i++) {
                 if (all_edges[i]->connects(node1_innovation_number, node2_innovation_number)) {
                     edge_exists = true;
                     all_edges_position = i;
@@ -589,7 +594,7 @@ CNN_Genome* EXACT::create_mutation() {
             }
 
             bool edge_exists_in_child = false;
-            for (uint32_t i = 0; i < child->get_number_edges(); i++) {
+            for (int32_t i = 0; i < child->get_number_edges(); i++) {
                 if (child->get_edge(i)->connects(node1_innovation_number, node2_innovation_number)) {
                     edge_exists_in_child = true;
                     break;
@@ -824,7 +829,7 @@ CNN_Genome* EXACT::create_mutation() {
 }
 
 void attempt_node_insert(vector<CNN_Node*> &nodes, CNN_Node *node) {
-    for (int i = 0; i < nodes.size(); i++) {
+    for (int32_t i = 0; i < (int32_t)nodes.size(); i++) {
         if (nodes[i]->get_innovation_number() == node->get_innovation_number()) return;
     }
 
@@ -832,7 +837,7 @@ void attempt_node_insert(vector<CNN_Node*> &nodes, CNN_Node *node) {
 }
 
 bool edges_contains(vector< CNN_Edge* > &edges, CNN_Edge *edge) {
-    for (int i = 0; i < edges.size(); i++) {
+    for (int32_t i = 0; i < (int32_t)edges.size(); i++) {
         if (edges[i]->get_innovation_number() == edge->get_innovation_number()) return true;
     }
     return false;
@@ -878,16 +883,16 @@ CNN_Genome* EXACT::create_child() {
     sort(p2_edges.begin(), p2_edges.end(), sort_CNN_Edges_by_innovation());
 
     cerr << "p1 innovation numbers AFTER SORT: " << endl;
-    for (uint32_t i = 0; i < p1_edges.size(); i++) {
+    for (int32_t i = 0; i < (int32_t)p1_edges.size(); i++) {
         cerr << "\t" << p1_edges[i]->get_innovation_number() << endl;
     }
     cerr << "p2 innovation numbers AFTER SORT: " << endl;
-    for (uint32_t i = 0; i < p2_edges.size(); i++) {
+    for (int32_t i = 0; i < (int32_t)p2_edges.size(); i++) {
         cerr << "\t" << p2_edges[i]->get_innovation_number() << endl;
     }
 
 
-    while (p1_position < p1_edges.size() && p2_position < p2_edges.size()) {
+    while (p1_position < (int32_t)p1_edges.size() && p2_position < (int32_t)p2_edges.size()) {
         CNN_Edge* p1_edge = p1_edges[p1_position];
         CNN_Edge* p2_edge = p2_edges[p2_position];
 
@@ -902,7 +907,7 @@ CNN_Genome* EXACT::create_child() {
                 cerr << "p1_position: " << p1_position << ", p1_size: " << p1_edges.size() << endl;
                 cerr << "p2_position: " << p2_position << ", p2_size: " << p2_edges.size() << endl;
                 cerr << "vector innovation numbers: " << endl;
-                for (uint32_t i = 0; i < child_edges.size(); i++) {
+                for (int32_t i = 0; i < (int32_t)child_edges.size(); i++) {
                     cerr << "\t" << child_edges[i]->get_innovation_number() << endl;
                 }
             }
@@ -923,7 +928,7 @@ CNN_Genome* EXACT::create_child() {
                 cerr << "p1_position: " << p1_position << ", p1_size: " << p1_edges.size() << endl;
                 cerr << "p2_position: " << p2_position << ", p2_size: " << p2_edges.size() << endl;
                 cerr << "vector innovation numbers: " << endl;
-                for (uint32_t i = 0; i < child_edges.size(); i++) {
+                for (int32_t i = 0; i < (int32_t)child_edges.size(); i++) {
                     cerr << "\t" << child_edges[i]->get_innovation_number() << endl;
                 }
             }
@@ -947,7 +952,7 @@ CNN_Genome* EXACT::create_child() {
                 cerr << "p1_position: " << p1_position << ", p1_size: " << p1_edges.size() << endl;
                 cerr << "p2_position: " << p2_position << ", p2_size: " << p2_edges.size() << endl;
                 cerr << "vector innovation numbers: " << endl;
-                for (uint32_t i = 0; i < child_edges.size(); i++) {
+                for (int32_t i = 0; i < (int32_t)child_edges.size(); i++) {
                     cerr << "\t" << child_edges[i]->get_innovation_number() << endl;
                 }
             }
@@ -966,7 +971,7 @@ CNN_Genome* EXACT::create_child() {
         }
     }
 
-    while (p1_position < p1_edges.size()) {
+    while (p1_position < (int32_t)p1_edges.size()) {
         CNN_Edge* p1_edge = p1_edges[p1_position];
 
         CNN_Edge *edge = p1_edge->copy();
@@ -975,16 +980,16 @@ CNN_Genome* EXACT::create_child() {
             cerr << "ERROR in crossover! trying to push an edge with innovation_number: " << edge->get_innovation_number() << " and it already exists in the vector!" << endl;
             cerr << "p1_position: " << p1_position << ", p1_size: " << p1_edges.size() << endl;
             cerr << "p1 innovation numbers: " << endl;
-            for (uint32_t i = 0; i < p1_edges.size(); i++) {
+            for (int32_t i = 0; i < (int32_t)p1_edges.size(); i++) {
                 cerr << "\t" << p1_edges[i]->get_innovation_number() << endl;
             }
             cerr << "p2_position: " << p2_position << ", p2_size: " << p2_edges.size() << endl;
             cerr << "p2 innovation numbers: " << endl;
-            for (uint32_t i = 0; i < p2_edges.size(); i++) {
+            for (int32_t i = 0; i < (int32_t)p2_edges.size(); i++) {
                 cerr << "\t" << p2_edges[i]->get_innovation_number() << endl;
             }
             cerr << "vector innovation numbers: " << endl;
-            for (uint32_t i = 0; i < child_edges.size(); i++) {
+            for (int32_t i = 0; i < (int32_t)child_edges.size(); i++) {
                 cerr << "\t" << child_edges[i]->get_innovation_number() << endl;
             }
         }
@@ -1002,7 +1007,7 @@ CNN_Genome* EXACT::create_child() {
         p1_position++;
     }
 
-    while (p2_position < p2_edges.size()) {
+    while (p2_position < (int32_t)p2_edges.size()) {
         CNN_Edge* p2_edge = p2_edges[p2_position];
 
         CNN_Edge *edge = p2_edge->copy();
@@ -1011,16 +1016,16 @@ CNN_Genome* EXACT::create_child() {
             cerr << "ERROR in crossover! trying to push an edge with innovation_number: " << edge->get_innovation_number() << " and it already exists in the vector!" << endl;
             cerr << "p1_position: " << p1_position << ", p1_size: " << p1_edges.size() << endl;
             cerr << "p1 innovation numbers: " << endl;
-            for (uint32_t i = 0; i < p1_edges.size(); i++) {
+            for (int32_t i = 0; i < (int32_t)p1_edges.size(); i++) {
                 cerr << "\t" << p1_edges[i]->get_innovation_number() << endl;
             }
             cerr << "p2_position: " << p2_position << ", p2_size: " << p2_edges.size() << endl;
             cerr << "p2 innovation numbers: " << endl;
-            for (uint32_t i = 0; i < p2_edges.size(); i++) {
+            for (int32_t i = 0; i < (int32_t)p2_edges.size(); i++) {
                 cerr << "\t" << p2_edges[i]->get_innovation_number() << endl;
             }
             cerr << "vector innovation numbers: " << endl;
-            for (uint32_t i = 0; i < child_edges.size(); i++) {
+            for (int32_t i = 0; i < (int32_t)child_edges.size(); i++) {
                 cerr << "\t" << child_edges[i]->get_innovation_number() << endl;
             }
         }
@@ -1041,7 +1046,7 @@ CNN_Genome* EXACT::create_child() {
     sort(child_edges.begin(), child_edges.end(), sort_CNN_Edges_by_depth());
     sort(child_nodes.begin(), child_nodes.end(), sort_CNN_Nodes_by_depth());
 
-    for (int i = 0; i < child_edges.size(); i++) {
+    for (int32_t i = 0; i < (int32_t)child_edges.size(); i++) {
         if (!child_edges[i]->set_nodes(child_nodes)) {
             cout << "\t\treinitializing weights of copy" << endl;
             child_edges[i]->reinitialize(generator);
@@ -1069,7 +1074,7 @@ void EXACT::print_statistics(ostream &out) {
     double avg_epochs = 0.0;
     int epochs_count = 0;
 
-    for (uint32_t i = 0; i < genomes.size(); i++) {
+    for (int32_t i = 0; i < (int32_t)genomes.size(); i++) {
         double fitness = genomes[i]->get_fitness();
 
         if (fitness != numeric_limits<double>::max()) {

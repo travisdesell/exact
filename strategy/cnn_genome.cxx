@@ -180,14 +180,14 @@ CNN_Genome::~CNN_Genome() {
 }
 
 bool CNN_Genome::equals(CNN_Genome *other) const {
-    for (int i = 0; i < edges.size(); i++) {
+    for (int32_t i = 0; i < (int32_t)edges.size(); i++) {
         CNN_Edge *edge = edges[i];
 
         if (edge->is_disabled()) continue;
 
         bool found = false;
 
-        for (int j = 0; j < other->get_number_edges(); j++) {
+        for (int32_t j = 0; j < other->get_number_edges(); j++) {
             CNN_Edge *other_edge = other->get_edge(j);
 
             if (other_edge->is_disabled()) continue;
@@ -204,14 +204,14 @@ bool CNN_Genome::equals(CNN_Genome *other) const {
 
     //other may have edges not in this genome, need to check this as well
 
-    for (int i = 0; i < other->get_number_edges(); i++) {
+    for (int32_t i = 0; i < other->get_number_edges(); i++) {
         CNN_Edge *other_edge = other->get_edge(i);
 
         if (other_edge->is_disabled()) continue;
 
         bool found = false;
         
-        for (int j = 0; j < edges.size(); j++) {
+        for (int32_t j = 0; j < (int32_t)edges.size(); j++) {
             CNN_Edge* edge = edges[j];
 
             if (edge->is_disabled()) continue;
@@ -610,7 +610,7 @@ int CNN_Genome::evaluate_image(const Image &image, vector<double> &class_error, 
     double max_value = -100;
     int predicted_class = -1;
 
-    for (uint32_t i = 0; i < softmax_nodes.size(); i++) {
+    for (int32_t i = 0; i < (int32_t)softmax_nodes.size(); i++) {
         double value = softmax_nodes[i]->get_value(0,0) / softmax_sum;
         //cout << "\tvalue " << softmax_nodes[i]->get_innovation_number() << ": " << softmax_nodes[i]->get_value(0,0) << endl;
 
@@ -698,7 +698,7 @@ void CNN_Genome::set_to_best() {
 void CNN_Genome::stochastic_backpropagation(const Images &images) {
     if (!started_from_checkpoint) {
         backprop_order.clear();
-        for (uint32_t i = 0; i < images.get_number_images(); i++) {
+        for (int32_t i = 0; i < images.get_number_images(); i++) {
             backprop_order.push_back(i);
         }
 
@@ -1004,7 +1004,7 @@ void CNN_Genome::read(istream &infile) {
     int number_nodes;
     infile >> number_nodes;
     cerr << "reading " << number_nodes << " nodes." << endl;
-    for (uint32_t i = 0; i < number_nodes; i++) {
+    for (int32_t i = 0; i < number_nodes; i++) {
         CNN_Node *node = new CNN_Node();
         infile >> node;
 
@@ -1017,7 +1017,7 @@ void CNN_Genome::read(istream &infile) {
     int number_edges;
     infile >> number_edges;
     cerr << "reading " << number_edges << " edges." << endl;
-    for (uint32_t i = 0; i < number_edges; i++) {
+    for (int32_t i = 0; i < number_edges; i++) {
         CNN_Edge *edge = new CNN_Edge();
         infile >> edge;
 
@@ -1049,7 +1049,7 @@ void CNN_Genome::read(istream &infile) {
     infile >> number_softmax_nodes;
     cerr << "number softmax nodes: " << number_softmax_nodes << endl;
 
-    for (uint32_t i = 0; i < number_softmax_nodes; i++) {
+    for (int32_t i = 0; i < number_softmax_nodes; i++) {
         int softmax_node_innovation_number;
         infile >> softmax_node_innovation_number;
         cerr << "\tsoftmax node: " << softmax_node_innovation_number << endl;
@@ -1079,7 +1079,7 @@ void CNN_Genome::read(istream &infile) {
     best_class_error.clear();
     int error_size;
     infile >> error_size;
-    for (uint32_t i = 0; i < error_size; i++) {
+    for (int32_t i = 0; i < error_size; i++) {
         double error;
         infile >> error;
         best_class_error.push_back(error);
@@ -1090,7 +1090,7 @@ void CNN_Genome::read(istream &infile) {
     best_correct_predictions.clear();
     int predictions_size;
     infile >> predictions_size;
-    for (uint32_t i = 0; i < predictions_size; i++) {
+    for (int32_t i = 0; i < predictions_size; i++) {
         double predictions;
         infile >> predictions;
         best_correct_predictions.push_back(predictions);
