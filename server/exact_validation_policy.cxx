@@ -32,7 +32,12 @@
 
 #include <algorithm>
 
+#include <iomanip>
+using std::setw;
+
 #include <iostream>
+using std::cout;
+using std::endl;
 using std::istreambuf_iterator;
 
 #include <fstream>
@@ -40,6 +45,7 @@ using std::ifstream;
 using std::ios;
 
 #include <sstream>
+using std::istringstream;
 using std::ostringstream;
 
 #include <string>
@@ -186,8 +192,35 @@ int compare_results(
             log_messages.printf(MSG_CRITICAL, "    %s\n", files[i].path.c_str());
         }
 
+        istringstream iss1(f1->file_contents);
+        istringstream iss2(f2->file_contents);
 
-        exit(1);
+        string line1, line2;
+        string fitness_line1, fitness_line2;
+        for (uint32_t i = 0; i < 20; i++) {
+            getline(iss1, line1);
+            getline(iss2, line2);
+
+            if (i == 12) {
+                fitness_line1 = line1;
+                fitness_line2 = line2;
+            }
+
+            cout << setw(5) << i << setw(30) << ("'" + line1 + "'") << setw(30) << ("'" + line2 + "'") << endl;
+        }
+
+        double fitness1 = stof(fitness_line1);
+        double fitness2 = stof(fitness_line2);
+
+        /*
+        if (fabs(fitness1 - fitness2) < 10.0) {
+            //close enough
+            match = true;
+        } else {
+            match = false;
+        }
+        */
+        match = false;
     }
 
     return 0;

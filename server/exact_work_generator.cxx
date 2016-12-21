@@ -72,7 +72,7 @@ using std::vector;
 #include "strategy/exact.hxx"
 
 #define CUSHION 1000
-#define WORKUNITS_TO_GENERATE 50
+#define WORKUNITS_TO_GENERATE 100
 #define REPLICATION_FACTOR  1
 #define SLEEP_TIME 10
 
@@ -128,7 +128,7 @@ void copy_file_to_download_dir(string filename) {
 
     string short_name = filename.substr(filename.find_last_of('/') + 1);
 
-    if ( !boost::filesystem::exists( filename ) ) { 
+    if ( !std::ifstream(filename) ) { 
         log_messages.printf(MSG_CRITICAL, "input filename '%s' does not exist, cannot copy to download directory.\n", filename.c_str());
         exit(1);
     }   
@@ -139,7 +139,7 @@ void copy_file_to_download_dir(string filename) {
         exit(1);
     }   
 
-    if ( boost::filesystem::exists(path) ) { 
+    if ( std::ifstream(path) ) { 
         log_messages.printf(MSG_CRITICAL, "\033[1minput file '%s' already exists in download directory hierarchy as '%s', not copying.\033[0m\n", short_name.c_str(), path);
     } else {
         log_messages.printf(MSG_CRITICAL, "input file '%s' does not exist in downlaod directory hierarchy, copying to '%s'\n", short_name.c_str(), path);
@@ -176,7 +176,7 @@ int make_job(CNN_Genome *genome) {
 
     // make a unique name (for the job and its input file)
     //sprintf(name, "exact_genome_%u_%u", exact->get_id(), genome->get_generation_id());
-    sprintf(name, "exact_genome_%lu_%u_%u", start_time, exact->get_id(), genome->get_generation_id());
+    sprintf(name, "exact_genome_%d_%s_%u_%u", start_time, exact->get_search_name().c_str(), exact->get_id(), genome->get_generation_id());
     log_messages.printf(MSG_DEBUG, "name: '%s'\n", name);
 
     string dataset_filename = "/home/tdesell/mnist_training_data.bin";
@@ -315,6 +315,9 @@ int main(int argc, char** argv) {
     int debug_level;
     get_argument(arguments, "--debug_level", true, debug_level);
 
+    string search_name;
+    get_argument(arguments, "--search_name", true, search_name);
+
     log_messages.set_debug_level(debug_level);
     if (debug_level == 4) g_print_queries = true;
 
@@ -368,7 +371,7 @@ int main(int argc, char** argv) {
 
     Images images("/home/tdesell/mnist_training_data.bin");
 
-    exact = new EXACT(images, population_size, min_epochs, max_epochs, improvement_required_epochs, reset_edges, max_individuals, output_directory);
+    exact = new EXACT(images, population_size, min_epochs, max_epochs, improvement_required_epochs, reset_edges, max_individuals, output_directory, search_name);
 
     start_time = time(0);
 

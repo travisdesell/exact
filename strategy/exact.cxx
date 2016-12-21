@@ -154,6 +154,11 @@ int EXACT::get_id() const {
     return id;
 }
 
+string EXACT::get_search_name() const {
+    return search_name;
+}
+
+
 int EXACT::get_number_images() const {
     return number_images;
 }

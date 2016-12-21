@@ -107,6 +107,7 @@ class EXACT {
         void print_statistics_header(ostream &out);
 
         int get_id() const;
+        string get_search_name() const;
         int get_number_images() const;
 };
 

@@ -114,6 +114,7 @@ int main(int argc, char** argv) {
 
     cerr << "starting backpropagation!" << endl;
     genome->stochastic_backpropagation(images);
+    cerr << "backpropagation finished successfully!" << endl;
 
     boinc_finish(0);
 
