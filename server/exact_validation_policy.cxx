@@ -30,22 +30,73 @@
 #include "error_numbers.h"
 #include "stdint.h"
 
+#include <algorithm>
+
 #include <iostream>
+using std::istreambuf_iterator;
+
 #include <fstream>
-#include <sstream>
-
-//from undvc_commmon
-#include "parse_xml.hxx"
-#include "file_io.hxx"
-
-using std::string;
-using std::vector;
 using std::ifstream;
+using std::ios;
 
-struct SSS_RESULT {
-    uint32_t checksum;
-    vector<uint64_t> failed_sets;
+#include <sstream>
+using std::ostringstream;
+
+#include <string>
+using std::string;
+
+#include <vector>
+using std::vector;
+
+struct EXACT_RESULT {
+    string file_contents;
 };
+
+string get_file_as_string(string file_path) throw (int) {
+    //read the entire contents of the file into a string
+    ifstream sites_file(file_path.c_str());
+
+    if (!sites_file.is_open()) {
+        throw 1;
+    }
+
+    string fc;
+
+    sites_file.seekg(0, ios::end);   
+    fc.reserve(sites_file.tellg());
+    sites_file.seekg(0, ios::beg);
+
+    fc.assign((istreambuf_iterator<char>(sites_file)), istreambuf_iterator<char>());
+
+    ostringstream oss;
+    for (uint32_t i = 0; i < fc.size(); i++) {
+        if (fc[i] != '\r') oss << fc[i];
+    }
+
+    return oss.str();
+}
+
+vector<char*> stderr_strings;
+bool reject_if_present = false;
+
+int validate_handler_init(int argc, char** argv) {
+    // handle project specific arguments here
+    return 0;
+}
+
+void validate_handler_usage() {
+    // describe the project specific arguments here
+    // currently no project specific arguments
+
+    /*
+    fprintf(stderr,
+        "    Custom options:\n"
+        "    --stderr_string X     accept task if X is present in stderr_out\n"
+        "    [--reject_if_present] reject (invalidate) the task if X is present\n"
+    );
+    */
+}
+
 
 int init_result(RESULT& result, void*& data) {
     int retval;
@@ -53,12 +104,12 @@ int init_result(RESULT& result, void*& data) {
 
     retval = get_output_file_infos(result, files);
     if (retval) {
-        log_messages.printf(MSG_CRITICAL, "[RESULT#%d %s] check_set: can't get output filenames\n", result.id, result.name);
+        log_messages.printf(MSG_CRITICAL, "[RESULT#%ld %s] check_set: can't get output filenames\n", result.id, result.name);
         return retval;
     }
 
     if (files.size() > 1) {
-        log_messages.printf(MSG_CRITICAL, "[RESULT#%d %s] had more than one output file: %zu\n", result.id, result.name, files.size());
+        log_messages.printf(MSG_CRITICAL, "[RESULT#%ld %s] had more than one output file: %zu\n", result.id, result.name, files.size());
         for (uint32_t i = 0; i < files.size(); i++) {
             log_messages.printf(MSG_CRITICAL, "    %s\n", files[i].path.c_str());
         }
@@ -67,43 +118,43 @@ int init_result(RESULT& result, void*& data) {
 
     OUTPUT_FILE_INFO& fi = files[0];
     if (fi.no_validate) {
-        log_messages.printf(MSG_CRITICAL, "[RESULT#%d %s] had file set to no validate: %s\n", result.id, result.name, fi.path.c_str());
+        log_messages.printf(MSG_CRITICAL, "[RESULT#%ld %s] had file set to no validate: %s\n", result.id, result.name, fi.path.c_str());
         exit(1);
         //continue;
     }
 
-    string fc;
+    string file_contents;
 
     try {
-        fc = get_file_as_string(fi.path);
+        file_contents = get_file_as_string(fi.path);
     } catch (int err) {
-        log_messages.printf(MSG_CRITICAL, "[RESULT#%d %s] get_data_from_result: could not open file for result\n", result.id, result.name);
+        log_messages.printf(MSG_CRITICAL, "[RESULT#%ld %s] get_data_from_result: could not open file for result\n", result.id, result.name);
         log_messages.printf(MSG_CRITICAL, "     file path: %s\n", fi.path.c_str());
         return ERR_FOPEN;
     }
 
-//    cout << "Parsing: " << endl << fc << endl;
+//    cout << "Parsing: " << endl << file_contents << endl;
 
-    SSS_RESULT* sss_result = new SSS_RESULT;
+    EXACT_RESULT* exact_result = new EXACT_RESULT;
     try {
-        sss_result->checksum = parse_xml<uint32_t>(fc, "checksum");
+        file_contents.erase(std::remove(file_contents.begin(), file_contents.end(), '\r'), file_contents.end());
 
-//        cout << "checksum: " << sss_result->checksum << endl;
+        exact_result->file_contents = file_contents;
 
-        parse_xml_vector<uint64_t>(fc, "failed_subsets", sss_result->failed_sets);
+//        log_messages.printf(MSG_CRITICAL, "[RESULT#%ld %s] result file contents:\n%s\n", result.id, result.name, exact_result->file_contents.c_str());
 
-//        cout << "failed subsets size: " << sss_result->failed_sets.size() << endl;
     } catch (string error_message) {
-        log_messages.printf(MSG_CRITICAL, "sss_validation_policy get_data_from_result([RESULT#%d %s]) failed with error: %s\n", result.id, result.name, error_message.c_str());
-        log_messages.printf(MSG_CRITICAL, "XML:\n%s\n", fc.c_str());
+        log_messages.printf(MSG_CRITICAL, "exact_validation_policy get_data_from_result([RESULT#%ld %s]) failed with error: %s\n", result.id, result.name, error_message.c_str());
+        log_messages.printf(MSG_CRITICAL, "XML:\n%s\n", file_contents.c_str());
 //        result.outcome = RESULT_OUTCOME_VALIDATE_ERROR;
 //        result.validate_state = VALIDATE_STATE_INVALID;
+        exit(1);
         return ERR_XML_PARSE;
 //        exit(1);
 //        throw 0;
     }
 
-    data = (void*) sss_result;
+    data = (void*) exact_result;
     return 0;
 }
 
@@ -112,47 +163,39 @@ int compare_results(
     RESULT const& r2, void* data2,
     bool& match
 ) {
-    SSS_RESULT* f1 = (SSS_RESULT*) data1;
-    SSS_RESULT* f2 = (SSS_RESULT*) data2;
+    EXACT_RESULT* f1 = (EXACT_RESULT*) data1;
+    EXACT_RESULT* f2 = (EXACT_RESULT*) data2;
 
-    if (f1->checksum == f2->checksum) {
-        
-        if (f1->failed_sets.size() == f2->failed_sets.size()) {
-            bool all_match = true;
-            for (unsigned int i = 0; i < f1->failed_sets.size(); i++) {
-                if (f1->failed_sets[i] != f2->failed_sets[i]) {
-                    log_messages.printf(MSG_CRITICAL, "[RESULT#%d %s] and [RESULT#%d %s] failed sets[%u] did not match %lu vs %lu\n", r1.id, r1.name, r2.id, r2.name, i, f1->failed_sets[i], f2->failed_sets[i]);
-                    all_match = false;
-                    //exit(1);
-                    break;
-                }
-            }
-
-            if (all_match) {
-                match = true;
-            } else {
-                match = false;
-                //exit(1);
-            }
-        } else {
-            match = false;
-            log_messages.printf(MSG_CRITICAL, "[RESULT#%d %s] and [RESULT#%d %s] failed sets had different sizes %zu vs %zu\n", r1.id, r1.name, r2.id, r2.name, f1->failed_sets.size(), f2->failed_sets.size());
-            //exit(1);
-        }
+    if (f1->file_contents.compare(f2->file_contents) == 0) {
+        match = true;
     } else {
         match = false;
-        log_messages.printf(MSG_CRITICAL, "[RESULT#%d %s] and [RESULT#%d %s] failed sets had different checksums %u vs %u\n", r1.id, r1.name, r2.id, r2.name, f1->checksum, f2->checksum);
-//        exit(1);
+        log_messages.printf(MSG_CRITICAL, "[RESULT#%ld %s] and [RESULT#%ld %s] failed sets had different file contents.\n", r1.id, r1.name, r2.id, r2.name);
+
+        vector<OUTPUT_FILE_INFO> files;
+
+        int retval = get_output_file_infos(r1, files);
+        log_messages.printf(MSG_CRITICAL, "[RESULT#%ld %s] files: %zu\n", r1.id, r1.name, files.size());
+        for (uint32_t i = 0; i < files.size(); i++) {
+            log_messages.printf(MSG_CRITICAL, "    %s\n", files[i].path.c_str());
+        }
+
+        retval = get_output_file_infos(r2, files);
+        log_messages.printf(MSG_CRITICAL, "[RESULT#%ld %s] files: %zu\n", r2.id, r2.name, files.size());
+        for (uint32_t i = 0; i < files.size(); i++) {
+            log_messages.printf(MSG_CRITICAL, "    %s\n", files[i].path.c_str());
+        }
+
+
+        exit(1);
     }
 
     return 0;
 }
 
 int cleanup_result(RESULT const& /*result*/, void* data) {
-    SSS_RESULT *sss_result = (SSS_RESULT*)data;
-//    delete sss_result->failed_sets;
-    delete sss_result;
-
+    EXACT_RESULT *exact_result = (EXACT_RESULT*)data;
+    delete exact_result;
     return 0;
 }
 

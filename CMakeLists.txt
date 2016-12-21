@@ -63,25 +63,6 @@ ENDIF(BOINC_APP_FOUND)
 if (BOINC_SERVER_FOUND)
     MESSAGE(STATUS "BOINC_SERVER_FOUND")
 
-    MESSAGE(STATUS "UNDVC_COMMON library required.")
-    #This will look for the undvc_common library, which should be in the
-    #same directory as this project. It should be compiled in the ../undvc_common/build
-    #directory
-    FIND_PATH(UNDVC_COMMON_INCLUDE_DIR file_io.hxx
-        ../undvc_common         #add addiitonal paths here if undvc_common is in a different directory
-        )
-    MESSAGE(STATUS "UNDVC_COMMON include directory: ${UNDVC_COMMON_INCLUDE_DIR}")
-
-    FIND_LIBRARY(UNDVC_COMMON_LIBRARY
-        NAMES undvc_common
-        PATHS ../undvc_common/build         #add additional paths here if undvc_common is in a different directory
-                                            #or if it has been build in a different directory
-        PATH_SUFFIXES lib
-        )
-    MESSAGE(STATUS "UNDVC_COMMON library: ${UNDVC_COMMON_LIBRARY}")
-
-    include_directories(${UNDVC_COMMON_INCLUDE_DIR})
-
     MESSAGE(STATUS "OpenSSL required.")
     find_package(OpenSSL REQUIRED)
 
