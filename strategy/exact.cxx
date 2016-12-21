@@ -41,9 +41,9 @@ using std::vector;
 #include "exact.hxx"
 
 
-EXACT::EXACT(const Images &images, int _population_size, int _min_epochs, int _max_epochs, int _improvement_required_epochs, bool _reset_edges, int _max_individuals, string _output_directory) {
+EXACT::EXACT(const Images &images, int _population_size, int _min_epochs, int _max_epochs, int _improvement_required_epochs, bool _reset_edges, int _max_individuals, string _output_directory, string _search_name) {
 
-    id = 1;
+    search_name = _search_name;
 
     output_directory = _output_directory;
     reset_edges = _reset_edges;
@@ -145,6 +145,9 @@ EXACT::EXACT(const Images &images, int _population_size, int _min_epochs, int _m
     cout << "\tnode_change_size_x: " << node_change_size_x << endl;
     cout << "\tnode_change_size_y: " << node_change_size_y << endl;
     cout << "\tnode_change_pool_size: " << node_change_pool_size << endl;
+
+    //need to retreive this from the database after inserting the search into it
+    id = 1;
 }
 
 int EXACT::get_id() const {

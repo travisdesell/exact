@@ -5,8 +5,7 @@
 #include <fstream>
 #include <vector>
 
-//from undvc_common
-#include "../undvc_common/arguments.hxx"
+#include "common/arguments.hxx"
 
 #include "image_tools/image_set.hxx"
 
@@ -15,18 +14,16 @@
 /**
  *  *  Includes required for BOINC
  *   */
-#ifdef _BOINC_
 #ifdef _WIN32
     #include "boinc_win.h"
     #include "str_util.h"
 #endif
 
-    #include "diagnostics.h"
-    #include "util.h"
-    #include "filesys.h"
-    #include "boinc_api.h"
-    #include "mfile.h"
-#endif
+#include "diagnostics.h"
+#include "util.h"
+#include "filesys.h"
+#include "boinc_api.h"
+#include "mfile.h"
 
 using namespace std;
 
@@ -45,15 +42,12 @@ string get_boinc_filename(string filename) {
     return input_path;
 }
 
-
-
 int main(int argc, char** argv) {
     cerr << "arguments:" << endl;
     for (uint32_t i = 0; i < argc; i++) {
         cerr << "\t'" << argv[i] << "'" << endl;
     }
 
-#ifdef _BOINC_
     int retval = 0;
     #ifdef BOINC_APP_GRAPHICS
         #if defined(_WIN32) || defined(__APPLE)
@@ -65,7 +59,6 @@ int main(int argc, char** argv) {
         retval = boinc_init();
     #endif
     if (retval) exit(retval);
-#endif
 
     cerr << "converting arguments to vector" << endl;
     arguments = vector<string>(argv, argv + argc);
@@ -122,9 +115,7 @@ int main(int argc, char** argv) {
     cerr << "starting backpropagation!" << endl;
     genome->stochastic_backpropagation(images);
 
-#ifdef _BOINC_
     boinc_finish(0);
-#endif
 
     return 0;
 }

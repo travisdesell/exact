@@ -24,8 +24,7 @@ using std::vector;
 
 #include "mpi.h"
 
-//from undvc_common
-#include "arguments.hxx"
+#include "common/arguments.hxx"
 
 #include "image_tools/image_set.hxx"
 
@@ -240,6 +239,9 @@ int main(int argc, char** argv) {
     string output_directory;
     get_argument(arguments, "--output_directory", true, output_directory);
 
+    string search_name;
+    get_argument(arguments, "--search_name", true, search_name);
+
     int population_size;
     get_argument(arguments, "--population_size", true, population_size);
 
@@ -263,7 +265,7 @@ int main(int argc, char** argv) {
     thread* poller = NULL;
     
     if (rank == 0) {
-        exact = new EXACT(images, population_size, min_epochs, max_epochs, improvement_required_epochs, reset_edges, max_individuals, output_directory);
+        exact = new EXACT(images, population_size, min_epochs, max_epochs, improvement_required_epochs, reset_edges, max_individuals, output_directory, search_name);
         poller = new thread(polling_thread, output_directory);
 
         master(images, max_rank);
