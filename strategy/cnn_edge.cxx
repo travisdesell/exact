@@ -322,8 +322,8 @@ bool CNN_Edge::has_zero_weight() const {
     if (disabled) return false;
 
     double filter_sum = 0.0;
-    for (uint32_t fy = 0; fy < filter_y; fy++) {
-        for (uint32_t fx = 0; fx < filter_x; fx++) {
+    for (int32_t fy = 0; fy < filter_y; fy++) {
+        for (int32_t fx = 0; fx < filter_x; fx++) {
             filter_sum += (weights[fy][fx] * weights[fy][fx]);
         }
     }
@@ -335,8 +335,8 @@ bool CNN_Edge::has_zero_best_weight() const {
     if (disabled) return false;
 
     double filter_sum = 0.0;
-    for (uint32_t fy = 0; fy < filter_y; fy++) {
-        for (uint32_t fx = 0; fx < filter_x; fx++) {
+    for (int32_t fy = 0; fy < filter_y; fy++) {
+        for (int32_t fx = 0; fx < filter_x; fx++) {
             filter_sum += (best_weights[fy][fx] * best_weights[fy][fx]);
         }
     }
@@ -389,8 +389,8 @@ void CNN_Edge::propagate_forward() {
     cout << "\tfilter_y: " << filter_y << endl;
     */
 
-    for (uint32_t fy = 0; fy < filter_y; fy++) {
-        for (uint32_t fx = 0; fx < filter_x; fx++) {
+    for (int32_t fy = 0; fy < filter_y; fy++) {
+        for (int32_t fx = 0; fx < filter_x; fx++) {
             if (isnan(weights[fy][fx])) {
                 cerr << "ERROR in edge " << innovation_number << " propagate forward!" << endl;
                 cerr << "input node innovation number: " << input_node->get_innovation_number() << " at depth: " << input_node->get_depth() << endl;
@@ -400,8 +400,8 @@ void CNN_Edge::propagate_forward() {
         }
     }
 
-    for (uint32_t y = 0; y < input_node->get_size_y(); y++) {
-        for (uint32_t x = 0; x < input_node->get_size_x(); x++) {
+    for (int32_t y = 0; y < input_node->get_size_y(); y++) {
+        for (int32_t x = 0; x < input_node->get_size_x(); x++) {
             if (isnan(input[y][x])) {
                 cerr << "ERROR in edge " << innovation_number << " propagate forward!" << endl;
                 cerr << "input[" << y << "][" << x << "] was NAN!" << endl;
@@ -416,12 +416,12 @@ void CNN_Edge::propagate_forward() {
     double previous_output;
 
     if (reverse_filter_x && reverse_filter_y) {
-        for (uint32_t fy = 0; fy < filter_y; fy++) {
-            for (uint32_t fx = 0; fx < filter_x; fx++) {
+        for (int32_t fy = 0; fy < filter_y; fy++) {
+            for (int32_t fx = 0; fx < filter_x; fx++) {
                 double weight = weights[fy][fx];
 
-                for (uint32_t y = 0; y < input_node->get_size_y(); y++) {
-                    for (uint32_t x = 0; x < input_node->get_size_x(); x++) {
+                for (int32_t y = 0; y < input_node->get_size_y(); y++) {
+                    for (int32_t x = 0; x < input_node->get_size_x(); x++) {
                         double value = weight * input[y][x];
 
                         previous_output = output[y + fy][x + fx];
@@ -445,12 +445,12 @@ void CNN_Edge::propagate_forward() {
         }
 
     } else if (reverse_filter_x) {
-        for (uint32_t fy = 0; fy < filter_y; fy++) {
-            for (uint32_t fx = 0; fx < filter_x; fx++) {
+        for (int32_t fy = 0; fy < filter_y; fy++) {
+            for (int32_t fx = 0; fx < filter_x; fx++) {
                 double weight = weights[fy][fx];
 
-                for (uint32_t y = 0; y < output_node->get_size_y(); y++) {
-                    for (uint32_t x = 0; x < input_node->get_size_x(); x++) {
+                for (int32_t y = 0; y < output_node->get_size_y(); y++) {
+                    for (int32_t x = 0; x < input_node->get_size_x(); x++) {
                         double value = weight * input[y + fy][x];
 
                         previous_output = output[y][x + fx];
@@ -475,12 +475,12 @@ void CNN_Edge::propagate_forward() {
         }
 
     } else if (reverse_filter_y) {
-        for (uint32_t fy = 0; fy < filter_y; fy++) {
-            for (uint32_t fx = 0; fx < filter_x; fx++) {
+        for (int32_t fy = 0; fy < filter_y; fy++) {
+            for (int32_t fx = 0; fx < filter_x; fx++) {
                 double weight = weights[fy][fx];
 
-                for (uint32_t y = 0; y < input_node->get_size_y(); y++) {
-                    for (uint32_t x = 0; x < output_node->get_size_x(); x++) {
+                for (int32_t y = 0; y < input_node->get_size_y(); y++) {
+                    for (int32_t x = 0; x < output_node->get_size_x(); x++) {
                         double value = weight * input[y][x + fx];
 
                         previous_output = output[y + fy][x];
@@ -505,12 +505,12 @@ void CNN_Edge::propagate_forward() {
         }
 
     } else {
-        for (uint32_t fy = 0; fy < filter_y; fy++) {
-            for (uint32_t fx = 0; fx < filter_x; fx++) {
+        for (int32_t fy = 0; fy < filter_y; fy++) {
+            for (int32_t fx = 0; fx < filter_x; fx++) {
                 double weight = weights[fy][fx];
 
-                for (uint32_t y = 0; y < output_node->get_size_y(); y++) {
-                    for (uint32_t x = 0; x < output_node->get_size_x(); x++) {
+                for (int32_t y = 0; y < output_node->get_size_y(); y++) {
+                    for (int32_t x = 0; x < output_node->get_size_x(); x++) {
                         double value = weight * input[y + fy][x + fx];
 
                         previous_output = output[y][x];
@@ -535,8 +535,8 @@ void CNN_Edge::propagate_forward() {
         }
     }
 
-    for (uint32_t y = 0; y < output_node->get_size_y(); y++) {
-        for (uint32_t x = 0; x < output_node->get_size_x(); x++) {
+    for (int32_t y = 0; y < output_node->get_size_y(); y++) {
+        for (int32_t x = 0; x < output_node->get_size_x(); x++) {
             if (isnan(output[y][x])) {
                 cerr << "ERROR in edge " << innovation_number << " propagate forward!" << endl;
                 cerr << "output[" << y << "][" << x << "] was NAN!" << endl;
@@ -606,13 +606,13 @@ void CNN_Edge::propagate_backward(double mu, double learning_rate, double weight
     if (reverse_filter_x && reverse_filter_y) {
         //cout << "reverse filter x and y!" << endl;
 
-        for (uint32_t fy = 0; fy < filter_y; fy++) {
-            for (uint32_t fx = 0; fx < filter_x; fx++) {
+        for (int32_t fy = 0; fy < filter_y; fy++) {
+            for (int32_t fx = 0; fx < filter_x; fx++) {
                 weight_update = 0;
                 weight = weights[fy][fx];
 
-                for (uint32_t y = 0; y < input_node->get_size_y(); y++) {
-                    for (uint32_t x = 0; x < input_node->get_size_x(); x++) {
+                for (int32_t y = 0; y < input_node->get_size_y(); y++) {
+                    for (int32_t x = 0; x < input_node->get_size_x(); x++) {
                         error = output_errors[y + fy][x + fx];
 
                         update = input[y][x] * error;
@@ -643,13 +643,13 @@ void CNN_Edge::propagate_backward(double mu, double learning_rate, double weight
     } else if (reverse_filter_x) {
         //cout << "reverse filter x!" << endl;
 
-        for (uint32_t fy = 0; fy < filter_y; fy++) {
-            for (uint32_t fx = 0; fx < filter_x; fx++) {
+        for (int32_t fy = 0; fy < filter_y; fy++) {
+            for (int32_t fx = 0; fx < filter_x; fx++) {
                 weight_update = 0;
                 weight = weights[fy][fx];
 
-                for (uint32_t y = 0; y < output_node->get_size_y(); y++) {
-                    for (uint32_t x = 0; x < input_node->get_size_x(); x++) {
+                for (int32_t y = 0; y < output_node->get_size_y(); y++) {
+                    for (int32_t x = 0; x < input_node->get_size_x(); x++) {
                         error = output_errors[y][x + fx];
 
                         update = input[y + fy][x] * error;
@@ -682,13 +682,13 @@ void CNN_Edge::propagate_backward(double mu, double learning_rate, double weight
     } else if (reverse_filter_y) {
         //cout << "reverse filter y!" << endl;
 
-        for (uint32_t fy = 0; fy < filter_y; fy++) {
-            for (uint32_t fx = 0; fx < filter_x; fx++) {
+        for (int32_t fy = 0; fy < filter_y; fy++) {
+            for (int32_t fx = 0; fx < filter_x; fx++) {
                 weight_update = 0;
                 weight = weights[fy][fx];
 
-                for (uint32_t y = 0; y < input_node->get_size_y(); y++) {
-                    for (uint32_t x = 0; x < output_node->get_size_x(); x++) {
+                for (int32_t y = 0; y < input_node->get_size_y(); y++) {
+                    for (int32_t x = 0; x < output_node->get_size_x(); x++) {
                         error = output_errors[y + fy][x];
 
                         update = input[y][x + fx] * error;
@@ -721,13 +721,13 @@ void CNN_Edge::propagate_backward(double mu, double learning_rate, double weight
     } else {
         //cout << "no reverse filter!" << endl;
 
-        for (uint32_t fy = 0; fy < filter_y; fy++) {
-            for (uint32_t fx = 0; fx < filter_x; fx++) {
+        for (int32_t fy = 0; fy < filter_y; fy++) {
+            for (int32_t fx = 0; fx < filter_x; fx++) {
                 weight_update = 0;
                 weight = weights[fy][fx];
 
-                for (uint32_t y = 0; y < output_node->get_size_y(); y++) {
-                    for (uint32_t x = 0; x < output_node->get_size_x(); x++) {
+                for (int32_t y = 0; y < output_node->get_size_y(); y++) {
+                    for (int32_t x = 0; x < output_node->get_size_x(); x++) {
                         error = output_errors[y][x];
 
                         update = input[y + fy][x + fx] * error;
@@ -770,25 +770,24 @@ ostream &operator<<(ostream &os, const CNN_Edge* edge) {
     os << edge->reverse_filter_y << " ";
     os << edge->disabled << endl;
 
-    for (uint32_t y = 0; y < edge->filter_y; y++) {
-        for (uint32_t x = 0; x < edge->filter_x; x++) {
+    for (int32_t y = 0; y < edge->filter_y; y++) {
+        for (int32_t x = 0; x < edge->filter_x; x++) {
             if (y > 0 || x > 0) os << " ";
             os << setprecision(15) << edge->weights[y][x];
         }
     }
     os << endl;
 
-    for (uint32_t y = 0; y < edge->filter_y; y++) {
-        for (uint32_t x = 0; x < edge->filter_x; x++) {
+    for (int32_t y = 0; y < edge->filter_y; y++) {
+        for (int32_t x = 0; x < edge->filter_x; x++) {
             if (y > 0 || x > 0) os << " ";
             os << setprecision(15) << edge->best_weights[y][x];
         }
     }
     os << endl;
 
-
-    for (uint32_t y = 0; y < edge->filter_y; y++) {
-        for (uint32_t x = 0; x < edge->filter_x; x++) {
+    for (int32_t y = 0; y < edge->filter_y; y++) {
+        for (int32_t x = 0; x < edge->filter_x; x++) {
             if (y > 0 || x > 0) os << " ";
             os << setprecision(15) << edge->previous_velocity[y][x];
         }
@@ -812,20 +811,20 @@ istream &operator>>(istream &is, CNN_Edge* edge) {
     edge->best_weights = vector< vector<double> >(edge->filter_y, vector<double>(edge->filter_x, 0.0));
     edge->previous_velocity = vector< vector<double> >(edge->filter_y, vector<double>(edge->filter_x, 0.0));
 
-    for (uint32_t y = 0; y < edge->filter_y; y++) {
-        for (uint32_t x = 0; x < edge->filter_x; x++) {
+    for (int32_t y = 0; y < edge->filter_y; y++) {
+        for (int32_t x = 0; x < edge->filter_x; x++) {
             is >> edge->weights[y][x];
         }
     }
 
-    for (uint32_t y = 0; y < edge->filter_y; y++) {
-        for (uint32_t x = 0; x < edge->filter_x; x++) {
+    for (int32_t y = 0; y < edge->filter_y; y++) {
+        for (int32_t x = 0; x < edge->filter_x; x++) {
             is >> edge->best_weights[y][x];
         }
     }
 
-    for (uint32_t y = 0; y < edge->filter_y; y++) {
-        for (uint32_t x = 0; x < edge->filter_x; x++) {
+    for (int32_t y = 0; y < edge->filter_y; y++) {
+        for (int32_t x = 0; x < edge->filter_x; x++) {
             is >> edge->previous_velocity[y][x];
         }
     }

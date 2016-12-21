@@ -44,7 +44,7 @@ string get_boinc_filename(string filename) {
 
 int main(int argc, char** argv) {
     cerr << "arguments:" << endl;
-    for (uint32_t i = 0; i < argc; i++) {
+    for (int32_t i = 0; i < argc; i++) {
         cerr << "\t'" << argv[i] << "'" << endl;
     }
 
