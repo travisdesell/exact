@@ -74,7 +74,7 @@ using std::vector;
 #include "strategy/exact.hxx"
 
 #define CUSHION 1000
-#define WORKUNITS_TO_GENERATE 500
+#define WORKUNITS_TO_GENERATE 50
 #define REPLICATION_FACTOR  1
 #define SLEEP_TIME 10
 
@@ -181,7 +181,7 @@ int make_job(CNN_Genome *genome) {
     double fpops_per_image = genome->get_number_weights() * 1e2;         //TODO: figure out an estimate of how many fpops per set calculation
     double fpops_est = exact->get_number_images() * genome->get_max_epochs() * fpops_per_image;
 
-    double credit = fpops_est / (2.5 * 10e10);
+    double credit = fpops_est / 10e10;
 
     // Fill in the job parameters
     wu.clear();
@@ -236,9 +236,9 @@ void make_jobs() {
 
         delete genome;
         total_generated++;
-
-        exit(1);
     }
+
+    exit(1);
 }
 
 void main_loop() {
