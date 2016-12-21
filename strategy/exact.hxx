@@ -32,6 +32,7 @@ using std::vector;
 class EXACT {
     private:
         int id;
+        string search_name;
 
         string output_directory;
 
@@ -44,6 +45,7 @@ class EXACT {
         int node_innovation_count;
         int edge_innovation_count;
 
+        minstd_rand0 generator;
         uniform_int_distribution<long> rng_long;
         uniform_real_distribution<double> rng_double;
 
@@ -60,8 +62,6 @@ class EXACT {
         int max_epochs;
         int improvement_required_epochs;
         int max_individuals;
-
-        minstd_rand0 generator;
 
         double learning_rate;
         double weight_decay;
@@ -92,7 +92,7 @@ class EXACT {
 
     public:
 
-        EXACT(const Images &images, int _population_size, int _min_epochs, int _max_epochs, int _improvement_required_epochs, bool _reset_edges, int _max_individuals, string _output_directory);
+        EXACT(const Images &images, int _population_size, int _min_epochs, int _max_epochs, int _improvement_required_epochs, bool _reset_edges, int _max_individuals, string _output_directory, string _search_name);
 
         bool population_contains(CNN_Genome *genome) const;
         CNN_Genome* get_best_genome();
