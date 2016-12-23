@@ -444,6 +444,7 @@ bool CNN_Genome::sanity_check(int type) const {
         */
         //cout << "passed checking zero best weights" << endl;
 
+        /*
         for (uint32_t i = 0; i < edges.size(); i++) {
             if (edges[i]->has_zero_best_weight()) {
                 cerr << "ERROR before insert!" << endl;
@@ -453,6 +454,7 @@ bool CNN_Genome::sanity_check(int type) const {
                 return false;
             }
         }
+        */
         //cout << "passed checking zero best weights" << endl;
     }
 
