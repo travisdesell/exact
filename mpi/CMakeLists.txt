@@ -1,4 +1,4 @@
-find_package(MPI REQUIRED)
+find_package(MPI)
 
 if (MPI_FOUND)
     set (CMAKE_CXX_COMPILE_FLAGS ${CMAKE_COMPILE_FLAGS} ${MPI_COMPILE_FLAGS})

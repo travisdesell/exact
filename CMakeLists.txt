@@ -25,31 +25,7 @@ find_package(BOINC)
 MESSAGE(STATUS "BOINC_APP_FOUND: ${BOINC_APP_FOUND}")
 MESSAGE(STATUS "BOINC_SERVER_FOUND: ${BOINC_SERVER_FOUND}")
 
-IF (BOINC_APP_FOUND)
-    message(STATUS "BOINC APP FOUND!")
-    include_directories(${BOINC_INCLUDE_DIR})
-    include_directories(${BOINC_INCLUDE_DIR}/api)
-    include_directories(${BOINC_INCLUDE_DIR}/lib)
-ENDIF (BOINC_APP_FOUND)
-
-find_package(MySQL)
-
-MESSAGE(STATUS "MYSQL_FOUND: ${MYSQL_FOUND}")
-if (MYSQL_FOUND)
-    add_definitions( -D_MYSQL_ )
-ENDIF (MYSQL_FOUND)
-
 include_directories(${PROJECT_SOURCE_DIR})
-
-include_directories(
-	${BOINC_INCLUDE_DIR}
-    ${BOINC_INCLUDE_DIR}/api
-    ${BOINC_INCLUDE_DIR}/db
-    ${BOINC_INCLUDE_DIR}/lib
-    ${BOINC_INCLUDE_DIR}/sched
-    ${BOINC_INCLUDE_DIR}/tools/
-	${MYSQL_INCLUDE_DIR}
-)
 
 
 add_subdirectory(common)
@@ -57,14 +33,36 @@ add_subdirectory(image_tools)
 add_subdirectory(strategy)
 
 if (BOINC_APP_FOUND)
+    message(STATUS "BOINC APP FOUND!")
+    include_directories(${BOINC_INCLUDE_DIR})
+    include_directories(${BOINC_INCLUDE_DIR}/api)
+    include_directories(${BOINC_INCLUDE_DIR}/lib)
+
     add_subdirectory(client)
 ENDIF(BOINC_APP_FOUND)
 
 if (BOINC_SERVER_FOUND)
+    find_package(MySQL)
+
+    MESSAGE(STATUS "MYSQL_FOUND: ${MYSQL_FOUND}")
+    if (MYSQL_FOUND)
+        add_definitions( -D_MYSQL_ )
+    ENDIF (MYSQL_FOUND)
+
     MESSAGE(STATUS "BOINC_SERVER_FOUND")
 
     MESSAGE(STATUS "OpenSSL required.")
     find_package(OpenSSL REQUIRED)
+
+    include_directories(
+        ${BOINC_INCLUDE_DIR}
+        ${BOINC_INCLUDE_DIR}/api
+        ${BOINC_INCLUDE_DIR}/db
+        ${BOINC_INCLUDE_DIR}/lib
+        ${BOINC_INCLUDE_DIR}/sched
+        ${BOINC_INCLUDE_DIR}/tools/
+        ${MYSQL_INCLUDE_DIR}
+        )
 
     add_subdirectory(server)
 ENDIF(BOINC_SERVER_FOUND)

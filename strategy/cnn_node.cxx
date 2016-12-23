@@ -29,6 +29,7 @@ using std::vector;
 #include "cnn_edge.hxx"
 #include "cnn_node.hxx"
 
+#include "stdint.h"
 
 CNN_Node::CNN_Node() {
     innovation_number = -1;

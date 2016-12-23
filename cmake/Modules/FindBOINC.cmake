@@ -13,35 +13,35 @@ IF (BOINC_INCLUDE_DIR)
 ENDIF (BOINC_INCLUDE_DIR)
 
 FIND_PATH(BOINC_INCLUDE_DIR api/boinc_api.h
-    $ENV{BOINC_SOURCE}
+    $ENV{BOINC_SOURCE} ~/Code/boinc
 )
 MESSAGE(STATUS "BOINC include directory: ${BOINC_INCLUDE_DIR}")
 
 FIND_LIBRARY(BOINC_LIBRARY
-    NAMES boinc
-    PATHS $ENV{BOINC_SOURCE} $ENV{BOINC_SOURCE}/mac_build/build/Deployment
-    PATH_SUFFIXES lib
+    NAMES boinc libboinc.lib
+    PATHS $ENV{BOINC_SOURCE} $ENV{BOINC_SOURCE}/mac_build/build/Deployment ~/Code/boinc/win_build/Build/x64
+    PATH_SUFFIXES lib Release
 )
 MESSAGE(STATUS "BOINC library: ${BOINC_LIBRARY}")
 
 FIND_LIBRARY(BOINC_CRYPT_LIBRARY
     NAMES boinc_crypt
-    PATHS $ENV{BOINC_SOURCE} $ENV{BOINC_SOURCE}/mac_build/build/Deployment
-    PATH_SUFFIXES lib
+    PATHS $ENV{BOINC_SOURCE} $ENV{BOINC_SOURCE}/mac_build/build/Deployment ~/Code/boinc/win_build/Build/x64
+    PATH_SUFFIXES lib Release
 )
 MESSAGE(STATUS "BOINC crypt library: ${BOINC_CRYPT_LIBRARY}")
 
 FIND_LIBRARY(BOINC_API_LIBRARY
-    NAMES boinc_api
-    PATHS $ENV{BOINC_SOURCE} $ENV{BOINC_SOURCE}/mac_build/build/Deployment
-    PATH_SUFFIXES api
+    NAMES boinc_api libboincapi_staticcrt.lib
+    PATHS $ENV{BOINC_SOURCE} $ENV{BOINC_SOURCE}/mac_build/build/Deployment ~/Code/boinc/win_build/Build/x64
+    PATH_SUFFIXES api Release
 )
 MESSAGE(STATUS "BOINC api library: ${BOINC_API_LIBRARY}")
 
 FIND_LIBRARY(BOINC_SCHED_LIBRARY
     NAMES sched
-    PATHS $ENV{BOINC_SOURCE} $ENV{BOINC_SOURCE}/mac_build/build/Deployment
-    PATH_SUFFIXES sched
+    PATHS $ENV{BOINC_SOURCE} $ENV{BOINC_SOURCE}/mac_build/build/Deployment ~/Code/boinc/win_build/Build/x64
+    PATH_SUFFIXES sched Release
 )
 MESSAGE(STATUS "BOINC sched library: ${BOINC_SCHED_LIBRARY}")
 

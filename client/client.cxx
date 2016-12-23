@@ -11,19 +11,23 @@
 
 #include "strategy/cnn_genome.hxx"
 
+#include "stdint.h"
+
 /**
  *  *  Includes required for BOINC
  *   */
+
 #ifdef _WIN32
     #include "boinc_win.h"
     #include "str_util.h"
 #endif
 
-#include "diagnostics.h"
 #include "util.h"
 #include "filesys.h"
 #include "boinc_api.h"
 #include "mfile.h"
+
+#include "diagnostics.h"
 
 using namespace std;
 
@@ -49,11 +53,6 @@ string get_boinc_filename(string filename) {
 }
 
 int main(int argc, char** argv) {
-    cerr << "arguments:" << endl;
-    for (int32_t i = 0; i < argc; i++) {
-        cerr << "\t'" << argv[i] << "'" << endl;
-    }
-
     int retval = 0;
     #ifdef BOINC_APP_GRAPHICS
         #if defined(_WIN32) || defined(__APPLE)
@@ -65,6 +64,11 @@ int main(int argc, char** argv) {
         retval = boinc_init();
     #endif
     if (retval) exit(retval);
+
+	cerr << "arguments:" << endl;
+	for (int32_t i = 0; i < argc; i++) {
+		cerr << "\t'" << argv[i] << "'" << endl;
+	}
 
     cerr << "converting arguments to vector" << endl;
     arguments = vector<string>(argv, argv + argc);
@@ -128,10 +132,22 @@ int main(int argc, char** argv) {
 }
 
 #ifdef _WIN32
+
+#if defined(_MSC_VER) && (_MSC_VER >= 1400)
+void AppInvalidParameterHandler(const wchar_t* expression, const wchar_t* function, const wchar_t* file, unsigned int line, uintptr_t pReserved) {
+	DebugBreak();
+}
+#endif
+
+
 int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR Args, int WinMode){
     LPSTR command_line;
     char* argv[100];
     int argc;
+
+#if defined(_MSC_VER) && (_MSC_VER >= 1400)
+	_set_invalid_parameter_handler(AppInvalidParameterHandler);
+#endif
 
     command_line = GetCommandLine();
     argc = parse_command_line( command_line, argv );

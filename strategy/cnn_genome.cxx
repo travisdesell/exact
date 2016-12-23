@@ -46,6 +46,8 @@ using std::vector;
 #include "cnn_edge.hxx"
 #include "cnn_genome.hxx"
 
+#include "stdint.h"
+
 /**
  *  Initialize a genome from a file
  */
