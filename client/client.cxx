@@ -29,6 +29,12 @@ using namespace std;
 
 vector<string> arguments;
 
+
+int progress_function(double progress) {
+    boinc_checkpoint_completed();
+    return boinc_fraction_done(progress);
+}
+
 string get_boinc_filename(string filename) {
     string input_path;
 
@@ -107,7 +113,7 @@ int main(int argc, char** argv) {
 
     //genome->print_graphviz(cout);
 
-    genome->set_progress_function(boinc_fraction_done);
+    genome->set_progress_function(progress_function);
 
     genome->set_checkpoint_filename(checkpoint_filename);
     genome->set_output_filename(output_filename);
