@@ -229,7 +229,7 @@ int make_job(CNN_Genome *genome) {
     wu.rsc_fpops_bound = fpops_est * 100;
     wu.rsc_memory_bound = 200 * 1024 * 1024; //200MB
     wu.rsc_disk_bound = 200 * 1024 * 1024; //200MB
-    wu.delay_bound = 86400;
+    wu.delay_bound = 60 * 60 * 24 * 3;
     wu.min_quorum = REPLICATION_FACTOR;
     wu.target_nresults = REPLICATION_FACTOR;
     wu.max_error_results = REPLICATION_FACTOR*4;
@@ -362,9 +362,9 @@ int main(int argc, char** argv) {
 
     //initialize the EXACT algorithm
     int population_size = 20;
-    int min_epochs = 300;
-    int max_epochs = 300;
-    int improvement_required_epochs = 1;
+    int min_epochs = 200;
+    int max_epochs = 200;
+    int improvement_required_epochs = 5;
     bool reset_edges = true;
     int max_individuals = 10000;
     string output_directory = "/home/tdesell/exact_output/";

@@ -21,6 +21,8 @@ using std::vector;
 
 #include "image_set.hxx"
 
+#include "stdint.h"
+
 Image::Image(ifstream &infile, int size, int _rows, int _cols, int _classification) {
     rows = _rows;
     cols = _cols;
