@@ -668,11 +668,13 @@ void CNN_Genome::reinitialize() {
     for (uint32_t i = 0; i < edges.size(); i++) {
         edges[i]->initialize_weights(generator);
         edges[i]->initialize_velocities();
+        edges[i]->save_best_weights();
     }
 
     for (uint32_t i = 0; i < nodes.size(); i++) {
         nodes[i]->initialize_bias(generator);
         nodes[i]->initialize_velocities();
+        nodes[i]->save_best_bias();
     }
 }
 
