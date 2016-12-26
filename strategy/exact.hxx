@@ -52,7 +52,7 @@ class EXACT {
         int genomes_generated;
         int inserted_genomes;
 
-        bool reset_edges;
+        bool reset_weights;
         int min_epochs;
         int max_epochs;
         int improvement_required_epochs;
@@ -62,6 +62,8 @@ class EXACT {
 
         double learning_rate;
         double weight_decay;
+
+        double reset_weights_chance;
 
         double crossover_rate;
         double more_fit_parent_crossover;
@@ -86,10 +88,11 @@ class EXACT {
         int inserted_from_change_size_x;
         int inserted_from_change_size_y;
         int inserted_from_crossover;
+        int inserted_from_reset_weights;
 
     public:
 
-        EXACT(const Images &images, int _population_size, int _min_epochs, int _max_epochs, int _improvement_required_epochs, bool _reset_edges, int _max_individuals, string _output_directory);
+        EXACT(const Images &images, int _population_size, int _min_epochs, int _max_epochs, int _improvement_required_epochs, bool _reset_weights, int _max_individuals, string _output_directory);
 
         bool population_contains(CNN_Genome *genome) const;
         CNN_Genome* get_best_genome();

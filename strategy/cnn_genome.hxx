@@ -39,7 +39,7 @@ class CNN_Genome {
         int min_epochs;
         int max_epochs;
         int improvement_required_epochs;
-        bool reset_edges;
+        bool reset_weights;
 
 
         double best_error;
@@ -66,6 +66,7 @@ class CNN_Genome {
         int generated_by_change_size_x;
         int generated_by_change_size_y;
         int generated_by_crossover;
+        int generated_by_reset_weights;
 
     public:
         /**
@@ -77,7 +78,7 @@ class CNN_Genome {
         /**
          *  Iniitalize a genome from a set of nodes and edges
          */
-        CNN_Genome(int _generation_id, int seed, int _min_epochs, int _max_epochs, int _improvement_required_epochs, bool _reset_edges, double _learning_rate, double _weight_decay, const vector<CNN_Node*> &_nodes, const vector<CNN_Edge*> &_edges);
+        CNN_Genome(int _generation_id, int seed, int _min_epochs, int _max_epochs, int _improvement_required_epochs, bool _reset_weights, double _learning_rate, double _weight_decay, const vector<CNN_Node*> &_nodes, const vector<CNN_Edge*> &_edges);
 
         ~CNN_Genome();
 
@@ -118,6 +119,8 @@ class CNN_Genome {
         void initialize_weights();
         void initialize_bias();
 
+        void reinitialize();
+
         void set_to_best();
         void save_weights();
         void save_bias();
@@ -142,6 +145,7 @@ class CNN_Genome {
         void set_generated_by_change_size_x();
         void set_generated_by_change_size_y();
         void set_generated_by_crossover();
+        void set_generated_by_reset_weights();
 
         int get_generated_by_disable_edge();
         int get_generated_by_enable_edge();
@@ -151,6 +155,7 @@ class CNN_Genome {
         int get_generated_by_change_size_x();
         int get_generated_by_change_size_y();
         int get_generated_by_crossover();
+        int get_generated_by_reset_weights();
 
 };
 
