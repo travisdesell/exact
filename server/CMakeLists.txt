@@ -1,5 +1,5 @@
 add_executable(exact_work_generator exact_work_generator)
-target_link_libraries(exact_work_generator exact_common exact_strategy exact_image_tools ${BOINC_SERVER_LIBRARIES} ${MYSQL_LIBRARIES} ${OPENSSL_LIBRARIES} pthread)
+target_link_libraries(exact_work_generator exact_strategy exact_image_tools exact_common ${BOINC_SERVER_LIBRARIES} ${MYSQL_LIBRARIES} ${OPENSSL_LIBRARIES} pthread)
 
 add_executable(exact_validator
     ${BOINC_INCLUDE_DIR}/sched/validator
