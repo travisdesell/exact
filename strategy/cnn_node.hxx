@@ -15,6 +15,8 @@ using std::istream;
 #include <random>
 using std::minstd_rand0;
 
+#include <sstream>
+using std::istringstream;
 
 #include <string>
 using std::string;
@@ -24,6 +26,10 @@ using std::vector;
 
 
 #include "image_tools/image_set.hxx"
+
+#ifdef _MYSQL_
+#include "common/db_conn.hxx"
+#endif
 
 #define RELU_MIN 0
 #define RELU_MIN_LEAK 0.005
@@ -39,6 +45,10 @@ using std::vector;
 
 class CNN_Node {
     private:
+        int node_id;
+        int exact_id;
+        int genome_id;
+
         int innovation_number;
         double depth;
 
@@ -70,6 +80,11 @@ class CNN_Node {
         ~CNN_Node();
 
         CNN_Node* copy() const;
+
+#ifdef _MYSQL_
+        CNN_Node(int node_id);
+        void export_to_database(int exact_id, int genome_id);
+#endif
 
         int get_size_x() const;
         int get_size_y() const;
@@ -128,6 +143,10 @@ class CNN_Node {
         friend ostream &operator<<(ostream &os, const CNN_Node* node);
         friend istream &operator>>(istream &is, CNN_Node* node);
 };
+
+template<class T>
+void parse_array_2d(T ***output, istringstream &iss, int size_x, int size_y);
+
 
 struct sort_CNN_Nodes_by_depth {
     bool operator()(const CNN_Node *n1, const CNN_Node *n2) {

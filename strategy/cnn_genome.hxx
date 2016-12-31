@@ -14,8 +14,13 @@ using std::vector;
 #define SANITY_CHECK_BEFORE_INSERT 0
 #define SANITY_CHECK_AFTER_GENERATION 1
 
+#define WORST_FITNESS 1000000
+
 class CNN_Genome {
     private:
+        int exact_id;
+        int genome_id;
+
         vector<CNN_Node*> nodes;
         vector<CNN_Edge*> edges;
 
@@ -78,6 +83,14 @@ class CNN_Genome {
         CNN_Genome(int _generation_id, int seed, int _min_epochs, int _max_epochs, int _improvement_required_epochs, bool _reset_edges, double _learning_rate, double _weight_decay, const vector<CNN_Node*> &_nodes, const vector<CNN_Edge*> &_edges);
 
         ~CNN_Genome();
+
+#ifdef _MYSQL_
+        CNN_Genome(int genome_id);
+        void export_to_database(int exact_id);
+#endif
+
+        int get_genome_id() const;
+        int get_exact_id() const;
 
         bool equals(CNN_Genome *other) const;
 

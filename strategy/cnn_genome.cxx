@@ -33,6 +33,10 @@ using std::normal_distribution;
 using std::uniform_int_distribution;
 using std::uniform_real_distribution;
 
+#include <sstream>
+using std::istringstream;
+using std::ostringstream;
+
 #include <string>
 using std::string;
 using std::to_string;
@@ -41,6 +45,10 @@ using std::to_string;
 using std::vector;
 
 
+#ifdef _MYSQL_
+#include "common/db_conn.hxx"
+#endif
+
 #include "image_tools/image_set.hxx"
 #include "cnn_node.hxx"
 #include "cnn_edge.hxx"
@@ -48,10 +56,13 @@ using std::vector;
 
 #include "stdint.h"
 
+
 /**
  *  Initialize a genome from a file
  */
 CNN_Genome::CNN_Genome(string filename, bool is_checkpoint) {
+    exact_id = -1;
+    genome_id = -1;
     started_from_checkpoint = is_checkpoint;
 
     ifstream infile(filename.c_str());
@@ -60,6 +71,8 @@ CNN_Genome::CNN_Genome(string filename, bool is_checkpoint) {
 }
 
 CNN_Genome::CNN_Genome(istream &in, bool is_checkpoint) {
+    exact_id = -1;
+    genome_id = -1;
     started_from_checkpoint = is_checkpoint;
     read(in);
 }
@@ -69,10 +82,279 @@ void CNN_Genome::set_progress_function(int (*_progress_function)(double)) {
     progress_function = _progress_function;
 }
 
+int CNN_Genome::get_genome_id() const {
+    return genome_id;
+}
+
+int CNN_Genome::get_exact_id() const {
+    return exact_id;
+}
+
+template <class T>
+void parse_array(vector<T> &output, istringstream &iss) {
+    output.clear();
+
+    T val;
+    while(iss >> val || !iss.eof()) {
+        if (iss.fail()) {
+            iss.clear();
+            string dummy;
+            iss >> dummy;
+            continue;
+        }
+        output.push_back(val);
+        //cout << val << endl;
+    }
+}
+
+#ifdef _MYSQL_
+CNN_Genome::CNN_Genome(int _genome_id) {
+    progress_function = NULL;
+
+    ostringstream query;
+
+    query << "SELECT * FROM cnn_genome WHERE id = " << _genome_id;
+
+    mysql_exact_query(query.str());
+    //cout << "query was successful!" << endl;
+
+    MYSQL_RES *result = mysql_store_result(exact_db_conn);
+    //cout << "got result!" << endl;
+
+    if (result != NULL) {
+        //cout << "result wasn't null!" << endl;
+        MYSQL_ROW row = mysql_fetch_row(result);
+        //cout << "got row!" << endl;
+
+        genome_id = _genome_id; //this is also row[0]
+        exact_id = atoi(row[1]);
+
+        int input_node_innovation_number = atoi(row[2]);
+
+        vector<int> softmax_node_innovation_numbers;
+
+        istringstream softmax_node_innovation_numbers_iss(row[3]);
+        //cout << "parsing softax node innovation numbers" << endl;
+        parse_array(softmax_node_innovation_numbers, softmax_node_innovation_numbers_iss);
+
+        istringstream iss(row[4]);
+        iss >> generator;
+
+        //cout << "generator: " << generator << endl;
+
+        initial_mu = atof(row[5]);
+        mu = atof(row[6]);
+        initial_learning_rate = atof(row[7]);
+        learning_rate = atof(row[8]);
+        initial_weight_decay = atof(row[9]);
+        weight_decay = atof(row[10]);
+
+        epoch = atoi(row[11]);
+        min_epochs = atoi(row[12]);
+        max_epochs = atoi(row[13]);
+        improvement_required_epochs = atoi(row[14]);
+        reset_edges = atoi(row[15]);
+
+        best_error = atof(row[16]);
+        best_error_epoch = atoi(row[17]);
+        best_predictions = atoi(row[18]);
+        best_predictions_epoch = atoi(row[19]);
+
+        istringstream best_class_error_iss(row[20]);
+        //cout << "parsing best class error" << endl;
+        parse_array(best_class_error, best_class_error_iss);
+
+        istringstream best_correct_predictions_iss(row[21]);
+        //cout << "parsing best correct predictions" << endl;
+        parse_array(best_correct_predictions, best_correct_predictions_iss);
+
+        started_from_checkpoint = atoi(row[22]);
+
+        istringstream backprop_order_iss(row[23]);
+        //cout << "parsing backprop order" << endl;
+        parse_array(backprop_order, backprop_order_iss);
+
+        generation_id = atoi(row[24]);
+        name = row[25];
+        checkpoint_filename = row[26];
+        output_filename = row[27];
+
+        generated_by_disable_edge = atoi(row[28]);
+        generated_by_enable_edge = atoi(row[29]);
+        generated_by_split_edge = atoi(row[30]);
+        generated_by_add_edge = atoi(row[31]);
+        generated_by_change_size = atoi(row[32]);
+        generated_by_change_size_x = atoi(row[33]);
+        generated_by_change_size_y = atoi(row[34]);
+        generated_by_crossover = atoi(row[35]);
+
+        ostringstream node_query;
+        node_query << "SELECT id FROM cnn_node WHERE genome_id = " << genome_id;
+
+        mysql_exact_query(node_query.str());
+        //cout << "node query was successful!" << endl;
+
+        MYSQL_RES *node_result = mysql_store_result(exact_db_conn);
+        //cout << "got result!" << endl;
+
+        MYSQL_ROW node_row;
+        while ((node_row = mysql_fetch_row(node_result)) != NULL) {
+            int node_id = atoi(node_row[0]);
+            //cout << "got node with id: " << node_id << endl;
+
+            CNN_Node *node = new CNN_Node(node_id);
+            nodes.push_back(node);
+
+            if (node->get_innovation_number() == input_node_innovation_number) {
+                input_node = node;
+            }
+
+            if (find(softmax_node_innovation_numbers.begin(), softmax_node_innovation_numbers.end(), node->get_innovation_number()) != softmax_node_innovation_numbers.end()) {
+                softmax_nodes.push_back(node);
+            }
+        }
+
+        //cout << "got all nodes!" << endl;
+
+        ostringstream edge_query;
+        edge_query << "SELECT id FROM cnn_edge WHERE genome_id = " << genome_id;
+
+        mysql_exact_query(edge_query.str());
+        //cout << "edge query was successful!" << endl;
+
+        MYSQL_RES *edge_result = mysql_store_result(exact_db_conn);
+        //cout << "got result!" << endl;
+
+        MYSQL_ROW edge_row;
+        while ((edge_row = mysql_fetch_row(edge_result)) != NULL) {
+            int edge_id = atoi(edge_row[0]);
+            //cout << "got edge with id: " << edge_id << endl;
+
+            CNN_Edge *edge = new CNN_Edge(edge_id);
+            edges.push_back(edge);
+
+            edge->set_nodes(nodes);
+        }
+
+        //cout << "got all edges!" << endl;
+
+    } else {
+        cout << "Could not find genome with id: " << genome_id << "!" << endl;
+        exit(1);
+    }
+
+    if (epoch > 0) {
+        //if this was saved at an epoch > 0, it has already been initialized
+        started_from_checkpoint = true;
+    }
+}
+
+void CNN_Genome::export_to_database(int _exact_id) {
+    exact_id = _exact_id;
+
+    ostringstream query;
+
+    if (genome_id >= 0) {
+        query << "REPLACE INTO cnn_genome SET id = " << genome_id << ",";
+    } else {
+        query << "INSERT INTO cnn_genome SET";
+    }
+
+    query << " exact_id = " << exact_id
+        << ", input_node_innovation_number = " << input_node->get_innovation_number()
+        << ", softmax_node_innovation_numbers = '";
+
+    for (uint32_t i = 0; i < softmax_nodes.size(); i++) {
+        if (i != 0) query << " ";
+        query << softmax_nodes[i]->get_innovation_number();
+    }
+
+    //mysql can't handl the max double value for some reason
+    bool best_error_max = false;
+    if (best_error == numeric_limits<double>::max()) {
+        best_error = 10000000;
+        best_error_max = true;
+    }
+
+    query << "', generator = '" << generator << "'"
+        << ", initial_mu = " << initial_mu
+        << ", mu = " << mu
+        << ", initial_learning_rate = " << initial_learning_rate
+        << ", learning_rate = " << learning_rate
+        << ", initial_weight_decay = " << initial_weight_decay
+        << ", weight_decay = " << weight_decay
+        << ", epoch = " << epoch
+        << ", min_epochs = " << min_epochs
+        << ", max_epochs = " << max_epochs
+        << ", improvement_required_epochs = " << improvement_required_epochs
+        << ", reset_edges = " << reset_edges
+        << ", best_error = " << best_error
+        << ", best_predictions = " << best_predictions
+        << ", best_predictions_epoch = " << best_predictions_epoch
+        << ", best_error_epoch = " << best_error_epoch
+        << ", best_class_error = '";
+
+    if (best_error_max) {
+        best_error = numeric_limits<double>::max();
+    }
+
+    for (uint32_t i = 0; i < best_class_error.size(); i++) {
+        if (i != 0) query << " ";
+        query << setprecision(15) << best_class_error[i];
+    }
+
+    query << "', best_correct_predictions = '";
+    for (uint32_t i = 0; i < best_correct_predictions.size(); i++) {
+        if (i != 0) query << " ";
+        query << setprecision(15) << best_correct_predictions[i];
+    }
+
+    query << "', started_from_checkpoint = " << started_from_checkpoint
+        << ", backprop_order = '";
+    for (uint32_t i = 0; i < backprop_order.size(); i++) {
+        if (i != 0) query << " ";
+        query << setprecision(15) << backprop_order[i];
+    }
+
+    query << "', generation_id = " << generation_id
+        << ", name = '" << name << "'"
+        << ", checkpoint_filename = '" << checkpoint_filename << "'"
+        << ", output_filename = '" << output_filename << "'"
+        << ", generated_by_disable_edge = " << generated_by_disable_edge
+        << ", generated_by_enable_edge = " << generated_by_enable_edge
+        << ", generated_by_split_edge = " << generated_by_split_edge
+        << ", generated_by_add_edge = " << generated_by_add_edge
+        << ", generated_by_change_size = " << generated_by_change_size
+        << ", generated_by_change_size_x = " << generated_by_change_size_x
+        << ", generated_by_change_size_y = " << generated_by_change_size_y
+        << ", generated_by_crossover = " << generated_by_crossover;
+
+    //cout << "query:\n" << query.str() << endl;
+
+    mysql_exact_query(query.str());
+
+    if (genome_id < 0) {
+        genome_id = mysql_exact_last_insert_id(); //get last insert id from database
+        cout << "setting genome id to: " << genome_id << endl;
+    }
+
+    for (uint32_t i = 0; i < nodes.size(); i++) {
+        nodes[i]->export_to_database(exact_id, genome_id);
+    }
+
+    for (uint32_t i = 0; i < edges.size(); i++) {
+        edges[i]->export_to_database(exact_id, genome_id);
+    }
+}
+
+#endif
+
 /**
  *  Iniitalize a genome from a set of nodes and edges
  */
 CNN_Genome::CNN_Genome(int _generation_id, int seed, int _min_epochs, int _max_epochs, int _improvement_required_epochs, bool _reset_edges, double _learning_rate, double _weight_decay, const vector<CNN_Node*> &_nodes, const vector<CNN_Edge*> &_edges) {
+    exact_id = -1;
+    genome_id = -1;
     started_from_checkpoint = false;
     generator = minstd_rand0(seed);
 
@@ -707,7 +989,7 @@ void CNN_Genome::stochastic_backpropagation(const Images &images) {
         }
 
         shuffle(backprop_order.begin(), backprop_order.end(), generator); 
-        //backprop_order.resize(1000);
+        backprop_order.resize(1000);
 
         //cout << "initializing weights and biases!" << endl;
         if (reset_edges) {
@@ -863,6 +1145,9 @@ void CNN_Genome::set_checkpoint_filename(string _checkpoint_filename) {
 
 
 void CNN_Genome::write(ostream &outfile) {
+    outfile << "v" << EXACT_VERSION << endl;
+    outfile << exact_id << endl;
+    outfile << genome_id << endl;
     outfile << initial_mu << endl;
     outfile << mu << endl;
     outfile << initial_learning_rate << endl;
@@ -940,6 +1225,16 @@ void CNN_Genome::read(istream &infile) {
     progress_function = NULL;
 
     bool verbose = true;
+
+    string version_str;
+    getline(infile, version_str);
+
+    cerr << "read CNN_Genome file with version: '" << version_str << "'" << endl;
+
+    infile >> exact_id;
+    if (verbose) cerr << "read exact_id: " << exact_id << endl;
+    infile >> genome_id;
+    if (verbose) cerr << "read genome_id: " << genome_id << endl;
 
     infile >> initial_mu;
     if (verbose) cerr << "read initial mu: " << initial_mu << endl;

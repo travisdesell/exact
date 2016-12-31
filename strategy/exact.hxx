@@ -91,6 +91,11 @@ class EXACT {
         int inserted_from_crossover;
 
     public:
+#ifdef _MYSQL_
+        EXACT(int exact_id);
+
+        void export_to_database();
+#endif
 
         EXACT(const Images &images, int _population_size, int _min_epochs, int _max_epochs, int _improvement_required_epochs, bool _reset_edges, int _max_individuals, string _output_directory, string _search_name);
 

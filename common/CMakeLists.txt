@@ -1,1 +1,5 @@
-add_library(exact_common arguments)
+if (MYSQL_FOUND)
+    add_library(exact_common arguments db_conn)
+else (MYSQL_FOUND)
+    add_library(exact_common arguments)
+endif (MYSQL_FOUND)

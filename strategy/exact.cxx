@@ -42,7 +42,238 @@ using std::vector;
 
 #include "stdlib.h"
 
+#ifdef _MYSQL_
+EXACT::EXACT(int exact_id) {
+    ostringstream query;
+
+    query << "SELECT * FROM exact_search WHERE id = " << exact_id;
+
+    mysql_exact_query(query.str());
+    
+    MYSQL_RES *result = mysql_store_result(exact_db_conn);
+    if (result != NULL) {
+        MYSQL_ROW row = mysql_fetch_row(result);
+
+        id = exact_id;  //is row 0
+        search_name = string(row[1]);
+        output_directory = string(row[2]);
+
+        number_images = atoi(row[3]);
+        image_rows = atoi(row[4]);
+        image_cols = atoi(row[5]);
+        number_classes = atoi(row[6]);
+
+        population_size = atoi(row[7]);
+        node_innovation_count = atoi(row[8]);
+        edge_innovation_count = atoi(row[9]);
+
+        genomes_generated = atoi(row[10]);
+        inserted_genomes = atoi(row[11]);
+
+        reset_edges = atoi(row[12]);
+        min_epochs = atoi(row[13]);
+        max_epochs = atoi(row[14]);
+        improvement_required_epochs = atoi(row[15]);
+        max_individuals = atoi(row[16]);
+
+        learning_rate = atof(row[17]);
+        weight_decay = atof(row[18]);
+
+        crossover_rate = atof(row[19]);
+        more_fit_parent_crossover = atof(row[20]);
+        less_fit_parent_crossover = atof(row[21]);
+
+        number_mutations = atoi(row[22]);
+        edge_disable = atof(row[23]);
+        edge_enable = atof(row[24]);
+        edge_split = atof(row[25]);
+        edge_add = atof(row[26]);
+        edge_change_stride = atof(row[27]);
+        node_change_size = atof(row[28]);
+        node_change_size_x = atof(row[29]);
+        node_change_size_y = atof(row[30]);
+        node_change_pool_size = atof(row[31]);
+
+        inserted_from_disable_edge = atoi(row[32]);
+        inserted_from_enable_edge = atoi(row[33]);
+        inserted_from_split_edge = atoi(row[34]);
+        inserted_from_add_edge = atoi(row[35]);
+        inserted_from_change_size = atoi(row[36]);
+        inserted_from_change_size_x = atoi(row[37]);
+        inserted_from_change_size_y = atoi(row[38]);
+        inserted_from_crossover = atoi(row[39]);
+
+        istringstream generator_iss(row[40]);
+        generator_iss >> generator;
+        //cout << "read generator from database: " << generator << endl;
+
+        istringstream rng_long_iss(row[41]);
+        rng_long_iss >> rng_long;
+        //cout << "read rng_long from database: " << rng_long << endl;
+
+        istringstream rng_double_iss(row[42]);
+        rng_double_iss >> rng_double;
+        //cout << "read rng_double from database: " << rng_double << endl;
+
+        ostringstream genome_query;
+        genome_query << "SELECT id FROM cnn_genome WHERE exact_id = " << id << " ORDER BY best_error LIMIT " << population_size;
+        cout << genome_query.str() << endl;
+
+        mysql_exact_query(genome_query.str());
+
+        MYSQL_RES *genome_result = mysql_store_result(exact_db_conn);
+
+        //cout << "got genome result" << endl;
+
+        MYSQL_ROW genome_row;
+        while ((genome_row = mysql_fetch_row(genome_result)) != NULL) {
+            int genome_id = atoi(genome_row[0]);
+            //cout << "got genome with id: " << genome_id << endl;
+
+            CNN_Genome *genome = new CNN_Genome(genome_id);
+            genomes.push_back(genome);
+        }
+
+        //cout << "got all genomes!" << endl;
+
+        ostringstream node_query;
+        node_query << "SELECT id FROM cnn_node WHERE exact_id = " << id << " AND genome_id = 0";
+        //cout << node_query.str() << endl;
+
+        mysql_exact_query(node_query.str());
+
+        MYSQL_RES *node_result = mysql_store_result(exact_db_conn);
+
+        //cout << "got node result!" << endl;
+
+        MYSQL_ROW node_row;
+        while ((node_row = mysql_fetch_row(node_result)) != NULL) {
+            int node_id = atoi(node_row[0]);
+            //cout << "got node with id: " << node_id << endl;
+
+            CNN_Node *node = new CNN_Node(node_id);
+            all_nodes.push_back(node);
+        }
+
+        //cout << "got all nodes!" << endl;
+
+        ostringstream edge_query;
+        edge_query << "SELECT id FROM cnn_edge WHERE exact_id = " << id << " AND genome_id = 0";
+        //cout << edge_query.str() << endl;
+
+        mysql_exact_query(edge_query.str());
+        //cout << "edge query was successful!" << endl;
+
+        MYSQL_RES *edge_result = mysql_store_result(exact_db_conn);
+        //cout << "got result!" << endl;
+
+        MYSQL_ROW edge_row;
+        while ((edge_row = mysql_fetch_row(edge_result)) != NULL) {
+            int edge_id = atoi(edge_row[0]);
+            //cout << "got edge with id: " << edge_id << endl;
+
+            CNN_Edge *edge = new CNN_Edge(edge_id);
+            all_edges.push_back(edge);
+
+            edge->set_nodes(all_nodes);
+        }
+
+        //cout << "got all edges!" << endl;
+
+    } else {
+        cerr << "ERROR! could not find exact_search in database with id: " << exact_id << endl;
+        exit(1);
+    }
+}
+
+void EXACT::export_to_database() {
+    ostringstream query;
+    if (id >= 0) {
+        query << "REPLACE INTO exact_search SET id = " << id << ",";
+    } else {
+        query << "INSERT INTO exact_search SET";
+    }
+
+    query << " search_name = '" << search_name << "'"
+        << ", output_directory = '" << output_directory << "'"
+        << ", number_images = " << number_images
+        << ", image_rows = " << image_rows
+        << ", image_cols = " << image_cols
+        << ", number_classes = " << number_classes
+
+        << ", population_size = " << population_size
+        << ", node_innovation_count = " << node_innovation_count
+        << ", edge_innovation_count = " << edge_innovation_count
+
+        << ", genomes_generated = " << genomes_generated
+        << ", inserted_genomes = " << inserted_genomes
+
+        << ", reset_edges = " << reset_edges
+        << ", min_epochs = " << min_epochs
+        << ", max_epochs = " << max_epochs
+        << ", improvement_required_epochs = " << improvement_required_epochs
+        << ", max_individuals = " << max_individuals
+
+        << ", learning_rate = " << learning_rate
+        << ", weight_decay = " << weight_decay
+
+        << ", crossover_rate = " << crossover_rate
+        << ", more_fit_parent_crossover = " << more_fit_parent_crossover
+        << ", less_fit_parent_crossover = " << more_fit_parent_crossover
+
+        << ", number_mutations = " << number_mutations
+        << ", edge_disable = " << edge_disable
+        << ", edge_enable = " << edge_enable
+        << ", edge_split = " << edge_split
+        << ", edge_add = " << edge_add
+        << ", edge_change_stride = " << edge_change_stride
+        << ", node_change_size = " << node_change_size
+        << ", node_change_size_x = " << node_change_size_x
+        << ", node_change_size_y = " << node_change_size_y
+        << ", node_change_pool_size = " << node_change_pool_size
+
+        << ", inserted_from_disable_edge = " << inserted_from_disable_edge
+        << ", inserted_from_enable_edge = " << inserted_from_enable_edge
+        << ", inserted_from_split_edge = " << inserted_from_split_edge
+        << ", inserted_from_add_edge = " << inserted_from_add_edge
+        << ", inserted_from_change_size = " << inserted_from_change_size
+        << ", inserted_from_change_size_x = " << inserted_from_change_size_x
+        << ", inserted_from_change_size_y = " << inserted_from_change_size_y
+        << ", inserted_from_crossover = " << inserted_from_crossover
+
+        << ", generator = '" << generator << "'"
+        << ", rng_long = '" << rng_long << "'"
+        << ", rng_double = '" << rng_double << "'";
+
+    mysql_exact_query(query.str());
+
+    if (id < 0) {
+        id = mysql_exact_last_insert_id();
+        cout << "inserted EXACT search with id: " << id << endl;
+    }
+
+    //need to insert genomes
+    for (uint32_t i = 0; i < genomes.size(); i++) {
+        genomes[i]->export_to_database(id);
+    }
+
+    //need to insert all_nodes and all_edges
+    //a genome id of 0 means that they are not assigned to
+    //a particular genome
+    for (uint32_t i = 0; i < all_nodes.size(); i++) {
+        all_nodes[i]->export_to_database(id, 0);
+    }
+
+    for (uint32_t i = 0; i < all_edges.size(); i++) {
+        all_edges[i]->export_to_database(id, 0);
+    }
+}
+
+#endif
+
 EXACT::EXACT(const Images &images, int _population_size, int _min_epochs, int _max_epochs, int _improvement_required_epochs, bool _reset_edges, int _max_individuals, string _output_directory, string _search_name) {
+
+    id = -1;
 
     search_name = _search_name;
 
@@ -53,8 +284,8 @@ EXACT::EXACT(const Images &images, int _population_size, int _min_epochs, int _m
     improvement_required_epochs = _improvement_required_epochs;
     max_individuals = _max_individuals;
 
-    unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
-    //unsigned seed = 10;
+    //unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
+    unsigned seed = 10;
 
     generator = minstd_rand0(seed);
     rng_long = uniform_int_distribution<long>(-numeric_limits<long>::max(), numeric_limits<long>::max());
@@ -146,9 +377,6 @@ EXACT::EXACT(const Images &images, int _population_size, int _min_epochs, int _m
     cout << "\tnode_change_size_x: " << node_change_size_x << endl;
     cout << "\tnode_change_size_y: " << node_change_size_y << endl;
     cout << "\tnode_change_pool_size: " << node_change_pool_size << endl;
-
-    //need to retreive this from the database after inserting the search into it
-    id = 1;
 }
 
 int EXACT::get_id() const {

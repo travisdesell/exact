@@ -22,6 +22,9 @@ using std::istream;
 using std::minstd_rand0;
 using std::normal_distribution;
 
+#include <sstream>
+using std::ostringstream;
+
 #include <string>
 using std::string;
 
@@ -34,6 +37,10 @@ using std::vector;
 
 #include "stdint.h"
 CNN_Edge::CNN_Edge() {
+    edge_id = -1;
+    exact_id = -1;
+    genome_id = -1;
+
     innovation_number = -1;
 
     input_node_innovation_number = -1;
@@ -44,6 +51,10 @@ CNN_Edge::CNN_Edge() {
 }
 
 CNN_Edge::CNN_Edge(CNN_Node *_input_node, CNN_Node *_output_node, bool _fixed, int _innovation_number) {
+    edge_id = -1;
+    exact_id = -1;
+    genome_id = -1;
+
     fixed = _fixed;
     innovation_number = _innovation_number;
     disabled = false;
@@ -83,6 +94,143 @@ CNN_Edge::~CNN_Edge() {
     input_node = NULL;
     output_node = NULL;
 }
+
+template <class T>
+void parse_vector_2d(vector< vector<T> > &output, istringstream &iss, int filter_x, int filter_y) {
+    output.clear();
+    output = vector< vector<T> >(filter_y, vector<T>(filter_x));
+
+    int current_x = 0, current_y = 0;
+
+    T val;
+    while(iss >> val || !iss.eof()) {
+        if (iss.fail()) {
+            iss.clear();
+            string dummy;
+            iss >> dummy;
+            continue;
+        }
+
+        //cout << "output[" << current_x << "][" << current_y << "]: " << val << endl;
+        output[current_y][current_x] = val;
+
+        current_x++;
+
+        if (current_x >= filter_x) {
+            current_x = 0;
+            current_y++;
+        }
+    }
+}
+
+
+
+#ifdef _MYSQL_
+CNN_Edge::CNN_Edge(int _edge_id) {
+    edge_id = _edge_id;
+
+    ostringstream query;
+    query << "SELECT * FROM cnn_edge WHERE id = " << edge_id;
+
+    mysql_exact_query(query.str());
+
+    MYSQL_RES *result = mysql_store_result(exact_db_conn);
+
+    if (result != NULL) {
+        MYSQL_ROW row = mysql_fetch_row(result);
+
+        exact_id = atoi(row[1]);
+        genome_id = atoi(row[2]);
+        innovation_number = atoi(row[3]);
+
+        input_node_innovation_number = atoi(row[4]);
+        output_node_innovation_number = atoi(row[5]);
+
+        filter_x = atoi(row[6]);
+        filter_y = atoi(row[7]);
+
+        istringstream weights_iss(row[8]);
+        parse_vector_2d(weights, weights_iss, filter_x, filter_y);
+
+        istringstream best_weights_iss(row[9]);
+        parse_vector_2d(best_weights, best_weights_iss, filter_x, filter_y);
+
+        istringstream previous_velocity_iss(row[10]);
+        parse_vector_2d(previous_velocity, previous_velocity_iss, filter_x, filter_y);
+
+        fixed = atoi(row[11]);
+        disabled = atoi(row[12]);
+        reverse_filter_x = atoi(row[13]);
+        reverse_filter_y = atoi(row[14]);
+    } else {
+        cerr << "ERROR! Could not find cnn_edge in database with edge id: " << edge_id << endl;
+        exit(1);
+    }
+
+    //cout << "read edge!" << endl;
+    //cout << this << endl;
+}
+
+void CNN_Edge::export_to_database(int _exact_id, int _genome_id) {
+    ostringstream query;
+
+    genome_id = _genome_id;
+    exact_id = _exact_id;
+
+    if (edge_id >= 0) {
+        query << "REPLACE INTO cnn_edge SET id = " << edge_id << ",";
+    } else {
+        query << "INSERT INTO cnn_edge SET";
+    }
+
+    query << " exact_id = " << exact_id
+        << ", genome_id = " << genome_id
+        << ", innovation_number = " << innovation_number
+        << ", input_node_innovation_number = " << input_node_innovation_number
+        << ", output_node_innovation_number = " << output_node_innovation_number
+        << ", filter_x = " << filter_x
+        << ", filter_y = " << filter_y
+        << ", fixed = " << fixed
+        << ", disabled = " << disabled
+        << ", reverse_filter_x = " << reverse_filter_x
+        << ", reverse_filter_y = " << reverse_filter_y
+        << ", weights = '";
+
+    for (int32_t y = 0; y < filter_y; y++) {
+        for (int32_t x = 0; x < filter_x; x++) {
+            if (x != 0) query << " ";
+            query << setprecision(15) << weights[y][x];
+        }
+        if (y != filter_y - 1) query << "\n";
+    }
+
+    query << "', best_weights = '";
+    for (int32_t y = 0; y < filter_y; y++) {
+        for (int32_t x = 0; x < filter_x; x++) {
+            if (x != 0) query << " ";
+            query << setprecision(15) << best_weights[y][x];
+        }
+        if (y != filter_y - 1) query << "\n";
+    }
+
+    query << "', previous_velocity = '";
+    for (int32_t y = 0; y < filter_y; y++) {
+        for (int32_t x = 0; x < filter_x; x++) {
+            if (x != 0) query << " ";
+            query << setprecision(15) << previous_velocity[y][x];
+        }
+        if (y != filter_y - 1) query << "\n";
+    }
+    query << "'";
+
+    mysql_exact_query(query.str());
+
+    if (edge_id < 0) {
+        edge_id = mysql_exact_last_insert_id();
+        cout << "set edge id to " << edge_id << endl;
+    }
+}
+#endif
 
 bool CNN_Edge::equals(CNN_Edge *other) const {
     return filter_x == other->filter_x && filter_y == other->filter_y && disabled == other->disabled && reverse_filter_x == other->reverse_filter_x && reverse_filter_y == other->reverse_filter_y;
@@ -167,6 +315,9 @@ void CNN_Edge::set_weights_to_best() {
 
 CNN_Edge* CNN_Edge::copy() const {
     CNN_Edge* copy = new CNN_Edge();
+
+    copy->edge_id = -1;
+    copy->genome_id = genome_id;
 
     copy->fixed = fixed;
     copy->innovation_number = innovation_number;
@@ -761,6 +912,9 @@ void CNN_Edge::propagate_backward(double mu, double learning_rate, double weight
 }
 
 ostream &operator<<(ostream &os, const CNN_Edge* edge) {
+    os << edge->edge_id << " ";
+    os << edge->exact_id << " ";
+    os << edge->genome_id << " ";
     os << edge->innovation_number << " ";
     os << edge->input_node_innovation_number << " ";
     os << edge->output_node_innovation_number << " ";
@@ -798,6 +952,9 @@ ostream &operator<<(ostream &os, const CNN_Edge* edge) {
 }
 
 istream &operator>>(istream &is, CNN_Edge* edge) {
+    is >> edge->edge_id;
+    is >> edge->exact_id;
+    is >> edge->genome_id;
     is >> edge->innovation_number;
     is >> edge->input_node_innovation_number;
     is >> edge->output_node_innovation_number;

@@ -3,7 +3,9 @@ project (EXACT)
 
 # The version number.
 set (EXACT_VERSION_MAJOR 0)
-set (EXACT_VERSION_MINOR 01)
+set (EXACT_VERSION_MINOR 08)
+
+add_definitions( -DEXACT_VERSION="${EXACT_VERSION_MAJOR}.${EXACT_VERSION_MINOR}" )
 
 SET (PLATFORM 64)
 
@@ -11,7 +13,7 @@ SET (PLATFORM 64)
 SET (CMAKE_CXX_FLAGS                "-std=c++11 -Wall -O3 -funroll-loops -msse3")
 SET (CMAKE_CXX_FLAGS_DEBUG          "-g")
 SET (CMAKE_CXX_FLAGS_MINSIZEREL     "-Os -DNDEBUG")
-SET (CMAKE_CXX_FLAGS_RELEASE        "-O4 -funrol-loops -DNDEBUG")
+SET (CMAKE_CXX_FLAGS_RELEASE        "-O4 -funroll-loops -DNDEBUG")
 
 set(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH} /opt/local/lib)
 
@@ -27,28 +29,43 @@ MESSAGE(STATUS "BOINC_SERVER_FOUND: ${BOINC_SERVER_FOUND}")
 
 include_directories(${PROJECT_SOURCE_DIR})
 
+SET(COMPILE_CLIENT "NO" CACHE STRING "Compile the BOINC client app or not")
+
+MESSAGE(STATUS "COMPILE CLIENT SET TO: ${COMPILE_CLIENT}")
+
+IF (COMPILE_CLIENT STREQUAL "YES")
+    #if we're compiling the client, don't look for MYSQL libraries
+    #to compile client add -DCOMPILE_CLIENT:STRING="YES" to the command line
+
+ELSE (COMPILE_CLIENT STREQUAL "YES")
+    find_package(MySQL)
+
+    MESSAGE(STATUS "MYSQL_FOUND: ${MYSQL_FOUND}")
+    IF (MYSQL_FOUND)
+        add_definitions( -D_MYSQL_ )
+
+        message(STATUS "including MYSQL_INCLUDE_DIR: ${MYSQL_INCLUDE_DIR}")
+        include_directories(${MYSQL_INCLUDE_DIR})
+    ENDIF (MYSQL_FOUND)
+ENDIF (COMPILE_CLIENT STREQUAL "YES")
+
 
 add_subdirectory(common)
 add_subdirectory(image_tools)
 add_subdirectory(strategy)
 
-if (BOINC_APP_FOUND)
-    message(STATUS "BOINC APP FOUND!")
-    include_directories(${BOINC_INCLUDE_DIR})
-    include_directories(${BOINC_INCLUDE_DIR}/api)
-    include_directories(${BOINC_INCLUDE_DIR}/lib)
+IF (COMPILE_CLIENT STREQUAL "YES")
+    if (BOINC_APP_FOUND)
+        message(STATUS "BOINC APP FOUND!")
+        include_directories(${BOINC_INCLUDE_DIR})
+        include_directories(${BOINC_INCLUDE_DIR}/api)
+        include_directories(${BOINC_INCLUDE_DIR}/lib)
 
-    add_subdirectory(client)
-ENDIF(BOINC_APP_FOUND)
+        add_subdirectory(client)
+    ENDIF(BOINC_APP_FOUND)
+ENDIF (COMPILE_CLIENT STREQUAL "YES")
 
 if (BOINC_SERVER_FOUND)
-    find_package(MySQL)
-
-    MESSAGE(STATUS "MYSQL_FOUND: ${MYSQL_FOUND}")
-    if (MYSQL_FOUND)
-        add_definitions( -D_MYSQL_ )
-    ENDIF (MYSQL_FOUND)
-
     MESSAGE(STATUS "BOINC_SERVER_FOUND")
 
     MESSAGE(STATUS "OpenSSL required.")

@@ -72,6 +72,7 @@ void exact_thread(const Images &images, int id) {
 
         exact_mutex.lock();
         exact->insert_genome(genome);
+        exact->export_to_database();
         exact_mutex.unlock();
     }
 }
@@ -111,7 +112,25 @@ int main(int argc, char** argv) {
 
     Images images(binary_samples_filename);
 
-    exact = new EXACT(images, population_size, min_epochs, max_epochs, improvement_required_epochs, reset_edges, max_individuals, output_directory, search_name);
+    //exact = new EXACT(images, population_size, min_epochs, max_epochs, improvement_required_epochs, reset_edges, max_individuals, output_directory, search_name);
+    exact = new EXACT(1);
+
+    /*
+    cout << "generating individual!" << endl;
+
+    CNN_Genome *genome = exact->generate_individual();
+
+    cout << "exporting genome to database!" << endl;
+    genome->export_to_database(1);
+    cout << "inserted genome into database with id: " << genome->get_genome_id() << endl;
+    genome->write_to_file("test_original.txt");
+
+    genome->stochastic_backpropagation(images);
+    */
+
+    //CNN_Genome *from_database = new CNN_Genome(genome->get_genome_id());
+    //CNN_Genome *from_database = new CNN_Genome(1);
+    //from_database->stochastic_backpropagation(images);
 
     vector<thread> threads;
     for (uint32_t i = 0; i < number_threads; i++) {

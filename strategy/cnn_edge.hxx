@@ -30,6 +30,10 @@ using std::vector;
 
 class CNN_Edge {
     private:
+        int edge_id;
+        int exact_id;
+        int genome_id;
+
         int innovation_number;
 
         int input_node_innovation_number;
@@ -52,6 +56,12 @@ class CNN_Edge {
         CNN_Edge();
 
         CNN_Edge(CNN_Node *_input_node, CNN_Node *_output_node, bool _fixed, int _innovation_number);
+
+#ifdef _MYSQL_
+        CNN_Edge(int edge_id);
+        void export_to_database(int exact_id, int genome_id);
+#endif
+
 
         CNN_Edge* copy() const;
 
@@ -100,6 +110,9 @@ class CNN_Edge {
         friend ostream &operator<<(ostream &os, const CNN_Edge* flight);
         friend istream &operator>>(istream &is, CNN_Edge* flight);
 };
+
+template <class T>
+void parse_vector_2d(vector<T> &output, istringstream &iss, int size_x, int size_y);
 
 struct sort_CNN_Edges_by_depth {
     bool operator()(CNN_Edge *n1, CNN_Edge *n2) {

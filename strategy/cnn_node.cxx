@@ -18,6 +18,9 @@ using std::istream;
 using std::minstd_rand0;
 using std::normal_distribution;
 
+#include <sstream>
+using std::ostringstream;
+using std::istringstream;
 
 #include <string>
 using std::string;
@@ -32,6 +35,10 @@ using std::vector;
 #include "stdint.h"
 
 CNN_Node::CNN_Node() {
+    node_id = -1;
+    exact_id = -1;
+    genome_id = -1;
+
     innovation_number = -1;
     values = NULL;
     errors = NULL;
@@ -42,6 +49,10 @@ CNN_Node::CNN_Node() {
 }
 
 CNN_Node::CNN_Node(int _innovation_number, double _depth, int _size_x, int _size_y, int _type) {
+    node_id = -1;
+    exact_id = -1;
+    genome_id = -1;
+
     innovation_number = _innovation_number;
     depth = _depth;
     type = _type;
@@ -80,6 +91,9 @@ CNN_Node::CNN_Node(int _innovation_number, double _depth, int _size_x, int _size
     best_bias = new double*[size_y];
     for (int32_t y = 0; y < size_y; y++) {
         best_bias[y] = new double[size_x];
+        for (int32_t x = 0; x < size_x; x++) {
+            best_bias[y][x] = 0.0;
+        }
     }
 
     bias_velocity = new double*[size_y];
@@ -117,8 +131,176 @@ CNN_Node::~CNN_Node() {
 }
 
 
+template <class T>
+void parse_array_2d(T ***output, istringstream &iss, int size_x, int size_y) {
+    (*output) = new T*[size_y];
+    for (int32_t y = 0; y < size_y; y++) {
+        (*output)[y] = new T[size_x];
+        for (int32_t x = 0; x < size_x; x++) {
+            (*output)[y][x] = 0.0;
+        }
+    }
+
+    int current_x = 0, current_y = 0;
+
+    T val;
+    while(iss >> val || !iss.eof()) {
+        if (iss.fail()) {
+            iss.clear();
+            string dummy;
+            iss >> dummy;
+            continue;
+        }
+
+        //cout << "output[" << current_x << "][" << current_y << "]: " << val << endl;
+        (*output)[current_y][current_x] = val;
+
+        current_x++;
+
+        if (current_x >= size_x) {
+            current_x = 0;
+            current_y++;
+        }
+    }
+}
+
+
+#ifdef _MYSQL_
+CNN_Node::CNN_Node(int _node_id) {
+    node_id = _node_id;
+
+    ostringstream query;
+    query << "SELECT * FROM cnn_node WHERE id = " << node_id;
+
+    mysql_exact_query(query.str());
+
+    MYSQL_RES *result = mysql_store_result(exact_db_conn);
+
+    if (result != NULL) {
+        MYSQL_ROW row = mysql_fetch_row(result);
+
+        exact_id = atoi(row[1]);
+        genome_id = atoi(row[2]);
+        innovation_number = atoi(row[3]);
+        depth = atof(row[4]);
+
+        size_x = atoi(row[5]);
+        size_y = atoi(row[6]);
+
+        istringstream values_iss(row[7]);
+        parse_array_2d(&values, values_iss, size_x, size_y);
+
+        istringstream errors_iss(row[8]);
+        parse_array_2d(&errors, errors_iss, size_x, size_y);
+
+        istringstream bias_iss(row[9]);
+        parse_array_2d(&bias, bias_iss, size_x, size_y);
+
+        istringstream best_bias_iss(row[10]);
+        parse_array_2d(&best_bias, best_bias_iss, size_x, size_y);
+
+        istringstream bias_velocity_iss(row[11]);
+        parse_array_2d(&bias_velocity, bias_velocity_iss, size_x, size_y);
+
+        type = atoi(row[12]);
+        total_inputs = atoi(row[13]);
+        total_inputs = 0;   //need to reset this because it will be modified when
+                            //edges are set
+        inputs_fired = atoi(row[14]);
+
+        visited = atoi(row[15]);
+    } else {
+        cerr << "ERROR! Could not find cnn_node in database with node id: " << node_id << endl;
+        exit(1);
+    }
+
+    //cout << "read node!" << endl;
+    //cout << this << endl;
+}
+
+void CNN_Node::export_to_database(int _exact_id, int _genome_id) {
+    ostringstream query;
+
+    exact_id = _exact_id;
+    genome_id = _genome_id;
+
+    if (node_id >= 0) {
+        query << "REPLACE INTO cnn_node SET id = " << node_id << ",";
+    } else {
+        query << "INSERT INTO cnn_node SET";
+    }
+
+    query << " exact_id = " << exact_id
+        << ", genome_id = " << genome_id
+        << ", innovation_number = " << innovation_number
+        << ", depth = " << depth
+        << ", size_x = " << size_x
+        << ", size_y = " << size_y
+        << ", `values` = '";
+
+    for (int32_t y = 0; y < size_y; y++) {
+        for (int32_t x = 0; x < size_x; x++) {
+            if (x != 0) query << " ";
+            query << setprecision(15) << values[y][x];
+        }
+        if (y != size_y - 1) query << "\n";
+    }
+
+    query << "', errors = '";
+    for (int32_t y = 0; y < size_y; y++) {
+        for (int32_t x = 0; x < size_x; x++) {
+            if (x != 0) query << " ";
+            query << setprecision(15) << errors[y][x];
+        }
+        if (y != size_y - 1) query << "\n";
+    }
+
+    query << "', bias = '";
+    for (int32_t y = 0; y < size_y; y++) {
+        for (int32_t x = 0; x < size_x; x++) {
+            if (x != 0) query << " ";
+            query << setprecision(15) << bias[y][x];
+        }
+        if (y != size_y - 1) query << "\n";
+    }
+
+    query << "', best_bias = '";
+    for (int32_t y = 0; y < size_y; y++) {
+        for (int32_t x = 0; x < size_x; x++) {
+            if (x != 0) query << " ";
+            query << setprecision(15) << best_bias[y][x];
+        }
+        if (y != size_y - 1) query << "\n";
+    }
+
+    query << "', bias_velocity = '";
+    for (int32_t y = 0; y < size_y; y++) {
+        for (int32_t x = 0; x < size_x; x++) {
+            if (x != 0) query << " ";
+            query << setprecision(15) << bias_velocity[y][x];
+        }
+        if (y != size_y - 1) query << "\n";
+    }
+
+    query << "', type = " << type
+        << ", total_inputs = " << total_inputs
+        << ", inputs_fired = " << inputs_fired
+        << ", visited = " << visited;
+
+    mysql_exact_query(query.str());
+
+    if (node_id < 0) {
+        node_id = mysql_exact_last_insert_id();
+        cout << "set node id to: " << node_id << endl;
+    }
+}
+#endif
+
 CNN_Node* CNN_Node::copy() const {
     CNN_Node *copy = new CNN_Node();
+
+    copy->node_id = -1;
+    copy->genome_id = genome_id;
 
     copy->innovation_number = innovation_number;
     copy->depth = depth;
@@ -310,6 +492,9 @@ void CNN_Node::reset() {
         }
     }
 
+    //should not reset these, this is done at the beginning of
+    //evaluate_image
+    /*
     for (int32_t y = 0; y < size_y; y++) {
         for (int32_t x = 0; x < size_x; x++) {
             best_bias[y][x] = 0;
@@ -321,6 +506,7 @@ void CNN_Node::reset() {
             bias_velocity[y][x] = 0;
         }
     }
+    */
 }
 
 void CNN_Node::set_values(const Image &image, int rows, int cols) {
@@ -608,6 +794,9 @@ void CNN_Node::propagate_bias(double mu, double learning_rate, double weight_dec
 }
 
 ostream &operator<<(ostream &os, const CNN_Node* node) {
+    os << node->node_id << " ";
+    os << node->exact_id << " ";
+    os << node->genome_id << " ";
     os << node->innovation_number << " ";
     os << node->depth << " ";
     os << node->size_x << " ";
@@ -643,6 +832,9 @@ ostream &operator<<(ostream &os, const CNN_Node* node) {
 }
 
 std::istream &operator>>(std::istream &is, CNN_Node* node) {
+    is >> node->node_id;
+    is >> node->exact_id;
+    is >> node->genome_id;
     is >> node->innovation_number;
     is >> node->depth;
     is >> node->size_x;
