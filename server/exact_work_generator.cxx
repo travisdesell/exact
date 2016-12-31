@@ -66,13 +66,14 @@ using std::vector;
 #include "mysql.h"
 
 #include "common/arguments.hxx"
+#include "common/db_conn.hxx"
 
 #include "image_tools/image_set.hxx"
 
 #include "strategy/exact.hxx"
 
 #define CUSHION 1000
-#define WORKUNITS_TO_GENERATE 100
+#define WORKUNITS_TO_GENERATE 50
 #define REPLICATION_FACTOR  1
 #define SLEEP_TIME 10
 
@@ -89,39 +90,6 @@ DB_APP app;
 int start_time;
 
 EXACT* exact;
-
-#define mysql_exact_query(query) __mysql_check (exact_db_conn, query, __FILE__, __LINE__)
-
-MYSQL *exact_db_conn = NULL;
-
-void __mysql_check(MYSQL *conn, string query, const char *file, const int line) {
-    mysql_query(conn, query.c_str());
-
-    if (mysql_errno(conn) != 0) {
-        ostringstream ex_msg;
-        ex_msg << "ERROR in MySQL query: '" << query.c_str() << "'. Error: " << mysql_errno(conn) << " -- '" << mysql_error(conn) << "'. Thrown on " << file << ":" << line;
-        log_messages.printf(MSG_CRITICAL, "%s\n", ex_msg.str().c_str());
-        exit(1);
-    }   
-}
-
-void initialize_exact_database() {
-    exact_db_conn = mysql_init(NULL);
-
-    //shoud get database info from a file
-    string db_host, db_name, db_password, db_user;
-    ifstream db_info_file("../exact_db_info");
-
-    db_info_file >> db_host >> db_name >> db_user >> db_password;
-    db_info_file.close();
-
-    log_messages.printf(MSG_NORMAL,"parsed db info, host: '%s', name: '%s', user: '%s', pass: '%s'\n", db_host.c_str(), db_name.c_str(), db_user.c_str(), db_password.c_str());
-
-    if (mysql_real_connect(exact_db_conn, db_host.c_str(), db_user.c_str(), db_password.c_str(), db_name.c_str(), 0, NULL, 0) == NULL) {
-        log_messages.printf(MSG_CRITICAL, "Error connecting to database: %d, '%s'\n", mysql_errno(exact_db_conn), mysql_error(exact_db_conn));
-        exit(1);
-    }   
-}
 
 void copy_file_to_download_dir(string filename) {
     char path[256];
@@ -216,7 +184,7 @@ int make_job(CNN_Genome *genome) {
     log_messages.printf(MSG_DEBUG, "infile[1]: '%s'\n", infiles[1]);
 
 
-    double fpops_per_image = genome->get_number_weights() * 1e2;         //TODO: figure out an estimate of how many fpops per set calculation
+    double fpops_per_image = genome->get_number_weights() * 250;         //TODO: figure out an estimate of how many fpops per set calculation
     double fpops_est = exact->get_number_images() * genome->get_max_epochs() * fpops_per_image;
 
     double credit = fpops_est / 10e10;
@@ -227,9 +195,9 @@ int make_job(CNN_Genome *genome) {
     strcpy(wu.name, name);
     wu.rsc_fpops_est = fpops_est;
     wu.rsc_fpops_bound = fpops_est * 100;
-    wu.rsc_memory_bound = 200 * 1024 * 1024; //200MB
-    wu.rsc_disk_bound = 200 * 1024 * 1024; //200MB
-    wu.delay_bound = 60 * 60 * 24 * 3;
+    wu.rsc_memory_bound = 200 * 1024 * 1024;    //200MB
+    wu.rsc_disk_bound = 200 * 1024 * 1024;      //200MB
+    wu.delay_bound = 60 * 60 * 24 * 7;          //7 days
     wu.min_quorum = REPLICATION_FACTOR;
     wu.target_nresults = REPLICATION_FACTOR;
     wu.max_error_results = REPLICATION_FACTOR*4;
@@ -275,6 +243,7 @@ void make_jobs() {
         delete genome;
         total_generated++;
     }
+    exact->export_to_database();
 
     exit(1);
 }
