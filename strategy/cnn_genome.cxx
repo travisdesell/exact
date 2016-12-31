@@ -989,7 +989,7 @@ void CNN_Genome::stochastic_backpropagation(const Images &images) {
         }
 
         shuffle(backprop_order.begin(), backprop_order.end(), generator); 
-        backprop_order.resize(1000);
+        //backprop_order.resize(1000);
 
         //cout << "initializing weights and biases!" << endl;
         if (reset_edges) {

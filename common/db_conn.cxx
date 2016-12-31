@@ -9,9 +9,10 @@ using std::ostringstream;
 #include <string>
 using std::string;
 
-#include "db_conn.hxx"
 
 #include "mysql.h"
+
+#include "common/db_conn.hxx"
 
 MYSQL *exact_db_conn = NULL;
 

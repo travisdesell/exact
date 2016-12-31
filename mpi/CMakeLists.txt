@@ -7,7 +7,7 @@ if (MPI_FOUND)
 
     IF (MYSQL_FOUND)
         add_executable(exact_mpi exact_mpi)
-        target_link_libraries(exact_mpi exact_common exact_strategy exact_image_tools ${MPI_LIBRARIES} ${MPI_EXTRA} ${MYSQL_LIBRARIES} pthread)
+        target_link_libraries(exact_mpi exact_strategy exact_image_tools exact_common ${MPI_LIBRARIES} ${MPI_EXTRA} ${MYSQL_LIBRARIES} pthread)
     ELSEIF (MYSQL_FOUND)
         add_executable(exact_mpi exact_mpi)
         target_link_libraries(exact_mpi exact_common exact_strategy exact_image_tools ${MPI_LIBRARIES} ${MPI_EXTRA} pthread)
