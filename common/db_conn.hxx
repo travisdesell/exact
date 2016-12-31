@@ -3,7 +3,7 @@
 
 #include "mysql.h"
 
-#define mysql_exact_query(query) __mysql_check (query, __FILE__, __LINE__)
+#define mysql_exact_query(query) __mysql_check(query, __FILE__, __LINE__)
 
 extern MYSQL *exact_db_conn;
 

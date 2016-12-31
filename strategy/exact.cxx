@@ -40,6 +40,10 @@ using std::vector;
 #include "cnn_genome.hxx"
 #include "exact.hxx"
 
+#ifdef _MYSQL_
+#include "common/db_conn.hxx"
+#endif
+
 #include "stdlib.h"
 
 #ifdef _MYSQL_
