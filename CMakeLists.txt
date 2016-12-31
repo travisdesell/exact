@@ -3,7 +3,7 @@ project (EXACT)
 
 # The version number.
 set (EXACT_VERSION_MAJOR 0)
-set (EXACT_VERSION_MINOR 08)
+set (EXACT_VERSION_MINOR 09)
 
 add_definitions( -DEXACT_VERSION="${EXACT_VERSION_MAJOR}.${EXACT_VERSION_MINOR}" )
 
@@ -84,5 +84,7 @@ if (BOINC_SERVER_FOUND)
     add_subdirectory(server)
 ENDIF(BOINC_SERVER_FOUND)
 
-add_subdirectory(multithreaded)
-add_subdirectory(mpi)
+IF (COMPILE_CLIENT STREQUAL "NO")
+	add_subdirectory(multithreaded)
+	add_subdirectory(mpi)
+ENDIF (COMPILE_CLIENT STREQUAL "NO")
