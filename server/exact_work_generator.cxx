@@ -73,7 +73,7 @@ using std::vector;
 #include "strategy/exact.hxx"
 
 #define CUSHION 1000
-#define WORKUNITS_TO_GENERATE 50
+#define WORKUNITS_TO_GENERATE 200
 #define REPLICATION_FACTOR  1
 #define SLEEP_TIME 10
 
@@ -330,9 +330,9 @@ int main(int argc, char** argv) {
     }
 
     //initialize the EXACT algorithm
-    int population_size = 20;
-    int min_epochs = 200;
-    int max_epochs = 200;
+    int population_size = 200;
+    int min_epochs = 100;
+    int max_epochs = 100;
     int improvement_required_epochs = 5;
     bool reset_edges = true;
     int max_individuals = 10000;
