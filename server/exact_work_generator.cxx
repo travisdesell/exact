@@ -27,6 +27,8 @@
 //   the file (and the workunit names) contain a timestamp
 //   and sequence number, so they're unique.
 
+#include <sys/stat.h>
+#include <sys/types.h>
 #include <unistd.h>
 
 #include <cmath>
@@ -143,8 +145,7 @@ int make_job(CNN_Genome *genome) {
     int retval;
 
     // make a unique name (for the job and its input file)
-    //sprintf(name, "exact_genome_%u_%u", exact->get_id(), genome->get_generation_id());
-    sprintf(name, "exact_genome_%d_%s_%u_%u", start_time, exact->get_search_name().c_str(), exact->get_id(), genome->get_generation_id());
+    sprintf(name, "exact_genome_%d_%u_%u", start_time, exact->get_id(), genome->get_generation_id());
     log_messages.printf(MSG_DEBUG, "name: '%s'\n", name);
 
     string dataset_filename = "/home/tdesell/mnist_training_data.bin";
@@ -331,12 +332,14 @@ int main(int argc, char** argv) {
 
     //initialize the EXACT algorithm
     int population_size = 200;
-    int min_epochs = 100;
-    int max_epochs = 100;
+    int min_epochs = 20;
+    int max_epochs = 20;
     int improvement_required_epochs = 5;
     bool reset_edges = true;
     int max_individuals = 10000;
-    string output_directory = "/home/tdesell/exact_output/";
+    string output_directory = "/home/tdesell/exact_output/" + search_name;
+
+    mkdir(output_directory.c_str(), 0777);
 
     Images images("/home/tdesell/mnist_training_data.bin");
 

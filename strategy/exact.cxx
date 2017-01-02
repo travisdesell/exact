@@ -288,8 +288,8 @@ EXACT::EXACT(const Images &images, int _population_size, int _min_epochs, int _m
     improvement_required_epochs = _improvement_required_epochs;
     max_individuals = _max_individuals;
 
-    //unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
-    unsigned seed = 10;
+    unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
+    //unsigned seed = 10;
 
     generator = minstd_rand0(seed);
     rng_long = uniform_int_distribution<long>(-numeric_limits<long>::max(), numeric_limits<long>::max());

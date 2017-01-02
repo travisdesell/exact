@@ -5,7 +5,13 @@ add_executable(exact_validator
     ${BOINC_INCLUDE_DIR}/sched/validator
     ${BOINC_INCLUDE_DIR}/sched/validate_util
     ${BOINC_INCLUDE_DIR}/sched/validate_util2
+    boinc_common
     exact_validation_policy)
 target_link_libraries(exact_validator exact_common exact_strategy exact_image_tools ${BOINC_SERVER_LIBRARIES} ${MYSQL_LIBRARIES} ${OPENSSL_LIBRARIRES})
 
-
+add_executable(exact_assimilator
+   ${BOINC_INCLUDE_DIR}/sched/assimilator
+   ${BOINC_INCLUDE_DIR}/sched/validate_util
+   boinc_common
+   exact_assimilation_policy)
+target_link_libraries(exact_assimilator exact_common exact_strategy exact_image_tools ${BOINC_SERVER_LIBRARIES} ${MYSQL_LIBRARIES} ${OPENSSL_LIBRARIES})
