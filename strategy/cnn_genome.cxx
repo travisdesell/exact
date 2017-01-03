@@ -983,9 +983,11 @@ void CNN_Genome::set_to_best() {
 
 void CNN_Genome::fisher_yates_shuffle(vector<long> &v) {
     for (int32_t i = v.size() - 1; i > 0; i--) {
-        uniform_int_distribution<int32_t> rng_long(0, i - 1);
+        double t = ((double)generator() - (double)generator.min()) / (double)generator.max();
+        t *= (double)i - 1.0;
 
-        int32_t target = rng_long(generator);
+        int32_t target = (int32_t)t;
+
         //cerr << "target: " << target << endl;
 
         long temp = v[target];
@@ -1001,6 +1003,8 @@ void CNN_Genome::stochastic_backpropagation(const Images &images) {
             backprop_order.push_back(i);
         }
 
+        cerr << "generator min: " << generator.min() << ", generator max: " << generator.max() << endl;
+
         cerr << "pre shuffle 1: " << generator() << endl;
         cerr << "pre shuffle 2: " << generator() << endl;
         cerr << "pre shuffle 3: " << generator() << endl;
@@ -1009,14 +1013,12 @@ void CNN_Genome::stochastic_backpropagation(const Images &images) {
         //shuffle(backprop_order.begin(), backprop_order.end(), generator); 
 
         //shuffle the array (thanks C++ not being the same across operating systems)
-        //backprop_order.resize(2000);
+        //backprop_order.resize(10);
         fisher_yates_shuffle(backprop_order);
 
-        /*
         for (uint32_t i = 0; i < backprop_order.size(); i++) {
             cerr << "backprop_order[" << i << "]: " << backprop_order[i] << endl;
         }
-        */
 
         cerr << "post shuffle 1: " << generator() << endl;
         cerr << "post shuffle 2: " << generator() << endl;
