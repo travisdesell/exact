@@ -62,6 +62,7 @@ $query = "CREATE TABLE `exact_search` (
     `inserted_from_crossover` int NOT NULL,
 
     `generator` varchar(64) NOT NULL,
+    `normal_distribution` varchar(128) NOT NULL,
     `rng_long` varchar(64) NOT NULL,
     `rng_double` varchar(64) NOT NULL,
 
@@ -83,6 +84,7 @@ $query = "CREATE TABLE `cnn_genome` (
     `softmax_node_innovation_numbers` BLOB NOT NULL,
 
     `generator` varchar(64) NOT NULL,
+    `normal_distribution` varchar(128) NOT NULL,
 
     `initial_mu` double NOT NULL,
     `mu` double NOT NULL,

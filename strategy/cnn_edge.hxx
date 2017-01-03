@@ -22,11 +22,9 @@ using std::string;
 #include <vector>
 using std::vector;
 
-#include "image_tools/image_set.hxx"
 #include "cnn_node.hxx"
-
-#define LEARNING_RATE 0.0010
-#define WEIGHT_DECAY 0.0010
+#include "image_tools/image_set.hxx"
+#include "common/random.hxx"
 
 class CNN_Edge {
     private:
@@ -76,9 +74,9 @@ class CNN_Edge {
         void set_weights_to_best();
 
         bool set_nodes(const vector<CNN_Node*> nodes);
-        void initialize_weights(minstd_rand0 &generator);
+        void initialize_weights(minstd_rand0 &generator, NormalDistribution &normal_distribution);
         void initialize_velocities();
-        void reinitialize(minstd_rand0 &generator);
+        void reinitialize(minstd_rand0 &generator, NormalDistribution &normal_distribution);
 
         void disable();
         void enable();

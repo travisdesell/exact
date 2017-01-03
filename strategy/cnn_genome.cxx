@@ -29,9 +29,6 @@ using std::istream;
 
 #include <random>
 using std::minstd_rand0;
-using std::normal_distribution;
-using std::uniform_int_distribution;
-using std::uniform_real_distribution;
 
 #include <sstream>
 using std::istringstream;
@@ -48,6 +45,8 @@ using std::vector;
 #ifdef _MYSQL_
 #include "common/db_conn.hxx"
 #endif
+
+#include "common/random.hxx"
 
 #include "image_tools/image_set.hxx"
 #include "cnn_node.hxx"
@@ -137,56 +136,59 @@ CNN_Genome::CNN_Genome(int _genome_id) {
         //cout << "parsing softax node innovation numbers" << endl;
         parse_array(softmax_node_innovation_numbers, softmax_node_innovation_numbers_iss);
 
-        istringstream iss(row[4]);
-        iss >> generator;
+        istringstream generator_iss(row[4]);
+        generator_iss >> generator;
+
+        istringstream normal_distribution_iss(row[5]);
+        normal_distribution_iss >> normal_distribution;
 
         //cout << "generator: " << generator << endl;
 
-        initial_mu = atof(row[5]);
-        mu = atof(row[6]);
-        initial_learning_rate = atof(row[7]);
-        learning_rate = atof(row[8]);
-        initial_weight_decay = atof(row[9]);
-        weight_decay = atof(row[10]);
+        initial_mu = atof(row[6]);
+        mu = atof(row[7]);
+        initial_learning_rate = atof(row[8]);
+        learning_rate = atof(row[9]);
+        initial_weight_decay = atof(row[10]);
+        weight_decay = atof(row[11]);
 
-        epoch = atoi(row[11]);
-        min_epochs = atoi(row[12]);
-        max_epochs = atoi(row[13]);
-        improvement_required_epochs = atoi(row[14]);
-        reset_edges = atoi(row[15]);
+        epoch = atoi(row[12]);
+        min_epochs = atoi(row[13]);
+        max_epochs = atoi(row[14]);
+        improvement_required_epochs = atoi(row[15]);
+        reset_edges = atoi(row[16]);
 
-        best_error = atof(row[16]);
-        best_error_epoch = atoi(row[17]);
-        best_predictions = atoi(row[18]);
-        best_predictions_epoch = atoi(row[19]);
+        best_error = atof(row[17]);
+        best_error_epoch = atoi(row[18]);
+        best_predictions = atoi(row[19]);
+        best_predictions_epoch = atoi(row[20]);
 
-        istringstream best_class_error_iss(row[20]);
+        istringstream best_class_error_iss(row[21]);
         //cout << "parsing best class error" << endl;
         parse_array(best_class_error, best_class_error_iss);
 
-        istringstream best_correct_predictions_iss(row[21]);
+        istringstream best_correct_predictions_iss(row[22]);
         //cout << "parsing best correct predictions" << endl;
         parse_array(best_correct_predictions, best_correct_predictions_iss);
 
-        started_from_checkpoint = atoi(row[22]);
+        started_from_checkpoint = atoi(row[23]);
 
-        istringstream backprop_order_iss(row[23]);
+        istringstream backprop_order_iss(row[24]);
         //cout << "parsing backprop order" << endl;
         parse_array(backprop_order, backprop_order_iss);
 
-        generation_id = atoi(row[24]);
-        name = row[25];
-        checkpoint_filename = row[26];
-        output_filename = row[27];
+        generation_id = atoi(row[25]);
+        name = row[26];
+        checkpoint_filename = row[27];
+        output_filename = row[28];
 
-        generated_by_disable_edge = atoi(row[28]);
-        generated_by_enable_edge = atoi(row[29]);
-        generated_by_split_edge = atoi(row[30]);
-        generated_by_add_edge = atoi(row[31]);
-        generated_by_change_size = atoi(row[32]);
-        generated_by_change_size_x = atoi(row[33]);
-        generated_by_change_size_y = atoi(row[34]);
-        generated_by_crossover = atoi(row[35]);
+        generated_by_disable_edge = atoi(row[29]);
+        generated_by_enable_edge = atoi(row[30]);
+        generated_by_split_edge = atoi(row[31]);
+        generated_by_add_edge = atoi(row[32]);
+        generated_by_change_size = atoi(row[33]);
+        generated_by_change_size_x = atoi(row[34]);
+        generated_by_change_size_y = atoi(row[35]);
+        generated_by_crossover = atoi(row[36]);
 
         ostringstream node_query;
         node_query << "SELECT id FROM cnn_node WHERE genome_id = " << genome_id;
@@ -277,6 +279,7 @@ void CNN_Genome::export_to_database(int _exact_id) {
     }
 
     query << "', generator = '" << generator << "'"
+        << ", normal_distribution = '" << normal_distribution << "'"
         << ", initial_mu = " << initial_mu
         << ", mu = " << mu
         << ", initial_learning_rate = " << initial_learning_rate
@@ -646,13 +649,13 @@ void CNN_Genome::resize_edges_around_node(int node_innovation_number) {
 
         if (edge->get_input_node()->get_innovation_number() == node_innovation_number) {
             cout << "\tresizing edge with innovation number " << edge->get_innovation_number() << " as input to node with innovation number " << node_innovation_number << endl;
-            edge->reinitialize(generator);
+            edge->reinitialize(generator, normal_distribution);
             edge->save_best_weights();  //save weights for reuse
         }
 
         if (edge->get_output_node()->get_innovation_number() == node_innovation_number) {
             cout << "\tresizing edge with innovation number " << edge->get_innovation_number() << " as output from node with innovation number " << node_innovation_number << endl;
-            edge->reinitialize(generator);
+            edge->reinitialize(generator, normal_distribution);
             edge->save_best_weights();  //save weights for reuse
         }
     }
@@ -947,13 +950,13 @@ int CNN_Genome::evaluate_image(const Image &image, vector<double> &class_error, 
 
 void CNN_Genome::initialize_weights() {
     for (uint32_t i = 0; i < edges.size(); i++) {
-        edges[i]->initialize_weights(generator);
+        edges[i]->initialize_weights(generator, normal_distribution);
     }
 }
 
 void CNN_Genome::initialize_bias() {
     for (uint32_t i = 0; i < nodes.size(); i++) {
-        nodes[i]->initialize_bias(generator);
+        nodes[i]->initialize_bias(generator, normal_distribution);
     }
 }
 
@@ -981,21 +984,6 @@ void CNN_Genome::set_to_best() {
     }
 }
 
-void CNN_Genome::fisher_yates_shuffle(vector<long> &v) {
-    for (int32_t i = v.size() - 1; i > 0; i--) {
-        double t = ((double)generator() - (double)generator.min()) / (double)generator.max();
-        t *= (double)i - 1.0;
-
-        int32_t target = (int32_t)t;
-
-        //cerr << "target: " << target << endl;
-
-        long temp = v[target];
-        v[target] = v[i];
-        v[i] = temp;
-    }
-}
-
 void CNN_Genome::stochastic_backpropagation(const Images &images) {
     if (!started_from_checkpoint) {
         backprop_order.clear();
@@ -1014,7 +1002,7 @@ void CNN_Genome::stochastic_backpropagation(const Images &images) {
 
         //shuffle the array (thanks C++ not being the same across operating systems)
         //backprop_order.resize(10);
-        fisher_yates_shuffle(backprop_order);
+        fisher_yates_shuffle(generator, backprop_order);
 
         for (uint32_t i = 0; i < backprop_order.size(); i++) {
             cerr << "backprop_order[" << i << "]: " << backprop_order[i] << endl;
@@ -1027,11 +1015,11 @@ void CNN_Genome::stochastic_backpropagation(const Images &images) {
         //cout << "initializing weights and biases!" << endl;
         if (reset_edges) {
             for (uint32_t i = 0; i < edges.size(); i++) {
-                edges[i]->initialize_weights(generator);
+                edges[i]->initialize_weights(generator, normal_distribution);
             }
 
             for (uint32_t i = 0; i < nodes.size(); i++) {
-                nodes[i]->initialize_bias(generator);
+                nodes[i]->initialize_bias(generator, normal_distribution);
             }
         } else {
             set_to_best();
@@ -1073,7 +1061,7 @@ void CNN_Genome::stochastic_backpropagation(const Images &images) {
         //shuffle(backprop_order.begin(), backprop_order.end(), generator); 
 
         //shuffle the array (thanks C++ not being the same across operating systems)
-        fisher_yates_shuffle(backprop_order);
+        fisher_yates_shuffle(generator, backprop_order);
 
         vector<double> class_error(images.get_number_classes(), 0.0);
         vector<int> correct_predictions(images.get_number_classes(), 0);
@@ -1220,6 +1208,7 @@ void CNN_Genome::write(ostream &outfile) {
     outfile << generated_by_crossover << endl;
 
     outfile << generation_id << endl;
+    outfile << normal_distribution << endl;
     //outfile << name << endl;
     //outfile << checkpoint_filename << endl;
     //outfile << output_filename << endl;
@@ -1335,6 +1324,9 @@ void CNN_Genome::read(istream &infile) {
     //infile >> name;
     //infile >> checkpoint_filename;
     //infile >> output_filename;
+
+    infile >> normal_distribution;
+    cerr << "read normal distribution: '" << normal_distribution << "'" << endl;
 
     //for some reason linux doesn't read the generator correcly because of
     //the first newline

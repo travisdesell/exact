@@ -46,6 +46,7 @@ class EXACT {
         int edge_innovation_count;
 
         minstd_rand0 generator;
+        NormalDistribution normal_distribution;
         uniform_int_distribution<long> rng_long;
         uniform_real_distribution<double> rng_double;
 
