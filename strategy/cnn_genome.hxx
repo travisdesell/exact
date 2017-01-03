@@ -10,6 +10,7 @@ using std::vector;
 #include "image_tools/image_set.hxx"
 #include "cnn_node.hxx"
 #include "cnn_edge.hxx"
+#include "common/random.hxx"
 
 #define SANITY_CHECK_BEFORE_INSERT 0
 #define SANITY_CHECK_AFTER_GENERATION 1
@@ -27,6 +28,7 @@ class CNN_Genome {
         CNN_Node *input_node;
         vector<CNN_Node*> softmax_nodes;
 
+        NormalDistribution normal_distribution;
         minstd_rand0 generator;
 
         double initial_mu;
@@ -88,7 +90,6 @@ class CNN_Genome {
         CNN_Genome(int genome_id);
         void export_to_database(int exact_id);
 #endif
-        void fisher_yates_shuffle(vector<long> &v);
 
         int get_genome_id() const;
         int get_exact_id() const;

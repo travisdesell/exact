@@ -20,7 +20,6 @@ using std::numeric_limits;
 
 #include <random>
 using std::minstd_rand0;
-using std::normal_distribution;
 using std::uniform_int_distribution;
 using std::uniform_real_distribution;
 
@@ -111,11 +110,15 @@ EXACT::EXACT(int exact_id) {
         generator_iss >> generator;
         //cout << "read generator from database: " << generator << endl;
 
-        istringstream rng_long_iss(row[41]);
+        istringstream normal_distribution_iss(row[41]);
+        normal_distribution_iss >> normal_distribution;
+        //cout << "read normal_distribution from database: " << normal_distribution << endl;
+
+        istringstream rng_long_iss(row[42]);
         rng_long_iss >> rng_long;
         //cout << "read rng_long from database: " << rng_long << endl;
 
-        istringstream rng_double_iss(row[42]);
+        istringstream rng_double_iss(row[43]);
         rng_double_iss >> rng_double;
         //cout << "read rng_double from database: " << rng_double << endl;
 
@@ -409,14 +412,14 @@ CNN_Genome* EXACT::generate_individual() {
         int total_weights = 0;
 
         CNN_Node *input_node = new CNN_Node(node_innovation_count, 0, image_rows, image_cols, INPUT_NODE);
-        input_node->initialize_bias(generator);
+        input_node->initialize_bias(generator, normal_distribution);
         input_node->save_best_bias();
         node_innovation_count++;
         all_nodes.push_back(input_node);
 
         for (int32_t i = 0; i < number_classes; i++) {
             CNN_Node *softmax_node = new CNN_Node(node_innovation_count, 1, 1, 1, SOFTMAX_NODE);
-            softmax_node->initialize_bias(generator);
+            softmax_node->initialize_bias(generator, normal_distribution);
             softmax_node->save_best_bias();
             node_innovation_count++;
             all_nodes.push_back(softmax_node);
@@ -424,7 +427,7 @@ CNN_Genome* EXACT::generate_individual() {
 
         for (int32_t i = 0; i < number_classes; i++) {
             CNN_Edge *edge = new CNN_Edge(input_node, all_nodes[i + 1] /*ith softmax node*/, true, edge_innovation_count);
-            edge->initialize_weights(generator);
+            edge->initialize_weights(generator, normal_distribution);
             edge->save_best_weights();
 
             all_edges.push_back(edge);
@@ -718,7 +721,7 @@ CNN_Genome* EXACT::create_mutation() {
 
                 disabled_edge->enable();
                 //reinitialize weights for re-enabled edge
-                disabled_edge->initialize_weights(generator);
+                disabled_edge->initialize_weights(generator, normal_distribution);
                 disabled_edge->save_best_weights(); //save the random weights so they are reused
                 child->set_generated_by_enable_edge();
                 modifications++;
@@ -745,7 +748,7 @@ CNN_Genome* EXACT::create_mutation() {
             int size_y = (input_node->get_size_y() + output_node->get_size_y()) / 2.0;
 
             CNN_Node *child_node = new CNN_Node(node_innovation_count, depth, size_x, size_y, HIDDEN_NODE);
-            child_node->initialize_bias(generator);
+            child_node->initialize_bias(generator, normal_distribution);
             child_node->save_best_bias();
             node_innovation_count++;
 
@@ -753,13 +756,13 @@ CNN_Genome* EXACT::create_mutation() {
             cout << "\t\tcreating edge " << edge_innovation_count << endl;
             CNN_Edge *edge1 = new CNN_Edge(input_node, child_node, false, edge_innovation_count);
             edge_innovation_count++;
-            edge1->initialize_weights(generator);
+            edge1->initialize_weights(generator, normal_distribution);
             edge1->save_best_weights(); //save the random weights so they are reused instead of 0
 
             cout << "\t\tcreating edge " << edge_innovation_count << endl;
             CNN_Edge *edge2 = new CNN_Edge(child_node, output_node, false, edge_innovation_count);
             edge_innovation_count++;
-            edge2->initialize_weights(generator);
+            edge2->initialize_weights(generator, normal_distribution);
             edge2->save_best_weights(); //save the random weights so they are resused instead of 0
 
             cout << "\t\tdisabling edge " << edge->get_innovation_number() << endl;
@@ -844,7 +847,7 @@ CNN_Genome* EXACT::create_mutation() {
                 edge_copy->enable();
                 if (!edge_copy->set_nodes(child->get_nodes())) {
                     cout << "\t\treinitializing weights of copy" << endl;
-                    edge_copy->reinitialize(generator);
+                    edge_copy->reinitialize(generator, normal_distribution);
                     edge_copy->save_best_weights();
                 }
 
@@ -862,7 +865,7 @@ CNN_Genome* EXACT::create_mutation() {
 
                 //enable the edge in case it was disabled
                 edge->enable();
-                edge->initialize_weights(generator);
+                edge->initialize_weights(generator, normal_distribution);
                 edge->save_best_weights();
                 child->add_edge(edge);
 
@@ -925,8 +928,8 @@ CNN_Genome* EXACT::create_mutation() {
             cout << "\t\tsize x before resize: " << previous_size_x << " modifying by change: " << change << endl;
             cout << "\t\tsize y before resize: " << previous_size_y << " modifying by change: " << change << endl;
 
-            bool modified_x = modified_node->modify_size_x(change, generator);
-            bool modified_y = modified_node->modify_size_y(change, generator);
+            bool modified_x = modified_node->modify_size_x(change, generator, normal_distribution);
+            bool modified_y = modified_node->modify_size_y(change, generator, normal_distribution);
 
             if (modified_x || modified_y) {
                 //need to make sure all edges with this as it's input or output get updated
@@ -978,7 +981,7 @@ CNN_Genome* EXACT::create_mutation() {
             int previous_size_x = modified_node->get_size_x();
             cout << "\t\tsize x before resize: " << previous_size_x << " modifying by change: " << change << endl;
 
-            if (modified_node->modify_size_x(change, generator)) {
+            if (modified_node->modify_size_x(change, generator, normal_distribution)) {
                 //need to make sure all edges with this as it's input or output get updated
                 cout << "\t\tresizing edges around node: " << modified_node->get_innovation_number() << endl;
 
@@ -1027,7 +1030,7 @@ CNN_Genome* EXACT::create_mutation() {
             int previous_size_y = modified_node->get_size_y();
             cout << "\t\tsize y before resize: " << previous_size_y << " modifying by change: " << change << endl;
 
-            if (modified_node->modify_size_y(change, generator)) {
+            if (modified_node->modify_size_y(change, generator, normal_distribution)) {
                 //need to make sure all edges with this as it's input or output get updated
                 cout << "\t\tresizing edges around node: " << modified_node->get_innovation_number() << endl;
 
@@ -1282,7 +1285,7 @@ CNN_Genome* EXACT::create_child() {
     for (int32_t i = 0; i < (int32_t)child_edges.size(); i++) {
         if (!child_edges[i]->set_nodes(child_nodes)) {
             cout << "\t\treinitializing weights of copy" << endl;
-            child_edges[i]->reinitialize(generator);
+            child_edges[i]->reinitialize(generator, normal_distribution);
             child_edges[i]->save_best_weights();
         }
     }

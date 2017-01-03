@@ -339,14 +339,17 @@ CNN_Node* CNN_Node::copy() const {
     return copy;
 }
 
-void CNN_Node::initialize_bias(minstd_rand0 &generator) {
+void CNN_Node::initialize_bias(minstd_rand0 &generator, NormalDistribution &normal_distribution) {
     int bias_size = size_x * size_y;
     if (bias_size == 1) bias_size = 10;
-    normal_distribution<double> distribution(0.0, sqrt(2.0 / bias_size));
+
+    double mu = 0.0;
+    //double sigma = sqrt(2.0 / bias_size);
+    double sigma = 2.0 / bias_size;
 
     for (int32_t i = 0; i < size_y; i++) {
         for (int32_t j = 0; j < size_x; j++) {
-            bias[i][j] = distribution(generator);
+            bias[i][j] = normal_distribution.random(generator, mu, sigma);
             best_bias[i][j] = 0.0;
             bias_velocity[i][j] = 0.0;
             //cout << "node " << innovation_number << " bias[" << i << "][" << j <<"]: " << bias[i][j] << endl;
@@ -491,22 +494,6 @@ void CNN_Node::reset() {
             errors[y][x] = 0;
         }
     }
-
-    //should not reset these, this is done at the beginning of
-    //evaluate_image
-    /*
-    for (int32_t y = 0; y < size_y; y++) {
-        for (int32_t x = 0; x < size_x; x++) {
-            best_bias[y][x] = 0;
-        }
-    }
-
-    for (int32_t y = 0; y < size_y; y++) {
-        for (int32_t x = 0; x < size_x; x++) {
-            bias_velocity[y][x] = 0;
-        }
-    }
-    */
 }
 
 void CNN_Node::set_values(const Image &image, int rows, int cols) {
@@ -650,7 +637,7 @@ void CNN_Node::resize_arrays(int previous_size_x, int previous_size_y) {
 }
 
 
-bool CNN_Node::modify_size_x(int change, minstd_rand0 &generator) {
+bool CNN_Node::modify_size_x(int change, minstd_rand0 &generator, NormalDistribution &normal_distribution) {
     int previous_size_x = size_x;
 
     size_x += change;
@@ -660,13 +647,13 @@ bool CNN_Node::modify_size_x(int change, minstd_rand0 &generator) {
     if (size_x == previous_size_x) return false;
 
     resize_arrays(previous_size_x, size_y);
-    initialize_bias(generator);
+    initialize_bias(generator, normal_distribution);
     save_best_bias(); //save the new random weights so they are resused by this child
 
     return true;
 }
 
-bool CNN_Node::modify_size_y(int change, minstd_rand0 &generator) {
+bool CNN_Node::modify_size_y(int change, minstd_rand0 &generator, NormalDistribution &normal_distribution) {
     int previous_size_y = size_y;
 
     size_y += change;
@@ -676,7 +663,7 @@ bool CNN_Node::modify_size_y(int change, minstd_rand0 &generator) {
     if (size_y == previous_size_y) return false;
 
     resize_arrays(size_x, previous_size_y);
-    initialize_bias(generator);
+    initialize_bias(generator, normal_distribution);
     save_best_bias(); //save the new random weights so they are resused by this child
 
     return true;
