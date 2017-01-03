@@ -1292,7 +1292,16 @@ void CNN_Genome::read(istream &infile) {
     //infile >> checkpoint_filename;
     //infile >> output_filename;
 
-    infile >> generator;
+    //for some reason linux doesn't read the generator correcly because of
+    //the first newline
+    string generator_str;
+    getline(infile, generator_str);
+    getline(infile, generator_str);
+    cerr << "generator_str: '" << generator_str << "'" << endl;
+    istringstream generator_iss(generator_str);
+    generator_iss >> generator;
+    //infile >> generator;
+
     if (verbose) cerr << "read generator: " << generator << endl;
 
     minstd_rand0 g1(132320);
