@@ -988,12 +988,13 @@ void CNN_Genome::stochastic_backpropagation(const Images &images) {
             backprop_order.push_back(i);
         }
 
-        shuffle(backprop_order.begin(), backprop_order.end(), generator); 
-        //backprop_order.resize(1000);
-
         cerr << "pre generator 1: " << generator() << endl;
         cerr << "pre generator 2: " << generator() << endl;
         cerr << "pre generator 3: " << generator() << endl;
+
+        shuffle(backprop_order.begin(), backprop_order.end(), generator); 
+        //backprop_order.resize(1000);
+
         for (uint32_t i = 0; i < backprop_order.size(); i++) {
             cerr << "backprop_order[" << i << "]: " << backprop_order[i] << endl;
         }
