@@ -1089,7 +1089,7 @@ void CNN_Genome::stochastic_backpropagation(const Images &images) {
                 save_weights();
             }
 
-            cerr << "[" << setw(10) << name << ", genome " << setw(5) << generation_id << "] best predictions: " << setw(10) << best_predictions << " of " << setw(10) << backprop_order.size() << ", best error: " << setw(20) << setprecision(5) << fixed << best_error << " on epoch: " << setw(5) << best_error_epoch << ", current epoch: " << setw(4) << epoch << " of " << setw(4) << max_epochs << ", current - best: " << setw(3) << (epoch - best_error_epoch) << ", mu: " << setw(10) << mu << ", learning_rate: " << setw(10) << learning_rate << ", weight_decay: " << setw(10) << weight_decay << endl;
+            cerr << "[" << setw(10) << name << ", genome " << setw(5) << generation_id << "] current predictions: " << setw(10) << total_predictions << ", best predictions: " << setw(10) << best_predictions << " of " << setw(10) << backprop_order.size() << ", current error: " << setprecision(5) << fixed << total_error << ", best error: " << setw(20) << setprecision(5) << fixed << best_error << " on epoch: " << setw(5) << best_error_epoch << ", current epoch: " << setw(4) << epoch << " of " << setw(4) << max_epochs << ", mu: " << setw(10) << mu << ", learning_rate: " << setw(10) << learning_rate << ", weight_decay: " << setw(10) << weight_decay << endl;
             //cout << "total correct predictions: " << total_predictions << " of " << backprop_order.size() << endl;
             //cout << "total error:               " << left << setw(20) << setprecision(5) << fixed << total_error << endl;
             //cout << endl;
@@ -1371,6 +1371,7 @@ void CNN_Genome::read(istream &infile) {
         long order;
         infile >> order;
         backprop_order.push_back(order);
+        cerr << "backprop order[" << i << "]: " << order << endl;
     }
 
 
