@@ -981,6 +981,19 @@ void CNN_Genome::set_to_best() {
     }
 }
 
+void CNN_Genome::fisher_yates_shuffle(vector<long> &v) {
+    for (int32_t i = v.size() - 1; i > 0; i--) {
+        uniform_int_distribution<int32_t> rng_long(0, i - 1);
+
+        int32_t target = rng_long(generator);
+        //cerr << "target: " << target << endl;
+
+        long temp = v[target];
+        v[target] = v[i];
+        v[i] = temp;
+    }
+}
+
 void CNN_Genome::stochastic_backpropagation(const Images &images) {
     if (!started_from_checkpoint) {
         backprop_order.clear();
@@ -988,19 +1001,26 @@ void CNN_Genome::stochastic_backpropagation(const Images &images) {
             backprop_order.push_back(i);
         }
 
-        cerr << "pre generator 1: " << generator() << endl;
-        cerr << "pre generator 2: " << generator() << endl;
-        cerr << "pre generator 3: " << generator() << endl;
+        cerr << "pre shuffle 1: " << generator() << endl;
+        cerr << "pre shuffle 2: " << generator() << endl;
+        cerr << "pre shuffle 3: " << generator() << endl;
 
-        shuffle(backprop_order.begin(), backprop_order.end(), generator); 
-        //backprop_order.resize(1000);
+        //this is sadly not cross platform compliant
+        //shuffle(backprop_order.begin(), backprop_order.end(), generator); 
 
+        //shuffle the array (thanks C++ not being the same across operating systems)
+        //backprop_order.resize(2000);
+        fisher_yates_shuffle(backprop_order);
+
+        /*
         for (uint32_t i = 0; i < backprop_order.size(); i++) {
             cerr << "backprop_order[" << i << "]: " << backprop_order[i] << endl;
         }
-        cerr << "post generator 1: " << generator() << endl;
-        cerr << "post generator 2: " << generator() << endl;
-        cerr << "post generator 3: " << generator() << endl;
+        */
+
+        cerr << "post shuffle 1: " << generator() << endl;
+        cerr << "post shuffle 2: " << generator() << endl;
+        cerr << "post shuffle 3: " << generator() << endl;
 
         //cout << "initializing weights and biases!" << endl;
         if (reset_edges) {
@@ -1047,7 +1067,11 @@ void CNN_Genome::stochastic_backpropagation(const Images &images) {
     }
 
     do {
-        shuffle(backprop_order.begin(), backprop_order.end(), generator); 
+        //this is sadly not cross platform compliant
+        //shuffle(backprop_order.begin(), backprop_order.end(), generator); 
+
+        //shuffle the array (thanks C++ not being the same across operating systems)
+        fisher_yates_shuffle(backprop_order);
 
         vector<double> class_error(images.get_number_classes(), 0.0);
         vector<int> correct_predictions(images.get_number_classes(), 0);

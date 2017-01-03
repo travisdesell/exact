@@ -88,6 +88,7 @@ class CNN_Genome {
         CNN_Genome(int genome_id);
         void export_to_database(int exact_id);
 #endif
+        void fisher_yates_shuffle(vector<long> &v);
 
         int get_genome_id() const;
         int get_exact_id() const;
