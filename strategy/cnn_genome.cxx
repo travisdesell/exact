@@ -992,7 +992,7 @@ void CNN_Genome::stochastic_backpropagation(const Images &images) {
         //backprop_order.resize(1000);
 
         for (uint32_t i = 0; i < backprop_order.size(); i++) {
-            cout << "backprop_order[i]: " << backprop_order[i] << endl;
+            cerr << "backprop_order[" << i << "]: " << backprop_order[i] << endl;
         }
 
         //cout << "initializing weights and biases!" << endl;
