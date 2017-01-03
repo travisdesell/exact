@@ -1302,10 +1302,12 @@ void CNN_Genome::read(istream &infile) {
     generator_iss >> generator;
     //infile >> generator;
 
-    if (verbose) cerr << "read generator: " << generator << endl;
-
-    minstd_rand0 g1(132320);
-    cerr << "other generator: " << g1 << endl;
+    if (verbose) {
+        cerr << "read generator: " << generator << endl;
+        cerr << "rand 1: " << generator() << endl;
+        cerr << "rand 2: " << generator() << endl;
+        cerr << "rand 3: " << generator() << endl;
+    }
 
     cerr << "reading nodes!" << endl;
     nodes.clear();
