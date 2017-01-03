@@ -1079,7 +1079,14 @@ void CNN_Genome::stochastic_backpropagation(const Images &images) {
         vector<int> correct_predictions(images.get_number_classes(), 0);
 
         for (uint32_t j = 0; j < backprop_order.size(); j++) {
+            cerr << "evaluating image: " << setw(10) << backprop_order[j];
             evaluate_image(images.get_image(backprop_order[j]), class_error, true);
+
+            cerr << ", class error: ";
+            for (uint32_t i = 0; i < class_error.size(); i++) {
+                cerr << setw(13) << setprecision(5) << fixed << class_error[i];
+            }
+            cerr << endl;
         }
 
         if (epoch % improvement_required_epochs == 0) {
