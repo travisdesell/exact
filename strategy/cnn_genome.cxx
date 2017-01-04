@@ -1344,9 +1344,9 @@ void CNN_Genome::read(istream &infile) {
 
     if (verbose) {
         cerr << "read generator: " << generator << endl;
-        cerr << "rand 1: " << generator() << endl;
-        cerr << "rand 2: " << generator() << endl;
-        cerr << "rand 3: " << generator() << endl;
+        //cerr << "rand 1: " << generator() << endl;
+        //cerr << "rand 2: " << generator() << endl;
+        //cerr << "rand 3: " << generator() << endl;
     }
 
     cerr << "reading nodes!" << endl;
@@ -1422,7 +1422,7 @@ void CNN_Genome::read(istream &infile) {
         long order;
         infile >> order;
         backprop_order.push_back(order);
-        cerr << "backprop order[" << i << "]: " << order << endl;
+        //cerr << "backprop order[" << i << "]: " << order << endl;
     }
 
 
