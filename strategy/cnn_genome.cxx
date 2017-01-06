@@ -1279,7 +1279,7 @@ void CNN_Genome::read(istream &infile) {
 
     cerr << "version: " << version << endl;
 
-    if (version < 0.11) return;
+    if (version <= 0.10) return;
 
     infile >> exact_id;
     if (verbose) cerr << "read exact_id: " << exact_id << endl;
