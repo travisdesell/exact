@@ -1146,7 +1146,7 @@ void CNN_Genome::set_checkpoint_filename(string _checkpoint_filename) {
 
 void CNN_Genome::write(ostream &outfile) {
 #ifdef _WIN32
-#define EXACT_VERSION "0.08"
+#define EXACT_VERSION "0.09"
 #endif
 	
 	outfile << "v" << EXACT_VERSION << endl;
