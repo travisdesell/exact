@@ -1,6 +1,8 @@
 #include <cstdlib>
 #include <cmath>
 #include <limits>
+#include <cstdint>
+
 
 #include <iostream>
 using std::ostream;
