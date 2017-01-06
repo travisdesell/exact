@@ -245,16 +245,19 @@ int CNN_Edge::get_filter_y() const {
 }
 
 
-void CNN_Edge::initialize_weights(minstd_rand0 &generator) {
+void CNN_Edge::initialize_weights(minstd_rand0 &generator, NormalDistribution &normal_distribution) {
     if (disabled) return;
 
     int edge_size = filter_x * filter_y;
     if (edge_size == 1) edge_size = 10;
-    normal_distribution<double> distribution(0.0, sqrt(2.0 / edge_size) );
+
+    double mu = 0.0;
+    //double sigma = sqrt(2.0 / edge_size);
+    double sigma = 2.0 / edge_size;
 
     for (uint32_t i = 0; i < weights.size(); i++) {
         for (uint32_t j = 0; j < weights[i].size(); j++) {
-            weights[i][j] = distribution(generator);
+            weights[i][j] = normal_distribution.random(generator, mu, sigma);
             best_weights[i][j] = 0.0;
             previous_velocity[i][j] = 0.0;
         }
@@ -271,7 +274,7 @@ void CNN_Edge::initialize_velocities() {
 }
 
 
-void CNN_Edge::reinitialize(minstd_rand0 &generator) {
+void CNN_Edge::reinitialize(minstd_rand0 &generator, NormalDistribution &normal_distribution) {
     //this may have changed from a regular to reverse filter
     if (output_node->get_size_x() <= input_node->get_size_x()) {
         reverse_filter_x = false;
@@ -293,7 +296,7 @@ void CNN_Edge::reinitialize(minstd_rand0 &generator) {
     best_weights = vector< vector<double> >(filter_y, vector<double>(filter_x, 0.0));
     previous_velocity = vector< vector<double> >(filter_y, vector<double>(filter_x, 0.0));
 
-    initialize_weights(generator);
+    initialize_weights(generator, normal_distribution);
 }
 
 void CNN_Edge::save_best_weights() {

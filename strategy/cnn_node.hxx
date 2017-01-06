@@ -31,6 +31,8 @@ using std::vector;
 #include "common/db_conn.hxx"
 #endif
 
+#include "common/random.hxx"
+
 #define RELU_MIN 0
 #define RELU_MIN_LEAK 0.005
 
@@ -103,8 +105,7 @@ class CNN_Node {
         void visit();
         void set_unvisited();
 
-        void initialize_bias(minstd_rand0 &generator);
-        void reinitialize_bias(minstd_rand0 &generator);
+        void initialize_bias(minstd_rand0 &generator, NormalDistribution &normal_disribution);
         void initialize_velocities();
 
         bool has_zero_bias() const;
@@ -130,8 +131,8 @@ class CNN_Node {
         void set_bias_to_best();
 
         void resize_arrays(int previous_size_x, int previous_size_y);
-        bool modify_size_x(int change, minstd_rand0 &generator);
-        bool modify_size_y(int change, minstd_rand0 &generator);
+        bool modify_size_x(int change, minstd_rand0 &generator, NormalDistribution &normal_distribution);
+        bool modify_size_y(int change, minstd_rand0 &generator, NormalDistribution &normal_distribution);
 
         void add_input();
         void disable_input();
