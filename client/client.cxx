@@ -113,7 +113,13 @@ int main(int argc, char** argv) {
         genome = new CNN_Genome(genome_filename, false);
         //genome->set_to_best();
     }
-    cerr << "parsed intput file" << endl;
+    cerr << "parsed input file" << endl;
+
+    if (genome->get_version() < 0.11) {
+        cerr << "ERROR: exact application with version '" << EXACT_VERSION << "' trying to process workunit with incompatible input version: '" << genome->get_version_str() << endl;
+        boinc_finish(1);
+        exit(1);
+    }
 
     //genome->print_graphviz(cout);
 

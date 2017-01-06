@@ -1049,6 +1049,7 @@ void CNN_Genome::stochastic_backpropagation(const Images &images) {
 
         best_error = numeric_limits<double>::max();
     }
+    //backprop_order.resize(1000);
 
     //sort edges by depth of input node
     sort(edges.begin(), edges.end(), sort_CNN_Edges_by_depth());
@@ -1179,6 +1180,13 @@ void CNN_Genome::set_checkpoint_filename(string _checkpoint_filename) {
     checkpoint_filename = _checkpoint_filename;
 }
 
+double CNN_Genome::get_version() const {
+    return version;
+}
+
+string CNN_Genome::get_version_str() const {
+    return version_str;
+}
 
 void CNN_Genome::write(ostream &outfile) {
     outfile << "v" << EXACT_VERSION << endl;
@@ -1263,10 +1271,15 @@ void CNN_Genome::read(istream &infile) {
 
     bool verbose = true;
 
-    string version_str;
     getline(infile, version_str);
 
-    cerr << "read CNN_Genome file with version: '" << version_str << "'" << endl;
+    cerr << "read CNN_Genome file with version string: '" << version_str << "'" << endl;
+
+    version = stof(version_str.substr(1,4));
+
+    cerr << "version: " << version << endl;
+
+    if (version < 0.11) return;
 
     infile >> exact_id;
     if (verbose) cerr << "read exact_id: " << exact_id << endl;
