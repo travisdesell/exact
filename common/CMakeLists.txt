@@ -1,6 +1,6 @@
 if (MYSQL_FOUND)
     message(STATUS "mysql found, adding db_conn to exact_common library!")
-    add_library(exact_common arguments db_conn)
+    add_library(exact_common arguments random db_conn)
 else (MYSQL_FOUND)
-    add_library(exact_common arguments)
+    add_library(exact_common arguments random)
 endif (MYSQL_FOUND)
