@@ -1190,7 +1190,7 @@ string CNN_Genome::get_version_str() const {
 
 void CNN_Genome::write(ostream &outfile) {
 #ifdef _WIN32
-#define EXACT_VERSION "0.09"
+#define EXACT_VERSION "0.11"
 #endif
 	
 	outfile << "v" << EXACT_VERSION << endl;
