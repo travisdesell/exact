@@ -19,6 +19,8 @@ using std::vector;
 
 class CNN_Genome {
     private:
+        string version_str;
+        double version;
         int exact_id;
         int genome_id;
 
@@ -90,6 +92,9 @@ class CNN_Genome {
         CNN_Genome(int genome_id);
         void export_to_database(int exact_id);
 #endif
+
+        double get_version() const;
+        string get_version_str() const;
 
         int get_genome_id() const;
         int get_exact_id() const;

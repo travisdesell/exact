@@ -249,6 +249,7 @@ void EXACT::export_to_database() {
         << ", inserted_from_crossover = " << inserted_from_crossover
 
         << ", generator = '" << generator << "'"
+        << ", normal_distribution = '" << normal_distribution << "'"
         << ", rng_long = '" << rng_long << "'"
         << ", rng_double = '" << rng_double << "'";
 
