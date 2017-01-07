@@ -209,6 +209,8 @@ CNN_Node::CNN_Node(int _node_id) {
         inputs_fired = atoi(row[14]);
 
         visited = atoi(row[15]);
+
+        mysql_free_result(result);
     } else {
         cerr << "ERROR! Could not find cnn_node in database with node id: " << node_id << endl;
         exit(1);
@@ -291,7 +293,7 @@ void CNN_Node::export_to_database(int _exact_id, int _genome_id) {
 
     if (node_id < 0) {
         node_id = mysql_exact_last_insert_id();
-        cout << "set node id to: " << node_id << endl;
+        //cout << "set node id to: " << node_id << endl;
     }
 }
 #endif

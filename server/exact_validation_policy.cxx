@@ -210,10 +210,13 @@ int compare_results(
         cout << "fitness 1: " << fitness1 << endl;
         cout << "fitness 2: " << fitness2 << endl;
 
-        if (fabs(fitness1 - fitness2) < 1000.0) {
-            //close enough
+        double min_fitness_difference = 100.0;
+
+        if (fabs(fitness1 - fitness2) < min_fitness_difference) {
+            log_messages.printf(MSG_CRITICAL, "[RESULT#%ld %s] and [RESULT#%ld %s] match because fitness difference is close enough (less than %lf): %lf - %lf = %lf.\n", r1.id, r1.name, r2.id, r2.name, min_fitness_difference, fitness1, fitness2, fabs(fitness1 - fitness2));
             match = true;
         } else {
+            log_messages.printf(MSG_CRITICAL, "[RESULT#%ld %s] and [RESULT#%ld %s] DO NOT MATCH because fitness difference is close enough (greater than %lf): %lf - %lf = %lf.\n", r1.id, r1.name, r2.id, r2.name, min_fitness_difference, fitness1, fitness2, fabs(fitness1 - fitness2));
             match = false;
             //exit(1);
         }

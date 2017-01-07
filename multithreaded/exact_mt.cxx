@@ -72,7 +72,7 @@ void exact_thread(const Images &images, int id) {
 
         exact_mutex.lock();
         exact->insert_genome(genome);
-        exact->export_to_database();
+        //exact->export_to_database();
         exact_mutex.unlock();
     }
 }
@@ -113,7 +113,7 @@ int main(int argc, char** argv) {
     Images images(binary_samples_filename);
 
     //exact = new EXACT(images, population_size, min_epochs, max_epochs, improvement_required_epochs, reset_edges, max_individuals, output_directory, search_name);
-    exact = new EXACT(1);
+    exact = new EXACT(2);
 
     /*
     cout << "generating individual!" << endl;

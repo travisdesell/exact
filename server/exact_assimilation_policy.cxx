@@ -39,9 +39,13 @@
 using std::string;
 
 #include <fstream>
+using std::fstream;
 
 #include <sstream>
+using std::stringstream;
 using std::istringstream;
+using std::ostringstream;
+using std::ios;
 
 #include <unordered_map>
 using std::unordered_map;
@@ -58,16 +62,67 @@ using std::vector;
 #include "strategy/exact.hxx"
 #include "strategy/cnn_genome.hxx"
 #include "server/boinc_common.hxx"
+#include "server/make_jobs.hxx"
 
-#define REPLICATION_FACTOR  2
-
-bool in_template_initialized = false;
-char *in_template;
 
 unordered_map<int, EXACT*> exact_searches;
 
+EXACT* get_exact_search(int exact_id) {
+    EXACT *search = NULL;
+    if (exact_searches.count(exact_id) > 0) {
+        search = exact_searches[exact_id];
+
+    } else {
+        search = new EXACT(exact_id);
+        exact_searches[exact_id] = search;
+    }
+
+    return search;
+}
+
 int assimilate_handler_init(int argc, char** argv) {
     // handle project specific arguments here
+
+    init_work_generation();
+
+    ostringstream running_search_query;
+
+    running_search_query << "SELECT id FROM exact_search WHERE inserted_genomes < max_individuals";
+    
+    mysql_exact_query(running_search_query.str());
+
+    MYSQL_RES *exact_result = mysql_store_result(exact_db_conn);
+
+    //cout << "got exact result" << endl;
+
+    MYSQL_ROW exact_row;
+    while ((exact_row = mysql_fetch_row(exact_result)) != NULL) {
+        int exact_id = atoi(exact_row[0]);
+        cout << "got exact with id: " << exact_id << endl;
+        get_exact_search(exact_id);
+    }
+
+    /*
+    if (low_on_workunits()) {
+        for (auto it = exact_searches.begin(); it != exact_searches.end(); ++it ) {
+            make_jobs(it->second, WORKUNITS_TO_GENERATE / exact_searches.size());
+            it->second->export_to_database();
+        }
+    }
+    */
+
+    return 0;
+}
+
+int after_assimilate_pass() {
+
+    if (low_on_workunits()) {
+        for (auto it = exact_searches.begin(); it != exact_searches.end(); ++it ) {
+            make_jobs(it->second, WORKUNITS_TO_GENERATE / exact_searches.size());
+            it->second->update_database();
+        }
+    }
+
     return 0;
 }
 
@@ -96,38 +151,125 @@ int assimilate_handler(WORKUNIT& wu, vector<RESULT>& results, RESULT& canonical_
         return retval;
     }
 
+    cout << "got output file info, files.size(): " << files.size() << endl;
+
     if (files.size() > 1) {
         log_messages.printf(MSG_CRITICAL, "[CANONICAL RESULT#%ld %s] had more than one output file: %zu\n", canonical_result.id, canonical_result.name, files.size());
         for (uint32_t i = 0; i < files.size(); i++) {
             log_messages.printf(MSG_CRITICAL, "    %s\n", files[i].path.c_str());
         }
         exit(1);
+    } else if (files.size() == 0) {
+        log_messages.printf(MSG_CRITICAL, "[CANONICAL RESULT#%ld %s] had more no output files: %zu\n", canonical_result.id, canonical_result.name, files.size());
+        return 0;
     }
+
+    cout << "checked file size" << endl;
 
     OUTPUT_FILE_INFO& fi = files[0];
     string file_contents;
 
     try {
+        cout << "getting file as string: '" << fi.path << "'" << endl;
         file_contents = get_file_as_string(fi.path);
+        cout << "got file as string, erasing carraige returns" << endl;
+
         file_contents.erase(std::remove(file_contents.begin(), file_contents.end(), '\r'), file_contents.end());
+        cout << "erased carraige returns" << endl;
+
     } catch (int err) {
         log_messages.printf(MSG_CRITICAL, "[CANONICAL RESULT#%ld %s] assimilate_handler: could not open file for canonical_result\n", canonical_result.id, canonical_result.name);
         log_messages.printf(MSG_CRITICAL, "     file path: %s\n", fi.path.c_str());
         return ERR_FOPEN;
     }
 
+    cout << "creating istringstream" << endl;
+
     istringstream file_iss(file_contents);
     string version_line;
     file_iss >> version_line;
 
+    int exact_id;
+    file_iss >> exact_id;
+
+    string genome_id;
+    file_iss >> genome_id;
+
+    if (version_line[0] != 'v') {
+        log_messages.printf(MSG_CRITICAL, "[CANONICAL RESULT#%ld %s] assimilate_handler: result was from old app version without version string, ignoring.\n", canonical_result.id, canonical_result.name);
+        return 0;
+    }
+
     cout << "version string: '" << version_line << "'" << endl;
-    exit(1);
+    cout << "exact_id: '" << exact_id << "'" << endl;
+    cout << "genome_id: '" << genome_id << "'" << endl;
+
+    stringstream test(canonical_result.name);
+    string segment;
+    vector<string> segment_list;
+
+    while(getline(test, segment, '_')) {
+        segment_list.push_back(segment);
+    }
+
+    if (segment_list.size() != 6) {
+        log_messages.printf(MSG_CRITICAL, "[CANONICAL RESULT#%ld %s] assimilate_handler: result had invalid name, needed 6 substrings between _ character, but had %lu.\n", canonical_result.id, canonical_result.name, segment_list.size());
+    }
 
     file_iss.clear();
-    file_iss.seekg(0,ios::beg);
+    file_iss.seekg(0, ios::beg);
 
     CNN_Genome *genome = new CNN_Genome(file_iss, false);
 
-    exit(1);
+    if (genome->get_version() <= 0.105) {
+        log_messages.printf(MSG_CRITICAL, "[CANONICAL RESULT#%ld %s] assimilate_handler: result was from an old version input file: '%s'.\n", canonical_result.id, canonical_result.name, genome->get_version_str().c_str());
+
+        delete genome;
+        return 0;
+    }
+
+    string exact_id_str = segment_list[3];
+    cout << "exact_id substring: " << exact_id_str << endl;
+
+    if (exact_id_str.find_first_not_of( "0123456789" ) != string::npos) {
+        log_messages.printf(MSG_CRITICAL, "[CANONICAL RESULT#%ld %s] assimilate_handler: parsing exact_id from result name resulted in non-integer: '%s'.\n", canonical_result.id, canonical_result.name, exact_id_str.c_str());
+        exit(1);
+    }
+
+    exact_id = stoi(exact_id_str);
+
+    if (exact_id < 0) {
+        log_messages.printf(MSG_CRITICAL, "[CANONICAL RESULT#%ld %s] assimilate_handler: result had no exact_id (exact_id: %d), ignoring.\n", canonical_result.id, canonical_result.name, exact_id);
+
+        //get the exact_id from the result name
+        exit(1);
+    }
+
+    if (!EXACT::exists_in_database(exact_id)) {
+        log_messages.printf(MSG_CRITICAL, "[CANONICAL RESULT#%ld %s] assimilate_handler: exact_id (exact_id: %d) was not in the database, ignoring.\n", canonical_result.id, canonical_result.name, exact_id);
+
+        delete genome;
+        return 0;
+     }
+
+    EXACT *exact = get_exact_search(exact_id);
+    bool was_inserted = exact->insert_genome(genome);
+
+    cout << "updating progress" << endl;
+    fstream stat_file(exact->get_output_directory() + "/progress.txt", fstream::out | fstream::app);
+    exact->print_statistics(stat_file);
+    stat_file.close();
+    cout << "updated progress" << endl;
+
+    if (was_inserted) {
+        cout << "exporting genome to database with exact id: " << exact->get_id() << endl;
+        genome->export_to_database(exact->get_id());
+    }
+
+    cout << "updating exact in database" << endl;
+    exact->update_database();
+    cout << "updated exact" << endl;
+
+    //exact->export_to_database();
     return 0;
 }
