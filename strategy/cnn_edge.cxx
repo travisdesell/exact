@@ -162,6 +162,8 @@ CNN_Edge::CNN_Edge(int _edge_id) {
         disabled = atoi(row[12]);
         reverse_filter_x = atoi(row[13]);
         reverse_filter_y = atoi(row[14]);
+
+        mysql_free_result(result);
     } else {
         cerr << "ERROR! Could not find cnn_edge in database with edge id: " << edge_id << endl;
         exit(1);
@@ -227,7 +229,7 @@ void CNN_Edge::export_to_database(int _exact_id, int _genome_id) {
 
     if (edge_id < 0) {
         edge_id = mysql_exact_last_insert_id();
-        cout << "set edge id to " << edge_id << endl;
+        //cout << "set edge id to " << edge_id << endl;
     }
 }
 #endif

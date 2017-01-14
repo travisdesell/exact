@@ -172,9 +172,12 @@ CNN_Genome::CNN_Genome(int _genome_id) {
 
         started_from_checkpoint = atoi(row[23]);
 
+        /*
         istringstream backprop_order_iss(row[24]);
         //cout << "parsing backprop order" << endl;
         parse_array(backprop_order, backprop_order_iss);
+        */
+        backprop_order.clear();
 
         generation_id = atoi(row[25]);
         name = row[26];
@@ -217,6 +220,7 @@ CNN_Genome::CNN_Genome(int _genome_id) {
         }
 
         //cout << "got all nodes!" << endl;
+        mysql_free_result(node_result);
 
         ostringstream edge_query;
         edge_query << "SELECT id FROM cnn_edge WHERE genome_id = " << genome_id;
@@ -239,6 +243,9 @@ CNN_Genome::CNN_Genome(int _genome_id) {
         }
 
         //cout << "got all edges!" << endl;
+        mysql_free_result(edge_result);
+
+        mysql_free_result(result);
 
     } else {
         cout << "Could not find genome with id: " << genome_id << "!" << endl;
@@ -281,17 +288,17 @@ void CNN_Genome::export_to_database(int _exact_id) {
     query << "', generator = '" << generator << "'"
         << ", normal_distribution = '" << normal_distribution << "'"
         << ", initial_mu = " << initial_mu
-        << ", mu = " << mu
+        << ", mu = " << setprecision(15) << fixed  << mu
         << ", initial_learning_rate = " << initial_learning_rate
-        << ", learning_rate = " << learning_rate
+        << ", learning_rate = " << setprecision(15) << fixed<< learning_rate
         << ", initial_weight_decay = " << initial_weight_decay
-        << ", weight_decay = " << weight_decay
+        << ", weight_decay = " << setprecision(15) << fixed<< weight_decay
         << ", epoch = " << epoch
         << ", min_epochs = " << min_epochs
         << ", max_epochs = " << max_epochs
         << ", improvement_required_epochs = " << improvement_required_epochs
         << ", reset_edges = " << reset_edges
-        << ", best_error = " << best_error
+        << ", best_error = " << setprecision(15) << fixed<< best_error
         << ", best_predictions = " << best_predictions
         << ", best_predictions_epoch = " << best_predictions_epoch
         << ", best_error_epoch = " << best_error_epoch
@@ -312,14 +319,20 @@ void CNN_Genome::export_to_database(int _exact_id) {
         query << setprecision(15) << best_correct_predictions[i];
     }
 
-    query << "', started_from_checkpoint = " << started_from_checkpoint
-        << ", backprop_order = '";
+    query << "', started_from_checkpoint = " << started_from_checkpoint;
+
+    //too much overhead for saving this and no use for it
+    query << ", backprop_order = ''";
+    /*
+    query << ", backprop_order = '";
     for (uint32_t i = 0; i < backprop_order.size(); i++) {
         if (i != 0) query << " ";
         query << setprecision(15) << backprop_order[i];
     }
+    query << "'";
+    */
 
-    query << "', generation_id = " << generation_id
+    query << ", generation_id = " << generation_id
         << ", name = '" << name << "'"
         << ", checkpoint_filename = '" << checkpoint_filename << "'"
         << ", output_filename = '" << output_filename << "'"
@@ -332,7 +345,7 @@ void CNN_Genome::export_to_database(int _exact_id) {
         << ", generated_by_change_size_y = " << generated_by_change_size_y
         << ", generated_by_crossover = " << generated_by_crossover;
 
-    //cout << "query:\n" << query.str() << endl;
+    cout << "query:\n" << query.str() << endl;
 
     mysql_exact_query(query.str());
 
@@ -1283,7 +1296,7 @@ void CNN_Genome::read(istream &infile) {
 
     cerr << "version: " << version << endl;
 
-    if (version <= 0.10) return;
+    if (version <= 0.105) return;
 
     infile >> exact_id;
     if (verbose) cerr << "read exact_id: " << exact_id << endl;
