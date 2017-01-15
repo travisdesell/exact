@@ -513,24 +513,18 @@ CNN_Genome* EXACT::generate_individual() {
         //generate the initial minimal CNN
         int total_weights = 0;
 
-        CNN_Node *input_node = new CNN_Node(node_innovation_count, 0, image_rows, image_cols, INPUT_NODE);
-        input_node->initialize_bias(generator, normal_distribution);
-        input_node->save_best_bias();
+        CNN_Node *input_node = new CNN_Node(node_innovation_count, 0, image_rows, image_cols, INPUT_NODE, generator, normal_distribution);
         node_innovation_count++;
         all_nodes.push_back(input_node);
 
         for (int32_t i = 0; i < number_classes; i++) {
-            CNN_Node *softmax_node = new CNN_Node(node_innovation_count, 1, 1, 1, SOFTMAX_NODE);
-            softmax_node->initialize_bias(generator, normal_distribution);
-            softmax_node->save_best_bias();
+            CNN_Node *softmax_node = new CNN_Node(node_innovation_count, 1, 1, 1, SOFTMAX_NODE, generator, normal_distribution);
             node_innovation_count++;
             all_nodes.push_back(softmax_node);
         }
 
         for (int32_t i = 0; i < number_classes; i++) {
-            CNN_Edge *edge = new CNN_Edge(input_node, all_nodes[i + 1] /*ith softmax node*/, true, edge_innovation_count);
-            edge->initialize_weights(generator, normal_distribution);
-            edge->save_best_weights();
+            CNN_Edge *edge = new CNN_Edge(input_node, all_nodes[i + 1] /*ith softmax node*/, true, edge_innovation_count, generator, normal_distribution);
 
             all_edges.push_back(edge);
 
@@ -887,23 +881,17 @@ CNN_Genome* EXACT::create_mutation() {
             int size_x = (input_node->get_size_x() + output_node->get_size_x()) / 2.0;
             int size_y = (input_node->get_size_y() + output_node->get_size_y()) / 2.0;
 
-            CNN_Node *child_node = new CNN_Node(node_innovation_count, depth, size_x, size_y, HIDDEN_NODE);
-            child_node->initialize_bias(generator, normal_distribution);
-            child_node->save_best_bias();
+            CNN_Node *child_node = new CNN_Node(node_innovation_count, depth, size_x, size_y, HIDDEN_NODE, generator, normal_distribution);
             node_innovation_count++;
 
             //add two new edges, disable the split edge
             cout << "\t\tcreating edge " << edge_innovation_count << endl;
-            CNN_Edge *edge1 = new CNN_Edge(input_node, child_node, false, edge_innovation_count);
+            CNN_Edge *edge1 = new CNN_Edge(input_node, child_node, false, edge_innovation_count, generator, normal_distribution);
             edge_innovation_count++;
-            edge1->initialize_weights(generator, normal_distribution);
-            edge1->save_best_weights(); //save the random weights so they are reused instead of 0
 
             cout << "\t\tcreating edge " << edge_innovation_count << endl;
-            CNN_Edge *edge2 = new CNN_Edge(child_node, output_node, false, edge_innovation_count);
+            CNN_Edge *edge2 = new CNN_Edge(child_node, output_node, false, edge_innovation_count, generator, normal_distribution);
             edge_innovation_count++;
-            edge2->initialize_weights(generator, normal_distribution);
-            edge2->save_best_weights(); //save the random weights so they are resused instead of 0
 
             cout << "\t\tdisabling edge " << edge->get_innovation_number() << endl;
             edge->disable();
@@ -999,14 +987,12 @@ CNN_Genome* EXACT::create_mutation() {
                 //edge does not exist at all
                 cout << "\t\tadding edge between node innovation numbers " << node1_innovation_number << " and " << node2_innovation_number << endl;
 
-                CNN_Edge *edge = new CNN_Edge(node1, node2, false, edge_innovation_count);
+                CNN_Edge *edge = new CNN_Edge(node1, node2, false, edge_innovation_count, generator, normal_distribution);
                 edge_innovation_count++;
                 //insert edge in order of depth
 
                 //enable the edge in case it was disabled
                 edge->enable();
-                edge->initialize_weights(generator, normal_distribution);
-                edge->save_best_weights();
                 child->add_edge(edge);
 
                 CNN_Edge *edge_copy = edge->copy();

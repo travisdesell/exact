@@ -50,7 +50,7 @@ CNN_Edge::CNN_Edge() {
     output_node = NULL;
 }
 
-CNN_Edge::CNN_Edge(CNN_Node *_input_node, CNN_Node *_output_node, bool _fixed, int _innovation_number) {
+CNN_Edge::CNN_Edge(CNN_Node *_input_node, CNN_Node *_output_node, bool _fixed, int _innovation_number, minstd_rand0 &generator, NormalDistribution &normal_distribution) {
     edge_id = -1;
     exact_id = -1;
     genome_id = -1;
@@ -88,6 +88,9 @@ CNN_Edge::CNN_Edge(CNN_Node *_input_node, CNN_Node *_output_node, bool _fixed, i
     weights = vector< vector<double> >(filter_y, vector<double>(filter_x, 0.0));
     best_weights = vector< vector<double> >(filter_y, vector<double>(filter_x, 0.0));
     previous_velocity = vector< vector<double> >(filter_y, vector<double>(filter_x, 0.0));
+
+    initialize_weights(generator, normal_distribution);
+    save_best_weights();
 }
 
 CNN_Edge::~CNN_Edge() {
@@ -715,8 +718,6 @@ inline void CNN_Edge::backprop_weight_update(int fy, int fx, double weight_updat
      * x += - learning_rate * m / (np.sqrt(v) + eps)
      */
 
-
-
     //L2 regularization
     dx = learning_rate * (weight_update / (filter_x * filter_y) - (weight * weight_decay));
 
@@ -741,11 +742,11 @@ inline void CNN_Edge::backprop_weight_update(int fy, int fx, double weight_updat
     weights[fy][fx] -= -mu * pv + (1 + mu) * velocity;
     previous_velocity[fy][fx] = velocity;
 
-    if (weights[fy][fx] > 50.0) {
-        weights[fy][fx] = 50.0;
+    if (weights[fy][fx] > 5.0) {
+        weights[fy][fx] = 5.0;
         previous_velocity[fy][fx] = 0.0;
-    } else if (weights[fy][fx] < -50.0) {
-        weights[fy][fx] = -50.0;
+    } else if (weights[fy][fx] < -5.0) {
+        weights[fy][fx] = -5.0;
         previous_velocity[fy][fx] = 0.0;
     }
 }

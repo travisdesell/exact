@@ -77,7 +77,7 @@ class CNN_Node {
     public:
         CNN_Node();
 
-        CNN_Node(int _innovation_number, double _depth, int _size_x, int _size_y, int type);
+        CNN_Node(int _innovation_number, double _depth, int _size_x, int _size_y, int type, minstd_rand0 &generator, NormalDistribution &normal_distribution);
 
         ~CNN_Node();
 

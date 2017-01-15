@@ -48,7 +48,7 @@ CNN_Node::CNN_Node() {
     visited = false;
 }
 
-CNN_Node::CNN_Node(int _innovation_number, double _depth, int _size_x, int _size_y, int _type) {
+CNN_Node::CNN_Node(int _innovation_number, double _depth, int _size_x, int _size_y, int _type, minstd_rand0 &generator, NormalDistribution &normal_distribution) {
     node_id = -1;
     exact_id = -1;
     genome_id = -1;
@@ -103,6 +103,9 @@ CNN_Node::CNN_Node(int _innovation_number, double _depth, int _size_x, int _size
             bias_velocity[y][x] = 0.0;
         }
     }
+
+    initialize_bias(generator, normal_distribution);
+    save_best_bias();
 }
 
 CNN_Node::~CNN_Node() {
@@ -728,7 +731,7 @@ void CNN_Node::input_fired() {
         //if (type != SOFTMAX_NODE) {
             for (int32_t y = 0; y < size_y; y++) {
                 for (int32_t x = 0; x < size_x; x++) {
-                    values[y][x] += bias[y][x];
+                    //values[y][x] += bias[y][x];
                     //cout << "values for node " << innovation_number << " now " << values[y][x] << " after adding bias: " << bias[y][x] << endl;
 
                     //apply activation function

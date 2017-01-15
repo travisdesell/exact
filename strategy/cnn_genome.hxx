@@ -20,7 +20,6 @@ using std::vector;
 class CNN_Genome {
     private:
         string version_str;
-        double version;
         int exact_id;
         int genome_id;
 
