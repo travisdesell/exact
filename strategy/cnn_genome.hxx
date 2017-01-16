@@ -36,8 +36,7 @@ class CNN_Genome {
         double mu;
         double initial_learning_rate;
         double learning_rate;
-        double initial_weight_decay;
-        double weight_decay;
+        double learning_rate_decay;
 
         int epoch;
         int min_epochs;
@@ -83,7 +82,7 @@ class CNN_Genome {
         /**
          *  Iniitalize a genome from a set of nodes and edges
          */
-        CNN_Genome(int _generation_id, int seed, int _min_epochs, int _max_epochs, int _improvement_required_epochs, bool _reset_edges, double _learning_rate, double _weight_decay, const vector<CNN_Node*> &_nodes, const vector<CNN_Edge*> &_edges);
+        CNN_Genome(int _generation_id, int seed, int _min_epochs, int _max_epochs, int _improvement_required_epochs, bool _reset_edges, double _learning_rate, double _learning_rate_decay, const vector<CNN_Node*> &_nodes, const vector<CNN_Edge*> &_edges);
 
         ~CNN_Genome();
 
@@ -142,6 +141,8 @@ class CNN_Genome {
         void save_weights();
         void save_bias();
         void stochastic_backpropagation(const Images &images);
+
+        void particle_swarm(const Images &images);
 
         void set_name(string _name);
         void set_output_filename(string _output_filename);

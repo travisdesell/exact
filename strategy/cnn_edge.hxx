@@ -26,6 +26,10 @@ using std::vector;
 #include "image_tools/image_set.hxx"
 #include "common/random.hxx"
 
+const double beta1 = 0.9;
+const double beta2 = 0.999;
+const double eps = 1e-8;
+
 class CNN_Edge {
     private:
         int edge_id;
@@ -43,7 +47,9 @@ class CNN_Edge {
         int filter_x, filter_y;
         vector< vector<double> > weights;
         vector< vector<double> > best_weights;
-        vector< vector<double> > previous_velocity;
+
+        vector< vector<double> > m;
+        vector< vector<double> > v;
 
         bool fixed;
         bool disabled;
@@ -75,7 +81,8 @@ class CNN_Edge {
 
         bool set_nodes(const vector<CNN_Node*> nodes);
         void initialize_weights(minstd_rand0 &generator, NormalDistribution &normal_distribution);
-        void initialize_velocities();
+        void initialize_velocities(minstd_rand0 &generator, NormalDistribution &normal_distribution);
+        void reset_mv();
         void reinitialize(minstd_rand0 &generator, NormalDistribution &normal_distribution);
 
         void disable();
@@ -101,9 +108,9 @@ class CNN_Edge {
 
         void print(ostream &out);
 
-        void backprop_weight_update(int fy, int fx, double weight_update, double weight, double mu, double learning_rate, double weight_decay);
+        void backprop_weight_update(int fy, int fx, double weight_update, double weight, double learning_rate);
         void propagate_forward();
-        void propagate_backward(double mu, double learning_rate, double weight_decay);
+        void propagate_backward(double learning_rate);
 
         friend ostream &operator<<(ostream &os, const CNN_Edge* flight);
         friend istream &operator>>(istream &is, CNN_Edge* flight);

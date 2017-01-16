@@ -65,7 +65,7 @@ class EXACT {
         int max_individuals;
 
         double learning_rate;
-        double weight_decay;
+        double learning_rate_decay;
 
         double crossover_rate;
         double more_fit_parent_crossover;

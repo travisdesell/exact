@@ -87,7 +87,9 @@ CNN_Edge::CNN_Edge(CNN_Node *_input_node, CNN_Node *_output_node, bool _fixed, i
 
     weights = vector< vector<double> >(filter_y, vector<double>(filter_x, 0.0));
     best_weights = vector< vector<double> >(filter_y, vector<double>(filter_x, 0.0));
-    previous_velocity = vector< vector<double> >(filter_y, vector<double>(filter_x, 0.0));
+
+    m = vector< vector<double> >(filter_y, vector<double>(filter_x, 0.0));
+    v = vector< vector<double> >(filter_y, vector<double>(filter_x, 0.0));
 
     initialize_weights(generator, normal_distribution);
     save_best_weights();
@@ -158,8 +160,11 @@ CNN_Edge::CNN_Edge(int _edge_id) {
         istringstream best_weights_iss(row[9]);
         parse_vector_2d(best_weights, best_weights_iss, filter_x, filter_y);
 
-        istringstream previous_velocity_iss(row[10]);
-        parse_vector_2d(previous_velocity, previous_velocity_iss, filter_x, filter_y);
+        istringstream m_iss(row[10]);
+        parse_vector_2d(m, m_iss, filter_x, filter_y);
+
+        istringstream v_iss(row[10]);
+        parse_vector_2d(v, v_iss, filter_x, filter_y);
 
         fixed = atoi(row[11]);
         disabled = atoi(row[12]);
@@ -218,15 +223,26 @@ void CNN_Edge::export_to_database(int _exact_id, int _genome_id) {
         if (y != filter_y - 1) query << "\n";
     }
 
-    query << "', previous_velocity = '";
+    query << "', m = '";
     for (int32_t y = 0; y < filter_y; y++) {
         for (int32_t x = 0; x < filter_x; x++) {
             if (x != 0) query << " ";
-            query << setprecision(15) << previous_velocity[y][x];
+            query << setprecision(15) << m[y][x];
         }
         if (y != filter_y - 1) query << "\n";
     }
     query << "'";
+
+    query << "', v = '";
+    for (int32_t y = 0; y < filter_y; y++) {
+        for (int32_t x = 0; x < filter_x; x++) {
+            if (x != 0) query << " ";
+            query << setprecision(15) << v[y][x];
+        }
+        if (y != filter_y - 1) query << "\n";
+    }
+    query << "'";
+
 
     mysql_exact_query(query.str());
 
@@ -251,32 +267,50 @@ int CNN_Edge::get_filter_y() const {
 
 
 void CNN_Edge::initialize_weights(minstd_rand0 &generator, NormalDistribution &normal_distribution) {
-    if (disabled) return;
-
     int edge_size = filter_x * filter_y;
     if (edge_size == 1) edge_size = 10;
 
     double mu = 0.0;
     //double sigma = sqrt(2.0 / edge_size);
-    double sigma = 2.0 / edge_size;
+    double sigma = 2.0 / (edge_size * edge_size);
 
     for (uint32_t i = 0; i < weights.size(); i++) {
         for (uint32_t j = 0; j < weights[i].size(); j++) {
             weights[i][j] = normal_distribution.random(generator, mu, sigma);
             best_weights[i][j] = 0.0;
-            previous_velocity[i][j] = 0.0;
+
+            //m[i][j] = normal_distribution.random(generator, mu, sigma);
+            //v[i][j] = normal_distribution.random(generator, mu, sigma);
+            m[i][j] = 0.0;
+            v[i][j] = 0.0;
         }
     }
     //cout << "initialized weights for edge " << innovation_number << ", weights[0][0]: " << weights[0][0] << endl;
 }
 
-void CNN_Edge::initialize_velocities() {
+void CNN_Edge::initialize_velocities(minstd_rand0 &generator, NormalDistribution &normal_distribution) {
     for (uint32_t i = 0; i < weights.size(); i++) {
         for (uint32_t j = 0; j < weights[i].size(); j++) {
-            previous_velocity[i][j] = 0.0;
+            //m[i][j] = normal_distribution.random(generator, mu, sigma);
+            //v[i][j] = normal_distribution.random(generator, mu, sigma);
+            m[i][j] = 0.0;
+            v[i][j] = 0.0;
         }
     }
 }
+
+void CNN_Edge::reset_mv() {
+    for (uint32_t i = 0; i < weights.size(); i++) {
+        for (uint32_t j = 0; j < weights[i].size(); j++) {
+            //m[i][j] = normal_distribution.random(generator, mu, sigma);
+            //v[i][j] = normal_distribution.random(generator, mu, sigma);
+            m[i][j] = 0.0;
+            v[i][j] = 0.0;
+        }
+    }
+}
+
+
 
 
 void CNN_Edge::reinitialize(minstd_rand0 &generator, NormalDistribution &normal_distribution) {
@@ -299,7 +333,9 @@ void CNN_Edge::reinitialize(minstd_rand0 &generator, NormalDistribution &normal_
 
     weights = vector< vector<double> >(filter_y, vector<double>(filter_x, 0.0));
     best_weights = vector< vector<double> >(filter_y, vector<double>(filter_x, 0.0));
-    previous_velocity = vector< vector<double> >(filter_y, vector<double>(filter_x, 0.0));
+
+    m = vector< vector<double> >(filter_y, vector<double>(filter_x, 0.0));
+    v = vector< vector<double> >(filter_y, vector<double>(filter_x, 0.0));
 
     initialize_weights(generator, normal_distribution);
 }
@@ -345,13 +381,17 @@ CNN_Edge* CNN_Edge::copy() const {
 
     copy->weights = vector< vector<double> >(filter_y, vector<double>(filter_x, 0.0));
     copy->best_weights = vector< vector<double> >(filter_y, vector<double>(filter_x, 0.0));
-    copy->previous_velocity = vector< vector<double> >(filter_y, vector<double>(filter_x, 0.0));
+
+    copy->m = vector< vector<double> >(filter_y, vector<double>(filter_x, 0.0));
+    copy->v = vector< vector<double> >(filter_y, vector<double>(filter_x, 0.0));
 
     for (uint32_t y = 0; y < weights.size(); y++) {
         for (uint32_t x = 0; x < weights[y].size(); x++) {
             copy->weights[y][x] = weights[y][x];
             copy->best_weights[y][x] = best_weights[y][x];
-            copy->previous_velocity[y][x] = previous_velocity[y][x];
+
+            copy->m[y][x] = m[y][x];
+            copy->v[y][x] = v[y][x];
         }
     }
 
@@ -517,10 +557,18 @@ void CNN_Edge::print(ostream &out) {
         out << endl;
     }
 
-    for (uint32_t i = 0; i < previous_velocity.size(); i++) {
+    for (uint32_t i = 0; i < m.size(); i++) {
         out << "    ";
-        for (uint32_t j = 0; j < previous_velocity[i].size(); j++) {
-            out << setw(9) << setprecision(3) << previous_velocity[i][j];
+        for (uint32_t j = 0; j < m[i].size(); j++) {
+            out << setw(9) << setprecision(3) << m[i][j];
+        }
+        out << endl;
+    }
+
+    for (uint32_t i = 0; i < v.size(); i++) {
+        out << "    ";
+        for (uint32_t j = 0; j < v[i].size(); j++) {
+            out << setw(9) << setprecision(3) << v[i][j];
         }
         out << endl;
     }
@@ -709,52 +757,53 @@ void CNN_Edge::propagate_forward() {
     output_node->input_fired();
 }
 
-inline void CNN_Edge::backprop_weight_update(int fy, int fx, double weight_update, double weight, double mu, double learning_rate, double weight_decay) {
-    double dx, pv, velocity;
-
+inline void CNN_Edge::backprop_weight_update(int fy, int fx, double weight_update, double weight, double learning_rate) {
     /* ADAM:
      * m = beta1*m + (1-beta1)*dx
      * v = beta2*v + (1-beta2)*(dx**2)
      * x += - learning_rate * m / (np.sqrt(v) + eps)
      */
 
-    //L2 regularization
-    dx = learning_rate * (weight_update / (filter_x * filter_y) - (weight * weight_decay));
+    //ADAM
+    m[fy][fx] = (beta1 * m[fy][fx]) + ((1 - beta1) * weight_update);
+    v[fy][fx] = (beta2 * v[fy][fx]) + ((2 - beta1) * weight_update * weight_update);
 
-    if (isnan(dx)) {
+    double update = -learning_rate * (m[fy][fx] / (sqrt((v[fy][fx]) + eps)));
+
+    if (isnan(update)) {
         cerr << "ERROR! dx became NAN in backprop weight update" << endl;
         cerr << "learning rate: " << learning_rate << endl;
         cerr << "weight_update: " << weight_update << endl;
         cerr << "filter_x: " << filter_x << endl;
         cerr << "filter_y: " << filter_y << endl;
         cerr << "weight: " << weight << endl;
-        cerr << "weight decay: " << weight_decay << endl;
-        cerr << "mu: " << mu << endl;
+        cerr << "m[" << fy << "][" << fx << "]: " << m[fy][fx] << endl;
+        cerr << "v[" << fy << "][" << fx << "]: " << v[fy][fx] << endl;
         exit(1);
     }
 
-    //no momemntum
-    //weights[fy][fx] += dx;
+    weights[fy][fx] -= update + (0.0005 * weights[fy][fx]);
 
-    //momentum
-    pv = previous_velocity[fy][fx];
-    velocity = (mu * pv) - dx;
-    weights[fy][fx] -= -mu * pv + (1 + mu) * velocity;
-    previous_velocity[fy][fx] = velocity;
-
-    if (weights[fy][fx] > 5.0) {
-        weights[fy][fx] = 5.0;
-        previous_velocity[fy][fx] = 0.0;
-    } else if (weights[fy][fx] < -5.0) {
-        weights[fy][fx] = -5.0;
-        previous_velocity[fy][fx] = 0.0;
+    if (weights[fy][fx] > 10.0) {
+        cerr << "ERROR: edge " << innovation_number << " weight[" << fy << "][" << fx << "] > 10.0" << endl;
+        cerr << "weight: " << weights[fy][fx] << endl;
+        weights[fy][fx] = 10.0;
+        m[fy][fx] = 0.0;
+        v[fy][fx] = 0.0;
+    } else if (weights[fy][fx] < -10.0) {
+        cerr << "ERROR: edge " << innovation_number << " weight[" << fy << "][" << fx << "] < -3.0" << endl;
+        cerr << "weight: " << weights[fy][fx] << endl;
+        weights[fy][fx] = -10.0;
+        m[fy][fx] = 0.0;
+        v[fy][fx] = 0.0;
     }
 }
 
-void CNN_Edge::propagate_backward(double mu, double learning_rate, double weight_decay) {
+void CNN_Edge::propagate_backward(double learning_rate) {
     if (disabled) return;
 
     double **input = input_node->get_values();
+    double **output = output_node->get_values();
     double **output_errors = output_node->get_errors();
     double **input_errors = input_node->get_errors();
 
@@ -794,7 +843,7 @@ void CNN_Edge::propagate_backward(double mu, double learning_rate, double weight
                         input_errors[y][x] += error * weight;
                     }
                 }
-                backprop_weight_update(fy, fx, weight_update, weight, mu, learning_rate, weight_decay);
+                backprop_weight_update(fy, fx, weight_update, weight, learning_rate);
             }
         }
 
@@ -833,7 +882,7 @@ void CNN_Edge::propagate_backward(double mu, double learning_rate, double weight
                         input_errors[y + fy][x] += error * weight;
                     }
                 }
-                backprop_weight_update(fy, fx, weight_update, weight, mu, learning_rate, weight_decay);
+                backprop_weight_update(fy, fx, weight_update, weight, learning_rate);
             }
         }
 
@@ -872,23 +921,38 @@ void CNN_Edge::propagate_backward(double mu, double learning_rate, double weight
                         input_errors[y][x + fx] += error * weight;
                     }
                 }
-                backprop_weight_update(fy, fx, weight_update, weight, mu, learning_rate, weight_decay);
+                backprop_weight_update(fy, fx, weight_update, weight, learning_rate);
             }
         }
 
     } else {
         //cout << "no reverse filter!" << endl;
+    
+        int out_x = output_node->get_size_y();
+        int out_y = output_node->get_size_y();
+
+        double inv_out_size = 1.0 / (out_x * out_y);
 
         for (int32_t fy = 0; fy < filter_y; fy++) {
             for (int32_t fx = 0; fx < filter_x; fx++) {
-                weight_update = 0;
+                double gradient = 0;
                 weight = weights[fy][fx];
 
-                for (int32_t y = 0; y < output_node->get_size_y(); y++) {
-                    for (int32_t x = 0; x < output_node->get_size_x(); x++) {
+                for (int32_t y = 0; y < out_y; y++) {
+                    for (int32_t x = 0; x < out_x; x++) {
                         error = output_errors[y][x];
 
+                        if (output[y][x] > RELU_MAX) gradient += RELU_MAX_LEAK;
+                        else if (output[y][x] < RELU_MIN) gradient += RELU_MIN_LEAK;
+                        else gradient += 1;
+
+                        gradient *= weight;
+
+                        //gradient += input[y + fy][x + fx] * weight;
+
+                        /*
                         update = input[y + fy][x + fx] * error;
+
 
                         previous_weight_update = weight_update;
                         weight_update -= update;
@@ -906,12 +970,42 @@ void CNN_Edge::propagate_backward(double mu, double learning_rate, double weight
                             cerr << "weight update: " << weight_update << endl;
                             exit(1);
                         }
-
+                        */
 
                         input_errors[y + fy][x + fx] += error * weight;
                     }
                 }
-                backprop_weight_update(fy, fx, weight_update, weight, mu, learning_rate, weight_decay);
+                //backprop_weight_update(fy, fx, weight_update, weight, learning_rate);
+
+                /* ADAM:
+                 * m = beta1*m + (1-beta1)*dx
+                 * v = beta2*v + (1-beta2)*(dx**2)
+                 * x += - learning_rate * m / (np.sqrt(v) + eps)
+                 */
+
+                input_errors[fy][fx] *= inv_out_size;
+                gradient *= inv_out_size;
+
+                //ADAM
+                m[fy][fx] = (beta1 * m[fy][fx]) + ((1 - beta1) * gradient);
+                v[fy][fx] = (beta2 * v[fy][fx]) + ((1 - beta2) * gradient * gradient);
+
+                double update = -learning_rate * (m[fy][fx] / (sqrt((v[fy][fx]) + eps)));
+
+                if (isnan(update)) {
+                    cerr << "ERROR! dx became NAN in backprop weight update" << endl;
+                    cerr << "learning rate: " << learning_rate << endl;
+                    cerr << "weight_update: " << weight_update << endl;
+                    cerr << "filter_x: " << filter_x << endl;
+                    cerr << "filter_y: " << filter_y << endl;
+                    cerr << "weight: " << weight << endl;
+                    cerr << "m[" << fy << "][" << fx << "]: " << m[fy][fx] << endl;
+                    cerr << "v[" << fy << "][" << fx << "]: " << v[fy][fx] << endl;
+                    exit(1);
+                }
+
+                weights[fy][fx] += update - (0.0005 * weights[fy][fx]);
+
             }
         }
     }
@@ -950,9 +1044,17 @@ ostream &operator<<(ostream &os, const CNN_Edge* edge) {
     for (int32_t y = 0; y < edge->filter_y; y++) {
         for (int32_t x = 0; x < edge->filter_x; x++) {
             if (y > 0 || x > 0) os << " ";
-            os << setprecision(15) << edge->previous_velocity[y][x];
+            os << setprecision(15) << edge->m[y][x];
         }
     }
+
+    for (int32_t y = 0; y < edge->filter_y; y++) {
+        for (int32_t x = 0; x < edge->filter_x; x++) {
+            if (y > 0 || x > 0) os << " ";
+            os << setprecision(15) << edge->v[y][x];
+        }
+    }
+
 
     return os;
 }
@@ -973,7 +1075,9 @@ istream &operator>>(istream &is, CNN_Edge* edge) {
 
     edge->weights = vector< vector<double> >(edge->filter_y, vector<double>(edge->filter_x, 0.0));
     edge->best_weights = vector< vector<double> >(edge->filter_y, vector<double>(edge->filter_x, 0.0));
-    edge->previous_velocity = vector< vector<double> >(edge->filter_y, vector<double>(edge->filter_x, 0.0));
+
+    edge->m = vector< vector<double> >(edge->filter_y, vector<double>(edge->filter_x, 0.0));
+    edge->v = vector< vector<double> >(edge->filter_y, vector<double>(edge->filter_x, 0.0));
 
     for (int32_t y = 0; y < edge->filter_y; y++) {
         for (int32_t x = 0; x < edge->filter_x; x++) {
@@ -989,9 +1093,16 @@ istream &operator>>(istream &is, CNN_Edge* edge) {
 
     for (int32_t y = 0; y < edge->filter_y; y++) {
         for (int32_t x = 0; x < edge->filter_x; x++) {
-            is >> edge->previous_velocity[y][x];
+            is >> edge->m[y][x];
         }
     }
+
+    for (int32_t y = 0; y < edge->filter_y; y++) {
+        for (int32_t x = 0; x < edge->filter_x; x++) {
+            is >> edge->v[y][x];
+        }
+    }
+
 
     return is;
 }

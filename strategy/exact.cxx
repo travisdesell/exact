@@ -96,7 +96,7 @@ EXACT::EXACT(int exact_id) {
         max_individuals = atoi(row[16]);
 
         learning_rate = atof(row[17]);
-        weight_decay = atof(row[18]);
+        learning_rate_decay = atof(row[18]);
 
         crossover_rate = atof(row[19]);
         more_fit_parent_crossover = atof(row[20]);
@@ -241,7 +241,7 @@ void EXACT::export_to_database() {
         << ", max_individuals = " << max_individuals
 
         << ", learning_rate = " << learning_rate
-        << ", weight_decay = " << weight_decay
+        << ", learning_rate_decay = " << learning_rate_decay
 
         << ", crossover_rate = " << crossover_rate
         << ", more_fit_parent_crossover = " << more_fit_parent_crossover
@@ -421,7 +421,7 @@ EXACT::EXACT(const Images &images, int _population_size, int _min_epochs, int _m
     genomes_generated = 0;
 
     learning_rate = 0.001;
-    weight_decay = 0.001;
+    learning_rate_decay = 0.5;
 
     crossover_rate = 0.20;
     more_fit_parent_crossover = 0.80;
@@ -440,7 +440,7 @@ EXACT::EXACT(const Images &images, int _population_size, int _min_epochs, int _m
 
     cout << "EXACT settings: " << endl;
     cout << "\tlearning_rate: " << learning_rate << endl;
-    cout << "\tweight_decay: " << weight_decay << endl;
+    cout << "\tlearning_rate_decay: " << learning_rate_decay << endl;
     cout << "\tmin_epochs: " << min_epochs << endl;
     cout << "\tmax_epochs: " << max_epochs << endl;
     cout << "\timprovement_required_epochs: " << improvement_required_epochs << endl;
@@ -535,7 +535,7 @@ CNN_Genome* EXACT::generate_individual() {
         long genome_seed = rng_long(generator);
         //cout << "seeding genome with: " << genome_seed << endl;
 
-        genome = new CNN_Genome(genomes_generated++, genome_seed, min_epochs, max_epochs, improvement_required_epochs, reset_edges, learning_rate, weight_decay, all_nodes, all_edges);
+        genome = new CNN_Genome(genomes_generated++, genome_seed, min_epochs, max_epochs, improvement_required_epochs, reset_edges, learning_rate, learning_rate_decay, all_nodes, all_edges);
         //save the weights and bias of the initially generated genome for reuse
         genome->save_weights();
         genome->save_bias();
@@ -597,7 +597,7 @@ CNN_Genome* EXACT::generate_individual() {
 
     if ((int32_t)genomes.size() < population_size) {
         //insert a copy with a bad fitness so we have more things to generate new genomes with
-        CNN_Genome *genome_copy = new CNN_Genome(genomes_generated++, /*new random seed*/ rng_long(generator), min_epochs, max_epochs, improvement_required_epochs, reset_edges, learning_rate, weight_decay, genome->get_nodes(), genome->get_edges());
+        CNN_Genome *genome_copy = new CNN_Genome(genomes_generated++, /*new random seed*/ rng_long(generator), min_epochs, max_epochs, improvement_required_epochs, reset_edges, learning_rate, learning_rate_decay, genome->get_nodes(), genome->get_edges());
 
         //for more variability in the initial population, re-initialize weights and bias for these unevaluated copies
         genome_copy->initialize_weights();
@@ -667,7 +667,7 @@ bool EXACT::insert_genome(CNN_Genome* genome) {
 
         gv_file << "#EXACT settings: " << endl;
         gv_file << "#\tlearning_rate: " << learning_rate << endl;
-        gv_file << "#\tweight_decay: " << weight_decay << endl;
+        gv_file << "#\tlearning_rate_decay: " << learning_rate_decay << endl;
         gv_file << "#\tmin_epochs: " << min_epochs << endl;
         gv_file << "#\tmax_epochs: " << max_epochs << endl;
         gv_file << "#\timprovement_required_epochs: " << improvement_required_epochs << endl;
@@ -771,7 +771,7 @@ CNN_Genome* EXACT::create_mutation() {
 
     cout << "\tgenerating child " << genomes_generated << " from parent genome: " << parent->get_generation_id() << endl;
 
-    CNN_Genome *child = new CNN_Genome(genomes_generated++, child_seed, min_epochs, max_epochs, improvement_required_epochs, reset_edges, learning_rate, weight_decay, parent->get_nodes(), parent->get_edges());
+    CNN_Genome *child = new CNN_Genome(genomes_generated++, child_seed, min_epochs, max_epochs, improvement_required_epochs, reset_edges, learning_rate, learning_rate_decay, parent->get_nodes(), parent->get_edges());
 
     cout << "\tchild nodes:" << endl;
     for (int32_t i = 0; i < child->get_number_nodes(); i++) {
@@ -1417,7 +1417,7 @@ CNN_Genome* EXACT::create_child() {
     }
 
     long genome_seed = rng_long(generator);
-    CNN_Genome *child = new CNN_Genome(genomes_generated++, genome_seed, min_epochs, max_epochs, improvement_required_epochs, reset_edges, learning_rate, weight_decay, child_nodes, child_edges);
+    CNN_Genome *child = new CNN_Genome(genomes_generated++, genome_seed, min_epochs, max_epochs, improvement_required_epochs, reset_edges, learning_rate, learning_rate_decay, child_nodes, child_edges);
 
     child->set_generated_by_crossover();
 
