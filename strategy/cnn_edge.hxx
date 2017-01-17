@@ -48,8 +48,7 @@ class CNN_Edge {
         vector< vector<double> > weights;
         vector< vector<double> > best_weights;
 
-        vector< vector<double> > m;
-        vector< vector<double> > v;
+        vector< vector<double> > previous_velocity;
 
         bool fixed;
         bool disabled;
@@ -82,7 +81,7 @@ class CNN_Edge {
         bool set_nodes(const vector<CNN_Node*> nodes);
         void initialize_weights(minstd_rand0 &generator, NormalDistribution &normal_distribution);
         void initialize_velocities(minstd_rand0 &generator, NormalDistribution &normal_distribution);
-        void reset_mv();
+        void reset_velocities();
         void reinitialize(minstd_rand0 &generator, NormalDistribution &normal_distribution);
 
         void disable();
@@ -108,9 +107,9 @@ class CNN_Edge {
 
         void print(ostream &out);
 
-        void backprop_weight_update(int fy, int fx, double weight_update, double weight, double learning_rate);
+		void backprop_weight_update(int fy, int fx, double weight_update, double weight, double mu, double learning_rate, double weight_decay);
         void propagate_forward();
-        void propagate_backward(double learning_rate);
+        void propagate_backward(double learning_rate, double weight_decay, double mu);
 
         friend ostream &operator<<(ostream &os, const CNN_Edge* flight);
         friend istream &operator>>(istream &is, CNN_Edge* flight);

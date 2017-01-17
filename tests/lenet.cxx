@@ -48,6 +48,15 @@ int main(int argc, char **argv) {
     double learning_rate_decay;
     get_argument(arguments, "--learning_rate_decay", true, learning_rate_decay);
 
+    double weight_decay;
+    get_argument(arguments, "--weight_decay", true, weight_decay);
+
+    double weight_decay_decay;
+    get_argument(arguments, "--weight_decay_decay", true, weight_decay_decay);
+
+    double mu = 0.5;
+    double mu_decay = 1.010;
+
     Images images(binary_samples_filename);
 
     //generate the initial minimal CNN
@@ -201,7 +210,7 @@ int main(int argc, char **argv) {
 
     //fully connected to 10 layer
     for (int32_t i = 0; i < 10; i++) {
-        CNN_Node *layer3_node = new CNN_Node(++node_innovation_count, 3, 1, 1, OUTPUT_NODE, generator, normal_distribution);
+        CNN_Node *layer3_node = new CNN_Node(++node_innovation_count, 3, 1, 1, HIDDEN_NODE, generator, normal_distribution);
         nodes.push_back(layer3_node);
         layer3_nodes.push_back(layer3_node);
 
@@ -231,7 +240,7 @@ int main(int argc, char **argv) {
     long genome_seed = generator();
     cout << "seeding genome with: " << genome_seed << endl;
 
-    CNN_Genome *genome = new CNN_Genome(1, genome_seed, min_epochs, max_epochs, improvement_required_epochs, reset_edges, learning_rate, learning_rate_decay, nodes, edges);
+    CNN_Genome *genome = new CNN_Genome(1, genome_seed, min_epochs, max_epochs, improvement_required_epochs, reset_edges, mu, mu_decay, learning_rate, learning_rate_decay, weight_decay, weight_decay_decay, nodes, edges);
     //save the weights and bias of the initially generated genome for reuse
     genome->save_weights();
     genome->save_bias();

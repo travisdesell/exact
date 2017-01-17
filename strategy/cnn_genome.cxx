@@ -144,30 +144,38 @@ CNN_Genome::CNN_Genome(int _genome_id) {
 
         //cout << "generator: " << generator << endl;
 
-        initial_learning_rate = atof(row[8]);
-        learning_rate = atof(row[9]);
-        learning_rate_decay = atof(row[10]);
+        initial_mu = atof(row[6]);
+        mu = atof(row[7]);
+        mu_decay = atof(row[8]);
 
-        epoch = atoi(row[11]);
-        min_epochs = atoi(row[12]);
-        max_epochs = atoi(row[13]);
-        improvement_required_epochs = atoi(row[14]);
-        reset_edges = atoi(row[15]);
+        initial_learning_rate = atof(row[9]);
+        learning_rate = atof(row[10]);
+        learning_rate_decay = atof(row[11]);
 
-        best_error = atof(row[16]);
-        best_error_epoch = atoi(row[17]);
-        best_predictions = atoi(row[18]);
-        best_predictions_epoch = atoi(row[19]);
+        initial_weight_decay = atof(row[12]);
+        weight_decay = atof(row[13]);
+        weight_decay_decay = atof(row[14]);
 
-        istringstream best_class_error_iss(row[20]);
+        epoch = atoi(row[15]);
+        min_epochs = atoi(row[16]);
+        max_epochs = atoi(row[17]);
+        improvement_required_epochs = atoi(row[18]);
+        reset_edges = atoi(row[19]);
+
+        best_error = atof(row[20]);
+        best_error_epoch = atoi(row[21]);
+        best_predictions = atoi(row[22]);
+        best_predictions_epoch = atoi(row[23]);
+
+        istringstream best_class_error_iss(row[24]);
         //cout << "parsing best class error" << endl;
         parse_array(best_class_error, best_class_error_iss);
 
-        istringstream best_correct_predictions_iss(row[21]);
+        istringstream best_correct_predictions_iss(row[25]);
         //cout << "parsing best correct predictions" << endl;
         parse_array(best_correct_predictions, best_correct_predictions_iss);
 
-        started_from_checkpoint = atoi(row[22]);
+        started_from_checkpoint = atoi(row[26]);
 
         /*
         istringstream backprop_order_iss(row[23]);
@@ -176,19 +184,19 @@ CNN_Genome::CNN_Genome(int _genome_id) {
         */
         backprop_order.clear();
 
-        generation_id = atoi(row[23]);
-        name = row[24];
-        checkpoint_filename = row[25];
-        output_filename = row[26];
+        generation_id = atoi(row[28]);
+        name = row[29];
+        checkpoint_filename = row[30];
+        output_filename = row[31];
 
-        generated_by_disable_edge = atoi(row[27]);
-        generated_by_enable_edge = atoi(row[28]);
-        generated_by_split_edge = atoi(row[29]);
-        generated_by_add_edge = atoi(row[30]);
-        generated_by_change_size = atoi(row[31]);
-        generated_by_change_size_x = atoi(row[32]);
-        generated_by_change_size_y = atoi(row[33]);
-        generated_by_crossover = atoi(row[34]);
+        generated_by_disable_edge = atoi(row[32]);
+        generated_by_enable_edge = atoi(row[33]);
+        generated_by_split_edge = atoi(row[34]);
+        generated_by_add_edge = atoi(row[35]);
+        generated_by_change_size = atoi(row[36]);
+        generated_by_change_size_x = atoi(row[37]);
+        generated_by_change_size_y = atoi(row[38]);
+        generated_by_crossover = atoi(row[39]);
 
         ostringstream node_query;
         node_query << "SELECT id FROM cnn_node WHERE genome_id = " << genome_id;
@@ -284,9 +292,15 @@ void CNN_Genome::export_to_database(int _exact_id) {
 
     query << "', generator = '" << generator << "'"
         << ", normal_distribution = '" << normal_distribution << "'"
+        << ", initial_mu = " << initial_mu
+        << ", mu = " << setprecision(15) << fixed<< mu
+        << ", mu_decay = " << mu_decay
         << ", initial_learning_rate = " << initial_learning_rate
         << ", learning_rate = " << setprecision(15) << fixed<< learning_rate
         << ", learning_rate_decay = " << learning_rate_decay
+        << ", initial_weight_decay = " << initial_weight_decay
+        << ", weight_decay = " << setprecision(15) << fixed<< weight_decay
+        << ", weight_decay_decay = " << weight_decay_decay
         << ", epoch = " << epoch
         << ", min_epochs = " << min_epochs
         << ", max_epochs = " << max_epochs
@@ -362,7 +376,7 @@ void CNN_Genome::export_to_database(int _exact_id) {
 /**
  *  Iniitalize a genome from a set of nodes and edges
  */
-CNN_Genome::CNN_Genome(int _generation_id, int seed, int _min_epochs, int _max_epochs, int _improvement_required_epochs, bool _reset_edges, double _learning_rate, double _learning_rate_decay, const vector<CNN_Node*> &_nodes, const vector<CNN_Edge*> &_edges) {
+CNN_Genome::CNN_Genome(int _generation_id, int seed, int _min_epochs, int _max_epochs, int _improvement_required_epochs, bool _reset_edges, double _mu, double _mu_decay, double _learning_rate, double _learning_rate_decay, double _weight_decay, double _weight_decay_decay, const vector<CNN_Node*> &_nodes, const vector<CNN_Edge*> &_edges) {
     exact_id = -1;
     genome_id = -1;
     started_from_checkpoint = false;
@@ -370,9 +384,17 @@ CNN_Genome::CNN_Genome(int _generation_id, int seed, int _min_epochs, int _max_e
 
     progress_function = NULL;
 
+    mu = _mu;
+    initial_mu = mu;
+    mu_decay = _mu_decay;
+
     learning_rate = _learning_rate;
     initial_learning_rate = learning_rate;
     learning_rate_decay = _learning_rate_decay;
+
+    weight_decay = _weight_decay;
+    initial_weight_decay = weight_decay;
+    weight_decay_decay = _weight_decay_decay;
 
     epoch = 0;
     min_epochs = _min_epochs;
@@ -939,7 +961,7 @@ int CNN_Genome::evaluate_image(const Image &image, vector<double> &class_error, 
 
     if (do_backprop) {
         for (int32_t i = edges.size() - 1; i >= 0; i--) {
-            edges[i]->propagate_backward(learning_rate);
+            edges[i]->propagate_backward(learning_rate, weight_decay, mu);
         }
 
         /*
@@ -1067,8 +1089,6 @@ void CNN_Genome::stochastic_backpropagation(const Images &images) {
         class_sizes[ images.get_image(backprop_order[i]).get_classification() ]++;
     }
 
-    int last_reset = 0;
-
     do {
         //this is sadly not cross platform compliant
         //shuffle(backprop_order.begin(), backprop_order.end(), generator); 
@@ -1134,16 +1154,13 @@ void CNN_Genome::stochastic_backpropagation(const Images &images) {
 
                 save_bias();
                 save_weights();
-            } else if ((epoch - last_reset) >= 5) {
-                cerr << "resetting m and v for ADAM" << endl;
-
-                last_reset = epoch;
-                learning_rate *= learning_rate_decay;
-
-                for (uint32_t i = 0; i < edges.size(); i++) {
-                    edges[i]->reset_mv();
-                 }
             }
+
+            /*
+               for (uint32_t i = 0; i < edges.size(); i++) {
+               edges[i]->reset_mv();
+               }
+               */
 
             cerr << "[" << setw(10) << name << ", genome " << setw(5) << generation_id << "] predictions: " << setw(7) << total_predictions << ", best: " << setw(7) << best_predictions << "/" << backprop_order.size() << ", error: " << setw(15) << setprecision(5) << fixed << total_error << ", best error: " << setw(15) << setprecision(5) << fixed << best_error << " on epoch: " << setw(5) << best_error_epoch << ", epoch: " << setw(4) << epoch << "/" << max_epochs << ", learning_rate: " << setw(10) << learning_rate << endl;
             //cout << "total correct predictions: " << total_predictions << " of " << backprop_order.size() << endl;
@@ -1151,12 +1168,17 @@ void CNN_Genome::stochastic_backpropagation(const Images &images) {
             //cout << endl;
         }
 
-        /*
-        if (epoch > 0 && (epoch % 5) == 0) {
-            last_reset = epoch;
-            learning_rate *= learning_rate_decay;
-        }
-        */
+        //mu *= mu_decay;
+        mu *= 1.010;
+        if (mu > 0.95) mu = 0.95;
+
+        //learning_rate *= learning_rate_decay;
+        learning_rate *= .99;
+        if (learning_rate < 0.0001) learning_rate = 0.0001;
+
+        weight_decay *= weight_decay_decay;
+        weight_decay *= .99;
+        if (weight_decay < 0.0001) weight_decay = 0.0001;
 
         epoch++;
 
