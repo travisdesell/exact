@@ -858,7 +858,7 @@ void CNN_Edge::propagate_backward() {
                         }
                         */
 
-                        input_errors[y][x] += output_error * weight;
+                        input_errors[y][x] += delta * weight;
                     }
                 }
                 weight_updates[fy][fx] = weight_update;
@@ -903,7 +903,7 @@ void CNN_Edge::propagate_backward() {
                         }
                         */
 
-                        input_errors[y + fy][x] += output_error * weight;
+                        input_errors[y + fy][x] += delta * weight;
                     }
                 }
                 weight_updates[fy][fx] = weight_update;
@@ -949,7 +949,7 @@ void CNN_Edge::propagate_backward() {
                         }
                         */
 
-                        input_errors[y][x + fx] += output_error * weight;
+                        input_errors[y][x + fx] += delta * weight;
                     }
                 }
                 weight_updates[fy][fx] = weight_update;
@@ -1007,7 +1007,7 @@ void CNN_Edge::propagate_backward() {
                                 << ", input_err_update: " << output_error * output_gradient * weight << endl;
                             */
 
-                        input_errors[y + fy][x + fx] += output_error * weight;
+                        input_errors[y + fy][x + fx] += delta * weight;
                     }
                 }
 
