@@ -874,8 +874,20 @@ int CNN_Genome::evaluate_image(const Image &image, vector<double> &class_error, 
         edges[i]->propagate_forward();
     }
 
-    //cout << "Before softmax applied: " << endl;
+    //cout << "before softmax: ";
 
+    double softmax_max = softmax_nodes[0]->get_value(0,0);
+    //cout << " " << setw(15) << fixed << setprecision(6) << softmax_nodes[0]->get_value(0,0);
+
+    for (uint32_t i = 1; i < softmax_nodes.size(); i++) {
+        //cout << " " << setw(15) << fixed << setprecision(6) << softmax_nodes[i]->get_value(0,0);
+        if (softmax_nodes[i]->get_value(0,0) > softmax_max) {
+            softmax_max = softmax_nodes[i]->get_value(0,0);
+        }
+    }
+    //cout << endl;
+
+    //cout << "after softmax:  ";
     double softmax_sum = 0.0;
     for (uint32_t i = 0; i < softmax_nodes.size(); i++) {
         //softmax_nodes[i]->print(cout);
@@ -892,8 +904,10 @@ int CNN_Genome::evaluate_image(const Image &image, vector<double> &class_error, 
 
         //value = 1.0 / (1.0 + exp(-value));
         //value = tanh(value);
+        value -= softmax_max;
         value = exp(value);
 
+        //cout << " " << setw(15) << fixed << setprecision(6) << value;
         if (isnan(value)) {
             cerr << "ERROR: value was NAN AFTER exp! previously: " << previous << endl;
             exit(1);
@@ -908,6 +922,7 @@ int CNN_Genome::evaluate_image(const Image &image, vector<double> &class_error, 
             exit(1);
         }
     }
+    //cout << endl;
 
     if (softmax_sum == 0) {
         cout << "ERROR! softmax sum == 0" << endl;
@@ -923,6 +938,7 @@ int CNN_Genome::evaluate_image(const Image &image, vector<double> &class_error, 
     double max_value = -100;
     int predicted_class = -1;
 
+    //cout << "error:          ";
     for (int32_t i = 0; i < (int32_t)softmax_nodes.size(); i++) {
         double value = softmax_nodes[i]->get_value(0,0) / softmax_sum;
         //cout << "\tvalue " << softmax_nodes[i]->get_innovation_number() << ": " << softmax_nodes[i]->get_value(0,0) << endl;
@@ -937,16 +953,18 @@ int CNN_Genome::evaluate_image(const Image &image, vector<double> &class_error, 
 
         //softmax_nodes[i]->print(cout);
 
-        double error = 0.0;
+        int target = 0.0;
         if (i == expected_class) {
-            error = value - 1;
+            //error = value - 1;
             //cout << ", error: " << error;
-        } else {
-            error = value;
+            target = 1.0;
         }
+        double error = value - target;
+        double gradient = value * (1 - value);
         //cout << "\t" << softmax_nodes[i]->get_innovation_number() << " -- value: " << value << ", error: " << error << endl;
 
         softmax_nodes[i]->set_error(0, 0, error);
+        softmax_nodes[i]->set_gradient(0, 0, gradient);
 
         class_error[i] += fabs(error);
 
@@ -955,13 +973,16 @@ int CNN_Genome::evaluate_image(const Image &image, vector<double> &class_error, 
             max_value = value;
         }
 
-        avg_error += fabs(error);
+        //cout << " " << setw(15) << fixed << setprecision(6) << error;
+        avg_error -= target * log(value);
     }
+    //cout << endl;
     //cout << "predicted class: " << predicted_class << endl;
+    //cout << "expected class:  " << expected_class << endl;
 
     if (do_backprop) {
         for (int32_t i = edges.size() - 1; i >= 0; i--) {
-            edges[i]->propagate_backward(learning_rate, weight_decay, mu);
+            edges[i]->propagate_backward();
         }
 
         /*
@@ -969,6 +990,10 @@ int CNN_Genome::evaluate_image(const Image &image, vector<double> &class_error, 
             nodes[i]->propagate_bias(mu, learning_rate, weight_decay);
         }
         */
+
+        for (int32_t i = 0; i < edges.size(); i++) {
+            edges[i]->update_weights(mu, learning_rate, weight_decay);
+        }
     }
 
     return predicted_class;
@@ -1015,6 +1040,10 @@ void CNN_Genome::particle_swarm(const Images &images) {
 }
 
 void CNN_Genome::stochastic_backpropagation(const Images &images) {
+    for (uint32_t i = 0; i < edges.size(); i++) {
+        edges[i]->propagate_weight_count();
+    }
+
     if (!started_from_checkpoint) {
         backprop_order.clear();
         for (int32_t i = 0; i < images.get_number_images(); i++) {
@@ -1031,7 +1060,6 @@ void CNN_Genome::stochastic_backpropagation(const Images &images) {
         //shuffle(backprop_order.begin(), backprop_order.end(), generator); 
 
         //shuffle the array (thanks C++ not being the same across operating systems)
-        //backprop_order.resize(10);
         fisher_yates_shuffle(generator, backprop_order);
 
         /*
@@ -1079,7 +1107,7 @@ void CNN_Genome::stochastic_backpropagation(const Images &images) {
 
         best_error = numeric_limits<double>::max();
     }
-    //backprop_order.resize(1000);
+    //backprop_order.resize(2000);
 
     //sort edges by depth of input node
     sort(edges.begin(), edges.end(), sort_CNN_Edges_by_depth());
@@ -1089,15 +1117,40 @@ void CNN_Genome::stochastic_backpropagation(const Images &images) {
         class_sizes[ images.get_image(backprop_order[i]).get_classification() ]++;
     }
 
+    vector<double> class_error(images.get_number_classes(), 0.0);
+    vector<int> correct_predictions(images.get_number_classes(), 0);
+
+    bool evaluate_initial_weights = true;
+    if  (evaluate_initial_weights) {
+        double total_error = 0.0;
+        int total_predictions = 0;
+        for (uint32_t j = 0; j < backprop_order.size(); j++) {
+            int predicted_class = evaluate_image(images.get_image(backprop_order[j]), class_error, false);
+            int expected_class = images.get_image(backprop_order[j]).get_classification();
+
+            if (predicted_class == expected_class) {
+                correct_predictions[expected_class]++;
+                total_predictions++;
+            }
+        }
+
+        for (uint32_t j = 0; j < class_error.size(); j++) {
+            total_error += class_error[j];
+        }
+
+        cerr << "[" << setw(10) << name << ", genome " << setw(5) << generation_id << "] predictions: " << setw(7) << total_predictions << ", best: " << setw(7) << best_predictions << "/" << backprop_order.size() << ", error: " << setw(15) << setprecision(5) << fixed << total_error << ", best error: " << setw(15) << "UNDEFINED" << " on epoch: " << setw(5) << best_error_epoch << ", epoch: " << setw(4) << epoch << "/" << max_epochs << ", mu: " << setw(6) << fixed << setprecision(4) << mu << ", learning_rate: " << setw(6) << fixed << setprecision(4) << learning_rate << ", weight_decay: " << setw(6) << fixed << setprecision(4) << weight_decay << endl;
+    }
+
     do {
+        class_error.assign(images.get_number_classes(), 0.0);
+        correct_predictions.assign(images.get_number_classes(), 0.0);
+
         //this is sadly not cross platform compliant
         //shuffle(backprop_order.begin(), backprop_order.end(), generator); 
 
         //shuffle the array (thanks C++ not being the same across operating systems)
         fisher_yates_shuffle(generator, backprop_order);
 
-        vector<double> class_error(images.get_number_classes(), 0.0);
-        vector<int> correct_predictions(images.get_number_classes(), 0);
 
         for (uint32_t j = 0; j < backprop_order.size(); j++) {
             //cerr << "evaluating image: " << setw(10) << backprop_order[j];
@@ -1139,6 +1192,8 @@ void CNN_Genome::stochastic_backpropagation(const Images &images) {
                 //cout << "\tclass " << setw(4) << j << ": " << setw(12) << setprecision(5) << class_error[j] << ", correct_predictions: " << correct_predictions[j] << " of " << class_sizes[j] << endl;
             }
 
+
+            bool found_improvement = false;
             if (total_error < best_error) {
                 best_error = total_error;
                 best_error_epoch = epoch;
@@ -1154,31 +1209,36 @@ void CNN_Genome::stochastic_backpropagation(const Images &images) {
 
                 save_bias();
                 save_weights();
+                found_improvement = true;
             }
 
-            /*
-               for (uint32_t i = 0; i < edges.size(); i++) {
-               edges[i]->reset_mv();
-               }
-               */
+            cerr << "[" << setw(10) << name << ", genome " << setw(5) << generation_id << "] predictions: " << setw(7) << total_predictions << ", best: " << setw(7) << best_predictions << "/" << backprop_order.size() << ", error: " << setw(15) << setprecision(5) << fixed << total_error << ", best error: " << setw(15) << setprecision(5) << fixed << best_error << " on epoch: " << setw(5) << best_error_epoch << ", epoch: " << setw(4) << epoch << "/" << max_epochs << ", mu: " << setw(6) << fixed << setprecision(6) << mu << ", learning_rate: " << setw(6) << fixed << setprecision(6) << learning_rate << ", weight_decay: " << setw(6) << fixed << setprecision(6) << weight_decay << endl;
 
-            cerr << "[" << setw(10) << name << ", genome " << setw(5) << generation_id << "] predictions: " << setw(7) << total_predictions << ", best: " << setw(7) << best_predictions << "/" << backprop_order.size() << ", error: " << setw(15) << setprecision(5) << fixed << total_error << ", best error: " << setw(15) << setprecision(5) << fixed << best_error << " on epoch: " << setw(5) << best_error_epoch << ", epoch: " << setw(4) << epoch << "/" << max_epochs << ", learning_rate: " << setw(10) << learning_rate << endl;
-            //cout << "total correct predictions: " << total_predictions << " of " << backprop_order.size() << endl;
-            //cout << "total error:               " << left << setw(20) << setprecision(5) << fixed << total_error << endl;
-            //cout << endl;
+            for (uint32_t i = 0; i < edges.size(); i++) {
+                edges[i]->print_statistics();
+            }
+
+            for (uint32_t i = 0; i < nodes.size(); i++) {
+                nodes[i]->print_statistics();
+            }
+
+            if (!found_improvement) {
+                //cerr << "resetting to best and updating hyperparameters" << endl;
+                set_to_best();
+            }
         }
 
-        //mu *= mu_decay;
-        mu *= 1.010;
+        mu *= mu_decay;
+        //mu *= 1.010;
         if (mu > 0.95) mu = 0.95;
 
-        //learning_rate *= learning_rate_decay;
-        learning_rate *= .99;
-        if (learning_rate < 0.0001) learning_rate = 0.0001;
+        learning_rate *= learning_rate_decay;
+        //learning_rate *= .99;
+        if (learning_rate < 0.00001) learning_rate = 0.00001;
 
         weight_decay *= weight_decay_decay;
-        weight_decay *= .99;
-        if (weight_decay < 0.0001) weight_decay = 0.0001;
+        //weight_decay *= .99;
+        if (weight_decay < 0.00001) weight_decay = 0.00001;
 
         epoch++;
 

@@ -167,8 +167,6 @@ $query = "CREATE TABLE `cnn_node` (
   `size_x` int(11) NOT NULL,
   `size_y` int(11) NOT NULL,
 
-  `values` BLOB NOT NULL,
-  `errors` BLOB NOT NULL,
   `bias` BLOB NOT NULL,
   `best_bias` BLOB NOT NULL,
   `bias_velocity` BLOB NOT NULL,

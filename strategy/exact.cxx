@@ -431,7 +431,7 @@ EXACT::EXACT(const Images &images, int _population_size, int _min_epochs, int _m
     genomes_generated = 0;
 
     mu = 0.5;
-    mu_decay = 1.010;
+    mu_decay = 1.200;
     learning_rate = 0.001;
     learning_rate_decay = 0.99;
     weight_decay = 0.001;

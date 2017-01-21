@@ -54,8 +54,16 @@ int main(int argc, char **argv) {
     double weight_decay_decay;
     get_argument(arguments, "--weight_decay_decay", true, weight_decay_decay);
 
+    double mu;
+    get_argument(arguments, "--mu", true, mu);
+
+    double mu_decay;
+    get_argument(arguments, "--mu_decay", true, mu_decay);
+
+    /*
     double mu = 0.5;
-    double mu_decay = 1.010;
+    double mu_decay = 1.05;
+    */
 
     Images images(binary_samples_filename);
 
@@ -80,7 +88,7 @@ int main(int argc, char **argv) {
     //first layer of filters
     //input node goes to 5 filters
     for (int32_t i = 0; i < 10; i++) {
-        CNN_Node *layer1_node = new CNN_Node(++node_innovation_count, 1, 1, 1, HIDDEN_NODE, generator, normal_distribution);
+        CNN_Node *layer1_node = new CNN_Node(++node_innovation_count, 1, 5, 5, HIDDEN_NODE, generator, normal_distribution);
         nodes.push_back(layer1_node);
         layer1_nodes.push_back(layer1_node);
 

@@ -46,9 +46,11 @@ class CNN_Edge {
 
         int filter_x, filter_y;
         vector< vector<double> > weights;
+        vector< vector<double> > weight_updates;
         vector< vector<double> > best_weights;
 
         vector< vector<double> > previous_velocity;
+        vector< vector<double> > best_velocity;
 
         bool fixed;
         bool disabled;
@@ -74,6 +76,8 @@ class CNN_Edge {
 
         int get_filter_x() const;
         int get_filter_y() const;
+
+        void propagate_weight_count();
 
         void save_best_weights();
         void set_weights_to_best();
@@ -107,9 +111,11 @@ class CNN_Edge {
 
         void print(ostream &out);
 
-		void backprop_weight_update(int fy, int fx, double weight_update, double weight, double mu, double learning_rate, double weight_decay);
         void propagate_forward();
-        void propagate_backward(double learning_rate, double weight_decay, double mu);
+        void propagate_backward();
+        void update_weights(double mu, double learning_rate, double weight_decay);
+
+        void print_statistics();
 
         friend ostream &operator<<(ostream &os, const CNN_Edge* flight);
         friend istream &operator>>(istream &is, CNN_Edge* flight);

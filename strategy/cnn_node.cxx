@@ -42,10 +42,13 @@ CNN_Node::CNN_Node() {
     innovation_number = -1;
     values = NULL;
     errors = NULL;
+    gradients = NULL;
     bias = NULL;
     best_bias = NULL;
     bias_velocity = NULL;
     visited = false;
+
+    weight_count = 0;
 }
 
 CNN_Node::CNN_Node(int _innovation_number, double _depth, int _size_x, int _size_y, int _type, minstd_rand0 &generator, NormalDistribution &normal_distribution) {
@@ -62,44 +65,29 @@ CNN_Node::CNN_Node(int _innovation_number, double _depth, int _size_x, int _size
     total_inputs = 0;
     inputs_fired = 0;
 
+    weight_count = 0;
+
     visited = false;
 
     values = new double*[size_y];
-    for (int32_t y = 0; y < size_y; y++) {
-        values[y] = new double[size_x];
-        for (int32_t x = 0; x < size_x; x++) {
-            values[y][x] = 0.0;
-        }
-    }
-
     errors = new double*[size_y];
-    for (int32_t y = 0; y < size_y; y++) {
-        errors[y] = new double[size_x];
-        for (int32_t x = 0; x < size_x; x++) {
-            errors[y][x] = 0.0;
-        }
-    }
-
+    gradients = new double*[size_y];
     bias = new double*[size_y];
-    for (int32_t y = 0; y < size_y; y++) {
-        bias[y] = new double[size_x];
-        for (int32_t x = 0; x < size_x; x++) {
-            bias[y][x] = 0.0;
-        }
-    }
-
     best_bias = new double*[size_y];
-    for (int32_t y = 0; y < size_y; y++) {
-        best_bias[y] = new double[size_x];
-        for (int32_t x = 0; x < size_x; x++) {
-            best_bias[y][x] = 0.0;
-        }
-    }
-
     bias_velocity = new double*[size_y];
     for (int32_t y = 0; y < size_y; y++) {
+        values[y] = new double[size_x];
+        errors[y] = new double[size_x];
+        gradients[y] = new double[size_x];
+        bias[y] = new double[size_x];
+        best_bias[y] = new double[size_x];
         bias_velocity[y] = new double[size_x];
         for (int32_t x = 0; x < size_x; x++) {
+            values[y][x] = 0.0;
+            errors[y][x] = 0.0;
+            gradients[y][x] = 0.0;
+            bias[y][x] = 0.0;
+            best_bias[y][x] = 0.0;
             bias_velocity[y][x] = 0.0;
         }
     }
@@ -122,12 +110,14 @@ CNN_Node::~CNN_Node() {
 
         delete [] values[y];
         delete [] errors[y];
+        delete [] gradients[y];
         delete [] bias[y];
         delete [] best_bias[y];
         delete [] bias_velocity[y];
     }
     delete [] values;
     delete [] errors;
+    delete [] gradients;
     delete [] bias;
     delete [] best_bias;
     delete [] bias_velocity;
@@ -190,12 +180,6 @@ CNN_Node::CNN_Node(int _node_id) {
         size_x = atoi(row[5]);
         size_y = atoi(row[6]);
 
-        istringstream values_iss(row[7]);
-        parse_array_2d(&values, values_iss, size_x, size_y);
-
-        istringstream errors_iss(row[8]);
-        parse_array_2d(&errors, errors_iss, size_x, size_y);
-
         istringstream bias_iss(row[9]);
         parse_array_2d(&bias, bias_iss, size_x, size_y);
 
@@ -219,6 +203,21 @@ CNN_Node::CNN_Node(int _node_id) {
         exit(1);
     }
 
+    //initialize arrays not stored to database
+    values = new double*[size_y];
+    errors = new double*[size_y];
+    gradients = new double*[size_y];
+    for (int32_t y = 0; y < size_y; y++) {
+        values[y] = new double[size_x];
+        errors[y] = new double[size_x];
+        gradients[y] = new double[size_x];
+        for (int32_t x = 0; x < size_x; x++) {
+            values[y][x] = 0.0;
+            errors[y][x] = 0.0;
+            gradients[y][x] = 0.0;
+        }
+    }
+
     //cout << "read node!" << endl;
     //cout << this << endl;
 }
@@ -240,27 +239,9 @@ void CNN_Node::export_to_database(int _exact_id, int _genome_id) {
         << ", innovation_number = " << innovation_number
         << ", depth = " << depth
         << ", size_x = " << size_x
-        << ", size_y = " << size_y
-        << ", `values` = '";
+        << ", size_y = " << size_y;
 
-    for (int32_t y = 0; y < size_y; y++) {
-        for (int32_t x = 0; x < size_x; x++) {
-            if (x != 0) query << " ";
-            query << setprecision(15) << values[y][x];
-        }
-        if (y != size_y - 1) query << "\n";
-    }
-
-    query << "', errors = '";
-    for (int32_t y = 0; y < size_y; y++) {
-        for (int32_t x = 0; x < size_x; x++) {
-            if (x != 0) query << " ";
-            query << setprecision(15) << errors[y][x];
-        }
-        if (y != size_y - 1) query << "\n";
-    }
-
-    query << "', bias = '";
+    query << ", bias = '";
     for (int32_t y = 0; y < size_y; y++) {
         for (int32_t x = 0; x < size_x; x++) {
             if (x != 0) query << " ";
@@ -321,6 +302,7 @@ CNN_Node* CNN_Node::copy() const {
 
     copy->values = new double*[size_y];
     copy->errors = new double*[size_y];
+    copy->gradients = new double*[size_y];
     copy->bias = new double*[size_y];
     copy->best_bias = new double*[size_y];
     copy->bias_velocity = new double*[size_y];
@@ -328,6 +310,7 @@ CNN_Node* CNN_Node::copy() const {
     for (int32_t y = 0; y < size_y; y++) {
         copy->values[y] = new double[size_x];
         copy->errors[y] = new double[size_x];
+        copy->gradients[y] = new double[size_x];
         copy->bias[y] = new double[size_x];
         copy->best_bias[y] = new double[size_x];
         copy->bias_velocity[y] = new double[size_x];
@@ -335,6 +318,7 @@ CNN_Node* CNN_Node::copy() const {
         for (int32_t x = 0; x < size_x; x++) {
             copy->values[y][x] = values[y][x];
             copy->errors[y][x] = errors[y][x];
+            copy->gradients[y][x] = gradients[y][x];
             copy->bias[y][x] = bias[y][x];
             copy->best_bias[y][x] = best_bias[y][x];
             copy->bias_velocity[y][x] = bias_velocity[y][x];
@@ -342,6 +326,16 @@ CNN_Node* CNN_Node::copy() const {
     }
 
     return copy;
+}
+
+void CNN_Node::add_weight_count(int _weight_count) {
+    weight_count += _weight_count;
+    
+    //cerr << "node " << innovation_number << " setting weight count to: " << weight_count << endl;
+}
+
+int CNN_Node::get_weight_count() const {
+    return weight_count;
 }
 
 void CNN_Node::initialize_bias(minstd_rand0 &generator, NormalDistribution &normal_distribution) {
@@ -448,37 +442,58 @@ double** CNN_Node::get_errors() {
     return errors;
 }
 
+void CNN_Node::set_gradient(int y, int x, double gradient) {
+    gradients[y][x] = gradient;
+}
+double** CNN_Node::get_gradients() {
+    return gradients;
+}
+
+
 void CNN_Node::print(ostream &out) {
     out << "CNN_Node " << innovation_number << ", at depth: " << depth << " of size x: " << size_x << ", y: " << size_y << endl;
 
+    out << "    values:" << endl;
     for (int32_t i = 0; i < size_y; i++) {
         out << "    ";
         for (int32_t j = 0; j < size_x; j++) {
-            out << setw(10) << setprecision(8) << values[i][j];
+            out << setw(13) << setprecision(8) << values[i][j];
         }
         out << endl;
     }
 
+    out << "    errors:" << endl;
     for (int32_t i = 0; i < size_y; i++) {
         out << "    ";
         for (int32_t j = 0; j < size_x; j++) {
-            out << setw(10) << setprecision(8) << errors[i][j];
+            out << setw(13) << setprecision(8) << errors[i][j];
         }
         out << endl;
     }
 
+    out << "    gradients:" << endl;
     for (int32_t i = 0; i < size_y; i++) {
         out << "    ";
         for (int32_t j = 0; j < size_x; j++) {
-            out << setw(10) << setprecision(8) << bias[i][j];
+            out << setw(13) << setprecision(8) << gradients[i][j];
         }
         out << endl;
     }
 
+    out << "    bias:" << endl;
     for (int32_t i = 0; i < size_y; i++) {
         out << "    ";
         for (int32_t j = 0; j < size_x; j++) {
-            out << setw(10) << setprecision(8) << bias_velocity[i][j];
+            out << setw(13) << setprecision(8) << bias[i][j];
+        }
+        out << endl;
+    }
+
+    out << "    bias_velocity:" << endl;
+    for (int32_t i = 0; i < size_y; i++) {
+        out << "    ";
+        for (int32_t j = 0; j < size_x; j++) {
+            out << setw(13) << setprecision(8) << bias_velocity[i][j];
         }
         out << endl;
     }
@@ -491,12 +506,8 @@ void CNN_Node::reset() {
     for (int32_t y = 0; y < size_y; y++) {
         for (int32_t x = 0; x < size_x; x++) {
             values[y][x] = 0;
-        }
-    }
-
-    for (int32_t y = 0; y < size_y; y++) {
-        for (int32_t x = 0; x < size_x; x++) {
             errors[y][x] = 0;
+            gradients[y][x] = 0;
         }
     }
 }
@@ -566,6 +577,12 @@ void CNN_Node::resize_arrays(int previous_size_x, int previous_size_y) {
             exit(1);
         }
 
+        if (gradients[y] == NULL) {
+            cerr << "ERROR, modifying node size x but gradients[" << y << "] == NULL" << endl;
+            exit(1);
+        }
+
+
         if (bias[y] == NULL) {
             cerr << "ERROR, modifying node size x but bias[" << y << "] == NULL" << endl;
             exit(1);
@@ -596,6 +613,8 @@ void CNN_Node::resize_arrays(int previous_size_x, int previous_size_y) {
     delete [] values;
     //cout << "resizing, deleting errors" << endl;
     delete [] errors;
+    //cout << "resizing, deleting gradients" << endl;
+    delete [] gradients;
     //cout << "resizing, deleting bias" << endl;
     delete [] bias;
     //cout << "resizing, deleting best_bias" << endl;
@@ -604,38 +623,24 @@ void CNN_Node::resize_arrays(int previous_size_x, int previous_size_y) {
     delete [] bias_velocity;
 
     values = new double*[size_y];
-    for (int32_t y = 0; y < size_y; y++) {
-        values[y] = new double[size_x];
-        for (int32_t x = 0; x < size_x; x++) {
-            values[y][x] = 0.0;
-        }
-    }
-
     errors = new double*[size_y];
-    for (int32_t y = 0; y < size_y; y++) {
-        errors[y] = new double[size_x];
-        for (int32_t x = 0; x < size_x; x++) {
-            errors[y][x] = 0.0;
-        }
-    }
-
+    gradients = new double*[size_y];
     bias = new double*[size_y];
-    for (int32_t y = 0; y < size_y; y++) {
-        bias[y] = new double[size_x];
-    }
-
     best_bias = new double*[size_y];
-    for (int32_t y = 0; y < size_y; y++) {
-        best_bias[y] = new double[size_x];
-        for (int32_t x = 0; x < size_x; x++) {
-            best_bias[y][x] = 0.0;
-        }
-    }
-
     bias_velocity = new double*[size_y];
     for (int32_t y = 0; y < size_y; y++) {
+        values[y] = new double[size_x];
+        errors[y] = new double[size_x];
+        gradients[y] = new double[size_x];
+        bias[y] = new double[size_x];
+        best_bias[y] = new double[size_x];
         bias_velocity[y] = new double[size_x];
         for (int32_t x = 0; x < size_x; x++) {
+            values[y][x] = 0.0;
+            errors[y][x] = 0.0;
+            gradients[y][x] = 0.0;
+            bias[y][x] = 0.0;
+            best_bias[y][x] = 0.0;
             bias_velocity[y][x] = 0.0;
         }
     }
@@ -725,10 +730,7 @@ void CNN_Node::input_fired() {
     //cout << "input fired on node: " << innovation_number << ", inputs fired: " << inputs_fired << ", total_inputs: " << total_inputs << endl;
 
     if (inputs_fired == total_inputs) {
-        //cout << "applying activation function to node!" << endl;
-        //print(cout);
-
-        //if (type != SOFTMAX_NODE) {
+        if (type != SOFTMAX_NODE) {
             for (int32_t y = 0; y < size_y; y++) {
                 for (int32_t x = 0; x < size_x; x++) {
                     //values[y][x] += bias[y][x];
@@ -737,14 +739,18 @@ void CNN_Node::input_fired() {
                     //apply activation function
                     if (values[y][x] <= RELU_MIN) {
                         values[y][x] *= RELU_MIN_LEAK;
-                    }
-
-                    if (values[y][x] > RELU_MAX) {
-                        values[y][x] = ((values[y][x] - RELU_MAX) * RELU_MAX_LEAK) + RELU_MAX;
+                        gradients[y][x] = RELU_MIN_LEAK;
+                    } else if (values[y][x] > RELU_MAX) {
+                        //values[y][x] = ((values[y][x] - RELU_MAX) * RELU_MAX_LEAK) + RELU_MAX;
+                        //gradients[y][x] = RELU_MAX_LEAK;
+                        values[y][x] = RELU_MAX;
+                        gradients[y][x] = 0.0;
+                    } else {
+                        gradients[y][x] = 1.0;
                     }
                 }
             }
-        //}
+        }
 
     } else if (inputs_fired > total_inputs) {
         cerr << "ERROR! inputs_fired > total_inputs" << endl;
@@ -783,6 +789,28 @@ void CNN_Node::propagate_bias(double mu, double learning_rate, double weight_dec
             if (bias[y][x] > 50.0) bias[y][x] = 50.0;
         }
     }
+}
+
+void CNN_Node::print_statistics() {
+    double value_min = std::numeric_limits<double>::max(), value_max = -std::numeric_limits<double>::max(), value_avg = 0.0;
+    double error_min = std::numeric_limits<double>::max(), error_max = -std::numeric_limits<double>::max(), error_avg = 0.0;
+
+    for (int y = 0; y < size_y; y++) {
+        for (int x = 0; x < size_x; x++) {
+            if (values[y][x] < value_min) value_min = values[y][x];
+            if (values[y][x] > value_max) value_max = values[y][x];
+            value_avg += values[y][x];
+
+            if (errors[y][x] < error_min) error_min = errors[y][x];
+            if (errors[y][x] > error_max) error_max = errors[y][x];
+            error_avg += errors[y][x];
+        }
+    }
+
+    error_avg /= size_y * size_x;
+    value_avg /= size_y * size_x;
+
+    cerr << "node " << setw(4) << innovation_number << ", v_min: " << value_min << ", v_avg: " << value_avg << ", v_max: " << value_max << ", e_min: " << error_min << ", e_avg: " << error_avg << ", e_max: " << error_max << endl;
 }
 
 ostream &operator<<(ostream &os, const CNN_Node* node) {
@@ -852,6 +880,14 @@ std::istream &operator>>(std::istream &is, CNN_Node* node) {
         node->errors[y] = new double[node->size_x];
         for (int32_t x = 0; x < node->size_x; x++) {
             node->errors[y][x] = 0.0;
+        }
+    }
+
+    node->gradients = new double*[node->size_y];
+    for (int32_t y = 0; y < node->size_y; y++) {
+        node->gradients[y] = new double[node->size_x];
+        for (int32_t x = 0; x < node->size_x; x++) {
+            node->gradients[y][x] = 0.0;
         }
     }
 
