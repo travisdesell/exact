@@ -278,7 +278,8 @@ void CNN_Edge::initialize_weights(minstd_rand0 &generator, NormalDistribution &n
     //double sigma = sqrt(2.0 / (edge_size * edge_size));
     */
     int edge_size = output_node->get_weight_count();
-    double sigma = sqrt(2.0 / (edge_size * edge_size));
+    //double sigma = sqrt(2.0 / (edge_size * edge_size));
+    double sigma = sqrt(2.0 / edge_size);
     //double sigma = 2.0 / (edge_size * edge_size);
 
     double mu = 0.0;
