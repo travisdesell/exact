@@ -73,7 +73,7 @@ CNN_Genome* receive_genome_from(string name, int source) {
 
     istringstream iss(genome_str);
 
-    CNN_Genome* genome = new CNN_Genome(iss, true);
+    CNN_Genome* genome = new CNN_Genome(iss, false);
 
     delete [] genome_str;
     return genome;

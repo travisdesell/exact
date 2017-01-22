@@ -64,9 +64,7 @@ void polling_thread(string output_directory) {
 void exact_thread(const Images &images, int id) {
     while (true) {
         exact_mutex.lock();
-        cout << "thread " << id << " generating individual!" << endl;
         CNN_Genome *genome = exact->generate_individual();
-        cout << "thread " << id << " generated individual!" << endl;
         exact_mutex.unlock();
 
         if (genome == NULL) break;  //generate_individual returns NULL when the search is done
@@ -79,11 +77,8 @@ void exact_thread(const Images &images, int id) {
         genome->stochastic_backpropagation(images);
 
         exact_mutex.lock();
-        cout << "inserting genome!" << endl;
         exact->insert_genome(genome);
-        cout << "exporting to database!" << endl;
         exact->export_to_database();
-        cout << "exported to database!" << endl;
         exact_mutex.unlock();
     }
 }
@@ -146,8 +141,8 @@ int main(int argc, char** argv) {
 
     Images images(binary_samples_filename);
 
-    //exact = new EXACT(images, population_size, min_epochs, max_epochs, improvement_required_epochs, reset_edges, mu, mu_decay, learning_rate, learning_rate_decay, weight_decay, weight_decay_decay, max_individuals, output_directory, search_name);
-    exact = new EXACT(4);
+    exact = new EXACT(images, population_size, min_epochs, max_epochs, improvement_required_epochs, reset_edges, mu, mu_decay, learning_rate, learning_rate_decay, weight_decay, weight_decay_decay, max_individuals, output_directory, search_name);
+    //exact = new EXACT(1);
 
     /*
     cout << "generating individual!" << endl;

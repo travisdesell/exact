@@ -1437,14 +1437,14 @@ void CNN_Genome::read(istream &infile) {
     //infile >> output_filename;
 
     infile >> normal_distribution;
-    cerr << "read normal distribution: '" << normal_distribution << "'" << endl;
+    if (verbose) cerr << "read normal distribution: '" << normal_distribution << "'" << endl;
 
     //for some reason linux doesn't read the generator correcly because of
     //the first newline
     string generator_str;
     getline(infile, generator_str);
     getline(infile, generator_str);
-    cerr << "generator_str: '" << generator_str << "'" << endl;
+    if (verbose) cerr << "generator_str: '" << generator_str << "'" << endl;
     istringstream generator_iss(generator_str);
     generator_iss >> generator;
     //infile >> generator;
@@ -1456,7 +1456,7 @@ void CNN_Genome::read(istream &infile) {
         //cerr << "rand 3: " << generator() << endl;
     }
 
-    cerr << "reading nodes!" << endl;
+    //cerr << "reading nodes!" << endl;
     
     string line;
     getline(infile, line);
@@ -1470,16 +1470,16 @@ void CNN_Genome::read(istream &infile) {
     nodes.clear();
     int number_nodes;
     infile >> number_nodes;
-    cerr << "reading " << number_nodes << " nodes." << endl;
+    //cerr << "reading " << number_nodes << " nodes." << endl;
     for (int32_t i = 0; i < number_nodes; i++) {
         CNN_Node *node = new CNN_Node();
         infile >> node;
 
-        cerr << "read node: " << node->get_innovation_number() << endl;
+        //cerr << "read node: " << node->get_innovation_number() << endl;
         nodes.push_back(node);
     }
 
-    cerr << "reading edges!" << endl;
+    //cerr << "reading edges!" << endl;
 
     getline(infile, line);
     getline(infile, line);
@@ -1492,12 +1492,12 @@ void CNN_Genome::read(istream &infile) {
     edges.clear();
     int number_edges;
     infile >> number_edges;
-    cerr << "reading " << number_edges << " edges." << endl;
+    //cerr << "reading " << number_edges << " edges." << endl;
     for (int32_t i = 0; i < number_edges; i++) {
         CNN_Edge *edge = new CNN_Edge();
         infile >> edge;
 
-        cerr << "read edge: " << edge->get_innovation_number() << endl;
+        //cerr << "read edge: " << edge->get_innovation_number() << endl;
         if (!edge->set_nodes(nodes)) {
             cerr << "ERROR: filter size didn't match when reading genome from input file!" << endl;
             cerr << "This should never happen!" << endl;
@@ -1518,12 +1518,12 @@ void CNN_Genome::read(istream &infile) {
     int input_node_innovation_number;
     infile >> input_node_innovation_number;
 
-    cerr << "input node innovation number: " << input_node_innovation_number << endl;
+    //cerr << "input node innovation number: " << input_node_innovation_number << endl;
 
     for (uint32_t i = 0; i < nodes.size(); i++) {
         if (nodes[i]->get_innovation_number() == input_node_innovation_number) {
             input_node = nodes[i];
-            cerr << "input node was in position: " << i << endl;
+            //cerr << "input node was in position: " << i << endl;
             break;
         }
     }
@@ -1531,24 +1531,24 @@ void CNN_Genome::read(istream &infile) {
     softmax_nodes.clear();
     int number_softmax_nodes;
     infile >> number_softmax_nodes;
-    cerr << "number softmax nodes: " << number_softmax_nodes << endl;
+    //cerr << "number softmax nodes: " << number_softmax_nodes << endl;
 
     for (int32_t i = 0; i < number_softmax_nodes; i++) {
         int softmax_node_innovation_number;
         infile >> softmax_node_innovation_number;
-        cerr << "\tsoftmax node: " << softmax_node_innovation_number << endl;
+        //cerr << "\tsoftmax node: " << softmax_node_innovation_number << endl;
 
         for (uint32_t i = 0; i < nodes.size(); i++) {
             if (nodes[i]->get_innovation_number() == softmax_node_innovation_number) {
                 softmax_nodes.push_back(nodes[i]);
-                cerr << "softmax node " << softmax_node_innovation_number << " was in position: " << i << endl;
+                //cerr << "softmax node " << softmax_node_innovation_number << " was in position: " << i << endl;
                 break;
             }
         }
 
     }
 
-    cerr << "reading backprop order" << endl;
+    //cerr << "reading backprop order" << endl;
 
     getline(infile, line);
     getline(infile, line);
@@ -1561,16 +1561,16 @@ void CNN_Genome::read(istream &infile) {
     backprop_order.clear();
     long order_size;
     infile >> order_size;
-    cout << "order_size: " << order_size << endl;
+    //cout << "order_size: " << order_size << endl;
     for (uint32_t i = 0; i < order_size; i++) {
         long order;
         infile >> order;
         backprop_order.push_back(order);
-        cerr << "backprop order[" << i << "]: " << order << endl;
+        //cerr << "backprop order[" << i << "]: " << order << endl;
     }
 
 
-    cerr << "reading best class error" << endl;
+    //cerr << "reading best class error" << endl;
 
     if (order_size == 0) getline(infile, line);
     getline(infile, line);
@@ -1584,14 +1584,14 @@ void CNN_Genome::read(istream &infile) {
     best_class_error.clear();
     int error_size;
     infile >> error_size;
-    cerr << "error_size: " << error_size << endl;
+    //cerr << "error_size: " << error_size << endl;
     for (int32_t i = 0; i < error_size; i++) {
         double error;
         infile >> error;
         best_class_error.push_back(error);
     }
 
-    cerr << "reading best correct predictions" << endl;
+    //cerr << "reading best correct predictions" << endl;
 
     if (error_size == 0) getline(infile, line);
     getline(infile, line);

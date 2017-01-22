@@ -959,7 +959,7 @@ CNN_Genome* EXACT::create_mutation() {
                     r2 = temp;
                 }
 
-                cout << "child->get_number_nodes(): " <<  child->get_number_nodes() << ", r1: " << r1 << ", r2: " << r2 << endl;
+                //cout << "child->get_number_nodes(): " <<  child->get_number_nodes() << ", r1: " << r1 << ", r2: " << r2 << endl;
 
                 node1 = child->get_node(r1);
                 node2 = child->get_node(r2);
@@ -999,7 +999,6 @@ CNN_Genome* EXACT::create_mutation() {
                 //enable the edge in case it was disabled
                 edge_copy->enable();
                 if (!edge_copy->set_nodes(child->get_nodes())) {
-                    cout << "\t\treinitializing weights of copy" << endl;
                     edge_copy->resize();
                 }
 
@@ -1011,28 +1010,20 @@ CNN_Genome* EXACT::create_mutation() {
                 //edge does not exist at all
                 cout << "\t\tadding edge between node innovation numbers " << node1_innovation_number << " and " << node2_innovation_number << endl;
 
-                cout << "creating edge" << endl;
                 CNN_Edge *edge = new CNN_Edge(node1, node2, false, edge_innovation_count, generator, normal_distribution);
                 edge_innovation_count++;
                 //insert edge in order of depth
 
-                cout << "enabling edge" << endl;
                 //enable the edge in case it was disabled
                 edge->enable();
                 child->add_edge(edge);
-                cout << "copying edge" << endl;
 
                 CNN_Edge *edge_copy = edge->copy();
-                cout << "made copy" << endl;
                 edge_copy->set_nodes(all_nodes);
-                cout << "set nodes" << endl;
 
-                cout << "all_edges.size(): " << all_edges.size() << endl;
                 all_edges.insert( upper_bound(all_edges.begin(), all_edges.end(), edge_copy, sort_CNN_Edges_by_depth()), edge_copy);
 
-                cout << "inserted edge" << endl;
                 child->set_generated_by_add_edge();
-                cout << "set generated" << endl;
 
                 modifications++;
             } else {
@@ -1221,7 +1212,6 @@ CNN_Genome* EXACT::create_mutation() {
         exit(1);
     }
 
-    cout << "returning child!" << endl;
     return child;
 }
 
