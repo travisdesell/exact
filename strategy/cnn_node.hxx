@@ -88,6 +88,8 @@ class CNN_Node {
 #ifdef _MYSQL_
         CNN_Node(int node_id);
         void export_to_database(int exact_id, int genome_id);
+
+        int get_node_id() const;
 #endif
 
         bool needs_init() const;

@@ -119,7 +119,9 @@ int after_assimilate_pass() {
     if (low_on_workunits()) {
         for (auto it = exact_searches.begin(); it != exact_searches.end(); ++it ) {
             make_jobs(it->second, WORKUNITS_TO_GENERATE / exact_searches.size());
-            it->second->update_database();
+
+            //this should not be needed due to updates after each workunit generation
+            //it->second->export_to_database();
         }
     }
 
@@ -216,6 +218,31 @@ int assimilate_handler(WORKUNIT& wu, vector<RESULT>& results, RESULT& canonical_
         log_messages.printf(MSG_CRITICAL, "[CANONICAL RESULT#%ld %s] assimilate_handler: result had invalid name, needed 6 substrings between _ character, but had %lu.\n", canonical_result.id, canonical_result.name, segment_list.size());
     }
 
+    string exact_id_str = segment_list[3];
+    cout << "exact_id substring: " << exact_id_str << endl;
+
+    if (exact_id_str.find_first_not_of( "0123456789" ) != string::npos) {
+        log_messages.printf(MSG_CRITICAL, "[CANONICAL RESULT#%ld %s] assimilate_handler: parsing exact_id from result name resulted in non-integer: '%s'.\n", canonical_result.id, canonical_result.name, exact_id_str.c_str());
+        return 0;
+    }
+
+    if (exact_id_str.size() > 5) {
+        log_messages.printf(MSG_CRITICAL, "[CANONICAL RESULT#%ld %s] assimilate_handler: exact_id was invalid: '%s'.\n", canonical_result.id, canonical_result.name, exact_id_str.c_str());
+        return 0;
+    }
+
+    exact_id = stoi(exact_id_str);
+
+    if (exact_id < 0) {
+        log_messages.printf(MSG_CRITICAL, "[CANONICAL RESULT#%ld %s] assimilate_handler: result had no exact_id (exact_id: %d), ignoring.\n", canonical_result.id, canonical_result.name, exact_id);
+        return 0;
+    }
+
+    if (!EXACT::exists_in_database(exact_id)) {
+        log_messages.printf(MSG_CRITICAL, "[CANONICAL RESULT#%ld %s] assimilate_handler: exact_id (exact_id: %d) was not in the database, ignoring.\n", canonical_result.id, canonical_result.name, exact_id);
+        return 0;
+     }
+
     file_iss.clear();
     file_iss.seekg(0, ios::beg);
 
@@ -227,30 +254,6 @@ int assimilate_handler(WORKUNIT& wu, vector<RESULT>& results, RESULT& canonical_
         delete genome;
         return 0;
     }
-
-    string exact_id_str = segment_list[3];
-    cout << "exact_id substring: " << exact_id_str << endl;
-
-    if (exact_id_str.find_first_not_of( "0123456789" ) != string::npos) {
-        log_messages.printf(MSG_CRITICAL, "[CANONICAL RESULT#%ld %s] assimilate_handler: parsing exact_id from result name resulted in non-integer: '%s'.\n", canonical_result.id, canonical_result.name, exact_id_str.c_str());
-        exit(1);
-    }
-
-    exact_id = stoi(exact_id_str);
-
-    if (exact_id < 0) {
-        log_messages.printf(MSG_CRITICAL, "[CANONICAL RESULT#%ld %s] assimilate_handler: result had no exact_id (exact_id: %d), ignoring.\n", canonical_result.id, canonical_result.name, exact_id);
-
-        //get the exact_id from the result name
-        exit(1);
-    }
-
-    if (!EXACT::exists_in_database(exact_id)) {
-        log_messages.printf(MSG_CRITICAL, "[CANONICAL RESULT#%ld %s] assimilate_handler: exact_id (exact_id: %d) was not in the database, ignoring.\n", canonical_result.id, canonical_result.name, exact_id);
-
-        delete genome;
-        return 0;
-     }
 
     EXACT *exact = get_exact_search(exact_id);
     bool was_inserted = exact->insert_genome(genome);

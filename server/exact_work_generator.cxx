@@ -106,10 +106,20 @@ int main(int argc, char** argv) {
 
     //initialize the EXACT algorithm
     int population_size = 100;
-    int min_epochs = 25;
-    int max_epochs = 25;
+    get_argument(arguments, "--population_size", true, population_size);
+
+    int min_epochs = 50;
+    get_argument(arguments, "--min_epochs", true, min_epochs);
+
+    int max_epochs = 50;
+    get_argument(arguments, "--max_epochs", true, max_epochs);
+
     int improvement_required_epochs = 5;
+    get_argument(arguments, "--improvement_required_epochs", true, improvement_required_epochs);
+
     bool reset_edges = false;
+    get_argument(arguments, "--reset_edges", true, reset_edges);
+
     int max_individuals = 1000000;
     string output_directory = "/projects/csg/exact_data/" + search_name;
 

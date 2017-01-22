@@ -66,6 +66,8 @@ class CNN_Edge {
 #ifdef _MYSQL_
         CNN_Edge(int edge_id);
         void export_to_database(int exact_id, int genome_id);
+
+        int get_edge_id() const;
 #endif
 
 

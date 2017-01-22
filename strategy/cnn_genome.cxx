@@ -279,12 +279,6 @@ void CNN_Genome::export_to_database(int _exact_id) {
         query << softmax_nodes[i]->get_innovation_number();
     }
 
-    //mysql can't handl the max double value for some reason
-    bool best_error_max = false;
-    if (best_error == numeric_limits<double>::max()) {
-        best_error = 10000000;
-        best_error_max = true;
-    }
 
     query << "', generator = '" << generator << "'"
         << ", normal_distribution = '" << normal_distribution << "'"
@@ -307,10 +301,6 @@ void CNN_Genome::export_to_database(int _exact_id) {
         << ", best_predictions_epoch = " << best_predictions_epoch
         << ", best_error_epoch = " << best_error_epoch
         << ", best_class_error = '";
-
-    if (best_error_max) {
-        best_error = numeric_limits<double>::max();
-    }
 
     for (uint32_t i = 0; i < best_class_error.size(); i++) {
         if (i != 0) query << " ";
@@ -399,7 +389,7 @@ CNN_Genome::CNN_Genome(int _generation_id, int seed, int _min_epochs, int _max_e
     reset_edges = _reset_edges;
 
     best_predictions = 0;
-    best_error = numeric_limits<double>::max();
+    best_error = EXACT_MAX_DOUBLE;
 
     best_predictions_epoch = 0;
     best_error_epoch = 0;
@@ -679,7 +669,7 @@ void CNN_Genome::resize_edges_around_node(int node_innovation_number) {
     }
 }
 
-bool CNN_Genome::sanity_check(int type) const {
+bool CNN_Genome::sanity_check(int type) {
     //check to see if all edge filters are the correct size
     for (uint32_t i = 0; i < edges.size(); i++) {
         if (!edges[i]->is_filter_correct()) {
@@ -689,8 +679,22 @@ bool CNN_Genome::sanity_check(int type) const {
         }
     }
 
-    //check for duplicate edges
+    //check for duplicate edges, make sure edge size is sane
     for (uint32_t i = 0; i < edges.size(); i++) {
+        if (edges[i]->get_filter_x() <= 0 || edges[i]->get_filter_x() > 100) {
+            cerr << "ERROR: edge failed sanity check, reached impossible filter_x (<= 0 or > 100)" << endl;
+            cerr << "edge in position " << i << " with innovation number: " << edges[i]->get_innovation_number() << endl;
+            cerr << "filter_x: " << edges[i]->get_filter_x() << ", filter_y: " << edges[i]->get_filter_y() << endl;
+            return false;
+        }
+
+        if (edges[i]->get_filter_y() <= 0 || edges[i]->get_filter_y() > 100) {
+            cerr << "ERROR: edge failed sanity check, reached impossible filter_y (<= 0 or > 100)" << endl;
+            cerr << "edge in position " << i << " with innovation number: " << edges[i]->get_innovation_number() << endl;
+            cerr << "filter_x: " << edges[i]->get_filter_x() << ", filter_y: " << edges[i]->get_filter_y() << endl;
+            return false;
+        }
+
         for (uint32_t j = i + 1; j < edges.size(); j++) {
             if (edges[i]->get_innovation_number() == edges[j]->get_innovation_number()) {
                 cerr << "SANITY CHECK FAILED! edges[" << i << "] and edges[" << j << "] have the same innovation number: " << edges[i]->get_innovation_number() << endl;
@@ -699,8 +703,22 @@ bool CNN_Genome::sanity_check(int type) const {
         }
     }
 
-    //check for duplicate nodes
+    //check for duplicate nodes, make sure node size is sane
     for (uint32_t i = 0; i < nodes.size(); i++) {
+        if (nodes[i]->get_size_x() <= 0 || nodes[i]->get_size_x() > 100) {
+            cerr << "ERROR: node failed sanity check, reached impossible size_x (<= 0 or > 100)" << endl;
+            cerr << "node in position " << i << " with innovation number: " << nodes[i]->get_innovation_number() << endl;
+            cerr << "size_x: " << nodes[i]->get_size_x() << ", size_y: " << nodes[i]->get_size_y() << endl;
+            return false;
+        }
+
+        if (nodes[i]->get_size_y() <= 0 || nodes[i]->get_size_y() > 100) {
+            cerr << "ERROR: node failed sanity check, reached impossible size_y (<= 0 or > 100)" << endl;
+            cerr << "node in position " << i << " with innovation number: " << nodes[i]->get_innovation_number() << endl;
+            cerr << "size_x: " << nodes[i]->get_size_x() << ", size_y: " << nodes[i]->get_size_y() << endl;
+            return false;
+        }
+
         for (uint32_t j = i + 1; j < nodes.size(); j++) {
             if (nodes[i]->get_innovation_number() == nodes[j]->get_innovation_number()) {
                 cerr << "SANITY CHECK FAILED! nodes[" << i << "] and nodes[" << j << "] have the same innovation number: " << nodes[i]->get_innovation_number() << endl;
@@ -710,26 +728,28 @@ bool CNN_Genome::sanity_check(int type) const {
     }
 
     if (type == SANITY_CHECK_AFTER_GENERATION) {
-        /*
         for (uint32_t i = 0; i < nodes.size(); i++) {
             if (nodes[i]->has_zero_bias()) {
-                cerr << "ERROR after generation!" << endl;
+                cerr << "WARNING after generation!" << endl;
                 cerr << "node in position " << i << " with innovation number: " << nodes[i]->get_innovation_number() << endl;
-                cerr << "sum of bias was 0" << endl;
                 cerr << "size_x: " << nodes[i]->get_size_x() << ", size_y: " << nodes[i]->get_size_y() << endl;
-                return false;
+                cerr << "sum of bias was 0" << endl;
+                nodes[i]->initialize_bias(generator, normal_distribution);
+                nodes[i]->save_best_bias();
+                //return false;
             }
         }
-        */
         //cout << "passed checking zero best bias" << endl;
 
         for (uint32_t i = 0; i < edges.size(); i++) {
             if (edges[i]->has_zero_weight()) {
-                cerr << "ERROR before after_generation!" << endl;
-                cerr << "ERROR: edge in position " << i << " with innovation number: " << edges[i]->get_innovation_number() << endl;
-                cerr << "sum of weights was 0" << endl;
+                cerr << "WARNING before after_generation!" << endl;
+                cerr << "edge in position " << i << " with innovation number: " << edges[i]->get_innovation_number() << endl;
                 cerr << "filter_x: " << edges[i]->get_filter_x() << ", filter_y: " << edges[i]->get_filter_y() << endl;
-                return false;
+                cerr << "sum of weights was 0" << endl;
+                edges[i]->initialize_weights(generator, normal_distribution);
+                edges[i]->save_best_weights();
+                //return false;
             }
         }
         //cout << "passed checking zero best weights" << endl;
@@ -1080,7 +1100,7 @@ void CNN_Genome::stochastic_backpropagation(const Images &images) {
 
         cerr << "post shuffle 1: " << generator() << endl;
 
-        best_error = WORST_FITNESS;
+        best_error = EXACT_MAX_DOUBLE;
     }
     backprop_order.resize(2000);
 

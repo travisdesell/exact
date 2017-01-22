@@ -121,23 +121,17 @@ int init_result(RESULT& result, void*& data) {
 //    cout << "Parsing: " << endl << file_contents << endl;
 
     EXACT_RESULT* exact_result = new EXACT_RESULT;
-    try {
-        file_contents.erase(std::remove(file_contents.begin(), file_contents.end(), '\r'), file_contents.end());
+    file_contents.erase(std::remove(file_contents.begin(), file_contents.end(), '\r'), file_contents.end());
 
-        exact_result->file_contents = file_contents;
-
-//        log_messages.printf(MSG_CRITICAL, "[RESULT#%ld %s] result file contents:\n%s\n", result.id, result.name, exact_result->file_contents.c_str());
-
-    } catch (string error_message) {
-        log_messages.printf(MSG_CRITICAL, "exact_validation_policy get_data_from_result([RESULT#%ld %s]) failed with error: %s\n", result.id, result.name, error_message.c_str());
-        log_messages.printf(MSG_CRITICAL, "XML:\n%s\n", file_contents.c_str());
-//        result.outcome = RESULT_OUTCOME_VALIDATE_ERROR;
-//        result.validate_state = VALIDATE_STATE_INVALID;
-        exit(1);
-        return ERR_XML_PARSE;
-//        exit(1);
-//        throw 0;
+    if (file_contents.size() < 100 || file_contents[0] != 'v') {
+        log_messages.printf(MSG_CRITICAL, "exact_validation_policy get_data_from_result([RESULT#%ld %s]) failed because contents were invalid\n", result.id, result.name);
+        log_messages.printf(MSG_CRITICAL, "contents:\n%s\n", file_contents.c_str());
+        return 1;
     }
+
+    exact_result->file_contents = file_contents;
+
+    //        log_messages.printf(MSG_CRITICAL, "[RESULT#%ld %s] result file contents:\n%s\n", result.id, result.name, exact_result->file_contents.c_str());
 
     data = (void*) exact_result;
     return 0;

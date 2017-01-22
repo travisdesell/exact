@@ -55,11 +55,21 @@ bool EXACT::exists_in_database(int exact_id) {
     mysql_exact_query(query.str());
     
     MYSQL_RES *result = mysql_store_result(exact_db_conn);
+    bool found;
     if (result != NULL) {
-        return false;
+        if (mysql_num_rows(result) > 0) {
+            found = true;
+        } else {
+            found = false;
+        }
+
     } else {
-        return true;
+        cerr << "ERROR in mysql query: '" << query.str() << "'" << endl;
+        exit(1);
     }
+    mysql_free_result(result);
+
+    return found;
 }
 
 EXACT::EXACT(int exact_id) {
@@ -301,11 +311,11 @@ void EXACT::export_to_database() {
     //a genome id of 0 means that they are not assigned to
     //a particular genome
     for (uint32_t i = 0; i < all_nodes.size(); i++) {
-        all_nodes[i]->export_to_database(id, 0);
+        all_nodes.at(i)->export_to_database(id, 0);
     }
 
     for (uint32_t i = 0; i < all_edges.size(); i++) {
-        all_edges[i]->export_to_database(id, 0);
+        all_edges.at(i)->export_to_database(id, 0);
     }
 
     if ((int32_t)genomes.size() == population_size) {
@@ -316,12 +326,12 @@ void EXACT::export_to_database() {
         mysql_exact_query(delete_query.str());
 
         ostringstream delete_node_query;
-        delete_node_query << "DELETE FROM cnn_node WHERE exact_id = " << id << " AND cnn_node.id > 0 AND NOT EXISTS(SELECT id FROM cnn_genome WHERE cnn_genome.id = cnn_node.genome_id)";
+        delete_node_query << "DELETE FROM cnn_node WHERE exact_id = " << id << " AND genome_id > 0 AND NOT EXISTS(SELECT id FROM cnn_genome WHERE cnn_genome.id = cnn_node.genome_id)";
         cout <<  delete_node_query.str() << endl;
         mysql_exact_query(delete_node_query.str());
 
         ostringstream delete_edge_query;
-        delete_edge_query << "DELETE FROM cnn_edge WHERE exact_id = " << id << " AND cnn_edge.id > 0 AND NOT EXISTS(SELECT id FROM cnn_genome WHERE cnn_genome.id = cnn_edge.genome_id)";
+        delete_edge_query << "DELETE FROM cnn_edge WHERE exact_id = " << id << " AND genome_id > 0 AND NOT EXISTS(SELECT id FROM cnn_genome WHERE cnn_genome.id = cnn_edge.genome_id)";
         cout <<  delete_edge_query.str() << endl;
         mysql_exact_query(delete_edge_query.str());
     }
@@ -339,6 +349,9 @@ void EXACT::update_database() {
     query << " genomes_generated = " << genomes_generated
         << ", inserted_genomes = " << inserted_genomes
 
+        << ", node_innovation_count = " << node_innovation_count
+        << ", edge_innovation_count = " << edge_innovation_count
+
         << ", inserted_from_disable_edge = " << inserted_from_disable_edge
         << ", inserted_from_enable_edge = " << inserted_from_enable_edge
         << ", inserted_from_split_edge = " << inserted_from_split_edge
@@ -351,8 +364,10 @@ void EXACT::update_database() {
         << ", generator = '" << generator << "'"
         << ", normal_distribution = '" << normal_distribution << "'"
         << ", rng_long = '" << rng_long << "'"
-        << ", rng_double = '" << rng_double << "'";
+        << ", rng_double = '" << rng_double << "'"
+        << " WHERE id = " << id;
 
+    cout << query.str() << endl;
     mysql_exact_query(query.str());
 
     //genomes are inserted separately
@@ -361,13 +376,16 @@ void EXACT::update_database() {
     //a genome id of 0 means that they are not assigned to
     //a particular genome
     for (uint32_t i = 0; i < all_nodes.size(); i++) {
-        all_nodes[i]->export_to_database(id, 0);
+        if (all_nodes.at(i)->get_node_id() < 0) {
+            all_nodes.at(i)->export_to_database(id, 0);
+        }
     }
 
     for (uint32_t i = 0; i < all_edges.size(); i++) {
-        all_edges[i]->export_to_database(id, 0);
+        if (all_edges.at(i)->get_edge_id() < 0) {
+            all_edges.at(i)->export_to_database(id, 0);
+        }
     }
-
 
     if ((int32_t)genomes.size() == population_size) {
         double worst_fitness = genomes.back()->get_fitness();
@@ -377,12 +395,12 @@ void EXACT::update_database() {
         mysql_exact_query(delete_query.str());
 
         ostringstream delete_node_query;
-        delete_node_query << "DELETE FROM cnn_node WHERE exact_id = " << id << " AND cnn_node.id > 0 AND NOT EXISTS(SELECT id FROM cnn_genome WHERE cnn_genome.id = cnn_node.genome_id)";
+        delete_node_query << "DELETE FROM cnn_node WHERE exact_id = " << id << " AND genome_id > 0 AND NOT EXISTS(SELECT id FROM cnn_genome WHERE cnn_genome.id = cnn_node.genome_id)";
         cout <<  delete_node_query.str() << endl;
         mysql_exact_query(delete_node_query.str());
 
         ostringstream delete_edge_query;
-        delete_edge_query << "DELETE FROM cnn_edge WHERE exact_id = " << id << " AND cnn_edge.id > 0 AND NOT EXISTS(SELECT id FROM cnn_genome WHERE cnn_genome.id = cnn_edge.genome_id)";
+        delete_edge_query << "DELETE FROM cnn_edge WHERE exact_id = " << id << " AND genome_id > 0 AND NOT EXISTS(SELECT id FROM cnn_genome WHERE cnn_genome.id = cnn_edge.genome_id)";
         cout <<  delete_edge_query.str() << endl;
         mysql_exact_query(delete_edge_query.str());
     }
@@ -444,7 +462,7 @@ EXACT::EXACT(const Images &images, int _population_size, int _min_epochs, int _m
     more_fit_parent_crossover = 0.80;
     less_fit_parent_crossover = 0.50;
 
-    number_mutations = 4;
+    number_mutations = 1;
     edge_disable = 1.0;
     edge_enable = 2.0;
     edge_split = 2.0;
@@ -628,8 +646,7 @@ bool EXACT::population_contains(CNN_Genome *genome) const {
     for (int32_t i = 0; i < (int32_t)genomes.size(); i++) {
         //we can overwrite genomes that were inserted in the initialization phase
         //and not evaluated
-        if (genomes[i]->get_fitness() == numeric_limits<double>::max()
-                || genomes[i]->get_fitness() == 10000000) continue;
+        if (genomes[i]->get_fitness() == EXACT_MAX_DOUBLE) continue;
 
         if (genomes[i]->equals(genome)) {
             cout << "\tgenome was the same as genome with generation id: " << genomes[i]->get_generation_id() << endl;
@@ -640,7 +657,7 @@ bool EXACT::population_contains(CNN_Genome *genome) const {
 }
 
 string parse_fitness(double fitness) {
-    if (fitness == numeric_limits<double>::max()) {
+    if (fitness == EXACT_MAX_DOUBLE) {
         return "UNEVALUATED";
     } else {
         return to_string(fitness);
@@ -803,7 +820,7 @@ CNN_Genome* EXACT::create_mutation() {
             << endl;
     }
 
-    if (parent->get_fitness() == numeric_limits<double>::max()) {
+    if (parent->get_fitness() == EXACT_MAX_DOUBLE) {
         //This parent has not actually been evaluated (the population is still initializing)
         //we can set the best_bias and best_weights randomly so that they are used when it
         //starts up
@@ -956,7 +973,7 @@ CNN_Genome* EXACT::create_mutation() {
             bool edge_exists = false;
             int all_edges_position = -1;
             for (int32_t i = 0; i < (int32_t)all_edges.size(); i++) {
-                if (all_edges[i]->connects(node1_innovation_number, node2_innovation_number)) {
+                if (all_edges.at(i)->connects(node1_innovation_number, node2_innovation_number)) {
                     edge_exists = true;
                     all_edges_position = i;
                     break;
@@ -975,7 +992,9 @@ CNN_Genome* EXACT::create_mutation() {
                 //edge exists in another genome, copy from all_edges
                 //we know the child has both endpoints because we grabbed node1 and node2 from the child
                 cout << "\t\tcopying edge in position " << all_edges_position << " from all_edges!" << endl;
-                CNN_Edge *edge_copy = all_edges[all_edges_position]->copy();
+                CNN_Edge *edge_copy = all_edges.at(all_edges_position)->copy();
+                cout << "\t\tedge_copy->input_innovation_number: " << edge_copy->get_input_innovation_number() << endl;
+                cout << "\t\tedge_copy->output_innovation_number: " << edge_copy->get_output_innovation_number() << endl;
 
                 //enable the edge in case it was disabled
                 edge_copy->enable();
@@ -1441,20 +1460,20 @@ CNN_Genome* EXACT::create_child() {
 
 
 void EXACT::print_statistics(ostream &out) {
-    double min_fitness = numeric_limits<double>::max();
-    double max_fitness = -numeric_limits<double>::max();
+    double min_fitness = EXACT_MAX_DOUBLE;
+    double max_fitness = -EXACT_MAX_DOUBLE;
     double avg_fitness = 0.0;
     int fitness_count = 0;
 
-    double min_epochs = numeric_limits<double>::max();
-    double max_epochs = -numeric_limits<double>::max();
+    double min_epochs = EXACT_MAX_DOUBLE;
+    double max_epochs = -EXACT_MAX_DOUBLE;
     double avg_epochs = 0.0;
     int epochs_count = 0;
 
     for (int32_t i = 0; i < (int32_t)genomes.size(); i++) {
         double fitness = genomes[i]->get_fitness();
 
-        if (fitness != numeric_limits<double>::max()) {
+        if (fitness != EXACT_MAX_DOUBLE) {
             avg_fitness += fitness;
             fitness_count++;
         }
@@ -1464,7 +1483,7 @@ void EXACT::print_statistics(ostream &out) {
 
         double epochs = genomes[i]->get_best_error_epoch();
 
-        if (epochs != numeric_limits<double>::max()) {
+        if (epochs != EXACT_MAX_DOUBLE) {
             avg_epochs += epochs;
             epochs_count++;
         }
@@ -1476,14 +1495,14 @@ void EXACT::print_statistics(ostream &out) {
     avg_epochs /= epochs_count;
 
     if (fitness_count == 0) avg_fitness = 0.0;
-    if (min_fitness == numeric_limits<double>::max()) min_fitness = 0;
-    if (max_fitness == numeric_limits<double>::max()) max_fitness = 0;
-    if (max_fitness == -numeric_limits<double>::max()) max_fitness = 0;
+    if (min_fitness == EXACT_MAX_DOUBLE) min_fitness = 0;
+    if (max_fitness == EXACT_MAX_DOUBLE) max_fitness = 0;
+    if (max_fitness == -EXACT_MAX_DOUBLE) max_fitness = 0;
 
     if (epochs_count == 0) avg_epochs = 0.0;
-    if (min_epochs == numeric_limits<double>::max()) min_epochs = 0;
-    if (max_epochs == numeric_limits<double>::max()) max_epochs = 0;
-    if (max_epochs == -numeric_limits<double>::max()) max_epochs = 0;
+    if (min_epochs == EXACT_MAX_DOUBLE) min_epochs = 0;
+    if (max_epochs == EXACT_MAX_DOUBLE) max_epochs = 0;
+    if (max_epochs == -EXACT_MAX_DOUBLE) max_epochs = 0;
 
     out << setw(16) << inserted_genomes
         << setw(16) << setprecision(5) << fixed << min_fitness

@@ -6,8 +6,8 @@ from scipy.stats import linregress
 import pandas as pd
 import sys
 
-#print sys.argv[1]
-v1 = genfromtxt('progress.txt')
+print sys.argv[1]
+v1 = genfromtxt(sys.argv[1])
 #v2 = genfromtxt('migration_ring_salsa_10_320.txt', delimiter=' ')
 #print v1
 
@@ -20,6 +20,7 @@ min_fitness = [row[1] for row in v1]
 avg_fitness = [row[2] for row in v1]
 max_fitness = [row[3] for row in v1]
 
+'''
 print "t:\n"
 print t
 print "\n\nmin_fitness:\n"
@@ -28,6 +29,7 @@ print "\n\navg_fitness:\n"
 print avg_fitness
 print "\n\nmax_fitness:\n"
 print max_fitness
+'''
 
 # plot it!
 fig, ax = plt.subplots(1)
@@ -87,7 +89,7 @@ change_size = [row[11] for row in v1]
 change_size_x = [row[12] for row in v1]
 change_size_y = [row[13] for row in v1]
 crossover = [row[14] for row in v1]
-reset_weights = [row[15] for row in v1]
+#reset_weights = [row[15] for row in v1]
 
 fig, ax = plt.subplots(1)
 
@@ -95,7 +97,7 @@ ax.plot(t, disable_edge, lw=2, label='Disable Edge')
 ax.plot(t, enable_edge, lw=2, label='Enable Edge')
 ax.plot(t, split_edge, lw=2, label='Split Edge')
 ax.plot(t, add_edge, lw=2, label='Add Edge')
-#ax.plot(t, change_size, lw=2, label='Disable Edge')
+ax.plot(t, change_size, lw=2, label='Disable Edge')
 ax.plot(t, change_size_x, lw=2, label='Change Size X')
 ax.plot(t, change_size_y, lw=2, label='Change Size Y')
 ax.plot(t, crossover, lw=2, label='Crossover')
