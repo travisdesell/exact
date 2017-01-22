@@ -960,6 +960,8 @@ ostream &operator<<(ostream &os, const CNN_Edge* edge) {
     os << edge->disabled << " ";
     os << edge->needs_initialization << endl;
 
+    os << "WEIGHTS" << endl;
+
     for (int32_t y = 0; y < edge->filter_y; y++) {
         for (int32_t x = 0; x < edge->filter_x; x++) {
             if (y > 0 || x > 0) os << " ";
@@ -968,6 +970,7 @@ ostream &operator<<(ostream &os, const CNN_Edge* edge) {
     }
     os << endl;
 
+    os << "BEST_WEIGHTS" << endl;
     for (int32_t y = 0; y < edge->filter_y; y++) {
         for (int32_t x = 0; x < edge->filter_x; x++) {
             if (y > 0 || x > 0) os << " ";
@@ -976,6 +979,7 @@ ostream &operator<<(ostream &os, const CNN_Edge* edge) {
     }
     os << endl;
 
+    os << "PREVIOUS_VELOCITY" << endl;
     for (int32_t y = 0; y < edge->filter_y; y++) {
         for (int32_t x = 0; x < edge->filter_x; x++) {
             if (y > 0 || x > 0) os << " ";
@@ -984,6 +988,7 @@ ostream &operator<<(ostream &os, const CNN_Edge* edge) {
     }
     os << endl;
 
+    os << "BEST_VELOCITY" << endl;
     for (int32_t y = 0; y < edge->filter_y; y++) {
         for (int32_t x = 0; x < edge->filter_x; x++) {
             if (y > 0 || x > 0) os << " ";
@@ -1016,10 +1021,25 @@ istream &operator>>(istream &is, CNN_Edge* edge) {
     edge->previous_velocity = vector< vector<double> >(edge->filter_y, vector<double>(edge->filter_x, 0.0));
     edge->best_velocity = vector< vector<double> >(edge->filter_y, vector<double>(edge->filter_x, 0.0));
 
+    string line;
+    getline(is, line);
+    getline(is, line);
+    if (line.compare("WEIGHTS") != 0) {
+        cerr << "ERROR: invalid input file, expected line to be 'WEIGHTS' but line was '" << line << "'" << endl;
+        exit(1);
+    }
+    
     for (int32_t y = 0; y < edge->filter_y; y++) {
         for (int32_t x = 0; x < edge->filter_x; x++) {
             is >> edge->weights[y][x];
         }
+    }
+
+    getline(is, line);
+    getline(is, line);
+    if (line.compare("BEST_WEIGHTS") != 0) {
+        cerr << "ERROR: invalid input file, expected line to be 'BEST_WEIGHTS' but line was '" << line << "'" << endl;
+        exit(1);
     }
 
     for (int32_t y = 0; y < edge->filter_y; y++) {
@@ -1028,10 +1048,24 @@ istream &operator>>(istream &is, CNN_Edge* edge) {
         }
     }
 
+    getline(is, line);
+    getline(is, line);
+    if (line.compare("PREVIOUS_VELOCITY") != 0) {
+        cerr << "ERROR: invalid input file, expected line to be 'PREVIOUS_VELOCITY' but line was '" << line << "'" << endl;
+        exit(1);
+    }
+
     for (int32_t y = 0; y < edge->filter_y; y++) {
         for (int32_t x = 0; x < edge->filter_x; x++) {
             is >> edge->previous_velocity[y][x];
         }
+    }
+
+    getline(is, line);
+    getline(is, line);
+    if (line.compare("BEST_VELOCITY") != 0) {
+        cerr << "ERROR: invalid input file, expected line to be 'BEST_VELOCITY' but line was '" << line << "'" << endl;
+        exit(1);
     }
 
     for (int32_t y = 0; y < edge->filter_y; y++) {

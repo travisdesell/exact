@@ -727,6 +727,7 @@ ostream &operator<<(ostream &os, const CNN_Node* node) {
     os << node->weight_count << " ";
     os << node->needs_initialization << endl;
 
+    os << "BIAS" << endl;
     for (int32_t y = 0; y < node->size_y; y++) {
         for (int32_t x = 0; x < node->size_x; x++) {
             if (y > 0 || x > 0) os << " ";
@@ -735,6 +736,7 @@ ostream &operator<<(ostream &os, const CNN_Node* node) {
     }
     os << endl;
 
+    os << "BEST_BIAS" << endl;
     for (int32_t y = 0; y < node->size_y; y++) {
         for (int32_t x = 0; x < node->size_x; x++) {
             if (y > 0 || x > 0) os << " ";
@@ -743,6 +745,7 @@ ostream &operator<<(ostream &os, const CNN_Node* node) {
     }
     os << endl;
 
+    os << "BIAS_VELOCITY" << endl;
     for (int32_t y = 0; y < node->size_y; y++) {
         for (int32_t x = 0; x < node->size_x; x++) {
             if (y > 0 || x > 0) os << " ";
@@ -751,6 +754,7 @@ ostream &operator<<(ostream &os, const CNN_Node* node) {
     }
     os << endl;
 
+    os << "BEST_BIAS_VELOCITY" << endl;
     for (int32_t y = 0; y < node->size_y; y++) {
         for (int32_t x = 0; x < node->size_x; x++) {
             if (y > 0 || x > 0) os << " ";
@@ -787,6 +791,16 @@ std::istream &operator>>(std::istream &is, CNN_Node* node) {
     node->bias_velocity = vector< vector<double> >(node->size_y, vector<double>(node->size_x, 0.0));
     node->best_bias_velocity = vector< vector<double> >(node->size_y, vector<double>(node->size_x, 0.0));
 
+
+    string line;
+    getline(is, line);
+    getline(is, line);
+    if (line.compare("BIAS") != 0) {
+        cerr << "ERROR: invalid input file, expected line to be 'BIAS' but line was '" << line << "'" << endl;
+        exit(1);
+    }
+
+
     double b;
     for (int32_t y = 0; y < node->size_y; y++) {
         for (int32_t x = 0; x < node->size_x; x++) {
@@ -794,6 +808,13 @@ std::istream &operator>>(std::istream &is, CNN_Node* node) {
             node->bias[y][x] = b;
             //cout << "reading node bias[" << y << "][" << x << "]: " << b << endl;
         }
+    }
+
+    getline(is, line);
+    getline(is, line);
+    if (line.compare("BEST_BIAS") != 0) {
+        cerr << "ERROR: invalid input file, expected line to be 'BEST_BIAS' but line was '" << line << "'" << endl;
+        exit(1);
     }
 
     for (int32_t y = 0; y < node->size_y; y++) {
@@ -804,12 +825,26 @@ std::istream &operator>>(std::istream &is, CNN_Node* node) {
         }
     }
 
+    getline(is, line);
+    getline(is, line);
+    if (line.compare("BIAS_VELOCITY") != 0) {
+        cerr << "ERROR: invalid input file, expected line to be 'BIAS_VELOCITY' but line was '" << line << "'" << endl;
+        exit(1);
+    }
+
     for (int32_t y = 0; y < node->size_y; y++) {
         for (int32_t x = 0; x < node->size_x; x++) {
             is >> b;
             node->bias_velocity[y][x] = b;
             //cout << "reading node bias_velocity[" << y << "][" << x << "]: " << b << endl;
         }
+    }
+
+    getline(is, line);
+    getline(is, line);
+    if (line.compare("BEST_BIAS_VELOCITY") != 0) {
+        cerr << "ERROR: invalid input file, expected line to be 'BEST_BIAS_VELOCITY' but line was '" << line << "'" << endl;
+        exit(1);
     }
 
     for (int32_t y = 0; y < node->size_y; y++) {

@@ -1100,7 +1100,7 @@ void CNN_Genome::stochastic_backpropagation(const Images &images) {
 
         best_error = EXACT_MAX_DOUBLE;
     }
-    //backprop_order.resize(2000);
+    //backprop_order.resize(10000);
 
     //sort edges by depth of input node
     sort(edges.begin(), edges.end(), sort_CNN_Edges_by_depth());
@@ -1199,7 +1199,6 @@ void CNN_Genome::stochastic_backpropagation(const Images &images) {
                     write_to_file(output_filename);
                 }
 
-                cerr << "saving new best!" << endl;
                 save_to_best();
                 found_improvement = true;
             }
@@ -1216,7 +1215,6 @@ void CNN_Genome::stochastic_backpropagation(const Images &images) {
             */
 
             if (!found_improvement) {
-                cerr << "resetting to best found weights/bias, zeroing velocities" << endl;
                 set_to_best();
             }
         }
@@ -1240,7 +1238,7 @@ void CNN_Genome::stochastic_backpropagation(const Images &images) {
         }
 
         if (progress_function != NULL) {
-            double progress = (double)epoch / (double)max_epochs;
+            double progress = (double)epoch / (double)(max_epochs + 1.0);
             progress_function(progress);
         }
 
@@ -1299,8 +1297,8 @@ void CNN_Genome::write(ostream &outfile) {
 
     outfile << setprecision(17) << best_predictions << endl;
     outfile << setprecision(17) << best_error << endl;
-    outfile << best_predictions_epoch << endl;;
-    outfile << best_error_epoch << endl;;
+    outfile << best_predictions_epoch << endl;
+    outfile << best_error_epoch << endl;
 
     outfile << generated_by_disable_edge << endl;
     outfile << generated_by_enable_edge << endl;
