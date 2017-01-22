@@ -74,16 +74,16 @@ int main(int argc, char **argv) {
     minstd_rand0 generator(time(NULL));
     NormalDistribution normal_distribution;
 
-    CNN_Node *input_node = new CNN_Node(node_innovation_count, 0, images.get_image_rows(), images.get_image_cols(), INPUT_NODE, generator, normal_distribution);
+    CNN_Node *input_node = new CNN_Node(node_innovation_count, 0, images.get_image_rows(), images.get_image_cols(), INPUT_NODE);
     node_innovation_count++;
     nodes.push_back(input_node);
 
     for (int32_t i = 0; i < images.get_number_classes(); i++) {
-        CNN_Node *softmax_node = new CNN_Node(++node_innovation_count, 2, 1, 1, SOFTMAX_NODE, generator, normal_distribution);
+        CNN_Node *softmax_node = new CNN_Node(++node_innovation_count, 2, 1, 1, SOFTMAX_NODE);
         nodes.push_back(softmax_node);
         softmax_nodes.push_back(softmax_node);
 
-        edges.push_back( new CNN_Edge(input_node, softmax_node, false, ++edge_innovation_count, generator, normal_distribution) );
+        edges.push_back( new CNN_Edge(input_node, softmax_node, false, ++edge_innovation_count) );
     }
 
     for (uint32_t i = 0; i < edges.size(); i++) {

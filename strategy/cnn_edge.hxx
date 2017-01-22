@@ -61,7 +61,7 @@ class CNN_Edge {
     public:
         CNN_Edge();
 
-        CNN_Edge(CNN_Node *_input_node, CNN_Node *_output_node, bool _fixed, int _innovation_number, minstd_rand0 &generator, NormalDistribution &normal_distribution);
+        CNN_Edge(CNN_Node *_input_node, CNN_Node *_output_node, bool _fixed, int _innovation_number);
 
 #ifdef _MYSQL_
         CNN_Edge(int edge_id);

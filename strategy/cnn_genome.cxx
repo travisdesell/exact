@@ -1052,7 +1052,7 @@ void CNN_Genome::initialize() {
 }
 
 void CNN_Genome::print_progress(ostream &out, int total_predictions, double total_error) const {
-    out << "[" << setw(10) << name << ", genome " << setw(5) << generation_id << "] predictions: " << setw(7) << total_predictions << ", best: " << setw(7) << best_predictions << "/" << backprop_order.size() << " (" << setw(5) << fixed << setprecision(2) << (100 * (double)best_predictions/(double)backprop_order.size()) << "%), error: " << setw(15) << setprecision(5) << fixed << total_error << ", best error: " << setw(15) << best_error << " on epoch: " << setw(5) << best_error_epoch << ", epoch: " << setw(4) << epoch << "/" << max_epochs << ", mu: " << setw(7) << fixed << setprecision(5) << mu << ", learning_rate: " << setw(7) << fixed << setprecision(5) << learning_rate << ", weight_decay: " << setw(7) << fixed << setprecision(5) << weight_decay << endl;
+    out << "[" << setw(10) << name << ", genome " << setw(5) << generation_id << "] predictions: " << setw(7) << total_predictions << ", best: " << setw(7) << best_predictions << "/" << backprop_order.size() << " (" << setw(5) << fixed << setprecision(2) << (100 * (double)best_predictions/(double)backprop_order.size()) << "%), error: " << setw(15) << setprecision(5) << fixed << total_error << ", best error: " << setw(15) << best_error << " on epoch: " << setw(5) << best_error_epoch << ", epoch: " << setw(4) << epoch << "/" << max_epochs << ", mu: " << setw(12) << fixed << setprecision(10) << mu << ", learning_rate: " << setw(12) << fixed << setprecision(10) << learning_rate << ", weight_decay: " << setw(12) << fixed << setprecision(10) << weight_decay << endl;
 }
 
 
@@ -1113,6 +1113,7 @@ void CNN_Genome::stochastic_backpropagation(const Images &images) {
     vector<double> class_error(images.get_number_classes(), 0.0);
     vector<int> correct_predictions(images.get_number_classes(), 0);
 
+    /*
     bool evaluate_initial_weights = true;
     if  (evaluate_initial_weights) {
         double total_error = 0.0;
@@ -1133,6 +1134,7 @@ void CNN_Genome::stochastic_backpropagation(const Images &images) {
 
         print_progress(cerr, total_predictions, total_error);
     }
+    */
 
     do {
         class_error.assign(images.get_number_classes(), 0.0);
@@ -1142,10 +1144,11 @@ void CNN_Genome::stochastic_backpropagation(const Images &images) {
         fisher_yates_shuffle(generator, backprop_order);
 
         /*
-        for (int32_t i = 0; i < 5; i++) {
-            cerr << "after suffle, backprop_order[" << i << "] = " << backprop_order[i] << endl;
+        for (int32_t i = 0; i < 3; i++) {
+            cerr << "after suffle, backprop_order[" << i << "] = " << backprop_order[i] << ", backprop_order.size(): " << backprop_order.size() << endl;
         }
         */
+
 
         for (uint32_t j = 0; j < backprop_order.size(); j++) {
             //cerr << "evaluating image: " << setw(10) << backprop_order[j] << endl;
@@ -1196,6 +1199,7 @@ void CNN_Genome::stochastic_backpropagation(const Images &images) {
                     write_to_file(output_filename);
                 }
 
+                cerr << "saving new best!" << endl;
                 save_to_best();
                 found_improvement = true;
             }
@@ -1212,7 +1216,7 @@ void CNN_Genome::stochastic_backpropagation(const Images &images) {
             */
 
             if (!found_improvement) {
-                //cerr << "resetting to best and updating hyperparameters" << endl;
+                cerr << "resetting to best found weights/bias, zeroing velocities" << endl;
                 set_to_best();
             }
         }
@@ -1270,22 +1274,22 @@ void CNN_Genome::write(ostream &outfile) {
 #ifdef _WIN32
 #define EXACT_VERSION "0.12"
 #endif
-	
-	outfile << "v" << EXACT_VERSION << endl;
+
+    outfile << "v" << EXACT_VERSION << endl;
     outfile << exact_id << endl;
     outfile << genome_id << endl;
 
-    outfile << setprecision(15) << fixed << initial_mu << endl;
-    outfile << setprecision(15) << fixed << mu << endl;
-    outfile << setprecision(15) << fixed << mu_decay << endl;
+    outfile << setprecision(17) << initial_mu << endl;
+    outfile << setprecision(17) << mu << endl;
+    outfile << setprecision(17) << mu_decay << endl;
 
-    outfile << setprecision(15) << fixed << initial_learning_rate << endl;
-    outfile << setprecision(15) << fixed << learning_rate << endl;
-    outfile << setprecision(15) << fixed << learning_rate_decay << endl;
+    outfile << setprecision(17) << initial_learning_rate << endl;
+    outfile << setprecision(17) << learning_rate << endl;
+    outfile << setprecision(17) << learning_rate_decay << endl;
 
-    outfile << setprecision(15) << fixed << initial_weight_decay << endl;
-    outfile << setprecision(15) << fixed << weight_decay << endl;
-    outfile << setprecision(15) << fixed << weight_decay_decay << endl;
+    outfile << setprecision(17) << initial_weight_decay << endl;
+    outfile << setprecision(17) << weight_decay << endl;
+    outfile << setprecision(17) << weight_decay_decay << endl;
 
     outfile << epoch << endl;
     outfile << min_epochs << endl;
@@ -1293,8 +1297,8 @@ void CNN_Genome::write(ostream &outfile) {
     outfile << improvement_required_epochs << endl;
     outfile << reset_edges << endl;
 
-    outfile << setprecision(15) << fixed << best_predictions << endl;
-    outfile << setprecision(15) << fixed << best_error << endl;
+    outfile << setprecision(17) << best_predictions << endl;
+    outfile << setprecision(17) << best_error << endl;
     outfile << best_predictions_epoch << endl;;
     outfile << best_error_epoch << endl;;
 

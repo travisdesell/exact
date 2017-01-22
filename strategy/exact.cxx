@@ -550,18 +550,18 @@ CNN_Genome* EXACT::generate_individual() {
     CNN_Genome *genome = NULL;
     if (genomes.size() == 0) {
         //generate the initial minimal CNN
-        CNN_Node *input_node = new CNN_Node(node_innovation_count, 0, image_rows, image_cols, INPUT_NODE, generator, normal_distribution);
+        CNN_Node *input_node = new CNN_Node(node_innovation_count, 0, image_rows, image_cols, INPUT_NODE);
         node_innovation_count++;
         all_nodes.push_back(input_node);
 
         for (int32_t i = 0; i < number_classes; i++) {
-            CNN_Node *softmax_node = new CNN_Node(node_innovation_count, 1, 1, 1, SOFTMAX_NODE, generator, normal_distribution);
+            CNN_Node *softmax_node = new CNN_Node(node_innovation_count, 1, 1, 1, SOFTMAX_NODE);
             node_innovation_count++;
             all_nodes.push_back(softmax_node);
         }
 
         for (int32_t i = 0; i < number_classes; i++) {
-            CNN_Edge *edge = new CNN_Edge(input_node, all_nodes[i + 1] /*ith softmax node*/, true, edge_innovation_count, generator, normal_distribution);
+            CNN_Edge *edge = new CNN_Edge(input_node, all_nodes[i + 1] /*ith softmax node*/, true, edge_innovation_count);
 
             all_edges.push_back(edge);
 
@@ -902,16 +902,16 @@ CNN_Genome* EXACT::create_mutation() {
             int size_x = (input_node->get_size_x() + output_node->get_size_x()) / 2.0;
             int size_y = (input_node->get_size_y() + output_node->get_size_y()) / 2.0;
 
-            CNN_Node *child_node = new CNN_Node(node_innovation_count, depth, size_x, size_y, HIDDEN_NODE, generator, normal_distribution);
+            CNN_Node *child_node = new CNN_Node(node_innovation_count, depth, size_x, size_y, HIDDEN_NODE);
             node_innovation_count++;
 
             //add two new edges, disable the split edge
             cout << "\t\tcreating edge " << edge_innovation_count << endl;
-            CNN_Edge *edge1 = new CNN_Edge(input_node, child_node, false, edge_innovation_count, generator, normal_distribution);
+            CNN_Edge *edge1 = new CNN_Edge(input_node, child_node, false, edge_innovation_count);
             edge_innovation_count++;
 
             cout << "\t\tcreating edge " << edge_innovation_count << endl;
-            CNN_Edge *edge2 = new CNN_Edge(child_node, output_node, false, edge_innovation_count, generator, normal_distribution);
+            CNN_Edge *edge2 = new CNN_Edge(child_node, output_node, false, edge_innovation_count);
             edge_innovation_count++;
 
             cout << "\t\tdisabling edge " << edge->get_innovation_number() << endl;
@@ -1010,7 +1010,7 @@ CNN_Genome* EXACT::create_mutation() {
                 //edge does not exist at all
                 cout << "\t\tadding edge between node innovation numbers " << node1_innovation_number << " and " << node2_innovation_number << endl;
 
-                CNN_Edge *edge = new CNN_Edge(node1, node2, false, edge_innovation_count, generator, normal_distribution);
+                CNN_Edge *edge = new CNN_Edge(node1, node2, false, edge_innovation_count);
                 edge_innovation_count++;
                 //insert edge in order of depth
 
@@ -1079,8 +1079,8 @@ CNN_Genome* EXACT::create_mutation() {
             cout << "\t\tsize x before resize: " << previous_size_x << " modifying by change: " << change << endl;
             cout << "\t\tsize y before resize: " << previous_size_y << " modifying by change: " << change << endl;
 
-            bool modified_x = modified_node->modify_size_x(change, generator, normal_distribution);
-            bool modified_y = modified_node->modify_size_y(change, generator, normal_distribution);
+            bool modified_x = modified_node->modify_size_x(change);
+            bool modified_y = modified_node->modify_size_y(change);
 
             if (modified_x || modified_y) {
                 //need to make sure all edges with this as it's input or output get updated
@@ -1132,7 +1132,7 @@ CNN_Genome* EXACT::create_mutation() {
             int previous_size_x = modified_node->get_size_x();
             cout << "\t\tsize x before resize: " << previous_size_x << " modifying by change: " << change << endl;
 
-            if (modified_node->modify_size_x(change, generator, normal_distribution)) {
+            if (modified_node->modify_size_x(change)) {
                 //need to make sure all edges with this as it's input or output get updated
                 cout << "\t\tresizing edges around node: " << modified_node->get_innovation_number() << endl;
 
@@ -1181,7 +1181,7 @@ CNN_Genome* EXACT::create_mutation() {
             int previous_size_y = modified_node->get_size_y();
             cout << "\t\tsize y before resize: " << previous_size_y << " modifying by change: " << change << endl;
 
-            if (modified_node->modify_size_y(change, generator, normal_distribution)) {
+            if (modified_node->modify_size_y(change)) {
                 //need to make sure all edges with this as it's input or output get updated
                 cout << "\t\tresizing edges around node: " << modified_node->get_innovation_number() << endl;
 

@@ -47,7 +47,7 @@ CNN_Node::CNN_Node() {
     weight_count = 0;
 }
 
-CNN_Node::CNN_Node(int _innovation_number, double _depth, int _size_x, int _size_y, int _type, minstd_rand0 &generator, NormalDistribution &normal_distribution) {
+CNN_Node::CNN_Node(int _innovation_number, double _depth, int _size_x, int _size_y, int _type) {
     node_id = -1;
     exact_id = -1;
     genome_id = -1;
@@ -528,7 +528,7 @@ void CNN_Node::resize_arrays(int previous_size_x, int previous_size_y) {
 }
 
 
-bool CNN_Node::modify_size_x(int change, minstd_rand0 &generator, NormalDistribution &normal_distribution) {
+bool CNN_Node::modify_size_x(int change) {
     int previous_size_x = size_x;
 
     size_x += change;
@@ -542,7 +542,7 @@ bool CNN_Node::modify_size_x(int change, minstd_rand0 &generator, NormalDistribu
     return true;
 }
 
-bool CNN_Node::modify_size_y(int change, minstd_rand0 &generator, NormalDistribution &normal_distribution) {
+bool CNN_Node::modify_size_y(int change) {
     int previous_size_y = size_y;
 
     size_y += change;
@@ -661,6 +661,7 @@ void CNN_Node::propagate_bias(double mu, double learning_rate, double weight_dec
 
             bias_velocity[y][x] = velocity;
 
+#ifdef NAN_CHECKS
             if (isnan(bias[y][x]) || isinf(bias[y][x])) {
                 cerr << "ERROR! bias became " << bias[y][x] << " in node: " << innovation_number << endl;
                 cerr << "\tdx: " << dx << endl;
@@ -669,6 +670,7 @@ void CNN_Node::propagate_bias(double mu, double learning_rate, double weight_dec
                 cerr << "\tprevious_bias: " << previous_bias << endl;
                 exit(1);
             }
+#endif
 
             if (bias[y][x] < -100.0) bias[y][x] = -100.0;
             if (bias[y][x] > 100.0) bias[y][x] = 100.0;
@@ -728,7 +730,7 @@ ostream &operator<<(ostream &os, const CNN_Node* node) {
     for (int32_t y = 0; y < node->size_y; y++) {
         for (int32_t x = 0; x < node->size_x; x++) {
             if (y > 0 || x > 0) os << " ";
-            os << setprecision(15) << node->bias[y][x];
+            os << setprecision(17) << node->bias[y][x];
         }
     }
     os << endl;
@@ -736,7 +738,7 @@ ostream &operator<<(ostream &os, const CNN_Node* node) {
     for (int32_t y = 0; y < node->size_y; y++) {
         for (int32_t x = 0; x < node->size_x; x++) {
             if (y > 0 || x > 0) os << " ";
-            os << setprecision(15) << node->best_bias[y][x];
+            os << setprecision(17) << node->best_bias[y][x];
         }
     }
     os << endl;
@@ -744,7 +746,7 @@ ostream &operator<<(ostream &os, const CNN_Node* node) {
     for (int32_t y = 0; y < node->size_y; y++) {
         for (int32_t x = 0; x < node->size_x; x++) {
             if (y > 0 || x > 0) os << " ";
-            os << setprecision(15) << node->bias_velocity[y][x];
+            os << setprecision(17) << node->bias_velocity[y][x];
         }
     }
     os << endl;
@@ -752,7 +754,7 @@ ostream &operator<<(ostream &os, const CNN_Node* node) {
     for (int32_t y = 0; y < node->size_y; y++) {
         for (int32_t x = 0; x < node->size_x; x++) {
             if (y > 0 || x > 0) os << " ";
-            os << setprecision(15) << node->best_bias_velocity[y][x];
+            os << setprecision(17) << node->best_bias_velocity[y][x];
         }
     }
 

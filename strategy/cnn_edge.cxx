@@ -53,7 +53,7 @@ CNN_Edge::CNN_Edge() {
     needs_initialization = true;
 }
 
-CNN_Edge::CNN_Edge(CNN_Node *_input_node, CNN_Node *_output_node, bool _fixed, int _innovation_number, minstd_rand0 &generator, NormalDistribution &normal_distribution) {
+CNN_Edge::CNN_Edge(CNN_Node *_input_node, CNN_Node *_output_node, bool _fixed, int _innovation_number) {
     edge_id = -1;
     exact_id = -1;
     genome_id = -1;
@@ -338,8 +338,8 @@ void CNN_Edge::resize() {
 }
 
 void CNN_Edge::save_best_weights() {
-    for (uint32_t y = 0; y < weights.size(); y++) {
-        for (uint32_t x = 0; x < weights[y].size(); x++) {
+    for (uint32_t y = 0; y < filter_y; y++) {
+        for (uint32_t x = 0; x < filter_x; x++) {
             best_weights[y][x] = weights[y][x];
             best_velocity[y][x] = previous_velocity[y][x];
         }
@@ -347,8 +347,8 @@ void CNN_Edge::save_best_weights() {
 }
 
 void CNN_Edge::set_weights_to_best() {
-    for (uint32_t y = 0; y < weights.size(); y++) {
-        for (uint32_t x = 0; x < weights[y].size(); x++) {
+    for (uint32_t y = 0; y < filter_y; y++) {
+        for (uint32_t x = 0; x < filter_x; x++) {
             weights[y][x] = best_weights[y][x];
             //previous_velocity[y][x] = best_velocity[y][x];
             previous_velocity[y][x] = 0;
@@ -705,7 +705,9 @@ void CNN_Edge::update_weights(double mu, double learning_rate, double weight_dec
             velocity = (mu * pv) - learning_rate * dx;
 
             weight = weights[fy][fx];
+#ifdef NAN_CHECKS
             previous_weight = weight;
+#endif
             weight += (-mu * pv + (1 + mu) * velocity);
             weight -= (weight * weight_decay);
             weights[fy][fx] = weight;
@@ -961,7 +963,7 @@ ostream &operator<<(ostream &os, const CNN_Edge* edge) {
     for (int32_t y = 0; y < edge->filter_y; y++) {
         for (int32_t x = 0; x < edge->filter_x; x++) {
             if (y > 0 || x > 0) os << " ";
-            os << setprecision(15) << edge->weights[y][x];
+            os << setprecision(17) << edge->weights[y][x];
         }
     }
     os << endl;
@@ -969,7 +971,7 @@ ostream &operator<<(ostream &os, const CNN_Edge* edge) {
     for (int32_t y = 0; y < edge->filter_y; y++) {
         for (int32_t x = 0; x < edge->filter_x; x++) {
             if (y > 0 || x > 0) os << " ";
-            os << setprecision(15) << edge->best_weights[y][x];
+            os << setprecision(17) << edge->best_weights[y][x];
         }
     }
     os << endl;
@@ -977,7 +979,7 @@ ostream &operator<<(ostream &os, const CNN_Edge* edge) {
     for (int32_t y = 0; y < edge->filter_y; y++) {
         for (int32_t x = 0; x < edge->filter_x; x++) {
             if (y > 0 || x > 0) os << " ";
-            os << setprecision(15) << edge->previous_velocity[y][x];
+            os << setprecision(17) << edge->previous_velocity[y][x];
         }
     }
     os << endl;
@@ -985,7 +987,7 @@ ostream &operator<<(ostream &os, const CNN_Edge* edge) {
     for (int32_t y = 0; y < edge->filter_y; y++) {
         for (int32_t x = 0; x < edge->filter_x; x++) {
             if (y > 0 || x > 0) os << " ";
-            os << setprecision(15) << edge->best_velocity[y][x];
+            os << setprecision(17) << edge->best_velocity[y][x];
         }
     }
 

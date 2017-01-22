@@ -81,7 +81,7 @@ class CNN_Node {
     public:
         CNN_Node();
 
-        CNN_Node(int _innovation_number, double _depth, int _size_x, int _size_y, int type, minstd_rand0 &generator, NormalDistribution &normal_distribution);
+        CNN_Node(int _innovation_number, double _depth, int _size_x, int _size_y, int type);
 
         CNN_Node* copy() const;
 
@@ -142,8 +142,8 @@ class CNN_Node {
         void set_bias_to_best();
 
         void resize_arrays(int previous_size_x, int previous_size_y);
-        bool modify_size_x(int change, minstd_rand0 &generator, NormalDistribution &normal_distribution);
-        bool modify_size_y(int change, minstd_rand0 &generator, NormalDistribution &normal_distribution);
+        bool modify_size_x(int change);
+        bool modify_size_y(int change);
 
         void add_input();
         void disable_input();

@@ -81,27 +81,27 @@ int main(int argc, char **argv) {
     minstd_rand0 generator(time(NULL));
     NormalDistribution normal_distribution;
 
-    CNN_Node *input_node = new CNN_Node(node_innovation_count, 0, images.get_image_rows(), images.get_image_cols(), INPUT_NODE, generator, normal_distribution);
+    CNN_Node *input_node = new CNN_Node(node_innovation_count, 0, images.get_image_rows(), images.get_image_cols(), INPUT_NODE);
     node_innovation_count++;
     nodes.push_back(input_node);
 
     //first layer of filters
     //input node goes to 5 filters
     for (int32_t i = 0; i < 10; i++) {
-        CNN_Node *layer1_node = new CNN_Node(++node_innovation_count, 1, 5, 5, HIDDEN_NODE, generator, normal_distribution);
+        CNN_Node *layer1_node = new CNN_Node(++node_innovation_count, 1, 5, 5, HIDDEN_NODE);
         nodes.push_back(layer1_node);
         layer1_nodes.push_back(layer1_node);
 
-        edges.push_back( new CNN_Edge(input_node, layer1_node, false, ++edge_innovation_count, generator, normal_distribution) );
+        edges.push_back( new CNN_Edge(input_node, layer1_node, false, ++edge_innovation_count) );
     }
 
     for (int32_t i = 0; i < images.get_number_classes(); i++) {
-        CNN_Node *softmax_node = new CNN_Node(++node_innovation_count, 2, 1, 1, SOFTMAX_NODE, generator, normal_distribution);
+        CNN_Node *softmax_node = new CNN_Node(++node_innovation_count, 2, 1, 1, SOFTMAX_NODE);
         nodes.push_back(softmax_node);
         softmax_nodes.push_back(softmax_node);
 
         for (int32_t j = 0; j < 10; j++) {
-            edges.push_back( new CNN_Edge(layer1_nodes[j], softmax_node, false, ++edge_innovation_count, generator, normal_distribution) );
+            edges.push_back( new CNN_Edge(layer1_nodes[j], softmax_node, false, ++edge_innovation_count) );
 
         }
     }
