@@ -36,6 +36,7 @@ using std::vector;
 #include "cnn_node.hxx"
 
 #include "stdint.h"
+
 CNN_Edge::CNN_Edge() {
     edge_id = -1;
     exact_id = -1;
@@ -179,6 +180,8 @@ void CNN_Edge::export_to_database(int _exact_id, int _genome_id) {
     genome_id = _genome_id;
     exact_id = _exact_id;
 
+    //cout << "inserting edge with exact_id: " << exact_id << " and genome id: " << genome_id << endl;
+
     if (edge_id >= 0) {
         query << "REPLACE INTO cnn_edge SET id = " << edge_id << ",";
     } else {
@@ -232,6 +235,10 @@ void CNN_Edge::export_to_database(int _exact_id, int _genome_id) {
         //cout << "set edge id to " << edge_id << endl;
     }
 }
+
+int CNN_Edge::get_edge_id() const {
+    return edge_id;
+}
 #endif
 
 bool CNN_Edge::equals(CNN_Edge *other) const {
@@ -277,6 +284,30 @@ void CNN_Edge::initialize_velocities() {
 
 
 void CNN_Edge::reinitialize(minstd_rand0 &generator, NormalDistribution &normal_distribution) {
+    cout << "\t\treinitializing edge: " << endl;
+    cout << "\t\t\tinput_node->get_size_x(): " << input_node->get_size_x() << ", output_node->get_size_x(): " << output_node->get_size_x() << endl;
+    cout << "\t\t\tinput_node->get_size_y(): " << input_node->get_size_y() << ", output_node->get_size_y(): " << output_node->get_size_y() << endl;
+
+    if (input_node->get_size_x() <= 0 || input_node->get_size_x() > 40) {
+        cout << "ERROR! input_node->get_size_x(): " << input_node->get_size_x() << " had an impossible value!" << endl;
+        exit(1);
+    }
+
+    if (output_node->get_size_x() <= 0 || output_node->get_size_x() > 40) {
+        cout << "ERROR! output_node->get_size_x(): " << output_node->get_size_x() << " had an impossible value!" << endl;
+        exit(1);
+    }
+
+    if (input_node->get_size_y() <= 0 || input_node->get_size_y() > 40) {
+        cout << "ERROR! input_node->get_size_y(): " << input_node->get_size_y() << " had an impossible value!" << endl;
+        exit(1);
+    }
+
+    if (output_node->get_size_y() <= 0 || output_node->get_size_y() > 40) {
+        cout << "ERROR! output_node->get_size_y(): " << output_node->get_size_y() << " had an impossible value!" << endl;
+        exit(1);
+    }
+
     //this may have changed from a regular to reverse filter
     if (output_node->get_size_x() <= input_node->get_size_x()) {
         reverse_filter_x = false;
@@ -360,6 +391,9 @@ bool CNN_Edge::set_nodes(const vector<CNN_Node*> nodes) {
     //cout << "setting input node: " << input_node_innovation_number << endl;
     //cout << "setting output node: " << output_node_innovation_number << endl;
 
+    input_node = NULL;
+    output_node = NULL;
+
     for (uint32_t i = 0; i < nodes.size(); i++) {
         if (nodes[i]->get_innovation_number() == input_node_innovation_number) {
             input_node = nodes[i];
@@ -374,12 +408,20 @@ bool CNN_Edge::set_nodes(const vector<CNN_Node*> nodes) {
     if (input_node == NULL) {
         cerr << "ERROR! Could not find node with input node innovation number " << input_node_innovation_number << endl;
         cerr << "This should never happen!" << endl;
+        cerr << "nodes innovation numbers:" << endl;
+        for (uint32_t i = 0; i < nodes.size(); i++) {
+            cerr << "\t" << nodes[i]->get_innovation_number() << endl;
+        }
         exit(1);
     }
 
     if (output_node == NULL) {
         cerr << "ERROR! Could not find node with output node innovation number " << output_node_innovation_number << endl;
         cerr << "This should never happen!" << endl;
+        cerr << "nodes innovation numbers:" << endl;
+        for (uint32_t i = 0; i < nodes.size(); i++) {
+            cerr << "\t" << nodes[i]->get_innovation_number() << endl;
+        }
         exit(1);
     }
 

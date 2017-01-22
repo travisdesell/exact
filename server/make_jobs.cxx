@@ -107,7 +107,6 @@ int make_job(EXACT *exact, CNN_Genome *genome, string search_name) {
     char command_line[512];
     char additional_xml[512];
     const char* infiles[2];
-    int retval;
 
     // make a unique name (for the job and its input file)
     sprintf(name, "exact_genome_%d_%u_%u", daemon_start_time, exact->get_id(), genome->get_generation_id());
@@ -121,15 +120,15 @@ int make_job(EXACT *exact, CNN_Genome *genome, string search_name) {
     log_messages.printf(MSG_DEBUG, "dataset filename: '%s'\n", dataset_filename.c_str());
     log_messages.printf(MSG_DEBUG, "genome filename: '%s'\n", genome_filename.c_str());
 
-    genome->write_to_file(genome_filename);
 
     // Create the input file.
     // Put it at the right place in the download dir hierarchy
     //
-    retval = config.download_path(name, path);
+    /*
+    int retval = config.download_path(name, path);
     if (retval) return retval;
     log_messages.printf(MSG_DEBUG, "download path: '%s'\n", path);
-
+    */
 
     //Make sure the dataset and genome files are in the download directory
     log_messages.printf(MSG_DEBUG, "copying dataset filename to download directory: '%s'\n", dataset_filename.c_str());
@@ -141,14 +140,26 @@ int make_job(EXACT *exact, CNN_Genome *genome, string search_name) {
     log_messages.printf(MSG_DEBUG, "infile[0]: '%s'\n", infiles[0]);
 
 
-    log_messages.printf(MSG_DEBUG, "copying genome filename to download directory: '%s'\n", genome_filename.c_str());
-    copy_file_to_download_dir(genome_filename);
-
     string stripped_genome_filename = genome_filename.substr(genome_filename.find_last_of("/\\") + 1);
     log_messages.printf(MSG_DEBUG, "stripped genome filename for infiles[1]: '%s'\n", stripped_genome_filename.c_str());
     infiles[1] = stripped_genome_filename.c_str();
     log_messages.printf(MSG_DEBUG, "infile[1]: '%s'\n", infiles[1]);
 
+    log_messages.printf(MSG_DEBUG, "writing genome filename to download directory: '%s'\n", genome_filename.c_str());
+    int retval = config.download_path( stripped_genome_filename.c_str(), path );
+    if (retval) {
+        log_messages.printf(MSG_CRITICAL, "can't get download path for file '%s', error: %s\n", stripped_genome_filename.c_str(), boincerror(retval));
+        exit(1);
+    }   
+
+    if ( std::ifstream(path) ) { 
+        log_messages.printf(MSG_CRITICAL, "\033[1minput file '%s' already exists in download directory hierarchy as '%s', not copying.\033[0m\n", stripped_genome_filename.c_str(), path);
+        exit(1);
+    }
+
+    log_messages.printf(MSG_DEBUG, "destination in the download path is '%s', writing genome file\n", path);
+    genome->write_to_file(path);
+    //copy_file_to_download_dir(genome_filename);
 
     double fpops_per_image = genome->get_number_weights() * 1500;         //TODO: figure out an estimate of how many fpops per set calculation
     double fpops_est = exact->get_number_images() * genome->get_max_epochs() * fpops_per_image;
@@ -225,6 +236,7 @@ void make_jobs(EXACT *exact, int workunits_to_generate) {
         CNN_Genome *genome = exact->generate_individual();
 
         make_job(exact, genome, exact->get_search_name());
+        exact->update_database();
 
         delete genome;
         total_generated++;

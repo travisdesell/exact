@@ -15,7 +15,8 @@ using std::vector;
 #define SANITY_CHECK_BEFORE_INSERT 0
 #define SANITY_CHECK_AFTER_GENERATION 1
 
-#define WORST_FITNESS 1000000
+//mysql can't handl the max double value for some reason
+#define EXACT_MAX_DOUBLE 10000000
 
 class CNN_Genome {
     private:
@@ -115,7 +116,7 @@ class CNN_Genome {
         int get_max_epochs() const;
         int get_number_enabled_edges() const;
 
-        bool sanity_check(int type) const;
+        bool sanity_check(int type);
         bool outputs_connected() const;
 
         const vector<CNN_Node*> get_nodes() const;

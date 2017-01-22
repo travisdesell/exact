@@ -226,6 +226,8 @@ void CNN_Node::export_to_database(int _exact_id, int _genome_id) {
     exact_id = _exact_id;
     genome_id = _genome_id;
 
+    //cout << "inserting node with exact_id: " << exact_id << " and genome id: " << genome_id << endl;
+
     if (node_id >= 0) {
         query << "REPLACE INTO cnn_node SET id = " << node_id << ",";
     } else {
@@ -295,6 +297,10 @@ void CNN_Node::export_to_database(int _exact_id, int _genome_id) {
         node_id = mysql_exact_last_insert_id();
         //cout << "set node id to: " << node_id << endl;
     }
+}
+
+int CNN_Node::get_node_id() const {
+    return node_id;
 }
 #endif
 
