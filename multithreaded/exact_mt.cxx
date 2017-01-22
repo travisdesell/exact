@@ -39,6 +39,7 @@ EXACT *exact;
 bool finished = false;
 
 void polling_thread(string output_directory) {
+    cout << "polling!" << endl;
     ofstream polling_file(output_directory + "/progress.txt");
 
     polling_file << "#" << setw(9) << "minute";
@@ -57,27 +58,42 @@ void polling_thread(string output_directory) {
     }   
 
     polling_file.close();
+    cout << "finished polling!" << endl;
 }
 
 void exact_thread(const Images &images, int id) {
     while (true) {
         exact_mutex.lock();
+        cout << "thread " << id << " generating individual!" << endl;
         CNN_Genome *genome = exact->generate_individual();
+        cout << "thread " << id << " generated individual!" << endl;
         exact_mutex.unlock();
 
         if (genome == NULL) break;  //generate_individual returns NULL when the search is done
+
+        ofstream outfile("./test_" + to_string(genome->get_generation_id()));
+        genome->write(outfile);
+        outfile.close();
 
         genome->set_name("thread_" + to_string(id));
         genome->stochastic_backpropagation(images);
 
         exact_mutex.lock();
+        cout << "inserting genome!" << endl;
         exact->insert_genome(genome);
-        //exact->export_to_database();
+        cout << "exporting to database!" << endl;
+        exact->export_to_database();
+        cout << "exported to database!" << endl;
         exact_mutex.unlock();
     }
 }
 
 int main(int argc, char** argv) {
+    /*
+    vector<int> test(100);
+    cout << "test[1000] = " << test[1000] << endl;
+    */
+
     arguments = vector<string>(argv, argv + argc);
 
     int number_threads;
@@ -110,10 +126,28 @@ int main(int argc, char** argv) {
     int max_individuals;
     get_argument(arguments, "--max_individuals", true, max_individuals);
 
+    double learning_rate;
+    get_argument(arguments, "--learning_rate", true, learning_rate);
+
+    double learning_rate_decay;
+    get_argument(arguments, "--learning_rate_decay", true, learning_rate_decay);
+
+    double weight_decay;
+    get_argument(arguments, "--weight_decay", true, weight_decay);
+
+    double weight_decay_decay;
+    get_argument(arguments, "--weight_decay_decay", true, weight_decay_decay);
+
+    double mu;
+    get_argument(arguments, "--mu", true, mu);
+
+    double mu_decay;
+    get_argument(arguments, "--mu_decay", true, mu_decay);
+
     Images images(binary_samples_filename);
 
-    //exact = new EXACT(images, population_size, min_epochs, max_epochs, improvement_required_epochs, reset_edges, max_individuals, output_directory, search_name);
-    exact = new EXACT(2);
+    //exact = new EXACT(images, population_size, min_epochs, max_epochs, improvement_required_epochs, reset_edges, mu, mu_decay, learning_rate, learning_rate_decay, weight_decay, weight_decay_decay, max_individuals, output_directory, search_name);
+    exact = new EXACT(4);
 
     /*
     cout << "generating individual!" << endl;

@@ -100,11 +100,13 @@ class CNN_Genome {
         double get_version() const;
         string get_version_str() const;
 
+
         int get_genome_id() const;
         int get_exact_id() const;
 
         bool equals(CNN_Genome *other) const;
 
+        void print_progress(ostream &out, int total_predictions, double total_error) const;
         void print_best_error(ostream &out) const;
         void print_best_predictions(ostream &out) const;
 
@@ -140,15 +142,10 @@ class CNN_Genome {
  
         int evaluate_image(const Image &image, vector<double> &class_error, bool do_backprop);
 
-        void initialize_weights();
-        void initialize_bias();
-
         void set_to_best();
-        void save_weights();
-        void save_bias();
+        void save_to_best();
+        void initialize();
         void stochastic_backpropagation(const Images &images);
-
-        void particle_swarm(const Images &images);
 
         void set_name(string _name);
         void set_output_filename(string _output_filename);
@@ -178,7 +175,6 @@ class CNN_Genome {
         int get_generated_by_change_size_x();
         int get_generated_by_change_size_y();
         int get_generated_by_crossover();
-
 };
 
 

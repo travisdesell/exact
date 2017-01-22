@@ -56,6 +56,7 @@ class CNN_Edge {
         bool disabled;
         bool reverse_filter_x;
         bool reverse_filter_y;
+        bool needs_initialization;
 
     public:
         CNN_Edge();
@@ -74,6 +75,10 @@ class CNN_Edge {
 
         bool equals(CNN_Edge *other) const;
 
+        bool has_nan() const;
+
+        void set_needs_init();
+        bool needs_init() const;
         int get_filter_x() const;
         int get_filter_y() const;
 
@@ -86,7 +91,7 @@ class CNN_Edge {
         void initialize_weights(minstd_rand0 &generator, NormalDistribution &normal_distribution);
         void initialize_velocities(minstd_rand0 &generator, NormalDistribution &normal_distribution);
         void reset_velocities();
-        void reinitialize(minstd_rand0 &generator, NormalDistribution &normal_distribution);
+        void resize();
 
         void disable();
         void enable();
@@ -111,6 +116,10 @@ class CNN_Edge {
 
         void print(ostream &out);
 
+        void check_output_update(const vector< vector<double> > &output, const vector< vector<double> > &input, double value, double weight, double previous_output, int in_y, int in_x, int out_y, int out_x);
+
+        void check_weight_update(const vector< vector<double> > &output_errors, const vector< vector<double> > &output_gradients, const vector< vector<double> > &input, double delta, double weight_update, double previous_weight_update, int out_y, int out_x, int in_y, int in_x);
+
         void propagate_forward();
         void propagate_backward();
         void update_weights(double mu, double learning_rate, double weight_decay);
@@ -121,8 +130,7 @@ class CNN_Edge {
         friend istream &operator>>(istream &is, CNN_Edge* flight);
 };
 
-template <class T>
-void parse_vector_2d(vector<T> &output, istringstream &iss, int size_x, int size_y);
+void parse_vector_2d(vector<vector<double>> &output, istringstream &iss, int size_x, int size_y);
 
 struct sort_CNN_Edges_by_depth {
     bool operator()(CNN_Edge *n1, CNN_Edge *n2) {

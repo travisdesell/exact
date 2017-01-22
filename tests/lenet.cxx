@@ -250,8 +250,7 @@ int main(int argc, char **argv) {
 
     CNN_Genome *genome = new CNN_Genome(1, genome_seed, min_epochs, max_epochs, improvement_required_epochs, reset_edges, mu, mu_decay, learning_rate, learning_rate_decay, weight_decay, weight_decay_decay, nodes, edges);
     //save the weights and bias of the initially generated genome for reuse
-    genome->save_weights();
-    genome->save_bias();
+    genome->initialize();
 
     ofstream outfile("lenet_no_pool.gv");
     genome->print_graphviz(outfile);

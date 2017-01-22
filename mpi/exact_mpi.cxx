@@ -43,27 +43,6 @@ EXACT *exact;
 
 bool finished = false;
 
-void polling_thread(string output_directory) {
-    ofstream polling_file(output_directory + "/progress.txt");
-
-    polling_file << "#" << setw(9) << "minute";
-    exact->print_statistics_header(polling_file);
-
-    int minute = 0;
-    while (true) {
-        exact_mutex.lock();
-        polling_file << setw(10) << minute;
-        exact->print_statistics(polling_file);
-        exact_mutex.unlock();
-
-        minute++;
-        std::this_thread::sleep_for( std::chrono::seconds(60) );
-        if (finished) break;
-    }
-
-    polling_file.close();
-}
-
 void send_work_request(int target) {
     int work_request_message[1];
     work_request_message[0] = 0;
@@ -94,7 +73,7 @@ CNN_Genome* receive_genome_from(string name, int source) {
 
     istringstream iss(genome_str);
 
-    CNN_Genome* genome = new CNN_Genome(iss, false);
+    CNN_Genome* genome = new CNN_Genome(iss, true);
 
     delete [] genome_str;
     return genome;
@@ -104,6 +83,10 @@ void send_genome_to(string name, int target, CNN_Genome* genome) {
     ostringstream oss;
 
     genome->write(oss);
+
+    ofstream outfile("./test_" + to_string(genome->get_generation_id()));
+    genome->write(outfile);
+    outfile.close();
 
     string genome_str = oss.str();
     int length = genome_str.size();
@@ -260,13 +243,29 @@ int main(int argc, char** argv) {
     bool reset_edges;
     get_argument(arguments, "--reset_edges", true, reset_edges);
 
+    double learning_rate;
+    get_argument(arguments, "--learning_rate", true, learning_rate);
+
+    double learning_rate_decay;
+    get_argument(arguments, "--learning_rate_decay", true, learning_rate_decay);
+
+    double weight_decay;
+    get_argument(arguments, "--weight_decay", true, weight_decay);
+
+    double weight_decay_decay;
+    get_argument(arguments, "--weight_decay_decay", true, weight_decay_decay);
+
+    double mu;
+    get_argument(arguments, "--mu", true, mu);
+
+    double mu_decay;
+    get_argument(arguments, "--mu_decay", true, mu_decay);
+
+
     Images images(binary_samples_filename);
 
-    thread* poller = NULL;
-    
     if (rank == 0) {
-        exact = new EXACT(images, population_size, min_epochs, max_epochs, improvement_required_epochs, reset_edges, max_individuals, output_directory, search_name);
-        poller = new thread(polling_thread, output_directory);
+        exact = new EXACT(images, population_size, min_epochs, max_epochs, improvement_required_epochs, reset_edges, mu, mu_decay, learning_rate, learning_rate_decay, weight_decay, weight_decay_decay, max_individuals, output_directory, search_name);
 
         master(images, max_rank);
     } else {
@@ -277,8 +276,6 @@ int main(int argc, char** argv) {
 
     if (rank == 0) {
         cout << "master waiting for poller thread." << endl;
-        poller->join();
-        delete poller;
     }
 
     cout << "rank " << rank << " completed!" << endl;

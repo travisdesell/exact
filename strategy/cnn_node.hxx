@@ -60,12 +60,13 @@ class CNN_Node {
         //int max_pool;
         //int output_size_x, output_size_y;
 
-        double **values;
-        double **errors;
-        double **gradients;
-        double **bias;
-        double **best_bias;
-        double **bias_velocity;
+        vector< vector<double> > values;
+        vector< vector<double> > errors;
+        vector< vector<double> > gradients;
+        vector< vector<double> > bias;
+        vector< vector<double> > best_bias;
+        vector< vector<double> > bias_velocity;
+        vector< vector<double> > best_bias_velocity;
 
         int weight_count;
 
@@ -75,13 +76,12 @@ class CNN_Node {
         int inputs_fired;
 
         bool visited;
+        bool needs_initialization;
 
     public:
         CNN_Node();
 
         CNN_Node(int _innovation_number, double _depth, int _size_x, int _size_y, int type, minstd_rand0 &generator, NormalDistribution &normal_distribution);
-
-        ~CNN_Node();
 
         CNN_Node* copy() const;
 
@@ -90,9 +90,11 @@ class CNN_Node {
         void export_to_database(int exact_id, int genome_id);
 #endif
 
+        bool needs_init() const;
         int get_size_x() const;
         int get_size_y() const;
 
+        void reset_weight_count();
         void add_weight_count(int _weight_count);
         int get_weight_count() const;
 
@@ -113,27 +115,27 @@ class CNN_Node {
         void initialize_bias(minstd_rand0 &generator, NormalDistribution &normal_disribution);
         void initialize_velocities();
 
+        bool has_nan() const;
         bool has_zero_bias() const;
         bool has_zero_best_bias() const;
         void propagate_bias(double mu, double learning_rate, double weight_decay);
 
         void set_values(const Image &image, int rows, int cols);
-        double** get_values();
+        double get_value(int y, int x);
+        double set_value(int y, int x, double value);
+        vector< vector<double> >& get_values();
 
         double get_error(int y, int x);
         void set_error(int y, int x, double value);
-        double** get_errors();
+        vector< vector<double> >& get_errors();
 
         void set_gradient(int y, int x, double value);
-        double** get_gradients();
+        vector< vector<double> >& get_gradients();
 
         void print(ostream &out);
 
         void reset();
 
-        double get_value(int y, int x);
-
-        double set_value(int y, int x, double value);
 
         void save_best_bias();
         void set_bias_to_best();
@@ -154,8 +156,10 @@ class CNN_Node {
         friend istream &operator>>(istream &is, CNN_Node* node);
 };
 
+/*
 template<class T>
 void parse_array_2d(T ***output, istringstream &iss, int size_x, int size_y);
+*/
 
 
 struct sort_CNN_Nodes_by_depth {
