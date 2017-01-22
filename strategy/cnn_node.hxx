@@ -36,7 +36,7 @@ using std::vector;
 #define RELU_MIN 0
 #define RELU_MIN_LEAK 0.005
 
-#define RELU_MAX 5
+#define RELU_MAX 5.5
 #define RELU_MAX_LEAK 0.00
 
 #define INPUT_NODE 0
@@ -62,10 +62,12 @@ class CNN_Node {
 
         double **values;
         double **errors;
+        double **gradients;
         double **bias;
         double **best_bias;
         double **bias_velocity;
 
+        int weight_count;
 
         int type;
 
@@ -77,7 +79,7 @@ class CNN_Node {
     public:
         CNN_Node();
 
-        CNN_Node(int _innovation_number, double _depth, int _size_x, int _size_y, int type);
+        CNN_Node(int _innovation_number, double _depth, int _size_x, int _size_y, int type, minstd_rand0 &generator, NormalDistribution &normal_distribution);
 
         ~CNN_Node();
 
@@ -92,6 +94,9 @@ class CNN_Node {
 
         int get_size_x() const;
         int get_size_y() const;
+
+        void add_weight_count(int _weight_count);
+        int get_weight_count() const;
 
         int get_innovation_number() const;
 
@@ -121,6 +126,9 @@ class CNN_Node {
         void set_error(int y, int x, double value);
         double** get_errors();
 
+        void set_gradient(int y, int x, double value);
+        double** get_gradients();
+
         void print(ostream &out);
 
         void reset();
@@ -141,6 +149,7 @@ class CNN_Node {
         int get_number_inputs() const;
         int get_inputs_fired() const;
 
+        void print_statistics();
         void input_fired();
 
         friend ostream &operator<<(ostream &os, const CNN_Node* node);
