@@ -91,8 +91,6 @@ class CNN_Edge {
 
         bool set_nodes(const vector<CNN_Node*> nodes);
         void initialize_weights(minstd_rand0 &generator, NormalDistribution &normal_distribution);
-        void initialize_velocities(minstd_rand0 &generator, NormalDistribution &normal_distribution);
-        void reset_velocities();
         void resize();
 
         void disable();

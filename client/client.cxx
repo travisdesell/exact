@@ -119,8 +119,8 @@ int main(int argc, char** argv) {
 #define EXACT_VERSION "0.12"
 #endif
 
-    if (genome->get_version_str().compare(EXACT_VERSION) != 0) {
-        cerr << "ERROR: exact application with version '" << EXACT_VERSION << "' trying to process workunit with incompatible input version: '" << genome->get_version_str() << "'" << endl;
+    if (genome->get_version_str().substr(1,4).compare(EXACT_VERSION) != 0) {
+        cerr << "ERROR: exact application with version '" << EXACT_VERSION << "' trying to process workunit with incompatible input version: '" << genome->get_version_str().substr(1,4) << "'" << endl;
         boinc_finish(1);
         exit(1);
     }

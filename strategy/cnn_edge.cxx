@@ -301,29 +301,12 @@ void CNN_Edge::initialize_weights(minstd_rand0 &generator, NormalDistribution &n
         for (uint32_t j = 0; j < weights[i].size(); j++) {
             weights[i][j] = normal_distribution.random(generator, mu, sigma);
             best_weights[i][j] = 0.0;
-
             previous_velocity[i][j] = 0.0;
         }
     }
     //cout << "initialized weights for edge " << innovation_number << ", weights[0][0]: " << weights[0][0] << endl;
 
     needs_initialization = false;
-}
-
-void CNN_Edge::initialize_velocities(minstd_rand0 &generator, NormalDistribution &normal_distribution) {
-    for (uint32_t i = 0; i < weights.size(); i++) {
-        for (uint32_t j = 0; j < weights[i].size(); j++) {
-            previous_velocity[i][j] = 0.0;
-        }
-    }
-}
-
-void CNN_Edge::reset_velocities() {
-    for (uint32_t i = 0; i < weights.size(); i++) {
-        for (uint32_t j = 0; j < weights[i].size(); j++) {
-            previous_velocity[i][j] = 0.0;
-        }
-    }
 }
 
 void CNN_Edge::resize() {
@@ -897,7 +880,7 @@ void CNN_Edge::propagate_backward() {
         for (int32_t fy = 0; fy < filter_y; fy++) {
             for (int32_t fx = 0; fx < filter_x; fx++) {
                 weight_update = 0;
-                weight = weights.at(fy).at(fx);
+                weight = weights[fy][fx];
 
                 for (int32_t y = 0; y < out_y; y++) {
                     for (int32_t x = 0; x < out_x; x++) {

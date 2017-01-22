@@ -115,7 +115,6 @@ class CNN_Node {
         void set_unvisited();
 
         void initialize_bias(minstd_rand0 &generator, NormalDistribution &normal_disribution);
-        void initialize_velocities();
 
         bool has_nan() const;
         bool has_zero_bias() const;

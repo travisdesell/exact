@@ -323,15 +323,6 @@ void CNN_Node::initialize_bias(minstd_rand0 &generator, NormalDistribution &norm
     needs_initialization = false;
 }
 
-void CNN_Node::initialize_velocities() {
-    for (int32_t i = 0; i < size_y; i++) {
-        for (int32_t j = 0; j < size_x; j++) {
-            bias_velocity[i][j] = 0.0;
-            best_bias_velocity[i][j] = 0.0;
-        }
-    }
-}
-
 bool CNN_Node::is_fixed() const {
     return type != INPUT_NODE && type != OUTPUT_NODE && type != SOFTMAX_NODE;
 }
