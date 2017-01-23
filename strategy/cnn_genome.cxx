@@ -158,7 +158,7 @@ CNN_Genome::CNN_Genome(int _genome_id) {
         min_epochs = atoi(row[16]);
         max_epochs = atoi(row[17]);
         improvement_required_epochs = atoi(row[18]);
-        reset_edges = atoi(row[19]);
+        reset_weights = atoi(row[19]);
 
         best_error = atof(row[20]);
         best_error_epoch = atoi(row[21]);
@@ -297,7 +297,7 @@ void CNN_Genome::export_to_database(int _exact_id) {
         << ", min_epochs = " << min_epochs
         << ", max_epochs = " << max_epochs
         << ", improvement_required_epochs = " << improvement_required_epochs
-        << ", reset_edges = " << reset_edges
+        << ", reset_weights = " << reset_weights
         << ", best_error = " << setprecision(15) << fixed << best_error
         << ", best_predictions = " << best_predictions
         << ", best_predictions_epoch = " << best_predictions_epoch
@@ -364,7 +364,7 @@ void CNN_Genome::export_to_database(int _exact_id) {
 /**
  *  Iniitalize a genome from a set of nodes and edges
  */
-CNN_Genome::CNN_Genome(int _generation_id, int seed, int _min_epochs, int _max_epochs, int _improvement_required_epochs, bool _reset_edges, double _mu, double _mu_decay, double _learning_rate, double _learning_rate_decay, double _weight_decay, double _weight_decay_decay, const vector<CNN_Node*> &_nodes, const vector<CNN_Edge*> &_edges) {
+CNN_Genome::CNN_Genome(int _generation_id, int seed, int _min_epochs, int _max_epochs, int _improvement_required_epochs, bool _reset_weights, double _mu, double _mu_decay, double _learning_rate, double _learning_rate_decay, double _weight_decay, double _weight_decay_decay, const vector<CNN_Node*> &_nodes, const vector<CNN_Edge*> &_edges) {
     exact_id = -1;
     genome_id = -1;
     started_from_checkpoint = false;
@@ -1013,7 +1013,7 @@ void CNN_Genome::initialize() {
     }
     cout << "calculated weight counts" << endl;
 
-    if (reset_edges) {
+    if (reset_weights) {
         for (uint32_t i = 0; i < edges.size(); i++) {
             edges[i]->initialize_weights(generator, normal_distribution);
             edges[i]->save_best_weights();
@@ -1306,6 +1306,7 @@ void CNN_Genome::write(ostream &outfile) {
     outfile << generated_by_change_size_x << endl;
     outfile << generated_by_change_size_y << endl;
     outfile << generated_by_crossover << endl;
+    outfile << generated_by_reset_weights << endl;
 
     outfile << generation_id << endl;
     outfile << normal_distribution << endl;
@@ -1414,8 +1415,8 @@ void CNN_Genome::read(istream &infile) {
     if (verbose) cerr << "read max_epochs: " << max_epochs << endl;
     infile >> improvement_required_epochs;
     if (verbose) cerr << "read improvement_required_epochs: " << improvement_required_epochs << endl;
-    infile >> reset_edges;
-    if (verbose) cerr << "read reset_edges: " << reset_edges << endl;
+    infile >> reset_weights;
+    if (verbose) cerr << "read reset_weights: " << reset_weights << endl;
 
     best_predictions = read_hexfloat(infile);
     if (verbose) cerr << "read best_predictions: " << best_predictions << endl;
@@ -1442,6 +1443,8 @@ void CNN_Genome::read(istream &infile) {
     if (verbose) cerr << "read generated_by_change_size_y: " << generated_by_change_size_x << endl;
     infile >> generated_by_crossover;
     if (verbose) cerr << "read generated_by_crossover: " << generated_by_crossover << endl;
+    infile >> generated_by_reset_weights;
+    if (verbose) cerr << "read generated_by_reset_weights: " << generated_by_reset_weights << endl;
 
     infile >> generation_id;
     if (verbose) cerr << "read generation_id: " << generation_id << endl;

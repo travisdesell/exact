@@ -107,7 +107,7 @@ class EXACT {
         void update_database();
 #endif
 
-        EXACT(const Images &images, int _population_size, int _min_epochs, int _max_epochs, int _improvement_required_epochs, bool _reset_edges, double _mu, double _mu_decay, double _learning_rate, double _learning_rate_decay, double _weight_decay, double _weight_decay_decay, int _max_individuals, string _output_directory, string _search_name);
+        EXACT(const Images &images, int _population_size, int _min_epochs, int _max_epochs, int _improvement_required_epochs, bool _reset_weights, double _mu, double _mu_decay, double _learning_rate, double _learning_rate_decay, double _weight_decay, double _weight_decay_decay, int _max_individuals, string _output_directory, string _search_name);
 
         bool population_contains(CNN_Genome *genome) const;
         CNN_Genome* get_best_genome();
