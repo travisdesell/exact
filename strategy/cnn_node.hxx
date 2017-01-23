@@ -150,6 +150,8 @@ class CNN_Node {
         int get_number_inputs() const;
         int get_inputs_fired() const;
 
+        void zero_bias_velocity();
+
         void print_statistics();
         void input_fired();
 
@@ -165,7 +167,20 @@ void parse_array_2d(T ***output, istringstream &iss, int size_x, int size_y);
 
 struct sort_CNN_Nodes_by_depth {
     bool operator()(const CNN_Node *n1, const CNN_Node *n2) {
-        return n1->get_depth() < n2->get_depth();
+        if (n1->get_depth() < n2->get_depth()) {
+            return true;
+        } else if (n1->get_depth() == n2->get_depth()) {
+            //make sure the order of the nodes is *always* the same
+            //going through the nodes in different orders may change
+            //the output of backpropagation
+            if (n1->get_innovation_number() < n2->get_innovation_number()) {
+                return true;
+            } else {
+                return false;
+            }
+        } else {
+            return false;
+        }
     }
 };
 

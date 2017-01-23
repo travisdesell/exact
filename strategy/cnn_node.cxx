@@ -695,6 +695,15 @@ bool CNN_Node::has_nan() const {
     return false;
 }
 
+void CNN_Node::zero_bias_velocity() {
+    for (int32_t y = 0; y < size_y; y++) {
+        for (int32_t x = 0; x < size_x; x++) {
+            bias[y][x] = 0.0;
+            bias_velocity[y][x] = 0.0;
+        }
+    }
+}
+
 void CNN_Node::print_statistics() {
     double value_min = std::numeric_limits<double>::max(), value_max = -std::numeric_limits<double>::max(), value_avg = 0.0;
     double error_min = std::numeric_limits<double>::max(), error_max = -std::numeric_limits<double>::max(), error_avg = 0.0;

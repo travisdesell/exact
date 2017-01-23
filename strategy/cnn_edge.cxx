@@ -914,6 +914,14 @@ bool CNN_Edge::has_nan() const {
     return false;
 }
 
+void CNN_Edge::zero_velocity() {
+    for (uint32_t y = 0; y < filter_y; y++) {
+        for (uint32_t x = 0; x < filter_x; x++) {
+            previous_velocity[y][x] = 0.0;
+        }
+    }
+}
+
 void CNN_Edge::print_statistics() {
     double weight_min = std::numeric_limits<double>::max(), weight_max = -std::numeric_limits<double>::max(), weight_avg = 0.0;
     double weight_update_min = std::numeric_limits<double>::max(), weight_update_max = -std::numeric_limits<double>::max(), weight_update_avg = 0.0;

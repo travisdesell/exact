@@ -126,6 +126,8 @@ class CNN_Edge {
 
         void print_statistics();
 
+        void zero_velocity();
+
         friend ostream &operator<<(ostream &os, const CNN_Edge* flight);
         friend istream &operator>>(istream &is, CNN_Edge* flight);
 };
@@ -139,6 +141,8 @@ struct sort_CNN_Edges_by_depth {
 
         } else if (n1->get_input_node()->get_depth() == n2->get_input_node()->get_depth()) {
             //make sure the order of the edges is *always* the same
+            //going through the edges in different orders may effect the output
+            //of backpropagation
             if (n1->get_innovation_number() < n2->get_innovation_number()) {
                 return true;
             } else {

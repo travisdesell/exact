@@ -1162,6 +1162,16 @@ void CNN_Genome::stochastic_backpropagation(const Images &images) {
             cerr << "after suffle, backprop_order[" << i << "] = " << backprop_order[i] << ", backprop_order.size(): " << backprop_order.size() << endl;
         }
 
+
+        //set the bias, bias_velocity, weight_velocities to 0
+        for (uint32_t j = 0; j < nodes.size(); j++) {
+            nodes[j]->zero_bias_velocity();
+        }
+        for (uint32_t j = 0; j < edges.size(); j++) {
+            edges[j]->zero_velocity();
+        }
+
+
         for (uint32_t j = 0; j < backprop_order.size(); j++) {
             evaluate_image(images.get_image(backprop_order[j]), class_error, true);
         }
