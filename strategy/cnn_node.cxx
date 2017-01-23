@@ -614,7 +614,7 @@ void CNN_Node::input_fired() {
         if (type != SOFTMAX_NODE) {
             for (int32_t y = 0; y < size_y; y++) {
                 for (int32_t x = 0; x < size_x; x++) {
-                    values[y][x] += bias[y][x];
+                    //values[y][x] += bias[y][x];
                     //cout << "values for node " << innovation_number << " now " << values[y][x] << " after adding bias: " << bias[y][x] << endl;
 
                     //apply activation function
