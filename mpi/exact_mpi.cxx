@@ -84,7 +84,7 @@ void send_genome_to(string name, int target, CNN_Genome* genome) {
 
     genome->write(oss);
 
-    ofstream outfile("./test_" + to_string(genome->get_generation_id()));
+    ofstream outfile(exact->get_output_directory() + "/gen_" + to_string(genome->get_generation_id()));
     genome->write(outfile);
     outfile.close();
 
@@ -273,10 +273,6 @@ int main(int argc, char** argv) {
     }
 
     finished = true;
-
-    if (rank == 0) {
-        cout << "master waiting for poller thread." << endl;
-    }
 
     cout << "rank " << rank << " completed!" << endl;
 

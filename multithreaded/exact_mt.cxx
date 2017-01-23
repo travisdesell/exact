@@ -30,37 +30,13 @@ using std::vector;
 #include "strategy/exact.hxx"
 
 mutex exact_mutex;
-condition_variable polling_condition;
 
 vector<string> arguments;
 
 EXACT *exact;
 
+
 bool finished = false;
-
-void polling_thread(string output_directory) {
-    cout << "polling!" << endl;
-    ofstream polling_file(output_directory + "/progress.txt");
-
-    polling_file << "#" << setw(9) << "minute";
-    exact->print_statistics_header(polling_file);
-
-    int minute = 0;
-    while (true) {
-        exact_mutex.lock();
-        polling_file << setw(10) << minute;
-        exact->print_statistics(polling_file);
-        exact_mutex.unlock();
-
-        minute++;
-        std::this_thread::sleep_for( std::chrono::seconds(60) );
-        if (finished) break;
-    }   
-
-    polling_file.close();
-    cout << "finished polling!" << endl;
-}
-
 void exact_thread(const Images &images, int id) {
     while (true) {
         exact_mutex.lock();
@@ -69,7 +45,7 @@ void exact_thread(const Images &images, int id) {
 
         if (genome == NULL) break;  //generate_individual returns NULL when the search is done
 
-        ofstream outfile("./test_" + to_string(genome->get_generation_id()));
+        ofstream outfile(exact->get_output_directory() + "/gen_" + to_string(genome->get_generation_id()));
         genome->write(outfile);
         outfile.close();
 
@@ -166,14 +142,11 @@ int main(int argc, char** argv) {
         threads.push_back( thread(exact_thread, images, i) );
     }
 
-    thread poller(polling_thread, output_directory);
-
     for (uint32_t i = 0; i < number_threads; i++) {
         threads[i].join();
     }
 
     finished = true;
-    poller.join();
 
     cout << "completed!" << endl;
 

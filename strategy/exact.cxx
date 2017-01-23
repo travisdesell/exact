@@ -12,6 +12,7 @@ using std::left;
 using std::right;
 
 #include <iostream>
+using std::fstream;
 using std::ostream;
 using std::istream;
 
@@ -522,6 +523,8 @@ EXACT::EXACT(const Images &images, int _population_size, int _min_epochs, int _m
     cout << "\tnode_change_size_x: " << node_change_size_x << endl;
     cout << "\tnode_change_size_y: " << node_change_size_y << endl;
     cout << "\tnode_change_pool_size: " << node_change_pool_size << endl;
+
+    if (output_directory.compare("") != 0) write_statistics_header();
 }
 
 int EXACT::get_id() const {
@@ -665,6 +668,9 @@ string parse_fitness(double fitness) {
 }
 
 bool EXACT::insert_genome(CNN_Genome* genome) {
+    double new_fitness = genome->get_fitness();
+    int new_generation_id = genome->get_generation_id();
+
     bool was_inserted = true;
 
     inserted_genomes++;
@@ -674,6 +680,8 @@ bool EXACT::insert_genome(CNN_Genome* genome) {
     if (population_contains(genome)) {
         cerr << "\tpopulation already contains genome! not inserting." << endl;
         delete genome;
+
+        if (output_directory.compare("") != 0) write_statistics(new_generation_id, new_fitness);
         return false;
     }
 
@@ -784,6 +792,7 @@ bool EXACT::insert_genome(CNN_Genome* genome) {
 
     cout << endl;
 
+    if (output_directory.compare("") != 0) write_statistics(new_generation_id, new_fitness);
     return was_inserted;
 }
 
@@ -1449,7 +1458,7 @@ CNN_Genome* EXACT::create_child() {
 }
 
 
-void EXACT::print_statistics(ostream &out) {
+void EXACT::write_statistics(int new_generation_id, double new_fitness) {
     double min_fitness = EXACT_MAX_DOUBLE;
     double max_fitness = -EXACT_MAX_DOUBLE;
     double avg_fitness = 0.0;
@@ -1494,7 +1503,11 @@ void EXACT::print_statistics(ostream &out) {
     if (max_epochs == EXACT_MAX_DOUBLE) max_epochs = 0;
     if (max_epochs == -EXACT_MAX_DOUBLE) max_epochs = 0;
 
-    out << setw(16) << inserted_genomes
+    fstream out(output_directory + "/progress.txt", fstream::out | fstream::app);
+
+    out << setw(16) << new_generation_id
+        << setw(16) << new_fitness
+        << setw(16) << inserted_genomes
         << setw(16) << setprecision(5) << fixed << min_fitness
         << setw(16) << setprecision(5) << fixed << avg_fitness
         << setw(16) << setprecision(5) << fixed << max_fitness
@@ -1510,10 +1523,15 @@ void EXACT::print_statistics(ostream &out) {
         << setw(16) << inserted_from_change_size_y
         << setw(16) << inserted_from_crossover
         << endl;
+
+    out.close();
 }
 
-void EXACT::print_statistics_header(ostream &out) {
-    out << ", " << setw(14) << "inserted"
+void EXACT::write_statistics_header() {
+    fstream out(output_directory + "/progress.txt", fstream::out | fstream::app);
+    out << "# " << setw(14) << "generation id"
+        << ", " << setw(14) << "new fitness"
+        << ", " << setw(14) << "inserted"
         << ", " << setw(14) << "min_fitness"
         << ", " << setw(14) << "avg_fitness"
         << ", " << setw(14) << "max_fitness"
@@ -1529,4 +1547,5 @@ void EXACT::print_statistics_header(ostream &out) {
         << ", " << setw(14) << "change_size_y"
         << ", " << setw(14) << "crossover"
         << endl;
+    out.close();
 }

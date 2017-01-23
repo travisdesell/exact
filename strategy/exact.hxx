@@ -115,8 +115,8 @@ class EXACT {
 
         bool insert_genome(CNN_Genome* genome);
 
-        void print_statistics(ostream &out);
-        void print_statistics_header(ostream &out);
+        void write_statistics(int new_generation_id, double new_fitness);
+        void write_statistics_header();
 
         int get_id() const;
         string get_search_name() const;
