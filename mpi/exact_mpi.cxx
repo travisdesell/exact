@@ -86,10 +86,6 @@ void send_genome_to(string name, int target, CNN_Genome* genome) {
 
     genome->write(oss);
 
-    ofstream outfile(exact->get_output_directory() + "/gen_" + to_string(genome->get_generation_id()));
-    genome->write(outfile);
-    outfile.close();
-
     string genome_str = oss.str();
     int length = genome_str.size();
 
@@ -151,6 +147,10 @@ void master(const Images &images, int max_rank) {
                 if (terminates_sent >= max_rank - 1) return;
 
             } else {
+                ofstream outfile(exact->get_output_directory() + "/gen_" + to_string(genome->get_generation_id()));
+                genome->write(outfile);
+                outfile.close();
+
                 //send genome
                 cout << "[" << setw(10) << name << "] sending genome to: " << source << endl;
                 send_genome_to(name, source, genome);
