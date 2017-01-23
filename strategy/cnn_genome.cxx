@@ -26,6 +26,8 @@ using std::cerr;
 using std::endl;
 using std::ostream;
 using std::istream;
+using std::hexfloat;
+using std::defaultfloat;
 
 #include <random>
 using std::minstd_rand0;
@@ -894,7 +896,7 @@ int CNN_Genome::evaluate_image(const Image &image, vector<double> &class_error, 
             exit(1);
         }
 
-        value = exp(value - softmax_max);
+        value = std::exp(value - softmax_max);
 
         //cout << " " << setw(15) << fixed << setprecision(6) << value;
         if (isnan(value)) {
@@ -1100,7 +1102,7 @@ void CNN_Genome::stochastic_backpropagation(const Images &images) {
 
         best_error = EXACT_MAX_DOUBLE;
     }
-    //backprop_order.resize(5000);
+    //backprop_order.resize(20000);
 
     //sort edges by depth of input node
     sort(edges.begin(), edges.end(), sort_CNN_Edges_by_depth());
@@ -1267,17 +1269,19 @@ void CNN_Genome::write(ostream &outfile) {
     outfile << exact_id << endl;
     outfile << genome_id << endl;
 
-    outfile << setprecision(17) << initial_mu << endl;
-    outfile << setprecision(17) << mu << endl;
-    outfile << setprecision(17) << mu_decay << endl;
+    outfile << hexfloat;
+    outfile << initial_mu << endl;
+    outfile << mu << endl;
+    outfile << mu_decay << endl;
 
-    outfile << setprecision(17) << initial_learning_rate << endl;
-    outfile << setprecision(17) << learning_rate << endl;
-    outfile << setprecision(17) << learning_rate_decay << endl;
+    outfile << initial_learning_rate << endl;
+    outfile << learning_rate << endl;
+    outfile << learning_rate_decay << endl;
 
-    outfile << setprecision(17) << initial_weight_decay << endl;
-    outfile << setprecision(17) << weight_decay << endl;
-    outfile << setprecision(17) << weight_decay_decay << endl;
+    outfile << initial_weight_decay << endl;
+    outfile << weight_decay << endl;
+    outfile << weight_decay_decay << endl;
+    outfile << defaultfloat;
 
     outfile << epoch << endl;
     outfile << min_epochs << endl;
@@ -1285,8 +1289,11 @@ void CNN_Genome::write(ostream &outfile) {
     outfile << improvement_required_epochs << endl;
     outfile << reset_edges << endl;
 
-    outfile << setprecision(17) << best_predictions << endl;
-    outfile << setprecision(17) << best_error << endl;
+    outfile << hexfloat;
+    outfile << best_predictions << endl;
+    outfile << best_error << endl;
+    outfile << defaultfloat;
+
     outfile << best_predictions_epoch << endl;
     outfile << best_error_epoch << endl;
 
@@ -1352,6 +1359,12 @@ void CNN_Genome::write(ostream &outfile) {
     outfile << endl;
 }
 
+double read_hexfloat(istream &infile) {
+    string s;
+    infile >> s;
+    return stod(s);
+}
+
 void CNN_Genome::read(istream &infile) {
     progress_function = NULL;
 
@@ -1371,25 +1384,25 @@ void CNN_Genome::read(istream &infile) {
     infile >> genome_id;
     if (verbose) cerr << "read genome_id: " << genome_id << endl;
 
-    infile >> initial_mu;
+    initial_mu = read_hexfloat(infile);
     if (verbose) cerr << "read initial_mu: " << initial_mu << endl;
-    infile >> mu;
+    mu = read_hexfloat(infile);
     if (verbose) cerr << "read mu: " << mu << endl;
-    infile >> mu_decay;
+    mu_decay = read_hexfloat(infile);
     if (verbose) cerr << "read mu_decay: " << mu_decay << endl;
 
-    infile >> initial_learning_rate;
+    initial_learning_rate = read_hexfloat(infile);
     if (verbose) cerr << "read initial_learning_rate: " << initial_learning_rate << endl;
-    infile >> learning_rate;
+    learning_rate = read_hexfloat(infile);
     if (verbose) cerr << "read learning_rate: " << learning_rate << endl;
-    infile >> learning_rate_decay;
+    learning_rate_decay = read_hexfloat(infile);
     if (verbose) cerr << "read learning_rate_decay: " << learning_rate_decay << endl;
 
-    infile >> initial_weight_decay;
+    initial_weight_decay = read_hexfloat(infile);
     if (verbose) cerr << "read initial_weight_decay: " << initial_weight_decay << endl;
-    infile >> weight_decay;
+    weight_decay = read_hexfloat(infile);
     if (verbose) cerr << "read weight_decay: " << weight_decay << endl;
-    infile >> weight_decay_decay;
+    weight_decay_decay = read_hexfloat(infile);
     if (verbose) cerr << "read weight_decay_decay: " << weight_decay_decay << endl;
 
     infile >> epoch;
@@ -1403,9 +1416,9 @@ void CNN_Genome::read(istream &infile) {
     infile >> reset_edges;
     if (verbose) cerr << "read reset_edges: " << reset_edges << endl;
 
-    infile >> best_predictions;
+    best_predictions = read_hexfloat(infile);
     if (verbose) cerr << "read best_predictions: " << best_predictions << endl;
-    infile >> best_error;
+    best_error = read_hexfloat(infile);
     if (verbose) cerr << "read best_error: " << best_error << endl;
     infile >> best_predictions_epoch;
     if (verbose) cerr << "read best_predictions_epoch: " << best_predictions_epoch << endl;
@@ -1631,7 +1644,8 @@ void CNN_Genome::print_graphviz(ostream &out) const {
         if (!nodes[i]->is_input()) continue;
         out << "\t\tnode" << nodes[i]->get_innovation_number() << " [shape=box,color=green,label=\"input " << nodes[i]->get_innovation_number() << "\\n" << nodes[i]->get_size_x() << " x " << nodes[i]->get_size_y() << "\"];" << endl;
     }
-    out << "\t}" << endl << endl;
+    out << "\t}" << endl;
+    out << endl;
 
     out << "\t{" << endl;
     out << "\t\trank = sink;" << endl;
@@ -1639,7 +1653,8 @@ void CNN_Genome::print_graphviz(ostream &out) const {
         if (!nodes[i]->is_softmax()) continue;
         out << "\t\tnode" << nodes[i]->get_innovation_number() << " [shape=box,color=blue,label=\"output " << (nodes[i]->get_innovation_number() - 1) << "\\n" << nodes[i]->get_size_x() << " x " << nodes[i]->get_size_y() << "\"];" << endl;
     }
-    out << "\t}" << endl << endl;
+    out << "\t}" << endl;
+    out << endl;
 
     //connect the softmax nodes in order with invisible edges so they display in order
 
@@ -1657,18 +1672,29 @@ void CNN_Genome::print_graphviz(ostream &out) const {
     }
     out << " [style=invis];" << endl << endl;
 
+    out << endl;
 
-    //draw the visible edges
+    //draw the hidden nodes
     for (uint32_t i = 0; i < nodes.size(); i++) {
         if (nodes[i]->is_input() || nodes[i]->is_softmax()) continue;
 
         out << "\tnode" << nodes[i]->get_innovation_number() << " [shape=box,label=\"node " << nodes[i]->get_innovation_number() << "\\n" << nodes[i]->get_size_x() << " x " << nodes[i]->get_size_y() << "\"];" << endl;
     }
+    
+    out << endl;
 
+    //draw the enabled edges
     for (uint32_t i = 0; i < edges.size(); i++) {
         if (edges[i]->is_disabled()) continue;
         
         out << "\tnode" << edges[i]->get_input_node()->get_innovation_number() << " -> node" << edges[i]->get_output_node()->get_innovation_number() << ";" << endl;
+    }
+
+    out << endl;
+    for (uint32_t i = 0; i < edges.size(); i++) {
+        if (edges[i]->is_disabled()) continue;
+        
+        out << "\tnode" << edges[i]->get_input_node()->get_innovation_number() << " -> node" << edges[i]->get_output_node()->get_innovation_number() << "[style=red];" << endl;
     }
 
     out << "}" << endl;
@@ -1705,7 +1731,6 @@ void CNN_Genome::set_generated_by_change_size_y() {
 void CNN_Genome::set_generated_by_crossover() {
     generated_by_crossover++;
 }
-
 
 int CNN_Genome::get_generated_by_disable_edge() {
     return generated_by_disable_edge;
