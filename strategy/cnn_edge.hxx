@@ -134,7 +134,20 @@ void parse_vector_2d(vector<vector<double>> &output, istringstream &iss, int siz
 
 struct sort_CNN_Edges_by_depth {
     bool operator()(CNN_Edge *n1, CNN_Edge *n2) {
-        return n1->get_input_node()->get_depth() < n2->get_input_node()->get_depth();
+        if (n1->get_input_node()->get_depth() < n2->get_input_node()->get_depth()) {
+            return true;
+
+        } else if (n1->get_input_node()->get_depth() == n2->get_input_node()->get_depth()) {
+            //make sure the order of the edges is *always* the same
+            if (n1->get_innovation_number() < n2->get_innovation_number()) {
+                return true;
+            } else {
+                return false;
+            }
+
+        } else {
+            return false;
+        }
     }   
 };
 
