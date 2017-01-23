@@ -898,8 +898,7 @@ int CNN_Genome::evaluate_image(const Image &image, vector<double> &class_error, 
             exit(1);
         }
 
-        //value = exact_exp(value - softmax_max);
-        value = exact_exp(value);
+        value = exact_exp(value - softmax_max);
 
         //cout << " " << setw(15) << fixed << setprecision(6) << value;
         if (isnan(value)) {
@@ -1105,7 +1104,7 @@ void CNN_Genome::stochastic_backpropagation(const Images &images) {
 
         best_error = EXACT_MAX_DOUBLE;
     }
-    backprop_order.resize(10000);
+    //backprop_order.resize(10000);
 
     //sort edges by depth of input node
     sort(edges.begin(), edges.end(), sort_CNN_Edges_by_depth());
