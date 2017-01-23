@@ -115,12 +115,11 @@ int main(int argc, char** argv) {
     }
     cerr << "parsed input file" << endl;
 
-<<<<<<< HEAD
 #ifdef _WIN32
 #define EXACT_VERSION "0.11"
 #endif
 
-    if (genome->get_version() <= 0.10) {
+    if (genome->get_version() <= 0.105) {
         cerr << "ERROR: exact application with version '" << EXACT_VERSION << "' trying to process workunit with incompatible input version: '" << genome->get_version() << "'" << endl;
         boinc_finish(1);
         exit(1);
