@@ -734,7 +734,11 @@ void CNN_Genome::stochastic_backpropagation(const Images &images) {
             }
         }
 
+        epoch = 0;
+        best_error_epoch = 0;
         best_error = numeric_limits<double>::max();
+        best_predictions = 0;
+        best_predictions_epoch = 0;
     }
 
     //sort edges by depth of input node

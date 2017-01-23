@@ -309,6 +309,7 @@ void CNN_Node::reset() {
         }
     }
 
+    /*
     for (uint32_t y = 0; y < size_y; y++) {
         for (uint32_t x = 0; x < size_x; x++) {
             best_bias[y][x] = 0;
@@ -320,6 +321,7 @@ void CNN_Node::reset() {
             bias_velocity[y][x] = 0;
         }
     }
+    */
 }
 
 void CNN_Node::set_values(const Image &image, int rows, int cols) {
