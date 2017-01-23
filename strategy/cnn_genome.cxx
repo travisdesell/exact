@@ -49,6 +49,7 @@ using std::vector;
 #endif
 
 #include "common/random.hxx"
+#include "common/exp.hxx"
 
 #include "image_tools/image_set.hxx"
 #include "cnn_node.hxx"
@@ -897,7 +898,8 @@ int CNN_Genome::evaluate_image(const Image &image, vector<double> &class_error, 
             exit(1);
         }
 
-        value = std::exp(value - softmax_max);
+        //value = exact_exp(value - softmax_max);
+        value = exact_exp(value);
 
         //cout << " " << setw(15) << fixed << setprecision(6) << value;
         if (isnan(value)) {
