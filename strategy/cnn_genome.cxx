@@ -158,7 +158,7 @@ CNN_Genome::CNN_Genome(int _genome_id) {
         min_epochs = atoi(row[16]);
         max_epochs = atoi(row[17]);
         improvement_required_epochs = atoi(row[18]);
-        reset_edges = atoi(row[19]);
+        reset_weights = atoi(row[19]);
 
         best_error = atof(row[20]);
         best_error_epoch = atoi(row[21]);
@@ -297,7 +297,7 @@ void CNN_Genome::export_to_database(int _exact_id) {
         << ", min_epochs = " << min_epochs
         << ", max_epochs = " << max_epochs
         << ", improvement_required_epochs = " << improvement_required_epochs
-        << ", reset_edges = " << reset_edges
+        << ", reset_weights = " << reset_weights
         << ", best_error = " << setprecision(15) << fixed << best_error
         << ", best_predictions = " << best_predictions
         << ", best_predictions_epoch = " << best_predictions_epoch
@@ -364,7 +364,7 @@ void CNN_Genome::export_to_database(int _exact_id) {
 /**
  *  Iniitalize a genome from a set of nodes and edges
  */
-CNN_Genome::CNN_Genome(int _generation_id, int seed, int _min_epochs, int _max_epochs, int _improvement_required_epochs, bool _reset_edges, double _mu, double _mu_decay, double _learning_rate, double _learning_rate_decay, double _weight_decay, double _weight_decay_decay, const vector<CNN_Node*> &_nodes, const vector<CNN_Edge*> &_edges) {
+CNN_Genome::CNN_Genome(int _generation_id, int seed, int _min_epochs, int _max_epochs, int _improvement_required_epochs, bool _reset_weights, double _mu, double _mu_decay, double _learning_rate, double _learning_rate_decay, double _weight_decay, double _weight_decay_decay, const vector<CNN_Node*> &_nodes, const vector<CNN_Edge*> &_edges) {
     exact_id = -1;
     genome_id = -1;
     started_from_checkpoint = false;
@@ -388,7 +388,7 @@ CNN_Genome::CNN_Genome(int _generation_id, int seed, int _min_epochs, int _max_e
     min_epochs = _min_epochs;
     max_epochs = _max_epochs;
     improvement_required_epochs = _improvement_required_epochs;
-    reset_edges = _reset_edges;
+    reset_weights = _reset_weights;
 
     best_predictions = 0;
     best_error = EXACT_MAX_DOUBLE;
@@ -406,6 +406,7 @@ CNN_Genome::CNN_Genome(int _generation_id, int seed, int _min_epochs, int _max_e
     generated_by_change_size_x = 0;
     generated_by_change_size_y = 0;
     generated_by_crossover = 0;
+    generated_by_reset_weights = 0;
 
     name = "";
     output_filename = "";
@@ -1012,7 +1013,7 @@ void CNN_Genome::initialize() {
     }
     cout << "calculated weight counts" << endl;
 
-    if (reset_edges) {
+    if (reset_weights) {
         for (uint32_t i = 0; i < edges.size(); i++) {
             edges[i]->initialize_weights(generator, normal_distribution);
             edges[i]->save_best_weights();
@@ -1102,7 +1103,7 @@ void CNN_Genome::stochastic_backpropagation(const Images &images) {
 
         best_error = EXACT_MAX_DOUBLE;
     }
-    //backprop_order.resize(20000);
+    backprop_order.resize(10000);
 
     //sort edges by depth of input node
     sort(edges.begin(), edges.end(), sort_CNN_Edges_by_depth());
@@ -1287,7 +1288,7 @@ void CNN_Genome::write(ostream &outfile) {
     outfile << min_epochs << endl;
     outfile << max_epochs << endl;
     outfile << improvement_required_epochs << endl;
-    outfile << reset_edges << endl;
+    outfile << reset_weights << endl;
 
     outfile << hexfloat;
     outfile << best_predictions << endl;
@@ -1305,6 +1306,7 @@ void CNN_Genome::write(ostream &outfile) {
     outfile << generated_by_change_size_x << endl;
     outfile << generated_by_change_size_y << endl;
     outfile << generated_by_crossover << endl;
+    outfile << generated_by_reset_weights << endl;
 
     outfile << generation_id << endl;
     outfile << normal_distribution << endl;
@@ -1413,8 +1415,8 @@ void CNN_Genome::read(istream &infile) {
     if (verbose) cerr << "read max_epochs: " << max_epochs << endl;
     infile >> improvement_required_epochs;
     if (verbose) cerr << "read improvement_required_epochs: " << improvement_required_epochs << endl;
-    infile >> reset_edges;
-    if (verbose) cerr << "read reset_edges: " << reset_edges << endl;
+    infile >> reset_weights;
+    if (verbose) cerr << "read reset_weights: " << reset_weights << endl;
 
     best_predictions = read_hexfloat(infile);
     if (verbose) cerr << "read best_predictions: " << best_predictions << endl;
@@ -1441,6 +1443,8 @@ void CNN_Genome::read(istream &infile) {
     if (verbose) cerr << "read generated_by_change_size_y: " << generated_by_change_size_x << endl;
     infile >> generated_by_crossover;
     if (verbose) cerr << "read generated_by_crossover: " << generated_by_crossover << endl;
+    infile >> generated_by_reset_weights;
+    if (verbose) cerr << "read generated_by_reset_weights: " << generated_by_reset_weights << endl;
 
     infile >> generation_id;
     if (verbose) cerr << "read generation_id: " << generation_id << endl;
@@ -1685,9 +1689,11 @@ void CNN_Genome::print_graphviz(ostream &out) const {
 
     //draw the enabled edges
     for (uint32_t i = 0; i < edges.size(); i++) {
-        if (edges[i]->is_disabled()) continue;
-        
-        out << "\tnode" << edges[i]->get_input_node()->get_innovation_number() << " -> node" << edges[i]->get_output_node()->get_innovation_number() << ";" << endl;
+        if (edges[i]->is_disabled()) {
+            out << "\tnode" << edges[i]->get_input_node()->get_innovation_number() << " -> node" << edges[i]->get_output_node()->get_innovation_number() << " [color=red];" << endl;
+        } else {
+            out << "\tnode" << edges[i]->get_input_node()->get_innovation_number() << " -> node" << edges[i]->get_output_node()->get_innovation_number() << ";" << endl;
+        }
     }
 
     out << endl;
@@ -1732,6 +1738,11 @@ void CNN_Genome::set_generated_by_crossover() {
     generated_by_crossover++;
 }
 
+void CNN_Genome::set_generated_by_reset_weights() {
+    generated_by_reset_weights++;
+}
+
+
 int CNN_Genome::get_generated_by_disable_edge() {
     return generated_by_disable_edge;
 }
@@ -1762,5 +1773,9 @@ int CNN_Genome::get_generated_by_change_size_y() {
 
 int CNN_Genome::get_generated_by_crossover() {
     return generated_by_crossover;
+}
+
+int CNN_Genome::get_generated_by_reset_weights() {
+    return generated_by_reset_weights;
 }
 

@@ -28,7 +28,7 @@ $query = "CREATE TABLE `exact_search` (
     `genomes_generated` int(11) NOT NULL,
     `inserted_genomes` int(11) NOT NULL,
 
-    `reset_edges` tinyint NOT NULL,
+    `reset_weights` tinyint NOT NULL,
     `min_epochs` int(11) NOT NULL,
     `max_epochs` int(11) NOT NULL,
     `improvement_required_epochs` int(11) NOT NULL,
@@ -42,6 +42,8 @@ $query = "CREATE TABLE `exact_search` (
 
     `weight_decay` double NOT NULL,
     `weight_decay_decay` double NOT NULL,
+
+    `reset_weights_chance` double NOT NULL,
 
     `crossover_rate` double NOT NULL,
     `more_fit_parent_crossover` double NOT NULL,
@@ -66,6 +68,7 @@ $query = "CREATE TABLE `exact_search` (
     `inserted_from_change_size_x` int NOT NULL,
     `inserted_from_change_size_y` int NOT NULL,
     `inserted_from_crossover` int NOT NULL,
+    `inserted_from_reset_weights` int NOT NULL,
 
     `generator` varchar(64) NOT NULL,
     `normal_distribution` varchar(128) NOT NULL,
@@ -108,7 +111,7 @@ $query = "CREATE TABLE `cnn_genome` (
     `min_epochs` int(11) NOT NULL,
     `max_epochs` int(11) NOT NULL,
     `improvement_required_epochs` int(11) NOT NULL,
-    `reset_edges` tinyint(1) NOT NULL,
+    `reset_weights` tinyint(1) NOT NULL,
 
     `best_error` double NOT NULL,
     `best_error_epoch` int(11) NOT NULL,
@@ -133,6 +136,7 @@ $query = "CREATE TABLE `cnn_genome` (
     `generated_by_change_size_x` int(11) NOT NULL,
     `generated_by_change_size_y` int(11) NOT NULL,
     `generated_by_crossover` int(11) NOT NULL,
+    `generated_by_reset_weights` int(11) NOT NULL,
 
   PRIMARY KEY(`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1";

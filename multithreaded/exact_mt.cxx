@@ -37,6 +37,7 @@ EXACT *exact;
 
 
 bool finished = false;
+
 void exact_thread(const Images &images, int id) {
     while (true) {
         exact_mutex.lock();
@@ -44,10 +45,6 @@ void exact_thread(const Images &images, int id) {
         exact_mutex.unlock();
 
         if (genome == NULL) break;  //generate_individual returns NULL when the search is done
-
-        ofstream outfile(exact->get_output_directory() + "/gen_" + to_string(genome->get_generation_id()));
-        genome->write(outfile);
-        outfile.close();
 
         genome->set_name("thread_" + to_string(id));
         genome->stochastic_backpropagation(images);
@@ -60,11 +57,6 @@ void exact_thread(const Images &images, int id) {
 }
 
 int main(int argc, char** argv) {
-    /*
-    vector<int> test(100);
-    cout << "test[1000] = " << test[1000] << endl;
-    */
-
     arguments = vector<string>(argv, argv + argc);
 
     int number_threads;
