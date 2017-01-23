@@ -1121,6 +1121,7 @@ void CNN_Genome::stochastic_backpropagation(const Images &images) {
             int predicted_class = evaluate_image(images.get_image(backprop_order[j]), class_error, false);
             int expected_class = images.get_image(backprop_order[j]).get_classification();
 
+            /*
             if (j < 5) {
                 cerr << "class error: ";
                 for (uint32_t i = 0; i < class_error.size(); i++) {
@@ -1128,6 +1129,7 @@ void CNN_Genome::stochastic_backpropagation(const Images &images) {
                 }
                 cerr << endl;
             }
+            */
 
             if (predicted_class == expected_class) {
                 correct_predictions[expected_class]++;
@@ -1140,15 +1142,6 @@ void CNN_Genome::stochastic_backpropagation(const Images &images) {
         }
 
         print_progress(cerr, total_predictions, total_error);
-
-        for (uint32_t i = 0; i < edges.size(); i++) {
-            edges[i]->print_statistics();
-        }
-
-        for (uint32_t i = 0; i < nodes.size(); i++) {
-            nodes[i]->print_statistics();
-        }
-
     }
 
     do {
@@ -1158,34 +1151,9 @@ void CNN_Genome::stochastic_backpropagation(const Images &images) {
         //shuffle the array (thanks C++ not being the same across operating systems)
         fisher_yates_shuffle(generator, backprop_order);
 
-        for (int32_t i = 0; i < 3; i++) {
-            cerr << "after suffle, backprop_order[" << i << "] = " << backprop_order[i] << ", backprop_order.size(): " << backprop_order.size() << endl;
-        }
-
-
-        //set the bias, bias_velocity, weight_velocities to 0
-        for (uint32_t j = 0; j < nodes.size(); j++) {
-            nodes[j]->zero_bias_velocity();
-        }
-        for (uint32_t j = 0; j < edges.size(); j++) {
-            edges[j]->zero_velocity();
-        }
-
-
         for (uint32_t j = 0; j < backprop_order.size(); j++) {
-            cerr << "\nevaluating image: " << backprop_order[j] << endl;
             evaluate_image(images.get_image(backprop_order[j]), class_error, true);
-
-            for (uint32_t i = 0; i < edges.size(); i++) {
-                edges[i]->print_statistics();
-            }
-
-            for (uint32_t i = 0; i < nodes.size(); i++) {
-                nodes[i]->print_statistics();
-            }
-
         }
-        exit(1);
 
         if (epoch % improvement_required_epochs == 0) {
             class_error.assign(images.get_number_classes(), 0.0);
@@ -1207,7 +1175,6 @@ void CNN_Genome::stochastic_backpropagation(const Images &images) {
                 total_error += class_error[j];
             }
 
-
             bool found_improvement = false;
             if (total_error < best_error) {
                 best_error = total_error;
@@ -1226,6 +1193,16 @@ void CNN_Genome::stochastic_backpropagation(const Images &images) {
                 found_improvement = true;
             }
             print_progress(cerr, total_predictions, total_error);
+
+            /*
+            for (uint32_t i = 0; i < edges.size(); i++) {
+                edges[i]->print_statistics();
+            }
+
+            for (uint32_t i = 0; i < nodes.size(); i++) {
+                nodes[i]->print_statistics();
+            }
+            */
 
             if (!found_improvement) {
                 set_to_best();

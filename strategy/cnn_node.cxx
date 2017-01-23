@@ -6,10 +6,13 @@ using std::isinf;
 using std::ofstream;
 using std::ifstream;
 using std::ios;
+using std::ios_base;
 
 #include <iomanip>
 using std::setw;
 using std::setprecision;
+using std::dec;
+using std::hex;
 
 #include <iostream>
 using std::cout;
@@ -695,15 +698,6 @@ bool CNN_Node::has_nan() const {
     return false;
 }
 
-void CNN_Node::zero_bias_velocity() {
-    for (int32_t y = 0; y < size_y; y++) {
-        for (int32_t x = 0; x < size_x; x++) {
-            bias[y][x] = 0.0;
-            bias_velocity[y][x] = 0.0;
-        }
-    }
-}
-
 void CNN_Node::print_statistics() {
     double value_min = std::numeric_limits<double>::max(), value_max = -std::numeric_limits<double>::max(), value_avg = 0.0;
     double error_min = std::numeric_limits<double>::max(), error_max = -std::numeric_limits<double>::max(), error_avg = 0.0;
@@ -751,39 +745,47 @@ ostream &operator<<(ostream &os, const CNN_Node* node) {
     os << node->needs_initialization << endl;
 
     os << "BIAS" << endl;
+    os.setf(std::ios::hex);
     for (int32_t y = 0; y < node->size_y; y++) {
         for (int32_t x = 0; x < node->size_x; x++) {
             if (y > 0 || x > 0) os << " ";
-            os << setprecision(17) << node->bias[y][x];
+            os << node->bias[y][x];
         }
     }
+    os.setf(std::ios::dec);
     os << endl;
 
     os << "BEST_BIAS" << endl;
+    os.setf(std::ios::hex);
     for (int32_t y = 0; y < node->size_y; y++) {
         for (int32_t x = 0; x < node->size_x; x++) {
             if (y > 0 || x > 0) os << " ";
-            os << setprecision(17) << node->best_bias[y][x];
+            os << node->best_bias[y][x];
         }
     }
+    os.setf(std::ios::dec);
     os << endl;
 
     os << "BIAS_VELOCITY" << endl;
+    os.setf(std::ios::hex);
     for (int32_t y = 0; y < node->size_y; y++) {
         for (int32_t x = 0; x < node->size_x; x++) {
             if (y > 0 || x > 0) os << " ";
-            os << setprecision(17) << node->bias_velocity[y][x];
+            os << node->bias_velocity[y][x];
         }
     }
+    os.setf(std::ios::dec);
     os << endl;
 
     os << "BEST_BIAS_VELOCITY" << endl;
+    os.setf(std::ios::hex);
     for (int32_t y = 0; y < node->size_y; y++) {
         for (int32_t x = 0; x < node->size_x; x++) {
             if (y > 0 || x > 0) os << " ";
-            os << setprecision(17) << node->best_bias_velocity[y][x];
+            os << node->best_bias_velocity[y][x];
         }
     }
+    os.setf(std::ios::dec);
 
     return os;
 }
@@ -815,23 +817,24 @@ std::istream &operator>>(std::istream &is, CNN_Node* node) {
     node->best_bias_velocity = vector< vector<double> >(node->size_y, vector<double>(node->size_x, 0.0));
 
 
-    string line;
-    getline(is, line);
+    string line, prev_line;
+    getline(is, prev_line);
     getline(is, line);
     if (line.compare("BIAS") != 0) {
         cerr << "ERROR: invalid input file, expected line to be 'BIAS' but line was '" << line << "'" << endl;
+        cerr << "prev_line: '" << prev_line << "'" << endl;
         exit(1);
     }
 
 
-    double b;
+    is.setf(std::ios::hex);
     for (int32_t y = 0; y < node->size_y; y++) {
         for (int32_t x = 0; x < node->size_x; x++) {
-            is >> b;
-            node->bias[y][x] = b;
+            is >> node->bias[y][x];
             //cout << "reading node bias[" << y << "][" << x << "]: " << b << endl;
         }
     }
+    is.setf(std::ios::dec);
 
     getline(is, line);
     getline(is, line);
@@ -840,13 +843,14 @@ std::istream &operator>>(std::istream &is, CNN_Node* node) {
         exit(1);
     }
 
+    is.setf(std::ios::hex);
     for (int32_t y = 0; y < node->size_y; y++) {
         for (int32_t x = 0; x < node->size_x; x++) {
-            is >> b;
-            node->best_bias[y][x] = b;
+            is >> node->best_bias[y][x];
             //cout << "reading node best_bias[" << y << "][" << x << "]: " << b << endl;
         }
     }
+    is.setf(std::ios::dec);
 
     getline(is, line);
     getline(is, line);
@@ -855,13 +859,14 @@ std::istream &operator>>(std::istream &is, CNN_Node* node) {
         exit(1);
     }
 
+    is.setf(std::ios::hex);
     for (int32_t y = 0; y < node->size_y; y++) {
         for (int32_t x = 0; x < node->size_x; x++) {
-            is >> b;
-            node->bias_velocity[y][x] = b;
+            is >> node->bias_velocity[y][x];
             //cout << "reading node bias_velocity[" << y << "][" << x << "]: " << b << endl;
         }
     }
+    is.setf(std::ios::dec);
 
     getline(is, line);
     getline(is, line);
@@ -870,13 +875,14 @@ std::istream &operator>>(std::istream &is, CNN_Node* node) {
         exit(1);
     }
 
+    is.setf(std::ios::hex);
     for (int32_t y = 0; y < node->size_y; y++) {
         for (int32_t x = 0; x < node->size_x; x++) {
-            is >> b;
-            node->best_bias_velocity[y][x] = b;
+            is >> node->best_bias_velocity[y][x];
             //cout << "reading node best_bias_velocity[" << y << "][" << x << "]: " << b << endl;
         }
     }
+    is.setf(std::ios::dec);
 
     return is;
 }

@@ -71,6 +71,8 @@ CNN_Genome* receive_genome_from(string name, int source) {
 
     genome_str[length] = '\0';
 
+    //cout << "genome_str:" << endl << genome_str << endl;
+
     istringstream iss(genome_str);
 
     CNN_Genome* genome = new CNN_Genome(iss, false);

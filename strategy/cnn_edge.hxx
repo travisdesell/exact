@@ -126,8 +126,6 @@ class CNN_Edge {
 
         void print_statistics();
 
-        void zero_velocity();
-
         friend ostream &operator<<(ostream &os, const CNN_Edge* flight);
         friend istream &operator>>(istream &is, CNN_Edge* flight);
 };
