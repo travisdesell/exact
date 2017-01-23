@@ -3,13 +3,14 @@ project (EXACT)
 
 # The version number.
 set (EXACT_VERSION_MAJOR 0)
-set (EXACT_VERSION_MINOR 11)
+set (EXACT_VERSION_MINOR 12)
 
 add_definitions( -DEXACT_VERSION="${EXACT_VERSION_MAJOR}.${EXACT_VERSION_MINOR}" )
 
 SET (PLATFORM 64)
 
 #SET (CMAKE_CXX_FLAGS                "-std=c++11 -Wall -O3 -funroll-loops -msse3 -stdlib=libstdc++")
+#SET (CMAKE_CXX_FLAGS                "-std=c++11 -Wall -O3 -funroll-loops -msse3 -fsanitize=address -DNAN_CHECKS")
 SET (CMAKE_CXX_FLAGS                "-std=c++11 -Wall -O3 -funroll-loops -msse3")
 SET (CMAKE_CXX_FLAGS_DEBUG          "-g")
 SET (CMAKE_CXX_FLAGS_MINSIZEREL     "-Os -DNDEBUG")
@@ -53,6 +54,7 @@ ENDIF (COMPILE_CLIENT STREQUAL "YES")
 add_subdirectory(common)
 add_subdirectory(image_tools)
 add_subdirectory(strategy)
+add_subdirectory(tests)
 
 IF (COMPILE_CLIENT STREQUAL "YES")
     if (BOINC_APP_FOUND)

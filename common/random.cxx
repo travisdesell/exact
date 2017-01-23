@@ -3,6 +3,8 @@
 #include <limits>
 #include <cstdint>
 
+#include <iomanip>
+using std::setprecision;
 
 #include <iostream>
 using std::ostream;
@@ -59,7 +61,7 @@ double NormalDistribution::random(minstd_rand0 &generator, double mu, double sig
 }
 
 ostream &operator<<(ostream &os, const NormalDistribution &normal_distribution) {
-    os << normal_distribution.generate << " " << normal_distribution.z0 << " " << normal_distribution.z1;
+    os << normal_distribution.generate << " " << setprecision(15) << normal_distribution.z0 << " " << setprecision(15) << normal_distribution.z1;
 
     return os;
 }
