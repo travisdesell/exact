@@ -2,6 +2,8 @@
 using std::isnan;
 using std::isinf;
 
+#include <cstdio>
+
 #include <fstream>
 using std::ofstream;
 using std::ifstream;
@@ -9,10 +11,10 @@ using std::ios;
 using std::ios_base;
 
 #include <iomanip>
+using std::defaultfloat;
+using std::hexfloat;
 using std::setw;
 using std::setprecision;
-using std::dec;
-using std::hex;
 
 #include <iostream>
 using std::cout;
@@ -745,47 +747,39 @@ ostream &operator<<(ostream &os, const CNN_Node* node) {
     os << node->needs_initialization << endl;
 
     os << "BIAS" << endl;
-    os.setf(std::ios::hex);
     for (int32_t y = 0; y < node->size_y; y++) {
         for (int32_t x = 0; x < node->size_x; x++) {
             if (y > 0 || x > 0) os << " ";
-            os << node->bias[y][x];
+            os << hexfloat << node->bias[y][x] << defaultfloat;
         }
     }
-    os.setf(std::ios::dec);
     os << endl;
 
     os << "BEST_BIAS" << endl;
-    os.setf(std::ios::hex);
     for (int32_t y = 0; y < node->size_y; y++) {
         for (int32_t x = 0; x < node->size_x; x++) {
             if (y > 0 || x > 0) os << " ";
-            os << node->best_bias[y][x];
+            os << hexfloat << node->best_bias[y][x] << defaultfloat;
         }
     }
-    os.setf(std::ios::dec);
     os << endl;
 
     os << "BIAS_VELOCITY" << endl;
-    os.setf(std::ios::hex);
     for (int32_t y = 0; y < node->size_y; y++) {
         for (int32_t x = 0; x < node->size_x; x++) {
             if (y > 0 || x > 0) os << " ";
-            os << node->bias_velocity[y][x];
+            os << hexfloat << node->bias_velocity[y][x] << defaultfloat;
         }
     }
-    os.setf(std::ios::dec);
     os << endl;
 
     os << "BEST_BIAS_VELOCITY" << endl;
-    os.setf(std::ios::hex);
     for (int32_t y = 0; y < node->size_y; y++) {
         for (int32_t x = 0; x < node->size_x; x++) {
             if (y > 0 || x > 0) os << " ";
-            os << node->best_bias_velocity[y][x];
+            os << hexfloat << node->best_bias_velocity[y][x] << defaultfloat;
         }
     }
-    os.setf(std::ios::dec);
 
     return os;
 }
@@ -827,14 +821,14 @@ std::istream &operator>>(std::istream &is, CNN_Node* node) {
     }
 
 
-    is.setf(std::ios::hex);
+    string s;
     for (int32_t y = 0; y < node->size_y; y++) {
         for (int32_t x = 0; x < node->size_x; x++) {
-            is >> node->bias[y][x];
+            is >> s;
+            node->bias[y][x] = stod(s);
             //cout << "reading node bias[" << y << "][" << x << "]: " << b << endl;
         }
     }
-    is.setf(std::ios::dec);
 
     getline(is, line);
     getline(is, line);
@@ -843,14 +837,13 @@ std::istream &operator>>(std::istream &is, CNN_Node* node) {
         exit(1);
     }
 
-    is.setf(std::ios::hex);
     for (int32_t y = 0; y < node->size_y; y++) {
         for (int32_t x = 0; x < node->size_x; x++) {
-            is >> node->best_bias[y][x];
+            is >> s;
+            node->best_bias[y][x] = stod(s);
             //cout << "reading node best_bias[" << y << "][" << x << "]: " << b << endl;
         }
     }
-    is.setf(std::ios::dec);
 
     getline(is, line);
     getline(is, line);
@@ -859,14 +852,13 @@ std::istream &operator>>(std::istream &is, CNN_Node* node) {
         exit(1);
     }
 
-    is.setf(std::ios::hex);
     for (int32_t y = 0; y < node->size_y; y++) {
         for (int32_t x = 0; x < node->size_x; x++) {
-            is >> node->bias_velocity[y][x];
+            is >> s;
+            node->bias_velocity[y][x] = stod(s);
             //cout << "reading node bias_velocity[" << y << "][" << x << "]: " << b << endl;
         }
     }
-    is.setf(std::ios::dec);
 
     getline(is, line);
     getline(is, line);
@@ -875,14 +867,13 @@ std::istream &operator>>(std::istream &is, CNN_Node* node) {
         exit(1);
     }
 
-    is.setf(std::ios::hex);
     for (int32_t y = 0; y < node->size_y; y++) {
         for (int32_t x = 0; x < node->size_x; x++) {
-            is >> node->best_bias_velocity[y][x];
+            is >> s;
+            node->best_bias_velocity[y][x] = stod(s);
             //cout << "reading node best_bias_velocity[" << y << "][" << x << "]: " << b << endl;
         }
     }
-    is.setf(std::ios::dec);
 
     return is;
 }

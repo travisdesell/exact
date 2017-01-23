@@ -8,10 +8,10 @@ using std::ifstream;
 using std::ios;
 
 #include <iomanip>
+using std::defaultfloat;
+using std::hexfloat;
 using std::setw;
 using std::setprecision;
-using std::dec;
-using std::hex;
 
 #include <iostream>
 using std::cout;
@@ -961,11 +961,10 @@ ostream &operator<<(ostream &os, const CNN_Edge* edge) {
 
     os << "WEIGHTS" << endl;
 
-    os.setf(std::ios::hex);
     for (int32_t y = 0; y < edge->filter_y; y++) {
         for (int32_t x = 0; x < edge->filter_x; x++) {
             if (y > 0 || x > 0) os << " ";
-             os << edge->weights[y][x];
+             os << hexfloat << edge->weights[y][x] << defaultfloat;
         }
     }
     os << endl;
@@ -974,7 +973,7 @@ ostream &operator<<(ostream &os, const CNN_Edge* edge) {
     for (int32_t y = 0; y < edge->filter_y; y++) {
         for (int32_t x = 0; x < edge->filter_x; x++) {
             if (y > 0 || x > 0) os << " ";
-            os << edge->best_weights[y][x];
+            os << hexfloat << edge->best_weights[y][x] << defaultfloat;
         }
     }
     os << endl;
@@ -983,7 +982,7 @@ ostream &operator<<(ostream &os, const CNN_Edge* edge) {
     for (int32_t y = 0; y < edge->filter_y; y++) {
         for (int32_t x = 0; x < edge->filter_x; x++) {
             if (y > 0 || x > 0) os << " ";
-            os << edge->previous_velocity[y][x];
+            os << hexfloat << edge->previous_velocity[y][x] << defaultfloat;
         }
     }
     os << endl;
@@ -992,10 +991,9 @@ ostream &operator<<(ostream &os, const CNN_Edge* edge) {
     for (int32_t y = 0; y < edge->filter_y; y++) {
         for (int32_t x = 0; x < edge->filter_x; x++) {
             if (y > 0 || x > 0) os << " ";
-            os << edge->best_velocity[y][x];
+            os << hexfloat << edge->best_velocity[y][x] << defaultfloat;
         }
     }
-    os.setf(std::ios::dec);
 
     return os;
 }
@@ -1030,13 +1028,13 @@ istream &operator>>(istream &is, CNN_Edge* edge) {
         exit(1);
     }
 
-    is.setf(std::ios::hex);
+    string s;
     for (int32_t y = 0; y < edge->filter_y; y++) {
         for (int32_t x = 0; x < edge->filter_x; x++) {
-            is >> edge->weights[y][x];
+            is >> s;
+            edge->weights[y][x] = stod(s);
         }
     }
-    is.setf(std::ios::dec);
 
     getline(is, line);
     getline(is, line);
@@ -1045,13 +1043,12 @@ istream &operator>>(istream &is, CNN_Edge* edge) {
         exit(1);
     }
 
-    is.setf(std::ios::hex);
     for (int32_t y = 0; y < edge->filter_y; y++) {
         for (int32_t x = 0; x < edge->filter_x; x++) {
-            is >> edge->best_weights[y][x];
+            is >> s;
+            edge->best_weights[y][x] = stod(s);
         }
     }
-    is.setf(std::ios::dec);
 
     getline(is, line);
     getline(is, line);
@@ -1060,13 +1057,12 @@ istream &operator>>(istream &is, CNN_Edge* edge) {
         exit(1);
     }
 
-    is.setf(std::ios::hex);
     for (int32_t y = 0; y < edge->filter_y; y++) {
         for (int32_t x = 0; x < edge->filter_x; x++) {
-            is >> edge->previous_velocity[y][x];
+            is >> s;
+            edge->previous_velocity[y][x] = stod(s);
         }
     }
-    is.setf(std::ios::dec);
 
     getline(is, line);
     getline(is, line);
@@ -1075,13 +1071,12 @@ istream &operator>>(istream &is, CNN_Edge* edge) {
         exit(1);
     }
 
-    is.setf(std::ios::hex);
     for (int32_t y = 0; y < edge->filter_y; y++) {
         for (int32_t x = 0; x < edge->filter_x; x++) {
-            is >> edge->best_velocity[y][x];
+            is >> s;
+            edge->best_velocity[y][x] = stod(s);
         }
     }
-    is.setf(std::ios::dec);
 
     return is;
 }
