@@ -1174,6 +1174,7 @@ void CNN_Genome::stochastic_backpropagation(const Images &images) {
 
         for (uint32_t j = 0; j < backprop_order.size(); j++) {
             evaluate_image(images.get_image(backprop_order[j]), class_error, true);
+            break;
         }
 
         if (epoch % improvement_required_epochs == 0) {
