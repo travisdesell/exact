@@ -1,6 +1,6 @@
 #include <cmath>
-//for isnan
 using std::isnan;
+using std::isinf;
 
 #include <fstream>
 using std::ofstream;
@@ -338,8 +338,8 @@ void CNN_Edge::resize() {
 }
 
 void CNN_Edge::save_best_weights() {
-    for (uint32_t y = 0; y < filter_y; y++) {
-        for (uint32_t x = 0; x < filter_x; x++) {
+    for (int32_t y = 0; y < filter_y; y++) {
+        for (int32_t x = 0; x < filter_x; x++) {
             best_weights[y][x] = weights[y][x];
             best_velocity[y][x] = previous_velocity[y][x];
         }
@@ -347,8 +347,8 @@ void CNN_Edge::save_best_weights() {
 }
 
 void CNN_Edge::set_weights_to_best() {
-    for (uint32_t y = 0; y < filter_y; y++) {
-        for (uint32_t x = 0; x < filter_x; x++) {
+    for (int32_t y = 0; y < filter_y; y++) {
+        for (int32_t x = 0; x < filter_x; x++) {
             weights[y][x] = best_weights[y][x];
             //previous_velocity[y][x] = best_velocity[y][x];
             previous_velocity[y][x] = 0;
