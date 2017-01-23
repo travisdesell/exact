@@ -614,7 +614,7 @@ void CNN_Node::input_fired() {
         if (type != SOFTMAX_NODE) {
             for (int32_t y = 0; y < size_y; y++) {
                 for (int32_t x = 0; x < size_x; x++) {
-                    //values[y][x] += bias[y][x];
+                    values[y][x] += bias[y][x];
                     //cout << "values for node " << innovation_number << " now " << values[y][x] << " after adding bias: " << bias[y][x] << endl;
 
                     //apply activation function
@@ -677,7 +677,7 @@ void CNN_Node::propagate_bias(double mu, double learning_rate, double weight_dec
 #endif
 
             if (bias[y][x] < -100.0) bias[y][x] = -100.0;
-            if (bias[y][x] > 100.0) bias[y][x] = 100.0;
+            else if (bias[y][x] > 100.0) bias[y][x] = 100.0;
         }
     }
 }
@@ -698,6 +698,8 @@ bool CNN_Node::has_nan() const {
 void CNN_Node::print_statistics() {
     double value_min = std::numeric_limits<double>::max(), value_max = -std::numeric_limits<double>::max(), value_avg = 0.0;
     double error_min = std::numeric_limits<double>::max(), error_max = -std::numeric_limits<double>::max(), error_avg = 0.0;
+    double bias_min = std::numeric_limits<double>::max(), bias_max = -std::numeric_limits<double>::max(), bias_avg = 0.0;
+    double bias_velocity_min = std::numeric_limits<double>::max(), bias_velocity_max = -std::numeric_limits<double>::max(), bias_velocity_avg = 0.0;
 
     for (int y = 0; y < size_y; y++) {
         for (int x = 0; x < size_x; x++) {
@@ -708,13 +710,21 @@ void CNN_Node::print_statistics() {
             if (errors[y][x] < error_min) error_min = errors[y][x];
             if (errors[y][x] > error_max) error_max = errors[y][x];
             error_avg += errors[y][x];
+
+            if (bias[y][x] < bias_min) bias_min = bias[y][x];
+            if (bias[y][x] > bias_max) bias_max = bias[y][x];
+            bias_avg += bias[y][x];
+
+            if (bias_velocity[y][x] < bias_velocity_min) bias_velocity_min = bias_velocity[y][x];
+            if (bias_velocity[y][x] > bias_velocity_max) bias_velocity_max = bias_velocity[y][x];
+            bias_velocity_avg += bias_velocity[y][x];
         }
     }
 
     error_avg /= size_y * size_x;
     value_avg /= size_y * size_x;
 
-    cerr << "node " << setw(4) << innovation_number << ", v_min: " << value_min << ", v_avg: " << value_avg << ", v_max: " << value_max << ", e_min: " << error_min << ", e_avg: " << error_avg << ", e_max: " << error_max << endl;
+    cerr << "node " << setw(4) << innovation_number << ", v_min: " << value_min << ", v_avg: " << value_avg << ", v_max: " << value_max << ", e_min: " << error_min << ", e_avg: " << error_avg << ", e_max: " << error_max << ", b_min: " << bias_min << ", b_avg: " << bias_avg << ", b_max: " << bias_max << ", bv_min: " << bias_velocity_min << ", bv_avg: " << bias_velocity_avg << ", bv_max: " << bias_velocity_max << endl;
 }
 
 ostream &operator<<(ostream &os, const CNN_Node* node) {

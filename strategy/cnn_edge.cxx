@@ -794,7 +794,7 @@ void CNN_Edge::propagate_backward() {
     vector< vector<double> > &input_errors = input_node->get_errors();
 
     double weight, weight_update, delta;
-    
+
     int out_x = output_node->get_size_x();
     int out_y = output_node->get_size_y();
 
@@ -809,12 +809,11 @@ void CNN_Edge::propagate_backward() {
                 for (int32_t y = 0; y < out_y; y++) {
                     for (int32_t x = 0; x < out_x; x++) {
                         delta = output_errors[y + fy][x + fx] * output_gradients[y + fy][x + fx];
-                        weight_update += input[y][x] * delta;
 #ifdef NAN_CHECKS                        
                         double previous_weight_update = weight_update;
 #endif
+                        weight_update += input[y][x] * delta;
                         input_errors[y][x] += delta * weight;
-
 #ifdef NAN_CHECKS
                         check_weight_update(output_errors, output_gradients, input, delta, weight_update, previous_weight_update, y + fy, x + fx, y, x);
 #endif
@@ -840,7 +839,6 @@ void CNN_Edge::propagate_backward() {
 #endif
                         weight_update += input[y + fy][x] * delta;
                         input_errors[y + fy][x] += delta * weight;
-
 #ifdef NAN_CHECKS
                         check_weight_update(output_errors, output_gradients, input, delta, weight_update, previous_weight_update, y, x + fx, y + fy, x);
 #endif
@@ -930,7 +928,6 @@ void CNN_Edge::print_statistics() {
             if (weight_updates[fy][fx] < weight_update_min) weight_update_min = weight_updates[fy][fx];
             if (weight_updates[fy][fx] > weight_update_max) weight_update_max = weight_updates[fy][fx];
             weight_update_avg += weight_updates[fy][fx];
-
 
             if (previous_velocity[fy][fx] < velocity_min) velocity_min = previous_velocity[fy][fx];
             if (previous_velocity[fy][fx] > velocity_max) velocity_max = previous_velocity[fy][fx];
@@ -1028,7 +1025,7 @@ istream &operator>>(istream &is, CNN_Edge* edge) {
         cerr << "ERROR: invalid input file, expected line to be 'WEIGHTS' but line was '" << line << "'" << endl;
         exit(1);
     }
-    
+
     for (int32_t y = 0; y < edge->filter_y; y++) {
         for (int32_t x = 0; x < edge->filter_x; x++) {
             is >> edge->weights[y][x];

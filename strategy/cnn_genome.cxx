@@ -971,11 +971,9 @@ int CNN_Genome::evaluate_image(const Image &image, vector<double> &class_error, 
             edges[i]->update_weights(mu, learning_rate, weight_decay);
         }
 
-        /*
         for (int32_t i = 0; i < nodes.size(); i++) {
             nodes[i]->propagate_bias(mu, learning_rate, weight_decay);
         }
-        */
     }
 
     return predicted_class;
@@ -1142,6 +1140,15 @@ void CNN_Genome::stochastic_backpropagation(const Images &images) {
         }
 
         print_progress(cerr, total_predictions, total_error);
+
+        for (uint32_t i = 0; i < edges.size(); i++) {
+            edges[i]->print_statistics();
+        }
+
+        for (uint32_t i = 0; i < nodes.size(); i++) {
+            nodes[i]->print_statistics();
+        }
+
     }
 
     do {
@@ -1151,24 +1158,12 @@ void CNN_Genome::stochastic_backpropagation(const Images &images) {
         //shuffle the array (thanks C++ not being the same across operating systems)
         fisher_yates_shuffle(generator, backprop_order);
 
-        /*
         for (int32_t i = 0; i < 3; i++) {
             cerr << "after suffle, backprop_order[" << i << "] = " << backprop_order[i] << ", backprop_order.size(): " << backprop_order.size() << endl;
         }
-        */
-
 
         for (uint32_t j = 0; j < backprop_order.size(); j++) {
-            //cerr << "evaluating image: " << setw(10) << backprop_order[j] << endl;
             evaluate_image(images.get_image(backprop_order[j]), class_error, true);
-
-            if (j < 5) {
-                cerr << "class error: ";
-                for (uint32_t i = 0; i < class_error.size(); i++) {
-                    cerr << setw(13) << setprecision(5) << fixed << class_error[i];
-                }
-                cerr << endl;
-            }
         }
 
         if (epoch % improvement_required_epochs == 0) {
@@ -1189,7 +1184,6 @@ void CNN_Genome::stochastic_backpropagation(const Images &images) {
 
             for (uint32_t j = 0; j < class_error.size(); j++) {
                 total_error += class_error[j];
-                //cerr << "\tclass " << setw(4) << j << ": " << setw(12) << setprecision(5) << class_error[j] << ", correct_predictions: " << correct_predictions[j] << " of " << class_sizes[j] << endl;
             }
 
 
@@ -1212,7 +1206,6 @@ void CNN_Genome::stochastic_backpropagation(const Images &images) {
             }
             print_progress(cerr, total_predictions, total_error);
 
-            /*
             for (uint32_t i = 0; i < edges.size(); i++) {
                 edges[i]->print_statistics();
             }
@@ -1220,7 +1213,6 @@ void CNN_Genome::stochastic_backpropagation(const Images &images) {
             for (uint32_t i = 0; i < nodes.size(); i++) {
                 nodes[i]->print_statistics();
             }
-            */
 
             if (!found_improvement) {
                 set_to_best();
