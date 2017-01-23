@@ -2,9 +2,7 @@
 #define CNN_GENOME_H
 
 #include <random>
-using std::mt19937;
-using std::uniform_int_distribution;
-using std::uniform_real_distribution;
+using std::minstd_rand0;
 
 #include <vector>
 using std::vector;
@@ -12,28 +10,40 @@ using std::vector;
 #include "image_tools/image_set.hxx"
 #include "cnn_node.hxx"
 #include "cnn_edge.hxx"
+#include "common/random.hxx"
 
 #define SANITY_CHECK_BEFORE_INSERT 0
 #define SANITY_CHECK_AFTER_GENERATION 1
 
+//mysql can't handl the max double value for some reason
+#define EXACT_MAX_DOUBLE 10000000
+
 class CNN_Genome {
     private:
+        string version_str;
+        int exact_id;
+        int genome_id;
+
         vector<CNN_Node*> nodes;
         vector<CNN_Edge*> edges;
 
         CNN_Node *input_node;
         vector<CNN_Node*> softmax_nodes;
 
-        mt19937 generator;
-        uniform_real_distribution<double> rng_double;
-        uniform_int_distribution<long> rng_long;
+        NormalDistribution normal_distribution;
+        minstd_rand0 generator;
 
         double initial_mu;
         double mu;
+        double mu_decay;
+
         double initial_learning_rate;
         double learning_rate;
+        double learning_rate_decay;
+
         double initial_weight_decay;
         double weight_decay;
+        double weight_decay_decay;
 
         int epoch;
         int min_epochs;
@@ -68,6 +78,8 @@ class CNN_Genome {
         int generated_by_crossover;
         int generated_by_reset_weights;
 
+        int (*progress_function)(double);
+
     public:
         /**
          *  Initialize a genome from a file
@@ -78,14 +90,30 @@ class CNN_Genome {
         /**
          *  Iniitalize a genome from a set of nodes and edges
          */
-        CNN_Genome(int _generation_id, int seed, int _min_epochs, int _max_epochs, int _improvement_required_epochs, bool _reset_weights, double _learning_rate, double _weight_decay, const vector<CNN_Node*> &_nodes, const vector<CNN_Edge*> &_edges);
+        CNN_Genome(int _generation_id, int seed, int _min_epochs, int _max_epochs, int _improvement_required_epochs, bool _reset_edges, double _mu, double _mu_decay, double _learning_rate, double _learning_rate_decay, double _weight_decay, double _weight_decay_decay, const vector<CNN_Node*> &_nodes, const vector<CNN_Edge*> &_edges);
 
         ~CNN_Genome();
 
+#ifdef _MYSQL_
+        CNN_Genome(int genome_id);
+        void export_to_database(int exact_id);
+#endif
+
+        double get_version() const;
+        string get_version_str() const;
+
+
+        int get_genome_id() const;
+        int get_exact_id() const;
+
         bool equals(CNN_Genome *other) const;
 
+        void print_progress(ostream &out, int total_predictions, double total_error) const;
         void print_best_error(ostream &out) const;
         void print_best_predictions(ostream &out) const;
+
+        int get_number_weights() const;
+        void set_progress_function(int (*_progress_function)(double));
 
         int get_generation_id() const;
         double get_fitness() const;
@@ -95,7 +123,7 @@ class CNN_Genome {
         int get_max_epochs() const;
         int get_number_enabled_edges() const;
 
-        bool sanity_check(int type) const;
+        bool sanity_check(int type);
         bool outputs_connected() const;
 
         const vector<CNN_Node*> get_nodes() const;
@@ -116,14 +144,9 @@ class CNN_Genome {
  
         int evaluate_image(const Image &image, vector<double> &class_error, bool do_backprop);
 
-        void initialize_weights();
-        void initialize_bias();
-
-        void reinitialize();
-
         void set_to_best();
-        void save_weights();
-        void save_bias();
+        void save_to_best();
+        void initialize();
         void stochastic_backpropagation(const Images &images);
 
         void set_name(string _name);
@@ -156,7 +179,6 @@ class CNN_Genome {
         int get_generated_by_change_size_y();
         int get_generated_by_crossover();
         int get_generated_by_reset_weights();
-
 };
 
 

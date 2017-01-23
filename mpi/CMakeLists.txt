@@ -1,10 +1,15 @@
-find_package(MPI REQUIRED)
+find_package(MPI)
 
 if (MPI_FOUND)
     set (CMAKE_CXX_COMPILE_FLAGS ${CMAKE_COMPILE_FLAGS} ${MPI_COMPILE_FLAGS})
     set (CMAKE_CXX_LINK_FLAGS ${CMAKE_CXX_LINK_FLAGS} ${MPI_LINK_FLAGS})
     include_directories(${MPI_INCLUDE_PATH})
 
-	add_executable(exact_mpi exact_mpi)
-	target_link_libraries(exact_mpi exact_strategy exact_image_tools ${UNDVC_COMMON_LIBRARY} ${MPI_LIBRARIES} ${MPI_EXTRA} pthread)
+    IF (MYSQL_FOUND)
+        add_executable(exact_mpi exact_mpi)
+        target_link_libraries(exact_mpi exact_strategy exact_image_tools exact_common ${MPI_LIBRARIES} ${MPI_EXTRA} ${MYSQL_LIBRARIES} pthread)
+    ELSEIF (MYSQL_FOUND)
+        add_executable(exact_mpi exact_mpi)
+        target_link_libraries(exact_mpi exact_common exact_strategy exact_image_tools ${MPI_LIBRARIES} ${MPI_EXTRA} pthread)
+    ENDIF (MYSQL_FOUND)
 endif (MPI_FOUND)

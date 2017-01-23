@@ -2,6 +2,9 @@
 using std::sort;
 using std::upper_bound;
 
+#include <cmath>
+using std::isnan;
+
 #include <fstream>
 using std::ofstream;
 using std::ifstream;
@@ -23,12 +26,15 @@ using std::cerr;
 using std::endl;
 using std::ostream;
 using std::istream;
+using std::hexfloat;
+using std::defaultfloat;
 
 #include <random>
-using std::mt19937;
-using std::normal_distribution;
-using std::uniform_int_distribution;
-using std::uniform_real_distribution;
+using std::minstd_rand0;
+
+#include <sstream>
+using std::istringstream;
+using std::ostringstream;
 
 #include <string>
 using std::string;
@@ -38,44 +44,345 @@ using std::to_string;
 using std::vector;
 
 
+#ifdef _MYSQL_
+#include "common/db_conn.hxx"
+#endif
+
+#include "common/random.hxx"
+
 #include "image_tools/image_set.hxx"
 #include "cnn_node.hxx"
 #include "cnn_edge.hxx"
 #include "cnn_genome.hxx"
 
+#include "stdint.h"
+
+
 /**
  *  Initialize a genome from a file
  */
 CNN_Genome::CNN_Genome(string filename, bool is_checkpoint) {
+    exact_id = -1;
+    genome_id = -1;
     started_from_checkpoint = is_checkpoint;
 
-    ifstream infile(filename);
+    ifstream infile(filename.c_str());
     read(infile);
     infile.close();
 }
 
 CNN_Genome::CNN_Genome(istream &in, bool is_checkpoint) {
+    exact_id = -1;
+    genome_id = -1;
     started_from_checkpoint = is_checkpoint;
     read(in);
 }
 
+
+void CNN_Genome::set_progress_function(int (*_progress_function)(double)) {
+    progress_function = _progress_function;
+}
+
+int CNN_Genome::get_genome_id() const {
+    return genome_id;
+}
+
+int CNN_Genome::get_exact_id() const {
+    return exact_id;
+}
+
+template <class T>
+void parse_array(vector<T> &output, istringstream &iss) {
+    output.clear();
+
+    T val;
+    while(iss >> val || !iss.eof()) {
+        if (iss.fail()) {
+            iss.clear();
+            string dummy;
+            iss >> dummy;
+            continue;
+        }
+        output.push_back(val);
+        //cout << val << endl;
+    }
+}
+
+#ifdef _MYSQL_
+CNN_Genome::CNN_Genome(int _genome_id) {
+    progress_function = NULL;
+
+    ostringstream query;
+
+    query << "SELECT * FROM cnn_genome WHERE id = " << _genome_id;
+
+    mysql_exact_query(query.str());
+
+    MYSQL_RES *result = mysql_store_result(exact_db_conn);
+
+    if (result != NULL) {
+        MYSQL_ROW row = mysql_fetch_row(result);
+
+        genome_id = _genome_id; //this is also row[0]
+        exact_id = atoi(row[1]);
+
+        int input_node_innovation_number = atoi(row[2]);
+
+        vector<int> softmax_node_innovation_numbers;
+
+        istringstream softmax_node_innovation_numbers_iss(row[3]);
+        //cout << "parsing softax node innovation numbers" << endl;
+        parse_array(softmax_node_innovation_numbers, softmax_node_innovation_numbers_iss);
+
+        istringstream generator_iss(row[4]);
+        generator_iss >> generator;
+
+        istringstream normal_distribution_iss(row[5]);
+        normal_distribution_iss >> normal_distribution;
+
+        //cout << "generator: " << generator << endl;
+
+        initial_mu = atof(row[6]);
+        mu = atof(row[7]);
+        mu_decay = atof(row[8]);
+
+        initial_learning_rate = atof(row[9]);
+        learning_rate = atof(row[10]);
+        learning_rate_decay = atof(row[11]);
+
+        initial_weight_decay = atof(row[12]);
+        weight_decay = atof(row[13]);
+        weight_decay_decay = atof(row[14]);
+
+        epoch = atoi(row[15]);
+        min_epochs = atoi(row[16]);
+        max_epochs = atoi(row[17]);
+        improvement_required_epochs = atoi(row[18]);
+        reset_edges = atoi(row[19]);
+
+        best_error = atof(row[20]);
+        best_error_epoch = atoi(row[21]);
+        best_predictions = atoi(row[22]);
+        best_predictions_epoch = atoi(row[23]);
+
+        istringstream best_class_error_iss(row[24]);
+        //cout << "parsing best class error" << endl;
+        parse_array(best_class_error, best_class_error_iss);
+
+        istringstream best_correct_predictions_iss(row[25]);
+        //cout << "parsing best correct predictions" << endl;
+        parse_array(best_correct_predictions, best_correct_predictions_iss);
+
+        started_from_checkpoint = atoi(row[26]);
+
+        /*
+        istringstream backprop_order_iss(row[23]);
+        //cout << "parsing backprop order" << endl;
+        parse_array(backprop_order, backprop_order_iss);
+        */
+        backprop_order.clear();
+
+        generation_id = atoi(row[27]);
+        name = row[28];
+        checkpoint_filename = row[29];
+        output_filename = row[30];
+
+        generated_by_disable_edge = atoi(row[31]);
+        generated_by_enable_edge = atoi(row[32]);
+        generated_by_split_edge = atoi(row[33]);
+        generated_by_add_edge = atoi(row[34]);
+        generated_by_change_size = atoi(row[35]);
+        generated_by_change_size_x = atoi(row[36]);
+        generated_by_change_size_y = atoi(row[37]);
+        generated_by_crossover = atoi(row[38]);
+
+        ostringstream node_query;
+        node_query << "SELECT id FROM cnn_node WHERE genome_id = " << genome_id;
+
+        mysql_exact_query(node_query.str());
+        //cout << "node query was successful!" << endl;
+
+        MYSQL_RES *node_result = mysql_store_result(exact_db_conn);
+        //cout << "got result!" << endl;
+
+        MYSQL_ROW node_row;
+        while ((node_row = mysql_fetch_row(node_result)) != NULL) {
+            int node_id = atoi(node_row[0]);
+            //cout << "got node with id: " << node_id << endl;
+
+            CNN_Node *node = new CNN_Node(node_id);
+            nodes.push_back(node);
+
+            if (node->get_innovation_number() == input_node_innovation_number) {
+                input_node = node;
+            }
+
+            if (find(softmax_node_innovation_numbers.begin(), softmax_node_innovation_numbers.end(), node->get_innovation_number()) != softmax_node_innovation_numbers.end()) {
+                softmax_nodes.push_back(node);
+            }
+        }
+
+        //cout << "got all nodes!" << endl;
+        mysql_free_result(node_result);
+
+        ostringstream edge_query;
+        edge_query << "SELECT id FROM cnn_edge WHERE genome_id = " << genome_id;
+
+        mysql_exact_query(edge_query.str());
+        //cout << "edge query was successful!" << endl;
+
+        MYSQL_RES *edge_result = mysql_store_result(exact_db_conn);
+        //cout << "got result!" << endl;
+
+        MYSQL_ROW edge_row;
+        while ((edge_row = mysql_fetch_row(edge_result)) != NULL) {
+            int edge_id = atoi(edge_row[0]);
+            //cout << "got edge with id: " << edge_id << endl;
+
+            CNN_Edge *edge = new CNN_Edge(edge_id);
+            edges.push_back(edge);
+
+            edge->set_nodes(nodes);
+        }
+
+        //cout << "got all edges!" << endl;
+        mysql_free_result(edge_result);
+
+        mysql_free_result(result);
+
+    } else {
+        cout << "Could not find genome with id: " << genome_id << "!" << endl;
+        exit(1);
+    }
+
+    if (epoch > 0) {
+        //if this was saved at an epoch > 0, it has already been initialized
+        started_from_checkpoint = true;
+    }
+}
+
+void CNN_Genome::export_to_database(int _exact_id) {
+    exact_id = _exact_id;
+
+    ostringstream query;
+
+    if (genome_id >= 0) {
+        query << "REPLACE INTO cnn_genome SET id = " << genome_id << ",";
+    } else {
+        query << "INSERT INTO cnn_genome SET";
+    }
+
+    query << " exact_id = " << exact_id
+        << ", input_node_innovation_number = " << input_node->get_innovation_number()
+        << ", softmax_node_innovation_numbers = '";
+
+    for (uint32_t i = 0; i < softmax_nodes.size(); i++) {
+        if (i != 0) query << " ";
+        query << softmax_nodes[i]->get_innovation_number();
+    }
+
+
+    query << "', generator = '" << generator << "'"
+        << ", normal_distribution = '" << normal_distribution << "'"
+        << ", initial_mu = " << setprecision(15) << fixed << initial_mu
+        << ", mu = " << setprecision(15) << fixed<< mu
+        << ", mu_decay = " << setprecision(15) << fixed << mu_decay
+        << ", initial_learning_rate = " << setprecision(15) << fixed << initial_learning_rate
+        << ", learning_rate = " << setprecision(15) << fixed << learning_rate
+        << ", learning_rate_decay = " << setprecision(15) << fixed << learning_rate_decay
+        << ", initial_weight_decay = " << setprecision(15) << fixed << initial_weight_decay
+        << ", weight_decay = " << setprecision(15) << fixed<< weight_decay
+        << ", weight_decay_decay = " << setprecision(15) << fixed << weight_decay_decay
+        << ", epoch = " << epoch
+        << ", min_epochs = " << min_epochs
+        << ", max_epochs = " << max_epochs
+        << ", improvement_required_epochs = " << improvement_required_epochs
+        << ", reset_edges = " << reset_edges
+        << ", best_error = " << setprecision(15) << fixed << best_error
+        << ", best_predictions = " << best_predictions
+        << ", best_predictions_epoch = " << best_predictions_epoch
+        << ", best_error_epoch = " << best_error_epoch
+        << ", best_class_error = '";
+
+    for (uint32_t i = 0; i < best_class_error.size(); i++) {
+        if (i != 0) query << " ";
+        query << setprecision(15) << fixed << best_class_error[i];
+    }
+
+    query << "', best_correct_predictions = '";
+    for (uint32_t i = 0; i < best_correct_predictions.size(); i++) {
+        if (i != 0) query << " ";
+        query << best_correct_predictions[i];
+    }
+
+    query << "', started_from_checkpoint = " << started_from_checkpoint;
+
+    //too much overhead for saving this and no use for it
+    //query << ", backprop_order = ''";
+    /*
+    query << ", backprop_order = '";
+    for (uint32_t i = 0; i < backprop_order.size(); i++) {
+        if (i != 0) query << " ";
+        query << setprecision(15) << backprop_order[i];
+    }
+    query << "'";
+    */
+
+    query << ", generation_id = " << generation_id
+        << ", name = '" << name << "'"
+        << ", checkpoint_filename = '" << checkpoint_filename << "'"
+        << ", output_filename = '" << output_filename << "'"
+        << ", generated_by_disable_edge = " << generated_by_disable_edge
+        << ", generated_by_enable_edge = " << generated_by_enable_edge
+        << ", generated_by_split_edge = " << generated_by_split_edge
+        << ", generated_by_add_edge = " << generated_by_add_edge
+        << ", generated_by_change_size = " << generated_by_change_size
+        << ", generated_by_change_size_x = " << generated_by_change_size_x
+        << ", generated_by_change_size_y = " << generated_by_change_size_y
+        << ", generated_by_crossover = " << generated_by_crossover;
+
+    //cout << "query:\n" << query.str() << endl;
+
+    mysql_exact_query(query.str());
+
+    if (genome_id < 0) {
+        genome_id = mysql_exact_last_insert_id(); //get last insert id from database
+        cout << "setting genome id to: " << genome_id << endl;
+    }
+
+    for (uint32_t i = 0; i < nodes.size(); i++) {
+        nodes[i]->export_to_database(exact_id, genome_id);
+    }
+
+    for (uint32_t i = 0; i < edges.size(); i++) {
+        edges[i]->export_to_database(exact_id, genome_id);
+    }
+}
+
+#endif
+
 /**
  *  Iniitalize a genome from a set of nodes and edges
  */
-CNN_Genome::CNN_Genome(int _generation_id, int seed, int _min_epochs, int _max_epochs, int _improvement_required_epochs, bool _reset_weights, double _learning_rate, double _weight_decay, const vector<CNN_Node*> &_nodes, const vector<CNN_Edge*> &_edges) {
+CNN_Genome::CNN_Genome(int _generation_id, int seed, int _min_epochs, int _max_epochs, int _improvement_required_epochs, bool _reset_edges, double _mu, double _mu_decay, double _learning_rate, double _learning_rate_decay, double _weight_decay, double _weight_decay_decay, const vector<CNN_Node*> &_nodes, const vector<CNN_Edge*> &_edges) {
+    exact_id = -1;
+    genome_id = -1;
     started_from_checkpoint = false;
-    generator = mt19937(seed);
-    rng_double = uniform_real_distribution<double>(0, 1.0);
-    rng_long = uniform_int_distribution<long>(-numeric_limits<long>::max(), numeric_limits<long>::max());
+    generator = minstd_rand0(seed);
 
-    mu = 0.5;
+    progress_function = NULL;
+
+    mu = _mu;
     initial_mu = mu;
+    mu_decay = _mu_decay;
 
     learning_rate = _learning_rate;
     initial_learning_rate = learning_rate;
+    learning_rate_decay = _learning_rate_decay;
 
     weight_decay = _weight_decay;
     initial_weight_decay = weight_decay;
+    weight_decay_decay = _weight_decay_decay;
 
     epoch = 0;
     min_epochs = _min_epochs;
@@ -84,7 +391,7 @@ CNN_Genome::CNN_Genome(int _generation_id, int seed, int _min_epochs, int _max_e
     reset_weights = _reset_weights;
 
     best_predictions = 0;
-    best_error = numeric_limits<double>::max();
+    best_error = EXACT_MAX_DOUBLE;
 
     best_predictions_epoch = 0;
     best_error_epoch = 0;
@@ -173,14 +480,14 @@ CNN_Genome::~CNN_Genome() {
 }
 
 bool CNN_Genome::equals(CNN_Genome *other) const {
-    for (int i = 0; i < edges.size(); i++) {
+    for (int32_t i = 0; i < (int32_t)edges.size(); i++) {
         CNN_Edge *edge = edges[i];
 
         if (edge->is_disabled()) continue;
 
         bool found = false;
 
-        for (int j = 0; j < other->get_number_edges(); j++) {
+        for (int32_t j = 0; j < other->get_number_edges(); j++) {
             CNN_Edge *other_edge = other->get_edge(j);
 
             if (other_edge->is_disabled()) continue;
@@ -197,14 +504,14 @@ bool CNN_Genome::equals(CNN_Genome *other) const {
 
     //other may have edges not in this genome, need to check this as well
 
-    for (int i = 0; i < other->get_number_edges(); i++) {
+    for (int32_t i = 0; i < other->get_number_edges(); i++) {
         CNN_Edge *other_edge = other->get_edge(i);
 
         if (other_edge->is_disabled()) continue;
 
         bool found = false;
         
-        for (int j = 0; j < edges.size(); j++) {
+        for (int32_t j = 0; j < (int32_t)edges.size(); j++) {
             CNN_Edge* edge = edges[j];
 
             if (edge->is_disabled()) continue;
@@ -234,6 +541,20 @@ void CNN_Genome::print_best_predictions(ostream &out) const {
         cout << setw(15) << setprecision(5) << best_correct_predictions[i];
     }
     cout << endl;
+}
+
+int CNN_Genome::get_number_weights() const {
+    int number_weights = 0;
+
+    for (uint32_t i = 0; i < nodes.size(); i++) {
+        number_weights += nodes[i]->get_size_x() * nodes[i]->get_size_y();
+    }
+
+    for (uint32_t i = 0; i < edges.size(); i++) {
+        number_weights += edges[i]->get_filter_x() * edges[i]->get_filter_y();
+    }
+
+    return number_weights;
 }
 
 
@@ -341,19 +662,17 @@ void CNN_Genome::resize_edges_around_node(int node_innovation_number) {
 
         if (edge->get_input_node()->get_innovation_number() == node_innovation_number) {
             cout << "\tresizing edge with innovation number " << edge->get_innovation_number() << " as input to node with innovation number " << node_innovation_number << endl;
-            edge->reinitialize(generator);
-            edge->save_best_weights();  //save weights for reuse
+            edge->resize();
         }
 
         if (edge->get_output_node()->get_innovation_number() == node_innovation_number) {
             cout << "\tresizing edge with innovation number " << edge->get_innovation_number() << " as output from node with innovation number " << node_innovation_number << endl;
-            edge->reinitialize(generator);
-            edge->save_best_weights();  //save weights for reuse
+            edge->resize();
         }
     }
 }
 
-bool CNN_Genome::sanity_check(int type) const {
+bool CNN_Genome::sanity_check(int type) {
     //check to see if all edge filters are the correct size
     for (uint32_t i = 0; i < edges.size(); i++) {
         if (!edges[i]->is_filter_correct()) {
@@ -363,8 +682,22 @@ bool CNN_Genome::sanity_check(int type) const {
         }
     }
 
-    //check for duplicate edges
+    //check for duplicate edges, make sure edge size is sane
     for (uint32_t i = 0; i < edges.size(); i++) {
+        if (edges[i]->get_filter_x() <= 0 || edges[i]->get_filter_x() > 100) {
+            cerr << "ERROR: edge failed sanity check, reached impossible filter_x (<= 0 or > 100)" << endl;
+            cerr << "edge in position " << i << " with innovation number: " << edges[i]->get_innovation_number() << endl;
+            cerr << "filter_x: " << edges[i]->get_filter_x() << ", filter_y: " << edges[i]->get_filter_y() << endl;
+            return false;
+        }
+
+        if (edges[i]->get_filter_y() <= 0 || edges[i]->get_filter_y() > 100) {
+            cerr << "ERROR: edge failed sanity check, reached impossible filter_y (<= 0 or > 100)" << endl;
+            cerr << "edge in position " << i << " with innovation number: " << edges[i]->get_innovation_number() << endl;
+            cerr << "filter_x: " << edges[i]->get_filter_x() << ", filter_y: " << edges[i]->get_filter_y() << endl;
+            return false;
+        }
+
         for (uint32_t j = i + 1; j < edges.size(); j++) {
             if (edges[i]->get_innovation_number() == edges[j]->get_innovation_number()) {
                 cerr << "SANITY CHECK FAILED! edges[" << i << "] and edges[" << j << "] have the same innovation number: " << edges[i]->get_innovation_number() << endl;
@@ -373,8 +706,22 @@ bool CNN_Genome::sanity_check(int type) const {
         }
     }
 
-    //check for duplicate nodes
+    //check for duplicate nodes, make sure node size is sane
     for (uint32_t i = 0; i < nodes.size(); i++) {
+        if (nodes[i]->get_size_x() <= 0 || nodes[i]->get_size_x() > 100) {
+            cerr << "ERROR: node failed sanity check, reached impossible size_x (<= 0 or > 100)" << endl;
+            cerr << "node in position " << i << " with innovation number: " << nodes[i]->get_innovation_number() << endl;
+            cerr << "size_x: " << nodes[i]->get_size_x() << ", size_y: " << nodes[i]->get_size_y() << endl;
+            return false;
+        }
+
+        if (nodes[i]->get_size_y() <= 0 || nodes[i]->get_size_y() > 100) {
+            cerr << "ERROR: node failed sanity check, reached impossible size_y (<= 0 or > 100)" << endl;
+            cerr << "node in position " << i << " with innovation number: " << nodes[i]->get_innovation_number() << endl;
+            cerr << "size_x: " << nodes[i]->get_size_x() << ", size_y: " << nodes[i]->get_size_y() << endl;
+            return false;
+        }
+
         for (uint32_t j = i + 1; j < nodes.size(); j++) {
             if (nodes[i]->get_innovation_number() == nodes[j]->get_innovation_number()) {
                 cerr << "SANITY CHECK FAILED! nodes[" << i << "] and nodes[" << j << "] have the same innovation number: " << nodes[i]->get_innovation_number() << endl;
@@ -384,26 +731,28 @@ bool CNN_Genome::sanity_check(int type) const {
     }
 
     if (type == SANITY_CHECK_AFTER_GENERATION) {
-        /*
         for (uint32_t i = 0; i < nodes.size(); i++) {
             if (nodes[i]->has_zero_bias()) {
-                cerr << "ERROR after generation!" << endl;
+                cerr << "WARNING after generation!" << endl;
                 cerr << "node in position " << i << " with innovation number: " << nodes[i]->get_innovation_number() << endl;
-                cerr << "sum of bias was 0" << endl;
                 cerr << "size_x: " << nodes[i]->get_size_x() << ", size_y: " << nodes[i]->get_size_y() << endl;
-                return false;
+                cerr << "sum of bias was 0" << endl;
+                nodes[i]->initialize_bias(generator, normal_distribution);
+                nodes[i]->save_best_bias();
+                //return false;
             }
         }
-        */
         //cout << "passed checking zero best bias" << endl;
 
         for (uint32_t i = 0; i < edges.size(); i++) {
             if (edges[i]->has_zero_weight()) {
-                cerr << "ERROR before after_generation!" << endl;
-                cerr << "ERROR: edge in position " << i << " with innovation number: " << edges[i]->get_innovation_number() << endl;
-                cerr << "sum of weights was 0" << endl;
+                cerr << "WARNING before after_generation!" << endl;
+                cerr << "edge in position " << i << " with innovation number: " << edges[i]->get_innovation_number() << endl;
                 cerr << "filter_x: " << edges[i]->get_filter_x() << ", filter_y: " << edges[i]->get_filter_y() << endl;
-                return false;
+                cerr << "sum of weights was 0" << endl;
+                edges[i]->initialize_weights(generator, normal_distribution);
+                edges[i]->save_best_weights();
+                //return false;
             }
         }
         //cout << "passed checking zero best weights" << endl;
@@ -515,39 +864,31 @@ int CNN_Genome::evaluate_image(const Image &image, vector<double> &class_error, 
     int rows = image.get_rows();
     int cols = image.get_cols();
 
-    /*
-       for (uint32_t i = 0; i < edges.size(); i++) {
-       edges[i]->print(cout);
-       }
-       */
-
     for (uint32_t i = 0; i < nodes.size(); i++) {
-        //cout << "resetting node: " << i << endl;
         nodes[i]->reset();
     }
 
     input_node->set_values(image, rows, cols);
 
-    //input_node->print(cout);
-    
-    /*
-    for (uint32_t i = 0; i < nodes.size(); i++) {
-        nodes[i]->print(cout);
-    }
-    */
-
     for (uint32_t i = 0; i < edges.size(); i++) {
-        //edges[i]->print(cout);
-
         edges[i]->propagate_forward();
     }
 
-    //cout << "Before softmax applied: " << endl;
+    //cout << "before softmax max: ";
+    double softmax_max = softmax_nodes[0]->get_value(0,0);
+    //cout << " " << setw(15) << fixed << setprecision(6) << softmax_nodes[0]->get_value(0,0);
 
+    for (uint32_t i = 1; i < softmax_nodes.size(); i++) {
+        //cout << " " << setw(15) << fixed << setprecision(6) << softmax_nodes[i]->get_value(0,0);
+        if (softmax_nodes[i]->get_value(0,0) > softmax_max) {
+            softmax_max = softmax_nodes[i]->get_value(0,0);
+        }
+    }
+    //cout << endl;
+
+    //cout << "after softmax max:  ";
     double softmax_sum = 0.0;
     for (uint32_t i = 0; i < softmax_nodes.size(); i++) {
-        //softmax_nodes[i]->print(cout);
-
         double value = softmax_nodes[i]->get_value(0,0);
         double previous = value;
 
@@ -556,12 +897,9 @@ int CNN_Genome::evaluate_image(const Image &image, vector<double> &class_error, 
             exit(1);
         }
 
-        //cout << "\tvalue " << softmax_nodes[i]->get_innovation_number() << " before exp: " << value << endl;
+        value = std::exp(value - softmax_max);
 
-        //value = 1.0 / (1.0 + exp(-value));
-        //value = tanh(value);
-        value = exp(value);
-
+        //cout << " " << setw(15) << fixed << setprecision(6) << value;
         if (isnan(value)) {
             cerr << "ERROR: value was NAN AFTER exp! previously: " << previous << endl;
             exit(1);
@@ -576,6 +914,7 @@ int CNN_Genome::evaluate_image(const Image &image, vector<double> &class_error, 
             exit(1);
         }
     }
+    //cout << endl;
 
     if (softmax_sum == 0) {
         cout << "ERROR! softmax sum == 0" << endl;
@@ -584,14 +923,11 @@ int CNN_Genome::evaluate_image(const Image &image, vector<double> &class_error, 
 
     //cout << "softmax sum: " << softmax_sum << endl;
 
-    //cout << "After softmax applied: " << endl;
-
-    //cout << "expected class: " << expected_class << endl;
-    double avg_error = 0.0;
     double max_value = -100;
     int predicted_class = -1;
 
-    for (uint32_t i = 0; i < softmax_nodes.size(); i++) {
+    //cout << "error:          ";
+    for (int32_t i = 0; i < (int32_t)softmax_nodes.size(); i++) {
         double value = softmax_nodes[i]->get_value(0,0) / softmax_sum;
         //cout << "\tvalue " << softmax_nodes[i]->get_innovation_number() << ": " << softmax_nodes[i]->get_value(0,0) << endl;
 
@@ -605,16 +941,16 @@ int CNN_Genome::evaluate_image(const Image &image, vector<double> &class_error, 
 
         //softmax_nodes[i]->print(cout);
 
-        double error = 0.0;
+        int target = 0.0;
         if (i == expected_class) {
-            error = value - 1;
-            //cout << ", error: " << error;
-        } else {
-            error = value;
+            target = 1.0;
         }
-        //cout << "\t" << softmax_nodes[i]->get_innovation_number() << " -- value: " << value << ", error: " << error << endl;
+        double error = value - target;
+        double gradient = value * (1 - value);
+        //cout << "\t" << softmax_nodes[i]->get_innovation_number() << " -- value: " << value << ", error: " << error << ", gradient: " << gradient << endl;
 
         softmax_nodes[i]->set_error(0, 0, error);
+        softmax_nodes[i]->set_gradient(0, 0, gradient);
 
         class_error[i] += fabs(error);
 
@@ -623,16 +959,22 @@ int CNN_Genome::evaluate_image(const Image &image, vector<double> &class_error, 
             max_value = value;
         }
 
-        avg_error += fabs(error);
+        //cout << " " << setw(15) << fixed << setprecision(6) << error;
     }
+    //cout << endl;
     //cout << "predicted class: " << predicted_class << endl;
+    //cout << "expected class:  " << expected_class << endl;
 
     if (do_backprop) {
         for (int32_t i = edges.size() - 1; i >= 0; i--) {
-            edges[i]->propagate_backward(mu, learning_rate, weight_decay);
+            edges[i]->propagate_backward();
         }
 
-        for (int32_t i = nodes.size() - 1; i >= 0; i--) {
+        for (int32_t i = 0; i < edges.size(); i++) {
+            edges[i]->update_weights(mu, learning_rate, weight_decay);
+        }
+
+        for (int32_t i = 0; i < nodes.size(); i++) {
             nodes[i]->propagate_bias(mu, learning_rate, weight_decay);
         }
     }
@@ -640,106 +982,128 @@ int CNN_Genome::evaluate_image(const Image &image, vector<double> &class_error, 
     return predicted_class;
 }
 
-void CNN_Genome::initialize_weights() {
-    for (uint32_t i = 0; i < edges.size(); i++) {
-        edges[i]->initialize_weights(generator);
-    }
-}
-
-void CNN_Genome::initialize_bias() {
-    for (uint32_t i = 0; i < nodes.size(); i++) {
-        nodes[i]->initialize_bias(generator);
-    }
-}
-
-void CNN_Genome::save_weights() {
+void CNN_Genome::save_to_best() {
     for (uint32_t i = 0; i < edges.size(); i++) {
         edges[i]->save_best_weights();
     }
-}
 
-void CNN_Genome::save_bias() {
     for (uint32_t i = 0; i < nodes.size(); i++) {
         nodes[i]->save_best_bias();
     }
 }
-
-void CNN_Genome::reinitialize() {
-    for (uint32_t i = 0; i < edges.size(); i++) {
-        edges[i]->initialize_weights(generator);
-        edges[i]->initialize_velocities();
-        edges[i]->save_best_weights();
-    }
-
-    for (uint32_t i = 0; i < nodes.size(); i++) {
-        nodes[i]->initialize_bias(generator);
-        nodes[i]->initialize_velocities();
-        nodes[i]->save_best_bias();
-    }
-}
-
 
 void CNN_Genome::set_to_best() {
     for (uint32_t i = 0; i < edges.size(); i++) {
         edges[i]->set_weights_to_best();
-        edges[i]->initialize_velocities();
     }
 
     for (uint32_t i = 0; i < nodes.size(); i++) {
         nodes[i]->set_bias_to_best();
-        nodes[i]->initialize_velocities();
     }
 }
 
+void CNN_Genome::initialize() {
+    cout << "initializing genome!" << endl;
+    for (uint32_t i = 0; i < nodes.size(); i++) {
+        nodes[i]->reset_weight_count();
+    }
+
+    for (uint32_t i = 0; i < edges.size(); i++) {
+        edges[i]->propagate_weight_count();
+    }
+    cout << "calculated weight counts" << endl;
+
+    if (reset_edges) {
+        for (uint32_t i = 0; i < edges.size(); i++) {
+            edges[i]->initialize_weights(generator, normal_distribution);
+            edges[i]->save_best_weights();
+        }
+        cout << "initialized weights!" << endl;
+
+        for (uint32_t i = 0; i < nodes.size(); i++) {
+            nodes[i]->initialize_bias(generator, normal_distribution);
+            nodes[i]->save_best_bias();
+        }
+        cout << "initialized bias!" << endl;
+    } else {
+        for (uint32_t i = 0; i < edges.size(); i++) {
+            if (edges[i]->needs_init()) {
+                edges[i]->initialize_weights(generator, normal_distribution);
+                edges[i]->save_best_weights();
+            }
+        }
+        cout << "reinitialized weights!" << endl;
+
+        for (uint32_t i = 0; i < nodes.size(); i++) {
+            if (nodes[i]->needs_init()) {
+                nodes[i]->initialize_bias(generator, normal_distribution);
+                nodes[i]->save_best_bias();
+            }
+        }
+        cout << "reinitialized bias!" << endl;
+        set_to_best();
+
+        for (uint32_t i = 0; i < edges.size(); i++) {
+            if (edges[i]->has_zero_weight()) {
+                cerr << "ERROR: edge in position " << i << " with innovation number: " << edges[i]->get_innovation_number() << endl;
+                cerr << "sum of weights was 0" << endl;
+                cerr << "filter_x: " << edges[i]->get_filter_x() << ", filter_y: " << edges[i]->get_filter_y() << endl;
+                exit(1);
+            }
+        }
+    }
+}
+
+void CNN_Genome::print_progress(ostream &out, int total_predictions, double total_error) const {
+    out << "[" << setw(10) << name << ", genome " << setw(5) << generation_id << "] predictions: " << setw(7) << total_predictions << ", best: " << setw(7) << best_predictions << "/" << backprop_order.size() << " (" << setw(5) << fixed << setprecision(2) << (100 * (double)best_predictions/(double)backprop_order.size()) << "%), error: " << setw(15) << setprecision(5) << fixed << total_error << ", best error: " << setw(15) << best_error << " on epoch: " << setw(5) << best_error_epoch << ", epoch: " << setw(4) << epoch << "/" << max_epochs << ", mu: " << setw(12) << fixed << setprecision(10) << mu << ", learning_rate: " << setw(12) << fixed << setprecision(10) << learning_rate << ", weight_decay: " << setw(12) << fixed << setprecision(10) << weight_decay << endl;
+}
+
+
 void CNN_Genome::stochastic_backpropagation(const Images &images) {
+    for (uint32_t i = 0; i < nodes.size(); i++) {
+        if (nodes[i]->needs_init()) {
+            cerr << "ERROR! nodes[" << i << "] needs init!" << endl;
+            exit(1);
+        }
+
+        if (nodes[i]->has_nan()) {
+            cerr << "ERROR! nodes[" << i << "] has nan or inf!" << endl;
+            nodes[i]->print(cerr);
+            exit(1);
+        }
+    }
+
+    for (uint32_t i = 0; i < edges.size(); i++) {
+        if (edges[i]->needs_init()) {
+            cerr << "ERROR! edges[" << i << "] needs init!" << endl;
+            exit(1);
+        }
+
+        if (edges[i]->has_nan()) {
+            cerr << "ERROR! edges[" << i << "] has nan or inf!" << endl;
+            edges[i]->print(cerr);
+            exit(1);
+        }
+    }
+
     if (!started_from_checkpoint) {
         backprop_order.clear();
-        for (uint32_t i = 0; i < images.get_number_images(); i++) {
+        for (int32_t i = 0; i < images.get_number_images(); i++) {
             backprop_order.push_back(i);
         }
 
-        shuffle(backprop_order.begin(), backprop_order.end(), generator); 
-        //backprop_order.resize(2000);
+        cerr << "generator min: " << generator.min() << ", generator max: " << generator.max() << endl;
 
-        //cout << "initializing weights and biases!" << endl;
-        if (reset_weights) {
-            for (uint32_t i = 0; i < edges.size(); i++) {
-                edges[i]->initialize_weights(generator);
-            }
+        cerr << "pre shuffle 1: " << generator() << endl;
 
-            for (uint32_t i = 0; i < nodes.size(); i++) {
-                nodes[i]->initialize_bias(generator);
-            }
-        } else {
-            set_to_best();
-            //double check to make sure none of the bias or weights are all zero
-            /*
-            for (uint32_t i = 0; i < nodes.size(); i++) {
-                if (nodes[i]->has_zero_bias()) {
-                    cerr << "ERROR: node in position " << i << " with innovation number: " << nodes[i]->get_innovation_number() << endl;
-                    cerr << "sum of bias was 0" << endl;
-                    cerr << "size_x: " << nodes[i]->get_size_x() << ", size_y: " << nodes[i]->get_size_y() << endl;
-                    exit(1);
-                }
-            }
-            */
+        //shuffle the array (thanks C++ not being the same across operating systems)
+        fisher_yates_shuffle(generator, backprop_order);
 
-            for (uint32_t i = 0; i < edges.size(); i++) {
-                if (edges[i]->has_zero_weight()) {
-                    cerr << "ERROR: edge in position " << i << " with innovation number: " << edges[i]->get_innovation_number() << endl;
-                    cerr << "sum of weights was 0" << endl;
-                    cerr << "filter_x: " << edges[i]->get_filter_x() << ", filter_y: " << edges[i]->get_filter_y() << endl;
-                    exit(1);
-                }
-            }
-        }
+        cerr << "post shuffle 1: " << generator() << endl;
 
-        epoch = 0;
-        best_error_epoch = 0;
-        best_error = numeric_limits<double>::max();
-        best_predictions = 0;
-        best_predictions_epoch = 0;
+        best_error = EXACT_MAX_DOUBLE;
     }
+    //backprop_order.resize(20000);
 
     //sort edges by depth of input node
     sort(edges.begin(), edges.end(), sort_CNN_Edges_by_depth());
@@ -749,17 +1113,55 @@ void CNN_Genome::stochastic_backpropagation(const Images &images) {
         class_sizes[ images.get_image(backprop_order[i]).get_classification() ]++;
     }
 
-    do {
-        shuffle(backprop_order.begin(), backprop_order.end(), generator); 
+    vector<double> class_error(images.get_number_classes(), 0.0);
+    vector<int> correct_predictions(images.get_number_classes(), 0);
 
-        vector<double> class_error(images.get_number_classes(), 0.0);
-        vector<int> correct_predictions(images.get_number_classes(), 0);
+    bool evaluate_initial_weights = true;
+    if  (evaluate_initial_weights) {
+        double total_error = 0.0;
+        int total_predictions = 0;
+        for (uint32_t j = 0; j < backprop_order.size(); j++) {
+            int predicted_class = evaluate_image(images.get_image(backprop_order[j]), class_error, false);
+            int expected_class = images.get_image(backprop_order[j]).get_classification();
+
+            /*
+            if (j < 5) {
+                cerr << "class error: ";
+                for (uint32_t i = 0; i < class_error.size(); i++) {
+                    cerr << setw(13) << setprecision(5) << fixed << class_error[i];
+                }
+                cerr << endl;
+            }
+            */
+
+            if (predicted_class == expected_class) {
+                correct_predictions[expected_class]++;
+                total_predictions++;
+            }
+        }
+
+        for (uint32_t j = 0; j < class_error.size(); j++) {
+            total_error += class_error[j];
+        }
+
+        print_progress(cerr, total_predictions, total_error);
+    }
+
+    do {
+        class_error.assign(images.get_number_classes(), 0.0);
+        correct_predictions.assign(images.get_number_classes(), 0.0);
+
+        //shuffle the array (thanks C++ not being the same across operating systems)
+        fisher_yates_shuffle(generator, backprop_order);
 
         for (uint32_t j = 0; j < backprop_order.size(); j++) {
             evaluate_image(images.get_image(backprop_order[j]), class_error, true);
         }
 
         if (epoch % improvement_required_epochs == 0) {
+            class_error.assign(images.get_number_classes(), 0.0);
+            correct_predictions.assign(images.get_number_classes(), 0.0);
+
             double total_error = 0.0;
             int total_predictions = 0;
             for (uint32_t j = 0; j < backprop_order.size(); j++) {
@@ -772,20 +1174,11 @@ void CNN_Genome::stochastic_backpropagation(const Images &images) {
                 }
             }
 
-            /*
-               for (uint32_t j = 0; j < 10; j++) {
-               edges[j]->print(cout);
-               }
-               */
-
-            //cout << "epoch " << epoch << " of " << epochs << endl;
-            //cout << "mu: " << mu << endl;
-            //cout << "class/prediction error: " << endl;
             for (uint32_t j = 0; j < class_error.size(); j++) {
                 total_error += class_error[j];
-                //cout << "\tclass " << setw(4) << j << ": " << setw(12) << setprecision(5) << class_error[j] << ", correct_predictions: " << correct_predictions[j] << " of " << class_sizes[j] << endl;
             }
 
+            bool found_improvement = false;
             if (total_error < best_error) {
                 best_error = total_error;
                 best_error_epoch = epoch;
@@ -799,29 +1192,47 @@ void CNN_Genome::stochastic_backpropagation(const Images &images) {
                     write_to_file(output_filename);
                 }
 
-                save_bias();
-                save_weights();
+                save_to_best();
+                found_improvement = true;
+            }
+            print_progress(cerr, total_predictions, total_error);
+
+            /*
+            for (uint32_t i = 0; i < edges.size(); i++) {
+                edges[i]->print_statistics();
             }
 
-            cout << "[" << setw(10) << name << ", genome " << setw(5) << generation_id << "] best predictions: " << setw(10) << best_predictions << " of " << setw(10) << backprop_order.size() << ", best error: " << setw(20) << setprecision(5) << fixed << best_error << " on epoch: " << setw(5) << best_error_epoch << ", current epoch: " << setw(4) << epoch << " of " << setw(4) << max_epochs << ", current - best: " << setw(3) << (epoch - best_error_epoch) << ", mu: " << setw(10) << mu << ", learning_rate: " << setw(10) << learning_rate << ", weight_decay: " << setw(10) << weight_decay << endl;
-            //cout << "total correct predictions: " << total_predictions << " of " << backprop_order.size() << endl;
-            //cout << "total error:               " << left << setw(20) << setprecision(5) << fixed << total_error << endl;
-            //cout << endl;
+            for (uint32_t i = 0; i < nodes.size(); i++) {
+                nodes[i]->print_statistics();
+            }
+            */
+
+            if (!found_improvement) {
+                set_to_best();
+            }
         }
 
-        mu *= 1.010;
-        if (mu > 0.95) mu = 0.95;
+        mu *= mu_decay;
+        //mu *= 1.010;
+        if (mu > 0.99) mu = 0.99;
 
-        learning_rate *= .99;
-        if (learning_rate < 0.0001) learning_rate = 0.0001;
+        learning_rate *= learning_rate_decay;
+        //learning_rate *= .99;
+        if (learning_rate < 0.00001) learning_rate = 0.00001;
 
-        weight_decay *= .99;
-        if (weight_decay < 0.0001) weight_decay = 0.0001;
+        weight_decay *= weight_decay_decay;
+        //weight_decay *= .99;
+        if (weight_decay < 0.00001) weight_decay = 0.00001;
 
         epoch++;
 
         if (checkpoint_filename.compare("") != 0) {
             write_to_file(checkpoint_filename);
+        }
+
+        if (progress_function != NULL) {
+            double progress = (double)epoch / (double)(max_epochs + 1.0);
+            progress_function(progress);
         }
 
         if (epoch > max_epochs) {
@@ -831,14 +1242,7 @@ void CNN_Genome::stochastic_backpropagation(const Images &images) {
         if (epoch > min_epochs && (epoch - best_error_epoch) > improvement_required_epochs) {
             break;
         }
-
     } while (true);
-
-    /*
-    for (uint32_t j = 0; j < edges.size(); j++) {
-        edges[j]->print(cout);
-    }
-    */
 }
 
 void CNN_Genome::set_name(string _name) {
@@ -853,14 +1257,32 @@ void CNN_Genome::set_checkpoint_filename(string _checkpoint_filename) {
     checkpoint_filename = _checkpoint_filename;
 }
 
+string CNN_Genome::get_version_str() const {
+    return version_str;
+}
 
 void CNN_Genome::write(ostream &outfile) {
+#ifdef _WIN32
+#define EXACT_VERSION "0.12"
+#endif
+
+    outfile << "v" << EXACT_VERSION << endl;
+    outfile << exact_id << endl;
+    outfile << genome_id << endl;
+
+    outfile << hexfloat;
     outfile << initial_mu << endl;
     outfile << mu << endl;
+    outfile << mu_decay << endl;
+
     outfile << initial_learning_rate << endl;
     outfile << learning_rate << endl;
+    outfile << learning_rate_decay << endl;
+
     outfile << initial_weight_decay << endl;
     outfile << weight_decay << endl;
+    outfile << weight_decay_decay << endl;
+    outfile << defaultfloat;
 
     outfile << epoch << endl;
     outfile << min_epochs << endl;
@@ -868,10 +1290,13 @@ void CNN_Genome::write(ostream &outfile) {
     outfile << improvement_required_epochs << endl;
     outfile << reset_weights << endl;
 
-    outfile << setprecision(15) << fixed << best_predictions << endl;
-    outfile << setprecision(15) << fixed << best_error << endl;
-    outfile << best_predictions_epoch << endl;;
-    outfile << best_error_epoch << endl;;
+    outfile << hexfloat;
+    outfile << best_predictions << endl;
+    outfile << best_error << endl;
+    outfile << defaultfloat;
+
+    outfile << best_predictions_epoch << endl;
+    outfile << best_error_epoch << endl;
 
     outfile << generated_by_disable_edge << endl;
     outfile << generated_by_enable_edge << endl;
@@ -883,24 +1308,26 @@ void CNN_Genome::write(ostream &outfile) {
     outfile << generated_by_crossover << endl;
 
     outfile << generation_id << endl;
+    outfile << normal_distribution << endl;
     //outfile << name << endl;
     //outfile << checkpoint_filename << endl;
     //outfile << output_filename << endl;
 
     outfile << generator << endl;
-    outfile << rng_double << endl;
-    outfile << rng_long << endl;
 
+    outfile << "NODES" << endl;
     outfile << nodes.size() << endl;
     for (uint32_t i = 0; i < nodes.size(); i++) {
         outfile << nodes[i] << endl;
     }
 
+    outfile << "EDGES" << endl;
     outfile << edges.size() << endl;
     for (uint32_t i = 0; i < edges.size(); i++) {
         outfile << edges[i] << endl;
     }
 
+    outfile << "INNOVATION_NUMBERS" << endl;
     outfile << input_node->get_innovation_number() << endl;
 
     outfile << softmax_nodes.size() << endl;
@@ -908,6 +1335,7 @@ void CNN_Genome::write(ostream &outfile) {
         outfile << softmax_nodes[i]->get_innovation_number() << endl;
     }
 
+    outfile << "BACKPROP_ORDER" << endl;
     outfile << backprop_order.size() << endl;
     for (uint32_t i = 0; i < backprop_order.size(); i++) {
         if (i > 0) outfile << " ";
@@ -915,6 +1343,7 @@ void CNN_Genome::write(ostream &outfile) {
     }
     outfile << endl;
 
+    outfile << "BEST_CLASS_ERROR" << endl;
     outfile << best_class_error.size() << endl;
     for (uint32_t i = 0; i < best_class_error.size(); i++) {
         if (i > 0) outfile << " ";
@@ -922,6 +1351,7 @@ void CNN_Genome::write(ostream &outfile) {
     }
     outfile << endl;
 
+    outfile << "BEST_CORRECT_PREDICTIONS" << endl;
     outfile << best_correct_predictions.size() << endl;
     for (uint32_t i = 0; i < best_correct_predictions.size(); i++) {
         if (i > 0) outfile << " ";
@@ -930,64 +1360,157 @@ void CNN_Genome::write(ostream &outfile) {
     outfile << endl;
 }
 
+double read_hexfloat(istream &infile) {
+    string s;
+    infile >> s;
+    return stod(s);
+}
+
 void CNN_Genome::read(istream &infile) {
-    infile >> initial_mu;
-    infile >> mu;
-    infile >> initial_learning_rate;
-    infile >> learning_rate;
-    infile >> initial_weight_decay;
-    infile >> weight_decay;
+    progress_function = NULL;
+
+    bool verbose = true;
+
+    getline(infile, version_str);
+
+    cerr << "read CNN_Genome file with version string: '" << version_str << "'" << endl;
+
+    if (version_str.substr(1,4).compare(EXACT_VERSION) != 0) {
+        cerr << "breaking because version_str '" << version_str.substr(1,4) << "' did not match EXACT_VERSION '" << EXACT_VERSION << "': " << version_str.compare(EXACT_VERSION) << endl;
+        return;
+    }
+
+    infile >> exact_id;
+    if (verbose) cerr << "read exact_id: " << exact_id << endl;
+    infile >> genome_id;
+    if (verbose) cerr << "read genome_id: " << genome_id << endl;
+
+    initial_mu = read_hexfloat(infile);
+    if (verbose) cerr << "read initial_mu: " << initial_mu << endl;
+    mu = read_hexfloat(infile);
+    if (verbose) cerr << "read mu: " << mu << endl;
+    mu_decay = read_hexfloat(infile);
+    if (verbose) cerr << "read mu_decay: " << mu_decay << endl;
+
+    initial_learning_rate = read_hexfloat(infile);
+    if (verbose) cerr << "read initial_learning_rate: " << initial_learning_rate << endl;
+    learning_rate = read_hexfloat(infile);
+    if (verbose) cerr << "read learning_rate: " << learning_rate << endl;
+    learning_rate_decay = read_hexfloat(infile);
+    if (verbose) cerr << "read learning_rate_decay: " << learning_rate_decay << endl;
+
+    initial_weight_decay = read_hexfloat(infile);
+    if (verbose) cerr << "read initial_weight_decay: " << initial_weight_decay << endl;
+    weight_decay = read_hexfloat(infile);
+    if (verbose) cerr << "read weight_decay: " << weight_decay << endl;
+    weight_decay_decay = read_hexfloat(infile);
+    if (verbose) cerr << "read weight_decay_decay: " << weight_decay_decay << endl;
 
     infile >> epoch;
+    if (verbose) cerr << "read epoch: " << epoch << endl;
     infile >> min_epochs;
+    if (verbose) cerr << "read min_epochs: " << min_epochs << endl;
     infile >> max_epochs;
+    if (verbose) cerr << "read max_epochs: " << max_epochs << endl;
     infile >> improvement_required_epochs;
-    infile >> reset_weights;
+    if (verbose) cerr << "read improvement_required_epochs: " << improvement_required_epochs << endl;
+    infile >> reset_edges;
+    if (verbose) cerr << "read reset_edges: " << reset_edges << endl;
 
-    infile >> best_predictions;
-    infile >> best_error;
+    best_predictions = read_hexfloat(infile);
+    if (verbose) cerr << "read best_predictions: " << best_predictions << endl;
+    best_error = read_hexfloat(infile);
+    if (verbose) cerr << "read best_error: " << best_error << endl;
     infile >> best_predictions_epoch;
+    if (verbose) cerr << "read best_predictions_epoch: " << best_predictions_epoch << endl;
     infile >> best_error_epoch;
+    if (verbose) cerr << "read best_error_epoch: " << best_error_epoch << endl;
 
     infile >> generated_by_disable_edge;
+    if (verbose) cerr << "read generated_by_disable_edge: " << generated_by_disable_edge << endl;
     infile >> generated_by_enable_edge;
+    if (verbose) cerr << "read generated_by_enable_edge: " << generated_by_enable_edge << endl;
     infile >> generated_by_split_edge;
+    if (verbose) cerr << "read generated_by_split_edge: " << generated_by_split_edge << endl;
     infile >> generated_by_add_edge;
+    if (verbose) cerr << "read generated_by_add_edge: " << generated_by_add_edge << endl;
     infile >> generated_by_change_size;
+    if (verbose) cerr << "read generated_by_change_size: " << generated_by_change_size << endl;
     infile >> generated_by_change_size_x;
+    if (verbose) cerr << "read generated_by_change_size_x: " << generated_by_change_size_x << endl;
     infile >> generated_by_change_size_y;
+    if (verbose) cerr << "read generated_by_change_size_y: " << generated_by_change_size_x << endl;
     infile >> generated_by_crossover;
+    if (verbose) cerr << "read generated_by_crossover: " << generated_by_crossover << endl;
 
     infile >> generation_id;
+    if (verbose) cerr << "read generation_id: " << generation_id << endl;
     //infile >> name;
     //infile >> checkpoint_filename;
     //infile >> output_filename;
 
-    infile >> generator;
-    infile >> rng_double;
-    infile >> rng_long;
+    infile >> normal_distribution;
+    if (verbose) cerr << "read normal distribution: '" << normal_distribution << "'" << endl;
 
-    //cout << "reading nodes!" << endl;
+    //for some reason linux doesn't read the generator correcly because of
+    //the first newline
+    string generator_str;
+    getline(infile, generator_str);
+    getline(infile, generator_str);
+    if (verbose) cerr << "generator_str: '" << generator_str << "'" << endl;
+    istringstream generator_iss(generator_str);
+    generator_iss >> generator;
+    //infile >> generator;
+
+    if (verbose) {
+        cerr << "read generator: " << generator << endl;
+        //cerr << "rand 1: " << generator() << endl;
+        //cerr << "rand 2: " << generator() << endl;
+        //cerr << "rand 3: " << generator() << endl;
+    }
+
+    //cerr << "reading nodes!" << endl;
+    
+    string line;
+    getline(infile, line);
+
+    if (line.compare("NODES") != 0) {
+        cerr << "ERROR: invalid input file, expected line to be 'NODES' but line was '" << line << "'" << endl;
+        version_str = "INALID";
+        return;
+    }
+
     nodes.clear();
     int number_nodes;
     infile >> number_nodes;
-    for (uint32_t i = 0; i < number_nodes; i++) {
+    //cerr << "reading " << number_nodes << " nodes." << endl;
+    for (int32_t i = 0; i < number_nodes; i++) {
         CNN_Node *node = new CNN_Node();
         infile >> node;
 
-        //cout << "read node: " << node->get_innovation_number() << endl;
+        //cerr << "read node: " << node->get_innovation_number() << endl;
         nodes.push_back(node);
     }
 
-    //cout << "reading edges!" << endl;
+    //cerr << "reading edges!" << endl;
+
+    getline(infile, line);
+    getline(infile, line);
+    if (line.compare("EDGES") != 0) {
+        cerr << "ERROR: invalid input file, expected line to be 'EDGES' but line was '" << line << "'" << endl;
+        version_str = "INALID";
+        return;
+    }
+
     edges.clear();
     int number_edges;
     infile >> number_edges;
-    for (uint32_t i = 0; i < number_edges; i++) {
+    //cerr << "reading " << number_edges << " edges." << endl;
+    for (int32_t i = 0; i < number_edges; i++) {
         CNN_Edge *edge = new CNN_Edge();
         infile >> edge;
 
-        //cout << "read edge: " << edge->get_innovation_number() << endl;
+        //cerr << "read edge: " << edge->get_innovation_number() << endl;
         if (!edge->set_nodes(nodes)) {
             cerr << "ERROR: filter size didn't match when reading genome from input file!" << endl;
             cerr << "This should never happen!" << endl;
@@ -997,15 +1520,23 @@ void CNN_Genome::read(istream &infile) {
         edges.push_back(edge);
     }
 
+    getline(infile, line);
+    getline(infile, line);
+    if (line.compare("INNOVATION_NUMBERS") != 0) {
+        cerr << "ERROR: invalid input file, expected line to be 'INNOVATION_NUMBERS' but line was '" << line << "'" << endl;
+        version_str = "INALID";
+        return;
+    }
+
     int input_node_innovation_number;
     infile >> input_node_innovation_number;
 
-    //cout << "input node innovation number: " << input_node_innovation_number << endl;
+    //cerr << "input node innovation number: " << input_node_innovation_number << endl;
 
     for (uint32_t i = 0; i < nodes.size(); i++) {
         if (nodes[i]->get_innovation_number() == input_node_innovation_number) {
             input_node = nodes[i];
-            //cout << "input node was in position: " << i << endl;
+            //cerr << "input node was in position: " << i << endl;
             break;
         }
     }
@@ -1013,47 +1544,81 @@ void CNN_Genome::read(istream &infile) {
     softmax_nodes.clear();
     int number_softmax_nodes;
     infile >> number_softmax_nodes;
-    //cout << "number softmax nodes: " << number_softmax_nodes << endl;
+    //cerr << "number softmax nodes: " << number_softmax_nodes << endl;
 
-    for (uint32_t i = 0; i < number_softmax_nodes; i++) {
+    for (int32_t i = 0; i < number_softmax_nodes; i++) {
         int softmax_node_innovation_number;
         infile >> softmax_node_innovation_number;
-        //cout << "\tsoftmax node: " << softmax_node_innovation_number << endl;
+        //cerr << "\tsoftmax node: " << softmax_node_innovation_number << endl;
 
         for (uint32_t i = 0; i < nodes.size(); i++) {
             if (nodes[i]->get_innovation_number() == softmax_node_innovation_number) {
                 softmax_nodes.push_back(nodes[i]);
-                //cout << "softmax node " << softmax_node_innovation_number << " was in position: " << i << endl;
+                //cerr << "softmax node " << softmax_node_innovation_number << " was in position: " << i << endl;
                 break;
             }
         }
 
     }
 
+    //cerr << "reading backprop order" << endl;
+
+    getline(infile, line);
+    getline(infile, line);
+    if (line.compare("BACKPROP_ORDER") != 0) {
+        cerr << "ERROR: invalid input file, expected line to be 'BACKPROP_ORDER' but line was '" << line << "'" << endl;
+        version_str = "INALID";
+        return;
+    }
+
     backprop_order.clear();
     long order_size;
     infile >> order_size;
+    //cout << "order_size: " << order_size << endl;
     for (uint32_t i = 0; i < order_size; i++) {
         long order;
         infile >> order;
         backprop_order.push_back(order);
+        //cerr << "backprop order[" << i << "]: " << order << endl;
     }
 
+
+    //cerr << "reading best class error" << endl;
+
+    if (order_size == 0) getline(infile, line);
+    getline(infile, line);
+    getline(infile, line);
+    if (line.compare("BEST_CLASS_ERROR") != 0) {
+        cerr << "ERROR: invalid input file, expected line to be 'BEST_CLASS_ERROR' but line was '" << line << "'" << endl;
+        version_str = "INALID";
+        return;
+    }
 
     best_class_error.clear();
     int error_size;
     infile >> error_size;
-    for (uint32_t i = 0; i < error_size; i++) {
+    //cerr << "error_size: " << error_size << endl;
+    for (int32_t i = 0; i < error_size; i++) {
         double error;
         infile >> error;
         best_class_error.push_back(error);
     }
 
+    //cerr << "reading best correct predictions" << endl;
+
+    if (error_size == 0) getline(infile, line);
+    getline(infile, line);
+    getline(infile, line);
+    if (line.compare("BEST_CORRECT_PREDICTIONS") != 0) {
+        cerr << "ERROR: invalid input file, expected line to be 'BEST_CORRECT_PREDICTIONS' but line was '" << line << "'" << endl;
+        version_str = "INALID";
+        return;
+    }
 
     best_correct_predictions.clear();
     int predictions_size;
     infile >> predictions_size;
-    for (uint32_t i = 0; i < predictions_size; i++) {
+    for (int32_t i = 0; i < predictions_size; i++) {
         double predictions;
         infile >> predictions;
         best_correct_predictions.push_back(predictions);
@@ -1061,7 +1626,7 @@ void CNN_Genome::read(istream &infile) {
 }
 
 void CNN_Genome::write_to_file(string filename) {
-    ofstream outfile(filename);
+    ofstream outfile(filename.c_str());
     write(outfile);
     outfile.close();
 }
@@ -1080,7 +1645,8 @@ void CNN_Genome::print_graphviz(ostream &out) const {
         if (!nodes[i]->is_input()) continue;
         out << "\t\tnode" << nodes[i]->get_innovation_number() << " [shape=box,color=green,label=\"input " << nodes[i]->get_innovation_number() << "\\n" << nodes[i]->get_size_x() << " x " << nodes[i]->get_size_y() << "\"];" << endl;
     }
-    out << "\t}" << endl << endl;
+    out << "\t}" << endl;
+    out << endl;
 
     out << "\t{" << endl;
     out << "\t\trank = sink;" << endl;
@@ -1088,7 +1654,8 @@ void CNN_Genome::print_graphviz(ostream &out) const {
         if (!nodes[i]->is_softmax()) continue;
         out << "\t\tnode" << nodes[i]->get_innovation_number() << " [shape=box,color=blue,label=\"output " << (nodes[i]->get_innovation_number() - 1) << "\\n" << nodes[i]->get_size_x() << " x " << nodes[i]->get_size_y() << "\"];" << endl;
     }
-    out << "\t}" << endl << endl;
+    out << "\t}" << endl;
+    out << endl;
 
     //connect the softmax nodes in order with invisible edges so they display in order
 
@@ -1106,20 +1673,31 @@ void CNN_Genome::print_graphviz(ostream &out) const {
     }
     out << " [style=invis];" << endl << endl;
 
+    out << endl;
 
-    //draw the visible edges
+    //draw the hidden nodes
     for (uint32_t i = 0; i < nodes.size(); i++) {
         if (nodes[i]->is_input() || nodes[i]->is_softmax()) continue;
 
         out << "\tnode" << nodes[i]->get_innovation_number() << " [shape=box,label=\"node " << nodes[i]->get_innovation_number() << "\\n" << nodes[i]->get_size_x() << " x " << nodes[i]->get_size_y() << "\"];" << endl;
     }
+    
+    out << endl;
 
+    //draw the enabled edges
     for (uint32_t i = 0; i < edges.size(); i++) {
         if (edges[i]->is_disabled()) {
             out << "\tnode" << edges[i]->get_input_node()->get_innovation_number() << " -> node" << edges[i]->get_output_node()->get_innovation_number() << " [color=red];" << endl;
         } else {
             out << "\tnode" << edges[i]->get_input_node()->get_innovation_number() << " -> node" << edges[i]->get_output_node()->get_innovation_number() << ";" << endl;
         }
+    }
+
+    out << endl;
+    for (uint32_t i = 0; i < edges.size(); i++) {
+        if (edges[i]->is_disabled()) continue;
+        
+        out << "\tnode" << edges[i]->get_input_node()->get_innovation_number() << " -> node" << edges[i]->get_output_node()->get_innovation_number() << "[style=red];" << endl;
     }
 
     out << "}" << endl;
@@ -1160,7 +1738,6 @@ void CNN_Genome::set_generated_by_crossover() {
 void CNN_Genome::set_generated_by_reset_weights() {
     generated_by_reset_weights++;
 }
-
 
 
 int CNN_Genome::get_generated_by_disable_edge() {

@@ -12,7 +12,7 @@ using std::istream;
 using std::numeric_limits;
 
 #include <random>
-using std::mt19937;
+using std::minstd_rand0;
 using std::normal_distribution;
 using std::uniform_int_distribution;
 using std::uniform_real_distribution;
@@ -31,8 +31,12 @@ using std::vector;
 
 class EXACT {
     private:
+        int id;
+        string search_name;
+
         string output_directory;
 
+        int number_images;
         int image_rows;
         int image_cols;
         int number_classes;
@@ -41,6 +45,8 @@ class EXACT {
         int node_innovation_count;
         int edge_innovation_count;
 
+        minstd_rand0 generator;
+        NormalDistribution normal_distribution;
         uniform_int_distribution<long> rng_long;
         uniform_real_distribution<double> rng_double;
 
@@ -58,10 +64,12 @@ class EXACT {
         int improvement_required_epochs;
         int max_individuals;
 
-        mt19937 generator;
-
+        double mu;
+        double mu_decay;
         double learning_rate;
+        double learning_rate_decay;
         double weight_decay;
+        double weight_decay_decay;
 
         double reset_weights_chance;
 
@@ -91,8 +99,15 @@ class EXACT {
         int inserted_from_reset_weights;
 
     public:
+#ifdef _MYSQL_
+        static bool exists_in_database(int exact_id);
+        EXACT(int exact_id);
 
-        EXACT(const Images &images, int _population_size, int _min_epochs, int _max_epochs, int _improvement_required_epochs, bool _reset_weights, int _max_individuals, string _output_directory);
+        void export_to_database();
+        void update_database();
+#endif
+
+        EXACT(const Images &images, int _population_size, int _min_epochs, int _max_epochs, int _improvement_required_epochs, bool _reset_edges, double _mu, double _mu_decay, double _learning_rate, double _learning_rate_decay, double _weight_decay, double _weight_decay_decay, int _max_individuals, string _output_directory, string _search_name);
 
         bool population_contains(CNN_Genome *genome) const;
         CNN_Genome* get_best_genome();
@@ -101,12 +116,15 @@ class EXACT {
         CNN_Genome* create_mutation();
         CNN_Genome* create_child();
 
-        void insert_genome(CNN_Genome* genome);
+        bool insert_genome(CNN_Genome* genome);
 
-        void print_statistics(ostream &out);
-        void print_statistics_header(ostream &out);
+        void write_statistics(int new_generation_id, double new_fitness);
+        void write_statistics_header();
+
+        int get_id() const;
+        string get_search_name() const;
+        string get_output_directory() const;
+        int get_number_images() const;
 };
-
-
 
 #endif

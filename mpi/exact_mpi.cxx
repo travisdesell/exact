@@ -24,8 +24,7 @@ using std::vector;
 
 #include "mpi.h"
 
-//from undvc_common
-#include "arguments.hxx"
+#include "common/arguments.hxx"
 
 #include "image_tools/image_set.hxx"
 
@@ -43,27 +42,6 @@ vector<string> arguments;
 EXACT *exact;
 
 bool finished = false;
-
-void polling_thread(string output_directory) {
-    ofstream polling_file(output_directory + "/progress.txt");
-
-    polling_file << "#" << setw(9) << "minute";
-    exact->print_statistics_header(polling_file);
-
-    int minute = 0;
-    while (true) {
-        exact_mutex.lock();
-        polling_file << setw(10) << minute;
-        exact->print_statistics(polling_file);
-        exact_mutex.unlock();
-
-        minute++;
-        std::this_thread::sleep_for( std::chrono::seconds(60) );
-        if (finished) break;
-    }
-
-    polling_file.close();
-}
 
 void send_work_request(int target) {
     int work_request_message[1];
@@ -92,6 +70,8 @@ CNN_Genome* receive_genome_from(string name, int source) {
     MPI_Recv(genome_str, length, MPI_CHAR, source, GENOME_TAG, MPI_COMM_WORLD, &status);
 
     genome_str[length] = '\0';
+
+    //cout << "genome_str:" << endl << genome_str << endl;
 
     istringstream iss(genome_str);
 
@@ -167,6 +147,12 @@ void master(const Images &images, int max_rank) {
                 if (terminates_sent >= max_rank - 1) return;
 
             } else {
+                /*
+                ofstream outfile(exact->get_output_directory() + "/gen_" + to_string(genome->get_generation_id()));
+                genome->write(outfile);
+                outfile.close();
+                */
+
                 //send genome
                 cout << "[" << setw(10) << name << "] sending genome to: " << source << endl;
                 send_genome_to(name, source, genome);
@@ -240,6 +226,9 @@ int main(int argc, char** argv) {
     string output_directory;
     get_argument(arguments, "--output_directory", true, output_directory);
 
+    string search_name;
+    get_argument(arguments, "--search_name", true, search_name);
+
     int population_size;
     get_argument(arguments, "--population_size", true, population_size);
 
@@ -258,13 +247,29 @@ int main(int argc, char** argv) {
     bool reset_edges;
     get_argument(arguments, "--reset_edges", true, reset_edges);
 
+    double learning_rate;
+    get_argument(arguments, "--learning_rate", true, learning_rate);
+
+    double learning_rate_decay;
+    get_argument(arguments, "--learning_rate_decay", true, learning_rate_decay);
+
+    double weight_decay;
+    get_argument(arguments, "--weight_decay", true, weight_decay);
+
+    double weight_decay_decay;
+    get_argument(arguments, "--weight_decay_decay", true, weight_decay_decay);
+
+    double mu;
+    get_argument(arguments, "--mu", true, mu);
+
+    double mu_decay;
+    get_argument(arguments, "--mu_decay", true, mu_decay);
+
+
     Images images(binary_samples_filename);
 
-    thread* poller = NULL;
-    
     if (rank == 0) {
-        exact = new EXACT(images, population_size, min_epochs, max_epochs, improvement_required_epochs, reset_edges, max_individuals, output_directory);
-        poller = new thread(polling_thread, output_directory);
+        exact = new EXACT(images, population_size, min_epochs, max_epochs, improvement_required_epochs, reset_edges, mu, mu_decay, learning_rate, learning_rate_decay, weight_decay, weight_decay_decay, max_individuals, output_directory, search_name);
 
         master(images, max_rank);
     } else {
@@ -272,12 +277,6 @@ int main(int argc, char** argv) {
     }
 
     finished = true;
-
-    if (rank == 0) {
-        cout << "master waiting for poller thread." << endl;
-        poller->join();
-        delete poller;
-    }
 
     cout << "rank " << rank << " completed!" << endl;
 
