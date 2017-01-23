@@ -120,6 +120,25 @@ int main(int argc, char** argv) {
     bool reset_edges = false;
     get_argument(arguments, "--reset_edges", true, reset_edges);
 
+    double learning_rate;
+    get_argument(arguments, "--learning_rate", true, learning_rate);
+
+    double learning_rate_decay;
+    get_argument(arguments, "--learning_rate_decay", true, learning_rate_decay);
+
+    double weight_decay;
+    get_argument(arguments, "--weight_decay", true, weight_decay);
+
+    double weight_decay_decay;
+    get_argument(arguments, "--weight_decay_decay", true, weight_decay_decay);
+
+    double mu;
+    get_argument(arguments, "--mu", true, mu);
+
+    double mu_decay;
+    get_argument(arguments, "--mu_decay", true, mu_decay);
+
+
     int max_individuals = 1000000;
     string output_directory = "/projects/csg/exact_data/" + search_name;
 
@@ -127,7 +146,7 @@ int main(int argc, char** argv) {
 
     Images images("/home/tdesell/mnist_training_data.bin");
 
-    EXACT *exact = new EXACT(images, population_size, min_epochs, max_epochs, improvement_required_epochs, reset_edges, max_individuals, output_directory, search_name);
+    EXACT *exact = new EXACT(images, population_size, min_epochs, max_epochs, improvement_required_epochs, reset_edges, mu, mu_decay, learning_rate, learning_rate_decay, weight_decay, weight_decay_decay, max_individuals, output_directory, search_name);
     exact->export_to_database();
 
     log_messages.printf(MSG_NORMAL, "inserted exact search into database with id: %d\n", exact->get_id());

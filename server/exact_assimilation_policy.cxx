@@ -248,7 +248,7 @@ int assimilate_handler(WORKUNIT& wu, vector<RESULT>& results, RESULT& canonical_
 
     CNN_Genome *genome = new CNN_Genome(file_iss, false);
 
-    if (genome->get_version() <= 0.105) {
+    if (genome->get_version_str().compare("v0.12)") != 0) {
         log_messages.printf(MSG_CRITICAL, "[CANONICAL RESULT#%ld %s] assimilate_handler: result was from an old version input file: '%s'.\n", canonical_result.id, canonical_result.name, genome->get_version_str().c_str());
 
         delete genome;
@@ -257,12 +257,6 @@ int assimilate_handler(WORKUNIT& wu, vector<RESULT>& results, RESULT& canonical_
 
     EXACT *exact = get_exact_search(exact_id);
     bool was_inserted = exact->insert_genome(genome);
-
-    cout << "updating progress" << endl;
-    fstream stat_file(exact->get_output_directory() + "/progress.txt", fstream::out | fstream::app);
-    exact->print_statistics(stat_file);
-    stat_file.close();
-    cout << "updated progress" << endl;
 
     if (was_inserted) {
         cout << "exporting genome to database with exact id: " << exact->get_id() << endl;

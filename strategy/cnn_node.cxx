@@ -1,3 +1,7 @@
+#include <cmath>
+using std::isnan;
+using std::isinf;
+
 #include <fstream>
 using std::ofstream;
 using std::ifstream;
