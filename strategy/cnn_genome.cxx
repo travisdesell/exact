@@ -1271,8 +1271,7 @@ void CNN_Genome::write(ostream &outfile) {
     outfile << exact_id << endl;
     outfile << genome_id << endl;
 
-    outfile << hexfloat;
-    outfile << initial_mu << endl;
+    outfile << std::hexfloat << initial_mu << std::defaultfloat << endl;
     outfile << mu << endl;
     outfile << mu_decay << endl;
 
