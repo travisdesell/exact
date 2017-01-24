@@ -1291,9 +1291,9 @@ void CNN_Genome::write(ostream &outfile) {
     outfile << improvement_required_epochs << endl;
     outfile << reset_weights << endl;
 
-    outfile << hexfloat;
     outfile << best_predictions << endl;
-    outfile << best_error << endl;
+	outfile << hexfloat;
+	outfile << best_error << endl;
     outfile << defaultfloat;
 
     outfile << best_predictions_epoch << endl;
@@ -1413,7 +1413,7 @@ void CNN_Genome::read(istream &infile) {
     infile >> reset_weights;
     if (verbose) cerr << "read reset_weights: " << reset_weights << endl;
 
-    best_predictions = read_hexfloat(infile);
+    infile >> best_predictions;
     if (verbose) cerr << "read best_predictions: " << best_predictions << endl;
     best_error = read_hexfloat(infile);
     if (verbose) cerr << "read best_error: " << best_error << endl;

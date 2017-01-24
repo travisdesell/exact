@@ -44,11 +44,17 @@ using std::vector;
 #include "stdint.h"
 
 double read_hexfloat(istream &infile) {
+#ifdef _WIN32
+	double result;
+	infile >> std::hexfloat >> result >> std::defaultfloat;
+	return result;
+#elif
     double result;
     string s;
     infile >> s;
     sscanf(s.c_str(), "%la", &result);
     return result;
+#endif
 }
 
 
