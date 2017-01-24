@@ -1291,8 +1291,8 @@ void CNN_Genome::write(ostream &outfile) {
     outfile << improvement_required_epochs << endl;
     outfile << reset_weights << endl;
 
-    outfile << hexfloat;
     outfile << best_predictions << endl;
+    outfile << hexfloat;
     outfile << best_error << endl;
     outfile << defaultfloat;
 
