@@ -115,7 +115,6 @@ int main(int argc, char** argv) {
     }
     cerr << "parsed input file" << endl;
 
-<<<<<<< HEAD
 #ifdef _WIN32
 #define EXACT_VERSION "0.11"
 #endif
