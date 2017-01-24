@@ -1362,12 +1362,6 @@ void CNN_Genome::write(ostream &outfile) {
     outfile << endl;
 }
 
-double read_hexfloat(istream &infile) {
-    string s;
-    infile >> s;
-    return stod(s);
-}
-
 void CNN_Genome::read(istream &infile) {
     progress_function = NULL;
 
