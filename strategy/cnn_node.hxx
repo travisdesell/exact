@@ -150,8 +150,6 @@ class CNN_Node {
         int get_number_inputs() const;
         int get_inputs_fired() const;
 
-        void zero_bias_velocity();
-
         void print_statistics();
         void input_fired();
 
@@ -164,6 +162,7 @@ template<class T>
 void parse_array_2d(T ***output, istringstream &iss, int size_x, int size_y);
 */
 
+double read_hexfloat(istream &infile);
 
 struct sort_CNN_Nodes_by_depth {
     bool operator()(const CNN_Node *n1, const CNN_Node *n2) {

@@ -1028,11 +1028,9 @@ istream &operator>>(istream &is, CNN_Edge* edge) {
         exit(1);
     }
 
-    string s;
     for (int32_t y = 0; y < edge->filter_y; y++) {
         for (int32_t x = 0; x < edge->filter_x; x++) {
-            is >> s;
-            edge->weights[y][x] = stod(s);
+            edge->weights[y][x] = read_hexfloat(is);
         }
     }
 
@@ -1045,8 +1043,7 @@ istream &operator>>(istream &is, CNN_Edge* edge) {
 
     for (int32_t y = 0; y < edge->filter_y; y++) {
         for (int32_t x = 0; x < edge->filter_x; x++) {
-            is >> s;
-            edge->best_weights[y][x] = stod(s);
+            edge->best_weights[y][x] = read_hexfloat(is);
         }
     }
 
@@ -1059,8 +1056,7 @@ istream &operator>>(istream &is, CNN_Edge* edge) {
 
     for (int32_t y = 0; y < edge->filter_y; y++) {
         for (int32_t x = 0; x < edge->filter_x; x++) {
-            is >> s;
-            edge->previous_velocity[y][x] = stod(s);
+            edge->previous_velocity[y][x] = read_hexfloat(is);
         }
     }
 
@@ -1073,8 +1069,7 @@ istream &operator>>(istream &is, CNN_Edge* edge) {
 
     for (int32_t y = 0; y < edge->filter_y; y++) {
         for (int32_t x = 0; x < edge->filter_x; x++) {
-            is >> s;
-            edge->best_velocity[y][x] = stod(s);
+            edge->best_velocity[y][x] = read_hexfloat(is);
         }
     }
 

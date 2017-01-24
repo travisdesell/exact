@@ -43,6 +43,15 @@ using std::vector;
 
 #include "stdint.h"
 
+double read_hexfloat(istream &infile) {
+    double result;
+    string s;
+    infile >> s;
+    sscanf(s.c_str(), "%la", &result);
+    return result;
+}
+
+
 CNN_Node::CNN_Node() {
     node_id = -1;
     exact_id = -1;
@@ -821,11 +830,9 @@ std::istream &operator>>(std::istream &is, CNN_Node* node) {
     }
 
 
-    string s;
     for (int32_t y = 0; y < node->size_y; y++) {
         for (int32_t x = 0; x < node->size_x; x++) {
-            is >> s;
-            node->bias[y][x] = stod(s);
+            node->bias[y][x] = read_hexfloat(is);
             //cout << "reading node bias[" << y << "][" << x << "]: " << b << endl;
         }
     }
@@ -839,8 +846,7 @@ std::istream &operator>>(std::istream &is, CNN_Node* node) {
 
     for (int32_t y = 0; y < node->size_y; y++) {
         for (int32_t x = 0; x < node->size_x; x++) {
-            is >> s;
-            node->best_bias[y][x] = stod(s);
+            node->best_bias[y][x] = read_hexfloat(is);
             //cout << "reading node best_bias[" << y << "][" << x << "]: " << b << endl;
         }
     }
@@ -854,8 +860,7 @@ std::istream &operator>>(std::istream &is, CNN_Node* node) {
 
     for (int32_t y = 0; y < node->size_y; y++) {
         for (int32_t x = 0; x < node->size_x; x++) {
-            is >> s;
-            node->bias_velocity[y][x] = stod(s);
+            node->bias_velocity[y][x] = read_hexfloat(is);
             //cout << "reading node bias_velocity[" << y << "][" << x << "]: " << b << endl;
         }
     }
@@ -869,8 +874,7 @@ std::istream &operator>>(std::istream &is, CNN_Node* node) {
 
     for (int32_t y = 0; y < node->size_y; y++) {
         for (int32_t x = 0; x < node->size_x; x++) {
-            is >> s;
-            node->best_bias_velocity[y][x] = stod(s);
+            node->best_bias_velocity[y][x] = read_hexfloat(is);
             //cout << "reading node best_bias_velocity[" << y << "][" << x << "]: " << b << endl;
         }
     }
