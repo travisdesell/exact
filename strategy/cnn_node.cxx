@@ -48,15 +48,23 @@ double read_hexfloat(istream &infile) {
 	double result;
 	infile >> std::hexfloat >> result >> std::defaultfloat;
 	return result;
-#elif
+#else
     double result;
     string s;
     infile >> s;
-    sscanf(s.c_str(), "%la", &result);
-    return result;
+    return stod(s);
 #endif
 }
 
+void write_hexfloat(ostream &outfile, double value) {
+#ifdef _WIN32
+    char hf[32];
+    sprintf(hf, "%lla", value);
+    outfile << hf;
+#else
+    outfile << std::hexfloat << value << std::defaultfloat;
+#endif
+}
 
 CNN_Node::CNN_Node() {
     node_id = -1;
@@ -765,7 +773,7 @@ ostream &operator<<(ostream &os, const CNN_Node* node) {
     for (int32_t y = 0; y < node->size_y; y++) {
         for (int32_t x = 0; x < node->size_x; x++) {
             if (y > 0 || x > 0) os << " ";
-            os << hexfloat << node->bias[y][x] << defaultfloat;
+            write_hexfloat(os, node->bias[y][x]);
         }
     }
     os << endl;
@@ -774,7 +782,7 @@ ostream &operator<<(ostream &os, const CNN_Node* node) {
     for (int32_t y = 0; y < node->size_y; y++) {
         for (int32_t x = 0; x < node->size_x; x++) {
             if (y > 0 || x > 0) os << " ";
-            os << hexfloat << node->best_bias[y][x] << defaultfloat;
+            write_hexfloat(os, node->best_bias[y][x]);
         }
     }
     os << endl;
@@ -783,7 +791,7 @@ ostream &operator<<(ostream &os, const CNN_Node* node) {
     for (int32_t y = 0; y < node->size_y; y++) {
         for (int32_t x = 0; x < node->size_x; x++) {
             if (y > 0 || x > 0) os << " ";
-            os << hexfloat << node->bias_velocity[y][x] << defaultfloat;
+            write_hexfloat(os, node->bias_velocity[y][x]);
         }
     }
     os << endl;
@@ -792,7 +800,7 @@ ostream &operator<<(ostream &os, const CNN_Node* node) {
     for (int32_t y = 0; y < node->size_y; y++) {
         for (int32_t x = 0; x < node->size_x; x++) {
             if (y > 0 || x > 0) os << " ";
-            os << hexfloat << node->best_bias_velocity[y][x] << defaultfloat;
+            write_hexfloat(os, node->best_bias_velocity[y][x]);
         }
     }
 
