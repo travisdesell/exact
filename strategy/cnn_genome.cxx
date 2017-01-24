@@ -196,6 +196,7 @@ CNN_Genome::CNN_Genome(int _genome_id) {
         generated_by_change_size_x = atoi(row[36]);
         generated_by_change_size_y = atoi(row[37]);
         generated_by_crossover = atoi(row[38]);
+        generated_by_reset_weights = atoi(row[39]);
 
         ostringstream node_query;
         node_query << "SELECT id FROM cnn_node WHERE genome_id = " << genome_id;
@@ -340,7 +341,8 @@ void CNN_Genome::export_to_database(int _exact_id) {
         << ", generated_by_change_size = " << generated_by_change_size
         << ", generated_by_change_size_x = " << generated_by_change_size_x
         << ", generated_by_change_size_y = " << generated_by_change_size_y
-        << ", generated_by_crossover = " << generated_by_crossover;
+        << ", generated_by_crossover = " << generated_by_crossover
+        << ", generated_by_reset_weights = " << generated_by_reset_weights;
 
     //cout << "query:\n" << query.str() << endl;
 

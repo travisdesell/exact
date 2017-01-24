@@ -49,7 +49,6 @@ double read_hexfloat(istream &infile) {
 	infile >> std::hexfloat >> result >> std::defaultfloat;
 	return result;
 #else
-    double result;
     string s;
     infile >> s;
     return stod(s);
@@ -59,7 +58,7 @@ double read_hexfloat(istream &infile) {
 void write_hexfloat(ostream &outfile, double value) {
 #ifdef _WIN32
     char hf[32];
-    sprintf(hf, "%lla", value);
+    sprintf(hf, "%la", value);
     outfile << hf;
 #else
     outfile << std::hexfloat << value << std::defaultfloat;
