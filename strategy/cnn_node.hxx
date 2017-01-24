@@ -163,6 +163,7 @@ void parse_array_2d(T ***output, istringstream &iss, int size_x, int size_y);
 */
 
 double read_hexfloat(istream &infile);
+void write_hexfloat(ostream &outfile, double value);
 
 struct sort_CNN_Nodes_by_depth {
     bool operator()(const CNN_Node *n1, const CNN_Node *n2) {

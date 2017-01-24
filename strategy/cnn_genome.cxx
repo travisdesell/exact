@@ -1271,19 +1271,26 @@ void CNN_Genome::write(ostream &outfile) {
     outfile << exact_id << endl;
     outfile << genome_id << endl;
 
-    outfile << hexfloat;
-    outfile << initial_mu << endl;
-    outfile << mu << endl;
-    outfile << mu_decay << endl;
+    write_hexfloat(outfile, initial_mu);
+    outfile << endl;
+    write_hexfloat(outfile, mu);
+    outfile << endl;
+    write_hexfloat(outfile, mu_decay);
+    outfile << endl;
 
-    outfile << initial_learning_rate << endl;
-    outfile << learning_rate << endl;
-    outfile << learning_rate_decay << endl;
+    write_hexfloat(outfile, initial_learning_rate);
+    outfile << endl;
+    write_hexfloat(outfile, learning_rate);
+    outfile << endl;
+    write_hexfloat(outfile, learning_rate_decay);
+    outfile << endl;
 
-    outfile << initial_weight_decay << endl;
-    outfile << weight_decay << endl;
-    outfile << weight_decay_decay << endl;
-    outfile << defaultfloat;
+    write_hexfloat(outfile, initial_weight_decay);
+    outfile << endl;
+    write_hexfloat(outfile, weight_decay);
+    outfile << endl;
+    write_hexfloat(outfile, weight_decay_decay);
+    outfile << endl;
 
     outfile << epoch << endl;
     outfile << min_epochs << endl;
@@ -1292,9 +1299,8 @@ void CNN_Genome::write(ostream &outfile) {
     outfile << reset_weights << endl;
 
     outfile << best_predictions << endl;
-	outfile << hexfloat;
-	outfile << best_error << endl;
-    outfile << defaultfloat;
+    write_hexfloat(outfile, best_error);
+    outfile << endl;
 
     outfile << best_predictions_epoch << endl;
     outfile << best_error_epoch << endl;

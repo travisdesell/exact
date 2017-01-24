@@ -964,7 +964,7 @@ ostream &operator<<(ostream &os, const CNN_Edge* edge) {
     for (int32_t y = 0; y < edge->filter_y; y++) {
         for (int32_t x = 0; x < edge->filter_x; x++) {
             if (y > 0 || x > 0) os << " ";
-             os << hexfloat << edge->weights[y][x] << defaultfloat;
+            write_hexfloat(os, edge->weights[y][x]);
         }
     }
     os << endl;
@@ -973,7 +973,7 @@ ostream &operator<<(ostream &os, const CNN_Edge* edge) {
     for (int32_t y = 0; y < edge->filter_y; y++) {
         for (int32_t x = 0; x < edge->filter_x; x++) {
             if (y > 0 || x > 0) os << " ";
-            os << hexfloat << edge->best_weights[y][x] << defaultfloat;
+            write_hexfloat(os, edge->best_weights[y][x]);
         }
     }
     os << endl;
@@ -982,7 +982,7 @@ ostream &operator<<(ostream &os, const CNN_Edge* edge) {
     for (int32_t y = 0; y < edge->filter_y; y++) {
         for (int32_t x = 0; x < edge->filter_x; x++) {
             if (y > 0 || x > 0) os << " ";
-            os << hexfloat << edge->previous_velocity[y][x] << defaultfloat;
+            write_hexfloat(os, edge->previous_velocity[y][x]);
         }
     }
     os << endl;
@@ -991,7 +991,7 @@ ostream &operator<<(ostream &os, const CNN_Edge* edge) {
     for (int32_t y = 0; y < edge->filter_y; y++) {
         for (int32_t x = 0; x < edge->filter_x; x++) {
             if (y > 0 || x > 0) os << " ";
-            os << hexfloat << edge->best_velocity[y][x] << defaultfloat;
+            write_hexfloat(os, edge->best_velocity[y][x]);
         }
     }
 
