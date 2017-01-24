@@ -26,6 +26,10 @@ using std::vector;
 #include "image_tools/image_set.hxx"
 #include "common/random.hxx"
 
+const double beta1 = 0.9;
+const double beta2 = 0.999;
+const double eps = 1e-8;
+
 class CNN_Edge {
     private:
         int edge_id;
@@ -42,13 +46,17 @@ class CNN_Edge {
 
         int filter_x, filter_y;
         vector< vector<double> > weights;
+        vector< vector<double> > weight_updates;
         vector< vector<double> > best_weights;
+
         vector< vector<double> > previous_velocity;
+        vector< vector<double> > best_velocity;
 
         bool fixed;
         bool disabled;
         bool reverse_filter_x;
         bool reverse_filter_y;
+        bool needs_initialization;
 
     public:
         CNN_Edge();
@@ -58,6 +66,8 @@ class CNN_Edge {
 #ifdef _MYSQL_
         CNN_Edge(int edge_id);
         void export_to_database(int exact_id, int genome_id);
+
+        int get_edge_id() const;
 #endif
 
 
@@ -67,16 +77,21 @@ class CNN_Edge {
 
         bool equals(CNN_Edge *other) const;
 
+        bool has_nan() const;
+
+        void set_needs_init();
+        bool needs_init() const;
         int get_filter_x() const;
         int get_filter_y() const;
+
+        void propagate_weight_count();
 
         void save_best_weights();
         void set_weights_to_best();
 
         bool set_nodes(const vector<CNN_Node*> nodes);
         void initialize_weights(minstd_rand0 &generator, NormalDistribution &normal_distribution);
-        void initialize_velocities();
-        void reinitialize(minstd_rand0 &generator, NormalDistribution &normal_distribution);
+        void resize();
 
         void disable();
         void enable();
@@ -101,20 +116,40 @@ class CNN_Edge {
 
         void print(ostream &out);
 
-        void backprop_weight_update(int fy, int fx, double weight_update, double weight, double mu, double learning_rate, double weight_decay);
+        void check_output_update(const vector< vector<double> > &output, const vector< vector<double> > &input, double value, double weight, double previous_output, int in_y, int in_x, int out_y, int out_x);
+
+        void check_weight_update(const vector< vector<double> > &output_errors, const vector< vector<double> > &output_gradients, const vector< vector<double> > &input, double delta, double weight_update, double previous_weight_update, int out_y, int out_x, int in_y, int in_x);
+
         void propagate_forward();
-        void propagate_backward(double mu, double learning_rate, double weight_decay);
+        void propagate_backward();
+        void update_weights(double mu, double learning_rate, double weight_decay);
+
+        void print_statistics();
 
         friend ostream &operator<<(ostream &os, const CNN_Edge* flight);
         friend istream &operator>>(istream &is, CNN_Edge* flight);
 };
 
-template <class T>
-void parse_vector_2d(vector<T> &output, istringstream &iss, int size_x, int size_y);
+void parse_vector_2d(vector<vector<double>> &output, istringstream &iss, int size_x, int size_y);
 
 struct sort_CNN_Edges_by_depth {
     bool operator()(CNN_Edge *n1, CNN_Edge *n2) {
-        return n1->get_input_node()->get_depth() < n2->get_input_node()->get_depth();
+        if (n1->get_input_node()->get_depth() < n2->get_input_node()->get_depth()) {
+            return true;
+
+        } else if (n1->get_input_node()->get_depth() == n2->get_input_node()->get_depth()) {
+            //make sure the order of the edges is *always* the same
+            //going through the edges in different orders may effect the output
+            //of backpropagation
+            if (n1->get_innovation_number() < n2->get_innovation_number()) {
+                return true;
+            } else {
+                return false;
+            }
+
+        } else {
+            return false;
+        }
     }   
 };
 

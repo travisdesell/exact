@@ -28,14 +28,22 @@ $query = "CREATE TABLE `exact_search` (
     `genomes_generated` int(11) NOT NULL,
     `inserted_genomes` int(11) NOT NULL,
 
-    `reset_edges` tinyint NOT NULL,
+    `reset_weights` tinyint NOT NULL,
     `min_epochs` int(11) NOT NULL,
     `max_epochs` int(11) NOT NULL,
     `improvement_required_epochs` int(11) NOT NULL,
     `max_individuals` int(11) NOT NULL,
 
+    `mu` double NOT NULL,
+    `mu_decay` double NOT NULL,
+
     `learning_rate` double NOT NULL,
+    `learning_rate_decay` double NOT NULL,
+
     `weight_decay` double NOT NULL,
+    `weight_decay_decay` double NOT NULL,
+
+    `reset_weights_chance` double NOT NULL,
 
     `crossover_rate` double NOT NULL,
     `more_fit_parent_crossover` double NOT NULL,
@@ -60,6 +68,7 @@ $query = "CREATE TABLE `exact_search` (
     `inserted_from_change_size_x` int NOT NULL,
     `inserted_from_change_size_y` int NOT NULL,
     `inserted_from_crossover` int NOT NULL,
+    `inserted_from_reset_weights` int NOT NULL,
 
     `generator` varchar(64) NOT NULL,
     `normal_distribution` varchar(128) NOT NULL,
@@ -88,16 +97,21 @@ $query = "CREATE TABLE `cnn_genome` (
 
     `initial_mu` double NOT NULL,
     `mu` double NOT NULL,
+    `mu_decay` double NOT NULL,
+
     `initial_learning_rate` double NOT NULL,
     `learning_rate` double NOT NULL,
+    `learning_rate_decay` double NOT NULL,
+
     `initial_weight_decay` double NOT NULL,
     `weight_decay` double NOT NULL,
+    `weight_decay_decay` double NOT NULL,
 
     `epoch` int(11) NOT NULL,
     `min_epochs` int(11) NOT NULL,
     `max_epochs` int(11) NOT NULL,
     `improvement_required_epochs` int(11) NOT NULL,
-    `reset_edges` tinyint(1) NOT NULL,
+    `reset_weights` tinyint(1) NOT NULL,
 
     `best_error` double NOT NULL,
     `best_error_epoch` int(11) NOT NULL,
@@ -108,7 +122,6 @@ $query = "CREATE TABLE `cnn_genome` (
     `best_correct_predictions` BLOB NOT NULL,
 
     `started_from_checkpoint` tinyint(1) NOT NULL,
-    `backprop_order` LONGBLOB NOT NULL,
 
     `generation_id` int(11) NOT NULL,
     `name` varchar(64),
@@ -123,6 +136,7 @@ $query = "CREATE TABLE `cnn_genome` (
     `generated_by_change_size_x` int(11) NOT NULL,
     `generated_by_change_size_y` int(11) NOT NULL,
     `generated_by_crossover` int(11) NOT NULL,
+    `generated_by_reset_weights` int(11) NOT NULL,
 
   PRIMARY KEY(`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1";
@@ -146,11 +160,13 @@ $query = "CREATE TABLE `cnn_edge` (
   `weights` BLOB NOT NULL,
   `best_weights` BLOB NOT NULL,
   `previous_velocity` BLOB NOT NULL,
+  `best_velocity` BLOB NOT NULL,
 
   `fixed` tinyint(1) NOT NULL,
   `disabled` tinyint(1) NOT NULL,
   `reverse_filter_x` tinyint(1) NOT NULL,
   `reverse_filter_y` tinyint(1) NOT NULL,
+  `needs_initialization` tinyint(1) NOT NULL,
 
   PRIMARY KEY(`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1";
@@ -170,17 +186,18 @@ $query = "CREATE TABLE `cnn_node` (
   `size_x` int(11) NOT NULL,
   `size_y` int(11) NOT NULL,
 
-  `values` BLOB NOT NULL,
-  `errors` BLOB NOT NULL,
   `bias` BLOB NOT NULL,
   `best_bias` BLOB NOT NULL,
   `bias_velocity` BLOB NOT NULL,
+  `best_bias_velocity` BLOB NOT NULL,
 
   `type` int(11) NOT NULL,
   `total_inputs` int(11) NOT NULL,
   `inputs_fired` int(11) NOT NULL,
 
   `visited` tinyint(1) NOT NULL,
+  `weight_count` int(11) NOT NULL,
+  `needs_initialization` tinyint(1) NOT NULL,
 
   PRIMARY KEY(`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1";

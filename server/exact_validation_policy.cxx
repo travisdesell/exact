@@ -54,33 +54,12 @@ using std::string;
 #include <vector>
 using std::vector;
 
+#include "server/boinc_common.hxx"
+
+
 struct EXACT_RESULT {
     string file_contents;
 };
-
-string get_file_as_string(string file_path) throw (int) {
-    //read the entire contents of the file into a string
-    ifstream sites_file(file_path.c_str());
-
-    if (!sites_file.is_open()) {
-        throw 1;
-    }
-
-    string fc;
-
-    sites_file.seekg(0, ios::end);   
-    fc.reserve(sites_file.tellg());
-    sites_file.seekg(0, ios::beg);
-
-    fc.assign((istreambuf_iterator<char>(sites_file)), istreambuf_iterator<char>());
-
-    ostringstream oss;
-    for (uint32_t i = 0; i < fc.size(); i++) {
-        if (fc[i] != '\r') oss << fc[i];
-    }
-
-    return oss.str();
-}
 
 vector<char*> stderr_strings;
 bool reject_if_present = false;
@@ -142,23 +121,17 @@ int init_result(RESULT& result, void*& data) {
 //    cout << "Parsing: " << endl << file_contents << endl;
 
     EXACT_RESULT* exact_result = new EXACT_RESULT;
-    try {
-        file_contents.erase(std::remove(file_contents.begin(), file_contents.end(), '\r'), file_contents.end());
+    file_contents.erase(std::remove(file_contents.begin(), file_contents.end(), '\r'), file_contents.end());
 
-        exact_result->file_contents = file_contents;
-
-//        log_messages.printf(MSG_CRITICAL, "[RESULT#%ld %s] result file contents:\n%s\n", result.id, result.name, exact_result->file_contents.c_str());
-
-    } catch (string error_message) {
-        log_messages.printf(MSG_CRITICAL, "exact_validation_policy get_data_from_result([RESULT#%ld %s]) failed with error: %s\n", result.id, result.name, error_message.c_str());
-        log_messages.printf(MSG_CRITICAL, "XML:\n%s\n", file_contents.c_str());
-//        result.outcome = RESULT_OUTCOME_VALIDATE_ERROR;
-//        result.validate_state = VALIDATE_STATE_INVALID;
-        exit(1);
-        return ERR_XML_PARSE;
-//        exit(1);
-//        throw 0;
+    if (file_contents.size() < 100 || file_contents[0] != 'v') {
+        log_messages.printf(MSG_CRITICAL, "exact_validation_policy get_data_from_result([RESULT#%ld %s]) failed because contents were invalid\n", result.id, result.name);
+        log_messages.printf(MSG_CRITICAL, "contents:\n%s\n", file_contents.c_str());
+        return 1;
     }
+
+    exact_result->file_contents = file_contents;
+
+    //        log_messages.printf(MSG_CRITICAL, "[RESULT#%ld %s] result file contents:\n%s\n", result.id, result.name, exact_result->file_contents.c_str());
 
     data = (void*) exact_result;
     return 0;
@@ -195,13 +168,29 @@ int compare_results(
         istringstream iss1(f1->file_contents);
         istringstream iss2(f2->file_contents);
 
+
+        string version_line1, version_line2;
+        getline(iss1, version_line1);
+        getline(iss2, version_line2);
+        cout << setw(5) << 0 << setw(30) << ("'" + version_line1 + "'") << setw(30) << ("'" + version_line2 + "'") << endl;
+
+        if (version_line1.compare(version_line2) != 0) {
+            cout << "versions are different: '" << version_line1 << "' vs. '" << version_line2 << "'" << endl;
+            //exit(1);
+        }
+
+        int fitness_line_number = 12;
+        if (version_line1[0] == 'v') {
+            fitness_line_number = 15;
+        }
+
         string line1, line2;
         string fitness_line1, fitness_line2;
-        for (uint32_t i = 0; i < 20; i++) {
+        for (uint32_t i = 1; i < 20; i++) {
             getline(iss1, line1);
             getline(iss2, line2);
 
-            if (i == 12) {
+            if (i == fitness_line_number) {
                 fitness_line1 = line1;
                 fitness_line2 = line2;
             }
@@ -212,15 +201,19 @@ int compare_results(
         double fitness1 = stof(fitness_line1);
         double fitness2 = stof(fitness_line2);
 
-        /*
-        if (fabs(fitness1 - fitness2) < 10.0) {
-            //close enough
+        cout << "fitness 1: " << fitness1 << endl;
+        cout << "fitness 2: " << fitness2 << endl;
+
+        double min_fitness_difference = 100.0;
+
+        if (fabs(fitness1 - fitness2) < min_fitness_difference) {
+            log_messages.printf(MSG_CRITICAL, "[RESULT#%ld %s] and [RESULT#%ld %s] match because fitness difference is close enough (less than %lf): %lf - %lf = %lf.\n", r1.id, r1.name, r2.id, r2.name, min_fitness_difference, fitness1, fitness2, fabs(fitness1 - fitness2));
             match = true;
         } else {
+            log_messages.printf(MSG_CRITICAL, "[RESULT#%ld %s] and [RESULT#%ld %s] DO NOT MATCH because fitness difference is close enough (greater than %lf): %lf - %lf = %lf.\n", r1.id, r1.name, r2.id, r2.name, min_fitness_difference, fitness1, fitness2, fabs(fitness1 - fitness2));
             match = false;
+            //exit(1);
         }
-        */
-        match = false;
     }
 
     return 0;
