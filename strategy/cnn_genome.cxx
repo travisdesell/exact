@@ -1062,6 +1062,44 @@ void CNN_Genome::print_progress(ostream &out, int total_predictions, double tota
 }
 
 
+void CNN_Genome::evaluate(const Images &images) {
+    backprop_order.clear();
+    for (int32_t i = 0; i < images.get_number_images(); i++) {
+        backprop_order.push_back(i);
+    }
+
+    vector<double> class_error(images.get_number_classes(), 0.0);
+    vector<int> correct_predictions(images.get_number_classes(), 0);
+
+    double total_error = 0.0;
+    int total_predictions = 0;
+    for (uint32_t j = 0; j < backprop_order.size(); j++) {
+        int predicted_class = evaluate_image(images.get_image(backprop_order[j]), class_error, false);
+        int expected_class = images.get_image(backprop_order[j]).get_classification();
+
+        /*
+           if (j < 5) {
+           cerr << "class error: ";
+           for (uint32_t i = 0; i < class_error.size(); i++) {
+           cerr << setw(13) << setprecision(5) << fixed << class_error[i];
+           }
+           cerr << endl;
+           }
+           */
+
+        if (predicted_class == expected_class) {
+            correct_predictions[expected_class]++;
+            total_predictions++;
+        }
+    }
+
+    for (uint32_t j = 0; j < class_error.size(); j++) {
+        total_error += class_error[j];
+    }
+
+    print_progress(cerr, total_predictions, total_error);
+}
+
 void CNN_Genome::stochastic_backpropagation(const Images &images) {
     for (uint32_t i = 0; i < nodes.size(); i++) {
         if (nodes[i]->needs_init()) {
@@ -1692,19 +1730,19 @@ void CNN_Genome::print_graphviz(ostream &out) const {
 
     //draw the enabled edges
     for (uint32_t i = 0; i < edges.size(); i++) {
-        if (edges[i]->is_disabled()) {
-            out << "\tnode" << edges[i]->get_input_node()->get_innovation_number() << " -> node" << edges[i]->get_output_node()->get_innovation_number() << " [color=red];" << endl;
-        } else {
-            out << "\tnode" << edges[i]->get_input_node()->get_innovation_number() << " -> node" << edges[i]->get_output_node()->get_innovation_number() << ";" << endl;
+        if (!edges[i]->is_disabled()) {
+            out << "\tnode" << edges[i]->get_input_node()->get_innovation_number() << " -> node" << edges[i]->get_output_node()->get_innovation_number() << endl;
         }
     }
 
     out << endl;
+    /*
     for (uint32_t i = 0; i < edges.size(); i++) {
-        if (edges[i]->is_disabled()) continue;
-        
-        out << "\tnode" << edges[i]->get_input_node()->get_innovation_number() << " -> node" << edges[i]->get_output_node()->get_innovation_number() << "[style=red];" << endl;
+        if (edges[i]->is_disabled()) {
+            out << "\tnode" << edges[i]->get_input_node()->get_innovation_number() << " -> node" << edges[i]->get_output_node()->get_innovation_number() << " [color=red];" << endl;
+        }
     }
+    */
 
     out << "}" << endl;
 }

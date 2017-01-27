@@ -161,7 +161,7 @@ int make_job(EXACT *exact, CNN_Genome *genome, string search_name) {
     genome->write_to_file(path);
     //copy_file_to_download_dir(genome_filename);
 
-    double fpops_per_image = genome->get_number_weights() * 1500;         //TODO: figure out an estimate of how many fpops per set calculation
+    double fpops_per_image = genome->get_number_weights() * 300;         //TODO: figure out an estimate of how many fpops per set calculation
     double fpops_est = exact->get_number_images() * genome->get_max_epochs() * fpops_per_image;
 
     double credit = fpops_est / 10e10;

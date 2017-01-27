@@ -248,8 +248,11 @@ int assimilate_handler(WORKUNIT& wu, vector<RESULT>& results, RESULT& canonical_
 
     CNN_Genome *genome = new CNN_Genome(file_iss, false);
 
-    if (genome->get_version_str().compare("v0.13)") != 0) {
-        log_messages.printf(MSG_CRITICAL, "[CANONICAL RESULT#%ld %s] assimilate_handler: result was from an old version input file: '%s'.\n", canonical_result.id, canonical_result.name, genome->get_version_str().c_str());
+    string expected_version = "v0.13";
+
+    if (genome->get_version_str().compare(expected_version) != 0) {
+        log_messages.printf(MSG_CRITICAL, "[CANONICAL RESULT#%ld %s] assimilate_handler: result was from an old version input file: '%s', expected '%s'.\n", canonical_result.id, canonical_result.name, genome->get_version_str().c_str(), expected_version.c_str());
+        exit(1);
 
         delete genome;
         return 0;

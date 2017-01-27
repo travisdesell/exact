@@ -56,6 +56,7 @@ using std::vector;
 
 #include "server/boinc_common.hxx"
 
+string required_version = string("v") + string(EXACT_VERSION);
 
 struct EXACT_RESULT {
     string file_contents;
@@ -112,6 +113,19 @@ int init_result(RESULT& result, void*& data) {
 
     try {
         file_contents = get_file_as_string(fi.path);
+
+        istringstream iss(file_contents);
+        string line;
+        getline(iss, line);
+
+        if (line.compare(required_version) != 0) {
+            log_messages.printf(MSG_CRITICAL, "[RESULT#%ld %s] get_data_from_result: invalid version\n", result.id, result.name);
+            log_messages.printf(MSG_CRITICAL, "     file version was: '%s', requires '%s'\n", line.c_str(), required_version.c_str());
+            return 1;
+        }
+
+         //first line should be v0.12
+
     } catch (int err) {
         log_messages.printf(MSG_CRITICAL, "[RESULT#%ld %s] get_data_from_result: could not open file for result\n", result.id, result.name);
         log_messages.printf(MSG_CRITICAL, "     file path: %s\n", fi.path.c_str());
@@ -176,17 +190,14 @@ int compare_results(
 
         if (version_line1.compare(version_line2) != 0) {
             cout << "versions are different: '" << version_line1 << "' vs. '" << version_line2 << "'" << endl;
-            //exit(1);
+            match = false;
         }
 
-        int fitness_line_number = 12;
-        if (version_line1[0] == 'v') {
-            fitness_line_number = 15;
-        }
+        int fitness_line_number = 18;
 
         string line1, line2;
         string fitness_line1, fitness_line2;
-        for (uint32_t i = 1; i < 20; i++) {
+        for (uint32_t i = 1; i < 25; i++) {
             getline(iss1, line1);
             getline(iss2, line2);
 
@@ -198,8 +209,8 @@ int compare_results(
             cout << setw(5) << i << setw(30) << ("'" + line1 + "'") << setw(30) << ("'" + line2 + "'") << endl;
         }
 
-        double fitness1 = stof(fitness_line1);
-        double fitness2 = stof(fitness_line2);
+        double fitness1 = stod(fitness_line1);
+        double fitness2 = stod(fitness_line2);
 
         cout << "fitness 1: " << fitness1 << endl;
         cout << "fitness 2: " << fitness2 << endl;
@@ -212,7 +223,6 @@ int compare_results(
         } else {
             log_messages.printf(MSG_CRITICAL, "[RESULT#%ld %s] and [RESULT#%ld %s] DO NOT MATCH because fitness difference is close enough (greater than %lf): %lf - %lf = %lf.\n", r1.id, r1.name, r2.id, r2.name, min_fitness_difference, fitness1, fitness2, fabs(fitness1 - fitness2));
             match = false;
-            //exit(1);
         }
     }
 

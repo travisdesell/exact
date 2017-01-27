@@ -147,6 +147,7 @@ class CNN_Genome {
         void set_to_best();
         void save_to_best();
         void initialize();
+        void evaluate(const Images &images);
         void stochastic_backpropagation(const Images &images);
 
         void set_name(string _name);
