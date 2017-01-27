@@ -1,26 +1,26 @@
+#include <cstdio>
+#include <cstdlib>
+
 #include <iostream>
-#include <stdio.h>
-#include <stdlib.h>
+using std::cout;
+using std::endl;
+
 #include <fstream>
+using std::ifstream;
+using std::ofstream;
+
 #include <vector>
-
-#include <boost/filesystem.hpp>
-using boost::filesystem::directory_iterator;
-
-#include "opencv2/highgui/highgui.hpp"
-#include "opencv2/imgproc/imgproc.hpp"
-#include "opencv2/core/core.hpp"
+using std::vector;
 
 using namespace std;
-using namespace cv;
 
-void write_images(ofstream &outfile, std::vector<Mat> images) {
+void write_images(ofstream &outfile, const vector< vector< vector<char> > > &images) {
     for (int i = 0; i < images.size(); i++) {
         unsigned char pixel;
 
-        for (int j = 0; j < images[i].rows; j++) {
-            for (int k = 0; k < images[i].cols; k++) {
-                pixel = images[i].at<uchar>(j,k);
+        for (int y = 0; y < images[i].size(); y++) {
+            for (int x = 0; x < images[i][y].size(); x++) {
+                pixel = images[i][y][x];
 
                 outfile.write( (char*)&pixel, sizeof(char));
 
@@ -56,16 +56,17 @@ uint32_t fread_uint32_t(ifstream &file, string filename, const char *name, uint3
 }
 
 int main(int argc, char** argv) {
-    if (argc != 4) {
+    if (argc != 5) {
         cerr << "error: incorrect arguments." << endl;
         cerr << "usage: " << endl;
-        cerr << "    " << argv[0] << " <mnist image file> <mnist label file> <output file>" << endl;
+        cerr << "    " << argv[0] << " <mnist image file> <mnist label file> <output file> <expected number of images>" << endl;
         exit(1);
     }
 
     string image_filename(argv[1]);
     string label_filename(argv[2]);
     string output_filename(argv[3]);
+    int expected_images = stoi(argv[4]);
 
     ifstream image_file(image_filename.c_str(), ios::in | ios::binary);
     ifstream label_file(label_filename.c_str(), ios::in | ios::binary);
@@ -79,40 +80,37 @@ int main(int argc, char** argv) {
     }
 
     uint32_t image_magic_number = fread_uint32_t(image_file, image_filename, "image file magic number", 2051);
-    uint32_t number_images = fread_uint32_t(image_file, image_filename, "number images", 60000);
+    uint32_t number_images = fread_uint32_t(image_file, image_filename, "number images", expected_images);
     uint32_t number_rows = fread_uint32_t(image_file, image_filename, "number rows", 28);
     uint32_t number_cols = fread_uint32_t(image_file, image_filename, "number cols", 28);
 
     uint32_t label_magic_number = fread_uint32_t(label_file, label_filename, "label file magic number", 2049);
-    uint32_t number_labels = fread_uint32_t(label_file, label_filename, "number labels", 60000);
+    uint32_t number_labels = fread_uint32_t(label_file, label_filename, "number labels", expected_images);
 
-    std::vector< std::vector<Mat> > images(10);
+    if (number_images != number_labels) {
+        cerr << "ERROR! Number images (" << number_images << ") != number labels (" << number_labels << ")" << endl;
+        cerr << "make sure image and label files match!" << endl;
+        exit(1);
+    }
+
+    vector< vector< vector< vector<char> > > > images(10);
 
     unsigned char pixel;
     unsigned char label;
-    for (uint32_t i = 0; i < 60000; i++) {
-        Mat image;
-        image.create(28, 28, CV_8UC1);
+    for (uint32_t i = 0; i < number_images; i++) {
+        vector< vector<char> > image(number_rows, vector<char>(number_cols, 0));
 
-        for (uint32_t j = 0; j < 28; j++) {
-            for (uint32_t k = 0; k < 28; k++) {
+        for (uint32_t y = 0; y < number_rows; y++) {
+            for (uint32_t x = 0; x < number_cols; x++) {
                 image_file.read( (char*)&pixel, sizeof(char) );
 
                 //pixel = 255 - pixel;
-                image.at<uchar>(j, k) = pixel;
+                image[y][x] = pixel;
             }
         }
 
-        /*
-        cout << "opencv Mat: " << image << endl;
-        ostringstream name;
-        name << "image " << i;
-
-        imshow(name.str(), image);
-        */
-
         label_file.read( (char*)&label, sizeof(char) );
-        //cout << "label: " << (int)label << endl;
+        cout << "label: " << (int)label << endl;
 
         images[ (int)label ].push_back(image);
 
@@ -122,7 +120,6 @@ int main(int argc, char** argv) {
 
     image_file.close();
     label_file.close();
-
 
     ofstream outfile;
     outfile.open(output_filename.c_str(), ios::out | ios::binary);

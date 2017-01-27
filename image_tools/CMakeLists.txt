@@ -1,1 +1,3 @@
 add_library(exact_image_tools image_set)
+
+add_executable(convert_mnist_data convert_mnist_data)

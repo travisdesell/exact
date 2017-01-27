@@ -1731,12 +1731,14 @@ void CNN_Genome::print_graphviz(ostream &out) const {
     //draw the enabled edges
     for (uint32_t i = 0; i < edges.size(); i++) {
         if (!edges[i]->is_disabled()) {
-            out << "\tnode" << edges[i]->get_input_node()->get_innovation_number() << " -> node" << edges[i]->get_output_node()->get_innovation_number() << endl;
+            out << "\tnode" << edges[i]->get_input_node()->get_innovation_number() << " -> node" << edges[i]->get_output_node()->get_innovation_number() << ";" << endl;
         }
     }
 
     out << endl;
+
     /*
+    //draw the disabled edges in red
     for (uint32_t i = 0; i < edges.size(); i++) {
         if (edges[i]->is_disabled()) {
             out << "\tnode" << edges[i]->get_input_node()->get_innovation_number() << " -> node" << edges[i]->get_output_node()->get_innovation_number() << " [color=red];" << endl;
