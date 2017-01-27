@@ -19,6 +19,7 @@ class Image {
         int classification;
         double **pixels;
 
+
     public:
 
         Image(ifstream &infile, int size, int _rows, int _cols, int _classification);
@@ -48,8 +49,14 @@ class Images {
 
         vector<Image> images;
 
+        double avg;
+        double std_dev;
+
     public:
+        void read_images(string binary_filename);
+
         Images(string binary_filename);
+        Images(string binary_filename, double avg, double variance);
 
         int get_class_size(int i) const;
 
@@ -62,6 +69,11 @@ class Images {
         int get_image_cols() const;
 
         const Image& get_image(int image) const;
+
+        void calculate_avg_std_dev();
+
+        double get_average() const;
+        double get_std_dev() const;
 
         void normalize();
 };

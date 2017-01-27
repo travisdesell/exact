@@ -122,7 +122,7 @@ void Image::print(ostream &out) {
     }
 }
 
-Images::Images(string binary_filename) {
+void Images::read_images(string binary_filename) {
     ifstream infile(binary_filename.c_str(), ios::in | ios::binary);
 
     if (!infile.is_open()) {
@@ -172,8 +172,34 @@ Images::Images(string binary_filename) {
        images[i].print(cerr);
        }
        */
+}
+
+Images::Images(string binary_filename, double _avg, double _std_dev) {
+    read_images(binary_filename);
+
+    cerr << "scaling images." << endl;
+    for (int i = 0; i < number_images; i++) {
+        images[i].scale_0_1();
+    }
 
     cerr << "normalizing images." << endl;
+    avg = _avg;
+    std_dev = _std_dev;
+    normalize();
+    cerr << "normalized." << endl;
+
+}
+
+Images::Images(string binary_filename) {
+    read_images(binary_filename);
+
+    cerr << "scaling images." << endl;
+    for (int i = 0; i < number_images; i++) {
+        images[i].scale_0_1();
+    }
+
+    cerr << "normalizing images." << endl;
+    calculate_avg_std_dev();
     normalize();
     cerr << "normalized." << endl;
 }
@@ -202,17 +228,23 @@ const Image& Images::get_image(int image) const {
     return images[image];
 }
 
-void Images::normalize() {
+double Images::get_average() const {
+    return avg;
+}
 
-    double avg = 0.0;
+double Images::get_std_dev() const {
+    return std_dev;
+}
+
+void Images::calculate_avg_std_dev() {
+    avg = 0.0;
 
     for (int i = 0; i < number_images; i++) {
-        images[i].scale_0_1();
         avg += images[i].get_pixel_avg();
     }
 
     avg /= number_images;
-    
+
     cerr << "average pixel value: " << avg << endl;
 
     double variance = 0.0;
@@ -222,9 +254,12 @@ void Images::normalize() {
 
     variance /= number_images;
     cerr << "pixel variance: " << variance << endl;
-    double std_dev = sqrt(variance);
+    std_dev = sqrt(variance);
     cerr << "pixel standard deviation: " << std_dev << endl;
+}
 
+void Images::normalize() {
+    cerr << "Normalizing with avg: " << avg << ", std_dev: " << std_dev << endl;
     for (int i = 0; i < number_images; i++) {
         images[i].normalize(avg, std_dev);
     }

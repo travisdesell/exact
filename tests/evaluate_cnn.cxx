@@ -28,11 +28,14 @@ int main(int argc, char **argv) {
     string training_data;
     get_argument(arguments, "--training_data", true, training_data);
 
-    //string testing_data;
-    //get_argument(arguments, "--testing_data", true, testing_data);
+    string testing_data;
+    get_argument(arguments, "--testing_data", true, testing_data);
 
-    Images images(training_data);
+    Images training_images(training_data);
+    Images testing_images(testing_data, training_images.get_average(), training_images.get_std_dev());
 
     CNN_Genome *genome = new CNN_Genome(genome_id);
-    genome->evaluate(images);
+    genome->evaluate(training_images);
+
+    genome->evaluate(testing_images);
 }
