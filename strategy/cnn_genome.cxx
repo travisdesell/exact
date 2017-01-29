@@ -1046,6 +1046,7 @@ void CNN_Genome::initialize() {
         cout << "reinitialized bias!" << endl;
         set_to_best();
 
+        /*
         for (uint32_t i = 0; i < edges.size(); i++) {
             if (edges[i]->has_zero_weight()) {
                 cerr << "ERROR: edge in position " << i << " with innovation number: " << edges[i]->get_innovation_number() << endl;
@@ -1054,6 +1055,7 @@ void CNN_Genome::initialize() {
                 exit(1);
             }
         }
+        */
     }
 }
 

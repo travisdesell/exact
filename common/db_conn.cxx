@@ -14,7 +14,13 @@ using std::string;
 
 #include "common/db_conn.hxx"
 
+string db_info_filename = "../exact_db_info";
+
 MYSQL *exact_db_conn = NULL;
+
+void set_db_info_filename(string _filename) {
+    db_info_filename = _filename;
+}
 
 void __mysql_check(string query, const char *file, const int line) {
     if (exact_db_conn == NULL) initialize_exact_database();
@@ -34,7 +40,7 @@ void initialize_exact_database() {
 
     //shoud get database info from a file
     string db_host, db_name, db_password, db_user;
-    ifstream db_info_file("../exact_db_info");
+    ifstream db_info_file(db_info_filename);
 
     getline(db_info_file, db_host);
     getline(db_info_file, db_name);

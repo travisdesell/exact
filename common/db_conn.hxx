@@ -7,6 +7,8 @@
 
 extern MYSQL *exact_db_conn;
 
+void set_db_info_filename(string _filename);
+
 void __mysql_check(string query, const char *file, const int line);
 
 void initialize_exact_database();

@@ -750,8 +750,9 @@ bool EXACT::insert_genome(CNN_Genome* genome) {
     }
     cout << endl;
 
+    cout << "checking if individual should be inserted or not, genomes.size(): " << genomes.size() << ", population_size: " << population_size << ", genome->get_fitness(): " << genome->get_fitness() << ", genomes.back()->get_fitness: " << genomes.back()->get_fitness() << endl;
 
-    if ((int32_t)genomes.size() >= population_size && genomes.size() > 0 && genome->get_fitness() >= genomes.back()->get_fitness()) {
+    if ((int32_t)genomes.size() >= population_size && genome->get_fitness() >= genomes.back()->get_fitness()) {
         //this will not be inserted into the population
         cout << "not inserting genome due to poor fitness" << endl;
         was_inserted = false;
