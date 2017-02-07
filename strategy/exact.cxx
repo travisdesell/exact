@@ -131,31 +131,41 @@ EXACT::EXACT(int exact_id) {
         node_change_size_y = atof(row[35]);
         node_change_pool_size = atof(row[36]);
 
-        inserted_from_disable_edge = atoi(row[37]);
-        inserted_from_enable_edge = atoi(row[38]);
-        inserted_from_split_edge = atoi(row[39]);
-        inserted_from_add_edge = atoi(row[40]);
-        inserted_from_change_size = atoi(row[41]);
-        inserted_from_change_size_x = atoi(row[42]);
-        inserted_from_change_size_y = atoi(row[43]);
-        inserted_from_crossover = atoi(row[44]);
-        inserted_from_reset_weights = atoi(row[45]);
-
-        istringstream generator_iss(row[46]);
+        istringstream generator_iss(row[37]);
         generator_iss >> generator;
         //cout << "read generator from database: " << generator << endl;
 
-        istringstream normal_distribution_iss(row[47]);
+        istringstream normal_distribution_iss(row[38]);
         normal_distribution_iss >> normal_distribution;
         //cout << "read normal_distribution from database: " << normal_distribution << endl;
 
-        istringstream rng_long_iss(row[48]);
+        istringstream rng_long_iss(row[39]);
         rng_long_iss >> rng_long;
         //cout << "read rng_long from database: " << rng_long << endl;
 
-        istringstream rng_double_iss(row[49]);
+        istringstream rng_double_iss(row[40]);
         rng_double_iss >> rng_double;
         //cout << "read rng_double from database: " << rng_double << endl;
+
+        inserted_from_disable_edge = atoi(row[41]);
+        inserted_from_enable_edge = atoi(row[42]);
+        inserted_from_split_edge = atoi(row[43]);
+        inserted_from_add_edge = atoi(row[44]);
+        inserted_from_change_size = atoi(row[45]);
+        inserted_from_change_size_x = atoi(row[46]);
+        inserted_from_change_size_y = atoi(row[47]);
+        inserted_from_crossover = atoi(row[48]);
+        inserted_from_reset_weights = atoi(row[49]);
+
+        generated_from_disable_edge = atoi(row[50]);
+        generated_from_enable_edge = atoi(row[51]);
+        generated_from_split_edge = atoi(row[52]);
+        generated_from_add_edge = atoi(row[53]);
+        generated_from_change_size = atoi(row[54]);
+        generated_from_change_size_x = atoi(row[55]);
+        generated_from_change_size_y = atoi(row[56]);
+        generated_from_crossover = atoi(row[57]);
+        generated_from_reset_weights = atoi(row[58]);
 
         ostringstream genome_query;
         genome_query << "SELECT id FROM cnn_genome WHERE exact_id = " << id << " ORDER BY best_error LIMIT " << population_size;
@@ -284,6 +294,11 @@ void EXACT::export_to_database() {
         << ", node_change_size_y = " << node_change_size_y
         << ", node_change_pool_size = " << node_change_pool_size
 
+        << ", generator = '" << generator << "'"
+        << ", normal_distribution = '" << normal_distribution << "'"
+        << ", rng_long = '" << rng_long << "'"
+        << ", rng_double = '" << rng_double << "'"
+
         << ", inserted_from_disable_edge = " << inserted_from_disable_edge
         << ", inserted_from_enable_edge = " << inserted_from_enable_edge
         << ", inserted_from_split_edge = " << inserted_from_split_edge
@@ -294,10 +309,15 @@ void EXACT::export_to_database() {
         << ", inserted_from_crossover = " << inserted_from_crossover
         << ", inserted_from_reset_weights = " << inserted_from_reset_weights
 
-        << ", generator = '" << generator << "'"
-        << ", normal_distribution = '" << normal_distribution << "'"
-        << ", rng_long = '" << rng_long << "'"
-        << ", rng_double = '" << rng_double << "'";
+        << ", generated_from_disable_edge = " << generated_from_disable_edge
+        << ", generated_from_enable_edge = " << generated_from_enable_edge
+        << ", generated_from_split_edge = " << generated_from_split_edge
+        << ", generated_from_add_edge = " << generated_from_add_edge
+        << ", generated_from_change_size = " << generated_from_change_size
+        << ", generated_from_change_size_x = " << generated_from_change_size_x
+        << ", generated_from_change_size_y = " << generated_from_change_size_y
+        << ", generated_from_crossover = " << generated_from_crossover
+        << ", generated_from_reset_weights = " << generated_from_reset_weights;
 
     cout << query.str() << endl;
     mysql_exact_query(query.str());
@@ -365,6 +385,15 @@ void EXACT::update_database() {
         << ", inserted_from_change_size_x = " << inserted_from_change_size_x
         << ", inserted_from_change_size_y = " << inserted_from_change_size_y
         << ", inserted_from_crossover = " << inserted_from_crossover
+
+        << ", generated_from_disable_edge = " << generated_from_disable_edge
+        << ", generated_from_enable_edge = " << generated_from_enable_edge
+        << ", generated_from_split_edge = " << generated_from_split_edge
+        << ", generated_from_add_edge = " << generated_from_add_edge
+        << ", generated_from_change_size = " << generated_from_change_size
+        << ", generated_from_change_size_x = " << generated_from_change_size_x
+        << ", generated_from_change_size_y = " << generated_from_change_size_y
+        << ", generated_from_crossover = " << generated_from_crossover
 
         << ", generator = '" << generator << "'"
         << ", normal_distribution = '" << normal_distribution << "'"
@@ -455,6 +484,16 @@ EXACT::EXACT(const Images &images, int _population_size, int _min_epochs, int _m
     inserted_from_crossover = 0;
     inserted_from_reset_weights = 0;
 
+    generated_from_disable_edge = 0;
+    generated_from_enable_edge = 0;
+    generated_from_split_edge = 0;
+    generated_from_add_edge = 0;
+    generated_from_change_size = 0;
+    generated_from_change_size_x = 0;
+    generated_from_change_size_y = 0;
+    generated_from_crossover = 0;
+    generated_from_reset_weights = 0;
+
     genomes_generated = 0;
 
     mu = _mu;
@@ -465,7 +504,7 @@ EXACT::EXACT(const Images &images, int _population_size, int _min_epochs, int _m
     weight_decay_decay = _weight_decay_decay;
 
     crossover_rate = 0.20;
-    more_fit_parent_crossover = 0.80;
+    more_fit_parent_crossover = 1.00;
     less_fit_parent_crossover = 0.50;
 
     reset_weights_chance = 0.20;
@@ -688,6 +727,17 @@ bool EXACT::insert_genome(CNN_Genome* genome) {
     bool was_inserted = true;
 
     inserted_genomes++;
+
+    generated_from_disable_edge += genome->get_generated_by_disable_edge();
+    generated_from_enable_edge += genome->get_generated_by_enable_edge();
+    generated_from_split_edge += genome->get_generated_by_split_edge();
+    generated_from_add_edge += genome->get_generated_by_add_edge();
+    generated_from_change_size += genome->get_generated_by_change_size();
+    generated_from_change_size_x += genome->get_generated_by_change_size_x();
+    generated_from_change_size_y += genome->get_generated_by_change_size_y();
+    generated_from_crossover += genome->get_generated_by_crossover();
+    generated_from_reset_weights += genome->get_generated_by_reset_weights();
+
 
     cout << "genomes evaluated: " << setw(10) << inserted_genomes << ", inserting: " << parse_fitness(genome->get_fitness()) << endl;
 
@@ -1528,15 +1578,15 @@ void EXACT::write_statistics(int new_generation_id, double new_fitness) {
         << setw(16) << setprecision(5) << fixed << min_epochs
         << setw(16) << setprecision(5) << fixed << avg_epochs
         << setw(16) << setprecision(5) << fixed << max_epochs 
-        << setw(16) << inserted_from_disable_edge
-        << setw(16) << inserted_from_enable_edge
-        << setw(16) << inserted_from_split_edge
-        << setw(16) << inserted_from_add_edge
-        << setw(16) << inserted_from_change_size
-        << setw(16) << inserted_from_change_size_x
-        << setw(16) << inserted_from_change_size_y
-        << setw(16) << inserted_from_crossover
-        << setw(16) << inserted_from_reset_weights
+        << setw(16) << setprecision(3) << (100.0 * (double)inserted_from_disable_edge / (double)generated_from_disable_edge)
+        << setw(16) << setprecision(3) << (100.0 * (double)inserted_from_enable_edge / (double)generated_from_enable_edge)
+        << setw(16) << setprecision(3) << (100.0 * (double)inserted_from_split_edge / (double)generated_from_split_edge)
+        << setw(16) << setprecision(3) << (100.0 * (double)inserted_from_add_edge / (double)generated_from_add_edge)
+        << setw(16) << setprecision(3) << (100.0 * (double)inserted_from_change_size / (double)generated_from_change_size)
+        << setw(16) << setprecision(3) << (100.0 * (double)inserted_from_change_size_x / (double)generated_from_change_size_x)
+        << setw(16) << setprecision(3) << (100.0 * (double)inserted_from_change_size_y / (double)generated_from_change_size_y)
+        << setw(16) << setprecision(3) << (100.0 * (double)inserted_from_crossover / (double)generated_from_crossover)
+        << setw(16) << setprecision(3) << (100.0 * (double)inserted_from_reset_weights / (double)generated_from_reset_weights)
         << endl;
 
     out.close();

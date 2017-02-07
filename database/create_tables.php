@@ -60,6 +60,11 @@ $query = "CREATE TABLE `exact_search` (
     `node_change_size_y` double NOT NULL,
     `node_change_pool_size` double NOT NULL,
 
+    `generator` varchar(64) NOT NULL,
+    `normal_distribution` varchar(128) NOT NULL,
+    `rng_long` varchar(64) NOT NULL,
+    `rng_double` varchar(64) NOT NULL,
+
     `inserted_from_disable_edge` int NOT NULL,
     `inserted_from_enable_edge` int NOT NULL,
     `inserted_from_split_edge` int NOT NULL,
@@ -70,10 +75,15 @@ $query = "CREATE TABLE `exact_search` (
     `inserted_from_crossover` int NOT NULL,
     `inserted_from_reset_weights` int NOT NULL,
 
-    `generator` varchar(64) NOT NULL,
-    `normal_distribution` varchar(128) NOT NULL,
-    `rng_long` varchar(64) NOT NULL,
-    `rng_double` varchar(64) NOT NULL,
+    `generated_from_disable_edge` int NOT NULL,
+    `generated_from_enable_edge` int NOT NULL,
+    `generated_from_split_edge` int NOT NULL,
+    `generated_from_add_edge` int NOT NULL,
+    `generated_from_change_size` int NOT NULL,
+    `generated_from_change_size_x` int NOT NULL,
+    `generated_from_change_size_y` int NOT NULL,
+    `generated_from_crossover` int NOT NULL,
+    `generated_from_reset_weights` int NOT NULL,
 
     PRIMARY KEY(`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1";

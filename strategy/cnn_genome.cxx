@@ -549,16 +549,23 @@ void CNN_Genome::print_best_predictions(ostream &out) const {
 int CNN_Genome::get_number_weights() const {
     int number_weights = 0;
 
-    for (uint32_t i = 0; i < nodes.size(); i++) {
-        number_weights += nodes[i]->get_size_x() * nodes[i]->get_size_y();
-    }
-
     for (uint32_t i = 0; i < edges.size(); i++) {
         number_weights += edges[i]->get_filter_x() * edges[i]->get_filter_y();
     }
 
     return number_weights;
 }
+
+int CNN_Genome::get_number_biases() const {
+    int number_biases = 0;
+
+    for (uint32_t i = 0; i < nodes.size(); i++) {
+        number_biases += nodes[i]->get_size_x() * nodes[i]->get_size_y();
+    }
+
+    return number_biases;
+}
+
 
 
 int CNN_Genome::get_generation_id() const {

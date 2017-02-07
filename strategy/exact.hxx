@@ -98,6 +98,17 @@ class EXACT {
         int inserted_from_crossover;
         int inserted_from_reset_weights;
 
+        int generated_from_disable_edge;
+        int generated_from_enable_edge;
+        int generated_from_split_edge;
+        int generated_from_add_edge;
+        int generated_from_change_size;
+        int generated_from_change_size_x;
+        int generated_from_change_size_y;
+        int generated_from_crossover;
+        int generated_from_reset_weights;
+
+
     public:
 #ifdef _MYSQL_
         static bool exists_in_database(int exact_id);

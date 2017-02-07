@@ -113,6 +113,7 @@ class CNN_Genome {
         void print_best_predictions(ostream &out) const;
 
         int get_number_weights() const;
+        int get_number_biases() const;
         void set_progress_function(int (*_progress_function)(double));
 
         int get_generation_id() const;
