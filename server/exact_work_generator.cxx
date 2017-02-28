@@ -138,15 +138,17 @@ int main(int argc, char** argv) {
     double mu_decay;
     get_argument(arguments, "--mu_decay", true, mu_decay);
 
+    double max_genomes;
+    get_argument(arguments, "--max_genomes", true, max_genomes);
 
-    int max_individuals = 1000000;
+    int max_genomes = 1000000;
     string output_directory = "/projects/csg/exact_data/" + search_name;
 
     mkdir(output_directory.c_str(), 0777);
 
     Images images("/home/tdesell/mnist_training_data.bin");
 
-    EXACT *exact = new EXACT(images, population_size, min_epochs, max_epochs, improvement_required_epochs, reset_edges, mu, mu_decay, learning_rate, learning_rate_decay, weight_decay, weight_decay_decay, max_individuals, output_directory, search_name);
+    EXACT *exact = new EXACT(images, max_genomes, population_size, min_epochs, max_epochs, improvement_required_epochs, reset_edges, mu, mu_decay, learning_rate, learning_rate_decay, weight_decay, weight_decay_decay, max_genomes, output_directory, search_name);
     exact->export_to_database();
 
     log_messages.printf(MSG_NORMAL, "inserted exact search into database with id: %d\n", exact->get_id());

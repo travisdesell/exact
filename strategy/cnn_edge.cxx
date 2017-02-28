@@ -311,6 +311,14 @@ void CNN_Edge::initialize_weights(minstd_rand0 &generator, NormalDistribution &n
     needs_initialization = false;
 }
 
+void CNN_Edge::reset_velocities() {
+    for (uint32_t y = 0; y < weights.size(); y++) {
+        for (uint32_t x = 0; x < weights[y].size(); x++) {
+            previous_velocity[y][x] = 0.0;
+        }
+    }
+}
+
 void CNN_Edge::resize() {
     //this may have changed from a regular to reverse filter
     if (output_node->get_size_x() <= input_node->get_size_x()) {
@@ -349,6 +357,18 @@ void CNN_Edge::save_best_weights() {
 }
 
 void CNN_Edge::set_weights_to_best() {
+    /*
+    if (filter_y != weights.size()) {
+        cerr << "ERROR! edge filter_x != weights.size(): " << filter_x << " vs " << weights.size() << endl;
+        exit(1);
+    }
+
+    if (filter_x != weights.size()) {
+        cerr << "ERROR! edge filter_x != weights.size(): " << filter_x << " vs " << weights.size() << endl;
+        exit(1);
+    }
+    */
+
     for (int32_t y = 0; y < filter_y; y++) {
         for (int32_t x = 0; x < filter_x; x++) {
             weights[y][x] = best_weights[y][x];
@@ -590,7 +610,7 @@ void CNN_Edge::check_output_update(const vector< vector<double> > &output, const
     }
 }
 
-void CNN_Edge::propagate_forward() {
+void CNN_Edge::propagate_forward(bool perform_dropout, uniform_real_distribution<double> &rng_double, minstd_rand0 &generator, double hidden_dropout_probability) {
     if (disabled) return;
 
     vector< vector<double> > &input = input_node->get_values();
@@ -691,7 +711,7 @@ void CNN_Edge::propagate_forward() {
         }
     }
 
-	output_node->input_fired();
+	output_node->input_fired(perform_dropout, rng_double, generator, hidden_dropout_probability);
 }
 
 void CNN_Edge::update_weights(double mu, double learning_rate, double weight_decay) {

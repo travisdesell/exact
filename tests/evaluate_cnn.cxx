@@ -35,7 +35,7 @@ int main(int argc, char **argv) {
     Images testing_images(testing_data, training_images.get_average(), training_images.get_std_dev());
 
     CNN_Genome *genome = new CNN_Genome(genome_id);
-    genome->evaluate(training_images);
 
+    genome->evaluate(training_images);
     genome->evaluate(testing_images);
 }

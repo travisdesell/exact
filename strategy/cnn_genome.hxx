@@ -32,6 +32,12 @@ class CNN_Genome {
 
         NormalDistribution normal_distribution;
         minstd_rand0 generator;
+        uniform_real_distribution<double> rng_double;
+
+        int velocity_reset;
+
+        double input_dropout_probability;
+        double hidden_dropout_probability;
 
         double initial_mu;
         double mu;
@@ -46,11 +52,8 @@ class CNN_Genome {
         double weight_decay_decay;
 
         int epoch;
-        int min_epochs;
         int max_epochs;
-        int improvement_required_epochs;
         bool reset_weights;
-
 
         double best_error;
         int best_predictions;
@@ -90,7 +93,7 @@ class CNN_Genome {
         /**
          *  Iniitalize a genome from a set of nodes and edges
          */
-        CNN_Genome(int _generation_id, int seed, int _min_epochs, int _max_epochs, int _improvement_required_epochs, bool _reset_weights, double _mu, double _mu_decay, double _learning_rate, double _learning_rate_decay, double _weight_decay, double _weight_decay_decay, const vector<CNN_Node*> &_nodes, const vector<CNN_Edge*> &_edges);
+        CNN_Genome(int _generation_id, int seed, int _max_epochs, bool _reset_weights, int velocity_reset, double _mu, double _mu_decay, double _learning_rate, double _learning_rate_decay, double _weight_decay, double _weight_decay_decay, double _input_dropout_probability, double _hidden_dropout_probability, const vector<CNN_Node*> &_nodes, const vector<CNN_Edge*> &_edges);
 
         ~CNN_Genome();
 
@@ -143,12 +146,13 @@ class CNN_Genome {
 
         void resize_edges_around_node(int node_position);
  
-        int evaluate_image(const Image &image, vector<double> &class_error, bool do_backprop);
+        int evaluate_image(const Image &image, vector<double> &class_error, bool perform_backprop, bool perform_dropout, double &total_error);
 
         void set_to_best();
         void save_to_best();
         void initialize();
         void evaluate(const Images &images);
+        void evaluate(const Images &images, vector<double> &class_error, vector<int> &correct_predictions, double &total_error, int &total_predictions, bool perform_backprop);
         void stochastic_backpropagation(const Images &images);
 
         void set_name(string _name);

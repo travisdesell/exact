@@ -27,12 +27,10 @@ $query = "CREATE TABLE `exact_search` (
 
     `genomes_generated` int(11) NOT NULL,
     `inserted_genomes` int(11) NOT NULL,
+    `max_genomes` int(11) NOT NULL,
 
     `reset_weights` tinyint NOT NULL,
-    `min_epochs` int(11) NOT NULL,
     `max_epochs` int(11) NOT NULL,
-    `improvement_required_epochs` int(11) NOT NULL,
-    `max_individuals` int(11) NOT NULL,
 
     `mu` double NOT NULL,
     `mu_decay` double NOT NULL,
@@ -42,6 +40,9 @@ $query = "CREATE TABLE `exact_search` (
 
     `weight_decay` double NOT NULL,
     `weight_decay_decay` double NOT NULL,
+
+    `input_dropout_probability` double NOT NULL,
+    `hidden_dropout_probability` double NOT NULL,
 
     `reset_weights_chance` double NOT NULL,
 
@@ -104,6 +105,12 @@ $query = "CREATE TABLE `cnn_genome` (
 
     `generator` varchar(64) NOT NULL,
     `normal_distribution` varchar(128) NOT NULL,
+    `rng_double` varchar(64) NOT NULL,
+
+    `velocity_reselt` int(11) NOT NULL,
+
+    `input_dropout_probability` double NOT NULL,
+    `hidden_dropout_probability` double NOT NULL,
 
     `initial_mu` double NOT NULL,
     `mu` double NOT NULL,
@@ -118,9 +125,7 @@ $query = "CREATE TABLE `cnn_genome` (
     `weight_decay_decay` double NOT NULL,
 
     `epoch` int(11) NOT NULL,
-    `min_epochs` int(11) NOT NULL,
     `max_epochs` int(11) NOT NULL,
-    `improvement_required_epochs` int(11) NOT NULL,
     `reset_weights` tinyint(1) NOT NULL,
 
     `best_error` double NOT NULL,
@@ -202,8 +207,6 @@ $query = "CREATE TABLE `cnn_node` (
   `best_bias_velocity` BLOB NOT NULL,
 
   `type` int(11) NOT NULL,
-  `total_inputs` int(11) NOT NULL,
-  `inputs_fired` int(11) NOT NULL,
 
   `visited` tinyint(1) NOT NULL,
   `weight_count` int(11) NOT NULL,

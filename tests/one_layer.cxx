@@ -33,14 +33,8 @@ int main(int argc, char **argv) {
     string binary_testing_filename;
     get_argument(arguments, "--testing_file", true, binary_testing_filename);
 
-    int min_epochs;
-    get_argument(arguments, "--min_epochs", true, min_epochs);
-
     int max_epochs;
     get_argument(arguments, "--max_epochs", true, max_epochs);
-
-    int improvement_required_epochs;
-    get_argument(arguments, "--improvement_required_epochs", true, improvement_required_epochs);
 
     bool reset_edges;
     get_argument(arguments, "--reset_edges", true, reset_edges);
@@ -63,6 +57,14 @@ int main(int argc, char **argv) {
     double mu_decay;
     get_argument(arguments, "--mu_decay", true, mu_decay);
 
+    double input_dropout_probability;
+    get_argument(arguments, "--input_dropout_probability", true, input_dropout_probability);
+
+    double hidden_dropout_probability;
+    get_argument(arguments, "--hidden_dropout_probability", true, hidden_dropout_probability);
+
+    int velocity_reset;
+    get_argument(arguments, "--velocity_reset", true, velocity_reset);
 
     Images training_images(binary_training_filename);
     Images testing_images(binary_testing_filename, training_images.get_average(), training_images.get_std_dev());
@@ -93,7 +95,7 @@ int main(int argc, char **argv) {
     long genome_seed = generator();
     cout << "seeding genome with: " << genome_seed << endl;
 
-    CNN_Genome *genome = new CNN_Genome(1, genome_seed, min_epochs, max_epochs, improvement_required_epochs, reset_edges, mu, mu_decay, learning_rate, learning_rate_decay, weight_decay, weight_decay_decay, nodes, edges);
+    CNN_Genome *genome = new CNN_Genome(1, genome_seed, max_epochs, reset_edges, velocity_reset, mu, mu_decay, learning_rate, learning_rate_decay, weight_decay, weight_decay_decay, input_dropout_probability, hidden_dropout_probability, nodes, edges);
     //save the weights and bias of the initially generated genome for reuse
     genome->initialize();
 
@@ -108,4 +110,5 @@ int main(int argc, char **argv) {
     cout << "evaluating best weights on testing data." << endl;
     genome->set_to_best();
     genome->evaluate(testing_images);
+    genome->evaluate(training_images);
 }

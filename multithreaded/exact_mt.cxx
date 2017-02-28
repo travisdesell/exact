@@ -74,20 +74,14 @@ int main(int argc, char** argv) {
     int population_size;
     get_argument(arguments, "--population_size", true, population_size);
 
-    int min_epochs;
-    get_argument(arguments, "--min_epochs", true, min_epochs);
-
     int max_epochs;
     get_argument(arguments, "--max_epochs", true, max_epochs);
-
-    int improvement_required_epochs;
-    get_argument(arguments, "--improvement_required_epochs", true, improvement_required_epochs);
 
     bool reset_edges;
     get_argument(arguments, "--reset_edges", true, reset_edges);
 
-    int max_individuals;
-    get_argument(arguments, "--max_individuals", true, max_individuals);
+    int max_genomes;
+    get_argument(arguments, "--max_genomes", true, max_genomes);
 
     double learning_rate;
     get_argument(arguments, "--learning_rate", true, learning_rate);
@@ -107,9 +101,18 @@ int main(int argc, char** argv) {
     double mu_decay;
     get_argument(arguments, "--mu_decay", true, mu_decay);
 
+    double input_dropout_probability;
+    get_argument(arguments, "--input_dropout_probability", true, input_dropout_probability);
+
+    double hidden_dropout_probability;
+    get_argument(arguments, "--hidden_dropout_probability", true, hidden_dropout_probability);
+
+    int velocity_reset;
+    get_argument(arguments, "--velocity_reset", true, velocity_reset);
+
     Images images(binary_samples_filename);
 
-    exact = new EXACT(images, population_size, min_epochs, max_epochs, improvement_required_epochs, reset_edges, mu, mu_decay, learning_rate, learning_rate_decay, weight_decay, weight_decay_decay, max_individuals, output_directory, search_name);
+    exact = new EXACT(images, population_size, max_epochs, reset_edges, velocity_reset, mu, mu_decay, learning_rate, learning_rate_decay, weight_decay, weight_decay_decay, input_dropout_probability, hidden_dropout_probability, max_genomes, output_directory, search_name);
     //exact = new EXACT(1);
 
     /*

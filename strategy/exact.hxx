@@ -57,12 +57,12 @@ class EXACT {
 
         int genomes_generated;
         int inserted_genomes;
+        int max_genomes;
 
         bool reset_weights;
-        int min_epochs;
         int max_epochs;
-        int improvement_required_epochs;
-        int max_individuals;
+
+        int velocity_reset;
 
         double mu;
         double mu_decay;
@@ -70,6 +70,9 @@ class EXACT {
         double learning_rate_decay;
         double weight_decay;
         double weight_decay_decay;
+
+        double input_dropout_probability;
+        double hidden_dropout_probability;
 
         double reset_weights_chance;
 
@@ -118,7 +121,7 @@ class EXACT {
         void update_database();
 #endif
 
-        EXACT(const Images &images, int _population_size, int _min_epochs, int _max_epochs, int _improvement_required_epochs, bool _reset_weights, double _mu, double _mu_decay, double _learning_rate, double _learning_rate_decay, double _weight_decay, double _weight_decay_decay, int _max_individuals, string _output_directory, string _search_name);
+        EXACT(const Images &images, int _population_size, int _max_epochs, bool _reset_weights, int _velocity_reset, double _mu, double _mu_decay, double _learning_rate, double _learning_rate_decay, double _weight_decay, double _weight_decay_decay, double _input_dropout_probability, double _hidden_dropout_probability, int _max_genomes, string _output_directory, string _search_name);
 
         bool population_contains(CNN_Genome *genome) const;
         CNN_Genome* get_best_genome();
