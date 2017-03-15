@@ -57,12 +57,12 @@ class EXACT {
 
         int genomes_generated;
         int inserted_genomes;
+        int max_genomes;
 
         bool reset_weights;
         int min_epochs;
         int max_epochs;
         int improvement_required_epochs;
-        int max_individuals;
 
         double mu;
         double mu_decay;
@@ -98,6 +98,17 @@ class EXACT {
         int inserted_from_crossover;
         int inserted_from_reset_weights;
 
+        int generated_from_disable_edge;
+        int generated_from_enable_edge;
+        int generated_from_split_edge;
+        int generated_from_add_edge;
+        int generated_from_change_size;
+        int generated_from_change_size_x;
+        int generated_from_change_size_y;
+        int generated_from_crossover;
+        int generated_from_reset_weights;
+
+        bool sort_by_fitness;
     public:
 #ifdef _MYSQL_
         static bool exists_in_database(int exact_id);
@@ -107,7 +118,7 @@ class EXACT {
         void update_database();
 #endif
 
-        EXACT(const Images &images, int _population_size, int _min_epochs, int _max_epochs, int _improvement_required_epochs, bool _reset_weights, double _mu, double _mu_decay, double _learning_rate, double _learning_rate_decay, double _weight_decay, double _weight_decay_decay, int _max_individuals, string _output_directory, string _search_name);
+        EXACT(const Images &images, int _population_size, int _min_epochs, int _max_epochs, int _improvement_required_epochs, bool _reset_weights, double _mu, double _mu_decay, double _learning_rate, double _learning_rate_decay, double _weight_decay, double _weight_decay_decay, int _max_genomes, string _output_directory, string _search_name);
 
         bool population_contains(CNN_Genome *genome) const;
         CNN_Genome* get_best_genome();
@@ -117,6 +128,9 @@ class EXACT {
         CNN_Genome* create_child();
 
         bool insert_genome(CNN_Genome* genome);
+
+        int get_inserted_genomes() const;
+        int get_max_genomes() const;
 
         void write_statistics(int new_generation_id, double new_fitness);
         void write_statistics_header();

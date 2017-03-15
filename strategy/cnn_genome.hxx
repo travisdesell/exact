@@ -113,6 +113,7 @@ class CNN_Genome {
         void print_best_predictions(ostream &out) const;
 
         int get_number_weights() const;
+        int get_operations_estimate() const;
         void set_progress_function(int (*_progress_function)(double));
 
         int get_generation_id() const;
@@ -147,7 +148,7 @@ class CNN_Genome {
         void set_to_best();
         void save_to_best();
         void initialize();
-        void evaluate(const Images &images);
+        void evaluate(const Images &images, double &total_error, int &total_predictions);
         void stochastic_backpropagation(const Images &images);
 
         void set_name(string _name);
@@ -188,6 +189,13 @@ struct sort_genomes_by_fitness {
         return g1->get_fitness() < g2->get_fitness();
     }   
 };
+
+struct sort_genomes_by_predictions {
+    bool operator()(CNN_Genome *g1, CNN_Genome *g2) {
+        return g1->get_best_predictions() > g2->get_best_predictions();
+    }   
+};
+
 
 
 #endif

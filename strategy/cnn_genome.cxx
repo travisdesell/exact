@@ -560,6 +560,31 @@ int CNN_Genome::get_number_weights() const {
     return number_weights;
 }
 
+int CNN_Genome::get_operations_estimate() const {
+    int operations_estimate = 0;
+
+    for (uint32_t i = 0; i < nodes.size(); i++) {
+        operations_estimate += nodes[i]->get_size_x() * nodes[i]->get_size_y();
+    }
+
+    for (uint32_t i = 0; i < edges.size(); i++) {
+        bool reverse_filter_x = edges[i]->is_reverse_filter_x();
+        bool reverse_filter_y = edges[i]->is_reverse_filter_y();
+
+        if (reverse_filter_x && reverse_filter_y) {
+            operations_estimate += edges[i]->get_filter_x() * edges[i]->get_filter_y() * edges[i]->get_input_node()->get_size_x() * edges[i]->get_input_node()->get_size_y();
+        } else if (reverse_filter_x) {
+            operations_estimate += edges[i]->get_filter_x() * edges[i]->get_filter_y() * edges[i]->get_input_node()->get_size_x() * edges[i]->get_output_node()->get_size_y();
+        } else if (reverse_filter_y) {
+            operations_estimate += edges[i]->get_filter_x() * edges[i]->get_filter_y() * edges[i]->get_output_node()->get_size_x() * edges[i]->get_input_node()->get_size_y();
+        } else {
+            operations_estimate += edges[i]->get_filter_x() * edges[i]->get_filter_y() * edges[i]->get_output_node()->get_size_x() * edges[i]->get_output_node()->get_size_y();
+        }
+    }
+
+    return operations_estimate;
+}
+
 
 int CNN_Genome::get_generation_id() const {
     return generation_id;
@@ -1064,7 +1089,7 @@ void CNN_Genome::print_progress(ostream &out, int total_predictions, double tota
 }
 
 
-void CNN_Genome::evaluate(const Images &images) {
+void CNN_Genome::evaluate(const Images &images, double &total_error, int &total_predictions) {
     backprop_order.clear();
     for (int32_t i = 0; i < images.get_number_images(); i++) {
         backprop_order.push_back(i);
@@ -1073,8 +1098,8 @@ void CNN_Genome::evaluate(const Images &images) {
     vector<double> class_error(images.get_number_classes(), 0.0);
     vector<int> correct_predictions(images.get_number_classes(), 0);
 
-    double total_error = 0.0;
-    int total_predictions = 0;
+    total_error = 0.0;
+    total_predictions = 0;
     for (uint32_t j = 0; j < backprop_order.size(); j++) {
         int predicted_class = evaluate_image(images.get_image(backprop_order[j]), class_error, false);
         int expected_class = images.get_image(backprop_order[j]).get_classification();

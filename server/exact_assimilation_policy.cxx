@@ -87,7 +87,7 @@ int assimilate_handler_init(int argc, char** argv) {
 
     ostringstream running_search_query;
 
-    running_search_query << "SELECT id FROM exact_search WHERE inserted_genomes < max_individuals";
+    running_search_query << "SELECT id FROM exact_search WHERE inserted_genomes < max_genomes";
     
     mysql_exact_query(running_search_query.str());
 
@@ -117,11 +117,22 @@ int assimilate_handler_init(int argc, char** argv) {
 int after_assimilate_pass() {
 
     if (low_on_workunits()) {
+        uint32_t active_searches = 0;
         for (auto it = exact_searches.begin(); it != exact_searches.end(); ++it ) {
-            make_jobs(it->second, WORKUNITS_TO_GENERATE / exact_searches.size());
+            if (it->second->get_inserted_genomes() < it->second->get_max_genomes()) {
+                active_searches++;
+            }
+        }
 
-            //this should not be needed due to updates after each workunit generation
-            //it->second->export_to_database();
+        if (active_searches > 0) {
+            for (auto it = exact_searches.begin(); it != exact_searches.end(); ++it ) {
+                if (it->second->get_inserted_genomes() < it->second->get_max_genomes()) {
+                    make_jobs(it->second, WORKUNITS_TO_GENERATE / active_searches);
+
+                    //this should not be needed due to updates after each workunit generation
+                    //it->second->export_to_database();
+                }
+            }
         }
     }
 
@@ -258,12 +269,18 @@ int assimilate_handler(WORKUNIT& wu, vector<RESULT>& results, RESULT& canonical_
         return 0;
     }
 
+    //cout << "result.stderr_out:\n" << canonical_result.stderr_out << endl << endl;
+
     EXACT *exact = get_exact_search(exact_id);
     bool was_inserted = exact->insert_genome(genome);
 
     if (was_inserted) {
         cout << "exporting genome to database with exact id: " << exact->get_id() << endl;
         genome->export_to_database(exact->get_id());
+
+        ostringstream genome_update;
+        genome_update << "UPDATE cnn_genome SET stderr_out = \"" << canonical_result.stderr_out << "\" WHERE id = " << genome->get_genome_id();
+        mysql_exact_query(genome_update.str());
     }
 
     cout << "updating exact in database" << endl;

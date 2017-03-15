@@ -163,11 +163,13 @@ CNN_Edge::CNN_Edge(int _edge_id) {
         istringstream best_weights_iss(row[9]);
         parse_vector_2d(best_weights, best_weights_iss, filter_x, filter_y);
 
+        /*
         istringstream previous_velocity_iss(row[10]);
         parse_vector_2d(previous_velocity, previous_velocity_iss, filter_x, filter_y);
 
         istringstream best_velocity_iss(row[11]);
         parse_vector_2d(best_velocity, best_velocity_iss, filter_x, filter_y);
+        */
 
         fixed = atoi(row[12]);
         disabled = atoi(row[13]);
@@ -182,6 +184,8 @@ CNN_Edge::CNN_Edge(int _edge_id) {
     }
 
     weight_updates = vector< vector<double> >(filter_y, vector<double>(filter_x, 0.0));
+    previous_velocity = vector< vector<double> >(filter_y, vector<double>(filter_x, 0.0));
+    best_velocity = vector< vector<double> >(filter_y, vector<double>(filter_x, 0.0));
 
     //cout << "read edge!" << endl;
     //cout << this << endl;
@@ -232,6 +236,7 @@ void CNN_Edge::export_to_database(int _exact_id, int _genome_id) {
         if (y != filter_y - 1) query << "\n";
     }
 
+    /*
     query << "', previous_velocity = '";
     for (int32_t y = 0; y < filter_y; y++) {
         for (int32_t x = 0; x < filter_x; x++) {
@@ -250,7 +255,8 @@ void CNN_Edge::export_to_database(int _exact_id, int _genome_id) {
         if (y != filter_y - 1) query << "\n";
     }
     query << "'";
-
+    */
+    query << "', previous_velocity = '', best_velocity = ''";
 
     mysql_exact_query(query.str());
 
@@ -283,6 +289,14 @@ int CNN_Edge::get_filter_x() const {
 
 int CNN_Edge::get_filter_y() const {
     return filter_y;
+}
+
+bool CNN_Edge::is_reverse_filter_x() const {
+    return reverse_filter_x;
+}
+
+bool CNN_Edge::is_reverse_filter_y() const {
+    return reverse_filter_y;
 }
 
 void CNN_Edge::propagate_weight_count() {
