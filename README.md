@@ -37,7 +37,13 @@ This version EXACT is set up to run using the [MNIST Handwritten Digits Dataset]
 
 ## Example Genomes from GECCO 2017
 
-Our submission to GECCO describes a set of best found genomes for the MNIST handwritten digits dataset.  These can be found in the genomes subdirectory of the project. After setting up the MNIST training and testing data as described in the previous section, these genomes can be run over the training and testing data for validation as follows:
+Our submission to GECCO describes a set of best found genomes for the MNIST handwritten digits dataset.  These can be found in the genomes subdirectory of the project. Please checkout the tag for the GECCO paper to use the version of EXACT these CNN genome files were generated with:
+
+```
+git checkout -b exact_gecco gecco_2017
+```
+
+After compiling this version and setting up the MNIST training and testing data as described in the previous section, these genomes can be run over the training and testing data for validation as follows:
 
 ```
 ~/exact/build/ $ ./tests/evaluate_cnn --training_data ../datasets/mnist_training_data.bin --testing_data ../datasets/mnist_testing_data.bin --genome_file ../genomes/genome_46823
