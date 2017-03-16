@@ -61,6 +61,10 @@ class EXACT {
 
         bool reset_weights;
         int max_epochs;
+<<<<<<< HEAD
+=======
+        int improvement_required_epochs;
+>>>>>>> 9d06146dad72324abd2295b530070590d941ed0e
 
 
         double initial_mu_min;
@@ -145,7 +149,11 @@ class EXACT {
         int generated_from_crossover;
         int generated_from_reset_weights;
 
+<<<<<<< HEAD
 
+=======
+        bool sort_by_fitness;
+>>>>>>> 9d06146dad72324abd2295b530070590d941ed0e
     public:
 #ifdef _MYSQL_
         static bool exists_in_database(int exact_id);
@@ -155,7 +163,11 @@ class EXACT {
         void update_database();
 #endif
 
+<<<<<<< HEAD
         EXACT(const Images &images, int _population_size, int _max_epochs, int _max_genomes, string _output_directory, string _search_name, bool _reset_weights);
+=======
+        EXACT(const Images &images, int _population_size, int _min_epochs, int _max_epochs, int _improvement_required_epochs, bool _reset_weights, double _mu, double _mu_decay, double _learning_rate, double _learning_rate_decay, double _weight_decay, double _weight_decay_decay, int _max_genomes, string _output_directory, string _search_name);
+>>>>>>> 9d06146dad72324abd2295b530070590d941ed0e
 
         int32_t population_contains(CNN_Genome *genome) const;
         CNN_Genome* get_best_genome();
@@ -170,6 +182,9 @@ class EXACT {
         CNN_Genome* create_child();
 
         bool insert_genome(CNN_Genome* genome);
+
+        int get_inserted_genomes() const;
+        int get_max_genomes() const;
 
         void write_statistics(int new_generation_id, double new_fitness);
         void write_statistics_header();

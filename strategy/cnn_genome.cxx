@@ -615,6 +615,7 @@ int CNN_Genome::get_number_weights() const {
     return number_weights;
 }
 
+<<<<<<< HEAD
 int CNN_Genome::get_number_biases() const {
     int number_biases = 0;
 
@@ -623,6 +624,31 @@ int CNN_Genome::get_number_biases() const {
     }
 
     return number_biases;
+=======
+int CNN_Genome::get_operations_estimate() const {
+    int operations_estimate = 0;
+
+    for (uint32_t i = 0; i < nodes.size(); i++) {
+        operations_estimate += nodes[i]->get_size_x() * nodes[i]->get_size_y();
+    }
+
+    for (uint32_t i = 0; i < edges.size(); i++) {
+        bool reverse_filter_x = edges[i]->is_reverse_filter_x();
+        bool reverse_filter_y = edges[i]->is_reverse_filter_y();
+
+        if (reverse_filter_x && reverse_filter_y) {
+            operations_estimate += edges[i]->get_filter_x() * edges[i]->get_filter_y() * edges[i]->get_input_node()->get_size_x() * edges[i]->get_input_node()->get_size_y();
+        } else if (reverse_filter_x) {
+            operations_estimate += edges[i]->get_filter_x() * edges[i]->get_filter_y() * edges[i]->get_input_node()->get_size_x() * edges[i]->get_output_node()->get_size_y();
+        } else if (reverse_filter_y) {
+            operations_estimate += edges[i]->get_filter_x() * edges[i]->get_filter_y() * edges[i]->get_output_node()->get_size_x() * edges[i]->get_input_node()->get_size_y();
+        } else {
+            operations_estimate += edges[i]->get_filter_x() * edges[i]->get_filter_y() * edges[i]->get_output_node()->get_size_x() * edges[i]->get_output_node()->get_size_y();
+        }
+    }
+
+    return operations_estimate;
+>>>>>>> 9d06146dad72324abd2295b530070590d941ed0e
 }
 
 
@@ -1120,6 +1146,7 @@ void CNN_Genome::initialize() {
         cout << "reinitialized bias!" << endl;
         set_to_best();
 
+        /*
         for (uint32_t i = 0; i < edges.size(); i++) {
             if (edges[i]->has_zero_weight()) {
                 cerr << "ERROR: edge in position " << i << " with innovation number: " << edges[i]->get_innovation_number() << endl;
@@ -1128,6 +1155,7 @@ void CNN_Genome::initialize() {
                 exit(1);
             }
         }
+        */
     }
 }
 
@@ -1136,9 +1164,17 @@ void CNN_Genome::print_progress(ostream &out, int total_predictions, double tota
 }
 
 
+<<<<<<< HEAD
 void CNN_Genome::evaluate(const Images &images, vector<double> &class_error, vector<int> &correct_predictions, double &total_error, int &total_predictions, bool perform_backprop) {
     class_error.assign(images.get_number_classes(), 0.0);
     correct_predictions.assign(images.get_number_classes(), 0);
+=======
+void CNN_Genome::evaluate(const Images &images, double &total_error, int &total_predictions) {
+    backprop_order.clear();
+    for (int32_t i = 0; i < images.get_number_images(); i++) {
+        backprop_order.push_back(i);
+    }
+>>>>>>> 9d06146dad72324abd2295b530070590d941ed0e
 
     bool perform_dropout;
     if (perform_backprop) {

@@ -84,6 +84,9 @@ class CNN_Edge {
         int get_filter_x() const;
         int get_filter_y() const;
 
+        bool is_reverse_filter_x() const;
+        bool is_reverse_filter_y() const;
+
         void propagate_weight_count();
 
         void save_best_weights();

@@ -139,11 +139,13 @@ CNN_Node::CNN_Node(int _node_id) {
         istringstream best_bias_iss(row[8]);
         parse_vector_2d(best_bias, best_bias_iss, size_x, size_y);
 
+        /*
         istringstream bias_velocity_iss(row[9]);
         parse_vector_2d(bias_velocity, bias_velocity_iss, size_x, size_y);
 
         istringstream best_bias_velocity_iss(row[10]);
         parse_vector_2d(best_bias_velocity, best_bias_velocity_iss, size_x, size_y);
+        */
 
         type = atoi(row[11]);
 
@@ -167,6 +169,8 @@ CNN_Node::CNN_Node(int _node_id) {
     values = vector< vector<double> >(size_y, vector<double>(size_x, 0.0));
     errors = vector< vector<double> >(size_y, vector<double>(size_x, 0.0));
     gradients = vector< vector<double> >(size_y, vector<double>(size_x, 0.0));
+    bias_velocity = vector< vector<double> >(size_y, vector<double>(size_x, 0.0));
+    best_bias_velocity = vector< vector<double> >(size_y, vector<double>(size_x, 0.0));
 
     //cout << "read node!" << endl;
     //cout << this << endl;
@@ -211,6 +215,7 @@ void CNN_Node::export_to_database(int _exact_id, int _genome_id) {
         if (y != size_y - 1) query << "\n";
     }
 
+    /*
     query << "', bias_velocity = '";
     for (int32_t y = 0; y < size_y; y++) {
         for (int32_t x = 0; x < size_x; x++) {
@@ -228,6 +233,8 @@ void CNN_Node::export_to_database(int _exact_id, int _genome_id) {
         }
         if (y != size_y - 1) query << "\n";
     }
+    */
+    query << "', bias_velocity = '', best_bias_velocity = '";
 
 
     query << "', type = " << type
