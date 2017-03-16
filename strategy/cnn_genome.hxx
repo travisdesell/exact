@@ -41,15 +41,15 @@ class CNN_Genome {
 
         double initial_mu;
         double mu;
-        double mu_decay;
+        double mu_delta;
 
         double initial_learning_rate;
         double learning_rate;
-        double learning_rate_decay;
+        double learning_rate_delta;
 
         double initial_weight_decay;
         double weight_decay;
-        double weight_decay_decay;
+        double weight_decay_delta;
 
         int epoch;
         int max_epochs;
@@ -93,7 +93,7 @@ class CNN_Genome {
         /**
          *  Iniitalize a genome from a set of nodes and edges
          */
-        CNN_Genome(int _generation_id, int seed, int _max_epochs, bool _reset_weights, int velocity_reset, double _mu, double _mu_decay, double _learning_rate, double _learning_rate_decay, double _weight_decay, double _weight_decay_decay, double _input_dropout_probability, double _hidden_dropout_probability, const vector<CNN_Node*> &_nodes, const vector<CNN_Edge*> &_edges);
+        CNN_Genome(int _generation_id, int seed, int _max_epochs, bool _reset_weights, int velocity_reset, double _mu, double _mu_delta, double _learning_rate, double _learning_rate_delta, double _weight_decay, double _weight_decay_delta, double _input_dropout_probability, double _hidden_dropout_probability, const vector<CNN_Node*> &_nodes, const vector<CNN_Edge*> &_edges);
 
         ~CNN_Genome();
 
@@ -135,6 +135,21 @@ class CNN_Genome {
 
         CNN_Node* get_node(int node_position);
         CNN_Edge* get_edge(int edge_position);
+
+        int get_velocity_reset() const;
+
+        double get_initial_mu() const;
+        double get_mu() const;
+        double get_mu_delta() const;
+        double get_initial_learning_rate() const;
+        double get_learning_rate() const;
+        double get_learning_rate_delta() const;
+        double get_initial_weight_decay() const;
+        double get_weight_decay() const;
+        double get_weight_decay_delta() const;
+
+        double get_input_dropout_probability() const;
+        double get_hidden_dropout_probability() const;
 
         int get_number_edges() const;
         int get_number_nodes() const;

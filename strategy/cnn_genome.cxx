@@ -92,6 +92,54 @@ int CNN_Genome::get_exact_id() const {
     return exact_id;
 }
 
+double CNN_Genome::get_initial_mu() const {
+    return initial_mu;
+}
+
+double CNN_Genome::get_mu() const {
+    return mu;
+}
+
+double CNN_Genome::get_mu_delta() const {
+    return mu_delta;
+}
+
+double CNN_Genome::get_initial_learning_rate() const {
+    return initial_learning_rate;
+}
+
+double CNN_Genome::get_learning_rate() const {
+    return learning_rate;
+}
+
+double CNN_Genome::get_learning_rate_delta() const {
+    return learning_rate_delta;
+}
+
+double CNN_Genome::get_initial_weight_decay() const {
+    return initial_weight_decay;
+}
+
+double CNN_Genome::get_weight_decay() const {
+    return weight_decay;
+}
+
+double CNN_Genome::get_weight_decay_delta() const {
+    return weight_decay_delta;
+}
+
+int CNN_Genome::get_velocity_reset() const {
+    return velocity_reset;
+}
+
+double CNN_Genome::get_input_dropout_probability() const {
+    return input_dropout_probability;
+}
+
+double CNN_Genome::get_hidden_dropout_probability() const {
+    return hidden_dropout_probability;
+}
+
 template <class T>
 void parse_array(vector<T> &output, istringstream &iss) {
     output.clear();
@@ -116,6 +164,8 @@ CNN_Genome::CNN_Genome(int _genome_id) {
     ostringstream query;
 
     query << "SELECT * FROM cnn_genome WHERE id = " << _genome_id;
+
+    //cout << query.str() << endl;
 
     mysql_exact_query(query.str());
 
@@ -155,15 +205,15 @@ CNN_Genome::CNN_Genome(int _genome_id) {
 
         initial_mu = atof(row[++column]);
         mu = atof(row[++column]);
-        mu_decay = atof(row[++column]);
+        mu_delta = atof(row[++column]);
 
         initial_learning_rate = atof(row[++column]);
         learning_rate = atof(row[++column]);
-        learning_rate_decay = atof(row[++column]);
+        learning_rate_delta = atof(row[++column]);
 
         initial_weight_decay = atof(row[++column]);
         weight_decay = atof(row[++column]);
-        weight_decay_decay = atof(row[++column]);
+        weight_decay_delta = atof(row[++column]);
 
         epoch = atoi(row[++column]);
         max_epochs = atoi(row[++column]);
@@ -203,6 +253,7 @@ CNN_Genome::CNN_Genome(int _genome_id) {
 
         ostringstream node_query;
         node_query << "SELECT id FROM cnn_node WHERE genome_id = " << genome_id;
+        //cout << node_query.str() << endl;
 
         mysql_exact_query(node_query.str());
         //cout << "node query was successful!" << endl;
@@ -295,13 +346,13 @@ void CNN_Genome::export_to_database(int _exact_id) {
         << ", hidden_dropout_probability = " << setprecision(15) << fixed << hidden_dropout_probability
         << ", initial_mu = " << setprecision(15) << fixed << initial_mu
         << ", mu = " << setprecision(15) << fixed<< mu
-        << ", mu_decay = " << setprecision(15) << fixed << mu_decay
+        << ", mu_delta = " << setprecision(15) << fixed << mu_delta
         << ", initial_learning_rate = " << setprecision(15) << fixed << initial_learning_rate
         << ", learning_rate = " << setprecision(15) << fixed << learning_rate
-        << ", learning_rate_decay = " << setprecision(15) << fixed << learning_rate_decay
+        << ", learning_rate_delta = " << setprecision(15) << fixed << learning_rate_delta
         << ", initial_weight_decay = " << setprecision(15) << fixed << initial_weight_decay
         << ", weight_decay = " << setprecision(15) << fixed<< weight_decay
-        << ", weight_decay_decay = " << setprecision(15) << fixed << weight_decay_decay
+        << ", weight_decay_delta = " << setprecision(15) << fixed << weight_decay_delta
         << ", epoch = " << epoch
         << ", max_epochs = " << max_epochs
         << ", reset_weights = " << reset_weights
@@ -372,7 +423,7 @@ void CNN_Genome::export_to_database(int _exact_id) {
 /**
  *  Iniitalize a genome from a set of nodes and edges
  */
-CNN_Genome::CNN_Genome(int _generation_id, int seed, int _max_epochs, bool _reset_weights, int _velocity_reset, double _mu, double _mu_decay, double _learning_rate, double _learning_rate_decay, double _weight_decay, double _weight_decay_decay, double _input_dropout_probability, double _hidden_dropout_probability, const vector<CNN_Node*> &_nodes, const vector<CNN_Edge*> &_edges) {
+CNN_Genome::CNN_Genome(int _generation_id, int seed, int _max_epochs, bool _reset_weights, int _velocity_reset, double _mu, double _mu_delta, double _learning_rate, double _learning_rate_delta, double _weight_decay, double _weight_decay_delta, double _input_dropout_probability, double _hidden_dropout_probability, const vector<CNN_Node*> &_nodes, const vector<CNN_Edge*> &_edges) {
     exact_id = -1;
     genome_id = -1;
     started_from_checkpoint = false;
@@ -387,15 +438,15 @@ CNN_Genome::CNN_Genome(int _generation_id, int seed, int _max_epochs, bool _rese
 
     mu = _mu;
     initial_mu = mu;
-    mu_decay = _mu_decay;
+    mu_delta = _mu_delta;
 
     learning_rate = _learning_rate;
     initial_learning_rate = learning_rate;
-    learning_rate_decay = _learning_rate_decay;
+    learning_rate_delta = _learning_rate_delta;
 
     weight_decay = _weight_decay;
     initial_weight_decay = weight_decay;
-    weight_decay_decay = _weight_decay_decay;
+    weight_decay_delta = _weight_decay_delta;
 
     epoch = 0;
     max_epochs = _max_epochs;
@@ -1197,7 +1248,7 @@ void CNN_Genome::stochastic_backpropagation(const Images &images) {
 
         best_error = EXACT_MAX_DOUBLE;
     }
-    //backprop_order.resize(10000);
+    //backprop_order.resize(5000);
 
     //sort edges by depth of input node
     sort(edges.begin(), edges.end(), sort_CNN_Edges_by_depth());
@@ -1260,17 +1311,13 @@ void CNN_Genome::stochastic_backpropagation(const Images &images) {
             set_to_best();
         }
 
-        mu *= mu_decay;
-        //mu *= 1.010;
-        //if (mu > 0.99) mu = 0.99;
-        if (mu > 0.99) mu = 0.99;
+        //decay mu with a max of 0.99
+        mu = 0.99 - ((0.99 - mu) * mu_delta);
 
-        learning_rate *= learning_rate_decay;
-        //learning_rate *= .99;
+        learning_rate *= learning_rate_delta;
         //if (learning_rate < 0.00001) learning_rate = 0.00001;
 
-        weight_decay *= weight_decay_decay;
-        //weight_decay *= .99;
+        weight_decay *= weight_decay_delta;
         //if (weight_decay < 0.00001) weight_decay = 0.00001;
 
         epoch++;
@@ -1319,21 +1366,21 @@ void CNN_Genome::write(ostream &outfile) {
     outfile << endl;
     write_hexfloat(outfile, mu);
     outfile << endl;
-    write_hexfloat(outfile, mu_decay);
+    write_hexfloat(outfile, mu_delta);
     outfile << endl;
 
     write_hexfloat(outfile, initial_learning_rate);
     outfile << endl;
     write_hexfloat(outfile, learning_rate);
     outfile << endl;
-    write_hexfloat(outfile, learning_rate_decay);
+    write_hexfloat(outfile, learning_rate_delta);
     outfile << endl;
 
     write_hexfloat(outfile, initial_weight_decay);
     outfile << endl;
     write_hexfloat(outfile, weight_decay);
     outfile << endl;
-    write_hexfloat(outfile, weight_decay_decay);
+    write_hexfloat(outfile, weight_decay_delta);
     outfile << endl;
 
     write_hexfloat(outfile, input_dropout_probability);
@@ -1439,22 +1486,22 @@ void CNN_Genome::read(istream &infile) {
     if (verbose) cerr << "read initial_mu: " << initial_mu << endl;
     mu = read_hexfloat(infile);
     if (verbose) cerr << "read mu: " << mu << endl;
-    mu_decay = read_hexfloat(infile);
-    if (verbose) cerr << "read mu_decay: " << mu_decay << endl;
+    mu_delta = read_hexfloat(infile);
+    if (verbose) cerr << "read mu_delta: " << mu_delta << endl;
 
     initial_learning_rate = read_hexfloat(infile);
     if (verbose) cerr << "read initial_learning_rate: " << initial_learning_rate << endl;
     learning_rate = read_hexfloat(infile);
     if (verbose) cerr << "read learning_rate: " << learning_rate << endl;
-    learning_rate_decay = read_hexfloat(infile);
-    if (verbose) cerr << "read learning_rate_decay: " << learning_rate_decay << endl;
+    learning_rate_delta = read_hexfloat(infile);
+    if (verbose) cerr << "read learning_rate_delta: " << learning_rate_delta << endl;
 
     initial_weight_decay = read_hexfloat(infile);
     if (verbose) cerr << "read initial_weight_decay: " << initial_weight_decay << endl;
     weight_decay = read_hexfloat(infile);
     if (verbose) cerr << "read weight_decay: " << weight_decay << endl;
-    weight_decay_decay = read_hexfloat(infile);
-    if (verbose) cerr << "read weight_decay_decay: " << weight_decay_decay << endl;
+    weight_decay_delta = read_hexfloat(infile);
+    if (verbose) cerr << "read weight_decay_delta: " << weight_decay_delta << endl;
 
     input_dropout_probability = read_hexfloat(infile);
     if (verbose) cerr << "read input_dropout_probability: " << input_dropout_probability << endl;

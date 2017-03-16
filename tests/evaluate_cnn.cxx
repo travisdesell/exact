@@ -31,11 +31,27 @@ int main(int argc, char **argv) {
     string testing_data;
     get_argument(arguments, "--testing_data", true, testing_data);
 
+/*
+    if (argument_exists(arguments, "--db_file")) {
+        string db_file;
+        get_argument(arguments, "--db_file", true, db_file);
+        set_db_info_filename(db_file);
+    }   
+*/
+
     Images training_images(training_data);
     Images testing_images(testing_data, training_images.get_average(), training_images.get_std_dev());
 
     CNN_Genome *genome = new CNN_Genome(genome_id);
-
     genome->evaluate(training_images);
     genome->evaluate(testing_images);
+
+/*
+    if (argument_exists(arguments, "--update_database")) {
+        ostringstream query;
+        query << "UPDATE cnn_genome SET test_error = " << error << ", test_predictions = " << predictions << " WHERE id = " << genome_id;
+        mysql_exact_query(query.str());
+    }   
+*/
+
 }

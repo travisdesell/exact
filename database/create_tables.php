@@ -32,17 +32,50 @@ $query = "CREATE TABLE `exact_search` (
     `reset_weights` tinyint NOT NULL,
     `max_epochs` int(11) NOT NULL,
 
-    `mu` double NOT NULL,
-    `mu_decay` double NOT NULL,
+    `initial_mu_min` double NOT NULL,
+    `initial_mu_max` double NOT NULL,
+    `mu_min` double NOT NULL,
+    `mu_max` double NOT NULL,
 
-    `learning_rate` double NOT NULL,
-    `learning_rate_decay` double NOT NULL,
+    `initial_mu_delta_min` double NOT NULL,
+    `initial_mu_delta_max` double NOT NULL,
+    `mu_delta_min` double NOT NULL,
+    `mu_delta_max` double NOT NULL,
 
-    `weight_decay` double NOT NULL,
-    `weight_decay_decay` double NOT NULL,
+    `initial_learning_rate_min` double NOT NULL,
+    `initial_learning_rate_max` double NOT NULL,
+    `learning_rate_min` double NOT NULL,
+    `learning_rate_max` double NOT NULL,
 
-    `input_dropout_probability` double NOT NULL,
-    `hidden_dropout_probability` double NOT NULL,
+    `initial_learning_rate_delta_min` double NOT NULL,
+    `initial_learning_rate_delta_max` double NOT NULL,
+    `learning_rate_delta_min` double NOT NULL,
+    `learning_rate_delta_max` double NOT NULL,
+
+    `initial_weight_decay_min` double NOT NULL,
+    `initial_weight_decay_max` double NOT NULL,
+    `weight_decay_min` double NOT NULL,
+    `weight_decay_max` double NOT NULL,
+
+    `initial_weight_decay_delta_min` double NOT NULL,
+    `initial_weight_decay_delta_max` double NOT NULL,
+    `weight_decay_delta_min` double NOT NULL,
+    `weight_decay_delta_max` double NOT NULL,
+
+    `initial_input_dropout_probability_min` double NOT NULL,
+    `initial_input_dropout_probability_max` double NOT NULL,
+    `input_dropout_probability_min` double NOT NULL,
+    `input_dropout_probability_max` double NOT NULL,
+
+    `initial_hidden_dropout_probability_min` double NOT NULL,
+    `initial_hidden_dropout_probability_max` double NOT NULL,
+    `hidden_dropout_probability_min` double NOT NULL,
+    `hidden_dropout_probability_max` double NOT NULL,
+
+    `initial_velocity_reset_min` int(11) NOT NULL,
+    `initial_velocity_reset_max` int(11) NOT NULL,
+    `velocity_reset_min` int(11) NOT NULL,
+    `velocity_reset_max` int(11) NOT NULL,
 
     `reset_weights_chance` double NOT NULL,
 
@@ -107,22 +140,22 @@ $query = "CREATE TABLE `cnn_genome` (
     `normal_distribution` varchar(128) NOT NULL,
     `rng_double` varchar(64) NOT NULL,
 
-    `velocity_reselt` int(11) NOT NULL,
+    `velocity_reset` int(11) NOT NULL,
 
     `input_dropout_probability` double NOT NULL,
     `hidden_dropout_probability` double NOT NULL,
 
     `initial_mu` double NOT NULL,
     `mu` double NOT NULL,
-    `mu_decay` double NOT NULL,
+    `mu_delta` double NOT NULL,
 
     `initial_learning_rate` double NOT NULL,
     `learning_rate` double NOT NULL,
-    `learning_rate_decay` double NOT NULL,
+    `learning_rate_delta` double NOT NULL,
 
     `initial_weight_decay` double NOT NULL,
     `weight_decay` double NOT NULL,
-    `weight_decay_decay` double NOT NULL,
+    `weight_decay_delta` double NOT NULL,
 
     `epoch` int(11) NOT NULL,
     `max_epochs` int(11) NOT NULL,

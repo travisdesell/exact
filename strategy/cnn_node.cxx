@@ -133,27 +133,27 @@ CNN_Node::CNN_Node(int _node_id) {
         size_x = atoi(row[5]);
         size_y = atoi(row[6]);
         
-        istringstream bias_iss(row[9]);
+        istringstream bias_iss(row[7]);
         parse_vector_2d(bias, bias_iss, size_x, size_y);
 
-        istringstream best_bias_iss(row[10]);
+        istringstream best_bias_iss(row[8]);
         parse_vector_2d(best_bias, best_bias_iss, size_x, size_y);
 
-        istringstream bias_velocity_iss(row[11]);
+        istringstream bias_velocity_iss(row[9]);
         parse_vector_2d(bias_velocity, bias_velocity_iss, size_x, size_y);
 
-        istringstream best_bias_velocity_iss(row[12]);
+        istringstream best_bias_velocity_iss(row[10]);
         parse_vector_2d(best_bias_velocity, best_bias_velocity_iss, size_x, size_y);
 
-        type = atoi(row[13]);
+        type = atoi(row[11]);
 
         //need to reset these because it will be modified when edges are set
         total_inputs = 0;
         inputs_fired = 0;
 
-        visited = atoi(row[14]);
-        weight_count = atoi(row[15]);
-        needs_initialization = atoi(row[16]);
+        visited = atoi(row[12]);
+        weight_count = atoi(row[13]);
+        needs_initialization = atoi(row[14]);
 
         mysql_free_result(result);
     } else {

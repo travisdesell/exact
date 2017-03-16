@@ -62,17 +62,51 @@ class EXACT {
         bool reset_weights;
         int max_epochs;
 
-        int velocity_reset;
 
-        double mu;
-        double mu_decay;
-        double learning_rate;
-        double learning_rate_decay;
-        double weight_decay;
-        double weight_decay_decay;
+        double initial_mu_min;
+        double initial_mu_max;
+        double mu_min;
+        double mu_max;
 
-        double input_dropout_probability;
-        double hidden_dropout_probability;
+        double initial_mu_delta_min;
+        double initial_mu_delta_max;
+        double mu_delta_min;
+        double mu_delta_max;
+
+        double initial_learning_rate_min;
+        double initial_learning_rate_max;
+        double learning_rate_min;
+        double learning_rate_max;
+
+        double initial_learning_rate_delta_min;
+        double initial_learning_rate_delta_max;
+        double learning_rate_delta_min;
+        double learning_rate_delta_max;
+
+        double initial_weight_decay_min;
+        double initial_weight_decay_max;
+        double weight_decay_min;
+        double weight_decay_max;
+
+        double initial_weight_decay_delta_min;
+        double initial_weight_decay_delta_max;
+        double weight_decay_delta_min;
+        double weight_decay_delta_max;
+
+        double initial_input_dropout_probability_min;
+        double initial_input_dropout_probability_max;
+        double input_dropout_probability_min;
+        double input_dropout_probability_max;
+
+        double initial_hidden_dropout_probability_min;
+        double initial_hidden_dropout_probability_max;
+        double hidden_dropout_probability_min;
+        double hidden_dropout_probability_max;
+
+        int initial_velocity_reset_min;
+        int initial_velocity_reset_max;
+        int velocity_reset_min;
+        int velocity_reset_max;
 
         double reset_weights_chance;
 
@@ -121,10 +155,15 @@ class EXACT {
         void update_database();
 #endif
 
-        EXACT(const Images &images, int _population_size, int _max_epochs, bool _reset_weights, int _velocity_reset, double _mu, double _mu_decay, double _learning_rate, double _learning_rate_decay, double _weight_decay, double _weight_decay_decay, double _input_dropout_probability, double _hidden_dropout_probability, int _max_genomes, string _output_directory, string _search_name);
+        EXACT(const Images &images, int _population_size, int _max_epochs, int _max_genomes, string _output_directory, string _search_name, bool _reset_weights);
 
-        bool population_contains(CNN_Genome *genome) const;
+        int32_t population_contains(CNN_Genome *genome) const;
         CNN_Genome* get_best_genome();
+
+        void generate_initial_hyperparameters(double &mu, double &mu_delta, double &learning_rate, double &learning_rate_delta, double &weight_decay, double &weight_decay_delta, double &input_dropout_probability, double &hidden_dropout_probability, int &velocity_reset);
+
+        void generate_simplex_hyperparameters(double &mu, double &mu_delta, double &learning_rate, double &learning_rate_delta, double &weight_decay, double &weight_decay_delta, double &input_dropout_probability, double &hidden_dropout_probability, int &velocity_reset);
+
 
         CNN_Genome* generate_individual();
         CNN_Genome* create_mutation();
