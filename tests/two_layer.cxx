@@ -123,5 +123,8 @@ int main(int argc, char **argv) {
 
     cout << "evaluating best weights on testing data." << endl;
     genome->set_to_best();
-    genome->evaluate(testing_images);
+
+    double error;
+    int predictions;
+    genome->evaluate(testing_images, error, predictions);
 }

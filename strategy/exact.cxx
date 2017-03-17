@@ -85,7 +85,6 @@ EXACT::EXACT(int exact_id) {
         MYSQL_ROW row = mysql_fetch_row(result);
 
         id = exact_id;  //is row 0
-<<<<<<< HEAD
 
         int column = 0;
 
@@ -153,7 +152,9 @@ EXACT::EXACT(int exact_id) {
         velocity_reset_min = atoi(row[++column]);
         velocity_reset_max = atoi(row[++column]);
 
+        sort_by_fitness = atoi(row[++column]);
         reset_weights_chance = atof(row[++column]);
+
         crossover_rate = atof(row[++column]);
         more_fit_parent_crossover = atof(row[++column]);
         less_fit_parent_crossover = atof(row[++column]);
@@ -204,91 +205,6 @@ EXACT::EXACT(int exact_id) {
         generated_from_change_size_y = atoi(row[++column]);
         generated_from_crossover = atoi(row[++column]);
         generated_from_reset_weights = atoi(row[++column]);
-=======
-        search_name = string(row[1]);
-        output_directory = string(row[2]);
-
-        number_images = atoi(row[3]);
-        image_rows = atoi(row[4]);
-        image_cols = atoi(row[5]);
-        number_classes = atoi(row[6]);
-
-        population_size = atoi(row[7]);
-        node_innovation_count = atoi(row[8]);
-        edge_innovation_count = atoi(row[9]);
-
-        genomes_generated = atoi(row[10]);
-        inserted_genomes = atoi(row[11]);
-
-        reset_weights = atoi(row[12]);
-        min_epochs = atoi(row[13]);
-        max_epochs = atoi(row[14]);
-        improvement_required_epochs = atoi(row[15]);
-        max_genomes = atoi(row[16]);
-
-        mu = atof(row[17]);
-        mu_decay = atof(row[18]);
-
-        learning_rate = atof(row[19]);
-        learning_rate_decay = atof(row[20]);
-
-        weight_decay = atof(row[21]);
-        weight_decay_decay = atof(row[22]);
-
-        reset_weights_chance = atof(row[23]);
-        crossover_rate = atof(row[24]);
-        more_fit_parent_crossover = atof(row[25]);
-        less_fit_parent_crossover = atof(row[26]);
-
-        number_mutations = atoi(row[27]);
-        edge_disable = atof(row[28]);
-        edge_enable = atof(row[29]);
-        edge_split = atof(row[30]);
-        edge_add = atof(row[31]);
-        edge_change_stride = atof(row[32]);
-        node_change_size = atof(row[33]);
-        node_change_size_x = atof(row[34]);
-        node_change_size_y = atof(row[35]);
-        node_change_pool_size = atof(row[36]);
-
-        inserted_from_disable_edge = atoi(row[37]);
-        inserted_from_enable_edge = atoi(row[38]);
-        inserted_from_split_edge = atoi(row[39]);
-        inserted_from_add_edge = atoi(row[40]);
-        inserted_from_change_size = atoi(row[41]);
-        inserted_from_change_size_x = atoi(row[42]);
-        inserted_from_change_size_y = atoi(row[43]);
-        inserted_from_crossover = atoi(row[44]);
-        inserted_from_reset_weights = atoi(row[45]);
-
-        generated_from_disable_edge = atoi(row[46]);
-        generated_from_enable_edge = atoi(row[47]);
-        generated_from_split_edge = atoi(row[48]);
-        generated_from_add_edge = atoi(row[49]);
-        generated_from_change_size = atoi(row[50]);
-        generated_from_change_size_x = atoi(row[51]);
-        generated_from_change_size_y = atoi(row[52]);
-        generated_from_crossover = atoi(row[53]);
-        generated_from_reset_weights = atoi(row[54]);
-
-        istringstream generator_iss(row[55]);
-        generator_iss >> generator;
-        //cout << "read generator from database: " << generator << endl;
-
-        istringstream normal_distribution_iss(row[56]);
-        normal_distribution_iss >> normal_distribution;
-        //cout << "read normal_distribution from database: " << normal_distribution << endl;
-
-        istringstream rng_long_iss(row[57]);
-        rng_long_iss >> rng_long;
-        //cout << "read rng_long from database: " << rng_long << endl;
-
-        istringstream rng_double_iss(row[58]);
-        rng_double_iss >> rng_double;
-        //cout << "read rng_double from database: " << rng_double << endl;
-
-        sort_by_fitness = row[59];
->>>>>>> 9d06146dad72324abd2295b530070590d941ed0e
 
         ostringstream genome_query;
         genome_query << "SELECT id FROM cnn_genome WHERE exact_id = " << id << " ORDER BY best_error LIMIT " << population_size;
@@ -389,11 +305,10 @@ void EXACT::export_to_database() {
 
         << ", genomes_generated = " << genomes_generated
         << ", inserted_genomes = " << inserted_genomes
+        << ", max_genomes = " << max_genomes
 
         << ", reset_weights = " << reset_weights
         << ", max_epochs = " << max_epochs
-<<<<<<< HEAD
-        << ", max_genomes = " << max_genomes
 
         << ", initial_mu_min = " << initial_mu_min
         << ", initial_mu_max = " << initial_mu_max
@@ -439,19 +354,10 @@ void EXACT::export_to_database() {
         << ", initial_velocity_reset_max = " << initial_velocity_reset_max
         << ", velocity_reset_min = " << velocity_reset_min
         << ", velocity_reset_max = " << velocity_reset_max
-=======
-        << ", improvement_required_epochs = " << improvement_required_epochs
-        << ", max_genomes = " << max_genomes
 
-        << ", mu = " << mu
-        << ", mu_decay = " << mu_decay
-        << ", learning_rate = " << learning_rate
-        << ", learning_rate_decay = " << learning_rate_decay
-        << ", weight_decay = " << weight_decay
-        << ", weight_decay_decay = " << weight_decay_decay
->>>>>>> 9d06146dad72324abd2295b530070590d941ed0e
-
+        << ", sort_by_fitness = " << sort_by_fitness
         << ", reset_weights_chance = " << reset_weights_chance
+
         << ", crossover_rate = " << crossover_rate
         << ", more_fit_parent_crossover = " << more_fit_parent_crossover
         << ", less_fit_parent_crossover = " << less_fit_parent_crossover
@@ -490,17 +396,7 @@ void EXACT::export_to_database() {
         << ", generated_from_change_size_x = " << generated_from_change_size_x
         << ", generated_from_change_size_y = " << generated_from_change_size_y
         << ", generated_from_crossover = " << generated_from_crossover
-<<<<<<< HEAD
         << ", generated_from_reset_weights = " << generated_from_reset_weights;
-=======
-        << ", generated_from_reset_weights = " << generated_from_reset_weights
-
-        << ", generator = '" << generator << "'"
-        << ", normal_distribution = '" << normal_distribution << "'"
-        << ", rng_long = '" << rng_long << "'"
-        << ", rng_double = '" << rng_double << "'"
-        << ", sort_by_fitness = " << sort_by_fitness;
->>>>>>> 9d06146dad72324abd2295b530070590d941ed0e
 
     cout << query.str() << endl;
     mysql_exact_query(query.str());
@@ -641,12 +537,7 @@ void EXACT::update_database() {
 
 #endif
 
-<<<<<<< HEAD
 EXACT::EXACT(const Images &images, int _population_size, int _max_epochs, int _max_genomes, string _output_directory, string _search_name, bool _reset_weights) {
-=======
-EXACT::EXACT(const Images &images, int _population_size, int _min_epochs, int _max_epochs, int _improvement_required_epochs, bool _reset_weights, double _mu, double _mu_decay, double _learning_rate, double _learning_rate_decay, double _weight_decay, double _weight_decay_decay, int _max_genomes, string _output_directory, string _search_name) {
-
->>>>>>> 9d06146dad72324abd2295b530070590d941ed0e
     id = -1;
 
     search_name = _search_name;
@@ -654,10 +545,6 @@ EXACT::EXACT(const Images &images, int _population_size, int _min_epochs, int _m
     output_directory = _output_directory;
     reset_weights = _reset_weights;
     max_epochs = _max_epochs;
-<<<<<<< HEAD
-=======
-    improvement_required_epochs = _improvement_required_epochs;
->>>>>>> 9d06146dad72324abd2295b530070590d941ed0e
     max_genomes = _max_genomes;
 
     unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
@@ -751,6 +638,7 @@ EXACT::EXACT(const Images &images, int _population_size, int _min_epochs, int _m
     more_fit_parent_crossover = 1.00;
     less_fit_parent_crossover = 0.50;
 
+    sort_by_fitness = true;
     reset_weights_chance = 0.20;
 
     number_mutations = 3;

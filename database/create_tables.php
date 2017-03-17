@@ -77,6 +77,7 @@ $query = "CREATE TABLE `exact_search` (
     `velocity_reset_min` int(11) NOT NULL,
     `velocity_reset_max` int(11) NOT NULL,
 
+    `sort_by_fitness` tinyint(1) NOT NULL,
     `reset_weights_chance` double NOT NULL,
 
     `crossover_rate` double NOT NULL,

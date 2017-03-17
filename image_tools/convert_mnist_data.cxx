@@ -59,7 +59,7 @@ int main(int argc, char** argv) {
     if (argc != 5) {
         cerr << "error: incorrect arguments." << endl;
         cerr << "usage: " << endl;
-        cerr << "    " << argv[0] << " <mnist image file> <mnist label file> <output file> <expected number of images>" << endl;
+        cerr << "    " << argv[0] << " <cifar-10 image file> > <output file> <expected number of images>" << endl;
         exit(1);
     }
 
