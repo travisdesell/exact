@@ -179,12 +179,14 @@ CNN_Genome::CNN_Genome(int _genome_id) {
 
         exact_id = atoi(row[++column]);
 
-        int input_node_innovation_number = atoi(row[++column]);
+        vector<int> input_node_innovation_numbers;
+        istringstream input_node_innovation_numbers_iss(row[++column]);
+        //cout << "parsing input node innovation numbers" << endl;
+        parse_array(input_node_innovation_numbers, input_node_innovation_numbers_iss);
 
         vector<int> softmax_node_innovation_numbers;
-
         istringstream softmax_node_innovation_numbers_iss(row[++column]);
-        //cout << "parsing softax node innovation numbers" << endl;
+        //cout << "parsing softmax node innovation numbers" << endl;
         parse_array(softmax_node_innovation_numbers, softmax_node_innovation_numbers_iss);
 
         istringstream generator_iss(row[++column]);
@@ -269,8 +271,8 @@ CNN_Genome::CNN_Genome(int _genome_id) {
             CNN_Node *node = new CNN_Node(node_id);
             nodes.push_back(node);
 
-            if (node->get_innovation_number() == input_node_innovation_number) {
-                input_node = node;
+            if (find(input_node_innovation_numbers.begin(), input_node_innovation_numbers.end(), node->get_innovation_number()) != input_node_innovation_numbers.end()) {
+                input_nodes.push_back(node);
             }
 
             if (find(softmax_node_innovation_numbers.begin(), softmax_node_innovation_numbers.end(), node->get_innovation_number()) != softmax_node_innovation_numbers.end()) {
@@ -329,8 +331,14 @@ void CNN_Genome::export_to_database(int _exact_id) {
     }
 
     query << " exact_id = " << exact_id
-        << ", input_node_innovation_number = " << input_node->get_innovation_number()
-        << ", softmax_node_innovation_numbers = '";
+        << ", input_node_innovation_numbers = '";
+
+    for (uint32_t i = 0; i < input_nodes.size(); i++) {
+        if (i != 0) query << " ";
+        query << input_nodes[i]->get_innovation_number();
+    }
+
+    query << "', softmax_node_innovation_numbers = '";
 
     for (uint32_t i = 0; i < softmax_nodes.size(); i++) {
         if (i != 0) query << " ";
@@ -474,8 +482,8 @@ CNN_Genome::CNN_Genome(int _generation_id, int seed, int _max_epochs, bool _rese
     output_filename = "";
     checkpoint_filename = "";
 
-    input_node = NULL;
     nodes.clear();
+    input_nodes.clear();
     softmax_nodes.clear();
 
     for (uint32_t i = 0; i < _nodes.size(); i++) {
@@ -484,16 +492,7 @@ CNN_Genome::CNN_Genome(int _generation_id, int seed, int _max_epochs, bool _rese
         if (node_copy->is_input()) {
             //cout << "node was input!" << endl;
 
-            if (input_node != NULL) {
-                cerr << "ERROR: multiple input nodes in genome." << endl;
-                cerr << "first: " << endl;
-                input_node->print(cerr);
-                cerr << "second: " << endl;
-                node_copy->print(cerr);
-                exit(1);
-            }
-
-            input_node = node_copy;
+            input_nodes.push_back(node_copy);
         }
 
         if (node_copy->is_softmax()) {
@@ -519,8 +518,6 @@ CNN_Genome::CNN_Genome(int _generation_id, int seed, int _max_epochs, bool _rese
 
 
 CNN_Genome::~CNN_Genome() {
-    input_node = NULL;
-
     while (nodes.size() > 0) {
         CNN_Node *node = nodes.back();
         nodes.pop_back();
@@ -535,6 +532,10 @@ CNN_Genome::~CNN_Genome() {
         delete edge;
     }
     
+    while (input_nodes.size() > 0) {
+        input_nodes.pop_back();
+    }
+
     while (softmax_nodes.size() > 0) {
         softmax_nodes.pop_back();
     }
@@ -714,6 +715,9 @@ int CNN_Genome::get_number_softmax_nodes() const {
     return softmax_nodes.size();
 }
 
+int CNN_Genome::get_number_input_nodes() const {
+    return input_nodes.size();
+}
 
 void CNN_Genome::add_node(CNN_Node* node) {
     nodes.insert( upper_bound(nodes.begin(), nodes.end(), node, sort_CNN_Nodes_by_depth()), node );
@@ -933,7 +937,9 @@ bool CNN_Genome::outputs_connected() const {
         nodes[i]->set_unvisited();
     }
 
-    input_node->visit();
+    for (uint32_t i = 0; i < input_nodes.size(); i++) {
+        input_nodes[i]->visit();
+    }
 
     for (uint32_t i = 0; i < edges.size(); i++) {
         if (!edges[i]->is_disabled()) {
@@ -961,7 +967,9 @@ int CNN_Genome::evaluate_image(const Image &image, vector<double> &class_error, 
         nodes[i]->reset();
     }
 
-    input_node->set_values(image, rows, cols, perform_dropout, rng_double, generator, input_dropout_probability);
+    for (uint32_t channel = 0; channel < input_nodes.size(); channel++) {
+        input_nodes[channel]->set_values(image, channel, rows, cols, perform_dropout, rng_double, generator, input_dropout_probability);
+    }
 
     for (uint32_t i = 0; i < edges.size(); i++) {
         edges[i]->propagate_forward(perform_dropout, rng_double, generator, hidden_dropout_probability);
@@ -1456,7 +1464,10 @@ void CNN_Genome::write(ostream &outfile) {
     }
 
     outfile << "INNOVATION_NUMBERS" << endl;
-    outfile << input_node->get_innovation_number() << endl;
+    outfile << input_nodes.size() << endl;
+    for (uint32_t i = 0; i < input_nodes.size(); i++) {
+        outfile << input_nodes[i]->get_innovation_number() << endl;
+    }
 
     outfile << softmax_nodes.size() << endl;
     for (uint32_t i = 0; i < softmax_nodes.size(); i++) {
@@ -1655,16 +1666,22 @@ void CNN_Genome::read(istream &infile) {
         return;
     }
 
-    int input_node_innovation_number;
-    infile >> input_node_innovation_number;
+    input_nodes.clear();
+    int number_input_nodes;
+    infile >> number_input_nodes;
+    //cerr << "number input nodes: " << number_input_nodes << endl;
 
-    //cerr << "input node innovation number: " << input_node_innovation_number << endl;
+    for (int32_t i = 0; i < number_input_nodes; i++) {
+        int input_node_innovation_number;
+        infile >> input_node_innovation_number;
+        //cerr << "\tinput node: " << input_node_innovation_number << endl;
 
-    for (uint32_t i = 0; i < nodes.size(); i++) {
-        if (nodes[i]->get_innovation_number() == input_node_innovation_number) {
-            input_node = nodes[i];
-            //cerr << "input node was in position: " << i << endl;
-            break;
+        for (uint32_t i = 0; i < nodes.size(); i++) {
+            if (nodes[i]->get_innovation_number() == input_node_innovation_number) {
+                input_nodes.push_back(nodes[i]);
+                //cerr << "input node " << input_node_innovation_number << " was in position: " << i << endl;
+                break;
+            }
         }
     }
 
@@ -1685,7 +1702,6 @@ void CNN_Genome::read(istream &infile) {
                 break;
             }
         }
-
     }
 
     //cerr << "reading backprop order" << endl;

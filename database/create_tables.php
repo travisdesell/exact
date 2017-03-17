@@ -17,6 +17,7 @@ $query = "CREATE TABLE `exact_search` (
     `output_directory` varchar(128) NOT NULL,
 
     `number_images` int(11) NOT NULL,
+    `image_channels` int(11) NOT NULL,
     `image_rows` int(11) NOT NULL,
     `image_cols` int(11) NOT NULL,
     `number_classes` int(11) NOT NULL,
@@ -134,7 +135,7 @@ $query = "CREATE TABLE `cnn_genome` (
     `id` int(11) NOT NULL AUTO_INCREMENT,
     `exact_id` int(11) NOT NULL,
 
-    `input_node_innovation_number` int NOT NULL,
+    `input_node_innovation_numbers` BLOB NOT NULL,
     `softmax_node_innovation_numbers` BLOB NOT NULL,
 
     `generator` varchar(64) NOT NULL,

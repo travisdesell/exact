@@ -27,7 +27,7 @@ class CNN_Genome {
         vector<CNN_Node*> nodes;
         vector<CNN_Edge*> edges;
 
-        CNN_Node *input_node;
+        vector<CNN_Node*> input_nodes;
         vector<CNN_Node*> softmax_nodes;
 
         NormalDistribution normal_distribution;
@@ -157,6 +157,7 @@ class CNN_Genome {
         int get_number_edges() const;
         int get_number_nodes() const;
         int get_number_softmax_nodes() const;
+        int get_number_input_nodes() const;
 
         void add_node(CNN_Node* node);
         void add_edge(CNN_Edge* edge);

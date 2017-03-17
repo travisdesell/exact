@@ -482,7 +482,7 @@ void CNN_Node::reset() {
     }
 }
 
-void CNN_Node::set_values(const Image &image, int rows, int cols, bool perform_dropout, uniform_real_distribution<double> &rng_double, minstd_rand0 &generator, double input_dropout_probability) {
+void CNN_Node::set_values(const Image &image, int channel, int rows, int cols, bool perform_dropout, uniform_real_distribution<double> &rng_double, minstd_rand0 &generator, double input_dropout_probability) {
     if (rows != size_y) {
         cerr << "ERROR: rows of input image: " << rows << " != size_y of input node: " << size_y << endl;
         exit(1);
@@ -501,7 +501,7 @@ void CNN_Node::set_values(const Image &image, int rows, int cols, bool perform_d
                 if (rng_double(generator) < input_dropout_probability) {
                     values[y][x] = 0.0;
                 } else {
-                    values[y][x] = image.get_pixel(x, y);
+                    values[y][x] = image.get_pixel(channel, y, x);
                     current++;
                     //cout << setw(5) << values[y][x];
                 }
@@ -512,7 +512,7 @@ void CNN_Node::set_values(const Image &image, int rows, int cols, bool perform_d
         double dropout_scale = 1.0 - input_dropout_probability;
         for (int32_t y = 0; y < size_y; y++) {
             for (int32_t x = 0; x < size_x; x++) {
-                values[y][x] = image.get_pixel(x, y) * dropout_scale;
+                values[y][x] = image.get_pixel(channel, y, x) * dropout_scale;
                 current++;
             }
         }

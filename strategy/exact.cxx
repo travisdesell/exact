@@ -92,6 +92,7 @@ EXACT::EXACT(int exact_id) {
         output_directory = string(row[++column]);
 
         number_images = atoi(row[++column]);
+        image_channels = atoi(row[++column]);
         image_rows = atoi(row[++column]);
         image_cols = atoi(row[++column]);
         number_classes = atoi(row[++column]);
@@ -295,6 +296,7 @@ void EXACT::export_to_database() {
     query << " search_name = '" << search_name << "'"
         << ", output_directory = '" << output_directory << "'"
         << ", number_images = " << number_images
+        << ", image_channels = " << image_channels
         << ", image_rows = " << image_rows
         << ", image_cols = " << image_cols
         << ", number_classes = " << number_classes
@@ -562,6 +564,7 @@ EXACT::EXACT(const Images &images, int _population_size, int _max_epochs, int _m
     population_size = _population_size;
 
     number_images = images.get_number_images();
+    image_channels = images.get_image_channels();
     image_rows = images.get_image_rows();
     image_cols = images.get_image_cols();
     number_classes = images.get_number_classes();
@@ -915,9 +918,14 @@ CNN_Genome* EXACT::generate_individual() {
     CNN_Genome *genome = NULL;
     if (genomes.size() == 0) {
         //generate the initial minimal CNN
-        CNN_Node *input_node = new CNN_Node(node_innovation_count, 0, image_rows, image_cols, INPUT_NODE);
-        node_innovation_count++;
-        all_nodes.push_back(input_node);
+        
+        vector<CNN_Node*> input_nodes;
+        for (int32_t i = 0; i < image_channels; i++) {
+            CNN_Node *input_node = new CNN_Node(node_innovation_count, 0, image_rows, image_cols, INPUT_NODE);
+            node_innovation_count++;
+            all_nodes.push_back(input_node);
+            input_nodes.push_back(input_node);
+        }
 
         for (int32_t i = 0; i < number_classes; i++) {
             CNN_Node *softmax_node = new CNN_Node(node_innovation_count, 1, 1, 1, SOFTMAX_NODE);
@@ -926,11 +934,13 @@ CNN_Genome* EXACT::generate_individual() {
         }
 
         for (int32_t i = 0; i < number_classes; i++) {
-            CNN_Edge *edge = new CNN_Edge(input_node, all_nodes[i + 1] /*ith softmax node*/, true, edge_innovation_count);
+            for (int32_t j = 0; j < image_channels; j++) {
+                CNN_Edge *edge = new CNN_Edge(input_nodes[j], all_nodes[i + image_channels] /*ith softmax node*/, true, edge_innovation_count);
 
-            all_edges.push_back(edge);
+                all_edges.push_back(edge);
 
-            edge_innovation_count++;
+                edge_innovation_count++;
+            }
         }
 
         long genome_seed = rng_long(generator);
@@ -1507,7 +1517,7 @@ CNN_Genome* EXACT::create_mutation() {
         if (r < node_change_size) {
             cout << "\tCHANGING NODE SIZE X and Y!" << endl;
 
-            if (child->get_number_softmax_nodes() + 1 == child->get_number_nodes()) {
+            if (child->get_number_softmax_nodes() + child->get_number_input_nodes() == child->get_number_nodes()) {
                 cout << "\t\tno non-input or softmax nodes so cannot change node size" << endl;
                 continue;
             }
@@ -1518,8 +1528,9 @@ CNN_Genome* EXACT::create_mutation() {
 
             //make sure we don't change the size of the input node
             cout << "\t\tnumber nodes: " << child->get_number_nodes() << endl;
+            cout << "\t\tnumber input nodes: " << child->get_number_input_nodes() << endl;
             cout << "\t\tnumber softmax nodes: " << child->get_number_softmax_nodes() << endl;
-            int r = (rng_double(generator) * (child->get_number_nodes() - 1 - child->get_number_softmax_nodes())) + 1;
+            int r = (rng_double(generator) * (child->get_number_nodes() - child->get_number_input_nodes() - child->get_number_softmax_nodes())) + child->get_number_input_nodes();
             cout << "\t\tr: " << r << endl;
 
             CNN_Node *modified_node = child->get_node(r);
@@ -1564,7 +1575,7 @@ CNN_Genome* EXACT::create_mutation() {
         if (r < node_change_size_x) {
             cout << "\tCHANGING NODE SIZE X!" << endl;
 
-            if (child->get_number_softmax_nodes() + 1 == child->get_number_nodes()) {
+            if (child->get_number_softmax_nodes() + child->get_number_input_nodes() == child->get_number_nodes()) {
                 cout << "\t\tno non-input or softmax nodes so cannot change node size" << endl;
                 continue;
             }
@@ -1574,8 +1585,11 @@ CNN_Genome* EXACT::create_mutation() {
             if (rng_double(generator) < 0.5) change *= -1;
 
             //make sure we don't change the size of the input node
-            int r = (rng_double(generator) * (child->get_number_nodes() - 1 - child->get_number_softmax_nodes())) + 1;
-
+            cout << "\t\tnumber nodes: " << child->get_number_nodes() << endl;
+            cout << "\t\tnumber input nodes: " << child->get_number_input_nodes() << endl;
+            cout << "\t\tnumber softmax nodes: " << child->get_number_softmax_nodes() << endl;
+            int r = (rng_double(generator) * (child->get_number_nodes() - child->get_number_input_nodes() - child->get_number_softmax_nodes())) + child->get_number_input_nodes();
+ 
             CNN_Node *modified_node = child->get_node(r);
             cout << "\t\tselected node: " << r << " with innovation number: " << modified_node->get_innovation_number() << endl;
 
@@ -1613,7 +1627,7 @@ CNN_Genome* EXACT::create_mutation() {
         if (r < node_change_size_y) {
             cout << "\tCHANGING NODE SIZE Y!" << endl;
 
-            if (child->get_number_softmax_nodes() + 1 == child->get_number_nodes()) {
+            if (child->get_number_softmax_nodes() + child->get_number_input_nodes() == child->get_number_nodes()) {
                 cout << "\t\tno non-input or softmax nodes so cannot change node size" << endl;
                 continue;
             }
@@ -1623,8 +1637,11 @@ CNN_Genome* EXACT::create_mutation() {
             if (rng_double(generator) < 0.5) change *= -1;
 
             //make sure we don't change the size of the input node
-            int r = (rng_double(generator) * (child->get_number_nodes() - 1 - child->get_number_softmax_nodes())) + 1;
-
+            cout << "\t\tnumber nodes: " << child->get_number_nodes() << endl;
+            cout << "\t\tnumber input nodes: " << child->get_number_input_nodes() << endl;
+            cout << "\t\tnumber softmax nodes: " << child->get_number_softmax_nodes() << endl;
+            int r = (rng_double(generator) * (child->get_number_nodes() - child->get_number_input_nodes() - child->get_number_softmax_nodes())) + child->get_number_input_nodes();
+ 
             CNN_Node *modified_node = child->get_node(r);
             cout << "\t\tselected node: " << r << " with innovation number: " << modified_node->get_innovation_number() << endl;
 

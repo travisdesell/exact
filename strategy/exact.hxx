@@ -37,6 +37,7 @@ class EXACT {
         string output_directory;
 
         int number_images;
+        int image_channels;
         int image_rows;
         int image_cols;
         int number_classes;
