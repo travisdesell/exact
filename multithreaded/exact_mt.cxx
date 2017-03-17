@@ -84,9 +84,9 @@ int main(int argc, char** argv) {
     get_argument(arguments, "--reset_edges", true, reset_edges);
 
     Images images(binary_samples_filename);
-    //exact = new EXACT(images, population_size, max_epochs, max_genomes, output_directory, search_name, reset_edges);
+    exact = new EXACT(images, population_size, max_epochs, max_genomes, output_directory, search_name, reset_edges);
 
-    exact = new EXACT(1);
+    //exact = new EXACT(1);
 
     /*
     cout << "generating individual!" << endl;

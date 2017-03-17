@@ -69,7 +69,7 @@ int Image::get_cols() const {
 }
 
 void Image::scale_0_1() {
-    for (int32_t z = 0; z < cols; z++) {
+    for (int32_t z = 0; z < channels; z++) {
         for (int32_t y = 0; y < cols; y++) {
             for (int32_t x = 0; x < rows; x++) {
                 pixels[z][y][x] /= 255.0;
