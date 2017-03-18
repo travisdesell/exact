@@ -744,7 +744,10 @@ EXACT::EXACT(const Images &images, int _population_size, int _max_epochs, int _m
     cout << "\tnode_change_size_y: " << node_change_size_y << endl;
     cout << "\tnode_change_pool_size: " << node_change_pool_size << endl;
 
-    if (output_directory.compare("") != 0) write_statistics_header();
+    if (output_directory.compare("") != 0) {
+        write_statistics_header();
+        write_hyperparameters_header();
+    }
 }
 
 int EXACT::get_id() const {
@@ -1096,50 +1099,50 @@ bool EXACT::insert_genome(CNN_Genome* genome) {
 
         gv_file << "#EXACT settings: " << endl;
 
-        gv_file << "\tinitial_mu_min: " << initial_mu_min << endl;
-        gv_file << "\tinitial_mu_max: " << initial_mu_max << endl;
-        gv_file << "\tmu_min: " << mu_min << endl;
-        gv_file << "\tmu_max: " << mu_max << endl;
+        gv_file << "#\tinitial_mu_min: " << initial_mu_min << endl;
+        gv_file << "#\tinitial_mu_max: " << initial_mu_max << endl;
+        gv_file << "#\tmu_min: " << mu_min << endl;
+        gv_file << "#\tmu_max: " << mu_max << endl;
 
-        gv_file << "\tinitial_mu_delta_min: " << initial_mu_delta_min << endl;
-        gv_file << "\tinitial_mu_delta_max: " << initial_mu_delta_max << endl;
-        gv_file << "\tmu_delta_min: " << mu_delta_min << endl;
-        gv_file << "\tmu_delta_max: " << mu_delta_max << endl;
+        gv_file << "#\tinitial_mu_delta_min: " << initial_mu_delta_min << endl;
+        gv_file << "#\tinitial_mu_delta_max: " << initial_mu_delta_max << endl;
+        gv_file << "#\tmu_delta_min: " << mu_delta_min << endl;
+        gv_file << "#\tmu_delta_max: " << mu_delta_max << endl;
 
-        gv_file << "\tinitial_learning_rate_min: " << initial_learning_rate_min << endl;
-        gv_file << "\tinitial_learning_rate_max: " << initial_learning_rate_max << endl;
-        gv_file << "\tlearning_rate_min: " << learning_rate_min << endl;
-        gv_file << "\tlearning_rate_max: " << learning_rate_max << endl;
+        gv_file << "#\tinitial_learning_rate_min: " << initial_learning_rate_min << endl;
+        gv_file << "#\tinitial_learning_rate_max: " << initial_learning_rate_max << endl;
+        gv_file << "#\tlearning_rate_min: " << learning_rate_min << endl;
+        gv_file << "#\tlearning_rate_max: " << learning_rate_max << endl;
 
-        gv_file << "\tinitial_learning_rate_delta_min: " << initial_learning_rate_delta_min << endl;
-        gv_file << "\tinitial_learning_rate_delta_max: " << initial_learning_rate_delta_max << endl;
-        gv_file << "\tlearning_rate_delta_min: " << learning_rate_delta_min << endl;
-        gv_file << "\tlearning_rate_delta_max: " << learning_rate_delta_max << endl;
+        gv_file << "#\tinitial_learning_rate_delta_min: " << initial_learning_rate_delta_min << endl;
+        gv_file << "#\tinitial_learning_rate_delta_max: " << initial_learning_rate_delta_max << endl;
+        gv_file << "#\tlearning_rate_delta_min: " << learning_rate_delta_min << endl;
+        gv_file << "#\tlearning_rate_delta_max: " << learning_rate_delta_max << endl;
 
-        gv_file << "\tinitial_weight_decay_min: " << initial_weight_decay_min << endl;
-        gv_file << "\tinitial_weight_decay_max: " << initial_weight_decay_max << endl;
-        gv_file << "\tweight_decay_min: " << weight_decay_min << endl;
-        gv_file << "\tweight_decay_max: " << weight_decay_max << endl;
+        gv_file << "#\tinitial_weight_decay_min: " << initial_weight_decay_min << endl;
+        gv_file << "#\tinitial_weight_decay_max: " << initial_weight_decay_max << endl;
+        gv_file << "#\tweight_decay_min: " << weight_decay_min << endl;
+        gv_file << "#\tweight_decay_max: " << weight_decay_max << endl;
 
-        gv_file << "\tinitial_weight_decay_delta_min: " << initial_weight_decay_delta_min << endl;
-        gv_file << "\tinitial_weight_decay_delta_max: " << initial_weight_decay_delta_max << endl;
-        gv_file << "\tweight_decay_delta_min: " << weight_decay_delta_min << endl;
-        gv_file << "\tweight_decay_delta_max: " << weight_decay_delta_max << endl;
+        gv_file << "#\tinitial_weight_decay_delta_min: " << initial_weight_decay_delta_min << endl;
+        gv_file << "#\tinitial_weight_decay_delta_max: " << initial_weight_decay_delta_max << endl;
+        gv_file << "#\tweight_decay_delta_min: " << weight_decay_delta_min << endl;
+        gv_file << "#\tweight_decay_delta_max: " << weight_decay_delta_max << endl;
 
-        gv_file << "\tinitial_input_dropout_probability_min: " << initial_input_dropout_probability_min << endl;
-        gv_file << "\tinitial_input_dropout_probability_max: " << initial_input_dropout_probability_max << endl;
-        gv_file << "\tinput_dropout_probability_min: " << input_dropout_probability_min << endl;
-        gv_file << "\tinput_dropout_probability_max: " << input_dropout_probability_max << endl;
+        gv_file << "#\tinitial_input_dropout_probability_min: " << initial_input_dropout_probability_min << endl;
+        gv_file << "#\tinitial_input_dropout_probability_max: " << initial_input_dropout_probability_max << endl;
+        gv_file << "#\tinput_dropout_probability_min: " << input_dropout_probability_min << endl;
+        gv_file << "#\tinput_dropout_probability_max: " << input_dropout_probability_max << endl;
 
-        gv_file << "\tinitial_hidden_dropout_probability_min: " << initial_hidden_dropout_probability_min << endl;
-        gv_file << "\tinitial_hidden_dropout_probability_max: " << initial_hidden_dropout_probability_max << endl;
-        gv_file << "\thidden_dropout_probability_min: " << hidden_dropout_probability_min << endl;
-        gv_file << "\thidden_dropout_probability_max: " << hidden_dropout_probability_max << endl;
+        gv_file << "#\tinitial_hidden_dropout_probability_min: " << initial_hidden_dropout_probability_min << endl;
+        gv_file << "#\tinitial_hidden_dropout_probability_max: " << initial_hidden_dropout_probability_max << endl;
+        gv_file << "#\thidden_dropout_probability_min: " << hidden_dropout_probability_min << endl;
+        gv_file << "#\thidden_dropout_probability_max: " << hidden_dropout_probability_max << endl;
 
-        gv_file << "\tinitial_velocity_reset_min: " << initial_velocity_reset_min << endl;
-        gv_file << "\tinitial_velocity_reset_max: " << initial_velocity_reset_max << endl;
-        gv_file << "\tvelocity_reset_min: " << velocity_reset_min << endl;
-        gv_file << "\tvelocity_reset_max: " << velocity_reset_max << endl;
+        gv_file << "#\tinitial_velocity_reset_min: " << initial_velocity_reset_min << endl;
+        gv_file << "#\tinitial_velocity_reset_max: " << initial_velocity_reset_max << endl;
+        gv_file << "#\tvelocity_reset_min: " << velocity_reset_min << endl;
+        gv_file << "#\tvelocity_reset_max: " << velocity_reset_max << endl;
 
         gv_file << "#\tmax_epochs: " << max_epochs << endl;
         gv_file << "#\treset_weights_chance: " << reset_weights_chance << endl;
@@ -2051,6 +2054,229 @@ void EXACT::write_statistics(int new_generation_id, double new_fitness) {
     }
 
     out << endl;
+
+    out.close();
+
+    out = fstream(output_directory + "/hyperparameters.txt", fstream::out | fstream::app);
+
+    double min_initial_mu = 10, max_initial_mu = 0, avg_initial_mu = 0;
+    double min_mu_delta = 10, max_mu_delta = 0, avg_mu_delta = 0;
+
+    double min_initial_learning_rate = 10, max_initial_learning_rate = 0, avg_initial_learning_rate = 0;
+    double min_learning_rate_delta = 10, max_learning_rate_delta = 0, avg_learning_rate_delta = 0;
+
+    double min_initial_weight_decay = 10, max_initial_weight_decay = 0, avg_initial_weight_decay = 0;
+    double min_weight_decay_delta = 10, max_weight_decay_delta = 0, avg_weight_decay_delta = 0;
+
+    double min_hidden_dropout = 10, max_hidden_dropout = 0, avg_hidden_dropout = 0;
+    double min_input_dropout = 10, max_input_dropout = 0, avg_input_dropout = 0;
+    double min_velocity_reset = 10000000, max_velocity_reset = 0, avg_velocity_reset = 0;
+
+
+    double best_initial_mu = genomes[0]->get_initial_mu();
+    double best_mu_delta = genomes[0]->get_mu_delta();
+
+    double best_initial_learning_rate = genomes[0]->get_initial_learning_rate();
+    double best_learning_rate_delta = genomes[0]->get_learning_rate_delta();
+
+    double best_initial_weight_decay = genomes[0]->get_initial_weight_decay();
+    double best_weight_decay_delta = genomes[0]->get_weight_decay_delta();
+
+    double best_hidden_dropout = genomes[0]->get_hidden_dropout_probability();
+    double best_input_dropout = genomes[0]->get_input_dropout_probability();
+    double best_velocity_reset = genomes[0]->get_velocity_reset();
+
+
+    for (uint32_t i = 0; i < genomes.size(); i++) {
+        if (genomes[i]->get_initial_mu() < min_initial_mu) {
+            min_initial_mu = genomes[i]->get_initial_mu();
+        }
+
+        if (genomes[i]->get_initial_mu() > max_initial_mu) {
+            max_initial_mu = genomes[i]->get_initial_mu();
+        }
+        avg_initial_mu += genomes[i]->get_initial_mu();
+
+        if (genomes[i]->get_mu_delta() < min_mu_delta) {
+            min_mu_delta = genomes[i]->get_mu_delta();
+        }
+
+        if (genomes[i]->get_mu_delta() > max_mu_delta) {
+            max_mu_delta = genomes[i]->get_mu_delta();
+        }
+        avg_mu_delta += genomes[i]->get_mu_delta();
+
+
+        if (genomes[i]->get_initial_learning_rate() < min_initial_learning_rate) {
+            min_initial_learning_rate = genomes[i]->get_initial_learning_rate();
+        }
+
+        if (genomes[i]->get_initial_learning_rate() > max_initial_learning_rate) {
+            max_initial_learning_rate = genomes[i]->get_initial_learning_rate();
+        }
+        avg_initial_learning_rate += genomes[i]->get_initial_learning_rate();
+
+        if (genomes[i]->get_learning_rate_delta() < min_learning_rate_delta) {
+            min_learning_rate_delta = genomes[i]->get_learning_rate_delta();
+        }
+
+        if (genomes[i]->get_learning_rate_delta() > max_learning_rate_delta) {
+            max_learning_rate_delta = genomes[i]->get_learning_rate_delta();
+        }
+        avg_learning_rate_delta += genomes[i]->get_learning_rate_delta();
+
+
+        if (genomes[i]->get_initial_weight_decay() < min_initial_weight_decay) {
+            min_initial_weight_decay = genomes[i]->get_initial_weight_decay();
+        }
+
+        if (genomes[i]->get_initial_weight_decay() > max_initial_weight_decay) {
+            max_initial_weight_decay = genomes[i]->get_initial_weight_decay();
+        }
+        avg_initial_weight_decay += genomes[i]->get_initial_weight_decay();
+
+        if (genomes[i]->get_weight_decay_delta() < min_weight_decay_delta) {
+            min_weight_decay_delta = genomes[i]->get_weight_decay_delta();
+        }
+
+        if (genomes[i]->get_weight_decay_delta() > max_weight_decay_delta) {
+            max_weight_decay_delta = genomes[i]->get_weight_decay_delta();
+        }
+        avg_weight_decay_delta += genomes[i]->get_weight_decay_delta();
+
+
+        if (genomes[i]->get_hidden_dropout_probability() < min_hidden_dropout) {
+            min_hidden_dropout = genomes[i]->get_hidden_dropout_probability();
+        }
+
+        if (genomes[i]->get_hidden_dropout_probability() > max_hidden_dropout) {
+            max_hidden_dropout = genomes[i]->get_hidden_dropout_probability();
+        }
+        avg_hidden_dropout += genomes[i]->get_hidden_dropout_probability();
+
+
+        if (genomes[i]->get_input_dropout_probability() < min_input_dropout) {
+            min_input_dropout = genomes[i]->get_input_dropout_probability();
+        }
+
+        if (genomes[i]->get_input_dropout_probability() > max_input_dropout) {
+            max_input_dropout = genomes[i]->get_input_dropout_probability();
+        }
+        avg_input_dropout += genomes[i]->get_input_dropout_probability();
+
+
+        if (genomes[i]->get_velocity_reset() < min_velocity_reset) {
+            min_velocity_reset = genomes[i]->get_velocity_reset();
+        }
+
+        if (genomes[i]->get_velocity_reset() > max_velocity_reset) {
+            max_velocity_reset = genomes[i]->get_velocity_reset();
+        }
+        avg_velocity_reset += genomes[i]->get_velocity_reset();
+    }
+    avg_initial_mu /= genomes.size();
+    avg_mu_delta /= genomes.size();
+
+    avg_initial_learning_rate /= genomes.size();
+    avg_learning_rate_delta /= genomes.size();
+
+    avg_initial_weight_decay /= genomes.size();
+    avg_weight_decay_delta /= genomes.size();
+
+    avg_hidden_dropout /= genomes.size();
+    avg_input_dropout /= genomes.size();
+    avg_velocity_reset /= genomes.size();
+
+    out << setw(20) << setprecision(11) << min_initial_mu
+        << setw(20) << setprecision(11) << max_initial_mu
+        << setw(20) << setprecision(11) << avg_initial_mu
+        << setw(20) << setprecision(11) << best_initial_mu
+        << setw(20) << setprecision(11) << min_mu_delta
+        << setw(20) << setprecision(11) << max_mu_delta
+        << setw(20) << setprecision(11) << avg_mu_delta
+        << setw(20) << setprecision(11) << best_mu_delta
+
+        << setw(20) << setprecision(11) << min_initial_learning_rate
+        << setw(20) << setprecision(11) << max_initial_learning_rate
+        << setw(20) << setprecision(11) << avg_initial_learning_rate
+        << setw(20) << setprecision(11) << best_initial_learning_rate
+        << setw(20) << setprecision(11) << min_learning_rate_delta
+        << setw(20) << setprecision(11) << max_learning_rate_delta
+        << setw(20) << setprecision(11) << avg_learning_rate_delta
+        << setw(20) << setprecision(11) << best_learning_rate_delta
+
+        << setw(20) << setprecision(11) << min_initial_weight_decay
+        << setw(20) << setprecision(11) << max_initial_weight_decay
+        << setw(20) << setprecision(11) << avg_initial_weight_decay
+        << setw(20) << setprecision(11) << best_initial_weight_decay
+        << setw(20) << setprecision(11) << min_weight_decay_delta
+        << setw(20) << setprecision(11) << max_weight_decay_delta
+        << setw(20) << setprecision(11) << avg_weight_decay_delta
+        << setw(20) << setprecision(11) << best_weight_decay_delta
+
+        << setw(20) << setprecision(11) << min_input_dropout
+        << setw(20) << setprecision(11) << max_input_dropout
+        << setw(20) << setprecision(11) << avg_input_dropout
+        << setw(20) << setprecision(11) << best_input_dropout
+
+        << setw(20) << setprecision(11) << min_hidden_dropout
+        << setw(20) << setprecision(11) << max_hidden_dropout
+        << setw(20) << setprecision(11) << avg_hidden_dropout
+        << setw(20) << setprecision(11) << best_hidden_dropout
+
+        << setw(20) << setprecision(11) << min_velocity_reset
+        << setw(20) << setprecision(11) << max_velocity_reset
+        << setw(20) << setprecision(11) << avg_velocity_reset
+        << setw(20) << setprecision(11) << best_velocity_reset
+        << endl;
+ 
+    out.close();
+}
+
+void EXACT::write_hyperparameters_header() {
+    fstream out(output_directory + "/hyperparameters.txt", fstream::out | fstream::app);
+    out << "# min initial mu"
+        << ", max initial mu"
+        << ", avg initial mu"
+        << ", best initial mu"
+        << ", min mu delta"
+        << ", max mu delta"
+        << ", avg mu delta"
+        << ", best mu delta"
+
+        << ", min initial learning rate"
+        << ", max initial learning rate"
+        << ", avg initial learning rate"
+        << ", best initial learning rate"
+        << ", min learning rate delta"
+        << ", max learning rate delta"
+        << ", avg learning rate delta"
+        << ", best learning rate delta"
+
+        << ", min initial weight decay"
+        << ", max initial weight decay"
+        << ", avg initial weight decay"
+        << ", best initial weight decay"
+        << ", min weight decay delta"
+        << ", max weight decay delta"
+        << ", avg weight decay delta"
+        << ", best weight decay delta"
+
+        << ", min input dropout"
+        << ", max input dropout"
+        << ", avg input dropout"
+        << ", best input dropout"
+
+        << ", min hidden dropout"
+        << ", max hidden dropout"
+        << ", avg hidden dropout"
+        << ", best hidden dropout"
+
+        << ", min velocity reset"
+        << ", max velocity reset"
+        << ", avg velocity reset"
+        << ", best velocity reset"
+        << endl;
 
     out.close();
 }
