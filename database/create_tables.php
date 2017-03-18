@@ -188,6 +188,10 @@ $query = "CREATE TABLE `cnn_genome` (
     `generated_by_crossover` int(11) NOT NULL,
     `generated_by_reset_weights` int(11) NOT NULL,
 
+    `test_error` double DEFAULT NULL,
+    `test_predictions` int(11) DEFAULT NULL,
+    `stderr_out` blob,
+
   PRIMARY KEY(`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1";
 query_exact_db($query);

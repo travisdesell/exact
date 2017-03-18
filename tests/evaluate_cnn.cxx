@@ -13,7 +13,10 @@ using std::string;
 using std::vector;
 
 #include "common/arguments.hxx"
+
+#ifdef _MYSQL_
 #include "common/db_conn.hxx"
+#endif
 
 #include "strategy/exact.hxx"
 #include "strategy/cnn_genome.hxx"
