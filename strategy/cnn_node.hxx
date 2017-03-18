@@ -122,7 +122,7 @@ class CNN_Node {
         bool has_zero_best_bias() const;
         void propagate_bias(double mu, double learning_rate, double weight_decay);
 
-        void set_values(const Image &image, int channel, int rows, int cols, bool perform_dropout, uniform_real_distribution<double> &rng_double, minstd_rand0 &generator, double input_dropout_probability);
+        void set_values(const Image &image, int channel, int rows, int cols, bool perform_dropout, minstd_rand0 &generator, double input_dropout_probability);
         double get_value(int y, int x);
         void set_value(int y, int x, double value);
         vector< vector<double> >& get_values();
@@ -149,7 +149,7 @@ class CNN_Node {
         void disable_input();
         int get_number_inputs() const;
         int get_inputs_fired() const;
-        void input_fired(bool perform_dropout, uniform_real_distribution<double> &rng_double, minstd_rand0 &generator, double hidden_dropout_probability);
+        void input_fired(bool perform_dropout, minstd_rand0 &generator, double hidden_dropout_probability);
 
         void print_statistics();
 

@@ -195,9 +195,6 @@ CNN_Genome::CNN_Genome(int _genome_id) {
         istringstream normal_distribution_iss(row[++column]);
         normal_distribution_iss >> normal_distribution;
 
-        istringstream rng_double_iss(row[++column]);
-        rng_double_iss >> rng_double;
-
         //cout << "generator: " << generator << endl;
 
         velocity_reset = atoi(row[++column]);
@@ -348,7 +345,6 @@ void CNN_Genome::export_to_database(int _exact_id) {
 
     query << "', generator = '" << generator << "'"
         << ", normal_distribution = '" << normal_distribution << "'"
-        << ", rng_double = '" << rng_double << "'"
         << ", velocity_reset = '" << velocity_reset << "'"
         << ", input_dropout_probability = " << setprecision(15) << fixed << input_dropout_probability
         << ", hidden_dropout_probability = " << setprecision(15) << fixed << hidden_dropout_probability
@@ -968,11 +964,11 @@ int CNN_Genome::evaluate_image(const Image &image, vector<double> &class_error, 
     }
 
     for (uint32_t channel = 0; channel < input_nodes.size(); channel++) {
-        input_nodes[channel]->set_values(image, channel, rows, cols, perform_dropout, rng_double, generator, input_dropout_probability);
+        input_nodes[channel]->set_values(image, channel, rows, cols, perform_dropout, generator, input_dropout_probability);
     }
 
     for (uint32_t i = 0; i < edges.size(); i++) {
-        edges[i]->propagate_forward(perform_dropout, rng_double, generator, hidden_dropout_probability);
+        edges[i]->propagate_forward(perform_dropout, generator, hidden_dropout_probability);
     }
 
     //cout << "before softmax max: ";
@@ -1444,7 +1440,6 @@ void CNN_Genome::write(ostream &outfile) {
 
     outfile << generation_id << endl;
     outfile << normal_distribution << endl;
-    outfile << rng_double << endl;
     //outfile << name << endl;
     //outfile << checkpoint_filename << endl;
     //outfile << output_filename << endl;
@@ -1587,8 +1582,6 @@ void CNN_Genome::read(istream &infile) {
 
     infile >> normal_distribution;
     if (verbose) cerr << "read normal distribution: '" << normal_distribution << "'" << endl;
-    infile >> rng_double;
-    if (verbose) cerr << "read rng_double: '" << rng_double << "'" << endl;
 
     //for some reason linux doesn't read the generator correcly because of
     //the first newline

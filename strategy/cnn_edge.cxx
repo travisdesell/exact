@@ -626,7 +626,7 @@ void CNN_Edge::check_output_update(const vector< vector<double> > &output, const
     }
 }
 
-void CNN_Edge::propagate_forward(bool perform_dropout, uniform_real_distribution<double> &rng_double, minstd_rand0 &generator, double hidden_dropout_probability) {
+void CNN_Edge::propagate_forward(bool perform_dropout, minstd_rand0 &generator, double hidden_dropout_probability) {
     if (disabled) return;
 
     vector< vector<double> > &input = input_node->get_values();
@@ -727,7 +727,7 @@ void CNN_Edge::propagate_forward(bool perform_dropout, uniform_real_distribution
         }
     }
 
-	output_node->input_fired(perform_dropout, rng_double, generator, hidden_dropout_probability);
+	output_node->input_fired(perform_dropout, generator, hidden_dropout_probability);
 }
 
 void CNN_Edge::update_weights(double mu, double learning_rate, double weight_decay) {

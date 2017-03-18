@@ -32,7 +32,6 @@ class CNN_Genome {
 
         NormalDistribution normal_distribution;
         minstd_rand0 generator;
-        uniform_real_distribution<double> rng_double;
 
         int velocity_reset;
 
