@@ -41,6 +41,7 @@ using std::string;
 using std::vector;
 
 #include "image_tools/image_set.hxx"
+#include "common/random.hxx"
 #include "cnn_edge.hxx"
 #include "cnn_node.hxx"
 
@@ -482,7 +483,7 @@ void CNN_Node::reset() {
     }
 }
 
-void CNN_Node::set_values(const Image &image, int channel, int rows, int cols, bool perform_dropout, uniform_real_distribution<double> &rng_double, minstd_rand0 &generator, double input_dropout_probability) {
+void CNN_Node::set_values(const Image &image, int channel, int rows, int cols, bool perform_dropout, minstd_rand0 &generator, double input_dropout_probability) {
     if (rows != size_y) {
         cerr << "ERROR: rows of input image: " << rows << " != size_y of input node: " << size_y << endl;
         exit(1);
@@ -498,7 +499,7 @@ void CNN_Node::set_values(const Image &image, int channel, int rows, int cols, b
     if (perform_dropout) {
         for (int32_t y = 0; y < size_y; y++) {
             for (int32_t x = 0; x < size_x; x++) {
-                if (rng_double(generator) < input_dropout_probability) {
+                if (random_0_1(generator) < input_dropout_probability) {
                     values[y][x] = 0.0;
                 } else {
                     values[y][x] = image.get_pixel(channel, y, x);
@@ -623,7 +624,7 @@ int CNN_Node::get_inputs_fired() const {
     return inputs_fired;
 }
 
-void CNN_Node::input_fired(bool perform_dropout, uniform_real_distribution<double> &rng_double, minstd_rand0 &generator, double hidden_dropout_probability) {
+void CNN_Node::input_fired(bool perform_dropout, minstd_rand0 &generator, double hidden_dropout_probability) {
     inputs_fired++;
 
     //cout << "input fired on node: " << innovation_number << ", inputs fired: " << inputs_fired << ", total_inputs: " << total_inputs << endl;
@@ -633,7 +634,7 @@ void CNN_Node::input_fired(bool perform_dropout, uniform_real_distribution<doubl
             if (perform_dropout) {
                 for (int32_t y = 0; y < size_y; y++) {
                     for (int32_t x = 0; x < size_x; x++) {
-                        if (rng_double(generator) < hidden_dropout_probability) {
+                        if (random_0_1(generator) < hidden_dropout_probability) {
                             values[y][x] = 0.0;
                             gradients[y][x] = 0.0;
                         } else {

@@ -18,6 +18,10 @@ using std::vector;
 
 #include "random.hxx"
 
+double random_0_1(minstd_rand0 &generator) {
+    return ((double)generator() - (double)generator.min()) / ((double)generator.max() - (double)generator.min());
+}
+
 void fisher_yates_shuffle(minstd_rand0 &generator, vector<long> &v) {
     for (int32_t i = v.size() - 1; i > 0; i--) {
         double t = ((double)generator() - (double)generator.min()) / ((double)generator.max() - (double)generator.min());
