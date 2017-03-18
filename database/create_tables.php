@@ -17,6 +17,7 @@ $query = "CREATE TABLE `exact_search` (
     `output_directory` varchar(128) NOT NULL,
 
     `number_images` int(11) NOT NULL,
+    `image_channels` int(11) NOT NULL,
     `image_rows` int(11) NOT NULL,
     `image_cols` int(11) NOT NULL,
     `number_classes` int(11) NOT NULL,
@@ -27,22 +28,57 @@ $query = "CREATE TABLE `exact_search` (
 
     `genomes_generated` int(11) NOT NULL,
     `inserted_genomes` int(11) NOT NULL,
+    `max_genomes` int(11) NOT NULL,
 
     `reset_weights` tinyint NOT NULL,
-    `min_epochs` int(11) NOT NULL,
     `max_epochs` int(11) NOT NULL,
-    `improvement_required_epochs` int(11) NOT NULL,
-    `max_individuals` int(11) NOT NULL,
 
-    `mu` double NOT NULL,
-    `mu_decay` double NOT NULL,
+    `initial_mu_min` double NOT NULL,
+    `initial_mu_max` double NOT NULL,
+    `mu_min` double NOT NULL,
+    `mu_max` double NOT NULL,
 
-    `learning_rate` double NOT NULL,
-    `learning_rate_decay` double NOT NULL,
+    `initial_mu_delta_min` double NOT NULL,
+    `initial_mu_delta_max` double NOT NULL,
+    `mu_delta_min` double NOT NULL,
+    `mu_delta_max` double NOT NULL,
 
-    `weight_decay` double NOT NULL,
-    `weight_decay_decay` double NOT NULL,
+    `initial_learning_rate_min` double NOT NULL,
+    `initial_learning_rate_max` double NOT NULL,
+    `learning_rate_min` double NOT NULL,
+    `learning_rate_max` double NOT NULL,
 
+    `initial_learning_rate_delta_min` double NOT NULL,
+    `initial_learning_rate_delta_max` double NOT NULL,
+    `learning_rate_delta_min` double NOT NULL,
+    `learning_rate_delta_max` double NOT NULL,
+
+    `initial_weight_decay_min` double NOT NULL,
+    `initial_weight_decay_max` double NOT NULL,
+    `weight_decay_min` double NOT NULL,
+    `weight_decay_max` double NOT NULL,
+
+    `initial_weight_decay_delta_min` double NOT NULL,
+    `initial_weight_decay_delta_max` double NOT NULL,
+    `weight_decay_delta_min` double NOT NULL,
+    `weight_decay_delta_max` double NOT NULL,
+
+    `initial_input_dropout_probability_min` double NOT NULL,
+    `initial_input_dropout_probability_max` double NOT NULL,
+    `input_dropout_probability_min` double NOT NULL,
+    `input_dropout_probability_max` double NOT NULL,
+
+    `initial_hidden_dropout_probability_min` double NOT NULL,
+    `initial_hidden_dropout_probability_max` double NOT NULL,
+    `hidden_dropout_probability_min` double NOT NULL,
+    `hidden_dropout_probability_max` double NOT NULL,
+
+    `initial_velocity_reset_min` int(11) NOT NULL,
+    `initial_velocity_reset_max` int(11) NOT NULL,
+    `velocity_reset_min` int(11) NOT NULL,
+    `velocity_reset_max` int(11) NOT NULL,
+
+    `sort_by_fitness` tinyint(1) NOT NULL,
     `reset_weights_chance` double NOT NULL,
 
     `crossover_rate` double NOT NULL,
@@ -60,6 +96,11 @@ $query = "CREATE TABLE `exact_search` (
     `node_change_size_y` double NOT NULL,
     `node_change_pool_size` double NOT NULL,
 
+    `generator` varchar(64) NOT NULL,
+    `normal_distribution` varchar(128) NOT NULL,
+    `rng_long` varchar(64) NOT NULL,
+    `rng_double` varchar(64) NOT NULL,
+
     `inserted_from_disable_edge` int NOT NULL,
     `inserted_from_enable_edge` int NOT NULL,
     `inserted_from_split_edge` int NOT NULL,
@@ -70,10 +111,15 @@ $query = "CREATE TABLE `exact_search` (
     `inserted_from_crossover` int NOT NULL,
     `inserted_from_reset_weights` int NOT NULL,
 
-    `generator` varchar(64) NOT NULL,
-    `normal_distribution` varchar(128) NOT NULL,
-    `rng_long` varchar(64) NOT NULL,
-    `rng_double` varchar(64) NOT NULL,
+    `generated_from_disable_edge` int NOT NULL,
+    `generated_from_enable_edge` int NOT NULL,
+    `generated_from_split_edge` int NOT NULL,
+    `generated_from_add_edge` int NOT NULL,
+    `generated_from_change_size` int NOT NULL,
+    `generated_from_change_size_x` int NOT NULL,
+    `generated_from_change_size_y` int NOT NULL,
+    `generated_from_crossover` int NOT NULL,
+    `generated_from_reset_weights` int NOT NULL,
 
     PRIMARY KEY(`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1";
@@ -89,28 +135,32 @@ $query = "CREATE TABLE `cnn_genome` (
     `id` int(11) NOT NULL AUTO_INCREMENT,
     `exact_id` int(11) NOT NULL,
 
-    `input_node_innovation_number` int NOT NULL,
+    `input_node_innovation_numbers` BLOB NOT NULL,
     `softmax_node_innovation_numbers` BLOB NOT NULL,
 
     `generator` varchar(64) NOT NULL,
     `normal_distribution` varchar(128) NOT NULL,
+    `rng_double` varchar(64) NOT NULL,
+
+    `velocity_reset` int(11) NOT NULL,
+
+    `input_dropout_probability` double NOT NULL,
+    `hidden_dropout_probability` double NOT NULL,
 
     `initial_mu` double NOT NULL,
     `mu` double NOT NULL,
-    `mu_decay` double NOT NULL,
+    `mu_delta` double NOT NULL,
 
     `initial_learning_rate` double NOT NULL,
     `learning_rate` double NOT NULL,
-    `learning_rate_decay` double NOT NULL,
+    `learning_rate_delta` double NOT NULL,
 
     `initial_weight_decay` double NOT NULL,
     `weight_decay` double NOT NULL,
-    `weight_decay_decay` double NOT NULL,
+    `weight_decay_delta` double NOT NULL,
 
     `epoch` int(11) NOT NULL,
-    `min_epochs` int(11) NOT NULL,
     `max_epochs` int(11) NOT NULL,
-    `improvement_required_epochs` int(11) NOT NULL,
     `reset_weights` tinyint(1) NOT NULL,
 
     `best_error` double NOT NULL,
@@ -137,6 +187,10 @@ $query = "CREATE TABLE `cnn_genome` (
     `generated_by_change_size_y` int(11) NOT NULL,
     `generated_by_crossover` int(11) NOT NULL,
     `generated_by_reset_weights` int(11) NOT NULL,
+
+    `test_error` double DEFAULT NULL,
+    `test_predictions` int(11) DEFAULT NULL,
+    `stderr_out` blob,
 
   PRIMARY KEY(`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1";
@@ -192,8 +246,6 @@ $query = "CREATE TABLE `cnn_node` (
   `best_bias_velocity` BLOB NOT NULL,
 
   `type` int(11) NOT NULL,
-  `total_inputs` int(11) NOT NULL,
-  `inputs_fired` int(11) NOT NULL,
 
   `visited` tinyint(1) NOT NULL,
   `weight_count` int(11) NOT NULL,

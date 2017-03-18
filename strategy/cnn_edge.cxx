@@ -24,6 +24,8 @@ using std::istream;
 using std::minstd_rand0;
 using std::normal_distribution;
 
+#include <thread>
+
 #include <sstream>
 using std::ostringstream;
 
@@ -325,6 +327,14 @@ void CNN_Edge::initialize_weights(minstd_rand0 &generator, NormalDistribution &n
     needs_initialization = false;
 }
 
+void CNN_Edge::reset_velocities() {
+    for (uint32_t y = 0; y < weights.size(); y++) {
+        for (uint32_t x = 0; x < weights[y].size(); x++) {
+            previous_velocity[y][x] = 0.0;
+        }
+    }
+}
+
 void CNN_Edge::resize() {
     //this may have changed from a regular to reverse filter
     if (output_node->get_size_x() <= input_node->get_size_x()) {
@@ -363,6 +373,18 @@ void CNN_Edge::save_best_weights() {
 }
 
 void CNN_Edge::set_weights_to_best() {
+    /*
+    if (filter_y != weights.size()) {
+        cerr << "ERROR! edge filter_x != weights.size(): " << filter_x << " vs " << weights.size() << endl;
+        exit(1);
+    }
+
+    if (filter_x != weights.size()) {
+        cerr << "ERROR! edge filter_x != weights.size(): " << filter_x << " vs " << weights.size() << endl;
+        exit(1);
+    }
+    */
+
     for (int32_t y = 0; y < filter_y; y++) {
         for (int32_t x = 0; x < filter_x; x++) {
             weights[y][x] = best_weights[y][x];
@@ -604,7 +626,7 @@ void CNN_Edge::check_output_update(const vector< vector<double> > &output, const
     }
 }
 
-void CNN_Edge::propagate_forward() {
+void CNN_Edge::propagate_forward(bool perform_dropout, minstd_rand0 &generator, double hidden_dropout_probability) {
     if (disabled) return;
 
     vector< vector<double> > &input = input_node->get_values();
@@ -705,7 +727,7 @@ void CNN_Edge::propagate_forward() {
         }
     }
 
-	output_node->input_fired();
+	output_node->input_fired(perform_dropout, generator, hidden_dropout_probability);
 }
 
 void CNN_Edge::update_weights(double mu, double learning_rate, double weight_decay) {
@@ -803,6 +825,7 @@ void CNN_Edge::check_weight_update(const vector< vector<double> > &output_errors
 void CNN_Edge::propagate_backward() {
     if (disabled) return;
 
+
     vector< vector<double> > &output_errors = output_node->get_errors();
     vector< vector<double> > &output_gradients = output_node->get_gradients();
 
@@ -810,6 +833,9 @@ void CNN_Edge::propagate_backward() {
     vector< vector<double> > &input_errors = input_node->get_errors();
 
     double weight, weight_update, delta;
+
+    int in_x = input_node->get_size_x();
+    int in_y = input_node->get_size_y();
 
     int out_x = output_node->get_size_x();
     int out_y = output_node->get_size_y();
@@ -822,8 +848,8 @@ void CNN_Edge::propagate_backward() {
                 weight_update = 0;
                 weight = weights[fy][fx];
 
-                for (int32_t y = 0; y < out_y; y++) {
-                    for (int32_t x = 0; x < out_x; x++) {
+                for (int32_t y = 0; y < in_y; y++) {
+                    for (int32_t x = 0; x < in_x; x++) {
                         delta = output_errors[y + fy][x + fx] * output_gradients[y + fy][x + fx];
 #ifdef NAN_CHECKS                        
                         double previous_weight_update = weight_update;
@@ -848,7 +874,7 @@ void CNN_Edge::propagate_backward() {
                 weight = weights[fy][fx];
 
                 for (int32_t y = 0; y < out_y; y++) {
-                    for (int32_t x = 0; x < out_x; x++) {
+                    for (int32_t x = 0; x < in_x; x++) {
                         delta = output_errors[y][x + fx] * output_gradients[y][x + fx];
 #ifdef NAN_CHECKS                        
                         double previous_weight_update = weight_update;
@@ -865,19 +891,35 @@ void CNN_Edge::propagate_backward() {
         }
 
     } else if (reverse_filter_y) {
-        //cout << "reverse filter y!" << endl;
+        /*
+        cout << "reverse filter y!" << endl;
+
+        std::thread::id this_id = std::this_thread::get_id();
+        //cout << "thread '" << this_id << "' -- INN: " << input_node_innovation_number << "ONN: " << output_node_innovation_number << ", in null? " << in_null << ", out null? " << out_null << endl;
+        cout << "thread '" << this_id << "' -- in_y: " << in_y << ", in_x: " << in_x << endl;
+        cout << "thread '" << this_id << "' -- out_y: " << out_y << ", out_x: " << out_x << endl;
+        cout << "thread '" << this_id << "' -- filter_y: " << filter_y << ", filter_x: " << filter_x << endl;
+        cout << "thread '" << this_id << "' -- weights.size(): " << weights.size() << " (should be filter_y), weights[0].size(): " << weights[0].size() << " (should be filter_x)" << endl;
+        */
+
 
         for (int32_t fy = 0; fy < filter_y; fy++) {
             for (int32_t fx = 0; fx < filter_x; fx++) {
                 weight_update = 0;
                 weight = weights[fy][fx];
 
-                for (int32_t y = 0; y < out_y; y++) {
+                //cout << "thread '" << this_id << "' -- looping fy: " << fy << ", fx: "<< fx << "!" << endl;
+
+                for (int32_t y = 0; y < in_y; y++) {
                     for (int32_t x = 0; x < out_x; x++) {
+                        //cout << "thread '" << this_id << "' -- setting output[" << y + fy << "][" << x << "]" << endl;
+
                         delta = output_errors[y + fy][x] * output_gradients[y + fy][x];
 #ifdef NAN_CHECKS                        
                         double previous_weight_update = weight_update;
 #endif
+                        //cout << "thread '" << this_id << "' -- setting input[" << y << "][" << x + fx << "]" << endl;
+
                         weight_update += input[y][x + fx] * delta;
                         input_errors[y][x + fx] += delta * weight;
 

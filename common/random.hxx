@@ -9,6 +9,8 @@ using std::vector;
 
 void fisher_yates_shuffle(minstd_rand0 &generator, vector<long> &v);
 
+double random_0_1(minstd_rand0 &generator);
+
 class NormalDistribution {
     private:
         bool generate;

@@ -13,7 +13,10 @@ using std::string;
 using std::vector;
 
 #include "common/arguments.hxx"
+
+#ifdef _MYSQL_
 #include "common/db_conn.hxx"
+#endif
 
 #include "strategy/exact.hxx"
 #include "strategy/cnn_genome.hxx"
@@ -60,10 +63,10 @@ int main(int argc, char **argv) {
     Images training_images(training_data);
     Images testing_images(testing_data, training_images.get_average(), training_images.get_std_dev());
 
-    //genome->evaluate(training_images);
-
     double error;
     int predictions;
+    //genome->evaluate(training_images, error, predictions);
+
     genome->evaluate(testing_images, error, predictions);
 
     cout << "test error: " << error << endl;

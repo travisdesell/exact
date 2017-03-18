@@ -94,6 +94,7 @@ class CNN_Edge {
 
         bool set_nodes(const vector<CNN_Node*> nodes);
         void initialize_weights(minstd_rand0 &generator, NormalDistribution &normal_distribution);
+        void reset_velocities();
         void resize();
 
         void disable();
@@ -123,7 +124,8 @@ class CNN_Edge {
 
         void check_weight_update(const vector< vector<double> > &output_errors, const vector< vector<double> > &output_gradients, const vector< vector<double> > &input, double delta, double weight_update, double previous_weight_update, int out_y, int out_x, int in_y, int in_x);
 
-        void propagate_forward();
+        void propagate_forward(bool perform_dropout,  minstd_rand0 &generator, double hidden_dropout_probability);
+
         void propagate_backward();
         void update_weights(double mu, double learning_rate, double weight_decay);
 

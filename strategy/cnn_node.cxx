@@ -23,9 +23,12 @@ using std::endl;
 using std::ostream;
 using std::istream;
 
+#include <limits>
+using std::numeric_limits;
+
 #include <random>
 using std::minstd_rand0;
-using std::normal_distribution;
+using std::uniform_real_distribution;
 
 #include <sstream>
 using std::ostringstream;
@@ -38,6 +41,7 @@ using std::string;
 using std::vector;
 
 #include "image_tools/image_set.hxx"
+#include "common/random.hxx"
 #include "cnn_edge.hxx"
 #include "cnn_node.hxx"
 
@@ -86,6 +90,7 @@ CNN_Node::CNN_Node(int _innovation_number, double _depth, int _size_x, int _size
     innovation_number = _innovation_number;
     depth = _depth;
     type = _type;
+
     size_x = _size_x;
     size_y = _size_y;
 
@@ -106,42 +111,6 @@ CNN_Node::CNN_Node(int _innovation_number, double _depth, int _size_x, int _size
 
     needs_initialization = true;
 }
-
-
-/*
-template <class T>
-void parse_array_2d(T ***output, istringstream &iss, int size_x, int size_y) {
-    (*output) = new T*[size_y];
-    for (int32_t y = 0; y < size_y; y++) {
-        (*output)[y] = new T[size_x];
-        for (int32_t x = 0; x < size_x; x++) {
-            (*output)[y][x] = 0.0;
-        }
-    }
-
-    int current_x = 0, current_y = 0;
-
-    T val;
-    while(iss >> val || !iss.eof()) {
-        if (iss.fail()) {
-            iss.clear();
-            string dummy;
-            iss >> dummy;
-            continue;
-        }
-
-        //cout << "output[" << current_x << "][" << current_y << "]: " << val << endl;
-        (*output)[current_y][current_x] = val;
-
-        current_x++;
-
-        if (current_x >= size_x) {
-            current_x = 0;
-            current_y++;
-        }
-    }
-}
-*/
 
 #ifdef _MYSQL_
 CNN_Node::CNN_Node(int _node_id) {
@@ -180,14 +149,14 @@ CNN_Node::CNN_Node(int _node_id) {
         */
 
         type = atoi(row[11]);
-        total_inputs = atoi(row[12]);
-        total_inputs = 0;   //need to reset this because it will be modified when
-                            //edges are set
-        inputs_fired = atoi(row[13]);
 
-        visited = atoi(row[14]);
-        weight_count = atoi(row[15]);
-        needs_initialization = atoi(row[16]);
+        //need to reset these because it will be modified when edges are set
+        total_inputs = 0;
+        inputs_fired = 0;
+
+        visited = atoi(row[12]);
+        weight_count = atoi(row[13]);
+        needs_initialization = atoi(row[14]);
 
         mysql_free_result(result);
     } else {
@@ -270,8 +239,6 @@ void CNN_Node::export_to_database(int _exact_id, int _genome_id) {
 
 
     query << "', type = " << type
-        << ", total_inputs = " << total_inputs
-        << ", inputs_fired = " << inputs_fired
         << ", visited = " << visited
         << ", weight_count = " << weight_count
         << ", needs_initialization = " << needs_initialization;
@@ -361,6 +328,15 @@ void CNN_Node::initialize_bias(minstd_rand0 &generator, NormalDistribution &norm
     needs_initialization = false;
 }
 
+void CNN_Node::reset_velocities() {
+    for (int32_t y = 0; y < size_y; y++) {
+        for (int32_t x = 0; x < size_x; x++) {
+            bias_velocity[y][x] = 0.0;
+        }
+    }
+ }
+
+
 bool CNN_Node::is_fixed() const {
     return type != INPUT_NODE && type != OUTPUT_NODE && type != SOFTMAX_NODE;
 }
@@ -414,18 +390,17 @@ double CNN_Node::get_depth() const {
     return depth;
 }
 
-vector< vector<double> >& CNN_Node::get_values() {
-    return values;
-}
-
 double CNN_Node::get_value(int y, int x) {
     return values[y][x];
 }
 
-double CNN_Node::set_value(int y, int x, double value) {
-    return values[y][x] = value;
+void CNN_Node::set_value(int y, int x, double value) {
+    values[y][x] = value;
 }
 
+vector< vector<double> >& CNN_Node::get_values() {
+    return values;
+}
 
 void CNN_Node::set_error(int y, int x, double value) {
     errors[y][x] = value;
@@ -447,9 +422,8 @@ vector< vector<double> >& CNN_Node::get_gradients() {
     return gradients;
 }
 
-
 void CNN_Node::print(ostream &out) {
-    out << "CNN_Node " << innovation_number << ", at depth: " << depth << " of size x: " << size_x << ", y: " << size_y << endl;
+    out << "CNN_Node " << innovation_number << ", at depth: " << depth << " of input size x: " << size_x << ", y: " << size_y << endl;
 
     out << "    values:" << endl;
     for (int32_t i = 0; i < size_y; i++) {
@@ -509,9 +483,9 @@ void CNN_Node::reset() {
     }
 }
 
-void CNN_Node::set_values(const Image &image, int rows, int cols) {
+void CNN_Node::set_values(const Image &image, int channel, int rows, int cols, bool perform_dropout, minstd_rand0 &generator, double input_dropout_probability) {
     if (rows != size_y) {
-        cerr << "ERROR: rows of input image: " << rows << " != size_x of input node: " << size_y << endl;
+        cerr << "ERROR: rows of input image: " << rows << " != size_y of input node: " << size_y << endl;
         exit(1);
     }
 
@@ -522,15 +496,28 @@ void CNN_Node::set_values(const Image &image, int rows, int cols) {
 
     //cout << "setting input image: " << endl;
     int current = 0;
-    for (int32_t y = 0; y < size_y; y++) {
-        for (int32_t x = 0; x < size_x; x++) {
-            values[y][x] = image.get_pixel(x, y);
-            current++;
-            //cout << setw(5) << values[y][x];
+    if (perform_dropout) {
+        for (int32_t y = 0; y < size_y; y++) {
+            for (int32_t x = 0; x < size_x; x++) {
+                if (random_0_1(generator) < input_dropout_probability) {
+                    values[y][x] = 0.0;
+                } else {
+                    values[y][x] = image.get_pixel(channel, y, x);
+                    current++;
+                    //cout << setw(5) << values[y][x];
+                }
+            }
+            //cout << endl;
         }
-        //cout << endl;
+    } else {
+        double dropout_scale = 1.0 - input_dropout_probability;
+        for (int32_t y = 0; y < size_y; y++) {
+            for (int32_t x = 0; x < size_x; x++) {
+                values[y][x] = image.get_pixel(channel, y, x) * dropout_scale;
+                current++;
+            }
+        }
     }
-    //cout << endl;
 }
 
 void CNN_Node::save_best_bias() {
@@ -553,7 +540,7 @@ void CNN_Node::set_bias_to_best() {
 }
 
 
-void CNN_Node::resize_arrays(int previous_size_x, int previous_size_y) {
+void CNN_Node::resize_arrays() {
     values = vector< vector<double> >(size_y, vector<double>(size_x, 0.0));
     errors = vector< vector<double> >(size_y, vector<double>(size_x, 0.0));
     gradients = vector< vector<double> >(size_y, vector<double>(size_x, 0.0));
@@ -575,7 +562,7 @@ bool CNN_Node::modify_size_x(int change) {
     if (size_x <= 0) size_x = 1;
     if (size_x == previous_size_x) return false;
 
-    resize_arrays(previous_size_x, size_y);
+    resize_arrays();
 
     return true;
 }
@@ -589,11 +576,10 @@ bool CNN_Node::modify_size_y(int change) {
     if (size_y <= 0) size_y = 1;
     if (size_y == previous_size_y) return false;
 
-    resize_arrays(size_x, previous_size_y);
+    resize_arrays();
 
     return true;
 }
-
 
 void CNN_Node::add_input() {
     total_inputs++;
@@ -604,6 +590,7 @@ void CNN_Node::disable_input() {
     total_inputs--;
     //cout << "\t\tdisabling input on node: " << innovation_number << ", total inputs: " << total_inputs << endl;
 }
+
 
 bool CNN_Node::has_zero_bias() const {
     double bias_sum = 0.0;
@@ -637,31 +624,61 @@ int CNN_Node::get_inputs_fired() const {
     return inputs_fired;
 }
 
-
-
-void CNN_Node::input_fired() {
+void CNN_Node::input_fired(bool perform_dropout, minstd_rand0 &generator, double hidden_dropout_probability) {
     inputs_fired++;
 
     //cout << "input fired on node: " << innovation_number << ", inputs fired: " << inputs_fired << ", total_inputs: " << total_inputs << endl;
 
     if (inputs_fired == total_inputs) {
         if (type != SOFTMAX_NODE) {
-            for (int32_t y = 0; y < size_y; y++) {
-                for (int32_t x = 0; x < size_x; x++) {
-                    values[y][x] += bias[y][x];
-                    //cout << "values for node " << innovation_number << " now " << values[y][x] << " after adding bias: " << bias[y][x] << endl;
+            if (perform_dropout) {
+                for (int32_t y = 0; y < size_y; y++) {
+                    for (int32_t x = 0; x < size_x; x++) {
+                        if (random_0_1(generator) < hidden_dropout_probability) {
+                            values[y][x] = 0.0;
+                            gradients[y][x] = 0.0;
+                        } else {
+                            values[y][x] += bias[y][x];
+                            //cout << "values for node " << innovation_number << " now " << values[y][x] << " after adding bias: " << bias[y][x] << endl;
 
-                    //apply activation function
-                    if (values[y][x] <= RELU_MIN) {
-                        values[y][x] *= RELU_MIN_LEAK;
-                        gradients[y][x] = RELU_MIN_LEAK;
-                    } else if (values[y][x] > RELU_MAX) {
-                        //values[y][x] = ((values[y][x] - RELU_MAX) * RELU_MAX_LEAK) + RELU_MAX;
-                        //gradients[y][x] = RELU_MAX_LEAK;
-                        values[y][x] = RELU_MAX;
-                        gradients[y][x] = 0.0;
-                    } else {
-                        gradients[y][x] = 1.0;
+                            //apply activation function
+                            if (values[y][x] <= RELU_MIN) {
+                                values[y][x] *= RELU_MIN_LEAK;
+                                gradients[y][x] = RELU_MIN_LEAK;
+                            } else if (values[y][x] > RELU_MAX) {
+                                //values[y][x] = ((values[y][x] - RELU_MAX) * RELU_MAX_LEAK) + RELU_MAX;
+                                //gradients[y][x] = RELU_MAX_LEAK;
+                                values[y][x] = RELU_MAX;
+                                gradients[y][x] = 0.0;
+                            } else {
+                                gradients[y][x] = 1.0;
+                            }
+                        }
+                    }
+                }
+
+            } else {
+                double dropout_scale = 1.0 - hidden_dropout_probability;
+
+                for (int32_t y = 0; y < size_y; y++) {
+                    for (int32_t x = 0; x < size_x; x++) {
+                        values[y][x] += bias[y][x];
+                        //cout << "values for node " << innovation_number << " now " << values[y][x] << " after adding bias: " << bias[y][x] << endl;
+
+                        //apply activation function
+                        if (values[y][x] <= RELU_MIN) {
+                            values[y][x] *= RELU_MIN_LEAK;
+                            gradients[y][x] = RELU_MIN_LEAK;
+                        } else if (values[y][x] > RELU_MAX) {
+                            //values[y][x] = ((values[y][x] - RELU_MAX) * RELU_MAX_LEAK) + RELU_MAX;
+                            //gradients[y][x] = RELU_MAX_LEAK;
+                            values[y][x] = RELU_MAX;
+                            gradients[y][x] = 0.0;
+                        } else {
+                            gradients[y][x] = 1.0;
+                        }
+
+                        values[y][x] *= dropout_scale;
                     }
                 }
             }
@@ -726,6 +743,7 @@ bool CNN_Node::has_nan() const {
             if (isnan(bias_velocity[y][x]) || isinf(bias_velocity[y][x])) return true;
         }
     }
+
     return false;
 }
 
@@ -771,7 +789,6 @@ ostream &operator<<(ostream &os, const CNN_Node* node) {
     os << node->size_y << " ";
     os << node->type << " ";
     os << node->visited << " ";
-    os << node->total_inputs << " ";
     os << node->weight_count << " ";
     os << node->needs_initialization << endl;
 
@@ -823,12 +840,12 @@ std::istream &operator>>(std::istream &is, CNN_Node* node) {
     is >> node->size_y;
     is >> node->type;
     is >> node->visited;
-    is >> node->total_inputs;
     is >> node->weight_count;
     is >> node->needs_initialization;
 
     node->total_inputs = 0;
     node->inputs_fired = 0;
+
     node->visited = false;
 
     node->values = vector< vector<double> >(node->size_y, vector<double>(node->size_x, 0.0));
@@ -838,7 +855,6 @@ std::istream &operator>>(std::istream &is, CNN_Node* node) {
     node->best_bias = vector< vector<double> >(node->size_y, vector<double>(node->size_x, 0.0));
     node->bias_velocity = vector< vector<double> >(node->size_y, vector<double>(node->size_x, 0.0));
     node->best_bias_velocity = vector< vector<double> >(node->size_y, vector<double>(node->size_x, 0.0));
-
 
     string line, prev_line;
     getline(is, prev_line);

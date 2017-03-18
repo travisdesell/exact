@@ -15,25 +15,28 @@ using std::vector;
 
 class Image {
     private:
-        int rows, cols;
+        int channels;
+        int rows;
+        int cols;
         int classification;
-        double **pixels;
+        vector< vector< vector<double> > > pixels;
 
 
     public:
 
-        Image(ifstream &infile, int size, int _rows, int _cols, int _classification);
-        double get_pixel(int x, int y) const;
+        Image(ifstream &infile, int _channels, int _cols, int _rows, int _classification);
+        double get_pixel(int z, int y, int x) const;
 
         int get_classification() const;
 
+        int get_channels() const;
         int get_rows() const;
         int get_cols() const;
 
         void scale_0_1();
-        double get_pixel_avg() const;
-        double get_pixel_variance(double avg) const;
-        void normalize(double avg, double variance);
+        void get_pixel_avg(vector<double> &channel_avgs) const;
+        void get_pixel_variance(const vector<double> &channel_avgs, vector<double> &channel_variances) const;
+        void normalize(const vector<double> &channel_avgs, const vector<double> &channel_std_dev);
 
         void print(ostream &out);
 };
@@ -45,18 +48,18 @@ class Images {
 
         vector<int> class_sizes;
 
-        int rows, cols, vals_per_pixel;
+        int channels, rows, cols;
 
         vector<Image> images;
 
-        double avg;
-        double std_dev;
+        vector<double> channel_avg;
+        vector<double> channel_std_dev;
 
     public:
         void read_images(string binary_filename);
 
         Images(string binary_filename);
-        Images(string binary_filename, double avg, double variance);
+        Images(string binary_filename, const vector<double> &_channeL_avg, const vector<double> &channel_std_dev);
 
         int get_class_size(int i) const;
 
@@ -64,16 +67,16 @@ class Images {
 
         int get_number_images() const;
 
-        int get_image_rows() const;
-
+        int get_image_channels() const;
         int get_image_cols() const;
+        int get_image_rows() const;
 
         const Image& get_image(int image) const;
 
         void calculate_avg_std_dev();
 
-        double get_average() const;
-        double get_std_dev() const;
+        const vector<double>& get_average() const;
+        const vector<double>& get_std_dev() const;
 
         void normalize();
 };

@@ -14,6 +14,7 @@ using std::istream;
 
 #include <random>
 using std::minstd_rand0;
+using std::uniform_real_distribution;
 
 #include <sstream>
 using std::istringstream;
@@ -56,9 +57,8 @@ class CNN_Node {
 
         int size_x, size_y;
 
-        //int stride;
-        //int max_pool;
-        //int output_size_x, output_size_y;
+        //bias only applied to input of the node
+        //output is after pooling
 
         vector< vector<double> > values;
         vector< vector<double> > errors;
@@ -81,7 +81,7 @@ class CNN_Node {
     public:
         CNN_Node();
 
-        CNN_Node(int _innovation_number, double _depth, int _size_x, int _size_y, int type);
+        CNN_Node(int _innovation_number, double _depth, int _input_size_x, int _input_size_y, int type);
 
         CNN_Node* copy() const;
 
@@ -115,15 +115,16 @@ class CNN_Node {
         void set_unvisited();
 
         void initialize_bias(minstd_rand0 &generator, NormalDistribution &normal_disribution);
+        void reset_velocities();
 
         bool has_nan() const;
         bool has_zero_bias() const;
         bool has_zero_best_bias() const;
         void propagate_bias(double mu, double learning_rate, double weight_decay);
 
-        void set_values(const Image &image, int rows, int cols);
+        void set_values(const Image &image, int channel, int rows, int cols, bool perform_dropout, minstd_rand0 &generator, double input_dropout_probability);
         double get_value(int y, int x);
-        double set_value(int y, int x, double value);
+        void set_value(int y, int x, double value);
         vector< vector<double> >& get_values();
 
         double get_error(int y, int x);
@@ -137,11 +138,10 @@ class CNN_Node {
 
         void reset();
 
-
         void save_best_bias();
         void set_bias_to_best();
 
-        void resize_arrays(int previous_size_x, int previous_size_y);
+        void resize_arrays();
         bool modify_size_x(int change);
         bool modify_size_y(int change);
 
@@ -149,9 +149,9 @@ class CNN_Node {
         void disable_input();
         int get_number_inputs() const;
         int get_inputs_fired() const;
+        void input_fired(bool perform_dropout, minstd_rand0 &generator, double hidden_dropout_probability);
 
         void print_statistics();
-        void input_fired();
 
         friend ostream &operator<<(ostream &os, const CNN_Node* node);
         friend istream &operator>>(istream &is, CNN_Node* node);

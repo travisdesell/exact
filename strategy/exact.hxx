@@ -37,6 +37,7 @@ class EXACT {
         string output_directory;
 
         int number_images;
+        int image_channels;
         int image_rows;
         int image_cols;
         int number_classes;
@@ -60,17 +61,54 @@ class EXACT {
         int max_genomes;
 
         bool reset_weights;
-        int min_epochs;
         int max_epochs;
-        int improvement_required_epochs;
 
-        double mu;
-        double mu_decay;
-        double learning_rate;
-        double learning_rate_decay;
-        double weight_decay;
-        double weight_decay_decay;
+        double initial_mu_min;
+        double initial_mu_max;
+        double mu_min;
+        double mu_max;
 
+        double initial_mu_delta_min;
+        double initial_mu_delta_max;
+        double mu_delta_min;
+        double mu_delta_max;
+
+        double initial_learning_rate_min;
+        double initial_learning_rate_max;
+        double learning_rate_min;
+        double learning_rate_max;
+
+        double initial_learning_rate_delta_min;
+        double initial_learning_rate_delta_max;
+        double learning_rate_delta_min;
+        double learning_rate_delta_max;
+
+        double initial_weight_decay_min;
+        double initial_weight_decay_max;
+        double weight_decay_min;
+        double weight_decay_max;
+
+        double initial_weight_decay_delta_min;
+        double initial_weight_decay_delta_max;
+        double weight_decay_delta_min;
+        double weight_decay_delta_max;
+
+        double initial_input_dropout_probability_min;
+        double initial_input_dropout_probability_max;
+        double input_dropout_probability_min;
+        double input_dropout_probability_max;
+
+        double initial_hidden_dropout_probability_min;
+        double initial_hidden_dropout_probability_max;
+        double hidden_dropout_probability_min;
+        double hidden_dropout_probability_max;
+
+        int initial_velocity_reset_min;
+        int initial_velocity_reset_max;
+        int velocity_reset_min;
+        int velocity_reset_max;
+
+        bool sort_by_fitness;
         double reset_weights_chance;
 
         double crossover_rate;
@@ -108,7 +146,6 @@ class EXACT {
         int generated_from_crossover;
         int generated_from_reset_weights;
 
-        bool sort_by_fitness;
     public:
 #ifdef _MYSQL_
         static bool exists_in_database(int exact_id);
@@ -118,10 +155,15 @@ class EXACT {
         void update_database();
 #endif
 
-        EXACT(const Images &images, int _population_size, int _min_epochs, int _max_epochs, int _improvement_required_epochs, bool _reset_weights, double _mu, double _mu_decay, double _learning_rate, double _learning_rate_decay, double _weight_decay, double _weight_decay_decay, int _max_genomes, string _output_directory, string _search_name);
+        EXACT(const Images &images, int _population_size, int _max_epochs, int _max_genomes, string _output_directory, string _search_name, bool _reset_weights);
 
-        bool population_contains(CNN_Genome *genome) const;
+        int32_t population_contains(CNN_Genome *genome) const;
         CNN_Genome* get_best_genome();
+
+        void generate_initial_hyperparameters(double &mu, double &mu_delta, double &learning_rate, double &learning_rate_delta, double &weight_decay, double &weight_decay_delta, double &input_dropout_probability, double &hidden_dropout_probability, int &velocity_reset);
+
+        void generate_simplex_hyperparameters(double &mu, double &mu_delta, double &learning_rate, double &learning_rate_delta, double &weight_decay, double &weight_decay_delta, double &input_dropout_probability, double &hidden_dropout_probability, int &velocity_reset);
+
 
         CNN_Genome* generate_individual();
         CNN_Genome* create_mutation();
@@ -134,6 +176,7 @@ class EXACT {
 
         void write_statistics(int new_generation_id, double new_fitness);
         void write_statistics_header();
+        void write_hyperparameters_header();
 
         int get_id() const;
         string get_search_name() const;
