@@ -124,8 +124,6 @@ int init_result(RESULT& result, void*& data) {
             return 1;
         }
 
-         //first line should be v0.12
-
     } catch (int err) {
         log_messages.printf(MSG_CRITICAL, "[RESULT#%ld %s] get_data_from_result: could not open file for result\n", result.id, result.name);
         log_messages.printf(MSG_CRITICAL, "     file path: %s\n", fi.path.c_str());

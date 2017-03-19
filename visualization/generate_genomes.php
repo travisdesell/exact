@@ -6,16 +6,18 @@ $cwd[__FILE__] = dirname($cwd[__FILE__]);
 
 require_once($cwd[__FILE__] . "/../../citizen_science_grid/my_query.php");
 
-$genome_result = query_boinc_db("SELECT id, exact_id, ISNULL(test_error) FROM cnn_genome");
+$genome_result = query_exact_db("SELECT id, exact_id, ISNULL(test_error) FROM cnn_genome");
 
 $png_files = array();
 $gv_files = array();
 
 while ($genome_row = $genome_result->fetch_assoc()) {
 
-    $exact_result = query_boinc_db("SELECT search_name FROM exact_search WHERE id = " . $genome_row['exact_id']);
+    $exact_result = query_exact_db("SELECT search_name, samples_filename FROM exact_search WHERE id = " . $genome_row['exact_id']);
     $exact_row = $exact_result->fetch_assoc();
     $search_name = $exact_row['search_name'];
+    $samples_filename = $exact_row['samples_filename'];
+    $testing_fileanme = str_replace("training", "testing", $samples_filename);
 
     $genome_id = $genome_row['id'];
     $genome_image = "/home/tdesell/exact/www/networks/" . $search_name . "_genome_" . $genome_id . ".png";
@@ -25,7 +27,7 @@ while ($genome_row = $genome_result->fetch_assoc()) {
     $gv_files[] = $search_name . "_genome_" . $genome_id . ".gv";
 
     if ($genome_row['ISNULL(test_error)'] == 1) {
-        $command = "/home/tdesell/exact/build/tests/evaluate_cnn --genome_id $genome_id --training_data /home/tdesell/exact/datasets/mnist_training_data.bin --testing_data /home/tdesell/exact/datasets/mnist_testing_data.bin --update_database --db_file /home/tdesell/exact/exact_db_info";
+        $command = "/home/tdesell/exact/build/tests/evaluate_cnn --genome_id $genome_id --training_data $samples_filename --testing_data $testing_filename --update_database --db_file /home/tdesell/exact/exact_db_info";
         echo "command: $command \n";
         echo "results: " . exec($command) . "\n";
     } else {

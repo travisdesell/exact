@@ -1,6 +1,6 @@
 <?php
 
-$db_info_file = file_get_contents("../exact_db_info");
+$db_info_file = file_get_contents("../exact2_db_info");
 $db_info_file_lines = explode("\n", $db_info_file);
 
 echo "connecting to database with information:\n";

@@ -56,7 +56,7 @@ def write_file(parameter_name, output_file, v1, first_row):
     #ax.set_yscale('log')
     #ax.set_xscale('log')
 
-    ax.set_title('EXACT Population Initial Mu')
+    ax.set_title('EXACT Population ' + parameter_name)
     ax.legend(loc='upper left')
     ax.set_xlabel('Genomes Evaluated')
     ax.set_ylabel('Value')

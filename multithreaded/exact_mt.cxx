@@ -62,8 +62,8 @@ int main(int argc, char** argv) {
     int number_threads;
     get_argument(arguments, "--number_threads", true, number_threads);
 
-    string binary_samples_filename;
-    get_argument(arguments, "--training_file", true, binary_samples_filename);
+    string samples_filename;
+    get_argument(arguments, "--training_file", true, samples_filename);
 
     int population_size;
     get_argument(arguments, "--population_size", true, population_size);
@@ -83,8 +83,8 @@ int main(int argc, char** argv) {
     bool reset_edges;
     get_argument(arguments, "--reset_edges", true, reset_edges);
 
-    Images images(binary_samples_filename);
-    exact = new EXACT(images, population_size, max_epochs, max_genomes, output_directory, search_name, reset_edges);
+    Images images(samples_filename);
+    exact = new EXACT(images, samples_filename, population_size, max_epochs, max_genomes, output_directory, search_name, reset_edges);
 
     //exact = new EXACT(1);
 
