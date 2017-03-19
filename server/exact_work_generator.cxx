@@ -108,51 +108,26 @@ int main(int argc, char** argv) {
     int population_size = 100;
     get_argument(arguments, "--population_size", true, population_size);
 
-    int min_epochs = 50;
-    get_argument(arguments, "--min_epochs", true, min_epochs);
-
     int max_epochs = 50;
     get_argument(arguments, "--max_epochs", true, max_epochs);
 
-    int improvement_required_epochs = 5;
-    get_argument(arguments, "--improvement_required_epochs", true, improvement_required_epochs);
+    int max_genomes = 1000000;
+    get_argument(arguments, "--max_genomes", true, max_genomes);
 
     bool reset_edges = false;
     get_argument(arguments, "--reset_edges", true, reset_edges);
 
-    double learning_rate;
-    get_argument(arguments, "--learning_rate", true, learning_rate);
-
-    double learning_rate_decay;
-    get_argument(arguments, "--learning_rate_decay", true, learning_rate_decay);
-
-    double weight_decay;
-    get_argument(arguments, "--weight_decay", true, weight_decay);
-
-    double weight_decay_decay;
-    get_argument(arguments, "--weight_decay_decay", true, weight_decay_decay);
-
-    double mu;
-    get_argument(arguments, "--mu", true, mu);
-
-    double mu_decay;
-    get_argument(arguments, "--mu_decay", true, mu_decay);
-
-    double max_genomes;
-    get_argument(arguments, "--max_genomes", true, max_genomes);
-
-    int max_genomes = 1000000;
     string output_directory = "/projects/csg/exact_data/" + search_name;
 
     mkdir(output_directory.c_str(), 0777);
 
-    Images images("/home/tdesell/mnist_training_data.bin");
+    string samples_file;
+    get_argument(arguments, "--samples_file", true, samples_file);
 
-<<<<<<< HEAD
-    EXACT *exact = new EXACT(images, max_genomes, population_size, min_epochs, max_epochs, improvement_required_epochs, reset_edges, mu, mu_decay, learning_rate, learning_rate_decay, weight_decay, weight_decay_decay, max_genomes, output_directory, search_name);
-=======
-    EXACT *exact = new EXACT(images, population_size, min_epochs, max_epochs, improvement_required_epochs, reset_edges, mu, mu_decay, learning_rate, learning_rate_decay, weight_decay, weight_decay_decay, max_genomes, output_directory, search_name);
->>>>>>> 9d06146dad72324abd2295b530070590d941ed0e
+    Images images(samples_file);
+
+    EXACT *exact = new EXACT(images, samples_file, population_size, max_epochs, max_genomes, output_directory, search_name, reset_edges);
+
     exact->export_to_database();
 
     log_messages.printf(MSG_NORMAL, "inserted exact search into database with id: %d\n", exact->get_id());

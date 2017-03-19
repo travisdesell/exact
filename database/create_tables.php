@@ -15,6 +15,7 @@ $query = "CREATE TABLE `exact_search` (
     `id` int(11) NOT NULL AUTO_INCREMENT,
     `search_name` varchar(128) NOT NULL,
     `output_directory` varchar(128) NOT NULL,
+    `samples_filename` varchar(256) NOT NULL,
 
     `number_images` int(11) NOT NULL,
     `image_channels` int(11) NOT NULL,
@@ -140,7 +141,6 @@ $query = "CREATE TABLE `cnn_genome` (
 
     `generator` varchar(64) NOT NULL,
     `normal_distribution` varchar(128) NOT NULL,
-    `rng_double` varchar(64) NOT NULL,
 
     `velocity_reset` int(11) NOT NULL,
 

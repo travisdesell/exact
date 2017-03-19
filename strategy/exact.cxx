@@ -90,6 +90,7 @@ EXACT::EXACT(int exact_id) {
 
         search_name = string(row[++column]);
         output_directory = string(row[++column]);
+        samples_filename = string(row[++column]);
 
         number_images = atoi(row[++column]);
         image_channels = atoi(row[++column]);
@@ -295,6 +296,8 @@ void EXACT::export_to_database() {
 
     query << " search_name = '" << search_name << "'"
         << ", output_directory = '" << output_directory << "'"
+        << ", samples_filename = '" << samples_filename << "'"
+
         << ", number_images = " << number_images
         << ", image_channels = " << image_channels
         << ", image_rows = " << image_rows
@@ -539,12 +542,13 @@ void EXACT::update_database() {
 
 #endif
 
-EXACT::EXACT(const Images &images, int _population_size, int _max_epochs, int _max_genomes, string _output_directory, string _search_name, bool _reset_weights) {
+EXACT::EXACT(const Images &images, string _samples_filename, int _population_size, int _max_epochs, int _max_genomes, string _output_directory, string _search_name, bool _reset_weights) {
     id = -1;
 
     search_name = _search_name;
-
     output_directory = _output_directory;
+    samples_filename = _samples_filename;
+
     reset_weights = _reset_weights;
     max_epochs = _max_epochs;
     max_genomes = _max_genomes;
@@ -770,6 +774,11 @@ string EXACT::get_search_name() const {
 string EXACT::get_output_directory() const {
     return output_directory;
 }
+
+string EXACT::get_samples_filename() const {
+    return samples_filename;
+}
+
 
 int EXACT::get_number_images() const {
     return number_images;
@@ -2234,6 +2243,9 @@ void EXACT::write_statistics(int new_generation_id, double new_fitness) {
 }
 
 void EXACT::write_hyperparameters_header() {
+    ifstream f(output_directory + "/hyperparameters.txt");
+    if (f.good()) return;   //return if file already exists, don't need to rewrite header
+
     fstream out(output_directory + "/hyperparameters.txt", fstream::out | fstream::app);
     out << "# min initial mu"
         << ", max initial mu"
@@ -2282,6 +2294,9 @@ void EXACT::write_hyperparameters_header() {
 }
 
 void EXACT::write_statistics_header() {
+    ifstream f(output_directory + "/progress.txt");
+    if (f.good()) return;   //return if file already exists, don't need to rewrite header
+
     fstream out(output_directory + "/progress.txt", fstream::out | fstream::app);
     out << "# " << setw(14) << "generation id"
         << ", " << setw(14) << "new fitness"

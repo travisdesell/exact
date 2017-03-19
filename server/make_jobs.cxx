@@ -44,7 +44,7 @@ using std::vector;
 #include "strategy/exact.hxx"
 #include "server/make_jobs.hxx"
 
-const char* app_name = "exact";
+const char* app_name = "exact2";
 
 //the following are the templates for the workunits (exact_in.xml) and results (exact_out.xml)
 //and they can be found in /projects/csg/templates
@@ -112,12 +112,13 @@ int make_job(EXACT *exact, CNN_Genome *genome, string search_name) {
     sprintf(name, "exact_genome_%d_%u_%u", daemon_start_time, exact->get_id(), genome->get_generation_id());
     log_messages.printf(MSG_DEBUG, "name: '%s'\n", name);
 
-    string dataset_filename = "/home/tdesell/mnist_training_data.bin";
+    string samples_filename = exact->get_samples_filename();
+
     ostringstream oss;
     oss << "/projects/csg/exact_data/" << search_name << "/" << name << ".txt";
     string genome_filename = oss.str();
 
-    log_messages.printf(MSG_DEBUG, "dataset filename: '%s'\n", dataset_filename.c_str());
+    log_messages.printf(MSG_DEBUG, "dataset filename: '%s'\n", samples_filename.c_str());
     log_messages.printf(MSG_DEBUG, "genome filename: '%s'\n", genome_filename.c_str());
 
 
@@ -131,12 +132,12 @@ int make_job(EXACT *exact, CNN_Genome *genome, string search_name) {
     */
 
     //Make sure the dataset and genome files are in the download directory
-    log_messages.printf(MSG_DEBUG, "copying dataset filename to download directory: '%s'\n", dataset_filename.c_str());
-    copy_file_to_download_dir(dataset_filename);
+    log_messages.printf(MSG_DEBUG, "copying dataset filename to download directory: '%s'\n", samples_filename.c_str());
+    copy_file_to_download_dir(samples_filename);
 
-    string stripped_dataset_filename  = dataset_filename.substr(dataset_filename.find_last_of("/\\") + 1);
-    log_messages.printf(MSG_DEBUG, "stripped dataset filename for infiles[0]: '%s'\n", stripped_dataset_filename.c_str());
-    infiles[0] = stripped_dataset_filename.c_str();
+    string stripped_samples_filename  = samples_filename.substr(samples_filename.find_last_of("/\\") + 1);
+    log_messages.printf(MSG_DEBUG, "stripped dataset filename for infiles[0]: '%s'\n", stripped_samples_filename.c_str());
+    infiles[0] = stripped_samples_filename.c_str();
     log_messages.printf(MSG_DEBUG, "infile[0]: '%s'\n", infiles[0]);
 
 

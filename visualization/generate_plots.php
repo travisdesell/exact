@@ -6,7 +6,7 @@ $cwd[__FILE__] = dirname($cwd[__FILE__]);
 
 require_once($cwd[__FILE__] . "/../../citizen_science_grid/my_query.php");
 
-$exact_result = query_boinc_db("SELECT search_name FROM exact_search");
+$exact_result = query_exact_db("SELECT search_name FROM exact_search");
 
 while ($exact_row = $exact_result->fetch_assoc()) {
     $search_name = $exact_row['search_name'];
@@ -15,16 +15,17 @@ while ($exact_row = $exact_result->fetch_assoc()) {
 
     $command = "python /home/tdesell/exact/visualization/plot_progress.py /projects/csg/exact_data/" . $search_name . "/progress.txt /home/tdesell/exact/www/progress/" . $search_name . "_fitness_progress.png /home/tdesell/exact/www/progress/" . $search_name . "_epochs_progress.png /home/tdesell/exact/www/progress/" . $search_name . "_generated_progress.png";
 
-    $command2 = "python /home/tdesell/exact/visualization/plot_hyperparameters.py /projects/csg/exact_data/" . $search_name . "/hyperparameters.txt "
-        . "/projects/csg/exact_data/" . $search_name . "/initial_mu.png "
-        . "/projects/csg/exact_data/" . $search_name . "/mu_delta.png "
-        . "/projects/csg/exact_data/" . $search_name . "/initial_learning_rate.png "
-        . "/projects/csg/exact_data/" . $search_name . "/learning_rate_delta.png "
-        . "/projects/csg/exact_data/" . $search_name . "/initial_weight_decay.png "
-        . "/projects/csg/exact_data/" . $search_name . "/weight_decay_delta.png "
-        . "/projects/csg/exact_data/" . $search_name . "/input_dropout.png "
-        . "/projects/csg/exact_data/" . $search_name . "/hidden_dropout.png "
-        . "/projects/csg/exact_data/" . $search_name . "/velocity_reset.png ";
+    $command2 = "python /home/tdesell/exact/visualization/plot_hyperparameters.py "
+        . "/projects/csg/exact_data/" . $search_name . "/hyperparameters.txt "
+        . "/home/tdesell/exact/www/hyperparameters/" . $search_name . "_initial_mu.png "
+        . "/home/tdesell/exact/www/hyperparameters/" . $search_name . "_mu_delta.png "
+        . "/home/tdesell/exact/www/hyperparameters/" . $search_name . "_initial_learning_rate.png "
+        . "/home/tdesell/exact/www/hyperparameters/" . $search_name . "_learning_rate_delta.png "
+        . "/home/tdesell/exact/www/hyperparameters/" . $search_name . "_initial_weight_decay.png "
+        . "/home/tdesell/exact/www/hyperparameters/" . $search_name . "_weight_decay_delta.png "
+        . "/home/tdesell/exact/www/hyperparameters/" . $search_name . "_input_dropout.png "
+        . "/home/tdesell/exact/www/hyperparameters/" . $search_name . "_hidden_dropout.png "
+        . "/home/tdesell/exact/www/hyperparameters/" . $search_name . "_velocity_reset.png ";
 
     if (!file_exists($progress_file)) {
         echo "'$progress_file' does not exist!\n";

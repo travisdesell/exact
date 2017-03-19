@@ -32,9 +32,10 @@ using std::vector;
 class EXACT {
     private:
         int id;
-        string search_name;
 
+        string search_name;
         string output_directory;
+        string samples_filename;
 
         int number_images;
         int image_channels;
@@ -155,7 +156,7 @@ class EXACT {
         void update_database();
 #endif
 
-        EXACT(const Images &images, int _population_size, int _max_epochs, int _max_genomes, string _output_directory, string _search_name, bool _reset_weights);
+        EXACT(const Images &images, string _samples_filename, int _population_size, int _max_epochs, int _max_genomes, string _output_directory, string _search_name, bool _reset_weights);
 
         int32_t population_contains(CNN_Genome *genome) const;
         CNN_Genome* get_best_genome();
@@ -181,6 +182,7 @@ class EXACT {
         int get_id() const;
         string get_search_name() const;
         string get_output_directory() const;
+        string get_samples_filename() const;
         int get_number_images() const;
 };
 
