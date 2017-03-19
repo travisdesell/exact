@@ -1416,8 +1416,8 @@ void CNN_Genome::write(ostream &outfile) {
     outfile << endl;
     write_hexfloat(outfile, hidden_dropout_probability);
     outfile << endl;
-    write_hexfloat(outfile, velocity_reset);
-    outfile << endl;
+
+    outfile << velocity_reset << endl;
 
     outfile << epoch << endl;
     outfile << max_epochs << endl;
@@ -1541,7 +1541,7 @@ void CNN_Genome::read(istream &infile) {
     hidden_dropout_probability = read_hexfloat(infile);
     if (verbose) cerr << "read hidden_dropout_probability: " << hidden_dropout_probability << endl;
 
-    velocity_reset = read_hexfloat(infile);
+    infile >> velocity_reset;
     if (verbose) cerr << "read velocity_reset: " << velocity_reset << endl;
 
     infile >> epoch;
