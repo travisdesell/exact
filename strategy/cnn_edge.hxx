@@ -26,10 +26,6 @@ using std::vector;
 #include "image_tools/image_set.hxx"
 #include "common/random.hxx"
 
-const double beta1 = 0.9;
-const double beta2 = 0.999;
-const double eps = 1e-8;
-
 class CNN_Edge {
     private:
         int edge_id;
