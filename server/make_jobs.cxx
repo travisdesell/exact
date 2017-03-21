@@ -173,7 +173,13 @@ int make_job(EXACT *exact, CNN_Genome *genome, string search_name) {
     strcpy(wu.name, name);
     wu.rsc_fpops_est = fpops_est;
     wu.rsc_fpops_bound = fpops_est * 100;
-    wu.rsc_memory_bound = 200 * 1024 * 1024;    //200MB
+
+    if (samples_filename.find("cifar") != std::string::npos) {
+        wu.rsc_memory_bound = 1500 * 1024 * 1024;    //200MB
+    } else {
+        wu.rsc_memory_bound = 200 * 1024 * 1024;    //200MB
+    }
+
     wu.rsc_disk_bound = 200 * 1024 * 1024;      //200MB
     wu.delay_bound = 60 * 60 * 24 * 7;          //7 days
     wu.min_quorum = REPLICATION_FACTOR;
