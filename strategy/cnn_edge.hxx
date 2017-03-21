@@ -52,6 +52,8 @@ class CNN_Edge {
         vector< vector<double> > previous_velocity;
         vector< vector<double> > best_velocity;
 
+        vector< vector<bool> > dropout_weight;
+
         bool fixed;
         bool disabled;
         bool reverse_filter_x;

@@ -99,6 +99,8 @@ CNN_Edge::CNN_Edge(CNN_Node *_input_node, CNN_Node *_output_node, bool _fixed, i
 
     previous_velocity = vector< vector<double> >(filter_y, vector<double>(filter_x, 0.0));
     best_velocity = vector< vector<double> >(filter_y, vector<double>(filter_x, 0.0));
+
+    dropout_weight = vector< vector<bool> >(filter_y, vector<bool>(filter_x, false));
 }
 
 CNN_Edge::~CNN_Edge() {
@@ -360,6 +362,8 @@ void CNN_Edge::resize() {
     previous_velocity = vector< vector<double> >(filter_y, vector<double>(filter_x, 0.0));
     best_velocity = vector< vector<double> >(filter_y, vector<double>(filter_x, 0.0));
 
+    dropout_weight = vector< vector<bool> >(filter_y, vector<bool>(filter_x, false));
+
     needs_initialization = true;
 }
 
@@ -424,6 +428,7 @@ CNN_Edge* CNN_Edge::copy() const {
     copy->previous_velocity = previous_velocity;
     copy->best_velocity = best_velocity;
 
+    copy->dropout_weight = dropout_weight;
     return copy;
 }
 
@@ -641,6 +646,26 @@ void CNN_Edge::propagate_forward(bool perform_dropout, minstd_rand0 &generator, 
     double previous_output;
 #endif
 
+    if (perform_dropout) {
+        for (uint32_t y = 0; y < filter_y; y++) {
+            for (uint32_t x = 0; x < filter_x; x++) {
+                if (random_0_1(generator) < hidden_dropout_probability) {
+                    dropout_weight[y][x]  = true;
+                } else {
+                    dropout_weight[y][x]  = false;
+                }
+            }
+        }
+    } else {
+        for (uint32_t y = 0; y < filter_y; y++) {
+            for (uint32_t x = 0; x < filter_x; x++) {
+                dropout_weight[y][x]  = false;
+            }
+        }
+    }
+
+    double dropout_scale = 1.0 - hidden_dropout_probability;
+
     int output_size_x = output_node->get_size_x();
     int output_size_y = output_node->get_size_y();
     int input_size_x = input_node->get_size_x();
@@ -649,7 +674,10 @@ void CNN_Edge::propagate_forward(bool perform_dropout, minstd_rand0 &generator, 
     if (reverse_filter_x && reverse_filter_y) {
         for (int32_t fy = 0; fy < filter_y; fy++) {
             for (int32_t fx = 0; fx < filter_x; fx++) {
+                if (dropout_weight[fy][fx]) continue;
+
                 double weight = weights[fy][fx];
+                if (perform_dropout) weight *= dropout_scale;
 
                 for (int32_t y = 0; y < input_size_y; y++) {
                     for (int32_t x = 0; x < input_size_x; x++) {
@@ -669,7 +697,10 @@ void CNN_Edge::propagate_forward(bool perform_dropout, minstd_rand0 &generator, 
     } else if (reverse_filter_x) {
         for (int32_t fy = 0; fy < filter_y; fy++) {
             for (int32_t fx = 0; fx < filter_x; fx++) {
+                if (dropout_weight[fy][fx]) continue;
+
                 double weight = weights[fy][fx];
+                if (perform_dropout) weight *= dropout_scale;
 
                 for (int32_t y = 0; y < output_size_y; y++) {
                     for (int32_t x = 0; x < input_size_x; x++) {
@@ -689,7 +720,10 @@ void CNN_Edge::propagate_forward(bool perform_dropout, minstd_rand0 &generator, 
     } else if (reverse_filter_y) {
         for (int32_t fy = 0; fy < filter_y; fy++) {
             for (int32_t fx = 0; fx < filter_x; fx++) {
+                if (dropout_weight[fy][fx]) continue;
+
                 double weight = weights[fy][fx];
+                if (perform_dropout) weight *= dropout_scale;
 
                 for (int32_t y = 0; y < input_size_y; y++) {
                     for (int32_t x = 0; x < output_size_x; x++) {
@@ -709,7 +743,10 @@ void CNN_Edge::propagate_forward(bool perform_dropout, minstd_rand0 &generator, 
     } else {
         for (int32_t fy = 0; fy < filter_y; fy++) {
             for (int32_t fx = 0; fx < filter_x; fx++) {
+                if (dropout_weight[fy][fx]) continue;
+
                 double weight = weights[fy][fx];
+                if (perform_dropout) weight *= dropout_scale;
 
                 for (int32_t y = 0; y < output_size_y; y++) {
                     for (int32_t x = 0; x < output_size_x; x++) {
@@ -825,7 +862,6 @@ void CNN_Edge::check_weight_update(const vector< vector<double> > &output_errors
 void CNN_Edge::propagate_backward() {
     if (disabled) return;
 
-
     vector< vector<double> > &output_errors = output_node->get_errors();
     vector< vector<double> > &output_gradients = output_node->get_gradients();
 
@@ -845,6 +881,8 @@ void CNN_Edge::propagate_backward() {
 
         for (int32_t fy = 0; fy < filter_y; fy++) {
             for (int32_t fx = 0; fx < filter_x; fx++) {
+                if (dropout_weight[fy][fx]) continue;
+
                 weight_update = 0;
                 weight = weights[fy][fx];
 
@@ -870,6 +908,8 @@ void CNN_Edge::propagate_backward() {
 
         for (int32_t fy = 0; fy < filter_y; fy++) {
             for (int32_t fx = 0; fx < filter_x; fx++) {
+                if (dropout_weight[fy][fx]) continue;
+
                 weight_update = 0;
                 weight = weights[fy][fx];
 
@@ -905,6 +945,8 @@ void CNN_Edge::propagate_backward() {
 
         for (int32_t fy = 0; fy < filter_y; fy++) {
             for (int32_t fx = 0; fx < filter_x; fx++) {
+                if (dropout_weight[fy][fx]) continue;
+
                 weight_update = 0;
                 weight = weights[fy][fx];
 
@@ -937,6 +979,8 @@ void CNN_Edge::propagate_backward() {
 
         for (int32_t fy = 0; fy < filter_y; fy++) {
             for (int32_t fx = 0; fx < filter_x; fx++) {
+                if (dropout_weight[fy][fx]) continue;
+
                 weight_update = 0;
                 weight = weights[fy][fx];
 
@@ -1075,6 +1119,8 @@ istream &operator>>(istream &is, CNN_Edge* edge) {
 
     edge->previous_velocity = vector< vector<double> >(edge->filter_y, vector<double>(edge->filter_x, 0.0));
     edge->best_velocity = vector< vector<double> >(edge->filter_y, vector<double>(edge->filter_x, 0.0));
+
+    edge->dropout_weight = vector< vector<bool> >(false);
 
     string line;
     getline(is, line);

@@ -631,54 +631,22 @@ void CNN_Node::input_fired(bool perform_dropout, minstd_rand0 &generator, double
 
     if (inputs_fired == total_inputs) {
         if (type != SOFTMAX_NODE) {
-            if (perform_dropout) {
-                for (int32_t y = 0; y < size_y; y++) {
-                    for (int32_t x = 0; x < size_x; x++) {
-                        if (random_0_1(generator) < hidden_dropout_probability) {
-                            values[y][x] = 0.0;
-                            gradients[y][x] = 0.0;
-                        } else {
-                            values[y][x] += bias[y][x];
-                            //cout << "values for node " << innovation_number << " now " << values[y][x] << " after adding bias: " << bias[y][x] << endl;
+            for (int32_t y = 0; y < size_y; y++) {
+                for (int32_t x = 0; x < size_x; x++) {
+                    values[y][x] += bias[y][x];
+                    //cout << "values for node " << innovation_number << " now " << values[y][x] << " after adding bias: " << bias[y][x] << endl;
 
-                            //apply activation function
-                            if (values[y][x] <= RELU_MIN) {
-                                values[y][x] *= RELU_MIN_LEAK;
-                                gradients[y][x] = RELU_MIN_LEAK;
-                            } else if (values[y][x] > RELU_MAX) {
-                                //values[y][x] = ((values[y][x] - RELU_MAX) * RELU_MAX_LEAK) + RELU_MAX;
-                                //gradients[y][x] = RELU_MAX_LEAK;
-                                values[y][x] = RELU_MAX;
-                                gradients[y][x] = 0.0;
-                            } else {
-                                gradients[y][x] = 1.0;
-                            }
-                        }
-                    }
-                }
-
-            } else {
-                double dropout_scale = 1.0 - hidden_dropout_probability;
-
-                for (int32_t y = 0; y < size_y; y++) {
-                    for (int32_t x = 0; x < size_x; x++) {
-                        values[y][x] += bias[y][x];
-                        //cout << "values for node " << innovation_number << " now " << values[y][x] << " after adding bias: " << bias[y][x] << endl;
-
-                        //apply activation function
-                        if (values[y][x] <= RELU_MIN) {
-                            values[y][x] *= RELU_MIN_LEAK;
-                            gradients[y][x] = RELU_MIN_LEAK;
-                        } else if (values[y][x] > RELU_MAX) {
-                            //values[y][x] = ((values[y][x] - RELU_MAX) * RELU_MAX_LEAK) + RELU_MAX;
-                            //gradients[y][x] = RELU_MAX_LEAK;
-                            values[y][x] = RELU_MAX;
-                            gradients[y][x] = 0.0;
-                        } else {
-                            gradients[y][x] = 1.0;
-                        }
-
-                        values[y][x] *= dropout_scale;
+                    //apply activation function
+                    if (values[y][x] <= RELU_MIN) {
+                        values[y][x] *= RELU_MIN_LEAK;
+                        gradients[y][x] = RELU_MIN_LEAK;
+                    } else if (values[y][x] > RELU_MAX) {
+                        //values[y][x] = ((values[y][x] - RELU_MAX) * RELU_MAX_LEAK) + RELU_MAX;
+                        //gradients[y][x] = RELU_MAX_LEAK;
+                        values[y][x] = RELU_MAX;
+                        gradients[y][x] = 0.0;
+                    } else {
+                        gradients[y][x] = 1.0;
                     }
                 }
             }
