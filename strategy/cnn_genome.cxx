@@ -1057,12 +1057,8 @@ int CNN_Genome::evaluate_image(const Image &image, vector<double> &class_error, 
             max_value = value;
         }
 
-        /*
-        if (target == 1.0) {
-            total_error -= log(value);
-        }
-        */
-        total_error += fabs(error);
+        total_error -= target * log(value);
+        //total_error += fabs(error);
 
 
         //cout << " " << setw(15) << fixed << setprecision(6) << error;

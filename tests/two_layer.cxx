@@ -36,26 +36,23 @@ int main(int argc, char **argv) {
     int max_epochs;
     get_argument(arguments, "--max_epochs", true, max_epochs);
 
-    bool reset_edges;
-    get_argument(arguments, "--reset_edges", true, reset_edges);
-
     double learning_rate;
     get_argument(arguments, "--learning_rate", true, learning_rate);
 
-    double learning_rate_decay;
-    get_argument(arguments, "--learning_rate_decay", true, learning_rate_decay);
+    double learning_rate_delta;
+    get_argument(arguments, "--learning_rate_delta", true, learning_rate_delta);
 
     double weight_decay;
     get_argument(arguments, "--weight_decay", true, weight_decay);
 
-    double weight_decay_decay;
-    get_argument(arguments, "--weight_decay_decay", true, weight_decay_decay);
+    double weight_decay_delta;
+    get_argument(arguments, "--weight_decay_delta", true, weight_decay_delta);
 
     double mu;
     get_argument(arguments, "--mu", true, mu);
 
-    double mu_decay;
-    get_argument(arguments, "--mu_decay", true, mu_decay);
+    double mu_delta;
+    get_argument(arguments, "--mu_delta", true, mu_delta);
 
     double input_dropout_probability;
     get_argument(arguments, "--input_dropout_probability", true, input_dropout_probability);
@@ -109,7 +106,7 @@ int main(int argc, char **argv) {
     long genome_seed = generator();
     cout << "seeding genome with: " << genome_seed << endl;
 
-    CNN_Genome *genome = new CNN_Genome(1, genome_seed, max_epochs, reset_edges, velocity_reset, mu, mu_decay, learning_rate, learning_rate_decay, weight_decay, weight_decay_decay, input_dropout_probability, hidden_dropout_probability, nodes, edges);
+    CNN_Genome *genome = new CNN_Genome(1, genome_seed, max_epochs, true, velocity_reset, mu, mu_delta, learning_rate, learning_rate_delta, weight_decay, weight_decay_delta, input_dropout_probability, hidden_dropout_probability, nodes, edges);
     //save the weights and bias of the initially generated genome for reuse
     genome->initialize();
 
