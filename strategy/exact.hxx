@@ -126,6 +126,7 @@ class EXACT {
         double node_change_size_x;
         double node_change_size_y;
         double node_change_pool_size;
+        double node_add;
 
         int inserted_from_disable_edge;
         int inserted_from_enable_edge;
@@ -136,6 +137,7 @@ class EXACT {
         int inserted_from_change_size_y;
         int inserted_from_crossover;
         int inserted_from_reset_weights;
+        int inserted_from_add_node;
 
         int generated_from_disable_edge;
         int generated_from_enable_edge;
@@ -146,6 +148,7 @@ class EXACT {
         int generated_from_change_size_y;
         int generated_from_crossover;
         int generated_from_reset_weights;
+        int generated_from_add_node;
 
     public:
 #ifdef _MYSQL_
@@ -165,6 +168,8 @@ class EXACT {
 
         void generate_simplex_hyperparameters(double &mu, double &mu_delta, double &learning_rate, double &learning_rate_delta, double &weight_decay, double &weight_decay_delta, double &input_dropout_probability, double &hidden_dropout_probability, int &velocity_reset);
 
+
+        bool add_edge(CNN_Genome *child, CNN_Node *node1, CNN_Node *node2);
 
         CNN_Genome* generate_individual();
         CNN_Genome* create_mutation();

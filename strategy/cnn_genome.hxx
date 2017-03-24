@@ -79,6 +79,7 @@ class CNN_Genome {
         int generated_by_change_size_y;
         int generated_by_crossover;
         int generated_by_reset_weights;
+        int generated_by_add_node;
 
         int (*progress_function)(double);
 
@@ -195,6 +196,7 @@ class CNN_Genome {
         void set_generated_by_change_size_y();
         void set_generated_by_crossover();
         void set_generated_by_reset_weights();
+        void set_generated_by_add_node();
 
         int get_generated_by_disable_edge();
         int get_generated_by_enable_edge();
@@ -205,6 +207,7 @@ class CNN_Genome {
         int get_generated_by_change_size_y();
         int get_generated_by_crossover();
         int get_generated_by_reset_weights();
+        int get_generated_by_add_node();
 };
 
 

@@ -96,6 +96,7 @@ $query = "CREATE TABLE `exact_search` (
     `node_change_size_x` double NOT NULL,
     `node_change_size_y` double NOT NULL,
     `node_change_pool_size` double NOT NULL,
+    `node_add` double NOT NULL,
 
     `generator` varchar(64) NOT NULL,
     `normal_distribution` varchar(128) NOT NULL,
@@ -111,6 +112,7 @@ $query = "CREATE TABLE `exact_search` (
     `inserted_from_change_size_y` int NOT NULL,
     `inserted_from_crossover` int NOT NULL,
     `inserted_from_reset_weights` int NOT NULL,
+    `inserted_from_add_node` int NOT NULL,
 
     `generated_from_disable_edge` int NOT NULL,
     `generated_from_enable_edge` int NOT NULL,
@@ -121,6 +123,7 @@ $query = "CREATE TABLE `exact_search` (
     `generated_from_change_size_y` int NOT NULL,
     `generated_from_crossover` int NOT NULL,
     `generated_from_reset_weights` int NOT NULL,
+    `generated_from_add_node` int NOT NULL,
 
     PRIMARY KEY(`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1";
@@ -187,6 +190,7 @@ $query = "CREATE TABLE `cnn_genome` (
     `generated_by_change_size_y` int(11) NOT NULL,
     `generated_by_crossover` int(11) NOT NULL,
     `generated_by_reset_weights` int(11) NOT NULL,
+    `generated_by_add_node` int(11) NOT NULL,
 
     `test_error` double DEFAULT NULL,
     `test_predictions` int(11) DEFAULT NULL,

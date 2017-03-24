@@ -171,6 +171,7 @@ EXACT::EXACT(int exact_id) {
         node_change_size_x = atof(row[++column]);
         node_change_size_y = atof(row[++column]);
         node_change_pool_size = atof(row[++column]);
+        node_add = atof(row[++column]);
 
         istringstream generator_iss(row[++column]);
         generator_iss >> generator;
@@ -197,6 +198,7 @@ EXACT::EXACT(int exact_id) {
         inserted_from_change_size_y = atoi(row[++column]);
         inserted_from_crossover = atoi(row[++column]);
         inserted_from_reset_weights = atoi(row[++column]);
+        inserted_from_add_node = atoi(row[++column]);
 
         generated_from_disable_edge = atoi(row[++column]);
         generated_from_enable_edge = atoi(row[++column]);
@@ -207,6 +209,7 @@ EXACT::EXACT(int exact_id) {
         generated_from_change_size_y = atoi(row[++column]);
         generated_from_crossover = atoi(row[++column]);
         generated_from_reset_weights = atoi(row[++column]);
+        generated_from_add_node = atoi(row[++column]);
 
         ostringstream genome_query;
         genome_query << "SELECT id FROM cnn_genome WHERE exact_id = " << id << " ORDER BY best_error LIMIT " << population_size;
@@ -377,6 +380,7 @@ void EXACT::export_to_database() {
         << ", node_change_size_x = " << node_change_size_x
         << ", node_change_size_y = " << node_change_size_y
         << ", node_change_pool_size = " << node_change_pool_size
+        << ", node_add = " << node_add
 
         << ", generator = '" << generator << "'"
         << ", normal_distribution = '" << normal_distribution << "'"
@@ -392,6 +396,7 @@ void EXACT::export_to_database() {
         << ", inserted_from_change_size_y = " << inserted_from_change_size_y
         << ", inserted_from_crossover = " << inserted_from_crossover
         << ", inserted_from_reset_weights = " << inserted_from_reset_weights
+        << ", inserted_from_add_node = " << inserted_from_add_node
 
         << ", generated_from_disable_edge = " << generated_from_disable_edge
         << ", generated_from_enable_edge = " << generated_from_enable_edge
@@ -401,7 +406,8 @@ void EXACT::export_to_database() {
         << ", generated_from_change_size_x = " << generated_from_change_size_x
         << ", generated_from_change_size_y = " << generated_from_change_size_y
         << ", generated_from_crossover = " << generated_from_crossover
-        << ", generated_from_reset_weights = " << generated_from_reset_weights;
+        << ", generated_from_reset_weights = " << generated_from_reset_weights
+        << ", generated_from_add_node = " << generated_from_add_node;
 
     cout << query.str() << endl;
     mysql_exact_query(query.str());
@@ -477,6 +483,7 @@ void EXACT::update_database() {
         << ", inserted_from_change_size_x = " << inserted_from_change_size_x
         << ", inserted_from_change_size_y = " << inserted_from_change_size_y
         << ", inserted_from_crossover = " << inserted_from_crossover
+        << ", inserted_from_add_node = " << inserted_from_add_node
 
         << ", generated_from_disable_edge = " << generated_from_disable_edge
         << ", generated_from_enable_edge = " << generated_from_enable_edge
@@ -486,6 +493,7 @@ void EXACT::update_database() {
         << ", generated_from_change_size_x = " << generated_from_change_size_x
         << ", generated_from_change_size_y = " << generated_from_change_size_y
         << ", generated_from_crossover = " << generated_from_crossover
+        << ", generated_from_add_node = " << generated_from_add_node
 
         << ", generator = '" << generator << "'"
         << ", normal_distribution = '" << normal_distribution << "'"
@@ -582,6 +590,7 @@ EXACT::EXACT(const Images &images, string _samples_filename, int _population_siz
     inserted_from_change_size_y = 0;
     inserted_from_crossover = 0;
     inserted_from_reset_weights = 0;
+    inserted_from_add_node = 0;
 
     generated_from_disable_edge = 0;
     generated_from_enable_edge = 0;
@@ -592,6 +601,7 @@ EXACT::EXACT(const Images &images, string _samples_filename, int _population_siz
     generated_from_change_size_y = 0;
     generated_from_crossover = 0;
     generated_from_reset_weights = 0;
+    generated_from_add_node = 0;
 
     genomes_generated = 0;
 
@@ -649,15 +659,16 @@ EXACT::EXACT(const Images &images, string _samples_filename, int _population_siz
     reset_weights_chance = 0.20;
 
     number_mutations = 3;
-    edge_disable = 1.0;
-    edge_enable = 2.0;
-    edge_split = 2.0;
+    edge_disable = 2.5;
+    edge_enable = 2.5;
+    edge_split = 3.0;
     edge_add = 4.0;
     edge_change_stride = 0.0;
-    node_change_size = 1.0;
-    node_change_size_x = 0.5;
-    node_change_size_y = 0.5;
+    node_change_size = 2.0;
+    node_change_size_x = 1.0;
+    node_change_size_y = 1.0;
     node_change_pool_size = 0.0;
+    node_add = 4.0;
 
     cout << "EXACT settings: " << endl;
 
@@ -724,9 +735,10 @@ EXACT::EXACT(const Images &images, string _samples_filename, int _population_siz
     cout << "\t\tnode_change_size_x: " << node_change_size_x << endl;
     cout << "\t\tnode_change_size_y: " << node_change_size_y << endl;
     cout << "\t\tnode_change_pool_size: " << node_change_pool_size << endl;
+    cout << "\t\tnode_add: " << node_add << endl;
 
     double total = edge_disable + edge_enable + edge_split + edge_add + edge_change_stride +
-                   node_change_size + node_change_size_x + node_change_size_y + node_change_pool_size;
+                   node_change_size + node_change_size_x + node_change_size_y + node_change_pool_size + node_add;
 
     edge_disable /= total;
     edge_enable /= total;
@@ -737,6 +749,7 @@ EXACT::EXACT(const Images &images, string _samples_filename, int _population_siz
     node_change_size_x /= total;
     node_change_size_y /= total;
     node_change_pool_size /= total;
+    node_add /= total;
 
     cout << "mutation probabilities: " << endl;
     cout << "\tedge_disable: " << edge_disable << endl;
@@ -747,6 +760,7 @@ EXACT::EXACT(const Images &images, string _samples_filename, int _population_siz
     cout << "\tnode_change_size_x: " << node_change_size_x << endl;
     cout << "\tnode_change_size_y: " << node_change_size_y << endl;
     cout << "\tnode_change_pool_size: " << node_change_pool_size << endl;
+    cout << "\tnode_add: " << node_add << endl;
 
     if (output_directory.compare("") != 0) {
         write_statistics_header();
@@ -1062,6 +1076,7 @@ bool EXACT::insert_genome(CNN_Genome* genome) {
     generated_from_change_size_y += genome->get_generated_by_change_size_y();
     generated_from_crossover += genome->get_generated_by_crossover();
     generated_from_reset_weights += genome->get_generated_by_reset_weights();
+    generated_from_add_node += genome->get_generated_by_add_node();
 
     cout << "genomes evaluated: " << setw(10) << inserted_genomes << ", inserting: " << parse_fitness(genome->get_fitness()) << endl;
 
@@ -1171,6 +1186,7 @@ bool EXACT::insert_genome(CNN_Genome* genome) {
         gv_file << "#\t\tnode_change_size_x: " << node_change_size_x << endl;
         gv_file << "#\t\tnode_change_size_y: " << node_change_size_y << endl;
         gv_file << "#\t\tnode_change_pool_size: " << node_change_pool_size << endl;
+        gv_file << "#\t\tnode_add: " << node_add << endl;
 
         genome->print_graphviz(gv_file);
         gv_file.close();
@@ -1258,6 +1274,70 @@ bool EXACT::insert_genome(CNN_Genome* genome) {
     if (output_directory.compare("") != 0) write_statistics(new_generation_id, new_fitness);
     return was_inserted;
 }
+
+bool EXACT::add_edge(CNN_Genome *child, CNN_Node *node1, CNN_Node *node2) {
+    int node1_innovation_number = node1->get_innovation_number();
+    int node2_innovation_number = node2->get_innovation_number();
+
+    //check to see if the edge already exists
+    bool edge_exists = false;
+    int all_edges_position = -1;
+    for (int32_t i = 0; i < (int32_t)all_edges.size(); i++) {
+        if (all_edges.at(i)->connects(node1_innovation_number, node2_innovation_number)) {
+            edge_exists = true;
+            all_edges_position = i;
+            break;
+        }
+    }
+
+    bool edge_exists_in_child = false;
+    for (int32_t i = 0; i < child->get_number_edges(); i++) {
+        if (child->get_edge(i)->connects(node1_innovation_number, node2_innovation_number)) {
+            edge_exists_in_child = true;
+            break;
+        }
+    }
+
+    if (edge_exists && !edge_exists_in_child) {
+        //edge exists in another genome, copy from all_edges
+        //we know the child has both endpoints because we grabbed node1 and node2 from the child
+        cout << "\t\tcopying edge in position " << all_edges_position << " from all_edges!" << endl;
+        CNN_Edge *edge_copy = all_edges.at(all_edges_position)->copy();
+        cout << "\t\tedge_copy->input_innovation_number: " << edge_copy->get_input_innovation_number() << endl;
+        cout << "\t\tedge_copy->output_innovation_number: " << edge_copy->get_output_innovation_number() << endl;
+
+        //enable the edge in case it was disabled
+        edge_copy->enable();
+        if (!edge_copy->set_nodes(child->get_nodes())) {
+            edge_copy->resize();
+        }
+
+        child->add_edge( edge_copy );
+        return true;
+
+    } else if (!edge_exists && !edge_exists_in_child) {
+        //edge does not exist at all
+        cout << "\t\tadding edge between node innovation numbers " << node1_innovation_number << " and " << node2_innovation_number << endl;
+
+        CNN_Edge *edge = new CNN_Edge(node1, node2, false, edge_innovation_count);
+        edge_innovation_count++;
+        //insert edge in order of depth
+
+        //enable the edge in case it was disabled
+        edge->enable();
+        child->add_edge(edge);
+
+        CNN_Edge *edge_copy = edge->copy();
+        edge_copy->set_nodes(all_nodes);
+
+        all_edges.insert( upper_bound(all_edges.begin(), all_edges.end(), edge_copy, sort_CNN_Edges_by_depth()), edge_copy);
+        return true;
+
+    } else {
+        return false;
+    }
+}
+
 
 CNN_Genome* EXACT::create_mutation() {
     //mutation options:
@@ -1449,68 +1529,11 @@ CNN_Genome* EXACT::create_mutation() {
             } while (node1->get_depth() >= node2->get_depth());
             //after this while loop, node 2 will always be deeper than node 1
 
-            int node1_innovation_number = node1->get_innovation_number();
-            int node2_innovation_number = node2->get_innovation_number();
-
-            //check to see if the edge already exists
-            bool edge_exists = false;
-            int all_edges_position = -1;
-            for (int32_t i = 0; i < (int32_t)all_edges.size(); i++) {
-                if (all_edges.at(i)->connects(node1_innovation_number, node2_innovation_number)) {
-                    edge_exists = true;
-                    all_edges_position = i;
-                    break;
-                }
-            }
-
-            bool edge_exists_in_child = false;
-            for (int32_t i = 0; i < child->get_number_edges(); i++) {
-                if (child->get_edge(i)->connects(node1_innovation_number, node2_innovation_number)) {
-                    edge_exists_in_child = true;
-                    break;
-                }
-            }
-
-            if (edge_exists && !edge_exists_in_child) {
-                //edge exists in another genome, copy from all_edges
-                //we know the child has both endpoints because we grabbed node1 and node2 from the child
-                cout << "\t\tcopying edge in position " << all_edges_position << " from all_edges!" << endl;
-                CNN_Edge *edge_copy = all_edges.at(all_edges_position)->copy();
-                cout << "\t\tedge_copy->input_innovation_number: " << edge_copy->get_input_innovation_number() << endl;
-                cout << "\t\tedge_copy->output_innovation_number: " << edge_copy->get_output_innovation_number() << endl;
-
-                //enable the edge in case it was disabled
-                edge_copy->enable();
-                if (!edge_copy->set_nodes(child->get_nodes())) {
-                    edge_copy->resize();
-                }
-
-                child->add_edge( edge_copy );
-
+            if (add_edge(child, node1, node2)) {
                 child->set_generated_by_add_edge();
-                modifications++;
-            } else if (!edge_exists && !edge_exists_in_child) {
-                //edge does not exist at all
-                cout << "\t\tadding edge between node innovation numbers " << node1_innovation_number << " and " << node2_innovation_number << endl;
-
-                CNN_Edge *edge = new CNN_Edge(node1, node2, false, edge_innovation_count);
-                edge_innovation_count++;
-                //insert edge in order of depth
-
-                //enable the edge in case it was disabled
-                edge->enable();
-                child->add_edge(edge);
-
-                CNN_Edge *edge_copy = edge->copy();
-                edge_copy->set_nodes(all_nodes);
-
-                all_edges.insert( upper_bound(all_edges.begin(), all_edges.end(), edge_copy, sort_CNN_Edges_by_depth()), edge_copy);
-
-                child->set_generated_by_add_edge();
-
                 modifications++;
             } else {
-                cout << "\t\tnot adding edge between node innovation numbers " << node1_innovation_number << " and " << node2_innovation_number << " because edge already exists!" << endl;
+                cout << "\t\tnot adding edge between node innovation numbers " << node1->get_innovation_number() << " and " << node2->get_innovation_number() << " because edge already exists!" << endl;
             }
 
             continue;
@@ -1696,6 +1719,101 @@ CNN_Genome* EXACT::create_mutation() {
             continue;
         }
         r -= node_change_pool_size;
+
+        if (r < node_add) {
+            cout << "\tADDING A NODE!" << endl;
+
+            //pick random depth
+            //separate nodes between those of less depth and those of greater depth
+
+            double random_depth = rng_double(generator);
+            cout << "\t\trandom depth: " << random_depth << endl;
+
+            vector<CNN_Node*> potential_inputs;
+            vector<CNN_Node*> potential_outputs;
+
+            for (uint32_t i = 0; i < child->get_number_nodes(); i++) {
+
+                if (child->get_node(i)->get_depth() < random_depth) {
+                    potential_inputs.push_back(child->get_node(i));
+                    cout << "\t\tnode " << i << " has depth: " << child->get_node(i)->get_depth() << " added as potential input" << endl;
+                } else if (child->get_node(i)->get_depth() > random_depth) {
+                    potential_outputs.push_back(child->get_node(i));
+                    cout << "\t\tnode " << i << " has depth: " << child->get_node(i)->get_depth() << " added as potential output" << endl;
+                } else {
+                    cout << "\t\tnode " << i << " has depth: " << child->get_node(i)->get_depth() << " not added!" << endl;
+                }
+            }
+
+            int number_inputs = (rng_double(generator) * 4) + 1;
+            cout << "\t\tnumber inputs to use: " << number_inputs << endl;
+            while (potential_inputs.size() > number_inputs) {
+                potential_inputs.erase(potential_inputs.begin() + (rng_double(generator) * potential_inputs.size()));
+            }
+
+            if (potential_inputs.size() == 0) {
+                cout << "\t\tNot adding node because no input nodes were selected." << endl;
+                continue;
+            }
+
+            int number_outputs = (rng_double(generator) * 4) + 1;
+            cout << "\t\tnumber outputs to use: " << number_outputs << endl;
+            while (potential_outputs.size() > number_outputs) {
+                potential_outputs.erase(potential_outputs.begin() + (rng_double(generator) * potential_outputs.size()));
+            }
+
+            if (potential_outputs.size() == 0) {
+                cout << "\t\tNot adding node because no output nodes were selected." << endl;
+                continue;
+            }
+
+            int32_t min_input_size_x = 1000, min_input_size_y = 1000, max_output_size_x = 0, max_output_size_y = 0;
+
+            for (uint32_t i = 0; i < potential_inputs.size(); i++) {
+                if (potential_inputs[i]->get_size_x() < min_input_size_x) min_input_size_x = potential_inputs[i]->get_size_x();
+                if (potential_inputs[i]->get_size_y() < min_input_size_y) min_input_size_y = potential_inputs[i]->get_size_y();
+
+                cout << "\t\tinput node: " << potential_inputs[i]->get_innovation_number() << endl;
+            }
+
+            for (uint32_t i = 0; i < potential_outputs.size(); i++) {
+                if (potential_outputs[i]->get_size_x() > max_output_size_x) max_output_size_x = potential_outputs[i]->get_size_x();
+                if (potential_outputs[i]->get_size_y() > max_output_size_y) max_output_size_y = potential_outputs[i]->get_size_y();
+                cout << "\t\toutput node: " << potential_outputs[i]->get_innovation_number() << endl;
+            }
+
+            int32_t size_x = ((double)min_input_size_x + (double)max_output_size_x) / 2.0;
+            int32_t size_y = ((double)min_input_size_y + (double)max_output_size_y) / 2.0;
+
+            cout << "\t\tMin input size_x: " << min_input_size_x << ", size_y: " << min_input_size_y << endl;
+            cout << "\t\tMax output size_x: " << max_output_size_x << ", size_y: " << max_output_size_y << endl;
+            cout << "\t\tNew node will have size_x: " << size_x << ", size_y: " << size_y << endl;
+
+            CNN_Node *child_node = new CNN_Node(node_innovation_count, random_depth, size_x, size_y, HIDDEN_NODE);
+            node_innovation_count++;
+
+            child->add_node(child_node);
+
+            //make sure copies are added to all_edges and all_nodes
+            CNN_Node *node_copy = child_node->copy();
+
+            //insert the new node into the population in sorted order
+            all_nodes.insert( upper_bound(all_nodes.begin(), all_nodes.end(), node_copy, sort_CNN_Nodes_by_depth()), node_copy);
+
+            for (uint32_t i = 0; i < potential_inputs.size(); i++) {
+                add_edge(child, potential_inputs[i], child_node);
+            }
+
+            for (uint32_t i = 0; i < potential_outputs.size(); i++) {
+                add_edge(child, child_node, potential_outputs[i]);
+            }
+
+            child->set_generated_by_add_node();
+            modifications++;
+
+            continue;
+        }
+        r -= node_add;
 
         cout << "ERROR: problem choosing mutation type -- should never get here!" << endl;
         cout << "\tremaining random value (for mutation selection): " << r << endl;
@@ -2060,6 +2178,12 @@ void EXACT::write_statistics(int new_generation_id, double new_fitness) {
         out << setw(16) << setprecision(3) << 0.0;
     } else {
         out << setw(16) << setprecision(3) << (100.0 * (double)inserted_from_reset_weights / (double)generated_from_reset_weights);
+    }
+
+    if (generated_from_add_node == 0) {
+        out << setw(16) << setprecision(3) << 0.0;
+    } else {
+        out << setw(16) << setprecision(3) << (100.0 * (double)inserted_from_add_node / (double)generated_from_add_node);
     }
 
     out << endl;

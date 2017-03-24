@@ -249,6 +249,7 @@ CNN_Genome::CNN_Genome(int _genome_id) {
         generated_by_change_size_y = atoi(row[++column]);
         generated_by_crossover = atoi(row[++column]);
         generated_by_reset_weights = atoi(row[++column]);
+        generated_by_add_node = atoi(row[++column]);
 
         ostringstream node_query;
         node_query << "SELECT id FROM cnn_node WHERE genome_id = " << genome_id;
@@ -402,7 +403,8 @@ void CNN_Genome::export_to_database(int _exact_id) {
         << ", generated_by_change_size_x = " << generated_by_change_size_x
         << ", generated_by_change_size_y = " << generated_by_change_size_y
         << ", generated_by_crossover = " << generated_by_crossover
-        << ", generated_by_reset_weights = " << generated_by_reset_weights;
+        << ", generated_by_reset_weights = " << generated_by_reset_weights
+        << ", generated_by_add_node = " << generated_by_add_node;
 
     //cout << "query:\n" << query.str() << endl;
 
@@ -473,6 +475,7 @@ CNN_Genome::CNN_Genome(int _generation_id, int seed, int _max_epochs, bool _rese
     generated_by_change_size_y = 0;
     generated_by_crossover = 0;
     generated_by_reset_weights = 0;
+    generated_by_add_node = 0;
 
     name = "";
     output_filename = "";
@@ -1273,7 +1276,7 @@ void CNN_Genome::stochastic_backpropagation(const Images &images) {
 
         best_error = EXACT_MAX_DOUBLE;
     }
-    //backprop_order.resize(5000);
+    backprop_order.resize(2000);
 
     //sort edges by depth of input node
     sort(edges.begin(), edges.end(), sort_CNN_Edges_by_depth());
@@ -1435,6 +1438,7 @@ void CNN_Genome::write(ostream &outfile) {
     outfile << generated_by_change_size_y << endl;
     outfile << generated_by_crossover << endl;
     outfile << generated_by_reset_weights << endl;
+    outfile << generated_by_add_node << endl;
 
     outfile << generation_id << endl;
     outfile << normal_distribution << endl;
@@ -1574,6 +1578,8 @@ void CNN_Genome::read(istream &infile) {
     if (verbose) cerr << "read generated_by_crossover: " << generated_by_crossover << endl;
     infile >> generated_by_reset_weights;
     if (verbose) cerr << "read generated_by_reset_weights: " << generated_by_reset_weights << endl;
+    infile >> generated_by_add_node;
+    if (verbose) cerr << "read generated_by_add_node: " << generated_by_add_node << endl;
 
     infile >> generation_id;
     if (verbose) cerr << "read generation_id: " << generation_id << endl;
@@ -1878,6 +1884,11 @@ void CNN_Genome::set_generated_by_reset_weights() {
     generated_by_reset_weights++;
 }
 
+void CNN_Genome::set_generated_by_add_node() {
+    generated_by_add_node++;
+}
+
+
 
 int CNN_Genome::get_generated_by_disable_edge() {
     return generated_by_disable_edge;
@@ -1913,5 +1924,9 @@ int CNN_Genome::get_generated_by_crossover() {
 
 int CNN_Genome::get_generated_by_reset_weights() {
     return generated_by_reset_weights;
+}
+
+int CNN_Genome::get_generated_by_add_node() {
+    return generated_by_add_node;
 }
 
