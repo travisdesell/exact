@@ -1276,7 +1276,7 @@ void CNN_Genome::stochastic_backpropagation(const Images &images) {
 
         best_error = EXACT_MAX_DOUBLE;
     }
-    backprop_order.resize(2000);
+    //backprop_order.resize(2000);
 
     //sort edges by depth of input node
     sort(edges.begin(), edges.end(), sort_CNN_Edges_by_depth());
@@ -1382,7 +1382,7 @@ string CNN_Genome::get_version_str() const {
 }
 
 #ifdef _WIN32
-#define EXACT_VERSION "0.19"
+#define EXACT_VERSION "0.20"
 #endif
 
 void CNN_Genome::write(ostream &outfile) {

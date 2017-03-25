@@ -2453,6 +2453,7 @@ void EXACT::write_statistics_header() {
         << ", " << setw(14) << "change_size_y"
         << ", " << setw(14) << "crossover"
         << ", " << setw(14) << "reset_weights"
+        << ", " << setw(14) << "add_node"
         << endl;
     out.close();
 }
