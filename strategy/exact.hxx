@@ -63,6 +63,7 @@ class EXACT {
 
         bool reset_weights;
         int max_epochs;
+        int batch_size;
 
         double initial_mu_min;
         double initial_mu_max;
@@ -94,15 +95,8 @@ class EXACT {
         double weight_decay_delta_min;
         double weight_decay_delta_max;
 
-        double initial_input_dropout_probability_min;
-        double initial_input_dropout_probability_max;
-        double input_dropout_probability_min;
-        double input_dropout_probability_max;
-
-        double initial_hidden_dropout_probability_min;
-        double initial_hidden_dropout_probability_max;
-        double hidden_dropout_probability_min;
-        double hidden_dropout_probability_max;
+        double epsilon;
+        double alpha;
 
         int initial_velocity_reset_min;
         int initial_velocity_reset_max;
@@ -159,14 +153,14 @@ class EXACT {
         void update_database();
 #endif
 
-        EXACT(const Images &images, string _samples_filename, int _population_size, int _max_epochs, int _max_genomes, string _output_directory, string _search_name, bool _reset_weights);
+        EXACT(const Images &images, string _samples_filename, int _population_size, int _max_epochs, int _batch_size, int _max_genomes, string _output_directory, string _search_name, bool _reset_weights);
 
         int32_t population_contains(CNN_Genome *genome) const;
         CNN_Genome* get_best_genome();
 
-        void generate_initial_hyperparameters(double &mu, double &mu_delta, double &learning_rate, double &learning_rate_delta, double &weight_decay, double &weight_decay_delta, double &input_dropout_probability, double &hidden_dropout_probability, int &velocity_reset);
+        void generate_initial_hyperparameters(double &mu, double &mu_delta, double &learning_rate, double &learning_rate_delta, double &weight_decay, double &weight_decay_delta, int &velocity_reset);
 
-        void generate_simplex_hyperparameters(double &mu, double &mu_delta, double &learning_rate, double &learning_rate_delta, double &weight_decay, double &weight_decay_delta, double &input_dropout_probability, double &hidden_dropout_probability, int &velocity_reset);
+        void generate_simplex_hyperparameters(double &mu, double &mu_delta, double &learning_rate, double &learning_rate_delta, double &weight_decay, double &weight_decay_delta, int &velocity_reset);
 
 
         bool add_edge(CNN_Genome *child, CNN_Node *node1, CNN_Node *node2);

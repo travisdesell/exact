@@ -35,8 +35,9 @@ class CNN_Genome {
 
         int velocity_reset;
 
-        double input_dropout_probability;
-        double hidden_dropout_probability;
+        int batch_size;
+        double epsilon;
+        double alpha;
 
         double initial_mu;
         double mu;
@@ -58,9 +59,6 @@ class CNN_Genome {
         int best_predictions;
         int best_predictions_epoch;
         int best_error_epoch;
-
-        vector<double> best_class_error;
-        vector<int> best_correct_predictions;
 
         bool started_from_checkpoint;
         vector<long> backprop_order;
@@ -93,7 +91,7 @@ class CNN_Genome {
         /**
          *  Iniitalize a genome from a set of nodes and edges
          */
-        CNN_Genome(int _generation_id, int seed, int _max_epochs, bool _reset_weights, int velocity_reset, double _mu, double _mu_delta, double _learning_rate, double _learning_rate_delta, double _weight_decay, double _weight_decay_delta, double _input_dropout_probability, double _hidden_dropout_probability, const vector<CNN_Node*> &_nodes, const vector<CNN_Edge*> &_edges);
+        CNN_Genome(int _generation_id, int seed, int _max_epochs, bool _reset_weights, int velocity_reset, double _mu, double _mu_delta, double _learning_rate, double _learning_rate_delta, double _weight_decay, double _weight_decay_delta, int _batch_size, double _epsilon, double _alpha, const vector<CNN_Node*> &_nodes, const vector<CNN_Edge*> &_edges);
 
         ~CNN_Genome();
 
@@ -111,9 +109,7 @@ class CNN_Genome {
 
         bool equals(CNN_Genome *other) const;
 
-        void print_progress(ostream &out, int total_predictions, double total_error) const;
-        void print_best_error(ostream &out) const;
-        void print_best_predictions(ostream &out) const;
+        void print_progress(ostream &out, double total_error, int correct_predictions) const;
 
         int get_number_weights() const;
         int get_number_biases() const;
@@ -165,14 +161,14 @@ class CNN_Genome {
 
         void resize_edges_around_node(int node_position);
  
-        int evaluate_image(const Image &image, vector<double> &class_error, bool perform_backprop, bool perform_dropout, double &total_error);
+        void evaluate_images(const vector<const Image> &images, bool training, double &total_error, int &correct_predictions);
 
         void set_to_best();
         void save_to_best();
         void initialize();
 
-        void evaluate(const Images &images, double &total_error, int &total_predictions);
-        void evaluate(const Images &images, vector<double> &class_error, vector<int> &correct_predictions, double &total_error, int &total_predictions, bool perform_backprop);
+        void evaluate(const Images &images, double &total_error, int &correct_predictions);
+        void evaluate(const Images &images, double &total_error, int &correct_predictions, bool perform_backprop);
 
         void stochastic_backpropagation(const Images &images);
 

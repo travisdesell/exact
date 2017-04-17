@@ -55,18 +55,7 @@ class CNN_Node {
         int innovation_number;
         double depth;
 
-        int size_x, size_y;
-
-        //bias only applied to input of the node
-        //output is after pooling
-
-        vector< vector<double> > values;
-        vector< vector<double> > errors;
-        vector< vector<double> > gradients;
-        vector< vector<double> > bias;
-        vector< vector<double> > best_bias;
-        vector< vector<double> > bias_velocity;
-        vector< vector<double> > best_bias_velocity;
+        int batch_size, size_y, size_x;
 
         int weight_count;
 
@@ -75,13 +64,38 @@ class CNN_Node {
         int total_inputs;
         int inputs_fired;
 
+        int total_outputs;
+        int outputs_fired;
+
         bool visited;
         bool needs_initialization;
+
+        double gamma;
+        double best_gamma;
+        double previous_velocity_gamma;
+
+        double beta;
+        double best_beta;
+        double previous_velocity_beta;
+
+        double inverse_variance;
+
+        double running_mean;
+        double best_running_mean;
+        double running_variance;
+        double best_running_variance;
+
+        //batch number x size_y x size_x
+        vector< vector< vector<double> > > values_in;   //after RELU
+        vector< vector< vector<double> > > values_hat;  //normalized but not scaled and shifted
+        vector< vector< vector<double> > > values_out;  //scaled and shifted
+        vector< vector< vector<double> > > deltas;
+
 
     public:
         CNN_Node();
 
-        CNN_Node(int _innovation_number, double _depth, int _input_size_x, int _input_size_y, int type);
+        CNN_Node(int _innovation_number, double _depth, int _batch_size, int _input_size_x, int _input_size_y, int type);
 
         CNN_Node* copy() const;
 
@@ -93,8 +107,13 @@ class CNN_Node {
 #endif
 
         bool needs_init() const;
+        int get_batch_size() const;
         int get_size_x() const;
         int get_size_y() const;
+
+        void initialize();
+
+        void reset_velocities();
 
         void reset_weight_count();
         void add_weight_count(int _weight_count);
@@ -114,32 +133,28 @@ class CNN_Node {
         void visit();
         void set_unvisited();
 
-        void initialize_bias(minstd_rand0 &generator, NormalDistribution &normal_disribution);
-        void reset_velocities();
-
         bool has_nan() const;
-        bool has_zero_bias() const;
-        bool has_zero_best_bias() const;
-        void propagate_bias(double mu, double learning_rate, double weight_decay);
 
-        void set_values(const Image &image, int channel, int rows, int cols, bool perform_dropout, minstd_rand0 &generator, double input_dropout_probability);
-        double get_value(int y, int x);
-        void set_value(int y, int x, double value);
-        vector< vector<double> >& get_values();
+        void batch_normalize(bool training, double epsilon, double alpha);
 
-        double get_error(int y, int x);
-        void set_error(int y, int x, double value);
-        vector< vector<double> >& get_errors();
+        void set_input_values(const vector<const Image> &image, int channel);
+        double get_input_value(int batch_number, int y, int x);
+        void set_input_value(int batch_number, int y, int x, double value);
+        vector< vector< vector<double> > >& get_input_values();
 
-        void set_gradient(int y, int x, double value);
-        vector< vector<double> >& get_gradients();
+        double get_output_value(int batch_number, int y, int x);
+        void set_output_value(int batch_number, int y, int x, double value);
+        vector< vector< vector<double> > >& get_output_values();
+
+        void set_delta(int batch_number, int y, int x, double delta);
+        vector< vector< vector<double> > >& get_deltas();
+
 
         void print(ostream &out);
 
         void reset();
-
-        void save_best_bias();
-        void set_bias_to_best();
+        void save_best_weights();
+        void set_weights_to_best();
 
         void resize_arrays();
         bool modify_size_x(int change);
@@ -149,18 +164,20 @@ class CNN_Node {
         void disable_input();
         int get_number_inputs() const;
         int get_inputs_fired() const;
-        void input_fired(bool perform_dropout, minstd_rand0 &generator, double hidden_dropout_probability);
+        void input_fired(bool training, double epsilon, double alpha);
+
+        void add_output();
+        void disable_output();
+        int get_number_outputs() const;
+        int get_outputs_fired() const;
+        void output_fired(double mu, double learning_rate);
+
 
         void print_statistics();
 
         friend ostream &operator<<(ostream &os, const CNN_Node* node);
         friend istream &operator>>(istream &is, CNN_Node* node);
 };
-
-/*
-template<class T>
-void parse_array_2d(T ***output, istringstream &iss, int size_x, int size_y);
-*/
 
 double read_hexfloat(istream &infile);
 void write_hexfloat(ostream &outfile, double value);

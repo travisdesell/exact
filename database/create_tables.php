@@ -33,6 +33,7 @@ $query = "CREATE TABLE `exact_search` (
 
     `reset_weights` tinyint NOT NULL,
     `max_epochs` int(11) NOT NULL,
+    `batch_size` int(11) NOT NULL,
 
     `initial_mu_min` double NOT NULL,
     `initial_mu_max` double NOT NULL,
@@ -64,15 +65,7 @@ $query = "CREATE TABLE `exact_search` (
     `weight_decay_delta_min` double NOT NULL,
     `weight_decay_delta_max` double NOT NULL,
 
-    `initial_input_dropout_probability_min` double NOT NULL,
-    `initial_input_dropout_probability_max` double NOT NULL,
-    `input_dropout_probability_min` double NOT NULL,
-    `input_dropout_probability_max` double NOT NULL,
-
-    `initial_hidden_dropout_probability_min` double NOT NULL,
-    `initial_hidden_dropout_probability_max` double NOT NULL,
-    `hidden_dropout_probability_min` double NOT NULL,
-    `hidden_dropout_probability_max` double NOT NULL,
+    `epsilon` double NOT NULL,
 
     `initial_velocity_reset_min` int(11) NOT NULL,
     `initial_velocity_reset_max` int(11) NOT NULL,
@@ -147,8 +140,9 @@ $query = "CREATE TABLE `cnn_genome` (
 
     `velocity_reset` int(11) NOT NULL,
 
-    `input_dropout_probability` double NOT NULL,
-    `hidden_dropout_probability` double NOT NULL,
+    `batch_size` int(11) NOT NULL,
+    `epsilon` double NOT NULL,
+    `alpha` double NOT NULL,
 
     `initial_mu` double NOT NULL,
     `mu` double NOT NULL,
@@ -170,9 +164,6 @@ $query = "CREATE TABLE `cnn_genome` (
     `best_error_epoch` int(11) NOT NULL,
     `best_predictions` int(11) NOT NULL,
     `best_predictions_epoch` int(11) NOT NULL,
-
-    `best_class_error` BLOB NOT NULL,
-    `best_correct_predictions` BLOB NOT NULL,
 
     `started_from_checkpoint` tinyint(1) NOT NULL,
 
@@ -213,6 +204,7 @@ $query = "CREATE TABLE `cnn_edge` (
   `input_node_innovation_number` int(11) NOT NULL,
   `output_node_innovation_number` int(11) NOT NULL,
 
+  `batch_size` int(11) NOT NULL,
   `filter_x` int(11) NOT NULL,
   `filter_y` int(11) NOT NULL,
   `weights` BLOB NOT NULL,
@@ -244,16 +236,22 @@ $query = "CREATE TABLE `cnn_node` (
   `size_x` int(11) NOT NULL,
   `size_y` int(11) NOT NULL,
 
-  `bias` BLOB NOT NULL,
-  `best_bias` BLOB NOT NULL,
-  `bias_velocity` BLOB NOT NULL,
-  `best_bias_velocity` BLOB NOT NULL,
-
   `type` int(11) NOT NULL,
 
   `visited` tinyint(1) NOT NULL,
   `weight_count` int(11) NOT NULL,
   `needs_initialization` tinyint(1) NOT NULL,
+
+  `gamma` double NOT NULL,
+  `best_gamma` double NOT NULL,
+  `previous_velocity_gamma` double NOT NULL,
+
+  `beta` double NOT NULL,
+  `best_beta` double NOT NULL,
+  `previous_velocity_beta` double NOT NULL,
+
+  `running_mean` double NOT NULL,
+  `running_average` double NOT NULL,
 
   PRIMARY KEY(`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1";

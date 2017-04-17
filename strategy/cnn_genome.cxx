@@ -132,14 +132,6 @@ int CNN_Genome::get_velocity_reset() const {
     return velocity_reset;
 }
 
-double CNN_Genome::get_input_dropout_probability() const {
-    return input_dropout_probability;
-}
-
-double CNN_Genome::get_hidden_dropout_probability() const {
-    return hidden_dropout_probability;
-}
-
 template <class T>
 void parse_array(vector<T> &output, istringstream &iss) {
     output.clear();
@@ -199,8 +191,9 @@ CNN_Genome::CNN_Genome(int _genome_id) {
 
         velocity_reset = atoi(row[++column]);
 
-        input_dropout_probability = atof(row[++column]);
-        hidden_dropout_probability = atof(row[++column]);
+        batch_size = atoi(row[++column]);
+        epsilon = atof(row[++column]);
+        alpha = atof(row[++column]);
 
         initial_mu = atof(row[++column]);
         mu = atof(row[++column]);
@@ -222,14 +215,6 @@ CNN_Genome::CNN_Genome(int _genome_id) {
         best_error_epoch = atoi(row[++column]);
         best_predictions = atoi(row[++column]);
         best_predictions_epoch = atoi(row[++column]);
-
-        istringstream best_class_error_iss(row[++column]);
-        //cout << "parsing best class error" << endl;
-        parse_array(best_class_error, best_class_error_iss);
-
-        istringstream best_correct_predictions_iss(row[++column]);
-        //cout << "parsing best correct predictions" << endl;
-        parse_array(best_correct_predictions, best_correct_predictions_iss);
 
         started_from_checkpoint = atoi(row[++column]);
 
@@ -347,8 +332,9 @@ void CNN_Genome::export_to_database(int _exact_id) {
     query << "', generator = '" << generator << "'"
         << ", normal_distribution = '" << normal_distribution << "'"
         << ", velocity_reset = '" << velocity_reset << "'"
-        << ", input_dropout_probability = " << setprecision(15) << fixed << input_dropout_probability
-        << ", hidden_dropout_probability = " << setprecision(15) << fixed << hidden_dropout_probability
+        << ", batch_size = " << batch_size
+        << ", epsilon = " << setprecision(15) << fixed << epsilon
+        << ", alpha = " << setprecision(15) << fixed << alpha
         << ", initial_mu = " << setprecision(15) << fixed << initial_mu
         << ", mu = " << setprecision(15) << fixed<< mu
         << ", mu_delta = " << setprecision(15) << fixed << mu_delta
@@ -365,20 +351,7 @@ void CNN_Genome::export_to_database(int _exact_id) {
         << ", best_predictions = " << best_predictions
         << ", best_predictions_epoch = " << best_predictions_epoch
         << ", best_error_epoch = " << best_error_epoch
-        << ", best_class_error = '";
-
-    for (uint32_t i = 0; i < best_class_error.size(); i++) {
-        if (i != 0) query << " ";
-        query << setprecision(15) << fixed << best_class_error[i];
-    }
-
-    query << "', best_correct_predictions = '";
-    for (uint32_t i = 0; i < best_correct_predictions.size(); i++) {
-        if (i != 0) query << " ";
-        query << best_correct_predictions[i];
-    }
-
-    query << "', started_from_checkpoint = " << started_from_checkpoint;
+        << ", started_from_checkpoint = " << started_from_checkpoint;
 
     //too much overhead for saving this and no use for it
     //query << ", backprop_order = ''";
@@ -429,7 +402,7 @@ void CNN_Genome::export_to_database(int _exact_id) {
 /**
  *  Iniitalize a genome from a set of nodes and edges
  */
-CNN_Genome::CNN_Genome(int _generation_id, int seed, int _max_epochs, bool _reset_weights, int _velocity_reset, double _mu, double _mu_delta, double _learning_rate, double _learning_rate_delta, double _weight_decay, double _weight_decay_delta, double _input_dropout_probability, double _hidden_dropout_probability, const vector<CNN_Node*> &_nodes, const vector<CNN_Edge*> &_edges) {
+CNN_Genome::CNN_Genome(int _generation_id, int seed, int _max_epochs, bool _reset_weights, int _velocity_reset, double _mu, double _mu_delta, double _learning_rate, double _learning_rate_delta, double _weight_decay, double _weight_decay_delta, int _batch_size, double _epsilon, double _alpha, const vector<CNN_Node*> &_nodes, const vector<CNN_Edge*> &_edges) {
     exact_id = -1;
     genome_id = -1;
     started_from_checkpoint = false;
@@ -438,9 +411,10 @@ CNN_Genome::CNN_Genome(int _generation_id, int seed, int _max_epochs, bool _rese
     progress_function = NULL;
 
     velocity_reset = _velocity_reset;
-
-    input_dropout_probability = _input_dropout_probability;
-    hidden_dropout_probability = _hidden_dropout_probability;
+ 
+    batch_size = _batch_size;
+    epsilon = _epsilon;
+    alpha = _alpha;
 
     mu = _mu;
     initial_mu = mu;
@@ -587,22 +561,6 @@ bool CNN_Genome::equals(CNN_Genome *other) const {
     }
 
     return true;
-}
-
-void CNN_Genome::print_best_error(ostream &out) const {
-    cout << left << setw(20) << "class error:" << right;
-    for (uint32_t i = 0; i < best_class_error.size(); i++) {
-        cout << setw(15) << setprecision(5) << best_class_error[i];
-    }
-    cout << endl;
-}
-
-void CNN_Genome::print_best_predictions(ostream &out) const {
-    cout << left << setw(20) << "correct predictions:" << right;
-    for (uint32_t i = 0; i < best_correct_predictions.size(); i++) {
-        cout << setw(15) << setprecision(5) << best_correct_predictions[i];
-    }
-    cout << endl;
 }
 
 int CNN_Genome::get_number_weights() const {
@@ -827,19 +785,6 @@ bool CNN_Genome::sanity_check(int type) {
     }
 
     if (type == SANITY_CHECK_AFTER_GENERATION) {
-        for (uint32_t i = 0; i < nodes.size(); i++) {
-            if (nodes[i]->has_zero_bias()) {
-                cerr << "WARNING after generation!" << endl;
-                cerr << "node in position " << i << " with innovation number: " << nodes[i]->get_innovation_number() << endl;
-                cerr << "size_x: " << nodes[i]->get_size_x() << ", size_y: " << nodes[i]->get_size_y() << endl;
-                cerr << "sum of bias was 0" << endl;
-                nodes[i]->initialize_bias(generator, normal_distribution);
-                nodes[i]->save_best_bias();
-                //return false;
-            }
-        }
-        //cout << "passed checking zero best bias" << endl;
-
         for (uint32_t i = 0; i < edges.size(); i++) {
             if (edges[i]->has_zero_weight()) {
                 cerr << "WARNING before after_generation!" << endl;
@@ -957,134 +902,130 @@ bool CNN_Genome::outputs_connected() const {
     return true;
 }
 
-int CNN_Genome::evaluate_image(const Image &image, vector<double> &class_error, bool perform_backprop, bool perform_dropout, double &total_error) {
-    int expected_class = image.get_classification();
-    int rows = image.get_rows();
-    int cols = image.get_cols();
-
+void CNN_Genome::evaluate_images(const vector<const Image> &images, bool training, double &total_error, int &correct_predictions) {
     for (uint32_t i = 0; i < nodes.size(); i++) {
         nodes[i]->reset();
     }
 
     for (uint32_t channel = 0; channel < input_nodes.size(); channel++) {
-        input_nodes[channel]->set_values(image, channel, rows, cols, perform_dropout, generator, input_dropout_probability);
+        input_nodes[channel]->set_input_values(images, channel);
     }
 
     for (uint32_t i = 0; i < edges.size(); i++) {
-        edges[i]->propagate_forward(perform_dropout, generator, hidden_dropout_probability);
+        edges[i]->propagate_forward(training, epsilon, alpha);
     }
 
-    //cout << "before softmax max: ";
-    double softmax_max = softmax_nodes[0]->get_value(0,0);
-    //cout << " " << setw(15) << fixed << setprecision(6) << softmax_nodes[0]->get_value(0,0);
+    for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
+        int expected_class = images[batch_number].get_classification();
 
-    for (uint32_t i = 1; i < softmax_nodes.size(); i++) {
-        //cout << " " << setw(15) << fixed << setprecision(6) << softmax_nodes[i]->get_value(0,0);
-        if (softmax_nodes[i]->get_value(0,0) > softmax_max) {
-            softmax_max = softmax_nodes[i]->get_value(0,0);
+        //if (training) cout << "before softmax max, batch number: " << batch_number << " -- ";
+        double softmax_max = softmax_nodes[0]->get_input_value(batch_number, 0, 0);
+        //if (training) cout << " " << setw(15) << fixed << setprecision(6) << softmax_nodes[0]->get_input_value(batch_number, 0,0);
+
+        for (uint32_t i = 1; i < softmax_nodes.size(); i++) {
+            //if (training) cout << " " << setw(15) << fixed << setprecision(6) << softmax_nodes[i]->get_input_value(batch_number, 0,0);
+
+            if (softmax_nodes[i]->get_input_value(batch_number, 0, 0) > softmax_max) {
+                softmax_max = softmax_nodes[i]->get_input_value(batch_number, 0, 0);
+            }
         }
-    }
-    //cout << endl;
+        //cout << endl;
 
-    //cout << "after softmax max:  ";
-    double softmax_sum = 0.0;
-    for (uint32_t i = 0; i < softmax_nodes.size(); i++) {
-        double value = softmax_nodes[i]->get_value(0,0);
-        double previous = value;
+        //cout << "after softmax max:  ";
+        double softmax_sum = 0.0;
+        for (uint32_t i = 0; i < softmax_nodes.size(); i++) {
+            double value = softmax_nodes[i]->get_input_value(batch_number, 0, 0);
+            double previous = value;
 
-        if (isnan(value)) {
-            cerr << "ERROR: value was NAN before exp!" << endl;
+            if (isnan(value)) {
+                cerr << "ERROR: value was NAN before exp!" << endl;
+                exit(1);
+            }
+
+            value = exact_exp(value - softmax_max);
+
+            //cout << " " << setw(15) << fixed << setprecision(6) << value;
+            if (isnan(value)) {
+                cerr << "ERROR: value was NAN AFTER exp! previously: " << previous << endl;
+                exit(1);
+            }
+
+            softmax_nodes[i]->set_input_value(batch_number, 0, 0, value);
+            //cout << "\tvalue " << softmax_nodes[i]->get_innovation_number() << ": " << softmax_nodes[i]->get_input_value(0,0) << endl;
+            softmax_sum += value;
+
+            if (isnan(softmax_sum)) {
+                cerr << "ERROR: softmax_sum was NAN AFTER add!" << endl;
+                exit(1);
+            }
+        }
+        //cout << endl;
+
+        if (softmax_sum == 0) {
+            cout << "ERROR! softmax sum == 0" << endl;
             exit(1);
         }
 
-        value = exact_exp(value - softmax_max);
+        //cout << "softmax sum: " << softmax_sum << endl;
 
-        //cout << " " << setw(15) << fixed << setprecision(6) << value;
-        if (isnan(value)) {
-            cerr << "ERROR: value was NAN AFTER exp! previously: " << previous << endl;
-            exit(1);
+        double max_value = -numeric_limits<double>::max();
+        int predicted_class = -1;
+
+        //cout << "error:          ";
+        for (int32_t i = 0; i < (int32_t)softmax_nodes.size(); i++) {
+            double value = softmax_nodes[i]->get_input_value(batch_number, 0,0) / softmax_sum;
+            //cout << "\tvalue " << softmax_nodes[i]->get_innovation_number() << ": " << softmax_nodes[i]->get_input_value(0,0) << endl;
+
+            if (isnan(value)) {
+                cerr << "ERROR: value was NAN AFTER divide by softmax_sum, previously: " << softmax_nodes[i]->get_input_value(batch_number, 0,0) << endl;
+                cerr << "softmax_sum: " << softmax_sum << endl;
+                exit(1);
+            }
+
+            softmax_nodes[i]->set_input_value(batch_number, 0, 0,  value);
+
+            //softmax_nodes[i]->print(cout);
+
+            int target = 0.0;
+            if (i == expected_class) {
+                target = 1.0;
+            }
+            double error = value - target;
+            double gradient = value * (1 - value);
+
+            //if (training) cout << "\t" << softmax_nodes[i]->get_innovation_number() << " -- batch number: " << batch_number << ", value: " << value << ", error: " << error << ", gradient: " << gradient << endl;
+
+            softmax_nodes[i]->set_delta(batch_number, 0, 0, error * gradient);
+
+            if (value > max_value) {
+                predicted_class = i;
+                max_value = value;
+            }
+
+            total_error -= target * log(value);
+            //total_error += fabs(error);
+
+
+            //cout << " " << setw(15) << fixed << setprecision(6) << error;
         }
+        //cout << endl;
+        //cout << "predicted class: " << predicted_class << endl;
+        //cout << "expected class:  " << expected_class << endl;
 
-        softmax_nodes[i]->set_value(0, 0, value);
-        //cout << "\tvalue " << softmax_nodes[i]->get_innovation_number() << ": " << softmax_nodes[i]->get_value(0,0) << endl;
-        softmax_sum += value;
-
-        if (isnan(softmax_sum)) {
-            cerr << "ERROR: softmax_sum was NAN AFTER add!" << endl;
-            exit(1);
+        if (predicted_class == expected_class) {
+            correct_predictions++;
         }
     }
-    //cout << endl;
 
-    if (softmax_sum == 0) {
-        cout << "ERROR! softmax sum == 0" << endl;
-        exit(1);
-    }
-
-    //cout << "softmax sum: " << softmax_sum << endl;
-
-    double max_value = -numeric_limits<double>::max();
-    int predicted_class = -1;
-
-    //cout << "error:          ";
-    for (int32_t i = 0; i < (int32_t)softmax_nodes.size(); i++) {
-        double value = softmax_nodes[i]->get_value(0,0) / softmax_sum;
-        //cout << "\tvalue " << softmax_nodes[i]->get_innovation_number() << ": " << softmax_nodes[i]->get_value(0,0) << endl;
-
-        if (isnan(value)) {
-            cerr << "ERROR: value was NAN AFTER divide by softmax_sum, previously: " << softmax_nodes[i]->get_value(0,0) << endl;
-            cerr << "softmax_sum: " << softmax_sum << endl;
-            exit(1);
-        }
-
-        softmax_nodes[i]->set_value(0, 0,  value);
-
-        //softmax_nodes[i]->print(cout);
-
-        int target = 0.0;
-        if (i == expected_class) {
-            target = 1.0;
-        }
-        double error = value - target;
-        double gradient = value * (1 - value);
-        //cout << "\t" << softmax_nodes[i]->get_innovation_number() << " -- value: " << value << ", error: " << error << ", gradient: " << gradient << endl;
-
-        softmax_nodes[i]->set_error(0, 0, error);
-        softmax_nodes[i]->set_gradient(0, 0, gradient);
-
-        class_error[i] += fabs(error);
-
-
-        if (value > max_value) {
-            predicted_class = i;
-            max_value = value;
-        }
-
-        total_error -= target * log(value);
-        //total_error += fabs(error);
-
-
-        //cout << " " << setw(15) << fixed << setprecision(6) << error;
-    }
-    //cout << endl;
-    //cout << "predicted class: " << predicted_class << endl;
-    //cout << "expected class:  " << expected_class << endl;
-
-    if (perform_backprop) {
+    if (training) {
         for (int32_t i = edges.size() - 1; i >= 0; i--) {
-            edges[i]->propagate_backward();
+            edges[i]->propagate_backward(mu, learning_rate);
         }
 
         for (int32_t i = 0; i < edges.size(); i++) {
             edges[i]->update_weights(mu, learning_rate, weight_decay);
         }
-
-        for (int32_t i = 0; i < nodes.size(); i++) {
-            nodes[i]->propagate_bias(mu, learning_rate, weight_decay);
-        }
     }
-
-    return predicted_class;
 }
 
 void CNN_Genome::save_to_best() {
@@ -1093,7 +1034,7 @@ void CNN_Genome::save_to_best() {
     }
 
     for (uint32_t i = 0; i < nodes.size(); i++) {
-        nodes[i]->save_best_bias();
+        nodes[i]->save_best_weights();
     }
 }
 
@@ -1103,7 +1044,7 @@ void CNN_Genome::set_to_best() {
     }
 
     for (uint32_t i = 0; i < nodes.size(); i++) {
-        nodes[i]->set_bias_to_best();
+        nodes[i]->set_weights_to_best();
     }
 }
 
@@ -1126,10 +1067,12 @@ void CNN_Genome::initialize() {
         cout << "initialized weights!" << endl;
 
         for (uint32_t i = 0; i < nodes.size(); i++) {
-            nodes[i]->initialize_bias(generator, normal_distribution);
-            nodes[i]->save_best_bias();
+            nodes[i]->initialize();
+            nodes[i]->save_best_weights();
         }
-        cout << "initialized bias!" << endl;
+        cout << "initialized node gamma/beta!" << endl;
+
+
     } else {
         for (uint32_t i = 0; i < edges.size(); i++) {
             if (edges[i]->needs_init()) {
@@ -1141,11 +1084,13 @@ void CNN_Genome::initialize() {
 
         for (uint32_t i = 0; i < nodes.size(); i++) {
             if (nodes[i]->needs_init()) {
-                nodes[i]->initialize_bias(generator, normal_distribution);
-                nodes[i]->save_best_bias();
+                nodes[i]->initialize();
+                nodes[i]->save_best_weights();
             }
         }
-        cout << "reinitialized bias!" << endl;
+        cout << "initialized node gamma/beta!" << endl;
+
+
         set_to_best();
 
         /*
@@ -1161,30 +1106,46 @@ void CNN_Genome::initialize() {
     }
 }
 
-void CNN_Genome::print_progress(ostream &out, int total_predictions, double total_error) const {
-    out << "[" << setw(10) << name << ", genome " << setw(5) << generation_id << "] predictions: " << setw(7) << total_predictions << ", best: " << setw(7) << best_predictions << "/" << backprop_order.size() << " (" << setw(5) << fixed << setprecision(2) << (100 * (double)best_predictions/(double)backprop_order.size()) << "%), error: " << setw(15) << setprecision(5) << fixed << total_error << ", best error: " << setw(15) << best_error << " on epoch: " << setw(5) << best_error_epoch << ", epoch: " << setw(4) << epoch << "/" << max_epochs << ", mu: " << setw(12) << fixed << setprecision(10) << mu << ", learning_rate: " << setw(12) << fixed << setprecision(10) << learning_rate << ", weight_decay: " << setw(12) << fixed << setprecision(10) << weight_decay << endl;
+void CNN_Genome::print_progress(ostream &out, double total_error, int correct_predictions) const {
+    out << "[" << setw(10) << name << ", genome " << setw(5) << generation_id << "] predictions: " << setw(7) << correct_predictions << ", best: " << setw(7) << best_predictions << "/" << backprop_order.size() << " (" << setw(5) << fixed << setprecision(2) << (100 * (double)best_predictions/(double)backprop_order.size()) << "%), error: " << setw(15) << setprecision(5) << fixed << total_error << ", best error: " << setw(15) << best_error << " on epoch: " << setw(5) << best_error_epoch << ", epoch: " << setw(4) << epoch << "/" << max_epochs << ", mu: " << setw(12) << fixed << setprecision(10) << mu << ", learning_rate: " << setw(12) << fixed << setprecision(10) << learning_rate << ", weight_decay: " << setw(12) << fixed << setprecision(10) << weight_decay << endl;
 }
 
 
-void CNN_Genome::evaluate(const Images &images, vector<double> &class_error, vector<int> &correct_predictions, double &total_error, int &total_predictions, bool perform_backprop) {
-    class_error.assign(images.get_number_classes(), 0.0);
-    correct_predictions.assign(images.get_number_classes(), 0);
-
-    bool perform_dropout;
+void CNN_Genome::evaluate(const Images &images, double &total_error, int &correct_predictions, bool perform_backprop) {
+    bool training;
     if (perform_backprop) {
-        perform_dropout = true;
+        training = true;
     } else {
-        perform_dropout = false;
+        training = false;
     }
 
     total_error = 0.0;
-    total_predictions = 0;
-    for (uint32_t j = 0; j < backprop_order.size(); j++) {
-        int predicted_class = evaluate_image(images.get_image(backprop_order[j]), class_error, perform_backprop, perform_dropout, total_error);
-        int expected_class = images.get_image(backprop_order[j]).get_classification();
-        //cout << "predicted class: " << predicted_class << ", expected class: " << expected_class << endl;
+    correct_predictions = 0;
+    for (uint32_t j = 0; j < backprop_order.size(); j += batch_size) {
 
-        if (perform_backprop && velocity_reset > 0 && j > 0 && ((j % velocity_reset) == 0)) {
+        vector<const Image> batch;
+        for (uint32_t k = 0; k < batch_size; k++) {
+            batch.push_back( images.get_image(backprop_order[j + k]) );
+        }
+
+        double batch_total_error = 0.0;
+        int batch_correct_predictions = 0;
+        evaluate_images(batch, training, batch_total_error, batch_correct_predictions);
+
+        /*
+        if (training) {
+            cerr << "training batch: ";
+        } else {
+            cerr << "testing batch: ";
+        }
+        cerr << setw(5) << (j / batch_size) << "/" << setw(5) << (backprop_order.size() / batch_size) << ", batch total error: " << setw(15) << fixed << setprecision(5) << batch_total_error << ", batch_correct_predictions: " << batch_correct_predictions << endl;
+        */
+
+        total_error += batch_total_error;
+        correct_predictions += batch_correct_predictions;
+
+        if (perform_backprop && velocity_reset > 0 && (((j + batch_size) % velocity_reset) == 0)) {
+            cout << "resetting velocities!" << endl;
             for (uint32_t i = 0; i < edges.size(); i++) {
                 edges[i]->reset_velocities();
             }
@@ -1193,43 +1154,19 @@ void CNN_Genome::evaluate(const Images &images, vector<double> &class_error, vec
                 nodes[i]->reset_velocities();
             }
         }
-
-        /*
-           if (j < 5) {
-           cerr << "class error: ";
-           for (uint32_t i = 0; i < class_error.size(); i++) {
-           cerr << setw(13) << setprecision(5) << fixed << class_error[i];
-           }
-           cerr << endl;
-           }
-           */
-
-        if (predicted_class == expected_class) {
-            correct_predictions[expected_class]++;
-            total_predictions++;
-        }
     }
-
-    /*
-    for (uint32_t j = 0; j < class_error.size(); j++) {
-        total_error += class_error[j];
-    }
-    */
 }
 
 
-void CNN_Genome::evaluate(const Images &images, double &total_error, int &total_predictions) {
-    vector<double> class_error;
-    vector<int> correct_predictions;
-
+void CNN_Genome::evaluate(const Images &images, double &total_error, int &correct_predictions) {
     backprop_order.clear();
     for (int32_t i = 0; i < images.get_number_images(); i++) {
         backprop_order.push_back(i);
     }
 
-    evaluate(images, class_error, correct_predictions, total_error, total_predictions, false);
+    evaluate(images, total_error, correct_predictions, false);
 
-    print_progress(cerr, total_predictions, total_error);
+    print_progress(cerr, total_error, correct_predictions);
 }
 
 void CNN_Genome::stochastic_backpropagation(const Images &images) {
@@ -1281,38 +1218,30 @@ void CNN_Genome::stochastic_backpropagation(const Images &images) {
     //sort edges by depth of input node
     sort(edges.begin(), edges.end(), sort_CNN_Edges_by_depth());
 
-    vector<int> class_sizes(images.get_number_classes(), 0);
-    for (uint32_t i = 0; i < backprop_order.size(); i++) {
-        class_sizes[ images.get_image(backprop_order[i]).get_classification() ]++;
-    }
-
     double total_error = 0.0;
-    int total_predictions = 0;
-    vector<double> class_error(images.get_number_classes(), 0.0);
-    vector<int> correct_predictions(images.get_number_classes(), 0);
+    int correct_predictions = 0;
 
+    /*
     bool evaluate_initial_weights = true;
     if  (evaluate_initial_weights) {
-        evaluate(images, class_error, correct_predictions, total_error, total_predictions, false);
-        print_progress(cerr, total_predictions, total_error);
+        evaluate(images, total_error, correct_predictions, false);
+        print_progress(cerr, total_error, correct_predictions);
     }
+    */
 
     do {
         //shuffle the array (thanks C++ not being the same across operating systems)
         fisher_yates_shuffle(generator, backprop_order);
 
-        evaluate(images, class_error, correct_predictions, total_error, total_predictions, true);
-        evaluate(images, class_error, correct_predictions, total_error, total_predictions, false);
+        evaluate(images, total_error, correct_predictions, true);
+        evaluate(images, total_error, correct_predictions, false);
 
         bool found_improvement = false;
         if (total_error < best_error) {
             best_error = total_error;
             best_error_epoch = epoch;
-            best_predictions = total_predictions;
+            best_predictions = correct_predictions;
             best_predictions_epoch = epoch;
-
-            best_class_error = class_error;
-            best_correct_predictions = correct_predictions;
 
             if (output_filename.compare("") != 0) {
                 write_to_file(output_filename);
@@ -1321,7 +1250,7 @@ void CNN_Genome::stochastic_backpropagation(const Images &images) {
             save_to_best();
             found_improvement = true;
         }
-        print_progress(cerr, total_predictions, total_error);
+        print_progress(cerr, total_error, correct_predictions);
 
         /*
         if (total_error > 100000 && total_error != EXACT_MAX_DOUBLE) {
@@ -1411,9 +1340,11 @@ void CNN_Genome::write(ostream &outfile) {
     write_hexfloat(outfile, weight_decay_delta);
     outfile << endl;
 
-    write_hexfloat(outfile, input_dropout_probability);
+    outfile << batch_size << endl;
+
+    write_hexfloat(outfile, epsilon);
     outfile << endl;
-    write_hexfloat(outfile, hidden_dropout_probability);
+    write_hexfloat(outfile, alpha);
     outfile << endl;
 
     outfile << velocity_reset << endl;
@@ -1478,22 +1409,6 @@ void CNN_Genome::write(ostream &outfile) {
         outfile << backprop_order[i];
     }
     outfile << endl;
-
-    outfile << "BEST_CLASS_ERROR" << endl;
-    outfile << best_class_error.size() << endl;
-    for (uint32_t i = 0; i < best_class_error.size(); i++) {
-        if (i > 0) outfile << " ";
-        outfile << best_class_error[i];
-    }
-    outfile << endl;
-
-    outfile << "BEST_CORRECT_PREDICTIONS" << endl;
-    outfile << best_correct_predictions.size() << endl;
-    for (uint32_t i = 0; i < best_correct_predictions.size(); i++) {
-        if (i > 0) outfile << " ";
-        outfile << best_correct_predictions[i];
-    }
-    outfile << endl;
 }
 
 void CNN_Genome::read(istream &infile) {
@@ -1536,10 +1451,14 @@ void CNN_Genome::read(istream &infile) {
     weight_decay_delta = read_hexfloat(infile);
     if (verbose) cerr << "read weight_decay_delta: " << weight_decay_delta << endl;
 
-    input_dropout_probability = read_hexfloat(infile);
-    if (verbose) cerr << "read input_dropout_probability: " << input_dropout_probability << endl;
-    hidden_dropout_probability = read_hexfloat(infile);
-    if (verbose) cerr << "read hidden_dropout_probability: " << hidden_dropout_probability << endl;
+
+    infile >> batch_size;
+
+    epsilon = read_hexfloat(infile);
+    if (verbose) cerr << "read epsilon: " << epsilon << endl;
+
+    alpha = read_hexfloat(infile);
+    if (verbose) cerr << "read alpha: " << alpha << endl;
 
     infile >> velocity_reset;
     if (verbose) cerr << "read velocity_reset: " << velocity_reset << endl;
@@ -1723,48 +1642,6 @@ void CNN_Genome::read(istream &infile) {
         infile >> order;
         backprop_order.push_back(order);
         //cerr << "backprop order[" << i << "]: " << order << endl;
-    }
-
-
-    //cerr << "reading best class error" << endl;
-
-    if (order_size == 0) getline(infile, line);
-    getline(infile, line);
-    getline(infile, line);
-    if (line.compare("BEST_CLASS_ERROR") != 0) {
-        cerr << "ERROR: invalid input file, expected line to be 'BEST_CLASS_ERROR' but line was '" << line << "'" << endl;
-        version_str = "INALID";
-        return;
-    }
-
-    best_class_error.clear();
-    int error_size;
-    infile >> error_size;
-    //cerr << "error_size: " << error_size << endl;
-    for (int32_t i = 0; i < error_size; i++) {
-        double error;
-        infile >> error;
-        best_class_error.push_back(error);
-    }
-
-    //cerr << "reading best correct predictions" << endl;
-
-    if (error_size == 0) getline(infile, line);
-    getline(infile, line);
-    getline(infile, line);
-    if (line.compare("BEST_CORRECT_PREDICTIONS") != 0) {
-        cerr << "ERROR: invalid input file, expected line to be 'BEST_CORRECT_PREDICTIONS' but line was '" << line << "'" << endl;
-        version_str = "INALID";
-        return;
-    }
-
-    best_correct_predictions.clear();
-    int predictions_size;
-    infile >> predictions_size;
-    for (int32_t i = 0; i < predictions_size; i++) {
-        double predictions;
-        infile >> predictions;
-        best_correct_predictions.push_back(predictions);
     }
 }
 

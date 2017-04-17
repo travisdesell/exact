@@ -54,15 +54,16 @@ int main(int argc, char **argv) {
     double mu_delta;
     get_argument(arguments, "--mu_delta", true, mu_delta);
 
-    double input_dropout_probability;
-    get_argument(arguments, "--input_dropout_probability", true, input_dropout_probability);
-
-    double hidden_dropout_probability;
-    get_argument(arguments, "--hidden_dropout_probability", true, hidden_dropout_probability);
-
     int velocity_reset;
     get_argument(arguments, "--velocity_reset", true, velocity_reset);
 
+    int batch_size;
+    get_argument(arguments, "--batch_size", true, batch_size);
+
+    double alpha;
+    get_argument(arguments, "--alpha", true, alpha);
+
+    double epsilon = 1.0e-7;
 
     Images training_images(binary_training_filename);
     Images testing_images(binary_testing_filename, training_images.get_average(), training_images.get_std_dev());
@@ -78,14 +79,14 @@ int main(int argc, char **argv) {
     minstd_rand0 generator(time(NULL));
     NormalDistribution normal_distribution;
 
-    CNN_Node *input_node = new CNN_Node(node_innovation_count, 0, training_images.get_image_rows(), training_images.get_image_cols(), INPUT_NODE);
+    CNN_Node *input_node = new CNN_Node(node_innovation_count, 0, batch_size, training_images.get_image_rows(), training_images.get_image_cols(), INPUT_NODE);
     node_innovation_count++;
     nodes.push_back(input_node);
 
     //first layer of filters
     //input node goes to 5 filters
     for (int32_t i = 0; i < 10; i++) {
-        CNN_Node *layer1_node = new CNN_Node(++node_innovation_count, 1, 5, 5, HIDDEN_NODE);
+        CNN_Node *layer1_node = new CNN_Node(++node_innovation_count, 1, batch_size, 5, 5, HIDDEN_NODE);
         nodes.push_back(layer1_node);
         layer1_nodes.push_back(layer1_node);
 
@@ -93,7 +94,7 @@ int main(int argc, char **argv) {
     }
 
     for (int32_t i = 0; i < training_images.get_number_classes(); i++) {
-        CNN_Node *softmax_node = new CNN_Node(++node_innovation_count, 2, 1, 1, SOFTMAX_NODE);
+        CNN_Node *softmax_node = new CNN_Node(++node_innovation_count, 2, batch_size, 1, 1, SOFTMAX_NODE);
         nodes.push_back(softmax_node);
         softmax_nodes.push_back(softmax_node);
 
@@ -106,7 +107,7 @@ int main(int argc, char **argv) {
     long genome_seed = generator();
     cout << "seeding genome with: " << genome_seed << endl;
 
-    CNN_Genome *genome = new CNN_Genome(1, genome_seed, max_epochs, true, velocity_reset, mu, mu_delta, learning_rate, learning_rate_delta, weight_decay, weight_decay_delta, input_dropout_probability, hidden_dropout_probability, nodes, edges);
+    CNN_Genome *genome = new CNN_Genome(1, genome_seed, max_epochs, true, velocity_reset, mu, mu_delta, learning_rate, learning_rate_delta, weight_decay, weight_decay_delta, batch_size, epsilon, alpha, nodes, edges);
     //save the weights and bias of the initially generated genome for reuse
     genome->initialize();
 

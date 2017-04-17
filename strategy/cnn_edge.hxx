@@ -26,10 +26,6 @@ using std::vector;
 #include "image_tools/image_set.hxx"
 #include "common/random.hxx"
 
-const double beta1 = 0.9;
-const double beta2 = 0.999;
-const double eps = 1e-8;
-
 class CNN_Edge {
     private:
         int edge_id;
@@ -44,6 +40,7 @@ class CNN_Edge {
         CNN_Node *input_node;
         CNN_Node *output_node;
 
+        int batch_size;
         int filter_x, filter_y;
         vector< vector<double> > weights;
         vector< vector<double> > weight_updates;
@@ -120,13 +117,13 @@ class CNN_Edge {
 
         void print(ostream &out);
 
-        void check_output_update(const vector< vector<double> > &output, const vector< vector<double> > &input, double value, double weight, double previous_output, int in_y, int in_x, int out_y, int out_x);
+        void check_output_update(const vector< vector< vector<double> > > &output, const vector< vector< vector<double> > > &input, double value, double weight, double previous_output, int batch_number, int in_y, int in_x, int out_y, int out_x);
 
-        void check_weight_update(const vector< vector<double> > &output_errors, const vector< vector<double> > &output_gradients, const vector< vector<double> > &input, double delta, double weight_update, double previous_weight_update, int out_y, int out_x, int in_y, int in_x);
+        void check_weight_update(const vector< vector< vector<double> > > &input, const vector< vector< vector<double> > > &input_deltas, double delta, double previous_delta, double weight_update, double previous_weight_update, int batch_number, int out_y, int out_x, int in_y, int in_x);
 
-        void propagate_forward(bool perform_dropout,  minstd_rand0 &generator, double hidden_dropout_probability);
+        void propagate_forward(bool training,  double epsilon, double alpha);
 
-        void propagate_backward();
+        void propagate_backward(double mu, double learning_rate);
         void update_weights(double mu, double learning_rate, double weight_decay);
 
         void print_statistics();
