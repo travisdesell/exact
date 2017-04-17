@@ -1234,6 +1234,7 @@ void CNN_Genome::stochastic_backpropagation(const Images &images) {
         fisher_yates_shuffle(generator, backprop_order);
 
         evaluate(images, total_error, correct_predictions, true);
+        cout << "backprop error: " << total_error << ", backprop predictions: " << correct_predictions << endl;
         evaluate(images, total_error, correct_predictions, false);
 
         bool found_improvement = false;

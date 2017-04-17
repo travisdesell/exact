@@ -399,7 +399,7 @@ void CNN_Node::resize_arrays() {
 }
 
 
-void CNN_Node::set_input_values(const vector<const Image> &images, int channel) {
+void CNN_Node::set_input_values(const vector<const Image> &images, int channel, bool perform_dropout, double input_dropout_probability, minstd_rand0 &generator) {
     if (images.size() != batch_size) {
         cerr << "ERROR: number of batch images: " << images.size() << " != batch_size of input node: " << batch_size << endl;
         exit(1);
@@ -415,15 +415,33 @@ void CNN_Node::set_input_values(const vector<const Image> &images, int channel) 
         exit(1);
     }
 
-    for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
-        //cout << "setting input image[" << batch_number << "]: " << endl;
-        for (int32_t y = 0; y < size_y; y++) {
-            for (int32_t x = 0; x < size_x; x++) {
-                values_out[batch_number][y][x] = images[batch_number].get_pixel(channel, y, x);
-                //cout << setw(5) << values[y][x];
+    if (perform_dropout) {
+        for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
+            //cout << "setting input image[" << batch_number << "]: " << endl;
+            for (int32_t y = 0; y < size_y; y++) {
+                for (int32_t x = 0; x < size_x; x++) {
+                    if (rng_double(generator) < input_dropout_probability) {
+                        values_out[batch_number][y][x] = 0.0;
+                    } else {
+                        values_out[batch_number][y][x] = images[batch_number].get_pixel(channel, y, x);
+                    }
+                    //cout << setw(5) << values[y][x];
+                }
             }
+            //cout << endl;
         }
-        //cout << endl;
+    } else {
+        double dropout_scale = 1.0 - input_dropout_probability;
+        for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
+            //cout << "setting input image[" << batch_number << "]: " << endl;
+            for (int32_t y = 0; y < size_y; y++) {
+                for (int32_t x = 0; x < size_x; x++) {
+                    values_out[batch_number][y][x] = images[batch_number].get_pixel(channel, y, x);
+                    //cout << setw(5) << values[y][x];
+                }
+            }
+            //cout << endl;
+        }
     }
 }
 
@@ -608,8 +626,10 @@ void CNN_Node::batch_normalize(bool training, double epsilon, double alpha) {
 
         inverse_variance = 1.0 / batch_std_dev;
 
+        batch_variance = batch_size / (batch_size - 1);
+
         running_mean = (batch_mean * alpha) + ((1.0 - alpha) * running_mean);
-        running_variance = ((batch_size / (batch_size - 1.0)) * batch_variance * alpha) + ((1.0 - alpha) * running_variance);
+        running_variance = (batch_variance * alpha) + ((1.0 - alpha) * running_variance);
 
         //cout << "\tnode " << innovation_number << ", batch_mean: " << batch_mean << ", batch_variance: " << batch_variance << ", batch_std_dev: " << batch_std_dev << ", running_mean: " << running_mean << ", running_variance: " << running_variance << endl;
 
