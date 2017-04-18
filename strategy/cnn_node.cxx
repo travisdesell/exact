@@ -415,6 +415,7 @@ void CNN_Node::set_input_values(const vector<const Image> &images, int channel, 
         exit(1);
     }
 
+    /*
     if (perform_dropout) {
         for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
             //cout << "setting input image[" << batch_number << "]: " << endl;
@@ -442,6 +443,18 @@ void CNN_Node::set_input_values(const vector<const Image> &images, int channel, 
             }
             //cout << endl;
         }
+    }
+    */
+
+    for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
+        //cout << "setting input image[" << batch_number << "]: " << endl;
+        for (int32_t y = 0; y < size_y; y++) {
+            for (int32_t x = 0; x < size_x; x++) {
+                values_out[batch_number][y][x] = images[batch_number].get_pixel(channel, y, x);
+                //cout << setw(5) << values[y][x];
+            }
+        }
+        //cout << endl;
     }
 }
 
@@ -703,6 +716,7 @@ void CNN_Node::input_fired(bool training, double epsilon, double alpha, bool per
         if (type != SOFTMAX_NODE) {
             batch_normalize(training, epsilon, alpha);
 
+            /*
             if (perform_dropout) {
                 for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
                     for (int32_t y = 0; y < size_y; y++) {
@@ -742,6 +756,7 @@ void CNN_Node::input_fired(bool training, double epsilon, double alpha, bool per
                     }
                 }
             }
+            */
         }
 
     } else if (inputs_fired > total_inputs) {
@@ -784,6 +799,7 @@ void CNN_Node::output_fired(double mu, double learning_rate) {
     if (outputs_fired == total_outputs) {
         if (type != SOFTMAX_NODE && type != INPUT_NODE) {
             //backprop relu
+            /*
             double gradient;
             for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
                 for (int32_t y = 0; y < size_y; y++) {
@@ -798,6 +814,7 @@ void CNN_Node::output_fired(double mu, double learning_rate) {
                     }
                 }
             }
+            */
 
             //backprop  batch normalization here
             double delta_beta = 0.0;

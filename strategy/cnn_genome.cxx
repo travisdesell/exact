@@ -1165,7 +1165,7 @@ void CNN_Genome::evaluate(const Images &images, double &total_error, int &correc
         correct_predictions += batch_correct_predictions;
 
         if (perform_backprop && velocity_reset > 0 && (((j + batch_size) % velocity_reset) == 0)) {
-            cout << "resetting velocities, total_error: " << total_error << ", correct_predictions: " << correct_predictions << endl;
+            //cout << "resetting velocities, total_error: " << total_error << ", correct_predictions: " << correct_predictions << endl;
             for (uint32_t i = 0; i < edges.size(); i++) {
                 edges[i]->reset_velocities();
             }
@@ -1254,8 +1254,8 @@ void CNN_Genome::stochastic_backpropagation(const Images &images) {
         fisher_yates_shuffle(generator, backprop_order);
 
         evaluate(images, total_error, correct_predictions, true);
-        cout << "backprop error: " << total_error << ", backprop predictions: " << correct_predictions << endl;
-        evaluate(images, total_error, correct_predictions, false);
+        //cout << "backprop error: " << total_error << ", backprop predictions: " << correct_predictions << endl;
+        //evaluate(images, total_error, correct_predictions, false);
 
         bool found_improvement = false;
         if (total_error < best_error) {
