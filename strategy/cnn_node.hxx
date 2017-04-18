@@ -90,6 +90,7 @@ class CNN_Node {
         vector< vector< vector<double> > > values_hat;  //normalized but not scaled and shifted
         vector< vector< vector<double> > > values_out;  //scaled and shifted
         vector< vector< vector<double> > > deltas;
+        vector< vector<bool> > dropped_out;
 
 
     public:

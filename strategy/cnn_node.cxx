@@ -140,6 +140,7 @@ CNN_Node::CNN_Node(int _innovation_number, double _depth, int _batch_size, int _
     values_hat = vector< vector< vector<double > > >(batch_size, vector< vector<double> >(size_y, vector<double>(size_x, 0.0)));
     values_out = vector< vector< vector<double > > >(batch_size, vector< vector<double> >(size_y, vector<double>(size_x, 0.0)));
     deltas = vector< vector< vector<double > > >(batch_size, vector< vector<double> >(size_y, vector<double>(size_x, 0.0)));
+    dropped_out = vector< vector<bool> >(size_y, vector<bool>(size_x, false));
 
 }
 
@@ -207,6 +208,7 @@ CNN_Node::CNN_Node(int _node_id) {
     values_hat = vector< vector< vector<double > > >(batch_size, vector< vector<double> >(size_y, vector<double>(size_x, 0.0)));
     values_out = vector< vector< vector<double > > >(batch_size, vector< vector<double> >(size_y, vector<double>(size_x, 0.0)));
     deltas = vector< vector< vector<double > > >(batch_size, vector< vector<double> >(size_y, vector<double>(size_x, 0.0)));
+    dropped_out = vector< vector<bool> >(size_y, vector<bool>(size_x, false));
 
     //cout << "read node!" << endl;
     //cout << this << endl;
@@ -301,6 +303,7 @@ CNN_Node* CNN_Node::copy() const {
     copy->values_hat = values_hat;
     copy->values_out = values_out;
     copy->deltas = deltas;
+    copy->dropped_out = dropped_out;
 
     return copy;
 }
@@ -395,6 +398,7 @@ void CNN_Node::resize_arrays() {
     values_hat = vector< vector< vector<double> > >(batch_size, vector< vector<double> >(size_y, vector<double>(size_x, 0.0)));
     values_out = vector< vector< vector<double> > >(batch_size, vector< vector<double> >(size_y, vector<double>(size_x, 0.0)));
     deltas = vector< vector< vector<double> > >(batch_size, vector< vector<double> >(size_y, vector<double>(size_x, 0.0)));
+    dropped_out = vector< vector<bool> >(size_y, vector<bool>(size_x, false));
     needs_initialization = true;
 }
 
@@ -415,7 +419,6 @@ void CNN_Node::set_input_values(const vector<const Image> &images, int channel, 
         exit(1);
     }
 
-    /*
     if (perform_dropout) {
         for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
             //cout << "setting input image[" << batch_number << "]: " << endl;
@@ -444,8 +447,9 @@ void CNN_Node::set_input_values(const vector<const Image> &images, int channel, 
             //cout << endl;
         }
     }
-    */
 
+    /*
+    //No dropout
     for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
         //cout << "setting input image[" << batch_number << "]: " << endl;
         for (int32_t y = 0; y < size_y; y++) {
@@ -456,6 +460,7 @@ void CNN_Node::set_input_values(const vector<const Image> &images, int channel, 
         }
         //cout << endl;
     }
+    */
 }
 
 double CNN_Node::get_input_value(int batch_number, int y, int x) {
@@ -639,7 +644,7 @@ void CNN_Node::batch_normalize(bool training, double epsilon, double alpha) {
 
         inverse_variance = 1.0 / batch_std_dev;
 
-        batch_variance = batch_size / (batch_size - 1);
+        batch_variance = (batch_size / (batch_size - 1)) * batch_variance;
 
         running_mean = (batch_mean * alpha) + ((1.0 - alpha) * running_mean);
         running_variance = (batch_variance * alpha) + ((1.0 - alpha) * running_variance);
@@ -716,23 +721,30 @@ void CNN_Node::input_fired(bool training, double epsilon, double alpha, bool per
         if (type != SOFTMAX_NODE) {
             batch_normalize(training, epsilon, alpha);
 
-            /*
             if (perform_dropout) {
-                for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
-                    for (int32_t y = 0; y < size_y; y++) {
-                        for (int32_t x = 0; x < size_x; x++) {
-                            //cout << "values for node " << innovation_number << " now " << values[batch_number][y][x] << " after adding bias: " << bias[batch_number][y][x] << endl;
+                for (int32_t y = 0; y < size_y; y++) {
+                    for (int32_t x = 0; x < size_x; x++) {
+                        //cout << "values for node " << innovation_number << " now " << values[batch_number][y][x] << " after adding bias: " << bias[batch_number][y][x] << endl;
 
-                            if (random_0_1(generator) < hidden_dropout_probability) {
+                        if (random_0_1(generator) < hidden_dropout_probability) {
+                            dropped_out[y][x] = true;
+                            for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
                                 values_out[batch_number][y][x] = 0.0;
-                            } else {
+                            }
+                        }
+                        else {
+                            dropped_out[y][x] = false;
+
+                            /*
+                            for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
                                 //apply activation function
-                                if (values_out[batch_number][y][x] <= RELU_MIN) {
-                                    values_out[batch_number][y][x] *= RELU_MIN_LEAK;
-                                } else if (values_out[batch_number][y][x] > RELU_MAX) {
+                                if (values_in[batch_number][y][x] <= RELU_MIN) {
+                                    values_out[batch_number][y][x] = values_in[batch_number][y][x] * RELU_MIN_LEAK;
+                                } else if (values_in[batch_number][y][x] > RELU_MAX) {
                                     values_out[batch_number][y][x] = RELU_MAX;
                                 }
                             }
+                            */
                         }
                     }
                 }
@@ -744,19 +756,20 @@ void CNN_Node::input_fired(bool training, double epsilon, double alpha, bool per
                         for (int32_t x = 0; x < size_x; x++) {
                             //cout << "values for node " << innovation_number << " now " << values[batch_number][y][x] << " after adding bias: " << bias[batch_number][y][x] << endl;
 
+                            /*
                             //apply activation function
-                            if (values_out[batch_number][y][x] <= RELU_MIN) {
-                                values_out[batch_number][y][x] *= RELU_MIN_LEAK;
-                            } else if (values_out[batch_number][y][x] > RELU_MAX) {
+                            if (values_in[batch_number][y][x] <= RELU_MIN) {
+                                values_out[batch_number][y][x] = values_in[batch_number][y][x] * RELU_MIN_LEAK;
+                            } else if (values_in[batch_number][y][x] > RELU_MAX) {
                                 values_out[batch_number][y][x] = RELU_MAX;
                             }
+                            */
 
                             values_out[batch_number][y][x] *= dropout_scale;
                         }
                     }
                 }
             }
-            */
         }
 
     } else if (inputs_fired > total_inputs) {
@@ -799,22 +812,26 @@ void CNN_Node::output_fired(double mu, double learning_rate) {
     if (outputs_fired == total_outputs) {
         if (type != SOFTMAX_NODE && type != INPUT_NODE) {
             //backprop relu
-            /*
             double gradient;
             for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
                 for (int32_t y = 0; y < size_y; y++) {
                     for (int32_t x = 0; x < size_x; x++) {
-                        if (values_out[batch_number][y][x] <= RELU_MIN) gradient = RELU_MIN_LEAK;
-                        else if (values_out[batch_number][y][x] > RELU_MAX) gradient = RELU_MAX_LEAK;
-                        else gradient = 1.0;
+                        if (dropped_out[y][x]) {
+                            deltas[batch_number][y][x] = 0.0;
+                        } else {
 
-                        if (values_out[batch_number][y][x] == 0.0) gradient = 0.0;
-                        //deltas now delta before REL
-                        deltas[batch_number][y][x] *= gradient;
+                            /*
+                            if (values_out[batch_number][y][x] <= RELU_MIN) gradient = RELU_MIN_LEAK;
+                            else if (values_out[batch_number][y][x] > RELU_MAX) gradient = RELU_MAX_LEAK;
+                            else gradient = 1.0;
+
+                            //deltas now delta before REL
+                            deltas[batch_number][y][x] *= gradient;
+                            */
+                        }
                     }
                 }
             }
-            */
 
             //backprop  batch normalization here
             double delta_beta = 0.0;
@@ -842,6 +859,7 @@ void CNN_Node::output_fired(double mu, double learning_rate) {
                     }
                 }
             }
+
 
             double inv_var_div_batch = inverse_variance / batch_size;
             double batch_x_gamma = batch_size * gamma;
@@ -1026,6 +1044,7 @@ std::istream &operator>>(std::istream &is, CNN_Node* node) {
     node->values_hat = vector< vector< vector<double> > >(node->batch_size, vector< vector<double> >(node->size_y, vector<double>(node->size_x, 0.0)));
     node->values_out = vector< vector< vector<double> > >(node->batch_size, vector< vector<double> >(node->size_y, vector<double>(node->size_x, 0.0)));
     node->deltas = vector< vector< vector<double> > >(node->batch_size, vector< vector<double> >(node->size_y, vector<double>(node->size_x, 0.0)));
+    node->dropped_out = vector< vector<bool> >(node->size_y, vector<bool>(node->size_x, false));
 
     return is;
 }
