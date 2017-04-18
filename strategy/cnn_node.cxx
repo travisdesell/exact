@@ -419,48 +419,7 @@ void CNN_Node::set_input_values(const vector<const Image> &images, int channel, 
         exit(1);
     }
 
-    if (perform_dropout) {
-        for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
-            //cout << "setting input image[" << batch_number << "]: " << endl;
-            for (int32_t y = 0; y < size_y; y++) {
-                for (int32_t x = 0; x < size_x; x++) {
-                    if (random_0_1(generator) < input_dropout_probability) {
-                        values_out[batch_number][y][x] = 0.0;
-                    } else {
-                        values_out[batch_number][y][x] = images[batch_number].get_pixel(channel, y, x);
-                    }
-                    //cout << setw(5) << values[y][x];
-                }
-            }
-            //cout << endl;
-        }
-    } else {
-        double dropout_scale = 1.0 - input_dropout_probability;
-        for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
-            //cout << "setting input image[" << batch_number << "]: " << endl;
-            for (int32_t y = 0; y < size_y; y++) {
-                for (int32_t x = 0; x < size_x; x++) {
-                    values_out[batch_number][y][x] = images[batch_number].get_pixel(channel, y, x) * dropout_scale;
-                    //cout << setw(5) << values[y][x];
-                }
-            }
-            //cout << endl;
-        }
-    }
-
-    /*
-    //No dropout
-    for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
-        //cout << "setting input image[" << batch_number << "]: " << endl;
-        for (int32_t y = 0; y < size_y; y++) {
-            for (int32_t x = 0; x < size_x; x++) {
-                values_out[batch_number][y][x] = images[batch_number].get_pixel(channel, y, x);
-                //cout << setw(5) << values[y][x];
-            }
-        }
-        //cout << endl;
-    }
-    */
+    apply_dropout(perform_dropout, input_dropout_probability, generator);
 }
 
 double CNN_Node::get_input_value(int batch_number, int y, int x) {
@@ -712,6 +671,54 @@ int CNN_Node::get_inputs_fired() const {
     return inputs_fired;
 }
 
+
+void CNN_Node::apply_relu(vector< vector< vector<double> > > &values_in, vector< vector< vector<double> > > &values_out) {
+    for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
+        for (int32_t y = 0; y < size_y; y++) {
+            for (int32_t x = 0; x < size_x; x++) {
+                //cout << "values for node " << innovation_number << " now " << values[batch_number][y][x] << " after adding bias: " << bias[batch_number][y][x] << endl;
+
+                //apply activation function
+                if (values_in[batch_number][y][x] <= RELU_MIN) {
+                    values_out[batch_number][y][x] = values_in[batch_number][y][x] * RELU_MIN_LEAK;
+                } else if (values_in[batch_number][y][x] > RELU_MAX) {
+                    values_out[batch_number][y][x] = RELU_MAX;
+                }
+            }
+        }
+    }
+}
+
+void CNN_Node::apply_dropout(bool perform_dropout, double dropout_probability, minstd_rand0 &generator) {
+    if (perform_dropout) {
+        for (int32_t y = 0; y < size_y; y++) {
+            for (int32_t x = 0; x < size_x; x++) {
+                //cout << "values for node " << innovation_number << " now " << values[batch_number][y][x] << " after adding bias: " << bias[batch_number][y][x] << endl;
+
+                if (random_0_1(generator) < dropout_probability) {
+                    dropped_out[y][x] = true;
+                    for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
+                        values_out[batch_number][y][x] = 0.0;
+                    }
+                }
+                else {
+                    dropped_out[y][x] = false;
+                }
+            }
+        }
+
+    } else {
+        double dropout_scale = 1.0 - dropout_probability;
+        for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
+            for (int32_t y = 0; y < size_y; y++) {
+                for (int32_t x = 0; x < size_x; x++) {
+                    values_out[batch_number][y][x] *= dropout_scale;
+                }
+            }
+        }
+    }
+}
+
 void CNN_Node::input_fired(bool training, double epsilon, double alpha, bool perform_dropout, double hidden_dropout_probability, minstd_rand0 &generator) {
     inputs_fired++;
 
@@ -720,56 +727,8 @@ void CNN_Node::input_fired(bool training, double epsilon, double alpha, bool per
     if (inputs_fired == total_inputs) {
         if (type != SOFTMAX_NODE) {
             batch_normalize(training, epsilon, alpha);
-
-            if (perform_dropout) {
-                for (int32_t y = 0; y < size_y; y++) {
-                    for (int32_t x = 0; x < size_x; x++) {
-                        //cout << "values for node " << innovation_number << " now " << values[batch_number][y][x] << " after adding bias: " << bias[batch_number][y][x] << endl;
-
-                        if (random_0_1(generator) < hidden_dropout_probability) {
-                            dropped_out[y][x] = true;
-                            for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
-                                values_out[batch_number][y][x] = 0.0;
-                            }
-                        }
-                        else {
-                            dropped_out[y][x] = false;
-
-                            /*
-                            for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
-                                //apply activation function
-                                if (values_in[batch_number][y][x] <= RELU_MIN) {
-                                    values_out[batch_number][y][x] = values_in[batch_number][y][x] * RELU_MIN_LEAK;
-                                } else if (values_in[batch_number][y][x] > RELU_MAX) {
-                                    values_out[batch_number][y][x] = RELU_MAX;
-                                }
-                            }
-                            */
-                        }
-                    }
-                }
-
-            } else {
-                double dropout_scale = 1.0 - hidden_dropout_probability;
-                for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
-                    for (int32_t y = 0; y < size_y; y++) {
-                        for (int32_t x = 0; x < size_x; x++) {
-                            //cout << "values for node " << innovation_number << " now " << values[batch_number][y][x] << " after adding bias: " << bias[batch_number][y][x] << endl;
-
-                            /*
-                            //apply activation function
-                            if (values_in[batch_number][y][x] <= RELU_MIN) {
-                                values_out[batch_number][y][x] = values_in[batch_number][y][x] * RELU_MIN_LEAK;
-                            } else if (values_in[batch_number][y][x] > RELU_MAX) {
-                                values_out[batch_number][y][x] = RELU_MAX;
-                            }
-                            */
-
-                            values_out[batch_number][y][x] *= dropout_scale;
-                        }
-                    }
-                }
-            }
+            //apply_relu(values_in, values_out);
+            apply_dropout(perform_dropout, hidden_dropout_probability, generator);
         }
 
     } else if (inputs_fired > total_inputs) {
@@ -803,6 +762,114 @@ int CNN_Node::get_outputs_fired() const {
     return outputs_fired;
 }
 
+void CNN_Node::backpropagate_dropout() {
+    for (int32_t y = 0; y < size_y; y++) {
+        for (int32_t x = 0; x < size_x; x++) {
+            if (dropped_out[y][x]) {
+                for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
+                    deltas[batch_number][y][x] = 0.0;
+                } 
+            }
+
+        }
+    }
+}
+
+void CNN_Node::backpropagate_relu(vector< vector< vector<double> > > &values) {
+    double gradient;
+    for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
+        for (int32_t y = 0; y < size_y; y++) {
+            for (int32_t x = 0; x < size_x; x++) {
+                if (values[batch_number][y][x] <= RELU_MIN) gradient = RELU_MIN_LEAK;
+                else if (values[batch_number][y][x] > RELU_MAX) gradient = RELU_MAX_LEAK;
+                else gradient = 1.0;
+
+                //deltas now delta before REL
+                deltas[batch_number][y][x] *= gradient;
+            }
+        }
+    }
+}
+
+void CNN_Node::backpropagate_batch_normalization(double mu, double learning_rate) {
+    //backprop  batch normalization here
+    double delta_beta = 0.0;
+    double delta_gamma = 0.0;
+
+    double value_hat, value_out;
+    double delta_out, delta_values_hat;
+    double delta_values_hat_sum = 0.0;
+    double delta_values_hat_x_values_sum = 0.0;
+
+    for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
+        for (int32_t y = 0; y < size_y; y++) {
+            for (int32_t x = 0; x < size_x; x++) {
+                delta_out = deltas[batch_number][y][x];
+                value_hat = values_hat[batch_number][y][x];
+                value_out = values_out[batch_number][y][x];
+
+                delta_values_hat = gamma * delta_out;
+
+                delta_beta += delta_out;
+                delta_gamma += value_hat * delta_out;
+
+                delta_values_hat_sum += delta_values_hat;
+                delta_values_hat_x_values_sum += delta_values_hat * value_hat;
+            }
+        }
+    }
+
+
+    double inv_var_div_batch = inverse_variance / batch_size;
+    double batch_x_gamma = batch_size * gamma;
+
+    for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
+        for (int32_t y = 0; y < size_y; y++) {
+            for (int32_t x = 0; x < size_x; x++) {
+                delta_out = deltas[batch_number][y][x];
+                delta_values_hat = gamma * delta_out;
+
+                //this makes delta = delta_in
+                deltas[batch_number][y][x] = inv_var_div_batch * ((batch_x_gamma * delta_out) - delta_values_hat_sum - (values_hat[batch_number][y][x] * delta_values_hat_x_values_sum));
+                //#ifdef NAN_CHECKS
+                if (isnan(deltas[batch_number][y][x]) || isinf(deltas[batch_number][y][x])) {
+                    cerr << "ERROR! deltas[" << batch_number << "][" << y << "][" << x << "] became: " << deltas[batch_number][y][x] << "!" << endl;
+                    cerr << "inverse_variance: " << inverse_variance << endl;
+                    cerr << "batch_size: " << batch_size << endl;
+                    cerr << "gamma: " << gamma << endl;
+                    cerr << "delta_out: " << delta_out << endl;
+                    cerr << "delta_values_hat_sum: " << delta_values_hat_sum << endl;
+                    cerr << "values_hat[" << batch_number << "][" << y << "][" << x << "]: " << values_hat[batch_number][y][x] << endl;
+                    cerr << "delta_values_hat_x_values_sum: " << delta_values_hat_x_values_sum << endl;
+
+                    exit(1);
+                }
+                //#endif
+            }
+        }
+    }
+    //deltas now delta_in
+
+    //backpropagate beta
+    double pv_beta = previous_velocity_beta;
+
+    double velocity_beta = (mu * pv_beta) - learning_rate * delta_beta;
+    beta += (-mu * pv_beta + (1 + mu) * velocity_beta);
+    //beta -= (beta * weight_decay);
+
+    previous_velocity_beta = velocity_beta;
+
+    //backpropagate gamma
+    double pv_gamma = previous_velocity_gamma;
+
+    double velocity_gamma = (mu * pv_gamma) - learning_rate * delta_gamma;
+    gamma += (-mu * pv_gamma + (1 + mu) * velocity_gamma);
+    //gamma -= (gamma * weight_decay);
+
+    previous_velocity_gamma = velocity_gamma;
+
+    //cout << "\tnode " << innovation_number << ", delta_gamma: " << delta_gamma << ", delta_beta: " << delta_beta << ", gamma now: " << gamma << ", beta now: " << beta << endl;
+}
 
 void CNN_Node::output_fired(double mu, double learning_rate) {
     outputs_fired++;
@@ -811,106 +878,9 @@ void CNN_Node::output_fired(double mu, double learning_rate) {
 
     if (outputs_fired == total_outputs) {
         if (type != SOFTMAX_NODE && type != INPUT_NODE) {
-            //backprop relu
-            double gradient;
-            for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
-                for (int32_t y = 0; y < size_y; y++) {
-                    for (int32_t x = 0; x < size_x; x++) {
-                        if (dropped_out[y][x]) {
-                            deltas[batch_number][y][x] = 0.0;
-                        } else {
-
-                            /*
-                            if (values_out[batch_number][y][x] <= RELU_MIN) gradient = RELU_MIN_LEAK;
-                            else if (values_out[batch_number][y][x] > RELU_MAX) gradient = RELU_MAX_LEAK;
-                            else gradient = 1.0;
-
-                            //deltas now delta before REL
-                            deltas[batch_number][y][x] *= gradient;
-                            */
-                        }
-                    }
-                }
-            }
-
-            //backprop  batch normalization here
-            double delta_beta = 0.0;
-            double delta_gamma = 0.0;
-
-            double value_hat, value_out;
-            double delta_out, delta_values_hat;
-            double delta_values_hat_sum = 0.0;
-            double delta_values_hat_x_values_sum = 0.0;
-
-            for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
-                for (int32_t y = 0; y < size_y; y++) {
-                    for (int32_t x = 0; x < size_x; x++) {
-                        delta_out = deltas[batch_number][y][x];
-                        value_hat = values_hat[batch_number][y][x];
-                        value_out = values_out[batch_number][y][x];
-
-                        delta_values_hat = gamma * delta_out;
-
-                        delta_beta += delta_out;
-                        delta_gamma += value_hat * delta_out;
-
-                        delta_values_hat_sum += delta_values_hat;
-                        delta_values_hat_x_values_sum += delta_values_hat * value_hat;
-                    }
-                }
-            }
-
-
-            double inv_var_div_batch = inverse_variance / batch_size;
-            double batch_x_gamma = batch_size * gamma;
-
-            for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
-                for (int32_t y = 0; y < size_y; y++) {
-                    for (int32_t x = 0; x < size_x; x++) {
-                        delta_out = deltas[batch_number][y][x];
-                        delta_values_hat = gamma * delta_out;
-
-
-                        //this makes delta = delta_in
-                        deltas[batch_number][y][x] = inv_var_div_batch * ((batch_x_gamma * delta_out) - delta_values_hat_sum - (values_hat[batch_number][y][x] * delta_values_hat_x_values_sum));
-//#ifdef NAN_CHECKS
-                        if (isnan(deltas[batch_number][y][x]) || isinf(deltas[batch_number][y][x])) {
-                            cerr << "ERROR! deltas[" << batch_number << "][" << y << "][" << x << "] became: " << deltas[batch_number][y][x] << "!" << endl;
-                            cerr << "inverse_variance: " << inverse_variance << endl;
-                            cerr << "batch_size: " << batch_size << endl;
-                            cerr << "gamma: " << gamma << endl;
-                            cerr << "delta_out: " << delta_out << endl;
-                            cerr << "delta_values_hat_sum: " << delta_values_hat_sum << endl;
-                            cerr << "values_hat[" << batch_number << "][" << y << "][" << x << "]: " << values_hat[batch_number][y][x] << endl;
-                            cerr << "delta_values_hat_x_values_sum: " << delta_values_hat_x_values_sum << endl;
-
-                            exit(1);
-                        }
-//#endif
-                    }
-                }
-            }
-            //deltas now delta_in
-
-            //backpropagate beta
-            double pv_beta = previous_velocity_beta;
-
-            double velocity_beta = (mu * pv_beta) - learning_rate * delta_beta;
-            beta += (-mu * pv_beta + (1 + mu) * velocity_beta);
-            //beta -= (beta * weight_decay);
-
-            previous_velocity_beta = velocity_beta;
-
-            //backpropagate gamma
-            double pv_gamma = previous_velocity_gamma;
-
-            double velocity_gamma = (mu * pv_gamma) - learning_rate * delta_gamma;
-            gamma += (-mu * pv_gamma + (1 + mu) * velocity_gamma);
-            //gamma -= (gamma * weight_decay);
-
-            previous_velocity_gamma = velocity_gamma;
-
-            //cout << "\tnode " << innovation_number << ", delta_gamma: " << delta_gamma << ", delta_beta: " << delta_beta << ", gamma now: " << gamma << ", beta now: " << beta << endl;
+            backpropagate_dropout();
+            //backpropagate_relu(values_out);
+            backpropagate_batch_normalization(mu, learning_rate);
         }
 
     } else if (outputs_fired > total_outputs) {
