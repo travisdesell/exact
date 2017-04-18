@@ -128,8 +128,20 @@ double CNN_Genome::get_weight_decay_delta() const {
     return weight_decay_delta;
 }
 
+double CNN_Genome::get_alpha() const {
+    return alpha;
+}
+
 int CNN_Genome::get_velocity_reset() const {
     return velocity_reset;
+}
+
+double CNN_Genome::get_input_dropout_probability() const {
+    return input_dropout_probability;
+}
+
+double CNN_Genome::get_hidden_dropout_probability() const {
+    return hidden_dropout_probability;
 }
 
 template <class T>
@@ -194,6 +206,9 @@ CNN_Genome::CNN_Genome(int _genome_id) {
         batch_size = atoi(row[++column]);
         epsilon = atof(row[++column]);
         alpha = atof(row[++column]);
+
+        input_dropout_probability = atof(row[++column]);
+        hidden_dropout_probability = atof(row[++column]);
 
         initial_mu = atof(row[++column]);
         mu = atof(row[++column]);
@@ -335,6 +350,8 @@ void CNN_Genome::export_to_database(int _exact_id) {
         << ", batch_size = " << batch_size
         << ", epsilon = " << setprecision(15) << fixed << epsilon
         << ", alpha = " << setprecision(15) << fixed << alpha
+        << ", input_dropout_probability = " << setprecision(15) << fixed << input_dropout_probability
+        << ", hidden_dropout_probability = " << setprecision(15) << fixed << hidden_dropout_probability
         << ", initial_mu = " << setprecision(15) << fixed << initial_mu
         << ", mu = " << setprecision(15) << fixed<< mu
         << ", mu_delta = " << setprecision(15) << fixed << mu_delta
@@ -402,7 +419,7 @@ void CNN_Genome::export_to_database(int _exact_id) {
 /**
  *  Iniitalize a genome from a set of nodes and edges
  */
-CNN_Genome::CNN_Genome(int _generation_id, int seed, int _max_epochs, bool _reset_weights, int _velocity_reset, double _mu, double _mu_delta, double _learning_rate, double _learning_rate_delta, double _weight_decay, double _weight_decay_delta, int _batch_size, double _epsilon, double _alpha, const vector<CNN_Node*> &_nodes, const vector<CNN_Edge*> &_edges) {
+CNN_Genome::CNN_Genome(int _generation_id, int seed, int _max_epochs, bool _reset_weights, int _velocity_reset, double _mu, double _mu_delta, double _learning_rate, double _learning_rate_delta, double _weight_decay, double _weight_decay_delta, int _batch_size, double _epsilon, double _alpha, double _input_dropout_probability, double _hidden_dropout_probability, const vector<CNN_Node*> &_nodes, const vector<CNN_Edge*> &_edges) {
     exact_id = -1;
     genome_id = -1;
     started_from_checkpoint = false;
@@ -415,6 +432,9 @@ CNN_Genome::CNN_Genome(int _generation_id, int seed, int _max_epochs, bool _rese
     batch_size = _batch_size;
     epsilon = _epsilon;
     alpha = _alpha;
+
+    input_dropout_probability = _input_dropout_probability;
+    hidden_dropout_probability = _hidden_dropout_probability;
 
     mu = _mu;
     initial_mu = mu;
@@ -908,11 +928,11 @@ void CNN_Genome::evaluate_images(const vector<const Image> &images, bool trainin
     }
 
     for (uint32_t channel = 0; channel < input_nodes.size(); channel++) {
-        input_nodes[channel]->set_input_values(images, channel);
+        input_nodes[channel]->set_input_values(images, channel, training, input_dropout_probability, generator);
     }
 
     for (uint32_t i = 0; i < edges.size(); i++) {
-        edges[i]->propagate_forward(training, epsilon, alpha);
+        edges[i]->propagate_forward(training, epsilon, alpha, training, hidden_dropout_probability, generator);
     }
 
     for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
@@ -1145,7 +1165,7 @@ void CNN_Genome::evaluate(const Images &images, double &total_error, int &correc
         correct_predictions += batch_correct_predictions;
 
         if (perform_backprop && velocity_reset > 0 && (((j + batch_size) % velocity_reset) == 0)) {
-            cout << "resetting velocities!" << endl;
+            cout << "resetting velocities, total_error: " << total_error << ", correct_predictions: " << correct_predictions << endl;
             for (uint32_t i = 0; i < edges.size(); i++) {
                 edges[i]->reset_velocities();
             }
@@ -1348,6 +1368,11 @@ void CNN_Genome::write(ostream &outfile) {
     write_hexfloat(outfile, alpha);
     outfile << endl;
 
+    write_hexfloat(outfile, input_dropout_probability);
+    outfile << endl;
+    write_hexfloat(outfile, hidden_dropout_probability);
+    outfile << endl;
+
     outfile << velocity_reset << endl;
 
     outfile << epoch << endl;
@@ -1457,9 +1482,14 @@ void CNN_Genome::read(istream &infile) {
 
     epsilon = read_hexfloat(infile);
     if (verbose) cerr << "read epsilon: " << epsilon << endl;
-
     alpha = read_hexfloat(infile);
     if (verbose) cerr << "read alpha: " << alpha << endl;
+
+    input_dropout_probability = read_hexfloat(infile);
+    if (verbose) cerr << "read input_dropout_probability: " << input_dropout_probability << endl;
+    hidden_dropout_probability = read_hexfloat(infile);
+    if (verbose) cerr << "read hidden_dropout_probability: " << hidden_dropout_probability << endl;
+
 
     infile >> velocity_reset;
     if (verbose) cerr << "read velocity_reset: " << velocity_reset << endl;

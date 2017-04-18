@@ -63,6 +63,13 @@ int main(int argc, char **argv) {
     double alpha;
     get_argument(arguments, "--alpha", true, alpha);
 
+    double input_dropout_probability;
+    get_argument(arguments, "--input_dropout_probability", true, input_dropout_probability);
+
+    double hidden_dropout_probability;
+    get_argument(arguments, "--hidden_dropout_probability", true, hidden_dropout_probability);
+
+
     double epsilon = 1.0e-7;
 
     Images training_images(binary_training_filename);
@@ -107,7 +114,7 @@ int main(int argc, char **argv) {
     long genome_seed = generator();
     cout << "seeding genome with: " << genome_seed << endl;
 
-    CNN_Genome *genome = new CNN_Genome(1, genome_seed, max_epochs, true, velocity_reset, mu, mu_delta, learning_rate, learning_rate_delta, weight_decay, weight_decay_delta, batch_size, epsilon, alpha, nodes, edges);
+    CNN_Genome *genome = new CNN_Genome(1, genome_seed, max_epochs, true, velocity_reset, mu, mu_delta, learning_rate, learning_rate_delta, weight_decay, weight_decay_delta, batch_size, epsilon, alpha, input_dropout_probability, hidden_dropout_probability, nodes, edges);
     //save the weights and bias of the initially generated genome for reuse
     genome->initialize();
 

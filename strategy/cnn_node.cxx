@@ -420,7 +420,7 @@ void CNN_Node::set_input_values(const vector<const Image> &images, int channel, 
             //cout << "setting input image[" << batch_number << "]: " << endl;
             for (int32_t y = 0; y < size_y; y++) {
                 for (int32_t x = 0; x < size_x; x++) {
-                    if (rng_double(generator) < input_dropout_probability) {
+                    if (random_0_1(generator) < input_dropout_probability) {
                         values_out[batch_number][y][x] = 0.0;
                     } else {
                         values_out[batch_number][y][x] = images[batch_number].get_pixel(channel, y, x);
@@ -436,7 +436,7 @@ void CNN_Node::set_input_values(const vector<const Image> &images, int channel, 
             //cout << "setting input image[" << batch_number << "]: " << endl;
             for (int32_t y = 0; y < size_y; y++) {
                 for (int32_t x = 0; x < size_x; x++) {
-                    values_out[batch_number][y][x] = images[batch_number].get_pixel(channel, y, x);
+                    values_out[batch_number][y][x] = images[batch_number].get_pixel(channel, y, x) * dropout_scale;
                     //cout << setw(5) << values[y][x];
                 }
             }
@@ -694,7 +694,7 @@ int CNN_Node::get_inputs_fired() const {
     return inputs_fired;
 }
 
-void CNN_Node::input_fired(bool training, double epsilon, double alpha) {
+void CNN_Node::input_fired(bool training, double epsilon, double alpha, bool perform_dropout, double hidden_dropout_probability, minstd_rand0 &generator) {
     inputs_fired++;
 
     //cout << "input fired on node: " << innovation_number << ", inputs fired: " << inputs_fired << ", total_inputs: " << total_inputs << endl;
@@ -703,21 +703,45 @@ void CNN_Node::input_fired(bool training, double epsilon, double alpha) {
         if (type != SOFTMAX_NODE) {
             batch_normalize(training, epsilon, alpha);
 
-            for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
-                for (int32_t y = 0; y < size_y; y++) {
-                    for (int32_t x = 0; x < size_x; x++) {
-                        //cout << "values for node " << innovation_number << " now " << values[batch_number][y][x] << " after adding bias: " << bias[batch_number][y][x] << endl;
+            if (perform_dropout) {
+                for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
+                    for (int32_t y = 0; y < size_y; y++) {
+                        for (int32_t x = 0; x < size_x; x++) {
+                            //cout << "values for node " << innovation_number << " now " << values[batch_number][y][x] << " after adding bias: " << bias[batch_number][y][x] << endl;
 
-                        //apply activation function
-                        if (values_in[batch_number][y][x] <= RELU_MIN) {
-                            values_in[batch_number][y][x] *= RELU_MIN_LEAK;
-                        } else if (values_in[batch_number][y][x] > RELU_MAX) {
-                            values_in[batch_number][y][x] = RELU_MAX;
+                            if (random_0_1(generator) < hidden_dropout_probability) {
+                                values_out[batch_number][y][x] = 0.0;
+                            } else {
+                                //apply activation function
+                                if (values_out[batch_number][y][x] <= RELU_MIN) {
+                                    values_out[batch_number][y][x] *= RELU_MIN_LEAK;
+                                } else if (values_out[batch_number][y][x] > RELU_MAX) {
+                                    values_out[batch_number][y][x] = RELU_MAX;
+                                }
+                            }
+                        }
+                    }
+                }
+
+            } else {
+                double dropout_scale = 1.0 - hidden_dropout_probability;
+                for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
+                    for (int32_t y = 0; y < size_y; y++) {
+                        for (int32_t x = 0; x < size_x; x++) {
+                            //cout << "values for node " << innovation_number << " now " << values[batch_number][y][x] << " after adding bias: " << bias[batch_number][y][x] << endl;
+
+                            //apply activation function
+                            if (values_out[batch_number][y][x] <= RELU_MIN) {
+                                values_out[batch_number][y][x] *= RELU_MIN_LEAK;
+                            } else if (values_out[batch_number][y][x] > RELU_MAX) {
+                                values_out[batch_number][y][x] = RELU_MAX;
+                            }
+
+                            values_out[batch_number][y][x] *= dropout_scale;
                         }
                     }
                 }
             }
-
         }
 
     } else if (inputs_fired > total_inputs) {
@@ -759,16 +783,16 @@ void CNN_Node::output_fired(double mu, double learning_rate) {
 
     if (outputs_fired == total_outputs) {
         if (type != SOFTMAX_NODE && type != INPUT_NODE) {
-
             //backprop relu
             double gradient;
             for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
                 for (int32_t y = 0; y < size_y; y++) {
                     for (int32_t x = 0; x < size_x; x++) {
-                        if (values_in[batch_number][y][x] <= RELU_MIN) gradient = RELU_MIN_LEAK;
-                        else if (values_in[batch_number][y][x] > RELU_MAX) gradient = RELU_MAX_LEAK;
+                        if (values_out[batch_number][y][x] <= RELU_MIN) gradient = RELU_MIN_LEAK;
+                        else if (values_out[batch_number][y][x] > RELU_MAX) gradient = RELU_MAX_LEAK;
                         else gradient = 1.0;
 
+                        if (values_out[batch_number][y][x] == 0.0) gradient = 0.0;
                         //deltas now delta before REL
                         deltas[batch_number][y][x] *= gradient;
                     }
@@ -849,9 +873,9 @@ void CNN_Node::output_fired(double mu, double learning_rate) {
             gamma += (-mu * pv_gamma + (1 + mu) * velocity_gamma);
             //gamma -= (gamma * weight_decay);
 
-            //cout << "\tnode " << innovation_number << ", delta_gamma: " << delta_gamma << ", delta_beta: " << delta_beta << ", gamma now: " << gamma << ", beta now: " << beta << endl;
-
             previous_velocity_gamma = velocity_gamma;
+
+            //cout << "\tnode " << innovation_number << ", delta_gamma: " << delta_gamma << ", delta_beta: " << delta_beta << ", gamma now: " << gamma << ", beta now: " << beta << endl;
         }
 
     } else if (outputs_fired > total_outputs) {

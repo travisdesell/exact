@@ -631,7 +631,7 @@ void CNN_Edge::check_output_update(const vector< vector< vector<double> > > &out
     }
 }
 
-void CNN_Edge::propagate_forward(bool training, double epsilon, double alpha) {
+void CNN_Edge::propagate_forward(bool training, double epsilon, double alpha, bool perform_dropout, double hidden_dropout_probability, minstd_rand0 &generator) {
     if (disabled) return;
 
     vector< vector< vector<double> > > &input = input_node->get_output_values();
@@ -740,7 +740,7 @@ void CNN_Edge::propagate_forward(bool training, double epsilon, double alpha) {
         }
     }
 
-	output_node->input_fired(training, epsilon, alpha);
+	output_node->input_fired(training, epsilon, alpha, perform_dropout, hidden_dropout_probability, generator);
 }
 
 void CNN_Edge::update_weights(double mu, double learning_rate, double weight_decay) {

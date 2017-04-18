@@ -137,7 +137,7 @@ class CNN_Node {
 
         void batch_normalize(bool training, double epsilon, double alpha);
 
-        void set_input_values(const vector<const Image> &image, int channel);
+        void set_input_values(const vector<const Image> &image, int channel, bool perform_dropout, double input_dropout_probability, minstd_rand0 &generator);
         double get_input_value(int batch_number, int y, int x);
         void set_input_value(int batch_number, int y, int x, double value);
         vector< vector< vector<double> > >& get_input_values();
@@ -164,7 +164,7 @@ class CNN_Node {
         void disable_input();
         int get_number_inputs() const;
         int get_inputs_fired() const;
-        void input_fired(bool training, double epsilon, double alpha);
+        void input_fired(bool training, double epsilon, double alpha, bool perform_dropout, double hidden_dropout_probability, minstd_rand0 &generator);
 
         void add_output();
         void disable_output();

@@ -96,12 +96,27 @@ class EXACT {
         double weight_decay_delta_max;
 
         double epsilon;
-        double alpha;
+
+        double initial_alpha_min;
+        double initial_alpha_max;
+        double alpha_min;
+        double alpha_max;
 
         int initial_velocity_reset_min;
         int initial_velocity_reset_max;
         int velocity_reset_min;
         int velocity_reset_max;
+
+        double initial_input_dropout_probability_min;
+        double initial_input_dropout_probability_max;
+        double input_dropout_probability_min;
+        double input_dropout_probability_max;
+
+        double initial_hidden_dropout_probability_min;
+        double initial_hidden_dropout_probability_max;
+        double hidden_dropout_probability_min;
+        double hidden_dropout_probability_max;
+
 
         bool sort_by_fitness;
         double reset_weights_chance;
@@ -158,9 +173,9 @@ class EXACT {
         int32_t population_contains(CNN_Genome *genome) const;
         CNN_Genome* get_best_genome();
 
-        void generate_initial_hyperparameters(double &mu, double &mu_delta, double &learning_rate, double &learning_rate_delta, double &weight_decay, double &weight_decay_delta, int &velocity_reset);
+        void generate_initial_hyperparameters(double &mu, double &mu_delta, double &learning_rate, double &learning_rate_delta, double &weight_decay, double &weight_decay_delta, double &alpha, int &velocity_reset, double &input_dropout_probability, double &hidden_dropout_probability);
 
-        void generate_simplex_hyperparameters(double &mu, double &mu_delta, double &learning_rate, double &learning_rate_delta, double &weight_decay, double &weight_decay_delta, int &velocity_reset);
+        void generate_simplex_hyperparameters(double &mu, double &mu_delta, double &learning_rate, double &learning_rate_delta, double &weight_decay, double &weight_decay_delta, double &alpha, int &velocity_reset, double &input_dropout_probability, double &hidden_dropout_probability);
 
 
         bool add_edge(CNN_Genome *child, CNN_Node *node1, CNN_Node *node2);
