@@ -419,7 +419,15 @@ void CNN_Node::set_input_values(const vector<const Image> &images, int channel, 
         exit(1);
     }
 
-    apply_dropout(perform_dropout, input_dropout_probability, generator);
+    for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
+        for (int32_t y = 0; y < size_y; y++) {
+            for (int32_t x = 0; x < size_x; x++) {
+                values_out[batch_number][y][x] = images[batch_number].get_pixel(channel, y, x);
+            }
+        }
+    }
+
+    apply_dropout(values_out, perform_dropout, input_dropout_probability, generator);
 }
 
 double CNN_Node::get_input_value(int batch_number, int y, int x) {
@@ -689,7 +697,7 @@ void CNN_Node::apply_relu(vector< vector< vector<double> > > &values_in, vector<
     }
 }
 
-void CNN_Node::apply_dropout(bool perform_dropout, double dropout_probability, minstd_rand0 &generator) {
+void CNN_Node::apply_dropout(vector< vector< vector<double> > > &values, bool perform_dropout, double dropout_probability, minstd_rand0 &generator) {
     if (perform_dropout) {
         for (int32_t y = 0; y < size_y; y++) {
             for (int32_t x = 0; x < size_x; x++) {
@@ -698,10 +706,9 @@ void CNN_Node::apply_dropout(bool perform_dropout, double dropout_probability, m
                 if (random_0_1(generator) < dropout_probability) {
                     dropped_out[y][x] = true;
                     for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
-                        values_out[batch_number][y][x] = 0.0;
+                        values[batch_number][y][x] = 0.0;
                     }
-                }
-                else {
+                } else {
                     dropped_out[y][x] = false;
                 }
             }
@@ -712,7 +719,7 @@ void CNN_Node::apply_dropout(bool perform_dropout, double dropout_probability, m
         for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
             for (int32_t y = 0; y < size_y; y++) {
                 for (int32_t x = 0; x < size_x; x++) {
-                    values_out[batch_number][y][x] *= dropout_scale;
+                    values[batch_number][y][x] *= dropout_scale;
                 }
             }
         }
@@ -728,7 +735,7 @@ void CNN_Node::input_fired(bool training, double epsilon, double alpha, bool per
         if (type != SOFTMAX_NODE) {
             batch_normalize(training, epsilon, alpha);
             //apply_relu(values_in, values_out);
-            apply_dropout(perform_dropout, hidden_dropout_probability, generator);
+            apply_dropout(values_out, perform_dropout, hidden_dropout_probability, generator);
         }
 
     } else if (inputs_fired > total_inputs) {

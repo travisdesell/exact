@@ -167,7 +167,7 @@ class CNN_Node {
 
         void batch_normalize(bool training, double epsilon, double alpha);
         void apply_relu(vector< vector< vector<double> > > &values_in, vector< vector< vector<double> > > &values_out);
-        void apply_dropout(bool perform_dropout, double dropout_probability, minstd_rand0 &generator);
+        void apply_dropout(vector< vector< vector<double> > > &values, bool perform_dropout, double dropout_probability, minstd_rand0 &generator);
 
         void add_output();
         void disable_output();
