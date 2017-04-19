@@ -73,29 +73,34 @@ int main(int argc, char** argv) {
     cerr << "converting arguments to vector" << endl;
     arguments = vector<string>(argv, argv + argc);
 
-    string binary_samples_filename;
+    string training_filename;
+    string testing_filename;
     string genome_filename;
     string output_filename;
     string checkpoint_filename;
 
-    get_argument(arguments, "--samples_file", true, binary_samples_filename);
+    get_argument(arguments, "--training_file", true, training_filename);
+    get_argument(arguments, "--testing_file", true, testing_filename);
     get_argument(arguments, "--genome_file", true, genome_filename);
     get_argument(arguments, "--output_file", true, output_filename);
     get_argument(arguments, "--checkpoint_file", true, checkpoint_filename);
 
-    binary_samples_filename = get_boinc_filename(binary_samples_filename);
+    training_filename = get_boinc_filename(training_filename);
+    testing_filename = get_boinc_filename(testing_filename);
     genome_filename = get_boinc_filename(genome_filename);
     output_filename = get_boinc_filename(output_filename);
     checkpoint_filename = get_boinc_filename(checkpoint_filename);
 
-    cerr << "boincified samples filename: '" << binary_samples_filename << "'" << endl;
+    cerr << "boincified training filename: '" << training_filename << "'" << endl;
+    cerr << "boincified testing filename: '" << testing_filename << "'" << endl;
     cerr << "boincified genome filename: '" << genome_filename << "'" << endl;
     cerr << "boincified output filename: '" << output_filename << "'" << endl;
     cerr << "boincified checkpoint filename: '" << checkpoint_filename << "'" << endl;
 
     cerr << "parsed arguments, loading images" << endl;
 
-    Images images(binary_samples_filename);
+    Images training_images(training_filename);
+    Images testing_images(testing_filename, training_images.get_average(), training_images.get_std_dev());
 
     cerr << "loaded images" << endl;
 
@@ -133,8 +138,15 @@ int main(int argc, char** argv) {
     genome->set_output_filename(output_filename);
 
     cerr << "starting backpropagation!" << endl;
-    genome->stochastic_backpropagation(images);
+    genome->stochastic_backpropagation(training_images);
     cerr << "backpropagation finished successfully!" << endl;
+
+    cout << "evaluating best weights on testing data." << endl;
+    double error;
+    int predictions;
+    genome->set_to_best();
+    genome->evaluate(testing_images, error, predictions);
+    genome->set_test_performance(error, predictions);
 
     boinc_finish(0);
 

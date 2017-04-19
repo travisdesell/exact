@@ -63,6 +63,9 @@ class CNN_Genome {
         int best_predictions_epoch;
         int best_error_epoch;
 
+        double test_error;
+        int test_predictions;
+
         bool started_from_checkpoint;
         vector<long> backprop_order;
 
@@ -175,6 +178,8 @@ class CNN_Genome {
         void evaluate(const Images &images, double &total_error, int &correct_predictions, bool perform_backprop);
 
         void stochastic_backpropagation(const Images &images);
+
+        void set_test_performance(double _test_error, int _test_predictions);
 
         void set_name(string _name);
         void set_output_filename(string _output_filename);
