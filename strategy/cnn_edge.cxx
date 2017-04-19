@@ -751,6 +751,10 @@ void CNN_Edge::update_weights(double mu, double learning_rate, double weight_dec
 	for (int32_t fy = 0; fy < filter_y; fy++) {
         for (int32_t fx = 0; fx < filter_x; fx++) {
             dx = weight_updates[fy][fx];
+
+            //try clipping the weight
+            //dx = dx * (0.5 / fmax(0.5, fabs(dx)));
+
             pv = previous_velocity[fy][fx];
 
             velocity = (mu * pv) - learning_rate * dx;
@@ -759,8 +763,10 @@ void CNN_Edge::update_weights(double mu, double learning_rate, double weight_dec
 #ifdef NAN_CHECKS
             previous_weight = weight;
 #endif
-            weight += (-mu * pv + (1 + mu) * velocity);
+            //weight += (-mu * pv + (1 + mu) * velocity);
+            weight += velocity + mu * (velocity - pv);
             weight -= (weight * weight_decay);
+
             weights[fy][fx] = weight;
 
             previous_velocity[fy][fx] = velocity;

@@ -403,33 +403,6 @@ void CNN_Node::resize_arrays() {
 }
 
 
-void CNN_Node::set_input_values(const vector<const Image> &images, int channel, bool perform_dropout, double input_dropout_probability, minstd_rand0 &generator) {
-    if (images.size() != batch_size) {
-        cerr << "ERROR: number of batch images: " << images.size() << " != batch_size of input node: " << batch_size << endl;
-        exit(1);
-    }
-
-    if (images[0].get_rows() != size_y) {
-        cerr << "ERROR: rows of input image: " << images[0].get_rows() << " != size_y of input node: " << size_y << endl;
-        exit(1);
-    }
-
-    if (images[0].get_cols() != size_x) {
-        cerr << "ERROR: cols of input image: " << images[0].get_cols() << " != size_x of input node: " << size_x << endl;
-        exit(1);
-    }
-
-    for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
-        for (int32_t y = 0; y < size_y; y++) {
-            for (int32_t x = 0; x < size_x; x++) {
-                values_out[batch_number][y][x] = images[batch_number].get_pixel(channel, y, x);
-            }
-        }
-    }
-
-    apply_dropout(values_out, perform_dropout, input_dropout_probability, generator);
-}
-
 double CNN_Node::get_input_value(int batch_number, int y, int x) {
     return values_in[batch_number][y][x];
 }
@@ -540,6 +513,71 @@ void CNN_Node::set_weights_to_best() {
     running_variance = best_running_variance;
 }
 
+
+bool CNN_Node::modify_size_x(int change) {
+    int previous_size_x = size_x;
+
+    size_x += change;
+
+    //make sure the size doesn't drop below 1
+    if (size_x <= 0) size_x = 1;
+    if (size_x == previous_size_x) return false;
+
+    resize_arrays();
+
+    return true;
+}
+
+bool CNN_Node::modify_size_y(int change) {
+    int previous_size_y = size_y;
+
+    size_y += change;
+
+    //make sure the size doesn't drop below 1
+    if (size_y <= 0) size_y = 1;
+    if (size_y == previous_size_y) return false;
+
+    resize_arrays();
+
+    return true;
+}
+
+void CNN_Node::add_input() {
+    total_inputs++;
+    //cout << "\t\tadding input on node: " << innovation_number << ", total inputs: " << total_inputs << endl;
+}
+
+void CNN_Node::disable_input() {
+    total_inputs--;
+    //cout << "\t\tdisabling input on node: " << innovation_number << ", total inputs: " << total_inputs << endl;
+}
+
+int CNN_Node::get_number_inputs() const {
+    return total_inputs;
+}
+
+int CNN_Node::get_inputs_fired() const {
+    return inputs_fired;
+}
+
+void CNN_Node::add_output() {
+    total_outputs++;
+    //cout << "\t\tadding output on node: " << innovation_number << ", total outputs: " << total_outputs << endl;
+}
+
+void CNN_Node::disable_output() {
+    total_outputs--;
+    //cout << "\t\tdisabling output on node: " << innovation_number << ", total outputs: " << total_outputs << endl;
+}
+
+int CNN_Node::get_number_outputs() const {
+    return total_outputs;
+}
+
+int CNN_Node::get_outputs_fired() const {
+    return outputs_fired;
+}
+
 void CNN_Node::batch_normalize(bool training, double epsilon, double alpha) {
     //normalize the batch
     if (training) {
@@ -633,53 +671,6 @@ void CNN_Node::batch_normalize(bool training, double epsilon, double alpha) {
     }
 }
 
-bool CNN_Node::modify_size_x(int change) {
-    int previous_size_x = size_x;
-
-    size_x += change;
-
-    //make sure the size doesn't drop below 1
-    if (size_x <= 0) size_x = 1;
-    if (size_x == previous_size_x) return false;
-
-    resize_arrays();
-
-    return true;
-}
-
-bool CNN_Node::modify_size_y(int change) {
-    int previous_size_y = size_y;
-
-    size_y += change;
-
-    //make sure the size doesn't drop below 1
-    if (size_y <= 0) size_y = 1;
-    if (size_y == previous_size_y) return false;
-
-    resize_arrays();
-
-    return true;
-}
-
-void CNN_Node::add_input() {
-    total_inputs++;
-    //cout << "\t\tadding input on node: " << innovation_number << ", total inputs: " << total_inputs << endl;
-}
-
-void CNN_Node::disable_input() {
-    total_inputs--;
-    //cout << "\t\tdisabling input on node: " << innovation_number << ", total inputs: " << total_inputs << endl;
-}
-
-int CNN_Node::get_number_inputs() const {
-    return total_inputs;
-}
-
-int CNN_Node::get_inputs_fired() const {
-    return inputs_fired;
-}
-
-
 void CNN_Node::apply_relu(vector< vector< vector<double> > > &values_in, vector< vector< vector<double> > > &values_out) {
     for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
         for (int32_t y = 0; y < size_y; y++) {
@@ -726,49 +717,6 @@ void CNN_Node::apply_dropout(vector< vector< vector<double> > > &values, bool pe
     }
 }
 
-void CNN_Node::input_fired(bool training, double epsilon, double alpha, bool perform_dropout, double hidden_dropout_probability, minstd_rand0 &generator) {
-    inputs_fired++;
-
-    //cout << "input fired on node: " << innovation_number << ", inputs fired: " << inputs_fired << ", total_inputs: " << total_inputs << endl;
-
-    if (inputs_fired == total_inputs) {
-        if (type != SOFTMAX_NODE) {
-            batch_normalize(training, epsilon, alpha);
-            //apply_relu(values_in, values_out);
-            apply_dropout(values_out, perform_dropout, hidden_dropout_probability, generator);
-        }
-
-    } else if (inputs_fired > total_inputs) {
-        cerr << "ERROR! inputs_fired > total_inputs" << endl;
-
-        cerr << "inputs_fired: " << inputs_fired << endl;
-        cerr << "total_inputs: " << total_inputs << endl;
-
-        cerr << "node: " << endl;
-        print(cerr);
-
-        exit(1);
-    }
-}
-
-void CNN_Node::add_output() {
-    total_outputs++;
-    //cout << "\t\tadding output on node: " << innovation_number << ", total outputs: " << total_outputs << endl;
-}
-
-void CNN_Node::disable_output() {
-    total_outputs--;
-    //cout << "\t\tdisabling output on node: " << innovation_number << ", total outputs: " << total_outputs << endl;
-}
-
-int CNN_Node::get_number_outputs() const {
-    return total_outputs;
-}
-
-int CNN_Node::get_outputs_fired() const {
-    return outputs_fired;
-}
-
 void CNN_Node::backpropagate_dropout() {
     for (int32_t y = 0; y < size_y; y++) {
         for (int32_t x = 0; x < size_x; x++) {
@@ -777,7 +725,6 @@ void CNN_Node::backpropagate_dropout() {
                     deltas[batch_number][y][x] = 0.0;
                 } 
             }
-
         }
     }
 }
@@ -878,6 +825,60 @@ void CNN_Node::backpropagate_batch_normalization(double mu, double learning_rate
     //cout << "\tnode " << innovation_number << ", delta_gamma: " << delta_gamma << ", delta_beta: " << delta_beta << ", gamma now: " << gamma << ", beta now: " << beta << endl;
 }
 
+
+void CNN_Node::set_input_values(const vector<const Image> &images, int channel, bool perform_dropout, double input_dropout_probability, minstd_rand0 &generator) {
+    if (images.size() != batch_size) {
+        cerr << "ERROR: number of batch images: " << images.size() << " != batch_size of input node: " << batch_size << endl;
+        exit(1);
+    }
+
+    if (images[0].get_rows() != size_y) {
+        cerr << "ERROR: rows of input image: " << images[0].get_rows() << " != size_y of input node: " << size_y << endl;
+        exit(1);
+    }
+
+    if (images[0].get_cols() != size_x) {
+        cerr << "ERROR: cols of input image: " << images[0].get_cols() << " != size_x of input node: " << size_x << endl;
+        exit(1);
+    }
+
+    for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
+        for (int32_t y = 0; y < size_y; y++) {
+            for (int32_t x = 0; x < size_x; x++) {
+                values_out[batch_number][y][x] = images[batch_number].get_pixel(channel, y, x);
+            }
+        }
+    }
+
+    apply_dropout(values_out, perform_dropout, input_dropout_probability, generator);
+}
+
+
+void CNN_Node::input_fired(bool training, double epsilon, double alpha, bool perform_dropout, double hidden_dropout_probability, minstd_rand0 &generator) {
+    inputs_fired++;
+
+    //cout << "input fired on node: " << innovation_number << ", inputs fired: " << inputs_fired << ", total_inputs: " << total_inputs << endl;
+
+    if (inputs_fired == total_inputs) {
+        if (type != SOFTMAX_NODE) {
+            //batch_normalize(training, epsilon, alpha);
+            apply_relu(values_in, values_out);
+            apply_dropout(values_out, perform_dropout, hidden_dropout_probability, generator);
+        }
+
+    } else if (inputs_fired > total_inputs) {
+        cerr << "ERROR! inputs_fired > total_inputs" << endl;
+
+        cerr << "inputs_fired: " << inputs_fired << endl;
+        cerr << "total_inputs: " << total_inputs << endl;
+
+        cerr << "node: " << endl;
+        print(cerr);
+
+        exit(1);
+    }
+}
+
 void CNN_Node::output_fired(double mu, double learning_rate) {
     outputs_fired++;
 
@@ -886,8 +887,8 @@ void CNN_Node::output_fired(double mu, double learning_rate) {
     if (outputs_fired == total_outputs) {
         if (type != SOFTMAX_NODE && type != INPUT_NODE) {
             backpropagate_dropout();
-            //backpropagate_relu(values_out);
-            backpropagate_batch_normalization(mu, learning_rate);
+            backpropagate_relu(values_in);
+            //backpropagate_batch_normalization(mu, learning_rate);
         }
 
     } else if (outputs_fired > total_outputs) {
