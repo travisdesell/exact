@@ -928,7 +928,7 @@ void CNN_Genome::evaluate_images(const vector<const Image> &images, bool trainin
     }
 
     for (uint32_t channel = 0; channel < input_nodes.size(); channel++) {
-        input_nodes[channel]->set_input_values(images, channel, training, input_dropout_probability, generator);
+        input_nodes[channel]->set_values(images, channel, training, input_dropout_probability, generator);
     }
 
     for (uint32_t i = 0; i < edges.size(); i++) {
@@ -939,14 +939,14 @@ void CNN_Genome::evaluate_images(const vector<const Image> &images, bool trainin
         int expected_class = images[batch_number].get_classification();
 
         //if (training) cout << "before softmax max, batch number: " << batch_number << " -- ";
-        double softmax_max = softmax_nodes[0]->get_input_value(batch_number, 0, 0);
-        //if (training) cout << " " << setw(15) << fixed << setprecision(6) << softmax_nodes[0]->get_input_value(batch_number, 0,0);
+        double softmax_max = softmax_nodes[0]->get_value(batch_number, 0, 0);
+        //if (training) cout << " " << setw(15) << fixed << setprecision(6) << softmax_nodes[0]->get_value(batch_number, 0,0);
 
         for (uint32_t i = 1; i < softmax_nodes.size(); i++) {
-            //if (training) cout << " " << setw(15) << fixed << setprecision(6) << softmax_nodes[i]->get_input_value(batch_number, 0,0);
+            //if (training) cout << " " << setw(15) << fixed << setprecision(6) << softmax_nodes[i]->get_value(batch_number, 0,0);
 
-            if (softmax_nodes[i]->get_input_value(batch_number, 0, 0) > softmax_max) {
-                softmax_max = softmax_nodes[i]->get_input_value(batch_number, 0, 0);
+            if (softmax_nodes[i]->get_value(batch_number, 0, 0) > softmax_max) {
+                softmax_max = softmax_nodes[i]->get_value(batch_number, 0, 0);
             }
         }
         //cout << endl;
@@ -954,7 +954,7 @@ void CNN_Genome::evaluate_images(const vector<const Image> &images, bool trainin
         //cout << "after softmax max:  ";
         double softmax_sum = 0.0;
         for (uint32_t i = 0; i < softmax_nodes.size(); i++) {
-            double value = softmax_nodes[i]->get_input_value(batch_number, 0, 0);
+            double value = softmax_nodes[i]->get_value(batch_number, 0, 0);
             double previous = value;
 
             if (isnan(value)) {
@@ -970,8 +970,8 @@ void CNN_Genome::evaluate_images(const vector<const Image> &images, bool trainin
                 exit(1);
             }
 
-            softmax_nodes[i]->set_input_value(batch_number, 0, 0, value);
-            //cout << "\tvalue " << softmax_nodes[i]->get_innovation_number() << ": " << softmax_nodes[i]->get_input_value(0,0) << endl;
+            softmax_nodes[i]->set_value(batch_number, 0, 0, value);
+            //cout << "\tvalue " << softmax_nodes[i]->get_innovation_number() << ": " << softmax_nodes[i]->get_value(0,0) << endl;
             softmax_sum += value;
 
             if (isnan(softmax_sum)) {
@@ -993,16 +993,16 @@ void CNN_Genome::evaluate_images(const vector<const Image> &images, bool trainin
 
         //cout << "error:          ";
         for (int32_t i = 0; i < (int32_t)softmax_nodes.size(); i++) {
-            double value = softmax_nodes[i]->get_input_value(batch_number, 0,0) / softmax_sum;
-            //cout << "\tvalue " << softmax_nodes[i]->get_innovation_number() << ": " << softmax_nodes[i]->get_input_value(0,0) << endl;
+            double value = softmax_nodes[i]->get_value(batch_number, 0,0) / softmax_sum;
+            //cout << "\tvalue " << softmax_nodes[i]->get_innovation_number() << ": " << softmax_nodes[i]->get_value(0,0) << endl;
 
             if (isnan(value)) {
-                cerr << "ERROR: value was NAN AFTER divide by softmax_sum, previously: " << softmax_nodes[i]->get_input_value(batch_number, 0,0) << endl;
+                cerr << "ERROR: value was NAN AFTER divide by softmax_sum, previously: " << softmax_nodes[i]->get_value(batch_number, 0,0) << endl;
                 cerr << "softmax_sum: " << softmax_sum << endl;
                 exit(1);
             }
 
-            softmax_nodes[i]->set_input_value(batch_number, 0, 0,  value);
+            softmax_nodes[i]->set_value(batch_number, 0, 0,  value);
 
             //softmax_nodes[i]->print(cout);
 
@@ -1015,7 +1015,8 @@ void CNN_Genome::evaluate_images(const vector<const Image> &images, bool trainin
 
             //if (training) cout << "\t" << softmax_nodes[i]->get_innovation_number() << " -- batch number: " << batch_number << ", value: " << value << ", error: " << error << ", gradient: " << gradient << endl;
 
-            softmax_nodes[i]->set_delta(batch_number, 0, 0, error * gradient);
+            softmax_nodes[i]->set_error(batch_number, 0, 0, error);
+            softmax_nodes[i]->set_gradient(batch_number, 0, 0, gradient);
 
             if (value > max_value) {
                 predicted_class = i;
@@ -1254,8 +1255,8 @@ void CNN_Genome::stochastic_backpropagation(const Images &images) {
         fisher_yates_shuffle(generator, backprop_order);
 
         evaluate(images, total_error, correct_predictions, true);
-        //cout << "backprop error: " << total_error << ", backprop predictions: " << correct_predictions << endl;
-        //evaluate(images, total_error, correct_predictions, false);
+        cout << "backprop error: " << total_error << ", backprop predictions: " << correct_predictions << endl;
+        evaluate(images, total_error, correct_predictions, false);
 
         bool found_improvement = false;
         if (total_error < best_error) {

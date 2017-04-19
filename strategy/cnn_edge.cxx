@@ -634,8 +634,8 @@ void CNN_Edge::check_output_update(const vector< vector< vector<double> > > &out
 void CNN_Edge::propagate_forward(bool training, double epsilon, double alpha, bool perform_dropout, double hidden_dropout_probability, minstd_rand0 &generator) {
     if (disabled) return;
 
-    vector< vector< vector<double> > > &input = input_node->get_output_values();
-    vector< vector< vector<double> > > &output = output_node->get_input_values();
+    vector< vector< vector<double> > > &input = input_node->get_values();
+    vector< vector< vector<double> > > &output = output_node->get_values();
 
 #ifdef NAN_CHECKS
     if (!is_filter_correct()) {
@@ -857,10 +857,11 @@ void CNN_Edge::check_weight_update(const vector< vector< vector<double> > > &inp
 void CNN_Edge::propagate_backward(double mu, double learning_rate) {
     if (disabled) return;
 
-    vector< vector< vector<double> > > &output_deltas = output_node->get_deltas();
+    vector< vector< vector<double> > > &output_errors = output_node->get_errors();
+    vector< vector< vector<double> > > &output_gradients = output_node->get_gradients();
 
-    vector< vector< vector<double> > > &input = input_node->get_output_values();
-    vector< vector< vector<double> > > &input_deltas = input_node->get_deltas();
+    vector< vector< vector<double> > > &input = input_node->get_values();
+    vector< vector< vector<double> > > &input_errors = input_node->get_errors();
 
     double weight, weight_update, delta;
 
@@ -881,13 +882,13 @@ void CNN_Edge::propagate_backward(double mu, double learning_rate) {
                 for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
                     for (int32_t y = 0; y < in_y; y++) {
                         for (int32_t x = 0; x < in_x; x++) {
-                            delta = output_deltas[batch_number][y + fy][x + fx];
+                            delta = output_errors[batch_number][y + fy][x + fx] * output_gradients[batch_number][y + fy][x + fx];
 #ifdef NAN_CHECKS                        
                             double previous_weight_update = weight_update;
                             double previous_delta = input_deltas[batch_number][y][x];
 #endif
                             weight_update += input[batch_number][y][x] * delta;
-                            input_deltas[batch_number][y][x] += delta * weight;
+                            input_errors[batch_number][y][x] += delta * weight;
 #ifdef NAN_CHECKS
                             check_weight_update(input, input_deltas, delta, previous_delta, weight_update, previous_weight_update, batch_number, y + fy, x + fx, y, x);
 #endif
@@ -910,13 +911,13 @@ void CNN_Edge::propagate_backward(double mu, double learning_rate) {
                 for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
                     for (int32_t y = 0; y < out_y; y++) {
                         for (int32_t x = 0; x < in_x; x++) {
-                            delta = output_deltas[batch_number][y][x + fx];
+                            delta = output_errors[batch_number][y][x + fx] * output_gradients[batch_number][y][x + fx];
 #ifdef NAN_CHECKS                        
                             double previous_weight_update = weight_update;
                             double previous_delta = input_deltas[batch_number][y][x];
 #endif
                             weight_update += input[batch_number][y + fy][x] * delta;
-                            input_deltas[batch_number][y + fy][x] += delta * weight;
+                            input_errors[batch_number][y + fy][x] += delta * weight;
 #ifdef NAN_CHECKS
                             check_weight_update(input, input_deltas, delta, previous_delta, weight_update, previous_weight_update, batch_number, y, x + fx, y + fy, x);
 #endif
@@ -953,7 +954,7 @@ void CNN_Edge::propagate_backward(double mu, double learning_rate) {
                         for (int32_t x = 0; x < out_x; x++) {
                             //cout << "thread '" << this_id << "' -- setting output[" << y + fy << "][" << x << "]" << endl;
 
-                            delta = output_deltas[batch_number][y + fy][x];
+                            delta = output_errors[batch_number][y + fy][x] * output_gradients[batch_number][y + fy][x];
 #ifdef NAN_CHECKS                        
                             double previous_weight_update = weight_update;
                             double previous_delta = input_deltas[batch_number][y][x];
@@ -961,7 +962,7 @@ void CNN_Edge::propagate_backward(double mu, double learning_rate) {
                             //cout << "thread '" << this_id << "' -- setting input[" << y << "][" << x + fx << "]" << endl;
 
                             weight_update += input[batch_number][y][x + fx] * delta;
-                            input_deltas[batch_number][y][x + fx] += delta * weight;
+                            input_errors[batch_number][y][x + fx] += delta * weight;
 
 #ifdef NAN_CHECKS
                             check_weight_update(input, input_deltas, delta, previous_delta, weight_update, previous_weight_update, batch_number, y + fy, x, y, x + fx);
@@ -985,14 +986,14 @@ void CNN_Edge::propagate_backward(double mu, double learning_rate) {
                 for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
                     for (int32_t y = 0; y < out_y; y++) {
                         for (int32_t x = 0; x < out_x; x++) {
-                            delta = output_deltas[batch_number][y][x];
+                            delta = output_errors[batch_number][y][x] * output_gradients[batch_number][y][x];
 #ifdef NAN_CHECKS                        
                             double previous_weight_update = weight_update;
                             double previous_delta = input_deltas[batch_number][y][x];
 #endif
 
                             weight_update += input[batch_number][y + fy][x + fx] * delta;
-                            input_deltas[batch_number][y + fy][x + fx] += delta * weight;
+                            input_errors[batch_number][y + fy][x + fx] += delta * weight;
 
 #ifdef NAN_CHECKS
                             check_weight_update(input, input_deltas, delta, previous_delta, weight_update, previous_weight_update, batch_number, y, x, y + fy, x + fx);

@@ -86,11 +86,9 @@ class CNN_Node {
         double best_running_variance;
 
         //batch number x size_y x size_x
-        vector< vector< vector<double> > > values_in;   //after RELU
-        vector< vector< vector<double> > > values_hat;  //normalized but not scaled and shifted
-        vector< vector< vector<double> > > values_out;  //scaled and shifted
-        vector< vector< vector<double> > > deltas;
-        vector< vector<bool> > dropped_out;
+        vector< vector< vector<double> > > values;   //after RELU
+        vector< vector< vector<double> > > errors;
+        vector< vector< vector<double> > > gradients;
 
 
     public:
@@ -136,18 +134,16 @@ class CNN_Node {
 
         bool has_nan() const;
 
-        void set_input_values(const vector<const Image> &image, int channel, bool perform_dropout, double input_dropout_probability, minstd_rand0 &generator);
-        double get_input_value(int batch_number, int y, int x);
-        void set_input_value(int batch_number, int y, int x, double value);
-        vector< vector< vector<double> > >& get_input_values();
+        void set_values(const vector<const Image> &image, int channel, bool perform_dropout, double input_dropout_probability, minstd_rand0 &generator);
+        double get_value(int batch_number, int y, int x);
+        void set_value(int batch_number, int y, int x, double value);
+        vector< vector< vector<double> > >& get_values();
 
-        double get_output_value(int batch_number, int y, int x);
-        void set_output_value(int batch_number, int y, int x, double value);
-        vector< vector< vector<double> > >& get_output_values();
+        void set_error(int batch_number, int y, int x, double error);
+        vector< vector< vector<double> > >& get_errors();
 
-        void set_delta(int batch_number, int y, int x, double delta);
-        vector< vector< vector<double> > >& get_deltas();
-
+        void set_gradient(int batch_number, int y, int x, double gradient);
+        vector< vector< vector<double> > >& get_gradients();
 
         void print(ostream &out);
 
@@ -165,19 +161,21 @@ class CNN_Node {
         int get_inputs_fired() const;
         void input_fired(bool training, double epsilon, double alpha, bool perform_dropout, double hidden_dropout_probability, minstd_rand0 &generator);
 
-        void batch_normalize(bool training, double epsilon, double alpha);
-        void apply_relu(vector< vector< vector<double> > > &values_in, vector< vector< vector<double> > > &values_out);
-        void apply_dropout(vector< vector< vector<double> > > &values, bool perform_dropout, double dropout_probability, minstd_rand0 &generator);
-
         void add_output();
         void disable_output();
         int get_number_outputs() const;
         int get_outputs_fired() const;
         void output_fired(double mu, double learning_rate);
 
+        //void batch_normalize(bool training, double epsilon, double alpha);
+        void apply_relu();
+        void apply_dropout(bool perform_dropout, double dropout_probability, minstd_rand0 &generator);
+
+        /*
         void backpropagate_dropout();
         void backpropagate_relu(vector< vector< vector<double> > > &values);
         void backpropagate_batch_normalization(double mu, double learning_rate);
+        */
 
         void print_statistics();
 
