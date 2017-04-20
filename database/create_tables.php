@@ -233,6 +233,9 @@ $query = "CREATE TABLE `cnn_edge` (
 
   `fixed` tinyint(1) NOT NULL,
   `disabled` tinyint(1) NOT NULL,
+  `forward_visited` tinyint(1) NOT NULL,
+  `reverse_visited` tinyint(1) NOT NULL,
+
   `reverse_filter_x` tinyint(1) NOT NULL,
   `reverse_filter_y` tinyint(1) NOT NULL,
   `needs_initialization` tinyint(1) NOT NULL,
@@ -257,7 +260,8 @@ $query = "CREATE TABLE `cnn_node` (
 
   `type` int(11) NOT NULL,
 
-  `visited` tinyint(1) NOT NULL,
+  `forward_visited` tinyint(1) NOT NULL,
+  `reverse_visited` tinyint(1) NOT NULL,
   `weight_count` int(11) NOT NULL,
   `needs_initialization` tinyint(1) NOT NULL,
 

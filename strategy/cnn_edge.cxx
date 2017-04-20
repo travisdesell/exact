@@ -65,6 +65,9 @@ CNN_Edge::CNN_Edge(CNN_Node *_input_node, CNN_Node *_output_node, bool _fixed, i
     fixed = _fixed;
     innovation_number = _innovation_number;
     disabled = false;
+    forward_visited = false;
+    reverse_visited = false;
+
     reverse_filter_x = false;
     reverse_filter_y = false;
     needs_initialization = true;
@@ -76,11 +79,6 @@ CNN_Edge::CNN_Edge(CNN_Node *_input_node, CNN_Node *_output_node, bool _fixed, i
     output_node_innovation_number = output_node->get_innovation_number();
 
     batch_size = _input_node->get_batch_size();
-
-    if (!disabled) {
-        output_node->add_input();
-        input_node->add_output();
-    }
 
     if (output_node->get_size_x() <= input_node->get_size_x()) {
         filter_x = (input_node->get_size_x() - output_node->get_size_x()) + 1;
@@ -175,6 +173,8 @@ CNN_Edge::CNN_Edge(int _edge_id) {
 
         fixed = atoi(row[++column]);
         disabled = atoi(row[++column]);
+        forward_visited = atoi(row[++column]);
+        reverse_visited = atoi(row[++column]);
         reverse_filter_x = atoi(row[++column]);
         reverse_filter_y = atoi(row[++column]);
         needs_initialization = atoi(row[++column]);
@@ -217,6 +217,8 @@ void CNN_Edge::export_to_database(int _exact_id, int _genome_id) {
         << ", filter_y = " << filter_y
         << ", fixed = " << fixed
         << ", disabled = " << disabled
+        << ", forward_visited = " << forward_visited
+        << ", reverse_visited = " << reverse_visited
         << ", reverse_filter_x = " << reverse_filter_x
         << ", reverse_filter_y = " << reverse_filter_y
         << ", needs_initialization = " << needs_initialization
@@ -405,6 +407,8 @@ CNN_Edge* CNN_Edge::copy() const {
     copy->fixed = fixed;
     copy->innovation_number = innovation_number;
     copy->disabled = disabled;
+    copy->forward_visited = forward_visited;
+    copy->reverse_visited = reverse_visited;
 
     copy->input_node = input_node;
     copy->output_node = output_node;
@@ -440,12 +444,10 @@ bool CNN_Edge::set_nodes(const vector<CNN_Node*> nodes) {
     for (uint32_t i = 0; i < nodes.size(); i++) {
         if (nodes[i]->get_innovation_number() == input_node_innovation_number) {
             input_node = nodes[i];
-            if (!disabled) input_node->add_output();
         }
 
         if (nodes[i]->get_innovation_number() == output_node_innovation_number) {
             output_node = nodes[i];
-            if (!disabled) output_node->add_input();
         }
     }
 
@@ -515,24 +517,46 @@ bool CNN_Edge::is_filter_correct() const {
 }
 
 void CNN_Edge::enable() {
-    if (disabled) {
+    if (is_reachable()) {
         disabled = false;
-        input_node->add_output();
-        output_node->add_input();
     }
 }
 
 void CNN_Edge::disable() {
-    if (!disabled) {
+    if (!is_reachable()) {
         disabled = true;
-        input_node->disable_output();
-        output_node->disable_input();
     }
 }
 
 bool CNN_Edge::is_disabled() const {
     return disabled;
 }
+
+bool CNN_Edge::is_reachable() const {
+    return !disabled && forward_visited && reverse_visited;
+}
+
+bool CNN_Edge::is_forward_visited() const {
+    return forward_visited;
+}
+
+bool CNN_Edge::is_reverse_visited() const {
+    return reverse_visited;
+}
+
+void CNN_Edge::forward_visit() {
+    forward_visited = true;
+}
+
+void CNN_Edge::reverse_visit() {
+    reverse_visited = true;
+}
+
+void CNN_Edge::set_unvisited() {
+    forward_visited = false;
+    reverse_visited = false;
+}
+
 
 int CNN_Edge::get_number_weights() const {
     return filter_x * filter_y;
@@ -564,7 +588,7 @@ bool CNN_Edge::connects(int n1, int n2) const {
 }
 
 bool CNN_Edge::has_zero_weight() const {
-    if (disabled) return false;
+    if (is_reachable()) return false;
 
     double filter_sum = 0.0;
     for (int32_t fy = 0; fy < filter_y; fy++) {
@@ -577,7 +601,7 @@ bool CNN_Edge::has_zero_weight() const {
 }
 
 bool CNN_Edge::has_zero_best_weight() const {
-    if (disabled) return false;
+    if (is_reachable()) return false;
 
     double filter_sum = 0.0;
     for (int32_t fy = 0; fy < filter_y; fy++) {
@@ -632,7 +656,7 @@ void CNN_Edge::check_output_update(const vector< vector< vector<double> > > &out
 }
 
 void CNN_Edge::propagate_forward(bool training, double epsilon, double alpha, bool perform_dropout, double hidden_dropout_probability, minstd_rand0 &generator) {
-    if (disabled) return;
+    if (!is_reachable()) return;
 
     vector< vector< vector<double> > > &input = input_node->get_values();
     vector< vector< vector<double> > > &output = output_node->get_values();
@@ -744,7 +768,7 @@ void CNN_Edge::propagate_forward(bool training, double epsilon, double alpha, bo
 }
 
 void CNN_Edge::update_weights(double mu, double learning_rate, double weight_decay) {
-    if (disabled) return;
+    if (!is_reachable()) return;
 
     double dx, pv, velocity, previous_weight, weight;
 
@@ -855,7 +879,7 @@ void CNN_Edge::check_weight_update(const vector< vector< vector<double> > > &inp
 }
 
 void CNN_Edge::propagate_backward(double mu, double learning_rate) {
-    if (disabled) return;
+    if (!is_reachable()) return;
 
     vector< vector< vector<double> > > &output_errors = output_node->get_errors();
     vector< vector< vector<double> > > &output_gradients = output_node->get_gradients();
@@ -1062,6 +1086,8 @@ ostream &operator<<(ostream &os, const CNN_Edge* edge) {
     os << edge->reverse_filter_x << " ";
     os << edge->reverse_filter_y << " ";
     os << edge->disabled << " ";
+    os << edge->forward_visited << " ";
+    os << edge->reverse_visited << " ";
     os << edge->needs_initialization << endl;
 
     os << "WEIGHTS" << endl;
@@ -1116,6 +1142,8 @@ istream &operator>>(istream &is, CNN_Edge* edge) {
     is >> edge->reverse_filter_x;
     is >> edge->reverse_filter_y;
     is >> edge->disabled;
+    is >> edge->forward_visited;
+    is >> edge->reverse_visited;
     is >> edge->needs_initialization;
 
     edge->weights = vector< vector<double> >(edge->filter_y, vector<double>(edge->filter_x, 0.0));

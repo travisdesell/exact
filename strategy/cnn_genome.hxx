@@ -133,7 +133,7 @@ class CNN_Genome {
         int get_number_enabled_edges() const;
 
         bool sanity_check(int type);
-        bool outputs_connected() const;
+        bool visit_nodes();
 
         const vector<CNN_Node*> get_nodes() const;
         const vector<CNN_Edge*> get_edges() const;

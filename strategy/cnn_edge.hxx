@@ -51,6 +51,9 @@ class CNN_Edge {
 
         bool fixed;
         bool disabled;
+        bool forward_visited;
+        bool reverse_visited;
+
         bool reverse_filter_x;
         bool reverse_filter_y;
         bool needs_initialization;
@@ -97,6 +100,13 @@ class CNN_Edge {
         void disable();
         void enable();
         bool is_disabled() const;
+
+        bool is_reachable() const;
+        bool is_forward_visited() const;
+        bool is_reverse_visited() const;
+        void forward_visit();
+        void reverse_visit();
+        void set_unvisited();
 
         bool is_filter_correct() const;
 
@@ -154,6 +164,28 @@ struct sort_CNN_Edges_by_depth {
         }
     }   
 };
+
+struct sort_CNN_Edges_by_output_depth {
+    bool operator()(CNN_Edge *n1, CNN_Edge *n2) {
+        if (n1->get_output_node()->get_depth() < n2->get_output_node()->get_depth()) {
+            return true;
+
+        } else if (n1->get_output_node()->get_depth() == n2->get_output_node()->get_depth()) {
+            //make sure the order of the edges is *always* the same
+            //going through the edges in different orders may effect the output
+            //of backpropagation
+            if (n1->get_innovation_number() < n2->get_innovation_number()) {
+                return true;
+            } else {
+                return false;
+            }
+
+        } else {
+            return false;
+        }
+    }   
+};
+
 
 struct sort_CNN_Edges_by_innovation {
     bool operator()(CNN_Edge *n1, CNN_Edge *n2) {

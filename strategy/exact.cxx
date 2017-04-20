@@ -1026,7 +1026,7 @@ CNN_Genome* EXACT::generate_individual() {
         while (genome == NULL) {
             genome = create_mutation();
 
-            if (!genome->outputs_connected()) {
+            if (!genome->visit_nodes()) {
                 cout << "\tAll softmax nodes were not reachable, deleting genome." << endl;
                 delete genome;
                 genome = NULL;
@@ -1038,7 +1038,7 @@ CNN_Genome* EXACT::generate_individual() {
             while (genome == NULL) {
                 genome = create_child();
 
-                if (!genome->outputs_connected()) {
+                if (!genome->visit_nodes()) {
                     cout << "\tAll softmax nodes were not reachable, deleting genome." << endl;
                     delete genome;
                     genome = NULL;
@@ -1050,7 +1050,7 @@ CNN_Genome* EXACT::generate_individual() {
             while (genome == NULL) {
                 genome = create_mutation();
 
-                if (!genome->outputs_connected()) {
+                if (!genome->visit_nodes()) {
                     cout << "\tAll softmax nodes were not reachable, deleting genome." << endl;
                     delete genome;
                     genome = NULL;

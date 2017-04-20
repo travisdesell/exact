@@ -67,7 +67,8 @@ class CNN_Node {
         int total_outputs;
         int outputs_fired;
 
-        bool visited;
+        bool forward_visited;
+        bool reverse_visited;
         bool needs_initialization;
 
         double gamma;
@@ -128,8 +129,11 @@ class CNN_Node {
         bool is_output() const;
         bool is_softmax() const;
 
-        bool is_visited() const;
-        void visit();
+        bool is_reachable() const;
+        bool is_forward_visited() const;
+        bool is_reverse_visited() const;
+        void forward_visit();
+        void reverse_visit();
         void set_unvisited();
 
         bool has_nan() const;

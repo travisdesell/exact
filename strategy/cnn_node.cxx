@@ -76,7 +76,8 @@ CNN_Node::CNN_Node() {
 
     innovation_number = -1;
 
-    visited = false;
+    forward_visited = false;
+    reverse_visited = false;
     needs_initialization = true;
 
     weight_count = 0;
@@ -119,7 +120,8 @@ CNN_Node::CNN_Node(int _innovation_number, double _depth, int _batch_size, int _
 
     weight_count = 0;
 
-    visited = false;
+    forward_visited = false;
+    reverse_visited = false;
 
     needs_initialization = true;
 
@@ -176,7 +178,8 @@ CNN_Node::CNN_Node(int _node_id) {
         total_outputs = 0;
         outputs_fired = 0;
 
-        visited = atoi(row[++column]);
+        forward_visited = atoi(row[++column]);
+        reverse_visited = atoi(row[++column]);
         weight_count = atoi(row[++column]);
         needs_initialization = atoi(row[++column]);
 
@@ -232,7 +235,8 @@ void CNN_Node::export_to_database(int _exact_id, int _genome_id) {
         << ", size_x = " << size_x
         << ", size_y = " << size_y;
         << ", type = " << type
-        << ", visited = " << visited
+        << ", forward_visited = " << forward_visited
+        << ", reverse_visited = " << reverse_visited
         << ", weight_count = " << weight_count
         << ", needs_initialization = " << needs_initialization
         << ", gamma = " << gamma
@@ -279,7 +283,8 @@ CNN_Node* CNN_Node::copy() const {
     copy->total_outputs = 0; //this will be updated when edges are set
     copy->outputs_fired = outputs_fired;
 
-    copy->visited = visited;
+    copy->forward_visited = forward_visited;
+    copy->reverse_visited = reverse_visited;
     copy->weight_count = weight_count;
     copy->needs_initialization = needs_initialization;
 
@@ -314,6 +319,10 @@ void CNN_Node::initialize() {
     gamma = 1.0;
     beta = 0.0;
     needs_initialization = false;
+
+    values = vector< vector< vector<double> > >(batch_size, vector< vector<double> >(size_y, vector<double>(size_x, 0.0)));
+    errors = vector< vector< vector<double> > >(batch_size, vector< vector<double> >(size_y, vector<double>(size_x, 0.0)));
+    gradients = vector< vector< vector<double> > >(batch_size, vector< vector<double> >(size_y, vector<double>(size_x, 0.0)));
 }
 
 void CNN_Node::reset_velocities() {
@@ -355,16 +364,29 @@ bool CNN_Node::is_softmax() const {
 }
 
 
-bool CNN_Node::is_visited() const {
-    return visited;
+bool CNN_Node::is_reachable() const {
+    return forward_visited && reverse_visited;
 }
 
-void CNN_Node::visit() {
-    visited = true;
+bool CNN_Node::is_forward_visited() const {
+    return forward_visited;
+}
+
+bool CNN_Node::is_reverse_visited() const {
+    return reverse_visited;
+}
+
+void CNN_Node::forward_visit() {
+    forward_visited = true;
+}
+
+void CNN_Node::reverse_visit() {
+    reverse_visited = true;
 }
 
 void CNN_Node::set_unvisited() {
-    visited = false;
+    forward_visited = false;
+    reverse_visited = false;
 }
 
 int CNN_Node::get_batch_size() const {
@@ -463,12 +485,14 @@ void CNN_Node::reset() {
     inputs_fired = 0;
     outputs_fired = 0;
 
-    for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
-        for (int32_t y = 0; y < size_y; y++) {
-            for (int32_t x = 0; x < size_x; x++) {
-                values[batch_number][y][x] = 0;
-                errors[batch_number][y][x] = 0;
-                gradients[batch_number][y][x] = 0;
+    if (is_reachable()) {
+        for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
+            for (int32_t y = 0; y < size_y; y++) {
+                for (int32_t x = 0; x < size_x; x++) {
+                    values[batch_number][y][x] = 0;
+                    errors[batch_number][y][x] = 0;
+                    gradients[batch_number][y][x] = 0;
+                }
             }
         }
     }
@@ -946,7 +970,6 @@ ostream &operator<<(ostream &os, const CNN_Node* node) {
     os << node->size_x << " ";
     os << node->size_y << " ";
     os << node->type << " ";
-    os << node->visited << " ";
     os << node->weight_count << " ";
     os << node->needs_initialization << " ";
 
@@ -973,7 +996,6 @@ std::istream &operator>>(std::istream &is, CNN_Node* node) {
     is >> node->size_x;
     is >> node->size_y;
     is >> node->type;
-    is >> node->visited;
     is >> node->weight_count;
     is >> node->needs_initialization;
 
@@ -991,7 +1013,8 @@ std::istream &operator>>(std::istream &is, CNN_Node* node) {
     node->total_inputs = 0;
     node->inputs_fired = 0;
 
-    node->visited = false;
+    node->forward_visited = false;
+    node->reverse_visited = false;
 
     node->values = vector< vector< vector<double> > >(node->batch_size, vector< vector<double> >(node->size_y, vector<double>(node->size_x, 0.0)));
     node->errors = vector< vector< vector<double> > >(node->batch_size, vector< vector<double> >(node->size_y, vector<double>(node->size_x, 0.0)));

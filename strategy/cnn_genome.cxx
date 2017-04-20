@@ -314,6 +314,8 @@ CNN_Genome::CNN_Genome(int _genome_id) {
         exit(1);
     }
 
+    visit_nodes();
+
     if (epoch > 0) {
         //if this was saved at an epoch > 0, it has already been initialized
         started_from_checkpoint = true;
@@ -899,27 +901,69 @@ bool CNN_Genome::sanity_check(int type) {
     return true;
 }
 
-bool CNN_Genome::outputs_connected() const {
+bool CNN_Genome::visit_nodes() {
     //check to see there is a path to from the input to each output
+    //check to see if there is a path from output to inputs
+    //if a node and edge is not forward and reverse visitable, then we can ignore it
+
+    //sort nodes and edges
+    sort(edges.begin(), edges.end(), sort_CNN_Edges_by_depth());
 
     for (uint32_t i = 0; i < nodes.size(); i++) {
         nodes[i]->set_unvisited();
     }
 
+    for (uint32_t i = 0; i < edges.size(); i++) {
+        edges[i]->set_unvisited();
+    }
+
     for (uint32_t i = 0; i < input_nodes.size(); i++) {
-        input_nodes[i]->visit();
+        input_nodes[i]->forward_visit();
+    }
+
+    for (uint32_t i = 0; i < softmax_nodes.size(); i++) {
+        softmax_nodes[i]->reverse_visit();
     }
 
     for (uint32_t i = 0; i < edges.size(); i++) {
         if (!edges[i]->is_disabled()) {
-            if (edges[i]->get_input_node()->is_visited()) {
-                edges[i]->get_output_node()->visit();
+            if (edges[i]->get_input_node()->is_forward_visited()) {
+                edges[i]->forward_visit();
+                edges[i]->get_output_node()->forward_visit();
             }
         }
     }
 
+    sort(edges.begin(), edges.end(), sort_CNN_Edges_by_output_depth());
+    for (int32_t i = edges.size() - 1; i >= 0; i--) {
+        if (!edges[i]->is_disabled()) {
+
+            if (edges[i]->get_output_node()->is_reverse_visited()) {
+                edges[i]->reverse_visit();
+                edges[i]->get_input_node()->reverse_visit();
+            }
+        }
+    }
+
+    sort(edges.begin(), edges.end(), sort_CNN_Edges_by_depth());
+
+    for (uint32_t i = 0; i < edges.size(); i++) {
+        //cout << "edge " << edges[i]->get_innovation_number() << " is forward visited: " << edges[i]->is_forward_visited() << ", is reverse visited: " << edges[i]->is_reverse_visited() << ", is reachable: " << edges[i]->is_reachable() << endl;
+
+        if (edges[i]->is_reachable()) {
+            edges[i]->get_input_node()->add_output();
+            edges[i]->get_output_node()->add_input();
+        }
+    }
+
+    /*
+    for (uint32_t i = 0; i < nodes.size(); i++) {
+        cout << "node " << nodes[i]->get_innovation_number() << " is forward visited: " << nodes[i]->is_forward_visited() << ", is reverse visited: " << nodes[i]->is_reverse_visited() << ", is reachable: " << nodes[i]->is_reachable() << ", number inputs: " << nodes[i]->get_number_inputs() << ", number outputs: " << nodes[i]->get_number_outputs() << endl;
+    }
+    */
+
     for (uint32_t i = 0; i < softmax_nodes.size(); i++) {
-        if (!softmax_nodes[i]->is_visited()) {
+        if (!softmax_nodes[i]->is_reachable()) {
             return false;
         }
     }
@@ -1075,6 +1119,8 @@ void CNN_Genome::set_to_best() {
 }
 
 void CNN_Genome::initialize() {
+    visit_nodes();
+
     cout << "initializing genome!" << endl;
     for (uint32_t i = 0; i < nodes.size(); i++) {
         nodes[i]->reset_weight_count();
@@ -1115,7 +1161,6 @@ void CNN_Genome::initialize() {
             }
         }
         cout << "initialized node gamma/beta!" << endl;
-
 
         set_to_best();
 
@@ -1691,6 +1736,8 @@ void CNN_Genome::read(istream &infile) {
         backprop_order.push_back(order);
         //cerr << "backprop order[" << i << "]: " << order << endl;
     }
+
+    visit_nodes();
 }
 
 void CNN_Genome::write_to_file(string filename) {
