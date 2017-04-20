@@ -150,6 +150,7 @@ class CNN_Genome {
         double get_initial_weight_decay() const;
         double get_weight_decay() const;
         double get_weight_decay_delta() const;
+        int get_batch_size() const;
 
         double get_alpha() const;
         int get_velocity_reset() const;

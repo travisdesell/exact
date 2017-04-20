@@ -109,7 +109,10 @@ EXACT::EXACT(int exact_id) {
         reset_weights = atoi(row[++column]);
         max_epochs = atoi(row[++column]);
 
-        batch_size = atoi(row[++column]);
+        initial_batch_size_min = atof(row[++column]);
+        initial_batch_size_max = atof(row[++column]);
+        batch_size_min = atof(row[++column]);
+        batch_size_max = atof(row[++column]);
 
         initial_mu_min = atof(row[++column]);
         initial_mu_max = atof(row[++column]);
@@ -326,7 +329,11 @@ void EXACT::export_to_database() {
 
         << ", reset_weights = " << reset_weights
         << ", max_epochs = " << max_epochs
-        << ", batch_size = " << batch_size
+
+        << ", initial_batch_size_min = " << initial_batch_size_min
+        << ", initial_batch_size_max = " << initial_batch_size_max
+        << ", batch_size_min = " << batch_size_min
+        << ", batch_size_max = " << batch_size_max
 
         << ", initial_mu_min = " << initial_mu_min
         << ", initial_mu_max = " << initial_mu_max
@@ -567,7 +574,7 @@ void EXACT::update_database() {
 
 #endif
 
-EXACT::EXACT(const Images &images, string _samples_filename, int _population_size, int _max_epochs, int _batch_size, int _max_genomes, string _output_directory, string _search_name, bool _reset_weights) {
+EXACT::EXACT(const Images &images, string _samples_filename, int _population_size, int _max_epochs, int _max_genomes, string _output_directory, string _search_name, bool _reset_weights) {
     id = -1;
 
     search_name = _search_name;
@@ -576,7 +583,6 @@ EXACT::EXACT(const Images &images, string _samples_filename, int _population_siz
 
     reset_weights = _reset_weights;
     max_epochs = _max_epochs;
-    batch_size = _batch_size;
 
     max_genomes = _max_genomes;
 
@@ -623,6 +629,11 @@ EXACT::EXACT(const Images &images, string _samples_filename, int _population_siz
     generated_from_add_node = 0;
 
     genomes_generated = 0;
+
+    initial_batch_size_min = 25;
+    initial_batch_size_max = 150;
+    batch_size_min = 25;
+    batch_size_max = 300;
 
     initial_mu_min = 0.40;
     initial_mu_max = 0.60;
@@ -697,6 +708,11 @@ EXACT::EXACT(const Images &images, string _samples_filename, int _population_siz
 
     cout << "EXACT settings: " << endl;
 
+    cout << "\tinitial_batch_size_min: " << initial_batch_size_min << endl;
+    cout << "\tinitial_batch_size_max: " << initial_batch_size_max << endl;
+    cout << "\tbatch_size_min: " << batch_size_min << endl;
+    cout << "\tbatch_size_max: " << batch_size_max << endl;
+
     cout << "\tinitial_mu_min: " << initial_mu_min << endl;
     cout << "\tinitial_mu_max: " << initial_mu_max << endl;
     cout << "\tmu_min: " << mu_min << endl;
@@ -750,7 +766,6 @@ EXACT::EXACT(const Images &images, string _samples_filename, int _population_siz
     cout << "\thidden_dropout_probability_max: " << hidden_dropout_probability_max << endl;
 
     cout << "\tmax_epochs: " << max_epochs << endl;
-    cout << "\tbatch_size: " << batch_size << endl;
     cout << "\treset_weights_chance: " << reset_weights_chance << endl;
 
     cout << "\tcrossover_settings: " << endl;
@@ -835,7 +850,7 @@ CNN_Genome* EXACT::get_best_genome() {
     return genomes[0];
 }
 
-void EXACT::generate_initial_hyperparameters(double &mu, double &mu_delta, double &learning_rate, double &learning_rate_delta, double &weight_decay, double &weight_decay_delta, double &alpha, int &velocity_reset, double &input_dropout_probability, double &hidden_dropout_probability) {
+void EXACT::generate_initial_hyperparameters(double &mu, double &mu_delta, double &learning_rate, double &learning_rate_delta, double &weight_decay, double &weight_decay_delta, double &alpha, int &velocity_reset, double &input_dropout_probability, double &hidden_dropout_probability, int &batch_size) {
     mu = (rng_double(generator) * (initial_mu_max - initial_mu_min)) + initial_mu_min;
     mu_delta = (rng_double(generator) * (initial_mu_delta_max - initial_mu_delta_min)) + initial_mu_delta_min;
 
@@ -852,6 +867,8 @@ void EXACT::generate_initial_hyperparameters(double &mu, double &mu_delta, doubl
     input_dropout_probability = (rng_double(generator) * (initial_input_dropout_probability_max - initial_input_dropout_probability_min)) + initial_input_dropout_probability_min;
     hidden_dropout_probability = (rng_double(generator) * (initial_hidden_dropout_probability_max - initial_hidden_dropout_probability_min)) + initial_hidden_dropout_probability_min;
 
+    batch_size = (rng_double(generator) * (initial_batch_size_max - initial_batch_size_min)) + initial_batch_size_min;
+
     cout << "\tGenerated RANDOM hyperparameters:" << endl;
     cout << "\t\tmu: " << mu << endl;
     cout << "\t\tmu_delta: " << mu_delta << endl;
@@ -863,11 +880,12 @@ void EXACT::generate_initial_hyperparameters(double &mu, double &mu_delta, doubl
     cout << "\t\tvelocity_reset: " << velocity_reset << endl;
     cout << "\t\tinput_dropout_probability: " << input_dropout_probability << endl;
     cout << "\t\thidden_dropout_probability: " << hidden_dropout_probability << endl;
+    cout << "\t\tbatch_size: " << batch_size << endl;
 }
 
-void EXACT::generate_simplex_hyperparameters(double &mu, double &mu_delta, double &learning_rate, double &learning_rate_delta, double &weight_decay, double &weight_decay_delta, double &alpha, int &velocity_reset, double &input_dropout_probability, double &hidden_dropout_probability) {
+void EXACT::generate_simplex_hyperparameters(double &mu, double &mu_delta, double &learning_rate, double &learning_rate_delta, double &weight_decay, double &weight_decay_delta, double &alpha, int &velocity_reset, double &input_dropout_probability, double &hidden_dropout_probability, int &batch_size) {
 
-    double best_mu, best_mu_delta, best_learning_rate, best_learning_rate_delta, best_weight_decay, best_weight_decay_delta, best_alpha, best_velocity_reset, best_input_dropout_probability, best_hidden_dropout_probability;
+    double best_mu, best_mu_delta, best_learning_rate, best_learning_rate_delta, best_weight_decay, best_weight_decay_delta, best_alpha, best_velocity_reset, best_input_dropout_probability, best_hidden_dropout_probability, best_batch_size;
 
     //get best hyperparameters
     CNN_Genome *best_genome = genomes[0];
@@ -881,9 +899,10 @@ void EXACT::generate_simplex_hyperparameters(double &mu, double &mu_delta, doubl
     best_velocity_reset = best_genome->get_velocity_reset();
     best_input_dropout_probability = best_genome->get_input_dropout_probability();
     best_hidden_dropout_probability = best_genome->get_hidden_dropout_probability();
+    best_batch_size = best_genome->get_batch_size();
 
     //get average parameters
-    double avg_mu, avg_mu_delta, avg_learning_rate, avg_learning_rate_delta, avg_weight_decay, avg_weight_decay_delta, avg_alpha, avg_velocity_reset, avg_input_dropout_probability, avg_hidden_dropout_probability;
+    double avg_mu, avg_mu_delta, avg_learning_rate, avg_learning_rate_delta, avg_weight_decay, avg_weight_decay_delta, avg_alpha, avg_velocity_reset, avg_input_dropout_probability, avg_hidden_dropout_probability, avg_batch_size;
 
     avg_mu = 0;
     avg_mu_delta = 0;
@@ -896,6 +915,7 @@ void EXACT::generate_simplex_hyperparameters(double &mu, double &mu_delta, doubl
     avg_velocity_reset = 0;
     avg_input_dropout_probability = 0;
     avg_hidden_dropout_probability = 0;
+    avg_batch_size = 0;
 
     int simplex_count = 5;
     for (uint32_t i = 0; i < simplex_count; i++) {
@@ -911,6 +931,7 @@ void EXACT::generate_simplex_hyperparameters(double &mu, double &mu_delta, doubl
         avg_velocity_reset += current_genome->get_velocity_reset();
         avg_input_dropout_probability += current_genome->get_input_dropout_probability();
         avg_hidden_dropout_probability += current_genome->get_hidden_dropout_probability();
+        avg_batch_size += current_genome->get_batch_size();
     }
 
     avg_mu /= simplex_count;
@@ -924,6 +945,7 @@ void EXACT::generate_simplex_hyperparameters(double &mu, double &mu_delta, doubl
     avg_velocity_reset /= simplex_count;
     avg_input_dropout_probability /= simplex_count;
     avg_hidden_dropout_probability /= simplex_count;
+    avg_batch_size /= simplex_count;
 
     double scale = (rng_double(generator) * 2.0) - 0.5;
 
@@ -938,6 +960,7 @@ void EXACT::generate_simplex_hyperparameters(double &mu, double &mu_delta, doubl
     velocity_reset = avg_velocity_reset + ((best_velocity_reset - avg_velocity_reset) * scale);
     input_dropout_probability = avg_input_dropout_probability + ((best_input_dropout_probability - avg_input_dropout_probability) * scale);
     hidden_dropout_probability = avg_hidden_dropout_probability + ((best_hidden_dropout_probability - avg_hidden_dropout_probability) * scale);
+    batch_size = avg_batch_size + ((best_batch_size - avg_batch_size) * scale);
 
     if (mu < mu_min) mu = mu_min;
     if (mu > mu_max) mu = mu_max;
@@ -965,6 +988,9 @@ void EXACT::generate_simplex_hyperparameters(double &mu, double &mu_delta, doubl
     if (hidden_dropout_probability < hidden_dropout_probability_min) hidden_dropout_probability = hidden_dropout_probability_min;
     if (hidden_dropout_probability > hidden_dropout_probability_max) hidden_dropout_probability = hidden_dropout_probability_max;
 
+    if (batch_size < batch_size_min) batch_size = batch_size_min;
+    if (batch_size > batch_size_max) batch_size = batch_size_max;
+
     cout << "\tGenerated SIMPLEX hyperparameters:" << endl;
     cout << "\t\tscale: " << scale << endl;
     cout << "\t\tmu: " << mu << endl;
@@ -977,6 +1003,7 @@ void EXACT::generate_simplex_hyperparameters(double &mu, double &mu_delta, doubl
     cout << "\t\tvelocity_reset: " << velocity_reset << endl;
     cout << "\t\tinput_dropout_probability: " << input_dropout_probability << endl;
     cout << "\t\thidden_dropout_probability: " << hidden_dropout_probability << endl;
+    cout << "\t\tbatch_size: " << batch_size << endl;
 }
 
 
@@ -986,6 +1013,12 @@ CNN_Genome* EXACT::generate_individual() {
 
     CNN_Genome *genome = NULL;
     if (genomes.size() == 0) {
+        //generate initial random hyperparameters
+        double mu, mu_delta, learning_rate, learning_rate_delta, weight_decay, weight_decay_delta, alpha, input_dropout_probability, hidden_dropout_probability;
+        int velocity_reset, batch_size;
+
+        generate_initial_hyperparameters(mu, mu_delta, learning_rate, learning_rate_delta, weight_decay, weight_decay_delta, alpha, velocity_reset, input_dropout_probability, hidden_dropout_probability, batch_size);
+
         //generate the initial minimal CNN
         
         vector<CNN_Node*> input_nodes;
@@ -1014,11 +1047,6 @@ CNN_Genome* EXACT::generate_individual() {
 
         long genome_seed = rng_long(generator);
         //cout << "seeding genome with: " << genome_seed << endl;
-
-        double mu, mu_delta, learning_rate, learning_rate_delta, weight_decay, weight_decay_delta, alpha, input_dropout_probability, hidden_dropout_probability;
-        int velocity_reset;
-
-        generate_initial_hyperparameters(mu, mu_delta, learning_rate, learning_rate_delta, weight_decay, weight_decay_delta, alpha, velocity_reset, input_dropout_probability, hidden_dropout_probability);
 
         genome = new CNN_Genome(genomes_generated++, genome_seed, max_epochs, reset_weights, velocity_reset, mu, mu_delta, learning_rate, learning_rate_delta, weight_decay, weight_decay_delta, batch_size, epsilon, alpha, input_dropout_probability, hidden_dropout_probability, all_nodes, all_edges);
 
@@ -1069,7 +1097,7 @@ CNN_Genome* EXACT::generate_individual() {
 
     if ((int32_t)genomes.size() < population_size) {
         //insert a copy with a bad fitness so we have more things to generate new genomes with
-        CNN_Genome *genome_copy = new CNN_Genome(genomes_generated++, /*new random seed*/ rng_long(generator), max_epochs, reset_weights, genome->get_velocity_reset(), genome->get_initial_mu(), genome->get_mu_delta(), genome->get_initial_learning_rate(), genome->get_learning_rate_delta(), genome->get_initial_weight_decay(), genome->get_weight_decay_delta(), batch_size, epsilon, genome->get_alpha(), genome->get_input_dropout_probability(), genome->get_hidden_dropout_probability(), genome->get_nodes(), genome->get_edges());
+        CNN_Genome *genome_copy = new CNN_Genome(genomes_generated++, /*new random seed*/ rng_long(generator), max_epochs, reset_weights, genome->get_velocity_reset(), genome->get_initial_mu(), genome->get_mu_delta(), genome->get_initial_learning_rate(), genome->get_learning_rate_delta(), genome->get_initial_weight_decay(), genome->get_weight_decay_delta(), genome->get_batch_size(), epsilon, genome->get_alpha(), genome->get_input_dropout_probability(), genome->get_hidden_dropout_probability(), genome->get_nodes(), genome->get_edges());
         genome_copy->initialize();
 
         //for more variability in the initial population, re-initialize weights and bias for these unevaluated copies
@@ -1167,6 +1195,11 @@ bool EXACT::insert_genome(CNN_Genome* genome) {
 
         gv_file << "#EXACT settings: " << endl;
 
+        gv_file << "#\tinitial_batch_size_min: " << initial_batch_size_min << endl;
+        gv_file << "#\tinitial_batch_size_max: " << initial_batch_size_max << endl;
+        gv_file << "#\tbatch_size_min: " << batch_size_min << endl;
+        gv_file << "#\tbatch_size_max: " << batch_size_max << endl;
+
         gv_file << "#\tinitial_mu_min: " << initial_mu_min << endl;
         gv_file << "#\tinitial_mu_max: " << initial_mu_max << endl;
         gv_file << "#\tmu_min: " << mu_min << endl;
@@ -1220,7 +1253,6 @@ bool EXACT::insert_genome(CNN_Genome* genome) {
         gv_file << "#\thidden_dropout_probability_max: " << hidden_dropout_probability_max << endl;
 
         gv_file << "#\tmax_epochs: " << max_epochs << endl;
-        gv_file << "#\tbatch_size: " << batch_size << endl;
         gv_file << "#\treset_weights_chance: " << reset_weights_chance << endl;
 
         gv_file << "#\tcrossover_settings: " << endl;
@@ -1305,6 +1337,7 @@ bool EXACT::insert_genome(CNN_Genome* genome) {
             << ", vr: " << setw(10) << fixed << setprecision(5) << genomes[i]->get_velocity_reset()
             << ", id: " << setw(10) << fixed << setprecision(5) << genomes[i]->get_input_dropout_probability()
             << ", hd: " << setw(10) << fixed << setprecision(5) << genomes[i]->get_hidden_dropout_probability()
+            << ", bs: " << setw(10) << fixed << setprecision(5) << genomes[i]->get_batch_size()
             << endl;
     }
 
@@ -1411,14 +1444,14 @@ CNN_Genome* EXACT::create_mutation() {
     cout << "\tgenerating child " << genomes_generated << " from parent genome: " << parent->get_generation_id() << endl;
 
     double mu, mu_delta, learning_rate, learning_rate_delta, weight_decay, weight_decay_delta, alpha, input_dropout_probability, hidden_dropout_probability;
-    int velocity_reset;
+    int velocity_reset, batch_size;
 
     if (inserted_genomes < (population_size * 2)) {
         cout << "\tGenerating hyperparameters randomly." << endl;
-        generate_initial_hyperparameters(mu, mu_delta, learning_rate, learning_rate_delta, weight_decay, weight_decay_delta, alpha, velocity_reset, input_dropout_probability, hidden_dropout_probability);
+        generate_initial_hyperparameters(mu, mu_delta, learning_rate, learning_rate_delta, weight_decay, weight_decay_delta, alpha, velocity_reset, input_dropout_probability, hidden_dropout_probability, batch_size);
     } else {
         cout << "\tGenerating hyperparameters with simplex." << endl;
-        generate_simplex_hyperparameters(mu, mu_delta, learning_rate, learning_rate_delta, weight_decay, weight_decay_delta, alpha, velocity_reset, input_dropout_probability, hidden_dropout_probability);
+        generate_simplex_hyperparameters(mu, mu_delta, learning_rate, learning_rate_delta, weight_decay, weight_decay_delta, alpha, velocity_reset, input_dropout_probability, hidden_dropout_probability, batch_size);
     }
 
     CNN_Genome *child = new CNN_Genome(genomes_generated++, child_seed, max_epochs, reset_weights, velocity_reset, mu, mu_delta, learning_rate, learning_rate_delta, weight_decay, weight_decay_delta, batch_size, epsilon, alpha, input_dropout_probability, hidden_dropout_probability, parent->get_nodes(), parent->get_edges());
@@ -2104,14 +2137,14 @@ CNN_Genome* EXACT::create_child() {
     long genome_seed = rng_long(generator);
 
     double mu, mu_delta, learning_rate, learning_rate_delta, weight_decay, weight_decay_delta, alpha, input_dropout_probability, hidden_dropout_probability;
-    int velocity_reset;
+    int velocity_reset, batch_size;
 
     if (inserted_genomes < (population_size * 2)) {
         cout << "\tGenerating hyperparameters randomly." << endl;
-        generate_initial_hyperparameters(mu, mu_delta, learning_rate, learning_rate_delta, weight_decay, weight_decay_delta, alpha, velocity_reset, input_dropout_probability, hidden_dropout_probability);
+        generate_initial_hyperparameters(mu, mu_delta, learning_rate, learning_rate_delta, weight_decay, weight_decay_delta, alpha, velocity_reset, input_dropout_probability, hidden_dropout_probability, batch_size);
     } else {
         cout << "\tGenerating hyperparameters with simplex." << endl;
-        generate_simplex_hyperparameters(mu, mu_delta, learning_rate, learning_rate_delta, weight_decay, weight_decay_delta, alpha, velocity_reset, input_dropout_probability, hidden_dropout_probability);
+        generate_simplex_hyperparameters(mu, mu_delta, learning_rate, learning_rate_delta, weight_decay, weight_decay_delta, alpha, velocity_reset, input_dropout_probability, hidden_dropout_probability, batch_size);
     }
 
     CNN_Genome *child = new CNN_Genome(genomes_generated++, genome_seed, max_epochs, reset_weights, velocity_reset, mu, mu_delta, learning_rate, learning_rate_delta, weight_decay, weight_decay_delta, batch_size, epsilon, alpha, input_dropout_probability, hidden_dropout_probability, child_nodes, child_edges);
@@ -2261,6 +2294,8 @@ void EXACT::write_statistics(int new_generation_id, double new_fitness) {
     double min_input_dropout_probability = 10000000, max_input_dropout_probability = 0, avg_input_dropout_probability = 0;
     double min_hidden_dropout_probability = 10000000, max_hidden_dropout_probability = 0, avg_hidden_dropout_probability = 0;
 
+    double min_batch_size = 10000000, max_batch_size = 0, avg_batch_size = 0;
+
     double best_initial_mu = genomes[0]->get_initial_mu();
     double best_mu_delta = genomes[0]->get_mu_delta();
 
@@ -2276,6 +2311,9 @@ void EXACT::write_statistics(int new_generation_id, double new_fitness) {
 
     double best_input_dropout_probability = genomes[0]->get_input_dropout_probability();
     double best_hidden_dropout_probability = genomes[0]->get_hidden_dropout_probability();
+
+    double best_batch_size = genomes[0]->get_batch_size();
+
 
 
     for (uint32_t i = 0; i < genomes.size(); i++) {
@@ -2374,8 +2412,16 @@ void EXACT::write_statistics(int new_generation_id, double new_fitness) {
         }
         avg_hidden_dropout_probability += genomes[i]->get_hidden_dropout_probability();
 
+        if (genomes[i]->get_batch_size() < min_batch_size) {
+            min_batch_size = genomes[i]->get_batch_size();
+        }
 
+        if (genomes[i]->get_batch_size() > max_batch_size) {
+            max_batch_size = genomes[i]->get_batch_size();
+        }
+        avg_batch_size += genomes[i]->get_batch_size();
     }
+
     avg_initial_mu /= genomes.size();
     avg_mu_delta /= genomes.size();
 
@@ -2391,6 +2437,8 @@ void EXACT::write_statistics(int new_generation_id, double new_fitness) {
 
     avg_input_dropout_probability /= genomes.size();
     avg_hidden_dropout_probability /= genomes.size();
+
+    avg_batch_size /= genomes.size();
 
     out << setw(20) << setprecision(11) << min_initial_mu
         << setw(20) << setprecision(11) << max_initial_mu
@@ -2438,6 +2486,10 @@ void EXACT::write_statistics(int new_generation_id, double new_fitness) {
         << setw(20) << setprecision(11) << avg_hidden_dropout_probability
         << setw(20) << setprecision(11) << best_hidden_dropout_probability
 
+        << setw(20) << setprecision(11) << min_batch_size
+        << setw(20) << setprecision(11) << max_batch_size
+        << setw(20) << setprecision(11) << avg_batch_size
+        << setw(20) << setprecision(11) << best_batch_size
 
         << endl;
  
@@ -2494,6 +2546,12 @@ void EXACT::write_hyperparameters_header() {
         << ", max hidden dropout probability"
         << ", avg hidden dropout probability"
         << ", best hidden dropout probability"
+
+        << ", min batch size"
+        << ", max batch size"
+        << ", avg batch size"
+        << ", best batch size"
+
 
         << endl;
 

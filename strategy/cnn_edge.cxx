@@ -516,6 +516,10 @@ bool CNN_Edge::is_filter_correct() const {
     return is_correct;
 }
 
+void CNN_Edge::update_batch_size(int new_batch_size) {
+    batch_size = new_batch_size;
+}
+
 void CNN_Edge::enable() {
     if (is_reachable()) {
         disabled = false;

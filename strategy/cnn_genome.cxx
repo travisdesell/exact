@@ -144,6 +144,11 @@ double CNN_Genome::get_hidden_dropout_probability() const {
     return hidden_dropout_probability;
 }
 
+int CNN_Genome::get_batch_size() const {
+    return batch_size;
+}
+
+
 template <class T>
 void parse_array(vector<T> &output, istringstream &iss) {
     output.clear();
@@ -501,6 +506,7 @@ CNN_Genome::CNN_Genome(int _generation_id, int seed, int _max_epochs, bool _rese
             softmax_nodes.push_back(node_copy);
         }
 
+        node_copy->batch_resize(batch_size);
         nodes.push_back( node_copy );
     }
 
@@ -512,6 +518,7 @@ CNN_Genome::CNN_Genome(int _generation_id, int seed, int _max_epochs, bool _rese
             cerr << "This should never happen!" << endl;
             exit(1);
         }
+        edge_copy->update_batch_size(batch_size);
         edges.push_back( edge_copy );
     }
 }

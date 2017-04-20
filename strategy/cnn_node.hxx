@@ -156,6 +156,7 @@ class CNN_Node {
         void set_weights_to_best();
 
         void resize_arrays();
+        void batch_resize(int new_batch_size);
         bool modify_size_x(int change);
         bool modify_size_y(int change);
 

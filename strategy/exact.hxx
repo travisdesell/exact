@@ -63,7 +63,12 @@ class EXACT {
 
         bool reset_weights;
         int max_epochs;
-        int batch_size;
+
+
+        double initial_batch_size_min;
+        double initial_batch_size_max;
+        double batch_size_min;
+        double batch_size_max;
 
         double initial_mu_min;
         double initial_mu_max;
@@ -168,14 +173,14 @@ class EXACT {
         void update_database();
 #endif
 
-        EXACT(const Images &images, string _samples_filename, int _population_size, int _max_epochs, int _batch_size, int _max_genomes, string _output_directory, string _search_name, bool _reset_weights);
+        EXACT(const Images &images, string _samples_filename, int _population_size, int _max_epochs, int _max_genomes, string _output_directory, string _search_name, bool _reset_weights);
 
         int32_t population_contains(CNN_Genome *genome) const;
         CNN_Genome* get_best_genome();
 
-        void generate_initial_hyperparameters(double &mu, double &mu_delta, double &learning_rate, double &learning_rate_delta, double &weight_decay, double &weight_decay_delta, double &alpha, int &velocity_reset, double &input_dropout_probability, double &hidden_dropout_probability);
+        void generate_initial_hyperparameters(double &mu, double &mu_delta, double &learning_rate, double &learning_rate_delta, double &weight_decay, double &weight_decay_delta, double &alpha, int &velocity_reset, double &input_dropout_probability, double &hidden_dropout_probability, int &batch_size);
 
-        void generate_simplex_hyperparameters(double &mu, double &mu_delta, double &learning_rate, double &learning_rate_delta, double &weight_decay, double &weight_decay_delta, double &alpha, int &velocity_reset, double &input_dropout_probability, double &hidden_dropout_probability);
+        void generate_simplex_hyperparameters(double &mu, double &mu_delta, double &learning_rate, double &learning_rate_delta, double &weight_decay, double &weight_decay_delta, double &alpha, int &velocity_reset, double &input_dropout_probability, double &hidden_dropout_probability, int &batch_size);
 
 
         bool add_edge(CNN_Genome *child, CNN_Node *node1, CNN_Node *node2);

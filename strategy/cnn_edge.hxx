@@ -100,6 +100,7 @@ class CNN_Edge {
         void disable();
         void enable();
         bool is_disabled() const;
+        void update_batch_size(int new_batch_size);
 
         bool is_reachable() const;
         bool is_forward_visited() const;

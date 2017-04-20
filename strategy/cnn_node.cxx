@@ -516,6 +516,10 @@ void CNN_Node::set_weights_to_best() {
     running_variance = best_running_variance;
 }
 
+void CNN_Node::batch_resize(int new_batch_size) {
+    batch_size = new_batch_size;
+    resize_arrays();
+}
 
 bool CNN_Node::modify_size_x(int change) {
     int previous_size_x = size_x;
