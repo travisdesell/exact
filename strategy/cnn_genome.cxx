@@ -863,7 +863,7 @@ bool CNN_Genome::sanity_check(int type) {
 
         int counted_inputs = 0;
         for (uint32_t j = 0; j < edges.size(); j++) {
-            if (edges[j]->is_disabled()) {
+            if (!edges[j]->is_reachable()) {
                 //cout << "\t\t\tedge " << j << " is disabled (" << edges[j]->get_input_innovation_number() << " to " << edges[j]->get_output_innovation_number() << ")" << endl;
                 continue;
             }
@@ -948,7 +948,7 @@ bool CNN_Genome::visit_nodes() {
     sort(edges.begin(), edges.end(), sort_CNN_Edges_by_depth());
 
     for (uint32_t i = 0; i < edges.size(); i++) {
-        //cout << "edge " << edges[i]->get_innovation_number() << " is forward visited: " << edges[i]->is_forward_visited() << ", is reverse visited: " << edges[i]->is_reverse_visited() << ", is reachable: " << edges[i]->is_reachable() << endl;
+        cout << "\t\tedge " << edges[i]->get_innovation_number() << " is forward visited: " << edges[i]->is_forward_visited() << ", is reverse visited: " << edges[i]->is_reverse_visited() << ", is reachable: " << edges[i]->is_reachable() << endl;
 
         if (edges[i]->is_reachable()) {
             edges[i]->get_input_node()->add_output();
@@ -956,11 +956,9 @@ bool CNN_Genome::visit_nodes() {
         }
     }
 
-    /*
     for (uint32_t i = 0; i < nodes.size(); i++) {
-        cout << "node " << nodes[i]->get_innovation_number() << " is forward visited: " << nodes[i]->is_forward_visited() << ", is reverse visited: " << nodes[i]->is_reverse_visited() << ", is reachable: " << nodes[i]->is_reachable() << ", number inputs: " << nodes[i]->get_number_inputs() << ", number outputs: " << nodes[i]->get_number_outputs() << endl;
+        cout << "\t\tnode " << nodes[i]->get_innovation_number() << " is forward visited: " << nodes[i]->is_forward_visited() << ", is reverse visited: " << nodes[i]->is_reverse_visited() << ", is reachable: " << nodes[i]->is_reachable() << ", number inputs: " << nodes[i]->get_number_inputs() << ", number outputs: " << nodes[i]->get_number_outputs() << endl;
     }
-    */
 
     for (uint32_t i = 0; i < softmax_nodes.size(); i++) {
         if (!softmax_nodes[i]->is_reachable()) {
@@ -1119,6 +1117,7 @@ void CNN_Genome::set_to_best() {
 }
 
 void CNN_Genome::initialize() {
+    cout << "visiting nodes!" << endl;
     visit_nodes();
 
     cout << "initializing genome!" << endl;

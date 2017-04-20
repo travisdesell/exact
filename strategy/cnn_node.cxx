@@ -233,7 +233,7 @@ void CNN_Node::export_to_database(int _exact_id, int _genome_id) {
         << ", depth = " << depth
         << ", batch_size = " << batch_size
         << ", size_x = " << size_x
-        << ", size_y = " << size_y;
+        << ", size_y = " << size_y
         << ", type = " << type
         << ", forward_visited = " << forward_visited
         << ", reverse_visited = " << reverse_visited
@@ -385,6 +385,8 @@ void CNN_Node::reverse_visit() {
 }
 
 void CNN_Node::set_unvisited() {
+    total_inputs = 0;
+    total_outputs = 0;
     forward_visited = false;
     reverse_visited = false;
 }
@@ -630,7 +632,7 @@ void CNN_Node::batch_normalize(bool training, double epsilon, double alpha) {
             //cout << endl;
         }
 
-//#ifdef NAN_CHECKS
+#ifdef NAN_CHECKS
         if (isnan(batch_mean) || isinf(batch_mean) || isnan(batch_variance) || isinf(batch_variance)) {
             cerr << "ERROR! NAN or INF batch_mean or batch_variance on node " << innovation_number << "!" << endl;
             cerr << "gamma: " << gamma << ", beta: " << beta << endl;
@@ -647,7 +649,7 @@ void CNN_Node::batch_normalize(bool training, double epsilon, double alpha) {
 
             exit(1);
         }
-//#endif
+#endif
 
         inverse_variance = 1.0 / batch_std_dev;
 
@@ -791,7 +793,7 @@ void CNN_Node::backpropagate_batch_normalization(double mu, double learning_rate
 
                 //this makes delta = delta_in
                 deltas[batch_number][y][x] = inv_var_div_batch * ((batch_x_gamma * delta_out) - delta_values_hat_sum - (values_hat[batch_number][y][x] * delta_values_hat_x_values_sum));
-                //#ifdef NAN_CHECKS
+#ifdef NAN_CHECKS
                 if (isnan(deltas[batch_number][y][x]) || isinf(deltas[batch_number][y][x])) {
                     cerr << "ERROR! deltas[" << batch_number << "][" << y << "][" << x << "] became: " << deltas[batch_number][y][x] << "!" << endl;
                     cerr << "inverse_variance: " << inverse_variance << endl;
@@ -804,7 +806,7 @@ void CNN_Node::backpropagate_batch_normalization(double mu, double learning_rate
 
                     exit(1);
                 }
-                //#endif
+#endif
             }
         }
     }
@@ -1012,6 +1014,9 @@ std::istream &operator>>(std::istream &is, CNN_Node* node) {
 
     node->total_inputs = 0;
     node->inputs_fired = 0;
+
+    node->total_outputs = 0;
+    node->outputs_fired = 0;
 
     node->forward_visited = false;
     node->reverse_visited = false;

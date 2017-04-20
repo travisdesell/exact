@@ -108,6 +108,7 @@ EXACT::EXACT(int exact_id) {
 
         reset_weights = atoi(row[++column]);
         max_epochs = atoi(row[++column]);
+
         batch_size = atoi(row[++column]);
 
         initial_mu_min = atof(row[++column]);
@@ -1069,6 +1070,7 @@ CNN_Genome* EXACT::generate_individual() {
     if ((int32_t)genomes.size() < population_size) {
         //insert a copy with a bad fitness so we have more things to generate new genomes with
         CNN_Genome *genome_copy = new CNN_Genome(genomes_generated++, /*new random seed*/ rng_long(generator), max_epochs, reset_weights, genome->get_velocity_reset(), genome->get_initial_mu(), genome->get_mu_delta(), genome->get_initial_learning_rate(), genome->get_learning_rate_delta(), genome->get_initial_weight_decay(), genome->get_weight_decay_delta(), batch_size, epsilon, genome->get_alpha(), genome->get_input_dropout_probability(), genome->get_hidden_dropout_probability(), genome->get_nodes(), genome->get_edges());
+        genome_copy->initialize();
 
         //for more variability in the initial population, re-initialize weights and bias for these unevaluated copies
 

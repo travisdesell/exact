@@ -227,6 +227,9 @@ int main(int argc, char** argv) {
     int max_epochs;
     get_argument(arguments, "--max_epochs", true, max_epochs);
 
+    int batch_size;
+    get_argument(arguments, "--batch_size", true, batch_size);
+
     int max_genomes;
     get_argument(arguments, "--max_genomes", true, max_genomes);
 
@@ -242,7 +245,7 @@ int main(int argc, char** argv) {
     Images images(samples_filename);
 
     if (rank == 0) {
-        exact = new EXACT(images, samples_filename, population_size, max_epochs, max_genomes, output_directory, search_name, reset_edges);
+        exact = new EXACT(images, samples_filename, population_size, max_epochs, batch_size, max_genomes, output_directory, search_name, reset_edges);
 
         master(images, max_rank);
     } else {
