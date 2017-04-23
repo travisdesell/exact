@@ -232,8 +232,6 @@ $query = "CREATE TABLE `cnn_edge` (
   `filter_y` int(11) NOT NULL,
   `weights` BLOB NOT NULL,
   `best_weights` BLOB NOT NULL,
-  `previous_velocity` BLOB NOT NULL,
-  `best_velocity` BLOB NOT NULL,
 
   `fixed` tinyint(1) NOT NULL,
   `disabled` tinyint(1) NOT NULL,
@@ -259,6 +257,7 @@ $query = "CREATE TABLE `cnn_node` (
   `innovation_number` int(11) NOT NULL,
   `depth` double NOT NULL,
 
+  `batch_size` int(11) NOT NULL,
   `size_x` int(11) NOT NULL,
   `size_y` int(11) NOT NULL,
 
@@ -278,7 +277,9 @@ $query = "CREATE TABLE `cnn_node` (
   `previous_velocity_beta` double NOT NULL,
 
   `running_mean` double NOT NULL,
-  `running_average` double NOT NULL,
+  `best_running_mean` double NOT NULL,
+  `running_variance` double NOT NULL,
+  `best_running_variance` double NOT NULL,
 
   PRIMARY KEY(`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1";

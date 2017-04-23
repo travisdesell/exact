@@ -126,8 +126,15 @@ class CNN_Genome {
 
         int get_generation_id() const;
         double get_fitness() const;
-        int get_best_error_epoch() const;
+
+        double get_best_error() const;
+        double get_test_error() const;
+
+        int get_test_predictions() const;
         int get_best_predictions() const;
+
+        int get_best_error_epoch() const;
+
         int get_epoch() const;
         int get_max_epochs() const;
         int get_number_enabled_edges() const;

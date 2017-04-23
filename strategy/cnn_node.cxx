@@ -395,6 +395,76 @@ int CNN_Node::get_batch_size() const {
     return batch_size;
 }
 
+bool CNN_Node::vectors_correct() const {
+    if (values.size() != batch_size) {
+        cerr << "ERROR! vectors incorrect on node " << innovation_number << endl;
+        cerr << "values.size(): " << values.size() << " and batch size: " << batch_size << endl;
+        return false;
+    }
+
+    for (uint32_t i = 0; i < values.size(); i++) {
+        if (values[i].size() != size_y) {
+            cerr << "ERROR! vectors incorrect on node " << innovation_number << endl;
+            cerr << "values[" << i << "].size(): " << values[i].size() << " and size_y: " << size_x << endl;
+            return false;
+        }
+
+        for (uint32_t j = 0; j < values[i].size(); j++) {
+            if (values[i][j].size() != size_x) {
+                cerr << "ERROR! vectors incorrect on node " << innovation_number << endl;
+                cerr << "values[" << i << "][" << j << "].size(): " << values[i][j].size() << " and size_x: " << size_x << endl;
+                return false;
+            }
+        }
+    }
+
+    if (errors.size() != batch_size) {
+        cerr << "ERROR! vectors incorrect on node " << innovation_number << endl;
+        cerr << "errors.size(): " << errors.size() << " and batch size: " << batch_size << endl;
+        return false;
+    }
+
+    for (uint32_t i = 0; i < errors.size(); i++) {
+        if (errors[i].size() != size_y) {
+            cerr << "ERROR! vectors incorrect on node " << innovation_number << endl;
+            cerr << "errors[" << i << "].size(): " << errors[i].size() << " and size_y: " << size_x << endl;
+            return false;
+        }
+
+        for (uint32_t j = 0; j < errors[i].size(); j++) {
+            if (errors[i][j].size() != size_x) {
+                cerr << "ERROR! vectors incorrect on node " << innovation_number << endl;
+                cerr << "errors[" << i << "][" << j << "].size(): " << errors[i][j].size() << " and size_x: " << size_x << endl;
+                return false;
+            }
+        }
+    }
+
+    if (gradients.size() != batch_size) {
+        cerr << "ERROR! vectors incorrect on node " << innovation_number << endl;
+        cerr << "gradients.size(): " << gradients.size() << " and batch size: " << batch_size << endl;
+        return false;
+    }
+
+    for (uint32_t i = 0; i < gradients.size(); i++) {
+        if (gradients[i].size() != size_y) {
+            cerr << "ERROR! vectors incorrect on node " << innovation_number << endl;
+            cerr << "gradients[" << i << "].size(): " << gradients[i].size() << " and size_y: " << size_x << endl;
+            return false;
+        }
+
+        for (uint32_t j = 0; j < gradients[i].size(); j++) {
+            if (gradients[i][j].size() != size_x) {
+                cerr << "ERROR! vectors incorrect on node " << innovation_number << endl;
+                cerr << "gradients[" << i << "][" << j << "].size(): " << gradients[i][j].size() << " and size_x: " << size_x << endl;
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
+
 int CNN_Node::get_size_x() const {
     return size_x;
 }
@@ -516,7 +586,7 @@ void CNN_Node::set_weights_to_best() {
     running_variance = best_running_variance;
 }
 
-void CNN_Node::batch_resize(int new_batch_size) {
+void CNN_Node::update_batch_size(int new_batch_size) {
     batch_size = new_batch_size;
     resize_arrays();
 }
@@ -840,8 +910,9 @@ void CNN_Node::backpropagate_batch_normalization(double mu, double learning_rate
 
 
 void CNN_Node::set_values(const vector<const Image> &images, int channel, bool perform_dropout, double input_dropout_probability, minstd_rand0 &generator) {
-    if (images.size() != batch_size) {
-        cerr << "ERROR: number of batch images: " << images.size() << " != batch_size of input node: " << batch_size << endl;
+    //images.size() may be less than batch size, in the case when the total number of images is not divisible by the batch_size
+    if (images.size() > batch_size) {
+        cerr << "ERROR: number of batch images: " << images.size() << " > batch_size of input node: " << batch_size << endl;
         exit(1);
     }
 
@@ -855,7 +926,8 @@ void CNN_Node::set_values(const vector<const Image> &images, int channel, bool p
         exit(1);
     }
 
-    for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
+    //images.size() may be less than batch size, in the case when the total number of images is not divisible by the batch_size
+    for (int32_t batch_number = 0; batch_number < images.size(); batch_number++) {
         for (int32_t y = 0; y < size_y; y++) {
             for (int32_t x = 0; x < size_x; x++) {
                 values[batch_number][y][x] = images[batch_number].get_pixel(channel, y, x);

@@ -38,7 +38,7 @@ EXACT *exact;
 
 bool finished = false;
 
-void exact_thread(const Images &images, int id) {
+void exact_thread(const Images &training_images, const Images &testing_images, int id) {
     while (true) {
         exact_mutex.lock();
         CNN_Genome *genome = exact->generate_individual();
@@ -47,7 +47,12 @@ void exact_thread(const Images &images, int id) {
         if (genome == NULL) break;  //generate_individual returns NULL when the search is done
 
         genome->set_name("thread_" + to_string(id));
-        genome->stochastic_backpropagation(images);
+        genome->stochastic_backpropagation(training_images);
+
+        double error;
+        int predictions;
+        genome->evaluate(testing_images, error, predictions);
+        genome->set_test_performance(error, predictions);
 
         exact_mutex.lock();
         exact->insert_genome(genome);
@@ -62,8 +67,11 @@ int main(int argc, char** argv) {
     int number_threads;
     get_argument(arguments, "--number_threads", true, number_threads);
 
-    string samples_filename;
-    get_argument(arguments, "--training_file", true, samples_filename);
+    string training_filename;
+    get_argument(arguments, "--training_file", true, training_filename);
+
+    string testing_filename;
+    get_argument(arguments, "--testing_file", true, testing_filename);
 
     int population_size;
     get_argument(arguments, "--population_size", true, population_size);
@@ -83,31 +91,16 @@ int main(int argc, char** argv) {
     bool reset_edges;
     get_argument(arguments, "--reset_edges", true, reset_edges);
 
-    Images images(samples_filename);
-    exact = new EXACT(images, samples_filename, population_size, max_epochs, max_genomes, output_directory, search_name, reset_edges);
+    Images training_images(training_filename);
+    Images testing_images(testing_filename, training_images.get_average(), training_images.get_std_dev());
 
-    //exact = new EXACT(1);
+    exact = new EXACT(training_images, training_filename, population_size, max_epochs, max_genomes, output_directory, search_name, reset_edges);
 
-    /*
-    cout << "generating individual!" << endl;
-
-    CNN_Genome *genome = exact->generate_individual();
-
-    cout << "exporting genome to database!" << endl;
-    genome->export_to_database(1);
-    cout << "inserted genome into database with id: " << genome->get_genome_id() << endl;
-    genome->write_to_file("test_original.txt");
-
-    genome->stochastic_backpropagation(images);
-    */
-
-    //CNN_Genome *from_database = new CNN_Genome(genome->get_genome_id());
-    //CNN_Genome *from_database = new CNN_Genome(1);
-    //from_database->stochastic_backpropagation(images);
+    //exact = new EXACT(7);
 
     vector<thread> threads;
     for (uint32_t i = 0; i < number_threads; i++) {
-        threads.push_back( thread(exact_thread, images, i) );
+        threads.push_back( thread(exact_thread, training_images, testing_images, i) );
     }
 
     for (uint32_t i = 0; i < number_threads; i++) {

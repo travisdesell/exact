@@ -467,6 +467,9 @@ CNN_Genome::CNN_Genome(int _generation_id, int seed, int _max_epochs, bool _rese
     best_predictions = 0;
     best_error = EXACT_MAX_DOUBLE;
 
+    test_predictions = 0;
+    test_error = EXACT_MAX_DOUBLE;
+
     best_predictions_epoch = 0;
     best_error_epoch = 0;
 
@@ -506,7 +509,8 @@ CNN_Genome::CNN_Genome(int _generation_id, int seed, int _max_epochs, bool _rese
             softmax_nodes.push_back(node_copy);
         }
 
-        node_copy->batch_resize(batch_size);
+        //cout << "resizing node " << node_copy->get_innovation_number() << " to " << batch_size << endl;
+        node_copy->update_batch_size(batch_size);
         nodes.push_back( node_copy );
     }
 
@@ -518,6 +522,8 @@ CNN_Genome::CNN_Genome(int _generation_id, int seed, int _max_epochs, bool _rese
             cerr << "This should never happen!" << endl;
             exit(1);
         }
+
+        //cout << "resizing edge " << edge_copy->get_innovation_number() << " to " << batch_size << endl;
         edge_copy->update_batch_size(batch_size);
         edges.push_back( edge_copy );
     }
@@ -648,7 +654,11 @@ int CNN_Genome::get_generation_id() const {
 }
 
 double CNN_Genome::get_fitness() const {
-    return best_error;
+    if (test_error != EXACT_MAX_DOUBLE) {
+        return test_error;
+    } else {
+        return best_error;
+    }
 }
 
 int CNN_Genome::get_max_epochs() const {
@@ -663,9 +673,23 @@ int CNN_Genome::get_best_error_epoch() const {
     return best_error_epoch;
 }
 
+double CNN_Genome::get_test_error() const {
+    return test_error;
+}
+
+double CNN_Genome::get_best_error() const {
+    return best_error;
+}
+
+
+int CNN_Genome::get_test_predictions() const {
+    return test_predictions;
+}
+
 int CNN_Genome::get_best_predictions() const {
     return best_predictions;
 }
+
 
 int CNN_Genome::get_number_enabled_edges() const {
     int number_enabled_edges = 0;
@@ -711,11 +735,13 @@ int CNN_Genome::get_number_input_nodes() const {
 }
 
 void CNN_Genome::add_node(CNN_Node* node) {
+    node->update_batch_size(batch_size);
     nodes.insert( upper_bound(nodes.begin(), nodes.end(), node, sort_CNN_Nodes_by_depth()), node );
 
 }
 
 void CNN_Genome::add_edge(CNN_Edge* edge) {
+    edge->update_batch_size(batch_size);
     edges.insert( upper_bound(edges.begin(), edges.end(), edge, sort_CNN_Edges_by_depth()), edge );
 }
 
@@ -765,10 +791,30 @@ bool CNN_Genome::sanity_check(int type) {
     for (uint32_t i = 0; i < edges.size(); i++) {
         if (!edges[i]->is_filter_correct()) {
             cerr << "SANITY CHECK FAILED! edges[" << i << "] had incorrect filter size!" << endl;
+            return false;
+        }
+
+        if (edges[i]->get_batch_size() != batch_size) {
+            cerr << "SANITY CHECK FAILED! edges[" << i << "] had batch size: " << edges[i]->get_batch_size() << " != genome batch size: " << batch_size << endl;
             cerr << edges[i] << endl;
             return false;
         }
     }
+
+    for (uint32_t i = 0; i < nodes.size(); i++) {
+        if (nodes[i]->get_batch_size() != batch_size) {
+            cerr << "SANITY CHECK FAILED! nodes[" << i << "] had batch size: " << nodes[i]->get_batch_size() << " != genome batch size: " << batch_size << endl;
+            cerr << nodes[i] << endl;
+            return false;
+        }
+
+        if (!nodes[i]->vectors_correct()) {
+            cerr << "SANITY CHECK FAILED! nodes[" << i << "] had incorrectly sized vectors!" << endl;
+            cerr << nodes[i] << endl;
+            return false;
+        }
+    }
+
 
     //check for duplicate edges, make sure edge size is sane
     for (uint32_t i = 0; i < edges.size(); i++) {
@@ -955,7 +1001,7 @@ bool CNN_Genome::visit_nodes() {
     sort(edges.begin(), edges.end(), sort_CNN_Edges_by_depth());
 
     for (uint32_t i = 0; i < edges.size(); i++) {
-        cout << "\t\tedge " << edges[i]->get_innovation_number() << " is forward visited: " << edges[i]->is_forward_visited() << ", is reverse visited: " << edges[i]->is_reverse_visited() << ", is reachable: " << edges[i]->is_reachable() << endl;
+        //cout << "\t\tedge " << edges[i]->get_innovation_number() << " is forward visited: " << edges[i]->is_forward_visited() << ", is reverse visited: " << edges[i]->is_reverse_visited() << ", is reachable: " << edges[i]->is_reachable() << endl;
 
         if (edges[i]->is_reachable()) {
             edges[i]->get_input_node()->add_output();
@@ -963,9 +1009,11 @@ bool CNN_Genome::visit_nodes() {
         }
     }
 
+    /*
     for (uint32_t i = 0; i < nodes.size(); i++) {
         cout << "\t\tnode " << nodes[i]->get_innovation_number() << " is forward visited: " << nodes[i]->is_forward_visited() << ", is reverse visited: " << nodes[i]->is_reverse_visited() << ", is reachable: " << nodes[i]->is_reachable() << ", number inputs: " << nodes[i]->get_number_inputs() << ", number outputs: " << nodes[i]->get_number_outputs() << endl;
     }
+    */
 
     for (uint32_t i = 0; i < softmax_nodes.size(); i++) {
         if (!softmax_nodes[i]->is_reachable()) {
@@ -989,7 +1037,8 @@ void CNN_Genome::evaluate_images(const vector<const Image> &images, bool trainin
         edges[i]->propagate_forward(training, epsilon, alpha, training, hidden_dropout_probability, generator);
     }
 
-    for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
+    //may be less images than in a batch if the total number of images is not divisible by the batch size
+    for (int32_t batch_number = 0; batch_number < images.size(); batch_number++) {
         int expected_class = images[batch_number].get_classification();
 
         //if (training) cout << "before softmax max, batch number: " << batch_number << " -- ";
@@ -1204,7 +1253,7 @@ void CNN_Genome::evaluate(const Images &images, double &total_error, int &correc
     for (uint32_t j = 0; j < backprop_order.size(); j += batch_size) {
 
         vector<const Image> batch;
-        for (uint32_t k = 0; k < batch_size; k++) {
+        for (uint32_t k = 0; k < batch_size && (j + k) < backprop_order.size(); k++) {
             batch.push_back( images.get_image(backprop_order[j + k]) );
         }
 
@@ -1213,6 +1262,7 @@ void CNN_Genome::evaluate(const Images &images, double &total_error, int &correc
         evaluate_images(batch, training, batch_total_error, batch_correct_predictions);
 
         /*
+        cerr << "[" << setw(10) << name << ", genome " << setw(5) << generation_id << "] ";
         if (training) {
             cerr << "training batch: ";
         } else {
@@ -1301,7 +1351,7 @@ void CNN_Genome::stochastic_backpropagation(const Images &images) {
 
         best_error = EXACT_MAX_DOUBLE;
     }
-    //backprop_order.resize(2000);
+    backprop_order.resize(3000);
 
     //sort edges by depth of input node
     sort(edges.begin(), edges.end(), sort_CNN_Edges_by_depth());
@@ -1316,6 +1366,8 @@ void CNN_Genome::stochastic_backpropagation(const Images &images) {
         print_progress(cerr, total_error, correct_predictions);
     }
     */
+
+
 
     do {
         //shuffle the array (thanks C++ not being the same across operating systems)

@@ -112,6 +112,7 @@ class CNN_Edge {
         bool is_filter_correct() const;
 
         int get_number_weights() const;
+        int get_batch_size() const;
 
         int get_innovation_number() const;
         int get_input_innovation_number() const;
