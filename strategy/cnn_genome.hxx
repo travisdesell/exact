@@ -58,11 +58,13 @@ class CNN_Genome {
         int max_epochs;
         bool reset_weights;
 
+        int number_training_images;
         double best_error;
         int best_predictions;
         int best_predictions_epoch;
         int best_error_epoch;
 
+        int number_testing_images;
         double test_error;
         int test_predictions;
 
@@ -115,7 +117,7 @@ class CNN_Genome {
 
         bool equals(CNN_Genome *other) const;
 
-        void print_progress(ostream &out, double total_error, int correct_predictions) const;
+        void print_progress(ostream &out, double total_error, int correct_predictions, int number_images) const;
 
         int get_number_weights() const;
         int get_number_biases() const;
@@ -187,7 +189,7 @@ class CNN_Genome {
 
         void stochastic_backpropagation(const Images &images);
 
-        void set_test_performance(double _test_error, int _test_predictions);
+        void set_test_performance(double _test_error, int _test_predictions, int _number_testing_images);
 
         void set_name(string _name);
         void set_output_filename(string _output_filename);

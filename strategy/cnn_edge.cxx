@@ -1098,7 +1098,8 @@ ostream &operator<<(ostream &os, const CNN_Edge* edge) {
     os << edge->disabled << " ";
     os << edge->forward_visited << " ";
     os << edge->reverse_visited << " ";
-    os << edge->needs_initialization << endl;
+    os << edge->needs_initialization << " ";
+    os << edge->batch_size << endl;
 
     os << "WEIGHTS" << endl;
 
@@ -1155,6 +1156,7 @@ istream &operator>>(istream &is, CNN_Edge* edge) {
     is >> edge->forward_visited;
     is >> edge->reverse_visited;
     is >> edge->needs_initialization;
+    is >> edge->batch_size;
 
     edge->weights = vector< vector<double> >(edge->filter_y, vector<double>(edge->filter_x, 0.0));
     edge->weight_updates = vector< vector<double> >(edge->filter_y, vector<double>(edge->filter_x, 0.0));

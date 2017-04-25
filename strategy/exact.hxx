@@ -126,6 +126,7 @@ class EXACT {
         bool sort_by_fitness;
         double reset_weights_chance;
 
+        double no_modification_rate;
         double crossover_rate;
         double more_fit_parent_crossover;
         double less_fit_parent_crossover;

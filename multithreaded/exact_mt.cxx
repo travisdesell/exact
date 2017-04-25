@@ -52,7 +52,7 @@ void exact_thread(const Images &training_images, const Images &testing_images, i
         double error;
         int predictions;
         genome->evaluate(testing_images, error, predictions);
-        genome->set_test_performance(error, predictions);
+        genome->set_test_performance(error, predictions, testing_images.get_number_images());
 
         exact_mutex.lock();
         exact->insert_genome(genome);

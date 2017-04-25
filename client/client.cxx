@@ -146,7 +146,7 @@ int main(int argc, char** argv) {
     int predictions;
     genome->set_to_best();
     genome->evaluate(testing_images, error, predictions);
-    genome->set_test_performance(error, predictions);
+    genome->set_test_performance(error, predictions, testing_images.get_number_images());
 
     boinc_finish(0);
 

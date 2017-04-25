@@ -111,7 +111,7 @@ void receive_terminate_message(int source) {
     MPI_Recv(terminate_message, 1, MPI_INT, source, TERMINATE_TAG, MPI_COMM_WORLD, &status);
 }
 
-void master(const Images &images, int max_rank) {
+void master(const Images &training_images, const Images &testing_images, int max_rank) {
     string name = "master";
 
     cout << "MAX INT: " << numeric_limits<int>::max() << endl;
@@ -174,7 +174,7 @@ void master(const Images &images, int max_rank) {
     }
 }
 
-void worker(const Images &images, int rank) {
+void worker(const Images &training_images, const Images &testing_images, int rank) {
     string name = "worker_" + to_string(rank);
     while (true) {
         cout << "[" << setw(10) << name << "] sending work request!" << endl;
@@ -197,7 +197,12 @@ void worker(const Images &images, int rank) {
             CNN_Genome* genome = receive_genome_from(name, 0);
 
             genome->set_name(name);
-            genome->stochastic_backpropagation(images);
+            genome->stochastic_backpropagation(training_images);
+
+            double error;
+            int predictions;
+            genome->evaluate(testing_images, error, predictions);
+            genome->set_test_performance(error, predictions, testing_images.get_number_images());
 
             send_genome_to(name, 0, genome);
 
@@ -218,8 +223,11 @@ int main(int argc, char** argv) {
 
     arguments = vector<string>(argv, argv + argc);
 
-    string samples_filename;
-    get_argument(arguments, "--training_file", true, samples_filename);
+    string training_filename;
+    get_argument(arguments, "--training_file", true, training_filename);
+
+    string testing_filename;
+    get_argument(arguments, "--testing_file", true, testing_filename);
 
     int population_size;
     get_argument(arguments, "--population_size", true, population_size);
@@ -239,14 +247,15 @@ int main(int argc, char** argv) {
     bool reset_edges;
     get_argument(arguments, "--reset_edges", true, reset_edges);
 
-    Images images(samples_filename);
+    Images training_images(training_filename);
+    Images testing_images(testing_filename, training_images.get_average(), training_images.get_std_dev());
 
     if (rank == 0) {
-        exact = new EXACT(images, samples_filename, population_size, max_epochs, max_genomes, output_directory, search_name, reset_edges);
+        exact = new EXACT(training_images, training_filename, population_size, max_epochs, max_genomes, output_directory, search_name, reset_edges);
 
-        master(images, max_rank);
+        master(training_images, testing_images, max_rank);
     } else {
-        worker(images, rank);
+        worker(training_images, testing_images, rank);
     }
 
     finished = true;

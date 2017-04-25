@@ -1052,14 +1052,32 @@ ostream &operator<<(ostream &os, const CNN_Node* node) {
     os << node->needs_initialization << " ";
 
     write_hexfloat(os, node->gamma);
+    os << endl;
+
     write_hexfloat(os, node->best_gamma);
+    os << endl;
+
     write_hexfloat(os, node->previous_velocity_gamma);
+    os << endl;
+
     write_hexfloat(os, node->beta);
+    os << endl;
+
     write_hexfloat(os, node->best_beta);
+    os << endl;
+
     write_hexfloat(os, node->previous_velocity_beta);
+    os << endl;
+
     write_hexfloat(os, node->running_mean);
+    os << endl;
+
     write_hexfloat(os, node->best_running_mean);
+    os << endl;
+
     write_hexfloat(os, node->running_variance);
+    os << endl;
+
     write_hexfloat(os, node->best_running_variance);
 
     return os;
@@ -1071,6 +1089,7 @@ std::istream &operator>>(std::istream &is, CNN_Node* node) {
     is >> node->genome_id;
     is >> node->innovation_number;
     is >> node->depth;
+    is >> node->batch_size;
     is >> node->size_x;
     is >> node->size_y;
     is >> node->type;

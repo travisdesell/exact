@@ -95,6 +95,7 @@ $query = "CREATE TABLE `exact_search` (
     `sort_by_fitness` tinyint(1) NOT NULL,
     `reset_weights_chance` double NOT NULL,
 
+    `no_modification_rate` double NOT NULL,
     `crossover_rate` double NOT NULL,
     `more_fit_parent_crossover` double NOT NULL,
     `less_fit_parent_crossover` double NOT NULL,
@@ -183,6 +184,7 @@ $query = "CREATE TABLE `cnn_genome` (
     `max_epochs` int(11) NOT NULL,
     `reset_weights` tinyint(1) NOT NULL,
 
+    `number_training_images` int(11) DEFAULT NULL,
     `best_error` double NOT NULL,
     `best_error_epoch` int(11) NOT NULL,
     `best_predictions` int(11) NOT NULL,
@@ -206,6 +208,7 @@ $query = "CREATE TABLE `cnn_genome` (
     `generated_by_reset_weights` int(11) NOT NULL,
     `generated_by_add_node` int(11) NOT NULL,
 
+    `number_testing_images` int(11) DEFAULT NULL,
     `test_error` double DEFAULT NULL,
     `test_predictions` int(11) DEFAULT NULL,
     `stderr_out` blob,
