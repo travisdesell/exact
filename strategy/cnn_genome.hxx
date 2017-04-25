@@ -131,6 +131,8 @@ class CNN_Genome {
 
         double get_best_error() const;
         double get_test_error() const;
+        double get_best_rate() const;
+        double get_test_rate() const;
 
         int get_test_predictions() const;
         int get_best_predictions() const;

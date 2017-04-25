@@ -1376,9 +1376,9 @@ bool EXACT::insert_genome(CNN_Genome* genome) {
     for (int32_t i = 0; i < (int32_t)genomes.size(); i++) {
         cout << "\t" << setw(4) << i << " -- genome: " << setw(10) << genomes[i]->get_generation_id() << ", "
             << setw(10) << left << "test err: " << right << setw(15) << setprecision(5) << fixed << parse_fitness(genomes[i]->get_test_error())
-            << " (" << genomes[i]->get_test_predictions() << "), "
+            << " (" << setw(5) << fixed << setprecision(2) << genomes[i]->get_test_rate() << "%), "
             << setw(10) << left << "train err: " << right << setw(15) << setprecision(5) << fixed << parse_fitness(genomes[i]->get_best_error())
-            << " (" << genomes[i]->get_best_predictions() << ") on epoch: " << genomes[i]->get_best_error_epoch() 
+            << " (" << setw(5) << fixed << setprecision(2) << genomes[i]->get_best_rate() << "%) on epoch: " << genomes[i]->get_best_error_epoch() 
             //<< ", number enabled edges: " << genomes[i]->get_number_enabled_edges()
             //<< ", number nodes: " << genomes[i]->get_number_nodes() << endl;
             << ", mu: " << setw(10) << fixed << setprecision(5) << genomes[i]->get_initial_mu()
