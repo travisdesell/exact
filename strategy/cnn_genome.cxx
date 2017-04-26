@@ -630,23 +630,41 @@ int CNN_Genome::get_number_biases() const {
 int CNN_Genome::get_operations_estimate() const {
     int operations_estimate = 0;
 
+    double random_cost = 100;
+    double if_cost = 15;
+    double multiply_cost = 7;
+    double add_cost = 1;
+
     for (uint32_t i = 0; i < nodes.size(); i++) {
-        operations_estimate += nodes[i]->get_size_x() * nodes[i]->get_size_y();
+        //propagate forward has 1 RELU and 1 DropOut per value in node
+        //RELU is 2 ifs, 1 multiply
+        //dropout is 1 if, 1 random
+
+        operations_estimate += nodes[i]->get_size_x() * nodes[i]->get_size_y() * (3.0 * if_cost + multiply_cost + random_cost);
     }
 
     for (uint32_t i = 0; i < edges.size(); i++) {
+        //propagate forward has 1 multiply 1 add per input to output
+        //propagate backward has 3 multiplies and 2 adds per output to input
+
         bool reverse_filter_x = edges[i]->is_reverse_filter_x();
         bool reverse_filter_y = edges[i]->is_reverse_filter_y();
 
+        double propagate_count;
         if (reverse_filter_x && reverse_filter_y) {
-            operations_estimate += edges[i]->get_filter_x() * edges[i]->get_filter_y() * edges[i]->get_input_node()->get_size_x() * edges[i]->get_input_node()->get_size_y();
+            propagate_count = edges[i]->get_filter_x() * edges[i]->get_filter_y() * edges[i]->get_input_node()->get_size_x() * edges[i]->get_input_node()->get_size_y();
         } else if (reverse_filter_x) {
-            operations_estimate += edges[i]->get_filter_x() * edges[i]->get_filter_y() * edges[i]->get_input_node()->get_size_x() * edges[i]->get_output_node()->get_size_y();
+            propagate_count = edges[i]->get_filter_x() * edges[i]->get_filter_y() * edges[i]->get_input_node()->get_size_x() * edges[i]->get_output_node()->get_size_y();
         } else if (reverse_filter_y) {
-            operations_estimate += edges[i]->get_filter_x() * edges[i]->get_filter_y() * edges[i]->get_output_node()->get_size_x() * edges[i]->get_input_node()->get_size_y();
+            propagate_count = edges[i]->get_filter_x() * edges[i]->get_filter_y() * edges[i]->get_output_node()->get_size_x() * edges[i]->get_input_node()->get_size_y();
         } else {
-            operations_estimate += edges[i]->get_filter_x() * edges[i]->get_filter_y() * edges[i]->get_output_node()->get_size_x() * edges[i]->get_output_node()->get_size_y();
+            propagate_count = edges[i]->get_filter_x() * edges[i]->get_filter_y() * edges[i]->get_output_node()->get_size_x() * edges[i]->get_output_node()->get_size_y();
         }
+
+        operations_estimate += propagate_count * (4.0 * multiply_cost + 3.0 * add_cost);
+
+        //update weights has 4 multiplies 4 adds and 2 ifs per weight 
+        operations_estimate += edges[i]->get_filter_x() * edges[i]->get_filter_y() * (4.0 * multiply_cost + 4.0 * add_cost + 2.0 * if_cost);
     }
 
     return operations_estimate;
