@@ -1375,23 +1375,23 @@ bool EXACT::insert_genome(CNN_Genome* genome) {
     cout << "genome fitnesses:" << endl;
     for (int32_t i = 0; i < (int32_t)genomes.size(); i++) {
         cout << "\t" << setw(4) << i << " -- genome: " << setw(10) << genomes[i]->get_generation_id() << ", "
-            << setw(10) << left << "test err: " << right << setw(15) << setprecision(5) << fixed << parse_fitness(genomes[i]->get_test_error())
+            << setw(10) << left << "test err: " << right << setw(12) << setprecision(2) << fixed << parse_fitness(genomes[i]->get_test_error())
             << " (" << setw(5) << fixed << setprecision(2) << genomes[i]->get_test_rate() << "%), "
-            << setw(10) << left << "train err: " << right << setw(15) << setprecision(5) << fixed << parse_fitness(genomes[i]->get_best_error())
-            << " (" << setw(5) << fixed << setprecision(2) << genomes[i]->get_best_rate() << "%) on epoch: " << genomes[i]->get_best_error_epoch() 
-            //<< ", number enabled edges: " << genomes[i]->get_number_enabled_edges()
-            //<< ", number nodes: " << genomes[i]->get_number_nodes() << endl;
-            << ", mu: " << setw(10) << fixed << setprecision(5) << genomes[i]->get_initial_mu()
-            << ", mu_d: " << setw(10) << fixed << setprecision(5) << genomes[i]->get_mu_delta()
-            << ", lr: " << setw(10) << fixed << setprecision(5) << genomes[i]->get_initial_learning_rate()
-            << ", lr_d: " << setw(10) << fixed << setprecision(5) << genomes[i]->get_learning_rate_delta()
-            << ", wd: " << setw(10) << fixed << setprecision(5) << genomes[i]->get_initial_weight_decay()
-            << ", wd_d: " << setw(10) << fixed << setprecision(5) << genomes[i]->get_weight_decay_delta()
-            << ", a: " << setw(10) << fixed << setprecision(5) << genomes[i]->get_alpha()
-            << ", vr: " << setw(10) << fixed << setprecision(5) << genomes[i]->get_velocity_reset()
-            << ", id: " << setw(10) << fixed << setprecision(5) << genomes[i]->get_input_dropout_probability()
-            << ", hd: " << setw(10) << fixed << setprecision(5) << genomes[i]->get_hidden_dropout_probability()
-            << ", bs: " << setw(10) << fixed << setprecision(5) << genomes[i]->get_batch_size()
+            << setw(10) << left << "train err: " << right << setw(12) << setprecision(2) << fixed << parse_fitness(genomes[i]->get_best_error())
+            << " (" << setw(5) << fixed << setprecision(2) << genomes[i]->get_best_rate() << "%) on ep: " << genomes[i]->get_best_error_epoch() 
+            //<< ", reachable edges: " << genomes[i]->get_number_reachable_edges()
+            //<< ", reachable nodes: " << genomes[i]->get_number_reachable_nodes()
+            << ", mu: " << setw(8) << fixed << setprecision(5) << genomes[i]->get_initial_mu()
+            << ", mu_d: " << setw(8) << fixed << setprecision(5) << genomes[i]->get_mu_delta()
+            << ", lr: " << setw(8) << fixed << setprecision(5) << genomes[i]->get_initial_learning_rate()
+            << ", lr_d: " << setw(8) << fixed << setprecision(5) << genomes[i]->get_learning_rate_delta()
+            << ", wd: " << setw(8) << fixed << setprecision(5) << genomes[i]->get_initial_weight_decay()
+            << ", wd_d: " << setw(8) << fixed << setprecision(5) << genomes[i]->get_weight_decay_delta()
+            << ", a: " << setw(8) << fixed << setprecision(5) << genomes[i]->get_alpha()
+            << ", vr: " << setw(6) << fixed << setprecision(5) << genomes[i]->get_velocity_reset()
+            << ", id: " << setw(8) << fixed << setprecision(5) << genomes[i]->get_input_dropout_probability()
+            << ", hd: " << setw(8) << fixed << setprecision(5) << genomes[i]->get_hidden_dropout_probability()
+            << ", bs: " << setw(6) << fixed << setprecision(5) << genomes[i]->get_batch_size()
             << endl;
     }
 

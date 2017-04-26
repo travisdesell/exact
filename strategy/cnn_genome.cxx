@@ -662,7 +662,7 @@ double CNN_Genome::get_fitness() const {
         double test_rate = ((double)test_predictions / (double)number_testing_images);
         double train_rate = ((double)best_predictions / (double)number_training_images);
 
-        if (test_rate > train_rate) return test_error * 0.9;
+        if (test_rate > train_rate) return test_error * (train_rate / test_rate);
         else return test_error;
     } else {
         return best_error;
@@ -690,11 +690,15 @@ double CNN_Genome::get_best_error() const {
 }
 
 double CNN_Genome::get_test_rate() const {
-    return (double)test_predictions / (double)number_testing_images;
+    if (test_error == EXACT_MAX_DOUBLE) return 0.0;
+
+    return 100.0 * (double)test_predictions / (double)number_testing_images;
 }
 
 double CNN_Genome::get_best_rate() const {
-    return (double)best_predictions / (double)number_training_images;
+    if (best_error == EXACT_MAX_DOUBLE) return 0.0;
+
+    return 100.0 * (double)best_predictions / (double)number_training_images;
 }
 
 
@@ -1369,7 +1373,7 @@ void CNN_Genome::stochastic_backpropagation(const Images &images) {
 
         best_error = EXACT_MAX_DOUBLE;
     }
-    backprop_order.resize(3000);
+    //backprop_order.resize(10000);
     number_training_images = backprop_order.size();
 
     //sort edges by depth of input node
