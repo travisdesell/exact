@@ -909,7 +909,7 @@ void CNN_Node::backpropagate_batch_normalization(double mu, double learning_rate
 */
 
 
-void CNN_Node::set_values(const vector<const Image> &images, int channel, bool perform_dropout, double input_dropout_probability, minstd_rand0 &generator) {
+void CNN_Node::set_values(const vector<Image> &images, int channel, bool perform_dropout, double input_dropout_probability, minstd_rand0 &generator) {
     //images.size() may be less than batch size, in the case when the total number of images is not divisible by the batch_size
     if (images.size() > batch_size) {
         cerr << "ERROR: number of batch images: " << images.size() << " > batch_size of input node: " << batch_size << endl;

@@ -57,7 +57,7 @@ add_subdirectory(common)
 add_subdirectory(image_tools)
 add_subdirectory(strategy)
 add_subdirectory(tests)
-add_subdirectory(opencl)
+#add_subdirectory(opencl)
 
 IF (COMPILE_CLIENT STREQUAL "YES")
     if (BOINC_APP_FOUND)

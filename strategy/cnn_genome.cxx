@@ -1064,7 +1064,7 @@ bool CNN_Genome::visit_nodes() {
     return true;
 }
 
-void CNN_Genome::evaluate_images(const vector<const Image> &images, bool training, double &total_error, int &correct_predictions) {
+void CNN_Genome::evaluate_images(const vector<Image> &images, bool training, double &total_error, int &correct_predictions) {
     for (uint32_t i = 0; i < nodes.size(); i++) {
         nodes[i]->reset();
     }
@@ -1292,7 +1292,7 @@ void CNN_Genome::evaluate(const Images &images, double &total_error, int &correc
 
     for (uint32_t j = 0; j < backprop_order.size(); j += batch_size) {
 
-        vector<const Image> batch;
+        vector<Image> batch;
         for (uint32_t k = 0; k < batch_size && (j + k) < backprop_order.size(); k++) {
             batch.push_back( images.get_image(backprop_order[j + k]) );
         }

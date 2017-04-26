@@ -180,7 +180,7 @@ class CNN_Genome {
 
         void resize_edges_around_node(int node_position);
  
-        void evaluate_images(const vector<const Image> &images, bool training, double &total_error, int &correct_predictions);
+        void evaluate_images(const vector<Image> &images, bool training, double &total_error, int &correct_predictions);
 
         void set_to_best();
         void save_to_best();
