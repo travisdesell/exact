@@ -121,7 +121,7 @@ int main(int argc, char** argv) {
     cerr << "parsed input file" << endl;
 
 #ifdef _WIN32
-#define EXACT_VERSION "0.20"
+#define EXACT_VERSION "0.21"
 #endif
 
     if (genome->get_version_str().substr(1,4).compare(EXACT_VERSION) != 0) {
