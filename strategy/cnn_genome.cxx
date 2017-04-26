@@ -662,8 +662,7 @@ double CNN_Genome::get_fitness() const {
         double test_rate = ((double)test_predictions / (double)number_testing_images);
         double train_rate = ((double)best_predictions / (double)number_training_images);
 
-        if (test_rate > train_rate) return test_error * (train_rate / test_rate);
-        else return test_error;
+        return test_error * (1.0 + (10.0 * (train_rate - test_rate)));
     } else {
         return best_error;
     }
@@ -1628,6 +1627,7 @@ void CNN_Genome::read(istream &infile) {
 
 
     infile >> batch_size;
+    if (verbose) cerr << "read batch_size: " << batch_size << endl;
 
     epsilon = read_hexfloat(infile);
     if (verbose) cerr << "read epsilon: " << epsilon << endl;
@@ -1826,7 +1826,7 @@ void CNN_Genome::read(istream &infile) {
     backprop_order.clear();
     long order_size;
     infile >> order_size;
-    if (verbose) cout << "order_size: " << order_size << endl;
+    if (verbose) cerr << "order_size: " << order_size << endl;
     for (uint32_t i = 0; i < order_size; i++) {
         long order;
         infile >> order;
