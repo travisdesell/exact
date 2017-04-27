@@ -633,6 +633,8 @@ int CNN_Genome::get_operations_estimate() const {
     }
 
     for (uint32_t i = 0; i < edges.size(); i++) {
+        if (edges[i]->is_disabled()) continue;
+
         bool reverse_filter_x = edges[i]->is_reverse_filter_x();
         bool reverse_filter_y = edges[i]->is_reverse_filter_y();
 

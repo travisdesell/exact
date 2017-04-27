@@ -44,8 +44,6 @@ using std::vector;
 #include "strategy/exact.hxx"
 #include "server/make_jobs.hxx"
 
-const char* app_name = "exact2";
-
 //the following are the templates for the workunits (exact_in.xml) and results (exact_out.xml)
 //and they can be found in /projects/csg/templates
 const char* in_template_file = "exact_in.xml";
@@ -162,7 +160,7 @@ int make_job(EXACT *exact, CNN_Genome *genome, string search_name) {
     genome->write_to_file(path);
     //copy_file_to_download_dir(genome_filename);
 
-    double fpops_per_image = genome->get_operations_estimate() * 30;         //TODO: figure out an estimate of how many fpops per set calculation
+    double fpops_per_image = genome->get_operations_estimate();
     double fpops_est = exact->get_number_images() * genome->get_max_epochs() * fpops_per_image;
 
     double credit = fpops_est / 10e10;
@@ -181,7 +179,7 @@ int make_job(EXACT *exact, CNN_Genome *genome, string search_name) {
     }
 
     wu.rsc_disk_bound = 200 * 1024 * 1024;      //200MB
-    wu.delay_bound = 60 * 60 * 24 * 7;          //7 days
+    wu.delay_bound = 60 * 60 * 24 * (credit / 500);          //7 days
     wu.min_quorum = REPLICATION_FACTOR;
     wu.target_nresults = REPLICATION_FACTOR;
     wu.max_error_results = REPLICATION_FACTOR*4;
@@ -250,12 +248,12 @@ void make_jobs(EXACT *exact, int workunits_to_generate) {
     }
 }
 
-void init_work_generation() {
+void init_work_generation(string app_name) {
     //looks for applicaiton to be run. If not found, program exits.
     char buf[256];
-    sprintf(buf, "where name='%s'", app_name);
+    sprintf(buf, "where name='%s'", app_name.c_str());
     if (app.lookup(buf)) {
-        log_messages.printf(MSG_CRITICAL, "can't find app %s\n", app_name);
+        log_messages.printf(MSG_CRITICAL, "can't find app %s\n", app_name.c_str());
         exit(1);
     }
 

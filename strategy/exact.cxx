@@ -617,7 +617,7 @@ EXACT::EXACT(const Images &images, string _samples_filename, int _population_siz
 
     initial_learning_rate_min = 0.01;
     initial_learning_rate_max = 0.001;
-    learning_rate_min = 0.00000001;
+    learning_rate_min = 0.00001;
     learning_rate_max = 0.1;
 
     initial_learning_rate_delta_min = 0.99;
@@ -635,7 +635,6 @@ EXACT::EXACT(const Images &images, string _samples_filename, int _population_siz
     weight_decay_delta_min = 0.00000001;
     weight_decay_delta_max = 1.0;
 
-    /*
     initial_input_dropout_probability_min = 0.001;
     initial_input_dropout_probability_max = 0.03;
     input_dropout_probability_min = 0.00000001;
@@ -645,8 +644,8 @@ EXACT::EXACT(const Images &images, string _samples_filename, int _population_siz
     initial_hidden_dropout_probability_max = 0.60;
     hidden_dropout_probability_min = 0.20;
     hidden_dropout_probability_max = 0.80;
-    */
 
+    /*
     initial_input_dropout_probability_min = 0.02;
     initial_input_dropout_probability_max = 0.02;
     input_dropout_probability_min = 0.02;
@@ -656,7 +655,7 @@ EXACT::EXACT(const Images &images, string _samples_filename, int _population_siz
     initial_hidden_dropout_probability_max = 0.48;
     hidden_dropout_probability_min = 0.48;
     hidden_dropout_probability_max = 0.48;
-
+    */
 
     initial_velocity_reset_min = 500;
     initial_velocity_reset_max = 10000;

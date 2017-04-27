@@ -27,7 +27,7 @@ while ($genome_row = $genome_result->fetch_assoc()) {
     $gv_files[] = $search_name . "_genome_" . $genome_id . ".gv";
 
     if ($genome_row['ISNULL(test_error)'] == 1) {
-        $command = "/home/tdesell/exact/build/tests/evaluate_cnn --genome_id $genome_id --training_data $samples_filename --testing_data $testing_filename --update_database --db_file /home/tdesell/exact/exact2_db_info";
+        $command = "/home/tdesell/exact/build/tests/evaluate_cnn --genome_id $genome_id --training_data $samples_filename --testing_data $testing_filename --update_database --db_file /home/tdesell/exact/exact_mnist_db_info";
         echo "command: $command \n";
         echo "results: " . exec($command) . "\n";
     } else {
@@ -36,7 +36,7 @@ while ($genome_row = $genome_result->fetch_assoc()) {
 
     if (!file_exists($genome_image)) {
         echo "'$graphviz_file' does not exist, generating\n";
-        $command = "/home/tdesell/exact/build/tests/generate_gv $genome_id $graphviz_file /projects/csg/exact2_db_info";
+        $command = "/home/tdesell/exact/build/tests/generate_gv $genome_id $graphviz_file /home/tdesell/exact/exact_mnist_db_info";
         echo "command: $command \n";
         echo "results: " . exec($command) . "\n";
 

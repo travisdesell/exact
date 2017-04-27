@@ -10,6 +10,6 @@
 
 bool low_on_workunits();
 void make_jobs(EXACT *exact, int workunits_to_generate);
-void init_work_generation();
+void init_work_generation(string app_name);
 
 #endif

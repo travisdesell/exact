@@ -96,19 +96,21 @@ change_size = [row[13] for row in v1]
 change_size_x = [row[14] for row in v1]
 change_size_y = [row[15] for row in v1]
 crossover = [row[16] for row in v1]
-#reset_weights = [row[15] for row in v1]
+#reset_weights = [row[18] for row in v1]
+add_node = [row[18] for row in v1]
 
 fig, ax = plt.subplots(1)
 
-ax.plot(t, disable_edge, lw=2, label='Disable Edge')
-ax.plot(t, enable_edge, lw=2, label='Enable Edge')
-ax.plot(t, split_edge, lw=2, label='Split Edge')
-ax.plot(t, add_edge, lw=2, label='Add Edge')
-ax.plot(t, change_size, lw=2, label='Change Size')
-ax.plot(t, change_size_x, lw=2, label='Change Size X')
-ax.plot(t, change_size_y, lw=2, label='Change Size Y')
-ax.plot(t, crossover, lw=2, label='Crossover')
+ax.plot(t, disable_edge, lw=1, label='Disable Edge')
+ax.plot(t, enable_edge, lw=1, label='Enable Edge')
+ax.plot(t, split_edge, lw=1, label='Split Edge')
+ax.plot(t, add_edge, lw=1, label='Add Edge')
+ax.plot(t, change_size, lw=1, label='Change Size')
+ax.plot(t, change_size_x, lw=1, label='Change Size X')
+ax.plot(t, change_size_y, lw=1, label='Change Size Y')
+ax.plot(t, crossover, lw=1, label='Crossover')
 #ax.plot(t, reset_weights, lw=2, label='Reset Weights')
+ax.plot(t, crossover, lw=1, label='Add Node')
 
 #ax.set_yscale('log')
 #ax.set_xscale('log')

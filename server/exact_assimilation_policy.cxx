@@ -58,6 +58,7 @@ using std::vector;
 #include "mysql.h"
 #include "boinc_db.h"
 
+#include "common/arguments.hxx"
 #include "common/db_conn.hxx"
 #include "strategy/exact.hxx"
 #include "strategy/cnn_genome.hxx"
@@ -82,8 +83,24 @@ EXACT* get_exact_search(int exact_id) {
 
 int assimilate_handler_init(int argc, char** argv) {
     // handle project specific arguments here
+    vector<string> arguments = vector<string>(argv, argv + argc);
 
-    init_work_generation();
+    for (uint32_t i = 0; i < argc; i++) {
+        cout << "argv[" << i << "]: '" << argv[i] << "'" << endl;
+    }
+
+    for (uint32_t i = 0; i < arguments.size(); i++) {
+        cout << "arguments[" << i << "]: '" << arguments[i] << "'" << endl;
+    }
+
+    string db_file;
+    get_argument(arguments, "--db_file", true, db_file);
+    set_db_info_filename(db_file);
+
+    string app_name;
+    get_argument(arguments, "--app_name", true, app_name);
+
+    init_work_generation(app_name);
 
     ostringstream running_search_query;
 
@@ -259,7 +276,7 @@ int assimilate_handler(WORKUNIT& wu, vector<RESULT>& results, RESULT& canonical_
 
     CNN_Genome *genome = new CNN_Genome(file_iss, false);
 
-    string expected_version = "v0.19";
+    string expected_version = "v0.20";
 
     if (genome->get_version_str().compare(expected_version) != 0) {
         log_messages.printf(MSG_CRITICAL, "[CANONICAL RESULT#%ld %s] assimilate_handler: result was from an old version input file: '%s', expected '%s'.\n", canonical_result.id, canonical_result.name, genome->get_version_str().c_str(), expected_version.c_str());

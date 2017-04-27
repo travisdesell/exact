@@ -76,6 +76,13 @@ using std::vector;
 int main(int argc, char** argv) {
     vector<string> arguments = vector<string>(argv, argv + argc);
 
+    string db_file;
+    get_argument(arguments, "--db_file", true, db_file);
+    set_db_info_filename(db_file);                                                                                   
+
+    string app_name;
+    get_argument(arguments, "--app", true, app_name);
+
     int debug_level;
     get_argument(arguments, "--debug_level", true, debug_level);
 
@@ -102,7 +109,7 @@ int main(int argc, char** argv) {
         exit(1);
     }
 
-    init_work_generation();
+    init_work_generation(app_name);
 
     //initialize the EXACT algorithm
     int population_size = 100;
