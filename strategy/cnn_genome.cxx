@@ -48,8 +48,9 @@ using std::vector;
 #include "common/db_conn.hxx"
 #endif
 
-#include "common/random.hxx"
 #include "common/exp.hxx"
+#include "common/random.hxx"
+#include "common/version.hxx"
 
 #include "image_tools/image_set.hxx"
 #include "cnn_node.hxx"
@@ -1493,12 +1494,9 @@ string CNN_Genome::get_version_str() const {
     return version_str;
 }
 
-#ifdef _WIN32
-#define EXACT_VERSION "0.21"
-#endif
 
 void CNN_Genome::write(ostream &outfile) {
-    outfile << "v" << EXACT_VERSION << endl;
+    outfile << EXACT_VERSION_STR << endl;
     outfile << exact_id << endl;
     outfile << genome_id << endl;
 
@@ -1614,8 +1612,8 @@ void CNN_Genome::read(istream &infile) {
 
     cerr << "read CNN_Genome file with version string: '" << version_str << "'" << endl;
 
-    if (version_str.substr(1,4).compare(EXACT_VERSION) != 0) {
-        cerr << "breaking because version_str '" << version_str.substr(1,4) << "' did not match EXACT_VERSION '" << EXACT_VERSION << "': " << version_str.compare(EXACT_VERSION) << endl;
+    if (version_str.compare(EXACT_VERSION_STR) != 0) {
+        cerr << "breaking because version_str '" << version_str << "' did not match EXACT_VERSION_STR '" << EXACT_VERSION_STR << "': " << version_str.compare(EXACT_VERSION_STR) << endl;
         return;
     }
 
