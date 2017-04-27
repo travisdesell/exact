@@ -55,8 +55,7 @@ using std::string;
 using std::vector;
 
 #include "server/boinc_common.hxx"
-
-string required_version = string("v") + string(EXACT_VERSION);
+#include "common/version.hxx"
 
 struct EXACT_RESULT {
     string file_contents;
@@ -118,9 +117,9 @@ int init_result(RESULT& result, void*& data) {
         string line;
         getline(iss, line);
 
-        if (line.compare(required_version) != 0) {
+        if (line.compare(EXACT_VERSION_STR) != 0) {
             log_messages.printf(MSG_CRITICAL, "[RESULT#%ld %s] get_data_from_result: invalid version\n", result.id, result.name);
-            log_messages.printf(MSG_CRITICAL, "     file version was: '%s', requires '%s'\n", line.c_str(), required_version.c_str());
+            log_messages.printf(MSG_CRITICAL, "     file version was: '%s', requires '%s'\n", line.c_str(), EXACT_VERSION_STR);
             return 1;
         }
 

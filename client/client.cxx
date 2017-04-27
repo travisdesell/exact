@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "common/arguments.hxx"
+#include "common/version.hxx"
 
 #include "image_tools/image_set.hxx"
 
@@ -120,12 +121,8 @@ int main(int argc, char** argv) {
     }
     cerr << "parsed input file" << endl;
 
-#ifdef _WIN32
-#define EXACT_VERSION "0.21"
-#endif
-
-    if (genome->get_version_str().substr(1,4).compare(EXACT_VERSION) != 0) {
-        cerr << "ERROR: exact application with version '" << EXACT_VERSION << "' trying to process workunit with incompatible input version: '" << genome->get_version_str().substr(1,4) << "'" << endl;
+    if (genome->get_version_str().compare(EXACT_VERSION_STR) != 0) {
+        cerr << "ERROR: exact application with version '" << EXACT_VERSION_STR << "' trying to process workunit with incompatible input version: '" << genome->get_version_str() << "'" << endl;
         boinc_finish(1);
         exit(1);
     }
@@ -147,6 +144,7 @@ int main(int argc, char** argv) {
     genome->set_to_best();
     genome->evaluate(testing_images, error, predictions);
     genome->set_test_performance(error, predictions, testing_images.get_number_images());
+    genome->write_to_file(output_filename);
 
     boinc_finish(0);
 
