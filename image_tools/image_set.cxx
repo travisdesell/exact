@@ -184,6 +184,8 @@ void Images::read_images(string binary_filename) {
    */
 }
 
+
+
 Images::Images(string binary_filename, const vector<double> &_channel_avg, const vector<double> &_channel_std_dev) {
     read_images(binary_filename);
 

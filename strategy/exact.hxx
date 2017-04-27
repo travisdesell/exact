@@ -35,7 +35,8 @@ class EXACT {
 
         string search_name;
         string output_directory;
-        string samples_filename;
+        string training_filename;
+        string testing_filename;
 
         int number_images;
         int image_channels;
@@ -63,6 +64,12 @@ class EXACT {
 
         bool reset_weights;
         int max_epochs;
+
+
+        double initial_batch_size_min;
+        double initial_batch_size_max;
+        double batch_size_min;
+        double batch_size_max;
 
         double initial_mu_min;
         double initial_mu_max;
@@ -94,6 +101,18 @@ class EXACT {
         double weight_decay_delta_min;
         double weight_decay_delta_max;
 
+        double epsilon;
+
+        double initial_alpha_min;
+        double initial_alpha_max;
+        double alpha_min;
+        double alpha_max;
+
+        int initial_velocity_reset_min;
+        int initial_velocity_reset_max;
+        int velocity_reset_min;
+        int velocity_reset_max;
+
         double initial_input_dropout_probability_min;
         double initial_input_dropout_probability_max;
         double input_dropout_probability_min;
@@ -104,14 +123,11 @@ class EXACT {
         double hidden_dropout_probability_min;
         double hidden_dropout_probability_max;
 
-        int initial_velocity_reset_min;
-        int initial_velocity_reset_max;
-        int velocity_reset_min;
-        int velocity_reset_max;
 
         bool sort_by_fitness;
         double reset_weights_chance;
 
+        double no_modification_rate;
         double crossover_rate;
         double more_fit_parent_crossover;
         double less_fit_parent_crossover;
@@ -159,14 +175,14 @@ class EXACT {
         void update_database();
 #endif
 
-        EXACT(const Images &images, string _samples_filename, int _population_size, int _max_epochs, int _max_genomes, string _output_directory, string _search_name, bool _reset_weights);
+        EXACT(const Images &images, string _training_filename, string _testing_filename, int _population_size, int _max_epochs, int _max_genomes, string _output_directory, string _search_name, bool _reset_weights);
 
         int32_t population_contains(CNN_Genome *genome) const;
         CNN_Genome* get_best_genome();
 
-        void generate_initial_hyperparameters(double &mu, double &mu_delta, double &learning_rate, double &learning_rate_delta, double &weight_decay, double &weight_decay_delta, double &input_dropout_probability, double &hidden_dropout_probability, int &velocity_reset);
+        void generate_initial_hyperparameters(double &mu, double &mu_delta, double &learning_rate, double &learning_rate_delta, double &weight_decay, double &weight_decay_delta, double &alpha, int &velocity_reset, double &input_dropout_probability, double &hidden_dropout_probability, int &batch_size);
 
-        void generate_simplex_hyperparameters(double &mu, double &mu_delta, double &learning_rate, double &learning_rate_delta, double &weight_decay, double &weight_decay_delta, double &input_dropout_probability, double &hidden_dropout_probability, int &velocity_reset);
+        void generate_simplex_hyperparameters(double &mu, double &mu_delta, double &learning_rate, double &learning_rate_delta, double &weight_decay, double &weight_decay_delta, double &alpha, int &velocity_reset, double &input_dropout_probability, double &hidden_dropout_probability, int &batch_size);
 
 
         bool add_edge(CNN_Genome *child, CNN_Node *node1, CNN_Node *node2);
@@ -187,7 +203,8 @@ class EXACT {
         int get_id() const;
         string get_search_name() const;
         string get_output_directory() const;
-        string get_samples_filename() const;
+        string get_training_filename() const;
+        string get_testing_filename() const;
         int get_number_images() const;
 };
 

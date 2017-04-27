@@ -15,7 +15,8 @@ $query = "CREATE TABLE `exact_search` (
     `id` int(11) NOT NULL AUTO_INCREMENT,
     `search_name` varchar(128) NOT NULL,
     `output_directory` varchar(128) NOT NULL,
-    `samples_filename` varchar(256) NOT NULL,
+    `training_filename` varchar(256) NOT NULL,
+    `testing_filename` varchar(256) NOT NULL,
 
     `number_images` int(11) NOT NULL,
     `image_channels` int(11) NOT NULL,
@@ -33,6 +34,11 @@ $query = "CREATE TABLE `exact_search` (
 
     `reset_weights` tinyint NOT NULL,
     `max_epochs` int(11) NOT NULL,
+
+    `initial_batch_size_min` double NOT NULL,
+    `initial_batch_size_max` double NOT NULL,
+    `batch_size_min` double NOT NULL,
+    `batch_size_max` double NOT NULL,
 
     `initial_mu_min` double NOT NULL,
     `initial_mu_max` double NOT NULL,
@@ -64,24 +70,33 @@ $query = "CREATE TABLE `exact_search` (
     `weight_decay_delta_min` double NOT NULL,
     `weight_decay_delta_max` double NOT NULL,
 
-    `initial_input_dropout_probability_min` double NOT NULL,
-    `initial_input_dropout_probability_max` double NOT NULL,
-    `input_dropout_probability_min` double NOT NULL,
-    `input_dropout_probability_max` double NOT NULL,
+    `epsilon` double NOT NULL,
 
-    `initial_hidden_dropout_probability_min` double NOT NULL,
-    `initial_hidden_dropout_probability_max` double NOT NULL,
-    `hidden_dropout_probability_min` double NOT NULL,
-    `hidden_dropout_probability_max` double NOT NULL,
+    `initial_alpha_min` int(11) NOT NULL,
+    `initial_alpha_max` int(11) NOT NULL,
+    `alpha_min` int(11) NOT NULL,
+    `alpha_max` int(11) NOT NULL,
 
     `initial_velocity_reset_min` int(11) NOT NULL,
     `initial_velocity_reset_max` int(11) NOT NULL,
     `velocity_reset_min` int(11) NOT NULL,
     `velocity_reset_max` int(11) NOT NULL,
 
+    `initial_input_dropout_probability_min` int(11) NOT NULL,
+    `initial_input_dropout_probability_max` int(11) NOT NULL,
+    `input_dropout_probability_min` int(11) NOT NULL,
+    `input_dropout_probability_max` int(11) NOT NULL,
+
+    `initial_hidden_dropout_probability_min` int(11) NOT NULL,
+    `initial_hidden_dropout_probability_max` int(11) NOT NULL,
+    `hidden_dropout_probability_min` int(11) NOT NULL,
+    `hidden_dropout_probability_max` int(11) NOT NULL,
+
+
     `sort_by_fitness` tinyint(1) NOT NULL,
     `reset_weights_chance` double NOT NULL,
 
+    `no_modification_rate` double NOT NULL,
     `crossover_rate` double NOT NULL,
     `more_fit_parent_crossover` double NOT NULL,
     `less_fit_parent_crossover` double NOT NULL,
@@ -147,6 +162,10 @@ $query = "CREATE TABLE `cnn_genome` (
 
     `velocity_reset` int(11) NOT NULL,
 
+    `batch_size` int(11) NOT NULL,
+    `epsilon` double NOT NULL,
+    `alpha` double NOT NULL,
+
     `input_dropout_probability` double NOT NULL,
     `hidden_dropout_probability` double NOT NULL,
 
@@ -166,13 +185,11 @@ $query = "CREATE TABLE `cnn_genome` (
     `max_epochs` int(11) NOT NULL,
     `reset_weights` tinyint(1) NOT NULL,
 
+    `number_training_images` int(11) DEFAULT NULL,
     `best_error` double NOT NULL,
     `best_error_epoch` int(11) NOT NULL,
     `best_predictions` int(11) NOT NULL,
     `best_predictions_epoch` int(11) NOT NULL,
-
-    `best_class_error` BLOB NOT NULL,
-    `best_correct_predictions` BLOB NOT NULL,
 
     `started_from_checkpoint` tinyint(1) NOT NULL,
 
@@ -192,6 +209,7 @@ $query = "CREATE TABLE `cnn_genome` (
     `generated_by_reset_weights` int(11) NOT NULL,
     `generated_by_add_node` int(11) NOT NULL,
 
+    `number_testing_images` int(11) DEFAULT NULL,
     `test_error` double DEFAULT NULL,
     `test_predictions` int(11) DEFAULT NULL,
     `stderr_out` blob,
@@ -213,15 +231,17 @@ $query = "CREATE TABLE `cnn_edge` (
   `input_node_innovation_number` int(11) NOT NULL,
   `output_node_innovation_number` int(11) NOT NULL,
 
+  `batch_size` int(11) NOT NULL,
   `filter_x` int(11) NOT NULL,
   `filter_y` int(11) NOT NULL,
   `weights` BLOB NOT NULL,
   `best_weights` BLOB NOT NULL,
-  `previous_velocity` BLOB NOT NULL,
-  `best_velocity` BLOB NOT NULL,
 
   `fixed` tinyint(1) NOT NULL,
   `disabled` tinyint(1) NOT NULL,
+  `forward_visited` tinyint(1) NOT NULL,
+  `reverse_visited` tinyint(1) NOT NULL,
+
   `reverse_filter_x` tinyint(1) NOT NULL,
   `reverse_filter_y` tinyint(1) NOT NULL,
   `needs_initialization` tinyint(1) NOT NULL,
@@ -241,19 +261,29 @@ $query = "CREATE TABLE `cnn_node` (
   `innovation_number` int(11) NOT NULL,
   `depth` double NOT NULL,
 
+  `batch_size` int(11) NOT NULL,
   `size_x` int(11) NOT NULL,
   `size_y` int(11) NOT NULL,
 
-  `bias` BLOB NOT NULL,
-  `best_bias` BLOB NOT NULL,
-  `bias_velocity` BLOB NOT NULL,
-  `best_bias_velocity` BLOB NOT NULL,
-
   `type` int(11) NOT NULL,
 
-  `visited` tinyint(1) NOT NULL,
+  `forward_visited` tinyint(1) NOT NULL,
+  `reverse_visited` tinyint(1) NOT NULL,
   `weight_count` int(11) NOT NULL,
   `needs_initialization` tinyint(1) NOT NULL,
+
+  `gamma` double NOT NULL,
+  `best_gamma` double NOT NULL,
+  `previous_velocity_gamma` double NOT NULL,
+
+  `beta` double NOT NULL,
+  `best_beta` double NOT NULL,
+  `previous_velocity_beta` double NOT NULL,
+
+  `running_mean` double NOT NULL,
+  `best_running_mean` double NOT NULL,
+  `running_variance` double NOT NULL,
+  `best_running_variance` double NOT NULL,
 
   PRIMARY KEY(`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1";

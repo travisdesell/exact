@@ -35,6 +35,10 @@ class CNN_Genome {
 
         int velocity_reset;
 
+        int batch_size;
+        double epsilon;
+        double alpha;
+
         double input_dropout_probability;
         double hidden_dropout_probability;
 
@@ -54,13 +58,15 @@ class CNN_Genome {
         int max_epochs;
         bool reset_weights;
 
+        int number_training_images;
         double best_error;
         int best_predictions;
         int best_predictions_epoch;
         int best_error_epoch;
 
-        vector<double> best_class_error;
-        vector<int> best_correct_predictions;
+        int number_testing_images;
+        double test_error;
+        int test_predictions;
 
         bool started_from_checkpoint;
         vector<long> backprop_order;
@@ -93,7 +99,7 @@ class CNN_Genome {
         /**
          *  Iniitalize a genome from a set of nodes and edges
          */
-        CNN_Genome(int _generation_id, int seed, int _max_epochs, bool _reset_weights, int velocity_reset, double _mu, double _mu_delta, double _learning_rate, double _learning_rate_delta, double _weight_decay, double _weight_decay_delta, double _input_dropout_probability, double _hidden_dropout_probability, const vector<CNN_Node*> &_nodes, const vector<CNN_Edge*> &_edges);
+        CNN_Genome(int _generation_id, int seed, int _max_epochs, bool _reset_weights, int velocity_reset, double _mu, double _mu_delta, double _learning_rate, double _learning_rate_delta, double _weight_decay, double _weight_decay_delta, int _batch_size, double _epsilon, double _alpha, double _input_dropout_probability, double _hidden_dropout_probability, const vector<CNN_Node*> &_nodes, const vector<CNN_Edge*> &_edges);
 
         ~CNN_Genome();
 
@@ -111,9 +117,7 @@ class CNN_Genome {
 
         bool equals(CNN_Genome *other) const;
 
-        void print_progress(ostream &out, int total_predictions, double total_error) const;
-        void print_best_error(ostream &out) const;
-        void print_best_predictions(ostream &out) const;
+        void print_progress(ostream &out, double total_error, int correct_predictions, int number_images) const;
 
         int get_number_weights() const;
         int get_number_biases() const;
@@ -124,22 +128,29 @@ class CNN_Genome {
 
         int get_generation_id() const;
         double get_fitness() const;
-        int get_best_error_epoch() const;
+
+        double get_best_error() const;
+        double get_test_error() const;
+        double get_best_rate() const;
+        double get_test_rate() const;
+
+        int get_test_predictions() const;
         int get_best_predictions() const;
+
+        int get_best_error_epoch() const;
+
         int get_epoch() const;
         int get_max_epochs() const;
         int get_number_enabled_edges() const;
 
         bool sanity_check(int type);
-        bool outputs_connected() const;
+        bool visit_nodes();
 
         const vector<CNN_Node*> get_nodes() const;
         const vector<CNN_Edge*> get_edges() const;
 
         CNN_Node* get_node(int node_position);
         CNN_Edge* get_edge(int edge_position);
-
-        int get_velocity_reset() const;
 
         double get_initial_mu() const;
         double get_mu() const;
@@ -150,6 +161,10 @@ class CNN_Genome {
         double get_initial_weight_decay() const;
         double get_weight_decay() const;
         double get_weight_decay_delta() const;
+        int get_batch_size() const;
+
+        double get_alpha() const;
+        int get_velocity_reset() const;
 
         double get_input_dropout_probability() const;
         double get_hidden_dropout_probability() const;
@@ -165,16 +180,18 @@ class CNN_Genome {
 
         void resize_edges_around_node(int node_position);
  
-        int evaluate_image(const Image &image, vector<double> &class_error, bool perform_backprop, bool perform_dropout, double &total_error);
+        void evaluate_images(const vector<Image> &images, bool training, double &total_error, int &correct_predictions);
 
         void set_to_best();
         void save_to_best();
         void initialize();
 
-        void evaluate(const Images &images, double &total_error, int &total_predictions);
-        void evaluate(const Images &images, vector<double> &class_error, vector<int> &correct_predictions, double &total_error, int &total_predictions, bool perform_backprop);
+        void evaluate(const Images &images, double &total_error, int &correct_predictions);
+        void evaluate(const Images &images, double &total_error, int &correct_predictions, bool perform_backprop);
 
         void stochastic_backpropagation(const Images &images);
+
+        void set_test_performance(double _test_error, int _test_predictions, int _number_testing_images);
 
         void set_name(string _name);
         void set_output_filename(string _output_filename);

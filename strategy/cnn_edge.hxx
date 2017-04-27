@@ -26,10 +26,6 @@ using std::vector;
 #include "image_tools/image_set.hxx"
 #include "common/random.hxx"
 
-const double beta1 = 0.9;
-const double beta2 = 0.999;
-const double eps = 1e-8;
-
 class CNN_Edge {
     private:
         int edge_id;
@@ -44,6 +40,7 @@ class CNN_Edge {
         CNN_Node *input_node;
         CNN_Node *output_node;
 
+        int batch_size;
         int filter_x, filter_y;
         vector< vector<double> > weights;
         vector< vector<double> > weight_updates;
@@ -54,6 +51,9 @@ class CNN_Edge {
 
         bool fixed;
         bool disabled;
+        bool forward_visited;
+        bool reverse_visited;
+
         bool reverse_filter_x;
         bool reverse_filter_y;
         bool needs_initialization;
@@ -100,10 +100,19 @@ class CNN_Edge {
         void disable();
         void enable();
         bool is_disabled() const;
+        void update_batch_size(int new_batch_size);
+
+        bool is_reachable() const;
+        bool is_forward_visited() const;
+        bool is_reverse_visited() const;
+        void forward_visit();
+        void reverse_visit();
+        void set_unvisited();
 
         bool is_filter_correct() const;
 
         int get_number_weights() const;
+        int get_batch_size() const;
 
         int get_innovation_number() const;
         int get_input_innovation_number() const;
@@ -120,13 +129,13 @@ class CNN_Edge {
 
         void print(ostream &out);
 
-        void check_output_update(const vector< vector<double> > &output, const vector< vector<double> > &input, double value, double weight, double previous_output, int in_y, int in_x, int out_y, int out_x);
+        void check_output_update(const vector< vector< vector<double> > > &output, const vector< vector< vector<double> > > &input, double value, double weight, double previous_output, int batch_number, int in_y, int in_x, int out_y, int out_x);
 
-        void check_weight_update(const vector< vector<double> > &output_errors, const vector< vector<double> > &output_gradients, const vector< vector<double> > &input, double delta, double weight_update, double previous_weight_update, int out_y, int out_x, int in_y, int in_x);
+        void check_weight_update(const vector< vector< vector<double> > > &input, const vector< vector< vector<double> > > &input_deltas, double delta, double previous_delta, double weight_update, double previous_weight_update, int batch_number, int out_y, int out_x, int in_y, int in_x);
 
-        void propagate_forward(bool perform_dropout,  minstd_rand0 &generator, double hidden_dropout_probability);
+        void propagate_forward(bool training, double epsilon, double alpha, bool perform_dropout, double hidden_dropout_probability, minstd_rand0 &generator);
 
-        void propagate_backward();
+        void propagate_backward(double mu, double learning_rate);
         void update_weights(double mu, double learning_rate, double weight_decay);
 
         void print_statistics();
@@ -157,6 +166,28 @@ struct sort_CNN_Edges_by_depth {
         }
     }   
 };
+
+struct sort_CNN_Edges_by_output_depth {
+    bool operator()(CNN_Edge *n1, CNN_Edge *n2) {
+        if (n1->get_output_node()->get_depth() < n2->get_output_node()->get_depth()) {
+            return true;
+
+        } else if (n1->get_output_node()->get_depth() == n2->get_output_node()->get_depth()) {
+            //make sure the order of the edges is *always* the same
+            //going through the edges in different orders may effect the output
+            //of backpropagation
+            if (n1->get_innovation_number() < n2->get_innovation_number()) {
+                return true;
+            } else {
+                return false;
+            }
+
+        } else {
+            return false;
+        }
+    }   
+};
+
 
 struct sort_CNN_Edges_by_innovation {
     bool operator()(CNN_Edge *n1, CNN_Edge *n2) {

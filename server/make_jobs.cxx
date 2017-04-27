@@ -46,7 +46,7 @@ using std::vector;
 
 //the following are the templates for the workunits (exact_in.xml) and results (exact_out.xml)
 //and they can be found in /projects/csg/templates
-const char* in_template_file = "exact_in.xml";
+const char* in_template_file = "exact_batch_in.xml";
 const char* out_template_file = "exact_out.xml";
 
 
@@ -104,19 +104,21 @@ int make_job(EXACT *exact, CNN_Genome *genome, string search_name) {
     char name[256], path[256];
     char command_line[512];
     char additional_xml[512];
-    const char* infiles[2];
+    const char* infiles[3];
 
     // make a unique name (for the job and its input file)
     sprintf(name, "exact_genome_%d_%u_%u", daemon_start_time, exact->get_id(), genome->get_generation_id());
     log_messages.printf(MSG_DEBUG, "name: '%s'\n", name);
 
-    string samples_filename = exact->get_samples_filename();
+    string training_filename = exact->get_training_filename();
+    string testing_filename = exact->get_testing_filename();
 
     ostringstream oss;
     oss << "/projects/csg/exact_data/" << search_name << "/" << name << ".txt";
     string genome_filename = oss.str();
 
-    log_messages.printf(MSG_DEBUG, "dataset filename: '%s'\n", samples_filename.c_str());
+    log_messages.printf(MSG_DEBUG, "training filename: '%s'\n", training_filename.c_str());
+    log_messages.printf(MSG_DEBUG, "testing filename: '%s'\n", testing_filename.c_str());
     log_messages.printf(MSG_DEBUG, "genome filename: '%s'\n", genome_filename.c_str());
 
 
@@ -130,19 +132,28 @@ int make_job(EXACT *exact, CNN_Genome *genome, string search_name) {
     */
 
     //Make sure the dataset and genome files are in the download directory
-    log_messages.printf(MSG_DEBUG, "copying dataset filename to download directory: '%s'\n", samples_filename.c_str());
-    copy_file_to_download_dir(samples_filename);
+    log_messages.printf(MSG_DEBUG, "copying training filename to download directory: '%s'\n", training_filename.c_str());
+    copy_file_to_download_dir(training_filename);
 
-    string stripped_samples_filename  = samples_filename.substr(samples_filename.find_last_of("/\\") + 1);
-    log_messages.printf(MSG_DEBUG, "stripped dataset filename for infiles[0]: '%s'\n", stripped_samples_filename.c_str());
-    infiles[0] = stripped_samples_filename.c_str();
+    string stripped_training_filename  = training_filename.substr(training_filename.find_last_of("/\\") + 1);
+    log_messages.printf(MSG_DEBUG, "stripped training filename for infiles[0]: '%s'\n", stripped_training_filename.c_str());
+    infiles[0] = stripped_training_filename.c_str();
     log_messages.printf(MSG_DEBUG, "infile[0]: '%s'\n", infiles[0]);
+
+    log_messages.printf(MSG_DEBUG, "copying testing filename to download directory: '%s'\n", testing_filename.c_str());
+    copy_file_to_download_dir(testing_filename);
+
+    string stripped_testing_filename  = testing_filename.substr(testing_filename.find_last_of("/\\") + 1);
+    log_messages.printf(MSG_DEBUG, "stripped testing filename for infiles[0]: '%s'\n", stripped_testing_filename.c_str());
+    infiles[1] = stripped_testing_filename.c_str();
+    log_messages.printf(MSG_DEBUG, "infile[1]: '%s'\n", infiles[1]);
+
 
 
     string stripped_genome_filename = genome_filename.substr(genome_filename.find_last_of("/\\") + 1);
-    log_messages.printf(MSG_DEBUG, "stripped genome filename for infiles[1]: '%s'\n", stripped_genome_filename.c_str());
-    infiles[1] = stripped_genome_filename.c_str();
-    log_messages.printf(MSG_DEBUG, "infile[1]: '%s'\n", infiles[1]);
+    log_messages.printf(MSG_DEBUG, "stripped genome filename for infiles[2]: '%s'\n", stripped_genome_filename.c_str());
+    infiles[2] = stripped_genome_filename.c_str();
+    log_messages.printf(MSG_DEBUG, "infile[1]: '%s'\n", infiles[2]);
 
     log_messages.printf(MSG_DEBUG, "writing genome filename to download directory: '%s'\n", genome_filename.c_str());
     int retval = config.download_path( stripped_genome_filename.c_str(), path );
@@ -172,7 +183,7 @@ int make_job(EXACT *exact, CNN_Genome *genome, string search_name) {
     wu.rsc_fpops_est = fpops_est;
     wu.rsc_fpops_bound = fpops_est * 100;
 
-    if (samples_filename.find("cifar") != std::string::npos) {
+    if (training_filename.find("cifar") != std::string::npos) {
         wu.rsc_memory_bound = 1500 * 1024 * 1024;    //200MB
     } else {
         wu.rsc_memory_bound = 200 * 1024 * 1024;    //200MB
@@ -189,7 +200,7 @@ int make_job(EXACT *exact, CNN_Genome *genome, string search_name) {
     // Register the job with BOINC
     sprintf(path, "templates/%s", out_template_file);
 
-    sprintf(command_line, " --samples_file samples.bin --genome_file input_genome.txt --output_file output_genome.txt --checkpoint_file checkpoint.txt");
+    sprintf(command_line, " --training_file training_samples.bin --testing_file testing_samples.bin --genome_file input_genome.txt --output_file output_genome.txt --checkpoint_file checkpoint.txt");
     
     //%u %u %lu %lu", max_set_value, set_size, starting_set, sets_to_evaluate);
     log_messages.printf(MSG_DEBUG, "command line: '%s'\n", command_line);
@@ -199,6 +210,7 @@ int make_job(EXACT *exact, CNN_Genome *genome, string search_name) {
 
     log_messages.printf(MSG_DEBUG, "infiles[0]: '%s'\n", infiles[0]);
     log_messages.printf(MSG_DEBUG, "infiles[1]: '%s'\n", infiles[1]);
+    log_messages.printf(MSG_DEBUG, "infiles[2]: '%s'\n", infiles[2]);
 
     return create_work(
         wu,
@@ -206,7 +218,7 @@ int make_job(EXACT *exact, CNN_Genome *genome, string search_name) {
         path,
         config.project_path(path),
         infiles,
-        2,
+        3,
         config,
         command_line,
         additional_xml

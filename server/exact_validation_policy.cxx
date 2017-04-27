@@ -191,7 +191,7 @@ int compare_results(
             match = false;
         }
 
-        int fitness_line_number = 18;
+        int fitness_line_number = 23;
 
         string line1, line2;
         string fitness_line1, fitness_line2;

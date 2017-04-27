@@ -128,12 +128,16 @@ int main(int argc, char** argv) {
 
     mkdir(output_directory.c_str(), 0777);
 
-    string samples_file;
-    get_argument(arguments, "--samples_file", true, samples_file);
+    string training_file;
+    get_argument(arguments, "--training_file", true, training_file);
 
-    Images images(samples_file);
+    string testing_file;
+    get_argument(arguments, "--testing_file", true, testing_file);
 
-    EXACT *exact = new EXACT(images, samples_file, population_size, max_epochs, max_genomes, output_directory, search_name, reset_edges);
+
+    Images images(training_file);
+
+    EXACT *exact = new EXACT(images, training_file, testing_file, population_size, max_epochs, max_genomes, output_directory, search_name, reset_edges);
 
     exact->export_to_database();
 
