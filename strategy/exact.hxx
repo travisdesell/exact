@@ -207,7 +207,7 @@ class EXACT {
         string get_output_directory() const;
         string get_training_filename() const;
         string get_testing_filename() const;
-        //int get_number_images() const;
+        int get_number_training_images() const;
 };
 
 #endif

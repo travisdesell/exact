@@ -197,12 +197,7 @@ void worker(const Images &training_images, const Images &testing_images, int ran
             CNN_Genome* genome = receive_genome_from(name, 0);
 
             genome->set_name(name);
-            genome->stochastic_backpropagation(training_images);
-
-            double error;
-            int predictions;
-            genome->evaluate(testing_images, error, predictions);
-            genome->set_test_performance(error, predictions, testing_images.get_number_images());
+            genome->stochastic_backpropagation(training_images, testing_images);
 
             send_genome_to(name, 0, genome);
 
@@ -251,7 +246,7 @@ int main(int argc, char** argv) {
     Images testing_images(testing_filename, training_images.get_average(), training_images.get_std_dev());
 
     if (rank == 0) {
-        exact = new EXACT(training_images, training_filename, testing_filename, population_size, max_epochs, max_genomes, output_directory, search_name, reset_edges);
+        exact = new EXACT(training_images, testing_images, population_size, max_epochs, max_genomes, output_directory, search_name, reset_edges);
 
         master(training_images, testing_images, max_rank);
     } else {

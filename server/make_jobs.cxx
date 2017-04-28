@@ -172,7 +172,7 @@ int make_job(EXACT *exact, CNN_Genome *genome, string search_name) {
     //copy_file_to_download_dir(genome_filename);
 
     double fpops_per_image = genome->get_operations_estimate();
-    double fpops_est = exact->get_number_images() * genome->get_max_epochs() * fpops_per_image * 3.0;
+    double fpops_est = exact->get_number_training_images() * genome->get_max_epochs() * fpops_per_image * 3.0;
 
     double credit = fpops_est / 10e10;
 

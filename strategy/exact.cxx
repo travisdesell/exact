@@ -881,12 +881,9 @@ string EXACT::get_testing_filename() const {
 }
 
 
-
-/*
-int EXACT::get_number_images() const {
-    return number_images;
+int EXACT::get_number_training_images() const {
+    return number_training_images;
 }
-*/
 
 CNN_Genome* EXACT::get_best_genome() {
     return genomes[0];

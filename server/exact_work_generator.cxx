@@ -135,9 +135,10 @@ int main(int argc, char** argv) {
     get_argument(arguments, "--testing_file", true, testing_file);
 
 
-    Images images(training_file);
+    Images training_images(training_file);
+    Images testing_images(testing_file, training_images.get_average(), training_images.get_std_dev());
 
-    EXACT *exact = new EXACT(images, training_file, testing_file, population_size, max_epochs, max_genomes, output_directory, search_name, reset_edges);
+    EXACT *exact = new EXACT(training_images, testing_images, population_size, max_epochs, max_genomes, output_directory, search_name, reset_edges);
 
     exact->export_to_database();
 
