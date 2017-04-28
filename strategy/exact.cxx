@@ -551,9 +551,9 @@ void EXACT::update_database() {
 
     if ((int32_t)genomes.size() == population_size) {
         if (sort_by_fitness) {
-            double worst_fitness = genomes.back()->get_fitness();
+            double worst_error = genomes.back()->get_best_error();
             ostringstream delete_query;
-            delete_query << "DELETE FROM cnn_genome WHERE exact_id = " << id << " AND best_error > " << worst_fitness;
+            delete_query << "DELETE FROM cnn_genome WHERE exact_id = " << id << " AND best_error > " << worst_error;
             cout << delete_query.str() << endl;
             mysql_exact_query(delete_query.str());
         } else {

@@ -23,9 +23,11 @@ while ($exact_row = $exact_result->fetch_assoc()) {
         . "/home/tdesell/exact/www/hyperparameters/" . $search_name . "_learning_rate_delta.png "
         . "/home/tdesell/exact/www/hyperparameters/" . $search_name . "_initial_weight_decay.png "
         . "/home/tdesell/exact/www/hyperparameters/" . $search_name . "_weight_decay_delta.png "
+        . "/home/tdesell/exact/www/hyperparameters/" . $search_name . "_alpha.png "
+        . "/home/tdesell/exact/www/hyperparameters/" . $search_name . "_velocity_reset.png "
         . "/home/tdesell/exact/www/hyperparameters/" . $search_name . "_input_dropout.png "
         . "/home/tdesell/exact/www/hyperparameters/" . $search_name . "_hidden_dropout.png "
-        . "/home/tdesell/exact/www/hyperparameters/" . $search_name . "_velocity_reset.png ";
+        . "/home/tdesell/exact/www/hyperparameters/" . $search_name . "_batch_size.png ";
 
     if (!file_exists($progress_file)) {
         echo "'$progress_file' does not exist!\n";

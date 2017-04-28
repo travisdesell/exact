@@ -14,9 +14,11 @@ initial_learning_rate_file = sys.argv[4]
 learning_rate_delta_file = sys.argv[5]
 initial_weight_decay_file = sys.argv[6]
 weight_decay_delta_file = sys.argv[7]
-input_dropout_file = sys.argv[8]
-hidden_dropout_file = sys.argv[9]
-velocity_reset_file = sys.argv[10]
+alpha_file = sys.argv[8]
+velocity_reset_file = sys.argv[9]
+input_dropout_file = sys.argv[10]
+hidden_dropout_file = sys.argv[11]
+batch_size_file = sys.argv[12]
 
 v1 = genfromtxt(hyperparameters_file)
 #print v1
@@ -73,6 +75,11 @@ write_file("Learning Rate Delta", learning_rate_delta_file, v1, 12);
 write_file("Initial Weight Decay", initial_weight_decay_file, v1, 16);
 write_file("Weight Decay Delta", weight_decay_delta_file, v1, 20);
 
-write_file("Input Dropout", input_dropout_file, v1, 24);
-write_file("Hidden Dropout", hidden_dropout_file, v1, 28);
-write_file("Velocity Reset", velocity_reset_file, v1, 32);
+write_file("Alpha", alpha_file, v1, 24);
+write_file("Velocity Reset", velocity_reset_file, v1, 28);
+
+write_file("Input Dropout", input_dropout_file, v1, 32);
+write_file("Hidden Dropout", hidden_dropout_file, v1, 36);
+write_file("Batch Size", batch_size_file, v1, 40);
+
+

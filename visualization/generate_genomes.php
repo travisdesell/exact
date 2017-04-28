@@ -7,48 +7,51 @@ $cwd[__FILE__] = dirname($cwd[__FILE__]);
 require_once($cwd[__FILE__] . "/../../citizen_science_grid/my_query.php");
 require_once($cwd[__FILE__] . "/../www/my_query.php");
 
-$db_name = "exact_mnist_batch";
-
-$genome_result = query_multi_db($db_name, "SELECT id, exact_id, test_error, best_error FROM cnn_genome");
 
 $png_files = array();
 $gv_files = array();
 
-while ($genome_row = $genome_result->fetch_assoc()) {
+function process_genomes($db_name) {
+    global $png_files, $gv_files;
 
-    $exact_result = query_multi_db($db_name, "SELECT search_name, training_filename FROM exact_search WHERE id = " . $genome_row['exact_id']);
-    $exact_row = $exact_result->fetch_assoc();
-    $search_name = $exact_row['search_name'];
-    $training_filename = $exact_row['training_filename'];
-    $testing_filename = str_replace("training", "testing", $training_filename);
+    $genome_result = query_multi_db($db_name, "SELECT id, exact_id, test_error, best_error FROM cnn_genome");
 
-    $genome_id = $genome_row['id'];
-    $genome_image = "/home/tdesell/exact/www/networks/" . $search_name . "_genome_" . $genome_id . ".png";
-    $graphviz_file = "/home/tdesell/exact/www/networks/" . $search_name . "_genome_" . $genome_id . ".gv";
+    while ($genome_row = $genome_result->fetch_assoc()) {
 
-    $png_files[] = $search_name . "_genome_" . $genome_id . ".png";
-    $gv_files[] = $search_name . "_genome_" . $genome_id . ".gv";
+        $exact_result = query_multi_db($db_name, "SELECT search_name, training_filename FROM exact_search WHERE id = " . $genome_row['exact_id']);
+        $exact_row = $exact_result->fetch_assoc();
+        $search_name = $exact_row['search_name'];
+        $training_filename = $exact_row['training_filename'];
+        $testing_filename = str_replace("training", "testing", $training_filename);
 
-    if ($genome_row['test_error'] == 10000000 && $genome_row['best_error'] != 10000000) {
-        $command = "/home/tdesell/exact/build/tests/evaluate_cnn --genome_id $genome_id --training_data $training_filename --testing_data $testing_filename --update_database --db_file /home/tdesell/exact/exact_mnist_batch_db_info";
-        echo "command: $command \n";
-        echo "results: " . exec($command) . "\n";
-    } else {
-        echo "SKIPPING genome $genome_id test_error already calculated!";
-    }
+        $genome_id = $genome_row['id'];
+        $genome_image = "/home/tdesell/exact/www/networks/" . $search_name . "_genome_" . $genome_id . ".png";
+        $graphviz_file = "/home/tdesell/exact/www/networks/" . $search_name . "_genome_" . $genome_id . ".gv";
 
-    if (!file_exists($genome_image)) {
-        echo "'$graphviz_file' does not exist, generating\n";
-        $command = "/home/tdesell/exact/build/tests/generate_gv $genome_id $graphviz_file /home/tdesell/exact/exact_mnist_batch_db_info";
-        echo "command: $command \n";
-        echo "results: " . exec($command) . "\n";
+        $png_files[] = $search_name . "_genome_" . $genome_id . ".png";
+        $gv_files[] = $search_name . "_genome_" . $genome_id . ".gv";
 
-        $command = "dot -Tpng $graphviz_file -o $genome_image";
-        echo "command: $command \n";
-        echo "results: " . exec($command) . "\n\n";
+        if ($genome_row['test_error'] == 10000000 && $genome_row['best_error'] != 10000000) {
+            $command = "/home/tdesell/exact/build/tests/evaluate_cnn --genome_id $genome_id --training_data $training_filename --testing_data $testing_filename --update_database --db_file /home/tdesell/exact/exact_mnist_batch_db_info";
+            echo "command: $command \n";
+            echo "results: " . exec($command) . "\n";
+        } else {
+            echo "SKIPPING genome $genome_id test_error already calculated!";
+        }
 
-    } else {
-        echo "SKIPPING '$genome_image', already created!\n";
+        if (!file_exists($genome_image)) {
+            echo "'$graphviz_file' does not exist, generating\n";
+            $command = "/home/tdesell/exact/build/tests/generate_gv $genome_id $graphviz_file /home/tdesell/exact/exact_mnist_batch_db_info";
+            echo "command: $command \n";
+            echo "results: " . exec($command) . "\n";
+
+            $command = "dot -Tpng $graphviz_file -o $genome_image";
+            echo "command: $command \n";
+            echo "results: " . exec($command) . "\n\n";
+
+        } else {
+            echo "SKIPPING '$genome_image', already created!\n";
+        }
     }
 }
 
@@ -68,6 +71,8 @@ foreach ($dir as $fileinfo) {
         }
     }
 }
+
+process_genomes("exact_mnist_batch");
 
 ?>
 

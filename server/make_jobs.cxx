@@ -172,7 +172,7 @@ int make_job(EXACT *exact, CNN_Genome *genome, string search_name) {
     //copy_file_to_download_dir(genome_filename);
 
     double fpops_per_image = genome->get_operations_estimate();
-    double fpops_est = exact->get_number_images() * genome->get_max_epochs() * fpops_per_image;
+    double fpops_est = exact->get_number_images() * genome->get_max_epochs() * fpops_per_image * 3.0;
 
     double credit = fpops_est / 10e10;
 
@@ -190,7 +190,7 @@ int make_job(EXACT *exact, CNN_Genome *genome, string search_name) {
     }
 
     wu.rsc_disk_bound = 200 * 1024 * 1024;      //200MB
-    wu.delay_bound = 60 * 60 * 24 * (credit / 500);          //7 days
+    wu.delay_bound = 60 * 60 * 24 * (credit / 250);          //7 days
     wu.min_quorum = REPLICATION_FACTOR;
     wu.target_nresults = REPLICATION_FACTOR;
     wu.max_error_results = REPLICATION_FACTOR*4;
