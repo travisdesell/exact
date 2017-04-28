@@ -93,7 +93,9 @@ EXACT::EXACT(int exact_id) {
         training_filename = string(row[++column]);
         testing_filename = string(row[++column]);
 
-        number_images = atoi(row[++column]);
+        number_training_images = atoi(row[++column]);
+        number_testing_images = atoi(row[++column]);
+
         image_channels = atoi(row[++column]);
         image_rows = atoi(row[++column]);
         image_cols = atoi(row[++column]);
@@ -316,7 +318,9 @@ void EXACT::export_to_database() {
         << ", training_filename = '" << training_filename << "'"
         << ", testing_filename = '" << testing_filename << "'"
 
-        << ", number_images = " << number_images
+        << ", number_training_images = " << number_training_images
+        << ", number_testing_images = " << number_testing_images
+
         << ", image_channels = " << image_channels
         << ", image_rows = " << image_rows
         << ", image_cols = " << image_cols
@@ -578,13 +582,14 @@ void EXACT::update_database() {
 
 #endif
 
-EXACT::EXACT(const Images &images, string _training_filename, string _testing_filename, int _population_size, int _max_epochs, int _max_genomes, string _output_directory, string _search_name, bool _reset_weights) {
+EXACT::EXACT(const Images &training_images, const Images &testing_images, int _population_size, int _max_epochs, int _max_genomes, string _output_directory, string _search_name, bool _reset_weights) {
     id = -1;
 
     search_name = _search_name;
     output_directory = _output_directory;
-    training_filename = _training_filename;
-    testing_filename = _testing_filename;
+
+    training_filename = training_images.get_filename(); 
+    testing_filename = testing_images.get_filename();
 
     reset_weights = _reset_weights;
     max_epochs = _max_epochs;
@@ -605,11 +610,33 @@ EXACT::EXACT(const Images &images, string _training_filename, string _testing_fi
 
     population_size = _population_size;
 
-    number_images = images.get_number_images();
-    image_channels = images.get_image_channels();
-    image_rows = images.get_image_rows();
-    image_cols = images.get_image_cols();
-    number_classes = images.get_number_classes();
+    number_training_images = training_images.get_number_images();
+    number_testing_images = testing_images.get_number_images();
+
+    if (training_images.get_image_channels() != testing_images.get_image_channels()) {
+        cerr << "ERROR, could not start EXACT search because number training channels != number testing channels in images" << endl;
+        exit(1);
+    }
+
+    if (training_images.get_image_rows() != testing_images.get_image_rows()) {
+        cerr << "ERROR, could not start EXACT search because number training rows != number testing rows in images" << endl;
+        exit(1);
+    }
+
+    if (training_images.get_image_cols() != testing_images.get_image_cols()) {
+        cerr << "ERROR, could not start EXACT search because number training cols != number testing cols in images" << endl;
+        exit(1);
+    }
+
+    if (training_images.get_number_classes() != testing_images.get_number_classes()) {
+        cerr << "ERROR, could not start EXACT search because number training classes != number testing classes in images" << endl;
+        exit(1);
+    }
+
+    image_channels = training_images.get_image_channels();
+    image_rows = training_images.get_image_rows();
+    image_cols = training_images.get_image_cols();
+    number_classes = training_images.get_number_classes();
 
     inserted_from_disable_edge = 0;
     inserted_from_enable_edge = 0;
@@ -855,9 +882,11 @@ string EXACT::get_testing_filename() const {
 
 
 
+/*
 int EXACT::get_number_images() const {
     return number_images;
 }
+*/
 
 CNN_Genome* EXACT::get_best_genome() {
     return genomes[0];
@@ -1080,7 +1109,7 @@ CNN_Genome* EXACT::generate_individual() {
         long genome_seed = rng_long(generator);
         //cout << "seeding genome with: " << genome_seed << endl;
 
-        genome = new CNN_Genome(genomes_generated++, genome_seed, max_epochs, reset_weights, velocity_reset, mu, mu_delta, learning_rate, learning_rate_delta, weight_decay, weight_decay_delta, batch_size, epsilon, alpha, input_dropout_probability, hidden_dropout_probability, all_nodes, all_edges);
+        genome = new CNN_Genome(genomes_generated++, number_training_images, number_testing_images, genome_seed, max_epochs, reset_weights, velocity_reset, mu, mu_delta, learning_rate, learning_rate_delta, weight_decay, weight_decay_delta, batch_size, epsilon, alpha, input_dropout_probability, hidden_dropout_probability, all_nodes, all_edges);
 
     } else if ((int32_t)genomes.size() < population_size) {
         //generate random mutatinos until genomes.size() < population_size
@@ -1112,7 +1141,7 @@ CNN_Genome* EXACT::generate_individual() {
                 generate_simplex_hyperparameters(mu, mu_delta, learning_rate, learning_rate_delta, weight_decay, weight_decay_delta, alpha, velocity_reset, input_dropout_probability, hidden_dropout_probability, batch_size);
             }
 
-            genome = new CNN_Genome(genomes_generated++, child_seed, max_epochs, reset_weights, velocity_reset, mu, mu_delta, learning_rate, learning_rate_delta, weight_decay, weight_decay_delta, batch_size, epsilon, alpha, input_dropout_probability, hidden_dropout_probability, parent->get_nodes(), parent->get_edges());
+            genome = new CNN_Genome(genomes_generated++, number_training_images, number_testing_images, child_seed, max_epochs, reset_weights, velocity_reset, mu, mu_delta, learning_rate, learning_rate_delta, weight_decay, weight_decay_delta, batch_size, epsilon, alpha, input_dropout_probability, hidden_dropout_probability, parent->get_nodes(), parent->get_edges());
 
             /*
             cout << "\tchild nodes:" << endl;
@@ -1156,7 +1185,7 @@ CNN_Genome* EXACT::generate_individual() {
 
     if ((int32_t)genomes.size() < population_size) {
         //insert a copy with a bad fitness so we have more things to generate new genomes with
-        CNN_Genome *genome_copy = new CNN_Genome(genomes_generated++, /*new random seed*/ rng_long(generator), max_epochs, reset_weights, genome->get_velocity_reset(), genome->get_initial_mu(), genome->get_mu_delta(), genome->get_initial_learning_rate(), genome->get_learning_rate_delta(), genome->get_initial_weight_decay(), genome->get_weight_decay_delta(), genome->get_batch_size(), epsilon, genome->get_alpha(), genome->get_input_dropout_probability(), genome->get_hidden_dropout_probability(), genome->get_nodes(), genome->get_edges());
+        CNN_Genome *genome_copy = new CNN_Genome(genomes_generated++, number_training_images, number_testing_images, /*new random seed*/ rng_long(generator), max_epochs, reset_weights, genome->get_velocity_reset(), genome->get_initial_mu(), genome->get_mu_delta(), genome->get_initial_learning_rate(), genome->get_learning_rate_delta(), genome->get_initial_weight_decay(), genome->get_weight_decay_delta(), genome->get_batch_size(), epsilon, genome->get_alpha(), genome->get_input_dropout_probability(), genome->get_hidden_dropout_probability(), genome->get_nodes(), genome->get_edges());
         genome_copy->initialize();
 
         //for more variability in the initial population, re-initialize weights and bias for these unevaluated copies
@@ -1516,7 +1545,7 @@ CNN_Genome* EXACT::create_mutation() {
         generate_simplex_hyperparameters(mu, mu_delta, learning_rate, learning_rate_delta, weight_decay, weight_decay_delta, alpha, velocity_reset, input_dropout_probability, hidden_dropout_probability, batch_size);
     }
 
-    CNN_Genome *child = new CNN_Genome(genomes_generated++, child_seed, max_epochs, reset_weights, velocity_reset, mu, mu_delta, learning_rate, learning_rate_delta, weight_decay, weight_decay_delta, batch_size, epsilon, alpha, input_dropout_probability, hidden_dropout_probability, parent->get_nodes(), parent->get_edges());
+    CNN_Genome *child = new CNN_Genome(genomes_generated++, number_training_images, number_testing_images, child_seed, max_epochs, reset_weights, velocity_reset, mu, mu_delta, learning_rate, learning_rate_delta, weight_decay, weight_decay_delta, batch_size, epsilon, alpha, input_dropout_probability, hidden_dropout_probability, parent->get_nodes(), parent->get_edges());
 
     cout << "\tchild nodes:" << endl;
     for (int32_t i = 0; i < child->get_number_nodes(); i++) {
@@ -2211,7 +2240,7 @@ CNN_Genome* EXACT::create_child() {
         generate_simplex_hyperparameters(mu, mu_delta, learning_rate, learning_rate_delta, weight_decay, weight_decay_delta, alpha, velocity_reset, input_dropout_probability, hidden_dropout_probability, batch_size);
     }
 
-    CNN_Genome *child = new CNN_Genome(genomes_generated++, genome_seed, max_epochs, reset_weights, velocity_reset, mu, mu_delta, learning_rate, learning_rate_delta, weight_decay, weight_decay_delta, batch_size, epsilon, alpha, input_dropout_probability, hidden_dropout_probability, child_nodes, child_edges);
+    CNN_Genome *child = new CNN_Genome(genomes_generated++, number_training_images, number_testing_images, genome_seed, max_epochs, reset_weights, velocity_reset, mu, mu_delta, learning_rate, learning_rate_delta, weight_decay, weight_decay_delta, batch_size, epsilon, alpha, input_dropout_probability, hidden_dropout_probability, child_nodes, child_edges);
 
     child->set_generated_by_crossover();
 
