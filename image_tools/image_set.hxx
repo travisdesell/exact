@@ -43,6 +43,8 @@ class Image {
 
 class Images {
     private:
+        string filename;
+
         int number_classes;
         int number_images;
 
@@ -60,6 +62,8 @@ class Images {
 
         Images(string binary_filename);
         Images(string binary_filename, const vector<double> &_channeL_avg, const vector<double> &channel_std_dev);
+
+        string get_filename() const;
 
         int get_class_size(int i) const;
 

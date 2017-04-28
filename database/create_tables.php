@@ -18,7 +18,9 @@ $query = "CREATE TABLE `exact_search` (
     `training_filename` varchar(256) NOT NULL,
     `testing_filename` varchar(256) NOT NULL,
 
-    `number_images` int(11) NOT NULL,
+    `number_training_images` int(11) NOT NULL,
+    `number_testing_images` int(11) NOT NULL,
+
     `image_channels` int(11) NOT NULL,
     `image_rows` int(11) NOT NULL,
     `image_cols` int(11) NOT NULL,

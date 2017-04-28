@@ -135,16 +135,8 @@ int main(int argc, char** argv) {
     genome->set_output_filename(output_filename);
 
     cerr << "starting backpropagation!" << endl;
-    genome->stochastic_backpropagation(training_images);
+    genome->stochastic_backpropagation(training_images, testing_images);
     cerr << "backpropagation finished successfully!" << endl;
-
-    cout << "evaluating best weights on testing data." << endl;
-    double error;
-    int predictions;
-    genome->set_to_best();
-    genome->evaluate(testing_images, error, predictions);
-    genome->set_test_performance(error, predictions, testing_images.get_number_images());
-    genome->write_to_file(output_filename);
 
     boinc_finish(0);
 

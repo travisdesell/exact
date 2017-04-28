@@ -38,7 +38,9 @@ class EXACT {
         string training_filename;
         string testing_filename;
 
-        int number_images;
+        int number_training_images;
+        int number_testing_images;
+
         int image_channels;
         int image_rows;
         int image_cols;
@@ -175,7 +177,7 @@ class EXACT {
         void update_database();
 #endif
 
-        EXACT(const Images &images, string _training_filename, string _testing_filename, int _population_size, int _max_epochs, int _max_genomes, string _output_directory, string _search_name, bool _reset_weights);
+        EXACT(const Images &training_images, const Images &testing_images, int _population_size, int _max_epochs, int _max_genomes, string _output_directory, string _search_name, bool _reset_weights);
 
         int32_t population_contains(CNN_Genome *genome) const;
         CNN_Genome* get_best_genome();
@@ -205,7 +207,7 @@ class EXACT {
         string get_output_directory() const;
         string get_training_filename() const;
         string get_testing_filename() const;
-        int get_number_images() const;
+        //int get_number_images() const;
 };
 
 #endif

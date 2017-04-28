@@ -232,7 +232,7 @@ CNN_Genome::CNN_Genome(int _genome_id) {
         max_epochs = atoi(row[++column]);
         reset_weights = atoi(row[++column]);
 
-        number_testing_images = atoi(row[++column]);
+        number_training_images = atoi(row[++column]);
         best_error = atof(row[++column]);
         best_error_epoch = atoi(row[++column]);
         best_predictions = atoi(row[++column]);
@@ -436,11 +436,14 @@ void CNN_Genome::export_to_database(int _exact_id) {
 /**
  *  Iniitalize a genome from a set of nodes and edges
  */
-CNN_Genome::CNN_Genome(int _generation_id, int seed, int _max_epochs, bool _reset_weights, int _velocity_reset, double _mu, double _mu_delta, double _learning_rate, double _learning_rate_delta, double _weight_decay, double _weight_decay_delta, int _batch_size, double _epsilon, double _alpha, double _input_dropout_probability, double _hidden_dropout_probability, const vector<CNN_Node*> &_nodes, const vector<CNN_Edge*> &_edges) {
+CNN_Genome::CNN_Genome(int _generation_id, int _number_training_images, int _number_testing_images, int seed, int _max_epochs, bool _reset_weights, int _velocity_reset, double _mu, double _mu_delta, double _learning_rate, double _learning_rate_delta, double _weight_decay, double _weight_decay_delta, int _batch_size, double _epsilon, double _alpha, double _input_dropout_probability, double _hidden_dropout_probability, const vector<CNN_Node*> &_nodes, const vector<CNN_Edge*> &_edges) {
     exact_id = -1;
     genome_id = -1;
     started_from_checkpoint = false;
     generator = minstd_rand0(seed);
+
+    number_training_images = _number_training_images;
+    number_testing_images = _number_testing_images;
 
     progress_function = NULL;
 
@@ -1343,13 +1346,14 @@ void CNN_Genome::evaluate(const Images &images, double &total_error, int &correc
     print_progress(cerr, total_error, correct_predictions, images.get_number_images());
 }
 
-void CNN_Genome::set_test_performance(double _test_error, int _test_predictions, int _number_testing_images) {
-    test_error = _test_error;
-    test_predictions = _test_predictions;
-    number_testing_images = _number_testing_images;
+void CNN_Genome::stochastic_backpropagation(const Images &training_images, const Images &testing_images) {
+    stochastic_backpropagation(training_images, testing_images, training_images.get_number_images());
 }
 
-void CNN_Genome::stochastic_backpropagation(const Images &images) {
+void CNN_Genome::stochastic_backpropagation(const Images &training_images, const Images &testing_images, int training_resize) {
+    number_training_images = training_resize;
+    number_testing_images = testing_images.get_number_images();
+
     for (uint32_t i = 0; i < nodes.size(); i++) {
         if (nodes[i]->needs_init()) {
             cerr << "ERROR! nodes[" << i << "] needs init!" << endl;
@@ -1378,7 +1382,7 @@ void CNN_Genome::stochastic_backpropagation(const Images &images) {
 
     if (!started_from_checkpoint) {
         backprop_order.clear();
-        for (int32_t i = 0; i < images.get_number_images(); i++) {
+        for (int32_t i = 0; i < training_images.get_number_images(); i++) {
             backprop_order.push_back(i);
         }
 
@@ -1393,8 +1397,7 @@ void CNN_Genome::stochastic_backpropagation(const Images &images) {
 
         best_error = EXACT_MAX_DOUBLE;
     }
-    //backprop_order.resize(10000);
-    number_training_images = backprop_order.size();
+    backprop_order.resize(training_resize);
 
     //sort edges by depth of input node
     sort(edges.begin(), edges.end(), sort_CNN_Edges_by_depth());
@@ -1416,9 +1419,9 @@ void CNN_Genome::stochastic_backpropagation(const Images &images) {
         //shuffle the array (thanks C++ not being the same across operating systems)
         fisher_yates_shuffle(generator, backprop_order);
 
-        evaluate(images, total_error, correct_predictions, true);
+        evaluate(training_images, total_error, correct_predictions, true);
         //cout << "backprop error: " << total_error << ", backprop predictions: " << correct_predictions << endl;
-        evaluate(images, total_error, correct_predictions, false);
+        evaluate(training_images, total_error, correct_predictions, false);
 
         bool found_improvement = false;
         if (total_error < best_error) {
@@ -1426,10 +1429,6 @@ void CNN_Genome::stochastic_backpropagation(const Images &images) {
             best_error_epoch = epoch;
             best_predictions = correct_predictions;
             best_predictions_epoch = epoch;
-
-            if (output_filename.compare("") != 0) {
-                write_to_file(output_filename);
-            }
 
             save_to_best();
             found_improvement = true;
@@ -1476,6 +1475,15 @@ void CNN_Genome::stochastic_backpropagation(const Images &images) {
             break;
         }
     } while (true);
+
+    cerr << "evaluating best weights on testing data." << endl;
+
+    set_to_best();
+    evaluate(testing_images, test_error, test_predictions);
+
+    if (output_filename.compare("") != 0) {
+        write_to_file(output_filename);
+    }
 }
 
 void CNN_Genome::set_name(string _name) {

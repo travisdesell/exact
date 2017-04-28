@@ -133,11 +133,17 @@ void Image::print(ostream &out) {
     }
 }
 
-void Images::read_images(string binary_filename) {
-    ifstream infile(binary_filename.c_str(), ios::in | ios::binary);
+string Images::get_filename() const {
+    return filename;
+}
+
+void Images::read_images(string _filename) {
+    filename = filename;
+
+    ifstream infile(filename.c_str(), ios::in | ios::binary);
 
     if (!infile.is_open()) {
-        cerr << "Could not open '" << binary_filename << "' for reading." << endl;
+        cerr << "Could not open '" << filename << "' for reading." << endl;
         return;
     }
 
@@ -186,8 +192,9 @@ void Images::read_images(string binary_filename) {
 
 
 
-Images::Images(string binary_filename, const vector<double> &_channel_avg, const vector<double> &_channel_std_dev) {
-    read_images(binary_filename);
+Images::Images(string _filename, const vector<double> &_channel_avg, const vector<double> &_channel_std_dev) {
+    filename = _filename;
+    read_images(filename);
 
     cerr << "scaling images." << endl;
     for (int i = 0; i < number_images; i++) {
@@ -202,8 +209,9 @@ Images::Images(string binary_filename, const vector<double> &_channel_avg, const
 
 }
 
-Images::Images(string binary_filename) {
-    read_images(binary_filename);
+Images::Images(string _filename) {
+    filename = _filename;
+    read_images(filename);
 
     cerr << "scaling images." << endl;
     for (int i = 0; i < number_images; i++) {
