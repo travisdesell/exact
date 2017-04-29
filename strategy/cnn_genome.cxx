@@ -1693,7 +1693,7 @@ void CNN_Genome::read(istream &infile) {
     if (verbose) cerr << "read max_epochs: " << max_epochs << endl;
     infile >> reset_weights;
     if (verbose) cerr << "read reset_weights: " << reset_weights << endl;
-    infile >> generalizability_constant;
+    generalizability_constant = read_hexfloat(infile);
     if (verbose) cerr << "read generalizability_constant: " << generalizability_constant << endl;
 
     infile >> number_training_images;
