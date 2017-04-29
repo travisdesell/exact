@@ -132,6 +132,7 @@ echo "
 print_db_overview("exact2", "EXACT 2");
 print_db_overview("exact_mnist", "EXACT MNIST");
 print_db_overview("exact_mnist_batch", "EXACT MNIST BATCH");
+print_db_overview("exact_mnist_batch2", "EXACT MNIST BATCH 2");
 print_db_overview("exact_cifar", "EXACT CIFAR");
 
 

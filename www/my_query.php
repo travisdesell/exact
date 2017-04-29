@@ -29,6 +29,10 @@ $databases = array(
     "exact_mnist_batch" => array(
         "file" => $cwd[__FILE__] . '/../exact_mnist_batch_db_info',
         "database" => NULL
+    ),
+    "exact_mnist_batch2" => array(
+        "file" => $cwd[__FILE__] . '/../exact_mnist_batch2_db_info',
+        "database" => NULL
     )
 );
 
