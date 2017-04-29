@@ -231,6 +231,7 @@ CNN_Genome::CNN_Genome(int _genome_id) {
         epoch = atoi(row[++column]);
         max_epochs = atoi(row[++column]);
         reset_weights = atoi(row[++column]);
+        generalizability_constant = atof(row[++column]);
 
         number_training_images = atoi(row[++column]);
         best_error = atof(row[++column]);
@@ -377,6 +378,7 @@ void CNN_Genome::export_to_database(int _exact_id) {
         << ", epoch = " << epoch
         << ", max_epochs = " << max_epochs
         << ", reset_weights = " << reset_weights
+        << ", generalizability_constant = " << generalizability_constant
         << ", number_training_images = " << number_training_images
         << ", best_error = " << setprecision(15) << fixed << best_error
         << ", best_predictions = " << best_predictions
@@ -436,7 +438,7 @@ void CNN_Genome::export_to_database(int _exact_id) {
 /**
  *  Iniitalize a genome from a set of nodes and edges
  */
-CNN_Genome::CNN_Genome(int _generation_id, int _number_training_images, int _number_testing_images, int seed, int _max_epochs, bool _reset_weights, int _velocity_reset, double _mu, double _mu_delta, double _learning_rate, double _learning_rate_delta, double _weight_decay, double _weight_decay_delta, int _batch_size, double _epsilon, double _alpha, double _input_dropout_probability, double _hidden_dropout_probability, const vector<CNN_Node*> &_nodes, const vector<CNN_Edge*> &_edges) {
+CNN_Genome::CNN_Genome(int _generation_id, int _number_training_images, int _number_testing_images, int seed, int _max_epochs, bool _reset_weights, double _generalizability_constant, int _velocity_reset, double _mu, double _mu_delta, double _learning_rate, double _learning_rate_delta, double _weight_decay, double _weight_decay_delta, int _batch_size, double _epsilon, double _alpha, double _input_dropout_probability, double _hidden_dropout_probability, const vector<CNN_Node*> &_nodes, const vector<CNN_Edge*> &_edges) {
     exact_id = -1;
     genome_id = -1;
     started_from_checkpoint = false;
@@ -471,6 +473,7 @@ CNN_Genome::CNN_Genome(int _generation_id, int _number_training_images, int _num
     epoch = 0;
     max_epochs = _max_epochs;
     reset_weights = _reset_weights;
+    generalizability_constant = _generalizability_constant;
 
     best_predictions = 0;
     best_error = EXACT_MAX_DOUBLE;
@@ -686,7 +689,7 @@ double CNN_Genome::get_fitness() const {
         double test_rate = ((double)test_predictions / (double)number_testing_images);
         double train_rate = ((double)best_predictions / (double)number_training_images);
 
-        return test_error * (1.0 + (10.0 * (train_rate - test_rate)));
+        return test_error * (1.0 + (generalizability_constant * (train_rate - test_rate)));
     } else {
         return best_error;
     }
@@ -1546,6 +1549,9 @@ void CNN_Genome::write(ostream &outfile) {
     outfile << epoch << endl;
     outfile << max_epochs << endl;
     outfile << reset_weights << endl;
+    write_hexfloat(outfile, generalizability_constant);
+    outfile << endl;
+
 
     outfile << number_training_images << endl;
     outfile << best_predictions << endl;
@@ -1675,6 +1681,8 @@ void CNN_Genome::read(istream &infile) {
     if (verbose) cerr << "read max_epochs: " << max_epochs << endl;
     infile >> reset_weights;
     if (verbose) cerr << "read reset_weights: " << reset_weights << endl;
+    infile >> generalizability_constant;
+    if (verbose) cerr << "read generalizability_constant: " << generalizability_constant << endl;
 
     infile >> number_training_images;
     if (verbose) cerr << "read number_training_images: " << number_training_images << endl;

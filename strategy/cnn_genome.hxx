@@ -57,6 +57,7 @@ class CNN_Genome {
         int epoch;
         int max_epochs;
         bool reset_weights;
+        double generalizability_constant;
 
         int number_training_images;
         double best_error;
@@ -99,7 +100,7 @@ class CNN_Genome {
         /**
          *  Iniitalize a genome from a set of nodes and edges
          */
-        CNN_Genome(int _generation_id, int _number_training_images, int _number_testing_images, int seed, int _max_epochs, bool _reset_weights, int velocity_reset, double _mu, double _mu_delta, double _learning_rate, double _learning_rate_delta, double _weight_decay, double _weight_decay_delta, int _batch_size, double _epsilon, double _alpha, double _input_dropout_probability, double _hidden_dropout_probability, const vector<CNN_Node*> &_nodes, const vector<CNN_Edge*> &_edges);
+        CNN_Genome(int _generation_id, int _number_training_images, int _number_testing_images, int seed, int _max_epochs, bool _reset_weights, double generalizability_constant, int velocity_reset, double _mu, double _mu_delta, double _learning_rate, double _learning_rate_delta, double _weight_decay, double _weight_decay_delta, int _batch_size, double _epsilon, double _alpha, double _input_dropout_probability, double _hidden_dropout_probability, const vector<CNN_Node*> &_nodes, const vector<CNN_Edge*> &_edges);
 
         ~CNN_Genome();
 

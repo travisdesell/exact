@@ -86,19 +86,23 @@ int main(int argc, char** argv) {
     bool reset_edges;
     get_argument(arguments, "--reset_edges", true, reset_edges);
 
+    double generalizability;
+    get_argument(arguments, "--generalizability", true, generalizability);
+
+
     Images training_images(training_filename);
     Images testing_images(testing_filename, training_images.get_average(), training_images.get_std_dev());
 
-    exact = new EXACT(training_images, testing_images, population_size, max_epochs, max_genomes, output_directory, search_name, reset_edges);
+    exact = new EXACT(training_images, testing_images, population_size, max_epochs, max_genomes, output_directory, search_name, reset_edges, generalizability);
 
     //exact = new EXACT(7);
 
     vector<thread> threads;
-    for (uint32_t i = 0; i < number_threads; i++) {
+    for (int32_t i = 0; i < number_threads; i++) {
         threads.push_back( thread(exact_thread, training_images, testing_images, i) );
     }
 
-    for (uint32_t i = 0; i < number_threads; i++) {
+    for (int32_t i = 0; i < number_threads; i++) {
         threads[i].join();
     }
 
