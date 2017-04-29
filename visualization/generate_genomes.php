@@ -72,7 +72,7 @@ foreach ($dir as $fileinfo) {
     }
 }
 
-process_genomes("exact_mnist_batch");
+process_genomes("exact_mnist_batch2");
 
 ?>
 
