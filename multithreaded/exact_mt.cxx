@@ -38,6 +38,8 @@ EXACT *exact;
 
 bool finished = false;
 
+int images_resize;
+
 void exact_thread(const Images &training_images, const Images &testing_images, int id) {
     while (true) {
         exact_mutex.lock();
@@ -47,7 +49,7 @@ void exact_thread(const Images &training_images, const Images &testing_images, i
         if (genome == NULL) break;  //generate_individual returns NULL when the search is done
 
         genome->set_name("thread_" + to_string(id));
-        genome->stochastic_backpropagation(training_images, testing_images, 3000);
+        genome->stochastic_backpropagation(training_images, testing_images, images_resize);
 
         exact_mutex.lock();
         exact->insert_genome(genome);
@@ -89,13 +91,16 @@ int main(int argc, char** argv) {
     double generalizability;
     get_argument(arguments, "--generalizability", true, generalizability);
 
+    get_argument(arguments, "--images_resize", true, images_resize);
+
+
 
     Images training_images(training_filename);
     Images testing_images(testing_filename, training_images.get_average(), training_images.get_std_dev());
 
     exact = new EXACT(training_images, testing_images, population_size, max_epochs, max_genomes, output_directory, search_name, reset_edges, generalizability);
 
-    //exact = new EXACT(7);
+    //exact = new EXACT(1);
 
     vector<thread> threads;
     for (int32_t i = 0; i < number_threads; i++) {

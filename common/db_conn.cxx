@@ -14,7 +14,7 @@ using std::string;
 
 #include "common/db_conn.hxx"
 
-string db_info_filename = "../exact2_db_info";
+string db_info_filename = "../exact_mnist_batch_db_info";
 
 MYSQL *exact_db_conn = NULL;
 

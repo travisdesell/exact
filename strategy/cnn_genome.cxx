@@ -614,6 +614,18 @@ bool CNN_Genome::equals(CNN_Genome *other) const {
     return true;
 }
 
+double CNN_Genome::get_generalizability_constant() const {
+    return generalizability_constant;
+}
+
+int CNN_Genome::get_number_training_images() const {
+    return number_training_images;
+}
+
+int CNN_Genome::get_number_testing_images() const {
+    return number_testing_images;
+}
+
 int CNN_Genome::get_number_weights() const {
     int number_weights = 0;
 
@@ -685,13 +697,13 @@ int CNN_Genome::get_generation_id() const {
 }
 
 double CNN_Genome::get_fitness() const {
-    if (test_error != EXACT_MAX_DOUBLE) {
+    if (test_error == EXACT_MAX_DOUBLE || best_error == EXACT_MAX_DOUBLE) {
+        return EXACT_MAX_DOUBLE;
+    } else {
         double test_rate = ((double)test_predictions / (double)number_testing_images);
         double train_rate = ((double)best_predictions / (double)number_training_images);
 
         return test_error * (1.0 + (generalizability_constant * (train_rate - test_rate)));
-    } else {
-        return best_error;
     }
 }
 

@@ -120,6 +120,10 @@ class CNN_Genome {
 
         void print_progress(ostream &out, double total_error, int correct_predictions, int number_images) const;
 
+        double get_generalizability_constant() const;
+        int get_number_training_images() const;
+        int get_number_testing_images() const;
+
         int get_number_weights() const;
         int get_number_biases() const;
 
