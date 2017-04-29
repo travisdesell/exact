@@ -43,6 +43,8 @@ EXACT *exact;
 
 bool finished = false;
 
+int images_resize;
+
 void send_work_request(int target) {
     int work_request_message[1];
     work_request_message[0] = 0;
@@ -197,7 +199,7 @@ void worker(const Images &training_images, const Images &testing_images, int ran
             CNN_Genome* genome = receive_genome_from(name, 0);
 
             genome->set_name(name);
-            genome->stochastic_backpropagation(training_images, testing_images);
+            genome->stochastic_backpropagation(training_images, testing_images, images_resize);
 
             send_genome_to(name, 0, genome);
 
@@ -245,6 +247,7 @@ int main(int argc, char** argv) {
     double generalizability;
     get_argument(arguments, "--generalizability", true, generalizability);
 
+    get_argument(arguments, "--images_resize", true, images_resize);
 
     Images training_images(training_filename);
     Images testing_images(testing_filename, training_images.get_average(), training_images.get_std_dev());
