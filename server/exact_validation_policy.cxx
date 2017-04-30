@@ -190,11 +190,11 @@ int compare_results(
             match = false;
         }
 
-        int fitness_line_number = 23;
+        int fitness_line_number = 24;
 
         string line1, line2;
         string fitness_line1, fitness_line2;
-        for (uint32_t i = 1; i < 25; i++) {
+        for (uint32_t i = 1; i < 30; i++) {
             getline(iss1, line1);
             getline(iss2, line2);
 

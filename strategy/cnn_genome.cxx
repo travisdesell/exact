@@ -703,7 +703,7 @@ double CNN_Genome::get_fitness() const {
         double test_rate = ((double)test_predictions / (double)number_testing_images);
         double train_rate = ((double)best_predictions / (double)number_training_images);
 
-        return test_error * (1.0 + (generalizability_constant * (train_rate - test_rate)));
+        return test_error * (1.0 + fmax(-0.5, (generalizability_constant * (train_rate - test_rate))));
     }
 }
 
