@@ -75,25 +75,25 @@ $query = "CREATE TABLE `exact_search` (
 
     `epsilon` double NOT NULL,
 
-    `initial_alpha_min` int(11) NOT NULL,
-    `initial_alpha_max` int(11) NOT NULL,
-    `alpha_min` int(11) NOT NULL,
-    `alpha_max` int(11) NOT NULL,
+    `initial_alpha_min` double NOT NULL,
+    `initial_alpha_max` double NOT NULL,
+    `alpha_min` double NOT NULL,
+    `alpha_max` double NOT NULL,
 
     `initial_velocity_reset_min` int(11) NOT NULL,
     `initial_velocity_reset_max` int(11) NOT NULL,
     `velocity_reset_min` int(11) NOT NULL,
     `velocity_reset_max` int(11) NOT NULL,
 
-    `initial_input_dropout_probability_min` int(11) NOT NULL,
-    `initial_input_dropout_probability_max` int(11) NOT NULL,
-    `input_dropout_probability_min` int(11) NOT NULL,
-    `input_dropout_probability_max` int(11) NOT NULL,
+    `initial_input_dropout_probability_min` double NOT NULL,
+    `initial_input_dropout_probability_max` double NOT NULL,
+    `input_dropout_probability_min` double NOT NULL,
+    `input_dropout_probability_max` double NOT NULL,
 
-    `initial_hidden_dropout_probability_min` int(11) NOT NULL,
-    `initial_hidden_dropout_probability_max` int(11) NOT NULL,
-    `hidden_dropout_probability_min` int(11) NOT NULL,
-    `hidden_dropout_probability_max` int(11) NOT NULL,
+    `initial_hidden_dropout_probability_min` double NOT NULL,
+    `initial_hidden_dropout_probability_max` double NOT NULL,
+    `hidden_dropout_probability_min` double NOT NULL,
+    `hidden_dropout_probability_max` double NOT NULL,
 
 
     `sort_by_fitness` tinyint(1) NOT NULL,

@@ -724,7 +724,7 @@ EXACT::EXACT(const Images &training_images, const Images &testing_images, int _p
     velocity_reset_min = 0;
     velocity_reset_max = 60000;
 
-    initial_input_dropout_probability_min = 0.005;
+    initial_input_dropout_probability_min = 0.0025;
     initial_input_dropout_probability_max = 0.05;
     input_dropout_probability_min = 0.005;
     input_dropout_probability_max = 0.5;
