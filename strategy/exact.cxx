@@ -113,10 +113,10 @@ EXACT::EXACT(int exact_id) {
         reset_weights = atoi(row[++column]);
         max_epochs = atoi(row[++column]);
 
-        initial_batch_size_min = atof(row[++column]);
-        initial_batch_size_max = atof(row[++column]);
-        batch_size_min = atof(row[++column]);
-        batch_size_max = atof(row[++column]);
+        initial_batch_size_min = atoi(row[++column]);
+        initial_batch_size_max = atoi(row[++column]);
+        batch_size_min = atoi(row[++column]);
+        batch_size_max = atoi(row[++column]);
 
         initial_mu_min = atof(row[++column]);
         initial_mu_max = atof(row[++column]);
@@ -150,25 +150,25 @@ EXACT::EXACT(int exact_id) {
 
         epsilon = atof(row[++column]);
 
-        initial_alpha_min = atoi(row[++column]);
-        initial_alpha_max = atoi(row[++column]);
-        alpha_min = atoi(row[++column]);
-        alpha_max = atoi(row[++column]);
+        initial_alpha_min = atof(row[++column]);
+        initial_alpha_max = atof(row[++column]);
+        alpha_min = atof(row[++column]);
+        alpha_max = atof(row[++column]);
 
         initial_velocity_reset_min = atoi(row[++column]);
         initial_velocity_reset_max = atoi(row[++column]);
         velocity_reset_min = atoi(row[++column]);
         velocity_reset_max = atoi(row[++column]);
 
-        initial_input_dropout_probability_min = atoi(row[++column]);
-        initial_input_dropout_probability_max = atoi(row[++column]);
-        input_dropout_probability_min = atoi(row[++column]);
-        input_dropout_probability_max = atoi(row[++column]);
+        initial_input_dropout_probability_min = atof(row[++column]);
+        initial_input_dropout_probability_max = atof(row[++column]);
+        input_dropout_probability_min = atof(row[++column]);
+        input_dropout_probability_max = atof(row[++column]);
 
-        initial_hidden_dropout_probability_min = atoi(row[++column]);
-        initial_hidden_dropout_probability_max = atoi(row[++column]);
-        hidden_dropout_probability_min = atoi(row[++column]);
-        hidden_dropout_probability_max = atoi(row[++column]);
+        initial_hidden_dropout_probability_min = atof(row[++column]);
+        initial_hidden_dropout_probability_max = atof(row[++column]);
+        hidden_dropout_probability_min = atof(row[++column]);
+        hidden_dropout_probability_max = atof(row[++column]);
 
         sort_by_fitness = atoi(row[++column]);
         reset_weights_chance = atof(row[++column]);
@@ -724,9 +724,9 @@ EXACT::EXACT(const Images &training_images, const Images &testing_images, int _p
     velocity_reset_min = 0;
     velocity_reset_max = 60000;
 
-    initial_input_dropout_probability_min = 0.001;
+    initial_input_dropout_probability_min = 0.005;
     initial_input_dropout_probability_max = 0.05;
-    input_dropout_probability_min = 0.0;
+    input_dropout_probability_min = 0.005;
     input_dropout_probability_max = 0.5;
 
     initial_hidden_dropout_probability_min = 0.35;
@@ -1145,7 +1145,7 @@ CNN_Genome* EXACT::generate_individual() {
             double mu, mu_delta, learning_rate, learning_rate_delta, weight_decay, weight_decay_delta, alpha, input_dropout_probability, hidden_dropout_probability;
             int velocity_reset, batch_size;
 
-            if (inserted_genomes < (population_size * 2)) {
+            if (inserted_genomes < (population_size * 10)) {
                 cout << "\tGenerating hyperparameters randomly." << endl;
                 generate_initial_hyperparameters(mu, mu_delta, learning_rate, learning_rate_delta, weight_decay, weight_decay_delta, alpha, velocity_reset, input_dropout_probability, hidden_dropout_probability, batch_size);
             } else {
@@ -1551,7 +1551,7 @@ CNN_Genome* EXACT::create_mutation() {
     double mu, mu_delta, learning_rate, learning_rate_delta, weight_decay, weight_decay_delta, alpha, input_dropout_probability, hidden_dropout_probability;
     int velocity_reset, batch_size;
 
-    if (inserted_genomes < (population_size * 2)) {
+    if (inserted_genomes < (population_size * 10)) {
         cout << "\tGenerating hyperparameters randomly." << endl;
         generate_initial_hyperparameters(mu, mu_delta, learning_rate, learning_rate_delta, weight_decay, weight_decay_delta, alpha, velocity_reset, input_dropout_probability, hidden_dropout_probability, batch_size);
     } else {
@@ -2246,7 +2246,7 @@ CNN_Genome* EXACT::create_child() {
     double mu, mu_delta, learning_rate, learning_rate_delta, weight_decay, weight_decay_delta, alpha, input_dropout_probability, hidden_dropout_probability;
     int velocity_reset, batch_size;
 
-    if (inserted_genomes < (population_size * 2)) {
+    if (inserted_genomes < (population_size * 10)) {
         cout << "\tGenerating hyperparameters randomly." << endl;
         generate_initial_hyperparameters(mu, mu_delta, learning_rate, learning_rate_delta, weight_decay, weight_decay_delta, alpha, velocity_reset, input_dropout_probability, hidden_dropout_probability, batch_size);
     } else {
