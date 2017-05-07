@@ -87,9 +87,14 @@ class CNN_Node {
         double best_running_variance;
 
         //batch number x size_y x size_x
-        vector< vector< vector<double> > > values;   //after RELU
-        vector< vector< vector<double> > > errors;
-        vector< vector< vector<double> > > gradients;
+        vector< vector< vector<double> > > values_out;
+        vector< vector< vector<double> > > errors_out;
+        vector< vector< vector<double> > > gradients_out;
+
+        vector< vector< vector<double> > > values_in;
+        vector< vector< vector<double> > > errors_in;
+        vector< vector< vector<double> > > gradients_in;
+
 
 
     public:
@@ -140,15 +145,29 @@ class CNN_Node {
         bool has_nan() const;
 
         void set_values(const vector<Image> &image, int channel, bool perform_dropout, double input_dropout_probability, minstd_rand0 &generator);
-        double get_value(int batch_number, int y, int x);
-        void set_value(int batch_number, int y, int x, double value);
-        vector< vector< vector<double> > >& get_values();
 
-        void set_error(int batch_number, int y, int x, double error);
-        vector< vector< vector<double> > >& get_errors();
+        double get_value_in(int batch_number, int y, int x);
+        void set_value_in(int batch_number, int y, int x, double value);
+        vector< vector< vector<double> > >& get_values_in();
 
-        void set_gradient(int batch_number, int y, int x, double gradient);
-        vector< vector< vector<double> > >& get_gradients();
+        double get_value_out(int batch_number, int y, int x);
+        void set_value_out(int batch_number, int y, int x, double value);
+        vector< vector< vector<double> > >& get_values_out();
+
+
+        void set_error_in(int batch_number, int y, int x, double error);
+        vector< vector< vector<double> > >& get_errors_in();
+
+        void set_error_out(int batch_number, int y, int x, double error);
+        vector< vector< vector<double> > >& get_errors_out();
+
+
+        void set_gradient_in(int batch_number, int y, int x, double gradient);
+        vector< vector< vector<double> > >& get_gradients_in();
+
+        void set_gradient_out(int batch_number, int y, int x, double gradient);
+        vector< vector< vector<double> > >& get_gradients_out();
+
 
         void print(ostream &out);
 
@@ -173,17 +192,16 @@ class CNN_Node {
         int get_outputs_fired() const;
         void output_fired(double mu, double learning_rate);
 
-        //void batch_normalize(bool training, double epsilon, double alpha);
+        void batch_normalize(bool training, double epsilon, double alpha);
         void apply_relu();
         void apply_dropout(bool perform_dropout, double dropout_probability, minstd_rand0 &generator);
 
-        /*
-        void backpropagate_dropout();
-        void backpropagate_relu(vector< vector< vector<double> > > &values);
+        //void backpropagate_dropout();
+        void backpropagate_relu();
         void backpropagate_batch_normalization(double mu, double learning_rate);
-        */
 
         void print_statistics();
+        void print_statistics(const vector< vector< vector<double> > > &values, const vector< vector< vector<double> > > &errors, const vector< vector< vector<double> > > &gradients);
 
         friend ostream &operator<<(ostream &os, const CNN_Node* node);
         friend istream &operator>>(istream &is, CNN_Node* node);

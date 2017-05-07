@@ -668,8 +668,8 @@ void CNN_Edge::check_output_update(const vector< vector< vector<double> > > &out
 void CNN_Edge::propagate_forward(bool training, double epsilon, double alpha, bool perform_dropout, double hidden_dropout_probability, minstd_rand0 &generator) {
     if (!is_reachable()) return;
 
-    vector< vector< vector<double> > > &input = input_node->get_values();
-    vector< vector< vector<double> > > &output = output_node->get_values();
+    vector< vector< vector<double> > > &input = input_node->get_values_out();
+    vector< vector< vector<double> > > &output = output_node->get_values_in();
 
 #ifdef NAN_CHECKS
     if (!is_filter_correct()) {
@@ -891,11 +891,11 @@ void CNN_Edge::check_weight_update(const vector< vector< vector<double> > > &inp
 void CNN_Edge::propagate_backward(double mu, double learning_rate) {
     if (!is_reachable()) return;
 
-    vector< vector< vector<double> > > &output_errors = output_node->get_errors();
-    vector< vector< vector<double> > > &output_gradients = output_node->get_gradients();
+    vector< vector< vector<double> > > &output_errors = output_node->get_errors_in();
+    vector< vector< vector<double> > > &output_gradients = output_node->get_gradients_in();
 
-    vector< vector< vector<double> > > &input = input_node->get_values();
-    vector< vector< vector<double> > > &input_errors = input_node->get_errors();
+    vector< vector< vector<double> > > &input = input_node->get_values_out();
+    vector< vector< vector<double> > > &input_errors = input_node->get_errors_out();
 
     double weight, weight_update, delta;
 
