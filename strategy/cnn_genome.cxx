@@ -1309,6 +1309,17 @@ void CNN_Genome::evaluate(const Images &images, double &total_error, int &correc
 
     int required_for_reset = velocity_reset;
 
+
+    double epoch_start_time = time(NULL);
+
+    for (uint32_t i = 0; i < nodes.size(); i++) {
+        nodes[i]->reset_times();
+    }
+
+    for (uint32_t i = 0; i < edges.size(); i++) {
+        edges[i]->reset_times();
+    }
+
     for (uint32_t j = 0; j < backprop_order.size(); j += batch_size) {
 
         vector<Image> batch;
@@ -1347,6 +1358,33 @@ void CNN_Genome::evaluate(const Images &images, double &total_error, int &correc
             }
         }
     }
+
+    double epoch_time = time(NULL) - epoch_start_time;
+    double input_fired_time = 0.0;
+    double output_fired_time = 0.0;
+
+    double propagate_forward_time = 0.0;
+    double propagate_backward_time = 0.0;
+    double weight_update_time = 0.0;
+
+    for (uint32_t i = 0; i < nodes.size(); i++) {
+        nodes[i]->accumulate_times(input_fired_time, output_fired_time);
+    }
+
+    for (uint32_t i = 0; i < edges.size(); i++) {
+        edges[i]->accumulate_times(propagate_forward_time, propagate_backward_time, weight_update_time);
+    }
+
+    double other_time = epoch_time - input_fired_time - output_fired_time - propagate_forward_time - propagate_backward_time;
+
+    cout << "epoch time: " << epoch_time << "s"
+         << ", input_fired_time: " << input_fired_time
+         << ", output_fired_time: " << output_fired_time
+         << ", propagate_forward_time: " << propagate_forward_time
+         << ", propagate_backward_time: " << propagate_backward_time
+         << ", weight_update_time: " << weight_update_time
+         << ", other_time: " << other_time
+         << endl;
 }
 
 

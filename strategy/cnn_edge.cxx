@@ -289,6 +289,19 @@ void CNN_Edge::set_needs_init() {
     needs_initialization = true;
 }
 
+
+void CNN_Edge::reset_times() {
+    propagate_forward_time = 0.0;
+    propagate_backward_time = 0.0;
+    weight_update_time = 0.0;
+}
+
+void CNN_Edge::accumulate_times(double &total_forward_time, double &total_backward_time, double &total_weight_update_time) {
+    total_forward_time += propagate_forward_time;
+    total_backward_time += propagate_backward_time;
+    total_weight_update_time += weight_update_time;
+}
+
 int CNN_Edge::get_filter_x() const {
     return filter_x;
 }
@@ -668,6 +681,8 @@ void CNN_Edge::check_output_update(const vector< vector< vector<double> > > &out
 void CNN_Edge::propagate_forward(bool training, bool accumulate_test_statistics, double epsilon, double alpha, bool perform_dropout, double hidden_dropout_probability, minstd_rand0 &generator) {
     if (!is_reachable()) return;
 
+    double propagate_forward_start_time = time(NULL);
+
     vector< vector< vector<double> > > &input = input_node->get_values_out();
     vector< vector< vector<double> > > &output = output_node->get_values_in();
 
@@ -774,11 +789,14 @@ void CNN_Edge::propagate_forward(bool training, bool accumulate_test_statistics,
         }
     }
 
+    propagate_forward_time += time(NULL) - propagate_forward_start_time;
 	output_node->input_fired(training, accumulate_test_statistics, epsilon, alpha, perform_dropout, hidden_dropout_probability, generator);
 }
 
 void CNN_Edge::update_weights(double mu, double learning_rate, double weight_decay) {
     if (!is_reachable()) return;
+
+    double weight_update_start_time = time(NULL);
 
     double dx, pv, velocity, previous_weight, weight;
 
@@ -854,6 +872,8 @@ void CNN_Edge::update_weights(double mu, double learning_rate, double weight_dec
             }
         }
     }
+
+    weight_update_time += time(NULL) - weight_update_start_time;
 }
 
 void CNN_Edge::check_weight_update(const vector< vector< vector<double> > > &input, const vector< vector< vector<double> > > &input_errors, double error, double previous_error, double weight_update, double previous_weight_update, int batch_number, int out_y, int out_x, int in_y, int in_x) {
@@ -890,6 +910,8 @@ void CNN_Edge::check_weight_update(const vector< vector< vector<double> > > &inp
 
 void CNN_Edge::propagate_backward(double mu, double learning_rate, double epsilon) {
     if (!is_reachable()) return;
+
+    double propagate_backward_start_time = time(NULL);
 
     vector< vector< vector<double> > > &output_errors = output_node->get_errors_in();
     vector< vector< vector<double> > > &output_gradients = output_node->get_gradients_in();
@@ -1040,6 +1062,8 @@ void CNN_Edge::propagate_backward(double mu, double learning_rate, double epsilo
             }
         }
     }
+
+    propagate_backward_time += time(NULL) - propagate_backward_start_time;
 
     input_node->output_fired(mu, learning_rate, epsilon);
 }

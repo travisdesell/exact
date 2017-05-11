@@ -58,6 +58,10 @@ class CNN_Edge {
         bool reverse_filter_y;
         bool needs_initialization;
 
+        double propagate_backward_time;
+        double propagate_forward_time;
+        double weight_update_time;
+
     public:
         CNN_Edge();
 
@@ -78,6 +82,9 @@ class CNN_Edge {
         bool equals(CNN_Edge *other) const;
 
         bool has_nan() const;
+
+        void reset_times();
+        void accumulate_times(double &total_forward_time, double &total_backward_time, double &total_weight_update_time);
 
         void set_needs_init();
         bool needs_init() const;

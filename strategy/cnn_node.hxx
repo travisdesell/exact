@@ -98,6 +98,8 @@ class CNN_Node {
         vector< vector< vector<double> > > errors_in;
         vector< vector< vector<double> > > gradients_in;
 
+        double input_fired_time;
+        double output_fired_time;
 
 
     public:
@@ -173,6 +175,9 @@ class CNN_Node {
 
 
         void print(ostream &out);
+
+        void reset_times();
+        void accumulate_times(double &total_input_time, double &total_output_time);
 
         void reset();
         void save_best_weights();

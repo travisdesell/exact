@@ -145,7 +145,6 @@ CNN_Node::CNN_Node(int _innovation_number, double _depth, int _batch_size, int _
     values_out = vector< vector< vector<double > > >(batch_size, vector< vector<double> >(size_y, vector<double>(size_x, 0.0)));
     errors_out = vector< vector< vector<double > > >(batch_size, vector< vector<double> >(size_y, vector<double>(size_x, 0.0)));
     gradients_out = vector< vector< vector<double > > >(batch_size, vector< vector<double> >(size_y, vector<double>(size_x, 0.0)));
-
 }
 
 #ifdef _MYSQL_
@@ -699,6 +698,16 @@ void CNN_Node::print(ostream &out) {
     }
 }
 
+void CNN_Node::reset_times() {
+    input_fired_time = 0.0;
+    output_fired_time = 0.0;
+}
+
+void CNN_Node::accumulate_times(double &total_input_time, double &total_output_time) {
+    total_input_time += input_fired_time;
+    total_output_time += output_fired_time;
+}
+
 void CNN_Node::reset() {
     inputs_fired = 0;
     outputs_fired = 0;
@@ -806,8 +815,6 @@ int CNN_Node::get_outputs_fired() const {
 }
 
 void CNN_Node::zero_test_statistics() {
-    cout << "node " << innovation_number << ", zeroing test statistics, initial running_mean: " << running_mean << ", running_variance: " << running_variance << endl;
-
     if (type == INPUT_NODE || type == SOFTMAX_NODE) return;
 
     running_mean = 0;
@@ -815,14 +822,12 @@ void CNN_Node::zero_test_statistics() {
 }
 
 void CNN_Node::divide_test_statistics(int number_batches) {
-    /*
     if ( !(type == INPUT_NODE || type == SOFTMAX_NODE)) {
         running_mean /= number_batches;
         running_variance /= number_batches;
     }
-    */
 
-    cout << "node " << innovation_number << ", final test statistics, running_mean: " << running_mean << ", running_variance: " << running_variance << endl;
+    cout << "node " << innovation_number << ", final test statistics, running_mean: " << running_mean << ", best_running_mean: " << best_running_mean << ", running_variance: " << running_variance << ", best_running_variance: " << best_running_variance << endl;
 }
 
 
@@ -900,10 +905,10 @@ void CNN_Node::batch_normalize(bool training, bool accumulating_test_statistics,
         batch_variance = (batch_size / (batch_size - 1)) * batch_variance;
 
         if (accumulating_test_statistics) {
-            //running_mean += batch_mean;
-            //running_variance += batch_variance;
-            running_mean = (batch_mean * alpha) + ((1.0 - alpha) * running_mean);
-            running_variance = (batch_variance * alpha) + ((1.0 - alpha) * running_variance);
+            running_mean += batch_mean;
+            running_variance += batch_variance;
+            //running_mean = (batch_mean * alpha) + ((1.0 - alpha) * running_mean);
+            //running_variance = (batch_variance * alpha) + ((1.0 - alpha) * running_variance);
  
             //cout << "node " << innovation_number << " accumulating test statistics, batch_mean: " << batch_mean << ", batch_variance: " << batch_variance << endl;
         } else {
@@ -1138,6 +1143,8 @@ void CNN_Node::set_values(const vector<Image> &images, int channel, bool perform
 
 
 void CNN_Node::input_fired(bool training, bool accumulate_test_statistics, double epsilon, double alpha, bool perform_dropout, double hidden_dropout_probability, minstd_rand0 &generator) {
+    double input_fired_start_time = time(NULL);
+
     inputs_fired++;
 
     //cout << "input fired on node: " << innovation_number << ", inputs fired: " << inputs_fired << ", total_inputs: " << total_inputs << endl;
@@ -1160,9 +1167,13 @@ void CNN_Node::input_fired(bool training, bool accumulate_test_statistics, doubl
 
         exit(1);
     }
+
+    input_fired_time += time(NULL) - input_fired_start_time;
 }
 
 void CNN_Node::output_fired(double mu, double learning_rate, double epsilon) {
+    double output_fired_start_time = time(NULL);
+
     outputs_fired++;
 
     //cout << "output fired on node: " << innovation_number << ", outputs fired: " << outputs_fired << ", total_outputs: " << total_outputs << endl;
@@ -1185,6 +1196,8 @@ void CNN_Node::output_fired(double mu, double learning_rate, double epsilon) {
 
         exit(1);
     }
+
+    output_fired_time += time(NULL) - output_fired_start_time;
 }
 
 
