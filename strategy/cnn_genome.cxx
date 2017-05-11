@@ -1083,17 +1083,17 @@ bool CNN_Genome::visit_nodes() {
     return true;
 }
 
-void CNN_Genome::evaluate_images(const vector<Image> &images, bool training, double &total_error, int &correct_predictions) {
+void CNN_Genome::evaluate_images(const vector<Image> &images, bool training, double &total_error, int &correct_predictions, bool accumulate_test_statistics) {
     for (uint32_t i = 0; i < nodes.size(); i++) {
         nodes[i]->reset();
     }
 
     for (uint32_t channel = 0; channel < input_nodes.size(); channel++) {
-        input_nodes[channel]->set_values(images, channel, training, input_dropout_probability, generator);
+        input_nodes[channel]->set_values(images, channel, training, accumulate_test_statistics, input_dropout_probability, generator);
     }
 
     for (uint32_t i = 0; i < edges.size(); i++) {
-        edges[i]->propagate_forward(training, epsilon, alpha, training, hidden_dropout_probability, generator);
+        edges[i]->propagate_forward(training, accumulate_test_statistics, epsilon, alpha, training, hidden_dropout_probability, generator);
     }
 
     //may be less images than in a batch if the total number of images is not divisible by the batch size
@@ -1202,7 +1202,7 @@ void CNN_Genome::evaluate_images(const vector<Image> &images, bool training, dou
 
     if (training) {
         for (int32_t i = edges.size() - 1; i >= 0; i--) {
-            edges[i]->propagate_backward(mu, learning_rate);
+            edges[i]->propagate_backward(mu, learning_rate, epsilon);
         }
 
         for (int32_t i = 0; i < edges.size(); i++) {
@@ -1296,7 +1296,7 @@ void CNN_Genome::print_progress(ostream &out, double total_error, int correct_pr
 }
 
 
-void CNN_Genome::evaluate(const Images &images, double &total_error, int &correct_predictions, bool perform_backprop) {
+void CNN_Genome::evaluate(const Images &images, double &total_error, int &correct_predictions, bool perform_backprop, bool accumulate_test_statistics) {
     bool training;
     if (perform_backprop) {
         training = true;
@@ -1318,7 +1318,7 @@ void CNN_Genome::evaluate(const Images &images, double &total_error, int &correc
 
         double batch_total_error = 0.0;
         int batch_correct_predictions = 0;
-        evaluate_images(batch, training, batch_total_error, batch_correct_predictions);
+        evaluate_images(batch, training, batch_total_error, batch_correct_predictions, accumulate_test_statistics);
 
         /*
         cerr << "[" << setw(10) << name << ", genome " << setw(5) << generation_id << "] ";
@@ -1356,7 +1356,7 @@ void CNN_Genome::evaluate(const Images &images, double &total_error, int &correc
         backprop_order.push_back(i);
     }
 
-    evaluate(images, total_error, correct_predictions, false);
+    evaluate(images, total_error, correct_predictions, false, false);
 
     print_progress(cerr, total_error, correct_predictions, images.get_number_images());
 }
@@ -1434,9 +1434,9 @@ void CNN_Genome::stochastic_backpropagation(const Images &training_images, const
         //shuffle the array (thanks C++ not being the same across operating systems)
         fisher_yates_shuffle(generator, backprop_order);
 
-        evaluate(training_images, total_error, correct_predictions, true);
+        evaluate(training_images, total_error, correct_predictions, true, false);
         //cout << "backprop error: " << total_error << ", backprop predictions: " << correct_predictions << endl;
-        evaluate(training_images, total_error, correct_predictions, false);
+        evaluate(training_images, total_error, correct_predictions, false, false);
 
         bool found_improvement = false;
         if (total_error < best_error) {
@@ -1494,6 +1494,63 @@ void CNN_Genome::stochastic_backpropagation(const Images &training_images, const
     cerr << "evaluating best weights on testing data." << endl;
 
     set_to_best();
+
+    cerr << "evaluting with running mean/variance:" << endl;
+    evaluate(testing_images, test_error, test_predictions);
+
+    //need to calculate good values for the average and variance given these final weights
+    int passes = 2;
+    int number_batches = passes * (number_training_images / batch_size);
+    cerr << "evaluating with " << number_batches << " batches." << endl;
+    for (uint32_t i = 0; i < nodes.size(); i++) {
+        nodes[i]->zero_test_statistics();
+    }
+
+    for (uint32_t i = 0; i < passes; i++) {
+        fisher_yates_shuffle(generator, backprop_order);
+        evaluate(training_images, test_error, test_predictions, false, true);
+    }
+
+    for (uint32_t i = 0; i < nodes.size(); i++) {
+        nodes[i]->divide_test_statistics(number_batches);
+    }
+
+    evaluate(testing_images, test_error, test_predictions);
+
+    passes = 4;
+    number_batches = passes * (number_training_images / batch_size);
+    cerr << "evaluating with " << passes * (number_training_images / batch_size) << " batches." << endl;
+    for (uint32_t i = 0; i < nodes.size(); i++) {
+        nodes[i]->zero_test_statistics();
+    }
+
+    for (uint32_t i = 0; i < passes; i++) {
+        fisher_yates_shuffle(generator, backprop_order);
+        evaluate(training_images, test_error, test_predictions, false, true);
+    }
+
+    for (uint32_t i = 0; i < nodes.size(); i++) {
+        nodes[i]->divide_test_statistics(number_batches);
+    }
+
+    evaluate(testing_images, test_error, test_predictions);
+
+    passes = 8;
+    number_batches = passes * (number_training_images / batch_size);
+    cerr << "evaluating with " << passes * (number_training_images / batch_size) << " batches." << endl;
+    for (uint32_t i = 0; i < nodes.size(); i++) {
+        nodes[i]->zero_test_statistics();
+    }
+
+    for (uint32_t i = 0; i < passes; i++) {
+        fisher_yates_shuffle(generator, backprop_order);
+        evaluate(training_images, test_error, test_predictions, false, true);
+    }
+
+    for (uint32_t i = 0; i < nodes.size(); i++) {
+        nodes[i]->divide_test_statistics(number_batches);
+    }
+
     evaluate(testing_images, test_error, test_predictions);
 
     if (output_filename.compare("") != 0) {

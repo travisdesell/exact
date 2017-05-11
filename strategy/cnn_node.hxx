@@ -79,6 +79,9 @@ class CNN_Node {
         double best_beta;
         double previous_velocity_beta;
 
+        double batch_mean;
+        double batch_variance; //sigma squared
+        double batch_std_dev; //sqrt(batch_variance + epsilon);
         double inverse_variance;
 
         double running_mean;
@@ -144,7 +147,7 @@ class CNN_Node {
 
         bool has_nan() const;
 
-        void set_values(const vector<Image> &image, int channel, bool perform_dropout, double input_dropout_probability, minstd_rand0 &generator);
+        void set_values(const vector<Image> &image, int channel, bool perform_dropout, bool accumulate_test_statistics, double input_dropout_probability, minstd_rand0 &generator);
 
         double get_value_in(int batch_number, int y, int x);
         void set_value_in(int batch_number, int y, int x, double value);
@@ -184,21 +187,24 @@ class CNN_Node {
         void disable_input();
         int get_number_inputs() const;
         int get_inputs_fired() const;
-        void input_fired(bool training, double epsilon, double alpha, bool perform_dropout, double hidden_dropout_probability, minstd_rand0 &generator);
+        void input_fired(bool training, bool accumulate_test_statistics, double epsilon, double alpha, bool perform_dropout, double hidden_dropout_probability, minstd_rand0 &generator);
 
         void add_output();
         void disable_output();
         int get_number_outputs() const;
         int get_outputs_fired() const;
-        void output_fired(double mu, double learning_rate);
+        void output_fired(double mu, double learning_rate, double epsilon);
 
-        void batch_normalize(bool training, double epsilon, double alpha);
-        void apply_relu();
-        void apply_dropout(bool perform_dropout, double dropout_probability, minstd_rand0 &generator);
+        void zero_test_statistics();
+        void divide_test_statistics(int number_batches);
+
+        void batch_normalize(bool training, bool accumulating_test_statistics, double epsilon, double alpha);
+        void apply_relu(vector< vector< vector<double> > > &values, vector< vector< vector<double> > > &gradients);
+        void apply_dropout(vector< vector< vector<double> > > &values, vector< vector< vector<double> > > &gradients, bool perform_dropout, bool accumulate_test_statistics, double dropout_probability, minstd_rand0 &generator);
 
         //void backpropagate_dropout();
         void backpropagate_relu();
-        void backpropagate_batch_normalization(double mu, double learning_rate);
+        void backpropagate_batch_normalization(double mu, double learning_rate, double epsilon);
 
         void print_statistics();
         void print_statistics(const vector< vector< vector<double> > > &values, const vector< vector< vector<double> > > &errors, const vector< vector< vector<double> > > &gradients);

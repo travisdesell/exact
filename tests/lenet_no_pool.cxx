@@ -91,8 +91,7 @@ int main(int argc, char **argv) {
     minstd_rand0 generator(time(NULL));
     NormalDistribution normal_distribution;
 
-    CNN_Node *input_node = new CNN_Node(node_innovation_count, 0, batch_size, training_images.get_image_rows(), training_images.get_image_cols(), INPUT_NODE);
-    node_innovation_count++;
+    CNN_Node *input_node = new CNN_Node(++node_innovation_count, 0, batch_size, training_images.get_image_rows(), training_images.get_image_cols(), INPUT_NODE);
     nodes.push_back(input_node);
 
     //first layer of filters

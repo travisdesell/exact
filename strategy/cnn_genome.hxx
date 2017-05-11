@@ -185,14 +185,14 @@ class CNN_Genome {
 
         void resize_edges_around_node(int node_position);
  
-        void evaluate_images(const vector<Image> &images, bool training, double &total_error, int &correct_predictions);
+        void evaluate_images(const vector<Image> &images, bool training, double &total_error, int &correct_predictions, bool accumulate_test_statistics);
 
         void set_to_best();
         void save_to_best();
         void initialize();
 
+        void evaluate(const Images &images, double &total_error, int &correct_predictions, bool perform_backprop, bool accumulate_test_statistics);
         void evaluate(const Images &images, double &total_error, int &correct_predictions);
-        void evaluate(const Images &images, double &total_error, int &correct_predictions, bool perform_backprop);
 
         void stochastic_backpropagation(const Images &training_images, const Images &testing_images, int training_resize);
         void stochastic_backpropagation(const Images &training_images, const Images &testing_images);

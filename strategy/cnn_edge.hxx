@@ -133,9 +133,9 @@ class CNN_Edge {
 
         void check_weight_update(const vector< vector< vector<double> > > &input, const vector< vector< vector<double> > > &input_deltas, double delta, double previous_delta, double weight_update, double previous_weight_update, int batch_number, int out_y, int out_x, int in_y, int in_x);
 
-        void propagate_forward(bool training, double epsilon, double alpha, bool perform_dropout, double hidden_dropout_probability, minstd_rand0 &generator);
+        void propagate_forward(bool training, bool accumulate_test_statistics, double epsilon, double alpha, bool perform_dropout, double hidden_dropout_probability, minstd_rand0 &generator);
 
-        void propagate_backward(double mu, double learning_rate);
+        void propagate_backward(double mu, double learning_rate, double epsilon);
         void update_weights(double mu, double learning_rate, double weight_decay);
 
         void print_statistics();

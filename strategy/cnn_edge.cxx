@@ -665,7 +665,7 @@ void CNN_Edge::check_output_update(const vector< vector< vector<double> > > &out
     }
 }
 
-void CNN_Edge::propagate_forward(bool training, double epsilon, double alpha, bool perform_dropout, double hidden_dropout_probability, minstd_rand0 &generator) {
+void CNN_Edge::propagate_forward(bool training, bool accumulate_test_statistics, double epsilon, double alpha, bool perform_dropout, double hidden_dropout_probability, minstd_rand0 &generator) {
     if (!is_reachable()) return;
 
     vector< vector< vector<double> > > &input = input_node->get_values_out();
@@ -774,7 +774,7 @@ void CNN_Edge::propagate_forward(bool training, double epsilon, double alpha, bo
         }
     }
 
-	output_node->input_fired(training, epsilon, alpha, perform_dropout, hidden_dropout_probability, generator);
+	output_node->input_fired(training, accumulate_test_statistics, epsilon, alpha, perform_dropout, hidden_dropout_probability, generator);
 }
 
 void CNN_Edge::update_weights(double mu, double learning_rate, double weight_decay) {
@@ -888,7 +888,7 @@ void CNN_Edge::check_weight_update(const vector< vector< vector<double> > > &inp
     }
 }
 
-void CNN_Edge::propagate_backward(double mu, double learning_rate) {
+void CNN_Edge::propagate_backward(double mu, double learning_rate, double epsilon) {
     if (!is_reachable()) return;
 
     vector< vector< vector<double> > > &output_errors = output_node->get_errors_in();
@@ -1041,7 +1041,7 @@ void CNN_Edge::propagate_backward(double mu, double learning_rate) {
         }
     }
 
-    input_node->output_fired(mu, learning_rate);
+    input_node->output_fired(mu, learning_rate, epsilon);
 }
 
 bool CNN_Edge::has_nan() const {

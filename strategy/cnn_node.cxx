@@ -209,9 +209,13 @@ CNN_Node::CNN_Node(int _node_id) {
     weight_count = 0;
 
     //initialize arrays not stored to database
-    values = vector< vector< vector<double > > >(batch_size, vector< vector<double> >(size_y, vector<double>(size_x, 0.0)));
-    gradients = vector< vector< vector<double > > >(batch_size, vector< vector<double> >(size_y, vector<double>(size_x, 0.0)));
-    errors = vector< vector< vector<double > > >(batch_size, vector< vector<double> >(size_y, vector<double>(size_x, 0.0)));
+    values_in = vector< vector< vector<double > > >(batch_size, vector< vector<double> >(size_y, vector<double>(size_x, 0.0)));
+    gradients_in = vector< vector< vector<double > > >(batch_size, vector< vector<double> >(size_y, vector<double>(size_x, 0.0)));
+    errors_in = vector< vector< vector<double > > >(batch_size, vector< vector<double> >(size_y, vector<double>(size_x, 0.0)));
+
+    values_out = vector< vector< vector<double > > >(batch_size, vector< vector<double> >(size_y, vector<double>(size_x, 0.0)));
+    gradients_out = vector< vector< vector<double > > >(batch_size, vector< vector<double> >(size_y, vector<double>(size_x, 0.0)));
+    errors_out = vector< vector< vector<double > > >(batch_size, vector< vector<double> >(size_y, vector<double>(size_x, 0.0)));
 
     //cout << "read node!" << endl;
     //cout << this << endl;
@@ -801,10 +805,31 @@ int CNN_Node::get_outputs_fired() const {
     return outputs_fired;
 }
 
-void CNN_Node::batch_normalize(bool training, double epsilon, double alpha) {
+void CNN_Node::zero_test_statistics() {
+    cout << "node " << innovation_number << ", zeroing test statistics, initial running_mean: " << running_mean << ", running_variance: " << running_variance << endl;
+
+    if (type == INPUT_NODE || type == SOFTMAX_NODE) return;
+
+    running_mean = 0;
+    running_variance = 0;
+}
+
+void CNN_Node::divide_test_statistics(int number_batches) {
+    /*
+    if ( !(type == INPUT_NODE || type == SOFTMAX_NODE)) {
+        running_mean /= number_batches;
+        running_variance /= number_batches;
+    }
+    */
+
+    cout << "node " << innovation_number << ", final test statistics, running_mean: " << running_mean << ", running_variance: " << running_variance << endl;
+}
+
+
+void CNN_Node::batch_normalize(bool training, bool accumulating_test_statistics, double epsilon, double alpha) {
     //normalize the batch
-    if (training) {
-        double batch_mean = 0.0;
+    if (training || accumulating_test_statistics) {
+        batch_mean = 0.0;
 
         //cout << "pre-batch normalization on node: " << innovation_number << endl;
 
@@ -820,7 +845,7 @@ void CNN_Node::batch_normalize(bool training, double epsilon, double alpha) {
         }
         batch_mean /= (uint64_t)batch_size * (uint64_t)size_y * (uint64_t)size_x;
 
-        double batch_variance = 0.0;
+        batch_variance = 0.0;
         double diff;
         for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
             for (int32_t y = 0; y < size_y; y++) {
@@ -832,7 +857,9 @@ void CNN_Node::batch_normalize(bool training, double epsilon, double alpha) {
         }
         batch_variance /= (uint64_t)batch_size * (uint64_t)size_y * (uint64_t)size_x;
 
-        double batch_std_dev = sqrt(batch_variance + epsilon);
+        batch_std_dev = sqrt(batch_variance + epsilon);
+
+        inverse_variance = 1.0 / batch_std_dev;
 
         //cout << endl;
         //cout << "post-batch normalization on node: " << innovation_number << endl;
@@ -840,7 +867,7 @@ void CNN_Node::batch_normalize(bool training, double epsilon, double alpha) {
         for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
             for (int32_t y = 0; y < size_y; y++) {
                 for (int32_t x = 0; x < size_x; x++) {
-                    temp = (values_in[batch_number][y][x] - batch_mean) / batch_std_dev;
+                    temp = (values_in[batch_number][y][x] - batch_mean) * inverse_variance;
                     values_in[batch_number][y][x] = temp;   //values in becomes x_hat
                     values_out[batch_number][y][x] = (gamma * temp) + beta;
 
@@ -870,12 +897,19 @@ void CNN_Node::batch_normalize(bool training, double epsilon, double alpha) {
         }
 #endif
 
-        inverse_variance = 1.0 / batch_std_dev;
-
         batch_variance = (batch_size / (batch_size - 1)) * batch_variance;
 
-        running_mean = (batch_mean * alpha) + ((1.0 - alpha) * running_mean);
-        running_variance = (batch_variance * alpha) + ((1.0 - alpha) * running_variance);
+        if (accumulating_test_statistics) {
+            //running_mean += batch_mean;
+            //running_variance += batch_variance;
+            running_mean = (batch_mean * alpha) + ((1.0 - alpha) * running_mean);
+            running_variance = (batch_variance * alpha) + ((1.0 - alpha) * running_variance);
+ 
+            //cout << "node " << innovation_number << " accumulating test statistics, batch_mean: " << batch_mean << ", batch_variance: " << batch_variance << endl;
+        } else {
+            running_mean = (batch_mean * alpha) + ((1.0 - alpha) * running_mean);
+            running_variance = (batch_variance * alpha) + ((1.0 - alpha) * running_variance);
+        }
 
         //cout << "\tnode " << innovation_number << ", batch_mean: " << batch_mean << ", batch_variance: " << batch_variance << ", batch_std_dev: " << batch_std_dev << ", running_mean: " << running_mean << ", running_variance: " << running_variance << endl;
 
@@ -884,7 +918,6 @@ void CNN_Node::batch_normalize(bool training, double epsilon, double alpha) {
         double term2 = beta - ((gamma * running_mean) / sqrt(running_variance + epsilon));
 
         for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
-
             for (int32_t y = 0; y < size_y; y++) {
                 for (int32_t x = 0; x < size_x; x++) {
                     values_out[batch_number][y][x] = (term1 * values_in[batch_number][y][x]) + term2;
@@ -894,37 +927,37 @@ void CNN_Node::batch_normalize(bool training, double epsilon, double alpha) {
     }
 }
 
-void CNN_Node::apply_relu() {
+void CNN_Node::apply_relu(vector< vector< vector<double> > > &values, vector< vector< vector<double> > > &gradients) {
     for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
         for (int32_t y = 0; y < size_y; y++) {
             for (int32_t x = 0; x < size_x; x++) {
                 //cout << "values_out for node " << innovation_number << " now " << values_out[batch_number][y][x] << " after adding bias: " << bias[batch_number][y][x] << endl;
 
                 //apply activation function
-                if (values_out[batch_number][y][x] <= RELU_MIN) {
-                    values_out[batch_number][y][x] = values_out[batch_number][y][x] * RELU_MIN_LEAK;
-                    gradients_out[batch_number][y][x] = RELU_MIN_LEAK; 
-                } else if (values_out[batch_number][y][x] > RELU_MAX) {
-                    values_out[batch_number][y][x] = RELU_MAX;
-                    gradients_out[batch_number][y][x] = RELU_MAX_LEAK; 
+                if (values[batch_number][y][x] <= RELU_MIN) {
+                    values[batch_number][y][x] = values[batch_number][y][x] * RELU_MIN_LEAK;
+                    gradients[batch_number][y][x] = RELU_MIN_LEAK; 
+                } else if (values[batch_number][y][x] > RELU_MAX) {
+                    values[batch_number][y][x] = RELU_MAX;
+                    gradients[batch_number][y][x] = RELU_MAX_LEAK; 
                 } else {
-                    gradients_out[batch_number][y][x] = 1.0;
+                    gradients[batch_number][y][x] = 1.0;
                 }
             }
         }
     }
 }
 
-void CNN_Node::apply_dropout(bool perform_dropout, double dropout_probability, minstd_rand0 &generator) {
-    if (perform_dropout) {
+void CNN_Node::apply_dropout(vector< vector< vector<double> > > &values, vector< vector< vector<double> > > &gradients, bool perform_dropout, bool accumulate_test_statistics, double dropout_probability, minstd_rand0 &generator) {
+    if (perform_dropout && !accumulate_test_statistics) {
         for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
             for (int32_t y = 0; y < size_y; y++) {
                 for (int32_t x = 0; x < size_x; x++) {
-                    //cout << "values_out for node " << innovation_number << " now " << values_out[batch_number][y][x] << " after adding bias: " << bias[batch_number][y][x] << endl;
+                    //cout << "values for node " << innovation_number << " now " << values[batch_number][y][x] << " after adding bias: " << bias[batch_number][y][x] << endl;
 
                     if (random_0_1(generator) < dropout_probability) {
-                        values_out[batch_number][y][x] = 0.0;
-                        gradients_out[batch_number][y][x] = 0.0;
+                        values[batch_number][y][x] = 0.0;
+                        gradients[batch_number][y][x] = 0.0;
                     }
                 }
             }
@@ -935,7 +968,7 @@ void CNN_Node::apply_dropout(bool perform_dropout, double dropout_probability, m
         for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
             for (int32_t y = 0; y < size_y; y++) {
                 for (int32_t x = 0; x < size_x; x++) {
-                    values_out[batch_number][y][x] *= dropout_scale;
+                    values[batch_number][y][x] *= dropout_scale;
                 }
             }
         }
@@ -954,7 +987,6 @@ void CNN_Node::backpropagate_dropout() {
         }
     }
 }
-*/
 
 void CNN_Node::backpropagate_relu() {
     for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
@@ -966,52 +998,72 @@ void CNN_Node::backpropagate_relu() {
         }
     }
 }
+*/
 
 
-void CNN_Node::backpropagate_batch_normalization(double mu, double learning_rate) {
+void CNN_Node::backpropagate_batch_normalization(double mu, double learning_rate, double epsilon) {
     //backprop  batch normalization here
     double delta_beta = 0.0;
     double delta_gamma = 0.0;
 
-    double value_hat, value_out;
-    double delta_out, delta_values_hat;
-    double delta_values_hat_sum = 0.0;
-    double delta_values_hat_x_values_sum = 0.0;
+    double value_in;
+    double value_hat;
+    //double value_out;
+    double delta_out;
+    //double delta_values_hat;
+    //double delta_values_hat_sum = 0.0;
+    //double delta_values_hat_x_values_sum = 0.0;
+
+    double derr_dvariance = 0.0;
+    double derr_dmean = 0.0;
+
+    double derr_dmean_term1 = 0.0;
+    double derr_dmean_term2 = 0.0;
+
+    double m = (uint64_t)batch_size * (uint64_t)size_y * (uint64_t)size_x;
+    double diff;
 
     for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
         for (int32_t y = 0; y < size_y; y++) {
             for (int32_t x = 0; x < size_x; x++) {
                 delta_out = errors_out[batch_number][y][x] * gradients_out[batch_number][y][x];
                 value_hat = values_in[batch_number][y][x];
-                value_out = values_out[batch_number][y][x];
 
-                delta_values_hat = gamma * delta_out;
+                value_in = (value_hat + batch_mean) * batch_std_dev;
+                diff = value_in - batch_mean;
 
                 delta_beta += delta_out;
                 delta_gamma += value_hat * delta_out;
 
-                delta_values_hat_sum += delta_values_hat;
-                delta_values_hat_x_values_sum += delta_values_hat * value_hat;
+                derr_dvariance += diff * delta_out * gamma;
+
+                derr_dmean_term1 += delta_out * gamma;
+                derr_dmean_term2 += diff;
             }
         }
     }
 
-    double inv_var_div_batch = inverse_variance / batch_size;
-    double batch_x_gamma = batch_size * gamma;
+    double inv_m = 1.0 / m;
+    double inv_m_x_2 = 2.0 * inv_m;
+
+    derr_dvariance *= -0.5 * pow(batch_variance + epsilon, -1.5);
+    derr_dmean_term1 *= -inverse_variance;
+    derr_dmean_term2 *= -inv_m_x_2 * derr_dvariance;
+    derr_dmean = derr_dmean_term1 + derr_dmean_term2;
 
     for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
         for (int32_t y = 0; y < size_y; y++) {
             for (int32_t x = 0; x < size_x; x++) {
                 delta_out = errors_out[batch_number][y][x] * gradients_out[batch_number][y][x];
-                delta_values_hat = gamma * delta_out;
+                value_hat = values_in[batch_number][y][x];
+                value_in = (value_hat + batch_mean) * batch_std_dev;
 
-                //this makes delta = delta_in
-                //gradients_in[batch_number][y][x] = inv_var_div_batch * ((batch_x_gamma * delta_out) - delta_values_hat_sum - (values_in[batch_number][y][x] * delta_values_hat_x_values_sum));
+                //gradients_in[batch_number][y][x] = inverse_variance;
+                gradients_in[batch_number][y][x] = (delta_out * inverse_variance) + (derr_dvariance * inv_m_x_2 * (value_in - batch_mean)) + (derr_dmean * inv_m);
 
-                //gradients_in[batch_number][y][x] = (1.0 - (1.0 / batch_size)) * inverse_variance;
-                gradients_in[batch_number][y][x] = inverse_variance;
-
-                errors_in[batch_number][y][x] = delta_out * gamma;
+                //errors_in[batch_number][y][x] = delta_out * gamma;
+                //errors_in[batch_number][y][x] = errors_out[batch_number][y][x];
+                errors_in[batch_number][y][x] = 1.0;
 
 #ifdef NAN_CHECKS
                 if (isnan(errors_in[batch_number][y][x]) || isinf(errors_in[batch_number][y][x])) {
@@ -1055,7 +1107,7 @@ void CNN_Node::backpropagate_batch_normalization(double mu, double learning_rate
 }
 
 
-void CNN_Node::set_values(const vector<Image> &images, int channel, bool perform_dropout, double input_dropout_probability, minstd_rand0 &generator) {
+void CNN_Node::set_values(const vector<Image> &images, int channel, bool perform_dropout, bool accumulate_test_statistics, double input_dropout_probability, minstd_rand0 &generator) {
     //images.size() may be less than batch size, in the case when the total number of images is not divisible by the batch_size
     if (images.size() > batch_size) {
         cerr << "ERROR: number of batch images: " << images.size() << " > batch_size of input node: " << batch_size << endl;
@@ -1081,20 +1133,20 @@ void CNN_Node::set_values(const vector<Image> &images, int channel, bool perform
         }
     }
 
-    apply_dropout(perform_dropout, input_dropout_probability, generator);
+    if (input_dropout_probability > 0) apply_dropout(values_out, gradients_out, perform_dropout, accumulate_test_statistics, input_dropout_probability, generator);
 }
 
 
-void CNN_Node::input_fired(bool training, double epsilon, double alpha, bool perform_dropout, double hidden_dropout_probability, minstd_rand0 &generator) {
+void CNN_Node::input_fired(bool training, bool accumulate_test_statistics, double epsilon, double alpha, bool perform_dropout, double hidden_dropout_probability, minstd_rand0 &generator) {
     inputs_fired++;
 
     //cout << "input fired on node: " << innovation_number << ", inputs fired: " << inputs_fired << ", total_inputs: " << total_inputs << endl;
 
     if (inputs_fired == total_inputs) {
         if (type != SOFTMAX_NODE) {
-            batch_normalize(training, epsilon, alpha);
-            apply_relu();
-            apply_dropout(perform_dropout, hidden_dropout_probability, generator);
+            batch_normalize(training, accumulate_test_statistics, epsilon, alpha);
+            apply_relu(values_out, gradients_out);
+            if (hidden_dropout_probability > 0) apply_dropout(values_out, gradients_out, perform_dropout, accumulate_test_statistics, hidden_dropout_probability, generator);
         }
 
     } else if (inputs_fired > total_inputs) {
@@ -1110,7 +1162,7 @@ void CNN_Node::input_fired(bool training, double epsilon, double alpha, bool per
     }
 }
 
-void CNN_Node::output_fired(double mu, double learning_rate) {
+void CNN_Node::output_fired(double mu, double learning_rate, double epsilon) {
     outputs_fired++;
 
     //cout << "output fired on node: " << innovation_number << ", outputs fired: " << outputs_fired << ", total_outputs: " << total_outputs << endl;
@@ -1119,7 +1171,7 @@ void CNN_Node::output_fired(double mu, double learning_rate) {
         if (type != SOFTMAX_NODE && type != INPUT_NODE) {
             //backpropagate_dropout();
             //backpropagate_relu();
-            backpropagate_batch_normalization(mu, learning_rate);
+            backpropagate_batch_normalization(mu, learning_rate, epsilon);
         }
 
     } else if (outputs_fired > total_outputs) {
