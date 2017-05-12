@@ -938,7 +938,7 @@ void CNN_Edge::propagate_backward(double mu, double learning_rate, double epsilo
                 for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
                     for (int32_t y = 0; y < in_y; y++) {
                         for (int32_t x = 0; x < in_x; x++) {
-                            delta = output_errors[batch_number][y + fy][x + fx] * output_gradients[batch_number][y + fy][x + fx];
+                            delta = output_errors[batch_number][y + fy][x + fx];
 #ifdef NAN_CHECKS                        
                             double previous_weight_update = weight_update;
                             double previous_error = input_errors[batch_number][y][x];
@@ -967,7 +967,7 @@ void CNN_Edge::propagate_backward(double mu, double learning_rate, double epsilo
                 for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
                     for (int32_t y = 0; y < out_y; y++) {
                         for (int32_t x = 0; x < in_x; x++) {
-                            delta = output_errors[batch_number][y][x + fx] * output_gradients[batch_number][y][x + fx];
+                            delta = output_errors[batch_number][y][x + fx];
 #ifdef NAN_CHECKS                        
                             double previous_weight_update = weight_update;
                             double previous_error = input_errors[batch_number][y][x];
@@ -1010,7 +1010,7 @@ void CNN_Edge::propagate_backward(double mu, double learning_rate, double epsilo
                         for (int32_t x = 0; x < out_x; x++) {
                             //cout << "thread '" << this_id << "' -- setting output[" << y + fy << "][" << x << "]" << endl;
 
-                            delta = output_errors[batch_number][y + fy][x] * output_gradients[batch_number][y + fy][x];
+                            delta = output_errors[batch_number][y + fy][x];
 #ifdef NAN_CHECKS                        
                             double previous_weight_update = weight_update;
                             double previous_error = input_errors[batch_number][y][x];
@@ -1042,7 +1042,7 @@ void CNN_Edge::propagate_backward(double mu, double learning_rate, double epsilo
                 for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
                     for (int32_t y = 0; y < out_y; y++) {
                         for (int32_t x = 0; x < out_x; x++) {
-                            delta = output_errors[batch_number][y][x] * output_gradients[batch_number][y][x];
+                            delta = output_errors[batch_number][y][x];
 #ifdef NAN_CHECKS                        
                             double previous_weight_update = weight_update;
                             double previous_error = input_errors[batch_number][y][x];

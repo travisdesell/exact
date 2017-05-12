@@ -1177,8 +1177,8 @@ void CNN_Genome::evaluate_images(const vector<Image> &images, bool training, dou
 
             //if (training) cout << "\t" << softmax_nodes[i]->get_innovation_number() << " -- batch number: " << batch_number << ", value: " << value << ", error: " << error << ", gradient: " << gradient << endl;
 
-            softmax_nodes[i]->set_error_in(batch_number, 0, 0, error);
-            softmax_nodes[i]->set_gradient_in(batch_number, 0, 0, gradient);
+            softmax_nodes[i]->set_error_in(batch_number, 0, 0, error * gradient);
+            //softmax_nodes[i]->set_gradient_in(batch_number, 0, 0, gradient);
 
             if (value > max_value) {
                 predicted_class = i;

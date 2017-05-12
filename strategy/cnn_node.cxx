@@ -1064,11 +1064,11 @@ void CNN_Node::backpropagate_batch_normalization(double mu, double learning_rate
                 value_in = (value_hat + batch_mean) * batch_std_dev;
 
                 //gradients_in[batch_number][y][x] = inverse_variance;
-                gradients_in[batch_number][y][x] = (delta_out * inverse_variance) + (derr_dvariance * inv_m_x_2 * (value_in - batch_mean)) + (derr_dmean * inv_m);
+                errors_in[batch_number][y][x] = (delta_out * inverse_variance) + (derr_dvariance * inv_m_x_2 * (value_in - batch_mean)) + (derr_dmean * inv_m);
 
                 //errors_in[batch_number][y][x] = delta_out * gamma;
                 //errors_in[batch_number][y][x] = errors_out[batch_number][y][x];
-                errors_in[batch_number][y][x] = 1.0;
+                //errors_in[batch_number][y][x] = 1.0;
 
 #ifdef NAN_CHECKS
                 if (isnan(errors_in[batch_number][y][x]) || isinf(errors_in[batch_number][y][x])) {
