@@ -16,10 +16,12 @@ $query = "CREATE TABLE `exact_search` (
     `search_name` varchar(128) NOT NULL,
     `output_directory` varchar(128) NOT NULL,
     `training_filename` varchar(256) NOT NULL,
-    `testing_filename` varchar(256) NOT NULL,
+    `generalizability_filename` varchar(256) NOT NULL,
+    `test_filename` varchar(256) NOT NULL,
 
     `number_training_images` int(11) NOT NULL,
-    `number_testing_images` int(11) NOT NULL,
+    `number_generalizability_images` int(11) NOT NULL,
+    `number_test_images` int(11) NOT NULL,
 
     `image_channels` int(11) NOT NULL,
     `image_rows` int(11) NOT NULL,
@@ -213,9 +215,14 @@ $query = "CREATE TABLE `cnn_genome` (
     `generated_by_reset_weights` int(11) NOT NULL,
     `generated_by_add_node` int(11) NOT NULL,
 
-    `number_testing_images` int(11) DEFAULT NULL,
+    `number_generalizability_images` int(11) DEFAULT NULL,
+    `generalizability_error` double DEFAULT NULL,
+    `generalizability_predictions` int(11) DEFAULT NULL,
+
+    `number_test_images` int(11) DEFAULT NULL,
     `test_error` double DEFAULT NULL,
     `test_predictions` int(11) DEFAULT NULL,
+
     `stderr_out` blob,
 
   PRIMARY KEY(`id`)

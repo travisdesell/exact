@@ -12,6 +12,9 @@ using std::endl;
 using std::ifstream;
 using std::ofstream;
 
+#include <random>
+using std::minstd_rand0;
+
 #include <vector>
 using std::vector;
 
@@ -120,8 +123,9 @@ int main(int argc, char** argv) {
     cout << "generalizability file '" << output_filename_generalizability << " will have " << images_per_label << " images per label." << endl;
 
 
+    minstd_rand0 generator = minstd_rand0(time(NULL));
     for (uint32_t i = 0; i < number_labels; i++) {
-        //shuffle(images[i].begin(), images[i].end());
+        shuffle(images[i].begin(), images[i].end(), generator);
 
         for (uint32_t j = 0; j < images_per_label; j++) {
             images_split[i].push_back( images[i].back() );

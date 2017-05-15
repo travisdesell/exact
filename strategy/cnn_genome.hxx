@@ -65,7 +65,11 @@ class CNN_Genome {
         int best_predictions_epoch;
         int best_error_epoch;
 
-        int number_testing_images;
+        int number_generalizability_images;
+        double generalizability_error;
+        int generalizability_predictions;
+
+        int number_test_images;
         double test_error;
         int test_predictions;
 
@@ -100,7 +104,7 @@ class CNN_Genome {
         /**
          *  Iniitalize a genome from a set of nodes and edges
          */
-        CNN_Genome(int _generation_id, int _number_training_images, int _number_testing_images, int seed, int _max_epochs, bool _reset_weights, double generalizability_constant, int velocity_reset, double _mu, double _mu_delta, double _learning_rate, double _learning_rate_delta, double _weight_decay, double _weight_decay_delta, int _batch_size, double _epsilon, double _alpha, double _input_dropout_probability, double _hidden_dropout_probability, const vector<CNN_Node*> &_nodes, const vector<CNN_Edge*> &_edges);
+        CNN_Genome(int _generation_id, int _number_training_images, int _number_generalizability_images, int _number_test_images, int seed, int _max_epochs, bool _reset_weights, double generalizability_constant, int velocity_reset, double _mu, double _mu_delta, double _learning_rate, double _learning_rate_delta, double _weight_decay, double _weight_decay_delta, int _batch_size, double _epsilon, double _alpha, double _input_dropout_probability, double _hidden_dropout_probability, const vector<CNN_Node*> &_nodes, const vector<CNN_Edge*> &_edges);
 
         ~CNN_Genome();
 
@@ -122,7 +126,8 @@ class CNN_Genome {
 
         double get_generalizability_constant() const;
         int get_number_training_images() const;
-        int get_number_testing_images() const;
+        int get_number_generalizability_images() const;
+        int get_number_test_images() const;
 
         int get_number_weights() const;
         int get_number_biases() const;
@@ -135,12 +140,16 @@ class CNN_Genome {
         double get_fitness() const;
 
         double get_best_error() const;
-        double get_test_error() const;
         double get_best_rate() const;
-        double get_test_rate() const;
-
-        int get_test_predictions() const;
         int get_best_predictions() const;
+
+        double get_generalizability_error() const;
+        double get_generalizability_rate() const;
+        int get_generalizability_predictions() const;
+
+        double get_test_error() const;
+        double get_test_rate() const;
+        int get_test_predictions() const;
 
         int get_best_error_epoch() const;
 
@@ -194,8 +203,8 @@ class CNN_Genome {
         void evaluate(const Images &images, double &total_error, int &correct_predictions, bool perform_backprop, bool accumulate_test_statistics);
         void evaluate(const Images &images, double &total_error, int &correct_predictions);
 
-        void stochastic_backpropagation(const Images &training_images, const Images &testing_images, int training_resize);
-        void stochastic_backpropagation(const Images &training_images, const Images &testing_images);
+        void stochastic_backpropagation(const Images &training_images, const Images &generalizability_images, const Images &test_images, int training_resize);
+        void stochastic_backpropagation(const Images &training_images, const Images &generalizability_images, const Images &test_images);
 
         void set_name(string _name);
         void set_output_filename(string _output_filename);
