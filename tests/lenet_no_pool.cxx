@@ -27,11 +27,14 @@ using std::vector;
 int main(int argc, char **argv) {
     vector<string> arguments = vector<string>(argv, argv + argc);
 
-    string binary_training_filename;
-    get_argument(arguments, "--training_file", true, binary_training_filename);
+    string training_filename;
+    get_argument(arguments, "--training_file", true, training_filename);
 
-    string binary_testing_filename;
-    get_argument(arguments, "--testing_file", true, binary_testing_filename);
+    string generalizability_filename;
+    get_argument(arguments, "--generalizability_file", true, generalizability_filename);
+
+    string testing_filename;
+    get_argument(arguments, "--testing_file", true, testing_filename);
 
     int max_epochs;
     get_argument(arguments, "--max_epochs", true, max_epochs);
@@ -75,8 +78,9 @@ int main(int argc, char **argv) {
 
     double epsilon = 1.0e-7;
 
-    Images training_images(binary_training_filename);
-    Images testing_images(binary_testing_filename, training_images.get_average(), training_images.get_std_dev());
+    Images training_images(training_filename);
+    Images generalizability_images(generalizability_filename, training_images.get_average(), training_images.get_std_dev());
+    Images testing_images(testing_filename, training_images.get_average(), training_images.get_std_dev());
 
     int node_innovation_count = 0;
     int edge_innovation_count = 0;
@@ -263,5 +267,5 @@ int main(int argc, char **argv) {
     genome->print_graphviz(outfile);
     outfile.close();
 
-    genome->stochastic_backpropagation(training_images, testing_images);
+    genome->stochastic_backpropagation(training_images, generalizability_images, testing_images);
 }
