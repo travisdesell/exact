@@ -92,11 +92,10 @@ class CNN_Node {
         //batch number x size_y x size_x
         vector< vector< vector<double> > > values_out;
         vector< vector< vector<double> > > errors_out;
-        vector< vector< vector<double> > > gradients_out;
+        vector< vector< vector<double> > > relu_gradients;
 
         vector< vector< vector<double> > > values_in;
         vector< vector< vector<double> > > errors_in;
-        vector< vector< vector<double> > > gradients_in;
 
         double input_fired_time;
         double output_fired_time;
@@ -167,11 +166,8 @@ class CNN_Node {
         vector< vector< vector<double> > >& get_errors_out();
 
 
-        void set_gradient_in(int batch_number, int y, int x, double gradient);
-        vector< vector< vector<double> > >& get_gradients_in();
-
-        void set_gradient_out(int batch_number, int y, int x, double gradient);
-        vector< vector< vector<double> > >& get_gradients_out();
+        void set_relu_gradient(int batch_number, int y, int x, double gradient);
+        vector< vector< vector<double> > >& get_relu_gradients();
 
 
         void print(ostream &out);
@@ -208,7 +204,7 @@ class CNN_Node {
         void apply_dropout(vector< vector< vector<double> > > &values, vector< vector< vector<double> > > &gradients, bool perform_dropout, bool accumulate_test_statistics, double dropout_probability, minstd_rand0 &generator);
 
         //void backpropagate_dropout();
-        void backpropagate_relu();
+        void backpropagate_relu(vector< vector< vector<double> > > &errors, vector< vector< vector<double> > > &gradients);
         void backpropagate_batch_normalization(double mu, double learning_rate, double epsilon);
 
         void print_statistics();

@@ -798,7 +798,10 @@ void CNN_Edge::update_weights(double mu, double learning_rate, double weight_dec
 
     double weight_update_start_time = time(NULL);
 
-    double dx, pv, velocity, previous_weight, weight;
+    double dx, pv, velocity, weight;
+#ifdef NAN_CHECKS
+    double previous_weight;
+#endif
 
 	for (int32_t fy = 0; fy < filter_y; fy++) {
         for (int32_t fx = 0; fx < filter_x; fx++) {
@@ -815,8 +818,10 @@ void CNN_Edge::update_weights(double mu, double learning_rate, double weight_dec
 #ifdef NAN_CHECKS
             previous_weight = weight;
 #endif
-            //weight += (-mu * pv + (1 + mu) * velocity);
             weight += velocity + mu * (velocity - pv);
+            //weight += (-mu * pv + (1 + mu) * velocity);
+            //weight += velocity;
+
             weight -= (weight * weight_decay);
 
             weights[fy][fx] = weight;
@@ -914,7 +919,6 @@ void CNN_Edge::propagate_backward(double mu, double learning_rate, double epsilo
     double propagate_backward_start_time = time(NULL);
 
     vector< vector< vector<double> > > &output_errors = output_node->get_errors_in();
-    vector< vector< vector<double> > > &output_gradients = output_node->get_gradients_in();
 
     vector< vector< vector<double> > > &input = input_node->get_values_out();
     vector< vector< vector<double> > > &input_errors = input_node->get_errors_out();

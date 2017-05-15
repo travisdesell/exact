@@ -1466,6 +1466,10 @@ void CNN_Genome::stochastic_backpropagation(const Images &training_images, const
     }
     */
 
+    vector<long> testing_backprop_order;
+    for (uint32_t i = 0; i < number_testing_images; i++) {
+        testing_backprop_order.push_back(i);
+    }
 
 
     do {
@@ -1473,8 +1477,15 @@ void CNN_Genome::stochastic_backpropagation(const Images &training_images, const
         fisher_yates_shuffle(generator, backprop_order);
 
         evaluate(training_images, total_error, correct_predictions, true, false);
-        //cout << "backprop error: " << total_error << ", backprop predictions: " << correct_predictions << endl;
         evaluate(training_images, total_error, correct_predictions, false, false);
+
+        /*
+        vector<long> tmp_vector = backprop_order;
+        backprop_order = testing_backprop_order;
+
+        evaluate(testing_images, total_error, correct_predictions, false, false);
+        backprop_order = tmp_vector;
+        */
 
         bool found_improvement = false;
         if (total_error < best_error) {
@@ -1486,6 +1497,7 @@ void CNN_Genome::stochastic_backpropagation(const Images &training_images, const
             save_to_best();
             found_improvement = true;
         }
+        //print_progress(cerr, total_error, correct_predictions, number_testing_images);
         print_progress(cerr, total_error, correct_predictions, number_training_images);
 
         /*
@@ -1536,6 +1548,7 @@ void CNN_Genome::stochastic_backpropagation(const Images &training_images, const
     cerr << "evaluting with running mean/variance:" << endl;
     evaluate(testing_images, test_error, test_predictions);
 
+    /*
     //need to calculate good values for the average and variance given these final weights
     int passes = 2;
     int number_batches = passes * (number_training_images / batch_size);
@@ -1590,6 +1603,7 @@ void CNN_Genome::stochastic_backpropagation(const Images &training_images, const
     }
 
     evaluate(testing_images, test_error, test_predictions);
+    */
 
     if (output_filename.compare("") != 0) {
         write_to_file(output_filename);
