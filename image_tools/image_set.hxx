@@ -21,7 +21,7 @@ class Image {
         int rows;
         int cols;
         int classification;
-        vector< vector< vector<char> > > pixels;
+        vector< vector< vector<uint8_t> > > pixels;
 
         //reference to images to get channel avgs and std_Devs
         const Images *images;

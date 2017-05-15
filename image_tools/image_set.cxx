@@ -30,7 +30,7 @@ Image::Image(ifstream &infile, int _channels, int _cols, int _rows, int _classif
     classification = _classification;
     images = _images;
 
-    pixels = vector< vector< vector<char> > >(channels, vector< vector<char> >(cols, vector<char>(rows, 0)));
+    pixels = vector< vector< vector<uint8_t> > >(channels, vector< vector<uint8_t> >(cols, vector<uint8_t>(rows, 0)));
 
     char* c_pixels = new char[channels * cols * rows];
 
@@ -40,7 +40,7 @@ Image::Image(ifstream &infile, int _channels, int _cols, int _rows, int _classif
     for (int32_t z = 0; z < channels; z++) {
         for (int32_t y = 0; y < cols; y++) {
             for (int32_t x = 0; x < rows; x++) {
-                pixels[z][y][x] = c_pixels[current];
+                pixels[z][y][x] = (uint8_t)c_pixels[current];
                 current++;
             }
         }
@@ -50,7 +50,7 @@ Image::Image(ifstream &infile, int _channels, int _cols, int _rows, int _classif
 }
 
 double Image::get_pixel(int z, int y, int x) const {
-    return (pixels[z][y][x] - images->get_channel_avg(z)) / images->get_channel_std_dev(z);
+    return ((pixels[z][y][x] / 255.0) - images->get_channel_avg(z)) / images->get_channel_std_dev(z);
 }
 
 int Image::get_classification() const {
