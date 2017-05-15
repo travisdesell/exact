@@ -13,18 +13,22 @@ using std::string;
 #include <vector>
 using std::vector;
 
+typedef class Images Images;
+
 class Image {
     private:
         int channels;
         int rows;
         int cols;
         int classification;
-        vector< vector< vector<double> > > pixels;
+        vector< vector< vector<char> > > pixels;
 
+        //reference to images to get channel avgs and std_Devs
+        const Images *images;
 
     public:
 
-        Image(ifstream &infile, int _channels, int _cols, int _rows, int _classification);
+        Image(ifstream &infile, int _channels, int _cols, int _rows, int _classification, const Images *_images);
         double get_pixel(int z, int y, int x) const;
 
         int get_classification() const;
@@ -78,6 +82,11 @@ class Images {
         const Image& get_image(int image) const;
 
         void calculate_avg_std_dev();
+
+        double get_channel_avg(int channel) const;
+
+        double get_channel_std_dev(int channel) const;
+
 
         const vector<double>& get_average() const;
         const vector<double>& get_std_dev() const;

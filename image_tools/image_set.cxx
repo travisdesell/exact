@@ -23,13 +23,14 @@ using std::vector;
 
 #include "stdint.h"
 
-Image::Image(ifstream &infile, int _channels, int _cols, int _rows, int _classification) {
+Image::Image(ifstream &infile, int _channels, int _cols, int _rows, int _classification, const Images *_images) {
     channels = _channels;
     cols = _cols;
     rows = _rows;
     classification = _classification;
+    images = _images;
 
-    pixels = vector< vector< vector<double> > >(channels, vector< vector<double> >(cols, vector<double>(rows, 0.0)));
+    pixels = vector< vector< vector<char> > >(channels, vector< vector<char> >(cols, vector<char>(rows, 0)));
 
     char* c_pixels = new char[channels * cols * rows];
 
@@ -39,7 +40,7 @@ Image::Image(ifstream &infile, int _channels, int _cols, int _rows, int _classif
     for (int32_t z = 0; z < channels; z++) {
         for (int32_t y = 0; y < cols; y++) {
             for (int32_t x = 0; x < rows; x++) {
-                pixels[z][y][x] = (int)(uint8_t)c_pixels[current];
+                pixels[z][y][x] = c_pixels[current];
                 current++;
             }
         }
@@ -49,7 +50,7 @@ Image::Image(ifstream &infile, int _channels, int _cols, int _rows, int _classif
 }
 
 double Image::get_pixel(int z, int y, int x) const {
-    return pixels[z][y][x];
+    return (pixels[z][y][x] - images->get_channel_avg(z)) / images->get_channel_std_dev(z);
 }
 
 int Image::get_classification() const {
@@ -68,16 +69,6 @@ int Image::get_cols() const {
     return cols;
 }
 
-void Image::scale_0_1() {
-    for (int32_t z = 0; z < channels; z++) {
-        for (int32_t y = 0; y < cols; y++) {
-            for (int32_t x = 0; x < rows; x++) {
-                pixels[z][y][x] /= 255.0;
-            }
-        }
-    }
-}
-
 void Image::get_pixel_avg(vector<double> &channel_avgs) const {
     channel_avgs.clear();
     channel_avgs.assign(channels, 0.0);
@@ -85,7 +76,7 @@ void Image::get_pixel_avg(vector<double> &channel_avgs) const {
     for (int32_t z = 0; z < channels; z++) {
         for (int32_t y = 0; y < cols; y++) {
             for (int32_t x = 0; x < rows; x++) {
-                channel_avgs[z] += pixels[z][y][x];
+                channel_avgs[z] += pixels[z][y][x] / 255.0;
             }
         }
         channel_avgs[z] /= (rows * cols);
@@ -100,7 +91,7 @@ void Image::get_pixel_variance(const vector<double> &channel_avgs, vector<double
     for (int32_t z = 0; z < channels; z++) {
         for (int32_t y = 0; y < cols; y++) {
             for (int32_t x = 0; x < rows; x++) {
-                tmp = channel_avgs[z] - pixels[z][y][x];
+                tmp = channel_avgs[z] - (pixels[z][y][x] / 255.0);
                 channel_variances[z] += tmp * tmp;
             }
         }
@@ -108,18 +99,6 @@ void Image::get_pixel_variance(const vector<double> &channel_avgs, vector<double
         channel_variances[z] /= (rows * cols);
     }
 }
-
-void Image::normalize(const vector<double> &channel_avgs, const vector<double> &channel_std_dev) {
-    for (int32_t z = 0; z < channels; z++) {
-        for (int32_t y = 0; y < cols; y++) {
-            for (int32_t x = 0; x < rows; x++) {
-                pixels[z][y][x] -= channel_avgs[z];
-                pixels[z][y][x] /= channel_std_dev[z];
-            }
-        }
-    }
-}
-
 
 void Image::print(ostream &out) {
     out << "Image Class: " << classification << endl;
@@ -169,7 +148,7 @@ void Images::read_images(string _filename) {
         cerr << "reading image set with " << class_sizes[i] << " images." << endl;
 
         for (int32_t j = 0; j < class_sizes[i]; j++) {
-            images.push_back(Image(infile, channels, cols, rows, i));
+            images.push_back(Image(infile, channels, cols, rows, i, this));
         }
     }
     number_images = images.size();
@@ -196,32 +175,15 @@ Images::Images(string _filename, const vector<double> &_channel_avg, const vecto
     filename = _filename;
     read_images(filename);
 
-    cerr << "scaling images." << endl;
-    for (int i = 0; i < number_images; i++) {
-        images[i].scale_0_1();
-    }
-
-    cerr << "normalizing images." << endl;
     channel_avg = _channel_avg;
     channel_std_dev = _channel_std_dev;
-    normalize();
-    cerr << "normalized." << endl;
-
 }
 
 Images::Images(string _filename) {
     filename = _filename;
     read_images(filename);
 
-    cerr << "scaling images." << endl;
-    for (int i = 0; i < number_images; i++) {
-        images[i].scale_0_1();
-    }
-
-    cerr << "normalizing images." << endl;
     calculate_avg_std_dev();
-    normalize();
-    cerr << "normalized." << endl;
 }
 
 int Images::get_class_size(int i) const {
@@ -260,7 +222,17 @@ const vector<double>& Images::get_std_dev() const {
     return channel_std_dev;
 }
 
+double Images::get_channel_avg(int channel) const {
+    return channel_avg[channel];
+}
+
+double Images::get_channel_std_dev(int channel) const {
+    return channel_std_dev[channel];
+}
+
+
 void Images::calculate_avg_std_dev() {
+    cerr << "calculating averages and standard deviations for images" << endl;
     channel_avg.clear();
     channel_avg.assign(channels, 0.0);
 
@@ -295,15 +267,5 @@ void Images::calculate_avg_std_dev() {
         cerr << "pixel variance for channel " << j << ": " << channel_std_dev[j] << endl;
         channel_std_dev[j] = sqrt(channel_std_dev[j]);
         cerr << "pixel standard deviation for channel " << j << ": " << channel_std_dev[j] << endl;
-    }
-}
-
-void Images::normalize() {
-    for (int32_t j = 0; j < channels; j++) {
-        cerr << "Normalizing channel " << j << " with avg: " << channel_avg[j] << ", std_dev: " << channel_std_dev[j] << endl;
-    }
-
-    for (int i = 0; i < number_images; i++) {
-        images[i].normalize(channel_avg, channel_std_dev);
     }
 }
