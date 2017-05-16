@@ -66,7 +66,6 @@ class EXACT {
         int inserted_genomes;
         int max_genomes;
 
-        double generalizability_constant;
         bool reset_weights;
         int max_epochs;
 
@@ -180,7 +179,7 @@ class EXACT {
         void update_database();
 #endif
 
-        EXACT(const Images &training_images, const Images &generalizability_images, const Images &test_images, int _population_size, int _max_epochs, int _max_genomes, string _output_directory, string _search_name, bool _reset_weights, double _generalizability_constant);
+        EXACT(const Images &training_images, const Images &generalizability_images, const Images &test_images, int _population_size, int _max_epochs, int _max_genomes, string _output_directory, string _search_name, bool _reset_weights);
 
         int32_t population_contains(CNN_Genome *genome) const;
         CNN_Genome* get_best_genome();

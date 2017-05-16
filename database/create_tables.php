@@ -36,7 +36,6 @@ $query = "CREATE TABLE `exact_search` (
     `inserted_genomes` int(11) NOT NULL,
     `max_genomes` int(11) NOT NULL,
 
-    `generalizability_constant` double NOT NULL,
     `reset_weights` tinyint NOT NULL,
     `max_epochs` int(11) NOT NULL,
 
@@ -189,7 +188,6 @@ $query = "CREATE TABLE `cnn_genome` (
     `epoch` int(11) NOT NULL,
     `max_epochs` int(11) NOT NULL,
     `reset_weights` tinyint(1) NOT NULL,
-    `generalizability_constant` double NOT NULL,
 
     `number_training_images` int(11) DEFAULT NULL,
     `best_error` double NOT NULL,

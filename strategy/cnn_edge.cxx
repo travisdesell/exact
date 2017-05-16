@@ -701,11 +701,11 @@ void CNN_Edge::propagate_forward(bool training, bool accumulate_test_statistics,
     int input_size_y = input_node->get_size_y();
 
     if (reverse_filter_x && reverse_filter_y) {
-        for (int32_t fy = 0; fy < filter_y; fy++) {
-            for (int32_t fx = 0; fx < filter_x; fx++) {
-                double weight = weights[fy][fx];
-                
-                for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
+        for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
+            for (int32_t fy = 0; fy < filter_y; fy++) {
+                for (int32_t fx = 0; fx < filter_x; fx++) {
+                    double weight = weights[fy][fx];
+
                     for (int32_t y = 0; y < input_size_y; y++) {
                         for (int32_t x = 0; x < input_size_x; x++) {
                             double value = weight * input[batch_number][y][x];
@@ -723,11 +723,11 @@ void CNN_Edge::propagate_forward(bool training, bool accumulate_test_statistics,
         }
 
     } else if (reverse_filter_x) {
-        for (int32_t fy = 0; fy < filter_y; fy++) {
-            for (int32_t fx = 0; fx < filter_x; fx++) {
-                double weight = weights[fy][fx];
+        for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
+            for (int32_t fy = 0; fy < filter_y; fy++) {
+                for (int32_t fx = 0; fx < filter_x; fx++) {
+                    double weight = weights[fy][fx];
 
-                for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
                     for (int32_t y = 0; y < output_size_y; y++) {
                         for (int32_t x = 0; x < input_size_x; x++) {
                             double value = weight * input[batch_number][y + fy][x];
@@ -745,11 +745,11 @@ void CNN_Edge::propagate_forward(bool training, bool accumulate_test_statistics,
         }
 
     } else if (reverse_filter_y) {
-        for (int32_t fy = 0; fy < filter_y; fy++) {
-            for (int32_t fx = 0; fx < filter_x; fx++) {
-                double weight = weights[fy][fx];
+        for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
+            for (int32_t fy = 0; fy < filter_y; fy++) {
+                for (int32_t fx = 0; fx < filter_x; fx++) {
+                    double weight = weights[fy][fx];
 
-                for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
                     for (int32_t y = 0; y < input_size_y; y++) {
                         for (int32_t x = 0; x < output_size_x; x++) {
                             double value = weight * input[batch_number][y][x + fx];
@@ -767,11 +767,11 @@ void CNN_Edge::propagate_forward(bool training, bool accumulate_test_statistics,
         }
 
     } else {
-        for (int32_t fy = 0; fy < filter_y; fy++) {
-            for (int32_t fx = 0; fx < filter_x; fx++) {
-                double weight = weights[fy][fx];
+        for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
+            for (int32_t fy = 0; fy < filter_y; fy++) {
+                for (int32_t fx = 0; fx < filter_x; fx++) {
+                    double weight = weights[fy][fx];
 
-                for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
                     for (int32_t y = 0; y < output_size_y; y++) {
                         for (int32_t x = 0; x < output_size_x; x++) {
                             double value = weight * input[batch_number][y + fy][x + fx];
@@ -931,15 +931,21 @@ void CNN_Edge::propagate_backward(double mu, double learning_rate, double epsilo
     int out_x = output_node->get_size_x();
     int out_y = output_node->get_size_y();
 
+    for (int32_t fy = 0; fy < filter_y; fy++) {
+        for (int32_t fx = 0; fx < filter_x; fx++) {
+            weight_updates[fy][fx] = 0;
+        }
+    }
+
     if (reverse_filter_x && reverse_filter_y) {
         //cout << "reverse filter x and y!" << endl;
 
-        for (int32_t fy = 0; fy < filter_y; fy++) {
-            for (int32_t fx = 0; fx < filter_x; fx++) {
-                weight_update = 0;
-                weight = weights[fy][fx];
+        for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
+            for (int32_t fy = 0; fy < filter_y; fy++) {
+                for (int32_t fx = 0; fx < filter_x; fx++) {
+                    weight_update = 0.0;
+                    weight = weights[fy][fx];
 
-                for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
                     for (int32_t y = 0; y < in_y; y++) {
                         for (int32_t x = 0; x < in_x; x++) {
                             delta = output_errors[batch_number][y + fy][x + fx];
@@ -954,21 +960,20 @@ void CNN_Edge::propagate_backward(double mu, double learning_rate, double epsilo
 #endif
                         }
                     }
+                    weight_updates[fy][fx] += weight_update;
                 }
-
-                weight_updates[fy][fx] = weight_update;
             }
         }
 
     } else if (reverse_filter_x) {
         //cout << "reverse filter x!" << endl;
 
-        for (int32_t fy = 0; fy < filter_y; fy++) {
-            for (int32_t fx = 0; fx < filter_x; fx++) {
-                weight_update = 0;
-                weight = weights[fy][fx];
+        for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
+            for (int32_t fy = 0; fy < filter_y; fy++) {
+                for (int32_t fx = 0; fx < filter_x; fx++) {
+                    weight_update = 0;
+                    weight = weights[fy][fx];
 
-                for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
                     for (int32_t y = 0; y < out_y; y++) {
                         for (int32_t x = 0; x < in_x; x++) {
                             delta = output_errors[batch_number][y][x + fx];
@@ -983,9 +988,8 @@ void CNN_Edge::propagate_backward(double mu, double learning_rate, double epsilo
 #endif
                         }
                     }
+                    weight_updates[fy][fx] = weight_update;
                 }
-
-                weight_updates[fy][fx] = weight_update;
             }
         }
 
@@ -1002,14 +1006,14 @@ void CNN_Edge::propagate_backward(double mu, double learning_rate, double epsilo
         */
 
 
-        for (int32_t fy = 0; fy < filter_y; fy++) {
-            for (int32_t fx = 0; fx < filter_x; fx++) {
-                weight_update = 0;
-                weight = weights[fy][fx];
+        for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
+            for (int32_t fy = 0; fy < filter_y; fy++) {
+                for (int32_t fx = 0; fx < filter_x; fx++) {
+                    weight_update = 0;
+                    weight = weights[fy][fx];
 
-                //cout << "thread '" << this_id << "' -- looping fy: " << fy << ", fx: "<< fx << "!" << endl;
+                    //cout << "thread '" << this_id << "' -- looping fy: " << fy << ", fx: "<< fx << "!" << endl;
 
-                for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
                     for (int32_t y = 0; y < in_y; y++) {
                         for (int32_t x = 0; x < out_x; x++) {
                             //cout << "thread '" << this_id << "' -- setting output[" << y + fy << "][" << x << "]" << endl;
@@ -1029,21 +1033,21 @@ void CNN_Edge::propagate_backward(double mu, double learning_rate, double epsilo
 #endif
                         }
                     }
+                    weight_updates[fy][fx] += weight_update;
                 }
-
-                weight_updates[fy][fx] = weight_update;
             }
         }
 
     } else {
         //cout << "no reverse filter!" << endl;
 
-        for (int32_t fy = 0; fy < filter_y; fy++) {
-            for (int32_t fx = 0; fx < filter_x; fx++) {
-                weight_update = 0;
-                weight = weights[fy][fx];
 
-                for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
+        for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
+            for (int32_t fy = 0; fy < filter_y; fy++) {
+                for (int32_t fx = 0; fx < filter_x; fx++) {
+                    weight_update = 0;
+                    weight = weights[fy][fx];
+
                     for (int32_t y = 0; y < out_y; y++) {
                         for (int32_t x = 0; x < out_x; x++) {
                             delta = output_errors[batch_number][y][x];
@@ -1060,9 +1064,8 @@ void CNN_Edge::propagate_backward(double mu, double learning_rate, double epsilo
 #endif
                         }
                     }
+                    weight_updates[fy][fx] += weight_update;
                 }
-
-                weight_updates[fy][fx] = weight_update;
             }
         }
     }

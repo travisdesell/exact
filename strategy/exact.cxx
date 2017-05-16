@@ -111,7 +111,6 @@ EXACT::EXACT(int exact_id) {
         inserted_genomes = atoi(row[++column]);
         max_genomes = atoi(row[++column]);
 
-        generalizability_constant = atof(row[++column]);
         reset_weights = atoi(row[++column]);
         max_epochs = atoi(row[++column]);
 
@@ -339,7 +338,6 @@ void EXACT::export_to_database() {
         << ", inserted_genomes = " << inserted_genomes
         << ", max_genomes = " << max_genomes
 
-        << ", generalizability_constant = " << generalizability_constant
         << ", reset_weights = " << reset_weights
         << ", max_epochs = " << max_epochs
 
@@ -600,7 +598,7 @@ void EXACT::update_database() {
 
 #endif
 
-EXACT::EXACT(const Images &training_images, const Images &generalizability_images, const Images &test_images, int _population_size, int _max_epochs, int _max_genomes, string _output_directory, string _search_name, bool _reset_weights, double _generalizability_constant) {
+EXACT::EXACT(const Images &training_images, const Images &generalizability_images, const Images &test_images, int _population_size, int _max_epochs, int _max_genomes, string _output_directory, string _search_name, bool _reset_weights) {
     id = -1;
 
     search_name = _search_name;
@@ -610,7 +608,6 @@ EXACT::EXACT(const Images &training_images, const Images &generalizability_image
     generalizability_filename = generalizability_images.get_filename();
     test_filename = test_images.get_filename();
 
-    generalizability_constant = _generalizability_constant;
     reset_weights = _reset_weights;
     max_epochs = _max_epochs;
 
@@ -1153,7 +1150,7 @@ CNN_Genome* EXACT::generate_individual() {
         long genome_seed = rng_long(generator);
         //cout << "seeding genome with: " << genome_seed << endl;
 
-        genome = new CNN_Genome(genomes_generated++, number_training_images, number_generalizability_images, number_test_images, genome_seed, max_epochs, reset_weights, generalizability_constant, velocity_reset, mu, mu_delta, learning_rate, learning_rate_delta, weight_decay, weight_decay_delta, batch_size, epsilon, alpha, input_dropout_probability, hidden_dropout_probability, all_nodes, all_edges);
+        genome = new CNN_Genome(genomes_generated++, number_training_images, number_generalizability_images, number_test_images, genome_seed, max_epochs, reset_weights, velocity_reset, mu, mu_delta, learning_rate, learning_rate_delta, weight_decay, weight_decay_delta, batch_size, epsilon, alpha, input_dropout_probability, hidden_dropout_probability, all_nodes, all_edges);
 
     } else if ((int32_t)genomes.size() < population_size) {
         //generate random mutatinos until genomes.size() < population_size
@@ -1185,7 +1182,7 @@ CNN_Genome* EXACT::generate_individual() {
                 generate_simplex_hyperparameters(mu, mu_delta, learning_rate, learning_rate_delta, weight_decay, weight_decay_delta, alpha, velocity_reset, input_dropout_probability, hidden_dropout_probability, batch_size);
             }
 
-            genome = new CNN_Genome(genomes_generated++, number_training_images, number_generalizability_images, number_test_images, child_seed, max_epochs, reset_weights, generalizability_constant, velocity_reset, mu, mu_delta, learning_rate, learning_rate_delta, weight_decay, weight_decay_delta, batch_size, epsilon, alpha, input_dropout_probability, hidden_dropout_probability, parent->get_nodes(), parent->get_edges());
+            genome = new CNN_Genome(genomes_generated++, number_training_images, number_generalizability_images, number_test_images, child_seed, max_epochs, reset_weights, velocity_reset, mu, mu_delta, learning_rate, learning_rate_delta, weight_decay, weight_decay_delta, batch_size, epsilon, alpha, input_dropout_probability, hidden_dropout_probability, parent->get_nodes(), parent->get_edges());
 
             /*
             cout << "\tchild nodes:" << endl;
@@ -1229,7 +1226,7 @@ CNN_Genome* EXACT::generate_individual() {
 
     if ((int32_t)genomes.size() < population_size) {
         //insert a copy with a bad fitness so we have more things to generate new genomes with
-        CNN_Genome *genome_copy = new CNN_Genome(genomes_generated++, number_training_images, number_generalizability_images, number_test_images, /*new random seed*/ rng_long(generator), max_epochs, reset_weights, generalizability_constant, genome->get_velocity_reset(), genome->get_initial_mu(), genome->get_mu_delta(), genome->get_initial_learning_rate(), genome->get_learning_rate_delta(), genome->get_initial_weight_decay(), genome->get_weight_decay_delta(), genome->get_batch_size(), epsilon, genome->get_alpha(), genome->get_input_dropout_probability(), genome->get_hidden_dropout_probability(), genome->get_nodes(), genome->get_edges());
+        CNN_Genome *genome_copy = new CNN_Genome(genomes_generated++, number_training_images, number_generalizability_images, number_test_images, /*new random seed*/ rng_long(generator), max_epochs, reset_weights, genome->get_velocity_reset(), genome->get_initial_mu(), genome->get_mu_delta(), genome->get_initial_learning_rate(), genome->get_learning_rate_delta(), genome->get_initial_weight_decay(), genome->get_weight_decay_delta(), genome->get_batch_size(), epsilon, genome->get_alpha(), genome->get_input_dropout_probability(), genome->get_hidden_dropout_probability(), genome->get_nodes(), genome->get_edges());
         genome_copy->initialize();
 
         //for more variability in the initial population, re-initialize weights and bias for these unevaluated copies
@@ -1457,7 +1454,8 @@ bool EXACT::insert_genome(CNN_Genome* genome) {
     for (int32_t i = 0; i < (int32_t)genomes.size(); i++) {
         cout << "\t" << setw(4) << i << " -- genome: " << setw(10) << genomes[i]->get_generation_id() << ", "
             << setw(10) << left << "fit: " << right << setw(12) << setprecision(2) << fixed << parse_fitness(genomes[i]->get_fitness())
-            //<< ", " << genomes[i]->get_number_training_images() << ", " << genomes[i]->get_number_test_images() << ", " << genomes[i]->get_generalizability_constant()
+            << ", " << setw(10) << left << "gen err: " << right << setw(12) << setprecision(2) << fixed << parse_fitness(genomes[i]->get_generalizability_error())
+            << " (" << setw(5) << fixed << setprecision(2) << genomes[i]->get_generalizability_rate() << "%), "
             << ", " << setw(10) << left << "test err: " << right << setw(12) << setprecision(2) << fixed << parse_fitness(genomes[i]->get_test_error())
             << " (" << setw(5) << fixed << setprecision(2) << genomes[i]->get_test_rate() << "%), "
             << setw(10) << left << "train err: " << right << setw(12) << setprecision(2) << fixed << parse_fitness(genomes[i]->get_best_error())
@@ -1591,7 +1589,7 @@ CNN_Genome* EXACT::create_mutation() {
         generate_simplex_hyperparameters(mu, mu_delta, learning_rate, learning_rate_delta, weight_decay, weight_decay_delta, alpha, velocity_reset, input_dropout_probability, hidden_dropout_probability, batch_size);
     }
 
-    CNN_Genome *child = new CNN_Genome(genomes_generated++, number_training_images, number_generalizability_images, number_test_images, child_seed, max_epochs, reset_weights, generalizability_constant, velocity_reset, mu, mu_delta, learning_rate, learning_rate_delta, weight_decay, weight_decay_delta, batch_size, epsilon, alpha, input_dropout_probability, hidden_dropout_probability, parent->get_nodes(), parent->get_edges());
+    CNN_Genome *child = new CNN_Genome(genomes_generated++, number_training_images, number_generalizability_images, number_test_images, child_seed, max_epochs, reset_weights, velocity_reset, mu, mu_delta, learning_rate, learning_rate_delta, weight_decay, weight_decay_delta, batch_size, epsilon, alpha, input_dropout_probability, hidden_dropout_probability, parent->get_nodes(), parent->get_edges());
 
     cout << "\tchild nodes:" << endl;
     for (int32_t i = 0; i < child->get_number_nodes(); i++) {
@@ -2286,7 +2284,7 @@ CNN_Genome* EXACT::create_child() {
         generate_simplex_hyperparameters(mu, mu_delta, learning_rate, learning_rate_delta, weight_decay, weight_decay_delta, alpha, velocity_reset, input_dropout_probability, hidden_dropout_probability, batch_size);
     }
 
-    CNN_Genome *child = new CNN_Genome(genomes_generated++, number_training_images, number_generalizability_images, number_test_images, genome_seed, max_epochs, reset_weights, generalizability_constant, velocity_reset, mu, mu_delta, learning_rate, learning_rate_delta, weight_decay, weight_decay_delta, batch_size, epsilon, alpha, input_dropout_probability, hidden_dropout_probability, child_nodes, child_edges);
+    CNN_Genome *child = new CNN_Genome(genomes_generated++, number_training_images, number_generalizability_images, number_test_images, genome_seed, max_epochs, reset_weights, velocity_reset, mu, mu_delta, learning_rate, learning_rate_delta, weight_decay, weight_decay_delta, batch_size, epsilon, alpha, input_dropout_probability, hidden_dropout_probability, child_nodes, child_edges);
 
     child->set_generated_by_crossover();
 
