@@ -2,6 +2,8 @@
 using std::isnan;
 using std::isinf;
 
+#include <chrono>
+
 #include <fstream>
 using std::ofstream;
 using std::ifstream;
@@ -681,7 +683,8 @@ void CNN_Edge::check_output_update(const vector< vector< vector<float> > > &outp
 void CNN_Edge::propagate_forward(bool training, bool accumulate_test_statistics, float epsilon, float alpha, bool perform_dropout, float hidden_dropout_probability, minstd_rand0 &generator) {
     if (!is_reachable()) return;
 
-    float propagate_forward_start_time = time(NULL);
+    using namespace std::chrono;
+    high_resolution_clock::time_point propagate_forward_start_time = high_resolution_clock::now();
 
     vector< vector< vector<float> > > &input = input_node->get_values_out();
     vector< vector< vector<float> > > &output = output_node->get_values_in();
@@ -789,14 +792,19 @@ void CNN_Edge::propagate_forward(bool training, bool accumulate_test_statistics,
         }
     }
 
-    propagate_forward_time += time(NULL) - propagate_forward_start_time;
+    high_resolution_clock::time_point propagate_forward_end_time = high_resolution_clock::now();
+    duration<float, std::milli> time_span = propagate_forward_end_time - propagate_forward_start_time;
+
+    propagate_forward_time += time_span.count() / 1000.0;
+
 	output_node->input_fired(training, accumulate_test_statistics, epsilon, alpha, perform_dropout, hidden_dropout_probability, generator);
 }
 
 void CNN_Edge::update_weights(float mu, float learning_rate, float weight_decay) {
     if (!is_reachable()) return;
 
-    float weight_update_start_time = time(NULL);
+    using namespace std::chrono;
+    high_resolution_clock::time_point weight_update_start_time = high_resolution_clock::now();
 
     float dx, pv, velocity, weight;
 #ifdef NAN_CHECKS
@@ -878,7 +886,10 @@ void CNN_Edge::update_weights(float mu, float learning_rate, float weight_decay)
         }
     }
 
-    weight_update_time += time(NULL) - weight_update_start_time;
+    high_resolution_clock::time_point weight_update_end_time = high_resolution_clock::now();
+    duration<float, std::milli> time_span = weight_update_end_time - weight_update_start_time;
+
+    weight_update_time += time_span.count() / 1000.0;
 }
 
 void CNN_Edge::check_weight_update(const vector< vector< vector<float> > > &input, const vector< vector< vector<float> > > &input_errors, float error, float previous_error, float weight_update, float previous_weight_update, int batch_number, int out_y, int out_x, int in_y, int in_x) {
@@ -916,7 +927,8 @@ void CNN_Edge::check_weight_update(const vector< vector< vector<float> > > &inpu
 void CNN_Edge::propagate_backward(float mu, float learning_rate, float epsilon) {
     if (!is_reachable()) return;
 
-    float propagate_backward_start_time = time(NULL);
+    using namespace std::chrono;
+    high_resolution_clock::time_point propagate_backward_start_time = high_resolution_clock::now();
 
     vector< vector< vector<float> > > &output_errors = output_node->get_errors_in();
 
@@ -1070,7 +1082,10 @@ void CNN_Edge::propagate_backward(float mu, float learning_rate, float epsilon) 
         }
     }
 
-    propagate_backward_time += time(NULL) - propagate_backward_start_time;
+    high_resolution_clock::time_point propagate_backward_end_time = high_resolution_clock::now();
+    duration<float, std::milli> time_span = propagate_backward_end_time - propagate_backward_start_time;
+
+    propagate_backward_time += time_span.count() / 1000.0;
 
     input_node->output_fired(mu, learning_rate, epsilon);
 }

@@ -1080,7 +1080,9 @@ void CNN_Node::set_values(const vector<Image> &images, int channel, bool perform
 
 
 void CNN_Node::input_fired(bool training, bool accumulate_test_statistics, float epsilon, float alpha, bool perform_dropout, float hidden_dropout_probability, minstd_rand0 &generator) {
-    float input_fired_start_time = time(NULL);
+
+    using namespace std::chrono;
+    high_resolution_clock::time_point input_fired_start_time = high_resolution_clock::now();
 
     inputs_fired++;
 
@@ -1107,11 +1109,16 @@ void CNN_Node::input_fired(bool training, bool accumulate_test_statistics, float
         exit(1);
     }
 
-    input_fired_time += time(NULL) - input_fired_start_time;
+    high_resolution_clock::time_point input_fired_end_time = high_resolution_clock::now();
+    duration<float, std::milli> time_span = input_fired_end_time - input_fired_start_time;
+
+    input_fired_time += time_span.count() / 1000.0;
 }
 
 void CNN_Node::output_fired(float mu, float learning_rate, float epsilon) {
-    float output_fired_start_time = time(NULL);
+    using namespace std::chrono;
+    high_resolution_clock::time_point output_fired_start_time = high_resolution_clock::now();
+
 
     outputs_fired++;
 
@@ -1135,7 +1142,11 @@ void CNN_Node::output_fired(float mu, float learning_rate, float epsilon) {
         exit(1);
     }
 
-    output_fired_time += time(NULL) - output_fired_start_time;
+
+    high_resolution_clock::time_point output_fired_end_time = high_resolution_clock::now();
+    duration<float, std::milli> time_span = output_fired_end_time - output_fired_start_time;
+
+    output_fired_time += time_span.count() / 1000.0;
 }
 
 

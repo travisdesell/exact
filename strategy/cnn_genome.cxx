@@ -1331,7 +1331,9 @@ void CNN_Genome::evaluate(const Images &images, float &total_error, int &correct
     int required_for_reset = velocity_reset;
 
 
-    float epoch_start_time = time(NULL);
+    using namespace std::chrono;
+
+    high_resolution_clock::time_point epoch_start_time = high_resolution_clock::now();
 
     for (uint32_t i = 0; i < nodes.size(); i++) {
         nodes[i]->reset_times();
@@ -1380,7 +1382,10 @@ void CNN_Genome::evaluate(const Images &images, float &total_error, int &correct
         }
     }
 
-    float epoch_time = time(NULL) - epoch_start_time;
+    high_resolution_clock::time_point epoch_end_time = high_resolution_clock::now();
+    duration<float, std::milli> time_span = epoch_end_time - epoch_start_time;
+
+    float epoch_time = time_span.count() / 1000.0;
     float input_fired_time = 0.0;
     float output_fired_time = 0.0;
 
