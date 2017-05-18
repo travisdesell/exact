@@ -55,7 +55,7 @@ class EXACT {
         minstd_rand0 generator;
         NormalDistribution normal_distribution;
         uniform_int_distribution<long> rng_long;
-        uniform_real_distribution<double> rng_double;
+        uniform_real_distribution<float> rng_float;
 
         vector <CNN_Node* > all_nodes;
         vector <CNN_Edge* > all_edges;
@@ -70,83 +70,83 @@ class EXACT {
         int max_epochs;
 
 
-        double initial_batch_size_min;
-        double initial_batch_size_max;
-        double batch_size_min;
-        double batch_size_max;
+        float initial_batch_size_min;
+        float initial_batch_size_max;
+        float batch_size_min;
+        float batch_size_max;
 
-        double initial_mu_min;
-        double initial_mu_max;
-        double mu_min;
-        double mu_max;
+        float initial_mu_min;
+        float initial_mu_max;
+        float mu_min;
+        float mu_max;
 
-        double initial_mu_delta_min;
-        double initial_mu_delta_max;
-        double mu_delta_min;
-        double mu_delta_max;
+        float initial_mu_delta_min;
+        float initial_mu_delta_max;
+        float mu_delta_min;
+        float mu_delta_max;
 
-        double initial_learning_rate_min;
-        double initial_learning_rate_max;
-        double learning_rate_min;
-        double learning_rate_max;
+        float initial_learning_rate_min;
+        float initial_learning_rate_max;
+        float learning_rate_min;
+        float learning_rate_max;
 
-        double initial_learning_rate_delta_min;
-        double initial_learning_rate_delta_max;
-        double learning_rate_delta_min;
-        double learning_rate_delta_max;
+        float initial_learning_rate_delta_min;
+        float initial_learning_rate_delta_max;
+        float learning_rate_delta_min;
+        float learning_rate_delta_max;
 
-        double initial_weight_decay_min;
-        double initial_weight_decay_max;
-        double weight_decay_min;
-        double weight_decay_max;
+        float initial_weight_decay_min;
+        float initial_weight_decay_max;
+        float weight_decay_min;
+        float weight_decay_max;
 
-        double initial_weight_decay_delta_min;
-        double initial_weight_decay_delta_max;
-        double weight_decay_delta_min;
-        double weight_decay_delta_max;
+        float initial_weight_decay_delta_min;
+        float initial_weight_decay_delta_max;
+        float weight_decay_delta_min;
+        float weight_decay_delta_max;
 
-        double epsilon;
+        float epsilon;
 
-        double initial_alpha_min;
-        double initial_alpha_max;
-        double alpha_min;
-        double alpha_max;
+        float initial_alpha_min;
+        float initial_alpha_max;
+        float alpha_min;
+        float alpha_max;
 
         int initial_velocity_reset_min;
         int initial_velocity_reset_max;
         int velocity_reset_min;
         int velocity_reset_max;
 
-        double initial_input_dropout_probability_min;
-        double initial_input_dropout_probability_max;
-        double input_dropout_probability_min;
-        double input_dropout_probability_max;
+        float initial_input_dropout_probability_min;
+        float initial_input_dropout_probability_max;
+        float input_dropout_probability_min;
+        float input_dropout_probability_max;
 
-        double initial_hidden_dropout_probability_min;
-        double initial_hidden_dropout_probability_max;
-        double hidden_dropout_probability_min;
-        double hidden_dropout_probability_max;
+        float initial_hidden_dropout_probability_min;
+        float initial_hidden_dropout_probability_max;
+        float hidden_dropout_probability_min;
+        float hidden_dropout_probability_max;
 
 
         bool sort_by_fitness;
-        double reset_weights_chance;
+        float reset_weights_chance;
 
-        double no_modification_rate;
-        double crossover_rate;
-        double more_fit_parent_crossover;
-        double less_fit_parent_crossover;
+        float no_modification_rate;
+        float crossover_rate;
+        float more_fit_parent_crossover;
+        float less_fit_parent_crossover;
 
         int number_mutations;
-        double edge_disable;
-        double edge_enable;
-        double edge_split;
-        double edge_add;
-        double edge_change_stride;
-        double node_change_size;
-        double node_change_size_x;
-        double node_change_size_y;
-        double node_change_pool_size;
-        double node_add;
+        float edge_disable;
+        float edge_enable;
+        float edge_split;
+        float edge_add;
+        float edge_change_stride;
+        float node_change_size;
+        float node_change_size_x;
+        float node_change_size_y;
+        float node_change_pool_size;
+        float node_add;
 
         int inserted_from_disable_edge;
         int inserted_from_enable_edge;
@@ -184,9 +184,9 @@ class EXACT {
         int32_t population_contains(CNN_Genome *genome) const;
         CNN_Genome* get_best_genome();
 
-        void generate_initial_hyperparameters(double &mu, double &mu_delta, double &learning_rate, double &learning_rate_delta, double &weight_decay, double &weight_decay_delta, double &alpha, int &velocity_reset, double &input_dropout_probability, double &hidden_dropout_probability, int &batch_size);
+        void generate_initial_hyperparameters(float &mu, float &mu_delta, float &learning_rate, float &learning_rate_delta, float &weight_decay, float &weight_decay_delta, float &alpha, int &velocity_reset, float &input_dropout_probability, float &hidden_dropout_probability, int &batch_size);
 
-        void generate_simplex_hyperparameters(double &mu, double &mu_delta, double &learning_rate, double &learning_rate_delta, double &weight_decay, double &weight_decay_delta, double &alpha, int &velocity_reset, double &input_dropout_probability, double &hidden_dropout_probability, int &batch_size);
+        void generate_simplex_hyperparameters(float &mu, float &mu_delta, float &learning_rate, float &learning_rate_delta, float &weight_decay, float &weight_decay_delta, float &alpha, int &velocity_reset, float &input_dropout_probability, float &hidden_dropout_probability, int &batch_size);
 
 
         bool add_edge(CNN_Genome *child, CNN_Node *node1, CNN_Node *node2);
@@ -200,7 +200,7 @@ class EXACT {
         int get_inserted_genomes() const;
         int get_max_genomes() const;
 
-        void write_statistics(int new_generation_id, double new_fitness);
+        void write_statistics(int new_generation_id, float new_fitness);
         void write_statistics_header();
         void write_hyperparameters_header();
 

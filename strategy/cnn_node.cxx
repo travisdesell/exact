@@ -47,9 +47,9 @@ using std::vector;
 
 #include "stdint.h"
 
-double read_hexfloat(istream &infile) {
+float read_hexfloat(istream &infile) {
 #ifdef _WIN32
-	double result;
+	float result;
 	infile >> std::hexfloat >> result >> std::defaultfloat;
 	return result;
 #else
@@ -59,10 +59,10 @@ double read_hexfloat(istream &infile) {
 #endif
 }
 
-void write_hexfloat(ostream &outfile, double value) {
+void write_hexfloat(ostream &outfile, float value) {
 #ifdef _WIN32
     char hf[32];
-    sprintf(hf, "%la", value);
+    sprintf(hf, "%a", value);
     outfile << hf;
 #else
     outfile << std::hexfloat << value << std::defaultfloat;
@@ -97,7 +97,7 @@ CNN_Node::CNN_Node() {
     best_running_variance = 1.0;
 }
 
-CNN_Node::CNN_Node(int _innovation_number, double _depth, int _batch_size, int _size_x, int _size_y, int _type) {
+CNN_Node::CNN_Node(int _innovation_number, float _depth, int _batch_size, int _size_x, int _size_y, int _type) {
     node_id = -1;
     exact_id = -1;
     genome_id = -1;
@@ -138,12 +138,12 @@ CNN_Node::CNN_Node(int _innovation_number, double _depth, int _batch_size, int _
     running_variance = 1.0;
     best_running_variance = 1.0;
 
-    values_in = vector< vector< vector<double > > >(batch_size, vector< vector<double> >(size_y, vector<double>(size_x, 0.0)));
-    errors_in = vector< vector< vector<double > > >(batch_size, vector< vector<double> >(size_y, vector<double>(size_x, 0.0)));
+    values_in = vector< vector< vector<float > > >(batch_size, vector< vector<float> >(size_y, vector<float>(size_x, 0.0)));
+    errors_in = vector< vector< vector<float > > >(batch_size, vector< vector<float> >(size_y, vector<float>(size_x, 0.0)));
 
-    values_out = vector< vector< vector<double > > >(batch_size, vector< vector<double> >(size_y, vector<double>(size_x, 0.0)));
-    errors_out = vector< vector< vector<double > > >(batch_size, vector< vector<double> >(size_y, vector<double>(size_x, 0.0)));
-    relu_gradients = vector< vector< vector<double > > >(batch_size, vector< vector<double> >(size_y, vector<double>(size_x, 0.0)));
+    values_out = vector< vector< vector<float > > >(batch_size, vector< vector<float> >(size_y, vector<float>(size_x, 0.0)));
+    errors_out = vector< vector< vector<float > > >(batch_size, vector< vector<float> >(size_y, vector<float>(size_x, 0.0)));
+    relu_gradients = vector< vector< vector<float > > >(batch_size, vector< vector<float> >(size_y, vector<float>(size_x, 0.0)));
 }
 
 #ifdef _MYSQL_
@@ -207,12 +207,12 @@ CNN_Node::CNN_Node(int _node_id) {
     weight_count = 0;
 
     //initialize arrays not stored to database
-    values_in = vector< vector< vector<double > > >(batch_size, vector< vector<double> >(size_y, vector<double>(size_x, 0.0)));
-    errors_in = vector< vector< vector<double > > >(batch_size, vector< vector<double> >(size_y, vector<double>(size_x, 0.0)));
+    values_in = vector< vector< vector<float > > >(batch_size, vector< vector<float> >(size_y, vector<float>(size_x, 0.0)));
+    errors_in = vector< vector< vector<float > > >(batch_size, vector< vector<float> >(size_y, vector<float>(size_x, 0.0)));
 
-    values_out = vector< vector< vector<double > > >(batch_size, vector< vector<double> >(size_y, vector<double>(size_x, 0.0)));
-    relu_gradients = vector< vector< vector<double > > >(batch_size, vector< vector<double> >(size_y, vector<double>(size_x, 0.0)));
-    errors_out = vector< vector< vector<double > > >(batch_size, vector< vector<double> >(size_y, vector<double>(size_x, 0.0)));
+    values_out = vector< vector< vector<float > > >(batch_size, vector< vector<float> >(size_y, vector<float>(size_x, 0.0)));
+    relu_gradients = vector< vector< vector<float > > >(batch_size, vector< vector<float> >(size_y, vector<float>(size_x, 0.0)));
+    errors_out = vector< vector< vector<float > > >(batch_size, vector< vector<float> >(size_y, vector<float>(size_x, 0.0)));
 
     //cout << "read node!" << endl;
     //cout << this << endl;
@@ -328,12 +328,12 @@ void CNN_Node::initialize() {
     beta = 0.0;
     needs_initialization = false;
 
-    values_in = vector< vector< vector<double> > >(batch_size, vector< vector<double> >(size_y, vector<double>(size_x, 0.0)));
-    errors_in = vector< vector< vector<double> > >(batch_size, vector< vector<double> >(size_y, vector<double>(size_x, 0.0)));
+    values_in = vector< vector< vector<float> > >(batch_size, vector< vector<float> >(size_y, vector<float>(size_x, 0.0)));
+    errors_in = vector< vector< vector<float> > >(batch_size, vector< vector<float> >(size_y, vector<float>(size_x, 0.0)));
 
-    values_out = vector< vector< vector<double> > >(batch_size, vector< vector<double> >(size_y, vector<double>(size_x, 0.0)));
-    errors_out = vector< vector< vector<double> > >(batch_size, vector< vector<double> >(size_y, vector<double>(size_x, 0.0)));
-    relu_gradients = vector< vector< vector<double> > >(batch_size, vector< vector<double> >(size_y, vector<double>(size_x, 0.0)));
+    values_out = vector< vector< vector<float> > >(batch_size, vector< vector<float> >(size_y, vector<float>(size_x, 0.0)));
+    errors_out = vector< vector< vector<float> > >(batch_size, vector< vector<float> >(size_y, vector<float>(size_x, 0.0)));
+    relu_gradients = vector< vector< vector<float> > >(batch_size, vector< vector<float> >(size_y, vector<float>(size_x, 0.0)));
 }
 
 void CNN_Node::reset_velocities() {
@@ -532,69 +532,69 @@ int CNN_Node::get_innovation_number() const {
     return innovation_number;
 }
 
-double CNN_Node::get_depth() const {
+float CNN_Node::get_depth() const {
     return depth;
 }
 
 void CNN_Node::resize_arrays() {
-    values_in = vector< vector< vector<double> > >(batch_size, vector< vector<double> >(size_y, vector<double>(size_x, 0.0)));
-    errors_in = vector< vector< vector<double> > >(batch_size, vector< vector<double> >(size_y, vector<double>(size_x, 0.0)));
+    values_in = vector< vector< vector<float> > >(batch_size, vector< vector<float> >(size_y, vector<float>(size_x, 0.0)));
+    errors_in = vector< vector< vector<float> > >(batch_size, vector< vector<float> >(size_y, vector<float>(size_x, 0.0)));
 
-    values_out = vector< vector< vector<double> > >(batch_size, vector< vector<double> >(size_y, vector<double>(size_x, 0.0)));
-    errors_out = vector< vector< vector<double> > >(batch_size, vector< vector<double> >(size_y, vector<double>(size_x, 0.0)));
-    relu_gradients = vector< vector< vector<double> > >(batch_size, vector< vector<double> >(size_y, vector<double>(size_x, 0.0)));
+    values_out = vector< vector< vector<float> > >(batch_size, vector< vector<float> >(size_y, vector<float>(size_x, 0.0)));
+    errors_out = vector< vector< vector<float> > >(batch_size, vector< vector<float> >(size_y, vector<float>(size_x, 0.0)));
+    relu_gradients = vector< vector< vector<float> > >(batch_size, vector< vector<float> >(size_y, vector<float>(size_x, 0.0)));
 
     needs_initialization = true;
 }
 
 
-double CNN_Node::get_value_in(int batch_number, int y, int x) {
+float CNN_Node::get_value_in(int batch_number, int y, int x) {
     return values_in[batch_number][y][x];
 }
 
-void CNN_Node::set_value_in(int batch_number, int y, int x, double value) {
+void CNN_Node::set_value_in(int batch_number, int y, int x, float value) {
     values_in[batch_number][y][x] = value;
 }
 
-vector< vector< vector<double> >>& CNN_Node::get_values_in() {
+vector< vector< vector<float> >>& CNN_Node::get_values_in() {
     return values_in;
 }
 
-double CNN_Node::get_value_out(int batch_number, int y, int x) {
+float CNN_Node::get_value_out(int batch_number, int y, int x) {
     return values_out[batch_number][y][x];
 }
 
-void CNN_Node::set_value_out(int batch_number, int y, int x, double value) {
+void CNN_Node::set_value_out(int batch_number, int y, int x, float value) {
     values_out[batch_number][y][x] = value;
 }
 
-vector< vector< vector<double> >>& CNN_Node::get_values_out() {
+vector< vector< vector<float> >>& CNN_Node::get_values_out() {
     return values_out;
 }
 
 
 
-void CNN_Node::set_error_in(int batch_number, int y, int x, double error) {
+void CNN_Node::set_error_in(int batch_number, int y, int x, float error) {
     errors_in[batch_number][y][x] = error;
 }
 
-vector<vector< vector<double> > >& CNN_Node::get_errors_in() {
+vector<vector< vector<float> > >& CNN_Node::get_errors_in() {
     return errors_in;
 }
 
-void CNN_Node::set_error_out(int batch_number, int y, int x, double error) {
+void CNN_Node::set_error_out(int batch_number, int y, int x, float error) {
     errors_out[batch_number][y][x] = error;
 }
 
-vector<vector< vector<double> > >& CNN_Node::get_errors_out() {
+vector<vector< vector<float> > >& CNN_Node::get_errors_out() {
     return errors_out;
 }
 
-void CNN_Node::set_relu_gradient(int batch_number, int y, int x, double gradient) {
+void CNN_Node::set_relu_gradient(int batch_number, int y, int x, float gradient) {
     relu_gradients[batch_number][y][x] = gradient;
 }
 
-vector<vector< vector<double> > >& CNN_Node::get_relu_gradients() {
+vector<vector< vector<float> > >& CNN_Node::get_relu_gradients() {
     return relu_gradients;
 }
 
@@ -657,7 +657,7 @@ void CNN_Node::reset_times() {
     output_fired_time = 0.0;
 }
 
-void CNN_Node::accumulate_times(double &total_input_time, double &total_output_time) {
+void CNN_Node::accumulate_times(float &total_input_time, float &total_output_time) {
     total_input_time += input_fired_time;
     total_output_time += output_fired_time;
 }
@@ -784,7 +784,7 @@ void CNN_Node::divide_test_statistics(int number_batches) {
 }
 
 
-void CNN_Node::batch_normalize(bool training, bool accumulating_test_statistics, double epsilon, double alpha) {
+void CNN_Node::batch_normalize(bool training, bool accumulating_test_statistics, float epsilon, float alpha) {
     //normalize the batch
     if (training || accumulating_test_statistics) {
         batch_mean = 0.0;
@@ -804,7 +804,7 @@ void CNN_Node::batch_normalize(bool training, bool accumulating_test_statistics,
         batch_mean /= (uint64_t)batch_size * (uint64_t)size_y * (uint64_t)size_x;
 
         batch_variance = 0.0;
-        double diff;
+        float diff;
         for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
             for (int32_t y = 0; y < size_y; y++) {
                 for (int32_t x = 0; x < size_x; x++) {
@@ -821,7 +821,7 @@ void CNN_Node::batch_normalize(bool training, bool accumulating_test_statistics,
 
         //cout << endl;
         //cout << "post-batch normalization on node: " << innovation_number << endl;
-        double temp;
+        float temp;
         for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
             for (int32_t y = 0; y < size_y; y++) {
                 for (int32_t x = 0; x < size_x; x++) {
@@ -872,8 +872,8 @@ void CNN_Node::batch_normalize(bool training, bool accumulating_test_statistics,
         //cout << "\tnode " << innovation_number << ", batch_mean: " << batch_mean << ", batch_variance: " << batch_variance << ", batch_std_dev: " << batch_std_dev << ", running_mean: " << running_mean << ", running_variance: " << running_variance << endl;
 
     } else { //testing
-        double term1 =  gamma / sqrt(running_variance + epsilon);
-        double term2 = beta - ((gamma * running_mean) / sqrt(running_variance + epsilon));
+        float term1 =  gamma / sqrt(running_variance + epsilon);
+        float term2 = beta - ((gamma * running_mean) / sqrt(running_variance + epsilon));
 
         for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
             for (int32_t y = 0; y < size_y; y++) {
@@ -885,7 +885,7 @@ void CNN_Node::batch_normalize(bool training, bool accumulating_test_statistics,
     }
 }
 
-void CNN_Node::apply_relu(vector< vector< vector<double> > > &values, vector< vector< vector<double> > > &gradients) {
+void CNN_Node::apply_relu(vector< vector< vector<float> > > &values, vector< vector< vector<float> > > &gradients) {
     for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
         for (int32_t y = 0; y < size_y; y++) {
             for (int32_t x = 0; x < size_x; x++) {
@@ -906,7 +906,7 @@ void CNN_Node::apply_relu(vector< vector< vector<double> > > &values, vector< ve
     }
 }
 
-void CNN_Node::apply_dropout(vector< vector< vector<double> > > &values, vector< vector< vector<double> > > &gradients, bool perform_dropout, bool accumulate_test_statistics, double dropout_probability, minstd_rand0 &generator) {
+void CNN_Node::apply_dropout(vector< vector< vector<float> > > &values, vector< vector< vector<float> > > &gradients, bool perform_dropout, bool accumulate_test_statistics, float dropout_probability, minstd_rand0 &generator) {
     if (perform_dropout && !accumulate_test_statistics) {
         for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
             for (int32_t y = 0; y < size_y; y++) {
@@ -922,7 +922,7 @@ void CNN_Node::apply_dropout(vector< vector< vector<double> > > &values, vector<
         }
 
     } else {
-        double dropout_scale = 1.0 - dropout_probability;
+        float dropout_scale = 1.0 - dropout_probability;
         for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
             for (int32_t y = 0; y < size_y; y++) {
                 for (int32_t x = 0; x < size_x; x++) {
@@ -933,7 +933,7 @@ void CNN_Node::apply_dropout(vector< vector< vector<double> > > &values, vector<
     }
 }
 
-void CNN_Node::backpropagate_relu(vector< vector< vector<double> > > &errors, vector< vector< vector<double> > > &gradients) {
+void CNN_Node::backpropagate_relu(vector< vector< vector<float> > > &errors, vector< vector< vector<float> > > &gradients) {
     for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
         for (int32_t y = 0; y < size_y; y++) {
             for (int32_t x = 0; x < size_x; x++) {
@@ -944,27 +944,27 @@ void CNN_Node::backpropagate_relu(vector< vector< vector<double> > > &errors, ve
 }
 
 
-void CNN_Node::backpropagate_batch_normalization(double mu, double learning_rate, double epsilon) {
+void CNN_Node::backpropagate_batch_normalization(float mu, float learning_rate, float epsilon) {
     //backprop  batch normalization here
-    double delta_beta = 0.0;
-    double delta_gamma = 0.0;
+    float delta_beta = 0.0;
+    float delta_gamma = 0.0;
 
-    double value_in;
-    double value_hat;
-    //double value_out;
-    double delta_out;
-    //double delta_values_hat;
-    //double delta_values_hat_sum = 0.0;
-    //double delta_values_hat_x_values_sum = 0.0;
+    float value_in;
+    float value_hat;
+    //float value_out;
+    float delta_out;
+    //float delta_values_hat;
+    //float delta_values_hat_sum = 0.0;
+    //float delta_values_hat_x_values_sum = 0.0;
 
-    double derr_dvariance = 0.0;
-    double derr_dmean = 0.0;
+    float derr_dvariance = 0.0;
+    float derr_dmean = 0.0;
 
-    double derr_dmean_term1 = 0.0;
-    double derr_dmean_term2 = 0.0;
+    float derr_dmean_term1 = 0.0;
+    float derr_dmean_term2 = 0.0;
 
-    double m = (uint64_t)batch_size * (uint64_t)size_y * (uint64_t)size_x;
-    double diff;
+    float m = (uint64_t)batch_size * (uint64_t)size_y * (uint64_t)size_x;
+    float diff;
 
     for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
         for (int32_t y = 0; y < size_y; y++) {
@@ -986,8 +986,8 @@ void CNN_Node::backpropagate_batch_normalization(double mu, double learning_rate
         }
     }
 
-    double inv_m = 1.0 / m;
-    double inv_m_x_2 = 2.0 * inv_m;
+    float inv_m = 1.0 / m;
+    float inv_m_x_2 = 2.0 * inv_m;
 
     derr_dvariance *= -0.5 * pow(batch_variance + epsilon, -1.5);
     derr_dmean_term1 *= -inverse_variance;
@@ -1023,9 +1023,9 @@ void CNN_Node::backpropagate_batch_normalization(double mu, double learning_rate
     }
 
     //backpropagate beta
-    double pv_beta = previous_velocity_beta;
+    float pv_beta = previous_velocity_beta;
 
-    double velocity_beta = (mu * pv_beta) - learning_rate * delta_beta;
+    float velocity_beta = (mu * pv_beta) - learning_rate * delta_beta;
     beta += velocity_beta + mu * (velocity_beta - pv_beta);
     //beta += velocity_beta;
 
@@ -1035,9 +1035,9 @@ void CNN_Node::backpropagate_batch_normalization(double mu, double learning_rate
     previous_velocity_beta = velocity_beta;
 
     //backpropagate gamma
-    double pv_gamma = previous_velocity_gamma;
+    float pv_gamma = previous_velocity_gamma;
 
-    double velocity_gamma = (mu * pv_gamma) - learning_rate * delta_gamma;
+    float velocity_gamma = (mu * pv_gamma) - learning_rate * delta_gamma;
     //gamma += velocity_gamma;
     gamma += velocity_gamma + mu * (velocity_gamma - pv_gamma);
     //gamma += (-mu * pv_gamma + (1 + mu) * velocity_gamma);
@@ -1049,7 +1049,7 @@ void CNN_Node::backpropagate_batch_normalization(double mu, double learning_rate
 }
 
 
-void CNN_Node::set_values(const vector<Image> &images, int channel, bool perform_dropout, bool accumulate_test_statistics, double input_dropout_probability, minstd_rand0 &generator) {
+void CNN_Node::set_values(const vector<Image> &images, int channel, bool perform_dropout, bool accumulate_test_statistics, float input_dropout_probability, minstd_rand0 &generator) {
     //images.size() may be less than batch size, in the case when the total number of images is not divisible by the batch_size
     if (images.size() > batch_size) {
         cerr << "ERROR: number of batch images: " << images.size() << " > batch_size of input node: " << batch_size << endl;
@@ -1079,8 +1079,8 @@ void CNN_Node::set_values(const vector<Image> &images, int channel, bool perform
 }
 
 
-void CNN_Node::input_fired(bool training, bool accumulate_test_statistics, double epsilon, double alpha, bool perform_dropout, double hidden_dropout_probability, minstd_rand0 &generator) {
-    double input_fired_start_time = time(NULL);
+void CNN_Node::input_fired(bool training, bool accumulate_test_statistics, float epsilon, float alpha, bool perform_dropout, float hidden_dropout_probability, minstd_rand0 &generator) {
+    float input_fired_start_time = time(NULL);
 
     inputs_fired++;
 
@@ -1110,8 +1110,8 @@ void CNN_Node::input_fired(bool training, bool accumulate_test_statistics, doubl
     input_fired_time += time(NULL) - input_fired_start_time;
 }
 
-void CNN_Node::output_fired(double mu, double learning_rate, double epsilon) {
-    double output_fired_start_time = time(NULL);
+void CNN_Node::output_fired(float mu, float learning_rate, float epsilon) {
+    float output_fired_start_time = time(NULL);
 
     outputs_fired++;
 
@@ -1165,10 +1165,10 @@ void CNN_Node::print_statistics() {
     print_statistics(values_out, errors_out, relu_gradients);
 }
 
-void CNN_Node::print_statistics(const vector< vector< vector<double> > > &values, const vector< vector< vector<double> > > &errors, const vector< vector< vector<double> > > &gradients) {
-    double value_min = std::numeric_limits<double>::max(), value_max = -std::numeric_limits<double>::max(), value_avg = 0.0;
-    double error_min = std::numeric_limits<double>::max(), error_max = -std::numeric_limits<double>::max(), error_avg = 0.0;
-    double gradient_min = std::numeric_limits<double>::max(), gradient_max = -std::numeric_limits<double>::max(), gradient_avg = 0.0;
+void CNN_Node::print_statistics(const vector< vector< vector<float> > > &values, const vector< vector< vector<float> > > &errors, const vector< vector< vector<float> > > &gradients) {
+    float value_min = std::numeric_limits<float>::max(), value_max = -std::numeric_limits<float>::max(), value_avg = 0.0;
+    float error_min = std::numeric_limits<float>::max(), error_max = -std::numeric_limits<float>::max(), error_avg = 0.0;
+    float gradient_min = std::numeric_limits<float>::max(), gradient_max = -std::numeric_limits<float>::max(), gradient_avg = 0.0;
 
     for (int batch_number = 0; batch_number < batch_size; batch_number++) {
         for (int y = 0; y < size_y; y++) {
@@ -1275,12 +1275,12 @@ std::istream &operator>>(std::istream &is, CNN_Node* node) {
     node->forward_visited = false;
     node->reverse_visited = false;
 
-    node->values_in = vector< vector< vector<double> > >(node->batch_size, vector< vector<double> >(node->size_y, vector<double>(node->size_x, 0.0)));
-    node->errors_in = vector< vector< vector<double> > >(node->batch_size, vector< vector<double> >(node->size_y, vector<double>(node->size_x, 0.0)));
+    node->values_in = vector< vector< vector<float> > >(node->batch_size, vector< vector<float> >(node->size_y, vector<float>(node->size_x, 0.0)));
+    node->errors_in = vector< vector< vector<float> > >(node->batch_size, vector< vector<float> >(node->size_y, vector<float>(node->size_x, 0.0)));
 
-    node->values_out = vector< vector< vector<double> > >(node->batch_size, vector< vector<double> >(node->size_y, vector<double>(node->size_x, 0.0)));
-    node->errors_out = vector< vector< vector<double> > >(node->batch_size, vector< vector<double> >(node->size_y, vector<double>(node->size_x, 0.0)));
-    node->relu_gradients = vector< vector< vector<double> > >(node->batch_size, vector< vector<double> >(node->size_y, vector<double>(node->size_x, 0.0)));
+    node->values_out = vector< vector< vector<float> > >(node->batch_size, vector< vector<float> >(node->size_y, vector<float>(node->size_x, 0.0)));
+    node->errors_out = vector< vector< vector<float> > >(node->batch_size, vector< vector<float> >(node->size_y, vector<float>(node->size_x, 0.0)));
+    node->relu_gradients = vector< vector< vector<float> > >(node->batch_size, vector< vector<float> >(node->size_y, vector<float>(node->size_x, 0.0)));
 
     return is;
 }

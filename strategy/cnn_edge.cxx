@@ -96,12 +96,12 @@ CNN_Edge::CNN_Edge(CNN_Node *_input_node, CNN_Node *_output_node, bool _fixed, i
 
     //cout << "\t\tcreated edge " << innovation_number << " (node " << input_node_innovation_number << " to " << output_node_innovation_number << ") with filter_x: " << filter_x << " (input: " << input_node->get_size_x() << ", output: " << output_node->get_size_x() << ") and filter_y: " << filter_y << " (input: " << input_node->get_size_y() << ", output: " << output_node->get_size_y() << "), reverse filter: " << reverse_filter_x << ", reverse_filter_y: " << reverse_filter_y << endl;
 
-    weights = vector< vector<double> >(filter_y, vector<double>(filter_x, 0.0));
-    weight_updates = vector< vector<double> >(filter_y, vector<double>(filter_x, 0.0));
-    best_weights = vector< vector<double> >(filter_y, vector<double>(filter_x, 0.0));
+    weights = vector< vector<float> >(filter_y, vector<float>(filter_x, 0.0));
+    weight_updates = vector< vector<float> >(filter_y, vector<float>(filter_x, 0.0));
+    best_weights = vector< vector<float> >(filter_y, vector<float>(filter_x, 0.0));
 
-    previous_velocity = vector< vector<double> >(filter_y, vector<double>(filter_x, 0.0));
-    best_velocity = vector< vector<double> >(filter_y, vector<double>(filter_x, 0.0));
+    previous_velocity = vector< vector<float> >(filter_y, vector<float>(filter_x, 0.0));
+    best_velocity = vector< vector<float> >(filter_y, vector<float>(filter_x, 0.0));
 }
 
 CNN_Edge::~CNN_Edge() {
@@ -109,13 +109,13 @@ CNN_Edge::~CNN_Edge() {
     output_node = NULL;
 }
 
-void parse_vector_2d(vector< vector<double> > &output, istringstream &iss, int filter_x, int filter_y) {
+void parse_vector_2d(vector< vector<float> > &output, istringstream &iss, int filter_x, int filter_y) {
     output.clear();
-    output = vector< vector<double> >(filter_y, vector<double>(filter_x));
+    output = vector< vector<float> >(filter_y, vector<float>(filter_x));
 
     int current_x = 0, current_y = 0;
 
-    double val;
+    float val;
     while(iss >> val || !iss.eof()) {
         if (iss.fail()) {
             iss.clear();
@@ -185,9 +185,9 @@ CNN_Edge::CNN_Edge(int _edge_id) {
         exit(1);
     }
 
-    weight_updates = vector< vector<double> >(filter_y, vector<double>(filter_x, 0.0));
-    previous_velocity = vector< vector<double> >(filter_y, vector<double>(filter_x, 0.0));
-    best_velocity = vector< vector<double> >(filter_y, vector<double>(filter_x, 0.0));
+    weight_updates = vector< vector<float> >(filter_y, vector<float>(filter_x, 0.0));
+    previous_velocity = vector< vector<float> >(filter_y, vector<float>(filter_x, 0.0));
+    best_velocity = vector< vector<float> >(filter_y, vector<float>(filter_x, 0.0));
 
     //cout << "read edge!" << endl;
     //cout << this << endl;
@@ -296,7 +296,7 @@ void CNN_Edge::reset_times() {
     weight_update_time = 0.0;
 }
 
-void CNN_Edge::accumulate_times(double &total_forward_time, double &total_backward_time, double &total_weight_update_time) {
+void CNN_Edge::accumulate_times(float &total_forward_time, float &total_backward_time, float &total_weight_update_time) {
     total_forward_time += propagate_forward_time;
     total_backward_time += propagate_backward_time;
     total_weight_update_time += weight_update_time;
@@ -329,8 +329,8 @@ void CNN_Edge::initialize_weights(minstd_rand0 &generator, NormalDistribution &n
         exit(1);
     }
 
-    double mu = 0.0;
-    double sigma = sqrt(2.0 / edge_size);
+    float mu = 0.0;
+    float sigma = sqrt(2.0 / edge_size);
 
     for (uint32_t i = 0; i < weights.size(); i++) {
         for (uint32_t j = 0; j < weights[i].size(); j++) {
@@ -370,12 +370,12 @@ void CNN_Edge::resize() {
         filter_y = (output_node->get_size_y() - input_node->get_size_y()) + 1;
     }
 
-    weights = vector< vector<double> >(filter_y, vector<double>(filter_x, 0.0));
-    weight_updates = vector< vector<double> >(filter_y, vector<double>(filter_x, 0.0));
-    best_weights = vector< vector<double> >(filter_y, vector<double>(filter_x, 0.0));
+    weights = vector< vector<float> >(filter_y, vector<float>(filter_x, 0.0));
+    weight_updates = vector< vector<float> >(filter_y, vector<float>(filter_x, 0.0));
+    best_weights = vector< vector<float> >(filter_y, vector<float>(filter_x, 0.0));
 
-    previous_velocity = vector< vector<double> >(filter_y, vector<double>(filter_x, 0.0));
-    best_velocity = vector< vector<double> >(filter_y, vector<double>(filter_x, 0.0));
+    previous_velocity = vector< vector<float> >(filter_y, vector<float>(filter_x, 0.0));
+    best_velocity = vector< vector<float> >(filter_y, vector<float>(filter_x, 0.0));
 
     needs_initialization = true;
 }
@@ -613,7 +613,7 @@ bool CNN_Edge::connects(int n1, int n2) const {
 bool CNN_Edge::has_zero_weight() const {
     if (is_reachable()) return false;
 
-    double filter_sum = 0.0;
+    float filter_sum = 0.0;
     for (int32_t fy = 0; fy < filter_y; fy++) {
         for (int32_t fx = 0; fx < filter_x; fx++) {
             filter_sum += (weights[fy][fx] * weights[fy][fx]);
@@ -626,7 +626,7 @@ bool CNN_Edge::has_zero_weight() const {
 bool CNN_Edge::has_zero_best_weight() const {
     if (is_reachable()) return false;
 
-    double filter_sum = 0.0;
+    float filter_sum = 0.0;
     for (int32_t fy = 0; fy < filter_y; fy++) {
         for (int32_t fx = 0; fx < filter_x; fx++) {
             filter_sum += (best_weights[fy][fx] * best_weights[fy][fx]);
@@ -658,7 +658,7 @@ void CNN_Edge::print(ostream &out) {
     }
 }
 
-void CNN_Edge::check_output_update(const vector< vector< vector<double> > > &output, const vector< vector< vector<double> > > &input, double value, double weight, double previous_output, int batch_number, int in_y, int in_x, int out_y, int out_x) {
+void CNN_Edge::check_output_update(const vector< vector< vector<float> > > &output, const vector< vector< vector<float> > > &input, float value, float weight, float previous_output, int batch_number, int in_y, int in_x, int out_y, int out_x) {
     if (isnan(output[batch_number][out_y][out_x]) || isinf(output[batch_number][out_y][out_x])) {
         cerr << "ERROR in edge " << innovation_number << " propagate forward!" << endl;
         cerr << "input node innovation number: " << input_node->get_innovation_number() << " at depth: " << input_node->get_depth() << endl;
@@ -678,13 +678,13 @@ void CNN_Edge::check_output_update(const vector< vector< vector<double> > > &out
     }
 }
 
-void CNN_Edge::propagate_forward(bool training, bool accumulate_test_statistics, double epsilon, double alpha, bool perform_dropout, double hidden_dropout_probability, minstd_rand0 &generator) {
+void CNN_Edge::propagate_forward(bool training, bool accumulate_test_statistics, float epsilon, float alpha, bool perform_dropout, float hidden_dropout_probability, minstd_rand0 &generator) {
     if (!is_reachable()) return;
 
-    double propagate_forward_start_time = time(NULL);
+    float propagate_forward_start_time = time(NULL);
 
-    vector< vector< vector<double> > > &input = input_node->get_values_out();
-    vector< vector< vector<double> > > &output = output_node->get_values_in();
+    vector< vector< vector<float> > > &input = input_node->get_values_out();
+    vector< vector< vector<float> > > &output = output_node->get_values_in();
 
 #ifdef NAN_CHECKS
     if (!is_filter_correct()) {
@@ -692,7 +692,7 @@ void CNN_Edge::propagate_forward(bool training, bool accumulate_test_statistics,
         exit(1);
     }
 
-    double previous_output;
+    float previous_output;
 #endif
 
     int output_size_x = output_node->get_size_x();
@@ -704,11 +704,11 @@ void CNN_Edge::propagate_forward(bool training, bool accumulate_test_statistics,
         for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
             for (int32_t fy = 0; fy < filter_y; fy++) {
                 for (int32_t fx = 0; fx < filter_x; fx++) {
-                    double weight = weights[fy][fx];
+                    float weight = weights[fy][fx];
 
                     for (int32_t y = 0; y < input_size_y; y++) {
                         for (int32_t x = 0; x < input_size_x; x++) {
-                            double value = weight * input[batch_number][y][x];
+                            float value = weight * input[batch_number][y][x];
 #ifdef NAN_CHECKS
                             previous_output = output[batch_number][y + fy][x + fx];
 #endif
@@ -726,11 +726,11 @@ void CNN_Edge::propagate_forward(bool training, bool accumulate_test_statistics,
         for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
             for (int32_t fy = 0; fy < filter_y; fy++) {
                 for (int32_t fx = 0; fx < filter_x; fx++) {
-                    double weight = weights[fy][fx];
+                    float weight = weights[fy][fx];
 
                     for (int32_t y = 0; y < output_size_y; y++) {
                         for (int32_t x = 0; x < input_size_x; x++) {
-                            double value = weight * input[batch_number][y + fy][x];
+                            float value = weight * input[batch_number][y + fy][x];
 #ifdef NAN_CHECKS
                             previous_output = output[batch_number][y][x + fx];
 #endif
@@ -748,11 +748,11 @@ void CNN_Edge::propagate_forward(bool training, bool accumulate_test_statistics,
         for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
             for (int32_t fy = 0; fy < filter_y; fy++) {
                 for (int32_t fx = 0; fx < filter_x; fx++) {
-                    double weight = weights[fy][fx];
+                    float weight = weights[fy][fx];
 
                     for (int32_t y = 0; y < input_size_y; y++) {
                         for (int32_t x = 0; x < output_size_x; x++) {
-                            double value = weight * input[batch_number][y][x + fx];
+                            float value = weight * input[batch_number][y][x + fx];
 #ifdef NAN_CHECKS
                             previous_output = output[batch_number][y + fy][x];
 #endif
@@ -770,11 +770,11 @@ void CNN_Edge::propagate_forward(bool training, bool accumulate_test_statistics,
         for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
             for (int32_t fy = 0; fy < filter_y; fy++) {
                 for (int32_t fx = 0; fx < filter_x; fx++) {
-                    double weight = weights[fy][fx];
+                    float weight = weights[fy][fx];
 
                     for (int32_t y = 0; y < output_size_y; y++) {
                         for (int32_t x = 0; x < output_size_x; x++) {
-                            double value = weight * input[batch_number][y + fy][x + fx];
+                            float value = weight * input[batch_number][y + fy][x + fx];
 #ifdef NAN_CHECKS
                             previous_output = output[batch_number][y][x];
 #endif
@@ -793,14 +793,14 @@ void CNN_Edge::propagate_forward(bool training, bool accumulate_test_statistics,
 	output_node->input_fired(training, accumulate_test_statistics, epsilon, alpha, perform_dropout, hidden_dropout_probability, generator);
 }
 
-void CNN_Edge::update_weights(double mu, double learning_rate, double weight_decay) {
+void CNN_Edge::update_weights(float mu, float learning_rate, float weight_decay) {
     if (!is_reachable()) return;
 
-    double weight_update_start_time = time(NULL);
+    float weight_update_start_time = time(NULL);
 
-    double dx, pv, velocity, weight;
+    float dx, pv, velocity, weight;
 #ifdef NAN_CHECKS
-    double previous_weight;
+    float previous_weight;
 #endif
 
 	for (int32_t fy = 0; fy < filter_y; fy++) {
@@ -881,7 +881,7 @@ void CNN_Edge::update_weights(double mu, double learning_rate, double weight_dec
     weight_update_time += time(NULL) - weight_update_start_time;
 }
 
-void CNN_Edge::check_weight_update(const vector< vector< vector<double> > > &input, const vector< vector< vector<double> > > &input_errors, double error, double previous_error, double weight_update, double previous_weight_update, int batch_number, int out_y, int out_x, int in_y, int in_x) {
+void CNN_Edge::check_weight_update(const vector< vector< vector<float> > > &input, const vector< vector< vector<float> > > &input_errors, float error, float previous_error, float weight_update, float previous_weight_update, int batch_number, int out_y, int out_x, int in_y, int in_x) {
     if (isnan(weight_update) || isinf(weight_update)) {
         cerr << "ERROR weight_update became " << weight_update << " in edge " << innovation_number << " (" << input_node_innovation_number << " to " << output_node_innovation_number << ")!" << endl;
         cerr << "\tprevious_weight_udpate: " << previous_weight_update << endl;
@@ -913,17 +913,17 @@ void CNN_Edge::check_weight_update(const vector< vector< vector<double> > > &inp
     }
 }
 
-void CNN_Edge::propagate_backward(double mu, double learning_rate, double epsilon) {
+void CNN_Edge::propagate_backward(float mu, float learning_rate, float epsilon) {
     if (!is_reachable()) return;
 
-    double propagate_backward_start_time = time(NULL);
+    float propagate_backward_start_time = time(NULL);
 
-    vector< vector< vector<double> > > &output_errors = output_node->get_errors_in();
+    vector< vector< vector<float> > > &output_errors = output_node->get_errors_in();
 
-    vector< vector< vector<double> > > &input = input_node->get_values_out();
-    vector< vector< vector<double> > > &input_errors = input_node->get_errors_out();
+    vector< vector< vector<float> > > &input = input_node->get_values_out();
+    vector< vector< vector<float> > > &input_errors = input_node->get_errors_out();
 
-    double weight, weight_update, delta;
+    float weight, weight_update, delta;
 
     int in_x = input_node->get_size_x();
     int in_y = input_node->get_size_y();
@@ -950,8 +950,8 @@ void CNN_Edge::propagate_backward(double mu, double learning_rate, double epsilo
                         for (int32_t x = 0; x < in_x; x++) {
                             delta = output_errors[batch_number][y + fy][x + fx];
 #ifdef NAN_CHECKS                        
-                            double previous_weight_update = weight_update;
-                            double previous_error = input_errors[batch_number][y][x];
+                            float previous_weight_update = weight_update;
+                            float previous_error = input_errors[batch_number][y][x];
 #endif
                             weight_update += input[batch_number][y][x] * delta;
                             input_errors[batch_number][y][x] += delta * weight;
@@ -978,8 +978,8 @@ void CNN_Edge::propagate_backward(double mu, double learning_rate, double epsilo
                         for (int32_t x = 0; x < in_x; x++) {
                             delta = output_errors[batch_number][y][x + fx];
 #ifdef NAN_CHECKS                        
-                            double previous_weight_update = weight_update;
-                            double previous_error = input_errors[batch_number][y][x];
+                            float previous_weight_update = weight_update;
+                            float previous_error = input_errors[batch_number][y][x];
 #endif
                             weight_update += input[batch_number][y + fy][x] * delta;
                             input_errors[batch_number][y + fy][x] += delta * weight;
@@ -1020,8 +1020,8 @@ void CNN_Edge::propagate_backward(double mu, double learning_rate, double epsilo
 
                             delta = output_errors[batch_number][y + fy][x];
 #ifdef NAN_CHECKS                        
-                            double previous_weight_update = weight_update;
-                            double previous_error = input_errors[batch_number][y][x];
+                            float previous_weight_update = weight_update;
+                            float previous_error = input_errors[batch_number][y][x];
 #endif
                             //cout << "thread '" << this_id << "' -- setting input[" << y << "][" << x + fx << "]" << endl;
 
@@ -1052,8 +1052,8 @@ void CNN_Edge::propagate_backward(double mu, double learning_rate, double epsilo
                         for (int32_t x = 0; x < out_x; x++) {
                             delta = output_errors[batch_number][y][x];
 #ifdef NAN_CHECKS                        
-                            double previous_weight_update = weight_update;
-                            double previous_error = input_errors[batch_number][y][x];
+                            float previous_weight_update = weight_update;
+                            float previous_error = input_errors[batch_number][y][x];
 #endif
 
                             weight_update += input[batch_number][y + fy][x + fx] * delta;
@@ -1087,9 +1087,9 @@ bool CNN_Edge::has_nan() const {
 }
 
 void CNN_Edge::print_statistics() {
-    double weight_min = std::numeric_limits<double>::max(), weight_max = -std::numeric_limits<double>::max(), weight_avg = 0.0;
-    double weight_update_min = std::numeric_limits<double>::max(), weight_update_max = -std::numeric_limits<double>::max(), weight_update_avg = 0.0;
-    double velocity_min = std::numeric_limits<double>::max(), velocity_max = -std::numeric_limits<double>::max(), velocity_avg = 0.0;
+    float weight_min = std::numeric_limits<float>::max(), weight_max = -std::numeric_limits<float>::max(), weight_avg = 0.0;
+    float weight_update_min = std::numeric_limits<float>::max(), weight_update_max = -std::numeric_limits<float>::max(), weight_update_avg = 0.0;
+    float velocity_min = std::numeric_limits<float>::max(), velocity_max = -std::numeric_limits<float>::max(), velocity_avg = 0.0;
 
     for (int fy = 0; fy < filter_y; fy++) {
         for (int fx = 0; fx < filter_x; fx++) {
@@ -1189,12 +1189,12 @@ istream &operator>>(istream &is, CNN_Edge* edge) {
     is >> edge->needs_initialization;
     is >> edge->batch_size;
 
-    edge->weights = vector< vector<double> >(edge->filter_y, vector<double>(edge->filter_x, 0.0));
-    edge->weight_updates = vector< vector<double> >(edge->filter_y, vector<double>(edge->filter_x, 0.0));
-    edge->best_weights = vector< vector<double> >(edge->filter_y, vector<double>(edge->filter_x, 0.0));
+    edge->weights = vector< vector<float> >(edge->filter_y, vector<float>(edge->filter_x, 0.0));
+    edge->weight_updates = vector< vector<float> >(edge->filter_y, vector<float>(edge->filter_x, 0.0));
+    edge->best_weights = vector< vector<float> >(edge->filter_y, vector<float>(edge->filter_x, 0.0));
 
-    edge->previous_velocity = vector< vector<double> >(edge->filter_y, vector<double>(edge->filter_x, 0.0));
-    edge->best_velocity = vector< vector<double> >(edge->filter_y, vector<double>(edge->filter_x, 0.0));
+    edge->previous_velocity = vector< vector<float> >(edge->filter_y, vector<float>(edge->filter_x, 0.0));
+    edge->best_velocity = vector< vector<float> >(edge->filter_y, vector<float>(edge->filter_x, 0.0));
 
     string line;
     getline(is, line);
