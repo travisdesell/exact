@@ -42,12 +42,13 @@ class CNN_Edge {
 
         int batch_size;
         int filter_x, filter_y;
-        vector< vector<float> > weights;
-        vector< vector<float> > weight_updates;
-        vector< vector<float> > best_weights;
+        int filter_size;
+        float *weights;
+        float *weight_updates;
+        float *best_weights;
 
-        vector< vector<float> > previous_velocity;
-        vector< vector<float> > best_velocity;
+        float *previous_velocity;
+        float *best_velocity;
 
         bool fixed;
         bool disabled;
@@ -151,6 +152,7 @@ class CNN_Edge {
         friend istream &operator>>(istream &is, CNN_Edge* flight);
 };
 
+void parse_float_2d(float **output, istringstream &iss, int size_x, int size_y);
 void parse_vector_2d(vector<vector<float>> &output, istringstream &iss, int size_x, int size_y);
 
 struct sort_CNN_Edges_by_depth {

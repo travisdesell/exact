@@ -391,19 +391,20 @@ void propagate_forward_1d(uint32_t batch_size, float *input, uint32_t input_y, u
 void propagate_forward_opencl(float *input, float *weights, float *output) {
     cl_int err;
 
-    err = clEnqueueWriteBuffer(queue, input_opencl, CL_TRUE, 0, opencl_input_size, input, 0, NULL, NULL);
-    check_error(err, "couldn't read the output nodes buffer: %d", err);
+    //err = clEnqueueWriteBuffer(queue, input_opencl, CL_TRUE, 0, opencl_input_size, input, 0, NULL, NULL);
+    //check_error(err, "couldn't read the output nodes buffer: %d", err);
 
-    err = clEnqueueWriteBuffer(queue, weights_opencl, CL_TRUE, 0, opencl_weights_size, weights, 0, NULL, NULL);
-    check_error(err, "couldn't read the output nodes buffer: %d", err);
+    //err = clEnqueueWriteBuffer(queue, weights_opencl, CL_TRUE, 0, opencl_weights_size, weights, 0, NULL, NULL);
+    //check_error(err, "couldn't read the output nodes buffer: %d", err);
 
     // Enqueue kernel
     err = clEnqueueNDRangeKernel(queue, kernel, 2, NULL, global_size, local_size, 0, NULL, NULL); 
-    check_error(err, "couldn't enqueue the kernel: %d", err);
+    clFinish(queue);
+    //check_error(err, "couldn't enqueue the kernel: %d", err);
 
     // Read the kernel's output
-    err = clEnqueueReadBuffer(queue, output_opencl, CL_TRUE, 0, opencl_output_size, output, 0, NULL, NULL);
-    check_error(err, "couldn't read the output nodes buffer: %d", err);
+    //err = clEnqueueReadBuffer(queue, output_opencl, CL_TRUE, 0, opencl_output_size, output, 0, NULL, NULL);
+    //check_error(err, "couldn't read the output nodes buffer: %d", err);
 
     /*
     clEnqueueWriteBuffer(queue, input_opencl, CL_TRUE, 0, opencl_input_size, input, 0, NULL, NULL);
