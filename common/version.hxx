@@ -1,6 +1,6 @@
 #ifndef EXACT_VERSION_HXX
 #define EXACT_VERSION_HXX
 
-#define EXACT_VERSION_STR "v0.22"
+#define EXACT_VERSION_STR "v0.25"
 
 #endif

@@ -3,7 +3,7 @@ project (EXACT)
 
 # The version number.
 set (EXACT_VERSION_MAJOR 0)
-set (EXACT_VERSION_MINOR 24)
+set (EXACT_VERSION_MINOR 25)
 
 #add_definitions( -DEXACT_VERSION="${EXACT_VERSION_MAJOR}.${EXACT_VERSION_MINOR}" )
 
