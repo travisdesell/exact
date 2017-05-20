@@ -1,6 +1,8 @@
 #ifndef CNN_PROPAGATION_H
 #define CNN_PROPAGATION_H
 
+#include "stdint.h"
+
 #include <vector>
 using std::vector;
 

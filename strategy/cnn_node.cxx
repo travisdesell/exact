@@ -2,6 +2,8 @@
 using std::isnan;
 using std::isinf;
 
+#include <chrono>
+
 #include <cstdio>
 
 #include <fstream>
