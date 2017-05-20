@@ -35,7 +35,7 @@ using namespace std;
 vector<string> arguments;
 
 
-int progress_function(double progress) {
+int progress_function(float progress) {
     boinc_checkpoint_completed();
     return boinc_fraction_done(progress);
 }

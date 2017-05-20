@@ -646,6 +646,7 @@ void CNN_Node::set_weights_to_best() {
 
 void CNN_Node::update_batch_size(int new_batch_size) {
     batch_size = new_batch_size;
+    total_size = batch_size * size_y * size_x;
     resize_arrays();
 }
 
@@ -658,6 +659,7 @@ bool CNN_Node::modify_size_x(int change) {
     if (size_x <= 0) size_x = 1;
     if (size_x == previous_size_x) return false;
 
+    total_size = batch_size * size_y * size_x;
     resize_arrays();
 
     return true;
@@ -672,6 +674,7 @@ bool CNN_Node::modify_size_y(int change) {
     if (size_y <= 0) size_y = 1;
     if (size_y == previous_size_y) return false;
 
+    total_size = batch_size * size_y * size_x;
     resize_arrays();
 
     return true;
@@ -914,9 +917,7 @@ void CNN_Node::backpropagate_batch_normalization(float mu, float learning_rate, 
             cerr << "batch_size: " << batch_size << endl;
             cerr << "gamma: " << gamma << endl;
             cerr << "delta_out: " << delta_out << endl;
-            cerr << "delta_values_hat_sum: " << delta_values_hat_sum << endl;
             cerr << "values_in[" << current << "]: " << values_in[current] << endl;
-            cerr << "delta_values_hat_x_values_sum: " << delta_values_hat_x_values_sum << endl;
 
             exit(1);
         }

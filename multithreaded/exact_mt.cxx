@@ -101,7 +101,7 @@ int main(int argc, char** argv) {
 
     //exact = new EXACT(training_images, generalizability_images, testing_images, population_size, max_epochs, max_genomes, output_directory, search_name, reset_edges);
 
-    exact = new EXACT(1);
+    exact = new EXACT(3);
 
     vector<thread> threads;
     for (int32_t i = 0; i < number_threads; i++) {

@@ -49,7 +49,7 @@ Image::Image(ifstream &infile, int _channels, int _cols, int _rows, int _classif
     delete [] c_pixels;
 }
 
-double Image::get_pixel(int z, int y, int x) const {
+float Image::get_pixel(int z, int y, int x) const {
     return ((pixels[z][y][x] / 255.0) - images->get_channel_avg(z)) / images->get_channel_std_dev(z);
 }
 
@@ -69,7 +69,7 @@ int Image::get_cols() const {
     return cols;
 }
 
-void Image::get_pixel_avg(vector<double> &channel_avgs) const {
+void Image::get_pixel_avg(vector<float> &channel_avgs) const {
     channel_avgs.clear();
     channel_avgs.assign(channels, 0.0);
 
@@ -83,11 +83,11 @@ void Image::get_pixel_avg(vector<double> &channel_avgs) const {
     }
 }
 
-void Image::get_pixel_variance(const vector<double> &channel_avgs, vector<double> &channel_variances) const {
+void Image::get_pixel_variance(const vector<float> &channel_avgs, vector<float> &channel_variances) const {
     channel_variances.clear();
     channel_variances.assign(channels, 0.0);
 
-    double tmp;
+    float tmp;
     for (int32_t z = 0; z < channels; z++) {
         for (int32_t y = 0; y < cols; y++) {
             for (int32_t x = 0; x < rows; x++) {
@@ -171,7 +171,7 @@ void Images::read_images(string _filename) {
 
 
 
-Images::Images(string _filename, const vector<double> &_channel_avg, const vector<double> &_channel_std_dev) {
+Images::Images(string _filename, const vector<float> &_channel_avg, const vector<float> &_channel_std_dev) {
     filename = _filename;
     read_images(filename);
 
@@ -214,19 +214,19 @@ const Image& Images::get_image(int image) const {
     return images[image];
 }
 
-const vector<double>& Images::get_average() const {
+const vector<float>& Images::get_average() const {
     return channel_avg;
 }
 
-const vector<double>& Images::get_std_dev() const {
+const vector<float>& Images::get_std_dev() const {
     return channel_std_dev;
 }
 
-double Images::get_channel_avg(int channel) const {
+float Images::get_channel_avg(int channel) const {
     return channel_avg[channel];
 }
 
-double Images::get_channel_std_dev(int channel) const {
+float Images::get_channel_std_dev(int channel) const {
     return channel_std_dev[channel];
 }
 
@@ -236,7 +236,7 @@ void Images::calculate_avg_std_dev() {
     channel_avg.clear();
     channel_avg.assign(channels, 0.0);
 
-    vector<double> image_avg;
+    vector<float> image_avg;
     for (int32_t i = 0; i < number_images; i++) {
         images[i].get_pixel_avg(image_avg);
 
@@ -253,7 +253,7 @@ void Images::calculate_avg_std_dev() {
     channel_std_dev.clear();
     channel_std_dev.assign(channels, 0.0);
 
-    vector<double> image_variance;
+    vector<float> image_variance;
     for (int i = 0; i < number_images; i++) {
         images[i].get_pixel_variance(channel_avg, image_variance);
 

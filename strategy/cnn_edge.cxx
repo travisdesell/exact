@@ -58,6 +58,12 @@ CNN_Edge::CNN_Edge() {
     output_node = NULL;
 
     needs_initialization = true;
+
+    weights = NULL;
+    weight_updates = NULL;
+    best_weights = NULL;
+    previous_velocity = NULL;
+    best_velocity = NULL;
 }
 
 CNN_Edge::CNN_Edge(CNN_Node *_input_node, CNN_Node *_output_node, bool _fixed, int _innovation_number) {
@@ -124,7 +130,7 @@ CNN_Edge::~CNN_Edge() {
 }
 
 void parse_float_2d(float **output, istringstream &iss, int filter_x, int filter_y) {
-    delete [] (*output);
+    //if (*output != NULL) delete [] (*output);
     (*output) = new float[filter_y * filter_x];
 
     int current = 0;
@@ -418,11 +424,11 @@ void CNN_Edge::resize() {
     }
     filter_size = filter_y * filter_x;
 
-    delete [] weights;
-    delete [] weight_updates;
-    delete [] best_weights;
-    delete [] previous_velocity;
-    delete [] best_velocity;
+    if (weights != NULL) delete [] weights;
+    if (weight_updates != NULL) delete [] weight_updates;
+    if (best_weights != NULL) delete [] best_weights;
+    if (previous_velocity != NULL) delete [] previous_velocity;
+    if (best_velocity != NULL) delete [] best_velocity;
 
     weights = new float[filter_size]();
     weight_updates = new float[filter_size]();
@@ -479,20 +485,47 @@ CNN_Edge* CNN_Edge::copy() const {
     copy->batch_size = batch_size;
     copy->filter_x = filter_x;
     copy->filter_y = filter_y;
-    copy->filter_size = filter_y * filter_y;
+    copy->filter_size = copy->filter_y * copy->filter_x;
+
+    //cout << "set copy->filter size to: " << copy->filter_size << endl;
 
     copy->reverse_filter_x = reverse_filter_x;
     copy->reverse_filter_y = reverse_filter_y;
     copy->needs_initialization = needs_initialization;
 
-    copy->weights = new float[filter_size]();
-    copy->weight_updates = new float[filter_size]();
-    copy->best_weights = new float[filter_size]();
+    if (weights == NULL) {
+        cerr << "ERROR! copying CNN_Edge where weights == NULL" << endl;
+        exit(1);
+    }
 
-    copy->previous_velocity = new float[filter_size]();
-    copy->best_velocity = new float[filter_size]();
+    if (weight_updates == NULL) {
+        cerr << "ERROR! copying CNN_Edge where weight_updates == NULL" << endl;
+        exit(1);
+    }
 
-    for (uint32_t current = 0; current < filter_size; current++) {
+    if (best_weights == NULL) {
+        cerr << "ERROR! copying CNN_Edge where best_weights == NULL" << endl;
+        exit(1);
+    }
+
+    if (previous_velocity == NULL) {
+        cerr << "ERROR! copying CNN_Edge where previous_velocity == NULL" << endl;
+        exit(1);
+    }
+
+    if (best_velocity == NULL) {
+        cerr << "ERROR! copying CNN_Edge where best_velocity == NULL" << endl;
+        exit(1);
+    }
+
+    copy->weights = new float[copy->filter_size]();
+    copy->weight_updates = new float[copy->filter_size]();
+    copy->best_weights = new float[copy->filter_size]();
+
+    copy->previous_velocity = new float[copy->filter_size]();
+    copy->best_velocity = new float[copy->filter_size]();
+
+    for (uint32_t current = 0; current < copy->filter_size; current++) {
         copy->weights[current] = weights[current];
         copy->weight_updates[current] = weight_updates[current];
         copy->best_weights[current] = best_weights[current];
@@ -1093,7 +1126,7 @@ istream &operator>>(istream &is, CNN_Edge* edge) {
     current = 0;
     for (int32_t y = 0; y < edge->filter_y; y++) {
         for (int32_t x = 0; x < edge->filter_x; x++) {
-            edge->previous_velocity[current++] = read_hexfloat(is);
+            edge->previous_velocity[current] = read_hexfloat(is);
             current++;
         }
     }
