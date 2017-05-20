@@ -53,9 +53,10 @@ class CNN_Node {
         int genome_id;
 
         int innovation_number;
-        double depth;
+        float depth;
 
         int batch_size, size_y, size_x;
+        int total_size;
 
         int weight_count;
 
@@ -71,31 +72,41 @@ class CNN_Node {
         bool reverse_visited;
         bool needs_initialization;
 
-        double gamma;
-        double best_gamma;
-        double previous_velocity_gamma;
+        float gamma;
+        float best_gamma;
+        float previous_velocity_gamma;
 
-        double beta;
-        double best_beta;
-        double previous_velocity_beta;
+        float beta;
+        float best_beta;
+        float previous_velocity_beta;
 
-        double inverse_variance;
+        float batch_mean;
+        float batch_variance; //sigma squared
+        float batch_std_dev; //sqrt(batch_variance + epsilon);
+        float inverse_variance;
 
-        double running_mean;
-        double best_running_mean;
-        double running_variance;
-        double best_running_variance;
+        float running_mean;
+        float best_running_mean;
+        float running_variance;
+        float best_running_variance;
 
         //batch number x size_y x size_x
-        vector< vector< vector<double> > > values;   //after RELU
-        vector< vector< vector<double> > > errors;
-        vector< vector< vector<double> > > gradients;
+        float *values_out;
+        float *errors_out;
+        float *relu_gradients;
+
+        float *values_in;
+        float *errors_in;
+
+        float input_fired_time;
+        float output_fired_time;
 
 
     public:
         CNN_Node();
+        ~CNN_Node();
 
-        CNN_Node(int _innovation_number, double _depth, int _batch_size, int _input_size_x, int _input_size_y, int type);
+        CNN_Node(int _innovation_number, float _depth, int _batch_size, int _input_size_x, int _input_size_y, int type);
 
         CNN_Node* copy() const;
 
@@ -122,7 +133,7 @@ class CNN_Node {
 
         int get_innovation_number() const;
 
-        double get_depth() const;
+        float get_depth() const;
 
         bool is_fixed() const;
         bool is_hidden() const;
@@ -139,18 +150,32 @@ class CNN_Node {
 
         bool has_nan() const;
 
-        void set_values(const vector<Image> &image, int channel, bool perform_dropout, double input_dropout_probability, minstd_rand0 &generator);
-        double get_value(int batch_number, int y, int x);
-        void set_value(int batch_number, int y, int x, double value);
-        vector< vector< vector<double> > >& get_values();
+        void set_values(const vector<Image> &image, int channel, bool perform_dropout, bool accumulate_test_statistics, float input_dropout_probability, minstd_rand0 &generator);
 
-        void set_error(int batch_number, int y, int x, double error);
-        vector< vector< vector<double> > >& get_errors();
+        float get_value_in(int batch_number, int y, int x);
+        void set_value_in(int batch_number, int y, int x, float value);
+        float* get_values_in();
 
-        void set_gradient(int batch_number, int y, int x, double gradient);
-        vector< vector< vector<double> > >& get_gradients();
+        float get_value_out(int batch_number, int y, int x);
+        void set_value_out(int batch_number, int y, int x, float value);
+        float* get_values_out();
+
+
+        void set_error_in(int batch_number, int y, int x, float error);
+        float* get_errors_in();
+
+        void set_error_out(int batch_number, int y, int x, float error);
+        float* get_errors_out();
+
+
+        void set_relu_gradient(int batch_number, int y, int x, float gradient);
+        float* get_relu_gradients();
+
 
         void print(ostream &out);
+
+        void reset_times();
+        void accumulate_times(float &total_input_time, float &total_output_time);
 
         void reset();
         void save_best_weights();
@@ -165,32 +190,34 @@ class CNN_Node {
         void disable_input();
         int get_number_inputs() const;
         int get_inputs_fired() const;
-        void input_fired(bool training, double epsilon, double alpha, bool perform_dropout, double hidden_dropout_probability, minstd_rand0 &generator);
+        void input_fired(bool training, bool accumulate_test_statistics, float epsilon, float alpha, bool perform_dropout, float hidden_dropout_probability, minstd_rand0 &generator);
 
         void add_output();
         void disable_output();
         int get_number_outputs() const;
         int get_outputs_fired() const;
-        void output_fired(double mu, double learning_rate);
+        void output_fired(float mu, float learning_rate, float epsilon);
 
-        //void batch_normalize(bool training, double epsilon, double alpha);
-        void apply_relu();
-        void apply_dropout(bool perform_dropout, double dropout_probability, minstd_rand0 &generator);
+        void zero_test_statistics();
+        void divide_test_statistics(int number_batches);
 
-        /*
-        void backpropagate_dropout();
-        void backpropagate_relu(vector< vector< vector<double> > > &values);
-        void backpropagate_batch_normalization(double mu, double learning_rate);
-        */
+        void batch_normalize(bool training, bool accumulating_test_statistics, float epsilon, float alpha);
+        void apply_relu(float* values, float* gradients);
+        void apply_dropout(float* values, float* gradients, bool perform_dropout, bool accumulate_test_statistics, float dropout_probability, minstd_rand0 &generator);
+
+        //void backpropagate_dropout();
+        void backpropagate_relu(float* errors, float* gradients);
+        void backpropagate_batch_normalization(float mu, float learning_rate, float epsilon);
 
         void print_statistics();
+        void print_statistics(const float* values, const float* errors, const float* gradients);
 
         friend ostream &operator<<(ostream &os, const CNN_Node* node);
         friend istream &operator>>(istream &is, CNN_Node* node);
 };
 
-double read_hexfloat(istream &infile);
-void write_hexfloat(ostream &outfile, double value);
+float read_hexfloat(istream &infile);
+void write_hexfloat(ostream &outfile, float value);
 
 struct sort_CNN_Nodes_by_depth {
     bool operator()(const CNN_Node *n1, const CNN_Node *n2) {

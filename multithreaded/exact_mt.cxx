@@ -40,7 +40,7 @@ bool finished = false;
 
 int images_resize;
 
-void exact_thread(const Images &training_images, const Images &testing_images, int id) {
+void exact_thread(const Images &training_images, const Images &generalizability_images, const Images &testing_images, int id) {
     while (true) {
         exact_mutex.lock();
         CNN_Genome *genome = exact->generate_individual();
@@ -49,7 +49,7 @@ void exact_thread(const Images &training_images, const Images &testing_images, i
         if (genome == NULL) break;  //generate_individual returns NULL when the search is done
 
         genome->set_name("thread_" + to_string(id));
-        genome->stochastic_backpropagation(training_images, testing_images, images_resize);
+        genome->stochastic_backpropagation(training_images, generalizability_images, testing_images, images_resize);
 
         exact_mutex.lock();
         exact->insert_genome(genome);
@@ -66,6 +66,9 @@ int main(int argc, char** argv) {
 
     string training_filename;
     get_argument(arguments, "--training_file", true, training_filename);
+
+    string generalizability_filename;
+    get_argument(arguments, "--generalizability_file", true, generalizability_filename);
 
     string testing_filename;
     get_argument(arguments, "--testing_file", true, testing_filename);
@@ -88,23 +91,21 @@ int main(int argc, char** argv) {
     bool reset_edges;
     get_argument(arguments, "--reset_edges", true, reset_edges);
 
-    double generalizability;
-    get_argument(arguments, "--generalizability", true, generalizability);
-
     get_argument(arguments, "--images_resize", true, images_resize);
 
 
 
     Images training_images(training_filename);
+    Images generalizability_images(generalizability_filename, training_images.get_average(), training_images.get_std_dev());
     Images testing_images(testing_filename, training_images.get_average(), training_images.get_std_dev());
 
-    exact = new EXACT(training_images, testing_images, population_size, max_epochs, max_genomes, output_directory, search_name, reset_edges, generalizability);
+    //exact = new EXACT(training_images, generalizability_images, testing_images, population_size, max_epochs, max_genomes, output_directory, search_name, reset_edges);
 
-    //exact = new EXACT(1);
+    exact = new EXACT(3);
 
     vector<thread> threads;
     for (int32_t i = 0; i < number_threads; i++) {
-        threads.push_back( thread(exact_thread, training_images, testing_images, i) );
+        threads.push_back( thread(exact_thread, training_images, generalizability_images, testing_images, i) );
     }
 
     for (int32_t i = 0; i < number_threads; i++) {
