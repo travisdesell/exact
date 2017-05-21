@@ -9,19 +9,19 @@ using std::vector;
 
 void fisher_yates_shuffle(minstd_rand0 &generator, vector<long> &v);
 
-double random_0_1(minstd_rand0 &generator);
+float random_0_1(minstd_rand0 &generator);
 
 class NormalDistribution {
     private:
         bool generate;
-        double z0;
-        double z1;
+        float z0;
+        float z1;
 
     public:
 
         NormalDistribution();
 
-        double random(minstd_rand0 &generator, double mu, double sigma);
+        float random(minstd_rand0 &generator, float mu, float sigma);
 
         friend ostream &operator<<(ostream &os, const NormalDistribution &normal_distribution);
         friend istream &operator>>(istream &is, NormalDistribution &normal_distribution);

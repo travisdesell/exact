@@ -35,7 +35,7 @@ using namespace std;
 vector<string> arguments;
 
 
-int progress_function(double progress) {
+int progress_function(float progress) {
     boinc_checkpoint_completed();
     return boinc_fraction_done(progress);
 }
@@ -76,11 +76,13 @@ int main(int argc, char** argv) {
 
     string training_filename;
     string testing_filename;
+    string generalizability_filename;
     string genome_filename;
     string output_filename;
     string checkpoint_filename;
 
     get_argument(arguments, "--training_file", true, training_filename);
+    get_argument(arguments, "--generalizability_file", true, generalizability_filename);
     get_argument(arguments, "--testing_file", true, testing_filename);
     get_argument(arguments, "--genome_file", true, genome_filename);
     get_argument(arguments, "--output_file", true, output_filename);
@@ -93,6 +95,7 @@ int main(int argc, char** argv) {
     checkpoint_filename = get_boinc_filename(checkpoint_filename);
 
     cerr << "boincified training filename: '" << training_filename << "'" << endl;
+    cerr << "boincified generalizability filename: '" << generalizability_filename << "'" << endl;
     cerr << "boincified testing filename: '" << testing_filename << "'" << endl;
     cerr << "boincified genome filename: '" << genome_filename << "'" << endl;
     cerr << "boincified output filename: '" << output_filename << "'" << endl;
@@ -101,6 +104,7 @@ int main(int argc, char** argv) {
     cerr << "parsed arguments, loading images" << endl;
 
     Images training_images(training_filename);
+    Images generalizability_images(generalizability_filename, training_images.get_average(), training_images.get_std_dev());
     Images testing_images(testing_filename, training_images.get_average(), training_images.get_std_dev());
 
     cerr << "loaded images" << endl;
@@ -135,7 +139,7 @@ int main(int argc, char** argv) {
     genome->set_output_filename(output_filename);
 
     cerr << "starting backpropagation!" << endl;
-    genome->stochastic_backpropagation(training_images, testing_images);
+    genome->stochastic_backpropagation(training_images, generalizability_images, testing_images);
     cerr << "backpropagation finished successfully!" << endl;
 
     boinc_finish(0);

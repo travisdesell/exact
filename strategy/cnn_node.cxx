@@ -2,6 +2,8 @@
 using std::isnan;
 using std::isinf;
 
+#include <chrono>
+
 #include <cstdio>
 
 #include <fstream>
@@ -47,9 +49,9 @@ using std::vector;
 
 #include "stdint.h"
 
-double read_hexfloat(istream &infile) {
+float read_hexfloat(istream &infile) {
 #ifdef _WIN32
-	double result;
+	float result;
 	infile >> std::hexfloat >> result >> std::defaultfloat;
 	return result;
 #else
@@ -59,10 +61,10 @@ double read_hexfloat(istream &infile) {
 #endif
 }
 
-void write_hexfloat(ostream &outfile, double value) {
+void write_hexfloat(ostream &outfile, float value) {
 #ifdef _WIN32
     char hf[32];
-    sprintf(hf, "%la", value);
+    sprintf(hf, "%a", value);
     outfile << hf;
 #else
     outfile << std::hexfloat << value << std::defaultfloat;
@@ -97,7 +99,7 @@ CNN_Node::CNN_Node() {
     best_running_variance = 1.0;
 }
 
-CNN_Node::CNN_Node(int _innovation_number, double _depth, int _batch_size, int _size_x, int _size_y, int _type) {
+CNN_Node::CNN_Node(int _innovation_number, float _depth, int _batch_size, int _size_x, int _size_y, int _type) {
     node_id = -1;
     exact_id = -1;
     genome_id = -1;
@@ -138,10 +140,14 @@ CNN_Node::CNN_Node(int _innovation_number, double _depth, int _batch_size, int _
     running_variance = 1.0;
     best_running_variance = 1.0;
 
-    values = vector< vector< vector<double > > >(batch_size, vector< vector<double> >(size_y, vector<double>(size_x, 0.0)));
-    errors = vector< vector< vector<double > > >(batch_size, vector< vector<double> >(size_y, vector<double>(size_x, 0.0)));
-    gradients = vector< vector< vector<double > > >(batch_size, vector< vector<double> >(size_y, vector<double>(size_x, 0.0)));
+    total_size = batch_size * size_y * size_x;
 
+    values_in = new float[total_size]();
+    errors_in = new float[total_size]();
+
+    values_out = new float[total_size]();
+    errors_out = new float[total_size]();
+    relu_gradients = new float[total_size]();
 }
 
 #ifdef _MYSQL_
@@ -168,7 +174,9 @@ CNN_Node::CNN_Node(int _node_id) {
         batch_size = atoi(row[++column]);
         size_x = atoi(row[++column]);
         size_y = atoi(row[++column]);
-        
+
+        total_size = batch_size * size_y * size_x;
+
         type = atoi(row[++column]);
 
         //need to reset these because it will be modified when edges are set
@@ -205,9 +213,12 @@ CNN_Node::CNN_Node(int _node_id) {
     weight_count = 0;
 
     //initialize arrays not stored to database
-    values = vector< vector< vector<double > > >(batch_size, vector< vector<double> >(size_y, vector<double>(size_x, 0.0)));
-    gradients = vector< vector< vector<double > > >(batch_size, vector< vector<double> >(size_y, vector<double>(size_x, 0.0)));
-    errors = vector< vector< vector<double > > >(batch_size, vector< vector<double> >(size_y, vector<double>(size_x, 0.0)));
+    values_in = new float[total_size]();
+    errors_in = new float[total_size]();
+
+    values_out = new float[total_size]();
+    errors_out = new float[total_size]();
+    relu_gradients = new float[total_size]();
 
     //cout << "read node!" << endl;
     //cout << this << endl;
@@ -263,6 +274,15 @@ int CNN_Node::get_node_id() const {
 }
 #endif
 
+CNN_Node::~CNN_Node() {
+    delete [] values_out;
+    delete [] errors_out;
+    delete [] relu_gradients;
+
+    delete [] values_in;
+    delete [] errors_in;
+}
+
 CNN_Node* CNN_Node::copy() const {
     CNN_Node *copy = new CNN_Node();
 
@@ -274,6 +294,7 @@ CNN_Node* CNN_Node::copy() const {
     copy->batch_size = batch_size;
     copy->size_x = size_x;
     copy->size_y = size_y;
+    copy->total_size = total_size;
 
     copy->type = type;
 
@@ -300,9 +321,21 @@ CNN_Node* CNN_Node::copy() const {
     copy->running_variance = running_variance;
     copy->best_running_variance = best_running_variance;
 
-    copy->values = values;
-    copy->errors = errors;
-    copy->gradients = gradients;
+    copy->values_in = new float[total_size]();
+    copy->errors_in = new float[total_size]();
+
+    copy->values_out = new float[total_size]();
+    copy->errors_out = new float[total_size]();
+    copy->relu_gradients = new float[total_size]();
+
+    for (uint32_t i = 0; i < total_size; i++) {
+        copy->values_in[i] = values_in[i];
+        copy->errors_in[i] = errors_in[i];
+
+        copy->values_out[i] = values_out[i];
+        copy->errors_out[i] = errors_out[i];
+        copy->relu_gradients[i] = relu_gradients[i];
+    }
 
     return copy;
 }
@@ -320,9 +353,19 @@ void CNN_Node::initialize() {
     beta = 0.0;
     needs_initialization = false;
 
-    values = vector< vector< vector<double> > >(batch_size, vector< vector<double> >(size_y, vector<double>(size_x, 0.0)));
-    errors = vector< vector< vector<double> > >(batch_size, vector< vector<double> >(size_y, vector<double>(size_x, 0.0)));
-    gradients = vector< vector< vector<double> > >(batch_size, vector< vector<double> >(size_y, vector<double>(size_x, 0.0)));
+    delete [] values_in;
+    delete [] errors_in;
+
+    delete [] values_out;
+    delete [] errors_out;
+    delete [] relu_gradients;
+
+    values_in = new float[total_size]();
+    errors_in = new float[total_size]();
+
+    values_out = new float[total_size]();
+    errors_out = new float[total_size]();
+    relu_gradients = new float[total_size]();
 }
 
 void CNN_Node::reset_velocities() {
@@ -396,70 +439,10 @@ int CNN_Node::get_batch_size() const {
 }
 
 bool CNN_Node::vectors_correct() const {
-    if (values.size() != batch_size) {
+    if (total_size != batch_size * size_y * size_x) {
         cerr << "ERROR! vectors incorrect on node " << innovation_number << endl;
-        cerr << "values.size(): " << values.size() << " and batch size: " << batch_size << endl;
+        cerr << "total_size: " << total_size << " and batch size: " << batch_size << ", size_y: " << size_y << ", size_x: " << size_x << endl;
         return false;
-    }
-
-    for (uint32_t i = 0; i < values.size(); i++) {
-        if (values[i].size() != size_y) {
-            cerr << "ERROR! vectors incorrect on node " << innovation_number << endl;
-            cerr << "values[" << i << "].size(): " << values[i].size() << " and size_y: " << size_x << endl;
-            return false;
-        }
-
-        for (uint32_t j = 0; j < values[i].size(); j++) {
-            if (values[i][j].size() != size_x) {
-                cerr << "ERROR! vectors incorrect on node " << innovation_number << endl;
-                cerr << "values[" << i << "][" << j << "].size(): " << values[i][j].size() << " and size_x: " << size_x << endl;
-                return false;
-            }
-        }
-    }
-
-    if (errors.size() != batch_size) {
-        cerr << "ERROR! vectors incorrect on node " << innovation_number << endl;
-        cerr << "errors.size(): " << errors.size() << " and batch size: " << batch_size << endl;
-        return false;
-    }
-
-    for (uint32_t i = 0; i < errors.size(); i++) {
-        if (errors[i].size() != size_y) {
-            cerr << "ERROR! vectors incorrect on node " << innovation_number << endl;
-            cerr << "errors[" << i << "].size(): " << errors[i].size() << " and size_y: " << size_x << endl;
-            return false;
-        }
-
-        for (uint32_t j = 0; j < errors[i].size(); j++) {
-            if (errors[i][j].size() != size_x) {
-                cerr << "ERROR! vectors incorrect on node " << innovation_number << endl;
-                cerr << "errors[" << i << "][" << j << "].size(): " << errors[i][j].size() << " and size_x: " << size_x << endl;
-                return false;
-            }
-        }
-    }
-
-    if (gradients.size() != batch_size) {
-        cerr << "ERROR! vectors incorrect on node " << innovation_number << endl;
-        cerr << "gradients.size(): " << gradients.size() << " and batch size: " << batch_size << endl;
-        return false;
-    }
-
-    for (uint32_t i = 0; i < gradients.size(); i++) {
-        if (gradients[i].size() != size_y) {
-            cerr << "ERROR! vectors incorrect on node " << innovation_number << endl;
-            cerr << "gradients[" << i << "].size(): " << gradients[i].size() << " and size_y: " << size_x << endl;
-            return false;
-        }
-
-        for (uint32_t j = 0; j < gradients[i].size(); j++) {
-            if (gradients[i][j].size() != size_x) {
-                cerr << "ERROR! vectors incorrect on node " << innovation_number << endl;
-                cerr << "gradients[" << i << "][" << j << "].size(): " << gradients[i][j].size() << " and size_x: " << size_x << endl;
-                return false;
-            }
-        }
     }
 
     return true;
@@ -477,46 +460,85 @@ int CNN_Node::get_innovation_number() const {
     return innovation_number;
 }
 
-double CNN_Node::get_depth() const {
+float CNN_Node::get_depth() const {
     return depth;
 }
 
 void CNN_Node::resize_arrays() {
-    values = vector< vector< vector<double> > >(batch_size, vector< vector<double> >(size_y, vector<double>(size_x, 0.0)));
-    errors = vector< vector< vector<double> > >(batch_size, vector< vector<double> >(size_y, vector<double>(size_x, 0.0)));
-    gradients = vector< vector< vector<double> > >(batch_size, vector< vector<double> >(size_y, vector<double>(size_x, 0.0)));
+    delete [] values_in;
+    delete [] errors_in;
+
+    delete [] values_out;
+    delete [] errors_out;
+    delete [] relu_gradients;
+
+    values_in = new float[total_size]();
+    errors_in = new float[total_size]();
+
+    values_out = new float[total_size]();
+    errors_out = new float[total_size]();
+    relu_gradients = new float[total_size]();
+
     needs_initialization = true;
 }
 
 
-double CNN_Node::get_value(int batch_number, int y, int x) {
-    return values[batch_number][y][x];
+float CNN_Node::get_value_in(int batch_number, int y, int x) {
+    return values_in[(batch_number * size_y * size_x) + (size_x * y) + x];
+    //return values_in[batch_number][y][x];
 }
 
-void CNN_Node::set_value(int batch_number, int y, int x, double value) {
-    values[batch_number][y][x] = value;
+void CNN_Node::set_value_in(int batch_number, int y, int x, float value) {
+    values_in[(batch_number * size_y * size_x) + (size_x * y) + x] = value;
+    //values_in[batch_number][y][x] = value;
 }
 
-vector< vector< vector<double> >>& CNN_Node::get_values() {
-    return values;
+float* CNN_Node::get_values_in() {
+    return values_in;
+}
+
+float CNN_Node::get_value_out(int batch_number, int y, int x) {
+    return values_out[(batch_number * size_y * size_x) + (size_x * y) + x];
+    //return values_out[batch_number][y][x];
+}
+
+void CNN_Node::set_value_out(int batch_number, int y, int x, float value) {
+    values_out[(batch_number * size_y * size_x) + (size_x * y) + x] = value;
+    //values_out[batch_number][y][x] = value;
+}
+
+float* CNN_Node::get_values_out() {
+    return values_out;
 }
 
 
-void CNN_Node::set_error(int batch_number, int y, int x, double error) {
-    errors[batch_number][y][x] = error;
+void CNN_Node::set_error_in(int batch_number, int y, int x, float error) {
+    errors_in[(batch_number * size_y * size_x) + (size_x * y) + x] = error;
+    //errors_in[batch_number][y][x] = error;
 }
 
-vector<vector< vector<double> > >& CNN_Node::get_errors() {
-    return errors;
+float* CNN_Node::get_errors_in() {
+    return errors_in;
 }
 
-void CNN_Node::set_gradient(int batch_number, int y, int x, double gradient) {
-    gradients[batch_number][y][x] = gradient;
+void CNN_Node::set_error_out(int batch_number, int y, int x, float error) {
+    errors_out[(batch_number * size_y * size_x) + (size_x * y) + x] = error;
+    //errors_out[batch_number][y][x] = error;
 }
 
-vector<vector< vector<double> > >& CNN_Node::get_gradients() {
-    return gradients;
+float* CNN_Node::get_errors_out() {
+    return errors_out;
 }
+
+void CNN_Node::set_relu_gradient(int batch_number, int y, int x, float gradient) {
+    relu_gradients[(batch_number * size_y * size_x) + (size_x * y) + x] = gradient;
+    //relu_gradients[batch_number][y][x] = gradient;
+}
+
+float* CNN_Node::get_relu_gradients() {
+    return relu_gradients;
+}
+
 
 
 void CNN_Node::print(ostream &out) {
@@ -525,32 +547,70 @@ void CNN_Node::print(ostream &out) {
     for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
         out << "    batch_number: " << batch_number << endl;
         out << "    values_in:" << endl;
+        int current = batch_number * size_y * size_x;
         for (int32_t i = 0; i < size_y; i++) {
             out << "    ";
             for (int32_t j = 0; j < size_x; j++) {
-                out << setw(13) << setprecision(8) << values[batch_number][i][j];
+                out << setw(13) << setprecision(8) << values_in[current];
+                current++;
             }
             out << endl;
         }
 
-        out << "    errors:" << endl;
+        out << "    errors_in:" << endl;
+        current = batch_number * size_y * size_x;
         for (int32_t i = 0; i < size_y; i++) {
             out << "    ";
             for (int32_t j = 0; j < size_x; j++) {
-                out << setw(13) << setprecision(8) << errors[batch_number][i][j];
+                out << setw(13) << setprecision(8) << errors_in[current];
+                current++;
             }
             out << endl;
         }
 
-        out << "    gradients:" << endl;
+        out << "    values_out:" << endl;
+        current = batch_number * size_y * size_x;
         for (int32_t i = 0; i < size_y; i++) {
             out << "    ";
             for (int32_t j = 0; j < size_x; j++) {
-                out << setw(13) << setprecision(8) << gradients[batch_number][i][j];
+                out << setw(13) << setprecision(8) << values_out[current];
+                current++;
+            }
+            out << endl;
+        }
+
+        out << "    errors_out:" << endl;
+        current = batch_number * size_y * size_x;
+        for (int32_t i = 0; i < size_y; i++) {
+            out << "    ";
+            for (int32_t j = 0; j < size_x; j++) {
+                out << setw(13) << setprecision(8) << errors_out[current];
+                current++;
+            }
+            out << endl;
+        }
+
+        out << "    relu_gradients:" << endl;
+        current = batch_number * size_y * size_x;
+        for (int32_t i = 0; i < size_y; i++) {
+            out << "    ";
+            for (int32_t j = 0; j < size_x; j++) {
+                out << setw(13) << setprecision(8) << relu_gradients[current];
+                current++;
             }
             out << endl;
         }
     }
+}
+
+void CNN_Node::reset_times() {
+    input_fired_time = 0.0;
+    output_fired_time = 0.0;
+}
+
+void CNN_Node::accumulate_times(float &total_input_time, float &total_output_time) {
+    total_input_time += input_fired_time;
+    total_output_time += output_fired_time;
 }
 
 void CNN_Node::reset() {
@@ -558,17 +618,17 @@ void CNN_Node::reset() {
     outputs_fired = 0;
 
     if (is_reachable()) {
-        for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
-            for (int32_t y = 0; y < size_y; y++) {
-                for (int32_t x = 0; x < size_x; x++) {
-                    values[batch_number][y][x] = 0;
-                    errors[batch_number][y][x] = 0;
-                    gradients[batch_number][y][x] = 0;
-                }
-            }
+        for (int32_t current = 0; current < total_size; current++) {
+            values_in[current] = 0.0;
+            errors_in[current] = 0.0;
+
+            values_out[current] = 0.0;
+            errors_out[current] = 0.0;
+            relu_gradients[current] = 0.0;
         }
     }
 }
+
 
 void CNN_Node::save_best_weights() {
     best_gamma = gamma;
@@ -588,6 +648,7 @@ void CNN_Node::set_weights_to_best() {
 
 void CNN_Node::update_batch_size(int new_batch_size) {
     batch_size = new_batch_size;
+    total_size = batch_size * size_y * size_x;
     resize_arrays();
 }
 
@@ -600,6 +661,7 @@ bool CNN_Node::modify_size_x(int change) {
     if (size_x <= 0) size_x = 1;
     if (size_x == previous_size_x) return false;
 
+    total_size = batch_size * size_y * size_x;
     resize_arrays();
 
     return true;
@@ -614,6 +676,7 @@ bool CNN_Node::modify_size_y(int change) {
     if (size_y <= 0) size_y = 1;
     if (size_y == previous_size_y) return false;
 
+    total_size = batch_size * size_y * size_x;
     resize_arrays();
 
     return true;
@@ -655,55 +718,54 @@ int CNN_Node::get_outputs_fired() const {
     return outputs_fired;
 }
 
-/*
-void CNN_Node::batch_normalize(bool training, double epsilon, double alpha) {
+void CNN_Node::zero_test_statistics() {
+    if (type == INPUT_NODE || type == SOFTMAX_NODE) return;
+
+    running_mean = 0;
+    running_variance = 0;
+}
+
+void CNN_Node::divide_test_statistics(int number_batches) {
+    if ( !(type == INPUT_NODE || type == SOFTMAX_NODE)) {
+        running_mean /= number_batches;
+        running_variance /= number_batches;
+    }
+
+    cout << "node " << innovation_number << ", final test statistics, running_mean: " << running_mean << ", best_running_mean: " << best_running_mean << ", running_variance: " << running_variance << ", best_running_variance: " << best_running_variance << endl;
+}
+
+
+void CNN_Node::batch_normalize(bool training, bool accumulating_test_statistics, float epsilon, float alpha) {
     //normalize the batch
-    if (training) {
-        double batch_mean = 0.0;
+    if (training || accumulating_test_statistics) {
+        batch_mean = 0.0;
 
         //cout << "pre-batch normalization on node: " << innovation_number << endl;
 
-        for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
-            for (int32_t y = 0; y < size_y; y++) {
-                for (int32_t x = 0; x < size_x; x++) {
-                    batch_mean += values_in[batch_number][y][x];
-                    //cout << setw(10) << std::fixed << values_in[batch_number][y][x];
-                }
-                //cout << endl;
-            }
-            //cout << endl;
+        for (int32_t current = 0; current < total_size; current++) {
+            batch_mean += values_in[current];
         }
         batch_mean /= (uint64_t)batch_size * (uint64_t)size_y * (uint64_t)size_x;
 
-        double batch_variance = 0.0;
-        double diff;
-        for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
-            for (int32_t y = 0; y < size_y; y++) {
-                for (int32_t x = 0; x < size_x; x++) {
-                    diff = values_in[batch_number][y][x] - batch_mean;
-                    batch_variance += diff * diff;
-                }
-            }
+        batch_variance = 0.0;
+        float diff;
+        for (int32_t current = 0; current < total_size; current++) {
+            diff = values_in[current] - batch_mean;
+            batch_variance += diff * diff;
         }
         batch_variance /= (uint64_t)batch_size * (uint64_t)size_y * (uint64_t)size_x;
 
-        double batch_std_dev = sqrt(batch_variance + epsilon);
+        batch_std_dev = sqrt(batch_variance + epsilon);
+
+        inverse_variance = 1.0 / batch_std_dev;
 
         //cout << endl;
         //cout << "post-batch normalization on node: " << innovation_number << endl;
-        double temp;
-        for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
-            for (int32_t y = 0; y < size_y; y++) {
-                for (int32_t x = 0; x < size_x; x++) {
-                    temp = (values_in[batch_number][y][x] - batch_mean) / batch_std_dev;
-                    values_hat[batch_number][y][x] = temp;
-                    values_out[batch_number][y][x] = (gamma * temp) + beta;
-
-                    //cout << setw(10) << std::fixed << values_out[batch_number][y][x];
-                }
-                //cout << endl;
-            }
-            //cout << endl;
+        float temp;
+        for (int32_t current = 0; current < total_size; current++) {
+            temp = (values_in[current] - batch_mean) * inverse_variance;
+            values_in[current] = temp;   //values in becomes x_hat
+            values_out[current] = (gamma * temp) + beta;
         }
 
 #ifdef NAN_CHECKS
@@ -711,10 +773,12 @@ void CNN_Node::batch_normalize(bool training, double epsilon, double alpha) {
             cerr << "ERROR! NAN or INF batch_mean or batch_variance on node " << innovation_number << "!" << endl;
             cerr << "gamma: " << gamma << ", beta: " << beta << endl;
 
+            int current = 0;
             for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
                 for (int32_t y = 0; y < size_y; y++) {
                     for (int32_t x = 0; x < size_x; x++) {
-                        cout << setw(10) << std::fixed << values_in[batch_number][y][x];
+                        cout << setw(10) << std::fixed << values_in[current];
+                        current++;
                     }
                     cout << endl;
                 }
@@ -725,191 +789,171 @@ void CNN_Node::batch_normalize(bool training, double epsilon, double alpha) {
         }
 #endif
 
-        inverse_variance = 1.0 / batch_std_dev;
-
         batch_variance = (batch_size / (batch_size - 1)) * batch_variance;
 
-        running_mean = (batch_mean * alpha) + ((1.0 - alpha) * running_mean);
-        running_variance = (batch_variance * alpha) + ((1.0 - alpha) * running_variance);
+        if (accumulating_test_statistics) {
+            running_mean += batch_mean;
+            running_variance += batch_variance;
+            //running_mean = (batch_mean * alpha) + ((1.0 - alpha) * running_mean);
+            //running_variance = (batch_variance * alpha) + ((1.0 - alpha) * running_variance);
+ 
+            //cout << "node " << innovation_number << " accumulating test statistics, batch_mean: " << batch_mean << ", batch_variance: " << batch_variance << endl;
+        } else {
+            running_mean = (batch_mean * alpha) + ((1.0 - alpha) * running_mean);
+            running_variance = (batch_variance * alpha) + ((1.0 - alpha) * running_variance);
+        }
 
         //cout << "\tnode " << innovation_number << ", batch_mean: " << batch_mean << ", batch_variance: " << batch_variance << ", batch_std_dev: " << batch_std_dev << ", running_mean: " << running_mean << ", running_variance: " << running_variance << endl;
 
     } else { //testing
-        double term1 =  gamma / sqrt(running_variance + epsilon);
-        double term2 = beta - ((gamma * running_mean) / sqrt(running_variance + epsilon));
+        float term1 =  gamma / sqrt(running_variance + epsilon);
+        float term2 = beta - ((gamma * running_mean) / sqrt(running_variance + epsilon));
 
-        for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
-
-            for (int32_t y = 0; y < size_y; y++) {
-                for (int32_t x = 0; x < size_x; x++) {
-                    values_out[batch_number][y][x] = (term1 * values_in[batch_number][y][x]) + term2;
-                }
-            }
-        }
-    }
-}
-*/
-
-void CNN_Node::apply_relu() {
-    for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
-        for (int32_t y = 0; y < size_y; y++) {
-            for (int32_t x = 0; x < size_x; x++) {
-                //cout << "values for node " << innovation_number << " now " << values[batch_number][y][x] << " after adding bias: " << bias[batch_number][y][x] << endl;
-
-                //apply activation function
-                if (values[batch_number][y][x] <= RELU_MIN) {
-                    values[batch_number][y][x] = values[batch_number][y][x] * RELU_MIN_LEAK;
-                    gradients[batch_number][y][x] = RELU_MIN_LEAK; 
-                } else if (values[batch_number][y][x] > RELU_MAX) {
-                    values[batch_number][y][x] = RELU_MAX;
-                    gradients[batch_number][y][x] = RELU_MAX_LEAK; 
-                } else {
-                    gradients[batch_number][y][x] = 1.0;
-                }
-            }
+        for (int32_t current = 0; current < total_size; current++) {
+            values_out[current] = (term1 * values_in[current]) + term2;
         }
     }
 }
 
-void CNN_Node::apply_dropout(bool perform_dropout, double dropout_probability, minstd_rand0 &generator) {
-    if (perform_dropout) {
-        for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
-            for (int32_t y = 0; y < size_y; y++) {
-                for (int32_t x = 0; x < size_x; x++) {
-                    //cout << "values for node " << innovation_number << " now " << values[batch_number][y][x] << " after adding bias: " << bias[batch_number][y][x] << endl;
+void CNN_Node::apply_relu(float* values, float* gradients) {
+    for (int32_t current = 0; current < total_size; current++) {
+        //cout << "values_out for node " << innovation_number << " now " << values_out[batch_number][y][x] << " after adding bias: " << bias[batch_number][y][x] << endl;
 
-                    if (random_0_1(generator) < dropout_probability) {
-                        values[batch_number][y][x] = 0.0;
-                        gradients[batch_number][y][x] = 0.0;
-                    }
-                }
+        //apply activation function
+        if (values[current] <= RELU_MIN) {
+            values[current] = values[current] * RELU_MIN_LEAK;
+            gradients[current] = RELU_MIN_LEAK; 
+        } else if (values[current] > RELU_MAX) {
+            values[current] = RELU_MAX;
+            gradients[current] = RELU_MAX_LEAK; 
+        } else {
+            gradients[current] = 1.0;
+        }
+    }
+}
+
+void CNN_Node::apply_dropout(float* values, float* gradients, bool perform_dropout, bool accumulate_test_statistics, float dropout_probability, minstd_rand0 &generator) {
+    if (perform_dropout && !accumulate_test_statistics) {
+        for (int32_t current = 0; current < total_size; current++) {
+            //cout << "values for node " << innovation_number << " now " << values[batch_number][y][x] << " after adding bias: " << bias[batch_number][y][x] << endl;
+
+            if (random_0_1(generator) < dropout_probability) {
+                values[current] = 0.0;
+                gradients[current] = 0.0;
             }
         }
 
     } else {
-        double dropout_scale = 1.0 - dropout_probability;
-        for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
-            for (int32_t y = 0; y < size_y; y++) {
-                for (int32_t x = 0; x < size_x; x++) {
-                    values[batch_number][y][x] *= dropout_scale;
-                }
-            }
+        float dropout_scale = 1.0 - dropout_probability;
+        for (int32_t current = 0; current < total_size; current++) {
+            values[current] *= dropout_scale;
         }
     }
 }
 
-/*
-void CNN_Node::backpropagate_dropout() {
-    for (int32_t y = 0; y < size_y; y++) {
-        for (int32_t x = 0; x < size_x; x++) {
-            if (dropped_out[y][x]) {
-                for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
-                    deltas[batch_number][y][x] = 0.0;
-                } 
-            }
-        }
+void CNN_Node::backpropagate_relu(float* errors, float* gradients) {
+    for (int32_t current = 0; current < total_size; current++) {
+        errors[current] *= gradients[current];
     }
 }
 
-void CNN_Node::backpropagate_relu(vector< vector< vector<double> > > &values) {
-    double gradient;
-    for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
-        for (int32_t y = 0; y < size_y; y++) {
-            for (int32_t x = 0; x < size_x; x++) {
-                if (values[batch_number][y][x] <= RELU_MIN) gradient = RELU_MIN_LEAK;
-                else if (values[batch_number][y][x] > RELU_MAX) gradient = RELU_MAX_LEAK;
-                else gradient = 1.0;
 
-                //deltas now delta before REL
-                deltas[batch_number][y][x] *= gradient;
-            }
-        }
-    }
-}
-
-void CNN_Node::backpropagate_batch_normalization(double mu, double learning_rate) {
+void CNN_Node::backpropagate_batch_normalization(float mu, float learning_rate, float epsilon) {
     //backprop  batch normalization here
-    double delta_beta = 0.0;
-    double delta_gamma = 0.0;
+    float delta_beta = 0.0;
+    float delta_gamma = 0.0;
 
-    double value_hat, value_out;
-    double delta_out, delta_values_hat;
-    double delta_values_hat_sum = 0.0;
-    double delta_values_hat_x_values_sum = 0.0;
+    float value_in;
+    float value_hat;
+    //float value_out;
+    float delta_out;
+    //float delta_values_hat;
+    //float delta_values_hat_sum = 0.0;
+    //float delta_values_hat_x_values_sum = 0.0;
 
-    for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
-        for (int32_t y = 0; y < size_y; y++) {
-            for (int32_t x = 0; x < size_x; x++) {
-                delta_out = deltas[batch_number][y][x];
-                value_hat = values_hat[batch_number][y][x];
-                value_out = values_out[batch_number][y][x];
+    float derr_dvariance = 0.0;
+    float derr_dmean = 0.0;
 
-                delta_values_hat = gamma * delta_out;
+    float derr_dmean_term1 = 0.0;
+    float derr_dmean_term2 = 0.0;
 
-                delta_beta += delta_out;
-                delta_gamma += value_hat * delta_out;
+    float m = (uint64_t)batch_size * (uint64_t)size_y * (uint64_t)size_x;
+    float diff;
 
-                delta_values_hat_sum += delta_values_hat;
-                delta_values_hat_x_values_sum += delta_values_hat * value_hat;
-            }
-        }
+    for (int32_t current = 0; current < total_size; current++) {
+        delta_out = errors_out[current];
+        value_hat = values_in[current];
+
+        value_in = (value_hat + batch_mean) * batch_std_dev;
+        diff = value_in - batch_mean;
+
+        delta_beta += delta_out;
+        delta_gamma += value_hat * delta_out;
+
+        derr_dvariance += diff * delta_out * gamma;
+
+        derr_dmean_term1 += delta_out * gamma;
+        derr_dmean_term2 += diff;
     }
 
+    float inv_m = 1.0 / m;
+    float inv_m_x_2 = 2.0 * inv_m;
 
-    double inv_var_div_batch = inverse_variance / batch_size;
-    double batch_x_gamma = batch_size * gamma;
+    derr_dvariance *= -0.5 * pow(batch_variance + epsilon, -1.5);
+    derr_dmean_term1 *= -inverse_variance;
+    derr_dmean_term2 *= -inv_m_x_2 * derr_dvariance;
+    derr_dmean = derr_dmean_term1 + derr_dmean_term2;
 
-    for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
-        for (int32_t y = 0; y < size_y; y++) {
-            for (int32_t x = 0; x < size_x; x++) {
-                delta_out = deltas[batch_number][y][x];
-                delta_values_hat = gamma * delta_out;
+    for (int32_t current = 0; current < total_size; current++) {
+        delta_out = errors_out[current] * relu_gradients[current];
+        value_hat = values_in[current];
+        value_in = (value_hat + batch_mean) * batch_std_dev;
 
-                //this makes delta = delta_in
-                deltas[batch_number][y][x] = inv_var_div_batch * ((batch_x_gamma * delta_out) - delta_values_hat_sum - (values_hat[batch_number][y][x] * delta_values_hat_x_values_sum));
+        errors_in[current] = (delta_out * inverse_variance) + (derr_dvariance * inv_m_x_2 * (value_in - batch_mean)) + (derr_dmean * inv_m);
+
+
 #ifdef NAN_CHECKS
-                if (isnan(deltas[batch_number][y][x]) || isinf(deltas[batch_number][y][x])) {
-                    cerr << "ERROR! deltas[" << batch_number << "][" << y << "][" << x << "] became: " << deltas[batch_number][y][x] << "!" << endl;
-                    cerr << "inverse_variance: " << inverse_variance << endl;
-                    cerr << "batch_size: " << batch_size << endl;
-                    cerr << "gamma: " << gamma << endl;
-                    cerr << "delta_out: " << delta_out << endl;
-                    cerr << "delta_values_hat_sum: " << delta_values_hat_sum << endl;
-                    cerr << "values_hat[" << batch_number << "][" << y << "][" << x << "]: " << values_hat[batch_number][y][x] << endl;
-                    cerr << "delta_values_hat_x_values_sum: " << delta_values_hat_x_values_sum << endl;
+        if (isnan(errors_in[current]) || isinf(errors_in[current])) {
+            cerr << "ERROR! errors_in[" << current << "] became: " << errors_in[current] << "!" << endl;
+            cerr << "inverse_variance: " << inverse_variance << endl;
+            cerr << "batch_size: " << batch_size << endl;
+            cerr << "gamma: " << gamma << endl;
+            cerr << "delta_out: " << delta_out << endl;
+            cerr << "values_in[" << current << "]: " << values_in[current] << endl;
 
-                    exit(1);
-                }
-#endif
-            }
+            exit(1);
         }
+#endif
     }
-    //deltas now delta_in
 
     //backpropagate beta
-    double pv_beta = previous_velocity_beta;
+    float pv_beta = previous_velocity_beta;
 
-    double velocity_beta = (mu * pv_beta) - learning_rate * delta_beta;
-    beta += (-mu * pv_beta + (1 + mu) * velocity_beta);
+    float velocity_beta = (mu * pv_beta) - learning_rate * delta_beta;
+    beta += velocity_beta + mu * (velocity_beta - pv_beta);
+    //beta += velocity_beta;
+
+    //beta += (-mu * pv_beta + (1 + mu) * velocity_beta);
     //beta -= (beta * weight_decay);
 
     previous_velocity_beta = velocity_beta;
 
     //backpropagate gamma
-    double pv_gamma = previous_velocity_gamma;
+    float pv_gamma = previous_velocity_gamma;
 
-    double velocity_gamma = (mu * pv_gamma) - learning_rate * delta_gamma;
-    gamma += (-mu * pv_gamma + (1 + mu) * velocity_gamma);
+    float velocity_gamma = (mu * pv_gamma) - learning_rate * delta_gamma;
+    //gamma += velocity_gamma;
+    gamma += velocity_gamma + mu * (velocity_gamma - pv_gamma);
+    //gamma += (-mu * pv_gamma + (1 + mu) * velocity_gamma);
     //gamma -= (gamma * weight_decay);
 
     previous_velocity_gamma = velocity_gamma;
 
     //cout << "\tnode " << innovation_number << ", delta_gamma: " << delta_gamma << ", delta_beta: " << delta_beta << ", gamma now: " << gamma << ", beta now: " << beta << endl;
 }
-*/
 
 
-void CNN_Node::set_values(const vector<Image> &images, int channel, bool perform_dropout, double input_dropout_probability, minstd_rand0 &generator) {
+void CNN_Node::set_values(const vector<Image> &images, int channel, bool perform_dropout, bool accumulate_test_statistics, float input_dropout_probability, minstd_rand0 &generator) {
     //images.size() may be less than batch size, in the case when the total number of images is not divisible by the batch_size
     if (images.size() > batch_size) {
         cerr << "ERROR: number of batch images: " << images.size() << " > batch_size of input node: " << batch_size << endl;
@@ -927,28 +971,36 @@ void CNN_Node::set_values(const vector<Image> &images, int channel, bool perform
     }
 
     //images.size() may be less than batch size, in the case when the total number of images is not divisible by the batch_size
+    int current = 0;
     for (int32_t batch_number = 0; batch_number < images.size(); batch_number++) {
         for (int32_t y = 0; y < size_y; y++) {
             for (int32_t x = 0; x < size_x; x++) {
-                values[batch_number][y][x] = images[batch_number].get_pixel(channel, y, x);
+                values_out[current] = images[batch_number].get_pixel(channel, y, x);
+                current++;
             }
         }
     }
 
-    apply_dropout(perform_dropout, input_dropout_probability, generator);
+    if (input_dropout_probability > 0) apply_dropout(values_out, relu_gradients, perform_dropout, accumulate_test_statistics, input_dropout_probability, generator);
 }
 
 
-void CNN_Node::input_fired(bool training, double epsilon, double alpha, bool perform_dropout, double hidden_dropout_probability, minstd_rand0 &generator) {
+void CNN_Node::input_fired(bool training, bool accumulate_test_statistics, float epsilon, float alpha, bool perform_dropout, float hidden_dropout_probability, minstd_rand0 &generator) {
+
+    using namespace std::chrono;
+    high_resolution_clock::time_point input_fired_start_time = high_resolution_clock::now();
+
     inputs_fired++;
 
     //cout << "input fired on node: " << innovation_number << ", inputs fired: " << inputs_fired << ", total_inputs: " << total_inputs << endl;
 
     if (inputs_fired == total_inputs) {
         if (type != SOFTMAX_NODE) {
-            //batch_normalize(training, epsilon, alpha);
-            apply_relu();
-            apply_dropout(perform_dropout, hidden_dropout_probability, generator);
+            apply_relu(values_in, relu_gradients);
+
+            if (hidden_dropout_probability > 0) apply_dropout(values_in, relu_gradients, perform_dropout, accumulate_test_statistics, hidden_dropout_probability, generator);
+
+            batch_normalize(training, accumulate_test_statistics, epsilon, alpha);
         }
 
     } else if (inputs_fired > total_inputs) {
@@ -962,18 +1014,26 @@ void CNN_Node::input_fired(bool training, double epsilon, double alpha, bool per
 
         exit(1);
     }
+
+    high_resolution_clock::time_point input_fired_end_time = high_resolution_clock::now();
+    duration<float, std::milli> time_span = input_fired_end_time - input_fired_start_time;
+
+    input_fired_time += time_span.count() / 1000.0;
 }
 
-void CNN_Node::output_fired(double mu, double learning_rate) {
+void CNN_Node::output_fired(float mu, float learning_rate, float epsilon) {
+    using namespace std::chrono;
+    high_resolution_clock::time_point output_fired_start_time = high_resolution_clock::now();
+
+
     outputs_fired++;
 
     //cout << "output fired on node: " << innovation_number << ", outputs fired: " << outputs_fired << ", total_outputs: " << total_outputs << endl;
 
     if (outputs_fired == total_outputs) {
         if (type != SOFTMAX_NODE && type != INPUT_NODE) {
-            //backpropagate_dropout();
-            //backpropagate_relu(values_in);
-            //backpropagate_batch_normalization(mu, learning_rate);
+            backpropagate_batch_normalization(mu, learning_rate, epsilon);
+            backpropagate_relu(errors_in, relu_gradients);
         }
 
     } else if (outputs_fired > total_outputs) {
@@ -987,53 +1047,61 @@ void CNN_Node::output_fired(double mu, double learning_rate) {
 
         exit(1);
     }
+
+
+    high_resolution_clock::time_point output_fired_end_time = high_resolution_clock::now();
+    duration<float, std::milli> time_span = output_fired_end_time - output_fired_start_time;
+
+    output_fired_time += time_span.count() / 1000.0;
 }
 
 
 bool CNN_Node::has_nan() const {
-    for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
-        for (int32_t y = 0; y < size_y; y++) {
-            for (int32_t x = 0; x < size_x; x++) {
-                if (isnan(values[batch_number][y][x]) || isinf(values[batch_number][y][x])) return true;
-                if (isnan(errors[batch_number][y][x]) || isinf(errors[batch_number][y][x])) return true;
-                if (isnan(gradients[batch_number][y][x]) || isinf(gradients[batch_number][y][x])) return true;
-            }
-        }
+    for (int32_t current = 0; current < total_size; current++) {
+        if (isnan(values_in[current]) || isinf(values_in[current])) return true;
+        if (isnan(errors_in[current]) || isinf(errors_in[current])) return true;
+
+        if (isnan(values_out[current]) || isinf(values_out[current])) return true;
+        if (isnan(errors_out[current]) || isinf(errors_out[current])) return true;
+        if (isnan(relu_gradients[current]) || isinf(relu_gradients[current])) return true;
     }
 
     return false;
 }
 
 void CNN_Node::print_statistics() {
-    double value_min = std::numeric_limits<double>::max(), value_max = -std::numeric_limits<double>::max(), value_avg = 0.0;
-    double error_min = std::numeric_limits<double>::max(), error_max = -std::numeric_limits<double>::max(), error_avg = 0.0;
-    double gradient_min = std::numeric_limits<double>::max(), gradient_max = -std::numeric_limits<double>::max(), gradient_avg = 0.0;
+    cerr << "node " << setw(4) << innovation_number;
+    cerr << ", gamma: " << gamma << ", beta: " << beta;
+    cerr << "\tINPUTS: ";
+    print_statistics(values_in, errors_in, relu_gradients);
+    cerr << "\tOUTPUTS: ";
+    print_statistics(values_out, errors_out, relu_gradients);
+}
 
-    for (int batch_number = 0; batch_number < batch_size; batch_number++) {
-        for (int y = 0; y < size_y; y++) {
-            for (int x = 0; x < size_x; x++) {
-                if (values[batch_number][y][x] < value_min) value_min = values[batch_number][y][x];
-                if (values[batch_number][y][x] > value_max) value_max = values[batch_number][y][x];
-                value_avg += values[batch_number][y][x];
+void CNN_Node::print_statistics(const float* values, const float* errors, const float* gradients) {
+    float value_min = std::numeric_limits<float>::max(), value_max = -std::numeric_limits<float>::max(), value_avg = 0.0;
+    float error_min = std::numeric_limits<float>::max(), error_max = -std::numeric_limits<float>::max(), error_avg = 0.0;
+    float gradient_min = std::numeric_limits<float>::max(), gradient_max = -std::numeric_limits<float>::max(), gradient_avg = 0.0;
 
-                if (gradients[batch_number][y][x] < gradient_min) gradient_min = gradients[batch_number][y][x];
-                if (gradients[batch_number][y][x] > gradient_max) gradient_max = gradients[batch_number][y][x];
-                gradient_avg += gradients[batch_number][y][x];
+    for (int32_t current = 0; current < total_size; current++) {
+        if (values[current] < value_min) value_min = values[current];
+        if (values[current] > value_max) value_max = values[current];
+        value_avg += values[current];
 
-                if (errors[batch_number][y][x] < error_min) error_min = errors[batch_number][y][x];
-                if (errors[batch_number][y][x] > error_max) error_max = errors[batch_number][y][x];
-                error_avg += errors[batch_number][y][x];
-            }
-        }
+        if (gradients[current] < gradient_min) gradient_min = gradients[current];
+        if (gradients[current] > gradient_max) gradient_max = gradients[current];
+        gradient_avg += gradients[current];
+
+        if (errors[current] < error_min) error_min = errors[current];
+        if (errors[current] > error_max) error_max = errors[current];
+        error_avg += errors[current];
     }
 
     error_avg /= batch_size * size_y * size_x;
     gradient_avg /= batch_size * size_y * size_x;
     value_avg /= batch_size * size_y * size_x;
 
-    cerr << "node " << setw(4) << innovation_number;
-    cerr << ", gamma: " << gamma << ", beta: " << beta;
-    cerr << ", v_min: " << value_min << ", v_avg: " << value_avg << ", v_max: " << value_max;
+    cerr << "v_min: " << value_min << ", v_avg: " << value_avg << ", v_max: " << value_max;
     cerr << ", gradient_min: " << gradient_min << ", gradient_avg: " << gradient_avg << ", gradient_max: " << gradient_max << endl;
     cerr << ", error_min: " << error_min << ", error_avg: " << error_avg << ", error_max: " << error_max << endl;
 }
@@ -1096,6 +1164,8 @@ std::istream &operator>>(std::istream &is, CNN_Node* node) {
     is >> node->weight_count;
     is >> node->needs_initialization;
 
+    node->total_size = node->batch_size * node->size_y * node->size_x;
+
     node->gamma = read_hexfloat(is);
     node->best_gamma = read_hexfloat(is);
     node->previous_velocity_gamma = read_hexfloat(is);
@@ -1116,9 +1186,12 @@ std::istream &operator>>(std::istream &is, CNN_Node* node) {
     node->forward_visited = false;
     node->reverse_visited = false;
 
-    node->values = vector< vector< vector<double> > >(node->batch_size, vector< vector<double> >(node->size_y, vector<double>(node->size_x, 0.0)));
-    node->errors = vector< vector< vector<double> > >(node->batch_size, vector< vector<double> >(node->size_y, vector<double>(node->size_x, 0.0)));
-    node->gradients = vector< vector< vector<double> > >(node->batch_size, vector< vector<double> >(node->size_y, vector<double>(node->size_x, 0.0)));
+    node->values_in = new float[node->total_size]();
+    node->errors_in = new float[node->total_size]();
+
+    node->values_out = new float[node->total_size]();
+    node->errors_out = new float[node->total_size]();
+    node->relu_gradients = new float[node->total_size]();
 
     return is;
 }

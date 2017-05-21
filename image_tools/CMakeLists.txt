@@ -2,5 +2,7 @@ add_library(exact_image_tools image_set)
 
 add_executable(convert_mnist_data convert_mnist_data)
 
+add_executable(split_mnist_data split_mnist_data)
+
 add_executable(convert_cifar10_data convert_cifar10_data)
 

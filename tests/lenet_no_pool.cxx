@@ -27,11 +27,14 @@ using std::vector;
 int main(int argc, char **argv) {
     vector<string> arguments = vector<string>(argv, argv + argc);
 
-    string binary_training_filename;
-    get_argument(arguments, "--training_file", true, binary_training_filename);
+    string training_filename;
+    get_argument(arguments, "--training_file", true, training_filename);
 
-    string binary_testing_filename;
-    get_argument(arguments, "--testing_file", true, binary_testing_filename);
+    string generalizability_filename;
+    get_argument(arguments, "--generalizability_file", true, generalizability_filename);
+
+    string testing_filename;
+    get_argument(arguments, "--testing_file", true, testing_filename);
 
     int max_epochs;
     get_argument(arguments, "--max_epochs", true, max_epochs);
@@ -63,9 +66,6 @@ int main(int argc, char **argv) {
     double alpha;
     get_argument(arguments, "--alpha", true, alpha);
 
-    double generalizability;
-    get_argument(arguments, "--generalizability", true, generalizability);
-
 
     double input_dropout_probability;
     get_argument(arguments, "--input_dropout_probability", true, input_dropout_probability);
@@ -75,8 +75,9 @@ int main(int argc, char **argv) {
 
     double epsilon = 1.0e-7;
 
-    Images training_images(binary_training_filename);
-    Images testing_images(binary_testing_filename, training_images.get_average(), training_images.get_std_dev());
+    Images training_images(training_filename);
+    Images generalizability_images(generalizability_filename, training_images.get_average(), training_images.get_std_dev());
+    Images testing_images(testing_filename, training_images.get_average(), training_images.get_std_dev());
 
     int node_innovation_count = 0;
     int edge_innovation_count = 0;
@@ -91,8 +92,7 @@ int main(int argc, char **argv) {
     minstd_rand0 generator(time(NULL));
     NormalDistribution normal_distribution;
 
-    CNN_Node *input_node = new CNN_Node(node_innovation_count, 0, batch_size, training_images.get_image_rows(), training_images.get_image_cols(), INPUT_NODE);
-    node_innovation_count++;
+    CNN_Node *input_node = new CNN_Node(++node_innovation_count, 0, batch_size, training_images.get_image_rows(), training_images.get_image_cols(), INPUT_NODE);
     nodes.push_back(input_node);
 
     //first layer of filters
@@ -254,7 +254,7 @@ int main(int argc, char **argv) {
     long genome_seed = generator();
     cout << "seeding genome with: " << genome_seed << endl;
 
-    CNN_Genome *genome = new CNN_Genome(1, training_images.get_number_images(), testing_images.get_number_images(), genome_seed, max_epochs, true, generalizability, velocity_reset, mu, mu_delta, learning_rate, learning_rate_delta, weight_decay, weight_decay_delta, batch_size, epsilon, alpha, input_dropout_probability, hidden_dropout_probability, nodes, edges);
+    CNN_Genome *genome = new CNN_Genome(1, training_images.get_number_images(), generalizability_images.get_number_images(), testing_images.get_number_images(), genome_seed, max_epochs, true, velocity_reset, mu, mu_delta, learning_rate, learning_rate_delta, weight_decay, weight_decay_delta, batch_size, epsilon, alpha, input_dropout_probability, hidden_dropout_probability, nodes, edges);
     //save the weights and bias of the initially generated genome for reuse
     genome->initialize();
 
@@ -264,5 +264,5 @@ int main(int argc, char **argv) {
     genome->print_graphviz(outfile);
     outfile.close();
 
-    genome->stochastic_backpropagation(training_images, testing_images);
+    genome->stochastic_backpropagation(training_images, generalizability_images, testing_images);
 }

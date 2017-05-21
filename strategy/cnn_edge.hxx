@@ -42,12 +42,13 @@ class CNN_Edge {
 
         int batch_size;
         int filter_x, filter_y;
-        vector< vector<double> > weights;
-        vector< vector<double> > weight_updates;
-        vector< vector<double> > best_weights;
+        int filter_size;
+        float *weights;
+        float *weight_updates;
+        float *best_weights;
 
-        vector< vector<double> > previous_velocity;
-        vector< vector<double> > best_velocity;
+        float *previous_velocity;
+        float *best_velocity;
 
         bool fixed;
         bool disabled;
@@ -57,6 +58,10 @@ class CNN_Edge {
         bool reverse_filter_x;
         bool reverse_filter_y;
         bool needs_initialization;
+
+        float propagate_backward_time;
+        float propagate_forward_time;
+        float weight_update_time;
 
     public:
         CNN_Edge();
@@ -78,6 +83,9 @@ class CNN_Edge {
         bool equals(CNN_Edge *other) const;
 
         bool has_nan() const;
+
+        void reset_times();
+        void accumulate_times(float &total_forward_time, float &total_backward_time, float &total_weight_update_time);
 
         void set_needs_init();
         bool needs_init() const;
@@ -129,14 +137,14 @@ class CNN_Edge {
 
         void print(ostream &out);
 
-        void check_output_update(const vector< vector< vector<double> > > &output, const vector< vector< vector<double> > > &input, double value, double weight, double previous_output, int batch_number, int in_y, int in_x, int out_y, int out_x);
+        void check_output_update(const vector< vector< vector<float> > > &output, const vector< vector< vector<float> > > &input, float value, float weight, float previous_output, int batch_number, int in_y, int in_x, int out_y, int out_x);
 
-        void check_weight_update(const vector< vector< vector<double> > > &input, const vector< vector< vector<double> > > &input_deltas, double delta, double previous_delta, double weight_update, double previous_weight_update, int batch_number, int out_y, int out_x, int in_y, int in_x);
+        void check_weight_update(const vector< vector< vector<float> > > &input, const vector< vector< vector<float> > > &input_deltas, float delta, float previous_delta, float weight_update, float previous_weight_update, int batch_number, int out_y, int out_x, int in_y, int in_x);
 
-        void propagate_forward(bool training, double epsilon, double alpha, bool perform_dropout, double hidden_dropout_probability, minstd_rand0 &generator);
+        void propagate_forward(bool training, bool accumulate_test_statistics, float epsilon, float alpha, bool perform_dropout, float hidden_dropout_probability, minstd_rand0 &generator);
 
-        void propagate_backward(double mu, double learning_rate);
-        void update_weights(double mu, double learning_rate, double weight_decay);
+        void propagate_backward(float mu, float learning_rate, float epsilon);
+        void update_weights(float mu, float learning_rate, float weight_decay);
 
         void print_statistics();
 
@@ -144,7 +152,8 @@ class CNN_Edge {
         friend istream &operator>>(istream &is, CNN_Edge* flight);
 };
 
-void parse_vector_2d(vector<vector<double>> &output, istringstream &iss, int size_x, int size_y);
+void parse_float_2d(float **output, istringstream &iss, int size_x, int size_y);
+void parse_vector_2d(vector<vector<float>> &output, istringstream &iss, int size_x, int size_y);
 
 struct sort_CNN_Edges_by_depth {
     bool operator()(CNN_Edge *n1, CNN_Edge *n2) {

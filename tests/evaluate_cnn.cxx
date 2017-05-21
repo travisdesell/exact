@@ -63,7 +63,7 @@ int main(int argc, char **argv) {
     Images training_images(training_data);
     Images testing_images(testing_data, training_images.get_average(), training_images.get_std_dev());
 
-    double error;
+    float error;
     int predictions;
     //genome->evaluate(training_images, error, predictions);
 
