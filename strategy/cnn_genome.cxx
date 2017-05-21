@@ -5,6 +5,8 @@ using std::upper_bound;
 #include <cmath>
 using std::isnan;
 
+#include <chrono>
+
 #include <fstream>
 using std::ofstream;
 using std::ifstream;
