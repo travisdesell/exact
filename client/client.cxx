@@ -89,6 +89,7 @@ int main(int argc, char** argv) {
     get_argument(arguments, "--checkpoint_file", true, checkpoint_filename);
 
     training_filename = get_boinc_filename(training_filename);
+    generalizability_filename = get_boinc_filename(generalizability_filename);
     testing_filename = get_boinc_filename(testing_filename);
     genome_filename = get_boinc_filename(genome_filename);
     output_filename = get_boinc_filename(output_filename);
