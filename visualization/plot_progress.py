@@ -38,6 +38,7 @@ print max_fitness
 
 # plot it!
 fig, ax = plt.subplots(1)
+plt.ylim(ymax = 5000, ymin = 0)
 
 
 ax.plot(t, avg_fitness, lw=2, label='Population Fitness', color='blue')

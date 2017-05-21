@@ -48,7 +48,7 @@ echo "
         //fitness query
 
         if ($search_row['sort_by_fitness'] == 1) {
-            $fitness_result = query_multi_db($db_name, "SELECT best_error, best_predictions, best_error_epoch FROM cnn_genome WHERE exact_id = " . $search_row['id'] . " ORDER BY best_error LIMIT 1");
+            $fitness_result = query_multi_db($db_name, "SELECT best_error, best_predictions, best_error_epoch FROM cnn_genome WHERE exact_id = " . $search_row['id'] . " ORDER BY test_error LIMIT 1");
             $fitness_row = $fitness_result->fetch_assoc();
 
             $search_row['best_error'] = number_format($fitness_row['best_error']);
@@ -61,13 +61,12 @@ echo "
 
             $search_row['best_error_epoch'] = $fitness_row['best_error_epoch'];
 
-            $fitness_result = query_multi_db($db_name, "SELECT best_error, best_error_epoch FROM cnn_genome WHERE exact_id = " . $search_row['id'] . " ORDER BY best_error DESC LIMIT 1");
+            $fitness_result = query_multi_db($db_name, "SELECT test_error, best_error_epoch FROM cnn_genome WHERE exact_id = " . $search_row['id'] . " ORDER BY test_error DESC LIMIT 1");
             $fitness_row = $fitness_result->fetch_assoc();
 
-            $search_row['worst_error'] = number_format($fitness_row['best_error']);
-            $search_row['worst_error_epoch'] = $fitness_row['best_error_epoch'];
+            $search_row['worst_error'] = number_format($fitness_row['test_error']);
 
-            $fitness_result = query_multi_db($db_name, "SELECT test_error, test_predictions FROM cnn_genome WHERE exact_id = " . $search_row['id'] . " ORDER BY best_error LIMIT 1");
+            $fitness_result = query_multi_db($db_name, "SELECT test_error, test_predictions FROM cnn_genome WHERE exact_id = " . $search_row['id'] . " ORDER BY test_error LIMIT 1");
             $fitness_row = $fitness_result->fetch_assoc();
 
             $search_row['test_error'] = number_format($fitness_row['test_error']);
