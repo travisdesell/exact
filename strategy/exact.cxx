@@ -748,13 +748,13 @@ EXACT::EXACT(const Images &training_images, const Images &generalizability_image
     velocity_reset_min = 0;
     velocity_reset_max = 60000;
 
-    initial_input_dropout_probability_min = 0.0025;
-    initial_input_dropout_probability_max = 0.05;
-    input_dropout_probability_min = 0.005;
+    initial_input_dropout_probability_min = 0.0005;
+    initial_input_dropout_probability_max = 0.002;
+    input_dropout_probability_min = 0.0001;
     input_dropout_probability_max = 0.5;
 
-    initial_hidden_dropout_probability_min = 0.35;
-    initial_hidden_dropout_probability_max = 0.65;
+    initial_hidden_dropout_probability_min = 0.05;
+    initial_hidden_dropout_probability_max = 0.15;
     hidden_dropout_probability_min = 0.0;
     hidden_dropout_probability_max = 0.9;
 

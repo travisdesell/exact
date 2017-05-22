@@ -47,56 +47,32 @@ echo "
 
         //fitness query
 
-        if ($search_row['sort_by_fitness'] == 1) {
-            $fitness_result = query_multi_db($db_name, "SELECT best_error, best_predictions, best_error_epoch FROM cnn_genome WHERE exact_id = " . $search_row['id'] . " ORDER BY test_error LIMIT 1");
-            $fitness_row = $fitness_result->fetch_assoc();
+        $fitness_result = query_multi_db($db_name, "SELECT best_error, best_predictions, best_error_epoch FROM cnn_genome WHERE exact_id = " . $search_row['id'] . " ORDER BY test_error LIMIT 1");
+        $fitness_row = $fitness_result->fetch_assoc();
 
-            $search_row['best_error'] = number_format($fitness_row['best_error']);
+        $search_row['best_error'] = number_format($fitness_row['best_error']);
 
-            if (strpos($search_row['search_name'], "cifar") !== false) {
-                $search_row['best_predictions'] = number_format(100 * $fitness_row['best_predictions'] / 50000, 2) . "%";
-            } else {
-                $search_row['best_predictions'] = number_format(100 * $fitness_row['best_predictions'] / 60000, 2) . "%";
-            }
-
-            $search_row['best_error_epoch'] = $fitness_row['best_error_epoch'];
-
-            $fitness_result = query_multi_db($db_name, "SELECT test_error, best_error_epoch FROM cnn_genome WHERE exact_id = " . $search_row['id'] . " ORDER BY test_error DESC LIMIT 1");
-            $fitness_row = $fitness_result->fetch_assoc();
-
-            $search_row['worst_error'] = number_format($fitness_row['test_error']);
-
-            $fitness_result = query_multi_db($db_name, "SELECT test_error, test_predictions FROM cnn_genome WHERE exact_id = " . $search_row['id'] . " ORDER BY test_error LIMIT 1");
-            $fitness_row = $fitness_result->fetch_assoc();
-
-            $search_row['test_error'] = number_format($fitness_row['test_error']);
-            $search_row['test_predictions'] = number_format(100 * $fitness_row['test_predictions'] / 10000, 2) . "%";
+        if (strpos($search_row['search_name'], "cifar") !== false) {
+            $search_row['best_predictions'] = number_format(100 * $fitness_row['best_predictions'] / 50000, 2) . "%";
         } else {
-            $fitness_result = query_multi_db($db_name, "SELECT best_error, best_predictions, best_error_epoch FROM cnn_genome WHERE exact_id = " . $search_row['id'] . " ORDER BY best_predictions DESC LIMIT 1");
-            $fitness_row = $fitness_result->fetch_assoc();
-
-            $search_row['best_error'] = number_format($fitness_row['best_error']);
-
-            if (strpos($search_row['search_name'], "cifar") !== false) {
-                $search_row['best_predictions'] = number_format(100 * $fitness_row['best_predictions'] / 50000, 2) . "%";
-            } else {
-                $search_row['best_predictions'] = number_format(100 * $fitness_row['best_predictions'] / 60000, 2) . "%";
-            }
-
-            $search_row['best_error_epoch'] = $fitness_row['best_error_epoch'];
-
-            $fitness_result = query_multi_db($db_name, "SELECT best_error, best_error_epoch FROM cnn_genome WHERE exact_id = " . $search_row['id'] . " ORDER BY best_predictions LIMIT 1");
-            $fitness_row = $fitness_result->fetch_assoc();
-
-            $search_row['worst_error'] = number_format($fitness_row['best_error']);
-            $search_row['worst_error_epoch'] = $fitness_row['best_error_epoch'];
-
-            $fitness_result = query_multi_db($db_name, "SELECT test_error, test_predictions FROM cnn_genome WHERE exact_id = " . $search_row['id'] . " ORDER BY best_predictions DESC LIMIT 1");
-            $fitness_row = $fitness_result->fetch_assoc();
-
-            $search_row['test_error'] = number_format($fitness_row['test_error']);
-            $search_row['test_predictions'] = number_format(100 * $fitness_row['test_predictions'] / 10000, 2) . "%";
+            $search_row['best_predictions'] = number_format(100 * $fitness_row['best_predictions'] / 60000, 2) . "%";
         }
+
+        $search_row['best_error_epoch'] = $fitness_row['best_error_epoch'];
+
+        $fitness_result = query_multi_db($db_name, "SELECT test_error, best_error_epoch FROM cnn_genome WHERE exact_id = " . $search_row['id'] . " ORDER BY test_error DESC LIMIT 1");
+        $fitness_row = $fitness_result->fetch_assoc();
+
+        $search_row['worst_error'] = number_format($fitness_row['test_error']);
+
+        $fitness_result = query_multi_db($db_name, "SELECT generalizability_error, generalizability_predictions, test_error, test_predictions FROM cnn_genome WHERE exact_id = " . $search_row['id'] . " ORDER BY test_error LIMIT 1");
+        $fitness_row = $fitness_result->fetch_assoc();
+
+        $search_row['generalizability_error'] = number_format($fitness_row['generalizability_error']);
+        $search_row['generalizability_predictions'] = number_format(100 * $fitness_row['generalizability_predictions'] / 5000, 2) . "%";
+
+        $search_row['test_error'] = number_format($fitness_row['test_error']);
+        $search_row['test_predictions'] = number_format(100 * $fitness_row['test_predictions'] / 5000, 2) . "%";
 
         $search_row['is_hidden'] = false;
         $search_row['db_name'] = $db_name;
@@ -128,12 +104,7 @@ echo "
 }
 
 //print_db_overview("exact");
-print_db_overview("exact2", "EXACT 2");
-print_db_overview("exact_mnist", "EXACT MNIST");
-print_db_overview("exact_mnist_batch", "EXACT MNIST BATCH");
-print_db_overview("exact_mnist_batch2", "EXACT MNIST BATCH 2");
-print_db_overview("exact_cifar", "EXACT CIFAR");
-
+print_db_overview("exact_batchnorm", "EXACT BATCH NORMALIZATION");
 
 print_footer('Travis Desell and the Wildlife@Home Team', "Travis Desell</body></html>");
 

@@ -124,9 +124,6 @@ int main(int argc, char** argv) {
     bool reset_edges = false;
     get_argument(arguments, "--reset_edges", true, reset_edges);
 
-    double generalizability = 0.50;
-    get_argument(arguments, "--generalizability", true, generalizability);
-
 
     string output_directory = "/projects/csg/exact_data/" + search_name;
 
@@ -135,14 +132,18 @@ int main(int argc, char** argv) {
     string training_file;
     get_argument(arguments, "--training_file", true, training_file);
 
+    string generalizability_file;
+    get_argument(arguments, "--generalizability_file", true, generalizability_file);
+
     string testing_file;
     get_argument(arguments, "--testing_file", true, testing_file);
 
 
     Images training_images(training_file);
+    Images generalizability_images(generalizability_file, training_images.get_average(), training_images.get_std_dev());
     Images testing_images(testing_file, training_images.get_average(), training_images.get_std_dev());
 
-    EXACT *exact = new EXACT(training_images, testing_images, population_size, max_epochs, max_genomes, output_directory, search_name, reset_edges, generalizability);
+    EXACT *exact = new EXACT(training_images, generalizability_images, testing_images, population_size, max_epochs, max_genomes, output_directory, search_name, reset_edges);
 
     exact->export_to_database();
 

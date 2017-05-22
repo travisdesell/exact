@@ -44,6 +44,7 @@ using std::vector;
 
 #include "image_tools/image_set.hxx"
 #include "common/random.hxx"
+#include "cnn_genome.hxx"
 #include "cnn_edge.hxx"
 #include "cnn_node.hxx"
 
@@ -57,7 +58,12 @@ float read_hexfloat(istream &infile) {
 #else
     string s;
     infile >> s;
-    return stod(s);
+
+    if (s.compare("-nan(ind)") == 0 || s.compare("-nan") == 0 || s.compare("nan(ind)") == 0 || s.compare("nan") == 0) {
+        return EXACT_MAX_FLOAT;
+    } else {
+        return stod(s);
+    }
 #endif
 }
 

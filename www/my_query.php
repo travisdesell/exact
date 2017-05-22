@@ -10,28 +10,8 @@ if (is_link($cwd[__FILE__])) $cwd[__FILE__] = readlink($cwd[__FILE__]);
 $cwd[__FILE__] = dirname($cwd[__FILE__]);
 
 $databases = array(
-    "exact" => array(
-        "file" => $cwd[__FILE__] . '/../exact_db_info',
-        "database" => NULL
-    ),
-    "exact2" => array(
-        "file" => $cwd[__FILE__] . '/../exact2_db_info',
-        "database" => NULL
-    ),
-    "exact_mnist" => array(
-        "file" => $cwd[__FILE__] . '/../exact_mnist_db_info',
-        "database" => NULL
-    ),
-    "exact_cifar" => array(
-        "file" => $cwd[__FILE__] . '/../exact_cifar_db_info',
-        "database" => NULL
-    ),
-    "exact_mnist_batch" => array(
-        "file" => $cwd[__FILE__] . '/../exact_mnist_batch_db_info',
-        "database" => NULL
-    ),
-    "exact_mnist_batch2" => array(
-        "file" => $cwd[__FILE__] . '/../exact_mnist_batch2_db_info',
+    "exact_batchnorm" => array(
+        "file" => $cwd[__FILE__] . '/../exact_batchnorm_db_info',
         "database" => NULL
     )
 );
