@@ -744,7 +744,7 @@ EXACT::EXACT(const Images &training_images, const Images &generalizability_image
     alpha_max = 0.5;
 
     initial_velocity_reset_min = 500;
-    initial_velocity_reset_max = 10000;
+    initial_velocity_reset_max = 3000;
     velocity_reset_min = 0;
     velocity_reset_max = 60000;
 
