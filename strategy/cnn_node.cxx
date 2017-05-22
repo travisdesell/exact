@@ -969,7 +969,7 @@ void CNN_Node::backpropagate_batch_normalization(float mu, float learning_rate, 
     previous_velocity_beta = velocity_beta;
 
     if (beta <= -50) {
-        beta = -0.0;
+        beta = -50.0;
         previous_velocity_beta = 0.0;
     } else if (beta >= 50.0) {
         beta = 50.0;
@@ -988,7 +988,7 @@ void CNN_Node::backpropagate_batch_normalization(float mu, float learning_rate, 
     previous_velocity_gamma = velocity_gamma;
 
     if (gamma <= -50) {
-        gamma = -0.0;
+        gamma = -50.0;
         previous_velocity_gamma = 0.0;
     } else if (gamma >= 50.0) {
         gamma = 50.0;
