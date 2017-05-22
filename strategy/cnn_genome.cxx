@@ -1124,20 +1124,20 @@ void CNN_Genome::evaluate_images(const vector<Image> &images, bool training, flo
     for (int32_t batch_number = 0; batch_number < images.size(); batch_number++) {
         int expected_class = images[batch_number].get_classification();
 
-        //if (training) cout << "before softmax max, batch number: " << batch_number << " -- ";
+        //cout << "before softmax max, batch number: " << batch_number << " -- ";
         float softmax_max = softmax_nodes[0]->get_value_in(batch_number, 0, 0);
-        //if (training) cout << " " << setw(15) << fixed << setprecision(6) << softmax_nodes[0]->get_value_in(batch_number, 0,0);
+        //cout << " " << setw(15) << fixed << setprecision(6) << softmax_nodes[0]->get_value_in(batch_number, 0,0);
+
 
         for (uint32_t i = 1; i < softmax_nodes.size(); i++) {
-            //if (training) cout << " " << setw(15) << fixed << setprecision(6) << softmax_nodes[i]->get_value_in(batch_number, 0,0);
-
+            //cout << " " << setw(15) << fixed << setprecision(6) << softmax_nodes[i]->get_value_in(batch_number, 0,0);
             if (softmax_nodes[i]->get_value_in(batch_number, 0, 0) > softmax_max) {
                 softmax_max = softmax_nodes[i]->get_value_in(batch_number, 0, 0);
             }
         }
         //cout << endl;
 
-        //cout << "after softmax max:  ";
+        //cout << "after softmax max:" << endl;
         float softmax_sum = 0.0;
         for (uint32_t i = 0; i < softmax_nodes.size(); i++) {
             float value = softmax_nodes[i]->get_value_in(batch_number, 0, 0);
@@ -1147,6 +1147,7 @@ void CNN_Genome::evaluate_images(const vector<Image> &images, bool training, flo
                 cerr << "ERROR: value was NAN before exp!" << endl;
                 exit(1);
             }
+            //cout << " value - softmax_max: " << value - softmax_max << endl;
 
             value = exact_exp(value - softmax_max);
 
@@ -1157,7 +1158,7 @@ void CNN_Genome::evaluate_images(const vector<Image> &images, bool training, flo
             }
 
             softmax_nodes[i]->set_value_in(batch_number, 0, 0, value);
-            //cout << "\tvalue " << softmax_nodes[i]->get_innovation_number() << ": " << softmax_nodes[i]->get_value_in(0,0) << endl;
+            //cout << "\tvalue " << softmax_nodes[i]->get_innovation_number() << ": " << softmax_nodes[i]->get_value_in(batch_number, 0,0) << endl;
             softmax_sum += value;
 
             if (isnan(softmax_sum)) {
@@ -1214,9 +1215,10 @@ void CNN_Genome::evaluate_images(const vector<Image> &images, bool training, flo
 
             double previous_error = total_error;
 
-            if (value != 0) {
-                total_error -= target * log(value);
-            }
+            if (value == 0) value = 1.0 / EXACT_MAX_FLOAT;
+
+            total_error -= target * log(value);
+            //cout << "total_error: " << total_error << endl;
             //total_error += fabs(error);
 
             if (isnan(total_error) || isinf(total_error)) {
@@ -1226,6 +1228,7 @@ void CNN_Genome::evaluate_images(const vector<Image> &images, bool training, flo
                 cerr << "log(value): " << log(value) << endl;
                 cerr << "target: " << target << endl;
 
+                cerr << "softmax max: " << softmax_max << endl;
                 cerr << "softmax sum: " << softmax_sum << endl;
                 cerr << "softmax node values: " << endl;
                 for (uint32_t i = 0; i < softmax_nodes.size(); i++) {
@@ -1239,6 +1242,20 @@ void CNN_Genome::evaluate_images(const vector<Image> &images, bool training, flo
         //cout << endl;
         //cout << "predicted class: " << predicted_class << endl;
         //cout << "expected class:  " << expected_class << endl;
+
+        /*
+        cerr << "total error for batch[" << batch_number << "]: " << total_error << endl;
+
+        if (total_error == 0) {
+            cerr << "expected class: " << expected_class << endl;
+            cerr << "softmax max: " << softmax_max << endl;
+            cerr << "softmax sum: " << softmax_sum << endl;
+            cerr << "softmax node values: " << endl;
+            for (uint32_t i = 0; i < softmax_nodes.size(); i++) {
+                cerr << "    " << softmax_nodes[i]->get_value_in(batch_number, 0, 0) << endl;
+            }
+        }
+        */
 
         if (predicted_class == expected_class) {
             correct_predictions++;
