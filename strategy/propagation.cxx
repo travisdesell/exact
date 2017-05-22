@@ -1,4 +1,9 @@
 #include "stdint.h"
+#include <cmath>
+
+#include <iostream>
+using std::cerr;
+using std::endl;
 
 #include <vector>
 using std::vector;
@@ -11,6 +16,10 @@ void prop_forward(const float* input, const float* weights, float* output, int32
     int output_image_size = output_size_y * output_size_x;
     int input_image_size = input_size_y * input_size_x;
     int width_difference = input_size_x - output_size_x;
+
+#ifdef NAN_CHECKS
+    double previous_output;
+#endif
 
     current_output = 0;
     for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
@@ -25,7 +34,19 @@ void prop_forward(const float* input, const float* weights, float* output, int32
 
                 for (int32_t y = 0; y < output_size_y; y++) {
                     for (int32_t x = 0; x < output_size_x; x++) {
+#ifdef NAN_CHECKS
+                        previous_output = output[current_output];
+#endif
                         output[current_output++] += weight * input[current_input++];
+
+#ifdef NAN_CHECKS
+                        if (isnan(output[current_output - 1]) || isinf(output[current_output - 1])) {
+                            cerr << "ERROR! NAN or INF in propagate forward" << endl;
+                            cerr << "previous_output: " << previous_output << ", output: " << output[current_output - 1] << endl;
+                            cerr << "weight: " << weight << ", input: " << input[current_input - 1] << endl;
+                            exit(1);
+                        }
+#endif
                     }
                     current_input += width_difference;
                 }
