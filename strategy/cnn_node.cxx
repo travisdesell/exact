@@ -811,6 +811,30 @@ void CNN_Node::batch_normalize(bool training, bool accumulating_test_statistics,
 
         for (int32_t current = 0; current < total_size; current++) {
             values_out[current] = (term1 * values_in[current]) + term2;
+
+#ifdef NAN_CHECKS
+            if (isnan(values_out[current]) || isinf(values_out[current])) {
+                cerr << "ERROR! NAN or INF batch_mean or batch_variance on node " << innovation_number << "!" << endl;
+                cerr << "values_out[" << current << "]: " << values_out[current] << ", values_in[" << current << "]: " << values_in[current] << endl;
+                cerr << "gamma: " << gamma << ", beta: " << beta << endl;
+                cerr << "term1: " << term1 << ", term2: " << term2 << endl;
+
+                int current = 0;
+                for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
+                    for (int32_t y = 0; y < size_y; y++) {
+                        for (int32_t x = 0; x < size_x; x++) {
+                            cout << setw(10) << std::fixed << values_in[current];
+                            current++;
+                        }
+                        cout << endl;
+                    }
+                    cout << endl;
+                }
+
+                exit(1);
+            }
+#endif
+
         }
     }
 }

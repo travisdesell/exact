@@ -1188,8 +1188,11 @@ void CNN_Genome::evaluate_images(const vector<Image> &images, bool training, flo
             }
 
             softmax_nodes[i]->set_value_in(batch_number, 0, 0,  value);
+        }
 
-            //softmax_nodes[i]->print(cout);
+        for (int32_t i = 0; i < (int32_t)softmax_nodes.size(); i++) {
+            float value = softmax_nodes[i]->get_value_in(batch_number, 0,0);
+             //softmax_nodes[i]->print(cout);
 
             int target = 0.0;
             if (i == expected_class) {
@@ -1208,9 +1211,27 @@ void CNN_Genome::evaluate_images(const vector<Image> &images, bool training, flo
                 max_value = value;
             }
 
-            total_error -= target * log(value);
+            double previous_error = total_error;
+
+            if (value != 0) {
+                total_error -= target * log(value);
+            }
             //total_error += fabs(error);
 
+            if (isnan(total_error) || isinf(total_error)) {
+                cerr << "ERROR! total_error became NAN or INF!" << endl;
+                cerr << "previous total_error: " << previous_error << endl;
+                cerr << "value: " << value << endl;
+                cerr << "log(value): " << log(value) << endl;
+                cerr << "target: " << target << endl;
+
+                cerr << "softmax sum: " << softmax_sum << endl;
+                cerr << "softmax node values: " << endl;
+                for (uint32_t i = 0; i < softmax_nodes.size(); i++) {
+                    cerr << "    " << softmax_nodes[i]->get_value_in(batch_number, 0, 0) << endl;
+                }
+                exit(1);
+            }
 
             //cout << " " << setw(15) << fixed << setprecision(6) << error;
         }

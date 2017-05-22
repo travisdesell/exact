@@ -16,7 +16,7 @@ using std::vector;
 #define SANITY_CHECK_AFTER_GENERATION 1
 
 //mysql can't handl the max float value for some reason
-#define EXACT_MAX_FLOAT 100000
+#define EXACT_MAX_FLOAT 10000000
 
 class CNN_Genome {
     private:
