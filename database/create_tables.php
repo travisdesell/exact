@@ -39,10 +39,10 @@ $query = "CREATE TABLE `exact_search` (
     `reset_weights` tinyint NOT NULL,
     `max_epochs` int(11) NOT NULL,
 
-    `initial_batch_size_min` float NOT NULL,
-    `initial_batch_size_max` float NOT NULL,
-    `batch_size_min` float NOT NULL,
-    `batch_size_max` float NOT NULL,
+    `initial_batch_size_min` int(11) NOT NULL,
+    `initial_batch_size_max` int(11) NOT NULL,
+    `batch_size_min` int(11) NOT NULL,
+    `batch_size_max` int(11) NOT NULL,
 
     `initial_mu_min` float NOT NULL,
     `initial_mu_max` float NOT NULL,

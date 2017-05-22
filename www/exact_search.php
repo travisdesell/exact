@@ -66,7 +66,7 @@ echo "
  */
 
 if ($sort_by_fitness == 1) {
-    $search_result = query_multi_db($db_name, "SELECT id, best_error, best_predictions, test_error, test_predictions, best_error_epoch, initial_mu, mu_delta, initial_learning_rate, learning_rate_delta, initial_weight_decay, weight_decay_delta, input_dropout_probability, hidden_dropout_probability, velocity_reset, max_epochs, alpha, batch_size, generation_id, (test_error * (1.0 + GREATEST(-0.5, (generalizability_constant * ((best_predictions / number_training_images) - (test_predictions / number_testing_images)))))) AS fitness FROM cnn_genome WHERE exact_id = " . $search_id . " ORDER BY fitness");
+    $search_result = query_multi_db($db_name, "SELECT id, best_error, best_predictions, generalizability_error, generalizability_predictions, test_error, test_predictions, best_error_epoch, initial_mu, mu_delta, initial_learning_rate, learning_rate_delta, initial_weight_decay, weight_decay_delta, input_dropout_probability, hidden_dropout_probability, velocity_reset, max_epochs, alpha, batch_size, generation_id FROM cnn_genome WHERE exact_id = " . $search_id . " ORDER BY test_error");
 } else {
     $search_result = query_multi_db($db_name, "SELECT id, best_error, best_predictions, test_error, test_predictions, best_error_epoch, initial_mu, mu_delta, initial_learning_rate, learning_rate_delta, initial_weight_decay, weight_decay_delta, input_dropout_probability, hidden_dropout_probability, velocity_reset, alpha, batch_size, max_epochs, generation_id FROM cnn_genome WHERE exact_id = " . $search_id . " ORDER BY best_predictions DESC");
 }
@@ -85,9 +85,12 @@ while ($search_row = $search_result->fetch_assoc()) {
     }
 
     $tp = $search_row['test_predictions'];
+    $gp = $search_row['generalizability_predictions'];
     $search_row['fitness'] = number_format($search_row['fitness'], 3);
+    $search_row['generalizability_error'] = number_format($search_row['generalizability_error'], 3);
+    $search_row['generalizability_predictions'] = $gp . " (" . number_format(100.0 * $gp / 5000.00, 2) . "%)";
     $search_row['test_error'] = number_format($search_row['test_error'], 3);
-    $search_row['test_predictions'] = $tp . " (" . number_format(100.0 * $tp / 10000.00, 2) . "%)";
+    $search_row['test_predictions'] = $tp . " (" . number_format(100.0 * $tp / 5000.00, 2) . "%)";
 
     $search_row['alpha'] = number_format($search_row['alpha'], 5);
     $search_row['initial_mu'] = number_format($search_row['initial_mu'], 5);

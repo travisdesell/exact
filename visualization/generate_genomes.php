@@ -32,7 +32,7 @@ function process_genomes($db_name) {
         $gv_files[] = $search_name . "_genome_" . $genome_id . ".gv";
 
         if ($genome_row['test_error'] == 10000000 && $genome_row['best_error'] != 10000000) {
-            $command = "/home/tdesell/exact/build/tests/evaluate_cnn --genome_id $genome_id --training_data $training_filename --testing_data $testing_filename --update_database --db_file /home/tdesell/exact/exact_mnist_batch_db_info";
+            $command = "/home/tdesell/exact/build/tests/evaluate_cnn --genome_id $genome_id --training_data $training_filename --testing_data $testing_filename --update_database --db_file /home/tdesell/exact/" . $db_name . "_db_info";
             echo "command: $command \n";
             echo "results: " . exec($command) . "\n";
         } else {
@@ -41,7 +41,7 @@ function process_genomes($db_name) {
 
         if (!file_exists($genome_image)) {
             echo "'$graphviz_file' does not exist, generating\n";
-            $command = "/home/tdesell/exact/build/tests/generate_gv $genome_id $graphviz_file /home/tdesell/exact/exact_mnist_batch_db_info";
+            $command = "/home/tdesell/exact/build/tests/generate_gv $genome_id $graphviz_file /home/tdesell/exact/" . $db_name . "_db_info";
             echo "command: $command \n";
             echo "results: " . exec($command) . "\n";
 
@@ -72,7 +72,7 @@ foreach ($dir as $fileinfo) {
     }
 }
 
-process_genomes("exact_mnist_batch2");
+process_genomes("exact_batchnorm");
 
 ?>
 
