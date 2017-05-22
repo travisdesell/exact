@@ -4,6 +4,7 @@ using std::upper_bound;
 
 #include <cmath>
 using std::isnan;
+using std::isinf;
 
 #include <chrono>
 
