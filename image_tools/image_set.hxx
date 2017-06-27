@@ -13,13 +13,18 @@ using std::string;
 #include <vector>
 using std::vector;
 
+#include "image_set_interface.hxx"
+
 typedef class Images Images;
 
-class Image {
+class Image : public ImageInterface {
+    friend class Images;
+
     private:
+        int padding;
         int channels;
-        int rows;
-        int cols;
+        int height;
+        int width;
         int classification;
         vector< vector< vector<uint8_t> > > pixels;
 
@@ -28,24 +33,26 @@ class Image {
 
     public:
 
-        Image(ifstream &infile, int _channels, int _cols, int _rows, int _classification, const Images *_images);
-        float get_pixel(int z, int y, int x) const;
+        Image(ifstream &infile, int _channels, int _width, int _height, int _padding, int _classification, const Images *_images);
 
         int get_classification() const;
 
         int get_channels() const;
-        int get_rows() const;
-        int get_cols() const;
+        int get_height() const;
+        int get_width() const;
 
         void scale_0_1();
+
+        float get_pixel(int z, int y, int x) const;
+
         void get_pixel_avg(vector<float> &channel_avgs) const;
         void get_pixel_variance(const vector<float> &channel_avgs, vector<float> &channel_variances) const;
-        void normalize(const vector<float> &channel_avgs, const vector<float> &channel_std_dev);
+        //void normalize(const vector<float> &channel_avgs, const vector<float> &channel_std_dev);
 
         void print(ostream &out);
 };
 
-class Images {
+class Images : public ImagesInterface {
     private:
         string filename;
 
@@ -54,18 +61,20 @@ class Images {
 
         vector<int> class_sizes;
 
-        int channels, rows, cols;
+        int padding;
+        int channels, width, height;
 
         vector<Image> images;
 
         vector<float> channel_avg;
         vector<float> channel_std_dev;
 
+        bool had_error;
     public:
-        void read_images(string binary_filename);
+        int read_images(string binary_filename);
 
-        Images(string binary_filename);
-        Images(string binary_filename, const vector<float> &_channeL_avg, const vector<float> &channel_std_dev);
+        Images(string binary_filename, int _padding);
+        Images(string binary_filename, int _padding, const vector<float> &_channeL_avg, const vector<float> &channel_std_dev);
 
         string get_filename() const;
 
@@ -76,10 +85,11 @@ class Images {
         int get_number_images() const;
 
         int get_image_channels() const;
-        int get_image_cols() const;
-        int get_image_rows() const;
+        int get_image_width() const;
+        int get_image_height() const;
 
-        const Image& get_image(int image) const;
+        int get_classification(int image) const;
+        float get_pixel(int image, int z, int y, int x) const;
 
         void calculate_avg_std_dev();
 
@@ -87,11 +97,13 @@ class Images {
 
         float get_channel_std_dev(int channel) const;
 
+        bool loaded_correctly() const;
+
 
         const vector<float>& get_average() const;
         const vector<float>& get_std_dev() const;
 
-        void normalize();
+        //void normalize();
 };
 
 #endif

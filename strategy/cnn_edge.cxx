@@ -795,32 +795,95 @@ void CNN_Edge::propagate_forward(bool training, bool accumulate_test_statistics,
     using namespace std::chrono;
     high_resolution_clock::time_point propagate_forward_start_time = high_resolution_clock::now();
 
-    float *input = input_node->get_values_out();
-    float *output = output_node->get_values_in();
+    //if (type == CONVOLUTION) {
+        float *input = input_node->get_values_out();
+        float *output = output_node->get_values_in();
 
 #ifdef NAN_CHECKS
-    if (!is_filter_correct()) {
-        cerr << "ERROR: filter_x != input_node->get_size_x: " << input_node->get_size_x() << " - output_node->get_size_x: " << output_node->get_size_x() << " + 1" << endl;
-        exit(1);
-    }
+        if (!is_filter_correct()) {
+            cerr << "ERROR: filter_x != input_node->get_size_x: " << input_node->get_size_x() << " - output_node->get_size_x: " << output_node->get_size_x() << " + 1" << endl;
+            exit(1);
+        }
 
-    float previous_output;
+        float previous_output;
 #endif
 
-    int output_size_x = output_node->get_size_x();
-    int output_size_y = output_node->get_size_y();
-    int input_size_x = input_node->get_size_x();
-    int input_size_y = input_node->get_size_y();
+        int output_size_x = output_node->get_size_x();
+        int output_size_y = output_node->get_size_y();
+        int input_size_x = input_node->get_size_x();
+        int input_size_y = input_node->get_size_y();
 
-    if (reverse_filter_y && reverse_filter_x) {
-        prop_forward_ry_rx(input, weights, output, batch_size, input_size_y, input_size_x, filter_y, filter_x, output_size_y, output_size_x);
-    } else if (reverse_filter_y) {
-        prop_forward_ry(input, weights, output, batch_size, input_size_y, input_size_x, filter_y, filter_x, output_size_y, output_size_x);
-    } else if (reverse_filter_x) {
-        prop_forward_rx(input, weights, output, batch_size, input_size_y, input_size_x, filter_y, filter_x, output_size_y, output_size_x);
+        if (reverse_filter_y && reverse_filter_x) {
+            prop_forward_ry_rx(input, weights, output, batch_size, input_size_y, input_size_x, filter_y, filter_x, output_size_y, output_size_x);
+        } else if (reverse_filter_y) {
+            prop_forward_ry(input, weights, output, batch_size, input_size_y, input_size_x, filter_y, filter_x, output_size_y, output_size_x);
+        } else if (reverse_filter_x) {
+            prop_forward_rx(input, weights, output, batch_size, input_size_y, input_size_x, filter_y, filter_x, output_size_y, output_size_x);
+        } else {
+            prop_forward(input, weights, output, batch_size, input_size_y, input_size_x, filter_y, filter_x, output_size_y, output_size_x);
+        }
+
+        /*
+    } else if (type == FRACTIONAL_MAX_POOL) {
+        vector<int> y_pools;
+        vector<int> x_pools;
+
+#ifdef NAN_CHECKS
+        if (y_pools.size() != output_size_y) {
+            cerr << "ERROR: FRACTIONAL_MAX_POOL y_pools.size: " << y_pools.size() << " != input_node->get_size_y" << endl;
+            exit(1);
+        }
+
+        if (x_pools.size() != output_size_x) {
+            cerr << "ERROR: FRACTIONAL_MAX_POOL x_pools.size: " << x_pools.size() << " != input_node->get_size_x" << endl;
+            exit(1);
+        }
+#endif
+
+        fisher_yates_shuffle(generator, y_pools);
+        fisher_yates_shuffle(generator, x_pools);
+
+        int current_output = 0;
+        for (int32_t y = 0; y < output_size_y; y++) {
+            for (int32_t x = 0; x < output_size_x; x++) {
+                output[current_output] = -numeric_limits<float>::max();
+            }
+        }
+
+        for (int32_t out_y = 0; out_y < y_pools.size(); out_y++) {
+            for (int32_t out_x = 0; out_x < x_pools.size(); out_x++) {
+                int max_y = 0;
+                int max_x = 0;
+
+                int in_y = y_pool_offset[out_y];
+                int in_x = x_pool_offset[out_x];
+
+                for (int32_t pool_y = 0; pool_y < y_pools[in_y]; pool_y++) {
+                    for (int32_t pool_x = 0; pool_x < x_pools[in_x]; pool_x++) {
+                        if (input[in_y + pool_y][in_x + pool_x] > output[out_y][out_x]) {
+                            output[out_y][out_x] = input[in_y + pool_y][in_x + pool_x];
+                            max_y = pool_y;
+                            max_x = pool_x;
+                        }
+                    }
+                }
+
+                for (int32_t pool_y = 0; pool_y < y_pools[in_y]; pool_y++) {
+                    for (int32_t pool_x = 0; pool_x < x_pools[in_x]; pool_x++) {
+                        if (pool_y == max_y && pool_x == max_x) {
+                            pool_gradients[in_y + pool_y][in_x + pool_x] = 1;
+                        } else {
+                            pool_gradients[in_y + pool_y][in_x + pool_x] = 0;
+                        }
+                    }
+                }
+            }
+        }
     } else {
-        prop_forward(input, weights, output, batch_size, input_size_y, input_size_x, filter_y, filter_x, output_size_y, output_size_x);
+        cerr << "ERROR: unknown edge type: " << type << endl;
+        exit(1);
     }
+    */
 
     high_resolution_clock::time_point propagate_forward_end_time = high_resolution_clock::now();
     duration<float, std::milli> time_span = propagate_forward_end_time - propagate_forward_start_time;

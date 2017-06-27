@@ -58,6 +58,7 @@ class CNN_Genome {
         int max_epochs;
         bool reset_weights;
 
+        int padding;
         int number_training_images;
         float best_error;
         int best_predictions;
@@ -103,7 +104,7 @@ class CNN_Genome {
         /**
          *  Iniitalize a genome from a set of nodes and edges
          */
-        CNN_Genome(int _generation_id, int _number_training_images, int _number_generalizability_images, int _number_test_images, int seed, int _max_epochs, bool _reset_weights, int velocity_reset, float _mu, float _mu_delta, float _learning_rate, float _learning_rate_delta, float _weight_decay, float _weight_decay_delta, int _batch_size, float _epsilon, float _alpha, float _input_dropout_probability, float _hidden_dropout_probability, const vector<CNN_Node*> &_nodes, const vector<CNN_Edge*> &_edges);
+        CNN_Genome(int _generation_id, int _padding, int _number_training_images, int _number_generalizability_images, int _number_test_images, int seed, int _max_epochs, bool _reset_weights, int velocity_reset, float _mu, float _mu_delta, float _learning_rate, float _learning_rate_delta, float _weight_decay, float _weight_decay_delta, int _batch_size, float _epsilon, float _alpha, float _input_dropout_probability, float _hidden_dropout_probability, const vector<CNN_Node*> &_nodes, const vector<CNN_Edge*> &_edges);
 
         ~CNN_Genome();
 
@@ -129,6 +130,8 @@ class CNN_Genome {
 
         int get_number_weights() const;
         int get_number_biases() const;
+
+        int get_padding() const;
 
         int get_operations_estimate() const;
 
@@ -192,17 +195,17 @@ class CNN_Genome {
 
         void resize_edges_around_node(int node_position);
  
-        void evaluate_images(const vector<Image> &images, bool training, float &total_error, int &correct_predictions, bool accumulate_test_statistics);
+        void evaluate_images(const ImagesInterface &images, const vector<int> &batch, bool training, float &total_error, int &correct_predictions, bool accumulate_test_statistics);
 
         void set_to_best();
         void save_to_best();
         void initialize();
 
-        void evaluate(const Images &images, float &total_error, int &correct_predictions, bool perform_backprop, bool accumulate_test_statistics);
-        void evaluate(const Images &images, float &total_error, int &correct_predictions);
+        void evaluate(const ImagesInterface &images, float &total_error, int &correct_predictions, bool perform_backprop, bool accumulate_test_statistics);
+        void evaluate(const ImagesInterface &images, float &total_error, int &correct_predictions);
 
-        void stochastic_backpropagation(const Images &training_images, const Images &generalizability_images, const Images &test_images, int training_resize);
-        void stochastic_backpropagation(const Images &training_images, const Images &generalizability_images, const Images &test_images);
+        void stochastic_backpropagation(const ImagesInterface &training_images, const ImagesInterface &generalizability_images, const ImagesInterface &test_images, int training_resize);
+        void stochastic_backpropagation(const ImagesInterface &training_images, const ImagesInterface &generalizability_images, const ImagesInterface &test_images);
 
         void set_name(string _name);
         void set_output_filename(string _output_filename);

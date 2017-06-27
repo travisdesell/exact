@@ -150,7 +150,7 @@ class CNN_Node {
 
         bool has_nan() const;
 
-        void set_values(const vector<Image> &image, int channel, bool perform_dropout, bool accumulate_test_statistics, float input_dropout_probability, minstd_rand0 &generator);
+        void set_values(const ImagesInterface &images, const vector<int> &batch, int channel, bool perform_dropout, bool accumulate_test_statistics, float input_dropout_probability, minstd_rand0 &generator);
 
         float get_value_in(int batch_number, int y, int x);
         void set_value_in(int batch_number, int y, int x, float value);

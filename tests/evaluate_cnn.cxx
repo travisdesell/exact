@@ -32,6 +32,7 @@ int main(int argc, char **argv) {
     string testing_data;
     get_argument(arguments, "--testing_data", true, testing_data);
 
+
 #ifdef _MYSQL_
     int genome_id = -1;
 #endif
@@ -60,8 +61,8 @@ int main(int argc, char **argv) {
         exit(1);
     }
 
-    Images training_images(training_data);
-    Images testing_images(testing_data, training_images.get_average(), training_images.get_std_dev());
+    Images training_images(training_data, genome->get_padding());
+    Images testing_images(testing_data, genome->get_padding(), training_images.get_average(), training_images.get_std_dev());
 
     float error;
     int predictions;

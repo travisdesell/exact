@@ -37,6 +37,9 @@ int main(int argc, char **argv) {
     get_argument(arguments, "--generalizability_file", true, generalizability_filename);
 
 
+    int padding;
+    get_argument(arguments, "--padding", true, padding);
+
     int max_epochs;
     get_argument(arguments, "--max_epochs", true, max_epochs);
 
@@ -77,9 +80,9 @@ int main(int argc, char **argv) {
 
     double epsilon = 1.0e-7;
 
-    Images training_images(training_filename);
-    Images generalizability_images(generalizability_filename, training_images.get_average(), training_images.get_std_dev());
-    Images testing_images(testing_filename, training_images.get_average(), training_images.get_std_dev());
+    Images training_images(training_filename, padding);
+    Images generalizability_images(generalizability_filename, padding, training_images.get_average(), training_images.get_std_dev());
+    Images testing_images(testing_filename, padding, training_images.get_average(), training_images.get_std_dev());
 
     int node_innovation_count = 0;
     int edge_innovation_count = 0;
@@ -92,7 +95,7 @@ int main(int argc, char **argv) {
     minstd_rand0 generator(time(NULL));
     NormalDistribution normal_distribution;
 
-    CNN_Node *input_node = new CNN_Node(node_innovation_count, 0, batch_size, training_images.get_image_rows(), training_images.get_image_cols(), INPUT_NODE);
+    CNN_Node *input_node = new CNN_Node(node_innovation_count, 0, batch_size, training_images.get_image_height(), training_images.get_image_width(), INPUT_NODE);
     node_innovation_count++;
     nodes.push_back(input_node);
 
@@ -120,7 +123,7 @@ int main(int argc, char **argv) {
     long genome_seed = generator();
     cout << "seeding genome with: " << genome_seed << endl;
 
-    CNN_Genome *genome = new CNN_Genome(1, training_images.get_number_images(), generalizability_images.get_number_images(), testing_images.get_number_images(), genome_seed, max_epochs, true, velocity_reset, mu, mu_delta, learning_rate, learning_rate_delta, weight_decay, weight_decay_delta, batch_size, epsilon, alpha, input_dropout_probability, hidden_dropout_probability, nodes, edges);
+    CNN_Genome *genome = new CNN_Genome(1, padding, training_images.get_number_images(), generalizability_images.get_number_images(), testing_images.get_number_images(), genome_seed, max_epochs, true, velocity_reset, mu, mu_delta, learning_rate, learning_rate_delta, weight_decay, weight_decay_delta, batch_size, epsilon, alpha, input_dropout_probability, hidden_dropout_probability, nodes, edges);
     //save the weights and bias of the initially generated genome for reuse
     genome->initialize();
 

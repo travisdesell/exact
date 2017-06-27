@@ -1000,29 +1000,29 @@ void CNN_Node::backpropagate_batch_normalization(float mu, float learning_rate, 
 }
 
 
-void CNN_Node::set_values(const vector<Image> &images, int channel, bool perform_dropout, bool accumulate_test_statistics, float input_dropout_probability, minstd_rand0 &generator) {
+void CNN_Node::set_values(const ImagesInterface &images, const vector<int> &batch, int channel, bool perform_dropout, bool accumulate_test_statistics, float input_dropout_probability, minstd_rand0 &generator) {
     //images.size() may be less than batch size, in the case when the total number of images is not divisible by the batch_size
-    if (images.size() > batch_size) {
-        cerr << "ERROR: number of batch images: " << images.size() << " > batch_size of input node: " << batch_size << endl;
+    if (batch.size() > batch_size) {
+        cerr << "ERROR: number of batch images: " << batch.size() << " > batch_size of input node: " << batch_size << endl;
         exit(1);
     }
 
-    if (images[0].get_rows() != size_y) {
-        cerr << "ERROR: rows of input image: " << images[0].get_rows() << " != size_y of input node: " << size_y << endl;
+    if (images.get_image_height() != size_y) {
+        cerr << "ERROR: height of input image: " << images.get_image_height() << " != size_y of input node: " << size_y << endl;
         exit(1);
     }
 
-    if (images[0].get_cols() != size_x) {
-        cerr << "ERROR: cols of input image: " << images[0].get_cols() << " != size_x of input node: " << size_x << endl;
+    if (images.get_image_width() != size_x) {
+        cerr << "ERROR: width of input image: " << images.get_image_width() << " != size_x of input node: " << size_x << endl;
         exit(1);
     }
 
     //images.size() may be less than batch size, in the case when the total number of images is not divisible by the batch_size
     int current = 0;
-    for (int32_t batch_number = 0; batch_number < images.size(); batch_number++) {
+    for (int32_t batch_number = 0; batch_number < batch.size(); batch_number++) {
         for (int32_t y = 0; y < size_y; y++) {
             for (int32_t x = 0; x < size_x; x++) {
-                values_out[current] = images[batch_number].get_pixel(channel, y, x);
+                values_out[current] = images.get_pixel(batch[batch_number], channel, y, x);
                 current++;
             }
         }

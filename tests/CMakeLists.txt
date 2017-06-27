@@ -11,6 +11,9 @@ IF (MYSQL_FOUND)
     add_executable(lenet_no_pool lenet_no_pool)
     target_link_libraries(lenet_no_pool exact_strategy exact_common exact_image_tools ${MYSQL_LIBRARIES} pthread)
 
+    add_executable(large_image_lenet large_image_lenet)
+    target_link_libraries(large_image_lenet exact_strategy exact_common exact_image_tools ${MYSQL_LIBRARIES} pthread)
+
     add_executable(export_genome export_genome)
     target_link_libraries(export_genome exact_strategy exact_common exact_image_tools ${MYSQL_LIBRARIES} pthread)
 
@@ -25,4 +28,7 @@ ELSE (MYSQL_FOUND)
 
     add_executable(lenet_no_pool lenet_no_pool)
     target_link_libraries(lenet_no_pool exact_strategy exact_common exact_image_tools pthread)
+
+    add_executable(large_image_lenet large_image_lenet)
+    target_link_libraries(large_image_lenet exact_strategy exact_common exact_image_tools pthread)
 ENDIF (MYSQL_FOUND)

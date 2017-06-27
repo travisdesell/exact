@@ -102,13 +102,7 @@ int main(int argc, char** argv) {
     cerr << "boincified output filename: '" << output_filename << "'" << endl;
     cerr << "boincified checkpoint filename: '" << checkpoint_filename << "'" << endl;
 
-    cerr << "parsed arguments, loading images" << endl;
-
-    Images training_images(training_filename);
-    Images generalizability_images(generalizability_filename, training_images.get_average(), training_images.get_std_dev());
-    Images testing_images(testing_filename, training_images.get_average(), training_images.get_std_dev());
-
-    cerr << "loaded images" << endl;
+    cerr << "loading genome" << endl;
 
     CNN_Genome *genome = NULL;
 
@@ -131,6 +125,31 @@ int main(int argc, char** argv) {
         boinc_finish(1);
         exit(1);
     }
+
+    cerr << "loaded genome" << endl;
+
+    cerr << "loading images" << endl;
+
+    Images training_images(training_filename, genome->get_padding());
+    Images generalizability_images(generalizability_filename, genome->get_padding(), training_images.get_average(), training_images.get_std_dev());
+    Images testing_images(testing_filename, genome->get_padding(), training_images.get_average(), training_images.get_std_dev());
+
+    if (!training_images.loaded_correctly()) {
+        cerr << "ERROR: had error loading training images" << endl;
+        boinc_finish(1);
+        exit(1);
+    } else if (generalizability_images.loaded_correctly()) {
+        cerr << "ERROR: had error loading generalizability images" << endl;
+        boinc_finish(1);
+        exit(1);
+    } else if (testing_images.loaded_correctly()) {
+        cerr << "ERROR: had error loading testing images" << endl;
+        boinc_finish(1);
+        exit(1);
+    }
+
+    cerr << "loaded images" << endl;
+
 
     //genome->print_graphviz(cout);
 
