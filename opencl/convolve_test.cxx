@@ -75,39 +75,40 @@ string generate_program(int batch_size, int input_y, int input_x, int weights_y,
 
     int n_local_copies = ceil((float)(input_y * input_x) / (float)(output_y * output_x));
 
-	program.append("    int inputs_local_offset = ((y * output_x) + x) * " + to_string(n_local_copies) + ";\n");
+	program.append("    int inputs_local_offset = (y * output_x) + x;\n");
     program.append("    int input_offset = (batch_number * input_image_size) + inputs_local_offset;\n");
 
-    if ((input_y * input_x) % (output_y * output_x) != 0) {
-        program.append("    if (inputs_local_offset < input_image_size) {\n");
-        program.append("        inputs_local[inputs_local_offset]       = inputs[input_offset];\n");
-        for (uint32_t i = 1; i < n_local_copies; i++) {
-            program.append("        inputs_local[inputs_local_offset + " + to_string(i) + "]   = inputs[input_offset + " + to_string(i) + "];\n");
-        }
-        program.append("    }\n");
-    } else {
-        program.append("    inputs_local[inputs_local_offset]       = inputs[input_offset];\n");
-        for (uint32_t i = 1; i < n_local_copies; i++) {
-            program.append("    inputs_local[inputs_local_offset + " + to_string(i) + "]   = inputs[input_offset + " + to_string(i) + "];\n");
+    program.append("    inputs_local[inputs_local_offset]       = inputs[input_offset];\n");
+    //program.append("    printf(\"thread[%d,%d,%d] inputs_local[%d] = inputs[%d]: %f\\n\", batch_number, y, x, inputs_local_offset, input_offset, inputs_local[inputs_local_offset]);\n");
+    for (uint32_t i = 1; i < n_local_copies; i++) {
+        if (i == n_local_copies - 1 && (input_y * input_x) % (output_y * output_x) != 0) {
+            program.append("    if (inputs_local_offset + " + to_string(i * output_y * output_x) + " < input_image_size) {\n");
+            program.append("        inputs_local[inputs_local_offset + " + to_string(i * output_y * output_x) + "]   = inputs[input_offset + " + to_string(i * output_y * output_x) + "];\n");
+            //program.append("        printf(\"thread[%d,%d,%d] inputs_local[%d] = inputs[%d]: %f -- IN IF STATEMENT\\n\", batch_number, y, x, inputs_local_offset + " + to_string(i * output_y * output_x) + ", input_offset + " + to_string(i * output_y * output_x) + ", inputs_local[inputs_local_offset + " + to_string(i * output_y * output_x) + "]);\n");
+            program.append("    }\n");
+        } else {
+            program.append("    inputs_local[inputs_local_offset + " + to_string(i * output_y * output_x) + "]   = inputs[input_offset + " + to_string(i * output_y * output_x) + "];\n");
+            //program.append("    printf(\"thread[%d,%d,%d] inputs_local[%d] = inputs[%d]: %f\\n\", batch_number, y, x, inputs_local_offset + " + to_string(i * output_y * output_x) + ", input_offset + " + to_string(i * output_y * output_x) + ", inputs_local[inputs_local_offset + " + to_string(i * output_y * output_x) + "]);\n");
         }
     }
 
 	program.append("    barrier(CLK_LOCAL_MEM_FENCE);\n");
 
-	program.append("    float output = outputs[output_position];\n");
-    //program.append("    float output = 0.0;\n");
+	//program.append("    float output = outputs[output_position];\n");
+    program.append("    float output = 0.0;\n");
     program.append("    int local_input_offset = (y * input_x) + x;\n");
 
     int current_weight = 0;
     int current_input = 0;
     for (uint32_t wy = 0; wy < weights_y; wy++) {
         for (uint32_t wx = 0; wx < weights_x; wx++) {
-            program.append("    output += weights[" + to_string(current_weight++) +"] * inputs_local[local_input_offset + " + to_string(current_input++) + "];\n");
+            program.append("    output += weights[" + to_string(current_weight++) + "] * inputs_local[local_input_offset + " + to_string(current_input++) + "];\n");
         }
-        current_input += (input_x - output_x) - 1;
+        current_input += input_x - weights_x;
     }
 
     program.append("    outputs[output_position] = output;\n");
+    //program.append("    printf(\"outputs[%d] = %f\\n\", output_position, output);\n");
     program.append("}\n");
 
     return program;
@@ -128,9 +129,8 @@ void initialize_opencl(int batch_size, int input_y, int input_x, int weights_y, 
     check_error(err, "couldn't create a command queue: %d", err);
 
     // Build program
-    propagate_forward_kernel = build_program(context, device, PROPAGATE_FORWARD_KERNEL_FILE);
+    //propagate_forward_kernel = build_program(context, device, PROPAGATE_FORWARD_KERNEL_FILE);
 
-    /*
     string program = generate_program(batch_size, input_y, input_x, weights_y, weights_x, output_y, output_x);
 
 	cout << "KERNEL OUTSIDE:" << endl;
@@ -155,7 +155,6 @@ void initialize_opencl(int batch_size, int input_y, int input_x, int weights_y, 
         printf("%s\n", buffer);
     }
     check_error(err, "could not build program: %d", err);
-    */
 
     opencl_input_size = sizeof(float) * batch_size * input_y * input_x;
     input_opencl = clCreateBuffer(context, CL_MEM_READ_ONLY, opencl_input_size, NULL, &err);
@@ -420,13 +419,13 @@ void propagate_forward_opencl(float *input, float *weights, float *output) {
 int main(int argc, char **argv) {
     vector<string> arguments = vector<string>(argv, argv + argc);
 
-    uint32_t batch_size = 100;
+    uint32_t batch_size = 1000;
 
-    uint32_t input_y = 28;
-    uint32_t input_x = 28;
+    uint32_t input_y = 10;
+    uint32_t input_x = 10;
 
-    uint32_t output_y = 14;
-    uint32_t output_x = 14;
+    uint32_t output_y = 5;
+    uint32_t output_x = 5;
 
     uint32_t weights_y = (input_y - output_y) + 1;
     uint32_t weights_x = (input_x - output_x) + 1;
@@ -464,9 +463,9 @@ int main(int argc, char **argv) {
     copy_3d_to_1d(output, batch_size, output_y, output_x, output_cpu);
     copy_2d_to_1d(weights, weights_y, weights_x, weights_cpu);
 
-    //print_3d(input, batch_size, input_y, input_x);
+    print_3d(input, batch_size, input_y, input_x);
     //print_3d(output, batch_size, output_y, output_x);
-    //print_2d(weights, weights_y, weights_x);
+    print_2d(weights, weights_y, weights_x);
 
     cout << endl << endl << "initializing opencl" << endl;
     initialize_opencl(batch_size, input_y, input_x, weights_y, weights_x, output_y, output_x);
@@ -509,6 +508,8 @@ int main(int argc, char **argv) {
 
     cout << "Are 3d and 1d the same? " << check_equal(batch_size, output, output_y, output_x, output_flat) << endl;
     cout << "Are 3d and opencl the same? " << check_equal(batch_size, output, output_y, output_x, output_cpu) << endl;
+
+    //exit(1);
 
     uint64_t count = 1000;
 

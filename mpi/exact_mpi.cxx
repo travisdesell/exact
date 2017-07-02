@@ -229,6 +229,9 @@ int main(int argc, char** argv) {
     string generalizability_filename;
     get_argument(arguments, "--generalizability_file", true, generalizability_filename);
 
+    int padding;
+    get_argument(arguments, "--padding", true, padding);
+
     int population_size;
     get_argument(arguments, "--population_size", true, population_size);
 
@@ -249,12 +252,12 @@ int main(int argc, char** argv) {
 
     get_argument(arguments, "--images_resize", true, images_resize);
 
-    Images training_images(training_filename);
-    Images generalizability_images(generalizability_filename, training_images.get_average(), training_images.get_std_dev());
-    Images testing_images(testing_filename, training_images.get_average(), training_images.get_std_dev());
+    Images training_images(training_filename, padding);
+    Images generalizability_images(generalizability_filename, padding, training_images.get_average(), training_images.get_std_dev());
+    Images testing_images(testing_filename, padding, training_images.get_average(), training_images.get_std_dev());
 
     if (rank == 0) {
-        exact = new EXACT(training_images, generalizability_images, testing_images, population_size, max_epochs, max_genomes, output_directory, search_name, reset_edges);
+        exact = new EXACT(training_images, generalizability_images, testing_images, padding, population_size, max_epochs, max_genomes, output_directory, search_name, reset_edges);
 
         master(training_images, generalizability_images, testing_images, max_rank);
     } else {

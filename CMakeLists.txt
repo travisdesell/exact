@@ -3,7 +3,7 @@ project (EXACT)
 
 # The version number.
 set (EXACT_VERSION_MAJOR 0)
-set (EXACT_VERSION_MINOR 29)
+set (EXACT_VERSION_MINOR 30)
 
 #add_definitions( -DEXACT_VERSION="${EXACT_VERSION_MAJOR}.${EXACT_VERSION_MINOR}" )
 
@@ -57,7 +57,7 @@ add_subdirectory(common)
 add_subdirectory(image_tools)
 add_subdirectory(strategy)
 add_subdirectory(tests)
-#add_subdirectory(opencl)
+add_subdirectory(opencl)
 
 IF (COMPILE_CLIENT STREQUAL "YES")
     if (BOINC_APP_FOUND)

@@ -235,6 +235,8 @@ CNN_Genome::CNN_Genome(int _genome_id) {
         max_epochs = atoi(row[++column]);
         reset_weights = atoi(row[++column]);
 
+        //padding = atoi(row[++column]);
+
         number_training_images = atoi(row[++column]);
         best_error = atof(row[++column]);
         best_error_epoch = atoi(row[++column]);
@@ -384,6 +386,7 @@ void CNN_Genome::export_to_database(int _exact_id) {
         << ", epoch = " << epoch
         << ", max_epochs = " << max_epochs
         << ", reset_weights = " << reset_weights
+//        << ", padding = " << padding
         << ", number_training_images = " << number_training_images
         << ", best_error = " << setprecision(15) << fixed << best_error
         << ", best_predictions = " << best_predictions
@@ -446,12 +449,13 @@ void CNN_Genome::export_to_database(int _exact_id) {
 /**
  *  Iniitalize a genome from a set of nodes and edges
  */
-CNN_Genome::CNN_Genome(int _generation_id, int _number_training_images, int _number_generalizability_images, int _number_test_images, int seed, int _max_epochs, bool _reset_weights, int _velocity_reset, float _mu, float _mu_delta, float _learning_rate, float _learning_rate_delta, float _weight_decay, float _weight_decay_delta, int _batch_size, float _epsilon, float _alpha, float _input_dropout_probability, float _hidden_dropout_probability, const vector<CNN_Node*> &_nodes, const vector<CNN_Edge*> &_edges) {
+CNN_Genome::CNN_Genome(int _generation_id, int _padding, int _number_training_images, int _number_generalizability_images, int _number_test_images, int seed, int _max_epochs, bool _reset_weights, int _velocity_reset, float _mu, float _mu_delta, float _learning_rate, float _learning_rate_delta, float _weight_decay, float _weight_decay_delta, int _batch_size, float _epsilon, float _alpha, float _input_dropout_probability, float _hidden_dropout_probability, const vector<CNN_Node*> &_nodes, const vector<CNN_Edge*> &_edges) {
     exact_id = -1;
     genome_id = -1;
     started_from_checkpoint = false;
     generator = minstd_rand0(seed);
 
+    padding = _padding;
     number_training_images = _number_training_images;
     number_generalizability_images = _number_generalizability_images;
     number_test_images = _number_test_images;
@@ -623,6 +627,10 @@ bool CNN_Genome::equals(CNN_Genome *other) const {
     }
 
     return true;
+}
+
+int CNN_Genome::get_padding() const {
+    return padding;
 }
 
 int CNN_Genome::get_number_training_images() const {
@@ -1107,7 +1115,7 @@ bool CNN_Genome::visit_nodes() {
     return true;
 }
 
-void CNN_Genome::evaluate_images(const vector<Image> &images, int offset, vector< vector<int> > &predictions) {
+void CNN_Genome::evaluate_images(const ImagesInterface &images, const vector<int> &batch, vector< vector<int> > &predictions) {
     bool training = false;
     bool accumulate_test_statistics = false;
 
@@ -1116,7 +1124,7 @@ void CNN_Genome::evaluate_images(const vector<Image> &images, int offset, vector
     }
 
     for (uint32_t channel = 0; channel < input_nodes.size(); channel++) {
-        input_nodes[channel]->set_values(images, channel, training, accumulate_test_statistics, input_dropout_probability, generator);
+        input_nodes[channel]->set_values(images, batch, channel, training, accumulate_test_statistics, input_dropout_probability, generator);
     }
 
     for (uint32_t i = 0; i < edges.size(); i++) {
@@ -1124,8 +1132,8 @@ void CNN_Genome::evaluate_images(const vector<Image> &images, int offset, vector
     }
 
     //may be less images than in a batch if the total number of images is not divisible by the batch size
-    for (int32_t batch_number = 0; batch_number < images.size(); batch_number++) {
-        int expected_class = images[batch_number].get_classification();
+    for (int32_t batch_number = 0; batch_number < batch.size(); batch_number++) {
+        int expected_class = images.get_classification(batch[batch_number]);
 
         //cout << "before softmax max, batch number: " << batch_number << " -- ";
         float softmax_max = softmax_nodes[0]->get_value_in(batch_number, 0, 0);
@@ -1217,17 +1225,17 @@ void CNN_Genome::evaluate_images(const vector<Image> &images, int offset, vector
             }
         }
 
-        predictions[offset + batch_number][predicted_class]++;
+        predictions[batch[batch_number]][predicted_class]++;
     }
 }
 
-void CNN_Genome::evaluate_images(const vector<Image> &images, bool training, float &total_error, int &correct_predictions, bool accumulate_test_statistics) {
+void CNN_Genome::evaluate_images(const ImagesInterface &images, const vector<int> &batch, bool training, float &total_error, int &correct_predictions, bool accumulate_test_statistics) {
     for (uint32_t i = 0; i < nodes.size(); i++) {
         nodes[i]->reset();
     }
 
     for (uint32_t channel = 0; channel < input_nodes.size(); channel++) {
-        input_nodes[channel]->set_values(images, channel, training, accumulate_test_statistics, input_dropout_probability, generator);
+        input_nodes[channel]->set_values(images, batch, channel, training, accumulate_test_statistics, input_dropout_probability, generator);
     }
 
     for (uint32_t i = 0; i < edges.size(); i++) {
@@ -1235,8 +1243,8 @@ void CNN_Genome::evaluate_images(const vector<Image> &images, bool training, flo
     }
 
     //may be less images than in a batch if the total number of images is not divisible by the batch size
-    for (int32_t batch_number = 0; batch_number < images.size(); batch_number++) {
-        int expected_class = images[batch_number].get_classification();
+    for (int32_t batch_number = 0; batch_number < batch.size(); batch_number++) {
+        int expected_class = images.get_classification(batch[batch_number]);
 
         //cout << "before softmax max, batch number: " << batch_number << " -- ";
         float softmax_max = softmax_nodes[0]->get_value_in(batch_number, 0, 0);
@@ -1472,21 +1480,21 @@ void CNN_Genome::print_progress(ostream &out, float total_error, int correct_pre
 }
 
 
-void CNN_Genome::evaluate(const Images &images, vector< vector<int> > &predictions) {
+void CNN_Genome::evaluate(const ImagesInterface &images, vector< vector<int> > &predictions) {
     for (uint32_t j = 0; j < images.get_number_images(); j += batch_size) {
 
-        vector<Image> batch;
+        vector<int> batch;
         for (uint32_t k = 0; k < batch_size && (j + k) < images.get_number_images(); k++) {
-            batch.push_back( images.get_image(j + k) );
+            batch.push_back( j + k );
         }
 
         float batch_total_error = 0.0;
         int batch_correct_predictions = 0;
-        evaluate_images(batch, j, predictions);
+        evaluate_images(images, batch, predictions);
     }
 }
 
-void CNN_Genome::evaluate(const Images &images, float &total_error, int &correct_predictions, bool perform_backprop, bool accumulate_test_statistics) {
+void CNN_Genome::evaluate(const ImagesInterface &images, float &total_error, int &correct_predictions, bool perform_backprop, bool accumulate_test_statistics) {
     bool training;
     if (perform_backprop) {
         training = true;
@@ -1513,17 +1521,15 @@ void CNN_Genome::evaluate(const Images &images, float &total_error, int &correct
     }
 
     for (uint32_t j = 0; j < backprop_order.size(); j += batch_size) {
-
-        vector<Image> batch;
+        vector<int> batch;
         for (uint32_t k = 0; k < batch_size && (j + k) < backprop_order.size(); k++) {
-            batch.push_back( images.get_image(backprop_order[j + k]) );
+            batch.push_back( backprop_order[j + k] );
         }
 
         float batch_total_error = 0.0;
         int batch_correct_predictions = 0;
-        evaluate_images(batch, training, batch_total_error, batch_correct_predictions, accumulate_test_statistics);
+        evaluate_images(images, batch, training, batch_total_error, batch_correct_predictions, accumulate_test_statistics);
 
-        /*
         cerr << "[" << setw(10) << name << ", genome " << setw(5) << generation_id << "] ";
         if (training) {
             cerr << "training batch: ";
@@ -1531,7 +1537,6 @@ void CNN_Genome::evaluate(const Images &images, float &total_error, int &correct
             cerr << "test batch: ";
         }
         cerr << setw(5) << (j / batch_size) << "/" << setw(5) << (backprop_order.size() / batch_size) << ", batch total error: " << setw(15) << fixed << setprecision(5) << batch_total_error << ", batch_correct_predictions: " << batch_correct_predictions << endl;
-        */
 
         total_error += batch_total_error;
         correct_predictions += batch_correct_predictions;
@@ -1583,7 +1588,7 @@ void CNN_Genome::evaluate(const Images &images, float &total_error, int &correct
 }
 
 
-void CNN_Genome::evaluate(const Images &images, float &total_error, int &correct_predictions) {
+void CNN_Genome::evaluate(const ImagesInterface &images, float &total_error, int &correct_predictions) {
     backprop_order.clear();
     for (int32_t i = 0; i < images.get_number_images(); i++) {
         backprop_order.push_back(i);
@@ -1594,11 +1599,11 @@ void CNN_Genome::evaluate(const Images &images, float &total_error, int &correct
     print_progress(cerr, total_error, correct_predictions, images.get_number_images());
 }
 
-void CNN_Genome::stochastic_backpropagation(const Images &training_images, const Images &generalizability_images, const Images &test_images) {
+void CNN_Genome::stochastic_backpropagation(const ImagesInterface &training_images, const ImagesInterface &generalizability_images, const ImagesInterface &test_images) {
     stochastic_backpropagation(training_images, generalizability_images, test_images, training_images.get_number_images());
 }
 
-void CNN_Genome::stochastic_backpropagation(const Images &training_images, const Images &generalizability_images, const Images &test_images, int training_resize) {
+void CNN_Genome::stochastic_backpropagation(const ImagesInterface &training_images, const ImagesInterface &generalizability_images, const ImagesInterface &test_images, int training_resize) {
     number_training_images = training_resize;
     number_generalizability_images = generalizability_images.get_number_images();
     number_test_images = test_images.get_number_images();
@@ -1870,6 +1875,7 @@ void CNN_Genome::write(ostream &outfile) {
     outfile << max_epochs << endl;
     outfile << reset_weights << endl;
 
+    //outfile << padding << endl;
 
     outfile << number_training_images << endl;
     outfile << best_predictions << endl;
@@ -2004,6 +2010,9 @@ void CNN_Genome::read(istream &infile) {
     if (verbose) cerr << "read max_epochs: " << max_epochs << endl;
     infile >> reset_weights;
     if (verbose) cerr << "read reset_weights: " << reset_weights << endl;
+
+    //infile >> padding;
+    //if (verbose) cerr << "read padding: " << padding << endl;
 
     infile >> number_training_images;
     if (verbose) cerr << "read number_training_images: " << number_training_images << endl;

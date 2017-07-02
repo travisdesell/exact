@@ -139,11 +139,11 @@ int main(int argc, char** argv) {
     get_argument(arguments, "--testing_file", true, testing_file);
 
 
-    Images training_images(training_file);
-    Images generalizability_images(generalizability_file, training_images.get_average(), training_images.get_std_dev());
-    Images testing_images(testing_file, training_images.get_average(), training_images.get_std_dev());
+    Images training_images(training_file, 0);
+    Images generalizability_images(generalizability_file, 0, training_images.get_average(), training_images.get_std_dev());
+    Images testing_images(testing_file, 0, training_images.get_average(), training_images.get_std_dev());
 
-    EXACT *exact = new EXACT(training_images, generalizability_images, testing_images, population_size, max_epochs, max_genomes, output_directory, search_name, reset_edges);
+    EXACT *exact = new EXACT(training_images, generalizability_images, testing_images, 0, population_size, max_epochs, max_genomes, output_directory, search_name, reset_edges);
 
     exact->export_to_database();
 

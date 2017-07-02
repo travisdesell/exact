@@ -64,6 +64,10 @@ int main(int argc, char** argv) {
     int number_threads;
     get_argument(arguments, "--number_threads", true, number_threads);
 
+    int padding;
+    get_argument(arguments, "--padding", true, padding);
+
+
     string training_filename;
     get_argument(arguments, "--training_file", true, training_filename);
 
@@ -95,13 +99,13 @@ int main(int argc, char** argv) {
 
 
 
-    Images training_images(training_filename);
-    Images generalizability_images(generalizability_filename, training_images.get_average(), training_images.get_std_dev());
-    Images testing_images(testing_filename, training_images.get_average(), training_images.get_std_dev());
+    Images training_images(training_filename, padding);
+    Images generalizability_images(generalizability_filename, padding, training_images.get_average(), training_images.get_std_dev());
+    Images testing_images(testing_filename, padding, training_images.get_average(), training_images.get_std_dev());
 
-    //exact = new EXACT(training_images, generalizability_images, testing_images, population_size, max_epochs, max_genomes, output_directory, search_name, reset_edges);
+    exact = new EXACT(training_images, generalizability_images, testing_images, padding, population_size, max_epochs, max_genomes, output_directory, search_name, reset_edges);
 
-    exact = new EXACT(3);
+    //exact = new EXACT(3);
 
     vector<thread> threads;
     for (int32_t i = 0; i < number_threads; i++) {

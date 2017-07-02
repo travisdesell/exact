@@ -23,6 +23,8 @@ $query = "CREATE TABLE `exact_search` (
     `number_generalizability_images` int(11) NOT NULL,
     `number_test_images` int(11) NOT NULL,
 
+    `padding` int(11) NOT NULL,
+
     `image_channels` int(11) NOT NULL,
     `image_rows` int(11) NOT NULL,
     `image_cols` int(11) NOT NULL,
@@ -188,6 +190,8 @@ $query = "CREATE TABLE `cnn_genome` (
     `epoch` int(11) NOT NULL,
     `max_epochs` int(11) NOT NULL,
     `reset_weights` tinyint(1) NOT NULL,
+
+    `padding` int(11) DEFAULT NULL,
 
     `number_training_images` int(11) DEFAULT NULL,
     `best_error` float NOT NULL,

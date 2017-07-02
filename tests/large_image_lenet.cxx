@@ -22,7 +22,7 @@ using std::vector;
 #include "strategy/cnn_edge.hxx"
 #include "strategy/cnn_node.hxx"
 
-#include "image_tools/image_set.hxx"
+#include "image_tools/large_image_set.hxx"
 
 int main(int argc, char **argv) {
     vector<string> arguments = vector<string>(argv, argv + argc);
@@ -79,13 +79,14 @@ int main(int argc, char **argv) {
 
     double epsilon = 1.0e-7;
 
-    Images training_images(training_filename, padding);
-    Images generalizability_images(generalizability_filename, padding, training_images.get_average(), training_images.get_std_dev());
-    Images testing_images(testing_filename, padding, training_images.get_average(), training_images.get_std_dev());
+    LargeImages training_images(training_filename, padding, 64, 64);
+    LargeImages generalizability_images(generalizability_filename, padding, 64, 64, training_images.get_average(), training_images.get_std_dev());
+    LargeImages testing_images(testing_filename, padding, 64, 64, training_images.get_average(), training_images.get_std_dev());
 
     int node_innovation_count = 0;
     int edge_innovation_count = 0;
     vector<CNN_Node*> nodes;
+    vector<CNN_Node*> input_nodes;
     vector<CNN_Node*> layer1_nodes;
     vector<CNN_Node*> layer2_nodes;
     vector<CNN_Node*> layer3_nodes;
@@ -96,21 +97,26 @@ int main(int argc, char **argv) {
     minstd_rand0 generator(time(NULL));
     NormalDistribution normal_distribution;
 
-    CNN_Node *input_node = new CNN_Node(++node_innovation_count, 0, batch_size, training_images.get_image_height(), training_images.get_image_width(), INPUT_NODE);
-    nodes.push_back(input_node);
+    for (int32_t i = 0; i < training_images.get_image_channels(); i++) {
+        CNN_Node *input_node = new CNN_Node(++node_innovation_count, 0, batch_size, training_images.get_image_height(), training_images.get_image_width(), INPUT_NODE);
+        nodes.push_back(input_node);
+        input_nodes.push_back(input_node);
+    }
 
     //first layer of filters
     //input node goes to 5 filters
     for (int32_t i = 0; i < 5; i++) {
-        CNN_Node *layer1_node = new CNN_Node(++node_innovation_count, 1, batch_size, 10, 10, HIDDEN_NODE);
+        CNN_Node *layer1_node = new CNN_Node(++node_innovation_count, 1, batch_size, 33, 33, HIDDEN_NODE);
         nodes.push_back(layer1_node);
         layer1_nodes.push_back(layer1_node);
 
-        edges.push_back( new CNN_Edge(input_node, layer1_node, false, ++edge_innovation_count) );
+        for (int32_t j = 0; j < training_images.get_image_channels(); j++) {
+            edges.push_back( new CNN_Edge(input_nodes[j], layer1_node, false, ++edge_innovation_count) );
+        }
     }
 
     for (int32_t i = 0; i < 30; i++) {
-        CNN_Node *layer2_node = new CNN_Node(++node_innovation_count, 2, batch_size, 5, 5, HIDDEN_NODE);
+        CNN_Node *layer2_node = new CNN_Node(++node_innovation_count, 2, batch_size, 10, 10, HIDDEN_NODE);
         nodes.push_back(layer2_node);
         layer2_nodes.push_back(layer2_node);
     }
@@ -264,9 +270,17 @@ int main(int argc, char **argv) {
 
     cout << "number edges: " << edges.size() << ", total weights: " << genome->get_number_weights() << ", total biases: " << genome->get_number_biases() << endl;
 
-    ofstream outfile("lenet_no_pool.gv");
+    ofstream outfile("largeimage_lenet.gv");
     genome->print_graphviz(outfile);
     outfile.close();
 
     genome->stochastic_backpropagation(training_images, generalizability_images, testing_images);
+
+    bool training = false;
+    bool accumulate_test_statistics = false;
+
+    float batch_total_error = 0.0;
+    int  batch_correct_predictions = 0;
+
+    //evaluate_images(images, batch, training, batch_total_error, batch_correct_predictions, accumulate_test_statistics);
 }
