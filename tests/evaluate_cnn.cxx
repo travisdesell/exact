@@ -67,7 +67,11 @@ int main(int argc, char **argv) {
     int predictions;
     //genome->evaluate(training_images, error, predictions);
 
+    genome->write_to_file("temp_genome.txt");
+
+    genome->set_to_best();
     genome->evaluate(testing_images, error, predictions);
+
 
     cout << "test error: " << error << endl;
     cout << "test predictions " << predictions << endl;

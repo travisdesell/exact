@@ -32,6 +32,10 @@
 
 #include <algorithm>
 
+#include <cmath>
+using std::isnan;
+using std::isinf;
+
 #include <iomanip>
 using std::setw;
 
@@ -123,6 +127,64 @@ int init_result(RESULT& result, void*& data) {
             return 1;
         }
 
+        int best_error_line_number = 23;
+        int generalizability_line_number = 28;
+        int test_line_number = 31;
+
+        string best_error_line;
+        string generalizability_line;
+        string test_line;
+        for (int32_t i = 1; i <= test_line_number; i++) {
+            getline(iss, line);
+
+            if (i == best_error_line_number) {
+                best_error_line = line;
+                cout << "FITNESS LINE ";
+            }
+            if (i == generalizability_line_number) {
+                generalizability_line = line;
+                cout << "GEN LINE ";
+            }
+            if (i == test_line_number) {
+                test_line = line;
+                cout << "TEST LINE ";
+            }
+
+            cout << setw(5) << i << setw(30) << ("'" + line + "'") << endl;
+        }
+
+
+        double best_error = stod(best_error_line);
+        double generalizability_error = stod(generalizability_line);
+        double test_error = stod(test_line);
+
+        cout << "best error: " << best_error << endl;
+        cout << "generalizability error: " << generalizability_error << endl;
+        cout << "test error: " << test_error << endl;
+
+        if (best_error <= 0 || isnan(best_error) || isinf(best_error)) {
+            log_messages.printf(MSG_CRITICAL, "[RESULT#%ld %s] get_data_from_result: invalid best_error\n", result.id, result.name);
+            log_messages.printf(MSG_CRITICAL, "     best_error was: '%lf'\n", best_error);
+            //exit(1);
+            return 1;
+        }
+
+        if (generalizability_error <= 0 || isnan(generalizability_error) || isinf(generalizability_error)) {
+            log_messages.printf(MSG_CRITICAL, "[RESULT#%ld %s] get_data_from_result: invalid generalizability error\n", result.id, result.name);
+            log_messages.printf(MSG_CRITICAL, "     generalizability_error was: '%lf'\n", generalizability_error);
+            //exit(1);
+            return 1;
+        }
+
+        if (test_error <= 0 || isnan(test_error) || isinf(test_error)) {
+            log_messages.printf(MSG_CRITICAL, "[RESULT#%ld %s] get_data_from_result: invalid test error\n", result.id, result.name);
+            log_messages.printf(MSG_CRITICAL, "     test_error was: '%lf'\n", test_error);
+            //exit(1);
+            return 1;
+        }
+
+
+
     } catch (int err) {
         log_messages.printf(MSG_CRITICAL, "[RESULT#%ld %s] get_data_from_result: could not open file for result\n", result.id, result.name);
         log_messages.printf(MSG_CRITICAL, "     file path: %s\n", fi.path.c_str());
@@ -190,35 +252,35 @@ int compare_results(
             match = false;
         }
 
-        int fitness_line_number = 23;
+        int best_error_line_number = 23;
 
         string line1, line2;
-        string fitness_line1, fitness_line2;
+        string best_error_line1, best_error_line2;
         for (uint32_t i = 1; i < 30; i++) {
             getline(iss1, line1);
             getline(iss2, line2);
 
-            if (i == fitness_line_number) {
-                fitness_line1 = line1;
-                fitness_line2 = line2;
+            if (i == best_error_line_number) {
+                best_error_line1 = line1;
+                best_error_line2 = line2;
             }
 
             cout << setw(5) << i << setw(30) << ("'" + line1 + "'") << setw(30) << ("'" + line2 + "'") << endl;
         }
 
-        double fitness1 = stod(fitness_line1);
-        double fitness2 = stod(fitness_line2);
+        double best_error1 = stod(best_error_line1);
+        double best_error2 = stod(best_error_line2);
 
-        cout << "fitness 1: " << fitness1 << endl;
-        cout << "fitness 2: " << fitness2 << endl;
+        cout << "best_error 1: " << best_error1 << endl;
+        cout << "best_error 2: " << best_error2 << endl;
 
-        double min_fitness_difference = 100.0;
+        double min_best_error_difference = 100.0;
 
-        if (fabs(fitness1 - fitness2) < min_fitness_difference) {
-            log_messages.printf(MSG_CRITICAL, "[RESULT#%ld %s] and [RESULT#%ld %s] match because fitness difference is close enough (less than %lf): %lf - %lf = %lf.\n", r1.id, r1.name, r2.id, r2.name, min_fitness_difference, fitness1, fitness2, fabs(fitness1 - fitness2));
+        if (fabs(best_error1 - best_error2) < min_best_error_difference) {
+            log_messages.printf(MSG_CRITICAL, "[RESULT#%ld %s] and [RESULT#%ld %s] match because best_error difference is close enough (less than %lf): %lf - %lf = %lf.\n", r1.id, r1.name, r2.id, r2.name, min_best_error_difference, best_error1, best_error2, fabs(best_error1 - best_error2));
             match = true;
         } else {
-            log_messages.printf(MSG_CRITICAL, "[RESULT#%ld %s] and [RESULT#%ld %s] DO NOT MATCH because fitness difference is close enough (greater than %lf): %lf - %lf = %lf.\n", r1.id, r1.name, r2.id, r2.name, min_fitness_difference, fitness1, fitness2, fabs(fitness1 - fitness2));
+            log_messages.printf(MSG_CRITICAL, "[RESULT#%ld %s] and [RESULT#%ld %s] DO NOT MATCH because best_error difference is close enough (greater than %lf): %lf - %lf = %lf.\n", r1.id, r1.name, r2.id, r2.name, min_best_error_difference, best_error1, best_error2, fabs(best_error1 - best_error2));
             match = false;
         }
     }

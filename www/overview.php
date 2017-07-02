@@ -47,7 +47,7 @@ echo "
 
         //fitness query
 
-        $fitness_result = query_multi_db($db_name, "SELECT best_error, best_predictions, best_error_epoch FROM cnn_genome WHERE exact_id = " . $search_row['id'] . " ORDER BY test_error LIMIT 1");
+        $fitness_result = query_multi_db($db_name, "SELECT best_error, best_predictions, best_error_epoch FROM cnn_genome WHERE exact_id = " . $search_row['id'] . " ORDER BY (generalizability_error) LIMIT 1");
         $fitness_row = $fitness_result->fetch_assoc();
 
         $search_row['best_error'] = number_format($fitness_row['best_error']);
@@ -60,12 +60,12 @@ echo "
 
         $search_row['best_error_epoch'] = $fitness_row['best_error_epoch'];
 
-        $fitness_result = query_multi_db($db_name, "SELECT test_error, best_error_epoch FROM cnn_genome WHERE exact_id = " . $search_row['id'] . " ORDER BY test_error DESC LIMIT 1");
+        $fitness_result = query_multi_db($db_name, "SELECT generalizability_error, best_error_epoch FROM cnn_genome WHERE exact_id = " . $search_row['id'] . " ORDER BY (generalizability_error) DESC LIMIT 1");
         $fitness_row = $fitness_result->fetch_assoc();
 
-        $search_row['worst_error'] = number_format($fitness_row['test_error']);
+        $search_row['worst_error'] = number_format($fitness_row['generalizability_error']);
 
-        $fitness_result = query_multi_db($db_name, "SELECT generalizability_error, generalizability_predictions, test_error, test_predictions FROM cnn_genome WHERE exact_id = " . $search_row['id'] . " ORDER BY test_error LIMIT 1");
+        $fitness_result = query_multi_db($db_name, "SELECT generalizability_error, generalizability_predictions, test_error, test_predictions FROM cnn_genome WHERE exact_id = " . $search_row['id'] . " ORDER BY (generalizability_error) LIMIT 1");
         $fitness_row = $fitness_result->fetch_assoc();
 
         $search_row['generalizability_error'] = number_format($fitness_row['generalizability_error']);
@@ -73,6 +73,12 @@ echo "
 
         $search_row['test_error'] = number_format($fitness_row['test_error']);
         $search_row['test_predictions'] = number_format(100 * $fitness_row['test_predictions'] / 5000, 2) . "%";
+
+        $fitness_result = query_multi_db($db_name, "SELECT test_predictions, generalizability_predictions FROM cnn_genome WHERE exact_id = " . $search_row['id'] . " ORDER BY (generalizability_predictions + test_predictions) DESC LIMIT 1");
+        $fitness_row = $fitness_result->fetch_assoc();
+
+        $search_row['best_total_predictions'] = number_format(100 * ($fitness_row['test_predictions'] + $fitness_row['generalizability_predictions']) / 10000.0, 2) . "%";
+
 
         $search_row['is_hidden'] = false;
         $search_row['db_name'] = $db_name;
