@@ -59,7 +59,7 @@ float read_hexfloat(istream &infile) {
     string s;
     infile >> s;
 
-    cout << "read hexfloat: '" << s << "'" << endl;
+    //cout << "read hexfloat: '" << s << "'" << endl;
 
     if (s.compare("-nan(ind)") == 0 || s.compare("-nan") == 0 || s.compare("nan(ind)") == 0 || s.compare("nan") == 0) {
         return EXACT_MAX_FLOAT;
