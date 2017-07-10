@@ -182,7 +182,7 @@ int make_job(EXACT *exact, CNN_Genome *genome, string search_name) {
     double fpops_per_image = genome->get_operations_estimate();
     double fpops_est = exact->get_number_training_images() * genome->get_max_epochs() * fpops_per_image * 3.0;
 
-    double credit = fpops_est / 10e10;
+    double credit = (fpops_est / 10e10) * 0.9;
 
     // Fill in the job parameters
     wu.clear();
@@ -262,11 +262,11 @@ void make_jobs(EXACT *exact, int workunits_to_generate) {
         CNN_Genome *genome = exact->generate_individual();
 
         make_job(exact, genome, exact->get_search_name());
-        exact->update_database();
 
         delete genome;
         total_generated++;
     }
+    exact->update_database();
 }
 
 void init_work_generation(string app_name) {

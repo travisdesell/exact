@@ -66,7 +66,7 @@ echo "
  */
 
 if ($sort_by_fitness == 1) {
-    $search_result = query_multi_db($db_name, "SELECT id, best_error, best_predictions, generalizability_error, generalizability_predictions, test_error, test_predictions, best_error_epoch, initial_mu, mu_delta, initial_learning_rate, learning_rate_delta, initial_weight_decay, weight_decay_delta, input_dropout_probability, hidden_dropout_probability, velocity_reset, max_epochs, alpha, batch_size, generation_id FROM cnn_genome WHERE exact_id = " . $search_id . " ORDER BY test_error");
+    $search_result = query_multi_db($db_name, "SELECT id, best_error, best_predictions, generalizability_error, generalizability_predictions, test_error, test_predictions, best_error_epoch, initial_mu, mu_delta, initial_learning_rate, learning_rate_delta, initial_weight_decay, weight_decay_delta, input_dropout_probability, hidden_dropout_probability, velocity_reset, max_epochs, alpha, batch_size, generation_id FROM cnn_genome WHERE exact_id = " . $search_id . " ORDER BY generalizability_error");
 } else {
     $search_result = query_multi_db($db_name, "SELECT id, best_error, best_predictions, test_error, test_predictions, best_error_epoch, initial_mu, mu_delta, initial_learning_rate, learning_rate_delta, initial_weight_decay, weight_decay_delta, input_dropout_probability, hidden_dropout_probability, velocity_reset, alpha, batch_size, max_epochs, generation_id FROM cnn_genome WHERE exact_id = " . $search_id . " ORDER BY best_predictions DESC");
 }

@@ -36,7 +36,7 @@ function process_genomes($db_name) {
             echo "command: $command \n";
             echo "results: " . exec($command) . "\n";
         } else {
-            echo "SKIPPING genome $genome_id test_error already calculated!";
+            echo "SKIPPING genome $genome_id test_error already calculated!\n";
         }
 
         if (!file_exists($genome_image)) {
@@ -55,6 +55,8 @@ function process_genomes($db_name) {
     }
 }
 
+process_genomes("exact_batchnorm");
+
 echo "listing files!\n";
 
 $dir = new DirectoryIterator("/home/tdesell/exact/www/networks/");
@@ -72,7 +74,6 @@ foreach ($dir as $fileinfo) {
     }
 }
 
-process_genomes("exact_batchnorm");
 
 ?>
 

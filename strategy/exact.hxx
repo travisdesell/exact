@@ -186,6 +186,9 @@ class EXACT {
         int32_t population_contains(CNN_Genome *genome) const;
         CNN_Genome* get_best_genome();
 
+        int get_number_genomes() const;
+        CNN_Genome* get_genome(int i);
+
         void generate_initial_hyperparameters(float &mu, float &mu_delta, float &learning_rate, float &learning_rate_delta, float &weight_decay, float &weight_decay_delta, float &alpha, int &velocity_reset, float &input_dropout_probability, float &hidden_dropout_probability, int &batch_size);
 
         void generate_simplex_hyperparameters(float &mu, float &mu_delta, float &learning_rate, float &learning_rate_delta, float &weight_decay, float &weight_decay_delta, float &alpha, int &velocity_reset, float &input_dropout_probability, float &hidden_dropout_probability, int &batch_size);

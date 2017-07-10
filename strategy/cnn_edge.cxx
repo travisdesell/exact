@@ -754,7 +754,7 @@ void CNN_Edge::print(ostream &out) {
     for (uint32_t y = 0; y < filter_y; y++) {
         out << "    ";
         for (uint32_t x = 0; x < filter_x; x++) {
-            out << setw(9) << std::fixed << setprecision(3) << weights[current];
+            out << setw(9) << std::fixed << setprecision(7) << weights[current];
             current++;
         }
         out << endl;
@@ -765,7 +765,7 @@ void CNN_Edge::print(ostream &out) {
     for (uint32_t y = 0; y < filter_y; y++) {
         out << "    ";
         for (uint32_t x = 0; x < filter_x; x++) {
-            out << setw(9) << std::fixed << setprecision(3) << previous_velocity[current];
+            out << setw(9) << std::fixed << setprecision(7) << previous_velocity[current];
             current++;
         }
         out << endl;
@@ -776,7 +776,7 @@ void CNN_Edge::print(ostream &out) {
     for (uint32_t y = 0; y < filter_y; y++) {
         out << "    ";
         for (uint32_t x = 0; x < filter_x; x++) {
-            out << setw(9) << std::fixed << setprecision(3) << weight_updates[current];
+            out << setw(9) << std::fixed << setprecision(7) << weight_updates[current];
             current++;
         }
         out << endl;

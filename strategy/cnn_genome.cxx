@@ -235,7 +235,7 @@ CNN_Genome::CNN_Genome(int _genome_id) {
         max_epochs = atoi(row[++column]);
         reset_weights = atoi(row[++column]);
 
-        padding = atoi(row[++column]);
+        //padding = atoi(row[++column]);
 
         number_training_images = atoi(row[++column]);
         best_error = atof(row[++column]);
@@ -386,7 +386,7 @@ void CNN_Genome::export_to_database(int _exact_id) {
         << ", epoch = " << epoch
         << ", max_epochs = " << max_epochs
         << ", reset_weights = " << reset_weights
-        << ", padding = " << padding
+//        << ", padding = " << padding
         << ", number_training_images = " << number_training_images
         << ", best_error = " << setprecision(15) << fixed << best_error
         << ", best_predictions = " << best_predictions
@@ -1115,6 +1115,120 @@ bool CNN_Genome::visit_nodes() {
     return true;
 }
 
+void CNN_Genome::evaluate_images(const ImagesInterface &images, const vector<int> &batch, vector< vector<int> > &predictions) {
+    bool training = false;
+    bool accumulate_test_statistics = false;
+
+    for (uint32_t i = 0; i < nodes.size(); i++) {
+        nodes[i]->reset();
+    }
+
+    for (uint32_t channel = 0; channel < input_nodes.size(); channel++) {
+        input_nodes[channel]->set_values(images, batch, channel, training, accumulate_test_statistics, input_dropout_probability, generator);
+    }
+
+    for (uint32_t i = 0; i < edges.size(); i++) {
+        edges[i]->propagate_forward(training, accumulate_test_statistics, epsilon, alpha, training, hidden_dropout_probability, generator);
+    }
+
+    //may be less images than in a batch if the total number of images is not divisible by the batch size
+    for (int32_t batch_number = 0; batch_number < batch.size(); batch_number++) {
+        int expected_class = images.get_classification(batch[batch_number]);
+
+        //cout << "before softmax max, batch number: " << batch_number << " -- ";
+        float softmax_max = softmax_nodes[0]->get_value_in(batch_number, 0, 0);
+        //cout << " " << setw(15) << fixed << setprecision(6) << softmax_nodes[0]->get_value_in(batch_number, 0,0);
+
+
+        for (uint32_t i = 1; i < softmax_nodes.size(); i++) {
+            //cout << " " << setw(15) << fixed << setprecision(6) << softmax_nodes[i]->get_value_in(batch_number, 0,0);
+            if (softmax_nodes[i]->get_value_in(batch_number, 0, 0) > softmax_max) {
+                softmax_max = softmax_nodes[i]->get_value_in(batch_number, 0, 0);
+            }
+        }
+        //cout << endl;
+
+        //cout << "after softmax max:" << endl;
+        float softmax_sum = 0.0;
+        for (uint32_t i = 0; i < softmax_nodes.size(); i++) {
+            float value = softmax_nodes[i]->get_value_in(batch_number, 0, 0);
+            float previous = value;
+
+            if (isnan(value)) {
+                cerr << "ERROR: value was NAN before exp!" << endl;
+                exit(1);
+            }
+            //cout << " value - softmax_max: " << value - softmax_max << endl;
+
+            value = exact_exp(value - softmax_max);
+
+            //cout << " " << setw(15) << fixed << setprecision(6) << value;
+            if (isnan(value)) {
+                cerr << "ERROR: value was NAN AFTER exp! previously: " << previous << endl;
+                exit(1);
+            }
+
+            softmax_nodes[i]->set_value_in(batch_number, 0, 0, value);
+            //cout << "\tvalue " << softmax_nodes[i]->get_innovation_number() << ": " << softmax_nodes[i]->get_value_in(batch_number, 0,0) << endl;
+            softmax_sum += value;
+
+            if (isnan(softmax_sum)) {
+                cerr << "ERROR: softmax_sum was NAN AFTER add!" << endl;
+                exit(1);
+            }
+        }
+        //cout << endl;
+
+        if (softmax_sum == 0) {
+            cout << "ERROR! softmax sum == 0" << endl;
+            exit(1);
+        }
+
+        //cout << "softmax sum: " << softmax_sum << endl;
+
+        float max_value = -numeric_limits<float>::max();
+        int predicted_class = -1;
+
+        //cout << "error:          ";
+        for (int32_t i = 0; i < (int32_t)softmax_nodes.size(); i++) {
+            float value = softmax_nodes[i]->get_value_in(batch_number, 0,0) / softmax_sum;
+            //cout << "\tvalue " << softmax_nodes[i]->get_innovation_number() << ": " << softmax_nodes[i]->get_value_in(0,0) << endl;
+
+            if (isnan(value)) {
+                cerr << "ERROR: value was NAN AFTER divide by softmax_sum, previously: " << softmax_nodes[i]->get_value_in(batch_number, 0,0) << endl;
+                cerr << "softmax_sum: " << softmax_sum << endl;
+                exit(1);
+            }
+
+            softmax_nodes[i]->set_value_in(batch_number, 0, 0,  value);
+        }
+
+        for (int32_t i = 0; i < (int32_t)softmax_nodes.size(); i++) {
+            float value = softmax_nodes[i]->get_value_in(batch_number, 0,0);
+             //softmax_nodes[i]->print(cout);
+
+            int target = 0.0;
+            if (i == expected_class) {
+                target = 1.0;
+            }
+            float error = value - target;
+            float gradient = value * (1 - value);
+
+            //if (training) cout << "\t" << softmax_nodes[i]->get_innovation_number() << " -- batch number: " << batch_number << ", value: " << value << ", error: " << error << ", gradient: " << gradient << endl;
+
+            softmax_nodes[i]->set_error_in(batch_number, 0, 0, error * gradient);
+            //softmax_nodes[i]->set_gradient_in(batch_number, 0, 0, gradient);
+
+            if (value > max_value) {
+                predicted_class = i;
+                max_value = value;
+            }
+        }
+
+        predictions[batch[batch_number]][predicted_class]++;
+    }
+}
+
 void CNN_Genome::evaluate_images(const ImagesInterface &images, const vector<int> &batch, bool training, float &total_error, int &correct_predictions, bool accumulate_test_statistics) {
     for (uint32_t i = 0; i < nodes.size(); i++) {
         nodes[i]->reset();
@@ -1365,6 +1479,20 @@ void CNN_Genome::print_progress(ostream &out, float total_error, int correct_pre
     out << "[" << setw(10) << name << ", genome " << setw(5) << generation_id << "] predictions: " << setw(7) << correct_predictions << "/" << setw(7) << number_images << " (" << setw(5) << fixed << setprecision(2) << (100.0 * (float)correct_predictions/(float)number_images) << "%), best: " << setw(7) << best_predictions << "/" << number_training_images << " (" << setw(5) << fixed << setprecision(2) << (100 * (float)best_predictions/(float)number_training_images) << "%), error: " << setw(15) << setprecision(5) << fixed << total_error << ", best error: " << setw(15) << best_error << " on epoch: " << setw(5) << best_error_epoch << ", epoch: " << setw(4) << epoch << "/" << max_epochs << ", mu: " << setw(12) << fixed << setprecision(10) << mu << ", learning_rate: " << setw(12) << fixed << setprecision(10) << learning_rate << ", weight_decay: " << setw(12) << fixed << setprecision(10) << weight_decay << endl;
 }
 
+
+void CNN_Genome::evaluate(const ImagesInterface &images, vector< vector<int> > &predictions) {
+    for (uint32_t j = 0; j < images.get_number_images(); j += batch_size) {
+
+        vector<int> batch;
+        for (uint32_t k = 0; k < batch_size && (j + k) < images.get_number_images(); k++) {
+            batch.push_back( j + k );
+        }
+
+        float batch_total_error = 0.0;
+        int batch_correct_predictions = 0;
+        evaluate_images(images, batch, predictions);
+    }
+}
 
 void CNN_Genome::evaluate(const ImagesInterface &images, float &total_error, int &correct_predictions, bool perform_backprop, bool accumulate_test_statistics) {
     bool training;
@@ -1749,7 +1877,7 @@ void CNN_Genome::write(ostream &outfile) {
     outfile << max_epochs << endl;
     outfile << reset_weights << endl;
 
-    outfile << padding << endl;
+    //outfile << padding << endl;
 
     outfile << number_training_images << endl;
     outfile << best_predictions << endl;
@@ -1885,8 +2013,8 @@ void CNN_Genome::read(istream &infile) {
     infile >> reset_weights;
     if (verbose) cerr << "read reset_weights: " << reset_weights << endl;
 
-    infile >> padding;
-    if (verbose) cerr << "read padding: " << padding << endl;
+    //infile >> padding;
+    //if (verbose) cerr << "read padding: " << padding << endl;
 
     infile >> number_training_images;
     if (verbose) cerr << "read number_training_images: " << number_training_images << endl;

@@ -152,6 +152,16 @@ int after_assimilate_pass() {
                 }
             }
         }
+
+        /*
+        cout << "updating all exact searches in database." << endl;
+        for (auto it = exact_searches.begin(); it != exact_searches.end(); ++it ) {
+            if (it->second->get_inserted_genomes() < it->second->get_max_genomes()) {
+                it->second->update_database();
+            }
+        }
+        cout << "finished." << endl;
+        */
     }
 
     return 0;
@@ -275,7 +285,14 @@ int assimilate_handler(WORKUNIT& wu, vector<RESULT>& results, RESULT& canonical_
     file_iss.clear();
     file_iss.seekg(0, ios::beg);
 
-    CNN_Genome *genome = new CNN_Genome(file_iss, false);
+    CNN_Genome *genome = NULL;
+   
+    try {
+        genome = new CNN_Genome(file_iss, false);
+    } catch (std::invalid_argument exception) {
+        log_messages.printf(MSG_CRITICAL, "[CANONICAL RESULT#%ld %s] assimilate_handler: caught invalid_argument exception while generating genome: '%s'.\n", canonical_result.id, canonical_result.name, exception.what());
+        return 0;
+    }
 
     if (genome->get_version_str().compare(EXACT_VERSION_STR) != 0) {
         log_messages.printf(MSG_CRITICAL, "[CANONICAL RESULT#%ld %s] assimilate_handler: result was from an old version input file: '%s', expected '%s'.\n", canonical_result.id, canonical_result.name, genome->get_version_str().c_str(), EXACT_VERSION_STR);

@@ -396,6 +396,7 @@ int main(int argc, char **argv) {
     cout << "number classes: " << large_images.get_number_classes() << endl;
     cout << "number images: " << large_images.get_number_images() << endl;
 
+    /*
 	for (uint32_t i = 2800; i < 2900; i++) {
 		// Open the TIFF file
 		TIFF *output_image = NULL;
@@ -446,6 +447,7 @@ int main(int argc, char **argv) {
 		TIFFClose(output_image);
 
     }
+    */
 
 
 }

@@ -98,7 +98,8 @@ EXACT::EXACT(int exact_id) {
         number_generalizability_images = atoi(row[++column]);
         number_test_images = atoi(row[++column]);
 
-        padding = atoi(row[++column]);
+        //padding = atoi(row[++column]);
+        padding = 0;
 
         image_channels = atoi(row[++column]);
         image_rows = atoi(row[++column]);
@@ -327,7 +328,7 @@ void EXACT::export_to_database() {
         << ", number_generalizability_images = " << number_generalizability_images
         << ", number_test_images = " << number_test_images
 
-        << ", padding = " << padding
+        //<< ", padding = " << padding
 
         << ", image_channels = " << image_channels
         << ", image_rows = " << image_rows
@@ -707,6 +708,64 @@ EXACT::EXACT(const ImagesInterface &training_images, const ImagesInterface &gene
 
     genomes_generated = 0;
 
+    epsilon = 1.0e-7;
+
+    initial_batch_size_min = 50;
+    initial_batch_size_max = 50;
+    batch_size_min = 50;
+    batch_size_max = 50;
+
+    initial_mu_min = 0.50;
+    initial_mu_max = 0.50;
+    mu_min = 0.50;
+    mu_max = 0.50;
+
+    initial_mu_delta_min = 0.95;
+    initial_mu_delta_max = 0.95;
+    mu_delta_min = 0.95;
+    mu_delta_max = 0.95;
+
+    initial_learning_rate_min = 0.0025;
+    initial_learning_rate_max = 0.0025;
+    learning_rate_min = 0.0025;
+    learning_rate_max = 0.0025;
+
+    initial_learning_rate_delta_min = 0.95;
+    initial_learning_rate_delta_max = 0.95;
+    learning_rate_delta_min = 0.95;
+    learning_rate_delta_max = 0.95;
+
+    initial_weight_decay_min = 0.0005;
+    initial_weight_decay_max = 0.0005;
+    weight_decay_min = 0.0005;
+    weight_decay_max = 0.0005;
+
+    initial_weight_decay_delta_min = 0.95;
+    initial_weight_decay_delta_max = 0.95;
+    weight_decay_delta_min = 0.95;
+    weight_decay_delta_max = 0.95;
+
+    initial_alpha_min = 0.1;
+    initial_alpha_max = 0.1;
+    alpha_min = 0.1;
+    alpha_max = 0.1;
+
+    initial_velocity_reset_min = 1000;
+    initial_velocity_reset_max = 1000;
+    velocity_reset_min = 1000;
+    velocity_reset_max = 1000;
+
+    initial_input_dropout_probability_min = 0.0000;
+    initial_input_dropout_probability_max = 0.000;
+    input_dropout_probability_min = 0.0000;
+    input_dropout_probability_max = 0.0;
+
+    initial_hidden_dropout_probability_min = 0.00;
+    initial_hidden_dropout_probability_max = 0.00;
+    hidden_dropout_probability_min = 0.0;
+    hidden_dropout_probability_max = 0.0;
+
+    /*
     initial_batch_size_min = 25;
     initial_batch_size_max = 150;
     batch_size_min = 25;
@@ -722,7 +781,7 @@ EXACT::EXACT(const ImagesInterface &training_images, const ImagesInterface &gene
     mu_delta_min = 0.0;
     mu_delta_max = 1.00;
 
-    initial_learning_rate_min = 0.01;
+    initial_learning_rate_min = 0.03;
     initial_learning_rate_max = 0.001;
     learning_rate_min = 0.00001;
     learning_rate_max = 0.1;
@@ -741,8 +800,6 @@ EXACT::EXACT(const ImagesInterface &training_images, const ImagesInterface &gene
     initial_weight_decay_delta_max = 0.90;
     weight_decay_delta_min = 0.00000001;
     weight_decay_delta_max = 1.0;
-
-    epsilon = 1.0e-7;
 
     initial_alpha_min = 0.001;
     initial_alpha_max = 0.2;
@@ -763,6 +820,7 @@ EXACT::EXACT(const ImagesInterface &training_images, const ImagesInterface &gene
     initial_hidden_dropout_probability_max = 0.15;
     hidden_dropout_probability_min = 0.0;
     hidden_dropout_probability_max = 0.9;
+    */
 
     no_modification_rate = 0.00;
     crossover_rate = 0.20;
@@ -937,6 +995,14 @@ int EXACT::get_number_training_images() const {
 
 CNN_Genome* EXACT::get_best_genome() {
     return genomes[0];
+}
+
+int EXACT::get_number_genomes() const {
+    return genomes.size();
+}
+
+CNN_Genome* EXACT::get_genome(int i) {
+    return genomes[i];
 }
 
 void EXACT::generate_initial_hyperparameters(float &mu, float &mu_delta, float &learning_rate, float &learning_rate_delta, float &weight_decay, float &weight_decay_delta, float &alpha, int &velocity_reset, float &input_dropout_probability, float &hidden_dropout_probability, int &batch_size) {
@@ -1461,7 +1527,7 @@ bool EXACT::insert_genome(CNN_Genome* genome) {
         cout << "\t" << setw(4) << i << " -- genome: " << setw(10) << genomes[i]->get_generation_id() << ", "
             << setw(10) << left << "fit: " << right << setw(12) << setprecision(2) << fixed << parse_fitness(genomes[i]->get_fitness())
             << ", " << setw(10) << left << "gen err: " << right << setw(12) << setprecision(2) << fixed << parse_fitness(genomes[i]->get_generalizability_error())
-            << " (" << setw(5) << fixed << setprecision(2) << genomes[i]->get_generalizability_rate() << "%), "
+            << " (" << setw(5) << fixed << setprecision(2) << genomes[i]->get_generalizability_rate() << "%)"
             << ", " << setw(10) << left << "test err: " << right << setw(12) << setprecision(2) << fixed << parse_fitness(genomes[i]->get_test_error())
             << " (" << setw(5) << fixed << setprecision(2) << genomes[i]->get_test_rate() << "%), "
             << setw(10) << left << "train err: " << right << setw(12) << setprecision(2) << fixed << parse_fitness(genomes[i]->get_best_error())

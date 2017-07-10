@@ -259,7 +259,12 @@ $query = "CREATE TABLE `cnn_edge` (
   `reverse_filter_y` tinyint(1) NOT NULL,
   `needs_initialization` tinyint(1) NOT NULL,
 
-  PRIMARY KEY(`id`)
+  PRIMARY KEY(`id`),
+  UNIQUE KEY(`id`, `exact_id`, `genome_id`, `innovation_number`),
+  KEY(`exact_id`, `genome_id`)
+  KEY(`exact_id`),
+  KEY(`genome_id`),
+  KEY(`innovation_number`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1";
 query_exact_db($query);
 
@@ -298,7 +303,12 @@ $query = "CREATE TABLE `cnn_node` (
   `running_variance` float NOT NULL,
   `best_running_variance` float NOT NULL,
 
-  PRIMARY KEY(`id`)
+  PRIMARY KEY(`id`),
+  UNIQUE KEY(`id`, `exact_id`, `genome_id`, `innovation_number`),
+  KEY(`exact_id`, `genome_id`)
+  KEY(`exact_id`),
+  KEY(`genome_id`),
+  KEY(`innovation_number`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1";
 query_exact_db($query);
 
