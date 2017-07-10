@@ -209,11 +209,23 @@ CNN_Edge::CNN_Edge(int _edge_id) {
         filter_y = atoi(row[++column]);
         filter_size = filter_y * filter_x;
 
+        cout << "reading weights for exact edge" << endl;
         istringstream weights_iss(row[++column]);
-        parse_float_2d(&weights, weights_iss, filter_x, filter_y);
+        //parse_float_2d(&weights, weights_iss, filter_x, filter_y);
+        weights = new float[filter_y * filter_x];
+        for (int32_t i = 0; i < filter_y * filter_x; i++) {
+            weights[i] = read_hexfloat(weights_iss);
+        }
+
+        cout << "reading best weights for exact edge" << endl;
 
         istringstream best_weights_iss(row[++column]);
-        parse_float_2d(&best_weights, best_weights_iss, filter_x, filter_y);
+        //parse_float_2d(&best_weights, best_weights_iss, filter_x, filter_y);
+        best_weights = new float[filter_y * filter_x];
+        for (int32_t i = 0; i < filter_y * filter_x; i++) {
+            best_weights[i] = read_hexfloat(best_weights_iss);
+        }
+        cout << "success!" << endl;
 
         fixed = atoi(row[++column]);
         disabled = atoi(row[++column]);
@@ -273,7 +285,8 @@ void CNN_Edge::export_to_database(int _exact_id, int _genome_id) {
     for (int32_t y = 0; y < filter_y; y++) {
         for (int32_t x = 0; x < filter_x; x++) {
             if (x != 0) query << " ";
-            query << setprecision(15) << weights[current];
+            write_hexfloat(query, weights[current]);
+            //query << setprecision(15) << weights[current];
             current++;
         }
         if (y != filter_y - 1) query << "\n";
@@ -284,7 +297,8 @@ void CNN_Edge::export_to_database(int _exact_id, int _genome_id) {
     for (int32_t y = 0; y < filter_y; y++) {
         for (int32_t x = 0; x < filter_x; x++) {
             if (x != 0) query << " ";
-            query << setprecision(15) << best_weights[current];
+            write_hexfloat(query, best_weights[current]);
+            //query << setprecision(15) << best_weights[current];
             current++;
         }
         if (y != filter_y - 1) query << "\n";
@@ -795,24 +809,24 @@ void CNN_Edge::propagate_forward(bool training, bool accumulate_test_statistics,
     using namespace std::chrono;
     high_resolution_clock::time_point propagate_forward_start_time = high_resolution_clock::now();
 
-    //if (type == CONVOLUTION) {
-        float *input = input_node->get_values_out();
-        float *output = output_node->get_values_in();
+    float *input = input_node->get_values_out();
+    float *output = output_node->get_values_in();
 
 #ifdef NAN_CHECKS
-        if (!is_filter_correct()) {
-            cerr << "ERROR: filter_x != input_node->get_size_x: " << input_node->get_size_x() << " - output_node->get_size_x: " << output_node->get_size_x() << " + 1" << endl;
-            exit(1);
-        }
+    if (!is_filter_correct()) {
+        cerr << "ERROR: filter_x != input_node->get_size_x: " << input_node->get_size_x() << " - output_node->get_size_x: " << output_node->get_size_x() << " + 1" << endl;
+        exit(1);
+    }
 
-        float previous_output;
+    float previous_output;
 #endif
 
-        int output_size_x = output_node->get_size_x();
-        int output_size_y = output_node->get_size_y();
-        int input_size_x = input_node->get_size_x();
-        int input_size_y = input_node->get_size_y();
+    int output_size_x = output_node->get_size_x();
+    int output_size_y = output_node->get_size_y();
+    int input_size_x = input_node->get_size_x();
+    int input_size_y = input_node->get_size_y();
 
+    //if (type == CONVOLUTION) {
         if (reverse_filter_y && reverse_filter_x) {
             prop_forward_ry_rx(input, weights, output, batch_size, input_size_y, input_size_x, filter_y, filter_x, output_size_y, output_size_x);
         } else if (reverse_filter_y) {
@@ -827,6 +841,8 @@ void CNN_Edge::propagate_forward(bool training, bool accumulate_test_statistics,
     } else if (type == FRACTIONAL_MAX_POOL) {
         vector<int> y_pools;
         vector<int> x_pools;
+        vector<int> y_pool_offset;
+        vector<int> x_pool_offset;
 
 #ifdef NAN_CHECKS
         if (y_pools.size() != output_size_y) {
@@ -843,42 +859,16 @@ void CNN_Edge::propagate_forward(bool training, bool accumulate_test_statistics,
         fisher_yates_shuffle(generator, y_pools);
         fisher_yates_shuffle(generator, x_pools);
 
-        int current_output = 0;
-        for (int32_t y = 0; y < output_size_y; y++) {
-            for (int32_t x = 0; x < output_size_x; x++) {
-                output[current_output] = -numeric_limits<float>::max();
-            }
+        if (reverse_filter_y && reverse_filter_x) {
+            pool_forward_ry_rx(input, output, batch_size, input_size_y, input_size_x, output_size_y, output_size_x, y_pools, x_pools, y_pool_offset, x_pool_offset);
+        } else if (reverse_filter_y) {
+            pool_forward_ry(input, output, batch_size, input_size_y, input_size_x, output_size_y, output_size_x, y_pools, x_pools, y_pool_offset, x_pool_offset);
+        } else if (reverse_filter_x) {
+            pool_forward_rx(input, output, batch_size, input_size_y, input_size_x, output_size_y, output_size_x, y_pools, x_pools, y_pool_offset, x_pool_offset);
+        } else {
+            pool_forward(input, output, batch_size, input_size_y, input_size_x, output_size_y, output_size_x, y_pools, x_pools, y_pool_offset, x_pool_offset);
         }
 
-        for (int32_t out_y = 0; out_y < y_pools.size(); out_y++) {
-            for (int32_t out_x = 0; out_x < x_pools.size(); out_x++) {
-                int max_y = 0;
-                int max_x = 0;
-
-                int in_y = y_pool_offset[out_y];
-                int in_x = x_pool_offset[out_x];
-
-                for (int32_t pool_y = 0; pool_y < y_pools[in_y]; pool_y++) {
-                    for (int32_t pool_x = 0; pool_x < x_pools[in_x]; pool_x++) {
-                        if (input[in_y + pool_y][in_x + pool_x] > output[out_y][out_x]) {
-                            output[out_y][out_x] = input[in_y + pool_y][in_x + pool_x];
-                            max_y = pool_y;
-                            max_x = pool_x;
-                        }
-                    }
-                }
-
-                for (int32_t pool_y = 0; pool_y < y_pools[in_y]; pool_y++) {
-                    for (int32_t pool_x = 0; pool_x < x_pools[in_x]; pool_x++) {
-                        if (pool_y == max_y && pool_x == max_x) {
-                            pool_gradients[in_y + pool_y][in_x + pool_x] = 1;
-                        } else {
-                            pool_gradients[in_y + pool_y][in_x + pool_x] = 0;
-                        }
-                    }
-                }
-            }
-        }
     } else {
         cerr << "ERROR: unknown edge type: " << type << endl;
         exit(1);

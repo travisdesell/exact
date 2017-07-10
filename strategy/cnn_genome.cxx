@@ -1402,6 +1402,7 @@ void CNN_Genome::evaluate(const ImagesInterface &images, float &total_error, int
         int batch_correct_predictions = 0;
         evaluate_images(images, batch, training, batch_total_error, batch_correct_predictions, accumulate_test_statistics);
 
+        /*
         cerr << "[" << setw(10) << name << ", genome " << setw(5) << generation_id << "] ";
         if (training) {
             cerr << "training batch: ";
@@ -1409,6 +1410,7 @@ void CNN_Genome::evaluate(const ImagesInterface &images, float &total_error, int
             cerr << "test batch: ";
         }
         cerr << setw(5) << (j / batch_size) << "/" << setw(5) << (backprop_order.size() / batch_size) << ", batch total error: " << setw(15) << fixed << setprecision(5) << batch_total_error << ", batch_correct_predictions: " << batch_correct_predictions << endl;
+        */
 
         total_error += batch_total_error;
         correct_predictions += batch_correct_predictions;
