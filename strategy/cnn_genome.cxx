@@ -649,20 +649,12 @@ int CNN_Genome::get_number_weights() const {
     int number_weights = 0;
 
     for (uint32_t i = 0; i < edges.size(); i++) {
-        number_weights += edges[i]->get_filter_x() * edges[i]->get_filter_y();
+        if (edges[i]->get_type() == CONVOLUTIONAL) {
+            number_weights += edges[i]->get_filter_x() * edges[i]->get_filter_y();
+        }
     }
 
     return number_weights;
-}
-
-int CNN_Genome::get_number_biases() const {
-    int number_biases = 0;
-
-    for (uint32_t i = 0; i < nodes.size(); i++) {
-        number_biases += nodes[i]->get_size_x() * nodes[i]->get_size_y();
-    }
-
-    return number_biases;
 }
 
 int CNN_Genome::get_operations_estimate() const {
@@ -690,18 +682,22 @@ int CNN_Genome::get_operations_estimate() const {
         bool reverse_filter_x = edges[i]->is_reverse_filter_x();
         bool reverse_filter_y = edges[i]->is_reverse_filter_y();
 
-        float propagate_count;
-        if (reverse_filter_x && reverse_filter_y) {
-            propagate_count = edges[i]->get_filter_x() * edges[i]->get_filter_y() * edges[i]->get_input_node()->get_size_x() * edges[i]->get_input_node()->get_size_y();
-        } else if (reverse_filter_x) {
-            propagate_count = edges[i]->get_filter_x() * edges[i]->get_filter_y() * edges[i]->get_input_node()->get_size_x() * edges[i]->get_output_node()->get_size_y();
-        } else if (reverse_filter_y) {
-            propagate_count = edges[i]->get_filter_x() * edges[i]->get_filter_y() * edges[i]->get_output_node()->get_size_x() * edges[i]->get_input_node()->get_size_y();
-        } else {
-            propagate_count = edges[i]->get_filter_x() * edges[i]->get_filter_y() * edges[i]->get_output_node()->get_size_x() * edges[i]->get_output_node()->get_size_y();
-        }
 
-        operations_estimate += propagate_count * (4.0 * multiply_cost + 3.0 * add_cost);
+        //TODO: calculate differently for POOLING nodes
+        if (edges[i]->get_type() == CONVOLUTIONAL) {
+            float propagate_count;
+            if (reverse_filter_x && reverse_filter_y) {
+                propagate_count = edges[i]->get_filter_x() * edges[i]->get_filter_y() * edges[i]->get_input_node()->get_size_x() * edges[i]->get_input_node()->get_size_y();
+            } else if (reverse_filter_x) {
+                propagate_count = edges[i]->get_filter_x() * edges[i]->get_filter_y() * edges[i]->get_input_node()->get_size_x() * edges[i]->get_output_node()->get_size_y();
+            } else if (reverse_filter_y) {
+                propagate_count = edges[i]->get_filter_x() * edges[i]->get_filter_y() * edges[i]->get_output_node()->get_size_x() * edges[i]->get_input_node()->get_size_y();
+            } else {
+                propagate_count = edges[i]->get_filter_x() * edges[i]->get_filter_y() * edges[i]->get_output_node()->get_size_x() * edges[i]->get_output_node()->get_size_y();
+            }
+            operations_estimate += propagate_count * (4.0 * multiply_cost + 3.0 * add_cost);
+        } else {
+        }
 
         //update weights has 4 multiplies 4 adds and 2 ifs per weight 
         operations_estimate += edges[i]->get_filter_x() * edges[i]->get_filter_y() * (4.0 * multiply_cost + 4.0 * add_cost + 2.0 * if_cost);
@@ -1488,8 +1484,8 @@ void CNN_Genome::evaluate(const ImagesInterface &images, vector< vector<int> > &
             batch.push_back( j + k );
         }
 
-        float batch_total_error = 0.0;
-        int batch_correct_predictions = 0;
+        //float batch_total_error = 0.0;
+        //int batch_correct_predictions = 0;
         evaluate_images(images, batch, predictions);
     }
 }

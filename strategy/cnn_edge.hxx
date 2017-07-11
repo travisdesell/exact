@@ -26,12 +26,16 @@ using std::vector;
 #include "image_tools/image_set.hxx"
 #include "common/random.hxx"
 
+#define CONVOLUTIONAL 0
+#define POOLING 1
+
 class CNN_Edge {
     private:
         int edge_id;
         int exact_id;
         int genome_id;
 
+        int type;
         int innovation_number;
 
         int input_node_innovation_number;
@@ -50,6 +54,11 @@ class CNN_Edge {
         float *previous_velocity;
         float *best_velocity;
 
+        vector<int> y_pools;
+        vector<int> y_pool_offset;
+        vector<int> x_pools;
+        vector<int> x_pool_offset;
+
         bool fixed;
         bool disabled;
         bool forward_visited;
@@ -66,7 +75,7 @@ class CNN_Edge {
     public:
         CNN_Edge();
 
-        CNN_Edge(CNN_Node *_input_node, CNN_Node *_output_node, bool _fixed, int _innovation_number);
+        CNN_Edge(CNN_Node *_input_node, CNN_Node *_output_node, bool _fixed, int _innovation_number, int _type);
 
 #ifdef _MYSQL_
         CNN_Edge(int edge_id);
@@ -81,6 +90,8 @@ class CNN_Edge {
         ~CNN_Edge();
 
         bool equals(CNN_Edge *other) const;
+
+        int get_type() const;
 
         bool has_nan() const;
 

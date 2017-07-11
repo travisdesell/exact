@@ -129,7 +129,6 @@ class CNN_Genome {
         int get_number_test_images() const;
 
         int get_number_weights() const;
-        int get_number_biases() const;
 
         int get_padding() const;
 

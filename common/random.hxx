@@ -7,6 +7,7 @@ using std::minstd_rand0;
 #include <vector>
 using std::vector;
 
+void fisher_yates_shuffle(minstd_rand0 &generator, vector<int> &v);
 void fisher_yates_shuffle(minstd_rand0 &generator, vector<long> &v);
 
 float random_0_1(minstd_rand0 &generator);

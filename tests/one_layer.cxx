@@ -102,7 +102,7 @@ int main(int argc, char **argv) {
         nodes.push_back(softmax_node);
         softmax_nodes.push_back(softmax_node);
 
-        edges.push_back( new CNN_Edge(input_node, softmax_node, false, ++edge_innovation_count) );
+        edges.push_back( new CNN_Edge(input_node, softmax_node, false, ++edge_innovation_count, CONVOLUTIONAL) );
     }
 
     long genome_seed = generator();

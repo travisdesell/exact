@@ -98,8 +98,7 @@ EXACT::EXACT(int exact_id) {
         number_generalizability_images = atoi(row[++column]);
         number_test_images = atoi(row[++column]);
 
-        //padding = atoi(row[++column]);
-        padding = 0;
+        padding = atoi(row[++column]);
 
         image_channels = atoi(row[++column]);
         image_rows = atoi(row[++column]);
@@ -328,7 +327,7 @@ void EXACT::export_to_database() {
         << ", number_generalizability_images = " << number_generalizability_images
         << ", number_test_images = " << number_test_images
 
-        //<< ", padding = " << padding
+        << ", padding = " << padding
 
         << ", image_channels = " << image_channels
         << ", image_rows = " << image_rows
@@ -1211,7 +1210,7 @@ CNN_Genome* EXACT::generate_individual() {
 
         for (int32_t i = 0; i < number_classes; i++) {
             for (int32_t j = 0; j < image_channels; j++) {
-                CNN_Edge *edge = new CNN_Edge(input_nodes[j], all_nodes[i + image_channels] /*ith softmax node*/, true, edge_innovation_count);
+                CNN_Edge *edge = new CNN_Edge(input_nodes[j], all_nodes[i + image_channels] /*ith softmax node*/, true, edge_innovation_count, CONVOLUTIONAL);
 
                 all_edges.push_back(edge);
 
@@ -1612,7 +1611,7 @@ bool EXACT::add_edge(CNN_Genome *child, CNN_Node *node1, CNN_Node *node2) {
         //edge does not exist at all
         cout << "\t\tadding edge between node innovation numbers " << node1_innovation_number << " and " << node2_innovation_number << endl;
 
-        CNN_Edge *edge = new CNN_Edge(node1, node2, false, edge_innovation_count);
+        CNN_Edge *edge = new CNN_Edge(node1, node2, false, edge_innovation_count, CONVOLUTIONAL);
         edge_innovation_count++;
         //insert edge in order of depth
 
@@ -1763,11 +1762,11 @@ CNN_Genome* EXACT::create_mutation() {
 
             //add two new edges, disable the split edge
             cout << "\t\tcreating edge " << edge_innovation_count << endl;
-            CNN_Edge *edge1 = new CNN_Edge(input_node, child_node, false, edge_innovation_count);
+            CNN_Edge *edge1 = new CNN_Edge(input_node, child_node, false, edge_innovation_count, CONVOLUTIONAL);
             edge_innovation_count++;
 
             cout << "\t\tcreating edge " << edge_innovation_count << endl;
-            CNN_Edge *edge2 = new CNN_Edge(child_node, output_node, false, edge_innovation_count);
+            CNN_Edge *edge2 = new CNN_Edge(child_node, output_node, false, edge_innovation_count, CONVOLUTIONAL);
             edge_innovation_count++;
 
             cout << "\t\tdisabling edge " << edge->get_innovation_number() << endl;

@@ -94,6 +94,7 @@ class CNN_Node {
         float *values_out;
         float *errors_out;
         float *relu_gradients;
+        float *pool_gradients;
 
         float *values_in;
         float *errors_in;
@@ -168,9 +169,8 @@ class CNN_Node {
         float* get_errors_out();
 
 
-        void set_relu_gradient(int batch_number, int y, int x, float gradient);
         float* get_relu_gradients();
-
+        float* get_pool_gradients();
 
         void print(ostream &out);
 

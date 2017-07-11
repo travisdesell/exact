@@ -37,9 +37,11 @@ using std::string;
 #include <vector>
 using std::vector;
 
+#include "common/random.hxx"
 #include "image_tools/image_set.hxx"
 #include "cnn_edge.hxx"
 #include "cnn_node.hxx"
+#include "pooling.hxx"
 #include "propagation.hxx"
 
 #include "stdint.h"
@@ -48,6 +50,8 @@ CNN_Edge::CNN_Edge() {
     edge_id = -1;
     exact_id = -1;
     genome_id = -1;
+
+    type = -1;
 
     innovation_number = -1;
 
@@ -62,15 +66,17 @@ CNN_Edge::CNN_Edge() {
     weights = NULL;
     weight_updates = NULL;
     best_weights = NULL;
+
     previous_velocity = NULL;
     best_velocity = NULL;
 }
 
-CNN_Edge::CNN_Edge(CNN_Node *_input_node, CNN_Node *_output_node, bool _fixed, int _innovation_number) {
+CNN_Edge::CNN_Edge(CNN_Node *_input_node, CNN_Node *_output_node, bool _fixed, int _innovation_number, int _type) {
     edge_id = -1;
     exact_id = -1;
     genome_id = -1;
 
+    type = _type;
     fixed = _fixed;
     innovation_number = _innovation_number;
     disabled = false;
@@ -115,6 +121,9 @@ CNN_Edge::CNN_Edge(CNN_Node *_input_node, CNN_Node *_output_node, bool _fixed, i
 
     previous_velocity = new float[filter_size]();
     best_velocity = new float[filter_size]();
+
+    initialize_pools(y_pools, y_pool_offset, input_node->get_size_y(), output_node->get_size_y());
+    initialize_pools(x_pools, x_pool_offset, input_node->get_size_x(), output_node->get_size_x());
 }
 
 CNN_Edge::~CNN_Edge() {
@@ -199,6 +208,8 @@ CNN_Edge::CNN_Edge(int _edge_id) {
 
         exact_id = atoi(row[++column]);
         genome_id = atoi(row[++column]);
+
+        type = atoi(row[++column]);
         innovation_number = atoi(row[++column]);
 
         input_node_innovation_number = atoi(row[++column]);
@@ -246,6 +257,8 @@ CNN_Edge::CNN_Edge(int _edge_id) {
     previous_velocity = new float[filter_size]();
     best_velocity = new float[filter_size]();
 
+    //pools will be initialized after nodes are set
+
     //cout << "read edge!" << endl;
     //cout << this << endl;
 }
@@ -266,6 +279,7 @@ void CNN_Edge::export_to_database(int _exact_id, int _genome_id) {
 
     query << " exact_id = " << exact_id
         << ", genome_id = " << genome_id
+        << ", type = " << type
         << ", innovation_number = " << innovation_number
         << ", input_node_innovation_number = " << input_node_innovation_number
         << ", output_node_innovation_number = " << output_node_innovation_number
@@ -365,6 +379,10 @@ void CNN_Edge::accumulate_times(float &total_forward_time, float &total_backward
     total_weight_update_time += weight_update_time;
 }
 
+int CNN_Edge::get_type() const {
+    return type;
+}
+
 int CNN_Edge::get_filter_x() const {
     return filter_x;
 }
@@ -382,13 +400,24 @@ bool CNN_Edge::is_reverse_filter_y() const {
 }
 
 void CNN_Edge::propagate_weight_count() {
-    output_node->add_weight_count(filter_x * filter_y);
+    if (type == CONVOLUTIONAL) {
+        output_node->add_weight_count(filter_x * filter_y);
+    }
 }
 
 void CNN_Edge::initialize_weights(minstd_rand0 &generator, NormalDistribution &normal_distribution) {
+    if (type == POOLING) {
+        needs_initialization = false;
+        return;
+    }
+
     int edge_size = output_node->get_weight_count();
     if (edge_size == 0) {
         cerr << "ERROR! Initializing weights on an edge when node weight counts have not yet been set!" << endl;
+        cerr << "edge innovation number: " << innovation_number << endl;
+        cerr << "output node innovation number: " << output_node_innovation_number << endl;
+        cerr << "input node innovation number: " << input_node_innovation_number << endl;
+        cerr << "edge type: " << type << endl;
         exit(1);
     }
 
@@ -451,6 +480,9 @@ void CNN_Edge::resize() {
     previous_velocity = new float[filter_size]();
     best_velocity = new float[filter_size]();
 
+    initialize_pools(y_pools, y_pool_offset, input_node->get_size_y(), output_node->get_size_y());
+    initialize_pools(x_pools, x_pool_offset, input_node->get_size_x(), output_node->get_size_x());
+
     needs_initialization = true;
 }
 
@@ -486,6 +518,9 @@ CNN_Edge* CNN_Edge::copy() const {
 
     copy->fixed = fixed;
     copy->innovation_number = innovation_number;
+
+    copy->type = type;
+
     copy->disabled = disabled;
     copy->forward_visited = forward_visited;
     copy->reverse_visited = reverse_visited;
@@ -547,6 +582,9 @@ CNN_Edge* CNN_Edge::copy() const {
         copy->best_velocity[current] = best_velocity[current];
     }
 
+    initialize_pools(copy->y_pools, copy->y_pool_offset, input_node->get_size_y(), output_node->get_size_y());
+    initialize_pools(copy->x_pools, copy->x_pool_offset, input_node->get_size_x(), output_node->get_size_x());
+
     return copy;
 }
 
@@ -599,6 +637,9 @@ bool CNN_Edge::set_nodes(const vector<CNN_Node*> nodes) {
     if (!is_filter_correct()) {
         return false;
     }
+
+    initialize_pools(y_pools, y_pool_offset, input_node->get_size_y(), output_node->get_size_y());
+    initialize_pools(x_pools, x_pool_offset, input_node->get_size_x(), output_node->get_size_x());
 
     return true;
 }
@@ -810,6 +851,7 @@ void CNN_Edge::propagate_forward(bool training, bool accumulate_test_statistics,
     high_resolution_clock::time_point propagate_forward_start_time = high_resolution_clock::now();
 
     float *input = input_node->get_values_out();
+    float *pool_gradients = input_node->get_pool_gradients();
     float *output = output_node->get_values_in();
 
 #ifdef NAN_CHECKS
@@ -826,7 +868,7 @@ void CNN_Edge::propagate_forward(bool training, bool accumulate_test_statistics,
     int input_size_x = input_node->get_size_x();
     int input_size_y = input_node->get_size_y();
 
-    //if (type == CONVOLUTION) {
+    if (type == CONVOLUTIONAL) {
         if (reverse_filter_y && reverse_filter_x) {
             prop_forward_ry_rx(input, weights, output, batch_size, input_size_y, input_size_x, filter_y, filter_x, output_size_y, output_size_x);
         } else if (reverse_filter_y) {
@@ -837,43 +879,76 @@ void CNN_Edge::propagate_forward(bool training, bool accumulate_test_statistics,
             prop_forward(input, weights, output, batch_size, input_size_y, input_size_x, filter_y, filter_x, output_size_y, output_size_x);
         }
 
-        /*
-    } else if (type == FRACTIONAL_MAX_POOL) {
-        vector<int> y_pools;
-        vector<int> x_pools;
-        vector<int> y_pool_offset;
-        vector<int> x_pool_offset;
-
+    } else if (type == POOLING) {
 #ifdef NAN_CHECKS
         if (y_pools.size() != output_size_y) {
-            cerr << "ERROR: FRACTIONAL_MAX_POOL y_pools.size: " << y_pools.size() << " != input_node->get_size_y" << endl;
+            cerr << "ERROR: POOLING y_pools.size: " << y_pools.size() << " != input_node->get_size_y" << endl;
             exit(1);
         }
 
         if (x_pools.size() != output_size_x) {
-            cerr << "ERROR: FRACTIONAL_MAX_POOL x_pools.size: " << x_pools.size() << " != input_node->get_size_x" << endl;
+            cerr << "ERROR: POOLING x_pools.size: " << x_pools.size() << " != input_node->get_size_x" << endl;
             exit(1);
         }
 #endif
 
-        fisher_yates_shuffle(generator, y_pools);
-        fisher_yates_shuffle(generator, x_pools);
-
         if (reverse_filter_y && reverse_filter_x) {
-            pool_forward_ry_rx(input, output, batch_size, input_size_y, input_size_x, output_size_y, output_size_x, y_pools, x_pools, y_pool_offset, x_pool_offset);
+            if (input_size_y % output_size_y == 0) {
+                fisher_yates_shuffle(generator, y_pools);
+                update_offset(y_pools, y_pool_offset);
+            }
+
+            if (input_size_x % output_size_x == 0) {
+                fisher_yates_shuffle(generator, x_pools);
+                update_offset(x_pools, x_pool_offset);
+            }
+
+            pool_forward_ry_rx(input, pool_gradients, output, batch_size, input_size_y, input_size_x, output_size_y, output_size_x, y_pools, x_pools, y_pool_offset, x_pool_offset);
+
         } else if (reverse_filter_y) {
-            pool_forward_ry(input, output, batch_size, input_size_y, input_size_x, output_size_y, output_size_x, y_pools, x_pools, y_pool_offset, x_pool_offset);
+            if (output_size_y % input_size_y == 0) {
+                fisher_yates_shuffle(generator, y_pools);
+                update_offset(y_pools, y_pool_offset);
+            }
+
+            if (input_size_x % output_size_x == 0) {
+                fisher_yates_shuffle(generator, x_pools);
+                update_offset(x_pools, x_pool_offset);
+            }
+
+            pool_forward_ry(input, pool_gradients, output, batch_size, input_size_y, input_size_x, output_size_y, output_size_x, y_pools, x_pools, y_pool_offset, x_pool_offset);
+
         } else if (reverse_filter_x) {
-            pool_forward_rx(input, output, batch_size, input_size_y, input_size_x, output_size_y, output_size_x, y_pools, x_pools, y_pool_offset, x_pool_offset);
+            if (input_size_y % output_size_y == 0) {
+                fisher_yates_shuffle(generator, y_pools);
+                update_offset(y_pools, y_pool_offset);
+            }
+
+            if (output_size_x % input_size_x == 0) {
+                fisher_yates_shuffle(generator, x_pools);
+                update_offset(x_pools, x_pool_offset);
+            }
+
+            pool_forward_rx(input, pool_gradients, output, batch_size, input_size_y, input_size_x, output_size_y, output_size_x, y_pools, x_pools, y_pool_offset, x_pool_offset);
+
         } else {
-            pool_forward(input, output, batch_size, input_size_y, input_size_x, output_size_y, output_size_x, y_pools, x_pools, y_pool_offset, x_pool_offset);
+            if (output_size_y % input_size_y == 0) {
+                fisher_yates_shuffle(generator, y_pools);
+                update_offset(y_pools, y_pool_offset);
+            }
+
+            if (output_size_x % input_size_x == 0) {
+                fisher_yates_shuffle(generator, x_pools);
+                update_offset(x_pools, x_pool_offset);
+            }
+
+            pool_forward(input, pool_gradients, output, batch_size, input_size_y, input_size_x, output_size_y, output_size_x, y_pools, x_pools, y_pool_offset, x_pool_offset);
         }
 
     } else {
-        cerr << "ERROR: unknown edge type: " << type << endl;
+        cerr << "ERROR: unknown edge type in propagate_forward: " << type << endl;
         exit(1);
     }
-    */
 
     high_resolution_clock::time_point propagate_forward_end_time = high_resolution_clock::now();
     duration<float, std::milli> time_span = propagate_forward_end_time - propagate_forward_start_time;
@@ -885,6 +960,7 @@ void CNN_Edge::propagate_forward(bool training, bool accumulate_test_statistics,
 
 void CNN_Edge::update_weights(float mu, float learning_rate, float weight_decay) {
     if (!is_reachable()) return;
+    if (type == POOLING) return;
 
     using namespace std::chrono;
     high_resolution_clock::time_point weight_update_start_time = high_resolution_clock::now();
@@ -983,24 +1059,43 @@ void CNN_Edge::propagate_backward(float mu, float learning_rate, float epsilon) 
     float *input = input_node->get_values_out();
     float *input_errors = input_node->get_errors_out();
 
-    int in_x = input_node->get_size_x();
-    int in_y = input_node->get_size_y();
+    int input_size_x = input_node->get_size_x();
+    int input_size_y = input_node->get_size_y();
 
-    int out_x = output_node->get_size_x();
-    int out_y = output_node->get_size_y();
+    int output_size_x = output_node->get_size_x();
+    int output_size_y = output_node->get_size_y();
 
     for (int32_t current = 0; current < filter_size; current++) {
         weight_updates[current] = 0;
     }
 
-    if (reverse_filter_x && reverse_filter_y) {
-        prop_backward_ry_rx(output_errors, input, input_errors, weight_updates, weights, batch_size, in_y, in_x, filter_y, filter_x, out_y, out_x);
-    } else if (reverse_filter_y) {
-        prop_backward_ry(output_errors, input, input_errors, weight_updates, weights, batch_size, in_y, in_x, filter_y, filter_x, out_y, out_x);
-    } else if (reverse_filter_x) {
-        prop_backward_rx(output_errors, input, input_errors, weight_updates, weights, batch_size, in_y, in_x, filter_y, filter_x, out_y, out_x);
+    if (type == CONVOLUTIONAL) {
+        if (reverse_filter_x && reverse_filter_y) {
+            prop_backward_ry_rx(output_errors, input, input_errors, weight_updates, weights, batch_size, input_size_y, input_size_x, filter_y, filter_x, output_size_y, output_size_x);
+        } else if (reverse_filter_y) {
+            prop_backward_ry(output_errors, input, input_errors, weight_updates, weights, batch_size, input_size_y, input_size_x, filter_y, filter_x, output_size_y, output_size_x);
+        } else if (reverse_filter_x) {
+            prop_backward_rx(output_errors, input, input_errors, weight_updates, weights, batch_size, input_size_y, input_size_x, filter_y, filter_x, output_size_y, output_size_x);
+        } else {
+            prop_backward(output_errors, input, input_errors, weight_updates, weights, batch_size, input_size_y, input_size_x, filter_y, filter_x, output_size_y, output_size_x);
+        }
+
+    } else if (type == POOLING) {
+        float *pool_gradients = input_node->get_pool_gradients();
+
+        if (reverse_filter_y && reverse_filter_x) {
+            pool_backward_ry_rx(input_errors, pool_gradients, output_errors, batch_size, input_size_y, input_size_x, output_size_y, output_size_x, y_pools, x_pools, y_pool_offset, x_pool_offset);
+        } else if (reverse_filter_y) {
+            pool_backward_ry(input_errors, pool_gradients, output_errors, batch_size, input_size_y, input_size_x, output_size_y, output_size_x, y_pools, x_pools, y_pool_offset, x_pool_offset);
+        } else if (reverse_filter_x) {
+            pool_backward_rx(input_errors, pool_gradients, output_errors, batch_size, input_size_y, input_size_x, output_size_y, output_size_x, y_pools, x_pools, y_pool_offset, x_pool_offset);
+        } else {
+            pool_backward(input_errors, pool_gradients, output_errors, batch_size, input_size_y, input_size_x, output_size_y, output_size_x, y_pools, x_pools, y_pool_offset, x_pool_offset);
+        }
+
     } else {
-        prop_backward(output_errors, input, input_errors, weight_updates, weights, batch_size, in_y, in_x, filter_y, filter_x, out_y, out_x);
+        cerr << "ERROR: unknown edge type in poolagate_backward: " << type << endl;
+        exit(1);
     }
 
     high_resolution_clock::time_point propagate_backward_end_time = high_resolution_clock::now();
@@ -1051,6 +1146,7 @@ ostream &operator<<(ostream &os, const CNN_Edge* edge) {
     os << edge->edge_id << " ";
     os << edge->exact_id << " ";
     os << edge->genome_id << " ";
+    os << edge->type << " ";
     os << edge->innovation_number << " ";
     os << edge->input_node_innovation_number << " ";
     os << edge->output_node_innovation_number << " ";
@@ -1115,6 +1211,7 @@ istream &operator>>(istream &is, CNN_Edge* edge) {
     is >> edge->edge_id;
     is >> edge->exact_id;
     is >> edge->genome_id;
+    is >> edge->type;
     is >> edge->innovation_number;
     is >> edge->input_node_innovation_number;
     is >> edge->output_node_innovation_number;
@@ -1198,6 +1295,8 @@ istream &operator>>(istream &is, CNN_Edge* edge) {
             current++;
         }
     }
+
+    //pools will be initialized after nodes are set
 
     return is;
 }

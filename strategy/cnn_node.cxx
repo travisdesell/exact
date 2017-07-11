@@ -156,6 +156,7 @@ CNN_Node::CNN_Node(int _innovation_number, float _depth, int _batch_size, int _s
     values_out = new float[total_size]();
     errors_out = new float[total_size]();
     relu_gradients = new float[total_size]();
+    pool_gradients = new float[total_size]();
 }
 
 #ifdef _MYSQL_
@@ -227,6 +228,7 @@ CNN_Node::CNN_Node(int _node_id) {
     values_out = new float[total_size]();
     errors_out = new float[total_size]();
     relu_gradients = new float[total_size]();
+    pool_gradients = new float[total_size]();
 
     //cout << "read node!" << endl;
     //cout << this << endl;
@@ -286,6 +288,7 @@ CNN_Node::~CNN_Node() {
     delete [] values_out;
     delete [] errors_out;
     delete [] relu_gradients;
+    delete [] pool_gradients;
 
     delete [] values_in;
     delete [] errors_in;
@@ -335,6 +338,7 @@ CNN_Node* CNN_Node::copy() const {
     copy->values_out = new float[total_size]();
     copy->errors_out = new float[total_size]();
     copy->relu_gradients = new float[total_size]();
+    copy->pool_gradients = new float[total_size]();
 
     for (uint32_t i = 0; i < total_size; i++) {
         copy->values_in[i] = values_in[i];
@@ -343,6 +347,7 @@ CNN_Node* CNN_Node::copy() const {
         copy->values_out[i] = values_out[i];
         copy->errors_out[i] = errors_out[i];
         copy->relu_gradients[i] = relu_gradients[i];
+        copy->pool_gradients[i] = pool_gradients[i];
     }
 
     return copy;
@@ -367,6 +372,7 @@ void CNN_Node::initialize() {
     delete [] values_out;
     delete [] errors_out;
     delete [] relu_gradients;
+    delete [] pool_gradients;
 
     values_in = new float[total_size]();
     errors_in = new float[total_size]();
@@ -374,6 +380,7 @@ void CNN_Node::initialize() {
     values_out = new float[total_size]();
     errors_out = new float[total_size]();
     relu_gradients = new float[total_size]();
+    pool_gradients = new float[total_size]();
 }
 
 void CNN_Node::reset_velocities() {
@@ -479,6 +486,7 @@ void CNN_Node::resize_arrays() {
     delete [] values_out;
     delete [] errors_out;
     delete [] relu_gradients;
+    delete [] pool_gradients;
 
     values_in = new float[total_size]();
     errors_in = new float[total_size]();
@@ -486,6 +494,7 @@ void CNN_Node::resize_arrays() {
     values_out = new float[total_size]();
     errors_out = new float[total_size]();
     relu_gradients = new float[total_size]();
+    pool_gradients = new float[total_size]();
 
     needs_initialization = true;
 }
@@ -538,15 +547,13 @@ float* CNN_Node::get_errors_out() {
     return errors_out;
 }
 
-void CNN_Node::set_relu_gradient(int batch_number, int y, int x, float gradient) {
-    relu_gradients[(batch_number * size_y * size_x) + (size_x * y) + x] = gradient;
-    //relu_gradients[batch_number][y][x] = gradient;
-}
-
 float* CNN_Node::get_relu_gradients() {
     return relu_gradients;
 }
 
+float* CNN_Node::get_pool_gradients() {
+    return pool_gradients;
+}
 
 
 void CNN_Node::print(ostream &out) {
@@ -608,6 +615,17 @@ void CNN_Node::print(ostream &out) {
             }
             out << endl;
         }
+
+        out << "    pool_gradients:" << endl;
+        current = batch_number * size_y * size_x;
+        for (int32_t i = 0; i < size_y; i++) {
+            out << "    ";
+            for (int32_t j = 0; j < size_x; j++) {
+                out << setw(13) << setprecision(8) << pool_gradients[current];
+                current++;
+            }
+            out << endl;
+        }
     }
 }
 
@@ -633,6 +651,7 @@ void CNN_Node::reset() {
             values_out[current] = 0.0;
             errors_out[current] = 0.0;
             relu_gradients[current] = 0.0;
+            pool_gradients[current] = 0.0;
         }
     }
 }
@@ -997,7 +1016,6 @@ void CNN_Node::backpropagate_batch_normalization(float mu, float learning_rate, 
         previous_velocity_gamma = 0.0;
     }
 
-
     //cout << "\tnode " << innovation_number << ", delta_gamma: " << delta_gamma << ", delta_beta: " << delta_beta << ", gamma now: " << gamma << ", beta now: " << beta << endl;
 }
 
@@ -1113,6 +1131,7 @@ bool CNN_Node::has_nan() const {
         if (isnan(values_out[current]) || isinf(values_out[current])) return true;
         if (isnan(errors_out[current]) || isinf(errors_out[current])) return true;
         if (isnan(relu_gradients[current]) || isinf(relu_gradients[current])) return true;
+        if (isnan(pool_gradients[current]) || isinf(pool_gradients[current])) return true;
     }
 
     return false;
@@ -1241,6 +1260,7 @@ std::istream &operator>>(std::istream &is, CNN_Node* node) {
     node->values_out = new float[node->total_size]();
     node->errors_out = new float[node->total_size]();
     node->relu_gradients = new float[node->total_size]();
+    node->pool_gradients = new float[node->total_size]();
 
     return is;
 }

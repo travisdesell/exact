@@ -106,7 +106,7 @@ int main(int argc, char **argv) {
         nodes.push_back(layer1_node);
         layer1_nodes.push_back(layer1_node);
 
-        edges.push_back( new CNN_Edge(input_node, layer1_node, false, ++edge_innovation_count) );
+        edges.push_back( new CNN_Edge(input_node, layer1_node, false, ++edge_innovation_count, CONVOLUTIONAL) );
     }
 
     for (int32_t i = 0; i < training_images.get_number_classes(); i++) {
@@ -115,7 +115,7 @@ int main(int argc, char **argv) {
         softmax_nodes.push_back(softmax_node);
 
         for (int32_t j = 0; j < 10; j++) {
-            edges.push_back( new CNN_Edge(layer1_nodes[j], softmax_node, false, ++edge_innovation_count) );
+            edges.push_back( new CNN_Edge(layer1_nodes[j], softmax_node, false, ++edge_innovation_count, CONVOLUTIONAL) );
 
         }
     }

@@ -239,6 +239,7 @@ $query = "CREATE TABLE `cnn_edge` (
   `exact_id` int(11) NOT NULL,
   `genome_id` int(11) NOT NULL,
 
+  `type` int(11) NOT NULL,
   `innovation_number` int(11) NOT NULL,
 
   `input_node_innovation_number` int(11) NOT NULL,

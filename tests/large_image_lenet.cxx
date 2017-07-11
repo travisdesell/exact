@@ -111,7 +111,7 @@ int main(int argc, char **argv) {
         layer1_nodes.push_back(layer1_node);
 
         for (int32_t j = 0; j < training_images.get_image_channels(); j++) {
-            edges.push_back( new CNN_Edge(input_nodes[j], layer1_node, false, ++edge_innovation_count) );
+            edges.push_back( new CNN_Edge(input_nodes[j], layer1_node, false, ++edge_innovation_count, CONVOLUTIONAL) );
         }
     }
 
@@ -122,119 +122,119 @@ int main(int argc, char **argv) {
     }
 
     //1 to 1 connections
-    edges.push_back( new CNN_Edge(layer1_nodes[0], layer2_nodes[0], false, ++edge_innovation_count) );
-    edges.push_back( new CNN_Edge(layer1_nodes[1], layer2_nodes[1], false, ++edge_innovation_count) );
-    edges.push_back( new CNN_Edge(layer1_nodes[2], layer2_nodes[2], false, ++edge_innovation_count) );
-    edges.push_back( new CNN_Edge(layer1_nodes[3], layer2_nodes[3], false, ++edge_innovation_count) );
-    edges.push_back( new CNN_Edge(layer1_nodes[4], layer2_nodes[4], false, ++edge_innovation_count) );
+    edges.push_back( new CNN_Edge(layer1_nodes[0], layer2_nodes[0], false, ++edge_innovation_count, CONVOLUTIONAL) );
+    edges.push_back( new CNN_Edge(layer1_nodes[1], layer2_nodes[1], false, ++edge_innovation_count, CONVOLUTIONAL) );
+    edges.push_back( new CNN_Edge(layer1_nodes[2], layer2_nodes[2], false, ++edge_innovation_count, CONVOLUTIONAL) );
+    edges.push_back( new CNN_Edge(layer1_nodes[3], layer2_nodes[3], false, ++edge_innovation_count, CONVOLUTIONAL) );
+    edges.push_back( new CNN_Edge(layer1_nodes[4], layer2_nodes[4], false, ++edge_innovation_count, CONVOLUTIONAL) );
 
     //2 to 1 connections
-    edges.push_back( new CNN_Edge(layer1_nodes[0], layer2_nodes[5], false, ++edge_innovation_count) );
-    edges.push_back( new CNN_Edge(layer1_nodes[1], layer2_nodes[5], false, ++edge_innovation_count) );
+    edges.push_back( new CNN_Edge(layer1_nodes[0], layer2_nodes[5], false, ++edge_innovation_count, CONVOLUTIONAL) );
+    edges.push_back( new CNN_Edge(layer1_nodes[1], layer2_nodes[5], false, ++edge_innovation_count, CONVOLUTIONAL) );
 
-    edges.push_back( new CNN_Edge(layer1_nodes[0], layer2_nodes[6], false, ++edge_innovation_count) );
-    edges.push_back( new CNN_Edge(layer1_nodes[2], layer2_nodes[6], false, ++edge_innovation_count) );
+    edges.push_back( new CNN_Edge(layer1_nodes[0], layer2_nodes[6], false, ++edge_innovation_count, CONVOLUTIONAL) );
+    edges.push_back( new CNN_Edge(layer1_nodes[2], layer2_nodes[6], false, ++edge_innovation_count, CONVOLUTIONAL) );
 
-    edges.push_back( new CNN_Edge(layer1_nodes[0], layer2_nodes[7], false, ++edge_innovation_count) );
-    edges.push_back( new CNN_Edge(layer1_nodes[3], layer2_nodes[7], false, ++edge_innovation_count) );
+    edges.push_back( new CNN_Edge(layer1_nodes[0], layer2_nodes[7], false, ++edge_innovation_count, CONVOLUTIONAL) );
+    edges.push_back( new CNN_Edge(layer1_nodes[3], layer2_nodes[7], false, ++edge_innovation_count, CONVOLUTIONAL) );
 
-    edges.push_back( new CNN_Edge(layer1_nodes[0], layer2_nodes[8], false, ++edge_innovation_count) );
-    edges.push_back( new CNN_Edge(layer1_nodes[4], layer2_nodes[8], false, ++edge_innovation_count) );
+    edges.push_back( new CNN_Edge(layer1_nodes[0], layer2_nodes[8], false, ++edge_innovation_count, CONVOLUTIONAL) );
+    edges.push_back( new CNN_Edge(layer1_nodes[4], layer2_nodes[8], false, ++edge_innovation_count, CONVOLUTIONAL) );
 
-    edges.push_back( new CNN_Edge(layer1_nodes[1], layer2_nodes[9], false, ++edge_innovation_count) );
-    edges.push_back( new CNN_Edge(layer1_nodes[2], layer2_nodes[9], false, ++edge_innovation_count) );
+    edges.push_back( new CNN_Edge(layer1_nodes[1], layer2_nodes[9], false, ++edge_innovation_count, CONVOLUTIONAL) );
+    edges.push_back( new CNN_Edge(layer1_nodes[2], layer2_nodes[9], false, ++edge_innovation_count, CONVOLUTIONAL) );
 
-    edges.push_back( new CNN_Edge(layer1_nodes[1], layer2_nodes[10], false, ++edge_innovation_count) );
-    edges.push_back( new CNN_Edge(layer1_nodes[3], layer2_nodes[10], false, ++edge_innovation_count) );
+    edges.push_back( new CNN_Edge(layer1_nodes[1], layer2_nodes[10], false, ++edge_innovation_count, CONVOLUTIONAL) );
+    edges.push_back( new CNN_Edge(layer1_nodes[3], layer2_nodes[10], false, ++edge_innovation_count, CONVOLUTIONAL) );
 
-    edges.push_back( new CNN_Edge(layer1_nodes[1], layer2_nodes[11], false, ++edge_innovation_count) );
-    edges.push_back( new CNN_Edge(layer1_nodes[4], layer2_nodes[11], false, ++edge_innovation_count) );
+    edges.push_back( new CNN_Edge(layer1_nodes[1], layer2_nodes[11], false, ++edge_innovation_count, CONVOLUTIONAL) );
+    edges.push_back( new CNN_Edge(layer1_nodes[4], layer2_nodes[11], false, ++edge_innovation_count, CONVOLUTIONAL) );
 
-    edges.push_back( new CNN_Edge(layer1_nodes[2], layer2_nodes[12], false, ++edge_innovation_count) );
-    edges.push_back( new CNN_Edge(layer1_nodes[3], layer2_nodes[12], false, ++edge_innovation_count) );
+    edges.push_back( new CNN_Edge(layer1_nodes[2], layer2_nodes[12], false, ++edge_innovation_count, CONVOLUTIONAL) );
+    edges.push_back( new CNN_Edge(layer1_nodes[3], layer2_nodes[12], false, ++edge_innovation_count, CONVOLUTIONAL) );
 
-    edges.push_back( new CNN_Edge(layer1_nodes[2], layer2_nodes[13], false, ++edge_innovation_count) );
-    edges.push_back( new CNN_Edge(layer1_nodes[4], layer2_nodes[13], false, ++edge_innovation_count) );
+    edges.push_back( new CNN_Edge(layer1_nodes[2], layer2_nodes[13], false, ++edge_innovation_count, CONVOLUTIONAL) );
+    edges.push_back( new CNN_Edge(layer1_nodes[4], layer2_nodes[13], false, ++edge_innovation_count, CONVOLUTIONAL) );
 
-    edges.push_back( new CNN_Edge(layer1_nodes[3], layer2_nodes[14], false, ++edge_innovation_count) );
-    edges.push_back( new CNN_Edge(layer1_nodes[4], layer2_nodes[14], false, ++edge_innovation_count) );
+    edges.push_back( new CNN_Edge(layer1_nodes[3], layer2_nodes[14], false, ++edge_innovation_count, CONVOLUTIONAL) );
+    edges.push_back( new CNN_Edge(layer1_nodes[4], layer2_nodes[14], false, ++edge_innovation_count, CONVOLUTIONAL) );
     //25
 
     //3 to 1 connections
-    edges.push_back( new CNN_Edge(layer1_nodes[0], layer2_nodes[15], false, ++edge_innovation_count) );
-    edges.push_back( new CNN_Edge(layer1_nodes[1], layer2_nodes[15], false, ++edge_innovation_count) );
-    edges.push_back( new CNN_Edge(layer1_nodes[2], layer2_nodes[15], false, ++edge_innovation_count) );
+    edges.push_back( new CNN_Edge(layer1_nodes[0], layer2_nodes[15], false, ++edge_innovation_count, CONVOLUTIONAL) );
+    edges.push_back( new CNN_Edge(layer1_nodes[1], layer2_nodes[15], false, ++edge_innovation_count, CONVOLUTIONAL) );
+    edges.push_back( new CNN_Edge(layer1_nodes[2], layer2_nodes[15], false, ++edge_innovation_count, CONVOLUTIONAL) );
 
-    edges.push_back( new CNN_Edge(layer1_nodes[0], layer2_nodes[16], false, ++edge_innovation_count) );
-    edges.push_back( new CNN_Edge(layer1_nodes[1], layer2_nodes[16], false, ++edge_innovation_count) );
-    edges.push_back( new CNN_Edge(layer1_nodes[3], layer2_nodes[16], false, ++edge_innovation_count) );
+    edges.push_back( new CNN_Edge(layer1_nodes[0], layer2_nodes[16], false, ++edge_innovation_count, CONVOLUTIONAL) );
+    edges.push_back( new CNN_Edge(layer1_nodes[1], layer2_nodes[16], false, ++edge_innovation_count, CONVOLUTIONAL) );
+    edges.push_back( new CNN_Edge(layer1_nodes[3], layer2_nodes[16], false, ++edge_innovation_count, CONVOLUTIONAL) );
 
-    edges.push_back( new CNN_Edge(layer1_nodes[0], layer2_nodes[17], false, ++edge_innovation_count) );
-    edges.push_back( new CNN_Edge(layer1_nodes[1], layer2_nodes[17], false, ++edge_innovation_count) );
-    edges.push_back( new CNN_Edge(layer1_nodes[4], layer2_nodes[17], false, ++edge_innovation_count) );
+    edges.push_back( new CNN_Edge(layer1_nodes[0], layer2_nodes[17], false, ++edge_innovation_count, CONVOLUTIONAL) );
+    edges.push_back( new CNN_Edge(layer1_nodes[1], layer2_nodes[17], false, ++edge_innovation_count, CONVOLUTIONAL) );
+    edges.push_back( new CNN_Edge(layer1_nodes[4], layer2_nodes[17], false, ++edge_innovation_count, CONVOLUTIONAL) );
 
-    edges.push_back( new CNN_Edge(layer1_nodes[0], layer2_nodes[17], false, ++edge_innovation_count) );
-    edges.push_back( new CNN_Edge(layer1_nodes[2], layer2_nodes[17], false, ++edge_innovation_count) );
-    edges.push_back( new CNN_Edge(layer1_nodes[3], layer2_nodes[17], false, ++edge_innovation_count) );
+    edges.push_back( new CNN_Edge(layer1_nodes[0], layer2_nodes[17], false, ++edge_innovation_count, CONVOLUTIONAL) );
+    edges.push_back( new CNN_Edge(layer1_nodes[2], layer2_nodes[17], false, ++edge_innovation_count, CONVOLUTIONAL) );
+    edges.push_back( new CNN_Edge(layer1_nodes[3], layer2_nodes[17], false, ++edge_innovation_count, CONVOLUTIONAL) );
 
-    edges.push_back( new CNN_Edge(layer1_nodes[0], layer2_nodes[18], false, ++edge_innovation_count) );
-    edges.push_back( new CNN_Edge(layer1_nodes[2], layer2_nodes[18], false, ++edge_innovation_count) );
-    edges.push_back( new CNN_Edge(layer1_nodes[4], layer2_nodes[18], false, ++edge_innovation_count) );
+    edges.push_back( new CNN_Edge(layer1_nodes[0], layer2_nodes[18], false, ++edge_innovation_count, CONVOLUTIONAL) );
+    edges.push_back( new CNN_Edge(layer1_nodes[2], layer2_nodes[18], false, ++edge_innovation_count, CONVOLUTIONAL) );
+    edges.push_back( new CNN_Edge(layer1_nodes[4], layer2_nodes[18], false, ++edge_innovation_count, CONVOLUTIONAL) );
 
-    edges.push_back( new CNN_Edge(layer1_nodes[0], layer2_nodes[19], false, ++edge_innovation_count) );
-    edges.push_back( new CNN_Edge(layer1_nodes[3], layer2_nodes[19], false, ++edge_innovation_count) );
-    edges.push_back( new CNN_Edge(layer1_nodes[4], layer2_nodes[19], false, ++edge_innovation_count) );
+    edges.push_back( new CNN_Edge(layer1_nodes[0], layer2_nodes[19], false, ++edge_innovation_count, CONVOLUTIONAL) );
+    edges.push_back( new CNN_Edge(layer1_nodes[3], layer2_nodes[19], false, ++edge_innovation_count, CONVOLUTIONAL) );
+    edges.push_back( new CNN_Edge(layer1_nodes[4], layer2_nodes[19], false, ++edge_innovation_count, CONVOLUTIONAL) );
 
-    edges.push_back( new CNN_Edge(layer1_nodes[1], layer2_nodes[20], false, ++edge_innovation_count) );
-    edges.push_back( new CNN_Edge(layer1_nodes[2], layer2_nodes[20], false, ++edge_innovation_count) );
-    edges.push_back( new CNN_Edge(layer1_nodes[3], layer2_nodes[20], false, ++edge_innovation_count) );
+    edges.push_back( new CNN_Edge(layer1_nodes[1], layer2_nodes[20], false, ++edge_innovation_count, CONVOLUTIONAL) );
+    edges.push_back( new CNN_Edge(layer1_nodes[2], layer2_nodes[20], false, ++edge_innovation_count, CONVOLUTIONAL) );
+    edges.push_back( new CNN_Edge(layer1_nodes[3], layer2_nodes[20], false, ++edge_innovation_count, CONVOLUTIONAL) );
 
-    edges.push_back( new CNN_Edge(layer1_nodes[1], layer2_nodes[21], false, ++edge_innovation_count) );
-    edges.push_back( new CNN_Edge(layer1_nodes[2], layer2_nodes[21], false, ++edge_innovation_count) );
-    edges.push_back( new CNN_Edge(layer1_nodes[4], layer2_nodes[21], false, ++edge_innovation_count) );
+    edges.push_back( new CNN_Edge(layer1_nodes[1], layer2_nodes[21], false, ++edge_innovation_count, CONVOLUTIONAL) );
+    edges.push_back( new CNN_Edge(layer1_nodes[2], layer2_nodes[21], false, ++edge_innovation_count, CONVOLUTIONAL) );
+    edges.push_back( new CNN_Edge(layer1_nodes[4], layer2_nodes[21], false, ++edge_innovation_count, CONVOLUTIONAL) );
 
-    edges.push_back( new CNN_Edge(layer1_nodes[1], layer2_nodes[22], false, ++edge_innovation_count) );
-    edges.push_back( new CNN_Edge(layer1_nodes[3], layer2_nodes[22], false, ++edge_innovation_count) );
-    edges.push_back( new CNN_Edge(layer1_nodes[4], layer2_nodes[22], false, ++edge_innovation_count) );
+    edges.push_back( new CNN_Edge(layer1_nodes[1], layer2_nodes[22], false, ++edge_innovation_count, CONVOLUTIONAL) );
+    edges.push_back( new CNN_Edge(layer1_nodes[3], layer2_nodes[22], false, ++edge_innovation_count, CONVOLUTIONAL) );
+    edges.push_back( new CNN_Edge(layer1_nodes[4], layer2_nodes[22], false, ++edge_innovation_count, CONVOLUTIONAL) );
 
-    edges.push_back( new CNN_Edge(layer1_nodes[2], layer2_nodes[23], false, ++edge_innovation_count) );
-    edges.push_back( new CNN_Edge(layer1_nodes[3], layer2_nodes[23], false, ++edge_innovation_count) );
-    edges.push_back( new CNN_Edge(layer1_nodes[4], layer2_nodes[23], false, ++edge_innovation_count) );
+    edges.push_back( new CNN_Edge(layer1_nodes[2], layer2_nodes[23], false, ++edge_innovation_count, CONVOLUTIONAL) );
+    edges.push_back( new CNN_Edge(layer1_nodes[3], layer2_nodes[23], false, ++edge_innovation_count, CONVOLUTIONAL) );
+    edges.push_back( new CNN_Edge(layer1_nodes[4], layer2_nodes[23], false, ++edge_innovation_count, CONVOLUTIONAL) );
     //55
 
     //4 to 1 connections
-    edges.push_back( new CNN_Edge(layer1_nodes[0], layer2_nodes[24], false, ++edge_innovation_count) );
-    edges.push_back( new CNN_Edge(layer1_nodes[1], layer2_nodes[24], false, ++edge_innovation_count) );
-    edges.push_back( new CNN_Edge(layer1_nodes[2], layer2_nodes[24], false, ++edge_innovation_count) );
-    edges.push_back( new CNN_Edge(layer1_nodes[3], layer2_nodes[24], false, ++edge_innovation_count) );
+    edges.push_back( new CNN_Edge(layer1_nodes[0], layer2_nodes[24], false, ++edge_innovation_count, CONVOLUTIONAL) );
+    edges.push_back( new CNN_Edge(layer1_nodes[1], layer2_nodes[24], false, ++edge_innovation_count, CONVOLUTIONAL) );
+    edges.push_back( new CNN_Edge(layer1_nodes[2], layer2_nodes[24], false, ++edge_innovation_count, CONVOLUTIONAL) );
+    edges.push_back( new CNN_Edge(layer1_nodes[3], layer2_nodes[24], false, ++edge_innovation_count, CONVOLUTIONAL) );
 
-    edges.push_back( new CNN_Edge(layer1_nodes[0], layer2_nodes[25], false, ++edge_innovation_count) );
-    edges.push_back( new CNN_Edge(layer1_nodes[1], layer2_nodes[25], false, ++edge_innovation_count) );
-    edges.push_back( new CNN_Edge(layer1_nodes[2], layer2_nodes[25], false, ++edge_innovation_count) );
-    edges.push_back( new CNN_Edge(layer1_nodes[4], layer2_nodes[25], false, ++edge_innovation_count) );
+    edges.push_back( new CNN_Edge(layer1_nodes[0], layer2_nodes[25], false, ++edge_innovation_count, CONVOLUTIONAL) );
+    edges.push_back( new CNN_Edge(layer1_nodes[1], layer2_nodes[25], false, ++edge_innovation_count, CONVOLUTIONAL) );
+    edges.push_back( new CNN_Edge(layer1_nodes[2], layer2_nodes[25], false, ++edge_innovation_count, CONVOLUTIONAL) );
+    edges.push_back( new CNN_Edge(layer1_nodes[4], layer2_nodes[25], false, ++edge_innovation_count, CONVOLUTIONAL) );
 
-    edges.push_back( new CNN_Edge(layer1_nodes[0], layer2_nodes[26], false, ++edge_innovation_count) );
-    edges.push_back( new CNN_Edge(layer1_nodes[1], layer2_nodes[26], false, ++edge_innovation_count) );
-    edges.push_back( new CNN_Edge(layer1_nodes[3], layer2_nodes[26], false, ++edge_innovation_count) );
-    edges.push_back( new CNN_Edge(layer1_nodes[4], layer2_nodes[26], false, ++edge_innovation_count) );
+    edges.push_back( new CNN_Edge(layer1_nodes[0], layer2_nodes[26], false, ++edge_innovation_count, CONVOLUTIONAL) );
+    edges.push_back( new CNN_Edge(layer1_nodes[1], layer2_nodes[26], false, ++edge_innovation_count, CONVOLUTIONAL) );
+    edges.push_back( new CNN_Edge(layer1_nodes[3], layer2_nodes[26], false, ++edge_innovation_count, CONVOLUTIONAL) );
+    edges.push_back( new CNN_Edge(layer1_nodes[4], layer2_nodes[26], false, ++edge_innovation_count, CONVOLUTIONAL) );
 
-    edges.push_back( new CNN_Edge(layer1_nodes[0], layer2_nodes[27], false, ++edge_innovation_count) );
-    edges.push_back( new CNN_Edge(layer1_nodes[2], layer2_nodes[27], false, ++edge_innovation_count) );
-    edges.push_back( new CNN_Edge(layer1_nodes[3], layer2_nodes[27], false, ++edge_innovation_count) );
-    edges.push_back( new CNN_Edge(layer1_nodes[4], layer2_nodes[27], false, ++edge_innovation_count) );
+    edges.push_back( new CNN_Edge(layer1_nodes[0], layer2_nodes[27], false, ++edge_innovation_count, CONVOLUTIONAL) );
+    edges.push_back( new CNN_Edge(layer1_nodes[2], layer2_nodes[27], false, ++edge_innovation_count, CONVOLUTIONAL) );
+    edges.push_back( new CNN_Edge(layer1_nodes[3], layer2_nodes[27], false, ++edge_innovation_count, CONVOLUTIONAL) );
+    edges.push_back( new CNN_Edge(layer1_nodes[4], layer2_nodes[27], false, ++edge_innovation_count, CONVOLUTIONAL) );
 
-    edges.push_back( new CNN_Edge(layer1_nodes[1], layer2_nodes[28], false, ++edge_innovation_count) );
-    edges.push_back( new CNN_Edge(layer1_nodes[2], layer2_nodes[28], false, ++edge_innovation_count) );
-    edges.push_back( new CNN_Edge(layer1_nodes[3], layer2_nodes[28], false, ++edge_innovation_count) );
-    edges.push_back( new CNN_Edge(layer1_nodes[4], layer2_nodes[28], false, ++edge_innovation_count) );
+    edges.push_back( new CNN_Edge(layer1_nodes[1], layer2_nodes[28], false, ++edge_innovation_count, CONVOLUTIONAL) );
+    edges.push_back( new CNN_Edge(layer1_nodes[2], layer2_nodes[28], false, ++edge_innovation_count, CONVOLUTIONAL) );
+    edges.push_back( new CNN_Edge(layer1_nodes[3], layer2_nodes[28], false, ++edge_innovation_count, CONVOLUTIONAL) );
+    edges.push_back( new CNN_Edge(layer1_nodes[4], layer2_nodes[28], false, ++edge_innovation_count, CONVOLUTIONAL) );
     //75
 
     //5 to 1 connections
-    edges.push_back( new CNN_Edge(layer1_nodes[0], layer2_nodes[29], false, ++edge_innovation_count) );
-    edges.push_back( new CNN_Edge(layer1_nodes[1], layer2_nodes[29], false, ++edge_innovation_count) );
-    edges.push_back( new CNN_Edge(layer1_nodes[2], layer2_nodes[29], false, ++edge_innovation_count) );
-    edges.push_back( new CNN_Edge(layer1_nodes[3], layer2_nodes[29], false, ++edge_innovation_count) );
-    edges.push_back( new CNN_Edge(layer1_nodes[4], layer2_nodes[29], false, ++edge_innovation_count) );
+    edges.push_back( new CNN_Edge(layer1_nodes[0], layer2_nodes[29], false, ++edge_innovation_count, CONVOLUTIONAL) );
+    edges.push_back( new CNN_Edge(layer1_nodes[1], layer2_nodes[29], false, ++edge_innovation_count, CONVOLUTIONAL) );
+    edges.push_back( new CNN_Edge(layer1_nodes[2], layer2_nodes[29], false, ++edge_innovation_count, CONVOLUTIONAL) );
+    edges.push_back( new CNN_Edge(layer1_nodes[3], layer2_nodes[29], false, ++edge_innovation_count, CONVOLUTIONAL) );
+    edges.push_back( new CNN_Edge(layer1_nodes[4], layer2_nodes[29], false, ++edge_innovation_count, CONVOLUTIONAL) );
 
 
     //fully connected to 100 layer
@@ -244,7 +244,7 @@ int main(int argc, char **argv) {
         layer3_nodes.push_back(layer3_node);
 
         for (int32_t j = 0; j < 30; j++) {
-            edges.push_back( new CNN_Edge(layer2_nodes[j], layer3_node, false, ++edge_innovation_count) );
+            edges.push_back( new CNN_Edge(layer2_nodes[j], layer3_node, false, ++edge_innovation_count, CONVOLUTIONAL) );
         }
     }
 
@@ -255,7 +255,7 @@ int main(int argc, char **argv) {
         softmax_nodes.push_back(softmax_node);
 
         for (int32_t j = 0; j < layer3_nodes.size(); j++) {
-            edges.push_back( new CNN_Edge(layer3_nodes[j], softmax_node, false, ++edge_innovation_count) );
+            edges.push_back( new CNN_Edge(layer3_nodes[j], softmax_node, false, ++edge_innovation_count, CONVOLUTIONAL) );
 
         }
     }
