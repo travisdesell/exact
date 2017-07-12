@@ -205,8 +205,11 @@ class CNN_Genome {
         void evaluate(const ImagesInterface &images, float &total_error, int &correct_predictions, bool perform_backprop, bool accumulate_test_statistics);
         void evaluate(const ImagesInterface &images, float &total_error, int &correct_predictions);
 
-        void stochastic_backpropagation(const ImagesInterface &training_images, const ImagesInterface &generalizability_images, const ImagesInterface &test_images, int training_resize);
-        void stochastic_backpropagation(const ImagesInterface &training_images, const ImagesInterface &generalizability_images, const ImagesInterface &test_images);
+        void stochastic_backpropagation(const ImagesInterface &training_images, int training_resize);
+        void stochastic_backpropagation(const ImagesInterface &training_images);
+
+        void evaluate_generalizability(const ImagesInterface &generalizability_images);
+        void evaluate_test(const ImagesInterface &test_images);
 
         void set_name(string _name);
         void set_output_filename(string _output_filename);

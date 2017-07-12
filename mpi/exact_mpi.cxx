@@ -199,7 +199,9 @@ void worker(const Images &training_images, const Images &generalizability_images
             CNN_Genome* genome = receive_genome_from(name, 0);
 
             genome->set_name(name);
-            genome->stochastic_backpropagation(training_images, generalizability_images, testing_images, images_resize);
+            genome->stochastic_backpropagation(training_images, images_resize);
+            genome->evaluate_generalizability(generalizability_images);
+            genome->evaluate_test(testing_images);
 
             send_genome_to(name, 0, genome);
 

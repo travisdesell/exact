@@ -686,6 +686,7 @@ int CNN_Genome::get_operations_estimate() const {
         //TODO: calculate differently for POOLING nodes
         if (edges[i]->get_type() == CONVOLUTIONAL) {
             float propagate_count;
+
             if (reverse_filter_x && reverse_filter_y) {
                 propagate_count = edges[i]->get_filter_x() * edges[i]->get_filter_y() * edges[i]->get_input_node()->get_size_x() * edges[i]->get_input_node()->get_size_y();
             } else if (reverse_filter_x) {
@@ -695,8 +696,23 @@ int CNN_Genome::get_operations_estimate() const {
             } else {
                 propagate_count = edges[i]->get_filter_x() * edges[i]->get_filter_y() * edges[i]->get_output_node()->get_size_x() * edges[i]->get_output_node()->get_size_y();
             }
-            operations_estimate += propagate_count * (4.0 * multiply_cost + 3.0 * add_cost);
+
+            operations_estimate += propagate_count * ((4.0 * multiply_cost) + (3.0 * add_cost));
+
         } else {
+            float propagate_count;
+
+            if (reverse_filter_x && reverse_filter_y) {
+                propagate_count = edges[i]->get_input_node()->get_size_x() * edges[i]->get_input_node()->get_size_y();
+            } else if (reverse_filter_y) {
+                propagate_count = edges[i]->get_input_node()->get_size_x() * edges[i]->get_output_node()->get_size_y();
+            } else if (reverse_filter_x) {
+                propagate_count = edges[i]->get_output_node()->get_size_x() * edges[i]->get_input_node()->get_size_y();
+            } else {
+                propagate_count = edges[i]->get_output_node()->get_size_x() * edges[i]->get_output_node()->get_size_y();
+            }
+
+            operations_estimate += propagate_count * 2.0 * (16.0 * add_cost) + (4.0 * multiply_cost);
         }
 
         //update weights has 4 multiplies 4 adds and 2 ifs per weight 
@@ -1597,14 +1613,12 @@ void CNN_Genome::evaluate(const ImagesInterface &images, float &total_error, int
     print_progress(cerr, total_error, correct_predictions, images.get_number_images());
 }
 
-void CNN_Genome::stochastic_backpropagation(const ImagesInterface &training_images, const ImagesInterface &generalizability_images, const ImagesInterface &test_images) {
-    stochastic_backpropagation(training_images, generalizability_images, test_images, training_images.get_number_images());
+void CNN_Genome::stochastic_backpropagation(const ImagesInterface &training_images) {
+    stochastic_backpropagation(training_images, training_images.get_number_images());
 }
 
-void CNN_Genome::stochastic_backpropagation(const ImagesInterface &training_images, const ImagesInterface &generalizability_images, const ImagesInterface &test_images, int training_resize) {
+void CNN_Genome::stochastic_backpropagation(const ImagesInterface &training_images, int training_resize) {
     number_training_images = training_resize;
-    number_generalizability_images = generalizability_images.get_number_images();
-    number_test_images = test_images.get_number_images();
 
     for (uint32_t i = 0; i < nodes.size(); i++) {
         if (nodes[i]->needs_init()) {
@@ -1740,77 +1754,29 @@ void CNN_Genome::stochastic_backpropagation(const ImagesInterface &training_imag
         }
     } while (true);
 
-    cerr << "evaluating best weights on test data." << endl;
 
+}
+
+void CNN_Genome::evaluate_generalizability(const ImagesInterface &generalizability_images) {
     set_to_best();
 
+    cerr << "evaluating best weights on generalizability data." << endl;
     cerr << "evaluting generalizability set with running mean/variance:" << endl;
+
+    number_generalizability_images = generalizability_images.get_number_images();
     evaluate(generalizability_images, generalizability_error, generalizability_predictions);
-
-    cerr << "evaluting test set with running mean/variance:" << endl;
-    evaluate(test_images, test_error, test_predictions);
-
-    /*
-    //need to calculate good values for the average and variance given these final weights
-    int passes = 2;
-    int number_batches = passes * (number_training_images / batch_size);
-    cerr << "evaluating with " << number_batches << " batches." << endl;
-    for (uint32_t i = 0; i < nodes.size(); i++) {
-        nodes[i]->zero_test_statistics();
-    }
-
-    for (uint32_t i = 0; i < passes; i++) {
-        fisher_yates_shuffle(generator, backprop_order);
-        evaluate(training_images, test_error, test_predictions, false, true);
-    }
-
-    for (uint32_t i = 0; i < nodes.size(); i++) {
-        nodes[i]->divide_test_statistics(number_batches);
-    }
-
-    evaluate(test_images, test_error, test_predictions);
-
-    passes = 4;
-    number_batches = passes * (number_training_images / batch_size);
-    cerr << "evaluating with " << passes * (number_training_images / batch_size) << " batches." << endl;
-    for (uint32_t i = 0; i < nodes.size(); i++) {
-        nodes[i]->zero_test_statistics();
-    }
-
-    for (uint32_t i = 0; i < passes; i++) {
-        fisher_yates_shuffle(generator, backprop_order);
-        evaluate(training_images, test_error, test_predictions, false, true);
-    }
-
-    for (uint32_t i = 0; i < nodes.size(); i++) {
-        nodes[i]->divide_test_statistics(number_batches);
-    }
-
-    evaluate(test_images, test_error, test_predictions);
-
-    passes = 8;
-    number_batches = passes * (number_training_images / batch_size);
-    cerr << "evaluating with " << passes * (number_training_images / batch_size) << " batches." << endl;
-    for (uint32_t i = 0; i < nodes.size(); i++) {
-        nodes[i]->zero_test_statistics();
-    }
-
-    for (uint32_t i = 0; i < passes; i++) {
-        fisher_yates_shuffle(generator, backprop_order);
-        evaluate(training_images, test_error, test_predictions, false, true);
-    }
-
-    for (uint32_t i = 0; i < nodes.size(); i++) {
-        nodes[i]->divide_test_statistics(number_batches);
-    }
-
-    evaluate(test_images, test_error, test_predictions);
-    */
-
-    if (output_filename.compare("") != 0) {
-        write_to_file(output_filename);
-    }
 }
+
+void CNN_Genome::evaluate_test(const ImagesInterface &test_images) {
+    set_to_best();
+
+    cerr << "evaluating best weights on test data." << endl;
+    cerr << "evaluting test set with running mean/variance:" << endl;
+
+    number_test_images = test_images.get_number_images();
+    evaluate(test_images, test_error, test_predictions);
+}
+
 
 void CNN_Genome::set_name(string _name) {
     name = _name;

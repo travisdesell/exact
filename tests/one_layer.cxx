@@ -33,9 +33,6 @@ int main(int argc, char **argv) {
     string testing_filename;
     get_argument(arguments, "--testing_file", true, testing_filename);
 
-    string generalizability_filename;
-    get_argument(arguments, "--generalizability_file", true, generalizability_filename);
-
     int padding;
     get_argument(arguments, "--padding", true, padding);
 
@@ -79,7 +76,6 @@ int main(int argc, char **argv) {
     double epsilon = 1.0e-7;
 
     Images training_images(training_filename, padding);
-    Images generalizability_images(generalizability_filename, padding, training_images.get_average(), training_images.get_std_dev());
     Images testing_images(testing_filename, padding, training_images.get_average(), training_images.get_std_dev());
 
     int node_innovation_count = 0;
@@ -108,15 +104,16 @@ int main(int argc, char **argv) {
     long genome_seed = generator();
     cout << "seeding genome with: " << genome_seed << endl;
 
-    CNN_Genome *genome = new CNN_Genome(1, padding, training_images.get_number_images(), generalizability_images.get_number_images(), testing_images.get_number_images(), genome_seed, max_epochs, true, velocity_reset, mu, mu_delta, learning_rate, learning_rate_delta, weight_decay, weight_decay_delta, batch_size, epsilon, alpha, input_dropout_probability, hidden_dropout_probability, nodes, edges);
+    CNN_Genome *genome = new CNN_Genome(1, padding, training_images.get_number_images(), 0, testing_images.get_number_images(), genome_seed, max_epochs, true, velocity_reset, mu, mu_delta, learning_rate, learning_rate_delta, weight_decay, weight_decay_delta, batch_size, epsilon, alpha, input_dropout_probability, hidden_dropout_probability, nodes, edges);
     //save the weights and bias of the initially generated genome for reuse
     genome->initialize();
 
-    cout << "number edges: " << edges.size() << ", total weights: " << genome->get_number_weights() << ", total biases: " << genome->get_number_biases() << endl;
+    cout << "number edges: " << edges.size() << ", total weights: " << genome->get_number_weights() << endl;
 
     ofstream outfile("one_layer.gv");
     genome->print_graphviz(outfile);
     outfile.close();
 
-    genome->stochastic_backpropagation(training_images, generalizability_images, testing_images);
+    genome->stochastic_backpropagation(training_images);
+    genome->evaluate_test(testing_images);
 }

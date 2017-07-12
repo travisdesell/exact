@@ -159,8 +159,12 @@ int main(int argc, char** argv) {
     genome->set_output_filename(output_filename);
 
     cerr << "starting backpropagation!" << endl;
-    genome->stochastic_backpropagation(training_images, generalizability_images, testing_images);
+    genome->stochastic_backpropagation(training_images);
+    genome->evaluate_generalizability(generalizability_images);
+    genome->evaluate_test(test_images);
     cerr << "backpropagation finished successfully!" << endl;
+
+    genome->write_to_file(output_filename);
 
     boinc_finish(0);
 
