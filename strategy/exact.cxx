@@ -259,8 +259,6 @@ EXACT::EXACT(int exact_id) {
         cout << "population_size: " << population_size << endl;
         cout << "inserted_genomes: " << inserted_genomes << ", max_genomes: " << max_genomes << endl;
 
-
-
         ostringstream node_query;
         node_query << "SELECT id FROM cnn_node WHERE exact_id = " << id << " AND genome_id = 0";
         //cout << node_query.str() << endl;
