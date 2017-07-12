@@ -199,18 +199,35 @@ CNN_Node::CNN_Node(int _node_id) {
         weight_count = atoi(row[++column]);
         needs_initialization = atoi(row[++column]);
 
-        gamma = atoi(row[++column]);
-        best_gamma = atoi(row[++column]);
-        previous_velocity_gamma = atoi(row[++column]);
+        istringstream batch_norm_parameters_iss(row[++column]);
 
-        beta = atoi(row[++column]);
-        best_beta = atoi(row[++column]);
-        previous_velocity_beta = atoi(row[++column]);
+        gamma = atof(row[++column]);
+        best_gamma = atof(row[++column]);
+        previous_velocity_gamma = atof(row[++column]);
 
-        running_mean = atoi(row[++column]);
-        best_running_mean = atoi(row[++column]);
-        running_variance = atoi(row[++column]);
-        best_running_variance = atoi(row[++column]);
+        beta = atof(row[++column]);
+        best_beta = atof(row[++column]);
+        previous_velocity_beta = atof(row[++column]);
+
+        running_mean = atof(row[++column]);
+        best_running_mean = atof(row[++column]);
+        running_variance = atof(row[++column]);
+        best_running_variance = atof(row[++column]);
+
+        //overwrite from hyperparameters string
+
+        gamma = read_hexfloat(batch_norm_parameters_iss);
+        best_gamma = read_hexfloat(batch_norm_parameters_iss);
+        previous_velocity_gamma = read_hexfloat(batch_norm_parameters_iss);
+
+        beta = read_hexfloat(batch_norm_parameters_iss);
+        best_beta = read_hexfloat(batch_norm_parameters_iss);
+        previous_velocity_beta = read_hexfloat(batch_norm_parameters_iss);
+
+        running_mean = read_hexfloat(batch_norm_parameters_iss);
+        best_running_mean = read_hexfloat(batch_norm_parameters_iss);
+        running_variance = read_hexfloat(batch_norm_parameters_iss);
+        best_running_variance = read_hexfloat(batch_norm_parameters_iss);
 
         mysql_free_result(result);
     } else {
@@ -258,6 +275,29 @@ void CNN_Node::export_to_database(int _exact_id, int _genome_id) {
         << ", reverse_visited = " << reverse_visited
         << ", weight_count = " << weight_count
         << ", needs_initialization = " << needs_initialization
+        << ", batch_norm_parameters = '";
+
+    write_hexfloat(query, gamma);
+    query << " ";
+    write_hexfloat(query, best_gamma);
+    query << " ";
+    write_hexfloat(query, previous_velocity_gamma);
+    query << " ";
+    write_hexfloat(query, beta);
+    query << " ";
+    write_hexfloat(query, best_beta);
+    query << " ";
+    write_hexfloat(query, previous_velocity_beta);
+    query << " ";
+    write_hexfloat(query, running_mean);
+    query << " ";
+    write_hexfloat(query, best_running_mean);
+    query << " ";
+    write_hexfloat(query, running_variance);
+    query << " ";
+    write_hexfloat(query, best_running_variance);
+
+    query << "'"
         << ", gamma = " << gamma
         << ", best_gamma = " << best_gamma
         << ", previous_velocity_gamma = " << previous_velocity_gamma
