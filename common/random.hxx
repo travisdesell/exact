@@ -1,6 +1,10 @@
 #ifndef EXACT_RANDOM_HXX
 #define EXACT_RANDOM_HXX
 
+#include <iostream>
+using std::ostream;
+using std::istream;
+
 #include <random>
 using std::minstd_rand0;
 

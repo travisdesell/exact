@@ -882,67 +882,87 @@ void CNN_Edge::propagate_forward(bool training, bool accumulate_test_statistics,
     } else if (type == POOLING) {
 #ifdef NAN_CHECKS
         if (y_pools.size() != output_size_y) {
-            cerr << "ERROR: POOLING y_pools.size: " << y_pools.size() << " != input_node->get_size_y" << endl;
+            cerr << "ERROR: POOLING y_pools.size: " << y_pools.size() << " != output_size_y: " << output_size_y << ", input_size_y: " << input_size_y << endl;
             exit(1);
         }
 
         if (x_pools.size() != output_size_x) {
-            cerr << "ERROR: POOLING x_pools.size: " << x_pools.size() << " != input_node->get_size_x" << endl;
+            cerr << "ERROR: POOLING x_pools.size: " << x_pools.size() << " != output_size_x: " << output_size_x << ", input_size_x: " << input_size_x << endl;
             exit(1);
         }
 #endif
 
+        /*
+        cout << "y_pools: ";
+        for (int32_t i = 0; i < y_pools.size(); i++) cout << " " << y_pools[i];
+        cout << endl;
+
+        cout << "x_pools: ";
+        for (int32_t i = 0; i < x_pools.size(); i++) cout << " " << x_pools[i];
+        cout << endl;
+        */
+
+
+        bool max_pooling = true;
         if (reverse_filter_y && reverse_filter_x) {
             if (input_size_y % output_size_y == 0) {
                 fisher_yates_shuffle(generator, y_pools);
                 update_offset(y_pools, y_pool_offset);
+                max_pooling = false;
             }
 
             if (input_size_x % output_size_x == 0) {
                 fisher_yates_shuffle(generator, x_pools);
                 update_offset(x_pools, x_pool_offset);
+                max_pooling = false;
             }
 
-            pool_forward_ry_rx(input, pool_gradients, output, batch_size, input_size_y, input_size_x, output_size_y, output_size_x, y_pools, x_pools, y_pool_offset, x_pool_offset);
+            pool_forward_ry_rx(input, pool_gradients, output, batch_size, input_size_y, input_size_x, output_size_y, output_size_x, y_pools, x_pools, y_pool_offset, x_pool_offset, generator, training, max_pooling);
 
         } else if (reverse_filter_y) {
             if (output_size_y % input_size_y == 0) {
                 fisher_yates_shuffle(generator, y_pools);
                 update_offset(y_pools, y_pool_offset);
+                max_pooling = false;
             }
 
             if (input_size_x % output_size_x == 0) {
                 fisher_yates_shuffle(generator, x_pools);
                 update_offset(x_pools, x_pool_offset);
+                max_pooling = false;
             }
 
-            pool_forward_ry(input, pool_gradients, output, batch_size, input_size_y, input_size_x, output_size_y, output_size_x, y_pools, x_pools, y_pool_offset, x_pool_offset);
+            pool_forward_ry(input, pool_gradients, output, batch_size, input_size_y, input_size_x, output_size_y, output_size_x, y_pools, x_pools, y_pool_offset, x_pool_offset, generator, training, max_pooling);
 
         } else if (reverse_filter_x) {
             if (input_size_y % output_size_y == 0) {
                 fisher_yates_shuffle(generator, y_pools);
                 update_offset(y_pools, y_pool_offset);
+                max_pooling = false;
             }
 
             if (output_size_x % input_size_x == 0) {
                 fisher_yates_shuffle(generator, x_pools);
                 update_offset(x_pools, x_pool_offset);
+                max_pooling = false;
             }
 
-            pool_forward_rx(input, pool_gradients, output, batch_size, input_size_y, input_size_x, output_size_y, output_size_x, y_pools, x_pools, y_pool_offset, x_pool_offset);
+            pool_forward_rx(input, pool_gradients, output, batch_size, input_size_y, input_size_x, output_size_y, output_size_x, y_pools, x_pools, y_pool_offset, x_pool_offset, generator, training, max_pooling);
 
         } else {
             if (output_size_y % input_size_y == 0) {
                 fisher_yates_shuffle(generator, y_pools);
                 update_offset(y_pools, y_pool_offset);
+                max_pooling = false;
             }
 
             if (output_size_x % input_size_x == 0) {
                 fisher_yates_shuffle(generator, x_pools);
                 update_offset(x_pools, x_pool_offset);
+                max_pooling = false;
             }
 
-            pool_forward(input, pool_gradients, output, batch_size, input_size_y, input_size_x, output_size_y, output_size_x, y_pools, x_pools, y_pool_offset, x_pool_offset);
+            pool_forward(input, pool_gradients, output, batch_size, input_size_y, input_size_x, output_size_y, output_size_x, y_pools, x_pools, y_pool_offset, x_pool_offset, generator, training, max_pooling);
         }
 
     } else {

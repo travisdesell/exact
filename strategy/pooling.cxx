@@ -10,6 +10,8 @@ using std::cerr;
 using std::endl;
 
 #include <iomanip>
+using std::fixed;
+using std::setprecision;
 using std::setw;
 
 #include <random>
@@ -19,6 +21,47 @@ using std::string;
 
 #include <vector>
 using std::vector;
+
+#include "common/random.hxx"
+
+#define REPEATS 16
+
+#ifdef POOL_TEST
+template <class T>
+void print_array(string name, T *array, int32_t batch_size, int32_t size_y, int32_t size_x) {
+    int32_t x_counter = 0;
+    int32_t batch_counter = 0;
+
+    cout << name << ":" << endl;
+    for (int32_t i = 0; i < batch_size * size_y * size_x; i++) {
+        cout << fixed << setw(10) << setprecision(3) << array[i];
+
+        x_counter++;
+        batch_counter++;
+
+        if (x_counter == size_x) {
+            cout << endl;
+            x_counter = 0;
+        }
+
+        if (batch_counter == (size_x * size_y)) {
+            cout << endl;
+            batch_counter = 0;
+        }
+    }
+    cout << endl << endl;
+}
+
+template <class T>
+void print_vector(string name, vector<T> v) {
+    cout << name << ":";
+
+    for (int32_t i = 0; i < v.size(); i++) {
+        cout << " " << v[i];
+    }
+    cout << endl;
+}
+#endif
 
 
 /********************************************
@@ -63,7 +106,7 @@ void initialize_pools(vector<int> &pools, vector<int> &offset, int input_size, i
 
 //pool forward when the y dimension of the output is less than the y dimension of the input and
 //the x dimension of the output is less than the the x dimension of the input
-void pool_forward(const float* input, float *pool_gradients, float* output, int32_t batch_size, int32_t input_size_y, int32_t input_size_x, int32_t output_size_y, int32_t output_size_x, const vector<int> &y_pools, const vector<int> &x_pools, const vector<int> &y_pool_offset, const vector<int> &x_pool_offset) {
+void pool_forward(const float* input, float *pool_gradients, float* output, int32_t batch_size, int32_t input_size_y, int32_t input_size_x, int32_t output_size_y, int32_t output_size_x, vector<int> &y_pools, vector<int> &x_pools, vector<int> &y_pool_offset, vector<int> &x_pool_offset) {
     int32_t input_batch_offset = 0;
     int32_t output_batch_offset = 0;
 
@@ -112,9 +155,36 @@ void pool_forward(const float* input, float *pool_gradients, float* output, int3
     }
 }
 
+
+void pool_forward(const float* input, float *pool_gradients, float* output, int32_t batch_size, int32_t input_size_y, int32_t input_size_x, int32_t output_size_y, int32_t output_size_x, vector<int> &y_pools, vector<int> &x_pools, vector<int> &y_pool_offset, vector<int> &x_pool_offset, minstd_rand0 &generator, bool training, bool max_pooling) {
+    if (training || max_pooling) {
+        pool_forward(input, pool_gradients, output, batch_size, input_size_y, input_size_x, output_size_y, output_size_x, y_pools, x_pools, y_pool_offset, x_pool_offset);
+    } else {
+        int output_image_size = output_size_y * output_size_x;
+        float *temp_output = new float[batch_size * output_image_size];
+        std::fill_n(temp_output, batch_size * output_image_size, 0);
+
+        for (int32_t i = 0; i < REPEATS; i++) {
+            fisher_yates_shuffle(generator, y_pools);
+            fisher_yates_shuffle(generator, x_pools);
+            update_offset(y_pools, y_pool_offset);
+            update_offset(x_pools, x_pool_offset);
+
+            pool_forward(input, pool_gradients, temp_output, batch_size, input_size_y, input_size_x, output_size_y, output_size_x, y_pools, x_pools, y_pool_offset, x_pool_offset);
+        }
+
+        for (int32_t i = 0; i < batch_size * output_image_size; i++) {
+            output[i] += temp_output[i] / REPEATS;
+        }
+
+        delete [] temp_output;
+    }
+}
+
+
 //pool forward when the y dimension of the output is greater than the y dimension of the input and
 //the x dimension of the output is less than the the x dimension of the input
-void pool_forward_ry(const float* input, float *pool_gradients, float* output, int32_t batch_size, int32_t input_size_y, int32_t input_size_x, int32_t output_size_y, int32_t output_size_x, const vector<int> &y_pools, const vector<int> &x_pools, const vector<int> &y_pool_offset, const vector<int> &x_pool_offset) {
+void pool_forward_ry(const float* input, float *pool_gradients, float* output, int32_t batch_size, int32_t input_size_y, int32_t input_size_x, int32_t output_size_y, int32_t output_size_x, vector<int> &y_pools, vector<int> &x_pools, vector<int> &y_pool_offset, vector<int> &x_pool_offset) {
     int32_t input_batch_offset = 0;
     int32_t output_batch_offset = 0;
 
@@ -162,10 +232,36 @@ void pool_forward_ry(const float* input, float *pool_gradients, float* output, i
     }
 }
 
+void pool_forward_ry(const float* input, float *pool_gradients, float* output, int32_t batch_size, int32_t input_size_y, int32_t input_size_x, int32_t output_size_y, int32_t output_size_x, vector<int> &y_pools, vector<int> &x_pools, vector<int> &y_pool_offset, vector<int> &x_pool_offset, minstd_rand0 &generator, bool training, bool max_pooling) {
+    if (training || max_pooling) {
+        pool_forward_ry(input, pool_gradients, output, batch_size, input_size_y, input_size_x, output_size_y, output_size_x, y_pools, x_pools, y_pool_offset, x_pool_offset);
+    } else {
+        int output_image_size = output_size_y * output_size_x;
+        float *temp_output = new float[batch_size * output_image_size];
+        std::fill_n(temp_output, batch_size * output_image_size, 0);
+
+        for (int32_t i = 0; i < REPEATS; i++) {
+            fisher_yates_shuffle(generator, y_pools);
+            fisher_yates_shuffle(generator, x_pools);
+            update_offset(y_pools, y_pool_offset);
+            update_offset(x_pools, x_pool_offset);
+
+            pool_forward_ry(input, pool_gradients, temp_output, batch_size, input_size_y, input_size_x, output_size_y, output_size_x, y_pools, x_pools, y_pool_offset, x_pool_offset);
+        }
+
+        for (int32_t i = 0; i < batch_size * output_image_size; i++) {
+            output[i] += temp_output[i] / REPEATS;
+        }
+
+        delete [] temp_output;
+    }
+}
+
+
 
 //pool forward when the y dimension of the output is less than the y dimension of the input and
 //the x dimension of the output is greater than the the x dimension of the input
-void pool_forward_rx(const float* input, float *pool_gradients, float* output, int32_t batch_size, int32_t input_size_y, int32_t input_size_x, int32_t output_size_y, int32_t output_size_x, const vector<int> &y_pools, const vector<int> &x_pools, const vector<int> &y_pool_offset, const vector<int> &x_pool_offset) {
+void pool_forward_rx(const float* input, float *pool_gradients, float* output, int32_t batch_size, int32_t input_size_y, int32_t input_size_x, int32_t output_size_y, int32_t output_size_x, vector<int> &y_pools, vector<int> &x_pools, vector<int> &y_pool_offset, vector<int> &x_pool_offset) {
     int32_t input_batch_offset = 0;
     int32_t output_batch_offset = 0;
 
@@ -213,11 +309,37 @@ void pool_forward_rx(const float* input, float *pool_gradients, float* output, i
     }
 }
 
+void pool_forward_rx(const float* input, float *pool_gradients, float* output, int32_t batch_size, int32_t input_size_y, int32_t input_size_x, int32_t output_size_y, int32_t output_size_x, vector<int> &y_pools, vector<int> &x_pools, vector<int> &y_pool_offset, vector<int> &x_pool_offset, minstd_rand0 &generator, bool training, bool max_pooling) {
+    if (training || max_pooling) {
+        pool_forward_rx(input, pool_gradients, output, batch_size, input_size_y, input_size_x, output_size_y, output_size_x, y_pools, x_pools, y_pool_offset, x_pool_offset);
+    } else {
+        int output_image_size = output_size_y * output_size_x;
+        float *temp_output = new float[batch_size * output_image_size];
+        std::fill_n(temp_output, batch_size * output_image_size, 0);
+
+        for (int32_t i = 0; i < REPEATS; i++) {
+            fisher_yates_shuffle(generator, y_pools);
+            fisher_yates_shuffle(generator, x_pools);
+            update_offset(y_pools, y_pool_offset);
+            update_offset(x_pools, x_pool_offset);
+
+            pool_forward_rx(input, pool_gradients, temp_output, batch_size, input_size_y, input_size_x, output_size_y, output_size_x, y_pools, x_pools, y_pool_offset, x_pool_offset);
+        }
+
+        for (int32_t i = 0; i < batch_size * output_image_size; i++) {
+            output[i] += temp_output[i] / REPEATS;
+        }
+
+        delete [] temp_output;
+    }
+}
+
+
 
 
 //pool forward when the y dimension of the output is greater than the y dimension of the input and
 //the x dimension of the output is greater than the the x dimension of the input
-void pool_forward_ry_rx(const float* input, float *pool_gradients, float* output, int32_t batch_size, int32_t input_size_y, int32_t input_size_x, int32_t output_size_y, int32_t output_size_x, const vector<int> &y_pools, const vector<int> &x_pools, const vector<int> &y_pool_offset, const vector<int> &x_pool_offset) {
+void pool_forward_ry_rx(const float* input, float *pool_gradients, float* output, int32_t batch_size, int32_t input_size_y, int32_t input_size_x, int32_t output_size_y, int32_t output_size_x, vector<int> &y_pools, vector<int> &x_pools, vector<int> &y_pool_offset, vector<int> &x_pool_offset) {
     int32_t input_batch_offset = 0;
     int32_t output_batch_offset = 0;
 
@@ -249,6 +371,32 @@ void pool_forward_ry_rx(const float* input, float *pool_gradients, float* output
     }
 }
 
+void pool_forward_ry_rx(const float* input, float *pool_gradients, float* output, int32_t batch_size, int32_t input_size_y, int32_t input_size_x, int32_t output_size_y, int32_t output_size_x, vector<int> &y_pools, vector<int> &x_pools, vector<int> &y_pool_offset, vector<int> &x_pool_offset, minstd_rand0 &generator, bool training, bool max_pooling) {
+    if (training || max_pooling) {
+        pool_forward_ry_rx(input, pool_gradients, output, batch_size, input_size_y, input_size_x, output_size_y, output_size_x, y_pools, x_pools, y_pool_offset, x_pool_offset);
+    } else {
+        int output_image_size = output_size_y * output_size_x;
+        float *temp_output = new float[batch_size * output_image_size];
+        std::fill_n(temp_output, batch_size * output_image_size, 0);
+
+        for (int32_t i = 0; i < REPEATS; i++) {
+            fisher_yates_shuffle(generator, y_pools);
+            fisher_yates_shuffle(generator, x_pools);
+            update_offset(y_pools, y_pool_offset);
+            update_offset(x_pools, x_pool_offset);
+
+            pool_forward_ry_rx(input, pool_gradients, temp_output, batch_size, input_size_y, input_size_x, output_size_y, output_size_x, y_pools, x_pools, y_pool_offset, x_pool_offset);
+        }
+
+        for (int32_t i = 0; i < batch_size * output_image_size; i++) {
+            output[i] += temp_output[i] / REPEATS;
+        }
+
+        delete [] temp_output;
+    }
+}
+
+
 
 /********************************************
  * BACK PROPAGATION
@@ -257,7 +405,7 @@ void pool_forward_ry_rx(const float* input, float *pool_gradients, float* output
 
 //pool backward when the y dimension of the output is less than the y dimension of the input and
 //the x dimension of the output is less than the the x dimension of the input
-void pool_backward(float* input_errors, const float *pool_gradients, const float* output_errors, int32_t batch_size, int32_t input_size_y, int32_t input_size_x, int32_t output_size_y, int32_t output_size_x, const vector<int> &y_pools, const vector<int> &x_pools, const vector<int> &y_pool_offset, const vector<int> &x_pool_offset) {
+void pool_backward(float* input_errors, const float *pool_gradients, const float* output_errors, int32_t batch_size, int32_t input_size_y, int32_t input_size_x, int32_t output_size_y, int32_t output_size_x, vector<int> &y_pools, vector<int> &x_pools, vector<int> &y_pool_offset, vector<int> &x_pool_offset) {
     int32_t input_batch_offset = 0;
     int32_t output_batch_offset = 0;
 
@@ -288,7 +436,7 @@ void pool_backward(float* input_errors, const float *pool_gradients, const float
 
 //pool backward when the y dimension of the output is greater than the y dimension of the input and
 //the x dimension of the output is less than the the x dimension of the input
-void pool_backward_ry(float* input_errors, const float *pool_gradients, const float* output_errors, int32_t batch_size, int32_t input_size_y, int32_t input_size_x, int32_t output_size_y, int32_t output_size_x, const vector<int> &y_pools, const vector<int> &x_pools, const vector<int> &y_pool_offset, const vector<int> &x_pool_offset) {
+void pool_backward_ry(float* input_errors, const float *pool_gradients, const float* output_errors, int32_t batch_size, int32_t input_size_y, int32_t input_size_x, int32_t output_size_y, int32_t output_size_x, vector<int> &y_pools, vector<int> &x_pools, vector<int> &y_pool_offset, vector<int> &x_pool_offset) {
     int32_t input_batch_offset = 0;
     int32_t output_batch_offset = 0;
 
@@ -320,7 +468,7 @@ void pool_backward_ry(float* input_errors, const float *pool_gradients, const fl
 
 //pool backward when the y dimension of the output is less than the y dimension of the input and
 //the x dimension of the output is greater than the the x dimension of the input
-void pool_backward_rx(float* input_errors, const float *pool_gradients, const float* output_errors, int32_t batch_size, int32_t input_size_y, int32_t input_size_x, int32_t output_size_y, int32_t output_size_x, const vector<int> &y_pools, const vector<int> &x_pools, const vector<int> &y_pool_offset, const vector<int> &x_pool_offset) {
+void pool_backward_rx(float* input_errors, const float *pool_gradients, const float* output_errors, int32_t batch_size, int32_t input_size_y, int32_t input_size_x, int32_t output_size_y, int32_t output_size_x, vector<int> &y_pools, vector<int> &x_pools, vector<int> &y_pool_offset, vector<int> &x_pool_offset) {
     int32_t input_batch_offset = 0;
     int32_t output_batch_offset = 0;
 
@@ -352,7 +500,7 @@ void pool_backward_rx(float* input_errors, const float *pool_gradients, const fl
 
 //pool backward when the y dimension of the output is greater than the y dimension of the input and
 //the x dimension of the output is greater than the the x dimension of the input
-void pool_backward_ry_rx(float* input_errors, const float *pool_gradients, const float* output_errors, int32_t batch_size, int32_t input_size_y, int32_t input_size_x, int32_t output_size_y, int32_t output_size_x, const vector<int> &y_pools, const vector<int> &x_pools, const vector<int> &y_pool_offset, const vector<int> &x_pool_offset) {
+void pool_backward_ry_rx(float* input_errors, const float *pool_gradients, const float* output_errors, int32_t batch_size, int32_t input_size_y, int32_t input_size_x, int32_t output_size_y, int32_t output_size_x, vector<int> &y_pools, vector<int> &x_pools, vector<int> &y_pool_offset, vector<int> &x_pool_offset) {
     int32_t input_batch_offset = 0;
     int32_t output_batch_offset = 0;
 
@@ -389,42 +537,8 @@ void pool_backward_ry_rx(float* input_errors, const float *pool_gradients, const
 
 
 #ifdef POOL_TEST
-template <class T>
-void print_array(string name, T *array, int32_t batch_size, int32_t size_y, int32_t size_x) {
-    int32_t x_counter = 0;
-    int32_t batch_counter = 0;
 
-    cout << name << ":" << endl;
-    for (int32_t i = 0; i < batch_size * size_y * size_x; i++) {
-        cout << setw(5) << array[i];
-
-        x_counter++;
-        batch_counter++;
-
-        if (x_counter == size_x) {
-            cout << endl;
-            x_counter = 0;
-        }
-
-        if (batch_counter == (size_x * size_y)) {
-            cout << endl;
-            batch_counter = 0;
-        }
-    }
-    cout << endl << endl;
-}
-
-template <class T>
-void print_vector(string name, vector<T> v) {
-    cout << name << ":";
-
-    for (int32_t i = 0; i < v.size(); i++) {
-        cout << " " << v[i];
-    }
-    cout << endl;
-}
-
-void test_pooling(int input_size_y, int input_size_x, int output_size_y, int output_size_x, int batch_size) {
+void test_pooling(int input_size_y, int input_size_x, int output_size_y, int output_size_x, int batch_size, minstd_rand0 &generator, bool training) {
     float *input = new float[batch_size * input_size_y * input_size_x];
     float *input_errors = new float[batch_size * input_size_y * input_size_x];
     float *pool_gradients = new float[batch_size * input_size_y * input_size_x];
@@ -458,34 +572,36 @@ void test_pooling(int input_size_y, int input_size_x, int output_size_y, int out
 
     print_vector("y_pools (before shuffle)", y_pools);
     print_vector("x_pools (before shuffle)", x_pools);
-    
-    unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
-    std::default_random_engine engine(seed);
 
-    shuffle(y_pools.begin(), y_pools.end(), engine);
-    shuffle(x_pools.begin(), x_pools.end(), engine);
+    print_vector("y_pool_offset (before shuffle)", y_pool_offset);
+    print_vector("x_pool_offset (before shuffle)", x_pool_offset);
+
+    fisher_yates_shuffle(generator, y_pools);
+    fisher_yates_shuffle(generator, x_pools);
+    update_offset(y_pools, y_pool_offset);
+    update_offset(x_pools, x_pool_offset);
 
     print_vector("y_pools (after shuffle)", y_pools);
     print_vector("x_pools (after shuffle)", x_pools);
 
-    print_vector("y_pool_offset", y_pool_offset);
-    print_vector("x_pool_offset", x_pool_offset);
+    print_vector("y_pool_offset (after shuffle)", y_pool_offset);
+    print_vector("x_pool_offset (after shuffle)", x_pool_offset);
 
 
     if (input_size_y >= output_size_y && input_size_x >= output_size_x) {
-        pool_forward(input, pool_gradients, output, batch_size, input_size_y, input_size_x, output_size_y, output_size_x, y_pools, x_pools, y_pool_offset, x_pool_offset);
+        pool_forward(input, pool_gradients, output, batch_size, input_size_y, input_size_x, output_size_y, output_size_x, y_pools, x_pools, y_pool_offset, x_pool_offset, generator, training, false);
         pool_backward(input_errors, pool_gradients, output_errors, batch_size, input_size_y, input_size_x, output_size_y, output_size_x, y_pools, x_pools, y_pool_offset, x_pool_offset);
 
     } else if (input_size_x >= output_size_x) {
-        pool_forward_ry(input, pool_gradients, output, batch_size, input_size_y, input_size_x, output_size_y, output_size_x, y_pools, x_pools, y_pool_offset, x_pool_offset);
+        pool_forward_ry(input, pool_gradients, output, batch_size, input_size_y, input_size_x, output_size_y, output_size_x, y_pools, x_pools, y_pool_offset, x_pool_offset, generator, training, false);
         pool_backward_ry(input_errors, pool_gradients, output_errors, batch_size, input_size_y, input_size_x, output_size_y, output_size_x, y_pools, x_pools, y_pool_offset, x_pool_offset);
 
     } else if (input_size_y >= output_size_y) {
-        pool_forward_rx(input, pool_gradients, output, batch_size, input_size_y, input_size_x, output_size_y, output_size_x, y_pools, x_pools, y_pool_offset, x_pool_offset);
+        pool_forward_rx(input, pool_gradients, output, batch_size, input_size_y, input_size_x, output_size_y, output_size_x, y_pools, x_pools, y_pool_offset, x_pool_offset, generator, training, false);
         pool_backward_rx(input_errors, pool_gradients, output_errors, batch_size, input_size_y, input_size_x, output_size_y, output_size_x, y_pools, x_pools, y_pool_offset, x_pool_offset);
 
     } else {
-        pool_forward_ry_rx(input, pool_gradients, output, batch_size, input_size_y, input_size_x, output_size_y, output_size_x, y_pools, x_pools, y_pool_offset, x_pool_offset);
+        pool_forward_ry_rx(input, pool_gradients, output, batch_size, input_size_y, input_size_x, output_size_y, output_size_x, y_pools, x_pools, y_pool_offset, x_pool_offset, generator, training, false);
         pool_backward_ry_rx(input_errors, pool_gradients, output_errors, batch_size, input_size_y, input_size_x, output_size_y, output_size_x, y_pools, x_pools, y_pool_offset, x_pool_offset);
 
     }
@@ -508,12 +624,17 @@ int main(int argc, char **argv) {
 
     cout << "TESTING REGULAR POOLING:" << endl;
 
+    bool training = false;
+
+    unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
+    minstd_rand0 generator(seed);
+
     // regular
     int input_size_y = 13;
     int input_size_x = 15;
     int output_size_y = 6;
     int output_size_x = 4;
-    test_pooling(input_size_y, input_size_x, output_size_y, output_size_x, batch_size);
+    test_pooling(input_size_y, input_size_x, output_size_y, output_size_x, batch_size, generator, training);
 
     cout << endl << endl << endl;
     cout << "TESTING POOLING WITH REVERSE FILTER Y:" << endl;
@@ -522,7 +643,7 @@ int main(int argc, char **argv) {
     input_size_x = 15;
     output_size_y = 13;
     output_size_x = 4;
-    test_pooling(input_size_y, input_size_x, output_size_y, output_size_x, batch_size);
+    test_pooling(input_size_y, input_size_x, output_size_y, output_size_x, batch_size, generator, training);
 
     cout << endl << endl << endl;
     cout << "TESTING POOLING WITH REVERSE FILTER X:" << endl;
@@ -531,7 +652,7 @@ int main(int argc, char **argv) {
     input_size_x = 4;
     output_size_y = 6;
     output_size_x = 15;
-    test_pooling(input_size_y, input_size_x, output_size_y, output_size_x, batch_size);
+    test_pooling(input_size_y, input_size_x, output_size_y, output_size_x, batch_size, generator, training);
 
     cout << endl << endl << endl;
     cout << "TESTING POOLING WITH REVERSE FILTER Y and X:" << endl;
@@ -540,7 +661,7 @@ int main(int argc, char **argv) {
     input_size_x = 4;
     output_size_y = 13;
     output_size_x = 15;
-    test_pooling(input_size_y, input_size_x, output_size_y, output_size_x, batch_size);
+    test_pooling(input_size_y, input_size_x, output_size_y, output_size_x, batch_size, generator, training);
 }
 
 
