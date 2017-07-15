@@ -717,6 +717,7 @@ EXACT::EXACT(const ImagesInterface &training_images, const ImagesInterface &gene
 
     epsilon = 1.0e-7;
 
+    /*
     initial_batch_size_min = 50;
     initial_batch_size_max = 50;
     batch_size_min = 50;
@@ -771,8 +772,8 @@ EXACT::EXACT(const ImagesInterface &training_images, const ImagesInterface &gene
     initial_hidden_dropout_probability_max = 0.00;
     hidden_dropout_probability_min = 0.0;
     hidden_dropout_probability_max = 0.0;
+    */
 
-    /*
     initial_batch_size_min = 25;
     initial_batch_size_max = 150;
     batch_size_min = 25;
@@ -827,7 +828,7 @@ EXACT::EXACT(const ImagesInterface &training_images, const ImagesInterface &gene
     initial_hidden_dropout_probability_max = 0.15;
     hidden_dropout_probability_min = 0.0;
     hidden_dropout_probability_max = 0.9;
-    */
+
 
     no_modification_rate = 0.00;
     crossover_rate = 0.20;

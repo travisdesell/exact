@@ -71,7 +71,6 @@ int main(int argc, char **argv) {
     genome->set_to_best();
     genome->evaluate(testing_images, error, predictions);
 
-
     cout << "test error: " << error << endl;
     cout << "test predictions " << predictions << endl;
 
