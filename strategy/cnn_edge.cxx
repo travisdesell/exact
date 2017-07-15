@@ -220,7 +220,7 @@ CNN_Edge::CNN_Edge(int _edge_id) {
         filter_y = atoi(row[++column]);
         filter_size = filter_y * filter_x;
 
-        cout << "reading weights for exact edge" << endl;
+        //cout << "reading weights for exact edge" << endl;
         istringstream weights_iss(row[++column]);
         //parse_float_2d(&weights, weights_iss, filter_x, filter_y);
         weights = new float[filter_y * filter_x];
@@ -228,7 +228,7 @@ CNN_Edge::CNN_Edge(int _edge_id) {
             weights[i] = read_hexfloat(weights_iss);
         }
 
-        cout << "reading best weights for exact edge" << endl;
+        //cout << "reading best weights for exact edge" << endl;
 
         istringstream best_weights_iss(row[++column]);
         //parse_float_2d(&best_weights, best_weights_iss, filter_x, filter_y);
@@ -236,7 +236,7 @@ CNN_Edge::CNN_Edge(int _edge_id) {
         for (int32_t i = 0; i < filter_y * filter_x; i++) {
             best_weights[i] = read_hexfloat(best_weights_iss);
         }
-        cout << "success!" << endl;
+        //cout << "success!" << endl;
 
         fixed = atoi(row[++column]);
         disabled = atoi(row[++column]);

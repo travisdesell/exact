@@ -208,11 +208,12 @@ CNN_Genome::CNN_Genome(int _genome_id) {
         istringstream normal_distribution_iss(row[++column]);
         normal_distribution_iss >> normal_distribution;
 
+        istringstream hyperparameters_iss(row[++column]);
         //cout << "generator: " << generator << endl;
 
         velocity_reset = atoi(row[++column]);
-
         batch_size = atoi(row[++column]);
+
         epsilon = atof(row[++column]);
         alpha = atof(row[++column]);
 
@@ -230,6 +231,25 @@ CNN_Genome::CNN_Genome(int _genome_id) {
         initial_weight_decay = atof(row[++column]);
         weight_decay = atof(row[++column]);
         weight_decay_delta = atof(row[++column]);
+
+        //overwrite these from the hyperparameters iss
+        epsilon = read_hexfloat(hyperparameters_iss);
+        alpha = read_hexfloat(hyperparameters_iss);
+
+        input_dropout_probability = read_hexfloat(hyperparameters_iss);
+        hidden_dropout_probability = read_hexfloat(hyperparameters_iss);
+
+        initial_mu = read_hexfloat(hyperparameters_iss);
+        mu = read_hexfloat(hyperparameters_iss);
+        mu_delta = read_hexfloat(hyperparameters_iss);
+
+        initial_learning_rate = read_hexfloat(hyperparameters_iss);
+        learning_rate = read_hexfloat(hyperparameters_iss);
+        learning_rate_delta = read_hexfloat(hyperparameters_iss);
+
+        initial_weight_decay = read_hexfloat(hyperparameters_iss);
+        weight_decay = read_hexfloat(hyperparameters_iss);
+        weight_decay_delta = read_hexfloat(hyperparameters_iss);
 
         epoch = atoi(row[++column]);
         max_epochs = atoi(row[++column]);
@@ -368,6 +388,35 @@ void CNN_Genome::export_to_database(int _exact_id) {
 
     query << "', generator = '" << generator << "'"
         << ", normal_distribution = '" << normal_distribution << "'"
+        << ", hyperparameters = '";
+
+    write_hexfloat(query, epsilon);
+    query << " ";
+    write_hexfloat(query, alpha);
+    query << " ";
+    write_hexfloat(query, input_dropout_probability);
+    query << " ";
+    write_hexfloat(query, hidden_dropout_probability);
+    query << " ";
+    write_hexfloat(query, initial_mu);
+    query << " ";
+    write_hexfloat(query, mu);
+    query << " ";
+    write_hexfloat(query, mu_delta);
+    query << " ";
+    write_hexfloat(query, initial_learning_rate);
+    query << " ";
+    write_hexfloat(query, learning_rate);
+    query << " ";
+    write_hexfloat(query, learning_rate_delta);
+    query << " ";
+    write_hexfloat(query, initial_weight_decay);
+    query << " ";
+    write_hexfloat(query, weight_decay);
+    query << " ";
+    write_hexfloat(query, weight_decay_delta);
+
+    query << "'"
         << ", velocity_reset = '" << velocity_reset << "'"
         << ", batch_size = " << batch_size
         << ", epsilon = " << setprecision(15) << fixed << epsilon

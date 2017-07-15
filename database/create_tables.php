@@ -166,6 +166,7 @@ $query = "CREATE TABLE `cnn_genome` (
     `generator` varchar(64) NOT NULL,
     `normal_distribution` varchar(128) NOT NULL,
 
+    `hyperparameters` VARCHAR(256) NOT NULL,
     `velocity_reset` int(11) NOT NULL,
 
     `batch_size` int(11) NOT NULL,
@@ -290,6 +291,8 @@ $query = "CREATE TABLE `cnn_node` (
   `reverse_visited` tinyint(1) NOT NULL,
   `weight_count` int(11) NOT NULL,
   `needs_initialization` tinyint(1) NOT NULL,
+
+  `batch_norm_parameters` VARCHAR(256) NOT NULL,
 
   `gamma` float NOT NULL,
   `best_gamma` float NOT NULL,
