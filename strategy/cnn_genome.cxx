@@ -235,7 +235,7 @@ CNN_Genome::CNN_Genome(int _genome_id) {
         max_epochs = atoi(row[++column]);
         reset_weights = atoi(row[++column]);
 
-        //padding = atoi(row[++column]);
+        padding = atoi(row[++column]);
 
         number_training_images = atoi(row[++column]);
         best_error = atof(row[++column]);
@@ -386,7 +386,7 @@ void CNN_Genome::export_to_database(int _exact_id) {
         << ", epoch = " << epoch
         << ", max_epochs = " << max_epochs
         << ", reset_weights = " << reset_weights
-//        << ", padding = " << padding
+        << ", padding = " << padding
         << ", number_training_images = " << number_training_images
         << ", best_error = " << setprecision(15) << fixed << best_error
         << ", best_predictions = " << best_predictions
@@ -1839,7 +1839,7 @@ void CNN_Genome::write(ostream &outfile) {
     outfile << max_epochs << endl;
     outfile << reset_weights << endl;
 
-    //outfile << padding << endl;
+    outfile << padding << endl;
 
     outfile << number_training_images << endl;
     outfile << best_predictions << endl;
@@ -1975,8 +1975,8 @@ void CNN_Genome::read(istream &infile) {
     infile >> reset_weights;
     if (verbose) cerr << "read reset_weights: " << reset_weights << endl;
 
-    //infile >> padding;
-    //if (verbose) cerr << "read padding: " << padding << endl;
+    infile >> padding;
+    if (verbose) cerr << "read padding: " << padding << endl;
 
     infile >> number_training_images;
     if (verbose) cerr << "read number_training_images: " << number_training_images << endl;
