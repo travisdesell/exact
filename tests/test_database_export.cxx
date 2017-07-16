@@ -56,6 +56,11 @@ int main(int argc, char **argv) {
     int predictions;
     //genome->evaluate(training_images, error, predictions);
 
+    if (!genome_from_file->is_identical(genome_from_database)) {
+        cerr << "ERROR! genome from file and genome from database were not identical!" << endl;
+        exit(1);
+    }
+
     genome_from_file->set_to_best();
     genome_from_file->evaluate(testing_images, error, predictions);
 

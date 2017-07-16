@@ -32,6 +32,9 @@ using std::istream;
 using std::hexfloat;
 using std::defaultfloat;
 
+#include <map>
+using std::map;
+
 #include <random>
 using std::minstd_rand0;
 
@@ -51,6 +54,7 @@ using std::vector;
 #include "common/db_conn.hxx"
 #endif
 
+#include "comparison.hxx"
 #include "common/exp.hxx"
 #include "common/random.hxx"
 #include "common/version.hxx"
@@ -211,28 +215,6 @@ CNN_Genome::CNN_Genome(int _genome_id) {
         istringstream hyperparameters_iss(row[++column]);
         //cout << "generator: " << generator << endl;
 
-        velocity_reset = atoi(row[++column]);
-        batch_size = atoi(row[++column]);
-
-        epsilon = atof(row[++column]);
-        alpha = atof(row[++column]);
-
-        input_dropout_probability = atof(row[++column]);
-        hidden_dropout_probability = atof(row[++column]);
-
-        initial_mu = atof(row[++column]);
-        mu = atof(row[++column]);
-        mu_delta = atof(row[++column]);
-
-        initial_learning_rate = atof(row[++column]);
-        learning_rate = atof(row[++column]);
-        learning_rate_delta = atof(row[++column]);
-
-        initial_weight_decay = atof(row[++column]);
-        weight_decay = atof(row[++column]);
-        weight_decay_delta = atof(row[++column]);
-
-        //overwrite these from the hyperparameters iss
         epsilon = read_hexfloat(hyperparameters_iss);
         alpha = read_hexfloat(hyperparameters_iss);
 
@@ -250,6 +232,10 @@ CNN_Genome::CNN_Genome(int _genome_id) {
         initial_weight_decay = read_hexfloat(hyperparameters_iss);
         weight_decay = read_hexfloat(hyperparameters_iss);
         weight_decay_delta = read_hexfloat(hyperparameters_iss);
+
+
+        velocity_reset = atoi(row[++column]);
+        batch_size = atoi(row[++column]);
 
         epoch = atoi(row[++column]);
         max_epochs = atoi(row[++column]);
@@ -2388,5 +2374,100 @@ int CNN_Genome::get_generated_by_reset_weights() {
 
 int CNN_Genome::get_generated_by_add_node() {
     return generated_by_add_node;
+}
+
+bool CNN_Genome::is_identical(CNN_Genome *other, bool testing_checkpoint) {
+    if (are_different("version_str", version_str, other->version_str)) return false;
+
+    if (are_different("normal_distribution", normal_distribution, other->normal_distribution)) return false;
+    if (are_different("generator", generator, other->generator)) return false;
+
+    if (are_different("velocity_reset", velocity_reset, other->velocity_reset)) return false;
+    if (are_different("batch_size", batch_size, other->batch_size)) return false;
+
+    if (are_different("epsilon", epsilon, other->epsilon)) return false;
+    if (are_different("alpha", alpha, other->alpha)) return false;
+
+    if (are_different("input_dropout_probability", input_dropout_probability, other->input_dropout_probability)) return false;
+    if (are_different("hidden_dropout_probability", hidden_dropout_probability, other->hidden_dropout_probability)) return false;
+
+    if (are_different("initial_mu", initial_mu, other->initial_mu)) return false;
+    if (are_different("mu", mu, other->mu)) return false;
+    if (are_different("mu_delta", mu_delta, other->mu_delta)) return false;
+
+    if (are_different("initial_learning_rate", initial_learning_rate, other->initial_learning_rate)) return false;
+    if (are_different("learning_rate", learning_rate, other->learning_rate)) return false;
+    if (are_different("learning_rate_delta", learning_rate_delta, other->learning_rate_delta)) return false;
+
+    if (are_different("initial_weight_decay", initial_weight_decay, other->initial_weight_decay)) return false;
+    if (are_different("weight_decay", weight_decay, other->weight_decay)) return false;
+    if (are_different("weight_decay_delta", weight_decay_delta, other->weight_decay_delta)) return false;
+
+    if (are_different("epoch", epoch, other->epoch)) return false;
+    if (are_different("max_epochs", max_epochs, other->max_epochs)) return false;
+    if (are_different("reset_weights", reset_weights, other->reset_weights)) return false;
+
+    if (are_different("padding", padding, other->padding)) return false;
+    if (are_different("number_training_images", number_training_images, other->number_training_images)) return false;
+    if (are_different("best_error", best_error, other->best_error)) return false;
+    if (are_different("best_predictions", best_predictions, other->best_predictions)) return false;
+    if (are_different("best_predictions_epoch", best_predictions_epoch, other->best_predictions_epoch)) return false;
+    if (are_different("best_error_epoch", best_error_epoch, other->best_error_epoch)) return false;
+
+    if (are_different("number_generalizability_images", number_generalizability_images, other->number_generalizability_images)) return false;
+    if (are_different("generalizability_error", generalizability_error, other->generalizability_error)) return false;
+    if (are_different("generalizability_predictions", generalizability_predictions, other->generalizability_predictions)) return false;
+
+    if (are_different("number_test_images", number_test_images, other->number_test_images)) return false;
+    if (are_different("test_error", test_error, other->test_error)) return false;
+    if (are_different("test_predictions", test_predictions, other->test_predictions)) return false;
+
+    if (are_different("started_from_checkpoint", started_from_checkpoint, other->started_from_checkpoint)) return false;
+    if (are_different("backprop_order", backprop_order, other->backprop_order)) {
+        if (testing_checkpoint) {
+            //backprop order when read from file has to be identical
+            //to make sure checkpoints are working
+            return false;
+        } else {
+            cerr << "backprop_order is different, however from CNNs stored in a database they are not required to be the same." << endl;
+        }
+    }
+
+    if (are_different("generation_id", generation_id, other->generation_id)) return false;
+    if (are_different("name", name, other->name)) return false;
+    if (are_different("checkpoint_filename", checkpoint_filename, other->checkpoint_filename)) return false;
+    if (are_different("output_filename", output_filename, other->output_filename)) return false;
+
+    //if (are_different("generated_by", generated_by, other->generated_by)) return false;
+
+    for (uint32_t i = 0; i < nodes.size(); i++) {
+        if (!nodes[i]->is_identical(other->nodes[i], testing_checkpoint)) {
+            cerr << "IDENTICAL ERROR: nodes[" << i << "] are not the same!" << endl;
+            return false;
+        }
+    }
+
+    for (uint32_t i = 0; i < edges.size(); i++) {
+        if (!edges[i]->is_identical(other->edges[i], testing_checkpoint)) {
+            cerr << "IDENTICAL ERROR: edges[" << i << "] are not the same!" << endl;
+            return false;
+        }
+    }
+
+    for (uint32_t i = 0; i < input_nodes.size(); i++) {
+        if (!input_nodes[i]->is_identical(other->input_nodes[i], testing_checkpoint)) {
+            cerr << "IDENTICAL ERROR: input_nodes[" << i << "] are not the same!" << endl;
+            return false;
+        }
+    }
+
+    for (uint32_t i = 0; i < softmax_nodes.size(); i++) {
+        if (!softmax_nodes[i]->is_identical(other->softmax_nodes[i], testing_checkpoint)) {
+            cerr << "IDENTICAL ERROR: softmax_nodes[" << i << "] are not the same!" << endl;
+            return false;
+        }
+    }
+
+    return true;
 }
 

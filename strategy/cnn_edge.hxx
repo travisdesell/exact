@@ -159,6 +159,8 @@ class CNN_Edge {
 
         void print_statistics();
 
+        bool is_identical(const CNN_Edge *other, bool testing_checkpoint);
+
         friend ostream &operator<<(ostream &os, const CNN_Edge* flight);
         friend istream &operator>>(istream &is, CNN_Edge* flight);
 };

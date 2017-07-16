@@ -93,3 +93,13 @@ istream &operator>>(istream &is, NormalDistribution &normal_distribution) {
 }
 
 
+bool NormalDistribution::operator==(const NormalDistribution &other) const {
+    return generate == other.generate && z0 == other.z0 && z1 == other.z1;
+}
+
+bool NormalDistribution::operator!=(const NormalDistribution &other) const {
+    return generate != other.generate || z0 != other.z0 || z1 != other.z1;
+}
+
+
+

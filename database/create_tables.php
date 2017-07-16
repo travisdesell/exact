@@ -167,26 +167,9 @@ $query = "CREATE TABLE `cnn_genome` (
     `normal_distribution` varchar(128) NOT NULL,
 
     `hyperparameters` VARCHAR(256) NOT NULL,
+
     `velocity_reset` int(11) NOT NULL,
-
     `batch_size` int(11) NOT NULL,
-    `epsilon` float NOT NULL,
-    `alpha` float NOT NULL,
-
-    `input_dropout_probability` float NOT NULL,
-    `hidden_dropout_probability` float NOT NULL,
-
-    `initial_mu` float NOT NULL,
-    `mu` float NOT NULL,
-    `mu_delta` float NOT NULL,
-
-    `initial_learning_rate` float NOT NULL,
-    `learning_rate` float NOT NULL,
-    `learning_rate_delta` float NOT NULL,
-
-    `initial_weight_decay` float NOT NULL,
-    `weight_decay` float NOT NULL,
-    `weight_decay_delta` float NOT NULL,
 
     `epoch` int(11) NOT NULL,
     `max_epochs` int(11) NOT NULL,
@@ -293,19 +276,6 @@ $query = "CREATE TABLE `cnn_node` (
   `needs_initialization` tinyint(1) NOT NULL,
 
   `batch_norm_parameters` VARCHAR(256) NOT NULL,
-
-  `gamma` float NOT NULL,
-  `best_gamma` float NOT NULL,
-  `previous_velocity_gamma` float NOT NULL,
-
-  `beta` float NOT NULL,
-  `best_beta` float NOT NULL,
-  `previous_velocity_beta` float NOT NULL,
-
-  `running_mean` float NOT NULL,
-  `best_running_mean` float NOT NULL,
-  `running_variance` float NOT NULL,
-  `best_running_variance` float NOT NULL,
 
   PRIMARY KEY(`id`),
   UNIQUE KEY(`id`, `exact_id`, `genome_id`, `innovation_number`),

@@ -39,6 +39,7 @@ using std::vector;
 
 #include "common/random.hxx"
 #include "image_tools/image_set.hxx"
+#include "comparison.hxx"
 #include "cnn_edge.hxx"
 #include "cnn_node.hxx"
 #include "pooling.hxx"
@@ -1320,3 +1321,51 @@ istream &operator>>(istream &is, CNN_Edge* edge) {
 
     return is;
 }
+
+bool CNN_Edge::is_identical(const CNN_Edge *other, bool testing_checkpoint) {
+    if (are_different("edge_id", edge_id, other->edge_id)) return false;
+    if (are_different("exact_id", exact_id, other->exact_id)) return false;
+    if (are_different("genome_id", genome_id, other->genome_id)) return false;
+
+    if (are_different("type", type, other->type)) return false;
+    if (are_different("innovation_number", innovation_number, other->innovation_number)) return false;
+
+    if (are_different("input_node_innovation_number", input_node_innovation_number, other->input_node_innovation_number)) return false;
+    if (are_different("output_node_innovation_number", output_node_innovation_number, other->output_node_innovation_number)) return false;
+
+    if (are_different("batch_size", batch_size, other->batch_size)) return false;
+    if (are_different("filter_x", filter_x, other->filter_x)) return false;
+    if (are_different("filter_y", filter_y, other->filter_y)) return false;
+
+    if (are_different("weights", filter_x * filter_y, weights, other->weights)) return false;
+    
+    //weight updates are zeroed at the beginning of each epoch
+    //if (are_different("weight_updates", weight_updates, other->weight_updates)) return false;
+    if (are_different("best_weights", filter_x * filter_y, best_weights, other->best_weights)) return false;
+
+    if (are_different("previous_velocity", filter_x * filter_y, previous_velocity, other->previous_velocity)) return false;
+    if (are_different("best_velocity", filter_x * filter_y, best_velocity, other->best_velocity)) return false;
+
+
+    if (are_different("y_pools", y_pools, other->y_pools)) return false;
+    if (are_different("y_pool_offset", y_pool_offset, other->y_pool_offset)) return false;
+    if (are_different("x_pools", x_pools, other->x_pools)) return false;
+    if (are_different("x_pool_offset", x_pool_offset, other->x_pool_offset)) return false;
+
+    if (are_different("fixed", fixed, other->fixed)) return false;
+    if (are_different("disabled", disabled, other->disabled)) return false;
+    if (are_different("forward_visited", forward_visited, other->forward_visited)) return false;
+    if (are_different("reverse_visited", reverse_visited, other->reverse_visited)) return false;
+
+    if (are_different("reverse_filter_x", reverse_filter_x, other->reverse_filter_x)) return false;
+    if (are_different("reverse_filter_y", reverse_filter_y, other->reverse_filter_y)) return false;
+    if (are_different("needs_initialization", needs_initialization, other->needs_initialization)) return false;
+
+    //these are zeroed at the beginning of each batch so don't need to be similar
+    //if (are_different("propagate_backward_time", propagate_backward_time, other->propagate_backward_time)) return false;
+    //if (are_different("propagate_backward_time", propagate_backward_time, other->propagate_backward_time)) return false;
+    //if (are_different("weight_update_time", weight_update_time, other->weight_update_time)) return false;
+
+    return true;
+}
+

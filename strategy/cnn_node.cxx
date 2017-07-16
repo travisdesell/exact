@@ -44,6 +44,7 @@ using std::vector;
 
 #include "image_tools/image_set.hxx"
 #include "common/random.hxx"
+#include "comparison.hxx"
 #include "cnn_genome.hxx"
 #include "cnn_edge.hxx"
 #include "cnn_node.hxx"
@@ -201,21 +202,6 @@ CNN_Node::CNN_Node(int _node_id) {
         needs_initialization = atoi(row[++column]);
 
         istringstream batch_norm_parameters_iss(row[++column]);
-
-        gamma = atof(row[++column]);
-        best_gamma = atof(row[++column]);
-        previous_velocity_gamma = atof(row[++column]);
-
-        beta = atof(row[++column]);
-        best_beta = atof(row[++column]);
-        previous_velocity_beta = atof(row[++column]);
-
-        running_mean = atof(row[++column]);
-        best_running_mean = atof(row[++column]);
-        running_variance = atof(row[++column]);
-        best_running_variance = atof(row[++column]);
-
-        //overwrite from hyperparameters string
 
         gamma = read_hexfloat(batch_norm_parameters_iss);
         best_gamma = read_hexfloat(batch_norm_parameters_iss);
@@ -1304,3 +1290,57 @@ std::istream &operator>>(std::istream &is, CNN_Node* node) {
 
     return is;
 }
+
+
+bool CNN_Node::is_identical(const CNN_Node *other, bool testing_checkpoint) {
+    if (are_different("node_id", node_id, other->node_id)) return false;
+    if (are_different("exact_id", exact_id, other->exact_id)) return false;
+    if (are_different("genome_id", genome_id, other->genome_id)) return false;
+
+    if (are_different("innovation_number", innovation_number, other->innovation_number)) return false;
+    if (are_different("depth", depth, other->depth)) return false;
+
+    if (are_different("batch_size", batch_size, other->batch_size)) return false;
+    if (are_different("size_y", size_y, other->size_y)) return false;
+    if (are_different("size_x", size_x, other->size_x)) return false;
+    if (are_different("total_size", total_size, other->total_size)) return false;
+
+    if (are_different("weight_count", weight_count, other->weight_count)) return false;
+
+    if (are_different("type", type, other->type)) return false;
+
+    if (are_different("total_inputs", total_inputs, other->total_inputs)) return false;
+    if (are_different("inputs_fired", inputs_fired, other->inputs_fired)) return false;
+
+    if (are_different("total_outputs", total_outputs, other->total_outputs)) return false;
+    if (are_different("outputs_fired", outputs_fired, other->outputs_fired)) return false;
+
+    if (are_different("forward_visited", forward_visited, other->forward_visited)) return false;
+    if (are_different("reverse_visited", reverse_visited, other->reverse_visited)) return false;
+    if (are_different("needs_initialization", needs_initialization, other->needs_initialization)) return false;
+
+    if (are_different("gamma", gamma, other->gamma)) return false;
+    if (are_different("best_gamma", best_gamma, other->best_gamma)) return false;
+    if (are_different("previous_velocity_gamma", previous_velocity_gamma, other->previous_velocity_gamma)) return false;
+
+    if (are_different("beta", beta, other->beta)) return false;
+    if (are_different("best_beta", best_beta, other->best_beta)) return false;
+    if (are_different("previous_velocity_beta", previous_velocity_beta, other->previous_velocity_beta)) return false;
+
+    if (are_different("batch_mean", batch_mean, other->batch_mean)) return false;
+    if (are_different("batch_variance", batch_variance, other->batch_variance)) return false;
+    if (are_different("batch_std_dev", batch_std_dev, other->batch_std_dev)) return false;
+    if (are_different("inverse_variance", inverse_variance, other->inverse_variance)) return false;
+
+    if (are_different("running_mean", running_mean, other->running_mean)) return false;
+    if (are_different("best_running_mean", best_running_mean, other->best_running_mean)) return false;
+
+    if (are_different("running_variance", running_variance, other->running_variance)) return false;
+    if (are_different("best_running_variance", best_running_variance, other->best_running_variance)) return false;
+
+    //values, errors_out, relu_gradients, pool_gradients, values_in, errors_in, input_fired_time and output_fired time
+    //are all reset to 0 before every pass so don't need to be compared
+
+    return true;
+}
+

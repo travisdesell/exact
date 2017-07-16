@@ -212,6 +212,8 @@ class CNN_Node {
         void print_statistics();
         void print_statistics(const float* values, const float* errors, const float* gradients);
 
+        bool is_identical(const CNN_Node *other, bool testing_checkpoint);
+
         friend ostream &operator<<(ostream &os, const CNN_Node* node);
         friend istream &operator>>(istream &is, CNN_Node* node);
 };

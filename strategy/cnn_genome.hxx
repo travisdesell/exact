@@ -34,8 +34,8 @@ class CNN_Genome {
         minstd_rand0 generator;
 
         int velocity_reset;
-
         int batch_size;
+
         float epsilon;
         float alpha;
 
@@ -243,6 +243,8 @@ class CNN_Genome {
         int get_generated_by_crossover();
         int get_generated_by_reset_weights();
         int get_generated_by_add_node();
+
+        bool is_identical(CNN_Genome *other, bool testing_checkpoint);
 };
 
 
