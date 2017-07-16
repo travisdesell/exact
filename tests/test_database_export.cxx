@@ -56,7 +56,7 @@ int main(int argc, char **argv) {
     int predictions;
     //genome->evaluate(training_images, error, predictions);
 
-    if (!genome_from_file->is_identical(genome_from_database)) {
+    if (!genome_from_file->is_identical(genome_from_database, false)) {
         cerr << "ERROR! genome from file and genome from database were not identical!" << endl;
         exit(1);
     }
