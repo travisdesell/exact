@@ -8,6 +8,9 @@ IF (MYSQL_FOUND)
     add_executable(test_database_export test_database_export)
     target_link_libraries(test_database_export exact_strategy exact_common exact_image_tools ${MYSQL_LIBRARIES} pthread)
 
+    add_executable(test_checkpoint test_checkpoint)
+    target_link_libraries(test_checkpoint exact_strategy exact_common exact_image_tools ${MYSQL_LIBRARIES} pthread)
+
     add_executable(one_layer one_layer)
     target_link_libraries(one_layer exact_strategy exact_common exact_image_tools ${MYSQL_LIBRARIES} pthread)
 
@@ -34,6 +37,9 @@ ELSE (MYSQL_FOUND)
 
     add_executable(evaluate_cnn evaluate_cnn)
     target_link_libraries(evaluate_cnn exact_strategy exact_common exact_image_tools pthread)
+
+    add_executable(test_checkpoint test_checkpoint)
+    target_link_libraries(test_checkpoint exact_strategy exact_common exact_image_tools pthread)
 
     add_executable(one_layer one_layer)
     target_link_libraries(one_layer exact_strategy exact_common exact_image_tools pthread)

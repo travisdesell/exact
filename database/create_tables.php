@@ -218,7 +218,7 @@ $query = "CREATE TABLE `cnn_edge` (
 
   PRIMARY KEY(`id`),
   UNIQUE KEY(`id`, `exact_id`, `genome_id`, `innovation_number`),
-  KEY(`exact_id`, `genome_id`)
+  KEY(`exact_id`, `genome_id`),
   KEY(`exact_id`),
   KEY(`genome_id`),
   KEY(`innovation_number`)
@@ -251,7 +251,7 @@ $query = "CREATE TABLE `cnn_node` (
 
   PRIMARY KEY(`id`),
   UNIQUE KEY(`id`, `exact_id`, `genome_id`, `innovation_number`),
-  KEY(`exact_id`, `genome_id`)
+  KEY(`exact_id`, `genome_id`),
   KEY(`exact_id`),
   KEY(`genome_id`),
   KEY(`innovation_number`)

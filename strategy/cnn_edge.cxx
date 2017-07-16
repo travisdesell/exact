@@ -639,10 +639,12 @@ bool CNN_Edge::set_nodes(const vector<CNN_Node*> nodes) {
         return false;
     }
 
+    return true;
+}
+
+void CNN_Edge::set_pools() {
     initialize_pools(y_pools, y_pool_offset, input_node->get_size_y(), output_node->get_size_y());
     initialize_pools(x_pools, x_pool_offset, input_node->get_size_x(), output_node->get_size_x());
-
-    return true;
 }
 
 bool CNN_Edge::is_filter_correct() const {
@@ -1182,6 +1184,19 @@ ostream &operator<<(ostream &os, const CNN_Edge* edge) {
     os << edge->needs_initialization << " ";
     os << edge->batch_size << endl;
 
+    os << "POOLS" << endl;
+    os << edge->y_pools.size();
+    for (int32_t i = 0; i < edge->y_pools.size(); i++) {
+        os << " " << edge->y_pools[i];
+    }
+    os << endl;
+
+    os << edge->x_pools.size();
+    for (int32_t i = 0; i < edge->x_pools.size(); i++) {
+        os << " " << edge->x_pools[i];
+    }
+    os << endl;
+
     os << "WEIGHTS" << endl;
     int current = 0;
     for (int32_t y = 0; y < edge->filter_y; y++) {
@@ -1257,6 +1272,34 @@ istream &operator>>(istream &is, CNN_Edge* edge) {
     edge->best_velocity = new float[edge->filter_size]();
 
     string line;
+    getline(is, line);
+    getline(is, line);
+    if (line.compare("POOLS") != 0) {
+        cerr << "ERROR: invalid input file, expected line to be 'POOLS' but line was '" << line << "'" << endl;
+        exit(1);
+    }
+
+    int pool_size;
+    int value;
+
+    is >> pool_size;
+    edge->y_pools.clear();
+    for (int32_t i = 0; i < pool_size; i++) {
+        is >> value;
+        edge->y_pools.push_back(value);
+    }
+
+    is >> pool_size;
+    edge->x_pools.clear();
+    for (int32_t i = 0; i < pool_size; i++) {
+        is >> value;
+        edge->x_pools.push_back(value);
+    }
+
+    update_offset(edge->y_pools, edge->y_pool_offset);
+    update_offset(edge->x_pools, edge->x_pool_offset);
+
+
     getline(is, line);
     getline(is, line);
     if (line.compare("WEIGHTS") != 0) {

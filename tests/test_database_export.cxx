@@ -74,11 +74,9 @@ int main(int argc, char **argv) {
     cout << "GENOME FROM FILE test error: " << error << endl;
     cout << "GENOME FROM FILE test predictions " << predictions << endl;
 
-
     /*
     ostringstream query;
     query << "DELETE FROM cnn_edge WHERE genome_id = " << genome_id << endl;
-    query << "UPDATE cnn_genome SET test_error = " << error << ", test_predictions = " << predictions << " WHERE id = " << genome_id;
     mysql_exact_query(query.str());
     */
 

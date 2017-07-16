@@ -200,6 +200,7 @@ void parse_array(vector<T> &output, istringstream &iss) {
 #ifdef _MYSQL_
 CNN_Genome::CNN_Genome(int _genome_id) {
     progress_function = NULL;
+    version_str = EXACT_VERSION_STR;
 
     ostringstream query;
 
@@ -420,19 +421,6 @@ void CNN_Genome::export_to_database(int _exact_id) {
     query << "'"
         << ", velocity_reset = '" << velocity_reset << "'"
         << ", batch_size = " << batch_size
-        << ", epsilon = " << setprecision(15) << fixed << epsilon
-        << ", alpha = " << setprecision(15) << fixed << alpha
-        << ", input_dropout_probability = " << setprecision(15) << fixed << input_dropout_probability
-        << ", hidden_dropout_probability = " << setprecision(15) << fixed << hidden_dropout_probability
-        << ", initial_mu = " << setprecision(15) << fixed << initial_mu
-        << ", mu = " << setprecision(15) << fixed<< mu
-        << ", mu_delta = " << setprecision(15) << fixed << mu_delta
-        << ", initial_learning_rate = " << setprecision(15) << fixed << initial_learning_rate
-        << ", learning_rate = " << setprecision(15) << fixed << learning_rate
-        << ", learning_rate_delta = " << setprecision(15) << fixed << learning_rate_delta
-        << ", initial_weight_decay = " << setprecision(15) << fixed << initial_weight_decay
-        << ", weight_decay = " << setprecision(15) << fixed<< weight_decay
-        << ", weight_decay_delta = " << setprecision(15) << fixed << weight_decay_delta
         << ", epoch = " << epoch
         << ", max_epochs = " << max_epochs
         << ", reset_weights = " << reset_weights
@@ -582,6 +570,8 @@ CNN_Genome::CNN_Genome(int _generation_id, int _padding, int _number_training_im
             cerr << "This should never happen!" << endl;
             exit(1);
         }
+
+        edge_copy->set_pools();
 
         //cout << "resizing edge " << edge_copy->get_innovation_number() << " to " << batch_size << endl;
         edge_copy->update_batch_size(batch_size);
@@ -2313,20 +2303,20 @@ bool CNN_Genome::is_identical(CNN_Genome *other, bool testing_checkpoint) {
 
     if (are_different("padding", padding, other->padding)) return false;
     if (are_different("number_training_images", number_training_images, other->number_training_images)) return false;
-    if (are_different("best_error", best_error, other->best_error)) return false;
+    //if (are_different("best_error", best_error, other->best_error)) return false;
     if (are_different("best_predictions", best_predictions, other->best_predictions)) return false;
     if (are_different("best_predictions_epoch", best_predictions_epoch, other->best_predictions_epoch)) return false;
     if (are_different("best_error_epoch", best_error_epoch, other->best_error_epoch)) return false;
 
     if (are_different("number_generalizability_images", number_generalizability_images, other->number_generalizability_images)) return false;
-    if (are_different("generalizability_error", generalizability_error, other->generalizability_error)) return false;
+    //if (are_different("generalizability_error", generalizability_error, other->generalizability_error)) return false;
     if (are_different("generalizability_predictions", generalizability_predictions, other->generalizability_predictions)) return false;
 
     if (are_different("number_test_images", number_test_images, other->number_test_images)) return false;
-    if (are_different("test_error", test_error, other->test_error)) return false;
+    //if (are_different("test_error", test_error, other->test_error)) return false;
     if (are_different("test_predictions", test_predictions, other->test_predictions)) return false;
 
-    if (are_different("started_from_checkpoint", started_from_checkpoint, other->started_from_checkpoint)) return false;
+    //if (are_different("started_from_checkpoint", started_from_checkpoint, other->started_from_checkpoint)) return false;
     if (are_different("backprop_order", backprop_order, other->backprop_order)) {
         if (testing_checkpoint) {
             //backprop order when read from file has to be identical

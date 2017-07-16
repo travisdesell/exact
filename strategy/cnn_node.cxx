@@ -284,18 +284,7 @@ void CNN_Node::export_to_database(int _exact_id, int _genome_id) {
     write_hexfloat(query, running_variance);
     query << " ";
     write_hexfloat(query, best_running_variance);
-
-    query << "'"
-        << ", gamma = " << gamma
-        << ", best_gamma = " << best_gamma
-        << ", previous_velocity_gamma = " << previous_velocity_gamma
-        << ", beta = " << beta
-        << ", best_beta = " << best_beta
-        << ", previous_velocity_beta = " << previous_velocity_beta
-        << ", running_mean = " << running_mean
-        << ", best_running_mean = " << best_running_mean
-        << ", running_variance = " << running_variance
-        << ", best_running_variance = " << best_running_variance;
+    query << "'";
 
     mysql_exact_query(query.str());
 
@@ -1327,10 +1316,11 @@ bool CNN_Node::is_identical(const CNN_Node *other, bool testing_checkpoint) {
     if (are_different("best_beta", best_beta, other->best_beta)) return false;
     if (are_different("previous_velocity_beta", previous_velocity_beta, other->previous_velocity_beta)) return false;
 
-    if (are_different("batch_mean", batch_mean, other->batch_mean)) return false;
-    if (are_different("batch_variance", batch_variance, other->batch_variance)) return false;
-    if (are_different("batch_std_dev", batch_std_dev, other->batch_std_dev)) return false;
-    if (are_different("inverse_variance", inverse_variance, other->inverse_variance)) return false;
+    //these are all reset and recalculated on each batch
+    //if (are_different("batch_mean", batch_mean, other->batch_mean)) return false;
+    //if (are_different("batch_variance", batch_variance, other->batch_variance)) return false;
+    //if (are_different("batch_std_dev", batch_std_dev, other->batch_std_dev)) return false;
+    //if (are_different("inverse_variance", inverse_variance, other->inverse_variance)) return false;
 
     if (are_different("running_mean", running_mean, other->running_mean)) return false;
     if (are_different("best_running_mean", best_running_mean, other->best_running_mean)) return false;

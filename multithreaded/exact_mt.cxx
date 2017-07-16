@@ -105,9 +105,14 @@ int main(int argc, char** argv) {
     Images generalizability_images(generalizability_filename, padding, training_images.get_average(), training_images.get_std_dev());
     Images testing_images(testing_filename, padding, training_images.get_average(), training_images.get_std_dev());
 
-    exact = new EXACT(training_images, generalizability_images, testing_images, padding, population_size, max_epochs, max_genomes, output_directory, search_name, reset_edges);
+    if (argument_exists(arguments, "--exact_id")) {
+        int exact_id;
+        get_argument(arguments, "--exact_id", true, exact_id);
+        exact = new EXACT(exact_id);
+    } else {
+        exact = new EXACT(training_images, generalizability_images, testing_images, padding, population_size, max_epochs, max_genomes, output_directory, search_name, reset_edges);
+    }
 
-    //exact = new EXACT(3);
 
     vector<thread> threads;
     for (int32_t i = 0; i < number_threads; i++) {

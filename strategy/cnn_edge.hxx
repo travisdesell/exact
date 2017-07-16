@@ -112,6 +112,8 @@ class CNN_Edge {
         void set_weights_to_best();
 
         bool set_nodes(const vector<CNN_Node*> nodes);
+        void set_pools();
+
         void initialize_weights(minstd_rand0 &generator, NormalDistribution &normal_distribution);
         void reset_velocities();
         void resize();
