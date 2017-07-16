@@ -67,6 +67,29 @@ using std::vector;
 #include "stdint.h"
 
 
+void write_map(ostream &out, map<string, int> &m) {
+    out << m.size();
+    for (auto iterator = m.begin(); iterator != m.end(); iterator++) {
+
+        out << " "<< iterator->first;
+        out << " "<< iterator->second;
+    }
+}
+
+void read_map(istream &in, map<string, int> &m) {
+    int map_size;
+    in >> map_size;
+    for (int i = 0; i < map_size; i++) {
+        string key;
+        in >> key;
+        int value;
+        in >> value;
+
+        m[key] = value;
+    }
+}
+
+
 /**
  *  Initialize a genome from a file
  */
@@ -258,16 +281,8 @@ CNN_Genome::CNN_Genome(int _genome_id) {
         checkpoint_filename = row[++column];
         output_filename = row[++column];
 
-        generated_by_disable_edge = atoi(row[++column]);
-        generated_by_enable_edge = atoi(row[++column]);
-        generated_by_split_edge = atoi(row[++column]);
-        generated_by_add_edge = atoi(row[++column]);
-        generated_by_change_size = atoi(row[++column]);
-        generated_by_change_size_x = atoi(row[++column]);
-        generated_by_change_size_y = atoi(row[++column]);
-        generated_by_crossover = atoi(row[++column]);
-        generated_by_reset_weights = atoi(row[++column]);
-        generated_by_add_node = atoi(row[++column]);
+        istringstream generated_by_map_iss(row[++column]);
+        read_map(generated_by_map_iss, generated_by_map);
 
         number_generalizability_images = atoi(row[++column]);
         generalizability_error = atof(row[++column]);
@@ -444,16 +459,11 @@ void CNN_Genome::export_to_database(int _exact_id) {
         << ", name = '" << name << "'"
         << ", checkpoint_filename = '" << checkpoint_filename << "'"
         << ", output_filename = '" << output_filename << "'"
-        << ", generated_by_disable_edge = " << generated_by_disable_edge
-        << ", generated_by_enable_edge = " << generated_by_enable_edge
-        << ", generated_by_split_edge = " << generated_by_split_edge
-        << ", generated_by_add_edge = " << generated_by_add_edge
-        << ", generated_by_change_size = " << generated_by_change_size
-        << ", generated_by_change_size_x = " << generated_by_change_size_x
-        << ", generated_by_change_size_y = " << generated_by_change_size_y
-        << ", generated_by_crossover = " << generated_by_crossover
-        << ", generated_by_reset_weights = " << generated_by_reset_weights
-        << ", generated_by_add_node = " << generated_by_add_node
+        << ", generated_by_map = '";
+
+    write_map(query, generated_by_map);
+
+    query << "'"
         << ", number_generalizability_images = " << number_generalizability_images
         << ", generalizability_error = " << generalizability_error 
         << ", generalizability_predictions = " << generalizability_predictions
@@ -535,17 +545,6 @@ CNN_Genome::CNN_Genome(int _generation_id, int _padding, int _number_training_im
     best_error_epoch = 0;
 
     generation_id = _generation_id;
-
-    generated_by_disable_edge = 0;
-    generated_by_enable_edge = 0;
-    generated_by_split_edge = 0;
-    generated_by_add_edge = 0;
-    generated_by_change_size = 0;
-    generated_by_change_size_x = 0;
-    generated_by_change_size_y = 0;
-    generated_by_crossover = 0;
-    generated_by_reset_weights = 0;
-    generated_by_add_node = 0;
 
     name = "";
     output_filename = "";
@@ -1829,7 +1828,6 @@ string CNN_Genome::get_version_str() const {
     return version_str;
 }
 
-
 void CNN_Genome::write(ostream &outfile) {
     outfile << EXACT_VERSION_STR << endl;
     outfile << exact_id << endl;
@@ -1894,17 +1892,6 @@ void CNN_Genome::write(ostream &outfile) {
     write_hexfloat(outfile, test_error);
     outfile << endl;
 
-    outfile << generated_by_disable_edge << endl;
-    outfile << generated_by_enable_edge << endl;
-    outfile << generated_by_split_edge << endl;
-    outfile << generated_by_add_edge << endl;
-    outfile << generated_by_change_size << endl;
-    outfile << generated_by_change_size_x << endl;
-    outfile << generated_by_change_size_y << endl;
-    outfile << generated_by_crossover << endl;
-    outfile << generated_by_reset_weights << endl;
-    outfile << generated_by_add_node << endl;
-
     outfile << generation_id << endl;
     outfile << normal_distribution << endl;
     //outfile << name << endl;
@@ -1912,6 +1899,9 @@ void CNN_Genome::write(ostream &outfile) {
     //outfile << output_filename << endl;
 
     outfile << generator << endl;
+
+    outfile << "GENERATED_BY" << endl;
+    write_map(outfile, generated_by_map);
 
     outfile << "NODES" << endl;
     outfile << nodes.size() << endl;
@@ -2039,27 +2029,6 @@ void CNN_Genome::read(istream &infile) {
     if (verbose) cerr << "read test_error: " << test_error << endl;
 
 
-    infile >> generated_by_disable_edge;
-    if (verbose) cerr << "read generated_by_disable_edge: " << generated_by_disable_edge << endl;
-    infile >> generated_by_enable_edge;
-    if (verbose) cerr << "read generated_by_enable_edge: " << generated_by_enable_edge << endl;
-    infile >> generated_by_split_edge;
-    if (verbose) cerr << "read generated_by_split_edge: " << generated_by_split_edge << endl;
-    infile >> generated_by_add_edge;
-    if (verbose) cerr << "read generated_by_add_edge: " << generated_by_add_edge << endl;
-    infile >> generated_by_change_size;
-    if (verbose) cerr << "read generated_by_change_size: " << generated_by_change_size << endl;
-    infile >> generated_by_change_size_x;
-    if (verbose) cerr << "read generated_by_change_size_x: " << generated_by_change_size_x << endl;
-    infile >> generated_by_change_size_y;
-    if (verbose) cerr << "read generated_by_change_size_y: " << generated_by_change_size_x << endl;
-    infile >> generated_by_crossover;
-    if (verbose) cerr << "read generated_by_crossover: " << generated_by_crossover << endl;
-    infile >> generated_by_reset_weights;
-    if (verbose) cerr << "read generated_by_reset_weights: " << generated_by_reset_weights << endl;
-    infile >> generated_by_add_node;
-    if (verbose) cerr << "read generated_by_add_node: " << generated_by_add_node << endl;
-
     infile >> generation_id;
     if (verbose) cerr << "read generation_id: " << generation_id << endl;
     //infile >> name;
@@ -2086,9 +2055,18 @@ void CNN_Genome::read(istream &infile) {
         //cerr << "rand 3: " << generator() << endl;
     }
 
+    string line;
+    getline(infile, line);
+
+    if (line.compare("GENERATED_BY") != 0) {
+        cerr << "ERROR: invalid input file, expected line to be 'GENERATED_BY' but line was '" << line << "'" << endl;
+        version_str = "INALID";
+        return;
+    }
+
+    read_map(infile, generated_by_map);
     //cerr << "reading nodes!" << endl;
     
-    string line;
     getline(infile, line);
 
     if (line.compare("NODES") != 0) {
@@ -2294,86 +2272,12 @@ void CNN_Genome::print_graphviz(ostream &out) const {
     out << "}" << endl;
 }
 
-void CNN_Genome::set_generated_by_disable_edge() {
-    generated_by_disable_edge++;
+void CNN_Genome::set_generated_by(string type) {
+    generated_by_map[type]++;
 }
 
-void CNN_Genome::set_generated_by_enable_edge() {
-    generated_by_enable_edge++;
-}
-
-void CNN_Genome::set_generated_by_split_edge() {
-    generated_by_split_edge++;
-}
-
-void CNN_Genome::set_generated_by_add_edge() {
-    generated_by_add_edge++;
-}
-
-void CNN_Genome::set_generated_by_change_size() {
-    generated_by_change_size++;
-}
-
-void CNN_Genome::set_generated_by_change_size_x() {
-    generated_by_change_size_x++;
-}
-
-void CNN_Genome::set_generated_by_change_size_y() {
-    generated_by_change_size_y++;
-}
-
-void CNN_Genome::set_generated_by_crossover() {
-    generated_by_crossover++;
-}
-
-void CNN_Genome::set_generated_by_reset_weights() {
-    generated_by_reset_weights++;
-}
-
-void CNN_Genome::set_generated_by_add_node() {
-    generated_by_add_node++;
-}
-
-
-
-int CNN_Genome::get_generated_by_disable_edge() {
-    return generated_by_disable_edge;
-}
-
-int CNN_Genome::get_generated_by_enable_edge() {
-    return generated_by_enable_edge;
-}
-
-int CNN_Genome::get_generated_by_split_edge() {
-    return generated_by_split_edge;
-}
-
-int CNN_Genome::get_generated_by_add_edge() {
-    return generated_by_add_edge;
-}
-
-int CNN_Genome::get_generated_by_change_size() {
-    return generated_by_change_size;
-}
-
-int CNN_Genome::get_generated_by_change_size_x() {
-    return generated_by_change_size_x;
-}
-
-int CNN_Genome::get_generated_by_change_size_y() {
-    return generated_by_change_size_y;
-}
-
-int CNN_Genome::get_generated_by_crossover() {
-    return generated_by_crossover;
-}
-
-int CNN_Genome::get_generated_by_reset_weights() {
-    return generated_by_reset_weights;
-}
-
-int CNN_Genome::get_generated_by_add_node() {
-    return generated_by_add_node;
+int CNN_Genome::get_generated_by(string type) {
+    return generated_by_map[type];
 }
 
 bool CNN_Genome::is_identical(CNN_Genome *other, bool testing_checkpoint) {

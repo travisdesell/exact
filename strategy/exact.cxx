@@ -209,27 +209,11 @@ EXACT::EXACT(int exact_id) {
         rng_float_iss >> rng_float;
         //cout << "read rng_float from database: " << rng_float << endl;
 
-        inserted_from_disable_edge = atoi(row[++column]);
-        inserted_from_enable_edge = atoi(row[++column]);
-        inserted_from_split_edge = atoi(row[++column]);
-        inserted_from_add_edge = atoi(row[++column]);
-        inserted_from_change_size = atoi(row[++column]);
-        inserted_from_change_size_x = atoi(row[++column]);
-        inserted_from_change_size_y = atoi(row[++column]);
-        inserted_from_crossover = atoi(row[++column]);
-        inserted_from_reset_weights = atoi(row[++column]);
-        inserted_from_add_node = atoi(row[++column]);
+        istringstream inserted_from_map_iss(row[++column]);
+        read_map(inserted_from_map_iss, inserted_from_map);
 
-        generated_from_disable_edge = atoi(row[++column]);
-        generated_from_enable_edge = atoi(row[++column]);
-        generated_from_split_edge = atoi(row[++column]);
-        generated_from_add_edge = atoi(row[++column]);
-        generated_from_change_size = atoi(row[++column]);
-        generated_from_change_size_x = atoi(row[++column]);
-        generated_from_change_size_y = atoi(row[++column]);
-        generated_from_crossover = atoi(row[++column]);
-        generated_from_reset_weights = atoi(row[++column]);
-        generated_from_add_node = atoi(row[++column]);
+        istringstream generated_from_map_iss(row[++column]);
+        read_map(generated_from_map_iss, generated_from_map);
 
         ostringstream genome_query;
         genome_query << "SELECT id FROM cnn_genome WHERE exact_id = " << id << " ORDER BY best_error LIMIT " << population_size;
@@ -431,27 +415,14 @@ void EXACT::export_to_database() {
         << ", rng_long = '" << rng_long << "'"
         << ", rng_float = '" << rng_float << "'"
 
-        << ", inserted_from_disable_edge = " << inserted_from_disable_edge
-        << ", inserted_from_enable_edge = " << inserted_from_enable_edge
-        << ", inserted_from_split_edge = " << inserted_from_split_edge
-        << ", inserted_from_add_edge = " << inserted_from_add_edge
-        << ", inserted_from_change_size = " << inserted_from_change_size
-        << ", inserted_from_change_size_x = " << inserted_from_change_size_x
-        << ", inserted_from_change_size_y = " << inserted_from_change_size_y
-        << ", inserted_from_crossover = " << inserted_from_crossover
-        << ", inserted_from_reset_weights = " << inserted_from_reset_weights
-        << ", inserted_from_add_node = " << inserted_from_add_node
+        << ", inserted_from_map = '";
 
-        << ", generated_from_disable_edge = " << generated_from_disable_edge
-        << ", generated_from_enable_edge = " << generated_from_enable_edge
-        << ", generated_from_split_edge = " << generated_from_split_edge
-        << ", generated_from_add_edge = " << generated_from_add_edge
-        << ", generated_from_change_size = " << generated_from_change_size
-        << ", generated_from_change_size_x = " << generated_from_change_size_x
-        << ", generated_from_change_size_y = " << generated_from_change_size_y
-        << ", generated_from_crossover = " << generated_from_crossover
-        << ", generated_from_reset_weights = " << generated_from_reset_weights
-        << ", generated_from_add_node = " << generated_from_add_node;
+    write_map(query, inserted_from_map);
+
+    query << "'"
+        << ", generated_from_map = '";
+    write_map(query, generated_from_map);
+    query << "'";
 
     cout << query.str() << endl;
     mysql_exact_query(query.str());
@@ -527,27 +498,15 @@ void EXACT::update_database() {
 
         << ", node_innovation_count = " << node_innovation_count
         << ", edge_innovation_count = " << edge_innovation_count
+        << ", inserted_from_map = '";
 
-        << ", inserted_from_disable_edge = " << inserted_from_disable_edge
-        << ", inserted_from_enable_edge = " << inserted_from_enable_edge
-        << ", inserted_from_split_edge = " << inserted_from_split_edge
-        << ", inserted_from_add_edge = " << inserted_from_add_edge
-        << ", inserted_from_change_size = " << inserted_from_change_size
-        << ", inserted_from_change_size_x = " << inserted_from_change_size_x
-        << ", inserted_from_change_size_y = " << inserted_from_change_size_y
-        << ", inserted_from_crossover = " << inserted_from_crossover
-        << ", inserted_from_add_node = " << inserted_from_add_node
+    write_map(query, inserted_from_map);
 
-        << ", generated_from_disable_edge = " << generated_from_disable_edge
-        << ", generated_from_enable_edge = " << generated_from_enable_edge
-        << ", generated_from_split_edge = " << generated_from_split_edge
-        << ", generated_from_add_edge = " << generated_from_add_edge
-        << ", generated_from_change_size = " << generated_from_change_size
-        << ", generated_from_change_size_x = " << generated_from_change_size_x
-        << ", generated_from_change_size_y = " << generated_from_change_size_y
-        << ", generated_from_crossover = " << generated_from_crossover
-        << ", generated_from_add_node = " << generated_from_add_node
+    query << "'"
+        << ", generated_from_map = '";
+    write_map(query, generated_from_map);
 
+    query << "'"
         << ", generator = '" << generator << "'"
         << ", normal_distribution = '" << normal_distribution << "'"
         << ", rng_long = '" << rng_long << "'"
@@ -690,27 +649,27 @@ EXACT::EXACT(const ImagesInterface &training_images, const ImagesInterface &gene
     image_cols = training_images.get_image_width();
     number_classes = training_images.get_number_classes();
 
-    inserted_from_disable_edge = 0;
-    inserted_from_enable_edge = 0;
-    inserted_from_split_edge = 0;
-    inserted_from_add_edge = 0;
-    inserted_from_change_size = 0;
-    inserted_from_change_size_x = 0;
-    inserted_from_change_size_y = 0;
-    inserted_from_crossover = 0;
-    inserted_from_reset_weights = 0;
-    inserted_from_add_node = 0;
+    inserted_from_map["disable_edge"] = 0;
+    inserted_from_map["enable_edge"] = 0;
+    inserted_from_map["split_edge"] = 0;
+    inserted_from_map["add_edge"] = 0;
+    inserted_from_map["change_size"] = 0;
+    inserted_from_map["change_size_x"] = 0;
+    inserted_from_map["change_size_y"] = 0;
+    inserted_from_map["crossover"] = 0;
+    inserted_from_map["reset_weights"] = 0;
+    inserted_from_map["add_node"] = 0;
 
-    generated_from_disable_edge = 0;
-    generated_from_enable_edge = 0;
-    generated_from_split_edge = 0;
-    generated_from_add_edge = 0;
-    generated_from_change_size = 0;
-    generated_from_change_size_x = 0;
-    generated_from_change_size_y = 0;
-    generated_from_crossover = 0;
-    generated_from_reset_weights = 0;
-    generated_from_add_node = 0;
+    generated_from_map["disable_edge"] = 0;
+    generated_from_map["enable_edge"] = 0;
+    generated_from_map["split_edge"] = 0;
+    generated_from_map["add_edge"] = 0;
+    generated_from_map["change_size"] = 0;
+    generated_from_map["change_size_x"] = 0;
+    generated_from_map["change_size_y"] = 0;
+    generated_from_map["crossover"] = 0;
+    generated_from_map["reset_weights"] = 0;
+    generated_from_map["add_node"] = 0;
 
     genomes_generated = 0;
 
@@ -1347,16 +1306,9 @@ bool EXACT::insert_genome(CNN_Genome* genome) {
 
     inserted_genomes++;
 
-    generated_from_disable_edge += genome->get_generated_by_disable_edge();
-    generated_from_enable_edge += genome->get_generated_by_enable_edge();
-    generated_from_split_edge += genome->get_generated_by_split_edge();
-    generated_from_add_edge += genome->get_generated_by_add_edge();
-    generated_from_change_size += genome->get_generated_by_change_size();
-    generated_from_change_size_x += genome->get_generated_by_change_size_x();
-    generated_from_change_size_y += genome->get_generated_by_change_size_y();
-    generated_from_crossover += genome->get_generated_by_crossover();
-    generated_from_reset_weights += genome->get_generated_by_reset_weights();
-    generated_from_add_node += genome->get_generated_by_add_node();
+    for (auto i = generated_from_map.begin(); i != generated_from_map.end(); i++) {
+        generated_from_map[i->first] += genome->get_generated_by(i->first);
+    }
 
     cout << "genomes evaluated: " << setw(10) << inserted_genomes << ", inserting: " << parse_fitness(genome->get_fitness()) << endl;
 
@@ -1500,15 +1452,9 @@ bool EXACT::insert_genome(CNN_Genome* genome) {
     } else {
         cout << "updating search statistics" << endl;
 
-        inserted_from_disable_edge += genome->get_generated_by_disable_edge();
-        inserted_from_enable_edge += genome->get_generated_by_enable_edge();
-        inserted_from_split_edge += genome->get_generated_by_split_edge();
-        inserted_from_add_edge += genome->get_generated_by_add_edge();
-        inserted_from_change_size += genome->get_generated_by_change_size();
-        inserted_from_change_size_x += genome->get_generated_by_change_size_x();
-        inserted_from_change_size_y += genome->get_generated_by_change_size_y();
-        inserted_from_crossover += genome->get_generated_by_crossover();
-        inserted_from_reset_weights += genome->get_generated_by_reset_weights();
+        for (auto i = inserted_from_map.begin(); i != inserted_from_map.end(); i++) {
+            inserted_from_map[i->first] += genome->get_generated_by(i->first);
+        }
 
         cout << "inserting new genome" << endl;
         //inorder insert the new individual
@@ -1706,7 +1652,7 @@ CNN_Genome* EXACT::create_mutation() {
 
             int edge_position = rng_float(generator) * child->get_number_edges();
             if (child->disable_edge(edge_position)) {
-                child->set_generated_by_disable_edge();
+                child->set_generated_by("disable_edge");
                 modifications++;
             }
 
@@ -1741,7 +1687,7 @@ CNN_Genome* EXACT::create_mutation() {
                 disabled_edge->enable();
                 //reinitialize weights for re-enabled edge
                 disabled_edge->set_needs_init();
-                child->set_generated_by_enable_edge();
+                child->set_generated_by("enable_edge");
                 modifications++;
             } else {
                 cout << "\t\tcould not enable an edge as there were no disabled edges!" << endl;
@@ -1797,7 +1743,7 @@ CNN_Genome* EXACT::create_mutation() {
             all_edges.insert( upper_bound(all_edges.begin(), all_edges.end(), edge_copy_1, sort_CNN_Edges_by_depth()), edge_copy_1);
             all_edges.insert( upper_bound(all_edges.begin(), all_edges.end(), edge_copy_2, sort_CNN_Edges_by_depth()), edge_copy_2);
 
-            child->set_generated_by_split_edge();
+            child->set_generated_by("split_edge");
             modifications++;
 
             continue;
@@ -1830,7 +1776,7 @@ CNN_Genome* EXACT::create_mutation() {
             //after this while loop, node 2 will always be deeper than node 1
 
             if (add_edge(child, node1, node2)) {
-                child->set_generated_by_add_edge();
+                child->set_generated_by("add_edge");
                 modifications++;
             } else {
                 cout << "\t\tnot adding edge between node innovation numbers " << node1->get_innovation_number() << " and " << node2->get_innovation_number() << " because edge already exists!" << endl;
@@ -1894,7 +1840,7 @@ CNN_Genome* EXACT::create_mutation() {
                 cout << "\t\tresizing edges around node: " << modified_node->get_innovation_number() << endl;
 
                 child->resize_edges_around_node( modified_node->get_innovation_number() );
-                child->set_generated_by_change_size();
+                child->set_generated_by("change_size");
                 modifications++;
 
                 cout << "\t\tmodified size x by " << change << " from " << previous_size_x << " to " << modified_node->get_size_x() << endl;
@@ -1947,7 +1893,7 @@ CNN_Genome* EXACT::create_mutation() {
                 cout << "\t\tresizing edges around node: " << modified_node->get_innovation_number() << endl;
 
                 child->resize_edges_around_node( modified_node->get_innovation_number() );
-                child->set_generated_by_change_size_x();
+                child->set_generated_by("change_size_x");
                 modifications++;
 
                 cout << "\t\tmodified size x by " << change << " from " << previous_size_x << " to " << modified_node->get_size_x() << endl;
@@ -1999,7 +1945,7 @@ CNN_Genome* EXACT::create_mutation() {
                 cout << "\t\tresizing edges around node: " << modified_node->get_innovation_number() << endl;
 
                 child->resize_edges_around_node( modified_node->get_innovation_number() );
-                child->set_generated_by_change_size_y();
+                child->set_generated_by("change_size_y");
                 modifications++;
 
                 cout << "\t\tmodified size y by " << change << " from " << previous_size_y << " to " << modified_node->get_size_y() << endl;
@@ -2108,7 +2054,7 @@ CNN_Genome* EXACT::create_mutation() {
                 add_edge(child, child_node, potential_outputs[i]);
             }
 
-            child->set_generated_by_add_node();
+            child->set_generated_by("add_node");
             modifications++;
 
             continue;
@@ -2365,7 +2311,7 @@ CNN_Genome* EXACT::create_child() {
 
     CNN_Genome *child = new CNN_Genome(genomes_generated++, padding, number_training_images, number_generalizability_images, number_test_images, genome_seed, max_epochs, reset_weights, velocity_reset, mu, mu_delta, learning_rate, learning_rate_delta, weight_decay, weight_decay_delta, batch_size, epsilon, alpha, input_dropout_probability, hidden_dropout_probability, child_nodes, child_edges);
 
-    child->set_generated_by_crossover();
+    child->set_generated_by("crossover");
 
     return child;
 }
@@ -2428,66 +2374,13 @@ void EXACT::write_statistics(int new_generation_id, float new_fitness) {
         << setw(16) << setprecision(5) << fixed << avg_epochs
         << setw(16) << setprecision(5) << fixed << max_epochs;
 
-    if (generated_from_disable_edge == 0) {
-        out << setw(16) << setprecision(3) << 0.0;
-    } else {
-        out << setw(16) << setprecision(3) << (100.0 * (float)inserted_from_disable_edge / (float)generated_from_disable_edge);
+    for (auto i = generated_from_map.begin(); i != generated_from_map.end(); i++) {
+        if (generated_from_map[i->first] == 0) {
+            out << setw(16) << setprecision(3) << 0.0;
+        } else {
+            out << setw(16) << setprecision(3) << (100.0 * (float)inserted_from_map[i->first] / (float)generated_from_map[i->first]);
+        }
     }
-
-    if (generated_from_enable_edge == 0) {
-        out << setw(16) << setprecision(3) << 0.0;
-    } else {
-        out << setw(16) << setprecision(3) << (100.0 * (float)inserted_from_enable_edge / (float)generated_from_enable_edge);
-    }
-
-    if (generated_from_split_edge == 0) {
-        out << setw(16) << setprecision(3) << 0.0;
-    } else {
-        out << setw(16) << setprecision(3) << (100.0 * (float)inserted_from_split_edge / (float)generated_from_split_edge);
-    }
-
-    if (generated_from_add_edge == 0) {
-        out << setw(16) << setprecision(3) << 0.0;
-    } else {
-        out << setw(16) << setprecision(3) << (100.0 * (float)inserted_from_add_edge / (float)generated_from_add_edge);
-    }
-
-    if (generated_from_change_size == 0) {
-        out << setw(16) << setprecision(3) << 0.0;
-    } else {
-        out << setw(16) << setprecision(3) << (100.0 * (float)inserted_from_change_size / (float)generated_from_change_size);
-    }
-
-    if (generated_from_change_size_x == 0) {
-        out << setw(16) << setprecision(3) << 0.0;
-    } else {
-        out << setw(16) << setprecision(3) << (100.0 * (float)inserted_from_change_size_x / (float)generated_from_change_size_x);
-    }
-
-    if (generated_from_change_size_y == 0) {
-        out << setw(16) << setprecision(3) << 0.0;
-    } else {
-        out << setw(16) << setprecision(3) << (100.0 * (float)inserted_from_change_size_y / (float)generated_from_change_size_y);
-    }
-
-    if (generated_from_crossover == 0) {
-        out << setw(16) << setprecision(3) << 0.0;
-    } else {
-        out << setw(16) << setprecision(3) << (100.0 * (float)inserted_from_crossover / (float)generated_from_crossover);
-    }
-
-    if (generated_from_reset_weights == 0) {
-        out << setw(16) << setprecision(3) << 0.0;
-    } else {
-        out << setw(16) << setprecision(3) << (100.0 * (float)inserted_from_reset_weights / (float)generated_from_reset_weights);
-    }
-
-    if (generated_from_add_node == 0) {
-        out << setw(16) << setprecision(3) << 0.0;
-    } else {
-        out << setw(16) << setprecision(3) << (100.0 * (float)inserted_from_add_node / (float)generated_from_add_node);
-    }
-
     out << endl;
 
     out.close();

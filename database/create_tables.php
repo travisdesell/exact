@@ -124,27 +124,8 @@ $query = "CREATE TABLE `exact_search` (
     `rng_long` varchar(64) NOT NULL,
     `rng_float` varchar(64) NOT NULL,
 
-    `inserted_from_disable_edge` int NOT NULL,
-    `inserted_from_enable_edge` int NOT NULL,
-    `inserted_from_split_edge` int NOT NULL,
-    `inserted_from_add_edge` int NOT NULL,
-    `inserted_from_change_size` int NOT NULL,
-    `inserted_from_change_size_x` int NOT NULL,
-    `inserted_from_change_size_y` int NOT NULL,
-    `inserted_from_crossover` int NOT NULL,
-    `inserted_from_reset_weights` int NOT NULL,
-    `inserted_from_add_node` int NOT NULL,
-
-    `generated_from_disable_edge` int NOT NULL,
-    `generated_from_enable_edge` int NOT NULL,
-    `generated_from_split_edge` int NOT NULL,
-    `generated_from_add_edge` int NOT NULL,
-    `generated_from_change_size` int NOT NULL,
-    `generated_from_change_size_x` int NOT NULL,
-    `generated_from_change_size_y` int NOT NULL,
-    `generated_from_crossover` int NOT NULL,
-    `generated_from_reset_weights` int NOT NULL,
-    `generated_from_add_node` int NOT NULL,
+    `inserted_from_map` varchar(256) NOT NULL,
+    `generated_from_map` varchar(256) NOT NULL,
 
     PRIMARY KEY(`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1";
@@ -190,16 +171,7 @@ $query = "CREATE TABLE `cnn_genome` (
     `checkpoint_filename` varchar(128) NOT NULL,
     `output_filename` varchar(128) NOT NULL,
 
-    `generated_by_disable_edge` int(11) NOT NULL,
-    `generated_by_enable_edge` int(11) NOT NULL,
-    `generated_by_split_edge` int(11) NOT NULL,
-    `generated_by_add_edge` int(11) NOT NULL,
-    `generated_by_change_size` int(11) NOT NULL,
-    `generated_by_change_size_x` int(11) NOT NULL,
-    `generated_by_change_size_y` int(11) NOT NULL,
-    `generated_by_crossover` int(11) NOT NULL,
-    `generated_by_reset_weights` int(11) NOT NULL,
-    `generated_by_add_node` int(11) NOT NULL,
+    `generated_by_map` varchar(256) NOT NULL,
 
     `number_generalizability_images` int(11) DEFAULT NULL,
     `generalizability_error` float DEFAULT NULL,

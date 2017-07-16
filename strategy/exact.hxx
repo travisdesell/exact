@@ -150,27 +150,8 @@ class EXACT {
         float node_change_pool_size;
         float node_add;
 
-        int inserted_from_disable_edge;
-        int inserted_from_enable_edge;
-        int inserted_from_split_edge;
-        int inserted_from_add_edge;
-        int inserted_from_change_size;
-        int inserted_from_change_size_x;
-        int inserted_from_change_size_y;
-        int inserted_from_crossover;
-        int inserted_from_reset_weights;
-        int inserted_from_add_node;
-
-        int generated_from_disable_edge;
-        int generated_from_enable_edge;
-        int generated_from_split_edge;
-        int generated_from_add_edge;
-        int generated_from_change_size;
-        int generated_from_change_size_x;
-        int generated_from_change_size_y;
-        int generated_from_crossover;
-        int generated_from_reset_weights;
-        int generated_from_add_node;
+        map<string, int> inserted_from_map;
+        map<string, int> generated_from_map;
 
     public:
 #ifdef _MYSQL_

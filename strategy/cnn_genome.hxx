@@ -1,6 +1,9 @@
 #ifndef CNN_GENOME_H
 #define CNN_GENOME_H
 
+#include <map>
+using std::map;
+
 #include <random>
 using std::minstd_rand0;
 
@@ -81,16 +84,7 @@ class CNN_Genome {
         string checkpoint_filename;
         string output_filename;
 
-        int generated_by_disable_edge;
-        int generated_by_enable_edge;
-        int generated_by_split_edge;
-        int generated_by_add_edge;
-        int generated_by_change_size;
-        int generated_by_change_size_x;
-        int generated_by_change_size_y;
-        int generated_by_crossover;
-        int generated_by_reset_weights;
-        int generated_by_add_node;
+        map<string, int> generated_by_map;
 
         int (*progress_function)(float);
 
@@ -222,31 +216,14 @@ class CNN_Genome {
 
         void print_graphviz(ostream &out) const;
 
-        void set_generated_by_disable_edge();
-        void set_generated_by_enable_edge();
-        void set_generated_by_split_edge();
-        void set_generated_by_add_edge();
-        void set_generated_by_change_size();
-        void set_generated_by_change_size_x();
-        void set_generated_by_change_size_y();
-        void set_generated_by_crossover();
-        void set_generated_by_reset_weights();
-        void set_generated_by_add_node();
-
-        int get_generated_by_disable_edge();
-        int get_generated_by_enable_edge();
-        int get_generated_by_split_edge();
-        int get_generated_by_add_edge();
-        int get_generated_by_change_size();
-        int get_generated_by_change_size_x();
-        int get_generated_by_change_size_y();
-        int get_generated_by_crossover();
-        int get_generated_by_reset_weights();
-        int get_generated_by_add_node();
+        void set_generated_by(string type);
+        int get_generated_by(string type);
 
         bool is_identical(CNN_Genome *other, bool testing_checkpoint);
 };
 
+void write_map(ostream &out, map<string, int> &m);
+void read_map(istream &in, map<string, int> &m);
 
 struct sort_genomes_by_fitness {
     bool operator()(CNN_Genome *g1, CNN_Genome *g2) {
