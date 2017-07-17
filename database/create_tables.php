@@ -252,6 +252,8 @@ $query = "CREATE TABLE `cnn_node` (
   `weight_count` int(11) NOT NULL,
   `needs_initialization` tinyint(1) NOT NULL,
 
+  `disabled` tinyint(1) NOT NULL,
+
   `batch_norm_parameters` VARCHAR(256) NOT NULL,
 
   PRIMARY KEY(`id`),

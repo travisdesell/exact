@@ -830,8 +830,8 @@ EXACT::EXACT(const ImagesInterface &training_images, const ImagesInterface &gene
     node_add = 3.0;
     node_split = 2.0;
     node_merge = 2.0;
-    node_disable = 0.0;
-    node_enable = 0.0;
+    node_disable = 1.5;
+    node_enable = 1.5;
 
     cout << "EXACT settings: " << endl;
 
@@ -2406,6 +2406,80 @@ CNN_Genome* EXACT::create_mutation() {
             continue;
         }
         r -= node_merge;
+
+
+        if (r < node_enable) {
+            cout << "\tENABLING NODE!" << endl;
+
+            vector<CNN_Node*> disabled_nodes;
+            for (uint32_t i = 0; i < child->get_number_nodes(); i++) {
+                CNN_Node *node = child->get_node(i);
+                if (node->is_hidden() && node->is_disabled()) {
+                    disabled_nodes.push_back(node);
+                }
+            }
+
+            if (disabled_nodes.size() == 0) {
+                cout << "\t\tThere were no disabled hidden nodes, skipping!" << endl;
+                continue;
+            }
+
+            int r = rng_float(generator) * disabled_nodes.size();
+
+            CNN_Node *node = disabled_nodes[r];
+            node->enable();
+
+            for (uint32_t i = 0; i < child->get_number_edges(); i++) {
+                CNN_Edge *edge = child->get_edge(i);
+
+                if (edge->get_output_innovation_number() == node->get_innovation_number() || edge->get_input_innovation_number() == node->get_innovation_number()) {
+                    edge->enable();
+                }
+            }
+
+            child->set_generated_by("enable_node");
+            modifications++;
+
+            continue;
+        }
+        r -= node_enable;
+
+        if (r < node_disable) {
+            cout << "\tDISABLING NODE!" << endl;
+
+            vector<CNN_Node*> enabled_nodes;
+            for (uint32_t i = 0; i < child->get_number_nodes(); i++) {
+                CNN_Node *node = child->get_node(i);
+                if (node->is_hidden() && node->is_enabled()) {
+                    enabled_nodes.push_back(node);
+                }
+            }
+
+            if (enabled_nodes.size() == 0) {
+                cout << "\t\tThere were no enabled hidden nodes, skipping!" << endl;
+                continue;
+            }
+
+            int r = rng_float(generator) * enabled_nodes.size();
+
+            CNN_Node *node = enabled_nodes[r];
+            node->disable();
+
+            for (uint32_t i = 0; i < child->get_number_edges(); i++) {
+                CNN_Edge *edge = child->get_edge(i);
+
+                if (edge->get_output_innovation_number() == node->get_innovation_number() || edge->get_input_innovation_number() == node->get_innovation_number()) {
+                    edge->disable();
+                }
+            }
+
+            child->set_generated_by("disable_node");
+            modifications++;
+
+            continue;
+        }
+        r -= node_disable;
+
 
 
         cout << "ERROR: problem choosing mutation type -- should never get here!" << endl;

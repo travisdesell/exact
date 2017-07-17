@@ -72,6 +72,8 @@ class CNN_Node {
         bool reverse_visited;
         bool needs_initialization;
 
+        bool disabled;
+
         float gamma;
         float best_gamma;
         float previous_velocity_gamma;
@@ -185,6 +187,11 @@ class CNN_Node {
         void update_batch_size(int new_batch_size);
         bool modify_size_x(int change);
         bool modify_size_y(int change);
+
+        bool is_disabled() const;
+        bool is_enabled() const;
+        void disable();
+        void enable();
 
         void add_input();
         void disable_input();

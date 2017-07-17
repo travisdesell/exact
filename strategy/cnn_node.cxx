@@ -91,6 +91,8 @@ CNN_Node::CNN_Node() {
     reverse_visited = false;
     needs_initialization = true;
 
+    disabled = false;
+
     weight_count = 0;
     inverse_variance = 0;
 
@@ -135,6 +137,8 @@ CNN_Node::CNN_Node(int _innovation_number, float _depth, int _batch_size, int _s
     reverse_visited = false;
 
     needs_initialization = true;
+
+    disabled = false;
 
     gamma = 1;
     best_gamma = 1;
@@ -201,6 +205,8 @@ CNN_Node::CNN_Node(int _node_id) {
         weight_count = atoi(row[++column]);
         needs_initialization = atoi(row[++column]);
 
+        disabled = atoi(row[++column]);
+
         istringstream batch_norm_parameters_iss(row[++column]);
 
         gamma = read_hexfloat(batch_norm_parameters_iss);
@@ -263,6 +269,7 @@ void CNN_Node::export_to_database(int _exact_id, int _genome_id) {
         << ", reverse_visited = " << reverse_visited
         << ", weight_count = " << weight_count
         << ", needs_initialization = " << needs_initialization
+        << ", disabled = " << disabled
         << ", batch_norm_parameters = '";
 
     write_hexfloat(query, gamma);
@@ -334,6 +341,8 @@ CNN_Node* CNN_Node::copy() const {
     copy->reverse_visited = reverse_visited;
     copy->weight_count = weight_count;
     copy->needs_initialization = needs_initialization;
+
+    copy->disabled = disabled;
 
     copy->gamma = gamma;
     copy->best_gamma = best_gamma;
@@ -431,6 +440,22 @@ bool CNN_Node::is_output() const {
     return type == OUTPUT_NODE;
 }
 
+
+bool CNN_Node::is_enabled() const {
+    return disabled == false;
+}
+
+bool CNN_Node::is_disabled() const {
+    return disabled == true;
+}
+
+void CNN_Node::disable() {
+    disabled = true;
+}
+
+void CNN_Node::enable() {
+    disabled = false;
+}
 
 bool CNN_Node::is_softmax() const {
     return type == SOFTMAX_NODE;
@@ -1201,6 +1226,7 @@ ostream &operator<<(ostream &os, const CNN_Node* node) {
     os << node->type << " ";
     os << node->weight_count << " ";
     os << node->needs_initialization << " ";
+    os << node->disabled << " ";
 
     write_hexfloat(os, node->gamma);
     os << endl;
@@ -1246,6 +1272,7 @@ std::istream &operator>>(std::istream &is, CNN_Node* node) {
     is >> node->type;
     is >> node->weight_count;
     is >> node->needs_initialization;
+    is >> node->disabled;
 
     node->total_size = node->batch_size * node->size_y * node->size_x;
 
@@ -1307,6 +1334,8 @@ bool CNN_Node::is_identical(const CNN_Node *other, bool testing_checkpoint) {
     if (are_different("forward_visited", forward_visited, other->forward_visited)) return false;
     if (are_different("reverse_visited", reverse_visited, other->reverse_visited)) return false;
     if (are_different("needs_initialization", needs_initialization, other->needs_initialization)) return false;
+
+    if (are_different("disabled", disabled, other->disabled)) return false;
 
     if (are_different("gamma", gamma, other->gamma)) return false;
     if (are_different("best_gamma", best_gamma, other->best_gamma)) return false;
