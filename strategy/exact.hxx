@@ -139,6 +139,7 @@ class EXACT {
         float less_fit_parent_crossover;
 
         int number_mutations;
+        float edge_alter_type;
         float edge_disable;
         float edge_enable;
         float edge_split;
@@ -149,6 +150,10 @@ class EXACT {
         float node_change_size_y;
         float node_change_pool_size;
         float node_add;
+        float node_split;
+        float node_merge;
+        float node_enable;
+        float node_disable;
 
         map<string, int> inserted_from_map;
         map<string, int> generated_from_map;
@@ -186,6 +191,7 @@ class EXACT {
         int get_inserted_genomes() const;
         int get_max_genomes() const;
 
+        void write_individual_hyperparameters(CNN_Genome *individual);
         void write_statistics(int new_generation_id, float new_fitness);
         void write_statistics_header();
         void write_hyperparameters_header();

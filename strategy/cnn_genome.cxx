@@ -2239,7 +2239,11 @@ void CNN_Genome::print_graphviz(ostream &out) const {
     for (uint32_t i = 0; i < edges.size(); i++) {
         if (!edges[i]->is_reachable()) continue;
 
-        out << "\tnode" << edges[i]->get_input_node()->get_innovation_number() << " -> node" << edges[i]->get_output_node()->get_innovation_number() << ";" << endl;
+        if (edges[i]->get_type() == CONVOLUTIONAL) {
+            out << "\tnode" << edges[i]->get_input_node()->get_innovation_number() << " -> node" << edges[i]->get_output_node()->get_innovation_number() << " [color=blue];" << endl;
+        } else {
+            out << "\tnode" << edges[i]->get_input_node()->get_innovation_number() << " -> node" << edges[i]->get_output_node()->get_innovation_number() << " [color=green];" << endl;
+        }
     }
 
     out << endl;

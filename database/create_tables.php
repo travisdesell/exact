@@ -108,6 +108,7 @@ $query = "CREATE TABLE `exact_search` (
     `less_fit_parent_crossover` float NOT NULL,
 
     `number_mutations` int(11) NOT NULL,
+    `edge_alter_type` float NOT NULL,
     `edge_disable` float NOT NULL,
     `edge_enable` float NOT NULL,
     `edge_split` float NOT NULL,
@@ -118,6 +119,10 @@ $query = "CREATE TABLE `exact_search` (
     `node_change_size_y` float NOT NULL,
     `node_change_pool_size` float NOT NULL,
     `node_add` float NOT NULL,
+    `node_split` float NOT NULL,
+    `node_merge` float NOT NULL,
+    `node_enable` float NOT NULL,
+    `node_disable` float NOT NULL,
 
     `generator` varchar(64) NOT NULL,
     `normal_distribution` varchar(128) NOT NULL,

@@ -47,6 +47,15 @@ using std::vector;
 
 #include "stdint.h"
 
+
+int random_edge_type(float random_value) {
+    if (random_value < 0.5) {
+        return CONVOLUTIONAL;
+    } else {
+        return POOLING;
+    }
+}
+
 CNN_Edge::CNN_Edge() {
     edge_id = -1;
     exact_id = -1;
@@ -679,6 +688,14 @@ bool CNN_Edge::is_filter_correct() const {
 
 void CNN_Edge::update_batch_size(int new_batch_size) {
     batch_size = new_batch_size;
+}
+
+void CNN_Edge::alter_edge_type() {
+    if (type == CONVOLUTIONAL) {
+        type = POOLING;
+    } else {
+        type = CONVOLUTIONAL;
+    }
 }
 
 void CNN_Edge::enable() {

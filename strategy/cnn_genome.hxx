@@ -233,7 +233,7 @@ struct sort_genomes_by_fitness {
 
 struct sort_genomes_by_predictions {
     bool operator()(CNN_Genome *g1, CNN_Genome *g2) {
-        return g1->get_best_predictions() > g2->get_best_predictions();
+        return g1->get_generalizability_predictions() > g2->get_generalizability_predictions();
     }   
 };
 

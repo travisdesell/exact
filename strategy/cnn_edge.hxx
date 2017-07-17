@@ -118,6 +118,7 @@ class CNN_Edge {
         void reset_velocities();
         void resize();
 
+        void alter_edge_type();
         void disable();
         void enable();
         bool is_disabled() const;
@@ -166,6 +167,8 @@ class CNN_Edge {
         friend ostream &operator<<(ostream &os, const CNN_Edge* flight);
         friend istream &operator>>(istream &is, CNN_Edge* flight);
 };
+
+int random_edge_type(float random_value);
 
 void parse_float_2d(float **output, istringstream &iss, int size_x, int size_y);
 void parse_vector_2d(vector<vector<float>> &output, istringstream &iss, int size_x, int size_y);
