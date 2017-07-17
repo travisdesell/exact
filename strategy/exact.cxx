@@ -1737,11 +1737,33 @@ CNN_Genome* EXACT::create_mutation() {
         if (r < edge_disable) {
             cout << "\tDISABLING EDGE!" << endl;
 
-            int edge_position = rng_float(generator) * child->get_number_edges();
-            if (child->disable_edge(edge_position)) {
-                child->set_generated_by("disable_edge");
-                modifications++;
+            vector< CNN_Edge* > enabled_edges;
+
+            for (int32_t i = 0; i < child->get_number_edges(); i++) {
+                CNN_Edge* current = child->get_edge(i);
+
+                if (current == NULL) {
+                    cout << "ERROR! edge " << i << " became null on child!" << endl;
+                    exit(1);
+                }
+
+                if (!current->is_reachable()) {
+                    enabled_edges.push_back(current);
+                }
             }
+
+            if (enabled_edges.size() == 0) {
+                cout << "\t\tno reachable edges! this should never happen!" << endl;
+                exit(1);
+                continue;
+            }
+
+            int edge_position = rng_float(generator) * enabled_edges.size();
+
+            enabled_edges[edge_position]->disable();
+            child->set_generated_by("disable_edge");
+            modifications++;
+
             continue;
         } 
         r -= edge_disable;
