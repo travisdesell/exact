@@ -12,7 +12,9 @@ from cycler import cycler
 progress_file = sys.argv[1]
 fitness_file = sys.argv[2]
 epochs_file = sys.argv[3]
-generated_file = sys.argv[4]
+node_percentage_file = sys.argv[4]
+edge_percentage_file = sys.argv[5]
+other_percentage_file = sys.argv[6]
 
 f = open(progress_file, 'rb')
 reader = csv.reader(f)
@@ -103,35 +105,45 @@ plt.cla()
 plt.close()
 
 
-num_plots = len(headers) - 9
-colormap = plt.cm.gist_ncar
+def generate_percentage_plot(output_filename, percentage_type):
+    num_plots = len(headers) - 9
+    colormap = plt.cm.gist_ncar
 
-plt.rc('axes', prop_cycle=(cycler('color', [colormap(i) for i in np.linspace(0, 0.9, num_plots)]) + cycler('linestyle', ['-', '-', '-', '-', '--', '--', '--', '--', ':', ':', ':', ':', '-.', '-.', '-.'])))
-fig, ax = plt.subplots(1)
+    plt.rc('axes', prop_cycle=(cycler('color', [colormap(i) for i in np.linspace(0, 0.9, num_plots)]) + cycler('linestyle', ['-', '-', '-', '-', '--', '--', '--', '--', ':', ':', ':', ':', '-.', '-.', '-.'])))
+    fig, ax = plt.subplots(1)
 
 
-for row_number in range(9, len(headers)):
-    current_row = [ row[row_number] for row in v1]
+    for row_number in range(9, len(headers)):
+        if percentage_type == "":
+            if "node" in headers[row_number] or "edge" in headers[row_number]:
+                continue
+        else:
+            if percentage_type not in headers[row_number]:
+                continue
 
-    ax.plot(t, current_row, lw=1, label=headers[row_number])
+        current_row = [ row[row_number] for row in v1]
+
+        ax.plot(t, current_row, lw=1, label=headers[row_number])
 
 #ax.set_yscale('log')
 #ax.set_xscale('log')
 
-box = ax.get_position()
-ax.set_position([box.x0, box.y0 + box.height * 0.1,
-    box.width, box.height * 0.9])
+    box = ax.get_position()
+    ax.set_position([box.x0, box.y0 + box.height * 0.1,
+        box.width, box.height * 0.9])
 
 # Put a legend below current axis
-ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.05),
-        fancybox=True, shadow=True, ncol=5, prop={'size':8})
+    ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.05),
+            fancybox=True, shadow=True, ncol=5, prop={'size':8})
 
-ax.set_title('EXACT Inserted Genome Statistics')
+    ax.set_title('EXACT Inserted Genome Statistics')
 #ax.legend(loc='upper right')
-ax.set_xlabel('Genomes Evaluated')
-ax.set_ylabel('Genomes Inserted (%)')
-ax.grid()
+    ax.set_xlabel('Genomes Evaluated')
+    ax.set_ylabel('Genomes Inserted (%)')
+    ax.grid()
 
-plt.savefig(generated_file)
+    plt.savefig(output_filename)
 
-
+generate_percentage_plot(node_percentage_file, "node")
+generate_percentage_plot(edge_percentage_file, "edge")
+generate_percentage_plot(other_percentage_file, "")

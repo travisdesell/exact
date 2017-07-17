@@ -13,7 +13,7 @@ while ($exact_row = $exact_result->fetch_assoc()) {
 
     $progress_file = "/home/tdesell/exact/www/progress/" . $search_name . "_fitness_progress.png";
 
-    $command = "python /home/tdesell/exact/visualization/plot_progress.py /projects/csg/exact_data/" . $search_name . "/progress.txt /home/tdesell/exact/www/progress/" . $search_name . "_fitness_progress.png /home/tdesell/exact/www/progress/" . $search_name . "_epochs_progress.png /home/tdesell/exact/www/progress/" . $search_name . "_generated_progress.png";
+    $command = "python /home/tdesell/exact/visualization/plot_progress.py /projects/csg/exact_data/" . $search_name . "/progress.txt /home/tdesell/exact/www/progress/" . $search_name . "_fitness_progress.png /home/tdesell/exact/www/progress/" . $search_name . "_epochs_progress.png /home/tdesell/exact/www/progress/" . $search_name . "_node_percentage_progress.png /home/tdesell/exact/www/progress/" . $search_name . "_edge_percentage_progress.png /home/tdesell/exact/www/progress/" . $search_name . "_other_percentage_progress.png";
 
     $command2 = "python /home/tdesell/exact/visualization/plot_hyperparameters.py "
         . "/projects/csg/exact_data/" . $search_name . "/hyperparameters.txt "
