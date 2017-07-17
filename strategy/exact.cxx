@@ -1747,7 +1747,7 @@ CNN_Genome* EXACT::create_mutation() {
                     exit(1);
                 }
 
-                if (!current->is_reachable()) {
+                if (current->is_reachable()) {
                     enabled_edges.push_back(current);
                 }
             }
