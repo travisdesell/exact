@@ -696,7 +696,6 @@ EXACT::EXACT(const ImagesInterface &training_images, const ImagesInterface &gene
 
     epsilon = 1.0e-7;
 
-    /*
     initial_batch_size_min = 50;
     initial_batch_size_max = 50;
     batch_size_min = 50;
@@ -751,8 +750,8 @@ EXACT::EXACT(const ImagesInterface &training_images, const ImagesInterface &gene
     initial_hidden_dropout_probability_max = 0.00;
     hidden_dropout_probability_min = 0.0;
     hidden_dropout_probability_max = 0.0;
-    */
 
+    /*
     initial_batch_size_min = 25;
     initial_batch_size_max = 150;
     batch_size_min = 25;
@@ -807,6 +806,7 @@ EXACT::EXACT(const ImagesInterface &training_images, const ImagesInterface &gene
     initial_hidden_dropout_probability_max = 0.15;
     hidden_dropout_probability_min = 0.0;
     hidden_dropout_probability_max = 0.9;
+    */
 
 
     no_modification_rate = 0.00;
@@ -1366,7 +1366,7 @@ bool EXACT::insert_genome(CNN_Genome* genome) {
         CNN_Genome *duplicate = genomes[duplicate_genome];
         if (duplicate->get_fitness() > genome->get_fitness()) {
             //erase the genome with loewr fitness from the vector;
-            cout << "REPLACING DUPLICATE GENOME, original fitness: " << parse_fitness(duplicate->get_fitness()) << ", new fitness: " << parse_fitness(genome->get_fitness()) << endl;
+            cout << "REPLACING DUPLICATE GENOME, fitness of genome in search: " << parse_fitness(duplicate->get_fitness()) << ", new fitness: " << parse_fitness(genome->get_fitness()) << endl;
             genomes.erase(genomes.begin() + duplicate_genome);
             delete duplicate;
 
@@ -1710,7 +1710,7 @@ CNN_Genome* EXACT::create_mutation() {
                     exit(1);
                 }
 
-                if (!current->is_disabled()) {
+                if (current->is_reachable()) {
                     enabled_edges.push_back(current);
                 }
             }
@@ -1920,10 +1920,25 @@ CNN_Genome* EXACT::create_mutation() {
             cout << "\t\tnumber nodes: " << child->get_number_nodes() << endl;
             cout << "\t\tnumber input nodes: " << child->get_number_input_nodes() << endl;
             cout << "\t\tnumber softmax nodes: " << child->get_number_softmax_nodes() << endl;
-            int r = (rng_float(generator) * (child->get_number_nodes() - child->get_number_input_nodes() - child->get_number_softmax_nodes())) + child->get_number_input_nodes();
+
+            vector<CNN_Node*> enabled_nodes;
+            for (int32_t i = 0; i < child->get_number_nodes(); i++) {
+                CNN_Node* current = child->get_node(i);
+
+                if (current == NULL) {
+                    cout << "ERROR! node " << i << " became null on child!" << endl;
+                    exit(1);
+                }
+
+                if (current->is_reachable() && current->is_hidden()) {
+                    enabled_nodes.push_back(current);
+                }
+            }
+
+            int r = rng_float(generator) * enabled_nodes.size();
             cout << "\t\tr: " << r << endl;
 
-            CNN_Node *modified_node = child->get_node(r);
+            CNN_Node *modified_node = enabled_nodes[r];
             cout << "\t\tselected node: " << r << " with innovation number: " << modified_node->get_innovation_number() << endl;
 
             if (modified_node->is_input()) {
@@ -1978,9 +1993,25 @@ CNN_Genome* EXACT::create_mutation() {
             cout << "\t\tnumber nodes: " << child->get_number_nodes() << endl;
             cout << "\t\tnumber input nodes: " << child->get_number_input_nodes() << endl;
             cout << "\t\tnumber softmax nodes: " << child->get_number_softmax_nodes() << endl;
-            int r = (rng_float(generator) * (child->get_number_nodes() - child->get_number_input_nodes() - child->get_number_softmax_nodes())) + child->get_number_input_nodes();
- 
-            CNN_Node *modified_node = child->get_node(r);
+
+            vector<CNN_Node*> enabled_nodes;
+            for (int32_t i = 0; i < child->get_number_nodes(); i++) {
+                CNN_Node* current = child->get_node(i);
+
+                if (current == NULL) {
+                    cout << "ERROR! node " << i << " became null on child!" << endl;
+                    exit(1);
+                }
+
+                if (current->is_reachable() && current->is_hidden()) {
+                    enabled_nodes.push_back(current);
+                }
+            }
+
+            int r = rng_float(generator) * enabled_nodes.size();
+            cout << "\t\tr: " << r << endl;
+
+            CNN_Node *modified_node = enabled_nodes[r];
             cout << "\t\tselected node: " << r << " with innovation number: " << modified_node->get_innovation_number() << endl;
 
             if (modified_node->is_input()) {
@@ -2030,9 +2061,25 @@ CNN_Genome* EXACT::create_mutation() {
             cout << "\t\tnumber nodes: " << child->get_number_nodes() << endl;
             cout << "\t\tnumber input nodes: " << child->get_number_input_nodes() << endl;
             cout << "\t\tnumber softmax nodes: " << child->get_number_softmax_nodes() << endl;
-            int r = (rng_float(generator) * (child->get_number_nodes() - child->get_number_input_nodes() - child->get_number_softmax_nodes())) + child->get_number_input_nodes();
- 
-            CNN_Node *modified_node = child->get_node(r);
+
+            vector<CNN_Node*> enabled_nodes;
+            for (int32_t i = 0; i < child->get_number_nodes(); i++) {
+                CNN_Node* current = child->get_node(i);
+
+                if (current == NULL) {
+                    cout << "ERROR! node " << i << " became null on child!" << endl;
+                    exit(1);
+                }
+
+                if (current->is_reachable() && current->is_hidden()) {
+                    enabled_nodes.push_back(current);
+                }
+            }
+
+            int r = rng_float(generator) * enabled_nodes.size();
+            cout << "\t\tr: " << r << endl;
+
+            CNN_Node *modified_node = enabled_nodes[r];
             cout << "\t\tselected node: " << r << " with innovation number: " << modified_node->get_innovation_number() << endl;
 
             if (modified_node->is_input()) {
