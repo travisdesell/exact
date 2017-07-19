@@ -15,6 +15,7 @@ progress_file = output_directory + "/progress.txt"
 fitness_filename = output_directory + "/fitness_progress.png"
 epochs_filename = output_directory + "/epochs_progress.png"
 nodes_edges_filename = output_directory + "/nodes_edges_progress.png"
+weights_filename = output_directory + "/weights_progress.png"
 
 node_percentage_file = output_directory + "/node_percentage_progress.png"
 edge_percentage_file = output_directory + "/edge_percentage_progress.png"
@@ -78,6 +79,7 @@ def plot_min_avg_max(filename, y_label_title, names, colors, first_row, values, 
 plot_min_avg_max(fitness_filename, 'Fitness (CNN best error)', ["Fitness"], ["blue"], 3, v1, y_min = 0, y_max = 2000)
 plot_min_avg_max(epochs_filename, 'Epochs to Best Error', ["Epochs"], ["green"], 6, v1, y_min = 0)
 plot_min_avg_max(nodes_edges_filename, 'Count', ["Nodes", "Edges"], ["blue", "green"], 9, v1, y_min = 0)
+plot_min_avg_max(weights_filename, 'Count', ["Weights"], ["green"], 15, v1, y_min = 0)
 
 n_initial_columns = 18
 
