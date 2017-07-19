@@ -710,6 +710,10 @@ void CNN_Edge::disable() {
     }
 }
 
+bool CNN_Edge::is_enabled() const {
+    return !disabled;
+}
+
 bool CNN_Edge::is_disabled() const {
     return disabled;
 }

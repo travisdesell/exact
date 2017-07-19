@@ -463,7 +463,7 @@ bool CNN_Node::is_softmax() const {
 
 
 bool CNN_Node::is_reachable() const {
-    return forward_visited && reverse_visited;
+    return !disabled && forward_visited && reverse_visited;
 }
 
 bool CNN_Node::is_forward_visited() const {

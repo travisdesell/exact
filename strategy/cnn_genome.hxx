@@ -149,7 +149,6 @@ class CNN_Genome {
 
         int get_epoch() const;
         int get_max_epochs() const;
-        int get_number_enabled_edges() const;
 
         bool sanity_check(int type);
         bool visit_nodes();
@@ -176,6 +175,9 @@ class CNN_Genome {
 
         float get_input_dropout_probability() const;
         float get_hidden_dropout_probability() const;
+
+        int get_number_enabled_edges() const;
+        int get_number_enabled_nodes() const;
 
         int get_number_edges() const;
         int get_number_nodes() const;

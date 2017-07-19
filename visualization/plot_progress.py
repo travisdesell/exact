@@ -9,12 +9,16 @@ import sys
 from cycler import cycler
 
 
-progress_file = sys.argv[1]
-fitness_file = sys.argv[2]
-epochs_file = sys.argv[3]
-node_percentage_file = sys.argv[4]
-edge_percentage_file = sys.argv[5]
-other_percentage_file = sys.argv[6]
+output_directory = sys.argv[1]
+
+progress_file = output_directory + "/progress.txt"
+fitness_filename = output_directory + "/fitness_progress.png"
+epochs_filename = output_directory + "/epochs_progress.png"
+nodes_edges_filename = output_directory + "/nodes_edges_progress.png"
+
+node_percentage_file = output_directory + "/node_percentage_progress.png"
+edge_percentage_file = output_directory + "/edge_percentage_progress.png"
+other_percentage_file = output_directory + "/other_percentage_progress.png"
 
 f = open(progress_file, 'rb')
 reader = csv.reader(f)
@@ -29,91 +33,63 @@ v1 = genfromtxt(progress_file)
 #print v1
 
 #print "first column of v1:\n"
-
 t = [row[2] for row in v1]
-min_fitness = [row[3] for row in v1]
-avg_fitness = [row[4] for row in v1]
-max_fitness = [row[5] for row in v1]
-
 '''
 print "t:\n"
 print t
-print "\n\nmin_fitness:\n"
-print min_fitness
-print "\n\navg_fitness:\n"
-print avg_fitness
-print "\n\nmax_fitness:\n"
-print max_fitness
 '''
 
-# plot it!
-fig, ax = plt.subplots(1)
-plt.ylim(ymax = 5000, ymin = 0)
+def plot_min_avg_max(filename, y_label_title, names, colors, first_row, values, y_min = None, y_max = None):
+    fig, ax = plt.subplots(1)
+
+    title = 'EXACT Population';
+    position = 0
+    for name in names:
+        min_value = [row[first_row] for row in values]
+        avg_value = [row[first_row + 1] for row in values]
+        max_value = [row[first_row + 2] for row in values]
+
+        title += ' ' + name
+
+        ax.plot(t, avg_value, lw=2, label=name, color=colors[position])
+        ax.fill_between(t, min_value, max_value, facecolor=colors[position], alpha=0.25)
+        first_row += 3
+        position += 1
+
+    ax.relim()
+    if y_max != None and y_min != None:
+        plt.ylim(ymax = y_max, ymin = y_min)
+
+    if y_min != None:
+        plt.ylim(ymin = y_min)
 
 
-ax.plot(t, avg_fitness, lw=2, label='Population Fitness', color='blue')
-ax.fill_between(t, min_fitness, max_fitness, facecolor='blue', alpha=0.25)
+    ax.set_title(title)
+    ax.legend(loc='upper right')
+    ax.set_xlabel('Genomes Evaluated')
+    ax.set_ylabel(y_label_title)
+    ax.grid()
 
-#ax.set_yscale('log')
-#ax.set_xscale('log')
+    plt.savefig(filename)
+    plt.clf()
+    plt.cla()
+    plt.close()
 
-ax.set_title('EXACT Population Fitness')
-ax.legend(loc='upper right')
-ax.set_xlabel('Genomes Evaluated')
-ax.set_ylabel('Fitness (CNN best error)')
-ax.grid()
+plot_min_avg_max(fitness_filename, 'Fitness (CNN best error)', ["Fitness"], ["blue"], 3, v1, y_min = 0, y_max = 2000)
+plot_min_avg_max(epochs_filename, 'Epochs to Best Error', ["Epochs"], ["green"], 6, v1, y_min = 0)
+plot_min_avg_max(nodes_edges_filename, 'Count', ["Nodes", "Edges"], ["blue", "green"], 9, v1, y_min = 0)
 
-plt.savefig(fitness_file)
-plt.clf()
-plt.cla()
-plt.close()
-
-min_epochs = [row[6] for row in v1]
-avg_epochs = [row[7] for row in v1]
-max_epochs = [row[8] for row in v1]
-
-'''
-print "t:\n"
-print t
-print "\n\nmin_epochs:\n"
-print min_epochs
-print "\n\navg_epochs:\n"
-print avg_epochs
-print "\n\nmax_epochs:\n"
-print max_epochs
-'''
-
-# plot it!
-fig, ax = plt.subplots(1)
-
-
-ax.plot(t, avg_epochs, lw=2, label='Population Epochs', color='green')
-ax.fill_between(t, min_epochs, max_epochs, facecolor='green', alpha=0.25)
-
-#ax.set_yscale('log')
-#ax.set_xscale('log')
-
-ax.set_title('EXACT Population Epochs')
-ax.legend(loc='lower right')
-ax.set_xlabel('Genomes Evaluated')
-ax.set_ylabel('Epochs Required')
-ax.grid()
-
-plt.savefig(epochs_file)
-plt.clf()
-plt.cla()
-plt.close()
-
+n_initial_columns = 18
 
 def generate_percentage_plot(output_filename, percentage_type):
-    num_plots = len(headers) - 9
+    num_plots = len(headers) - n_initial_columns
     colormap = plt.cm.gist_ncar
 
     plt.rc('axes', prop_cycle=(cycler('color', [colormap(i) for i in np.linspace(0, 0.9, num_plots)]) + cycler('linestyle', ['-', '-', '-', '-', '--', '--', '--', '--', ':', ':', ':', ':', '-.', '-.', '-.'])))
     fig, ax = plt.subplots(1)
 
 
-    for row_number in range(9, len(headers)):
+    for row_number in range(n_initial_columns, len(headers)):
         if percentage_type == "":
             if "node" in headers[row_number] or "edge" in headers[row_number]:
                 continue

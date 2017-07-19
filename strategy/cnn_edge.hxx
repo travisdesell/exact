@@ -121,6 +121,7 @@ class CNN_Edge {
         void alter_edge_type();
         void disable();
         void enable();
+        bool is_enabled() const;
         bool is_disabled() const;
         void update_batch_size(int new_batch_size);
 

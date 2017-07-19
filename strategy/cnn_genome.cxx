@@ -673,7 +673,7 @@ int CNN_Genome::get_number_weights() const {
     int number_weights = 0;
 
     for (uint32_t i = 0; i < edges.size(); i++) {
-        if (edges[i]->get_type() == CONVOLUTIONAL) {
+        if (edges[i]->get_type() == CONVOLUTIONAL && edges[i]->is_reachable()) {
             number_weights += edges[i]->get_filter_x() * edges[i]->get_filter_y();
         }
     }
@@ -817,18 +817,6 @@ int CNN_Genome::get_test_predictions() const {
     return test_predictions;
 }
 
-
-int CNN_Genome::get_number_enabled_edges() const {
-    int number_enabled_edges = 0;
-
-    for (uint32_t i = 0; i < edges.size(); i++) {
-        if (!edges[i]->is_disabled()) number_enabled_edges++;
-    }
-
-    return number_enabled_edges;
-}
-
-
 const vector<CNN_Node*> CNN_Genome::get_nodes() const {
     return nodes;
 }
@@ -843,6 +831,22 @@ CNN_Node* CNN_Genome::get_node(int node_position) {
 
 CNN_Edge* CNN_Genome::get_edge(int edge_position) {
     return edges.at(edge_position);
+}
+
+int CNN_Genome::get_number_enabled_edges() const {
+    int n_enabled_edges = 0;
+    for (uint32_t i = 0; i < edges.size(); i++) {
+        if (edges[i]->is_reachable()) n_enabled_edges++;
+    }
+    return n_enabled_edges;
+}
+
+int CNN_Genome::get_number_enabled_nodes() const {
+    int n_enabled_nodes = 0;
+    for (uint32_t i = 0; i < nodes.size(); i++) {
+        if (nodes[i]->is_reachable()) n_enabled_nodes++;
+    }
+    return n_enabled_nodes;
 }
 
 int CNN_Genome::get_number_edges() const {
@@ -1107,7 +1111,7 @@ bool CNN_Genome::visit_nodes() {
 
     for (uint32_t i = 0; i < edges.size(); i++) {
         if (!edges[i]->is_disabled()) {
-            if (edges[i]->get_input_node()->is_forward_visited()) {
+            if (edges[i]->get_input_node()->is_forward_visited() && edges[i]->get_input_node()->is_enabled()) {
                 edges[i]->forward_visit();
                 edges[i]->get_output_node()->forward_visit();
             }
@@ -1118,7 +1122,7 @@ bool CNN_Genome::visit_nodes() {
     for (int32_t i = edges.size() - 1; i >= 0; i--) {
         if (!edges[i]->is_disabled()) {
 
-            if (edges[i]->get_output_node()->is_reverse_visited()) {
+            if (edges[i]->get_output_node()->is_reverse_visited() && edges[i]->get_output_node()->is_enabled()) {
                 edges[i]->reverse_visit();
                 edges[i]->get_input_node()->reverse_visit();
             }

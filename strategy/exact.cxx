@@ -2185,7 +2185,7 @@ CNN_Genome* EXACT::create_mutation() {
             int r = (rng_float(generator) * (child->get_number_nodes() - child->get_number_input_nodes() - child->get_number_softmax_nodes())) + child->get_number_input_nodes();
 
             CNN_Node *child_node = child->get_node(r);
-            cout << "\t\tselected node: " << r << " with innovation number: " << child_node->get_innovation_number() << endl;
+            cout << "\t\tselected node: " << r << " to split with innovation number: " << child_node->get_innovation_number() << endl;
 
             if (child_node->is_input()) {
                 cout << "\t\tchild_node was input, this should never happen!" << endl;
@@ -2286,6 +2286,8 @@ CNN_Genome* EXACT::create_mutation() {
                     add_edge(child, split2, output_nodes[i]);
                 }
             }
+            child_node->disable();
+
             child->set_generated_by("split_node");
             modifications++;
 
@@ -2410,6 +2412,10 @@ CNN_Genome* EXACT::create_mutation() {
                     add_edge(child, merged_node, connected_nodes[i]);
                 }
             }
+
+            //disable the merged nodes so they can later be enabled
+            node1->disable();
+            node2->disable();
 
             child->set_generated_by("merge_node");
             modifications++;
@@ -2790,6 +2796,22 @@ void EXACT::write_statistics(int new_generation_id, float new_fitness) {
     float avg_epochs = 0.0;
     int epochs_count = 0;
 
+    float min_nodes = EXACT_MAX_FLOAT;
+    float max_nodes = -EXACT_MAX_FLOAT;
+    float avg_nodes = 0.0;
+    int nodes_count = 0;
+
+    float min_edges = EXACT_MAX_FLOAT;
+    float max_edges = -EXACT_MAX_FLOAT;
+    float avg_edges = 0.0;
+    int edges_count = 0;
+
+    float min_weights = EXACT_MAX_FLOAT;
+    float max_weights = -EXACT_MAX_FLOAT;
+    float avg_weights = 0.0;
+    int weights_count = 0;
+
+
     for (int32_t i = 0; i < (int32_t)genomes.size(); i++) {
         float fitness = genomes[i]->get_fitness();
 
@@ -2810,9 +2832,42 @@ void EXACT::write_statistics(int new_generation_id, float new_fitness) {
 
         if (epochs < min_epochs) min_epochs = epochs;
         if (epochs > max_epochs) max_epochs = epochs;
+
+        float nodes = genomes[i]->get_number_enabled_nodes();
+
+        if (nodes != EXACT_MAX_FLOAT) {
+            avg_nodes += nodes;
+            nodes_count++;
+        }
+
+        if (nodes < min_nodes) min_nodes = nodes;
+        if (nodes > max_nodes) max_nodes = nodes;
+
+        float edges = genomes[i]->get_number_enabled_edges();
+
+        if (edges != EXACT_MAX_FLOAT) {
+            avg_edges += edges;
+            edges_count++;
+        }
+
+        if (edges < min_edges) min_edges = edges;
+        if (edges > max_edges) max_edges = edges;
+
+        float weights = genomes[i]->get_number_weights();
+
+        if (weights != EXACT_MAX_FLOAT) {
+            avg_weights += weights;
+            weights_count++;
+        }
+
+        if (weights < min_weights) min_weights = weights;
+        if (weights > max_weights) max_weights = weights;
     }
     avg_fitness /= fitness_count;
     avg_epochs /= epochs_count;
+    avg_nodes /= nodes_count;
+    avg_edges /= edges_count;
+    avg_weights /= weights_count;
 
     if (fitness_count == 0) avg_fitness = 0.0;
     if (min_fitness == EXACT_MAX_FLOAT) min_fitness = 0;
@@ -2824,6 +2879,22 @@ void EXACT::write_statistics(int new_generation_id, float new_fitness) {
     if (max_epochs == EXACT_MAX_FLOAT) max_epochs = 0;
     if (max_epochs == -EXACT_MAX_FLOAT) max_epochs = 0;
 
+    if (nodes_count == 0) avg_nodes = 0.0;
+    if (min_nodes == EXACT_MAX_FLOAT) min_nodes = 0;
+    if (max_nodes == EXACT_MAX_FLOAT) max_nodes = 0;
+    if (max_nodes == -EXACT_MAX_FLOAT) max_nodes = 0;
+
+    if (edges_count == 0) avg_edges = 0.0;
+    if (min_edges == EXACT_MAX_FLOAT) min_edges = 0;
+    if (max_edges == EXACT_MAX_FLOAT) max_edges = 0;
+    if (max_edges == -EXACT_MAX_FLOAT) max_edges = 0;
+
+    if (weights_count == 0) avg_weights = 0.0;
+    if (min_weights == EXACT_MAX_FLOAT) min_weights = 0;
+    if (max_weights == EXACT_MAX_FLOAT) max_weights = 0;
+    if (max_weights == -EXACT_MAX_FLOAT) max_weights = 0;
+
+
     fstream out(output_directory + "/progress.txt", fstream::out | fstream::app);
 
     out << setw(16) << new_generation_id
@@ -2834,7 +2905,16 @@ void EXACT::write_statistics(int new_generation_id, float new_fitness) {
         << setw(16) << setprecision(5) << fixed << max_fitness
         << setw(16) << setprecision(5) << fixed << min_epochs
         << setw(16) << setprecision(5) << fixed << avg_epochs
-        << setw(16) << setprecision(5) << fixed << max_epochs;
+        << setw(16) << setprecision(5) << fixed << max_epochs
+        << setw(16) << setprecision(5) << fixed << min_nodes
+        << setw(16) << setprecision(5) << fixed << avg_nodes
+        << setw(16) << setprecision(5) << fixed << max_nodes
+        << setw(16) << setprecision(5) << fixed << min_edges
+        << setw(16) << setprecision(5) << fixed << avg_edges
+        << setw(16) << setprecision(5) << fixed << max_edges
+        << setw(16) << setprecision(5) << fixed << min_weights
+        << setw(16) << setprecision(5) << fixed << avg_weights
+        << setw(16) << setprecision(5) << fixed << max_weights;
 
     for (auto i = generated_from_map.begin(); i != generated_from_map.end(); i++) {
         if (generated_from_map[i->first] == 0) {
@@ -3142,7 +3222,16 @@ void EXACT::write_statistics_header() {
         << ", " << setw(14) << "max_fitness"
         << ", " << setw(14) << "min_epochs"
         << ", " << setw(14) << "avg_epochs"
-        << ", " << setw(14) << "max_epochs";
+        << ", " << setw(14) << "max_epochs"
+        << ", " << setw(14) << "min_nodes"
+        << ", " << setw(14) << "avg_nodes"
+        << ", " << setw(14) << "max_nodes"
+        << ", " << setw(14) << "min_edges"
+        << ", " << setw(14) << "avg_edges"
+        << ", " << setw(14) << "max_edges"
+        << ", " << setw(14) << "min_weights"
+        << ", " << setw(14) << "avg_weights"
+        << ", " << setw(14) << "max_weights";
 
     for (auto i = generated_from_map.begin(); i != generated_from_map.end(); i++) {
         out << ", " << setw(14) << i->first;
