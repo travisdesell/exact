@@ -40,7 +40,7 @@ print "t:\n"
 print t
 '''
 
-def plot_min_avg_max(filename, y_label_title, names, colors, first_row, values, y_min = None, y_max = None):
+def plot_min_avg_max(filename, y_label_title, names, colors, first_row, values, legend_loc = 'upper right', y_min = None, y_max = None):
     fig, ax = plt.subplots(1)
 
     title = 'EXACT Population';
@@ -66,7 +66,7 @@ def plot_min_avg_max(filename, y_label_title, names, colors, first_row, values, 
 
 
     ax.set_title(title)
-    ax.legend(loc='upper right')
+    ax.legend(loc = legend_loc)
     ax.set_xlabel('Genomes Evaluated')
     ax.set_ylabel(y_label_title)
     ax.grid()
@@ -76,10 +76,10 @@ def plot_min_avg_max(filename, y_label_title, names, colors, first_row, values, 
     plt.cla()
     plt.close()
 
-plot_min_avg_max(fitness_filename, 'Fitness (CNN best error)', ["Fitness"], ["blue"], 3, v1, y_min = 0, y_max = 2000)
-plot_min_avg_max(epochs_filename, 'Epochs to Best Error', ["Epochs"], ["green"], 6, v1, y_min = 0)
-plot_min_avg_max(nodes_edges_filename, 'Count', ["Nodes", "Edges"], ["blue", "green"], 9, v1, y_min = 0)
-plot_min_avg_max(weights_filename, 'Count', ["Weights"], ["green"], 15, v1, y_min = 0)
+plot_min_avg_max(fitness_filename, 'Fitness (CNN best error)', ["Fitness"], ["blue"], 3, v1, legend_loc = 'upper right', y_min = 0, y_max = 2000)
+plot_min_avg_max(epochs_filename, 'Epochs to Best Error', ["Epochs"], ["green"], 6, v1, legend_loc = 'lower right', y_min = 0)
+plot_min_avg_max(nodes_edges_filename, 'Count', ["Enabled Nodes", "Enabled Edges"], ["blue", "green"], 9, v1, legend_loc = 'upper left', y_min = 0)
+plot_min_avg_max(weights_filename, 'Count', ["Weights"], ["green"], 15, v1, legend_loc = 'upper left', y_min = 0)
 
 n_initial_columns = 18
 
