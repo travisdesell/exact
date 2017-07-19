@@ -35,6 +35,7 @@ using std::to_string;
 using std::vector;
 
 #include "image_tools/image_set.hxx"
+#include "comparison.hxx"
 #include "cnn_node.hxx"
 #include "cnn_edge.hxx"
 #include "cnn_genome.hxx"
@@ -810,8 +811,8 @@ EXACT::EXACT(const ImagesInterface &training_images, const ImagesInterface &gene
 
     no_modification_rate = 0.00;
     crossover_rate = 0.20;
-    more_fit_parent_crossover = 1.00;
-    less_fit_parent_crossover = 0.50;
+    more_fit_parent_crossover = 0.80;
+    less_fit_parent_crossover = 0.40;
 
     sort_by_fitness = true;
     reset_weights_chance = 0.20;
@@ -2216,15 +2217,14 @@ CNN_Genome* EXACT::create_mutation() {
             //insert the new node into the population in sorted order
             all_nodes.insert( upper_bound(all_nodes.begin(), all_nodes.end(), node_copy1, sort_CNN_Nodes_by_depth()), node_copy1);
             all_nodes.insert( upper_bound(all_nodes.begin(), all_nodes.end(), node_copy2, sort_CNN_Nodes_by_depth()), node_copy2);
+            
+            vector<CNN_Node*> input_nodes;
+            vector<CNN_Node*> output_nodes;
 
             for (uint32_t i = 0; i < child->get_number_edges(); i++) {
                 CNN_Edge *edge = child->get_edge(i);
 
                 if (edge->get_input_innovation_number() == child_node->get_innovation_number()) {
-                    cout << "\t\tdisabling edge with input innovation number " << edge->get_input_innovation_number() << " == split node innovation number " << child_node->get_innovation_number() << endl;
-
-                    edge->disable();
-
                     CNN_Node *output_node = NULL;
                     for (uint32_t j = 0; j < child->get_number_nodes(); j++) {
                         CNN_Node *node = child->get_node(j);
@@ -2236,23 +2236,8 @@ CNN_Genome* EXACT::create_mutation() {
                         }
                     }
 
-                    if (output_node == NULL) {
-                        cerr << "\t\tdid not select an output node! this should never happen!" << endl;
-                        exit(1);
-                    }
-
-                    if (rng_float(generator) < 0.5) {
-                        cout << "\t\tadding edge between split1 and output node" << endl;
-                        add_edge(child, split1, output_node);
-                    } else {
-                        cout << "\t\tadding edge between split2 and output node" << endl;
-                        add_edge(child, split2, output_node);
-                    }
-                }
-
-                if (edge->get_output_innovation_number() == child_node->get_innovation_number()) {
-                    edge->disable();
-
+                    output_nodes.push_back(output_node);
+                } else if (edge->get_output_innovation_number() == child_node->get_innovation_number()) {
                     CNN_Node *input_node = NULL;
                     for (uint32_t j = 0; j < child->get_number_nodes(); j++) {
                         CNN_Node *node = child->get_node(j);
@@ -2264,21 +2249,43 @@ CNN_Genome* EXACT::create_mutation() {
                         }
                     }
 
-                    if (input_node == NULL) {
-                        cerr << "\t\tdid not select an output node! this should never happen!" << endl;
-                        exit(1);
-                    }
-
-                    if (rng_float(generator) < 0.5) {
-                        cout << "\t\tadding edge between split1 and input node" << endl;
-                        add_edge(child, input_node, split1);
-                    } else {
-                        cout << "\t\tadding edge between split1 and input node" << endl;
-                        add_edge(child, input_node, split2);
-                    }
+                    input_nodes.push_back(input_node);
                 }
             }
 
+            //make sure each split node has at least 1 input and 1 output
+            int selected_input1 = rng_float(generator) * input_nodes.size();
+            int selected_input2 = rng_float(generator) * input_nodes.size();
+            int selected_output1 = rng_float(generator) * output_nodes.size();
+            int selected_output2 = rng_float(generator) * output_nodes.size();
+
+            add_edge(child, input_nodes[selected_input1], split1);
+            add_edge(child, input_nodes[selected_input2], split2);
+            add_edge(child, split1, output_nodes[selected_output1]);
+            add_edge(child, split2, output_nodes[selected_output2]);
+
+            float input_split_selection_rate = 0.65;
+            float output_split_selection_rate = 0.65;
+
+            for (uint32_t i = 0; i < input_nodes.size(); i++) {
+                if (i != selected_input1 && rng_float(generator) > input_split_selection_rate) {
+                    add_edge(child, input_nodes[i], split1);
+                }
+
+                if (i != selected_input2 && rng_float(generator) > input_split_selection_rate) {
+                    add_edge(child, input_nodes[i], split2);
+                }
+            }
+
+            for (uint32_t i = 0; i < output_nodes.size(); i++) {
+                if (i != selected_output1 && rng_float(generator) > output_split_selection_rate) {
+                    add_edge(child, split1, output_nodes[i]);
+                }
+
+                if (i != selected_output2 && rng_float(generator) > output_split_selection_rate) {
+                    add_edge(child, split2, output_nodes[i]);
+                }
+            }
             child->set_generated_by("split_node");
             modifications++;
 
@@ -2294,8 +2301,11 @@ CNN_Genome* EXACT::create_mutation() {
             //  create new node with depth the average of those two
             //  create edges between new node and all inputs/outputs of merged nodes
 
-            if (child->get_number_softmax_nodes() + child->get_number_input_nodes() <= child->get_number_nodes() + 1) {
+            if (child->get_number_softmax_nodes() + child->get_number_input_nodes() + 2 > child->get_number_nodes()) {
                 cout << "\t\tneed at least two non-input or softmax nodes so cannot change node size" << endl;
+                cout << "\t\t\tnumber nodes: " << child->get_number_nodes() << endl;
+                cout << "\t\t\tnumber input nodes: " << child->get_number_input_nodes() << endl;
+                cout << "\t\t\tnumber softmax nodes: " << child->get_number_softmax_nodes() << endl;
                 continue;
             }
 
@@ -2303,9 +2313,10 @@ CNN_Genome* EXACT::create_mutation() {
             cout << "\t\tnumber nodes: " << child->get_number_nodes() << endl;
             cout << "\t\tnumber input nodes: " << child->get_number_input_nodes() << endl;
             cout << "\t\tnumber softmax nodes: " << child->get_number_softmax_nodes() << endl;
-            int r1 = (rng_float(generator) * (child->get_number_nodes() - child->get_number_input_nodes() - child->get_number_softmax_nodes())) + child->get_number_input_nodes();
+            int number_hidden_nodes = child->get_number_nodes() - (child->get_number_input_nodes() + child->get_number_softmax_nodes());
+            int r1 = (rng_float(generator) * (number_hidden_nodes - 1)) + child->get_number_input_nodes();
 
-            int r2 = (rng_float(generator) * (child->get_number_nodes() - child->get_number_input_nodes() - child->get_number_softmax_nodes() - 1)) + child->get_number_input_nodes() + 1;
+            int r2 = (rng_float(generator) * (number_hidden_nodes - 1)) + child->get_number_input_nodes();
 
             //will select two distinct nodes
             if (r2 == r1) r2++;
@@ -3139,4 +3150,154 @@ void EXACT::write_statistics_header() {
     out << endl;
 
     out.close();
+}
+
+
+bool EXACT::is_identical(EXACT *other, bool testing_checkpoint) {
+    if (are_different("id", id, other->id)) return false;
+
+    if (are_different("search_name", search_name, other->search_name)) return false;
+    if (are_different("output_directory", output_directory, other->output_directory)) return false;
+    if (are_different("training_filename", training_filename, other->training_filename)) return false;
+    if (are_different("generalizability_filename", generalizability_filename, other->generalizability_filename)) return false;
+    if (are_different("test_filename", test_filename, other->test_filename)) return false;
+
+    if (are_different("number_training_images", number_training_images, other->number_training_images)) return false;
+    if (are_different("number_generalizability_images", number_generalizability_images, other->number_generalizability_images)) return false;
+    if (are_different("number_test_images", number_test_images, other->number_test_images)) return false;
+
+    if (are_different("padding", padding, other->padding)) return false;
+
+    if (are_different("image_channels", image_channels, other->image_channels)) return false;
+    if (are_different("image_rows", image_rows, other->image_rows)) return false;
+    if (are_different("image_cols", image_cols, other->image_cols)) return false;
+    if (are_different("number_classes", number_classes, other->number_classes)) return false;
+
+    if (are_different("population_size", population_size, other->population_size)) return false;
+    if (are_different("node_innovation_count", node_innovation_count, other->node_innovation_count)) return false;
+    if (are_different("edge_innovation_count", edge_innovation_count, other->edge_innovation_count)) return false;
+
+    if (are_different("generator", generator, other->generator)) return false;
+    if (are_different("normal_distribution", normal_distribution, other->normal_distribution)) return false;
+    if (are_different("rng_long", rng_long, other->rng_long)) return false;
+    if (are_different("rng_float", rng_float, other->rng_float)) return false;
+
+    if (are_different("genomes_generated", genomes_generated, other->genomes_generated)) return false;
+    if (are_different("inserted_genomes", inserted_genomes, other->inserted_genomes)) return false;
+    if (are_different("max_genomes", max_genomes, other->max_genomes)) return false;
+
+    if (are_different("reset_weights", reset_weights, other->reset_weights)) return false;
+    if (are_different("max_epochs", max_epochs, other->max_epochs)) return false;
+
+    if (are_different("initial_batch_size_min", initial_batch_size_min, other->initial_batch_size_min)) return false;
+    if (are_different("initial_batch_size_max", initial_batch_size_max, other->initial_batch_size_max)) return false;
+    if (are_different("batch_size_min", batch_size_min, other->batch_size_min)) return false;
+    if (are_different("batch_size_max", batch_size_max, other->batch_size_max)) return false;
+
+    if (are_different("initial_mu_min", initial_mu_min, other->initial_mu_min)) return false;
+    if (are_different("initial_mu_max", initial_mu_max, other->initial_mu_max)) return false;
+    if (are_different("mu_min", mu_min, other->mu_min)) return false;
+    if (are_different("mu_max", mu_max, other->mu_max)) return false;
+
+    if (are_different("initial_mu_delta_min", initial_mu_delta_min, other->initial_mu_delta_min)) return false;
+    if (are_different("initial_mu_delta_max", initial_mu_delta_max, other->initial_mu_delta_max)) return false;
+    if (are_different("mu_delta_min", mu_delta_min, other->mu_delta_min)) return false;
+    if (are_different("mu_delta_max", mu_delta_max, other->mu_delta_max)) return false;
+
+    if (are_different("initial_learning_rate_min", initial_learning_rate_min, other->initial_learning_rate_min)) return false;
+    if (are_different("initial_learning_rate_max", initial_learning_rate_max, other->initial_learning_rate_max)) return false;
+    if (are_different("learning_rate_min", learning_rate_min, other->learning_rate_min)) return false;
+    if (are_different("learning_rate_max", learning_rate_max, other->learning_rate_max)) return false;
+
+    if (are_different("initial_learning_rate_delta_min", initial_learning_rate_delta_min, other->initial_learning_rate_delta_min)) return false;
+    if (are_different("initial_learning_rate_delta_max", initial_learning_rate_delta_max, other->initial_learning_rate_delta_max)) return false;
+    if (are_different("learning_rate_delta_min", learning_rate_delta_min, other->learning_rate_delta_min)) return false;
+    if (are_different("learning_rate_delta_max", learning_rate_delta_max, other->learning_rate_delta_max)) return false;
+
+    if (are_different("initial_weight_decay_min", initial_weight_decay_min, other->initial_weight_decay_min)) return false;
+    if (are_different("initial_weight_decay_max", initial_weight_decay_max, other->initial_weight_decay_max)) return false;
+    if (are_different("weight_decay_min", weight_decay_min, other->weight_decay_min)) return false;
+    if (are_different("weight_decay_max", weight_decay_max, other->weight_decay_max)) return false;
+
+    if (are_different("initial_weight_decay_delta_min", initial_weight_decay_delta_min, other->initial_weight_decay_delta_min)) return false;
+    if (are_different("initial_weight_decay_delta_max", initial_weight_decay_delta_max, other->initial_weight_decay_delta_max)) return false;
+    if (are_different("weight_decay_delta_min", weight_decay_delta_min, other->weight_decay_delta_min)) return false;
+    if (are_different("weight_decay_delta_max", weight_decay_delta_max, other->weight_decay_delta_max)) return false;
+
+    if (are_different("epsilon", epsilon, other->epsilon)) return false;
+
+    if (are_different("initial_alpha_min", initial_alpha_min, other->initial_alpha_min)) return false;
+    if (are_different("initial_alpha_max", initial_alpha_max, other->initial_alpha_max)) return false;
+    if (are_different("alpha_min", alpha_min, other->alpha_min)) return false;
+    if (are_different("alpha_max", alpha_max, other->alpha_max)) return false;
+
+    if (are_different("initial_velocity_reset_min", initial_velocity_reset_min, other->initial_velocity_reset_min)) return false;
+    if (are_different("initial_velocity_reset_max", initial_velocity_reset_max, other->initial_velocity_reset_max)) return false;
+    if (are_different("velocity_reset_min", velocity_reset_min, other->velocity_reset_min)) return false;
+    if (are_different("velocity_reset_max", velocity_reset_max, other->velocity_reset_max)) return false;
+
+    if (are_different("initial_input_dropout_probability_min", initial_input_dropout_probability_min, other->initial_input_dropout_probability_min)) return false;
+    if (are_different("initial_input_dropout_probability_max", initial_input_dropout_probability_max, other->initial_input_dropout_probability_max)) return false;
+    if (are_different("input_dropout_probability_min", input_dropout_probability_min, other->input_dropout_probability_min)) return false;
+    if (are_different("input_dropout_probability_max", input_dropout_probability_max, other->input_dropout_probability_max)) return false;
+
+    if (are_different("initial_hidden_dropout_probability_min", initial_hidden_dropout_probability_min, other->initial_hidden_dropout_probability_min)) return false;
+    if (are_different("initial_hidden_dropout_probability_max", initial_hidden_dropout_probability_max, other->initial_hidden_dropout_probability_max)) return false;
+    if (are_different("hidden_dropout_probability_min", hidden_dropout_probability_min, other->hidden_dropout_probability_min)) return false;
+    if (are_different("hidden_dropout_probability_max", hidden_dropout_probability_max, other->hidden_dropout_probability_max)) return false;
+
+    if (are_different("sort_by_fitness", sort_by_fitness, other->sort_by_fitness)) return false;
+    if (are_different("reset_weights_chance", reset_weights_chance, other->reset_weights_chance)) return false;
+
+    if (are_different("no_modification_rate", no_modification_rate, other->no_modification_rate)) return false;
+    if (are_different("crossover_rate", crossover_rate, other->crossover_rate)) return false;
+    if (are_different("more_fit_parent_crossover", more_fit_parent_crossover, other->more_fit_parent_crossover)) return false;
+    if (are_different("less_fit_parent_crossover", less_fit_parent_crossover, other->less_fit_parent_crossover)) return false;
+
+    if (are_different("number_mutations", number_mutations, other->number_mutations)) return false;
+
+    if (are_different("edge_alter_type", edge_alter_type, other->edge_alter_type)) return false;
+    if (are_different("edge_disable", edge_disable, other->edge_disable)) return false;
+    if (are_different("edge_enable", edge_enable, other->edge_enable)) return false;
+    if (are_different("edge_split", edge_split, other->edge_split)) return false;
+    if (are_different("edge_add", edge_add, other->edge_add)) return false;
+    if (are_different("edge_change_stride", edge_change_stride, other->edge_change_stride)) return false;
+    if (are_different("node_change_size", node_change_size, other->node_change_size)) return false;
+    if (are_different("node_change_size_x", node_change_size_x, other->node_change_size_x)) return false;
+    if (are_different("node_change_size_y", node_change_size_y, other->node_change_size_y)) return false;
+    if (are_different("node_change_pool_size", node_change_pool_size, other->node_change_pool_size)) return false;
+    if (are_different("node_add", node_add, other->node_add)) return false;
+    if (are_different("node_split", node_split, other->node_split)) return false;
+    if (are_different("node_merge", node_merge, other->node_merge)) return false;
+    if (are_different("node_enable", node_enable, other->node_enable)) return false;
+    if (are_different("node_disable", node_disable, other->node_disable)) return false;
+
+    if (are_different("inserted_from_map", inserted_from_map, other->inserted_from_map)) return false;
+    if (are_different("generated_from_map", generated_from_map, other->generated_from_map)) return false;
+
+    //all_nodes
+    for (uint32_t i = 0; i < all_nodes.size(); i++) {
+        if (!all_nodes[i]->is_identical(other->all_nodes[i], testing_checkpoint)) {
+            cerr << "IDENTICAL ERROR: all_nodes[" << i << "] are not the same!" << endl;
+            return false;
+        }
+    }
+
+    //all_edges
+    for (uint32_t i = 0; i < all_edges.size(); i++) {
+        if (!all_edges[i]->is_identical(other->all_edges[i], testing_checkpoint)) {
+            cerr << "IDENTICAL ERROR: all_edges[" << i << "] are not the same!" << endl;
+            return false;
+        }
+    }
+
+    //genomes
+    for (uint32_t i = 0; i < genomes.size(); i++) {
+        if (!genomes[i]->is_identical(other->genomes[i], testing_checkpoint)) {
+            cerr << "IDENTICAL ERROR: genomes[" << i << "] are not the same!" << endl;
+            return false;
+        }
+    }
+
+    return true;
 }

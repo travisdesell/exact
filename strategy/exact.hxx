@@ -203,6 +203,8 @@ class EXACT {
         string get_generalizability_filename() const;
         string get_test_filename() const;
         int get_number_training_images() const;
+
+        bool is_identical(EXACT *other, bool testing_checkpoint);
 };
 
 #endif

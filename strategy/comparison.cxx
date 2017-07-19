@@ -5,6 +5,11 @@ using std::endl;
 #include <map>
 using std::map;
 
+#include <random>
+using std::minstd_rand0;
+using std::uniform_int_distribution;
+using std::uniform_real_distribution;
+
 #include <string>
 using std::string;
 
@@ -50,7 +55,23 @@ bool are_different(string variable_name, const minstd_rand0 &v1, const minstd_ra
     return false;
 }
 
+bool are_different(string variable_name, const uniform_int_distribution<long> &v1, const uniform_int_distribution<long> &v2) {
+    if (v1 != v2) {
+        cerr << "IDENTICAL ERROR: " << variable_name << " different" << endl;
+        cerr << "self: '" << v1 << "' vs. other: '" << v2 << "'" << endl;
+        return true;
+    }
+    return false;
+}
 
+bool are_different(string variable_name, const uniform_real_distribution<float> &v1, const uniform_real_distribution<float> &v2) {
+    if (v1 != v2) {
+        cerr << "IDENTICAL ERROR: " << variable_name << " different" << endl;
+        cerr << "self: '" << v1 << "' vs. other: '" << v2 << "'" << endl;
+        return true;
+    }
+    return false;
+}
 
 bool are_different(string variable_name, const string &v1, const string &v2) {
     if (v1.compare(v2) != 0) {
