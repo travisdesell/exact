@@ -144,11 +144,9 @@ class EXACT {
         float edge_enable;
         float edge_split;
         float edge_add;
-        float edge_change_stride;
         float node_change_size;
         float node_change_size_x;
         float node_change_size_y;
-        float node_change_pool_size;
         float node_add;
         float node_split;
         float node_merge;

@@ -188,11 +188,9 @@ EXACT::EXACT(int exact_id) {
         edge_enable = atof(row[++column]);
         edge_split = atof(row[++column]);
         edge_add = atof(row[++column]);
-        edge_change_stride = atof(row[++column]);
         node_change_size = atof(row[++column]);
         node_change_size_x = atof(row[++column]);
         node_change_size_y = atof(row[++column]);
-        node_change_pool_size = atof(row[++column]);
         node_add = atof(row[++column]);
         node_split = atof(row[++column]);
         node_merge = atof(row[++column]);
@@ -410,11 +408,9 @@ void EXACT::export_to_database() {
         << ", edge_enable = " << edge_enable
         << ", edge_split = " << edge_split
         << ", edge_add = " << edge_add
-        << ", edge_change_stride = " << edge_change_stride
         << ", node_change_size = " << node_change_size
         << ", node_change_size_x = " << node_change_size_x
         << ", node_change_size_y = " << node_change_size_y
-        << ", node_change_pool_size = " << node_change_pool_size
         << ", node_add = " << node_add
         << ", node_split = " << node_split
         << ", node_merge = " << node_merge
@@ -823,11 +819,9 @@ EXACT::EXACT(const ImagesInterface &training_images, const ImagesInterface &gene
     edge_enable = 2.5;
     edge_split = 3.0;
     edge_add = 3.0;
-    edge_change_stride = 0.0;
     node_change_size = 2.0;
     node_change_size_x = 1.0;
     node_change_size_y = 1.0;
-    node_change_pool_size = 0.0;
     node_add = 3.0;
     node_split = 2.0;
     node_merge = 2.0;
@@ -909,19 +903,17 @@ EXACT::EXACT(const ImagesInterface &training_images, const ImagesInterface &gene
     cout << "\t\tedge_disable: " << edge_disable << endl;
     cout << "\t\tedge_split: " << edge_split << endl;
     cout << "\t\tedge_add: " << edge_add << endl;
-    cout << "\t\tedge_change_stride: " << edge_change_stride << endl;
     cout << "\t\tnode_change_size: " << node_change_size << endl;
     cout << "\t\tnode_change_size_x: " << node_change_size_x << endl;
     cout << "\t\tnode_change_size_y: " << node_change_size_y << endl;
-    cout << "\t\tnode_change_pool_size: " << node_change_pool_size << endl;
     cout << "\t\tnode_add: " << node_add << endl;
     cout << "\t\tnode_split: " << node_split << endl;
     cout << "\t\tnode_merge: " << node_merge << endl;
     cout << "\t\tnode_enable: " << node_enable << endl;
     cout << "\t\tnode_disable: " << node_disable << endl;
 
-    float total = edge_disable + edge_enable + edge_split + edge_add + edge_change_stride + edge_alter_type +
-                   node_change_size + node_change_size_x + node_change_size_y + node_change_pool_size + node_add +
+    float total = edge_disable + edge_enable + edge_split + edge_add + edge_alter_type +
+                   node_change_size + node_change_size_x + node_change_size_y + node_add +
                    node_split + node_merge + node_enable + node_disable;
 
     edge_alter_type /= total;
@@ -929,11 +921,9 @@ EXACT::EXACT(const ImagesInterface &training_images, const ImagesInterface &gene
     edge_enable /= total;
     edge_split /= total;
     edge_add /= total;
-    edge_change_stride /= total;
     node_change_size /= total;
     node_change_size_x /= total;
     node_change_size_y /= total;
-    node_change_pool_size /= total;
     node_add /= total;
     node_split /= total;
     node_merge /= total;
@@ -945,11 +935,9 @@ EXACT::EXACT(const ImagesInterface &training_images, const ImagesInterface &gene
     cout << "\tedge_disable: " << edge_disable << endl;
     cout << "\tedge_split: " << edge_split << endl;
     cout << "\tedge_add: " << edge_add << endl;
-    cout << "\tedge_change_stride: " << edge_change_stride << endl;
     cout << "\tnode_change_size: " << node_change_size << endl;
     cout << "\tnode_change_size_x: " << node_change_size_x << endl;
     cout << "\tnode_change_size_y: " << node_change_size_y << endl;
-    cout << "\tnode_change_pool_size: " << node_change_pool_size << endl;
     cout << "\tnode_add: " << node_add << endl;
     cout << "\tnode_split: " << node_split << endl;
     cout << "\tnode_merge: " << node_merge << endl;
@@ -1473,11 +1461,9 @@ bool EXACT::insert_genome(CNN_Genome* genome) {
         gv_file << "#\t\tedge_disable: " << edge_disable << endl;
         gv_file << "#\t\tedge_split: " << edge_split << endl;
         gv_file << "#\t\tedge_add: " << edge_add << endl;
-        gv_file << "#\t\tedge_change_stride: " << edge_change_stride << endl;
         gv_file << "#\t\tnode_change_size: " << node_change_size << endl;
         gv_file << "#\t\tnode_change_size_x: " << node_change_size_x << endl;
         gv_file << "#\t\tnode_change_size_y: " << node_change_size_y << endl;
-        gv_file << "#\t\tnode_change_pool_size: " << node_change_pool_size << endl;
         gv_file << "#\t\tnode_add: " << node_add << endl;
         gv_file << "#\t\tnode_split: " << node_split << endl;
         gv_file << "#\t\tnode_merge: " << node_merge << endl;
@@ -1936,15 +1922,6 @@ CNN_Genome* EXACT::create_mutation() {
         }
         r -= edge_add;
 
-        if (r < edge_change_stride) {
-            cout << "\tCHANGING EDGE STRIDE!" << endl;
-
-            //child->mutate(MUTATE_EDGE_STRIDE, node_innovation_count, edge_innovation_count);
-
-            continue;
-        }
-        r -= edge_change_stride;
-
         if (r < node_change_size) {
             cout << "\tCHANGING NODE SIZE X and Y!" << endl;
 
@@ -2153,15 +2130,6 @@ CNN_Genome* EXACT::create_mutation() {
             continue;
         }
         r -= node_change_size_y;
-
-        if (r < node_change_pool_size) {
-            cout << "\tCHANGING NODE POOL SIZE!" << endl;
-
-            //child->mutate(MUTATE_NODE_POOL_SIZE, node_innovation_count, edge_innovation_count);
-
-            continue;
-        }
-        r -= node_change_pool_size;
 
         if (r < node_add) {
             cout << "\tADDING A NODE!" << endl;
@@ -3438,11 +3406,9 @@ bool EXACT::is_identical(EXACT *other, bool testing_checkpoint) {
     if (are_different("edge_enable", edge_enable, other->edge_enable)) return false;
     if (are_different("edge_split", edge_split, other->edge_split)) return false;
     if (are_different("edge_add", edge_add, other->edge_add)) return false;
-    if (are_different("edge_change_stride", edge_change_stride, other->edge_change_stride)) return false;
     if (are_different("node_change_size", node_change_size, other->node_change_size)) return false;
     if (are_different("node_change_size_x", node_change_size_x, other->node_change_size_x)) return false;
     if (are_different("node_change_size_y", node_change_size_y, other->node_change_size_y)) return false;
-    if (are_different("node_change_pool_size", node_change_pool_size, other->node_change_pool_size)) return false;
     if (are_different("node_add", node_add, other->node_add)) return false;
     if (are_different("node_split", node_split, other->node_split)) return false;
     if (are_different("node_merge", node_merge, other->node_merge)) return false;
