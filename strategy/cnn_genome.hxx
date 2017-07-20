@@ -176,6 +176,8 @@ class CNN_Genome {
         float get_input_dropout_probability() const;
         float get_hidden_dropout_probability() const;
 
+        int get_number_enabled_pooling_edges() const;
+        int get_number_enabled_convolutional_edges() const;
         int get_number_enabled_edges() const;
         int get_number_enabled_nodes() const;
 

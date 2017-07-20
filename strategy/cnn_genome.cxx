@@ -833,6 +833,23 @@ CNN_Edge* CNN_Genome::get_edge(int edge_position) {
     return edges.at(edge_position);
 }
 
+int CNN_Genome::get_number_enabled_pooling_edges() const {
+    int n_enabled_pooling_edges = 0;
+    for (uint32_t i = 0; i < edges.size(); i++) {
+        if (edges[i]->is_reachable() && edges[i]->get_type() == POOLING) n_enabled_pooling_edges++;
+    }
+    return n_enabled_pooling_edges;
+}
+
+int CNN_Genome::get_number_enabled_convolutional_edges() const {
+    int n_enabled_convolutional_edges = 0;
+    for (uint32_t i = 0; i < edges.size(); i++) {
+        if (edges[i]->is_reachable() && edges[i]->get_type() == CONVOLUTIONAL) n_enabled_convolutional_edges++;
+    }
+    return n_enabled_convolutional_edges;
+}
+
+
 int CNN_Genome::get_number_enabled_edges() const {
     int n_enabled_edges = 0;
     for (uint32_t i = 0; i < edges.size(); i++) {
@@ -997,8 +1014,9 @@ bool CNN_Genome::sanity_check(int type) {
 
     if (type == SANITY_CHECK_AFTER_GENERATION) {
         for (uint32_t i = 0; i < edges.size(); i++) {
-            if (edges[i]->has_zero_weight()) {
+            if (edges[i]->has_zero_weight() && edges[i]->get_type() == CONVOLUTIONAL) {
                 cerr << "WARNING before after_generation!" << endl;
+                cerr << "edge type: " << edges[i]->get_type() << endl;
                 cerr << "edge in position " << i << " with innovation number: " << edges[i]->get_innovation_number() << endl;
                 cerr << "filter_x: " << edges[i]->get_filter_x() << ", filter_y: " << edges[i]->get_filter_y() << endl;
                 cerr << "sum of weights was 0" << endl;

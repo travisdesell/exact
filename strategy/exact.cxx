@@ -1653,6 +1653,7 @@ CNN_Genome* EXACT::create_mutation() {
 
     CNN_Genome *child = new CNN_Genome(genomes_generated++, padding, number_training_images, number_generalizability_images, number_test_images, child_seed, max_epochs, reset_weights, velocity_reset, mu, mu_delta, learning_rate, learning_rate_delta, weight_decay, weight_decay_delta, batch_size, epsilon, alpha, input_dropout_probability, hidden_dropout_probability, parent->get_nodes(), parent->get_edges());
 
+    /*
     cout << "\tchild nodes:" << endl;
     for (int32_t i = 0; i < child->get_number_nodes(); i++) {
         cout << "\t\tnode innovation number: " << child->get_node(i)->get_innovation_number() << endl;
@@ -1665,6 +1666,7 @@ CNN_Genome* EXACT::create_mutation() {
             << ", output node innovation number: " << child->get_edge(i)->get_output_innovation_number()
             << endl;
     }
+    */
 
     if (parent->get_fitness() == EXACT_MAX_FLOAT) {
         //This parent has not actually been evaluated (the population is still initializing)
@@ -2880,10 +2882,15 @@ void EXACT::write_statistics(int new_generation_id, float new_fitness) {
     float avg_nodes = 0.0;
     int nodes_count = 0;
 
-    float min_edges = EXACT_MAX_FLOAT;
-    float max_edges = -EXACT_MAX_FLOAT;
-    float avg_edges = 0.0;
-    int edges_count = 0;
+    float min_pooling_edges = EXACT_MAX_FLOAT;
+    float max_pooling_edges = -EXACT_MAX_FLOAT;
+    float avg_pooling_edges = 0.0;
+    int pooling_edges_count = 0;
+
+    float min_convolutional_edges = EXACT_MAX_FLOAT;
+    float max_convolutional_edges = -EXACT_MAX_FLOAT;
+    float avg_convolutional_edges = 0.0;
+    int convolutional_edges_count = 0;
 
     float min_weights = EXACT_MAX_FLOAT;
     float max_weights = -EXACT_MAX_FLOAT;
@@ -2922,15 +2929,26 @@ void EXACT::write_statistics(int new_generation_id, float new_fitness) {
         if (nodes < min_nodes) min_nodes = nodes;
         if (nodes > max_nodes) max_nodes = nodes;
 
-        float edges = genomes[i]->get_number_enabled_edges();
+        float pooling_edges = genomes[i]->get_number_enabled_pooling_edges();
 
-        if (edges != EXACT_MAX_FLOAT) {
-            avg_edges += edges;
-            edges_count++;
+        if (pooling_edges != EXACT_MAX_FLOAT) {
+            avg_pooling_edges += pooling_edges;
+            pooling_edges_count++;
         }
 
-        if (edges < min_edges) min_edges = edges;
-        if (edges > max_edges) max_edges = edges;
+        if (pooling_edges < min_pooling_edges) min_pooling_edges = pooling_edges;
+        if (pooling_edges > max_pooling_edges) max_pooling_edges = pooling_edges;
+
+        float convolutional_edges = genomes[i]->get_number_enabled_convolutional_edges();
+
+        if (convolutional_edges != EXACT_MAX_FLOAT) {
+            avg_convolutional_edges += convolutional_edges;
+            convolutional_edges_count++;
+        }
+
+        if (convolutional_edges < min_convolutional_edges) min_convolutional_edges = convolutional_edges;
+        if (convolutional_edges > max_convolutional_edges) max_convolutional_edges = convolutional_edges;
+
 
         float weights = genomes[i]->get_number_weights();
 
@@ -2945,7 +2963,8 @@ void EXACT::write_statistics(int new_generation_id, float new_fitness) {
     avg_fitness /= fitness_count;
     avg_epochs /= epochs_count;
     avg_nodes /= nodes_count;
-    avg_edges /= edges_count;
+    avg_pooling_edges /= pooling_edges_count;
+    avg_convolutional_edges /= convolutional_edges_count;
     avg_weights /= weights_count;
 
     if (fitness_count == 0) avg_fitness = 0.0;
@@ -2963,10 +2982,16 @@ void EXACT::write_statistics(int new_generation_id, float new_fitness) {
     if (max_nodes == EXACT_MAX_FLOAT) max_nodes = 0;
     if (max_nodes == -EXACT_MAX_FLOAT) max_nodes = 0;
 
-    if (edges_count == 0) avg_edges = 0.0;
-    if (min_edges == EXACT_MAX_FLOAT) min_edges = 0;
-    if (max_edges == EXACT_MAX_FLOAT) max_edges = 0;
-    if (max_edges == -EXACT_MAX_FLOAT) max_edges = 0;
+    if (pooling_edges_count == 0) avg_pooling_edges = 0.0;
+    if (min_pooling_edges == EXACT_MAX_FLOAT) min_pooling_edges = 0;
+    if (max_pooling_edges == EXACT_MAX_FLOAT) max_pooling_edges = 0;
+    if (max_pooling_edges == -EXACT_MAX_FLOAT) max_pooling_edges = 0;
+
+    if (convolutional_edges_count == 0) avg_convolutional_edges = 0.0;
+    if (min_convolutional_edges == EXACT_MAX_FLOAT) min_convolutional_edges = 0;
+    if (max_convolutional_edges == EXACT_MAX_FLOAT) max_convolutional_edges = 0;
+    if (max_convolutional_edges == -EXACT_MAX_FLOAT) max_convolutional_edges = 0;
+
 
     if (weights_count == 0) avg_weights = 0.0;
     if (min_weights == EXACT_MAX_FLOAT) min_weights = 0;
@@ -2988,9 +3013,12 @@ void EXACT::write_statistics(int new_generation_id, float new_fitness) {
         << setw(16) << setprecision(5) << fixed << min_nodes
         << setw(16) << setprecision(5) << fixed << avg_nodes
         << setw(16) << setprecision(5) << fixed << max_nodes
-        << setw(16) << setprecision(5) << fixed << min_edges
-        << setw(16) << setprecision(5) << fixed << avg_edges
-        << setw(16) << setprecision(5) << fixed << max_edges
+        << setw(16) << setprecision(5) << fixed << min_pooling_edges
+        << setw(16) << setprecision(5) << fixed << avg_pooling_edges
+        << setw(16) << setprecision(5) << fixed << max_pooling_edges
+        << setw(16) << setprecision(5) << fixed << min_convolutional_edges
+        << setw(16) << setprecision(5) << fixed << avg_convolutional_edges
+        << setw(16) << setprecision(5) << fixed << max_convolutional_edges
         << setw(16) << setprecision(5) << fixed << min_weights
         << setw(16) << setprecision(5) << fixed << avg_weights
         << setw(16) << setprecision(5) << fixed << max_weights;
@@ -3305,9 +3333,12 @@ void EXACT::write_statistics_header() {
         << ", " << setw(14) << "min_nodes"
         << ", " << setw(14) << "avg_nodes"
         << ", " << setw(14) << "max_nodes"
-        << ", " << setw(14) << "min_edges"
-        << ", " << setw(14) << "avg_edges"
-        << ", " << setw(14) << "max_edges"
+        << ", " << setw(14) << "min_pooling_edges"
+        << ", " << setw(14) << "avg_pooling_edges"
+        << ", " << setw(14) << "max_pooling_edges"
+        << ", " << setw(14) << "min_convolutional_edges"
+        << ", " << setw(14) << "avg_convolutional_edges"
+        << ", " << setw(14) << "max_convolutional_edges"
         << ", " << setw(14) << "min_weights"
         << ", " << setw(14) << "avg_weights"
         << ", " << setw(14) << "max_weights";

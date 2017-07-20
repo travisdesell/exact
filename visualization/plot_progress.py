@@ -78,10 +78,10 @@ def plot_min_avg_max(filename, y_label_title, names, colors, first_row, values, 
 
 plot_min_avg_max(fitness_filename, 'Fitness (CNN best error)', ["Fitness"], ["blue"], 3, v1, legend_loc = 'upper right', y_min = 0, y_max = 2000)
 plot_min_avg_max(epochs_filename, 'Epochs to Best Error', ["Epochs"], ["green"], 6, v1, legend_loc = 'lower right', y_min = 0)
-plot_min_avg_max(nodes_edges_filename, 'Count', ["Enabled Nodes", "Enabled Edges"], ["blue", "green"], 9, v1, legend_loc = 'upper left', y_min = 0)
-plot_min_avg_max(weights_filename, 'Count', ["Weights"], ["green"], 15, v1, legend_loc = 'upper left', y_min = 0)
+plot_min_avg_max(nodes_edges_filename, 'Count', ["Enabled Nodes", "Enabled Pooling Edges", "Enabled Convolutional Edges"], ["blue", "green", "yellow"], 9, v1, legend_loc = 'upper left', y_min = 0)
+plot_min_avg_max(weights_filename, 'Count', ["Weights"], ["green"], 18, v1, legend_loc = 'upper left', y_min = 0)
 
-n_initial_columns = 18
+n_initial_columns = 21
 
 def generate_percentage_plot(output_filename, percentage_type):
     num_plots = len(headers) - n_initial_columns
