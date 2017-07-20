@@ -1808,10 +1808,30 @@ CNN_Genome* EXACT::create_mutation() {
 
 
         if (r < edge_split) {
-            int edge_position = rng_float(generator) * child->get_number_edges();
-            cout << "\tSPLITTING EDGE IN POSITION: " << edge_position << "!" << endl;
+            vector< CNN_Edge* > enabled_edges;
 
-            CNN_Edge* edge = child->get_edge(edge_position);
+            for (int32_t i = 0; i < child->get_number_edges(); i++) {
+                CNN_Edge* current = child->get_edge(i);
+
+                if (current == NULL) {
+                    cout << "ERROR! edge " << i << " became null on child!" << endl;
+                    exit(1);
+                }
+
+                if (current->is_reachable()) {
+                    enabled_edges.push_back(current);
+                }
+            }
+
+            if (enabled_edges.size() == 0) {
+                cout << "\t\tno reachable edges! this should never happen!" << endl;
+                exit(1);
+                continue;
+            }
+
+            int edge_position = rng_float(generator) * enabled_edges.size();
+
+            CNN_Edge* edge = enabled_edges[edge_position];
 
             CNN_Node* input_node = edge->get_input_node();
             CNN_Node* output_node = edge->get_output_node();

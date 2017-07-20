@@ -138,11 +138,11 @@ int main(int argc, char** argv) {
         cerr << "ERROR: had error loading training images" << endl;
         boinc_finish(1);
         exit(1);
-    } else if (generalizability_images.loaded_correctly()) {
+    } else if (!generalizability_images.loaded_correctly()) {
         cerr << "ERROR: had error loading generalizability images" << endl;
         boinc_finish(1);
         exit(1);
-    } else if (testing_images.loaded_correctly()) {
+    } else if (!testing_images.loaded_correctly()) {
         cerr << "ERROR: had error loading testing images" << endl;
         boinc_finish(1);
         exit(1);
@@ -161,7 +161,7 @@ int main(int argc, char** argv) {
     cerr << "starting backpropagation!" << endl;
     genome->stochastic_backpropagation(training_images);
     genome->evaluate_generalizability(generalizability_images);
-    genome->evaluate_test(test_images);
+    genome->evaluate_test(testing_images);
     cerr << "backpropagation finished successfully!" << endl;
 
     genome->write_to_file(output_filename);
