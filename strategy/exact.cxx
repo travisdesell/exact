@@ -1680,6 +1680,8 @@ CNN_Genome* EXACT::create_mutation() {
     int modifications = 0;
 
     while (modifications < number_mutations) {
+        child->visit_nodes();
+
         float r = rng_float(generator);
         cout << "\tr: " << r << endl;
         r -= 0.00001;
@@ -1953,6 +1955,13 @@ CNN_Genome* EXACT::create_mutation() {
                 }
             }
 
+            if (enabled_nodes.size() == 0) {
+                cout << "\tthere were no reachable non-hidden nodes, cannot change a node size." << endl;
+                continue;
+            }
+            
+            cout << "\t\tthere are " << enabled_nodes.size() << " reachable nodes." << endl;
+
             int r = rng_float(generator) * enabled_nodes.size();
             cout << "\t\tr: " << r << endl;
 
@@ -2026,6 +2035,13 @@ CNN_Genome* EXACT::create_mutation() {
                 }
             }
 
+            if (enabled_nodes.size() == 0) {
+                cout << "\tthere were no reachable non-hidden nodes, cannot change a node size." << endl;
+                continue;
+            }
+
+            cout << "\t\tthere are " << enabled_nodes.size() << " reachable nodes." << endl;
+
             int r = rng_float(generator) * enabled_nodes.size();
             cout << "\t\tr: " << r << endl;
 
@@ -2093,6 +2109,13 @@ CNN_Genome* EXACT::create_mutation() {
                     enabled_nodes.push_back(current);
                 }
             }
+
+            if (enabled_nodes.size() == 0) {
+                cout << "\tthere were no reachable non-hidden nodes, cannot change a node size." << endl;
+                continue;
+            }
+
+            cout << "\t\tthere are " << enabled_nodes.size() << " reachable nodes." << endl;
 
             int r = rng_float(generator) * enabled_nodes.size();
             cout << "\t\tr: " << r << endl;
