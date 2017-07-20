@@ -1882,12 +1882,33 @@ CNN_Genome* EXACT::create_mutation() {
         if (r < edge_add) {
             cout << "\tADDING EDGE!" << endl;
 
+            vector< CNN_Node* > enabled_nodes;
+
+            for (int32_t i = 0; i < child->get_number_nodes(); i++) {
+                CNN_Node* current = child->get_node(i);
+
+                if (current == NULL) {
+                    cout << "ERROR! node " << i << " became null on child!" << endl;
+                    exit(1);
+                }
+
+                if (current->is_reachable()) {
+                    enabled_nodes.push_back(current);
+                }
+            }
+
+            if (enabled_nodes.size() < 2) {
+                cout << "\t\tless tahn 2 reachable nodes! this should never happen!" << endl;
+                exit(1);
+                continue;
+            }
+
             CNN_Node *node1;
             CNN_Node *node2;
 
             do {
-                int r1 = rng_float(generator) * child->get_number_nodes();
-                int r2 = rng_float(generator) * child->get_number_nodes() - 1;
+                int r1 = rng_float(generator) * enabled_nodes.size();
+                int r2 = rng_float(generator) * enabled_nodes.size() - 1;
 
                 if (r1 == r2) r2++;
 
@@ -1899,8 +1920,8 @@ CNN_Genome* EXACT::create_mutation() {
 
                 //cout << "child->get_number_nodes(): " <<  child->get_number_nodes() << ", r1: " << r1 << ", r2: " << r2 << endl;
 
-                node1 = child->get_node(r1);
-                node2 = child->get_node(r2);
+                node1 = enabled_nodes[r1];
+                node2 = enabled_nodes[r2];
             } while (node1->get_depth() >= node2->get_depth());
             //after this while loop, node 2 will always be deeper than node 1
 
