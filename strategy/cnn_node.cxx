@@ -990,7 +990,11 @@ void CNN_Node::backpropagate_batch_normalization(float mu, float learning_rate, 
     float inv_m = 1.0 / m;
     float inv_m_x_2 = 2.0 * inv_m;
 
-    derr_dvariance *= -0.5 * pow(batch_variance + epsilon, -1.5);
+    float bv_pow_32 = -0.5 / (batch_std_dev * batch_std_dev * batch_std_dev);
+
+    //derr_dvariance *= -0.5 * pow(batch_variance + epsilon, -1.5);
+    derr_dvariance *= bv_pow_32;
+
     derr_dmean_term1 *= -inverse_variance;
     derr_dmean_term2 *= -inv_m_x_2 * derr_dvariance;
     derr_dmean = derr_dmean_term1 + derr_dmean_term2;
