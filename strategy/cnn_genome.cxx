@@ -1914,6 +1914,7 @@ void CNN_Genome::write(ostream &outfile) {
 
     outfile << "GENERATED_BY" << endl;
     write_map(outfile, generated_by_map);
+    outfile << endl;
 
     outfile << "NODES" << endl;
     outfile << nodes.size() << endl;

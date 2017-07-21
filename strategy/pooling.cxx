@@ -170,6 +170,12 @@ void pool_forward(const float* input, float *pool_gradients, float* output, int3
             update_offset(y_pools, y_pool_offset);
             update_offset(x_pools, x_pool_offset);
 
+            cout << "y_pools:";
+            for (int32_t j = 0; j < y_pools.size(); j++) cout << " " << y_pools[j];
+            cout << "x_pools:";
+            for (int32_t j = 0; j < x_pools.size(); j++) cout << " " << x_pools[j];
+            cout << endl;
+
             pool_forward(input, pool_gradients, temp_output, batch_size, input_size_y, input_size_x, output_size_y, output_size_x, y_pools, x_pools, y_pool_offset, x_pool_offset);
         }
 
