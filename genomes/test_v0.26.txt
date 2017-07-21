@@ -35,7 +35,8 @@ v0.26
 1 0 0
 252439580
 GENERATED_BY
-15 add_edge 0 add_node 0 alter_edge_type 0 change_size 0 change_size_x 0 change_size_y 0 crossover 1 disable_edge 0 disable_node 0 enable_edge 0 enable_node 0 merge_node 0 reset_weights 0 split_edge 0 split_node 0NODES
+15 add_edge 0 add_node 0 alter_edge_type 0 change_size 0 change_size_x 0 change_size_y 0 crossover 1 disable_edge 0 disable_node 0 enable_edge 0 enable_node 0 merge_node 0 reset_weights 0 split_edge 0 split_node 0
+NODES
 46
 -1 -1 591 0 0 50 30 30 0 0 0 0 0x1p+0
 0x1p+0

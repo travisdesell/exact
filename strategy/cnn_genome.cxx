@@ -2081,6 +2081,7 @@ void CNN_Genome::read(istream &infile) {
     //cerr << "reading nodes!" << endl;
     
     getline(infile, line);
+    getline(infile, line);
 
     if (line.compare("NODES") != 0) {
         cerr << "ERROR: invalid input file, expected line to be 'NODES' but line was '" << line << "'" << endl;
