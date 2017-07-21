@@ -153,7 +153,6 @@ int main(int argc, char** argv) {
 
     //genome->print_graphviz(cout);
 
-    genome->initialize();
     genome->set_progress_function(progress_function);
 
     genome->set_checkpoint_filename(checkpoint_filename);
