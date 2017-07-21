@@ -1226,7 +1226,7 @@ ostream &operator<<(ostream &os, const CNN_Node* node) {
     os << node->type << " ";
     os << node->weight_count << " ";
     os << node->needs_initialization << " ";
-    os << node->disabled << " ";
+    os << node->disabled << endl;
 
     write_hexfloat(os, node->gamma);
     os << endl;
@@ -1286,6 +1286,17 @@ std::istream &operator>>(std::istream &is, CNN_Node* node) {
     node->best_running_mean = read_hexfloat(is);
     node->running_variance = read_hexfloat(is);
     node->best_running_variance = read_hexfloat(is);
+
+    node->gamma = 1;
+    node->best_gamma = 1;
+    node->previous_velocity_gamma = 0;
+    node->beta = 0;
+    node->best_beta = 0;
+    node->previous_velocity_beta = 0;
+    node->running_mean = 0;
+    node->best_running_mean = 0;
+    node->running_variance = 1;
+    node->best_running_variance = 1;
 
 
     node->total_inputs = 0;
