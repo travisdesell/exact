@@ -74,6 +74,8 @@ int main(int argc, char **argv) {
     cout << "test error: " << error << endl;
     cout << "test predictions " << predictions << endl;
 
+    genome->write_to_file("./genome_" + to_string(genome->get_generation_id()));
+
 #ifdef _MYSQL_
     if (genome_id >= 0 && argument_exists(arguments, "--update_database")) {
         ostringstream query;
