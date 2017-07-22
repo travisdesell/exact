@@ -2078,6 +2078,11 @@ void CNN_Genome::read(istream &infile) {
     }
 
     read_map(infile, generated_by_map);
+    if (verbose) {
+        cerr << "read generated_by_map:" << endl;
+        write_map(cerr, generated_by_map);
+        cerr << endl;
+    }
     //cerr << "reading nodes!" << endl;
     
     getline(infile, line);

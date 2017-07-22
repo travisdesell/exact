@@ -1320,6 +1320,7 @@ istream &operator>>(istream &is, CNN_Edge* edge) {
     update_offset(edge->y_pools, edge->y_pool_offset);
     update_offset(edge->x_pools, edge->x_pool_offset);
 
+    /*
     cerr << "edge " << edge->innovation_number << ", y_pools: ";
     for (int32_t i = 0; i < edge->y_pools.size(); i++) {
         cerr << " " << edge->y_pools[i];
@@ -1329,6 +1330,7 @@ istream &operator>>(istream &is, CNN_Edge* edge) {
         cerr << " " << edge->x_pools[i];
     }
     cerr << endl;
+    */
 
 
     getline(is, line);
