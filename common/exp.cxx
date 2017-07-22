@@ -28,3 +28,22 @@ float exact_exp(float z) {
 }
 
 
+float exact_sqrt(float s) {
+    float s_prev = s;
+
+    float s_next = 0.5 * (s_prev + (s / s_prev));
+    s_prev = s_next;
+    s_next = 0.5 * (s_prev + (s / s_prev));
+    s_prev = s_next;
+    s_next = 0.5 * (s_prev + (s / s_prev));
+    s_prev = s_next;
+    s_next = 0.5 * (s_prev + (s / s_prev));
+    s_prev = s_next;
+    s_next = 0.5 * (s_prev + (s / s_prev));
+    s_prev = s_next;
+    s_next = 0.5 * (s_prev + (s / s_prev));
+    s_prev = s_next;
+    s_next = 0.5 * (s_prev + (s / s_prev));
+
+    return s_next;
+}

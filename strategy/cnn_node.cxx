@@ -44,6 +44,7 @@ using std::vector;
 
 #include "image_tools/image_set.hxx"
 #include "common/random.hxx"
+#include "common/exp.hxx"
 #include "comparison.hxx"
 #include "cnn_genome.hxx"
 #include "cnn_edge.hxx"
@@ -822,7 +823,7 @@ void CNN_Node::batch_normalize(bool training, bool accumulating_test_statistics,
         }
         batch_variance /= (uint64_t)batch_size * (uint64_t)size_y * (uint64_t)size_x;
 
-        batch_std_dev = sqrt(batch_variance + epsilon);
+        batch_std_dev = exact_sqrt(batch_variance + epsilon);
 
         inverse_variance = 1.0 / batch_std_dev;
 
@@ -873,8 +874,8 @@ void CNN_Node::batch_normalize(bool training, bool accumulating_test_statistics,
         //cout << "\tnode " << innovation_number << ", batch_mean: " << batch_mean << ", batch_variance: " << batch_variance << ", batch_std_dev: " << batch_std_dev << ", running_mean: " << running_mean << ", running_variance: " << running_variance << endl;
 
     } else { //testing
-        float term1 =  gamma / sqrt(running_variance + epsilon);
-        float term2 = beta - ((gamma * running_mean) / sqrt(running_variance + epsilon));
+        float term1 =  gamma / exact_sqrt(running_variance + epsilon);
+        float term2 = beta - ((gamma * running_mean) / exact_sqrt(running_variance + epsilon));
 
         for (int32_t current = 0; current < total_size; current++) {
             values_out[current] = (term1 * values_in[current]) + term2;

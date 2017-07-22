@@ -3,4 +3,6 @@
 
 float exact_exp(float);
 
+float exact_sqrt(float);
+
 #endif
