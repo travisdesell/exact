@@ -1292,6 +1292,7 @@ std::istream &operator>>(std::istream &is, CNN_Node* node) {
     node->running_variance = read_hexfloat(is);
     node->best_running_variance = read_hexfloat(is);
 
+    /*
     cerr << "node " << node->innovation_number
          << " " << node->gamma
          << " " << node->best_gamma
@@ -1303,6 +1304,7 @@ std::istream &operator>>(std::istream &is, CNN_Node* node) {
          << " " << node->best_running_mean
          << " " << node->running_variance
          << " " << node->best_running_variance << endl;
+    */
 
     node->total_inputs = 0;
     node->inputs_fired = 0;

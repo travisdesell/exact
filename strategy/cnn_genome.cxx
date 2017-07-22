@@ -2392,4 +2392,3 @@ bool CNN_Genome::is_identical(CNN_Genome *other, bool testing_checkpoint) {
 
     return true;
 }
-
