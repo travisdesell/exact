@@ -59,9 +59,6 @@ class EXACT {
         uniform_int_distribution<long> rng_long;
         uniform_real_distribution<float> rng_float;
 
-        vector <CNN_Node* > all_nodes;
-        vector <CNN_Edge* > all_edges;
-
         vector< CNN_Genome* > genomes;
 
         int genomes_generated;
@@ -129,8 +126,6 @@ class EXACT {
         float hidden_dropout_probability_min;
         float hidden_dropout_probability_max;
 
-
-        bool sort_by_fitness;
         float reset_weights_chance;
 
         float no_modification_rate;

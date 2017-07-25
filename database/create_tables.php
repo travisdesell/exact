@@ -98,8 +98,6 @@ $query = "CREATE TABLE `exact_search` (
     `hidden_dropout_probability_min` float NOT NULL,
     `hidden_dropout_probability_max` float NOT NULL,
 
-
-    `sort_by_fitness` tinyint(1) NOT NULL,
     `reset_weights_chance` float NOT NULL,
 
     `no_modification_rate` float NOT NULL,
