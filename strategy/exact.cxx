@@ -180,6 +180,7 @@ EXACT::EXACT(int exact_id) {
         crossover_rate = atof(row[++column]);
         more_fit_parent_crossover = atof(row[++column]);
         less_fit_parent_crossover = atof(row[++column]);
+        crossover_alter_edge_type = atof(row[++column]);
 
         number_mutations = atoi(row[++column]);
         edge_alter_type = atof(row[++column]);
@@ -349,6 +350,7 @@ void EXACT::export_to_database() {
         << ", crossover_rate = " << crossover_rate
         << ", more_fit_parent_crossover = " << more_fit_parent_crossover
         << ", less_fit_parent_crossover = " << less_fit_parent_crossover
+        << ", crossover_alter_edge_type = " << crossover_alter_edge_type
 
         << ", number_mutations = " << number_mutations
         << ", edge_alter_type = " << edge_alter_type
@@ -718,6 +720,7 @@ EXACT::EXACT(const ImagesInterface &training_images, const ImagesInterface &gene
     crossover_rate = 0.20;
     more_fit_parent_crossover = 0.80;
     less_fit_parent_crossover = 0.40;
+    crossover_alter_edge_type = 0.00;
 
     reset_weights_chance = 0.20;
 
@@ -804,6 +807,7 @@ EXACT::EXACT(const ImagesInterface &training_images, const ImagesInterface &gene
     cout << "\t\tcrossover_rate: " << crossover_rate << endl;
     cout << "\t\tmore_fit_parent_crossover: " << more_fit_parent_crossover << endl;
     cout << "\t\tless_fit_parent_crossover: " << less_fit_parent_crossover << endl;
+    cout << "\t\tcrossover_alter_edge_type: " << crossover_alter_edge_type << endl;
 
     cout << "\tmutation_settings: " << endl;
     cout << "\t\tnumber_mutations: " << number_mutations << endl;
@@ -1364,6 +1368,7 @@ bool EXACT::insert_genome(CNN_Genome* genome) {
         gv_file << "#\t\tcrossover_rate: " << crossover_rate << endl;
         gv_file << "#\t\tmore_fit_parent_crossover: " << more_fit_parent_crossover << endl;
         gv_file << "#\t\tless_fit_parent_crossover: " << less_fit_parent_crossover << endl;
+        gv_file << "#\t\tcrossover_alter_edge_type: " << crossover_alter_edge_type << endl;
 
         gv_file << "#\tmutation_settings: " << endl;
         gv_file << "#\t\tnumber_mutations: " << number_mutations << endl;
@@ -1464,7 +1469,7 @@ bool EXACT::insert_genome(CNN_Genome* genome) {
     return was_inserted;
 }
 
-bool EXACT::add_edge(CNN_Genome *child, CNN_Node *node1, CNN_Node *node2) {
+bool EXACT::add_edge(CNN_Genome *child, CNN_Node *node1, CNN_Node *node2, int edge_type) {
     int node1_innovation_number = node1->get_innovation_number();
     int node2_innovation_number = node2->get_innovation_number();
 
@@ -1489,7 +1494,8 @@ bool EXACT::add_edge(CNN_Genome *child, CNN_Node *node1, CNN_Node *node2) {
     //edge doesn't exist, add it
     cout << "\t\tadding edge between node innovation numbers " << node1_innovation_number << " and " << node2_innovation_number << endl;
 
-    CNN_Edge *edge = new CNN_Edge(node1, node2, false, edge_innovation_count, random_edge_type(rng_float(generator)));
+    //CNN_Edge *edge = new CNN_Edge(node1, node2, false, edge_innovation_count, random_edge_type(rng_float(generator)));
+    CNN_Edge *edge = new CNN_Edge(node1, node2, false, edge_innovation_count, edge_type);
     edge_innovation_count++;
 
     //insert edge in order of depth
@@ -1716,7 +1722,7 @@ CNN_Genome* EXACT::create_mutation() {
             } while (node1->get_depth() >= node2->get_depth());
             //after this while loop, node 2 will always be deeper than node 1
 
-            if (add_edge(child, node1, node2)) {
+            if (add_edge(child, node1, node2, random_edge_type(rng_float(generator)))) {
                 child->set_generated_by("add_edge");
                 modifications++;
             } else {
@@ -1995,12 +2001,15 @@ CNN_Genome* EXACT::create_mutation() {
 
             child->add_node(child_node);
 
+            int input_edge_type = random_edge_type(rng_float(generator));
+            int output_edge_type = random_edge_type(rng_float(generator));
+
             for (uint32_t i = 0; i < potential_inputs.size(); i++) {
-                add_edge(child, potential_inputs[i], child_node);
+                add_edge(child, potential_inputs[i], child_node, input_edge_type);
             }
 
             for (uint32_t i = 0; i < potential_outputs.size(); i++) {
-                add_edge(child, child_node, potential_outputs[i]);
+                add_edge(child, child_node, potential_outputs[i], output_edge_type);
             }
 
             child->set_generated_by("add_node");
@@ -2083,37 +2092,42 @@ CNN_Genome* EXACT::create_mutation() {
                 }
             }
 
+            int node_1_input_edge_type = random_edge_type(rng_float(generator));
+            int node_2_input_edge_type = random_edge_type(rng_float(generator));
+            int node_1_output_edge_type = random_edge_type(rng_float(generator));
+            int node_2_output_edge_type = random_edge_type(rng_float(generator));
+
             //make sure each split node has at least 1 input and 1 output
             int selected_input1 = rng_float(generator) * input_nodes.size();
             int selected_input2 = rng_float(generator) * input_nodes.size();
             int selected_output1 = rng_float(generator) * output_nodes.size();
             int selected_output2 = rng_float(generator) * output_nodes.size();
 
-            add_edge(child, input_nodes[selected_input1], split1);
-            add_edge(child, input_nodes[selected_input2], split2);
-            add_edge(child, split1, output_nodes[selected_output1]);
-            add_edge(child, split2, output_nodes[selected_output2]);
+            add_edge(child, input_nodes[selected_input1], split1, node_1_input_edge_type);
+            add_edge(child, input_nodes[selected_input2], split2, node_2_input_edge_type);
+            add_edge(child, split1, output_nodes[selected_output1], node_1_output_edge_type);
+            add_edge(child, split2, output_nodes[selected_output2], node_2_output_edge_type);
 
             float input_split_selection_rate = 0.50;
             float output_split_selection_rate = 0.50;
 
             for (uint32_t i = 0; i < input_nodes.size(); i++) {
                 if (i != selected_input1 && rng_float(generator) > input_split_selection_rate) {
-                    add_edge(child, input_nodes[i], split1);
+                    add_edge(child, input_nodes[i], split1, node_1_input_edge_type);
                 }
 
                 if (i != selected_input2 && rng_float(generator) > input_split_selection_rate) {
-                    add_edge(child, input_nodes[i], split2);
+                    add_edge(child, input_nodes[i], split2, node_2_input_edge_type);
                 }
             }
 
             for (uint32_t i = 0; i < output_nodes.size(); i++) {
                 if (i != selected_output1 && rng_float(generator) > output_split_selection_rate) {
-                    add_edge(child, split1, output_nodes[i]);
+                    add_edge(child, split1, output_nodes[i], node_1_output_edge_type);
                 }
 
                 if (i != selected_output2 && rng_float(generator) > output_split_selection_rate) {
-                    add_edge(child, split2, output_nodes[i]);
+                    add_edge(child, split2, output_nodes[i], node_2_output_edge_type);
                 }
             }
             child_node->disable();
@@ -2221,11 +2235,14 @@ CNN_Genome* EXACT::create_mutation() {
                 }
             }
 
+            int input_edge_type = random_edge_type(rng_float(generator));
+            int output_edge_type = random_edge_type(rng_float(generator));
+
             for (uint32_t i = 0; i < connected_nodes.size(); i++) {
                 if (connected_nodes[i]->get_depth() < depth) {
-                    add_edge(child, connected_nodes[i], merged_node);
+                    add_edge(child, connected_nodes[i], merged_node, input_edge_type);
                 } else if (connected_nodes[i]->get_depth() > depth) {
-                    add_edge(child, merged_node, connected_nodes[i]);
+                    add_edge(child, merged_node, connected_nodes[i], output_edge_type);
                 }
             }
 
@@ -2309,19 +2326,52 @@ CNN_Genome* EXACT::create_mutation() {
     return child;
 }
 
-void attempt_node_insert(vector<CNN_Node*> &nodes, CNN_Node *node) {
-    for (int32_t i = 0; i < (int32_t)nodes.size(); i++) {
-        if (nodes[i]->get_innovation_number() == node->get_innovation_number()) return;
-    }
-
-    nodes.insert( upper_bound(nodes.begin(), nodes.end(), node->copy(), sort_CNN_Nodes_by_depth()), node->copy());
-}
 
 bool edges_contains(vector< CNN_Edge* > &edges, CNN_Edge *edge) {
     for (int32_t i = 0; i < (int32_t)edges.size(); i++) {
         if (edges[i]->get_innovation_number() == edge->get_innovation_number()) return true;
     }
     return false;
+}
+
+CNN_Edge* attempt_edge_insert(vector<CNN_Edge*> &child_edges, CNN_Edge *edge) {
+    for (int32_t i = 0; i < (int32_t)child_edges.size(); i++) {
+        if (child_edges[i]->get_innovation_number() == edge->get_innovation_number()) {
+            cerr << "ERROR in crossover! trying to push an edge with innovation_number: " << edge->get_innovation_number() << " and it already exists in the vector!" << endl;
+            /*
+            cerr << "p1_position: " << p1_position << ", p1_size: " << p1_child_edges.size() << endl;
+            cerr << "p2_position: " << p2_position << ", p2_size: " << p2_child_edges.size() << endl;
+            cerr << "vector innovation numbers: " << endl;
+            */
+            for (int32_t i = 0; i < (int32_t)child_edges.size(); i++) {
+                cerr << "\t" << child_edges[i]->get_innovation_number() << endl;
+            }
+
+            cerr << "This should never happen!" << endl;
+            exit(1);
+
+            return NULL;
+        } else if (child_edges[i]->get_input_innovation_number() == edge->get_input_innovation_number() &&
+                child_edges[i]->get_output_innovation_number() == edge->get_output_innovation_number()) {
+
+            cerr << "Not inserting edge in crossover operation as there was already an edge with the same input and output innovation numbers!" << endl;
+            return NULL;
+        }
+    }
+
+    CNN_Edge *edge_copy = edge->copy();
+    child_edges.insert( upper_bound(child_edges.begin(), child_edges.end(), edge_copy, sort_CNN_Edges_by_depth()), edge_copy);
+
+    return edge_copy;
+}
+
+void attempt_node_insert(vector<CNN_Node*> &child_nodes, CNN_Node *node) {
+    for (int32_t i = 0; i < (int32_t)child_nodes.size(); i++) {
+        if (child_nodes[i]->get_innovation_number() == node->get_innovation_number()) return;
+    }
+
+    CNN_Node *node_copy = node->copy();
+    child_nodes.insert( upper_bound(child_nodes.begin(), child_nodes.end(), node_copy, sort_CNN_Nodes_by_depth()), node_copy);
 }
 
 CNN_Genome* EXACT::create_child() {
@@ -2374,7 +2424,6 @@ CNN_Genome* EXACT::create_child() {
     }
     */
 
-
     while (p1_position < (int32_t)p1_edges.size() && p2_position < (int32_t)p2_edges.size()) {
         CNN_Edge* p1_edge = p1_edges[p1_position];
         CNN_Edge* p2_edge = p2_edges[p2_position];
@@ -2383,72 +2432,45 @@ CNN_Genome* EXACT::create_child() {
         int p2_innovation = p2_edge->get_innovation_number();
 
         if (p1_innovation == p2_innovation) {
-            CNN_Edge *edge = p1_edge->copy();
-
-            if (edges_contains(child_edges, edge)) {
-                cerr << "ERROR in crossover! trying to push an edge with innovation_number: " << edge->get_innovation_number() << " and it already exists in the vector!" << endl;
-                cerr << "p1_position: " << p1_position << ", p1_size: " << p1_edges.size() << endl;
-                cerr << "p2_position: " << p2_position << ", p2_size: " << p2_edges.size() << endl;
-                cerr << "vector innovation numbers: " << endl;
-                for (int32_t i = 0; i < (int32_t)child_edges.size(); i++) {
-                    cerr << "\t" << child_edges[i]->get_innovation_number() << endl;
-                }
+            CNN_Edge *inserted_edge = NULL;
+            if ((inserted_edge = attempt_edge_insert(child_edges, p1_edge)) != NULL) {
+                //push back surrounding nodes
+                attempt_node_insert(child_nodes, p1_edge->get_input_node());
+                attempt_node_insert(child_nodes, p1_edge->get_output_node());
             }
-
-            child_edges.push_back(edge->copy());
-
-            //push back surrounding nodes
-            attempt_node_insert(child_nodes, p1_edge->get_input_node());
-            attempt_node_insert(child_nodes, p1_edge->get_output_node());
 
             p1_position++;
             p2_position++;
         } else if (p1_innovation < p2_innovation) {
-            CNN_Edge *edge = p1_edge->copy();
+            CNN_Edge *inserted_edge = NULL;
+            if ((inserted_edge = attempt_edge_insert(child_edges, p1_edge)) != NULL) {
 
-            if (edges_contains(child_edges, edge)) {
-                cerr << "ERROR in crossover! trying to push an edge with innovation_number: " << edge->get_innovation_number() << " and it already exists in the vector!" << endl;
-                cerr << "p1_position: " << p1_position << ", p1_size: " << p1_edges.size() << endl;
-                cerr << "p2_position: " << p2_position << ", p2_size: " << p2_edges.size() << endl;
-                cerr << "vector innovation numbers: " << endl;
-                for (int32_t i = 0; i < (int32_t)child_edges.size(); i++) {
-                    cerr << "\t" << child_edges[i]->get_innovation_number() << endl;
+                if (rng_float(generator) >= more_fit_parent_crossover) {
+                    inserted_edge->disable();
+                } else if (rng_float(generator) >= crossover_alter_edge_type) {
+                    inserted_edge->alter_edge_type();
                 }
+
+                //push back surrounding nodes
+                attempt_node_insert(child_nodes, p1_edge->get_input_node());
+                attempt_node_insert(child_nodes, p1_edge->get_output_node());
             }
-
-            child_edges.push_back(edge);
-
-            if (rng_float(generator) >= more_fit_parent_crossover) {
-                edge->disable();
-            }
-
-            //push back surrounding nodes
-            attempt_node_insert(child_nodes, p1_edge->get_input_node());
-            attempt_node_insert(child_nodes, p1_edge->get_output_node());
 
             p1_position++;
         } else {
-            CNN_Edge *edge = p2_edge->copy();
+            CNN_Edge *inserted_edge = NULL;
+            if ((inserted_edge = attempt_edge_insert(child_edges, p2_edge)) != NULL) {
 
-            if (edges_contains(child_edges, edge)) {
-                cerr << "ERROR in crossover! trying to push an edge with innovation_number: " << edge->get_innovation_number() << " and it already exists in the vector!" << endl;
-                cerr << "p1_position: " << p1_position << ", p1_size: " << p1_edges.size() << endl;
-                cerr << "p2_position: " << p2_position << ", p2_size: " << p2_edges.size() << endl;
-                cerr << "vector innovation numbers: " << endl;
-                for (int32_t i = 0; i < (int32_t)child_edges.size(); i++) {
-                    cerr << "\t" << child_edges[i]->get_innovation_number() << endl;
+                if (rng_float(generator) >= less_fit_parent_crossover) {
+                    inserted_edge->disable();
+                } else if (rng_float(generator) >= crossover_alter_edge_type) {
+                    inserted_edge->alter_edge_type();
                 }
+
+                //push back surrounding nodes
+                attempt_node_insert(child_nodes, p2_edge->get_input_node());
+                attempt_node_insert(child_nodes, p2_edge->get_output_node());
             }
-
-            child_edges.push_back(edge);
-
-            if (rng_float(generator) >= less_fit_parent_crossover) {
-                edge->disable();
-            }
-
-            //push back surrounding nodes
-            attempt_node_insert(child_nodes, p2_edge->get_input_node());
-            attempt_node_insert(child_nodes, p2_edge->get_output_node());
 
             p2_position++;
         }
@@ -2457,35 +2479,17 @@ CNN_Genome* EXACT::create_child() {
     while (p1_position < (int32_t)p1_edges.size()) {
         CNN_Edge* p1_edge = p1_edges[p1_position];
 
-        CNN_Edge *edge = p1_edge->copy();
+        CNN_Edge *inserted_edge = NULL;
+        if ((inserted_edge = attempt_edge_insert(child_edges, p1_edge)) != NULL) {
 
-        if (edges_contains(child_edges, edge)) {
-            cerr << "ERROR in crossover! trying to push an edge with innovation_number: " << edge->get_innovation_number() << " and it already exists in the vector!" << endl;
-            cerr << "p1_position: " << p1_position << ", p1_size: " << p1_edges.size() << endl;
-            cerr << "p1 innovation numbers: " << endl;
-            for (int32_t i = 0; i < (int32_t)p1_edges.size(); i++) {
-                cerr << "\t" << p1_edges[i]->get_innovation_number() << endl;
+            if (rng_float(generator) >= more_fit_parent_crossover) {
+                inserted_edge->disable();
             }
-            cerr << "p2_position: " << p2_position << ", p2_size: " << p2_edges.size() << endl;
-            cerr << "p2 innovation numbers: " << endl;
-            for (int32_t i = 0; i < (int32_t)p2_edges.size(); i++) {
-                cerr << "\t" << p2_edges[i]->get_innovation_number() << endl;
-            }
-            cerr << "vector innovation numbers: " << endl;
-            for (int32_t i = 0; i < (int32_t)child_edges.size(); i++) {
-                cerr << "\t" << child_edges[i]->get_innovation_number() << endl;
-            }
+
+            //push back surrounding nodes
+            attempt_node_insert(child_nodes, p1_edge->get_input_node());
+            attempt_node_insert(child_nodes, p1_edge->get_output_node());
         }
-
-        child_edges.push_back(edge);
-
-        if (rng_float(generator) >= more_fit_parent_crossover) {
-            edge->disable();
-        }
-
-        //push back surrounding nodes
-        attempt_node_insert(child_nodes, p1_edge->get_input_node());
-        attempt_node_insert(child_nodes, p1_edge->get_output_node());
 
         p1_position++;
     }
@@ -2493,35 +2497,16 @@ CNN_Genome* EXACT::create_child() {
     while (p2_position < (int32_t)p2_edges.size()) {
         CNN_Edge* p2_edge = p2_edges[p2_position];
 
-        CNN_Edge *edge = p2_edge->copy();
+        CNN_Edge *inserted_edge = NULL;
+        if ((inserted_edge = attempt_edge_insert(child_edges, p2_edge)) != NULL) {
+            if (rng_float(generator) >= less_fit_parent_crossover) {
+                inserted_edge->disable();
+            }
 
-        if (edges_contains(child_edges, edge)) {
-            cerr << "ERROR in crossover! trying to push an edge with innovation_number: " << edge->get_innovation_number() << " and it already exists in the vector!" << endl;
-            cerr << "p1_position: " << p1_position << ", p1_size: " << p1_edges.size() << endl;
-            cerr << "p1 innovation numbers: " << endl;
-            for (int32_t i = 0; i < (int32_t)p1_edges.size(); i++) {
-                cerr << "\t" << p1_edges[i]->get_innovation_number() << endl;
-            }
-            cerr << "p2_position: " << p2_position << ", p2_size: " << p2_edges.size() << endl;
-            cerr << "p2 innovation numbers: " << endl;
-            for (int32_t i = 0; i < (int32_t)p2_edges.size(); i++) {
-                cerr << "\t" << p2_edges[i]->get_innovation_number() << endl;
-            }
-            cerr << "vector innovation numbers: " << endl;
-            for (int32_t i = 0; i < (int32_t)child_edges.size(); i++) {
-                cerr << "\t" << child_edges[i]->get_innovation_number() << endl;
-            }
+            //push back surrounding nodes
+            attempt_node_insert(child_nodes, p2_edge->get_input_node());
+            attempt_node_insert(child_nodes, p2_edge->get_output_node());
         }
-
-        child_edges.push_back(edge);
-
-        if (rng_float(generator) >= less_fit_parent_crossover) {
-            edge->disable();
-        }
-
-        //push back surrounding nodes
-        attempt_node_insert(child_nodes, p2_edge->get_input_node());
-        attempt_node_insert(child_nodes, p2_edge->get_output_node());
 
         p2_position++;
     }
@@ -3172,6 +3157,7 @@ bool EXACT::is_identical(EXACT *other, bool testing_checkpoint) {
     if (are_different("crossover_rate", crossover_rate, other->crossover_rate)) return false;
     if (are_different("more_fit_parent_crossover", more_fit_parent_crossover, other->more_fit_parent_crossover)) return false;
     if (are_different("less_fit_parent_crossover", less_fit_parent_crossover, other->less_fit_parent_crossover)) return false;
+    if (are_different("crossover_alter_edge_type", crossover_alter_edge_type, other->crossover_alter_edge_type)) return false;
 
     if (are_different("number_mutations", number_mutations, other->number_mutations)) return false;
 

@@ -104,6 +104,7 @@ $query = "CREATE TABLE `exact_search` (
     `crossover_rate` float NOT NULL,
     `more_fit_parent_crossover` float NOT NULL,
     `less_fit_parent_crossover` float NOT NULL,
+    `crossover_alter_edge_type` float NOT NULL,
 
     `number_mutations` int(11) NOT NULL,
     `edge_alter_type` float NOT NULL,

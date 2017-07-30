@@ -1700,7 +1700,7 @@ void CNN_Genome::evaluate(const ImagesInterface &images, float &total_error, int
 
     float other_time = epoch_time - input_fired_time - output_fired_time - propagate_forward_time - propagate_backward_time;
 
-    cout << "epoch time: " << epoch_time << "s"
+    cerr << "epoch time: " << epoch_time << "s"
          << ", input_fired_time: " << input_fired_time
          << ", output_fired_time: " << output_fired_time
          << ", propagate_forward_time: " << propagate_forward_time
