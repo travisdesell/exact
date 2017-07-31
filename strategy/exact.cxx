@@ -724,7 +724,7 @@ EXACT::EXACT(const ImagesInterface &training_images, const ImagesInterface &gene
 
     reset_weights_chance = 0.20;
 
-    number_mutations = 3;
+    number_mutations = 1;
     edge_alter_type = 2.0;
     edge_disable = 2.5;
     edge_enable = 2.5;
