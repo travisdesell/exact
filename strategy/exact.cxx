@@ -1460,7 +1460,10 @@ bool EXACT::insert_genome(CNN_Genome* genome) {
             cout << "deleting worst genome" << endl;
             CNN_Genome *worst = genomes.back();
             genomes.pop_back();
-            delete worst;
+
+            if (worst->get_genome_id() != best_predictions_genome_id) {
+                delete worst;
+            }
         }
     }
 
