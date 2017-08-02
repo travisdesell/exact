@@ -33,7 +33,11 @@ echo "
         <div class='row'>
             <div class='col-sm-12'>";
 
-    $search_result = query_multi_db($db_name, "SELECT id, search_name, inserted_genomes, genomes_generated, max_genomes, max_epochs, sort_by_fitness FROM exact_search");
+    if ($db_name == "exact_bn_pool") {
+        $search_result = query_multi_db($db_name, "SELECT id, search_name, inserted_genomes, genomes_generated, max_genomes, max_epochs, best_predictions_genome_id FROM exact_search");
+    } else {
+        $search_result = query_multi_db($db_name, "SELECT id, search_name, inserted_genomes, genomes_generated, max_genomes, max_epochs FROM exact_search");
+    }
 
     while ($search_row = $search_result->fetch_assoc()) {
     /*
@@ -47,7 +51,7 @@ echo "
 
         //fitness query
 
-        $fitness_result = query_multi_db($db_name, "SELECT best_error, best_predictions, best_error_epoch FROM cnn_genome WHERE exact_id = " . $search_row['id'] . " ORDER BY (generalizability_error) LIMIT 1");
+        $fitness_result = query_multi_db($db_name, "SELECT best_error, best_predictions, best_error_epoch, generalizability_error, generalizability_predictions, test_error, test_predictions FROM cnn_genome WHERE exact_id = " . $search_row['id'] . " ORDER BY (generalizability_error) LIMIT 1");
         $fitness_row = $fitness_result->fetch_assoc();
 
         $search_row['best_error'] = number_format($fitness_row['best_error']);
@@ -60,24 +64,25 @@ echo "
 
         $search_row['best_error_epoch'] = $fitness_row['best_error_epoch'];
 
-        $fitness_result = query_multi_db($db_name, "SELECT generalizability_error, best_error_epoch FROM cnn_genome WHERE exact_id = " . $search_row['id'] . " ORDER BY (generalizability_error) DESC LIMIT 1");
-        $fitness_row = $fitness_result->fetch_assoc();
-
-        $search_row['worst_error'] = number_format($fitness_row['generalizability_error']);
-
-        $fitness_result = query_multi_db($db_name, "SELECT generalizability_error, generalizability_predictions, test_error, test_predictions FROM cnn_genome WHERE exact_id = " . $search_row['id'] . " ORDER BY (generalizability_error) LIMIT 1");
-        $fitness_row = $fitness_result->fetch_assoc();
-
         $search_row['generalizability_error'] = number_format($fitness_row['generalizability_error']);
         $search_row['generalizability_predictions'] = number_format(100 * $fitness_row['generalizability_predictions'] / 5000, 2) . "%";
 
         $search_row['test_error'] = number_format($fitness_row['test_error']);
         $search_row['test_predictions'] = number_format(100 * $fitness_row['test_predictions'] / 5000, 2) . "%";
 
-        $fitness_result = query_multi_db($db_name, "SELECT test_predictions, generalizability_predictions FROM cnn_genome WHERE exact_id = " . $search_row['id'] . " ORDER BY (generalizability_predictions + test_predictions) DESC LIMIT 1");
-        $fitness_row = $fitness_result->fetch_assoc();
+        if ($db_name == "exact_bn_pool") {
+            if ($search_row['best_predictions_genome_id'] != 0) {
+                $fitness_result = query_multi_db($db_name, "SELECT test_predictions, generalizability_predictions FROM cnn_genome WHERE exact_id = " . $search_row['id'] . " AND id = " . $search_row['best_predictions_genome_id']);
+                $fitness_row = $fitness_result->fetch_assoc();
 
-        $search_row['best_total_predictions'] = number_format(100 * ($fitness_row['test_predictions'] + $fitness_row['generalizability_predictions']) / 10000.0, 2) . "%";
+                $search_row['best_total_predictions'] = number_format(100 * ($fitness_row['test_predictions'] + $fitness_row['generalizability_predictions']) / 10000.0, 2) . "%";
+            }
+        } else {
+            $fitness_result = query_multi_db($db_name, "SELECT test_predictions, generalizability_predictions FROM cnn_genome WHERE exact_id = " . $search_row['id'] . " ORDER BY (generalizability_predictions + test_predictions) DESC LIMIT 1");
+            $fitness_row = $fitness_result->fetch_assoc();
+
+            $search_row['best_total_predictions'] = number_format(100 * ($fitness_row['test_predictions'] + $fitness_row['generalizability_predictions']) / 10000.0, 2) . "%";
+        }
 
 
         $search_row['is_hidden'] = false;
@@ -111,6 +116,7 @@ echo "
 
 //print_db_overview("exact");
 print_db_overview("exact_batchnorm", "EXACT BATCH NORMALIZATION");
+print_db_overview("exact_bn_pool", "EXACT BATCH NORMALIZATION WITH POOLING");
 
 print_footer('Travis Desell and the Wildlife@Home Team', "Travis Desell</body></html>");
 

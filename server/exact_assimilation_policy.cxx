@@ -221,7 +221,8 @@ int assimilate_handler(WORKUNIT& wu, vector<RESULT>& results, RESULT& canonical_
     } catch (int err) {
         log_messages.printf(MSG_CRITICAL, "[CANONICAL RESULT#%ld %s] assimilate_handler: could not open file for canonical_result\n", canonical_result.id, canonical_result.name);
         log_messages.printf(MSG_CRITICAL, "     file path: %s\n", fi.path.c_str());
-        return ERR_FOPEN;
+        return 0;
+        //return ERR_FOPEN;
     }
 
     cout << "creating istringstream" << endl;

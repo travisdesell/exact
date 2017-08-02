@@ -450,6 +450,7 @@ void EXACT::update_database() {
 
         << ", node_innovation_count = " << node_innovation_count
         << ", edge_innovation_count = " << edge_innovation_count
+        << ", best_predictions_genome_id = " << best_predictions_genome_id
         << ", inserted_from_map = '";
 
     write_map(query, inserted_from_map);
