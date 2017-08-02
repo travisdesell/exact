@@ -20,10 +20,6 @@ class ImageInterface {
 
         virtual int get_classification() const = 0;
 
-        virtual int get_channels() const = 0;
-        virtual int get_height() const = 0;
-        virtual int get_width() const = 0;
-
         virtual void print(ostream &out) = 0;
 };
 

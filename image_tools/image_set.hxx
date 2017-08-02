@@ -37,10 +37,6 @@ class Image : public ImageInterface {
 
         int get_classification() const;
 
-        int get_channels() const;
-        int get_height() const;
-        int get_width() const;
-
         void scale_0_1();
 
         float get_pixel(int z, int y, int x) const;

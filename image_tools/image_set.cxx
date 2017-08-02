@@ -62,18 +62,6 @@ int Image::get_classification() const {
     return classification;
 }
 
-int Image::get_channels() const {
-    return channels;
-}
-
-int Image::get_height() const {
-    return height + padding;
-}
-
-int Image::get_width() const {
-    return width + padding;
-}
-
 void Image::get_pixel_avg(vector<float> &channel_avgs) const {
     channel_avgs.clear();
     channel_avgs.assign(channels, 0.0);
