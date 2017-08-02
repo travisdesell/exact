@@ -241,11 +241,11 @@ int LargeImages::get_image_channels() const {
 }
 
 int LargeImages::get_image_width() const {
-    return subimage_width + padding;
+    return subimage_width + (2 * padding);
 }
 
 int LargeImages::get_image_height() const {
-    return subimage_height + padding;
+    return subimage_height + (2 * padding);
 }
 
 

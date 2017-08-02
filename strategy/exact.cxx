@@ -1284,13 +1284,21 @@ bool EXACT::insert_genome(CNN_Genome* genome) {
         }
 
         if (total_genome_predictions > total_best_genome_predictions) {
+            CNN_Genome *previous_best = best_predictions_genome;
+ 
             best_predictions_genome = genome;
 
 #ifdef _MYSQL_
             genome->export_to_database(id);
+            best_predictions_genome_id = genome->get_genome_id();
 #endif
 
-            best_predictions_genome_id = genome->get_genome_id();
+            //delete best_predictions_genome if it is not in the population
+            CNN_Genome *worst = genomes.back();
+            if (worst->get_generalizability_error() < previous_best->get_generalizability_error()) {
+                delete previous_best;
+            }
+
             was_best_predictions_genome = true;
         }
     }
@@ -1461,7 +1469,10 @@ bool EXACT::insert_genome(CNN_Genome* genome) {
             cout << "deleting worst genome" << endl;
             CNN_Genome *worst = genomes.back();
             genomes.pop_back();
-            delete worst;
+
+            if (worst->get_genome_id() != best_predictions_genome_id) {
+                delete worst;
+            }
         }
     }
 
