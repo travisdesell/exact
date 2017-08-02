@@ -34,6 +34,8 @@ $query = "CREATE TABLE `exact_search` (
     `node_innovation_count` int(11) NOT NULL,
     `edge_innovation_count` int(11) NOT NULL,
 
+    `best_predictions_genome_id` int(11) NOT NULL,
+
     `genomes_generated` int(11) NOT NULL,
     `inserted_genomes` int(11) NOT NULL,
     `max_genomes` int(11) NOT NULL,

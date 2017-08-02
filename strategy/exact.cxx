@@ -110,6 +110,8 @@ EXACT::EXACT(int exact_id) {
         node_innovation_count = atoi(row[++column]);
         edge_innovation_count = atoi(row[++column]);
 
+        best_predictions_genome_id = atoi(row[++column]);
+
         genomes_generated = atoi(row[++column]);
         inserted_genomes = atoi(row[++column]);
         max_genomes = atoi(row[++column]);
@@ -243,6 +245,12 @@ EXACT::EXACT(int exact_id) {
         cout << "inserted_genomes: " << inserted_genomes << ", max_genomes: " << max_genomes << endl;
 
         mysql_free_result(result);
+
+        if (best_predictions_genome_id > 0) {
+            best_predictions_genome = new CNN_Genome(best_predictions_genome_id);
+        } else {
+            best_predictions_genome = NULL;
+        }
     } else {
         cerr << "ERROR! could not find exact_search in database with id: " << exact_id << endl;
         exit(1);
@@ -279,6 +287,8 @@ void EXACT::export_to_database() {
         << ", population_size = " << population_size
         << ", node_innovation_count = " << node_innovation_count
         << ", edge_innovation_count = " << edge_innovation_count
+
+        << ", best_predictions_genome_id = " << best_predictions_genome_id
 
         << ", genomes_generated = " << genomes_generated
         << ", inserted_genomes = " << inserted_genomes
@@ -405,6 +415,10 @@ void EXACT::export_to_database() {
             if (i < (genomes.size() - 1)) delete_query << " AND ";
         }
 
+        if (best_predictions_genome_id > 0) {
+            delete_query << " AND id != " << best_predictions_genome_id;
+        }
+
         delete_query << ")";
 
         cout << delete_query.str() << endl;
@@ -467,6 +481,10 @@ void EXACT::update_database() {
             if (i < (genomes.size() - 1)) delete_query << " AND ";
         }
 
+        if (best_predictions_genome_id > 0) {
+            delete_query << " AND id != " << best_predictions_genome_id;
+        }
+
         delete_query << ")";
 
         cout << delete_query.str() << endl;
@@ -510,6 +528,9 @@ EXACT::EXACT(const ImagesInterface &training_images, const ImagesInterface &gene
 
     node_innovation_count = 0;
     edge_innovation_count = 0;
+
+    best_predictions_genome_id = -1;
+    best_predictions_genome = NULL;
 
     inserted_genomes = 0;
 
@@ -1248,10 +1269,29 @@ bool EXACT::insert_genome(CNN_Genome* genome) {
 
     bool was_inserted = true;
 
+    bool was_best_predictions_genome = false;
+
     inserted_genomes++;
 
     if (genome->get_fitness() != EXACT_MAX_FLOAT) {
         write_individual_hyperparameters(genome);
+
+        int total_genome_predictions = genome->get_test_predictions() + genome->get_generalizability_predictions();
+        int total_best_genome_predictions = 0;
+        if (best_predictions_genome != NULL) {
+            total_best_genome_predictions = best_predictions_genome->get_test_predictions() + best_predictions_genome->get_generalizability_predictions();
+        }
+
+        if (total_genome_predictions > total_best_genome_predictions) {
+            best_predictions_genome = genome;
+
+#ifdef _MYSQL_
+            genome->export_to_database(id);
+#endif
+
+            best_predictions_genome_id = genome->get_genome_id();
+            was_best_predictions_genome = true;
+        }
     }
 
     for (auto i = generated_from_map.begin(); i != generated_from_map.end(); i++) {
@@ -1274,7 +1314,7 @@ bool EXACT::insert_genome(CNN_Genome* genome) {
 
         } else {
             cerr << "\tpopulation already contains genome! not inserting." << endl;
-            delete genome;
+            if (!was_best_predictions_genome) delete genome;
 
             if (output_directory.compare("") != 0) write_statistics(new_generation_id, new_fitness);
             return false;
@@ -1400,7 +1440,8 @@ bool EXACT::insert_genome(CNN_Genome* genome) {
         //this will not be inserted into the population
         cout << "not inserting genome due to poor fitness" << endl;
         was_inserted = false;
-        delete genome;
+
+        if (!was_best_predictions_genome) delete genome;
     } else {
         cout << "updating search statistics" << endl;
 
@@ -1447,6 +1488,10 @@ bool EXACT::insert_genome(CNN_Genome* genome) {
             << ", hd: " << setw(8) << fixed << setprecision(5) << genomes[i]->get_hidden_dropout_probability()
             << ", bs: " << setw(6) << fixed << setprecision(5) << genomes[i]->get_batch_size()
             << endl;
+    }
+
+    if (best_predictions_genome != NULL) {
+        cout << "best genome total predictions: " << best_predictions_genome->get_generalizability_predictions() + best_predictions_genome->get_test_predictions() << ", generalizability predictions: " << best_predictions_genome->get_generalizability_predictions() << ", test predictions: " << best_predictions_genome->get_test_predictions() << ", generalizability error: " << best_predictions_genome->get_generalizability_error() << endl;
     }
 
     /*

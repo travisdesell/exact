@@ -61,6 +61,9 @@ class EXACT {
 
         vector< CNN_Genome* > genomes;
 
+        int best_predictions_genome_id;
+        CNN_Genome *best_predictions_genome;
+
         int genomes_generated;
         int inserted_genomes;
         int max_genomes;
