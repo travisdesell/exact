@@ -218,11 +218,11 @@ int Images::get_image_channels() const {
 }
 
 int Images::get_image_height() const {
-    return height + padding;
+    return height + (2 * padding);
 }
 
 int Images::get_image_width() const {
-    return width + padding;
+    return width + (2 * padding);
 }
 
 
