@@ -934,6 +934,69 @@ void CNN_Genome::resize_edges_around_node(int node_innovation_number) {
     }
 }
 
+vector<CNN_Node*> CNN_Genome::get_reachable_nodes() {
+    vector<CNN_Node*> reachable_nodes;
+
+    for (uint32_t i = 0; i < nodes.size(); i++) {
+        if (nodes[i]->is_reachable()) {
+            reachable_nodes.push_back(nodes[i]);
+        }
+    }
+
+    return reachable_nodes;
+}
+
+vector<CNN_Node*> CNN_Genome::get_disabled_nodes() {
+    vector<CNN_Node*> disabled_nodes;
+
+    for (uint32_t i = 0; i < nodes.size(); i++) {
+        if (nodes[i]->is_disabled()) {
+            disabled_nodes.push_back(nodes[i]);
+        }
+    }
+
+    return disabled_nodes;
+}
+
+
+vector<CNN_Node*> CNN_Genome::get_reachable_hidden_nodes() {
+    vector<CNN_Node*> reachable_nodes;
+
+    for (uint32_t i = 0; i < nodes.size(); i++) {
+        if (nodes[i]->is_reachable() && nodes[i]->is_hidden()) {
+            reachable_nodes.push_back(nodes[i]);
+        }
+    }
+
+    return reachable_nodes;
+}
+
+vector<CNN_Edge*> CNN_Genome::get_reachable_edges() {
+    vector<CNN_Edge*> reachable_edges;
+
+    for (uint32_t i = 0; i < edges.size(); i++) {
+        if (edges[i]->is_reachable()) {
+            reachable_edges.push_back(edges[i]);
+        }
+    }
+
+    return reachable_edges;
+}
+
+vector<CNN_Edge*> CNN_Genome::get_disabled_edges() {
+    vector<CNN_Edge*> disabled_edges;
+
+    for (uint32_t i = 0; i < edges.size(); i++) {
+        if (edges[i]->is_disabled()) {
+            disabled_edges.push_back(edges[i]);
+        }
+    }
+
+    return disabled_edges;
+}
+
+
+
 bool CNN_Genome::sanity_check(int type) {
     //check to see if all edge filters are the correct size
     for (uint32_t i = 0; i < edges.size(); i++) {
@@ -1637,7 +1700,7 @@ void CNN_Genome::evaluate(const ImagesInterface &images, float &total_error, int
 
     float other_time = epoch_time - input_fired_time - output_fired_time - propagate_forward_time - propagate_backward_time;
 
-    cout << "epoch time: " << epoch_time << "s"
+    cerr << "epoch time: " << epoch_time << "s"
          << ", input_fired_time: " << input_fired_time
          << ", output_fired_time: " << output_fired_time
          << ", propagate_forward_time: " << propagate_forward_time

@@ -9,17 +9,20 @@ import sys
 from cycler import cycler
 
 
-output_directory = sys.argv[1]
+input_directory = sys.argv[1]
+output_directory = sys.argv[2]
+search_name = sys.argv[3]
 
-progress_file = output_directory + "/progress.txt"
-fitness_filename = output_directory + "/fitness_progress.png"
-epochs_filename = output_directory + "/epochs_progress.png"
-nodes_edges_filename = output_directory + "/nodes_edges_progress.png"
-weights_filename = output_directory + "/weights_progress.png"
+progress_file = input_directory + "/progress.txt"
 
-node_percentage_file = output_directory + "/node_percentage_progress.png"
-edge_percentage_file = output_directory + "/edge_percentage_progress.png"
-other_percentage_file = output_directory + "/other_percentage_progress.png"
+fitness_filename = output_directory + search_name + "_fitness_progress.png"
+epochs_filename = output_directory + search_name + "_epochs_progress.png"
+nodes_edges_filename = output_directory + search_name + "_nodes_edges_progress.png"
+weights_filename = output_directory + search_name + "_weights_progress.png"
+
+node_percentage_file = output_directory + search_name + "_node_percentage_progress.png"
+edge_percentage_file = output_directory + search_name + "_edge_percentage_progress.png"
+other_percentage_file = output_directory + search_name + "_other_percentage_progress.png"
 
 f = open(progress_file, 'rb')
 reader = csv.reader(f)
@@ -83,7 +86,7 @@ plot_min_avg_max(weights_filename, 'Count', ["Weights"], ["green"], 18, v1, lege
 
 n_initial_columns = 21
 
-def generate_percentage_plot(output_filename, percentage_type):
+def generate_percentage_plot(output_filename, percentage_type, title):
     num_plots = len(headers) - n_initial_columns
     colormap = plt.cm.gist_ncar
 
@@ -114,7 +117,7 @@ def generate_percentage_plot(output_filename, percentage_type):
     ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.05),
             fancybox=True, shadow=True, ncol=5, prop={'size':8})
 
-    ax.set_title('EXACT Inserted Genome Statistics')
+    ax.set_title(title)
 #ax.legend(loc='upper right')
     ax.set_xlabel('Genomes Evaluated')
     ax.set_ylabel('Genomes Inserted (%)')
@@ -122,6 +125,6 @@ def generate_percentage_plot(output_filename, percentage_type):
 
     plt.savefig(output_filename)
 
-generate_percentage_plot(node_percentage_file, "node")
-generate_percentage_plot(edge_percentage_file, "edge")
-generate_percentage_plot(other_percentage_file, "")
+generate_percentage_plot(node_percentage_file, "node", "Node Mutation Operation Statistics")
+generate_percentage_plot(edge_percentage_file, "edge", "Edge Mutation Operation Statistics")
+generate_percentage_plot(other_percentage_file, "", "Other Mutation Operation Statistics")

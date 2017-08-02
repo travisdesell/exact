@@ -34,6 +34,8 @@ $query = "CREATE TABLE `exact_search` (
     `node_innovation_count` int(11) NOT NULL,
     `edge_innovation_count` int(11) NOT NULL,
 
+    `best_predictions_genome_id` int(11) NOT NULL,
+
     `genomes_generated` int(11) NOT NULL,
     `inserted_genomes` int(11) NOT NULL,
     `max_genomes` int(11) NOT NULL,
@@ -98,14 +100,13 @@ $query = "CREATE TABLE `exact_search` (
     `hidden_dropout_probability_min` float NOT NULL,
     `hidden_dropout_probability_max` float NOT NULL,
 
-
-    `sort_by_fitness` tinyint(1) NOT NULL,
     `reset_weights_chance` float NOT NULL,
 
     `no_modification_rate` float NOT NULL,
     `crossover_rate` float NOT NULL,
     `more_fit_parent_crossover` float NOT NULL,
     `less_fit_parent_crossover` float NOT NULL,
+    `crossover_alter_edge_type` float NOT NULL,
 
     `number_mutations` int(11) NOT NULL,
     `edge_alter_type` float NOT NULL,

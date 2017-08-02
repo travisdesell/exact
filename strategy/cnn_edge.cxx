@@ -664,23 +664,40 @@ bool CNN_Edge::is_filter_correct() const {
 
     bool is_correct = true;
     if (reverse_filter_x) {
-        //cout << "\t\t\tfilter_x: " << filter_x << ", should be: " << (output_node->get_size_x() - input_node->get_size_x()) + 1 << " (output_x: " << output_node->get_size_x() << " - input_x: " << input_node->get_size_x() << " + 1) " << endl;
-
         is_correct = is_correct && (filter_x == (output_node->get_size_x() - input_node->get_size_x()) + 1);
-    } else {
-        //cout << "\t\t\tfilter_x: " << filter_x << ", should be: " << (input_node->get_size_x() - output_node->get_size_x()) + 1 << " (input_x: " << input_node->get_size_x() << " - output_x: " << output_node->get_size_x() << " + 1) " << endl;
 
+        if (!is_correct) {
+            cerr << "\t\t\tfilter_x: " << filter_x << ", should be: " << (output_node->get_size_x() - input_node->get_size_x()) + 1 << " (output_x: " << output_node->get_size_x() << " - input_x: " << input_node->get_size_x() << " + 1) " << endl;
+        }
+    } else {
         is_correct = is_correct && (filter_x == (input_node->get_size_x() - output_node->get_size_x()) + 1);
+
+        if (!is_correct) {
+            cerr << "\t\t\tfilter_x: " << filter_x << ", should be: " << (input_node->get_size_x() - output_node->get_size_x()) + 1 << " (input_x: " << input_node->get_size_x() << " - output_x: " << output_node->get_size_x() << " + 1) " << endl;
+        }
     }
 
     if (reverse_filter_y) {
-        //cout << "\t\t\tfilter_y: " << filter_y << ", should be: " << (output_node->get_size_y() - input_node->get_size_y()) + 1 << " (output_y: " << output_node->get_size_y() << " - input_y: " << input_node->get_size_y() << " + 1) " << endl;
-
         is_correct = is_correct && (filter_y == (output_node->get_size_y() - input_node->get_size_y()) + 1);
+
+        if (!is_correct) {
+            cerr << "\t\t\tfilter_y: " << filter_y << ", should be: " << (output_node->get_size_y() - input_node->get_size_y()) + 1 << " (output_y: " << output_node->get_size_y() << " - input_y: " << input_node->get_size_y() << " + 1) " << endl;
+        }
     } else {
-        //cout << "\t\t\tfilter_y: " << filter_y << ", should be: " << (input_node->get_size_y() - output_node->get_size_y()) + 1 << " (input_y: " << input_node->get_size_y() << " - output_y: " << output_node->get_size_y() << " + 1) " << endl;
 
         is_correct = is_correct && (filter_y == (input_node->get_size_y() - output_node->get_size_y()) + 1);
+
+        if (!is_correct) {
+            cerr << "\t\t\tfilter_y: " << filter_y << ", should be: " << (input_node->get_size_y() - output_node->get_size_y()) + 1 << " (input_y: " << input_node->get_size_y() << " - output_y: " << output_node->get_size_y() << " + 1) " << endl;
+        }
+    }
+
+    if (!is_correct) {
+        cerr << "\t\tfilter incorrect on edge: " << innovation_number << endl;
+        cerr << "\t\t\tdisabled? " << disabled << endl;
+        cerr << "\t\t\ttype: " << type << endl;
+        cerr << "\t\t\treverse_filter_x? " << reverse_filter_x << ", reverse_filter_y: " << reverse_filter_y << endl;
+        cerr << "\t\t\tbetween node " << input_node_innovation_number << " and " << output_node_innovation_number << endl;
     }
 
     return is_correct;

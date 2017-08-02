@@ -278,3 +278,9 @@ void prop_backward_ry_rx(float* output_errors, float* input, float* input_errors
     }
 }
 
+#ifdef PROPAGATE_TEST
+int main(int argc, char **argv) {
+    //make tests for the 8 convolve operations
+
+}
+#endif

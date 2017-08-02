@@ -59,10 +59,10 @@ class EXACT {
         uniform_int_distribution<long> rng_long;
         uniform_real_distribution<float> rng_float;
 
-        vector <CNN_Node* > all_nodes;
-        vector <CNN_Edge* > all_edges;
-
         vector< CNN_Genome* > genomes;
+
+        int best_predictions_genome_id;
+        CNN_Genome *best_predictions_genome;
 
         int genomes_generated;
         int inserted_genomes;
@@ -129,14 +129,13 @@ class EXACT {
         float hidden_dropout_probability_min;
         float hidden_dropout_probability_max;
 
-
-        bool sort_by_fitness;
         float reset_weights_chance;
 
         float no_modification_rate;
         float crossover_rate;
         float more_fit_parent_crossover;
         float less_fit_parent_crossover;
+        float crossover_alter_edge_type;
 
         int number_mutations;
         float edge_alter_type;
@@ -178,7 +177,7 @@ class EXACT {
         void generate_simplex_hyperparameters(float &mu, float &mu_delta, float &learning_rate, float &learning_rate_delta, float &weight_decay, float &weight_decay_delta, float &alpha, int &velocity_reset, float &input_dropout_probability, float &hidden_dropout_probability, int &batch_size);
 
 
-        bool add_edge(CNN_Genome *child, CNN_Node *node1, CNN_Node *node2);
+        bool add_edge(CNN_Genome *child, CNN_Node *node1, CNN_Node *node2, int edge_type);
 
         CNN_Genome* generate_individual();
         CNN_Genome* create_mutation();

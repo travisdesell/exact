@@ -13,6 +13,10 @@ $databases = array(
     "exact_batchnorm" => array(
         "file" => $cwd[__FILE__] . '/../exact_batchnorm_db_info',
         "database" => NULL
+    ),
+    "exact_bn_pool" => array(
+        "file" => $cwd[__FILE__] . '/../exact_bn_pool_db_info',
+        "database" => NULL
     )
 );
 

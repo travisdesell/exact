@@ -186,6 +186,12 @@ class CNN_Genome {
         int get_number_softmax_nodes() const;
         int get_number_input_nodes() const;
 
+        vector<CNN_Node*> get_reachable_nodes();
+        vector<CNN_Node*> get_disabled_nodes();
+        vector<CNN_Node*> get_reachable_hidden_nodes();
+        vector<CNN_Edge*> get_reachable_edges();
+        vector<CNN_Edge*> get_disabled_edges();
+
         void add_node(CNN_Node* node);
         void add_edge(CNN_Edge* edge);
         bool disable_edge(int edge_position);

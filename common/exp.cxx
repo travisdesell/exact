@@ -1,3 +1,12 @@
+#ifdef EXACT_MATH_TEST
+#include <cmath>
+#include <cstdlib>
+
+#include <iostream>
+using std::cout;
+using std::endl;
+#endif
+
 #include <cstdint>
 
 #include "exp.hxx"
@@ -47,3 +56,20 @@ float exact_sqrt(float s) {
 
     return s_next;
 }
+
+#ifdef EXACT_MATH_TEST
+
+int main(int argc, char **argv) {
+    
+    float value = 0.932;
+
+    for (int i = 0; i < 100; i++) {
+        float exact_result = exact_sqrt(value);
+        float default_result = sqrt(value);
+
+        cout << "value: " << value << ", exact_sqrt: " << exact_result << ", sqrt: " << default_result << endl;
+        value += drand48();
+    }
+}
+
+#endif

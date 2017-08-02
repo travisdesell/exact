@@ -120,6 +120,13 @@ int main(int argc, char** argv) {
     }
     cerr << "parsed input file" << endl;
 
+    if (!genome->sanity_check(SANITY_CHECK_AFTER_GENERATION)) {
+        cerr << "ERROR! genome failed sanity check! This should never happen!" << endl;
+
+        boinc_finish(1);
+        exit(1);
+    }
+
     if (genome->get_version_str().compare(EXACT_VERSION_STR) != 0) {
         cerr << "ERROR: exact application with version '" << EXACT_VERSION_STR << "' trying to process workunit with incompatible input version: '" << genome->get_version_str() << "'" << endl;
         boinc_finish(1);

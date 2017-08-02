@@ -56,6 +56,7 @@ function process_genomes($db_name) {
 }
 
 process_genomes("exact_batchnorm");
+process_genomes("exact_bn_pool");
 
 echo "listing files!\n";
 
