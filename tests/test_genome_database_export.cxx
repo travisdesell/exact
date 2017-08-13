@@ -56,23 +56,25 @@ int main(int argc, char **argv) {
     int predictions;
     //genome->evaluate(training_images, error, predictions);
 
-    if (!genome_from_file->is_identical(genome_from_database, false)) {
-        cerr << "ERROR! genome from file and genome from database were not identical!" << endl;
-        exit(1);
-    }
-
     genome_from_file->set_to_best();
     genome_from_file->evaluate(testing_images, error, predictions);
 
     cout << "GENOME FROM FILE test error: " << error << endl;
     cout << "GENOME FROM FILE test predictions " << predictions << endl;
 
+    genome_from_database->initialize();
     genome_from_database->set_to_best();
     genome_from_database->evaluate(testing_images, error, predictions);
     genome_from_database->write_to_file("./exported_genome_" + to_string(genome_id));
 
     cout << "GENOME FROM FILE test error: " << error << endl;
     cout << "GENOME FROM FILE test predictions " << predictions << endl;
+
+    if (!genome_from_file->is_identical(genome_from_database, false)) {
+        cerr << "ERROR! genome from file and genome from database were not identical!" << endl;
+        exit(1);
+    }
+
 
     /*
     ostringstream query;
