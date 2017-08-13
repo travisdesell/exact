@@ -27,7 +27,7 @@ using std::vector;
 
 #include "image_tools/image_set.hxx"
 
-#include "strategy/exact.hxx"
+#include "cnn/exact.hxx"
 
 mutex exact_mutex;
 

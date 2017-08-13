@@ -17,10 +17,10 @@ using std::vector;
 
 #include "common/arguments.hxx"
 
-#include "strategy/exact.hxx"
-#include "strategy/cnn_genome.hxx"
-#include "strategy/cnn_edge.hxx"
-#include "strategy/cnn_node.hxx"
+#include "cnn/exact.hxx"
+#include "cnn/cnn_genome.hxx"
+#include "cnn/cnn_edge.hxx"
+#include "cnn/cnn_node.hxx"
 
 #include "image_tools/large_image_set.hxx"
 

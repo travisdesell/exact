@@ -10,7 +10,7 @@
 
 #include "image_tools/image_set.hxx"
 
-#include "strategy/cnn_genome.hxx"
+#include "cnn/cnn_genome.hxx"
 
 #include "stdint.h"
 

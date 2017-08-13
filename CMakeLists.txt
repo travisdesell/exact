@@ -55,7 +55,9 @@ ENDIF (COMPILE_CLIENT STREQUAL "YES")
 
 add_subdirectory(common)
 add_subdirectory(image_tools)
-add_subdirectory(strategy)
+add_subdirectory(time_series)
+add_subdirectory(cnn)
+add_subdirectory(rnn)
 add_subdirectory(tests)
 add_subdirectory(opencl)
 

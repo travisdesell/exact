@@ -28,7 +28,7 @@ using std::vector;
 
 #include "image_tools/image_set.hxx"
 
-#include "strategy/exact.hxx"
+#include "cnn/exact.hxx"
 
 #define WORK_REQUEST_TAG 1
 #define GENOME_LENGTH_TAG 2
