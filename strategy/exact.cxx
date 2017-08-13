@@ -1290,14 +1290,22 @@ bool EXACT::insert_genome(CNN_Genome* genome) {
 
 #ifdef _MYSQL_
             genome->export_to_database(id);
+            cout << "set new best predictions genome id to: " << genome->get_genome_id();
             best_predictions_genome_id = genome->get_genome_id();
 #endif
 
-            //delete best_predictions_genome if it is not in the population
-            CNN_Genome *worst = genomes.back();
-            if (worst->get_generalizability_error() < previous_best->get_generalizability_error()) {
-                delete previous_best;
+            if (genomes.size() > 0) {
+                //delete best_predictions_genome if it is not in the population
+                CNN_Genome *worst = genomes.back();
+                cout << "got worst" << endl;
+                if (previous_best != NULL && worst->get_generalizability_error() < previous_best->get_generalizability_error()) {
+                    cout << "deleting previous best" << endl;
+                    delete previous_best;
+                    cout << "deleted previous best" << endl;
+                }
             }
+
+            cout << "found new best predictions genome!" << endl;
 
             was_best_predictions_genome = true;
         }

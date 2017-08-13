@@ -65,30 +65,48 @@ $tp = $genome_row['test_predictions'];
 $genome_row['test_error'] = number_format($genome_row['test_error'], 3);
 $genome_row['test_predictions'] = $tp . " (" . number_format(100.0 * $tp / 10000.00, 2) . "%)";
 
+$gp = $genome_row['generalizability_predictions'];
+$genome_row['generalizability_error'] = number_format($genome_row['generalizability_error'], 3);
+$genome_row['generalizability_predictions'] = $gp . " (" . number_format(100.0 * $gp / 10000.00, 2) . "%)";
 
-$node_result = query_multi_db($db_name, "SELECT count(*) FROM cnn_node WHERE genome_id = $genome_id");
+$genome_row['combined_error'] = $genome_row['generalizability_error'] + $genome_row['test_error'];
+$genome_row['combined_predictions'] = $genome_row['generalizability_predictions'] + $genome_row['test_predictions'];
+$cp = $genome_row['combined_predictions'];
+$genome_row['combined_predictions'] = $cp . " (" . number_format(100.0 * $cp / 10000.00, 2) . "%)";
+
+
+$node_result = query_multi_db($db_name, "SELECT count(*) FROM cnn_node WHERE genome_id = $genome_id AND disabled = 0");
 $node_row = $node_result->fetch_assoc();
-$genome_row['number_nodes'] = $node_row['count(*)'];
+$genome_row['number_enabled_nodes'] = $node_row['count(*)'];
 
-$edge_result = query_multi_db($db_name, "SELECT count(*) FROM cnn_edge WHERE genome_id = $genome_id AND disabled = 0");
+$node_result = query_multi_db($db_name, "SELECT count(*) FROM cnn_node WHERE genome_id = $genome_id AND disabled = 1");
+$node_row = $node_result->fetch_assoc();
+$genome_row['number_disabled_nodes'] = $node_row['count(*)'];
+
+
+
+$edge_result = query_multi_db($db_name, "SELECT count(*) FROM cnn_edge WHERE genome_id = $genome_id AND disabled = 0 AND type = 0");
 $edge_row = $edge_result->fetch_assoc();
-$genome_row['number_enabled_edges'] = $edge_row['count(*)'];
+$genome_row['number_enabled_conv_edges'] = $edge_row['count(*)'];
 
-$edge_result = query_multi_db($db_name, "SELECT count(*) FROM cnn_edge WHERE genome_id = $genome_id AND disabled = 1");
+$edge_result = query_multi_db($db_name, "SELECT count(*) FROM cnn_edge WHERE genome_id = $genome_id AND disabled = 1 AND type = 0");
 $edge_row = $edge_result->fetch_assoc();
-$genome_row['number_disabled_edges'] = $edge_row['count(*)'];
+$genome_row['number_disabled_conv_edges'] = $edge_row['count(*)'];
+
+$edge_result = query_multi_db($db_name, "SELECT count(*) FROM cnn_edge WHERE genome_id = $genome_id AND disabled = 0 AND type = 1");
+$edge_row = $edge_result->fetch_assoc();
+$genome_row['number_enabled_pool_edges'] = $edge_row['count(*)'];
+
+$edge_result = query_multi_db($db_name, "SELECT count(*) FROM cnn_edge WHERE genome_id = $genome_id AND disabled = 1 AND type = 1");
+$edge_row = $edge_result->fetch_assoc();
+$genome_row['number_disabled_pool_edges'] = $edge_row['count(*)'];
 
 
-$weight_result = query_multi_db($db_name, "SELECT sum(filter_x * filter_y) FROM cnn_edge WHERE genome_id = $genome_id AND disabled = 0");
+
+$weight_result = query_multi_db($db_name, "SELECT sum(filter_x * filter_y) FROM cnn_edge WHERE genome_id = $genome_id AND disabled = 0 AND type = 0");
 $weight_row = $weight_result->fetch_assoc();
 $weight_count = $weight_row['sum(filter_x * filter_y)'];
 $genome_row['weight_count'] = $weight_count;
-
-
-$bias_result = query_multi_db($db_name, "SELECT sum(size_x * size_y) FROM cnn_node WHERE genome_id = $genome_id");
-$bias_row = $bias_result->fetch_assoc();
-$bias_count = $bias_row['sum(size_x * size_y)'];
-$genome_row['bias_count'] = $bias_count;
 
 
 $stderr_result = query_multi_db($db_name, "SELECT stderr_out FROM cnn_genome WHERE id = $genome_id");

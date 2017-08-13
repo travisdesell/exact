@@ -341,6 +341,7 @@ CNN_Genome::CNN_Genome(int _genome_id) {
             edges.push_back(edge);
 
             edge->set_nodes(nodes);
+            edge->set_pools();
         }
 
         //cout << "got all edges!" << endl;
