@@ -1545,6 +1545,7 @@ bool EXACT::add_edge(CNN_Genome *child, CNN_Node *node1, CNN_Node *node2, int ed
 
             if (edge->is_disabled()) {
                 edge->enable();
+                edge->set_needs_init();
                 if (!edge->set_nodes(child->get_nodes())) {
                     edge->resize();
                 }
@@ -2343,6 +2344,8 @@ CNN_Genome* EXACT::create_mutation() {
 
                 if (edge->get_output_innovation_number() == node->get_innovation_number() || edge->get_input_innovation_number() == node->get_innovation_number()) {
                     edge->enable();
+                    //reinitialize weights for re-enabled edge
+                    edge->set_needs_init();
                 }
             }
 
