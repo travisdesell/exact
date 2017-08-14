@@ -1537,6 +1537,22 @@ void CNN_Genome::set_to_best() {
     }
 }
 
+void CNN_Genome::reset() {
+    reset_weights = true;
+    epoch = 0; 
+
+    mu = initial_mu;
+    learning_rate = initial_learning_rate;
+    weight_decay = initial_weight_decay;
+
+    best_error = EXACT_MAX_FLOAT;
+    best_predictions = 0; 
+
+    unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
+    generator = minstd_rand0(seed);
+}
+
+
 void CNN_Genome::initialize() {
     //cout << "visiting nodes!" << endl;
     visit_nodes();
@@ -1652,6 +1668,7 @@ void CNN_Genome::evaluate(const ImagesInterface &images, float &total_error, int
         int batch_correct_predictions = 0;
         evaluate_images(images, batch, training, batch_total_error, batch_correct_predictions, accumulate_test_statistics);
 
+        /*
         cerr << "[" << setw(10) << name << ", genome " << setw(5) << generation_id << "] ";
         if (training) {
             cerr << "training batch: ";
@@ -1659,6 +1676,7 @@ void CNN_Genome::evaluate(const ImagesInterface &images, float &total_error, int
             cerr << "test batch: ";
         }
         cerr << setw(5) << (j / batch_size) << "/" << setw(5) << (backprop_order.size() / batch_size) << ", batch total error: " << setw(15) << fixed << setprecision(5) << batch_total_error << ", batch_correct_predictions: " << batch_correct_predictions << endl;
+        */
 
         total_error += batch_total_error;
         correct_predictions += batch_correct_predictions;

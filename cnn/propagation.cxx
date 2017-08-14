@@ -63,13 +63,13 @@ void prop_forward_ry(const float* input, const float* weights, float* output, in
     int input_image_size = input_size_y * input_size_x;
     //int width_difference = input_size_x - output_size_x;
 
-    current_weight = 0;
+    for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
+        current_weight = 0;
 
-    for (int32_t fy = 0; fy < filter_y; fy++) {
-        for (int32_t fx = 0; fx < filter_x; fx++) {
-            float weight = weights[current_weight++];
+        for (int32_t fy = 0; fy < filter_y; fy++) {
+            for (int32_t fx = 0; fx < filter_x; fx++) {
+                float weight = weights[current_weight++];
 
-            for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
                 for (int32_t y = 0; y < input_size_y; y++) {
                     current_input = (batch_number * input_image_size) + (input_size_x * y) + fx;
                     current_output = (batch_number * output_image_size) + (output_size_x * (fy + y));
@@ -90,13 +90,13 @@ void prop_forward_rx(const float* input, const float* weights, float* output, in
     int input_image_size = input_size_y * input_size_x;
     //int width_difference = input_size_x - output_size_x;
 
-    current_weight = 0;
+    for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
+        current_weight = 0;
 
-    for (int32_t fy = 0; fy < filter_y; fy++) {
-        for (int32_t fx = 0; fx < filter_x; fx++) {
-            float weight = weights[current_weight++];
+        for (int32_t fy = 0; fy < filter_y; fy++) {
+            for (int32_t fx = 0; fx < filter_x; fx++) {
+                float weight = weights[current_weight++];
 
-            for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
                 for (int32_t y = 0; y < output_size_y; y++) {
                     current_input = (batch_number * input_image_size) + (input_size_x * (fy + y));
                     current_output = (batch_number * output_image_size) + (output_size_x * y) + fx;
@@ -119,13 +119,13 @@ void prop_forward_ry_rx(const float* input, const float* weights, float* output,
     int input_image_size = input_size_y * input_size_x;
     //int width_difference = input_size_x - output_size_x;
 
-    current_weight = 0;
+    for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
+        current_weight = 0;
 
-    for (int32_t fy = 0; fy < filter_y; fy++) {
-        for (int32_t fx = 0; fx < filter_x; fx++) {
-            float weight = weights[current_weight++];
+        for (int32_t fy = 0; fy < filter_y; fy++) {
+            for (int32_t fx = 0; fx < filter_x; fx++) {
+                float weight = weights[current_weight++];
 
-            for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
                 for (int32_t y = 0; y < input_size_y; y++) {
                     current_input = (batch_number * input_image_size) + (input_size_x * y);
                     current_output = (batch_number * output_image_size) + (output_size_x * (fy + y)) + fx;
@@ -149,14 +149,14 @@ void prop_backward(float* output_errors, float* input, float* input_errors, floa
 
     float weight_update, weight, delta;
 
-    current_weight = 0;
+    for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
+        current_weight = 0;
 
-    for (int32_t fy = 0; fy < filter_y; fy++) {
-        for (int32_t fx = 0; fx < filter_x; fx++) {
-            weight_update = 0;
-            weight = weights[current_weight];
+        for (int32_t fy = 0; fy < filter_y; fy++) {
+            for (int32_t fx = 0; fx < filter_x; fx++) {
+                weight_update = 0;
+                weight = weights[current_weight];
 
-            for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
                 current_output = (batch_number * output_image_size);
                 current_input = (batch_number * input_image_size) + (fy * input_size_x) + fx;
 
@@ -170,9 +170,9 @@ void prop_backward(float* output_errors, float* input, float* input_errors, floa
                     }
                     current_input += width_difference;
                 }
+                weight_updates[current_weight] += weight_update / batch_size;
+                current_weight++;
             }
-            weight_updates[current_weight] += weight_update / batch_size;
-            current_weight++;
         }
     }
 }
@@ -185,14 +185,14 @@ void prop_backward_ry(float* output_errors, float* input, float* input_errors, f
 
     float weight_update, weight, delta;
 
-    current_weight = 0;
+    for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
+        current_weight = 0;
 
-    for (int32_t fy = 0; fy < filter_y; fy++) {
-        for (int32_t fx = 0; fx < filter_x; fx++) {
-            weight_update = 0;
-            weight = weights[current_weight];
+        for (int32_t fy = 0; fy < filter_y; fy++) {
+            for (int32_t fx = 0; fx < filter_x; fx++) {
+                weight_update = 0;
+                weight = weights[current_weight];
 
-            for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
                 for (int32_t y = 0; y < input_size_y; y++) {
                     current_output = (batch_number * output_image_size) + (output_size_x * (fy + y));
                     current_input = (batch_number * input_image_size) + (input_size_x * y) + fx;
@@ -203,9 +203,9 @@ void prop_backward_ry(float* output_errors, float* input, float* input_errors, f
                         input_errors[current_input + x] += delta * weight;
                     }
                 }
+                weight_updates[current_weight] += weight_update / batch_size;
+                current_weight++;
             }
-            weight_updates[current_weight] += weight_update / batch_size;
-            current_weight++;
         }
     }
 }
@@ -218,14 +218,14 @@ void prop_backward_rx(float* output_errors, float* input, float* input_errors, f
 
     float weight_update, weight, delta;
 
-    current_weight = 0;
+    for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
+        current_weight = 0;
 
-    for (int32_t fy = 0; fy < filter_y; fy++) {
-        for (int32_t fx = 0; fx < filter_x; fx++) {
-            weight_update = 0;
-            weight = weights[current_weight];
+        for (int32_t fy = 0; fy < filter_y; fy++) {
+            for (int32_t fx = 0; fx < filter_x; fx++) {
+                weight_update = 0;
+                weight = weights[current_weight];
 
-            for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
                 for (int32_t y = 0; y < output_size_y; y++) {
                     current_output = (batch_number * output_image_size) + (output_size_x * y) + fx;
                     current_input = (batch_number * input_image_size) + (input_size_x * (fy + y));
@@ -236,9 +236,9 @@ void prop_backward_rx(float* output_errors, float* input, float* input_errors, f
                         input_errors[current_input + x] += delta * weight;
                     }
                 }
+                weight_updates[current_weight] += weight_update / batch_size;
+                current_weight++;
             }
-            weight_updates[current_weight] += weight_update / batch_size;
-            current_weight++;
         }
     }
 }
@@ -251,14 +251,14 @@ void prop_backward_ry_rx(float* output_errors, float* input, float* input_errors
 
     float weight_update, weight, delta;
 
-    current_weight = 0;
+    for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
+        current_weight = 0;
 
-    for (int32_t fy = 0; fy < filter_y; fy++) {
-        for (int32_t fx = 0; fx < filter_x; fx++) {
-            weight_update = 0.0;
-            weight = weights[current_weight];
+        for (int32_t fy = 0; fy < filter_y; fy++) {
+            for (int32_t fx = 0; fx < filter_x; fx++) {
+                weight_update = 0.0;
+                weight = weights[current_weight];
 
-            for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
                 for (int32_t y = 0; y < input_size_y; y++) {
                     current_output = (batch_number * output_image_size) + (output_size_x * (fy + y)) + fx;
                     current_input = (batch_number * input_image_size) + (input_size_x * y);
@@ -269,9 +269,9 @@ void prop_backward_ry_rx(float* output_errors, float* input, float* input_errors
                         input_errors[current_input + x] += delta * weight;
                     }
                 }
+                weight_updates[current_weight] += weight_update / batch_size;
+                current_weight++;
             }
-            weight_updates[current_weight] += weight_update / batch_size;
-            current_weight++;
         }
     }
 }

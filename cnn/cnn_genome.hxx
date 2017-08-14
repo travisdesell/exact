@@ -203,6 +203,8 @@ class CNN_Genome {
 
         void set_to_best();
         void save_to_best();
+
+        void reset();
         void initialize();
 
         void evaluate(const ImagesInterface &images, vector< vector<int> > &predictions);

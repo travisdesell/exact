@@ -640,10 +640,10 @@ EXACT::EXACT(const ImagesInterface &training_images, const ImagesInterface &gene
     mu_delta_min = 0.95;
     mu_delta_max = 0.95;
 
-    initial_learning_rate_min = 0.0025;
-    initial_learning_rate_max = 0.0025;
-    learning_rate_min = 0.0025;
-    learning_rate_max = 0.0025;
+    initial_learning_rate_min = 0.05;
+    initial_learning_rate_max = 0.05;
+    learning_rate_min = 0.05;
+    learning_rate_max = 0.05;
 
     initial_learning_rate_delta_min = 0.95;
     initial_learning_rate_delta_max = 0.95;
@@ -697,9 +697,9 @@ EXACT::EXACT(const ImagesInterface &training_images, const ImagesInterface &gene
     mu_delta_max = 1.00;
 
     initial_learning_rate_min = 0.001;
-    initial_learning_rate_max = 0.03;
+    initial_learning_rate_max = 0.10;
     learning_rate_min = 0.00001;
-    learning_rate_max = 0.1;
+    learning_rate_max = 0.3;
 
     initial_learning_rate_delta_min = 0.90;
     initial_learning_rate_delta_max = 0.99;

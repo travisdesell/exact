@@ -2,6 +2,9 @@ IF (MYSQL_FOUND)
     add_executable(evaluate_population evaluate_population)
     target_link_libraries(evaluate_population exact_strategy exact_common exact_image_tools ${MYSQL_LIBRARIES} pthread)
 
+    add_executable(retrain_cnn retrain_cnn)
+    target_link_libraries(retrain_cnn exact_strategy exact_common exact_image_tools ${MYSQL_LIBRARIES} pthread)
+
     add_executable(evaluate_cnn evaluate_cnn)
     target_link_libraries(evaluate_cnn exact_strategy exact_common exact_image_tools ${MYSQL_LIBRARIES} pthread)
 
@@ -37,6 +40,9 @@ IF (MYSQL_FOUND)
 ELSE (MYSQL_FOUND)
     add_executable(evaluate_population evaluate_population)
     target_link_libraries(evaluate_population exact_strategy exact_common exact_image_tools pthread)
+
+    add_executable(retrain_cnn retrain_cnn)
+    target_link_libraries(retrain_cnn exact_strategy exact_common exact_image_tools pthread)
 
     add_executable(evaluate_cnn evaluate_cnn)
     target_link_libraries(evaluate_cnn exact_strategy exact_common exact_image_tools pthread)
