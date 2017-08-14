@@ -1222,61 +1222,59 @@ ostream &operator<<(ostream &os, const CNN_Edge* edge) {
     os << edge->needs_initialization << " ";
     os << edge->batch_size << endl;
 
-    if (edge->disabled || !(edge->forward_visited && edge->reverse_visited)) {
-        os << "POOLS" << endl;
-        os << edge->y_pools.size();
-        for (int32_t i = 0; i < edge->y_pools.size(); i++) {
-            os << " " << edge->y_pools[i];
-        }
-        os << endl;
+    os << "POOLS" << endl;
+    os << edge->y_pools.size();
+    for (int32_t i = 0; i < edge->y_pools.size(); i++) {
+        os << " " << edge->y_pools[i];
+    }
+    os << endl;
 
-        os << edge->x_pools.size();
-        for (int32_t i = 0; i < edge->x_pools.size(); i++) {
-            os << " " << edge->x_pools[i];
-        }
-        os << endl;
+    os << edge->x_pools.size();
+    for (int32_t i = 0; i < edge->x_pools.size(); i++) {
+        os << " " << edge->x_pools[i];
+    }
+    os << endl;
 
-        os << "WEIGHTS" << endl;
-        int current = 0;
-        for (int32_t y = 0; y < edge->filter_y; y++) {
-            for (int32_t x = 0; x < edge->filter_x; x++) {
-                if (y > 0 || x > 0) os << " ";
-                write_hexfloat(os, edge->weights[current]);
-                current++;
-            }
+    os << "WEIGHTS" << endl;
+    int current = 0;
+    for (int32_t y = 0; y < edge->filter_y; y++) {
+        for (int32_t x = 0; x < edge->filter_x; x++) {
+            if (y > 0 || x > 0) os << " ";
+            write_hexfloat(os, edge->weights[current]);
+            current++;
         }
-        os << endl;
+    }
+    os << endl;
 
-        os << "BEST_WEIGHTS" << endl;
-        current = 0;
-        for (int32_t y = 0; y < edge->filter_y; y++) {
-            for (int32_t x = 0; x < edge->filter_x; x++) {
-                if (y > 0 || x > 0) os << " ";
-                write_hexfloat(os, edge->best_weights[current]);
-                current++;
-            }
+    os << "BEST_WEIGHTS" << endl;
+    current = 0;
+    for (int32_t y = 0; y < edge->filter_y; y++) {
+        for (int32_t x = 0; x < edge->filter_x; x++) {
+            if (y > 0 || x > 0) os << " ";
+            write_hexfloat(os, edge->best_weights[current]);
+            current++;
         }
-        os << endl;
+    }
+    os << endl;
 
-        os << "PREVIOUS_VELOCITY" << endl;
-        current = 0;
-        for (int32_t y = 0; y < edge->filter_y; y++) {
-            for (int32_t x = 0; x < edge->filter_x; x++) {
-                if (y > 0 || x > 0) os << " ";
-                write_hexfloat(os, edge->previous_velocity[current]);
-                current++;
-            }
+    os << "PREVIOUS_VELOCITY" << endl;
+    current = 0;
+    for (int32_t y = 0; y < edge->filter_y; y++) {
+        for (int32_t x = 0; x < edge->filter_x; x++) {
+            if (y > 0 || x > 0) os << " ";
+            write_hexfloat(os, edge->previous_velocity[current]);
+            current++;
         }
-        os << endl;
+    }
+    os << endl;
 
-        os << "BEST_VELOCITY" << endl;
-        current = 0;
-        for (int32_t y = 0; y < edge->filter_y; y++) {
-            for (int32_t x = 0; x < edge->filter_x; x++) {
-                if (y > 0 || x > 0) os << " ";
-                write_hexfloat(os, edge->best_velocity[current]);
-                current++;
-            }
+    os << "BEST_VELOCITY" << endl;
+    current = 0;
+    for (int32_t y = 0; y < edge->filter_y; y++) {
+        for (int32_t x = 0; x < edge->filter_x; x++) {
+            if (y > 0 || x > 0) os << " ";
+            write_hexfloat(os, edge->best_velocity[current]);
+            current++;
         }
     }
 
@@ -1304,118 +1302,116 @@ istream &operator>>(istream &is, CNN_Edge* edge) {
 
     edge->filter_size = edge->filter_y * edge->filter_x;
 
-    if (edge->disabled || !(edge->forward_visited && edge->reverse_visited)) {
-        //don't need to initialize memory for unreachable edges
-        edge->weights = new float[edge->filter_size]();
-        edge->weight_updates = new float[edge->filter_size]();
-        edge->best_weights = new float[edge->filter_size]();
+    //don't need to initialize memory for unreachable edges
+    edge->weights = new float[edge->filter_size]();
+    edge->weight_updates = new float[edge->filter_size]();
+    edge->best_weights = new float[edge->filter_size]();
 
-        edge->previous_velocity = new float[edge->filter_size]();
-        edge->best_velocity = new float[edge->filter_size]();
+    edge->previous_velocity = new float[edge->filter_size]();
+    edge->best_velocity = new float[edge->filter_size]();
 
-        string line;
-        getline(is, line);
-        getline(is, line);
-        if (line.compare("POOLS") != 0) {
-            cerr << "ERROR: invalid input file, expected line to be 'POOLS' but line was '" << line << "'" << endl;
-            exit(1);
-        }
-
-        int pool_size;
-        int value;
-
-        is >> pool_size;
-        edge->y_pools.clear();
-        for (int32_t i = 0; i < pool_size; i++) {
-            is >> value;
-            edge->y_pools.push_back(value);
-        }
-
-        is >> pool_size;
-        edge->x_pools.clear();
-        for (int32_t i = 0; i < pool_size; i++) {
-            is >> value;
-            edge->x_pools.push_back(value);
-        }
-
-        update_offset(edge->y_pools, edge->y_pool_offset);
-        update_offset(edge->x_pools, edge->x_pool_offset);
-
-        /*
-           cerr << "edge " << edge->innovation_number << ", y_pools: ";
-           for (int32_t i = 0; i < edge->y_pools.size(); i++) {
-           cerr << " " << edge->y_pools[i];
-           }
-           cerr << ", x_pools:";
-           for (int32_t i = 0; i < edge->x_pools.size(); i++) {
-           cerr << " " << edge->x_pools[i];
-           }
-           cerr << endl;
-           */
-
-
-        getline(is, line);
-        getline(is, line);
-        if (line.compare("WEIGHTS") != 0) {
-            cerr << "ERROR: invalid input file, expected line to be 'WEIGHTS' but line was '" << line << "'" << endl;
-            exit(1);
-        }
-
-        int current = 0;
-        for (int32_t y = 0; y < edge->filter_y; y++) {
-            for (int32_t x = 0; x < edge->filter_x; x++) {
-                edge->weights[current] = read_hexfloat(is);
-                current++;
-            }
-        }
-
-        getline(is, line);
-        getline(is, line);
-        if (line.compare("BEST_WEIGHTS") != 0) {
-            cerr << "ERROR: invalid input file, expected line to be 'BEST_WEIGHTS' but line was '" << line << "'" << endl;
-            exit(1);
-        }
-
-        current = 0;
-        for (int32_t y = 0; y < edge->filter_y; y++) {
-            for (int32_t x = 0; x < edge->filter_x; x++) {
-                edge->best_weights[current] = read_hexfloat(is);
-                current++;
-            }
-        }
-
-        getline(is, line);
-        getline(is, line);
-        if (line.compare("PREVIOUS_VELOCITY") != 0) {
-            cerr << "ERROR: invalid input file, expected line to be 'PREVIOUS_VELOCITY' but line was '" << line << "'" << endl;
-            exit(1);
-        }
-
-        current = 0;
-        for (int32_t y = 0; y < edge->filter_y; y++) {
-            for (int32_t x = 0; x < edge->filter_x; x++) {
-                edge->previous_velocity[current] = read_hexfloat(is);
-                current++;
-            }
-        }
-
-        getline(is, line);
-        getline(is, line);
-        if (line.compare("BEST_VELOCITY") != 0) {
-            cerr << "ERROR: invalid input file, expected line to be 'BEST_VELOCITY' but line was '" << line << "'" << endl;
-            exit(1);
-        }
-
-        current = 0;
-        for (int32_t y = 0; y < edge->filter_y; y++) {
-            for (int32_t x = 0; x < edge->filter_x; x++) {
-                edge->best_velocity[current] = read_hexfloat(is);
-                current++;
-            }
-        }
-
-        //pools will be initialized after nodes are set
+    string line;
+    getline(is, line);
+    getline(is, line);
+    if (line.compare("POOLS") != 0) {
+        cerr << "ERROR: invalid input file, expected line to be 'POOLS' but line was '" << line << "'" << endl;
+        exit(1);
     }
+
+    int pool_size;
+    int value;
+
+    is >> pool_size;
+    edge->y_pools.clear();
+    for (int32_t i = 0; i < pool_size; i++) {
+        is >> value;
+        edge->y_pools.push_back(value);
+    }
+
+    is >> pool_size;
+    edge->x_pools.clear();
+    for (int32_t i = 0; i < pool_size; i++) {
+        is >> value;
+        edge->x_pools.push_back(value);
+    }
+
+    update_offset(edge->y_pools, edge->y_pool_offset);
+    update_offset(edge->x_pools, edge->x_pool_offset);
+
+    /*
+       cerr << "edge " << edge->innovation_number << ", y_pools: ";
+       for (int32_t i = 0; i < edge->y_pools.size(); i++) {
+       cerr << " " << edge->y_pools[i];
+       }
+       cerr << ", x_pools:";
+       for (int32_t i = 0; i < edge->x_pools.size(); i++) {
+       cerr << " " << edge->x_pools[i];
+       }
+       cerr << endl;
+       */
+
+
+    getline(is, line);
+    getline(is, line);
+    if (line.compare("WEIGHTS") != 0) {
+        cerr << "ERROR: invalid input file, expected line to be 'WEIGHTS' but line was '" << line << "'" << endl;
+        exit(1);
+    }
+
+    int current = 0;
+    for (int32_t y = 0; y < edge->filter_y; y++) {
+        for (int32_t x = 0; x < edge->filter_x; x++) {
+            edge->weights[current] = read_hexfloat(is);
+            current++;
+        }
+    }
+
+    getline(is, line);
+    getline(is, line);
+    if (line.compare("BEST_WEIGHTS") != 0) {
+        cerr << "ERROR: invalid input file, expected line to be 'BEST_WEIGHTS' but line was '" << line << "'" << endl;
+        exit(1);
+    }
+
+    current = 0;
+    for (int32_t y = 0; y < edge->filter_y; y++) {
+        for (int32_t x = 0; x < edge->filter_x; x++) {
+            edge->best_weights[current] = read_hexfloat(is);
+            current++;
+        }
+    }
+
+    getline(is, line);
+    getline(is, line);
+    if (line.compare("PREVIOUS_VELOCITY") != 0) {
+        cerr << "ERROR: invalid input file, expected line to be 'PREVIOUS_VELOCITY' but line was '" << line << "'" << endl;
+        exit(1);
+    }
+
+    current = 0;
+    for (int32_t y = 0; y < edge->filter_y; y++) {
+        for (int32_t x = 0; x < edge->filter_x; x++) {
+            edge->previous_velocity[current] = read_hexfloat(is);
+            current++;
+        }
+    }
+
+    getline(is, line);
+    getline(is, line);
+    if (line.compare("BEST_VELOCITY") != 0) {
+        cerr << "ERROR: invalid input file, expected line to be 'BEST_VELOCITY' but line was '" << line << "'" << endl;
+        exit(1);
+    }
+
+    current = 0;
+    for (int32_t y = 0; y < edge->filter_y; y++) {
+        for (int32_t x = 0; x < edge->filter_x; x++) {
+            edge->best_velocity[current] = read_hexfloat(is);
+            current++;
+        }
+    }
+
+    //pools will be initialized after nodes are set
 
     return is;
 }

@@ -1529,11 +1529,15 @@ void CNN_Genome::save_to_best() {
 
 void CNN_Genome::set_to_best() {
     for (uint32_t i = 0; i < edges.size(); i++) {
-        edges[i]->set_weights_to_best();
+        if (edges[i]->is_reachable()) {
+            edges[i]->set_weights_to_best();
+        }
     }
 
     for (uint32_t i = 0; i < nodes.size(); i++) {
-        nodes[i]->set_weights_to_best();
+        if (edges[i]->is_reachable()) {
+            nodes[i]->set_weights_to_best();
+        }
     }
 }
 
@@ -1569,21 +1573,25 @@ void CNN_Genome::initialize() {
 
     if (reset_weights) {
         for (uint32_t i = 0; i < edges.size(); i++) {
-            edges[i]->initialize_weights(generator, normal_distribution);
-            edges[i]->save_best_weights();
+            if (edges[i]->is_reachable()) {
+                edges[i]->initialize_weights(generator, normal_distribution);
+                edges[i]->save_best_weights();
+            }
         }
         //cout << "initialized weights!" << endl;
 
         for (uint32_t i = 0; i < nodes.size(); i++) {
-            nodes[i]->initialize();
-            nodes[i]->save_best_weights();
+            if (nodes[i]->is_reachable()) {
+                nodes[i]->initialize();
+                nodes[i]->save_best_weights();
+            }
         }
         //cout << "initialized node gamma/beta!" << endl;
 
 
     } else {
         for (uint32_t i = 0; i < edges.size(); i++) {
-            if (edges[i]->needs_init()) {
+            if (edges[i]->is_reachable() && edges[i]->needs_init()) {
                 edges[i]->initialize_weights(generator, normal_distribution);
                 edges[i]->save_best_weights();
             }
@@ -1591,7 +1599,7 @@ void CNN_Genome::initialize() {
         //cout << "reinitialized weights!" << endl;
 
         for (uint32_t i = 0; i < nodes.size(); i++) {
-            if (nodes[i]->needs_init()) {
+            if (nodes[i]->is_reachable() && nodes[i]->needs_init()) {
                 nodes[i]->initialize();
                 nodes[i]->save_best_weights();
             }
