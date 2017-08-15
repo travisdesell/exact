@@ -62,15 +62,15 @@ class CNN_Genome {
         bool reset_weights;
 
         int padding;
-        int number_training_images;
-        float best_error;
-        int best_predictions;
-        int best_predictions_epoch;
-        int best_error_epoch;
 
-        int number_generalizability_images;
-        float generalizability_error;
-        int generalizability_predictions;
+        int best_epoch;
+        int number_validation_images;
+        float best_validation_error;
+        int best_validation_predictions;
+
+        int number_training_images;
+        float training_error;
+        int training_predictions;
 
         int number_test_images;
         float test_error;
@@ -98,7 +98,7 @@ class CNN_Genome {
         /**
          *  Iniitalize a genome from a set of nodes and edges
          */
-        CNN_Genome(int _generation_id, int _padding, int _number_training_images, int _number_generalizability_images, int _number_test_images, int seed, int _max_epochs, bool _reset_weights, int velocity_reset, float _mu, float _mu_delta, float _learning_rate, float _learning_rate_delta, float _weight_decay, float _weight_decay_delta, int _batch_size, float _epsilon, float _alpha, float _input_dropout_probability, float _hidden_dropout_probability, const vector<CNN_Node*> &_nodes, const vector<CNN_Edge*> &_edges);
+        CNN_Genome(int _generation_id, int _padding, int _number_training_images, int _number_validation_images, int _number_test_images, int seed, int _max_epochs, bool _reset_weights, int velocity_reset, float _mu, float _mu_delta, float _learning_rate, float _learning_rate_delta, float _weight_decay, float _weight_decay_delta, int _batch_size, float _epsilon, float _alpha, float _input_dropout_probability, float _hidden_dropout_probability, const vector<CNN_Node*> &_nodes, const vector<CNN_Edge*> &_edges);
 
         ~CNN_Genome();
 
@@ -116,10 +116,10 @@ class CNN_Genome {
 
         bool equals(CNN_Genome *other) const;
 
-        void print_progress(ostream &out, float total_error, int correct_predictions, int number_images) const;
+        void print_progress(ostream &out, string progress_name, float total_error, int correct_predictions, int number_images) const;
 
         int get_number_training_images() const;
-        int get_number_generalizability_images() const;
+        int get_number_validation_images() const;
         int get_number_test_images() const;
 
         int get_number_weights() const;
@@ -131,21 +131,20 @@ class CNN_Genome {
         void set_progress_function(int (*_progress_function)(float));
 
         int get_generation_id() const;
-        float get_fitness() const;
 
-        float get_best_error() const;
-        float get_best_rate() const;
-        int get_best_predictions() const;
+        float get_best_validation_error() const;
+        float get_best_validation_rate() const;
+        int get_best_validation_predictions() const;
 
-        float get_generalizability_error() const;
-        float get_generalizability_rate() const;
-        int get_generalizability_predictions() const;
+        float get_training_error() const;
+        float get_training_rate() const;
+        int get_training_predictions() const;
 
         float get_test_error() const;
         float get_test_rate() const;
         int get_test_predictions() const;
 
-        int get_best_error_epoch() const;
+        int get_best_epoch() const;
 
         int get_epoch() const;
         int get_max_epochs() const;
@@ -210,13 +209,12 @@ class CNN_Genome {
         void check_gradients(const ImagesInterface &images);
 
         void evaluate(const ImagesInterface &images, vector< vector<int> > &predictions);
-        void evaluate(const ImagesInterface &images, float &total_error, int &correct_predictions, bool perform_backprop, bool accumulate_test_statistics);
+        void evaluate(const ImagesInterface &images, const vector<long> &order, float &total_error, int &correct_predictions, bool perform_backprop, bool accumulate_test_statistics);
         void evaluate(const ImagesInterface &images, float &total_error, int &correct_predictions);
 
-        void stochastic_backpropagation(const ImagesInterface &training_images, int training_resize);
-        void stochastic_backpropagation(const ImagesInterface &training_images);
+        void stochastic_backpropagation(const ImagesInterface &training_images, int training_resize, const ImagesInterface &validation_images);
+        void stochastic_backpropagation(const ImagesInterface &training_images, const ImagesInterface &validation_images);
 
-        void evaluate_generalizability(const ImagesInterface &generalizability_images);
         void evaluate_test(const ImagesInterface &test_images);
 
         void set_name(string _name);
@@ -239,15 +237,15 @@ class CNN_Genome {
 void write_map(ostream &out, map<string, int> &m);
 void read_map(istream &in, map<string, int> &m);
 
-struct sort_genomes_by_fitness {
+struct sort_genomes_by_validation_error {
     bool operator()(CNN_Genome *g1, CNN_Genome *g2) {
-        return g1->get_fitness() < g2->get_fitness();
+        return g1->get_best_validation_error() < g2->get_best_validation_error();
     }   
 };
 
 struct sort_genomes_by_predictions {
     bool operator()(CNN_Genome *g1, CNN_Genome *g2) {
-        return g1->get_generalizability_predictions() > g2->get_generalizability_predictions();
+        return g1->get_best_validation_predictions() > g2->get_best_validation_predictions();
     }   
 };
 

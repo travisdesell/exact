@@ -30,6 +30,9 @@ int main(int argc, char **argv) {
     string training_filename;
     get_argument(arguments, "--training_file", true, training_filename);
 
+    string validation_filename;
+    get_argument(arguments, "--validation_file", true, validation_filename);
+
     string testing_filename;
     get_argument(arguments, "--testing_file", true, testing_filename);
 
@@ -76,6 +79,7 @@ int main(int argc, char **argv) {
     double epsilon = 1.0e-7;
 
     Images training_images(training_filename, padding);
+    Images validation_images(validation_filename, padding, training_images.get_average(), training_images.get_std_dev());
     Images testing_images(testing_filename, padding, training_images.get_average(), training_images.get_std_dev());
 
     int node_innovation_count = 0;
@@ -103,7 +107,7 @@ int main(int argc, char **argv) {
     long genome_seed = generator();
     cout << "seeding genome with: " << genome_seed << endl;
 
-    CNN_Genome *genome = new CNN_Genome(1, padding, training_images.get_number_images(), 0, testing_images.get_number_images(), genome_seed, max_epochs, true, velocity_reset, mu, mu_delta, learning_rate, learning_rate_delta, weight_decay, weight_decay_delta, batch_size, epsilon, alpha, input_dropout_probability, hidden_dropout_probability, nodes, edges);
+    CNN_Genome *genome = new CNN_Genome(1, padding, training_images.get_number_images(), validation_images.get_number_images(), testing_images.get_number_images(), genome_seed, max_epochs, true, velocity_reset, mu, mu_delta, learning_rate, learning_rate_delta, weight_decay, weight_decay_delta, batch_size, epsilon, alpha, input_dropout_probability, hidden_dropout_probability, nodes, edges);
     //save the weights and bias of the initially generated genome for reuse
     genome->initialize();
 
@@ -115,6 +119,6 @@ int main(int argc, char **argv) {
 
     genome->check_gradients(training_images);
 
-    genome->stochastic_backpropagation(training_images);
+    genome->stochastic_backpropagation(training_images, validation_images);
     genome->evaluate_test(testing_images);
 }

@@ -267,11 +267,18 @@ CNN_Genome::CNN_Genome(int _genome_id) {
 
         padding = atoi(row[++column]);
 
+        best_epoch = atoi(row[++column]);
+        number_validation_images = atoi(row[++column]);
+        best_validation_error = atof(row[++column]);
+        best_validation_predictions = atoi(row[++column]);
+
         number_training_images = atoi(row[++column]);
-        best_error = atof(row[++column]);
-        best_error_epoch = atoi(row[++column]);
-        best_predictions = atoi(row[++column]);
-        best_predictions_epoch = atoi(row[++column]);
+        training_error = atof(row[++column]);
+        training_predictions = atoi(row[++column]);
+
+        number_test_images = atoi(row[++column]);
+        test_error = atof(row[++column]);
+        test_predictions = atoi(row[++column]);
 
         started_from_checkpoint = atoi(row[++column]);
 
@@ -284,14 +291,6 @@ CNN_Genome::CNN_Genome(int _genome_id) {
 
         istringstream generated_by_map_iss(row[++column]);
         read_map(generated_by_map_iss, generated_by_map);
-
-        number_generalizability_images = atoi(row[++column]);
-        generalizability_error = atof(row[++column]);
-        generalizability_predictions = atoi(row[++column]);
-
-        number_test_images = atoi(row[++column]);
-        test_error = atof(row[++column]);
-        test_predictions = atoi(row[++column]);
 
         ostringstream node_query;
         node_query << "SELECT id FROM cnn_node WHERE genome_id = " << genome_id;
@@ -426,11 +425,19 @@ void CNN_Genome::export_to_database(int _exact_id) {
         << ", max_epochs = " << max_epochs
         << ", reset_weights = " << reset_weights
         << ", padding = " << padding
+        << ", best_epoch = " << best_epoch
+        << ", number_validation_images = " << number_validation_images
+        << ", best_validation_error = " << setprecision(15) << fixed << best_validation_error
+        << ", best_validation_predictions = " << best_validation_predictions
+
         << ", number_training_images = " << number_training_images
-        << ", best_error = " << setprecision(15) << fixed << best_error
-        << ", best_predictions = " << best_predictions
-        << ", best_predictions_epoch = " << best_predictions_epoch
-        << ", best_error_epoch = " << best_error_epoch
+        << ", training_error = " << setprecision(15) << fixed << training_error 
+        << ", training_predictions = " << training_predictions
+
+        << ", number_training_images = " << number_training_images
+        << ", test_error = " << setprecision(15) << fixed << test_error 
+        << ", test_predictions = " << test_predictions
+
         << ", started_from_checkpoint = " << started_from_checkpoint;
 
     //too much overhead for saving this and no use for it
@@ -452,14 +459,7 @@ void CNN_Genome::export_to_database(int _exact_id) {
 
     write_map(query, generated_by_map);
 
-    query << "'"
-        << ", number_generalizability_images = " << number_generalizability_images
-        << ", generalizability_error = " << generalizability_error 
-        << ", generalizability_predictions = " << generalizability_predictions
-        << ", number_test_images = " << number_test_images
-        << ", test_error = " << test_error 
-        << ", test_predictions = " << test_predictions;
-
+    query << "'";
     //cout << "query:\n" << query.str() << endl;
 
     mysql_exact_query(query.str());
@@ -483,7 +483,7 @@ void CNN_Genome::export_to_database(int _exact_id) {
 /**
  *  Iniitalize a genome from a set of nodes and edges
  */
-CNN_Genome::CNN_Genome(int _generation_id, int _padding, int _number_training_images, int _number_generalizability_images, int _number_test_images, int seed, int _max_epochs, bool _reset_weights, int _velocity_reset, float _mu, float _mu_delta, float _learning_rate, float _learning_rate_delta, float _weight_decay, float _weight_decay_delta, int _batch_size, float _epsilon, float _alpha, float _input_dropout_probability, float _hidden_dropout_probability, const vector<CNN_Node*> &_nodes, const vector<CNN_Edge*> &_edges) {
+CNN_Genome::CNN_Genome(int _generation_id, int _padding, int _number_training_images, int _number_validation_images, int _number_test_images, int seed, int _max_epochs, bool _reset_weights, int _velocity_reset, float _mu, float _mu_delta, float _learning_rate, float _learning_rate_delta, float _weight_decay, float _weight_decay_delta, int _batch_size, float _epsilon, float _alpha, float _input_dropout_probability, float _hidden_dropout_probability, const vector<CNN_Node*> &_nodes, const vector<CNN_Edge*> &_edges) {
     exact_id = -1;
     genome_id = -1;
     started_from_checkpoint = false;
@@ -491,7 +491,7 @@ CNN_Genome::CNN_Genome(int _generation_id, int _padding, int _number_training_im
 
     padding = _padding;
     number_training_images = _number_training_images;
-    number_generalizability_images = _number_generalizability_images;
+    number_validation_images = _number_validation_images;
     number_test_images = _number_test_images;
 
     progress_function = NULL;
@@ -521,17 +521,16 @@ CNN_Genome::CNN_Genome(int _generation_id, int _padding, int _number_training_im
     max_epochs = _max_epochs;
     reset_weights = _reset_weights;
 
-    best_predictions = 0;
-    best_error = EXACT_MAX_FLOAT;
+    best_epoch = 0;
+    best_validation_predictions = 0;
+    best_validation_error = EXACT_MAX_FLOAT;
 
-    generalizability_predictions = 0;
-    generalizability_error = EXACT_MAX_FLOAT;
+    training_predictions = 0;
+    training_error = EXACT_MAX_FLOAT;
 
     test_predictions = 0;
     test_error = EXACT_MAX_FLOAT;
 
-    best_predictions_epoch = 0;
-    best_error_epoch = 0;
 
     generation_id = _generation_id;
 
@@ -662,8 +661,8 @@ int CNN_Genome::get_number_training_images() const {
     return number_training_images;
 }
 
-int CNN_Genome::get_number_generalizability_images() const {
-    return number_generalizability_images;
+int CNN_Genome::get_number_validation_images() const {
+    return number_validation_images;
 }
 
 int CNN_Genome::get_number_test_images() const {
@@ -752,12 +751,8 @@ int CNN_Genome::get_generation_id() const {
     return generation_id;
 }
 
-float CNN_Genome::get_fitness() const {
-    if (generalizability_error == EXACT_MAX_FLOAT || best_error == EXACT_MAX_FLOAT) {
-        return EXACT_MAX_FLOAT;
-    } else {
-        return generalizability_error;
-    }
+float CNN_Genome::get_best_validation_error() const {
+    return best_validation_error;
 }
 
 int CNN_Genome::get_max_epochs() const {
@@ -768,38 +763,33 @@ int CNN_Genome::get_epoch() const {
     return epoch;
 }
 
-int CNN_Genome::get_best_error_epoch() const {
-    return best_error_epoch;
+int CNN_Genome::get_best_epoch() const {
+    return best_epoch;
 }
 
-float CNN_Genome::get_best_error() const {
-    return best_error;
+float CNN_Genome::get_best_validation_rate() const {
+    if (best_validation_error == EXACT_MAX_FLOAT) return 0.0;
+
+    return 100.0 * (float)best_validation_predictions / (float)number_validation_images;
 }
 
-float CNN_Genome::get_best_rate() const {
-    if (best_error == EXACT_MAX_FLOAT) return 0.0;
-
-    return 100.0 * (float)best_predictions / (float)number_training_images;
-}
-
-int CNN_Genome::get_best_predictions() const {
-    return best_predictions;
+int CNN_Genome::get_best_validation_predictions() const {
+    return best_validation_predictions;
 }
 
 
-float CNN_Genome::get_generalizability_error() const {
-    return generalizability_error;
+float CNN_Genome::get_training_error() const {
+    return training_error;
 }
 
-float CNN_Genome::get_generalizability_rate() const {
-    if (generalizability_error == EXACT_MAX_FLOAT) return 0.0;
+float CNN_Genome::get_training_rate() const {
+    if (training_error == EXACT_MAX_FLOAT) return 0.0;
 
-    return 100.0 * (float)generalizability_predictions / (float)number_generalizability_images;
+    return 100.0 * (float)training_predictions / (float)number_training_images;
 }
 
-
-int CNN_Genome::get_generalizability_predictions() const {
-    return generalizability_predictions;
+int CNN_Genome::get_training_predictions() const {
+    return training_predictions;
 }
 
 
@@ -813,10 +803,10 @@ float CNN_Genome::get_test_rate() const {
     return 100.0 * (float)test_predictions / (float)number_test_images;
 }
 
-
 int CNN_Genome::get_test_predictions() const {
     return test_predictions;
 }
+
 
 const vector<CNN_Node*> CNN_Genome::get_nodes() const {
     return nodes;
@@ -1632,8 +1622,9 @@ void CNN_Genome::reset() {
     learning_rate = initial_learning_rate;
     weight_decay = initial_weight_decay;
 
-    best_error = EXACT_MAX_FLOAT;
-    best_predictions = 0; 
+    best_epoch = 0;
+    best_validation_error = EXACT_MAX_FLOAT;
+    best_validation_predictions = 0; 
 
     unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
     generator = minstd_rand0(seed);
@@ -1704,8 +1695,8 @@ void CNN_Genome::initialize() {
     }
 }
 
-void CNN_Genome::print_progress(ostream &out, float total_error, int correct_predictions, int number_images) const {
-    out << "[" << setw(10) << name << ", genome " << setw(5) << generation_id << "] predictions: " << setw(7) << correct_predictions << "/" << setw(7) << number_images << " (" << setw(5) << fixed << setprecision(2) << (100.0 * (float)correct_predictions/(float)number_images) << "%), best: " << setw(7) << best_predictions << "/" << number_training_images << " (" << setw(5) << fixed << setprecision(2) << (100 * (float)best_predictions/(float)number_training_images) << "%), error: " << setw(15) << setprecision(5) << fixed << total_error << ", best error: " << setw(15) << best_error << " on epoch: " << setw(5) << best_error_epoch << ", epoch: " << setw(4) << epoch << "/" << max_epochs << ", mu: " << setw(12) << fixed << setprecision(10) << mu << ", learning_rate: " << setw(12) << fixed << setprecision(10) << learning_rate << ", weight_decay: " << setw(12) << fixed << setprecision(10) << weight_decay << endl;
+void CNN_Genome::print_progress(ostream &out, string progress_name, float total_error, int correct_predictions, int number_images) const {
+    out << setw(10) << progress_name << "[" << setw(10) << name << ", genome " << setw(5) << generation_id << "] predictions: " << setw(7) << correct_predictions << "/" << setw(7) << number_images << " (" << setw(5) << fixed << setprecision(2) << (100.0 * (float)correct_predictions/(float)number_images) << "%), best: " << setw(7) << best_validation_predictions << "/" << number_validation_images << " (" << setw(5) << fixed << setprecision(2) << (100 * (float)best_validation_predictions/(float)number_validation_images) << "%), error: " << setw(15) << setprecision(5) << fixed << total_error << ", best error: " << setw(15) << best_validation_error << " on epoch: " << setw(5) << best_epoch << ", epoch: " << setw(4) << epoch << "/" << max_epochs << ", mu: " << setw(12) << fixed << setprecision(10) << mu << ", learning_rate: " << setw(12) << fixed << setprecision(10) << learning_rate << ", weight_decay: " << setw(12) << fixed << setprecision(10) << weight_decay << endl;
 }
 
 
@@ -1723,7 +1714,7 @@ void CNN_Genome::evaluate(const ImagesInterface &images, vector< vector<int> > &
     }
 }
 
-void CNN_Genome::evaluate(const ImagesInterface &images, float &total_error, int &correct_predictions, bool perform_backprop, bool accumulate_test_statistics) {
+void CNN_Genome::evaluate(const ImagesInterface &images, const vector<long> &order, float &total_error, int &correct_predictions, bool perform_backprop, bool accumulate_test_statistics) {
     bool training;
     if (perform_backprop) {
         training = true;
@@ -1749,10 +1740,10 @@ void CNN_Genome::evaluate(const ImagesInterface &images, float &total_error, int
         edges[i]->reset_times();
     }
 
-    for (uint32_t j = 0; j < backprop_order.size(); j += batch_size) {
+    for (uint32_t j = 0; j < order.size(); j += batch_size) {
         vector<int> batch;
-        for (uint32_t k = 0; k < batch_size && (j + k) < backprop_order.size(); k++) {
-            batch.push_back( backprop_order[j + k] );
+        for (uint32_t k = 0; k < batch_size && (j + k) < order.size(); k++) {
+            batch.push_back( order[j + k] );
         }
 
         float batch_total_error = 0.0;
@@ -1766,7 +1757,7 @@ void CNN_Genome::evaluate(const ImagesInterface &images, float &total_error, int
         } else {
             cerr << "test batch: ";
         }
-        cerr << setw(5) << (j / batch_size) << "/" << setw(5) << (backprop_order.size() / batch_size) << ", batch total error: " << setw(15) << fixed << setprecision(5) << batch_total_error << ", batch_correct_predictions: " << batch_correct_predictions << endl;
+        cerr << setw(5) << (j / batch_size) << "/" << setw(5) << (order.size() / batch_size) << ", batch total error: " << setw(15) << fixed << setprecision(5) << batch_total_error << ", batch_correct_predictions: " << batch_correct_predictions << endl;
         */
 
         total_error += batch_total_error;
@@ -1824,17 +1815,18 @@ void CNN_Genome::evaluate(const ImagesInterface &images, float &total_error, int
         backprop_order.push_back(i);
     }
 
-    evaluate(images, total_error, correct_predictions, false, false);
+    evaluate(images, backprop_order, total_error, correct_predictions, false, false);
 
-    print_progress(cerr, total_error, correct_predictions, images.get_number_images());
+    print_progress(cerr, "", total_error, correct_predictions, images.get_number_images());
 }
 
-void CNN_Genome::stochastic_backpropagation(const ImagesInterface &training_images) {
-    stochastic_backpropagation(training_images, training_images.get_number_images());
+void CNN_Genome::stochastic_backpropagation(const ImagesInterface &training_images, const ImagesInterface &validation_images) {
+        stochastic_backpropagation(training_images, training_images.get_number_images(), validation_images);
 }
 
-void CNN_Genome::stochastic_backpropagation(const ImagesInterface &training_images, int training_resize) {
+void CNN_Genome::stochastic_backpropagation(const ImagesInterface &training_images, int training_resize, const ImagesInterface &validation_images) {
     number_training_images = training_resize;
+    number_validation_images = validation_images.get_number_images();
 
     for (uint32_t i = 0; i < nodes.size(); i++) {
         if (nodes[i]->needs_init()) {
@@ -1877,70 +1869,41 @@ void CNN_Genome::stochastic_backpropagation(const ImagesInterface &training_imag
 
         cerr << "post shuffle 1: " << generator() << endl;
 
-        best_error = EXACT_MAX_FLOAT;
+        best_validation_error = EXACT_MAX_FLOAT;
     }
     backprop_order.resize(training_resize);
 
     //sort edges by depth of input node
     sort(edges.begin(), edges.end(), sort_CNN_Edges_by_depth());
 
-    float total_error = 0.0;
-    int correct_predictions = 0;
-
-    /*
-    bool evaluate_initial_weights = true;
-    if  (evaluate_initial_weights) {
-        evaluate(images, total_error, correct_predictions, false);
-        print_progress(cerr, total_error, correct_predictions, number_training_images);
+    vector<long> validation_order;
+    for (uint32_t i = 0; i < number_validation_images; i++) {
+        validation_order.push_back(i);
     }
-    */
 
-    /*
-    vector<long> test_backprop_order;
-    for (uint32_t i = 0; i < number_test_images; i++) {
-        test_backprop_order.push_back(i);
-    }
-    */
+    float current_training_error = 0.0;
+    int current_training_predictions = 0;
+    float current_validation_error = 0.0;
+    int current_validation_predictions = 0;
 
     do {
         //shuffle the array (thanks C++ not being the same across operating systems)
         fisher_yates_shuffle(generator, backprop_order);
 
-        evaluate(training_images, total_error, correct_predictions, true, false);
-        evaluate(training_images, total_error, correct_predictions, false, false);
-
-        /*
-        vector<long> tmp_vector = backprop_order;
-        backprop_order = test_backprop_order;
-
-        evaluate(test_images, total_error, correct_predictions, false, false);
-        backprop_order = tmp_vector;
-        */
+        evaluate(training_images, backprop_order, current_training_error, current_training_predictions, true, false);
+        evaluate(validation_images, validation_order, current_validation_error, current_validation_predictions, false, false);
 
         bool found_improvement = false;
-        if (total_error < best_error) {
-            best_error = total_error;
-            best_error_epoch = epoch;
-            best_predictions = correct_predictions;
-            best_predictions_epoch = epoch;
+        if (current_validation_error < best_validation_error) {
+            best_validation_error = current_validation_error;
+            best_validation_predictions = current_validation_predictions;
+            best_epoch = epoch;
 
             save_to_best();
             found_improvement = true;
         }
-        //print_progress(cerr, total_error, correct_predictions, number_test_images);
-        print_progress(cerr, total_error, correct_predictions, number_training_images);
-
-        /*
-        if (total_error > 100000 && total_error != EXACT_MAX_FLOAT) {
-            for (uint32_t i = 0; i < edges.size(); i++) {
-                edges[i]->print_statistics();
-            }
-
-            for (uint32_t i = 0; i < nodes.size(); i++) {
-                nodes[i]->print_statistics();
-            }
-        }
-        */
+        print_progress(cerr, "training", current_training_error, current_training_predictions, number_training_images);
+        print_progress(cerr, "validation", current_validation_error, current_validation_predictions, number_validation_images);
 
         if (!found_improvement) {
             set_to_best();
@@ -1971,17 +1934,9 @@ void CNN_Genome::stochastic_backpropagation(const ImagesInterface &training_imag
         }
     } while (true);
 
-
-}
-
-void CNN_Genome::evaluate_generalizability(const ImagesInterface &generalizability_images) {
+    evaluate(training_images, backprop_order, training_error, training_predictions, false, false);
     set_to_best();
-
-    cerr << "evaluating best weights on generalizability data." << endl;
-    cerr << "evaluting generalizability set with running mean/variance:" << endl;
-
-    number_generalizability_images = generalizability_images.get_number_images();
-    evaluate(generalizability_images, generalizability_error, generalizability_predictions);
+    print_progress(cerr, "best training", training_error, training_predictions, number_training_images);
 }
 
 void CNN_Genome::evaluate_test(const ImagesInterface &test_images) {
@@ -2057,17 +2012,15 @@ void CNN_Genome::write(ostream &outfile) {
 
     outfile << padding << endl;
 
-    outfile << number_training_images << endl;
-    outfile << best_predictions << endl;
-    write_hexfloat(outfile, best_error);
+    outfile << best_epoch << endl;
+    outfile << number_validation_images << endl;
+    outfile << best_validation_predictions << endl;
+    write_hexfloat(outfile, best_validation_error);
     outfile << endl;
 
-    outfile << best_predictions_epoch << endl;
-    outfile << best_error_epoch << endl;
-
-    outfile << number_generalizability_images << endl;
-    outfile << generalizability_predictions << endl;
-    write_hexfloat(outfile, generalizability_error);
+    outfile << number_training_images << endl;
+    outfile << training_predictions << endl;
+    write_hexfloat(outfile, training_error);
     outfile << endl;
 
     outfile << number_test_images << endl;
@@ -2187,23 +2140,21 @@ void CNN_Genome::read(istream &infile) {
     infile >> padding;
     if (verbose) cerr << "read padding: " << padding << endl;
 
+    infile >> best_epoch;
+    if (verbose) cerr << "read best_epoch: " << best_epoch << endl;
     infile >> number_training_images;
     if (verbose) cerr << "read number_training_images: " << number_training_images << endl;
-    infile >> best_predictions;
-    if (verbose) cerr << "read best_predictions: " << best_predictions << endl;
-    best_error = read_hexfloat(infile);
-    if (verbose) cerr << "read best_error: " << best_error << endl;
-    infile >> best_predictions_epoch;
-    if (verbose) cerr << "read best_predictions_epoch: " << best_predictions_epoch << endl;
-    infile >> best_error_epoch;
-    if (verbose) cerr << "read best_error_epoch: " << best_error_epoch << endl;
+    infile >> best_validation_predictions;
+    if (verbose) cerr << "read best_validation_predictions: " << best_validation_predictions << endl;
+    best_validation_error = read_hexfloat(infile);
+    if (verbose) cerr << "read best_validation_error: " << best_validation_error << endl;
 
-    infile >> number_generalizability_images;
-    if (verbose) cerr << "read number_generalizability_images: " << number_generalizability_images << endl;
-    infile >> generalizability_predictions;
-    if (verbose) cerr << "read generalizability_predictions: " << generalizability_predictions << endl;
-    generalizability_error = read_hexfloat(infile);
-    if (verbose) cerr << "read generalizability_error: " << generalizability_error << endl;
+    infile >> number_training_images;
+    if (verbose) cerr << "read number_training_images: " << number_training_images << endl;
+    infile >> training_predictions;
+    if (verbose) cerr << "read training_predictions: " << training_predictions << endl;
+    training_error = read_hexfloat(infile);
+    if (verbose) cerr << "read training_error: " << training_error << endl;
 
     infile >> number_test_images;
     if (verbose) cerr << "read number_test_images: " << number_test_images << endl;
@@ -2506,18 +2457,19 @@ bool CNN_Genome::is_identical(CNN_Genome *other, bool testing_checkpoint) {
     if (are_different("reset_weights", reset_weights, other->reset_weights)) return false;
 
     if (are_different("padding", padding, other->padding)) return false;
+
+    if (are_different("best_epoch", best_epoch, other->best_epoch)) return false;
     if (are_different("number_training_images", number_training_images, other->number_training_images)) return false;
     //if (are_different("best_error", best_error, other->best_error)) return false;
-    if (are_different("best_predictions", best_predictions, other->best_predictions)) return false;
-    if (are_different("best_predictions_epoch", best_predictions_epoch, other->best_predictions_epoch)) return false;
-    if (are_different("best_error_epoch", best_error_epoch, other->best_error_epoch)) return false;
+    if (are_different("best_validation_predictions", best_validation_predictions, other->best_validation_predictions)) return false;
+    if (are_different("best_validation_error", best_validation_error, other->best_validation_error)) return false;
 
-    if (are_different("number_generalizability_images", number_generalizability_images, other->number_generalizability_images)) return false;
-    //if (are_different("generalizability_error", generalizability_error, other->generalizability_error)) return false;
-    if (are_different("generalizability_predictions", generalizability_predictions, other->generalizability_predictions)) return false;
+    if (are_different("number_training_images", number_training_images, other->number_training_images)) return false;
+    if (are_different("training_error", training_error, other->training_error)) return false;
+    if (are_different("training_predictions", training_predictions, other->training_predictions)) return false;
 
     if (are_different("number_test_images", number_test_images, other->number_test_images)) return false;
-    //if (are_different("test_error", test_error, other->test_error)) return false;
+    if (are_different("test_error", test_error, other->test_error)) return false;
     if (are_different("test_predictions", test_predictions, other->test_predictions)) return false;
 
     //if (are_different("started_from_checkpoint", started_from_checkpoint, other->started_from_checkpoint)) return false;

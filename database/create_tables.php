@@ -162,11 +162,18 @@ $query = "CREATE TABLE `cnn_genome` (
 
     `padding` int(11) DEFAULT NULL,
 
+    `best_epoch` int(11) NOT NULL,
+    `number_validation_images` int(11) DEFAULT NULL,
+    `best_validation_error` float NOT NULL,
+    `best_validation_predictions` int(11) NOT NULL,
+
     `number_training_images` int(11) DEFAULT NULL,
-    `best_error` float NOT NULL,
-    `best_error_epoch` int(11) NOT NULL,
-    `best_predictions` int(11) NOT NULL,
-    `best_predictions_epoch` int(11) NOT NULL,
+    `best_training_error` float NOT NULL,
+    `best_training_predictions` int NOT NULL,
+
+    `number_test_images` int(11) DEFAULT NULL,
+    `test_error` float DEFAULT NULL,
+    `test_predictions` int(11) DEFAULT NULL,
 
     `started_from_checkpoint` tinyint(1) NOT NULL,
 
@@ -176,14 +183,6 @@ $query = "CREATE TABLE `cnn_genome` (
     `output_filename` varchar(128) NOT NULL,
 
     `generated_by_map` varchar(256) NOT NULL,
-
-    `number_generalizability_images` int(11) DEFAULT NULL,
-    `generalizability_error` float DEFAULT NULL,
-    `generalizability_predictions` int(11) DEFAULT NULL,
-
-    `number_test_images` int(11) DEFAULT NULL,
-    `test_error` float DEFAULT NULL,
-    `test_predictions` int(11) DEFAULT NULL,
 
     `stderr_out` blob,
 

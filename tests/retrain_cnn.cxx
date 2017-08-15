@@ -29,6 +29,9 @@ int main(int argc, char **argv) {
     string training_data;
     get_argument(arguments, "--training_data", true, training_data);
 
+    string validation_data;
+    get_argument(arguments, "--validation_data", true, validation_data);
+
     string testing_data;
     get_argument(arguments, "--testing_data", true, testing_data);
 
@@ -62,6 +65,7 @@ int main(int argc, char **argv) {
     }
 
     Images training_images(training_data, genome->get_padding());
+    Images validation_images(validation_data, genome->get_padding(), training_images.get_average(), training_images.get_std_dev());
     Images testing_images(testing_data, genome->get_padding(), training_images.get_average(), training_images.get_std_dev());
 
     //cout << "number enabled edges: " << genome->get_number_enabled_edges();
@@ -71,7 +75,7 @@ int main(int argc, char **argv) {
     genome->reset();
     genome->initialize();
 
-    genome->stochastic_backpropagation(training_images);
+    genome->stochastic_backpropagation(training_images, validation_images);
     genome->evaluate_test(testing_images);
 
     //genome->set_to_best();

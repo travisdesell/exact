@@ -237,7 +237,7 @@ EXACT::EXACT(int exact_id) {
             //cout << "got genome with id: " << genome_id << endl;
 
             CNN_Genome *genome = new CNN_Genome(genome_id);
-            genomes.insert( upper_bound(genomes.begin(), genomes.end(), genome, sort_genomes_by_fitness()), genome);
+            genomes.insert( upper_bound(genomes.begin(), genomes.end(), genome, sort_genomes_by_validation_error()), genome);
         }
 
         cout << "got " << genomes.size() << " genomes." << endl;
@@ -1011,7 +1011,7 @@ void EXACT::generate_simplex_hyperparameters(float &mu, float &mu_delta, float &
         CNN_Genome *current_genome = genomes[rng_float(generator) * genomes.size()];
 
         //getting best parameters from group instead of best of population
-        if (i == 0 || current_genome->get_fitness() < best_fitness) {
+        if (i == 0 || current_genome->get_best_validation_error() < best_fitness) {
             best_mu = current_genome->get_initial_mu();
             best_mu_delta = current_genome->get_mu_delta();
             best_learning_rate = current_genome->get_initial_learning_rate();
@@ -1245,7 +1245,7 @@ int32_t EXACT::population_contains(CNN_Genome *genome) const {
     for (int32_t i = 0; i < (int32_t)genomes.size(); i++) {
         //we can overwrite genomes that were inserted in the initialization phase
         //and not evaluated
-        //if (genomes[i]->get_fitness() == EXACT_MAX_FLOAT) continue;
+        //if (genomes[i]->get_best_validation_error() == EXACT_MAX_FLOAT) continue;
 
         if (genomes[i]->equals(genome)) {
             cout << "\tgenome was the same as genome with generation id: " << genomes[i]->get_generation_id() << endl;
@@ -1265,7 +1265,7 @@ string parse_fitness(float fitness) {
 }
 
 bool EXACT::insert_genome(CNN_Genome* genome) {
-    float new_fitness = genome->get_fitness();
+    float new_fitness = genome->get_best_validation_error();
     int new_generation_id = genome->get_generation_id();
 
     bool was_inserted = true;
@@ -1274,16 +1274,16 @@ bool EXACT::insert_genome(CNN_Genome* genome) {
 
     inserted_genomes++;
 
-    if (genome->get_fitness() != EXACT_MAX_FLOAT) {
+    if (genome->get_best_validation_error() != EXACT_MAX_FLOAT) {
         write_individual_hyperparameters(genome);
 
-        int total_genome_predictions = genome->get_test_predictions() + genome->get_generalizability_predictions();
-        int total_best_genome_predictions = 0;
+        int genome_test_predictions = genome->get_test_predictions();
+        int best_genome_test_predictions = 0;
         if (best_predictions_genome != NULL) {
-            total_best_genome_predictions = best_predictions_genome->get_test_predictions() + best_predictions_genome->get_generalizability_predictions();
+            best_genome_test_predictions = best_predictions_genome->get_test_predictions();
         }
 
-        if (total_genome_predictions > total_best_genome_predictions) {
+        if (genome_test_predictions > best_genome_test_predictions) {
             CNN_Genome *previous_best = best_predictions_genome;
  
             best_predictions_genome = genome;
@@ -1298,7 +1298,7 @@ bool EXACT::insert_genome(CNN_Genome* genome) {
                 //delete best_predictions_genome if it is not in the population
                 CNN_Genome *worst = genomes.back();
                 cout << "got worst" << endl;
-                if (previous_best != NULL && worst->get_generalizability_error() < previous_best->get_generalizability_error()) {
+                if (previous_best != NULL && worst->get_best_validation_error() < previous_best->get_best_validation_error()) {
                     cout << "deleting previous best" << endl;
                     delete previous_best;
                     cout << "deleted previous best" << endl;
@@ -1315,7 +1315,7 @@ bool EXACT::insert_genome(CNN_Genome* genome) {
         generated_from_map[i->first] += genome->get_generated_by(i->first);
     }
 
-    cout << "genomes evaluated: " << setw(10) << inserted_genomes << ", inserting: " << parse_fitness(genome->get_fitness()) << endl;
+    cout << "genomes evaluated: " << setw(10) << inserted_genomes << ", inserting: " << parse_fitness(genome->get_best_validation_error()) << endl;
 
     int32_t duplicate_genome = population_contains(genome);
     if (duplicate_genome >= 0) {
@@ -1323,9 +1323,9 @@ bool EXACT::insert_genome(CNN_Genome* genome) {
         cout << "found duplicate at position: " << duplicate_genome << endl;
 
         CNN_Genome *duplicate = genomes[duplicate_genome];
-        if (duplicate->get_fitness() > genome->get_fitness()) {
+        if (duplicate->get_best_validation_error() > genome->get_best_validation_error()) {
             //erase the genome with loewr fitness from the vector;
-            cout << "REPLACING DUPLICATE GENOME, fitness of genome in search: " << parse_fitness(duplicate->get_fitness()) << ", new fitness: " << parse_fitness(genome->get_fitness()) << endl;
+            cout << "REPLACING DUPLICATE GENOME, fitness of genome in search: " << parse_fitness(duplicate->get_best_validation_error()) << ", new fitness: " << parse_fitness(genome->get_best_validation_error()) << endl;
             genomes.erase(genomes.begin() + duplicate_genome);
             delete duplicate;
 
@@ -1344,9 +1344,9 @@ bool EXACT::insert_genome(CNN_Genome* genome) {
         cout << "ERROR: genome " << genome->get_generation_id() << " failed sanity check before insert!" << endl;
         exit(1);
     }
-    cout << "genome " << genome->get_generation_id() << " passed sanity check with fitness: " << parse_fitness(genome->get_fitness()) << endl;
+    cout << "genome " << genome->get_generation_id() << " passed sanity check with fitness: " << parse_fitness(genome->get_best_validation_error()) << endl;
 
-    if (genomes.size() == 0 || genome->get_fitness() < genomes[0]->get_fitness()) {
+    if (genomes.size() == 0 || genome->get_best_validation_error() < genomes[0]->get_best_validation_error()) {
         cout << "new best fitness!" << endl;
 
         cout << "writing new best (data) to: " << (output_directory + "/global_best_" + to_string(inserted_genomes) + ".txt") << endl;
@@ -1448,12 +1448,12 @@ bool EXACT::insert_genome(CNN_Genome* genome) {
     cout << endl;
 
     if (genomes.size() == 0) {
-        cout << "checking if individual should be inserted or not, genomes.size(): " << genomes.size() << ", population_size: " << population_size << ", genome->get_fitness(): " << genome->get_fitness() << ", genomes is empty!" << endl;
+        cout << "checking if individual should be inserted or not, genomes.size(): " << genomes.size() << ", population_size: " << population_size << ", genome->get_best_validation_error(): " << genome->get_best_validation_error() << ", genomes is empty!" << endl;
     } else {
-        cout << "checking if individual should be inserted or not, genomes.size(): " << genomes.size() << ", population_size: " << population_size << ", genome->get_fitness(): " << genome->get_fitness() << ", genomes.back()->get_fitness(): " << genomes.back()->get_fitness() << endl;
+        cout << "checking if individual should be inserted or not, genomes.size(): " << genomes.size() << ", population_size: " << population_size << ", genome->get_best_validation_error(): " << genome->get_best_validation_error() << ", genomes.back()->get_best_validation_error(): " << genomes.back()->get_best_validation_error() << endl;
     }
 
-    if ((int32_t)genomes.size() >= population_size && genome->get_fitness() >= genomes.back()->get_fitness()) {
+    if ((int32_t)genomes.size() >= population_size && genome->get_best_validation_error() >= genomes.back()->get_best_validation_error()) {
         //this will not be inserted into the population
         cout << "not inserting genome due to poor fitness" << endl;
         was_inserted = false;
@@ -1468,7 +1468,7 @@ bool EXACT::insert_genome(CNN_Genome* genome) {
 
         cout << "inserting new genome" << endl;
         //inorder insert the new individual
-        genomes.insert( upper_bound(genomes.begin(), genomes.end(), genome, sort_genomes_by_fitness()), genome);
+        genomes.insert( upper_bound(genomes.begin(), genomes.end(), genome, sort_genomes_by_validation_error()), genome);
 
         cout << "inserted the new genome" << endl;
 
@@ -1487,13 +1487,12 @@ bool EXACT::insert_genome(CNN_Genome* genome) {
     cout << "genome fitnesses:" << endl;
     for (int32_t i = 0; i < (int32_t)genomes.size(); i++) {
         cout << "\t" << setw(4) << i << " -- genome: " << setw(10) << genomes[i]->get_generation_id() << ", "
-            << setw(10) << left << "fit: " << right << setw(12) << setprecision(2) << fixed << parse_fitness(genomes[i]->get_fitness())
-            << ", " << setw(10) << left << "gen err: " << right << setw(12) << setprecision(2) << fixed << parse_fitness(genomes[i]->get_generalizability_error())
-            << " (" << setw(5) << fixed << setprecision(2) << genomes[i]->get_generalizability_rate() << "%)"
+            << setw(10) << left << "val err: " << right << setw(12) << setprecision(2) << fixed << parse_fitness(genomes[i]->get_best_validation_error())
+            << " (" << setw(5) << fixed << setprecision(2) << genomes[i]->get_best_validation_rate() << "%)"
             << ", " << setw(10) << left << "test err: " << right << setw(12) << setprecision(2) << fixed << parse_fitness(genomes[i]->get_test_error())
             << " (" << setw(5) << fixed << setprecision(2) << genomes[i]->get_test_rate() << "%), "
-            << setw(10) << left << "train err: " << right << setw(12) << setprecision(2) << fixed << parse_fitness(genomes[i]->get_best_error())
-            << " (" << setw(5) << fixed << setprecision(2) << genomes[i]->get_best_rate() << "%) on ep: " << genomes[i]->get_best_error_epoch() 
+            << setw(10) << left << "train err: " << right << setw(12) << setprecision(2) << fixed << parse_fitness(genomes[i]->get_training_error())
+            << " (" << setw(5) << fixed << setprecision(2) << genomes[i]->get_training_rate() << "%) on ep: " << genomes[i]->get_best_epoch() 
             //<< ", reachable edges: " << genomes[i]->get_number_reachable_edges()
             //<< ", reachable nodes: " << genomes[i]->get_number_reachable_nodes()
             << ", mu: " << setw(8) << fixed << setprecision(5) << genomes[i]->get_initial_mu()
@@ -1511,7 +1510,7 @@ bool EXACT::insert_genome(CNN_Genome* genome) {
     }
 
     if (best_predictions_genome != NULL) {
-        cout << "best genome total predictions: " << best_predictions_genome->get_generalizability_predictions() + best_predictions_genome->get_test_predictions() << ", generalizability predictions: " << best_predictions_genome->get_generalizability_predictions() << ", test predictions: " << best_predictions_genome->get_test_predictions() << ", generalizability error: " << best_predictions_genome->get_generalizability_error() << endl;
+        cout << "best predictions genome validation predictions: " << best_predictions_genome->get_best_validation_predictions() << ", training predictions: " << best_predictions_genome->get_training_predictions() << ", test predictions: " << best_predictions_genome->get_test_predictions() << ", validation error: " << best_predictions_genome->get_best_validation_error() << endl;
     }
 
     /*
@@ -1617,7 +1616,7 @@ CNN_Genome* EXACT::create_mutation() {
     }
     */
 
-    if (parent->get_fitness() == EXACT_MAX_FLOAT) {
+    if (parent->get_best_validation_error() == EXACT_MAX_FLOAT) {
         //This parent has not actually been evaluated (the population is still initializing)
         //we can set the best_bias and best_weights randomly so that they are used when it
         //starts up
@@ -1625,7 +1624,7 @@ CNN_Genome* EXACT::create_mutation() {
         cout << "\tparent had not been evaluated yet, but best_bias and best_weights should have been set randomly" << endl;
     } else {
         cout << "\tparent had been evaluated! not setting best_bias and best_weights randomly" << endl;
-        cout << "\tparent fitness: " << parent->get_fitness() << endl;
+        cout << "\tparent fitness: " << parent->get_best_validation_error() << endl;
     }
 
     int modifications = 0;
@@ -2613,8 +2612,8 @@ CNN_Genome* EXACT::create_child() {
 void EXACT::write_individual_hyperparameters(CNN_Genome *individual) {
     fstream out(output_directory + "/individual_hyperparameters.txt", fstream::out | fstream::app);
 
-    out << individual->get_best_error()
-        << "," << individual->get_generalizability_error()
+    out << individual->get_best_validation_error()
+        << "," << individual->get_best_validation_error()
         << "," << individual->get_test_error()
         << "," << individual->get_number_edges()
         << "," << individual->get_number_nodes()
@@ -2673,7 +2672,7 @@ void EXACT::write_statistics(int new_generation_id, float new_fitness) {
 
 
     for (int32_t i = 0; i < (int32_t)genomes.size(); i++) {
-        float fitness = genomes[i]->get_fitness();
+        float fitness = genomes[i]->get_best_validation_error();
 
         if (fitness != EXACT_MAX_FLOAT) {
             avg_fitness += fitness;
@@ -2683,7 +2682,7 @@ void EXACT::write_statistics(int new_generation_id, float new_fitness) {
         if (fitness < min_fitness) min_fitness = fitness;
         if (fitness > max_fitness) max_fitness = fitness;
 
-        float epochs = genomes[i]->get_best_error_epoch();
+        float epochs = genomes[i]->get_best_epoch();
 
         if (epochs != EXACT_MAX_FLOAT) {
             avg_epochs += epochs;
