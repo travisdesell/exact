@@ -89,8 +89,7 @@ int main(int argc, char **argv) {
     minstd_rand0 generator(time(NULL));
     NormalDistribution normal_distribution;
 
-    CNN_Node *input_node = new CNN_Node(node_innovation_count, 0, batch_size, training_images.get_image_height(), training_images.get_image_width(), INPUT_NODE);
-    node_innovation_count++;
+    CNN_Node *input_node = new CNN_Node(++node_innovation_count, 0, batch_size, training_images.get_image_height(), training_images.get_image_width(), INPUT_NODE);
     nodes.push_back(input_node);
 
     for (int32_t i = 0; i < training_images.get_number_classes(); i++) {
@@ -113,6 +112,8 @@ int main(int argc, char **argv) {
     ofstream outfile("one_layer.gv");
     genome->print_graphviz(outfile);
     outfile.close();
+
+    genome->check_gradients(training_images);
 
     genome->stochastic_backpropagation(training_images);
     genome->evaluate_test(testing_images);

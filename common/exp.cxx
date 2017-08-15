@@ -38,6 +38,8 @@ float exact_exp(float z) {
 
 
 float exact_sqrt(float s) {
+    if (s == 0) return 0.0;
+
     float s_prev = s;
 
     float s_next = 0.5 * (s_prev + (s / s_prev));

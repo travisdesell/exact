@@ -950,7 +950,7 @@ void CNN_Node::backpropagate_relu(float* errors, float* gradients) {
 }
 
 
-void CNN_Node::backpropagate_batch_normalization(float mu, float learning_rate, float epsilon) {
+void CNN_Node::backpropagate_batch_normalization(bool training, float mu, float learning_rate, float epsilon) {
     //backprop  batch normalization here
     float delta_beta = 0.0;
     float delta_gamma = 0.0;
@@ -1011,54 +1011,66 @@ void CNN_Node::backpropagate_batch_normalization(float mu, float learning_rate, 
 #ifdef NAN_CHECKS
         if (isnan(errors_in[current]) || isinf(errors_in[current])) {
             cerr << "ERROR! errors_in[" << current << "] became: " << errors_in[current] << "!" << endl;
+            cerr << "value_in: " << value_in << endl;
+            cerr << "derr_dmean: " << derr_dmean << endl;
+            cerr << "inv_m: " << inv_m << endl;
+            cerr << "derr_dvariance: " << derr_dvariance << endl;
+            cerr << "inv_m_x_2: " << inv_m_x_2 << endl;
             cerr << "inverse_variance: " << inverse_variance << endl;
+            cerr << "batch_mean: " << batch_mean << endl;
             cerr << "batch_size: " << batch_size << endl;
             cerr << "gamma: " << gamma << endl;
             cerr << "delta_out: " << delta_out << endl;
             cerr << "values_in[" << current << "]: " << values_in[current] << endl;
+
+            for (int32_t current = 0; current < total_size; current++) {
+                cout << "errors_out[" << current << "]: " << errors_out[current] << ", values_in[" << current << "]: " << values_in[current] << endl;
+            }
 
             exit(1);
         }
 #endif
     }
 
-    //backpropagate beta
-    float pv_beta = previous_velocity_beta;
+    if (training) {
+        //backpropagate beta
+        float pv_beta = previous_velocity_beta;
 
-    float velocity_beta = (mu * pv_beta) - learning_rate * delta_beta;
-    beta += velocity_beta + mu * (velocity_beta - pv_beta);
-    //beta += velocity_beta;
+        float velocity_beta = (mu * pv_beta) - learning_rate * delta_beta;
+        beta += velocity_beta + mu * (velocity_beta - pv_beta);
+        //beta += velocity_beta;
 
-    //beta += (-mu * pv_beta + (1 + mu) * velocity_beta);
-    //beta -= (beta * weight_decay);
+        //beta += (-mu * pv_beta + (1 + mu) * velocity_beta);
+        //beta -= (beta * weight_decay);
 
-    previous_velocity_beta = velocity_beta;
+        previous_velocity_beta = velocity_beta;
 
-    if (beta <= -50) {
-        beta = -50.0;
-        previous_velocity_beta = 0.0;
-    } else if (beta >= 50.0) {
-        beta = 50.0;
-        previous_velocity_beta = 0.0;
-    }
+        if (beta <= -50) {
+            beta = -50.0;
+            previous_velocity_beta = 0.0;
+        } else if (beta >= 50.0) {
+            beta = 50.0;
+            previous_velocity_beta = 0.0;
+        }
 
-    //backpropagate gamma
-    float pv_gamma = previous_velocity_gamma;
+        //backpropagate gamma
+        float pv_gamma = previous_velocity_gamma;
 
-    float velocity_gamma = (mu * pv_gamma) - learning_rate * delta_gamma;
-    //gamma += velocity_gamma;
-    gamma += velocity_gamma + mu * (velocity_gamma - pv_gamma);
-    //gamma += (-mu * pv_gamma + (1 + mu) * velocity_gamma);
-    //gamma -= (gamma * weight_decay);
+        float velocity_gamma = (mu * pv_gamma) - learning_rate * delta_gamma;
+        //gamma += velocity_gamma;
+        gamma += velocity_gamma + mu * (velocity_gamma - pv_gamma);
+        //gamma += (-mu * pv_gamma + (1 + mu) * velocity_gamma);
+        //gamma -= (gamma * weight_decay);
 
-    previous_velocity_gamma = velocity_gamma;
+        previous_velocity_gamma = velocity_gamma;
 
-    if (gamma <= -50) {
-        gamma = -50.0;
-        previous_velocity_gamma = 0.0;
-    } else if (gamma >= 50.0) {
-        gamma = 50.0;
-        previous_velocity_gamma = 0.0;
+        if (gamma <= -50) {
+            gamma = -50.0;
+            previous_velocity_gamma = 0.0;
+        } else if (gamma >= 50.0) {
+            gamma = 50.0;
+            previous_velocity_gamma = 0.0;
+        }
     }
 
     //cout << "\tnode " << innovation_number << ", delta_gamma: " << delta_gamma << ", delta_beta: " << delta_beta << ", gamma now: " << gamma << ", beta now: " << beta << endl;
@@ -1133,7 +1145,7 @@ void CNN_Node::input_fired(bool training, bool accumulate_test_statistics, float
     input_fired_time += time_span.count() / 1000.0;
 }
 
-void CNN_Node::output_fired(float mu, float learning_rate, float epsilon) {
+void CNN_Node::output_fired(bool training, float mu, float learning_rate, float epsilon) {
     using namespace std::chrono;
     high_resolution_clock::time_point output_fired_start_time = high_resolution_clock::now();
 
@@ -1144,7 +1156,7 @@ void CNN_Node::output_fired(float mu, float learning_rate, float epsilon) {
 
     if (outputs_fired == total_outputs) {
         if (type != SOFTMAX_NODE && type != INPUT_NODE) {
-            backpropagate_batch_normalization(mu, learning_rate, epsilon);
+            backpropagate_batch_normalization(training, mu, learning_rate, epsilon);
             backpropagate_relu(errors_in, relu_gradients);
         }
 

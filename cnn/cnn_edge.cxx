@@ -393,6 +393,10 @@ int CNN_Edge::get_type() const {
     return type;
 }
 
+int CNN_Edge::get_filter_size() const {
+    return filter_x * filter_y;
+}
+
 int CNN_Edge::get_filter_x() const {
     return filter_x;
 }
@@ -407,6 +411,18 @@ bool CNN_Edge::is_reverse_filter_x() const {
 
 bool CNN_Edge::is_reverse_filter_y() const {
     return reverse_filter_y;
+}
+
+float CNN_Edge::get_weight(int i) const {
+    return weights[i];
+}
+
+float CNN_Edge::get_weight_update(int i) const {
+    return weight_updates[i];
+}
+
+void CNN_Edge::update_weight(int i, float diff) {
+    weights[i] += diff;
 }
 
 void CNN_Edge::propagate_weight_count() {
@@ -434,14 +450,13 @@ void CNN_Edge::initialize_weights(minstd_rand0 &generator, NormalDistribution &n
     float mu = 0.0;
     float sigma = sqrt(2.0 / edge_size);
 
-    int current = 0;
-    for (uint32_t i = 0; i < filter_y; i++) {
-        for (uint32_t j = 0; j < filter_x; j++) {
-            weights[current] = normal_distribution.random(generator, mu, sigma);
-            best_weights[current] = 0.0;
-            previous_velocity[current] = 0.0;
-            current++;
-        }
+    //discard the first
+    normal_distribution.random(generator, mu, sigma);
+
+    for (uint32_t i = 0; i < filter_size; i++) {
+        weights[i] = normal_distribution.random(generator, mu, sigma);
+        best_weights[i] = 0.0;
+        previous_velocity[i] = 0.0;
     }
     //cout << "initialized weights for edge " << innovation_number << ", weights[0][0]: " << weights[0][0] << endl;
 
@@ -836,7 +851,7 @@ void CNN_Edge::print(ostream &out) {
     for (uint32_t y = 0; y < filter_y; y++) {
         out << "    ";
         for (uint32_t x = 0; x < filter_x; x++) {
-            out << setw(9) << std::fixed << setprecision(7) << weights[current];
+            out << setw(11) << std::fixed << setprecision(7) << weights[current];
             current++;
         }
         out << endl;
@@ -847,7 +862,7 @@ void CNN_Edge::print(ostream &out) {
     for (uint32_t y = 0; y < filter_y; y++) {
         out << "    ";
         for (uint32_t x = 0; x < filter_x; x++) {
-            out << setw(9) << std::fixed << setprecision(7) << previous_velocity[current];
+            out << setw(11) << std::fixed << setprecision(7) << previous_velocity[current];
             current++;
         }
         out << endl;
@@ -858,7 +873,7 @@ void CNN_Edge::print(ostream &out) {
     for (uint32_t y = 0; y < filter_y; y++) {
         out << "    ";
         for (uint32_t x = 0; x < filter_x; x++) {
-            out << setw(9) << std::fixed << setprecision(7) << weight_updates[current];
+            out << setw(11) << std::fixed << setprecision(7) << weight_updates[current];
             current++;
         }
         out << endl;
@@ -1110,7 +1125,7 @@ void CNN_Edge::update_weights(float mu, float learning_rate, float weight_decay)
     weight_update_time += time_span.count() / 1000.0;
 }
 
-void CNN_Edge::propagate_backward(float mu, float learning_rate, float epsilon) {
+void CNN_Edge::propagate_backward(bool training, float mu, float learning_rate, float epsilon) {
     if (!is_reachable()) return;
 
     using namespace std::chrono;
@@ -1164,7 +1179,7 @@ void CNN_Edge::propagate_backward(float mu, float learning_rate, float epsilon) 
 
     propagate_backward_time += time_span.count() / 1000.0;
 
-    input_node->output_fired(mu, learning_rate, epsilon);
+    input_node->output_fired(training, mu, learning_rate, epsilon);
 }
 
 bool CNN_Edge::has_nan() const {

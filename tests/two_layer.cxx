@@ -128,6 +128,8 @@ int main(int argc, char **argv) {
     genome->print_graphviz(outfile);
     outfile.close();
 
+    genome->check_gradients(training_images);
+
     genome->stochastic_backpropagation(training_images);
     genome->evaluate_test(testing_images);
 }

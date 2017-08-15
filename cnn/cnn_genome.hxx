@@ -207,6 +207,8 @@ class CNN_Genome {
         void reset();
         void initialize();
 
+        void check_gradients(const ImagesInterface &images);
+
         void evaluate(const ImagesInterface &images, vector< vector<int> > &predictions);
         void evaluate(const ImagesInterface &images, float &total_error, int &correct_predictions, bool perform_backprop, bool accumulate_test_statistics);
         void evaluate(const ImagesInterface &images, float &total_error, int &correct_predictions);

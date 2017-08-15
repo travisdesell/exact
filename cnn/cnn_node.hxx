@@ -203,7 +203,7 @@ class CNN_Node {
         void disable_output();
         int get_number_outputs() const;
         int get_outputs_fired() const;
-        void output_fired(float mu, float learning_rate, float epsilon);
+        void output_fired(bool training, float mu, float learning_rate, float epsilon);
 
         void zero_test_statistics();
         void divide_test_statistics(int number_batches);
@@ -214,7 +214,7 @@ class CNN_Node {
 
         //void backpropagate_dropout();
         void backpropagate_relu(float* errors, float* gradients);
-        void backpropagate_batch_normalization(float mu, float learning_rate, float epsilon);
+        void backpropagate_batch_normalization(bool training, float mu, float learning_rate, float epsilon);
 
         void print_statistics();
         void print_statistics(const float* values, const float* errors, const float* gradients);

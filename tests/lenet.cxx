@@ -285,6 +285,8 @@ int main(int argc, char **argv) {
     genome->print_graphviz(outfile);
     outfile.close();
 
+    //genome->check_gradients(training_images);
+
     genome->stochastic_backpropagation(training_images);
     if (generalizability_filename.compare("") != 0) {
         genome->evaluate_generalizability(*generalizability_images);

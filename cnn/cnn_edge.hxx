@@ -100,11 +100,16 @@ class CNN_Edge {
 
         void set_needs_init();
         bool needs_init() const;
+        int get_filter_size() const;
         int get_filter_x() const;
         int get_filter_y() const;
 
         bool is_reverse_filter_x() const;
         bool is_reverse_filter_y() const;
+
+        float get_weight(int i) const;
+        float get_weight_update(int i) const;
+        void update_weight(int i, float diff);
 
         void propagate_weight_count();
 
@@ -158,7 +163,7 @@ class CNN_Edge {
 
         void propagate_forward(bool training, bool accumulate_test_statistics, float epsilon, float alpha, bool perform_dropout, float hidden_dropout_probability, minstd_rand0 &generator);
 
-        void propagate_backward(float mu, float learning_rate, float epsilon);
+        void propagate_backward(bool training, float mu, float learning_rate, float epsilon);
         void update_weights(float mu, float learning_rate, float weight_decay);
 
         void print_statistics();

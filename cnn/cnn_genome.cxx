@@ -1351,6 +1351,172 @@ void CNN_Genome::evaluate_images(const ImagesInterface &images, const vector<int
     }
 }
 
+void calculate_softmax(const vector<float> &values_in, vector<float> &values_out, vector<float> &gradient, int expected_class, int &predicted_class) {
+    float softmax_max = values_in[0];
+    predicted_class = 0;
+
+    for (uint32_t i = 1; i < values_in.size(); i++) {
+        if (values_in[i] > softmax_max) {
+            softmax_max = values_in[i];
+            predicted_class = i;
+        }
+    }
+
+    float softmax_sum = 0.0;
+    for (uint32_t i = 0; i < values_in.size(); i++) {
+        values_out[i] = exact_exp(values_in[i] - softmax_max);
+        //values_out[i] = exact_exp(values_in[i]);
+        softmax_sum += values_out[i];
+    }
+
+    if (softmax_sum == 0 || isinf(softmax_sum) || isnan(softmax_sum)) {
+        cerr << "ERROR! softmax sum was " << softmax_sum << endl;
+        cerr << "values_in/values_out:" << endl;
+        for (uint32_t i = 0; i < values_in.size(); i++) {
+            cerr << "\tvalues_in[" << i << "]: " << values_in[i] << ", values_out[" << i << "]: " << values_out[i] << endl;
+        }
+        exit(1);
+    }
+
+    for (uint32_t i = 0; i < values_in.size(); i++) {
+        values_out[i] /= softmax_sum;
+
+        if (i == expected_class) {
+            gradient[i] = values_out[i] - 1;
+        } else {
+            gradient[i] = values_out[i];
+        }
+    }
+
+    /*
+    cerr << "values_in:  ";
+    for (uint32_t i = 0; i < values_in.size(); i++) {
+        cerr << fixed << setw(11) << setprecision(7) << values_in[i];
+    }
+    cerr << endl;
+
+    cerr << "values_out: ";
+    for (uint32_t i = 0; i < values_out.size(); i++) {
+        cerr << fixed << setw(11) << setprecision(7) << values_out[i];
+    }
+    cerr << endl;
+    */
+}
+
+
+void CNN_Genome::check_gradients(const ImagesInterface &images) {
+    vector<int> batch;
+    for (uint32_t i = 0; i < batch_size; i++) {
+        batch.push_back(i);
+    }
+
+    float analytic_error = 0.0;
+    int analytic_predictions = 0;
+    evaluate_images(images, batch, false, analytic_error, analytic_predictions, true);
+
+    cout << "after initial evaluate, analytic_error: " << analytic_error << ", analytic_predictions: " << analytic_predictions << endl;
+
+    for (int32_t i = edges.size() - 1; i >= 0; i--) {
+        edges[i]->propagate_backward(false, mu, learning_rate, epsilon);
+    }
+
+    analytic_error = 0.0;
+    analytic_predictions = 0;
+    evaluate_images(images, batch, false, analytic_error, analytic_predictions, true);
+    cout << "after backpropagate, analytic_error: " << analytic_error << ", analytic_predictions: " << analytic_predictions << endl;
+
+    //test the softmax layer
+    vector<float> values_in(softmax_nodes.size());
+    vector<float> values_out(softmax_nodes.size());
+    vector<float> analytic_softmax_gradient(softmax_nodes.size());
+    vector<float> numeric_softmax_gradient1(softmax_nodes.size());
+    vector<float> numeric_softmax_gradient2(softmax_nodes.size());
+    vector<float> temp_gradients(softmax_nodes.size());
+
+
+    int numeric_predictions;
+    float diff = 1e-4;
+
+    //may be less images than in a batch if the total number of images is not divisible by the batch size
+    for (int32_t batch_number = 0; batch_number < batch.size(); batch_number++) {
+        int expected_class = images.get_classification(batch[batch_number]);
+
+        for (uint32_t i = 0; i < softmax_nodes.size(); i++) {
+            values_in[i] = softmax_nodes[i]->get_value_in(batch_number, 0, 0);
+        }
+
+        int predicted_class = 0;
+        calculate_softmax(values_in, values_out, analytic_softmax_gradient, expected_class, predicted_class);
+
+        /*
+        cerr << "values_in/values_out:" << endl;
+        for (uint32_t i = 0; i < values_in.size(); i++) {
+            cerr << "\tvalues_in[" << i << "]: " << values_in[i] << ", values_out[" << i << "]: " << values_out[i] << endl;
+        }
+        */
+
+        cerr << "expected class: " << expected_class << endl;
+        for (uint32_t j = 0; j < softmax_nodes.size(); j++) {
+            values_in[j] += diff;
+            calculate_softmax(values_in, values_out, temp_gradients, expected_class, predicted_class);
+
+            float error1 = -log(values_out[expected_class]);
+
+            values_in[j] -= 2.0 * diff;
+            calculate_softmax(values_in, values_out, temp_gradients, expected_class, predicted_class);
+
+            float error2 = -log(values_out[expected_class]);
+
+            values_in[j] += diff;
+
+            float numeric_softmax_gradient = (error1 - error2) / (2.0 * diff);
+            float relative_error = (fabs(analytic_softmax_gradient[j]) - fabs(numeric_softmax_gradient)) / fmax(fabs(analytic_softmax_gradient[j]), fabs(numeric_softmax_gradient));
+
+            cerr << "ag[" << j << "]: " << fixed << setw(11) << setprecision(7) << analytic_softmax_gradient[j] << ", ng[" << j << "]: " << fixed << setw(11) << setprecision(7) << numeric_softmax_gradient << ", re: " << fixed << setw(11) << setprecision(7) << relative_error << endl;
+        }
+    }
+
+
+    for (int32_t i = 0; i < edges.size(); i++) {
+        if (edges[i]->is_reachable() && edges[i]->get_type() == CONVOLUTIONAL) {
+            //cout << "CHECKING GRADIENTS ON EDGE: " << endl;
+            edges[i]->print(cout);
+            //edges[i]->get_output_node()->print(cout);
+            //edges[i]->get_input_node()->print(cout);
+
+            for (int32_t j = 0; j < edges[i]->get_filter_size(); j++) {
+                //cout << "adding " << diff << " to weight: " << edges[i]->get_weight(j) << endl;
+                edges[i]->update_weight(j, diff);
+                float numeric_error1 = 0.0;
+                evaluate_images(images, batch, false, numeric_error1, numeric_predictions, true);
+                //cout << "finished first evaluation!" << endl;
+                //cout << "numeric_error1: " << numeric_error1 << endl;
+
+                edges[i]->update_weight(j, -1.0 * diff);
+                float check_error = 0.0;
+                evaluate_images(images, batch, false, check_error, numeric_predictions, true);
+
+                //cout << "adding " << -2.0 * diff << " to weight: " << edges[i]->get_weight(j) << endl;
+                edges[i]->update_weight(j, -1.0 * diff);
+                float numeric_error2 = 0.0;
+                evaluate_images(images, batch, false, numeric_error2, numeric_predictions, true);
+                //cout << "finished second evaluation!" << endl;
+                //cout << "numeric_error2: " << numeric_error2 << endl;
+
+                edges[i]->update_weight(j, diff);
+
+                float analytic_gradient = edges[i]->get_weight_update(j);
+
+                float numeric_gradient = (numeric_error1 - numeric_error2) / (2.0 * diff);
+
+                float relative_error = fabs(analytic_gradient - numeric_gradient) / fmax(fabs(analytic_gradient), fabs(numeric_gradient));
+
+                cerr << "edge[" << i << "], weight[" << j << "]: ae: " << fixed << setw(11) << setprecision(7) << analytic_error << ", ce: " << fixed << setw(11) << setprecision(7) << check_error << ", ne1: " << fixed << setw(11) << setprecision(7) << numeric_error1 << ", ne2: " << numeric_error2 << ", ng: " << fixed << setw(11) << setprecision(7) << numeric_gradient << ", ag: " << fixed << setw(11) << setprecision(7) << analytic_gradient << ", relative_error: " << fixed << setw(11) << setprecision(7) << relative_error << endl;
+            }
+        }
+    }
+}
+
 void CNN_Genome::evaluate_images(const ImagesInterface &images, const vector<int> &batch, bool training, float &total_error, int &correct_predictions, bool accumulate_test_statistics) {
     for (uint32_t i = 0; i < nodes.size(); i++) {
         nodes[i]->reset();
@@ -1364,142 +1530,59 @@ void CNN_Genome::evaluate_images(const ImagesInterface &images, const vector<int
         edges[i]->propagate_forward(training, accumulate_test_statistics, epsilon, alpha, training, hidden_dropout_probability, generator);
     }
 
+    vector<float> values_in(softmax_nodes.size());
+    vector<float> values_out(softmax_nodes.size());
+    vector<float> gradients(softmax_nodes.size());
+
     //may be less images than in a batch if the total number of images is not divisible by the batch size
     for (int32_t batch_number = 0; batch_number < batch.size(); batch_number++) {
         int expected_class = images.get_classification(batch[batch_number]);
 
-        //cout << "before softmax max, batch number: " << batch_number << " -- ";
-        float softmax_max = softmax_nodes[0]->get_value_in(batch_number, 0, 0);
-        //cout << " " << setw(15) << fixed << setprecision(6) << softmax_nodes[0]->get_value_in(batch_number, 0,0);
-
-
-        for (uint32_t i = 1; i < softmax_nodes.size(); i++) {
-            //cout << " " << setw(15) << fixed << setprecision(6) << softmax_nodes[i]->get_value_in(batch_number, 0,0);
-            if (softmax_nodes[i]->get_value_in(batch_number, 0, 0) > softmax_max) {
-                softmax_max = softmax_nodes[i]->get_value_in(batch_number, 0, 0);
-            }
-        }
-        //cout << endl;
-
-        //cout << "after softmax max:" << endl;
-        float softmax_sum = 0.0;
         for (uint32_t i = 0; i < softmax_nodes.size(); i++) {
-            float value = softmax_nodes[i]->get_value_in(batch_number, 0, 0);
-            float previous = value;
-
-            if (isnan(value)) {
-                cerr << "ERROR: value was NAN before exp!" << endl;
-                exit(1);
-            }
-            //cout << " value - softmax_max: " << value - softmax_max << endl;
-
-            value = exact_exp(value - softmax_max);
-
-            //cout << " " << setw(15) << fixed << setprecision(6) << value;
-            if (isnan(value)) {
-                cerr << "ERROR: value was NAN AFTER exp! previously: " << previous << endl;
-                exit(1);
-            }
-
-            softmax_nodes[i]->set_value_in(batch_number, 0, 0, value);
-            //cout << "\tvalue " << softmax_nodes[i]->get_innovation_number() << ": " << softmax_nodes[i]->get_value_in(batch_number, 0,0) << endl;
-            softmax_sum += value;
-
-            if (isnan(softmax_sum)) {
-                cerr << "ERROR: softmax_sum was NAN AFTER add!" << endl;
-                exit(1);
-            }
-        }
-        //cout << endl;
-
-        if (softmax_sum == 0) {
-            cout << "ERROR! softmax sum == 0" << endl;
-            exit(1);
+            values_in[i] = softmax_nodes[i]->get_value_in(batch_number, 0, 0);
         }
 
-        //cout << "softmax sum: " << softmax_sum << endl;
-
-        float max_value = -numeric_limits<float>::max();
-        int predicted_class = -1;
-
-        //cout << "error:          ";
-        for (int32_t i = 0; i < (int32_t)softmax_nodes.size(); i++) {
-            float value = softmax_nodes[i]->get_value_in(batch_number, 0,0) / softmax_sum;
-            //cout << "\tvalue " << softmax_nodes[i]->get_innovation_number() << ": " << softmax_nodes[i]->get_value_in(0,0) << endl;
-
-            if (isnan(value)) {
-                cerr << "ERROR: value was NAN AFTER divide by softmax_sum, previously: " << softmax_nodes[i]->get_value_in(batch_number, 0,0) << endl;
-                cerr << "softmax_sum: " << softmax_sum << endl;
-                exit(1);
-            }
-
-            softmax_nodes[i]->set_value_in(batch_number, 0, 0,  value);
-        }
-
-        for (int32_t i = 0; i < (int32_t)softmax_nodes.size(); i++) {
-            float value = softmax_nodes[i]->get_value_in(batch_number, 0,0);
-             //softmax_nodes[i]->print(cout);
-
-            int target = 0.0;
-            if (i == expected_class) {
-                target = 1.0;
-            }
-            float error = value - target;
-            float gradient = value * (1 - value);
-
-            //if (training) cout << "\t" << softmax_nodes[i]->get_innovation_number() << " -- batch number: " << batch_number << ", value: " << value << ", error: " << error << ", gradient: " << gradient << endl;
-
-            softmax_nodes[i]->set_error_in(batch_number, 0, 0, error * gradient);
-            //softmax_nodes[i]->set_gradient_in(batch_number, 0, 0, gradient);
-
-            if (value > max_value) {
-                predicted_class = i;
-                max_value = value;
-            }
-
-            double previous_error = total_error;
-
-            if (value == 0) value = 1.0 / EXACT_MAX_FLOAT;
-
-            total_error -= target * log(value);
-            //cout << "total_error: " << total_error << endl;
-            //total_error += fabs(error);
-
-            if (isnan(total_error) || isinf(total_error)) {
-                cerr << "ERROR! total_error became NAN or INF!" << endl;
-                cerr << "previous total_error: " << previous_error << endl;
-                cerr << "value: " << value << endl;
-                cerr << "log(value): " << log(value) << endl;
-                cerr << "target: " << target << endl;
-
-                cerr << "softmax max: " << softmax_max << endl;
-                cerr << "softmax sum: " << softmax_sum << endl;
-                cerr << "softmax node values: " << endl;
-                for (uint32_t i = 0; i < softmax_nodes.size(); i++) {
-                    cerr << "    " << softmax_nodes[i]->get_value_in(batch_number, 0, 0) << endl;
-                }
-                exit(1);
-            }
-
-            //cout << " " << setw(15) << fixed << setprecision(6) << error;
-        }
-        //cout << endl;
-        //cout << "predicted class: " << predicted_class << endl;
-        //cout << "expected class:  " << expected_class << endl;
+        int predicted_class = 0;
+        calculate_softmax(values_in, values_out, gradients, expected_class, predicted_class);
 
         /*
-        cerr << "total error for batch[" << batch_number << "]: " << total_error << endl;
+        cerr << "values_in/values_out:" << endl;
+        for (uint32_t i = 0; i < values_in.size(); i++) {
+            cerr << "\tvalues_in[" << i << "]: " << values_in[i] << ", values_out[" << i << "]: " << values_out[i] << endl;
+        }
+        */
 
-        if (total_error == 0) {
-            cerr << "expected class: " << expected_class << endl;
-            cerr << "softmax max: " << softmax_max << endl;
-            cerr << "softmax sum: " << softmax_sum << endl;
+        for (int32_t i = 0; i < (int32_t)softmax_nodes.size(); i++) {
+            softmax_nodes[i]->set_value_in(batch_number, 0, 0, values_out[i]);
+            softmax_nodes[i]->set_error_in(batch_number, 0, 0, gradients[i]);
+        }
+
+        double previous_error = total_error;
+
+        float error = values_out[expected_class];
+        if (error == 0) error = 1.0 / EXACT_MAX_FLOAT;
+        total_error -= log(error);
+
+        if (isnan(total_error) || isinf(total_error)) {
+            cerr << "ERROR! total_error became NAN or INF!" << endl;
+            cerr << "previous total_error: " << previous_error << endl;
+            cerr << "error: " << error << endl;
+            cerr << "log(error): " << log(error) << endl;
+            cerr << "predicted_class: " << predicted_class << endl;
+            cerr << "expected_class: " << expected_class << endl;
+
             cerr << "softmax node values: " << endl;
             for (uint32_t i = 0; i < softmax_nodes.size(); i++) {
                 cerr << "    " << softmax_nodes[i]->get_value_in(batch_number, 0, 0) << endl;
             }
+
+            cerr << "values_in/values_out:" << endl;
+            for (uint32_t i = 0; i < values_in.size(); i++) {
+                cerr << "\tvalues_in[" << i << "]: " << values_in[i] << ", values_out[" << i << "]: " << values_out[i] << endl;
+            }
+
+            exit(1);
         }
-        */
 
         if (predicted_class == expected_class) {
             correct_predictions++;
@@ -1508,7 +1591,7 @@ void CNN_Genome::evaluate_images(const ImagesInterface &images, const vector<int
 
     if (training) {
         for (int32_t i = edges.size() - 1; i >= 0; i--) {
-            edges[i]->propagate_backward(mu, learning_rate, epsilon);
+            edges[i]->propagate_backward(training, mu, learning_rate, epsilon);
         }
 
         for (int32_t i = 0; i < edges.size(); i++) {
@@ -1535,7 +1618,7 @@ void CNN_Genome::set_to_best() {
     }
 
     for (uint32_t i = 0; i < nodes.size(); i++) {
-        if (edges[i]->is_reachable()) {
+        if (nodes[i]->is_reachable()) {
             nodes[i]->set_weights_to_best();
         }
     }
@@ -1735,7 +1818,6 @@ void CNN_Genome::evaluate(const ImagesInterface &images, float &total_error, int
          << endl;
 }
 
-
 void CNN_Genome::evaluate(const ImagesInterface &images, float &total_error, int &correct_predictions) {
     backprop_order.clear();
     for (int32_t i = 0; i < images.get_number_images(); i++) {
@@ -1813,11 +1895,12 @@ void CNN_Genome::stochastic_backpropagation(const ImagesInterface &training_imag
     }
     */
 
+    /*
     vector<long> test_backprop_order;
     for (uint32_t i = 0; i < number_test_images; i++) {
         test_backprop_order.push_back(i);
     }
-
+    */
 
     do {
         //shuffle the array (thanks C++ not being the same across operating systems)
