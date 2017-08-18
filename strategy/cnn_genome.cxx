@@ -539,44 +539,37 @@ CNN_Genome::CNN_Genome(int _generation_id, int _padding, int _number_training_im
     output_filename = "";
     checkpoint_filename = "";
 
-    nodes.clear();
+    nodes = _nodes;
     input_nodes.clear();
     softmax_nodes.clear();
 
-    for (uint32_t i = 0; i < _nodes.size(); i++) {
-        CNN_Node *node_copy = _nodes[i]->copy();
-
-        if (node_copy->is_input()) {
+    for (uint32_t i = 0; i < nodes.size(); i++) {
+        if (nodes[i]->is_input()) {
             //cout << "node was input!" << endl;
-
-            input_nodes.push_back(node_copy);
+            input_nodes.push_back(nodes[i]);
         }
 
-        if (node_copy->is_softmax()) {
+        if (nodes[i]->is_softmax()) {
             //cout << "node was softmax!" << endl;
-
-            softmax_nodes.push_back(node_copy);
+            softmax_nodes.push_back(nodes[i]);
         }
 
         //cout << "resizing node " << node_copy->get_innovation_number() << " to " << batch_size << endl;
-        node_copy->update_batch_size(batch_size);
-        nodes.push_back( node_copy );
+        nodes[i]->update_batch_size(batch_size);
     }
 
-    for (uint32_t i = 0; i < _edges.size(); i++) {
-        CNN_Edge *edge_copy = _edges[i]->copy();
-
-        if (!edge_copy->set_nodes(nodes)) {
+    edges = _edges;
+    for (uint32_t i = 0; i < edges.size(); i++) {
+        if (!edges[i]->set_nodes(nodes)) {
             cerr << "ERROR: filter size didn't match when creating genome!" << endl;
             cerr << "This should never happen!" << endl;
             exit(1);
         }
 
-        edge_copy->set_pools();
+        edges[i]->set_pools();
 
         //cout << "resizing edge " << edge_copy->get_innovation_number() << " to " << batch_size << endl;
-        edge_copy->update_batch_size(batch_size);
-        edges.push_back( edge_copy );
+        edges[i]->update_batch_size(batch_size);
     }
 }
 
@@ -817,6 +810,23 @@ float CNN_Genome::get_test_rate() const {
 int CNN_Genome::get_test_predictions() const {
     return test_predictions;
 }
+
+void CNN_Genome::get_node_copies(vector<CNN_Node*> &node_copies) const {
+    node_copies.clear();
+
+    for (uint32_t i = 0; i < nodes.size(); i++) {
+        node_copies.push_back( nodes[i]->copy() );
+    }
+}
+
+void CNN_Genome::get_edge_copies(vector<CNN_Edge*> &edge_copies) const {
+    edge_copies.clear();
+
+    for (uint32_t i = 0; i < edges.size(); i++) {
+        edge_copies.push_back( edges[i]->copy() );
+    }
+}
+
 
 const vector<CNN_Node*> CNN_Genome::get_nodes() const {
     return nodes;

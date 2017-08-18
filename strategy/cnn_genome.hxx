@@ -153,6 +153,9 @@ class CNN_Genome {
         bool sanity_check(int type);
         bool visit_nodes();
 
+        void get_node_copies(vector<CNN_Node*> &node_copies) const;
+        void get_edge_copies(vector<CNN_Edge*> &edge_copies) const;
+
         const vector<CNN_Node*> get_nodes() const;
         const vector<CNN_Edge*> get_edges() const;
 
