@@ -1716,10 +1716,12 @@ void CNN_Genome::print_progress(ostream &out, string progress_name, float total_
     out << setw(10) << progress_name << "[" << setw(10) << name << ", genome " << setw(5) << generation_id << "] predictions: " << setw(7) << correct_predictions << "/" << setw(7) << number_images << " (" << setw(5) << fixed << setprecision(2) << (100.0 * (float)correct_predictions/(float)number_images) << "%), best: " << setw(7) << best_validation_predictions << "/" << number_validation_images << " (" << setw(5) << fixed << setprecision(2) << (100 * (float)best_validation_predictions/(float)number_validation_images) << "%), error: " << setw(15) << setprecision(5) << fixed << total_error << ", best error: " << setw(15) << best_validation_error << " on epoch: " << setw(5) << best_epoch << ", epoch: " << setw(4) << epoch << "/" << max_epochs << ", mu: " << setw(12) << fixed << setprecision(10) << mu << ", learning_rate: " << setw(12) << fixed << setprecision(10) << learning_rate << ", weight_decay: " << setw(12) << fixed << setprecision(10) << weight_decay << endl;
 }
 
-void CNN_Genome::evaluate_large_images(const LargeImages &images) {
+void CNN_Genome::evaluate_large_images(const LargeImages &images, string output_directory) {
     int current_subimage = 0;
 
     vector< vector<int> > bins(images.get_number_classes(), vector<int>(10, 0));
+
+    //cout << "number classes: " << images.get_number_classes() << endl;
 
     for (int image_number = 0; image_number < images.get_number_large_images(); image_number++) {
         int number_subimages = images.get_number_subimages(image_number);
@@ -2536,7 +2538,7 @@ int CNN_Genome::get_generated_by(string type) {
 }
 
 bool CNN_Genome::is_identical(CNN_Genome *other, bool testing_checkpoint) {
-    if (are_different("version_str", version_str, other->version_str)) return false;
+    //if (are_different("version_str", version_str, other->version_str)) return false;
 
     if (are_different("normal_distribution", normal_distribution, other->normal_distribution)) return false;
     if (are_different("generator", generator, other->generator)) return false;

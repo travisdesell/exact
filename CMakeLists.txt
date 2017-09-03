@@ -38,7 +38,7 @@ SET(COMPILE_CLIENT "NO" CACHE STRING "Compile the BOINC client app or not")
 MESSAGE(STATUS "COMPILE CLIENT SET TO: ${COMPILE_CLIENT}")
 
 IF (COMPILE_CLIENT STREQUAL "YES")
-    #if we're compiling the client, don't look for MYSQL libraries
+    #if we're compiling the client, don't look for MYSQL or TIFF libraries
     #to compile client add -DCOMPILE_CLIENT:STRING="YES" to the command line
 
 ELSE (COMPILE_CLIENT STREQUAL "YES")
@@ -51,8 +51,17 @@ ELSE (COMPILE_CLIENT STREQUAL "YES")
         message(STATUS "including MYSQL_INCLUDE_DIR: ${MYSQL_INCLUDE_DIR}")
         include_directories(${MYSQL_INCLUDE_DIR})
     ENDIF (MYSQL_FOUND)
-ENDIF (COMPILE_CLIENT STREQUAL "YES")
 
+    find_package(tiff)
+
+    message(STATUS "TIFF found? ${TIFF_FOUND}")
+    message(STATUS "TIFF libraries: ${TIFF_LIBRARIES}")
+    message(STATUS "TIFF include dir: ${TIFF_INCLUDE_DIR}")
+    IF (TIFF_FOUND)
+        add_definitions( -D_HAS_TIFF_ )
+        include_directories(${TIFF_INCLUDE_DIR})
+    ENDIF (TIFF_FOUND)
+ENDIF (COMPILE_CLIENT STREQUAL "YES")
 
 add_subdirectory(common)
 add_subdirectory(image_tools)

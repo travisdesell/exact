@@ -1365,7 +1365,7 @@ bool CNN_Node::is_identical(const CNN_Node *other, bool testing_checkpoint) {
     if (are_different("type", type, other->type)) return false;
 
     if (are_different("total_inputs", total_inputs, other->total_inputs)) return false;
-    if (are_different("inputs_fired", inputs_fired, other->inputs_fired)) return false;
+    //if (are_different("inputs_fired", inputs_fired, other->inputs_fired)) return false;
 
     if (are_different("total_outputs", total_outputs, other->total_outputs)) return false;
     if (are_different("outputs_fired", outputs_fired, other->outputs_fired)) return false;

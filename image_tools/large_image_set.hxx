@@ -106,6 +106,10 @@ class LargeImages : public ImagesInterface {
         const vector<float>& get_std_dev() const;
 
         void normalize();
+
+#ifdef _HAS_TIFF_
+        void draw_image(int i, string filename);
+#endif
 };
 
 #endif

@@ -64,11 +64,14 @@ int main(int argc, char **argv) {
     LargeImages training_images(training_data, genome->get_padding(), 64, 64);
     LargeImages testing_images(testing_data, genome->get_padding(), 64, 64, training_images.get_average(), training_images.get_std_dev());
 
-    genome->initialize();
+    //genome->initialize();
     genome->set_to_best();
 
+    cout << endl << "getting training images predictions." << endl;
+    genome->evaluate_large_images(training_images, "./prediction_results_training/");
+
     cout << endl << "getting testing images predictions." << endl;
-    genome->evaluate_large_images(testing_images);
+    genome->evaluate_large_images(testing_images, "./prediction_results_testing/");
 
 
 }

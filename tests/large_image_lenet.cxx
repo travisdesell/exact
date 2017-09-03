@@ -304,13 +304,14 @@ int main(int argc, char **argv) {
 
     genome->stochastic_backpropagation(training_images, validation_images);
 
-    genome->write_to_file("large_image_lenet.txt");
+    cout << "writing genome to file!" << endl;
+    genome->write_to_file("./large_image_lenet.txt");
 
     cout << endl << "getting training images predictions." << endl;
-    genome->evaluate_large_images(training_images);
+    genome->evaluate_large_images(training_images, "./prediction_results_training/");
 
     cout << endl << "getting testing images predictions." << endl;
-    genome->evaluate_large_images(testing_images);
+    genome->evaluate_large_images(testing_images, "./prediction_results_testing/");
     
     cout << endl << "getting statistics for test images:" << endl;
     genome->evaluate_test(testing_images);

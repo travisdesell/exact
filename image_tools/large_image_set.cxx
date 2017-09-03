@@ -23,10 +23,11 @@ using std::vector;
 
 #include "stdint.h"
 
-#ifdef LARGE_IMAGES_TEST
+#ifdef _HAS_TIFF_
 #include <sstream>
 using std::ostringstream;
 
+#include "tiff.h"
 #include "tiffio.h"
 #endif
 
@@ -217,6 +218,11 @@ LargeImages::LargeImages(string _filename, int _padding, int _subimage_height, i
 
     channel_avg = _channel_avg;
     channel_std_dev = _channel_std_dev;
+
+    for (int32_t j = 0; j < channels; j++) {
+        cerr << "setting pixel variance for channel " << j << ": " << channel_std_dev[j] << endl;
+        cerr << "setting pixel standard deviation for channel " << j << ": " << channel_std_dev[j] << endl;
+    }
 }
 
 LargeImages::LargeImages(string _filename, int _padding, int _subimage_height, int _subimage_width) {
@@ -406,6 +412,55 @@ void LargeImages::calculate_avg_std_dev() {
 }
 
 
+#ifdef _HAS_TIFF_
+
+void LargeImages::draw_image(int i, string filename) {
+    // Open the TIFF file
+    TIFF *output_image = NULL;
+
+    vector<uint8_t> values;
+    for (int32_t y = 0; y < images[i].get_height();  y++) {
+        for (int32_t x = 0; x < images[i].get_width(); x++) {
+            values.push_back( get_pixel_unnormalized(i, 0, y, x) );
+            //cout << "pushed back: " << values.back() << endl;
+            values.push_back( get_pixel_unnormalized(i, 1, y, x) );
+            //cout << "pushed back: " << values.back() << endl;
+            values.push_back( get_pixel_unnormalized(i, 2, y, x) );
+            //cout << "pushed back: " << values.back() << endl;
+        }
+    }
+
+    if((output_image = TIFFOpen(filename.c_str(), "w")) == NULL){
+        std::cerr << "Unable to write tif file: " << "image.tiff" << std::endl;
+    }
+
+    TIFFSetField(output_image, TIFFTAG_IMAGEWIDTH, images[i].get_width());
+    TIFFSetField(output_image, TIFFTAG_IMAGELENGTH, images[i].get_height());
+    TIFFSetField(output_image, TIFFTAG_SAMPLESPERPIXEL, 3);
+    TIFFSetField(output_image, TIFFTAG_BITSPERSAMPLE, 8);
+    TIFFSetField(output_image, TIFFTAG_ROWSPERSTRIP, images[i].get_height());
+    TIFFSetField(output_image, TIFFTAG_ORIENTATION, (int)ORIENTATION_TOPLEFT);
+    TIFFSetField(output_image, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
+    TIFFSetField(output_image, TIFFTAG_COMPRESSION, COMPRESSION_NONE);
+    TIFFSetField(output_image, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_MINISBLACK);
+
+    // Write the information to the file
+
+    tsize_t image_s;
+    if ( (image_s = TIFFWriteEncodedStrip(output_image, 0, &values[0], 3 * images[i].get_width() * images[i].get_height() * sizeof(int8_t))) == -1) {
+        std::cerr << "Unable to write tif file '" << filename << "'" << endl;
+    }
+    else {
+        std::cout << "Image is saved to '" << filename << "', size is : " << image_s << endl;
+    }
+
+    TIFFWriteDirectory(output_image);
+    TIFFClose(output_image);
+}
+
+#endif
+
+
 #ifdef LARGE_IMAGES_TEST
 int main(int argc, char **argv) {
     int subimage_y = 32;
@@ -417,7 +472,7 @@ int main(int argc, char **argv) {
     cout << "number classes: " << large_images.get_number_classes() << endl;
     cout << "number images: " << large_images.get_number_images() << endl;
 
-    /*
+#ifdef _TIFF_
 	for (uint32_t i = 2800; i < 2900; i++) {
 		// Open the TIFF file
 		TIFF *output_image = NULL;
@@ -468,8 +523,7 @@ int main(int argc, char **argv) {
 		TIFFClose(output_image);
 
     }
-    */
-
+#endif
 
 }
 #endif

@@ -212,7 +212,7 @@ class CNN_Genome {
 
         void check_gradients(const ImagesInterface &images);
 
-        void evaluate_large_images(const LargeImages &images);
+        void evaluate_large_images(const LargeImages &images, string output_directory);
 
         void evaluate(const ImagesInterface &images, vector< vector<int> > &predictions);
         void evaluate(const ImagesInterface &images, const vector<long> &order, float &total_error, int &correct_predictions, bool perform_backprop, bool accumulate_test_statistics);
