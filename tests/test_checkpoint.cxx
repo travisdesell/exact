@@ -55,13 +55,13 @@ int main(int argc, char **argv) {
     }
 
     genome_from_file->set_to_best();
-    genome_from_file->evaluate(testing_images, error, predictions);
+    genome_from_file->evaluate("testing", testing_images, error, predictions);
 
     cout << "GENOME FROM FILE test error: " << error << endl;
     cout << "GENOME FROM FILE test predictions " << predictions << endl;
 
     genome_from_checkpoint->set_to_best();
-    genome_from_checkpoint->evaluate(testing_images, error, predictions);
+    genome_from_checkpoint->evaluate("testing", testing_images, error, predictions);
 
     cout << "GENOME FROM CHECKPOINT test error: " << error << endl;
     cout << "GENOME FROM CHECKPOINT test predictions " << predictions << endl;

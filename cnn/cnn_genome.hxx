@@ -11,6 +11,7 @@ using std::minstd_rand0;
 using std::vector;
 
 #include "image_tools/image_set.hxx"
+#include "image_tools/large_image_set.hxx"
 #include "cnn_node.hxx"
 #include "cnn_edge.hxx"
 #include "common/random.hxx"
@@ -152,6 +153,9 @@ class CNN_Genome {
         bool sanity_check(int type);
         bool visit_nodes();
 
+        void get_node_copies(vector<CNN_Node*> node_copies) const;
+        void get_edge_copies(vector<CNN_Edge*> edge_copies) const;
+
         const vector<CNN_Node*> get_nodes() const;
         const vector<CNN_Edge*> get_edges() const;
 
@@ -197,7 +201,7 @@ class CNN_Genome {
 
         void resize_edges_around_node(int node_position);
  
-        void evaluate_images(const ImagesInterface &images, const vector<int> &batch, vector< vector<int> > &predictions);
+        void evaluate_images(const ImagesInterface &images, const vector<int> &batch, vector< vector<int> > &predictions, int offset);
         void evaluate_images(const ImagesInterface &images, const vector<int> &batch, bool training, float &total_error, int &correct_predictions, bool accumulate_test_statistics);
 
         void set_to_best();
@@ -208,9 +212,11 @@ class CNN_Genome {
 
         void check_gradients(const ImagesInterface &images);
 
+        void evaluate_large_images(const LargeImages &images);
+
         void evaluate(const ImagesInterface &images, vector< vector<int> > &predictions);
         void evaluate(const ImagesInterface &images, const vector<long> &order, float &total_error, int &correct_predictions, bool perform_backprop, bool accumulate_test_statistics);
-        void evaluate(const ImagesInterface &images, float &total_error, int &correct_predictions);
+        void evaluate(string progress_name, const ImagesInterface &images, float &total_error, int &correct_predictions);
 
         void stochastic_backpropagation(const ImagesInterface &training_images, int training_resize, const ImagesInterface &validation_images);
         void stochastic_backpropagation(const ImagesInterface &training_images, const ImagesInterface &validation_images);

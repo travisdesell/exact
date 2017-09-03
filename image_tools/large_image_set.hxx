@@ -82,11 +82,15 @@ class LargeImages : public ImagesInterface {
         int get_number_classes() const;
 
         int get_number_images() const;
+        int get_number_large_images() const;
+        int get_number_subimages(int i) const;
+
 
         int get_image_channels() const;
         int get_image_width() const;
         int get_image_height() const;
 
+        int get_image_classification(int image) const;
         int get_classification(int subimage) const;
         float get_pixel(int subimage, int z, int y, int x) const;
         uint8_t get_pixel_unnormalized(int subimage, int z, int y, int x) const;

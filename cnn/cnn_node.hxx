@@ -208,6 +208,8 @@ class CNN_Node {
         void zero_test_statistics();
         void divide_test_statistics(int number_batches);
 
+        void print_batch_statistics();
+
         void batch_normalize(bool training, bool accumulating_test_statistics, float epsilon, float alpha);
         void apply_relu(float* values, float* gradients);
         void apply_dropout(float* values, float* gradients, bool perform_dropout, bool accumulate_test_statistics, float dropout_probability, minstd_rand0 &generator);

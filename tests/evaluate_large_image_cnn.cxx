@@ -61,28 +61,14 @@ int main(int argc, char **argv) {
         exit(1);
     }
 
-    Images training_images(training_data, genome->get_padding());
-    Images testing_images(testing_data, genome->get_padding(), training_images.get_average(), training_images.get_std_dev());
-
-    float error;
-    int predictions;
-    //genome->evaluate(training_images, error, predictions);
+    LargeImages training_images(training_data, genome->get_padding(), 64, 64);
+    LargeImages testing_images(testing_data, genome->get_padding(), 64, 64, training_images.get_average(), training_images.get_std_dev());
 
     genome->initialize();
     genome->set_to_best();
-    genome->evaluate("testing", testing_images, error, predictions);
 
-    cout << "test error: " << error << endl;
-    cout << "test predictions " << predictions << endl;
+    cout << endl << "getting testing images predictions." << endl;
+    genome->evaluate_large_images(testing_images);
 
-    genome->write_to_file("./genome_" + to_string(genome->get_generation_id()));
-
-#ifdef _MYSQL_
-    if (genome_id >= 0 && argument_exists(arguments, "--update_database")) {
-        ostringstream query;
-        query << "UPDATE cnn_genome SET test_error = " << error << ", test_predictions = " << predictions << " WHERE id = " << genome_id;
-        mysql_exact_query(query.str());
-    }
-#endif
 
 }

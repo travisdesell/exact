@@ -802,6 +802,10 @@ void CNN_Node::divide_test_statistics(int number_batches) {
     cout << "node " << innovation_number << ", final test statistics, running_mean: " << running_mean << ", best_running_mean: " << best_running_mean << ", running_variance: " << running_variance << ", best_running_variance: " << best_running_variance << endl;
 }
 
+void CNN_Node::print_batch_statistics() {
+    cerr << "batch_mean: " << batch_mean << ", running_mean: " << running_mean << ", batch_variance: " << batch_variance << ", running_variance: " << running_variance << ", gamma: " << gamma << ", beta: " << beta << endl;
+}
+
 
 void CNN_Node::batch_normalize(bool training, bool accumulating_test_statistics, float epsilon, float alpha) {
     //normalize the batch
@@ -1036,7 +1040,7 @@ void CNN_Node::backpropagate_batch_normalization(bool training, float mu, float 
         //backpropagate beta
         float pv_beta = previous_velocity_beta;
 
-        float velocity_beta = (mu * pv_beta) - learning_rate * delta_beta;
+        float velocity_beta = (mu * pv_beta) - (learning_rate / batch_size) * delta_beta;
         beta += velocity_beta + mu * (velocity_beta - pv_beta);
         //beta += velocity_beta;
 
@@ -1046,9 +1050,11 @@ void CNN_Node::backpropagate_batch_normalization(bool training, float mu, float 
         previous_velocity_beta = velocity_beta;
 
         if (beta <= -50) {
+            cerr << "beta hit: " << beta << endl;
             beta = -50.0;
             previous_velocity_beta = 0.0;
         } else if (beta >= 50.0) {
+            cerr << "beta hit: " << beta << endl;
             beta = 50.0;
             previous_velocity_beta = 0.0;
         }
@@ -1056,7 +1062,7 @@ void CNN_Node::backpropagate_batch_normalization(bool training, float mu, float 
         //backpropagate gamma
         float pv_gamma = previous_velocity_gamma;
 
-        float velocity_gamma = (mu * pv_gamma) - learning_rate * delta_gamma;
+        float velocity_gamma = (mu * pv_gamma) - (learning_rate / batch_size) * delta_gamma;
         //gamma += velocity_gamma;
         gamma += velocity_gamma + mu * (velocity_gamma - pv_gamma);
         //gamma += (-mu * pv_gamma + (1 + mu) * velocity_gamma);
@@ -1065,9 +1071,11 @@ void CNN_Node::backpropagate_batch_normalization(bool training, float mu, float 
         previous_velocity_gamma = velocity_gamma;
 
         if (gamma <= -50) {
+            cerr << "gamma hit: " << gamma << endl;
             gamma = -50.0;
             previous_velocity_gamma = 0.0;
         } else if (gamma >= 50.0) {
+            cerr << "gamma hit: " << gamma << endl;
             gamma = 50.0;
             previous_velocity_gamma = 0.0;
         }

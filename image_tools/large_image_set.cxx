@@ -170,7 +170,14 @@ int LargeImages::read_images(string _filename) {
         int subimages_along_height = (height - subimage_height) + 1;
         int number_subimages = subimages_along_width * subimages_along_height;
 
-        images.push_back(LargeImage(infile, number_subimages, channels, width, height, padding, image_class, this));
+        LargeImage large_image(infile, number_subimages, channels, width, height, padding, image_class, this);
+
+        if (number_subimages < 0) {
+            cerr << "ERROR! number subimages < 0!" << endl;
+            continue;
+        }
+
+        images.push_back(large_image);
     }
 
 
@@ -235,6 +242,15 @@ int LargeImages::get_number_images() const {
     return number_images;
 }
 
+int LargeImages::get_number_large_images() const {
+    return images.size();
+}
+
+int LargeImages::get_number_subimages(int i) const {
+    return images[i].get_number_subimages();
+}
+
+
 
 int LargeImages::get_image_channels() const {
     return channels;
@@ -248,6 +264,9 @@ int LargeImages::get_image_height() const {
     return subimage_height + (2 * padding);
 }
 
+int LargeImages::get_image_classification(int image) const {
+    return images[image].get_classification();
+}
 
 int LargeImages::get_classification(int subimage) const {
     for (int32_t i = 0; i < images.size(); i++) {
@@ -255,6 +274,8 @@ int LargeImages::get_classification(int subimage) const {
             return images[i].get_classification();
         } else {
             subimage -= images[i].get_number_subimages();
+
+            if (i == images.size() - 1) return images[i].get_classification();
         }
     }
 
