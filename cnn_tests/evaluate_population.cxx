@@ -74,7 +74,7 @@ int main(int argc, char **argv) {
         expected_classes[i] = testing_images.get_classification(i);
     }
 
-    vector<vector<int>> predictions(testing_images.get_number_images(), vector<int>(testing_images.get_number_classes(), 0));
+    vector<vector<float>> predictions(testing_images.get_number_images(), vector<float>(testing_images.get_number_classes(), 0));
 
     for (uint32_t i = 0; i < genomes.size(); i++) {
         cout << "evaluating predictions for genome " << i << " of " << genomes.size() << ", genome id: " << genomes[i]->get_generation_id() << endl;

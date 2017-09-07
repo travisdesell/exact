@@ -201,7 +201,7 @@ class CNN_Genome {
 
         void resize_edges_around_node(int node_position);
  
-        void evaluate_images(const ImagesInterface &images, const vector<int> &batch, vector< vector<int> > &predictions, int offset);
+        void evaluate_images(const ImagesInterface &images, const vector<int> &batch, vector< vector<float> > &predictions, int offset);
         void evaluate_images(const ImagesInterface &images, const vector<int> &batch, bool training, float &total_error, int &correct_predictions, bool accumulate_test_statistics);
 
         void set_to_best();
@@ -214,7 +214,7 @@ class CNN_Genome {
 
         void evaluate_large_images(const LargeImages &images, string output_directory);
 
-        void evaluate(const ImagesInterface &images, vector< vector<int> > &predictions);
+        void evaluate(const ImagesInterface &images, vector< vector<float> > &predictions);
         void evaluate(const ImagesInterface &images, const vector<long> &order, float &total_error, int &correct_predictions, bool perform_backprop, bool accumulate_test_statistics);
         void evaluate(string progress_name, const ImagesInterface &images, float &total_error, int &correct_predictions);
 

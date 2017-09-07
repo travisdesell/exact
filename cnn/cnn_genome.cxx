@@ -1237,7 +1237,7 @@ bool CNN_Genome::visit_nodes() {
     return true;
 }
 
-void CNN_Genome::evaluate_images(const ImagesInterface &images, const vector<int> &batch, vector< vector<int> > &predictions, int offset) {
+void CNN_Genome::evaluate_images(const ImagesInterface &images, const vector<int> &batch, vector< vector<float> > &predictions, int offset) {
     bool training = false;
     bool accumulate_test_statistics = false;
 
@@ -1345,9 +1345,9 @@ void CNN_Genome::evaluate_images(const ImagesInterface &images, const vector<int
                 predicted_class = i;
                 max_value = value;
             }
-        }
 
-        predictions[batch[batch_number] - offset][predicted_class]++;
+            predictions[batch[batch_number] - offset][i] = value;
+        }
     }
 }
 
@@ -1729,7 +1729,7 @@ void CNN_Genome::evaluate_large_images(const LargeImages &images, string output_
 
         int number_correct = 0;
 
-        vector< vector<int> > predictions(number_subimages, vector<int>(images.get_number_classes(), 0.0));
+        vector< vector<float> > predictions(number_subimages, vector<float>(images.get_number_classes(), 0.0));
         //cout << "created vector!" << endl;
 
         for (uint32_t j = 0; j < number_subimages; j += batch_size) {
@@ -1753,7 +1753,17 @@ void CNN_Genome::evaluate_large_images(const LargeImages &images, string output_
         //cout << "checking predictions!" << endl;
         int classification = images.get_image_classification(image_number);
         for (int j = 0; j < number_subimages; j++) {
-            if (predictions[j][classification] == 1) number_correct++;
+            int max_class = 0;
+            float max_value = 0.0;
+
+            for (int32_t k = 0; k < images.get_number_classes(); k++) {
+                if (predictions[j][k] > max_value) {
+                    max_value = predictions[j][k];
+                    max_class = k;
+                }
+            }
+
+            if (max_class == classification) number_correct++;
         }
 
         float percentage_correct = (float)number_correct / (float)images.get_number_subimages(image_number);
@@ -1768,6 +1778,43 @@ void CNN_Genome::evaluate_large_images(const LargeImages &images, string output_
             }
             cutoff += 0.1;
         }
+
+#ifdef _HAS_TIFF_
+        if (percentage_correct < 0.95) {
+            ostringstream filename;
+            filename << output_directory << "image_" << image_number << "_class_" << classification << "_pred_" << setw(5) << fixed << setprecision(3) << percentage_correct << ".tiff";
+
+            cout << "drawing image: '" << filename.str() << "'" << endl;
+
+            LargeImage *image = images.copy_image(image_number);
+
+            for (uint32_t j = 0; j < predictions.size(); j++) {
+                int x = j + (image->get_height() / 2) + padding;
+
+                int y = padding;
+                image->set_pixel(0, y, x, (int8_t)(predictions[j][1] * 255.0));
+                image->set_pixel(1, y, x, (int8_t)(predictions[j][0] * 255.0));
+                image->set_pixel(2, y, x, 0);
+
+                y = padding + 1;
+                image->set_pixel(0, y, x, (int8_t)(predictions[j][1] * 255.0));
+                image->set_pixel(1, y, x, (int8_t)(predictions[j][0] * 255.0));
+                image->set_pixel(2, y, x, 0);
+
+                y = image->get_height() - 1 + padding;
+                image->set_pixel(0, y, x, (int8_t)(predictions[j][1] * 255.0));
+                image->set_pixel(1, y, x, (int8_t)(predictions[j][0] * 255.0));
+                image->set_pixel(2, y, x, 0);
+
+                y = image->get_height() - 2 + padding;
+                image->set_pixel(0, y, x, (int8_t)(predictions[j][1] * 255.0));
+                image->set_pixel(1, y, x, (int8_t)(predictions[j][0] * 255.0));
+                image->set_pixel(2, y, x, 0);
+            }
+
+            image->draw_image(filename.str().c_str());
+        }
+#endif
     }
 
     for (uint32_t i = 0; i < images.get_number_classes(); i++) {
@@ -1782,9 +1829,9 @@ void CNN_Genome::evaluate_large_images(const LargeImages &images, string output_
 }
 
 
-void CNN_Genome::evaluate(const ImagesInterface &images, vector< vector<int> > &predictions) {
+void CNN_Genome::evaluate(const ImagesInterface &images, vector< vector<float> > &predictions) {
     predictions.clear();
-    predictions.assign(images.get_number_images(), vector<int>(images.get_number_classes(), 0));
+    predictions.assign(images.get_number_images(), vector<float>(images.get_number_classes(), 0));
 
     for (uint32_t j = 0; j < images.get_number_images(); j += batch_size) {
 

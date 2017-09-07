@@ -1,8 +1,8 @@
 add_executable(evaluate_population evaluate_population)
 target_link_libraries(evaluate_population exact_strategy exact_common exact_image_tools ${MYSQL_LIBRARIES}  ${TIFF_LIBRARIES} pthread)
 
-#add_executable(one_layer_lstm one_layer_lstm)
-#target_link_libraries(one_layer_lstm exact_strategy exact_common exact_time_series ${MYSQL_LIBRARIES}  ${TIFF_LIBRARIES} pthread)
+add_executable(one_layer_lstm one_layer_lstm)
+target_link_libraries(one_layer_lstm exalt_strategy exact_common exact_time_series ${MYSQL_LIBRARIES}  ${TIFF_LIBRARIES} pthread)
 
 add_executable(check_gradients check_gradients)
 target_link_libraries(check_gradients exact_strategy exact_common exact_image_tools ${MYSQL_LIBRARIES}  ${TIFF_LIBRARIES} pthread)
