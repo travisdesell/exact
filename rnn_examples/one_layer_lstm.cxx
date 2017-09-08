@@ -15,6 +15,8 @@ using std::string;
 #include <vector>
 using std::vector;
 
+#include "mpi.h"
+
 #include "common/arguments.hxx"
 
 #include "rnn/lstm_node.hxx"
@@ -25,8 +27,12 @@ using std::vector;
 
 #include "time_series/time_series.hxx"
 
-//#include "asynchronous_algorithms/particle_swarm.hxx"
-//#include "asynchronous_algorithms/differential_evolution.hxx"
+#include "mpi/mpi_ant_colony_optimization_new.hxx"
+#include "mpi/mpi_particle_swarm.hxx"
+#include "mpi/mpi_differential_evolution.hxx"
+
+#include "asynchronous_algorithms/particle_swarm.hxx"
+#include "asynchronous_algorithms/differential_evolution.hxx"
 
 
 vector< vector< vector<double> > > series_data;
@@ -40,22 +46,30 @@ double objective_function(const vector<double> &parameters) {
     double total_error = 0.0;
     for (uint32_t i = 0; i < series_data.size(); i++) {
         double output = genome->predict(series_data[i], expected_classes[i]);
+
         double error = 0.0;
 
+
         if (expected_classes[i] == 0) {
-            error = -1.0 - output;
+            error = fabs(-1.0 - output);
         } else {
-            error = 1.0 - output;
+            error = fabs(1.0 - output);
         }
 
         //cout << "output for series[" << i << "]: " << output << ", expected_class: " << expected_classes[i] << ", error: " << error << endl;
         total_error += error;
     }
 
-    return total_error;
+    return -total_error;
 }
 
 int main(int argc, char **argv) {
+    MPI_Init(&argc, &argv);
+
+    int rank, max_rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &max_rank);
+
     vector<string> arguments = vector<string>(argv, argv + argc);
 
     vector<string> before_filenames;
@@ -178,27 +192,35 @@ int main(int argc, char **argv) {
         //cout << "test_parameters[" << i << "]: " << test_parameters[i] << endl;
     }
 
-    double error = objective_function(test_parameters);
+    //double error = objective_function(test_parameters);
 
-    cout << "error was: " << error << endl;
+    //cout << "error was: " << error << endl;
 
     string search_type;
     get_argument(arguments, "--search_type", true, search_type);
     if (search_type.compare("ps") == 0) {
         ParticleSwarm ps(min_bound, max_bound, arguments);
-        ps.iterate(f);
+        ps.iterate(objective_function);
 
     } else if (search_type.compare("de") == 0) {
         DifferentialEvolution de(min_bound, max_bound, arguments);
-        de.iterate(f);
+        de.iterate(objective_function);
 
+    } else if (search_type.compare("ps_mpi") == 0) {
+        ParticleSwarmMPI ps(min_bound, max_bound, arguments);
+        ps.go(objective_function);
+
+    } else if (search_type.compare("de_mpi") == 0) {
+        DifferentialEvolutionMPI de(min_bound, max_bound, arguments);
+        de.go(objective_function);
 
     } else {
         cerr << "Improperly specified search type: '" << search_type.c_str() <<"'" << endl;
         cerr << "Possibilities are:" << endl;
         cerr << "    de     -       differential evolution" << endl;
         cerr << "    ps     -       particle swarm optimization" << endl;
+        cerr << "    de_mpi -       MPI parallel differential evolution" << endl;
+        cerr << "    ps_mpi -       MPI parallel particle swarm optimization" << endl;
         exit(1);
     }
-
 }
