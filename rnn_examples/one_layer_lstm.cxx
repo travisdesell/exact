@@ -1,5 +1,9 @@
 #include <chrono>
 
+#include <fstream>
+using std::getline;
+using std::ifstream;
+
 #include <iostream>
 using std::cout;
 using std::cerr;
@@ -47,14 +51,7 @@ double objective_function(const vector<double> &parameters) {
     for (uint32_t i = 0; i < series_data.size(); i++) {
         double output = genome->predict(series_data[i], expected_classes[i]);
 
-        double error = 0.0;
-
-
-        if (expected_classes[i] == 0) {
-            error = fabs(-1.0 - output);
-        } else {
-            error = fabs(1.0 - output);
-        }
+        double error = fabs(expected_classes[i] - output);
 
         //cout << "output for series[" << i << "]: " << output << ", expected_class: " << expected_classes[i] << ", error: " << error << endl;
         total_error += error;
@@ -82,33 +79,33 @@ int main(int argc, char **argv) {
 
     int before_rows = 0;
     vector<TimeSeriesSet*> before_time_series;
-    cout << "got before time series filenames:" << endl;
+    if (rank == 0) cout << "got before time series filenames:" << endl;
     for (uint32_t i = 0; i < before_filenames.size(); i++) {
-        cout << "\t" << before_filenames[i] << endl;
+        if (rank == 0) cout << "\t" << before_filenames[i] << endl;
 
         TimeSeriesSet *ts = new TimeSeriesSet(before_filenames[i], 1.0);
         before_time_series.push_back( ts );
         all_time_series.push_back( ts );
 
-        cout << "\t\trows: " << ts->get_number_rows() << endl;
+        //if (rank == 0) cout << "\t\trows: " << ts->get_number_rows() << endl;
         before_rows += ts->get_number_rows();
     }
-    cout << "total rows for before flights: " << before_rows << endl;
+    if (rank == 0) cout << "number before files: " << before_filenames.size() << ", total rows for before flights: " << before_rows << endl;
 
     int after_rows = 0;
     vector<TimeSeriesSet*> after_time_series;
-    cout << "got after time series filenames:" << endl;
+    if (rank == 0) cout << "got after time series filenames:" << endl;
     for (uint32_t i = 0; i < after_filenames.size(); i++) {
-        cout << "\t" << after_filenames[i] << endl;
+        if (rank == 0) cout << "\t" << after_filenames[i] << endl;
 
-        TimeSeriesSet *ts = new TimeSeriesSet(after_filenames[i], 0.0);
+        TimeSeriesSet *ts = new TimeSeriesSet(after_filenames[i], -1.0);
         after_time_series.push_back( ts );
         all_time_series.push_back( ts );
 
-        cout << "\t\trows: " << ts->get_number_rows() << endl;
+        //if (rank == 0) cout << "\t\trows: " << ts->get_number_rows() << endl;
         after_rows += ts->get_number_rows();
     }
-    cout << "total rows for after flights: " << after_rows << endl;
+    if (rank == 0) cout << "number after files: " << after_filenames.size() << ", total rows for after flights: " << after_rows << endl;
 
     normalize_time_series_sets(all_time_series);
 
@@ -198,7 +195,23 @@ int main(int argc, char **argv) {
 
     string search_type;
     get_argument(arguments, "--search_type", true, search_type);
-    if (search_type.compare("ps") == 0) {
+    if (search_type.compare("test") == 0) {
+        string rnn_parameter_filename;
+        get_argument(arguments, "--rnn_parameter_file", true, rnn_parameter_filename);
+
+        vector<double> parameters;
+
+        ifstream parameter_file(rnn_parameter_filename);
+        string parameter;
+        while (getline(parameter_file, parameter, ',')) {
+                cout << "got parameter: " << parameter << endl;
+                parameters.push_back(stod(parameter));
+        }
+
+        double error = objective_function(parameters);
+        cout << "total_error: " << error << endl;
+
+    } else if (search_type.compare("ps") == 0) {
         ParticleSwarm ps(min_bound, max_bound, arguments);
         ps.iterate(objective_function);
 
