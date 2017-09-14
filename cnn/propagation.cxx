@@ -170,7 +170,6 @@ void prop_backward(float* output_errors, float* input, float* input_errors, floa
                     }
                     current_input += width_difference;
                 }
-                //weight_updates[current_weight] += weight_update;
                 weight_updates[current_weight] += weight_update / batch_size;
                 current_weight++;
             }

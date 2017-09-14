@@ -40,7 +40,9 @@ using std::vector;
 
 
 vector< vector< vector<double> > > series_data;
+vector< vector< vector<double> > > test_series_data;
 vector<double> expected_classes;
+vector<double> test_expected_classes;
 
 RNN_Genome *genome;
 
@@ -59,6 +61,23 @@ double objective_function(const vector<double> &parameters) {
 
     return -total_error;
 }
+
+double test_objective_function(const vector<double> &parameters) {
+    genome->set_weights(parameters);
+
+    double total_error = 0.0;
+    for (uint32_t i = 0; i < test_series_data.size(); i++) {
+        double output = genome->predict(test_series_data[i], test_expected_classes[i]);
+
+        double error = fabs(test_expected_classes[i] - output);
+
+        cout << "output for series[" << i << "]: " << output << ", expected_class: " << test_expected_classes[i] << ", error: " << error << endl;
+        total_error += error;
+    }
+
+    return -total_error;
+}
+
 
 int main(int argc, char **argv) {
     MPI_Init(&argc, &argv);
@@ -172,8 +191,8 @@ int main(int argc, char **argv) {
 
     uint32_t number_of_weights = genome->get_number_weights();
 
-    vector<double> min_bound(number_of_weights, -1.0); 
-    vector<double> max_bound(number_of_weights, 1.0); 
+    vector<double> min_bound(number_of_weights, -5.0); 
+    vector<double> max_bound(number_of_weights, 5.0); 
 
     cout << "Input data has " << number_columns << " columns." << endl;
     cout << "RNN has " << number_of_weights << " weights." << endl;
@@ -210,6 +229,62 @@ int main(int argc, char **argv) {
 
         double error = objective_function(parameters);
         cout << "total_error: " << error << endl;
+
+        cout << "loading test time series." << endl;
+
+        vector<string> before_test_filenames;
+        get_argument_vector(arguments, "--before_test_filenames", true, before_test_filenames);
+
+        vector<string> after_test_filenames;
+        get_argument_vector(arguments, "--after_test_filenames", true, after_test_filenames);
+
+
+        vector<TimeSeriesSet*> all_test_time_series;
+
+        int before_rows = 0;
+        vector<TimeSeriesSet*> before_test_time_series;
+        if (rank == 0) cout << "got before time series filenames:" << endl;
+        for (uint32_t i = 0; i < before_test_filenames.size(); i++) {
+            if (rank == 0) cout << "\t" << before_test_filenames[i] << endl;
+
+            TimeSeriesSet *ts = new TimeSeriesSet(before_test_filenames[i], 1.0);
+            before_test_time_series.push_back( ts );
+            all_test_time_series.push_back( ts );
+
+            //if (rank == 0) cout << "\t\trows: " << ts->get_number_rows() << endl;
+            before_rows += ts->get_number_rows();
+        }
+        if (rank == 0) cout << "number before test files: " << before_test_filenames.size() << ", total rows for before test flights: " << before_rows << endl;
+
+        int after_rows = 0;
+        vector<TimeSeriesSet*> after_test_time_series;
+        if (rank == 0) cout << "got after time series filenames:" << endl;
+        for (uint32_t i = 0; i < after_test_filenames.size(); i++) {
+            if (rank == 0) cout << "\t" << after_test_filenames[i] << endl;
+
+            TimeSeriesSet *ts = new TimeSeriesSet(after_test_filenames[i], -1.0);
+            after_test_time_series.push_back( ts );
+            all_test_time_series.push_back( ts );
+
+            //if (rank == 0) cout << "\t\trows: " << ts->get_number_rows() << endl;
+            after_rows += ts->get_number_rows();
+        }
+        if (rank == 0) cout << "number after test files: " << after_test_filenames.size() << ", total rows for after test flights: " << after_rows << endl;
+
+        normalize_time_series_sets(all_test_time_series);
+
+        test_series_data.clear();
+        test_series_data.resize(all_test_time_series.size());
+        test_expected_classes.clear();
+        test_expected_classes.resize(all_test_time_series.size());
+        for (uint32_t i = 0; i < all_test_time_series.size(); i++) {
+            all_test_time_series[i]->export_time_series(test_series_data[i]);
+            test_expected_classes[i] = all_test_time_series[i]->get_expected_class();
+        }
+
+        double test_error = test_objective_function(parameters);
+        cout << "total_test_error: " << test_error << endl;
+
 
     } else if (search_type.compare("ps") == 0) {
         ParticleSwarm ps(min_bound, max_bound, arguments);

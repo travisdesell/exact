@@ -117,6 +117,8 @@ class CNN_Genome {
 
         bool equals(CNN_Genome *other) const;
 
+        void print_results(ostream &out) const;
+
         void print_progress(ostream &out, string progress_name, float total_error, int correct_predictions, int number_images) const;
 
         int get_number_training_images() const;

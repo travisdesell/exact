@@ -281,4 +281,5 @@ int main(int argc, char **argv) {
 
     genome->stochastic_backpropagation(training_images, validation_images);
     genome->evaluate_test(testing_images);
+    genome->print_results(cerr);
 }

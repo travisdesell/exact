@@ -1387,7 +1387,11 @@ void calculate_softmax(const vector<float> &values_in, vector<float> &values_out
             gradient[i] = values_out[i];
         }
 
-        //gradient[i] *= values_out[i] * (1.0 - values_out[i]);
+        /*
+        if (modified_softmax) {
+            gradient[i] *= values_out[i] * (1.0 - values_out[i]);
+        }
+        */
     }
 
     /*
@@ -2022,8 +2026,6 @@ void CNN_Genome::stochastic_backpropagation(const ImagesInterface &training_imag
         validation_order.push_back(i);
     }
 
-    float best_training_error = EXACT_MAX_FLOAT;
-    int best_training_predictions = 0;
     float current_training_error = 0.0;
     int current_training_predictions = 0;
     float current_validation_error = 0.0;
@@ -2034,37 +2036,38 @@ void CNN_Genome::stochastic_backpropagation(const ImagesInterface &training_imag
         fisher_yates_shuffle(generator, backprop_order);
 
         evaluate(training_images, backprop_order, current_training_error, current_training_predictions, true, false);
-
-        //evaluate(training_images, backprop_order, current_training_error, current_training_predictions, false, false);
         evaluate(validation_images, validation_order, current_validation_error, current_validation_predictions, false, false);
 
         bool found_improvement = false;
 
-        if (epoch < 5) {
-            best_epoch = epoch;
-
-            save_to_best();
-            found_improvement = true;
-        } else if (current_validation_error + current_training_error < best_validation_error + best_training_error) {
+        if (current_validation_error < best_validation_error) {
+            cout << "current validation error: " << current_validation_error << " < best validation error: " << best_validation_error << endl;
             best_validation_error = current_validation_error;
             best_validation_predictions = current_validation_predictions;
 
-            best_training_error = current_training_error;
-            best_training_predictions = current_training_predictions;
-
             best_epoch = epoch;
 
             save_to_best();
             found_improvement = true;
+            /*
+        } else if (epoch < 5) {
+            cout << "epoch < 5" << endl;
+            best_epoch = epoch;
+
+            save_to_best();
+            found_improvement = true;
+            */
+        } else if (current_validation_error < 2.5 * best_validation_error) {
+            cout << "current_validation_error < 2.5 * best_validation_error" << endl;
+            found_improvement = true;
         }
 
-        //print_progress(cerr, "training", current_training_error, current_training_predictions, number_training_images);
         print_progress(cerr, "validation", current_validation_error, current_validation_predictions, number_validation_images);
-        //cerr << "best training error: " << best_training_error << ", best training predictions: " << best_training_predictions << endl;
-        cerr << "best validation error: " << best_validation_error << ", best validation predictions: " << best_validation_predictions << endl;
+        //cerr << "best validation error: " << best_validation_error << ", best validation predictions: " << best_validation_predictions << endl;
         cerr << endl;
 
         if (!found_improvement) {
+            cerr << "resetting weights to those on epoch: " << best_epoch << endl;
             set_to_best();
         }
 
@@ -2093,10 +2096,20 @@ void CNN_Genome::stochastic_backpropagation(const ImagesInterface &training_imag
         }
     } while (true);
 
-    evaluate(training_images, backprop_order, training_error, training_predictions, false, false);
     set_to_best();
+    evaluate(training_images, backprop_order, training_error, training_predictions, false, false);
     print_progress(cerr, "best training", training_error, training_predictions, number_training_images);
 }
+
+void CNN_Genome::print_results(ostream &out) const {
+    out << setw(10) << fixed << setprecision(5) << training_error;
+    out << setw(15) << fixed << setprecision(5) << best_validation_error;
+    out << setw(15) << fixed << setprecision(5) << test_error;
+    out << setw(10) << training_predictions << setw(10) << number_training_images;
+    out << setw(10) << best_validation_predictions << setw(10) << number_validation_images;
+    out << setw(10) << test_predictions << setw(10) << number_test_images << endl;
+} 
+
 
 void CNN_Genome::evaluate_test(const ImagesInterface &test_images) {
     set_to_best();
