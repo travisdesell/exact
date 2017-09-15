@@ -54,6 +54,11 @@ class CNN_Edge {
         float *previous_velocity;
         float *best_velocity;
 
+        float scale;
+        float best_scale;
+        float previous_velocity_scale;
+        float best_velocity_scale;
+
         vector<int> y_pools;
         vector<int> y_pool_offset;
         vector<int> x_pools;

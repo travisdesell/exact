@@ -79,6 +79,11 @@ CNN_Edge::CNN_Edge() {
 
     previous_velocity = NULL;
     best_velocity = NULL;
+
+    scale = 1.0;
+    best_scale = 1.0;
+    previous_velocity_scale = 0.0;
+    best_velocity_scale = 0.0;
 }
 
 CNN_Edge::CNN_Edge(CNN_Node *_input_node, CNN_Node *_output_node, bool _fixed, int _innovation_number, int _type) {
@@ -96,6 +101,11 @@ CNN_Edge::CNN_Edge(CNN_Node *_input_node, CNN_Node *_output_node, bool _fixed, i
     reverse_filter_x = false;
     reverse_filter_y = false;
     needs_initialization = true;
+
+    scale = 1.0;
+    best_scale = 1.0;
+    previous_velocity_scale = 0.0;
+    best_velocity_scale = 0.0;
 
     input_node = _input_node;
     output_node = _output_node;
@@ -256,6 +266,13 @@ CNN_Edge::CNN_Edge(int _edge_id) {
         reverse_filter_y = atoi(row[++column]);
         needs_initialization = atoi(row[++column]);
 
+        istringstream scale_iss(row[++column]);
+        scale = read_hexfloat(scale_iss);
+        best_scale = read_hexfloat(scale_iss);
+        previous_velocity_scale = read_hexfloat(scale_iss);
+        best_velocity_scale = read_hexfloat(scale_iss);
+
+
         mysql_free_result(result);
     } else {
         cerr << "ERROR! Could not find cnn_edge in database with edge id: " << edge_id << endl;
@@ -327,7 +344,15 @@ void CNN_Edge::export_to_database(int _exact_id, int _genome_id) {
         }
         if (y != filter_y - 1) query << "\n";
     }
-    query << "'";
+    query << "', scale_values = '";
+    write_hexfloat(query, scale);
+    query << " ";
+    write_hexfloat(query, best_scale);
+    query << " ";
+    write_hexfloat(query, previous_velocity_scale);
+    query << " ";
+    write_hexfloat(query, best_velocity_scale);
+    query <<"'";
 
     /*
     query << "', previous_velocity = '";
@@ -461,6 +486,11 @@ void CNN_Edge::initialize_weights(minstd_rand0 &generator, NormalDistribution &n
     //cout << "initialized weights for edge " << innovation_number << ", weights[0][0]: " << weights[0][0] << endl;
 
     needs_initialization = false;
+
+    scale = 1.0;
+    best_scale = 1.0;
+    previous_velocity_scale = 0.0;
+    best_velocity_scale = 0.0;
 }
 
 void CNN_Edge::reset_velocities() {
@@ -471,6 +501,9 @@ void CNN_Edge::reset_velocities() {
             current++;
         }
     }
+
+    previous_velocity_scale = 0.0;
+    best_velocity_scale = 0.0;
 }
 
 void CNN_Edge::resize() {
@@ -520,6 +553,9 @@ void CNN_Edge::save_best_weights() {
             current++;
         }
     }
+
+    best_scale = scale;
+    best_velocity_scale = previous_velocity_scale;
 }
 
 void CNN_Edge::set_weights_to_best() {
@@ -532,6 +568,9 @@ void CNN_Edge::set_weights_to_best() {
             current++;
         }
     }
+
+    scale = best_scale;
+    previous_velocity_scale = best_velocity_scale;
 }
 
 
@@ -566,6 +605,11 @@ CNN_Edge* CNN_Edge::copy() const {
     copy->reverse_filter_x = reverse_filter_x;
     copy->reverse_filter_y = reverse_filter_y;
     copy->needs_initialization = needs_initialization;
+
+    copy->scale = scale;
+    copy->best_scale = best_scale;
+    copy->previous_velocity_scale = previous_velocity_scale;
+    copy->best_velocity_scale = best_velocity_scale;
 
     if (weights == NULL) {
         cerr << "ERROR! copying CNN_Edge where weights == NULL" << endl;
@@ -973,7 +1017,7 @@ void CNN_Edge::propagate_forward(bool training, bool accumulate_test_statistics,
                 max_pooling = false;
             }
 
-            pool_forward_ry_rx(input, pool_gradients, output, batch_size, input_size_y, input_size_x, output_size_y, output_size_x, y_pools, x_pools, y_pool_offset, x_pool_offset, generator, training, max_pooling);
+            pool_forward_ry_rx(input, scale, pool_gradients, output, batch_size, input_size_y, input_size_x, output_size_y, output_size_x, y_pools, x_pools, y_pool_offset, x_pool_offset, generator, training, max_pooling);
 
         } else if (reverse_filter_y) {
             if (output_size_y % input_size_y == 0) {
@@ -988,7 +1032,7 @@ void CNN_Edge::propagate_forward(bool training, bool accumulate_test_statistics,
                 max_pooling = false;
             }
 
-            pool_forward_ry(input, pool_gradients, output, batch_size, input_size_y, input_size_x, output_size_y, output_size_x, y_pools, x_pools, y_pool_offset, x_pool_offset, generator, training, max_pooling);
+            pool_forward_ry(input, scale, pool_gradients, output, batch_size, input_size_y, input_size_x, output_size_y, output_size_x, y_pools, x_pools, y_pool_offset, x_pool_offset, generator, training, max_pooling);
 
         } else if (reverse_filter_x) {
             if (input_size_y % output_size_y == 0) {
@@ -1003,7 +1047,7 @@ void CNN_Edge::propagate_forward(bool training, bool accumulate_test_statistics,
                 max_pooling = false;
             }
 
-            pool_forward_rx(input, pool_gradients, output, batch_size, input_size_y, input_size_x, output_size_y, output_size_x, y_pools, x_pools, y_pool_offset, x_pool_offset, generator, training, max_pooling);
+            pool_forward_rx(input, scale, pool_gradients, output, batch_size, input_size_y, input_size_x, output_size_y, output_size_x, y_pools, x_pools, y_pool_offset, x_pool_offset, generator, training, max_pooling);
 
         } else {
             if (output_size_y % input_size_y == 0) {
@@ -1018,7 +1062,7 @@ void CNN_Edge::propagate_forward(bool training, bool accumulate_test_statistics,
                 max_pooling = false;
             }
 
-            pool_forward(input, pool_gradients, output, batch_size, input_size_y, input_size_x, output_size_y, output_size_x, y_pools, x_pools, y_pool_offset, x_pool_offset, generator, training, max_pooling);
+            pool_forward(input, scale, pool_gradients, output, batch_size, input_size_y, input_size_x, output_size_y, output_size_x, y_pools, x_pools, y_pool_offset, x_pool_offset, generator, training, max_pooling);
         }
 
     } else {
@@ -1159,14 +1203,28 @@ void CNN_Edge::propagate_backward(bool training, float mu, float learning_rate, 
     } else if (type == POOLING) {
         float *pool_gradients = input_node->get_pool_gradients();
 
+        float scale_update = 0.0;
         if (reverse_filter_y && reverse_filter_x) {
-            pool_backward_ry_rx(input_errors, pool_gradients, output_errors, batch_size, input_size_y, input_size_x, output_size_y, output_size_x, y_pools, x_pools, y_pool_offset, x_pool_offset);
+            pool_backward_ry_rx(input_errors, scale_update, input, pool_gradients, output_errors, batch_size, input_size_y, input_size_x, output_size_y, output_size_x, y_pools, x_pools, y_pool_offset, x_pool_offset);
         } else if (reverse_filter_y) {
-            pool_backward_ry(input_errors, pool_gradients, output_errors, batch_size, input_size_y, input_size_x, output_size_y, output_size_x, y_pools, x_pools, y_pool_offset, x_pool_offset);
+            pool_backward_ry(input_errors, scale_update, input, pool_gradients, output_errors, batch_size, input_size_y, input_size_x, output_size_y, output_size_x, y_pools, x_pools, y_pool_offset, x_pool_offset);
         } else if (reverse_filter_x) {
-            pool_backward_rx(input_errors, pool_gradients, output_errors, batch_size, input_size_y, input_size_x, output_size_y, output_size_x, y_pools, x_pools, y_pool_offset, x_pool_offset);
+            pool_backward_rx(input_errors, scale_update, input, pool_gradients, output_errors, batch_size, input_size_y, input_size_x, output_size_y, output_size_x, y_pools, x_pools, y_pool_offset, x_pool_offset);
         } else {
-            pool_backward(input_errors, pool_gradients, output_errors, batch_size, input_size_y, input_size_x, output_size_y, output_size_x, y_pools, x_pools, y_pool_offset, x_pool_offset);
+            pool_backward(input_errors, scale_update, input, pool_gradients, output_errors, batch_size, input_size_y, input_size_x, output_size_y, output_size_x, y_pools, x_pools, y_pool_offset, x_pool_offset);
+        }
+
+        float pv_scale = previous_velocity_scale;
+        float velocity_scale = (mu * pv_scale) - (learning_rate * scale_update); //scale update is divided by batch size in pool_backward
+        scale += velocity_scale + mu * (velocity_scale - pv_scale);
+        previous_velocity_scale = velocity_scale;
+
+        if (scale > 50.0) {
+            scale = 50.0;
+            previous_velocity_scale = 0.0;
+        } else if (scale < -50.0) {
+            scale = -50.0;
+            previous_velocity_scale = 0.0;
         }
 
     } else {
@@ -1189,6 +1247,8 @@ bool CNN_Edge::has_nan() const {
         if (isnan(weight_updates[current]) || isinf(weight_updates[current])) return true;
         if (isnan(previous_velocity[current]) || isinf(previous_velocity[current])) return true;
     }
+    
+    if (isnan(scale) || isnan(best_scale) || isnan(previous_velocity_scale) || isnan(best_velocity_scale)) return true;
     return false;
 }
 
@@ -1236,6 +1296,15 @@ ostream &operator<<(ostream &os, const CNN_Edge* edge) {
     os << edge->reverse_visited << " ";
     os << edge->needs_initialization << " ";
     os << edge->batch_size << endl;
+
+    write_hexfloat(os, edge->scale);
+    os << " ";
+    write_hexfloat(os, edge->best_scale);
+    os << " ";
+    write_hexfloat(os, edge->previous_velocity_scale);
+    os << " ";
+    write_hexfloat(os, edge->best_velocity_scale);
+    os << endl;
 
     os << "POOLS" << endl;
     os << edge->y_pools.size();
@@ -1324,6 +1393,11 @@ istream &operator>>(istream &is, CNN_Edge* edge) {
 
     edge->previous_velocity = new float[edge->filter_size]();
     edge->best_velocity = new float[edge->filter_size]();
+
+    edge->scale = read_hexfloat(is);
+    edge->best_scale = read_hexfloat(is);
+    edge->previous_velocity_scale = read_hexfloat(is);
+    edge->best_velocity_scale = read_hexfloat(is);
 
     string line;
     getline(is, line);
@@ -1469,6 +1543,11 @@ bool CNN_Edge::is_identical(const CNN_Edge *other, bool testing_checkpoint) {
     if (are_different("reverse_filter_x", reverse_filter_x, other->reverse_filter_x)) return false;
     if (are_different("reverse_filter_y", reverse_filter_y, other->reverse_filter_y)) return false;
     if (are_different("needs_initialization", needs_initialization, other->needs_initialization)) return false;
+
+    if (are_different("scale", scale, other->scale)) return false;
+    if (are_different("best_scale", best_scale, other->best_scale)) return false;
+    if (are_different("previous_velocity_scale", previous_velocity_scale, other->previous_velocity_scale)) return false;
+    if (are_different("best_velocity_scale", best_velocity_scale, other->best_velocity_scale)) return false;
 
     //these are zeroed at the beginning of each batch so don't need to be similar
     //if (are_different("propagate_backward_time", propagate_backward_time, other->propagate_backward_time)) return false;

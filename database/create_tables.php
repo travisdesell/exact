@@ -218,6 +218,7 @@ $query = "CREATE TABLE `cnn_edge` (
   `reverse_filter_x` tinyint(1) NOT NULL,
   `reverse_filter_y` tinyint(1) NOT NULL,
   `needs_initialization` tinyint(1) NOT NULL,
+  `scale_values` BLOB NOT NULL,
 
   PRIMARY KEY(`id`),
   UNIQUE KEY(`id`, `exact_id`, `genome_id`, `innovation_number`),
