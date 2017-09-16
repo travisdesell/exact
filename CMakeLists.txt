@@ -3,7 +3,7 @@ project (EXACT)
 
 # The version number.
 set (EXACT_VERSION_MAJOR 0)
-set (EXACT_VERSION_MINOR 32)
+set (EXACT_VERSION_MINOR 33)
 
 #add_definitions( -DEXACT_VERSION="${EXACT_VERSION_MAJOR}.${EXACT_VERSION_MINOR}" )
 
@@ -63,13 +63,6 @@ ELSE (COMPILE_CLIENT STREQUAL "YES")
     ENDIF (TIFF_FOUND)
 ENDIF (COMPILE_CLIENT STREQUAL "YES")
 
-add_subdirectory(common)
-add_subdirectory(image_tools)
-add_subdirectory(time_series)
-add_subdirectory(cnn)
-add_subdirectory(cnn_tests)
-add_subdirectory(cnn_examples)
-
 FIND_PATH(TAO_INCLUDE_DIR ./examples/benchmarks.hxx
     ../tao #add addiitonal paths here if undvc_common is in a different directory
     )
@@ -95,15 +88,12 @@ ELSE (${TAO_INCLUDE_DIR} STREQUAL "TAO_INCLUDE_DIR-NOTFOUND")
 
 ENDIF (${TAO_INCLUDE_DIR} STREQUAL "TAO_INCLUDE_DIR-NOTFOUND") 
 
-include_directories(${TAO_INCLUDE_DIR})
 
-IF (TAO_FOUND)
-    add_subdirectory(rnn)
-    #add_subdirectory(rnn_tests)
-    add_subdirectory(rnn_examples)
-ENDIF (TAO_FOUND)
+add_subdirectory(common)
+add_subdirectory(image_tools)
+add_subdirectory(time_series)
+add_subdirectory(cnn)
 
-add_subdirectory(opencl)
 
 IF (COMPILE_CLIENT STREQUAL "YES")
     if (BOINC_APP_FOUND)
@@ -117,7 +107,25 @@ IF (COMPILE_CLIENT STREQUAL "YES")
 ENDIF (COMPILE_CLIENT STREQUAL "YES")
 
 
-if (BOINC_SERVER_FOUND)
+IF (COMPILE_CLIENT STREQUAL "NO")
+    IF (TAO_FOUND)
+        include_directories(${TAO_INCLUDE_DIR})
+
+        add_subdirectory(rnn)
+        #add_subdirectory(rnn_tests)
+        add_subdirectory(rnn_examples)
+    ENDIF (TAO_FOUND)
+
+    add_subdirectory(opencl)
+
+    add_subdirectory(cnn_tests)
+    add_subdirectory(cnn_examples)
+	add_subdirectory(multithreaded)
+	add_subdirectory(mpi)
+ENDIF (COMPILE_CLIENT STREQUAL "NO")
+
+
+IF (BOINC_SERVER_FOUND)
     MESSAGE(STATUS "BOINC_SERVER_FOUND")
 
     MESSAGE(STATUS "OpenSSL required.")
@@ -136,7 +144,3 @@ if (BOINC_SERVER_FOUND)
     add_subdirectory(server)
 ENDIF(BOINC_SERVER_FOUND)
 
-IF (COMPILE_CLIENT STREQUAL "NO")
-	add_subdirectory(multithreaded)
-	add_subdirectory(mpi)
-ENDIF (COMPILE_CLIENT STREQUAL "NO")

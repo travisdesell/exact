@@ -13,7 +13,7 @@ IF (BOINC_INCLUDE_DIR)
 ENDIF (BOINC_INCLUDE_DIR)
 
 FIND_PATH(BOINC_INCLUDE_DIR api/boinc_api.h
-    $ENV{BOINC_SOURCE} ~/Code/boinc
+    $ENV{BOINC_SOURCE} ~/Code/boinc ~/Dropbox/code/boinc
 )
 MESSAGE(STATUS "BOINC include directory: ${BOINC_INCLUDE_DIR}")
 

@@ -16,11 +16,11 @@ $query = "CREATE TABLE `exact_search` (
     `search_name` varchar(128) NOT NULL,
     `output_directory` varchar(128) NOT NULL,
     `training_filename` varchar(256) NOT NULL,
-    `generalizability_filename` varchar(256) NOT NULL,
+    `validation_filename` varchar(256) NOT NULL,
     `test_filename` varchar(256) NOT NULL,
 
     `number_training_images` int(11) NOT NULL,
-    `number_generalizability_images` int(11) NOT NULL,
+    `number_validation_images` int(11) NOT NULL,
     `number_test_images` int(11) NOT NULL,
 
     `padding` int(11) NOT NULL,

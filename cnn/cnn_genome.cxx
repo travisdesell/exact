@@ -435,7 +435,7 @@ void CNN_Genome::export_to_database(int _exact_id) {
         << ", training_error = " << setprecision(15) << fixed << training_error 
         << ", training_predictions = " << training_predictions
 
-        << ", number_test_images = " << number_training_images
+        << ", number_test_images = " << number_test_images
         << ", test_error = " << setprecision(15) << fixed << test_error 
         << ", test_predictions = " << test_predictions
 
@@ -2122,6 +2122,8 @@ void CNN_Genome::stochastic_backpropagation(const ImagesInterface &training_imag
         }
     } while (true);
 
+    cerr << "evaluating best weights on full training data." << endl;
+    cerr << "evaluting training set with running mean/variance:" << endl;
     set_to_best();
     evaluate(training_images, backprop_order, training_error, training_predictions, false, false);
     print_progress(cerr, "best training", training_error, training_predictions, number_training_images);
