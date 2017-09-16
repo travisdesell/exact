@@ -12,6 +12,9 @@ using std::cerr;
 using std::endl;
 using std::ostream;
 
+#include <limits>
+using std::numeric_limits;
+
 #include <sstream>
 using std::stringstream;
 
