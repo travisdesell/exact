@@ -178,7 +178,6 @@ EXACT::EXACT(int exact_id) {
 
         reset_weights_chance = atof(row[++column]);
 
-        no_modification_rate = atof(row[++column]);
         crossover_rate = atof(row[++column]);
         more_fit_parent_crossover = atof(row[++column]);
         less_fit_parent_crossover = atof(row[++column]);
@@ -356,7 +355,6 @@ void EXACT::export_to_database() {
 
         << ", reset_weights_chance = " << reset_weights_chance
 
-        << ", no_modification_rate = " << no_modification_rate 
         << ", crossover_rate = " << crossover_rate
         << ", more_fit_parent_crossover = " << more_fit_parent_crossover
         << ", less_fit_parent_crossover = " << less_fit_parent_crossover
@@ -640,10 +638,10 @@ EXACT::EXACT(const ImagesInterface &training_images, const ImagesInterface &gene
     mu_delta_min = 0.95;
     mu_delta_max = 0.95;
 
-    initial_learning_rate_min = 0.05;
-    initial_learning_rate_max = 0.05;
-    learning_rate_min = 0.05;
-    learning_rate_max = 0.05;
+    initial_learning_rate_min = 0.0125;
+    initial_learning_rate_max = 0.0125;
+    learning_rate_min = 0.0125;
+    learning_rate_max = 0.0125;
 
     initial_learning_rate_delta_min = 0.95;
     initial_learning_rate_delta_max = 0.95;
@@ -738,7 +736,6 @@ EXACT::EXACT(const ImagesInterface &training_images, const ImagesInterface &gene
     */
 
 
-    no_modification_rate = 0.00;
     crossover_rate = 0.20;
     more_fit_parent_crossover = 0.80;
     less_fit_parent_crossover = 0.40;
@@ -822,8 +819,6 @@ EXACT::EXACT(const ImagesInterface &training_images, const ImagesInterface &gene
 
     cout << "\tmax_epochs: " << max_epochs << endl;
     cout << "\treset_weights_chance: " << reset_weights_chance << endl;
-
-    cout << "\tno_modification_rate: " << no_modification_rate << endl;
 
     cout << "\tcrossover_settings: " << endl;
     cout << "\t\tcrossover_rate: " << crossover_rate << endl;
@@ -1168,39 +1163,7 @@ CNN_Genome* EXACT::generate_individual() {
             }
         }
     } else {
-        if (rng_float(generator) < no_modification_rate) {
-            long child_seed = rng_long(generator);
-
-            CNN_Genome *parent = genomes[rng_float(generator) * genomes.size()];
-
-            cout << "\tcopying child " << genomes_generated << " from parent genome: " << parent->get_generation_id() << endl;
-
-            float mu, mu_delta, learning_rate, learning_rate_delta, weight_decay, weight_decay_delta, alpha, input_dropout_probability, hidden_dropout_probability;
-            int velocity_reset, batch_size;
-
-            if (inserted_genomes < (population_size * 10)) {
-                cout << "\tGenerating hyperparameters randomly." << endl;
-                generate_initial_hyperparameters(mu, mu_delta, learning_rate, learning_rate_delta, weight_decay, weight_decay_delta, alpha, velocity_reset, input_dropout_probability, hidden_dropout_probability, batch_size);
-            } else {
-                cout << "\tGenerating hyperparameters with simplex." << endl;
-                generate_simplex_hyperparameters(mu, mu_delta, learning_rate, learning_rate_delta, weight_decay, weight_decay_delta, alpha, velocity_reset, input_dropout_probability, hidden_dropout_probability, batch_size);
-            }
-
-            vector<CNN_Node*> node_copies;
-            vector<CNN_Edge*> edge_copies;
-            parent->get_node_copies(node_copies);
-            parent->get_edge_copies(edge_copies);
-
-            genome = new CNN_Genome(genomes_generated++, padding, number_training_images, number_generalizability_images, number_test_images, child_seed, max_epochs, reset_weights, velocity_reset, mu, mu_delta, learning_rate, learning_rate_delta, weight_decay, weight_decay_delta, batch_size, epsilon, alpha, input_dropout_probability, hidden_dropout_probability, node_copies, edge_copies);
-
-            /*
-            cout << "\tchild nodes:" << endl;
-            for (int32_t i = 0; i < child->get_number_nodes(); i++) {
-                cout << "\t\tnode innovation number: " << child->get_node(i)->get_innovation_number() << endl;
-            }
-            */
-
-        } else if (rng_float(generator) < crossover_rate) {
+        if (rng_float(generator) < crossover_rate) {
             //generate a child from crossover
             while (genome == NULL) {
                 genome = create_child();
@@ -1240,6 +1203,7 @@ CNN_Genome* EXACT::generate_individual() {
         genome->get_node_copies(node_copies);
         genome->get_edge_copies(edge_copies);
 
+        cout << "creating genome_copy to insert into population because genomes.size() < population_size" << endl;
         CNN_Genome *genome_copy = new CNN_Genome(genomes_generated++, padding, number_training_images, number_generalizability_images, number_test_images, /*new random seed*/ rng_long(generator), max_epochs, reset_weights, genome->get_velocity_reset(), genome->get_initial_mu(), genome->get_mu_delta(), genome->get_initial_learning_rate(), genome->get_learning_rate_delta(), genome->get_initial_weight_decay(), genome->get_weight_decay_delta(), genome->get_batch_size(), epsilon, genome->get_alpha(), genome->get_input_dropout_probability(), genome->get_hidden_dropout_probability(), node_copies, edge_copies);
         genome_copy->initialize();
 
@@ -1430,7 +1394,6 @@ bool EXACT::insert_genome(CNN_Genome* genome) {
         gv_file << "#\tmax_epochs: " << max_epochs << endl;
         gv_file << "#\treset_weights_chance: " << reset_weights_chance << endl;
 
-        gv_file << "#\tno_modification_rate: " << no_modification_rate << endl;
         gv_file << "#\tcrossover_settings: " << endl;
         gv_file << "#\t\tcrossover_rate: " << crossover_rate << endl;
         gv_file << "#\t\tmore_fit_parent_crossover: " << more_fit_parent_crossover << endl;
@@ -2785,7 +2748,8 @@ void EXACT::write_statistics(int new_generation_id, float new_fitness) {
 
     fstream out(output_directory + "/progress.txt", fstream::out | fstream::app);
 
-    out << setw(16) << new_generation_id
+    out << setw(16) << time(NULL)
+        << setw(16) << new_generation_id
         << setw(16) << new_fitness
         << setw(16) << inserted_genomes
         << setw(16) << setprecision(5) << fixed << min_fitness
@@ -3105,7 +3069,8 @@ void EXACT::write_statistics_header() {
     if (f.good()) return;   //return if file already exists, don't need to rewrite header
 
     fstream out(output_directory + "/progress.txt", fstream::out | fstream::app);
-    out << "# " << setw(14) << "generation id"
+    out << "# " << setw(14) << "time"
+        << ", " << setw(14) << "generation id"
         << ", " << setw(14) << "new fitness"
         << ", " << setw(14) << "inserted"
         << ", " << setw(14) << "min_fitness"
@@ -3231,7 +3196,6 @@ bool EXACT::is_identical(EXACT *other, bool testing_checkpoint) {
 
     if (are_different("reset_weights_chance", reset_weights_chance, other->reset_weights_chance)) return false;
 
-    if (are_different("no_modification_rate", no_modification_rate, other->no_modification_rate)) return false;
     if (are_different("crossover_rate", crossover_rate, other->crossover_rate)) return false;
     if (are_different("more_fit_parent_crossover", more_fit_parent_crossover, other->more_fit_parent_crossover)) return false;
     if (are_different("less_fit_parent_crossover", less_fit_parent_crossover, other->less_fit_parent_crossover)) return false;

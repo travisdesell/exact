@@ -199,6 +199,7 @@ void worker(const Images &training_images, const Images &validation_images, cons
             CNN_Genome* genome = receive_genome_from(name, 0);
 
             genome->set_name(name);
+            genome->initialize();
             genome->stochastic_backpropagation(training_images, images_resize, validation_images);
             genome->evaluate_test(testing_images);
 

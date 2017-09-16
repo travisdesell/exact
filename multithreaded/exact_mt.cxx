@@ -49,6 +49,7 @@ void exact_thread(const Images &training_images, const Images &validation_images
         if (genome == NULL) break;  //generate_individual returns NULL when the search is done
 
         genome->set_name("thread_" + to_string(id));
+        genome->initialize();
         genome->stochastic_backpropagation(training_images, images_resize, validation_images);
         genome->evaluate_test(testing_images);
 

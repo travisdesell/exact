@@ -131,7 +131,6 @@ class EXACT {
 
         float reset_weights_chance;
 
-        float no_modification_rate;
         float crossover_rate;
         float more_fit_parent_crossover;
         float less_fit_parent_crossover;

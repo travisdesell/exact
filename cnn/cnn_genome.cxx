@@ -435,7 +435,7 @@ void CNN_Genome::export_to_database(int _exact_id) {
         << ", training_error = " << setprecision(15) << fixed << training_error 
         << ", training_predictions = " << training_predictions
 
-        << ", number_training_images = " << number_training_images
+        << ", number_test_images = " << number_training_images
         << ", test_error = " << setprecision(15) << fixed << test_error 
         << ", test_predictions = " << test_predictions
 
@@ -539,7 +539,13 @@ CNN_Genome::CNN_Genome(int _generation_id, int _padding, int _number_training_im
     output_filename = "";
     checkpoint_filename = "";
 
+
     nodes = _nodes;
+    edges = _edges;
+
+    cout << "creating genome with nodes.size(): " << nodes.size() << " and edges.size(): " << edges.size() << endl;
+
+    
     input_nodes.clear();
     softmax_nodes.clear();
 
@@ -558,7 +564,6 @@ CNN_Genome::CNN_Genome(int _generation_id, int _padding, int _number_training_im
         nodes[i]->update_batch_size(batch_size);
     }
 
-    edges = _edges;
     for (uint32_t i = 0; i < edges.size(); i++) {
         if (!edges[i]->set_nodes(nodes)) {
             cerr << "ERROR: filter size didn't match when creating genome!" << endl;
@@ -810,7 +815,7 @@ const vector<CNN_Edge*> CNN_Genome::get_edges() const {
     return edges;
 }
 
-void CNN_Genome::get_node_copies(vector<CNN_Node*> node_copies) const {
+void CNN_Genome::get_node_copies(vector<CNN_Node*> &node_copies) const {
     node_copies.clear();
 
     for (uint32_t i = 0; i < nodes.size(); i++) {
@@ -818,7 +823,7 @@ void CNN_Genome::get_node_copies(vector<CNN_Node*> node_copies) const {
     }
 }
 
-void CNN_Genome::get_edge_copies(vector<CNN_Edge*> edge_copies) const {
+void CNN_Genome::get_edge_copies(vector<CNN_Edge*> &edge_copies) const {
     edge_copies.clear();
 
     for (uint32_t i = 0; i < edges.size(); i++) {
@@ -1168,12 +1173,15 @@ bool CNN_Genome::sanity_check(int type) {
 }
 
 bool CNN_Genome::visit_nodes() {
+    //cout << "visiting nodes!" << endl;
+
     //check to see there is a path to from the input to each output
     //check to see if there is a path from output to inputs
     //if a node and edge is not forward and reverse visitable, then we can ignore it
 
     //sort nodes and edges
     sort(edges.begin(), edges.end(), sort_CNN_Edges_by_depth());
+
 
     for (uint32_t i = 0; i < nodes.size(); i++) {
         nodes[i]->set_unvisited();
@@ -1184,16 +1192,19 @@ bool CNN_Genome::visit_nodes() {
     }
 
     for (uint32_t i = 0; i < input_nodes.size(); i++) {
+        //cerr << "reverse visiting input node: " << i << endl;
         input_nodes[i]->forward_visit();
     }
 
     for (uint32_t i = 0; i < softmax_nodes.size(); i++) {
+        //cerr << "reverse visiting softmax node: " << i << endl;
         softmax_nodes[i]->reverse_visit();
     }
 
     for (uint32_t i = 0; i < edges.size(); i++) {
         if (!edges[i]->is_disabled()) {
             if (edges[i]->get_input_node()->is_forward_visited() && edges[i]->get_input_node()->is_enabled()) {
+                //cerr << "visiting edge: " << i << endl;
                 edges[i]->forward_visit();
                 edges[i]->get_output_node()->forward_visit();
             }
@@ -1667,8 +1678,8 @@ void CNN_Genome::initialize() {
                 edges[i]->initialize_weights(generator, normal_distribution);
                 edges[i]->save_best_weights();
             } else {
-                cerr << "edges[" << i << "] is unreachable, input innovation number: " << edges[i]->get_input_innovation_number() << ", output innovation_number: " << edges[i]->get_output_innovation_number()
-                    << ", forward visited: " << edges[i]->is_forward_visited() << ", reverse_visited: " << edges[i]->is_reverse_visited() << endl;
+                //cerr << "edges[" << i << "] is unreachable, input innovation number: " << edges[i]->get_input_innovation_number() << ", output innovation_number: " << edges[i]->get_output_innovation_number()
+                //    << ", forward visited: " << edges[i]->is_forward_visited() << ", reverse_visited: " << edges[i]->is_reverse_visited() << endl;
             }
         }
         //cout << "initialized weights!" << endl;
@@ -1678,7 +1689,7 @@ void CNN_Genome::initialize() {
                 nodes[i]->initialize();
                 nodes[i]->save_best_weights();
             } else {
-                cerr << "nodes[" << i << "] is unreachable!" << endl;
+                //cerr << "nodes[" << i << "] is unreachable!" << endl;
             }
         }
         //cout << "initialized node gamma/beta!" << endl;
@@ -1695,8 +1706,11 @@ void CNN_Genome::initialize() {
 
         for (uint32_t i = 0; i < nodes.size(); i++) {
             if (nodes[i]->is_reachable() && nodes[i]->needs_init()) {
+                //cout << "initializing nodes[" << i << "]" << endl;
                 nodes[i]->initialize();
                 nodes[i]->save_best_weights();
+            } else {
+                //cout << "not initializing nodes[" << i << "], reachable: " << nodes[i]->is_reachable() << ", needs init: " << nodes[i]->needs_init() << endl;
             }
         }
         //cout << "initialized node gamma/beta!" << endl;
@@ -1974,6 +1988,8 @@ void CNN_Genome::stochastic_backpropagation(const ImagesInterface &training_imag
     number_validation_images = validation_images.get_number_images();
 
     for (uint32_t i = 0; i < nodes.size(); i++) {
+        if (!nodes[i]->is_reachable()) continue;
+
         if (nodes[i]->needs_init()) {
             cerr << "ERROR! nodes[" << i << "] needs init!" << endl;
             exit(1);
@@ -1987,6 +2003,8 @@ void CNN_Genome::stochastic_backpropagation(const ImagesInterface &training_imag
     }
 
     for (uint32_t i = 0; i < edges.size(); i++) {
+        if (!edges[i]->is_reachable()) continue;
+
         if (edges[i]->needs_init()) {
             cerr << "ERROR! edges[" << i << "] needs init!" << endl;
             exit(1);
@@ -2041,7 +2059,7 @@ void CNN_Genome::stochastic_backpropagation(const ImagesInterface &training_imag
         bool found_improvement = false;
 
         if (current_validation_error < best_validation_error) {
-            cout << "current validation error: " << current_validation_error << " < best validation error: " << best_validation_error << endl;
+            //cout << "current validation error: " << current_validation_error << " < best validation error: " << best_validation_error << endl;
             best_validation_error = current_validation_error;
             best_validation_predictions = current_validation_predictions;
 
@@ -2058,7 +2076,7 @@ void CNN_Genome::stochastic_backpropagation(const ImagesInterface &training_imag
             found_improvement = true;
             */
         } else if (current_validation_error < 2.5 * best_validation_error) {
-            cout << "current_validation_error < 2.5 * best_validation_error" << endl;
+            //cout << "current_validation_error < 2.5 * best_validation_error" << endl;
             found_improvement = true;
         }
 
@@ -2090,6 +2108,14 @@ void CNN_Genome::stochastic_backpropagation(const ImagesInterface &training_imag
             float progress = (float)epoch / (float)(max_epochs + 1.0);
             progress_function(progress);
         }
+
+        /*
+        for (uint32_t i = 0; i < edges.size(); i++) {
+            if (edges[i]->get_type() == POOLING) {
+                cout << "edge " << edges[i]->get_innovation_number() << ", scale: " << edges[i]->get_scale() << endl;
+            }
+        }
+        */
 
         if (epoch > max_epochs) {
             break;
@@ -2314,8 +2340,8 @@ void CNN_Genome::read(istream &infile) {
 
     infile >> best_epoch;
     if (verbose) cerr << "read best_epoch: " << best_epoch << endl;
-    infile >> number_training_images;
-    if (verbose) cerr << "read number_training_images: " << number_training_images << endl;
+    infile >> number_validation_images;
+    if (verbose) cerr << "read number_validation_images: " << number_validation_images << endl;
     infile >> best_validation_predictions;
     if (verbose) cerr << "read best_validation_predictions: " << best_validation_predictions << endl;
     best_validation_error = read_hexfloat(infile);
@@ -2631,7 +2657,7 @@ bool CNN_Genome::is_identical(CNN_Genome *other, bool testing_checkpoint) {
     if (are_different("padding", padding, other->padding)) return false;
 
     if (are_different("best_epoch", best_epoch, other->best_epoch)) return false;
-    if (are_different("number_training_images", number_training_images, other->number_training_images)) return false;
+    if (are_different("number_validation_images", number_validation_images, other->number_validation_images)) return false;
     //if (are_different("best_error", best_error, other->best_error)) return false;
     if (are_different("best_validation_predictions", best_validation_predictions, other->best_validation_predictions)) return false;
     if (are_different("best_validation_error", best_validation_error, other->best_validation_error)) return false;

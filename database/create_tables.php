@@ -102,7 +102,6 @@ $query = "CREATE TABLE `exact_search` (
 
     `reset_weights_chance` float NOT NULL,
 
-    `no_modification_rate` float NOT NULL,
     `crossover_rate` float NOT NULL,
     `more_fit_parent_crossover` float NOT NULL,
     `less_fit_parent_crossover` float NOT NULL,
@@ -168,8 +167,8 @@ $query = "CREATE TABLE `cnn_genome` (
     `best_validation_predictions` int(11) NOT NULL,
 
     `number_training_images` int(11) DEFAULT NULL,
-    `best_training_error` float NOT NULL,
-    `best_training_predictions` int NOT NULL,
+    `training_error` float NOT NULL,
+    `training_predictions` int NOT NULL,
 
     `number_test_images` int(11) DEFAULT NULL,
     `test_error` float DEFAULT NULL,

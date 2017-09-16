@@ -450,6 +450,10 @@ void CNN_Edge::update_weight(int i, float diff) {
     weights[i] += diff;
 }
 
+float CNN_Edge::get_scale() const {
+    return scale;
+}
+
 void CNN_Edge::propagate_weight_count() {
     if (type == CONVOLUTIONAL) {
         output_node->add_weight_count(filter_x * filter_y);

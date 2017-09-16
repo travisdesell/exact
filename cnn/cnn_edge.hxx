@@ -116,6 +116,8 @@ class CNN_Edge {
         float get_weight_update(int i) const;
         void update_weight(int i, float diff);
 
+        float get_scale() const;
+
         void propagate_weight_count();
 
         void save_best_weights();
