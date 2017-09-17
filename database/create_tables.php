@@ -16,11 +16,11 @@ $query = "CREATE TABLE `exact_search` (
     `search_name` varchar(128) NOT NULL,
     `output_directory` varchar(128) NOT NULL,
     `training_filename` varchar(256) NOT NULL,
-    `generalizability_filename` varchar(256) NOT NULL,
+    `validation_filename` varchar(256) NOT NULL,
     `test_filename` varchar(256) NOT NULL,
 
     `number_training_images` int(11) NOT NULL,
-    `number_generalizability_images` int(11) NOT NULL,
+    `number_validation_images` int(11) NOT NULL,
     `number_test_images` int(11) NOT NULL,
 
     `padding` int(11) NOT NULL,
@@ -102,7 +102,6 @@ $query = "CREATE TABLE `exact_search` (
 
     `reset_weights_chance` float NOT NULL,
 
-    `no_modification_rate` float NOT NULL,
     `crossover_rate` float NOT NULL,
     `more_fit_parent_crossover` float NOT NULL,
     `less_fit_parent_crossover` float NOT NULL,
@@ -162,11 +161,18 @@ $query = "CREATE TABLE `cnn_genome` (
 
     `padding` int(11) DEFAULT NULL,
 
+    `best_epoch` int(11) NOT NULL,
+    `number_validation_images` int(11) DEFAULT NULL,
+    `best_validation_error` float NOT NULL,
+    `best_validation_predictions` int(11) NOT NULL,
+
     `number_training_images` int(11) DEFAULT NULL,
-    `best_error` float NOT NULL,
-    `best_error_epoch` int(11) NOT NULL,
-    `best_predictions` int(11) NOT NULL,
-    `best_predictions_epoch` int(11) NOT NULL,
+    `training_error` float NOT NULL,
+    `training_predictions` int NOT NULL,
+
+    `number_test_images` int(11) DEFAULT NULL,
+    `test_error` float DEFAULT NULL,
+    `test_predictions` int(11) DEFAULT NULL,
 
     `started_from_checkpoint` tinyint(1) NOT NULL,
 
@@ -176,14 +182,6 @@ $query = "CREATE TABLE `cnn_genome` (
     `output_filename` varchar(128) NOT NULL,
 
     `generated_by_map` varchar(256) NOT NULL,
-
-    `number_generalizability_images` int(11) DEFAULT NULL,
-    `generalizability_error` float DEFAULT NULL,
-    `generalizability_predictions` int(11) DEFAULT NULL,
-
-    `number_test_images` int(11) DEFAULT NULL,
-    `test_error` float DEFAULT NULL,
-    `test_predictions` int(11) DEFAULT NULL,
 
     `stderr_out` blob,
 
@@ -219,6 +217,7 @@ $query = "CREATE TABLE `cnn_edge` (
   `reverse_filter_x` tinyint(1) NOT NULL,
   `reverse_filter_y` tinyint(1) NOT NULL,
   `needs_initialization` tinyint(1) NOT NULL,
+  `scale_values` BLOB NOT NULL,
 
   PRIMARY KEY(`id`),
   UNIQUE KEY(`id`, `exact_id`, `genome_id`, `innovation_number`),

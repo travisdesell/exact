@@ -44,18 +44,19 @@ uint32_t fread_uint32_t(ifstream &file, string filename, const char *name, uint3
 }
 
 int main(int argc, char** argv) {
-    if (argc != 6) {
+    if (argc != 7) {
         cerr << "error: incorrect arguments." << endl;
         cerr << "usage: " << endl;
-        cerr << "    " << argv[0] << " <mnist image file> <mnist label file> <output file test> <output file generalizability> <expected number of images>" << endl;
+        cerr << "    " << argv[0] << " <mnist image file> <mnist label file> <output training file> <output validation file> <expected number of images> <validation images per label" << endl;
         exit(1);
     }
 
     string image_filename(argv[1]);
     string label_filename(argv[2]);
     string output_filename_test(argv[3]);
-    string output_filename_generalizability(argv[4]);
+    string output_filename_validation(argv[4]);
     int expected_images = stoi(argv[5]);
+    int images_per_label = stoi(argv[6]);
 
     ifstream image_file(image_filename.c_str(), ios::in | ios::binary);
     ifstream label_file(label_filename.c_str(), ios::in | ios::binary);
@@ -119,8 +120,8 @@ int main(int argc, char** argv) {
     image_file.close();
     label_file.close();
 
-    int images_per_label = (number_images / 2.0) / number_labels;
-    cout << "generalizability file '" << output_filename_generalizability << " will have " << images_per_label << " images per label." << endl;
+    //int images_per_label = (number_images / 2.0) / number_labels;
+    cout << "validation file '" << output_filename_validation << " will have " << images_per_label << " images per label." << endl;
 
 
     minstd_rand0 generator = minstd_rand0(time(NULL));
@@ -138,7 +139,7 @@ int main(int argc, char** argv) {
         cout << "\timages[" << i << "].size(): " << images[i].size() << endl;
     }
 
-    cout << "generalizability file '" << output_filename_generalizability << " has the following images per label: " << endl;
+    cout << "validation file '" << output_filename_validation << " has the following images per label: " << endl;
     for (uint32_t i = 0; i < number_labels; i++) {
         cout << "\timages_split[" << i << "].size(): " << images_split[i].size() << endl;
     }
@@ -188,9 +189,9 @@ int main(int argc, char** argv) {
 
     test_outfile.close();
 
-    cout << "writing generalizability file" << endl;
-    ofstream generalizability_outfile;
-    generalizability_outfile.open(output_filename_generalizability.c_str(), ios::out | ios::binary);
+    cout << "writing validation file" << endl;
+    ofstream validation_outfile;
+    validation_outfile.open(output_filename_validation.c_str(), ios::out | ios::binary);
 
     initial_vals.clear();
     initial_vals.push_back(number_labels);
@@ -206,7 +207,7 @@ int main(int argc, char** argv) {
     }
     cout << "read " << sum << " images_split in total" << endl;
 
-    generalizability_outfile.write( (char*)&initial_vals[0], initial_vals.size() * sizeof(int) );
+    validation_outfile.write( (char*)&initial_vals[0], initial_vals.size() * sizeof(int) );
 
     for (int i = 0; i < images_split.size(); i++) {
         for (int j = 0; j < images_split[i].size(); j++) {
@@ -217,7 +218,7 @@ int main(int argc, char** argv) {
                     for (int x = 0; x < number_rows; x++) {
                         pixel = images_split[i][j][z][y][x];
 
-                        generalizability_outfile.write( (char*)&pixel, sizeof(char));
+                        validation_outfile.write( (char*)&pixel, sizeof(char));
 
                         //                cout << " " << (uint32_t)pixel;
                     }
@@ -230,7 +231,7 @@ int main(int argc, char** argv) {
         cout << "\twrote " << images_split[i].size() << " images_split." << endl;
     }
 
-    generalizability_outfile.close();
+    validation_outfile.close();
     return 0;
 }
 

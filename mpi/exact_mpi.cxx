@@ -28,7 +28,7 @@ using std::vector;
 
 #include "image_tools/image_set.hxx"
 
-#include "strategy/exact.hxx"
+#include "cnn/exact.hxx"
 
 #define WORK_REQUEST_TAG 1
 #define GENOME_LENGTH_TAG 2
@@ -113,7 +113,7 @@ void receive_terminate_message(int source) {
     MPI_Recv(terminate_message, 1, MPI_INT, source, TERMINATE_TAG, MPI_COMM_WORLD, &status);
 }
 
-void master(const Images &training_images, const Images &generalizability_images, const Images &testing_images, int max_rank) {
+void master(const Images &training_images, const Images &validation_images, const Images &testing_images, int max_rank) {
     string name = "master";
 
     cout << "MAX INT: " << numeric_limits<int>::max() << endl;
@@ -176,7 +176,7 @@ void master(const Images &training_images, const Images &generalizability_images
     }
 }
 
-void worker(const Images &training_images, const Images &generalizability_images, const Images &testing_images, int rank) {
+void worker(const Images &training_images, const Images &validation_images, const Images &testing_images, int rank) {
     string name = "worker_" + to_string(rank);
     while (true) {
         cout << "[" << setw(10) << name << "] sending work request!" << endl;
@@ -199,8 +199,8 @@ void worker(const Images &training_images, const Images &generalizability_images
             CNN_Genome* genome = receive_genome_from(name, 0);
 
             genome->set_name(name);
-            genome->stochastic_backpropagation(training_images, images_resize);
-            genome->evaluate_generalizability(generalizability_images);
+            genome->initialize();
+            genome->stochastic_backpropagation(training_images, images_resize, validation_images);
             genome->evaluate_test(testing_images);
 
             send_genome_to(name, 0, genome);
@@ -228,8 +228,8 @@ int main(int argc, char** argv) {
     string testing_filename;
     get_argument(arguments, "--testing_file", true, testing_filename);
 
-    string generalizability_filename;
-    get_argument(arguments, "--generalizability_file", true, generalizability_filename);
+    string validation_filename;
+    get_argument(arguments, "--validation_file", true, validation_filename);
 
     int padding;
     get_argument(arguments, "--padding", true, padding);
@@ -255,15 +255,15 @@ int main(int argc, char** argv) {
     get_argument(arguments, "--images_resize", true, images_resize);
 
     Images training_images(training_filename, padding);
-    Images generalizability_images(generalizability_filename, padding, training_images.get_average(), training_images.get_std_dev());
+    Images validation_images(validation_filename, padding, training_images.get_average(), training_images.get_std_dev());
     Images testing_images(testing_filename, padding, training_images.get_average(), training_images.get_std_dev());
 
     if (rank == 0) {
-        exact = new EXACT(training_images, generalizability_images, testing_images, padding, population_size, max_epochs, max_genomes, output_directory, search_name, reset_edges);
+        exact = new EXACT(training_images, validation_images, testing_images, padding, population_size, max_epochs, max_genomes, output_directory, search_name, reset_edges);
 
-        master(training_images, generalizability_images, testing_images, max_rank);
+        master(training_images, validation_images, testing_images, max_rank);
     } else {
-        worker(training_images, generalizability_images, testing_images, rank);
+        worker(training_images, validation_images, testing_images, rank);
     }
 
     finished = true;

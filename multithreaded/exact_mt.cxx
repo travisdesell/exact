@@ -27,7 +27,7 @@ using std::vector;
 
 #include "image_tools/image_set.hxx"
 
-#include "strategy/exact.hxx"
+#include "cnn/exact.hxx"
 
 mutex exact_mutex;
 
@@ -40,7 +40,7 @@ bool finished = false;
 
 int images_resize;
 
-void exact_thread(const Images &training_images, const Images &generalizability_images, const Images &testing_images, int id) {
+void exact_thread(const Images &training_images, const Images &validation_images, const Images &testing_images, int id) {
     while (true) {
         exact_mutex.lock();
         CNN_Genome *genome = exact->generate_individual();
@@ -49,8 +49,8 @@ void exact_thread(const Images &training_images, const Images &generalizability_
         if (genome == NULL) break;  //generate_individual returns NULL when the search is done
 
         genome->set_name("thread_" + to_string(id));
-        genome->stochastic_backpropagation(training_images, images_resize);
-        genome->evaluate_generalizability(generalizability_images);
+        genome->initialize();
+        genome->stochastic_backpropagation(training_images, images_resize, validation_images);
         genome->evaluate_test(testing_images);
 
         exact_mutex.lock();
@@ -73,8 +73,8 @@ int main(int argc, char** argv) {
     string training_filename;
     get_argument(arguments, "--training_file", true, training_filename);
 
-    string generalizability_filename;
-    get_argument(arguments, "--generalizability_file", true, generalizability_filename);
+    string validation_filename;
+    get_argument(arguments, "--validation_file", true, validation_filename);
 
     string testing_filename;
     get_argument(arguments, "--testing_file", true, testing_filename);
@@ -102,7 +102,7 @@ int main(int argc, char** argv) {
 
 
     Images training_images(training_filename, padding);
-    Images generalizability_images(generalizability_filename, padding, training_images.get_average(), training_images.get_std_dev());
+    Images validation_images(validation_filename, padding, training_images.get_average(), training_images.get_std_dev());
     Images testing_images(testing_filename, padding, training_images.get_average(), training_images.get_std_dev());
 
     if (argument_exists(arguments, "--exact_id")) {
@@ -110,13 +110,13 @@ int main(int argc, char** argv) {
         get_argument(arguments, "--exact_id", true, exact_id);
         exact = new EXACT(exact_id);
     } else {
-        exact = new EXACT(training_images, generalizability_images, testing_images, padding, population_size, max_epochs, max_genomes, output_directory, search_name, reset_edges);
+        exact = new EXACT(training_images, validation_images, testing_images, padding, population_size, max_epochs, max_genomes, output_directory, search_name, reset_edges);
     }
 
 
     vector<thread> threads;
     for (int32_t i = 0; i < number_threads; i++) {
-        threads.push_back( thread(exact_thread, training_images, generalizability_images, testing_images, i) );
+        threads.push_back( thread(exact_thread, training_images, validation_images, testing_images, i) );
     }
 
     for (int32_t i = 0; i < number_threads; i++) {

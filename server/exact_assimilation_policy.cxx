@@ -61,8 +61,8 @@ using std::vector;
 #include "common/arguments.hxx"
 #include "common/db_conn.hxx"
 #include "common/version.hxx"
-#include "strategy/exact.hxx"
-#include "strategy/cnn_genome.hxx"
+#include "cnn/exact.hxx"
+#include "cnn/cnn_genome.hxx"
 #include "server/boinc_common.hxx"
 #include "server/make_jobs.hxx"
 

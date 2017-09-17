@@ -10,7 +10,7 @@
 
 #include "image_tools/image_set.hxx"
 
-#include "strategy/cnn_genome.hxx"
+#include "cnn/cnn_genome.hxx"
 
 #include "stdint.h"
 
@@ -76,27 +76,27 @@ int main(int argc, char** argv) {
 
     string training_filename;
     string testing_filename;
-    string generalizability_filename;
+    string validation_filename;
     string genome_filename;
     string output_filename;
     string checkpoint_filename;
 
     get_argument(arguments, "--training_file", true, training_filename);
-    get_argument(arguments, "--generalizability_file", true, generalizability_filename);
+    get_argument(arguments, "--validation_file", true, validation_filename);
     get_argument(arguments, "--testing_file", true, testing_filename);
     get_argument(arguments, "--genome_file", true, genome_filename);
     get_argument(arguments, "--output_file", true, output_filename);
     get_argument(arguments, "--checkpoint_file", true, checkpoint_filename);
 
     training_filename = get_boinc_filename(training_filename);
-    generalizability_filename = get_boinc_filename(generalizability_filename);
+    validation_filename = get_boinc_filename(validation_filename);
     testing_filename = get_boinc_filename(testing_filename);
     genome_filename = get_boinc_filename(genome_filename);
     output_filename = get_boinc_filename(output_filename);
     checkpoint_filename = get_boinc_filename(checkpoint_filename);
 
     cerr << "boincified training filename: '" << training_filename << "'" << endl;
-    cerr << "boincified generalizability filename: '" << generalizability_filename << "'" << endl;
+    cerr << "boincified validation filename: '" << validation_filename << "'" << endl;
     cerr << "boincified testing filename: '" << testing_filename << "'" << endl;
     cerr << "boincified genome filename: '" << genome_filename << "'" << endl;
     cerr << "boincified output filename: '" << output_filename << "'" << endl;
@@ -138,15 +138,15 @@ int main(int argc, char** argv) {
     cerr << "loading images" << endl;
 
     Images training_images(training_filename, genome->get_padding());
-    Images generalizability_images(generalizability_filename, genome->get_padding(), training_images.get_average(), training_images.get_std_dev());
+    Images validation_images(validation_filename, genome->get_padding(), training_images.get_average(), training_images.get_std_dev());
     Images testing_images(testing_filename, genome->get_padding(), training_images.get_average(), training_images.get_std_dev());
 
     if (!training_images.loaded_correctly()) {
         cerr << "ERROR: had error loading training images" << endl;
         boinc_finish(1);
         exit(1);
-    } else if (!generalizability_images.loaded_correctly()) {
-        cerr << "ERROR: had error loading generalizability images" << endl;
+    } else if (!validation_images.loaded_correctly()) {
+        cerr << "ERROR: had error loading validation images" << endl;
         boinc_finish(1);
         exit(1);
     } else if (!testing_images.loaded_correctly()) {
@@ -166,8 +166,7 @@ int main(int argc, char** argv) {
     genome->set_output_filename(output_filename);
 
     cerr << "starting backpropagation!" << endl;
-    genome->stochastic_backpropagation(training_images);
-    genome->evaluate_generalizability(generalizability_images);
+    genome->stochastic_backpropagation(training_images, validation_images);
     genome->evaluate_test(testing_images);
     cerr << "backpropagation finished successfully!" << endl;
 

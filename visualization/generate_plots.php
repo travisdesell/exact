@@ -24,6 +24,12 @@ function generate_plots($db_name) {
 
         $progress_file = $output_directory . $search_name . "_fitness_progress.png";
 
+        /*
+        $command2 = "python /home/tdesell/exact/visualization/plot_hyperparameters.py "
+            . "/projects/csg/exact_data/" . $search_name . "/ "
+            . "/home/tdesell/exact/www/hyperparameters/ "  . $search_name;
+         */
+
         $command2 = "python /home/tdesell/exact/visualization/plot_hyperparameters.py "
             . "/projects/csg/exact_data/" . $search_name . "/hyperparameters.txt "
             . "/home/tdesell/exact/www/hyperparameters/" . $search_name . "_initial_mu.png "
@@ -60,7 +66,7 @@ function generate_plots($db_name) {
 }
 
 //generate_plots("exact_batchnorm");
-generate_plots("exact_bn_pool");
+generate_plots("exact_bn_sfmp");
 
 ?>
 

@@ -35,6 +35,7 @@ class LargeImage : public ImageInterface {
     public:
 
         LargeImage(ifstream &infile, int _number_subimages, int _channels, int _width, int _height, int _padding, int _classification, const LargeImages *_images);
+        LargeImage(int _number_subimages, int _channels, int _width, int _height, int _padding, int _classification, const vector< vector< vector<uint8_t> > > &_pixels);
 
         int get_classification() const;
 
@@ -49,6 +50,15 @@ class LargeImage : public ImageInterface {
         void normalize(const vector<float> &channel_avgs, const vector<float> &channel_std_dev);
 
         void print(ostream &out);
+
+        int8_t get_pixel_unnormalized(int z, int y, int x) const;
+        void set_pixel(int z, int y, int x, int8_t value);
+
+        LargeImage* copy() const;
+
+#ifdef _HAS_TIFF_
+        void draw_image(string filename) const;
+#endif
 };
 
 class LargeImages : public ImagesInterface {
@@ -82,14 +92,17 @@ class LargeImages : public ImagesInterface {
         int get_number_classes() const;
 
         int get_number_images() const;
+        int get_number_large_images() const;
+        int get_number_subimages(int i) const;
+
 
         int get_image_channels() const;
         int get_image_width() const;
         int get_image_height() const;
 
+        int get_image_classification(int image) const;
         int get_classification(int subimage) const;
         float get_pixel(int subimage, int z, int y, int x) const;
-        uint8_t get_pixel_unnormalized(int subimage, int z, int y, int x) const;
 
         void calculate_avg_std_dev();
 
@@ -102,6 +115,12 @@ class LargeImages : public ImagesInterface {
         const vector<float>& get_std_dev() const;
 
         void normalize();
+
+        LargeImage* copy_image(int i) const;
+
+#ifdef _HAS_TIFF_
+        void draw_image(int i, string filename) const;
+#endif
 };
 
 #endif

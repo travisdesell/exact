@@ -17,6 +17,10 @@ $databases = array(
     "exact_bn_pool" => array(
         "file" => $cwd[__FILE__] . '/../exact_bn_pool_db_info',
         "database" => NULL
+    ),
+    "exact_bn_sfmp" => array(
+        "file" => $cwd[__FILE__] . '/../exact_bn_sfmp_db_info',
+        "database" => NULL
     )
 );
 

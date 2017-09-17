@@ -37,7 +37,7 @@ v1 = genfromtxt(progress_file)
 #print v1
 
 #print "first column of v1:\n"
-t = [row[2] for row in v1]
+t = [row[3] for row in v1]
 '''
 print "t:\n"
 print t
@@ -79,10 +79,10 @@ def plot_min_avg_max(filename, y_label_title, names, colors, first_row, values, 
     plt.cla()
     plt.close()
 
-plot_min_avg_max(fitness_filename, 'Fitness (CNN best error)', ["Fitness"], ["blue"], 3, v1, legend_loc = 'upper right', y_min = 0, y_max = 2000)
-plot_min_avg_max(epochs_filename, 'Epochs to Best Error', ["Epochs"], ["green"], 6, v1, legend_loc = 'lower right', y_min = 0)
-plot_min_avg_max(nodes_edges_filename, 'Count', ["Enabled Nodes", "Enabled Pooling Edges", "Enabled Convolutional Edges"], ["blue", "green", "yellow"], 9, v1, legend_loc = 'upper left', y_min = 0)
-plot_min_avg_max(weights_filename, 'Count', ["Weights"], ["green"], 18, v1, legend_loc = 'upper left', y_min = 0)
+plot_min_avg_max(fitness_filename, 'Fitness (CNN best error)', ["Fitness"], ["blue"], 4, v1, legend_loc = 'upper right', y_min = 0, y_max = 2000)
+plot_min_avg_max(epochs_filename, 'Epochs to Best Error', ["Epochs"], ["green"], 7, v1, legend_loc = 'lower right', y_min = 0)
+plot_min_avg_max(nodes_edges_filename, 'Count', ["Enabled Nodes", "Enabled Pooling Edges", "Enabled Convolutional Edges"], ["blue", "green", "yellow"], 10, v1, legend_loc = 'upper left', y_min = 0)
+plot_min_avg_max(weights_filename, 'Count', ["Weights"], ["green"], 19, v1, legend_loc = 'upper left', y_min = 0)
 
 n_initial_columns = 21
 
@@ -90,7 +90,7 @@ def generate_percentage_plot(output_filename, percentage_type, title):
     num_plots = len(headers) - n_initial_columns
     colormap = plt.cm.gist_ncar
 
-    plt.rc('axes', prop_cycle=(cycler('color', [colormap(i) for i in np.linspace(0, 0.9, num_plots)]) + cycler('linestyle', ['-', '-', '-', '-', '--', '--', '--', '--', ':', ':', ':', ':', '-.', '-.', '-.'])))
+    plt.rc('axes', prop_cycle=(cycler('color', [colormap(i) for i in np.linspace(0, 0.9, num_plots)]) + cycler('linestyle', ['-', '-', '-', '-', '--', '--', '--', '--', ':', ':', ':', ':', '-.', '-.', '-.', '-.'])))
     fig, ax = plt.subplots(1)
 
 

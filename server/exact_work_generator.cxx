@@ -70,7 +70,7 @@ using std::vector;
 #include "common/arguments.hxx"
 #include "common/db_conn.hxx"
 #include "image_tools/image_set.hxx"
-#include "strategy/exact.hxx"
+#include "cnn/exact.hxx"
 #include "server/make_jobs.hxx"
 
 int main(int argc, char** argv) {
@@ -132,8 +132,8 @@ int main(int argc, char** argv) {
     string training_file;
     get_argument(arguments, "--training_file", true, training_file);
 
-    string generalizability_file;
-    get_argument(arguments, "--generalizability_file", true, generalizability_file);
+    string validation_file;
+    get_argument(arguments, "--validation_file", true, validation_file);
 
     string testing_file;
     get_argument(arguments, "--testing_file", true, testing_file);
@@ -142,10 +142,10 @@ int main(int argc, char** argv) {
     get_argument(arguments, "--padding", true, padding);
 
     Images training_images(training_file, padding);
-    Images generalizability_images(generalizability_file, padding, training_images.get_average(), training_images.get_std_dev());
+    Images validation_images(validation_file, padding, training_images.get_average(), training_images.get_std_dev());
     Images testing_images(testing_file, padding, training_images.get_average(), training_images.get_std_dev());
 
-    EXACT *exact = new EXACT(training_images, generalizability_images, testing_images, padding, population_size, max_epochs, max_genomes, output_directory, search_name, reset_edges);
+    EXACT *exact = new EXACT(training_images, validation_images, testing_images, padding, population_size, max_epochs, max_genomes, output_directory, search_name, reset_edges);
 
     exact->export_to_database();
 
