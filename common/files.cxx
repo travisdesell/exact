@@ -9,7 +9,7 @@ using std::ostringstream;
 #include <string>
 using std::string;
 
-#include "server/boinc_common.hxx"
+#include "files.hxx"
 
 string get_file_as_string(string file_path) throw (int) {
     //read the entire contents of the file into a string

@@ -68,6 +68,13 @@ int main(int argc, char **argv) {
     int predictions;
     //genome->evaluate(training_images, error, predictions);
 
+    if (!genome->sanity_check(SANITY_CHECK_AFTER_GENERATION)) {
+        cerr << "ERROR! genome failed sanity check! This should never happen!" << endl;
+
+        exit(1);
+    }   
+
+
     genome->initialize();
     genome->set_to_best();
     genome->evaluate("testing", testing_images, error, predictions);

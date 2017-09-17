@@ -58,6 +58,7 @@ using std::vector;
 #include "common/exp.hxx"
 #include "common/random.hxx"
 #include "common/version.hxx"
+#include "common/files.hxx"
 
 #include "image_tools/image_set.hxx"
 #include "image_tools/large_image_set.hxx"
@@ -99,9 +100,24 @@ CNN_Genome::CNN_Genome(string filename, bool is_checkpoint) {
     genome_id = -1;
     started_from_checkpoint = is_checkpoint;
 
-    ifstream infile(filename.c_str());
-    read(infile);
-    infile.close();
+    string file_contents;
+
+    try {
+        //cout << "getting file as string: '" << filename << "'" << endl;
+        file_contents = get_file_as_string(filename);
+        //cout << "got file as string, erasing carraige returns" << endl;
+
+        file_contents.erase(std::remove(file_contents.begin(), file_contents.end(), '\r'), file_contents.end());
+        //cout << "erased carraige returns" << endl;
+
+    } catch (int err) {
+        cerr << "ERROR: could not read genome file: '" << filename << "'" << endl;
+        cerr << "excption: " << err << endl;
+        exit(1);
+    }   
+
+    istringstream infile_iss(file_contents);
+    read(infile_iss);
 }
 
 CNN_Genome::CNN_Genome(istream &in, bool is_checkpoint) {
@@ -2424,7 +2440,7 @@ void CNN_Genome::read(istream &infile) {
         CNN_Node *node = new CNN_Node();
         infile >> node;
 
-        //cerr << "read node: " << node->get_innovation_number() << endl;
+        cerr << "read node: " << node->get_innovation_number() << endl;
         nodes.push_back(node);
     }
 
@@ -2446,7 +2462,7 @@ void CNN_Genome::read(istream &infile) {
         CNN_Edge *edge = new CNN_Edge();
         infile >> edge;
 
-        //cerr << "read edge: " << edge->get_innovation_number() << endl;
+        cerr << "read edge: " << edge->get_innovation_number() << " from node " << edge->get_input_innovation_number() << " to node " << edge->get_output_innovation_number() << endl;
         if (!edge->set_nodes(nodes)) {
             cerr << "ERROR: filter size didn't match when reading genome from input file!" << endl;
             cerr << "This should never happen!" << endl;
