@@ -58,6 +58,7 @@ using std::vector;
 #include "common/exp.hxx"
 #include "common/random.hxx"
 #include "common/version.hxx"
+#include "common/files.hxx"
 
 #include "image_tools/image_set.hxx"
 #include "image_tools/large_image_set.hxx"
@@ -99,9 +100,17 @@ CNN_Genome::CNN_Genome(string filename, bool is_checkpoint) {
     genome_id = -1;
     started_from_checkpoint = is_checkpoint;
 
-    ifstream infile(filename.c_str());
-    read(infile);
-    infile.close();
+    string file_contents;
+
+    //cout << "getting file as string: '" << filename << "'" << endl;
+    file_contents = get_file_as_string(filename);
+    //cout << "got file as string, erasing carraige returns" << endl;
+
+    file_contents.erase(std::remove(file_contents.begin(), file_contents.end(), '\r'), file_contents.end());
+    //cout << "erased carraige returns" << endl;
+
+    istringstream infile_iss(file_contents);
+    read(infile_iss);
 }
 
 CNN_Genome::CNN_Genome(istream &in, bool is_checkpoint) {
@@ -564,9 +573,9 @@ CNN_Genome::CNN_Genome(int _generation_id, int _padding, int _number_training_im
 
     for (uint32_t i = 0; i < edges.size(); i++) {
         if (!edges[i]->set_nodes(nodes)) {
-            cerr << "ERROR: filter size didn't match when creating genome!" << endl;
-            cerr << "This should never happen!" << endl;
-            exit(1);
+            ostringstream error_message;
+            error_message << "Error setting nodes, filter size was not correct. This should never happen.";
+            throw runtime_error(error_message.str());
         }
 
         edges[i]->set_pools();
@@ -2421,7 +2430,7 @@ void CNN_Genome::read(istream &infile) {
         CNN_Node *node = new CNN_Node();
         infile >> node;
 
-        //cerr << "read node: " << node->get_innovation_number() << endl;
+        cerr << "read node: " << node->get_innovation_number() << endl;
         nodes.push_back(node);
     }
 
@@ -2443,7 +2452,7 @@ void CNN_Genome::read(istream &infile) {
         CNN_Edge *edge = new CNN_Edge();
         infile >> edge;
 
-        //cerr << "read edge: " << edge->get_innovation_number() << endl;
+        cerr << "read edge: " << edge->get_innovation_number() << " from node " << edge->get_input_innovation_number() << " to node " << edge->get_output_innovation_number() << endl;
         if (!edge->set_nodes(nodes)) {
             cerr << "ERROR: filter size didn't match when reading genome from input file!" << endl;
             cerr << "This should never happen!" << endl;

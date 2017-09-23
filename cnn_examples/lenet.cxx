@@ -87,6 +87,7 @@ int main(int argc, char **argv) {
     int node_innovation_count = 0;
     int edge_innovation_count = 0;
     vector<CNN_Node*> nodes;
+    vector<CNN_Node*> input_nodes;
     vector<CNN_Node*> layer1_nodes;
     vector<CNN_Node*> layer2_nodes;
     vector<CNN_Node*> layer3_nodes;
@@ -100,8 +101,12 @@ int main(int argc, char **argv) {
     minstd_rand0 generator(time(NULL));
     NormalDistribution normal_distribution;
 
-    CNN_Node *input_node = new CNN_Node(++node_innovation_count, 0, batch_size, training_images.get_image_height(), training_images.get_image_width(), INPUT_NODE);
-    nodes.push_back(input_node);
+    for (int32_t i = 0; i < training_images.get_image_channels(); i++) {
+        CNN_Node *input_node = new CNN_Node(++node_innovation_count, 0, batch_size, training_images.get_image_height(), training_images.get_image_width(), INPUT_NODE);
+        nodes.push_back(input_node);
+        input_nodes.push_back(input_node);
+    }
+
 
     //first layer of filters
     //input node goes to 5 filters
@@ -110,7 +115,9 @@ int main(int argc, char **argv) {
         nodes.push_back(layer1_node);
         layer1_nodes.push_back(layer1_node);
 
-        edges.push_back( new CNN_Edge(input_node, layer1_node, false, ++edge_innovation_count, CONVOLUTIONAL) );
+        for (int32_t j = 0; j < training_images.get_image_channels(); j++) {
+            edges.push_back( new CNN_Edge(input_nodes[j], layer1_node, false, ++edge_innovation_count, CONVOLUTIONAL) );
+        }
     }
 
     for (int32_t i = 0; i < 6; i++) {
