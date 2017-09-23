@@ -102,19 +102,12 @@ CNN_Genome::CNN_Genome(string filename, bool is_checkpoint) {
 
     string file_contents;
 
-    try {
-        //cout << "getting file as string: '" << filename << "'" << endl;
-        file_contents = get_file_as_string(filename);
-        //cout << "got file as string, erasing carraige returns" << endl;
+    //cout << "getting file as string: '" << filename << "'" << endl;
+    file_contents = get_file_as_string(filename);
+    //cout << "got file as string, erasing carraige returns" << endl;
 
-        file_contents.erase(std::remove(file_contents.begin(), file_contents.end(), '\r'), file_contents.end());
-        //cout << "erased carraige returns" << endl;
-
-    } catch (int err) {
-        cerr << "ERROR: could not read genome file: '" << filename << "'" << endl;
-        cerr << "excption: " << err << endl;
-        exit(1);
-    }   
+    file_contents.erase(std::remove(file_contents.begin(), file_contents.end(), '\r'), file_contents.end());
+    //cout << "erased carraige returns" << endl;
 
     istringstream infile_iss(file_contents);
     read(infile_iss);
@@ -582,9 +575,9 @@ CNN_Genome::CNN_Genome(int _generation_id, int _padding, int _number_training_im
 
     for (uint32_t i = 0; i < edges.size(); i++) {
         if (!edges[i]->set_nodes(nodes)) {
-            cerr << "ERROR: filter size didn't match when creating genome!" << endl;
-            cerr << "This should never happen!" << endl;
-            exit(1);
+            ostringstream error_message;
+            error_message << "Error setting nodes, filter size was not correct. This should never happen.";
+            throw runtime_error(error_message.str());
         }
 
         edges[i]->set_pools();

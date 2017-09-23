@@ -31,6 +31,9 @@ using std::normal_distribution;
 #include <sstream>
 using std::ostringstream;
 
+#include <stdexcept>
+using std::runtime_error;
+
 #include <string>
 using std::string;
 
@@ -275,8 +278,9 @@ CNN_Edge::CNN_Edge(int _edge_id) {
 
         mysql_free_result(result);
     } else {
-        cerr << "ERROR! Could not find cnn_edge in database with edge id: " << edge_id << endl;
-        exit(1);
+        ostringstream error_message;
+        error_message << "ERROR! Could not find cnn_edge in database with edge id: " << edge_id;
+        throw runtime_error(error_message.str());
     }
 
     weight_updates = new float[filter_size]();
@@ -473,7 +477,7 @@ void CNN_Edge::initialize_weights(minstd_rand0 &generator, NormalDistribution &n
         cerr << "output node innovation number: " << output_node_innovation_number << endl;
         cerr << "input node innovation number: " << input_node_innovation_number << endl;
         cerr << "edge type: " << type << endl;
-        exit(1);
+        throw runtime_error("ERROR! Initializing weights on an edge when node weight counts have not yet been set!");
     }
 
     float mu = 0.0;
@@ -615,30 +619,11 @@ CNN_Edge* CNN_Edge::copy() const {
     copy->previous_velocity_scale = previous_velocity_scale;
     copy->best_velocity_scale = best_velocity_scale;
 
-    if (weights == NULL) {
-        cerr << "ERROR! copying CNN_Edge where weights == NULL" << endl;
-        exit(1);
-    }
-
-    if (weight_updates == NULL) {
-        cerr << "ERROR! copying CNN_Edge where weight_updates == NULL" << endl;
-        exit(1);
-    }
-
-    if (best_weights == NULL) {
-        cerr << "ERROR! copying CNN_Edge where best_weights == NULL" << endl;
-        exit(1);
-    }
-
-    if (previous_velocity == NULL) {
-        cerr << "ERROR! copying CNN_Edge where previous_velocity == NULL" << endl;
-        exit(1);
-    }
-
-    if (best_velocity == NULL) {
-        cerr << "ERROR! copying CNN_Edge where best_velocity == NULL" << endl;
-        exit(1);
-    }
+    if (weights == NULL) throw runtime_error("ERROR! copying CNN_Edge where weights == NULL");
+    if (weight_updates == NULL) throw runtime_error("ERROR! copying CNN_Edge where weight_updates == NULL");
+    if (best_weights == NULL) throw runtime_error("ERROR! copying CNN_Edge where best_weights == NULL");
+    if (previous_velocity == NULL) throw runtime_error("ERROR! copying CNN_Edge where previous_velocity == NULL");
+    if (best_velocity == NULL) throw runtime_error("ERROR! copying CNN_Edge where best_velocity == NULL");
 
     copy->weights = new float[copy->filter_size]();
     copy->weight_updates = new float[copy->filter_size]();
@@ -680,36 +665,36 @@ bool CNN_Edge::set_nodes(const vector<CNN_Node*> nodes) {
     }
 
     if (input_node == NULL) {
-        cerr << "ERROR! Could not find node with input node innovation number " << input_node_innovation_number << endl;
-        cerr << "This should never happen!" << endl;
-        cerr << "nodes innovation numbers:" << endl;
+        cerr << "ERROR: Could not find node with input innovation number: " << input_node_innovation_number << endl;
+        cerr << " nodes innovation numbers:" << endl;
         for (uint32_t i = 0; i < nodes.size(); i++) {
             cerr << "\t" << nodes[i]->get_innovation_number() << endl;
         }
-        exit(1);
+
+        ostringstream error_message;
+        error_message << "Could not find node with input node innovation number " << input_node_innovation_number << "This should never happen!" << endl;
+        throw runtime_error(error_message.str());
     }
 
     if (output_node == NULL) {
-        cerr << "ERROR! Could not find node with output node innovation number " << output_node_innovation_number << endl;
-        cerr << "This should never happen!" << endl;
-        cerr << "nodes innovation numbers:" << endl;
+        cerr << "ERROR: Could not find node with output innovation number: " << output_node_innovation_number << endl;
+        cerr << " nodes innovation numbers:" << endl;
         for (uint32_t i = 0; i < nodes.size(); i++) {
             cerr << "\t" << nodes[i]->get_innovation_number() << endl;
         }
-        exit(1);
+
+        ostringstream error_message;
+        error_message << "Could not find node with output node innovation number " << output_node_innovation_number << "This should never happen!" << endl;
+        throw runtime_error(error_message.str());
     }
 
     if (output_node == input_node) {
-        cerr << "ERROR! Setting nodes and output_node == input_node!" << endl;
-        cerr << "input node innovation number: " << input_node_innovation_number << endl;
-        cerr << "output node innovation number: " << output_node_innovation_number << endl;
-        cerr << "This should never happen!" << endl;
-        exit(1);
+        ostringstream error_message;
+        error_message << "Error setting nodes, output_node (" << output_node_innovation_number << ") == input_node (" << input_node_innovation_number << "). This should never happen.";
+        throw runtime_error(error_message.str());
     }
 
-    if (!is_filter_correct()) {
-        return false;
-    }
+    if (!is_filter_correct()) return false;
 
     return true;
 }
@@ -944,7 +929,7 @@ void CNN_Edge::check_output_update(const vector< vector< vector<float> > > &outp
         input_node->print(cerr);
         output_node->print(cerr);
 
-        exit(1);
+        throw runtime_error("ERROR: output because NAN or INF in check_output_update");
     }
 }
 
@@ -960,8 +945,9 @@ void CNN_Edge::propagate_forward(bool training, bool accumulate_test_statistics,
 
 #ifdef NAN_CHECKS
     if (!is_filter_correct()) {
-        cerr << "ERROR: filter_x != input_node->get_size_x: " << input_node->get_size_x() << " - output_node->get_size_x: " << output_node->get_size_x() << " + 1" << endl;
-        exit(1);
+        ostringstream error_message;
+        error_message << "ERROR: filter_x != input_node->get_size_x: " << input_node->get_size_x() << " - output_node->get_size_x: " << output_node->get_size_x() << " + 1";
+        throw runtime_error(error_message.str());
     }
 
     float previous_output;

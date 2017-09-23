@@ -32,6 +32,9 @@ using std::numeric_limits;
 using std::minstd_rand0;
 using std::uniform_real_distribution;
 
+#include <stdexcept>
+using std::runtime_error;
+
 #include <sstream>
 using std::ostringstream;
 using std::istringstream;
@@ -225,8 +228,9 @@ CNN_Node::CNN_Node(int _node_id) {
 
         mysql_free_result(result);
     } else {
-        cerr << "ERROR! Could not find cnn_node in database with node id: " << node_id << endl;
-        exit(1);
+        ostringstream error_message;
+        error_message << "ERROR! Could not find cnn_node in database with node id: " << node_id << endl;
+        throw runtime_error(error_message.str());
     }
 
     weight_count = 0;
@@ -857,7 +861,7 @@ void CNN_Node::batch_normalize(bool training, bool accumulating_test_statistics,
                 cout << endl;
             }
 
-            exit(1);
+            throw runtime_error("batch_normalize resulted in NAN or INF when calculating batch_mean or batch_variance");
         }
 #endif
 
@@ -903,7 +907,7 @@ void CNN_Node::batch_normalize(bool training, bool accumulating_test_statistics,
                     cout << endl;
                 }
 
-                exit(1);
+                throw runtime_error("batch_normalize resulted in NAN or INF when calculating values_out");
             }
 #endif
 
@@ -1031,7 +1035,7 @@ void CNN_Node::backpropagate_batch_normalization(bool training, float mu, float 
                 cout << "errors_out[" << current << "]: " << errors_out[current] << ", values_in[" << current << "]: " << values_in[current] << endl;
             }
 
-            exit(1);
+            throw runtime_error("backpropagate_batch_normalization resulted in NAN or INF");
         }
 #endif
     }
@@ -1088,18 +1092,21 @@ void CNN_Node::backpropagate_batch_normalization(bool training, float mu, float 
 void CNN_Node::set_values(const ImagesInterface &images, const vector<int> &batch, int channel, bool perform_dropout, bool accumulate_test_statistics, float input_dropout_probability, minstd_rand0 &generator) {
     //images.size() may be less than batch size, in the case when the total number of images is not divisible by the batch_size
     if (batch.size() > batch_size) {
-        cerr << "ERROR: number of batch images: " << batch.size() << " > batch_size of input node: " << batch_size << endl;
-        exit(1);
+        ostringstream error_message;
+        error_message << "ERROR: number of batch images: " << batch.size() << " > batch_size of input node: " << batch_size << endl;
+        throw runtime_error(error_message.str());
     }
 
     if (images.get_image_height() != size_y) {
-        cerr << "ERROR: height of input image: " << images.get_image_height() << " != size_y of input node: " << size_y << endl;
-        exit(1);
+        ostringstream error_message;
+        error_message << "ERROR: height of input image: " << images.get_image_height() << " != size_y of input node: " << size_y << endl;
+        throw runtime_error(error_message.str());
     }
 
     if (images.get_image_width() != size_x) {
-        cerr << "ERROR: width of input image: " << images.get_image_width() << " != size_x of input node: " << size_x << endl;
-        exit(1);
+        ostringstream error_message;
+        error_message << "ERROR: width of input image: " << images.get_image_width() << " != size_x of input node: " << size_x << endl;
+        throw runtime_error(error_message.str());
     }
 
     //images.size() may be less than batch size, in the case when the total number of images is not divisible by the batch_size
@@ -1144,7 +1151,7 @@ void CNN_Node::input_fired(bool training, bool accumulate_test_statistics, float
         cerr << "node: " << endl;
         print(cerr);
 
-        exit(1);
+        throw runtime_error("Error in input fired, inputs_fired > total_inputs");
     }
 
     high_resolution_clock::time_point input_fired_end_time = high_resolution_clock::now();
@@ -1177,7 +1184,7 @@ void CNN_Node::output_fired(bool training, float mu, float learning_rate, float 
         cerr << "node: " << endl;
         print(cerr);
 
-        exit(1);
+        throw runtime_error("Error in output fired, outputs_fired > total_outputs");
     }
 
 

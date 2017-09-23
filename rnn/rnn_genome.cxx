@@ -39,6 +39,10 @@ double RNN_Genome::predict(const vector< vector<double> > &series_data, double e
         nodes[i]->full_reset();
     }
 
+    vector<double> window(60, 0.0);
+    int window_position = 0;
+    double window_sum = 0.0;
+
     int count = 0;
     double max_prediction = -numeric_limits<double>::max();
     double output_prediction = 0;
@@ -62,17 +66,33 @@ double RNN_Genome::predict(const vector< vector<double> > &series_data, double e
             edges[j]->propagate_forward();
         }
 
-        //calculate max prediction
         output_prediction = output_nodes[0]->output_value;
+
+        //calculate sum of window
+        if (i >= window.size()) {
+            window_sum -= window[window_position];
+        }
+        window[window_position] = output_prediction;
+        window_sum += output_prediction;
+        window_position++;
+        if (window_position == window.size()) window_position = 0;
+
+        if ((window_sum / window.size()) > max_prediction) max_prediction = (window_sum / window.size());
+        count++;
+
+        //calculate max prediction
+        /*
         if (output_prediction > max_prediction) max_prediction = output_prediction;
         sum += output_prediction;
         count++;
+        */
+
     }
 
     //check to see error between output and expected class
-    //return max_prediction;
+    return max_prediction;
     //return output_prediction;
-    return sum / count;
+    //return sum / count;
 }
 
 void RNN_Genome::set_weights(const vector<double> &parameters) {
