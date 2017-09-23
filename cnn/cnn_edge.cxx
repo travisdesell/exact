@@ -672,7 +672,7 @@ bool CNN_Edge::set_nodes(const vector<CNN_Node*> nodes) {
         }
 
         ostringstream error_message;
-        error_message << "Could not find node with input node innovation number " << input_node_innovation_number << "This should never happen!" << endl;
+        error_message << "Could not find node with input node innovation number " << input_node_innovation_number << " -- this should never happen!" << endl;
         throw runtime_error(error_message.str());
     }
 
@@ -684,7 +684,7 @@ bool CNN_Edge::set_nodes(const vector<CNN_Node*> nodes) {
         }
 
         ostringstream error_message;
-        error_message << "Could not find node with output node innovation number " << output_node_innovation_number << "This should never happen!" << endl;
+        error_message << "Could not find node with output node innovation number " << output_node_innovation_number << " -- this should never happen!" << endl;
         throw runtime_error(error_message.str());
     }
 

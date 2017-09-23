@@ -84,13 +84,13 @@ plot_min_avg_max(epochs_filename, 'Epochs to Best Error', ["Epochs"], ["green"],
 plot_min_avg_max(nodes_edges_filename, 'Count', ["Enabled Nodes", "Enabled Pooling Edges", "Enabled Convolutional Edges"], ["blue", "green", "yellow"], 10, v1, legend_loc = 'upper left', y_min = 0)
 plot_min_avg_max(weights_filename, 'Count', ["Weights"], ["green"], 19, v1, legend_loc = 'upper left', y_min = 0)
 
-n_initial_columns = 21
+n_initial_columns = 23
 
 def generate_percentage_plot(output_filename, percentage_type, title):
     num_plots = len(headers) - n_initial_columns
     colormap = plt.cm.gist_ncar
 
-    plt.rc('axes', prop_cycle=(cycler('color', [colormap(i) for i in np.linspace(0, 0.9, num_plots)]) + cycler('linestyle', ['-', '-', '-', '-', '--', '--', '--', '--', ':', ':', ':', ':', '-.', '-.', '-.', '-.'])))
+    plt.rc('axes', prop_cycle=(cycler('color', [colormap(i) for i in np.linspace(0, 0.9, num_plots)]) + cycler('linestyle', ['-', '-', '-', '-', '--', '--', '--', '--', ':', ':', ':',  '-.', '-.', '-.'])))
     fig, ax = plt.subplots(1)
 
 

@@ -58,7 +58,7 @@ using std::string;
 #include <vector>
 using std::vector;
 
-#include "server/boinc_common.hxx"
+#include "common/files.hxx"
 #include "common/version.hxx"
 
 struct EXACT_RESULT {
