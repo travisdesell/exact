@@ -1855,6 +1855,105 @@ void CNN_Genome::evaluate_large_images(const LargeImages &images, string output_
     }
 }
 
+#ifdef _HAS_TIFF_
+
+void CNN_Genome::draw_predictions(const LargeImages &images, string output_directory) {
+    uint32_t current_subimage = 0;
+    for (int image_number = 0; image_number < images.get_number_large_images(); image_number++) {
+        int number_subimages = images.get_number_subimages(image_number);
+
+        vector< vector<float> > predictions(number_subimages, vector<float>(images.get_number_classes(), 0.0));
+        //cout << "created vector!" << endl;
+
+        for (uint32_t j = 0; j < number_subimages; j += batch_size) {
+
+            //cout << "image " << image_number << ", number subimages: " << number_subimages << ", batch is: ";
+            vector<int> batch;
+            for (uint32_t k = 0; k < batch_size && (j + k) < number_subimages; k++) {
+                batch.push_back( current_subimage + j + k );
+                //cout << " " << current_subimage + j + k;
+            }
+            //cout << endl;
+
+            //cout << "evaluating images for batch starting at " << j << " with batch size " << batch_size << endl;
+            //float batch_total_error = 0.0;
+            //int batch_correct_predictions = 0;
+            evaluate_images(images, batch, predictions, current_subimage);
+            //cout << "evaluated images!" << endl;
+        }
+
+        int classification = images.get_image_classification(image_number);
+        int number_correct = 0;
+        for (int j = 0; j < number_subimages; j++) {
+            int max_class = 0;
+            float max_value = 0.0;
+
+            for (int32_t k = 0; k < images.get_number_classes(); k++) {
+                if (predictions[j][k] > max_value) {
+                    max_value = predictions[j][k];
+                    max_class = k;
+                }
+            }
+
+            if (max_class == classification) number_correct++;
+        }
+
+        float percentage_correct = (float)number_correct / (float)number_subimages;
+
+        current_subimage += number_subimages;
+
+        ostringstream filename;
+        filename << output_directory << "image_" << image_number << "_class_" << classification << "_pred_" << setw(5) << fixed << setprecision(3) << percentage_correct << ".tiff";
+
+        cout << "drawing image: '" << filename.str() << "'" << endl;
+
+        int subimage_height = images.get_image_height();
+        int subimage_width = images.get_image_width();
+        int subimage_channels = images.get_image_channels();
+
+        int large_image_height = images.get_large_image_height(image_number);
+        int large_image_width = images.get_large_image_width(image_number);
+        int large_image_channels = images.get_large_image_channels(image_number);
+
+        vector< vector<int> > counts(large_image_height, vector<int>(large_image_width, 0));
+        vector< vector< vector<float> > > pixels(large_image_height, vector< vector<float> >(large_image_width, vector<float>(3, 0.0)));
+
+        int current_y = 0;
+        int current_x = 0;
+        for (uint32_t j = 0; j < predictions.size(); j++) {
+            for (int y = 0; y < subimage_height; y++) {
+                for (int x = 0; x < subimage_width; x++) {
+                    pixels[current_y + y][current_x + x][0] += predictions[j][1] * 255.0;
+                    pixels[current_y + y][current_x + x][1] += predictions[j][0] * 255.0;
+                    counts[current_y + y][current_x + x]++;
+                }
+            }
+
+            current_x++;
+            if (current_x == large_image_width) {
+                current_x = 0;
+                current_y++;
+            }
+        }
+
+        vector< vector< vector<uint8_t> > > small_pixels(large_image_height, vector< vector<uint8_t> >(large_image_width, vector<uint8_t>(3, 0)));
+
+        for (int y = 0; y < counts.size(); y++) {
+            for (int x = 0; x < counts[y].size(); x++) {
+                pixels[y][x][0] /= counts[y][x];
+                pixels[y][x][1] /= counts[y][x];
+
+                small_pixels[y][x][0] = pixels[y][x][0];
+                small_pixels[y][x][1] = pixels[y][x][1];
+            }
+        }
+
+        LargeImage *prediction_image = new LargeImage(number_subimages, large_image_channels, large_image_width, large_image_height, padding, classification, small_pixels);
+        prediction_image->draw_image(filename.str().c_str());
+    }
+}
+
+#endif
 
 void CNN_Genome::evaluate(const ImagesInterface &images, vector< vector<float> > &predictions) {
     predictions.clear();

@@ -240,6 +240,10 @@ class CNN_Genome {
         int get_generated_by(string type);
 
         bool is_identical(CNN_Genome *other, bool testing_checkpoint);
+
+#ifdef _HAS_TIFF_
+        void draw_predictions(const LargeImages &images, string output_directory);
+#endif
 };
 
 void write_map(ostream &out, map<string, int> &m);

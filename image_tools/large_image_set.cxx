@@ -1,5 +1,7 @@
 #include <cmath>
 
+#include <dirent.h>
+
 #include <fstream>
 using std::ifstream;
 
@@ -208,7 +210,7 @@ string LargeImages::get_filename() const {
     return filename;
 }
 
-int LargeImages::read_images(string _filename) {
+int LargeImages::read_images_from_file(string _filename) {
     filename = _filename;
 
     cout << "reading filename: " << filename << endl;
@@ -284,6 +286,99 @@ int LargeImages::read_images(string _filename) {
     return 0;
 }
 
+int LargeImages::read_images_from_directory(string directory) {
+    DIR *dir;
+    struct dirent *ent;
+
+    int image_class = 0;
+    if ((dir = opendir(directory.c_str())) != NULL) {
+        /* print all the files and directories within directory */
+        while ((ent = readdir(dir)) != NULL) {
+            cout << "file: '" << ent->d_name << "'" << endl;
+
+            string filename(ent->d_name);
+            if (filename.compare(".") == 0) {
+                cout << "skipping current directory" << endl;
+                continue;
+            }
+
+            if (filename.compare("..") == 0) {
+                cout << "skipping parent directory" << endl;
+                continue;
+            }
+
+            string subdir_filename(directory + ent->d_name);
+            DIR *subdir = opendir(subdir_filename.c_str());
+            struct dirent *subdir_ent;
+
+            if (subdir == NULL) {
+                cout << "was not a directory, skipping!" << endl;
+                continue;
+            }
+
+            cout << "entering subdir: '" << subdir_filename << "' for class: " << image_class << endl;
+            while ((subdir_ent = readdir(subdir)) != NULL) {
+                string image_filename(subdir_filename + "/" + subdir_ent->d_name);
+                if (image_filename.size() < 4 || image_filename.substr(image_filename.size() - 4, 4).compare(".tif") != 0) {
+                    cout << "skipping non-TIFF file: '" << image_filename << "'" << endl;
+                    continue;
+                }
+
+                TIFF *tif = TIFFOpen(image_filename.c_str(), "r");
+                uint32_t height, width;
+                TIFFGetField(tif, TIFFTAG_IMAGELENGTH, &height);        // uint32 height;
+                TIFFGetField(tif, TIFFTAG_IMAGEWIDTH, &width);           // uint32 width;
+                TIFFGetField(tif, TIFFTAG_SAMPLESPERPIXEL, &channels);
+
+                cout << image_filename << ", height: " << height << ", width: " << width << ", channels: " << channels << endl;
+
+                uint32_t *raster = (uint32_t*)_TIFFmalloc(height * width * sizeof(uint32_t));
+                TIFFReadRGBAImage(tif, width, height, raster, 0);
+
+                vector< vector< vector<uint8_t> > > pixels(channels, vector< vector<uint8_t> >(height, vector<uint8_t>(width, 0)));
+
+                cout << "pixels: " << endl;
+                int current_y = 0;
+                int current_x = 0;
+                for (uint32_t i = 0; i < height * width; i++) {
+                    pixels[0][height - 1 - current_y][current_x] = TIFFGetR(raster[i]);
+                    if (channels > 1) pixels[1][height - 1 - current_y][current_x] = TIFFGetG(raster[i]);
+                    if (channels > 2) pixels[2][height - 1 - current_y][current_x] = TIFFGetB(raster[i]);
+                    if (channels > 3) pixels[3][height - 1 - current_y][current_x] = TIFFGetA(raster[i]);
+
+                    current_x++;
+                    if (current_x == width) {
+                        current_x = 0;
+                        current_y++;
+                    }
+                }
+
+                int subimages_along_width = (width - subimage_width) + 1;
+                int subimages_along_height = (height - subimage_height) + 1;
+                int number_subimages = subimages_along_width * subimages_along_height;
+
+                LargeImage large_image(number_subimages, channels, width, height, padding, image_class, pixels);
+                images.push_back(large_image);
+
+                string test_filename(image_filename.substr(0, image_filename.length() - 4) + "_test.tif");
+                cout << "writing test filename '" << test_filename << "'" << endl;
+
+                large_image.draw_image(test_filename);
+            }
+            image_class++;
+
+            //_TIFFfree(raster);
+
+        }
+        closedir(dir);
+    } else {
+        /* could not open directory */
+        cerr << "Attemped to read images from directory '" << directory << "', but could not open directory for reading." << endl;
+        return EXIT_FAILURE;
+    }
+
+    return 0;
+}
 
 
 LargeImages::LargeImages(string _filename, int _padding, int _subimage_height, int _subimage_width, const vector<float> &_channel_avg, const vector<float> &_channel_std_dev) {
@@ -292,7 +387,14 @@ LargeImages::LargeImages(string _filename, int _padding, int _subimage_height, i
     subimage_width = _subimage_width;
 
     filename = _filename;
-    read_images(filename);
+    cout << "filename substr: " << filename.substr(filename.size() - 4, 4) << endl;
+    if (filename.size() >= 4 && filename.substr(filename.size() - 4, 4).compare(".bin") == 0) {
+        cout << "reading images from file: " << endl;
+        read_images_from_file(filename);
+    } else {
+        cout << "reading images from directory: " << endl;
+        read_images_from_directory(filename);
+    }
 
     channel_avg = _channel_avg;
     channel_std_dev = _channel_std_dev;
@@ -309,7 +411,14 @@ LargeImages::LargeImages(string _filename, int _padding, int _subimage_height, i
     subimage_width = _subimage_width;
 
     filename = _filename;
-    read_images(filename);
+    cout << "filename substr: " << filename.substr(filename.size() - 4, 4) << endl;
+    if (filename.size() >= 4 && filename.substr(filename.size() - 4, 4).compare(".bin") == 0) {
+        cout << "reading images from binary file: " << endl;
+        read_images_from_file(filename);
+    } else {
+        cout << "reading images from directory: " << endl;
+        read_images_from_directory(filename);
+    }
 
     calculate_avg_std_dev();
 }
@@ -347,6 +456,19 @@ int LargeImages::get_image_width() const {
 int LargeImages::get_image_height() const {
     return subimage_height + (2 * padding);
 }
+
+int LargeImages::get_large_image_height(int image) const {
+    return images[image].get_height();
+}
+
+int LargeImages::get_large_image_width(int image) const {
+    return images[image].get_width();
+}
+
+int LargeImages::get_large_image_channels(int image) const {
+    return images[image].get_channels();
+}
+
 
 int LargeImages::get_image_classification(int image) const {
     return images[image].get_classification();

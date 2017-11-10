@@ -394,7 +394,7 @@ int CNN_Edge::get_edge_id() const {
 #endif
 
 bool CNN_Edge::equals(CNN_Edge *other) const {
-    return filter_x == other->filter_x && filter_y == other->filter_y && disabled == other->disabled && reverse_filter_x == other->reverse_filter_x && reverse_filter_y == other->reverse_filter_y;
+    return filter_x == other->filter_x && filter_y == other->filter_y && disabled == other->disabled && reverse_filter_x == other->reverse_filter_x && reverse_filter_y == other->reverse_filter_y && type == other->type;
 }
 
 bool CNN_Edge::needs_init() const {

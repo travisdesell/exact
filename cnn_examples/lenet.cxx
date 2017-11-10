@@ -266,7 +266,6 @@ int main(int argc, char **argv) {
 
         for (int32_t j = 0; j < layer6_nodes.size(); j++) {
             edges.push_back( new CNN_Edge(layer6_nodes[j], softmax_node, false, ++edge_innovation_count, CONVOLUTIONAL) );
-
         }
     }
 
@@ -289,4 +288,6 @@ int main(int argc, char **argv) {
     genome->stochastic_backpropagation(training_images, validation_images);
     genome->evaluate_test(testing_images);
     genome->print_results(cerr);
+
+    genome->write_to_file("lenet_trained.txt");
 }

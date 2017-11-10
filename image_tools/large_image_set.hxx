@@ -80,7 +80,8 @@ class LargeImages : public ImagesInterface {
         vector<float> channel_std_dev;
 
     public:
-        int read_images(string binary_filename);
+        int read_images_from_file(string binary_filename);
+        int read_images_from_directory(string directory);
 
         LargeImages(string binary_filename, int _padding, int _subimage_height, int _subimage_width);
         LargeImages(string binary_filename, int _padding, int _subimage_height, int _subimage_width, const vector<float> &_channeL_avg, const vector<float> &channel_std_dev);
@@ -95,10 +96,14 @@ class LargeImages : public ImagesInterface {
         int get_number_large_images() const;
         int get_number_subimages(int i) const;
 
-
         int get_image_channels() const;
         int get_image_width() const;
         int get_image_height() const;
+
+        int get_large_image_channels(int image) const;
+        int get_large_image_width(int image) const;
+        int get_large_image_height(int image) const;
+
 
         int get_image_classification(int image) const;
         int get_classification(int subimage) const;
