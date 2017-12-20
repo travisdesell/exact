@@ -189,6 +189,11 @@ int init_result(RESULT& result, void*& data) {
         log_messages.printf(MSG_CRITICAL, "[RESULT#%ld %s] get_data_from_result: could not open file for result\n", result.id, result.name);
         log_messages.printf(MSG_CRITICAL, "     file path: %s\n", fi.path.c_str());
         return ERR_FOPEN;
+    } catch (std::runtime_error exception) {
+        log_messages.printf(MSG_CRITICAL, "[RESULT#%ld %s] get_data_from_result: could not open file for result\n", result.id, result.name);
+        log_messages.printf(MSG_CRITICAL, "     file path: %s\n", fi.path.c_str());
+        log_messages.printf(MSG_CRITICAL, "     exception: %s\n", exception.what());
+        return ERR_FOPEN;
     }
 
 //    cout << "Parsing: " << endl << file_contents << endl;
@@ -240,7 +245,6 @@ int compare_results(
 
         istringstream iss1(f1->file_contents);
         istringstream iss2(f2->file_contents);
-
 
         string version_line1, version_line2;
         getline(iss1, version_line1);

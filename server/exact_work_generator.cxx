@@ -118,6 +118,13 @@ int main(int argc, char** argv) {
     int max_epochs = 50;
     get_argument(arguments, "--max_epochs", true, max_epochs);
 
+    bool use_sfmp = true;
+    get_argument(arguments, "--use_sfmp", true, use_sfmp);
+
+    bool use_node_operations = true;
+    get_argument(arguments, "--use_node_operations", true, use_node_operations);
+
+
     int max_genomes = 1000000;
     get_argument(arguments, "--max_genomes", true, max_genomes);
 
@@ -145,7 +152,7 @@ int main(int argc, char** argv) {
     Images validation_images(validation_file, padding, training_images.get_average(), training_images.get_std_dev());
     Images testing_images(testing_file, padding, training_images.get_average(), training_images.get_std_dev());
 
-    EXACT *exact = new EXACT(training_images, validation_images, testing_images, padding, population_size, max_epochs, max_genomes, output_directory, search_name, reset_edges);
+    EXACT *exact = new EXACT(training_images, validation_images, testing_images, padding, population_size, max_epochs, use_sfmp, use_node_operations, max_genomes, output_directory, search_name, reset_edges);
 
     exact->export_to_database();
 

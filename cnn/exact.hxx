@@ -70,7 +70,8 @@ class EXACT {
 
         bool reset_weights;
         int max_epochs;
-
+        bool use_sfmp;
+        bool use_node_operations;
 
         float initial_batch_size_min;
         float initial_batch_size_max;
@@ -163,7 +164,7 @@ class EXACT {
         void update_database();
 #endif
 
-        EXACT(const ImagesInterface &training_images, const ImagesInterface &validation_images, const ImagesInterface &test_images, int _padding, int _population_size, int _max_epochs, int _max_genomes, string _output_directory, string _search_name, bool _reset_weights);
+        EXACT(const ImagesInterface &training_images, const ImagesInterface &validation_images, const ImagesInterface &test_images, int _padding, int _population_size, int _max_epochs, bool _use_sfmp, bool _use_node_operations, int _max_genomes, string _output_directory, string _search_name, bool _reset_weights);
 
         int32_t population_contains(CNN_Genome *genome) const;
         CNN_Genome* get_best_genome();

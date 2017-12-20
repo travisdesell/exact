@@ -118,6 +118,8 @@ EXACT::EXACT(int exact_id) {
 
         reset_weights = atoi(row[++column]);
         max_epochs = atoi(row[++column]);
+        use_sfmp = atoi(row[++column]);
+        use_node_operations = atoi(row[++column]);
 
         initial_batch_size_min = atoi(row[++column]);
         initial_batch_size_max = atoi(row[++column]);
@@ -295,6 +297,8 @@ void EXACT::export_to_database() {
 
         << ", reset_weights = " << reset_weights
         << ", max_epochs = " << max_epochs
+        << ", use_sfmp = " << use_sfmp
+        << ", use_node_operations = " << use_node_operations
 
         << ", initial_batch_size_min = " << initial_batch_size_min
         << ", initial_batch_size_max = " << initial_batch_size_max
@@ -503,7 +507,7 @@ void EXACT::update_database() {
 
 #endif
 
-EXACT::EXACT(const ImagesInterface &training_images, const ImagesInterface &validation_images, const ImagesInterface &test_images, int _padding, int _population_size, int _max_epochs, int _max_genomes, string _output_directory, string _search_name, bool _reset_weights) {
+EXACT::EXACT(const ImagesInterface &training_images, const ImagesInterface &validation_images, const ImagesInterface &test_images, int _padding, int _population_size, int _max_epochs, bool _use_sfmp, bool _use_node_operations, int _max_genomes, string _output_directory, string _search_name, bool _reset_weights) {
     id = -1;
 
     search_name = _search_name;
@@ -515,6 +519,8 @@ EXACT::EXACT(const ImagesInterface &training_images, const ImagesInterface &vali
 
     reset_weights = _reset_weights;
     max_epochs = _max_epochs;
+    use_sfmp = _use_sfmp;
+    use_node_operations = _use_node_operations;
 
     max_genomes = _max_genomes;
 
@@ -744,7 +750,12 @@ EXACT::EXACT(const ImagesInterface &training_images, const ImagesInterface &vali
     reset_weights_chance = 0.20;
 
     number_mutations = 1;
-    edge_alter_type = 2.0;
+    if (use_sfmp) {
+        edge_alter_type = 2.0;
+    } else {
+        edge_alter_type = 0.0;
+    }
+
     edge_disable = 2.5;
     edge_enable = 2.5;
     edge_split = 3.0;
@@ -752,11 +763,20 @@ EXACT::EXACT(const ImagesInterface &training_images, const ImagesInterface &vali
     node_change_size = 2.0;
     node_change_size_x = 1.0;
     node_change_size_y = 1.0;
-    node_add = 3.0;
-    node_split = 2.0;
-    node_merge = 2.0;
-    node_disable = 1.5;
-    node_enable = 1.5;
+
+    if (use_node_operations) {
+        node_add = 3.0;
+        node_split = 2.0;
+        node_merge = 2.0;
+        node_disable = 1.5;
+        node_enable = 1.5;
+    } else {
+        node_add = 0.0;
+        node_split = 0.0;
+        node_merge = 0.0;
+        node_disable = 0.0;
+        node_enable = 0.0;
+    }
 
     cout << "EXACT settings: " << endl;
 
@@ -1532,8 +1552,13 @@ bool EXACT::add_edge(CNN_Genome *child, CNN_Node *node1, CNN_Node *node2, int ed
     //edge doesn't exist, add it
     cout << "\t\tadding edge between node innovation numbers " << node1_innovation_number << " and " << node2_innovation_number << endl;
 
-    //CNN_Edge *edge = new CNN_Edge(node1, node2, false, edge_innovation_count, random_edge_type(rng_float(generator)));
-    CNN_Edge *edge = new CNN_Edge(node1, node2, false, edge_innovation_count, edge_type);
+    CNN_Edge *edge = NULL;
+
+    if (use_sfmp) {
+        edge = new CNN_Edge(node1, node2, false, edge_innovation_count, edge_type);
+    } else {
+        edge = new CNN_Edge(node1, node2, false, edge_innovation_count, CONVOLUTIONAL);
+    }
     edge_innovation_count++;
 
     //insert edge in order of depth
@@ -1710,12 +1735,22 @@ CNN_Genome* EXACT::create_mutation() {
             node_innovation_count++;
 
             //add two new edges, disable the split edge
+            CNN_Edge *edge1 = NULL;
             cout << "\t\tcreating edge " << edge_innovation_count << endl;
-            CNN_Edge *edge1 = new CNN_Edge(input_node, child_node, false, edge_innovation_count, random_edge_type(rng_float(generator)));
+            if (use_sfmp) {
+                edge1 = new CNN_Edge(input_node, child_node, false, edge_innovation_count, random_edge_type(rng_float(generator)));
+            } else {
+                edge1 = new CNN_Edge(input_node, child_node, false, edge_innovation_count, CONVOLUTIONAL);
+            }
             edge_innovation_count++;
 
+            CNN_Edge *edge2 = NULL;
             cout << "\t\tcreating edge " << edge_innovation_count << endl;
-            CNN_Edge *edge2 = new CNN_Edge(child_node, output_node, false, edge_innovation_count, random_edge_type(rng_float(generator)));
+            if (use_sfmp) {
+                edge2 = new CNN_Edge(child_node, output_node, false, edge_innovation_count, random_edge_type(rng_float(generator)));
+            } else {
+                edge2 = new CNN_Edge(child_node, output_node, false, edge_innovation_count, CONVOLUTIONAL);
+            }
             edge_innovation_count++;
 
             cout << "\t\tdisabling edge " << edge->get_innovation_number() << endl;
@@ -1765,11 +1800,20 @@ CNN_Genome* EXACT::create_mutation() {
             } while (node1->get_depth() >= node2->get_depth());
             //after this while loop, node 2 will always be deeper than node 1
 
-            if (add_edge(child, node1, node2, random_edge_type(rng_float(generator)))) {
-                child->set_generated_by("add_edge");
-                modifications++;
+            if (use_sfmp) {
+                if (add_edge(child, node1, node2, random_edge_type(rng_float(generator)))) {
+                    child->set_generated_by("add_edge");
+                    modifications++;
+                } else {
+                    cout << "\t\tnot adding edge between node innovation numbers " << node1->get_innovation_number() << " and " << node2->get_innovation_number() << " because edge already exists!" << endl;
+                }
             } else {
-                cout << "\t\tnot adding edge between node innovation numbers " << node1->get_innovation_number() << " and " << node2->get_innovation_number() << " because edge already exists!" << endl;
+                if (add_edge(child, node1, node2, CONVOLUTIONAL)) {
+                    child->set_generated_by("add_edge");
+                    modifications++;
+                } else {
+                    cout << "\t\tnot adding edge between node innovation numbers " << node1->get_innovation_number() << " and " << node2->get_innovation_number() << " because edge already exists!" << endl;
+                }
             }
 
             continue;
@@ -2044,8 +2088,16 @@ CNN_Genome* EXACT::create_mutation() {
 
             child->add_node(child_node);
 
-            int input_edge_type = random_edge_type(rng_float(generator));
-            int output_edge_type = random_edge_type(rng_float(generator));
+            int input_edge_type;
+            int output_edge_type;
+
+            if (use_sfmp) {
+                input_edge_type = random_edge_type(rng_float(generator));
+                output_edge_type = random_edge_type(rng_float(generator));
+            } else {
+                input_edge_type = CONVOLUTIONAL;
+                output_edge_type = CONVOLUTIONAL;
+            }
 
             for (uint32_t i = 0; i < potential_inputs.size(); i++) {
                 add_edge(child, potential_inputs[i], child_node, input_edge_type);
@@ -2135,10 +2187,22 @@ CNN_Genome* EXACT::create_mutation() {
                 }
             }
 
-            int node_1_input_edge_type = random_edge_type(rng_float(generator));
-            int node_2_input_edge_type = random_edge_type(rng_float(generator));
-            int node_1_output_edge_type = random_edge_type(rng_float(generator));
-            int node_2_output_edge_type = random_edge_type(rng_float(generator));
+            int node_1_input_edge_type;
+            int node_2_input_edge_type;
+            int node_1_output_edge_type;
+            int node_2_output_edge_type;
+
+            if (use_sfmp) {
+                node_1_input_edge_type = random_edge_type(rng_float(generator));
+                node_2_input_edge_type = random_edge_type(rng_float(generator));
+                node_1_output_edge_type = random_edge_type(rng_float(generator));
+                node_2_output_edge_type = random_edge_type(rng_float(generator));
+            } else {
+                node_1_input_edge_type = CONVOLUTIONAL;
+                node_2_input_edge_type = CONVOLUTIONAL;
+                node_1_output_edge_type = CONVOLUTIONAL;
+                node_2_output_edge_type = CONVOLUTIONAL;
+            }
 
             //make sure each split node has at least 1 input and 1 output
             int selected_input1 = rng_float(generator) * input_nodes.size();
@@ -2278,8 +2342,16 @@ CNN_Genome* EXACT::create_mutation() {
                 }
             }
 
-            int input_edge_type = random_edge_type(rng_float(generator));
-            int output_edge_type = random_edge_type(rng_float(generator));
+            int input_edge_type;
+            int output_edge_type;
+
+            if (use_sfmp) {
+                input_edge_type = random_edge_type(rng_float(generator));
+                output_edge_type = random_edge_type(rng_float(generator));
+            } else {
+                input_edge_type = CONVOLUTIONAL;
+                output_edge_type = CONVOLUTIONAL;
+            }
 
             for (uint32_t i = 0; i < connected_nodes.size(); i++) {
                 if (connected_nodes[i]->get_depth() < depth) {
@@ -2486,9 +2558,9 @@ CNN_Genome* EXACT::create_child() {
             CNN_Edge *inserted_edge = NULL;
             if ((inserted_edge = attempt_edge_insert(child_edges, p1_edge)) != NULL) {
 
-                if (rng_float(generator) >= more_fit_parent_crossover) {
+                if (rng_float(generator) <= more_fit_parent_crossover) {
                     inserted_edge->disable();
-                } else if (rng_float(generator) >= crossover_alter_edge_type) {
+                } else if (rng_float(generator) <= crossover_alter_edge_type) {
                     inserted_edge->alter_edge_type();
                 }
 
@@ -2504,7 +2576,7 @@ CNN_Genome* EXACT::create_child() {
 
                 if (rng_float(generator) >= less_fit_parent_crossover) {
                     inserted_edge->disable();
-                } else if (rng_float(generator) >= crossover_alter_edge_type) {
+                } else if (rng_float(generator) <= crossover_alter_edge_type) {
                     inserted_edge->alter_edge_type();
                 }
 
@@ -3136,6 +3208,8 @@ bool EXACT::is_identical(EXACT *other, bool testing_checkpoint) {
 
     if (are_different("reset_weights", reset_weights, other->reset_weights)) return false;
     if (are_different("max_epochs", max_epochs, other->max_epochs)) return false;
+    if (are_different("use_sfmp", use_sfmp, other->use_sfmp)) return false;
+    if (are_different("use_node_operations", use_node_operations, other->use_node_operations)) return false;
 
     if (are_different("initial_batch_size_min", initial_batch_size_min, other->initial_batch_size_min)) return false;
     if (are_different("initial_batch_size_max", initial_batch_size_max, other->initial_batch_size_max)) return false;

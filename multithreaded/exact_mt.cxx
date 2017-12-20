@@ -85,6 +85,12 @@ int main(int argc, char** argv) {
     int max_epochs;
     get_argument(arguments, "--max_epochs", true, max_epochs);
 
+    bool use_sfmp;
+    get_argument(arguments, "--use_sfmp", true, use_sfmp);
+
+    bool use_node_operations;
+    get_argument(arguments, "--use_node_operations", true, use_node_operations);
+
     int max_genomes;
     get_argument(arguments, "--max_genomes", true, max_genomes);
 
@@ -110,7 +116,7 @@ int main(int argc, char** argv) {
         get_argument(arguments, "--exact_id", true, exact_id);
         exact = new EXACT(exact_id);
     } else {
-        exact = new EXACT(training_images, validation_images, testing_images, padding, population_size, max_epochs, max_genomes, output_directory, search_name, reset_edges);
+        exact = new EXACT(training_images, validation_images, testing_images, padding, population_size, max_epochs, use_sfmp, use_node_operations, max_genomes, output_directory, search_name, reset_edges);
     }
 
 
