@@ -473,8 +473,8 @@ LargeImages::LargeImages(string _filename, int _padding, int _subimage_height, i
     } else {
         cout << "reading images from directory: " << endl;
         read_images_from_directory(filename);
-    }
 #endif
+    }
 
     channel_avg = _channel_avg;
     channel_std_dev = _channel_std_dev;
@@ -499,8 +499,8 @@ LargeImages::LargeImages(string _filename, int _padding, int _subimage_height, i
     } else {
         cout << "reading images from directory: " << endl;
         read_images_from_directory(filename);
-    }
 #endif
+    }
 
     calculate_avg_std_dev();
 }
