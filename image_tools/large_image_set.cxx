@@ -289,6 +289,7 @@ int LargeImages::read_images_from_file(string _filename) {
     return 0;
 }
 
+#ifdef _HAS_TIFF_
 int LargeImages::read_images_from_directory(string directory) {
     DIR *dir;
     struct dirent *ent;
@@ -455,6 +456,7 @@ int LargeImages::read_images_from_directories(string directory) {
 
     return 0;
 }
+#endif
 
 
 LargeImages::LargeImages(string _filename, int _padding, int _subimage_height, int _subimage_width, const vector<float> &_channel_avg, const vector<float> &_channel_std_dev) {
