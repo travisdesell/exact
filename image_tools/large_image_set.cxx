@@ -469,10 +469,12 @@ LargeImages::LargeImages(string _filename, int _padding, int _subimage_height, i
     if (filename.size() >= 4 && filename.substr(filename.size() - 4, 4).compare(".bin") == 0) {
         cout << "reading images from file: " << endl;
         read_images_from_file(filename);
+#ifdef _HAS_TIFF_
     } else {
         cout << "reading images from directory: " << endl;
         read_images_from_directory(filename);
     }
+#endif
 
     channel_avg = _channel_avg;
     channel_std_dev = _channel_std_dev;
@@ -493,10 +495,12 @@ LargeImages::LargeImages(string _filename, int _padding, int _subimage_height, i
     if (filename.size() >= 4 && filename.substr(filename.size() - 4, 4).compare(".bin") == 0) {
         cout << "reading images from binary file: " << endl;
         read_images_from_file(filename);
+#ifdef _HAS_TIFF_
     } else {
         cout << "reading images from directory: " << endl;
         read_images_from_directory(filename);
     }
+#endif
 
     calculate_avg_std_dev();
 }
