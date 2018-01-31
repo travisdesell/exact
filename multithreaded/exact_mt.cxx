@@ -55,7 +55,9 @@ void exact_thread(const Images &training_images, const Images &validation_images
 
         exact_mutex.lock();
         exact->insert_genome(genome);
+#ifdef _MYSQL_
         exact->export_to_database();
+#endif
         exact_mutex.unlock();
     }
 }
