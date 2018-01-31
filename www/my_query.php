@@ -17,7 +17,11 @@ $databases = array(
     "exact_bn_pool" => array(
         "file" => $cwd[__FILE__] . '/../exact_bn_pool_db_info',
         "database" => NULL
-    )
+    ),
+    "exact_bn_sfmp" => array(
+        "file" => $cwd[__FILE__] . '/../exact_bn_sfmp_db_info',
+        "database" => NULL
+    ),
 );
 
 function multi_db_connect($db_name) {
@@ -29,8 +33,19 @@ function multi_db_connect($db_name) {
     $db_name = $lines[1];
     $user = $lines[2];
     $passwd = $lines[3];
+    $port = 3306;
+    if (count($lines) > 4) {
+        $port = $lines[4];
+    }
 
-    $dbcnx = new mysqli($server, $user, $passwd, $db_name);
+    echo "connecting to: server:'$server' db: '$db_name', user: '$user', pass: '$passwd', port: '$port'\n";
+
+    $dbcnx = new mysqli($server, $user, $passwd, $db_name, $port);
+
+    if ($dbcnx == NULL) {
+        error_log("Error, connection to database failed. Database is null.");
+        exit(1);
+    }
 
     if ($dbcnx->connect_errno) {
         //echo "Failed to connect to MySQL: (" . $dbcnx->connect_errno . ") " . $dbcnx->connect_error;
@@ -47,7 +62,12 @@ function query_multi_db($db_name, $query) {
 
     $result = $databases[$db_name]["database"]->query($query);
 
-    if (!$result) mysqli_error_msg($databases[$db_name]["database"], $query);
+    if (!$result) {
+        error_log("had an error with query:\n$query\n");
+        error_log("Error:" > $databases[$db_name]["database"]->error());
+        exit(1);
+        //mysqli_error_msg($databases[$db_name]["database"], $query);
+    }
 
     return $result;
 }

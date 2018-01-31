@@ -1,3 +1,6 @@
+add_executable(apply_cnn apply_cnn)
+target_link_libraries(apply_cnn exact_strategy exact_common exact_image_tools ${MYSQL_LIBRARIES}  ${TIFF_LIBRARIES} pthread)
+
 add_executable(evaluate_large_image_cnn evaluate_large_image_cnn)
 target_link_libraries(evaluate_large_image_cnn exact_strategy exact_common exact_image_tools ${MYSQL_LIBRARIES}  ${TIFF_LIBRARIES} pthread)
 

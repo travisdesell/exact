@@ -209,7 +209,7 @@ class CNN_Genome {
         void set_to_best();
         void save_to_best();
 
-        void reset();
+        void reset(bool _reset_weights);
         void initialize();
 
         void check_gradients(const ImagesInterface &images);

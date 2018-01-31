@@ -82,6 +82,7 @@ class LargeImages : public ImagesInterface {
     public:
         int read_images_from_file(string binary_filename);
         int read_images_from_directory(string directory);
+        int read_images_from_directories(string directory);
 
         LargeImages(string binary_filename, int _padding, int _subimage_height, int _subimage_width);
         LargeImages(string binary_filename, int _padding, int _subimage_height, int _subimage_width, const vector<float> &_channeL_avg, const vector<float> &channel_std_dev);

@@ -1371,7 +1371,7 @@ void CNN_Genome::evaluate_images(const ImagesInterface &images, const vector<int
     }
 }
 
-void calculate_softmax(const vector<float> &values_in, vector<float> &values_out, vector<float> &gradient, int expected_class, int &predicted_class) {
+void calculate_softmax(const vector<float> &values_in, vector<float> &values_out, vector<float> &gradient, int expected_class, int &predicted_class, float &entropy) {
     float softmax_max = values_in[0];
     predicted_class = 0;
 
@@ -1398,14 +1398,31 @@ void calculate_softmax(const vector<float> &values_in, vector<float> &values_out
         exit(1);
     }
 
+    entropy = 0.0;
     for (uint32_t i = 0; i < values_in.size(); i++) {
         values_out[i] /= softmax_sum;
 
+//        entropy -= values_out[i] * log(values_out[i]);
+    }
+
+    for (uint32_t i = 0; i < values_in.size(); i++) {
         if (i == expected_class) {
             gradient[i] = values_out[i] - 1;
+
         } else {
             gradient[i] = values_out[i];
         }
+
+        //float beta = 1.0;
+        //apply confidence penalty
+        //cout << "entropy: " << entropy << ", expected class probability: " << values_out[i] << ", regular gradient: " << gradient[i];
+        //gradient[i] += beta * values_out[i] * (-log(values_out[i]) - entropy);
+        //cout << ", after penalty: " << gradient[i] << endl;
+
+        //cout << "values_out[" << i << "]: " << values_out[i] << ", gradient before entropy[" << i << "]: " << gradient[i];
+
+
+        //cout << ", gradient after entropy[" << i << "]: " << gradient[i] << endl;
 
         /*
         if (modified_softmax) {
@@ -1472,7 +1489,8 @@ void CNN_Genome::check_gradients(const ImagesInterface &images) {
         }
 
         int predicted_class = 0;
-        calculate_softmax(values_in, values_out, analytic_softmax_gradient, expected_class, predicted_class);
+        float entropy = 0.0;
+        calculate_softmax(values_in, values_out, analytic_softmax_gradient, expected_class, predicted_class, entropy);
 
         /*
         cerr << "values_in/values_out:" << endl;
@@ -1484,12 +1502,12 @@ void CNN_Genome::check_gradients(const ImagesInterface &images) {
         cerr << "expected class: " << expected_class << endl;
         for (uint32_t j = 0; j < softmax_nodes.size(); j++) {
             values_in[j] += diff;
-            calculate_softmax(values_in, values_out, temp_gradients, expected_class, predicted_class);
+            calculate_softmax(values_in, values_out, temp_gradients, expected_class, predicted_class, entropy);
 
             float error1 = -log(values_out[expected_class]);
 
             values_in[j] -= 2.0 * diff;
-            calculate_softmax(values_in, values_out, temp_gradients, expected_class, predicted_class);
+            calculate_softmax(values_in, values_out, temp_gradients, expected_class, predicted_class, entropy);
 
             float error2 = -log(values_out[expected_class]);
 
@@ -1569,7 +1587,8 @@ void CNN_Genome::evaluate_images(const ImagesInterface &images, const vector<int
         }
 
         int predicted_class = 0;
-        calculate_softmax(values_in, values_out, gradients, expected_class, predicted_class);
+        float entropy = 0.0;
+        calculate_softmax(values_in, values_out, gradients, expected_class, predicted_class, entropy);
 
         /*
         cerr << "values_in/values_out:" << endl;
@@ -1585,9 +1604,12 @@ void CNN_Genome::evaluate_images(const ImagesInterface &images, const vector<int
 
         double previous_error = total_error;
 
+        float beta = 0.0; //controls the strength of the confidence penalty
+
         float error = values_out[expected_class];
         if (error == 0) error = 1.0 / EXACT_MAX_FLOAT;
         total_error -= log(error);
+        //total_error += beta * entropy;  //entropy is negative
 
         if (isnan(total_error) || isinf(total_error)) {
             cerr << "ERROR! total_error became NAN or INF!" << endl;
@@ -1650,8 +1672,8 @@ void CNN_Genome::set_to_best() {
     }
 }
 
-void CNN_Genome::reset() {
-    reset_weights = true;
+void CNN_Genome::reset(bool _reset_weights) {
+    reset_weights = _reset_weights;
     epoch = 0; 
 
     mu = initial_mu;
@@ -1862,8 +1884,8 @@ void CNN_Genome::draw_predictions(const LargeImages &images, string output_direc
     for (int image_number = 0; image_number < images.get_number_large_images(); image_number++) {
         int number_subimages = images.get_number_subimages(image_number);
 
-        vector< vector<float> > predictions(number_subimages, vector<float>(images.get_number_classes(), 0.0));
-        //cout << "created vector!" << endl;
+        vector< vector<float> > predictions(number_subimages, vector<float>(2, 0.0));
+        //cout << "created vector, images.get_number_classes(): " << images.get_number_classes() << endl;
 
         for (uint32_t j = 0; j < number_subimages; j += batch_size) {
 
@@ -1916,15 +1938,16 @@ void CNN_Genome::draw_predictions(const LargeImages &images, string output_direc
         int large_image_channels = images.get_large_image_channels(image_number);
 
         vector< vector<int> > counts(large_image_height, vector<int>(large_image_width, 0));
-        vector< vector< vector<float> > > pixels(large_image_height, vector< vector<float> >(large_image_width, vector<float>(3, 0.0)));
+        vector< vector< vector<float> > > pixels(3, vector< vector<float> >(large_image_height, vector<float>(large_image_width, 0.0)));
 
         int current_y = 0;
         int current_x = 0;
         for (uint32_t j = 0; j < predictions.size(); j++) {
             for (int y = 0; y < subimage_height; y++) {
                 for (int x = 0; x < subimage_width; x++) {
-                    pixels[current_y + y][current_x + x][0] += predictions[j][1] * 255.0;
-                    pixels[current_y + y][current_x + x][1] += predictions[j][0] * 255.0;
+                    pixels[0][current_y + y][current_x + x] += 255 - (predictions[j][0] * 255.0);
+                    pixels[1][current_y + y][current_x + x] += 255 - (predictions[j][0] * 255.0);
+                    pixels[2][current_y + y][current_x + x] += 255 - (predictions[j][0] * 255.0);
                     counts[current_y + y][current_x + x]++;
                 }
             }
@@ -1936,15 +1959,17 @@ void CNN_Genome::draw_predictions(const LargeImages &images, string output_direc
             }
         }
 
-        vector< vector< vector<uint8_t> > > small_pixels(large_image_height, vector< vector<uint8_t> >(large_image_width, vector<uint8_t>(3, 0)));
+        vector< vector< vector<uint8_t> > > small_pixels(3, vector< vector<uint8_t> >(large_image_height, vector<uint8_t>(large_image_width, 0)));
 
         for (int y = 0; y < counts.size(); y++) {
             for (int x = 0; x < counts[y].size(); x++) {
-                pixels[y][x][0] /= counts[y][x];
-                pixels[y][x][1] /= counts[y][x];
+                pixels[0][y][x] /= counts[y][x];
+                pixels[1][y][x] /= counts[y][x];
+                pixels[2][y][x] /= counts[y][x];
 
-                small_pixels[y][x][0] = pixels[y][x][0];
-                small_pixels[y][x][1] = pixels[y][x][1];
+                small_pixels[0][y][x] = pixels[0][y][x];
+                small_pixels[1][y][x] = pixels[1][y][x];
+                small_pixels[2][y][x] = pixels[2][y][x];
             }
         }
 
@@ -2166,7 +2191,7 @@ void CNN_Genome::stochastic_backpropagation(const ImagesInterface &training_imag
 
         bool found_improvement = false;
 
-        if (current_validation_error < best_validation_error) {
+        if (current_validation_predictions > best_validation_predictions) {
             //cout << "current validation error: " << current_validation_error << " < best validation error: " << best_validation_error << endl;
             best_validation_error = current_validation_error;
             best_validation_predictions = current_validation_predictions;

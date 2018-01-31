@@ -72,7 +72,11 @@ int main(int argc, char **argv) {
     //cout << "number enabled nodes: " << genome->get_number_enabled_edges();
     cout << "number enabled weights: " << genome->get_number_weights() << endl;
 
-    genome->reset();
+
+    bool reset_weights = false;
+    get_argument(arguments, "--reset_weights", true, reset_weights);
+
+    genome->reset(reset_weights);
     genome->initialize();
 
     genome->stochastic_backpropagation(training_images, validation_images);

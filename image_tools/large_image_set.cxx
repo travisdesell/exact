@@ -101,18 +101,21 @@ void LargeImage::draw_image(string filename) const {
 
     cout << "drawing a TIFF with height: " << height << " and width: " << width << " and padding: " << padding << endl;
 
-    vector<uint8_t> values;
+    uint8_t *values = new uint8_t[(height + (padding * 2)) * (width + (padding * 2)) * 3];
+    int current = 0;
+
     for (int32_t y = 0; y < height + (padding * 2);  y++) {
         for (int32_t x = 0; x < width + (padding * 2); x++) {
             //cout << "pushing back values for [" << y << "][" << x << "]!" << endl;
-            values.push_back(get_pixel_unnormalized(0, y, x));
-            values.push_back(get_pixel_unnormalized(1, y, x));
-            values.push_back(get_pixel_unnormalized(2, y, x));
+            values[current] = get_pixel_unnormalized(0, y, x);
+            values[current + 1] = get_pixel_unnormalized(1, y, x);
+            values[current + 2] = get_pixel_unnormalized(2, y, x);
+            current += 3;
             //cout << "pushed back values for [" << y << "][" << x << "]!" << endl;
         }
     }
 
-    if((output_image = TIFFOpen(filename.c_str(), "w")) == NULL){
+    if ((output_image = TIFFOpen(filename.c_str(), "w")) == NULL) {
         std::cerr << "Unable to write tif file: " << "image.tiff" << std::endl;
     }
 
@@ -129,7 +132,7 @@ void LargeImage::draw_image(string filename) const {
     // Write the information to the file
 
     tsize_t image_s;
-    if ( (image_s = TIFFWriteEncodedStrip(output_image, 0, &values[0], 3 * (width + (padding * 2)) * (height + (padding * 2)) * sizeof(int8_t))) == -1) {
+    if ( (image_s = TIFFWriteEncodedStrip(output_image, 0, values, 3 * (width + (padding * 2)) * (height + (padding * 2)) * sizeof(int8_t))) == -1) {
         std::cerr << "Unable to write tif file '" << filename << "'" << endl;
     }
     else {
@@ -296,6 +299,78 @@ int LargeImages::read_images_from_directory(string directory) {
         while ((ent = readdir(dir)) != NULL) {
             cout << "file: '" << ent->d_name << "'" << endl;
 
+            string image_filename(directory + ent->d_name);
+            if (image_filename.size() < 4 || image_filename.substr(image_filename.size() - 4, 4).compare(".tif") != 0) {
+                cout << "skipping non-TIFF file: '" << image_filename << "'" << endl;
+                continue;
+            }
+
+            TIFF *tif = TIFFOpen(image_filename.c_str(), "r");
+            uint32_t height, width;
+            TIFFGetField(tif, TIFFTAG_IMAGELENGTH, &height);        // uint32 height;
+            TIFFGetField(tif, TIFFTAG_IMAGEWIDTH, &width);           // uint32 width;
+            TIFFGetField(tif, TIFFTAG_SAMPLESPERPIXEL, &channels);
+
+            cout << image_filename << ", height: " << height << ", width: " << width << ", channels: " << channels << endl;
+
+            uint32_t *raster = (uint32_t*)_TIFFmalloc(height * width * sizeof(uint32_t));
+            TIFFReadRGBAImage(tif, width, height, raster, 0);
+
+            vector< vector< vector<uint8_t> > > pixels(channels, vector< vector<uint8_t> >(height, vector<uint8_t>(width, 0)));
+
+            //cout << "pixels: " << endl;
+            int current_y = 0;
+            int current_x = 0;
+            for (uint32_t i = 0; i < height * width; i++) {
+                pixels[0][height - 1 - current_y][current_x] = TIFFGetR(raster[i]);
+                if (channels > 1) pixels[1][height - 1 - current_y][current_x] = TIFFGetG(raster[i]);
+                if (channels > 2) pixels[2][height - 1 - current_y][current_x] = TIFFGetB(raster[i]);
+                if (channels > 3) pixels[3][height - 1 - current_y][current_x] = TIFFGetA(raster[i]);
+
+                current_x++;
+                if (current_x == width) {
+                    current_x = 0;
+                    current_y++;
+                }
+            }
+
+            _TIFFfree(raster);
+            TIFFClose(tif);
+
+            int subimages_along_width = (width - subimage_width) + 1;
+            int subimages_along_height = (height - subimage_height) + 1;
+            int number_subimages = subimages_along_width * subimages_along_height;
+
+            LargeImage large_image(number_subimages, channels, width, height, padding, image_class, pixels);
+            images.push_back(large_image);
+
+            ///string test_filename(image_filename.substr(0, image_filename.length() - 4) + "_test.tif");
+            //cout << "writing test filename '" << test_filename << "'" << endl;
+            //large_image.draw_image(test_filename);
+        }
+
+        //_TIFFfree(raster);
+
+        closedir(dir);
+    } else {
+        /* could not open directory */
+        cerr << "Attemped to read images from directory '" << directory << "', but could not open directory for reading." << endl;
+        return EXIT_FAILURE;
+    }
+
+    return 0;
+}
+
+int LargeImages::read_images_from_directories(string directory) {
+    DIR *dir;
+    struct dirent *ent;
+
+    int image_class = 0;
+    if ((dir = opendir(directory.c_str())) != NULL) {
+        /* print all the files and directories within directory */
+        while ((ent = readdir(dir)) != NULL) {
+            cout << "file: '" << ent->d_name << "'" << endl;
+
             string filename(ent->d_name);
             if (filename.compare(".") == 0) {
                 cout << "skipping current directory" << endl;
@@ -337,7 +412,7 @@ int LargeImages::read_images_from_directory(string directory) {
 
                 vector< vector< vector<uint8_t> > > pixels(channels, vector< vector<uint8_t> >(height, vector<uint8_t>(width, 0)));
 
-                cout << "pixels: " << endl;
+                //cout << "pixels: " << endl;
                 int current_y = 0;
                 int current_x = 0;
                 for (uint32_t i = 0; i < height * width; i++) {
@@ -352,6 +427,8 @@ int LargeImages::read_images_from_directory(string directory) {
                         current_y++;
                     }
                 }
+                _TIFFfree(raster);
+                TIFFClose(tif);
 
                 int subimages_along_width = (width - subimage_width) + 1;
                 int subimages_along_height = (height - subimage_height) + 1;
@@ -360,10 +437,9 @@ int LargeImages::read_images_from_directory(string directory) {
                 LargeImage large_image(number_subimages, channels, width, height, padding, image_class, pixels);
                 images.push_back(large_image);
 
-                string test_filename(image_filename.substr(0, image_filename.length() - 4) + "_test.tif");
-                cout << "writing test filename '" << test_filename << "'" << endl;
-
-                large_image.draw_image(test_filename);
+                ///string test_filename(image_filename.substr(0, image_filename.length() - 4) + "_test.tif");
+                //cout << "writing test filename '" << test_filename << "'" << endl;
+                //large_image.draw_image(test_filename);
             }
             image_class++;
 

@@ -72,7 +72,7 @@ int main(int argc, char **argv) {
     //cout << "number enabled nodes: " << genome->get_number_enabled_edges();
     cout << "number enabled weights: " << genome->get_number_weights() << endl;
 
-    genome->reset();
+    genome->reset(true);
     genome->initialize();
 
     genome->check_gradients(training_images);
