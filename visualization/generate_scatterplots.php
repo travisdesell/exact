@@ -7,7 +7,7 @@ $cwd[__FILE__] = dirname($cwd[__FILE__]);
 require_once($cwd[__FILE__] . "/../www/my_query.php");
 
 
-$db_name = "exact_batchnorm";
+$db_name = "exact_bn_sfmp";
 $min_exact_id = 24;
 $max_exact_id = 28;
 

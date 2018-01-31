@@ -14,7 +14,7 @@ $gv_files = array();
 function process_genomes($db_name) {
     global $png_files, $gv_files;
 
-    $genome_result = query_multi_db($db_name, "SELECT id, exact_id, test_error, best_error FROM cnn_genome");
+    $genome_result = query_multi_db($db_name, "SELECT id, exact_id, test_error FROM cnn_genome");
 
     while ($genome_row = $genome_result->fetch_assoc()) {
 
@@ -31,7 +31,7 @@ function process_genomes($db_name) {
         $png_files[] = $search_name . "_genome_" . $genome_id . ".png";
         $gv_files[] = $search_name . "_genome_" . $genome_id . ".gv";
 
-        if ($genome_row['test_error'] == 10000000 && $genome_row['best_error'] != 10000000) {
+        if ($genome_row['test_error'] == 10000000) {
             $command = "/home/tdesell/exact/build/tests/evaluate_cnn --genome_id $genome_id --training_data $training_filename --testing_data $testing_filename --update_database --db_file /home/tdesell/exact/" . $db_name . "_db_info";
             echo "command: $command \n";
             echo "results: " . exec($command) . "\n";
@@ -57,6 +57,7 @@ function process_genomes($db_name) {
 
 process_genomes("exact_batchnorm");
 process_genomes("exact_bn_pool");
+process_genomes("exact_bn_sfmp");
 
 echo "listing files!\n";
 

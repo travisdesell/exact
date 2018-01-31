@@ -548,13 +548,11 @@ CNN_Genome::CNN_Genome(int _generation_id, int _padding, int _number_training_im
     output_filename = "";
     checkpoint_filename = "";
 
-
     nodes = _nodes;
     edges = _edges;
 
     cout << "creating genome with nodes.size(): " << nodes.size() << " and edges.size(): " << edges.size() << endl;
 
-    
     input_nodes.clear();
     softmax_nodes.clear();
 
@@ -814,7 +812,6 @@ float CNN_Genome::get_test_rate() const {
 int CNN_Genome::get_test_predictions() const {
     return test_predictions;
 }
-
 
 const vector<CNN_Node*> CNN_Genome::get_nodes() const {
     return nodes;

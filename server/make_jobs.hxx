@@ -1,7 +1,7 @@
 #ifndef EXACT_MAKE_JOBS_HXX
 #define EXACT_MAKE_JOBS_HXX
 
-#include "strategy/exact.hxx"
+#include "cnn/exact.hxx"
 
 #define CUSHION 100
 #define WORKUNITS_TO_GENERATE 100

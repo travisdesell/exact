@@ -240,6 +240,12 @@ int main(int argc, char** argv) {
     int max_epochs;
     get_argument(arguments, "--max_epochs", true, max_epochs);
 
+    bool use_sfmp;
+    get_argument(arguments, "--use_sfmp", true, use_sfmp);
+
+    bool use_node_operations;
+    get_argument(arguments, "--use_node_operations", true, use_node_operations);
+
     int max_genomes;
     get_argument(arguments, "--max_genomes", true, max_genomes);
 
@@ -259,7 +265,7 @@ int main(int argc, char** argv) {
     Images testing_images(testing_filename, padding, training_images.get_average(), training_images.get_std_dev());
 
     if (rank == 0) {
-        exact = new EXACT(training_images, validation_images, testing_images, padding, population_size, max_epochs, max_genomes, output_directory, search_name, reset_edges);
+        exact = new EXACT(training_images, validation_images, testing_images, padding, population_size, max_epochs, use_sfmp, use_node_operations, max_genomes, output_directory, search_name, reset_edges);
 
         master(training_images, validation_images, testing_images, max_rank);
     } else {

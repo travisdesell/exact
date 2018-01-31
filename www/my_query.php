@@ -21,7 +21,7 @@ $databases = array(
     "exact_bn_sfmp" => array(
         "file" => $cwd[__FILE__] . '/../exact_bn_sfmp_db_info',
         "database" => NULL
-    ),
+    )
 );
 
 function multi_db_connect($db_name) {

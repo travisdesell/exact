@@ -58,7 +58,7 @@ using std::string;
 #include <vector>
 using std::vector;
 
-#include "server/boinc_common.hxx"
+#include "common/files.hxx"
 #include "common/version.hxx"
 
 struct EXACT_RESULT {
@@ -127,7 +127,7 @@ int init_result(RESULT& result, void*& data) {
             return 1;
         }
 
-        int best_error_line_number = 23;
+        int best_error_line_number = 25;
         int generalizability_line_number = 28;
         int test_line_number = 31;
 
@@ -189,6 +189,11 @@ int init_result(RESULT& result, void*& data) {
         log_messages.printf(MSG_CRITICAL, "[RESULT#%ld %s] get_data_from_result: could not open file for result\n", result.id, result.name);
         log_messages.printf(MSG_CRITICAL, "     file path: %s\n", fi.path.c_str());
         return ERR_FOPEN;
+    } catch (std::runtime_error exception) {
+        log_messages.printf(MSG_CRITICAL, "[RESULT#%ld %s] get_data_from_result: could not open file for result\n", result.id, result.name);
+        log_messages.printf(MSG_CRITICAL, "     file path: %s\n", fi.path.c_str());
+        log_messages.printf(MSG_CRITICAL, "     exception: %s\n", exception.what());
+        return ERR_FOPEN;
     }
 
 //    cout << "Parsing: " << endl << file_contents << endl;
@@ -241,7 +246,6 @@ int compare_results(
         istringstream iss1(f1->file_contents);
         istringstream iss2(f2->file_contents);
 
-
         string version_line1, version_line2;
         getline(iss1, version_line1);
         getline(iss2, version_line2);
@@ -252,7 +256,7 @@ int compare_results(
             match = false;
         }
 
-        int best_error_line_number = 23;
+        int best_error_line_number = 25;
 
         string line1, line2;
         string best_error_line1, best_error_line2;

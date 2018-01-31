@@ -60,10 +60,10 @@ using std::vector;
 
 #include "common/arguments.hxx"
 #include "common/db_conn.hxx"
+#include "common/files.hxx"
 #include "common/version.hxx"
-#include "strategy/exact.hxx"
-#include "strategy/cnn_genome.hxx"
-#include "server/boinc_common.hxx"
+#include "cnn/exact.hxx"
+#include "cnn/cnn_genome.hxx"
 #include "server/make_jobs.hxx"
 
 
@@ -292,6 +292,9 @@ int assimilate_handler(WORKUNIT& wu, vector<RESULT>& results, RESULT& canonical_
         genome = new CNN_Genome(file_iss, false);
     } catch (std::invalid_argument exception) {
         log_messages.printf(MSG_CRITICAL, "[CANONICAL RESULT#%ld %s] assimilate_handler: caught invalid_argument exception while generating genome: '%s'.\n", canonical_result.id, canonical_result.name, exception.what());
+        return 0;
+    } catch (std::runtime_error exception) {
+        log_messages.printf(MSG_CRITICAL, "[CANONICAL RESULT#%ld %s] assimilate_handler: caught runtime error exception while generating genome: '%s'.\n", canonical_result.id, canonical_result.name, exception.what());
         return 0;
     }
 

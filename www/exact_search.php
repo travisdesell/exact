@@ -73,6 +73,7 @@ echo "
 
 $search_rows = array();
 
+
 if ($db_name == "exact_bn_pool") {
     $best_pred_result = query_multi_db($db_name, "SELECT best_predictions_genome_id FROM exact_search WHERE id = $search_id");
     $best_pred_row = $best_pred_result->fetch_assoc();
@@ -115,47 +116,45 @@ if ($db_name == "exact_bn_pool") {
 
     $search_rows['row'][] = $search_row;
 
-}
+    $search_result = query_multi_db($db_name, "SELECT id, best_error, best_predictions, generalizability_error, generalizability_predictions, test_error, test_predictions, best_error_epoch, max_epochs, generation_id, hyperparameters FROM cnn_genome WHERE exact_id = " . $search_id . " ORDER BY generalizability_error");
 
+    while ($search_row = $search_result->fetch_assoc()) {
+        $bp = $search_row['best_predictions'];
 
-$search_result = query_multi_db($db_name, "SELECT id, best_error, best_predictions, generalizability_error, generalizability_predictions, test_error, test_predictions, best_error_epoch, max_epochs, generation_id, hyperparameters FROM cnn_genome WHERE exact_id = " . $search_id . " ORDER BY generalizability_error");
+        if (strpos($search_name, 'cifar') !== false) {
+            $search_row['best_error'] = number_format($search_row['best_error'], 3);
+            $search_row['best_predictions'] = $bp . " (" . number_format(100.0 * $bp / 50000.00, 2) . "%)";
+        } else {
+            $search_row['best_error'] = number_format($search_row['best_error'], 3);
+            $search_row['best_predictions'] = $bp . " (" . number_format(100.0 * $bp / 60000.00, 2) . "%)";
+        }
 
+        $tp = $search_row['test_predictions'];
+        $gp = $search_row['generalizability_predictions'];
+        $search_row['fitness'] = number_format($search_row['fitness'], 3);
+        $search_row['generalizability_error'] = number_format($search_row['generalizability_error'], 3);
+        $search_row['generalizability_predictions'] = $gp . " (" . number_format(100.0 * $gp / 5000.00, 2) . "%)";
+        $search_row['test_error'] = number_format($search_row['test_error'], 3);
+        $search_row['test_predictions'] = $tp . " (" . number_format(100.0 * $tp / 5000.00, 2) . "%)";
 
-while ($search_row = $search_result->fetch_assoc()) {
-    $bp = $search_row['best_predictions'];
+        $search_row['alpha'] = number_format($search_row['alpha'], 5);
+        $search_row['initial_mu'] = number_format($search_row['initial_mu'], 5);
+        $search_row['mu_delta'] = number_format($search_row['mu_delta'], 5);
+        $search_row['initial_learning_rate'] = number_format($search_row['initial_learning_rate'], 10);
+        $search_row['learning_rate_delta'] = number_format($search_row['learning_rate_delta'], 5);
+        $search_row['initial_weight_decay'] = number_format($search_row['initial_weight_decay'], 10);
+        $search_row['weight_decay_delta'] = number_format($search_row['weight_decay_delta'], 5);
+        $search_row['input_dropout_probability'] = number_format($search_row['input_dropout_probability'], 5);
+        $search_row['hidden_dropout_probability'] = number_format($search_row['hidden_dropout_probability'], 5);
 
-    if (strpos($search_name, 'cifar') !== false) {
-        $search_row['best_error'] = number_format($search_row['best_error'], 3);
-        $search_row['best_predictions'] = $bp . " (" . number_format(100.0 * $bp / 50000.00, 2) . "%)";
-    } else {
-        $search_row['best_error'] = number_format($search_row['best_error'], 3);
-        $search_row['best_predictions'] = $bp . " (" . number_format(100.0 * $bp / 60000.00, 2) . "%)";
+        $stderr_result = query_multi_db($db_name, "SELECT ISNULL(stderr_out) FROM cnn_genome WHERE id = " . $search_row['id']);
+        $stderr_row = $stderr_result->fetch_assoc();
+
+        $search_row['db_name'] = $db_name;
+
+        $search_rows['row'][] = $search_row;
+
     }
-
-    $tp = $search_row['test_predictions'];
-    $gp = $search_row['generalizability_predictions'];
-    $search_row['fitness'] = number_format($search_row['fitness'], 3);
-    $search_row['generalizability_error'] = number_format($search_row['generalizability_error'], 3);
-    $search_row['generalizability_predictions'] = $gp . " (" . number_format(100.0 * $gp / 5000.00, 2) . "%)";
-    $search_row['test_error'] = number_format($search_row['test_error'], 3);
-    $search_row['test_predictions'] = $tp . " (" . number_format(100.0 * $tp / 5000.00, 2) . "%)";
-
-    $search_row['alpha'] = number_format($search_row['alpha'], 5);
-    $search_row['initial_mu'] = number_format($search_row['initial_mu'], 5);
-    $search_row['mu_delta'] = number_format($search_row['mu_delta'], 5);
-    $search_row['initial_learning_rate'] = number_format($search_row['initial_learning_rate'], 10);
-    $search_row['learning_rate_delta'] = number_format($search_row['learning_rate_delta'], 5);
-    $search_row['initial_weight_decay'] = number_format($search_row['initial_weight_decay'], 10);
-    $search_row['weight_decay_delta'] = number_format($search_row['weight_decay_delta'], 5);
-    $search_row['input_dropout_probability'] = number_format($search_row['input_dropout_probability'], 5);
-    $search_row['hidden_dropout_probability'] = number_format($search_row['hidden_dropout_probability'], 5);
-
-    $stderr_result = query_multi_db($db_name, "SELECT ISNULL(stderr_out) FROM cnn_genome WHERE id = " . $search_row['id']);
-    $stderr_row = $stderr_result->fetch_assoc();
-
-    $search_row['db_name'] = $db_name;
-
-    $search_rows['row'][] = $search_row;
 
 }
 

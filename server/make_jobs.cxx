@@ -41,12 +41,12 @@ using std::vector;
 #include "common/arguments.hxx"
 #include "common/db_conn.hxx"
 #include "image_tools/image_set.hxx"
-#include "strategy/exact.hxx"
+#include "cnn/exact.hxx"
 #include "server/make_jobs.hxx"
 
 //the following are the templates for the workunits (exact_in.xml) and results (exact_out.xml)
 //and they can be found in /projects/csg/templates
-const char* in_template_file = "exact_batchnorm_in.xml";
+const char* in_template_file = "exact_bn_fmp_in.xml";
 const char* out_template_file = "exact_out.xml";
 
 
@@ -111,7 +111,7 @@ int make_job(EXACT *exact, CNN_Genome *genome, string search_name) {
     log_messages.printf(MSG_DEBUG, "name: '%s'\n", name);
 
     string training_filename = exact->get_training_filename();
-    string generalizability_filename = exact->get_generalizability_filename();
+    string validation_filename = exact->get_validation_filename();
     string test_filename = exact->get_test_filename();
 
     ostringstream oss;
@@ -119,7 +119,7 @@ int make_job(EXACT *exact, CNN_Genome *genome, string search_name) {
     string genome_filename = oss.str();
 
     log_messages.printf(MSG_DEBUG, "training filename: '%s'\n", training_filename.c_str());
-    log_messages.printf(MSG_DEBUG, "generalizability filename: '%s'\n", generalizability_filename.c_str());
+    log_messages.printf(MSG_DEBUG, "validation filename: '%s'\n", validation_filename.c_str());
     log_messages.printf(MSG_DEBUG, "test filename: '%s'\n", test_filename.c_str());
     log_messages.printf(MSG_DEBUG, "genome filename: '%s'\n", genome_filename.c_str());
 
@@ -142,12 +142,12 @@ int make_job(EXACT *exact, CNN_Genome *genome, string search_name) {
     infiles[0] = stripped_training_filename.c_str();
     log_messages.printf(MSG_DEBUG, "infile[0]: '%s'\n", infiles[0]);
 
-    log_messages.printf(MSG_DEBUG, "copying generalizability filename to download directory: '%s'\n", generalizability_filename.c_str());
-    copy_file_to_download_dir(generalizability_filename);
+    log_messages.printf(MSG_DEBUG, "copying validation filename to download directory: '%s'\n", validation_filename.c_str());
+    copy_file_to_download_dir(validation_filename);
 
-    string stripped_generalizability_filename  = generalizability_filename.substr(generalizability_filename.find_last_of("/\\") + 1);
-    log_messages.printf(MSG_DEBUG, "stripped generalizability filename for infiles[1]: '%s'\n", stripped_generalizability_filename.c_str());
-    infiles[1] = stripped_generalizability_filename.c_str();
+    string stripped_validation_filename  = validation_filename.substr(validation_filename.find_last_of("/\\") + 1);
+    log_messages.printf(MSG_DEBUG, "stripped validation filename for infiles[1]: '%s'\n", stripped_validation_filename.c_str());
+    infiles[1] = stripped_validation_filename.c_str();
     log_messages.printf(MSG_DEBUG, "infile[1]: '%s'\n", infiles[1]);
 
     log_messages.printf(MSG_DEBUG, "copying test filename to download directory: '%s'\n", test_filename.c_str());
@@ -182,7 +182,7 @@ int make_job(EXACT *exact, CNN_Genome *genome, string search_name) {
     double fpops_per_image = genome->get_operations_estimate();
     double fpops_est = exact->get_number_training_images() * genome->get_max_epochs() * fpops_per_image * 3.0;
 
-    double credit = (fpops_est / 10e10) * 0.9;
+    double credit = (fpops_est / 10e10) * 0.5;
 
     // Fill in the job parameters
     wu.clear();
@@ -208,7 +208,7 @@ int make_job(EXACT *exact, CNN_Genome *genome, string search_name) {
     // Register the job with BOINC
     sprintf(path, "templates/%s", out_template_file);
 
-    sprintf(command_line, " --training_file training_samples.bin --generalizability_file generalizability_samples.bin --testing_file testing_samples.bin --genome_file input_genome.txt --output_file output_genome.txt --checkpoint_file checkpoint.txt");
+    sprintf(command_line, " --training_file training_samples.bin --validation_file validation_samples.bin --testing_file testing_samples.bin --genome_file input_genome.txt --output_file output_genome.txt --checkpoint_file checkpoint.txt");
     
     //%u %u %lu %lu", max_set_value, set_size, starting_set, sets_to_evaluate);
     log_messages.printf(MSG_DEBUG, "command line: '%s'\n", command_line);

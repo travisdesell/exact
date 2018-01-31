@@ -51,7 +51,11 @@ echo "
 
         //fitness query
 
-        $fitness_result = query_multi_db($db_name, "SELECT best_error, best_predictions, best_error_epoch, generalizability_error, generalizability_predictions, test_error, test_predictions FROM cnn_genome WHERE exact_id = " . $search_row['id'] . " ORDER BY (generalizability_error) LIMIT 1");
+        if ($db_name == "exact_bn_sfmp") {
+            $fitness_result = query_multi_db($db_name, "SELECT best_validation_error, best_validation_predictions, best_epoch, training_error, training_predictions, test_error, test_predictions FROM cnn_genome WHERE exact_id = " . $search_row['id'] . " ORDER BY (best_validation_error) LIMIT 1");
+        } else {
+            $fitness_result = query_multi_db($db_name, "SELECT best_error, best_predictions, best_error_epoch, generalizability_error, generalizability_predictions, test_error, test_predictions FROM cnn_genome WHERE exact_id = " . $search_row['id'] . " ORDER BY (generalizability_error) LIMIT 1");
+        }
         $fitness_row = $fitness_result->fetch_assoc();
 
         $search_row['best_error'] = number_format($fitness_row['best_error']);
@@ -62,15 +66,27 @@ echo "
             $search_row['best_predictions'] = number_format(100 * $fitness_row['best_predictions'] / 60000, 2) . "%";
         }
 
-        $search_row['best_error_epoch'] = $fitness_row['best_error_epoch'];
+        if ($db_name == "exact_bn_sfmp") {
+            $search_row['best_epoch'] = $fitness_row['best_epoch'];
 
-        $search_row['generalizability_error'] = number_format($fitness_row['generalizability_error']);
-        $search_row['generalizability_predictions'] = number_format(100 * $fitness_row['generalizability_predictions'] / 5000, 2) . "%";
+            $search_row['training_error'] = number_format($fitness_row['training_error']);
+            $search_row['training_predictions'] = number_format(100 * $fitness_row['training_predictions'] / 50000, 2) . "%";
+
+            $search_row['best_validation_error'] = number_format($fitness_row['best_validation_error']);
+            $search_row['best_validation_predictions'] = number_format($fitness_row['best_validation_predictions']);
+
+        } else {
+            $search_row['best_error_epoch'] = $fitness_row['best_error_epoch'];
+
+            $search_row['generalizability_error'] = number_format($fitness_row['generalizability_error']);
+            $search_row['generalizability_predictions'] = number_format(100 * $fitness_row['generalizability_predictions'] / 5000, 2) . "%";
+        }
 
         $search_row['test_error'] = number_format($fitness_row['test_error']);
         $search_row['test_predictions'] = number_format(100 * $fitness_row['test_predictions'] / 5000, 2) . "%";
 
-        if ($db_name == "exact_bn_pool") {
+        if ($db_name == "exact_bn_sfmp") {
+        } else if ($db_name == "exact_bn_pool") {
             if ($search_row['best_predictions_genome_id'] != 0) {
                 $fitness_result = query_multi_db($db_name, "SELECT test_predictions, generalizability_predictions FROM cnn_genome WHERE exact_id = " . $search_row['id'] . " AND id = " . $search_row['best_predictions_genome_id']);
                 $fitness_row = $fitness_result->fetch_assoc();
@@ -101,10 +117,17 @@ echo "
      */
     }
 
-    $projects_template = file_get_contents($cwd[__FILE__] . "/templates/search_overview.html");
+    if ($db_name == "exact_bn_sfmp") {
+        $projects_template = file_get_contents($cwd[__FILE__] . "/templates/search_overview_new.html");
 
-    $m = new Mustache_Engine;
-    echo $m->render($projects_template, $search_rows);
+        $m = new Mustache_Engine;
+        echo $m->render($projects_template, $search_rows);
+    } else {
+        $projects_template = file_get_contents($cwd[__FILE__] . "/templates/search_overview.html");
+
+        $m = new Mustache_Engine;
+        echo $m->render($projects_template, $search_rows);
+    }
 
 
     echo "
