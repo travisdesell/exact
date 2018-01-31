@@ -111,13 +111,17 @@ int main(int argc, char** argv) {
     Images validation_images(validation_filename, padding, training_images.get_average(), training_images.get_std_dev());
     Images testing_images(testing_filename, padding, training_images.get_average(), training_images.get_std_dev());
 
+#ifdef _MYSQL_
     if (argument_exists(arguments, "--exact_id")) {
         int exact_id;
         get_argument(arguments, "--exact_id", true, exact_id);
         exact = new EXACT(exact_id);
     } else {
+#endif
         exact = new EXACT(training_images, validation_images, testing_images, padding, population_size, max_epochs, use_sfmp, use_node_operations, max_genomes, output_directory, search_name, reset_edges);
+#ifdef _MYSQL_
     }
+#endif
 
 
     vector<thread> threads;
