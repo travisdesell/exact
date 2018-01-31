@@ -13,8 +13,10 @@ target_link_libraries(test_genome_database_export exact_strategy exact_common ex
 add_executable(test_checkpoint test_checkpoint)
 target_link_libraries(test_checkpoint exact_strategy exact_common exact_image_tools ${MYSQL_LIBRARIES}  ${TIFF_LIBRARIES} pthread)
 
-add_executable(export_genome export_genome)
-target_link_libraries(export_genome exact_strategy exact_common exact_image_tools ${MYSQL_LIBRARIES}  ${TIFF_LIBRARIES} pthread)
+if (MYSQL_FOUND)
+    add_executable(export_genome export_genome)
+    target_link_libraries(export_genome exact_strategy exact_common exact_image_tools ${MYSQL_LIBRARIES}  ${TIFF_LIBRARIES} pthread)
+endif (MYSQL_FOUND)
 
 add_executable(generate_gv generate_gv)
 target_link_libraries(generate_gv exact_strategy exact_common exact_image_tools ${MYSQL_LIBRARIES}  ${TIFF_LIBRARIES} pthread)
