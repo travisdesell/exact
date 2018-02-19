@@ -1,3 +1,7 @@
+#include <iostream>
+using std::cout;
+using std::endl;
+
 #include <limits>
 using std::numeric_limits;
 
@@ -33,7 +37,7 @@ RNN_Genome::RNN_Genome(vector<RNN_Node_Interface*> &_nodes, vector<RNN_Edge*> &_
 
 }
 
-double RNN_Genome::predict(const vector< vector<double> > &series_data, double expected_class) {
+double RNN_Genome::classify(const vector< vector<double> > &series_data, double expected_class) {
     //reset the values and recurrent values in each node to 0
     for (uint32_t i = 0; i < nodes.size(); i++) {
         nodes[i]->full_reset();
@@ -95,6 +99,99 @@ double RNN_Genome::predict(const vector< vector<double> > &series_data, double e
     //return sum / count;
 }
 
+
+double RNN_Genome::predict(const vector< vector<double> > &series_data, const vector<string> &fields) {
+    //reset the values and recurrent values in each node to 0
+    for (uint32_t i = 0; i < nodes.size(); i++) {
+        nodes[i]->full_reset();
+    }
+
+    int count = 0;
+    double output_prediction = 0;
+    double error = 0.0;
+    double mean_squared_error = 0.0;
+
+    for (uint32_t i = 0; i < series_data.size() - 1; i++) {
+        //reset the values in each node to 0
+        for (uint32_t i = 0; i < nodes.size(); i++) {
+            //reset the non-recurrent values
+            nodes[i]->reset();
+        }
+
+        //set the input node values
+        //TODO: check the number of input nodes == the series data width
+        for (uint32_t j = 0; j < input_nodes.size(); j++) {
+            input_nodes[j]->input_value = series_data[i][j];
+            input_nodes[j]->input_fired();
+        }
+
+        //feed forward
+        for (uint32_t j = 0; j < edges.size(); j++) {
+            edges[j]->propagate_forward();
+        }
+
+
+        for (uint32_t j = 0; j < output_nodes.size(); j++) {
+            output_prediction = output_nodes[j]->output_value;
+            error = output_prediction - series_data[i+1][j];
+            mean_squared_error += error * error;
+
+            cout << "step " << i << ", output[" << j << "]: " << output_prediction << ", actual: " << series_data[i+1][j] << ", MSE: " << error * error << endl;
+        }
+
+        count++;
+    }
+
+    return mean_squared_error / count;
+}
+
+double RNN_Genome::test_backprop(const vector< vector<double> > &series_data, const vector<string> &fields) {
+    //reset the values and recurrent values in each node to 0
+    for (uint32_t i = 0; i < nodes.size(); i++) {
+        nodes[i]->full_reset();
+    }
+
+    int count = 0;
+    double output_prediction = 0;
+    double error = 0.0;
+    double mean_squared_error = 0.0;
+
+    for (uint32_t i = 0; i < series_data.size() - 1; i++) {
+        //reset the values in each node to 0
+        for (uint32_t i = 0; i < nodes.size(); i++) {
+            //reset the non-recurrent values
+            nodes[i]->reset();
+        }
+
+        //set the input node values
+        //TODO: check the number of input nodes == the series data width
+        for (uint32_t j = 0; j < input_nodes.size(); j++) {
+            input_nodes[j]->input_value = series_data[i][j];
+            input_nodes[j]->input_fired();
+        }
+
+        //feed forward
+        for (uint32_t j = 0; j < edges.size(); j++) {
+            edges[j]->propagate_forward();
+        }
+
+
+        //TODO: check that the number of output nodes == the number of fields
+        for (uint32_t j = 0; j < output_nodes.size(); j++) {
+            output_prediction = output_nodes[j]->output_value;
+            error = output_prediction - series_data[i+1][j];
+            mean_squared_error += error * error;
+
+            cout << "step " << i << ", output[" << j << "]: " << output_prediction << ", actual: " << series_data[i+1][j] << ", MSE: " << error * error << endl;
+        }
+
+        count++;
+    }
+
+    return mean_squared_error / count;
+}
+
+
 void RNN_Genome::set_weights(const vector<double> &parameters) {
     if (parameters.size() != get_number_weights()) {
         cerr << "ERROR! Trying to set weights where the RNN has " << get_number_weights() << " weights, and the parameters vector has << " << parameters.size() << " weights!" << endl;
@@ -126,3 +223,5 @@ uint32_t RNN_Genome::get_number_weights() {
 
     return number_weights;
 }
+
+

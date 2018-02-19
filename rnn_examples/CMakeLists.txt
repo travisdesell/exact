@@ -1,3 +1,7 @@
+add_executable(one_node_lstm one_node_lstm)
+target_link_libraries(one_node_lstm exalt_strategy exact_common exact_time_series ${MYSQL_LIBRARIES} pthread)
+
+
 find_package(MPI)
 
 IF (MPI_FOUND)

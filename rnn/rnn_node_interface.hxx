@@ -12,6 +12,9 @@ using std::vector;
 
 
 double sigmoid(double value);
+double sigmoid_derivative(double value);
+double tanh_derivative(double value);
+
 void bound_value(double &value);
 void bound_value(double min, double max, double &value);
 

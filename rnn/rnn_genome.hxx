@@ -1,6 +1,9 @@
 #ifndef EXALT_RNN_GENOME_HXX
 #define EXALT_RNN_GENOME_HXX
 
+#include <string>
+using std::string;
+
 #include <vector>
 using std::vector;
 
@@ -15,7 +18,9 @@ class RNN_Genome {
     public:
         RNN_Genome(vector<RNN_Node_Interface*> &_nodes, vector<RNN_Edge*> &_edges);
 
-        double predict(const vector< vector<double> > &series_data, double expected_class);
+        double classify(const vector< vector<double> > &series_data, double expected_class);
+        double predict(const vector< vector<double> > &series_data, const vector<string> &fields);
+        double test_backprop(const vector< vector<double> > &series_data, const vector<string> &fields);
 
         void set_weights(const vector<double> &parameters);
 

@@ -7,6 +7,15 @@ double sigmoid(double value) {
     return 1.0 / (1.0 + exp_value);
 }
 
+double sigmoid_derivative(double input) {
+    return input * (1 - input);
+}
+
+double tanh_derivative(double input) {
+    return 1 - (input * input);
+    //return 1 - (tanh(input) * tanh(input));
+}
+
 void bound_value(double &value) {
     bound_value(-20.0, 20.0, value);
 }

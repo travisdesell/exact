@@ -51,7 +51,7 @@ double objective_function(const vector<double> &parameters) {
 
     double total_error = 0.0;
     for (uint32_t i = 0; i < series_data.size(); i++) {
-        double output = genome->predict(series_data[i], expected_classes[i]);
+        double output = genome->classify(series_data[i], expected_classes[i]);
 
         double error = fabs(expected_classes[i] - output);
 
@@ -67,7 +67,7 @@ double test_objective_function(const vector<double> &parameters) {
 
     double total_error = 0.0;
     for (uint32_t i = 0; i < test_series_data.size(); i++) {
-        double output = genome->predict(test_series_data[i], test_expected_classes[i]);
+        double output = genome->classify(test_series_data[i], test_expected_classes[i]);
 
         double error = fabs(test_expected_classes[i] - output);
 

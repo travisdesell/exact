@@ -28,6 +28,15 @@ class LSTM_Node : public RNN_Node_Interface {
         double forget_gate_bias;
         double cell_bias;
 
+        double ld_output_gate;
+        double ld_input_gate;
+        double ld_forget_gate;
+
+        double cell_in_tanh;
+        double cell_out_tanh;
+        double ld_cell_in;
+        double ld_cell_out;
+
     public:
 
         LSTM_Node(int _innovation_number, int _type);
@@ -44,5 +53,9 @@ class LSTM_Node : public RNN_Node_Interface {
         void print_cell_values();
 
         friend class RNN_Edge;
+
+#ifdef LSTM_TEST
+        friend int main(int argc, char **argv);
+#endif
 };
 #endif
