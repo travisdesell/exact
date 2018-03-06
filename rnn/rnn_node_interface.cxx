@@ -29,7 +29,14 @@ RNN_Node_Interface::RNN_Node_Interface(int _innovation_number, int _type) : inno
     inputs_fired = 0;
     outputs_fired = 0;
     total_inputs = 0;
-    total_outputs = 0;
+
+    //outputs don't have an official output node but
+    //deltas are passed in via the output_fired method
+    if (type == RNN_OUTPUT_NODE) {
+        total_outputs = 1;
+    } else {
+        total_outputs = 0;
+    }
 }
 
 int RNN_Node_Interface::get_type() {

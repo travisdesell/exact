@@ -6,6 +6,8 @@
 #include <vector>
 using std::vector;
 
+#include "rnn_genome.hxx"
+
 #define RNN_INPUT_NODE 0
 #define RNN_HIDDEN_NODE 1
 #define RNN_OUTPUT_NODE 2
@@ -23,8 +25,12 @@ class RNN_Node_Interface {
         int innovation_number;
         int type;
 
-        double input_value;
-        double output_value;
+        int series_length;
+
+        vector<double> input_values;
+        vector<double> output_values;
+        vector<double> error_values;
+        vector<double> d_input;
 
         int inputs_fired;
         int outputs_fired;
@@ -33,20 +39,29 @@ class RNN_Node_Interface {
     public:
         RNN_Node_Interface(int _innovation_number, int _type);
 
-        virtual void input_fired() = 0;
-        virtual void output_fired() = 0;
+        virtual void input_fired(const vector<double> &incoming_outputs) = 0;
+        virtual void output_fired(const vector<double> &deltas) = 0;
+        virtual void output_fired(double error) = 0;
 
         virtual uint32_t get_number_weights() = 0;
 
+        virtual void get_weights(uint32_t &offset, vector<double> &parameters) = 0;
         virtual void set_weights(uint32_t &offset, const vector<double> &parameters) = 0;
-        virtual void reset() = 0;
-        virtual void full_reset() = 0;
+        virtual void reset(int _series_length) = 0;
+
+        virtual void get_gradients(vector<double> &gradients) = 0;
+
+        virtual RNN_Node_Interface* copy() = 0;
 
         int get_type();
         int get_innovation_number();
 
-    friend class RNN_Edge;
-    friend class RNN_Genome;
+        friend class RNN_Edge;
+        friend class RNN_Genome;
+
+        friend void get_mse(RNN_Genome* genome, const vector< vector<double> > &expected, double &mse, vector< vector<double> > &deltas);
+        friend void get_mae(RNN_Genome* genome, const vector< vector<double> > &expected, double &mae, vector< vector<double> > &deltas);
+
 };
 
 

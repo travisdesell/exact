@@ -303,26 +303,51 @@ void normalize_time_series_sets(vector<TimeSeriesSet*> time_series) {
     }
 }
 
-void TimeSeriesSet::export_time_series(vector< vector<double> > &data) {
+/**
+ *  Time offset < 0 generates input data. Do not use the last <time_offset> values
+ *  Time offset > 0 generates output data. Do not use the first <time_offset> values
+ */
+void TimeSeriesSet::export_time_series(vector< vector<double> > &data, const vector<string> &requested_fields, int32_t time_offset) {
+    cout << "clearing data" << endl;
     data.clear();
-    data.resize(number_rows, vector<double>(fields.size(), 0.0));
+    cout << "resizing to " << requested_fields.size() << " by " << number_rows - fabs(time_offset) << endl;
 
-    for (int i = 0; i < number_rows; i++) {
-        for (auto j = 0; j != fields.size(); j++) {
-            data[i][j] = time_series[ fields[j] ]->get_value(i);
+    data.resize(requested_fields.size(), vector<double>(number_rows - fabs(time_offset), 0.0));
+
+    cout << "resized! time_offset = " << time_offset << endl;
+
+    if (time_offset == 0) {
+        for (int i = 0; i != requested_fields.size(); i++) {
+            for (int j = 0; j < number_rows; j++) {
+                data[i][j] = time_series[ requested_fields[i] ]->get_value(j);
+            }
         }
+
+    } else if (time_offset < 0) {
+        //input data, ignore the last N values
+        for (int i = 0; i != requested_fields.size(); i++) {
+            for (int j = 0; j < number_rows + time_offset; j++) {
+                data[i][j] = time_series[ requested_fields[i] ]->get_value(j);
+            }
+        }
+
+    } else if (time_offset > 0) {
+        //output data, ignore the first N values
+        for (int i = 0; i != requested_fields.size(); i++) {
+            for (int j = time_offset; j < number_rows; j++) {
+                data[i][j - time_offset] = time_series[ requested_fields[i] ]->get_value(j);
+            }
+        }
+
     }
 }
 
-void TimeSeriesSet::export_time_series(const vector<string> &requested_fields, vector< vector<double> > &data) {
-    data.clear();
-    data.resize(number_rows, vector<double>(fields.size(), 0.0));
+void TimeSeriesSet::export_time_series(vector< vector<double> > &data, const vector<string> &requested_fields) {
+    export_time_series(data, requested_fields, 0);
+}
 
-    for (int i = 0; i < number_rows; i++) {
-        for (int j = 0; j < requested_fields.size(); j++) {
-            data[i][j] = time_series[ requested_fields[j] ]->get_value(i);
-        }
-    }
+void TimeSeriesSet::export_time_series(vector< vector<double> > &data) {
+    export_time_series(data, fields, 0);
 }
 
 

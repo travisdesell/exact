@@ -8,7 +8,11 @@ class RNN_Edge {
     private:
         int innovation_number;
 
+        vector<double> outputs;
+        vector<double> deltas;
+
         double weight;
+        double d_weight;
 
         int input_innovation_number;
         int output_innovation_number;
@@ -19,9 +23,16 @@ class RNN_Edge {
     public:
         RNN_Edge(int _innovation_number, RNN_Node_Interface *_input_node, RNN_Node_Interface *_output_node);
 
-        void propagate_forward();
+        RNN_Edge(int _innovation_number, int _input_innovation_number, int _output_innovation_number, const vector<RNN_Node_Interface*> &nodes);
 
-    friend class RNN_Genome;
+        void propagate_forward();
+        void propagate_backward();
+
+        double get_gradient();
+
+        RNN_Edge* copy(const vector<RNN_Node_Interface*> new_nodes);
+
+        friend class RNN_Genome;
 };
 
 #endif

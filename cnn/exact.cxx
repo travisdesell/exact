@@ -2495,7 +2495,7 @@ CNN_Genome* EXACT::create_child() {
     cout << "\tCREATING CHILD THROUGH CROSSOVER!" << endl;
     int r1 = rng_float(generator) * genomes.size();
     int r2 = rng_float(generator) * (genomes.size() - 1);
-    if (r1 == r2) r2++;
+    if (r1 >= r2) r2++;
 
     //parent should have higher fitness
     if (r2 < r1) {

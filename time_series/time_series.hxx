@@ -80,7 +80,8 @@ class TimeSeriesSet {
         void normalize_min_max(string field, double min, double max);
 
         void export_time_series(vector< vector<double> > &data);
-        void export_time_series(const vector<string> &requested_fields, vector< vector<double> > &data);
+        void export_time_series(vector< vector<double> > &data, const vector<string> &requested_fields);
+        void export_time_series(vector< vector<double> > &data, const vector<string> &requested_fields, int32_t time_offset);
 
         double get_expected_class() const;
 };

@@ -28,6 +28,7 @@ using std::vector;
 #include "rnn/rnn_genome.hxx"
 #include "rnn/rnn_node.hxx"
 #include "rnn/rnn_node_interface.hxx"
+#include "rnn/bptt.hxx"
 
 #include "time_series/time_series.hxx"
 
@@ -39,40 +40,35 @@ using std::vector;
 #include "asynchronous_algorithms/differential_evolution.hxx"
 
 
-vector< vector< vector<double> > > series_data;
-vector< vector< vector<double> > > test_series_data;
-vector<double> expected_classes;
-vector<double> test_expected_classes;
+vector< vector< vector<double> > > training_inputs;
+vector< vector< vector<double> > > training_outputs;
+vector< vector< vector<double> > > test_inputs;
+vector< vector< vector<double> > > test_outputs;
 
 RNN_Genome *genome;
 
 double objective_function(const vector<double> &parameters) {
     genome->set_weights(parameters);
 
-    double total_error = 0.0;
-    for (uint32_t i = 0; i < series_data.size(); i++) {
-        double output = genome->classify(series_data[i], expected_classes[i]);
+    double error = 0.0;
 
-        double error = fabs(expected_classes[i] - output);
-
-        //cout << "output for series[" << i << "]: " << output << ", expected_class: " << expected_classes[i] << ", error: " << error << endl;
-        total_error += error;
+    for (uint32_t i = 0; i < training_inputs.size(); i++) {
+        error += genome->prediction_mae(training_inputs[i], training_outputs[i]);
     }
 
-    return -total_error;
+    return -error;
 }
 
 double test_objective_function(const vector<double> &parameters) {
     genome->set_weights(parameters);
 
     double total_error = 0.0;
-    for (uint32_t i = 0; i < test_series_data.size(); i++) {
-        double output = genome->classify(test_series_data[i], test_expected_classes[i]);
 
-        double error = fabs(test_expected_classes[i] - output);
-
-        cout << "output for series[" << i << "]: " << output << ", expected_class: " << test_expected_classes[i] << ", error: " << error << endl;
+    for (uint32_t i = 0; i < test_inputs.size(); i++) {
+        double error = genome->prediction_mse(test_inputs[i], test_outputs[i]);
         total_error += error;
+
+        cout << "output for series[" << i << "]: " << error << endl;
     }
 
     return -total_error;
@@ -88,73 +84,98 @@ int main(int argc, char **argv) {
 
     vector<string> arguments = vector<string>(argv, argv + argc);
 
-    vector<string> before_filenames;
-    get_argument_vector(arguments, "--before_filenames", true, before_filenames);
+    vector<string> training_filenames;
+    get_argument_vector(arguments, "--training_filenames", true, training_filenames);
 
-    vector<string> after_filenames;
-    get_argument_vector(arguments, "--after_filenames", true, after_filenames);
+    vector<string> test_filenames;
+    get_argument_vector(arguments, "--test_filenames", true, test_filenames);
 
     vector<TimeSeriesSet*> all_time_series;
 
-    int before_rows = 0;
-    vector<TimeSeriesSet*> before_time_series;
-    if (rank == 0) cout << "got before time series filenames:" << endl;
-    for (uint32_t i = 0; i < before_filenames.size(); i++) {
-        if (rank == 0) cout << "\t" << before_filenames[i] << endl;
+    int training_rows = 0;
+    vector<TimeSeriesSet*> training_time_series;
+    if (rank == 0) cout << "got training time series filenames:" << endl;
+    for (uint32_t i = 0; i < training_filenames.size(); i++) {
+        if (rank == 0) cout << "\t" << training_filenames[i] << endl;
 
-        TimeSeriesSet *ts = new TimeSeriesSet(before_filenames[i], 1.0);
-        before_time_series.push_back( ts );
+        TimeSeriesSet *ts = new TimeSeriesSet(training_filenames[i], 1.0);
+        training_time_series.push_back( ts );
         all_time_series.push_back( ts );
 
         //if (rank == 0) cout << "\t\trows: " << ts->get_number_rows() << endl;
-        before_rows += ts->get_number_rows();
+        training_rows += ts->get_number_rows();
     }
-    if (rank == 0) cout << "number before files: " << before_filenames.size() << ", total rows for before flights: " << before_rows << endl;
+    if (rank == 0) cout << "number training files: " << training_filenames.size() << ", total rows for training flights: " << training_rows << endl;
 
-    int after_rows = 0;
-    vector<TimeSeriesSet*> after_time_series;
-    if (rank == 0) cout << "got after time series filenames:" << endl;
-    for (uint32_t i = 0; i < after_filenames.size(); i++) {
-        if (rank == 0) cout << "\t" << after_filenames[i] << endl;
+    int test_rows = 0;
+    vector<TimeSeriesSet*> test_time_series;
+    if (rank == 0) cout << "got test time series filenames:" << endl;
+    for (uint32_t i = 0; i < test_filenames.size(); i++) {
+        if (rank == 0) cout << "\t" << test_filenames[i] << endl;
 
-        TimeSeriesSet *ts = new TimeSeriesSet(after_filenames[i], -1.0);
-        after_time_series.push_back( ts );
+        TimeSeriesSet *ts = new TimeSeriesSet(test_filenames[i], -1.0);
+        test_time_series.push_back( ts );
         all_time_series.push_back( ts );
 
         //if (rank == 0) cout << "\t\trows: " << ts->get_number_rows() << endl;
-        after_rows += ts->get_number_rows();
+        test_rows += ts->get_number_rows();
     }
-    if (rank == 0) cout << "number after files: " << after_filenames.size() << ", total rows for after flights: " << after_rows << endl;
+    if (rank == 0) cout << "number test files: " << test_filenames.size() << ", total rows for test flights: " << test_rows << endl;
 
     normalize_time_series_sets(all_time_series);
 
-    series_data.clear();
-    series_data.resize(all_time_series.size());
-    expected_classes.clear();
-    expected_classes.resize(all_time_series.size());
-    for (uint32_t i = 0; i < all_time_series.size(); i++) {
-        all_time_series[i]->export_time_series(series_data[i]);
-        expected_classes[i] = all_time_series[i]->get_expected_class();
-    }
+    if (rank == 0) cout << "normalized all time series" << endl;
 
+    vector<string> input_parameter_names;
+    input_parameter_names.push_back("indicated_airspeed");
+    input_parameter_names.push_back("msl_altitude");
+    input_parameter_names.push_back("eng_1_rpm");
+    input_parameter_names.push_back("eng_1_fuel_flow");
+    input_parameter_names.push_back("eng_1_oil_press");
+    input_parameter_names.push_back("eng_1_oil_temp");
+    input_parameter_names.push_back("eng_1_cht_1");
+    input_parameter_names.push_back("eng_1_cht_2");
+    input_parameter_names.push_back("eng_1_cht_3");
+    input_parameter_names.push_back("eng_1_cht_4");
+    input_parameter_names.push_back("eng_1_egt_1");
+    input_parameter_names.push_back("eng_1_egt_2");
+    input_parameter_names.push_back("eng_1_egt_3");
+    input_parameter_names.push_back("eng_1_egt_4");
 
+    vector<string> output_parameter_names;
+    output_parameter_names.push_back("indicated_airspeed");
     /*
-    for (uint32_t i = 0; i < series_data.size(); i++) {
-        for (uint32_t j = 0; j < series_data[i].size(); j++) {
-            for (uint32_t k = 0; k < series_data[i][j].size(); k++) {
-                cout << " " << series_data[i][j][k];
-            }
-            cout << endl;
-        }
-        cout << endl << endl;
-    }
+    output_parameter_names.push_back("msl_altitude");
+    output_parameter_names.push_back("eng_1_rpm");
+    output_parameter_names.push_back("eng_1_fuel_flow");
+    output_parameter_names.push_back("eng_1_oil_press");
+    output_parameter_names.push_back("eng_1_oil_temp");
+    output_parameter_names.push_back("eng_1_cht_1");
+    output_parameter_names.push_back("eng_1_cht_2");
+    output_parameter_names.push_back("eng_1_cht_3");
+    output_parameter_names.push_back("eng_1_cht_4");
+    output_parameter_names.push_back("eng_1_egt_1");
+    output_parameter_names.push_back("eng_1_egt_2");
+    output_parameter_names.push_back("eng_1_egt_3");
+    output_parameter_names.push_back("eng_1_egt_4");
     */
 
-    /*
-    for (uint32_t i = 0; i < expected_classes.size(); i++) {
-        cout << "expected_classes[" << i << "]: " << expected_classes[i] << endl;
+    int32_t time_offset = 1;
+
+    training_inputs.resize(training_time_series.size());
+    training_outputs.resize(training_time_series.size());
+    for (uint32_t i = 0; i < training_time_series.size(); i++) {
+        training_time_series[i]->export_time_series(training_inputs[i], input_parameter_names, -time_offset);
+        training_time_series[i]->export_time_series(training_outputs[i], output_parameter_names, time_offset);
     }
-    */
+
+    test_inputs.resize(test_time_series.size());
+    test_outputs.resize(test_time_series.size());
+    for (uint32_t i = 0; i < test_time_series.size(); i++) {
+        test_time_series[i]->export_time_series(test_inputs[i], input_parameter_names, -time_offset);
+        test_time_series[i]->export_time_series(test_outputs[i], output_parameter_names, time_offset);
+    }
+
 
     vector<RNN_Node_Interface*> rnn_nodes;
     vector<RNN_Node_Interface*> layer1_nodes;
@@ -162,9 +183,11 @@ int main(int argc, char **argv) {
     vector<RNN_Node_Interface*> layer3_nodes;
     vector<RNN_Edge*> rnn_edges;
 
-    int number_columns = all_time_series[0]->get_number_columns();
+    int number_columns = training_inputs[0].size();
     int node_innovation_count = 0;
     int edge_innovation_count = 0;
+
+    cout << "number_columns: " << number_columns << endl;
 
     for (int32_t i = 0; i < number_columns; i++) {
         RNN_Node *node = new RNN_Node(++node_innovation_count, RNN_INPUT_NODE);
@@ -192,7 +215,6 @@ int main(int argc, char **argv) {
         }
     }
 
-
     LSTM_Node *output_node = new LSTM_Node(++node_innovation_count, RNN_OUTPUT_NODE);
     rnn_nodes.push_back(output_node);
     for (int32_t i = 0; i < number_columns; i++) {
@@ -203,124 +225,146 @@ int main(int argc, char **argv) {
 
     uint32_t number_of_weights = genome->get_number_weights();
 
-    vector<double> min_bound(number_of_weights, -5.0); 
-    vector<double> max_bound(number_of_weights, 5.0); 
-
-    cout << "Input data has " << number_columns << " columns." << endl;
     cout << "RNN has " << number_of_weights << " weights." << endl;
+    vector<double> min_bound(number_of_weights, -1.0); 
+    vector<double> max_bound(number_of_weights, 1.0); 
 
-    vector<double> test_parameters(number_of_weights, 0.0);
-
-    unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
-    minstd_rand0 generator(seed);
-    for (uint32_t i = 0; i < test_parameters.size(); i++) {
-        uniform_real_distribution<double> rng(min_bound[i], max_bound[i]);
-        test_parameters[i] = rng(generator);
-
-        //cout << "test_parameters[" << i << "]: " << test_parameters[i] << endl;
-    }
-
-    //double error = objective_function(test_parameters);
-
-    //cout << "error was: " << error << endl;
 
     string search_type;
     get_argument(arguments, "--search_type", true, search_type);
-    if (search_type.compare("test") == 0) {
-        string rnn_parameter_filename;
-        get_argument(arguments, "--rnn_parameter_file", true, rnn_parameter_filename);
 
-        vector<double> parameters;
+    if (search_type.compare("bp") == 0) {
+        int max_iterations;
+        get_argument(arguments, "--max_iterations", true, max_iterations);
 
-        ifstream parameter_file(rnn_parameter_filename);
-        string parameter;
-        while (getline(parameter_file, parameter, ',')) {
-                cout << "got parameter: " << parameter << endl;
-                parameters.push_back(stod(parameter));
+        genome->initialize_randomly();
+
+        double learning_rate = 0.010;
+        bool nesterov_momentum = true;
+        bool adapt_learning_rate = false;
+        bool reset_weights = true;
+        bool use_high_norm = true;
+        bool use_low_norm = true;
+
+        string log_filename = "rnn_log.csv";
+
+        backpropagate(genome, training_inputs, training_outputs, max_iterations, learning_rate, nesterov_momentum, adapt_learning_rate, reset_weights, use_high_norm, use_low_norm, log_filename);
+
+        double mse, mae;
+
+        for (uint32_t i = 0; i < training_inputs.size(); i++) {
+            mse = genome->prediction_mse(training_inputs[i], training_outputs[i]);
+            mae = genome->prediction_mae(training_inputs[i], training_outputs[i]);
+
+            cout << "series[" << i << "] training MSE:  " << mse << endl;
+            cout << "series[" << i << "] training MAE: " << mae << endl;
         }
 
-        double error = objective_function(parameters);
-        cout << "total_error: " << error << endl;
+        for (uint32_t i = 0; i < test_inputs.size(); i++) {
+            mse = genome->prediction_mse(test_inputs[i], test_outputs[i]);
+            mae = genome->prediction_mae(test_inputs[i], test_outputs[i]);
 
-        cout << "loading test time series." << endl;
-
-        vector<string> before_test_filenames;
-        get_argument_vector(arguments, "--before_test_filenames", true, before_test_filenames);
-
-        vector<string> after_test_filenames;
-        get_argument_vector(arguments, "--after_test_filenames", true, after_test_filenames);
-
-
-        vector<TimeSeriesSet*> all_test_time_series;
-
-        int before_rows = 0;
-        vector<TimeSeriesSet*> before_test_time_series;
-        if (rank == 0) cout << "got before time series filenames:" << endl;
-        for (uint32_t i = 0; i < before_test_filenames.size(); i++) {
-            if (rank == 0) cout << "\t" << before_test_filenames[i] << endl;
-
-            TimeSeriesSet *ts = new TimeSeriesSet(before_test_filenames[i], 1.0);
-            before_test_time_series.push_back( ts );
-            all_test_time_series.push_back( ts );
-
-            //if (rank == 0) cout << "\t\trows: " << ts->get_number_rows() << endl;
-            before_rows += ts->get_number_rows();
+            cout << "series[" << i << "] test MSE:      " << mse << endl;
+            cout << "series[" << i << "] test MAE:     " << mae << endl;
         }
-        if (rank == 0) cout << "number before test files: " << before_test_filenames.size() << ", total rows for before test flights: " << before_rows << endl;
-
-        int after_rows = 0;
-        vector<TimeSeriesSet*> after_test_time_series;
-        if (rank == 0) cout << "got after time series filenames:" << endl;
-        for (uint32_t i = 0; i < after_test_filenames.size(); i++) {
-            if (rank == 0) cout << "\t" << after_test_filenames[i] << endl;
-
-            TimeSeriesSet *ts = new TimeSeriesSet(after_test_filenames[i], -1.0);
-            after_test_time_series.push_back( ts );
-            all_test_time_series.push_back( ts );
-
-            //if (rank == 0) cout << "\t\trows: " << ts->get_number_rows() << endl;
-            after_rows += ts->get_number_rows();
-        }
-        if (rank == 0) cout << "number after test files: " << after_test_filenames.size() << ", total rows for after test flights: " << after_rows << endl;
-
-        normalize_time_series_sets(all_test_time_series);
-
-        test_series_data.clear();
-        test_series_data.resize(all_test_time_series.size());
-        test_expected_classes.clear();
-        test_expected_classes.resize(all_test_time_series.size());
-        for (uint32_t i = 0; i < all_test_time_series.size(); i++) {
-            all_test_time_series[i]->export_time_series(test_series_data[i]);
-            test_expected_classes[i] = all_test_time_series[i]->get_expected_class();
-        }
-
-        double test_error = test_objective_function(parameters);
-        cout << "total_test_error: " << test_error << endl;
-
 
     } else if (search_type.compare("ps") == 0) {
         ParticleSwarm ps(min_bound, max_bound, arguments);
         ps.iterate(objective_function);
 
+        vector<double> parameters = ps.get_global_best();
+        genome->set_weights(parameters);
+
+        double mse, mae;
+
+        mse = genome->prediction_mse(training_inputs[0], training_outputs[0]);
+        mae = genome->prediction_mae(training_inputs[0], training_outputs[0]);
+
+        cout << "Training Mean Squared error:  " << mse << endl;
+        cout << "Training Mean Absolute error: " << mae << endl;
+
+        mse = genome->prediction_mse(test_inputs[0], test_outputs[0]);
+        mae = genome->prediction_mae(test_inputs[0], test_outputs[0]);
+
+        cout << "Test Mean Squared error:      " << mse << endl;
+        cout << "Test Mean Absolute error:     " << mae << endl;
+
+
     } else if (search_type.compare("de") == 0) {
         DifferentialEvolution de(min_bound, max_bound, arguments);
         de.iterate(objective_function);
+
+        vector<double> parameters = de.get_global_best();
+        genome->set_weights(parameters);
+
+        double mse, mae;
+
+        mse = genome->prediction_mse(training_inputs[0], training_outputs[0]);
+        mae = genome->prediction_mae(training_inputs[0], training_outputs[0]);
+
+        cout << "Training Mean Squared error:  " << mse << endl;
+        cout << "Training Mean Absolute error: " << mae << endl;
+
+        mse = genome->prediction_mse(test_inputs[0], test_outputs[0]);
+        mae = genome->prediction_mae(test_inputs[0], test_outputs[0]);
+
+        cout << "Test Mean Squared error:      " << mse << endl;
+        cout << "Test Mean Absolute error:     " << mae << endl;
+
 
     } else if (search_type.compare("ps_mpi") == 0) {
         ParticleSwarmMPI ps(min_bound, max_bound, arguments);
         ps.go(objective_function);
 
+        vector<double> parameters = ps.get_global_best();
+        genome->set_weights(parameters);
+
+        double mse, mae;
+
+        mse = genome->prediction_mse(training_inputs[0], training_outputs[0]);
+        mae = genome->prediction_mae(training_inputs[0], training_outputs[0]);
+
+        cout << "Training Mean Squared error:  " << mse << endl;
+        cout << "Training Mean Absolute error: " << mae << endl;
+
+        mse = genome->prediction_mse(test_inputs[0], test_outputs[0]);
+        mae = genome->prediction_mae(test_inputs[0], test_outputs[0]);
+
+        cout << "Test Mean Squared error:      " << mse << endl;
+        cout << "Test Mean Absolute error:     " << mae << endl;
+
+
     } else if (search_type.compare("de_mpi") == 0) {
         DifferentialEvolutionMPI de(min_bound, max_bound, arguments);
         de.go(objective_function);
 
+        vector<double> parameters = de.get_global_best();
+        genome->set_weights(parameters);
+
+        double mse, mae;
+
+        mse = genome->prediction_mse(training_inputs[0], training_outputs[0]);
+        mae = genome->prediction_mae(training_inputs[0], training_outputs[0]);
+
+        cout << "Training Mean Squared error:  " << mse << endl;
+        cout << "Training Mean Absolute error: " << mae << endl;
+
+        mse = genome->prediction_mse(test_inputs[0], test_outputs[0]);
+        mae = genome->prediction_mae(test_inputs[0], test_outputs[0]);
+
+        cout << "Test Mean Squared error:      " << mse << endl;
+        cout << "Test Mean Absolute error:     " << mae << endl;
+
+
     } else {
         cerr << "Improperly specified search type: '" << search_type.c_str() <<"'" << endl;
         cerr << "Possibilities are:" << endl;
-        cerr << "    de     -       differential evolution" << endl;
-        cerr << "    ps     -       particle swarm optimization" << endl;
-        cerr << "    de_mpi -       MPI parallel differential evolution" << endl;
-        cerr << "    ps_mpi -       MPI parallel particle swarm optimization" << endl;
+        cerr << "    bp             -       backpropagation" << endl;
+        cerr << "    bp_empirical   -       empirical backpropagation" << endl;
+        cerr << "    de             -       differential evolution" << endl;
+        cerr << "    ps             -       particle swarm optimization" << endl;
+        cerr << "    de_mpi         -       MPI parallel differential evolution" << endl;
+        cerr << "    ps_mpi         -       MPI parallel particle swarm optimization" << endl;
         exit(1);
     }
 }
