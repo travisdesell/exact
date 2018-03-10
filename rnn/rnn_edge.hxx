@@ -25,8 +25,10 @@ class RNN_Edge {
 
         RNN_Edge(int _innovation_number, int _input_innovation_number, int _output_innovation_number, const vector<RNN_Node_Interface*> &nodes);
 
-        void propagate_forward();
-        void propagate_backward();
+        void reset(int series_length);
+
+        void propagate_forward(int time);
+        void propagate_backward(int time);
 
         double get_gradient();
 

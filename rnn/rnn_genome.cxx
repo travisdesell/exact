@@ -112,6 +112,7 @@ uint32_t RNN_Genome::get_number_weights() {
 }
 
 void RNN_Genome::forward_pass(const vector< vector<double> > &series_data) {
+    series_length = series_data[0].size();
 
     if (input_nodes.size() != series_data.size()) {
         cerr << "ERROR: number of input nodes (" << input_nodes.size() << ") != number of time series data input fields (" << series_data.size() << ")" << endl;
@@ -121,18 +122,51 @@ void RNN_Genome::forward_pass(const vector< vector<double> > &series_data) {
     //TODO: want to check that all vectors in series_data are of same length
 
     for (uint32_t i = 0; i < nodes.size(); i++) {
-        nodes[i]->reset(series_data[0].size());
+        nodes[i]->reset(series_length);
     }
 
-    for (uint32_t i = 0; i < input_nodes.size(); i++) {
-        input_nodes[i]->input_fired(series_data[i]);
-    }
-
-    //feed forward
     for (uint32_t i = 0; i < edges.size(); i++) {
-        edges[i]->propagate_forward();
+        edges[i]->reset(series_length);
+    }
+
+    /*
+    for (uint32_t i = 0; i < recurrent_edges.size(); i++) {
+        recurrent_edges[i]->reset(series_data[0].size());
+    }
+    */
+
+
+    for (int32_t time = 0; time < series_length; time++) {
+        for (uint32_t i = 0; i < input_nodes.size(); i++) {
+            input_nodes[i]->input_fired(time, series_data[i][time]);
+        }
+
+        //feed forward
+        for (uint32_t i = 0; i < edges.size(); i++) {
+            edges[i]->propagate_forward(time);
+        }
+
+        /*
+        for (uint32_t i = 0; i < edges.size(); i++) {
+            recurrent_edges[i]->propagate_forward(time);
+        }
+        */
     }
 }
+
+void RNN_Genome::backward_pass(double error) {
+    for (int32_t time = series_length - 1; time >= 0; time--) {
+
+        for (uint32_t i = 0; i < output_nodes.size(); i++) {
+            output_nodes[i]->error_fired(time, error);
+        }
+
+        for (int32_t i = (int32_t)edges.size() - 1; i >= 0; i--) {
+            edges[i]->propagate_backward(time);
+        }
+    }
+}
+
 
 double RNN_Genome::calculate_error_mse(const vector< vector<double> > &expected_outputs) {
     double mse_sum = 0.0;
@@ -163,24 +197,21 @@ double RNN_Genome::calculate_error_mae(const vector< vector<double> > &expected_
         mae = 0.0;
         for (uint32_t j = 0; j < expected_outputs[i].size(); j++) {
             error = fabs(output_nodes[i]->output_values[j] - expected_outputs[i][j]);
-            output_nodes[i]->error_values[j] = error;
+
             mae += error;
+
+            if (error == 0) {
+                error = 0;
+            } else {
+                error = (output_nodes[i]->output_values[j] - expected_outputs[i][j]) / error;
+            }
+            output_nodes[i]->error_values[j] = error;
+
         }
         mae_sum += mae / expected_outputs[i].size();
     }
 
     return mae_sum;
-}
-
-
-void RNN_Genome::backward_pass(double error) {
-    for (uint32_t i = 0; i < output_nodes.size(); i++) {
-        output_nodes[i]->output_fired(error);
-    }
-
-    for (int32_t i = (int32_t)edges.size() - 1; i >= 0; i--) {
-        edges[i]->propagate_backward();
-    }
 }
 
 double RNN_Genome::prediction_mse(const vector< vector<double> > &series_data, const vector< vector<double> > &expected_outputs) {

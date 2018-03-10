@@ -26,8 +26,6 @@ void bound_value(double min, double max, double &value) {
 }
 
 RNN_Node_Interface::RNN_Node_Interface(int _innovation_number, int _type) : innovation_number(_innovation_number), type(_type) {
-    inputs_fired = 0;
-    outputs_fired = 0;
     total_inputs = 0;
 
     //outputs don't have an official output node but

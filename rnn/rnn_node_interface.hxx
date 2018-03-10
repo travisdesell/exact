@@ -32,16 +32,16 @@ class RNN_Node_Interface {
         vector<double> error_values;
         vector<double> d_input;
 
-        int inputs_fired;
-        int outputs_fired;
+        vector<int> inputs_fired;
+        vector<int> outputs_fired;
         int total_inputs;
         int total_outputs;
     public:
         RNN_Node_Interface(int _innovation_number, int _type);
 
-        virtual void input_fired(const vector<double> &incoming_outputs) = 0;
-        virtual void output_fired(const vector<double> &deltas) = 0;
-        virtual void output_fired(double error) = 0;
+        virtual void input_fired(int time, double incoming_output) = 0;
+        virtual void output_fired(int time, double delta) = 0;
+        virtual void error_fired(int time, double error) = 0;
 
         virtual uint32_t get_number_weights() = 0;
 

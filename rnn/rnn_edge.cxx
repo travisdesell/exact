@@ -48,17 +48,13 @@ RNN_Edge::RNN_Edge(int _innovation_number, int _input_innovation_number, int _ou
 
 
 
-void RNN_Edge::propagate_forward() {
-    outputs.resize(input_node->series_length, 0.0);
-
-    for (uint32_t i = 0; i < outputs.size(); i++) {
-        outputs[i] = input_node->output_values[i] * weight;
-    }
-
-    output_node->input_fired(outputs);
+void RNN_Edge::propagate_forward(int time) {
+    double output = input_node->output_values[time] * weight;
+    outputs[time] = output;
+    output_node->input_fired(time, output);
 }
 
-void RNN_Edge::propagate_backward() {
+void RNN_Edge::propagate_backward(int time) {
     /*
     cout << "edge " << innovation_number << " propagating backwards, input_node->series_length: " << input_node->series_length << endl;
     cout << "input_innovation_number: " << input_innovation_number << endl;
@@ -67,17 +63,17 @@ void RNN_Edge::propagate_backward() {
     cout << "output_node->d_input.size(): " << output_node->d_input.size() << endl;
     */
 
-    deltas.resize(input_node->series_length, 0.0);
+    double delta = output_node->d_input[time];
 
+    d_weight += delta * input_node->output_values[time];
+    deltas[time] = delta * weight;
+    input_node->output_fired(time, deltas[time]);
+}
+
+void RNN_Edge::reset(int series_length) {
     d_weight = 0.0;
-    double delta;
-    for (uint32_t i = 0; i < deltas.size(); i++) {
-        delta = output_node->d_input[i];
-
-        d_weight += delta * input_node->output_values[i];
-        deltas[i] = delta * weight;
-    }
-    input_node->output_fired(deltas);
+    outputs.resize(series_length);
+    deltas.resize(series_length);
 }
 
 double RNN_Edge::get_gradient() {

@@ -17,13 +17,13 @@ class RNN_Node : public RNN_Node_Interface {
 
         RNN_Node(int _innovation_number, int _type);
 
-        void input_fired(const vector<double> &incoming_outputs);
+        void input_fired(int time, double incoming_output);
 
-        void try_update_deltas();
-        void output_fired(const vector<double> &deltas);
-        void output_fired(double error);
+        void try_update_deltas(int time);
+        void output_fired(int time, double delta);
+        void error_fired(int time, double error);
+
         uint32_t get_number_weights();
-
         void get_weights(uint32_t &offset, vector<double> &parameters);
         void set_weights(uint32_t &offset, const vector<double> &parameters);
 

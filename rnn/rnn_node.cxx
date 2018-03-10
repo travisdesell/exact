@@ -16,78 +16,60 @@ RNN_Node::RNN_Node(int _innovation_number, int _type) : RNN_Node_Interface(_inno
     }
 }
 
-void RNN_Node::input_fired(const vector<double> &incoming_outputs) {
-    inputs_fired++;
+void RNN_Node::input_fired(int time, double incoming_output) {
+    inputs_fired[time]++;
 
-    for (uint32_t i = 0; i < input_values.size(); i++) {
-        input_values[i] += incoming_outputs[i];
-    }
+    input_values[time] += incoming_output;
 
-    if (inputs_fired < total_inputs) return;
-    else if (inputs_fired > total_inputs) {
-        cerr << "ERROR: inputs_fired on RNN_Node " << innovation_number << " is " << inputs_fired << " and total_inputs is " << total_inputs << endl;
+    if (inputs_fired[time] < total_inputs) return;
+    else if (inputs_fired[time] > total_inputs) {
+        cerr << "ERROR: inputs_fired on RNN_Node " << innovation_number << " at time " << time << " is " << inputs_fired[time] << " and total_inputs is " << total_inputs << endl;
         exit(1);
     }
 
-    //bound_value(input_value);
-    //cerr << "activating RNN node: " << innovation_number << ", type: " << type << endl;
 
-    for (uint32_t i = 0; i < input_values.size(); i++) {
-        //output_values[i] = input_values[i] + bias;
-        //ld_output[i] = 1.0;
+    output_values[time] = tanh(input_values[time] + bias);
+    ld_output[time] = tanh_derivative(output_values[time]);
 
-        output_values[i] = tanh(input_values[i] + bias);
-        ld_output[i] = tanh_derivative(output_values[i]);
-
-        //output_values[i] = sigmoid(input_values[i] + bias);
-        //ld_output[i] = sigmoid_derivative(output_values[i]);
+    //output_values[time] = sigmoid(input_values[time] + bias);
+    //ld_output[time] = sigmoid_derivative(output_values[time]);
 
 #ifdef NAN_CHECKS
-        if (isnan(output_values[i]) || isinf(output_values[i])) {
-            cerr << "ERROR: output_value[" << i << "] became " << output_values[i] << " on RNN node: " << innovation_number << endl;
-            cerr << "\tinput_value[" << i << "]: " << input_values[i] << endl;
-            cerr << "\tnode bias: " << bias << endl;
-            exit(1);
-        }
-#endif
+    if (isnan(output_values[time]) || isinf(output_values[time])) {
+        cerr << "ERROR: output_value[" << time << "] became " << output_values[time] << " on RNN node: " << innovation_number << endl;
+        cerr << "\tinput_value[" << time << "]: " << input_values[time] << endl;
+        cerr << "\tnode bias: " << bias << endl;
+        exit(1);
     }
+#endif
 }
 
-void RNN_Node::try_update_deltas() {
-    if (outputs_fired < total_outputs) return;
-    else if (outputs_fired > total_outputs) {
-        cerr << "ERROR: outputs_fired on RNN_Node " << innovation_number << " is " << outputs_fired << " and total_outputs is " << total_outputs << endl;
+void RNN_Node::try_update_deltas(int time) {
+    if (outputs_fired[time] < total_outputs) return;
+    else if (outputs_fired[time] > total_outputs) {
+        cerr << "ERROR: outputs_fired on RNN_Node " << innovation_number << " at time " << time << " is " << outputs_fired[time] << " and total_outputs is " << total_outputs << endl;
         exit(1);
     }
 
-    for (uint32_t i = 0; i < series_length; i++) {
-        d_input[i] *= ld_output[i];
-    }
+    d_input[time] *= ld_output[time];
 
-    d_bias = 0.0;
-    for (uint32_t i = 0; i < series_length; i++) {
-        d_bias += d_input[i];
-    }
+    d_bias += d_input[time];
 }
 
-void RNN_Node::output_fired(double error) {
-    outputs_fired++;
+void RNN_Node::error_fired(int time, double error) {
+    outputs_fired[time]++;
 
-    for (uint32_t i = 0; i < series_length; i++) {
-        d_input[i] *= error;
-    }
+    d_input[time] *= error;
 
-    try_update_deltas();
+    try_update_deltas(time);
 }
 
-void RNN_Node::output_fired(const vector<double> &deltas) {
-    outputs_fired++;
+void RNN_Node::output_fired(int time, double delta) {
+    outputs_fired[time]++;
 
-    for (uint32_t i = 0; i < series_length; i++) {
-        d_input[i] += deltas[i];
-    }
+    d_input[time] += delta;
 
-    try_update_deltas();
+    try_update_deltas(time);
 }
 
 void RNN_Node::reset(int _series_length) {
@@ -98,8 +80,10 @@ void RNN_Node::reset(int _series_length) {
     input_values.assign(series_length, 0.0);
     output_values.assign(series_length, 0.0);
 
-    inputs_fired = 0;
-    outputs_fired = 0;
+    inputs_fired.assign(series_length, 0);
+    outputs_fired.assign(series_length, 0);
+
+    d_bias = 0.0;
 }
 
 void RNN_Node::get_gradients(vector<double> &gradients) {

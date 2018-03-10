@@ -16,6 +16,8 @@ class RNN_Genome;
 
 class RNN_Genome {
     private:
+        int series_length;
+
         vector<RNN_Node_Interface*> input_nodes;
         vector<RNN_Node_Interface*> output_nodes;
 

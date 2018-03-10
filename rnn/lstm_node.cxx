@@ -58,60 +58,56 @@ void LSTM_Node::print_gradient(string gradient_name) {
     cout << "\tgradient['" << gradient_name << "']: " << get_gradient(gradient_name) << endl;
 }
 
-void LSTM_Node::input_fired(const vector<double> &incoming_outputs) {
-    inputs_fired++;
+void LSTM_Node::input_fired(int time, double incoming_output) {
+    inputs_fired[time]++;
 
-    for (int32_t i = 0; i < series_length; i++) {
-        input_values[i] += incoming_outputs[i];
-    }
+    input_values[time] += incoming_output;
 
-    if (inputs_fired < total_inputs) return;
-    else if (inputs_fired > total_inputs) {
-        cerr << "ERROR: inputs_fired on LSTM_Node " << innovation_number << " is " << inputs_fired << " and total_inputs is " << total_inputs << endl;
+    if (inputs_fired[time] < total_inputs) return;
+    else if (inputs_fired[time] > total_inputs) {
+        cerr << "ERROR: inputs_fired on LSTM_Node " << innovation_number << " at time " << time << " is " << inputs_fired[time] << " and total_inputs is " << total_inputs << endl;
         exit(1);
     }
 
-    for (int32_t i = 0; i < series_length; i++) {
-        double input_value = input_values[i];
-        //cout << "input value[" << i << "]:" << input_value << endl;
+    double input_value = input_values[time];
+    //cout << "input value[" << i << "]:" << input_value << endl;
 
-        double previous_cell_value = 0.0;
-        if (i > 0) previous_cell_value = cell_values[i - 1];
-        //previous_cell_value = 0.33;
-        //cout << "previous_cell_value[" << i << "]: " << previous_cell_value << endl;
+    double previous_cell_value = 0.0;
+    if (time > 0) previous_cell_value = cell_values[time - 1];
+    //previous_cell_value = 0.33;
+    //cout << "previous_cell_value[" << i << "]: " << previous_cell_value << endl;
 
-        output_gate_values[i] = sigmoid(output_gate_weight * input_value + output_gate_update_weight * previous_cell_value + output_gate_bias);
-        input_gate_values[i] = sigmoid(input_gate_weight * input_value + input_gate_update_weight * previous_cell_value + input_gate_bias);
-        forget_gate_values[i] = sigmoid(forget_gate_weight * input_value + forget_gate_update_weight * previous_cell_value + forget_gate_bias);
+    output_gate_values[time] = sigmoid(output_gate_weight * input_value + output_gate_update_weight * previous_cell_value + output_gate_bias);
+    input_gate_values[time] = sigmoid(input_gate_weight * input_value + input_gate_update_weight * previous_cell_value + input_gate_bias);
+    forget_gate_values[time] = sigmoid(forget_gate_weight * input_value + forget_gate_update_weight * previous_cell_value + forget_gate_bias);
 
-        ld_output_gate[i] = sigmoid_derivative(output_gate_values[i]);
-        ld_input_gate[i] = sigmoid_derivative(input_gate_values[i]);
-        ld_forget_gate[i] = sigmoid_derivative(forget_gate_values[i]);
+    ld_output_gate[time] = sigmoid_derivative(output_gate_values[time]);
+    ld_input_gate[time] = sigmoid_derivative(input_gate_values[time]);
+    ld_forget_gate[time] = sigmoid_derivative(forget_gate_values[time]);
 
-        /*
-        output_gate_values[i] = output_gate_weight * input_value + output_gate_update_weight * previous_cell_value + output_gate_bias;
-        input_gate_values[i] = input_gate_weight * input_value + input_gate_update_weight * previous_cell_value + input_gate_bias;
-        forget_gate_values[i] = forget_gate_weight * input_value + forget_gate_update_weight * previous_cell_value + forget_gate_bias;
+    /*
+       output_gate_values[time] = output_gate_weight * input_value + output_gate_update_weight * previous_cell_value + output_gate_bias;
+       input_gate_values[time] = input_gate_weight * input_value + input_gate_update_weight * previous_cell_value + input_gate_bias;
+       forget_gate_values[time] = forget_gate_weight * input_value + forget_gate_update_weight * previous_cell_value + forget_gate_bias;
 
-        ld_output_gate[i] = 1.0;
-        ld_input_gate[i] = 1.0;
-        ld_forget_gate[i] = 1.0;
-        */
+       ld_output_gate[time] = 1.0;
+       ld_input_gate[time] = 1.0;
+       ld_forget_gate[time] = 1.0;
+       */
 
-        cell_in_tanh[i] = tanh(cell_weight * input_value + cell_bias);
-        ld_cell_in[i] = tanh_derivative(cell_in_tanh[i]);
+    cell_in_tanh[time] = tanh(cell_weight * input_value + cell_bias);
+    ld_cell_in[time] = tanh_derivative(cell_in_tanh[time]);
 
-        cell_values[i] = (forget_gate_values[i] * previous_cell_value) + (input_gate_values[i] * cell_in_tanh[i]);
+    cell_values[time] = (forget_gate_values[time] * previous_cell_value) + (input_gate_values[time] * cell_in_tanh[time]);
 
-        //The original is a hyperbolic tangent, but the peephole[clarification needed] LSTM paper suggests the activation function be linear -- activation(x) = x
+    //The original is a hyperbolic tangent, but the peephole[clarification needed] LSTM paper suggests the activation function be linear -- activation(x) = x
 
-        cell_out_tanh[i] = cell_values[i];
-        ld_cell_out[i] = 1.0;
-        //cell_out_tanh[i] = tanh(cell_values[i]);
-        //ld_cell_out[i] = tanh_derivative(cell_out_tanh[i]);
+    cell_out_tanh[time] = cell_values[time];
+    ld_cell_out[time] = 1.0;
+    //cell_out_tanh[time] = tanh(cell_values[time]);
+    //ld_cell_out[time] = tanh_derivative(cell_out_tanh[time]);
 
-        output_values[i] = output_gate_values[i] * cell_out_tanh[i];
-    }
+    output_values[time] = output_gate_values[time] * cell_out_tanh[time];
 }
 
 
@@ -125,83 +121,77 @@ void LSTM_Node::print_cell_values() {
     */
 }
 
-void LSTM_Node::try_update_deltas() {
-    if (outputs_fired < total_outputs) return;
-    else if (outputs_fired > total_outputs) {
-        cerr << "ERROR: outputs_fired on LSTM_Node " << innovation_number << " is " << outputs_fired << " and total_outputs is " << outputs_fired << endl;
+void LSTM_Node::try_update_deltas(int time) {
+    if (outputs_fired[time] < total_outputs) return;
+    else if (outputs_fired[time] > total_outputs) {
+        cerr << "ERROR: outputs_fired on LSTM_Node " << innovation_number << " at time " << time << " is " << outputs_fired[time] << " and total_outputs is " << total_outputs << endl;
         exit(1);
     }
 
-    for (int32_t i = series_length - 1; i >= 0; i--) {
-        double error = error_values[i];
-        double input_value = input_values[i];
-        //cout << "input value[" << i << "]:" << input_value << endl;
+    double error = error_values[time];
+    double input_value = input_values[time];
+    //cout << "input value[" << i << "]:" << input_value << endl;
 
-        double previous_cell_value = 0.00;
-        if (i > 0) previous_cell_value = cell_values[i - 1];
-        //previous_cell_value = 0.33;
-        //cout << "previous_cell_value[" << i << "]: " << previous_cell_value << endl;
-
-
-        //backprop output gate
-        double d_output_gate = error * cell_out_tanh[i] * ld_output_gate[i];
-        d_output_gate_bias[i] = d_output_gate;
-        d_output_gate_update_weight[i] = d_output_gate * previous_cell_value;
-        d_output_gate_weight[i] = d_output_gate * input_value;
-        d_prev_cell[i] += d_output_gate * output_gate_update_weight;
-        d_input[i] += d_output_gate * output_gate_weight;
-
-        //backprop the cell path
-
-        double d_cell_out = error * output_gate_values[i] * ld_cell_out[i];
-        //propagate error back from the next cell value if there is one
-        if (i < (series_length - 1)) d_cell_out += d_prev_cell[i + 1];
-
-        //backprop forget gate
-        d_prev_cell[i] += d_cell_out * forget_gate_values[i];
-
-        double d_forget_gate = d_cell_out * previous_cell_value * ld_forget_gate[i]; 
-        d_forget_gate_bias[i] = d_forget_gate;
-        d_forget_gate_update_weight[i] = d_forget_gate * previous_cell_value;
-        d_forget_gate_weight[i] = d_forget_gate * input_value;
-        d_prev_cell[i] += d_forget_gate * forget_gate_update_weight;
-        d_input[i] += d_forget_gate * forget_gate_weight;
-
-        //backprob input gate
-        double d_input_gate = d_cell_out * cell_in_tanh[i] * ld_input_gate[i];
-        d_input_gate_bias[i] = d_input_gate;
-        d_input_gate_update_weight[i] = d_input_gate * previous_cell_value;
-        d_input_gate_weight[i] = d_input_gate * input_value;
-        d_prev_cell[i] += d_input_gate * input_gate_update_weight;
-        d_input[i] += d_input_gate * input_gate_weight;
+    double previous_cell_value = 0.00;
+    if (time > 0) previous_cell_value = cell_values[time - 1];
+    //previous_cell_value = 0.33;
+    //cout << "previous_cell_value[" << i << "]: " << previous_cell_value << endl;
 
 
-        //backprop cell input
-        double d_cell_in = d_cell_out * input_gate_values[i] * ld_cell_in[i];
-        d_cell_bias[i] = d_cell_in;
-        d_cell_weight[i] = d_cell_in * input_value;
-        d_input[i] += d_cell_in * cell_weight;
-    }
+    //backprop output gate
+    double d_output_gate = error * cell_out_tanh[time] * ld_output_gate[time];
+    d_output_gate_bias[time] = d_output_gate;
+    d_output_gate_update_weight[time] = d_output_gate * previous_cell_value;
+    d_output_gate_weight[time] = d_output_gate * input_value;
+    d_prev_cell[time] += d_output_gate * output_gate_update_weight;
+    d_input[time] += d_output_gate * output_gate_weight;
+
+    //backprop the cell path
+
+    double d_cell_out = error * output_gate_values[time] * ld_cell_out[time];
+    //propagate error back from the next cell value if there is one
+    if (time < (series_length - 1)) d_cell_out += d_prev_cell[time + 1];
+
+    //backprop forget gate
+    d_prev_cell[time] += d_cell_out * forget_gate_values[time];
+
+    double d_forget_gate = d_cell_out * previous_cell_value * ld_forget_gate[time]; 
+    d_forget_gate_bias[time] = d_forget_gate;
+    d_forget_gate_update_weight[time] = d_forget_gate * previous_cell_value;
+    d_forget_gate_weight[time] = d_forget_gate * input_value;
+    d_prev_cell[time] += d_forget_gate * forget_gate_update_weight;
+    d_input[time] += d_forget_gate * forget_gate_weight;
+
+    //backprob input gate
+    double d_input_gate = d_cell_out * cell_in_tanh[time] * ld_input_gate[time];
+    d_input_gate_bias[time] = d_input_gate;
+    d_input_gate_update_weight[time] = d_input_gate * previous_cell_value;
+    d_input_gate_weight[time] = d_input_gate * input_value;
+    d_prev_cell[time] += d_input_gate * input_gate_update_weight;
+    d_input[time] += d_input_gate * input_gate_weight;
+
+
+    //backprop cell input
+    double d_cell_in = d_cell_out * input_gate_values[time] * ld_cell_in[time];
+    d_cell_bias[time] = d_cell_in;
+    d_cell_weight[time] = d_cell_in * input_value;
+    d_input[time] += d_cell_in * cell_weight;
 }
 
-void LSTM_Node::output_fired(double error) {
-    outputs_fired++;
+void LSTM_Node::error_fired(int time, double error) {
+    outputs_fired[time]++;
 
-    for (int32_t i = 0; i < series_length; i++) {
-        error_values[i] *= error;
-    }
+    error_values[time] *= error;
 
-    try_update_deltas();
+    try_update_deltas(time);
 }
 
-void LSTM_Node::output_fired(const vector<double> &deltas) {
-    outputs_fired++;
+void LSTM_Node::output_fired(int time, double delta) {
+    outputs_fired[time]++;
 
-    for (int32_t i = 0; i < series_length; i++) {
-        error_values[i] += deltas[i];
-    }
+    error_values[time] += delta;
 
-    try_update_deltas();
+    try_update_deltas(time);
 }
 
 uint32_t LSTM_Node::get_number_weights() {
@@ -325,8 +315,8 @@ void LSTM_Node::reset(int _series_length) {
     input_values.assign(series_length, 0.0);
     output_values.assign(series_length, 0.0);
 
-    inputs_fired = 0;
-    outputs_fired = 0;
+    inputs_fired.assign(series_length, 0);
+    outputs_fired.assign(series_length, 0);
 }
 
 RNN_Node_Interface* LSTM_Node::copy() {
@@ -474,14 +464,21 @@ int main(int argc, char **argv) {
         //cout << "firing node1" << endl;
         offset = 0;
         node1->reset(inputs.size());
-        node1->set_weights(offset, parameters);
-        node1->input_fired(inputs);
         node2->reset(inputs.size());
+        node1->set_weights(offset, parameters);
         node2->set_weights(offset, parameters);
-        node2->input_fired(node1->output_values);
+
+        for (int time = 0; time < outputs.size(); time++) {
+            node1->input_fired(time, inputs[time]);
+            node2->input_fired(time, node1->output_values[time]);
+        }
+
         get_mse(node2->output_values, outputs, mse, deltas);
-        node2->output_fired(deltas);
-        node1->output_fired(node2->d_input);
+
+        for (int time = outputs.size() - 1; time >= 0; time--) {
+            node2->output_fired(time, deltas[time]);
+            node1->output_fired(time, node2->d_input[time]);
+        }
 
         if (print) {
             cout << "mean squared error: " << mse << endl;
@@ -514,22 +511,29 @@ int main(int argc, char **argv) {
 
             offset = 0;
             n11->reset(inputs.size());
-            n11->set_weights(offset, parameters);
-            n11->input_fired(inputs);
             n12->reset(inputs.size());
+            n11->set_weights(offset, parameters);
             n12->set_weights(offset, parameters);
-            n12->input_fired(n11->output_values);
+
+            for (int time = 0; time < outputs.size(); time++) {
+                n11->input_fired(time, inputs[time]);
+                n12->input_fired(time, n11->output_values[time]);
+            }
+
             get_mse(n12->output_values, outputs, mse1, deltas);
 
             parameters[i] = save + diff;
 
             offset = 0;
             n21->reset(inputs.size());
-            n21->set_weights(offset, parameters);
-            n21->input_fired(inputs);
             n22->reset(inputs.size());
+            n21->set_weights(offset, parameters);
             n22->set_weights(offset, parameters);
-            n22->input_fired(n21->output_values);
+
+            for (int time = 0; time < outputs.size(); time++) {
+                n21->input_fired(time, inputs[time]);
+                n22->input_fired(time, n21->output_values[time]);
+            }
             get_mse(n22->output_values, outputs, mse2, deltas);
 
             double gradient = (mse2 - mse1) / (2.0 * diff);

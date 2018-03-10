@@ -3,6 +3,9 @@
 #include <fstream>
 using std::ofstream;
 
+#include <iomanip>
+using std::setw;
+
 #include <iostream>
 using std::cout;
 using std::endl;
@@ -11,6 +14,9 @@ using std::endl;
 using std::minstd_rand0;
 using std::uniform_real_distribution;
 
+#include <thread>
+using std::thread;
+
 #include <vector>
 using std::vector;
 
@@ -18,23 +24,37 @@ using std::vector;
 #include "rnn_genome.hxx"
 #include "bptt.hxx"
 
+void forward_pass_thread(RNN_Genome* genome, const vector<double> &parameters, const vector< vector<double> > &series_data, const vector< vector<double> > &expected_outputs, uint32_t i, double *mses) {
+    genome->set_weights(parameters);
+    genome->forward_pass(series_data);
+    mses[i] = genome->calculate_error_mse(expected_outputs);
+
+    //mses[i] = genome->calculate_error_mae(expected_outputs);
+    //cout << "mse[" << i << "]: " << mse_current << endl;
+}
+
 void get_analytic_gradient(vector<RNN_Genome*> &genomes, const vector<double> &parameters, const vector< vector< vector<double> > > &series_data, const vector< vector< vector<double> > > &expected_outputs, double &mse, vector<double> &analytic_gradient) {
 
+    double *mses = new double[genomes.size()];
     double mse_sum = 0.0;
-    double mse_current;
+    vector<thread> threads;
     for (uint32_t i = 0; i < genomes.size(); i++) {
-        genomes[i]->set_weights(parameters);
-        genomes[i]->forward_pass(series_data[i]);
-        mse_current = genomes[i]->calculate_error_mse(expected_outputs[i]);
-        //cout << "mse[" << i << "]: " << mse_current << endl;
-
-        mse_sum += mse_current;
+        threads.push_back( thread(forward_pass_thread, genomes[i], parameters, series_data[i], expected_outputs[i], i, mses) );
     }
 
     for (uint32_t i = 0; i < genomes.size(); i++) {
-        double d_mse = mse_sum * (1.0 / expected_outputs[i][0].size()) * 2.0;
+        threads[i].join();
+        mse_sum += mses[i];
+    }
+    delete [] mses;
 
+    for (uint32_t i = 0; i < genomes.size(); i++) {
+        double d_mse = mse_sum * (1.0 / expected_outputs[i][0].size()) * 2.0;
         genomes[i]->backward_pass(d_mse);
+
+        //double d_mae = mse_sum * (1.0 / expected_outputs[i][0].size());
+        //genomes[i]->backward_pass(d_mae);
+
     }
 
     mse = mse_sum;
@@ -61,7 +81,7 @@ void get_analytic_gradient(vector<RNN_Genome*> &genomes, const vector<double> &p
 }
 
 
-void backpropagate(RNN_Genome *genome, const vector< vector< vector<double> > > &series_data, const vector< vector< vector<double> > > &expected_outputs, int max_iterations, double learning_rate, bool nesterov_momentum, bool adapt_learning_rate, bool reset_weights, bool use_high_norm, bool use_low_norm, string log_filename) {
+void backpropagate(RNN_Genome *genome, const vector< vector< vector<double> > > &series_data, const vector< vector< vector<double> > > &expected_outputs, int max_iterations, double learning_rate, bool nesterov_momentum, bool adapt_learning_rate, bool reset_weights, bool use_high_norm, double high_threshold, bool use_low_norm, double low_threshold, string log_filename) {
 
     int32_t n_series = series_data.size();
     vector<RNN_Genome*> genomes;
@@ -82,8 +102,6 @@ void backpropagate(RNN_Genome *genome, const vector< vector< vector<double> > > 
     vector<double> prev_gradient(n_parameters, 0.0);
 
     double mu = 0.9;
-    double high_threshold = 2;
-    double low_threshold = 0.001;
     double original_learning_rate = learning_rate;
 
     double prev_mu;
@@ -92,6 +110,8 @@ void backpropagate(RNN_Genome *genome, const vector< vector< vector<double> > > 
     double prev_mse;
     double mse;
 
+    double parameter_norm = 0.0;
+    double velocity_norm = 0.0;
     double norm = 0.0;
 
     //initialize the initial previous values
@@ -106,7 +126,7 @@ void backpropagate(RNN_Genome *genome, const vector< vector< vector<double> > > 
     ofstream output_log(log_filename);
 
     bool was_reset = false;
-    int reset_count = 0;
+    double reset_count = 0;
     for (uint32_t iteration = 0; iteration < max_iterations; iteration++) {
         prev_mu = mu;
         prev_norm  = norm;
@@ -118,23 +138,30 @@ void backpropagate(RNN_Genome *genome, const vector< vector< vector<double> > > 
         get_analytic_gradient(genomes, parameters, series_data, expected_outputs, mse, analytic_gradient);
 
         norm = 0.0;
+        velocity_norm = 0.0;
+        parameter_norm = 0.0;
         for (int32_t i = 0; i < parameters.size(); i++) {
             norm += analytic_gradient[i] * analytic_gradient[i];
+            velocity_norm += prev_velocity[i] * prev_velocity[i];
+            parameter_norm += parameters[i] * parameters[i];
         }
         norm = sqrt(norm);
+        velocity_norm = sqrt(velocity_norm);
 
         output_log << iteration
              << " " << mse 
              << " " << norm
              << " " << learning_rate << endl;
 
-        cout << "iteration " << iteration
-             << ", mse: " << mse 
-             << ", lr: " << learning_rate 
-             << ", norm: " << norm;
+        cout << "iteration " << setw(10) << iteration
+             << ", mse: " << setw(10) << mse 
+             << ", lr: " << setw(10) << learning_rate 
+             << ", norm: " << setw(10) << norm
+             << ", p_norm: " << setw(10) << parameter_norm
+             << ", v_norm: " << setw(10) << velocity_norm;
 
-        if (reset_weights && prev_mse * 2 < mse) {
-            cout << ", RESETTING WEIGHTS" << endl;
+        if (reset_weights && prev_mse * 1.25 < mse) {
+            cout << ", RESETTING WEIGHTS " << reset_count << endl;
             parameters = prev_parameters;
             //prev_velocity = prev_prev_velocity;
             prev_velocity.assign(parameters.size(), 0.0);
@@ -143,8 +170,9 @@ void backpropagate(RNN_Genome *genome, const vector< vector< vector<double> > > 
             learning_rate = prev_learning_rate;
             analytic_gradient = prev_gradient;
 
-            learning_rate *= 0.5;
-            if (learning_rate < 0.0000001) learning_rate = 0.0000001;
+
+            //learning_rate *= 0.5;
+            //if (learning_rate < 0.0000001) learning_rate = 0.0000001;
 
             reset_count++;
             if (reset_count > 20) break;
@@ -156,8 +184,9 @@ void backpropagate(RNN_Genome *genome, const vector< vector< vector<double> > > 
         if (was_reset) {
             was_reset = false;
         } else {
-            reset_count = 0;
-            learning_rate = original_learning_rate;
+            reset_count -= 0.1;
+            if (reset_count < 0) reset_count = 0;
+            if (adapt_learning_rate) learning_rate = original_learning_rate;
         }
 
 
@@ -172,6 +201,7 @@ void backpropagate(RNN_Genome *genome, const vector< vector< vector<double> > > 
 
         if (use_high_norm && norm > high_threshold) {
             double high_threshold_norm = high_threshold / norm;
+
             cout << ", OVER THRESHOLD, multiplier: " << high_threshold_norm;
 
             for (int32_t i = 0; i < parameters.size(); i++) {
@@ -200,6 +230,17 @@ void backpropagate(RNN_Genome *genome, const vector< vector< vector<double> > > 
             }
         }
 
+        if (reset_count > 0) {
+            double reset_penalty = pow(5.0, -reset_count);
+            cout << ", RESET PENALTY (" << reset_count << "): " << reset_penalty;
+
+            for (int32_t i = 0; i < parameters.size(); i++) {
+                analytic_gradient[i] = reset_penalty * analytic_gradient[i];
+            }
+
+        }
+
+
         cout << endl;
 
         if (nesterov_momentum) {
@@ -225,7 +266,7 @@ void backpropagate(RNN_Genome *genome, const vector< vector< vector<double> > > 
 }
 
 
-void backpropagate_stochastic(RNN_Genome *genome, const vector< vector< vector<double> > > &series_data, const vector< vector< vector<double> > > &expected_outputs, int max_iterations, double learning_rate, bool nesterov_momentum, bool adapt_learning_rate, bool reset_weights, bool use_high_norm, bool use_low_norm, string log_filename) {
+void backpropagate_stochastic(RNN_Genome *genome, const vector< vector< vector<double> > > &series_data, const vector< vector< vector<double> > > &expected_outputs, int max_iterations, double learning_rate, bool nesterov_momentum, bool adapt_learning_rate, bool reset_weights, bool use_high_norm, double high_threshold, bool use_low_norm, double low_threshold, string log_filename) {
 
     vector<double> parameters;
     genome->get_weights(parameters);
@@ -240,8 +281,6 @@ void backpropagate_stochastic(RNN_Genome *genome, const vector< vector< vector<d
     vector<double> prev_gradient(n_parameters, 0.0);
 
     double mu = 0.9;
-    double high_threshold = 2;
-    double low_threshold = 0.001;
     double original_learning_rate = learning_rate;
 
     int n_series = series_data.size();

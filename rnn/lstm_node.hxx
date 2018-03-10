@@ -64,11 +64,11 @@ class LSTM_Node : public RNN_Node_Interface {
         double get_gradient(string gradient_name);
         void print_gradient(string gradient_name);
 
-        void input_fired(const vector<double> &incoming_outputs);
+        void input_fired(int time, double incoming_output);
 
-        void try_update_deltas();
-        void output_fired(double error);
-        void output_fired(const vector<double> &deltas);
+        void try_update_deltas(int time);
+        void error_fired(int time, double error);
+        void output_fired(int time, double delta);
 
         uint32_t get_number_weights();
         void set_weights(const vector<double> &parameters);

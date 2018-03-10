@@ -48,12 +48,14 @@ ax1.set_yscale('log')
 ax1.set_ylabel('MSE', color='b')
 ax1.tick_params('y', colors='b')
 ax1.plot(t, mse, lw=0.25, label='MSE', color='blue')
+ax1.set_ylim(0.0001, 10)
 
 ax2 = ax1.twinx()
 ax2.set_yscale('log')
 ax2.set_ylabel('Norm', color='g')
 ax2.tick_params('y', colors='g')
 ax2.plot(t, norm, lw=0.25, label='norm', color='green')
+ax2.set_ylim(0.0000001, 1)
 
 
 ax1.legend(loc = 'upper right')
