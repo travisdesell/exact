@@ -201,6 +201,12 @@ int main(int argc, char **argv) {
     } else if (rnn_type == "two_layer_ff") {
         genome = create_ff(number_inputs, 1, number_inputs, number_outputs);
 
+    } else if (rnn_type == "jordan") {
+        genome = create_jordan(number_inputs, 1, number_inputs, number_outputs);
+
+    } else if (rnn_type == "elman") {
+        genome = create_elman(number_inputs, 1, number_inputs, number_outputs);
+
     } else {
         cerr << "ERROR: incorrect rnn type" << endl;
         cerr << "Possibilities are:" << endl;
