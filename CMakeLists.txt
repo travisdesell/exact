@@ -112,7 +112,7 @@ IF (COMPILE_CLIENT STREQUAL "NO")
         include_directories(${TAO_INCLUDE_DIR})
 
         add_subdirectory(rnn)
-        #add_subdirectory(rnn_tests)
+        add_subdirectory(rnn_tests)
         add_subdirectory(rnn_examples)
     ENDIF (TAO_FOUND)
 

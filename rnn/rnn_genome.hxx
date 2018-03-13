@@ -11,8 +11,9 @@ class RNN_Node_Interface;
 class RNN_Edge;
 class RNN_Genome;
 
-#include "rnn_node_interface.hxx"
 #include "rnn_edge.hxx"
+#include "rnn_node_interface.hxx"
+#include "rnn_recurrent_edge.hxx"
 
 class RNN_Genome {
     private:
@@ -23,9 +24,11 @@ class RNN_Genome {
 
         vector<RNN_Node_Interface*> nodes;
         vector<RNN_Edge*> edges;
+        vector<RNN_Recurrent_Edge*> recurrent_edges;
 
     public:
         RNN_Genome(vector<RNN_Node_Interface*> &_nodes, vector<RNN_Edge*> &_edges);
+        RNN_Genome(vector<RNN_Node_Interface*> &_nodes, vector<RNN_Edge*> &_edges, vector<RNN_Recurrent_Edge*> &_recurrent_edges);
 
         int get_number_nodes();
         int get_number_edges();

@@ -57,6 +57,7 @@ class RNN_Node_Interface {
         int get_innovation_number();
 
         friend class RNN_Edge;
+        friend class RNN_Recurrent_Edge;
         friend class RNN_Genome;
 
         friend void get_mse(RNN_Genome* genome, const vector< vector<double> > &expected, double &mse, vector< vector<double> > &deltas);

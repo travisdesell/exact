@@ -25,6 +25,7 @@ using std::vector;
 
 
 #include "rnn_edge.hxx"
+#include "rnn_recurrent_edge.hxx"
 #include "rnn_genome.hxx"
 #include "rnn_node_interface.hxx"
 #include "rnn_node.hxx"
@@ -48,6 +49,25 @@ RNN_Genome::RNN_Genome(vector<RNN_Node_Interface*> &_nodes, vector<RNN_Edge*> &_
     }
 
 }
+
+RNN_Genome::RNN_Genome(vector<RNN_Node_Interface*> &_nodes, vector<RNN_Edge*> &_edges, vector<RNN_Recurrent_Edge*> &_recurrent_edges) {
+    nodes = _nodes;
+    edges = _edges;
+    recurrent_edges = _recurrent_edges;
+
+    //sort nodes by depth
+    //sort edges by depth
+
+    for (uint32_t i = 0; i < nodes.size(); i++) {
+        if (nodes[i]->type == RNN_INPUT_NODE) {
+            input_nodes.push_back(nodes[i]);
+        } else if (nodes[i]->type == RNN_OUTPUT_NODE) {
+            output_nodes.push_back(nodes[i]);
+        }
+    }
+
+}
+
 
 int RNN_Genome::get_number_nodes() {
     return nodes.size();
@@ -121,6 +141,7 @@ void RNN_Genome::forward_pass(const vector< vector<double> > &series_data) {
 
     //TODO: want to check that all vectors in series_data are of same length
 
+
     for (uint32_t i = 0; i < nodes.size(); i++) {
         nodes[i]->reset(series_length);
     }
@@ -129,11 +150,16 @@ void RNN_Genome::forward_pass(const vector< vector<double> > &series_data) {
         edges[i]->reset(series_length);
     }
 
-    /*
     for (uint32_t i = 0; i < recurrent_edges.size(); i++) {
-        recurrent_edges[i]->reset(series_data[0].size());
+        recurrent_edges[i]->reset(series_length);
     }
-    */
+
+    //do a propagate forward for time == -1 so that the the input
+    //fired count on each node will be correct for the first pass
+    //through the RNN
+    for (uint32_t i = 0; i < recurrent_edges.size(); i++) {
+        recurrent_edges[i]->first_propagate_forward();
+    }
 
 
     for (int32_t time = 0; time < series_length; time++) {
@@ -146,15 +172,20 @@ void RNN_Genome::forward_pass(const vector< vector<double> > &series_data) {
             edges[i]->propagate_forward(time);
         }
 
-        /*
-        for (uint32_t i = 0; i < edges.size(); i++) {
+        for (uint32_t i = 0; i < recurrent_edges.size(); i++) {
             recurrent_edges[i]->propagate_forward(time);
         }
-        */
     }
 }
 
 void RNN_Genome::backward_pass(double error) {
+    //do a propagate forward for time == (series_length - 1) so that the 
+    // output fired count on each node will be correct for the first pass
+    //through the RNN
+    for (uint32_t i = 0; i < recurrent_edges.size(); i++) {
+        recurrent_edges[i]->first_propagate_backward();
+    }
+
     for (int32_t time = series_length - 1; time >= 0; time--) {
 
         for (uint32_t i = 0; i < output_nodes.size(); i++) {
@@ -163,6 +194,10 @@ void RNN_Genome::backward_pass(double error) {
 
         for (int32_t i = (int32_t)edges.size() - 1; i >= 0; i--) {
             edges[i]->propagate_backward(time);
+        }
+
+        for (int32_t i = (int32_t)recurrent_edges.size() - 1; i >= 0; i--) {
+            recurrent_edges[i]->propagate_backward(time);
         }
     }
 }
@@ -299,8 +334,8 @@ void RNN_Genome::initialize_randomly() {
 
     unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
     minstd_rand0 generator(seed);
+    uniform_real_distribution<double> rng(-0.5, 0.5);
     for (uint32_t i = 0; i < parameters.size(); i++) {
-        uniform_real_distribution<double> rng(-0.5, 0.5);
         parameters[i] = rng(generator);
     }
     set_weights(parameters);

@@ -2,6 +2,7 @@
 
 #include <iostream>
 using std::cerr;
+using std::cout;
 using std::endl;
 
 #include <vector>
@@ -14,6 +15,7 @@ RNN_Node::RNN_Node(int _innovation_number, int _type) : RNN_Node_Interface(_inno
     if (type == RNN_INPUT_NODE) {
         total_inputs = 1;
     }
+    //cout << "created node: " << innovation_number << ", type: " << type << endl;
 }
 
 void RNN_Node::input_fired(int time, double incoming_output) {
@@ -59,7 +61,17 @@ void RNN_Node::try_update_deltas(int time) {
 void RNN_Node::error_fired(int time, double error) {
     outputs_fired[time]++;
 
-    d_input[time] *= error;
+    /*
+    cout << "error fired at time: " << time << " on node " << innovation_number
+        << ", d_input: " << d_input[time]
+        << ", ld_output: " << ld_output[time]
+        << ", error_values: " << error_values[time]
+        << ", output_values: " << output_values[time]
+        << endl;
+    */
+
+
+    d_input[time] += error_values[time] * error;
 
     try_update_deltas(time);
 }
@@ -79,6 +91,7 @@ void RNN_Node::reset(int _series_length) {
     d_input.assign(series_length, 0.0);
     input_values.assign(series_length, 0.0);
     output_values.assign(series_length, 0.0);
+    error_values.assign(series_length, 0.0);
 
     inputs_fired.assign(series_length, 0);
     outputs_fired.assign(series_length, 0);

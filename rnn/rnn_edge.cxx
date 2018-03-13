@@ -15,6 +15,8 @@ RNN_Edge::RNN_Edge(int _innovation_number, RNN_Node_Interface *_input_node, RNN_
 
     input_node->total_outputs++;
     output_node->total_inputs++;
+
+    //cout << "created edge " << innovation_number << " from " << input_innovation_number << ", to " << output_innovation_number << endl;
 }
 
 RNN_Edge::RNN_Edge(int _innovation_number, int _input_innovation_number, int _output_innovation_number, const vector<RNN_Node_Interface*> &nodes) {
@@ -50,6 +52,9 @@ RNN_Edge::RNN_Edge(int _innovation_number, int _input_innovation_number, int _ou
 
 void RNN_Edge::propagate_forward(int time) {
     double output = input_node->output_values[time] * weight;
+
+    //cout << "propagating forward at time " << time << " from " << input_node->innovation_number << " to " << output_node->innovation_number << ", value: " << output << ", input: " << input_node->output_values[time] << ", weight: " << weight << endl;
+
     outputs[time] = output;
     output_node->input_fired(time, output);
 }

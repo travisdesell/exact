@@ -6,6 +6,6 @@ IF (MPI_FOUND)
     include_directories(${MPI_INCLUDE_PATH})
 
 
-    add_executable(train_rnn train_rnn one_layer_lstm two_layer_lstm)
+    add_executable(train_rnn train_rnn)
     target_link_libraries(train_rnn exalt_strategy exact_common exact_time_series ${MPI_LIBRARIES} ${MPI_EXTRA} ${MYSQL_LIBRARIES} ${TIFF_LIBRARIES} ${TAO_LIBRARY} pthread)
 ENDIF(MPI_FOUND)
