@@ -145,8 +145,9 @@ void TimeSeriesSet::add_time_series(string name) {
     }
 }
 
-TimeSeriesSet::TimeSeriesSet(string filename, double _expected_class) {
+TimeSeriesSet::TimeSeriesSet(string _filename, double _expected_class) {
     expected_class = _expected_class;
+    filename = _filename;
 
     ifstream ts_file(filename);
 
@@ -169,7 +170,7 @@ TimeSeriesSet::TimeSeriesSet(string filename, double _expected_class) {
     int row = 1;
     //cout << "values:" << endl;
     while (getline(ts_file, line)) {
-        if (line.size() == 0 || line[0] == '#' || row < 100) {
+        if (line.size() == 0 || line[0] == '#' || row < 0) {
             row++;
             continue;
         }
@@ -183,6 +184,7 @@ TimeSeriesSet::TimeSeriesSet(string filename, double _expected_class) {
         }
 
         for (uint32_t i = 0; i < parts.size(); i++) {
+            //cout << "parts[" << i << "]: " << parts[i] << endl;
             try {
                 time_series[ fields[i] ]->add_value( stod(parts[i]) );
             } catch (const invalid_argument& ia) {
@@ -212,6 +214,8 @@ TimeSeriesSet::TimeSeriesSet(string filename, double _expected_class) {
             cerr << "ERROR! number of rows for field '" << series->first << "' (" << series->second->get_number_values() << ") doesn't equal number of rows in first field '" << time_series.begin()->first << " (" << time_series.begin()->second->get_number_values() << ")" << endl;
         }
     }
+
+    cout << "read time series '" << filename << "' with number rows: " << number_rows << endl;
 
 }
 
@@ -308,13 +312,13 @@ void normalize_time_series_sets(vector<TimeSeriesSet*> time_series) {
  *  Time offset > 0 generates output data. Do not use the first <time_offset> values
  */
 void TimeSeriesSet::export_time_series(vector< vector<double> > &data, const vector<string> &requested_fields, int32_t time_offset) {
-    cout << "clearing data" << endl;
+    //cout << "clearing data" << endl;
     data.clear();
-    cout << "resizing to " << requested_fields.size() << " by " << number_rows - fabs(time_offset) << endl;
+    //cout << "resizing '" << filename << "' to " << requested_fields.size() << " by " << number_rows - fabs(time_offset) << endl;
 
     data.resize(requested_fields.size(), vector<double>(number_rows - fabs(time_offset), 0.0));
 
-    cout << "resized! time_offset = " << time_offset << endl;
+    //cout << "resized! time_offset = " << time_offset << endl;
 
     if (time_offset == 0) {
         for (int i = 0; i != requested_fields.size(); i++) {

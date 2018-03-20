@@ -25,7 +25,7 @@ void bound_value(double min, double max, double &value) {
     else if (value > max) value = max;
 }
 
-RNN_Node_Interface::RNN_Node_Interface(int _innovation_number, int _type) : innovation_number(_innovation_number), type(_type) {
+RNN_Node_Interface::RNN_Node_Interface(int _innovation_number, int _type, double _depth) : innovation_number(_innovation_number), type(_type), depth(_depth) {
     total_inputs = 0;
 
     //outputs don't have an official output node but
@@ -37,11 +37,14 @@ RNN_Node_Interface::RNN_Node_Interface(int _innovation_number, int _type) : inno
     }
 }
 
-int RNN_Node_Interface::get_type() {
+int RNN_Node_Interface::get_type() const {
     return type;
 }
 
-int RNN_Node_Interface::get_innovation_number() {
+int RNN_Node_Interface::get_innovation_number() const {
     return innovation_number;
 }
 
+double RNN_Node_Interface::get_depth() const {
+    return depth;
+}

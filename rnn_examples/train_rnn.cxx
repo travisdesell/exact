@@ -28,7 +28,6 @@ using std::vector;
 #include "rnn/rnn_genome.hxx"
 #include "rnn/rnn_node.hxx"
 #include "rnn/rnn_node_interface.hxx"
-#include "rnn/bptt.hxx"
 
 #include "rnn/generate_nn.hxx"
 
@@ -48,26 +47,29 @@ vector< vector< vector<double> > > test_inputs;
 vector< vector< vector<double> > > test_outputs;
 
 RNN_Genome *genome;
+RNN* rnn;
+bool using_dropout;
+double dropout_probability;
 
 double objective_function(const vector<double> &parameters) {
-    genome->set_weights(parameters);
+    rnn->set_weights(parameters);
 
     double error = 0.0;
 
     for (uint32_t i = 0; i < training_inputs.size(); i++) {
-        error += genome->prediction_mae(training_inputs[i], training_outputs[i]);
+        error += rnn->prediction_mae(training_inputs[i], training_outputs[i], false, true, 0.0);
     }
 
     return -error;
 }
 
 double test_objective_function(const vector<double> &parameters) {
-    genome->set_weights(parameters);
+    rnn->set_weights(parameters);
 
     double total_error = 0.0;
 
     for (uint32_t i = 0; i < test_inputs.size(); i++) {
-        double error = genome->prediction_mse(test_inputs[i], test_outputs[i]);
+        double error = rnn->prediction_mse(test_inputs[i], test_outputs[i], false, true, 0.0);
         total_error += error;
 
         cout << "output for series[" << i << "]: " << error << endl;
@@ -124,11 +126,16 @@ int main(int argc, char **argv) {
     }
     if (rank == 0) cout << "number test files: " << test_filenames.size() << ", total rows for test flights: " << test_rows << endl;
 
-    normalize_time_series_sets(all_time_series);
+    if (argument_exists(arguments, "--normalize")) {
+        normalize_time_series_sets(all_time_series);
+        if (rank == 0) cout << "normalized all time series" << endl;
+    } else {
+        if (rank == 0) cout << "not normalizing time series" << endl;
+    }
 
-    if (rank == 0) cout << "normalized all time series" << endl;
 
     vector<string> input_parameter_names;
+    /*
     input_parameter_names.push_back("indicated_airspeed");
     input_parameter_names.push_back("msl_altitude");
     input_parameter_names.push_back("eng_1_rpm");
@@ -143,9 +150,26 @@ int main(int argc, char **argv) {
     input_parameter_names.push_back("eng_1_egt_2");
     input_parameter_names.push_back("eng_1_egt_3");
     input_parameter_names.push_back("eng_1_egt_4");
+    */
+    input_parameter_names.push_back("par1");
+    input_parameter_names.push_back("par2");
+    input_parameter_names.push_back("par3");
+    input_parameter_names.push_back("par4");
+    input_parameter_names.push_back("par5");
+    input_parameter_names.push_back("par6");
+    input_parameter_names.push_back("par7");
+    input_parameter_names.push_back("par8");
+    input_parameter_names.push_back("par9");
+    input_parameter_names.push_back("par10");
+    input_parameter_names.push_back("par11");
+    input_parameter_names.push_back("par12");
+    input_parameter_names.push_back("par13");
+    input_parameter_names.push_back("par14");
+    input_parameter_names.push_back("vib");
 
     vector<string> output_parameter_names;
-    output_parameter_names.push_back("indicated_airspeed");
+    output_parameter_names.push_back("vib");
+    //output_parameter_names.push_back("indicated_airspeed");
     //output_parameter_names.push_back("eng_1_oil_press");
     /*
     output_parameter_names.push_back("msl_altitude");
@@ -163,7 +187,7 @@ int main(int argc, char **argv) {
     output_parameter_names.push_back("eng_1_egt_4");
     */
 
-    int32_t time_offset = 1;
+    int32_t time_offset = 10;
 
     training_inputs.resize(training_time_series.size());
     training_outputs.resize(training_time_series.size());
@@ -216,6 +240,7 @@ int main(int argc, char **argv) {
         cerr << "    two_layer_ff" << endl;
         exit(1);
     }
+    rnn = genome->get_rnn();
 
     uint32_t number_of_weights = genome->get_number_weights();
 
@@ -228,27 +253,36 @@ int main(int argc, char **argv) {
     string search_type;
     get_argument(arguments, "--search_type", true, search_type);
 
+    using_dropout = false;
+
     if (search_type.compare("bp") == 0) {
         int max_iterations;
         get_argument(arguments, "--max_iterations", true, max_iterations);
 
         genome->initialize_randomly();
 
-        double learning_rate = 0.005;
+        double learning_rate = 0.001;
+        get_argument(arguments, "--learning_rate", false, learning_rate);
+
         bool nesterov_momentum = true;
         bool adapt_learning_rate = false;
         bool reset_weights = false;
         bool use_high_norm = true;
         double high_threshold = 1.0;
         bool use_low_norm = true;
-        double low_threshold = 0.01;
+        double low_threshold = 0.05;
+        using_dropout = false;
+        dropout_probability = 0.5;
 
         string log_filename = "rnn_log.csv";
+        if (argument_exists(arguments, "--log_filename")) {
+            get_argument(arguments, "--log_filename", false, log_filename);
+        }
 
         if (argument_exists(arguments, "--stochastic")) {
-                backpropagate_stochastic(genome, training_inputs, training_outputs, max_iterations, learning_rate, nesterov_momentum, adapt_learning_rate, reset_weights, use_high_norm, high_threshold, use_low_norm, low_threshold, log_filename);
+                genome->backpropagate_stochastic(training_inputs, training_outputs, max_iterations, learning_rate, nesterov_momentum, adapt_learning_rate, reset_weights, use_high_norm, high_threshold, use_low_norm, low_threshold, using_dropout, dropout_probability, log_filename);
         } else {
-                backpropagate(genome, training_inputs, training_outputs, max_iterations, learning_rate, nesterov_momentum, adapt_learning_rate, reset_weights, use_high_norm, high_threshold, use_low_norm, low_threshold, log_filename);
+                genome->backpropagate(training_inputs, training_outputs, max_iterations, learning_rate, nesterov_momentum, adapt_learning_rate, reset_weights, use_high_norm, high_threshold, use_low_norm, low_threshold, using_dropout, dropout_probability, log_filename);
         }
         genome->get_weights(best_parameters);
 
@@ -288,24 +322,43 @@ int main(int argc, char **argv) {
         exit(1);
     }
 
-    genome->set_weights(best_parameters);
+    rnn->set_weights(best_parameters);
 
     double mse, mae;
+    double avg_mse = 0.0, avg_mae = 0.0;
 
     for (uint32_t i = 0; i < training_inputs.size(); i++) {
-        mse = genome->prediction_mse(training_inputs[i], training_outputs[i]);
-        mae = genome->prediction_mae(training_inputs[i], training_outputs[i]);
+        mse = rnn->prediction_mse(training_inputs[i], training_outputs[i], using_dropout, false, dropout_probability);
+        mae = rnn->prediction_mae(training_inputs[i], training_outputs[i], using_dropout, false, dropout_probability);
+
+        avg_mse += mse;
+        avg_mae += mae;
 
         cout << "series[" << i << "] training MSE:  " << mse << endl;
         cout << "series[" << i << "] training MAE: " << mae << endl;
     }
+    avg_mse /= training_inputs.size();
+    avg_mae /= training_inputs.size();
+    cout << "average training MSE: " << avg_mse << endl;
+    cout << "average training MAE: " << avg_mae << endl;
+    cout << endl;
 
+    avg_mse = 0.0;
+    avg_mae = 0.0;
     for (uint32_t i = 0; i < test_inputs.size(); i++) {
-        mse = genome->prediction_mse(test_inputs[i], test_outputs[i]);
-        mae = genome->prediction_mae(test_inputs[i], test_outputs[i]);
+        mse = rnn->prediction_mse(test_inputs[i], test_outputs[i], using_dropout, false, dropout_probability);
+        mae = rnn->prediction_mae(test_inputs[i], test_outputs[i], using_dropout, false, dropout_probability);
+
+        avg_mse += mse;
+        avg_mae += mae;
 
         cout << "series[" << i << "] test MSE:      " << mse << endl;
         cout << "series[" << i << "] test MAE:     " << mae << endl;
     }
+    avg_mse /= test_inputs.size();
+    avg_mae /= test_inputs.size();
+    cout << "average test MSE: " << avg_mse << endl;
+    cout << "average test MAE: " << avg_mae << endl;
+    cout << endl;
 
 }

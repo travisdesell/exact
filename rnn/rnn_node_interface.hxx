@@ -6,7 +6,7 @@
 #include <vector>
 using std::vector;
 
-#include "rnn_genome.hxx"
+class RNN;
 
 #define RNN_INPUT_NODE 0
 #define RNN_HIDDEN_NODE 1
@@ -25,6 +25,8 @@ class RNN_Node_Interface {
         int innovation_number;
         int type;
 
+        double depth;
+
         int series_length;
 
         vector<double> input_values;
@@ -37,7 +39,7 @@ class RNN_Node_Interface {
         int total_inputs;
         int total_outputs;
     public:
-        RNN_Node_Interface(int _innovation_number, int _type);
+        RNN_Node_Interface(int _innovation_number, int _type, double _depth);
 
         virtual void input_fired(int time, double incoming_output) = 0;
         virtual void output_fired(int time, double delta) = 0;
@@ -53,16 +55,17 @@ class RNN_Node_Interface {
 
         virtual RNN_Node_Interface* copy() = 0;
 
-        int get_type();
-        int get_innovation_number();
+        int get_type() const;
+        int get_innovation_number() const;
+        double get_depth() const;
 
         friend class RNN_Edge;
         friend class RNN_Recurrent_Edge;
+        friend class RNN;
         friend class RNN_Genome;
 
-        friend void get_mse(RNN_Genome* genome, const vector< vector<double> > &expected, double &mse, vector< vector<double> > &deltas);
-        friend void get_mae(RNN_Genome* genome, const vector< vector<double> > &expected, double &mae, vector< vector<double> > &deltas);
-
+        friend void get_mse(RNN* genome, const vector< vector<double> > &expected, double &mse, vector< vector<double> > &deltas);
+        friend void get_mae(RNN* genome, const vector< vector<double> > &expected, double &mae, vector< vector<double> > &deltas);
 };
 
 

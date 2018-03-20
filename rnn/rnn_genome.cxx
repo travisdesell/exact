@@ -1,37 +1,29 @@
-#include <iostream>
-using std::cout;
-using std::endl;
-
-#include <limits>
-using std::numeric_limits;
-
-#include <iomanip>
-using std::fixed;
-using std::setw;
-
-#include <iostream>
-using std::cerr;
-using std::endl;
+#include <cmath>
 
 #include <fstream>
 using std::ofstream;
+
+#include <iomanip>
+using std::setw;
+
+#include <iostream>
+using std::cout;
+using std::cerr;
+using std::endl;
 
 #include <random>
 using std::minstd_rand0;
 using std::uniform_real_distribution;
 
+#include <thread>
+using std::thread;
+
 #include <vector>
 using std::vector;
 
 
-#include "rnn_edge.hxx"
-#include "rnn_recurrent_edge.hxx"
+#include "rnn.hxx"
 #include "rnn_genome.hxx"
-#include "rnn_node_interface.hxx"
-#include "rnn_node.hxx"
-#include "lstm_node.hxx"
-#include "mse.hxx"
-
 
 RNN_Genome::RNN_Genome(vector<RNN_Node_Interface*> &_nodes, vector<RNN_Edge*> &_edges) {
     nodes = _nodes;
@@ -39,15 +31,7 @@ RNN_Genome::RNN_Genome(vector<RNN_Node_Interface*> &_nodes, vector<RNN_Edge*> &_
 
     //sort nodes by depth
     //sort edges by depth
-
-    for (uint32_t i = 0; i < nodes.size(); i++) {
-        if (nodes[i]->type == RNN_INPUT_NODE) {
-            input_nodes.push_back(nodes[i]);
-        } else if (nodes[i]->type == RNN_OUTPUT_NODE) {
-            output_nodes.push_back(nodes[i]);
-        }
-    }
-
+    sort(edges.begin(), edges.end(), sort_RNN_Edges_by_depth());
 }
 
 RNN_Genome::RNN_Genome(vector<RNN_Node_Interface*> &_nodes, vector<RNN_Edge*> &_edges, vector<RNN_Recurrent_Edge*> &_recurrent_edges) {
@@ -57,32 +41,7 @@ RNN_Genome::RNN_Genome(vector<RNN_Node_Interface*> &_nodes, vector<RNN_Edge*> &_
 
     //sort nodes by depth
     //sort edges by depth
-
-    for (uint32_t i = 0; i < nodes.size(); i++) {
-        if (nodes[i]->type == RNN_INPUT_NODE) {
-            input_nodes.push_back(nodes[i]);
-        } else if (nodes[i]->type == RNN_OUTPUT_NODE) {
-            output_nodes.push_back(nodes[i]);
-        }
-    }
-
-}
-
-
-int RNN_Genome::get_number_nodes() {
-    return nodes.size();
-}
-
-int RNN_Genome::get_number_edges() {
-    return edges.size();
-}
-
-RNN_Node_Interface* RNN_Genome::get_node(int i) {
-    return nodes[i];
-}
-
-RNN_Edge* RNN_Genome::get_edge(int i) {
-    return edges[i];
+    sort(edges.begin(), edges.end(), sort_RNN_Edges_by_depth());
 }
 
 
@@ -98,6 +57,11 @@ void RNN_Genome::get_weights(vector<double> &parameters) {
     for (uint32_t i = 0; i < edges.size(); i++) {
         parameters[current++] = edges[i]->weight;
     }
+
+    for (uint32_t i = 0; i < recurrent_edges.size(); i++) {
+        parameters[current++] = recurrent_edges[i]->weight;
+    }
+
 
 }
 
@@ -117,6 +81,10 @@ void RNN_Genome::set_weights(const vector<double> &parameters) {
         edges[i]->weight = parameters[current++];
     }
 
+    for (uint32_t i = 0; i < recurrent_edges.size(); i++) {
+        recurrent_edges[i]->weight = parameters[current++];
+    }
+
 }
 
 uint32_t RNN_Genome::get_number_weights() {
@@ -127,205 +95,9 @@ uint32_t RNN_Genome::get_number_weights() {
     }
 
     number_weights += edges.size();
+    number_weights += recurrent_edges.size();
 
     return number_weights;
-}
-
-void RNN_Genome::forward_pass(const vector< vector<double> > &series_data) {
-    series_length = series_data[0].size();
-
-    if (input_nodes.size() != series_data.size()) {
-        cerr << "ERROR: number of input nodes (" << input_nodes.size() << ") != number of time series data input fields (" << series_data.size() << ")" << endl;
-        exit(1);
-    }
-
-    //TODO: want to check that all vectors in series_data are of same length
-
-
-    for (uint32_t i = 0; i < nodes.size(); i++) {
-        nodes[i]->reset(series_length);
-    }
-
-    for (uint32_t i = 0; i < edges.size(); i++) {
-        edges[i]->reset(series_length);
-    }
-
-    for (uint32_t i = 0; i < recurrent_edges.size(); i++) {
-        recurrent_edges[i]->reset(series_length);
-    }
-
-    //do a propagate forward for time == -1 so that the the input
-    //fired count on each node will be correct for the first pass
-    //through the RNN
-    for (uint32_t i = 0; i < recurrent_edges.size(); i++) {
-        recurrent_edges[i]->first_propagate_forward();
-    }
-
-
-    for (int32_t time = 0; time < series_length; time++) {
-        for (uint32_t i = 0; i < input_nodes.size(); i++) {
-            input_nodes[i]->input_fired(time, series_data[i][time]);
-        }
-
-        //feed forward
-        for (uint32_t i = 0; i < edges.size(); i++) {
-            edges[i]->propagate_forward(time);
-        }
-
-        for (uint32_t i = 0; i < recurrent_edges.size(); i++) {
-            recurrent_edges[i]->propagate_forward(time);
-        }
-    }
-}
-
-void RNN_Genome::backward_pass(double error) {
-    //do a propagate forward for time == (series_length - 1) so that the 
-    // output fired count on each node will be correct for the first pass
-    //through the RNN
-    for (uint32_t i = 0; i < recurrent_edges.size(); i++) {
-        recurrent_edges[i]->first_propagate_backward();
-    }
-
-    for (int32_t time = series_length - 1; time >= 0; time--) {
-
-        for (uint32_t i = 0; i < output_nodes.size(); i++) {
-            output_nodes[i]->error_fired(time, error);
-        }
-
-        for (int32_t i = (int32_t)edges.size() - 1; i >= 0; i--) {
-            edges[i]->propagate_backward(time);
-        }
-
-        for (int32_t i = (int32_t)recurrent_edges.size() - 1; i >= 0; i--) {
-            recurrent_edges[i]->propagate_backward(time);
-        }
-    }
-}
-
-
-double RNN_Genome::calculate_error_mse(const vector< vector<double> > &expected_outputs) {
-    double mse_sum = 0.0;
-    double mse;
-    double error;
-    for (uint32_t i = 0; i < output_nodes.size(); i++) {
-        output_nodes[i]->error_values.resize(expected_outputs[i].size());
-
-        mse = 0.0;
-        for (uint32_t j = 0; j < expected_outputs[i].size(); j++) {
-            error = output_nodes[i]->output_values[j] - expected_outputs[i][j];
-            output_nodes[i]->error_values[j] = error;
-            mse += error * error;
-        }
-        mse_sum += mse / expected_outputs[i].size();
-    }
-
-    return mse_sum;
-}
-
-double RNN_Genome::calculate_error_mae(const vector< vector<double> > &expected_outputs) {
-    double mae_sum = 0.0;
-    double mae;
-    double error;
-    for (uint32_t i = 0; i < output_nodes.size(); i++) {
-        output_nodes[i]->error_values.resize(expected_outputs[i].size());
-
-        mae = 0.0;
-        for (uint32_t j = 0; j < expected_outputs[i].size(); j++) {
-            error = fabs(output_nodes[i]->output_values[j] - expected_outputs[i][j]);
-
-            mae += error;
-
-            if (error == 0) {
-                error = 0;
-            } else {
-                error = (output_nodes[i]->output_values[j] - expected_outputs[i][j]) / error;
-            }
-            output_nodes[i]->error_values[j] = error;
-
-        }
-        mae_sum += mae / expected_outputs[i].size();
-    }
-
-    return mae_sum;
-}
-
-double RNN_Genome::prediction_mse(const vector< vector<double> > &series_data, const vector< vector<double> > &expected_outputs) {
-    forward_pass(series_data);
-    return calculate_error_mse(expected_outputs);;
-}
-
-double RNN_Genome::prediction_mae(const vector< vector<double> > &series_data, const vector< vector<double> > &expected_outputs) {
-    forward_pass(series_data);
-    return calculate_error_mae(expected_outputs);;
-}
-
-
-void RNN_Genome::get_analytic_gradient(const vector<double> &test_parameters, const vector< vector<double> > &inputs, const vector< vector<double> > &outputs, double &mse, vector<double> &analytic_gradient) {
-    analytic_gradient.assign(test_parameters.size(), 0.0);
-
-    set_weights(test_parameters);
-    forward_pass(inputs);
-
-    mse = calculate_error_mse(outputs);
-
-    backward_pass(mse * (1.0 / outputs[0].size()) * 2.0);
-
-    vector<double> current_gradients;
-
-    uint32_t current = 0;
-    for (uint32_t i = 0; i < nodes.size(); i++) {
-        nodes[i]->get_gradients(current_gradients);
-
-        for (uint32_t j = 0; j < current_gradients.size(); j++) {
-            analytic_gradient[current] = current_gradients[j];
-            current++;
-        }
-    }
-
-    for (uint32_t i = 0; i < edges.size(); i++) {
-        analytic_gradient[current] = edges[i]->get_gradient();
-        current++;
-    }
-}
-
-void RNN_Genome::get_empirical_gradient(const vector<double> &test_parameters, const vector< vector<double> > &inputs, const vector< vector<double> > &outputs, double &mse, vector<double> &empirical_gradient) {
-    empirical_gradient.assign(test_parameters.size(), 0.0);
-
-    vector< vector<double> > deltas;
-
-
-    set_weights(test_parameters);
-    forward_pass(inputs);
-    double original_mse = calculate_error_mse(outputs);
-
-    //cout << "EMPIRICAL statistics: " << endl;
-    //print_output_statistics(outputs);
-
-    double save;
-    double diff = 0.00001;
-    double mse1, mse2;
-
-    vector<double> parameters = test_parameters;
-    for (uint32_t i = 0; i < parameters.size(); i++) {
-        save = parameters[i];
-
-        parameters[i] = save - diff;
-        set_weights(parameters);
-        forward_pass(inputs);
-        get_mse(this, outputs, mse1, deltas);
-
-        parameters[i] = save + diff;
-        set_weights(parameters);
-        forward_pass(inputs);
-        get_mse(this, outputs, mse2, deltas);
-
-        empirical_gradient[i] = (mse2 - mse1) / (2.0 * diff);
-        empirical_gradient[i] *= original_mse;
-
-        parameters[i] = save;
-    }
-
-    mse = original_mse;
 }
 
 void RNN_Genome::initialize_randomly() {
@@ -341,9 +113,11 @@ void RNN_Genome::initialize_randomly() {
     set_weights(parameters);
 }
 
-RNN_Genome* RNN_Genome::copy() {
+
+RNN* RNN_Genome::get_rnn() {
     vector<RNN_Node_Interface*> node_copies;
     vector<RNN_Edge*> edge_copies;
+    vector<RNN_Recurrent_Edge*> recurrent_edge_copies;
 
     for (uint32_t i = 0; i < nodes.size(); i++) {
         node_copies.push_back( nodes[i]->copy() );
@@ -353,132 +127,444 @@ RNN_Genome* RNN_Genome::copy() {
         edge_copies.push_back( edges[i]->copy(node_copies) );
     }
 
-    return new RNN_Genome(node_copies, edge_copies);
+    for (uint32_t i = 0; i < recurrent_edges.size(); i++) {
+        recurrent_edge_copies.push_back( recurrent_edges[i]->copy(node_copies) );
+    }
+
+    return new RNN(node_copies, edge_copies, recurrent_edge_copies);
 }
 
-#ifdef RNN_GENOME_TEST
+void forward_pass_thread(RNN* rnn, const vector<double> &parameters, const vector< vector<double> > &series_data, const vector< vector<double> > &expected_outputs, uint32_t i, double *mses, bool using_dropout, bool training, double dropout_probability) {
+    rnn->set_weights(parameters);
+    rnn->forward_pass(series_data, using_dropout, training, dropout_probability);
+    mses[i] = rnn->calculate_error_mse(expected_outputs);
 
-int main(int argc, char **argv) {
-    int node_innovation_count = 0;
-    int edge_innovation_count = 0;
+    //mses[i] = rnn->calculate_error_mae(expected_outputs);
+    //cout << "mse[" << i << "]: " << mse_current << endl;
+}
 
-    //only one input node
-    RNN_Node_Interface* input_node1 = new RNN_Node(++node_innovation_count, RNN_INPUT_NODE);
-    RNN_Node_Interface* input_node2 = new RNN_Node(++node_innovation_count, RNN_INPUT_NODE);
-    RNN_Node_Interface* hidden11 = new LSTM_Node(++node_innovation_count, RNN_HIDDEN_NODE);
-    RNN_Node_Interface* hidden12 = new LSTM_Node(++node_innovation_count, RNN_HIDDEN_NODE);
-    RNN_Node_Interface* hidden21 = new LSTM_Node(++node_innovation_count, RNN_HIDDEN_NODE);
-    RNN_Node_Interface* hidden22 = new LSTM_Node(++node_innovation_count, RNN_HIDDEN_NODE);
-    RNN_Node_Interface* output_node1 = new LSTM_Node(++node_innovation_count, RNN_OUTPUT_NODE);
-    RNN_Node_Interface* output_node2 = new LSTM_Node(++node_innovation_count, RNN_OUTPUT_NODE);
+void RNN_Genome::get_analytic_gradient(vector<RNN*> &rnns, const vector<double> &parameters, const vector< vector< vector<double> > > &series_data, const vector< vector< vector<double> > > &expected_outputs, double &mse, vector<double> &analytic_gradient, bool using_dropout, bool training, double dropout_probability) {
 
-    vector<RNN_Node_Interface*> rnn_nodes;
-    rnn_nodes.push_back(input_node1);
-    rnn_nodes.push_back(input_node2);
-    rnn_nodes.push_back(hidden11);
-    rnn_nodes.push_back(hidden12);
-    rnn_nodes.push_back(hidden21);
-    rnn_nodes.push_back(hidden22);
-    rnn_nodes.push_back(output_node1);
-    rnn_nodes.push_back(output_node2);
+    double *mses = new double[rnns.size()];
+    double mse_sum = 0.0;
+    vector<thread> threads;
+    for (uint32_t i = 0; i < rnns.size(); i++) {
+        threads.push_back( thread(forward_pass_thread, rnns[i], parameters, series_data[i], expected_outputs[i], i, mses, using_dropout, training, dropout_probability) );
+    }
 
-    vector<RNN_Edge*> rnn_edges;
-    rnn_edges.push_back(new RNN_Edge(++edge_innovation_count, input_node1, hidden11));
-    rnn_edges.push_back(new RNN_Edge(++edge_innovation_count, input_node1, hidden12));
-    rnn_edges.push_back(new RNN_Edge(++edge_innovation_count, input_node2, hidden11));
-    rnn_edges.push_back(new RNN_Edge(++edge_innovation_count, input_node2, hidden12));
+    for (uint32_t i = 0; i < rnns.size(); i++) {
+        threads[i].join();
+        mse_sum += mses[i];
+    }
+    delete [] mses;
 
-    rnn_edges.push_back(new RNN_Edge(++edge_innovation_count, hidden11, hidden21));
-    rnn_edges.push_back(new RNN_Edge(++edge_innovation_count, hidden11, hidden22));
-    rnn_edges.push_back(new RNN_Edge(++edge_innovation_count, hidden12, hidden21));
-    rnn_edges.push_back(new RNN_Edge(++edge_innovation_count, hidden12, hidden22));
+    for (uint32_t i = 0; i < rnns.size(); i++) {
+        double d_mse = mse_sum * (1.0 / expected_outputs[i][0].size()) * 2.0;
+        rnns[i]->backward_pass(d_mse, using_dropout, training, dropout_probability);
 
-    rnn_edges.push_back(new RNN_Edge(++edge_innovation_count, hidden21, output_node1));
-    rnn_edges.push_back(new RNN_Edge(++edge_innovation_count, hidden22, output_node1));
-    rnn_edges.push_back(new RNN_Edge(++edge_innovation_count, hidden21, output_node2));
-    rnn_edges.push_back(new RNN_Edge(++edge_innovation_count, hidden22, output_node2));
+        //double d_mae = mse_sum * (1.0 / expected_outputs[i][0].size());
+        //rnns[i]->backward_pass(d_mae);
 
-    RNN_Genome *genome = new RNN_Genome(rnn_nodes, rnn_edges);
+    }
 
-    uint32_t number_of_weights = genome->get_number_weights();
+    mse = mse_sum;
 
-    vector<double> min_bound(number_of_weights, -1.0); 
-    vector<double> max_bound(number_of_weights, 1.0); 
+    vector<double> current_gradients;
+    analytic_gradient.assign(parameters.size(), 0.0);
+    for (uint32_t k = 0; k < rnns.size(); k++) {
 
-    cout << "RNN has " << number_of_weights << " weights." << endl;
+        uint32_t current = 0;
+        for (uint32_t i = 0; i < rnns[k]->get_number_nodes(); i++) {
+            rnns[k]->get_node(i)->get_gradients(current_gradients);
 
-    vector<double> test_parameters(number_of_weights, 0.0);
+            for (uint32_t j = 0; j < current_gradients.size(); j++) {
+                analytic_gradient[current] += current_gradients[j];
+                current++;
+            }
+        }
+
+        for (uint32_t i = 0; i < rnns[k]->get_number_edges(); i++) {
+            analytic_gradient[current] += rnns[k]->get_edge(i)->get_gradient();
+            current++;
+        }
+    }
+}
+
+
+void RNN_Genome::backpropagate(const vector< vector< vector<double> > > &series_data, const vector< vector< vector<double> > > &expected_outputs, int max_iterations, double learning_rate, bool nesterov_momentum, bool adapt_learning_rate, bool reset_weights, bool use_high_norm, double high_threshold, bool use_low_norm, double low_threshold, bool using_dropout, double dropout_probability, string log_filename) {
+
+    int32_t n_series = series_data.size();
+    vector<RNN*> rnns;
+    for (int32_t i = 0; i < n_series; i++) {
+        rnns.push_back( this->get_rnn() );
+    }
+
+    vector<double> parameters;
+    this->get_weights(parameters);
+
+    int n_parameters = this->get_number_weights();
+    vector<double> prev_parameters(n_parameters, 0.0);
+
+    vector<double> prev_velocity(n_parameters, 0.0);
+    vector<double> prev_prev_velocity(n_parameters, 0.0);
+
+    vector<double> analytic_gradient;
+    vector<double> prev_gradient(n_parameters, 0.0);
+
+    double mu = 0.9;
+    double original_learning_rate = learning_rate;
+
+    double prev_mu;
+    double prev_norm;
+    double prev_learning_rate;
+    double prev_mse;
+    double mse;
+
+    double parameter_norm = 0.0;
+    double velocity_norm = 0.0;
+    double norm = 0.0;
+
+    //initialize the initial previous values
+    get_analytic_gradient(rnns, parameters, series_data, expected_outputs, mse, analytic_gradient, using_dropout, true, dropout_probability);
+
+    norm = 0.0;
+    for (int32_t i = 0; i < parameters.size(); i++) {
+        norm += analytic_gradient[i] * analytic_gradient[i];
+    }
+    norm = sqrt(norm);
+    
+    ofstream output_log(log_filename);
+
+    bool was_reset = false;
+    double reset_count = 0;
+    for (uint32_t iteration = 0; iteration < max_iterations; iteration++) {
+        prev_mu = mu;
+        prev_norm  = norm;
+        prev_mse = mse;
+        prev_learning_rate = learning_rate;
+
+
+        prev_gradient = analytic_gradient;
+
+        get_analytic_gradient(rnns, parameters, series_data, expected_outputs, mse, analytic_gradient, using_dropout, true, dropout_probability);
+
+        norm = 0.0;
+        velocity_norm = 0.0;
+        parameter_norm = 0.0;
+        for (int32_t i = 0; i < parameters.size(); i++) {
+            norm += analytic_gradient[i] * analytic_gradient[i];
+            velocity_norm += prev_velocity[i] * prev_velocity[i];
+            parameter_norm += parameters[i] * parameters[i];
+        }
+        norm = sqrt(norm);
+        velocity_norm = sqrt(velocity_norm);
+
+        output_log << iteration
+             << " " << mse 
+             << " " << norm
+             << " " << learning_rate << endl;
+
+        cout << "iteration " << setw(10) << iteration
+             << ", mse: " << setw(10) << mse 
+             << ", lr: " << setw(10) << learning_rate 
+             << ", norm: " << setw(10) << norm
+             << ", p_norm: " << setw(10) << parameter_norm
+             << ", v_norm: " << setw(10) << velocity_norm;
+
+        if (reset_weights && prev_mse * 1.25 < mse) {
+            cout << ", RESETTING WEIGHTS " << reset_count << endl;
+            parameters = prev_parameters;
+            //prev_velocity = prev_prev_velocity;
+            prev_velocity.assign(parameters.size(), 0.0);
+            mse = prev_mse;
+            mu = prev_mu;
+            learning_rate = prev_learning_rate;
+            analytic_gradient = prev_gradient;
+
+
+            //learning_rate *= 0.5;
+            //if (learning_rate < 0.0000001) learning_rate = 0.0000001;
+
+            reset_count++;
+            if (reset_count > 20) break;
+
+            was_reset = true;
+            continue;
+        }
+
+        if (was_reset) {
+            was_reset = false;
+        } else {
+            reset_count -= 0.1;
+            if (reset_count < 0) reset_count = 0;
+            if (adapt_learning_rate) learning_rate = original_learning_rate;
+        }
+
+
+        if (adapt_learning_rate) {
+            if (prev_mse > mse) {
+                learning_rate *= 1.10;
+                if (learning_rate > 1.0) learning_rate = 1.0;
+
+                cout << ", INCREASING LR";
+            }
+        }
+
+        if (use_high_norm && norm > high_threshold) {
+            double high_threshold_norm = high_threshold / norm;
+
+            cout << ", OVER THRESHOLD, multiplier: " << high_threshold_norm;
+
+            for (int32_t i = 0; i < parameters.size(); i++) {
+                analytic_gradient[i] = high_threshold_norm * analytic_gradient[i];
+            }
+
+            if (adapt_learning_rate) {
+                learning_rate *= 0.5;
+                if (learning_rate < 0.0000001) learning_rate = 0.0000001;
+            }
+
+        } else if (use_low_norm && norm < low_threshold) {
+            double low_threshold_norm = low_threshold / norm;
+            cout << ", UNDER THRESHOLD, multiplier: " << low_threshold_norm;
+
+            for (int32_t i = 0; i < parameters.size(); i++) {
+                analytic_gradient[i] = low_threshold_norm * analytic_gradient[i];
+            }
+
+            if (adapt_learning_rate) {
+                if (prev_mse * 1.05 < mse) {
+                    cout << ", WORSE";
+                    learning_rate *= 0.5;
+                    if (learning_rate < 0.0000001) learning_rate = 0.0000001;
+                }
+            }
+        }
+
+        if (reset_count > 0) {
+            double reset_penalty = pow(5.0, -reset_count);
+            cout << ", RESET PENALTY (" << reset_count << "): " << reset_penalty;
+
+            for (int32_t i = 0; i < parameters.size(); i++) {
+                analytic_gradient[i] = reset_penalty * analytic_gradient[i];
+            }
+
+        }
+
+
+        cout << endl;
+
+        if (nesterov_momentum) {
+            for (int32_t i = 0; i < parameters.size(); i++) {
+                prev_parameters[i] = parameters[i];
+                prev_prev_velocity[i] = prev_velocity[i];
+
+                double mu_v = prev_velocity[i] * prev_mu;
+
+                prev_velocity[i] = mu_v  - (prev_learning_rate * prev_gradient[i]);
+                parameters[i] += mu_v + ((mu + 1) * prev_velocity[i]);
+            }
+        } else {
+            for (int32_t i = 0; i < parameters.size(); i++) {
+                prev_parameters[i] = parameters[i];
+                prev_gradient[i] = analytic_gradient[i];
+                parameters[i] -= learning_rate * analytic_gradient[i];
+            }
+        }
+    }
+
+    RNN *g;
+    for (int32_t i = 0; i < n_series; i++) {
+        g = rnns.back();
+        rnns.pop_back();
+        delete g;
+
+    }
+
+
+    this->set_weights(parameters);
+}
+
+
+void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> > > &series_data, const vector< vector< vector<double> > > &expected_outputs, int max_iterations, double learning_rate, bool nesterov_momentum, bool adapt_learning_rate, bool reset_weights, bool use_high_norm, double high_threshold, bool use_low_norm, double low_threshold, bool using_dropout, double dropout_probability, string log_filename) {
+
+    vector<double> parameters;
+    this->get_weights(parameters);
+
+    int n_parameters = this->get_number_weights();
+    vector<double> prev_parameters(n_parameters, 0.0);
+
+    vector<double> prev_velocity(n_parameters, 0.0);
+    vector<double> prev_prev_velocity(n_parameters, 0.0);
+
+    vector<double> analytic_gradient;
+    vector<double> prev_gradient(n_parameters, 0.0);
+
+    double mu = 0.9;
+    double original_learning_rate = learning_rate;
+
+    int n_series = series_data.size();
+    double prev_mu[n_series];
+    double prev_norm[n_series];
+    double prev_learning_rate[n_series];
+    double prev_mse[n_series];
+    double mse;
+
+    double norm = 0.0;
+
+    RNN* rnn = get_rnn();
+    rnn->set_weights(parameters);
+
+    //initialize the initial previous values
+    for (uint32_t i = 0; i < n_series; i++) {
+        rnn->get_analytic_gradient(parameters, series_data[i], expected_outputs[i], mse, analytic_gradient, using_dropout, true, dropout_probability);
+
+        norm = 0.0;
+        for (int32_t i = 0; i < parameters.size(); i++) {
+            norm += analytic_gradient[i] * analytic_gradient[i];
+        }
+        norm = sqrt(norm);
+        prev_mu[i] = mu;
+        prev_norm[i] = norm;
+        prev_mse[i] = mse;
+        prev_learning_rate[i] = learning_rate;
+    }
 
     unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
     minstd_rand0 generator(seed);
-    for (uint32_t i = 0; i < test_parameters.size(); i++) {
-        uniform_real_distribution<double> rng(min_bound[i], max_bound[i]);
-        test_parameters[i] = rng(generator);
-    }
+    uniform_real_distribution<double> rng(0, 1);
 
-    vector< vector<double> > inputs;
-    vector<double> input1;
-    input1.push_back(0.82);
-    input1.push_back(0.83);
-    input1.push_back(0.87);
-    input1.push_back(0.91);
-    inputs.push_back(input1);
+    int random_selection = rng(generator);
+    mu = prev_mu[random_selection];
+    norm = prev_norm[random_selection];
+    mse = prev_mse[random_selection];
+    learning_rate = prev_learning_rate[random_selection];
 
-    vector<double> input2;
-    input2.push_back(0.43);
-    input2.push_back(0.41);
-    input2.push_back(-0.49);
-    input2.push_back(0.33);
-    inputs.push_back(input2);
+    ofstream output_log(log_filename);
 
+    bool was_reset = false;
+    int reset_count = 0;
+    for (uint32_t iteration = 0; iteration < max_iterations; iteration++) {
+        prev_mu[random_selection] = mu;
+        prev_norm[random_selection] = norm;
+        prev_mse[random_selection] = mse;
+        prev_learning_rate[random_selection] = learning_rate;
 
-    vector< vector<double> > outputs;
-    vector<double> output1;
-    output1.push_back(-0.52);
-    output1.push_back(0.55);
-    output1.push_back(-0.67);
-    output1.push_back(0.71);
-    outputs.push_back(output1);
+        prev_gradient = analytic_gradient;
 
-    vector<double> output2;
-    output2.push_back(-0.23);
-    output2.push_back(0.27);
-    output2.push_back(-0.35);
-    output2.push_back(0.33);
-    outputs.push_back(output2);
-
-    vector<double> analytic_gradient;
-    vector<double> empirical_gradient;
-
-    vector<double> previous_velocity(test_parameters.size(), 0.0);
-
-    double mse;
-
-    for (uint32_t iteration = 0; iteration < 10000; iteration++) {
-        genome->get_analytic_gradient(test_parameters, inputs, outputs, mse, analytic_gradient);
-        genome->get_empirical_gradient(test_parameters, inputs, outputs, mse, empirical_gradient);
-
-        cout << "GRADIENTS:" << endl;
-        for (uint32_t i = 0; i < analytic_gradient.size(); i++) {
-            double diff = analytic_gradient[i] - empirical_gradient[i];
-            cout << "\t gradient[" << i << "] analytic: " << setw(10) << analytic_gradient[i]
-                << ", empirical: " << setw(10) << empirical_gradient[i]
-                << ", diff: " << setw(10) << diff << endl;
+        if (!was_reset) {
+            random_selection = rng(generator) * series_data.size();
         }
 
-        double mu = 0.001;
-        double learning_rate = 0.001;
-        for (uint32_t i = 0; i < test_parameters.size(); i++) {
-            double pv = previous_velocity[i];
-            double velocity = (mu * pv) - (learning_rate * analytic_gradient[i]);
-            previous_velocity[i] = velocity;
+        rnn->get_analytic_gradient(parameters, series_data[random_selection], expected_outputs[random_selection], mse, analytic_gradient, using_dropout, true, dropout_probability);
 
-            test_parameters[i] += velocity + mu * (velocity - pv);
-            //test_parameters[i] -= learning_rate * analytic_gradient[i];
+        norm = 0.0;
+        for (int32_t i = 0; i < parameters.size(); i++) {
+            norm += analytic_gradient[i] * analytic_gradient[i];
+        }
+        norm = sqrt(norm);
+
+        output_log << iteration
+             << " " << mse 
+             << " " << norm
+             << " " << learning_rate << endl;
+
+        cout << "iteration " << iteration
+             << ", series: " << random_selection
+             << ", mse: " << mse 
+             << ", lr: " << learning_rate 
+             << ", norm: " << norm;
+
+        if (reset_weights && prev_mse[random_selection] * 2 < mse) {
+            cout << ", RESETTING WEIGHTS" << endl;
+            parameters = prev_parameters;
+            //prev_velocity = prev_prev_velocity;
+            prev_velocity.assign(parameters.size(), 0.0);
+            mse = prev_mse[random_selection];
+            mu = prev_mu[random_selection];
+            learning_rate = prev_learning_rate[random_selection];
+            analytic_gradient = prev_gradient;
+
+            random_selection = rng(generator) * series_data.size();
+
+            learning_rate *= 0.5;
+            if (learning_rate < 0.0000001) learning_rate = 0.0000001;
+
+            reset_count++;
+            if (reset_count > 20) break;
+
+            was_reset = true;
+            continue;
         }
 
+        if (was_reset) {
+            was_reset = false;
+        } else {
+            reset_count = 0;
+            learning_rate = original_learning_rate;
+        }
+
+
+        if (adapt_learning_rate) {
+            if (prev_mse[random_selection] > mse) {
+                learning_rate *= 1.10;
+                if (learning_rate > 1.0) learning_rate = 1.0;
+
+                cout << ", INCREASING LR";
+            }
+        }
+
+        if (use_high_norm && norm > high_threshold) {
+            double high_threshold_norm = high_threshold / norm;
+            cout << ", OVER THRESHOLD, multiplier: " << high_threshold_norm;
+
+            for (int32_t i = 0; i < parameters.size(); i++) {
+                analytic_gradient[i] = high_threshold_norm * analytic_gradient[i];
+            }
+
+            if (adapt_learning_rate) {
+                learning_rate *= 0.5;
+                if (learning_rate < 0.0000001) learning_rate = 0.0000001;
+            }
+
+        } else if (use_low_norm && norm < low_threshold) {
+            double low_threshold_norm = low_threshold / norm;
+            cout << ", UNDER THRESHOLD, multiplier: " << low_threshold_norm;
+
+
+            for (int32_t i = 0; i < parameters.size(); i++) {
+                analytic_gradient[i] = low_threshold_norm * analytic_gradient[i];
+            }
+
+            if (adapt_learning_rate) {
+                if (prev_mse[random_selection] * 1.05 < mse) {
+                    cout << ", WORSE";
+                    learning_rate *= 0.5;
+                    if (learning_rate < 0.0000001) learning_rate = 0.0000001;
+                }
+            }
+        }
+
+        cout << endl;
+
+        if (nesterov_momentum) {
+            for (int32_t i = 0; i < parameters.size(); i++) {
+                prev_parameters[i] = parameters[i];
+                prev_prev_velocity[i] = prev_velocity[i];
+
+                double mu_v = prev_velocity[i] * prev_mu[random_selection];
+
+                prev_velocity[i] = mu_v  - (prev_learning_rate[random_selection] * prev_gradient[i]);
+                parameters[i] += mu_v + ((mu + 1) * prev_velocity[i]);
+            }
+        } else {
+            for (int32_t i = 0; i < parameters.size(); i++) {
+                prev_parameters[i] = parameters[i];
+                prev_gradient[i] = analytic_gradient[i];
+                parameters[i] -= learning_rate * analytic_gradient[i];
+            }
+        }
     }
+
+    this->set_weights(parameters);
 }
-
-#endif
-

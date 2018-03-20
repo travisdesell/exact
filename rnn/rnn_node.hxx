@@ -15,7 +15,7 @@ class RNN_Node : public RNN_Node_Interface {
 
     public:
 
-        RNN_Node(int _innovation_number, int _type);
+        RNN_Node(int _innovation_number, int _type, double _depth);
 
         void input_fired(int time, double incoming_output);
 

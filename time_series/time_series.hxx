@@ -53,6 +53,7 @@ class TimeSeriesSet {
     private:
         int number_rows;
         double expected_class;
+        string filename;
 
         vector<string> fields;
 
@@ -60,7 +61,7 @@ class TimeSeriesSet {
 
     public:
 
-        TimeSeriesSet(string filename, double _expected_class);
+        TimeSeriesSet(string _filename, double _expected_class);
 
         void add_time_series(string name);
 

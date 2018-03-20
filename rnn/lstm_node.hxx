@@ -59,7 +59,7 @@ class LSTM_Node : public RNN_Node_Interface {
 
     public:
 
-        LSTM_Node(int _innovation_number, int _type);
+        LSTM_Node(int _innovation_number, int _type, double _depth);
 
         double get_gradient(string gradient_name);
         void print_gradient(string gradient_name);

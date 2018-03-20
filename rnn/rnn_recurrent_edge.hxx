@@ -1,8 +1,9 @@
 #ifndef EXALT_RNN_RECURRENT_EDGE_HXX
 #define EXALT_RNN_RECURRENT_EDGE_HXX
 
-#include "rnn_node_interface.hxx"
+class RNN;
 
+#include "rnn_node_interface.hxx"
 
 class RNN_Recurrent_Edge {
     private:
@@ -38,6 +39,7 @@ class RNN_Recurrent_Edge {
         RNN_Recurrent_Edge* copy(const vector<RNN_Node_Interface*> new_nodes);
 
         friend class RNN_Genome;
+        friend class RNN;
 };
 
 #endif

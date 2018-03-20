@@ -1,65 +1,39 @@
-#ifndef EXALT_RNN_GENOME_HXX
-#define EXALT_RNN_GENOME_HXX
-
-#include <string>
-using std::string;
+#ifndef RNN_BPTT_HXX
+#define RNN_BPTT_HXX
 
 #include <vector>
 using std::vector;
 
-class RNN_Node_Interface;
-class RNN_Edge;
-class RNN_Genome;
-
-#include "rnn_edge.hxx"
+#include "rnn.hxx"
 #include "rnn_node_interface.hxx"
+#include "rnn_edge.hxx"
 #include "rnn_recurrent_edge.hxx"
+
 
 class RNN_Genome {
     private:
-        int series_length;
-
-        vector<RNN_Node_Interface*> input_nodes;
-        vector<RNN_Node_Interface*> output_nodes;
-
         vector<RNN_Node_Interface*> nodes;
         vector<RNN_Edge*> edges;
         vector<RNN_Recurrent_Edge*> recurrent_edges;
 
     public:
+
         RNN_Genome(vector<RNN_Node_Interface*> &_nodes, vector<RNN_Edge*> &_edges);
+
         RNN_Genome(vector<RNN_Node_Interface*> &_nodes, vector<RNN_Edge*> &_edges, vector<RNN_Recurrent_Edge*> &_recurrent_edges);
 
-        int get_number_nodes();
-        int get_number_edges();
-
-        RNN_Node_Interface* get_node(int i);
-        RNN_Edge* get_edge(int i);
-
-        void forward_pass(const vector< vector<double> > &series_data);
-        void backward_pass(double error);
-
-        double calculate_error_mse(const vector< vector<double> > &expected_outputs);
-        double calculate_error_mae(const vector< vector<double> > &expected_outputs);
-
-        double prediction_mse(const vector< vector<double> > &series_data, const vector< vector<double> > &expected_outputs);
-        double prediction_mae(const vector< vector<double> > &series_data, const vector< vector<double> > &expected_outputs);
-
-        void initialize_randomly();
         void get_weights(vector<double> &parameters);
         void set_weights(const vector<double> &parameters);
-
         uint32_t get_number_weights();
+        void initialize_randomly();
 
-        void get_analytic_gradient(const vector<double> &test_parameters, const vector< vector<double> > &inputs, const vector< vector<double> > &outputs, double &mse, vector<double> &analytic_gradient);
-        void get_empirical_gradient(const vector<double> &test_parameters, const vector< vector<double> > &inputs, const vector< vector<double> > &outputs, double &mae, vector<double> &empirical_gradient);
+        RNN* get_rnn();
 
-        RNN_Genome* copy();
+        void get_analytic_gradient(vector<RNN*> &rnns, const vector<double> &parameters, const vector< vector< vector<double> > > &series_data, const vector< vector< vector<double> > > &expected_outputs, double &mse, vector<double> &analytic_gradient, bool using_dropout, bool training, double dropout_probability);
 
-        friend void get_mse(RNN_Genome* genome, const vector< vector<double> > &expected, double &mse, vector< vector<double> > &deltas);
-        friend void get_mae(RNN_Genome* genome, const vector< vector<double> > &expected, double &mae, vector< vector<double> > &deltas);
+        void backpropagate(const vector< vector< vector<double> > > &series_data, const vector< vector< vector<double> > > &expected_outputs, int max_iterations, double learning_rate, bool nesterov_momentum, bool adapt_learning_rate, bool reset_weights, bool use_high_norm, double high_threshold, bool use_low_norm, double low_threshold, bool using_dropout, double dropout_probability, string log_filename);
 
-
+        void backpropagate_stochastic(const vector< vector< vector<double> > > &series_data, const vector< vector< vector<double> > > &expected_outputs, int max_iterations, double learning_rate, bool nesterov_momentum, bool adapt_learning_rate, bool reset_weights, bool use_high_norm, double high_threshold, bool use_low_norm, double low_threshold, bool using_dropout, double dropout_probability, string log_filename);
 };
 
 #endif

@@ -28,7 +28,6 @@ using std::vector;
 #include "rnn/rnn_genome.hxx"
 #include "rnn/rnn_node.hxx"
 #include "rnn/rnn_node_interface.hxx"
-#include "rnn/bptt.hxx"
 
 #include "rnn/generate_nn.hxx"
 
@@ -51,13 +50,16 @@ void generate_random_vector(int number_parameters, vector<double> &v) {
     }
 }
 
-void test_rnn(string name, RNN_Genome *rnn, const vector< vector<double> > &inputs, const vector< vector<double> > &outputs) {
+void test_rnn(string name, RNN_Genome *genome, const vector< vector<double> > &inputs, const vector< vector<double> > &outputs) {
     double analytic_mse, empirical_mse;
     vector<double> parameters;
     vector<double> analytic_gradient, empirical_gradient;
 
     cout << "testing gradient on '" << name << "' ... ";
     bool failed = false;
+
+    RNN* rnn = genome->get_rnn();
+
 
     for (uint32_t i = 0; i < test_iterations; i++) {
         if (verbose) {
@@ -67,8 +69,8 @@ void test_rnn(string name, RNN_Genome *rnn, const vector< vector<double> > &inpu
 
         generate_random_vector(rnn->get_number_weights(), parameters);
 
-        rnn->get_analytic_gradient(parameters, inputs, outputs, analytic_mse, analytic_gradient);
-        rnn->get_empirical_gradient(parameters, inputs, outputs, empirical_mse, empirical_gradient);
+        rnn->get_analytic_gradient(parameters, inputs, outputs, analytic_mse, analytic_gradient, false, true, 0.0);
+        rnn->get_empirical_gradient(parameters, inputs, outputs, empirical_mse, empirical_gradient, false, true, 0.0);
 
 
         for (uint32_t j = 0; j < analytic_gradient.size(); j++) {
@@ -99,7 +101,7 @@ int main(int argc, char **argv) {
     //seed = 1337;
     generator = minstd_rand0(seed);
 
-    RNN_Genome *rnn;
+    RNN_Genome *genome;
 
     cout << "TESTING FEED FORWARD" << endl;
 
@@ -117,26 +119,26 @@ int main(int argc, char **argv) {
 
     if (test_ff) {
         //Test 1 input, 1 output, no hidden
-        rnn = create_ff(1, 0, 0, 1);
-        test_rnn("FF: 1 Input, 1 Output", rnn, inputs, outputs);
-        delete rnn;
+        genome = create_ff(1, 0, 0, 1);
+        test_rnn("FF: 1 Input, 1 Output", genome, inputs, outputs);
+        delete genome;
 
-        rnn = create_ff(1, 1, 1, 1);
-        test_rnn("FF: 1 Input, 1x1 Hidden, 1 Output", rnn, inputs, outputs);
-        delete rnn;
+        genome = create_ff(1, 1, 1, 1);
+        test_rnn("FF: 1 Input, 1x1 Hidden, 1 Output", genome, inputs, outputs);
+        delete genome;
 
-        rnn = create_ff(1, 1, 2, 1);
-        test_rnn("FF: 1 Input, 1x2 Hidden, 1 Output", rnn, inputs, outputs);
-        delete rnn;
+        genome = create_ff(1, 1, 2, 1);
+        test_rnn("FF: 1 Input, 1x2 Hidden, 1 Output", genome, inputs, outputs);
+        delete genome;
 
-        rnn = create_ff(1, 2, 2, 1);
-        test_rnn("FF: 1 Input, 2x2 Hidden, 1 Output", rnn, inputs, outputs);
-        delete rnn;
+        genome = create_ff(1, 2, 2, 1);
+        test_rnn("FF: 1 Input, 2x2 Hidden, 1 Output", genome, inputs, outputs);
+        delete genome;
 
 
 
         //Test 2 inputs, 2 outputs, no hidden
-        rnn = create_ff(2, 0, 0, 2);
+        genome = create_ff(2, 0, 0, 2);
 
         inputs.resize(2);
         outputs.resize(2);
@@ -145,26 +147,26 @@ int main(int argc, char **argv) {
         generate_random_vector(input_length, inputs[1]);
         generate_random_vector(input_length, outputs[1]);
 
-        test_rnn("FF: 2 Input, 2 Output", rnn, inputs, outputs);
-        delete rnn;
+        test_rnn("FF: 2 Input, 2 Output", genome, inputs, outputs);
+        delete genome;
 
 
-        rnn = create_ff(2, 2, 2, 2);
-        test_rnn("FF: 2 Input, 2x2 Hidden, 2 Output", rnn, inputs, outputs);
-        delete rnn;
+        genome = create_ff(2, 2, 2, 2);
+        test_rnn("FF: 2 Input, 2x2 Hidden, 2 Output", genome, inputs, outputs);
+        delete genome;
 
-        rnn = create_ff(2, 2, 3, 2);
-        test_rnn("FF: 2 Input, 2x3 Hidden, 2 Output", rnn, inputs, outputs);
-        delete rnn;
+        genome = create_ff(2, 2, 3, 2);
+        test_rnn("FF: 2 Input, 2x3 Hidden, 2 Output", genome, inputs, outputs);
+        delete genome;
 
-        rnn = create_ff(2, 3, 3, 2);
-        test_rnn("FF: 2 Input, 3x3 Hidden, 2 Output", rnn, inputs, outputs);
-        delete rnn;
+        genome = create_ff(2, 3, 3, 2);
+        test_rnn("FF: 2 Input, 3x3 Hidden, 2 Output", genome, inputs, outputs);
+        delete genome;
 
 
 
         //Test 3 inputs, 3 outputs, no hidden
-        rnn = create_ff(3, 0, 0, 3);
+        genome = create_ff(3, 0, 0, 3);
 
         inputs.resize(3);
         outputs.resize(3);
@@ -175,20 +177,20 @@ int main(int argc, char **argv) {
         generate_random_vector(input_length, inputs[2]);
         generate_random_vector(input_length, outputs[2]);
 
-        test_rnn("FF: Three Input, Three Output", rnn, inputs, outputs);
-        delete rnn;
+        test_rnn("FF: Three Input, Three Output", genome, inputs, outputs);
+        delete genome;
 
-        rnn = create_ff(3, 3, 3, 3);
-        test_rnn("FF: 3 Input, 3x3 Hidden, 3 Output", rnn, inputs, outputs);
-        delete rnn;
+        genome = create_ff(3, 3, 3, 3);
+        test_rnn("FF: 3 Input, 3x3 Hidden, 3 Output", genome, inputs, outputs);
+        delete genome;
 
-        rnn = create_ff(3, 3, 4, 3);
-        test_rnn("FF: 3 Input, 3x4 Hidden, 3 Output", rnn, inputs, outputs);
-        delete rnn;
+        genome = create_ff(3, 3, 4, 3);
+        test_rnn("FF: 3 Input, 3x4 Hidden, 3 Output", genome, inputs, outputs);
+        delete genome;
 
-        rnn = create_ff(3, 4, 4, 3);
-        test_rnn("FF: 3 Input, 4x4 Hidden, 3 Output", rnn, inputs, outputs);
-        delete rnn;
+        genome = create_ff(3, 4, 4, 3);
+        test_rnn("FF: 3 Input, 4x4 Hidden, 3 Output", genome, inputs, outputs);
+        delete genome;
     }
 
     if (test_jordan) {
@@ -203,26 +205,26 @@ int main(int argc, char **argv) {
 
 
         //Test 1 input, 1 output, no hidden
-        rnn = create_jordan(1, 0, 0, 1);
-        test_rnn("JORDAN: 1 Input, 1 Output", rnn, inputs, outputs);
-        delete rnn;
+        genome = create_jordan(1, 0, 0, 1);
+        test_rnn("JORDAN: 1 Input, 1 Output", genome, inputs, outputs);
+        delete genome;
 
-        rnn = create_jordan(1, 1, 1, 1);
-        test_rnn("JORDAN: 1 Input, 1x1 Hidden, 1 Output", rnn, inputs, outputs);
-        delete rnn;
+        genome = create_jordan(1, 1, 1, 1);
+        test_rnn("JORDAN: 1 Input, 1x1 Hidden, 1 Output", genome, inputs, outputs);
+        delete genome;
 
-        rnn = create_jordan(1, 1, 2, 1);
-        test_rnn("JORDAN: 1 Input, 1x2 Hidden, 1 Output", rnn, inputs, outputs);
-        delete rnn;
+        genome = create_jordan(1, 1, 2, 1);
+        test_rnn("JORDAN: 1 Input, 1x2 Hidden, 1 Output", genome, inputs, outputs);
+        delete genome;
 
-        rnn = create_jordan(1, 2, 2, 1);
-        test_rnn("JORDAN: 1 Input, 2x2 Hidden, 1 Output", rnn, inputs, outputs);
-        delete rnn;
+        genome = create_jordan(1, 2, 2, 1);
+        test_rnn("JORDAN: 1 Input, 2x2 Hidden, 1 Output", genome, inputs, outputs);
+        delete genome;
 
 
 
         //Test 2 inputs, 2 outputs, no hidden
-        rnn = create_jordan(2, 0, 0, 2);
+        genome = create_jordan(2, 0, 0, 2);
 
         inputs.resize(2);
         outputs.resize(2);
@@ -231,26 +233,26 @@ int main(int argc, char **argv) {
         generate_random_vector(input_length, inputs[1]);
         generate_random_vector(input_length, outputs[1]);
 
-        test_rnn("JORDAN: 2 Input, 2 Output", rnn, inputs, outputs);
-        delete rnn;
+        test_rnn("JORDAN: 2 Input, 2 Output", genome, inputs, outputs);
+        delete genome;
 
 
-        rnn = create_jordan(2, 2, 2, 2);
-        test_rnn("JORDAN: 2 Input, 2x2 Hidden, 2 Output", rnn, inputs, outputs);
-        delete rnn;
+        genome = create_jordan(2, 2, 2, 2);
+        test_rnn("JORDAN: 2 Input, 2x2 Hidden, 2 Output", genome, inputs, outputs);
+        delete genome;
 
-        rnn = create_jordan(2, 2, 3, 2);
-        test_rnn("JORDAN: 2 Input, 2x3 Hidden, 2 Output", rnn, inputs, outputs);
-        delete rnn;
+        genome = create_jordan(2, 2, 3, 2);
+        test_rnn("JORDAN: 2 Input, 2x3 Hidden, 2 Output", genome, inputs, outputs);
+        delete genome;
 
-        rnn = create_jordan(2, 3, 3, 2);
-        test_rnn("JORDAN: 2 Input, 3x3 Hidden, 2 Output", rnn, inputs, outputs);
-        delete rnn;
+        genome = create_jordan(2, 3, 3, 2);
+        test_rnn("JORDAN: 2 Input, 3x3 Hidden, 2 Output", genome, inputs, outputs);
+        delete genome;
 
 
 
         //Test 3 inputs, 3 outputs, no hidden
-        rnn = create_jordan(3, 0, 0, 3);
+        genome = create_jordan(3, 0, 0, 3);
 
         inputs.resize(3);
         outputs.resize(3);
@@ -261,20 +263,20 @@ int main(int argc, char **argv) {
         generate_random_vector(input_length, inputs[2]);
         generate_random_vector(input_length, outputs[2]);
 
-        test_rnn("JORDAN: Three Input, Three Output", rnn, inputs, outputs);
-        delete rnn;
+        test_rnn("JORDAN: Three Input, Three Output", genome, inputs, outputs);
+        delete genome;
 
-        rnn = create_jordan(3, 3, 3, 3);
-        test_rnn("JORDAN: 3 Input, 3x3 Hidden, 3 Output", rnn, inputs, outputs);
-        delete rnn;
+        genome = create_jordan(3, 3, 3, 3);
+        test_rnn("JORDAN: 3 Input, 3x3 Hidden, 3 Output", genome, inputs, outputs);
+        delete genome;
 
-        rnn = create_jordan(3, 3, 4, 3);
-        test_rnn("JORDAN: 3 Input, 3x4 Hidden, 3 Output", rnn, inputs, outputs);
-        delete rnn;
+        genome = create_jordan(3, 3, 4, 3);
+        test_rnn("JORDAN: 3 Input, 3x4 Hidden, 3 Output", genome, inputs, outputs);
+        delete genome;
 
-        rnn = create_jordan(3, 4, 4, 3);
-        test_rnn("JORDAN: 3 Input, 4x4 Hidden, 3 Output", rnn, inputs, outputs);
-        delete rnn;
+        genome = create_jordan(3, 4, 4, 3);
+        test_rnn("JORDAN: 3 Input, 4x4 Hidden, 3 Output", genome, inputs, outputs);
+        delete genome;
     }
 
     if (test_elman) {
@@ -288,26 +290,26 @@ int main(int argc, char **argv) {
 
 
         //Test 1 input, 1 output, no hidden
-        rnn = create_elman(1, 0, 0, 1);
-        test_rnn("ELMAN: 1 Input, 1 Output", rnn, inputs, outputs);
-        delete rnn;
+        genome = create_elman(1, 0, 0, 1);
+        test_rnn("ELMAN: 1 Input, 1 Output", genome, inputs, outputs);
+        delete genome;
 
-        rnn = create_elman(1, 1, 1, 1);
-        test_rnn("ELMAN: 1 Input, 1x1 Hidden, 1 Output", rnn, inputs, outputs);
-        delete rnn;
+        genome = create_elman(1, 1, 1, 1);
+        test_rnn("ELMAN: 1 Input, 1x1 Hidden, 1 Output", genome, inputs, outputs);
+        delete genome;
 
-        rnn = create_elman(1, 1, 2, 1);
-        test_rnn("ELMAN: 1 Input, 1x2 Hidden, 1 Output", rnn, inputs, outputs);
-        delete rnn;
+        genome = create_elman(1, 1, 2, 1);
+        test_rnn("ELMAN: 1 Input, 1x2 Hidden, 1 Output", genome, inputs, outputs);
+        delete genome;
 
-        rnn = create_elman(1, 2, 2, 1);
-        test_rnn("ELMAN: 1 Input, 2x2 Hidden, 1 Output", rnn, inputs, outputs);
-        delete rnn;
+        genome = create_elman(1, 2, 2, 1);
+        test_rnn("ELMAN: 1 Input, 2x2 Hidden, 1 Output", genome, inputs, outputs);
+        delete genome;
 
 
 
         //Test 2 inputs, 2 outputs, no hidden
-        rnn = create_elman(2, 0, 0, 2);
+        genome = create_elman(2, 0, 0, 2);
 
         inputs.resize(2);
         outputs.resize(2);
@@ -316,26 +318,26 @@ int main(int argc, char **argv) {
         generate_random_vector(input_length, inputs[1]);
         generate_random_vector(input_length, outputs[1]);
 
-        test_rnn("ELMAN: 2 Input, 2 Output", rnn, inputs, outputs);
-        delete rnn;
+        test_rnn("ELMAN: 2 Input, 2 Output", genome, inputs, outputs);
+        delete genome;
 
 
-        rnn = create_elman(2, 2, 2, 2);
-        test_rnn("ELMAN: 2 Input, 2x2 Hidden, 2 Output", rnn, inputs, outputs);
-        delete rnn;
+        genome = create_elman(2, 2, 2, 2);
+        test_rnn("ELMAN: 2 Input, 2x2 Hidden, 2 Output", genome, inputs, outputs);
+        delete genome;
 
-        rnn = create_elman(2, 2, 3, 2);
-        test_rnn("ELMAN: 2 Input, 2x3 Hidden, 2 Output", rnn, inputs, outputs);
-        delete rnn;
+        genome = create_elman(2, 2, 3, 2);
+        test_rnn("ELMAN: 2 Input, 2x3 Hidden, 2 Output", genome, inputs, outputs);
+        delete genome;
 
-        rnn = create_elman(2, 3, 3, 2);
-        test_rnn("ELMAN: 2 Input, 3x3 Hidden, 2 Output", rnn, inputs, outputs);
-        delete rnn;
+        genome = create_elman(2, 3, 3, 2);
+        test_rnn("ELMAN: 2 Input, 3x3 Hidden, 2 Output", genome, inputs, outputs);
+        delete genome;
 
 
 
         //Test 3 inputs, 3 outputs, no hidden
-        rnn = create_elman(3, 0, 0, 3);
+        genome = create_elman(3, 0, 0, 3);
 
         inputs.resize(3);
         outputs.resize(3);
@@ -346,20 +348,20 @@ int main(int argc, char **argv) {
         generate_random_vector(input_length, inputs[2]);
         generate_random_vector(input_length, outputs[2]);
 
-        test_rnn("ELMAN: Three Input, Three Output", rnn, inputs, outputs);
-        delete rnn;
+        test_rnn("ELMAN: Three Input, Three Output", genome, inputs, outputs);
+        delete genome;
 
-        rnn = create_elman(3, 3, 3, 3);
-        test_rnn("ELMAN: 3 Input, 3x3 Hidden, 3 Output", rnn, inputs, outputs);
-        delete rnn;
+        genome = create_elman(3, 3, 3, 3);
+        test_rnn("ELMAN: 3 Input, 3x3 Hidden, 3 Output", genome, inputs, outputs);
+        delete genome;
 
-        rnn = create_elman(3, 3, 4, 3);
-        test_rnn("ELMAN: 3 Input, 3x4 Hidden, 3 Output", rnn, inputs, outputs);
-        delete rnn;
+        genome = create_elman(3, 3, 4, 3);
+        test_rnn("ELMAN: 3 Input, 3x4 Hidden, 3 Output", genome, inputs, outputs);
+        delete genome;
 
-        rnn = create_elman(3, 4, 4, 3);
-        test_rnn("ELMAN: 3 Input, 4x4 Hidden, 3 Output", rnn, inputs, outputs);
-        delete rnn;
+        genome = create_elman(3, 4, 4, 3);
+        test_rnn("ELMAN: 3 Input, 4x4 Hidden, 3 Output", genome, inputs, outputs);
+        delete genome;
     }
 
 
@@ -374,26 +376,26 @@ int main(int argc, char **argv) {
 
 
         //Test 1 input, 1 output, no hidden
-        rnn = create_lstm(1, 0, 0, 1);
-        test_rnn("LSTM: 1 Input, 1 Output", rnn, inputs, outputs);
-        delete rnn;
+        genome = create_lstm(1, 0, 0, 1);
+        test_rnn("LSTM: 1 Input, 1 Output", genome, inputs, outputs);
+        delete genome;
 
-        rnn = create_lstm(1, 1, 1, 1);
-        test_rnn("LSTM: 1 Input, 1x1 Hidden, 1 Output", rnn, inputs, outputs);
-        delete rnn;
+        genome = create_lstm(1, 1, 1, 1);
+        test_rnn("LSTM: 1 Input, 1x1 Hidden, 1 Output", genome, inputs, outputs);
+        delete genome;
 
-        rnn = create_lstm(1, 1, 2, 1);
-        test_rnn("LSTM: 1 Input, 1x2 Hidden, 1 Output", rnn, inputs, outputs);
-        delete rnn;
+        genome = create_lstm(1, 1, 2, 1);
+        test_rnn("LSTM: 1 Input, 1x2 Hidden, 1 Output", genome, inputs, outputs);
+        delete genome;
 
-        rnn = create_lstm(1, 2, 2, 1);
-        test_rnn("LSTM: 1 Input, 2x2 Hidden, 1 Output", rnn, inputs, outputs);
-        delete rnn;
+        genome = create_lstm(1, 2, 2, 1);
+        test_rnn("LSTM: 1 Input, 2x2 Hidden, 1 Output", genome, inputs, outputs);
+        delete genome;
 
 
 
         //Test 2 inputs, 2 outputs, no hidden
-        rnn = create_lstm(2, 0, 0, 2);
+        genome = create_lstm(2, 0, 0, 2);
 
         inputs.resize(2);
         outputs.resize(2);
@@ -402,26 +404,26 @@ int main(int argc, char **argv) {
         generate_random_vector(input_length, inputs[1]);
         generate_random_vector(input_length, outputs[1]);
 
-        test_rnn("LSTM: 2 Input, 2 Output", rnn, inputs, outputs);
-        delete rnn;
+        test_rnn("LSTM: 2 Input, 2 Output", genome, inputs, outputs);
+        delete genome;
 
 
-        rnn = create_lstm(2, 2, 2, 2);
-        test_rnn("LSTM: 2 Input, 2x2 Hidden, 2 Output", rnn, inputs, outputs);
-        delete rnn;
+        genome = create_lstm(2, 2, 2, 2);
+        test_rnn("LSTM: 2 Input, 2x2 Hidden, 2 Output", genome, inputs, outputs);
+        delete genome;
 
-        rnn = create_lstm(2, 2, 3, 2);
-        test_rnn("LSTM: 2 Input, 2x3 Hidden, 2 Output", rnn, inputs, outputs);
-        delete rnn;
+        genome = create_lstm(2, 2, 3, 2);
+        test_rnn("LSTM: 2 Input, 2x3 Hidden, 2 Output", genome, inputs, outputs);
+        delete genome;
 
-        rnn = create_lstm(2, 3, 3, 2);
-        test_rnn("LSTM: 2 Input, 3x3 Hidden, 2 Output", rnn, inputs, outputs);
-        delete rnn;
+        genome = create_lstm(2, 3, 3, 2);
+        test_rnn("LSTM: 2 Input, 3x3 Hidden, 2 Output", genome, inputs, outputs);
+        delete genome;
 
 
 
         //Test 3 inputs, 3 outputs, no hidden
-        rnn = create_lstm(3, 0, 0, 3);
+        genome = create_lstm(3, 0, 0, 3);
 
         inputs.resize(3);
         outputs.resize(3);
@@ -432,19 +434,19 @@ int main(int argc, char **argv) {
         generate_random_vector(input_length, inputs[2]);
         generate_random_vector(input_length, outputs[2]);
 
-        test_rnn("LSTM: Three Input, Three Output", rnn, inputs, outputs);
-        delete rnn;
+        test_rnn("LSTM: Three Input, Three Output", genome, inputs, outputs);
+        delete genome;
 
-        rnn = create_lstm(3, 3, 3, 3);
-        test_rnn("LSTM: 3 Input, 3x3 Hidden, 3 Output", rnn, inputs, outputs);
-        delete rnn;
+        genome = create_lstm(3, 3, 3, 3);
+        test_rnn("LSTM: 3 Input, 3x3 Hidden, 3 Output", genome, inputs, outputs);
+        delete genome;
 
-        rnn = create_lstm(3, 3, 4, 3);
-        test_rnn("LSTM: 3 Input, 3x4 Hidden, 3 Output", rnn, inputs, outputs);
-        delete rnn;
+        genome = create_lstm(3, 3, 4, 3);
+        test_rnn("LSTM: 3 Input, 3x4 Hidden, 3 Output", genome, inputs, outputs);
+        delete genome;
 
-        rnn = create_lstm(3, 4, 4, 3);
-        test_rnn("LSTM: 3 Input, 4x4 Hidden, 3 Output", rnn, inputs, outputs);
-        delete rnn;
+        genome = create_lstm(3, 4, 4, 3);
+        test_rnn("LSTM: 3 Input, 4x4 Hidden, 3 Output", genome, inputs, outputs);
+        delete genome;
     }
 }

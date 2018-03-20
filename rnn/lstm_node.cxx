@@ -16,7 +16,7 @@ using std::vector;
 #include "lstm_node.hxx"
 
 
-LSTM_Node::LSTM_Node(int _innovation_number, int _type) : RNN_Node_Interface(_innovation_number, _type) {
+LSTM_Node::LSTM_Node(int _innovation_number, int _type, double _depth) : RNN_Node_Interface(_innovation_number, _type, _depth) {
 }
 
 double LSTM_Node::get_gradient(string gradient_name) {
@@ -320,7 +320,7 @@ void LSTM_Node::reset(int _series_length) {
 }
 
 RNN_Node_Interface* LSTM_Node::copy() {
-    LSTM_Node* n = new LSTM_Node(innovation_number, type);
+    LSTM_Node* n = new LSTM_Node(innovation_number, type, depth);
 
     //copy LSTM_Node values
     n->output_gate_update_weight = output_gate_update_weight;
@@ -425,12 +425,12 @@ int main(int argc, char **argv) {
     parameter_names.push_back("cell_weight");
     parameter_names.push_back("cell_bias");
 
-    LSTM_Node *node1 = new LSTM_Node(0, RNN_HIDDEN_NODE);
-    LSTM_Node *node2 = new LSTM_Node(0, RNN_HIDDEN_NODE);
-    LSTM_Node *n11  = new LSTM_Node(0, RNN_HIDDEN_NODE);
-    LSTM_Node *n12  = new LSTM_Node(0, RNN_HIDDEN_NODE);
-    LSTM_Node *n21 = new LSTM_Node(0, RNN_HIDDEN_NODE);
-    LSTM_Node *n22 = new LSTM_Node(0, RNN_HIDDEN_NODE);
+    LSTM_Node *node1 = new LSTM_Node(0, RNN_HIDDEN_NODE, 0.0);
+    LSTM_Node *node2 = new LSTM_Node(0, RNN_HIDDEN_NODE, 0.0);
+    LSTM_Node *n11  = new LSTM_Node(0, RNN_HIDDEN_NODE, 0.0);
+    LSTM_Node *n12  = new LSTM_Node(0, RNN_HIDDEN_NODE, 0.0);
+    LSTM_Node *n21 = new LSTM_Node(0, RNN_HIDDEN_NODE, 0.0);
+    LSTM_Node *n22 = new LSTM_Node(0, RNN_HIDDEN_NODE, 0.0);
     node1->total_inputs = 1;
     node1->total_outputs = 1;
     node2->total_inputs = 1;

@@ -7,7 +7,7 @@ using std::endl;
 #include <vector>
 using std::vector;
 
-#include "rnn_genome.hxx"
+#include "rnn.hxx"
 
 void get_mse(const vector<double> &output_values, const vector<double> &expected, double &mse, vector<double> &deltas) {
     deltas.assign(expected.size(), 0.0);
@@ -30,7 +30,7 @@ void get_mse(const vector<double> &output_values, const vector<double> &expected
     }
 }
 
-void get_mse(RNN_Genome *genome, const vector< vector<double> > &expected, double &mse_sum, vector< vector<double> > &deltas) {
+void get_mse(RNN *genome, const vector< vector<double> > &expected, double &mse_sum, vector< vector<double> > &deltas) {
     deltas.assign(genome->output_nodes.size(), vector<double>(expected[0].size(), 0.0));
 
     mse_sum = 0.0;
@@ -83,7 +83,7 @@ void get_mae(const vector<double> &output_values, const vector<double> &expected
     }
 }
 
-void get_mae(RNN_Genome *genome, const vector< vector<double> > &expected, double &mae_sum, vector< vector<double> > &deltas) {
+void get_mae(RNN *genome, const vector< vector<double> > &expected, double &mae_sum, vector< vector<double> > &deltas) {
     deltas.assign(genome->output_nodes.size(), vector<double>(expected[0].size(), 0.0));
 
     mae_sum = 0.0;

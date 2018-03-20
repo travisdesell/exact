@@ -3,7 +3,7 @@ using std::cerr;
 using std::cout;
 using std::endl;
 
-#include "rnn_edge.hxx"
+#include "rnn_recurrent_edge.hxx"
 
 RNN_Recurrent_Edge::RNN_Recurrent_Edge(int _innovation_number, RNN_Node_Interface *_input_node, RNN_Node_Interface *_output_node) {
     innovation_number = _innovation_number;
@@ -56,6 +56,11 @@ void RNN_Recurrent_Edge::first_propagate_forward() {
 }
 
 void RNN_Recurrent_Edge::propagate_forward(int time) {
+    if (input_node->inputs_fired[time] != input_node->total_inputs) {
+        cerr << "ERROR! propagate forward called on recurrent edge " << innovation_number << " where input_node->inputs_fired[" << time << "] (" << input_node->inputs_fired[time] << ") != total_inputs (" << input_node->total_inputs << ")" << endl;
+        exit(1);
+    }
+
     double output = input_node->output_values[time] * weight;
     if (time < series_length - 1) {
         //cout << "propagating recurrent at time " << time << " from " << input_node->innovation_number << " to " << output_node->innovation_number << ", value: " << output << ", input: " << input_node->output_values[time] << ", weight: " << weight << endl;
@@ -71,6 +76,11 @@ void RNN_Recurrent_Edge::first_propagate_backward() {
 }
 
 void RNN_Recurrent_Edge::propagate_backward(int time) {
+    if (output_node->outputs_fired[time] != output_node->total_outputs) {
+        cerr << "ERROR! propagate backward called on recurrent edge " << innovation_number << " where output_node->outputs_fired[" << time << "] (" << output_node->outputs_fired[time] << ") != total_outputs (" << output_node->total_outputs << ")" << endl;
+        exit(1);
+    }
+
     /*
     cout << "edge " << innovation_number << " propagating backwards, input_node->series_length: " << input_node->series_length << endl;
     cout << "input_innovation_number: " << input_innovation_number << endl;
