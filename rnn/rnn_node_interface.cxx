@@ -28,6 +28,10 @@ void bound_value(double min, double max, double &value) {
 RNN_Node_Interface::RNN_Node_Interface(int _innovation_number, int _type, double _depth) : innovation_number(_innovation_number), type(_type), depth(_depth) {
     total_inputs = 0;
 
+    enabled = true;
+    forward_reachable = false;
+    backward_reachable = false;
+
     //outputs don't have an official output node but
     //deltas are passed in via the output_fired method
     if (type == RNN_OUTPUT_NODE) {
@@ -35,6 +39,9 @@ RNN_Node_Interface::RNN_Node_Interface(int _innovation_number, int _type, double
     } else {
         total_outputs = 0;
     }
+}
+
+RNN_Node_Interface::~RNN_Node_Interface() {
 }
 
 int RNN_Node_Interface::get_type() const {
@@ -47,4 +54,13 @@ int RNN_Node_Interface::get_innovation_number() const {
 
 double RNN_Node_Interface::get_depth() const {
     return depth;
+}
+
+bool RNN_Node_Interface::is_reachable() const {
+    return forward_reachable && backward_reachable;
+}
+
+bool RNN_Node_Interface::equals(RNN_Node_Interface *other) const {
+    if (innovation_number == other->innovation_number && enabled == other->enabled) return true;
+    return false;
 }

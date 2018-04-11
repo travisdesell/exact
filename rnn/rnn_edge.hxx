@@ -5,7 +5,7 @@
 
 class RNN_Edge {
     private:
-        int innovation_number;
+        int32_t innovation_number;
 
         vector<double> outputs;
         vector<double> deltas;
@@ -14,35 +14,46 @@ class RNN_Edge {
         double weight;
         double d_weight;
 
-        int input_innovation_number;
-        int output_innovation_number;
+        bool enabled;
+        bool forward_reachable;
+        bool backward_reachable;
+
+        int32_t input_innovation_number;
+        int32_t output_innovation_number;
 
         RNN_Node_Interface *input_node;
         RNN_Node_Interface *output_node;
 
     public:
-        RNN_Edge(int _innovation_number, RNN_Node_Interface *_input_node, RNN_Node_Interface *_output_node);
+        RNN_Edge(int32_t _innovation_number, RNN_Node_Interface *_input_node, RNN_Node_Interface *_output_node);
 
-        RNN_Edge(int _innovation_number, int _input_innovation_number, int _output_innovation_number, const vector<RNN_Node_Interface*> &nodes);
+        RNN_Edge(int32_t _innovation_number, int32_t _input_innovation_number, int32_t _output_innovation_number, const vector<RNN_Node_Interface*> &nodes);
 
-        void reset(int series_length);
+        RNN_Edge* copy(const vector<RNN_Node_Interface*> new_nodes);
 
-        void propagate_forward(int time);
-        void propagate_backward(int time);
+        void reset(int32_t series_length);
 
-        void propagate_forward(int time, bool training, double dropout_probability);
-        void propagate_backward(int time, bool training, double dropout_probability);
+        void propagate_forward(int32_t time);
+        void propagate_backward(int32_t time);
+
+        void propagate_forward(int32_t time, bool training, double dropout_probability);
+        void propagate_backward(int32_t time, bool training, double dropout_probability);
 
         double get_gradient() const;
-        int get_innovation_number() const;
+        int32_t get_innovation_number() const;
+        int32_t get_input_innovation_number() const;
+        int32_t get_output_innovation_number() const;
 
         const RNN_Node_Interface* get_input_node() const;
         const RNN_Node_Interface* get_output_node() const;
 
-        RNN_Edge* copy(const vector<RNN_Node_Interface*> new_nodes);
+        bool is_reachable() const;
+
+        bool equals (RNN_Edge *other) const;
 
         friend class RNN_Genome;
         friend class RNN;
+        friend class EXALT;
 };
 
 

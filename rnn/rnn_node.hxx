@@ -16,6 +16,9 @@ class RNN_Node : public RNN_Node_Interface {
     public:
 
         RNN_Node(int _innovation_number, int _type, double _depth);
+        ~RNN_Node();
+
+        void initialize_randomly(minstd_rand0 &generator, NormalDistribution &normal_distribution, double mu, double sigma);
 
         void input_fired(int time, double incoming_output);
 
@@ -23,15 +26,17 @@ class RNN_Node : public RNN_Node_Interface {
         void output_fired(int time, double delta);
         void error_fired(int time, double error);
 
-        uint32_t get_number_weights();
-        void get_weights(uint32_t &offset, vector<double> &parameters);
+        uint32_t get_number_weights() const ;
+        void get_weights(vector<double> &parameters) const;
+        void set_weights(const vector<double> &parameters);
+        void get_weights(uint32_t &offset, vector<double> &parameters) const;
         void set_weights(uint32_t &offset, const vector<double> &parameters);
 
         void reset(int _series_length);
 
         void get_gradients(vector<double> &gradients);
 
-        RNN_Node_Interface* copy();
+        RNN_Node_Interface* copy() const;
 
         friend class RNN_Edge;
 };

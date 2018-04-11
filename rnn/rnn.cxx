@@ -64,7 +64,37 @@ RNN::RNN(vector<RNN_Node_Interface*> &_nodes, vector<RNN_Edge*> &_edges, vector<
             output_nodes.push_back(nodes[i]);
         }
     }
+    
+    //cout << "got RNN with " << nodes.size() << " nodes, " << edges.size() << ", " << recurrent_edges.size() << " recurrent edges" << endl;
+}
 
+RNN::~RNN() {
+    RNN_Node_Interface *node;
+
+    while (nodes.size() > 0) {
+        node = nodes.back();
+        nodes.pop_back();
+        delete node;
+    }
+
+    RNN_Edge *edge;
+
+    while (edges.size() > 0) {
+        edge = edges.back();
+        edges.pop_back();
+        delete edge;
+    }
+
+    RNN_Recurrent_Edge *recurrent_edge;
+
+    while (recurrent_edges.size() > 0) {
+        recurrent_edge = recurrent_edges.back();
+        recurrent_edges.pop_back();
+        delete recurrent_edge;
+    }
+
+    while (input_nodes.size() > 0) input_nodes.pop_back();
+    while (output_nodes.size() > 0) output_nodes.pop_back();
 }
 
 
@@ -91,18 +121,16 @@ void RNN::get_weights(vector<double> &parameters) {
     uint32_t current = 0;
 
     for (uint32_t i = 0; i < nodes.size(); i++) {
-        nodes[i]->get_weights(current, parameters);
+        if (nodes[i]->is_reachable()) nodes[i]->get_weights(current, parameters);
     }
 
     for (uint32_t i = 0; i < edges.size(); i++) {
-        parameters[current++] = edges[i]->weight;
+        if (edges[i]->is_reachable()) parameters[current++] = edges[i]->weight;
     }
 
     for (uint32_t i = 0; i < recurrent_edges.size(); i++) {
-        parameters[current++] = recurrent_edges[i]->weight;
+        if (recurrent_edges[i]->is_reachable()) parameters[current++] = recurrent_edges[i]->weight;
     }
-
-
 }
 
 void RNN::set_weights(const vector<double> &parameters) {
@@ -114,15 +142,15 @@ void RNN::set_weights(const vector<double> &parameters) {
     uint32_t current = 0;
 
     for (uint32_t i = 0; i < nodes.size(); i++) {
-        nodes[i]->set_weights(current, parameters);
+        if (nodes[i]->is_reachable()) nodes[i]->set_weights(current, parameters);
     }
 
     for (uint32_t i = 0; i < edges.size(); i++) {
-        edges[i]->weight = parameters[current++];
+        if (edges[i]->is_reachable()) edges[i]->weight = parameters[current++];
     }
 
     for (uint32_t i = 0; i < recurrent_edges.size(); i++) {
-        recurrent_edges[i]->weight = parameters[current++];
+        if (recurrent_edges[i]->is_reachable()) recurrent_edges[i]->weight = parameters[current++];
     }
 
 }
@@ -131,11 +159,16 @@ uint32_t RNN::get_number_weights() {
     uint32_t number_weights = 0;
 
     for (uint32_t i = 0; i < nodes.size(); i++) {
-        number_weights += nodes[i]->get_number_weights();
+        if (nodes[i]->is_reachable()) number_weights += nodes[i]->get_number_weights();
     }
 
-    number_weights += edges.size();
-    number_weights += recurrent_edges.size();
+    for (uint32_t i = 0; i < edges.size(); i++) {
+        if (edges[i]->is_reachable()) number_weights++;
+    }
+
+    for (uint32_t i = 0; i < recurrent_edges.size(); i++) {
+        if (recurrent_edges[i]->is_reachable()) number_weights++;
+    }
 
     return number_weights;
 }
@@ -167,28 +200,27 @@ void RNN::forward_pass(const vector< vector<double> > &series_data, bool using_d
     //fired count on each node will be correct for the first pass
     //through the RNN
     for (uint32_t i = 0; i < recurrent_edges.size(); i++) {
-        recurrent_edges[i]->first_propagate_forward();
+        if (recurrent_edges[i]->is_reachable()) recurrent_edges[i]->first_propagate_forward();
     }
-
 
     for (int32_t time = 0; time < series_length; time++) {
         for (uint32_t i = 0; i < input_nodes.size(); i++) {
-            input_nodes[i]->input_fired(time, series_data[i][time]);
+            if(input_nodes[i]->is_reachable()) input_nodes[i]->input_fired(time, series_data[i][time]);
         }
 
         //feed forward
         if (using_dropout) {
             for (uint32_t i = 0; i < edges.size(); i++) {
-                edges[i]->propagate_forward(time, training, dropout_probability);
+                if (edges[i]->is_reachable()) edges[i]->propagate_forward(time, training, dropout_probability);
             }
         } else {
             for (uint32_t i = 0; i < edges.size(); i++) {
-                edges[i]->propagate_forward(time);
+                if (edges[i]->is_reachable()) edges[i]->propagate_forward(time);
             }
         }
 
         for (uint32_t i = 0; i < recurrent_edges.size(); i++) {
-            recurrent_edges[i]->propagate_forward(time);
+            if (recurrent_edges[i]->is_reachable()) recurrent_edges[i]->propagate_forward(time);
         }
     }
 }
@@ -198,7 +230,7 @@ void RNN::backward_pass(double error, bool using_dropout, bool training, double 
     // output fired count on each node will be correct for the first pass
     //through the RNN
     for (uint32_t i = 0; i < recurrent_edges.size(); i++) {
-        recurrent_edges[i]->first_propagate_backward();
+        if (recurrent_edges[i]->is_reachable()) recurrent_edges[i]->first_propagate_backward();
     }
 
     for (int32_t time = series_length - 1; time >= 0; time--) {
@@ -209,17 +241,16 @@ void RNN::backward_pass(double error, bool using_dropout, bool training, double 
 
         if (using_dropout) {
             for (int32_t i = (int32_t)edges.size() - 1; i >= 0; i--) {
-                edges[i]->propagate_backward(time, training, dropout_probability);
+                if (edges[i]->is_reachable()) edges[i]->propagate_backward(time, training, dropout_probability);
             }
         } else {
             for (int32_t i = (int32_t)edges.size() - 1; i >= 0; i--) {
-                edges[i]->propagate_backward(time);
+                if (edges[i]->is_reachable()) edges[i]->propagate_backward(time);
             }
         }
 
         for (int32_t i = (int32_t)recurrent_edges.size() - 1; i >= 0; i--) {
-
-            recurrent_edges[i]->propagate_backward(time);
+            if (recurrent_edges[i]->is_reachable()) recurrent_edges[i]->propagate_backward(time);
         }
     }
 }
@@ -296,22 +327,28 @@ void RNN::get_analytic_gradient(const vector<double> &test_parameters, const vec
 
     uint32_t current = 0;
     for (uint32_t i = 0; i < nodes.size(); i++) {
-        nodes[i]->get_gradients(current_gradients);
+        if (nodes[i]->is_reachable()) {
+            nodes[i]->get_gradients(current_gradients);
 
-        for (uint32_t j = 0; j < current_gradients.size(); j++) {
-            analytic_gradient[current] = current_gradients[j];
-            current++;
+            for (uint32_t j = 0; j < current_gradients.size(); j++) {
+                analytic_gradient[current] = current_gradients[j];
+                current++;
+            }
         }
     }
 
     for (uint32_t i = 0; i < edges.size(); i++) {
-        analytic_gradient[current] = edges[i]->get_gradient();
-        current++;
+        if (edges[i]->is_reachable()) {
+            analytic_gradient[current] = edges[i]->get_gradient();
+            current++;
+        }
     }
 
     for (uint32_t i = 0; i < recurrent_edges.size(); i++) {
-        analytic_gradient[current] = recurrent_edges[i]->get_gradient();
-        current++;
+        if (recurrent_edges[i]->is_reachable()) {
+            analytic_gradient[current] = recurrent_edges[i]->get_gradient();
+            current++;
+        }
     }
 }
 

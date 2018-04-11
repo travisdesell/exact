@@ -16,6 +16,10 @@ RNN_Recurrent_Edge::RNN_Recurrent_Edge(int _innovation_number, RNN_Node_Interfac
     input_node->total_outputs++;
     output_node->total_inputs++;
 
+    enabled = true;
+    forward_reachable = true;
+    backward_reachable = true;
+
     //cout << "created recurrent edge " << innovation_number << ", from " << input_innovation_number << ", to " << output_innovation_number << endl;
 }
 
@@ -46,7 +50,56 @@ RNN_Recurrent_Edge::RNN_Recurrent_Edge(int _innovation_number, int _input_innova
             output_node = nodes[i];
         }
     }
+
+    if (input_node == NULL) {
+        cerr << "ERROR initializing RNN_Edge, input node with innovation number; " << input_innovation_number << " was not found!" << endl;
+        exit(1);
+    }
+
+    if (output_node == NULL) {
+        cerr << "ERROR initializing RNN_Edge, output node with innovation number; " << output_innovation_number << " was not found!" << endl;
+        exit(1);
+    }
 }
+
+RNN_Recurrent_Edge* RNN_Recurrent_Edge::copy(const vector<RNN_Node_Interface*> new_nodes) {
+    RNN_Recurrent_Edge* e = new RNN_Recurrent_Edge(innovation_number, input_innovation_number, output_innovation_number, new_nodes);
+
+    e->weight = weight;
+    e->d_weight = d_weight;
+
+    e->outputs = outputs;
+    e->deltas = deltas;
+
+    e->enabled = enabled;
+    e->forward_reachable = forward_reachable;
+    e->backward_reachable = backward_reachable;
+
+    return e;
+}
+
+
+int32_t RNN_Recurrent_Edge::get_innovation_number() const {
+    return innovation_number;
+}
+
+int32_t RNN_Recurrent_Edge::get_input_innovation_number() const {
+    return input_innovation_number;
+}
+
+int32_t RNN_Recurrent_Edge::get_output_innovation_number() const {
+    return output_innovation_number;
+}
+
+
+const RNN_Node_Interface* RNN_Recurrent_Edge::get_input_node() const {
+    return input_node;
+}
+
+const RNN_Node_Interface* RNN_Recurrent_Edge::get_output_node() const {
+    return output_node;
+}
+
 
 
 //do a propagate to the network at time 0 so that the
@@ -77,8 +130,20 @@ void RNN_Recurrent_Edge::first_propagate_backward() {
 
 void RNN_Recurrent_Edge::propagate_backward(int time) {
     if (output_node->outputs_fired[time] != output_node->total_outputs) {
-        cerr << "ERROR! propagate backward called on recurrent edge " << innovation_number << " where output_node->outputs_fired[" << time << "] (" << output_node->outputs_fired[time] << ") != total_outputs (" << output_node->total_outputs << ")" << endl;
-        exit(1);
+        //if (output_node->innovation_number == input_node->innovation_number) {
+            //circular recurrent edge
+            /*
+            if (output_node->outputs_fired[time] != (output_node->total_outputs - 1)) {
+                cerr << "ERROR! propagate backward called on recurrent edge " << innovation_number << " where output_node->outputs_fired[" << time << "] (" << output_node->outputs_fired[time] << ") != total_outputs (" << output_node->total_outputs << ")" << endl;
+                cerr << "input innovation number: " << input_node->innovation_number << ", output innovation number: " << output_node->innovation_number << endl;
+                exit(1);
+            }
+            */
+        //} else {
+            cerr << "ERROR! propagate backward called on recurrent edge " << innovation_number << " where output_node->outputs_fired[" << time << "] (" << output_node->outputs_fired[time] << ") != total_outputs (" << output_node->total_outputs << ")" << endl;
+            cerr << "input innovation number: " << input_node->innovation_number << ", output innovation number: " << output_node->innovation_number << endl;
+            exit(1);
+        //}
     }
 
     /*
@@ -109,14 +174,11 @@ double RNN_Recurrent_Edge::get_gradient() {
     return d_weight;
 }
 
-RNN_Recurrent_Edge* RNN_Recurrent_Edge::copy(const vector<RNN_Node_Interface*> new_nodes) {
-    RNN_Recurrent_Edge* e = new RNN_Recurrent_Edge(innovation_number, input_innovation_number, output_innovation_number, new_nodes);
+bool RNN_Recurrent_Edge::is_reachable() const {
+    return forward_reachable && backward_reachable;
+}
 
-    e->weight = weight;
-    e->d_weight = d_weight;
-
-    e->outputs = outputs;
-    e->deltas = deltas;
-
-    return e;
+bool RNN_Recurrent_Edge::equals(RNN_Recurrent_Edge *other) const {
+    if (innovation_number == other->innovation_number && enabled == other->enabled) return true;
+    return false;
 }

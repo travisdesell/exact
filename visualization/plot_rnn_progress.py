@@ -27,7 +27,8 @@ v1 = genfromtxt(input_file)
 #print "first column of v1:\n"
 t = [row[0] for row in v1]
 mse = [row[1] for row in v1]
-norm = [row[2] for row in v1]
+v_mse = [row[2] for row in v1]
+bv_mse = [row[3] for row in v1]
 #print("t:\n")
 #print(t)
 #print("mse:\n")
@@ -45,17 +46,29 @@ ax1.set_xlabel('Epoch')
 
 
 ax1.set_yscale('log')
-ax1.set_ylabel('MSE', color='b')
+ax1.set_ylabel('Training MSE', color='b')
 ax1.tick_params('y', colors='b')
-ax1.plot(t, mse, lw=0.25, label='MSE', color='blue')
-ax1.set_ylim(0.0001, 10)
+ax1.plot(t, mse, lw=0.25, label='Training MSE', color='blue')
+ax1.plot(t, v_mse, lw=0.25, label='Validation MSE', color='green')
+ax1.plot(t, bv_mse, lw=0.25, label='Best Validation MSE', color='red')
+ax1.set_ylim(0.001, 10)
 
+
+'''
 ax2 = ax1.twinx()
 ax2.set_yscale('log')
-ax2.set_ylabel('Norm', color='g')
+ax2.set_ylabel('Validation MSE', color='g')
 ax2.tick_params('y', colors='g')
-ax2.plot(t, norm, lw=0.25, label='norm', color='green')
-ax2.set_ylim(0.0000001, 1)
+ax2.plot(t, v_mse, lw=0.25, label='Validation MSE', color='green')
+#ax2.set_ylim(0.0000001, 1)
+
+ax3 = ax1.twinx()
+ax2.set_yscale('log')
+ax3.set_ylabel('Best Validation MSE', color='r')
+ax2.tick_params('y', colors='r')
+ax2.plot(t, bv_mse, lw=0.25, label='Best Validation MSE', color='red')
+#ax2.set_ylim(0.0000001, 1)
+'''
 
 
 ax1.legend(loc = 'upper right')

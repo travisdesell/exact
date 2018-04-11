@@ -1,4 +1,4 @@
-add_library(exalt_strategy generate_nn rnn_genome rnn lstm_node mse rnn_node rnn_edge rnn_recurrent_edge rnn_node_interface)
+add_library(exalt_strategy generate_nn exalt rnn_genome rnn lstm_node mse rnn_node rnn_edge rnn_recurrent_edge rnn_node_interface)
 
 add_executable(lstm_test lstm_node mse rnn_node rnn_node_interface)
 target_link_libraries(lstm_test exact_common)

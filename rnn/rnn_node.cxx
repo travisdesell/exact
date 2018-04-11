@@ -16,6 +16,15 @@ RNN_Node::RNN_Node(int _innovation_number, int _type, double _depth) : RNN_Node_
         total_inputs = 1;
     }
     //cout << "created node: " << innovation_number << ", type: " << type << endl;
+
+    node_type = RNN_NODE;
+}
+
+RNN_Node::~RNN_Node() {
+}
+
+void RNN_Node::initialize_randomly(minstd_rand0 &generator, NormalDistribution &normal_distribution, double mu, double sigma) {
+    bias = normal_distribution.random(generator, mu, sigma);
 }
 
 void RNN_Node::input_fired(int time, double incoming_output) {
@@ -103,11 +112,24 @@ void RNN_Node::get_gradients(vector<double> &gradients) {
     gradients.assign(1, d_bias);
 }
 
-uint32_t RNN_Node::get_number_weights() {
+uint32_t RNN_Node::get_number_weights() const {
     return 1;
 }
 
-void RNN_Node::get_weights(uint32_t &offset, vector<double> &parameters) {
+void RNN_Node::get_weights(vector<double> &parameters) const {
+    parameters.resize(get_number_weights());
+    //no weights to set in a basic RNN node, only a bias
+    uint32_t offset = 0;
+    get_weights(offset, parameters);
+}
+
+void RNN_Node::set_weights(const vector<double> &parameters) {
+    //no weights to set in a basic RNN node, only a bias
+    uint32_t offset = 0;
+    set_weights(offset, parameters);
+}
+
+void RNN_Node::get_weights(uint32_t &offset, vector<double> &parameters) const {
     //no weights to set in a basic RNN node, only a bias
     parameters[offset++] = bias;
 }
@@ -117,7 +139,7 @@ void RNN_Node::set_weights(uint32_t &offset, const vector<double> &parameters) {
     bias = parameters[offset++];
 }
 
-RNN_Node_Interface* RNN_Node::copy() {
+RNN_Node_Interface* RNN_Node::copy() const {
     RNN_Node* n = new RNN_Node(innovation_number, type, depth);
 
     //copy RNN_Node values
@@ -136,6 +158,9 @@ RNN_Node_Interface* RNN_Node::copy() {
     n->total_inputs = total_inputs;
     n->outputs_fired = outputs_fired;
     n->total_outputs = total_outputs;
+    n->enabled = enabled;
+    n->forward_reachable = forward_reachable;
+    n->backward_reachable = backward_reachable;
 
     return n;
 }

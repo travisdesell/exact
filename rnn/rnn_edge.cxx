@@ -10,6 +10,10 @@ RNN_Edge::RNN_Edge(int _innovation_number, RNN_Node_Interface *_input_node, RNN_
     input_node = _input_node;
     output_node = _output_node;
 
+    enabled = true;
+    forward_reachable = false;
+    backward_reachable = false;
+
     input_innovation_number = input_node->get_innovation_number();
     output_innovation_number = output_node->get_innovation_number();
 
@@ -46,7 +50,33 @@ RNN_Edge::RNN_Edge(int _innovation_number, int _input_innovation_number, int _ou
             output_node = nodes[i];
         }
     }
+
+    if (input_node == NULL) {
+        cerr << "ERROR initializing RNN_Edge, input node with innovation number; " << input_innovation_number << " was not found!" << endl;
+        exit(1);
+    }
+
+    if (output_node == NULL) {
+        cerr << "ERROR initializing RNN_Edge, output node with innovation number; " << output_innovation_number << " was not found!" << endl;
+        exit(1);
+    }
 }
+
+RNN_Edge* RNN_Edge::copy(const vector<RNN_Node_Interface*> new_nodes) {
+    RNN_Edge* e = new RNN_Edge(innovation_number, input_innovation_number, output_innovation_number, new_nodes);
+
+    e->weight = weight;
+    e->d_weight = d_weight;
+
+    e->outputs = outputs;
+    e->deltas = deltas;
+    e->enabled = enabled;
+    e->forward_reachable = forward_reachable;
+    e->backward_reachable = backward_reachable;
+
+    return e;
+}
+
 
 
 
@@ -94,6 +124,8 @@ void RNN_Edge::propagate_forward(int time, bool training, double dropout_probabi
 void RNN_Edge::propagate_backward(int time) {
     if (output_node->outputs_fired[time] != output_node->total_outputs) {
         cerr << "ERROR! propagate backward called on edge " << innovation_number << " where output_node->outputs_fired[" << time << "] (" << output_node->outputs_fired[time] << ") != total_outputs (" << output_node->total_outputs << ")" << endl;
+        cerr << "input innovation number: " << input_node->innovation_number << ", output innovation number: " << output_node->innovation_number << endl;
+        cerr << "series_length: " << input_node->series_length << endl;
         exit(1);
     }
 
@@ -107,6 +139,8 @@ void RNN_Edge::propagate_backward(int time) {
 void RNN_Edge::propagate_backward(int time, bool training, double dropout_probability) {
     if (output_node->outputs_fired[time] != output_node->total_outputs) {
         cerr << "ERROR! propagate backward called on edge " << innovation_number << " where output_node->outputs_fired[" << time << "] (" << output_node->outputs_fired[time] << ") != total_outputs (" << output_node->total_outputs << ")" << endl;
+        cerr << "input innovation number: " << input_node->innovation_number << ", output innovation number: " << output_node->innovation_number << endl;
+        cerr << "series_length: " << input_node->series_length << endl;
         exit(1);
     }
 
@@ -140,9 +174,19 @@ double RNN_Edge::get_gradient() const {
     return d_weight;
 }
 
-int RNN_Edge::get_innovation_number() const {
+int32_t RNN_Edge::get_innovation_number() const {
     return innovation_number;
 }
+
+int32_t RNN_Edge::get_input_innovation_number() const {
+    return input_innovation_number;
+}
+
+
+int32_t RNN_Edge::get_output_innovation_number() const {
+    return output_innovation_number;
+}
+
 
 const RNN_Node_Interface* RNN_Edge::get_input_node() const {
     return input_node;
@@ -152,16 +196,12 @@ const RNN_Node_Interface* RNN_Edge::get_output_node() const {
     return output_node;
 }
 
+bool RNN_Edge::is_reachable() const {
+    return forward_reachable && backward_reachable;
+}
 
 
-RNN_Edge* RNN_Edge::copy(const vector<RNN_Node_Interface*> new_nodes) {
-    RNN_Edge* e = new RNN_Edge(innovation_number, input_innovation_number, output_innovation_number, new_nodes);
-
-    e->weight = weight;
-    e->d_weight = d_weight;
-
-    e->outputs = outputs;
-    e->deltas = deltas;
-
-    return e;
+bool RNN_Edge::equals(RNN_Edge *other) const {
+    if (innovation_number == other->innovation_number && enabled == other->enabled) return true;
+    return false;
 }

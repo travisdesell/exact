@@ -1,198 +1,147 @@
-bool EXALT::insert_genome(RNN_Genome* genome) {
-    float new_fitness = genome->get_best_validation_error();
-    int new_generation_id = genome->get_generation_id();
+#include <iomanip>
+using std::setw;
+using std::setprecision;
 
-    bool was_inserted = true;
-    bool was_best_test_genome = false;
+#include <iostream>
+using std::cerr;
+using std::cout;
+using std::endl;
 
-    inserted_genomes++;
+#include <random>
+using std::minstd_rand0;
+using std::uniform_real_distribution;
 
-    if (genome->get_best_validation_error() != EXALT_MAX_FLOAT) {
-        write_individual_hyperparameters(genome);
+#include <string>
+using std::string;
+using std::to_string;
 
-        int genome_test_predictions = genome->get_test_predictions();
-        int best_genome_test_predictions = 0;
-        if (best_predictions_genome != NULL) {
-            best_genome_test_predictions = best_predictions_genome->get_test_predictions();
-        }
+#include "exalt.hxx"
+#include "rnn_genome.hxx"
+#include "generate_nn.hxx"
 
-        if (genome_test_predictions > best_genome_test_predictions) {
-            CNN_Genome *previous_best = best_predictions_genome;
- 
-            best_predictions_genome = genome;
+EXALT::EXALT(int32_t _population_size, int32_t _max_genomes, int32_t _number_inputs, int32_t _number_outputs, int32_t _bp_iterations, double _learning_rate, bool _use_high_threshold, double _high_threshold, bool _use_low_threshold, double _low_threshold, bool _use_dropout, double _dropout_probability) : population_size(_population_size), max_genomes(_max_genomes), number_inputs(_number_inputs), number_outputs(_number_outputs), bp_iterations(_bp_iterations), learning_rate(_learning_rate), use_high_threshold(_use_high_threshold), high_threshold(_high_threshold), use_low_threshold(_use_low_threshold), low_threshold(_low_threshold), use_dropout(_use_dropout), dropout_probability(_dropout_probability) {
 
-#ifdef _MYSQL_
-            genome->export_to_database(id);
-            cout << "set new best predictions genome id to: " << genome->get_genome_id();
-            best_predictions_genome_id = genome->get_genome_id();
-#endif
+    inserted_genomes = 0;
+    generated_genomes = 0;
 
-            if (genomes.size() > 0) {
-                //delete best_predictions_genome if it is not in the population
-                CNN_Genome *worst = genomes.back();
-                cout << "got worst" << endl;
-                if (previous_best != NULL && worst->get_best_validation_error() < previous_best->get_best_validation_error()) {
-                    cout << "deleting previous best" << endl;
-                    delete previous_best;
-                    cout << "deleted previous best" << endl;
-                }
-            }
+    edge_innovation_count = 0;
+    node_innovation_count = 0;
 
-            cout << "found new best predictions genome!" << endl;
+    uint16_t seed = std::chrono::system_clock::now().time_since_epoch().count();
+    generator = minstd_rand0(seed);
+    rng_0_1 = uniform_real_distribution<double>(0.0, 1.0);
+    rng_crossover_weight = uniform_real_distribution<double>(-0.25, 1.25);
 
-            was_best_predictions_genome = true;
+    epigenetic_weights = true;
+    crossover_rate = 0.25;
+    more_fit_crossover_rate = 0.75;
+    less_fit_crossover_rate = 0.25;
+
+    lstm_node_rate = 0.5;
+
+    add_edge_rate = 1.0;
+    add_recurrent_edge_rate = 1.0;
+    enable_edge_rate = 1.0;
+    disable_edge_rate = 1.0;
+    split_edge_rate = 1.0;
+
+    add_node_rate = 1.0;
+    enable_node_rate = 1.0;
+    disable_node_rate = 1.0;
+    split_node_rate = 1.0;
+    merge_node_rate = 1.0;
+
+}
+
+string parse_fitness(float fitness) {
+    if (fitness == EXALT_MAX_DOUBLE) {
+        return "UNEVALUATED";
+    } else {
+        return to_string(fitness);
+    }
+}
+
+void EXALT::print_population() {
+    cout << "POPUALTION: " << endl;
+    for (int32_t i = 0; i < (int32_t)genomes.size(); i++) {
+        cout << "\t" << setw(15) << parse_fitness(genomes[i]->best_validation_error) << ", " << genomes[i]->nodes.size() << ", " << genomes[i]->edges.size() << ", " << genomes[i]->recurrent_edges.size() << ", " << genomes[i]->generated_by_string() << endl;
+    }
+
+    cout << endl << endl;
+}
+
+int32_t EXALT::population_contains(RNN_Genome* genome) {
+    for (int32_t i = 0; i < (int32_t)genomes.size(); i++) {
+        if (genomes[i]->equals(genome)) {
+            return i;
         }
     }
+
+    return -1;
+}
+
+double EXALT::get_best_fitness() const {
+    if (genomes.size() == 0) return EXALT_MAX_DOUBLE;
+    else return genomes[0]->get_validation_error();
+}
+
+double EXALT::get_worst_fitness() const {
+    if (genomes.size() < population_size) return EXALT_MAX_DOUBLE;
+    else return genomes.back()->get_validation_error();
+}
+
+
+//this will insert a COPY, original needs to be deleted
+bool EXALT::insert_genome(RNN_Genome* genome) {
+    if (!genome->sanity_check()) {
+        cerr << "ERROR, genome failed sanity check on insert!" << endl;
+        exit(1);
+    }
+
+    double new_fitness = genome->get_validation_error();
+
+    bool was_inserted = true;
+
+    inserted_genomes++;
 
     for (auto i = generated_from_map.begin(); i != generated_from_map.end(); i++) {
         generated_from_map[i->first] += genome->get_generated_by(i->first);
     }
 
-    cout << "genomes evaluated: " << setw(10) << inserted_genomes << ", inserting: " << parse_fitness(genome->get_best_validation_error()) << endl;
+    cout << "genomes evaluated: " << setw(10) << inserted_genomes << ", inserting: " << parse_fitness(genome->get_validation_error()) << endl;
+
+    if (get_worst_fitness() < new_fitness) {
+        cout << "ignoring genome, fitness: " << new_fitness << " < worst population fitness: " << get_worst_fitness() << endl;
+        print_population();
+        return false;
+    }
 
     int32_t duplicate_genome = population_contains(genome);
     if (duplicate_genome >= 0) {
         //if fitness is better, replace this genome with new one
         cout << "found duplicate at position: " << duplicate_genome << endl;
 
-        CNN_Genome *duplicate = genomes[duplicate_genome];
-        if (duplicate->get_best_validation_error() > genome->get_best_validation_error()) {
+        RNN_Genome *duplicate = genomes[duplicate_genome];
+        if (duplicate->get_validation_error() > new_fitness) {
             //erase the genome with loewr fitness from the vector;
-            cout << "REPLACING DUPLICATE GENOME, fitness of genome in search: " << parse_fitness(duplicate->get_best_validation_error()) << ", new fitness: " << parse_fitness(genome->get_best_validation_error()) << endl;
+            cout << "REPLACING DUPLICATE GENOME, fitness of genome in search: " << parse_fitness(duplicate->get_validation_error()) << ", new fitness: " << parse_fitness(genome->get_validation_error()) << endl;
             genomes.erase(genomes.begin() + duplicate_genome);
             delete duplicate;
 
         } else {
             cerr << "\tpopulation already contains genome! not inserting." << endl;
-            if (!was_best_predictions_genome) delete genome;
-
-            if (output_directory.compare("") != 0) write_statistics(new_generation_id, new_fitness);
+            print_population();
             return false;
         }
     }
 
-    cout << "performing sanity check." << endl;
+    if (genomes.size() < population_size || genomes.back()->get_validation_error() > new_fitness) {
+        //this genome will be inserted
+        was_inserted = true;
 
-    if (!genome->sanity_check(SANITY_CHECK_BEFORE_INSERT)) {
-        cout << "ERROR: genome " << genome->get_generation_id() << " failed sanity check before insert!" << endl;
-        exit(1);
-    }
-    cout << "genome " << genome->get_generation_id() << " passed sanity check with fitness: " << parse_fitness(genome->get_best_validation_error()) << endl;
-
-    if (genomes.size() == 0 || genome->get_best_validation_error() < genomes[0]->get_best_validation_error()) {
-        cout << "new best fitness!" << endl;
-
-        cout << "writing new best (data) to: " << (output_directory + "/global_best_" + to_string(inserted_genomes) + ".txt") << endl;
-
-        genome->write_to_file(output_directory + "/global_best_" + to_string(inserted_genomes) + ".txt");
-
-        cout << "writing new best (graphviz) to: " << (output_directory + "/global_best_" + to_string(inserted_genomes) + ".txt") << endl;
-
-        ofstream gv_file(output_directory + "/global_best_" + to_string(inserted_genomes) + ".gv");
-        gv_file << "#EXALT settings: " << endl;
-
-        gv_file << "#EXALT settings: " << endl;
-
-        gv_file << "#\tinitial_batch_size_min: " << initial_batch_size_min << endl;
-        gv_file << "#\tinitial_batch_size_max: " << initial_batch_size_max << endl;
-        gv_file << "#\tbatch_size_min: " << batch_size_min << endl;
-        gv_file << "#\tbatch_size_max: " << batch_size_max << endl;
-
-        gv_file << "#\tinitial_mu_min: " << initial_mu_min << endl;
-        gv_file << "#\tinitial_mu_max: " << initial_mu_max << endl;
-        gv_file << "#\tmu_min: " << mu_min << endl;
-        gv_file << "#\tmu_max: " << mu_max << endl;
-
-        gv_file << "#\tinitial_mu_delta_min: " << initial_mu_delta_min << endl;
-        gv_file << "#\tinitial_mu_delta_max: " << initial_mu_delta_max << endl;
-        gv_file << "#\tmu_delta_min: " << mu_delta_min << endl;
-        gv_file << "#\tmu_delta_max: " << mu_delta_max << endl;
-
-        gv_file << "#\tinitial_learning_rate_min: " << initial_learning_rate_min << endl;
-        gv_file << "#\tinitial_learning_rate_max: " << initial_learning_rate_max << endl;
-        gv_file << "#\tlearning_rate_min: " << learning_rate_min << endl;
-        gv_file << "#\tlearning_rate_max: " << learning_rate_max << endl;
-
-        gv_file << "#\tinitial_learning_rate_delta_min: " << initial_learning_rate_delta_min << endl;
-        gv_file << "#\tinitial_learning_rate_delta_max: " << initial_learning_rate_delta_max << endl;
-        gv_file << "#\tlearning_rate_delta_min: " << learning_rate_delta_min << endl;
-        gv_file << "#\tlearning_rate_delta_max: " << learning_rate_delta_max << endl;
-
-        gv_file << "#\tinitial_weight_decay_min: " << initial_weight_decay_min << endl;
-        gv_file << "#\tinitial_weight_decay_max: " << initial_weight_decay_max << endl;
-        gv_file << "#\tweight_decay_min: " << weight_decay_min << endl;
-        gv_file << "#\tweight_decay_max: " << weight_decay_max << endl;
-
-        gv_file << "#\tinitial_weight_decay_delta_min: " << initial_weight_decay_delta_min << endl;
-        gv_file << "#\tinitial_weight_decay_delta_max: " << initial_weight_decay_delta_max << endl;
-        gv_file << "#\tweight_decay_delta_min: " << weight_decay_delta_min << endl;
-        gv_file << "#\tweight_decay_delta_max: " << weight_decay_delta_max << endl;
-
-        gv_file << "#\tepsilon: " << epsilon << endl;
-
-        gv_file << "#\tinitial_alpha_min: " << initial_alpha_min << endl;
-        gv_file << "#\tinitial_alpha_max: " << initial_alpha_max << endl;
-        gv_file << "#\talpha_min: " << alpha_min << endl;
-        gv_file << "#\talpha_max: " << alpha_max << endl;
-
-        gv_file << "#\tinitial_velocity_reset_min: " << initial_velocity_reset_min << endl;
-        gv_file << "#\tinitial_velocity_reset_max: " << initial_velocity_reset_max << endl;
-        gv_file << "#\tvelocity_reset_min: " << velocity_reset_min << endl;
-        gv_file << "#\tvelocity_reset_max: " << velocity_reset_max << endl;
-
-        gv_file << "#\tinitial_input_dropout_probability_min: " << initial_input_dropout_probability_min << endl;
-        gv_file << "#\tinitial_input_dropout_probability_max: " << initial_input_dropout_probability_max << endl;
-        gv_file << "#\tinput_dropout_probability_min: " << input_dropout_probability_min << endl;
-        gv_file << "#\tinput_dropout_probability_max: " << input_dropout_probability_max << endl;
-
-        gv_file << "#\tinitial_hidden_dropout_probability_min: " << initial_hidden_dropout_probability_min << endl;
-        gv_file << "#\tinitial_hidden_dropout_probability_max: " << initial_hidden_dropout_probability_max << endl;
-        gv_file << "#\thidden_dropout_probability_min: " << hidden_dropout_probability_min << endl;
-        gv_file << "#\thidden_dropout_probability_max: " << hidden_dropout_probability_max << endl;
-
-        gv_file << "#\tmax_epochs: " << max_epochs << endl;
-        gv_file << "#\treset_weights_chance: " << reset_weights_chance << endl;
-
-        gv_file << "#\tcrossover_settings: " << endl;
-        gv_file << "#\t\tcrossover_rate: " << crossover_rate << endl;
-        gv_file << "#\t\tmore_fit_parent_crossover: " << more_fit_parent_crossover << endl;
-        gv_file << "#\t\tless_fit_parent_crossover: " << less_fit_parent_crossover << endl;
-        gv_file << "#\t\tcrossover_alter_edge_type: " << crossover_alter_edge_type << endl;
-
-        gv_file << "#\tmutation_settings: " << endl;
-        gv_file << "#\t\tnumber_mutations: " << number_mutations << endl;
-        gv_file << "#\t\tedge_alter_type: " << edge_alter_type << endl;
-        gv_file << "#\t\tedge_disable: " << edge_disable << endl;
-        gv_file << "#\t\tedge_split: " << edge_split << endl;
-        gv_file << "#\t\tedge_add: " << edge_add << endl;
-        gv_file << "#\t\tnode_change_size: " << node_change_size << endl;
-        gv_file << "#\t\tnode_change_size_x: " << node_change_size_x << endl;
-        gv_file << "#\t\tnode_change_size_y: " << node_change_size_y << endl;
-        gv_file << "#\t\tnode_add: " << node_add << endl;
-        gv_file << "#\t\tnode_split: " << node_split << endl;
-        gv_file << "#\t\tnode_merge: " << node_merge << endl;
-        gv_file << "#\t\tnode_enable: " << node_enable << endl;
-        gv_file << "#\t\tnode_disable: " << node_disable << endl;
-
-        genome->print_graphviz(gv_file);
-        gv_file.close();
-    }
-    cout << endl;
-
-    if (genomes.size() == 0) {
-        cout << "checking if individual should be inserted or not, genomes.size(): " << genomes.size() << ", population_size: " << population_size << ", genome->get_best_validation_error(): " << genome->get_best_validation_error() << ", genomes is empty!" << endl;
-    } else {
-        cout << "checking if individual should be inserted or not, genomes.size(): " << genomes.size() << ", population_size: " << population_size << ", genome->get_best_validation_error(): " << genome->get_best_validation_error() << ", genomes.back()->get_best_validation_error(): " << genomes.back()->get_best_validation_error() << endl;
-    }
-
-    if ((int32_t)genomes.size() >= population_size && genome->get_best_validation_error() >= genomes.back()->get_best_validation_error()) {
-        //this will not be inserted into the population
-        cout << "not inserting genome due to poor fitness" << endl;
-        was_inserted = false;
-
-        if (!was_best_predictions_genome) delete genome;
-    } else {
-        cout << "updating search statistics" << endl;
+        if (genomes.size() == 0 || genome->get_validation_error() < genomes[0]->get_validation_error()) {
+            cout << "new best fitness!" << endl;
+        }
 
         for (auto i = inserted_from_map.begin(); i != inserted_from_map.end(); i++) {
             inserted_from_map[i->first] += genome->get_generated_by(i->first);
@@ -200,69 +149,557 @@ bool EXALT::insert_genome(RNN_Genome* genome) {
 
         cout << "inserting new genome" << endl;
         //inorder insert the new individual
-        genomes.insert( upper_bound(genomes.begin(), genomes.end(), genome, sort_genomes_by_validation_error()), genome);
-
-        cout << "inserted the new genome" << endl;
+        RNN_Genome *copy = genome->copy();
+        genomes.insert( upper_bound(genomes.begin(), genomes.end(), copy, sort_genomes_by_validation_error()), copy);
 
         //delete the worst individual if we've reached the population size
         if ((int32_t)genomes.size() > population_size) {
             cout << "deleting worst genome" << endl;
-            CNN_Genome *worst = genomes.back();
+            RNN_Genome *worst = genomes.back();
             genomes.pop_back();
 
-            if (worst->get_genome_id() != best_predictions_genome_id) {
-                delete worst;
-            }
+            delete worst;
         }
+    } else {
+        was_inserted = false;
+        cout << "not inserting genome due to poor fitness" << endl;
     }
 
-    cout << "genome fitnesses:" << endl;
-    for (int32_t i = 0; i < (int32_t)genomes.size(); i++) {
-        cout << "\t" << setw(4) << i << " -- genome: " << setw(10) << genomes[i]->get_generation_id() << ", "
-            << setw(10) << left << "val err: " << right << setw(12) << setprecision(2) << fixed << parse_fitness(genomes[i]->get_best_validation_error())
-            << " (" << setw(5) << fixed << setprecision(2) << genomes[i]->get_best_validation_rate() << "%)"
-            << ", " << setw(10) << left << "test err: " << right << setw(12) << setprecision(2) << fixed << parse_fitness(genomes[i]->get_test_error())
-            << " (" << setw(5) << fixed << setprecision(2) << genomes[i]->get_test_rate() << "%), "
-            << setw(10) << left << "train err: " << right << setw(12) << setprecision(2) << fixed << parse_fitness(genomes[i]->get_training_error())
-            << " (" << setw(5) << fixed << setprecision(2) << genomes[i]->get_training_rate() << "%) on ep: " << genomes[i]->get_best_epoch() 
-            //<< ", reachable edges: " << genomes[i]->get_number_reachable_edges()
-            //<< ", reachable nodes: " << genomes[i]->get_number_reachable_nodes()
-            << ", mu: " << setw(8) << fixed << setprecision(5) << genomes[i]->get_initial_mu()
-            << ", mu_d: " << setw(8) << fixed << setprecision(5) << genomes[i]->get_mu_delta()
-            << ", lr: " << setw(8) << fixed << setprecision(5) << genomes[i]->get_initial_learning_rate()
-            << ", lr_d: " << setw(8) << fixed << setprecision(5) << genomes[i]->get_learning_rate_delta()
-            << ", wd: " << setw(8) << fixed << setprecision(5) << genomes[i]->get_initial_weight_decay()
-            << ", wd_d: " << setw(8) << fixed << setprecision(5) << genomes[i]->get_weight_decay_delta()
-            << ", a: " << setw(8) << fixed << setprecision(5) << genomes[i]->get_alpha()
-            << ", vr: " << setw(6) << fixed << setprecision(5) << genomes[i]->get_velocity_reset()
-            << ", id: " << setw(8) << fixed << setprecision(5) << genomes[i]->get_input_dropout_probability()
-            << ", hd: " << setw(8) << fixed << setprecision(5) << genomes[i]->get_hidden_dropout_probability()
-            << ", bs: " << setw(6) << fixed << setprecision(5) << genomes[i]->get_batch_size()
-            << endl;
-    }
+    print_population();
 
-    if (best_predictions_genome != NULL) {
-        cout << "best predictions genome validation predictions: " << best_predictions_genome->get_best_validation_predictions() << ", training predictions: " << best_predictions_genome->get_training_predictions() << ", test predictions: " << best_predictions_genome->get_test_predictions() << ", validation error: " << best_predictions_genome->get_best_validation_error() << endl;
-    }
-
-    /*
-    cout << "genome best error: " << endl;
-    for (int32_t i = 0; i < (int32_t)genomes.size(); i++) {
-        cout << "\t" << setw(4) << i << " -- genome: " << setw(10) << genomes[i]->get_generation_id() << ", ";
-        genomes[i]->print_best_error(cout);
-    }
-
-    cout << "genome correct predictions: " << endl;
-    for (int32_t i = 0; i < (int32_t)genomes.size(); i++) {
-        cout << "\t" << setw(4) << i << " -- genome: " << setw(10) << genomes[i]->get_generation_id() << ", ";
-        genomes[i]->print_best_predictions(cout);
-    }
-    */
-
-    cout << endl;
-
-    if (output_directory.compare("") != 0) write_statistics(new_generation_id, new_fitness);
     return was_inserted;
 }
 
+void EXALT::initialize_genome_parameters(RNN_Genome* genome) {
+    genome->set_bp_iterations(bp_iterations);
+    genome->set_learning_rate(learning_rate);
+
+    if (use_high_threshold) genome->enable_high_threshold(high_threshold);
+    if (use_low_threshold) genome->enable_low_threshold(low_threshold);
+    if (use_dropout) genome->enable_dropout(dropout_probability);
+}
+
+RNN_Genome* EXALT::generate_genome() {
+    if (inserted_genomes > max_genomes) return NULL;
+    generated_genomes++;
+
+    RNN_Genome *genome = NULL;
+
+    if (genomes.size() == 0) {
+        //this is the first genome to be generated
+        //generate minimal genome, insert it into the population
+        genome = create_ff(number_inputs, 0, 0, number_outputs);
+
+        edge_innovation_count = genome->edges.size() + genome->recurrent_edges.size();
+        node_innovation_count = genome->nodes.size();
+
+        genome->set_generated_by("initial");
+        initialize_genome_parameters(genome);
+
+        //insert a copy of it into the population so
+        //additional requests can mutate it
+        genome->initialize_randomly();
+        genome->best_validation_error = EXALT_MAX_DOUBLE;
+        genome->best_parameters.clear();
+        genome->generated_by_map.clear();
+
+        insert_genome(genome->copy());
+
+    } else {
+        //generate a genome via crossover or mutation
+
+        cout << "generating new genome, genoems.size(): " << genomes.size() << ", population_size: " << population_size << ", crossover_rate: " << crossover_rate << endl;
+
+        while (genome == NULL) {
+            //if we haven't filled the population yet, only
+            //use mutation
+            if (genomes.size() >= population_size && rng_0_1(generator) < crossover_rate) {
+                //select two distinct parent genomes
+                int32_t p1 = genomes.size() * rng_0_1(generator);
+                int32_t p2 = (genomes.size() - 1) * rng_0_1(generator);
+                if (p2 >= p1) p2++;
+
+                //swap so the first parent is the more fit parent
+                if (p1 > p2) {
+                    int32_t tmp = p1;
+                    p1 = p2;
+                    p2 = tmp;
+                }
+
+                genome = crossover(genomes[p1], genomes[p2]);
+
+            } else {
+                int32_t genome_position = genomes.size() * rng_0_1(generator);
+                genome = genomes[genome_position]->copy();
+                mutate(genome);
+            }
+
+            if (genome->outputs_unreachable()) {
+                //no path from at least one input to the outputs
+                delete genome;
+                genome = NULL;
+            }
+        }
+
+        //if the population hasn't been filled yet, insert a copy of
+        //the genome into the population so it can be further mutated
+        if (genomes.size() < population_size) {
+            RNN_Genome *copy = genome->copy();
+            copy->initialize_randomly();
+            insert_genome(copy);
+
+            //also randomly initialize this genome as
+            //what it was generated from was also randomly
+            //initialized as the population hasn't been
+            //filled
+            genome->initialize_randomly();
+        }
+    }
+
+    genome->print_graphviz("rnn_genome_" + to_string(generated_genomes) + ".gv");
+
+    if (!epigenetic_weights) genome->initialize_randomly();
+
+    return genome;
+}
+
+
+void EXALT::mutate(RNN_Genome *g) {
+    double total = add_edge_rate + add_recurrent_edge_rate + enable_edge_rate + disable_edge_rate + split_edge_rate + add_node_rate + enable_node_rate + disable_node_rate + split_node_rate + merge_node_rate;
+
+    bool modified = false;
+
+    double mu, sigma;
+
+    cout << "generating new genome by mutation" << endl;
+    //g->get_mu_sigma(g->best_parameters, mu, sigma);
+    g->generated_by_map.clear();
+
+    //the the weights in the genome to it's best parameters
+    //for epigenetic iniitalization
+    if (g->best_parameters.size() == 0) {
+        g->set_weights(g->initial_parameters);
+        g->get_mu_sigma(g->initial_parameters, mu, sigma);
+    } else {
+        g->set_weights(g->best_parameters);
+        g->get_mu_sigma(g->best_parameters, mu, sigma);
+    }
+
+    while (!modified) {
+        g->assign_reachability();
+        double rng = rng_0_1(generator) * total;
+        cout << "rng: " << rng << ", total: " << total << endl;
+
+        if (rng < add_edge_rate) {
+            modified = g->add_edge(mu, sigma, edge_innovation_count);
+            cout << "\tadding edge, modified: " << modified << endl;
+            if (modified) g->generated_by_map["add_edge"]++;
+            continue;
+        }
+        rng -= add_edge_rate;
+
+        if (rng < add_recurrent_edge_rate) {
+            modified = g->add_recurrent_edge(mu, sigma, edge_innovation_count);
+            cout << "\tadding recurrent edge, modified: " << modified << endl;
+            if (modified) g->generated_by_map["add_recurrent_edge"]++;
+            continue;
+        }
+        rng -= add_recurrent_edge_rate;
+
+        if (rng < enable_edge_rate) {
+            modified = g->enable_edge();
+            cout << "\tenabling edge, modified: " << modified << endl;
+            if (modified) g->generated_by_map["enable_edge"]++;
+            continue;
+        }
+        rng -= enable_edge_rate;
+
+        if (rng < disable_edge_rate) {
+            modified = g->disable_edge();
+            cout << "\tdisabling edge, modified: " << modified << endl;
+            if (modified) g->generated_by_map["disable_edge"]++;
+            continue;
+        }
+        rng -= disable_edge_rate;
+
+        if (rng < split_edge_rate) {
+            modified = g->split_edge(mu, sigma, lstm_node_rate, edge_innovation_count, node_innovation_count);
+            cout << "\tsplitting edge, modified: " << modified << endl;
+            if (modified) g->generated_by_map["split_edge"]++;
+            continue;
+        }
+        rng -= split_edge_rate;
+
+        if (rng < add_node_rate) {
+            modified = g->add_node(mu, sigma, lstm_node_rate, edge_innovation_count, node_innovation_count);
+            cout << "\tadding node, modified: " << modified << endl;
+            if (modified) g->generated_by_map["add_node"]++;
+            continue;
+        }
+        rng -= add_node_rate;
+
+        if (rng < enable_node_rate) {
+            modified = g->enable_node();
+            cout << "\tenabling node, modified: " << modified << endl;
+            if (modified) g->generated_by_map["enable_node"]++;
+            continue;
+        }
+        rng -= enable_node_rate;
+
+        if (rng < disable_node_rate) {
+            modified = g->disable_node();
+            cout << "\tdisabling node, modified: " << modified << endl;
+            if (modified) g->generated_by_map["disable_node"]++;
+            continue;
+        }
+        rng -= disable_node_rate;
+
+        if (rng < split_node_rate) {
+            modified = g->split_node(mu, sigma, lstm_node_rate, edge_innovation_count, node_innovation_count);
+            cout << "\tsplitting node, modified: " << modified << endl;
+            if (modified) g->generated_by_map["split_node"]++;
+            continue;
+        }
+        rng -= split_node_rate;
+
+        if (rng < merge_node_rate) {
+            modified = g->merge_node(mu, sigma, lstm_node_rate, edge_innovation_count, node_innovation_count);
+            cout << "\tmerging node, modified: " << modified << endl;
+            if (modified) g->generated_by_map["merge_node"]++;
+            continue;
+        }
+        rng -= merge_node_rate;
+    }
+
+    vector<double> new_parameters;
+    g->get_weights(new_parameters);
+    //cout << "getting mu/sigma before assign reachability" << endl;
+    //g->get_mu_sigma(new_parameters, mu, sigma);
+
+    g->assign_reachability();
+
+    //reset the genomes statistics (as these carry over on copy)
+    g->best_validation_error = EXALT_MAX_DOUBLE;
+
+    //get the new set of parameters (as new paramters may have been
+    //added duriung mutatino) and set them to the initial parameters
+    //for epigenetic_initialization
+    g->get_weights(new_parameters);
+    g->initial_parameters = new_parameters;
+
+    //cout << "checking parameters after mutation" << endl;
+    //g->get_mu_sigma(g->initial_parameters, mu, sigma);
+
+    g->best_parameters.clear();
+}
+
+
+void EXALT::attempt_node_insert(vector<RNN_Node_Interface*> &child_nodes, const RNN_Node_Interface *node, const vector<double> &new_weights) {
+    for (int32_t i = 0; i < (int32_t)child_nodes.size(); i++) {
+        if (child_nodes[i]->get_innovation_number() == node->get_innovation_number()) return;
+    }
+
+    RNN_Node_Interface *node_copy = node->copy();
+    node_copy->set_weights(new_weights);
+
+    child_nodes.insert( upper_bound(child_nodes.begin(), child_nodes.end(), node_copy, sort_RNN_Nodes_by_depth()), node_copy);
+}
+
+void EXALT::attempt_edge_insert(vector<RNN_Edge*> &child_edges, vector<RNN_Node_Interface*> &child_nodes, RNN_Edge *edge, RNN_Edge *second_edge, bool set_enabled) {
+    for (int32_t i = 0; i < (int32_t)child_edges.size(); i++) {
+        if (child_edges[i]->get_innovation_number() == edge->get_innovation_number()) {
+            cerr << "ERROR in crossover! trying to push an edge with innovation_number: " << edge->get_innovation_number() << " and it already exists in the vector!" << endl;
+            /*
+            cerr << "p1_position: " << p1_position << ", p1_size: " << p1_child_edges.size() << endl;
+            cerr << "p2_position: " << p2_position << ", p2_size: " << p2_child_edges.size() << endl;
+            cerr << "vector innovation numbers: " << endl;
+            */
+            for (int32_t i = 0; i < (int32_t)child_edges.size(); i++) {
+                cerr << "\t" << child_edges[i]->get_innovation_number() << endl;
+            }
+
+            cerr << "This should never happen!" << endl;
+            exit(1);
+
+            return;
+        } else if (child_edges[i]->get_input_innovation_number() == edge->get_input_innovation_number() &&
+                child_edges[i]->get_output_innovation_number() == edge->get_output_innovation_number()) {
+
+            cerr << "Not inserting edge in crossover operation as there was already an edge with the same input and output innovation numbers!" << endl;
+            return;
+        }
+    }
+
+    vector<double> new_input_weights, new_output_weights;
+    double new_weight = 0.0;
+    if (second_edge != NULL) {
+        double crossover_value = rng_crossover_weight(generator);
+        new_weight = crossover_value * (second_edge->weight - edge->weight) + edge->weight;
+
+        cout << "EDGE WEIGHT CROSSOVER" << "better: " << edge->weight << ", worse: " << second_edge->weight << ", crossover_value: " << crossover_value << ", new_weight: " << new_weight << endl;
+
+        vector<double> input_weights1, input_weights2, output_weights1, output_weights2;
+        edge->get_input_node()->get_weights(input_weights1);
+        edge->get_output_node()->get_weights(output_weights1);
+
+        second_edge->get_input_node()->get_weights(input_weights2);
+        second_edge->get_output_node()->get_weights(output_weights2);
+        
+        new_input_weights.resize(input_weights1.size());
+        new_output_weights.resize(output_weights1.size());
+
+        for (int32_t i = 0; i < (int32_t)new_input_weights.size(); i++) {
+            new_input_weights[i] = crossover_value * (input_weights2[i] - input_weights1[i]) + input_weights1[i];
+        }
+
+        for (int32_t i = 0; i < (int32_t)new_output_weights.size(); i++) {
+            new_output_weights[i] = crossover_value * (output_weights2[i] - output_weights1[i]) + output_weights1[i];
+        }
+
+    } else {
+        new_weight = edge->weight;
+        edge->get_input_node()->get_weights(new_input_weights);
+        edge->get_output_node()->get_weights(new_output_weights);
+    }
+
+    attempt_node_insert(child_nodes, edge->get_input_node(), new_input_weights);
+    attempt_node_insert(child_nodes, edge->get_output_node(), new_output_weights);
+
+    RNN_Edge *edge_copy = edge->copy(child_nodes);
+
+    edge_copy->enabled = set_enabled;
+    edge_copy->weight = new_weight;
+
+    //edges have already been copied
+    child_edges.insert( upper_bound(child_edges.begin(), child_edges.end(), edge_copy, sort_RNN_Edges_by_depth()), edge_copy);
+}
+
+void EXALT::attempt_recurrent_edge_insert(vector<RNN_Recurrent_Edge*> &child_recurrent_edges, vector<RNN_Node_Interface*> &child_nodes, RNN_Recurrent_Edge *recurrent_edge, RNN_Recurrent_Edge *second_edge, bool set_enabled) {
+    for (int32_t i = 0; i < (int32_t)child_recurrent_edges.size(); i++) {
+        if (child_recurrent_edges[i]->get_innovation_number() == recurrent_edge->get_innovation_number()) {
+            cerr << "ERROR in crossover! trying to push an recurrent_edge with innovation_number: " << recurrent_edge->get_innovation_number() << " and it already exists in the vector!" << endl;
+            /*
+            cerr << "p1_position: " << p1_position << ", p1_size: " << p1_child_recurrent_edges.size() << endl;
+            cerr << "p2_position: " << p2_position << ", p2_size: " << p2_child_recurrent_edges.size() << endl;
+            cerr << "vector innovation numbers: " << endl;
+            */
+            for (int32_t i = 0; i < (int32_t)child_recurrent_edges.size(); i++) {
+                cerr << "\t" << child_recurrent_edges[i]->get_innovation_number() << endl;
+            }
+
+            cerr << "This should never happen!" << endl;
+            exit(1);
+
+            return;
+        } else if (child_recurrent_edges[i]->get_input_innovation_number() == recurrent_edge->get_input_innovation_number() &&
+                child_recurrent_edges[i]->get_output_innovation_number() == recurrent_edge->get_output_innovation_number()) {
+
+            cerr << "Not inserting recurrent_edge in crossover operation as there was already an recurrent_edge with the same input and output innovation numbers!" << endl;
+            return;
+        }
+    }
+
+
+    vector<double> new_input_weights, new_output_weights;
+    double new_weight = 0.0;
+    if (second_edge != NULL) {
+        double crossover_value = rng_crossover_weight(generator);
+        new_weight = crossover_value * (second_edge->weight - recurrent_edge->weight) + recurrent_edge->weight;
+
+        vector<double> input_weights1, input_weights2, output_weights1, output_weights2;
+        recurrent_edge->get_input_node()->get_weights(input_weights1);
+        recurrent_edge->get_output_node()->get_weights(output_weights1);
+
+        second_edge->get_input_node()->get_weights(input_weights2);
+        second_edge->get_output_node()->get_weights(output_weights2);
+        
+        new_input_weights.resize(input_weights1.size());
+        new_output_weights.resize(output_weights1.size());
+
+        for (int32_t i = 0; i < (int32_t)new_input_weights.size(); i++) {
+            new_input_weights[i] = crossover_value * (input_weights2[i] - input_weights1[i]) + input_weights1[i];
+        }
+
+        for (int32_t i = 0; i < (int32_t)new_output_weights.size(); i++) {
+            new_output_weights[i] = crossover_value * (output_weights2[i] - output_weights1[i]) + output_weights1[i];
+        }
+
+    } else {
+        new_weight = recurrent_edge->weight;
+        recurrent_edge->get_input_node()->get_weights(new_input_weights);
+        recurrent_edge->get_output_node()->get_weights(new_output_weights);
+    }
+
+    attempt_node_insert(child_nodes, recurrent_edge->get_input_node(), new_input_weights);
+    attempt_node_insert(child_nodes, recurrent_edge->get_output_node(), new_output_weights);
+
+    RNN_Recurrent_Edge *recurrent_edge_copy = recurrent_edge->copy(child_nodes);
+
+    recurrent_edge_copy->enabled = set_enabled;
+    recurrent_edge_copy->weight = new_weight;
+
+
+    //recurrent_edges have already been copied
+    child_recurrent_edges.insert( upper_bound(child_recurrent_edges.begin(), child_recurrent_edges.end(), recurrent_edge_copy, sort_RNN_Recurrent_Edges_by_depth()), recurrent_edge_copy);
+}
+
+
+RNN_Genome* EXALT::crossover(RNN_Genome *p1, RNN_Genome *p2) {
+    cerr << "generating new genome by crossover!" << endl;
+    //nodes are copied in the attempt_node_insert_function
+    vector< RNN_Node_Interface* > child_nodes;
+    vector< RNN_Edge* > child_edges;
+    vector< RNN_Recurrent_Edge* > child_recurrent_edges;
+
+    //edges are not sorted in order of innovation number, they need to be
+    vector< RNN_Edge* > p1_edges = p1->edges;
+    vector< RNN_Edge* > p2_edges = p2->edges;
+
+    sort(p1_edges.begin(), p1_edges.end(), sort_RNN_Edges_by_innovation());
+    sort(p2_edges.begin(), p2_edges.end(), sort_RNN_Edges_by_innovation());
+
+    cerr << "\tp1 innovation numbers AFTER SORT: " << endl;
+    for (int32_t i = 0; i < (int32_t)p1_edges.size(); i++) {
+        cerr << "\t\t" << p1_edges[i]->innovation_number << endl;
+    }
+    cerr << "\tp2 innovation numbers AFTER SORT: " << endl;
+    for (int32_t i = 0; i < (int32_t)p2_edges.size(); i++) {
+        cerr << "\t\t" << p2_edges[i]->innovation_number << endl;
+    }
+
+    vector< RNN_Recurrent_Edge* > p1_recurrent_edges = p1->recurrent_edges;
+    vector< RNN_Recurrent_Edge* > p2_recurrent_edges = p2->recurrent_edges;
+
+    sort(p1_recurrent_edges.begin(), p1_recurrent_edges.end(), sort_RNN_Recurrent_Edges_by_innovation());
+    sort(p2_recurrent_edges.begin(), p2_recurrent_edges.end(), sort_RNN_Recurrent_Edges_by_innovation());
+
+
+    int32_t p1_position = 0;
+    int32_t p2_position = 0;
+
+    while (p1_position < (int32_t)p1_edges.size() && p2_position < (int32_t)p2_edges.size()) {
+        RNN_Edge* p1_edge = p1_edges[p1_position];
+        RNN_Edge* p2_edge = p2_edges[p2_position];
+
+        int p1_innovation = p1_edge->innovation_number;
+        int p2_innovation = p2_edge->innovation_number;
+
+        if (p1_innovation == p2_innovation) {
+            attempt_edge_insert(child_edges, child_nodes, p1_edge, p2_edge, true);
+
+            p1_position++;
+            p2_position++;
+        } else if (p1_innovation < p2_innovation) {
+            bool set_enabled = rng_0_1(generator) < more_fit_crossover_rate;
+            attempt_edge_insert(child_edges, child_nodes, p1_edge, NULL, set_enabled);
+
+            p1_position++;
+        } else {
+            bool set_enabled = rng_0_1(generator) < less_fit_crossover_rate;
+            attempt_edge_insert(child_edges, child_nodes, p2_edge, NULL, set_enabled);
+
+            p2_position++;
+        }
+    }
+
+    while (p1_position < (int32_t)p1_edges.size()) {
+        RNN_Edge* p1_edge = p1_edges[p1_position];
+
+        bool set_enabled = rng_0_1(generator) < more_fit_crossover_rate;
+        attempt_edge_insert(child_edges, child_nodes, p1_edge, NULL, set_enabled);
+
+        p1_position++;
+    }
+
+    while (p2_position < (int32_t)p2_edges.size()) {
+        RNN_Edge* p2_edge = p2_edges[p2_position];
+
+        bool set_enabled = rng_0_1(generator) < less_fit_crossover_rate;
+        attempt_edge_insert(child_edges, child_nodes, p2_edge, NULL, set_enabled);
+
+        p2_position++;
+    }
+
+    //do the same for recurrent_edges
+    p1_position = 0;
+    p2_position = 0;
+
+    while (p1_position < (int32_t)p1_recurrent_edges.size() && p2_position < (int32_t)p2_recurrent_edges.size()) {
+        RNN_Recurrent_Edge* p1_recurrent_edge = p1_recurrent_edges[p1_position];
+        RNN_Recurrent_Edge* p2_recurrent_edge = p2_recurrent_edges[p2_position];
+
+        int p1_innovation = p1_recurrent_edge->innovation_number;
+        int p2_innovation = p2_recurrent_edge->innovation_number;
+
+        if (p1_innovation == p2_innovation) {
+            //do weight crossover
+            attempt_recurrent_edge_insert(child_recurrent_edges, child_nodes, p1_recurrent_edge, p2_recurrent_edge, true);
+
+            p1_position++;
+            p2_position++;
+        } else if (p1_innovation < p2_innovation) {
+            bool set_enabled = rng_0_1(generator) < more_fit_crossover_rate;
+            attempt_recurrent_edge_insert(child_recurrent_edges, child_nodes, p1_recurrent_edge, NULL, set_enabled);
+
+            p1_position++;
+        } else {
+            bool set_enabled = rng_0_1(generator) < less_fit_crossover_rate;
+            attempt_recurrent_edge_insert(child_recurrent_edges, child_nodes, p2_recurrent_edge, NULL, set_enabled);
+
+            p2_position++;
+        }
+    }
+
+    while (p1_position < (int32_t)p1_recurrent_edges.size()) {
+        RNN_Recurrent_Edge* p1_recurrent_edge = p1_recurrent_edges[p1_position];
+
+        bool set_enabled = rng_0_1(generator) < more_fit_crossover_rate;
+        attempt_recurrent_edge_insert(child_recurrent_edges, child_nodes, p1_recurrent_edge, NULL, set_enabled);
+
+        p1_position++;
+    }
+
+    while (p2_position < (int32_t)p2_recurrent_edges.size()) {
+        RNN_Recurrent_Edge* p2_recurrent_edge = p2_recurrent_edges[p2_position];
+
+        bool set_enabled = rng_0_1(generator) < less_fit_crossover_rate;
+        attempt_recurrent_edge_insert(child_recurrent_edges, child_nodes, p2_recurrent_edge, NULL, set_enabled);
+
+        p2_position++;
+    }
+
+    sort(child_nodes.begin(), child_nodes.end(), sort_RNN_Nodes_by_depth());
+    sort(child_edges.begin(), child_edges.end(), sort_RNN_Edges_by_depth());
+    sort(child_recurrent_edges.begin(), child_recurrent_edges.end(), sort_RNN_Recurrent_Edges_by_depth());
+
+    RNN_Genome *child = new RNN_Genome(child_nodes, child_edges, child_recurrent_edges);
+
+    child->set_generated_by("crossover");
+    initialize_genome_parameters(child);
+
+    double mu, sigma;
+
+    vector<double> new_parameters;
+    child->get_weights(new_parameters);
+    cout << "getting mu/sigma before assign reachability" << endl;
+    child->get_mu_sigma(new_parameters, mu, sigma);
+
+    child->assign_reachability();
+
+    //reset the genomes statistics (as these carry over on copy)
+    child->best_validation_error = EXALT_MAX_DOUBLE;
+
+    //get the new set of parameters (as new paramters may have been
+    //added duriung mutatino) and set them to the initial parameters
+    //for epigenetic_initialization
+    child->get_weights(new_parameters);
+    child->initial_parameters = new_parameters;
+
+    cout << "checking parameters after crossover" << endl;
+    child->get_mu_sigma(child->initial_parameters, mu, sigma);
+
+    child->best_parameters.clear();
+
+    return child;
+}
 

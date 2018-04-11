@@ -4,8 +4,14 @@
 #include <string>
 using std::string;
 
+#include <random>
+using std::minstd_rand0;
+using std::uniform_real_distribution;
+
 #include <vector>
 using std::vector;
+
+#include "common/random.hxx"
 
 #include "rnn_node_interface.hxx"
 
@@ -60,6 +66,9 @@ class LSTM_Node : public RNN_Node_Interface {
     public:
 
         LSTM_Node(int _innovation_number, int _type, double _depth);
+        ~LSTM_Node();
+
+        void initialize_randomly(minstd_rand0 &generator, NormalDistribution &normal_distribution, double mu, double sigma);
 
         double get_gradient(string gradient_name);
         void print_gradient(string gradient_name);
@@ -70,18 +79,21 @@ class LSTM_Node : public RNN_Node_Interface {
         void error_fired(int time, double error);
         void output_fired(int time, double delta);
 
-        uint32_t get_number_weights();
+        uint32_t get_number_weights() const;
+
+        void get_weights(vector<double> &parameters) const;
         void set_weights(const vector<double> &parameters);
+
+        void get_weights(uint32_t &offset, vector<double> &parameters) const;
         void set_weights(uint32_t &offset, const vector<double> &parameters);
 
-        void get_weights(uint32_t &offset, vector<double> &parameters);
         void get_gradients(vector<double> &gradients);
 
         void reset(int _series_length);
 
         void print_cell_values();
 
-        RNN_Node_Interface* copy();
+        RNN_Node_Interface* copy() const;
 
         friend class RNN_Edge;
 

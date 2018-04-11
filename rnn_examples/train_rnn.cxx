@@ -205,7 +205,7 @@ int main(int argc, char **argv) {
 
 
     int number_inputs = training_inputs[0].size();
-    int number_outputs = 1;
+    int number_outputs = training_outputs[0].size();
 
     cout << "number_inputs: " << number_inputs << ", number_outputs: " << number_outputs << endl;
 
@@ -256,35 +256,36 @@ int main(int argc, char **argv) {
     using_dropout = false;
 
     if (search_type.compare("bp") == 0) {
-        int max_iterations;
-        get_argument(arguments, "--max_iterations", true, max_iterations);
-
         genome->initialize_randomly();
+
+        int bp_iterations;
+        get_argument(arguments, "--bp_iterations", true, bp_iterations);
+        genome->set_bp_iterations(bp_iterations);
 
         double learning_rate = 0.001;
         get_argument(arguments, "--learning_rate", false, learning_rate);
 
-        bool nesterov_momentum = true;
-        bool adapt_learning_rate = false;
-        bool reset_weights = false;
-        bool use_high_norm = true;
-        double high_threshold = 1.0;
-        bool use_low_norm = true;
-        double low_threshold = 0.05;
-        using_dropout = false;
-        dropout_probability = 0.5;
+        genome->set_learning_rate(learning_rate);
+        genome->set_adapt_learning_rate(false);
+        genome->set_nesterov_momentum(true);
+        genome->set_reset_weights(false);
+        genome->enable_high_threshold(1.0);
+        genome->enable_low_threshold(0.05);
+        genome->disable_dropout();
 
-        string log_filename = "rnn_log.csv";
         if (argument_exists(arguments, "--log_filename")) {
+            string log_filename;
             get_argument(arguments, "--log_filename", false, log_filename);
+            genome->set_log_filename(log_filename);
         }
 
         if (argument_exists(arguments, "--stochastic")) {
-                genome->backpropagate_stochastic(training_inputs, training_outputs, max_iterations, learning_rate, nesterov_momentum, adapt_learning_rate, reset_weights, use_high_norm, high_threshold, use_low_norm, low_threshold, using_dropout, dropout_probability, log_filename);
+                genome->backpropagate_stochastic(training_inputs, training_outputs, test_inputs, test_outputs);
         } else {
-                genome->backpropagate(training_inputs, training_outputs, max_iterations, learning_rate, nesterov_momentum, adapt_learning_rate, reset_weights, use_high_norm, high_threshold, use_low_norm, low_threshold, using_dropout, dropout_probability, log_filename);
+                genome->backpropagate(training_inputs, training_outputs, test_inputs, test_outputs);
         }
         genome->get_weights(best_parameters);
+        cout << "best validation error: " << genome->get_validation_error() << endl;
 
     } else if (search_type.compare("ps") == 0) {
         ParticleSwarm ps(min_bound, max_bound, arguments);
@@ -323,42 +324,15 @@ int main(int argc, char **argv) {
     }
 
     rnn->set_weights(best_parameters);
-
-    double mse, mae;
-    double avg_mse = 0.0, avg_mae = 0.0;
-
-    for (uint32_t i = 0; i < training_inputs.size(); i++) {
-        mse = rnn->prediction_mse(training_inputs[i], training_outputs[i], using_dropout, false, dropout_probability);
-        mae = rnn->prediction_mae(training_inputs[i], training_outputs[i], using_dropout, false, dropout_probability);
-
-        avg_mse += mse;
-        avg_mae += mae;
-
-        cout << "series[" << i << "] training MSE:  " << mse << endl;
-        cout << "series[" << i << "] training MAE: " << mae << endl;
-    }
-    avg_mse /= training_inputs.size();
-    avg_mae /= training_inputs.size();
-    cout << "average training MSE: " << avg_mse << endl;
-    cout << "average training MAE: " << avg_mae << endl;
+    cout << "TRAINING ERRORS:" << endl;
+    genome->get_mse(training_inputs, training_outputs, true);
+    cout << endl;
+    genome->get_mae(training_inputs, training_outputs, true);
     cout << endl;
 
-    avg_mse = 0.0;
-    avg_mae = 0.0;
-    for (uint32_t i = 0; i < test_inputs.size(); i++) {
-        mse = rnn->prediction_mse(test_inputs[i], test_outputs[i], using_dropout, false, dropout_probability);
-        mae = rnn->prediction_mae(test_inputs[i], test_outputs[i], using_dropout, false, dropout_probability);
-
-        avg_mse += mse;
-        avg_mae += mae;
-
-        cout << "series[" << i << "] test MSE:      " << mse << endl;
-        cout << "series[" << i << "] test MAE:     " << mae << endl;
-    }
-    avg_mse /= test_inputs.size();
-    avg_mae /= test_inputs.size();
-    cout << "average test MSE: " << avg_mse << endl;
-    cout << "average test MAE: " << avg_mae << endl;
+    cout << "TEST ERRORS:" << endl;
+    genome->get_mse(test_inputs, test_outputs, true);
     cout << endl;
-
+    genome->get_mae(test_inputs, test_outputs, true);
+    cout << endl;
 }

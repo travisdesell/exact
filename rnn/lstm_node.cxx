@@ -8,8 +8,14 @@ using std::endl;
 #include <string>
 using std::string;
 
+#include <random>
+using std::minstd_rand0;
+using std::uniform_real_distribution;
+
 #include <vector>
 using std::vector;
+
+#include "common/random.hxx"
 
 #include "rnn_node_interface.hxx"
 #include "mse.hxx"
@@ -17,6 +23,28 @@ using std::vector;
 
 
 LSTM_Node::LSTM_Node(int _innovation_number, int _type, double _depth) : RNN_Node_Interface(_innovation_number, _type, _depth) {
+    node_type = LSTM_NODE;
+}
+
+LSTM_Node::~LSTM_Node() {
+}
+
+void LSTM_Node::initialize_randomly(minstd_rand0 &generator, NormalDistribution &normal_distribution, double mu, double sigma) {
+
+    output_gate_update_weight = normal_distribution.random(generator, mu, sigma);
+    output_gate_weight = normal_distribution.random(generator, mu, sigma);
+    output_gate_bias = normal_distribution.random(generator, mu, sigma);
+
+    input_gate_update_weight = normal_distribution.random(generator, mu, sigma);
+    input_gate_weight = normal_distribution.random(generator, mu, sigma);
+    input_gate_bias = normal_distribution.random(generator, mu, sigma);
+
+    forget_gate_update_weight = normal_distribution.random(generator, mu, sigma);
+    forget_gate_weight = normal_distribution.random(generator, mu, sigma);
+    forget_gate_bias = normal_distribution.random(generator, mu, sigma);
+
+    cell_weight = normal_distribution.random(generator, mu, sigma);
+    cell_bias = normal_distribution.random(generator, mu, sigma);
 }
 
 double LSTM_Node::get_gradient(string gradient_name) {
@@ -194,14 +222,21 @@ void LSTM_Node::output_fired(int time, double delta) {
     try_update_deltas(time);
 }
 
-uint32_t LSTM_Node::get_number_weights() {
+uint32_t LSTM_Node::get_number_weights() const {
     return 11;
+}
+
+void LSTM_Node::get_weights(vector<double> &parameters) const {
+    parameters.resize(get_number_weights());
+    uint32_t offset = 0;
+    get_weights(offset, parameters);
 }
 
 void LSTM_Node::set_weights(const vector<double> &parameters) {
     uint32_t offset = 0;
     set_weights(offset, parameters);
 }
+
 
 void LSTM_Node::set_weights(uint32_t &offset, const vector<double> &parameters) {
     //uint32_t start_offset = offset;
@@ -226,7 +261,7 @@ void LSTM_Node::set_weights(uint32_t &offset, const vector<double> &parameters) 
     //cerr << "set weights from offset " << start_offset << " to " << end_offset << " on LSTM_Node " << innovation_number << endl;
 }
 
-void LSTM_Node::get_weights(uint32_t &offset, vector<double> &parameters) {
+void LSTM_Node::get_weights(uint32_t &offset, vector<double> &parameters) const {
     //uint32_t start_offset = offset;
 
     parameters[offset++] = output_gate_update_weight;
@@ -319,7 +354,7 @@ void LSTM_Node::reset(int _series_length) {
     outputs_fired.assign(series_length, 0);
 }
 
-RNN_Node_Interface* LSTM_Node::copy() {
+RNN_Node_Interface* LSTM_Node::copy() const {
     LSTM_Node* n = new LSTM_Node(innovation_number, type, depth);
 
     //copy LSTM_Node values
@@ -381,6 +416,9 @@ RNN_Node_Interface* LSTM_Node::copy() {
     n->total_inputs = total_inputs;
     n->outputs_fired = outputs_fired;
     n->total_outputs = total_outputs;
+    n->enabled = enabled;
+    n->forward_reachable = forward_reachable;
+    n->backward_reachable = backward_reachable;
 
     return n;
 }

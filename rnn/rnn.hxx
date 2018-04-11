@@ -26,6 +26,7 @@ class RNN {
     public:
         RNN(vector<RNN_Node_Interface*> &_nodes, vector<RNN_Edge*> &_edges);
         RNN(vector<RNN_Node_Interface*> &_nodes, vector<RNN_Edge*> &_edges, vector<RNN_Recurrent_Edge*> &_recurrent_edges);
+        ~RNN();
 
         int get_number_nodes();
         int get_number_edges();
