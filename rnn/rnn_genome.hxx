@@ -47,6 +47,7 @@ class RNN_Genome {
         vector<double> initial_parameters;
 
         double best_validation_error;
+        double best_validation_mae;
         vector<double> best_parameters;
 
         minstd_rand0 generator;
@@ -70,6 +71,10 @@ class RNN_Genome {
         ~RNN_Genome();
 
         string generated_by_string();
+
+        int32_t get_enabled_node_count();
+        int32_t get_enabled_edge_count();
+        int32_t get_enabled_recurrent_edge_count();
 
         void set_bp_iterations(int32_t _bp_iterations);
         void set_learning_rate(double _learning_rate);
@@ -116,6 +121,7 @@ class RNN_Genome {
 
         RNN_Node_Interface* create_node(double mu, double sigma, double lstm_node_rate, int32_t &node_innovation_count, double depth);
         bool attempt_edge_insert(RNN_Node_Interface *n1, RNN_Node_Interface *n2, double mu, double sigma, int32_t &edge_innovation_count);
+        bool attempt_recurrent_edge_insert(RNN_Node_Interface *n1, RNN_Node_Interface *n2, double mu, double sigma, int32_t &edge_innovation_count);
 
         bool add_edge(double mu, double sigma, int32_t &edge_innovation_count);
         bool add_recurrent_edge(double mu, double sigma, int32_t &edge_innovation_count);
@@ -132,6 +138,7 @@ class RNN_Genome {
 
         bool equals(RNN_Genome *other);
 
+        string get_color(double weight, bool is_recurrent);
         void print_graphviz(string filename);
 
 

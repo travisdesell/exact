@@ -5,6 +5,10 @@ using std::ofstream;
 
 #include <iomanip>
 using std::setw;
+using std::setfill;
+
+#include <ios>
+using std::hex;
 
 #include <iostream>
 using std::cout;
@@ -32,6 +36,7 @@ using std::string;
 using std::vector;
 
 #include "common/random.hxx"
+#include "common/color_table.hxx"
 
 #include "rnn.hxx"
 #include "rnn_node.hxx"
@@ -49,6 +54,7 @@ void RNN_Genome::sort_edges_by_depth() {
 RNN_Genome::RNN_Genome(vector<RNN_Node_Interface*> &_nodes, vector<RNN_Edge*> &_edges) {
     generation_id = -1;
     best_validation_error = EXALT_MAX_DOUBLE;
+    best_validation_mae = EXALT_MAX_DOUBLE;
 
     nodes = _nodes;
     edges = _edges;
@@ -134,6 +140,7 @@ RNN_Genome* RNN_Genome::copy() {
     other->initial_parameters = initial_parameters;
 
     other->best_validation_error = best_validation_error;
+    other->best_validation_mae = best_validation_mae;
     other->best_parameters = best_parameters;
 
     other->assign_reachability();
@@ -168,6 +175,35 @@ RNN_Genome::~RNN_Genome() {
     }
 }
 
+int32_t RNN_Genome::get_enabled_node_count() {
+    int32_t count = 0;
+
+    for (int32_t i = 0; i < nodes.size(); i++) {
+        if (nodes[i]->enabled) count++;
+    }
+
+    return count;
+}
+
+int32_t RNN_Genome::get_enabled_edge_count() {
+    int32_t count = 0;
+
+    for (int32_t i = 0; i < edges.size(); i++) {
+        if (edges[i]->enabled) count++;
+    }
+
+    return count;
+}
+
+int32_t RNN_Genome::get_enabled_recurrent_edge_count() {
+    int32_t count = 0;
+
+    for (int32_t i = 0; i < recurrent_edges.size(); i++) {
+        if (recurrent_edges[i]->enabled) count++;
+    }
+
+    return count;
+}
 
 string RNN_Genome::generated_by_string() {
     ostringstream oss;
@@ -446,6 +482,7 @@ void RNN_Genome::backpropagate(const vector< vector< vector<double> > > &inputs,
     get_analytic_gradient(rnns, parameters, inputs, outputs, mse, analytic_gradient, true);
     double validation_error = get_mse(validation_inputs, validation_outputs);
     best_validation_error = validation_error;
+    best_validation_mae = get_mae(validation_inputs, validation_outputs);
     best_parameters = parameters;
 
     norm = 0.0;
@@ -476,6 +513,7 @@ void RNN_Genome::backpropagate(const vector< vector< vector<double> > > &inputs,
         validation_error = get_mse(validation_inputs, validation_outputs);
         if (validation_error < best_validation_error) {
             best_validation_error = validation_error;
+            best_validation_mae = get_mae(validation_inputs, validation_outputs);
             best_parameters = parameters;
         }
 
@@ -609,7 +647,7 @@ void RNN_Genome::backpropagate(const vector< vector< vector<double> > > &inputs,
     }
 
     RNN *g;
-    for (int32_t i = 0; i < n_series; i++) {
+    while (rnns.size() > 0) {
         g = rnns.back();
         rnns.pop_back();
         delete g;
@@ -664,6 +702,7 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
 
     double validation_error = get_mse(validation_inputs, validation_outputs);
     best_validation_error = validation_error;
+    best_validation_mae = get_mae(validation_inputs, validation_outputs);
     best_parameters = parameters;
 
     unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
@@ -822,6 +861,8 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
         validation_error = get_mse(validation_inputs, validation_outputs);
         if (validation_error < best_validation_error) {
             best_validation_error = validation_error;
+            best_validation_mae = get_mae(validation_inputs, validation_outputs);
+
             best_parameters = parameters;
         }
 
@@ -835,9 +876,11 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
         }
 
 
-        cout << "iteration " << iteration << ", mse: " << training_error << ", v_mse: " << validation_error << ", bv_mse: " << best_validation_error << ", avg_norm: " << avg_norm << endl;
+        cout << "iteration " << setw(5) << iteration << ", mse: " << training_error << ", v_mse: " << validation_error << ", bv_mse: " << best_validation_error << ", avg_norm: " << avg_norm << endl;
 
     }
+
+    delete rnn;
 
     this->set_weights(best_parameters);
     //cout << "backpropagation completed, getting mu/sigma" << endl;
@@ -1195,6 +1238,35 @@ bool RNN_Genome::attempt_edge_insert(RNN_Node_Interface *n1, RNN_Node_Interface 
     return true;
 }
 
+bool RNN_Genome::attempt_recurrent_edge_insert(RNN_Node_Interface *n1, RNN_Node_Interface *n2, double mu, double sigma, int32_t &edge_innovation_count) {
+    cout << "\tadding recurrent edge between nodes " << n1->innovation_number << " and " << n2->innovation_number << endl;
+
+    //check to see if an edge between the two nodes already exists
+    for (int32_t i = 0; i < (int32_t)recurrent_edges.size(); i++) {
+        if (recurrent_edges[i]->input_innovation_number == n1->innovation_number &&
+                recurrent_edges[i]->output_innovation_number == n2->innovation_number) {
+            if (!recurrent_edges[i]->enabled) {
+                //edge was disabled so we can enable it
+                cout << "\tedge already exists but was disabled, enabling it." << endl;
+                recurrent_edges[i]->enabled = true;
+                return true;
+            } else {
+                cout << "\tedge already exists, not adding." << endl;
+                //edge was already enabled, so there will not be a change
+                return false;
+            }
+        }
+    }
+
+    RNN_Recurrent_Edge *e = new RNN_Recurrent_Edge(++edge_innovation_count, n1, n2);
+    e->weight = normal_distribution.random(generator, mu, sigma);
+    cout << "\tadding recurrent edge between nodes " << e->input_innovation_number << " and " << e->output_innovation_number << ", new edge weight: " << e->weight << endl;
+
+    recurrent_edges.insert( upper_bound(recurrent_edges.begin(), recurrent_edges.end(), e, sort_RNN_Recurrent_Edges_by_depth()), e);
+    return true;
+}
+
+
 
 bool RNN_Genome::add_edge(double mu, double sigma, int32_t &edge_innovation_count) {
     cout << "\tattempting to add edge!" << endl;
@@ -1230,20 +1302,31 @@ bool RNN_Genome::add_edge(double mu, double sigma, int32_t &edge_innovation_coun
 
 bool RNN_Genome::add_recurrent_edge(double mu, double sigma, int32_t &edge_innovation_count) {
     cout << "\tattempting to add recurrent edge!" << endl;
-    vector<RNN_Node_Interface*> reachable_nodes;
+
+    vector<RNN_Node_Interface*> possible_input_nodes;
+    vector<RNN_Node_Interface*> possible_output_nodes;
     for (int32_t i = 0; i < (int32_t)nodes.size(); i++) {
-        if (nodes[i]->type != RNN_INPUT_NODE && nodes[i]->is_reachable()) reachable_nodes.push_back(nodes[i]);
+        if (nodes[i]->is_reachable()) {
+            possible_input_nodes.push_back(nodes[i]);
+
+            if (nodes[i]->type != RNN_INPUT_NODE) {
+                possible_output_nodes.push_back(nodes[i]);
+            }
+        }
     }
-    cout << "\treachable_nodes.size(): " << reachable_nodes.size() << endl;
-    if (reachable_nodes.size() == 0) return false;
+ 
+    cout << "\tpossible_input_nodes.size(): " << possible_input_nodes.size() << endl;
+    cout << "\tpossible_output_nodes.size(): " << possible_output_nodes.size() << endl;
+    if (possible_input_nodes.size() == 0) return false;
+    if (possible_output_nodes.size() == 0) return false;
 
-    int position = rng_0_1(generator) * reachable_nodes.size();
+    int p1 = rng_0_1(generator) * possible_input_nodes.size();
+    int p2 = rng_0_1(generator) * possible_output_nodes.size();
 
-    RNN_Node_Interface *n1 = reachable_nodes[position];
+    RNN_Node_Interface *n1 = possible_input_nodes[p1];
     cout << "\tselected first node " << n1->innovation_number << " with depth " << n1->depth << endl;
 
-    position = rng_0_1(generator) * reachable_nodes.size();
-    RNN_Node_Interface *n2 = reachable_nodes[position];
+    RNN_Node_Interface *n2 = possible_output_nodes[p2];
     cout << "\tselected second node " << n2->innovation_number << " with depth " << n2->depth << endl;
 
     //no need to swap the nodes as recurrent connections can go backwards
@@ -1367,13 +1450,57 @@ bool RNN_Genome::add_node(double mu, double sigma, double lstm_node_rate, int32_
     vector<RNN_Node_Interface*> possible_inputs;
     vector<RNN_Node_Interface*> possible_outputs;
 
+    int32_t enabled_count = 0;
+    double avg_inputs = 0.0;
+    double avg_outputs = 0.0;
+
     for (int32_t i = 0; i < (int32_t)nodes.size(); i++) {
         if (nodes[i]->depth < split_depth) possible_inputs.push_back(nodes[i]);
         else possible_outputs.push_back(nodes[i]);
+
+        if (nodes[i]->enabled) {
+            enabled_count++;
+            avg_inputs += nodes[i]->total_inputs;
+            avg_outputs += nodes[i]->total_outputs;
+        }
     }
 
-    int32_t max_inputs = 5;
-    int32_t max_outputs = 5;
+    avg_inputs /= enabled_count;
+    avg_outputs /= enabled_count;
+
+    double input_sigma = 0.0;
+    double output_sigma = 0.0;
+    double temp;
+    for (int32_t i = 0; i < (int32_t)nodes.size(); i++) {
+        if (nodes[i]->enabled) {
+            temp = (avg_inputs - nodes[i]->total_inputs);
+            temp = temp * temp;
+            input_sigma += temp;
+
+            temp = (avg_outputs - nodes[i]->total_outputs);
+            temp = temp * temp;
+            output_sigma += temp;
+        }
+    }
+
+    input_sigma /= (enabled_count - 1);
+    input_sigma = sqrt(input_sigma);
+
+    output_sigma /= (enabled_count - 1);
+    output_sigma = sqrt(output_sigma);
+
+    int32_t max_inputs = fmax(1, 4.0 + normal_distribution.random(generator, avg_inputs, input_sigma));
+    int32_t max_outputs = fmax(1, 4.0 + normal_distribution.random(generator, avg_outputs, output_sigma));
+    cout << "\tadd node max_inputs: " << max_inputs << endl;
+    cout << "\tadd node max_outputs: " << max_outputs << endl;
+
+    int32_t enabled_edges = get_enabled_edge_count();
+    int32_t enabled_recurrent_edges = get_enabled_recurrent_edge_count();
+
+    double recurrent_probability = (double)enabled_recurrent_edges / (double)(enabled_recurrent_edges + enabled_edges);
+    //recurrent_probability = fmax(0.2, recurrent_probability);
+
+    cout << "\tadd node recurrent probability: " << recurrent_probability << endl;
 
     while (possible_inputs.size() > max_inputs) {
         int32_t position = rng_0_1(generator) * possible_inputs.size();
@@ -1389,11 +1516,19 @@ bool RNN_Genome::add_node(double mu, double sigma, double lstm_node_rate, int32_
     nodes.insert( upper_bound(nodes.begin(), nodes.end(), new_node, sort_RNN_Nodes_by_depth()), new_node);
 
     for (int32_t i = 0; i < possible_inputs.size(); i++) {
-        attempt_edge_insert(possible_inputs[i], new_node, mu, sigma, edge_innovation_count);
+        if (rng_0_1(generator) < recurrent_probability) {
+            attempt_recurrent_edge_insert(possible_inputs[i], new_node, mu, sigma, edge_innovation_count);
+        } else {
+            attempt_edge_insert(possible_inputs[i], new_node, mu, sigma, edge_innovation_count);
+        }
     }
 
     for (int32_t i = 0; i < possible_outputs.size(); i++) {
-        attempt_edge_insert(new_node, possible_outputs[i], mu, sigma, edge_innovation_count);
+        if (rng_0_1(generator) < recurrent_probability) {
+            attempt_recurrent_edge_insert(new_node, possible_outputs[i], mu, sigma, edge_innovation_count);
+        } else {
+            attempt_edge_insert(new_node, possible_outputs[i], mu, sigma, edge_innovation_count);
+        }
     }
 
     return true;
@@ -1435,7 +1570,10 @@ bool RNN_Genome::split_node(double mu, double sigma, double lstm_node_rate, int3
     cout << "\tattempting to split a node!" << endl;
     vector<RNN_Node_Interface*> possible_nodes;
     for (int32_t i = 0; i < (int32_t)nodes.size(); i++) {
-        if (nodes[i]->type != RNN_INPUT_NODE && nodes[i]->type != RNN_OUTPUT_NODE) possible_nodes.push_back(nodes[i]);
+        if (nodes[i]->type != RNN_INPUT_NODE && nodes[i]->type != RNN_OUTPUT_NODE &&
+                nodes[i]->is_reachable()) {
+            possible_nodes.push_back(nodes[i]);
+        }
     }
 
     if (possible_nodes.size() == 0) return false;
@@ -1456,6 +1594,29 @@ bool RNN_Genome::split_node(double mu, double sigma, double lstm_node_rate, int3
         }
     }
 
+    vector<RNN_Recurrent_Edge*> recurrent_edges_1;
+    vector<RNN_Recurrent_Edge*> recurrent_edges_2;
+
+    for (int32_t i = 0; i < (int32_t)recurrent_edges.size(); i++) {
+        if (recurrent_edges[i]->output_innovation_number == selected_node->innovation_number
+                || recurrent_edges[i]->input_innovation_number == selected_node->innovation_number) {
+
+            if (rng_0_1(generator) < 0.5) recurrent_edges_1.push_back(recurrent_edges[i]);
+            if (rng_0_1(generator) < 0.5) recurrent_edges_2.push_back(recurrent_edges[i]);
+        }
+    }
+    cout << "\t[split node] recurrent_edges_1.size(): " << recurrent_edges_1.size() << endl;
+    cout << "\t[split node] recurrent_edges_2.size(): " << recurrent_edges_2.size() << endl;
+    cout << "\t[split node] input_edges.size(): " << input_edges.size() << endl;
+    cout << "\t[split node] output_edges.size(): " << output_edges.size() << endl;
+
+    if (input_edges.size() == 0 || output_edges.size() == 0) {
+        cout << "\t[split node] error, input or output edges size was 0, cannot create a node" << endl;
+        //print_graphviz("error_genome.gv");
+        //exit(1);
+        return false;
+    }
+
     vector<RNN_Edge*> input_edges_1;
     vector<RNN_Edge*> input_edges_2;
 
@@ -1465,12 +1626,12 @@ bool RNN_Genome::split_node(double mu, double sigma, double lstm_node_rate, int3
     }
 
     //make sure there is at least one input edge
-    if (input_edges_1.size() == 0) {
+    if (input_edges_1.size() == 0 && input_edges.size() > 0) {
         int position = rng_0_1(generator) * input_edges.size();
         input_edges_1.push_back(input_edges[position]);
     }
 
-    if (input_edges_2.size() == 0) {
+    if (input_edges_2.size() == 0 && input_edges.size() > 0) {
         int position = rng_0_1(generator) * input_edges.size();
         input_edges_2.push_back(input_edges[position]);
     }
@@ -1484,12 +1645,12 @@ bool RNN_Genome::split_node(double mu, double sigma, double lstm_node_rate, int3
     }
 
     //make sure there is at least one output edge
-    if (output_edges_1.size() == 0) {
+    if (output_edges_1.size() == 0 && output_edges.size() > 0) {
         int position = rng_0_1(generator) * output_edges.size();
         output_edges_1.push_back(output_edges[position]);
     }
 
-    if (output_edges_2.size() == 0) {
+    if (output_edges_2.size() == 0 && output_edges.size() > 0) {
         int position = rng_0_1(generator) * output_edges.size();
         output_edges_2.push_back(output_edges[position]);
     }
@@ -1541,6 +1702,34 @@ bool RNN_Genome::split_node(double mu, double sigma, double lstm_node_rate, int3
         attempt_edge_insert(new_node_2, output_edges_2[i]->output_node, mu, sigma, edge_innovation_count);
     }
 
+    cout << "\t[split node] attempting recurrent edge inserts" << endl;
+
+    for (int32_t i = 0; i < (int32_t)recurrent_edges_1.size(); i++) {
+        if (recurrent_edges_1[i]->input_innovation_number == selected_node->innovation_number) {
+            attempt_recurrent_edge_insert(new_node_1, recurrent_edges_1[i]->output_node, mu, sigma, edge_innovation_count);
+        } else if (recurrent_edges_1[i]->output_innovation_number == selected_node->innovation_number) {
+            attempt_recurrent_edge_insert(recurrent_edges_1[i]->input_node, new_node_1, mu, sigma, edge_innovation_count);
+        } else {
+            cerr << "\trecurrent edge list for split had an edge which was not connected to the selected node! This should never happen." << endl;
+            exit(1);
+        }
+        //disable the old recurrent edges
+        recurrent_edges_1[i]->enabled = false;
+    }
+
+    for (int32_t i = 0; i < (int32_t)recurrent_edges_2.size(); i++) {
+        if (recurrent_edges_2[i]->input_innovation_number == selected_node->innovation_number) {
+            attempt_recurrent_edge_insert(new_node_2, recurrent_edges_2[i]->output_node, mu, sigma, edge_innovation_count);
+        } else if (recurrent_edges_2[i]->output_innovation_number == selected_node->innovation_number) {
+            attempt_recurrent_edge_insert(recurrent_edges_2[i]->input_node, new_node_2, mu, sigma, edge_innovation_count);
+        } else {
+            cerr << "\trecurrent edge list for split had an edge which was not connected to the selected node! This should never happen." << endl;
+            exit(1);
+        }
+        //disable the old recurrent edges
+        recurrent_edges_2[i]->enabled = false;
+    }
+
     nodes.insert( upper_bound(nodes.begin(), nodes.end(), new_node_1, sort_RNN_Nodes_by_depth()), new_node_1);
     nodes.insert( upper_bound(nodes.begin(), nodes.end(), new_node_2, sort_RNN_Nodes_by_depth()), new_node_2);
 
@@ -1552,6 +1741,7 @@ bool RNN_Genome::split_node(double mu, double sigma, double lstm_node_rate, int3
     for (int32_t i = 0; i < (int32_t)output_edges.size(); i++) {
         output_edges[i]->enabled = false;
     }
+
     selected_node->enabled = false;
 
     return true;
@@ -1590,12 +1780,57 @@ bool RNN_Genome::merge_node(double mu, double sigma, double lstm_node_rate, int3
                 e->output_innovation_number == n1->innovation_number ||
                 e->output_innovation_number == n2->innovation_number) {
 
-            e->enabled = false;
-            merged_edges.push_back(e);
+            //if the edge is between the two merged nodes just disasble it
+            if ((e->input_innovation_number == n1->innovation_number &&
+                    e->output_innovation_number == n2->innovation_number)
+                    ||
+                    (e->input_innovation_number == n2->innovation_number &&
+                    e->output_innovation_number == n1->innovation_number)) {
+                e->enabled = false;
+            }
+
+            if (e->enabled) {
+                e->enabled = false;
+                merged_edges.push_back(e);
+            }
         }
     }
 
     for (int32_t i = 0; i < (int32_t)merged_edges.size(); i++) {
+        RNN_Edge *e = merged_edges[i];
+
+        RNN_Node_Interface *input_node = NULL;
+        RNN_Node_Interface *output_node = NULL;
+
+        if (e->input_innovation_number == n1->innovation_number ||
+                e->input_innovation_number == n2->innovation_number) {
+            input_node = new_node;
+        } else {
+            input_node = e->input_node;
+        }
+
+        if (e->output_innovation_number == n1->innovation_number ||
+                e->output_innovation_number == n2->innovation_number) {
+            output_node = new_node;
+        } else {
+            output_node = e->output_node;
+        }
+
+        if (input_node->depth == output_node->depth) {
+            cout << "\tskipping merged edge because the input and output nodes are the same depth" << endl;
+            continue;
+        }
+
+        //swap the edges becasue the input node is deeper than the output node
+        if (input_node->depth > output_node->depth) {
+            RNN_Node_Interface *tmp = input_node;
+            input_node = output_node;
+            output_node = tmp;
+        }
+
+        attempt_edge_insert(input_node, output_node, mu, sigma, edge_innovation_count);
+
+        /*
         if (merged_edges[i]->input_node->depth > new_node->depth) {
             cout << "\tinput node depth " << merged_edges[i]->input_node->depth << " > new node depth " << new_node->depth << endl;
             attempt_edge_insert(new_node, merged_edges[i]->output_node, mu, sigma, edge_innovation_count);
@@ -1621,9 +1856,92 @@ bool RNN_Genome::merge_node(double mu, double sigma, double lstm_node_rate, int3
                 exit(1);
             }
         }
+        */
+    }
+
+    vector<RNN_Recurrent_Edge*> merged_recurrent_edges;
+    for (int32_t i = 0; i < (int32_t)recurrent_edges.size(); i++) {
+        RNN_Recurrent_Edge *e = recurrent_edges[i];
+        
+        if (e->input_innovation_number == n1->innovation_number ||
+                e->input_innovation_number == n2->innovation_number ||
+                e->output_innovation_number == n1->innovation_number ||
+                e->output_innovation_number == n2->innovation_number) {
+
+            if (e->enabled) {
+                e->enabled = false;
+                merged_recurrent_edges.push_back(e);
+            }
+        }
+    }
+
+    //add recurrent edges to merged node
+    for (int32_t i = 0; i < (int32_t)merged_recurrent_edges.size(); i++) {
+        RNN_Recurrent_Edge *e = merged_recurrent_edges[i];
+
+        RNN_Node_Interface *input_node = NULL;
+        RNN_Node_Interface *output_node = NULL;
+
+        if (e->input_innovation_number == n1->innovation_number ||
+                e->input_innovation_number == n2->innovation_number) {
+            input_node = new_node;
+        } else {
+            input_node = e->input_node;
+        }
+
+        if (e->output_innovation_number == n1->innovation_number ||
+                e->output_innovation_number == n2->innovation_number) {
+            output_node = new_node;
+        } else {
+            output_node = e->output_node;
+        }
+
+        attempt_recurrent_edge_insert(input_node, output_node, mu, sigma, edge_innovation_count);
     }
 
     return false;
+}
+
+string RNN_Genome::get_color(double weight, bool is_recurrent) {
+    double max = 0.0;
+    double min = 0.0;
+
+    ostringstream oss;
+
+    if (!is_recurrent) {
+        for (int32_t i = 0; i < (int32_t)edges.size(); i++) {
+            if (edges[i]->weight > max) {
+                max = edges[i]->weight;
+            } else if (edges[i]->weight < min) {
+                min = edges[i]->weight;
+            }
+        }
+
+    } else {
+        for (int32_t i = 0; i < (int32_t)recurrent_edges.size(); i++) {
+            if (recurrent_edges[i]->weight > max) {
+                max = recurrent_edges[i]->weight;
+            } else if (recurrent_edges[i]->weight < min) {
+                min = recurrent_edges[i]->weight;
+            }
+        }
+    }
+
+    double value;
+    if (weight <= 0) {
+        value = -((weight / min) / 2.0) + 0.5;
+    } else {
+        value = ((weight / max) / 2.0) + 0.5;
+    }
+    Color color = get_colormap(value);
+
+    //cout << "weight: " << weight << ", converted to value: " << value << endl;
+
+    oss << hex << setw(2) << setfill('0') << color.red 
+        << hex << setw(2) << setfill('0') << color.green
+        << hex << setw(2) << setfill('0') << color.blue;
+
+    return oss.str();
 }
 
 
@@ -1637,6 +1955,7 @@ void RNN_Genome::print_graphviz(string filename) {
     outfile << "\t\trank = source;" << endl;
     for (uint32_t i = 0; i < nodes.size(); i++) {
         if (nodes[i]->type != RNN_INPUT_NODE) continue;
+        if (nodes[i]->total_outputs == 0) continue;
         outfile << "\t\tnode" << nodes[i]->innovation_number << " [shape=box,color=green,label=\"input " << nodes[i]->innovation_number << "\\ndepth " << nodes[i]->depth << "\"];" << endl;
     }
     outfile << "\t}" << endl;
@@ -1663,6 +1982,7 @@ void RNN_Genome::print_graphviz(string filename) {
     if (input_count > 1) {
         for (uint32_t i = 0; i < nodes.size(); i++) {
             if (nodes[i]->type != RNN_INPUT_NODE) continue;
+            if (nodes[i]->total_outputs == 0) continue;
 
             if (!printed_first) {
                 printed_first = true;
@@ -1711,7 +2031,7 @@ void RNN_Genome::print_graphviz(string filename) {
     for (uint32_t i = 0; i < edges.size(); i++) {
         if (!edges[i]->is_reachable()) continue;
 
-        outfile << "\tnode" << edges[i]->get_input_node()->get_innovation_number() << " -> node" << edges[i]->get_output_node()->get_innovation_number() << " [color=blue];" << endl;
+        outfile << "\tnode" << edges[i]->get_input_node()->get_innovation_number() << " -> node" << edges[i]->get_output_node()->get_innovation_number() << " [color=\"#" << get_color(edges[i]->weight, false) << "\"]; /* weight: " << edges[i]->weight << " */" << endl;
     }
     outfile << endl;
 
@@ -1719,7 +2039,7 @@ void RNN_Genome::print_graphviz(string filename) {
     for (uint32_t i = 0; i < recurrent_edges.size(); i++) {
         if (!recurrent_edges[i]->is_reachable()) continue;
 
-        outfile << "\tnode" << recurrent_edges[i]->get_input_node()->get_innovation_number() << " -> node" << recurrent_edges[i]->get_output_node()->get_innovation_number() << " [color=green,style=dashed];" << endl;
+        outfile << "\tnode" << recurrent_edges[i]->get_input_node()->get_innovation_number() << " -> node" << recurrent_edges[i]->get_output_node()->get_innovation_number() << " [color=\"#" << get_color(recurrent_edges[i]->weight, true) << "\",style=dotted]; /* weight: " << recurrent_edges[i]->weight << " */" << endl;
     }
     outfile << endl;
 

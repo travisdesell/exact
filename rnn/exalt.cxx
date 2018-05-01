@@ -30,7 +30,11 @@ EXALT::EXALT(int32_t _population_size, int32_t _max_genomes, int32_t _number_inp
     uint16_t seed = std::chrono::system_clock::now().time_since_epoch().count();
     generator = minstd_rand0(seed);
     rng_0_1 = uniform_real_distribution<double>(0.0, 1.0);
-    rng_crossover_weight = uniform_real_distribution<double>(-0.25, 1.25);
+
+    rng_crossover_weight = uniform_real_distribution<double>(0.0, 0.0);
+    //rng_crossover_weight = uniform_real_distribution<double>(-0.10, 0.1);
+    //rng_crossover_weight = uniform_real_distribution<double>(-0.5, 1.5);
+    //rng_crossover_weight = uniform_real_distribution<double>(0.45, 0.55);
 
     epigenetic_weights = true;
     crossover_rate = 0.25;
@@ -42,14 +46,23 @@ EXALT::EXALT(int32_t _population_size, int32_t _max_genomes, int32_t _number_inp
     add_edge_rate = 1.0;
     add_recurrent_edge_rate = 1.0;
     enable_edge_rate = 1.0;
-    disable_edge_rate = 1.0;
+    disable_edge_rate = 3.0;
     split_edge_rate = 1.0;
 
-    add_node_rate = 1.0;
-    enable_node_rate = 1.0;
-    disable_node_rate = 1.0;
-    split_node_rate = 1.0;
-    merge_node_rate = 1.0;
+    bool node_ops = true;
+    if (node_ops) {
+        add_node_rate = 1.0;
+        enable_node_rate = 1.0;
+        disable_node_rate = 3.0;
+        split_node_rate = 1.0;
+        merge_node_rate = 1.0;
+    } else {
+        add_node_rate = 0.0;
+        enable_node_rate = 0.0;
+        disable_node_rate = 0.0;
+        split_node_rate = 0.0;
+        merge_node_rate = 0.0;
+    }
 
 }
 
@@ -64,7 +77,7 @@ string parse_fitness(float fitness) {
 void EXALT::print_population() {
     cout << "POPUALTION: " << endl;
     for (int32_t i = 0; i < (int32_t)genomes.size(); i++) {
-        cout << "\t" << setw(15) << parse_fitness(genomes[i]->best_validation_error) << ", " << genomes[i]->nodes.size() << ", " << genomes[i]->edges.size() << ", " << genomes[i]->recurrent_edges.size() << ", " << genomes[i]->generated_by_string() << endl;
+        cout << "\t" << setw(15) << parse_fitness(genomes[i]->best_validation_error) << ", " << parse_fitness(genomes[i]->best_validation_mae) << ", " << genomes[i]->nodes.size() << " (" << genomes[i]->get_enabled_node_count() << "), " << genomes[i]->edges.size() << " (" << genomes[i]->get_enabled_edge_count() << "), " << genomes[i]->recurrent_edges.size() << " (" << genomes[i]->get_enabled_recurrent_edge_count() << "), " << genomes[i]->generated_by_string() << endl;
     }
 
     cout << endl << endl;
@@ -141,6 +154,7 @@ bool EXALT::insert_genome(RNN_Genome* genome) {
 
         if (genomes.size() == 0 || genome->get_validation_error() < genomes[0]->get_validation_error()) {
             cout << "new best fitness!" << endl;
+            genome->print_graphviz("rnn_genome_" + to_string(inserted_genomes) + ".gv");
         }
 
         for (auto i = inserted_from_map.begin(); i != inserted_from_map.end(); i++) {
@@ -200,6 +214,7 @@ RNN_Genome* EXALT::generate_genome() {
         //additional requests can mutate it
         genome->initialize_randomly();
         genome->best_validation_error = EXALT_MAX_DOUBLE;
+        genome->best_validation_mae = EXALT_MAX_DOUBLE;
         genome->best_parameters.clear();
         genome->generated_by_map.clear();
 
@@ -256,7 +271,7 @@ RNN_Genome* EXALT::generate_genome() {
         }
     }
 
-    genome->print_graphviz("rnn_genome_" + to_string(generated_genomes) + ".gv");
+    //genome->print_graphviz("rnn_genome_" + to_string(generated_genomes) + ".gv");
 
     if (!epigenetic_weights) genome->initialize_randomly();
 
@@ -270,6 +285,8 @@ void EXALT::mutate(RNN_Genome *g) {
     bool modified = false;
 
     double mu, sigma;
+
+    //g->print_graphviz("rnn_genome_premutate_" + to_string(generated_genomes) + ".gv");
 
     cout << "generating new genome by mutation" << endl;
     //g->get_mu_sigma(g->best_parameters, mu, sigma);
@@ -380,6 +397,7 @@ void EXALT::mutate(RNN_Genome *g) {
 
     //reset the genomes statistics (as these carry over on copy)
     g->best_validation_error = EXALT_MAX_DOUBLE;
+    g->best_validation_mae = EXALT_MAX_DOUBLE;
 
     //get the new set of parameters (as new paramters may have been
     //added duriung mutatino) and set them to the initial parameters
@@ -436,7 +454,7 @@ void EXALT::attempt_edge_insert(vector<RNN_Edge*> &child_edges, vector<RNN_Node_
         double crossover_value = rng_crossover_weight(generator);
         new_weight = crossover_value * (second_edge->weight - edge->weight) + edge->weight;
 
-        cout << "EDGE WEIGHT CROSSOVER" << "better: " << edge->weight << ", worse: " << second_edge->weight << ", crossover_value: " << crossover_value << ", new_weight: " << new_weight << endl;
+        //cout << "EDGE WEIGHT CROSSOVER" << "better: " << edge->weight << ", worse: " << second_edge->weight << ", crossover_value: " << crossover_value << ", new_weight: " << new_weight << endl;
 
         vector<double> input_weights1, input_weights2, output_weights1, output_weights2;
         edge->get_input_node()->get_weights(input_weights1);
@@ -558,6 +576,7 @@ RNN_Genome* EXALT::crossover(RNN_Genome *p1, RNN_Genome *p2) {
     sort(p1_edges.begin(), p1_edges.end(), sort_RNN_Edges_by_innovation());
     sort(p2_edges.begin(), p2_edges.end(), sort_RNN_Edges_by_innovation());
 
+    /*
     cerr << "\tp1 innovation numbers AFTER SORT: " << endl;
     for (int32_t i = 0; i < (int32_t)p1_edges.size(); i++) {
         cerr << "\t\t" << p1_edges[i]->innovation_number << endl;
@@ -566,13 +585,13 @@ RNN_Genome* EXALT::crossover(RNN_Genome *p1, RNN_Genome *p2) {
     for (int32_t i = 0; i < (int32_t)p2_edges.size(); i++) {
         cerr << "\t\t" << p2_edges[i]->innovation_number << endl;
     }
+    */
 
     vector< RNN_Recurrent_Edge* > p1_recurrent_edges = p1->recurrent_edges;
     vector< RNN_Recurrent_Edge* > p2_recurrent_edges = p2->recurrent_edges;
 
     sort(p1_recurrent_edges.begin(), p1_recurrent_edges.end(), sort_RNN_Recurrent_Edges_by_innovation());
     sort(p2_recurrent_edges.begin(), p2_recurrent_edges.end(), sort_RNN_Recurrent_Edges_by_innovation());
-
 
     int32_t p1_position = 0;
     int32_t p2_position = 0;
@@ -688,6 +707,7 @@ RNN_Genome* EXALT::crossover(RNN_Genome *p1, RNN_Genome *p2) {
 
     //reset the genomes statistics (as these carry over on copy)
     child->best_validation_error = EXALT_MAX_DOUBLE;
+    child->best_validation_mae = EXALT_MAX_DOUBLE;
 
     //get the new set of parameters (as new paramters may have been
     //added duriung mutatino) and set them to the initial parameters

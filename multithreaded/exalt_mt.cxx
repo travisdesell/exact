@@ -57,6 +57,7 @@ void exalt_thread(int id) {
 
         if (genome == NULL) break;  //generate_individual returns NULL when the search is done
 
+        //genome->backpropagate(training_inputs, training_outputs, validation_inputs, validation_outputs);
         genome->backpropagate_stochastic(training_inputs, training_outputs, validation_inputs, validation_outputs);
 
         exalt_mutex.lock();
@@ -134,6 +135,8 @@ int main(int argc, char** argv) {
     input_parameter_names.push_back("eng_1_egt_3");
     input_parameter_names.push_back("eng_1_egt_4");
     */
+    
+    /*
     input_parameter_names.push_back("par1");
     input_parameter_names.push_back("par2");
     input_parameter_names.push_back("par3");
@@ -149,9 +152,24 @@ int main(int argc, char** argv) {
     input_parameter_names.push_back("par13");
     input_parameter_names.push_back("par14");
     input_parameter_names.push_back("vib");
+    */
+
+    input_parameter_names.push_back("Coyote-GROSS_GENERATOR_OUTPUT");
+    input_parameter_names.push_back("Coyote-Net_Unit_Generation");
+    input_parameter_names.push_back("Cyclone_01-CYC_01_CONDITIONER_INLET_TEMP");
+    input_parameter_names.push_back("Cyclone_01-CYC_01_CONDITIONER_OUTLET_TEMP");
+    input_parameter_names.push_back("Cyclone_01-LIGNITE_FEEDER_01_RATE");
+    input_parameter_names.push_back("Cyclone_01-CYC_01_TOTAL_COMB_AIR_FLOW");
+    input_parameter_names.push_back("Cyclone_01-1_MAIN_OIL_FLOW");
+    input_parameter_names.push_back("Cyclone_01-CYCLONE_1_MAIN_FLM_INT");
+
+
 
     vector<string> output_parameter_names;
-    output_parameter_names.push_back("vib");
+    output_parameter_names.push_back("Cyclone_01-1_MAIN_OIL_FLOW");
+
+    //output_parameter_names.push_back("vib");
+
     //output_parameter_names.push_back("indicated_airspeed");
     //output_parameter_names.push_back("eng_1_oil_press");
     /*

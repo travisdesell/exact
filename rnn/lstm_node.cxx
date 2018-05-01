@@ -1,5 +1,8 @@
 #include <cmath>
 
+#include <iomanip>
+using std::setw;
+
 #include <iostream>
 using std::cerr;
 using std::cout;
@@ -34,17 +37,21 @@ void LSTM_Node::initialize_randomly(minstd_rand0 &generator, NormalDistribution 
     output_gate_update_weight = normal_distribution.random(generator, mu, sigma);
     output_gate_weight = normal_distribution.random(generator, mu, sigma);
     output_gate_bias = normal_distribution.random(generator, mu, sigma);
+    //output_gate_bias = 0.0;
 
     input_gate_update_weight = normal_distribution.random(generator, mu, sigma);
     input_gate_weight = normal_distribution.random(generator, mu, sigma);
     input_gate_bias = normal_distribution.random(generator, mu, sigma);
+    //input_gate_bias = 0.0;
 
     forget_gate_update_weight = normal_distribution.random(generator, mu, sigma);
     forget_gate_weight = normal_distribution.random(generator, mu, sigma);
-    forget_gate_bias = normal_distribution.random(generator, mu, sigma);
+    //forget_gate_bias = normal_distribution.random(generator, mu, sigma);
+    forget_gate_bias = 1.0 + normal_distribution.random(generator, mu, sigma);
 
     cell_weight = normal_distribution.random(generator, mu, sigma);
     cell_bias = normal_distribution.random(generator, mu, sigma);
+    //cell_bias = 0.0;
 }
 
 double LSTM_Node::get_gradient(string gradient_name) {
@@ -497,7 +504,7 @@ int main(int argc, char **argv) {
     for (uint32_t iteration = 0; iteration < 2000000; iteration++) {
         bool print = (iteration % 10000) == 0;
 
-        if (print) cout << "\n\niteration: " << iteration << endl;
+        if (print) cout << "\n\niteration: " << setw(5) << iteration << endl;
        
         //cout << "firing node1" << endl;
         offset = 0;
