@@ -19,7 +19,10 @@ using std::to_string;
 #include "rnn_genome.hxx"
 #include "generate_nn.hxx"
 
-EXALT::EXALT(int32_t _population_size, int32_t _max_genomes, int32_t _number_inputs, int32_t _number_outputs, int32_t _bp_iterations, double _learning_rate, bool _use_high_threshold, double _high_threshold, bool _use_low_threshold, double _low_threshold, bool _use_dropout, double _dropout_probability) : population_size(_population_size), max_genomes(_max_genomes), number_inputs(_number_inputs), number_outputs(_number_outputs), bp_iterations(_bp_iterations), learning_rate(_learning_rate), use_high_threshold(_use_high_threshold), high_threshold(_high_threshold), use_low_threshold(_use_low_threshold), low_threshold(_low_threshold), use_dropout(_use_dropout), dropout_probability(_dropout_probability) {
+EXALT::EXALT(int32_t _population_size, int32_t _max_genomes, int32_t _number_inputs, int32_t _number_outputs, const vector<string> &_input_parameter_names, const vector<string> &_output_parameter_names, int32_t _bp_iterations, double _learning_rate, bool _use_high_threshold, double _high_threshold, bool _use_low_threshold, double _low_threshold, bool _use_dropout, double _dropout_probability) : population_size(_population_size), max_genomes(_max_genomes), number_inputs(_number_inputs), number_outputs(_number_outputs), bp_iterations(_bp_iterations), learning_rate(_learning_rate), use_high_threshold(_use_high_threshold), high_threshold(_high_threshold), use_low_threshold(_use_low_threshold), low_threshold(_low_threshold), use_dropout(_use_dropout), dropout_probability(_dropout_probability) {
+
+    input_parameter_names = _input_parameter_names;
+    output_parameter_names = _output_parameter_names;
 
     inserted_genomes = 0;
     generated_genomes = 0;
@@ -43,13 +46,15 @@ EXALT::EXALT(int32_t _population_size, int32_t _max_genomes, int32_t _number_inp
 
     lstm_node_rate = 0.5;
 
+    clone_rate = 1.0;
+
     add_edge_rate = 1.0;
     add_recurrent_edge_rate = 1.0;
     enable_edge_rate = 1.0;
     disable_edge_rate = 3.0;
     split_edge_rate = 1.0;
 
-    bool node_ops = true;
+    bool node_ops = false;
     if (node_ops) {
         add_node_rate = 1.0;
         enable_node_rate = 1.0;
@@ -203,6 +208,7 @@ RNN_Genome* EXALT::generate_genome() {
         //this is the first genome to be generated
         //generate minimal genome, insert it into the population
         genome = create_ff(number_inputs, 0, 0, number_outputs);
+        genome->set_parameter_names(input_parameter_names, output_parameter_names);
 
         edge_innovation_count = genome->edges.size() + genome->recurrent_edges.size();
         node_innovation_count = genome->nodes.size();
@@ -280,7 +286,7 @@ RNN_Genome* EXALT::generate_genome() {
 
 
 void EXALT::mutate(RNN_Genome *g) {
-    double total = add_edge_rate + add_recurrent_edge_rate + enable_edge_rate + disable_edge_rate + split_edge_rate + add_node_rate + enable_node_rate + disable_node_rate + split_node_rate + merge_node_rate;
+    double total = clone_rate + add_edge_rate + add_recurrent_edge_rate + enable_edge_rate + disable_edge_rate + split_edge_rate + add_node_rate + enable_node_rate + disable_node_rate + split_node_rate + merge_node_rate;
 
     bool modified = false;
 
@@ -306,6 +312,14 @@ void EXALT::mutate(RNN_Genome *g) {
         g->assign_reachability();
         double rng = rng_0_1(generator) * total;
         cout << "rng: " << rng << ", total: " << total << endl;
+
+        if (rng < clone_rate) {
+            cout << "\tcloned" << endl;
+            g->generated_by_map["clone"]++;
+            modified = true;
+            continue;
+        }
+        rng -= clone_rate;
 
         if (rng < add_edge_rate) {
             modified = g->add_edge(mu, sigma, edge_innovation_count);
@@ -692,6 +706,7 @@ RNN_Genome* EXALT::crossover(RNN_Genome *p1, RNN_Genome *p2) {
     sort(child_recurrent_edges.begin(), child_recurrent_edges.end(), sort_RNN_Recurrent_Edges_by_depth());
 
     RNN_Genome *child = new RNN_Genome(child_nodes, child_edges, child_recurrent_edges);
+    child->set_parameter_names(input_parameter_names, output_parameter_names);
 
     child->set_generated_by("crossover");
     initialize_genome_parameters(child);

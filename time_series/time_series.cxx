@@ -227,6 +227,9 @@ int TimeSeriesSet::get_number_columns() const {
     return fields.size();
 }
 
+string TimeSeriesSet::get_filename() const {
+    return filename;
+}
 
 vector<string> TimeSeriesSet::get_fields() const {
     return fields;
@@ -273,11 +276,11 @@ void normalize_time_series_sets(vector<TimeSeriesSet*> time_series) {
 
         if (other_fields != fields) {
             cerr << "ERROR! cannot normalize time series sets with different fields!" << endl;
-            cerr << "first time series fields:" << endl;
+            cerr << "first time series '" << time_series[0]->get_filename() << "' fields:" << endl;
             for (int j = 0; j < other_fields.size(); j++) {
                 cerr << "\t" << other_fields[j] << endl;
             }
-            cerr << "second time series fields:" << endl;
+            cerr << "second time series '" << time_series[i]->get_filename() << "' fields:" << endl;
             for (int j = 0; j < fields.size(); j++) {
                 cerr << "\t" << fields[j] << endl;
             }
@@ -298,7 +301,7 @@ void normalize_time_series_sets(vector<TimeSeriesSet*> time_series) {
             if (current_min < min) min = current_min;
             if (current_max > max) max = current_max;
         }
-        //cout << setw(25) << fields[i] << ", overall min: " << setw(12) << min << ", overall max: " << setw(12) << max << endl;
+        cout << setw(50) << fields[i] << ", overall min: " << setw(12) << min << ", overall max: " << setw(12) << max << endl;
 
         //for each series, subtract min, divide by (max - min)
         for (int j = 0; j < time_series.size(); j++) {
@@ -306,6 +309,62 @@ void normalize_time_series_sets(vector<TimeSeriesSet*> time_series) {
         }
     }
 }
+
+void load_time_series(const vector<string> &training_filenames, const vector<string> &testing_filenames, const vector<string> &input_parameter_names, const vector<string> &output_parameter_names, int time_offset, vector< vector< vector<double> > > &training_inputs, vector< vector< vector<double> > > &training_outputs, vector< vector< vector<double> > > &testing_inputs, vector< vector< vector<double> > > &testing_outputs, bool normalize) {
+
+    vector<TimeSeriesSet*> all_time_series;
+
+    int training_rows = 0;
+    vector<TimeSeriesSet*> training_time_series;
+    cout << "got training time series filenames:" << endl;
+    for (uint32_t i = 0; i < training_filenames.size(); i++) {
+        cout << "\t" << training_filenames[i] << endl;
+
+        TimeSeriesSet *ts = new TimeSeriesSet(training_filenames[i], 1.0);
+        training_time_series.push_back( ts );
+        all_time_series.push_back( ts );
+
+        training_rows += ts->get_number_rows();
+    }
+    cout << "number training files: " << training_filenames.size() << ", total rows for training flights: " << training_rows << endl;
+
+    int testing_rows = 0;
+    vector<TimeSeriesSet*> testing_time_series;
+    cout << "got test time series filenames:" << endl;
+    for (uint32_t i = 0; i < testing_filenames.size(); i++) {
+        cout << "\t" << testing_filenames[i] << endl;
+
+        TimeSeriesSet *ts = new TimeSeriesSet(testing_filenames[i], -1.0);
+        testing_time_series.push_back( ts );
+        all_time_series.push_back( ts );
+
+        testing_rows += ts->get_number_rows();
+    }
+    cout << "number test files: " << testing_filenames.size() << ", total rows for test flights: " << testing_rows << endl;
+
+    if (normalize) {
+        normalize_time_series_sets(all_time_series);
+        cout << "normalized all time series" << endl;
+    } else {
+        cout << "not normalizing time series" << endl;
+    }
+
+
+    training_inputs.resize(training_time_series.size());
+    training_outputs.resize(training_time_series.size());
+    for (uint32_t i = 0; i < training_time_series.size(); i++) {
+        training_time_series[i]->export_time_series(training_inputs[i], input_parameter_names, -time_offset);
+        training_time_series[i]->export_time_series(training_outputs[i], output_parameter_names, time_offset);
+    }
+
+    testing_inputs.resize(testing_time_series.size());
+    testing_outputs.resize(testing_time_series.size());
+    for (uint32_t i = 0; i < testing_time_series.size(); i++) {
+        testing_time_series[i]->export_time_series(testing_inputs[i], input_parameter_names, -time_offset);
+        testing_time_series[i]->export_time_series(testing_outputs[i], output_parameter_names, time_offset);
+    }
+}
+
 
 /**
  *  Time offset < 0 generates input data. Do not use the last <time_offset> values
@@ -404,6 +463,5 @@ int main(int argc, char **argv) {
 
     normalize_time_series_sets(all_time_series);
 }
-
 
 #endif

@@ -98,6 +98,10 @@ RNN_Genome::RNN_Genome(vector<RNN_Node_Interface*> &_nodes, vector<RNN_Edge*> &_
     assign_reachability();
 }
 
+void RNN_Genome::set_parameter_names(const vector<string> &_input_parameter_names, const vector<string> &_output_parameter_names) {
+    input_parameter_names = _input_parameter_names;
+    output_parameter_names = _output_parameter_names;
+}
 
 
 RNN_Genome* RNN_Genome::copy() {
@@ -142,6 +146,10 @@ RNN_Genome* RNN_Genome::copy() {
     other->best_validation_error = best_validation_error;
     other->best_validation_mae = best_validation_mae;
     other->best_parameters = best_parameters;
+
+    other->input_parameter_names = input_parameter_names;
+    other->output_parameter_names = output_parameter_names;
+
 
     other->assign_reachability();
 
@@ -480,9 +488,9 @@ void RNN_Genome::backpropagate(const vector< vector< vector<double> > > &inputs,
 
     //initialize the initial previous values
     get_analytic_gradient(rnns, parameters, inputs, outputs, mse, analytic_gradient, true);
-    double validation_error = get_mse(validation_inputs, validation_outputs);
+    double validation_error = get_mse(parameters, validation_inputs, validation_outputs);
     best_validation_error = validation_error;
-    best_validation_mae = get_mae(validation_inputs, validation_outputs);
+    best_validation_mae = get_mae(parameters, validation_inputs, validation_outputs);
     best_parameters = parameters;
 
     norm = 0.0;
@@ -510,10 +518,10 @@ void RNN_Genome::backpropagate(const vector< vector< vector<double> > > &inputs,
         get_analytic_gradient(rnns, parameters, inputs, outputs, mse, analytic_gradient, true);
 
         this->set_weights(parameters);
-        validation_error = get_mse(validation_inputs, validation_outputs);
+        validation_error = get_mse(parameters, validation_inputs, validation_outputs);
         if (validation_error < best_validation_error) {
             best_validation_error = validation_error;
-            best_validation_mae = get_mae(validation_inputs, validation_outputs);
+            best_validation_mae = get_mae(parameters, validation_inputs, validation_outputs);
             best_parameters = parameters;
         }
 
@@ -700,10 +708,21 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
         prev_learning_rate[i] = learning_rate;
     }
 
-    double validation_error = get_mse(validation_inputs, validation_outputs);
+    //TODO: need to get validation error on the RNN not the genome
+    double validation_error = get_mse(parameters, validation_inputs, validation_outputs, false);
     best_validation_error = validation_error;
-    best_validation_mae = get_mae(validation_inputs, validation_outputs);
+    best_validation_mae = get_mae(parameters, validation_inputs, validation_outputs);
     best_parameters = parameters;
+
+    /*
+    cout << "initial validation_error: " << validation_error << endl;
+    cout << "best validation error: " << best_validation_error << endl;
+    double m = 0.0, s = 0.0;
+    get_mu_sigma(parameters, m, s);
+    for (int32_t i = 0; i < parameters.size(); i++) {
+        cout << "parameters[" << i << "]: " << parameters[i] << endl;
+    }
+    */
 
     unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
     minstd_rand0 generator(seed);
@@ -857,11 +876,11 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
 
         this->set_weights(parameters);
 
-        double training_error = get_mse(inputs, outputs);
-        validation_error = get_mse(validation_inputs, validation_outputs);
+        double training_error = get_mse(parameters, inputs, outputs);
+        validation_error = get_mse(parameters, validation_inputs, validation_outputs);
         if (validation_error < best_validation_error) {
             best_validation_error = validation_error;
-            best_validation_mae = get_mae(validation_inputs, validation_outputs);
+            best_validation_mae = get_mae(parameters, validation_inputs, validation_outputs);
 
             best_parameters = parameters;
         }
@@ -888,10 +907,11 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
     //get_mu_sigma(best_parameters, _mu, _sigma);
 }
 
-double RNN_Genome::get_mse(const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, bool verbose) {
+double RNN_Genome::get_mse(const vector<double> &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, bool verbose) {
     RNN *rnn = get_rnn();
+    rnn->set_weights(parameters);
 
-    double mse;
+    double mse = 0.0;
     double avg_mse = 0.0;
 
     int32_t width = ceil(log10(inputs.size()));
@@ -914,8 +934,9 @@ double RNN_Genome::get_mse(const vector< vector< vector<double> > > &inputs, con
     return avg_mse;
 }
 
-double RNN_Genome::get_mae(const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, bool verbose) {
+double RNN_Genome::get_mae(const vector<double> &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, bool verbose) {
     RNN *rnn = get_rnn();
+    rnn->set_weights(parameters);
 
     double mae;
     double avg_mae = 0.0;
@@ -963,8 +984,8 @@ bool RNN_Genome::equals(RNN_Genome* other) {
 }
 
 void RNN_Genome::assign_reachability() {
-    cout << "assigning reachability!" << endl;
-    cout << nodes.size() << " nodes, " << edges.size() << " edges, " << recurrent_edges.size() << " recurrent_edges" << endl;
+    //cout << "assigning reachability!" << endl;
+    //cout << nodes.size() << " nodes, " << edges.size() << " edges, " << recurrent_edges.size() << " recurrent_edges" << endl;
 
     for (int32_t i = 0; i < (int32_t)nodes.size(); i++) {
         nodes[i]->forward_reachable = false;
@@ -1951,12 +1972,22 @@ void RNN_Genome::print_graphviz(string filename) {
     outfile << "digraph RNN {" << endl;
     outfile << "graph [pad=\"0.01\", nodesep=\"0.05\", ranksep=\"0.9\"];" << endl;
 
+    int32_t input_name_index = 0;
     outfile << "\t{" << endl;
     outfile << "\t\trank = source;" << endl;
     for (uint32_t i = 0; i < nodes.size(); i++) {
         if (nodes[i]->type != RNN_INPUT_NODE) continue;
+        input_name_index++;
         if (nodes[i]->total_outputs == 0) continue;
-        outfile << "\t\tnode" << nodes[i]->innovation_number << " [shape=box,color=green,label=\"input " << nodes[i]->innovation_number << "\\ndepth " << nodes[i]->depth << "\"];" << endl;
+        outfile << "\t\tnode" << nodes[i]->innovation_number
+            << " [shape=box,color=green,label=\"input " << nodes[i]->innovation_number 
+            << "\\ndepth " << nodes[i]->depth;
+
+        if (input_parameter_names.size() != 0) {
+            outfile << "\\n" << input_parameter_names[input_name_index - 1];
+        }
+
+        outfile << "\"];" << endl;
     }
     outfile << "\t}" << endl;
     outfile << endl;
@@ -1968,11 +1999,21 @@ void RNN_Genome::print_graphviz(string filename) {
         if (nodes[i]->type == RNN_INPUT_NODE) input_count++;
     }
 
+    int32_t output_name_index = 0;
     outfile << "\t{" << endl;
     outfile << "\t\trank = sink;" << endl;
     for (uint32_t i = 0; i < nodes.size(); i++) {
         if (nodes[i]->type != RNN_OUTPUT_NODE) continue;
-        outfile << "\t\tnode" << nodes[i]->get_innovation_number() << " [shape=box,color=blue,label=\"output " << nodes[i]->innovation_number << "\\ndepth " << nodes[i]->depth << "\"];" << endl;
+        output_name_index++;
+        outfile << "\t\tnode" << nodes[i]->get_innovation_number()
+            << " [shape=box,color=blue,label=\"output " << nodes[i]->innovation_number 
+            << "\\ndepth " << nodes[i]->depth;
+
+        if (output_parameter_names.size() != 0) {
+            outfile << "\\n" << output_parameter_names[output_name_index - 1];
+        }
+
+        outfile << "\"];" << endl;
     }
     outfile << "\t}" << endl;
     outfile << endl;

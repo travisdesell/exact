@@ -80,42 +80,10 @@ int main(int argc, char** argv) {
     vector<string> validation_filenames;
     get_argument_vector(arguments, "--validation_filenames", true, validation_filenames);
 
-    vector<TimeSeriesSet*> all_time_series;
+    int32_t time_offset = 1;
+    get_argument(arguments, "--time_offset", true, time_offset);
 
-    int training_rows = 0;
-    vector<TimeSeriesSet*> training_time_series;
-    cout << "got training time series filenames:" << endl;
-    for (uint32_t i = 0; i < training_filenames.size(); i++) {
-        cout << "\t" << training_filenames[i] << endl;
-
-        TimeSeriesSet *ts = new TimeSeriesSet(training_filenames[i], 1.0);
-        training_time_series.push_back( ts );
-        all_time_series.push_back( ts );
-
-        training_rows += ts->get_number_rows();
-    }
-    cout << "number training files: " << training_filenames.size() << ", total rows for training flights: " << training_rows << endl;
-
-    int validation_rows = 0;
-    vector<TimeSeriesSet*> validation_time_series;
-    cout << "got test time series filenames:" << endl;
-    for (uint32_t i = 0; i < validation_filenames.size(); i++) {
-        cout << "\t" << validation_filenames[i] << endl;
-
-        TimeSeriesSet *ts = new TimeSeriesSet(validation_filenames[i], -1.0);
-        validation_time_series.push_back( ts );
-        all_time_series.push_back( ts );
-
-        validation_rows += ts->get_number_rows();
-    }
-    cout << "number test files: " << validation_filenames.size() << ", total rows for test flights: " << validation_rows << endl;
-
-    if (argument_exists(arguments, "--normalize")) {
-        normalize_time_series_sets(all_time_series);
-        cout << "normalized all time series" << endl;
-    } else {
-        cout << "not normalizing time series" << endl;
-    }
+    bool normalize = argument_exists(arguments, "--normalize");
 
 
     vector<string> input_parameter_names;
@@ -156,17 +124,16 @@ int main(int argc, char** argv) {
 
     input_parameter_names.push_back("Coyote-GROSS_GENERATOR_OUTPUT");
     input_parameter_names.push_back("Coyote-Net_Unit_Generation");
-    input_parameter_names.push_back("Cyclone_01-CYC_01_CONDITIONER_INLET_TEMP");
-    input_parameter_names.push_back("Cyclone_01-CYC_01_CONDITIONER_OUTLET_TEMP");
-    input_parameter_names.push_back("Cyclone_01-LIGNITE_FEEDER_01_RATE");
-    input_parameter_names.push_back("Cyclone_01-CYC_01_TOTAL_COMB_AIR_FLOW");
-    input_parameter_names.push_back("Cyclone_01-1_MAIN_OIL_FLOW");
-    input_parameter_names.push_back("Cyclone_01-CYCLONE_1_MAIN_FLM_INT");
-
-
+    input_parameter_names.push_back("Cyclone_-CYC__CONDITIONER_INLET_TEMP");
+    input_parameter_names.push_back("Cyclone_-CYC__CONDITIONER_OUTLET_TEMP");
+    input_parameter_names.push_back("Cyclone_-LIGNITE_FEEDER__RATE");
+    input_parameter_names.push_back("Cyclone_-CYC__TOTAL_COMB_AIR_FLOW");
+    input_parameter_names.push_back("Cyclone_-_MAIN_OIL_FLOW");
+    input_parameter_names.push_back("Cyclone_-CYCLONE__MAIN_FLM_INT");
 
     vector<string> output_parameter_names;
-    output_parameter_names.push_back("Cyclone_01-1_MAIN_OIL_FLOW");
+    output_parameter_names.push_back("Cyclone_-_MAIN_OIL_FLOW");
+    //output_parameter_names.push_back("Cyclone_-CYCLONE__MAIN_FLM_INT");
 
     //output_parameter_names.push_back("vib");
 
@@ -188,22 +155,8 @@ int main(int argc, char** argv) {
     output_parameter_names.push_back("eng_1_egt_4");
     */
 
-    int32_t time_offset = 10;
 
-    training_inputs.resize(training_time_series.size());
-    training_outputs.resize(training_time_series.size());
-    for (uint32_t i = 0; i < training_time_series.size(); i++) {
-        training_time_series[i]->export_time_series(training_inputs[i], input_parameter_names, -time_offset);
-        training_time_series[i]->export_time_series(training_outputs[i], output_parameter_names, time_offset);
-    }
-
-    validation_inputs.resize(validation_time_series.size());
-    validation_outputs.resize(validation_time_series.size());
-    for (uint32_t i = 0; i < validation_time_series.size(); i++) {
-        validation_time_series[i]->export_time_series(validation_inputs[i], input_parameter_names, -time_offset);
-        validation_time_series[i]->export_time_series(validation_outputs[i], output_parameter_names, time_offset);
-    }
-
+    load_time_series(training_filenames, validation_filenames, input_parameter_names, output_parameter_names, time_offset, training_inputs, training_outputs, validation_inputs, validation_outputs, normalize);
 
     int number_inputs = training_inputs[0].size();
     int number_outputs = training_outputs[0].size();
@@ -231,7 +184,7 @@ int main(int argc, char** argv) {
     double dropout_probability = 0.0;
     bool use_dropout = get_argument(arguments, "--dropout_probability", false, dropout_probability);
 
-    exalt = new EXALT(population_size, max_genomes, number_inputs, number_outputs, bp_iterations, learning_rate, use_high_threshold, high_threshold, use_low_threshold, low_threshold, use_dropout, dropout_probability);
+    exalt = new EXALT(population_size, max_genomes, number_inputs, number_outputs, input_parameter_names, output_parameter_names, bp_iterations, learning_rate, use_high_threshold, high_threshold, use_low_threshold, low_threshold, use_dropout, dropout_probability);
 
 
     vector<thread> threads;

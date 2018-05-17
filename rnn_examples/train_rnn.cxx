@@ -94,44 +94,10 @@ int main(int argc, char **argv) {
     vector<string> test_filenames;
     get_argument_vector(arguments, "--test_filenames", true, test_filenames);
 
-    vector<TimeSeriesSet*> all_time_series;
+    int32_t time_offset = 1;
+    get_argument(arguments, "--time_offset", true, time_offset);
 
-    int training_rows = 0;
-    vector<TimeSeriesSet*> training_time_series;
-    if (rank == 0) cout << "got training time series filenames:" << endl;
-    for (uint32_t i = 0; i < training_filenames.size(); i++) {
-        if (rank == 0) cout << "\t" << training_filenames[i] << endl;
-
-        TimeSeriesSet *ts = new TimeSeriesSet(training_filenames[i], 1.0);
-        training_time_series.push_back( ts );
-        all_time_series.push_back( ts );
-
-        //if (rank == 0) cout << "\t\trows: " << ts->get_number_rows() << endl;
-        training_rows += ts->get_number_rows();
-    }
-    if (rank == 0) cout << "number training files: " << training_filenames.size() << ", total rows for training flights: " << training_rows << endl;
-
-    int test_rows = 0;
-    vector<TimeSeriesSet*> test_time_series;
-    if (rank == 0) cout << "got test time series filenames:" << endl;
-    for (uint32_t i = 0; i < test_filenames.size(); i++) {
-        if (rank == 0) cout << "\t" << test_filenames[i] << endl;
-
-        TimeSeriesSet *ts = new TimeSeriesSet(test_filenames[i], -1.0);
-        test_time_series.push_back( ts );
-        all_time_series.push_back( ts );
-
-        //if (rank == 0) cout << "\t\trows: " << ts->get_number_rows() << endl;
-        test_rows += ts->get_number_rows();
-    }
-    if (rank == 0) cout << "number test files: " << test_filenames.size() << ", total rows for test flights: " << test_rows << endl;
-
-    if (argument_exists(arguments, "--normalize")) {
-        normalize_time_series_sets(all_time_series);
-        if (rank == 0) cout << "normalized all time series" << endl;
-    } else {
-        if (rank == 0) cout << "not normalizing time series" << endl;
-    }
+    bool normalize = argument_exists(arguments, "--normalize");
 
 
     vector<string> input_parameter_names;
@@ -151,6 +117,8 @@ int main(int argc, char **argv) {
     input_parameter_names.push_back("eng_1_egt_3");
     input_parameter_names.push_back("eng_1_egt_4");
     */
+
+    /*
     input_parameter_names.push_back("par1");
     input_parameter_names.push_back("par2");
     input_parameter_names.push_back("par3");
@@ -166,9 +134,24 @@ int main(int argc, char **argv) {
     input_parameter_names.push_back("par13");
     input_parameter_names.push_back("par14");
     input_parameter_names.push_back("vib");
+    */
+
+    input_parameter_names.push_back("Coyote-GROSS_GENERATOR_OUTPUT");
+    input_parameter_names.push_back("Coyote-Net_Unit_Generation");
+    input_parameter_names.push_back("Cyclone_-CYC__CONDITIONER_INLET_TEMP");
+    input_parameter_names.push_back("Cyclone_-CYC__CONDITIONER_OUTLET_TEMP");
+    input_parameter_names.push_back("Cyclone_-LIGNITE_FEEDER__RATE");
+    input_parameter_names.push_back("Cyclone_-CYC__TOTAL_COMB_AIR_FLOW");
+    input_parameter_names.push_back("Cyclone_-_MAIN_OIL_FLOW");
+    input_parameter_names.push_back("Cyclone_-CYCLONE__MAIN_FLM_INT");
+
 
     vector<string> output_parameter_names;
-    output_parameter_names.push_back("vib");
+    output_parameter_names.push_back("Cyclone_-_MAIN_OIL_FLOW");
+
+
+
+    //output_parameter_names.push_back("vib");
     //output_parameter_names.push_back("indicated_airspeed");
     //output_parameter_names.push_back("eng_1_oil_press");
     /*
@@ -186,23 +169,8 @@ int main(int argc, char **argv) {
     output_parameter_names.push_back("eng_1_egt_3");
     output_parameter_names.push_back("eng_1_egt_4");
     */
-
-    int32_t time_offset = 10;
-
-    training_inputs.resize(training_time_series.size());
-    training_outputs.resize(training_time_series.size());
-    for (uint32_t i = 0; i < training_time_series.size(); i++) {
-        training_time_series[i]->export_time_series(training_inputs[i], input_parameter_names, -time_offset);
-        training_time_series[i]->export_time_series(training_outputs[i], output_parameter_names, time_offset);
-    }
-
-    test_inputs.resize(test_time_series.size());
-    test_outputs.resize(test_time_series.size());
-    for (uint32_t i = 0; i < test_time_series.size(); i++) {
-        test_time_series[i]->export_time_series(test_inputs[i], input_parameter_names, -time_offset);
-        test_time_series[i]->export_time_series(test_outputs[i], output_parameter_names, time_offset);
-    }
-
+    
+    load_time_series(training_filenames, test_filenames, input_parameter_names, output_parameter_names, time_offset, training_inputs, training_outputs, test_inputs, test_outputs, normalize);
 
     int number_inputs = training_inputs[0].size();
     int number_outputs = training_outputs[0].size();
@@ -325,14 +293,14 @@ int main(int argc, char **argv) {
 
     rnn->set_weights(best_parameters);
     cout << "TRAINING ERRORS:" << endl;
-    genome->get_mse(training_inputs, training_outputs, true);
+    genome->get_mse(best_parameters, training_inputs, training_outputs, true);
     cout << endl;
-    genome->get_mae(training_inputs, training_outputs, true);
+    genome->get_mae(best_parameters, training_inputs, training_outputs, true);
     cout << endl;
 
     cout << "TEST ERRORS:" << endl;
-    genome->get_mse(test_inputs, test_outputs, true);
+    genome->get_mse(best_parameters, test_inputs, test_outputs, true);
     cout << endl;
-    genome->get_mae(test_inputs, test_outputs, true);
+    genome->get_mae(best_parameters, test_inputs, test_outputs, true);
     cout << endl;
 }

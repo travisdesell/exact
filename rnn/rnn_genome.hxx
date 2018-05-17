@@ -58,6 +58,9 @@ class RNN_Genome {
         vector<RNN_Edge*> edges;
         vector<RNN_Recurrent_Edge*> recurrent_edges;
 
+        vector<string> input_parameter_names;
+        vector<string> output_parameter_names;
+
     public:
         void sort_nodes_by_depth();
         void sort_edges_by_depth();
@@ -69,6 +72,8 @@ class RNN_Genome {
         RNN_Genome* copy();
 
         ~RNN_Genome();
+
+        void set_parameter_names(const vector<string> &_input_parameter_names, const vector<string> &_output_parameter_names);
 
         string generated_by_string();
 
@@ -110,8 +115,8 @@ class RNN_Genome {
         void backpropagate_stochastic(const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, const vector< vector< vector<double> > > &validation_inputs, const vector< vector< vector<double> > > &validation_outputs);
 
 
-        double get_mse(const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, bool verbose = false);
-        double get_mae(const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, bool verbose = false);
+        double get_mse(const vector<double> &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, bool verbose = false);
+        double get_mae(const vector<double> &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, bool verbose = false);
 
         void get_mu_sigma(const vector<double> &p, double &mu, double &sigma);
 

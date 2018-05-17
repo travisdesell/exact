@@ -67,6 +67,7 @@ class TimeSeriesSet {
 
         int get_number_rows() const;
         int get_number_columns() const;
+        string get_filename() const;
 
         vector<string> get_fields() const;
 
@@ -88,5 +89,7 @@ class TimeSeriesSet {
 };
 
 void normalize_time_series_sets(vector<TimeSeriesSet*> time_series);
+
+void load_time_series(const vector<string> &training_filenames, const vector<string> &testing_filenames, const vector<string> &input_parameter_names, const vector<string> &output_parameter_names, int time_offset, vector< vector< vector<double> > > &training_inputs, vector< vector< vector<double> > > &training_outputs, vector< vector< vector<double> > > &testing_inputs, vector< vector< vector<double> > > &testing_outputs, bool normalize);
 
 #endif
