@@ -1,6 +1,9 @@
 #ifndef EXALT_HXX
 #define EXALT_HXX
 
+#include <fstream>
+using std::ofstream;
+
 #include <map>
 using std::map;
 
@@ -67,13 +70,15 @@ class EXALT {
         double split_node_rate;
         double merge_node_rate;
 
+        string log_filename;
+        ofstream *log_file;
 
         vector<string> input_parameter_names;
         vector<string> output_parameter_names;
 
 
     public:
-        EXALT(int32_t _population_size, int32_t _max_genomes, int32_t _number_inputs, int32_t _number_outputs, const vector<string> &_input_parameter_names, const vector<string> &_output_parameter_names, int32_t _bp_iterations, double _learning_rate, bool _use_high_threshold, double _high_threshold, bool _use_low_threshold, double _low_threshold, bool _use_dropout, double _dropout_probability);
+        EXALT(int32_t _population_size, int32_t _max_genomes, int32_t _number_inputs, int32_t _number_outputs, const vector<string> &_input_parameter_names, const vector<string> &_output_parameter_names, int32_t _bp_iterations, double _learning_rate, bool _use_high_threshold, double _high_threshold, bool _use_low_threshold, double _low_threshold, bool _use_dropout, double _dropout_probability, string _log_filename);
 
         void print_population();
         int32_t population_contains(RNN_Genome* genome);

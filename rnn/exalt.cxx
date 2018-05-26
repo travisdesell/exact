@@ -1,3 +1,6 @@
+#include <fstream>
+using std::ofstream;
+
 #include <iomanip>
 using std::setw;
 using std::setprecision;
@@ -19,7 +22,7 @@ using std::to_string;
 #include "rnn_genome.hxx"
 #include "generate_nn.hxx"
 
-EXALT::EXALT(int32_t _population_size, int32_t _max_genomes, int32_t _number_inputs, int32_t _number_outputs, const vector<string> &_input_parameter_names, const vector<string> &_output_parameter_names, int32_t _bp_iterations, double _learning_rate, bool _use_high_threshold, double _high_threshold, bool _use_low_threshold, double _low_threshold, bool _use_dropout, double _dropout_probability) : population_size(_population_size), max_genomes(_max_genomes), number_inputs(_number_inputs), number_outputs(_number_outputs), bp_iterations(_bp_iterations), learning_rate(_learning_rate), use_high_threshold(_use_high_threshold), high_threshold(_high_threshold), use_low_threshold(_use_low_threshold), low_threshold(_low_threshold), use_dropout(_use_dropout), dropout_probability(_dropout_probability) {
+EXALT::EXALT(int32_t _population_size, int32_t _max_genomes, int32_t _number_inputs, int32_t _number_outputs, const vector<string> &_input_parameter_names, const vector<string> &_output_parameter_names, int32_t _bp_iterations, double _learning_rate, bool _use_high_threshold, double _high_threshold, bool _use_low_threshold, double _low_threshold, bool _use_dropout, double _dropout_probability, string _log_filename) : population_size(_population_size), max_genomes(_max_genomes), number_inputs(_number_inputs), number_outputs(_number_outputs), bp_iterations(_bp_iterations), learning_rate(_learning_rate), use_high_threshold(_use_high_threshold), high_threshold(_high_threshold), use_low_threshold(_use_low_threshold), low_threshold(_low_threshold), use_dropout(_use_dropout), dropout_probability(_dropout_probability), log_filename(_log_filename) {
 
     input_parameter_names = _input_parameter_names;
     output_parameter_names = _output_parameter_names;
@@ -69,6 +72,11 @@ EXALT::EXALT(int32_t _population_size, int32_t _max_genomes, int32_t _number_inp
         merge_node_rate = 0.0;
     }
 
+    if (log_filename != "") {
+        log_file = new ofstream(log_filename);
+    } else {
+        log_file = NULL;
+    }
 }
 
 string parse_fitness(float fitness) {
@@ -86,6 +94,11 @@ void EXALT::print_population() {
     }
 
     cout << endl << endl;
+
+    if (log_file != NULL) {
+        (*log_file) << inserted_genomes << "," << (inserted_genomes * bp_iterations) << "," << genomes[0]->best_validation_mae << "," << genomes[0]->best_validation_error << "," << genomes[0]->get_enabled_node_count() << "," << genomes[0]->get_enabled_edge_count() << "," << genomes[0]->get_enabled_recurrent_edge_count() << endl;
+    }
+
 }
 
 int32_t EXALT::population_contains(RNN_Genome* genome) {
@@ -183,7 +196,7 @@ bool EXALT::insert_genome(RNN_Genome* genome) {
         was_inserted = false;
         cout << "not inserting genome due to poor fitness" << endl;
     }
-
+    
     print_population();
 
     return was_inserted;

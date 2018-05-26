@@ -132,8 +132,8 @@ int main(int argc, char** argv) {
     input_parameter_names.push_back("Cyclone_-CYCLONE__MAIN_FLM_INT");
 
     vector<string> output_parameter_names;
-    output_parameter_names.push_back("Cyclone_-_MAIN_OIL_FLOW");
-    //output_parameter_names.push_back("Cyclone_-CYCLONE__MAIN_FLM_INT");
+    //output_parameter_names.push_back("Cyclone_-_MAIN_OIL_FLOW");
+    output_parameter_names.push_back("Cyclone_-CYCLONE__MAIN_FLM_INT");
 
     //output_parameter_names.push_back("vib");
 
@@ -184,7 +184,10 @@ int main(int argc, char** argv) {
     double dropout_probability = 0.0;
     bool use_dropout = get_argument(arguments, "--dropout_probability", false, dropout_probability);
 
-    exalt = new EXALT(population_size, max_genomes, number_inputs, number_outputs, input_parameter_names, output_parameter_names, bp_iterations, learning_rate, use_high_threshold, high_threshold, use_low_threshold, low_threshold, use_dropout, dropout_probability);
+    string log_filename = "";
+    get_argument(arguments, "--log_filename", false, log_filename);
+
+    exalt = new EXALT(population_size, max_genomes, number_inputs, number_outputs, input_parameter_names, output_parameter_names, bp_iterations, learning_rate, use_high_threshold, high_threshold, use_low_threshold, low_threshold, use_dropout, dropout_probability, log_filename);
 
 
     vector<thread> threads;
