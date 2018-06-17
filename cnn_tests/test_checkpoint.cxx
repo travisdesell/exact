@@ -23,6 +23,8 @@ using std::vector;
 #include "cnn/cnn_edge.hxx"
 #include "cnn/cnn_node.hxx"
 
+#include "image_tools/image_set.hxx"
+
 int main(int argc, char **argv) {
     vector<string> arguments = vector<string>(argv, argv + argc);
 

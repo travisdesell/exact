@@ -28,6 +28,7 @@ class LargeImage : public ImageInterface {
         int width;
         int classification;
         vector< vector< vector<uint8_t> > > pixels;
+        vector< vector<uint8_t> > alpha;
 
         //reference to images to get channel avgs and std_Devs
         const LargeImages *images;
@@ -36,6 +37,7 @@ class LargeImage : public ImageInterface {
 
         LargeImage(ifstream &infile, int _number_subimages, int _channels, int _width, int _height, int _padding, int _classification, const LargeImages *_images);
         LargeImage(int _number_subimages, int _channels, int _width, int _height, int _padding, int _classification, const vector< vector< vector<uint8_t> > > &_pixels);
+        LargeImage(int _number_subimages, int _channels, int _width, int _height, int _padding, int _classification, const vector< vector< vector<uint8_t> > > &_pixels, const vector< vector<uint8_t> > &_alpha);
 
         int get_classification() const;
 
@@ -52,16 +54,23 @@ class LargeImage : public ImageInterface {
         void print(ostream &out);
 
         int8_t get_pixel_unnormalized(int z, int y, int x) const;
-        void set_pixel(int z, int y, int x, int8_t value);
+        int8_t get_alpha_unnormalized(int y, int x) const;
+        void set_pixel(int z, int y, int x, uint8_t value);
+        uint8_t get_pixel(int z, int y, int x) const;
+
+        void set_alpha(const vector< vector<uint8_t> > &_alpha);
+        void set_alpha(const vector< vector<float> > &_alpha);
 
         LargeImage* copy() const;
 
 #ifdef _HAS_TIFF_
         void draw_image(string filename) const;
+        void draw_image_4channel(string filename) const;
+        void draw_image_alpha(string filename) const;
 #endif
 };
 
-class LargeImages : public ImagesInterface {
+class LargeImages : public MultiImagesInterface {
     private:
         string filename;
 
@@ -83,7 +92,7 @@ class LargeImages : public ImagesInterface {
         int read_images_from_file(string binary_filename);
 
         LargeImages(string binary_filename, int _padding, int _subimage_height, int _subimage_width);
-        LargeImages(string binary_filename, int _padding, int _subimage_height, int _subimage_width, const vector<float> &_channeL_avg, const vector<float> &channel_std_dev);
+        LargeImages(string binary_filename, int _padding, int _subimage_height, int _subimage_width, const vector<float> &_channel_avg, const vector<float> &channel_std_dev);
 
         string get_filename() const;
 
@@ -94,6 +103,8 @@ class LargeImages : public ImagesInterface {
         int get_number_images() const;
         int get_number_large_images() const;
         int get_number_subimages(int i) const;
+
+        int get_padding() const;
 
         int get_image_channels() const;
         int get_image_width() const;
@@ -107,6 +118,7 @@ class LargeImages : public ImagesInterface {
         int get_image_classification(int image) const;
         int get_classification(int subimage) const;
         float get_pixel(int subimage, int z, int y, int x) const;
+        float get_raw_pixel(int subimage, int z, int y, int x) const;
 
         void calculate_avg_std_dev();
 
@@ -127,6 +139,8 @@ class LargeImages : public ImagesInterface {
         int read_images_from_directories(string directory);
 
         void draw_image(int i, string filename) const;
+        void draw_image_4channel(int i, string filename) const;
+        void draw_image_alpha(int i, string filename) const;
 #endif
 };
 

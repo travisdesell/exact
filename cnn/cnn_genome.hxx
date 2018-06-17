@@ -241,9 +241,9 @@ class CNN_Genome {
 
         bool is_identical(CNN_Genome *other, bool testing_checkpoint);
 
-#ifdef _HAS_TIFF_
-        void draw_predictions(const LargeImages &images, string output_directory);
-#endif
+        void get_prediction_matrix(const MultiImagesInterface &images, int image_number, int stride, vector< vector< vector<float> > > &prediction_matrix);
+        void get_expanded_prediction_matrix(const MultiImagesInterface &images, int image_number, int stride, int prediction_class, vector< vector<float> > &extended_prediction_matrix);
+
 };
 
 void write_map(ostream &out, map<string, int> &m);

@@ -57,11 +57,15 @@ int main(int argc, char **argv) {
     string images_directory;
     get_argument(arguments, "--images_directory", true, images_directory);
 
+    string output_directory;
+    get_argument(arguments, "--output_directory", true, output_directory);
+
     LargeImages test_images(images_directory, genome->get_padding(), 32, 32);
 
     //genome->initialize();
     genome->set_to_best();
 
     cout << endl << "drawing image predictions." << endl;
-    genome->draw_predictions(test_images, "./prediction_results/");
+    //TODO: update to use prediction matrix
+    //genome->draw_predictions(test_images, output_directory);
 }

@@ -33,6 +33,9 @@ using std::ostringstream;
 #include "tiffio.h"
 #endif
 
+ImageInterface::~ImageInterface() {
+}
+
 LargeImage::LargeImage(ifstream &infile, int _number_subimages, int _channels, int _width, int _height, int _padding, int _classification, const LargeImages *_images) {
     number_subimages = _number_subimages;
     channels = _channels;
@@ -73,6 +76,18 @@ LargeImage::LargeImage(int _number_subimages, int _channels, int _width, int _he
     pixels = _pixels;
 }
 
+LargeImage::LargeImage(int _number_subimages, int _channels, int _width, int _height, int _padding, int _classification, const vector< vector< vector<uint8_t> > > &_pixels, const vector< vector<uint8_t> > &_alpha) {
+    number_subimages = _number_subimages;
+    channels = _channels;
+    width = _width;
+    height = _height;
+    padding = _padding;
+    classification = _classification;
+    pixels = _pixels;
+    alpha = _alpha;
+}
+
+
 
 LargeImage* LargeImage::copy() const {
     return new LargeImage(number_subimages, channels, width, height, padding, classification, pixels);
@@ -86,13 +101,31 @@ int8_t LargeImage::get_pixel_unnormalized(int z, int y, int x) const {
     }
 }
 
-void LargeImage::set_pixel(int z, int y, int x, int8_t value) {
+int8_t LargeImage::get_alpha_unnormalized(int y, int x) const {
+    if (y < padding || x < padding) return 0;
+    else if (y >= height + padding || x >= width + padding) return 0;
+    else {
+        return alpha[y - padding][x - padding];
+    }
+}
+
+
+void LargeImage::set_pixel(int z, int y, int x, uint8_t value) {
     if (y < padding || x < padding) return;
     else if (y >= height + padding || x >= width + padding) return;
     else {
         pixels[z][y - padding][x - padding] = value;
     }
 }
+
+uint8_t LargeImage::get_pixel(int z, int y, int x) const {
+    if (y < padding || x < padding) return 0;
+    else if (y >= height + padding || x >= width + padding) return 0;
+    else {
+        return pixels[z][y - padding][x - padding];
+    }
+}
+
 
 #ifdef _HAS_TIFF_
 void LargeImage::draw_image(string filename) const {
@@ -133,6 +166,106 @@ void LargeImage::draw_image(string filename) const {
 
     tsize_t image_s;
     if ( (image_s = TIFFWriteEncodedStrip(output_image, 0, values, 3 * (width + (padding * 2)) * (height + (padding * 2)) * sizeof(int8_t))) == -1) {
+        std::cerr << "Unable to write tif file '" << filename << "'" << endl;
+    }
+    else {
+        std::cout << "Image is saved to '" << filename << "', size is : " << image_s << endl;
+    }
+
+    TIFFWriteDirectory(output_image);
+    TIFFClose(output_image);
+}
+
+void LargeImage::draw_image_alpha(string filename) const {
+    // Open the TIFF file
+    TIFF *output_image = NULL;
+
+    cout << "drawing a TIFF with height: " << height << " and width: " << width << " and padding: " << padding << endl;
+
+    uint8_t *values = new uint8_t[(height + (padding * 2)) * (width + (padding * 2)) * 1];
+    int current = 0;
+
+    for (int32_t y = 0; y < height + (padding * 2);  y++) {
+        for (int32_t x = 0; x < width + (padding * 2); x++) {
+            //cout << "pushing back values for [" << y << "][" << x << "]!" << endl;
+            values[current] = get_alpha_unnormalized(y, x);
+            current += 1;
+            //cout << "pushed back values for [" << y << "][" << x << "]!" << endl;
+        }
+    }
+
+    if ((output_image = TIFFOpen(filename.c_str(), "w")) == NULL) {
+        std::cerr << "Unable to write tif file: " << "image.tiff" << std::endl;
+    }
+
+    TIFFSetField(output_image, TIFFTAG_IMAGEWIDTH, width + (padding * 2));
+    TIFFSetField(output_image, TIFFTAG_IMAGELENGTH, height + (padding * 2));
+    TIFFSetField(output_image, TIFFTAG_SAMPLESPERPIXEL, 1);
+    TIFFSetField(output_image, TIFFTAG_BITSPERSAMPLE, 8);
+    TIFFSetField(output_image, TIFFTAG_ROWSPERSTRIP, height + (padding * 2));
+    TIFFSetField(output_image, TIFFTAG_ORIENTATION, (int)ORIENTATION_TOPLEFT);
+    TIFFSetField(output_image, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
+    TIFFSetField(output_image, TIFFTAG_COMPRESSION, COMPRESSION_NONE);
+    TIFFSetField(output_image, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_MINISBLACK);
+
+    // Write the information to the file
+
+    tsize_t image_s;
+    if ( (image_s = TIFFWriteEncodedStrip(output_image, 0, values, (width + (padding * 2)) * (height + (padding * 2)) * sizeof(int8_t))) == -1) {
+        std::cerr << "Unable to write tif file '" << filename << "'" << endl;
+    }
+    else {
+        std::cout << "Image is saved to '" << filename << "', size is : " << image_s << endl;
+    }
+
+    TIFFWriteDirectory(output_image);
+    TIFFClose(output_image);
+}
+
+
+void LargeImage::draw_image_4channel(string filename) const {
+    // Open the TIFF file
+    TIFF *output_image = NULL;
+
+    cout << "drawing a TIFF with height: " << height << " and width: " << width << " and padding: " << padding << endl;
+
+    uint8_t *values = new uint8_t[(height + (padding * 2)) * (width + (padding * 2)) * 4];
+    int current = 0;
+
+    for (int32_t y = 0; y < height + (padding * 2);  y++) {
+        for (int32_t x = 0; x < width + (padding * 2); x++) {
+            //cout << "pushing back values for [" << y << "][" << x << "]!" << endl;
+            values[current] = get_pixel_unnormalized(0, y, x);
+            values[current + 1] = get_pixel_unnormalized(1, y, x);
+            values[current + 2] = get_pixel_unnormalized(2, y, x);
+            values[current + 3] = get_alpha_unnormalized(y, x);
+            current += 4;
+            //cout << "pushed back values for [" << y << "][" << x << "]!" << endl;
+        }
+    }
+
+    if ((output_image = TIFFOpen(filename.c_str(), "w")) == NULL) {
+        std::cerr << "Unable to write tif file: " << "image.tiff" << std::endl;
+    }
+
+    int samples_per_pixel = 4;
+    TIFFSetField(output_image, TIFFTAG_IMAGEWIDTH, width + (padding * 2));
+    TIFFSetField(output_image, TIFFTAG_IMAGELENGTH, height + (padding * 2));
+    TIFFSetField(output_image, TIFFTAG_BITSPERSAMPLE, 8);
+    TIFFSetField(output_image, TIFFTAG_SAMPLESPERPIXEL, samples_per_pixel);
+    //TIFFSetField(output_image, TIFFTAG_ROWSPERSTRIP, height + (padding * 2));
+    //TIFFSetField(output_image, TIFFTAG_ROWSPERSTRIP, TIFFDefaultStripSize(output_image, width * samples_per_pixel));
+    TIFFSetField(output_image, TIFFTAG_ORIENTATION, (int)ORIENTATION_TOPLEFT);
+    TIFFSetField(output_image, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
+    //TIFFSetField(output_image, TIFFTAG_COMPRESSION, COMPRESSION_NONE);
+    //TIFFSetField(output_image, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_MINISBLACK);
+    TIFFSetField(output_image, TIFFTAG_COMPRESSION, COMPRESSION_NONE);
+    TIFFSetField(output_image, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_RGB);
+
+    // Write the information to the file
+
+    tsize_t image_s;
+    if ( (image_s = TIFFWriteEncodedStrip(output_image, 0, values, samples_per_pixel * (width + (padding * 2)) * (height + (padding * 2)) )) == -1) {
         std::cerr << "Unable to write tif file '" << filename << "'" << endl;
     }
     else {
@@ -196,6 +329,30 @@ void LargeImage::get_pixel_variance(const vector<float> &channel_avgs, vector<fl
         channel_variances[z] /= (height * width);
     }
 }
+
+void LargeImage::set_alpha(const vector< vector<uint8_t> > &_alpha) {
+    alpha = _alpha;
+}
+
+void LargeImage::set_alpha(const vector< vector<float> > &_alpha) {
+    if (_alpha.size() != height) {
+        cerr << "ERROR: could not set alpha of image because it was incorrectly sized. alpha.size(): " << alpha.size() << " != height: " << height << endl;
+        exit(1);
+    }
+    alpha.assign(height, vector<uint8_t>(width, 0));
+
+    for (uint32_t y = 0; y < height; y++) {
+        for (uint32_t x = 0; x < width; x++) {
+            if (_alpha[y].size() != width) {
+                cerr << "ERROR: could not set alpha of image because it was incorrectly sized. alpha[" << y << "].size(): " << alpha[y].size() << " != width: " << width<< endl;
+                exit(1);
+            }
+
+            alpha[y][x] = _alpha[y][x] * 255.0;
+        }
+    }
+}
+
 
 void LargeImage::print(ostream &out) {
     out << "LargeImage Class: " << classification << endl;
@@ -526,6 +683,9 @@ int LargeImages::get_number_subimages(int i) const {
 }
 
 
+int LargeImages::get_padding() const {
+    return padding;
+}
 
 int LargeImages::get_image_channels() const {
     return channels;
@@ -575,7 +735,8 @@ int LargeImages::get_classification(int subimage) const {
 float LargeImages::get_pixel(int subimage, int z, int y, int x) const {
     //cout << "getting pixel from subimage: " << subimage << ", z: " << z << ", y: " << y << ", x: " << x << endl;
 
-    for (int32_t i = 0; i < images.size(); i++) {
+    int32_t i;
+    for (i = 0; i < images.size(); i++) {
         if (subimage < images[i].get_number_subimages()) {
             const LargeImage &image = images[i];
 
@@ -587,7 +748,7 @@ float LargeImages::get_pixel(int subimage, int z, int y, int x) const {
                 int subimage_y_offset = subimage / subimages_along_width;
                 int subimage_x_offset = subimage % subimages_along_width;
 
-                return ((image.pixels[z][subimage_y_offset + y - padding][subimage_x_offset + x - padding] / 255.0) - channel_avg[z]) / channel_std_dev[z];
+                return ((image.get_pixel(z, subimage_y_offset + y, subimage_x_offset + x) / 255.0) - channel_avg[z]) / channel_std_dev[z];
             }
         } else {
             subimage -= images[i].get_number_subimages();
@@ -595,6 +756,9 @@ float LargeImages::get_pixel(int subimage, int z, int y, int x) const {
     }
 
     cerr << "Error getting normalized pixel, subimage was: " << subimage << " and there are not that many subimages!" << endl;
+    cerr << "images[" << i << "] had " << images[subimage].get_number_subimages() << " subimages" << endl;
+    cerr << "images[" << i << "].get_height(): " << images[subimage].get_height() << endl;
+    cerr << "images[" << i << "].get_width(): " << images[subimage].get_width() << endl;
     exit(1);
     return 0;
 }
@@ -671,11 +835,25 @@ LargeImage* LargeImages::copy_image(int i) const {
 }
 
 
+float LargeImages::get_raw_pixel(int subimage, int z, int y, int x) const {
+    return images[subimage].pixels[z][y][x];
+}
+
 #ifdef _HAS_TIFF_
 
 void LargeImages::draw_image(int i, string filename) const {
     images[i].draw_image(filename);
 }
+
+void LargeImages::draw_image_4channel(int i, string filename) const {
+    images[i].draw_image_4channel(filename);
+}
+
+void LargeImages::draw_image_alpha(int i, string filename) const {
+    images[i].draw_image_alpha(filename);
+}
+
+
 
 #endif
 

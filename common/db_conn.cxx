@@ -39,19 +39,22 @@ void initialize_exact_database() {
     exact_db_conn = mysql_init(NULL);
 
     //shoud get database info from a file
-    string db_host, db_name, db_password, db_user;
+    string db_host, db_name, db_password, db_user, db_port_s;
     ifstream db_info_file(db_info_filename);
 
     getline(db_info_file, db_host);
     getline(db_info_file, db_name);
     getline(db_info_file, db_user);
     getline(db_info_file, db_password);
+    getline(db_info_file, db_port_s);
+
+    int db_port = stoi(db_port_s);
 
     db_info_file.close();
 
-    fprintf(stderr, "parsed db info, host: '%s', name: '%s', user: '%s', pass: '%s'\n", db_host.c_str(), db_name.c_str(), db_user.c_str(), db_password.c_str());
+    fprintf(stderr, "parsed db info, host: '%s', name: '%s', user: '%s', pass: '%s', port: '%d'\n", db_host.c_str(), db_name.c_str(), db_user.c_str(), db_password.c_str(), db_port);
 
-    if (mysql_real_connect(exact_db_conn, db_host.c_str(), db_user.c_str(), db_password.c_str(), db_name.c_str(), 0, NULL, 0) == NULL) {
+    if (mysql_real_connect(exact_db_conn, db_host.c_str(), db_user.c_str(), db_password.c_str(), db_name.c_str(), db_port, NULL, 0) == NULL) {
         fprintf(stderr, "Error connecting to database: %d, '%s'\n", mysql_errno(exact_db_conn), mysql_error(exact_db_conn));
         exit(1);
     }   

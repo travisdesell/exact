@@ -1,6 +1,11 @@
 if (TIFF_FOUND)
+    if (MYSQL_FOUND)
+        add_executable(apply_cnn_to_mosaic apply_cnn_to_mosaic)
+        target_link_libraries(apply_cnn_to_mosaic exact_strategy exact_common exact_image_tools ${MYSQL_LIBRARIES}  ${TIFF_LIBRARIES} pthread)
+    endif (MYSQL_FOUND)
+
     add_executable(apply_cnn apply_cnn)
-    target_link_libraries(apply_cnn exact_strategy exact_common exact_image_tools ${MYSQL_LIBRARIES}  ${TIFF_LIBRARIES} pthread)
+    target_link_libraries(apply_cnn exact_strategy exact_common exact_image_tools ${MYSQL_LIBRARIES} ${TIFF_LIBRARIES} pthread)
 endif (TIFF_FOUND)
 
 add_executable(evaluate_large_image_cnn evaluate_large_image_cnn)
