@@ -52,6 +52,10 @@ ELSE (COMPILE_CLIENT STREQUAL "YES")
         include_directories(${MYSQL_INCLUDE_DIR})
     ENDIF (MYSQL_FOUND)
 
+    set(TIFF_INCLUDE_DIR "/usr/include/x86_64-linux-gnu/")
+    set(TIFF_LIBRARIES /usr/lib/x86_64-linux-gnu/libtiffxx.so /usr/lib/x86_64-linux-gnu/libtiff.so)
+    set(TIFF_FOUND true)
+
     find_package(tiff)
 
     message(STATUS "TIFF found? ${TIFF_FOUND}")
@@ -120,8 +124,8 @@ IF (COMPILE_CLIENT STREQUAL "NO")
 
     add_subdirectory(cnn_tests)
     add_subdirectory(cnn_examples)
-	add_subdirectory(multithreaded)
-	add_subdirectory(mpi)
+    #add_subdirectory(multithreaded)
+    #add_subdirectory(mpi)
 ENDIF (COMPILE_CLIENT STREQUAL "NO")
 
 
@@ -141,6 +145,5 @@ IF (BOINC_SERVER_FOUND)
         ${MYSQL_INCLUDE_DIR}
         )
 
-    add_subdirectory(server)
+    #    add_subdirectory(server)
 ENDIF(BOINC_SERVER_FOUND)
-

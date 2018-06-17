@@ -33,6 +33,8 @@ using std::ostringstream;
 #include "tiffio.h"
 #endif
 
+#include "lodepng.h"
+
 ImageInterface::~ImageInterface() {
 }
 
@@ -127,8 +129,22 @@ uint8_t LargeImage::get_pixel(int z, int y, int x) const {
 }
 
 
+void LargeImage::draw_png(string filename) const {
+    vector<uint8_t> flat_pixels;
+
+
+	//Encode the image
+	unsigned error = lodepng::encode(filename.c_str(), image, width, height);
+
+	//if there's an error, display it
+	if (error) cout << "encoder error " << error << ": "<< lodepng_error_text(error) << endl;
+}
+
+#endif
+
 #ifdef _HAS_TIFF_
-void LargeImage::draw_image(string filename) const {
+
+void LargeImage::draw_tiff(string filename) const {
     // Open the TIFF file
     TIFF *output_image = NULL;
 
@@ -176,7 +192,7 @@ void LargeImage::draw_image(string filename) const {
     TIFFClose(output_image);
 }
 
-void LargeImage::draw_image_alpha(string filename) const {
+void LargeImage::draw_tiff_alpha(string filename) const {
     // Open the TIFF file
     TIFF *output_image = NULL;
 
@@ -223,7 +239,7 @@ void LargeImage::draw_image_alpha(string filename) const {
 }
 
 
-void LargeImage::draw_image_4channel(string filename) const {
+void LargeImage::draw_tiff_4channel(string filename) const {
     // Open the TIFF file
     TIFF *output_image = NULL;
 
@@ -504,7 +520,7 @@ int LargeImages::read_images_from_directory(string directory) {
 
             ///string test_filename(image_filename.substr(0, image_filename.length() - 4) + "_test.tif");
             //cout << "writing test filename '" << test_filename << "'" << endl;
-            //large_image.draw_image(test_filename);
+            //large_image.draw_tiff(test_filename);
         }
 
         //_TIFFfree(raster);
@@ -597,7 +613,7 @@ int LargeImages::read_images_from_directories(string directory) {
 
                 ///string test_filename(image_filename.substr(0, image_filename.length() - 4) + "_test.tif");
                 //cout << "writing test filename '" << test_filename << "'" << endl;
-                //large_image.draw_image(test_filename);
+                //large_image.draw_tiff(test_filename);
             }
             image_class++;
 
@@ -841,16 +857,16 @@ float LargeImages::get_raw_pixel(int subimage, int z, int y, int x) const {
 
 #ifdef _HAS_TIFF_
 
-void LargeImages::draw_image(int i, string filename) const {
-    images[i].draw_image(filename);
+void LargeImages::draw_tiff(int i, string filename) const {
+    images[i].draw_tiff(filename);
 }
 
-void LargeImages::draw_image_4channel(int i, string filename) const {
-    images[i].draw_image_4channel(filename);
+void LargeImages::draw_tiff_4channel(int i, string filename) const {
+    images[i].draw_tiff_4channel(filename);
 }
 
-void LargeImages::draw_image_alpha(int i, string filename) const {
-    images[i].draw_image_alpha(filename);
+void LargeImages::draw_tiff_alpha(int i, string filename) const {
+    images[i].draw_tiff_alpha(filename);
 }
 
 
