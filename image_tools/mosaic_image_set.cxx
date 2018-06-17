@@ -27,13 +27,11 @@ using std::vector;
 
 #include "stdint.h"
 
-#ifdef _HAS_TIFF_
 #include <sstream>
 using std::ostringstream;
 
 #include "tiff.h"
 #include "tiffio.h"
-#endif
 
 Point::Point(int _y, int _x) : y(_y), x(_x) {
 }
@@ -525,23 +523,6 @@ void MosaicImages::set_alpha(int i, const vector< vector<float> > &_alpha) {
 void MosaicImages::set_alpha(int i, const vector< vector<uint8_t> > &_alpha) {
     images[i].set_alpha(_alpha);
 }
-
-
-#ifdef _HAS_TIFF_
-
-void MosaicImages::draw_image(int i, string filename) const {
-    images[i].draw_image(filename);
-}
-
-void MosaicImages::draw_image_4channel(int i, string filename) const {
-    images[i].draw_image_4channel(filename);
-}
-
-void MosaicImages::draw_image_alpha(int i, string filename) const {
-    images[i].draw_image_alpha(filename);
-}
-
-#endif
 
 
 

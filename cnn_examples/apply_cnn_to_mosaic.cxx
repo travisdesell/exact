@@ -176,9 +176,9 @@ int main(int argc, char **argv) {
             image->set_alpha(expanded_prediction_matrix);
             ostringstream output_filename;
             output_filename << output_directory << "point_" << mosaic_id << "_" << label_id << "_" << point_ids[i];
-            image->draw_image(output_filename.str() + "_original.tif");
-            image->draw_image_alpha(output_filename.str() + "_predictions.tif");
-            image->draw_image_4channel(output_filename.str() + "_merged.tif");
+            image->draw_png(output_filename.str() + "_original.png");
+            image->draw_png_alpha(output_filename.str() + "_predictions.png");
+            image->draw_png_4channel(output_filename.str() + "_merged.png");
 
             delete image;
         }
@@ -289,8 +289,8 @@ int main(int argc, char **argv) {
             }
 
             ostringstream output_filename;
-            output_filename << output_directory << "line_" << mosaic_id << "_" << label_id << "_" << line_ids[i] << ".tif";
-            image->draw_image(output_filename.str().c_str());
+            output_filename << output_directory << "line_" << mosaic_id << "_" << label_id << "_" << line_ids[i] << ".png";
+            image->draw_png(output_filename.str().c_str());
 
             delete image;
         }

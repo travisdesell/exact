@@ -125,14 +125,6 @@ class MosaicImages : public MultiImagesInterface {
 
         void set_alpha(int i, const vector< vector<float> > &_alpha);
         void set_alpha(int i, const vector< vector<uint8_t> > &_alpha);
-
-
-#ifdef _HAS_TIFF_
-        void draw_image(int i, string filename) const;
-        void draw_image_4channel(int i, string filename) const;
-        void draw_image_alpha(int i, string filename) const;
-#endif
-
 };
 
 #endif
