@@ -10,6 +10,9 @@ class RNN_Recurrent_Edge {
         int innovation_number;
         int series_length;
 
+        //how far in the past to get the value
+        int recurrent_depth;
+
         vector<double> outputs;
         vector<double> deltas;
 
@@ -27,9 +30,9 @@ class RNN_Recurrent_Edge {
         RNN_Node_Interface *output_node;
 
     public:
-        RNN_Recurrent_Edge(int _innovation_number, RNN_Node_Interface *_input_node, RNN_Node_Interface *_output_node);
+        RNN_Recurrent_Edge(int _innovation_number, int _recurrent_depth, RNN_Node_Interface *_input_node, RNN_Node_Interface *_output_node);
 
-        RNN_Recurrent_Edge(int _innovation_number, int _input_innovation_number, int _output_innovation_number, const vector<RNN_Node_Interface*> &nodes);
+        RNN_Recurrent_Edge(int _innovation_number, int _recurrent_depth, int _input_innovation_number, int _output_innovation_number, const vector<RNN_Node_Interface*> &nodes);
 
         void reset(int _series_length);
 

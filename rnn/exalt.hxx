@@ -49,6 +49,8 @@ class EXALT {
         uniform_real_distribution<double> rng_0_1;
         uniform_real_distribution<double> rng_crossover_weight;
 
+        int32_t max_recurrent_depth;
+
         bool epigenetic_weights;
         double crossover_rate;
         double more_fit_crossover_rate;

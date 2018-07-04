@@ -129,6 +129,8 @@ void RNN_Edge::propagate_backward(int time) {
         exit(1);
     }
 
+    //cout << "propgating backward on edge " << innovation_number << " at time " << time << " from node " << output_innovation_number << " to node " << input_innovation_number << endl;
+
     double delta = output_node->d_input[time];
 
     d_weight += delta * input_node->output_values[time];

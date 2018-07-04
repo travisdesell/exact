@@ -42,6 +42,8 @@ EXALT::EXALT(int32_t _population_size, int32_t _max_genomes, int32_t _number_inp
     //rng_crossover_weight = uniform_real_distribution<double>(-0.5, 1.5);
     //rng_crossover_weight = uniform_real_distribution<double>(0.45, 0.55);
 
+    max_recurrent_depth = 5;
+
     epigenetic_weights = true;
     crossover_rate = 0.25;
     more_fit_crossover_rate = 0.75;
@@ -220,7 +222,7 @@ RNN_Genome* EXALT::generate_genome() {
     if (genomes.size() == 0) {
         //this is the first genome to be generated
         //generate minimal genome, insert it into the population
-        genome = create_ff(number_inputs, 0, 0, number_outputs);
+        genome = create_ff(number_inputs, 0, 0, number_outputs, 0);
         genome->set_parameter_names(input_parameter_names, output_parameter_names);
 
         edge_innovation_count = genome->edges.size() + genome->recurrent_edges.size();
@@ -343,7 +345,7 @@ void EXALT::mutate(RNN_Genome *g) {
         rng -= add_edge_rate;
 
         if (rng < add_recurrent_edge_rate) {
-            modified = g->add_recurrent_edge(mu, sigma, edge_innovation_count);
+            modified = g->add_recurrent_edge(mu, sigma, max_recurrent_depth, edge_innovation_count);
             cout << "\tadding recurrent edge, modified: " << modified << endl;
             if (modified) g->generated_by_map["add_recurrent_edge"]++;
             continue;
@@ -375,7 +377,7 @@ void EXALT::mutate(RNN_Genome *g) {
         rng -= split_edge_rate;
 
         if (rng < add_node_rate) {
-            modified = g->add_node(mu, sigma, lstm_node_rate, edge_innovation_count, node_innovation_count);
+            modified = g->add_node(mu, sigma, lstm_node_rate, max_recurrent_depth, edge_innovation_count, node_innovation_count);
             cout << "\tadding node, modified: " << modified << endl;
             if (modified) g->generated_by_map["add_node"]++;
             continue;
@@ -399,7 +401,7 @@ void EXALT::mutate(RNN_Genome *g) {
         rng -= disable_node_rate;
 
         if (rng < split_node_rate) {
-            modified = g->split_node(mu, sigma, lstm_node_rate, edge_innovation_count, node_innovation_count);
+            modified = g->split_node(mu, sigma, lstm_node_rate, max_recurrent_depth, edge_innovation_count, node_innovation_count);
             cout << "\tsplitting node, modified: " << modified << endl;
             if (modified) g->generated_by_map["split_node"]++;
             continue;
@@ -407,7 +409,7 @@ void EXALT::mutate(RNN_Genome *g) {
         rng -= split_node_rate;
 
         if (rng < merge_node_rate) {
-            modified = g->merge_node(mu, sigma, lstm_node_rate, edge_innovation_count, node_innovation_count);
+            modified = g->merge_node(mu, sigma, lstm_node_rate, max_recurrent_depth, edge_innovation_count, node_innovation_count);
             cout << "\tmerging node, modified: " << modified << endl;
             if (modified) g->generated_by_map["merge_node"]++;
             continue;
