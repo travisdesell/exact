@@ -42,7 +42,7 @@ EXALT::EXALT(int32_t _population_size, int32_t _max_genomes, int32_t _number_inp
     //rng_crossover_weight = uniform_real_distribution<double>(-0.5, 1.5);
     //rng_crossover_weight = uniform_real_distribution<double>(0.45, 0.55);
 
-    max_recurrent_depth = 5;
+    max_recurrent_depth = 10;
 
     epigenetic_weights = true;
     crossover_rate = 0.25;
@@ -90,7 +90,7 @@ string parse_fitness(float fitness) {
 }
 
 void EXALT::print_population() {
-    cout << "POPUALTION: " << endl;
+    cout << "POPULATION: " << endl;
     for (int32_t i = 0; i < (int32_t)genomes.size(); i++) {
         cout << "\t" << setw(15) << parse_fitness(genomes[i]->best_validation_error) << ", " << parse_fitness(genomes[i]->best_validation_mae) << ", " << genomes[i]->nodes.size() << " (" << genomes[i]->get_enabled_node_count() << "), " << genomes[i]->edges.size() << " (" << genomes[i]->get_enabled_edge_count() << "), " << genomes[i]->recurrent_edges.size() << " (" << genomes[i]->get_enabled_recurrent_edge_count() << "), " << genomes[i]->generated_by_string() << endl;
     }
@@ -369,7 +369,7 @@ void EXALT::mutate(RNN_Genome *g) {
         rng -= disable_edge_rate;
 
         if (rng < split_edge_rate) {
-            modified = g->split_edge(mu, sigma, lstm_node_rate, edge_innovation_count, node_innovation_count);
+            modified = g->split_edge(mu, sigma, lstm_node_rate, max_recurrent_depth, edge_innovation_count, node_innovation_count);
             cout << "\tsplitting edge, modified: " << modified << endl;
             if (modified) g->generated_by_map["split_edge"]++;
             continue;
