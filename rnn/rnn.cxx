@@ -313,6 +313,39 @@ double RNN::prediction_mae(const vector< vector<double> > &series_data, const ve
 }
 
 
+void RNN::write_predictions(string output_filename, const vector<string> &output_parameter_names, const vector< vector<double> > &series_data, const vector< vector<double> > &expected_outputs, bool using_dropout, double dropout_probability) {
+    forward_pass(series_data, using_dropout, false, dropout_probability);
+
+    ofstream outfile(output_filename);
+
+    outfile << "#";
+
+    for (uint32_t i = 0; i < output_nodes.size(); i++) {
+        if (i > 0) outfile << ",";
+        outfile << output_parameter_names[i];
+    }
+
+    for (uint32_t i = 0; i < output_nodes.size(); i++) {
+        outfile << ",";
+        outfile << "predicted_" << output_parameter_names[i];
+    }
+    outfile << endl;
+
+    for (uint32_t j = 0; j < series_length; j++) {
+        for (uint32_t i = 0; i < output_nodes.size(); i++) {
+            if (i > 0) outfile << ",";
+            outfile << expected_outputs[i][j];
+        }
+
+        for (uint32_t i = 0; i < output_nodes.size(); i++) {
+            outfile << ",";
+            outfile << output_nodes[i]->output_values[j];
+        }
+        outfile << endl;
+    }
+    outfile.close();
+}
+
 void RNN::get_analytic_gradient(const vector<double> &test_parameters, const vector< vector<double> > &inputs, const vector< vector<double> > &outputs, double &mse, vector<double> &analytic_gradient, bool using_dropout, bool training, double dropout_probability) {
     analytic_gradient.assign(test_parameters.size(), 0.0);
 

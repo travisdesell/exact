@@ -969,6 +969,22 @@ double RNN_Genome::get_mae(const vector<double> &parameters, const vector< vecto
     return avg_mae;
 }
 
+void RNN_Genome::write_predictions(const vector<string> &input_filenames, const vector<double> &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs) {
+    RNN *rnn = get_rnn();
+    rnn->set_weights(parameters);
+
+    for (uint32_t i = 0; i < inputs.size(); i++) {
+        cout << "input filename[" << i << "]: " << input_filenames[i] << endl;
+
+        string output_filename = "predictions_" + std::to_string(i) + ".txt";
+        cout << "output filename: " << output_filename << endl;
+
+        rnn->write_predictions(output_filename, output_parameter_names, inputs[i], outputs[i], use_dropout, dropout_probability);
+    }
+
+    delete rnn;
+}
+
 bool RNN_Genome::equals(RNN_Genome* other) {
 
     if (nodes.size() != other->nodes.size()) return false;
@@ -1178,7 +1194,7 @@ void RNN_Genome::get_mu_sigma(const vector<double> &p, double &mu, double &sigma
     if (p.size() == 0) {
         mu = 0.0;
         sigma = 0.25;
-        cout << "\tmu: " << mu << ", sigma: " << sigma << ", paramters.size() == 0" << endl;
+        cout << "\tmu: " << mu << ", sigma: " << sigma << ", parameters.size() == 0" << endl;
         return;
     }
 
@@ -2254,6 +2270,28 @@ void RNN_Genome::read_from_stream(ifstream &bin_infile, bool verbose) {
     delete [] best_parameters_v;
 
 
+    input_parameter_names.clear();
+    int32_t n_input_parameter_names;
+    bin_infile.read((char*)&n_input_parameter_names, sizeof(int32_t));
+    if (verbose) cout << "reading " << n_input_parameter_names << " input parameter names." << endl;
+    for (int32_t i = 0; i < n_input_parameter_names; i++) {
+        string input_parameter_name;
+        read_binary_string(bin_infile, input_parameter_name, "input_parameter_names[" + std::to_string(i) + "]", verbose);
+        input_parameter_names.push_back(input_parameter_name);
+    }
+
+    output_parameter_names.clear();
+    int32_t n_output_parameter_names;
+    bin_infile.read((char*)&n_output_parameter_names, sizeof(int32_t));
+    if (verbose) cout << "reading " << n_output_parameter_names << " output parameter names." << endl;
+    for (int32_t i = 0; i < n_output_parameter_names; i++) {
+        string output_parameter_name;
+        read_binary_string(bin_infile, output_parameter_name, "output_parameter_names[" + std::to_string(i) + "]", verbose);
+        output_parameter_names.push_back(output_parameter_name);
+    }
+
+
+
     int32_t n_nodes;
     bin_infile.read((char*)&n_nodes, sizeof(int32_t));
     if (verbose) cout << "reading " << n_nodes << " nodes." << endl;
@@ -2415,6 +2453,17 @@ void RNN_Genome::write_to_stream(ofstream &bin_outfile, bool verbose) {
     bin_outfile.write((char*)&n_best_parameters, sizeof(int32_t));
     bin_outfile.write((char*)&best_parameters[0], sizeof(double) * best_parameters.size());
 
+    int32_t n_input_parameter_names = input_parameter_names.size();
+    bin_outfile.write((char*)&n_input_parameter_names, sizeof(int32_t));
+    for (int32_t i = 0; i < input_parameter_names.size(); i++) {
+        write_binary_string(bin_outfile, input_parameter_names[i], "input_parameter_names[" + std::to_string(i) + "]", verbose);
+    }
+
+    int32_t n_output_parameter_names = output_parameter_names.size();
+    bin_outfile.write((char*)&n_output_parameter_names, sizeof(int32_t));
+    for (int32_t i = 0; i < output_parameter_names.size(); i++) {
+        write_binary_string(bin_outfile, output_parameter_names[i], "output_parameter_names[" + std::to_string(i) + "]", verbose);
+    }
 
     int32_t n_nodes = nodes.size();
     bin_outfile.write((char*)&n_nodes, sizeof(int32_t));

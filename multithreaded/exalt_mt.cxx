@@ -187,6 +187,9 @@ int main(int argc, char** argv) {
     string log_filename = "";
     get_argument(arguments, "--log_filename", false, log_filename);
 
+    string output_filename;
+    get_argument(arguments, "--output_filename", true, output_filename);
+
     exalt = new EXALT(population_size, max_genomes, number_inputs, number_outputs, input_parameter_names, output_parameter_names, bp_iterations, learning_rate, use_high_threshold, high_threshold, use_low_threshold, low_threshold, use_dropout, dropout_probability, log_filename);
 
 
@@ -211,10 +214,9 @@ int main(int argc, char** argv) {
     cout << "validation MSE: " << best_genome->get_mse(best_parameters, validation_inputs, validation_outputs) << endl;
     cout << "validation MAE: " << best_genome->get_mae(best_parameters, validation_inputs, validation_outputs) << endl;
 
-    string output_filename = "best_rnn_genome.bin";
-    best_genome->write_to_file(output_filename, true);
+    best_genome->write_to_file(output_filename, false);
 
-    RNN_Genome *duplicate_genome = new RNN_Genome(output_filename, true);
+    RNN_Genome *duplicate_genome = new RNN_Genome(output_filename, false);
 
     vector<double> duplicate_parameters = duplicate_genome->get_best_parameters();
     cout << "training MSE: " << duplicate_genome->get_mse(duplicate_parameters, training_inputs, training_outputs) << endl;
