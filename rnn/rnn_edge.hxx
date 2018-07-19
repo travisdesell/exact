@@ -51,6 +51,8 @@ class RNN_Edge {
 
         bool equals (RNN_Edge *other) const;
 
+        void write_to_stream(ofstream &out);
+
         friend class RNN_Genome;
         friend class RNN;
         friend class EXALT;

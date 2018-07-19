@@ -203,5 +203,24 @@ int main(int argc, char** argv) {
 
     cout << "completed!" << endl;
 
+    RNN_Genome *best_genome = exalt->get_best_genome();
+
+    vector<double> best_parameters = best_genome->get_best_parameters();
+    cout << "training MSE: " << best_genome->get_mse(best_parameters, training_inputs, training_outputs) << endl;
+    cout << "training MAE: " << best_genome->get_mae(best_parameters, training_inputs, training_outputs) << endl;
+    cout << "validation MSE: " << best_genome->get_mse(best_parameters, validation_inputs, validation_outputs) << endl;
+    cout << "validation MAE: " << best_genome->get_mae(best_parameters, validation_inputs, validation_outputs) << endl;
+
+    string output_filename = "best_rnn_genome.bin";
+    best_genome->write_to_file(output_filename, true);
+
+    RNN_Genome *duplicate_genome = new RNN_Genome(output_filename, true);
+
+    vector<double> duplicate_parameters = duplicate_genome->get_best_parameters();
+    cout << "training MSE: " << duplicate_genome->get_mse(duplicate_parameters, training_inputs, training_outputs) << endl;
+    cout << "training MAE: " << duplicate_genome->get_mae(duplicate_parameters, training_inputs, training_outputs) << endl;
+    cout << "validation MSE: " << duplicate_genome->get_mse(duplicate_parameters, validation_inputs, validation_outputs) << endl;
+    cout << "validation MAE: " << duplicate_genome->get_mae(duplicate_parameters, validation_inputs, validation_outputs) << endl;
+
     return 0;
 }

@@ -1,5 +1,8 @@
 #include <cmath>
 
+#include <fstream>
+using std::ofstream;
+
 #include "rnn_node_interface.hxx"
 
 double sigmoid(double value) {
@@ -25,7 +28,7 @@ void bound_value(double min, double max, double &value) {
     else if (value > max) value = max;
 }
 
-RNN_Node_Interface::RNN_Node_Interface(int _innovation_number, int _type, double _depth) : innovation_number(_innovation_number), type(_type), depth(_depth) {
+RNN_Node_Interface::RNN_Node_Interface(int32_t _innovation_number, int32_t _type, double _depth) : innovation_number(_innovation_number), type(_type), depth(_depth) {
     total_inputs = 0;
 
     enabled = true;
@@ -44,11 +47,11 @@ RNN_Node_Interface::RNN_Node_Interface(int _innovation_number, int _type, double
 RNN_Node_Interface::~RNN_Node_Interface() {
 }
 
-int RNN_Node_Interface::get_type() const {
+int32_t RNN_Node_Interface::get_type() const {
     return type;
 }
 
-int RNN_Node_Interface::get_innovation_number() const {
+int32_t RNN_Node_Interface::get_innovation_number() const {
     return innovation_number;
 }
 
@@ -63,4 +66,12 @@ bool RNN_Node_Interface::is_reachable() const {
 bool RNN_Node_Interface::equals(RNN_Node_Interface *other) const {
     if (innovation_number == other->innovation_number && enabled == other->enabled) return true;
     return false;
+}
+
+void RNN_Node_Interface::write_to_stream(ofstream &out) {
+    out.write((char*)&innovation_number, sizeof(int32_t)); 
+    out.write((char*)&type, sizeof(int32_t)); 
+    out.write((char*)&node_type, sizeof(int32_t)); 
+    out.write((char*)&depth, sizeof(double)); 
+    out.write((char*)&enabled, sizeof(bool));
 }

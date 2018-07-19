@@ -54,12 +54,13 @@ EXALT::EXALT(int32_t _population_size, int32_t _max_genomes, int32_t _number_inp
     clone_rate = 1.0;
 
     add_edge_rate = 1.0;
-    add_recurrent_edge_rate = 1.0;
+    add_recurrent_edge_rate = 3.0;
+    //add_recurrent_edge_rate = 1.0;
     enable_edge_rate = 1.0;
     disable_edge_rate = 3.0;
     split_edge_rate = 1.0;
 
-    bool node_ops = false;
+    bool node_ops = true;
     if (node_ops) {
         add_node_rate = 1.0;
         enable_node_rate = 1.0;
@@ -123,6 +124,9 @@ double EXALT::get_worst_fitness() const {
     else return genomes.back()->get_validation_error();
 }
 
+RNN_Genome* EXALT::get_best_genome() {
+    return genomes[0];
+}
 
 //this will insert a COPY, original needs to be deleted
 bool EXALT::insert_genome(RNN_Genome* genome) {

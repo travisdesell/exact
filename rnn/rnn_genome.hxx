@@ -1,6 +1,10 @@
 #ifndef RNN_BPTT_HXX
 #define RNN_BPTT_HXX
 
+#include <fstream>
+using std::ifstream;
+using std::ofstream;
+
 #include <map>
 using std::map;
 
@@ -69,6 +73,7 @@ class RNN_Genome {
         RNN_Genome(vector<RNN_Node_Interface*> &_nodes, vector<RNN_Edge*> &_edges, vector<RNN_Recurrent_Edge*> &_recurrent_edges);
         RNN_Genome(vector<RNN_Node_Interface*> &_nodes, vector<RNN_Edge*> &_edges, vector<RNN_Recurrent_Edge*> &_recurrent_edges, uint16_t seed);
 
+
         RNN_Genome* copy();
 
         ~RNN_Genome();
@@ -107,6 +112,7 @@ class RNN_Genome {
 
 
         RNN* get_rnn();
+        vector<double> get_best_parameters() const;
 
         void get_analytic_gradient(vector<RNN*> &rnns, const vector<double> &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, double &mse, vector<double> &analytic_gradient, bool training);
 
@@ -145,6 +151,13 @@ class RNN_Genome {
 
         string get_color(double weight, bool is_recurrent);
         void print_graphviz(string filename);
+
+        RNN_Genome(string binary_filename, bool verbose = false);
+        RNN_Genome(ifstream &bin_infile, bool verbose = false);
+
+        void read_from_stream(ifstream &bin_infile, bool verbose = false);
+        void write_to_file(string bin_filename, bool verbose = false);
+        void write_to_stream(ofstream &bin_outfile, bool verbose = false);
 
 
         friend class EXALT;

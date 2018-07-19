@@ -164,3 +164,7 @@ RNN_Node_Interface* RNN_Node::copy() const {
 
     return n;
 }
+
+void RNN_Node::write_to_stream(ofstream &out) {
+    RNN_Node_Interface::write_to_stream(out);
+}

@@ -1,5 +1,8 @@
 #include <cmath>
 
+#include <fstream>
+using std::ofstream;
+
 #include <iomanip>
 using std::setw;
 
@@ -598,6 +601,10 @@ int main(int argc, char **argv) {
         }
         parameters = next_parameters;
     }
+}
+
+void LSTM_Node::write_to_stream(ofstream &out) {
+    RNN_Node_Interface::write_to_stream(out);
 }
 
 #endif

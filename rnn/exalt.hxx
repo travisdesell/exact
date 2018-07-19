@@ -98,6 +98,8 @@ class EXALT {
 
         double get_best_fitness() const;
         double get_worst_fitness() const;
+
+        RNN_Genome* get_best_genome();
 };
 
 #endif

@@ -5,7 +5,7 @@ using std::endl;
 
 #include "rnn_recurrent_edge.hxx"
 
-RNN_Recurrent_Edge::RNN_Recurrent_Edge(int _innovation_number, int _recurrent_depth, RNN_Node_Interface *_input_node, RNN_Node_Interface *_output_node) {
+RNN_Recurrent_Edge::RNN_Recurrent_Edge(int32_t _innovation_number, int32_t _recurrent_depth, RNN_Node_Interface *_input_node, RNN_Node_Interface *_output_node) {
     innovation_number = _innovation_number;
     recurrent_depth = _recurrent_depth;
 
@@ -33,7 +33,7 @@ RNN_Recurrent_Edge::RNN_Recurrent_Edge(int _innovation_number, int _recurrent_de
     //cout << "created recurrent edge " << innovation_number << ", from " << input_innovation_number << ", to " << output_innovation_number << endl;
 }
 
-RNN_Recurrent_Edge::RNN_Recurrent_Edge(int _innovation_number, int _recurrent_depth, int _input_innovation_number, int _output_innovation_number, const vector<RNN_Node_Interface*> &nodes) {
+RNN_Recurrent_Edge::RNN_Recurrent_Edge(int32_t _innovation_number, int32_t _recurrent_depth, int32_t _input_innovation_number, int32_t _output_innovation_number, const vector<RNN_Node_Interface*> &nodes) {
     innovation_number = _innovation_number;
     recurrent_depth = _recurrent_depth;
 
@@ -51,7 +51,7 @@ RNN_Recurrent_Edge::RNN_Recurrent_Edge(int _innovation_number, int _recurrent_de
 
     input_node = NULL;
     output_node = NULL;
-    for (int i = 0; i < nodes.size(); i++) {
+    for (int32_t i = 0; i < nodes.size(); i++) {
         if (nodes[i]->innovation_number == _input_innovation_number) {
             if (input_node != NULL) {
                 cerr << "ERROR in copying RNN_Recurrent_Edge, list of nodes has multiple nodes with same input_innovation_number -- this should never happen." << endl;
@@ -132,7 +132,7 @@ void RNN_Recurrent_Edge::first_propagate_forward() {
     }
 }
 
-void RNN_Recurrent_Edge::propagate_forward(int time) {
+void RNN_Recurrent_Edge::propagate_forward(int32_t time) {
     if (input_node->inputs_fired[time] != input_node->total_inputs) {
         cerr << "ERROR! propagate forward called on recurrent edge " << innovation_number << " where input_node->inputs_fired[" << time << "] (" << input_node->inputs_fired[time] << ") != total_inputs (" << input_node->total_inputs << ")" << endl;
         exit(1);
@@ -158,7 +158,7 @@ void RNN_Recurrent_Edge::first_propagate_backward() {
     }
 }
 
-void RNN_Recurrent_Edge::propagate_backward(int time) {
+void RNN_Recurrent_Edge::propagate_backward(int32_t time) {
     if (output_node->outputs_fired[time] != output_node->total_outputs) {
         //if (output_node->innovation_number == input_node->innovation_number) {
             //circular recurrent edge
@@ -195,7 +195,7 @@ void RNN_Recurrent_Edge::propagate_backward(int time) {
     }
 }
 
-void RNN_Recurrent_Edge::reset(int _series_length) {
+void RNN_Recurrent_Edge::reset(int32_t _series_length) {
     series_length = _series_length;
     d_weight = 0.0;
     outputs.resize(series_length);
@@ -213,4 +213,12 @@ bool RNN_Recurrent_Edge::is_reachable() const {
 bool RNN_Recurrent_Edge::equals(RNN_Recurrent_Edge *other) const {
     if (innovation_number == other->innovation_number && enabled == other->enabled) return true;
     return false;
+}
+
+void RNN_Recurrent_Edge::write_to_stream(ofstream &out) {
+    out.write((char*)&innovation_number, sizeof(int32_t));
+    out.write((char*)&recurrent_depth, sizeof(int32_t));
+    out.write((char*)&input_innovation_number, sizeof(int32_t));
+    out.write((char*)&output_innovation_number, sizeof(int32_t));
+    out.write((char*)&enabled, sizeof(bool));
 }

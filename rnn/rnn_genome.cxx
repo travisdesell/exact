@@ -1,6 +1,7 @@
 #include <cmath>
 
 #include <fstream>
+using std::ifstream;
 using std::ofstream;
 
 #include <iomanip>
@@ -9,6 +10,7 @@ using std::setfill;
 
 #include <ios>
 using std::hex;
+using std::ios;
 
 #include <iostream>
 using std::cout;
@@ -27,6 +29,7 @@ using std::minstd_rand0;
 using std::uniform_real_distribution;
 
 #include <sstream>
+using std::istringstream;
 using std::ostringstream;
 
 #include <string>
@@ -67,6 +70,7 @@ RNN_Genome::RNN_Genome(vector<RNN_Node_Interface*> &_nodes, vector<RNN_Edge*> &_
     learning_rate = 0.001;
     adapt_learning_rate = false;
     use_nesterov_momentum = true;
+    //use_nesterov_momentum = false;
     use_reset_weights = false;
 
     use_high_norm = true;
@@ -369,6 +373,10 @@ RNN* RNN_Genome::get_rnn() {
     }
 
     return new RNN(node_copies, edge_copies, recurrent_edge_copies);
+}
+
+vector<double> RNN_Genome::get_best_parameters() const {
+    return best_parameters;
 }
 
 int32_t RNN_Genome::get_generation_id() const {
@@ -2119,3 +2127,327 @@ void RNN_Genome::print_graphviz(string filename) {
     outfile.close();
 
 }
+
+void write_map(ostream &out, map<string, int> &m) {
+    out << m.size();
+    for (auto iterator = m.begin(); iterator != m.end(); iterator++) {
+
+        out << " "<< iterator->first;
+        out << " "<< iterator->second;
+    }
+}
+
+void read_map(istream &in, map<string, int> &m) {
+    int map_size;
+    in >> map_size;
+    for (int i = 0; i < map_size; i++) {
+        string key;
+        in >> key;
+        int value;
+        in >> value;
+
+        m[key] = value;
+    }
+}
+
+
+void write_binary_string(ostream &out, string s, string name, bool verbose) {
+    int32_t n = s.size();
+    if (verbose) cout << "writing " << n << " " << name << " characters '" << s << "'" << endl;
+    out.write((char*)&n, sizeof(int32_t));
+    out.write((char*)&s[0], sizeof(char) * s.size());
+}
+
+void read_binary_string(istream &in, string &s, string name, bool verbose) {
+
+    int32_t n;
+    in.read((char*)&n, sizeof(int32_t));
+
+    if (verbose) cout << "reading " << n << " " << name << " characters." << endl;
+    char* s_v = new char[n];
+    in.read((char*)s_v, sizeof(char) * n);
+    s.assign(s_v, s_v + n);
+    delete [] s_v;
+
+    if (verbose) cout << "read " << n << " " << name << " characters '" << s << "'" << endl;
+}
+
+
+RNN_Genome::RNN_Genome(string binary_filename, bool verbose) {
+    ifstream bin_infile(binary_filename, ios::in | ios::binary);
+    read_from_stream(bin_infile, verbose);
+}
+
+RNN_Genome::RNN_Genome(ifstream &bin_infile, bool verbose) {
+    read_from_stream(bin_infile, verbose);
+}
+
+void RNN_Genome::read_from_stream(ifstream &bin_infile, bool verbose) {
+    if (verbose) cout << "READING GENOME FROM STREAM" << endl;
+    bin_infile.read((char*)&generation_id, sizeof(int32_t));
+    bin_infile.read((char*)&bp_iterations, sizeof(int32_t));
+    bin_infile.read((char*)&learning_rate, sizeof(double));
+    bin_infile.read((char*)&adapt_learning_rate, sizeof(bool));
+    bin_infile.read((char*)&use_nesterov_momentum, sizeof(bool));
+    bin_infile.read((char*)&use_reset_weights, sizeof(bool));
+
+    bin_infile.read((char*)&use_high_norm, sizeof(bool));
+    bin_infile.read((char*)&high_threshold, sizeof(double));
+    bin_infile.read((char*)&use_low_norm, sizeof(bool));
+    bin_infile.read((char*)&low_threshold, sizeof(double));
+
+    bin_infile.read((char*)&use_dropout, sizeof(bool));
+    bin_infile.read((char*)&dropout_probability, sizeof(double));
+
+    if (verbose) {
+        cout << "generation_id: " << generation_id << endl;
+        cout << "bp_iterations: " << bp_iterations << endl;
+        cout << "learning_rate: " << learning_rate << endl;
+        cout << "adapt_learning_rate: " << adapt_learning_rate << endl;
+        cout << "use_nesterov_momentum: " << use_nesterov_momentum << endl;
+        cout << "use_reset_weights: " << use_reset_weights << endl;
+
+        cout << "use_high_norm: " << use_high_norm << endl;
+        cout << "high_threshold: " << high_threshold << endl;
+        cout << "use_low_norm: " << use_low_norm << endl;
+        cout << "low_threshold: " << low_threshold << endl;
+
+        cout << "use_dropout: " << use_dropout << endl;
+        cout << "dropout_probability: " << dropout_probability << endl;
+    }
+
+    read_binary_string(bin_infile, log_filename, "log_filename", verbose);
+
+    string generator_str;
+    read_binary_string(bin_infile, generator_str, "generator", verbose);
+    istringstream generator_iss(generator_str);
+    generator_iss >> generator;
+
+    string rng_0_1_str;
+    read_binary_string(bin_infile, rng_0_1_str, "rng_0_1", verbose);
+    istringstream rng_0_1_iss;
+    rng_0_1_iss >> rng_0_1;
+
+
+    string generated_by_map_str;
+    read_binary_string(bin_infile, generated_by_map_str, "generated_by_map", verbose);
+    istringstream generated_by_map_iss(generated_by_map_str);
+    read_map(generated_by_map_iss, generated_by_map);
+
+    bin_infile.read((char*)&best_validation_error, sizeof(double));
+    bin_infile.read((char*)&best_validation_mae, sizeof(double));
+
+    int32_t n_initial_parameters;
+    bin_infile.read((char*)&n_initial_parameters, sizeof(int32_t));
+    if (verbose) cout << "reading " << n_initial_parameters << " initial parameters." << endl;
+    double* initial_parameters_v = new double[n_initial_parameters];
+    bin_infile.read((char*)initial_parameters_v, sizeof(double) * n_initial_parameters);
+    initial_parameters.assign(initial_parameters_v, initial_parameters_v + n_initial_parameters);
+    delete [] initial_parameters_v;
+
+    int32_t n_best_parameters;
+    bin_infile.read((char*)&n_best_parameters, sizeof(int32_t));
+    if (verbose) cout << "reading " << n_best_parameters << " best parameters." << endl;
+    double* best_parameters_v = new double[n_best_parameters];
+    bin_infile.read((char*)best_parameters_v, sizeof(double) * n_best_parameters);
+    best_parameters.assign(best_parameters_v, best_parameters_v + n_best_parameters);
+    delete [] best_parameters_v;
+
+
+    int32_t n_nodes;
+    bin_infile.read((char*)&n_nodes, sizeof(int32_t));
+    if (verbose) cout << "reading " << n_nodes << " nodes." << endl;
+
+    nodes.clear();
+    for (int32_t i = 0; i < n_nodes; i++) {
+        int32_t innovation_number;
+        int32_t type;
+        int32_t node_type;
+        double depth;
+        bool enabled;
+
+        bin_infile.read((char*)&innovation_number, sizeof(int32_t)); 
+        bin_infile.read((char*)&type, sizeof(int32_t)); 
+        bin_infile.read((char*)&node_type, sizeof(int32_t)); 
+        bin_infile.read((char*)&depth, sizeof(double)); 
+        bin_infile.read((char*)&enabled, sizeof(bool));
+
+        if (verbose) cout << "NODE: " << innovation_number << " " << type << " " << node_type << " " << depth << " " << enabled << endl;
+
+        RNN_Node_Interface *node;
+        if (node_type == LSTM_NODE) {
+            node = new LSTM_Node(innovation_number, type, depth);
+        } else if (node_type == RNN_NODE) {
+            node = new RNN_Node(innovation_number, type, depth);
+        } else {
+            cerr << "Error reading node from stream, unknown node_type: " << node_type << endl;
+            exit(1);
+        }
+        node->enabled = enabled;
+        nodes.push_back(node);
+    }
+
+
+    int32_t n_edges;
+    bin_infile.read((char*)&n_edges, sizeof(int32_t));
+    if (verbose) cout << "reading " << n_edges << " edges." << endl;
+
+    edges.clear();
+    for (int32_t i = 0; i < n_edges; i++) {
+        int32_t innovation_number;
+        int32_t input_innovation_number;
+        int32_t output_innovation_number;
+        bool enabled;
+
+        bin_infile.read((char*)&innovation_number, sizeof(int32_t)); 
+        bin_infile.read((char*)&input_innovation_number, sizeof(int32_t)); 
+        bin_infile.read((char*)&output_innovation_number, sizeof(int32_t)); 
+        bin_infile.read((char*)&enabled, sizeof(bool));
+
+        if (verbose) cout << "EDGE: " << innovation_number << " " << input_innovation_number << " " << output_innovation_number << " " << enabled << endl;
+
+        RNN_Edge *edge = new RNN_Edge(innovation_number, input_innovation_number, output_innovation_number, nodes);
+        edge->enabled = enabled;
+        edges.push_back(edge);
+    }
+
+
+    int32_t n_recurrent_edges;
+    bin_infile.read((char*)&n_recurrent_edges, sizeof(int32_t));
+    if (verbose) cout << "reading " << n_recurrent_edges << " recurrent_edges." << endl;
+
+    recurrent_edges.clear();
+    for (int32_t i = 0; i < n_recurrent_edges; i++) {
+        int32_t innovation_number;
+        int32_t recurrent_depth;
+        int32_t input_innovation_number;
+        int32_t output_innovation_number;
+        bool enabled;
+
+        bin_infile.read((char*)&innovation_number, sizeof(int32_t)); 
+        bin_infile.read((char*)&recurrent_depth, sizeof(int32_t)); 
+        bin_infile.read((char*)&input_innovation_number, sizeof(int32_t)); 
+        bin_infile.read((char*)&output_innovation_number, sizeof(int32_t)); 
+        bin_infile.read((char*)&enabled, sizeof(bool));
+
+        if (verbose) cout << "RECURRENT EDGE: " << innovation_number << " " << recurrent_depth << " " << input_innovation_number << " " << output_innovation_number << " " << enabled << endl;
+
+        RNN_Recurrent_Edge *recurrent_edge = new RNN_Recurrent_Edge(innovation_number, recurrent_depth, input_innovation_number, output_innovation_number, nodes);
+        recurrent_edge->enabled = enabled;
+        recurrent_edges.push_back(recurrent_edge);
+    }
+
+    assign_reachability();
+
+    bin_infile.close();
+}
+
+
+void RNN_Genome::write_to_file(string bin_filename, bool verbose) {
+    ofstream bin_outfile(bin_filename, ios::out | ios::binary);
+    write_to_stream(bin_outfile, verbose);
+}
+
+void RNN_Genome::write_to_stream(ofstream &bin_outfile, bool verbose) {
+    if (verbose) cout << "WRITING GENOME TO STREAM" << endl;
+
+    bin_outfile.write((char*)&generation_id, sizeof(int32_t));
+    bin_outfile.write((char*)&bp_iterations, sizeof(int32_t));
+    bin_outfile.write((char*)&learning_rate, sizeof(double));
+    bin_outfile.write((char*)&adapt_learning_rate, sizeof(bool));
+    bin_outfile.write((char*)&use_nesterov_momentum, sizeof(bool));
+    bin_outfile.write((char*)&use_reset_weights, sizeof(bool));
+
+    bin_outfile.write((char*)&use_high_norm, sizeof(bool));
+    bin_outfile.write((char*)&high_threshold, sizeof(double));
+    bin_outfile.write((char*)&use_low_norm, sizeof(bool));
+    bin_outfile.write((char*)&low_threshold, sizeof(double));
+
+    bin_outfile.write((char*)&use_dropout, sizeof(bool));
+    bin_outfile.write((char*)&dropout_probability, sizeof(double));
+
+
+
+    if (verbose) {
+        cout << "generation_id: " << generation_id << endl;
+        cout << "bp_iterations: " << bp_iterations << endl;
+        cout << "learning_rate: " << learning_rate << endl;
+        cout << "adapt_learning_rate: " << adapt_learning_rate << endl;
+        cout << "use_nesterov_momentum: " << use_nesterov_momentum << endl;
+        cout << "use_reset_weights: " << use_reset_weights << endl;
+
+        cout << "use_high_norm: " << use_high_norm << endl;
+        cout << "high_threshold: " << high_threshold << endl;
+        cout << "use_low_norm: " << use_low_norm << endl;
+        cout << "low_threshold: " << low_threshold << endl;
+
+        cout << "use_dropout: " << use_dropout << endl;
+        cout << "dropout_probability: " << dropout_probability << endl;
+    }
+
+    write_binary_string(bin_outfile, log_filename, "log_filename", verbose);
+
+    ostringstream generator_oss;
+    generator_oss << generator;
+    string generator_str = generator_oss.str();
+    write_binary_string(bin_outfile, generator_str, "generator", verbose);
+
+    ostringstream rng_0_1_oss;
+    rng_0_1_oss << rng_0_1;
+    string rng_0_1_str = rng_0_1_oss.str();
+    write_binary_string(bin_outfile, rng_0_1_str, "rng_0_1", verbose);
+
+    ostringstream generated_by_map_oss;
+    write_map(generated_by_map_oss, generated_by_map);
+    string generated_by_map_str = generated_by_map_oss.str();
+    write_binary_string(bin_outfile, generated_by_map_str, "generated_by_map", verbose);
+
+    bin_outfile.write((char*)&best_validation_error, sizeof(double));
+    bin_outfile.write((char*)&best_validation_mae, sizeof(double));
+
+    int32_t n_initial_parameters = initial_parameters.size();
+    if (verbose) cout << "writing " << n_initial_parameters << " initial parameters." << endl;
+    bin_outfile.write((char*)&n_initial_parameters, sizeof(int32_t));
+    bin_outfile.write((char*)&initial_parameters[0], sizeof(double) * initial_parameters.size());
+
+    int32_t n_best_parameters = best_parameters.size();
+    if (verbose) cout << "writing " << n_best_parameters << " best parameters." << endl;
+    bin_outfile.write((char*)&n_best_parameters, sizeof(int32_t));
+    bin_outfile.write((char*)&best_parameters[0], sizeof(double) * best_parameters.size());
+
+
+    int32_t n_nodes = nodes.size();
+    bin_outfile.write((char*)&n_nodes, sizeof(int32_t));
+    if (verbose) cout << "writing " << n_nodes << " nodes." << endl;
+
+    for (int32_t i = 0; i < nodes.size(); i++) {
+        if (verbose) cout << "NODE: " << nodes[i]->innovation_number << " " << nodes[i]->type << " " << nodes[i]->node_type << " " << nodes[i]->depth << endl;
+        nodes[i]->write_to_stream(bin_outfile);
+    }
+
+
+    int32_t n_edges = edges.size();
+    bin_outfile.write((char*)&n_edges, sizeof(int32_t));
+    if (verbose) cout << "writing " << n_edges << " edges." << endl;
+
+    for (int32_t i = 0; i < edges.size(); i++) {
+        if (verbose) cout << "EDGE: " << edges[i]->innovation_number << " " << edges[i]->input_innovation_number << " " << edges[i]->output_innovation_number << endl;
+        edges[i]->write_to_stream(bin_outfile);
+    }
+
+
+    int32_t n_recurrent_edges = recurrent_edges.size();
+    bin_outfile.write((char*)&n_recurrent_edges, sizeof(int32_t));
+    if (verbose) cout << "writing " << n_recurrent_edges << " recurrent_edges." << endl;
+
+    for (int32_t i = 0; i < recurrent_edges.size(); i++) {
+        if (verbose) cout << "RECURRENT EDGE: " << recurrent_edges[i]->innovation_number << " " << recurrent_edges[i]->recurrent_depth << " " << recurrent_edges[i]->input_innovation_number << " " << recurrent_edges[i]->output_innovation_number << endl;
+
+        recurrent_edges[i]->write_to_stream(bin_outfile);
+    }
+
+    bin_outfile.close();
+}
+
+
+ 
