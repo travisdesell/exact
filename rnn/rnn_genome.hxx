@@ -152,7 +152,7 @@ class RNN_Genome {
         bool equals(RNN_Genome *other);
 
         string get_color(double weight, bool is_recurrent);
-        void print_graphviz(string filename);
+        void write_graphviz(string filename);
 
         RNN_Genome(string binary_filename, bool verbose = false);
         RNN_Genome(ifstream &bin_infile, bool verbose = false);

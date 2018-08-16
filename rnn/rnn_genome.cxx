@@ -979,7 +979,7 @@ void RNN_Genome::write_predictions(const vector<string> &input_filenames, const 
         string output_filename = "predictions_" + std::to_string(i) + ".txt";
         cout << "output filename: " << output_filename << endl;
 
-        rnn->write_predictions(output_filename, output_parameter_names, inputs[i], outputs[i], use_dropout, dropout_probability);
+        rnn->write_predictions(output_filename, input_parameter_names, output_parameter_names, inputs[i], outputs[i], use_dropout, dropout_probability);
     }
 
     delete rnn;
@@ -1687,7 +1687,7 @@ bool RNN_Genome::split_node(double mu, double sigma, double lstm_node_rate, int3
 
     if (input_edges.size() == 0 || output_edges.size() == 0) {
         cout << "\t[split node] error, input or output edges size was 0, cannot create a node" << endl;
-        //print_graphviz("error_genome.gv");
+        //write_graphviz("error_genome.gv");
         //exit(1);
         return false;
     }
@@ -2020,11 +2020,15 @@ string RNN_Genome::get_color(double weight, bool is_recurrent) {
 }
 
 
-void RNN_Genome::print_graphviz(string filename) {
+void RNN_Genome::write_graphviz(string filename) {
     ofstream outfile(filename);
 
     outfile << "digraph RNN {" << endl;
-    outfile << "graph [pad=\"0.01\", nodesep=\"0.05\", ranksep=\"0.9\"];" << endl;
+    outfile << "labelloc=\"t\";" << endl; 
+    outfile << "label=\"Genome Fitness: " << best_validation_mae * 100.0 << "% MAE\";" << endl;
+    outfile << endl;
+
+    outfile << "\tgraph [pad=\"0.01\", nodesep=\"0.05\", ranksep=\"0.9\"];" << endl;
 
     int32_t input_name_index = 0;
     outfile << "\t{" << endl;

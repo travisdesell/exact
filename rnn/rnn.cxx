@@ -313,16 +313,16 @@ double RNN::prediction_mae(const vector< vector<double> > &series_data, const ve
 }
 
 
-void RNN::write_predictions(string output_filename, const vector<string> &output_parameter_names, const vector< vector<double> > &series_data, const vector< vector<double> > &expected_outputs, bool using_dropout, double dropout_probability) {
+void RNN::write_predictions(string output_filename, const vector<string> &input_parameter_names, const vector<string> &output_parameter_names, const vector< vector<double> > &series_data, const vector< vector<double> > &expected_outputs, bool using_dropout, double dropout_probability) {
     forward_pass(series_data, using_dropout, false, dropout_probability);
 
     ofstream outfile(output_filename);
 
     outfile << "#";
 
-    for (uint32_t i = 0; i < output_nodes.size(); i++) {
+    for (uint32_t i = 0; i < input_nodes.size(); i++) {
         if (i > 0) outfile << ",";
-        outfile << output_parameter_names[i];
+        outfile << input_parameter_names[i];
     }
 
     for (uint32_t i = 0; i < output_nodes.size(); i++) {
@@ -332,9 +332,9 @@ void RNN::write_predictions(string output_filename, const vector<string> &output
     outfile << endl;
 
     for (uint32_t j = 0; j < series_length; j++) {
-        for (uint32_t i = 0; i < output_nodes.size(); i++) {
+        for (uint32_t i = 0; i < input_nodes.size(); i++) {
             if (i > 0) outfile << ",";
-            outfile << expected_outputs[i][j];
+            outfile << series_data[i][j];
         }
 
         for (uint32_t i = 0; i < output_nodes.size(); i++) {

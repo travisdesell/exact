@@ -39,8 +39,6 @@ EXALT *exalt;
 
 bool finished = false;
 
-int images_resize;
-
 
 vector< vector< vector<double> > > training_inputs;
 vector< vector< vector<double> > > training_outputs;
@@ -156,7 +154,11 @@ int main(int argc, char** argv) {
     */
 
 
-    load_time_series(training_filenames, validation_filenames, input_parameter_names, output_parameter_names, time_offset, training_inputs, training_outputs, validation_inputs, validation_outputs, normalize);
+    vector<TimeSeriesSet*> training_time_series, validation_time_series;
+    load_time_series(training_filenames, validation_filenames, normalize, training_time_series, validation_time_series);
+
+    export_time_series(training_time_series, input_parameter_names, output_parameter_names, time_offset, training_inputs, training_outputs);
+    export_time_series(validation_time_series, input_parameter_names, output_parameter_names, time_offset, validation_inputs, validation_outputs);
 
     int number_inputs = training_inputs[0].size();
     int number_outputs = training_outputs[0].size();
@@ -190,7 +192,7 @@ int main(int argc, char** argv) {
     string output_filename;
     get_argument(arguments, "--output_filename", true, output_filename);
 
-    exalt = new EXALT(population_size, max_genomes, number_inputs, number_outputs, input_parameter_names, output_parameter_names, bp_iterations, learning_rate, use_high_threshold, high_threshold, use_low_threshold, low_threshold, use_dropout, dropout_probability, log_filename);
+    exalt = new EXALT(population_size, max_genomes, input_parameter_names, output_parameter_names, bp_iterations, learning_rate, use_high_threshold, high_threshold, use_low_threshold, low_threshold, use_dropout, dropout_probability, log_filename);
 
 
     vector<thread> threads;

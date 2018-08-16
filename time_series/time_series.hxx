@@ -27,6 +27,7 @@ class TimeSeries {
 
         vector<double> values;
 
+        TimeSeries();
     public:
         TimeSeries(string _name);
 
@@ -47,21 +48,26 @@ class TimeSeries {
         double get_max_change() const;
 
         void normalize_min_max(double min, double max);
+
+        void cut(int32_t start, int32_t stop);
+
+        TimeSeries* copy();
 };
 
 class TimeSeriesSet {
     private:
         int number_rows;
-        double expected_class;
         string filename;
 
         vector<string> fields;
 
         map<string, TimeSeries*> time_series;
 
+        TimeSeriesSet();
     public:
 
-        TimeSeriesSet(string _filename, double _expected_class);
+
+        TimeSeriesSet(string _filename);
 
         void add_time_series(string name);
 
@@ -85,11 +91,19 @@ class TimeSeriesSet {
         void export_time_series(vector< vector<double> > &data, const vector<string> &requested_fields);
         void export_time_series(vector< vector<double> > &data, const vector<string> &requested_fields, int32_t time_offset);
 
-        double get_expected_class() const;
+        TimeSeriesSet* copy();
+
+        void cut(int32_t start, int32_t stop);
+        void split(int slices, vector<TimeSeriesSet*> &sub_series);
+
+        void select_parameters(const vector<string> &parameter_names);
+        void select_parameters(const vector<string> &input_parameter_names, const vector<string> &output_parameter_names);
 };
 
 void normalize_time_series_sets(vector<TimeSeriesSet*> time_series);
 
-void load_time_series(const vector<string> &training_filenames, const vector<string> &testing_filenames, const vector<string> &input_parameter_names, const vector<string> &output_parameter_names, int time_offset, vector< vector< vector<double> > > &training_inputs, vector< vector< vector<double> > > &training_outputs, vector< vector< vector<double> > > &testing_inputs, vector< vector< vector<double> > > &testing_outputs, bool normalize);
+void load_time_series(const vector<string> &training_filenames, const vector<string> &testing_filenames, bool normalize, vector<TimeSeriesSet*> &training_time_series, vector<TimeSeriesSet*> &testing_time_series);
+
+void export_time_series(const vector<TimeSeriesSet*> &time_series, const vector<string> &input_parameter_names, const vector<string> &output_parameter_names, int time_offset, vector< vector< vector<double> > > &inputs, vector< vector< vector<double> > > &outputs);
 
 #endif

@@ -43,8 +43,8 @@ using std::vector;
 
 vector< vector< vector<double> > > training_inputs;
 vector< vector< vector<double> > > training_outputs;
-vector< vector< vector<double> > > test_inputs;
-vector< vector< vector<double> > > test_outputs;
+vector< vector< vector<double> > > validation_inputs;
+vector< vector< vector<double> > > validation_outputs;
 
 RNN_Genome *genome;
 RNN* rnn;
@@ -63,13 +63,13 @@ double objective_function(const vector<double> &parameters) {
     return -error;
 }
 
-double test_objective_function(const vector<double> &parameters) {
+double validation_objective_function(const vector<double> &parameters) {
     rnn->set_weights(parameters);
 
     double total_error = 0.0;
 
-    for (uint32_t i = 0; i < test_inputs.size(); i++) {
-        double error = rnn->prediction_mse(test_inputs[i], test_outputs[i], false, true, 0.0);
+    for (uint32_t i = 0; i < validation_inputs.size(); i++) {
+        double error = rnn->prediction_mse(validation_inputs[i], validation_outputs[i], false, true, 0.0);
         total_error += error;
 
         cout << "output for series[" << i << "]: " << error << endl;
@@ -91,8 +91,8 @@ int main(int argc, char **argv) {
     vector<string> training_filenames;
     get_argument_vector(arguments, "--training_filenames", true, training_filenames);
 
-    vector<string> test_filenames;
-    get_argument_vector(arguments, "--test_filenames", true, test_filenames);
+    vector<string> validation_filenames;
+    get_argument_vector(arguments, "--validation_filenames", true, validation_filenames);
 
     int32_t time_offset = 1;
     get_argument(arguments, "--time_offset", true, time_offset);
@@ -155,22 +155,26 @@ int main(int argc, char **argv) {
     //output_parameter_names.push_back("indicated_airspeed");
     //output_parameter_names.push_back("eng_1_oil_press");
     /*
-    output_parameter_names.push_back("msl_altitude");
-    output_parameter_names.push_back("eng_1_rpm");
-    output_parameter_names.push_back("eng_1_fuel_flow");
-    output_parameter_names.push_back("eng_1_oil_press");
-    output_parameter_names.push_back("eng_1_oil_temp");
-    output_parameter_names.push_back("eng_1_cht_1");
-    output_parameter_names.push_back("eng_1_cht_2");
-    output_parameter_names.push_back("eng_1_cht_3");
-    output_parameter_names.push_back("eng_1_cht_4");
-    output_parameter_names.push_back("eng_1_egt_1");
-    output_parameter_names.push_back("eng_1_egt_2");
-    output_parameter_names.push_back("eng_1_egt_3");
-    output_parameter_names.push_back("eng_1_egt_4");
-    */
-    
-    load_time_series(training_filenames, test_filenames, input_parameter_names, output_parameter_names, time_offset, training_inputs, training_outputs, test_inputs, test_outputs, normalize);
+       output_parameter_names.push_back("msl_altitude");
+       output_parameter_names.push_back("eng_1_rpm");
+       output_parameter_names.push_back("eng_1_fuel_flow");
+       output_parameter_names.push_back("eng_1_oil_press");
+       output_parameter_names.push_back("eng_1_oil_temp");
+       output_parameter_names.push_back("eng_1_cht_1");
+       output_parameter_names.push_back("eng_1_cht_2");
+       output_parameter_names.push_back("eng_1_cht_3");
+       output_parameter_names.push_back("eng_1_cht_4");
+       output_parameter_names.push_back("eng_1_egt_1");
+       output_parameter_names.push_back("eng_1_egt_2");
+       output_parameter_names.push_back("eng_1_egt_3");
+       output_parameter_names.push_back("eng_1_egt_4");
+       */
+
+    vector<TimeSeriesSet*> training_time_series, validation_time_series;
+    load_time_series(training_filenames, validation_filenames, normalize, training_time_series, validation_time_series);
+
+    export_time_series(training_time_series, input_parameter_names, output_parameter_names, time_offset, training_inputs, training_outputs);
+    export_time_series(validation_time_series, input_parameter_names, output_parameter_names, time_offset, validation_inputs, validation_outputs);
 
     int number_inputs = training_inputs[0].size();
     int number_outputs = training_outputs[0].size();
@@ -251,9 +255,9 @@ int main(int argc, char **argv) {
         }
 
         if (argument_exists(arguments, "--stochastic")) {
-                genome->backpropagate_stochastic(training_inputs, training_outputs, test_inputs, test_outputs);
+                genome->backpropagate_stochastic(training_inputs, training_outputs, validation_inputs, validation_outputs);
         } else {
-                genome->backpropagate(training_inputs, training_outputs, test_inputs, test_outputs);
+                genome->backpropagate(training_inputs, training_outputs, validation_inputs, validation_outputs);
         }
         genome->get_weights(best_parameters);
         cout << "best validation error: " << genome->get_validation_error() << endl;
@@ -302,8 +306,8 @@ int main(int argc, char **argv) {
     cout << endl;
 
     cout << "TEST ERRORS:" << endl;
-    genome->get_mse(best_parameters, test_inputs, test_outputs, true);
+    genome->get_mse(best_parameters, validation_inputs, validation_outputs, true);
     cout << endl;
-    genome->get_mae(best_parameters, test_inputs, test_outputs, true);
+    genome->get_mae(best_parameters, validation_inputs, validation_outputs, true);
     cout << endl;
 }

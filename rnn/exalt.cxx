@@ -22,7 +22,7 @@ using std::to_string;
 #include "rnn_genome.hxx"
 #include "generate_nn.hxx"
 
-EXALT::EXALT(int32_t _population_size, int32_t _max_genomes, int32_t _number_inputs, int32_t _number_outputs, const vector<string> &_input_parameter_names, const vector<string> &_output_parameter_names, int32_t _bp_iterations, double _learning_rate, bool _use_high_threshold, double _high_threshold, bool _use_low_threshold, double _low_threshold, bool _use_dropout, double _dropout_probability, string _log_filename) : population_size(_population_size), max_genomes(_max_genomes), number_inputs(_number_inputs), number_outputs(_number_outputs), bp_iterations(_bp_iterations), learning_rate(_learning_rate), use_high_threshold(_use_high_threshold), high_threshold(_high_threshold), use_low_threshold(_use_low_threshold), low_threshold(_low_threshold), use_dropout(_use_dropout), dropout_probability(_dropout_probability), log_filename(_log_filename) {
+EXALT::EXALT(int32_t _population_size, int32_t _max_genomes, const vector<string> &_input_parameter_names, const vector<string> &_output_parameter_names, int32_t _bp_iterations, double _learning_rate, bool _use_high_threshold, double _high_threshold, bool _use_low_threshold, double _low_threshold, bool _use_dropout, double _dropout_probability, string _log_filename) : population_size(_population_size), max_genomes(_max_genomes), number_inputs(_input_parameter_names.size()), number_outputs(_output_parameter_names.size()), bp_iterations(_bp_iterations), learning_rate(_learning_rate), use_high_threshold(_use_high_threshold), high_threshold(_high_threshold), use_low_threshold(_use_low_threshold), low_threshold(_low_threshold), use_dropout(_use_dropout), dropout_probability(_dropout_probability), log_filename(_log_filename) {
 
     input_parameter_names = _input_parameter_names;
     output_parameter_names = _output_parameter_names;
@@ -178,7 +178,8 @@ bool EXALT::insert_genome(RNN_Genome* genome) {
 
         if (genomes.size() == 0 || genome->get_validation_error() < genomes[0]->get_validation_error()) {
             cout << "new best fitness!" << endl;
-            genome->print_graphviz("rnn_genome_" + to_string(inserted_genomes) + ".gv");
+            //genome->write_graphviz("rnn_genome_" + to_string(inserted_genomes) + ".gv");
+            //genome->write_to_file("rnn_genome_" + to_string(inserted_genomes) + ".bin");
         }
 
         for (auto i = inserted_from_map.begin(); i != inserted_from_map.end(); i++) {
@@ -296,7 +297,7 @@ RNN_Genome* EXALT::generate_genome() {
         }
     }
 
-    //genome->print_graphviz("rnn_genome_" + to_string(generated_genomes) + ".gv");
+    //genome->write_graphviz("rnn_genome_" + to_string(generated_genomes) + ".gv");
 
     if (!epigenetic_weights) genome->initialize_randomly();
 
@@ -311,7 +312,7 @@ void EXALT::mutate(RNN_Genome *g) {
 
     double mu, sigma;
 
-    //g->print_graphviz("rnn_genome_premutate_" + to_string(generated_genomes) + ".gv");
+    //g->write_graphviz("rnn_genome_premutate_" + to_string(generated_genomes) + ".gv");
 
     cout << "generating new genome by mutation" << endl;
     //g->get_mu_sigma(g->best_parameters, mu, sigma);

@@ -122,12 +122,51 @@ double TimeSeries::get_max_change() const {
 }
 
 void TimeSeries::normalize_min_max(double min, double max) {
+    cout << "normalizing time series '" << name << "' with min: " << min << " and " << max << endl;
     for (int i = 0; i < values.size(); i++) {
+        if (values[i] < min) {
+            cout << "WARNING: normalizing series " << name << ", value[" << i << "] " << values[i] << " was less than min for normalization:" << min << endl;
+        }
+
+        if (values[i] > max) {
+            cout << "WARNING: normalizing series " << name << ", value[" << i << "] " << values[i] << " was greater than max for normalization:" << max << endl;
+        }
+
         values[i] = (values[i] - min) / (max - min);
     }
 }
 
-void split(const string &s, char delim, vector<string> &result) {
+void TimeSeries::cut(int32_t start, int32_t stop) {
+    auto first = values.begin() + start;
+    auto last = values.begin() + stop;
+    values = vector<double>(first, last);
+
+    //update the statistics after the cut
+    calculate_statistics();
+}
+
+TimeSeries::TimeSeries() {
+}
+
+TimeSeries* TimeSeries::copy() {
+    TimeSeries *ts = new TimeSeries();
+
+    ts->name = name;
+    ts->min = min;
+    ts->average = average;
+    ts->max = max;
+    ts->std_dev = std_dev;
+    ts->variance = variance;
+    ts->min_change = min_change;
+    ts->max_change = max_change;
+
+    ts->values = values;
+
+    return ts;
+}
+
+
+void string_split(const string &s, char delim, vector<string> &result) {
     stringstream ss;
     ss.str(s);
 
@@ -145,8 +184,7 @@ void TimeSeriesSet::add_time_series(string name) {
     }
 }
 
-TimeSeriesSet::TimeSeriesSet(string _filename, double _expected_class) {
-    expected_class = _expected_class;
+TimeSeriesSet::TimeSeriesSet(string _filename) {
     filename = _filename;
 
     ifstream ts_file(filename);
@@ -157,7 +195,7 @@ TimeSeriesSet::TimeSeriesSet(string _filename, double _expected_class) {
         cerr << "ERROR! Could not get headers from the CSV file. File potentially empty!" << endl;
         exit(1);
     }
-    split(line, ',', fields);
+    string_split(line, ',', fields);
     
     //cout << "number fields: " << fields.size() << endl;
 
@@ -176,7 +214,7 @@ TimeSeriesSet::TimeSeriesSet(string _filename, double _expected_class) {
         }
 
         vector<string> parts;
-        split(line, ',', parts);
+        string_split(line, ',', parts);
 
         if (parts.size() != fields.size()) {
             cerr << "ERROR! number of values in row " << row << " was " << parts.size() << ", but there were " << fields.size() << " fields in the header." << endl;
@@ -310,17 +348,16 @@ void normalize_time_series_sets(vector<TimeSeriesSet*> time_series) {
     }
 }
 
-void load_time_series(const vector<string> &training_filenames, const vector<string> &testing_filenames, const vector<string> &input_parameter_names, const vector<string> &output_parameter_names, int time_offset, vector< vector< vector<double> > > &training_inputs, vector< vector< vector<double> > > &training_outputs, vector< vector< vector<double> > > &testing_inputs, vector< vector< vector<double> > > &testing_outputs, bool normalize) {
-
+void load_time_series(const vector<string> &training_filenames, const vector<string> &testing_filenames, bool normalize, vector<TimeSeriesSet*> &training_time_series, vector<TimeSeriesSet*> &testing_time_series) {
     vector<TimeSeriesSet*> all_time_series;
 
     int training_rows = 0;
-    vector<TimeSeriesSet*> training_time_series;
+    training_time_series.clear();
     cout << "got training time series filenames:" << endl;
     for (uint32_t i = 0; i < training_filenames.size(); i++) {
         cout << "\t" << training_filenames[i] << endl;
 
-        TimeSeriesSet *ts = new TimeSeriesSet(training_filenames[i], 1.0);
+        TimeSeriesSet *ts = new TimeSeriesSet(training_filenames[i]);
         training_time_series.push_back( ts );
         all_time_series.push_back( ts );
 
@@ -329,12 +366,12 @@ void load_time_series(const vector<string> &training_filenames, const vector<str
     cout << "number training files: " << training_filenames.size() << ", total rows for training flights: " << training_rows << endl;
 
     int testing_rows = 0;
-    vector<TimeSeriesSet*> testing_time_series;
+    testing_time_series.clear();
     cout << "got test time series filenames:" << endl;
     for (uint32_t i = 0; i < testing_filenames.size(); i++) {
         cout << "\t" << testing_filenames[i] << endl;
 
-        TimeSeriesSet *ts = new TimeSeriesSet(testing_filenames[i], -1.0);
+        TimeSeriesSet *ts = new TimeSeriesSet(testing_filenames[i]);
         testing_time_series.push_back( ts );
         all_time_series.push_back( ts );
 
@@ -348,20 +385,14 @@ void load_time_series(const vector<string> &training_filenames, const vector<str
     } else {
         cout << "not normalizing time series" << endl;
     }
+}
 
-
-    training_inputs.resize(training_time_series.size());
-    training_outputs.resize(training_time_series.size());
-    for (uint32_t i = 0; i < training_time_series.size(); i++) {
-        training_time_series[i]->export_time_series(training_inputs[i], input_parameter_names, -time_offset);
-        training_time_series[i]->export_time_series(training_outputs[i], output_parameter_names, time_offset);
-    }
-
-    testing_inputs.resize(testing_time_series.size());
-    testing_outputs.resize(testing_time_series.size());
-    for (uint32_t i = 0; i < testing_time_series.size(); i++) {
-        testing_time_series[i]->export_time_series(testing_inputs[i], input_parameter_names, -time_offset);
-        testing_time_series[i]->export_time_series(testing_outputs[i], output_parameter_names, time_offset);
+void export_time_series(const vector<TimeSeriesSet*> &time_series, const vector<string> &input_parameter_names, const vector<string> &output_parameter_names, int time_offset, vector< vector< vector<double> > > &inputs, vector< vector< vector<double> > > &outputs) {
+    inputs.resize(time_series.size());
+    outputs.resize(time_series.size());
+    for (uint32_t i = 0; i < time_series.size(); i++) {
+        time_series[i]->export_time_series(inputs[i], input_parameter_names, -time_offset);
+        time_series[i]->export_time_series(outputs[i], output_parameter_names, time_offset);
     }
 }
 
@@ -413,10 +444,73 @@ void TimeSeriesSet::export_time_series(vector< vector<double> > &data) {
     export_time_series(data, fields, 0);
 }
 
-
-double TimeSeriesSet::get_expected_class() const {
-    return expected_class;
+TimeSeriesSet::TimeSeriesSet() {
 }
+
+TimeSeriesSet* TimeSeriesSet::copy() {
+    TimeSeriesSet *tss = new TimeSeriesSet();
+
+    tss->number_rows = number_rows;
+    tss->filename = filename;
+    tss->fields = fields;
+    
+    for (auto series = time_series.begin(); series != time_series.end(); series++) {
+        tss->time_series[series->first] = series->second->copy();
+    }
+
+    return tss;
+}
+
+void TimeSeriesSet::cut(int32_t start, int32_t stop) {
+    for (auto series = time_series.begin(); series != time_series.end(); series++) {
+        series->second->cut(start, stop);
+    }
+    number_rows = stop - start;
+}
+
+void TimeSeriesSet::split(int slices, vector<TimeSeriesSet*> &sub_series) {
+    sub_series.clear();
+
+    double start = 0;
+    double slice_size = (double)number_rows / (double)slices;
+    double stop = slice_size;
+
+    for (int32_t i = 0; i < slices; i++) {
+        if (i == (slices - 1)) {
+            stop = number_rows;
+        }
+
+        TimeSeriesSet *slice = this->copy();
+        slice->filename = filename + "_split_" + to_string(i);
+
+        slice->cut((int32_t)start, (int32_t)stop);
+        sub_series.push_back( this->copy() );
+
+        cout << "split series from time " << (int32_t)start << " to " << (int32_t)stop << endl;
+
+        start += slice_size;
+        stop += slice_size;
+    }
+}
+
+void TimeSeriesSet::select_parameters(const vector<string> &parameter_names) {
+    for (auto series = time_series.begin(); series != time_series.end(); series++) {
+        if (find(parameter_names.begin(), parameter_names.end(), series->first) == parameter_names.end()) {
+            cout << "removing series: '" << series->first << "'" << endl;
+            time_series.erase(series->first);
+        }
+    }
+}
+
+void TimeSeriesSet::select_parameters(const vector<string> &input_parameter_names, const vector<string> &output_parameter_names) {
+    vector<string> combined_parameters = input_parameter_names;
+    combined_parameters.insert(combined_parameters.end(), output_parameter_names.begin(), output_parameter_names.end());
+
+    select_parameters(combined_parameters);
+}
+
+
+
 
 #ifdef TIME_SERIES_TEST
 
@@ -437,7 +531,7 @@ int main(int argc, char **argv) {
     for (uint32_t i = 0; i < before_filenames.size(); i++) {
         cout << "\t" << before_filenames[i] << endl;
 
-        TimeSeriesSet *ts = new TimeSeriesSet(before_filenames[i], 1.0);
+        TimeSeriesSet *ts = new TimeSeriesSet(before_filenames[i]);
         before_time_series.push_back( ts );
         all_time_series.push_back( ts );
 
@@ -452,7 +546,7 @@ int main(int argc, char **argv) {
     for (uint32_t i = 0; i < after_filenames.size(); i++) {
         cout << "\t" << after_filenames[i] << endl;
 
-        TimeSeriesSet *ts = new TimeSeriesSet(after_filenames[i], 0.0);
+        TimeSeriesSet *ts = new TimeSeriesSet(after_filenames[i]);
         after_time_series.push_back( ts );
         all_time_series.push_back( ts );
 

@@ -124,7 +124,11 @@ int main(int argc, char** argv) {
     */
 
 
-    load_time_series(training_filenames, testing_filenames, input_parameter_names, output_parameter_names, time_offset, training_inputs, training_outputs, testing_inputs, testing_outputs, normalize);
+    vector<TimeSeriesSet*> training_time_series, testing_time_series;
+    load_time_series(training_filenames, testing_filenames, normalize, training_time_series, testing_time_series);
+
+    export_time_series(training_time_series, input_parameter_names, output_parameter_names, time_offset, training_inputs, training_outputs);
+    export_time_series(testing_time_series, input_parameter_names, output_parameter_names, time_offset, testing_inputs, testing_outputs);
 
     int number_inputs = training_inputs[0].size();
     int number_outputs = training_outputs[0].size();

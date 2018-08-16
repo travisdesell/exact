@@ -127,7 +127,7 @@ int main(int argc, char **argv) {
             delete genome;
 
             genome = create_ff(1, 1, 1, 1, max_recurrent_depth);
-            genome->print_graphviz("ff_1_1x1_1.gv");
+            //genome->write_graphviz("ff_1_1x1_1.gv");
             test_rnn("FF: 1 Input, 1x1 Hidden, 1 Output", genome, inputs, outputs);
             delete genome;
 
