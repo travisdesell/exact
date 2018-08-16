@@ -2195,6 +2195,12 @@ void read_binary_string(istream &in, string &s, string name, bool verbose) {
 
 RNN_Genome::RNN_Genome(string binary_filename, bool verbose) {
     ifstream bin_infile(binary_filename, ios::in | ios::binary);
+
+    if (!bin_infile.good()) {
+        cerr << "ERROR: could not open RNN genome file '" << binary_filename << "' for reading." << endl;
+        exit(1);
+    }
+
     read_from_stream(bin_infile, verbose);
 }
 
@@ -2408,8 +2414,6 @@ void RNN_Genome::write_to_stream(ofstream &bin_outfile, bool verbose) {
     bin_outfile.write((char*)&use_dropout, sizeof(bool));
     bin_outfile.write((char*)&dropout_probability, sizeof(double));
 
-
-
     if (verbose) {
         cout << "generation_id: " << generation_id << endl;
         cout << "bp_iterations: " << bp_iterations << endl;
@@ -2501,6 +2505,3 @@ void RNN_Genome::write_to_stream(ofstream &bin_outfile, bool verbose) {
 
     bin_outfile.close();
 }
-
-
- 
