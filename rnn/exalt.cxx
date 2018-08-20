@@ -298,6 +298,7 @@ RNN_Genome* EXALT::generate_genome() {
     }
 
     genome->write_graphviz("rnn_genome_" + to_string(generated_genomes) + ".gv");
+    genome->write_to_file("rnn_genome_" + to_string(generated_genomes) + ".bin");
 
     if (!epigenetic_weights) genome->initialize_randomly();
 
