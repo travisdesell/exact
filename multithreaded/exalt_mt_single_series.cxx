@@ -152,22 +152,13 @@ int main(int argc, char** argv) {
     vector<TimeSeriesSet*> training_series;
     vector<TimeSeriesSet*> validation_series;
 
-    int32_t repeats = 10;
+    int32_t repeats = 5;
 
     ofstream overall_results("overall_results.txt");
 
     for (uint32_t i = 0; i < number_slices; i++) {
-        while (training_series.size() > 0) {
-            TimeSeriesSet *current = training_series.back();
-            training_series.pop_back();
-            delete current;
-        }
-
-        while (validation_series.size() > 0) {
-            TimeSeriesSet *current = validation_series.back();
-            validation_series.pop_back();
-            delete current;
-        }
+        training_series.clear();
+        validation_series.clear();
 
         for (uint32_t j = 0; j < number_slices; j++) {
             if (j == i) {
@@ -223,8 +214,11 @@ int main(int argc, char** argv) {
             cout << "validation MSE: " << duplicate_genome->get_mae(duplicate_parameters, validation_inputs, validation_outputs) << endl;
             */
 
+            cout << "deleting genome" << endl;
             delete best_genome;
+            cout << "deleting exact" << endl;
             delete exalt;
+            cout << "deleted exact" << endl;
         }
         overall_results << endl;
     }
