@@ -142,5 +142,20 @@ int main(int argc, char** argv) {
     cout << "MAE: " << duplicate_genome->get_mae(duplicate_parameters, testing_inputs, testing_outputs) << endl;
     duplicate_genome->write_predictions(testing_filenames, duplicate_parameters, testing_inputs, testing_outputs);
 
+    int length;
+    char *byte_array;
+
+    duplicate_genome->write_to_array(&byte_array, length, true);
+
+    cout << endl << endl << "WROTE TO BYTE ARRAY WITH LENGTH: " << length << endl << endl;
+
+    RNN_Genome *duplicate_genome_2 = new RNN_Genome(byte_array, length, true);
+
+    vector<double> duplicate_parameters_2 = duplicate_genome_2->get_best_parameters();
+    cout << "MSE: " << duplicate_genome_2->get_mse(duplicate_parameters_2, testing_inputs, testing_outputs) << endl;
+    cout << "MAE: " << duplicate_genome_2->get_mae(duplicate_parameters_2, testing_inputs, testing_outputs) << endl;
+    duplicate_genome_2->write_predictions(testing_filenames, duplicate_parameters_2, testing_inputs, testing_outputs);
+
+
     return 0;
 }

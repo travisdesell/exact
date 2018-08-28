@@ -1,7 +1,9 @@
 #include <cmath>
 
 #include <fstream>
+using std::istream;
 using std::ifstream;
+using std::ostream;
 using std::ofstream;
 
 #include <iomanip>
@@ -282,24 +284,24 @@ void RNN_Genome::set_log_filename(string _log_filename) {
     log_filename = _log_filename;
 }
 
-
-
-
 void RNN_Genome::get_weights(vector<double> &parameters) {
     parameters.resize(get_number_weights());
 
     uint32_t current = 0;
 
     for (uint32_t i = 0; i < nodes.size(); i++) {
-        if (nodes[i]->is_reachable()) nodes[i]->get_weights(current, parameters);
+        nodes[i]->get_weights(current, parameters);
+        //if (nodes[i]->is_reachable()) nodes[i]->get_weights(current, parameters);
     }
 
     for (uint32_t i = 0; i < edges.size(); i++) {
-        if (edges[i]->is_reachable()) parameters[current++] = edges[i]->weight;
+        parameters[current++] = edges[i]->weight;
+        //if (edges[i]->is_reachable()) parameters[current++] = edges[i]->weight;
     }
 
     for (uint32_t i = 0; i < recurrent_edges.size(); i++) {
-        if (recurrent_edges[i]->is_reachable()) parameters[current++] = recurrent_edges[i]->weight;
+        parameters[current++] = recurrent_edges[i]->weight;
+        //if (recurrent_edges[i]->is_reachable()) parameters[current++] = recurrent_edges[i]->weight;
     }
 }
 
@@ -312,15 +314,18 @@ void RNN_Genome::set_weights(const vector<double> &parameters) {
     uint32_t current = 0;
 
     for (uint32_t i = 0; i < nodes.size(); i++) {
-        if (nodes[i]->is_reachable()) nodes[i]->set_weights(current, parameters);
+        nodes[i]->set_weights(current, parameters);
+        //if (nodes[i]->is_reachable()) nodes[i]->set_weights(current, parameters);
     }
 
     for (uint32_t i = 0; i < edges.size(); i++) {
-        if (edges[i]->is_reachable()) edges[i]->weight = parameters[current++];
+        edges[i]->weight = parameters[current++];
+        //if (edges[i]->is_reachable()) edges[i]->weight = parameters[current++];
     }
 
     for (uint32_t i = 0; i < recurrent_edges.size(); i++) {
-        if (recurrent_edges[i]->is_reachable()) recurrent_edges[i]->weight = parameters[current++];
+        recurrent_edges[i]->weight = parameters[current++];
+        //if (recurrent_edges[i]->is_reachable()) recurrent_edges[i]->weight = parameters[current++];
     }
 
 }
@@ -329,15 +334,18 @@ uint32_t RNN_Genome::get_number_weights() {
     uint32_t number_weights = 0;
 
     for (uint32_t i = 0; i < nodes.size(); i++) {
-        if (nodes[i]->is_reachable()) number_weights += nodes[i]->get_number_weights();
+        number_weights += nodes[i]->get_number_weights();
+        //if (nodes[i]->is_reachable()) number_weights += nodes[i]->get_number_weights();
     }
 
     for (uint32_t i = 0; i < edges.size(); i++) {
-        if (edges[i]->is_reachable()) number_weights++;
+        number_weights++;
+        //if (edges[i]->is_reachable()) number_weights++;
     }
 
     for (uint32_t i = 0; i < recurrent_edges.size(); i++) {
-        if (recurrent_edges[i]->is_reachable()) number_weights++;
+        number_weights++;
+        //if (recurrent_edges[i]->is_reachable()) number_weights++;
     }
 
     return number_weights;
@@ -361,15 +369,18 @@ RNN* RNN_Genome::get_rnn() {
     vector<RNN_Recurrent_Edge*> recurrent_edge_copies;
 
     for (uint32_t i = 0; i < nodes.size(); i++) {
-        if (nodes[i]->type == RNN_INPUT_NODE || nodes[i]->type == RNN_OUTPUT_NODE || nodes[i]->is_reachable()) node_copies.push_back( nodes[i]->copy() );
+        node_copies.push_back( nodes[i]->copy() );
+        //if (nodes[i]->type == RNN_INPUT_NODE || nodes[i]->type == RNN_OUTPUT_NODE || nodes[i]->is_reachable()) node_copies.push_back( nodes[i]->copy() );
     }
 
     for (uint32_t i = 0; i < edges.size(); i++) {
-        if (edges[i]->is_reachable()) edge_copies.push_back( edges[i]->copy(node_copies) );
+        edge_copies.push_back( edges[i]->copy(node_copies) );
+        //if (edges[i]->is_reachable()) edge_copies.push_back( edges[i]->copy(node_copies) );
     }
 
     for (uint32_t i = 0; i < recurrent_edges.size(); i++) {
-        if (recurrent_edges[i]->is_reachable()) recurrent_edge_copies.push_back( recurrent_edges[i]->copy(node_copies) );
+        recurrent_edge_copies.push_back( recurrent_edges[i]->copy(node_copies) );
+        //if (recurrent_edges[i]->is_reachable()) recurrent_edge_copies.push_back( recurrent_edges[i]->copy(node_copies) );
     }
 
     return new RNN(node_copies, edge_copies, recurrent_edge_copies);
@@ -381,6 +392,10 @@ vector<double> RNN_Genome::get_best_parameters() const {
 
 int32_t RNN_Genome::get_generation_id() const {
     return generation_id;
+}
+
+void RNN_Genome::set_generation_id(int32_t _generation_id) {
+    generation_id = _generation_id;
 }
 
 double RNN_Genome::get_validation_error() const {
@@ -910,9 +925,9 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
     delete rnn;
 
     this->set_weights(best_parameters);
-    //cout << "backpropagation completed, getting mu/sigma" << endl;
-    //double _mu, _sigma;
-    //get_mu_sigma(best_parameters, _mu, _sigma);
+    cout << "backpropagation completed, getting mu/sigma" << endl;
+    double _mu, _sigma;
+    get_mu_sigma(best_parameters, _mu, _sigma);
 }
 
 double RNN_Genome::get_mse(const vector<double> &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, bool verbose) {
@@ -1202,6 +1217,15 @@ void RNN_Genome::get_mu_sigma(const vector<double> &p, double &mu, double &sigma
     sigma = 0.0;
     
     for (int32_t i = 0; i < p.size(); i++) {
+        if (p[i] < -10 || p[i] > 10) {
+            cerr << "ERROR in get_mu_sigma, parameter[" << i << "]: was out of bounds: " << p[i] << endl;
+            cerr << "all parameters: " << endl;
+            for (int32_t i = 0; i < (int32_t)p.size(); i++) { 
+                cerr << "\t" << p[i] << endl;
+            }
+            exit(1);
+        }
+
         mu += p[i];
     }
     mu /= p.size();
@@ -1215,9 +1239,18 @@ void RNN_Genome::get_mu_sigma(const vector<double> &p, double &mu, double &sigma
     sigma /= (p.size() - 1);
     sigma = sqrt(sigma);
 
-    cout << "\tmu: " << mu << ", sigma: " << sigma << endl;
+    cout << "\tmu: " << mu << ", sigma: " << sigma << ", parameters.size(): " << p.size() << endl;
     if (isnan(mu) || isinf(mu) || isnan(sigma) || isinf(sigma)) {
         cerr << "mu or sigma was not a number, best parameters: " << endl;
+        for (int32_t i = 0; i < (int32_t)p.size(); i++) { 
+            cerr << "\t" << p[i] << endl;
+        }
+
+        exit(1);
+    }
+
+    if (mu < -2.0 || mu > 2.0 || sigma < -2.0 || sigma > 2.0) {
+        cerr << "mu or sigma exceeded possible bounds, best parameters: " << endl;
         for (int32_t i = 0; i < (int32_t)p.size(); i++) { 
             cerr << "\t" << p[i] << endl;
         }
@@ -2202,28 +2235,43 @@ RNN_Genome::RNN_Genome(string binary_filename, bool verbose) {
     }
 
     read_from_stream(bin_infile, verbose);
+    bin_infile.close();
 }
 
-RNN_Genome::RNN_Genome(ifstream &bin_infile, bool verbose) {
+RNN_Genome::RNN_Genome(char *array, int32_t length, bool verbose) {
+    read_from_array(array, length, verbose);
+}
+
+RNN_Genome::RNN_Genome(istream &bin_infile, bool verbose) {
     read_from_stream(bin_infile, verbose);
 }
 
-void RNN_Genome::read_from_stream(ifstream &bin_infile, bool verbose) {
+void RNN_Genome::read_from_array(char *array, int32_t length, bool verbose) {
+    string array_str;
+    for (uint32_t i = 0; i < length; i++) {
+        array_str.push_back(array[i]);
+    }
+
+    istringstream iss(array_str);
+    read_from_stream(iss, verbose);
+}
+
+void RNN_Genome::read_from_stream(istream &bin_istream, bool verbose) {
     if (verbose) cout << "READING GENOME FROM STREAM" << endl;
-    bin_infile.read((char*)&generation_id, sizeof(int32_t));
-    bin_infile.read((char*)&bp_iterations, sizeof(int32_t));
-    bin_infile.read((char*)&learning_rate, sizeof(double));
-    bin_infile.read((char*)&adapt_learning_rate, sizeof(bool));
-    bin_infile.read((char*)&use_nesterov_momentum, sizeof(bool));
-    bin_infile.read((char*)&use_reset_weights, sizeof(bool));
+    bin_istream.read((char*)&generation_id, sizeof(int32_t));
+    bin_istream.read((char*)&bp_iterations, sizeof(int32_t));
+    bin_istream.read((char*)&learning_rate, sizeof(double));
+    bin_istream.read((char*)&adapt_learning_rate, sizeof(bool));
+    bin_istream.read((char*)&use_nesterov_momentum, sizeof(bool));
+    bin_istream.read((char*)&use_reset_weights, sizeof(bool));
 
-    bin_infile.read((char*)&use_high_norm, sizeof(bool));
-    bin_infile.read((char*)&high_threshold, sizeof(double));
-    bin_infile.read((char*)&use_low_norm, sizeof(bool));
-    bin_infile.read((char*)&low_threshold, sizeof(double));
+    bin_istream.read((char*)&use_high_norm, sizeof(bool));
+    bin_istream.read((char*)&high_threshold, sizeof(double));
+    bin_istream.read((char*)&use_low_norm, sizeof(bool));
+    bin_istream.read((char*)&low_threshold, sizeof(double));
 
-    bin_infile.read((char*)&use_dropout, sizeof(bool));
-    bin_infile.read((char*)&dropout_probability, sizeof(double));
+    bin_istream.read((char*)&use_dropout, sizeof(bool));
+    bin_istream.read((char*)&dropout_probability, sizeof(double));
 
     if (verbose) {
         cout << "generation_id: " << generation_id << endl;
@@ -2242,68 +2290,68 @@ void RNN_Genome::read_from_stream(ifstream &bin_infile, bool verbose) {
         cout << "dropout_probability: " << dropout_probability << endl;
     }
 
-    read_binary_string(bin_infile, log_filename, "log_filename", verbose);
+    read_binary_string(bin_istream, log_filename, "log_filename", verbose);
 
     string generator_str;
-    read_binary_string(bin_infile, generator_str, "generator", verbose);
+    read_binary_string(bin_istream, generator_str, "generator", verbose);
     istringstream generator_iss(generator_str);
     generator_iss >> generator;
 
     string rng_0_1_str;
-    read_binary_string(bin_infile, rng_0_1_str, "rng_0_1", verbose);
+    read_binary_string(bin_istream, rng_0_1_str, "rng_0_1", verbose);
     istringstream rng_0_1_iss;
     rng_0_1_iss >> rng_0_1;
 
 
     string generated_by_map_str;
-    read_binary_string(bin_infile, generated_by_map_str, "generated_by_map", verbose);
+    read_binary_string(bin_istream, generated_by_map_str, "generated_by_map", verbose);
     istringstream generated_by_map_iss(generated_by_map_str);
     read_map(generated_by_map_iss, generated_by_map);
 
-    bin_infile.read((char*)&best_validation_error, sizeof(double));
-    bin_infile.read((char*)&best_validation_mae, sizeof(double));
+    bin_istream.read((char*)&best_validation_error, sizeof(double));
+    bin_istream.read((char*)&best_validation_mae, sizeof(double));
 
     int32_t n_initial_parameters;
-    bin_infile.read((char*)&n_initial_parameters, sizeof(int32_t));
+    bin_istream.read((char*)&n_initial_parameters, sizeof(int32_t));
     if (verbose) cout << "reading " << n_initial_parameters << " initial parameters." << endl;
     double* initial_parameters_v = new double[n_initial_parameters];
-    bin_infile.read((char*)initial_parameters_v, sizeof(double) * n_initial_parameters);
+    bin_istream.read((char*)initial_parameters_v, sizeof(double) * n_initial_parameters);
     initial_parameters.assign(initial_parameters_v, initial_parameters_v + n_initial_parameters);
     delete [] initial_parameters_v;
 
     int32_t n_best_parameters;
-    bin_infile.read((char*)&n_best_parameters, sizeof(int32_t));
+    bin_istream.read((char*)&n_best_parameters, sizeof(int32_t));
     if (verbose) cout << "reading " << n_best_parameters << " best parameters." << endl;
     double* best_parameters_v = new double[n_best_parameters];
-    bin_infile.read((char*)best_parameters_v, sizeof(double) * n_best_parameters);
+    bin_istream.read((char*)best_parameters_v, sizeof(double) * n_best_parameters);
     best_parameters.assign(best_parameters_v, best_parameters_v + n_best_parameters);
     delete [] best_parameters_v;
 
 
     input_parameter_names.clear();
     int32_t n_input_parameter_names;
-    bin_infile.read((char*)&n_input_parameter_names, sizeof(int32_t));
+    bin_istream.read((char*)&n_input_parameter_names, sizeof(int32_t));
     if (verbose) cout << "reading " << n_input_parameter_names << " input parameter names." << endl;
     for (int32_t i = 0; i < n_input_parameter_names; i++) {
         string input_parameter_name;
-        read_binary_string(bin_infile, input_parameter_name, "input_parameter_names[" + std::to_string(i) + "]", verbose);
+        read_binary_string(bin_istream, input_parameter_name, "input_parameter_names[" + std::to_string(i) + "]", verbose);
         input_parameter_names.push_back(input_parameter_name);
     }
 
     output_parameter_names.clear();
     int32_t n_output_parameter_names;
-    bin_infile.read((char*)&n_output_parameter_names, sizeof(int32_t));
+    bin_istream.read((char*)&n_output_parameter_names, sizeof(int32_t));
     if (verbose) cout << "reading " << n_output_parameter_names << " output parameter names." << endl;
     for (int32_t i = 0; i < n_output_parameter_names; i++) {
         string output_parameter_name;
-        read_binary_string(bin_infile, output_parameter_name, "output_parameter_names[" + std::to_string(i) + "]", verbose);
+        read_binary_string(bin_istream, output_parameter_name, "output_parameter_names[" + std::to_string(i) + "]", verbose);
         output_parameter_names.push_back(output_parameter_name);
     }
 
 
 
     int32_t n_nodes;
-    bin_infile.read((char*)&n_nodes, sizeof(int32_t));
+    bin_istream.read((char*)&n_nodes, sizeof(int32_t));
     if (verbose) cout << "reading " << n_nodes << " nodes." << endl;
 
     nodes.clear();
@@ -2314,11 +2362,11 @@ void RNN_Genome::read_from_stream(ifstream &bin_infile, bool verbose) {
         double depth;
         bool enabled;
 
-        bin_infile.read((char*)&innovation_number, sizeof(int32_t)); 
-        bin_infile.read((char*)&type, sizeof(int32_t)); 
-        bin_infile.read((char*)&node_type, sizeof(int32_t)); 
-        bin_infile.read((char*)&depth, sizeof(double)); 
-        bin_infile.read((char*)&enabled, sizeof(bool));
+        bin_istream.read((char*)&innovation_number, sizeof(int32_t)); 
+        bin_istream.read((char*)&type, sizeof(int32_t)); 
+        bin_istream.read((char*)&node_type, sizeof(int32_t)); 
+        bin_istream.read((char*)&depth, sizeof(double)); 
+        bin_istream.read((char*)&enabled, sizeof(bool));
 
         if (verbose) cout << "NODE: " << innovation_number << " " << type << " " << node_type << " " << depth << " " << enabled << endl;
 
@@ -2337,7 +2385,7 @@ void RNN_Genome::read_from_stream(ifstream &bin_infile, bool verbose) {
 
 
     int32_t n_edges;
-    bin_infile.read((char*)&n_edges, sizeof(int32_t));
+    bin_istream.read((char*)&n_edges, sizeof(int32_t));
     if (verbose) cout << "reading " << n_edges << " edges." << endl;
 
     edges.clear();
@@ -2347,10 +2395,10 @@ void RNN_Genome::read_from_stream(ifstream &bin_infile, bool verbose) {
         int32_t output_innovation_number;
         bool enabled;
 
-        bin_infile.read((char*)&innovation_number, sizeof(int32_t)); 
-        bin_infile.read((char*)&input_innovation_number, sizeof(int32_t)); 
-        bin_infile.read((char*)&output_innovation_number, sizeof(int32_t)); 
-        bin_infile.read((char*)&enabled, sizeof(bool));
+        bin_istream.read((char*)&innovation_number, sizeof(int32_t)); 
+        bin_istream.read((char*)&input_innovation_number, sizeof(int32_t)); 
+        bin_istream.read((char*)&output_innovation_number, sizeof(int32_t)); 
+        bin_istream.read((char*)&enabled, sizeof(bool));
 
         if (verbose) cout << "EDGE: " << innovation_number << " " << input_innovation_number << " " << output_innovation_number << " " << enabled << endl;
 
@@ -2361,7 +2409,7 @@ void RNN_Genome::read_from_stream(ifstream &bin_infile, bool verbose) {
 
 
     int32_t n_recurrent_edges;
-    bin_infile.read((char*)&n_recurrent_edges, sizeof(int32_t));
+    bin_istream.read((char*)&n_recurrent_edges, sizeof(int32_t));
     if (verbose) cout << "reading " << n_recurrent_edges << " recurrent_edges." << endl;
 
     recurrent_edges.clear();
@@ -2372,11 +2420,11 @@ void RNN_Genome::read_from_stream(ifstream &bin_infile, bool verbose) {
         int32_t output_innovation_number;
         bool enabled;
 
-        bin_infile.read((char*)&innovation_number, sizeof(int32_t)); 
-        bin_infile.read((char*)&recurrent_depth, sizeof(int32_t)); 
-        bin_infile.read((char*)&input_innovation_number, sizeof(int32_t)); 
-        bin_infile.read((char*)&output_innovation_number, sizeof(int32_t)); 
-        bin_infile.read((char*)&enabled, sizeof(bool));
+        bin_istream.read((char*)&innovation_number, sizeof(int32_t)); 
+        bin_istream.read((char*)&recurrent_depth, sizeof(int32_t)); 
+        bin_istream.read((char*)&input_innovation_number, sizeof(int32_t)); 
+        bin_istream.read((char*)&output_innovation_number, sizeof(int32_t)); 
+        bin_istream.read((char*)&enabled, sizeof(bool));
 
         if (verbose) cout << "RECURRENT EDGE: " << innovation_number << " " << recurrent_depth << " " << input_innovation_number << " " << output_innovation_number << " " << enabled << endl;
 
@@ -2386,33 +2434,43 @@ void RNN_Genome::read_from_stream(ifstream &bin_infile, bool verbose) {
     }
 
     assign_reachability();
-
-    bin_infile.close();
 }
 
+void RNN_Genome::write_to_array(char **bytes, int32_t &length, bool verbose) {
+    ostringstream oss;
+    write_to_stream(oss, verbose);
+
+    string bytes_str = oss.str();
+    length = bytes_str.size();
+    (*bytes) = (char*)malloc(length * sizeof(char));
+    for (uint32_t i = 0; i < length; i++) {
+        (*bytes)[i] = bytes_str[i];
+    }
+}
 
 void RNN_Genome::write_to_file(string bin_filename, bool verbose) {
     ofstream bin_outfile(bin_filename, ios::out | ios::binary);
     write_to_stream(bin_outfile, verbose);
+    bin_outfile.close();
 }
 
-void RNN_Genome::write_to_stream(ofstream &bin_outfile, bool verbose) {
+void RNN_Genome::write_to_stream(ostream &bin_ostream, bool verbose) {
     if (verbose) cout << "WRITING GENOME TO STREAM" << endl;
 
-    bin_outfile.write((char*)&generation_id, sizeof(int32_t));
-    bin_outfile.write((char*)&bp_iterations, sizeof(int32_t));
-    bin_outfile.write((char*)&learning_rate, sizeof(double));
-    bin_outfile.write((char*)&adapt_learning_rate, sizeof(bool));
-    bin_outfile.write((char*)&use_nesterov_momentum, sizeof(bool));
-    bin_outfile.write((char*)&use_reset_weights, sizeof(bool));
+    bin_ostream.write((char*)&generation_id, sizeof(int32_t));
+    bin_ostream.write((char*)&bp_iterations, sizeof(int32_t));
+    bin_ostream.write((char*)&learning_rate, sizeof(double));
+    bin_ostream.write((char*)&adapt_learning_rate, sizeof(bool));
+    bin_ostream.write((char*)&use_nesterov_momentum, sizeof(bool));
+    bin_ostream.write((char*)&use_reset_weights, sizeof(bool));
 
-    bin_outfile.write((char*)&use_high_norm, sizeof(bool));
-    bin_outfile.write((char*)&high_threshold, sizeof(double));
-    bin_outfile.write((char*)&use_low_norm, sizeof(bool));
-    bin_outfile.write((char*)&low_threshold, sizeof(double));
+    bin_ostream.write((char*)&use_high_norm, sizeof(bool));
+    bin_ostream.write((char*)&high_threshold, sizeof(double));
+    bin_ostream.write((char*)&use_low_norm, sizeof(bool));
+    bin_ostream.write((char*)&low_threshold, sizeof(double));
 
-    bin_outfile.write((char*)&use_dropout, sizeof(bool));
-    bin_outfile.write((char*)&dropout_probability, sizeof(double));
+    bin_ostream.write((char*)&use_dropout, sizeof(bool));
+    bin_ostream.write((char*)&dropout_probability, sizeof(double));
 
     if (verbose) {
         cout << "generation_id: " << generation_id << endl;
@@ -2431,77 +2489,75 @@ void RNN_Genome::write_to_stream(ofstream &bin_outfile, bool verbose) {
         cout << "dropout_probability: " << dropout_probability << endl;
     }
 
-    write_binary_string(bin_outfile, log_filename, "log_filename", verbose);
+    write_binary_string(bin_ostream, log_filename, "log_filename", verbose);
 
     ostringstream generator_oss;
     generator_oss << generator;
     string generator_str = generator_oss.str();
-    write_binary_string(bin_outfile, generator_str, "generator", verbose);
+    write_binary_string(bin_ostream, generator_str, "generator", verbose);
 
     ostringstream rng_0_1_oss;
     rng_0_1_oss << rng_0_1;
     string rng_0_1_str = rng_0_1_oss.str();
-    write_binary_string(bin_outfile, rng_0_1_str, "rng_0_1", verbose);
+    write_binary_string(bin_ostream, rng_0_1_str, "rng_0_1", verbose);
 
     ostringstream generated_by_map_oss;
     write_map(generated_by_map_oss, generated_by_map);
     string generated_by_map_str = generated_by_map_oss.str();
-    write_binary_string(bin_outfile, generated_by_map_str, "generated_by_map", verbose);
+    write_binary_string(bin_ostream, generated_by_map_str, "generated_by_map", verbose);
 
-    bin_outfile.write((char*)&best_validation_error, sizeof(double));
-    bin_outfile.write((char*)&best_validation_mae, sizeof(double));
+    bin_ostream.write((char*)&best_validation_error, sizeof(double));
+    bin_ostream.write((char*)&best_validation_mae, sizeof(double));
 
     int32_t n_initial_parameters = initial_parameters.size();
     if (verbose) cout << "writing " << n_initial_parameters << " initial parameters." << endl;
-    bin_outfile.write((char*)&n_initial_parameters, sizeof(int32_t));
-    bin_outfile.write((char*)&initial_parameters[0], sizeof(double) * initial_parameters.size());
+    bin_ostream.write((char*)&n_initial_parameters, sizeof(int32_t));
+    bin_ostream.write((char*)&initial_parameters[0], sizeof(double) * initial_parameters.size());
 
     int32_t n_best_parameters = best_parameters.size();
     if (verbose) cout << "writing " << n_best_parameters << " best parameters." << endl;
-    bin_outfile.write((char*)&n_best_parameters, sizeof(int32_t));
-    bin_outfile.write((char*)&best_parameters[0], sizeof(double) * best_parameters.size());
+    bin_ostream.write((char*)&n_best_parameters, sizeof(int32_t));
+    bin_ostream.write((char*)&best_parameters[0], sizeof(double) * best_parameters.size());
 
     int32_t n_input_parameter_names = input_parameter_names.size();
-    bin_outfile.write((char*)&n_input_parameter_names, sizeof(int32_t));
+    bin_ostream.write((char*)&n_input_parameter_names, sizeof(int32_t));
     for (int32_t i = 0; i < input_parameter_names.size(); i++) {
-        write_binary_string(bin_outfile, input_parameter_names[i], "input_parameter_names[" + std::to_string(i) + "]", verbose);
+        write_binary_string(bin_ostream, input_parameter_names[i], "input_parameter_names[" + std::to_string(i) + "]", verbose);
     }
 
     int32_t n_output_parameter_names = output_parameter_names.size();
-    bin_outfile.write((char*)&n_output_parameter_names, sizeof(int32_t));
+    bin_ostream.write((char*)&n_output_parameter_names, sizeof(int32_t));
     for (int32_t i = 0; i < output_parameter_names.size(); i++) {
-        write_binary_string(bin_outfile, output_parameter_names[i], "output_parameter_names[" + std::to_string(i) + "]", verbose);
+        write_binary_string(bin_ostream, output_parameter_names[i], "output_parameter_names[" + std::to_string(i) + "]", verbose);
     }
 
     int32_t n_nodes = nodes.size();
-    bin_outfile.write((char*)&n_nodes, sizeof(int32_t));
+    bin_ostream.write((char*)&n_nodes, sizeof(int32_t));
     if (verbose) cout << "writing " << n_nodes << " nodes." << endl;
 
     for (int32_t i = 0; i < nodes.size(); i++) {
         if (verbose) cout << "NODE: " << nodes[i]->innovation_number << " " << nodes[i]->type << " " << nodes[i]->node_type << " " << nodes[i]->depth << endl;
-        nodes[i]->write_to_stream(bin_outfile);
+        nodes[i]->write_to_stream(bin_ostream);
     }
 
 
     int32_t n_edges = edges.size();
-    bin_outfile.write((char*)&n_edges, sizeof(int32_t));
+    bin_ostream.write((char*)&n_edges, sizeof(int32_t));
     if (verbose) cout << "writing " << n_edges << " edges." << endl;
 
     for (int32_t i = 0; i < edges.size(); i++) {
         if (verbose) cout << "EDGE: " << edges[i]->innovation_number << " " << edges[i]->input_innovation_number << " " << edges[i]->output_innovation_number << endl;
-        edges[i]->write_to_stream(bin_outfile);
+        edges[i]->write_to_stream(bin_ostream);
     }
 
 
     int32_t n_recurrent_edges = recurrent_edges.size();
-    bin_outfile.write((char*)&n_recurrent_edges, sizeof(int32_t));
+    bin_ostream.write((char*)&n_recurrent_edges, sizeof(int32_t));
     if (verbose) cout << "writing " << n_recurrent_edges << " recurrent_edges." << endl;
 
     for (int32_t i = 0; i < recurrent_edges.size(); i++) {
         if (verbose) cout << "RECURRENT EDGE: " << recurrent_edges[i]->innovation_number << " " << recurrent_edges[i]->recurrent_depth << " " << recurrent_edges[i]->input_innovation_number << " " << recurrent_edges[i]->output_innovation_number << endl;
 
-        recurrent_edges[i]->write_to_stream(bin_outfile);
+        recurrent_edges[i]->write_to_stream(bin_ostream);
     }
-
-    bin_outfile.close();
 }

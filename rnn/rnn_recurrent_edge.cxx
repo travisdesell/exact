@@ -215,7 +215,7 @@ bool RNN_Recurrent_Edge::equals(RNN_Recurrent_Edge *other) const {
     return false;
 }
 
-void RNN_Recurrent_Edge::write_to_stream(ofstream &out) {
+void RNN_Recurrent_Edge::write_to_stream(ostream &out) {
     out.write((char*)&innovation_number, sizeof(int32_t));
     out.write((char*)&recurrent_depth, sizeof(int32_t));
     out.write((char*)&input_innovation_number, sizeof(int32_t));

@@ -121,15 +121,18 @@ void RNN::get_weights(vector<double> &parameters) {
     uint32_t current = 0;
 
     for (uint32_t i = 0; i < nodes.size(); i++) {
-        if (nodes[i]->is_reachable()) nodes[i]->get_weights(current, parameters);
+        nodes[i]->get_weights(current, parameters);
+        //if (nodes[i]->is_reachable()) nodes[i]->get_weights(current, parameters);
     }
 
     for (uint32_t i = 0; i < edges.size(); i++) {
-        if (edges[i]->is_reachable()) parameters[current++] = edges[i]->weight;
+        parameters[current++] = edges[i]->weight;
+        //if (edges[i]->is_reachable()) parameters[current++] = edges[i]->weight;
     }
 
     for (uint32_t i = 0; i < recurrent_edges.size(); i++) {
-        if (recurrent_edges[i]->is_reachable()) parameters[current++] = recurrent_edges[i]->weight;
+        parameters[current++] = recurrent_edges[i]->weight;
+        //if (recurrent_edges[i]->is_reachable()) parameters[current++] = recurrent_edges[i]->weight;
     }
 }
 
@@ -142,15 +145,18 @@ void RNN::set_weights(const vector<double> &parameters) {
     uint32_t current = 0;
 
     for (uint32_t i = 0; i < nodes.size(); i++) {
-        if (nodes[i]->is_reachable()) nodes[i]->set_weights(current, parameters);
+        nodes[i]->set_weights(current, parameters);
+        //if (nodes[i]->is_reachable()) nodes[i]->set_weights(current, parameters);
     }
 
     for (uint32_t i = 0; i < edges.size(); i++) {
-        if (edges[i]->is_reachable()) edges[i]->weight = parameters[current++];
+        edges[i]->weight = parameters[current++];
+        //if (edges[i]->is_reachable()) edges[i]->weight = parameters[current++];
     }
 
     for (uint32_t i = 0; i < recurrent_edges.size(); i++) {
-        if (recurrent_edges[i]->is_reachable()) recurrent_edges[i]->weight = parameters[current++];
+        recurrent_edges[i]->weight = parameters[current++];
+        //if (recurrent_edges[i]->is_reachable()) recurrent_edges[i]->weight = parameters[current++];
     }
 
 }
@@ -159,15 +165,18 @@ uint32_t RNN::get_number_weights() {
     uint32_t number_weights = 0;
 
     for (uint32_t i = 0; i < nodes.size(); i++) {
-        if (nodes[i]->is_reachable()) number_weights += nodes[i]->get_number_weights();
+        number_weights += nodes[i]->get_number_weights();
+        //if (nodes[i]->is_reachable()) number_weights += nodes[i]->get_number_weights();
     }
 
     for (uint32_t i = 0; i < edges.size(); i++) {
-        if (edges[i]->is_reachable()) number_weights++;
+        number_weights++;
+        //if (edges[i]->is_reachable()) number_weights++;
     }
 
     for (uint32_t i = 0; i < recurrent_edges.size(); i++) {
-        if (recurrent_edges[i]->is_reachable()) number_weights++;
+        number_weights++;
+        //if (recurrent_edges[i]->is_reachable()) number_weights++;
     }
 
     return number_weights;

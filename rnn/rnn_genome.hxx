@@ -2,7 +2,9 @@
 #define RNN_BPTT_HXX
 
 #include <fstream>
+using std::istream;
 using std::ifstream;
+using std::ostream;
 using std::ofstream;
 
 #include <map>
@@ -105,6 +107,7 @@ class RNN_Genome {
         void initialize_randomly();
 
         int32_t get_generation_id() const;
+        void set_generation_id(int32_t generation_id);
         double get_validation_error() const;
 
         void set_generated_by(string type);
@@ -155,11 +158,15 @@ class RNN_Genome {
         void write_graphviz(string filename);
 
         RNN_Genome(string binary_filename, bool verbose = false);
-        RNN_Genome(ifstream &bin_infile, bool verbose = false);
+        RNN_Genome(char* array, int32_t length, bool verbose = false);
+        RNN_Genome(istream &bin_infile, bool verbose = false);
 
-        void read_from_stream(ifstream &bin_infile, bool verbose = false);
+        void read_from_array(char *array, int32_t length, bool verbose = false);
+        void read_from_stream(istream &bin_istream, bool verbose = false);
+
+        void write_to_array(char **array, int32_t &length, bool verbose = false);
         void write_to_file(string bin_filename, bool verbose = false);
-        void write_to_stream(ofstream &bin_outfile, bool verbose = false);
+        void write_to_stream(ostream &bin_stream, bool verbose = false);
 
 
         friend class EXALT;

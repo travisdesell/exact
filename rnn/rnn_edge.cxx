@@ -208,7 +208,7 @@ bool RNN_Edge::equals(RNN_Edge *other) const {
     return false;
 }
 
-void RNN_Edge::write_to_stream(ofstream &out) {
+void RNN_Edge::write_to_stream(ostream &out) {
     out.write((char*)&innovation_number, sizeof(int32_t));
     out.write((char*)&input_innovation_number, sizeof(int32_t));
     out.write((char*)&output_innovation_number, sizeof(int32_t));

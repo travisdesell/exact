@@ -4,7 +4,7 @@
 #include <cstdint>
 
 #include <fstream>
-using std::ofstream;
+using std::ostream;
 
 #include <random>
 using std::minstd_rand0;
@@ -77,7 +77,7 @@ class RNN_Node_Interface {
 
         virtual RNN_Node_Interface* copy() const = 0;
 
-        void write_to_stream(ofstream &out);
+        void write_to_stream(ostream &out);
 
         int32_t get_type() const;
         int32_t get_innovation_number() const;

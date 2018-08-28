@@ -53,7 +53,7 @@ class RNN_Recurrent_Edge {
         const RNN_Node_Interface* get_input_node() const;
         const RNN_Node_Interface* get_output_node() const;
 
-        void write_to_stream(ofstream &out);
+        void write_to_stream(ostream &out);
 
         bool equals(RNN_Recurrent_Edge *other) const;
 

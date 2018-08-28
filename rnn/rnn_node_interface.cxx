@@ -1,7 +1,7 @@
 #include <cmath>
 
 #include <fstream>
-using std::ofstream;
+using std::ostream;
 
 #include "rnn_node_interface.hxx"
 
@@ -68,7 +68,7 @@ bool RNN_Node_Interface::equals(RNN_Node_Interface *other) const {
     return false;
 }
 
-void RNN_Node_Interface::write_to_stream(ofstream &out) {
+void RNN_Node_Interface::write_to_stream(ostream &out) {
     out.write((char*)&innovation_number, sizeof(int32_t)); 
     out.write((char*)&type, sizeof(int32_t)); 
     out.write((char*)&node_type, sizeof(int32_t)); 

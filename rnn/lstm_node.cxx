@@ -1,7 +1,7 @@
 #include <cmath>
 
 #include <fstream>
-using std::ofstream;
+using std::ostream;
 
 #include <iomanip>
 using std::setw;
@@ -603,7 +603,7 @@ int main(int argc, char **argv) {
     }
 }
 
-void LSTM_Node::write_to_stream(ofstream &out) {
+void LSTM_Node::write_to_stream(ostream &out) {
     RNN_Node_Interface::write_to_stream(out);
 }
 
