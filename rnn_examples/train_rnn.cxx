@@ -33,7 +33,6 @@ using std::vector;
 
 #include "time_series/time_series.hxx"
 
-#include "mpi/mpi_ant_colony_optimization_new.hxx"
 #include "mpi/mpi_particle_swarm.hxx"
 #include "mpi/mpi_differential_evolution.hxx"
 

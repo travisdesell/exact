@@ -80,8 +80,11 @@ ELSE (${TAO_INCLUDE_DIR} STREQUAL "TAO_INCLUDE_DIR-NOTFOUND")
     FIND_LIBRARY(TAO_MPI_LIBRARY NAMES mpi_algorithms PATHS ../tao/build/mpi PATH_SUFFIXES lib)
     FIND_LIBRARY(TAO_SYNCH_LIBRARY NAMES synchronous_algorithms PATHS ../tao/build/synchronous_algorithms PATH_SUFFIXES lib)
     FIND_LIBRARY(TAO_ASYNCH_LIBRARY NAMES asynchronous_algorithms PATHS ../tao/build/asynchronous_algorithms PATH_SUFFIXES lib)
-    FIND_LIBRARY(TAO_DB_ASYNCH_LIBRARY NAMES db_asynchronous_algorithms PATHS ../tao/build/asynchronous_algorithms PATH_SUFFIXES lib)
-    FIND_LIBRARY(TAO_NN_LIBRARY NAMES neural_networks PATHS ../tao/build/neural_networks PATH_SUFFIXES lib)
+
+    IF (MYSQL_FOUND)
+        FIND_LIBRARY(TAO_DB_ASYNCH_LIBRARY NAMES db_asynchronous_algorithms PATHS ../tao/build/asynchronous_algorithms PATH_SUFFIXES lib)
+    ENDIf (MYSQL_FOUND)
+
     FIND_LIBRARY(TAO_UTIL_LIBRARY NAMES tao_util PATHS ../tao/build/util  PATH_SUFFIXES lib)
     set(TAO_LIBRARY ${TAO_MPI_LIBRARY} ${TAO_SYNCH_LIBRARY} ${TAO_ASYNCH_LIBRARY} ${TAO_DB_ASYNCH_LIBRARY} ${TAO_NN_LIBRARY} ${TAO_UTIL_LIBRARY})
     MESSAGE(STATUS "TAO library: ${TAO_LIBRARY}")

@@ -186,9 +186,10 @@ bool EXALT::insert_genome(RNN_Genome* genome) {
 
         if (genomes.size() == 0 || genome->get_validation_error() < genomes[0]->get_validation_error()) {
             cout << "new best fitness!" << endl;
-            //genome->write_graphviz("rnn_genome_" + to_string(inserted_genomes) + ".gv");
-            //genome->write_to_file("rnn_genome_" + to_string(inserted_genomes) + ".bin");
-        }
+            genome->write_graphviz(output_directory + "/rnn_genome_" + to_string(inserted_genomes) + ".gv");
+            genome->write_to_file(output_directory + "/rnn_genome_" + to_string(inserted_genomes) + ".bin");
+
+}
 
         for (auto i = inserted_from_map.begin(); i != inserted_from_map.end(); i++) {
             inserted_from_map[i->first] += genome->get_generated_by(i->first);
@@ -316,8 +317,8 @@ RNN_Genome* EXALT::generate_genome() {
         }
     }
 
-    genome->write_graphviz(output_directory + "/rnn_genome_" + to_string(generated_genomes) + ".gv");
-    genome->write_to_file(output_directory + "/rnn_genome_" + to_string(generated_genomes) + ".bin");
+    //genome->write_graphviz(output_directory + "/rnn_genome_" + to_string(generated_genomes) + ".gv");
+    //genome->write_to_file(output_directory + "/rnn_genome_" + to_string(generated_genomes) + ".bin");
 
     if (!epigenetic_weights) genome->initialize_randomly();
 
