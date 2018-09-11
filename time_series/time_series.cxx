@@ -1,5 +1,8 @@
 #include <cmath>
 
+#include <algorithm>
+using std::find;
+
 #include <fstream>
 using std::ifstream;
 
@@ -495,7 +498,7 @@ void TimeSeriesSet::split(int slices, vector<TimeSeriesSet*> &sub_series) {
 
 void TimeSeriesSet::select_parameters(const vector<string> &parameter_names) {
     for (auto series = time_series.begin(); series != time_series.end(); series++) {
-        if (find(parameter_names.begin(), parameter_names.end(), series->first) == parameter_names.end()) {
+        if (std::find(parameter_names.begin(), parameter_names.end(), series->first) == parameter_names.end()) {
             cout << "removing series: '" << series->first << "'" << endl;
             time_series.erase(series->first);
         }

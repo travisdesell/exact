@@ -19,8 +19,6 @@ using std::string;
 #include <vector>
 using std::vector;
 
-#include "mpi.h"
-
 #include "common/arguments.hxx"
 
 #include "rnn/lstm_node.hxx"

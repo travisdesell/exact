@@ -1,3 +1,7 @@
+#include <algorithm>
+using std::sort;
+using std::upper_bound;
+
 #include <cmath>
 
 #include <fstream>
@@ -1240,7 +1244,7 @@ void RNN_Genome::get_mu_sigma(const vector<double> &p, double &mu, double &sigma
     sigma = sqrt(sigma);
 
     cout << "\tmu: " << mu << ", sigma: " << sigma << ", parameters.size(): " << p.size() << endl;
-    if (isnan(mu) || isinf(mu) || isnan(sigma) || isinf(sigma)) {
+    if (std::isnan(mu) || std::isinf(mu) || std::isnan(sigma) || std::isinf(sigma)) {
         cerr << "mu or sigma was not a number, best parameters: " << endl;
         for (int32_t i = 0; i < (int32_t)p.size(); i++) { 
             cerr << "\t" << p[i] << endl;

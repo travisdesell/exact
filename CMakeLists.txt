@@ -63,34 +63,6 @@ ELSE (COMPILE_CLIENT STREQUAL "YES")
     ENDIF (TIFF_FOUND)
 ENDIF (COMPILE_CLIENT STREQUAL "YES")
 
-FIND_PATH(TAO_INCLUDE_DIR ./examples/benchmarks.hxx
-    ../tao #add addiitonal paths here if undvc_common is in a different directory
-    )
-
-IF (${TAO_INCLUDE_DIR} STREQUAL "TAO_INCLUDE_DIR-NOTFOUND") 
-    SET (TAO_FOUND FALSE)
-    MESSAGE(STATUS "TAO NOT FOUND!")
-    SET(TAO_INCLUDE_DIR "")
-
-ELSE (${TAO_INCLUDE_DIR} STREQUAL "TAO_INCLUDE_DIR-NOTFOUND") 
-    SET (TAO_FOUND TRUE)
-
-    MESSAGE(STATUS "TAO include directory: ${TAO_INCLUDE_DIR}")
-
-    FIND_LIBRARY(TAO_MPI_LIBRARY NAMES mpi_algorithms PATHS ../tao/build/mpi PATH_SUFFIXES lib)
-    FIND_LIBRARY(TAO_SYNCH_LIBRARY NAMES synchronous_algorithms PATHS ../tao/build/synchronous_algorithms PATH_SUFFIXES lib)
-    FIND_LIBRARY(TAO_ASYNCH_LIBRARY NAMES asynchronous_algorithms PATHS ../tao/build/asynchronous_algorithms PATH_SUFFIXES lib)
-
-    IF (MYSQL_FOUND)
-        FIND_LIBRARY(TAO_DB_ASYNCH_LIBRARY NAMES db_asynchronous_algorithms PATHS ../tao/build/asynchronous_algorithms PATH_SUFFIXES lib)
-    ENDIf (MYSQL_FOUND)
-
-    FIND_LIBRARY(TAO_UTIL_LIBRARY NAMES tao_util PATHS ../tao/build/util  PATH_SUFFIXES lib)
-    set(TAO_LIBRARY ${TAO_MPI_LIBRARY} ${TAO_SYNCH_LIBRARY} ${TAO_ASYNCH_LIBRARY} ${TAO_DB_ASYNCH_LIBRARY} ${TAO_NN_LIBRARY} ${TAO_UTIL_LIBRARY})
-    MESSAGE(STATUS "TAO library: ${TAO_LIBRARY}")
-
-ENDIF (${TAO_INCLUDE_DIR} STREQUAL "TAO_INCLUDE_DIR-NOTFOUND") 
-
 
 add_subdirectory(common)
 add_subdirectory(image_tools)
@@ -111,15 +83,12 @@ ENDIF (COMPILE_CLIENT STREQUAL "YES")
 
 
 IF (COMPILE_CLIENT STREQUAL "NO")
-    IF (TAO_FOUND)
-        include_directories(${TAO_INCLUDE_DIR})
 
-        add_subdirectory(rnn)
-        add_subdirectory(rnn_tests)
-        add_subdirectory(rnn_examples)
-    ENDIF (TAO_FOUND)
+    add_subdirectory(rnn)
+    add_subdirectory(rnn_tests)
+    add_subdirectory(rnn_examples)
 
-    add_subdirectory(opencl)
+    #add_subdirectory(opencl)
 
     add_subdirectory(cnn_tests)
     add_subdirectory(cnn_examples)
