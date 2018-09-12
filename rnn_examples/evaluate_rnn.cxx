@@ -25,64 +25,34 @@ using std::vector;
 
 #include "common/arguments.hxx"
 
-#include "rnn/exalt.hxx"
+#include "rnn/rnn_genome.hxx"
 
 #include "time_series/time_series.hxx"
 
 
-mutex exalt_mutex;
-
 vector<string> arguments;
-
-EXALT *exalt;
-
-
-bool finished = false;
-
 
 vector< vector< vector<double> > > training_inputs;
 vector< vector< vector<double> > > training_outputs;
-vector< vector< vector<double> > > validation_inputs;
-vector< vector< vector<double> > > validation_outputs;
-
-
-void exalt_thread(int id) {
-
-    while (true) {
-        exalt_mutex.lock();
-        RNN_Genome *genome = exalt->generate_genome();
-        exalt_mutex.unlock();
-
-        if (genome == NULL) break;  //generate_individual returns NULL when the search is done
-
-        //genome->backpropagate(training_inputs, training_outputs, validation_inputs, validation_outputs);
-        genome->backpropagate_stochastic(training_inputs, training_outputs, validation_inputs, validation_outputs);
-
-        exalt_mutex.lock();
-        exalt->insert_genome(genome);
-        exalt_mutex.unlock();
-
-        delete genome;
-    }
-}
+vector< vector< vector<double> > > testing_inputs;
+vector< vector< vector<double> > > testing_outputs;
 
 int main(int argc, char** argv) {
     arguments = vector<string>(argv, argv + argc);
 
-    int number_threads;
-    get_argument(arguments, "--number_threads", true, number_threads);
-
     vector<string> training_filenames;
     get_argument_vector(arguments, "--training_filenames", true, training_filenames);
 
-    vector<string> validation_filenames;
-    get_argument_vector(arguments, "--validation_filenames", true, validation_filenames);
+    vector<string> testing_filenames;
+    get_argument_vector(arguments, "--testing_filenames", true, testing_filenames);
 
     int32_t time_offset = 1;
     get_argument(arguments, "--time_offset", true, time_offset);
 
     bool normalize = argument_exists(arguments, "--normalize");
 
+    string genome_filename;
+    get_argument(arguments, "--genome_file", true, genome_filename);
 
     vector<string> input_parameter_names;
     /*
@@ -154,77 +124,38 @@ int main(int argc, char** argv) {
     */
 
 
-    vector<TimeSeriesSet*> training_time_series, validation_time_series;
-    load_time_series(training_filenames, validation_filenames, normalize, training_time_series, validation_time_series);
+    vector<TimeSeriesSet*> training_time_series, testing_time_series;
+    load_time_series(training_filenames, testing_filenames, normalize, training_time_series, testing_time_series);
 
     export_time_series(training_time_series, input_parameter_names, output_parameter_names, time_offset, training_inputs, training_outputs);
-    export_time_series(validation_time_series, input_parameter_names, output_parameter_names, time_offset, validation_inputs, validation_outputs);
+    export_time_series(testing_time_series, input_parameter_names, output_parameter_names, time_offset, testing_inputs, testing_outputs);
 
     int number_inputs = training_inputs[0].size();
     int number_outputs = training_outputs[0].size();
 
     cout << "number_inputs: " << number_inputs << ", number_outputs: " << number_outputs << endl;
 
-    int32_t population_size;
-    get_argument(arguments, "--population_size", true, population_size);
-
-    int32_t max_genomes;
-    get_argument(arguments, "--max_genomes", true, max_genomes);
-
-    int32_t bp_iterations;
-    get_argument(arguments, "--bp_iterations", true, bp_iterations);
-
-    double learning_rate = 0.001;
-    get_argument(arguments, "--learning_rate", false, learning_rate);
-
-    double high_threshold = 1.0;
-    bool use_high_threshold = get_argument(arguments, "--high_threshold", false, high_threshold);
-
-    double low_threshold = 0.05;
-    bool use_low_threshold = get_argument(arguments, "--low_threshold", false, low_threshold);
-
-    double dropout_probability = 0.0;
-    bool use_dropout = get_argument(arguments, "--dropout_probability", false, dropout_probability);
-
-    string log_filename = "";
-    get_argument(arguments, "--log_filename", false, log_filename);
-
-    string output_filename;
-    get_argument(arguments, "--output_filename", true, output_filename);
-
-    exalt = new EXALT(population_size, max_genomes, input_parameter_names, output_parameter_names, bp_iterations, learning_rate, use_high_threshold, high_threshold, use_low_threshold, low_threshold, use_dropout, dropout_probability, log_filename);
-
-
-    vector<thread> threads;
-    for (int32_t i = 0; i < number_threads; i++) {
-        threads.push_back( thread(exalt_thread, i) );
-    }
-
-    for (int32_t i = 0; i < number_threads; i++) {
-        threads[i].join();
-    }
-
-    finished = true;
-
-    cout << "completed!" << endl;
-
-    RNN_Genome *best_genome = exalt->get_best_genome();
-
-    vector<double> best_parameters = best_genome->get_best_parameters();
-    cout << "training MSE: " << best_genome->get_mse(best_parameters, training_inputs, training_outputs) << endl;
-    cout << "training MAE: " << best_genome->get_mae(best_parameters, training_inputs, training_outputs) << endl;
-    cout << "validation MSE: " << best_genome->get_mse(best_parameters, validation_inputs, validation_outputs) << endl;
-    cout << "validation MAE: " << best_genome->get_mae(best_parameters, validation_inputs, validation_outputs) << endl;
-
-    best_genome->write_to_file(output_filename, false);
-
-    RNN_Genome *duplicate_genome = new RNN_Genome(output_filename, false);
+    RNN_Genome *duplicate_genome = new RNN_Genome(genome_filename, true);
 
     vector<double> duplicate_parameters = duplicate_genome->get_best_parameters();
-    cout << "training MSE: " << duplicate_genome->get_mse(duplicate_parameters, training_inputs, training_outputs) << endl;
-    cout << "training MAE: " << duplicate_genome->get_mae(duplicate_parameters, training_inputs, training_outputs) << endl;
-    cout << "validation MSE: " << duplicate_genome->get_mse(duplicate_parameters, validation_inputs, validation_outputs) << endl;
-    cout << "validation MAE: " << duplicate_genome->get_mae(duplicate_parameters, validation_inputs, validation_outputs) << endl;
+    cout << "MSE: " << duplicate_genome->get_mse(duplicate_parameters, testing_inputs, testing_outputs) << endl;
+    cout << "MAE: " << duplicate_genome->get_mae(duplicate_parameters, testing_inputs, testing_outputs) << endl;
+    duplicate_genome->write_predictions(testing_filenames, duplicate_parameters, testing_inputs, testing_outputs);
+
+    int length;
+    char *byte_array;
+
+    duplicate_genome->write_to_array(&byte_array, length, true);
+
+    cout << endl << endl << "WROTE TO BYTE ARRAY WITH LENGTH: " << length << endl << endl;
+
+    RNN_Genome *duplicate_genome_2 = new RNN_Genome(byte_array, length, true);
+
+    vector<double> duplicate_parameters_2 = duplicate_genome_2->get_best_parameters();
+    cout << "MSE: " << duplicate_genome_2->get_mse(duplicate_parameters_2, testing_inputs, testing_outputs) << endl;
+    cout << "MAE: " << duplicate_genome_2->get_mae(duplicate_parameters_2, testing_inputs, testing_outputs) << endl;
+    duplicate_genome_2->write_predictions(testing_filenames, duplicate_parameters_2, testing_inputs, testing_outputs);
+
 
     return 0;
 }

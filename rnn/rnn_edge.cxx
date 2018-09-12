@@ -129,6 +129,8 @@ void RNN_Edge::propagate_backward(int time) {
         exit(1);
     }
 
+    //cout << "propgating backward on edge " << innovation_number << " at time " << time << " from node " << output_innovation_number << " to node " << input_innovation_number << endl;
+
     double delta = output_node->d_input[time];
 
     d_weight += delta * input_node->output_values[time];
@@ -204,4 +206,11 @@ bool RNN_Edge::is_reachable() const {
 bool RNN_Edge::equals(RNN_Edge *other) const {
     if (innovation_number == other->innovation_number && enabled == other->enabled) return true;
     return false;
+}
+
+void RNN_Edge::write_to_stream(ostream &out) {
+    out.write((char*)&innovation_number, sizeof(int32_t));
+    out.write((char*)&input_innovation_number, sizeof(int32_t));
+    out.write((char*)&output_innovation_number, sizeof(int32_t));
+    out.write((char*)&enabled, sizeof(bool));
 }

@@ -49,6 +49,8 @@ class EXALT {
         uniform_real_distribution<double> rng_0_1;
         uniform_real_distribution<double> rng_crossover_weight;
 
+        int32_t max_recurrent_depth;
+
         bool epigenetic_weights;
         double crossover_rate;
         double more_fit_crossover_rate;
@@ -70,7 +72,7 @@ class EXALT {
         double split_node_rate;
         double merge_node_rate;
 
-        string log_filename;
+        string output_directory;
         ofstream *log_file;
 
         vector<string> input_parameter_names;
@@ -78,7 +80,7 @@ class EXALT {
 
 
     public:
-        EXALT(int32_t _population_size, int32_t _max_genomes, int32_t _number_inputs, int32_t _number_outputs, const vector<string> &_input_parameter_names, const vector<string> &_output_parameter_names, int32_t _bp_iterations, double _learning_rate, bool _use_high_threshold, double _high_threshold, bool _use_low_threshold, double _low_threshold, bool _use_dropout, double _dropout_probability, string _log_filename);
+        EXALT(int32_t _population_size, int32_t _max_genomes, const vector<string> &_input_parameter_names, const vector<string> &_output_parameter_names, int32_t _bp_iterations, double _learning_rate, bool _use_high_threshold, double _high_threshold, bool _use_low_threshold, double _low_threshold, bool _use_dropout, double _dropout_probability, string _output_directory);
 
         void print_population();
         int32_t population_contains(RNN_Genome* genome);
@@ -96,6 +98,10 @@ class EXALT {
 
         double get_best_fitness() const;
         double get_worst_fitness() const;
+
+        string get_output_directory() const;
+
+        RNN_Genome* get_best_genome();
 };
 
 #endif

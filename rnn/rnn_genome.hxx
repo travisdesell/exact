@@ -1,6 +1,12 @@
 #ifndef RNN_BPTT_HXX
 #define RNN_BPTT_HXX
 
+#include <fstream>
+using std::istream;
+using std::ifstream;
+using std::ostream;
+using std::ofstream;
+
 #include <map>
 using std::map;
 
@@ -69,6 +75,7 @@ class RNN_Genome {
         RNN_Genome(vector<RNN_Node_Interface*> &_nodes, vector<RNN_Edge*> &_edges, vector<RNN_Recurrent_Edge*> &_recurrent_edges);
         RNN_Genome(vector<RNN_Node_Interface*> &_nodes, vector<RNN_Edge*> &_edges, vector<RNN_Recurrent_Edge*> &_recurrent_edges, uint16_t seed);
 
+
         RNN_Genome* copy();
 
         ~RNN_Genome();
@@ -100,6 +107,7 @@ class RNN_Genome {
         void initialize_randomly();
 
         int32_t get_generation_id() const;
+        void set_generation_id(int32_t generation_id);
         double get_validation_error() const;
 
         void set_generated_by(string type);
@@ -107,6 +115,7 @@ class RNN_Genome {
 
 
         RNN* get_rnn();
+        vector<double> get_best_parameters() const;
 
         void get_analytic_gradient(vector<RNN*> &rnns, const vector<double> &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, double &mse, vector<double> &analytic_gradient, bool training);
 
@@ -118,6 +127,8 @@ class RNN_Genome {
         double get_mse(const vector<double> &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, bool verbose = false);
         double get_mae(const vector<double> &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, bool verbose = false);
 
+        void write_predictions(const vector<string> &input_filenames, const vector<double> &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs);
+
         void get_mu_sigma(const vector<double> &p, double &mu, double &sigma);
 
         bool sanity_check();
@@ -126,25 +137,36 @@ class RNN_Genome {
 
         RNN_Node_Interface* create_node(double mu, double sigma, double lstm_node_rate, int32_t &node_innovation_count, double depth);
         bool attempt_edge_insert(RNN_Node_Interface *n1, RNN_Node_Interface *n2, double mu, double sigma, int32_t &edge_innovation_count);
-        bool attempt_recurrent_edge_insert(RNN_Node_Interface *n1, RNN_Node_Interface *n2, double mu, double sigma, int32_t &edge_innovation_count);
+        bool attempt_recurrent_edge_insert(RNN_Node_Interface *n1, RNN_Node_Interface *n2, double mu, double sigma, int32_t max_recurrent_depth, int32_t &edge_innovation_count);
 
         bool add_edge(double mu, double sigma, int32_t &edge_innovation_count);
-        bool add_recurrent_edge(double mu, double sigma, int32_t &edge_innovation_count);
+        bool add_recurrent_edge(double mu, double sigma, int32_t max_recurrent_depth, int32_t &edge_innovation_count);
         bool disable_edge();
         bool enable_edge();
-        bool split_edge(double mu, double sigma, double lstm_node_rate, int32_t &edge_innovation_count, int32_t &node_innovation_count);
+        bool split_edge(double mu, double sigma, double lstm_node_rate, int32_t max_recurrent_depth, int32_t &edge_innovation_count, int32_t &node_innovation_count);
 
-        bool add_node(double mu, double sigma, double lstm_node_rate, int32_t &edge_innovation_count, int32_t &node_innovation_count);
+        bool add_node(double mu, double sigma, double lstm_node_rate, int32_t max_recurrent_depth, int32_t &edge_innovation_count, int32_t &node_innovation_count);
         bool enable_node();
         bool disable_node();
-        bool split_node(double mu, double sigma, double lstm_node_rate, int32_t &edge_innovation_count, int32_t &node_innovation_count);
-        bool merge_node(double mu, double sigma, double lstm_node_rate, int32_t &edge_innovation_count, int32_t &node_innovation_count);
+        bool split_node(double mu, double sigma, double lstm_node_rate, int32_t max_recurrent_depth, int32_t &edge_innovation_count, int32_t &node_innovation_count);
+        bool merge_node(double mu, double sigma, double lstm_node_rate, int32_t max_recurrent_depth, int32_t &edge_innovation_count, int32_t &node_innovation_count);
 
 
         bool equals(RNN_Genome *other);
 
         string get_color(double weight, bool is_recurrent);
-        void print_graphviz(string filename);
+        void write_graphviz(string filename);
+
+        RNN_Genome(string binary_filename, bool verbose = false);
+        RNN_Genome(char* array, int32_t length, bool verbose = false);
+        RNN_Genome(istream &bin_infile, bool verbose = false);
+
+        void read_from_array(char *array, int32_t length, bool verbose = false);
+        void read_from_stream(istream &bin_istream, bool verbose = false);
+
+        void write_to_array(char **array, int32_t &length, bool verbose = false);
+        void write_to_file(string bin_filename, bool verbose = false);
+        void write_to_stream(ostream &bin_stream, bool verbose = false);
 
 
         friend class EXALT;

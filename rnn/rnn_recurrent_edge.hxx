@@ -7,8 +7,11 @@ class RNN;
 
 class RNN_Recurrent_Edge {
     private:
-        int innovation_number;
-        int series_length;
+        int32_t innovation_number;
+        int32_t series_length;
+
+        //how far in the past to get the value
+        int32_t recurrent_depth;
 
         vector<double> outputs;
         vector<double> deltas;
@@ -20,23 +23,23 @@ class RNN_Recurrent_Edge {
         bool forward_reachable;
         bool backward_reachable;
 
-        int input_innovation_number;
-        int output_innovation_number;
+        int32_t input_innovation_number;
+        int32_t output_innovation_number;
 
         RNN_Node_Interface *input_node;
         RNN_Node_Interface *output_node;
 
     public:
-        RNN_Recurrent_Edge(int _innovation_number, RNN_Node_Interface *_input_node, RNN_Node_Interface *_output_node);
+        RNN_Recurrent_Edge(int32_t _innovation_number, int32_t _recurrent_depth, RNN_Node_Interface *_input_node, RNN_Node_Interface *_output_node);
 
-        RNN_Recurrent_Edge(int _innovation_number, int _input_innovation_number, int _output_innovation_number, const vector<RNN_Node_Interface*> &nodes);
+        RNN_Recurrent_Edge(int32_t _innovation_number, int32_t _recurrent_depth, int32_t _input_innovation_number, int32_t _output_innovation_number, const vector<RNN_Node_Interface*> &nodes);
 
-        void reset(int _series_length);
+        void reset(int32_t _series_length);
 
         void first_propagate_forward();
         void first_propagate_backward();
-        void propagate_forward(int time);
-        void propagate_backward(int time);
+        void propagate_forward(int32_t time);
+        void propagate_backward(int32_t time);
 
         double get_gradient();
         bool is_reachable() const;
@@ -50,6 +53,7 @@ class RNN_Recurrent_Edge {
         const RNN_Node_Interface* get_input_node() const;
         const RNN_Node_Interface* get_output_node() const;
 
+        void write_to_stream(ostream &out);
 
         bool equals(RNN_Recurrent_Edge *other) const;
 

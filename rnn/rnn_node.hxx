@@ -38,6 +38,8 @@ class RNN_Node : public RNN_Node_Interface {
 
         RNN_Node_Interface* copy() const;
 
+        void write_to_stream(ostream &out);
+
         friend class RNN_Edge;
 };
 

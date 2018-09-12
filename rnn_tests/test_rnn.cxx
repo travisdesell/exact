@@ -19,8 +19,6 @@ using std::string;
 #include <vector>
 using std::vector;
 
-#include "mpi.h"
-
 #include "common/arguments.hxx"
 
 #include "rnn/lstm_node.hxx"
@@ -117,336 +115,341 @@ int main(int argc, char **argv) {
     bool test_elman = true;
     bool test_lstm = true;
 
-    if (test_ff) {
-        //Test 1 input, 1 output, no hidden
-        genome = create_ff(1, 0, 0, 1);
-        test_rnn("FF: 1 Input, 1 Output", genome, inputs, outputs);
-        delete genome;
+    for (int32_t max_recurrent_depth = 1; max_recurrent_depth <= 5; max_recurrent_depth++) {
+        cout << "\n\testing with max recurrent depth: " << max_recurrent_depth << endl;
 
-        genome = create_ff(1, 1, 1, 1);
-        test_rnn("FF: 1 Input, 1x1 Hidden, 1 Output", genome, inputs, outputs);
-        delete genome;
+        if (test_ff) {
+            //Test 1 input, 1 output, no hidden
+            genome = create_ff(1, 0, 0, 1, max_recurrent_depth);
+            test_rnn("FF: 1 Input, 1 Output", genome, inputs, outputs);
+            delete genome;
 
-        genome = create_ff(1, 1, 2, 1);
-        test_rnn("FF: 1 Input, 1x2 Hidden, 1 Output", genome, inputs, outputs);
-        delete genome;
+            genome = create_ff(1, 1, 1, 1, max_recurrent_depth);
+            //genome->write_graphviz("ff_1_1x1_1.gv");
+            test_rnn("FF: 1 Input, 1x1 Hidden, 1 Output", genome, inputs, outputs);
+            delete genome;
 
-        genome = create_ff(1, 2, 2, 1);
-        test_rnn("FF: 1 Input, 2x2 Hidden, 1 Output", genome, inputs, outputs);
-        delete genome;
+            genome = create_ff(1, 1, 2, 1, max_recurrent_depth);
+            test_rnn("FF: 1 Input, 1x2 Hidden, 1 Output", genome, inputs, outputs);
+            delete genome;
 
+            genome = create_ff(1, 2, 2, 1, max_recurrent_depth);
+            test_rnn("FF: 1 Input, 2x2 Hidden, 1 Output", genome, inputs, outputs);
+            delete genome;
 
 
-        //Test 2 inputs, 2 outputs, no hidden
-        genome = create_ff(2, 0, 0, 2);
 
-        inputs.resize(2);
-        outputs.resize(2);
-        generate_random_vector(input_length, inputs[0]);
-        generate_random_vector(input_length, outputs[0]);
-        generate_random_vector(input_length, inputs[1]);
-        generate_random_vector(input_length, outputs[1]);
+            //Test 2 inputs, 2 outputs, no hidden
+            genome = create_ff(2, 0, 0, 2, max_recurrent_depth);
 
-        test_rnn("FF: 2 Input, 2 Output", genome, inputs, outputs);
-        delete genome;
+            inputs.resize(2);
+            outputs.resize(2);
+            generate_random_vector(input_length, inputs[0]);
+            generate_random_vector(input_length, outputs[0]);
+            generate_random_vector(input_length, inputs[1]);
+            generate_random_vector(input_length, outputs[1]);
 
+            test_rnn("FF: 2 Input, 2 Output", genome, inputs, outputs);
+            delete genome;
 
-        genome = create_ff(2, 2, 2, 2);
-        test_rnn("FF: 2 Input, 2x2 Hidden, 2 Output", genome, inputs, outputs);
-        delete genome;
 
-        genome = create_ff(2, 2, 3, 2);
-        test_rnn("FF: 2 Input, 2x3 Hidden, 2 Output", genome, inputs, outputs);
-        delete genome;
+            genome = create_ff(2, 2, 2, 2, max_recurrent_depth);
+            test_rnn("FF: 2 Input, 2x2 Hidden, 2 Output", genome, inputs, outputs);
+            delete genome;
 
-        genome = create_ff(2, 3, 3, 2);
-        test_rnn("FF: 2 Input, 3x3 Hidden, 2 Output", genome, inputs, outputs);
-        delete genome;
+            genome = create_ff(2, 2, 3, 2, max_recurrent_depth);
+            test_rnn("FF: 2 Input, 2x3 Hidden, 2 Output", genome, inputs, outputs);
+            delete genome;
 
+            genome = create_ff(2, 3, 3, 2, max_recurrent_depth);
+            test_rnn("FF: 2 Input, 3x3 Hidden, 2 Output", genome, inputs, outputs);
+            delete genome;
 
 
-        //Test 3 inputs, 3 outputs, no hidden
-        genome = create_ff(3, 0, 0, 3);
 
-        inputs.resize(3);
-        outputs.resize(3);
-        generate_random_vector(input_length, inputs[0]);
-        generate_random_vector(input_length, outputs[0]);
-        generate_random_vector(input_length, inputs[1]);
-        generate_random_vector(input_length, outputs[1]);
-        generate_random_vector(input_length, inputs[2]);
-        generate_random_vector(input_length, outputs[2]);
+            //Test 3 inputs, 3 outputs, no hidden
+            genome = create_ff(3, 0, 0, 3, max_recurrent_depth);
 
-        test_rnn("FF: Three Input, Three Output", genome, inputs, outputs);
-        delete genome;
+            inputs.resize(3);
+            outputs.resize(3);
+            generate_random_vector(input_length, inputs[0]);
+            generate_random_vector(input_length, outputs[0]);
+            generate_random_vector(input_length, inputs[1]);
+            generate_random_vector(input_length, outputs[1]);
+            generate_random_vector(input_length, inputs[2]);
+            generate_random_vector(input_length, outputs[2]);
 
-        genome = create_ff(3, 3, 3, 3);
-        test_rnn("FF: 3 Input, 3x3 Hidden, 3 Output", genome, inputs, outputs);
-        delete genome;
+            test_rnn("FF: Three Input, Three Output", genome, inputs, outputs);
+            delete genome;
 
-        genome = create_ff(3, 3, 4, 3);
-        test_rnn("FF: 3 Input, 3x4 Hidden, 3 Output", genome, inputs, outputs);
-        delete genome;
+            genome = create_ff(3, 3, 3, 3, max_recurrent_depth);
+            test_rnn("FF: 3 Input, 3x3 Hidden, 3 Output", genome, inputs, outputs);
+            delete genome;
 
-        genome = create_ff(3, 4, 4, 3);
-        test_rnn("FF: 3 Input, 4x4 Hidden, 3 Output", genome, inputs, outputs);
-        delete genome;
-    }
+            genome = create_ff(3, 3, 4, 3, max_recurrent_depth);
+            test_rnn("FF: 3 Input, 3x4 Hidden, 3 Output", genome, inputs, outputs);
+            delete genome;
 
-    if (test_jordan) {
+            genome = create_ff(3, 4, 4, 3, max_recurrent_depth);
+            test_rnn("FF: 3 Input, 4x4 Hidden, 3 Output", genome, inputs, outputs);
+            delete genome;
+        }
 
-        cout << "TESTING JORDAN" << endl;
+        if (test_jordan) {
 
-        inputs.resize(1);
-        outputs.resize(1);
+            cout << "TESTING JORDAN" << endl;
 
-        generate_random_vector(input_length, inputs[0]);
-        generate_random_vector(input_length, outputs[0]);
+            inputs.resize(1);
+            outputs.resize(1);
 
+            generate_random_vector(input_length, inputs[0]);
+            generate_random_vector(input_length, outputs[0]);
 
-        //Test 1 input, 1 output, no hidden
-        genome = create_jordan(1, 0, 0, 1);
-        test_rnn("JORDAN: 1 Input, 1 Output", genome, inputs, outputs);
-        delete genome;
 
-        genome = create_jordan(1, 1, 1, 1);
-        test_rnn("JORDAN: 1 Input, 1x1 Hidden, 1 Output", genome, inputs, outputs);
-        delete genome;
+            //Test 1 input, 1 output, no hidden
+            genome = create_jordan(1, 0, 0, 1, max_recurrent_depth);
+            test_rnn("JORDAN: 1 Input, 1 Output", genome, inputs, outputs);
+            delete genome;
 
-        genome = create_jordan(1, 1, 2, 1);
-        test_rnn("JORDAN: 1 Input, 1x2 Hidden, 1 Output", genome, inputs, outputs);
-        delete genome;
+            genome = create_jordan(1, 1, 1, 1, max_recurrent_depth);
+            test_rnn("JORDAN: 1 Input, 1x1 Hidden, 1 Output", genome, inputs, outputs);
+            delete genome;
 
-        genome = create_jordan(1, 2, 2, 1);
-        test_rnn("JORDAN: 1 Input, 2x2 Hidden, 1 Output", genome, inputs, outputs);
-        delete genome;
+            genome = create_jordan(1, 1, 2, 1, max_recurrent_depth);
+            test_rnn("JORDAN: 1 Input, 1x2 Hidden, 1 Output", genome, inputs, outputs);
+            delete genome;
 
+            genome = create_jordan(1, 2, 2, 1, max_recurrent_depth);
+            test_rnn("JORDAN: 1 Input, 2x2 Hidden, 1 Output", genome, inputs, outputs);
+            delete genome;
 
 
-        //Test 2 inputs, 2 outputs, no hidden
-        genome = create_jordan(2, 0, 0, 2);
 
-        inputs.resize(2);
-        outputs.resize(2);
-        generate_random_vector(input_length, inputs[0]);
-        generate_random_vector(input_length, outputs[0]);
-        generate_random_vector(input_length, inputs[1]);
-        generate_random_vector(input_length, outputs[1]);
+            //Test 2 inputs, 2 outputs, no hidden
+            genome = create_jordan(2, 0, 0, 2, max_recurrent_depth);
 
-        test_rnn("JORDAN: 2 Input, 2 Output", genome, inputs, outputs);
-        delete genome;
+            inputs.resize(2);
+            outputs.resize(2);
+            generate_random_vector(input_length, inputs[0]);
+            generate_random_vector(input_length, outputs[0]);
+            generate_random_vector(input_length, inputs[1]);
+            generate_random_vector(input_length, outputs[1]);
 
+            test_rnn("JORDAN: 2 Input, 2 Output", genome, inputs, outputs);
+            delete genome;
 
-        genome = create_jordan(2, 2, 2, 2);
-        test_rnn("JORDAN: 2 Input, 2x2 Hidden, 2 Output", genome, inputs, outputs);
-        delete genome;
 
-        genome = create_jordan(2, 2, 3, 2);
-        test_rnn("JORDAN: 2 Input, 2x3 Hidden, 2 Output", genome, inputs, outputs);
-        delete genome;
+            genome = create_jordan(2, 2, 2, 2, max_recurrent_depth);
+            test_rnn("JORDAN: 2 Input, 2x2 Hidden, 2 Output", genome, inputs, outputs);
+            delete genome;
 
-        genome = create_jordan(2, 3, 3, 2);
-        test_rnn("JORDAN: 2 Input, 3x3 Hidden, 2 Output", genome, inputs, outputs);
-        delete genome;
+            genome = create_jordan(2, 2, 3, 2, max_recurrent_depth);
+            test_rnn("JORDAN: 2 Input, 2x3 Hidden, 2 Output", genome, inputs, outputs);
+            delete genome;
 
+            genome = create_jordan(2, 3, 3, 2, max_recurrent_depth);
+            test_rnn("JORDAN: 2 Input, 3x3 Hidden, 2 Output", genome, inputs, outputs);
+            delete genome;
 
 
-        //Test 3 inputs, 3 outputs, no hidden
-        genome = create_jordan(3, 0, 0, 3);
 
-        inputs.resize(3);
-        outputs.resize(3);
-        generate_random_vector(input_length, inputs[0]);
-        generate_random_vector(input_length, outputs[0]);
-        generate_random_vector(input_length, inputs[1]);
-        generate_random_vector(input_length, outputs[1]);
-        generate_random_vector(input_length, inputs[2]);
-        generate_random_vector(input_length, outputs[2]);
+            //Test 3 inputs, 3 outputs, no hidden
+            genome = create_jordan(3, 0, 0, 3, max_recurrent_depth);
 
-        test_rnn("JORDAN: Three Input, Three Output", genome, inputs, outputs);
-        delete genome;
+            inputs.resize(3);
+            outputs.resize(3);
+            generate_random_vector(input_length, inputs[0]);
+            generate_random_vector(input_length, outputs[0]);
+            generate_random_vector(input_length, inputs[1]);
+            generate_random_vector(input_length, outputs[1]);
+            generate_random_vector(input_length, inputs[2]);
+            generate_random_vector(input_length, outputs[2]);
 
-        genome = create_jordan(3, 3, 3, 3);
-        test_rnn("JORDAN: 3 Input, 3x3 Hidden, 3 Output", genome, inputs, outputs);
-        delete genome;
+            test_rnn("JORDAN: Three Input, Three Output", genome, inputs, outputs);
+            delete genome;
 
-        genome = create_jordan(3, 3, 4, 3);
-        test_rnn("JORDAN: 3 Input, 3x4 Hidden, 3 Output", genome, inputs, outputs);
-        delete genome;
+            genome = create_jordan(3, 3, 3, 3, max_recurrent_depth);
+            test_rnn("JORDAN: 3 Input, 3x3 Hidden, 3 Output", genome, inputs, outputs);
+            delete genome;
 
-        genome = create_jordan(3, 4, 4, 3);
-        test_rnn("JORDAN: 3 Input, 4x4 Hidden, 3 Output", genome, inputs, outputs);
-        delete genome;
-    }
+            genome = create_jordan(3, 3, 4, 3, max_recurrent_depth);
+            test_rnn("JORDAN: 3 Input, 3x4 Hidden, 3 Output", genome, inputs, outputs);
+            delete genome;
 
-    if (test_elman) {
-        cout << "TESTING ELMAN" << endl;
+            genome = create_jordan(3, 4, 4, 3, max_recurrent_depth);
+            test_rnn("JORDAN: 3 Input, 4x4 Hidden, 3 Output", genome, inputs, outputs);
+            delete genome;
+        }
 
-        inputs.resize(1);
-        outputs.resize(1);
+        if (test_elman) {
+            cout << "TESTING ELMAN" << endl;
 
-        generate_random_vector(input_length, inputs[0]);
-        generate_random_vector(input_length, outputs[0]);
+            inputs.resize(1);
+            outputs.resize(1);
 
+            generate_random_vector(input_length, inputs[0]);
+            generate_random_vector(input_length, outputs[0]);
 
-        //Test 1 input, 1 output, no hidden
-        genome = create_elman(1, 0, 0, 1);
-        test_rnn("ELMAN: 1 Input, 1 Output", genome, inputs, outputs);
-        delete genome;
 
-        genome = create_elman(1, 1, 1, 1);
-        test_rnn("ELMAN: 1 Input, 1x1 Hidden, 1 Output", genome, inputs, outputs);
-        delete genome;
+            //Test 1 input, 1 output, no hidden
+            genome = create_elman(1, 0, 0, 1, max_recurrent_depth);
+            test_rnn("ELMAN: 1 Input, 1 Output", genome, inputs, outputs);
+            delete genome;
 
-        genome = create_elman(1, 1, 2, 1);
-        test_rnn("ELMAN: 1 Input, 1x2 Hidden, 1 Output", genome, inputs, outputs);
-        delete genome;
+            genome = create_elman(1, 1, 1, 1, max_recurrent_depth);
+            test_rnn("ELMAN: 1 Input, 1x1 Hidden, 1 Output", genome, inputs, outputs);
+            delete genome;
 
-        genome = create_elman(1, 2, 2, 1);
-        test_rnn("ELMAN: 1 Input, 2x2 Hidden, 1 Output", genome, inputs, outputs);
-        delete genome;
+            genome = create_elman(1, 1, 2, 1, max_recurrent_depth);
+            test_rnn("ELMAN: 1 Input, 1x2 Hidden, 1 Output", genome, inputs, outputs);
+            delete genome;
 
+            genome = create_elman(1, 2, 2, 1, max_recurrent_depth);
+            test_rnn("ELMAN: 1 Input, 2x2 Hidden, 1 Output", genome, inputs, outputs);
+            delete genome;
 
 
-        //Test 2 inputs, 2 outputs, no hidden
-        genome = create_elman(2, 0, 0, 2);
 
-        inputs.resize(2);
-        outputs.resize(2);
-        generate_random_vector(input_length, inputs[0]);
-        generate_random_vector(input_length, outputs[0]);
-        generate_random_vector(input_length, inputs[1]);
-        generate_random_vector(input_length, outputs[1]);
+            //Test 2 inputs, 2 outputs, no hidden
+            genome = create_elman(2, 0, 0, 2, max_recurrent_depth);
 
-        test_rnn("ELMAN: 2 Input, 2 Output", genome, inputs, outputs);
-        delete genome;
+            inputs.resize(2);
+            outputs.resize(2);
+            generate_random_vector(input_length, inputs[0]);
+            generate_random_vector(input_length, outputs[0]);
+            generate_random_vector(input_length, inputs[1]);
+            generate_random_vector(input_length, outputs[1]);
 
+            test_rnn("ELMAN: 2 Input, 2 Output", genome, inputs, outputs);
+            delete genome;
 
-        genome = create_elman(2, 2, 2, 2);
-        test_rnn("ELMAN: 2 Input, 2x2 Hidden, 2 Output", genome, inputs, outputs);
-        delete genome;
 
-        genome = create_elman(2, 2, 3, 2);
-        test_rnn("ELMAN: 2 Input, 2x3 Hidden, 2 Output", genome, inputs, outputs);
-        delete genome;
+            genome = create_elman(2, 2, 2, 2, max_recurrent_depth);
+            test_rnn("ELMAN: 2 Input, 2x2 Hidden, 2 Output", genome, inputs, outputs);
+            delete genome;
 
-        genome = create_elman(2, 3, 3, 2);
-        test_rnn("ELMAN: 2 Input, 3x3 Hidden, 2 Output", genome, inputs, outputs);
-        delete genome;
+            genome = create_elman(2, 2, 3, 2, max_recurrent_depth);
+            test_rnn("ELMAN: 2 Input, 2x3 Hidden, 2 Output", genome, inputs, outputs);
+            delete genome;
 
+            genome = create_elman(2, 3, 3, 2, max_recurrent_depth);
+            test_rnn("ELMAN: 2 Input, 3x3 Hidden, 2 Output", genome, inputs, outputs);
+            delete genome;
 
 
-        //Test 3 inputs, 3 outputs, no hidden
-        genome = create_elman(3, 0, 0, 3);
 
-        inputs.resize(3);
-        outputs.resize(3);
-        generate_random_vector(input_length, inputs[0]);
-        generate_random_vector(input_length, outputs[0]);
-        generate_random_vector(input_length, inputs[1]);
-        generate_random_vector(input_length, outputs[1]);
-        generate_random_vector(input_length, inputs[2]);
-        generate_random_vector(input_length, outputs[2]);
+            //Test 3 inputs, 3 outputs, no hidden
+            genome = create_elman(3, 0, 0, 3, max_recurrent_depth);
 
-        test_rnn("ELMAN: Three Input, Three Output", genome, inputs, outputs);
-        delete genome;
+            inputs.resize(3);
+            outputs.resize(3);
+            generate_random_vector(input_length, inputs[0]);
+            generate_random_vector(input_length, outputs[0]);
+            generate_random_vector(input_length, inputs[1]);
+            generate_random_vector(input_length, outputs[1]);
+            generate_random_vector(input_length, inputs[2]);
+            generate_random_vector(input_length, outputs[2]);
 
-        genome = create_elman(3, 3, 3, 3);
-        test_rnn("ELMAN: 3 Input, 3x3 Hidden, 3 Output", genome, inputs, outputs);
-        delete genome;
+            test_rnn("ELMAN: Three Input, Three Output", genome, inputs, outputs);
+            delete genome;
 
-        genome = create_elman(3, 3, 4, 3);
-        test_rnn("ELMAN: 3 Input, 3x4 Hidden, 3 Output", genome, inputs, outputs);
-        delete genome;
+            genome = create_elman(3, 3, 3, 3, max_recurrent_depth);
+            test_rnn("ELMAN: 3 Input, 3x3 Hidden, 3 Output", genome, inputs, outputs);
+            delete genome;
 
-        genome = create_elman(3, 4, 4, 3);
-        test_rnn("ELMAN: 3 Input, 4x4 Hidden, 3 Output", genome, inputs, outputs);
-        delete genome;
-    }
+            genome = create_elman(3, 3, 4, 3, max_recurrent_depth);
+            test_rnn("ELMAN: 3 Input, 3x4 Hidden, 3 Output", genome, inputs, outputs);
+            delete genome;
 
+            genome = create_elman(3, 4, 4, 3, max_recurrent_depth);
+            test_rnn("ELMAN: 3 Input, 4x4 Hidden, 3 Output", genome, inputs, outputs);
+            delete genome;
+        }
 
-    if (test_lstm) {
-        cout << "TESTING LSTMS" << endl;
 
-        inputs.resize(1);
-        outputs.resize(1);
+        if (test_lstm) {
+            cout << "TESTING LSTMS" << endl;
 
-        generate_random_vector(input_length, inputs[0]);
-        generate_random_vector(input_length, outputs[0]);
+            inputs.resize(1);
+            outputs.resize(1);
 
+            generate_random_vector(input_length, inputs[0]);
+            generate_random_vector(input_length, outputs[0]);
 
-        //Test 1 input, 1 output, no hidden
-        genome = create_lstm(1, 0, 0, 1);
-        test_rnn("LSTM: 1 Input, 1 Output", genome, inputs, outputs);
-        delete genome;
 
-        genome = create_lstm(1, 1, 1, 1);
-        test_rnn("LSTM: 1 Input, 1x1 Hidden, 1 Output", genome, inputs, outputs);
-        delete genome;
+            //Test 1 input, 1 output, no hidden
+            genome = create_lstm(1, 0, 0, 1, max_recurrent_depth);
+            test_rnn("LSTM: 1 Input, 1 Output", genome, inputs, outputs);
+            delete genome;
 
-        genome = create_lstm(1, 1, 2, 1);
-        test_rnn("LSTM: 1 Input, 1x2 Hidden, 1 Output", genome, inputs, outputs);
-        delete genome;
+            genome = create_lstm(1, 1, 1, 1, max_recurrent_depth);
+            test_rnn("LSTM: 1 Input, 1x1 Hidden, 1 Output", genome, inputs, outputs);
+            delete genome;
 
-        genome = create_lstm(1, 2, 2, 1);
-        test_rnn("LSTM: 1 Input, 2x2 Hidden, 1 Output", genome, inputs, outputs);
-        delete genome;
+            genome = create_lstm(1, 1, 2, 1, max_recurrent_depth);
+            test_rnn("LSTM: 1 Input, 1x2 Hidden, 1 Output", genome, inputs, outputs);
+            delete genome;
 
+            genome = create_lstm(1, 2, 2, 1, max_recurrent_depth);
+            test_rnn("LSTM: 1 Input, 2x2 Hidden, 1 Output", genome, inputs, outputs);
+            delete genome;
 
 
-        //Test 2 inputs, 2 outputs, no hidden
-        genome = create_lstm(2, 0, 0, 2);
 
-        inputs.resize(2);
-        outputs.resize(2);
-        generate_random_vector(input_length, inputs[0]);
-        generate_random_vector(input_length, outputs[0]);
-        generate_random_vector(input_length, inputs[1]);
-        generate_random_vector(input_length, outputs[1]);
+            //Test 2 inputs, 2 outputs, no hidden
+            genome = create_lstm(2, 0, 0, 2, max_recurrent_depth);
 
-        test_rnn("LSTM: 2 Input, 2 Output", genome, inputs, outputs);
-        delete genome;
+            inputs.resize(2);
+            outputs.resize(2);
+            generate_random_vector(input_length, inputs[0]);
+            generate_random_vector(input_length, outputs[0]);
+            generate_random_vector(input_length, inputs[1]);
+            generate_random_vector(input_length, outputs[1]);
 
+            test_rnn("LSTM: 2 Input, 2 Output", genome, inputs, outputs);
+            delete genome;
 
-        genome = create_lstm(2, 2, 2, 2);
-        test_rnn("LSTM: 2 Input, 2x2 Hidden, 2 Output", genome, inputs, outputs);
-        delete genome;
 
-        genome = create_lstm(2, 2, 3, 2);
-        test_rnn("LSTM: 2 Input, 2x3 Hidden, 2 Output", genome, inputs, outputs);
-        delete genome;
+            genome = create_lstm(2, 2, 2, 2, max_recurrent_depth);
+            test_rnn("LSTM: 2 Input, 2x2 Hidden, 2 Output", genome, inputs, outputs);
+            delete genome;
 
-        genome = create_lstm(2, 3, 3, 2);
-        test_rnn("LSTM: 2 Input, 3x3 Hidden, 2 Output", genome, inputs, outputs);
-        delete genome;
+            genome = create_lstm(2, 2, 3, 2, max_recurrent_depth);
+            test_rnn("LSTM: 2 Input, 2x3 Hidden, 2 Output", genome, inputs, outputs);
+            delete genome;
 
+            genome = create_lstm(2, 3, 3, 2, max_recurrent_depth);
+            test_rnn("LSTM: 2 Input, 3x3 Hidden, 2 Output", genome, inputs, outputs);
+            delete genome;
 
 
-        //Test 3 inputs, 3 outputs, no hidden
-        genome = create_lstm(3, 0, 0, 3);
 
-        inputs.resize(3);
-        outputs.resize(3);
-        generate_random_vector(input_length, inputs[0]);
-        generate_random_vector(input_length, outputs[0]);
-        generate_random_vector(input_length, inputs[1]);
-        generate_random_vector(input_length, outputs[1]);
-        generate_random_vector(input_length, inputs[2]);
-        generate_random_vector(input_length, outputs[2]);
+            //Test 3 inputs, 3 outputs, no hidden
+            genome = create_lstm(3, 0, 0, 3, max_recurrent_depth);
 
-        test_rnn("LSTM: Three Input, Three Output", genome, inputs, outputs);
-        delete genome;
+            inputs.resize(3);
+            outputs.resize(3);
+            generate_random_vector(input_length, inputs[0]);
+            generate_random_vector(input_length, outputs[0]);
+            generate_random_vector(input_length, inputs[1]);
+            generate_random_vector(input_length, outputs[1]);
+            generate_random_vector(input_length, inputs[2]);
+            generate_random_vector(input_length, outputs[2]);
 
-        genome = create_lstm(3, 3, 3, 3);
-        test_rnn("LSTM: 3 Input, 3x3 Hidden, 3 Output", genome, inputs, outputs);
-        delete genome;
+            test_rnn("LSTM: Three Input, Three Output", genome, inputs, outputs);
+            delete genome;
 
-        genome = create_lstm(3, 3, 4, 3);
-        test_rnn("LSTM: 3 Input, 3x4 Hidden, 3 Output", genome, inputs, outputs);
-        delete genome;
+            genome = create_lstm(3, 3, 3, 3, max_recurrent_depth);
+            test_rnn("LSTM: 3 Input, 3x3 Hidden, 3 Output", genome, inputs, outputs);
+            delete genome;
 
-        genome = create_lstm(3, 4, 4, 3);
-        test_rnn("LSTM: 3 Input, 4x4 Hidden, 3 Output", genome, inputs, outputs);
-        delete genome;
+            genome = create_lstm(3, 3, 4, 3, max_recurrent_depth);
+            test_rnn("LSTM: 3 Input, 3x4 Hidden, 3 Output", genome, inputs, outputs);
+            delete genome;
+
+            genome = create_lstm(3, 4, 4, 3, max_recurrent_depth);
+            test_rnn("LSTM: 3 Input, 4x4 Hidden, 3 Output", genome, inputs, outputs);
+            delete genome;
+        }
     }
 }

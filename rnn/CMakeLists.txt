@@ -5,7 +5,7 @@ target_link_libraries(lstm_test exact_common)
 target_compile_definitions(lstm_test PUBLIC -DLSTM_TEST)
 
 add_executable(rnn_genome_test rnn_genome rnn lstm_node mse rnn_node rnn_edge rnn_recurrent_edge rnn_node_interface)
-target_link_libraries(rnn_genome_test exact_common)
+target_link_libraries(rnn_genome_test exact_common pthread)
 target_compile_definitions(rnn_genome_test PUBLIC -DRNN_GENOME_TEST)
 
 #add_executable(pooling_test pooling)

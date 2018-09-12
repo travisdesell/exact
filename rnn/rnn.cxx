@@ -1,3 +1,9 @@
+#include <algorithm>
+using std::sort;
+using std::upper_bound;
+
+#include <chrono>
+
 #include <iostream>
 using std::cout;
 using std::endl;
@@ -121,15 +127,18 @@ void RNN::get_weights(vector<double> &parameters) {
     uint32_t current = 0;
 
     for (uint32_t i = 0; i < nodes.size(); i++) {
-        if (nodes[i]->is_reachable()) nodes[i]->get_weights(current, parameters);
+        nodes[i]->get_weights(current, parameters);
+        //if (nodes[i]->is_reachable()) nodes[i]->get_weights(current, parameters);
     }
 
     for (uint32_t i = 0; i < edges.size(); i++) {
-        if (edges[i]->is_reachable()) parameters[current++] = edges[i]->weight;
+        parameters[current++] = edges[i]->weight;
+        //if (edges[i]->is_reachable()) parameters[current++] = edges[i]->weight;
     }
 
     for (uint32_t i = 0; i < recurrent_edges.size(); i++) {
-        if (recurrent_edges[i]->is_reachable()) parameters[current++] = recurrent_edges[i]->weight;
+        parameters[current++] = recurrent_edges[i]->weight;
+        //if (recurrent_edges[i]->is_reachable()) parameters[current++] = recurrent_edges[i]->weight;
     }
 }
 
@@ -142,15 +151,18 @@ void RNN::set_weights(const vector<double> &parameters) {
     uint32_t current = 0;
 
     for (uint32_t i = 0; i < nodes.size(); i++) {
-        if (nodes[i]->is_reachable()) nodes[i]->set_weights(current, parameters);
+        nodes[i]->set_weights(current, parameters);
+        //if (nodes[i]->is_reachable()) nodes[i]->set_weights(current, parameters);
     }
 
     for (uint32_t i = 0; i < edges.size(); i++) {
-        if (edges[i]->is_reachable()) edges[i]->weight = parameters[current++];
+        edges[i]->weight = parameters[current++];
+        //if (edges[i]->is_reachable()) edges[i]->weight = parameters[current++];
     }
 
     for (uint32_t i = 0; i < recurrent_edges.size(); i++) {
-        if (recurrent_edges[i]->is_reachable()) recurrent_edges[i]->weight = parameters[current++];
+        recurrent_edges[i]->weight = parameters[current++];
+        //if (recurrent_edges[i]->is_reachable()) recurrent_edges[i]->weight = parameters[current++];
     }
 
 }
@@ -159,15 +171,18 @@ uint32_t RNN::get_number_weights() {
     uint32_t number_weights = 0;
 
     for (uint32_t i = 0; i < nodes.size(); i++) {
-        if (nodes[i]->is_reachable()) number_weights += nodes[i]->get_number_weights();
+        number_weights += nodes[i]->get_number_weights();
+        //if (nodes[i]->is_reachable()) number_weights += nodes[i]->get_number_weights();
     }
 
     for (uint32_t i = 0; i < edges.size(); i++) {
-        if (edges[i]->is_reachable()) number_weights++;
+        number_weights++;
+        //if (edges[i]->is_reachable()) number_weights++;
     }
 
     for (uint32_t i = 0; i < recurrent_edges.size(); i++) {
-        if (recurrent_edges[i]->is_reachable()) number_weights++;
+        number_weights++;
+        //if (recurrent_edges[i]->is_reachable()) number_weights++;
     }
 
     return number_weights;
@@ -312,6 +327,39 @@ double RNN::prediction_mae(const vector< vector<double> > &series_data, const ve
     return calculate_error_mae(expected_outputs);
 }
 
+
+void RNN::write_predictions(string output_filename, const vector<string> &input_parameter_names, const vector<string> &output_parameter_names, const vector< vector<double> > &series_data, const vector< vector<double> > &expected_outputs, bool using_dropout, double dropout_probability) {
+    forward_pass(series_data, using_dropout, false, dropout_probability);
+
+    ofstream outfile(output_filename);
+
+    outfile << "#";
+
+    for (uint32_t i = 0; i < input_nodes.size(); i++) {
+        if (i > 0) outfile << ",";
+        outfile << input_parameter_names[i];
+    }
+
+    for (uint32_t i = 0; i < output_nodes.size(); i++) {
+        outfile << ",";
+        outfile << "predicted_" << output_parameter_names[i];
+    }
+    outfile << endl;
+
+    for (uint32_t j = 0; j < series_length; j++) {
+        for (uint32_t i = 0; i < input_nodes.size(); i++) {
+            if (i > 0) outfile << ",";
+            outfile << series_data[i][j];
+        }
+
+        for (uint32_t i = 0; i < output_nodes.size(); i++) {
+            outfile << ",";
+            outfile << output_nodes[i]->output_values[j];
+        }
+        outfile << endl;
+    }
+    outfile.close();
+}
 
 void RNN::get_analytic_gradient(const vector<double> &test_parameters, const vector< vector<double> > &inputs, const vector< vector<double> > &outputs, double &mse, vector<double> &analytic_gradient, bool using_dropout, bool training, double dropout_probability) {
     analytic_gradient.assign(test_parameters.size(), 0.0);

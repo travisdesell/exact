@@ -1,3 +1,8 @@
+#include <algorithm>
+using std::sort;
+
+#include <chrono>
+
 #include <fstream>
 using std::ofstream;
 
@@ -18,11 +23,14 @@ using std::uniform_real_distribution;
 using std::string;
 using std::to_string;
 
+//for mkdir
+#include <sys/stat.h>
+
 #include "exalt.hxx"
 #include "rnn_genome.hxx"
 #include "generate_nn.hxx"
 
-EXALT::EXALT(int32_t _population_size, int32_t _max_genomes, int32_t _number_inputs, int32_t _number_outputs, const vector<string> &_input_parameter_names, const vector<string> &_output_parameter_names, int32_t _bp_iterations, double _learning_rate, bool _use_high_threshold, double _high_threshold, bool _use_low_threshold, double _low_threshold, bool _use_dropout, double _dropout_probability, string _log_filename) : population_size(_population_size), max_genomes(_max_genomes), number_inputs(_number_inputs), number_outputs(_number_outputs), bp_iterations(_bp_iterations), learning_rate(_learning_rate), use_high_threshold(_use_high_threshold), high_threshold(_high_threshold), use_low_threshold(_use_low_threshold), low_threshold(_low_threshold), use_dropout(_use_dropout), dropout_probability(_dropout_probability), log_filename(_log_filename) {
+EXALT::EXALT(int32_t _population_size, int32_t _max_genomes, const vector<string> &_input_parameter_names, const vector<string> &_output_parameter_names, int32_t _bp_iterations, double _learning_rate, bool _use_high_threshold, double _high_threshold, bool _use_low_threshold, double _low_threshold, bool _use_dropout, double _dropout_probability, string _output_directory) : population_size(_population_size), max_genomes(_max_genomes), number_inputs(_input_parameter_names.size()), number_outputs(_output_parameter_names.size()), bp_iterations(_bp_iterations), learning_rate(_learning_rate), use_high_threshold(_use_high_threshold), high_threshold(_high_threshold), use_low_threshold(_use_low_threshold), low_threshold(_low_threshold), use_dropout(_use_dropout), dropout_probability(_dropout_probability), output_directory(_output_directory) {
 
     input_parameter_names = _input_parameter_names;
     output_parameter_names = _output_parameter_names;
@@ -37,10 +45,12 @@ EXALT::EXALT(int32_t _population_size, int32_t _max_genomes, int32_t _number_inp
     generator = minstd_rand0(seed);
     rng_0_1 = uniform_real_distribution<double>(0.0, 1.0);
 
-    rng_crossover_weight = uniform_real_distribution<double>(0.0, 0.0);
+    //rng_crossover_weight = uniform_real_distribution<double>(0.0, 0.0);
     //rng_crossover_weight = uniform_real_distribution<double>(-0.10, 0.1);
-    //rng_crossover_weight = uniform_real_distribution<double>(-0.5, 1.5);
+    rng_crossover_weight = uniform_real_distribution<double>(-0.5, 1.5);
     //rng_crossover_weight = uniform_real_distribution<double>(0.45, 0.55);
+
+    max_recurrent_depth = 10;
 
     epigenetic_weights = true;
     crossover_rate = 0.25;
@@ -52,12 +62,13 @@ EXALT::EXALT(int32_t _population_size, int32_t _max_genomes, int32_t _number_inp
     clone_rate = 1.0;
 
     add_edge_rate = 1.0;
-    add_recurrent_edge_rate = 1.0;
+    add_recurrent_edge_rate = 3.0;
+    //add_recurrent_edge_rate = 1.0;
     enable_edge_rate = 1.0;
     disable_edge_rate = 3.0;
     split_edge_rate = 1.0;
 
-    bool node_ops = false;
+    bool node_ops = true;
     if (node_ops) {
         add_node_rate = 1.0;
         enable_node_rate = 1.0;
@@ -72,8 +83,9 @@ EXALT::EXALT(int32_t _population_size, int32_t _max_genomes, int32_t _number_inp
         merge_node_rate = 0.0;
     }
 
-    if (log_filename != "") {
-        log_file = new ofstream(log_filename);
+    if (output_directory != "") {
+        mkdir(output_directory.c_str(), 0777);
+        log_file = new ofstream(output_directory + "/" + "fitness_log.csv");
     } else {
         log_file = NULL;
     }
@@ -88,7 +100,7 @@ string parse_fitness(float fitness) {
 }
 
 void EXALT::print_population() {
-    cout << "POPUALTION: " << endl;
+    cout << "POPULATION: " << endl;
     for (int32_t i = 0; i < (int32_t)genomes.size(); i++) {
         cout << "\t" << setw(15) << parse_fitness(genomes[i]->best_validation_error) << ", " << parse_fitness(genomes[i]->best_validation_mae) << ", " << genomes[i]->nodes.size() << " (" << genomes[i]->get_enabled_node_count() << "), " << genomes[i]->edges.size() << " (" << genomes[i]->get_enabled_edge_count() << "), " << genomes[i]->recurrent_edges.size() << " (" << genomes[i]->get_enabled_recurrent_edge_count() << "), " << genomes[i]->generated_by_string() << endl;
     }
@@ -111,6 +123,10 @@ int32_t EXALT::population_contains(RNN_Genome* genome) {
     return -1;
 }
 
+string EXALT::get_output_directory() const {
+    return output_directory;
+}
+
 double EXALT::get_best_fitness() const {
     if (genomes.size() == 0) return EXALT_MAX_DOUBLE;
     else return genomes[0]->get_validation_error();
@@ -121,6 +137,9 @@ double EXALT::get_worst_fitness() const {
     else return genomes.back()->get_validation_error();
 }
 
+RNN_Genome* EXALT::get_best_genome() {
+    return genomes[0];
+}
 
 //this will insert a COPY, original needs to be deleted
 bool EXALT::insert_genome(RNN_Genome* genome) {
@@ -172,8 +191,10 @@ bool EXALT::insert_genome(RNN_Genome* genome) {
 
         if (genomes.size() == 0 || genome->get_validation_error() < genomes[0]->get_validation_error()) {
             cout << "new best fitness!" << endl;
-            genome->print_graphviz("rnn_genome_" + to_string(inserted_genomes) + ".gv");
-        }
+            genome->write_graphviz(output_directory + "/rnn_genome_" + to_string(inserted_genomes) + ".gv");
+            genome->write_to_file(output_directory + "/rnn_genome_" + to_string(inserted_genomes) + ".bin");
+
+}
 
         for (auto i = inserted_from_map.begin(); i != inserted_from_map.end(); i++) {
             inserted_from_map[i->first] += genome->get_generated_by(i->first);
@@ -220,7 +241,7 @@ RNN_Genome* EXALT::generate_genome() {
     if (genomes.size() == 0) {
         //this is the first genome to be generated
         //generate minimal genome, insert it into the population
-        genome = create_ff(number_inputs, 0, 0, number_outputs);
+        genome = create_ff(number_inputs, 0, 0, number_outputs, 0);
         genome->set_parameter_names(input_parameter_names, output_parameter_names);
 
         edge_innovation_count = genome->edges.size() + genome->recurrent_edges.size();
@@ -232,6 +253,10 @@ RNN_Genome* EXALT::generate_genome() {
         //insert a copy of it into the population so
         //additional requests can mutate it
         genome->initialize_randomly();
+        double _mu, _sigma;
+        cout << "getting mu/sigma after random initialization!" << endl;
+        genome->get_mu_sigma(genome->best_parameters, _mu, _sigma);
+
         genome->best_validation_error = EXALT_MAX_DOUBLE;
         genome->best_validation_mae = EXALT_MAX_DOUBLE;
         genome->best_parameters.clear();
@@ -280,6 +305,11 @@ RNN_Genome* EXALT::generate_genome() {
         if (genomes.size() < population_size) {
             RNN_Genome *copy = genome->copy();
             copy->initialize_randomly();
+            double _mu, _sigma;
+            cout << "getting mu/sigma after random initialization of copy!" << endl;
+            genome->get_mu_sigma(genome->best_parameters, _mu, _sigma);
+
+
             insert_genome(copy);
 
             //also randomly initialize this genome as
@@ -287,13 +317,17 @@ RNN_Genome* EXALT::generate_genome() {
             //initialized as the population hasn't been
             //filled
             genome->initialize_randomly();
+            cout << "getting mu/sigma after random initialization due to genomes.size() < population_size!" << endl;
+            genome->get_mu_sigma(genome->best_parameters, _mu, _sigma);
         }
     }
 
-    //genome->print_graphviz("rnn_genome_" + to_string(generated_genomes) + ".gv");
+    //genome->write_graphviz(output_directory + "/rnn_genome_" + to_string(generated_genomes) + ".gv");
+    //genome->write_to_file(output_directory + "/rnn_genome_" + to_string(generated_genomes) + ".bin");
 
     if (!epigenetic_weights) genome->initialize_randomly();
 
+    genome->set_generation_id(generated_genomes);
     return genome;
 }
 
@@ -305,10 +339,10 @@ void EXALT::mutate(RNN_Genome *g) {
 
     double mu, sigma;
 
-    //g->print_graphviz("rnn_genome_premutate_" + to_string(generated_genomes) + ".gv");
+    //g->write_graphviz("rnn_genome_premutate_" + to_string(generated_genomes) + ".gv");
 
     cout << "generating new genome by mutation" << endl;
-    //g->get_mu_sigma(g->best_parameters, mu, sigma);
+    g->get_mu_sigma(g->best_parameters, mu, sigma);
     g->generated_by_map.clear();
 
     //the the weights in the genome to it's best parameters
@@ -343,7 +377,7 @@ void EXALT::mutate(RNN_Genome *g) {
         rng -= add_edge_rate;
 
         if (rng < add_recurrent_edge_rate) {
-            modified = g->add_recurrent_edge(mu, sigma, edge_innovation_count);
+            modified = g->add_recurrent_edge(mu, sigma, max_recurrent_depth, edge_innovation_count);
             cout << "\tadding recurrent edge, modified: " << modified << endl;
             if (modified) g->generated_by_map["add_recurrent_edge"]++;
             continue;
@@ -367,7 +401,7 @@ void EXALT::mutate(RNN_Genome *g) {
         rng -= disable_edge_rate;
 
         if (rng < split_edge_rate) {
-            modified = g->split_edge(mu, sigma, lstm_node_rate, edge_innovation_count, node_innovation_count);
+            modified = g->split_edge(mu, sigma, lstm_node_rate, max_recurrent_depth, edge_innovation_count, node_innovation_count);
             cout << "\tsplitting edge, modified: " << modified << endl;
             if (modified) g->generated_by_map["split_edge"]++;
             continue;
@@ -375,7 +409,7 @@ void EXALT::mutate(RNN_Genome *g) {
         rng -= split_edge_rate;
 
         if (rng < add_node_rate) {
-            modified = g->add_node(mu, sigma, lstm_node_rate, edge_innovation_count, node_innovation_count);
+            modified = g->add_node(mu, sigma, lstm_node_rate, max_recurrent_depth, edge_innovation_count, node_innovation_count);
             cout << "\tadding node, modified: " << modified << endl;
             if (modified) g->generated_by_map["add_node"]++;
             continue;
@@ -399,7 +433,7 @@ void EXALT::mutate(RNN_Genome *g) {
         rng -= disable_node_rate;
 
         if (rng < split_node_rate) {
-            modified = g->split_node(mu, sigma, lstm_node_rate, edge_innovation_count, node_innovation_count);
+            modified = g->split_node(mu, sigma, lstm_node_rate, max_recurrent_depth, edge_innovation_count, node_innovation_count);
             cout << "\tsplitting node, modified: " << modified << endl;
             if (modified) g->generated_by_map["split_node"]++;
             continue;
@@ -407,7 +441,7 @@ void EXALT::mutate(RNN_Genome *g) {
         rng -= split_node_rate;
 
         if (rng < merge_node_rate) {
-            modified = g->merge_node(mu, sigma, lstm_node_rate, edge_innovation_count, node_innovation_count);
+            modified = g->merge_node(mu, sigma, lstm_node_rate, max_recurrent_depth, edge_innovation_count, node_innovation_count);
             cout << "\tmerging node, modified: " << modified << endl;
             if (modified) g->generated_by_map["merge_node"]++;
             continue;
@@ -481,7 +515,7 @@ void EXALT::attempt_edge_insert(vector<RNN_Edge*> &child_edges, vector<RNN_Node_
         double crossover_value = rng_crossover_weight(generator);
         new_weight = crossover_value * (second_edge->weight - edge->weight) + edge->weight;
 
-        //cout << "EDGE WEIGHT CROSSOVER" << "better: " << edge->weight << ", worse: " << second_edge->weight << ", crossover_value: " << crossover_value << ", new_weight: " << new_weight << endl;
+        cout << "EDGE WEIGHT CROSSOVER :: " << "better: " << edge->weight << ", worse: " << second_edge->weight << ", crossover_value: " << crossover_value << ", new_weight: " << new_weight << endl;
 
         vector<double> input_weights1, input_weights2, output_weights1, output_weights2;
         edge->get_input_node()->get_weights(input_weights1);
@@ -493,12 +527,17 @@ void EXALT::attempt_edge_insert(vector<RNN_Edge*> &child_edges, vector<RNN_Node_
         new_input_weights.resize(input_weights1.size());
         new_output_weights.resize(output_weights1.size());
 
+        //can check to see if input weights lengths are same
+        //can check to see if output weights lengths are same
+
         for (int32_t i = 0; i < (int32_t)new_input_weights.size(); i++) {
             new_input_weights[i] = crossover_value * (input_weights2[i] - input_weights1[i]) + input_weights1[i];
+            cout << "\tnew input weights[" << i <<  "]: " << new_input_weights[i] << endl;
         }
 
         for (int32_t i = 0; i < (int32_t)new_output_weights.size(); i++) {
             new_output_weights[i] = crossover_value * (output_weights2[i] - output_weights1[i]) + output_weights1[i];
+            cout << "\tnew output weights[" << i <<  "]: " << new_output_weights[i] << endl;
         }
 
     } else {
@@ -551,6 +590,8 @@ void EXALT::attempt_recurrent_edge_insert(vector<RNN_Recurrent_Edge*> &child_rec
         double crossover_value = rng_crossover_weight(generator);
         new_weight = crossover_value * (second_edge->weight - recurrent_edge->weight) + recurrent_edge->weight;
 
+        cout << "RECURRENT EDGE WEIGHT CROSSOVER :: " << "better: " << recurrent_edge->weight << ", worse: " << second_edge->weight << ", crossover_value: " << crossover_value << ", new_weight: " << new_weight << endl;
+
         vector<double> input_weights1, input_weights2, output_weights1, output_weights2;
         recurrent_edge->get_input_node()->get_weights(input_weights1);
         recurrent_edge->get_output_node()->get_weights(output_weights1);
@@ -563,10 +604,12 @@ void EXALT::attempt_recurrent_edge_insert(vector<RNN_Recurrent_Edge*> &child_rec
 
         for (int32_t i = 0; i < (int32_t)new_input_weights.size(); i++) {
             new_input_weights[i] = crossover_value * (input_weights2[i] - input_weights1[i]) + input_weights1[i];
+            cout << "\tnew input weights[" << i <<  "]: " << new_input_weights[i] << endl;
         }
 
         for (int32_t i = 0; i < (int32_t)new_output_weights.size(); i++) {
             new_output_weights[i] = crossover_value * (output_weights2[i] - output_weights1[i]) + output_weights1[i];
+            cout << "\tnew output weights[" << i <<  "]: " << new_output_weights[i] << endl;
         }
 
     } else {
@@ -591,6 +634,26 @@ void EXALT::attempt_recurrent_edge_insert(vector<RNN_Recurrent_Edge*> &child_rec
 
 RNN_Genome* EXALT::crossover(RNN_Genome *p1, RNN_Genome *p2) {
     cerr << "generating new genome by crossover!" << endl;
+
+    double _mu, _sigma;
+    cout << "getting p1 mu/sigma!" << endl;
+    if (p1->best_parameters.size() == 0) {
+        p1->set_weights(p1->initial_parameters);
+        p1->get_mu_sigma(p1->initial_parameters, _mu, _sigma);
+    } else {
+        p1->set_weights(p1->best_parameters);
+        p1->get_mu_sigma(p1->best_parameters, _mu, _sigma);
+    }
+
+    cout << "getting p2 mu/sigma!" << endl;
+    if (p2->best_parameters.size() == 0) {
+        p2->set_weights(p2->initial_parameters);
+        p2->get_mu_sigma(p2->initial_parameters, _mu, _sigma);
+    } else {
+        p2->set_weights(p2->best_parameters);
+        p2->get_mu_sigma(p2->best_parameters, _mu, _sigma);
+    }
+
     //nodes are copied in the attempt_node_insert_function
     vector< RNN_Node_Interface* > child_nodes;
     vector< RNN_Edge* > child_edges;
