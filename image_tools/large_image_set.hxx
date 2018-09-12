@@ -53,8 +53,8 @@ class LargeImage : public ImageInterface {
 
         void print(ostream &out);
 
-        int8_t get_pixel_unnormalized(int z, int y, int x) const;
-        int8_t get_alpha_unnormalized(int y, int x) const;
+        uint8_t get_pixel_unnormalized(int z, int y, int x) const;
+        uint8_t get_alpha_unnormalized(int y, int x) const;
         void set_pixel(int z, int y, int x, uint8_t value);
         uint8_t get_pixel(int z, int y, int x) const;
 
@@ -141,10 +141,6 @@ class LargeImages : public MultiImagesInterface {
 #ifdef _HAS_TIFF_
         int read_images_from_directory(string directory);
         int read_images_from_directories(string directory);
-
-        void draw_tiff(int i, string filename) const;
-        void draw_tiff_4channel(int i, string filename) const;
-        void draw_tiff_alpha(int i, string filename) const;
 #endif
 };
 

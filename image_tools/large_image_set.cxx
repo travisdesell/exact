@@ -25,6 +25,8 @@ using std::vector;
 
 #include "stdint.h"
 
+#include "lodepng.h"
+
 #ifdef _HAS_TIFF_
 #include <sstream>
 using std::ostringstream;
@@ -95,7 +97,7 @@ LargeImage* LargeImage::copy() const {
     return new LargeImage(number_subimages, channels, width, height, padding, classification, pixels);
 }
 
-int8_t LargeImage::get_pixel_unnormalized(int z, int y, int x) const {
+uint8_t LargeImage::get_pixel_unnormalized(int z, int y, int x) const {
     if (y < padding || x < padding) return 0;
     else if (y >= height + padding || x >= width + padding) return 0;
     else {
@@ -103,7 +105,7 @@ int8_t LargeImage::get_pixel_unnormalized(int z, int y, int x) const {
     }
 }
 
-int8_t LargeImage::get_alpha_unnormalized(int y, int x) const {
+uint8_t LargeImage::get_alpha_unnormalized(int y, int x) const {
     if (y < padding || x < padding) return 0;
     else if (y >= height + padding || x >= width + padding) return 0;
     else {
@@ -128,19 +130,73 @@ uint8_t LargeImage::get_pixel(int z, int y, int x) const {
     }
 }
 
-
 void LargeImage::draw_png(string filename) const {
+
+    cout << "drawing a PNG with height: " << height << " and width: " << width << " and padding: " << padding << endl;
+
     vector<uint8_t> flat_pixels;
 
+    for (int32_t y = 0; y < height + (padding * 2);  y++) {
+        for (int32_t x = 0; x < width + (padding * 2); x++) {
+            flat_pixels.push_back( get_pixel_unnormalized(0, y, x) );
+            flat_pixels.push_back( get_pixel_unnormalized(1, y, x) );
+            flat_pixels.push_back( get_pixel_unnormalized(2, y, x) );
+            flat_pixels.push_back( 255 );
+        }
+    }
 
-	//Encode the image
-	unsigned error = lodepng::encode(filename.c_str(), image, width, height);
+    //Encode the image
+    uint32_t error = lodepng::encode(filename.c_str(), flat_pixels, width + (padding * 2), height + (padding * 2));
 
-	//if there's an error, display it
-	if (error) cout << "encoder error " << error << ": "<< lodepng_error_text(error) << endl;
+    //if there's an error, display it
+    if (error) cout << "encoder error " << error << ": "<< lodepng_error_text(error) << endl;
 }
 
-#endif
+void LargeImage::draw_png_4channel(string filename) const {
+
+    cout << "drawing a PNG with height: " << height << " and width: " << width << " and padding: " << padding << endl;
+
+    vector<uint8_t> flat_pixels;
+
+    for (int32_t y = 0; y < height + (padding * 2);  y++) {
+        for (int32_t x = 0; x < width + (padding * 2); x++) {
+            flat_pixels.push_back( get_pixel_unnormalized(0, y, x) );
+            flat_pixels.push_back( get_pixel_unnormalized(1, y, x) );
+            flat_pixels.push_back( get_pixel_unnormalized(2, y, x) );
+            flat_pixels.push_back( get_alpha_unnormalized(y, x) );
+        }
+    }
+
+    //Encode the image
+    uint32_t error = lodepng::encode(filename.c_str(), flat_pixels, width + (padding * 2), height + (padding * 2));
+
+    //if there's an error, display it
+    if (error) cout << "encoder error " << error << ": "<< lodepng_error_text(error) << endl;
+}
+
+void LargeImage::draw_png_alpha(string filename) const {
+
+    cout << "drawing a PNG with height: " << height << " and width: " << width << " and padding: " << padding << endl;
+
+    vector<uint8_t> flat_pixels;
+
+    for (int32_t y = 0; y < height + (padding * 2);  y++) {
+        for (int32_t x = 0; x < width + (padding * 2); x++) {
+            flat_pixels.push_back( get_alpha_unnormalized(y, x) );
+            flat_pixels.push_back( get_alpha_unnormalized(y, x) );
+            flat_pixels.push_back( get_alpha_unnormalized(y, x) );
+            flat_pixels.push_back( 255 );
+        }
+    }
+
+    //Encode the image
+    uint32_t error = lodepng::encode(filename.c_str(), flat_pixels, width + (padding * 2), height + (padding * 2));
+
+    //if there's an error, display it
+    if (error) cout << "encoder error " << error << ": "<< lodepng_error_text(error) << endl;
+}
+
+
 
 #ifdef _HAS_TIFF_
 
@@ -854,25 +910,6 @@ LargeImage* LargeImages::copy_image(int i) const {
 float LargeImages::get_raw_pixel(int subimage, int z, int y, int x) const {
     return images[subimage].pixels[z][y][x];
 }
-
-#ifdef _HAS_TIFF_
-
-void LargeImages::draw_tiff(int i, string filename) const {
-    images[i].draw_tiff(filename);
-}
-
-void LargeImages::draw_tiff_4channel(int i, string filename) const {
-    images[i].draw_tiff_4channel(filename);
-}
-
-void LargeImages::draw_tiff_alpha(int i, string filename) const {
-    images[i].draw_tiff_alpha(filename);
-}
-
-
-
-#endif
-
 
 #ifdef LARGE_IMAGES_TEST
 int main(int argc, char **argv) {

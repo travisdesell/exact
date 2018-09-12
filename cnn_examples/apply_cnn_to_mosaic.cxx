@@ -18,6 +18,10 @@ using std::vector;
 #include "common/db_conn.hxx"
 #endif
 
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
+
 #include "cnn/exact.hxx"
 #include "cnn/cnn_genome.hxx"
 #include "cnn/cnn_edge.hxx"
@@ -88,6 +92,16 @@ int main(int argc, char **argv) {
     string output_directory;
     get_argument(arguments, "--output_directory", true, output_directory);
 
+    int owner_id;
+    get_argument(arguments, "--owner_id", true, owner_id);
+
+    string job_name;
+    get_argument(arguments, "--job_name", true, job_name);
+
+    input_directory += to_string(owner_id) + "/";
+    output_directory += to_string(owner_id) + "/";
+
+
     vector<string> filenames;
     filenames.push_back(input_directory + mosaic_filename);
 
@@ -141,6 +155,13 @@ int main(int argc, char **argv) {
         cout << endl << "drawing image predictions." << endl;
         //genome->draw_predictions(line_mosaic_images, output_directory);
 
+        ostringstream job_query;
+        job_query << "INSERT INTO jobs SET owner_id = " << owner_id << ", mosaic_id = " << mosaic_id << ", label_id = " << label_id << ", name = '" << job_name << "'";
+        mysql_exact_query(job_query.str());
+        
+        int job_id = mysql_exact_last_insert_id();
+
+
         int stride = 1;
         for (uint32_t i = 0; i < point_mosaic_images.get_number_large_images(); i++) {
             cout << endl << endl;
@@ -161,24 +182,41 @@ int main(int argc, char **argv) {
                 }
             }
 
+            cout << "prediction: " << max_prediction << endl;
+
+            ostringstream prediction_query;
+            prediction_query << "INSERT INTO prediction SET job_id = " << job_id << ", owner_id = " << owner_id << ", mosaic_id = " << mosaic_id << ", label_id = " << label_id << ", mark_id = " << point_ids[i] << ", prediction = " << max_prediction;
+            mysql_exact_query(prediction_query.str());
+
+
             LargeImage *image = point_mosaic_images.copy_image(i);
 
             for (int32_t y = max_y - 5; y <= max_y + 5; y++) {
                 if (y < 0 || y >= 2 * point_radius) continue;
                 image->set_pixel(0, y, max_x, (uint8_t)255);
+                image->set_pixel(1, y, max_x, (uint8_t)0);
+                image->set_pixel(2, y, max_x, (uint8_t)0);
             }
 
             for (int32_t x = max_x - 5; x <= max_x + 5; x++) {
                 if (x < 0 || x >= 2 * point_radius) continue;
                 image->set_pixel(0, max_y, x, (uint8_t)255);
+                image->set_pixel(1, max_y, x, (uint8_t)0);
+                image->set_pixel(2, max_y, x, (uint8_t)0);
             }
 
             image->set_alpha(expanded_prediction_matrix);
+
+            ostringstream file_directory;
+            file_directory << output_directory << job_id;
+            mkdir(file_directory.str().c_str(), 0777);
+
             ostringstream output_filename;
-            output_filename << output_directory << "point_" << mosaic_id << "_" << label_id << "_" << point_ids[i];
-            image->draw_image(output_filename.str() + "_original.tif");
-            image->draw_image_alpha(output_filename.str() + "_predictions.tif");
-            image->draw_image_4channel(output_filename.str() + "_merged.tif");
+            output_filename << output_directory << job_id << "/point_" << mosaic_id << "_" << label_id << "_" << point_ids[i];
+
+            image->draw_png(output_filename.str() + "_original.png");
+            image->draw_png_alpha(output_filename.str() + "_predictions.png");
+            image->draw_png_4channel(output_filename.str() + "_merged.png");
 
             delete image;
         }
@@ -235,6 +273,12 @@ int main(int argc, char **argv) {
         cout << endl << "drawing image predictions." << endl;
         //genome->draw_predictions(line_mosaic_images, output_directory);
 
+        ostringstream job_query;
+        job_query << "INSERT INTO jobs SET owner_id = " << owner_id << ", mosaic_id = " << mosaic_id << ", label_id = " << label_id << ", name = '" << job_name << "'";
+        mysql_exact_query(job_query.str());
+        
+        int job_id = mysql_exact_last_insert_id();
+
         int stride = 1;
         for (uint32_t i = 0; i < line_mosaic_images.get_number_large_images(); i++) {
             cout << endl << endl;
@@ -262,6 +306,10 @@ int main(int argc, char **argv) {
             prediction /= count;
             cout << "prediction: " << prediction << endl;
 
+            ostringstream prediction_query;
+            prediction_query << "INSERT INTO prediction SET job_id = " << job_id << ", owner_id = " << owner_id << ", mosaic_id = " << mosaic_id << ", label_id = " << label_id << ", mark_id = " << line_ids[i] << ", prediction = " << prediction;
+            mysql_exact_query(prediction_query.str());
+
             LargeImage *image = line_mosaic_images.copy_image(i);
 
             for (uint32_t j = 0; j < prediction_matrix[0].size(); j++) {
@@ -288,9 +336,14 @@ int main(int argc, char **argv) {
                 image->set_pixel(2, y, x, 0);
             }
 
+            ostringstream file_directory;
+            file_directory << output_directory << job_id;
+            mkdir(file_directory.str().c_str(), 0777);
+
             ostringstream output_filename;
-            output_filename << output_directory << "line_" << mosaic_id << "_" << label_id << "_" << line_ids[i] << ".tif";
-            image->draw_image(output_filename.str().c_str());
+            output_filename << output_directory << job_id << "/line_" << mosaic_id << "_" << label_id << "_" << line_ids[i] << ".png";
+            image->draw_png(output_filename.str().c_str());
+
 
             delete image;
         }
