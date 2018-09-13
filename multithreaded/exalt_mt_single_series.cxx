@@ -24,6 +24,9 @@ using std::thread;
 #include <vector>
 using std::vector;
 
+//for mkdir
+#include <sys/stat.h>
+
 #include "common/arguments.hxx"
 
 #include "rnn/exalt.hxx"
@@ -37,6 +40,8 @@ vector<string> arguments;
 EXALT *exalt;
 
 bool finished = false;
+
+string output_directory = "";
 
 vector< vector< vector<double> > > training_inputs;
 vector< vector< vector<double> > > training_outputs;
@@ -95,8 +100,7 @@ int main(int argc, char** argv) {
     double dropout_probability = 0.0;
     bool use_dropout = get_argument(arguments, "--dropout_probability", false, dropout_probability);
 
-    string log_filename = "";
-    get_argument(arguments, "--log_filename", false, log_filename);
+    get_argument(arguments, "--output_directory", true, output_directory);
 
     string output_filename;
     get_argument(arguments, "--output_filename", true, output_filename);
@@ -154,7 +158,10 @@ int main(int argc, char** argv) {
 
     int32_t repeats = 5;
 
-    ofstream overall_results("overall_results.txt");
+    if (output_directory != "") {
+        mkdir(output_directory.c_str(), 0777);
+    }
+    ofstream overall_results(output_directory + "/overall_results.txt");
 
     for (uint32_t i = 0; i < number_slices; i++) {
         training_series.clear();
@@ -173,7 +180,7 @@ int main(int argc, char** argv) {
         overall_results << "results for slice " << i << " as test data." << endl;
 
         for (uint32_t k = 0; k < repeats; k++) {
-            exalt = new EXALT(population_size, max_genomes, input_parameter_names, output_parameter_names, bp_iterations, learning_rate, use_high_threshold, high_threshold, use_low_threshold, low_threshold, use_dropout, dropout_probability, log_filename);
+            exalt = new EXALT(population_size, max_genomes, input_parameter_names, output_parameter_names, bp_iterations, learning_rate, use_high_threshold, high_threshold, use_low_threshold, low_threshold, use_dropout, dropout_probability, output_directory + "/slice_" + to_string(i) + "_repeat_" + to_string(k));
 
             vector<thread> threads;
             for (int32_t i = 0; i < number_threads; i++) {
@@ -201,8 +208,8 @@ int main(int argc, char** argv) {
                 << setw(15) << fixed << best_genome->get_mse(best_parameters, validation_inputs, validation_outputs) << ", "
                 << setw(15) << fixed << best_genome->get_mae(best_parameters, validation_inputs, validation_outputs) << endl;
 
-            best_genome->write_to_file(output_filename + "_slice_" + to_string(i) + "_repeat_" + to_string(k) + ".bin", false);
-            best_genome->write_graphviz(output_filename + "_slice_" + to_string(i) + "_repeat_" + to_string(k) + ".gv");
+            best_genome->write_to_file(output_directory + "/" + output_filename + "_slice_" + to_string(i) + "_repeat_" + to_string(k) + ".bin", false);
+            best_genome->write_graphviz(output_directory + "/" + output_filename + "_slice_" + to_string(i) + "_repeat_" + to_string(k) + ".gv");
 
             /*
             RNN_Genome *duplicate_genome = new RNN_Genome(output_filename, false);

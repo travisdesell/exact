@@ -32,16 +32,11 @@ using std::vector;
 
 vector<string> arguments;
 
-vector< vector< vector<double> > > training_inputs;
-vector< vector< vector<double> > > training_outputs;
 vector< vector< vector<double> > > testing_inputs;
 vector< vector< vector<double> > > testing_outputs;
 
 int main(int argc, char** argv) {
     arguments = vector<string>(argv, argv + argc);
-
-    vector<string> training_filenames;
-    get_argument_vector(arguments, "--training_filenames", true, training_filenames);
 
     vector<string> testing_filenames;
     get_argument_vector(arguments, "--testing_filenames", true, testing_filenames);
@@ -49,47 +44,10 @@ int main(int argc, char** argv) {
     int32_t time_offset = 1;
     get_argument(arguments, "--time_offset", true, time_offset);
 
-    bool normalize = argument_exists(arguments, "--normalize");
-
     string genome_filename;
     get_argument(arguments, "--genome_file", true, genome_filename);
 
     vector<string> input_parameter_names;
-    /*
-    input_parameter_names.push_back("indicated_airspeed");
-    input_parameter_names.push_back("msl_altitude");
-    input_parameter_names.push_back("eng_1_rpm");
-    input_parameter_names.push_back("eng_1_fuel_flow");
-    input_parameter_names.push_back("eng_1_oil_press");
-    input_parameter_names.push_back("eng_1_oil_temp");
-    input_parameter_names.push_back("eng_1_cht_1");
-    input_parameter_names.push_back("eng_1_cht_2");
-    input_parameter_names.push_back("eng_1_cht_3");
-    input_parameter_names.push_back("eng_1_cht_4");
-    input_parameter_names.push_back("eng_1_egt_1");
-    input_parameter_names.push_back("eng_1_egt_2");
-    input_parameter_names.push_back("eng_1_egt_3");
-    input_parameter_names.push_back("eng_1_egt_4");
-    */
-    
-    /*
-    input_parameter_names.push_back("par1");
-    input_parameter_names.push_back("par2");
-    input_parameter_names.push_back("par3");
-    input_parameter_names.push_back("par4");
-    input_parameter_names.push_back("par5");
-    input_parameter_names.push_back("par6");
-    input_parameter_names.push_back("par7");
-    input_parameter_names.push_back("par8");
-    input_parameter_names.push_back("par9");
-    input_parameter_names.push_back("par10");
-    input_parameter_names.push_back("par11");
-    input_parameter_names.push_back("par12");
-    input_parameter_names.push_back("par13");
-    input_parameter_names.push_back("par14");
-    input_parameter_names.push_back("vib");
-    */
-
     input_parameter_names.push_back("Coyote-GROSS_GENERATOR_OUTPUT");
     input_parameter_names.push_back("Coyote-Net_Unit_Generation");
     input_parameter_names.push_back("Cyclone_-CYC__CONDITIONER_INLET_TEMP");
@@ -103,35 +61,44 @@ int main(int argc, char** argv) {
     //output_parameter_names.push_back("Cyclone_-_MAIN_OIL_FLOW");
     output_parameter_names.push_back("Cyclone_-CYCLONE__MAIN_FLM_INT");
 
-    //output_parameter_names.push_back("vib");
 
-    //output_parameter_names.push_back("indicated_airspeed");
-    //output_parameter_names.push_back("eng_1_oil_press");
-    /*
-    output_parameter_names.push_back("msl_altitude");
-    output_parameter_names.push_back("eng_1_rpm");
-    output_parameter_names.push_back("eng_1_fuel_flow");
-    output_parameter_names.push_back("eng_1_oil_press");
-    output_parameter_names.push_back("eng_1_oil_temp");
-    output_parameter_names.push_back("eng_1_cht_1");
-    output_parameter_names.push_back("eng_1_cht_2");
-    output_parameter_names.push_back("eng_1_cht_3");
-    output_parameter_names.push_back("eng_1_cht_4");
-    output_parameter_names.push_back("eng_1_egt_1");
-    output_parameter_names.push_back("eng_1_egt_2");
-    output_parameter_names.push_back("eng_1_egt_3");
-    output_parameter_names.push_back("eng_1_egt_4");
-    */
+    vector<TimeSeriesSet*> testing_time_series;
+    for (uint32_t i = 0; i < testing_filenames.size(); i++) {
+        TimeSeriesSet *tss = new TimeSeriesSet(testing_filenames[i]);
+        tss->select_parameters(input_parameter_names, output_parameter_names);
 
+        //tss->normalize_min_max("Coyote-GROSS_GENERATOR_OUTPUT", 200, 500);
+        tss->normalize_min_max("Coyote-GROSS_GENERATOR_OUTPUT", 0, 500);
 
-    vector<TimeSeriesSet*> training_time_series, testing_time_series;
-    load_time_series(training_filenames, testing_filenames, normalize, training_time_series, testing_time_series);
+        //tss->normalize_min_max("Coyote-Net_Unit_Generation", 200, 500);
+        tss->normalize_min_max("Coyote-Net_Unit_Generation", 0, 500);
 
-    export_time_series(training_time_series, input_parameter_names, output_parameter_names, time_offset, training_inputs, training_outputs);
+        //tss->normalize_min_max("Cyclone_-CYC__CONDITIONER_INLET_TEMP", 150, 600);
+        tss->normalize_min_max("Cyclone_-CYC__CONDITIONER_INLET_TEMP", 0, 600);
+
+        //tss->normalize_min_max("Cyclone_-CYC__CONDITIONER_OUTLET_TEMP", 90, 200);
+        //tss->normalize_min_max("Cyclone_-CYC__CONDITIONER_OUTLET_TEMP", 0, 200);
+        tss->normalize_min_max("Cyclone_-CYC__CONDITIONER_OUTLET_TEMP", 0, 250);
+
+        //tss->normalize_min_max("Cyclone_-LIGNITE_FEEDER__RATE", 30, 80);
+        tss->normalize_min_max("Cyclone_-LIGNITE_FEEDER__RATE", 0, 80);
+
+        //tss->normalize_min_max("Cyclone_-CYC__TOTAL_COMB_AIR_FLOW", 190, 400);
+        tss->normalize_min_max("Cyclone_-CYC__TOTAL_COMB_AIR_FLOW", 0, 400);
+
+        //tss->normalize_min_max("Cyclone_-_MAIN_OIL_FLOW", 0, 15);
+        tss->normalize_min_max("Cyclone_-_MAIN_OIL_FLOW", -1, 15);
+
+        //tss->normalize_min_max("Cyclone_-CYCLONE__MAIN_FLM_INT", 0, 100);
+        tss->normalize_min_max("Cyclone_-CYCLONE__MAIN_FLM_INT", 0, 400);
+
+        testing_time_series.push_back(tss);
+    }
+
     export_time_series(testing_time_series, input_parameter_names, output_parameter_names, time_offset, testing_inputs, testing_outputs);
 
-    int number_inputs = training_inputs[0].size();
-    int number_outputs = training_outputs[0].size();
+    int number_inputs = testing_inputs[0].size();
+    int number_outputs = testing_outputs[0].size();
 
     cout << "number_inputs: " << number_inputs << ", number_outputs: " << number_outputs << endl;
 
