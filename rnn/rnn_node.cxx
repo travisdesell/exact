@@ -38,6 +38,8 @@ void RNN_Node::input_fired(int time, double incoming_output) {
         exit(1);
     }
 
+    //cout << "node " << innovation_number << " - input value[" << time << "]: " << input_values[time] << endl;
+
 
     output_values[time] = tanh(input_values[time] + bias);
     ld_output[time] = tanh_derivative(output_values[time]);

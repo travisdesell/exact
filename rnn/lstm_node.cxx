@@ -108,7 +108,7 @@ void LSTM_Node::input_fired(int time, double incoming_output) {
     }
 
     double input_value = input_values[time];
-    //cout << "input value[" << i << "]:" << input_value << endl;
+    //cout << "node " << innovation_number << " - input value[" << time << "]:" << input_value << endl;
 
     double previous_cell_value = 0.0;
     if (time > 0) previous_cell_value = cell_values[time - 1];

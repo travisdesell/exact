@@ -120,6 +120,24 @@ int main(int argc, char** argv) {
     input_parameter_names.push_back("vib");
     */
 
+    input_parameter_names.push_back("Gross_Generator_Output");
+    input_parameter_names.push_back("Net_Unit_Generation");
+    input_parameter_names.push_back("Cyclone-Conditioner_Inlet_Temp");
+    input_parameter_names.push_back("Cyclone-Conditioner_Outlet_Temp");
+    input_parameter_names.push_back("Cyclone-Lignite_Feeder_Rate");
+    input_parameter_names.push_back("Cyclone-Primary_Air_Flow");
+    input_parameter_names.push_back("Cyclone-Primary_Air_Split");
+    input_parameter_names.push_back("Cyclone-Secondary_Air_Ratio");
+    input_parameter_names.push_back("Cyclone-System_Cyc_Secondary_Air_Flow_Total");
+    input_parameter_names.push_back("Cyclone-Secondary_Air_Flow");
+    input_parameter_names.push_back("Cyclone-Secondary_Air_Split");
+    input_parameter_names.push_back("Cyclone-Tertiary_Air_Flow");
+    input_parameter_names.push_back("Cyclone-Tertiary_Air_Split");
+    input_parameter_names.push_back("Cyclone-Total_Comb_Air_Flow");
+    input_parameter_names.push_back("Cyclone-Main_Oil_Flow");
+    input_parameter_names.push_back("Cyclone-Main_Flm_Int");
+
+    /*
     input_parameter_names.push_back("Coyote-GROSS_GENERATOR_OUTPUT");
     input_parameter_names.push_back("Coyote-Net_Unit_Generation");
     input_parameter_names.push_back("Cyclone_-CYC__CONDITIONER_INLET_TEMP");
@@ -128,10 +146,11 @@ int main(int argc, char** argv) {
     input_parameter_names.push_back("Cyclone_-CYC__TOTAL_COMB_AIR_FLOW");
     input_parameter_names.push_back("Cyclone_-_MAIN_OIL_FLOW");
     input_parameter_names.push_back("Cyclone_-CYCLONE__MAIN_FLM_INT");
+    */
 
     vector<string> output_parameter_names;
-    //output_parameter_names.push_back("Cyclone_-_MAIN_OIL_FLOW");
-    output_parameter_names.push_back("Cyclone_-CYCLONE__MAIN_FLM_INT");
+    output_parameter_names.push_back("Cyclone-Main_Oil_Flow");
+    output_parameter_names.push_back("Cyclone-Main_Flm_Int");
 
     //output_parameter_names.push_back("vib");
 
@@ -153,12 +172,15 @@ int main(int argc, char** argv) {
     output_parameter_names.push_back("eng_1_egt_4");
     */
 
-
     vector<TimeSeriesSet*> training_time_series, validation_time_series;
     load_time_series(training_filenames, validation_filenames, normalize, training_time_series, validation_time_series);
 
+    cout << "loaded time series." << endl;
+
     export_time_series(training_time_series, input_parameter_names, output_parameter_names, time_offset, training_inputs, training_outputs);
     export_time_series(validation_time_series, input_parameter_names, output_parameter_names, time_offset, validation_inputs, validation_outputs);
+
+    cout << "exported time series." << endl;
 
     int number_inputs = training_inputs[0].size();
     int number_outputs = training_outputs[0].size();
@@ -186,13 +208,11 @@ int main(int argc, char** argv) {
     double dropout_probability = 0.0;
     bool use_dropout = get_argument(arguments, "--dropout_probability", false, dropout_probability);
 
-    string log_filename = "";
-    get_argument(arguments, "--log_filename", false, log_filename);
+    string output_directory = "";
+    get_argument(arguments, "--output_directory", false, output_directory);
 
-    string output_filename;
-    get_argument(arguments, "--output_filename", true, output_filename);
 
-    exalt = new EXALT(population_size, max_genomes, input_parameter_names, output_parameter_names, bp_iterations, learning_rate, use_high_threshold, high_threshold, use_low_threshold, low_threshold, use_dropout, dropout_probability, log_filename);
+    exalt = new EXALT(population_size, max_genomes, input_parameter_names, output_parameter_names, bp_iterations, learning_rate, use_high_threshold, high_threshold, use_low_threshold, low_threshold, use_dropout, dropout_probability, output_directory);
 
 
     vector<thread> threads;
@@ -207,24 +227,6 @@ int main(int argc, char** argv) {
     finished = true;
 
     cout << "completed!" << endl;
-
-    RNN_Genome *best_genome = exalt->get_best_genome();
-
-    vector<double> best_parameters = best_genome->get_best_parameters();
-    cout << "training MSE: " << best_genome->get_mse(best_parameters, training_inputs, training_outputs) << endl;
-    cout << "training MAE: " << best_genome->get_mae(best_parameters, training_inputs, training_outputs) << endl;
-    cout << "validation MSE: " << best_genome->get_mse(best_parameters, validation_inputs, validation_outputs) << endl;
-    cout << "validation MAE: " << best_genome->get_mae(best_parameters, validation_inputs, validation_outputs) << endl;
-
-    best_genome->write_to_file(output_filename, false);
-
-    RNN_Genome *duplicate_genome = new RNN_Genome(output_filename, false);
-
-    vector<double> duplicate_parameters = duplicate_genome->get_best_parameters();
-    cout << "training MSE: " << duplicate_genome->get_mse(duplicate_parameters, training_inputs, training_outputs) << endl;
-    cout << "training MAE: " << duplicate_genome->get_mae(duplicate_parameters, training_inputs, training_outputs) << endl;
-    cout << "validation MSE: " << duplicate_genome->get_mse(duplicate_parameters, validation_inputs, validation_outputs) << endl;
-    cout << "validation MAE: " << duplicate_genome->get_mae(duplicate_parameters, validation_inputs, validation_outputs) << endl;
 
     return 0;
 }

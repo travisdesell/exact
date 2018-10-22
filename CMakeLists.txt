@@ -73,6 +73,18 @@ add_subdirectory(image_tools)
 add_subdirectory(time_series)
 add_subdirectory(cnn)
 
+add_subdirectory(rnn)
+add_subdirectory(rnn_tests)
+add_subdirectory(rnn_examples)
+
+#add_subdirectory(opencl)
+
+add_subdirectory(cnn_tests)
+add_subdirectory(cnn_examples)
+add_subdirectory(multithreaded)
+add_subdirectory(mpi)
+
+
 
 IF (COMPILE_CLIENT STREQUAL "YES")
     if (BOINC_APP_FOUND)
@@ -84,21 +96,6 @@ IF (COMPILE_CLIENT STREQUAL "YES")
         add_subdirectory(client)
     ENDIF (BOINC_APP_FOUND)
 ENDIF (COMPILE_CLIENT STREQUAL "YES")
-
-
-IF (COMPILE_CLIENT STREQUAL "NO")
-
-    add_subdirectory(rnn)
-    add_subdirectory(rnn_tests)
-    add_subdirectory(rnn_examples)
-
-    #add_subdirectory(opencl)
-
-    add_subdirectory(cnn_tests)
-    add_subdirectory(cnn_examples)
-    #add_subdirectory(multithreaded)
-    #add_subdirectory(mpi)
-ENDIF (COMPILE_CLIENT STREQUAL "NO")
 
 
 IF (BOINC_SERVER_FOUND)
