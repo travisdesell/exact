@@ -100,7 +100,7 @@ class TimeSeriesSet {
         void select_parameters(const vector<string> &input_parameter_names, const vector<string> &output_parameter_names);
 };
 
-void normalize_time_series_sets(vector<TimeSeriesSet*> time_series);
+void normalize_time_series_sets(vector<TimeSeriesSet*> time_series, bool verbose = true);
 
 void load_time_series(const vector<string> &training_filenames, const vector<string> &testing_filenames, bool normalize, vector<TimeSeriesSet*> &training_time_series, vector<TimeSeriesSet*> &testing_time_series);
 

@@ -125,7 +125,7 @@ double TimeSeries::get_max_change() const {
 }
 
 void TimeSeries::normalize_min_max(double min, double max) {
-    cout << "normalizing time series '" << name << "' with min: " << min << " and " << max << endl;
+    cout << "normalizing time series '" << name << "' with min: " << min << " and " << max << ", series min: " << this->min << ", series max: " << this->max << endl;
     for (int i = 0; i < values.size(); i++) {
         if (values[i] < min) {
             cout << "WARNING: normalizing series " << name << ", value[" << i << "] " << values[i] << " was less than min for normalization:" << min << endl;
@@ -256,7 +256,7 @@ TimeSeriesSet::TimeSeriesSet(string _filename) {
         }
     }
 
-    cout << "read time series '" << filename << "' with number rows: " << number_rows << endl;
+    //cout << "read time series '" << filename << "' with number rows: " << number_rows << endl;
 
 }
 
@@ -309,7 +309,7 @@ void TimeSeriesSet::normalize_min_max(string field, double min, double max) {
 }
 
 
-void normalize_time_series_sets(vector<TimeSeriesSet*> time_series) {
+void normalize_time_series_sets(vector<TimeSeriesSet*> time_series, bool verbose) {
     vector<string> fields = time_series[0]->get_fields();
 
     for (int i = 1; i < time_series.size(); i++) {
@@ -342,7 +342,7 @@ void normalize_time_series_sets(vector<TimeSeriesSet*> time_series) {
             if (current_min < min) min = current_min;
             if (current_max > max) max = current_max;
         }
-        cout << setw(50) << fields[i] << ", overall min: " << setw(12) << min << ", overall max: " << setw(12) << max << endl;
+        if (verbose) cout << setw(50) << fields[i] << ", overall min: " << setw(12) << min << ", overall max: " << setw(12) << max << endl;
 
         //for each series, subtract min, divide by (max - min)
         for (int j = 0; j < time_series.size(); j++) {
