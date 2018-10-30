@@ -22,6 +22,10 @@ using std::thread;
 #include <vector>
 using std::vector;
 
+//for mkdir
+#include <sys/stat.h>
+
+
 #include "mpi.h"
 
 #include "common/arguments.hxx"
@@ -40,8 +44,6 @@ mutex exalt_mutex;
 vector<string> arguments;
 
 EXALT *exalt;
-
-bool finished = false;
 
 vector< vector< vector<double> > > training_inputs;
 vector< vector< vector<double> > > training_outputs;
@@ -269,17 +271,27 @@ int main(int argc, char** argv) {
     string output_directory = "";
     get_argument(arguments, "--output_directory", false, output_directory);
 
-    if (rank == 0) {
-        exalt = new EXALT(population_size, max_genomes, input_parameter_names, output_parameter_names, bp_iterations, learning_rate, use_high_threshold, high_threshold, use_low_threshold, low_threshold, use_dropout, dropout_probability, output_directory);
+    mkdir(output_directory.c_str(), 0777);
 
-        master(max_rank);
-    } else {
-        worker(rank);
+    for (int i = 0; i < repeats; i++) {
+        string current_output_directory = output_directory + "/repeat_" + to_string(i);
+        mkdir(current_output_directory.c_str(), 0777);
+
+        if (rank == 0) {
+            exalt = new EXALT(population_size, max_genomes, input_parameter_names, output_parameter_names, bp_iterations, learning_rate, use_high_threshold, high_threshold, use_low_threshold, low_threshold, use_dropout, dropout_probability, current_output_directory);
+
+            master(max_rank);
+
+            delete exalt;
+        } else {
+            worker(rank);
+        }
+
+        MPI_Barrier(MPI_COMM_WORLD);
+        cout << "rank " << rank << " completed repeat " << i << " of " << repeats << endl;
     }
 
-    finished = true;
 
-    cout << "rank " << rank << " completed!" << endl;
 
     MPI_Finalize();
 
