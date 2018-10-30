@@ -356,7 +356,7 @@ uint32_t RNN_Genome::get_number_weights() {
 }
 
 void RNN_Genome::initialize_randomly() {
-    cout << "initializing randomly!" << endl;
+    //cout << "initializing randomly!" << endl;
     int number_of_weights = get_number_weights();
     initial_parameters.assign(number_of_weights, 0.0);
 
@@ -722,7 +722,11 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
 
     //initialize the initial previous values
     for (uint32_t i = 0; i < n_series; i++) {
+        //cout << "getting analytic gradient for input/output: " << i << ", n_series: " << n_series << ", parameters.size: " << parameters.size() << ", log filename: " << log_filename << endl;
+        //cout << "inputs.size(): " << inputs.size()  << ", outputs.size(): " << outputs.size() << ", log filename: " << log_filename << endl;
+
         rnn->get_analytic_gradient(parameters, inputs[i], outputs[i], mse, analytic_gradient, use_dropout, true, dropout_probability);
+        //cout << "got analytic gradient, inputs.size(): " << inputs.size()  << ", outputs.size(): " << outputs.size() << ", log filename: " << log_filename << endl;
 
         norm = 0.0;
         for (int32_t j = 0; j < parameters.size(); j++) {
@@ -734,12 +738,15 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
         prev_mse[i] = mse;
         prev_learning_rate[i] = learning_rate;
     }
+    //cout << "initialized previous values on: " << log_filename << endl;
 
     //TODO: need to get validation error on the RNN not the genome
     double validation_error = get_mse(parameters, validation_inputs, validation_outputs, false);
     best_validation_error = validation_error;
     best_validation_mae = get_mae(parameters, validation_inputs, validation_outputs);
     best_parameters = parameters;
+
+    //cout << "got initial errors on: " << log_filename << endl;
 
     /*
     cout << "initial validation_error: " << validation_error << endl;
@@ -763,7 +770,18 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
 
     ofstream *output_log = NULL;
     
-    if (log_filename != "") output_log = new ofstream(log_filename);
+    if (log_filename != "") {
+        //cout << "craeting new log stream for " << log_filename << endl;
+        output_log = new ofstream(log_filename);
+        //cout << "testing to see if log file valid for " << log_filename << endl;
+
+        if (!output_log->is_open()) {
+            cerr << "ERROR, could not open output log: '" << log_filename << "'" << endl;
+            exit(1);
+        }
+
+        //cout << "opened log file '" << log_filename << "'" << endl;
+    }
 
     vector<int32_t> shuffle_order;
     for (int32_t i = 0; i < (int32_t)inputs.size(); i++) {

@@ -52,7 +52,8 @@ int32_t repeats = 5;
 
 string process_name;
 
-vector<string> rnn_types({"one_layer_ff", "two_layer_ff", "jordan", "elman", "one_layer_lstm", "two_layer_lstm" });
+//vector<string> rnn_types({"jordan", "elman", "one_layer_lstm", "two_layer_lstm"});
+vector<string> rnn_types({"one_layer_ff", "two_layer_ff", "jordan", "elman", "one_layer_lstm", "two_layer_lstm"});
 
 vector<string> input_parameter_names({
         "Cyclone-Conditioner_Inlet_Temp", "Cyclone-Conditioner_Outlet_Temp",
@@ -60,7 +61,7 @@ vector<string> input_parameter_names({
         "Cyclone-System_Cyc_Secondary_Air_Flow_Total", "Cyclone-Secondary_Air_Flow", "Cyclone-Secondary_Air_Split",
         "Cyclone-Tertiary_Air_Split", "Cyclone-Total_Comb_Air_Flow", "Cyclone-Main_Oil_Flow",
         "Cyclone-Main_Flm_Int"
-        });
+        }); 
 
 /*
 vector<string> input_parameter_names({
@@ -74,9 +75,8 @@ vector<string> input_parameter_names({
         });
 */
 
-
-
-vector<string> output_parameter_names({"Cyclone-Main_Flm_Int"});
+vector<string> output_parameter_names;
+//vector<string> output_parameter_names({"Cyclone-Main_Flm_Int"});
 //vector<string> output_parameter_names({"Cyclone-Main_Oil_Flow"});
 
 vector<TimeSeriesSet*> input_series;
@@ -133,11 +133,6 @@ string result_to_string(ResultSet result) {
 }
 
 void send_result_to(int target, ResultSet result) {
-    cout << "sizeof(ResultSet): " << sizeof(ResultSet) << endl;
-    cout << "sizeof(result): " << sizeof(result) << endl;
-
-    cout << "sending: " << result_to_string(result) << endl;
-
     size_t result_size = sizeof(result);
     char bytes[result_size];
     memcpy(bytes, &result, result_size);
@@ -155,8 +150,6 @@ ResultSet receive_result_from(int source) {
     MPI_Recv(bytes, result_size, MPI_CHAR, source, RESULT_TAG, MPI_COMM_WORLD, &status);
 
     memcpy(&result, bytes, result_size);
-
-    cout << "received: " << result_to_string(result) << endl;
 
     return result;
 }
@@ -183,8 +176,6 @@ void master(int max_rank) {
     }
 
     results = vector<ResultSet>(rnn_types.size() * input_series.size() * repeats);
-
-    cout << "MAX INT: " << numeric_limits<int>::max() << endl;
 
     int terminates_sent = 0;
     int current_job = 0;
@@ -214,8 +205,8 @@ void master(int max_rank) {
                 if (terminates_sent >= max_rank - 1) return;
 
             } else {
-                //send genome
-                cout << "[" << setw(10) << process_name << "] sending genome to: " << message_source << endl;
+                //send job
+                cout << "[" << setw(10) << process_name << "] sending job to: " << message_source << endl;
                 send_job_to(message_source, current_job);
 
                 //increment the current job for the next worker
@@ -277,10 +268,10 @@ ResultSet handle_job(int current_job) {
         genome = create_lstm(number_inputs, 2, number_inputs, number_outputs, 1);
 
     } else if (rnn_type == "one_layer_ff") {
-        genome = create_ff(number_inputs, 1, number_inputs, number_outputs, 1);
+        genome = create_ff(number_inputs, 1, number_inputs, number_outputs, 0);
 
     } else if (rnn_type == "two_layer_ff") {
-        genome = create_ff(number_inputs, 2, number_inputs, number_outputs, 1);
+        genome = create_ff(number_inputs, 2, number_inputs, number_outputs, 0);
 
     } else if (rnn_type == "jordan") {
         genome = create_jordan(number_inputs, 1, number_inputs, number_outputs, 1);
@@ -304,21 +295,25 @@ ResultSet handle_job(int current_job) {
     string log_filename = output_directory + "/" + rnn_type + "_" + to_string(j) + "_" + to_string(repeat) + ".txt";
     genome->set_log_filename(log_filename);
 
-
     std::chrono::time_point<std::chrono::system_clock> start = std::chrono::system_clock::now();
     genome->backpropagate_stochastic(training_inputs, training_outputs, validation_inputs, validation_outputs);
     std::chrono::time_point<std::chrono::system_clock> end = std::chrono::system_clock::now();
 
     long milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-    cout << "backpropagation took: " << milliseconds << " ms." << endl;
 
     genome->get_weights(best_parameters);
     rnn->set_weights(best_parameters);
-    double training_mse = genome->get_mse(best_parameters, training_inputs, training_outputs, true);
-    double training_mae = genome->get_mae(best_parameters, training_inputs, training_outputs, true);
 
-    double test_mse = genome->get_mse(best_parameters, validation_inputs, validation_outputs, true);
-    double test_mae = genome->get_mae(best_parameters, validation_inputs, validation_outputs, true);
+    double training_mse = genome->get_mse(best_parameters, training_inputs, training_outputs, false);
+    double training_mae = genome->get_mae(best_parameters, training_inputs, training_outputs, false);
+
+    double test_mse = genome->get_mse(best_parameters, validation_inputs, validation_outputs, false);
+    double test_mae = genome->get_mae(best_parameters, validation_inputs, validation_outputs, false);
+
+    cout << "[" << setw(10) << process_name << "] deleting genome and rnn." << endl;
+
+    delete genome;
+    delete rnn;
 
     ResultSet result;
     result.job = current_job;
@@ -380,6 +375,8 @@ int main(int argc, char **argv) {
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &max_rank);
 
+    cout << "process " << rank << " of " << max_rank << endl;
+
     vector<string> arguments = vector<string>(argv, argv + argc);
 
     vector<string> input_filenames;
@@ -391,30 +388,38 @@ int main(int argc, char **argv) {
 
     get_argument(arguments, "--output_directory", true, output_directory);
 
+    get_argument_vector(arguments, "--output_parameter_names", true, output_parameter_names);
+
     get_argument(arguments, "--repeats", true, repeats);
 
     for (int i = 0; i < input_filenames.size(); i++) {
         input_series.push_back(new TimeSeriesSet(input_filenames[i]));
     }
 
-    /*
-    if (rank == 0) {
-        normalize_time_series_sets(input_series, true);
-        write_time_series_sets(input_series, "./series_");
-    } else {
-        normalize_time_series_sets(input_series, false);
-    }
-    */
+    bool normalize = argument_exists(argument, "--normalize");
 
-    MPI_Barrier(MPI_COMM_WORLD);
+    if (normalize) {
+        if (rank == 0) {
+            normalize_time_series_sets(input_series, true);
+            write_time_series_sets(input_series, "./series_");
+        } else {
+            normalize_time_series_sets(input_series, false);
+        }
+    }
+
+    //MPI_Barrier(MPI_COMM_WORLD);
 
     if (rank == 0) {
         master(max_rank);
 
         int32_t current = 0;
         for (int i = 0; i < rnn_types.size(); i++) {
+            ofstream outfile(output_directory + "/combined_" + rnn_types[i] + ".csv");
+
             for (int j = 0; j < input_series.size(); j++) {
                 for (int k = 0; k < repeats; k++) {
+                    outfile << j << "," << k << "," << results[current].milliseconds << "," << results[current].training_mse << "," << results[current].training_mae << "," << results[current].test_mse << "," << results[current].test_mae << endl;
+
                     cout << rnn_types[i] << ", tested on series[" << j << "], repeat: " << k << ", result: " << result_to_string(results[current]) << endl;
                     current++;
                 }

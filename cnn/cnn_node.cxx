@@ -1,6 +1,6 @@
 #include <cmath>
-using std::isnan;
-using std::isinf;
+//using std::isnan;
+//using std::isinf;
 
 #include <chrono>
 
@@ -845,7 +845,7 @@ void CNN_Node::batch_normalize(bool training, bool accumulating_test_statistics,
         }
 
 #ifdef NAN_CHECKS
-        if (isnan(batch_mean) || isinf(batch_mean) || isnan(batch_variance) || isinf(batch_variance)) {
+        if (std::isnan(batch_mean) || std::isinf(batch_mean) || std::isnan(batch_variance) || std::isinf(batch_variance)) {
             cerr << "ERROR! NAN or INF batch_mean or batch_variance on node " << innovation_number << "!" << endl;
             cerr << "gamma: " << gamma << ", beta: " << beta << endl;
 
@@ -889,7 +889,7 @@ void CNN_Node::batch_normalize(bool training, bool accumulating_test_statistics,
             values_out[current] = (term1 * values_in[current]) + term2;
 
 #ifdef NAN_CHECKS
-            if (isnan(values_out[current]) || isinf(values_out[current])) {
+            if (std::isnan(values_out[current]) || std::isinf(values_out[current])) {
                 cerr << "ERROR! NAN or INF batch_mean or batch_variance on node " << innovation_number << "!" << endl;
                 cerr << "values_out[" << current << "]: " << values_out[current] << ", values_in[" << current << "]: " << values_in[current] << endl;
                 cerr << "gamma: " << gamma << ", beta: " << beta << endl;
@@ -1017,7 +1017,7 @@ void CNN_Node::backpropagate_batch_normalization(bool training, float mu, float 
 
 
 #ifdef NAN_CHECKS
-        if (isnan(errors_in[current]) || isinf(errors_in[current])) {
+        if (std::isnan(errors_in[current]) || std::isinf(errors_in[current])) {
             cerr << "ERROR! errors_in[" << current << "] became: " << errors_in[current] << "!" << endl;
             cerr << "value_in: " << value_in << endl;
             cerr << "derr_dmean: " << derr_dmean << endl;
@@ -1197,13 +1197,13 @@ void CNN_Node::output_fired(bool training, float mu, float learning_rate, float 
 
 bool CNN_Node::has_nan() const {
     for (int32_t current = 0; current < total_size; current++) {
-        if (isnan(values_in[current]) || isinf(values_in[current])) return true;
-        if (isnan(errors_in[current]) || isinf(errors_in[current])) return true;
+        if (std::isnan(values_in[current]) || std::isinf(values_in[current])) return true;
+        if (std::isnan(errors_in[current]) || std::isinf(errors_in[current])) return true;
 
-        if (isnan(values_out[current]) || isinf(values_out[current])) return true;
-        if (isnan(errors_out[current]) || isinf(errors_out[current])) return true;
-        if (isnan(relu_gradients[current]) || isinf(relu_gradients[current])) return true;
-        if (isnan(pool_gradients[current]) || isinf(pool_gradients[current])) return true;
+        if (std::isnan(values_out[current]) || std::isinf(values_out[current])) return true;
+        if (std::isnan(errors_out[current]) || std::isinf(errors_out[current])) return true;
+        if (std::isnan(relu_gradients[current]) || std::isinf(relu_gradients[current])) return true;
+        if (std::isnan(pool_gradients[current]) || std::isinf(pool_gradients[current])) return true;
     }
 
     return false;
