@@ -55,6 +55,15 @@ string process_name;
 vector<string> rnn_types({"one_layer_ff", "two_layer_ff", "jordan", "elman", "one_layer_lstm", "two_layer_lstm" });
 
 vector<string> input_parameter_names({
+        "Cyclone-Conditioner_Inlet_Temp", "Cyclone-Conditioner_Outlet_Temp",
+        "Cyclone-Lignite_Feeder_Rate", "Cyclone-Primary_Air_Flow","Cyclone-Primary_Air_Split",
+        "Cyclone-System_Cyc_Secondary_Air_Flow_Total", "Cyclone-Secondary_Air_Flow", "Cyclone-Secondary_Air_Split",
+        "Cyclone-Tertiary_Air_Split", "Cyclone-Total_Comb_Air_Flow", "Cyclone-Main_Oil_Flow",
+        "Cyclone-Main_Flm_Int"
+        });
+
+/*
+vector<string> input_parameter_names({
         "Cyclone-Conditioner_Inlet_Temp" ,"Cyclone-Conditioner_Outlet_Temp",
         "Cyclone-Lignite_Feeder_Rate","Cyclone-Primary_Air_Flow","Cyclone-Primary_Air_Split",
         "Cyclone-Secondary_Air_Ratio","Cyclone-System_Cyc_Secondary_Air_Flow_Total",
@@ -63,6 +72,9 @@ vector<string> input_parameter_names({
         "Cyclone-Total_Comb_Air_Flow","Cyclone-Main_Oil_Flow",
         "Cyclone-Main_Flm_Int"
         });
+*/
+
+
 
 vector<string> output_parameter_names({"Cyclone-Main_Flm_Int"});
 //vector<string> output_parameter_names({"Cyclone-Main_Oil_Flow"});
@@ -384,11 +396,15 @@ int main(int argc, char **argv) {
     for (int i = 0; i < input_filenames.size(); i++) {
         input_series.push_back(new TimeSeriesSet(input_filenames[i]));
     }
+
+    /*
     if (rank == 0) {
         normalize_time_series_sets(input_series, true);
+        write_time_series_sets(input_series, "./series_");
     } else {
         normalize_time_series_sets(input_series, false);
     }
+    */
 
     MPI_Barrier(MPI_COMM_WORLD);
 

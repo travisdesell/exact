@@ -124,8 +124,8 @@ double TimeSeries::get_max_change() const {
     return max_change;
 }
 
-void TimeSeries::normalize_min_max(double min, double max) {
-    cout << "normalizing time series '" << name << "' with min: " << min << " and " << max << ", series min: " << this->min << ", series max: " << this->max << endl;
+void TimeSeries::normalize_min_max(double min, double max, bool verbose) {
+    if (verbose) cout << "normalizing time series '" << name << "' with min: " << min << " and " << max << ", series min: " << this->min << ", series max: " << this->max << endl;
     for (int i = 0; i < values.size(); i++) {
         if (values[i] < min) {
             cout << "WARNING: normalizing series " << name << ", value[" << i << "] " << values[i] << " was less than min for normalization:" << min << endl;
@@ -304,8 +304,8 @@ double TimeSeriesSet::get_max_change(string field) {
     return time_series[field]->get_max_change();
 }
 
-void TimeSeriesSet::normalize_min_max(string field, double min, double max) {
-    time_series[field]->normalize_min_max(min, max);
+void TimeSeriesSet::normalize_min_max(string field, double min, double max, bool verbose) {
+    time_series[field]->normalize_min_max(min, max, verbose);
 }
 
 
@@ -346,7 +346,7 @@ void normalize_time_series_sets(vector<TimeSeriesSet*> time_series, bool verbose
 
         //for each series, subtract min, divide by (max - min)
         for (int j = 0; j < time_series.size(); j++) {
-            time_series[j]->normalize_min_max(fields[i], min, max);
+            time_series[j]->normalize_min_max(fields[i], min, max, false);
         }
     }
 }
@@ -510,6 +510,37 @@ void TimeSeriesSet::select_parameters(const vector<string> &input_parameter_name
     combined_parameters.insert(combined_parameters.end(), output_parameter_names.begin(), output_parameter_names.end());
 
     select_parameters(combined_parameters);
+}
+
+
+void write_time_series_sets(const vector<TimeSeriesSet*> &time_series, string base_filename) {
+    for (uint32_t i = 0; i < time_series.size(); i++) {
+        ofstream outfile(base_filename + to_string(i) + ".csv");
+
+        vector<string> fields = time_series[i]->get_fields();
+
+        vector< vector<double> > data;
+        time_series[i]->export_time_series(data);
+
+        for (int j = 0; j < fields.size(); j++) {
+            if (j > 0) {
+                outfile << ",";
+            }
+            outfile << fields[j];
+        }
+        outfile << endl;
+
+        for (int j = 0; j < data[0].size(); j++) {
+            for (int k = 0; k < data.size(); k++) {
+                if (k > 0) {
+                    outfile << ",";
+                }
+
+                outfile << data[k][j];
+            }
+            outfile << endl;
+        }
+    }
 }
 
 

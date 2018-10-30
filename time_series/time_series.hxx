@@ -47,7 +47,7 @@ class TimeSeries {
         double get_min_change() const;
         double get_max_change() const;
 
-        void normalize_min_max(double min, double max);
+        void normalize_min_max(double min, double max, bool verbose = false);
 
         void cut(int32_t start, int32_t stop);
 
@@ -85,7 +85,7 @@ class TimeSeriesSet {
         double get_min_change(string field);
         double get_max_change(string field);
 
-        void normalize_min_max(string field, double min, double max);
+        void normalize_min_max(string field, double min, double max, bool verbose = false);
 
         void export_time_series(vector< vector<double> > &data);
         void export_time_series(vector< vector<double> > &data, const vector<string> &requested_fields);
@@ -101,6 +101,7 @@ class TimeSeriesSet {
 };
 
 void normalize_time_series_sets(vector<TimeSeriesSet*> time_series, bool verbose = true);
+void write_time_series_sets(const vector<TimeSeriesSet*> &time_series, string base_filename);
 
 void load_time_series(const vector<string> &training_filenames, const vector<string> &testing_filenames, bool normalize, vector<TimeSeriesSet*> &training_time_series, vector<TimeSeriesSet*> &testing_time_series);
 
