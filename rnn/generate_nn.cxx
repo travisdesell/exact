@@ -14,7 +14,7 @@ using std::vector;
 #include "rnn/rnn_node_interface.hxx"
 
 RNN_Genome* create_ff(int number_inputs, int number_hidden_layers, int number_hidden_nodes, int number_outputs, int max_recurrent_depth) {
-    cout << "creating ff with inputs: " << number_inputs << ", hidden: " << number_hidden_layers << "x" << number_hidden_nodes << ", outputs: " << number_outputs << endl;
+    //cout << "creating ff with inputs: " << number_inputs << ", hidden: " << number_hidden_layers << "x" << number_hidden_nodes << ", outputs: " << number_outputs << endl;
     vector<RNN_Node_Interface*> rnn_nodes;
     vector< vector<RNN_Node_Interface*> > layer_nodes(2 + number_hidden_layers);
     vector<RNN_Edge*> rnn_edges;
