@@ -396,7 +396,7 @@ int main(int argc, char **argv) {
         input_series.push_back(new TimeSeriesSet(input_filenames[i]));
     }
 
-    bool normalize = argument_exists(argument, "--normalize");
+    bool normalize = argument_exists(arguments, "--normalize");
 
     if (normalize) {
         if (rank == 0) {

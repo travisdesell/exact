@@ -10,4 +10,7 @@ if (MPI_FOUND)
 
     add_executable(exalt_mpi exalt_mpi)
     target_link_libraries(exalt_mpi exalt_strategy exact_time_series exact_common ${MPI_LIBRARIES} ${MPI_EXTRA} ${MYSQL_LIBRARIES} ${TIFF_LIBRARIES} pthread)
+
+    add_executable(exalt_mpi_multi exalt_mpi_multi)
+    target_link_libraries(exalt_mpi_multi exalt_strategy exact_time_series exact_common ${MPI_LIBRARIES} ${MPI_EXTRA} ${MYSQL_LIBRARIES} ${TIFF_LIBRARIES} pthread)
 endif (MPI_FOUND)
