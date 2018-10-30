@@ -516,7 +516,7 @@ void EXALT::attempt_edge_insert(vector<RNN_Edge*> &child_edges, vector<RNN_Node_
         double crossover_value = rng_crossover_weight(generator);
         new_weight = crossover_value * (second_edge->weight - edge->weight) + edge->weight;
 
-        cout << "EDGE WEIGHT CROSSOVER :: " << "better: " << edge->weight << ", worse: " << second_edge->weight << ", crossover_value: " << crossover_value << ", new_weight: " << new_weight << endl;
+        //cout << "EDGE WEIGHT CROSSOVER :: " << "better: " << edge->weight << ", worse: " << second_edge->weight << ", crossover_value: " << crossover_value << ", new_weight: " << new_weight << endl;
 
         vector<double> input_weights1, input_weights2, output_weights1, output_weights2;
         edge->get_input_node()->get_weights(input_weights1);
@@ -533,12 +533,12 @@ void EXALT::attempt_edge_insert(vector<RNN_Edge*> &child_edges, vector<RNN_Node_
 
         for (int32_t i = 0; i < (int32_t)new_input_weights.size(); i++) {
             new_input_weights[i] = crossover_value * (input_weights2[i] - input_weights1[i]) + input_weights1[i];
-            cout << "\tnew input weights[" << i <<  "]: " << new_input_weights[i] << endl;
+            //cout << "\tnew input weights[" << i <<  "]: " << new_input_weights[i] << endl;
         }
 
         for (int32_t i = 0; i < (int32_t)new_output_weights.size(); i++) {
             new_output_weights[i] = crossover_value * (output_weights2[i] - output_weights1[i]) + output_weights1[i];
-            cout << "\tnew output weights[" << i <<  "]: " << new_output_weights[i] << endl;
+            //cout << "\tnew output weights[" << i <<  "]: " << new_output_weights[i] << endl;
         }
 
     } else {
@@ -591,7 +591,7 @@ void EXALT::attempt_recurrent_edge_insert(vector<RNN_Recurrent_Edge*> &child_rec
         double crossover_value = rng_crossover_weight(generator);
         new_weight = crossover_value * (second_edge->weight - recurrent_edge->weight) + recurrent_edge->weight;
 
-        cout << "RECURRENT EDGE WEIGHT CROSSOVER :: " << "better: " << recurrent_edge->weight << ", worse: " << second_edge->weight << ", crossover_value: " << crossover_value << ", new_weight: " << new_weight << endl;
+        //cout << "RECURRENT EDGE WEIGHT CROSSOVER :: " << "better: " << recurrent_edge->weight << ", worse: " << second_edge->weight << ", crossover_value: " << crossover_value << ", new_weight: " << new_weight << endl;
 
         vector<double> input_weights1, input_weights2, output_weights1, output_weights2;
         recurrent_edge->get_input_node()->get_weights(input_weights1);
@@ -605,12 +605,12 @@ void EXALT::attempt_recurrent_edge_insert(vector<RNN_Recurrent_Edge*> &child_rec
 
         for (int32_t i = 0; i < (int32_t)new_input_weights.size(); i++) {
             new_input_weights[i] = crossover_value * (input_weights2[i] - input_weights1[i]) + input_weights1[i];
-            cout << "\tnew input weights[" << i <<  "]: " << new_input_weights[i] << endl;
+            //cout << "\tnew input weights[" << i <<  "]: " << new_input_weights[i] << endl;
         }
 
         for (int32_t i = 0; i < (int32_t)new_output_weights.size(); i++) {
             new_output_weights[i] = crossover_value * (output_weights2[i] - output_weights1[i]) + output_weights1[i];
-            cout << "\tnew output weights[" << i <<  "]: " << new_output_weights[i] << endl;
+            //cout << "\tnew output weights[" << i <<  "]: " << new_output_weights[i] << endl;
         }
 
     } else {
