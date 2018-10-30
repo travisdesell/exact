@@ -219,29 +219,34 @@ int main(int argc, char** argv) {
 
     arguments = vector<string>(argv, argv + argc);
 
-    vector<string> training_filenames;
-    get_argument_vector(arguments, "--training_filenames", true, training_filenames);
+    vector<string> input_filenames;
+    get_argument_vector(arguments, "--input_filenames", true, input_filenames);
 
-    vector<string> validation_filenames;
-    get_argument_vector(arguments, "--validation_filenames", true, validation_filenames);
+    vector<TimeSeriesSet*> input_series;
+    for (int i = 0; i < input_filenames.size(); i++) {
+        input_series.push_back(new TimeSeriesSet(input_filenames[i]));
+    }
 
     int32_t time_offset = 1;
     get_argument(arguments, "--time_offset", true, time_offset);
 
     bool normalize = argument_exists(arguments, "--normalize");
+    if (normalize) {
+        if (rank == 0) {
+            normalize_time_series_sets(input_series, true);
+            write_time_series_sets(input_series, "./series_");
+        } else {
+            normalize_time_series_sets(input_series, false);
+        }
+    }
 
 
     vector<string> input_parameter_names;
     get_argument_vector(arguments, "--input_parameter_names", true, input_parameter_names);
 
+
     vector<string> output_parameter_names;
     get_argument_vector(arguments, "--output_parameter_names", true, output_parameter_names);
-
-    vector<TimeSeriesSet*> training_time_series, validation_time_series;
-    load_time_series(training_filenames, validation_filenames, normalize, training_time_series, validation_time_series);
-
-    export_time_series(training_time_series, input_parameter_names, output_parameter_names, time_offset, training_inputs, training_outputs);
-    export_time_series(validation_time_series, input_parameter_names, output_parameter_names, time_offset, validation_inputs, validation_outputs);
 
     int32_t population_size;
     get_argument(arguments, "--population_size", true, population_size);
@@ -273,25 +278,52 @@ int main(int argc, char** argv) {
 
     mkdir(output_directory.c_str(), 0777);
 
-    for (int i = 0; i < repeats; i++) {
-        string current_output_directory = output_directory + "/repeat_" + to_string(i);
-        mkdir(current_output_directory.c_str(), 0777);
 
-        if (rank == 0) {
-            exalt = new EXALT(population_size, max_genomes, input_parameter_names, output_parameter_names, bp_iterations, learning_rate, use_high_threshold, high_threshold, use_low_threshold, low_threshold, use_dropout, dropout_probability, current_output_directory);
+    for (uint32_t i = 0; i < input_series.size(); i++) {
+        vector<TimeSeriesSet*> training_series;
+        vector<TimeSeriesSet*> validation_series;
 
-            master(max_rank);
-
-            delete exalt;
-        } else {
-            worker(rank);
+        for (uint32_t j = 0; j < input_series.size(); j++) {
+            if (j == i) {
+                validation_series.push_back(input_series[j]);
+            } else {
+                training_series.push_back(input_series[j]);
+            }
         }
 
-        MPI_Barrier(MPI_COMM_WORLD);
-        cout << "rank " << rank << " completed repeat " << i << " of " << repeats << endl;
+        export_time_series(training_series, input_parameter_names, output_parameter_names, time_offset, training_inputs, training_outputs);
+        export_time_series(validation_series, input_parameter_names, output_parameter_names, time_offset, validation_inputs, validation_outputs);
+
+        string slice_output_directory = output_directory + "/slice_" + to_string(i);
+        mkdir(slice_output_directory.c_str(), 0777);
+
+        for (int k = 0; k < repeats; k++) {
+            string current_output_directory = slice_output_directory + "/repeat_" + to_string(k);
+            mkdir(current_output_directory.c_str(), 0777);
+
+            if (rank == 0) {
+                exalt = new EXALT(population_size, max_genomes, input_parameter_names, output_parameter_names, bp_iterations, learning_rate, use_high_threshold, high_threshold, use_low_threshold, low_threshold, use_dropout, dropout_probability, current_output_directory);
+
+                master(max_rank);
+
+                RNN_Genome *best_genome = exalt->get_best_genome();
+
+                string binary_file = slice_output_directory + "/repeat_best_" + to_string(k) + ".bin";
+                string graphviz_file = slice_output_directory + "/repeat_best_" + to_string(k) + ".gv";
+
+                cout << "writing best genome to '" << binary_file << "' and '" << graphviz_file << "'" << endl;
+                best_genome->write_to_file(binary_file, false);
+                best_genome->write_graphviz(graphviz_file);
+
+                delete exalt;
+            } else {
+                worker(rank);
+            }
+
+            MPI_Barrier(MPI_COMM_WORLD);
+            cout << "rank " << rank << " completed slice " << i << " of " << input_series.size() << " repeat " << k << " of " << repeats << endl;
+        }
     }
-
-
 
     MPI_Finalize();
 

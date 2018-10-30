@@ -55,6 +55,9 @@ string process_name;
 //vector<string> rnn_types({"jordan", "elman", "one_layer_lstm", "two_layer_lstm"});
 vector<string> rnn_types({"one_layer_ff", "two_layer_ff", "jordan", "elman", "one_layer_lstm", "two_layer_lstm"});
 
+vector<string> input_parameter_names;
+
+/*
 vector<string> input_parameter_names({
         "Cyclone-Conditioner_Inlet_Temp", "Cyclone-Conditioner_Outlet_Temp",
         "Cyclone-Lignite_Feeder_Rate", "Cyclone-Primary_Air_Flow","Cyclone-Primary_Air_Split",
@@ -62,6 +65,7 @@ vector<string> input_parameter_names({
         "Cyclone-Tertiary_Air_Split", "Cyclone-Total_Comb_Air_Flow", "Cyclone-Main_Oil_Flow",
         "Cyclone-Main_Flm_Int"
         }); 
+        */
 
 /*
 vector<string> input_parameter_names({
@@ -388,6 +392,7 @@ int main(int argc, char **argv) {
 
     get_argument(arguments, "--output_directory", true, output_directory);
 
+    get_argument_vector(arguments, "--input_parameter_names", true, input_parameter_names);
     get_argument_vector(arguments, "--output_parameter_names", true, output_parameter_names);
 
     get_argument(arguments, "--repeats", true, repeats);
