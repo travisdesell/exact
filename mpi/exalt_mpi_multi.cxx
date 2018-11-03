@@ -301,6 +301,7 @@ int main(int argc, char** argv) {
 
         string slice_output_directory = output_directory + "/slice_" + to_string(i);
         mkdir(slice_output_directory.c_str(), 0777);
+        ofstream slice_times_file(output_directory + "/slice_" + to_string(i) + "_runtimes.csv");
 
         int k = 0;
         if (output_parameter_names[0].compare("Pitch") == 0 && first == true) {
@@ -312,9 +313,14 @@ int main(int argc, char** argv) {
             mkdir(current_output_directory.c_str(), 0777);
 
             if (rank == 0) {
+
                 exalt = new EXALT(population_size, max_genomes, input_parameter_names, output_parameter_names, bp_iterations, learning_rate, use_high_threshold, high_threshold, use_low_threshold, low_threshold, use_dropout, dropout_probability, current_output_directory);
 
+                std::chrono::time_point<std::chrono::system_clock> start = std::chrono::system_clock::now();
                 master(max_rank);
+                std::chrono::time_point<std::chrono::system_clock> end = std::chrono::system_clock::now();
+                long milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+                slice_times_file << milliseconds << endl;
 
                 RNN_Genome *best_genome = exalt->get_best_genome();
 
@@ -333,6 +339,8 @@ int main(int argc, char** argv) {
             MPI_Barrier(MPI_COMM_WORLD);
             cout << "rank " << rank << " completed slice " << i << " of " << input_series.size() << " repeat " << k << " of " << repeats << endl;
         }
+
+        slice_times_file.close();
     }
 
     MPI_Finalize();

@@ -717,6 +717,8 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
 
     double norm = 0.0;
 
+    std::chrono::time_point<std::chrono::system_clock> startClock = std::chrono::system_clock::now();
+
     RNN* rnn = get_rnn();
     rnn->set_weights(parameters);
 
@@ -931,11 +933,16 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
         }
 
         if (output_log != NULL) {
+            std::chrono::time_point<std::chrono::system_clock> currentClock = std::chrono::system_clock::now();
+            long milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(currentClock - startClock).count();
+
             (*output_log) << iteration
-                << " " << training_error
-                << " " << validation_error
-                << " " << best_validation_error
-                << " " << avg_norm << endl;
+                << "," << milliseconds
+                << "," << training_error
+                << "," << validation_error
+                << "," << best_validation_error
+                << "," << best_validation_mae
+                << "," << avg_norm << endl;
 
         }
 
