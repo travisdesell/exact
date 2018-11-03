@@ -405,6 +405,7 @@ int main(int argc, char **argv) {
 
     if (normalize) {
         if (rank == 0) {
+            cout << "normalizing series!" << endl;
             normalize_time_series_sets(input_series, true);
             write_time_series_sets(input_series, "./series_");
         } else {
