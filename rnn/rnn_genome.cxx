@@ -935,6 +935,7 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
                 << " " << training_error
                 << " " << validation_error
                 << " " << best_validation_error
+                << " " << best_validation_mae
                 << " " << avg_norm << endl;
 
         }

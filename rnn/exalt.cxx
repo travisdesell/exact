@@ -86,7 +86,7 @@ EXALT::EXALT(int32_t _population_size, int32_t _max_genomes, const vector<string
     if (output_directory != "") {
         mkdir(output_directory.c_str(), 0777);
         log_file = new ofstream(output_directory + "/" + "fitness_log.csv");
-        (*log_file) << "Inserted Genomes, Total BP Epochs, Best Val. MSE, Best Val. MAE, Enabled Nodes, Enabled Edges, Enabled Rec. Edges" << endl;
+        (*log_file) << "Inserted Genomes, Total BP Epochs, Best Val. MAE, Best Val. MSE, Enabled Nodes, Enabled Edges, Enabled Rec. Edges" << endl;
     } else {
         log_file = NULL;
     }
