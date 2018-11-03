@@ -30,6 +30,15 @@ using std::to_string;
 #include "rnn_genome.hxx"
 #include "generate_nn.hxx"
 
+EXALT::~EXALT() {
+    RNN_Genome *genome;
+    while (genomes.size() > 0) {
+        genome = genomes.back();
+        genomes.pop_back();
+        delete genome;
+    }
+}
+
 EXALT::EXALT(int32_t _population_size, int32_t _max_genomes, const vector<string> &_input_parameter_names, const vector<string> &_output_parameter_names, int32_t _bp_iterations, double _learning_rate, bool _use_high_threshold, double _high_threshold, bool _use_low_threshold, double _low_threshold, bool _use_dropout, double _dropout_probability, string _output_directory) : population_size(_population_size), max_genomes(_max_genomes), number_inputs(_input_parameter_names.size()), number_outputs(_output_parameter_names.size()), bp_iterations(_bp_iterations), learning_rate(_learning_rate), use_high_threshold(_use_high_threshold), high_threshold(_high_threshold), use_low_threshold(_use_low_threshold), low_threshold(_low_threshold), use_dropout(_use_dropout), dropout_probability(_dropout_probability), output_directory(_output_directory) {
 
     input_parameter_names = _input_parameter_names;
@@ -634,7 +643,7 @@ void EXALT::attempt_recurrent_edge_insert(vector<RNN_Recurrent_Edge*> &child_rec
 
 
 RNN_Genome* EXALT::crossover(RNN_Genome *p1, RNN_Genome *p2) {
-    cerr << "generating new genome by crossover!" << endl;
+    cout << "generating new genome by crossover!" << endl;
 
     double _mu, _sigma;
     cout << "getting p1 mu/sigma!" << endl;

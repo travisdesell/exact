@@ -278,8 +278,13 @@ int main(int argc, char** argv) {
 
     mkdir(output_directory.c_str(), 0777);
 
+    uint32_t i = 0;
+    bool first = true;
+    if (output_parameter_names[0].compare("Pitch") == 0 || output_parameter_names[0].compare("E1 RPM") == 0) {
+        i = 8;
+    }
 
-    for (uint32_t i = 0; i < input_series.size(); i++) {
+    for (; i < input_series.size(); i++) {
         vector<TimeSeriesSet*> training_series;
         vector<TimeSeriesSet*> validation_series;
 
@@ -297,7 +302,12 @@ int main(int argc, char** argv) {
         string slice_output_directory = output_directory + "/slice_" + to_string(i);
         mkdir(slice_output_directory.c_str(), 0777);
 
-        for (int k = 0; k < repeats; k++) {
+        int k = 0;
+        if (output_parameter_names[0].compare("Pitch") == 0 && first == true) {
+            first = false;
+            k = 4;
+        }
+        for (; k < repeats; k++) {
             string current_output_directory = slice_output_directory + "/repeat_" + to_string(k);
             mkdir(current_output_directory.c_str(), 0777);
 

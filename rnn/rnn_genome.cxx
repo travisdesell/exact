@@ -1334,6 +1334,9 @@ bool RNN_Genome::attempt_edge_insert(RNN_Node_Interface *n1, RNN_Node_Interface 
 
     RNN_Edge *e = new RNN_Edge(++edge_innovation_count, n1, n2);
     e->weight = normal_distribution.random(generator, mu, sigma);
+    if (e->weight <= -10.0) e->weight = -10.0;
+    if (e->weight >= 10.0) e->weight = 10.0;
+
     cout << "\tadding edge between nodes " << e->input_innovation_number << " and " << e->output_innovation_number << ", new edge weight: " << e->weight << endl;
 
     edges.insert( upper_bound(edges.begin(), edges.end(), e, sort_RNN_Edges_by_depth()), e);
@@ -1364,6 +1367,9 @@ bool RNN_Genome::attempt_recurrent_edge_insert(RNN_Node_Interface *n1, RNN_Node_
 
     RNN_Recurrent_Edge *e = new RNN_Recurrent_Edge(++edge_innovation_count, recurrent_depth, n1, n2);
     e->weight = normal_distribution.random(generator, mu, sigma);
+    if (e->weight <= -10.0) e->weight = -10.0;
+    if (e->weight >= 10.0) e->weight = 10.0;
+
     cout << "\tadding recurrent edge between nodes " << e->input_innovation_number << " and " << e->output_innovation_number << ", new edge weight: " << e->weight << endl;
 
     recurrent_edges.insert( upper_bound(recurrent_edges.begin(), recurrent_edges.end(), e, sort_RNN_Recurrent_Edges_by_depth()), e);
@@ -1459,6 +1465,8 @@ bool RNN_Genome::add_recurrent_edge(double mu, double sigma, int32_t max_recurre
     //edge with same input/output did not exist, now we can create it
     RNN_Recurrent_Edge *recurrent_edge = new RNN_Recurrent_Edge(++edge_innovation_count, recurrent_depth, n1, n2);
     recurrent_edge->weight = normal_distribution.random(generator, mu, sigma);
+    if (recurrent_edge->weight <= -10.0) recurrent_edge->weight = -10.0;
+    if (recurrent_edge->weight >= 10.0) recurrent_edge->weight = 10.0;
 
     recurrent_edges.insert( upper_bound(recurrent_edges.begin(), recurrent_edges.end(), recurrent_edge, sort_RNN_Recurrent_Edges_by_depth()), recurrent_edge);
 

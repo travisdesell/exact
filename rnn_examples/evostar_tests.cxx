@@ -183,6 +183,12 @@ void master(int max_rank) {
 
     int terminates_sent = 0;
     int current_job = 0;
+    int last_job = rnn_types.size() * input_series.size() * repeats;
+
+    if (output_parameter_names[0].compare("Cyclone-Main_Flm_Int") == 0) {
+        current_job = 4 * input_series.size() * repeats;
+        last_job = 5 * input_series.size() * repeats;
+    }
 
     while (true) {
         //wait for a incoming message
@@ -198,7 +204,8 @@ void master(int max_rank) {
         if (tag == WORK_REQUEST_TAG) {
             receive_work_request_from(message_source);
 
-            if (current_job >= results.size()) {
+            if (current_job >= last_job) {
+//            if (current_job >= results.size()) {
                 //no more jobs to process if the current job is >= the result vector
                 //send terminate message
                 cout << "[" << setw(10) << process_name << "] terminating worker: " << message_source << endl;
@@ -419,7 +426,14 @@ int main(int argc, char **argv) {
         master(max_rank);
 
         int32_t current = 0;
-        for (int i = 0; i < rnn_types.size(); i++) {
+        int i = 0;
+        int last = rnn_types.size();
+        if (output_parameter_names[0].compare("Cyclone-Main_Flm_Int") == 0) {
+            i = 4;
+            last = 5;
+        }
+
+        for (; i < last; i++) {
             ofstream outfile(output_directory + "/combined_" + rnn_types[i] + ".csv");
 
             for (int j = 0; j < input_series.size(); j++) {

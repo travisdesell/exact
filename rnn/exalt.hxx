@@ -82,6 +82,8 @@ class EXALT {
     public:
         EXALT(int32_t _population_size, int32_t _max_genomes, const vector<string> &_input_parameter_names, const vector<string> &_output_parameter_names, int32_t _bp_iterations, double _learning_rate, bool _use_high_threshold, double _high_threshold, bool _use_low_threshold, double _low_threshold, bool _use_dropout, double _dropout_probability, string _output_directory);
 
+        ~EXALT();
+
         void print_population();
         int32_t population_contains(RNN_Genome* genome);
 
