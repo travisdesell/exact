@@ -86,10 +86,12 @@ EXALT::EXALT(int32_t _population_size, int32_t _max_genomes, const vector<string
     if (output_directory != "") {
         mkdir(output_directory.c_str(), 0777);
         log_file = new ofstream(output_directory + "/" + "fitness_log.csv");
-        (*log_file) << "Inserted Genomes, Total BP Epochs, Best Val. MAE, Best Val. MSE, Enabled Nodes, Enabled Edges, Enabled Rec. Edges" << endl;
+        (*log_file) << "Inserted Genomes, Total BP Epochs, Time, Best Val. MAE, Best Val. MSE, Enabled Nodes, Enabled Edges, Enabled Rec. Edges" << endl;
     } else {
         log_file = NULL;
     }
+
+    startClock = std::chrono::system_clock::now();
 }
 
 string parse_fitness(float fitness) {
@@ -109,7 +111,17 @@ void EXALT::print_population() {
     cout << endl << endl;
 
     if (log_file != NULL) {
-        (*log_file) << inserted_genomes << "," << (inserted_genomes * bp_iterations) << "," << genomes[0]->best_validation_mae << "," << genomes[0]->best_validation_error << "," << genomes[0]->get_enabled_node_count() << "," << genomes[0]->get_enabled_edge_count() << "," << genomes[0]->get_enabled_recurrent_edge_count() << endl;
+        std::chrono::time_point<std::chrono::system_clock> currentClock = std::chrono::system_clock::now();
+        long milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(currentClock - startClock).count();
+
+        (*log_file) << inserted_genomes
+            << "," << (inserted_genomes * bp_iterations) 
+            << "," << milliseconds
+            << "," << genomes[0]->best_validation_mae 
+            << "," << genomes[0]->best_validation_error 
+            << "," << genomes[0]->get_enabled_node_count() 
+            << "," << genomes[0]->get_enabled_edge_count() 
+            << "," << genomes[0]->get_enabled_recurrent_edge_count() << endl;
     }
 
 }
