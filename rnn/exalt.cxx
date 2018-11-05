@@ -30,7 +30,7 @@ using std::to_string;
 #include "rnn_genome.hxx"
 #include "generate_nn.hxx"
 
-EXALT::EXALT(int32_t _population_size, int32_t _max_genomes, const vector<string> &_input_parameter_names, const vector<string> &_output_parameter_names, int32_t _bp_iterations, double _learning_rate, bool _use_high_threshold, double _high_threshold, bool _use_low_threshold, double _low_threshold, bool _use_dropout, double _dropout_probability, string _output_directory) : population_size(_population_size), max_genomes(_max_genomes), number_inputs(_input_parameter_names.size()), number_outputs(_output_parameter_names.size()), bp_iterations(_bp_iterations), learning_rate(_learning_rate), use_high_threshold(_use_high_threshold), high_threshold(_high_threshold), use_low_threshold(_use_low_threshold), low_threshold(_low_threshold), use_dropout(_use_dropout), dropout_probability(_dropout_probability), output_directory(_output_directory) {
+EXALT::EXALT(int32_t _population_size, int32_t _number_islands, int32_t _max_genomes, const vector<string> &_input_parameter_names, const vector<string> &_output_parameter_names, int32_t _bp_iterations, double _learning_rate, bool _use_high_threshold, double _high_threshold, bool _use_low_threshold, double _low_threshold, bool _use_dropout, double _dropout_probability, string _output_directory) : population_size(_population_size), number_islands(_number_islands), max_genomes(_max_genomes), number_inputs(_input_parameter_names.size()), number_outputs(_output_parameter_names.size()), bp_iterations(_bp_iterations), learning_rate(_learning_rate), use_high_threshold(_use_high_threshold), high_threshold(_high_threshold), use_low_threshold(_use_low_threshold), low_threshold(_low_threshold), use_dropout(_use_dropout), dropout_probability(_dropout_probability), output_directory(_output_directory) {
 
     input_parameter_names = _input_parameter_names;
     output_parameter_names = _output_parameter_names;
@@ -40,6 +40,9 @@ EXALT::EXALT(int32_t _population_size, int32_t _max_genomes, const vector<string
 
     edge_innovation_count = 0;
     node_innovation_count = 0;
+
+    //update to now have islands of genomes
+    genomes = vector< vector<RNN_Genome*> >(number_islands);
 
     uint16_t seed = std::chrono::system_clock::now().time_since_epoch().count();
     generator = minstd_rand0(seed);
@@ -53,7 +56,12 @@ EXALT::EXALT(int32_t _population_size, int32_t _max_genomes, const vector<string
     max_recurrent_depth = 10;
 
     epigenetic_weights = true;
-    crossover_rate = 0.25;
+
+    mutation_rate = 0.70;
+    crossover_rate = 0.20 + mutation_rate;
+    island_crossover_rate = 0.10 + crossover_rate;
+    //all three should add up to 1.0
+
     more_fit_crossover_rate = 0.75;
     less_fit_crossover_rate = 0.25;
 
@@ -105,53 +113,107 @@ string parse_fitness(float fitness) {
 void EXALT::print_population() {
     cout << "POPULATION: " << endl;
     for (int32_t i = 0; i < (int32_t)genomes.size(); i++) {
-        cout << "\t" << setw(15) << parse_fitness(genomes[i]->best_validation_error) << ", " << parse_fitness(genomes[i]->best_validation_mae) << ", " << genomes[i]->nodes.size() << " (" << genomes[i]->get_enabled_node_count() << "), " << genomes[i]->edges.size() << " (" << genomes[i]->get_enabled_edge_count() << "), " << genomes[i]->recurrent_edges.size() << " (" << genomes[i]->get_enabled_recurrent_edge_count() << "), " << genomes[i]->generated_by_string() << endl;
+        cout << "\tGENOME " << i << ":" << endl;
+
+        for (int32_t j = 0; j < (int32_t)genomes[i].size(); j++) {
+
+            cout << "\t\t" << setw(15) << parse_fitness(genomes[i][j]->best_validation_error) << ", " << parse_fitness(genomes[i][j]->best_validation_mae) << ", " << genomes[i][j]->nodes.size() << " (" << genomes[i][j]->get_enabled_node_count() << "), " << genomes[i][j]->edges.size() << " (" << genomes[i][j]->get_enabled_edge_count() << "), " << genomes[i][j]->recurrent_edges.size() << " (" << genomes[i][j]->get_enabled_recurrent_edge_count() << "), " << genomes[i][j]->generated_by_string() << endl;
+        }
     }
 
     cout << endl << endl;
 
     if (log_file != NULL) {
+        RNN_Genome *best_genome = get_best_genome();
+
         std::chrono::time_point<std::chrono::system_clock> currentClock = std::chrono::system_clock::now();
         long milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(currentClock - startClock).count();
 
         (*log_file) << inserted_genomes
             << "," << (inserted_genomes * bp_iterations) 
             << "," << milliseconds
-            << "," << genomes[0]->best_validation_mae 
-            << "," << genomes[0]->best_validation_error 
-            << "," << genomes[0]->get_enabled_node_count() 
-            << "," << genomes[0]->get_enabled_edge_count() 
-            << "," << genomes[0]->get_enabled_recurrent_edge_count() << endl;
+            << "," << best_genome->best_validation_mae 
+            << "," << best_genome->best_validation_error 
+            << "," << best_genome->get_enabled_node_count() 
+            << "," << best_genome->get_enabled_edge_count() 
+            << "," << best_genome->get_enabled_recurrent_edge_count() << endl;
     }
 
 }
 
-int32_t EXALT::population_contains(RNN_Genome* genome) {
-    for (int32_t i = 0; i < (int32_t)genomes.size(); i++) {
-        if (genomes[i]->equals(genome)) {
-            return i;
+int32_t EXALT::population_contains(RNN_Genome* genome, int32_t island) {
+    for (int32_t j = 0; j < (int32_t)genomes[island].size(); j++) {
+        if (genomes[island][j]->equals(genome)) {
+            return j;
         }
     }
 
     return -1;
 }
 
+bool EXALT::populations_full() const {
+    for (int32_t i = 0; i < (int32_t)genomes.size(); i++) {
+        if (genomes[i].size() < population_size) return false;
+    }
+
+    return true;
+}
+
 string EXALT::get_output_directory() const {
     return output_directory;
 }
 
-double EXALT::get_best_fitness() const {
-    if (genomes.size() == 0) return EXALT_MAX_DOUBLE;
-    else return genomes[0]->get_validation_error();
-}
-
-double EXALT::get_worst_fitness() const {
-    if (genomes.size() < population_size) return EXALT_MAX_DOUBLE;
-    else return genomes.back()->get_validation_error();
-}
-
 RNN_Genome* EXALT::get_best_genome() {
-    return genomes[0];
+    int32_t best_genome_population = -1;
+    double best_fitness = EXALT_MAX_DOUBLE;
+
+    for (int32_t i = 0; i < (int32_t)genomes.size(); i++) {
+        if (genomes[i].size() > 0) {
+            if (genomes[i][0]->best_validation_error <= best_fitness) {
+                best_fitness = genomes[i][0]->best_validation_error;
+                best_genome_population = i;
+            }
+        }
+    }
+
+    if (best_genome_population < 0) {
+        return NULL;
+    } else {
+        return genomes[best_genome_population][0];
+    }
+}
+
+RNN_Genome* EXALT::get_worst_genome() {
+    int32_t worst_genome_population = -1;
+    double worst_fitness = -EXALT_MAX_DOUBLE;
+
+    for (int32_t i = 0; i < (int32_t)genomes.size(); i++) {
+        if (genomes[i].size() > 0) {
+            if (genomes[i].back()->best_validation_error > worst_fitness) {
+                worst_fitness = genomes[i].back()->best_validation_error;
+                worst_genome_population = i;
+            }
+        }
+    }
+
+    if (worst_genome_population < 0) {
+        return NULL;
+    } else {
+        return genomes[worst_genome_population].back();
+    }
+}
+
+
+double EXALT::get_best_fitness() {
+    RNN_Genome *best_genome = get_best_genome();
+    if (best_genome == NULL) return EXALT_MAX_DOUBLE;
+    else return best_genome->get_validation_error();
+}
+
+double EXALT::get_worst_fitness() {
+    RNN_Genome *worst_genome = get_worst_genome();
+    if (worst_genome == NULL) return EXALT_MAX_DOUBLE;
+    else return worst_genome->get_validation_error();
 }
 
 //this will insert a COPY, original needs to be deleted
@@ -161,6 +223,7 @@ bool EXALT::insert_genome(RNN_Genome* genome) {
         exit(1);
     }
 
+    int32_t island = genome->get_island();
     double new_fitness = genome->get_validation_error();
 
     bool was_inserted = true;
@@ -171,7 +234,7 @@ bool EXALT::insert_genome(RNN_Genome* genome) {
         generated_from_map[i->first] += genome->get_generated_by(i->first);
     }
 
-    cout << "genomes evaluated: " << setw(10) << inserted_genomes << ", inserting: " << parse_fitness(genome->get_validation_error()) << endl;
+    cout << "genomes evaluated: " << setw(10) << inserted_genomes << ", inserting: " << parse_fitness(genome->get_validation_error()) << " to island " << island << endl;
 
     if (get_worst_fitness() < new_fitness) {
         cout << "ignoring genome, fitness: " << new_fitness << " < worst population fitness: " << get_worst_fitness() << endl;
@@ -179,16 +242,16 @@ bool EXALT::insert_genome(RNN_Genome* genome) {
         return false;
     }
 
-    int32_t duplicate_genome = population_contains(genome);
+    int32_t duplicate_genome = population_contains(genome, island);
     if (duplicate_genome >= 0) {
         //if fitness is better, replace this genome with new one
         cout << "found duplicate at position: " << duplicate_genome << endl;
 
-        RNN_Genome *duplicate = genomes[duplicate_genome];
+        RNN_Genome *duplicate = genomes[island][duplicate_genome];
         if (duplicate->get_validation_error() > new_fitness) {
             //erase the genome with loewr fitness from the vector;
             cout << "REPLACING DUPLICATE GENOME, fitness of genome in search: " << parse_fitness(duplicate->get_validation_error()) << ", new fitness: " << parse_fitness(genome->get_validation_error()) << endl;
-            genomes.erase(genomes.begin() + duplicate_genome);
+            genomes[island].erase(genomes[island].begin() + duplicate_genome);
             delete duplicate;
 
         } else {
@@ -198,11 +261,11 @@ bool EXALT::insert_genome(RNN_Genome* genome) {
         }
     }
 
-    if (genomes.size() < population_size || genomes.back()->get_validation_error() > new_fitness) {
+    if (genomes[island].size() < population_size || genomes[island].back()->get_validation_error() > new_fitness) {
         //this genome will be inserted
         was_inserted = true;
 
-        if (genomes.size() == 0 || genome->get_validation_error() < genomes[0]->get_validation_error()) {
+        if (genomes[island].size() == 0 || genome->get_validation_error() < genomes[island][0]->get_validation_error()) {
             cout << "new best fitness!" << endl;
             genome->write_graphviz(output_directory + "/rnn_genome_" + to_string(inserted_genomes) + ".gv");
             genome->write_to_file(output_directory + "/rnn_genome_" + to_string(inserted_genomes) + ".bin");
@@ -213,16 +276,19 @@ bool EXALT::insert_genome(RNN_Genome* genome) {
             inserted_from_map[i->first] += genome->get_generated_by(i->first);
         }
 
-        cout << "inserting new genome" << endl;
+        cout << "inserting new genome to island " << island << endl;
         //inorder insert the new individual
         RNN_Genome *copy = genome->copy();
-        genomes.insert( upper_bound(genomes.begin(), genomes.end(), copy, sort_genomes_by_validation_error()), copy);
+        cout << "created copy with island: " << copy->get_island() << endl;
+
+        genomes[island].insert( upper_bound(genomes[island].begin(), genomes[island].end(), copy, sort_genomes_by_validation_error()), copy);
+        cout << "finished insert" << endl;
 
         //delete the worst individual if we've reached the population size
-        if ((int32_t)genomes.size() > population_size) {
+        if ((int32_t)genomes[island].size() > population_size) {
             cout << "deleting worst genome" << endl;
-            RNN_Genome *worst = genomes.back();
-            genomes.pop_back();
+            RNN_Genome *worst = genomes[island].back();
+            genomes[island].pop_back();
 
             delete worst;
         }
@@ -232,6 +298,8 @@ bool EXALT::insert_genome(RNN_Genome* genome) {
     }
     
     print_population();
+
+    cout << "printed population!" << endl;
 
     return was_inserted;
 }
@@ -247,14 +315,16 @@ void EXALT::initialize_genome_parameters(RNN_Genome* genome) {
 
 RNN_Genome* EXALT::generate_genome() {
     if (inserted_genomes > max_genomes) return NULL;
+    int island = generated_genomes % number_islands;
     generated_genomes++;
 
     RNN_Genome *genome = NULL;
 
-    if (genomes.size() == 0) {
+    if (genomes[island].size() == 0) {
         //this is the first genome to be generated
         //generate minimal genome, insert it into the population
         genome = create_ff(number_inputs, 0, 0, number_outputs, 0);
+        genome->set_island(island);
         genome->set_parameter_names(input_parameter_names, output_parameter_names);
 
         edge_innovation_count = genome->edges.size() + genome->recurrent_edges.size();
@@ -280,15 +350,25 @@ RNN_Genome* EXALT::generate_genome() {
     } else {
         //generate a genome via crossover or mutation
 
-        cout << "generating new genome, genoems.size(): " << genomes.size() << ", population_size: " << population_size << ", crossover_rate: " << crossover_rate << endl;
+        cout << "generating new genome, genomes[" << island << "].size(): " << genomes[island].size() << ", population_size: " << population_size << ", crossover_rate: " << crossover_rate << endl;
 
         while (genome == NULL) {
-            //if we haven't filled the population yet, only
+            //if we haven't filled the island populations yet, only
             //use mutation
-            if (genomes.size() >= population_size && rng_0_1(generator) < crossover_rate) {
-                //select two distinct parent genomes
-                int32_t p1 = genomes.size() * rng_0_1(generator);
-                int32_t p2 = (genomes.size() - 1) * rng_0_1(generator);
+            //otherwise do mutation at %, crossover at %, and island crossover at %
+
+            double r = rng_0_1(generator);
+            if (!populations_full() || r < mutation_rate) {
+                int32_t genome_position = genomes[island].size() * rng_0_1(generator);
+                genome = genomes[island][genome_position]->copy();
+                mutate(genome);
+                genome->set_island(island);
+            } else if (r < crossover_rate || number_islands == 1) {
+                //intra-island crossover
+
+                //select two distinct parent genomes in the same island
+                int32_t p1 = genomes[island].size() * rng_0_1(generator);
+                int32_t p2 = (genomes[island].size() - 1) * rng_0_1(generator);
                 if (p2 >= p1) p2++;
 
                 //swap so the first parent is the more fit parent
@@ -298,12 +378,30 @@ RNN_Genome* EXALT::generate_genome() {
                     p2 = tmp;
                 }
 
-                genome = crossover(genomes[p1], genomes[p2]);
-
+                genome = crossover(genomes[island][p1], genomes[island][p2]);
+                genome->set_island(island);
             } else {
-                int32_t genome_position = genomes.size() * rng_0_1(generator);
-                genome = genomes[genome_position]->copy();
-                mutate(genome);
+                //inter-island crossover
+
+                //select two distinct parent genomes in the same island
+                int32_t p1 = genomes[island].size() * rng_0_1(generator);
+
+                //select a different island randomly
+                int32_t other_island = rng_0_1(generator) * (number_islands - 1);
+                if (other_island >= island) other_island++;
+
+                int32_t p2 = genomes[other_island].size() * rng_0_1(generator);
+
+                //swap so the first parent is the more fit parent
+                if (p1 > p2) {
+                    int32_t tmp = p1;
+                    p1 = p2;
+                    p2 = tmp;
+                }
+
+                genome = crossover(genomes[island][p1], genomes[other_island][p2]);
+                genome->set_island(island);
+                genome->set_bp_iterations(2 * bp_iterations);
             }
 
             if (genome->outputs_unreachable()) {
@@ -315,13 +413,12 @@ RNN_Genome* EXALT::generate_genome() {
 
         //if the population hasn't been filled yet, insert a copy of
         //the genome into the population so it can be further mutated
-        if (genomes.size() < population_size) {
+        if (genomes[island].size() < population_size) {
             RNN_Genome *copy = genome->copy();
             copy->initialize_randomly();
             double _mu, _sigma;
             cout << "getting mu/sigma after random initialization of copy!" << endl;
             genome->get_mu_sigma(genome->best_parameters, _mu, _sigma);
-
 
             insert_genome(copy);
 
@@ -647,6 +744,7 @@ void EXALT::attempt_recurrent_edge_insert(vector<RNN_Recurrent_Edge*> &child_rec
 
 RNN_Genome* EXALT::crossover(RNN_Genome *p1, RNN_Genome *p2) {
     cerr << "generating new genome by crossover!" << endl;
+    cout << "p1->island: " << p1->get_island() << ", p2->island: " << p2->get_island() << endl;
 
     double _mu, _sigma;
     cout << "getting p1 mu/sigma!" << endl;
@@ -797,7 +895,11 @@ RNN_Genome* EXALT::crossover(RNN_Genome *p1, RNN_Genome *p2) {
     RNN_Genome *child = new RNN_Genome(child_nodes, child_edges, child_recurrent_edges);
     child->set_parameter_names(input_parameter_names, output_parameter_names);
 
-    child->set_generated_by("crossover");
+    if (p1->get_island() == p2->get_island()) {
+        child->set_generated_by("crossover");
+    } else {
+        child->set_generated_by("island_crossover");
+    }
     initialize_genome_parameters(child);
 
     double mu, sigma;

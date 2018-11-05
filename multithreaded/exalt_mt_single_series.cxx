@@ -82,6 +82,9 @@ int main(int argc, char** argv) {
     int32_t population_size;
     get_argument(arguments, "--population_size", true, population_size);
 
+    int32_t number_islands;
+    get_argument(arguments, "--number_islands", true, number_islands);
+
     int32_t max_genomes;
     get_argument(arguments, "--max_genomes", true, max_genomes);
 
@@ -180,7 +183,7 @@ int main(int argc, char** argv) {
         overall_results << "results for slice " << i << " as test data." << endl;
 
         for (uint32_t k = 0; k < repeats; k++) {
-            exalt = new EXALT(population_size, max_genomes, input_parameter_names, output_parameter_names, bp_iterations, learning_rate, use_high_threshold, high_threshold, use_low_threshold, low_threshold, use_dropout, dropout_probability, output_directory + "/slice_" + to_string(i) + "_repeat_" + to_string(k));
+            exalt = new EXALT(population_size, number_islands, max_genomes, input_parameter_names, output_parameter_names, bp_iterations, learning_rate, use_high_threshold, high_threshold, use_low_threshold, low_threshold, use_dropout, dropout_probability, output_directory + "/slice_" + to_string(i) + "_repeat_" + to_string(k));
 
             vector<thread> threads;
             for (int32_t i = 0; i < number_threads; i++) {
