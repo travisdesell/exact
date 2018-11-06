@@ -232,7 +232,7 @@ int main(int argc, char** argv) {
     if (normalize) {
         if (rank == 0) {
             normalize_time_series_sets(input_series, true);
-            write_time_series_sets(input_series, "./series_");
+            //write_time_series_sets(input_series, "./series_");
         } else {
             normalize_time_series_sets(input_series, false);
         }
