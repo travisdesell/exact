@@ -31,6 +31,7 @@ using std::vector;
 class RNN_Genome {
     private:
         int32_t generation_id;
+        int32_t island;
 
         int32_t bp_iterations;
         double learning_rate;
@@ -88,7 +89,13 @@ class RNN_Genome {
         int32_t get_enabled_edge_count();
         int32_t get_enabled_recurrent_edge_count();
 
+        int32_t get_island() const;
+        void set_island(int32_t _island);
+
+
         void set_bp_iterations(int32_t _bp_iterations);
+        int32_t get_bp_iterations();
+
         void set_learning_rate(double _learning_rate);
         void set_adapt_learning_rate(bool _adapt_learning_rate);
         void set_nesterov_momentum(bool _use_nesterov_momentum);

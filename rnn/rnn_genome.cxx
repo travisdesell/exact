@@ -62,6 +62,8 @@ void RNN_Genome::sort_edges_by_depth() {
 
 RNN_Genome::RNN_Genome(vector<RNN_Node_Interface*> &_nodes, vector<RNN_Edge*> &_edges) {
     generation_id = -1;
+    island = -1;
+
     best_validation_error = EXALT_MAX_DOUBLE;
     best_validation_mae = EXALT_MAX_DOUBLE;
 
@@ -133,6 +135,7 @@ RNN_Genome* RNN_Genome::copy() {
 
     RNN_Genome *other = new RNN_Genome(node_copies, edge_copies, recurrent_edge_copies);
 
+    other->island = island;
     other->bp_iterations = bp_iterations;
     other->learning_rate = learning_rate;
     other->adapt_learning_rate = adapt_learning_rate;
@@ -193,6 +196,14 @@ RNN_Genome::~RNN_Genome() {
     }
 }
 
+int32_t RNN_Genome::get_island() const {
+    return island;
+}
+
+void RNN_Genome::set_island(int32_t _island) {
+    island = _island;
+}
+
 int32_t RNN_Genome::get_enabled_node_count() {
     int32_t count = 0;
 
@@ -239,6 +250,10 @@ string RNN_Genome::generated_by_string() {
 
 void RNN_Genome::set_bp_iterations(int32_t _bp_iterations) {
     bp_iterations = _bp_iterations;
+}
+
+int32_t RNN_Genome::get_bp_iterations() {
+    return bp_iterations;
 }
 
 void RNN_Genome::set_learning_rate(double _learning_rate) {
@@ -1278,10 +1293,10 @@ void RNN_Genome::get_mu_sigma(const vector<double> &p, double &mu, double &sigma
         exit(1);
     }
 
-    if (mu < -5.0 || mu > 5.0 || sigma < -5.0 || sigma > 5.0) {
+    if (mu < -11.0 || mu > 11.0 || sigma < -30.0 || sigma > 30.0) {
         cerr << "mu or sigma exceeded possible bounds, best parameters: " << endl;
         cerr << "mu: " << mu << endl;
-        cerr << "sigma: " << mu << endl;
+        cerr << "sigma: " << sigma << endl;
         for (int32_t i = 0; i < (int32_t)p.size(); i++) { 
             cerr << "\t" << p[i] << endl;
         }
@@ -2298,6 +2313,7 @@ void RNN_Genome::read_from_array(char *array, int32_t length, bool verbose) {
 void RNN_Genome::read_from_stream(istream &bin_istream, bool verbose) {
     if (verbose) cout << "READING GENOME FROM STREAM" << endl;
     bin_istream.read((char*)&generation_id, sizeof(int32_t));
+    bin_istream.read((char*)&island, sizeof(int32_t));
     bin_istream.read((char*)&bp_iterations, sizeof(int32_t));
     bin_istream.read((char*)&learning_rate, sizeof(double));
     bin_istream.read((char*)&adapt_learning_rate, sizeof(bool));
@@ -2497,6 +2513,7 @@ void RNN_Genome::write_to_stream(ostream &bin_ostream, bool verbose) {
     if (verbose) cout << "WRITING GENOME TO STREAM" << endl;
 
     bin_ostream.write((char*)&generation_id, sizeof(int32_t));
+    bin_ostream.write((char*)&island, sizeof(int32_t));
     bin_ostream.write((char*)&bp_iterations, sizeof(int32_t));
     bin_ostream.write((char*)&learning_rate, sizeof(double));
     bin_ostream.write((char*)&adapt_learning_rate, sizeof(bool));

@@ -53,10 +53,10 @@ void LSTM_Node::initialize_randomly(minstd_rand0 &generator, NormalDistribution 
     input_gate_bias = bound(normal_distribution.random(generator, mu, sigma));
     //input_gate_bias = 0.0;
 
-    forget_gate_update_weight = bound(normal_distribution.random(generator, mu, sigma));
-    forget_gate_weight = bound(normal_distribution.random(generator, mu, sigma));
-    //forget_gate_bias = normal_distribution.random(generator, mu, sigma);
-    forget_gate_bias = 1.0 + bound(normal_distribution.random(generator, mu, sigma));
+    forget_gate_update_weight = normal_distribution.random(generator, mu, sigma);
+    forget_gate_weight = normal_distribution.random(generator, mu, sigma);
+    forget_gate_bias = normal_distribution.random(generator, mu, sigma);
+    //forget_gate_bias = 1.0 + normal_distribution.random(generator, mu, sigma);
 
     cell_weight = bound(normal_distribution.random(generator, mu, sigma));
     cell_bias = bound(normal_distribution.random(generator, mu, sigma));
@@ -121,6 +121,8 @@ void LSTM_Node::input_fired(int time, double incoming_output) {
     //previous_cell_value = 0.33;
     //cout << "previous_cell_value[" << i << "]: " << previous_cell_value << endl;
 
+    forget_gate_bias = forget_gate_bias + 1.0;
+
     output_gate_values[time] = sigmoid(output_gate_weight * input_value + output_gate_update_weight * previous_cell_value + output_gate_bias);
     input_gate_values[time] = sigmoid(input_gate_weight * input_value + input_gate_update_weight * previous_cell_value + input_gate_bias);
     forget_gate_values[time] = sigmoid(forget_gate_weight * input_value + forget_gate_update_weight * previous_cell_value + forget_gate_bias);
@@ -152,6 +154,8 @@ void LSTM_Node::input_fired(int time, double incoming_output) {
     //ld_cell_out[time] = tanh_derivative(cell_out_tanh[time]);
 
     output_values[time] = output_gate_values[time] * cell_out_tanh[time];
+
+    forget_gate_bias -= 1.0;
 }
 
 
