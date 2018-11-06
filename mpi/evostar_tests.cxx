@@ -185,10 +185,11 @@ void master(int max_rank) {
     int current_job = 0;
     int last_job = rnn_types.size() * input_series.size() * repeats;
 
-    if (output_parameter_names[0].compare("Cyclone-Main_Flm_Int") == 0) {
-        current_job = 4 * input_series.size() * repeats;
-        last_job = 5 * input_series.size() * repeats;
+    /*
+    if (output_parameter_names[0].compare("Pitch") == 0) {
+        current_job = 5 * input_series.size() * repeats;
     }
+    */
 
     while (true) {
         //wait for a incoming message
@@ -428,10 +429,11 @@ int main(int argc, char **argv) {
         int32_t current = 0;
         int i = 0;
         int last = rnn_types.size();
-        if (output_parameter_names[0].compare("Cyclone-Main_Flm_Int") == 0) {
-            i = 4;
-            last = 5;
+        /*
+        if (output_parameter_names[0].compare("Pitch") == 0) {
+            i = 5;
         }
+        */
 
         for (; i < last; i++) {
             ofstream outfile(output_directory + "/combined_" + rnn_types[i] + ".csv");

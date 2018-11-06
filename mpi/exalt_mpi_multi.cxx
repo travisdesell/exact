@@ -301,7 +301,7 @@ int main(int argc, char** argv) {
         mkdir(slice_output_directory.c_str(), 0777);
         ofstream slice_times_file(output_directory + "/slice_" + to_string(i) + "_runtimes.csv");
 
-        int k = 0;
+        int k = 7;
         //if (output_parameter_names[0].compare("Pitch") == 0 && first == true) {
         //    first = false;
         //    k = 4;
