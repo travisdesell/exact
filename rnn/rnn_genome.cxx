@@ -252,6 +252,10 @@ void RNN_Genome::set_bp_iterations(int32_t _bp_iterations) {
     bp_iterations = _bp_iterations;
 }
 
+int32_t RNN_Genome::get_bp_iterations() {
+    return bp_iterations;
+}
+
 void RNN_Genome::set_learning_rate(double _learning_rate) {
     learning_rate = _learning_rate;
 }
@@ -1289,10 +1293,10 @@ void RNN_Genome::get_mu_sigma(const vector<double> &p, double &mu, double &sigma
         exit(1);
     }
 
-    if (mu < -5.0 || mu > 5.0 || sigma < -5.0 || sigma > 5.0) {
+    if (mu < -11.0 || mu > 11.0 || sigma < -30.0 || sigma > 30.0) {
         cerr << "mu or sigma exceeded possible bounds, best parameters: " << endl;
         cerr << "mu: " << mu << endl;
-        cerr << "sigma: " << mu << endl;
+        cerr << "sigma: " << sigma << endl;
         for (int32_t i = 0; i < (int32_t)p.size(); i++) { 
             cerr << "\t" << p[i] << endl;
         }

@@ -25,6 +25,7 @@ class EXALT {
         int32_t max_genomes;
         int32_t generated_genomes;
         int32_t inserted_genomes;
+        int32_t total_bp_epochs;
 
         int32_t edge_innovation_count;
         int32_t node_innovation_count;

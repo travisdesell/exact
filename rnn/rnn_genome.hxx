@@ -94,6 +94,8 @@ class RNN_Genome {
 
 
         void set_bp_iterations(int32_t _bp_iterations);
+        int32_t get_bp_iterations();
+
         void set_learning_rate(double _learning_rate);
         void set_adapt_learning_rate(bool _adapt_learning_rate);
         void set_nesterov_momentum(bool _use_nesterov_momentum);

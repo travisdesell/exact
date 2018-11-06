@@ -37,6 +37,7 @@ EXALT::EXALT(int32_t _population_size, int32_t _number_islands, int32_t _max_gen
 
     inserted_genomes = 0;
     generated_genomes = 0;
+    total_bp_epochs = 0;
 
     edge_innovation_count = 0;
     node_innovation_count = 0;
@@ -62,8 +63,10 @@ EXALT::EXALT(int32_t _population_size, int32_t _number_islands, int32_t _max_gen
     island_crossover_rate = 0.10 + crossover_rate;
     //all three should add up to 1.0
 
-    more_fit_crossover_rate = 0.75;
-    less_fit_crossover_rate = 0.25;
+    more_fit_crossover_rate = 1.00;
+    less_fit_crossover_rate = 0.50;
+    //more_fit_crossover_rate = 0.75;
+    //less_fit_crossover_rate = 0.25;
 
     lstm_node_rate = 0.5;
 
@@ -74,6 +77,7 @@ EXALT::EXALT(int32_t _population_size, int32_t _number_islands, int32_t _max_gen
     //add_recurrent_edge_rate = 1.0;
     enable_edge_rate = 1.0;
     disable_edge_rate = 3.0;
+    //disable_edge_rate = 1.0;
     split_edge_rate = 1.0;
 
     bool node_ops = true;
@@ -81,6 +85,7 @@ EXALT::EXALT(int32_t _population_size, int32_t _number_islands, int32_t _max_gen
         add_node_rate = 1.0;
         enable_node_rate = 1.0;
         disable_node_rate = 3.0;
+        //disable_node_rate = 1.0;
         split_node_rate = 1.0;
         merge_node_rate = 1.0;
     } else {
@@ -130,7 +135,7 @@ void EXALT::print_population() {
         long milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(currentClock - startClock).count();
 
         (*log_file) << inserted_genomes
-            << "," << (inserted_genomes * bp_iterations) 
+            << "," << total_bp_epochs
             << "," << milliseconds
             << "," << best_genome->best_validation_mae 
             << "," << best_genome->best_validation_error 
@@ -229,6 +234,7 @@ bool EXALT::insert_genome(RNN_Genome* genome) {
     bool was_inserted = true;
 
     inserted_genomes++;
+    total_bp_epochs += genome->get_bp_iterations();
 
     for (auto i = generated_from_map.begin(); i != generated_from_map.end(); i++) {
         generated_from_map[i->first] += genome->get_generated_by(i->first);
@@ -267,6 +273,14 @@ bool EXALT::insert_genome(RNN_Genome* genome) {
 
         if (genomes[island].size() == 0 || genome->get_validation_error() < genomes[island][0]->get_validation_error()) {
             cout << "new best fitness!" << endl;
+
+            if (genome->best_validation_error != EXALT_MAX_DOUBLE) {
+                //need to set the weights for non-initial genomes so we
+                //can generate a proper graphviz file
+                vector<double> best_parameters = genome->get_best_parameters();
+                genome->set_weights(best_parameters);
+            }
+
             genome->write_graphviz(output_directory + "/rnn_genome_" + to_string(inserted_genomes) + ".gv");
             genome->write_to_file(output_directory + "/rnn_genome_" + to_string(inserted_genomes) + ".bin");
 
@@ -387,21 +401,32 @@ RNN_Genome* EXALT::generate_genome() {
                 int32_t p1 = genomes[island].size() * rng_0_1(generator);
 
                 //select a different island randomly
-                int32_t other_island = rng_0_1(generator) * (number_islands - 1);
-                if (other_island >= island) other_island++;
+                //int32_t other_island = rng_0_1(generator) * (number_islands - 1);
+                //if (other_island >= island) other_island++;
 
-                int32_t p2 = genomes[other_island].size() * rng_0_1(generator);
-
-                //swap so the first parent is the more fit parent
-                if (p1 > p2) {
-                    int32_t tmp = p1;
-                    p1 = p2;
-                    p2 = tmp;
+                int other_island = -1;
+                double best_other_fitness = EXALT_MAX_DOUBLE;
+                for (int32_t i = 0; i < genomes.size(); i++) {
+                    if (i == island) continue;
+                    if (genomes[i][0]->best_validation_error < best_other_fitness) {
+                        other_island = i;
+                        best_other_fitness = genomes[i][0]->best_validation_error;
+                    }
                 }
 
-                genome = crossover(genomes[island][p1], genomes[other_island][p2]);
+                RNN_Genome *g1 = genomes[island][p1];
+                RNN_Genome *g2 = genomes[other_island][0];
+
+                //swap so the first parent is the more fit parent
+                if (g1->best_validation_error > g2->best_validation_error) {
+                    RNN_Genome *tmp = g1;
+                    g1 = g2;
+                    g2 = tmp;
+                }
+
+                genome = crossover(g1, g2);
                 genome->set_island(island);
-                genome->set_bp_iterations(2 * bp_iterations);
+                //genome->set_bp_iterations(2 * bp_iterations);
             }
 
             if (genome->outputs_unreachable()) {
@@ -811,11 +836,17 @@ RNN_Genome* EXALT::crossover(RNN_Genome *p1, RNN_Genome *p2) {
             p2_position++;
         } else if (p1_innovation < p2_innovation) {
             bool set_enabled = rng_0_1(generator) < more_fit_crossover_rate;
+            if (p1_edge->is_reachable()) set_enabled = true;
+            else set_enabled = false;
+
             attempt_edge_insert(child_edges, child_nodes, p1_edge, NULL, set_enabled);
 
             p1_position++;
         } else {
             bool set_enabled = rng_0_1(generator) < less_fit_crossover_rate;
+            if (p2_edge->is_reachable()) set_enabled = true;
+            else set_enabled = false;
+
             attempt_edge_insert(child_edges, child_nodes, p2_edge, NULL, set_enabled);
 
             p2_position++;
@@ -826,6 +857,9 @@ RNN_Genome* EXALT::crossover(RNN_Genome *p1, RNN_Genome *p2) {
         RNN_Edge* p1_edge = p1_edges[p1_position];
 
         bool set_enabled = rng_0_1(generator) < more_fit_crossover_rate;
+        if (p1_edge->is_reachable()) set_enabled = true;
+        else set_enabled = false;
+
         attempt_edge_insert(child_edges, child_nodes, p1_edge, NULL, set_enabled);
 
         p1_position++;
@@ -835,6 +869,9 @@ RNN_Genome* EXALT::crossover(RNN_Genome *p1, RNN_Genome *p2) {
         RNN_Edge* p2_edge = p2_edges[p2_position];
 
         bool set_enabled = rng_0_1(generator) < less_fit_crossover_rate;
+        if (p2_edge->is_reachable()) set_enabled = true;
+        else set_enabled = false;
+
         attempt_edge_insert(child_edges, child_nodes, p2_edge, NULL, set_enabled);
 
         p2_position++;
@@ -859,11 +896,17 @@ RNN_Genome* EXALT::crossover(RNN_Genome *p1, RNN_Genome *p2) {
             p2_position++;
         } else if (p1_innovation < p2_innovation) {
             bool set_enabled = rng_0_1(generator) < more_fit_crossover_rate;
+            if (p1_recurrent_edge->is_reachable()) set_enabled = true;
+            else set_enabled = false;
+
             attempt_recurrent_edge_insert(child_recurrent_edges, child_nodes, p1_recurrent_edge, NULL, set_enabled);
 
             p1_position++;
         } else {
             bool set_enabled = rng_0_1(generator) < less_fit_crossover_rate;
+            if (p2_recurrent_edge->is_reachable()) set_enabled = true;
+            else set_enabled = false;
+
             attempt_recurrent_edge_insert(child_recurrent_edges, child_nodes, p2_recurrent_edge, NULL, set_enabled);
 
             p2_position++;
@@ -874,6 +917,9 @@ RNN_Genome* EXALT::crossover(RNN_Genome *p1, RNN_Genome *p2) {
         RNN_Recurrent_Edge* p1_recurrent_edge = p1_recurrent_edges[p1_position];
 
         bool set_enabled = rng_0_1(generator) < more_fit_crossover_rate;
+        if (p1_recurrent_edge->is_reachable()) set_enabled = true;
+        else set_enabled = false;
+
         attempt_recurrent_edge_insert(child_recurrent_edges, child_nodes, p1_recurrent_edge, NULL, set_enabled);
 
         p1_position++;
@@ -883,6 +929,9 @@ RNN_Genome* EXALT::crossover(RNN_Genome *p1, RNN_Genome *p2) {
         RNN_Recurrent_Edge* p2_recurrent_edge = p2_recurrent_edges[p2_position];
 
         bool set_enabled = rng_0_1(generator) < less_fit_crossover_rate;
+        if (p2_recurrent_edge->is_reachable()) set_enabled = true;
+        else set_enabled = false;
+
         attempt_recurrent_edge_insert(child_recurrent_edges, child_nodes, p2_recurrent_edge, NULL, set_enabled);
 
         p2_position++;

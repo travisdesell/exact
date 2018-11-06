@@ -52,36 +52,10 @@ int32_t repeats = 5;
 
 string process_name;
 
-//vector<string> rnn_types({"jordan", "elman", "one_layer_lstm", "two_layer_lstm"});
 vector<string> rnn_types({"one_layer_ff", "two_layer_ff", "jordan", "elman", "one_layer_lstm", "two_layer_lstm"});
 
 vector<string> input_parameter_names;
-
-/*
-vector<string> input_parameter_names({
-        "Cyclone-Conditioner_Inlet_Temp", "Cyclone-Conditioner_Outlet_Temp",
-        "Cyclone-Lignite_Feeder_Rate", "Cyclone-Primary_Air_Flow","Cyclone-Primary_Air_Split",
-        "Cyclone-System_Cyc_Secondary_Air_Flow_Total", "Cyclone-Secondary_Air_Flow", "Cyclone-Secondary_Air_Split",
-        "Cyclone-Tertiary_Air_Split", "Cyclone-Total_Comb_Air_Flow", "Cyclone-Main_Oil_Flow",
-        "Cyclone-Main_Flm_Int"
-        }); 
-        */
-
-/*
-vector<string> input_parameter_names({
-        "Cyclone-Conditioner_Inlet_Temp" ,"Cyclone-Conditioner_Outlet_Temp",
-        "Cyclone-Lignite_Feeder_Rate","Cyclone-Primary_Air_Flow","Cyclone-Primary_Air_Split",
-        "Cyclone-Secondary_Air_Ratio","Cyclone-System_Cyc_Secondary_Air_Flow_Total",
-        "Cyclone-Secondary_Air_Flow","Cyclone-Secondary_Air_Split",
-        "Cyclone-Tertiary_Air_Flow","Cyclone-Tertiary_Air_Split",
-        "Cyclone-Total_Comb_Air_Flow","Cyclone-Main_Oil_Flow",
-        "Cyclone-Main_Flm_Int"
-        });
-*/
-
 vector<string> output_parameter_names;
-//vector<string> output_parameter_names({"Cyclone-Main_Flm_Int"});
-//vector<string> output_parameter_names({"Cyclone-Main_Oil_Flow"});
 
 vector<TimeSeriesSet*> input_series;
 
@@ -179,7 +153,8 @@ void master(int max_rank) {
         mkdir(output_directory.c_str(), 0777);
     }
 
-    results = vector<ResultSet>(rnn_types.size() * input_series.size() * repeats);
+    //initialize the results with -1 as the job so we can determine if a particular rnn type has completed
+    results = vector<ResultSet>(rnn_types.size() * input_series.size() * repeats, {-1, 0.0, 0.0, 0.0, 0.0, 0});
 
     int terminates_sent = 0;
     int current_job = 0;
@@ -220,6 +195,45 @@ void master(int max_rank) {
             cout << "[" << setw(10) << process_name << "] receiving job from: " << message_source << endl;
             ResultSet result = receive_result_from(message_source);
             results[result.job] = result;
+
+            //TODO:
+            //check and see if this particular set of jobs for rnn_type has completed,
+            //then write the file for that type if it has
+            int32_t jobs_per_rnn = input_series.size() * repeats;
+
+            //get the particular rnn type this job was for, and which results should be there
+            int32_t rnn = result.job / jobs_per_rnn;
+            int32_t rnn_job_start = rnn * jobs_per_rnn;
+            int32_t rnn_job_end = (rnn + 1) * jobs_per_rnn;
+
+            bool rnn_finished = true;
+            cout << "[" << setw(10) << process_name << "] testing finished for rnn: '" << rnn_types[rnn] << "'" << endl;
+            for (int i = rnn_job_start; i < rnn_job_end; i++) {
+                cout << " " << results[i].job;
+                if (results[i].job < 0) {
+                    rnn_finished = false;
+                    break;
+                }
+            }
+            cout << endl;
+            cout << "[" << setw(10) << process_name << "] rnn '" << rnn_types[rnn] << "' finished? " << rnn_finished << endl;
+
+            if (rnn_finished) {
+                ofstream outfile(output_directory + "/combined_" + rnn_types[rnn] + ".csv");
+
+                int32_t current = rnn_job_start;
+                for (int32_t j = 0; j < input_series.size(); j++) {
+                    for (int32_t k = 0; k < repeats; k++) {
+
+                        outfile << j << "," << k << "," << results[current].milliseconds << "," << results[current].training_mse << "," << results[current].training_mae << "," << results[current].test_mse << "," << results[current].test_mae << endl;
+
+                        cout << rnn_types[rnn] << ", tested on series[" << j << "], repeat: " << k << ", result: " << result_to_string(results[current]) << endl;
+                        current++;
+                    }
+                }
+                outfile.close();
+            }
+
 
         } else {
             cerr << "[" << setw(10) << process_name << "] ERROR: received message with unknown tag: " << tag << endl;
@@ -407,7 +421,7 @@ int main(int argc, char **argv) {
         if (rank == 0) {
             cout << "normalizing series!" << endl;
             normalize_time_series_sets(input_series, true);
-            write_time_series_sets(input_series, "./series_");
+            //write_time_series_sets(input_series, "./series_");
         } else {
             normalize_time_series_sets(input_series, false);
         }
@@ -417,21 +431,6 @@ int main(int argc, char **argv) {
 
     if (rank == 0) {
         master(max_rank);
-
-        int32_t current = 0;
-        for (int i = 0; i < rnn_types.size(); i++) {
-            ofstream outfile(output_directory + "/combined_" + rnn_types[i] + ".csv");
-
-            for (int j = 0; j < input_series.size(); j++) {
-                for (int k = 0; k < repeats; k++) {
-                    outfile << j << "," << k << "," << results[current].milliseconds << "," << results[current].training_mse << "," << results[current].training_mae << "," << results[current].test_mse << "," << results[current].test_mae << endl;
-
-                    cout << rnn_types[i] << ", tested on series[" << j << "], repeat: " << k << ", result: " << result_to_string(results[current]) << endl;
-                    current++;
-                }
-            }
-        }
-
     } else {
         worker(rank);
     }
