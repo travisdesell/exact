@@ -92,10 +92,6 @@ RNN_Genome* create_jordan(int number_inputs, int number_hidden_layers, int numbe
 
             for (uint32_t k = 0; k < layer_nodes[current_layer - 1].size(); k++) {
                 rnn_edges.push_back(new RNN_Edge(++edge_innovation_count, layer_nodes[current_layer - 1][k], node));
-
-                for (uint32_t d = 1; d <= max_recurrent_depth; d++) {
-                    recurrent_edges.push_back(new RNN_Recurrent_Edge(++edge_innovation_count, d, layer_nodes[current_layer - 1][k], node));
-                }
             }
         }
         current_layer++;
@@ -109,9 +105,6 @@ RNN_Genome* create_jordan(int number_inputs, int number_hidden_layers, int numbe
 
         for (uint32_t k = 0; k < layer_nodes[current_layer - 1].size(); k++) {
             rnn_edges.push_back(new RNN_Edge(++edge_innovation_count, layer_nodes[current_layer - 1][k], output_node));
-            for (uint32_t d = 1; d <= max_recurrent_depth; d++) {
-                recurrent_edges.push_back(new RNN_Recurrent_Edge(++edge_innovation_count, d, layer_nodes[current_layer - 1][k], output_node));
-            }
         }
     }
 
@@ -156,10 +149,6 @@ RNN_Genome* create_elman(int number_inputs, int number_hidden_layers, int number
 
             for (uint32_t k = 0; k < layer_nodes[current_layer - 1].size(); k++) {
                 rnn_edges.push_back(new RNN_Edge(++edge_innovation_count, layer_nodes[current_layer - 1][k], node));
-
-                for (uint32_t d = 1; d <= max_recurrent_depth; d++) {
-                    recurrent_edges.push_back(new RNN_Recurrent_Edge(++edge_innovation_count, d, layer_nodes[current_layer - 1][k], node));
-                }
             }
         }
         current_layer++;
@@ -173,21 +162,23 @@ RNN_Genome* create_elman(int number_inputs, int number_hidden_layers, int number
 
         for (uint32_t k = 0; k < layer_nodes[current_layer - 1].size(); k++) {
             rnn_edges.push_back(new RNN_Edge(++edge_innovation_count, layer_nodes[current_layer - 1][k], output_node));
-
-            for (uint32_t d = 1; d <= max_recurrent_depth; d++) {
-                recurrent_edges.push_back(new RNN_Recurrent_Edge(++edge_innovation_count, d, layer_nodes[current_layer - 1][k], output_node));
-            }
         }
     }
 
-    //connect the hidden nodes back to their hidden layer
-    for (int32_t i = 1; i < layer_nodes.size(); i++) {
-        for (int32_t j = 0; j < layer_nodes[i].size(); j++) {
-            for (int32_t k = 0; k < layer_nodes[k].size(); k++) {
-                for (uint32_t d = 1; d <= max_recurrent_depth; d++) {
-                    recurrent_edges.push_back(new RNN_Recurrent_Edge(++edge_innovation_count, d, layer_nodes[i][j], layer_nodes[i][k]));
+    //recurrently connect every hidden node to every other hidden node
+    for (int32_t i = 0; i < number_hidden_layers; i++) {
+        for (int32_t j = 0; j < number_hidden_nodes; j++) {
+
+            for (int32_t k = 0; k < number_hidden_layers; k++) {
+                for (int32_t l = 0; l < number_hidden_nodes; l++) {
+
+
+                    for (uint32_t d = 1; d <= max_recurrent_depth; d++) {
+                        recurrent_edges.push_back(new RNN_Recurrent_Edge(++edge_innovation_count, d, layer_nodes[i+1][j], layer_nodes[k+1][l]));
+                    }
                 }
             }
+
         }
     }
 
@@ -219,9 +210,6 @@ RNN_Genome* create_lstm(int number_inputs, int number_hidden_layers, int number_
 
             for (uint32_t k = 0; k < layer_nodes[current_layer - 1].size(); k++) {
                 rnn_edges.push_back(new RNN_Edge(++edge_innovation_count, layer_nodes[current_layer - 1][k], node));
-                for (uint32_t d = 1; d <= max_recurrent_depth; d++) {
-                    recurrent_edges.push_back(new RNN_Recurrent_Edge(++edge_innovation_count, d, layer_nodes[current_layer - 1][k], node));
-                }
             }
         }
         current_layer++;
@@ -233,9 +221,6 @@ RNN_Genome* create_lstm(int number_inputs, int number_hidden_layers, int number_
 
         for (uint32_t k = 0; k < layer_nodes[current_layer - 1].size(); k++) {
             rnn_edges.push_back(new RNN_Edge(++edge_innovation_count, layer_nodes[current_layer - 1][k], output_node));
-            for (uint32_t d = 1; d <= max_recurrent_depth; d++) {
-                recurrent_edges.push_back(new RNN_Recurrent_Edge(++edge_innovation_count, d, layer_nodes[current_layer - 1][k], output_node));
-            }
         }
     }
 

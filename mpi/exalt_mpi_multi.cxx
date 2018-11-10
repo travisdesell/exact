@@ -232,16 +232,14 @@ int main(int argc, char** argv) {
     if (normalize) {
         if (rank == 0) {
             normalize_time_series_sets(input_series, true);
-            write_time_series_sets(input_series, "./series_");
+            //write_time_series_sets(input_series, "./series_");
         } else {
             normalize_time_series_sets(input_series, false);
         }
     }
 
-
     vector<string> input_parameter_names;
     get_argument_vector(arguments, "--input_parameter_names", true, input_parameter_names);
-
 
     vector<string> output_parameter_names;
     get_argument_vector(arguments, "--output_parameter_names", true, output_parameter_names);

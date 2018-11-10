@@ -121,6 +121,8 @@ void LSTM_Node::input_fired(int time, double incoming_output) {
     //previous_cell_value = 0.33;
     //cout << "previous_cell_value[" << i << "]: " << previous_cell_value << endl;
 
+    //forget gate bias should be around 1.0 intead of 0, but we do it here to not throw
+    //off the mu/sigma of the parameters
     forget_gate_bias = forget_gate_bias + 1.0;
 
     output_gate_values[time] = sigmoid(output_gate_weight * input_value + output_gate_update_weight * previous_cell_value + output_gate_bias);
