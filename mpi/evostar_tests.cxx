@@ -52,6 +52,7 @@ int32_t repeats = 5;
 
 string process_name;
 
+//vector<string> rnn_types({"one_layer_lstm"});
 vector<string> rnn_types({"one_layer_ff", "two_layer_ff", "jordan", "elman", "one_layer_lstm", "two_layer_lstm"});
 
 vector<string> input_parameter_names;
@@ -309,6 +310,7 @@ ResultSet handle_job(int current_job) {
     RNN* rnn = genome->get_rnn();
 
     uint32_t number_of_weights = genome->get_number_weights();
+    cout << "[" << setw(10) << process_name << "] RNN INFO FOR '" << rnn_type << ", nodes: " << genome->get_enabled_node_count() << ", edges: " << genome->get_enabled_edge_count() << ", rec: " << genome->get_enabled_recurrent_edge_count() << ", weights: " << number_of_weights << endl;
 
     vector<double> min_bound(number_of_weights, -1.0); 
     vector<double> max_bound(number_of_weights, 1.0); 

@@ -238,10 +238,8 @@ int main(int argc, char** argv) {
         }
     }
 
-
     vector<string> input_parameter_names;
     get_argument_vector(arguments, "--input_parameter_names", true, input_parameter_names);
-
 
     vector<string> output_parameter_names;
     get_argument_vector(arguments, "--output_parameter_names", true, output_parameter_names);
