@@ -281,9 +281,11 @@ int main(int argc, char** argv) {
 
     uint32_t i = 0;
     bool first = true;
+    /*
     if (output_parameter_names[0].compare("Pitch") == 0) {
         i = 7;
     }
+    */
 
     for (; i < input_series.size(); i++) {
         vector<TimeSeriesSet*> training_series;
