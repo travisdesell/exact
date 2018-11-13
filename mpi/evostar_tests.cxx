@@ -53,8 +53,8 @@ int32_t repeats = 5;
 string process_name;
 
 //vector<string> rnn_types({"one_layer_lstm"});
-vector<string> rnn_types({"two_layer_lstm"});
-//vector<string> rnn_types({"one_layer_ff", "two_layer_ff", "jordan", "elman", "one_layer_lstm", "two_layer_lstm"});
+//vector<string> rnn_types({"two_layer_lstm"});
+vector<string> rnn_types({"one_layer_ff", "two_layer_ff", "jordan", "elman", "one_layer_lstm", "two_layer_lstm"});
 
 vector<string> input_parameter_names;
 vector<string> output_parameter_names;
