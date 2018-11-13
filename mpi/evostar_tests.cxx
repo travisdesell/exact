@@ -53,8 +53,8 @@ int32_t repeats = 5;
 string process_name;
 
 //vector<string> rnn_types({"one_layer_lstm"});
-//vector<string> rnn_types({"elman", "one_layer_lstm", "two_layer_lstm"});
-vector<string> rnn_types({"one_layer_ff", "two_layer_ff", "jordan", "elman", "one_layer_lstm", "two_layer_lstm"});
+vector<string> rnn_types({"two_layer_lstm"});
+//vector<string> rnn_types({"one_layer_ff", "two_layer_ff", "jordan", "elman", "one_layer_lstm", "two_layer_lstm"});
 
 vector<string> input_parameter_names;
 vector<string> output_parameter_names;
@@ -161,6 +161,8 @@ void master(int max_rank) {
     int terminates_sent = 0;
     int current_job = 0;
     int last_job = rnn_types.size() * input_series.size() * repeats;
+
+    current_job = 11 * repeats;
 
     /*
     if (output_parameter_names[0].compare("Pitch") == 0) {

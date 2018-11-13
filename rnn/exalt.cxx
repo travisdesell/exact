@@ -127,9 +127,9 @@ string parse_fitness(float fitness) {
 }
 
 void EXALT::print_population() {
-    cout << "POPULATION: " << endl;
+    cout << "POPULATIONS: " << endl;
     for (int32_t i = 0; i < (int32_t)genomes.size(); i++) {
-        cout << "\tGENOME " << i << ":" << endl;
+        cout << "\tPOPULATION" << i << ":" << endl;
 
         for (int32_t j = 0; j < (int32_t)genomes[i].size(); j++) {
 
