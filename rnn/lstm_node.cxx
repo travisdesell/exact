@@ -149,7 +149,6 @@ void LSTM_Node::input_fired(int time, double incoming_output) {
     cell_values[time] = (forget_gate_values[time] * previous_cell_value) + (input_gate_values[time] * cell_in_tanh[time]);
 
     //The original is a hyperbolic tangent, but the peephole[clarification needed] LSTM paper suggests the activation function be linear -- activation(x) = x
-
     cell_out_tanh[time] = cell_values[time];
     ld_cell_out[time] = 1.0;
     //cell_out_tanh[time] = tanh(cell_values[time]);

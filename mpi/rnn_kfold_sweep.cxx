@@ -53,7 +53,7 @@ int32_t repeats = 5;
 string process_name;
 
 //vector<string> rnn_types({"one_layer_lstm"});
-//vector<string> rnn_types({"elman", "one_layer_lstm", "two_layer_lstm"});
+//vector<string> rnn_types({"two_layer_lstm"});
 vector<string> rnn_types({"one_layer_ff", "two_layer_ff", "jordan", "elman", "one_layer_lstm", "two_layer_lstm"});
 
 vector<string> input_parameter_names;
@@ -161,12 +161,6 @@ void master(int max_rank) {
     int terminates_sent = 0;
     int current_job = 0;
     int last_job = rnn_types.size() * input_series.size() * repeats;
-
-    /*
-    if (output_parameter_names[0].compare("Pitch") == 0) {
-        current_job = 5 * input_series.size() * repeats;
-    }
-    */
 
     while (true) {
         //wait for a incoming message
@@ -321,7 +315,13 @@ ResultSet handle_job(int current_job) {
     genome->initialize_randomly();
     genome->set_bp_iterations(bp_iterations);
 
-    string log_filename = output_directory + "/" + rnn_type + "_" + to_string(j) + "_" + to_string(repeat) + ".txt";
+    string first_directory = output_directory + "/" + rnn_type;
+    mkdir(first_directory.c_str(), 0777);
+
+    string second_directory = first_directory + "/slice_" + to_string(j);
+    mkdir(second_directory.c_str(), 0777);
+
+    string log_filename = second_directory + "/repeat_" + to_string(repeat) + ".txt";
     genome->set_log_filename(log_filename);
 
     std::chrono::time_point<std::chrono::system_clock> start = std::chrono::system_clock::now();

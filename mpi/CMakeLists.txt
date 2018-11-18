@@ -18,6 +18,6 @@ if (MPI_FOUND)
     set (CMAKE_CXX_LINK_FLAGS "${CMAKE_CXX_LINK_FLAGS} ${MPI_LINK_FLAGS}")
     include_directories(${MPI_INCLUDE_PATH})
 
-    add_executable(evostar_tests evostar_tests)
-    target_link_libraries(evostar_tests exalt_strategy exact_common exact_time_series ${MPI_LIBRARIES} ${MPI_EXTRA} ${MYSQL_LIBRARIES} ${TIFF_LIBRARIES} pthread)
+    add_executable(rnn_kfold_sweep rnn_kfold_sweep)
+    target_link_libraries(rnn_kfold_sweep exalt_strategy exact_common exact_time_series ${MPI_LIBRARIES} ${MPI_EXTRA} ${MYSQL_LIBRARIES} ${TIFF_LIBRARIES} pthread)
 endif (MPI_FOUND)
