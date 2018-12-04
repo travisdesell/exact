@@ -481,13 +481,13 @@ void merge_parameter_names(const vector<string> &input_parameter_names, const ve
     all_parameter_names.clear();
 
     for (int32_t i = 0; i < (int32_t)input_parameter_names.size(); i++) {
-        if (find(all_parameter_names.begin(), all_parameter_names.end(), input_parameter_names[i]) != all_parameter_names.end()) {
+        if (find(all_parameter_names.begin(), all_parameter_names.end(), input_parameter_names[i]) == all_parameter_names.end()) {
             all_parameter_names.push_back(input_parameter_names[i]);
         }
     }
 
     for (int32_t i = 0; i < (int32_t)output_parameter_names.size(); i++) {
-        if (find(all_parameter_names.begin(), all_parameter_names.end(), output_parameter_names[i]) != all_parameter_names.end()) {
+        if (find(all_parameter_names.begin(), all_parameter_names.end(), output_parameter_names[i]) == all_parameter_names.end()) {
             all_parameter_names.push_back(output_parameter_names[i]);
         }
     }
@@ -557,7 +557,6 @@ void TimeSeriesSets::load_time_series(bool verbose) {
 
         TimeSeriesSet *ts = new TimeSeriesSet(filenames[i], all_parameter_names);
         time_series.push_back( ts );
-        time_series.push_back( ts );
 
         rows += ts->get_number_rows();
     }
@@ -619,13 +618,30 @@ TimeSeriesSets* TimeSeriesSets::generate_from_arguments(const vector<string> &ar
 
         merge_parameter_names(tss->input_parameter_names, tss->output_parameter_names, tss->all_parameter_names);
 
+        if (verbose) {
+            cout << "input parameter names:" << endl;
+            for (int i = 0; i < tss->input_parameter_names.size(); i++) {
+                cout << "\t" << tss->input_parameter_names[i] << endl;
+            }
+
+            cout << "output parameter names:" << endl;
+            for (int i = 0; i < tss->output_parameter_names.size(); i++) {
+                cout << "\t" << tss->output_parameter_names[i] << endl;
+            }
+
+            cout << "all parameter names:" << endl;
+            for (int i = 0; i < tss->all_parameter_names.size(); i++) {
+                cout << "\t" << tss->all_parameter_names[i] << endl;
+            }
+        }
     } else {
         cerr << "Could not find the '--parameters' or the '--input_parameter_names' and '--output_parameter_names' command line arguments.  Usage instructions:" << endl << endl;
         help_message();
         exit(1);
     }
 
-    tss->load_time_series();
+
+    tss->load_time_series(verbose);
 
     bool _normalize = argument_exists(arguments, "--normalize");
 
@@ -633,10 +649,10 @@ TimeSeriesSets* TimeSeriesSets::generate_from_arguments(const vector<string> &ar
         tss->normalized = true;
 
         tss->normalize(verbose);
-        cout << "normalized all time series" << endl;
+        if (verbose) cout << "normalized all time series" << endl;
     } else {
         tss->normalized = false;
-        cout << "not normalizing time series" << endl;
+        if (verbose) cout << "not normalizing time series" << endl;
     }
 
     return tss;
@@ -665,6 +681,8 @@ TimeSeriesSets* TimeSeriesSets::generate_test(const vector<string> &_test_filena
 }
 
 void TimeSeriesSets::normalize(bool verbose) {
+    if (verbose) cout << "normalizing:" << endl;
+
     for (int i = 0; i < all_parameter_names.size(); i++) {
         string parameter_name = all_parameter_names[i];
 
@@ -751,8 +769,8 @@ void TimeSeriesSets::export_time_series(const vector<int> &series_indexes, int t
     for (uint32_t i = 0; i < series_indexes.size(); i++) {
         int series_index = series_indexes[i];
 
-        time_series[series_index]->export_time_series(inputs[series_index], input_parameter_names, -time_offset);
-        time_series[series_index]->export_time_series(outputs[series_index], output_parameter_names, time_offset);
+        time_series[series_index]->export_time_series(inputs[i], input_parameter_names, -time_offset);
+        time_series[series_index]->export_time_series(outputs[i], output_parameter_names, time_offset);
     }
 }
 

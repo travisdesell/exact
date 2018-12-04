@@ -217,7 +217,13 @@ int main(int argc, char** argv) {
 
     arguments = vector<string>(argv, argv + argc);
 
-    TimeSeriesSets *time_series_sets = TimeSeriesSets::generate_from_arguments(arguments);
+    TimeSeriesSets *time_series_sets = NULL;
+    if (rank == 0) {
+        //only have the master process print TSS info
+        time_series_sets = TimeSeriesSets::generate_from_arguments(arguments, true);
+    } else {
+        time_series_sets = TimeSeriesSets::generate_from_arguments(arguments, false);
+    }
 
     int32_t time_offset = 1;
     get_argument(arguments, "--time_offset", true, time_offset);
