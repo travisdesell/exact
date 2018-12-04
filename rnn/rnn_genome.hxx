@@ -53,7 +53,7 @@ class RNN_Genome {
 
         vector<double> initial_parameters;
 
-        double best_validation_error;
+        double best_validation_mse;
         double best_validation_mae;
         vector<double> best_parameters;
 
@@ -67,6 +67,9 @@ class RNN_Genome {
 
         vector<string> input_parameter_names;
         vector<string> output_parameter_names;
+
+        map<string,double> normalize_mins;
+        map<string,double> normalize_maxs;
 
     public:
         void sort_nodes_by_depth();
@@ -88,6 +91,14 @@ class RNN_Genome {
         int32_t get_enabled_node_count();
         int32_t get_enabled_edge_count();
         int32_t get_enabled_recurrent_edge_count();
+
+        void set_normalize_bounds(const map<string,double> &_normalize_mins, const map<string,double> &_normalize_maxs);
+
+        map<string,double> get_normalize_mins() const;
+        map<string,double> get_normalize_maxs() const;
+
+        vector<string> get_input_parameter_names() const;
+        vector<string> get_output_parameter_names() const;
 
         int32_t get_island() const;
         void set_island(int32_t _island);
@@ -115,7 +126,7 @@ class RNN_Genome {
 
         int32_t get_generation_id() const;
         void set_generation_id(int32_t generation_id);
-        double get_validation_error() const;
+        double get_fitness() const;
 
         void set_generated_by(string type);
         int32_t get_generated_by(string type);
@@ -179,9 +190,9 @@ class RNN_Genome {
         friend class EXALT;
 };
 
-struct sort_genomes_by_validation_error {
+struct sort_genomes_by_fitness {
     bool operator()(RNN_Genome *g1, RNN_Genome *g2) {
-        return g1->get_validation_error() < g2->get_validation_error();
+        return g1->get_fitness() < g2->get_fitness();
     }
 };
 

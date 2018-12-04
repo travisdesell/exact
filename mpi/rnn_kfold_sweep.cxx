@@ -59,7 +59,7 @@ vector<string> rnn_types({"one_layer_ff", "two_layer_ff", "jordan", "elman", "on
 vector<string> input_parameter_names;
 vector<string> output_parameter_names;
 
-vector<TimeSeriesSet*> input_series;
+TimeSeriesSets* time_series_sets = NULL;
 
 
 struct ResultSet {
@@ -156,11 +156,11 @@ void master(int max_rank) {
     }
 
     //initialize the results with -1 as the job so we can determine if a particular rnn type has completed
-    results = vector<ResultSet>(rnn_types.size() * input_series.size() * repeats, {-1, 0.0, 0.0, 0.0, 0.0, 0});
+    results = vector<ResultSet>(rnn_types.size() * time_series_sets->get_number_series() * repeats, {-1, 0.0, 0.0, 0.0, 0.0, 0});
 
     int terminates_sent = 0;
     int current_job = 0;
-    int last_job = rnn_types.size() * input_series.size() * repeats;
+    int last_job = rnn_types.size() * time_series_sets->get_number_series() * repeats;
 
     while (true) {
         //wait for a incoming message
@@ -203,7 +203,7 @@ void master(int max_rank) {
             //TODO:
             //check and see if this particular set of jobs for rnn_type has completed,
             //then write the file for that type if it has
-            int32_t jobs_per_rnn = input_series.size() * repeats;
+            int32_t jobs_per_rnn = time_series_sets->get_number_series() * repeats;
 
             //get the particular rnn type this job was for, and which results should be there
             int32_t rnn = result.job / jobs_per_rnn;
@@ -226,7 +226,7 @@ void master(int max_rank) {
                 ofstream outfile(output_directory + "/combined_" + rnn_types[rnn] + ".csv");
 
                 int32_t current = rnn_job_start;
-                for (int32_t j = 0; j < input_series.size(); j++) {
+                for (int32_t j = 0; j < time_series_sets->get_number_series(); j++) {
                     for (int32_t k = 0; k < repeats; k++) {
 
                         outfile << j << "," << k << "," << results[current].milliseconds << "," << results[current].training_mse << "," << results[current].training_mae << "," << results[current].test_mse << "," << results[current].test_mae << endl;
@@ -247,7 +247,7 @@ void master(int max_rank) {
 }
 
 ResultSet handle_job(int current_job) {
-    int32_t jobs_per_rnn = input_series.size() * repeats;
+    int32_t jobs_per_rnn = time_series_sets->get_number_series() * repeats;
 
     //get rnn_type
     string rnn_type = rnn_types[ current_job / jobs_per_rnn ] ;
@@ -260,24 +260,27 @@ ResultSet handle_job(int current_job) {
 
     cout << "[" << setw(10) << process_name << "] evaluating rnn type '" << rnn_type << "' with j: " << j << ", repeat: " << repeat << endl;
 
-    vector<TimeSeriesSet*> training_series;
-    vector<TimeSeriesSet*> validation_series;
+    vector<int> training_indexes;
+    vector<int> test_indexes;
 
-    for (uint32_t k = 0; k < input_series.size(); k++) {
+    for (uint32_t k = 0; k < time_series_sets->get_number_series(); k++) {
         if (j == k) {
-            validation_series.push_back(input_series[k]);
+            test_indexes.push_back(k);
         } else {
-            training_series.push_back(input_series[k]);
+            training_indexes.push_back(k);
         }
     }
+
+    time_series_sets->set_training_indexes(training_indexes);
+    time_series_sets->set_test_indexes(test_indexes);
 
     vector< vector< vector<double> > > training_inputs;
     vector< vector< vector<double> > > training_outputs;
     vector< vector< vector<double> > > validation_inputs;
     vector< vector< vector<double> > > validation_outputs;
 
-    export_time_series(training_series, input_parameter_names, output_parameter_names, time_offset, training_inputs, training_outputs);
-    export_time_series(validation_series, input_parameter_names, output_parameter_names, time_offset, validation_inputs, validation_outputs);
+    time_series_sets->export_training_series(time_offset, training_inputs, training_outputs);
+    time_series_sets->export_test_series(time_offset, validation_inputs, validation_outputs);
 
     int number_inputs = input_parameter_names.size();
     int number_outputs = output_parameter_names.size();
@@ -408,34 +411,19 @@ int main(int argc, char **argv) {
 
     vector<string> arguments = vector<string>(argv, argv + argc);
 
-    vector<string> input_filenames;
-    get_argument_vector(arguments, "--input_files", true, input_filenames);
-
     get_argument(arguments, "--time_offset", true, time_offset);
 
     get_argument(arguments, "--bp_iterations", true, bp_iterations);
 
     get_argument(arguments, "--output_directory", true, output_directory);
 
-    get_argument_vector(arguments, "--input_parameter_names", true, input_parameter_names);
-    get_argument_vector(arguments, "--output_parameter_names", true, output_parameter_names);
-
     get_argument(arguments, "--repeats", true, repeats);
 
-    for (int i = 0; i < input_filenames.size(); i++) {
-        input_series.push_back(new TimeSeriesSet(input_filenames[i]));
-    }
-
-    bool normalize = argument_exists(arguments, "--normalize");
-
-    if (normalize) {
-        if (rank == 0) {
-            cout << "normalizing series!" << endl;
-            normalize_time_series_sets(input_series, true);
-            //write_time_series_sets(input_series, "./series_");
-        } else {
-            normalize_time_series_sets(input_series, false);
-        }
+    if (rank == 0) {
+        //only print verbose info from the master process
+        time_series_sets = TimeSeriesSets::generate_from_arguments(arguments, true);
+    } else {
+        time_series_sets = TimeSeriesSets::generate_from_arguments(arguments, false);
     }
 
     //MPI_Barrier(MPI_COMM_WORLD);

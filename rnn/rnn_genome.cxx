@@ -64,7 +64,7 @@ RNN_Genome::RNN_Genome(vector<RNN_Node_Interface*> &_nodes, vector<RNN_Edge*> &_
     generation_id = -1;
     island = -1;
 
-    best_validation_error = EXALT_MAX_DOUBLE;
+    best_validation_mse = EXALT_MAX_DOUBLE;
     best_validation_mae = EXALT_MAX_DOUBLE;
 
     nodes = _nodes;
@@ -156,7 +156,7 @@ RNN_Genome* RNN_Genome::copy() {
 
     other->initial_parameters = initial_parameters;
 
-    other->best_validation_error = best_validation_error;
+    other->best_validation_mse = best_validation_mse;
     other->best_validation_mae = best_validation_mae;
     other->best_parameters = best_parameters;
 
@@ -195,6 +195,28 @@ RNN_Genome::~RNN_Genome() {
         delete recurrent_edge;
     }
 }
+
+vector<string> RNN_Genome::get_input_parameter_names() const {
+    return input_parameter_names;
+}
+
+vector<string> RNN_Genome::get_output_parameter_names() const {
+    return output_parameter_names;
+}
+
+void RNN_Genome::set_normalize_bounds(const map<string,double> &_normalize_mins, const map<string,double> &_normalize_maxs) {
+    normalize_mins = _normalize_mins;
+    normalize_maxs = _normalize_maxs;
+}
+
+map<string,double> RNN_Genome::get_normalize_mins() const {
+    return normalize_mins;
+}
+
+map<string,double> RNN_Genome::get_normalize_maxs() const {
+    return normalize_maxs;
+}
+
 
 int32_t RNN_Genome::get_island() const {
     return island;
@@ -417,8 +439,9 @@ void RNN_Genome::set_generation_id(int32_t _generation_id) {
     generation_id = _generation_id;
 }
 
-double RNN_Genome::get_validation_error() const {
-    return best_validation_error;
+double RNN_Genome::get_fitness() const {
+    return best_validation_mse;
+    //return best_validation_mae;
 }
 
 
@@ -530,8 +553,8 @@ void RNN_Genome::backpropagate(const vector< vector< vector<double> > > &inputs,
 
     //initialize the initial previous values
     get_analytic_gradient(rnns, parameters, inputs, outputs, mse, analytic_gradient, true);
-    double validation_error = get_mse(parameters, validation_inputs, validation_outputs);
-    best_validation_error = validation_error;
+    double validation_mse = get_mse(parameters, validation_inputs, validation_outputs);
+    best_validation_mse = validation_mse;
     best_validation_mae = get_mae(parameters, validation_inputs, validation_outputs);
     best_parameters = parameters;
 
@@ -560,9 +583,9 @@ void RNN_Genome::backpropagate(const vector< vector< vector<double> > > &inputs,
         get_analytic_gradient(rnns, parameters, inputs, outputs, mse, analytic_gradient, true);
 
         this->set_weights(parameters);
-        validation_error = get_mse(parameters, validation_inputs, validation_outputs);
-        if (validation_error < best_validation_error) {
-            best_validation_error = validation_error;
+        validation_mse = get_mse(parameters, validation_inputs, validation_outputs);
+        if (validation_mse < best_validation_mse) {
+            best_validation_mse = validation_mse;
             best_validation_mae = get_mae(parameters, validation_inputs, validation_outputs);
             best_parameters = parameters;
         }
@@ -581,14 +604,14 @@ void RNN_Genome::backpropagate(const vector< vector< vector<double> > > &inputs,
         if (output_log != NULL) {
             (*output_log) << iteration
                 << " " << mse 
-                << " " << validation_error
-                << " " << best_validation_error << endl;
+                << " " << validation_mse
+                << " " << best_validation_mse << endl;
         }
 
         cout << "iteration " << setw(10) << iteration
              << ", mse: " << setw(10) << mse 
-             << ", v_mse: " << setw(10) << validation_error 
-             << ", bv_mse: " << setw(10) << best_validation_error 
+             << ", v_mse: " << setw(10) << validation_mse 
+             << ", bv_mse: " << setw(10) << best_validation_mse 
              << ", lr: " << setw(10) << learning_rate 
              << ", norm: " << setw(10) << norm
              << ", p_norm: " << setw(10) << parameter_norm
@@ -758,16 +781,16 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
     //cout << "initialized previous values on: " << log_filename << endl;
 
     //TODO: need to get validation error on the RNN not the genome
-    double validation_error = get_mse(parameters, validation_inputs, validation_outputs, false);
-    best_validation_error = validation_error;
+    double validation_mse = get_mse(parameters, validation_inputs, validation_outputs, false);
+    best_validation_mse = validation_mse;
     best_validation_mae = get_mae(parameters, validation_inputs, validation_outputs);
     best_parameters = parameters;
 
     //cout << "got initial errors on: " << log_filename << endl;
 
     /*
-    cout << "initial validation_error: " << validation_error << endl;
-    cout << "best validation error: " << best_validation_error << endl;
+    cout << "initial validation_mse: " << validation_mse << endl;
+    cout << "best validation error: " << best_validation_mse << endl;
     double m = 0.0, s = 0.0;
     get_mu_sigma(parameters, m, s);
     for (int32_t i = 0; i < parameters.size(); i++) {
@@ -939,9 +962,9 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
         this->set_weights(parameters);
 
         double training_error = get_mse(parameters, inputs, outputs);
-        validation_error = get_mse(parameters, validation_inputs, validation_outputs);
-        if (validation_error < best_validation_error) {
-            best_validation_error = validation_error;
+        validation_mse = get_mse(parameters, validation_inputs, validation_outputs);
+        if (validation_mse < best_validation_mse) {
+            best_validation_mse = validation_mse;
             best_validation_mae = get_mae(parameters, validation_inputs, validation_outputs);
 
             best_parameters = parameters;
@@ -951,18 +974,32 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
             std::chrono::time_point<std::chrono::system_clock> currentClock = std::chrono::system_clock::now();
             long milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(currentClock - startClock).count();
 
+            //make sure the output log is good
+            if ( !output_log->good() ) {
+                output_log->close();
+                delete output_log;
+
+                output_log = new ofstream(log_filename, std::ios_base::app);
+                //cout << "testing to see if log file valid for " << log_filename << endl;
+
+                if (!output_log->is_open()) {
+                    cerr << "ERROR, could not open output log: '" << log_filename << "'" << endl;
+                    exit(1);
+                }
+            }
+
             (*output_log) << iteration
                 << "," << milliseconds
                 << "," << training_error
-                << "," << validation_error
-                << "," << best_validation_error
+                << "," << validation_mse
+                << "," << best_validation_mse
                 << "," << best_validation_mae
                 << "," << avg_norm << endl;
 
         }
 
 
-        cout << "iteration " << setw(5) << iteration << ", mse: " << training_error << ", v_mse: " << validation_error << ", bv_mse: " << best_validation_error << ", avg_norm: " << avg_norm << endl;
+        cout << "iteration " << setw(5) << iteration << ", mse: " << training_error << ", v_mse: " << validation_mse << ", bv_mse: " << best_validation_mse << ", avg_norm: " << avg_norm << endl;
 
     }
 
@@ -2235,7 +2272,29 @@ void RNN_Genome::write_graphviz(string filename) {
 
 }
 
-void write_map(ostream &out, map<string, int> &m) {
+void write_map_d(ostream &out, map<string, double> &m) {
+    out << m.size();
+    for (auto iterator = m.begin(); iterator != m.end(); iterator++) {
+
+        out << " "<< iterator->first;
+        out << " "<< iterator->second;
+    }
+}
+
+void read_map(istream &in, map<string, double> &m) {
+    int map_size;
+    in >> map_size;
+    for (int i = 0; i < map_size; i++) {
+        string key;
+        in >> key;
+        double value;
+        in >> value;
+
+        m[key] = value;
+    }
+}
+
+void write_map(ostream &out, map<string, double> &m) {
     out << m.size();
     for (auto iterator = m.begin(); iterator != m.end(); iterator++) {
 
@@ -2256,6 +2315,16 @@ void read_map(istream &in, map<string, int> &m) {
         m[key] = value;
     }
 }
+
+void write_map(ostream &out, map<string, int> &m) {
+    out << m.size();
+    for (auto iterator = m.begin(); iterator != m.end(); iterator++) {
+
+        out << " "<< iterator->first;
+        out << " "<< iterator->second;
+    }
+}
+
 
 
 void write_binary_string(ostream &out, string s, string name, bool verbose) {
@@ -2363,7 +2432,7 @@ void RNN_Genome::read_from_stream(istream &bin_istream, bool verbose) {
     istringstream generated_by_map_iss(generated_by_map_str);
     read_map(generated_by_map_iss, generated_by_map);
 
-    bin_istream.read((char*)&best_validation_error, sizeof(double));
+    bin_istream.read((char*)&best_validation_mse, sizeof(double));
     bin_istream.read((char*)&best_validation_mae, sizeof(double));
 
     int32_t n_initial_parameters;
@@ -2488,6 +2557,17 @@ void RNN_Genome::read_from_stream(istream &bin_istream, bool verbose) {
         recurrent_edges.push_back(recurrent_edge);
     }
 
+
+    string normalize_mins_str;
+    read_binary_string(bin_istream, normalize_mins_str, "normalize_mins", verbose);
+    istringstream normalize_mins_iss(normalize_mins_str);
+    read_map(normalize_mins_iss, normalize_mins);
+
+    string normalize_maxs_str;
+    read_binary_string(bin_istream, normalize_maxs_str, "normalize_maxs", verbose);
+    istringstream normalize_maxs_iss(normalize_maxs_str);
+    read_map(normalize_maxs_iss, normalize_maxs);
+
     assign_reachability();
 }
 
@@ -2562,7 +2642,7 @@ void RNN_Genome::write_to_stream(ostream &bin_ostream, bool verbose) {
     string generated_by_map_str = generated_by_map_oss.str();
     write_binary_string(bin_ostream, generated_by_map_str, "generated_by_map", verbose);
 
-    bin_ostream.write((char*)&best_validation_error, sizeof(double));
+    bin_ostream.write((char*)&best_validation_mse, sizeof(double));
     bin_ostream.write((char*)&best_validation_mae, sizeof(double));
 
     int32_t n_initial_parameters = initial_parameters.size();
@@ -2616,4 +2696,15 @@ void RNN_Genome::write_to_stream(ostream &bin_ostream, bool verbose) {
 
         recurrent_edges[i]->write_to_stream(bin_ostream);
     }
+
+
+    ostringstream normalize_mins_oss;
+    write_map(normalize_mins_oss, normalize_mins);
+    string normalize_mins_str = normalize_mins_oss.str();
+    write_binary_string(bin_ostream, normalize_mins_str, "normalize_mins", verbose);
+
+    ostringstream normalize_maxs_oss;
+    write_map(normalize_maxs_oss, normalize_maxs);
+    string normalize_maxs_str = normalize_maxs_oss.str();
+    write_binary_string(bin_ostream, normalize_maxs_str, "normalize_maxs", verbose);
 }

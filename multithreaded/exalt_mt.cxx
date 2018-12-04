@@ -72,35 +72,18 @@ int main(int argc, char** argv) {
     int number_threads;
     get_argument(arguments, "--number_threads", true, number_threads);
 
-    vector<string> training_filenames;
-    get_argument_vector(arguments, "--training_filenames", true, training_filenames);
-
-    vector<string> validation_filenames;
-    get_argument_vector(arguments, "--validation_filenames", true, validation_filenames);
-
     int32_t time_offset = 1;
     get_argument(arguments, "--time_offset", true, time_offset);
 
-    bool normalize = argument_exists(arguments, "--normalize");
+    TimeSeriesSets* time_series_sets = TimeSeriesSets::generate_from_arguments(arguments);
 
-    vector<string> input_parameter_names;
-    get_argument_vector(arguments, "--input_parameter_names", true, input_parameter_names);
-
-    vector<string> output_parameter_names;
-    get_argument_vector(arguments, "--output_parameter_names", true, output_parameter_names);
-
-    vector<TimeSeriesSet*> training_time_series, validation_time_series;
-    load_time_series(training_filenames, validation_filenames, normalize, training_time_series, validation_time_series);
-
-    cout << "loaded time series." << endl;
-
-    export_time_series(training_time_series, input_parameter_names, output_parameter_names, time_offset, training_inputs, training_outputs);
-    export_time_series(validation_time_series, input_parameter_names, output_parameter_names, time_offset, validation_inputs, validation_outputs);
+    time_series_sets->export_training_series(time_offset, training_inputs, training_outputs);
+    time_series_sets->export_test_series(time_offset, validation_inputs, validation_outputs);
 
     cout << "exported time series." << endl;
 
-    int number_inputs = training_inputs[0].size();
-    int number_outputs = training_outputs[0].size();
+    int number_inputs = time_series_sets->get_number_inputs();
+    int number_outputs = time_series_sets->get_number_outputs();
 
     cout << "number_inputs: " << number_inputs << ", number_outputs: " << number_outputs << endl;
 
@@ -131,7 +114,7 @@ int main(int argc, char** argv) {
     string output_directory = "";
     get_argument(arguments, "--output_directory", false, output_directory);
 
-    exalt = new EXALT(population_size, number_islands, max_genomes, input_parameter_names, output_parameter_names, bp_iterations, learning_rate, use_high_threshold, high_threshold, use_low_threshold, low_threshold, use_dropout, dropout_probability, output_directory);
+    exalt = new EXALT(population_size, number_islands, max_genomes, time_series_sets->get_input_parameter_names(), time_series_sets->get_output_parameter_names(), time_series_sets->get_normalize_mins(), time_series_sets->get_normalize_maxs(), bp_iterations, learning_rate, use_high_threshold, high_threshold, use_low_threshold, low_threshold, use_dropout, dropout_probability, output_directory);
 
 
     vector<thread> threads;

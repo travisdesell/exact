@@ -67,7 +67,7 @@ class TimeSeriesSet {
     public:
 
 
-        TimeSeriesSet(string _filename);
+        TimeSeriesSet(string _filename, const vector<string> &_fields);
 
         void add_time_series(string name);
 
@@ -100,11 +100,62 @@ class TimeSeriesSet {
         void select_parameters(const vector<string> &input_parameter_names, const vector<string> &output_parameter_names);
 };
 
-void normalize_time_series_sets(vector<TimeSeriesSet*> time_series, bool verbose = true);
-void write_time_series_sets(const vector<TimeSeriesSet*> &time_series, string base_filename);
+class TimeSeriesSets {
+    private:
+        bool normalized;
 
-void load_time_series(const vector<string> &training_filenames, const vector<string> &testing_filenames, bool normalize, vector<TimeSeriesSet*> &training_time_series, vector<TimeSeriesSet*> &testing_time_series);
+        vector<string> filenames;
 
-void export_time_series(const vector<TimeSeriesSet*> &time_series, const vector<string> &input_parameter_names, const vector<string> &output_parameter_names, int time_offset, vector< vector< vector<double> > > &inputs, vector< vector< vector<double> > > &outputs);
+        vector<int> training_indexes;
+        vector<int> test_indexes;
+
+        vector<string> input_parameter_names;
+        vector<string> output_parameter_names;
+        vector<string> all_parameter_names;
+
+        vector<TimeSeriesSet*> time_series;
+
+        map<string,double> normalize_mins;
+        map<string,double> normalize_maxs;
+
+        void parse_parameters_string(const vector<string> &p);
+        void load_time_series(bool verbose = false);
+
+    public:
+        static void help_message();
+
+        TimeSeriesSets();
+
+        static TimeSeriesSets* generate_from_arguments(const vector<string> &arguments, bool verbose = true);
+        static TimeSeriesSets* generate_test(const vector<string> &_test_filenames, const vector<string> &_input_parameter_names, const vector<string> &_output_parameter_names, bool verbose = true);
+
+        void normalize(bool verbose = true);
+        void normalize(const map<string,double> &_normalize_mins, const map<string,double> &_normalize_maxs, bool verbose = true);
+
+        void split_series(int series, int number_slices);
+        void split_all(int number_slices);
+
+        void write_time_series_sets(string base_filename);
+
+        void export_time_series(const vector<int> &series_indexes, int time_offset, vector< vector< vector<double> > > &inputs, vector< vector< vector<double> > > &outputs);
+
+        void export_training_series(int time_offset, vector< vector< vector<double> > > &inputs, vector< vector< vector<double> > > &outputs);
+
+        void export_test_series(int time_offset, vector< vector< vector<double> > > &inputs, vector< vector< vector<double> > > &outputs);
+
+        map<string,double> get_normalize_mins() const;
+        map<string,double> get_normalize_maxs() const;
+
+        vector<string> get_input_parameter_names() const;
+        vector<string> get_output_parameter_names() const;
+
+        int get_number_series() const;
+
+        int get_number_inputs() const;
+        int get_number_outputs() const;
+
+        void set_training_indexes(const vector<int> &_training_indexes);
+        void set_test_indexes(const vector<int> &_test_indexes);
+};
 
 #endif

@@ -217,33 +217,6 @@ int main(int argc, char** argv) {
 
     arguments = vector<string>(argv, argv + argc);
 
-    vector<string> input_filenames;
-    get_argument_vector(arguments, "--input_filenames", true, input_filenames);
-
-    vector<TimeSeriesSet*> input_series;
-    for (int i = 0; i < input_filenames.size(); i++) {
-        input_series.push_back(new TimeSeriesSet(input_filenames[i]));
-    }
-
-    int32_t time_offset = 1;
-    get_argument(arguments, "--time_offset", true, time_offset);
-
-    bool normalize = argument_exists(arguments, "--normalize");
-    if (normalize) {
-        if (rank == 0) {
-            normalize_time_series_sets(input_series, true);
-            //write_time_series_sets(input_series, "./series_");
-        } else {
-            normalize_time_series_sets(input_series, false);
-        }
-    }
-
-    vector<string> input_parameter_names;
-    get_argument_vector(arguments, "--input_parameter_names", true, input_parameter_names);
-
-    vector<string> output_parameter_names;
-    get_argument_vector(arguments, "--output_parameter_names", true, output_parameter_names);
-
     int32_t population_size;
     get_argument(arguments, "--population_size", true, population_size);
 
@@ -277,42 +250,44 @@ int main(int argc, char** argv) {
 
     mkdir(output_directory.c_str(), 0777);
 
-    uint32_t i = 0;
-    bool first = true;
-    //if (output_parameter_names[0].compare("Pitch") == 0 || output_parameter_names[0].compare("E1 RPM") == 0) {
-    //    i = 8;
-    //}
+    TimeSeriesSets *time_series_sets = NULL;
+    
+    if (rank == 0) {
+        //only have the master process be verbose
+        time_series_sets = TimeSeriesSets::generate_from_arguments(arguments, true);
+    } else {
+        time_series_sets = TimeSeriesSets::generate_from_arguments(arguments, false);
+    }
 
-    for (; i < input_series.size(); i++) {
-        vector<TimeSeriesSet*> training_series;
-        vector<TimeSeriesSet*> validation_series;
+    int32_t time_offset = 1;
+    get_argument(arguments, "--time_offset", true, time_offset);
 
-        for (uint32_t j = 0; j < input_series.size(); j++) {
+
+    for (int32_t i = 0; i < time_series_sets->get_number_series(); i++) {
+        vector<int> training_indexes;
+        vector<int> test_indexes;
+
+        for (uint32_t j = 0; j < time_series_sets->get_number_series(); j++) {
             if (j == i) {
-                validation_series.push_back(input_series[j]);
+                test_indexes.push_back(j);
             } else {
-                training_series.push_back(input_series[j]);
+                training_indexes.push_back(j);
             }
         }
 
-        export_time_series(training_series, input_parameter_names, output_parameter_names, time_offset, training_inputs, training_outputs);
-        export_time_series(validation_series, input_parameter_names, output_parameter_names, time_offset, validation_inputs, validation_outputs);
+        time_series_sets->export_training_series(time_offset, training_inputs, training_outputs);
+        time_series_sets->export_test_series(time_offset, validation_inputs, validation_outputs);
 
         string slice_output_directory = output_directory + "/slice_" + to_string(i);
         mkdir(slice_output_directory.c_str(), 0777);
         ofstream slice_times_file(output_directory + "/slice_" + to_string(i) + "_runtimes.csv");
 
-        int k = 7;
-        //if (output_parameter_names[0].compare("Pitch") == 0 && first == true) {
-        //    first = false;
-        //    k = 4;
-        //}
-        for (; k < repeats; k++) {
+        for (int k = 0; k < repeats; k++) {
             string current_output_directory = slice_output_directory + "/repeat_" + to_string(k);
             mkdir(current_output_directory.c_str(), 0777);
 
             if (rank == 0) {
-                exalt = new EXALT(population_size, number_islands, max_genomes, input_parameter_names, output_parameter_names, bp_iterations, learning_rate, use_high_threshold, high_threshold, use_low_threshold, low_threshold, use_dropout, dropout_probability, current_output_directory);
+                exalt = new EXALT(population_size, number_islands, max_genomes, time_series_sets->get_input_parameter_names(), time_series_sets->get_output_parameter_names(), time_series_sets->get_normalize_mins(), time_series_sets->get_normalize_maxs(), bp_iterations, learning_rate, use_high_threshold, high_threshold, use_low_threshold, low_threshold, use_dropout, dropout_probability, current_output_directory);
 
                 std::chrono::time_point<std::chrono::system_clock> start = std::chrono::system_clock::now();
                 master(max_rank);
@@ -335,7 +310,7 @@ int main(int argc, char** argv) {
             }
 
             MPI_Barrier(MPI_COMM_WORLD);
-            cout << "rank " << rank << " completed slice " << i << " of " << input_series.size() << " repeat " << k << " of " << repeats << endl;
+            cout << "rank " << rank << " completed slice " << i << " of " << time_series_sets->get_number_series() << " repeat " << k << " of " << repeats << endl;
         }
 
         slice_times_file.close();

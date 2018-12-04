@@ -1,5 +1,1 @@
 add_library(exact_time_series time_series)
-
-add_executable(time_series_test time_series)
-target_link_libraries(time_series_test exact_common)
-target_compile_definitions(time_series_test PUBLIC -DTIME_SERIES_TEST)
