@@ -221,6 +221,12 @@ int main(int argc, char** argv) {
     if (rank == 0) {
         //only have the master process print TSS info
         time_series_sets = TimeSeriesSets::generate_from_arguments(arguments, true);
+
+        if (argument_exists(arguments, "--write_time_series")) {
+            string base_filename;
+            get_argument(arguments, "--write_time_series", true, base_filename);
+            time_series_sets->write_time_series_sets(base_filename);
+        }
     } else {
         time_series_sets = TimeSeriesSets::generate_from_arguments(arguments, false);
     }
