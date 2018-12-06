@@ -310,7 +310,7 @@ bool EXALT::insert_genome(RNN_Genome* genome) {
             }
 
             genome->write_graphviz(output_directory + "/rnn_genome_" + to_string(inserted_genomes) + ".gv");
-            genome->write_to_file(output_directory + "/rnn_genome_" + to_string(inserted_genomes) + ".bin");
+            genome->write_to_file(output_directory + "/rnn_genome_" + to_string(inserted_genomes) + ".bin", true);
 
         }
 
@@ -405,6 +405,8 @@ RNN_Genome* EXALT::generate_genome() {
                 int32_t genome_position = genomes[island].size() * rng_0_1(generator);
                 genome = genomes[island][genome_position]->copy();
                 mutate(genome);
+
+                genome->set_normalize_bounds(normalize_mins, normalize_maxs);
                 genome->set_island(island);
             } else if (r < crossover_rate || number_islands == 1) {
                 //intra-island crossover
@@ -422,6 +424,7 @@ RNN_Genome* EXALT::generate_genome() {
                 }
 
                 genome = crossover(genomes[island][p1], genomes[island][p2]);
+                genome->set_normalize_bounds(normalize_mins, normalize_maxs);
                 genome->set_island(island);
             } else {
                 //inter-island crossover
@@ -454,6 +457,7 @@ RNN_Genome* EXALT::generate_genome() {
                 }
 
                 genome = crossover(g1, g2);
+                genome->set_normalize_bounds(normalize_mins, normalize_maxs);
                 genome->set_island(island);
                 //genome->set_bp_iterations(2 * bp_iterations);
             }

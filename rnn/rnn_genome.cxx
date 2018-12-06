@@ -163,6 +163,8 @@ RNN_Genome* RNN_Genome::copy() {
     other->input_parameter_names = input_parameter_names;
     other->output_parameter_names = output_parameter_names;
 
+    other->normalize_mins = normalize_mins;
+    other->normalize_maxs = normalize_maxs;
 
     other->assign_reachability();
 
@@ -2272,15 +2274,6 @@ void RNN_Genome::write_graphviz(string filename) {
 
 }
 
-void write_map_d(ostream &out, map<string, double> &m) {
-    out << m.size();
-    for (auto iterator = m.begin(); iterator != m.end(); iterator++) {
-
-        out << " "<< iterator->first;
-        out << " "<< iterator->second;
-    }
-}
-
 void read_map(istream &in, map<string, double> &m) {
     int map_size;
     in >> map_size;
@@ -2296,10 +2289,10 @@ void read_map(istream &in, map<string, double> &m) {
 
 void write_map(ostream &out, map<string, double> &m) {
     out << m.size();
-    for (auto iterator = m.begin(); iterator != m.end(); iterator++) {
 
-        out << " "<< iterator->first;
-        out << " "<< iterator->second;
+    for (auto iterator = m.begin(); iterator != m.end(); iterator++) {
+        out << " " << iterator->first;
+        out << " " << iterator->second;
     }
 }
 
