@@ -1,4 +1,4 @@
-Conditioner_Inlet_Temp,Conditioner_Outlet_Temp,Coal_Feeder_Rate,Primary_Air_Flow,Primary_Air_Split,System_Secondary_Air_Flow_Total,Secondary_Air_Flow,Secondary_Air_Split,Tertiary_Air_Split,Total_Comb_Air_Flow,Supp_Oil_Flow,Main_Flm_Int
+Conditioner_Inlet_Temp,Conditioner_Outlet_Temp,Coal_Feeder_Rate,Primary_Air_Flow,Primary_Air_Split,System_Secondary_Air_Flow_Total,Secondary_Air_Flow,Secondary_Air_Split,Tertiary_Air_Split,Total_Comb_Air_Flow,Supp_Fuel_Flow,Main_Flm_Int
 0.275803,0.268879,0.96203,0.775715,0.988019,0.8538,0.722619,0.0144017,0.00349515,0.765936,0.00296704,0.831211
 0.276866,0.268879,0.951923,0.770439,0.987987,0.843072,0.714865,0.0144157,0.00363705,0.75971,0.00296704,0.858239
 0.275803,0.268411,0.944992,0.75869,0.987859,0.82285,0.700248,0.0145109,0.00395248,0.746217,0.00296704,0.85712
