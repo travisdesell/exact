@@ -551,7 +551,14 @@ void TimeSeriesSets::parse_parameters_string(const vector<string> &p) {
 void TimeSeriesSets::load_time_series(bool verbose) {
     int32_t rows = 0;
     time_series.clear();
-    if (verbose) cout << "got time series filenames:" << endl;
+    if (verbose) {
+        cout << "loading time series with parameters:" << endl;
+        for (uint32_t i = 0; i < all_parameter_names.size(); i++) {
+            cout << "\t'" << all_parameter_names[i] << "'" << endl;
+        }
+        cout << "got time series filenames:" << endl;
+    }
+
     for (uint32_t i = 0; i < filenames.size(); i++) {
         if (verbose) cout << "\t" << filenames[i] << endl;
 
@@ -662,7 +669,6 @@ TimeSeriesSets* TimeSeriesSets::generate_test(const vector<string> &_test_filena
     TimeSeriesSets *tss = new TimeSeriesSets();
 
     tss->filenames = _test_filenames;
-    tss->load_time_series(verbose);
 
     tss->training_indexes.clear();
     tss->test_indexes.clear();
@@ -676,6 +682,8 @@ TimeSeriesSets* TimeSeriesSets::generate_test(const vector<string> &_test_filena
 
     tss->normalize_mins.clear();
     tss->normalize_maxs.clear();
+
+    tss->load_time_series(verbose);
 
     return tss;
 }

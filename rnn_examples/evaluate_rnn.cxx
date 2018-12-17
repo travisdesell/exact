@@ -46,7 +46,9 @@ int main(int argc, char** argv) {
     get_argument_vector(arguments, "--testing_filenames", true, testing_filenames);
 
     TimeSeriesSets *time_series_sets = TimeSeriesSets::generate_test(testing_filenames, genome->get_input_parameter_names(), genome->get_output_parameter_names());
+    cout << "got time series sets" << endl;
     time_series_sets->normalize(genome->get_normalize_mins(), genome->get_normalize_maxs());
+    cout << "normalized time series." << endl;
 
     int32_t time_offset = 1;
     get_argument(arguments, "--time_offset", true, time_offset);
@@ -59,6 +61,7 @@ int main(int argc, char** argv) {
     cout << "MAE: " << genome->get_mae(best_parameters, testing_inputs, testing_outputs) << endl;
     genome->write_predictions(testing_filenames, best_parameters, testing_inputs, testing_outputs);
 
+    /*
     int length;
     char *byte_array;
 
@@ -72,6 +75,7 @@ int main(int argc, char** argv) {
     cout << "MSE: " << duplicate_genome->get_mse(best_parameters_2, testing_inputs, testing_outputs) << endl;
     cout << "MAE: " << duplicate_genome->get_mae(best_parameters_2, testing_inputs, testing_outputs) << endl;
     duplicate_genome->write_predictions(testing_filenames, best_parameters_2, testing_inputs, testing_outputs);
+    */
 
     return 0;
 }
