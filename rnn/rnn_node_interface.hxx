@@ -23,6 +23,7 @@ class RNN;
 
 #define LSTM_NODE 0
 #define RNN_NODE 1
+#define GRU_NODE 2
 
 
 double sigmoid(double value);
@@ -99,17 +100,16 @@ class RNN_Node_Interface {
 struct sort_RNN_Nodes_by_innovation {
     bool operator()(RNN_Node_Interface *n1, RNN_Node_Interface *n2) {
         return n1->get_innovation_number() < n2->get_innovation_number();
-    }   
+    }
 };
 
 
 struct sort_RNN_Nodes_by_depth {
     bool operator()(RNN_Node_Interface *n1, RNN_Node_Interface *n2) {
         return n1->get_depth() < n2->get_depth();
-    }   
+    }
 };
 
 
 
 #endif
-
