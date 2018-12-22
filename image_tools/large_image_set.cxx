@@ -31,8 +31,8 @@ using std::vector;
 #include <sstream>
 using std::ostringstream;
 
-#include "tiff.h"
-#include "tiffio.h"
+#include "/usr/local/Cellar/libtiff/4.0.10/include/tiff.h"
+#include "/usr/local/Cellar/libtiff/4.0.10/include/tiffio.h"
 #endif
 
 #include "lodepng.h"

@@ -82,6 +82,7 @@ EXALT::EXALT(int32_t _population_size, int32_t _number_islands, int32_t _max_gen
     //less_fit_crossover_rate = 0.25;
 
     lstm_node_rate = 0.5;
+    gru_node_rate = 0.5;
 
     clone_rate = 1.0;
 
@@ -156,7 +157,7 @@ void EXALT::print_population() {
                 exit(1);
             }
         }
- 
+
         RNN_Genome *best_genome = get_best_genome();
 
         std::chrono::time_point<std::chrono::system_clock> currentClock = std::chrono::system_clock::now();
@@ -165,10 +166,10 @@ void EXALT::print_population() {
         (*log_file) << inserted_genomes
             << "," << total_bp_epochs
             << "," << milliseconds
-            << "," << best_genome->best_validation_mae 
+            << "," << best_genome->best_validation_mae
             << "," << best_genome->best_validation_mse
-            << "," << best_genome->get_enabled_node_count() 
-            << "," << best_genome->get_enabled_edge_count() 
+            << "," << best_genome->get_enabled_node_count()
+            << "," << best_genome->get_enabled_edge_count()
             << "," << best_genome->get_enabled_recurrent_edge_count() << endl;
     }
 
@@ -338,7 +339,7 @@ bool EXALT::insert_genome(RNN_Genome* genome) {
         was_inserted = false;
         cout << "not inserting genome due to poor fitness" << endl;
     }
-    
+
     print_population();
 
     cout << "printed population!" << endl;
@@ -569,7 +570,7 @@ void EXALT::mutate(RNN_Genome *g) {
         rng -= disable_edge_rate;
 
         if (rng < split_edge_rate) {
-            modified = g->split_edge(mu, sigma, lstm_node_rate, max_recurrent_depth, edge_innovation_count, node_innovation_count);
+            modified = g->split_edge(mu, sigma, lstm_node_rate, gru_node_rate, max_recurrent_depth, edge_innovation_count, node_innovation_count);
             cout << "\tsplitting edge, modified: " << modified << endl;
             if (modified) g->generated_by_map["split_edge"]++;
             continue;
@@ -577,7 +578,7 @@ void EXALT::mutate(RNN_Genome *g) {
         rng -= split_edge_rate;
 
         if (rng < add_node_rate) {
-            modified = g->add_node(mu, sigma, lstm_node_rate, max_recurrent_depth, edge_innovation_count, node_innovation_count);
+            modified = g->add_node(mu, sigma, lstm_node_rate, gru_node_rate, max_recurrent_depth, edge_innovation_count, node_innovation_count);
             cout << "\tadding node, modified: " << modified << endl;
             if (modified) g->generated_by_map["add_node"]++;
             continue;
@@ -601,7 +602,7 @@ void EXALT::mutate(RNN_Genome *g) {
         rng -= disable_node_rate;
 
         if (rng < split_node_rate) {
-            modified = g->split_node(mu, sigma, lstm_node_rate, max_recurrent_depth, edge_innovation_count, node_innovation_count);
+            modified = g->split_node(mu, sigma, lstm_node_rate, gru_node_rate, max_recurrent_depth, edge_innovation_count, node_innovation_count);
             cout << "\tsplitting node, modified: " << modified << endl;
             if (modified) g->generated_by_map["split_node"]++;
             continue;
@@ -609,7 +610,7 @@ void EXALT::mutate(RNN_Genome *g) {
         rng -= split_node_rate;
 
         if (rng < merge_node_rate) {
-            modified = g->merge_node(mu, sigma, lstm_node_rate, max_recurrent_depth, edge_innovation_count, node_innovation_count);
+            modified = g->merge_node(mu, sigma, lstm_node_rate, gru_node_rate, max_recurrent_depth, edge_innovation_count, node_innovation_count);
             cout << "\tmerging node, modified: " << modified << endl;
             if (modified) g->generated_by_map["merge_node"]++;
             continue;
@@ -691,7 +692,7 @@ void EXALT::attempt_edge_insert(vector<RNN_Edge*> &child_edges, vector<RNN_Node_
 
         second_edge->get_input_node()->get_weights(input_weights2);
         second_edge->get_output_node()->get_weights(output_weights2);
-        
+
         new_input_weights.resize(input_weights1.size());
         new_output_weights.resize(output_weights1.size());
 
@@ -766,7 +767,7 @@ void EXALT::attempt_recurrent_edge_insert(vector<RNN_Recurrent_Edge*> &child_rec
 
         second_edge->get_input_node()->get_weights(input_weights2);
         second_edge->get_output_node()->get_weights(output_weights2);
-        
+
         new_input_weights.resize(input_weights1.size());
         new_output_weights.resize(output_weights1.size());
 
@@ -1012,4 +1013,3 @@ RNN_Genome* EXALT::crossover(RNN_Genome *p1, RNN_Genome *p2) {
 
     return child;
 }
-

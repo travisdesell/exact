@@ -22,6 +22,7 @@ using std::vector;
 #include "common/arguments.hxx"
 
 #include "rnn/lstm_node.hxx"
+#include "rnn/gru_node.hxx"
 #include "rnn/rnn_edge.hxx"
 #include "rnn/rnn_genome.hxx"
 #include "rnn/rnn_node.hxx"
@@ -96,6 +97,12 @@ int main(int argc, char **argv) {
     } else if (rnn_type == "two_layer_lstm") {
         genome = create_lstm(number_inputs, 1, number_inputs, number_outputs, max_recurrent_depth);
 
+    } else if (rnn_type == "one_layer_gru") {
+        genome = create_gru(number_inputs, 1, number_inputs, number_outputs, max_recurrent_depth);
+
+    } else if (rnn_type == "two_layer_gru") {
+        genome = create_gru(number_inputs, 1, number_inputs, number_outputs, max_recurrent_depth);
+
     } else if (rnn_type == "one_layer_ff") {
         genome = create_ff(number_inputs, 1, number_inputs, number_outputs, max_recurrent_depth);
 
@@ -113,6 +120,8 @@ int main(int argc, char **argv) {
         cerr << "Possibilities are:" << endl;
         cerr << "    one_layer_lstm" << endl;
         cerr << "    two_layer_lstm" << endl;
+        cerr << "    one_layer_gru" << endl;
+        cerr << "    two_layer_gru" << endl;
         cerr << "    one_layer_ff" << endl;
         cerr << "    two_layer_ff" << endl;
         exit(1);
@@ -126,8 +135,8 @@ int main(int argc, char **argv) {
     uint32_t number_of_weights = genome->get_number_weights();
 
     cout << "RNN has " << number_of_weights << " weights." << endl;
-    vector<double> min_bound(number_of_weights, -1.0); 
-    vector<double> max_bound(number_of_weights, 1.0); 
+    vector<double> min_bound(number_of_weights, -1.0);
+    vector<double> max_bound(number_of_weights, 1.0);
 
     vector<double> best_parameters;
 

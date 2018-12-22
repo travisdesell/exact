@@ -22,7 +22,7 @@ using std::thread;
 #include <vector>
 using std::vector;
 
-#include "mpi.h"
+#include "/usr/local/Cellar/open-mpi/4.0.0/include/mpi.h"
 
 #include "common/arguments.hxx"
 

@@ -50,6 +50,7 @@ using std::vector;
 #include "rnn.hxx"
 #include "rnn_node.hxx"
 #include "lstm_node.hxx"
+#include "gru_node.hxx"
 #include "rnn_genome.hxx"
 
 void RNN_Genome::sort_nodes_by_depth() {
@@ -565,7 +566,7 @@ void RNN_Genome::backpropagate(const vector< vector< vector<double> > > &inputs,
         norm += analytic_gradient[i] * analytic_gradient[i];
     }
     norm = sqrt(norm);
-    
+
     ofstream *output_log = NULL;
     if (log_filename != "") {
         output_log = new ofstream(log_filename);
@@ -605,16 +606,16 @@ void RNN_Genome::backpropagate(const vector< vector< vector<double> > > &inputs,
 
         if (output_log != NULL) {
             (*output_log) << iteration
-                << " " << mse 
+                << " " << mse
                 << " " << validation_mse
                 << " " << best_validation_mse << endl;
         }
 
         cout << "iteration " << setw(10) << iteration
-             << ", mse: " << setw(10) << mse 
-             << ", v_mse: " << setw(10) << validation_mse 
-             << ", bv_mse: " << setw(10) << best_validation_mse 
-             << ", lr: " << setw(10) << learning_rate 
+             << ", mse: " << setw(10) << mse
+             << ", v_mse: " << setw(10) << validation_mse
+             << ", bv_mse: " << setw(10) << best_validation_mse
+             << ", lr: " << setw(10) << learning_rate
              << ", norm: " << setw(10) << norm
              << ", p_norm: " << setw(10) << parameter_norm
              << ", v_norm: " << setw(10) << velocity_norm;
@@ -811,7 +812,7 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
     learning_rate = prev_learning_rate[random_selection];
 
     ofstream *output_log = NULL;
-    
+
     if (log_filename != "") {
         //cout << "craeting new log stream for " << log_filename << endl;
         output_log = new ofstream(log_filename);
@@ -859,8 +860,8 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
             /*
             cout << "iteration " << iteration
                 << ", series: " << random_selection
-                << ", mse: " << mse 
-                << ", lr: " << learning_rate 
+                << ", mse: " << mse
+                << ", lr: " << learning_rate
                 << ", norm: " << norm;
                 */
 
@@ -1119,7 +1120,7 @@ void RNN_Genome::assign_reachability() {
         if (nodes[i]->type == RNN_INPUT_NODE && nodes[i]->enabled) {
             nodes[i]->forward_reachable = true;
             nodes[i]->total_inputs = 1;
-            
+
             //cout << "\tsetting input node[" << i << "] reachable" << endl;
         }
 
@@ -1298,12 +1299,12 @@ void RNN_Genome::get_mu_sigma(const vector<double> &p, double &mu, double &sigma
 
     mu = 0.0;
     sigma = 0.0;
-    
+
     for (int32_t i = 0; i < p.size(); i++) {
         if (p[i] < -10 || p[i] > 10) {
             cerr << "ERROR in get_mu_sigma, parameter[" << i << "]: was out of bounds: " << p[i] << endl;
             cerr << "all parameters: " << endl;
-            for (int32_t i = 0; i < (int32_t)p.size(); i++) { 
+            for (int32_t i = 0; i < (int32_t)p.size(); i++) {
                 cerr << "\t" << p[i] << endl;
             }
             exit(1);
@@ -1325,7 +1326,7 @@ void RNN_Genome::get_mu_sigma(const vector<double> &p, double &mu, double &sigma
     cout << "\tmu: " << mu << ", sigma: " << sigma << ", parameters.size(): " << p.size() << endl;
     if (std::isnan(mu) || std::isinf(mu) || std::isnan(sigma) || std::isinf(sigma)) {
         cerr << "mu or sigma was not a number, best parameters: " << endl;
-        for (int32_t i = 0; i < (int32_t)p.size(); i++) { 
+        for (int32_t i = 0; i < (int32_t)p.size(); i++) {
             cerr << "\t" << p[i] << endl;
         }
 
@@ -1336,7 +1337,7 @@ void RNN_Genome::get_mu_sigma(const vector<double> &p, double &mu, double &sigma
         cerr << "mu or sigma exceeded possible bounds, best parameters: " << endl;
         cerr << "mu: " << mu << endl;
         cerr << "sigma: " << sigma << endl;
-        for (int32_t i = 0; i < (int32_t)p.size(); i++) { 
+        for (int32_t i = 0; i < (int32_t)p.size(); i++) {
             cerr << "\t" << p[i] << endl;
         }
 
@@ -1345,11 +1346,13 @@ void RNN_Genome::get_mu_sigma(const vector<double> &p, double &mu, double &sigma
 }
 
 
-RNN_Node_Interface* RNN_Genome::create_node(double mu, double sigma, double lstm_node_rate, int32_t &node_innovation_count, double depth) {
+RNN_Node_Interface* RNN_Genome::create_node(double mu, double sigma, double lstm_node_rate, double gru_node_rate, int32_t &node_innovation_count, double depth) {
     RNN_Node_Interface *n = NULL;
 
     if (rng_0_1(generator) < lstm_node_rate) {
         n = new LSTM_Node(++node_innovation_count, RNN_HIDDEN_NODE, depth);
+    } else if (rng_0_1(generator) < gru_node_rate) {
+        n = new GRU_Node(++node_innovation_count, RNN_HIDDEN_NODE, depth);
     } else {
         n = new RNN_Node(++node_innovation_count, RNN_HIDDEN_NODE, depth);
     }
@@ -1485,7 +1488,7 @@ bool RNN_Genome::add_recurrent_edge(double mu, double sigma, int32_t max_recurre
             }
         }
     }
- 
+
     cout << "\tpossible_input_nodes.size(): " << possible_input_nodes.size() << endl;
     cout << "\tpossible_output_nodes.size(): " << possible_output_nodes.size() << endl;
     if (possible_input_nodes.size() == 0) return false;
@@ -1594,7 +1597,7 @@ bool RNN_Genome::enable_edge() {
 }
 
 
-bool RNN_Genome::split_edge(double mu, double sigma, double lstm_node_rate, int32_t max_recurrent_depth, int32_t &edge_innovation_count, int32_t &node_innovation_count) {
+bool RNN_Genome::split_edge(double mu, double sigma, double lstm_node_rate, double gru_node_rate, int32_t max_recurrent_depth, int32_t &edge_innovation_count, int32_t &node_innovation_count) {
     cout << "\tattempting to split an edge!" << endl;
     vector<RNN_Edge*> enabled_edges;
     for (int32_t i = 0; i < edges.size(); i++) {
@@ -1624,7 +1627,7 @@ bool RNN_Genome::split_edge(double mu, double sigma, double lstm_node_rate, int3
     }
 
     double new_depth = (n1->get_depth() + n2->get_depth()) / 2.0;
-    RNN_Node_Interface *new_node = create_node(mu, sigma, lstm_node_rate, node_innovation_count, new_depth);
+    RNN_Node_Interface *new_node = create_node(mu, sigma, lstm_node_rate, gru_node_rate, node_innovation_count, new_depth);
 
     nodes.insert( upper_bound(nodes.begin(), nodes.end(), new_node, sort_RNN_Nodes_by_depth()), new_node);
 
@@ -1645,7 +1648,7 @@ bool RNN_Genome::split_edge(double mu, double sigma, double lstm_node_rate, int3
     return true;
 }
 
-bool RNN_Genome::add_node(double mu, double sigma, double lstm_node_rate, int32_t max_recurrent_depth, int32_t &edge_innovation_count, int32_t &node_innovation_count) {
+bool RNN_Genome::add_node(double mu, double sigma, double lstm_node_rate, double gru_node_rate, int32_t max_recurrent_depth, int32_t &edge_innovation_count, int32_t &node_innovation_count) {
     double split_depth = rng_0_1(generator);
 
     vector<RNN_Node_Interface*> possible_inputs;
@@ -1713,7 +1716,7 @@ bool RNN_Genome::add_node(double mu, double sigma, double lstm_node_rate, int32_
         possible_outputs.erase(possible_outputs.begin() + position);
     }
 
-    RNN_Node_Interface *new_node = create_node(mu, sigma, lstm_node_rate, node_innovation_count, split_depth);
+    RNN_Node_Interface *new_node = create_node(mu, sigma, lstm_node_rate, gru_node_rate, node_innovation_count, split_depth);
     nodes.insert( upper_bound(nodes.begin(), nodes.end(), new_node, sort_RNN_Nodes_by_depth()), new_node);
 
     for (int32_t i = 0; i < possible_inputs.size(); i++) {
@@ -1767,7 +1770,7 @@ bool RNN_Genome::disable_node() {
     return true;
 }
 
-bool RNN_Genome::split_node(double mu, double sigma, double lstm_node_rate, int32_t max_recurrent_depth, int32_t &edge_innovation_count, int32_t &node_innovation_count) {
+bool RNN_Genome::split_node(double mu, double sigma, double lstm_node_rate, double gru_node_rate, int32_t max_recurrent_depth, int32_t &edge_innovation_count, int32_t &node_innovation_count) {
     cout << "\tattempting to split a node!" << endl;
     vector<RNN_Node_Interface*> possible_nodes;
     for (int32_t i = 0; i < (int32_t)nodes.size(); i++) {
@@ -1883,8 +1886,8 @@ bool RNN_Genome::split_node(double mu, double sigma, double lstm_node_rate, int3
     double new_depth_1 = (n1_avg_input + n1_avg_output) / 2.0;
     double new_depth_2 = (n2_avg_input + n2_avg_output) / 2.0;
 
-    RNN_Node_Interface *new_node_1 = create_node(mu, sigma, lstm_node_rate, node_innovation_count, new_depth_1);
-    RNN_Node_Interface *new_node_2 = create_node(mu, sigma, lstm_node_rate, node_innovation_count, new_depth_2);
+    RNN_Node_Interface *new_node_1 = create_node(mu, sigma, lstm_node_rate, gru_node_rate, node_innovation_count, new_depth_1);
+    RNN_Node_Interface *new_node_2 = create_node(mu, sigma, lstm_node_rate, gru_node_rate, node_innovation_count, new_depth_2);
 
     //create the new edges
     for (int32_t i = 0; i < (int32_t)input_edges_1.size(); i++) {
@@ -1948,7 +1951,7 @@ bool RNN_Genome::split_node(double mu, double sigma, double lstm_node_rate, int3
     return true;
 }
 
-bool RNN_Genome::merge_node(double mu, double sigma, double lstm_node_rate, int32_t max_recurrent_depth, int32_t &edge_innovation_count, int32_t &node_innovation_count) {
+bool RNN_Genome::merge_node(double mu, double sigma, double lstm_node_rate, double gru_node_rate, int32_t max_recurrent_depth, int32_t &edge_innovation_count, int32_t &node_innovation_count) {
     cout << "\tattempting to merge a node!" << endl;
     vector<RNN_Node_Interface*> possible_nodes;
     for (int32_t i = 0; i < (int32_t)nodes.size(); i++) {
@@ -1969,13 +1972,13 @@ bool RNN_Genome::merge_node(double mu, double sigma, double lstm_node_rate, int3
 
     double new_depth = (n1->depth + n2->depth) / 2.0;
 
-    RNN_Node_Interface *new_node = create_node(mu, sigma, lstm_node_rate, node_innovation_count, new_depth);
+    RNN_Node_Interface *new_node = create_node(mu, sigma, lstm_node_rate, gru_node_rate, node_innovation_count, new_depth);
     nodes.insert( upper_bound(nodes.begin(), nodes.end(), new_node, sort_RNN_Nodes_by_depth()), new_node);
 
     vector<RNN_Edge*> merged_edges;
     for (int32_t i = 0; i < (int32_t)edges.size(); i++) {
         RNN_Edge *e = edges[i];
-        
+
         if (e->input_innovation_number == n1->innovation_number ||
                 e->input_innovation_number == n2->innovation_number ||
                 e->output_innovation_number == n1->innovation_number ||
@@ -2063,7 +2066,7 @@ bool RNN_Genome::merge_node(double mu, double sigma, double lstm_node_rate, int3
     vector<RNN_Recurrent_Edge*> merged_recurrent_edges;
     for (int32_t i = 0; i < (int32_t)recurrent_edges.size(); i++) {
         RNN_Recurrent_Edge *e = recurrent_edges[i];
-        
+
         if (e->input_innovation_number == n1->innovation_number ||
                 e->input_innovation_number == n2->innovation_number ||
                 e->output_innovation_number == n1->innovation_number ||
@@ -2138,7 +2141,7 @@ string RNN_Genome::get_color(double weight, bool is_recurrent) {
 
     //cout << "weight: " << weight << ", converted to value: " << value << endl;
 
-    oss << hex << setw(2) << setfill('0') << color.red 
+    oss << hex << setw(2) << setfill('0') << color.red
         << hex << setw(2) << setfill('0') << color.green
         << hex << setw(2) << setfill('0') << color.blue;
 
@@ -2150,7 +2153,7 @@ void RNN_Genome::write_graphviz(string filename) {
     ofstream outfile(filename);
 
     outfile << "digraph RNN {" << endl;
-    outfile << "labelloc=\"t\";" << endl; 
+    outfile << "labelloc=\"t\";" << endl;
     outfile << "label=\"Genome Fitness: " << best_validation_mae * 100.0 << "% MAE\";" << endl;
     outfile << endl;
 
@@ -2164,7 +2167,7 @@ void RNN_Genome::write_graphviz(string filename) {
         input_name_index++;
         if (nodes[i]->total_outputs == 0) continue;
         outfile << "\t\tnode" << nodes[i]->innovation_number
-            << " [shape=box,color=green,label=\"input " << nodes[i]->innovation_number 
+            << " [shape=box,color=green,label=\"input " << nodes[i]->innovation_number
             << "\\ndepth " << nodes[i]->depth;
 
         if (input_parameter_names.size() != 0) {
@@ -2190,7 +2193,7 @@ void RNN_Genome::write_graphviz(string filename) {
         if (nodes[i]->type != RNN_OUTPUT_NODE) continue;
         output_name_index++;
         outfile << "\t\tnode" << nodes[i]->get_innovation_number()
-            << " [shape=box,color=blue,label=\"output " << nodes[i]->innovation_number 
+            << " [shape=box,color=blue,label=\"output " << nodes[i]->innovation_number
             << "\\ndepth " << nodes[i]->depth;
 
         if (output_parameter_names.size() != 0) {
@@ -2245,6 +2248,8 @@ void RNN_Genome::write_graphviz(string filename) {
         string color;
         if (nodes[i]->node_type == LSTM_NODE) {
             color = "orange";
+        } else if (nodes[i]->node_type == GRU_NODE) {
+            color = "green";
         } else {
             color = "black";
         }
@@ -2479,10 +2484,10 @@ void RNN_Genome::read_from_stream(istream &bin_istream, bool verbose) {
         double depth;
         bool enabled;
 
-        bin_istream.read((char*)&innovation_number, sizeof(int32_t)); 
-        bin_istream.read((char*)&type, sizeof(int32_t)); 
-        bin_istream.read((char*)&node_type, sizeof(int32_t)); 
-        bin_istream.read((char*)&depth, sizeof(double)); 
+        bin_istream.read((char*)&innovation_number, sizeof(int32_t));
+        bin_istream.read((char*)&type, sizeof(int32_t));
+        bin_istream.read((char*)&node_type, sizeof(int32_t));
+        bin_istream.read((char*)&depth, sizeof(double));
         bin_istream.read((char*)&enabled, sizeof(bool));
 
         if (verbose) cout << "NODE: " << innovation_number << " " << type << " " << node_type << " " << depth << " " << enabled << endl;
@@ -2492,6 +2497,8 @@ void RNN_Genome::read_from_stream(istream &bin_istream, bool verbose) {
             node = new LSTM_Node(innovation_number, type, depth);
         } else if (node_type == RNN_NODE) {
             node = new RNN_Node(innovation_number, type, depth);
+        } else if (node_type == GRU_NODE) {
+            node = new GRU_Node(innovation_number, type, depth);
         } else {
             cerr << "Error reading node from stream, unknown node_type: " << node_type << endl;
             exit(1);
@@ -2512,9 +2519,9 @@ void RNN_Genome::read_from_stream(istream &bin_istream, bool verbose) {
         int32_t output_innovation_number;
         bool enabled;
 
-        bin_istream.read((char*)&innovation_number, sizeof(int32_t)); 
-        bin_istream.read((char*)&input_innovation_number, sizeof(int32_t)); 
-        bin_istream.read((char*)&output_innovation_number, sizeof(int32_t)); 
+        bin_istream.read((char*)&innovation_number, sizeof(int32_t));
+        bin_istream.read((char*)&input_innovation_number, sizeof(int32_t));
+        bin_istream.read((char*)&output_innovation_number, sizeof(int32_t));
         bin_istream.read((char*)&enabled, sizeof(bool));
 
         if (verbose) cout << "EDGE: " << innovation_number << " " << input_innovation_number << " " << output_innovation_number << " " << enabled << endl;
@@ -2537,10 +2544,10 @@ void RNN_Genome::read_from_stream(istream &bin_istream, bool verbose) {
         int32_t output_innovation_number;
         bool enabled;
 
-        bin_istream.read((char*)&innovation_number, sizeof(int32_t)); 
-        bin_istream.read((char*)&recurrent_depth, sizeof(int32_t)); 
-        bin_istream.read((char*)&input_innovation_number, sizeof(int32_t)); 
-        bin_istream.read((char*)&output_innovation_number, sizeof(int32_t)); 
+        bin_istream.read((char*)&innovation_number, sizeof(int32_t));
+        bin_istream.read((char*)&recurrent_depth, sizeof(int32_t));
+        bin_istream.read((char*)&input_innovation_number, sizeof(int32_t));
+        bin_istream.read((char*)&output_innovation_number, sizeof(int32_t));
         bin_istream.read((char*)&enabled, sizeof(bool));
 
         if (verbose) cout << "RECURRENT EDGE: " << innovation_number << " " << recurrent_depth << " " << input_innovation_number << " " << output_innovation_number << " " << enabled << endl;

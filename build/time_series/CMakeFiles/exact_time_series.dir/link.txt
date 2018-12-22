@@ -1,0 +1,2 @@
+/Library/Developer/CommandLineTools/usr/bin/ar qc libexact_time_series.a  CMakeFiles/exact_time_series.dir/time_series.cxx.o
+/Library/Developer/CommandLineTools/usr/bin/ranlib libexact_time_series.a

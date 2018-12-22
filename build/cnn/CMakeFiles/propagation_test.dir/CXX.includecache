@@ -1,0 +1,26 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/Users/a.e./Dropbox/exact/cnn/propagation.cxx
+stdint.h
+/Users/a.e./Dropbox/exact/cnn/stdint.h
+cmath
+-
+iostream
+-
+vector
+-
+propagation.hxx
+/Users/a.e./Dropbox/exact/cnn/propagation.hxx
+
+/Users/a.e./Dropbox/exact/cnn/propagation.hxx
+stdint.h
+/Users/a.e./Dropbox/exact/cnn/stdint.h
+vector
+-
+

@@ -62,6 +62,7 @@ class EXALT {
         double less_fit_crossover_rate;
 
         double lstm_node_rate;
+        double gru_node_rate;
 
         double clone_rate;
 

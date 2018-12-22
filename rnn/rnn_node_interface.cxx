@@ -69,9 +69,9 @@ bool RNN_Node_Interface::equals(RNN_Node_Interface *other) const {
 }
 
 void RNN_Node_Interface::write_to_stream(ostream &out) {
-    out.write((char*)&innovation_number, sizeof(int32_t)); 
-    out.write((char*)&type, sizeof(int32_t)); 
-    out.write((char*)&node_type, sizeof(int32_t)); 
-    out.write((char*)&depth, sizeof(double)); 
+    out.write((char*)&innovation_number, sizeof(int32_t));
+    out.write((char*)&type, sizeof(int32_t));
+    out.write((char*)&node_type, sizeof(int32_t));
+    out.write((char*)&depth, sizeof(double));
     out.write((char*)&enabled, sizeof(bool));
 }

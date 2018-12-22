@@ -153,7 +153,8 @@ class RNN_Genome {
         void assign_reachability();
         bool outputs_unreachable();
 
-        RNN_Node_Interface* create_node(double mu, double sigma, double lstm_node_rate, int32_t &node_innovation_count, double depth);
+        RNN_Node_Interface* create_node(double mu, double sigma, double lstm_node_rate, double gru_node_rate, int32_t &node_innovation_count, double depth);
+
         bool attempt_edge_insert(RNN_Node_Interface *n1, RNN_Node_Interface *n2, double mu, double sigma, int32_t &edge_innovation_count);
         bool attempt_recurrent_edge_insert(RNN_Node_Interface *n1, RNN_Node_Interface *n2, double mu, double sigma, int32_t max_recurrent_depth, int32_t &edge_innovation_count);
 
@@ -161,13 +162,17 @@ class RNN_Genome {
         bool add_recurrent_edge(double mu, double sigma, int32_t max_recurrent_depth, int32_t &edge_innovation_count);
         bool disable_edge();
         bool enable_edge();
-        bool split_edge(double mu, double sigma, double lstm_node_rate, int32_t max_recurrent_depth, int32_t &edge_innovation_count, int32_t &node_innovation_count);
+        bool split_edge(double mu, double sigma, double lstm_node_rate, double gru_node_rate, int32_t max_recurrent_depth, int32_t &edge_innovation_count, int32_t &node_innovation_count);
 
-        bool add_node(double mu, double sigma, double lstm_node_rate, int32_t max_recurrent_depth, int32_t &edge_innovation_count, int32_t &node_innovation_count);
+
+        bool add_node(double mu, double sigma, double lstm_node_rate, double gru_node_rate, int32_t max_recurrent_depth, int32_t &edge_innovation_count, int32_t &node_innovation_count);
+
         bool enable_node();
         bool disable_node();
-        bool split_node(double mu, double sigma, double lstm_node_rate, int32_t max_recurrent_depth, int32_t &edge_innovation_count, int32_t &node_innovation_count);
-        bool merge_node(double mu, double sigma, double lstm_node_rate, int32_t max_recurrent_depth, int32_t &edge_innovation_count, int32_t &node_innovation_count);
+        bool split_node(double mu, double sigma, double lstm_node_rate, double gru_node_rate, int32_t max_recurrent_depth, int32_t &edge_innovation_count, int32_t &node_innovation_count);
+
+        bool merge_node(double mu, double sigma, double lstm_node_rate, double gru_node_rate, int32_t max_recurrent_depth, int32_t &edge_innovation_count, int32_t &node_innovation_count);
+
 
 
         bool equals(RNN_Genome *other);

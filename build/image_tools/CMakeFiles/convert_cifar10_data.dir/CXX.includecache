@@ -1,0 +1,20 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/Users/a.e./Dropbox/exact/image_tools/convert_cifar10_data.cxx
+cstdio
+-
+cstdlib
+-
+iostream
+-
+fstream
+-
+vector
+-
+

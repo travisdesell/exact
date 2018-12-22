@@ -1,0 +1,22 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/Users/a.e./Dropbox/exact/common/exp.cxx
+cmath
+-
+cstdlib
+-
+iostream
+-
+cstdint
+-
+exp.hxx
+/Users/a.e./Dropbox/exact/common/exp.hxx
+
+/Users/a.e./Dropbox/exact/common/exp.hxx
+

@@ -21,7 +21,7 @@ using std::uniform_real_distribution;
 #include <vector>
 using std::vector;
 
-#include "../common/random.hxx"
+#include "common/random.hxx"
 
 #include "rnn_node_interface.hxx"
 #include "mse.hxx"
@@ -35,19 +35,26 @@ GRU_Node::GRU_Node(int _innovation_number, int _type, double _depth) : RNN_Node_
 GRU_Node::~GRU_Node() {
 }
 
+double Bound(double value) {
+    if (value < -10.0) value = -10.0;
+    else if (value > 10.0) value = 10.0;
+    return value;
+}
+
 void GRU_Node::initialize_randomly(minstd_rand0 &generator, NormalDistribution &normal_distribution, double mu, double sigma) {
 
-    update_gate_update_weight = normal_distribution.random(generator, mu, sigma);
-    update_gate_weight        = normal_distribution.random(generator, mu, sigma);
-    update_gate_bias          = normal_distribution.random(generator, mu, sigma);
+    update_gate_update_weight = Bound(normal_distribution.random(generator, mu, sigma));
+    update_gate_weight        = Bound(normal_distribution.random(generator, mu, sigma));
+    update_gate_bias          = Bound(normal_distribution.random(generator, mu, sigma));
 
-    reset_gate_update_weight  = normal_distribution.random(generator, mu, sigma);
-    reset_gate_weight         = normal_distribution.random(generator, mu, sigma);
-    reset_gate_bias           = 1.0 + normal_distribution.random(generator, mu, sigma);
+    reset_gate_update_weight  = Bound(normal_distribution.random(generator, mu, sigma));
+    reset_gate_weight         = Bound(normal_distribution.random(generator, mu, sigma));
+    reset_gate_bias           = Bound(normal_distribution.random(generator, mu, sigma));
+    // reset_gate_bias        = 1.0 + normal_distribution.random(generator, mu, sigma);
 
-    memory_gate_update_weight = normal_distribution.random(generator, mu, sigma);
-    memory_gate_weight        = normal_distribution.random(generator, mu, sigma);
-    memory_gate_bias          = normal_distribution.random(generator, mu, sigma);
+    memory_gate_update_weight = Bound(normal_distribution.random(generator, mu, sigma));
+    memory_gate_weight        = Bound(normal_distribution.random(generator, mu, sigma));
+    memory_gate_bias          = Bound(normal_distribution.random(generator, mu, sigma));
 
 
 }
@@ -71,11 +78,11 @@ double GRU_Node::get_gradient(string gradient_name) {
         } else if (gradient_name == "reset_gate_bias") {
             gradient_sum += d_reset_gate_bias[i];
 
-        } else if (gradient_name == "current_memory_gate_update_weight") {
+        } else if (gradient_name == "memory_gate_update_weight") {
             gradient_sum += d_memory_gate_update_weight[i];
-        } else if (gradient_name == "current_memory_gate_weight") {
+        } else if (gradient_name == "memory_gate_weight") {
             gradient_sum += d_memory_gate_weight[i];
-        } else if (gradient_name == "current_memory_gate_bias") {
+        } else if (gradient_name == "memory_gate_bias") {
             gradient_sum += d_memory_gate_bias[i];
         } else {
             cerr << "ERROR: tried to get unknown gradient: '" << gradient_name << "'" << endl;
@@ -114,19 +121,9 @@ void GRU_Node::input_fired(int time, double incoming_output) {
     ld_reset_gate[time]  = sigmoid_derivative(reset_gate_values[time]);
     ld_memory_gate[time] = tanh_derivative(memory_gate_values[time]);
 
-    output_values[time] = update_gate_values[time] * previous_out_value + (1-update_gate_values[time]) * memory_gate_values[time];
+    output_values[time] = previous_out_value * (1-update_gate_values[time]) +  update_gate_values[time] * memory_gate_values[time];
 }
 
-
-void GRU_Node::print_cell_values() {
-    /*
-    cerr << "\tinput_value: " << input_value << endl;
-    cerr << "\tinput_gate_value: " << input_gate_value << ", input_gate_update_weight: " << input_gate_update_weight << ", input_gate_bias: " << input_gate_bias << endl;
-    cerr << "\toutput_gate_value: " << output_gate_value << ", output_gate_update_weight: " << output_gate_update_weight << ", output_gate_bias: " << output_gate_bias << endl;
-    cerr << "\tforget_gate_value: " << forget_gate_value << ", forget_gate_update_weight: " << forget_gate_update_weight << "\tforget_gate_bias: " << forget_gate_bias << endl;
-    cerr << "\tcell_value: " << cell_value << ", cell_bias: " << cell_bias << endl;
-    */
-}
 
 void GRU_Node::try_update_deltas(int time) {
     if (outputs_fired[time] < total_outputs) return;
@@ -146,7 +143,7 @@ void GRU_Node::try_update_deltas(int time) {
 
 
     //backprop output gate
-    double d_update_gate              = error * (previous_out_value[time] - memory_gate_values[time]) * ld_update_gate[time];
+    double d_update_gate              = error * (memory_gate_values[time] - previous_out_value ) * ld_update_gate[time];
     d_update_gate_bias[time]          = d_update_gate;
     d_update_gate_update_weight[time] = d_update_gate  * previous_out_value;
     d_update_gate_weight[time]        = d_update_gate  * input_value;
@@ -154,7 +151,7 @@ void GRU_Node::try_update_deltas(int time) {
     d_input[time]                     += d_update_gate * update_gate_weight;
 
     //backprop memory gate
-    double d_memory_gate              = error * (-1 * update_gate_values[time]) * ld_memory_gate[time];
+    double d_memory_gate              = error * update_gate_values[time] * ld_memory_gate[time];
     d_memory_gate_bias[time]          = d_memory_gate;
     d_memory_gate_update_weight[time] = d_memory_gate  * reset_gate_values[time] * previous_out_value;
     d_memory_gate_weight[time]        = d_memory_gate  * input_value;
@@ -169,6 +166,19 @@ void GRU_Node::try_update_deltas(int time) {
     d_prev_out[time]                  += d_reset_gate * reset_gate_update_weight;
     d_input[time]                     += d_reset_gate * reset_gate_weight;
 
+    d_prev_out[time]                  += error * (1-update_gate_values[time]);
+
+}
+
+
+void GRU_Node::print_cell_values() {
+    /*
+    cerr << "\tinput_value: " << input_value << endl;
+    cerr << "\tinput_gate_value: " << input_gate_value << ", input_gate_update_weight: " << input_gate_update_weight << ", input_gate_bias: " << input_gate_bias << endl;
+    cerr << "\toutput_gate_value: " << output_gate_value << ", output_gate_update_weight: " << output_gate_update_weight << ", output_gate_bias: " << output_gate_bias << endl;
+    cerr << "\tforget_gate_value: " << forget_gate_value << ", forget_gate_update_weight: " << forget_gate_update_weight << "\tforget_gate_bias: " << forget_gate_bias << endl;
+    cerr << "\tcell_value: " << cell_value << ", cell_bias: " << cell_bias << endl;
+    */
 }
 
 void GRU_Node::error_fired(int time, double error) {
@@ -246,9 +256,9 @@ void GRU_Node::get_weights(uint32_t &offset, vector<double> &parameters) const {
 
 
 void GRU_Node::get_gradients(vector<double> &gradients) {
-    gradients.assign(11, 0.0);
+    gradients.assign(9, 0.0);
 
-    for (uint32_t i = 0; i < 11; i++) {
+    for (uint32_t i = 0; i < 9; i++) {
         gradients[i] = 0.0;
     }
 
@@ -461,10 +471,10 @@ int main(int argc, char **argv) {
 
             cout << "analytical gradient:" << endl;
             for (uint32_t i = 0; i < parameter_names.size(); i++) {
-                node1->print_gradient(parameter_names[i % 11]);
+                node1->print_gradient(parameter_names[i % 9]);
             }
             for (uint32_t i = 0; i < parameter_names.size(); i++) {
-                node2->print_gradient(parameter_names[i % 11]);
+                node2->print_gradient(parameter_names[i % 9]);
             }
         }
 
@@ -510,16 +520,16 @@ int main(int argc, char **argv) {
             double gradient = (mse2 - mse1) / (2.0 * diff);
 
             gradient *= mse;
-            if (print) cout << "\tgradient['" << parameter_names[i % 11] << "']: " << gradient << endl;
+            if (print) cout << "\tgradient['" << parameter_names[i % 9] << "']: " << gradient << endl;
 
             parameters[i] = save;
         }
 
         for (int32_t j = 0; j < parameters.size(); j++) {
-            if (j < 11) {
-                next_parameters[j] -= learning_rate * node1->get_gradient(parameter_names[j % 11]);
+            if (j < 9) {
+                next_parameters[j] -= learning_rate * node1->get_gradient(parameter_names[j % 9]);
             } else {
-                next_parameters[j] -= learning_rate * node2->get_gradient(parameter_names[j % 11]);
+                next_parameters[j] -= learning_rate * node2->get_gradient(parameter_names[j % 9]);
             }
         }
         parameters = next_parameters;

@@ -204,7 +204,7 @@ void LSTM_Node::try_update_deltas(int time) {
     //backprop forget gate
     d_prev_cell[time] += d_cell_out * forget_gate_values[time];
 
-    double d_forget_gate = d_cell_out * previous_cell_value * ld_forget_gate[time]; 
+    double d_forget_gate = d_cell_out * previous_cell_value * ld_forget_gate[time];
     d_forget_gate_bias[time] = d_forget_gate;
     d_forget_gate_update_weight[time] = d_forget_gate * previous_cell_value;
     d_forget_gate_weight[time] = d_forget_gate * input_value;
@@ -519,7 +519,7 @@ int main(int argc, char **argv) {
         bool print = (iteration % 10000) == 0;
 
         if (print) cout << "\n\niteration: " << setw(5) << iteration << endl;
-       
+
         //cout << "firing node1" << endl;
         offset = 0;
         node1->reset(inputs.size());
@@ -619,4 +619,3 @@ void LSTM_Node::write_to_stream(ostream &out) {
 }
 
 #endif
-

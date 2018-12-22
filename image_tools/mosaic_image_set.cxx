@@ -30,8 +30,8 @@ using std::vector;
 #include <sstream>
 using std::ostringstream;
 
-#include "tiff.h"
-#include "tiffio.h"
+#include "/usr/local/Cellar/libtiff/4.0.10/include/tiff.h"
+#include "/usr/local/Cellar/libtiff/4.0.10/include/tiffio.h"
 
 Point::Point(int _y, int _x) : y(_y), x(_x) {
 }
@@ -142,7 +142,7 @@ void MosaicImages::read_mosaic(string filename, const vector<Line> &lines, int l
         //calculate the center of the line
         float y_center = (y1 + y2) / 2.0;
         float x_center = (x1 + x2) / 2.0;
-        
+
         float y_temp = y2 - y_center;
         float x_temp = x2 - x_center;
 
@@ -207,7 +207,7 @@ void MosaicImages::read_mosaic(string filename, const vector<Line> &lines, int l
         int subimages_along_width = (line_width - subimage_width) + 1;
         int subimages_along_height = (line_height - subimage_height) + 1;
         int number_subimages = subimages_along_width * subimages_along_height;
-        
+
         cout << "creating a mosaic image with " << number_subimages << " subimages" << endl;
 
         LargeImage mosaic_image(number_subimages, channels, line_width, line_height, padding, line_classes[i], line_pixels);

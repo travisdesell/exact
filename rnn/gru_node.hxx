@@ -11,7 +11,7 @@ using std::uniform_real_distribution;
 #include <vector>
 using std::vector;
 
-#include "../common/random.hxx"
+#include "common/random.hxx"
 
 #include "rnn_node_interface.hxx"
 

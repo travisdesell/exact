@@ -36,6 +36,7 @@ using std::vector;
 #include "rnn_node_interface.hxx"
 #include "rnn_node.hxx"
 #include "lstm_node.hxx"
+#include "gru_node.hxx"
 #include "mse.hxx"
 
 
@@ -70,7 +71,7 @@ RNN::RNN(vector<RNN_Node_Interface*> &_nodes, vector<RNN_Edge*> &_edges, vector<
             output_nodes.push_back(nodes[i]);
         }
     }
-    
+
     //cout << "got RNN with " << nodes.size() << " nodes, " << edges.size() << ", " << recurrent_edges.size() << " recurrent edges" << endl;
 }
 
@@ -241,7 +242,7 @@ void RNN::forward_pass(const vector< vector<double> > &series_data, bool using_d
 }
 
 void RNN::backward_pass(double error, bool using_dropout, bool training, double dropout_probability) {
-    //do a propagate forward for time == (series_length - 1) so that the 
+    //do a propagate forward for time == (series_length - 1) so that the
     // output fired count on each node will be correct for the first pass
     //through the RNN
     for (uint32_t i = 0; i < recurrent_edges.size(); i++) {
@@ -520,8 +521,8 @@ int main(int argc, char **argv) {
 
     uint32_t number_of_weights = genome->get_number_weights();
 
-    vector<double> min_bound(number_of_weights, -1.0); 
-    vector<double> max_bound(number_of_weights, 1.0); 
+    vector<double> min_bound(number_of_weights, -1.0);
+    vector<double> max_bound(number_of_weights, 1.0);
 
     cout << "RNN has " << number_of_weights << " weights." << endl;
 
@@ -599,4 +600,3 @@ int main(int argc, char **argv) {
 }
 
 #endif
-
