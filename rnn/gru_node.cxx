@@ -106,9 +106,9 @@ void GRU_Node::input_fired(int time, double incoming_output) {
     double previous_out_value = 0.0;
     if (time > 0) previous_out_value = output_values[time - 1];
 
-    update_gate_values[time] = sigmoid(update_gate_weight * input_value  + update_gate_update_weight                              * previous_out_value + update_gate_bias);
-    reset_gate_values[time]  = sigmoid(reset_gate_weight  * input_value  + reset_gate_update_weight                               * previous_out_value + reset_gate_bias);
-    memory_gate_values[time] = tanh(memory_gate_weight    * input_value  + memory_gate_update_weight * reset_gate_values[time]    * previous_out_value + memory_gate_bias);
+    update_gate_values[time] = sigmoid(update_gate_weight * input_value  + update_gate_update_weight * previous_out_value + update_gate_bias);
+    reset_gate_values[time]  = sigmoid(reset_gate_weight  * input_value  + reset_gate_update_weight * previous_out_value + reset_gate_bias);
+    memory_gate_values[time] = tanh(memory_gate_weight    * input_value  + memory_gate_update_weight * reset_gate_values[time] * previous_out_value + memory_gate_bias);
 
     ld_update_gate[time] = sigmoid_derivative(update_gate_values[time]);
     ld_reset_gate[time]  = sigmoid_derivative(reset_gate_values[time]);
@@ -146,7 +146,7 @@ void GRU_Node::try_update_deltas(int time) {
 
 
     //backprop output gate
-    double d_update_gate              = error * (previous_out_value[time] - memory_gate_values[time]) * ld_update_gate[time];
+    double d_update_gate              = error * (previous_out_value - memory_gate_values[time]) * ld_update_gate[time];
     d_update_gate_bias[time]          = d_update_gate;
     d_update_gate_update_weight[time] = d_update_gate  * previous_out_value;
     d_update_gate_weight[time]        = d_update_gate  * input_value;
