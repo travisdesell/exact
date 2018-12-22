@@ -1,2 +1,14 @@
-add_executable(test_rnn test_rnn)
-target_link_libraries(test_rnn exalt_strategy exact_common exact_time_series ${MYSQL_LIBRARIES} pthread)
+add_executable(test_feed_forward_gradients test_feed_forward_gradients gradient_test)
+target_link_libraries(test_feed_forward_gradients exalt_strategy exact_common exact_time_series ${MYSQL_LIBRARIES} pthread)
+
+add_executable(test_elman_gradients test_elman_gradients gradient_test)
+target_link_libraries(test_elman_gradients exalt_strategy exact_common exact_time_series ${MYSQL_LIBRARIES} pthread)
+
+add_executable(test_jordan_gradients test_jordan_gradients gradient_test)
+target_link_libraries(test_jordan_gradients exalt_strategy exact_common exact_time_series ${MYSQL_LIBRARIES} pthread)
+
+add_executable(test_gru_gradients test_gru_gradients gradient_test)
+target_link_libraries(test_gru_gradients exalt_strategy exact_common exact_time_series ${MYSQL_LIBRARIES} pthread)
+
+add_executable(test_lstm_gradients test_lstm_gradients gradient_test)
+target_link_libraries(test_lstm_gradients exalt_strategy exact_common exact_time_series ${MYSQL_LIBRARIES} pthread)

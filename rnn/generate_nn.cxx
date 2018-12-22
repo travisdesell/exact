@@ -7,6 +7,7 @@ using std::endl;
 using std::vector;
 
 
+#include "rnn/gru_node.hxx"
 #include "rnn/lstm_node.hxx"
 #include "rnn/gru_node.hxx"
 #include "rnn/rnn_edge.hxx"
@@ -227,6 +228,16 @@ RNN_Genome* create_lstm(int number_inputs, int number_hidden_layers, int number_
 
     return new RNN_Genome(rnn_nodes, rnn_edges, recurrent_edges);
 }
+RNN_Genome* create_gru(int number_inputs, int number_hidden_layers, int number_hidden_nodes, int number_outputs, int max_recurrent_depth) {
+    vector<RNN_Node_Interface*> rnn_nodes;
+    vector< vector<RNN_Node_Interface*> > layer_nodes(2 + number_hidden_layers);
+    vector<RNN_Edge*> rnn_edges;
+    vector<RNN_Recurrent_Edge*> recurrent_edges;
+
+    int node_innovation_count = 0;
+    int edge_innovation_count = 0;
+    int current_layer = 0;
+
 RNN_Genome* create_gru(int number_inputs, int number_hidden_layers, int number_hidden_nodes, int number_outputs, int max_recurrent_depth) {
     vector<RNN_Node_Interface*> rnn_nodes;
     vector< vector<RNN_Node_Interface*> > layer_nodes(2 + number_hidden_layers);
