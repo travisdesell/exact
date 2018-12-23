@@ -1,2 +1,0 @@
-/Library/Developer/CommandLineTools/usr/bin/ar qc libexact_common.a  CMakeFiles/exact_common.dir/arguments.cxx.o CMakeFiles/exact_common.dir/random.cxx.o CMakeFiles/exact_common.dir/exp.cxx.o CMakeFiles/exact_common.dir/db_conn.cxx.o CMakeFiles/exact_common.dir/color_table.cxx.o CMakeFiles/exact_common.dir/files.cxx.o
-/Library/Developer/CommandLineTools/usr/bin/ranlib libexact_common.a

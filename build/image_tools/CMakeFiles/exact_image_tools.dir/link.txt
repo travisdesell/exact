@@ -1,2 +1,0 @@
-/Library/Developer/CommandLineTools/usr/bin/ar qc libexact_image_tools.a  CMakeFiles/exact_image_tools.dir/lodepng.cpp.o CMakeFiles/exact_image_tools.dir/image_set.cxx.o CMakeFiles/exact_image_tools.dir/large_image_set.cxx.o CMakeFiles/exact_image_tools.dir/mosaic_image_set.cxx.o
-/Library/Developer/CommandLineTools/usr/bin/ranlib libexact_image_tools.a
