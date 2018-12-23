@@ -155,7 +155,7 @@ void GRU_Node::try_update_deltas(int time) {
     d_memory_gate_bias[time]          = d_memory_gate;
     d_memory_gate_update_weight[time] = d_memory_gate  * reset_gate_values[time] * previous_out_value;
     d_memory_gate_weight[time]        = d_memory_gate  * input_value;
-    d_prev_out[time]                  += d_memory_gate * memory_gate_update_weight * reset_gate_values[time];
+    d_prev_out[time]                  += d_memory_gate * reset_gate_values[time] * memory_gate_update_weight;
     d_input[time]                     += d_memory_gate * memory_gate_weight;
 
     //backprob Reset gate
