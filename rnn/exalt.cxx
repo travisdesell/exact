@@ -92,7 +92,8 @@ EXALT::EXALT(int32_t _population_size, int32_t _number_islands, int32_t _max_gen
     enable_edge_rate = 1.0;
     disable_edge_rate = 3.0;
     //disable_edge_rate = 1.0;
-    split_edge_rate = 1.0;
+    //split_edge_rate = 1.0;
+    split_edge_rate = 0.0;
 
     bool node_ops = true;
     if (node_ops) {
@@ -102,6 +103,15 @@ EXALT::EXALT(int32_t _population_size, int32_t _number_islands, int32_t _max_gen
         //disable_node_rate = 1.0;
         split_node_rate = 1.0;
         merge_node_rate = 1.0;
+
+        feed_forward_node_rate = 0.0;
+        jordan_node_rate = 0.0;
+        elman_node_rate = 0.0;
+        ugrnn_node_rate = 0.0;
+        gru_node_rate = 0.0;
+        delta_node_rate = 0.0;
+        lstm_node_rate = 0.0;
+
     } else {
         add_node_rate = 0.0;
         enable_node_rate = 0.0;
