@@ -99,7 +99,7 @@ void GRU_Node::input_fired(int time, double incoming_output) {
     }
 
     //update the reset gate bias so its centered around 1
-    r_bias += 1;
+    //r_bias += 1;
 
     //cout << "PROPAGATING FORWARD" << endl;
 
@@ -141,7 +141,7 @@ void GRU_Node::input_fired(int time, double incoming_output) {
 
     //reset alpha, beta1, beta2 so they don't mess with mean/stddev calculations for
     //parameter generation
-    r_bias -= 1.0;
+    //r_bias -= 1.0;
 
     //cout << "node " << innovation_number << " - output_values[" << time << "]: " << output_values[time] << endl;
 }
@@ -155,7 +155,7 @@ void GRU_Node::try_update_deltas(int time) {
 
     //cout << "PROPAGATING BACKWARDS" << endl;
     //update the reset gate bias so its centered around 1   
-    r_bias += 1.0;
+    //r_bias += 1.0;
 
     double error = error_values[time];
     //cout << "error_values[time]: " << error << endl;
@@ -210,7 +210,7 @@ void GRU_Node::try_update_deltas(int time) {
     //cout << endl << endl;
 
     //reset the reset gate bias to be around 0
-    r_bias -= 1.0;
+    //r_bias -= 1.0;
 }
 
 void GRU_Node::error_fired(int time, double error) {
