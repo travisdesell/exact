@@ -11,6 +11,7 @@ using std::vector;
 #include "rnn_node.hxx"
 
 
+
 RNN_Node::RNN_Node(int _innovation_number, int _type, double _depth) : RNN_Node_Interface(_innovation_number, _type, _depth) {
     if (type == RNN_INPUT_NODE) {
         total_inputs = 1;

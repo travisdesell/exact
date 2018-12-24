@@ -54,7 +54,7 @@ int main(int argc, char **argv) {
     bool verbose = argument_exists(arguments, "--verbose");
 
     for (int32_t max_recurrent_depth = 1; max_recurrent_depth <= 5; max_recurrent_depth++) {
-        cout << "\n\testing with max recurrent depth: " << max_recurrent_depth << endl;
+        cout << "testing with max recurrent depth: " << max_recurrent_depth << endl;
 
         inputs.resize(1);
         outputs.resize(1);

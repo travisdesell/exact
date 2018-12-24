@@ -35,12 +35,6 @@ LSTM_Node::LSTM_Node(int _innovation_number, int _type, double _depth) : RNN_Nod
 LSTM_Node::~LSTM_Node() {
 }
 
-double bound(double value) {
-    if (value < -10.0) value = -10.0;
-    else if (value > 10.0) value = 10.0;
-    return value;
-}
-
 void LSTM_Node::initialize_randomly(minstd_rand0 &generator, NormalDistribution &normal_distribution, double mu, double sigma) {
 
     output_gate_update_weight = bound(normal_distribution.random(generator, mu, sigma));

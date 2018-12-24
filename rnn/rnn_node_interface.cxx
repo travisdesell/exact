@@ -5,6 +5,12 @@ using std::ostream;
 
 #include "rnn_node_interface.hxx"
 
+double bound(double value) {
+    if (value < -10.0) value = -10.0;
+    else if (value > 10.0) value = 10.0;
+    return value;
+}
+
 double sigmoid(double value) {
     double exp_value = exp(-value);
     return 1.0 / (1.0 + exp_value);

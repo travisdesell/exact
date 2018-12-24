@@ -58,7 +58,7 @@ void gradient_test(string name, RNN_Genome *genome, const vector< vector<double>
 	vector<double> parameters;
 	vector<double> analytic_gradient, empirical_gradient;
 
-	cout << "testing gradient on '" << name << "' ... ";
+	cout << "\ttesting gradient on '" << name << "' ... " << endl;
 	bool failed = false;
 
 	RNN* rnn = genome->get_rnn();
@@ -75,24 +75,31 @@ void gradient_test(string name, RNN_Genome *genome, const vector< vector<double>
 		rnn->get_analytic_gradient(parameters, inputs, outputs, analytic_mse, analytic_gradient, false, true, 0.0);
 		rnn->get_empirical_gradient(parameters, inputs, outputs, empirical_mse, empirical_gradient, false, true, 0.0);
 
+        bool iteration_failed = false;
 
 		for (uint32_t j = 0; j < analytic_gradient.size(); j++) {
 			double difference = analytic_gradient[j] - empirical_gradient[j];
 
-			if (verbose) {
-				cout << "\t\tanalytic gradient[" << j << "]: " << analytic_gradient[j] << ", empirical gradient[" << j << "]: " << empirical_gradient[j] << ", difference: " << difference << endl;
-			}
-
 			if (fabs(difference) > 10e-10) {
 				failed = true;
-				cout << "FAILED on attempt " << i << "!" << endl;
-				cout << "analytic gradient[" << j << "]: " << analytic_gradient[j] << ", empirical gradient[" << j << "]: " << empirical_gradient[j] << ", difference: " << difference << endl;
+                iteration_failed = true;
+				cout << "\t\tFAILED analytic gradient[" << j << "]: " << analytic_gradient[j] << ", empirical gradient[" << j << "]: " << empirical_gradient[j] << ", difference: " << difference << endl;
 				//exit(1);
-			}
+			} else if (verbose) {
+				cout << "\t\tPASSED analytic gradient[" << j << "]: " << analytic_gradient[j] << ", empirical gradient[" << j << "]: " << empirical_gradient[j] << ", difference: " << difference << endl;
+            }
 		}
+
+        if (iteration_failed) {
+            cout << "\tITERATION " << i << " FAILED!" << endl << endl;
+        } else if (verbose) {
+            cout << "\tITERATION " << i << " PASSED!" << endl << endl;
+        }
 	}
 
 	if (!failed) {
-		cout << "SUCCESS!" << endl;
-	}
+		cout << "ALL PASSED!" << endl;
+	} else {
+        cout << "SOME FAILED!" << endl;
+    }
 }

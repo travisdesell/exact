@@ -43,5 +43,4 @@ class RNN_Node : public RNN_Node_Interface {
         friend class RNN_Edge;
 };
 
-
 #endif

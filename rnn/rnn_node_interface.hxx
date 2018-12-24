@@ -24,6 +24,7 @@ class RNN;
 #define LSTM_NODE 0
 #define RNN_NODE 1
 #define GRU_NODE 2
+#define DELTA_NODE 3
 
 
 double sigmoid(double value);
@@ -110,6 +111,7 @@ struct sort_RNN_Nodes_by_depth {
     }
 };
 
+double bound(double value);
 
 
 #endif
