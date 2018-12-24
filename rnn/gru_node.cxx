@@ -28,6 +28,8 @@ using std::vector;
 #include "gru_node.hxx"
 
 
+#define NUMBER_GRU_WEIGHTS 9
+
 GRU_Node::GRU_Node(int _innovation_number, int _type, double _depth) : RNN_Node_Interface(_innovation_number, _type, _depth) {
     node_type = GRU_NODE;
 }
@@ -35,60 +37,49 @@ GRU_Node::GRU_Node(int _innovation_number, int _type, double _depth) : RNN_Node_
 GRU_Node::~GRU_Node() {
 }
 
-double Bound(double value) {
-    if (value < -10.0) value = -10.0;
-    else if (value > 10.0) value = 10.0;
-    return value;
-}
-
 void GRU_Node::initialize_randomly(minstd_rand0 &generator, NormalDistribution &normal_distribution, double mu, double sigma) {
 
-    update_gate_update_weight = Bound(normal_distribution.random(generator, mu, sigma));
-    update_gate_weight        = Bound(normal_distribution.random(generator, mu, sigma));
-    update_gate_bias          = Bound(normal_distribution.random(generator, mu, sigma));
+    zw = bound(normal_distribution.random(generator, mu, sigma));
+    zu = bound(normal_distribution.random(generator, mu, sigma));
+    z_bias = bound(normal_distribution.random(generator, mu, sigma));
 
-    reset_gate_update_weight  = Bound(normal_distribution.random(generator, mu, sigma));
-    reset_gate_weight         = Bound(normal_distribution.random(generator, mu, sigma));
-    reset_gate_bias           = Bound(normal_distribution.random(generator, mu, sigma));
-    // reset_gate_bias        = 1.0 + normal_distribution.random(generator, mu, sigma);
+    rw = bound(normal_distribution.random(generator, mu, sigma));
+    ru = bound(normal_distribution.random(generator, mu, sigma));
+    r_bias = bound(normal_distribution.random(generator, mu, sigma));
 
-    memory_gate_update_weight = Bound(normal_distribution.random(generator, mu, sigma));
-    memory_gate_weight        = Bound(normal_distribution.random(generator, mu, sigma));
-    memory_gate_bias          = Bound(normal_distribution.random(generator, mu, sigma));
-
-
+    hw = bound(normal_distribution.random(generator, mu, sigma));
+    hu = bound(normal_distribution.random(generator, mu, sigma));
+    h_bias = bound(normal_distribution.random(generator, mu, sigma));
 }
 
 double GRU_Node::get_gradient(string gradient_name) {
     double gradient_sum = 0.0;
 
     for (uint32_t i = 0; i < series_length; i++ ) {
-
-        if (gradient_name == "update_gate_update_weight") {
-            gradient_sum += d_update_gate_update_weight[i];
-        } else if (gradient_name == "update_gate_weight") {
-            gradient_sum += d_update_gate_weight[i];
-        } else if (gradient_name == "update_gate_bias") {
-            gradient_sum += d_update_gate_bias[i];
-
-        } else if (gradient_name == "reset_gate_update_weight") {
-            gradient_sum += d_reset_gate_update_weight[i];
-        } else if (gradient_name == "reset_gate_weight") {
-            gradient_sum += d_reset_gate_weight[i];
-        } else if (gradient_name == "reset_gate_bias") {
-            gradient_sum += d_reset_gate_bias[i];
-
-        } else if (gradient_name == "memory_gate_update_weight") {
-            gradient_sum += d_memory_gate_update_weight[i];
-        } else if (gradient_name == "memory_gate_weight") {
-            gradient_sum += d_memory_gate_weight[i];
-        } else if (gradient_name == "memory_gate_bias") {
-            gradient_sum += d_memory_gate_bias[i];
+        if (gradient_name == "zw") {
+            gradient_sum += d_zw[i];
+        } else if (gradient_name == "zu") {
+            gradient_sum += d_zu[i];
+        } else if (gradient_name == "z_bias") {
+            gradient_sum += d_z_bias[i];
+        } else if (gradient_name == "rw") {
+            gradient_sum += d_rw[i];
+        } else if (gradient_name == "ru") {
+            gradient_sum += d_ru[i];
+        } else if (gradient_name == "r_bias") {
+            gradient_sum += d_r_bias[i];
+        } else if (gradient_name == "hw") {
+            gradient_sum += d_hw[i];
+        } else if (gradient_name == "hu") {
+            gradient_sum += d_hu[i];
+        } else if (gradient_name == "h_bias") {
+            gradient_sum += d_h_bias[i];
         } else {
             cerr << "ERROR: tried to get unknown gradient: '" << gradient_name << "'" << endl;
             exit(1);
         }
     }
+
     return gradient_sum;
 }
 
@@ -107,23 +98,53 @@ void GRU_Node::input_fired(int time, double incoming_output) {
         exit(1);
     }
 
-    double input_value = input_values[time];
-    //cout << "input value[" << i << "]:" << input_value << endl;
+    //update the reset gate bias so its centered around 1
+    r_bias += 1;
 
-    double previous_out_value = 0.0;
-    if (time > 0) previous_out_value = output_values[time - 1];
+    //cout << "PROPAGATING FORWARD" << endl;
 
-    update_gate_values[time] = sigmoid(update_gate_weight * input_value  + update_gate_update_weight                              * previous_out_value + update_gate_bias);
-    reset_gate_values[time]  = sigmoid(reset_gate_weight  * input_value  + reset_gate_update_weight                               * previous_out_value + reset_gate_bias);
-    memory_gate_values[time] = tanh(memory_gate_weight    * input_value  + memory_gate_update_weight * reset_gate_values[time]    * previous_out_value + memory_gate_bias);
+    double x = input_values[time];
+    //cout << "node " << innovation_number << " - input value[" << time << "] (x): " << x << endl;
 
-    ld_update_gate[time] = sigmoid_derivative(update_gate_values[time]);
-    ld_reset_gate[time]  = sigmoid_derivative(reset_gate_values[time]);
-    ld_memory_gate[time] = tanh_derivative(memory_gate_values[time]);
+    double h_prev = 0.0;
+    if (time > 0) h_prev = output_values[time - 1];
+    //cout << "node " << innovation_number << " - prev_output_value[" << time << "] (h_prev): " << h_prev << endl;
 
-    output_values[time] = previous_out_value * update_gate_values[time]    +    (1 - update_gate_values[time]) * memory_gate_values[time];
+    //cout << "r_bias: " << r_bias << endl;
+
+    double hzu = h_prev * zu;
+    double xzw = x * zw;
+    double z_sum = z_bias + hzu + xzw;
+
+    z[time] = sigmoid(z_sum);
+    ld_z[time] = sigmoid_derivative(z[time]);
+
+    double z_h_prev = h_prev * z[time];
+
+    double xhw = x * hw;
+    double xrw = x * rw;
+    double hru = h_prev * ru;
+
+    double r_sum = r_bias + xrw + hru;
+
+    r[time] = sigmoid(r_sum);
+    ld_r[time] = sigmoid_derivative(r[time]);
+
+    double hu_r_h_prev = hu * r[time] * h_prev;
+
+    double h_sum = h_bias + xhw + hu_r_h_prev;
+
+    h_tanh[time] = tanh(h_sum);
+    ld_h_tanh[time] = tanh_derivative(h_tanh[time]);
+
+    output_values[time] = z_h_prev + (1 - z[time]) * h_tanh[time];
+
+    //reset alpha, beta1, beta2 so they don't mess with mean/stddev calculations for
+    //parameter generation
+    r_bias -= 1.0;
+
+    //cout << "node " << innovation_number << " - output_values[" << time << "]: " << output_values[time] << endl;
 }
-
 
 void GRU_Node::try_update_deltas(int time) {
     if (outputs_fired[time] < total_outputs) return;
@@ -132,53 +153,64 @@ void GRU_Node::try_update_deltas(int time) {
         exit(1);
     }
 
-    double error = error_values[time];
-    double input_value = input_values[time];
-    //cout << "input value[" << i << "]:" << input_value << endl;
+    //cout << "PROPAGATING BACKWARDS" << endl;
+    //update the reset gate bias so its centered around 1   
+    r_bias += 1.0;
 
-    double previous_out_value = 0.00;
-    if (time > 0) previous_out_value = output_values[time - 1];
-    //previous_out_value = 0.33;
-    //cout << "previous_out_value[" << i << "]: " << previous_out_value << endl;
+    double error = error_values[time];
+    //cout << "error_values[time]: " << error << endl;
+    double x = input_values[time];
+    //cout << "input value[" << time << "]:" << x << endl;
+
+    double h_prev = 0.0;
+    if (time > 0) h_prev = output_values[time - 1];
+    //cout << "h_prev[" << (time - 1) << "]: " << h_prev << endl;
 
 
     //backprop output gate
-    double d_update_gate              = error * (previous_out_value - memory_gate_values[time]) * ld_update_gate[time];
-    d_update_gate_bias[time]          = d_update_gate;
-    d_update_gate_update_weight[time] = d_update_gate  * previous_out_value;
-    d_update_gate_weight[time]        = d_update_gate  * input_value;
-    d_prev_out[time]                  += d_update_gate * update_gate_update_weight;
-    d_input[time]                     += d_update_gate * update_gate_weight;
+    double d_h = error;
+    if (time < (series_length - 1)) d_h += d_h_prev[time + 1];
+    //get the error into the output (z), it's the error from ahead in the network
+    //as well as from the previous output of the cell
 
-    //backprop memory gate
-    double d_memory_gate              = error * (1 - update_gate_values[time]) * ld_memory_gate[time];
-    d_memory_gate_bias[time]          = d_memory_gate;
-    d_memory_gate_update_weight[time] = d_memory_gate  * reset_gate_values[time] * previous_out_value;
-    d_memory_gate_weight[time]        = d_memory_gate  * input_value;
-    d_prev_out[time]                  += d_memory_gate * reset_gate_values[time] * memory_gate_update_weight;
-    d_input[time]                     += d_memory_gate * memory_gate_weight;
+    //cout << "d_z: " << d_z << endl;
+    //cout << "ld_z_cap[" << time << "]: " << ld_z_cap[time] << endl;
 
-    //backprob Reset gate
-    double d_reset_gate               = d_memory_gate * memory_gate_update_weight * previous_out_value * ld_reset_gate[time];
-    d_reset_gate_bias[time]           = d_reset_gate;
-    d_reset_gate_update_weight[time]  = d_reset_gate * previous_out_value;
-    d_reset_gate_weight[time]         = d_reset_gate * input_value;
-    d_prev_out[time]                  += d_reset_gate * reset_gate_update_weight;
-    d_input[time]                     += d_reset_gate * reset_gate_weight;
+    d_h_prev[time] = d_h * z[time];
 
-    d_prev_out[time]                  += error * update_gate_values[time];
+    double d_z = ((d_h * h_prev) - (d_h * h_tanh[time])) * ld_z[time];
+    d_z_bias[time] = d_z;
+    d_zu[time] = d_z * h_prev;
+    d_h_prev[time] += d_z * zu;
+    d_zw[time] = d_z * x;
+    d_input[time] = d_z * zw;
 
-}
+    double d_h_tanh = (1 - z[time]) * d_h * ld_h_tanh[time];
 
+    d_input[time] += d_h_tanh * hw;
+    d_hw[time] = d_h_tanh * x;
 
-void GRU_Node::print_cell_values() {
-    /*
-    cerr << "\tinput_value: " << input_value << endl;
-    cerr << "\tinput_gate_value: " << input_gate_value << ", input_gate_update_weight: " << input_gate_update_weight << ", input_gate_bias: " << input_gate_bias << endl;
-    cerr << "\toutput_gate_value: " << output_gate_value << ", output_gate_update_weight: " << output_gate_update_weight << ", output_gate_bias: " << output_gate_bias << endl;
-    cerr << "\tforget_gate_value: " << forget_gate_value << ", forget_gate_update_weight: " << forget_gate_update_weight << "\tforget_gate_bias: " << forget_gate_bias << endl;
-    cerr << "\tcell_value: " << cell_value << ", cell_bias: " << cell_bias << endl;
-    */
+    d_h_bias[time] = d_h_tanh;
+
+    d_hu[time] = d_h_tanh * r[time] * h_prev;
+    double d_r = d_h_tanh * hu * h_prev * ld_r[time];
+
+    d_h_prev[time] += d_h_tanh * hu * r[time];
+
+    d_r_bias[time] = d_r;
+    d_ru[time] = d_r * h_prev;
+    d_h_prev[time] += d_r * ru;
+
+    d_rw[time] = d_r * x;
+    d_input[time] += d_r * rw;
+
+    //cout << "d_input: " << d_input[time] << endl;
+    //cout << "d_beta2: " << d_beta2[time] << endl;
+
+    //cout << endl << endl;
+
+    //reset the reset gate bias to be around 0
+    r_bias -= 1.0;
 }
 
 void GRU_Node::error_fired(int time, double error) {
@@ -197,8 +229,20 @@ void GRU_Node::output_fired(int time, double delta) {
     try_update_deltas(time);
 }
 
+
+void GRU_Node::print_cell_values() {
+    /*
+    cerr << "\tinput_value: " << input_value << endl;
+    cerr << "\tinput_gate_value: " << input_gate_value << ", input_gate_update_weight: " << input_gate_update_weight << ", input_gate_bias: " << input_gate_bias << endl;
+    cerr << "\toutput_gate_value: " << output_gate_value << ", output_gate_update_weight: " << output_gate_update_weight << ", output_gate_bias: " << output_gate_bias << endl;
+    cerr << "\tforget_gate_value: " << forget_gate_value << ", forget_gate_update_weight: " << forget_gate_update_weight << "\tforget_gate_bias: " << forget_gate_bias << endl;
+    cerr << "\tcell_value: " << cell_value << ", cell_bias: " << cell_bias << endl;
+    */
+}
+
+
 uint32_t GRU_Node::get_number_weights() const {
-    return 9;
+    return NUMBER_GRU_WEIGHTS;
 }
 
 void GRU_Node::get_weights(vector<double> &parameters) const {
@@ -212,97 +256,97 @@ void GRU_Node::set_weights(const vector<double> &parameters) {
     set_weights(offset, parameters);
 }
 
-double get_bias(){
-  return 999;
-}
 
 void GRU_Node::set_weights(uint32_t &offset, const vector<double> &parameters) {
     //uint32_t start_offset = offset;
 
-    update_gate_update_weight = parameters[offset++];
-    update_gate_weight = parameters[offset++];
-    update_gate_bias = parameters[offset++];
+    zw = parameters[offset++];
+    zu = parameters[offset++];
+    z_bias = parameters[offset++];
 
-    reset_gate_update_weight = parameters[offset++];
-    reset_gate_weight = parameters[offset++];
-    reset_gate_bias = parameters[offset++];
+    rw = parameters[offset++];
+    ru = parameters[offset++];
+    r_bias = parameters[offset++];
 
-    memory_gate_update_weight = parameters[offset++];
-    memory_gate_weight = parameters[offset++];
-    memory_gate_bias = parameters[offset++];
+    hw = parameters[offset++];
+    hu = parameters[offset++];
+    h_bias = parameters[offset++];
+
 
     //uint32_t end_offset = offset;
+
     //cerr << "set weights from offset " << start_offset << " to " << end_offset << " on GRU_Node " << innovation_number << endl;
 }
 
 void GRU_Node::get_weights(uint32_t &offset, vector<double> &parameters) const {
     //uint32_t start_offset = offset;
 
-    parameters[offset++] = update_gate_update_weight;
-    parameters[offset++] = update_gate_weight;
-    parameters[offset++] = update_gate_bias;
+    parameters[offset++] = zw;
+    parameters[offset++] = zu;
+    parameters[offset++] = z_bias;
 
-    parameters[offset++] = reset_gate_update_weight;
-    parameters[offset++] = reset_gate_weight;
-    parameters[offset++] = reset_gate_bias;
+    parameters[offset++] = rw;
+    parameters[offset++] = ru;
+    parameters[offset++] = r_bias;
 
-    parameters[offset++] = memory_gate_update_weight;
-    parameters[offset++] = memory_gate_weight;
-    parameters[offset++] = memory_gate_bias;
+    parameters[offset++] = hw;
+    parameters[offset++] = hu;
+    parameters[offset++] = h_bias;
 
     //uint32_t end_offset = offset;
+
     //cerr << "set weights from offset " << start_offset << " to " << end_offset << " on GRU_Node " << innovation_number << endl;
 }
 
 
 void GRU_Node::get_gradients(vector<double> &gradients) {
-    gradients.assign(9, 0.0);
+    gradients.assign(NUMBER_GRU_WEIGHTS, 0.0);
 
-    for (uint32_t i = 0; i < 9; i++) {
+    for (uint32_t i = 0; i < NUMBER_GRU_WEIGHTS; i++) {
         gradients[i] = 0.0;
     }
 
     for (uint32_t i = 0; i < series_length; i++) {
-        gradients[0] += d_update_gate_update_weight[i];
-        gradients[1] += d_update_gate_weight[i];
-        gradients[2] += d_update_gate_bias[i];
+        gradients[0] += d_zw[i];
+        gradients[1] += d_zu[i];
+        gradients[2] += d_z_bias[i];
 
-        gradients[3] += d_reset_gate_update_weight[i];
-        gradients[4] += d_reset_gate_weight[i];
-        gradients[5] += d_reset_gate_bias[i];
+        gradients[3] += d_rw[i];
+        gradients[4] += d_ru[i];
+        gradients[5] += d_r_bias[i];
 
-        gradients[6] += d_memory_gate_update_weight[i];
-        gradients[7] += d_memory_gate_weight[i];
-        gradients[8] += d_memory_gate_bias[i];
+        gradients[6] += d_hw[i];
+        gradients[7] += d_hu[i];
+        gradients[8] += d_h_bias[i];
     }
 }
 
 void GRU_Node::reset(int _series_length) {
     series_length = _series_length;
 
-    ld_update_gate.assign(series_length, 0.0);
-    ld_reset_gate.assign(series_length, 0.0);
-    ld_memory_gate.assign(series_length, 0.0);
+    d_zw.assign(series_length, 0.0);
+    d_zu.assign(series_length, 0.0);
+    d_z_bias.assign(series_length, 0.0);
 
+    d_rw.assign(series_length, 0.0);
+    d_ru.assign(series_length, 0.0);
+    d_r_bias.assign(series_length, 0.0);
+
+    d_hw.assign(series_length, 0.0);
+    d_hu.assign(series_length, 0.0);
+    d_h_bias.assign(series_length, 0.0);
+
+    d_h_prev.assign(series_length, 0.0);
+
+    z.assign(series_length, 0.0);
+    ld_z.assign(series_length, 0.0);
+    r.assign(series_length, 0.0);
+    ld_r.assign(series_length, 0.0);
+    h_tanh.assign(series_length, 0.0);
+    ld_h_tanh.assign(series_length, 0.0);
+
+    //reset values from rnn_node_interface
     d_input.assign(series_length, 0.0);
-    d_prev_out.assign(series_length, 0.0);
-
-    d_update_gate_update_weight.assign(series_length, 0.0);
-    d_update_gate_weight.assign(series_length, 0.0);
-    d_update_gate_bias.assign(series_length, 0.0);
-
-    d_reset_gate_update_weight.assign(series_length, 0.0);
-    d_reset_gate_weight.assign(series_length, 0.0);
-    d_reset_gate_bias.assign(series_length, 0.0);
-
-    d_memory_gate_update_weight.assign(series_length, 0.0);
-    d_memory_gate_weight.assign(series_length, 0.0);
-    d_memory_gate_bias.assign(series_length, 0.0);
-
-    update_gate_values.assign(series_length, 0.0);
-    reset_gate_values.assign(series_length, 0.0);
-    memory_gate_values.assign(series_length, 0.0);
-
     error_values.assign(series_length, 0.0);
 
     input_values.assign(series_length, 0.0);
@@ -315,48 +359,44 @@ void GRU_Node::reset(int _series_length) {
 RNN_Node_Interface* GRU_Node::copy() const {
     GRU_Node* n = new GRU_Node(innovation_number, type, depth);
 
+    //cout << "COPYING!" << endl;
+
     //copy GRU_Node values
-    n->update_gate_update_weight = update_gate_update_weight;
-    n->update_gate_weight        = update_gate_weight;
-    n->update_gate_bias          = update_gate_bias;
+    n->zw = zw;
+    n->zu = zu;
+    n->z_bias = z_bias;
+    n->rw = rw;
+    n->ru = ru;
+    n->r_bias = r_bias;
+    n->hw = hw;
+    n->hu = hu;
+    n->h_bias = h_bias;
 
-    n->reset_gate_update_weight  = reset_gate_update_weight;
-    n->reset_gate_weight         = reset_gate_weight;
-    n->reset_gate_bias           = reset_gate_bias;
+    n->d_zw = d_zw;
+    n->d_zu = d_zu;
+    n->d_z_bias = d_z_bias;
+    n->d_rw = d_rw;
+    n->d_ru = d_ru;
+    n->d_r_bias = d_r_bias;
+    n->d_hw = d_hw;
+    n->d_hu = d_hu;
+    n->d_h_bias = d_h_bias;
 
-    n->memory_gate_update_weight = memory_gate_update_weight;
-    n->memory_gate_weight        = memory_gate_weight;
-    n->memory_gate_bias          = memory_gate_bias;
+    n->d_h_prev = d_h_prev;
 
-    n->update_gate_values        = update_gate_values;
-    n->reset_gate_values         = reset_gate_values;
-    n->memory_gate_values        = memory_gate_values;
-
-    n->ld_update_gate            = ld_update_gate;
-    n->ld_reset_gate             = ld_reset_gate;
-    n->ld_memory_gate            = ld_memory_gate;
-
-    n->d_prev_out                = d_prev_out;
-
-    n->d_update_gate_update_weight = d_update_gate_update_weight;
-    n->d_update_gate_weight        = d_update_gate_weight;
-    n->d_update_gate_bias          = d_update_gate_bias;
-
-    n->d_reset_gate_update_weight  = d_reset_gate_update_weight;
-    n->d_reset_gate_weight         = d_reset_gate_weight;
-    n->d_reset_gate_bias           = d_reset_gate_bias;
-
-    n->d_memory_gate_update_weight = d_memory_gate_update_weight;
-    n->d_memory_gate_weight        = d_memory_gate_weight;
-    n->d_memory_gate_bias          = d_memory_gate_bias;
-
+    n->z = z;
+    n->ld_z = ld_z;
+    n->r = r;
+    n->ld_r = ld_r;
+    n->h_tanh = h_tanh;
+    n->ld_h_tanh = ld_h_tanh;
 
     //copy RNN_Node_Interface values
     n->series_length = series_length;
     n->input_values = input_values;
     n->output_values = output_values;
     n->error_values = error_values;
-    n->d_input      = d_input;
+    n->d_input = d_input;
 
     n->inputs_fired = inputs_fired;
     n->total_inputs = total_inputs;
@@ -368,176 +408,3 @@ RNN_Node_Interface* GRU_Node::copy() const {
 
     return n;
 }
-
-#ifdef GRU_TEST
-#include <random>
-using std::minstd_rand0;
-using std::uniform_real_distribution;
-
-#include <string>
-using std::string;
-
-int main(int argc, char **argv) {
-
-    int number_of_weights = 9 * 2;
-    vector<double> parameters(number_of_weights, 0.0);
-    vector<double> next_parameters;
-    vector<double> min_bound(number_of_weights, -2.0);
-    vector<double> max_bound(number_of_weights, 2.0);
-
-    //unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
-    unsigned seed = 1337;
-    minstd_rand0 generator(seed);
-    for (uint32_t i = 0; i < parameters.size(); i++) {
-        uniform_real_distribution<double> rng(min_bound[i], max_bound[i]);
-        parameters[i] = rng(generator);
-    }
-
-    vector<string> parameter_names;
-    parameter_names.push_back("update_gate_update_weight");
-    parameter_names.push_back("update_gate_weight");
-    parameter_names.push_back("update_gate_bias");
-
-    parameter_names.push_back("reset_gate_update_weight");
-    parameter_names.push_back("reset_gate_weight");
-    parameter_names.push_back("reset_gate_bias");
-
-    parameter_names.push_back("memory_gate_update_weight");
-    parameter_names.push_back("memory_gate_weight");
-    parameter_names.push_back("memory_gate_bias");
-
-    GRU_Node *node1 = new GRU_Node(0, RNN_HIDDEN_NODE, 0.0);
-    GRU_Node *node2 = new GRU_Node(0, RNN_HIDDEN_NODE, 0.0);
-    GRU_Node *n11  = new GRU_Node(0, RNN_HIDDEN_NODE, 0.0);
-    GRU_Node *n12  = new GRU_Node(0, RNN_HIDDEN_NODE, 0.0);
-    GRU_Node *n21 = new GRU_Node(0, RNN_HIDDEN_NODE, 0.0);
-    GRU_Node *n22 = new GRU_Node(0, RNN_HIDDEN_NODE, 0.0);
-    node1->total_inputs = 1;
-    node1->total_outputs = 1;
-    node2->total_inputs = 1;
-    node2->total_outputs = 1;
-    n11->total_inputs = 1;
-    n12->total_inputs = 1;
-    n21->total_inputs = 1;
-    n22->total_inputs = 1;
-
-    uint32_t offset;
-    double mse;
-    vector<double> deltas;
-
-    vector<double> inputs;
-    inputs.push_back(-0.88);
-    inputs.push_back(-0.83);
-    inputs.push_back(-0.89);
-    inputs.push_back(-0.87);
-
-    vector<double> outputs;
-    outputs.push_back(0.73);
-    outputs.push_back(0.63);
-    outputs.push_back(0.59);
-    outputs.push_back(0.55);
-
-    for (uint32_t iteration = 0; iteration < 2000000; iteration++) {
-        bool print = (iteration % 10000) == 0;
-
-        if (print) cout << "\n\niteration: " << setw(5) << iteration << endl;
-
-        //cout << "firing node1" << endl;
-        offset = 0;
-        node1->reset(inputs.size());
-        node2->reset(inputs.size());
-        node1->set_weights(offset, parameters);
-        node2->set_weights(offset, parameters);
-
-        for (int time = 0; time < outputs.size(); time++) {
-            node1->input_fired(time, inputs[time]);
-            node2->input_fired(time, node1->output_values[time]);
-        }
-
-        get_mse(node2->output_values, outputs, mse, deltas);
-
-        for (int time = outputs.size() - 1; time >= 0; time--) {
-            node2->output_fired(time, deltas[time]);
-            node1->output_fired(time, node2->d_input[time]);
-        }
-
-        if (print) {
-            cout << "mean squared error: " << mse << endl;
-
-            cout << "outputs: " << endl;
-            for (uint32_t i = 0; i < inputs.size(); i++) {
-                cout << "\toutput[" << i << "]: " << node2->output_values[i] << ", expected[" << i << "]: " << outputs[i] << ", diff: " << node2->output_values[i] - outputs[i] << endl;
-            }
-
-            cout << "analytical gradient:" << endl;
-            for (uint32_t i = 0; i < parameter_names.size(); i++) {
-                node1->print_gradient(parameter_names[i % 9]);
-            }
-            for (uint32_t i = 0; i < parameter_names.size(); i++) {
-                node2->print_gradient(parameter_names[i % 9]);
-            }
-        }
-
-        next_parameters = parameters;
-
-        if (print) cout << "empirical gradient:" << endl;
-
-        double learning_rate = 0.01;
-        double diff = 0.00001;
-        double save;
-        double mse1, mse2;
-        for (uint32_t i = 0; i < parameters.size(); i++) {
-            save = parameters[i];
-            parameters[i] = save - diff;
-
-            offset = 0;
-            n11->reset(inputs.size());
-            n12->reset(inputs.size());
-            n11->set_weights(offset, parameters);
-            n12->set_weights(offset, parameters);
-
-            for (int time = 0; time < outputs.size(); time++) {
-                n11->input_fired(time, inputs[time]);
-                n12->input_fired(time, n11->output_values[time]);
-            }
-
-            get_mse(n12->output_values, outputs, mse1, deltas);
-
-            parameters[i] = save + diff;
-
-            offset = 0;
-            n21->reset(inputs.size());
-            n22->reset(inputs.size());
-            n21->set_weights(offset, parameters);
-            n22->set_weights(offset, parameters);
-
-            for (int time = 0; time < outputs.size(); time++) {
-                n21->input_fired(time, inputs[time]);
-                n22->input_fired(time, n21->output_values[time]);
-            }
-            get_mse(n22->output_values, outputs, mse2, deltas);
-
-            double gradient = (mse2 - mse1) / (2.0 * diff);
-
-            gradient *= mse;
-            if (print) cout << "\tgradient['" << parameter_names[i % 9] << "']: " << gradient << endl;
-
-            parameters[i] = save;
-        }
-
-        for (int32_t j = 0; j < parameters.size(); j++) {
-            if (j < 9) {
-                next_parameters[j] -= learning_rate * node1->get_gradient(parameter_names[j % 9]);
-            } else {
-                next_parameters[j] -= learning_rate * node2->get_gradient(parameter_names[j % 9]);
-            }
-        }
-        parameters = next_parameters;
-    }
-}
-
-void GRU_Node::write_to_stream(ostream &out) {
-    RNN_Node_Interface::write_to_stream(out);
-}
-
-#endif

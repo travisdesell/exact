@@ -17,40 +17,36 @@ using std::vector;
 
 class GRU_Node : public RNN_Node_Interface {
     private:
-        double update_gate_update_weight;
-        double update_gate_weight;
-        double update_gate_bias;
+        double zw;
+        double zu;
+        double z_bias;
 
-        double reset_gate_update_weight;
-        double reset_gate_weight;
-        double reset_gate_bias;
+        double rw;
+        double ru;
+        double r_bias;
 
-        double memory_gate_update_weight;
-        double memory_gate_weight;
-        double memory_gate_bias;
+        double hw;
+        double hu;
+        double h_bias;
 
-        vector<double> update_gate_values;
-        vector<double> reset_gate_values;
-        vector<double> memory_gate_values;
+        vector<double> d_zw;
+        vector<double> d_zu;
+        vector<double> d_z_bias;
+        vector<double> d_rw;
+        vector<double> d_ru;
+        vector<double> d_r_bias;
+        vector<double> d_hw;
+        vector<double> d_hu;
+        vector<double> d_h_bias;
 
-        vector<double> ld_update_gate;
-        vector<double> ld_reset_gate;
-        vector<double> ld_memory_gate;
+        vector<double> d_h_prev;
 
-        vector<double> d_prev_out;
-
-        vector<double> d_update_gate_update_weight;
-        vector<double> d_update_gate_weight;
-        vector<double> d_update_gate_bias;
-
-        vector<double> d_reset_gate_update_weight;
-        vector<double> d_reset_gate_weight;
-        vector<double> d_reset_gate_bias;
-
-        vector<double> d_memory_gate_update_weight;
-        vector<double> d_memory_gate_weight;
-        vector<double> d_memory_gate_bias;
-
+        vector<double> z;
+        vector<double> ld_z;
+        vector<double> r;
+        vector<double> ld_r;
+        vector<double> h_tanh;
+        vector<double> ld_h_tanh;
 
     public:
 
@@ -72,7 +68,6 @@ class GRU_Node : public RNN_Node_Interface {
 
         void get_weights(vector<double> &parameters) const;
         void set_weights(const vector<double> &parameters);
-        double get_bias();
 
         void get_weights(uint32_t &offset, vector<double> &parameters) const;
         void set_weights(uint32_t &offset, const vector<double> &parameters);
@@ -89,8 +84,5 @@ class GRU_Node : public RNN_Node_Interface {
 
         friend class RNN_Edge;
 
-#ifdef GRU_TEST
-        friend int main(int argc, char **argv);
-#endif
 };
 #endif
