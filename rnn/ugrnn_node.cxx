@@ -307,7 +307,7 @@ void UGRNN_Node::reset(int _series_length) {
 }
 
 RNN_Node_Interface* UGRNN_Node::copy() const {
-    UGRNN_Node* n = new UGRNN_Node(innovation_number, type, depth);
+    UGRNN_Node* n = new UGRNN_Node(innovation_number, layer_type, depth);
 
     //cout << "COPYING!" << endl;
 
@@ -350,3 +350,8 @@ RNN_Node_Interface* UGRNN_Node::copy() const {
 
     return n;
 }
+
+void UGRNN_Node::write_to_stream(ostream &out) {
+    RNN_Node_Interface::write_to_stream(out);
+}
+

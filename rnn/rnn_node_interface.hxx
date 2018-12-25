@@ -10,6 +10,9 @@ using std::ostream;
 using std::minstd_rand0;
 using std::uniform_real_distribution;
 
+#include <string>
+using std::string;
+
 #include <vector>
 using std::vector;
 
@@ -17,28 +20,31 @@ using std::vector;
 
 class RNN;
 
-#define RNN_INPUT_NODE 0
-#define RNN_HIDDEN_NODE 1
-#define RNN_OUTPUT_NODE 2
+#define INPUT_LAYER 0
+#define HIDDEN_LAYER 1
+#define OUTPUT_LAYER 2
 
-#define LSTM_NODE 0
-#define RNN_NODE 1
-#define GRU_NODE 2
+extern const string NODE_TYPES[];
+
+#define FEED_FORWARD_NODE 0
+#define JORDAN_NODE 1
+#define ELMAN_NODE 2
 #define UGRNN_NODE 3
-#define DELTA_NODE 4
+#define GRU_NODE 4
+#define DELTA_NODE 5
+#define LSTM_NODE 6
 
 
 double sigmoid(double value);
 double sigmoid_derivative(double value);
 double tanh_derivative(double value);
 
-void bound_value(double &value);
-void bound_value(double min, double max, double &value);
+double bound(double value);
 
 class RNN_Node_Interface {
     protected:
         int32_t innovation_number;
-        int32_t type;
+        int32_t layer_type;
         int32_t node_type;
 
         double depth;
@@ -59,7 +65,7 @@ class RNN_Node_Interface {
         int32_t total_inputs;
         int32_t total_outputs;
     public:
-        RNN_Node_Interface(int32_t _innovation_number, int32_t _type, double _depth);
+        RNN_Node_Interface(int32_t _innovation_number, int32_t _layer_type, double _depth);
         virtual ~RNN_Node_Interface();
 
         virtual void initialize_randomly(minstd_rand0 &generator, NormalDistribution &normal_distribution, double mu, double sigma) = 0;
@@ -82,7 +88,7 @@ class RNN_Node_Interface {
 
         void write_to_stream(ostream &out);
 
-        int32_t get_type() const;
+        int32_t get_layer_type() const;
         int32_t get_innovation_number() const;
         double get_depth() const;
         bool equals(RNN_Node_Interface *other) const;
@@ -111,8 +117,5 @@ struct sort_RNN_Nodes_by_depth {
         return n1->get_depth() < n2->get_depth();
     }
 };
-
-double bound(double value);
-
 
 #endif

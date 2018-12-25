@@ -98,9 +98,5 @@ class LSTM_Node : public RNN_Node_Interface {
         RNN_Node_Interface* copy() const;
 
         friend class RNN_Edge;
-
-#ifdef LSTM_TEST
-        friend int main(int argc, char **argv);
-#endif
 };
 #endif

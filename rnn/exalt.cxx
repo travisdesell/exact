@@ -81,9 +81,6 @@ EXALT::EXALT(int32_t _population_size, int32_t _number_islands, int32_t _max_gen
     //more_fit_crossover_rate = 0.75;
     //less_fit_crossover_rate = 0.25;
 
-    lstm_node_rate = 0.5;
-    gru_node_rate = 0.5;
-
     clone_rate = 1.0;
 
     add_edge_rate = 1.0;
@@ -95,6 +92,16 @@ EXALT::EXALT(int32_t _population_size, int32_t _number_islands, int32_t _max_gen
     //split_edge_rate = 1.0;
     split_edge_rate = 0.0;
 
+    possible_node_types.clear();
+    possible_node_types.push_back(FEED_FORWARD_NODE);
+    possible_node_types.push_back(JORDAN_NODE);
+    possible_node_types.push_back(ELMAN_NODE);
+    possible_node_types.push_back(UGRNN_NODE);
+    possible_node_types.push_back(GRU_NODE);
+    possible_node_types.push_back(LSTM_NODE);
+    possible_node_types.push_back(DELTA_NODE);
+
+
     bool node_ops = true;
     if (node_ops) {
         add_node_rate = 1.0;
@@ -103,14 +110,6 @@ EXALT::EXALT(int32_t _population_size, int32_t _number_islands, int32_t _max_gen
         //disable_node_rate = 1.0;
         split_node_rate = 1.0;
         merge_node_rate = 1.0;
-
-        feed_forward_node_rate = 0.0;
-        jordan_node_rate = 0.0;
-        elman_node_rate = 0.0;
-        ugrnn_node_rate = 0.0;
-        gru_node_rate = 0.0;
-        delta_node_rate = 0.0;
-        lstm_node_rate = 0.0;
 
     } else {
         add_node_rate = 0.0;
@@ -510,6 +509,9 @@ RNN_Genome* EXALT::generate_genome() {
     return genome;
 }
 
+int EXALT::get_random_node_type() {
+    return possible_node_types[rng_0_1(generator) * possible_node_types.size()];
+}
 
 void EXALT::mutate(RNN_Genome *g) {
     double total = clone_rate + add_edge_rate + add_recurrent_edge_rate + enable_edge_rate + disable_edge_rate + split_edge_rate + add_node_rate + enable_node_rate + disable_node_rate + split_node_rate + merge_node_rate;
@@ -580,7 +582,7 @@ void EXALT::mutate(RNN_Genome *g) {
         rng -= disable_edge_rate;
 
         if (rng < split_edge_rate) {
-            modified = g->split_edge(mu, sigma, lstm_node_rate, gru_node_rate, max_recurrent_depth, edge_innovation_count, node_innovation_count);
+            modified = g->split_edge(mu, sigma, get_random_node_type(), max_recurrent_depth, edge_innovation_count, node_innovation_count);
             cout << "\tsplitting edge, modified: " << modified << endl;
             if (modified) g->generated_by_map["split_edge"]++;
             continue;
@@ -588,7 +590,7 @@ void EXALT::mutate(RNN_Genome *g) {
         rng -= split_edge_rate;
 
         if (rng < add_node_rate) {
-            modified = g->add_node(mu, sigma, lstm_node_rate, gru_node_rate, max_recurrent_depth, edge_innovation_count, node_innovation_count);
+            modified = g->add_node(mu, sigma, get_random_node_type(), max_recurrent_depth, edge_innovation_count, node_innovation_count);
             cout << "\tadding node, modified: " << modified << endl;
             if (modified) g->generated_by_map["add_node"]++;
             continue;
@@ -612,7 +614,7 @@ void EXALT::mutate(RNN_Genome *g) {
         rng -= disable_node_rate;
 
         if (rng < split_node_rate) {
-            modified = g->split_node(mu, sigma, lstm_node_rate, gru_node_rate, max_recurrent_depth, edge_innovation_count, node_innovation_count);
+            modified = g->split_node(mu, sigma, get_random_node_type(), max_recurrent_depth, edge_innovation_count, node_innovation_count);
             cout << "\tsplitting node, modified: " << modified << endl;
             if (modified) g->generated_by_map["split_node"]++;
             continue;
@@ -620,7 +622,7 @@ void EXALT::mutate(RNN_Genome *g) {
         rng -= split_node_rate;
 
         if (rng < merge_node_rate) {
-            modified = g->merge_node(mu, sigma, lstm_node_rate, gru_node_rate, max_recurrent_depth, edge_innovation_count, node_innovation_count);
+            modified = g->merge_node(mu, sigma, get_random_node_type(), max_recurrent_depth, edge_innovation_count, node_innovation_count);
             cout << "\tmerging node, modified: " << modified << endl;
             if (modified) g->generated_by_map["merge_node"]++;
             continue;
