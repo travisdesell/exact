@@ -61,9 +61,6 @@ class EXALT {
         double more_fit_crossover_rate;
         double less_fit_crossover_rate;
 
-        double lstm_node_rate;
-        double gru_node_rate;
-
         double clone_rate;
 
         double add_edge_rate;
@@ -77,6 +74,8 @@ class EXALT {
         double disable_node_rate;
         double split_node_rate;
         double merge_node_rate;
+
+        vector<int> possible_node_types;
 
         string output_directory;
         ofstream *log_file;
@@ -99,6 +98,9 @@ class EXALT {
         bool populations_full() const;
 
         bool insert_genome(RNN_Genome* genome);
+
+
+        int get_random_node_type();
 
         void initialize_genome_parameters(RNN_Genome* genome);
         RNN_Genome* generate_genome();

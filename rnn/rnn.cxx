@@ -48,9 +48,9 @@ RNN::RNN(vector<RNN_Node_Interface*> &_nodes, vector<RNN_Edge*> &_edges) {
     sort(edges.begin(), edges.end(), sort_RNN_Edges_by_depth());
 
     for (uint32_t i = 0; i < nodes.size(); i++) {
-        if (nodes[i]->type == RNN_INPUT_NODE) {
+        if (nodes[i]->layer_type == INPUT_LAYER) {
             input_nodes.push_back(nodes[i]);
-        } else if (nodes[i]->type == RNN_OUTPUT_NODE) {
+        } else if (nodes[i]->layer_type == OUTPUT_LAYER) {
             output_nodes.push_back(nodes[i]);
         }
     }
@@ -65,9 +65,9 @@ RNN::RNN(vector<RNN_Node_Interface*> &_nodes, vector<RNN_Edge*> &_edges, vector<
     //sort edges by depth
 
     for (uint32_t i = 0; i < nodes.size(); i++) {
-        if (nodes[i]->type == RNN_INPUT_NODE) {
+        if (nodes[i]->layer_type == INPUT_LAYER) {
             input_nodes.push_back(nodes[i]);
-        } else if (nodes[i]->type == RNN_OUTPUT_NODE) {
+        } else if (nodes[i]->layer_type == OUTPUT_LAYER) {
             output_nodes.push_back(nodes[i]);
         }
     }
@@ -475,128 +475,3 @@ RNN* RNN::copy() {
     return new RNN(node_copies, edge_copies, recurrent_edge_copies);
 }
 
-#ifdef RNN_GENOME_TEST
-
-int main(int argc, char **argv) {
-    int node_innovation_count = 0;
-    int edge_innovation_count = 0;
-
-    //only one input node
-    RNN_Node_Interface* input_node1 = new RNN_Node(++node_innovation_count, RNN_INPUT_NODE, 0.0);
-    RNN_Node_Interface* input_node2 = new RNN_Node(++node_innovation_count, RNN_INPUT_NODE, 0.0);
-    RNN_Node_Interface* hidden11 = new LSTM_Node(++node_innovation_count, RNN_HIDDEN_NODE, 1.0);
-    RNN_Node_Interface* hidden12 = new LSTM_Node(++node_innovation_count, RNN_HIDDEN_NODE, 1.0);
-    RNN_Node_Interface* hidden21 = new LSTM_Node(++node_innovation_count, RNN_HIDDEN_NODE, 2.0);
-    RNN_Node_Interface* hidden22 = new LSTM_Node(++node_innovation_count, RNN_HIDDEN_NODE, 2.0);
-    RNN_Node_Interface* output_node1 = new LSTM_Node(++node_innovation_count, RNN_OUTPUT_NODE, 3.0);
-    RNN_Node_Interface* output_node2 = new LSTM_Node(++node_innovation_count, RNN_OUTPUT_NODE, 3.0);
-
-    vector<RNN_Node_Interface*> rnn_nodes;
-    rnn_nodes.push_back(input_node1);
-    rnn_nodes.push_back(input_node2);
-    rnn_nodes.push_back(hidden11);
-    rnn_nodes.push_back(hidden12);
-    rnn_nodes.push_back(hidden21);
-    rnn_nodes.push_back(hidden22);
-    rnn_nodes.push_back(output_node1);
-    rnn_nodes.push_back(output_node2);
-
-    vector<RNN_Edge*> rnn_edges;
-    rnn_edges.push_back(new RNN_Edge(++edge_innovation_count, input_node1, hidden11));
-    rnn_edges.push_back(new RNN_Edge(++edge_innovation_count, input_node1, hidden12));
-    rnn_edges.push_back(new RNN_Edge(++edge_innovation_count, input_node2, hidden11));
-    rnn_edges.push_back(new RNN_Edge(++edge_innovation_count, input_node2, hidden12));
-
-    rnn_edges.push_back(new RNN_Edge(++edge_innovation_count, hidden11, hidden21));
-    rnn_edges.push_back(new RNN_Edge(++edge_innovation_count, hidden11, hidden22));
-    rnn_edges.push_back(new RNN_Edge(++edge_innovation_count, hidden12, hidden21));
-    rnn_edges.push_back(new RNN_Edge(++edge_innovation_count, hidden12, hidden22));
-
-    rnn_edges.push_back(new RNN_Edge(++edge_innovation_count, hidden21, output_node1));
-    rnn_edges.push_back(new RNN_Edge(++edge_innovation_count, hidden22, output_node1));
-    rnn_edges.push_back(new RNN_Edge(++edge_innovation_count, hidden21, output_node2));
-    rnn_edges.push_back(new RNN_Edge(++edge_innovation_count, hidden22, output_node2));
-
-    RNN *genome = new RNN(rnn_nodes, rnn_edges);
-
-    uint32_t number_of_weights = genome->get_number_weights();
-
-    vector<double> min_bound(number_of_weights, -1.0);
-    vector<double> max_bound(number_of_weights, 1.0);
-
-    cout << "RNN has " << number_of_weights << " weights." << endl;
-
-    vector<double> test_parameters(number_of_weights, 0.0);
-
-    unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
-    minstd_rand0 generator(seed);
-    for (uint32_t i = 0; i < test_parameters.size(); i++) {
-        uniform_real_distribution<double> rng(min_bound[i], max_bound[i]);
-        test_parameters[i] = rng(generator);
-    }
-
-    vector< vector<double> > inputs;
-    vector<double> input1;
-    input1.push_back(0.82);
-    input1.push_back(0.83);
-    input1.push_back(0.87);
-    input1.push_back(0.91);
-    inputs.push_back(input1);
-
-    vector<double> input2;
-    input2.push_back(0.43);
-    input2.push_back(0.41);
-    input2.push_back(-0.49);
-    input2.push_back(0.33);
-    inputs.push_back(input2);
-
-
-    vector< vector<double> > outputs;
-    vector<double> output1;
-    output1.push_back(-0.52);
-    output1.push_back(0.55);
-    output1.push_back(-0.67);
-    output1.push_back(0.71);
-    outputs.push_back(output1);
-
-    vector<double> output2;
-    output2.push_back(-0.23);
-    output2.push_back(0.27);
-    output2.push_back(-0.35);
-    output2.push_back(0.33);
-    outputs.push_back(output2);
-
-    vector<double> analytic_gradient;
-    vector<double> empirical_gradient;
-
-    vector<double> previous_velocity(test_parameters.size(), 0.0);
-
-    double mse;
-
-    for (uint32_t iteration = 0; iteration < 10000; iteration++) {
-        genome->get_analytic_gradient(test_parameters, inputs, outputs, mse, analytic_gradient, false, false, 0.0);
-        genome->get_empirical_gradient(test_parameters, inputs, outputs, mse, empirical_gradient, false, false, 0.0);
-
-        cout << "GRADIENTS:" << endl;
-        for (uint32_t i = 0; i < analytic_gradient.size(); i++) {
-            double diff = analytic_gradient[i] - empirical_gradient[i];
-            cout << "\t gradient[" << i << "] analytic: " << setw(10) << analytic_gradient[i]
-                << ", empirical: " << setw(10) << empirical_gradient[i]
-                << ", diff: " << setw(10) << diff << endl;
-        }
-
-        double mu = 0.001;
-        double learning_rate = 0.001;
-        for (uint32_t i = 0; i < test_parameters.size(); i++) {
-            double pv = previous_velocity[i];
-            double velocity = (mu * pv) - (learning_rate * analytic_gradient[i]);
-            previous_velocity[i] = velocity;
-
-            test_parameters[i] += velocity + mu * (velocity - pv);
-            //test_parameters[i] -= learning_rate * analytic_gradient[i];
-        }
-
-    }
-}
-
-#endif

@@ -327,7 +327,7 @@ void Delta_Node::reset(int _series_length) {
 }
 
 RNN_Node_Interface* Delta_Node::copy() const {
-    Delta_Node* n = new Delta_Node(innovation_number, type, depth);
+    Delta_Node* n = new Delta_Node(innovation_number, layer_type, depth);
 
     //cout << "COPYING!" << endl;
 
@@ -362,4 +362,8 @@ RNN_Node_Interface* Delta_Node::copy() const {
     n->backward_reachable = backward_reachable;
 
     return n;
+}
+
+void Delta_Node::write_to_stream(ostream &out) {
+    RNN_Node_Interface::write_to_stream(out);
 }

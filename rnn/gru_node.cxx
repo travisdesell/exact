@@ -357,7 +357,7 @@ void GRU_Node::reset(int _series_length) {
 }
 
 RNN_Node_Interface* GRU_Node::copy() const {
-    GRU_Node* n = new GRU_Node(innovation_number, type, depth);
+    GRU_Node* n = new GRU_Node(innovation_number, layer_type, depth);
 
     //cout << "COPYING!" << endl;
 
@@ -408,3 +408,8 @@ RNN_Node_Interface* GRU_Node::copy() const {
 
     return n;
 }
+
+void GRU_Node::write_to_stream(ostream &out) {
+    RNN_Node_Interface::write_to_stream(out);
+}
+
