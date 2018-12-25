@@ -1459,11 +1459,7 @@ void RNN_Genome::generate_recurrent_edges(RNN_Node_Interface *node, double mu, d
 
     } else if (node->node_type == ELMAN_NODE) {
         //elman nodes have a circular reference to themselves
-        RNN_Recurrent_Edge *e = new RNN_Recurrent_Edge(++edge_innovation_count, recurrent_depth, node, node);
-
-        e->weight = bound(normal_distribution.random(generator, mu, sigma));
-
-        recurrent_edges.insert( upper_bound(recurrent_edges.begin(), recurrent_edges.end(), e, sort_RNN_Recurrent_Edges_by_depth()), e);
+        attempt_recurrent_edge_insert(node, node, mu, sigma, max_recurrent_depth, edge_innovation_count);
     }
 }
 
