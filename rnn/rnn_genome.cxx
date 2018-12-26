@@ -54,6 +54,7 @@ using std::vector;
 #include "gru_node.hxx"
 #include "delta_node.hxx"
 #include "ugrnn_node.hxx"
+#include "mgu_node.hxx"
 #include "rnn_genome.hxx"
 
 string parse_fitness(double fitness) {
@@ -219,6 +220,32 @@ string RNN_Genome::print_statistics_header() {
     return "";
 }
 
+void RNN_Genome::clear_generated_by() {
+    generated_by_map.clear();
+}
+
+void RNN_Genome::update_generation_map(map<string, int32_t> &generation_map) {
+    for (auto i = generated_by_map.begin(); i != generated_by_map.end(); i++) {
+        generation_map[i->first] += i->second;
+    }
+
+}
+
+string RNN_Genome::generated_by_string() {
+    ostringstream oss;
+    oss << "[";
+    bool first = true;
+    for (auto i = generated_by_map.begin(); i != generated_by_map.end(); i++) {
+        if (!first) oss << ", ";
+        oss << i->first << ":" << i->second;
+        first = false;
+    }
+    oss << "]";
+
+    return oss.str();
+}
+
+
 string RNN_Genome::print_statistics() {
     ostringstream oss;
     oss << setw(15) << parse_fitness(best_validation_mse) << ", " << parse_fitness(best_validation_mae) << ", " << nodes.size() << " (" << get_enabled_node_count() << "), " << edges.size() << " (" << get_enabled_edge_count() << "), " << recurrent_edges.size() << " (" << get_enabled_recurrent_edge_count() << "), " << generated_by_string();
@@ -283,20 +310,6 @@ int32_t RNN_Genome::get_enabled_recurrent_edge_count() {
     }
 
     return count;
-}
-
-string RNN_Genome::generated_by_string() {
-    ostringstream oss;
-    oss << "[";
-    bool first = true;
-    for (auto i = generated_by_map.begin(); i != generated_by_map.end(); i++) {
-        if (!first) oss << ", ";
-        oss << i->first << ":" << generated_by_map[i->first];
-        first = false;
-    }
-    oss << "]";
-
-    return oss.str();
 }
 
 void RNN_Genome::set_bp_iterations(int32_t _bp_iterations) {
@@ -1024,7 +1037,6 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
                 << "," << best_validation_mse
                 << "," << best_validation_mae
                 << "," << avg_norm << endl;
-
         }
 
 
@@ -1382,6 +1394,8 @@ RNN_Node_Interface* RNN_Genome::create_node(double mu, double sigma, int node_ty
         n = new Delta_Node(++node_innovation_count, HIDDEN_LAYER, depth);
     } else if (node_type == GRU_NODE) {
         n = new GRU_Node(++node_innovation_count, HIDDEN_LAYER, depth);
+    } else if (node_type == MGU_NODE) {
+        n = new MGU_Node(++node_innovation_count, HIDDEN_LAYER, depth);
     } else if (node_type == UGRNN_NODE) {
         n = new UGRNN_Node(++node_innovation_count, HIDDEN_LAYER, depth);
     } else if (node_type == FEED_FORWARD_NODE || node_type == JORDAN_NODE || node_type == ELMAN_NODE) {
@@ -2545,6 +2559,8 @@ void RNN_Genome::read_from_stream(istream &bin_istream, bool verbose) {
             node = new Delta_Node(innovation_number, type, depth);
         } else if (node_type == GRU_NODE) {
             node = new GRU_Node(innovation_number, type, depth);
+        } else if (node_type == MGU_NODE) {
+            node = new MGU_Node(innovation_number, type, depth);
         } else if (node_type == UGRNN_NODE) {
             node = new UGRNN_Node(innovation_number, type, depth);
         } else if (node_type == FEED_FORWARD_NODE || node_type == JORDAN_NODE || node_type == ELMAN_NODE) {

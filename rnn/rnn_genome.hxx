@@ -133,6 +133,8 @@ class RNN_Genome {
         void set_generation_id(int32_t generation_id);
         double get_fitness() const;
 
+        void clear_generated_by();
+        void update_generation_map(map<string, int32_t> &generation_map);
         void set_generated_by(string type);
         int32_t get_generated_by(string type);
 

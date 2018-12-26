@@ -31,7 +31,7 @@ using std::vector;
 #define NUMBER_MGU_WEIGHTS 6
 
 MGU_Node::MGU_Node(int _innovation_number, int _layer_type, double _depth) : RNN_Node_Interface(_innovation_number, _layer_type, _depth) {
-    node_type = GRU_NODE;
+    node_type = MGU_NODE;
 }
 
 MGU_Node::~MGU_Node() {
@@ -117,7 +117,7 @@ void MGU_Node::input_fired(int time, double incoming_output) {
 void MGU_Node::try_update_deltas(int time) {
     if (outputs_fired[time] < total_outputs) return;
     else if (outputs_fired[time] > total_outputs) {
-        cerr << "ERROR: outputs_fired on GRU_Node " << innovation_number << " at time " << time << " is " << outputs_fired[time] << " and total_outputs is " << total_outputs << endl;
+        cerr << "ERROR: outputs_fired on MGU_Node " << innovation_number << " at time " << time << " is " << outputs_fired[time] << " and total_outputs is " << total_outputs << endl;
         exit(1);
     }
 
@@ -213,7 +213,7 @@ void MGU_Node::set_weights(uint32_t &offset, const vector<double> &parameters) {
 
     //uint32_t end_offset = offset;
 
-    //cerr << "set weights from offset " << start_offset << " to " << end_offset << " on GRU_Node " << innovation_number << endl;
+    //cerr << "set weights from offset " << start_offset << " to " << end_offset << " on MGU_Node " << innovation_number << endl;
 }
 
 void MGU_Node::get_weights(uint32_t &offset, vector<double> &parameters) const {
@@ -229,7 +229,7 @@ void MGU_Node::get_weights(uint32_t &offset, vector<double> &parameters) const {
 
     //uint32_t end_offset = offset;
 
-    //cerr << "set weights from offset " << start_offset << " to " << end_offset << " on GRU_Node " << innovation_number << endl;
+    //cerr << "set weights from offset " << start_offset << " to " << end_offset << " on MGU_Node " << innovation_number << endl;
 }
 
 
@@ -284,7 +284,7 @@ RNN_Node_Interface* MGU_Node::copy() const {
 
     //cout << "COPYING!" << endl;
 
-    //copy GRU_Node values
+    //copy MGU_Node values
     n->fw = fw;
     n->fu = fu;
     n->f_bias = f_bias;
