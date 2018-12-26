@@ -27,6 +27,8 @@ using std::vector;
 //mysql can't handl the max float value for some reason
 #define EXALT_MAX_DOUBLE 10000000
 
+string parse_fitness(double fitness);
+
 
 class RNN_Genome {
     private:
@@ -83,6 +85,9 @@ class RNN_Genome {
         RNN_Genome* copy();
 
         ~RNN_Genome();
+
+        static string print_statistics_header();
+        string print_statistics();
 
         void set_parameter_names(const vector<string> &_input_parameter_names, const vector<string> &_output_parameter_names);
 

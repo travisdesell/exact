@@ -40,6 +40,7 @@ using std::ostringstream;
 
 #include <string>
 using std::string;
+using std::to_string;
 
 #include <vector>
 using std::vector;
@@ -54,6 +55,15 @@ using std::vector;
 #include "delta_node.hxx"
 #include "ugrnn_node.hxx"
 #include "rnn_genome.hxx"
+
+string parse_fitness(double fitness) {
+    if (fitness == EXALT_MAX_DOUBLE) {
+        return "UNEVALUATED";
+    } else {
+        return to_string(fitness);
+    }
+}
+
 
 void RNN_Genome::sort_nodes_by_depth() {
     sort(nodes.begin(), nodes.end(), sort_RNN_Nodes_by_depth());
@@ -199,6 +209,20 @@ RNN_Genome::~RNN_Genome() {
         recurrent_edges.pop_back();
         delete recurrent_edge;
     }
+}
+
+string RNN_Genome::print_statistics_header() {
+    ostringstream oss;
+
+    oss << setw(15) << "MSE, " << endl;
+
+    return "";
+}
+
+string RNN_Genome::print_statistics() {
+    ostringstream oss;
+    oss << setw(15) << parse_fitness(best_validation_mse) << ", " << parse_fitness(best_validation_mae) << ", " << nodes.size() << " (" << get_enabled_node_count() << "), " << edges.size() << " (" << get_enabled_edge_count() << "), " << recurrent_edges.size() << " (" << get_enabled_recurrent_edge_count() << "), " << generated_by_string();
+    return oss.str();
 }
 
 vector<string> RNN_Genome::get_input_parameter_names() const {
@@ -1447,8 +1471,6 @@ bool RNN_Genome::attempt_recurrent_edge_insert(RNN_Node_Interface *n1, RNN_Node_
 }
 
 void RNN_Genome::generate_recurrent_edges(RNN_Node_Interface *node, double mu, double sigma, int32_t max_recurrent_depth, int32_t &edge_innovation_count) {
-
-    int32_t recurrent_depth = 1 + (rng_0_1(generator) * (max_recurrent_depth - 1));
 
     if (node->node_type == JORDAN_NODE) {
         for (int32_t i = 0; i < (int32_t)edges.size(); i++) {

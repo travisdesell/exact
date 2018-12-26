@@ -8,7 +8,7 @@ using std::string;
 
 #include "rnn_node_interface.hxx"
 
-extern const string NODE_TYPES[] = { "FEED_FORWARD" , "JORDAN", "ELMAN", "UGRNN", "GRU", "DELTA", "LSTM" };
+extern const string NODE_TYPES[] = { "feed forward" , "jordan", "elman", "UGRNN", "GRU", "delta", "LSTM" };
 
 double bound(double value) {
     if (value < -10.0) value = -10.0;

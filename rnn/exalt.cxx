@@ -129,22 +129,17 @@ EXALT::EXALT(int32_t _population_size, int32_t _number_islands, int32_t _max_gen
     startClock = std::chrono::system_clock::now();
 }
 
-string parse_fitness(float fitness) {
-    if (fitness == EXALT_MAX_DOUBLE) {
-        return "UNEVALUATED";
-    } else {
-        return to_string(fitness);
-    }
-}
-
 void EXALT::print_population() {
     cout << "POPULATIONS: " << endl;
     for (int32_t i = 0; i < (int32_t)genomes.size(); i++) {
         cout << "\tPOPULATION " << i << ":" << endl;
 
-        for (int32_t j = 0; j < (int32_t)genomes[i].size(); j++) {
+        //cout << "\t\t" << RNN_Genome::print_statistics_header();
 
-            cout << "\t\t" << setw(15) << parse_fitness(genomes[i][j]->best_validation_mse) << ", " << parse_fitness(genomes[i][j]->best_validation_mae) << ", " << genomes[i][j]->nodes.size() << " (" << genomes[i][j]->get_enabled_node_count() << "), " << genomes[i][j]->edges.size() << " (" << genomes[i][j]->get_enabled_edge_count() << "), " << genomes[i][j]->recurrent_edges.size() << " (" << genomes[i][j]->get_enabled_recurrent_edge_count() << "), " << genomes[i][j]->generated_by_string() << endl;
+        for (int32_t j = 0; j < (int32_t)genomes[i].size(); j++) {
+            cout << "\t\t" << genomes[i][j]->print_statistics() << endl;
+
+            //cout << "\t\t" << setw(15) << parse_fitness(genomes[i][j]->best_validation_mse) << ", " << parse_fitness(genomes[i][j]->best_validation_mae) << ", " << genomes[i][j]->nodes.size() << " (" << genomes[i][j]->get_enabled_node_count() << "), " << genomes[i][j]->edges.size() << " (" << genomes[i][j]->get_enabled_edge_count() << "), " << genomes[i][j]->recurrent_edges.size() << " (" << genomes[i][j]->get_enabled_recurrent_edge_count() << "), " << genomes[i][j]->generated_by_string() << endl;
         }
     }
 
@@ -274,6 +269,7 @@ bool EXALT::insert_genome(RNN_Genome* genome) {
     total_bp_epochs += genome->get_bp_iterations();
 
     for (auto i = generated_from_map.begin(); i != generated_from_map.end(); i++) {
+        cout << "GENERATED_FROM_MAP: " << i->first << endl;
         generated_from_map[i->first] += genome->get_generated_by(i->first);
     }
 
@@ -324,6 +320,7 @@ bool EXALT::insert_genome(RNN_Genome* genome) {
         }
 
         for (auto i = inserted_from_map.begin(); i != inserted_from_map.end(); i++) {
+            cout << "INSERTED_FROM_MAP: " << i->first << endl;
             inserted_from_map[i->first] += genome->get_generated_by(i->first);
         }
 
@@ -538,7 +535,9 @@ void EXALT::mutate(RNN_Genome *g) {
     while (!modified) {
         g->assign_reachability();
         double rng = rng_0_1(generator) * total;
-        cout << "rng: " << rng << ", total: " << total << endl;
+        int new_node_type = get_random_node_type();
+        string node_type_str = NODE_TYPES[new_node_type];
+        cout << "rng: " << rng << ", total: " << total << ", new node type: " << new_node_type << " (" << node_type_str << ")" << endl;
 
         if (rng < clone_rate) {
             cout << "\tcloned" << endl;
@@ -581,17 +580,17 @@ void EXALT::mutate(RNN_Genome *g) {
         rng -= disable_edge_rate;
 
         if (rng < split_edge_rate) {
-            modified = g->split_edge(mu, sigma, get_random_node_type(), max_recurrent_depth, edge_innovation_count, node_innovation_count);
+            modified = g->split_edge(mu, sigma, new_node_type, max_recurrent_depth, edge_innovation_count, node_innovation_count);
             cout << "\tsplitting edge, modified: " << modified << endl;
-            if (modified) g->generated_by_map["split_edge"]++;
+            if (modified) g->generated_by_map["split_edge (" + node_type_str + ")"]++;
             continue;
         }
         rng -= split_edge_rate;
 
         if (rng < add_node_rate) {
-            modified = g->add_node(mu, sigma, get_random_node_type(), max_recurrent_depth, edge_innovation_count, node_innovation_count);
+            modified = g->add_node(mu, sigma, new_node_type, max_recurrent_depth, edge_innovation_count, node_innovation_count);
             cout << "\tadding node, modified: " << modified << endl;
-            if (modified) g->generated_by_map["add_node"]++;
+            if (modified) g->generated_by_map["add_node (" + node_type_str + ")"]++;
             continue;
         }
         rng -= add_node_rate;
@@ -613,17 +612,17 @@ void EXALT::mutate(RNN_Genome *g) {
         rng -= disable_node_rate;
 
         if (rng < split_node_rate) {
-            modified = g->split_node(mu, sigma, get_random_node_type(), max_recurrent_depth, edge_innovation_count, node_innovation_count);
+            modified = g->split_node(mu, sigma, new_node_type, max_recurrent_depth, edge_innovation_count, node_innovation_count);
             cout << "\tsplitting node, modified: " << modified << endl;
-            if (modified) g->generated_by_map["split_node"]++;
+            if (modified) g->generated_by_map["split_node (" + node_type_str + ")"]++;
             continue;
         }
         rng -= split_node_rate;
 
         if (rng < merge_node_rate) {
-            modified = g->merge_node(mu, sigma, get_random_node_type(), max_recurrent_depth, edge_innovation_count, node_innovation_count);
+            modified = g->merge_node(mu, sigma, new_node_type, max_recurrent_depth, edge_innovation_count, node_innovation_count);
             cout << "\tmerging node, modified: " << modified << endl;
-            if (modified) g->generated_by_map["merge_node"]++;
+            if (modified) g->generated_by_map["merge_node (" + node_type_str + ")"]++;
             continue;
         }
         rng -= merge_node_rate;
