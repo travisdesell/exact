@@ -16,5 +16,8 @@ target_link_libraries(test_ugrnn_gradients exalt_strategy exact_common exact_tim
 add_executable(test_gru_gradients test_gru_gradients gradient_test)
 target_link_libraries(test_gru_gradients exalt_strategy exact_common exact_time_series ${MYSQL_LIBRARIES} pthread)
 
+add_executable(test_mgu_gradients test_mgu_gradients gradient_test)
+target_link_libraries(test_mgu_gradients exalt_strategy exact_common exact_time_series ${MYSQL_LIBRARIES} pthread)
+
 add_executable(test_lstm_gradients test_lstm_gradients gradient_test)
 target_link_libraries(test_lstm_gradients exalt_strategy exact_common exact_time_series ${MYSQL_LIBRARIES} pthread)

@@ -21,7 +21,8 @@ digraph CNN {
 
 
     f_sum       [shape=circle,color=orange,label="+",xlabel="f_sum"];
-    f           [shape=circle,color=purple,label="sigmoid",xlabel="f"];
+    //f           [shape=circle,color=purple,label="sigmoid",xlabel="f"];
+    f           [shape=circle,color=purple,label="&sigma;",xlabel="f"];
 
     f_bias -> f_sum;
     xfw -> f_sum;
@@ -86,7 +87,7 @@ digraph CNN {
             label=<
                 <table>
                 <tr><td>f = sigmoid(fw*x + fu*h_prev * f_bias)</td></tr>
-                <tr><td>h = tanh(fw*x + fu*h_prev * f_bias)</td></tr>
+                <tr><td>h = tanh(hw*x + f*hu*h_prev * h_bias)</td></tr>
                 <tr><td>out = (1-f)*h_prev + f*h</td></tr>
                 </table>
                 >]
