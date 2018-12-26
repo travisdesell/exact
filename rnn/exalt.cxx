@@ -97,6 +97,7 @@ EXALT::EXALT(int32_t _population_size, int32_t _number_islands, int32_t _max_gen
     possible_node_types.push_back(JORDAN_NODE);
     possible_node_types.push_back(ELMAN_NODE);
     possible_node_types.push_back(UGRNN_NODE);
+    possible_node_types.push_back(MGU_NODE);
     possible_node_types.push_back(GRU_NODE);
     possible_node_types.push_back(LSTM_NODE);
     possible_node_types.push_back(DELTA_NODE);
