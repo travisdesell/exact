@@ -26,6 +26,7 @@ class RNN;
 #define GRU_NODE 2
 #define UGRNN_NODE 3
 #define DELTA_NODE 4
+#define MGU_NODE 5
 
 
 double sigmoid(double value);
