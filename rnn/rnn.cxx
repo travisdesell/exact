@@ -37,6 +37,7 @@ using std::vector;
 #include "rnn_node.hxx"
 #include "lstm_node.hxx"
 #include "gru_node.hxx"
+#include "mgu_node.hxx"
 #include "mse.hxx"
 
 

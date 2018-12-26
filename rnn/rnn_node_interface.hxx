@@ -30,9 +30,10 @@ extern const string NODE_TYPES[];
 #define JORDAN_NODE 1
 #define ELMAN_NODE 2
 #define UGRNN_NODE 3
-#define GRU_NODE 4
-#define DELTA_NODE 5
-#define LSTM_NODE 6
+#define MGU_NODE 4
+#define GRU_NODE 5
+#define DELTA_NODE 6
+#define LSTM_NODE 7
 
 
 double sigmoid(double value);

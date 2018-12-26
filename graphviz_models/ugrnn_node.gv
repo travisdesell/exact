@@ -17,7 +17,7 @@ digraph CNN {
 
     h_prev -> hch;
     ch -> hch;
-    
+
     c_sum       [shape=circle,color=orange,label="+",xlabel="c_sum"];
     c           [shape=circle,color=purple,label="tanh",xlabel="c"];
 
@@ -39,9 +39,10 @@ digraph CNN {
 
     h_prev -> hgh;
     gh -> hgh;
-    
+
     g_sum       [shape=circle,color=orange,label="+",xlabel="g_sum"];
-    g           [shape=circle,color=purple,label="sigmoid",xlabel="g"];
+    //g           [shape=circle,color=purple,label="sigmoid",xlabel="g"];
+    g           [shape=circle,color=purple,label="&sigma;",xlabel="g"];
 
     g_bias -> g_sum;
     xgw -> g_sum;
@@ -70,16 +71,16 @@ digraph CNN {
 
     g -> g_h;
     h_prev -> g_h;
-    
+
 
 	{
 		rank = sink;
-
+				/* <tr><td>g = sigmoid(gw*x + gh*h_prev * g_bias)</td></tr> */
         legend [shape=box,
             label=<
                 <table>
                 <tr><td>c = tanh(cw*x + ch*h_prev * c_bias)</td></tr>
-                <tr><td>g = sigmoid(gw*x + gh*h_prev * g_bias)</td></tr>
+                <tr><td>g = &sigma;(gw*x + gh*h_prev * g_bias)</td></tr>
                 <tr><td>h = g*h_prev + (1-g)*c</td></tr>
                 </table>
                 >]

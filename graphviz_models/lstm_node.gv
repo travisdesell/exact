@@ -30,7 +30,8 @@ digraph CNN {
 
 
     input_add [shape=circle,color=blue,label="+"];
-    input_sigmoid [shape=circle,color=red,label="sigmoid"];
+    //input_sigmoid [shape=circle,color=red,label="sigmoid"];
+    input_sigmoid [shape=circle,color=red,label="&sigma;"];
     input_mul -> input_add;
     input_gate_mul -> input_add;
     b_input -> input_add;
@@ -52,7 +53,8 @@ digraph CNN {
 
 
     output_add [shape=circle,color=blue,label="+"];
-    output_sigmoid [shape=circle,color=red,label="sigmoid"];
+    //output_sigmoid [shape=circle,color=red,label="sigmoid"];
+    output_sigmoid [shape=circle,color=red,label="&sigma;"];
     output_mul -> output_add;
     output_gate_mul -> output_add;
     b_output -> output_add;
@@ -75,7 +77,8 @@ digraph CNN {
 
 
     forget_add [shape=circle,color=blue,label="+"];
-    forget_sigmoid [shape=circle,color=red,label="sigmoid"];
+    //forget_sigmoid [shape=circle,color=red,label="sigmoid"];
+    forget_sigmoid [shape=circle,color=red,label="&sigma;"];
     forget_mul -> forget_add;
     forget_gate_mul -> forget_add;
     b_forget -> forget_add;
