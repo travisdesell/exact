@@ -41,7 +41,7 @@ class MGU_Node : public RNN_Node_Interface {
 
     public:
 
-        MGU_Node(int _innovation_number, int _type, double _depth);
+        MGU_Node(int _innovation_number, int _layer_type, double _depth);
         ~MGU_Node();
 
         void initialize_randomly(minstd_rand0 &generator, NormalDistribution &normal_distribution, double mu, double sigma);

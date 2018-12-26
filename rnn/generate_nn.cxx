@@ -328,7 +328,7 @@ RNN_Genome* create_mgu(int number_inputs, int number_hidden_layers, int number_h
     int current_layer = 0;
 
     for (int32_t i = 0; i < number_inputs; i++) {
-        RNN_Node *node = new RNN_Node(++node_innovation_count, RNN_INPUT_NODE, current_layer);
+        RNN_Node *node = new RNN_Node(++node_innovation_count, INPUT_LAYER, current_layer, FEED_FORWARD_NODE);
         rnn_nodes.push_back(node);
         layer_nodes[current_layer].push_back(node);
     }
@@ -336,7 +336,7 @@ RNN_Genome* create_mgu(int number_inputs, int number_hidden_layers, int number_h
 
     for (int32_t i = 0; i < number_hidden_layers; i++) {
         for (uint32_t j = 0; j < number_hidden_nodes; j++) {
-            MGU_Node *node = new MGU_Node(++node_innovation_count, RNN_HIDDEN_NODE, current_layer);
+            MGU_Node *node = new MGU_Node(++node_innovation_count, HIDDEN_LAYER, current_layer);
             rnn_nodes.push_back(node);
             layer_nodes[current_layer].push_back(node);
 
@@ -348,7 +348,7 @@ RNN_Genome* create_mgu(int number_inputs, int number_hidden_layers, int number_h
     }
 
     for (int32_t i = 0; i < number_outputs; i++) {
-        MGU_Node *output_node = new MGU_Node(++node_innovation_count, RNN_OUTPUT_NODE, current_layer);
+        RNN_Node *output_node = new RNN_Node(++node_innovation_count, OUTPUT_LAYER, current_layer, FEED_FORWARD_NODE);
         rnn_nodes.push_back(output_node);
 
         for (uint32_t k = 0; k < layer_nodes[current_layer - 1].size(); k++) {

@@ -30,7 +30,7 @@ using std::vector;
 
 #define NUMBER_MGU_WEIGHTS 6
 
-MGU_Node::MGU_Node(int _innovation_number, int _type, double _depth) : RNN_Node_Interface(_innovation_number, _type, _depth) {
+MGU_Node::MGU_Node(int _innovation_number, int _layer_type, double _depth) : RNN_Node_Interface(_innovation_number, _layer_type, _depth) {
     node_type = GRU_NODE;
 }
 
@@ -280,7 +280,7 @@ void MGU_Node::reset(int _series_length) {
 }
 
 RNN_Node_Interface* MGU_Node::copy() const {
-    MGU_Node* n = new MGU_Node(innovation_number, type, depth);
+    MGU_Node* n = new MGU_Node(innovation_number, layer_type, depth);
 
     //cout << "COPYING!" << endl;
 
@@ -322,4 +322,8 @@ RNN_Node_Interface* MGU_Node::copy() const {
     n->backward_reachable = backward_reachable;
 
     return n;
+}
+
+void MGU_Node::write_to_stream(ostream &out) {
+    RNN_Node_Interface::write_to_stream(out);
 }

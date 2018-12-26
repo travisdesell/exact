@@ -33,8 +33,6 @@ using std::vector;
 
 #include "gradient_test.hxx"
 
-int input_length = 10;
-
 int main(int argc, char **argv) {
     vector<string> arguments = vector<string>(argv, argv + argc);
 
@@ -44,12 +42,8 @@ int main(int argc, char **argv) {
 
     cout << "TESTING DELTA" << endl;
 
-    //test feed forward NNs
-    vector< vector<double> > inputs(1);
-    vector< vector<double> > outputs(1);
-
-    generate_random_vector(input_length, inputs[0]);
-    generate_random_vector(input_length, outputs[0]);
+    vector< vector<double> > inputs;
+    vector< vector<double> > outputs;
 
     bool verbose = argument_exists(arguments, "--verbose");
     int input_length = 10;

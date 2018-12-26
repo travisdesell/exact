@@ -33,8 +33,6 @@ using std::vector;
 
 #include "gradient_test.hxx"
 
-int input_length = 10;
-
 int main(int argc, char **argv) {
     vector<string> arguments = vector<string>(argv, argv + argc);
 
@@ -44,14 +42,12 @@ int main(int argc, char **argv) {
 
     cout << "TESTING FEED FORWARD" << endl;
 
-    //test feed forward NNs
-    vector< vector<double> > inputs(1);
-    vector< vector<double> > outputs(1);
-
-    generate_random_vector(input_length, inputs[0]);
-    generate_random_vector(input_length, outputs[0]);
+    vector< vector<double> > inputs;
+    vector< vector<double> > outputs;
 
     bool verbose = argument_exists(arguments, "--verbose");
+    int input_length = 10;
+    get_argument(arguments, "--input_length", true, input_length);
 
     for (int32_t max_recurrent_depth = 1; max_recurrent_depth <= 5; max_recurrent_depth++) {
         cout << "\n\testing with max recurrent depth: " << max_recurrent_depth << endl;
