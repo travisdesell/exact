@@ -18,7 +18,7 @@ digraph CNN {
 
     alpha -> z_hat_1;
     d1 -> z_hat_1;
-    input -> z_hat_1; 
+    input -> z_hat_1;
 
     z_hat_2         [shape=circle,color=red,label="*",xlabel="z_hat_2"]
     beta_1          [shape=diamond,color=blue,label="beta 1"];
@@ -50,7 +50,8 @@ digraph CNN {
     input -> input_r_bias;
     r_bias -> input_r_bias;
 
-    r               [shape=circle,color=purple,label="sigmoid",xlabel="r"];
+    //r               [shape=circle,color=purple,label="sigmoid",xlabel="r"];
+    r               [shape=circle,color=purple,label="&sigma;",xlabel="r"];
 
     input_r_bias -> r;
 
@@ -67,7 +68,7 @@ digraph CNN {
     neg_r -> one_minus_r;
 
     z_1            [shape=circle,color=red,label="*",xlabel="z_1"]
-    
+
     z_cap -> z_1;
     one_minus_r -> z_1;
 
@@ -83,7 +84,7 @@ digraph CNN {
 
 	{
 		rank = sink;
-
+				/*<tr><td>r = sigmoid(d2 + r_bias)</td></tr>*/
         legend          [shape=box,label=<<table>
             <tr><td>d1 = v*prev_z</td></tr>
             <tr><td>d2 = input</td></tr>
@@ -92,7 +93,8 @@ digraph CNN {
             <tr><td>z_hat_3 = beta2*d2</td></tr>
             <tr><td>z_hat_sum = z_hat_1 + z_hat_2 + z_hat_3 + z_hat_bias</td></tr>
             <tr><td>z_cap = tanh(z_hat_sum)</td></tr>
-            <tr><td>r = sigmoid(d2 + r_bias)</td></tr>
+
+            <tr><td>r = &sigma;(d2 + r_bias)</td></tr>
             <tr><td>z_1 = (1-r)*z_cap</td></tr>
             <tr><td>z_2 = r*prev_z</td></tr>
             <tr><td>z = tanh(z_1 + z_2)</td></tr>

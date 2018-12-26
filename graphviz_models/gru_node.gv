@@ -17,9 +17,10 @@ digraph CNN {
 
     h_prev -> hzu;
     zu -> hzu;
-    
+
     z_sum       [shape=circle,color=orange,label="+",xlabel="z_sum"];
-    z           [shape=circle,color=purple,label="sigmoid",xlabel="z"];
+    //z           [shape=circle,color=purple,label="sigmoid",xlabel="z"];
+    z           [shape=circle,color=purple,label="&sigma;",xlabel="z"];
 
     z_bias -> z_sum;
     xzw -> z_sum;
@@ -39,9 +40,10 @@ digraph CNN {
 
     h_prev -> hru;
     ru -> hru;
-    
+
     r_sum       [shape=circle,color=orange,label="+",xlabel="r_sum"];
-    r           [shape=circle,color=purple,label="sigmoid",xlabel="r"];
+    //r           [shape=circle,color=purple,label="sigmoid",xlabel="r"];
+    r           [shape=circle,color=purple,label="&sigma;",xlabel="r"];
 
     r_bias -> r_sum;
     xrw -> r_sum;
@@ -69,7 +71,7 @@ digraph CNN {
     xhw -> h_sum;
     hurh -> h_sum;
     h_bias -> h_sum;
-    
+
     h_sum -> h_tanh;
 
     zh          [shape=circle,color=red,label="*",xlabel="z * h_prev"];
@@ -97,12 +99,15 @@ digraph CNN {
 
 	{
 		rank = sink;
-
+					/*<tr><td>z = sigmoid(zw*x + zu*h_prev * z_bias)</td></tr>
+						<tr><td>r = sigmoid(rw*x + lu*h_prev * r_bias)</td></tr> */
         legend [shape=box,
             label=<
                 <table>
-                <tr><td>z = sigmoid(zw*x + zu*h_prev * z_bias)</td></tr>
-                <tr><td>r = sigmoid(rw*x + lu*h_prev * r_bias)</td></tr>
+                <tr><td>z = &sigma;(zw*x + zu*h_prev * z_bias)</td></tr>
+
+
+                <tr><td>r = &sigma;(rw*x + lu*h_prev * r_bias)</td></tr>
                 <tr><td>h = z*h_prev + (1-z)*tanh(hw*x + hu*r*h_prev * h_bias)</td></tr>
                 </table>
                 >]
