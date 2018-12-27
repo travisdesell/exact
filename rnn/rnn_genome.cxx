@@ -272,8 +272,7 @@ string RNN_Genome::get_node_count_str(int node_type) {
         int enabled_nodes = get_enabled_node_count(node_type);
         int total_nodes = get_node_count(node_type);
 
-        if (enabled_nodes > 0) oss << enabled_nodes;
-        if (total_nodes > 0) oss << " (" << total_nodes << ")";
+        if (total_nodes > 0) oss << enabled_nodes << " (" << total_nodes << ")";
     }
     return oss.str();
 }
