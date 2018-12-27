@@ -73,9 +73,6 @@ int main(int argc, char** argv) {
     int number_threads;
     get_argument(arguments, "--number_threads", true, number_threads);
 
-    string series_filename;
-    get_argument(arguments, "--series_filename", true, series_filename);
-
     int32_t time_offset = 1;
     get_argument(arguments, "--time_offset", true, time_offset);
 
@@ -108,56 +105,13 @@ int main(int argc, char** argv) {
     string output_filename;
     get_argument(arguments, "--output_filename", true, output_filename);
 
+
+    TimeSeriesSets *time_series_sets = TimeSeriesSets::generate_from_arguments(arguments);
+
     int32_t number_slices;
     get_argument(arguments, "--number_slices", true, number_slices);
 
-    vector<string> input_parameter_names;
-    input_parameter_names.push_back("Coyote-GROSS_GENERATOR_OUTPUT");
-    input_parameter_names.push_back("Coyote-Net_Unit_Generation");
-    input_parameter_names.push_back("Cyclone_-CYC__CONDITIONER_INLET_TEMP");
-    input_parameter_names.push_back("Cyclone_-CYC__CONDITIONER_OUTLET_TEMP");
-    input_parameter_names.push_back("Cyclone_-LIGNITE_FEEDER__RATE");
-    input_parameter_names.push_back("Cyclone_-CYC__TOTAL_COMB_AIR_FLOW");
-    input_parameter_names.push_back("Cyclone_-_MAIN_OIL_FLOW");
-    input_parameter_names.push_back("Cyclone_-CYCLONE__MAIN_FLM_INT");
-
-    vector<string> output_parameter_names;
-    //output_parameter_names.push_back("Cyclone_-_MAIN_OIL_FLOW");
-    output_parameter_names.push_back("Cyclone_-CYCLONE__MAIN_FLM_INT");
-
-    TimeSeriesSet *tss = new TimeSeriesSet(series_filename);
-    tss->select_parameters(input_parameter_names, output_parameter_names);
-
-    //tss->normalize_min_max("Coyote-GROSS_GENERATOR_OUTPUT", 200, 500);
-    tss->normalize_min_max("Coyote-GROSS_GENERATOR_OUTPUT", 0, 500);
-
-    //tss->normalize_min_max("Coyote-Net_Unit_Generation", 200, 500);
-    tss->normalize_min_max("Coyote-Net_Unit_Generation", 0, 500);
-
-    //tss->normalize_min_max("Cyclone_-CYC__CONDITIONER_INLET_TEMP", 150, 600);
-    tss->normalize_min_max("Cyclone_-CYC__CONDITIONER_INLET_TEMP", 0, 600);
-
-    //tss->normalize_min_max("Cyclone_-CYC__CONDITIONER_OUTLET_TEMP", 90, 200);
-    //tss->normalize_min_max("Cyclone_-CYC__CONDITIONER_OUTLET_TEMP", 0, 200);
-    tss->normalize_min_max("Cyclone_-CYC__CONDITIONER_OUTLET_TEMP", 0, 250);
-
-    //tss->normalize_min_max("Cyclone_-LIGNITE_FEEDER__RATE", 30, 80);
-    tss->normalize_min_max("Cyclone_-LIGNITE_FEEDER__RATE", 0, 80);
-
-    //tss->normalize_min_max("Cyclone_-CYC__TOTAL_COMB_AIR_FLOW", 190, 400);
-    tss->normalize_min_max("Cyclone_-CYC__TOTAL_COMB_AIR_FLOW", 0, 400);
-
-    //tss->normalize_min_max("Cyclone_-_MAIN_OIL_FLOW", 0, 15);
-    tss->normalize_min_max("Cyclone_-_MAIN_OIL_FLOW", -1, 15);
-
-    //tss->normalize_min_max("Cyclone_-CYCLONE__MAIN_FLM_INT", 0, 100);
-    tss->normalize_min_max("Cyclone_-CYCLONE__MAIN_FLM_INT", 0, 400);
-
-    vector<TimeSeriesSet*> slices;
-    tss->split(number_slices, slices);
-
-    vector<TimeSeriesSet*> training_series;
-    vector<TimeSeriesSet*> validation_series;
+    time_series_sets->split_all(number_slices);
 
     int32_t repeats = 5;
 
@@ -166,24 +120,28 @@ int main(int argc, char** argv) {
     }
     ofstream overall_results(output_directory + "/overall_results.txt");
 
-    for (uint32_t i = 0; i < number_slices; i++) {
-        training_series.clear();
-        validation_series.clear();
+    for (uint32_t i = 0; i < time_series_sets->get_number_series(); i++) {
+        vector<int> training_indexes;
+        vector<int> test_indexes;
 
-        for (uint32_t j = 0; j < number_slices; j++) {
+        for (int j = 0; j < time_series_sets->get_number_series(); j++) {
             if (j == i) {
-                validation_series.push_back(slices[j]);
+                test_indexes.push_back(j);
             } else {
-                training_series.push_back(slices[j]);
+                training_indexes.push_back(j);
             }
-        }
-        export_time_series(training_series, input_parameter_names, output_parameter_names, time_offset, training_inputs, training_outputs);
-        export_time_series(validation_series, input_parameter_names, output_parameter_names, time_offset, validation_inputs, validation_outputs);
 
-        overall_results << "results for slice " << i << " as test data." << endl;
+        }
+        time_series_sets->set_training_indexes(training_indexes);
+        time_series_sets->set_test_indexes(training_indexes);
+
+        time_series_sets->export_training_series(time_offset, training_inputs, training_outputs);
+        time_series_sets->export_test_series(time_offset, validation_inputs, validation_outputs);
+
+        overall_results << "results for slice " << i << " of " << time_series_sets->get_number_series() << " as test data." << endl;
 
         for (uint32_t k = 0; k < repeats; k++) {
-            exalt = new EXALT(population_size, number_islands, max_genomes, input_parameter_names, output_parameter_names, bp_iterations, learning_rate, use_high_threshold, high_threshold, use_low_threshold, low_threshold, use_dropout, dropout_probability, output_directory + "/slice_" + to_string(i) + "_repeat_" + to_string(k));
+            exalt = new EXALT(population_size, number_islands, max_genomes, time_series_sets->get_input_parameter_names(), time_series_sets->get_output_parameter_names(), time_series_sets->get_normalize_mins(), time_series_sets->get_normalize_maxs(), bp_iterations, learning_rate, use_high_threshold, high_threshold, use_low_threshold, low_threshold, use_dropout, dropout_probability, output_directory + "/slice_" + to_string(i) + "_repeat_" + to_string(k));
 
             vector<thread> threads;
             for (int32_t i = 0; i < number_threads; i++) {
@@ -213,16 +171,6 @@ int main(int argc, char** argv) {
 
             best_genome->write_to_file(output_directory + "/" + output_filename + "_slice_" + to_string(i) + "_repeat_" + to_string(k) + ".bin", false);
             best_genome->write_graphviz(output_directory + "/" + output_filename + "_slice_" + to_string(i) + "_repeat_" + to_string(k) + ".gv");
-
-            /*
-            RNN_Genome *duplicate_genome = new RNN_Genome(output_filename, false);
-
-            vector<double> duplicate_parameters = duplicate_genome->get_best_parameters();
-            cout << "training MSE: " << duplicate_genome->get_mse(duplicate_parameters, training_inputs, training_outputs) << endl;
-            cout << "training MSE: " << duplicate_genome->get_mae(duplicate_parameters, training_inputs, training_outputs) << endl;
-            cout << "validation MSE: " << duplicate_genome->get_mse(duplicate_parameters, validation_inputs, validation_outputs) << endl;
-            cout << "validation MSE: " << duplicate_genome->get_mae(duplicate_parameters, validation_inputs, validation_outputs) << endl;
-            */
 
             cout << "deleting genome" << endl;
             delete best_genome;

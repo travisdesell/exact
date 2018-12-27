@@ -1,1 +1,6 @@
 connect_db.sh
+build/*
+.DS_Store
+copy_binary_windows.sh
+copy_binary_linux.sh
+copy_binary_osx.sh

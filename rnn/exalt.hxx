@@ -7,6 +7,9 @@ using std::ofstream;
 #include <map>
 using std::map;
 
+#include <sstream>
+using std::ostringstream;
+
 #include <string>
 using std::string;
 using std::to_string;
@@ -61,8 +64,6 @@ class EXALT {
         double more_fit_crossover_rate;
         double less_fit_crossover_rate;
 
-        double lstm_node_rate;
-
         double clone_rate;
 
         double add_edge_rate;
@@ -77,24 +78,36 @@ class EXALT {
         double split_node_rate;
         double merge_node_rate;
 
+        vector<int> possible_node_types;
+
         string output_directory;
         ofstream *log_file;
 
         vector<string> input_parameter_names;
         vector<string> output_parameter_names;
 
+        map<string,double> normalize_mins;
+        map<string,double> normalize_maxs;
+
+        ostringstream memory_log;
+
         std::chrono::time_point<std::chrono::system_clock> startClock;
 
     public:
-        EXALT(int32_t _population_size, int32_t _number_islands, int32_t _max_genomes, const vector<string> &_input_parameter_names, const vector<string> &_output_parameter_names, int32_t _bp_iterations, double _learning_rate, bool _use_high_threshold, double _high_threshold, bool _use_low_threshold, double _low_threshold, bool _use_dropout, double _dropout_probability, string _output_directory);
+        EXALT(int32_t _population_size, int32_t _number_islands, int32_t _max_genomes, const vector<string> &_input_parameter_names, const vector<string> &_output_parameter_names, const map<string,double> &_normalize_mins, const map<string,double> &_normalize_maxs, int32_t _bp_iterations, double _learning_rate, bool _use_high_threshold, double _high_threshold, bool _use_low_threshold, double _low_threshold, bool _use_dropout, double _dropout_probability, string _output_directory);
 
         ~EXALT();
 
         void print_population();
+        void write_memory_log(string filename);
+
         int32_t population_contains(RNN_Genome* genome, int32_t island);
         bool populations_full() const;
 
         bool insert_genome(RNN_Genome* genome);
+
+
+        int get_random_node_type();
 
         void initialize_genome_parameters(RNN_Genome* genome);
         RNN_Genome* generate_genome();

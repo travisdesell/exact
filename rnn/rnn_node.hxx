@@ -15,7 +15,7 @@ class RNN_Node : public RNN_Node_Interface {
 
     public:
 
-        RNN_Node(int _innovation_number, int _type, double _depth);
+        RNN_Node(int _innovation_number, int _layer_type, double _depth, int _node_type);
         ~RNN_Node();
 
         void initialize_randomly(minstd_rand0 &generator, NormalDistribution &normal_distribution, double mu, double sigma);
@@ -42,6 +42,5 @@ class RNN_Node : public RNN_Node_Interface {
 
         friend class RNN_Edge;
 };
-
 
 #endif

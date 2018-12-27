@@ -10,6 +10,9 @@ using std::ostream;
 using std::minstd_rand0;
 using std::uniform_real_distribution;
 
+#include <string>
+using std::string;
+
 #include <vector>
 using std::vector;
 
@@ -17,25 +20,32 @@ using std::vector;
 
 class RNN;
 
-#define RNN_INPUT_NODE 0
-#define RNN_HIDDEN_NODE 1
-#define RNN_OUTPUT_NODE 2
+#define INPUT_LAYER 0
+#define HIDDEN_LAYER 1
+#define OUTPUT_LAYER 2
 
-#define LSTM_NODE 0
-#define RNN_NODE 1
+extern const string NODE_TYPES[];
+
+#define FEED_FORWARD_NODE 0
+#define JORDAN_NODE 1
+#define ELMAN_NODE 2
+#define UGRNN_NODE 3
+#define MGU_NODE 4
+#define GRU_NODE 5
+#define DELTA_NODE 6
+#define LSTM_NODE 7
 
 
 double sigmoid(double value);
 double sigmoid_derivative(double value);
 double tanh_derivative(double value);
 
-void bound_value(double &value);
-void bound_value(double min, double max, double &value);
+double bound(double value);
 
 class RNN_Node_Interface {
     protected:
         int32_t innovation_number;
-        int32_t type;
+        int32_t layer_type;
         int32_t node_type;
 
         double depth;
@@ -56,7 +66,7 @@ class RNN_Node_Interface {
         int32_t total_inputs;
         int32_t total_outputs;
     public:
-        RNN_Node_Interface(int32_t _innovation_number, int32_t _type, double _depth);
+        RNN_Node_Interface(int32_t _innovation_number, int32_t _layer_type, double _depth);
         virtual ~RNN_Node_Interface();
 
         virtual void initialize_randomly(minstd_rand0 &generator, NormalDistribution &normal_distribution, double mu, double sigma) = 0;
@@ -79,7 +89,7 @@ class RNN_Node_Interface {
 
         void write_to_stream(ostream &out);
 
-        int32_t get_type() const;
+        int32_t get_layer_type() const;
         int32_t get_innovation_number() const;
         double get_depth() const;
         bool equals(RNN_Node_Interface *other) const;
@@ -99,17 +109,14 @@ class RNN_Node_Interface {
 struct sort_RNN_Nodes_by_innovation {
     bool operator()(RNN_Node_Interface *n1, RNN_Node_Interface *n2) {
         return n1->get_innovation_number() < n2->get_innovation_number();
-    }   
+    }
 };
 
 
 struct sort_RNN_Nodes_by_depth {
     bool operator()(RNN_Node_Interface *n1, RNN_Node_Interface *n2) {
         return n1->get_depth() < n2->get_depth();
-    }   
+    }
 };
 
-
-
 #endif
-

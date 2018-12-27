@@ -35,12 +35,6 @@ LSTM_Node::LSTM_Node(int _innovation_number, int _type, double _depth) : RNN_Nod
 LSTM_Node::~LSTM_Node() {
 }
 
-double bound(double value) {
-    if (value < -10.0) value = -10.0;
-    else if (value > 10.0) value = 10.0;
-    return value;
-}
-
 void LSTM_Node::initialize_randomly(minstd_rand0 &generator, NormalDistribution &normal_distribution, double mu, double sigma) {
 
     output_gate_update_weight = bound(normal_distribution.random(generator, mu, sigma));
@@ -204,7 +198,7 @@ void LSTM_Node::try_update_deltas(int time) {
     //backprop forget gate
     d_prev_cell[time] += d_cell_out * forget_gate_values[time];
 
-    double d_forget_gate = d_cell_out * previous_cell_value * ld_forget_gate[time]; 
+    double d_forget_gate = d_cell_out * previous_cell_value * ld_forget_gate[time];
     d_forget_gate_bias[time] = d_forget_gate;
     d_forget_gate_update_weight[time] = d_forget_gate * previous_cell_value;
     d_forget_gate_weight[time] = d_forget_gate * input_value;
@@ -376,7 +370,7 @@ void LSTM_Node::reset(int _series_length) {
 }
 
 RNN_Node_Interface* LSTM_Node::copy() const {
-    LSTM_Node* n = new LSTM_Node(innovation_number, type, depth);
+    LSTM_Node* n = new LSTM_Node(innovation_number, layer_type, depth);
 
     //copy LSTM_Node values
     n->output_gate_update_weight = output_gate_update_weight;
@@ -444,179 +438,6 @@ RNN_Node_Interface* LSTM_Node::copy() const {
     return n;
 }
 
-#ifdef LSTM_TEST
-#include <random>
-using std::minstd_rand0;
-using std::uniform_real_distribution;
-
-#include <string>
-using std::string;
-
-int main(int argc, char **argv) {
-
-    int number_of_weights = 11 * 2;
-    vector<double> parameters(number_of_weights, 0.0);
-    vector<double> next_parameters;
-    vector<double> min_bound(number_of_weights, -2.0);
-    vector<double> max_bound(number_of_weights, 2.0);
-
-    //unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
-    unsigned seed = 1337;
-    minstd_rand0 generator(seed);
-    for (uint32_t i = 0; i < parameters.size(); i++) {
-        uniform_real_distribution<double> rng(min_bound[i], max_bound[i]);
-        parameters[i] = rng(generator);
-    }
-
-    vector<string> parameter_names;
-    parameter_names.push_back("output_gate_update_weight");
-    parameter_names.push_back("output_gate_weight");
-    parameter_names.push_back("output_gate_bias");
-
-    parameter_names.push_back("input_gate_update_weight");
-    parameter_names.push_back("input_gate_weight");
-    parameter_names.push_back("input_gate_bias");
-
-    parameter_names.push_back("forget_gate_update_weight");
-    parameter_names.push_back("forget_gate_weight");
-    parameter_names.push_back("forget_gate_bias");
-
-    parameter_names.push_back("cell_weight");
-    parameter_names.push_back("cell_bias");
-
-    LSTM_Node *node1 = new LSTM_Node(0, RNN_HIDDEN_NODE, 0.0);
-    LSTM_Node *node2 = new LSTM_Node(0, RNN_HIDDEN_NODE, 0.0);
-    LSTM_Node *n11  = new LSTM_Node(0, RNN_HIDDEN_NODE, 0.0);
-    LSTM_Node *n12  = new LSTM_Node(0, RNN_HIDDEN_NODE, 0.0);
-    LSTM_Node *n21 = new LSTM_Node(0, RNN_HIDDEN_NODE, 0.0);
-    LSTM_Node *n22 = new LSTM_Node(0, RNN_HIDDEN_NODE, 0.0);
-    node1->total_inputs = 1;
-    node1->total_outputs = 1;
-    node2->total_inputs = 1;
-    node2->total_outputs = 1;
-    n11->total_inputs = 1;
-    n12->total_inputs = 1;
-    n21->total_inputs = 1;
-    n22->total_inputs = 1;
-
-    uint32_t offset;
-    double mse;
-    vector<double> deltas;
-
-    vector<double> inputs;
-    inputs.push_back(-0.88);
-    inputs.push_back(-0.83);
-    inputs.push_back(-0.89);
-    inputs.push_back(-0.87);
-
-    vector<double> outputs;
-    outputs.push_back(0.73);
-    outputs.push_back(0.63);
-    outputs.push_back(0.59);
-    outputs.push_back(0.55);
-
-    for (uint32_t iteration = 0; iteration < 2000000; iteration++) {
-        bool print = (iteration % 10000) == 0;
-
-        if (print) cout << "\n\niteration: " << setw(5) << iteration << endl;
-       
-        //cout << "firing node1" << endl;
-        offset = 0;
-        node1->reset(inputs.size());
-        node2->reset(inputs.size());
-        node1->set_weights(offset, parameters);
-        node2->set_weights(offset, parameters);
-
-        for (int time = 0; time < outputs.size(); time++) {
-            node1->input_fired(time, inputs[time]);
-            node2->input_fired(time, node1->output_values[time]);
-        }
-
-        get_mse(node2->output_values, outputs, mse, deltas);
-
-        for (int time = outputs.size() - 1; time >= 0; time--) {
-            node2->output_fired(time, deltas[time]);
-            node1->output_fired(time, node2->d_input[time]);
-        }
-
-        if (print) {
-            cout << "mean squared error: " << mse << endl;
-
-            cout << "outputs: " << endl;
-            for (uint32_t i = 0; i < inputs.size(); i++) {
-                cout << "\toutput[" << i << "]: " << node2->output_values[i] << ", expected[" << i << "]: " << outputs[i] << ", diff: " << node2->output_values[i] - outputs[i] << endl;
-            }
-
-            cout << "analytical gradient:" << endl;
-            for (uint32_t i = 0; i < parameter_names.size(); i++) {
-                node1->print_gradient(parameter_names[i % 11]);
-            }
-            for (uint32_t i = 0; i < parameter_names.size(); i++) {
-                node2->print_gradient(parameter_names[i % 11]);
-            }
-        }
-
-        next_parameters = parameters;
-
-        if (print) cout << "empirical gradient:" << endl;
-
-        double learning_rate = 0.01;
-        double diff = 0.00001;
-        double save;
-        double mse1, mse2;
-        for (uint32_t i = 0; i < parameters.size(); i++) {
-            save = parameters[i];
-            parameters[i] = save - diff;
-
-            offset = 0;
-            n11->reset(inputs.size());
-            n12->reset(inputs.size());
-            n11->set_weights(offset, parameters);
-            n12->set_weights(offset, parameters);
-
-            for (int time = 0; time < outputs.size(); time++) {
-                n11->input_fired(time, inputs[time]);
-                n12->input_fired(time, n11->output_values[time]);
-            }
-
-            get_mse(n12->output_values, outputs, mse1, deltas);
-
-            parameters[i] = save + diff;
-
-            offset = 0;
-            n21->reset(inputs.size());
-            n22->reset(inputs.size());
-            n21->set_weights(offset, parameters);
-            n22->set_weights(offset, parameters);
-
-            for (int time = 0; time < outputs.size(); time++) {
-                n21->input_fired(time, inputs[time]);
-                n22->input_fired(time, n21->output_values[time]);
-            }
-            get_mse(n22->output_values, outputs, mse2, deltas);
-
-            double gradient = (mse2 - mse1) / (2.0 * diff);
-
-            gradient *= mse;
-            if (print) cout << "\tgradient['" << parameter_names[i % 11] << "']: " << gradient << endl;
-
-            parameters[i] = save;
-        }
-
-        for (int32_t j = 0; j < parameters.size(); j++) {
-            if (j < 11) {
-                next_parameters[j] -= learning_rate * node1->get_gradient(parameter_names[j % 11]);
-            } else {
-                next_parameters[j] -= learning_rate * node2->get_gradient(parameter_names[j % 11]);
-            }
-        }
-        parameters = next_parameters;
-    }
-}
-
 void LSTM_Node::write_to_stream(ostream &out) {
     RNN_Node_Interface::write_to_stream(out);
 }
-
-#endif
-

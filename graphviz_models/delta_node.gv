@@ -1,0 +1,110 @@
+digraph CNN {
+	{
+		rank = source;
+        z_prev      [shape=box,color=blue,label="z_prev",xlabel="previous output"];
+        input       [shape=box,color=blue,label="input", xlabel="d2"];
+	}
+
+
+    v               [shape=diamond,color=blue,label="v"];
+    d1              [shape=circle,color=red,label="*", xlabel="d1"];
+
+    z_prev -> d1;
+    v -> d1;
+
+    alpha           [shape=diamond,color=blue,label="alpha"];
+
+    z_hat_1         [shape=circle,color=red,label="*",xlabel="z_hat_1"]
+
+    alpha -> z_hat_1;
+    d1 -> z_hat_1;
+    input -> z_hat_1;
+
+    z_hat_2         [shape=circle,color=red,label="*",xlabel="z_hat_2"]
+    beta_1          [shape=diamond,color=blue,label="beta 1"];
+
+    beta_1 -> z_hat_2;
+    d1 -> z_hat_2;
+
+    z_hat_3         [shape=circle,color=red,label="*",xlabel="z_hat_3"]
+    beta_2          [shape=diamond,color=blue,label="beta 2"];
+
+    beta_2 -> z_hat_3;
+    input -> z_hat_3;
+
+    z_hat_sum       [shape=circle,color=orange,label="+",xlabel="z_hat_sum"];
+    z_hat_bias      [shape=diamond,color=blue,label="z_hat_bias"];
+
+    z_hat_1 -> z_hat_sum;
+    z_hat_2 -> z_hat_sum;
+    z_hat_3 -> z_hat_sum;
+    z_hat_bias -> z_hat_sum;
+
+    z_cap           [shape=circle,color=orange,label="tanh",xlabel="z_cap"];
+
+    z_hat_sum -> z_cap;
+
+    input_r_bias    [shape=circle,color=orange,label="+",xlabel="input_r_bias"];
+    r_bias          [shape=diamond,color=blue,label="r_bias"];
+
+    input -> input_r_bias;
+    r_bias -> input_r_bias;
+
+    //r               [shape=circle,color=purple,label="sigmoid",xlabel="r"];
+    r               [shape=circle,color=purple,label="&sigma;",xlabel="r"];
+
+    input_r_bias -> r;
+
+    neg_1           [shape=box,color=blue,label="-1"];
+    neg_r           [shape=circle,color=red,label="*", xlabel="-r"]
+
+    neg_1 -> neg_r;
+    r -> neg_r;
+
+    plus_1          [shape=box,color=blue,label="1"];
+    one_minus_r     [shape=circle,color=orange,label="+",xlabel="(1 - r)"];
+
+    plus_1 -> one_minus_r;
+    neg_r -> one_minus_r;
+
+    z_1            [shape=circle,color=red,label="*",xlabel="z_1"]
+
+    z_cap -> z_1;
+    one_minus_r -> z_1;
+
+    z_2            [shape=circle,color=red,label="*",xlabel="z_2"]
+    r -> z_2;
+    z_prev -> z_2;
+
+    z_sum          [shape=circle,color=orange,label="+",xlabel="z_sum"];
+    z_1 -> z_sum;
+    z_2 -> z_sum;
+
+
+
+	{
+		rank = sink;
+				/*<tr><td>r = sigmoid(d2 + r_bias)</td></tr>*/
+        legend          [shape=box,label=<<table>
+            <tr><td>d1 = v*prev_z</td></tr>
+            <tr><td>d2 = input</td></tr>
+            <tr><td>z_hat_1 = alpha*d1*d2</td></tr>
+            <tr><td>z_hat_2 = beta1*d1</td></tr>
+            <tr><td>z_hat_3 = beta2*d2</td></tr>
+            <tr><td>z_hat_sum = z_hat_1 + z_hat_2 + z_hat_3 + z_hat_bias</td></tr>
+            <tr><td>z_cap = tanh(z_hat_sum)</td></tr>
+
+            <tr><td>r = &sigma;(d2 + r_bias)</td></tr>
+            <tr><td>z_1 = (1-r)*z_cap</td></tr>
+            <tr><td>z_2 = r*prev_z</td></tr>
+            <tr><td>z = tanh(z_1 + z_2)</td></tr>
+                    </table>>]
+
+        z              [shape=circle,color=purple,label="tanh",xlabel="z"];
+    }
+
+    z_sum -> z;
+    legend -> z [style=invis];
+    z -> z_prev;
+
+}

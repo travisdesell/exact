@@ -27,6 +27,8 @@ using std::vector;
 //mysql can't handl the max float value for some reason
 #define EXALT_MAX_DOUBLE 10000000
 
+string parse_fitness(double fitness);
+
 
 class RNN_Genome {
     private:
@@ -53,7 +55,7 @@ class RNN_Genome {
 
         vector<double> initial_parameters;
 
-        double best_validation_error;
+        double best_validation_mse;
         double best_validation_mae;
         vector<double> best_parameters;
 
@@ -68,6 +70,9 @@ class RNN_Genome {
         vector<string> input_parameter_names;
         vector<string> output_parameter_names;
 
+        map<string,double> normalize_mins;
+        map<string,double> normalize_maxs;
+
     public:
         void sort_nodes_by_depth();
         void sort_edges_by_depth();
@@ -81,13 +86,31 @@ class RNN_Genome {
 
         ~RNN_Genome();
 
+        static string print_statistics_header();
+        string print_statistics();
+
         void set_parameter_names(const vector<string> &_input_parameter_names, const vector<string> &_output_parameter_names);
 
         string generated_by_string();
 
-        int32_t get_enabled_node_count();
+        string get_edge_count_str(bool recurrent);
+        string get_node_count_str(int node_type);
+
         int32_t get_enabled_edge_count();
         int32_t get_enabled_recurrent_edge_count();
+        int32_t get_enabled_node_count(int node_type);
+        int32_t get_node_count(int node_type);
+        int32_t get_enabled_node_count();
+        int32_t get_node_count();
+
+
+        void set_normalize_bounds(const map<string,double> &_normalize_mins, const map<string,double> &_normalize_maxs);
+
+        map<string,double> get_normalize_mins() const;
+        map<string,double> get_normalize_maxs() const;
+
+        vector<string> get_input_parameter_names() const;
+        vector<string> get_output_parameter_names() const;
 
         int32_t get_island() const;
         void set_island(int32_t _island);
@@ -115,8 +138,10 @@ class RNN_Genome {
 
         int32_t get_generation_id() const;
         void set_generation_id(int32_t generation_id);
-        double get_validation_error() const;
+        double get_fitness() const;
 
+        void clear_generated_by();
+        void update_generation_map(map<string, int32_t> &generation_map);
         void set_generated_by(string type);
         int32_t get_generated_by(string type);
 
@@ -142,21 +167,30 @@ class RNN_Genome {
         void assign_reachability();
         bool outputs_unreachable();
 
-        RNN_Node_Interface* create_node(double mu, double sigma, double lstm_node_rate, int32_t &node_innovation_count, double depth);
+        RNN_Node_Interface* create_node(double mu, double sigma, int node_type, int32_t &node_innovation_count, double depth);
+
         bool attempt_edge_insert(RNN_Node_Interface *n1, RNN_Node_Interface *n2, double mu, double sigma, int32_t &edge_innovation_count);
         bool attempt_recurrent_edge_insert(RNN_Node_Interface *n1, RNN_Node_Interface *n2, double mu, double sigma, int32_t max_recurrent_depth, int32_t &edge_innovation_count);
+
+        //after adding an Elman or Jordan node, generate the circular RNN edge for Elman and the
+        //edges from output to this node for Jordan.
+        void generate_recurrent_edges(RNN_Node_Interface *node, double mu, double sigma, int32_t max_recurrent_depth, int32_t &edge_innovation_count);
 
         bool add_edge(double mu, double sigma, int32_t &edge_innovation_count);
         bool add_recurrent_edge(double mu, double sigma, int32_t max_recurrent_depth, int32_t &edge_innovation_count);
         bool disable_edge();
         bool enable_edge();
-        bool split_edge(double mu, double sigma, double lstm_node_rate, int32_t max_recurrent_depth, int32_t &edge_innovation_count, int32_t &node_innovation_count);
+        bool split_edge(double mu, double sigma, int node_type, int32_t max_recurrent_depth, int32_t &edge_innovation_count, int32_t &node_innovation_count);
 
-        bool add_node(double mu, double sigma, double lstm_node_rate, int32_t max_recurrent_depth, int32_t &edge_innovation_count, int32_t &node_innovation_count);
+
+        bool add_node(double mu, double sigma, int node_type, int32_t max_recurrent_depth, int32_t &edge_innovation_count, int32_t &node_innovation_count);
+
         bool enable_node();
         bool disable_node();
-        bool split_node(double mu, double sigma, double lstm_node_rate, int32_t max_recurrent_depth, int32_t &edge_innovation_count, int32_t &node_innovation_count);
-        bool merge_node(double mu, double sigma, double lstm_node_rate, int32_t max_recurrent_depth, int32_t &edge_innovation_count, int32_t &node_innovation_count);
+        bool split_node(double mu, double sigma, int node_type, int32_t max_recurrent_depth, int32_t &edge_innovation_count, int32_t &node_innovation_count);
+
+        bool merge_node(double mu, double sigma, int node_type, int32_t max_recurrent_depth, int32_t &edge_innovation_count, int32_t &node_innovation_count);
+
 
 
         bool equals(RNN_Genome *other);
@@ -179,9 +213,9 @@ class RNN_Genome {
         friend class EXALT;
 };
 
-struct sort_genomes_by_validation_error {
+struct sort_genomes_by_fitness {
     bool operator()(RNN_Genome *g1, RNN_Genome *g2) {
-        return g1->get_validation_error() < g2->get_validation_error();
+        return g1->get_fitness() < g2->get_fitness();
     }
 };
 

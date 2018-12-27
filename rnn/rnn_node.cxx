@@ -11,13 +11,14 @@ using std::vector;
 #include "rnn_node.hxx"
 
 
-RNN_Node::RNN_Node(int _innovation_number, int _type, double _depth) : RNN_Node_Interface(_innovation_number, _type, _depth) {
-    if (type == RNN_INPUT_NODE) {
+
+RNN_Node::RNN_Node(int _innovation_number, int _layer_type, double _depth, int _node_type) : RNN_Node_Interface(_innovation_number, _layer_type, _depth) {
+    if (layer_type == INPUT_LAYER) {
         total_inputs = 1;
     }
     //cout << "created node: " << innovation_number << ", type: " << type << endl;
 
-    node_type = RNN_NODE;
+    node_type = _node_type;
 }
 
 RNN_Node::~RNN_Node() {
@@ -144,7 +145,7 @@ void RNN_Node::set_weights(uint32_t &offset, const vector<double> &parameters) {
 }
 
 RNN_Node_Interface* RNN_Node::copy() const {
-    RNN_Node* n = new RNN_Node(innovation_number, type, depth);
+    RNN_Node* n = new RNN_Node(innovation_number, layer_type, depth, node_type);
 
     //copy RNN_Node values
     n->bias = bias;
