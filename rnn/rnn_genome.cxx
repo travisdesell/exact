@@ -269,10 +269,15 @@ string RNN_Genome::get_node_count_str(int node_type) {
     if (node_type < 0) {
         oss << get_enabled_node_count() << " (" << get_node_count() << ")";
     } else {
-        oss << get_enabled_node_count(node_type) << " (" << get_node_count(node_type) << ")";
+        int enabled_nodes = get_enabled_node_count(node_type);
+        int total_nodes = get_node_count(node_type);
+
+        if (enabled_nodes > 0) oss << enabled_nodes;
+        if (total_nodes > 0) oss << " (" << total_nodes << ")";
     }
     return oss.str();
 }
+
 
 int RNN_Genome::get_enabled_node_count() {
     int32_t count = 0;
