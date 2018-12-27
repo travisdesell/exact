@@ -192,6 +192,28 @@ void EXALT::write_memory_log(string filename) {
     log_file.close();
 }
 
+void EXALT::set_possible_node_types(vector<string> possible_node_type_strings) {
+    possible_node_types.clear();
+
+    for (int32_t i = 0; i < possible_node_type_strings.size(); i++) {
+        string node_type_s = possible_node_type_strings[i];
+
+        bool found = false;
+
+        for (int32_t j = 0; j < NUMBER_NODE_TYPES; j++) {
+            if (NODE_TYPES[j].compare(node_type_s) == 0) {
+                found = true;
+                possible_node_types.push_back(j);
+            }
+        }
+
+        if (!found) {
+            cerr << "ERROR! unknown node type: '" << node_type_s << "'" << endl;
+            exit(1);
+        }
+    }
+}
+
 int32_t EXALT::population_contains(RNN_Genome* genome, int32_t island) {
     for (int32_t j = 0; j < (int32_t)genomes[island].size(); j++) {
         if (genomes[island][j]->equals(genome)) {

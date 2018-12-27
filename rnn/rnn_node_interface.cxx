@@ -8,6 +8,8 @@ using std::string;
 
 #include "rnn_node_interface.hxx"
 
+
+extern const int32_t NUMBER_NODE_TYPES = 8;
 extern const string NODE_TYPES[] = { "feed_forward" , "jordan", "elman", "UGRNN", "MGU", "GRU", "delta", "LSTM" };
 
 double bound(double value) {

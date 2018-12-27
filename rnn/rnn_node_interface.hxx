@@ -24,6 +24,7 @@ class RNN;
 #define HIDDEN_LAYER 1
 #define OUTPUT_LAYER 2
 
+extern const int32_t NUMBER_NODE_TYPES;
 extern const string NODE_TYPES[];
 
 #define FEED_FORWARD_NODE 0
