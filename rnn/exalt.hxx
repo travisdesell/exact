@@ -7,6 +7,9 @@ using std::ofstream;
 #include <map>
 using std::map;
 
+#include <sstream>
+using std::ostringstream;
+
 #include <string>
 using std::string;
 using std::to_string;
@@ -86,6 +89,8 @@ class EXALT {
         map<string,double> normalize_mins;
         map<string,double> normalize_maxs;
 
+        ostringstream memory_log;
+
         std::chrono::time_point<std::chrono::system_clock> startClock;
 
     public:
@@ -94,6 +99,8 @@ class EXALT {
         ~EXALT();
 
         void print_population();
+        void write_memory_log(string filename);
+
         int32_t population_contains(RNN_Genome* genome, int32_t island);
         bool populations_full() const;
 

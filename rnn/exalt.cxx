@@ -123,6 +123,7 @@ EXALT::EXALT(int32_t _population_size, int32_t _number_islands, int32_t _max_gen
         mkdir(output_directory.c_str(), 0777);
         log_file = new ofstream(output_directory + "/" + "fitness_log.csv");
         (*log_file) << "Inserted Genomes, Total BP Epochs, Time, Best Val. MAE, Best Val. MSE, Enabled Nodes, Enabled Edges, Enabled Rec. Edges" << endl;
+        memory_log << "Inserted Genomes, Total BP Epochs, Time, Best Val. MAE, Best Val. MSE, Enabled Nodes, Enabled Edges, Enabled Rec. Edges" << endl;
     } else {
         log_file = NULL;
     }
@@ -139,8 +140,6 @@ void EXALT::print_population() {
 
         for (int32_t j = 0; j < (int32_t)genomes[i].size(); j++) {
             cout << "\t" << genomes[i][j]->print_statistics() << endl;
-
-            //cout << "\t\t" << setw(15) << parse_fitness(genomes[i][j]->best_validation_mse) << ", " << parse_fitness(genomes[i][j]->best_validation_mae) << ", " << genomes[i][j]->nodes.size() << " (" << genomes[i][j]->get_enabled_node_count() << "), " << genomes[i][j]->edges.size() << " (" << genomes[i][j]->get_enabled_edge_count() << "), " << genomes[i][j]->recurrent_edges.size() << " (" << genomes[i][j]->get_enabled_recurrent_edge_count() << "), " << genomes[i][j]->generated_by_string() << endl;
         }
     }
 
@@ -153,7 +152,7 @@ void EXALT::print_population() {
             log_file->close();
             delete log_file;
 
-            string output_file = output_directory + "/" + "fitness_log.csv";
+            string output_file = output_directory + "/fitness_log.csv";
             log_file = new ofstream(output_file, std::ios_base::app);
 
             if (!log_file->is_open()) {
@@ -175,8 +174,22 @@ void EXALT::print_population() {
             << "," << best_genome->get_enabled_node_count()
             << "," << best_genome->get_enabled_edge_count()
             << "," << best_genome->get_enabled_recurrent_edge_count() << endl;
-    }
 
+        memory_log << inserted_genomes
+            << "," << total_bp_epochs
+            << "," << milliseconds
+            << "," << best_genome->best_validation_mae
+            << "," << best_genome->best_validation_mse
+            << "," << best_genome->get_enabled_node_count()
+            << "," << best_genome->get_enabled_edge_count()
+            << "," << best_genome->get_enabled_recurrent_edge_count() << endl;
+    }
+}
+
+void EXALT::write_memory_log(string filename) {
+    ofstream log_file(filename);
+    log_file << memory_log.str();
+    log_file.close();
 }
 
 int32_t EXALT::population_contains(RNN_Genome* genome, int32_t island) {

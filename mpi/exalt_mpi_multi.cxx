@@ -262,16 +262,22 @@ int main(int argc, char** argv) {
     int32_t time_offset = 1;
     get_argument(arguments, "--time_offset", true, time_offset);
 
+    int fold_size = 2;
+    get_argument(arguments, "--fold_size", true, fold_size);
 
-    for (int32_t i = 0; i < time_series_sets->get_number_series(); i++) {
+    for (int32_t i = 0; i < time_series_sets->get_number_series(); i += fold_size) {
         vector<int> training_indexes;
         vector<int> test_indexes;
 
-        for (uint32_t j = 0; j < time_series_sets->get_number_series(); j++) {
+        for (uint32_t j = 0; j < time_series_sets->get_number_series(); j += fold_size) {
             if (j == i) {
-                test_indexes.push_back(j);
+                for (int k = 0; k < fold_size; k++) {
+                    test_indexes.push_back(j + k);
+                }
             } else {
-                training_indexes.push_back(j);
+                for (int k = 0; k < fold_size; k++) {
+                    training_indexes.push_back(j + k);
+                }
             }
         }
 
@@ -293,6 +299,9 @@ int main(int argc, char** argv) {
                 master(max_rank);
                 std::chrono::time_point<std::chrono::system_clock> end = std::chrono::system_clock::now();
                 long milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+
+                exalt->write_memory_log(current_output_directory + "/memory_fitness_log.csv");
+
                 slice_times_file << milliseconds << endl;
 
                 RNN_Genome *best_genome = exalt->get_best_genome();

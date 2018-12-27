@@ -928,6 +928,7 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
     learning_rate = prev_learning_rate[random_selection];
 
     ofstream *output_log = NULL;
+    ostringstream memory_log;
 
     if (log_filename != "") {
         //cout << "craeting new log stream for " << log_filename << endl;
@@ -1114,12 +1115,24 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
                 << "," << best_validation_mse
                 << "," << best_validation_mae
                 << "," << avg_norm << endl;
+
+            memory_log << iteration
+                << "," << milliseconds
+                << "," << training_error
+                << "," << validation_mse
+                << "," << best_validation_mse
+                << "," << best_validation_mae
+                << "," << avg_norm << endl;
         }
 
 
         cout << "iteration " << setw(5) << iteration << ", mse: " << training_error << ", v_mse: " << validation_mse << ", bv_mse: " << best_validation_mse << ", avg_norm: " << avg_norm << endl;
 
     }
+
+    ofstream memory_log_file(log_filename + "_mem");
+    memory_log_file << memory_log.str();
+    memory_log_file.close();
 
     delete rnn;
 
