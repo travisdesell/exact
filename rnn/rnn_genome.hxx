@@ -93,9 +93,16 @@ class RNN_Genome {
 
         string generated_by_string();
 
-        int32_t get_enabled_node_count();
+        string get_edge_count_str(bool recurrent);
+        string get_node_count_str(int node_type);
+
         int32_t get_enabled_edge_count();
         int32_t get_enabled_recurrent_edge_count();
+        int32_t get_enabled_node_count(int node_type);
+        int32_t get_node_count(int node_type);
+        int32_t get_enabled_node_count();
+        int32_t get_node_count();
+
 
         void set_normalize_bounds(const map<string,double> &_normalize_mins, const map<string,double> &_normalize_maxs);
 

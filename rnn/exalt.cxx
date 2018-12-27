@@ -84,11 +84,11 @@ EXALT::EXALT(int32_t _population_size, int32_t _number_islands, int32_t _max_gen
     clone_rate = 1.0;
 
     add_edge_rate = 1.0;
-    add_recurrent_edge_rate = 3.0;
-    //add_recurrent_edge_rate = 1.0;
+    //add_recurrent_edge_rate = 3.0;
+    add_recurrent_edge_rate = 1.0;
     enable_edge_rate = 1.0;
-    disable_edge_rate = 3.0;
-    //disable_edge_rate = 1.0;
+    //disable_edge_rate = 3.0;
+    disable_edge_rate = 1.0;
     //split_edge_rate = 1.0;
     split_edge_rate = 0.0;
 
@@ -106,8 +106,8 @@ EXALT::EXALT(int32_t _population_size, int32_t _number_islands, int32_t _max_gen
     if (node_ops) {
         add_node_rate = 1.0;
         enable_node_rate = 1.0;
-        disable_node_rate = 3.0;
-        //disable_node_rate = 1.0;
+        //disable_node_rate = 3.0;
+        disable_node_rate = 1.0;
         split_node_rate = 1.0;
         merge_node_rate = 1.0;
 
@@ -135,10 +135,10 @@ void EXALT::print_population() {
     for (int32_t i = 0; i < (int32_t)genomes.size(); i++) {
         cout << "\tPOPULATION " << i << ":" << endl;
 
-        //cout << "\t\t" << RNN_Genome::print_statistics_header();
+        cout << "\t" << RNN_Genome::print_statistics_header() << endl;
 
         for (int32_t j = 0; j < (int32_t)genomes[i].size(); j++) {
-            cout << "\t\t" << genomes[i][j]->print_statistics() << endl;
+            cout << "\t" << genomes[i][j]->print_statistics() << endl;
 
             //cout << "\t\t" << setw(15) << parse_fitness(genomes[i][j]->best_validation_mse) << ", " << parse_fitness(genomes[i][j]->best_validation_mae) << ", " << genomes[i][j]->nodes.size() << " (" << genomes[i][j]->get_enabled_node_count() << "), " << genomes[i][j]->edges.size() << " (" << genomes[i][j]->get_enabled_edge_count() << "), " << genomes[i][j]->recurrent_edges.size() << " (" << genomes[i][j]->get_enabled_recurrent_edge_count() << "), " << genomes[i][j]->generated_by_string() << endl;
         }

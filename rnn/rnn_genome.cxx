@@ -59,7 +59,7 @@ using std::vector;
 
 string parse_fitness(double fitness) {
     if (fitness == EXALT_MAX_DOUBLE) {
-        return "UNEVALUATED";
+        return "UNEVAL";
     } else {
         return to_string(fitness);
     }
@@ -215,10 +215,100 @@ RNN_Genome::~RNN_Genome() {
 string RNN_Genome::print_statistics_header() {
     ostringstream oss;
 
-    oss << setw(15) << "MSE, " << endl;
+    oss << std::left
+        << setw(12) << "MSE" 
+        << setw(12) << "MAE"
+        << setw(12) << "Edges"
+        << setw(12) << "Rec Edges"
+        << setw(12) << "FF"
+        << setw(12) << "Jordan"
+        << setw(12) << "Elman"
+        << setw(12) << "UGRNN"
+        << setw(12) << "MGU"
+        << setw(12) << "GRU"
+        << setw(12) << "Delta"
+        << setw(12) << "LSTM"
+        << setw(12) << "Total"
+        << "Generated";
 
-    return "";
+    return oss.str();
 }
+
+string RNN_Genome::print_statistics() {
+    ostringstream oss;
+    oss << std::left
+        << setw(12) << parse_fitness(best_validation_mse)  
+        << setw(12) << parse_fitness(best_validation_mae)  
+        << setw(12) << get_edge_count_str(false) 
+        << setw(12) << get_edge_count_str(true) 
+        << setw(12) << get_node_count_str(FEED_FORWARD_NODE) 
+        << setw(12) << get_node_count_str(JORDAN_NODE) 
+        << setw(12) << get_node_count_str(ELMAN_NODE) 
+        << setw(12) << get_node_count_str(UGRNN_NODE) 
+        << setw(12) << get_node_count_str(MGU_NODE) 
+        << setw(12) << get_node_count_str(GRU_NODE) 
+        << setw(12) << get_node_count_str(DELTA_NODE) 
+        << setw(12) << get_node_count_str(LSTM_NODE) 
+        << setw(12) << get_node_count_str(-1)  //-1 does all nodes
+        << generated_by_string();
+    return oss.str();
+}
+
+string RNN_Genome::get_edge_count_str(bool recurrent) {
+    ostringstream oss;
+    if (recurrent) {
+        oss << get_enabled_recurrent_edge_count() << " (" << recurrent_edges.size() << ")";
+    } else {
+        oss << get_enabled_edge_count() << " (" << edges.size() << ")";
+    }
+    return oss.str();
+}
+
+string RNN_Genome::get_node_count_str(int node_type) {
+    ostringstream oss;
+    if (node_type < 0) {
+        oss << get_enabled_node_count() << " (" << get_node_count() << ")";
+    } else {
+        oss << get_enabled_node_count(node_type) << " (" << get_node_count(node_type) << ")";
+    }
+    return oss.str();
+}
+
+int RNN_Genome::get_enabled_node_count() {
+    int32_t count = 0;
+
+    for (int32_t i = 0; i < nodes.size(); i++) {
+        if (nodes[i]->enabled) count++;
+    }
+
+    return count;
+}
+
+int RNN_Genome::get_enabled_node_count(int node_type) {
+    int32_t count = 0;
+
+    for (int32_t i = 0; i < nodes.size(); i++) {
+        if (nodes[i]->enabled && nodes[i]->node_type == node_type) count++;
+    }
+
+    return count;
+}
+
+int RNN_Genome::get_node_count() {
+    return nodes.size();
+}
+
+
+int RNN_Genome::get_node_count(int node_type) {
+    int32_t count = 0;
+
+    for (int32_t i = 0; i < nodes.size(); i++) {
+        if (nodes[i]->node_type == node_type) count++;
+    }
+
+    return count;
+}
+
 
 void RNN_Genome::clear_generated_by() {
     generated_by_map.clear();
@@ -242,13 +332,6 @@ string RNN_Genome::generated_by_string() {
     }
     oss << "]";
 
-    return oss.str();
-}
-
-
-string RNN_Genome::print_statistics() {
-    ostringstream oss;
-    oss << setw(15) << parse_fitness(best_validation_mse) << ", " << parse_fitness(best_validation_mae) << ", " << nodes.size() << " (" << get_enabled_node_count() << "), " << edges.size() << " (" << get_enabled_edge_count() << "), " << recurrent_edges.size() << " (" << get_enabled_recurrent_edge_count() << "), " << generated_by_string();
     return oss.str();
 }
 
@@ -280,16 +363,6 @@ int32_t RNN_Genome::get_island() const {
 
 void RNN_Genome::set_island(int32_t _island) {
     island = _island;
-}
-
-int32_t RNN_Genome::get_enabled_node_count() {
-    int32_t count = 0;
-
-    for (int32_t i = 0; i < nodes.size(); i++) {
-        if (nodes[i]->enabled) count++;
-    }
-
-    return count;
 }
 
 int32_t RNN_Genome::get_enabled_edge_count() {
