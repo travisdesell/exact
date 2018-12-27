@@ -265,6 +265,10 @@ int main(int argc, char** argv) {
     int fold_size = 2;
     get_argument(arguments, "--fold_size", true, fold_size);
 
+    vector<string> possible_node_types;
+    get_argument_vector(arguments, "--possible_node_types", true, possible_node_types);
+
+
     for (int32_t i = 0; i < time_series_sets->get_number_series(); i += fold_size) {
         vector<int> training_indexes;
         vector<int> test_indexes;
@@ -281,6 +285,9 @@ int main(int argc, char** argv) {
             }
         }
 
+        time_series_sets->set_training_indexes(training_indexes);
+        time_series_sets->set_test_indexes(test_indexes);
+
         time_series_sets->export_training_series(time_offset, training_inputs, training_outputs);
         time_series_sets->export_test_series(time_offset, validation_inputs, validation_outputs);
 
@@ -294,6 +301,7 @@ int main(int argc, char** argv) {
 
             if (rank == 0) {
                 exalt = new EXALT(population_size, number_islands, max_genomes, time_series_sets->get_input_parameter_names(), time_series_sets->get_output_parameter_names(), time_series_sets->get_normalize_mins(), time_series_sets->get_normalize_maxs(), bp_iterations, learning_rate, use_high_threshold, high_threshold, use_low_threshold, low_threshold, use_dropout, dropout_probability, current_output_directory);
+                exalt->set_possible_node_types(possible_node_types);
 
                 std::chrono::time_point<std::chrono::system_clock> start = std::chrono::system_clock::now();
                 master(max_rank);

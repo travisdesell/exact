@@ -101,6 +101,8 @@ class EXALT {
         void print_population();
         void write_memory_log(string filename);
 
+        void set_possible_node_types(vector<string> possible_node_type_strings);
+
         int32_t population_contains(RNN_Genome* genome, int32_t island);
         bool populations_full() const;
 
