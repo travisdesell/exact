@@ -25,9 +25,7 @@ RNN_Node::~RNN_Node() {
 }
 
 void RNN_Node::initialize_randomly(minstd_rand0 &generator, NormalDistribution &normal_distribution, double mu, double sigma) {
-    bias = normal_distribution.random(generator, mu, sigma);
-    if (bias <= -10.0) bias = -10.0;
-    if (bias >= 10.0) bias = 10.0;
+    bias = bound(normal_distribution.random(generator, mu, sigma));
 }
 
 void RNN_Node::input_fired(int time, double incoming_output) {
