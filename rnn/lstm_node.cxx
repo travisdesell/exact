@@ -47,10 +47,10 @@ void LSTM_Node::initialize_randomly(minstd_rand0 &generator, NormalDistribution 
     input_gate_bias = bound(normal_distribution.random(generator, mu, sigma));
     //input_gate_bias = 0.0;
 
-    forget_gate_update_weight = normal_distribution.random(generator, mu, sigma);
-    forget_gate_weight = normal_distribution.random(generator, mu, sigma);
-    forget_gate_bias = normal_distribution.random(generator, mu, sigma);
-    //forget_gate_bias = 1.0 + normal_distribution.random(generator, mu, sigma);
+    forget_gate_update_weight = bound(normal_distribution.random(generator, mu, sigma));
+    forget_gate_weight = bound(normal_distribution.random(generator, mu, sigma));
+    forget_gate_bias = bound(normal_distribution.random(generator, mu, sigma));
+    //forget_gate_bias = 1.0 + bound(normal_distribution.random(generator, mu, sigma));
 
     cell_weight = bound(normal_distribution.random(generator, mu, sigma));
     cell_bias = bound(normal_distribution.random(generator, mu, sigma));

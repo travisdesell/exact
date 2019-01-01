@@ -1130,9 +1130,11 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
 
     }
 
-    ofstream memory_log_file(log_filename + "_mem");
-    memory_log_file << memory_log.str();
-    memory_log_file.close();
+    if (log_filename != "") {
+        ofstream memory_log_file(log_filename + "_mem");
+        memory_log_file << memory_log.str();
+        memory_log_file.close();
+    }
 
     delete rnn;
 
@@ -1677,9 +1679,7 @@ bool RNN_Genome::add_recurrent_edge(double mu, double sigma, int32_t max_recurre
 
     //edge with same input/output did not exist, now we can create it
     RNN_Recurrent_Edge *recurrent_edge = new RNN_Recurrent_Edge(++edge_innovation_count, recurrent_depth, n1, n2);
-    recurrent_edge->weight = normal_distribution.random(generator, mu, sigma);
-    if (recurrent_edge->weight <= -10.0) recurrent_edge->weight = -10.0;
-    if (recurrent_edge->weight >= 10.0) recurrent_edge->weight = 10.0;
+    recurrent_edge->weight = bound(normal_distribution.random(generator, mu, sigma));
 
     recurrent_edges.insert( upper_bound(recurrent_edges.begin(), recurrent_edges.end(), recurrent_edge, sort_RNN_Recurrent_Edges_by_depth()), recurrent_edge);
 
