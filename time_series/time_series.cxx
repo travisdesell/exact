@@ -451,7 +451,7 @@ void TimeSeriesSet::select_parameters(const vector<string> &input_parameter_name
 void TimeSeriesSets::help_message() {
     cerr << "TimeSeriesSets initialization options from arguments:" << endl;
     cerr << "\tFile input:" << endl;
-    cerr << "\t\t\t--filename <filename>* : list of input CSV files" << endl;
+    cerr << "\t\t\t--filenames <filenames>* : list of input CSV files" << endl;
     cerr << "\t\tWith the following are optional unless you want to split the data into training/testing sets:" << endl;
     cerr << "\t\t\t--training_indexes : array of ints (starting at 0) specifying which files are training files" << endl;
     cerr << "\t\t\t--test_indexes : array of ints (starting at 0) specifying which files are test files" << endl;

@@ -1,3 +1,6 @@
+add_executable(process_sweep_results process_sweep_results)
+target_link_libraries(process_sweep_results exalt_strategy exact_common exact_time_series pthread)
+
 find_package(MPI)
 
 if (MPI_FOUND)
