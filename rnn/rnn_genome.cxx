@@ -292,7 +292,7 @@ int RNN_Genome::get_enabled_node_count(int node_type) {
     int32_t count = 0;
 
     for (int32_t i = 0; i < nodes.size(); i++) {
-        if (nodes[i]->enabled && nodes[i]->node_type == node_type) count++;
+        if (nodes[i]->enabled && nodes[i]->layer_type == HIDDEN_LAYER && nodes[i]->node_type == node_type) count++;
     }
 
     return count;
@@ -562,6 +562,15 @@ double RNN_Genome::get_fitness() const {
     return best_validation_mse;
     //return best_validation_mae;
 }
+
+double RNN_Genome::get_best_validation_mse() const {
+    return best_validation_mse;
+}
+
+double RNN_Genome::get_best_validation_mae() const {
+    return best_validation_mae;
+}
+
 
 
 void RNN_Genome::set_generated_by(string type) {

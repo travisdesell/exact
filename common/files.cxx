@@ -14,7 +14,7 @@ using std::string;
 
 #include "files.hxx"
 
-string get_file_as_string(string file_path) throw (runtime_error) {
+string get_file_as_string(string file_path) noexcept(false) {
     //read the entire contents of the file into a string
     ifstream sites_file(file_path.c_str());
 

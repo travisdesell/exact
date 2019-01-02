@@ -8,6 +8,6 @@ using std::runtime_error;
 using std::string;
 
 
-string get_file_as_string(string file_path) throw (runtime_error);
+string get_file_as_string(string file_path) noexcept(false);
 
 #endif

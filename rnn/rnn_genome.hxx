@@ -103,6 +103,10 @@ class RNN_Genome {
         int32_t get_enabled_node_count();
         int32_t get_node_count();
 
+        double get_fitness() const;
+        double get_best_validation_mse() const;
+        double get_best_validation_mae() const;
+
 
         void set_normalize_bounds(const map<string,double> &_normalize_mins, const map<string,double> &_normalize_maxs);
 
@@ -138,7 +142,6 @@ class RNN_Genome {
 
         int32_t get_generation_id() const;
         void set_generation_id(int32_t generation_id);
-        double get_fitness() const;
 
         void clear_generated_by();
         void update_generation_map(map<string, int32_t> &generation_map);
