@@ -49,6 +49,7 @@ int32_t time_offset = 1;
 int bp_iterations;
 string output_directory;
 int32_t repeats = 5;
+int fold_size = 2;
 
 string process_name;
 
@@ -164,7 +165,7 @@ void master(int max_rank) {
 
     int terminates_sent = 0;
     int current_job = 0;
-    int last_job = rnn_types.size() * time_series_sets->get_number_series() * repeats;
+    int last_job = rnn_types.size() * (time_series_sets->get_number_series() / fold_size) * repeats;
 
     while (true) {
         //wait for a incoming message
@@ -207,7 +208,7 @@ void master(int max_rank) {
             //TODO:
             //check and see if this particular set of jobs for rnn_type has completed,
             //then write the file for that type if it has
-            int32_t jobs_per_rnn = time_series_sets->get_number_series() * repeats;
+            int32_t jobs_per_rnn = (time_series_sets->get_number_series() / fold_size) * repeats;
 
             //get the particular rnn type this job was for, and which results should be there
             int32_t rnn = result.job / jobs_per_rnn;
@@ -230,7 +231,7 @@ void master(int max_rank) {
                 ofstream outfile(output_directory + "/combined_" + rnn_types[rnn] + ".csv");
 
                 int32_t current = rnn_job_start;
-                for (int32_t j = 0; j < time_series_sets->get_number_series(); j++) {
+                for (int32_t j = 0; j < (time_series_sets->get_number_series() / fold_size); j++) {
                     for (int32_t k = 0; k < repeats; k++) {
 
                         outfile << j << "," << k << "," << results[current].milliseconds << "," << results[current].training_mse << "," << results[current].training_mae << "," << results[current].test_mse << "," << results[current].test_mae << endl;
@@ -251,7 +252,7 @@ void master(int max_rank) {
 }
 
 ResultSet handle_job(int current_job) {
-    int32_t jobs_per_rnn = time_series_sets->get_number_series() * repeats;
+    int32_t jobs_per_rnn = (time_series_sets->get_number_series() / fold_size) * repeats;
 
     //get rnn_type
     string rnn_type = rnn_types[ current_job / jobs_per_rnn ] ;
@@ -267,13 +268,19 @@ ResultSet handle_job(int current_job) {
     vector<int> training_indexes;
     vector<int> test_indexes;
 
-    for (uint32_t k = 0; k < time_series_sets->get_number_series(); k++) {
-        if (j == k) {
-            test_indexes.push_back(k);
+    for (uint32_t k = 0; k < time_series_sets->get_number_series(); k += fold_size) {
+        if (j == (k / fold_size)) {
+            for (int l = 0; l < fold_size; l++) {
+                test_indexes.push_back(k + l);
+            }
         } else {
-            training_indexes.push_back(k);
+            for (int l = 0; l < fold_size; l++) {
+                training_indexes.push_back(k + l);
+            }
         }
     }
+
+    cout << "[" << setw(10) << process_name << "] test_indexes.size(): " << test_indexes.size() << ", training_indexes.size(): " << training_indexes.size() << endl;
 
     time_series_sets->set_training_indexes(training_indexes);
     time_series_sets->set_test_indexes(test_indexes);
@@ -452,6 +459,9 @@ int main(int argc, char **argv) {
     get_argument(arguments, "--output_directory", true, output_directory);
 
     get_argument(arguments, "--repeats", true, repeats);
+
+    get_argument(arguments, "--fold_size", true, fold_size);
+
 
     if (rank == 0) {
         //only print verbose info from the master process
