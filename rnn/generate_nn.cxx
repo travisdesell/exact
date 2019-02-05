@@ -461,11 +461,12 @@ void create_ff_w_pheromones(int number_inputs, int number_hidden_layers, int num
           RNN_Edge *edge = new RNN_Edge(++edge_innovation_count, layer_nodes[current_layer - 1][k], node);
           edge->enabled = false;    //Turn elements off for ants to make them active while they march
           rnn_edges.push_back(edge);
-          dum.push_back(new Edge_Pheromone({edge.get_innovation_number(), 1, layer_nodes[current_layer - 1][k].get_innovation_number(), node.get_innovation_number()))
+          dum.push_back(new Edge_Pheromone(edge.get_innovation_number(), 1, layer_nodes[current_layer - 1][k].get_innovation_number(), node.get_innovation_number()))
           for (uint32_t d = 1; d <= max_recurrent_depth; d++) {
-              RNN_Recurrent_Edge *recurrent_edge = new RNN_Recurrent_Edge(++edge_innovation_count, d, layer_nodes[current_layer - 1][k], node);
-              recurrent_edge->enabled = false;
-              recurrent_edges.push_back(recurrent_edge);
+            RNN_Recurrent_Edge *recurrent_edge = new RNN_Recurrent_Edge(++edge_innovation_count, d, layer_nodes[current_layer - 1][k], node);
+            recurrent_edge->enabled = false;
+            recurrent_edges.push_back(recurrent_edge);
+            dum.push_back(new Edge_Pheromone(edge.get_innovation_number(), 1, layer_nodes[current_layer - 1][k].get_innovation_number(), node.get_innovation_number()))
           }
         }
           double*  type_pheromones[5] = new double [5];
@@ -486,9 +487,10 @@ void create_ff_w_pheromones(int number_inputs, int number_hidden_layers, int num
         rnn_edges.push_back(edge);
         dum.push_back(new Edge_Pheromone(edge.get_innovation_number(), 1, layer_nodes[current_layer - 1][k].get_innovation_number(), -1))
         for (uint32_t d = 1; d <= max_recurrent_depth; d++) {
-            RNN_Recurrent_Edge *recurrent_edge = new RNN_Recurrent_Edge(++edge_innovation_count, d, layer_nodes[current_layer - 1][k], output_node);
-            recurrent_edge->enabled = false;
-            recurrent_edges.push_back(recurrent_edge);
+          RNN_Recurrent_Edge *recurrent_edge = new RNN_Recurrent_Edge(++edge_innovation_count, d, layer_nodes[current_layer - 1][k], output_node);
+          recurrent_edge->enabled = false;
+          recurrent_edges.push_back(recurrent_edge);
+          dum.push_back(new Edge_Pheromone(edge.get_innovation_number(), 1, layer_nodes[current_layer - 1][k].get_innovation_number(), -1))
         }
       }
       double*  type_pheromones[5] = new double [5];
