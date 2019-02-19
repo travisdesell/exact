@@ -1,4 +1,4 @@
-#ifndef EXALT_MSE_HXX
+  #ifndef EXALT_MSE_HXX
 #define EXALT_MSE_HXX
 
 #include <vector>

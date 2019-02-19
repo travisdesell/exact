@@ -365,7 +365,6 @@ void RNN::write_predictions(string output_filename, const vector<string> &input_
 
 void RNN::get_analytic_gradient(const vector<double> &test_parameters, const vector< vector<double> > &inputs, const vector< vector<double> > &outputs, double &mse, vector<double> &analytic_gradient, bool using_dropout, bool training, double dropout_probability) {
     analytic_gradient.assign(test_parameters.size(), 0.0);
-
     set_weights(test_parameters);
     forward_pass(inputs, using_dropout, training, dropout_probability);
 
@@ -475,4 +474,3 @@ RNN* RNN::copy() {
 
     return new RNN(node_copies, edge_copies, recurrent_edge_copies);
 }
-

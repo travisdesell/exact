@@ -1,1 +1,3 @@
-add_library(exalt_strategy generate_nn exalt rnn_genome rnn lstm_node ugrnn_node delta_node gru_node mgu_node mse rnn_node rnn_edge rnn_recurrent_edge rnn_node_interface)
+add_library(exalt_strategy generate_nn exalt rnn_genome rnn lstm_node ugrnn_node delta_node gru_node mgu_node mse rnn_node rnn_edge rnn_recurrent_edge rnn_node_interface node_pheromone edge_pheromone)
+
+add_library(acnnto_strategy generate_nn acnnto rnn_genome rnn lstm_node ugrnn_node delta_node gru_node mgu_node mse rnn_node rnn_edge rnn_recurrent_edge rnn_node_interface node_pheromone edge_pheromone)

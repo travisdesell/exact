@@ -216,7 +216,7 @@ string RNN_Genome::print_statistics_header() {
     ostringstream oss;
 
     oss << std::left
-        << setw(12) << "MSE" 
+        << setw(12) << "MSE"
         << setw(12) << "MAE"
         << setw(12) << "Edges"
         << setw(12) << "Rec Edges"
@@ -237,18 +237,18 @@ string RNN_Genome::print_statistics_header() {
 string RNN_Genome::print_statistics() {
     ostringstream oss;
     oss << std::left
-        << setw(12) << parse_fitness(best_validation_mse)  
-        << setw(12) << parse_fitness(best_validation_mae)  
-        << setw(12) << get_edge_count_str(false) 
-        << setw(12) << get_edge_count_str(true) 
-        << setw(12) << get_node_count_str(FEED_FORWARD_NODE) 
-        << setw(12) << get_node_count_str(JORDAN_NODE) 
-        << setw(12) << get_node_count_str(ELMAN_NODE) 
-        << setw(12) << get_node_count_str(UGRNN_NODE) 
-        << setw(12) << get_node_count_str(MGU_NODE) 
-        << setw(12) << get_node_count_str(GRU_NODE) 
-        << setw(12) << get_node_count_str(DELTA_NODE) 
-        << setw(12) << get_node_count_str(LSTM_NODE) 
+        << setw(12) << parse_fitness(best_validation_mse)
+        << setw(12) << parse_fitness(best_validation_mae)
+        << setw(12) << get_edge_count_str(false)
+        << setw(12) << get_edge_count_str(true)
+        << setw(12) << get_node_count_str(FEED_FORWARD_NODE)
+        << setw(12) << get_node_count_str(JORDAN_NODE)
+        << setw(12) << get_node_count_str(ELMAN_NODE)
+        << setw(12) << get_node_count_str(UGRNN_NODE)
+        << setw(12) << get_node_count_str(MGU_NODE)
+        << setw(12) << get_node_count_str(GRU_NODE)
+        << setw(12) << get_node_count_str(DELTA_NODE)
+        << setw(12) << get_node_count_str(LSTM_NODE)
         << setw(12) << get_node_count_str(-1)  //-1 does all nodes
         << generated_by_string();
     return oss.str();
@@ -886,6 +886,7 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
     std::chrono::time_point<std::chrono::system_clock> startClock = std::chrono::system_clock::now();
 
     RNN* rnn = get_rnn();
+
     rnn->set_weights(parameters);
 
     //initialize the initial previous values
@@ -895,6 +896,7 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
 
         rnn->get_analytic_gradient(parameters, inputs[i], outputs[i], mse, analytic_gradient, use_dropout, true, dropout_probability);
         //cout << "got analytic gradient, inputs.size(): " << inputs.size()  << ", outputs.size(): " << outputs.size() << ", log filename: " << log_filename << endl;
+
 
         norm = 0.0;
         for (int32_t j = 0; j < parameters.size(); j++) {
@@ -925,7 +927,6 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
         cout << "parameters[" << i << "]: " << parameters[i] << endl;
     }
     */
-
     unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
     minstd_rand0 generator(seed);
     uniform_real_distribution<double> rng(0, 1);

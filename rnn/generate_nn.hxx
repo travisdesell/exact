@@ -11,13 +11,22 @@ using std::endl;
 #include <vector>
 using std::vector;
 
-#include<tuple>
-using std:tuple
-
 #include<map>
-using std::map
+using std::map;
 
 #include "rnn/rnn_genome.hxx"
+#include "edge_pheromone.hxx"
+#include "node_pheromone.hxx"
+#include "rnn/delta_node.hxx"
+#include "rnn/ugrnn_node.hxx"
+#include "rnn/gru_node.hxx"
+#include "rnn/mgu_node.hxx"
+#include "rnn/lstm_node.hxx"
+#include "rnn/rnn_edge.hxx"
+#include "rnn/rnn_genome.hxx"
+#include "rnn/rnn_node.hxx"
+#include "rnn/rnn_node_interface.hxx"
+
 
 
 RNN_Genome* create_ff(int number_inputs, int number_hidden_layers, int number_hidden_nodes, int number_outputs, int max_recurrent_depth);
@@ -36,7 +45,6 @@ RNN_Genome* create_mgu(int number_inputs, int number_hidden_layers, int number_h
 
 RNN_Genome* create_ugrnn(int number_inputs, int number_hidden_layers, int number_hidden_nodes, int number_outputs, int max_recurrent_depth);
 
-void        create_ff_w_pheromones(int number_inputs, int number_hidden_layers, int number_hidden_nodes, int number_outputs, int max_recurrent_depth,
-                                    RNN_Genome* genome, map <int32_t, NODE_Pheromones> &colony);
-
+void         create_colony_pheromones(int number_inputs, int number_hidden_layers, int number_hidden_nodes, int number_outputs, int max_recurrent_depth,
+                                      map <int32_t, NODE_Pheromones*> &colony1);
 #endif

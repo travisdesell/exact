@@ -214,7 +214,7 @@ class RNN_Genome {
 
 
         friend class EXALT;
-        friend class ANT_COLONY;
+        friend class ACNNTO;
 };
 
 struct sort_genomes_by_fitness {

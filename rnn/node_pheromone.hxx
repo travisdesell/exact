@@ -17,17 +17,24 @@ class NODE_Pheromones {
     private:
       int32_t node_innovation_number;
 
-      vector<EDGE_Pheromone*> &pheromone_lines;
-
       double* type_pheromones;
+      vector<EDGE_Pheromone*> *pheromone_lines;
+
+      int layer_type;;
+      int current_layer;
+
 
     public:
-      NODE_Pheromones(double *_node_pheromones, vector<EDGE_Pheromone*> &_pheromone_lines);
-      // NODE_Pheromones(double* _type_pheromones);
+      NODE_Pheromones(double *_node_pheromones, vector<EDGE_Pheromone*> *_pheromone_lines, int _layer_type, int _current_layer);
+
+      int32_t get_layer_type();
+      int32_t get_current_layer();
+      vector<EDGE_Pheromone*>* get_pheromone_lines();
+
 
       ~NODE_Pheromones();
 
-      friend class ANT_COLONY;
+      friend class ACNNTO;
       friend class TT;
 };
 

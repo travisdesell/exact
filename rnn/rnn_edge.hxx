@@ -56,6 +56,7 @@ class RNN_Edge {
         friend class RNN_Genome;
         friend class RNN;
         friend class EXALT;
+        friend class ACNNTO;
 };
 
 
@@ -77,7 +78,7 @@ struct sort_RNN_Edges_by_depth {
         } else {
             return false;
         }
-    }   
+    }
 };
 
 struct sort_RNN_Edges_by_output_depth {
@@ -98,14 +99,14 @@ struct sort_RNN_Edges_by_output_depth {
         } else {
             return false;
         }
-    }   
+    }
 };
 
 
 struct sort_RNN_Edges_by_innovation {
     bool operator()(RNN_Edge *n1, RNN_Edge *n2) {
         return n1->get_innovation_number() < n2->get_innovation_number();
-    }   
+    }
 };
 
 

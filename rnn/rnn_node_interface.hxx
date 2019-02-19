@@ -101,7 +101,7 @@ class RNN_Node_Interface {
         friend class RNN_Recurrent_Edge;
         friend class RNN;
         friend class RNN_Genome;
-        friend class ANT_COLONY;
+        friend class ACNNTO;
 
         friend void get_mse(RNN* genome, const vector< vector<double> > &expected, double &mse, vector< vector<double> > &deltas);
         friend void get_mae(RNN* genome, const vector< vector<double> > &expected, double &mae, vector< vector<double> > &deltas);

@@ -7,10 +7,10 @@ using std::endl;
 using std::vector;
 
 #include<map>
-using std::map
+using std::map;
 
-#include "Edge_Pheromone.hxx"
-#include "NODE_Pheromones"
+#include "edge_pheromone.hxx"
+#include "node_pheromone.hxx"
 #include "rnn/delta_node.hxx"
 #include "rnn/ugrnn_node.hxx"
 #include "rnn/gru_node.hxx"
@@ -423,81 +423,93 @@ The colony structure components will be:
         -- An array of node-types pheromones
         -- A vector for the edges coming out of the node
 */
-void create_ff_w_pheromones(int number_inputs, int number_hidden_layers, int number_hidden_nodes, int number_outputs, int max_recurrent_depth,
-                                    RNN_Genome* genome, map <int32_t, NODE_Pheromones> &colony) {
-    vector<RNN_Node_Interface*> rnn_nodes;
-    vector< vector<RNN_Node_Interface*> > layer_nodes(2 + number_hidden_layers);
-    vector<RNN_Edge*> rnn_edges;
-    vector<RNN_Recurrent_Edge*> recurrent_edges;
+
+void create_colony_pheromones(int number_inputs, int number_hidden_layers, int number_hidden_nodes, int number_outputs, int max_recurrent_depth, map <int32_t, NODE_Pheromones*> &colony) {
+
+    // map <int32_t, NODE_Pheromones*> colony;
+    vector<vector<int>> layer_nodes(2 + number_hidden_layers);
 
     int node_innovation_count = 0;
     int edge_innovation_count = 0;
-    int current_layer = 0;
+    // int current_layer = 0;
+    vector<EDGE_Pheromone*> dum;
 
-    vector<EDGE_Pheromone*> dum;        //vector to hold pointers to EDGE_Pheromones
-                                        //to append the node they are coming out from
-    for (int32_t i = 0; i < number_inputs; i++) {
-        RNN_Node *node = new RNN_Node(++node_innovation_count, INPUT_LAYER, current_layer, FEED_FORWARD_NODE);
-        node->enabled = false;         //Turn elements off for ants to make them active while they march
-        rnn_nodes.push_back(node);
-        layer_nodes[current_layer].push_back(node);
-        dum.push_back(new Edge_Pheromone(-1, 1, -1, node.get_innovation_number()))
-        /*First node is an imaginary point from where the ants will march to the input nodes..
-          The ID will be -1 to mark the first imaginary node*/
+    /* Building the nodes*/
+    for ( uint32_t i = 0; i<number_inputs; i++){
+        layer_nodes[0].push_back(node_innovation_count++);
     }
-    colony[-1] = new NODE_Pheromones({}, dum);
-    current_layer++;
+    for ( uint32_t i = 1; i<number_hidden_layers+1; i++){
+        for ( uint32_t j = 0; j<number_hidden_nodes; j++){
+            layer_nodes[i].push_back(node_innovation_count++);
+        }
+    }
+    for ( uint32_t i = 0; i<number_outputs; i++){
+        layer_nodes[1 + number_hidden_layers].push_back(-(node_innovation_count++)); //-ve to indicate output node.
+    }
 
+    //Building the pheromones from the starting point
+    for ( uint32_t i = 0; i < number_inputs; i++) {
+        dum.push_back(new EDGE_Pheromone(-1, 1, 0, -1, layer_nodes[0][i]));
+    }
+
+    vector<EDGE_Pheromone*> *dum2 = new vector<EDGE_Pheromone*>;
+    *dum2 = dum;
+    colony[-1] = new NODE_Pheromones(NULL, dum2, -1, -1);
 
     double type_pheromones_initial_values[5] = {1.0, 1.0, 1.0, 1.0, 1.0};     //initially all node type pheromones will be 1.0
-    for (int32_t i = 0; i < number_hidden_layers; i++) {
-      for (uint32_t j = 0; j < number_hidden_nodes; j++) {
-        dum.clear();
-        RNN_Node *node = new RNN_Node(++node_innovation_count, HIDDEN_LAYER, current_layer, FEED_FORWARD_NODE);
-        node->enabled = false;        //Turn elements off for ants to make them active while they march
-        rnn_nodes.push_back(node);
-        layer_nodes[current_layer].push_back(node);
-        for (uint32_t k = 0; k < layer_nodes[current_layer - 1].size(); k++) {
-          RNN_Edge *edge = new RNN_Edge(++edge_innovation_count, layer_nodes[current_layer - 1][k], node);
-          edge->enabled = false;    //Turn elements off for ants to make them active while they march
-          rnn_edges.push_back(edge);
-          dum.push_back(new Edge_Pheromone(edge.get_innovation_number(), 1, layer_nodes[current_layer - 1][k].get_innovation_number(), node.get_innovation_number()))
-          for (uint32_t d = 1; d <= max_recurrent_depth; d++) {
-            RNN_Recurrent_Edge *recurrent_edge = new RNN_Recurrent_Edge(++edge_innovation_count, d, layer_nodes[current_layer - 1][k], node);
-            recurrent_edge->enabled = false;
-            recurrent_edges.push_back(recurrent_edge);
-            dum.push_back(new Edge_Pheromone(edge.get_innovation_number(), 1, layer_nodes[current_layer - 1][k].get_innovation_number(), node.get_innovation_number()))
-          }
+
+    /*
+       - Using the nodes the build the colony.
+       - Every node holds all the edges and recurrent edges comming out of it.
+       - Every node also holds the pheromones to for the node type.
+   */
+    for ( uint32_t i = 0; i<layer_nodes.size(); i++){
+        int layer_type;
+        if (i==0){
+            layer_type = INPUT_LAYER;
         }
-          double*  type_pheromones[5] = new double [5];
-          memcpy(type_pheromones, type_pheromones_initial_values, 5*sizeof(double) );
-          colony[layer_nodes[current_layer - 1][k].get_innovation_number()] = new NODE_Pheromones(type_pheromones, dum);
-      }
-      current_layer++;
+        else if(i>0 && i<layer_nodes.size()-1){
+            layer_type = HIDDEN_LAYER;
+        }
+        else if (i==layer_nodes.size()-1){
+            layer_type = OUTPUT_LAYER;
+        }
+
+        for ( uint32_t j = 0; j<layer_nodes[i].size(); j++){
+            dum.clear();
+            int l = i+1;
+            /*Building the edges' pheromones: Edge to every node in subsequent layer*/
+            while (l<layer_nodes.size()){
+              cout<<"** Creating Edges **\n";
+              for ( uint32_t k = 0; k<layer_nodes[l].size(); k++){
+                cout<<"Edge From Node["<<i<<"]["<<j<<"]: "<<layer_nodes[i][j]<<" To NODE["<<l<<"]["<<j<<"]: "<<layer_nodes[l][k]<<endl;
+                  dum.push_back(new EDGE_Pheromone(edge_innovation_count++, 1, 0, layer_nodes[i][j], layer_nodes[l][k]));
+              }
+              l++;
+            }
+            /*Building recurrent edges' pheromones: Re-Edge to every node in each subsequent time step*/
+            for ( uint32_t m = 1; m<layer_nodes.size(); m++){
+                for ( uint32_t n = 0; n<layer_nodes[m].size(); n++){
+                    for (uint32_t d = 1; d < max_recurrent_depth; d++) {
+                        dum.push_back(new EDGE_Pheromone(edge_innovation_count++, 1, d, layer_nodes[i][j], layer_nodes[m][n]));
+                    }
+                }
+            }
+
+            /*Node types phermones*/
+            double*  type_pheromones = new double[5];
+            memcpy(type_pheromones, type_pheromones_initial_values, 5*sizeof(double) );
+            vector<EDGE_Pheromone*> *dum2 = new vector<EDGE_Pheromone*>;
+            *dum2 = dum;
+            colony[layer_nodes[i][j]] = new NODE_Pheromones(type_pheromones, dum2, layer_type, i);
+            cout<<"Node Number: "<<layer_nodes[i][j]<<" -- Current Layer: "<<i<<" -- Layer type: "<<layer_type<<endl;
+            cout<<"%%%%%%%%%%%%"<<endl;
+        }
     }
 
-    for (int32_t i = 0; i < number_outputs; i++) {
-      RNN_Node *output_node = new RNN_Node(++node_innovation_count, OUTPUT_LAYER, current_layer, FEED_FORWARD_NODE);
-      node->enabled = false;        //Turn elements off for ants to make them active while they march
-      rnn_nodes.push_back(output_node);
-      dum.clear()
-      for (uint32_t k = 0; k < layer_nodes[current_layer - 1].size(); k++) {
-        RNN_Edge *edge = new RNN_Edge(++edge_innovation_count, layer_nodes[current_layer - 1][k], output_node);
-        edge->enabled = false;      //Turn elements off for ants to make them active while they march
-        rnn_edges.push_back(edge);
-        dum.push_back(new Edge_Pheromone(edge.get_innovation_number(), 1, layer_nodes[current_layer - 1][k].get_innovation_number(), -1))
-        for (uint32_t d = 1; d <= max_recurrent_depth; d++) {
-          RNN_Recurrent_Edge *recurrent_edge = new RNN_Recurrent_Edge(++edge_innovation_count, d, layer_nodes[current_layer - 1][k], output_node);
-          recurrent_edge->enabled = false;
-          recurrent_edges.push_back(recurrent_edge);
-          dum.push_back(new Edge_Pheromone(edge.get_innovation_number(), 1, layer_nodes[current_layer - 1][k].get_innovation_number(), -1))
-        }
-      }
-      double*  type_pheromones[5] = new double [5];
-      memcpy(type_pheromones, type_pheromones_initial_values, 5*sizeof(double) );
-      colony[layer_nodes[current_layer - 1][k].get_innovation_number()] = new NODE_Pheromones(type_pheromones, dum);
-  }
-
-  genome = new RNN_Genome(rnn_nodes, rnn_edges, recurrent_edges);
-
+    // cout<<"GENERATE COLONY: Number of Edges in Colony[-1]: "<<colony[-1]->get_pheromone_lines()->size()<<endl;
+    // cout<<"GENERATOR:: Index of first element in map"<<colony[-1]<<endl;
+    // cout<<"GENERATOR: Number of Edges in Colony[-1]: "<<colony[-1]->get_pheromone_lines()->back()->get_edge_phermone()<<endl;
+    // cout<<"GENERATOR:: Number of Edges in Colony[-1]: ";
+    cout<<colony[-1]->get_pheromone_lines()->size()<<endl;
 }
