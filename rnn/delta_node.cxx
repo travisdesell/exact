@@ -92,7 +92,6 @@ void Delta_Node::input_fired(int time, double incoming_output) {
     beta1 += 1;
     beta2 += 1;
 
-
     //cout << "PROPAGATING FORWARD" << endl;
 
     double d2 = input_values[time];

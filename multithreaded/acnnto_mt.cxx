@@ -56,6 +56,8 @@ void acnnto_thread(int id) {
         if (genome == NULL) break;  //generate_individual returns NULL when the search is done
 
         //genome->backpropagate(training_inputs, training_outputs, validation_inputs, validation_outputs);
+        genome->write_graphviz("./test.gv");
+        genome->print_information();
         genome->backpropagate_stochastic(training_inputs, training_outputs, validation_inputs, validation_outputs);
         acnnto_mutex.lock();
         acnnto->insert_genome(genome);

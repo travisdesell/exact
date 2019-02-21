@@ -129,6 +129,43 @@ void RNN_Genome::set_parameter_names(const vector<string> &_input_parameter_name
     output_parameter_names = _output_parameter_names;
 }
 
+void RNN_Genome::print_information() {
+    cout << "GENOME NODES:" << endl;
+    for (int i = 0; i < nodes.size(); i++) {
+        cout << "\tnode innovation number: " << nodes[i]->innovation_number
+            << ", layer_type: " << nodes[i]->layer_type
+            << ", depth: " << nodes[i]->depth
+            << ", enabled: " << nodes[i]->enabled
+            << ", forward_reachable: " << nodes[i]->forward_reachable
+            << ", backward_reachable: " << nodes[i]->backward_reachable
+            << ", total_inputs: " << nodes[i]->total_inputs
+            << ", total_outputs: " << nodes[i]->total_outputs << endl;
+    }
+
+    cout << "GENOME EDGES:" << endl;
+    for (int i = 0; i < edges.size(); i++) {
+        cout << "\tedge innovation number: " << edges[i]->innovation_number
+            << ", enabled: " << edges[i]->enabled
+            << ", forward_reachable: " << edges[i]->forward_reachable
+            << ", backward_reachable: " << edges[i]->backward_reachable
+            << ", input_innovation_number: " << edges[i]->input_innovation_number
+            << ", output_innovation_number: " << edges[i]->output_innovation_number << endl;
+    }
+
+    cout << "GENOME RECURRENT EDGES:" << endl;
+    for (int i = 0; i < recurrent_edges.size(); i++) {
+        cout << "\trecurrent_edge innovation number: " << recurrent_edges[i]->innovation_number
+            << ", recurrent_depth: " << recurrent_edges[i]->recurrent_depth
+            << ", enabled: " << recurrent_edges[i]->enabled
+            << ", forward_reachable: " << recurrent_edges[i]->forward_reachable
+            << ", backward_reachable: " << recurrent_edges[i]->backward_reachable
+            << ", input_innovation_number: " << recurrent_edges[i]->input_innovation_number
+            << ", output_innovation_number: " << recurrent_edges[i]->output_innovation_number << endl;
+    }
+
+
+
+}
 
 RNN_Genome* RNN_Genome::copy() {
     vector<RNN_Node_Interface*> node_copies;
@@ -1247,7 +1284,7 @@ bool RNN_Genome::equals(RNN_Genome* other) {
 }
 
 void RNN_Genome::assign_reachability() {
-    //cout << "assigning reachability!" << endl;
+    cout << "assigning reachability!" << endl;
     //cout << nodes.size() << " nodes, " << edges.size() << " edges, " << recurrent_edges.size() << " recurrent_edges" << endl;
 
     for (int32_t i = 0; i < (int32_t)nodes.size(); i++) {
@@ -1382,11 +1419,17 @@ void RNN_Genome::assign_reachability() {
         }
     }
 
+    cout << "setting input and output counts in assign reachabaility:" << endl;
     //set inputs/outputs
     for (int32_t i = 0; i < (int32_t)edges.size(); i++) {
         if (edges[i]->is_reachable()) {
             edges[i]->input_node->total_outputs++;
             edges[i]->output_node->total_inputs++;
+
+            cout << "edge IN " << edges[i]->innovation_number
+                << " setting input node (" << edges[i]->input_node->innovation_number << ")->total_outputs: " << edges[i]->input_node->total_outputs << endl;
+            cout << "edge IN " << edges[i]->innovation_number
+                << " setting output node (" << edges[i]->output_node->innovation_number << ")->total_inputs: " << edges[i]->output_node->total_inputs << endl;
         }
     }
 
@@ -1394,6 +1437,11 @@ void RNN_Genome::assign_reachability() {
         if (recurrent_edges[i]->is_reachable()) {
             recurrent_edges[i]->input_node->total_outputs++;
             recurrent_edges[i]->output_node->total_inputs++;
+
+            cout << "recurrent_edge IN " << recurrent_edges[i]->innovation_number
+                << " setting input node (" << recurrent_edges[i]->input_node->innovation_number << ")->total_outputs: " << recurrent_edges[i]->input_node->total_outputs << endl;
+            cout << "recurrent_edge IN " << recurrent_edges[i]->innovation_number
+                << " setting output node (" << recurrent_edges[i]->output_node->innovation_number << ")->total_inputs: " << recurrent_edges[i]->output_node->total_inputs << endl;
         }
     }
 

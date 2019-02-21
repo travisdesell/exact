@@ -651,7 +651,7 @@ RNN_Genome* ACNNTO::ants_march(){
         }
       }
       if (add_node){
-        RNN_Node* node = new RNN_Node(-(i+100), 0, 0, 0);
+        RNN_Node* node = new RNN_Node(-(i+100), INPUT_LAYER, 0, FEED_FORWARD_NODE);
         node->enabled = false;
         rnn_nodes.push_back(node);
       }

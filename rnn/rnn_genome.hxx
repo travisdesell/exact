@@ -195,6 +195,7 @@ class RNN_Genome {
         bool merge_node(double mu, double sigma, int node_type, int32_t max_recurrent_depth, int32_t &edge_innovation_count, int32_t &node_innovation_count);
 
 
+        void print_information();
 
         bool equals(RNN_Genome *other);
 
