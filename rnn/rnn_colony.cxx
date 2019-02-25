@@ -55,7 +55,7 @@ using std::vector;
 #include "delta_node.hxx"
 #include "ugrnn_node.hxx"
 #include "mgu_node.hxx"
-#include "rnn_genome.hxx"
+#include "rnn_colony.hxx"
 
 string parse_fitness(double fitness) {
     if (fitness == EXALT_MAX_DOUBLE) {
@@ -66,17 +66,15 @@ string parse_fitness(double fitness) {
 }
 
 
-void RNN_Genome::sort_nodes_by_depth() {
+void RNN_Colony::sort_nodes_by_depth() {
     sort(nodes.begin(), nodes.end(), sort_RNN_Nodes_by_depth());
 }
 
-void RNN_Genome::sort_edges_by_depth() {
+void RNN_Colony::sort_edges_by_depth() {
     sort(edges.begin(), edges.end(), sort_RNN_Edges_by_depth());
 }
 
-RNN_Genome::RNN_Genome(vector<RNN_Node_Interface*> &_nodes, vector<RNN_Edge*> &_edges) {
-    generation_id = -1;
-    island = -1;
+RNN_Colony::RNN_Colony(vector<RNN_Node_Interface*> &_nodes, vector<RNN_Edge*> &_edges) {
 
     best_validation_mse = EXALT_MAX_DOUBLE;
     best_validation_mae = EXALT_MAX_DOUBLE;
@@ -91,17 +89,12 @@ RNN_Genome::RNN_Genome(vector<RNN_Node_Interface*> &_nodes, vector<RNN_Edge*> &_
     bp_iterations = 20000;
     learning_rate = 0.001;
     adapt_learning_rate = false;
-    use_nesterov_momentum = true;
-    //use_nesterov_momentum = false;
     use_reset_weights = false;
 
     use_high_norm = true;
     high_threshold = 1.0;
     use_low_norm = true;
     low_threshold = 0.05;
-
-    use_dropout = false;
-    dropout_probability = 0.5;
 
     log_filename = "";
 
@@ -112,25 +105,18 @@ RNN_Genome::RNN_Genome(vector<RNN_Node_Interface*> &_nodes, vector<RNN_Edge*> &_
     assign_reachability();
 }
 
-RNN_Genome::RNN_Genome(vector<RNN_Node_Interface*> &_nodes, vector<RNN_Edge*> &_edges, vector<RNN_Recurrent_Edge*> &_recurrent_edges) : RNN_Genome(_nodes, _edges) {
+RNN_Colony::RNN_Colony(vector<RNN_Node_Interface*> &_nodes, vector<RNN_Edge*> &_edges, vector<RNN_Recurrent_Edge*> &_recurrent_edges) : RNN_Colony(_nodes, _edges) {
     recurrent_edges = _recurrent_edges;
     assign_reachability();
 }
 
-RNN_Genome::RNN_Genome(vector<RNN_Node_Interface*> &_nodes, vector<RNN_Edge*> &_edges, vector<RNN_Recurrent_Edge*> &_recurrent_edges, uint16_t seed) : RNN_Genome(_nodes, _edges) {
-    recurrent_edges = _recurrent_edges;
-
-    generator = minstd_rand0(seed);
-    assign_reachability();
-}
-
-void RNN_Genome::set_parameter_names(const vector<string> &_input_parameter_names, const vector<string> &_output_parameter_names) {
+void RNN_Colony::set_parameter_names(const vector<string> &_input_parameter_names, const vector<string> &_output_parameter_names) {
     input_parameter_names = _input_parameter_names;
     output_parameter_names = _output_parameter_names;
 }
 
-void RNN_Genome::print_information() {
-    cout << "GENOME NODES:" << endl;
+void RNN_Colony::print_information() {
+    cout << "COLONY NODES:" << endl;
     for (int i = 0; i < nodes.size(); i++) {
         cout << "\tnode innovation number: " << nodes[i]->innovation_number
             << ", layer_type: " << nodes[i]->layer_type
@@ -142,7 +128,7 @@ void RNN_Genome::print_information() {
             << ", total_outputs: " << nodes[i]->total_outputs << endl;
     }
 
-    cout << "GENOME EDGES:" << endl;
+    cout << "COLONY EDGES:" << endl;
     for (int i = 0; i < edges.size(); i++) {
         cout << "\tedge innovation number: " << edges[i]->innovation_number
             << ", enabled: " << edges[i]->enabled
@@ -152,7 +138,7 @@ void RNN_Genome::print_information() {
             << ", output_innovation_number: " << edges[i]->output_innovation_number << endl;
     }
 
-    cout << "GENOME RECURRENT EDGES:" << endl;
+    cout << "COLONY RECURRENT EDGES:" << endl;
     for (int i = 0; i < recurrent_edges.size(); i++) {
         cout << "\trecurrent_edge innovation number: " << recurrent_edges[i]->innovation_number
             << ", recurrent_depth: " << recurrent_edges[i]->recurrent_depth
@@ -167,7 +153,7 @@ void RNN_Genome::print_information() {
 
 }
 
-RNN_Genome* RNN_Genome::copy() {
+RNN_Colony* RNN_Colony::copy() {
     vector<RNN_Node_Interface*> node_copies;
     vector<RNN_Edge*> edge_copies;
     vector<RNN_Recurrent_Edge*> recurrent_edge_copies;
@@ -184,22 +170,17 @@ RNN_Genome* RNN_Genome::copy() {
         recurrent_edge_copies.push_back( recurrent_edges[i]->copy(node_copies) );
     }
 
-    RNN_Genome *other = new RNN_Genome(node_copies, edge_copies, recurrent_edge_copies);
+    RNN_Colony *other = new RNN_Colony(node_copies, edge_copies, recurrent_edge_copies);
 
-    other->island = island;
     other->bp_iterations = bp_iterations;
     other->learning_rate = learning_rate;
     other->adapt_learning_rate = adapt_learning_rate;
-    other->use_nesterov_momentum = use_nesterov_momentum;
     other->use_reset_weights = use_reset_weights;
 
     other->use_high_norm = use_high_norm;
     other->high_threshold = high_threshold;
     other->use_low_norm = use_low_norm;
     other->low_threshold = low_threshold;
-
-    other->use_dropout = use_dropout;
-    other->dropout_probability = dropout_probability;
 
     other->log_filename = log_filename;
 
@@ -223,7 +204,7 @@ RNN_Genome* RNN_Genome::copy() {
 }
 
 
-RNN_Genome::~RNN_Genome() {
+RNN_Colony::~RNN_Colony() {
     RNN_Node_Interface *node;
 
     while (nodes.size() > 0) {
@@ -249,7 +230,7 @@ RNN_Genome::~RNN_Genome() {
     }
 }
 
-string RNN_Genome::print_statistics_header() {
+string RNN_Colony::print_statistics_header() {
     ostringstream oss;
 
     oss << std::left
@@ -271,7 +252,7 @@ string RNN_Genome::print_statistics_header() {
     return oss.str();
 }
 
-string RNN_Genome::print_statistics() {
+string RNN_Colony::print_statistics() {
     ostringstream oss;
     oss << std::left
         << setw(12) << parse_fitness(best_validation_mse)
@@ -291,7 +272,7 @@ string RNN_Genome::print_statistics() {
     return oss.str();
 }
 
-string RNN_Genome::get_edge_count_str(bool recurrent) {
+string RNN_Colony::get_edge_count_str(bool recurrent) {
     ostringstream oss;
     if (recurrent) {
         oss << get_enabled_recurrent_edge_count() << " (" << recurrent_edges.size() << ")";
@@ -301,7 +282,7 @@ string RNN_Genome::get_edge_count_str(bool recurrent) {
     return oss.str();
 }
 
-string RNN_Genome::get_node_count_str(int node_type) {
+string RNN_Colony::get_node_count_str(int node_type) {
     ostringstream oss;
     if (node_type < 0) {
         oss << get_enabled_node_count() << " (" << get_node_count() << ")";
@@ -315,7 +296,7 @@ string RNN_Genome::get_node_count_str(int node_type) {
 }
 
 
-int RNN_Genome::get_enabled_node_count() {
+int RNN_Colony::get_enabled_node_count() {
     int32_t count = 0;
 
     for (int32_t i = 0; i < nodes.size(); i++) {
@@ -325,7 +306,7 @@ int RNN_Genome::get_enabled_node_count() {
     return count;
 }
 
-int RNN_Genome::get_enabled_node_count(int node_type) {
+int RNN_Colony::get_enabled_node_count(int node_type) {
     int32_t count = 0;
 
     for (int32_t i = 0; i < nodes.size(); i++) {
@@ -335,12 +316,12 @@ int RNN_Genome::get_enabled_node_count(int node_type) {
     return count;
 }
 
-int RNN_Genome::get_node_count() {
+int RNN_Colony::get_node_count() {
     return nodes.size();
 }
 
 
-int RNN_Genome::get_node_count(int node_type) {
+int RNN_Colony::get_node_count(int node_type) {
     int32_t count = 0;
 
     for (int32_t i = 0; i < nodes.size(); i++) {
@@ -351,18 +332,18 @@ int RNN_Genome::get_node_count(int node_type) {
 }
 
 
-void RNN_Genome::clear_generated_by() {
+void RNN_Colony::clear_generated_by() {
     generated_by_map.clear();
 }
 
-void RNN_Genome::update_generation_map(map<string, int32_t> &generation_map) {
+void RNN_Colony::update_generation_map(map<string, int32_t> &generation_map) {
     for (auto i = generated_by_map.begin(); i != generated_by_map.end(); i++) {
         generation_map[i->first] += i->second;
     }
 
 }
 
-string RNN_Genome::generated_by_string() {
+string RNN_Colony::generated_by_string() {
     ostringstream oss;
     oss << "[";
     bool first = true;
@@ -376,37 +357,29 @@ string RNN_Genome::generated_by_string() {
     return oss.str();
 }
 
-vector<string> RNN_Genome::get_input_parameter_names() const {
+vector<string> RNN_Colony::get_input_parameter_names() const {
     return input_parameter_names;
 }
 
-vector<string> RNN_Genome::get_output_parameter_names() const {
+vector<string> RNN_Colony::get_output_parameter_names() const {
     return output_parameter_names;
 }
 
-void RNN_Genome::set_normalize_bounds(const map<string,double> &_normalize_mins, const map<string,double> &_normalize_maxs) {
+void RNN_Colony::set_normalize_bounds(const map<string,double> &_normalize_mins, const map<string,double> &_normalize_maxs) {
     normalize_mins = _normalize_mins;
     normalize_maxs = _normalize_maxs;
 }
 
-map<string,double> RNN_Genome::get_normalize_mins() const {
+map<string,double> RNN_Colony::get_normalize_mins() const {
     return normalize_mins;
 }
 
-map<string,double> RNN_Genome::get_normalize_maxs() const {
+map<string,double> RNN_Colony::get_normalize_maxs() const {
     return normalize_maxs;
 }
 
 
-int32_t RNN_Genome::get_island() const {
-    return island;
-}
-
-void RNN_Genome::set_island(int32_t _island) {
-    island = _island;
-}
-
-int32_t RNN_Genome::get_enabled_edge_count() {
+int32_t RNN_Colony::get_enabled_edge_count() {
     int32_t count = 0;
 
     for (int32_t i = 0; i < edges.size(); i++) {
@@ -416,7 +389,7 @@ int32_t RNN_Genome::get_enabled_edge_count() {
     return count;
 }
 
-int32_t RNN_Genome::get_enabled_recurrent_edge_count() {
+int32_t RNN_Colony::get_enabled_recurrent_edge_count() {
     int32_t count = 0;
 
     for (int32_t i = 0; i < recurrent_edges.size(); i++) {
@@ -426,62 +399,50 @@ int32_t RNN_Genome::get_enabled_recurrent_edge_count() {
     return count;
 }
 
-void RNN_Genome::set_bp_iterations(int32_t _bp_iterations) {
+void RNN_Colony::set_bp_iterations(int32_t _bp_iterations) {
     bp_iterations = _bp_iterations;
 }
 
-int32_t RNN_Genome::get_bp_iterations() {
+int32_t RNN_Colony::get_bp_iterations() {
     return bp_iterations;
 }
 
-void RNN_Genome::set_learning_rate(double _learning_rate) {
+void RNN_Colony::set_learning_rate(double _learning_rate) {
     learning_rate = _learning_rate;
 }
 
-void RNN_Genome::set_adapt_learning_rate(bool _adapt_learning_rate) {
+void RNN_Colony::set_adapt_learning_rate(bool _adapt_learning_rate) {
     adapt_learning_rate = _adapt_learning_rate;
 }
 
-void RNN_Genome::set_nesterov_momentum(bool _use_nesterov_momentum) {
-    use_nesterov_momentum = _use_nesterov_momentum;
-}
-
-void RNN_Genome::set_reset_weights(bool _use_reset_weights) {
+void RNN_Colony::set_reset_weights(bool _use_reset_weights) {
     use_reset_weights = _use_reset_weights;
 }
 
 
-void RNN_Genome::disable_high_threshold() {
+void RNN_Colony::disable_high_threshold() {
     use_high_norm = false;
 }
 
-void RNN_Genome::enable_high_threshold(double _high_threshold) {
+void RNN_Colony::enable_high_threshold(double _high_threshold) {
     use_high_norm = true;
     high_threshold = _high_threshold;
 }
 
-void RNN_Genome::disable_low_threshold() {
+void RNN_Colony::disable_low_threshold() {
     use_low_norm = false;
 }
 
-void RNN_Genome::enable_low_threshold(double _low_threshold) {
+void RNN_Colony::enable_low_threshold(double _low_threshold) {
     use_low_norm = true;
     low_threshold = _low_threshold;
 }
 
-void RNN_Genome::disable_dropout() {
-    use_dropout = false;
-}
-
-void RNN_Genome::enable_dropout(double _dropout_probability) {
-    dropout_probability = _dropout_probability;
-}
-
-void RNN_Genome::set_log_filename(string _log_filename) {
+void RNN_Colony::set_log_filename(string _log_filename) {
     log_filename = _log_filename;
 }
 
-void RNN_Genome::get_weights(vector<double> &parameters) {
+void RNN_Colony::get_weights(vector<double> &parameters) {
     parameters.resize(get_number_weights());
 
     uint32_t current = 0;
@@ -502,7 +463,7 @@ void RNN_Genome::get_weights(vector<double> &parameters) {
     }
 }
 
-void RNN_Genome::set_weights(const vector<double> &parameters) {
+void RNN_Colony::set_weights(const vector<double> &parameters) {
     if (parameters.size() != get_number_weights()) {
         cerr << "ERROR! Trying to set weights where the RNN has " << get_number_weights() << " weights, and the parameters vector has << " << parameters.size() << " weights!" << endl;
         exit(1);
@@ -527,7 +488,7 @@ void RNN_Genome::set_weights(const vector<double> &parameters) {
 
 }
 
-uint32_t RNN_Genome::get_number_weights() {
+uint32_t RNN_Colony::get_number_weights() {
     uint32_t number_weights = 0;
 
     for (uint32_t i = 0; i < nodes.size(); i++) {
@@ -548,7 +509,7 @@ uint32_t RNN_Genome::get_number_weights() {
     return number_weights;
 }
 
-void RNN_Genome::initialize_randomly() {
+void RNN_Colony::initialize_randomly() {
     //cout << "initializing randomly!" << endl;
     int number_of_weights = get_number_weights();
     initial_parameters.assign(number_of_weights, 0.0);
@@ -560,7 +521,7 @@ void RNN_Genome::initialize_randomly() {
 }
 
 
-RNN* RNN_Genome::get_rnn() {
+RNN* RNN_Colony::get_rnn() {
     vector<RNN_Node_Interface*> node_copies;
     vector<RNN_Edge*> edge_copies;
     vector<RNN_Recurrent_Edge*> recurrent_edge_copies;
@@ -583,42 +544,34 @@ RNN* RNN_Genome::get_rnn() {
     return new RNN(node_copies, edge_copies, recurrent_edge_copies);
 }
 
-vector<double> RNN_Genome::get_best_parameters() const {
+vector<double> RNN_Colony::get_best_parameters() const {
     return best_parameters;
 }
 
-int32_t RNN_Genome::get_generation_id() const {
-    return generation_id;
-}
-
-void RNN_Genome::set_generation_id(int32_t _generation_id) {
-    generation_id = _generation_id;
-}
-
-double RNN_Genome::get_fitness() const {
+double RNN_Colony::get_fitness() const {
     return best_validation_mse;
     //return best_validation_mae;
 }
 
-double RNN_Genome::get_best_validation_mse() const {
+double RNN_Colony::get_best_validation_mse() const {
     return best_validation_mse;
 }
 
-double RNN_Genome::get_best_validation_mae() const {
+double RNN_Colony::get_best_validation_mae() const {
     return best_validation_mae;
 }
 
 
 
-void RNN_Genome::set_generated_by(string type) {
+void RNN_Colony::set_generated_by(string type) {
     generated_by_map[type]++;
 }
 
-int RNN_Genome::get_generated_by(string type) {
+int RNN_Colony::get_generated_by(string type) {
     return generated_by_map[type];
 }
 
-bool RNN_Genome::sanity_check() {
+bool RNN_Colony::sanity_check() {
     return true;
 }
 
@@ -632,7 +585,7 @@ void forward_pass_thread(RNN* rnn, const vector<double> &parameters, const vecto
     //cout << "mse[" << i << "]: " << mse_current << endl;
 }
 
-void RNN_Genome::get_analytic_gradient(vector<RNN*> &rnns, const vector<double> &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, double &mse, vector<double> &analytic_gradient, bool training) {
+void RNN_Colony::get_analytic_gradient(vector<RNN*> &rnns, const vector<double> &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, double &mse, vector<double> &analytic_gradient, bool training) {
 
     double *mses = new double[rnns.size()];
     double mse_sum = 0.0;
@@ -679,223 +632,7 @@ void RNN_Genome::get_analytic_gradient(vector<RNN*> &rnns, const vector<double> 
     }
 }
 
-
-void RNN_Genome::backpropagate(const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, const vector< vector< vector<double> > > &validation_inputs, const vector< vector< vector<double> > > &validation_outputs) {
-
-    double learning_rate = this->learning_rate / inputs.size();
-    double low_threshold = sqrt(this->low_threshold * inputs.size());
-    double high_threshold = sqrt(this->high_threshold * inputs.size());
-
-    int32_t n_series = inputs.size();
-    vector<RNN*> rnns;
-    for (int32_t i = 0; i < n_series; i++) {
-        rnns.push_back( this->get_rnn() );
-    }
-
-    vector<double> parameters = initial_parameters;
-
-    int n_parameters = this->get_number_weights();
-    vector<double> prev_parameters(n_parameters, 0.0);
-
-    vector<double> prev_velocity(n_parameters, 0.0);
-    vector<double> prev_prev_velocity(n_parameters, 0.0);
-
-    vector<double> analytic_gradient;
-    vector<double> prev_gradient(n_parameters, 0.0);
-
-    double mu = 0.9;
-    double original_learning_rate = learning_rate;
-
-    double prev_mu;
-    double prev_norm;
-    double prev_learning_rate;
-    double prev_mse;
-    double mse;
-
-    double parameter_norm = 0.0;
-    double velocity_norm = 0.0;
-    double norm = 0.0;
-
-    //initialize the initial previous values
-    get_analytic_gradient(rnns, parameters, inputs, outputs, mse, analytic_gradient, true);
-    double validation_mse = get_mse(parameters, validation_inputs, validation_outputs);
-    best_validation_mse = validation_mse;
-    best_validation_mae = get_mae(parameters, validation_inputs, validation_outputs);
-    best_parameters = parameters;
-
-    norm = 0.0;
-    for (int32_t i = 0; i < parameters.size(); i++) {
-        norm += analytic_gradient[i] * analytic_gradient[i];
-    }
-    norm = sqrt(norm);
-
-    ofstream *output_log = NULL;
-    if (log_filename != "") {
-        output_log = new ofstream(log_filename);
-    }
-
-    bool was_reset = false;
-    double reset_count = 0;
-    for (uint32_t iteration = 0; iteration < bp_iterations; iteration++) {
-        prev_mu = mu;
-        prev_norm  = norm;
-        prev_mse = mse;
-        prev_learning_rate = learning_rate;
-
-
-        prev_gradient = analytic_gradient;
-
-        get_analytic_gradient(rnns, parameters, inputs, outputs, mse, analytic_gradient, true);
-
-        this->set_weights(parameters);
-        validation_mse = get_mse(parameters, validation_inputs, validation_outputs);
-        if (validation_mse < best_validation_mse) {
-            best_validation_mse = validation_mse;
-            best_validation_mae = get_mae(parameters, validation_inputs, validation_outputs);
-            best_parameters = parameters;
-        }
-
-        norm = 0.0;
-        velocity_norm = 0.0;
-        parameter_norm = 0.0;
-        for (int32_t i = 0; i < parameters.size(); i++) {
-            norm += analytic_gradient[i] * analytic_gradient[i];
-            velocity_norm += prev_velocity[i] * prev_velocity[i];
-            parameter_norm += parameters[i] * parameters[i];
-        }
-        norm = sqrt(norm);
-        velocity_norm = sqrt(velocity_norm);
-
-        if (output_log != NULL) {
-            (*output_log) << iteration
-                << " " << mse
-                << " " << validation_mse
-                << " " << best_validation_mse << endl;
-        }
-
-        cout << "iteration " << setw(10) << iteration
-             << ", mse: " << setw(10) << mse
-             << ", v_mse: " << setw(10) << validation_mse
-             << ", bv_mse: " << setw(10) << best_validation_mse
-             << ", lr: " << setw(10) << learning_rate
-             << ", norm: " << setw(10) << norm
-             << ", p_norm: " << setw(10) << parameter_norm
-             << ", v_norm: " << setw(10) << velocity_norm;
-
-        if (use_reset_weights && prev_mse * 1.25 < mse) {
-            cout << ", RESETTING WEIGHTS " << reset_count << endl;
-            parameters = prev_parameters;
-            //prev_velocity = prev_prev_velocity;
-            prev_velocity.assign(parameters.size(), 0.0);
-            mse = prev_mse;
-            mu = prev_mu;
-            learning_rate = prev_learning_rate;
-            analytic_gradient = prev_gradient;
-
-
-            //learning_rate *= 0.5;
-            //if (learning_rate < 0.0000001) learning_rate = 0.0000001;
-
-            reset_count++;
-            if (reset_count > 20) break;
-
-            was_reset = true;
-            continue;
-        }
-
-        if (was_reset) {
-            was_reset = false;
-        } else {
-            reset_count -= 0.1;
-            if (reset_count < 0) reset_count = 0;
-            if (adapt_learning_rate) learning_rate = original_learning_rate;
-        }
-
-
-        if (adapt_learning_rate) {
-            if (prev_mse > mse) {
-                learning_rate *= 1.10;
-                if (learning_rate > 1.0) learning_rate = 1.0;
-
-                cout << ", INCREASING LR";
-            }
-        }
-
-        if (use_high_norm && norm > high_threshold) {
-            double high_threshold_norm = high_threshold / norm;
-
-            cout << ", OVER THRESHOLD, multiplier: " << high_threshold_norm;
-
-            for (int32_t i = 0; i < parameters.size(); i++) {
-                analytic_gradient[i] = high_threshold_norm * analytic_gradient[i];
-            }
-
-            if (adapt_learning_rate) {
-                learning_rate *= 0.5;
-                if (learning_rate < 0.0000001) learning_rate = 0.0000001;
-            }
-
-        } else if (use_low_norm && norm < low_threshold) {
-            double low_threshold_norm = low_threshold / norm;
-            cout << ", UNDER THRESHOLD, multiplier: " << low_threshold_norm;
-
-            for (int32_t i = 0; i < parameters.size(); i++) {
-                analytic_gradient[i] = low_threshold_norm * analytic_gradient[i];
-            }
-
-            if (adapt_learning_rate) {
-                if (prev_mse * 1.05 < mse) {
-                    cout << ", WORSE";
-                    learning_rate *= 0.5;
-                    if (learning_rate < 0.0000001) learning_rate = 0.0000001;
-                }
-            }
-        }
-
-        if (reset_count > 0) {
-            double reset_penalty = pow(5.0, -reset_count);
-            cout << ", RESET PENALTY (" << reset_count << "): " << reset_penalty;
-
-            for (int32_t i = 0; i < parameters.size(); i++) {
-                analytic_gradient[i] = reset_penalty * analytic_gradient[i];
-            }
-
-        }
-
-
-        cout << endl;
-
-        if (use_nesterov_momentum) {
-            for (int32_t i = 0; i < parameters.size(); i++) {
-                prev_parameters[i] = parameters[i];
-                prev_prev_velocity[i] = prev_velocity[i];
-
-                double mu_v = prev_velocity[i] * prev_mu;
-
-                prev_velocity[i] = mu_v  - (prev_learning_rate * prev_gradient[i]);
-                parameters[i] += mu_v + ((mu + 1) * prev_velocity[i]);
-            }
-        } else {
-            for (int32_t i = 0; i < parameters.size(); i++) {
-                prev_parameters[i] = parameters[i];
-                prev_gradient[i] = analytic_gradient[i];
-                parameters[i] -= learning_rate * analytic_gradient[i];
-            }
-        }
-    }
-
-    RNN *g;
-    while (rnns.size() > 0) {
-        g = rnns.back();
-        rnns.pop_back();
-        delete g;
-
-    }
-
-    this->set_weights(best_parameters);
-}
-
-void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, const vector< vector< vector<double> > > &validation_inputs, const vector< vector< vector<double> > > &validation_outputs) {
+void RNN_Colony::backpropagate_stochastic(const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, const vector< vector< vector<double> > > &validation_inputs, const vector< vector< vector<double> > > &validation_outputs) {
 
     vector<double> parameters = initial_parameters;
 
@@ -925,9 +662,8 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
     RNN* rnn = get_rnn();
 
     rnn->set_weights(parameters);
-    cout<<"NO: ("<<-1<<") DDRR--DDRR--DDRR--DDRR--DDRR--DDRR--DDRR--DDRR\nDDRR--DDRR--DDRR--DDRR--DDRR--DDRR--DDRR--DDRR\n";
+
     //initialize the initial previous values
-    cout<<"Number of Data Series: "<<n_series<<endl;
     for (uint32_t i = 0; i < n_series; i++) {
         //cout << "getting analytic gradient for input/output: " << i << ", n_series: " << n_series << ", parameters.size: " << parameters.size() << ", log filename: " << log_filename << endl;
         //cout << "inputs.size(): " << inputs.size()  << ", outputs.size(): " << outputs.size() << ", log filename: " << log_filename << endl;
@@ -948,7 +684,7 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
     }
     //cout << "initialized previous values on: " << log_filename << endl;
 
-    //TODO: need to get validation error on the RNN not the genome
+    //TODO: need to get validation error on the RNN not the colony
     double validation_mse = get_mse(parameters, validation_inputs, validation_outputs, false);
     best_validation_mse = validation_mse;
     best_validation_mae = get_mae(parameters, validation_inputs, validation_outputs);
@@ -998,8 +734,7 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
 
     bool was_reset = false;
     int reset_count = 0;
-    cout<<"NO: ("<<0<<") DDRR--DDRR--DDRR--DDRR--DDRR--DDRR--DDRR--DDRR\nDDRR--DDRR--DDRR--DDRR--DDRR--DDRR--DDRR--DDRR\n";
-    getchar();
+
     for (uint32_t iteration = 0; iteration < bp_iterations; iteration++) {
         fisher_yates_shuffle(generator, shuffle_order);
 
@@ -1023,7 +758,13 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
             norm = sqrt(norm);
             avg_norm += norm;
 
-            cout<<"XYOXYOXYOXYOXYOXYOXYOXYOXYOXYOXYOXYOXYOXYOXYOXYOXYOXYOXYOXYO\nXYOXYOXYOXYOXYOXYOXYOXYOXYOXYOXYOXYOXYOXYOXYOXYOXYOXYOXYOXYO\n";
+            /*
+            cout << "iteration " << iteration
+                << ", series: " << random_selection
+                << ", mse: " << mse
+                << ", lr: " << learning_rate
+                << ", norm: " << norm;
+                */
 
             if (use_reset_weights && prev_mse[random_selection] * 2 < mse) {
                 //cout << ", RESETTING WEIGHTS" << endl;
@@ -1170,8 +911,7 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
 
 
         cout << "iteration " << setw(5) << iteration << ", mse: " << training_error << ", v_mse: " << validation_mse << ", bv_mse: " << best_validation_mse << ", avg_norm: " << avg_norm << endl;
-        cout<<"NO: ("<<iteration+1<<") DDRR--DDRR--DDRR--DDRR--DDRR--DDRR--DDRR--DDRR\nDDRR--DDRR--DDRR--DDRR--DDRR--DDRR--DDRR--DDRR\n";
-        getchar();
+
     }
 
     if (log_filename != "") {
@@ -1188,7 +928,7 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
     get_mu_sigma(best_parameters, _mu, _sigma);
 }
 
-double RNN_Genome::get_mse(const vector<double> &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, bool verbose) {
+double RNN_Colony::get_mse(const vector<double> &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, bool verbose) {
     RNN *rnn = get_rnn();
     rnn->set_weights(parameters);
 
@@ -1215,7 +955,7 @@ double RNN_Genome::get_mse(const vector<double> &parameters, const vector< vecto
     return avg_mse;
 }
 
-double RNN_Genome::get_mae(const vector<double> &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, bool verbose) {
+double RNN_Colony::get_mae(const vector<double> &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, bool verbose) {
     RNN *rnn = get_rnn();
     rnn->set_weights(parameters);
 
@@ -1242,7 +982,7 @@ double RNN_Genome::get_mae(const vector<double> &parameters, const vector< vecto
     return avg_mae;
 }
 
-void RNN_Genome::write_predictions(const vector<string> &input_filenames, const vector<double> &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs) {
+void RNN_Colony::write_predictions(const vector<string> &input_filenames, const vector<double> &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs) {
     RNN *rnn = get_rnn();
     rnn->set_weights(parameters);
 
@@ -1258,7 +998,7 @@ void RNN_Genome::write_predictions(const vector<string> &input_filenames, const 
     delete rnn;
 }
 
-bool RNN_Genome::equals(RNN_Genome* other) {
+bool RNN_Colony::equals(RNN_Colony* other) {
 
     if (nodes.size() != other->nodes.size()) return false;
     if (edges.size() != other->edges.size()) return false;
@@ -1280,7 +1020,7 @@ bool RNN_Genome::equals(RNN_Genome* other) {
     return true;
 }
 
-void RNN_Genome::assign_reachability() {
+void RNN_Colony::assign_reachability() {
     cout << "assigning reachability!" << endl;
     //cout << nodes.size() << " nodes, " << edges.size() << " edges, " << recurrent_edges.size() << " recurrent_edges" << endl;
 
@@ -1465,7 +1205,7 @@ void RNN_Genome::assign_reachability() {
 }
 
 
-bool RNN_Genome::outputs_unreachable() {
+bool RNN_Colony::outputs_unreachable() {
     assign_reachability();
 
     for (int32_t i = 0; i < (int32_t)nodes.size(); i++) {
@@ -1475,7 +1215,7 @@ bool RNN_Genome::outputs_unreachable() {
     return false;
 }
 
-void RNN_Genome::get_mu_sigma(const vector<double> &p, double &mu, double &sigma) {
+void RNN_Colony::get_mu_sigma(const vector<double> &p, double &mu, double &sigma) {
     if (p.size() == 0) {
         mu = 0.0;
         sigma = 0.25;
@@ -1532,7 +1272,7 @@ void RNN_Genome::get_mu_sigma(const vector<double> &p, double &mu, double &sigma
 }
 
 
-RNN_Node_Interface* RNN_Genome::create_node(double mu, double sigma, int node_type, int32_t &node_innovation_count, double depth) {
+RNN_Node_Interface* RNN_Colony::create_node(double mu, double sigma, int node_type, int32_t &node_innovation_count, double depth) {
     RNN_Node_Interface *n = NULL;
 
     cout << "CREATING " << NODE_TYPES[node_type] << endl;
@@ -1558,7 +1298,7 @@ RNN_Node_Interface* RNN_Genome::create_node(double mu, double sigma, int node_ty
     return n;
 }
 
-bool RNN_Genome::attempt_edge_insert(RNN_Node_Interface *n1, RNN_Node_Interface *n2, double mu, double sigma, int32_t &edge_innovation_count) {
+bool RNN_Colony::attempt_edge_insert(RNN_Node_Interface *n1, RNN_Node_Interface *n2, double mu, double sigma, int32_t &edge_innovation_count) {
     cout << "\tadding edge between nodes " << n1->innovation_number << " and " << n2->innovation_number << endl;
 
     if (n1->depth == n2->depth) {
@@ -1601,7 +1341,7 @@ bool RNN_Genome::attempt_edge_insert(RNN_Node_Interface *n1, RNN_Node_Interface 
     return true;
 }
 
-bool RNN_Genome::attempt_recurrent_edge_insert(RNN_Node_Interface *n1, RNN_Node_Interface *n2, double mu, double sigma, int32_t max_recurrent_depth, int32_t &edge_innovation_count) {
+bool RNN_Colony::attempt_recurrent_edge_insert(RNN_Node_Interface *n1, RNN_Node_Interface *n2, double mu, double sigma, int32_t max_recurrent_depth, int32_t &edge_innovation_count) {
     cout << "\tadding recurrent edge between nodes " << n1->innovation_number << " and " << n2->innovation_number << endl;
 
     //check to see if an edge between the two nodes already exists
@@ -1632,7 +1372,7 @@ bool RNN_Genome::attempt_recurrent_edge_insert(RNN_Node_Interface *n1, RNN_Node_
     return true;
 }
 
-void RNN_Genome::generate_recurrent_edges(RNN_Node_Interface *node, double mu, double sigma, int32_t max_recurrent_depth, int32_t &edge_innovation_count) {
+void RNN_Colony::generate_recurrent_edges(RNN_Node_Interface *node, double mu, double sigma, int32_t max_recurrent_depth, int32_t &edge_innovation_count) {
 
     if (node->node_type == JORDAN_NODE) {
         for (int32_t i = 0; i < (int32_t)edges.size(); i++) {
@@ -1649,7 +1389,7 @@ void RNN_Genome::generate_recurrent_edges(RNN_Node_Interface *node, double mu, d
 
 
 
-bool RNN_Genome::add_edge(double mu, double sigma, int32_t &edge_innovation_count) {
+bool RNN_Colony::add_edge(double mu, double sigma, int32_t &edge_innovation_count) {
     cout << "\tattempting to add edge!" << endl;
     vector<RNN_Node_Interface*> reachable_nodes;
     for (int32_t i = 0; i < (int32_t)nodes.size(); i++) {
@@ -1681,7 +1421,7 @@ bool RNN_Genome::add_edge(double mu, double sigma, int32_t &edge_innovation_coun
     return attempt_edge_insert(n1, n2, mu, sigma, edge_innovation_count);
 }
 
-bool RNN_Genome::add_recurrent_edge(double mu, double sigma, int32_t max_recurrent_depth, int32_t &edge_innovation_count) {
+bool RNN_Colony::add_recurrent_edge(double mu, double sigma, int32_t max_recurrent_depth, int32_t &edge_innovation_count) {
     cout << "\tattempting to add recurrent edge!" << endl;
 
     vector<RNN_Node_Interface*> possible_input_nodes;
@@ -1744,7 +1484,7 @@ bool RNN_Genome::add_recurrent_edge(double mu, double sigma, int32_t max_recurre
 
 
 //TODO: should probably change these to enable/disable path
-bool RNN_Genome::disable_edge() {
+bool RNN_Colony::disable_edge() {
     //TODO: edge should be reachable
     vector<RNN_Edge*> enabled_edges;
     for (int32_t i = 0; i < edges.size(); i++) {
@@ -1773,7 +1513,7 @@ bool RNN_Genome::disable_edge() {
     }
 }
 
-bool RNN_Genome::enable_edge() {
+bool RNN_Colony::enable_edge() {
     //TODO: edge should be reachable
     vector<RNN_Edge*> disabled_edges;
     for (int32_t i = 0; i < edges.size(); i++) {
@@ -1802,7 +1542,7 @@ bool RNN_Genome::enable_edge() {
 }
 
 
-bool RNN_Genome::split_edge(double mu, double sigma, int node_type, int32_t max_recurrent_depth, int32_t &edge_innovation_count, int32_t &node_innovation_count) {
+bool RNN_Colony::split_edge(double mu, double sigma, int node_type, int32_t max_recurrent_depth, int32_t &edge_innovation_count, int32_t &node_innovation_count) {
     cout << "\tattempting to split an edge!" << endl;
     vector<RNN_Edge*> enabled_edges;
     for (int32_t i = 0; i < edges.size(); i++) {
@@ -1851,7 +1591,7 @@ bool RNN_Genome::split_edge(double mu, double sigma, int node_type, int32_t max_
     return true;
 }
 
-bool RNN_Genome::add_node(double mu, double sigma, int node_type, int32_t max_recurrent_depth, int32_t &edge_innovation_count, int32_t &node_innovation_count) {
+bool RNN_Colony::add_node(double mu, double sigma, int node_type, int32_t max_recurrent_depth, int32_t &edge_innovation_count, int32_t &node_innovation_count) {
     double split_depth = rng_0_1(generator);
 
     vector<RNN_Node_Interface*> possible_inputs;
@@ -1943,7 +1683,7 @@ bool RNN_Genome::add_node(double mu, double sigma, int node_type, int32_t max_re
     return true;
 }
 
-bool RNN_Genome::enable_node() {
+bool RNN_Colony::enable_node() {
     cout << "\tattempting to enable a node!" << endl;
     vector<RNN_Node_Interface*> possible_nodes;
     for (int32_t i = 0; i < (int32_t)nodes.size(); i++) {
@@ -1959,7 +1699,7 @@ bool RNN_Genome::enable_node() {
     return true;
 }
 
-bool RNN_Genome::disable_node() {
+bool RNN_Colony::disable_node() {
     cout << "\tattempting to disable a node!" << endl;
     vector<RNN_Node_Interface*> possible_nodes;
     for (int32_t i = 0; i < (int32_t)nodes.size(); i++) {
@@ -1975,7 +1715,7 @@ bool RNN_Genome::disable_node() {
     return true;
 }
 
-bool RNN_Genome::split_node(double mu, double sigma, int node_type, int32_t max_recurrent_depth, int32_t &edge_innovation_count, int32_t &node_innovation_count) {
+bool RNN_Colony::split_node(double mu, double sigma, int node_type, int32_t max_recurrent_depth, int32_t &edge_innovation_count, int32_t &node_innovation_count) {
     cout << "\tattempting to split a node!" << endl;
     vector<RNN_Node_Interface*> possible_nodes;
     for (int32_t i = 0; i < (int32_t)nodes.size(); i++) {
@@ -2021,7 +1761,7 @@ bool RNN_Genome::split_node(double mu, double sigma, int node_type, int32_t max_
 
     if (input_edges.size() == 0 || output_edges.size() == 0) {
         cout << "\t[split node] error, input or output edges size was 0, cannot create a node" << endl;
-        //write_graphviz("error_genome.gv");
+        //write_graphviz("error_colony.gv");
         //exit(1);
         return false;
     }
@@ -2160,7 +1900,7 @@ bool RNN_Genome::split_node(double mu, double sigma, int node_type, int32_t max_
     return true;
 }
 
-bool RNN_Genome::merge_node(double mu, double sigma, int node_type, int32_t max_recurrent_depth, int32_t &edge_innovation_count, int32_t &node_innovation_count) {
+bool RNN_Colony::merge_node(double mu, double sigma, int node_type, int32_t max_recurrent_depth, int32_t &edge_innovation_count, int32_t &node_innovation_count) {
     cout << "\tattempting to merge a node!" << endl;
     vector<RNN_Node_Interface*> possible_nodes;
     for (int32_t i = 0; i < (int32_t)nodes.size(); i++) {
@@ -2317,7 +2057,7 @@ bool RNN_Genome::merge_node(double mu, double sigma, int node_type, int32_t max_
     return false;
 }
 
-string RNN_Genome::get_color(double weight, bool is_recurrent) {
+string RNN_Colony::get_color(double weight, bool is_recurrent) {
     double max = 0.0;
     double min = 0.0;
 
@@ -2360,12 +2100,12 @@ string RNN_Genome::get_color(double weight, bool is_recurrent) {
 }
 
 
-void RNN_Genome::write_graphviz(string filename) {
+void RNN_Colony::write_graphviz(string filename) {
     ofstream outfile(filename);
 
     outfile << "digraph RNN {" << endl;
     outfile << "labelloc=\"t\";" << endl;
-    outfile << "label=\"Genome Fitness: " << best_validation_mae * 100.0 << "% MAE\";" << endl;
+    outfile << "label=\"Colony Fitness: " << best_validation_mae * 100.0 << "% MAE\";" << endl;
     outfile << endl;
 
     outfile << "\tgraph [pad=\"0.01\", nodesep=\"0.05\", ranksep=\"0.9\"];" << endl;
@@ -2553,11 +2293,11 @@ void read_binary_string(istream &in, string &s, string name, bool verbose) {
 }
 
 
-RNN_Genome::RNN_Genome(string binary_filename, bool verbose) {
+RNN_Colony::RNN_Colony(string binary_filename, bool verbose) {
     ifstream bin_infile(binary_filename, ios::in | ios::binary);
 
     if (!bin_infile.good()) {
-        cerr << "ERROR: could not open RNN genome file '" << binary_filename << "' for reading." << endl;
+        cerr << "ERROR: could not open RNN colony file '" << binary_filename << "' for reading." << endl;
         exit(1);
     }
 
@@ -2565,15 +2305,15 @@ RNN_Genome::RNN_Genome(string binary_filename, bool verbose) {
     bin_infile.close();
 }
 
-RNN_Genome::RNN_Genome(char *array, int32_t length, bool verbose) {
+RNN_Colony::RNN_Colony(char *array, int32_t length, bool verbose) {
     read_from_array(array, length, verbose);
 }
 
-RNN_Genome::RNN_Genome(istream &bin_infile, bool verbose) {
+RNN_Colony::RNN_Colony(istream &bin_infile, bool verbose) {
     read_from_stream(bin_infile, verbose);
 }
 
-void RNN_Genome::read_from_array(char *array, int32_t length, bool verbose) {
+void RNN_Colony::read_from_array(char *array, int32_t length, bool verbose) {
     string array_str;
     for (uint32_t i = 0; i < length; i++) {
         array_str.push_back(array[i]);
@@ -2583,10 +2323,8 @@ void RNN_Genome::read_from_array(char *array, int32_t length, bool verbose) {
     read_from_stream(iss, verbose);
 }
 
-void RNN_Genome::read_from_stream(istream &bin_istream, bool verbose) {
-    if (verbose) cout << "READING GENOME FROM STREAM" << endl;
-    bin_istream.read((char*)&generation_id, sizeof(int32_t));
-    bin_istream.read((char*)&island, sizeof(int32_t));
+void RNN_Colony::read_from_stream(istream &bin_istream, bool verbose) {
+    if (verbose) cout << "READING COLONY FROM STREAM" << endl;
     bin_istream.read((char*)&bp_iterations, sizeof(int32_t));
     bin_istream.read((char*)&learning_rate, sizeof(double));
     bin_istream.read((char*)&adapt_learning_rate, sizeof(bool));
@@ -2602,7 +2340,6 @@ void RNN_Genome::read_from_stream(istream &bin_istream, bool verbose) {
     bin_istream.read((char*)&dropout_probability, sizeof(double));
 
     if (verbose) {
-        cout << "generation_id: " << generation_id << endl;
         cout << "bp_iterations: " << bp_iterations << endl;
         cout << "learning_rate: " << learning_rate << endl;
         cout << "adapt_learning_rate: " << adapt_learning_rate << endl;
@@ -2784,7 +2521,7 @@ void RNN_Genome::read_from_stream(istream &bin_istream, bool verbose) {
     assign_reachability();
 }
 
-void RNN_Genome::write_to_array(char **bytes, int32_t &length, bool verbose) {
+void RNN_Colony::write_to_array(char **bytes, int32_t &length, bool verbose) {
     ostringstream oss;
     write_to_stream(oss, verbose);
 
@@ -2796,17 +2533,15 @@ void RNN_Genome::write_to_array(char **bytes, int32_t &length, bool verbose) {
     }
 }
 
-void RNN_Genome::write_to_file(string bin_filename, bool verbose) {
+void RNN_Colony::write_to_file(string bin_filename, bool verbose) {
     ofstream bin_outfile(bin_filename, ios::out | ios::binary);
     write_to_stream(bin_outfile, verbose);
     bin_outfile.close();
 }
 
-void RNN_Genome::write_to_stream(ostream &bin_ostream, bool verbose) {
-    if (verbose) cout << "WRITING GENOME TO STREAM" << endl;
+void RNN_Colony::write_to_stream(ostream &bin_ostream, bool verbose) {
+    if (verbose) cout << "WRITING COLONY TO STREAM" << endl;
 
-    bin_ostream.write((char*)&generation_id, sizeof(int32_t));
-    bin_ostream.write((char*)&island, sizeof(int32_t));
     bin_ostream.write((char*)&bp_iterations, sizeof(int32_t));
     bin_ostream.write((char*)&learning_rate, sizeof(double));
     bin_ostream.write((char*)&adapt_learning_rate, sizeof(bool));
@@ -2822,7 +2557,6 @@ void RNN_Genome::write_to_stream(ostream &bin_ostream, bool verbose) {
     bin_ostream.write((char*)&dropout_probability, sizeof(double));
 
     if (verbose) {
-        cout << "generation_id: " << generation_id << endl;
         cout << "bp_iterations: " << bp_iterations << endl;
         cout << "learning_rate: " << learning_rate << endl;
         cout << "adapt_learning_rate: " << adapt_learning_rate << endl;

@@ -48,6 +48,10 @@ RNN_Node_Interface::RNN_Node_Interface(int32_t _innovation_number, int32_t _laye
     }
 }
 
+// RNN_Node_Interface::RNN_Node_Interface(const RNN_Node_Interface& rnn_node):rnn_node(_rnn_node){
+//   *this = rnn_node;
+// }
+
 RNN_Node_Interface::~RNN_Node_Interface() {
 }
 

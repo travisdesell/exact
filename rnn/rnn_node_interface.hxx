@@ -68,6 +68,9 @@ class RNN_Node_Interface {
         int32_t total_outputs;
     public:
         RNN_Node_Interface(int32_t _innovation_number, int32_t _layer_type, double _depth);
+
+        // RNN_Node_Interface(const RNN_Node_Interface& _rnn_node);
+
         virtual ~RNN_Node_Interface();
 
         virtual void initialize_randomly(minstd_rand0 &generator, NormalDistribution &normal_distribution, double mu, double sigma) = 0;

@@ -105,9 +105,9 @@ class ACNNTO {
         std::chrono::time_point<std::chrono::system_clock> startClock;
 
         void prepare_new_genome(RNN_Genome* genome);
-        void check_node_existance(vector<RNN_Node_Interface*> &rnn_nodes,   RNN_Node_Interface* node);
-        void check_edge_existance(vector<RNN_Edge*> &rnn_edges, RNN_Edge* edge);
-        void check_recurrent_edge_existance(vector<RNN_Recurrent_Edge*> &recurrent_edges, RNN_Recurrent_Edge* recurrent_edge);
+        RNN_Node* check_node_existance(vector<RNN_Node_Interface*> &rnn_nodes,   EDGE_Pheromone* pheromone_line);
+        void check_edge_existance(vector<RNN_Edge*> &rnn_edges, int32_t innovation_number, RNN_Node* in_node, RNN_Node* out_node);
+        void check_recurrent_edge_existance(vector<RNN_Recurrent_Edge*> &recurrent_edges, int32_t innovation_number, int32_t depth, RNN_Node* in_node, RNN_Node* out_node);
 
         EDGE_Pheromone* pick_line(vector<EDGE_Pheromone*>* edges_pheromones);
         int pick_node_type(double* type_pheromones);

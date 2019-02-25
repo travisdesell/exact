@@ -89,7 +89,7 @@ void RNN_Edge::propagate_forward(int time) {
 
     double output = input_node->output_values[time] * weight;
 
-    cout << "propagating forward at time " << time << " from " << input_node->innovation_number << " to " << output_node->innovation_number << ", value: " << output << ", input: " << input_node->output_values[time] << ", weight: " << weight << endl;
+    cout << "propagating forward on Edge " << innovation_number << " at time " << time << " from " << input_node->innovation_number << " to " << output_node->innovation_number << ", value: " << output << ", input: " << input_node->output_values[time] << ", weight: " << weight << endl;
 
     outputs[time] = output;
     output_node->input_fired(time, output);
@@ -104,7 +104,7 @@ void RNN_Edge::propagate_forward(int time, bool training, double dropout_probabi
 
     double output = input_node->output_values[time] * weight;
 
-    cout << "propagating forward at time " << time << " from " << input_node->innovation_number << " to " << output_node->innovation_number << ", value: " << output << ", input: " << input_node->output_values[time] << ", weight: " << weight << endl;
+    cout << "propagating forward on Edge " << innovation_number << " at time " << time << " from " << input_node->innovation_number << " to " << output_node->innovation_number << ", value: " << output << ", input: " << input_node->output_values[time] << ", weight: " << weight << endl;
 
     if (training) {
         if (drand48() < dropout_probability) {

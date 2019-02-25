@@ -268,14 +268,15 @@ bool ACNNTO::insert_genome(RNN_Genome* genome) {
 
     cout << "genomes evaluated: " << setw(10) << inserted_genomes << ", inserting: " << parse_fitness(genome->get_fitness()) << endl;
 
+    cout<<"YYYYYY: "<< population.back()->get_fitness()<<endl;
+
     if (new_fitness > population.back()->get_fitness()) {
-        cout << "ignoring genome, fitness: " << new_fitness << " > worst population" << " fitness: " << population.back()->get_fitness() << endl;
-        print_population();
-        reward_colony(genome, 0.85);
-        return false;
+      cout << "ignoring genome, fitness: " << new_fitness << " > worst population" << " fitness: " << population.back()->get_fitness() << endl;
+      print_population();
+      reward_colony(genome, 0.85);
+      return false;
     }
-    cout<<"XXXXXXXX-XXXXXXXX-XXXXXXXX-XXXXXXXX-XXXXXXXX-XXXXXXXX\n";
-    cout<<"XXXXXXXX-XXXXXXXX-XXXXXXXX-XXXXXXXX-XXXXXXXX-XXXXXXXX\n";
+
     int32_t duplicate_genome = population_contains(genome);
     if (duplicate_genome >= 0) {
         //if fitness is better, replace this genome with new one
@@ -352,36 +353,6 @@ void ACNNTO::initialize_genome_parameters(RNN_Genome* genome) {
     if (use_high_threshold) genome->enable_high_threshold(high_threshold);
     if (use_low_threshold) genome->enable_low_threshold(low_threshold);
 }
-
-
-/*
-ACNNTO::generate_genome(int number_hidden_layers, int number_hidden_nodes, int max_recurrent_depth) {
-
-    create_ff_w_pheromones(number_inputs, 0, 0, number_outputs, max_recurrent_depth, genome, &colony);
-    genome->set_parameter_names(input_parameter_names, output_parameter_names);
-    genome->set_normalize_bounds(normalize_mins, normalize_maxs);
-
-    edge_innovation_count = genome->edges.size() + genome->recurrent_edges.size();
-    node_innovation_count = genome->nodes.size();
-
-    genome->set_generated_by("initial");
-    initialize_genome_parameters(genome);
-
-    //insert a copy of it into the population so
-    //additional requests can mutate it
-    genome->initialize_randomly();
-    bool initialize_phermones_to_ones = true;
-    colony->initialize_randomly(initialize_phermones_to_ones);
-
-    genome->best_validation_mse = EXALT_MAX_DOUBLE;
-    genome->best_validation_mae = EXALT_MAX_DOUBLE;
-    genome->best_parameters.clear();
-    //genome->clear_generated_by();
-
-    // genome->set_generation_id(generated_genomes);
-}
-*/
-
 
 EDGE_Pheromone* ACNNTO::pick_line(vector<EDGE_Pheromone*>* edges_pheromones){
   double sum_pheromones = 0;
@@ -520,35 +491,40 @@ void ACNNTO::reduce_pheromones(){
 }
 
 
-void ACNNTO::check_node_existance(vector<RNN_Node_Interface*> &rnn_nodes,   RNN_Node_Interface* node){
+RNN_Node* ACNNTO::check_node_existance(vector<RNN_Node_Interface*> &rnn_nodes,   EDGE_Pheromone* pheromone_line){
   for ( int i=0; i<rnn_nodes.size(); i++){
-    if (rnn_nodes[i]->get_innovation_number() == node->get_innovation_number()){
-      return;
+    if (rnn_nodes[i]->get_innovation_number() == abs(pheromone_line->get_output_innovation_number())){
+      return (RNN_Node*)rnn_nodes[i];
     }
   }
-  rnn_nodes.push_back(node);
-  return;
+  rnn_nodes.push_back(new RNN_Node(abs(pheromone_line->get_output_innovation_number()),
+                                    colony[pheromone_line->get_output_innovation_number()]->get_layer_type(),
+                                    colony[pheromone_line->get_output_innovation_number()]->get_current_layer(),
+                                    pick_node_type(colony[pheromone_line->get_output_innovation_number()]->type_pheromones)));
+  return (RNN_Node*)rnn_nodes.back();
 }
-void ACNNTO::check_edge_existance(vector<RNN_Edge*> &rnn_edges, RNN_Edge* edge){
+void ACNNTO::check_edge_existance(vector<RNN_Edge*> &rnn_edges, int32_t innovation_number, RNN_Node* in_node, RNN_Node* out_node){
   for ( int i=0; i<rnn_edges.size(); i++){
-    if (rnn_edges[i]->get_innovation_number() == edge->get_innovation_number()){
+    if (rnn_edges[i]->get_innovation_number() == innovation_number){
       return;
     }
   }
-  rnn_edges.push_back(edge);
+  rnn_edges.push_back(new RNN_Edge(innovation_number, in_node, out_node));
   return;
 }
-void ACNNTO::check_recurrent_edge_existance(vector<RNN_Recurrent_Edge*> &recurrent_edges, RNN_Recurrent_Edge* recurrent_edge){
+void ACNNTO::check_recurrent_edge_existance(vector<RNN_Recurrent_Edge*> &recurrent_edges, int32_t innovation_number, int32_t depth, RNN_Node* in_node, RNN_Node* out_node){
   for ( int i=0; i<recurrent_edges.size(); i++){
-    if (recurrent_edges[i]->get_innovation_number() == recurrent_edge->get_innovation_number()){
+    if (recurrent_edges[i]->get_innovation_number() == innovation_number){
       return;
     }
   }
-  recurrent_edges.push_back(recurrent_edge);
+  recurrent_edges.push_back(new RNN_Recurrent_Edge(innovation_number, depth, in_node, out_node));
   return;
 }
 
 void ACNNTO::prepare_new_genome(RNN_Genome* genome){
+  int32_t island  = -1;
+  genome->set_island(island);
   genome->set_parameter_names(input_parameter_names, output_parameter_names);
   genome->set_normalize_bounds(normalize_mins, normalize_maxs);
 
@@ -557,10 +533,11 @@ void ACNNTO::prepare_new_genome(RNN_Genome* genome){
 
   genome->set_generated_by("initial");
   initialize_genome_parameters(genome);
-
+  genome->initialize_randomly();
   genome->best_validation_mse = EXALT_MAX_DOUBLE;
   genome->best_validation_mae = EXALT_MAX_DOUBLE;
   genome->best_parameters.clear();
+  // insert_genome(genome->copy());
   //genome->clear_generated_by();
 
   // genome->set_generation_id(generated_genomes);
@@ -588,13 +565,14 @@ RNN_Genome* ACNNTO::ants_march(){
         reduce_pheromones();
       }
       pheromone_line = pick_line(colony[-1]->pheromone_lines); //begine with imaginary node
-      RNN_Node* node = new RNN_Node(abs(pheromone_line->get_output_innovation_number()),
-                                        colony[pheromone_line->get_output_innovation_number()]->get_layer_type(),
-                                        colony[pheromone_line->get_output_innovation_number()]->get_current_layer(), pick_node_type(colony[pheromone_line->get_output_innovation_number()]->type_pheromones)
-                                      );
-      check_node_existance(rnn_nodes,  node);
+      // RNN_Node* node = new RNN_Node(abs(pheromone_line->get_output_innovation_number()),
+      //                                   colony[pheromone_line->get_output_innovation_number()]->get_layer_type(),
+      //                                   colony[pheromone_line->get_output_innovation_number()]->get_current_layer(),
+      //                                   pick_node_type(colony[pheromone_line->get_output_innovation_number()]->type_pheromones)
+      //                                 );
+      RNN_Node* current_node = check_node_existance(rnn_nodes,  pheromone_line);
 
-      RNN_Node* previous_node = node;
+      RNN_Node* previous_node = current_node;
       cout<<"FIRST NODE: "<<previous_node->get_innovation_number()<<endl;
       cout<<"\t************************************************\n";
       cout<<"\t************************************************\n";
@@ -608,24 +586,25 @@ RNN_Genome* ACNNTO::ants_march(){
         for (int y=0; y<rnn_nodes.size(); y++)
         cout<<"\t\tNODES["<<y<<"]: "<<rnn_nodes[y]->get_innovation_number()<<" Layer Type: "<<rnn_nodes[y]->layer_type<<endl;
         cout<<"\tNumber of Nodes: "<<rnn_nodes.size()<<endl;
-        RNN_Node* current_node = new RNN_Node(abs(pheromone_line->get_output_innovation_number()),
-                                          colony[pheromone_line->get_output_innovation_number()]->get_layer_type(),
-                                          colony[pheromone_line->get_output_innovation_number()]->get_current_layer(),
-                                          pick_node_type(colony[pheromone_line->get_output_innovation_number()]->type_pheromones));
-        check_node_existance(rnn_nodes, current_node);
+        // RNN_Node* current_node = new RNN_Node(abs(pheromone_line->get_output_innovation_number()),
+        //                                   colony[pheromone_line->get_output_innovation_number()]->get_layer_type(),
+        //                                   colony[pheromone_line->get_output_innovation_number()]->get_current_layer(),
+        //                                   pick_node_type(colony[pheromone_line->get_output_innovation_number()]->type_pheromones));
+        // current_node = check_node_existance(rnn_nodes, current_node);
+        current_node = check_node_existance(rnn_nodes, pheromone_line);
 
 
 
 
         cout<<"\tEdge Depth: "<<pheromone_line->get_depth()<<endl;
         if (pheromone_line->get_depth()==0 && previous_node->get_innovation_number()<current_node->get_innovation_number()){
-          check_edge_existance(rnn_edges, new RNN_Edge(pheromone_line->get_edge_innovation_number(), previous_node, current_node));
+          check_edge_existance(rnn_edges, pheromone_line->get_edge_innovation_number(), previous_node, current_node);
           cout<<"\t**EDGES**\n";
           for (int y=0; y<rnn_edges.size(); y++)
             cout<<"\t\tEDGE["<<y<<"] (innov: "<<rnn_edges[y]->innovation_number<<")  From NODE: "<<rnn_edges[y]->get_input_innovation_number()<<" -- To NODE: "<<rnn_edges[y]->get_output_innovation_number()<<endl;
         }
         else{
-          check_recurrent_edge_existance(recurrent_edges, new RNN_Recurrent_Edge(pheromone_line->get_edge_innovation_number(), pheromone_line->get_depth(), previous_node, current_node));
+          check_recurrent_edge_existance(recurrent_edges, pheromone_line->get_edge_innovation_number(), pheromone_line->get_depth(), previous_node, current_node);
           cout<<"\t**RecEDGES**\n";
           for (int y=0; y<recurrent_edges.size(); y++)
             cout<<"\t\tRecEDGE["<<y<<"] (inov: "<<recurrent_edges[y]->innovation_number<<")  From NODE: "<<recurrent_edges[y]->get_input_innovation_number()<<" -- To NODE: "<<recurrent_edges[y]->get_output_innovation_number()<<" Depth: "<<recurrent_edges[y]->recurrent_depth<<endl;
@@ -641,7 +620,6 @@ RNN_Genome* ACNNTO::ants_march(){
     for (int y=0; y<recurrent_edges.size(); y++)
     cout<<"\t\tRecEDGE["<<y<<"] (inov: "<<recurrent_edges[y]->innovation_number<<")  From NODE: "<<recurrent_edges[y]->get_input_innovation_number()<<" -- To NODE: "<<recurrent_edges[y]->get_output_innovation_number()<<" Depth: "<<recurrent_edges[y]->recurrent_depth<<endl;
 
-    bool add_node;
     for (int i=0; i<this->number_inputs; i++){
       bool add_node = true;
       for (int j=0; j<rnn_nodes.size(); j++){

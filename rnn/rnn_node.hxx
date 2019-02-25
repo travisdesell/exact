@@ -18,6 +18,8 @@ class RNN_Node : public RNN_Node_Interface {
         RNN_Node(int _innovation_number, int _layer_type, double _depth, int _node_type);
         ~RNN_Node();
 
+        // RNN_Node(const RNN_Node_Interface& _rnn_node_interface);
+
         void initialize_randomly(minstd_rand0 &generator, NormalDistribution &normal_distribution, double mu, double sigma);
 
         void input_fired(int time, double incoming_output);

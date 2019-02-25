@@ -24,6 +24,9 @@ RNN_Node::RNN_Node(int _innovation_number, int _layer_type, double _depth, int _
 RNN_Node::~RNN_Node() {
 }
 
+// RNN_Node(const RNN_Node_Interface& _rnn_node_interface) : RNN_Node_Interface(_rnn_node_interface){
+// }
+
 void RNN_Node::initialize_randomly(minstd_rand0 &generator, NormalDistribution &normal_distribution, double mu, double sigma) {
     bias = bound(normal_distribution.random(generator, mu, sigma));
 }

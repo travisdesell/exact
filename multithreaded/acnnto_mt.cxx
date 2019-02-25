@@ -113,6 +113,7 @@ int main(int argc, char** argv) {
 
 
     vector<thread> threads;
+    cout<<"NUMBER OF THREADS: "<<number_threads<<endl;
     for (int32_t i = 0; i < number_threads; i++) {
         threads.push_back( thread(acnnto_thread, i) );
     }
