@@ -596,6 +596,7 @@ void RNN_Genome::set_generation_id(int32_t _generation_id) {
 }
 
 double RNN_Genome::get_fitness() const {
+    cout << "BEST VALIDATION MSE: " << best_validation_mse << endl;
     return best_validation_mse;
     //return best_validation_mae;
 }
@@ -1423,11 +1424,10 @@ void RNN_Genome::assign_reachability() {
             edges[i]->input_node->total_outputs++;
             edges[i]->output_node->total_inputs++;
 
-            // cout << "edge IN " << edges[i]->innovation_number
-            //     << " setting input node (" << edges[i]->input_node->innovation_number << ")->total_outputs: " << edges[i]->input_node->total_outputs << " IN ADDRESS: " << edges[i]->input_node << endl;
-            // cout << "edge IN " << edges[i]->innovation_number
-            //     << " setting output node (" << edges[i]->output_node->innovation_number << ")->total_inputs: " << edges[i]->output_node->total_inputs << " OUT ADDRESS: " << edges[i]->output_node << endl;
-            // cout<<"edge IN ADDRESS: "<<edges[i]<<endl;
+            cout << "edge IN " << edges[i]->innovation_number << " ADD: "<<edges[i]
+                << " setting input node (" << edges[i]->input_node->innovation_number << ")->total_outputs: " << edges[i]->input_node->total_outputs << " Node ADD: " << edges[i]->input_node << endl;
+            cout << "edge IN " << edges[i]->innovation_number << " ADD: "<<edges[i]
+                << " setting output node (" << edges[i]->output_node->innovation_number << ")->total_inputs: " << edges[i]->output_node->total_inputs << " Node ADD: " << edges[i]->output_node << endl;
         }
     }
 
@@ -1436,10 +1436,10 @@ void RNN_Genome::assign_reachability() {
             recurrent_edges[i]->input_node->total_outputs++;
             recurrent_edges[i]->output_node->total_inputs++;
 
-            // cout << "recurrent_edge IN " << recurrent_edges[i]->innovation_number
-            //     << " setting input node (" << recurrent_edges[i]->input_node->innovation_number << ")->total_outputs: " << recurrent_edges[i]->input_node->total_outputs << endl;
-            // cout << "recurrent_edge IN " << recurrent_edges[i]->innovation_number
-            //     << " setting output node (" << recurrent_edges[i]->output_node->innovation_number << ")->total_inputs: " << recurrent_edges[i]->output_node->total_inputs << endl;
+            cout << "recurrent_edge IN " << recurrent_edges[i]->innovation_number <<" ADD: "<< recurrent_edges[i]
+                << " setting input node (" << recurrent_edges[i]->input_node->innovation_number << ")->total_outputs: " << recurrent_edges[i]->input_node->total_outputs << " Node ADD: " << recurrent_edges[i]->input_node << endl;
+            cout << "recurrent_edge IN " << recurrent_edges[i]->innovation_number <<" ADD: "<< recurrent_edges[i]
+                << " setting output node (" << recurrent_edges[i]->output_node->innovation_number << ")->total_inputs: " << recurrent_edges[i]->output_node->total_inputs << " Node ADD: " << recurrent_edges[i]->output_node << endl;
         }
     }
 

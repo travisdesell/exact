@@ -33,6 +33,8 @@ class ACNNTO {
         int32_t number_islands;
         vector<RNN_Genome*> population;
 
+        map <int32_t, NODE_Pheromones*> colony;
+
         int32_t max_genomes;
         int32_t generated_genomes;
         int32_t inserted_genomes;
@@ -96,8 +98,6 @@ class ACNNTO {
 
         map<string,double> normalize_mins;
         map<string,double> normalize_maxs;
-
-        map <int32_t, NODE_Pheromones*> colony;
 
 
         ostringstream memory_log;
