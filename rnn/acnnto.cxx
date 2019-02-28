@@ -62,13 +62,21 @@ ACNNTO::~ACNNTO() {
         if ( i == colony.size()-1){
             i*=-1;
         }
+        cout<<"I: "<<i<<endl;
         int p_size = colony[i]->pheromone_lines->size();
         for ( int j=0; j<p_size; j++){
             delete colony[i]->pheromone_lines->at(j);
         }
         delete colony[i]->pheromone_lines;
+        // delete colony[i]->type_pheromones;
+    }
+    for (int i=-1; i<c_size; i++){
+        if ( i == colony.size()-1){
+            i*=-1;
+        }
         colony.erase(i);
     }
+    cout<<"INFO: CLEANED CLONY!"<<endl;
 }
 
 
@@ -510,16 +518,20 @@ void ACNNTO::reward_colony(RNN_Genome* g, double treat_pheromone){
 
 /*Will reduce phermones periodically*/
 void ACNNTO::reduce_pheromones(){
-  for ( int i=0; i<colony.size(); i++){
-    colony[i]->type_pheromones[0]*=PERIODIC_PHEROMONE_REDUCTION_RATIO;
-    colony[i]->type_pheromones[1]*=PERIODIC_PHEROMONE_REDUCTION_RATIO;
-    colony[i]->type_pheromones[2]*=PERIODIC_PHEROMONE_REDUCTION_RATIO;
-    colony[i]->type_pheromones[3]*=PERIODIC_PHEROMONE_REDUCTION_RATIO;
-    colony[i]->type_pheromones[4]*=PERIODIC_PHEROMONE_REDUCTION_RATIO;
-    for ( int j=0; j<colony[i]->pheromone_lines->size(); j++){
-          colony[i]->pheromone_lines->at(j)->edge_pheromone*=PERIODIC_PHEROMONE_REDUCTION_RATIO;
+    cout<<"PROBLEM IS BELOW!\n";
+    for ( int i=-1; i<colony.size(); i++){
+        if(i==colony.size()-1)
+            i*=-1;
+        colony[i]->type_pheromones[0]*=PERIODIC_PHEROMONE_REDUCTION_RATIO;
+        colony[i]->type_pheromones[1]*=PERIODIC_PHEROMONE_REDUCTION_RATIO;
+        colony[i]->type_pheromones[2]*=PERIODIC_PHEROMONE_REDUCTION_RATIO;
+        colony[i]->type_pheromones[3]*=PERIODIC_PHEROMONE_REDUCTION_RATIO;
+        colony[i]->type_pheromones[4]*=PERIODIC_PHEROMONE_REDUCTION_RATIO;
+        for ( int j=0; j<colony[i]->pheromone_lines->size(); j++){
+            colony[i]->pheromone_lines->at(j)->edge_pheromone*=PERIODIC_PHEROMONE_REDUCTION_RATIO;
+        }
     }
-  }
+    cout<<"PROBLEM IS ABOVE!\n";
 }
 
 
@@ -592,10 +604,10 @@ RNN_Genome* ACNNTO::ants_march(){
     rnn_edges.clear();
     recurrent_edges.clear();
     for (int ant=0; ant<ANTS; ant++){
-      cout<<"ANT:: "<<ant<<endl;
-      if (generated_genomes!=0 && generated_genomes%100==0){
-        reduce_pheromones();
-      }
+        cout<<"ANT:: "<<ant<<endl;
+        if (generated_genomes!=0 && generated_genomes%100==0){
+          reduce_pheromones();
+}
       pheromone_line = pick_line(colony[-1]->pheromone_lines); //begine with imaginary node
       // RNN_Node* node = new RNN_Node(abs(pheromone_line->get_output_innovation_number()),
       //                                   colony[pheromone_line->get_output_innovation_number()]->get_layer_type(),
@@ -678,7 +690,7 @@ RNN_Genome* ACNNTO::ants_march(){
     RNN_Genome* g = new RNN_Genome(rnn_nodes, rnn_edges, recurrent_edges);
     g->write_graphviz("genome.gv");
     cout<<"PRESS ENTER TO CONTINUE...\n";
-    getchar();
+    // getchar();
     if (!g->outputs_unreachable()){
       g->set_generation_id(generated_genomes++);
       prepare_new_genome(g);
