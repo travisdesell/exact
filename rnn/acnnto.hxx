@@ -17,6 +17,10 @@ using std::to_string;
 #include <vector>
 using std::vector;
 
+#include <ios>
+using std::hex;
+using std::ios;
+
 #include "rnn_genome.hxx"
 #include "edge_pheromone.hxx"
 #include "node_pheromone.hxx"
@@ -24,11 +28,24 @@ using std::vector;
 #include "generate_nn.hxx"
 
 #define ANTS 50
+#define HIDDEN_LAYERS_DEPTH 0
+#define HIDDEN_LAYER_NODES  0
 #define PHEROMONES_THERESHOLD 20
 #define PERIODIC_PHEROMONE_REDUCTION_RATIO 0.75
+#define PHEROMONE_DECAY_PARAMETER 0.8
+#define PHEROMONE_UPDATE_STRENGTH 0.7
+#define EXPLORATION_FACTOR 0.7          //Used in pick_node_type() which is I'm not using ( using the old_pick_node_type() )
+#define PHEROMONE_HEURISTIC 0.3
 
 class ACNNTO {
     private:
+        int32_t ants;
+        int32_t hidden_layers_depth;
+        int32_t hidden_layer_nodes;
+        double  pheromone_decay_parameter;
+        double  pheromone_update_strength;
+        double  pheromone_heuristic;
+
         int32_t population_size;
         int32_t number_islands;
         vector<RNN_Genome*> population;
@@ -98,6 +115,7 @@ class ACNNTO {
 
         map<string,double> normalize_mins;
         map<string,double> normalize_maxs;
+        map<int32_t, int32_t> node_types;
 
 
         ostringstream memory_log;
@@ -110,9 +128,12 @@ class ACNNTO {
         void check_recurrent_edge_existance(vector<RNN_Recurrent_Edge*> &recurrent_edges, int32_t innovation_number, int32_t depth, RNN_Node* in_node, RNN_Node* out_node);
 
         EDGE_Pheromone* pick_line(vector<EDGE_Pheromone*>* edges_pheromones);
+        int old_pick_node_type(double* type_pheromones);
         int pick_node_type(double* type_pheromones);
-        void reward_colony(RNN_Genome* g, double treat);
+        void reward_colony(RNN_Genome* g, bool reward);
+        void old_reward_colony(RNN_Genome* g, double treat);
         void reduce_pheromones();
+        void evaporate_pheromones();
 
 
 
@@ -120,7 +141,9 @@ class ACNNTO {
         ACNNTO(int32_t _population_size, int32_t _max_genomes, const vector<string> &_input_parameter_names,
           const vector<string> &_output_parameter_names, const map<string,double> &_normalize_mins, const map<string,double> &_normalize_maxs,
           int32_t _bp_iterations, double _learning_rate, bool _use_high_threshold, double _high_threshold, bool _use_low_threshold,
-          double _low_threshold, string _output_directory);
+          double _low_threshold, string _output_directory, int32_t _ants, int32_t _hidden_layers_depth,
+          int32_t _hidden_layer_nodes, double _pheromone_decay_parameter, double _pheromone_update_strength,
+          double _pheromone_heuristic);
 
         ~ACNNTO();
 
@@ -149,6 +172,9 @@ class ACNNTO {
         string get_output_directory() const;
 
         RNN_Genome* ants_march();
+
+        void write_to_file(string bin_filename, bool verbose = false);
+        void write_to_stream(ostream &bin_stream, bool verbose = false);
 };
 
 #endif
