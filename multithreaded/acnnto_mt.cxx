@@ -44,7 +44,6 @@ vector< vector< vector<double> > > training_inputs;
 vector< vector< vector<double> > > training_outputs;
 vector< vector< vector<double> > > validation_inputs;
 vector< vector< vector<double> > > validation_outputs;
-// cout<<"XYOXYOXYOXYOXYOXYOXYOXYOXYOXYOXYOXYOXYOXYOXYOXYOXYOXYOXYOXYO\nXYOXYOXYOXYOXYOXYOXYOXYOXYOXYOXYOXYOXYOXYOXYOXYOXYOXYOXYOXY\n";
 
 void acnnto_thread(int id) {
 
@@ -56,7 +55,7 @@ void acnnto_thread(int id) {
         if (genome == NULL) break;  //generate_individual returns NULL when the search is done
 
         //genome->backpropagate(training_inputs, training_outputs, validation_inputs, validation_outputs);
-        genome->write_graphviz("./test.gv");
+        // genome->write_graphviz("./test.gv");
         genome->print_information();
         genome->backpropagate_stochastic(training_inputs, training_outputs, validation_inputs, validation_outputs);
         acnnto_mutex.lock();
@@ -64,6 +63,8 @@ void acnnto_thread(int id) {
         acnnto_mutex.unlock();
 
         delete genome;
+        cout<<"ONE MORE GENOME COMING!\n";
+        getchar();
     }
 }
 
@@ -106,10 +107,31 @@ int main(int argc, char** argv) {
     double low_threshold = 0.05;
     bool use_low_threshold = get_argument(arguments, "--low_threshold", false, low_threshold);
 
+    int32_t number_of_ants = 50;
+    get_argument(arguments, "--ants", false, number_of_ants);
+
+    int32_t hidden_layers_depth = 0;
+    get_argument(arguments, "--hidden_layers_depth", false, hidden_layers_depth);
+
+    int32_t hidden_layer_nodes = 0;
+    get_argument(arguments, "--hidden_layer_nodes", false, hidden_layer_nodes);
+
+    double pheromone_decay_parameter = 0.8;
+    get_argument(arguments, "--pheromone_decay_parameter", false, pheromone_decay_parameter);
+
+    double pheromone_update_strength = 0.7;
+    get_argument(arguments, "--pheromone_update_strength", false, pheromone_update_strength);
+
+    double pheromone_heuristic = 0.3;
+    get_argument(arguments, "--pheromone_heuristic", false, pheromone_heuristic);
+
+    int32_t max_recurrent_depth = 3;
+    get_argument(arguments, "--max_recurrent_depth", true, max_genomes);
+
     string output_directory = "";
     get_argument(arguments, "--output_directory", false, output_directory);
 
-    acnnto = new ACNNTO(population_size, max_genomes, time_series_sets->get_input_parameter_names(), time_series_sets->get_output_parameter_names(), time_series_sets->get_normalize_mins(), time_series_sets->get_normalize_maxs(), bp_iterations, learning_rate, use_high_threshold, high_threshold, use_low_threshold, low_threshold, output_directory);
+    acnnto = new ACNNTO(population_size, max_genomes, time_series_sets->get_input_parameter_names(), time_series_sets->get_output_parameter_names(), time_series_sets->get_normalize_mins(), time_series_sets->get_normalize_maxs(), bp_iterations, learning_rate, use_high_threshold, high_threshold, use_low_threshold, low_threshold, output_directory, number_of_ants, hidden_layers_depth, hidden_layer_nodes, pheromone_decay_parameter, pheromone_update_strength, pheromone_heuristic, max_recurrent_depth );
 
 
     vector<thread> threads;
