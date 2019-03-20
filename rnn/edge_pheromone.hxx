@@ -17,13 +17,13 @@ class EDGE_Pheromone {
 
     public:
 
-        EDGE_Pheromone(int32_t _edge_innovation_number, double _edge_pheromone, int _depth, int _input_innovation_number, int _output_innovation_number);
+        EDGE_Pheromone(int32_t _edge_innovation_number, double _edge_pheromone, int _depth, int32_t _input_innovation_number, int32_t _output_innovation_number);
         int32_t get_edge_innovation_number();
         double get_edge_phermone();
         int get_depth();
 
-        int get_input_innovation_number();
-        int get_output_innovation_number();
+        int32_t get_input_innovation_number();
+        int32_t get_output_innovation_number();
         void set_edge_phermone(double p);
 
         friend class ACNNTO;

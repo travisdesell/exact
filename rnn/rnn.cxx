@@ -146,7 +146,7 @@ void RNN::get_weights(vector<double> &parameters) {
 
 void RNN::set_weights(const vector<double> &parameters) {
     if (parameters.size() != get_number_weights()) {
-        cerr << "ERROR! Trying to set weights where the RNN has " << get_number_weights() << " weights, and the parameters vector has << " << parameters.size() << " weights!" << endl;
+        cerr << "ERROR! Trying to set weights where the RNN has " << get_number_weights() << " weights, and the parameters vector has " << parameters.size() << " weights!" << endl;
         exit(1);
     }
 

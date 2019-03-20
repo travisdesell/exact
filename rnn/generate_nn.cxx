@@ -429,8 +429,8 @@ void create_colony_pheromones(int number_inputs, int number_hidden_layers, int n
     // map <int32_t, NODE_Pheromones*> colony;
     vector<vector<int>> layer_nodes(2 + number_hidden_layers);
 
-    int node_innovation_count = 0;
-    int edge_innovation_count = 0;
+    int32_t node_innovation_count = 0;
+    int32_t edge_innovation_count = 0;
     // int current_layer = 0;
     vector<EDGE_Pheromone*> dum;
 
@@ -449,14 +449,14 @@ void create_colony_pheromones(int number_inputs, int number_hidden_layers, int n
 
     //Building the pheromones from the starting point
     for ( uint32_t i = 0; i < number_inputs; i++) {
-        dum.push_back(new EDGE_Pheromone(-1, 1, 0, -1, layer_nodes[0][i]));
+        dum.push_back(new EDGE_Pheromone(-1, 0.7, 0, -1, layer_nodes[0][i]));
     }
 
     vector<EDGE_Pheromone*> *dum2 = new vector<EDGE_Pheromone*>;
     *dum2 = dum;
     colony[-1] = new NODE_Pheromones(NULL, dum2, -1, -1);
 
-    double type_pheromones_initial_values[5] = {1.0, 1.0, 1.0, 1.0, 1.0};     //initially all node type pheromones will be 1.0
+    double type_pheromones_initial_values[6] = {0.7, 0.7, 0.7, 0.7, 0.7, 0.7};     //initially all node type pheromones will be 1.0
 
     /*
        - Using the nodes the build the colony.
@@ -480,10 +480,8 @@ void create_colony_pheromones(int number_inputs, int number_hidden_layers, int n
             int l = i+1;
             /*Building the edges' pheromones: Edge to every node in subsequent layer*/
             while (l<layer_nodes.size()){
-              cout<<"** Creating Edges **\n";
               for ( uint32_t k = 0; k<layer_nodes[l].size(); k++){
-                cout<<"Edge From Node["<<i<<"]["<<j<<"]: "<<layer_nodes[i][j]<<" To NODE["<<l<<"]["<<j<<"]: "<<layer_nodes[l][k]<<endl;
-                  dum.push_back(new EDGE_Pheromone(edge_innovation_count++, 1, 0, layer_nodes[i][j], layer_nodes[l][k]));
+                  dum.push_back(new EDGE_Pheromone(edge_innovation_count++, 0.7, 0, layer_nodes[i][j], layer_nodes[l][k]));
               }
               l++;
             }
@@ -491,25 +489,17 @@ void create_colony_pheromones(int number_inputs, int number_hidden_layers, int n
             for ( uint32_t m = 1; m<layer_nodes.size(); m++){
                 for ( uint32_t n = 0; n<layer_nodes[m].size(); n++){
                     for (uint32_t d = 1; d < max_recurrent_depth; d++) {
-                        dum.push_back(new EDGE_Pheromone(edge_innovation_count++, 1, d, layer_nodes[i][j], layer_nodes[m][n]));
+                        dum.push_back(new EDGE_Pheromone(edge_innovation_count++, 0.7, d, layer_nodes[i][j], layer_nodes[m][n]));
                     }
                 }
             }
 
             /*Node types phermones*/
             double*  type_pheromones = new double[5];
-            memcpy(type_pheromones, type_pheromones_initial_values, 5*sizeof(double) );
+            memcpy(type_pheromones, type_pheromones_initial_values, 6*sizeof(double) );
             vector<EDGE_Pheromone*> *dum2 = new vector<EDGE_Pheromone*>;
             *dum2 = dum;
             colony[layer_nodes[i][j]] = new NODE_Pheromones(type_pheromones, dum2, layer_type, i);
-            cout<<"Node Number: "<<layer_nodes[i][j]<<" -- Current Layer: "<<i<<" -- Layer type: "<<layer_type<<endl;
-            cout<<"%%%%%%%%%%%%"<<endl;
         }
     }
-
-    // cout<<"GENERATE COLONY: Number of Edges in Colony[-1]: "<<colony[-1]->get_pheromone_lines()->size()<<endl;
-    // cout<<"GENERATOR:: Index of first element in map"<<colony[-1]<<endl;
-    // cout<<"GENERATOR: Number of Edges in Colony[-1]: "<<colony[-1]->get_pheromone_lines()->back()->get_edge_phermone()<<endl;
-    // cout<<"GENERATOR:: Number of Edges in Colony[-1]: ";
-    cout<<colony[-1]->get_pheromone_lines()->size()<<endl;
 }

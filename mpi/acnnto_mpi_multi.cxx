@@ -19,6 +19,10 @@ using std::string;
 #include <vector>
 using std::vector;
 
+//for mkdir
+#include <sys/stat.h>
+
+
 #include "mpi.h"
 
 #include "common/arguments.hxx"
@@ -26,8 +30,6 @@ using std::vector;
 #include "rnn/acnnto.hxx"
 
 #include "time_series/time_series.hxx"
-
-#include <sys/stat.h>
 
 #define WORK_REQUEST_TAG 1
 #define GENOME_LENGTH_TAG 2
@@ -39,8 +41,6 @@ mutex acnnto_mutex;
 vector<string> arguments;
 
 ACNNTO *acnnto;
-
-bool finished = false;
 
 vector< vector< vector<double> > > training_inputs;
 vector< vector< vector<double> > > training_outputs;
@@ -75,6 +75,7 @@ RNN_Genome* receive_genome_from(string name, int source) {
 
     genome_str[length] = '\0';
 
+    //cout << "genome_str:" << endl << genome_str << endl;
 
     RNN_Genome* genome = new RNN_Genome(genome_str, length, false);
 
@@ -85,7 +86,9 @@ RNN_Genome* receive_genome_from(string name, int source) {
 void send_genome_to(string name, int target, RNN_Genome* genome) {
     char *byte_array;
     int32_t length;
+
     genome->write_to_array(&byte_array, length);
+
     cout << "[" << setw(10) << name << "] sending genome of length: " << length << " to: " << target << endl;
 
     int length_message[1];
@@ -111,8 +114,6 @@ void receive_terminate_message(int source) {
 void master(int max_rank) {
     string name = "master";
 
-    cout << "MAX INT: " << numeric_limits<int>::max() << endl;
-
     int terminates_sent = 0;
 
     while (true) {
@@ -124,6 +125,7 @@ void master(int max_rank) {
         int tag = status.MPI_TAG;
         cout << "[" << setw(10) << name << "] probe returned message from: " << source << " with tag: " << tag << endl;
 
+
         //if the message is a work request, send a genome
 
         if (tag == WORK_REQUEST_TAG) {
@@ -133,7 +135,6 @@ void master(int max_rank) {
             RNN_Genome *genome = acnnto->ants_march();
             acnnto_mutex.unlock();
 
-
             if (genome == NULL) { //search was completed if it returns NULL for an individual
                 //send terminate message
                 cout << "[" << setw(10) << name << "] terminating worker: " << source << endl;
@@ -142,8 +143,6 @@ void master(int max_rank) {
 
                 cout << "[" << setw(10) << name << "] sent: " << terminates_sent << " terminates of: " << (max_rank - 1) << endl;
                 if (terminates_sent >= max_rank - 1) return;
-
-                acnnto->print_last_population();
 
             } else {
                 //genome->write_to_file( acnnto->get_output_directory() + "/before_send_gen_" + to_string(genome->get_generation_id()) );
@@ -193,7 +192,6 @@ void worker(int rank) {
         } else if (tag == GENOME_LENGTH_TAG) {
             cout << "[" << setw(10) << name << "] received genome!" << endl;
             RNN_Genome* genome = receive_genome_from(name, 0);
-            cout << "Worker=> GENOME weights #: " << genome->get_number_weights() << endl;
 
             genome->backpropagate_stochastic(training_inputs, training_outputs, validation_inputs, validation_outputs);
 
@@ -216,57 +214,11 @@ int main(int argc, char** argv) {
 
     arguments = vector<string>(argv, argv + argc);
 
-    TimeSeriesSets *time_series_sets = NULL;
-    if (rank == 0) {
-        //only have the master process print TSS info
-        time_series_sets = TimeSeriesSets::generate_from_arguments(arguments, true);
-
-        if (argument_exists(arguments, "--write_time_series")) {
-            string base_filename;
-            get_argument(arguments, "--write_time_series", true, base_filename);
-            time_series_sets->write_time_series_sets(base_filename);
-        }
-    } else {
-        time_series_sets = TimeSeriesSets::generate_from_arguments(arguments, false);
-    }
-
-    int32_t time_offset = 1;
-    get_argument(arguments, "--time_offset", true, time_offset);
-
-    time_series_sets->export_training_series(time_offset, training_inputs, training_outputs);
-    time_series_sets->export_test_series(time_offset, validation_inputs, validation_outputs);
-
-    int number_inputs = time_series_sets->get_number_inputs();
-    int number_outputs = time_series_sets->get_number_outputs();
-
-    cout << "number_inputs: " << number_inputs << ", number_outputs: " << number_outputs << endl;
-
     int32_t population_size;
     get_argument(arguments, "--population_size", true, population_size);
 
     int32_t max_genomes;
     get_argument(arguments, "--max_genomes", true, max_genomes);
-
-    int32_t max_recurrent_depth = 3;
-    get_argument(arguments, "--max_recurrent_depth", true, max_genomes);
-
-    int32_t number_of_ants = 50;
-    get_argument(arguments, "--ants", false, number_of_ants);
-
-    int32_t hidden_layers_depth = 0;
-    get_argument(arguments, "--hidden_layers_depth", false, hidden_layers_depth);
-
-    int32_t hidden_layer_nodes = 0;
-    get_argument(arguments, "--hidden_layer_nodes", false, hidden_layer_nodes);
-
-    double pheromone_decay_parameter = 0.8;
-    get_argument(arguments, "--pheromone_decay_parameter", false, pheromone_decay_parameter);
-
-    double pheromone_update_strength = 0.7;
-    get_argument(arguments, "--pheromone_update_strength", false, pheromone_update_strength);
-
-    double pheromone_heuristic = 0.3;
-    get_argument(arguments, "--pheromone_heuristic", false, pheromone_heuristic);
 
     int32_t bp_iterations;
     get_argument(arguments, "--bp_iterations", true, bp_iterations);
@@ -280,37 +232,97 @@ int main(int argc, char** argv) {
     double low_threshold = 0.05;
     bool use_low_threshold = get_argument(arguments, "--low_threshold", false, low_threshold);
 
+    int32_t repeats;
+    get_argument(arguments, "--repeats", true, repeats);
+
+
     string output_directory = "";
     get_argument(arguments, "--output_directory", false, output_directory);
 
+    mkdir(output_directory.c_str(), 0777);
+
+    TimeSeriesSets *time_series_sets = NULL;
+
     if (rank == 0) {
-        cout << "NUMBER OF ANTS:: " << number_of_ants << endl;
-        cout << "DECAY         :: " << pheromone_decay_parameter << endl;
-        cout << "UPDATE        :: " << pheromone_update_strength << endl;
-        string log_dir_str;
-        ostringstream dum;
-        dum << number_of_ants;
-            dum << "_";
-        dum << pheromone_decay_parameter;
-        dum << "_";
-        dum << pheromone_update_strength;
-        log_dir_str = output_directory;
-        log_dir_str += "/";
-        log_dir_str += dum.str();
-        if (mkdir(log_dir_str.c_str(), 0777) == -1)
-        cerr << "Error :  " << strerror(errno) << endl;
-        else
-        cout << "Directory created";
-        output_directory = log_dir_str.c_str();
-        acnnto = new ACNNTO(population_size, max_genomes, time_series_sets->get_input_parameter_names(), time_series_sets->get_output_parameter_names(), time_series_sets->get_normalize_mins(), time_series_sets->get_normalize_maxs(), bp_iterations, learning_rate, use_high_threshold, high_threshold, use_low_threshold, low_threshold, output_directory, number_of_ants, hidden_layers_depth, hidden_layer_nodes, pheromone_decay_parameter, pheromone_update_strength, pheromone_heuristic, max_recurrent_depth );
-        master(max_rank);
+        //only have the master process be verbose
+        time_series_sets = TimeSeriesSets::generate_from_arguments(arguments, true);
     } else {
-        worker(rank);
+        time_series_sets = TimeSeriesSets::generate_from_arguments(arguments, false);
     }
 
-    finished = true;
+    int32_t time_offset = 1;
+    get_argument(arguments, "--time_offset", true, time_offset);
 
-    cout << "rank " << rank << " completed!" << endl;
+    int fold_size = 2;
+    get_argument(arguments, "--fold_size", true, fold_size);
+
+    vector<string> possible_node_types;
+    get_argument_vector(arguments, "--possible_node_types", true, possible_node_types);
+
+
+    for (int32_t i = 0; i < time_series_sets->get_number_series(); i += fold_size) {
+        vector<int> training_indexes;
+        vector<int> test_indexes;
+
+        for (uint32_t j = 0; j < time_series_sets->get_number_series(); j += fold_size) {
+            if (j == i) {
+                for (int k = 0; k < fold_size; k++) {
+                    test_indexes.push_back(j + k);
+                }
+            } else {
+                for (int k = 0; k < fold_size; k++) {
+                    training_indexes.push_back(j + k);
+                }
+            }
+        }
+
+        time_series_sets->set_training_indexes(training_indexes);
+        time_series_sets->set_test_indexes(test_indexes);
+
+        time_series_sets->export_training_series(time_offset, training_inputs, training_outputs);
+        time_series_sets->export_test_series(time_offset, validation_inputs, validation_outputs);
+
+        string slice_output_directory = output_directory + "/slice_" + to_string(i);
+        mkdir(slice_output_directory.c_str(), 0777);
+        ofstream slice_times_file(output_directory + "/slice_" + to_string(i) + "_runtimes.csv");
+
+        for (int k = 0; k < repeats; k++) {
+            string current_output_directory = slice_output_directory + "/repeat_" + to_string(k);
+            mkdir(current_output_directory.c_str(), 0777);
+
+            if (rank == 0) {
+                acnnto = new ACNNTO(population_size, max_genomes, time_series_sets->get_input_parameter_names(), time_series_sets->get_output_parameter_names(), time_series_sets->get_normalize_mins(), time_series_sets->get_normalize_maxs(), bp_iterations, learning_rate, use_high_threshold, high_threshold, use_low_threshold, low_threshold, output_directory);
+                acnnto->set_possible_node_types(possible_node_types);
+
+                std::chrono::time_point<std::chrono::system_clock> start = std::chrono::system_clock::now();
+                master(max_rank);
+                std::chrono::time_point<std::chrono::system_clock> end = std::chrono::system_clock::now();
+                long milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+
+                acnnto->write_memory_log(current_output_directory + "/memory_fitness_log.csv");
+
+                slice_times_file << milliseconds << endl;
+
+                RNN_Genome *best_genome = acnnto->get_best_genome();
+
+                string binary_file = slice_output_directory + "/repeat_best_" + to_string(k) + ".bin";
+                string graphviz_file = slice_output_directory + "/repeat_best_" + to_string(k) + ".gv";
+
+                cout << "writing best genome to '" << binary_file << "' and '" << graphviz_file << "'" << endl;
+                best_genome->write_to_file(binary_file, false);
+                best_genome->write_graphviz(graphviz_file);
+
+                delete acnnto;
+            } else {
+                worker(rank);
+            }
+
+            MPI_Barrier(MPI_COMM_WORLD);
+            cout << "rank " << rank << " completed slice " << i << " of " << time_series_sets->get_number_series() << " repeat " << k << " of " << repeats << endl;
+        }
+
+        slice_times_file.close();
+    }
 
     MPI_Finalize();
 

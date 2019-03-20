@@ -21,6 +21,12 @@ using std::vector;
 using std::hex;
 using std::ios;
 
+//for mkdir
+#include <sys/stat.h>
+
+
+#include <chrono>
+
 #include "rnn_genome.hxx"
 #include "edge_pheromone.hxx"
 #include "node_pheromone.hxx"
@@ -143,11 +149,12 @@ class ACNNTO {
           int32_t _bp_iterations, double _learning_rate, bool _use_high_threshold, double _high_threshold, bool _use_low_threshold,
           double _low_threshold, string _output_directory, int32_t _ants, int32_t _hidden_layers_depth,
           int32_t _hidden_layer_nodes, double _pheromone_decay_parameter, double _pheromone_update_strength,
-          double _pheromone_heuristic);
+          double _pheromone_heuristic, int32_t _max_recurrent_depth);
 
         ~ACNNTO();
 
         void print_population();
+        void print_last_population();
         void write_memory_log(string filename);
 
         void set_possible_node_types(vector<string> possible_node_type_strings);

@@ -31,11 +31,11 @@ int EDGE_Pheromone::get_depth(){
 
 
 
-int EDGE_Pheromone::get_input_innovation_number() {
+int32_t EDGE_Pheromone::get_input_innovation_number() {
   return input_innovation_number;
 }
 
-int EDGE_Pheromone::get_output_innovation_number(){
+int32_t EDGE_Pheromone::get_output_innovation_number(){
   return output_innovation_number;
 }
 

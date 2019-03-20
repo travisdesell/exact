@@ -925,6 +925,7 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
 
     RNN* rnn = get_rnn();
 
+    cout<<"NO: ("<<-1<<") DDRR--DDRR--DDRR--DDRR--DDRR--DDRR--DDRR--DDRR\nDDRR--DDRR--DDRR--DDRR--DDRR--DDRR--DDRR--DDRR\n";
     rnn->set_weights(parameters);
     //initialize the initial previous values
     cout<<"Number of Data Series: "<<n_series<<endl;
@@ -998,7 +999,8 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
 
     bool was_reset = false;
     int reset_count = 0;
-
+    cout<<"NO: ("<<0<<") DDRR--DDRR--DDRR--DDRR--DDRR--DDRR--DDRR--DDRR\nDDRR--DDRR--DDRR--DDRR--DDRR--DDRR--DDRR--DDRR\n";
+    // getchar();
     for (uint32_t iteration = 0; iteration < bp_iterations; iteration++) {
         fisher_yates_shuffle(generator, shuffle_order);
 
@@ -1021,6 +1023,8 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
             }
             norm = sqrt(norm);
             avg_norm += norm;
+
+            cout<<"XYOXYOXYOXYOXYOXYOXYOXYOXYOXYOXYOXYOXYOXYOXYOXYOXYOXYOXYOXYO\nXYOXYOXYOXYOXYOXYOXYOXYOXYOXYOXYOXYOXYOXYOXYOXYOXYOXYOXYOXYO\n";
 
             if (use_reset_weights && prev_mse[random_selection] * 2 < mse) {
                 //cout << ", RESETTING WEIGHTS" << endl;
@@ -1167,6 +1171,8 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
 
 
         cout << "iteration " << setw(5) << iteration << ", mse: " << training_error << ", v_mse: " << validation_mse << ", bv_mse: " << best_validation_mse << ", avg_norm: " << avg_norm << endl;
+        cout<<"NO: ("<<iteration+1<<") DDRR--DDRR--DDRR--DDRR--DDRR--DDRR--DDRR--DDRR\nDDRR--DDRR--DDRR--DDRR--DDRR--DDRR--DDRR--DDRR\n";
+        // getchar();
     }
 
     if (log_filename != "") {
@@ -1277,6 +1283,7 @@ bool RNN_Genome::equals(RNN_Genome* other) {
 
 void RNN_Genome::assign_reachability() {
     cout << "assigning reachability!" << endl;
+    //cout << nodes.size() << " nodes, " << edges.size() << " edges, " << recurrent_edges.size() << " recurrent_edges" << endl;
 
     for (int32_t i = 0; i < (int32_t)nodes.size(); i++) {
         nodes[i]->forward_reachable = false;
@@ -1417,10 +1424,10 @@ void RNN_Genome::assign_reachability() {
             edges[i]->input_node->total_outputs++;
             edges[i]->output_node->total_inputs++;
 
-            // cout << "edge IN " << edges[i]->innovation_number << " ADD: "<<edges[i]
-            //     << " setting input node (" << edges[i]->input_node->innovation_number << ")->total_outputs: " << edges[i]->input_node->total_outputs << " Node ADD: " << edges[i]->input_node << endl;
-            // cout << "edge IN " << edges[i]->innovation_number << " ADD: "<<edges[i]
-            //     << " setting output node (" << edges[i]->output_node->innovation_number << ")->total_inputs: " << edges[i]->output_node->total_inputs << " Node ADD: " << edges[i]->output_node << endl;
+            cout << "edge IN " << edges[i]->innovation_number << " ADD: "<<edges[i]
+                << " setting input node (" << edges[i]->input_node->innovation_number << ")->total_outputs: " << edges[i]->input_node->total_outputs << " Node ADD: " << edges[i]->input_node << endl;
+            cout << "edge IN " << edges[i]->innovation_number << " ADD: "<<edges[i]
+                << " setting output node (" << edges[i]->output_node->innovation_number << ")->total_inputs: " << edges[i]->output_node->total_inputs << " Node ADD: " << edges[i]->output_node << endl;
         }
     }
 
@@ -1429,10 +1436,10 @@ void RNN_Genome::assign_reachability() {
             recurrent_edges[i]->input_node->total_outputs++;
             recurrent_edges[i]->output_node->total_inputs++;
 
-            // cout << "recurrent_edge IN " << recurrent_edges[i]->innovation_number <<" ADD: "<< recurrent_edges[i]
-            //     << " setting input node (" << recurrent_edges[i]->input_node->innovation_number << ")->total_outputs: " << recurrent_edges[i]->input_node->total_outputs << " Node ADD: " << recurrent_edges[i]->input_node << endl;
-            // cout << "recurrent_edge IN " << recurrent_edges[i]->innovation_number <<" ADD: "<< recurrent_edges[i]
-            //     << " setting output node (" << recurrent_edges[i]->output_node->innovation_number << ")->total_inputs: " << recurrent_edges[i]->output_node->total_inputs << " Node ADD: " << recurrent_edges[i]->output_node << endl;
+            cout << "recurrent_edge IN " << recurrent_edges[i]->innovation_number <<" ADD: "<< recurrent_edges[i]
+                << " setting input node (" << recurrent_edges[i]->input_node->innovation_number << ")->total_outputs: " << recurrent_edges[i]->input_node->total_outputs << " Node ADD: " << recurrent_edges[i]->input_node << endl;
+            cout << "recurrent_edge IN " << recurrent_edges[i]->innovation_number <<" ADD: "<< recurrent_edges[i]
+                << " setting output node (" << recurrent_edges[i]->output_node->innovation_number << ")->total_inputs: " << recurrent_edges[i]->output_node->total_inputs << " Node ADD: " << recurrent_edges[i]->output_node << endl;
         }
     }
 
@@ -2691,25 +2698,25 @@ void RNN_Genome::read_from_stream(istream &bin_istream, bool verbose) {
 
         if (verbose) cout << "NODE: " << innovation_number << " " << type << " " << node_type << " " << depth << " " << enabled << endl;
 
-
         RNN_Node_Interface *node;
-        // node = new RNN_Node(innovation_number, type, depth, node_type);
-        if (node_type == LSTM_NODE) {
-            node = new LSTM_Node(innovation_number, type, depth);
-        } else if (node_type == DELTA_NODE) {
-            node = new Delta_Node(innovation_number, type, depth);
-        } else if (node_type == GRU_NODE) {
-            node = new GRU_Node(innovation_number, type, depth);
-        } else if (node_type == MGU_NODE) {
-            node = new MGU_Node(innovation_number, type, depth);
-        } else if (node_type == UGRNN_NODE) {
-            node = new UGRNN_Node(innovation_number, type, depth);
-        } else if (node_type == FEED_FORWARD_NODE || node_type == JORDAN_NODE || node_type == ELMAN_NODE) {
-            node = new RNN_Node(innovation_number, type, depth, node_type);
-        } else {
-            cerr << "Error reading node from stream, unknown node_type: " << node_type << endl;
-            exit(1);
-        }
+        node = new RNN_Node(innovation_number, type, depth, node_type);
+        // if (node_type == LSTM_NODE) {
+        //     node = new LSTM_Node(innovation_number, type, depth);
+        // } else if (node_type == DELTA_NODE) {
+        //     node = new Delta_Node(innovation_number, type, depth);
+        // } else if (node_type == GRU_NODE) {
+        //     node = new GRU_Node(innovation_number, type, depth);
+        // } else if (node_type == MGU_NODE) {
+        //     node = new MGU_Node(innovation_number, type, depth);
+        // } else if (node_type == UGRNN_NODE) {
+        //     node = new UGRNN_Node(innovation_number, type, depth);
+        // } else if (node_type == FEED_FORWARD_NODE || node_type == JORDAN_NODE || node_type == ELMAN_NODE) {
+        //     node = new RNN_Node(innovation_number, type, depth, node_type);
+        // } else {
+        //     cerr << "Error reading node from stream, unknown node_type: " << node_type << endl;
+        //     exit(1);
+        // }
+
         node->enabled = enabled;
         nodes.push_back(node);
     }

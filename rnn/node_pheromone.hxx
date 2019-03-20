@@ -35,7 +35,6 @@ class NODE_Pheromones {
       ~NODE_Pheromones();
 
       friend class ACNNTO;
-      friend class TT;
 };
 
 

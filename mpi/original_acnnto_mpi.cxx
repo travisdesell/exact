@@ -27,8 +27,6 @@ using std::vector;
 
 #include "time_series/time_series.hxx"
 
-#include <sys/stat.h>
-
 #define WORK_REQUEST_TAG 1
 #define GENOME_LENGTH_TAG 2
 #define GENOME_TAG 3
@@ -143,8 +141,6 @@ void master(int max_rank) {
                 cout << "[" << setw(10) << name << "] sent: " << terminates_sent << " terminates of: " << (max_rank - 1) << endl;
                 if (terminates_sent >= max_rank - 1) return;
 
-                acnnto->print_last_population();
-
             } else {
                 //genome->write_to_file( acnnto->get_output_directory() + "/before_send_gen_" + to_string(genome->get_generation_id()) );
 
@@ -247,9 +243,6 @@ int main(int argc, char** argv) {
     int32_t max_genomes;
     get_argument(arguments, "--max_genomes", true, max_genomes);
 
-    int32_t max_recurrent_depth = 3;
-    get_argument(arguments, "--max_recurrent_depth", true, max_genomes);
-
     int32_t number_of_ants = 50;
     get_argument(arguments, "--ants", false, number_of_ants);
 
@@ -284,25 +277,7 @@ int main(int argc, char** argv) {
     get_argument(arguments, "--output_directory", false, output_directory);
 
     if (rank == 0) {
-        cout << "NUMBER OF ANTS:: " << number_of_ants << endl;
-        cout << "DECAY         :: " << pheromone_decay_parameter << endl;
-        cout << "UPDATE        :: " << pheromone_update_strength << endl;
-        string log_dir_str;
-        ostringstream dum;
-        dum << number_of_ants;
-            dum << "_";
-        dum << pheromone_decay_parameter;
-        dum << "_";
-        dum << pheromone_update_strength;
-        log_dir_str = output_directory;
-        log_dir_str += "/";
-        log_dir_str += dum.str();
-        if (mkdir(log_dir_str.c_str(), 0777) == -1)
-        cerr << "Error :  " << strerror(errno) << endl;
-        else
-        cout << "Directory created";
-        output_directory = log_dir_str.c_str();
-        acnnto = new ACNNTO(population_size, max_genomes, time_series_sets->get_input_parameter_names(), time_series_sets->get_output_parameter_names(), time_series_sets->get_normalize_mins(), time_series_sets->get_normalize_maxs(), bp_iterations, learning_rate, use_high_threshold, high_threshold, use_low_threshold, low_threshold, output_directory, number_of_ants, hidden_layers_depth, hidden_layer_nodes, pheromone_decay_parameter, pheromone_update_strength, pheromone_heuristic, max_recurrent_depth );
+        acnnto = new ACNNTO(population_size, max_genomes, time_series_sets->get_input_parameter_names(), time_series_sets->get_output_parameter_names(), time_series_sets->get_normalize_mins(), time_series_sets->get_normalize_maxs(), bp_iterations, learning_rate, use_high_threshold, high_threshold, use_low_threshold, low_threshold, output_directory, number_of_ants, hidden_layers_depth, hidden_layer_nodes, pheromone_decay_parameter, pheromone_update_strength, pheromone_heuristic );
         master(max_rank);
     } else {
         worker(rank);
