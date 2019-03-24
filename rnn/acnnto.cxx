@@ -63,23 +63,18 @@ ACNNTO::~ACNNTO() {
       delete genome;
       population.pop_back();
     }
-    int c_size = colony.size();
-    for (int i=-1; i<c_size; i++){
-        if ( i == colony.size()-1){
-            i*=-1;
-        }
-        int p_size = colony[i]->pheromone_lines->size();
+
+    for (auto const& c : colony){
+        int p_size = c.second->pheromone_lines->size();
         for ( int j=0; j<p_size; j++){
-            delete colony[i]->pheromone_lines->at(j);
+            delete c.second->pheromone_lines->at(j);
         }
-        delete colony[i]->pheromone_lines;
-        delete colony[i]->type_pheromones;
+        delete c.second->pheromone_lines;
+        delete c.second->type_pheromones;
+
     }
-    for (int i=-1; i<c_size; i++){
-        if ( i == colony.size()-1){
-            i*=-1;
-        }
-        colony.erase(i);
+    for (auto const& c : colony){
+        colony.erase(c.first);
     }
     cout<<"INFO: CLEANED CLONY!"<<endl;
 }
@@ -142,6 +137,23 @@ ACNNTO::ACNNTO(int32_t _population_size, int32_t _max_genomes, const vector<stri
 
 
     create_colony_pheromones(number_inputs, hidden_layers_depth, hidden_layer_nodes, number_outputs, max_recurrent_depth, colony);
+
+    // colony[11]->pheromone_lines->at(2)->edge_pheromone = 99;
+    // cout << "COLONY SIZE: " << colony.size()<< endl;
+    // for (auto const& x : colony)
+    //     {
+    //         std::cout << x.first  // string (key)
+    //                   // << ':'
+    //                   // << x.second // string's value
+    //                   << std::endl ;
+    //     }
+    // for  ( int c=0; c<colony.size(); c++){
+    //     if(c==colony.size()-2)
+    //         c*=-1;
+    //     for ( int j=0; j<colony[c]->pheromone_lines->size(); j++){
+    //         cout <<"COLONY NODE: "<< c << " PRINTING PHEROMONE VALUE: " << colony[c]->pheromone_lines->at(j)->edge_pheromone << endl;
+    //     }
+    // }
 }
 
 
@@ -618,18 +630,33 @@ void ACNNTO::old_reward_colony(RNN_Genome* g, double treat_pheromone){
 
 /*Will reduce phermones periodically*/
 void ACNNTO::evaporate_pheromones(){
-    for ( int i=-1; i<colony.size(); i++){
-        if(i==colony.size()-1)
-            i*=-1;
-        colony[i]->type_pheromones[0]*=PERIODIC_PHEROMONE_REDUCTION_RATIO;
-        colony[i]->type_pheromones[1]*=PERIODIC_PHEROMONE_REDUCTION_RATIO;
-        colony[i]->type_pheromones[2]*=PERIODIC_PHEROMONE_REDUCTION_RATIO;
-        colony[i]->type_pheromones[3]*=PERIODIC_PHEROMONE_REDUCTION_RATIO;
-        colony[i]->type_pheromones[4]*=PERIODIC_PHEROMONE_REDUCTION_RATIO;
-        for ( int j=0; j<colony[i]->pheromone_lines->size(); j++){
-            colony[i]->pheromone_lines->at(j)->edge_pheromone*=PERIODIC_PHEROMONE_REDUCTION_RATIO;
+    for (auto const& c : colony){
+        if (c.first>-1) {
+            c.second->type_pheromones[0]*=PERIODIC_PHEROMONE_REDUCTION_RATIO;
+            c.second->type_pheromones[1]*=PERIODIC_PHEROMONE_REDUCTION_RATIO;
+            c.second->type_pheromones[2]*=PERIODIC_PHEROMONE_REDUCTION_RATIO;
+            c.second->type_pheromones[3]*=PERIODIC_PHEROMONE_REDUCTION_RATIO;
+            c.second->type_pheromones[4]*=PERIODIC_PHEROMONE_REDUCTION_RATIO;
+        }
+        for ( int j=0; j<c.second->pheromone_lines->size(); j++){
+          c.second->pheromone_lines->at(j)->edge_pheromone*=PERIODIC_PHEROMONE_REDUCTION_RATIO;
         }
     }
+
+
+    // for ( int i=0; i<colony.size(); i++){
+    //     cout << "BB -- INSIDE EVAPORATE" << " COLONY SIZE" << colony.size()<< endl;
+    //     if(i==colony.size()-1)
+    //         i*=-1;
+    //     colony[i]->type_pheromones[0]*=PERIODIC_PHEROMONE_REDUCTION_RATIO;
+    //     colony[i]->type_pheromones[1]*=PERIODIC_PHEROMONE_REDUCTION_RATIO;
+    //     colony[i]->type_pheromones[2]*=PERIODIC_PHEROMONE_REDUCTION_RATIO;
+    //     colony[i]->type_pheromones[3]*=PERIODIC_PHEROMONE_REDUCTION_RATIO;
+    //     colony[i]->type_pheromones[4]*=PERIODIC_PHEROMONE_REDUCTION_RATIO;
+    //     for ( int j=0; j<colony[i]->pheromone_lines->size(); j++){
+    //         colony[i]->pheromone_lines->at(j)->edge_pheromone*=PERIODIC_PHEROMONE_REDUCTION_RATIO;
+    //     }
+    // }
 }
 
 
