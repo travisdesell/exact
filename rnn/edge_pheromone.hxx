@@ -27,6 +27,7 @@ class EDGE_Pheromone {
         void set_edge_phermone(double p);
 
         friend class ACNNTO;
+        friend class generate_nn;
 };
 
 

@@ -499,7 +499,16 @@ void create_colony_pheromones(int number_inputs, int number_hidden_layers, int n
             memcpy(type_pheromones, type_pheromones_initial_values, 6*sizeof(double) );
             vector<EDGE_Pheromone*> *dum2 = new vector<EDGE_Pheromone*>;
             *dum2 = dum;
+            // vector<EDGE_Pheromone*> dum2 = dum;
+            // cout << "JJ: DUM size: " <<dum.size() << " DUM2 size: " << dum2.size() << endl;
+            // dum2.push_back(new EDGE_Pheromone(22,1,2,3,2));
+            // cout << "JJ: DUM size: " <<dum.size() << " DUM2 size: " << dum2.size() << endl;
+            // exit(1);
+            // for ( int i=0; i<dum.size(); i++){
+            //     cout << "EDGE (" << i << ") PHEROMONE VALUE: " << dum[i]->get_edge_phermone() << endl;
+            // }
             colony[layer_nodes[i][j]] = new NODE_Pheromones(type_pheromones, dum2, layer_type, i);
+            // colony[layer_nodes[i][j]] = new NODE_Pheromones(type_pheromones, &dum2, layer_type, i);
         }
     }
 }

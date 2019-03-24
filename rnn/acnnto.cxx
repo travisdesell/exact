@@ -396,14 +396,15 @@ void ACNNTO::initialize_genome_parameters(RNN_Genome* genome) {
 
 EDGE_Pheromone* ACNNTO::pick_line(vector<EDGE_Pheromone*>* edges_pheromones){
   double sum_pheromones = 0;
+  // cout << "EDGE PHEROMONES SIZE: " << edges_pheromones->size() << endl;
   for ( int i=0; i<edges_pheromones->size(); i++){
-    sum_pheromones+=edges_pheromones->at(i)->get_edge_phermone();
+      sum_pheromones+=edges_pheromones->at(i)->get_edge_phermone();
   }
   uniform_real_distribution<double> rng(0.0, 1.0);
   double rand_gen = rng(generator) * sum_pheromones;
-  for ( int i = 0; i < edges_pheromones->size(); i++) {
+  // for ( int i = 0; i < edges_pheromones->size(); i++) {
       // cout<<"Edge : "<<edges_pheromones->at(i)->get_output_innovation_number()<<" Pheromone Value: "<<edges_pheromones->at(i)->get_edge_phermone()<<endl;
-  }
+  // }
   int a;
   for ( a = 0; a < edges_pheromones->size(); a++) {
       if ( rand_gen<=edges_pheromones->at(a)->get_edge_phermone() )
@@ -741,6 +742,7 @@ RNN_Genome* ACNNTO::ants_march(){
                 break;  //break while() when its iterator reaches an output node
             }
         }
+        // exit(1);
 
 
         for (int i=0; i<this->number_inputs; i++){

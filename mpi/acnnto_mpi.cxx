@@ -248,7 +248,7 @@ int main(int argc, char** argv) {
     get_argument(arguments, "--max_genomes", true, max_genomes);
 
     int32_t max_recurrent_depth = 3;
-    get_argument(arguments, "--max_recurrent_depth", true, max_genomes);
+    get_argument(arguments, "--max_recurrent_depth", true, max_recurrent_depth);
 
     int32_t number_of_ants = 50;
     get_argument(arguments, "--ants", false, number_of_ants);
