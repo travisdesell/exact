@@ -495,8 +495,10 @@ void create_colony_pheromones(int number_inputs, int number_hidden_layers, int n
             }
 
             /*Node types phermones*/
-            double*  type_pheromones = new double[5];
+            double*  type_pheromones = new double[6];
             memcpy(type_pheromones, type_pheromones_initial_values, 6*sizeof(double) );
+            // double  type_pheromones[6];
+            // std::copy(std::begin(type_pheromones_initial_values), std::end(type_pheromones_initial_values), std::begin(type_pheromones));
             vector<EDGE_Pheromone*> *dum2 = new vector<EDGE_Pheromone*>;
             *dum2 = dum;
             // vector<EDGE_Pheromone*> dum2 = dum;
@@ -504,9 +506,9 @@ void create_colony_pheromones(int number_inputs, int number_hidden_layers, int n
             // dum2.push_back(new EDGE_Pheromone(22,1,2,3,2));
             // cout << "JJ: DUM size: " <<dum.size() << " DUM2 size: " << dum2.size() << endl;
             // exit(1);
-            for ( int i=0; i<dum.size(); i++){
-                cout << "EDGE (" << i << ") PHEROMONE DEPTH: " << dum[i]->get_depth() << " PHEROMONE VALUE: " << dum[i]->get_edge_phermone() << endl;
-            }
+            // for ( int i=0; i<dum.size(); i++){
+            //     cout << "EDGE (" << i << ") PHEROMONE VALUE: " << dum[i]->get_edge_phermone() << endl;
+            // }
             colony[layer_nodes[i][j]] = new NODE_Pheromones(type_pheromones, dum2, layer_type, i);
             // colony[layer_nodes[i][j]] = new NODE_Pheromones(type_pheromones, &dum2, layer_type, i);
         }

@@ -865,6 +865,8 @@ void ACNNTO::write_to_stream(ostream &bin_ostream, bool verbose) {
             int32_t input_innovation_number  = c.second->pheromone_lines->at(e)->get_input_innovation_number();
             int32_t output_innovation_number = c.second->pheromone_lines->at(e)->get_output_innovation_number();
 
+            cout << "Edge Pheromone: " << edge_phermone << endl;
+
             bin_ostream.write((char*)&innovation_number         , sizeof(int32_t));
             bin_ostream.write((char*)&edge_phermone             , sizeof(double));
             bin_ostream.write((char*)&depth                     , sizeof(int));
