@@ -485,7 +485,7 @@ void create_colony_pheromones(int number_inputs, int number_hidden_layers, int n
               }
               l++;
             }
-            /*Building recurrent edges' pheromones: Re-Edge to every node in each subsequent time step*/
+            /*Building recurrent edges' pheromones: Re-Edge to every node in each cosecutive time step*/
             for ( uint32_t m = 1; m<layer_nodes.size(); m++){
                 for ( uint32_t n = 0; n<layer_nodes[m].size(); n++){
                     for (uint32_t d = 1; d < max_recurrent_depth; d++) {
