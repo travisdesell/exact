@@ -260,10 +260,10 @@ int main(int argc, char** argv) {
     get_argument(arguments, "--hidden_layer_nodes", false, hidden_layer_nodes);
 
     double pheromone_decay_parameter = 0.8;
-    get_argument(arguments, "--pheromone_decay_parameter", false, pheromone_decay_parameter);
+    get_argument(arguments, "--pheromone_decay_parameter", true, pheromone_decay_parameter);
 
     double pheromone_update_strength = 0.7;
-    get_argument(arguments, "--pheromone_update_strength", false, pheromone_update_strength);
+    get_argument(arguments, "--pheromone_update_strength", true, pheromone_update_strength);
 
     double pheromone_heuristic = 0.3;
     get_argument(arguments, "--pheromone_heuristic", false, pheromone_heuristic);
@@ -300,7 +300,7 @@ int main(int argc, char** argv) {
         if (mkdir(log_dir_str.c_str(), 0777) == -1)
         cerr << "Error :  " << strerror(errno) << endl;
         else
-        cout << "Directory created";
+        cout << "Directory created: " << log_dir_str.c_str() << endl;
         output_directory = log_dir_str.c_str();
         acnnto = new ACNNTO(population_size, max_genomes, time_series_sets->get_input_parameter_names(), time_series_sets->get_output_parameter_names(), time_series_sets->get_normalize_mins(), time_series_sets->get_normalize_maxs(), bp_iterations, learning_rate, use_high_threshold, high_threshold, use_low_threshold, low_threshold, output_directory, number_of_ants, hidden_layers_depth, hidden_layer_nodes, pheromone_decay_parameter, pheromone_update_strength, pheromone_heuristic, max_recurrent_depth );
         master(max_rank);

@@ -63,18 +63,23 @@ ACNNTO::~ACNNTO() {
       delete genome;
       population.pop_back();
     }
-
-    for (auto const& c : colony){
-        int p_size = c.second->pheromone_lines->size();
-        for ( int j=0; j<p_size; j++){
-            delete c.second->pheromone_lines->at(j);
+    int c_size = colony.size();
+    for (int i=-1; i<c_size; i++){
+        if ( i == colony.size()-1){
+            i*=-1;
         }
-        delete c.second->pheromone_lines;
-        delete c.second->type_pheromones;
-
+        int p_size = colony[i]->pheromone_lines->size();
+        for ( int j=0; j<p_size; j++){
+            delete colony[i]->pheromone_lines->at(j);
+        }
+        delete colony[i]->pheromone_lines;
+        delete colony[i]->type_pheromones;
     }
-    for (auto const& c : colony){
-        colony.erase(c.first);
+    for (int i=-1; i<c_size; i++){
+        if ( i == colony.size()-1){
+            i*=-1;
+        }
+        colony.erase(i);
     }
     cout<<"INFO: CLEANED CLONY!"<<endl;
 }
@@ -137,23 +142,6 @@ ACNNTO::ACNNTO(int32_t _population_size, int32_t _max_genomes, const vector<stri
 
 
     create_colony_pheromones(number_inputs, hidden_layers_depth, hidden_layer_nodes, number_outputs, max_recurrent_depth, colony);
-
-    // colony[11]->pheromone_lines->at(2)->edge_pheromone = 99;
-    // cout << "COLONY SIZE: " << colony.size()<< endl;
-    // for (auto const& x : colony)
-    //     {
-    //         std::cout << x.first  // string (key)
-    //                   // << ':'
-    //                   // << x.second // string's value
-    //                   << std::endl ;
-    //     }
-    // for  ( int c=0; c<colony.size(); c++){
-    //     if(c==colony.size()-2)
-    //         c*=-1;
-    //     for ( int j=0; j<colony[c]->pheromone_lines->size(); j++){
-    //         cout <<"COLONY NODE: "<< c << " PRINTING PHEROMONE VALUE: " << colony[c]->pheromone_lines->at(j)->edge_pheromone << endl;
-    //     }
-    // }
 }
 
 
@@ -630,33 +618,18 @@ void ACNNTO::old_reward_colony(RNN_Genome* g, double treat_pheromone){
 
 /*Will reduce phermones periodically*/
 void ACNNTO::evaporate_pheromones(){
-    for (auto const& c : colony){
-        if (c.first>-1) {
-            c.second->type_pheromones[0]*=PERIODIC_PHEROMONE_REDUCTION_RATIO;
-            c.second->type_pheromones[1]*=PERIODIC_PHEROMONE_REDUCTION_RATIO;
-            c.second->type_pheromones[2]*=PERIODIC_PHEROMONE_REDUCTION_RATIO;
-            c.second->type_pheromones[3]*=PERIODIC_PHEROMONE_REDUCTION_RATIO;
-            c.second->type_pheromones[4]*=PERIODIC_PHEROMONE_REDUCTION_RATIO;
-        }
-        for ( int j=0; j<c.second->pheromone_lines->size(); j++){
-          c.second->pheromone_lines->at(j)->edge_pheromone*=PERIODIC_PHEROMONE_REDUCTION_RATIO;
+    for ( int i=-1; i<colony.size(); i++){
+        if(i==colony.size()-1)
+            i*=-1;
+        colony[i]->type_pheromones[0]*=PERIODIC_PHEROMONE_REDUCTION_RATIO;
+        colony[i]->type_pheromones[1]*=PERIODIC_PHEROMONE_REDUCTION_RATIO;
+        colony[i]->type_pheromones[2]*=PERIODIC_PHEROMONE_REDUCTION_RATIO;
+        colony[i]->type_pheromones[3]*=PERIODIC_PHEROMONE_REDUCTION_RATIO;
+        colony[i]->type_pheromones[4]*=PERIODIC_PHEROMONE_REDUCTION_RATIO;
+        for ( int j=0; j<colony[i]->pheromone_lines->size(); j++){
+            colony[i]->pheromone_lines->at(j)->edge_pheromone*=PERIODIC_PHEROMONE_REDUCTION_RATIO;
         }
     }
-
-
-    // for ( int i=0; i<colony.size(); i++){
-    //     cout << "BB -- INSIDE EVAPORATE" << " COLONY SIZE" << colony.size()<< endl;
-    //     if(i==colony.size()-1)
-    //         i*=-1;
-    //     colony[i]->type_pheromones[0]*=PERIODIC_PHEROMONE_REDUCTION_RATIO;
-    //     colony[i]->type_pheromones[1]*=PERIODIC_PHEROMONE_REDUCTION_RATIO;
-    //     colony[i]->type_pheromones[2]*=PERIODIC_PHEROMONE_REDUCTION_RATIO;
-    //     colony[i]->type_pheromones[3]*=PERIODIC_PHEROMONE_REDUCTION_RATIO;
-    //     colony[i]->type_pheromones[4]*=PERIODIC_PHEROMONE_REDUCTION_RATIO;
-    //     for ( int j=0; j<colony[i]->pheromone_lines->size(); j++){
-    //         colony[i]->pheromone_lines->at(j)->edge_pheromone*=PERIODIC_PHEROMONE_REDUCTION_RATIO;
-    //     }
-    // }
 }
 
 
@@ -809,6 +782,7 @@ RNN_Genome* ACNNTO::ants_march(){
             prepare_new_genome(g);
             cout<<"ANTS SUCCEEDED IN FINDING A COMPLETE NN STRUCTURE.... WILL BEGIN GENOME EVALUATION..."<<endl;
             write_to_file (output_directory + "/colony_" + to_string(generated_genomes) + ".bin", true);
+            g->write_to_file("gene_" + to_string(generated_genomes) + ".bin", true);
             return g;
         }
         cout<<"ANTS FAILED TO FIND A COMPLETE NN STRUCTURE.... BEGINING ANOTHER ITERATION..."<<endl;
@@ -864,8 +838,6 @@ void ACNNTO::write_to_stream(ostream &bin_ostream, bool verbose) {
             int depth                        = c.second->pheromone_lines->at(e)->get_depth();
             int32_t input_innovation_number  = c.second->pheromone_lines->at(e)->get_input_innovation_number();
             int32_t output_innovation_number = c.second->pheromone_lines->at(e)->get_output_innovation_number();
-
-            cout << "Edge Pheromone: " << edge_phermone << endl;
 
             bin_ostream.write((char*)&innovation_number         , sizeof(int32_t));
             bin_ostream.write((char*)&edge_phermone             , sizeof(double));
