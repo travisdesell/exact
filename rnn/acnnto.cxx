@@ -324,8 +324,8 @@ bool ACNNTO::insert_genome(RNN_Genome* genome) {
     if (population.size() >= population_size  && new_fitness > population.back()->get_fitness()) {
       cout << "ignoring genome, fitness: " << new_fitness << " > worst population" << " fitness: " << population.back()->get_fitness() << endl;
       print_population();
-      old_reward_colony(genome, 0.85);
-      // reward_colony(genome, false);
+      // old_reward_colony(genome, 0.85);
+      reward_colony(genome, false);
       return false;
     }
 
@@ -340,8 +340,8 @@ bool ACNNTO::insert_genome(RNN_Genome* genome) {
             cout << "REPLACING DUPLICATE GENOME, fitness of genome in search: " << parse_fitness(duplicate->get_fitness()) << ", new fitness: " << parse_fitness(genome->get_fitness()) << endl;
             population.erase(population.begin() + duplicate_genome);
             delete duplicate;
-            old_reward_colony(genome, 1.15);
-            // reward_colony(genome, true);
+            // old_reward_colony(genome, 1.15);
+            reward_colony(genome, true);
 
         } else {
             cerr << "\tpopulation already contains genome! not inserting." << endl;
@@ -353,8 +353,8 @@ bool ACNNTO::insert_genome(RNN_Genome* genome) {
     if (population.size() < population_size || population.back()->get_fitness() > new_fitness) {
         //this genome will be inserted
         was_inserted = true;
-        old_reward_colony(genome, 1.15);
-        // reward_colony(genome, true);
+        // old_reward_colony(genome, 1.15);
+        reward_colony(genome, true);
 
         if (population.size() == 0 || genome->get_fitness() < get_best_genome()->get_fitness()) {
 
@@ -809,7 +809,7 @@ RNN_Genome* ACNNTO::ants_march(){
             prepare_new_genome(g);
             cout<<"ANTS SUCCEEDED IN FINDING A COMPLETE NN STRUCTURE.... WILL BEGIN GENOME EVALUATION..."<<endl;
             write_to_file (output_directory + "/colony_" + to_string(generated_genomes) + ".bin", true);
-            g->write_to_file("gene_" + to_string(generated_genomes) + ".bin", true);
+            g->write_to_file(output_directory + "/gene_" + to_string(generated_genomes) + ".bin", true);
             return g;
         }
         cout<<"ANTS FAILED TO FIND A COMPLETE NN STRUCTURE.... BEGINING ANOTHER ITERATION..."<<endl;
