@@ -85,7 +85,7 @@ EXALT::EXALT(int32_t _population_size, int32_t _number_islands, int32_t _max_gen
 
     add_edge_rate = 1.0;
     //add_recurrent_edge_rate = 3.0;
-    add_recurrent_edge_rate = 1.0;
+    add_recurrent_edge_rate = 0.0;
     enable_edge_rate = 1.0;
     //disable_edge_rate = 3.0;
     disable_edge_rate = 1.0;

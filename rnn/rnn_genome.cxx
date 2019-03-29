@@ -1876,6 +1876,9 @@ bool RNN_Genome::add_node(double mu, double sigma, int node_type, int32_t max_re
     nodes.insert( upper_bound(nodes.begin(), nodes.end(), new_node, sort_RNN_Nodes_by_depth()), new_node);
 
     for (int32_t i = 0; i < possible_inputs.size(); i++) {
+        //TODO: remove after running tests without recurrent edges
+        recurrent_probability = 0;
+
         if (rng_0_1(generator) < recurrent_probability) {
             attempt_recurrent_edge_insert(possible_inputs[i], new_node, mu, sigma, max_recurrent_depth, edge_innovation_count);
         } else {
@@ -1884,6 +1887,9 @@ bool RNN_Genome::add_node(double mu, double sigma, int node_type, int32_t max_re
     }
 
     for (int32_t i = 0; i < possible_outputs.size(); i++) {
+        //TODO: remove after running tests without recurrent edges
+        recurrent_probability = 0;
+
         if (rng_0_1(generator) < recurrent_probability) {
             attempt_recurrent_edge_insert(new_node, possible_outputs[i], mu, sigma, max_recurrent_depth, edge_innovation_count);
         } else {
