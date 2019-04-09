@@ -52,6 +52,8 @@ class ACNNTO {
         double  pheromone_update_strength;
         double  pheromone_heuristic;
 
+        double weight_reg_parameter;
+
         int32_t population_size;
         int32_t number_islands;
         vector<RNN_Genome*> population;
@@ -126,9 +128,10 @@ class ACNNTO {
 
         ostringstream memory_log;
 
+        string reward_type;
+
         std::chrono::time_point<std::chrono::system_clock> startClock;
 
-        void prepare_new_genome(RNN_Genome* genome);
         RNN_Node* check_node_existance(vector<RNN_Node_Interface*> &rnn_nodes,   EDGE_Pheromone* pheromone_line);
         void check_edge_existance(vector<RNN_Edge*> &rnn_edges, int32_t innovation_number, RNN_Node* in_node, RNN_Node* out_node);
         void check_recurrent_edge_existance(vector<RNN_Recurrent_Edge*> &recurrent_edges, int32_t innovation_number, int32_t depth, RNN_Node* in_node, RNN_Node* out_node);
@@ -137,10 +140,13 @@ class ACNNTO {
         int old_pick_node_type(double* type_pheromones);
         int pick_node_type(double* type_pheromones);
         void reward_colony(RNN_Genome* g, bool reward);
-        void old_reward_colony(RNN_Genome* g, double treat);
+        void reward_colony_regularization(RNN_Genome* g, bool reward);
+        void reward_colony_fixed_rate(RNN_Genome* g, double treat_pheromone);
+        void reward_colony_constant_rate(RNN_Genome* g, int treat_pheromone);
         void reduce_pheromones();
         void evaporate_pheromones();
 
+        void initialize_genome_parameters(RNN_Genome* genome);
 
 
     public:
@@ -149,7 +155,15 @@ class ACNNTO {
           int32_t _bp_iterations, double _learning_rate, bool _use_high_threshold, double _high_threshold, bool _use_low_threshold,
           double _low_threshold, string _output_directory, int32_t _ants, int32_t _hidden_layers_depth,
           int32_t _hidden_layer_nodes, double _pheromone_decay_parameter, double _pheromone_update_strength,
-          double _pheromone_heuristic, int32_t _max_recurrent_depth);
+          double _pheromone_heuristic, int32_t _max_recurrent_depth, double _weight_reg_parameter);
+
+
+        ACNNTO(int32_t _population_size, int32_t _max_genomes, const vector<string> &_input_parameter_names,
+          const vector<string> &_output_parameter_names, const map<string,double> &_normalize_mins, const map<string,double> &_normalize_maxs,
+          int32_t _bp_iterations, double _learning_rate, bool _use_high_threshold, double _high_threshold, bool _use_low_threshold,
+          double _low_threshold, string _output_directory, int32_t _ants, int32_t _hidden_layers_depth,
+          int32_t _hidden_layer_nodes, double _pheromone_decay_parameter, double _pheromone_update_strength,
+          double _pheromone_heuristic, int32_t _max_recurrent_depth, double _weight_reg_parameter, string _reward_type);
 
         ~ACNNTO();
 
@@ -167,7 +181,7 @@ class ACNNTO {
 
         int get_random_node_type();
 
-        void initialize_genome_parameters(RNN_Genome* genome);
+
 
 
         RNN_Genome* get_best_genome();
@@ -182,6 +196,10 @@ class ACNNTO {
 
         void write_to_file(string bin_filename, bool verbose = false);
         void write_to_stream(ostream &bin_stream, bool verbose = false);
+
+        // double get_genome_squared_weights_sum(RNN_Genome* genome);
+        int32_t get_colony_number_edges();
+        void reinitialize_edges_pheromones();
 };
 
 #endif

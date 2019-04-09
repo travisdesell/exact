@@ -116,7 +116,7 @@ int main(int argc, char** argv) {
     int32_t hidden_layer_nodes = 0;
     get_argument(arguments, "--hidden_layer_nodes", false, hidden_layer_nodes);
 
-    double pheromone_decay_parameter = 0.8;
+    double pheromone_decay_parameter = 1.0;
     get_argument(arguments, "--pheromone_decay_parameter", false, pheromone_decay_parameter);
 
     double pheromone_update_strength = 0.7;
@@ -125,13 +125,16 @@ int main(int argc, char** argv) {
     double pheromone_heuristic = 0.3;
     get_argument(arguments, "--pheromone_heuristic", false, pheromone_heuristic);
 
+    double weight_reg_parameter = 0.0;
+    get_argument(arguments, "--weight_reg_parameter", false, weight_reg_parameter);
+
     int32_t max_recurrent_depth = 3;
     get_argument(arguments, "--max_recurrent_depth", true, max_genomes);
 
     string output_directory = "";
     get_argument(arguments, "--output_directory", false, output_directory);
 
-    acnnto = new ACNNTO(population_size, max_genomes, time_series_sets->get_input_parameter_names(), time_series_sets->get_output_parameter_names(), time_series_sets->get_normalize_mins(), time_series_sets->get_normalize_maxs(), bp_iterations, learning_rate, use_high_threshold, high_threshold, use_low_threshold, low_threshold, output_directory, number_of_ants, hidden_layers_depth, hidden_layer_nodes, pheromone_decay_parameter, pheromone_update_strength, pheromone_heuristic, max_recurrent_depth );
+    acnnto = new ACNNTO(population_size, max_genomes, time_series_sets->get_input_parameter_names(), time_series_sets->get_output_parameter_names(), time_series_sets->get_normalize_mins(), time_series_sets->get_normalize_maxs(), bp_iterations, learning_rate, use_high_threshold, high_threshold, use_low_threshold, low_threshold, output_directory, number_of_ants, hidden_layers_depth, hidden_layer_nodes, pheromone_decay_parameter, pheromone_update_strength, pheromone_heuristic, max_recurrent_depth, weight_reg_parameter );
 
 
     vector<thread> threads;

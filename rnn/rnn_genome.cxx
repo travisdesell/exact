@@ -291,6 +291,11 @@ string RNN_Genome::print_statistics() {
     return oss.str();
 }
 
+
+vector<RNN_Edge*> RNN_Genome::get_edges(){      //WARNING: THIS IS ADDED BY ABDELRAHMAN FOR TESTING
+    return edges;
+}
+
 string RNN_Genome::get_edge_count_str(bool recurrent) {
     ostringstream oss;
     if (recurrent) {
@@ -493,6 +498,7 @@ void RNN_Genome::get_weights(vector<double> &parameters) {
 
     for (uint32_t i = 0; i < edges.size(); i++) {
         parameters[current++] = edges[i]->weight;
+        cout << "\tGENOME-GET_WEIGHTS():: edges[" << i << "]->weight: " << edges[i]->weight << endl;
         //if (edges[i]->is_reachable()) parameters[current++] = edges[i]->weight;
     }
 

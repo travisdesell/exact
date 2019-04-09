@@ -25,6 +25,8 @@ class RNN_Edge {
         RNN_Node_Interface *output_node;
 
     public:
+
+        double get_weight();
         RNN_Edge(int32_t _innovation_number, RNN_Node_Interface *_input_node, RNN_Node_Interface *_output_node);
 
         RNN_Edge(int32_t _innovation_number, int32_t _input_innovation_number, int32_t _output_innovation_number, const vector<RNN_Node_Interface*> &nodes);

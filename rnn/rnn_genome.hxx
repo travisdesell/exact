@@ -74,6 +74,8 @@ class RNN_Genome {
         map<string,double> normalize_maxs;
 
     public:
+        vector<RNN_Edge*> get_edges();     //WARNING: THIS IS ADDED BY ABDELRAMAN
+
         void sort_nodes_by_depth();
         void sort_edges_by_depth();
 

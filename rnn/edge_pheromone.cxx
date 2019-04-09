@@ -40,5 +40,5 @@ int32_t EDGE_Pheromone::get_output_innovation_number(){
 }
 
 void EDGE_Pheromone::set_edge_phermone(double p) {
-  edge_innovation_number = p;
+  edge_pheromone = p;
 }

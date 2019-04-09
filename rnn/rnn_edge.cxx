@@ -62,6 +62,10 @@ RNN_Edge::RNN_Edge(int _innovation_number, int _input_innovation_number, int _ou
     }
 }
 
+double RNN_Edge::get_weight(){
+    return weight;
+}
+
 RNN_Edge* RNN_Edge::copy(const vector<RNN_Node_Interface*> new_nodes) {
     RNN_Edge* e = new RNN_Edge(innovation_number, input_innovation_number, output_innovation_number, new_nodes);
 

@@ -134,6 +134,13 @@ void master(int max_rank) {
             acnnto_mutex.unlock();
 
 
+            // vector<RNN_Edge*> eedges = genome->get_edges();
+            // for (int i=0; i< eedges.size(); i++){
+            //     cout << "\tMPI-Master:: Edge[" << i << "] Weight:" << eedges[i]->get_weight() << endl;
+            // }
+            // cout << "\t MPI-Master:: genome->get_generation_id(): " << genome->get_generation_id() << endl;
+            // cout << "\t MPI-Master:: genome->edges: " << &eedges << endl;
+
             if (genome == NULL) { //search was completed if it returns NULL for an individual
                 //send terminate message
                 cout << "[" << setw(10) << name << "] terminating worker: " << source << endl;
@@ -195,7 +202,20 @@ void worker(int rank) {
             RNN_Genome* genome = receive_genome_from(name, 0);
             cout << "Worker=> GENOME weights #: " << genome->get_number_weights() << endl;
 
+            // vector<RNN_Edge*> eedges = genome->get_edges();
+            // for (int i=0; i< eedges.size(); i++){
+            //     cout << "\tMPI-Worker (Before BackProp):: Edge[" << i << "] Weight:" << eedges[i]->get_weight() << endl;
+            // }
+            // cout << "\t MPI-Worker:: genome->get_generation_id(): " << genome->get_generation_id() << endl;
+            // cout << "\t MPI-Worker:: genome->edges: " << &eedges << endl;
+
+
             genome->backpropagate_stochastic(training_inputs, training_outputs, validation_inputs, validation_outputs);
+
+            // eedges = genome->get_edges();
+            // for (int i=0; i< eedges.size(); i++){
+            //     cout << "\tMPI-Worker (After BackProp):: Edge[" << i << "] Weight:" << eedges[i]->get_weight() << endl;
+            // }
 
             send_genome_to(name, 0, genome);
 
@@ -259,14 +279,17 @@ int main(int argc, char** argv) {
     int32_t hidden_layer_nodes = 0;
     get_argument(arguments, "--hidden_layer_nodes", false, hidden_layer_nodes);
 
-    double pheromone_decay_parameter = 0.8;
-    get_argument(arguments, "--pheromone_decay_parameter", true, pheromone_decay_parameter);
+    double pheromone_decay_parameter = 1.0;
+    get_argument(arguments, "--pheromone_decay_parameter", false, pheromone_decay_parameter);
 
     double pheromone_update_strength = 0.7;
     get_argument(arguments, "--pheromone_update_strength", true, pheromone_update_strength);
 
     double pheromone_heuristic = 0.3;
     get_argument(arguments, "--pheromone_heuristic", false, pheromone_heuristic);
+
+    double weight_reg_parameter = 0.3;
+    get_argument(arguments, "--weight_reg_parameter", false, weight_reg_parameter);
 
     int32_t bp_iterations;
     get_argument(arguments, "--bp_iterations", true, bp_iterations);
@@ -282,6 +305,9 @@ int main(int argc, char** argv) {
 
     string output_directory = "";
     get_argument(arguments, "--output_directory", false, output_directory);
+
+    string reward_type = "";
+    get_argument(arguments, "--reward_type", true, reward_type);
 
     if (rank == 0) {
         cout << "NUMBER OF ANTS:: " << number_of_ants << endl;
@@ -302,7 +328,7 @@ int main(int argc, char** argv) {
         else
         cout << "Directory created: " << log_dir_str.c_str() << endl;
         output_directory = log_dir_str.c_str();
-        acnnto = new ACNNTO(population_size, max_genomes, time_series_sets->get_input_parameter_names(), time_series_sets->get_output_parameter_names(), time_series_sets->get_normalize_mins(), time_series_sets->get_normalize_maxs(), bp_iterations, learning_rate, use_high_threshold, high_threshold, use_low_threshold, low_threshold, output_directory, number_of_ants, hidden_layers_depth, hidden_layer_nodes, pheromone_decay_parameter, pheromone_update_strength, pheromone_heuristic, max_recurrent_depth );
+        acnnto = new ACNNTO(population_size, max_genomes, time_series_sets->get_input_parameter_names(), time_series_sets->get_output_parameter_names(), time_series_sets->get_normalize_mins(), time_series_sets->get_normalize_maxs(), bp_iterations, learning_rate, use_high_threshold, high_threshold, use_low_threshold, low_threshold, output_directory, number_of_ants, hidden_layers_depth, hidden_layer_nodes, pheromone_decay_parameter, pheromone_update_strength, pheromone_heuristic, max_recurrent_depth, weight_reg_parameter, reward_type );
         master(max_rank);
     } else {
         worker(rank);
