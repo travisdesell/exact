@@ -202,13 +202,13 @@ void MGU_Node::set_weights(const vector<double> &parameters) {
 void MGU_Node::set_weights(uint32_t &offset, const vector<double> &parameters) {
     //uint32_t start_offset = offset;
 
-    fw = parameters[offset++];
-    fu = parameters[offset++];
-    f_bias = parameters[offset++];
+    fw = bound(parameters[offset++]);
+    fu = bound(parameters[offset++]);
+    f_bias = bound(parameters[offset++]);
 
-    hw = parameters[offset++];
-    hu = parameters[offset++];
-    h_bias = parameters[offset++];
+    hw = bound(parameters[offset++]);
+    hu = bound(parameters[offset++]);
+    h_bias = bound(parameters[offset++]);
 
 
     //uint32_t end_offset = offset;

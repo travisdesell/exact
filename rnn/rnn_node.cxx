@@ -139,7 +139,7 @@ void RNN_Node::get_weights(uint32_t &offset, vector<double> &parameters) const {
 
 void RNN_Node::set_weights(uint32_t &offset, const vector<double> &parameters) {
     //no weights to set in a basic RNN node, only a bias
-    bias = parameters[offset++];
+    bias = bound(parameters[offset++]);
 }
 
 RNN_Node_Interface* RNN_Node::copy() const {

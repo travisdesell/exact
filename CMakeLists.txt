@@ -58,9 +58,9 @@ ELSE (COMPILE_CLIENT STREQUAL "YES")
     #set(TIFF_INCLUDE_DIR "/usr/include/x86_64-linux-gnu/")
     #set(TIFF_LIBRARIES /usr/lib/x86_64-linux-gnu/libtiffxx.so /usr/lib/x86_64-linux-gnu/libtiff.so)
     #set(TIFF_FOUND true)
-    #set(TIFF_INCLUDE_DIR "/usr/include/")
-    #set(TIFF_LIBRARIES /usr/lib64/libtiffxx.so /usr/lib64/libtiff.so)
-    #set(TIFF_FOUND true)
+    set(TIFF_INCLUDE_DIR "/usr/include/")
+    set(TIFF_LIBRARIES /usr/lib64/libtiffxx.so /usr/lib64/libtiff.so)
+    set(TIFF_FOUND true)
 
     find_package(tiff)
 

@@ -479,12 +479,12 @@ void RNN_Genome::set_weights(const vector<double> &parameters) {
     }
 
     for (uint32_t i = 0; i < edges.size(); i++) {
-        edges[i]->weight = parameters[current++];
+        edges[i]->weight = bound(parameters[current++]);
         //if (edges[i]->is_reachable()) edges[i]->weight = parameters[current++];
     }
 
     for (uint32_t i = 0; i < recurrent_edges.size(); i++) {
-        recurrent_edges[i]->weight = parameters[current++];
+        recurrent_edges[i]->weight = bound(parameters[current++]);
         //if (recurrent_edges[i]->is_reachable()) recurrent_edges[i]->weight = parameters[current++];
     }
 
@@ -1440,6 +1440,7 @@ void RNN_Genome::get_mu_sigma(const vector<double> &p, double &mu, double &sigma
     sigma = 0.0;
 
     for (int32_t i = 0; i < p.size(); i++) {
+        /*
         if (p[i] < -10 || p[i] > 10) {
             cerr << "ERROR in get_mu_sigma, parameter[" << i << "]: was out of bounds: " << p[i] << endl;
             cerr << "all parameters: " << endl;
@@ -1448,8 +1449,11 @@ void RNN_Genome::get_mu_sigma(const vector<double> &p, double &mu, double &sigma
             }
             exit(1);
         }
+        */
 
-        mu += p[i];
+        if (p[i] < -10) mu += -10.0;
+        else if (p[i] > 10) mu += 10.0;
+        else mu += p[i];
     }
     mu /= p.size();
 
@@ -1464,7 +1468,7 @@ void RNN_Genome::get_mu_sigma(const vector<double> &p, double &mu, double &sigma
 
     cout << "\tmu: " << mu << ", sigma: " << sigma << ", parameters.size(): " << p.size() << endl;
     if (std::isnan(mu) || std::isinf(mu) || std::isnan(sigma) || std::isinf(sigma)) {
-        cerr << "mu or sigma was not a number, best parameters: " << endl;
+        cerr << "mu or sigma was not a number, all parameters: " << endl;
         for (int32_t i = 0; i < (int32_t)p.size(); i++) {
             cerr << "\t" << p[i] << endl;
         }
@@ -1473,7 +1477,7 @@ void RNN_Genome::get_mu_sigma(const vector<double> &p, double &mu, double &sigma
     }
 
     if (mu < -11.0 || mu > 11.0 || sigma < -30.0 || sigma > 30.0) {
-        cerr << "mu or sigma exceeded possible bounds, best parameters: " << endl;
+        cerr << "mu or sigma exceeded possible bounds, all parameters: " << endl;
         cerr << "mu: " << mu << endl;
         cerr << "sigma: " << sigma << endl;
         for (int32_t i = 0; i < (int32_t)p.size(); i++) {
@@ -1876,6 +1880,9 @@ bool RNN_Genome::add_node(double mu, double sigma, int node_type, int32_t max_re
     nodes.insert( upper_bound(nodes.begin(), nodes.end(), new_node, sort_RNN_Nodes_by_depth()), new_node);
 
     for (int32_t i = 0; i < possible_inputs.size(); i++) {
+        //TODO: remove after running tests without recurrent edges
+        //recurrent_probability = 0;
+
         if (rng_0_1(generator) < recurrent_probability) {
             attempt_recurrent_edge_insert(possible_inputs[i], new_node, mu, sigma, max_recurrent_depth, edge_innovation_count);
         } else {
@@ -1884,6 +1891,9 @@ bool RNN_Genome::add_node(double mu, double sigma, int node_type, int32_t max_re
     }
 
     for (int32_t i = 0; i < possible_outputs.size(); i++) {
+        //TODO: remove after running tests without recurrent edges
+        //recurrent_probability = 0;
+
         if (rng_0_1(generator) < recurrent_probability) {
             attempt_recurrent_edge_insert(new_node, possible_outputs[i], mu, sigma, max_recurrent_depth, edge_innovation_count);
         } else {

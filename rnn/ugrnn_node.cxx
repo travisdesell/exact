@@ -229,13 +229,13 @@ void UGRNN_Node::set_weights(const vector<double> &parameters) {
 void UGRNN_Node::set_weights(uint32_t &offset, const vector<double> &parameters) {
     //uint32_t start_offset = offset;
 
-    cw = parameters[offset++];
-    ch = parameters[offset++];
-    c_bias = parameters[offset++];
+    cw = bound(parameters[offset++]);
+    ch = bound(parameters[offset++]);
+    c_bias = bound(parameters[offset++]);
 
-    gw = parameters[offset++];
-    gh = parameters[offset++];
-    g_bias = parameters[offset++];
+    gw = bound(parameters[offset++]);
+    gh = bound(parameters[offset++]);
+    g_bias = bound(parameters[offset++]);
 
     //uint32_t end_offset = offset;
 

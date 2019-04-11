@@ -256,20 +256,20 @@ void LSTM_Node::set_weights(const vector<double> &parameters) {
 void LSTM_Node::set_weights(uint32_t &offset, const vector<double> &parameters) {
     //uint32_t start_offset = offset;
 
-    output_gate_update_weight = parameters[offset++];
-    output_gate_weight = parameters[offset++];
-    output_gate_bias = parameters[offset++];
+    output_gate_update_weight = bound(parameters[offset++]);
+    output_gate_weight = bound(parameters[offset++]);
+    output_gate_bias = bound(parameters[offset++]);
 
-    input_gate_update_weight = parameters[offset++];
-    input_gate_weight = parameters[offset++];
-    input_gate_bias = parameters[offset++];
+    input_gate_update_weight = bound(parameters[offset++]);
+    input_gate_weight = bound(parameters[offset++]);
+    input_gate_bias = bound(parameters[offset++]);
 
-    forget_gate_update_weight = parameters[offset++];
-    forget_gate_weight = parameters[offset++];
-    forget_gate_bias = parameters[offset++];
+    forget_gate_update_weight = bound(parameters[offset++]);
+    forget_gate_weight = bound(parameters[offset++]);
+    forget_gate_bias = bound(parameters[offset++]);
 
-    cell_weight = parameters[offset++];
-    cell_bias = parameters[offset++];
+    cell_weight = bound(parameters[offset++]);
+    cell_bias = bound(parameters[offset++]);
 
     //uint32_t end_offset = offset;
 

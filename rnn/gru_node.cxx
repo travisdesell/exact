@@ -260,17 +260,17 @@ void GRU_Node::set_weights(const vector<double> &parameters) {
 void GRU_Node::set_weights(uint32_t &offset, const vector<double> &parameters) {
     //uint32_t start_offset = offset;
 
-    zw = parameters[offset++];
-    zu = parameters[offset++];
-    z_bias = parameters[offset++];
+    zw = bound(parameters[offset++]);
+    zu = bound(parameters[offset++]);
+    z_bias = bound(parameters[offset++]);
 
-    rw = parameters[offset++];
-    ru = parameters[offset++];
-    r_bias = parameters[offset++];
+    rw = bound(parameters[offset++]);
+    ru = bound(parameters[offset++]);
+    r_bias = bound(parameters[offset++]);
 
-    hw = parameters[offset++];
-    hu = parameters[offset++];
-    h_bias = parameters[offset++];
+    hw = bound(parameters[offset++]);
+    hu = bound(parameters[offset++]);
+    h_bias = bound(parameters[offset++]);
 
 
     //uint32_t end_offset = offset;
