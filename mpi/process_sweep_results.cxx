@@ -52,8 +52,8 @@ bool extension_is(string name, string extension) {
     return ext.compare(extension) == 0;
 }
 
-string current_search;
-string current_slice;
+string current_output;
+string current_run_type;
 
 void process_dir(string dir_name, int depth) {
     DIR *dir;
@@ -62,27 +62,32 @@ void process_dir(string dir_name, int depth) {
         /* print all the files and directories within directory */
         while ((ent = readdir(dir)) != NULL) {
             if (ent->d_name[0] == '.') continue;
-            if (ent->d_name[0] == 's' && depth == 0) continue;
+            if (strcmp(ent->d_name, "logs") == 0 && depth == 0) continue;
 
             if (depth == 0) {
-                current_search = ent->d_name;
-                //cout << "set current search to '" << current_search << "'" << endl;
+                current_output = ent->d_name;
+                cout << "set current output to '" << current_output << "'" << endl;
             }
 
-            if (depth == 1 && !extension_is(ent->d_name, ".csv")) {
-                current_slice = ent->d_name;
-                //cout << "set current slice to '" << current_slice << "'" << endl;
+            if (depth == 1) {
+                current_run_type = ent->d_name;
+                cout << "set current run type to '" << current_run_type << "'" << endl;
+            }
+
+            if (depth == 2 && extension_is(ent->d_name, ".csv")) {
+                continue;
             }
 
             string sub_dir_name = dir_name + "/" + ent->d_name;
             //cout << sub_dir_name << ", depth: " << depth << endl;
 
-            if (depth == 2 && extension_is(sub_dir_name, ".bin")) {
-                //cout << "processing genome binary '" << sub_dir_name << "' for '" << current_search << "'" << endl;
-                //genomes.push_back(new RepeatGenome(current_search, current_slice, sub_dir_name));
+            if (depth == 3 && extension_is(sub_dir_name, ".bin")) {
+                cout << "\tprocessing genome binary '" << sub_dir_name << "' for '" << current_output << "'" << " and " << current_run_type;
+                RNN_Genome *genome = new RNN_Genome(sub_dir_name, false);
+                cout << ", fitness: " << genome->get_fitness() << endl;
 
-                genome_map[current_search][current_slice].push_back(new RNN_Genome(sub_dir_name, false));
-            } else if (depth < 2) {
+                genome_map[current_output][current_run_type].push_back(genome);
+            } else if (depth < 3) {
                 process_dir(sub_dir_name, depth + 1);
             }
         }
@@ -92,7 +97,6 @@ void process_dir(string dir_name, int depth) {
         /* could not open directory */
         //cerr << "ERROR: could not open the directory '" << dir_name << "'" << endl;
     }
-
 }
 
 
@@ -105,33 +109,22 @@ int main(int argc, char** argv) {
 
     vector<string> output_types;
     output_types.push_back("flame");
-    output_types.push_back("oil_flow");
+    output_types.push_back("oil");
     output_types.push_back("rpm");
     output_types.push_back("pitch");
 
 
     cout << "search_name,slice_name,best_mse,best_mae,n_edges,n_rec_edges,n_nodes,n_ff,n_lstm,n_ugrnn,n_delta,n_mgu,n_gru" << endl;
 
-    //iterate over the map of search names
+    //iterate over the map of output names
     for (auto i = genome_map.begin(); i != genome_map.end(); i++) {
-        string dirname = i->first;
-        int uc_index = dirname.find_first_of('_');
+        string output_name = i->first;
 
-        string output_name;
-        string run_type;
-        for (int j = 0; j < output_types.size(); j++) {
-            if (dirname.find(output_types[j]) != std::string::npos) {
-                output_name = output_types[j];
-                run_type = dirname.substr(output_name.size() + 1, dirname.size() - (output_name.size() + 1));
-
-                break;
-            }
-        }
-
-        RunStatistics *rs = new RunStatistics(output_name, run_type);
-
-        //iterate over the map of slice names
+        //iterate over the map of run types
         for (auto j = i->second.begin(); j != i->second.end(); j++) {
+            string run_type = j->first;
+
+            RunStatistics *rs = new RunStatistics(output_name, run_type);
 
             //iterate over the vector of genomes
             for (auto k = j->second.begin(); k != j->second.end(); k++) {
@@ -163,29 +156,31 @@ int main(int argc, char** argv) {
                 rs->mgu.track(genome->get_enabled_node_count(MGU_NODE));
                 rs->gru.track(genome->get_enabled_node_count(GRU_NODE));
             }
+            cout << endl;
+
+            cout << rs->to_string_min() << endl;
+            cout << rs->to_string_avg() << endl;
+            cout << rs->to_string_max() << endl;
+            cout << rs->to_string_stddev() << endl;
+            cout << rs->to_string_correlate("mse", rs->mse) << endl;
+            cout << rs->to_string_correlate("mae", rs->mae) << endl;
+
+            /*
+               cout << i->first << ",min," << mse.min() << "," << mae.min() << "," << edge.min() << "," << rec_edge.min() << "," << node.min() << "," << ff.min() << "," << lstm.min() << "," << ugrnn.min() << "," << delta.min() << "," << mgu.min() << "," << gru.min() << endl;
+               cout << i->first << ",avg," << mse.avg() << "," << mae.avg() << "," << edge.avg() << "," << rec_edge.avg() << "," << node.avg() << "," << ff.avg() << "," << lstm.avg() << "," << ugrnn.avg() << "," << delta.avg() << "," << mgu.avg() << "," << gru.avg() << endl;
+               cout << i->first << ",max," << mse.max() << "," << mae.max() << "," << edge.max() << "," << rec_edge.max() << "," << node.max() << "," << ff.max() << "," << lstm.max() << "," << ugrnn.max() << "," << delta.max() << "," << mgu.max() << "," << gru.max() << endl;
+               cout << i->first << ",stddev," << mse.stddev() << "," << mae.stddev() << "," << edge.stddev() << "," << rec_edge.stddev() << "," << node.stddev() << "," << ff.stddev() << "," << lstm.stddev() << "," << ugrnn.stddev() << "," << delta.stddev() << "," << mgu.stddev() << "," << gru.stddev() << endl;
+               cout << i->first << ",mse correlation," << mse.correlate(mse) << "," << mae.correlate(mse) << "," << edge.correlate(mse) << "," << rec_edge.correlate(mse) << "," << node.correlate(mse) << "," << ff.correlate(mse) << "," << lstm.correlate(mse) << "," << ugrnn.correlate(mse) << "," << delta.correlate(mse) << "," << mgu.correlate(mse) << "," << gru.correlate(mse) << endl;
+               cout << i->first << ",mae correlation," << mse.correlate(mae) << "," << mae.correlate(mae) << "," << edge.correlate(mae) << "," << rec_edge.correlate(mae) << "," << node.correlate(mae) << "," << ff.correlate(mae) << "," << lstm.correlate(mae) << "," << ugrnn.correlate(mae) << "," << delta.correlate(mae) << "," << mgu.correlate(mae) << "," << gru.correlate(mae) << endl;
+               */
+
+            cout << endl;
+            cout << endl;
+
+
+            run_statistics.push_back(rs);
+
         }
-        cout << endl;
-
-        cout << rs->to_string_min() << endl;
-        cout << rs->to_string_avg() << endl;
-        cout << rs->to_string_max() << endl;
-        cout << rs->to_string_stddev() << endl;
-        cout << rs->to_string_correlate("mse", rs->mse) << endl;
-        cout << rs->to_string_correlate("mae", rs->mae) << endl;
-
-        /*
-        cout << i->first << ",min," << mse.min() << "," << mae.min() << "," << edge.min() << "," << rec_edge.min() << "," << node.min() << "," << ff.min() << "," << lstm.min() << "," << ugrnn.min() << "," << delta.min() << "," << mgu.min() << "," << gru.min() << endl;
-        cout << i->first << ",avg," << mse.avg() << "," << mae.avg() << "," << edge.avg() << "," << rec_edge.avg() << "," << node.avg() << "," << ff.avg() << "," << lstm.avg() << "," << ugrnn.avg() << "," << delta.avg() << "," << mgu.avg() << "," << gru.avg() << endl;
-        cout << i->first << ",max," << mse.max() << "," << mae.max() << "," << edge.max() << "," << rec_edge.max() << "," << node.max() << "," << ff.max() << "," << lstm.max() << "," << ugrnn.max() << "," << delta.max() << "," << mgu.max() << "," << gru.max() << endl;
-        cout << i->first << ",stddev," << mse.stddev() << "," << mae.stddev() << "," << edge.stddev() << "," << rec_edge.stddev() << "," << node.stddev() << "," << ff.stddev() << "," << lstm.stddev() << "," << ugrnn.stddev() << "," << delta.stddev() << "," << mgu.stddev() << "," << gru.stddev() << endl;
-        cout << i->first << ",mse correlation," << mse.correlate(mse) << "," << mae.correlate(mse) << "," << edge.correlate(mse) << "," << rec_edge.correlate(mse) << "," << node.correlate(mse) << "," << ff.correlate(mse) << "," << lstm.correlate(mse) << "," << ugrnn.correlate(mse) << "," << delta.correlate(mse) << "," << mgu.correlate(mse) << "," << gru.correlate(mse) << endl;
-        cout << i->first << ",mae correlation," << mse.correlate(mae) << "," << mae.correlate(mae) << "," << edge.correlate(mae) << "," << rec_edge.correlate(mae) << "," << node.correlate(mae) << "," << ff.correlate(mae) << "," << lstm.correlate(mae) << "," << ugrnn.correlate(mae) << "," << delta.correlate(mae) << "," << mgu.correlate(mae) << "," << gru.correlate(mae) << endl;
-        */
-
-        cout << endl;
-        cout << endl;
-
-        run_statistics.push_back(rs);
     }
 
 
@@ -298,7 +293,7 @@ int main(int argc, char** argv) {
         for (int j = 0; j < run_statistics.size(); j++) {
             if (run_statistics[j]->output_name.compare(output_types[i]) == 0) {
                 string run_type = run_statistics[j]->run_type;
-                if (run_type.find("solo") != string::npos || run_type.find("all") != string::npos) {
+                if (run_type.find("simple") == string::npos || run_type.find("all") != string::npos) {
                     cout << run_statistics[j]->to_overview_string() << endl;
                 }
             }
@@ -317,7 +312,7 @@ int main(int argc, char** argv) {
         for (int j = 0; j < run_statistics.size(); j++) {
             if (run_statistics[j]->output_name.compare(output_types[i]) == 0) {
                 string run_type = run_statistics[j]->run_type;
-                if (run_type.find("solo") == string::npos && run_type.find("all") == string::npos) {
+                if (run_type.find("simple") != string::npos && run_type.find("all") == string::npos) {
                     cout << run_statistics[j]->to_overview_ff_string() << endl;
                 }
             }
@@ -416,17 +411,34 @@ int main(int argc, char** argv) {
     }
 
     vector<string> run_types;
-    run_types.push_back("all");
-    run_types.push_back("delta");
-    run_types.push_back("lstm");
-    run_types.push_back("mgu");
-    run_types.push_back("gru");
-    run_types.push_back("ugrnn");
-    run_types.push_back("delta_solo");
-    run_types.push_back("lstm_solo");
-    run_types.push_back("mgu_solo");
-    run_types.push_back("gru_solo");
-    run_types.push_back("ugrnn_solo");
+    run_types.push_back("all_norec");
+    run_types.push_back("all_rec");
+    run_types.push_back("ff_norec");
+    run_types.push_back("ff_rec");
+
+    run_types.push_back("delta_norec");
+    run_types.push_back("lstm_norec");
+    run_types.push_back("mgu_norec");
+    run_types.push_back("gru_norec");
+    run_types.push_back("ugrnn_norec");
+
+    run_types.push_back("delta_rec");
+    run_types.push_back("lstm_rec");
+    run_types.push_back("mgu_rec");
+    run_types.push_back("gru_rec");
+    run_types.push_back("ugrnn_rec");
+
+    run_types.push_back("delta_simple_norec");
+    run_types.push_back("lstm_simple_norec");
+    run_types.push_back("mgu_simple_norec");
+    run_types.push_back("gru_simple_norec");
+    run_types.push_back("ugrnn_simple_norec");
+
+    run_types.push_back("delta_simple_rec");
+    run_types.push_back("lstm_simple_rec");
+    run_types.push_back("mgu_simple_rec");
+    run_types.push_back("gru_simple_rec");
+    run_types.push_back("ugrnn_simple_rec");
 
     map<string, ConsolidatedStatistics*> consolidated_statistics;
 
@@ -435,7 +447,11 @@ int main(int argc, char** argv) {
     }
 
     for (int i = 0; i < output_types.size(); i++) {
+        cout << "GENERATING sorted stats for: '" << output_types[i] << "'" << endl;
+
         vector<RunStatistics*> current = output_sorted_statistics[output_types[i]];
+
+        cout << "got current!" << endl;
 
         double avg_min = 0.0;
         double avg_avg = 0.0;
@@ -451,6 +467,8 @@ int main(int argc, char** argv) {
         avg_avg /= current.size();
         avg_max /= current.size();
 
+        cout << "calculated averages" << endl;
+
         double stddev_min = 0.0;
         double stddev_avg = 0.0;
         double stddev_max = 0.0;
@@ -465,7 +483,11 @@ int main(int argc, char** argv) {
         stddev_avg = sqrt(stddev_avg / (current.size() - 1));
         stddev_max = sqrt(stddev_max / (current.size() - 1));
 
+        cout << "calculated stddevs!" << endl;
+
         for (int j = 0; j < current.size(); j++) {
+            cout << "current[" << j << "]->run_type: " << current[j]->run_type << endl;
+
             current[j]->set_deviation_from_mean_min((current[j]->mse.min() - avg_min) / stddev_min);
             current[j]->set_deviation_from_mean_avg((current[j]->mse.avg() - avg_avg) / stddev_avg);
             current[j]->set_deviation_from_mean_max((current[j]->mse.max() - avg_max) / stddev_max);
@@ -475,36 +497,40 @@ int main(int argc, char** argv) {
             consolidated_statistics[ current[j]->run_type ]->dfm_max += current[j]->dfm_max / output_types.size();
         }
 
+        cout << "updated consolidated statistics!" << endl;
+
         vector<RunStatistics*> sorted_by_min = current;
         vector<RunStatistics*> sorted_by_avg = current;
         vector<RunStatistics*> sorted_by_max = current;
 
+        cout << "sorting!" << endl;
+
         sort(sorted_by_min.begin(), sorted_by_min.end(), less_than_dfm_min());
         sort(sorted_by_avg.begin(), sorted_by_avg.end(), less_than_dfm_avg());
         sort(sorted_by_max.begin(), sorted_by_max.end(), less_than_dfm_max());
-        
-         cout << endl << endl;
-         //cout << "RANKINGS FOR '" << output_types[i] << "'" << endl;
 
-         cout << "\\begin{table}" << endl;
-         cout << "\\begin{scriptsize}" << endl;
-         cout << "\\centering" << endl;
-         cout << "\\begin{tabular}{|r|l||r|l||r|l||}" << endl;
-         cout << "\\hline" << endl;
-         cout << "\\multicolumn{2}{|c||}{{\\bf Best Case}} & \\multicolumn{2}{|c||}{{\\bf Avg. Case}} & \\multicolumn{2}{|c|}{{\\bf Worst Case}} \\\\" << endl;
-         cout << "\\hline" << endl;
+        cout << endl << endl;
+        cout << "RANKINGS FOR '" << output_types[i] << "'" << endl;
 
-         for (int j = 0; j < current.size(); j++) {
-             cout << setw(15) << fix_run_type(sorted_by_min[j]->run_type) << " & " << setw(15) << setprecision(5) << sorted_by_min[j]->dfm_min << " & ";
-             cout << setw(15) << fix_run_type(sorted_by_avg[j]->run_type) << " & " << setw(15) << setprecision(5) << sorted_by_avg[j]->dfm_avg << " & ";
-             cout << setw(15) << fix_run_type(sorted_by_max[j]->run_type) << " & " << setw(15) << setprecision(5) << sorted_by_max[j]->dfm_max << "\\\\" << endl;
-         }
+        cout << "\\begin{table}" << endl;
+        cout << "\\begin{scriptsize}" << endl;
+        cout << "\\centering" << endl;
+        cout << "\\begin{tabular}{|r|l||r|l||r|l||}" << endl;
+        cout << "\\hline" << endl;
+        cout << "\\multicolumn{2}{|c||}{{\\bf Best Case}} & \\multicolumn{2}{|c||}{{\\bf Avg. Case}} & \\multicolumn{2}{|c|}{{\\bf Worst Case}} \\\\" << endl;
+        cout << "\\hline" << endl;
 
-         cout << "\\hline" << endl;
-         cout << "\\end{tabular}" << endl;
-         cout << "\\caption{\\label{table:consolidated_rankings} Rankings for all the EXAMM run types predicting " << output_types[i] << ".}" << endl;
-         cout << "\\end{scriptsize}" << endl;
-         cout << "\\end{table}" << endl;
+        for (int j = 0; j < current.size(); j++) {
+            cout << setw(15) << fix_run_type(sorted_by_min[j]->run_type) << " & " << setw(15) << setprecision(5) << sorted_by_min[j]->dfm_min << " & ";
+            cout << setw(15) << fix_run_type(sorted_by_avg[j]->run_type) << " & " << setw(15) << setprecision(5) << sorted_by_avg[j]->dfm_avg << " & ";
+            cout << setw(15) << fix_run_type(sorted_by_max[j]->run_type) << " & " << setw(15) << setprecision(5) << sorted_by_max[j]->dfm_max << "\\\\" << endl;
+        }
+
+        cout << "\\hline" << endl;
+        cout << "\\end{tabular}" << endl;
+        cout << "\\caption{\\label{table:consolidated_rankings} Rankings for all the EXAMM run types predicting " << output_types[i] << ".}" << endl;
+        cout << "\\end{scriptsize}" << endl;
+        cout << "\\end{table}" << endl;
     }
 
     vector<ConsolidatedStatistics*> min_stats_vector;

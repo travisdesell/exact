@@ -22,13 +22,11 @@ using std::thread;
 #include <vector>
 using std::vector;
 
-//for mkdir
-#include <sys/stat.h>
-
 
 #include "mpi.h"
 
 #include "common/arguments.hxx"
+#include "common/files.hxx"
 
 #include "rnn/exalt.hxx"
 
@@ -248,7 +246,7 @@ int main(int argc, char** argv) {
     string output_directory = "";
     get_argument(arguments, "--output_directory", false, output_directory);
 
-    mkdir(output_directory.c_str(), 0777);
+    //mkpath(output_directory.c_str(), 0777);
 
     TimeSeriesSets *time_series_sets = NULL;
     
@@ -292,12 +290,12 @@ int main(int argc, char** argv) {
         time_series_sets->export_test_series(time_offset, validation_inputs, validation_outputs);
 
         string slice_output_directory = output_directory + "/slice_" + to_string(i);
-        mkdir(slice_output_directory.c_str(), 0777);
+        mkpath(slice_output_directory.c_str(), 0777);
         ofstream slice_times_file(output_directory + "/slice_" + to_string(i) + "_runtimes.csv");
 
         for (int k = 0; k < repeats; k++) {
             string current_output_directory = slice_output_directory + "/repeat_" + to_string(k);
-            mkdir(current_output_directory.c_str(), 0777);
+            mkpath(current_output_directory.c_str(), 0777);
 
             if (rank == 0) {
                 exalt = new EXALT(population_size, number_islands, max_genomes, time_series_sets->get_input_parameter_names(), time_series_sets->get_output_parameter_names(), time_series_sets->get_normalize_mins(), time_series_sets->get_normalize_maxs(), bp_iterations, learning_rate, use_high_threshold, high_threshold, use_low_threshold, low_threshold, use_dropout, dropout_probability, current_output_directory);

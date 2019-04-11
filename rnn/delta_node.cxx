@@ -251,13 +251,13 @@ void Delta_Node::set_weights(const vector<double> &parameters) {
 void Delta_Node::set_weights(uint32_t &offset, const vector<double> &parameters) {
     //uint32_t start_offset = offset;
 
-    alpha = parameters[offset++];
-    beta1 = parameters[offset++];
-    beta2 = parameters[offset++];
-    v = parameters[offset++];
+    alpha = bound(parameters[offset++]);
+    beta1 = bound(parameters[offset++]);
+    beta2 = bound(parameters[offset++]);
+    v = bound(parameters[offset++]);
 
-    r_bias = parameters[offset++];
-    z_hat_bias = parameters[offset++];
+    r_bias = bound(parameters[offset++]);
+    z_hat_bias = bound(parameters[offset++]);
 
     //uint32_t end_offset = offset;
 
