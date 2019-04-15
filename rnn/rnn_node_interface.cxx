@@ -10,7 +10,7 @@ using std::string;
 
 
 extern const int32_t NUMBER_NODE_TYPES = 8;
-extern const string NODE_TYPES[] = { "feed_forward" , "jordan", "elman", "UGRNN", "MGU", "GRU", "delta", "LSTM" };
+extern const string NODE_TYPES[] = { "simple" , "jordan", "elman", "UGRNN", "MGU", "GRU", "delta", "LSTM" };
 
 double bound(double value) {
     if (value < -10.0) value = -10.0;

@@ -27,7 +27,7 @@ class RNN;
 extern const int32_t NUMBER_NODE_TYPES;
 extern const string NODE_TYPES[];
 
-#define FEED_FORWARD_NODE 0
+#define SIMPLE_NODE 0
 #define JORDAN_NODE 1
 #define ELMAN_NODE 2
 #define UGRNN_NODE 3
