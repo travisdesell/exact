@@ -1,0 +1,38 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+..//common/random.hxx
+iostream
+-
+random
+-
+vector
+-
+
+/Users/a.e./Dropbox/newAntColony/cnn/pooling.cxx
+stdint.h
+/Users/a.e./Dropbox/newAntColony/cnn/stdint.h
+cmath
+-
+chrono
+-
+limits
+-
+iostream
+-
+iomanip
+-
+random
+-
+string
+-
+vector
+-
+common/random.hxx
+/Users/a.e./Dropbox/newAntColony/cnn/common/random.hxx
+

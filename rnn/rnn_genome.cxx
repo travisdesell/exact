@@ -593,6 +593,14 @@ vector<double> RNN_Genome::get_best_parameters() const {
     return best_parameters;
 }
 
+void RNN_Genome::set_best_parameters( vector<double> parameters) {        //WARNING: ADDED BY ABDELRAHMAN TO TEST THE PHEROMONE UPDATE
+    best_parameters = parameters ;
+}
+
+vector<double> RNN_Genome::get_initial_parameters() const {         //WARNING: ADDED BY ABDELRAHMAN TO TEST THE PHEROMONE UPDATE
+    return initial_parameters;
+}
+
 int32_t RNN_Genome::get_generation_id() const {
     return generation_id;
 }
@@ -605,6 +613,11 @@ double RNN_Genome::get_fitness() const {
     cout << "BEST VALIDATION MSE: " << best_validation_mse << endl;
     return best_validation_mse;
     //return best_validation_mae;
+}
+
+
+void RNN_Genome::set_fitness(double fit) {                  //WARNING: ADDED BY ABDELRAHMAN TO TEST THE PHEROMONE UPDATE
+    best_validation_mse = fit;
 }
 
 double RNN_Genome::get_best_validation_mse() const {

@@ -33,15 +33,10 @@ using std::ios;
 #include "rnn_genome.hxx"
 #include "generate_nn.hxx"
 
-#define ANTS 50
-#define HIDDEN_LAYERS_DEPTH 0
-#define HIDDEN_LAYER_NODES  0
 #define PHEROMONES_THERESHOLD 20
-#define PERIODIC_PHEROMONE_REDUCTION_RATIO 0.75
-#define PHEROMONE_DECAY_PARAMETER 0.8
-#define PHEROMONE_UPDATE_STRENGTH 0.7
+#define PERIODIC_PHEROMONE_REDUCTION_RATIO 0.995
 #define EXPLORATION_FACTOR 0.7          //Used in pick_node_type() which is I'm not using ( using the old_pick_node_type() )
-#define PHEROMONE_HEURISTIC 0.3
+#define INITIAL_PHEROMONE 0.7
 
 class ACNNTO {
     private:
@@ -57,6 +52,8 @@ class ACNNTO {
         int32_t population_size;
         int32_t number_islands;
         vector<RNN_Genome*> population;
+
+        vector<double> best_weights;
 
         map <int32_t, NODE_Pheromones*> colony;
 
@@ -129,6 +126,8 @@ class ACNNTO {
         ostringstream memory_log;
 
         string reward_type;
+        string norm;
+        bool bias_forward_paths;
 
         std::chrono::time_point<std::chrono::system_clock> startClock;
 
@@ -145,6 +144,7 @@ class ACNNTO {
         void reward_colony_constant_rate(RNN_Genome* g, int treat_pheromone);
         void reduce_pheromones();
         void evaporate_pheromones();
+        double get_norm(RNN_Genome* g);
 
         void initialize_genome_parameters(RNN_Genome* genome);
 
@@ -163,7 +163,8 @@ class ACNNTO {
           int32_t _bp_iterations, double _learning_rate, bool _use_high_threshold, double _high_threshold, bool _use_low_threshold,
           double _low_threshold, string _output_directory, int32_t _ants, int32_t _hidden_layers_depth,
           int32_t _hidden_layer_nodes, double _pheromone_decay_parameter, double _pheromone_update_strength,
-          double _pheromone_heuristic, int32_t _max_recurrent_depth, double _weight_reg_parameter, string _reward_type);
+          double _pheromone_heuristic, int32_t _max_recurrent_depth, double _weight_reg_parameter, string _reward_type,
+          string _norm, bool _bias_forward_paths);
 
         ~ACNNTO();
 
@@ -178,11 +179,7 @@ class ACNNTO {
 
         bool insert_genome(RNN_Genome* genome);
 
-
         int get_random_node_type();
-
-
-
 
         RNN_Genome* get_best_genome();
         RNN_Genome* get_worst_genome();
@@ -199,7 +196,7 @@ class ACNNTO {
 
         // double get_genome_squared_weights_sum(RNN_Genome* genome);
         int32_t get_colony_number_edges();
-        void reinitialize_edges_pheromones();
+        void bias_for_forward_paths();
 };
 
 #endif

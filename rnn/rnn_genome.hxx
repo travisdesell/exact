@@ -106,6 +106,7 @@ class RNN_Genome {
         int32_t get_node_count();
 
         double get_fitness() const;
+        void set_fitness( double fit );                       //WARNING: ADDED BY ABDELRAHMAN TO TEST THE PHEROMONE UPDATE
         double get_best_validation_mse() const;
         double get_best_validation_mae() const;
 
@@ -153,6 +154,8 @@ class RNN_Genome {
 
         RNN* get_rnn();
         vector<double> get_best_parameters() const;
+        vector<double> get_initial_parameters() const;           //WARNING: ADDED BY ABDELRAHMAN TO TEST THE PHEROMONE UPDATE
+        void set_best_parameters(vector<double> parameters);     //WARNING: ADDED BY ABDELRAHMAN TO TEST THE PHEROMONE UPDATE
 
         void get_analytic_gradient(vector<RNN*> &rnns, const vector<double> &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, double &mse, vector<double> &analytic_gradient, bool training);
 

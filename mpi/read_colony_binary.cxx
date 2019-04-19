@@ -16,7 +16,7 @@ using std::to_string;
 
 using namespace std;
 
-int main()
+int main(int argc, char** argv)
 {
   map<int, int> node_types;
   node_types[1] = 3;
@@ -30,7 +30,8 @@ int main()
   // bin_outfile.write((char*)&node_types[2], sizeof(int));
   // bin_outfile.close();
 
-  ifstream bin_infile("../build/mpi/_no_of_ants_experiment/01/10_0.5_0.5/colony_2.bin", ios::in | ios::binary);
+  ifstream bin_infile(argv[1], ios::in | ios::binary);
+  // ifstream bin_infile("../build/mpi/marching_ants_experiment/10_0.5_0.5/colony_99.bin", ios::in | ios::binary);
   int n;
   int32_t m;
   double k = 0.0;

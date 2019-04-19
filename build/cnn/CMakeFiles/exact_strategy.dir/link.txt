@@ -1,0 +1,2 @@
+/Library/Developer/CommandLineTools/usr/bin/ar qc libexact_strategy.a  CMakeFiles/exact_strategy.dir/propagation.cxx.o CMakeFiles/exact_strategy.dir/comparison.cxx.o CMakeFiles/exact_strategy.dir/pooling.cxx.o CMakeFiles/exact_strategy.dir/cnn_node.cxx.o CMakeFiles/exact_strategy.dir/cnn_edge.cxx.o CMakeFiles/exact_strategy.dir/cnn_genome.cxx.o CMakeFiles/exact_strategy.dir/exact.cxx.o
+/Library/Developer/CommandLineTools/usr/bin/ranlib libexact_strategy.a

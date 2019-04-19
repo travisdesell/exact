@@ -282,8 +282,8 @@ int main(int argc, char** argv) {
     double pheromone_decay_parameter = 1.0;
     get_argument(arguments, "--pheromone_decay_parameter", false, pheromone_decay_parameter);
 
-    double pheromone_update_strength = 0.7;
-    get_argument(arguments, "--pheromone_update_strength", true, pheromone_update_strength);
+    double pheromone_update_strength = 0.1;
+    get_argument(arguments, "--pheromone_update_strength", false, pheromone_update_strength);
 
     double pheromone_heuristic = 0.3;
     get_argument(arguments, "--pheromone_heuristic", false, pheromone_heuristic);
@@ -309,6 +309,18 @@ int main(int argc, char** argv) {
     string reward_type = "";
     get_argument(arguments, "--reward_type", true, reward_type);
 
+    string norm = "l2";
+    get_argument(arguments, "--norm", false, norm);
+
+    bool bias_forward_paths = false;
+    for ( int i=0; i<argc; i++) {
+        if ( string( argv[i] )=="--bias_forward_paths" ) {
+            bias_forward_paths = true;
+            cout << "Using Forward Paths Bias\n" ;
+            break;
+        }
+    }
+
     if (rank == 0) {
         cout << "NUMBER OF ANTS:: " << number_of_ants << endl;
         cout << "DECAY         :: " << pheromone_decay_parameter << endl;
@@ -328,7 +340,7 @@ int main(int argc, char** argv) {
         else
         cout << "Directory created: " << log_dir_str.c_str() << endl;
         output_directory = log_dir_str.c_str();
-        acnnto = new ACNNTO(population_size, max_genomes, time_series_sets->get_input_parameter_names(), time_series_sets->get_output_parameter_names(), time_series_sets->get_normalize_mins(), time_series_sets->get_normalize_maxs(), bp_iterations, learning_rate, use_high_threshold, high_threshold, use_low_threshold, low_threshold, output_directory, number_of_ants, hidden_layers_depth, hidden_layer_nodes, pheromone_decay_parameter, pheromone_update_strength, pheromone_heuristic, max_recurrent_depth, weight_reg_parameter, reward_type );
+        acnnto = new ACNNTO(population_size, max_genomes, time_series_sets->get_input_parameter_names(), time_series_sets->get_output_parameter_names(), time_series_sets->get_normalize_mins(), time_series_sets->get_normalize_maxs(), bp_iterations, learning_rate, use_high_threshold, high_threshold, use_low_threshold, low_threshold, output_directory, number_of_ants, hidden_layers_depth, hidden_layer_nodes, pheromone_decay_parameter, pheromone_update_strength, pheromone_heuristic, max_recurrent_depth, weight_reg_parameter, reward_type, norm, bias_forward_paths );
         master(max_rank);
     } else {
         worker(rank);
