@@ -5,7 +5,7 @@ using std::endl;
 
 #include "edge_pheromone.hxx"
 
-EDGE_Pheromone::EDGE_Pheromone(int32_t _edge_innovation_number, double _edge_pheromone, int _depth, int _input_innovation_number, int _output_innovation_number) : edge_innovation_number(_edge_innovation_number), edge_pheromone(_edge_pheromone), depth(_depth), input_innovation_number(_input_innovation_number), output_innovation_number(_output_innovation_number)  {
+EDGE_Pheromone::EDGE_Pheromone(int32_t _edge_innovation_number, double _edge_pheromone, int _depth, int _input_innovation_number, int _output_innovation_number, double _edge_weight) : edge_innovation_number(_edge_innovation_number), edge_pheromone(_edge_pheromone), depth(_depth), input_innovation_number(_input_innovation_number), output_innovation_number(_output_innovation_number), edge_weight(_edge_weight)  {
     edge_innovation_number    = _edge_innovation_number;
 
     edge_pheromone            = _edge_pheromone;
@@ -14,6 +14,8 @@ EDGE_Pheromone::EDGE_Pheromone(int32_t _edge_innovation_number, double _edge_phe
 
     input_innovation_number   = _input_innovation_number;
     output_innovation_number  = _output_innovation_number;
+
+    edge_weight               = _edge_weight ;
 
 }
 
@@ -27,6 +29,11 @@ double EDGE_Pheromone::get_edge_phermone(){
 
 int EDGE_Pheromone::get_depth(){
     return depth;
+}
+
+
+double EDGE_Pheromone::get_weight(){
+    return edge_weight;
 }
 
 

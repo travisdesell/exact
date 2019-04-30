@@ -20,7 +20,7 @@ class NODE_Pheromones {
       double* type_pheromones;
       vector<EDGE_Pheromone*> *pheromone_lines;
 
-      int layer_type;;
+      int layer_type;
       int current_layer;
 
 

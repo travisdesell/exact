@@ -21,6 +21,10 @@ using std::map;
 #include "rnn/rnn_node.hxx"
 #include "rnn/rnn_node_interface.hxx"
 
+#include <random>
+using std::minstd_rand0;
+using std::uniform_real_distribution;
+
 RNN_Genome* create_ff(int number_inputs, int number_hidden_layers, int number_hidden_nodes, int number_outputs, int max_recurrent_depth) {
     //cout << "creating ff with inputs: " << number_inputs << ", hidden: " << number_hidden_layers << "x" << number_hidden_nodes << ", outputs: " << number_outputs << endl;
     vector<RNN_Node_Interface*> rnn_nodes;
@@ -424,7 +428,12 @@ The colony structure components will be:
         -- A vector for the edges coming out of the node
 */
 
-void create_colony_pheromones(int number_inputs, int number_hidden_layers, int number_hidden_nodes, int number_outputs, int max_recurrent_depth, map <int32_t, NODE_Pheromones*> &colony, double initial_pheromone) {
+void create_colony_pheromones(int number_inputs, int number_hidden_layers, int number_hidden_nodes, int number_outputs, int max_recurrent_depth, map <int32_t, NODE_Pheromones*> &colony, double initial_pheromone, map<int32_t, EDGE_Pheromone*> &colony_edges) {
+
+    uint16_t seed = std::chrono::system_clock::now().time_since_epoch().count();
+    minstd_rand0 generator = minstd_rand0(seed);
+    uniform_real_distribution<double> rng (-0.5, 0.5);
+
 
     // map <int32_t, NODE_Pheromones*> colony;
     vector<vector<int>> layer_nodes(2 + number_hidden_layers);
@@ -449,7 +458,7 @@ void create_colony_pheromones(int number_inputs, int number_hidden_layers, int n
 
     //Building the pheromones from the starting point
     for ( uint32_t i = 0; i < number_inputs; i++) {
-        dum.push_back(new EDGE_Pheromone(-1, initial_pheromone, 0, -1, layer_nodes[0][i]));
+        dum.push_back(new EDGE_Pheromone(-1, initial_pheromone, 0, -1, layer_nodes[0][i], rng(generator) ) );
     }
 
     vector<EDGE_Pheromone*> *dum2 = new vector<EDGE_Pheromone*>;
@@ -481,7 +490,9 @@ void create_colony_pheromones(int number_inputs, int number_hidden_layers, int n
             /*Building the edges' pheromones: Edge to every node in cosecutive layer*/
             while (l<layer_nodes.size()){
               for ( uint32_t k = 0; k<layer_nodes[l].size(); k++){
-                  dum.push_back(new EDGE_Pheromone(edge_innovation_count++, initial_pheromone, 0, layer_nodes[i][j], layer_nodes[l][k]));
+                  dum.push_back( new EDGE_Pheromone(edge_innovation_count, initial_pheromone, 0, layer_nodes[i][j], layer_nodes[l][k], rng(generator) ) ) ;
+                  colony_edges[edge_innovation_count] = dum.back() ;
+                  edge_innovation_count++ ;
               }
               l++;
             }
@@ -489,7 +500,9 @@ void create_colony_pheromones(int number_inputs, int number_hidden_layers, int n
             for ( uint32_t m = 1; m<layer_nodes.size(); m++){
                 for ( uint32_t n = 0; n<layer_nodes[m].size(); n++){
                     for (uint32_t d = 1; d < max_recurrent_depth; d++) {
-                        dum.push_back(new EDGE_Pheromone(edge_innovation_count++, initial_pheromone, d, layer_nodes[i][j], layer_nodes[m][n]));
+                        dum.push_back( new EDGE_Pheromone(edge_innovation_count, initial_pheromone, d, layer_nodes[i][j], layer_nodes[m][n], rng(generator) ) ) ;
+                        colony_edges[edge_innovation_count] = dum.back() ;
+                        edge_innovation_count++ ;
                     }
                 }
             }

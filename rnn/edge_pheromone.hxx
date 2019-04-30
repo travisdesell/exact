@@ -10,6 +10,8 @@ class EDGE_Pheromone {
 
         double edge_pheromone;
 
+        double edge_weight ;
+
         int depth;
 
         int input_innovation_number;
@@ -17,10 +19,11 @@ class EDGE_Pheromone {
 
     public:
 
-        EDGE_Pheromone(int32_t _edge_innovation_number, double _edge_pheromone, int _depth, int32_t _input_innovation_number, int32_t _output_innovation_number);
+        EDGE_Pheromone(int32_t _edge_innovation_number, double _edge_pheromone, int _depth, int32_t _input_innovation_number, int32_t _output_innovation_number, double _edge_weight);
         int32_t get_edge_innovation_number();
         double get_edge_phermone();
         int get_depth();
+        double get_weight();
 
         int32_t get_input_innovation_number();
         int32_t get_output_innovation_number();

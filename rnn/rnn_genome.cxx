@@ -601,6 +601,10 @@ vector<double> RNN_Genome::get_initial_parameters() const {         //WARNING: A
     return initial_parameters;
 }
 
+void RNN_Genome::set_initial_parameter( vector <double> parameters) {
+    initial_parameters = parameters ;
+}
+
 int32_t RNN_Genome::get_generation_id() const {
     return generation_id;
 }

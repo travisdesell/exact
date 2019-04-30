@@ -37,6 +37,7 @@ using std::ios;
 #define PERIODIC_PHEROMONE_REDUCTION_RATIO 0.995
 #define EXPLORATION_FACTOR 0.7          //Used in pick_node_type() which is I'm not using ( using the old_pick_node_type() )
 #define INITIAL_PHEROMONE 0.7
+#define MINIMUM_PHEROMONE_VALUE 0.2
 
 class ACNNTO {
     private:
@@ -56,6 +57,7 @@ class ACNNTO {
         vector<double> best_weights;
 
         map <int32_t, NODE_Pheromones*> colony;
+        map <int32_t, EDGE_Pheromone*>  colony_edges;
 
         int32_t max_genomes;
         int32_t generated_genomes;
@@ -129,11 +131,14 @@ class ACNNTO {
         string norm;
         bool bias_forward_paths;
 
+        vector <double> edges_inherited_weights;
+        vector <double> recedges_inherited_weights;
+
         std::chrono::time_point<std::chrono::system_clock> startClock;
 
         RNN_Node* check_node_existance(vector<RNN_Node_Interface*> &rnn_nodes,   EDGE_Pheromone* pheromone_line);
-        void check_edge_existance(vector<RNN_Edge*> &rnn_edges, int32_t innovation_number, RNN_Node* in_node, RNN_Node* out_node);
-        void check_recurrent_edge_existance(vector<RNN_Recurrent_Edge*> &recurrent_edges, int32_t innovation_number, int32_t depth, RNN_Node* in_node, RNN_Node* out_node);
+        void check_edge_existance(vector<RNN_Edge*> &rnn_edges, int32_t innovation_number, RNN_Node* in_node, RNN_Node* out_node, double edge_weight);
+        void check_recurrent_edge_existance(vector<RNN_Recurrent_Edge*> &recurrent_edges, int32_t innovation_number, int32_t depth, RNN_Node* in_node, RNN_Node* out_node, double edge_weight);
 
         EDGE_Pheromone* pick_line(vector<EDGE_Pheromone*>* edges_pheromones);
         int old_pick_node_type(double* type_pheromones);
@@ -146,7 +151,7 @@ class ACNNTO {
         void evaporate_pheromones();
         double get_norm(RNN_Genome* g);
 
-        void initialize_genome_parameters(RNN_Genome* genome);
+        void initialize_genome_parameters(RNN_Genome* genome, bool use_edge_inherited_weights);
 
 
     public:
@@ -187,6 +192,7 @@ class ACNNTO {
         double get_best_fitness();
         double get_worst_fitness();
 
+
         string get_output_directory() const;
 
         RNN_Genome* ants_march();
@@ -197,6 +203,9 @@ class ACNNTO {
         // double get_genome_squared_weights_sum(RNN_Genome* genome);
         int32_t get_colony_number_edges();
         void bias_for_forward_paths();
+
+        void set_colony_best_weights( RNN_Genome* g ) ;
+        void pheromones_initialize_weights( RNN_Genome* genome ) ;
 };
 
 #endif
