@@ -11,8 +11,8 @@ vector<string> arguments;
 int main(int argc, char** argv) {
     vector < double > demo_fitness {0.3, 0.1, 0.07, 0.05, 0.035, 0.03, 0.037, 0.033, 0.029, 0.045, 0.031} ;
 
-    int population_size = 1001 ;
-    int max_genomes = 1000 ;
+    int population_size = 100 ;
+    int max_genomes = 100 ;
     int bp_iterations = 20;
     double learning_rate = 0.001;
     bool use_high_threshold = false;
@@ -28,7 +28,7 @@ int main(int argc, char** argv) {
     double pheromone_heuristic = 0.3 ;
     int max_recurrent_depth = 2 ;
     double weight_reg_parameter = 0.2 ;
-    string reward_type = "regularized" ;
+    string reward_type = "fixed" ;
     arguments = vector<string>(argv, argv + argc);
     TimeSeriesSets *time_series_sets = NULL;
 
@@ -44,9 +44,23 @@ int main(int argc, char** argv) {
             break;
         }
     }
+    bool bias_edges = false;
+    for ( int i=0; i<argc; i++) {
+        if ( string( argv[i] )=="--bias_edges" ) {
+            bias_edges = true;
+            cout << "Using Edges Bias\n" ;
+            break;
+        }
+    }
+
+
+
+    bool use_edge_inherited_weights = false;
+    bool use_pheromone_weight_update = false;
+    bool use_fitness_weight_update = true;
 
     time_series_sets = TimeSeriesSets::generate_from_arguments(arguments, true);
-    ACNNTO *acnnto = new ACNNTO(population_size, max_genomes, time_series_sets->get_input_parameter_names(), time_series_sets->get_output_parameter_names(), time_series_sets->get_normalize_mins(), time_series_sets->get_normalize_maxs(), bp_iterations, learning_rate, use_high_threshold, high_threshold, use_low_threshold, low_threshold, output_directory, number_of_ants, hidden_layers_depth, hidden_layer_nodes, pheromone_decay_parameter, pheromone_update_strength, pheromone_heuristic, max_recurrent_depth, weight_reg_parameter, reward_type, norm, bias_forward_paths );
+    ACNNTO *acnnto = new ACNNTO(population_size, max_genomes, time_series_sets->get_input_parameter_names(), time_series_sets->get_output_parameter_names(), time_series_sets->get_normalize_mins(), time_series_sets->get_normalize_maxs(), bp_iterations, learning_rate, use_high_threshold, high_threshold, use_low_threshold, low_threshold, output_directory, number_of_ants, hidden_layers_depth, hidden_layer_nodes, pheromone_decay_parameter, pheromone_update_strength, pheromone_heuristic, max_recurrent_depth, weight_reg_parameter, reward_type, norm, bias_forward_paths, bias_edges, use_edge_inherited_weights, use_pheromone_weight_update, use_fitness_weight_update );
 
     int count = 0 ;
     while ( count<population_size ) {
@@ -56,6 +70,7 @@ int main(int argc, char** argv) {
         genome->set_best_parameters(genome->get_initial_parameters());
         acnnto->insert_genome(genome);
         delete genome;
+        count++;
     }
 
     return 0;

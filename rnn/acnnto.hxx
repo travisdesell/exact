@@ -23,7 +23,7 @@ using std::ios;
 
 //for mkdir
 #include <sys/stat.h>
-
+#include <algorithm>
 
 #include <chrono>
 
@@ -130,9 +130,17 @@ class ACNNTO {
         string reward_type;
         string norm;
         bool bias_forward_paths;
+        bool bias_edges;
+        bool use_edge_inherited_weights;
+        bool use_pheromone_weight_update;
+        bool use_fitness_weight_update;
 
         vector <double> edges_inherited_weights;
         vector <double> recedges_inherited_weights;
+
+        double max_pheromone = PHEROMONES_THERESHOLD ;
+
+        double phi ;
 
         std::chrono::time_point<std::chrono::system_clock> startClock;
 
@@ -151,7 +159,7 @@ class ACNNTO {
         void evaporate_pheromones();
         double get_norm(RNN_Genome* g);
 
-        void initialize_genome_parameters(RNN_Genome* genome, bool use_edge_inherited_weights);
+        void initialize_genome_parameters(RNN_Genome* genome );
 
 
     public:
@@ -169,7 +177,8 @@ class ACNNTO {
           double _low_threshold, string _output_directory, int32_t _ants, int32_t _hidden_layers_depth,
           int32_t _hidden_layer_nodes, double _pheromone_decay_parameter, double _pheromone_update_strength,
           double _pheromone_heuristic, int32_t _max_recurrent_depth, double _weight_reg_parameter, string _reward_type,
-          string _norm, bool _bias_forward_paths);
+          string _norm, bool _bias_forward_paths, bool _bias_edges, bool _use_edge_inherited_weights,
+          bool _use_pheromone_weight_update, bool _use_fitness_weight_update);
 
         ~ACNNTO();
 
@@ -203,9 +212,10 @@ class ACNNTO {
         // double get_genome_squared_weights_sum(RNN_Genome* genome);
         int32_t get_colony_number_edges();
         void bias_for_forward_paths();
+        void bias_for_edges();
 
         void set_colony_best_weights( RNN_Genome* g ) ;
-        void pheromones_initialize_weights( RNN_Genome* genome ) ;
+        void pheromones_update_weights( RNN_Genome* genome ) ;
 };
 
 #endif

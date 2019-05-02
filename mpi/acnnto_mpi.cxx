@@ -160,7 +160,7 @@ void master(int max_rank) {
                 send_genome_to(name, source, genome);
 
                 //delete this genome as it will not be used again
-                delete genome;
+                delete genome ;
             }
         } else if (tag == GENOME_LENGTH_TAG) {
             cout << "[" << setw(10) << name << "] received genome from: " << source << endl;
@@ -169,6 +169,7 @@ void master(int max_rank) {
             acnnto_mutex.lock();
             acnnto->insert_genome(genome);
             acnnto_mutex.unlock();
+            delete genome ;
 
             //this genome will be deleted if/when removed from population
         } else {
@@ -312,13 +313,48 @@ int main(int argc, char** argv) {
     string norm = "l2";
     get_argument(arguments, "--norm", false, norm);
 
-    bool bias_forward_paths = false;
+    bool bias_forward_paths = true;
     for ( int i=0; i<argc; i++) {
         if ( string( argv[i] )=="--bias_forward_paths" ) {
             bias_forward_paths = true;
             cout << "Using Forward Paths Bias\n" ;
             break;
         }
+    }
+    bool bias_edges = true;
+    for ( int i=0; i<argc; i++) {
+        if ( string( argv[i] )=="--bias_edges" ) {
+            bias_edges = true;
+            cout << "Using Forward Paths Bias\n" ;
+            break;
+        }
+    }
+    bool use_edge_inherited_weights = false;
+    for ( int i=0; i<argc; i++) {
+        if ( string( argv[i] )=="--use_edge_inherited_weights" ) {
+            use_edge_inherited_weights = true;
+            cout << "Using Edges' Inherited Weights\n" ;
+            break;
+        }
+        // std::cerr << "ERROR: --use_edge_inherited_weights required but not given." << '\n';
+    }
+    bool use_pheromone_weight_update = false;
+    for ( int i=0; i<argc; i++) {
+        if ( string( argv[i] )=="--use_pheromone_weight_update" ) {
+            use_pheromone_weight_update = true;
+            cout << "Using Pheromones To Update Weights\n" ;
+            break;
+        }
+        // std::cerr << "ERROR: --use_pheromone_weight_update required but not given." << '\n';
+    }
+    bool use_fitness_weight_update = false;
+    for ( int i=0; i<argc; i++) {
+        if ( string( argv[i] )=="--use_fitness_weight_update" ) {
+            use_fitness_weight_update = true;
+            cout << "Using Fitness To Update Weights\n" ;
+            break;
+        }
+        // std::cerr << "ERROR: --use_pheromone_weight_update required but not given." << '\n';
     }
 
     if (rank == 0) {
@@ -340,7 +376,7 @@ int main(int argc, char** argv) {
         else
         cout << "Directory created: " << log_dir_str.c_str() << endl;
         output_directory = log_dir_str.c_str();
-        acnnto = new ACNNTO(population_size, max_genomes, time_series_sets->get_input_parameter_names(), time_series_sets->get_output_parameter_names(), time_series_sets->get_normalize_mins(), time_series_sets->get_normalize_maxs(), bp_iterations, learning_rate, use_high_threshold, high_threshold, use_low_threshold, low_threshold, output_directory, number_of_ants, hidden_layers_depth, hidden_layer_nodes, pheromone_decay_parameter, pheromone_update_strength, pheromone_heuristic, max_recurrent_depth, weight_reg_parameter, reward_type, norm, bias_forward_paths );
+        acnnto = new ACNNTO(population_size, max_genomes, time_series_sets->get_input_parameter_names(), time_series_sets->get_output_parameter_names(), time_series_sets->get_normalize_mins(), time_series_sets->get_normalize_maxs(), bp_iterations, learning_rate, use_high_threshold, high_threshold, use_low_threshold, low_threshold, output_directory, number_of_ants, hidden_layers_depth, hidden_layer_nodes, pheromone_decay_parameter, pheromone_update_strength, pheromone_heuristic, max_recurrent_depth, weight_reg_parameter, reward_type, norm, bias_forward_paths, bias_edges, use_edge_inherited_weights, use_pheromone_weight_update, use_fitness_weight_update );
         master(max_rank);
     } else {
         worker(rank);

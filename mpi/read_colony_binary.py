@@ -92,12 +92,12 @@ def build_gv(colony_id, recurrence_depth, Nodes, Edges, RecEdges, max_pheromone 
         dot.edge( "{}_{}".format(in_node, d), "{}_{}".format(out_node, d) , color="grey{}".format(100-edge_pheromone_), style=s)
 
 
-    # for edge in RecEdges:
-    #     edge_pheromone_ = int( edge[-2]/max_pheromone  * 99 )
-    #     s = ""
-    #     if edge_pheromone_<=1:
-    #         s = "invis"
-    #     dot.edge( "{}_{}".format(int(edge[1]), int(edge[-1])-1), "{}_{}".format(int(edge[2]), int(edge[-1])) , color="grey{}".format(edge_pheromone_), style=s)
+    for edge in RecEdges:
+        edge_pheromone_ = int( edge[-2]/max_pheromone  * 99 )
+        s = ""
+        if edge_pheromone_<=1:
+            s = "invis"
+        dot.edge( "{}_{}".format(int(edge[1]), int(edge[-1])-1), "{}_{}".format(int(edge[2]), int(edge[-1])) , color="grey{}".format(edge_pheromone_), style=s)
 
     dot.render('colony_{}.gv'.format(colony_id), view=False)
 
