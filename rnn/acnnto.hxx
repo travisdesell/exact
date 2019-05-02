@@ -157,6 +157,7 @@ class ACNNTO {
         void reward_colony_constant_rate(RNN_Genome* g, int treat_pheromone);
         void reduce_pheromones();
         void evaporate_pheromones();
+        void new_evaporate_pheromones();
         double get_norm(RNN_Genome* g);
 
         void initialize_genome_parameters(RNN_Genome* genome );
