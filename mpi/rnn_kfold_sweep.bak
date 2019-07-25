@@ -50,19 +50,18 @@ int bp_iterations;
 string output_directory;
 int32_t repeats = 5;
 int fold_size = 2;
-int max_recurrent_depth = 1;
 
 string process_name;
 
 vector<string> rnn_types({
-    // "jordan",
-    // "elman",
-        "one_layer_ff"      , "two_layer_ff"    , "three_layer_ff",
-        "one_layer_mgu"     , "two_layer_mgu"   , "three_layer_mgu",
-        "one_layer_gru"     , "two_layer_gru"   , "three_layer_gru",
-        "one_layer_ugrnn"   , "two_layer_ugrnn" , "three_layer_ugrnn",
-        "one_layer_delta"   , "two_layer_delta" , "three_layer_delta",
-        "one_layer_lstm"    , "two_layer_lstm"  , "three_layer_lstm"
+        "one_layer_ff", "two_layer_ff",
+        "jordan",
+        "elman",
+        "one_layer_mgu", "two_layer_mgu",
+        "one_layer_gru", "two_layer_gru",
+        "one_layer_ugrnn", "two_layer_ugrnn",
+        "one_layer_delta", "two_layer_delta",
+        "one_layer_lstm", "two_layer_lstm"
     });
 
 TimeSeriesSets* time_series_sets = NULL;
@@ -299,67 +298,46 @@ ResultSet handle_job(int current_job) {
 
     RNN_Genome *genome = NULL;
     if (rnn_type == "one_layer_lstm") {
-        genome = create_lstm(number_inputs, 1, number_inputs, number_outputs, max_recurrent_depth);
+        genome = create_lstm(number_inputs, 1, number_inputs, number_outputs, 1);
 
     } else if (rnn_type == "two_layer_lstm") {
-        genome = create_lstm(number_inputs, 2, number_inputs, number_outputs, max_recurrent_depth);
-
-    } else if (rnn_type == "three_layer_lstm") {
-        genome = create_lstm(number_inputs, 3, number_inputs, number_outputs, max_recurrent_depth);
+        genome = create_lstm(number_inputs, 2, number_inputs, number_outputs, 1);
 
     } else if (rnn_type == "one_layer_delta") {
-        genome = create_delta(number_inputs, 1, number_inputs, number_outputs, max_recurrent_depth);
+        genome = create_delta(number_inputs, 1, number_inputs, number_outputs, 1);
 
     } else if (rnn_type == "two_layer_delta") {
-        genome = create_delta(number_inputs, 2, number_inputs, number_outputs, max_recurrent_depth);
-
-    } else if (rnn_type == "three_layer_delta") {
-        genome = create_delta(number_inputs, 3, number_inputs, number_outputs, max_recurrent_depth);
+        genome = create_delta(number_inputs, 2, number_inputs, number_outputs, 1);
 
     } else if (rnn_type == "one_layer_gru") {
-        genome = create_gru(number_inputs, 1, number_inputs, number_outputs, max_recurrent_depth);
+        genome = create_gru(number_inputs, 1, number_inputs, number_outputs, 1);
 
     } else if (rnn_type == "two_layer_gru") {
-        genome = create_gru(number_inputs, 2, number_inputs, number_outputs, max_recurrent_depth);
-
-    } else if (rnn_type == "three_layer_gru") {
-        genome = create_gru(number_inputs, 3, number_inputs, number_outputs, max_recurrent_depth);
+        genome = create_gru(number_inputs, 2, number_inputs, number_outputs, 1);
 
     } else if (rnn_type == "one_layer_mgu") {
-        genome = create_mgu(number_inputs, 1, number_inputs, number_outputs, max_recurrent_depth);
+        genome = create_mgu(number_inputs, 1, number_inputs, number_outputs, 1);
 
     } else if (rnn_type == "two_layer_mgu") {
-        genome = create_mgu(number_inputs, 2, number_inputs, number_outputs, max_recurrent_depth);
-
-    } else if (rnn_type == "three_layer_mgu") {
-        genome = create_mgu(number_inputs, 3, number_inputs, number_outputs, max_recurrent_depth);
+        genome = create_mgu(number_inputs, 2, number_inputs, number_outputs, 1);
 
     } else if (rnn_type == "one_layer_delta") {
-        genome = create_delta(number_inputs, 1, number_inputs, number_outputs, max_recurrent_depth);
+        genome = create_delta(number_inputs, 1, number_inputs, number_outputs, 1);
 
     } else if (rnn_type == "two_layer_delta") {
-        genome = create_delta(number_inputs, 2, number_inputs, number_outputs, max_recurrent_depth);
-
-    } else if (rnn_type == "three_layer_delta") {
-        genome = create_delta(number_inputs, 3, number_inputs, number_outputs, max_recurrent_depth);
+        genome = create_delta(number_inputs, 2, number_inputs, number_outputs, 1);
 
     } else if (rnn_type == "one_layer_ugrnn") {
-        genome = create_ugrnn(number_inputs, 1, number_inputs, number_outputs, max_recurrent_depth);
+        genome = create_ugrnn(number_inputs, 1, number_inputs, number_outputs, 1);
 
     } else if (rnn_type == "two_layer_ugrnn") {
-        genome = create_ugrnn(number_inputs, 2, number_inputs, number_outputs, max_recurrent_depth);
-
-    } else if (rnn_type == "three_layer_ugrnn") {
-        genome = create_ugrnn(number_inputs, 3, number_inputs, number_outputs, max_recurrent_depth);
+        genome = create_ugrnn(number_inputs, 2, number_inputs, number_outputs, 1);
 
     } else if (rnn_type == "one_layer_ff") {
-        genome = create_ff(number_inputs, 1, number_inputs, number_outputs, max_recurrent_depth);
+        genome = create_ff(number_inputs, 1, number_inputs, number_outputs, 0);
 
     } else if (rnn_type == "two_layer_ff") {
-        genome = create_ff(number_inputs, 2, number_inputs, number_outputs, max_recurrent_depth);
-
-    } else if (rnn_type == "three_layer_ff") {
-        genome = create_ff(number_inputs, 3, number_inputs, number_outputs, max_recurrent_depth);
+        genome = create_ff(number_inputs, 2, number_inputs, number_outputs, 0);
 
     } else if (rnn_type == "jordan") {
         genome = create_jordan(number_inputs, 1, number_inputs, number_outputs, 1);
@@ -373,8 +351,8 @@ ResultSet handle_job(int current_job) {
     uint32_t number_of_weights = genome->get_number_weights();
     cout << "[" << setw(10) << process_name << "] RNN INFO FOR '" << rnn_type << "', nodes: " << genome->get_enabled_node_count() << ", edges: " << genome->get_enabled_edge_count() << ", rec: " << genome->get_enabled_recurrent_edge_count() << ", weights: " << number_of_weights << endl;
 
-    vector<double> min_bound(number_of_weights, -1.0);
-    vector<double> max_bound(number_of_weights, 1.0);
+    vector<double> min_bound(number_of_weights, -1.0); 
+    vector<double> max_bound(number_of_weights, 1.0); 
 
     vector<double> best_parameters;
 
@@ -483,8 +461,6 @@ int main(int argc, char **argv) {
     get_argument(arguments, "--repeats", true, repeats);
 
     get_argument(arguments, "--fold_size", true, fold_size);
-
-    get_argument(arguments, "--max_recurrent_depth", true, max_recurrent_depth);
 
 
     if (rank == 0) {

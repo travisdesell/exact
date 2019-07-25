@@ -134,19 +134,25 @@ class ACNNTO {
         bool use_edge_inherited_weights;
         bool use_pheromone_weight_update;
         bool use_fitness_weight_update;
+        bool use_two_ants_types;
 
         vector <double> edges_inherited_weights;
         vector <double> recedges_inherited_weights;
 
         double max_pheromone = PHEROMONES_THERESHOLD ;
 
-        double phi ;
+        double phi = NULL ;
+        double const_phi ;
+        bool use_all_jumps ;
+        bool use_forward_social_ants ;
+        bool use_backward_social_ants ;
 
         std::chrono::time_point<std::chrono::system_clock> startClock;
 
-        RNN_Node* check_node_existance(vector<RNN_Node_Interface*> &rnn_nodes,   EDGE_Pheromone* pheromone_line);
+        RNN_Node* check_node_existance(vector<RNN_Node_Interface*> &rnn_nodes,   int32_t node_inno);
         void check_edge_existance(vector<RNN_Edge*> &rnn_edges, int32_t innovation_number, RNN_Node* in_node, RNN_Node* out_node, double edge_weight);
         void check_recurrent_edge_existance(vector<RNN_Recurrent_Edge*> &recurrent_edges, int32_t innovation_number, int32_t depth, RNN_Node* in_node, RNN_Node* out_node, double edge_weight);
+        // void check_recurrent_edge_existance_twoAnts(vector<RNN_Recurrent_Edge*> &recurrent_edges, int32_t innovation_number, int32_t depth, RNN_Node* in_node, RNN_Node* out_node, double edge_weight, int pre_recurrency_depth ) ;
 
         EDGE_Pheromone* pick_line(vector<EDGE_Pheromone*>* edges_pheromones);
         int old_pick_node_type(double* type_pheromones);
@@ -161,6 +167,9 @@ class ACNNTO {
         double get_norm(RNN_Genome* g);
 
         void initialize_genome_parameters(RNN_Genome* genome );
+        void build_social_colony(map <int32_t, NODE_Pheromones*>* social_colony, vector<RNN_Node_Interface*> rnn_nodes ) ;
+        void build_social_colony(map <int32_t, NODE_Pheromones*>* social_colony, map <int32_t, EDGE_Pheromone*>* social_colony_edges, vector<RNN_Node_Interface*> rnn_nodes ) ;
+        void build_layer_node_map(map<int32_t, vector<int32_t> >* layer_node_map) ;
 
 
     public:
@@ -179,7 +188,8 @@ class ACNNTO {
           int32_t _hidden_layer_nodes, double _pheromone_decay_parameter, double _pheromone_update_strength,
           double _pheromone_heuristic, int32_t _max_recurrent_depth, double _weight_reg_parameter, string _reward_type,
           string _norm, bool _bias_forward_paths, bool _bias_edges, bool _use_edge_inherited_weights,
-          bool _use_pheromone_weight_update, bool _use_fitness_weight_update);
+          bool _use_pheromone_weight_update, bool _use_fitness_weight_update, bool _use_two_ants_types, double _const_phi, bool _use_all_jumps
+          , bool _use_forward_social_ants, bool _use_backward_social_ants );
 
         ~ACNNTO();
 
@@ -206,6 +216,8 @@ class ACNNTO {
         string get_output_directory() const;
 
         RNN_Genome* ants_march();
+        RNN_Genome* explorer_social_ants_march();
+        RNN_Genome* old_explorer_social_ants_march();
 
         void write_to_file(string bin_filename, bool verbose = false);
         void write_to_stream(ostream &bin_stream, bool verbose = false);
@@ -213,6 +225,7 @@ class ACNNTO {
         // double get_genome_squared_weights_sum(RNN_Genome* genome);
         int32_t get_colony_number_edges();
         void bias_for_forward_paths();
+        void bias_for_forward_rec_edges();
         void bias_for_edges();
 
         void set_colony_best_weights( RNN_Genome* g ) ;

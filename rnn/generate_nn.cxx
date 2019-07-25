@@ -470,7 +470,7 @@ void create_colony_pheromones(int number_inputs, int number_hidden_layers, int n
     /*
        - Using the nodes the build the colony.
        - Every node holds all the edges and recurrent edges comming out of it.
-       - Every node also holds the pheromones to for the node type.
+       - Every node also holds the pheromones for the node type.
    */
     for ( uint32_t i = 0; i<layer_nodes.size(); i++){
         int layer_type;
@@ -496,6 +496,7 @@ void create_colony_pheromones(int number_inputs, int number_hidden_layers, int n
               }
               l++;
             }
+
             /*Building recurrent edges' pheromones: Re-Edge to every node in each subsequent time step*/
             for ( uint32_t m = 1; m<layer_nodes.size(); m++){
                 for ( uint32_t n = 0; n<layer_nodes[m].size(); n++){

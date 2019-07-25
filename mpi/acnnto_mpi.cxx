@@ -108,7 +108,7 @@ void receive_terminate_message(int source) {
     MPI_Recv(terminate_message, 1, MPI_INT, source, TERMINATE_TAG, MPI_COMM_WORLD, &status);
 }
 
-void master(int max_rank) {
+void master(int max_rank, bool use_two_ants_types) {
     string name = "master";
 
     cout << "MAX INT: " << numeric_limits<int>::max() << endl;
@@ -129,8 +129,10 @@ void master(int max_rank) {
         if (tag == WORK_REQUEST_TAG) {
             receive_work_request(source);
 
+            RNN_Genome *genome = NULL ;
             acnnto_mutex.lock();
-            RNN_Genome *genome = acnnto->ants_march();
+            if ( use_two_ants_types ) genome = acnnto->explorer_social_ants_march() ;
+            else genome = acnnto->ants_march();
             acnnto_mutex.unlock();
 
 
@@ -289,9 +291,6 @@ int main(int argc, char** argv) {
     double pheromone_heuristic = 0.3;
     get_argument(arguments, "--pheromone_heuristic", false, pheromone_heuristic);
 
-    double weight_reg_parameter = 0.3;
-    get_argument(arguments, "--weight_reg_parameter", false, weight_reg_parameter);
-
     int32_t bp_iterations;
     get_argument(arguments, "--bp_iterations", true, bp_iterations);
 
@@ -310,8 +309,19 @@ int main(int argc, char** argv) {
     string reward_type = "";
     get_argument(arguments, "--reward_type", true, reward_type);
 
-    string norm = "l2";
+    double weight_reg_parameter = 0.0;
+    get_argument(arguments, "--weight_reg_parameter", false, weight_reg_parameter);
+
+    string norm = "";
     get_argument(arguments, "--norm", false, norm);
+    if (weight_reg_parameter=0.0 && norm!=""){
+        cerr << "Error: Trying to use Normalization " << norm << " without specifying Normalizaton Weight\n" ;
+        exit(0) ;
+    }
+    else if (weight_reg_parameter!=0.0 && norm==""){
+        cerr << "Error: Trying to use Normalization (Reg. weight provided) without specifying Normalizaton Type (l1/l2)\n" ;
+        exit(0) ;
+    }
 
     bool bias_forward_paths = true;
     for ( int i=0; i<argc; i++) {
@@ -325,7 +335,7 @@ int main(int argc, char** argv) {
     for ( int i=0; i<argc; i++) {
         if ( string( argv[i] )=="--bias_edges" ) {
             bias_edges = true;
-            cout << "Using Forward Paths Bias\n" ;
+            cout << "Using Edges Bias\n" ;
             break;
         }
     }
@@ -356,6 +366,58 @@ int main(int argc, char** argv) {
         }
         // std::cerr << "ERROR: --use_pheromone_weight_update required but not given." << '\n';
     }
+    bool use_two_ants_types = false;
+    for ( int i=0; i<argc; i++) {
+        if ( string( argv[i] )=="--use_two_ants_types" ) {
+            use_two_ants_types = true;
+            cout << "Using Two Ants Scheme\n" ;
+            break;
+        }
+        // std::cerr << "ERROR: --use_two_ants_types required but not given." << '\n';
+        // exit(0);
+    }
+    bool use_all_jumps = false;
+    for ( int i=0; i<argc; i++) {
+        if ( string( argv[i] )=="--use_all_jumps" ) {
+            use_all_jumps = true;
+            if (!use_two_ants_types){
+                cerr << "Error: Trying to use All Jumps while One Ant species is used\n" ;
+                exit(0) ;
+            }
+            cout << "Using All Jumps\n" ;
+            break;
+        }
+    }
+    if (!use_all_jumps) cout << "Using One Jumps\n" ;
+
+
+    bool use_forward_social_ants = false;
+    for ( int i=0; i<argc; i++) {
+        if ( string( argv[i] )=="--use_forward_social_ants" ) {
+            use_forward_social_ants = true;
+            if (!use_two_ants_types){
+                cerr <<"FORWARD SCOIAL: " << use_two_ants_types << " --" << "Error: Trying to use Two Ants Species while One Ant species is used\n" ;
+                exit(0) ;
+            }
+            cout << "Using Forward Social Ants\n" ;
+            break;
+        }
+    }
+    bool use_backward_social_ants = false;
+    for ( int i=0; i<argc; i++) {
+        if ( string( argv[i] )=="--use_backward_social_ants" ) {
+            use_backward_social_ants = true;
+            if (!use_two_ants_types){
+                cerr <<"BACKWARD SCOIAL: " << use_two_ants_types << " --" << "Error: Trying to use Two Ants Species while One Ant species is used\n" ;
+                exit(0) ;
+            }
+            cout << "Using Backward Social Ants\n" ;
+            break;
+        }
+    }
+
+    double const_phi = 0.0 ;
+    get_argument(arguments, "--const_phi", true, const_phi);
 
     if (rank == 0) {
         cout << "NUMBER OF ANTS:: " << number_of_ants << endl;
@@ -376,8 +438,8 @@ int main(int argc, char** argv) {
         else
         cout << "Directory created: " << log_dir_str.c_str() << endl;
         output_directory = log_dir_str.c_str();
-        acnnto = new ACNNTO(population_size, max_genomes, time_series_sets->get_input_parameter_names(), time_series_sets->get_output_parameter_names(), time_series_sets->get_normalize_mins(), time_series_sets->get_normalize_maxs(), bp_iterations, learning_rate, use_high_threshold, high_threshold, use_low_threshold, low_threshold, output_directory, number_of_ants, hidden_layers_depth, hidden_layer_nodes, pheromone_decay_parameter, pheromone_update_strength, pheromone_heuristic, max_recurrent_depth, weight_reg_parameter, reward_type, norm, bias_forward_paths, bias_edges, use_edge_inherited_weights, use_pheromone_weight_update, use_fitness_weight_update );
-        master(max_rank);
+        acnnto = new ACNNTO(population_size, max_genomes, time_series_sets->get_input_parameter_names(), time_series_sets->get_output_parameter_names(), time_series_sets->get_normalize_mins(), time_series_sets->get_normalize_maxs(), bp_iterations, learning_rate, use_high_threshold, high_threshold, use_low_threshold, low_threshold, output_directory, number_of_ants, hidden_layers_depth, hidden_layer_nodes, pheromone_decay_parameter, pheromone_update_strength, pheromone_heuristic, max_recurrent_depth, weight_reg_parameter, reward_type, norm, bias_forward_paths, bias_edges, use_edge_inherited_weights, use_pheromone_weight_update, use_fitness_weight_update, use_two_ants_types, const_phi, use_all_jumps, use_forward_social_ants, use_backward_social_ants );
+        master(max_rank, use_two_ants_types);
     } else {
         worker(rank);
     }
