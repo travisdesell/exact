@@ -4,6 +4,14 @@
 EXONA has been developed to compile using CMake, which should be installed before attempting to compile. To use the MPI version, a version of MPI (such as OpenMPI) should be installed. EXACT currently requires libtiff and libpng
 The EXACT algorithm can also checkpoint to a database, however this is not required.  To enable this I recommend installing libmysql-dev via apt-get on Linux systems, or mysql via [homebrew](https://brew.sh) on OSX.  Other than that, EXACT/EXALT/EXAMM has no prerequesites other than c++11 compatible compiler.
 
+If you are using OSX, to set up the environment:
+
+```
+$ brew install cmake
+$ brew install mysql
+$ xcode-select --install
+```
+
 To build:
 
 ```
