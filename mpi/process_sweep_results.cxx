@@ -66,7 +66,14 @@ class Run {
                 cout << ", " << genomes[i]->get_fitness();
             }
 
+            cout << "], \"recurrent_depth\": [";
+            cout << genomes[0]->get_avg_recurrent_depth();
+
+            for (int i = 1; i < genomes.size(); i++) {
+                cout << ", " << genomes[i]->get_avg_recurrent_depth();
+            }
             cout << "] ";
+
             cout << "}";
         }
 

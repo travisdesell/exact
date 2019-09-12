@@ -254,6 +254,22 @@ string RNN_Genome::print_statistics() {
     return oss.str();
 }
 
+double RNN_Genome::get_avg_recurrent_depth() const {
+    int32_t count = 0;
+    double average = 0.0;
+    for (int32_t i = 0; i < recurrent_edges.size(); i++) {
+        if (recurrent_edges[i]->is_reachable()) {
+            average += recurrent_edges[i]->get_recurrent_depth();
+            count++;
+        }
+    }
+    
+    //in case there are no recurrent edges
+    if (count == 0) return 0;
+
+    return average / count;
+}
+
 string RNN_Genome::get_edge_count_str(bool recurrent) {
     ostringstream oss;
     if (recurrent) {

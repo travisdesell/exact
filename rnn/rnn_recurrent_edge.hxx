@@ -41,6 +41,7 @@ class RNN_Recurrent_Edge {
         void propagate_forward(int32_t time);
         void propagate_backward(int32_t time);
 
+        int32_t get_recurrent_depth() const;
         double get_gradient();
         bool is_reachable() const;
 

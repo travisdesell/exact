@@ -202,6 +202,10 @@ void RNN_Recurrent_Edge::reset(int32_t _series_length) {
     deltas.resize(series_length);
 }
 
+int32_t RNN_Recurrent_Edge::get_recurrent_depth() const {
+    return recurrent_depth;
+}
+
 double RNN_Recurrent_Edge::get_gradient() {
     return d_weight;
 }

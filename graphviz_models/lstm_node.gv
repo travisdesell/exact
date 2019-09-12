@@ -5,17 +5,17 @@ digraph CNN {
         input       [shape=box,color=blue,label="input"];
 	}
 
-    w_input     [shape=box,color=blue,label="W_input"];
-    w_cell      [shape=box,color=blue,label="W_cell"];
-    w_output    [shape=box,color=blue,label="W_output"];
-    w_forget    [shape=box,color=blue,label="W_forget"];
-    u_input     [shape=box,color=blue,label="U_input"];
-    u_output    [shape=box,color=blue,label="U_output"];
-    u_forget    [shape=box,color=blue,label="U_forget"];
-    b_input     [shape=box,color=blue,label="B_input"];
-    b_cell      [shape=box,color=blue,label="B_cell"];
-    b_output    [shape=box,color=blue,label="B_output"];
-    b_forget    [shape=box,color=blue,label="B_forget"];
+    w_input     [shape=diamond,color=blue,label="W_input"];
+    w_cell      [shape=diamond,color=blue,label="W_cell"];
+    w_output    [shape=diamond,color=blue,label="W_output"];
+    w_forget    [shape=diamond,color=blue,label="W_forget"];
+    u_input     [shape=diamond,color=blue,label="U_input"];
+    u_output    [shape=diamond,color=blue,label="U_output"];
+    u_forget    [shape=diamond,color=blue,label="U_forget"];
+    b_input     [shape=diamond,color=blue,label="B_input"];
+    b_cell      [shape=diamond,color=blue,label="B_cell"];
+    b_output    [shape=diamond,color=blue,label="B_output"];
+    b_forget    [shape=diamond,color=blue,label="B_forget"];
 
     #input gate
     input_mul [shape=circle,color=blue,label="*"];
@@ -117,7 +117,8 @@ digraph CNN {
     cell_add -> cell;
     cell->prev_cell;
 
-    output_tanh [shape=circle,color=orange,label="tanh"];
+//    output_tanh [shape=circle,color=orange,label="tanh"];
+    output_tanh [shape=circle,color=orange,label="identity"];
     cell -> output_tanh;
 
     final_output_mul [shape=circle,color=blue,label="*"];
@@ -127,6 +128,20 @@ digraph CNN {
 
 	{
 		rank = sink;
+
+        legend [shape=box,
+            label=<
+                <table>
+                <tr><td>f = &sigma;(W_f*x + U_f*c_prev * f_bias)</td></tr>
+                <tr><td>i = &sigma;(W_i*x + U_i*c_prev * i_bias)</td></tr>
+                <tr><td>o = &sigma;(W_o*x + U_o*c_prev * o_bias)</td></tr>
+
+
+                <tr><td>c = f * c_prev + i * tanh(W_c*x + c_bias)</td></tr>
+                <tr><td>h = o * c</td></tr>
+                </table>
+                >]
+
 		output [shape=circle,color=blue,label="output"];
 	}
 
