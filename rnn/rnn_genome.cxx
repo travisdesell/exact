@@ -559,8 +559,8 @@ void RNN_Genome::set_generation_id(int32_t _generation_id) {
 }
 
 double RNN_Genome::get_fitness() const {
-    return best_validation_mse;
-    //return best_validation_mae;
+    //return best_validation_mse;
+    return best_validation_mae;
 }
 
 double RNN_Genome::get_best_validation_mse() const {

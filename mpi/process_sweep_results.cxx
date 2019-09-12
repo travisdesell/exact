@@ -458,9 +458,9 @@ int main(int argc, char** argv) {
         double avg_max = 0.0;
 
         for (int j = 0; j < current.size(); j++) {
-            avg_min += current[j]->mse.min();
-            avg_avg += current[j]->mse.avg();
-            avg_max += current[j]->mse.max();
+            avg_min += current[j]->mae.min();
+            avg_avg += current[j]->mae.avg();
+            avg_max += current[j]->mae.max();
         }
 
         avg_min /= current.size();
@@ -474,9 +474,9 @@ int main(int argc, char** argv) {
         double stddev_max = 0.0;
 
         for (int j = 0; j < current.size(); j++) {
-            stddev_min += (current[j]->mse.min() - avg_min) * (current[j]->mse.min() - avg_min);
-            stddev_avg += (current[j]->mse.avg() - avg_avg) * (current[j]->mse.avg() - avg_avg);
-            stddev_max += (current[j]->mse.max() - avg_max) * (current[j]->mse.max() - avg_max);
+            stddev_min += (current[j]->mae.min() - avg_min) * (current[j]->mae.min() - avg_min);
+            stddev_avg += (current[j]->mae.avg() - avg_avg) * (current[j]->mae.avg() - avg_avg);
+            stddev_max += (current[j]->mae.max() - avg_max) * (current[j]->mae.max() - avg_max);
         }
 
         stddev_min = sqrt(stddev_min / (current.size() - 1));
@@ -488,9 +488,9 @@ int main(int argc, char** argv) {
         for (int j = 0; j < current.size(); j++) {
             cout << "current[" << j << "]->run_type: " << current[j]->run_type << endl;
 
-            current[j]->set_deviation_from_mean_min((current[j]->mse.min() - avg_min) / stddev_min);
-            current[j]->set_deviation_from_mean_avg((current[j]->mse.avg() - avg_avg) / stddev_avg);
-            current[j]->set_deviation_from_mean_max((current[j]->mse.max() - avg_max) / stddev_max);
+            current[j]->set_deviation_from_mean_min((current[j]->mae.min() - avg_min) / stddev_min);
+            current[j]->set_deviation_from_mean_avg((current[j]->mae.avg() - avg_avg) / stddev_avg);
+            current[j]->set_deviation_from_mean_max((current[j]->mae.max() - avg_max) / stddev_max);
 
             consolidated_statistics[ current[j]->run_type ]->dfm_min += current[j]->dfm_min / output_types.size();
             consolidated_statistics[ current[j]->run_type ]->dfm_avg += current[j]->dfm_avg / output_types.size();
