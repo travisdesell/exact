@@ -203,9 +203,102 @@ int main(int argc, char** argv) {
             }
             closedir(slice_dir);
 
+    for (int i = 0; i < output_types.size(); i++) {
+        cout << "GENERATING sorted stats for: '" << output_types[i] << "'" << endl;
+
+        vector<RunStatistics*> current = output_sorted_statistics[output_types[i]];
+
+        cout << "got current!" << endl;
+
+        double avg_min = 0.0;
+        double avg_avg = 0.0;
+        double avg_max = 0.0;
+
+        for (int j = 0; j < current.size(); j++) {
+            avg_min += current[j]->mae.min();
+            avg_avg += current[j]->mae.avg();
+            avg_max += current[j]->mae.max();
+        }
+
+        avg_min /= current.size();
+        avg_avg /= current.size();
+        avg_max /= current.size();
+
+        cout << "calculated averages" << endl;
+
+        double stddev_min = 0.0;
+        double stddev_avg = 0.0;
+        double stddev_max = 0.0;
+
+        for (int j = 0; j < current.size(); j++) {
+            stddev_min += (current[j]->mae.min() - avg_min) * (current[j]->mae.min() - avg_min);
+            stddev_avg += (current[j]->mae.avg() - avg_avg) * (current[j]->mae.avg() - avg_avg);
+            stddev_max += (current[j]->mae.max() - avg_max) * (current[j]->mae.max() - avg_max);
         }
         closedir(search_dir);
 
+        stddev_min = sqrt(stddev_min / (current.size() - 1));
+        stddev_avg = sqrt(stddev_avg / (current.size() - 1));
+        stddev_max = sqrt(stddev_max / (current.size() - 1));
+
+        cout << "calculated stddevs!" << endl;
+
+        for (int j = 0; j < current.size(); j++) {
+            cout << "current[" << j << "]->run_type: " << current[j]->run_type << endl;
+
+            current[j]->set_deviation_from_mean_min((current[j]->mae.min() - avg_min) / stddev_min);
+            current[j]->set_deviation_from_mean_avg((current[j]->mae.avg() - avg_avg) / stddev_avg);
+            current[j]->set_deviation_from_mean_max((current[j]->mae.max() - avg_max) / stddev_max);
+
+            consolidated_statistics[ current[j]->run_type ]->dfm_min += current[j]->dfm_min / output_types.size();
+            consolidated_statistics[ current[j]->run_type ]->dfm_avg += current[j]->dfm_avg / output_types.size();
+            consolidated_statistics[ current[j]->run_type ]->dfm_max += current[j]->dfm_max / output_types.size();
+        }
+
+        cout << "updated consolidated statistics!" << endl;
+
+        vector<RunStatistics*> sorted_by_min = current;
+        vector<RunStatistics*> sorted_by_avg = current;
+        vector<RunStatistics*> sorted_by_max = current;
+
+        cout << "sorting!" << endl;
+
+        sort(sorted_by_min.begin(), sorted_by_min.end(), less_than_dfm_min());
+        sort(sorted_by_avg.begin(), sorted_by_avg.end(), less_than_dfm_avg());
+        sort(sorted_by_max.begin(), sorted_by_max.end(), less_than_dfm_max());
+
+        cout << endl << endl;
+        cout << "RANKINGS FOR '" << output_types[i] << "'" << endl;
+
+        cout << "\\begin{table}" << endl;
+        cout << "\\begin{scriptsize}" << endl;
+        cout << "\\centering" << endl;
+        cout << "\\begin{tabular}{|r|l||r|l||r|l||}" << endl;
+        cout << "\\hline" << endl;
+        cout << "\\multicolumn{2}{|c||}{{\\bf Best Case}} & \\multicolumn{2}{|c||}{{\\bf Avg. Case}} & \\multicolumn{2}{|c|}{{\\bf Worst Case}} \\\\" << endl;
+        cout << "\\hline" << endl;
+
+        for (int j = 0; j < current.size(); j++) {
+            cout << setw(15) << fix_run_type(sorted_by_min[j]->run_type) << " & " << setw(15) << setprecision(5) << sorted_by_min[j]->dfm_min << " & ";
+            cout << setw(15) << fix_run_type(sorted_by_avg[j]->run_type) << " & " << setw(15) << setprecision(5) << sorted_by_avg[j]->dfm_avg << " & ";
+            cout << setw(15) << fix_run_type(sorted_by_max[j]->run_type) << " & " << setw(15) << setprecision(5) << sorted_by_max[j]->dfm_max << "\\\\" << endl;
+        }
+
+        cout << "\\hline" << endl;
+        cout << "\\end{tabular}" << endl;
+        cout << "\\caption{\\label{table:consolidated_rankings} Rankings for all the EXAMM run types predicting " << output_types[i] << ".}" << endl;
+        cout << "\\end{scriptsize}" << endl;
+        cout << "\\end{table}" << endl;
+    }
+
+    vector<ConsolidatedStatistics*> min_stats_vector;
+    vector<ConsolidatedStatistics*> avg_stats_vector;
+    vector<ConsolidatedStatistics*> max_stats_vector;
+
+    for (auto i = consolidated_statistics.begin(); i != consolidated_statistics.end(); i++) {
+        min_stats_vector.push_back(i->second);
+        avg_stats_vector.push_back(i->second);
+        max_stats_vector.push_back(i->second);
     }
     closedir(output_dir);
 
