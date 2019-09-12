@@ -1840,8 +1840,12 @@ void CNN_Genome::evaluate_large_images(const LargeImages &images, string output_
 void CNN_Genome::get_prediction_matrix(const MultiImagesInterface &images, int image_number, int stride, vector< vector< vector<float> > > &prediction_matrix) {
     int number_subimages = images.get_number_subimages(image_number);
 
-    vector< vector<float> > predictions(number_subimages, vector<float>(images.get_number_classes(), 0.0));
-    cout << "created predictions vector for image: " << image_number << ", number subimages: " << number_subimages << ", number_classes: " << images.get_number_classes() << endl;
+    //TODO: fix, number classes should be equal to number of softmax nodes of genome
+    int number_classes = images.get_number_classes();
+    number_classes = 2;
+
+    vector< vector<float> > predictions(number_subimages, vector<float>(number_classes, 0.0));
+    cout << "created predictions vector for image: " << image_number << ", number subimages: " << number_subimages << ", number_classes: " << number_classes << endl;
 
     int initial_offset = 0;
     for (uint32_t i = 0; i < image_number; i++) {
@@ -1850,6 +1854,8 @@ void CNN_Genome::get_prediction_matrix(const MultiImagesInterface &images, int i
     int current_subimage = initial_offset;
 
     for (uint32_t j = 0; j < number_subimages; j += batch_size) {
+        if (j % 10000 == 0) cout << "subimage: " << j << "/" << number_subimages << endl;
+
         vector<int> batch;
         for (uint32_t k = 0; k < batch_size && (j + k) < number_subimages; k++) {
             batch.push_back( current_subimage + j + k );
@@ -1861,7 +1867,6 @@ void CNN_Genome::get_prediction_matrix(const MultiImagesInterface &images, int i
     //now create the prediction matrix to put these predictions into
     int matrix_height = images.get_large_image_height(image_number) - (images.get_image_height() - (images.get_padding() * 2)) + 1;
     int matrix_width = images.get_large_image_width(image_number) - (images.get_image_width() - (images.get_padding() * 2)) + 1;
-    int number_classes = images.get_number_classes();
 
     cout << "created prediction matrix, height: " << matrix_height << ", matrix_width: " << matrix_width << ", number classes: " << number_classes << endl;
 

@@ -121,6 +121,9 @@ void Delta_Node::input_fired(int time, double incoming_output) {
     double z_1 = z_cap[time] * (1 - r[time]);
     double z_2 = r[time] * z_prev;
 
+    //TODO:
+    //try this with RELU(0 to 6)) or identity
+
     output_values[time] = tanh(z_1 + z_2);
     ld_z[time] = tanh_derivative(output_values[time]);
 

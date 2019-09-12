@@ -241,7 +241,7 @@ string RNN_Genome::print_statistics() {
         << setw(12) << parse_fitness(best_validation_mae)  
         << setw(12) << get_edge_count_str(false) 
         << setw(12) << get_edge_count_str(true) 
-        << setw(12) << get_node_count_str(FEED_FORWARD_NODE) 
+        << setw(12) << get_node_count_str(SIMPLE_NODE) 
         << setw(12) << get_node_count_str(JORDAN_NODE) 
         << setw(12) << get_node_count_str(ELMAN_NODE) 
         << setw(12) << get_node_count_str(UGRNN_NODE) 
@@ -1503,7 +1503,7 @@ RNN_Node_Interface* RNN_Genome::create_node(double mu, double sigma, int node_ty
         n = new MGU_Node(++node_innovation_count, HIDDEN_LAYER, depth);
     } else if (node_type == UGRNN_NODE) {
         n = new UGRNN_Node(++node_innovation_count, HIDDEN_LAYER, depth);
-    } else if (node_type == FEED_FORWARD_NODE || node_type == JORDAN_NODE || node_type == ELMAN_NODE) {
+    } else if (node_type == SIMPLE_NODE || node_type == JORDAN_NODE || node_type == ELMAN_NODE) {
         n = new RNN_Node(++node_innovation_count, HIDDEN_LAYER, depth, node_type);
     } else {
         cerr << "ERROR: attempted to create a node with an unknown node type: " << node_type << endl;
@@ -2672,7 +2672,7 @@ void RNN_Genome::read_from_stream(istream &bin_istream, bool verbose) {
             node = new MGU_Node(innovation_number, type, depth);
         } else if (node_type == UGRNN_NODE) {
             node = new UGRNN_Node(innovation_number, type, depth);
-        } else if (node_type == FEED_FORWARD_NODE || node_type == JORDAN_NODE || node_type == ELMAN_NODE) {
+        } else if (node_type == SIMPLE_NODE || node_type == JORDAN_NODE || node_type == ELMAN_NODE) {
             node = new RNN_Node(innovation_number, type, depth, node_type);
         } else {
             cerr << "Error reading node from stream, unknown node_type: " << node_type << endl;

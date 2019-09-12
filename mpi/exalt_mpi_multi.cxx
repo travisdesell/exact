@@ -286,8 +286,8 @@ int main(int argc, char** argv) {
         time_series_sets->set_training_indexes(training_indexes);
         time_series_sets->set_test_indexes(test_indexes);
 
-        time_series_sets->export_training_series(time_offset, training_inputs, training_outputs);
-        time_series_sets->export_test_series(time_offset, validation_inputs, validation_outputs);
+        //time_series_sets->export_training_series(time_offset, training_inputs, training_outputs);
+        //time_series_sets->export_test_series(time_offset, validation_inputs, validation_outputs);
 
         string slice_output_directory = output_directory + "/slice_" + to_string(i);
         mkpath(slice_output_directory.c_str(), 0777);

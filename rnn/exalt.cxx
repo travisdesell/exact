@@ -96,7 +96,7 @@ int mkpath(const char *path, mode_t mode);
     split_edge_rate = 0.0;
 
     possible_node_types.clear();
-    possible_node_types.push_back(FEED_FORWARD_NODE);
+    possible_node_types.push_back(SIMPLE_NODE);
     possible_node_types.push_back(JORDAN_NODE);
     possible_node_types.push_back(ELMAN_NODE);
     possible_node_types.push_back(UGRNN_NODE);
