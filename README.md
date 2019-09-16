@@ -26,13 +26,20 @@ This version EXACT is set up to run using the [MNIST Handwritten Digits Dataset]
 ```
 ~/exact $ mkdir datasets
 ~/exact $ cd datasets
+
 ~/exact/datasets $ wget http://yann.lecun.com/exdb/mnist/train-images-idx3-ubyte.gz
 ~/exact/datasets $ wget http://yann.lecun.com/exdb/mnist/train-labels-idx1-ubyte.gz
 ~/exact/datasets $ wget http://yann.lecun.com/exdb/mnist/t10k-images-idx3-ubyte.gz
 ~/exact/datasets $ wget http://yann.lecun.com/exdb/mnist/t10k-labels-idx1-ubyte.gz
+
+~/exact/datasets $ unzip train-images-idx3-ubyte.gz
+~/exact/datasets $ unzip train-labels-idx1-ubyte.gz
+~/exact/datasets $ unzip t10k-images-idx3-ubyte.gz
+~/exact/datasets $ unzip t10k-labels-idx1-ubyte.gz
+
 ~/exact/datasets $ cd ../build
-~/exact/build $ ./image_tools/convert_mnist_data ../datasets/train-images-idx3-ubyte.gz ../datasets/train-labels-idx1-ubyte.gz ../datasets/mnist_training_data.bin 60000
-~/exact/build $ ./image_tools/convert_mnist_data ../datasets/t10k-images-idx3-ubyte.gz ../datasets/t10k-labels-idx1-ubyte.gz ../datasets/mnist_testing_data.bin 10000
+~/exact/build $ ./image_tools/convert_mnist_data ../datasets/train-images-idx3-ubyte ../datasets/train-labels-idx1-ubyte ../datasets/mnist_training_data.bin 60000
+~/exact/build $ ./image_tools/convert_mnist_data ../datasets/t10k-images-idx3-ubyte ../datasets/t10k-labels-idx1-ubyte ../datasets/mnist_testing_data.bin 10000
 ```
 
 ## Example Genomes from GECCO 2017
