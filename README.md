@@ -1,10 +1,8 @@
-# EXACT: Evolutionary Exploration of Augmenting Convolutional Topologies
 
-This repository provides source code for the Evolutionary Exploration of Augmenting Convolutional Topologies algorithm.  This algorithm progressively evolves convolutional neural networks for image classification problems.  The algorithm is asychronous, which allows for easy multithreading and parallelization. Code is provided for running EXACT as a BOINC volunteer computing project, on a cluster or supercomputer using MPI or on a desktop or laptop using threads.
+# Getting Started and Prerequisites
 
-## Getting Started and Prerequisites
-
-EXACT has been developed to compile using CMake, which should be installed before attempting to compile. To use the MPI version, a version of MPI (such as OpenMPI) should be installed.  The EXACT algorithm can also checkpoint to a database.  To enable this I recommend installing libmysql-dev via apt-get on Linux systems, or mysql via [homebrew](https://brew.sh) on OSX.  Other than that, EXACT has no prerequesites other than c++11 compatible compiler.
+EXONA has been developed to compile using CMake, which should be installed before attempting to compile. To use the MPI version, a version of MPI (such as OpenMPI) should be installed. EXACT currently requires libtiff and libpng
+The EXACT algorithm can also checkpoint to a database, however this is not required.  To enable this I recommend installing libmysql-dev via apt-get on Linux systems, or mysql via [homebrew](https://brew.sh) on OSX.  Other than that, EXACT/EXALT/EXAMM has no prerequesites other than c++11 compatible compiler.
 
 To build:
 
@@ -15,9 +13,24 @@ To build:
 ~/exact/build $ make
 ```
 
-I've built and run EXACT on both an Ubuntu Linux high performance computing cluser and OSX laptops and desktops. I have not tried it on Windows.  If there are issues with the CMake scripts please let me know and I'll update them.
+# EXAMM: Evolutionary eXploration of Augmenting Memory Models and EXALT: Evolutionary eXploration of Augmenting LSTM Topologies
 
-If you want to set this up on your own BOINC volunteer computing project, I recommend sending me an email as this is a rather complicated process.
+Source code for EXALT/EXAMM can be found in the rnn subdirectory. EXALT has been enhanced with the ability to utilize more recurrent memory cells and has been renamed EXAMM.  The memory cells currently implemented are Delta-RNN, GRU, LSTM, MGU, and UGRNNs. Some example time series data has been provided as part of two publications on EXALT and EXAMM, which also provide implementation details:
+
+1. Alex Ororbia, AbdElRahman ElSaid, and Travis Desell. **Investigating Recurrent Neural Network Memory Structures using Neuro-Evolution.** *The Genetic and Evolutionary Computation Conference (GECCO 2019).* Prague, Czech Republic. July 8-12, 2019. [link](https://dl.acm.org/citation.cfm?id=3321795)
+
+2. AbdElRahman ElSaid, Steven Benson, Shuchita Patwardhan, David Stadem and Travis Desell. **Evolving Recurrent Neural Networks for Time Series Data Prediction of Coal Plant Parameters.** *The 22nd International Conference on the Applications of Evolutionary Computation (EvoStar: EvoApps 2019).* Leipzig, Germany. April 24-26, 2019. [link](https://link.springer.com/chapter/10.1007/978-3-030-16692-2_33)
+
+
+
+
+# EXACT: Evolutionary Exploration of Augmenting Convolutional Topologies
+
+This repository provides source code for the Evolutionary Exploration of Augmenting Convolutional Topologies algorithm.  This algorithm progressively evolves convolutional neural networks for image classification problems.  The algorithm is asychronous, which allows for easy multithreading and parallelization. Code is provided for running EXACT as a BOINC volunteer computing project, on a cluster or supercomputer using MPI or on a desktop or laptop using threads.
+
+We've built and run EXACT on both an Ubuntu Linux high performance computing cluser and OSX laptops and desktops. We have not tried it on Windows.  If there are issues with the CMake scripts please let us know and we'll update them.
+
+If you want to set this up on your own BOINC volunteer computing project, we recommend sending us an email as this is a rather complicated process.
 
 ## Setting up Training and Testing Data
 
