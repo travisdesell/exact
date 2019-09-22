@@ -13,6 +13,12 @@ To build:
 ~/exact/build $ make
 ```
 
+You may also want to have graphviz installed so you can generate images of the evolved neural networks.  EXACT/EXALT/EXAMM will write out evolved genomes in a .gv (graphviz) format for this. For example, can generate a pdf from a gv file (assuming graphviz is installed with):
+
+```
+$ dot -Tpdf genome.gv -o genome.pdf
+```
+
 # EXAMM: Evolutionary eXploration of Augmenting Memory Models and EXALT: Evolutionary eXploration of Augmenting LSTM Topologies
 
 Source code for EXALT/EXAMM can be found in the rnn subdirectory. EXALT has been enhanced with the ability to utilize more recurrent memory cells and has been renamed EXAMM.  The memory cells currently implemented are Delta-RNN, GRU, LSTM, MGU, and UGRNNs. Some example time series data has been provided as part of two publications on EXALT and EXAMM, which also provide implementation details:
@@ -21,8 +27,27 @@ Source code for EXALT/EXAMM can be found in the rnn subdirectory. EXALT has been
 
 2. AbdElRahman ElSaid, Steven Benson, Shuchita Patwardhan, David Stadem and Travis Desell. **Evolving Recurrent Neural Networks for Time Series Data Prediction of Coal Plant Parameters.** *The 22nd International Conference on the Applications of Evolutionary Computation (EvoStar: EvoApps 2019).* Leipzig, Germany. April 24-26, 2019. [link](https://link.springer.com/chapter/10.1007/978-3-030-16692-2_33)
 
+These datasets can be found in the *datasets* directory, and provide example CSV files which you can use with EXAMM. EXAMM can be run in two different ways, a multithreaded version:
 
+```
+./multithreaded/examm_mt --number_threads 9 --training_filenames ../datasets/2018_coal/burner_[0-9].csv --test_filenames ../datasets/2018_coal/burner_1[0-1].csv --time_offset 1 --input_parameter_names Conditioner_Inlet_Temp Conditioner_Outlet_Temp Coal_Feeder_Rate Primary_Air_Flow Primary_Air_Split System_Secondary_Air_Flow_Total Secondary_Air_Flow Secondary_Air_Split Tertiary_Air_Split Total_Comb_Air_Flow Supp_Fuel_Flow Main_Flm_Int --output_parameter_names Main_Flm_Int --number_islands 10 --population_size 10 --max_genomes 2000 --bp_iterations 10 --output_directory "./test_output" --possible_node_types simple UGRNN MGU GRU delta LSTM
+```
 
+And a parallel version using MPI:
+
+```
+~/exact/build/ $ mpirun -np 9 ./mpi/examm_mpi --training_filenames ../datasets/2018_coal/burner_[0-9].csv --test_filenames ../datasets/2018_coal/burner_1[0-1].csv --time_offset 1 --input_parameter_names Conditioner_Inlet_Temp Conditioner_Outlet_Temp Coal_Feeder_Rate Primary_Air_Flow Primary_Air_Split System_Secondary_Air_Flow_Total Secondary_Air_Flow Secondary_Air_Split Tertiary_Air_Split Total_Comb_Air_Flow Supp_Fuel_Flow Main_Flm_Int --output_parameter_names Main_Flm_Int --number_islands 10 --population_size 10 --max_genomes 2000 --bp_iterations 10 --output_directory "./test_output" --possible_node_types simple UGRNN MGU GRU delta LSTM
+```
+
+Which will run EXAMM with 11 threads or 11 processes, respectively. Note that EXAMM uses one thread/process as the master and this typically just waits on the results of backprop so you if you have 8 processors/cores available you can usually run EXAMM with 9 processes/threads for better performance. A performance log of RNN fitnesses will be exported into fitness_log.csv, as well as the best found RNNs into the specified output directory, in this case *./test_output*.
+
+The aviation data can be run similarly, however it the data should be normalized first (which can be done with the *--normalize* command line parameter), e.g.:
+
+```
+./multithreaded/examm_mt --number_threads 9 --training_filenames ../datasets/2018_ngafid/flight_[0-7].csv --test_filenames ../datasets/2018_ngafid/flight_[8-9].csv --time_offset 1 --input_parameter_names "AltAGL" "E1 CHT1" "E1 CHT2" "E1 CHT3" "E1 CHT4" "E1 EGT1" "E1 EGT2" "E1 EGT3" "E1 EGT4" "E1 OilP" "E1 OilT" "E1 RPM" "FQtyL" "FQtyR" "GndSpd" "IAS" "LatAc" "NormAc" "OAT" "Pitch" "Roll" "TAS" "volt1" "volt2" "VSpd" "VSpdG" --output_parameter_names Pitch --number_islands 10 --population_size 10 --max_genomes 2000 --bp_iterations 10 --output_directory "./test_output" --possible_node_types simple UGRNN MGU GRU delta LSTM --normalize
+```
+
+The *--time_offset* parameter specifies how many time steps in the future EXAMM should predict for the output parameter(s). 
 
 # EXACT: Evolutionary Exploration of Augmenting Convolutional Topologies
 
@@ -54,6 +79,9 @@ This version EXACT is set up to run using the [MNIST Handwritten Digits Dataset]
 ~/exact/build $ ./image_tools/convert_mnist_data ../datasets/train-images-idx3-ubyte ../datasets/train-labels-idx1-ubyte ../datasets/mnist_training_data.bin 60000
 ~/exact/build $ ./image_tools/convert_mnist_data ../datasets/t10k-images-idx3-ubyte ../datasets/t10k-labels-idx1-ubyte ../datasets/mnist_testing_data.bin 10000
 ```
+
+## Running EXACT
+
 
 ## Example Genomes from GECCO 2017
 
