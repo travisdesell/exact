@@ -36,9 +36,7 @@ These datasets can be found in the *datasets* directory, and provide example CSV
 And a parallel version using MPI:
 
 ```
-~/exact/build/ $ mpirun -np 9 ./mpi/examm_mpi --training_filenames ../datasets/2018_coal/burner_[0-9].csv \ 
---test_filenames ../datasets/2018_coal/burner_1[0-1].csv --time_offset 1 \
---input_parameter_names Conditioner_Inlet_Temp Conditioner_Outlet_Temp Coal_Feeder_Rate Primary_Air_Flow Primary_Air_Split System_Secondary_Air_Flow_Total Secondary_Air_Flow Secondary_Air_Split Tertiary_Air_Split Total_Comb_Air_Flow Supp_Fuel_Flow Main_Flm_Int --output_parameter_names Main_Flm_Int --number_islands 10 --population_size 10 --max_genomes 2000 --bp_iterations 10 --output_directory "./test_output" --possible_node_types simple UGRNN MGU GRU delta LSTM
+~/exact/build/ $ mpirun -np 9 ./mpi/examm_mpi --training_filenames ../datasets/2018_coal/burner_[0-9].csv --test_filenames ../datasets/2018_coal/burner_1[0-1].csv --time_offset 1 --input_parameter_names Conditioner_Inlet_Temp Conditioner_Outlet_Temp Coal_Feeder_Rate Primary_Air_Flow Primary_Air_Split System_Secondary_Air_Flow_Total Secondary_Air_Flow Secondary_Air_Split Tertiary_Air_Split Total_Comb_Air_Flow Supp_Fuel_Flow Main_Flm_Int --output_parameter_names Main_Flm_Int --number_islands 10 --population_size 10 --max_genomes 2000 --bp_iterations 10 --output_directory "./test_output" --possible_node_types simple UGRNN MGU GRU delta LSTM
 ```
 
 Which will run EXAMM with 11 threads or 11 processes, respectively. Note that EXAMM uses one thread/process as the master and this typically just waits on the results of backprop so you if you have 8 processors/cores available you can usually run EXAMM with 9 processes/threads for better performance. A performance log of RNN fitnesses will be exported into fitness_log.csv, as well as the best found RNNs into the specified output directory, in this case *./test_output*.
@@ -82,8 +80,36 @@ This version EXACT is set up to run using the [MNIST Handwritten Digits Dataset]
 ~/exact/build $ ./image_tools/convert_mnist_data ../datasets/t10k-images-idx3-ubyte ../datasets/t10k-labels-idx1-ubyte ../datasets/mnist_testing_data.bin 10000
 ```
 
+You can also split up either the training or test data to add a third dataset of validation images for more robust analysis, e.g., so you can train on one set, use the validation set to determine the best CNNs for EXACT to keep, and then after the evolution process is completed you can test the best found genome(s) on the test set which has not been seen before. You can split up the MNIST training data into a 50k training set and 10k validation set as follows:
+
+```
+~/exact/build/ $ ./image_tools/split_mnist_data ../datasets/train-images-idx3-ubyte ../datasets/train-labels-idx1-ubyte ../datasets/mnist_train_50k.bin ../datasets/mnist_validation_10k.bin 60000 1000
+```
+
+Where the usage is:
+
+```
+./image_tools/split_mnist_data <mnist image file> <mnist label file> <output training file> <output validation file> <expected number of images> <validation images per label>
+```
+
+So this will take 1000 images of each type from the training data and put them into the specified validation file (*mnist_validation_10k.bin*) and the rest of the images will be in the training set (*mnist_train_50k.bin*).
+
 ## Running EXACT
 
+You can then run EXACT in a similar manner to EXAMM, either using threads or MPI. For the threaded version:
+
+```
+~/exact/build/ $ ./multithreaded/exact_mt --number_threads 9 --padding 2 --training_file ../datasets/mnist_train_50k.bin --validation_file ../datasets/mnist_validation_10k.bin  --testing_file ../datasets/mnist_testing_data.bin --population_size 30 --max_epochs 5 --use_sfmp 1 --use_node_operations 1 --max_genomes 1000 --output_directory ./test_exact --search_name "test" --reset_edges 0 --images_resize 50000
+
+```
+
+And for the MPI version:
+
+```
+~/exact/build/ $ mpirun -np 9 ./mpi/exact_mpi --padding 2 --training_file ../datasets/mnist_train_50k.bin --validation_file ../datasets/mnist_validation_10k.bin  --testing_file ../datasets/mnist_testing_data.bin --population_size 30 --max_epochs 5 --use_sfmp 1 --use_node_operations 1 --max_genomes 1000 --output_directory ./test_exact --search_name "test" --reset_edges 0 --images_resize 50000
+```
+
+Which will run EXACT with 9 threads or processes, respectively. The *--use_sfmp* argument turns on or off scaled fractional max pooling (which allows for pooling operations between feature maps of any size), the *--use_node_operations* argument turns on or off node level mutations (see the EXACT and EXAMM papers), the *--reset_edges* parameter turns on or off Lamarckian weight evolution (turning it on will evolve and train networks faster) and the *--images_resize* parameter allows EXACT to train CNNs on a subset of the training data to speed the evolution process (e.g., --images_resize 5000 would train each CNN on a different subset of 5k images from the training data, as opposed to the full 50k).
 
 ## Example Genomes from GECCO 2017
 
