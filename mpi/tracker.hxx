@@ -1,5 +1,5 @@
-#ifndef EXALT_TRACKER_HXX
-#define EXALT_TRACKER_HXX
+#ifndef EXAMM_TRACKER_HXX
+#define EXAMM_TRACKER_HXX
 
 #include <vector>
 using std::vector;

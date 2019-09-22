@@ -1,5 +1,5 @@
-#ifndef EXALT_TIME_SERIES_HXX
-#define EXALT_TIME_SERIES_HXX
+#ifndef EXAMM_TIME_SERIES_HXX
+#define EXAMM_TIME_SERIES_HXX
 
 #include <iostream>
 using std::ostream;

@@ -1,5 +1,5 @@
-#ifndef EXALT_MGU_NODE_HXX
-#define EXALT_MGU_NODE_HXX
+#ifndef EXAMM_MGU_NODE_HXX
+#define EXAMM_MGU_NODE_HXX
 
 #include <string>
 using std::string;

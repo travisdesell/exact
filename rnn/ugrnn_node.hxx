@@ -1,5 +1,5 @@
-#ifndef EXALT_UGRNN_NODE_HXX
-#define EXALT_UGRNN_NODE_HXX
+#ifndef EXAMM_UGRNN_NODE_HXX
+#define EXAMM_UGRNN_NODE_HXX
 
 #include <string>
 using std::string;

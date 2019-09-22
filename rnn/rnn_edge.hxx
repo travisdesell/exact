@@ -1,5 +1,5 @@
-#ifndef EXALT_RNN_EDGE_HXX
-#define EXALT_RNN_EDGE_HXX
+#ifndef EXAMM_RNN_EDGE_HXX
+#define EXAMM_RNN_EDGE_HXX
 
 #include "rnn_node_interface.hxx"
 
@@ -55,7 +55,7 @@ class RNN_Edge {
 
         friend class RNN_Genome;
         friend class RNN;
-        friend class EXALT;
+        friend class EXAMM;
 };
 
 

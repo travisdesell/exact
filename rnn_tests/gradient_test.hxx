@@ -1,5 +1,5 @@
-#ifndef EXALT_GRADIENT_TEST
-#define EXALT_GRADIENT_TEST
+#ifndef EXAMM_GRADIENT_TEST
+#define EXAMM_GRADIENT_TEST
 
 #include <chrono>
 

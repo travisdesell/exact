@@ -1,5 +1,5 @@
-#ifndef EXALT_MSE_HXX
-#define EXALT_MSE_HXX
+#ifndef EXAMM_MSE_HXX
+#define EXAMM_MSE_HXX
 
 #include <vector>
 using std::vector;

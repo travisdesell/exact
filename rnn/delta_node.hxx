@@ -1,5 +1,5 @@
-#ifndef EXALT_DELTA_NODE_HXX
-#define EXALT_DELTA_NODE_HXX
+#ifndef EXAMM_DELTA_NODE_HXX
+#define EXAMM_DELTA_NODE_HXX
 
 #include <string>
 using std::string;

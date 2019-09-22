@@ -25,7 +25,7 @@ using std::vector;
 #include "common/random.hxx"
 
 //mysql can't handl the max float value for some reason
-#define EXALT_MAX_DOUBLE 10000000
+#define EXAMM_MAX_DOUBLE 10000000
 
 string parse_fitness(double fitness);
 
@@ -215,7 +215,7 @@ class RNN_Genome {
         void write_to_stream(ostream &bin_stream, bool verbose = false);
 
 
-        friend class EXALT;
+        friend class EXAMM;
 };
 
 struct sort_genomes_by_fitness {

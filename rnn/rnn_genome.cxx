@@ -58,7 +58,7 @@ using std::vector;
 #include "rnn_genome.hxx"
 
 string parse_fitness(double fitness) {
-    if (fitness == EXALT_MAX_DOUBLE) {
+    if (fitness == EXAMM_MAX_DOUBLE) {
         return "UNEVAL";
     } else {
         return to_string(fitness);
@@ -78,8 +78,8 @@ RNN_Genome::RNN_Genome(vector<RNN_Node_Interface*> &_nodes, vector<RNN_Edge*> &_
     generation_id = -1;
     island = -1;
 
-    best_validation_mse = EXALT_MAX_DOUBLE;
-    best_validation_mae = EXALT_MAX_DOUBLE;
+    best_validation_mse = EXAMM_MAX_DOUBLE;
+    best_validation_mae = EXAMM_MAX_DOUBLE;
 
     nodes = _nodes;
     edges = _edges;

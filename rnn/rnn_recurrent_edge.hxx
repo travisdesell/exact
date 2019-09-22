@@ -1,5 +1,5 @@
-#ifndef EXALT_RNN_RECURRENT_EDGE_HXX
-#define EXALT_RNN_RECURRENT_EDGE_HXX
+#ifndef EXAMM_RNN_RECURRENT_EDGE_HXX
+#define EXAMM_RNN_RECURRENT_EDGE_HXX
 
 class RNN;
 
@@ -60,7 +60,7 @@ class RNN_Recurrent_Edge {
 
         friend class RNN_Genome;
         friend class RNN;
-        friend class EXALT;
+        friend class EXAMM;
 };
 
 

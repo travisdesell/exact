@@ -24,13 +24,13 @@ using std::uniform_real_distribution;
 using std::string;
 using std::to_string;
 
-#include "exalt.hxx"
+#include "examm.hxx"
 #include "rnn_genome.hxx"
 #include "generate_nn.hxx"
 
 #include "common/files.hxx"
 
-EXALT::~EXALT() {
+EXAMM::~EXAMM() {
     RNN_Genome *genome;
     for (int32_t i = 0; i < genomes.size(); i++) {
         while (genomes[i].size() > 0) {
@@ -41,7 +41,7 @@ EXALT::~EXALT() {
     }
 }
 
-EXALT::EXALT(int32_t _population_size, int32_t _number_islands, int32_t _max_genomes, const vector<string> &_input_parameter_names, const vector<string> &_output_parameter_names, const map<string,double> &_normalize_mins, const map<string,double> &_normalize_maxs, int32_t _bp_iterations, double _learning_rate, bool _use_high_threshold, double _high_threshold, bool _use_low_threshold, double _low_threshold, bool _use_dropout, double _dropout_probability, string _output_directory) : population_size(_population_size), number_islands(_number_islands), max_genomes(_max_genomes), number_inputs(_input_parameter_names.size()), number_outputs(_output_parameter_names.size()), bp_iterations(_bp_iterations), learning_rate(_learning_rate), use_high_threshold(_use_high_threshold), high_threshold(_high_threshold), use_low_threshold(_use_low_threshold), low_threshold(_low_threshold), use_dropout(_use_dropout), dropout_probability(_dropout_probability), output_directory(_output_directory) {
+EXAMM::EXAMM(int32_t _population_size, int32_t _number_islands, int32_t _max_genomes, const vector<string> &_input_parameter_names, const vector<string> &_output_parameter_names, const map<string,double> &_normalize_mins, const map<string,double> &_normalize_maxs, int32_t _bp_iterations, double _learning_rate, bool _use_high_threshold, double _high_threshold, bool _use_low_threshold, double _low_threshold, bool _use_dropout, double _dropout_probability, string _output_directory) : population_size(_population_size), number_islands(_number_islands), max_genomes(_max_genomes), number_inputs(_input_parameter_names.size()), number_outputs(_output_parameter_names.size()), bp_iterations(_bp_iterations), learning_rate(_learning_rate), use_high_threshold(_use_high_threshold), high_threshold(_high_threshold), use_low_threshold(_use_low_threshold), low_threshold(_low_threshold), use_dropout(_use_dropout), dropout_probability(_dropout_probability), output_directory(_output_directory) {
 
     input_parameter_names = _input_parameter_names;
     output_parameter_names = _output_parameter_names;
@@ -134,7 +134,7 @@ int mkpath(const char *path, mode_t mode);
     startClock = std::chrono::system_clock::now();
 }
 
-void EXALT::print_population() {
+void EXAMM::print_population() {
     cout << "POPULATIONS: " << endl;
     for (int32_t i = 0; i < (int32_t)genomes.size(); i++) {
         cout << "\tPOPULATION " << i << ":" << endl;
@@ -159,7 +159,7 @@ void EXALT::print_population() {
             log_file = new ofstream(output_file, std::ios_base::app);
 
             if (!log_file->is_open()) {
-                cerr << "ERROR, could not open EXALT output log: '" << output_file << "'" << endl;
+                cerr << "ERROR, could not open EXAMM output log: '" << output_file << "'" << endl;
                 exit(1);
             }
         }
@@ -189,13 +189,13 @@ void EXALT::print_population() {
     }
 }
 
-void EXALT::write_memory_log(string filename) {
+void EXAMM::write_memory_log(string filename) {
     ofstream log_file(filename);
     log_file << memory_log.str();
     log_file.close();
 }
 
-void EXALT::set_possible_node_types(vector<string> possible_node_type_strings) {
+void EXAMM::set_possible_node_types(vector<string> possible_node_type_strings) {
     possible_node_types.clear();
 
     for (int32_t i = 0; i < possible_node_type_strings.size(); i++) {
@@ -217,7 +217,7 @@ void EXALT::set_possible_node_types(vector<string> possible_node_type_strings) {
     }
 }
 
-int32_t EXALT::population_contains(RNN_Genome* genome, int32_t island) {
+int32_t EXAMM::population_contains(RNN_Genome* genome, int32_t island) {
     for (int32_t j = 0; j < (int32_t)genomes[island].size(); j++) {
         if (genomes[island][j]->equals(genome)) {
             return j;
@@ -227,7 +227,7 @@ int32_t EXALT::population_contains(RNN_Genome* genome, int32_t island) {
     return -1;
 }
 
-bool EXALT::populations_full() const {
+bool EXAMM::populations_full() const {
     for (int32_t i = 0; i < (int32_t)genomes.size(); i++) {
         if (genomes[i].size() < population_size) return false;
     }
@@ -235,13 +235,13 @@ bool EXALT::populations_full() const {
     return true;
 }
 
-string EXALT::get_output_directory() const {
+string EXAMM::get_output_directory() const {
     return output_directory;
 }
 
-RNN_Genome* EXALT::get_best_genome() {
+RNN_Genome* EXAMM::get_best_genome() {
     int32_t best_genome_population = -1;
-    double best_fitness = EXALT_MAX_DOUBLE;
+    double best_fitness = EXAMM_MAX_DOUBLE;
 
     for (int32_t i = 0; i < (int32_t)genomes.size(); i++) {
         if (genomes[i].size() > 0) {
@@ -259,9 +259,9 @@ RNN_Genome* EXALT::get_best_genome() {
     }
 }
 
-RNN_Genome* EXALT::get_worst_genome() {
+RNN_Genome* EXAMM::get_worst_genome() {
     int32_t worst_genome_population = -1;
-    double worst_fitness = -EXALT_MAX_DOUBLE;
+    double worst_fitness = -EXAMM_MAX_DOUBLE;
 
     for (int32_t i = 0; i < (int32_t)genomes.size(); i++) {
         if (genomes[i].size() > 0) {
@@ -280,20 +280,20 @@ RNN_Genome* EXALT::get_worst_genome() {
 }
 
 
-double EXALT::get_best_fitness() {
+double EXAMM::get_best_fitness() {
     RNN_Genome *best_genome = get_best_genome();
-    if (best_genome == NULL) return EXALT_MAX_DOUBLE;
+    if (best_genome == NULL) return EXAMM_MAX_DOUBLE;
     else return best_genome->get_fitness();
 }
 
-double EXALT::get_worst_fitness() {
+double EXAMM::get_worst_fitness() {
     RNN_Genome *worst_genome = get_worst_genome();
-    if (worst_genome == NULL) return EXALT_MAX_DOUBLE;
+    if (worst_genome == NULL) return EXAMM_MAX_DOUBLE;
     else return worst_genome->get_fitness();
 }
 
 //this will insert a COPY, original needs to be deleted
-bool EXALT::insert_genome(RNN_Genome* genome) {
+bool EXAMM::insert_genome(RNN_Genome* genome) {
     if (!genome->sanity_check()) {
         cerr << "ERROR, genome failed sanity check on insert!" << endl;
         exit(1);
@@ -343,7 +343,7 @@ bool EXALT::insert_genome(RNN_Genome* genome) {
         if (genomes[island].size() == 0 || genome->get_fitness() < get_best_genome()->get_fitness()) {
             cout << "new best fitness!" << endl;
 
-            if (genome->get_fitness() != EXALT_MAX_DOUBLE) {
+            if (genome->get_fitness() != EXAMM_MAX_DOUBLE) {
                 //need to set the weights for non-initial genomes so we
                 //can generate a proper graphviz file
                 vector<double> best_parameters = genome->get_best_parameters();
@@ -385,7 +385,7 @@ bool EXALT::insert_genome(RNN_Genome* genome) {
     return was_inserted;
 }
 
-void EXALT::initialize_genome_parameters(RNN_Genome* genome) {
+void EXAMM::initialize_genome_parameters(RNN_Genome* genome) {
     genome->set_bp_iterations(bp_iterations);
     genome->set_learning_rate(learning_rate);
 
@@ -394,7 +394,7 @@ void EXALT::initialize_genome_parameters(RNN_Genome* genome) {
     if (use_dropout) genome->enable_dropout(dropout_probability);
 }
 
-RNN_Genome* EXALT::generate_genome() {
+RNN_Genome* EXAMM::generate_genome() {
     if (inserted_genomes > max_genomes) return NULL;
     int island = generated_genomes % number_islands;
     generated_genomes++;
@@ -422,8 +422,8 @@ RNN_Genome* EXALT::generate_genome() {
         cout << "getting mu/sigma after random initialization!" << endl;
         genome->get_mu_sigma(genome->best_parameters, _mu, _sigma);
 
-        genome->best_validation_mse = EXALT_MAX_DOUBLE;
-        genome->best_validation_mae = EXALT_MAX_DOUBLE;
+        genome->best_validation_mse = EXAMM_MAX_DOUBLE;
+        genome->best_validation_mae = EXAMM_MAX_DOUBLE;
         genome->best_parameters.clear();
         //genome->clear_generated_by();
 
@@ -476,7 +476,7 @@ RNN_Genome* EXALT::generate_genome() {
                 //if (other_island >= island) other_island++;
 
                 int other_island = -1;
-                double best_other_fitness = EXALT_MAX_DOUBLE;
+                double best_other_fitness = EXAMM_MAX_DOUBLE;
                 for (int32_t i = 0; i < genomes.size(); i++) {
                     if (i == island) continue;
                     if (genomes[i][0]->get_fitness() < best_other_fitness) {
@@ -538,11 +538,11 @@ RNN_Genome* EXALT::generate_genome() {
     return genome;
 }
 
-int EXALT::get_random_node_type() {
+int EXAMM::get_random_node_type() {
     return possible_node_types[rng_0_1(generator) * possible_node_types.size()];
 }
 
-void EXALT::mutate(RNN_Genome *g) {
+void EXAMM::mutate(RNN_Genome *g) {
     double total = clone_rate + add_edge_rate + add_recurrent_edge_rate + enable_edge_rate + disable_edge_rate + split_edge_rate + add_node_rate + enable_node_rate + disable_node_rate + split_node_rate + merge_node_rate;
 
     bool modified = false;
@@ -669,8 +669,8 @@ void EXALT::mutate(RNN_Genome *g) {
     g->assign_reachability();
 
     //reset the genomes statistics (as these carry over on copy)
-    g->best_validation_mse = EXALT_MAX_DOUBLE;
-    g->best_validation_mae = EXALT_MAX_DOUBLE;
+    g->best_validation_mse = EXAMM_MAX_DOUBLE;
+    g->best_validation_mae = EXAMM_MAX_DOUBLE;
 
     //get the new set of parameters (as new paramters may have been
     //added duriung mutatino) and set them to the initial parameters
@@ -685,7 +685,7 @@ void EXALT::mutate(RNN_Genome *g) {
 }
 
 
-void EXALT::attempt_node_insert(vector<RNN_Node_Interface*> &child_nodes, const RNN_Node_Interface *node, const vector<double> &new_weights) {
+void EXAMM::attempt_node_insert(vector<RNN_Node_Interface*> &child_nodes, const RNN_Node_Interface *node, const vector<double> &new_weights) {
     for (int32_t i = 0; i < (int32_t)child_nodes.size(); i++) {
         if (child_nodes[i]->get_innovation_number() == node->get_innovation_number()) return;
     }
@@ -696,7 +696,7 @@ void EXALT::attempt_node_insert(vector<RNN_Node_Interface*> &child_nodes, const 
     child_nodes.insert( upper_bound(child_nodes.begin(), child_nodes.end(), node_copy, sort_RNN_Nodes_by_depth()), node_copy);
 }
 
-void EXALT::attempt_edge_insert(vector<RNN_Edge*> &child_edges, vector<RNN_Node_Interface*> &child_nodes, RNN_Edge *edge, RNN_Edge *second_edge, bool set_enabled) {
+void EXAMM::attempt_edge_insert(vector<RNN_Edge*> &child_edges, vector<RNN_Node_Interface*> &child_nodes, RNN_Edge *edge, RNN_Edge *second_edge, bool set_enabled) {
     for (int32_t i = 0; i < (int32_t)child_edges.size(); i++) {
         if (child_edges[i]->get_innovation_number() == edge->get_innovation_number()) {
             cerr << "ERROR in crossover! trying to push an edge with innovation_number: " << edge->get_innovation_number() << " and it already exists in the vector!" << endl;
@@ -770,7 +770,7 @@ void EXALT::attempt_edge_insert(vector<RNN_Edge*> &child_edges, vector<RNN_Node_
     child_edges.insert( upper_bound(child_edges.begin(), child_edges.end(), edge_copy, sort_RNN_Edges_by_depth()), edge_copy);
 }
 
-void EXALT::attempt_recurrent_edge_insert(vector<RNN_Recurrent_Edge*> &child_recurrent_edges, vector<RNN_Node_Interface*> &child_nodes, RNN_Recurrent_Edge *recurrent_edge, RNN_Recurrent_Edge *second_edge, bool set_enabled) {
+void EXAMM::attempt_recurrent_edge_insert(vector<RNN_Recurrent_Edge*> &child_recurrent_edges, vector<RNN_Node_Interface*> &child_nodes, RNN_Recurrent_Edge *recurrent_edge, RNN_Recurrent_Edge *second_edge, bool set_enabled) {
     for (int32_t i = 0; i < (int32_t)child_recurrent_edges.size(); i++) {
         if (child_recurrent_edges[i]->get_innovation_number() == recurrent_edge->get_innovation_number()) {
             cerr << "ERROR in crossover! trying to push an recurrent_edge with innovation_number: " << recurrent_edge->get_innovation_number() << " and it already exists in the vector!" << endl;
@@ -844,7 +844,7 @@ void EXALT::attempt_recurrent_edge_insert(vector<RNN_Recurrent_Edge*> &child_rec
 }
 
 
-RNN_Genome* EXALT::crossover(RNN_Genome *p1, RNN_Genome *p2) {
+RNN_Genome* EXAMM::crossover(RNN_Genome *p1, RNN_Genome *p2) {
     cerr << "generating new genome by crossover!" << endl;
     cout << "p1->island: " << p1->get_island() << ", p2->island: " << p2->get_island() << endl;
 
@@ -1040,8 +1040,8 @@ RNN_Genome* EXALT::crossover(RNN_Genome *p1, RNN_Genome *p2) {
     child->assign_reachability();
 
     //reset the genomes statistics (as these carry over on copy)
-    child->best_validation_mse = EXALT_MAX_DOUBLE;
-    child->best_validation_mae = EXALT_MAX_DOUBLE;
+    child->best_validation_mse = EXAMM_MAX_DOUBLE;
+    child->best_validation_mae = EXAMM_MAX_DOUBLE;
 
     //get the new set of parameters (as new paramters may have been
     //added duriung mutatino) and set them to the initial parameters

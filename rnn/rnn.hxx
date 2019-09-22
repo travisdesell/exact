@@ -1,5 +1,5 @@
-#ifndef EXALT_RNN_GENOME_HXX
-#define EXALT_RNN_GENOME_HXX
+#ifndef EXAMM_RNN_GENOME_HXX
+#define EXAMM_RNN_GENOME_HXX
 
 #include <string>
 using std::string;

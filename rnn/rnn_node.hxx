@@ -1,5 +1,5 @@
-#ifndef EXALT_RNN_NODE_HXX
-#define EXALT_RNN_NODE_HXX
+#ifndef EXAMM_RNN_NODE_HXX
+#define EXAMM_RNN_NODE_HXX
 
 #include <vector>
 using std::vector;

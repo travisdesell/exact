@@ -1,23 +1,23 @@
 add_executable(test_feed_forward_gradients test_feed_forward_gradients gradient_test)
-target_link_libraries(test_feed_forward_gradients exalt_strategy exact_common exact_time_series ${MYSQL_LIBRARIES} pthread)
+target_link_libraries(test_feed_forward_gradients examm_strategy exact_common exact_time_series ${MYSQL_LIBRARIES} pthread)
 
 add_executable(test_elman_gradients test_elman_gradients gradient_test)
-target_link_libraries(test_elman_gradients exalt_strategy exact_common exact_time_series ${MYSQL_LIBRARIES} pthread)
+target_link_libraries(test_elman_gradients examm_strategy exact_common exact_time_series ${MYSQL_LIBRARIES} pthread)
 
 add_executable(test_jordan_gradients test_jordan_gradients gradient_test)
-target_link_libraries(test_jordan_gradients exalt_strategy exact_common exact_time_series ${MYSQL_LIBRARIES} pthread)
+target_link_libraries(test_jordan_gradients examm_strategy exact_common exact_time_series ${MYSQL_LIBRARIES} pthread)
 
 add_executable(test_delta_gradients test_delta_gradients gradient_test)
-target_link_libraries(test_delta_gradients exalt_strategy exact_common exact_time_series ${MYSQL_LIBRARIES} pthread)
+target_link_libraries(test_delta_gradients examm_strategy exact_common exact_time_series ${MYSQL_LIBRARIES} pthread)
 
 add_executable(test_ugrnn_gradients test_ugrnn_gradients gradient_test)
-target_link_libraries(test_ugrnn_gradients exalt_strategy exact_common exact_time_series ${MYSQL_LIBRARIES} pthread)
+target_link_libraries(test_ugrnn_gradients examm_strategy exact_common exact_time_series ${MYSQL_LIBRARIES} pthread)
 
 add_executable(test_gru_gradients test_gru_gradients gradient_test)
-target_link_libraries(test_gru_gradients exalt_strategy exact_common exact_time_series ${MYSQL_LIBRARIES} pthread)
+target_link_libraries(test_gru_gradients examm_strategy exact_common exact_time_series ${MYSQL_LIBRARIES} pthread)
 
 add_executable(test_mgu_gradients test_mgu_gradients gradient_test)
-target_link_libraries(test_mgu_gradients exalt_strategy exact_common exact_time_series ${MYSQL_LIBRARIES} pthread)
+target_link_libraries(test_mgu_gradients examm_strategy exact_common exact_time_series ${MYSQL_LIBRARIES} pthread)
 
 add_executable(test_lstm_gradients test_lstm_gradients gradient_test)
-target_link_libraries(test_lstm_gradients exalt_strategy exact_common exact_time_series ${MYSQL_LIBRARIES} pthread)
+target_link_libraries(test_lstm_gradients examm_strategy exact_common exact_time_series ${MYSQL_LIBRARIES} pthread)
