@@ -23,9 +23,9 @@ $ dot -Tpdf genome.gv -o genome.pdf
 
 Source code for EXALT/EXAMM can be found in the rnn subdirectory. EXALT has been enhanced with the ability to utilize more recurrent memory cells and has been renamed EXAMM.  The memory cells currently implemented are Delta-RNN, GRU, LSTM, MGU, and UGRNNs. Some example time series data has been provided as part of two publications on EXALT and EXAMM, which also provide implementation details:
 
-1. Alex Ororbia, AbdElRahman ElSaid, and Travis Desell. **Investigating Recurrent Neural Network Memory Structures using Neuro-Evolution.** *The Genetic and Evolutionary Computation Conference (GECCO 2019).* Prague, Czech Republic. July 8-12, 2019. [link](https://dl.acm.org/citation.cfm?id=3321795)
+1. Alex Ororbia, AbdElRahman ElSaid, and Travis Desell. **[Investigating Recurrent Neural Network Memory Structures using Neuro-Evolution](https://dl.acm.org/citation.cfm?id=3321795).** *The Genetic and Evolutionary Computation Conference (GECCO 2019).* Prague, Czech Republic. July 8-12, 2019.
 
-2. AbdElRahman ElSaid, Steven Benson, Shuchita Patwardhan, David Stadem and Travis Desell. **Evolving Recurrent Neural Networks for Time Series Data Prediction of Coal Plant Parameters.** *The 22nd International Conference on the Applications of Evolutionary Computation (EvoStar: EvoApps 2019).* Leipzig, Germany. April 24-26, 2019. [link](https://link.springer.com/chapter/10.1007/978-3-030-16692-2_33)
+2. AbdElRahman ElSaid, Steven Benson, Shuchita Patwardhan, David Stadem and Travis Desell. **[Evolving Recurrent Neural Networks for Time Series Data Prediction of Coal Plant Parameters](https://link.springer.com/chapter/10.1007/978-3-030-16692-2_33).** *The 22nd International Conference on the Applications of Evolutionary Computation (EvoStar: EvoApps 2019).* Leipzig, Germany. April 24-26, 2019.
 
 These datasets can be found in the *datasets* directory, and provide example CSV files which you can use with EXAMM. EXAMM can be run in two different ways, a multithreaded version:
 
@@ -59,9 +59,9 @@ If you want to set this up on your own BOINC volunteer computing project, we rec
 
 For more information on EXACT please see our following publications:
 
-1. Travis Desell. **Accelerating the Evolution of Convolutional Neural Networks with Node-Level Mutations and Epigenetic Weight Initialization.** *arXiv: Neural and Evolutionary Computing (cs.NE).* November, 2018. [link](https://arxiv.org/abs/1811.08286)
+1. Travis Desell. **[Accelerating the Evolution of Convolutional Neural Networks with Node-Level Mutations and Epigenetic Weight Initialization](https://arxiv.org/abs/1811.08286).** *arXiv: Neural and Evolutionary Computing (cs.NE).* November, 2018.
 
-2. Travis Desell. **Developing a Volunteer Computing Project to Evolve Convolutional Neural Networks and Their Hyperparameters.** *The 13th IEEE International Conference on eScience (eScience 2017).* Auckland, New Zealand. October 24-27 2017. [link](https://ieeexplore.ieee.org/document/8109119)
+2. Travis Desell. **[Developing a Volunteer Computing Project to Evolve Convolutional Neural Networks and Their Hyperparameters](https://ieeexplore.ieee.org/document/8109119).** *The 13th IEEE International Conference on eScience (eScience 2017).* Auckland, New Zealand. October 24-27 2017.
 
 
 ## Setting up Training and Testing Data
