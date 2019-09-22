@@ -57,6 +57,13 @@ We've built and run EXACT on both an Ubuntu Linux high performance computing clu
 
 If you want to set this up on your own BOINC volunteer computing project, we recommend sending us an email as this is a rather complicated process.
 
+For more information on EXACT please see our following publications:
+
+1. Travis Desell. **Accelerating the Evolution of Convolutional Neural Networks with Node-Level Mutations and Epigenetic Weight Initialization.** *arXiv: Neural and Evolutionary Computing (cs.NE).* November, 2018. [link](https://arxiv.org/abs/1811.08286)
+
+2. Travis Desell. **Developing a Volunteer Computing Project to Evolve Convolutional Neural Networks and Their Hyperparameters.** *The 13th IEEE International Conference on eScience (eScience 2017).* Auckland, New Zealand. October 24-27 2017. [link](https://ieeexplore.ieee.org/document/8109119)
+
+
 ## Setting up Training and Testing Data
 
 This version EXACT is set up to run using the [MNIST Handwritten Digits Dataset](http://yann.lecun.com/exdb/mnist/). However it expects a different data format where the images and labels are combined.  You can download the data and convert it as follows:
