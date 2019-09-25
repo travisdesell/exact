@@ -114,7 +114,12 @@ int main(int argc, char** argv) {
     string output_directory = "";
     get_argument(arguments, "--output_directory", false, output_directory);
 
+    vector<string> possible_node_types;
+    get_argument_vector(arguments, "--possible_node_types", false, possible_node_types);
+
     examm = new EXAMM(population_size, number_islands, max_genomes, time_series_sets->get_input_parameter_names(), time_series_sets->get_output_parameter_names(), time_series_sets->get_normalize_mins(), time_series_sets->get_normalize_maxs(), bp_iterations, learning_rate, use_high_threshold, high_threshold, use_low_threshold, low_threshold, use_dropout, dropout_probability, output_directory);
+
+    if (possible_node_types.size() > 0) examm->set_possible_node_types(possible_node_types);
 
 
     vector<thread> threads;

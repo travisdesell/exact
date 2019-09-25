@@ -220,7 +220,7 @@ string RNN_Genome::print_statistics_header() {
         << setw(12) << "MAE"
         << setw(12) << "Edges"
         << setw(12) << "Rec Edges"
-        << setw(12) << "FF"
+        << setw(12) << "Simple"
         << setw(12) << "Jordan"
         << setw(12) << "Elman"
         << setw(12) << "UGRNN"
