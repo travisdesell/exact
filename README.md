@@ -39,7 +39,7 @@ And a parallel version using MPI:
 ~/exact/build/ $ mpirun -np 9 ./mpi/examm_mpi --training_filenames ../datasets/2018_coal/burner_[0-9].csv --test_filenames ../datasets/2018_coal/burner_1[0-1].csv --time_offset 1 --input_parameter_names Conditioner_Inlet_Temp Conditioner_Outlet_Temp Coal_Feeder_Rate Primary_Air_Flow Primary_Air_Split System_Secondary_Air_Flow_Total Secondary_Air_Flow Secondary_Air_Split Tertiary_Air_Split Total_Comb_Air_Flow Supp_Fuel_Flow Main_Flm_Int --output_parameter_names Main_Flm_Int --number_islands 10 --population_size 10 --max_genomes 2000 --bp_iterations 10 --output_directory "./test_output" --possible_node_types simple UGRNN MGU GRU delta LSTM
 ```
 
-Which will run EXAMM with 11 threads or 11 processes, respectively. Note that EXAMM uses one thread/process as the master and this typically just waits on the results of backprop so you if you have 8 processors/cores available you can usually run EXAMM with 9 processes/threads for better performance. A performance log of RNN fitnesses will be exported into fitness_log.csv, as well as the best found RNNs into the specified output directory, in this case *./test_output*.
+Which will run EXAMM with 9 threads or 9 processes, respectively. Note that EXAMM uses one thread/process as the master and this typically just waits on the results of backprop so you if you have 8 processors/cores available you can usually run EXAMM with 9 processes/threads for better performance. A performance log of RNN fitnesses will be exported into fitness_log.csv, as well as the best found RNNs into the specified output directory, in this case *./test_output*.
 
 The aviation data can be run similarly, however it the data should be normalized first (which can be done with the *--normalize* command line parameter), e.g.:
 
@@ -47,7 +47,9 @@ The aviation data can be run similarly, however it the data should be normalized
 ./multithreaded/examm_mt --number_threads 9 --training_filenames ../datasets/2018_ngafid/flight_[0-7].csv --test_filenames ../datasets/2018_ngafid/flight_[8-9].csv --time_offset 1 --input_parameter_names "AltAGL" "E1 CHT1" "E1 CHT2" "E1 CHT3" "E1 CHT4" "E1 EGT1" "E1 EGT2" "E1 EGT3" "E1 EGT4" "E1 OilP" "E1 OilT" "E1 RPM" "FQtyL" "FQtyR" "GndSpd" "IAS" "LatAc" "NormAc" "OAT" "Pitch" "Roll" "TAS" "volt1" "volt2" "VSpd" "VSpdG" --output_parameter_names Pitch --number_islands 10 --population_size 10 --max_genomes 2000 --bp_iterations 10 --output_directory "./test_output" --possible_node_types simple UGRNN MGU GRU delta LSTM --normalize
 ```
 
-The *--time_offset* parameter specifies how many time steps in the future EXAMM should predict for the output parameter(s). 
+The *--time_offset* parameter specifies how many time steps in the future EXAMM should predict for the output parameter(s). The *--number_islands* is the number of islands of populations that EXAMM will use, and the *--population_size* parameter specifies how many individuals/genomes are in each island. The *--bp_iterations* specifies how many epochs/iterations backpropagation should be run for each generated RNN genome.
+
+The 
 
 # EXACT: Evolutionary Exploration of Augmenting Convolutional Topologies
 
