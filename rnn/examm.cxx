@@ -41,7 +41,33 @@ EXAMM::~EXAMM() {
     }
 }
 
-EXAMM::EXAMM(int32_t _population_size, int32_t _number_islands, int32_t _max_genomes, const vector<string> &_input_parameter_names, const vector<string> &_output_parameter_names, const map<string,double> &_normalize_mins, const map<string,double> &_normalize_maxs, int32_t _bp_iterations, double _learning_rate, bool _use_high_threshold, double _high_threshold, bool _use_low_threshold, double _low_threshold, bool _use_dropout, double _dropout_probability, string _output_directory) : population_size(_population_size), number_islands(_number_islands), max_genomes(_max_genomes), number_inputs(_input_parameter_names.size()), number_outputs(_output_parameter_names.size()), bp_iterations(_bp_iterations), learning_rate(_learning_rate), use_high_threshold(_use_high_threshold), high_threshold(_high_threshold), use_low_threshold(_use_low_threshold), low_threshold(_low_threshold), use_dropout(_use_dropout), dropout_probability(_dropout_probability), output_directory(_output_directory) {
+EXAMM::EXAMM(int32_t _population_size, int32_t _number_islands, int32_t _max_genomes,
+		const vector<string> &_input_parameter_names,
+		const vector<string> &_output_parameter_names,
+		const map<string,double> &_normalize_mins,
+		const map<string,double> &_normalize_maxs,
+		int32_t _bp_iterations, double _learning_rate, 
+		bool _use_high_threshold, double _high_threshold,
+		bool _use_low_threshold, double _low_threshold, 
+		bool _use_dropout, double _dropout_probability,
+		int32_t _min_recurrent_depth, int32_t _max_recurrent_depth,
+		bool _use_rec_depth_population_sampling, string _rec_sampling_population,
+		string _rec_sampling_distribution,
+		string _output_directory) : 
+					population_size(_population_size), 
+					number_islands(_number_islands), 
+					max_genomes(_max_genomes), 
+					number_inputs(_input_parameter_names.size()),
+					number_outputs(_output_parameter_names.size()), 
+					bp_iterations(_bp_iterations), 
+					learning_rate(_learning_rate), 
+					use_high_threshold(_use_high_threshold), 
+					high_threshold(_high_threshold), 
+					use_low_threshold(_use_low_threshold), 
+					low_threshold(_low_threshold), 
+					use_dropout(_use_dropout), 
+					dropout_probability(_dropout_probability), 
+					output_directory(_output_directory) {
 
     input_parameter_names = _input_parameter_names;
     output_parameter_names = _output_parameter_names;
@@ -70,7 +96,32 @@ int mkpath(const char *path, mode_t mode);
     rng_crossover_weight = uniform_real_distribution<double>(-0.5, 1.5);
     //rng_crossover_weight = uniform_real_distribution<double>(0.45, 0.55);
 
-    max_recurrent_depth = 10;
+    min_recurrent_depth = _min_recurrent_depth;
+    max_recurrent_depth = _max_recurrent_depth;
+
+    use_rec_depth_population_sampling = _use_rec_depth_population_sampling;
+    
+    if (_rec_sampling_population.compare("global") == 0) {
+    	rec_sampling_population = GLOBAL_POPULATION;
+    } else if (_rec_sampling_population.compare("island") == 0) {
+    	rec_sampling_population = ISLAND_POPULATION;
+    } else {
+	cout << "WARNING: value passed to --rec_sampling_population is not valid ('" 
+	     << _rec_sampling_population
+	     << "'), defaulting to global.\n";
+	rec_sampling_population = GLOBAL_POPULATION;
+    }
+
+    if (_rec_sampling_distribution.compare("global") == 0) {
+    	rec_sampling_population = NORMAL_DISTRIBUTION;
+    } else if (_rec_sampling_distribution.compare("histogram") == 0) {
+    	rec_sampling_population = HISTOGRAM_DISTRIBUTION;
+    } else {
+	cout << "WARNING: value passed to --rec_sampling_distribution is not valid ('" 
+	     << _rec_sampling_distribution
+	     << "'), defaulting to normal.\n";
+	rec_sampling_distribution = NORMAL_DISTRIBUTION;
+    }
 
     epigenetic_weights = true;
 
