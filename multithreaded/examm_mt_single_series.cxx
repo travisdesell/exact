@@ -100,6 +100,23 @@ int main(int argc, char** argv) {
     double dropout_probability = 0.0;
     bool use_dropout = get_argument(arguments, "--dropout_probability", false, dropout_probability);
 
+    int32_t rec_delay_min = 1;
+    get_argument(arguments, "--rec_delay_min", false, rec_delay_min);
+    
+    int32_t rec_delay_max = 10;
+    get_argument(arguments, "--rec_delay_max", false, rec_delay_max);
+
+    bool rec_delay_population_based_sampling = false;
+    get_argument(arguments, "--rec_population_based_sampling", false, rec_delay_population_based_sampling);
+
+    string rec_sampling_population = "global";
+    get_argument(arguments, "--rec_sampling_population", false, rec_sampling_population);
+
+    string rec_sampling_distribution = "normal";
+    get_argument(arguments, "--rec_sampling_distribution", false, rec_sampling_distribution);
+
+
+
     get_argument(arguments, "--output_directory", true, output_directory);
 
     string output_filename;
@@ -141,7 +158,18 @@ int main(int argc, char** argv) {
         overall_results << "results for slice " << i << " of " << time_series_sets->get_number_series() << " as test data." << endl;
 
         for (uint32_t k = 0; k < repeats; k++) {
-            examm = new EXAMM(population_size, number_islands, max_genomes, time_series_sets->get_input_parameter_names(), time_series_sets->get_output_parameter_names(), time_series_sets->get_normalize_mins(), time_series_sets->get_normalize_maxs(), bp_iterations, learning_rate, use_high_threshold, high_threshold, use_low_threshold, low_threshold, use_dropout, dropout_probability, output_directory + "/slice_" + to_string(i) + "_repeat_" + to_string(k));
+            examm = new EXAMM(population_size, number_islands, max_genomes,
+			    time_series_sets->get_input_parameter_names(),
+			    time_series_sets->get_output_parameter_names(),
+			    time_series_sets->get_normalize_mins(),
+			    time_series_sets->get_normalize_maxs(), 
+			    bp_iterations, learning_rate, 
+			    use_high_threshold, high_threshold,
+			    use_low_threshold, low_threshold,
+			    use_dropout, dropout_probability,
+ 		            rec_delay_min, rec_delay_max, rec_delay_population_based_sampling,
+ 			    rec_sampling_population, rec_sampling_distribution,
+			    output_directory + "/slice_" + to_string(i) + "_repeat_" + to_string(k));
 
             vector<thread> threads;
             for (int32_t i = 0; i < number_threads; i++) {

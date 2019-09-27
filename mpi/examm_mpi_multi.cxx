@@ -266,6 +266,20 @@ int main(int argc, char** argv) {
     vector<string> possible_node_types;
     get_argument_vector(arguments, "--possible_node_types", true, possible_node_types);
 
+    int32_t rec_delay_min = 1;
+    get_argument(arguments, "--rec_delay_min", false, rec_delay_min);
+    
+    int32_t rec_delay_max = 10;
+    get_argument(arguments, "--rec_delay_max", false, rec_delay_max);
+
+    bool rec_delay_population_based_sampling = false;
+    get_argument(arguments, "--rec_population_based_sampling", false, rec_delay_population_based_sampling);
+
+    string rec_sampling_population = "global";
+    get_argument(arguments, "--rec_sampling_population", false, rec_sampling_population);
+
+    string rec_sampling_distribution = "normal";
+    get_argument(arguments, "--rec_sampling_distribution", false, rec_sampling_distribution);
 
     for (int32_t i = 0; i < time_series_sets->get_number_series(); i += fold_size) {
         vector<int> training_indexes;
@@ -298,7 +312,18 @@ int main(int argc, char** argv) {
             mkpath(current_output_directory.c_str(), 0777);
 
             if (rank == 0) {
-                examm = new EXAMM(population_size, number_islands, max_genomes, time_series_sets->get_input_parameter_names(), time_series_sets->get_output_parameter_names(), time_series_sets->get_normalize_mins(), time_series_sets->get_normalize_maxs(), bp_iterations, learning_rate, use_high_threshold, high_threshold, use_low_threshold, low_threshold, use_dropout, dropout_probability, current_output_directory);
+                examm = new EXAMM(population_size, number_islands, max_genomes,
+				time_series_sets->get_input_parameter_names(),
+				time_series_sets->get_output_parameter_names(),
+				time_series_sets->get_normalize_mins(),
+				time_series_sets->get_normalize_maxs(),
+				bp_iterations, learning_rate,
+				use_high_threshold, high_threshold,
+				use_low_threshold, low_threshold,
+				use_dropout, dropout_probability,
+ 		                rec_delay_min, rec_delay_max, rec_delay_population_based_sampling,
+ 			    	rec_sampling_population, rec_sampling_distribution,
+				current_output_directory);
                 examm->set_possible_node_types(possible_node_types);
 
                 std::chrono::time_point<std::chrono::system_clock> start = std::chrono::system_clock::now();
