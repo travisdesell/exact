@@ -19,6 +19,11 @@ using std::vector;
 
 #include "rnn_genome.hxx"
 
+#define GLOBAL_POPULATION 0
+#define ISLAND_POPULATION 1
+#define NORMAL_DISTRIBUTION 0
+#define HISTOGRAM_DISTRIBUTION 1
+
 class EXAMM {
     private:
         int32_t population_size;
@@ -54,6 +59,7 @@ class EXAMM {
         uniform_real_distribution<double> rng_0_1;
         uniform_real_distribution<double> rng_crossover_weight;
 
+	int32_t min_recurrent_depth;
         int32_t max_recurrent_depth;
 
         bool epigenetic_weights;
@@ -92,9 +98,25 @@ class EXAMM {
         ostringstream memory_log;
 
         std::chrono::time_point<std::chrono::system_clock> startClock;
+	
+	bool use_rec_depth_population_sampling;
+	int32_t rec_sampling_population;
+	int32_t rec_sampling_distribution;
 
     public:
-        EXAMM(int32_t _population_size, int32_t _number_islands, int32_t _max_genomes, const vector<string> &_input_parameter_names, const vector<string> &_output_parameter_names, const map<string,double> &_normalize_mins, const map<string,double> &_normalize_maxs, int32_t _bp_iterations, double _learning_rate, bool _use_high_threshold, double _high_threshold, bool _use_low_threshold, double _low_threshold, bool _use_dropout, double _dropout_probability, string _output_directory);
+        EXAMM(int32_t _population_size, int32_t _number_islands, int32_t _max_genomes, 
+		const vector<string> &_input_parameter_names,
+		const vector<string> &_output_parameter_names, 
+		const map<string,double> &_normalize_mins,
+		const map<string,double> &_normalize_maxs,
+		int32_t _bp_iterations, double _learning_rate, 
+		bool _use_high_threshold, double _high_threshold, 
+		bool _use_low_threshold, double _low_threshold, 
+		bool _use_dropout, double _dropout_probability,
+		int32_t _min_recurrent_depth, int32_t _max_recurrent_depth,
+		bool _use_rec_depth_population_sampling, string _rec_sampling_population,
+		string _rec_sampling_distribution,
+		string _output_directory);
 
         ~EXAMM();
 
