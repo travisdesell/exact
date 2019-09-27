@@ -1,13 +1,63 @@
 import os
+import glob
 
 class ExammTask:
     
+    @staticmethod
+    def rec_to_args(rec):
+        rec_min = 1
+        if 'min' in rec:
+            rec_min = rec['min']
+            if type(rec_min) != int:
+                raise Exception("Type of 'examm.rec.min' must be int")
+            if rec_min < 1:
+                raise Exception("'examm.rec.min' must be greater than or equal to 1")
+
+        args = ['--rec_delay_min', str(rec_min)]
+
+        rec_max = 10
+        if 'max' in rec:
+            rec_min = rec['max']
+            if type(rec_min) != int:
+                raise Exception("Type of 'examm.rec.max' must be int")
+            if rec_min < 2:
+                raise Exception("'examm.rec.min' must be greater than or equal to 2")
+        
+        if rec_min >= rec_max:
+            raise Exception(f"'examm.rec.min' (= {rec_min}) must be less than 'examm.rec.max' (= {rec_max})") 
+        args = args + ['--rec_delay_max', str(rec_max)]
+
+        if 'population_based_sampling' in rec:
+            population_based_sampling = rec['population_based_sampling']
+            if type(population_based_sampling) != type(True):
+                raise Exception("Type of 'examm.rec.population_based_sampling' must be bool")
+            args = args + ['--rec_population_based_sampling', str(population_based_sampling).lower()]
+
+        if 'population' in rec:
+            population = rec['population']
+            if type(population) != str:
+                raise Exception("Type of 'examm.rec.population' must be string")
+            if population not in {"global", "island"}:
+                raise Exception("'examm.rec.population' must be 'global' or 'island'")
+            args = args + ['--rec_sampling_population', population]
+
+        if 'dist' in rec:
+            dist = rec['dist']
+            if type(dist) != str:
+                raise Exception("Type of 'examm.rec.dist' must be string")
+            if dist not in {"normal", "histogram"}:
+                raise Exception("'examm.rec.dist' must be 'normal' or 'histogram'")
+            args = args + ['--rec_sampling_distribution', dist]
+        
+        return args
+
+
     # Maps required config option name to a lambda which takes the value set of that config option
     # and returns a list of command line arguments.
     # Some type checking should be done somewhere but it's probably not worth the effort.
     REQUIRED_CONFIG_OPTIONS = {
-            "training_files":       lambda x: ['--training_filenames', str(x)],
-            "test_files":           lambda x: ['--test_filenames', str(x)],
+            "training_files":       lambda x: ['--training_filenames'] + glob.glob(str(x)),
+            "test_files":           lambda x: ['--test_filenames'] + glob.glob(str(x)),
             "time_offset":          lambda x: ['--time_offset', str(x)],
             "input_parameters":     lambda x: ['--input_parameter_names'] + list(map(str, x)),
             "output_parameters":    lambda x: ['--output_parameter_names'] + list(map(str, x)),
@@ -21,16 +71,18 @@ class ExammTask:
     # Maps optional config option name to a lambda which returns the appropriate command arguments
     # for that option.
     OPTIONAL_CONFIG_OPTIONS = {
-            "parallelism": lambda x: (_ for _ in ()).throw(Exception("This shouldn't happen")), 
-            "node_types": lambda x: ['--possible_node_types'] + list(map(str, x)),
-    }
+            "parallelism":  lambda x: (_ for _ in ()).throw(Exception("This shouldn't happen")), 
+            "node_types":   lambda x: ['--possible_node_types'] + list(map(str, x)),
+            "rec":          lambda x: ExammTask.rec_to_args(x)
+    }    
 
     # A dictionary mapping optional parameter name to a function which will calculate
     # the default value
     OPTIONAL_CONFIG_OPTION_DEFAULTS = {
             # https://stackoverflow.com/questions/1006289/how-to-find-out-the-number-of-cpus-using-python
             "parallelism": lambda: len(os.sched_getaffinity(0)) + 1,
-            "node_types": lambda: [ 'simple', 'UGRNN', 'MGU', 'GRU', 'delta', 'LSTM' ]
+            "node_types": lambda: [ 'simple', 'UGRNN', 'MGU', 'GRU', 'delta', 'LSTM' ],
+            "rec": lambda: dict()
     }
 
     ALL_CONFIG_OPTIONS = set(REQUIRED_CONFIG_OPTIONS.keys()).union(OPTIONAL_CONFIG_OPTIONS.keys())
