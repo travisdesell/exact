@@ -640,7 +640,8 @@ void EXAMM::mutate(RNN_Genome *g) {
         rng -= add_edge_rate;
 
         if (rng < add_recurrent_edge_rate) {
-            modified = g->add_recurrent_edge(mu, sigma, max_recurrent_depth, edge_innovation_count);
+            modified = g->add_recurrent_edge(mu, sigma, 
+			    min_recurrent_depth, max_recurrent_depth, edge_innovation_count);
             cout << "\tadding recurrent edge, modified: " << modified << endl;
             if (modified) g->set_generated_by("add_recurrent_edge");
             continue;
