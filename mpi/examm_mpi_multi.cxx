@@ -278,7 +278,7 @@ int main(int argc, char** argv) {
     string rec_sampling_population = "global";
     get_argument(arguments, "--rec_sampling_population", false, rec_sampling_population);
 
-    string rec_sampling_distribution = "normal";
+    string rec_sampling_distribution = "uniform";
     get_argument(arguments, "--rec_sampling_distribution", false, rec_sampling_distribution);
 
     for (int32_t i = 0; i < time_series_sets->get_number_series(); i += fold_size) {
