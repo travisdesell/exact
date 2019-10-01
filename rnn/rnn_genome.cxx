@@ -56,6 +56,7 @@ using std::vector;
 #include "ugrnn_node.hxx"
 #include "mgu_node.hxx"
 #include "rnn_genome.hxx"
+#include "distribution.hxx"
 
 string parse_fitness(double fitness) {
     if (fitness == EXAMM_MAX_DOUBLE) {
@@ -1654,7 +1655,7 @@ bool RNN_Genome::add_edge(double mu, double sigma, int32_t &edge_innovation_coun
     return attempt_edge_insert(n1, n2, mu, sigma, edge_innovation_count);
 }
 
-bool RNN_Genome::add_recurrent_edge(double mu, double sigma, int32_t max_recurrent_depth, int32_t &edge_innovation_count) {
+bool RNN_Genome::add_recurrent_edge(double mu, double sigma, Distribution* dist, int32_t &edge_innovation_count) {
     cout << "\tattempting to add recurrent edge!" << endl;
 
     vector<RNN_Node_Interface*> possible_input_nodes;
@@ -1673,7 +1674,7 @@ bool RNN_Genome::add_recurrent_edge(double mu, double sigma, int32_t max_recurre
     cout << "\tpossible_output_nodes.size(): " << possible_output_nodes.size() << endl;
     if (possible_input_nodes.size() == 0) return false;
     if (possible_output_nodes.size() == 0) return false;
-
+    
     int p1 = rng_0_1(generator) * possible_input_nodes.size();
     int p2 = rng_0_1(generator) * possible_output_nodes.size();
 
@@ -1685,8 +1686,8 @@ bool RNN_Genome::add_recurrent_edge(double mu, double sigma, int32_t max_recurre
 
     //no need to swap the nodes as recurrent connections can go backwards
 
-    int32_t recurrent_depth = 1 + (rng_0_1(generator) * (max_recurrent_depth - 1));
-
+    // int32_t recurrent_depth = 1 + (rng_0_1(generator) * (max_recurrent_depth - 1));
+    int32_t recurrent_depth = dist->sample();
     //check to see if an edge between the two nodes already exists
     for (int32_t i = 0; i < (int32_t)recurrent_edges.size(); i++) {
         if (recurrent_edges[i]->input_innovation_number == n1->innovation_number &&

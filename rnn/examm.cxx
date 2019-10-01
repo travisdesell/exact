@@ -27,6 +27,7 @@ using std::to_string;
 #include "examm.hxx"
 #include "rnn_genome.hxx"
 #include "generate_nn.hxx"
+#include "rec_depth_dist.hxx"
 
 #include "common/files.hxx"
 
@@ -42,32 +43,32 @@ EXAMM::~EXAMM() {
 }
 
 EXAMM::EXAMM(int32_t _population_size, int32_t _number_islands, int32_t _max_genomes,
-		const vector<string> &_input_parameter_names,
-		const vector<string> &_output_parameter_names,
-		const map<string,double> &_normalize_mins,
-		const map<string,double> &_normalize_maxs,
-		int32_t _bp_iterations, double _learning_rate, 
-		bool _use_high_threshold, double _high_threshold,
-		bool _use_low_threshold, double _low_threshold, 
-		bool _use_dropout, double _dropout_probability,
-		int32_t _min_recurrent_depth, int32_t _max_recurrent_depth,
-		bool _use_rec_depth_population_sampling, string _rec_sampling_population,
-		string _rec_sampling_distribution,
-		string _output_directory) : 
-					population_size(_population_size), 
-					number_islands(_number_islands), 
-					max_genomes(_max_genomes), 
-					number_inputs(_input_parameter_names.size()),
-					number_outputs(_output_parameter_names.size()), 
-					bp_iterations(_bp_iterations), 
-					learning_rate(_learning_rate), 
-					use_high_threshold(_use_high_threshold), 
-					high_threshold(_high_threshold), 
-					use_low_threshold(_use_low_threshold), 
-					low_threshold(_low_threshold), 
-					use_dropout(_use_dropout), 
-					dropout_probability(_dropout_probability), 
-					output_directory(_output_directory) {
+                const vector<string> &_input_parameter_names,
+                const vector<string> &_output_parameter_names,
+                const map<string,double> &_normalize_mins,
+                const map<string,double> &_normalize_maxs,
+                int32_t _bp_iterations, double _learning_rate, 
+                bool _use_high_threshold, double _high_threshold,
+                bool _use_low_threshold, double _low_threshold, 
+                bool _use_dropout, double _dropout_probability,
+                int32_t _min_recurrent_depth, int32_t _max_recurrent_depth,
+                bool _use_rec_depth_population_sampling, string _rec_sampling_population,
+                string _rec_sampling_distribution,
+                string _output_directory) : 
+                                        population_size(_population_size), 
+                                        number_islands(_number_islands), 
+                                        max_genomes(_max_genomes), 
+                                        number_inputs(_input_parameter_names.size()),
+                                        number_outputs(_output_parameter_names.size()), 
+                                        bp_iterations(_bp_iterations), 
+                                        learning_rate(_learning_rate), 
+                                        use_high_threshold(_use_high_threshold), 
+                                        high_threshold(_high_threshold), 
+                                        use_low_threshold(_use_low_threshold), 
+                                        low_threshold(_low_threshold), 
+                                        use_dropout(_use_dropout), 
+                                        dropout_probability(_dropout_probability), 
+                                        output_directory(_output_directory) {
 
     input_parameter_names = _input_parameter_names;
     output_parameter_names = _output_parameter_names;
@@ -102,25 +103,28 @@ int mkpath(const char *path, mode_t mode);
     use_rec_depth_population_sampling = _use_rec_depth_population_sampling;
     
     if (_rec_sampling_population.compare("global") == 0) {
-    	rec_sampling_population = GLOBAL_POPULATION;
+        rec_sampling_population = GLOBAL_POPULATION;
     } else if (_rec_sampling_population.compare("island") == 0) {
-    	rec_sampling_population = ISLAND_POPULATION;
+        rec_sampling_population = ISLAND_POPULATION;
     } else {
-	cout << "WARNING: value passed to --rec_sampling_population is not valid ('" 
-	     << _rec_sampling_population
-	     << "'), defaulting to global.\n";
-	rec_sampling_population = GLOBAL_POPULATION;
+        cout << "WARNING: value passed to --rec_sampling_population is not valid ('" 
+             << _rec_sampling_population
+             << "'), defaulting to global.\n";
+        rec_sampling_population = GLOBAL_POPULATION;
     }
 
     if (_rec_sampling_distribution.compare("global") == 0) {
-    	rec_sampling_population = NORMAL_DISTRIBUTION;
+        rec_sampling_population = NORMAL_DISTRIBUTION;
     } else if (_rec_sampling_distribution.compare("histogram") == 0) {
-    	rec_sampling_population = HISTOGRAM_DISTRIBUTION;
-    } else {
-	cout << "WARNING: value passed to --rec_sampling_distribution is not valid ('" 
-	     << _rec_sampling_distribution
-	     << "'), defaulting to normal.\n";
-	rec_sampling_distribution = NORMAL_DISTRIBUTION;
+        rec_sampling_population = HISTOGRAM_DISTRIBUTION;
+    } else if (_rec_sampling_distribution.compare("uniform") == 0) {
+        rec_sampling_population = UNIFORM_DISTRIBUTION;
+    }
+    else {
+        cout << "WARNING: value passed to --rec_sampling_distribution is not valid ('" 
+             << _rec_sampling_distribution
+             << "'), defaulting to uniform.\n";
+        rec_sampling_distribution = UNIFORM_DISTRIBUTION;
     }
 
     epigenetic_weights = true;
@@ -593,6 +597,26 @@ int EXAMM::get_random_node_type() {
     return possible_node_types[rng_0_1(generator) * possible_node_types.size()];
 }
 
+Distribution *EXAMM::get_recurrent_depth_dist(int32_t island_index) {
+    Distribution *d = NULL;
+    if (use_rec_depth_population_sampling && rec_sampling_distribution != UNIFORM_DISTRIBUTION) {
+        if (rec_sampling_distribution == NORMAL_DISTRIBUTION) {
+            if (rec_sampling_population == ISLAND_POPULATION)
+                d = new RecDepthNormalDist(genomes[island_index], min_recurrent_depth, max_recurrent_depth);
+            else
+                d = new RecDepthNormalDist(genomes, min_recurrent_depth, max_recurrent_depth);
+        } else {
+            if (rec_sampling_population == ISLAND_POPULATION)
+                d = new RecDepthHistDist(genomes[island_index], min_recurrent_depth, max_recurrent_depth);
+            else
+                d = new RecDepthHistDist(genomes, min_recurrent_depth, max_recurrent_depth);
+        }
+    } else {
+        d = new RecDepthUniformDist(min_recurrent_depth, max_recurrent_depth);
+    }
+    return d;
+}
+
 void EXAMM::mutate(RNN_Genome *g) {
     double total = clone_rate + add_edge_rate + add_recurrent_edge_rate + enable_edge_rate + disable_edge_rate + split_edge_rate + add_node_rate + enable_node_rate + disable_node_rate + split_node_rate + merge_node_rate;
 
@@ -640,8 +664,9 @@ void EXAMM::mutate(RNN_Genome *g) {
         rng -= add_edge_rate;
 
         if (rng < add_recurrent_edge_rate) {
-            modified = g->add_recurrent_edge(mu, sigma, 
-			    min_recurrent_depth, max_recurrent_depth, edge_innovation_count);
+            Distribution *dist = get_recurrent_depth_dist(g->island);
+            modified = g->add_recurrent_edge(mu, sigma, dist, edge_innovation_count);
+            delete dist;
             cout << "\tadding recurrent edge, modified: " << modified << endl;
             if (modified) g->set_generated_by("add_recurrent_edge");
             continue;
