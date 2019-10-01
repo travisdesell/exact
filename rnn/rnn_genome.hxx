@@ -13,6 +13,7 @@ using std::map;
 #include <random>
 using std::minstd_rand0;
 using std::uniform_real_distribution;
+using std::mt19937;
 
 #include <vector>
 using std::vector;
@@ -29,6 +30,8 @@ using std::vector;
 
 string parse_fitness(double fitness);
 
+// NOTE: the include of distributions.hxx is at the end of this file since.
+class Distribution;
 
 class RNN_Genome {
     private:
@@ -182,7 +185,7 @@ class RNN_Genome {
         void generate_recurrent_edges(RNN_Node_Interface *node, double mu, double sigma, int32_t max_recurrent_depth, int32_t &edge_innovation_count);
 
         bool add_edge(double mu, double sigma, int32_t &edge_innovation_count);
-        bool add_recurrent_edge(double mu, double sigma, int32_t max_recurrent_depth, int32_t &edge_innovation_count);
+        bool add_recurrent_edge(double mu, double sigma, Distribution *d, int32_t &edge_innovation_count);
         bool disable_edge();
         bool enable_edge();
         bool split_edge(double mu, double sigma, int node_type, int32_t max_recurrent_depth, int32_t &edge_innovation_count, int32_t &node_innovation_count);
@@ -216,6 +219,7 @@ class RNN_Genome {
 
 
         friend class EXAMM;
+        friend class RecDepthFrequencyTable;
 };
 
 struct sort_genomes_by_fitness {
@@ -223,6 +227,5 @@ struct sort_genomes_by_fitness {
         return g1->get_fitness() < g2->get_fitness();
     }
 };
-
 
 #endif
