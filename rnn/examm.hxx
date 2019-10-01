@@ -26,6 +26,7 @@ class EXAMM {
         vector< vector<RNN_Genome*> > genomes;
 
         int32_t max_genomes;
+        int32_t num_genomes_check_worst_fit;
         int32_t generated_genomes;
         int32_t inserted_genomes;
         int32_t total_bp_epochs;
@@ -94,7 +95,7 @@ class EXAMM {
         std::chrono::time_point<std::chrono::system_clock> startClock;
 
     public:
-        EXAMM(int32_t _population_size, int32_t _number_islands, int32_t _max_genomes, const vector<string> &_input_parameter_names, const vector<string> &_output_parameter_names, const map<string,double> &_normalize_mins, const map<string,double> &_normalize_maxs, int32_t _bp_iterations, double _learning_rate, bool _use_high_threshold, double _high_threshold, bool _use_low_threshold, double _low_threshold, bool _use_dropout, double _dropout_probability, string _output_directory);
+        EXAMM(int32_t _population_size, int32_t _number_islands, int32_t _max_genomes, int32_t _num_genomes_check_worst_fit, const vector<string> &_input_parameter_names, const vector<string> &_output_parameter_names, const map<string,double> &_normalize_mins, const map<string,double> &_normalize_maxs, int32_t _bp_iterations, double _learning_rate, bool _use_high_threshold, double _high_threshold, bool _use_low_threshold, double _low_threshold, bool _use_dropout, double _dropout_probability, string _output_directory);
 
         ~EXAMM();
 
@@ -108,8 +109,9 @@ class EXAMM {
 
         bool insert_genome(RNN_Genome* genome);
 
-
         int get_random_node_type();
+
+        void check_on_island();
 
         void initialize_genome_parameters(RNN_Genome* genome);
         RNN_Genome* generate_genome();

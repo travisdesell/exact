@@ -41,8 +41,8 @@ EXAMM::~EXAMM() {
     }
 }
 
-EXAMM::EXAMM(int32_t _population_size, int32_t _number_islands, int32_t _max_genomes, const vector<string> &_input_parameter_names, const vector<string> &_output_parameter_names, const map<string,double> &_normalize_mins, const map<string,double> &_normalize_maxs, int32_t _bp_iterations, double _learning_rate, bool _use_high_threshold, double _high_threshold, bool _use_low_threshold, double _low_threshold, bool _use_dropout, double _dropout_probability, string _output_directory) : population_size(_population_size), number_islands(_number_islands), max_genomes(_max_genomes), number_inputs(_input_parameter_names.size()), number_outputs(_output_parameter_names.size()), bp_iterations(_bp_iterations), learning_rate(_learning_rate), use_high_threshold(_use_high_threshold), high_threshold(_high_threshold), use_low_threshold(_use_low_threshold), low_threshold(_low_threshold), use_dropout(_use_dropout), dropout_probability(_dropout_probability), output_directory(_output_directory) {
-
+EXAMM::EXAMM(int32_t _population_size, int32_t _number_islands, int32_t _max_genomes, int32_t _num_genomes_check_worst_fit, const vector<string> &_input_parameter_names, const vector<string> &_output_parameter_names, const map<string,double> &_normalize_mins, const map<string,double> &_normalize_maxs, int32_t _bp_iterations, double _learning_rate, bool _use_high_threshold, double _high_threshold, bool _use_low_threshold, double _low_threshold, bool _use_dropout, double _dropout_probability, string _output_directory) : population_size(_population_size), number_islands(_number_islands), max_genomes(_max_genomes), number_inputs(_input_parameter_names.size()), number_outputs(_output_parameter_names.size()), bp_iterations(_bp_iterations), learning_rate(_learning_rate), use_high_threshold(_use_high_threshold), high_threshold(_high_threshold), use_low_threshold(_use_low_threshold), low_threshold(_low_threshold), use_dropout(_use_dropout), dropout_probability(_dropout_probability), output_directory(_output_directory) {
+    num_genomes_check_worst_fit = _num_genomes_check_worst_fit;
     input_parameter_names = _input_parameter_names;
     output_parameter_names = _output_parameter_names;
     normalize_mins = _normalize_mins;
@@ -378,11 +378,40 @@ bool EXAMM::insert_genome(RNN_Genome* genome) {
         cout << "not inserting genome due to poor fitness" << endl;
     }
 
+    // TODO: inserted_genomes vs total_bp_epochs here?
+    if (inserted_genomes % num_genomes_check_worst_fit == 0) {
+        check_on_island();
+    }
+
     print_population();
 
     cout << "printed population!" << endl;
 
     return was_inserted;
+}
+
+void EXAMM::check_on_island() {
+    int32_t worst_island = -1;
+    double worst_island_fitness = -EXAMM_MAX_DOUBLE;
+
+    for (int i = 0; i < (int32_t)genomes.size(); i++) {
+        double best_fitness = EXAMM_MAX_DOUBLE;
+
+        for (int j = 0; j < (int32_t)genomes[i].size(); j++) {
+            if (genomes[i][j]->get_fitness() < best_fitness) {
+                best_fitness = genomes[i][j]->get_fitness();
+            }
+        }
+
+        if (best_fitness > worst_island_fitness) {
+            worst_island = i;
+            worst_island_fitness = best_fitness;
+        }
+    }
+
+    if (worst_island != -1) {
+        genomes.erase(genomes.begin() + worst_island);
+    }
 }
 
 void EXAMM::initialize_genome_parameters(RNN_Genome* genome) {

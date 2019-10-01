@@ -224,6 +224,9 @@ int main(int argc, char** argv) {
     int32_t max_genomes;
     get_argument(arguments, "--max_genomes", true, max_genomes);
 
+    int32_t num_genomes_check_worst_fit;
+    get_argument(arguments, "--num_genomes_check_worst_fit", true, num_genomes_check_worst_fit);
+
     int32_t bp_iterations;
     get_argument(arguments, "--bp_iterations", true, bp_iterations);
 
@@ -298,7 +301,7 @@ int main(int argc, char** argv) {
             mkpath(current_output_directory.c_str(), 0777);
 
             if (rank == 0) {
-                examm = new EXAMM(population_size, number_islands, max_genomes, time_series_sets->get_input_parameter_names(), time_series_sets->get_output_parameter_names(), time_series_sets->get_normalize_mins(), time_series_sets->get_normalize_maxs(), bp_iterations, learning_rate, use_high_threshold, high_threshold, use_low_threshold, low_threshold, use_dropout, dropout_probability, current_output_directory);
+                examm = new EXAMM(population_size, number_islands, max_genomes, num_genomes_check_worst_fit, time_series_sets->get_input_parameter_names(), time_series_sets->get_output_parameter_names(), time_series_sets->get_normalize_mins(), time_series_sets->get_normalize_maxs(), bp_iterations, learning_rate, use_high_threshold, high_threshold, use_low_threshold, low_threshold, use_dropout, dropout_probability, current_output_directory);
                 examm->set_possible_node_types(possible_node_types);
 
                 std::chrono::time_point<std::chrono::system_clock> start = std::chrono::system_clock::now();
