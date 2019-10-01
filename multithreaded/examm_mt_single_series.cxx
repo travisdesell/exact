@@ -112,7 +112,7 @@ int main(int argc, char** argv) {
     string rec_sampling_population = "global";
     get_argument(arguments, "--rec_sampling_population", false, rec_sampling_population);
 
-    string rec_sampling_distribution = "normal";
+    string rec_sampling_distribution = "uniform";
     get_argument(arguments, "--rec_sampling_distribution", false, rec_sampling_distribution);
 
 
