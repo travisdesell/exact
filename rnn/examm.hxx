@@ -111,7 +111,7 @@ class EXAMM {
 
         int get_random_node_type();
 
-        void check_on_island();
+        int32_t check_on_island();
 
         void initialize_genome_parameters(RNN_Genome* genome);
         RNN_Genome* generate_genome();
