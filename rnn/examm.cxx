@@ -378,11 +378,6 @@ bool EXAMM::insert_genome(RNN_Genome* genome) {
         cout << "not inserting genome due to poor fitness" << endl;
     }
 
-    // TODO: inserted_genomes vs total_bp_epochs here?
-    if (inserted_genomes % num_genomes_check_worst_fit == 0) {
-        check_on_island();
-    }
-
     print_population();
 
     cout << "printed population!" << endl;
@@ -390,14 +385,14 @@ bool EXAMM::insert_genome(RNN_Genome* genome) {
     return was_inserted;
 }
 
-void EXAMM::check_on_island() {
+int32_t EXAMM::check_on_island() {
     int32_t worst_island = -1;
     double worst_island_fitness = -EXAMM_MAX_DOUBLE;
 
-    for (int i = 0; i < (int32_t)genomes.size(); i++) {
+    for (int32_t i = 0; i < (int32_t)genomes.size(); i++) {
         double best_fitness = EXAMM_MAX_DOUBLE;
 
-        for (int j = 0; j < (int32_t)genomes[i].size(); j++) {
+        for (int32_t j = 0; j < (int32_t)genomes[i].size(); j++) {
             if (genomes[i][j]->get_fitness() < best_fitness) {
                 best_fitness = genomes[i][j]->get_fitness();
             }
@@ -410,8 +405,18 @@ void EXAMM::check_on_island() {
     }
 
     if (worst_island != -1) {
-        genomes.erase(genomes.begin() + worst_island);
+        cout << "removing a bad island: " << worst_island << endl;
+        for (int32_t k = 0; k < (int32_t)genomes[worst_island].size(); k++) {
+            if (genomes[worst_island][k] != NULL) {
+                delete genomes[worst_island][k];
+                genomes[worst_island].erase(genomes[worst_island].begin() + k);
+            }
+        }
+
+        return worst_island;
     }
+
+    return -1;
 }
 
 void EXAMM::initialize_genome_parameters(RNN_Genome* genome) {
@@ -425,7 +430,16 @@ void EXAMM::initialize_genome_parameters(RNN_Genome* genome) {
 
 RNN_Genome* EXAMM::generate_genome() {
     if (inserted_genomes > max_genomes) return NULL;
-    int island = generated_genomes % number_islands;
+
+    int32_t island;
+
+    int32_t worst_island = check_on_island();
+    if (worst_island != -1) {
+        island = worst_island;
+    } else {
+        island = generated_genomes % number_islands;
+    }
+
     generated_genomes++;
 
     RNN_Genome *genome = NULL;
