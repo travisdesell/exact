@@ -389,33 +389,35 @@ int32_t EXAMM::check_on_island() {
     int32_t worst_island = -1;
     double worst_island_fitness = -EXAMM_MAX_DOUBLE;
 
-    for (int32_t i = 0; i < (int32_t)genomes.size(); i++) {
-        double best_fitness = EXAMM_MAX_DOUBLE;
+    if (inserted_genomes % num_genomes_check_worst_fit == 0) {
+        for (int32_t i = 0; i < (int32_t)genomes.size(); i++) {
+            double best_fitness = EXAMM_MAX_DOUBLE;
 
-        for (int32_t j = 0; j < (int32_t)genomes[i].size(); j++) {
-            if (genomes[i][j]->get_fitness() < best_fitness) {
-                best_fitness = genomes[i][j]->get_fitness();
+            for (int32_t j = 0; j < (int32_t)genomes[i].size(); j++) {
+                if (genomes[i][j]->get_fitness() < best_fitness) {
+                    best_fitness = genomes[i][j]->get_fitness();
+                }
+            }
+
+            if (best_fitness > worst_island_fitness) {
+                worst_island = i;
+                worst_island_fitness = best_fitness;
             }
         }
 
-        if (best_fitness > worst_island_fitness) {
-            worst_island = i;
-            worst_island_fitness = best_fitness;
-        }
-    }
-
-    if (worst_island != -1) {
-        cout << "removing a bad island: " << worst_island << endl;
-        for (int32_t k = 0; k < (int32_t)genomes[worst_island].size(); k++) {
-            if (genomes[worst_island][k] != NULL) {
-                delete genomes[worst_island][k];
-                genomes[worst_island].erase(genomes[worst_island].begin() + k);
+        if (worst_island != -1) {
+            cout << "removing a bad island: " << worst_island << endl;
+            for (int32_t k = 0; k < (int32_t)genomes[worst_island].size(); k++) {
+                if (genomes[worst_island][k] != NULL) {
+                    delete genomes[worst_island][k];
+                    genomes[worst_island].erase(genomes[worst_island].begin() + k);
+                }
             }
+
+            return worst_island;
         }
-
-        return worst_island;
     }
-
+    
     return -1;
 }
 
