@@ -272,7 +272,7 @@ int main(int argc, char** argv) {
     int32_t rec_delay_max = 10;
     get_argument(arguments, "--rec_delay_max", false, rec_delay_max);
 
-    bool rec_delay_population_based_sampling = false;
+    int32_t rec_delay_population_based_sampling = 0;
     get_argument(arguments, "--rec_population_based_sampling", false, rec_delay_population_based_sampling);
 
     string rec_sampling_population = "global";
@@ -313,17 +313,17 @@ int main(int argc, char** argv) {
 
             if (rank == 0) {
                 examm = new EXAMM(population_size, number_islands, max_genomes,
-				time_series_sets->get_input_parameter_names(),
-				time_series_sets->get_output_parameter_names(),
-				time_series_sets->get_normalize_mins(),
-				time_series_sets->get_normalize_maxs(),
-				bp_iterations, learning_rate,
-				use_high_threshold, high_threshold,
-				use_low_threshold, low_threshold,
-				use_dropout, dropout_probability,
- 		                rec_delay_min, rec_delay_max, rec_delay_population_based_sampling,
- 			    	rec_sampling_population, rec_sampling_distribution,
-				current_output_directory);
+                time_series_sets->get_input_parameter_names(),
+                time_series_sets->get_output_parameter_names(),
+                time_series_sets->get_normalize_mins(),
+                time_series_sets->get_normalize_maxs(),
+                bp_iterations, learning_rate,
+                use_high_threshold, high_threshold,
+                use_low_threshold, low_threshold,
+                use_dropout, dropout_probability,
+                rec_delay_min, rec_delay_max, (bool) (rec_delay_population_based_sampling != 0),
+                rec_sampling_population, rec_sampling_distribution,
+                current_output_directory);
                 examm->set_possible_node_types(possible_node_types);
 
                 std::chrono::time_point<std::chrono::system_clock> start = std::chrono::system_clock::now();
