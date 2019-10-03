@@ -17,10 +17,10 @@ class ExammTask:
 
         rec_max = 10
         if 'max' in rec:
-            rec_min = rec['max']
+            rec_max = rec['max']
             if type(rec_min) != int:
                 raise Exception("Type of 'examm.rec.max' must be int")
-            if rec_min < 2:
+            if rec_max < 2:
                 raise Exception("'examm.rec.min' must be greater than or equal to 2")
         
         if rec_min >= rec_max:
@@ -31,7 +31,11 @@ class ExammTask:
             population_based_sampling = rec['population_based_sampling']
             if type(population_based_sampling) != type(True):
                 raise Exception("Type of 'examm.rec.population_based_sampling' must be bool")
-            args = args + ['--rec_population_based_sampling', str(population_based_sampling).lower()]
+            if population_based_sampling:
+                population_based_sampling = 1
+            else:
+                population_based_sampling = 0
+            args = args + ['--rec_population_based_sampling', str(population_based_sampling)]
 
         if 'population' in rec:
             population = rec['population']
@@ -87,7 +91,7 @@ class ExammTask:
 
     ALL_CONFIG_OPTIONS = set(REQUIRED_CONFIG_OPTIONS.keys()).union(OPTIONAL_CONFIG_OPTIONS.keys())
 
-    def __init__(self, toml_object, file_path):
+    def __init__(self, toml_object, file_path, run_number):
         if 'examm' not in toml_object:
             raise Exception(f"There is no [examm] section in configuration file '{file_path}'.") 
         self.examm_config = toml_object['examm']
@@ -122,6 +126,12 @@ class ExammTask:
 
         for config_option in ExammTask.ALL_CONFIG_OPTIONS:
             assert self.__dict__[config_option] is not None
+        
+        if run_number is not None:
+            self.output_directory = os.path.join(self.output_directory, f"{run_number}")
+            from pathlib import Path
+            p = Path(self.output_directory)
+            p.mkdir(parents=True, exist_ok=True)
 
     def to_command(self):
         if self.version == 'mpi':
