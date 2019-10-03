@@ -32,7 +32,7 @@ bp_iterations = 10
                                                                                           
 # Where to write the binary ('.bin') files containing the best genomes,
 # along with graphvis ('.gv') files which can be used to create a pdf of the network.
-output_directory = 'build/test_output'
+output_directory = 'experiments/rec_time_delay_dist/results/control/'
 
 # OPTIONAL PARAMETER: the default value will be all possible node types
 # The types of nodes which can be used

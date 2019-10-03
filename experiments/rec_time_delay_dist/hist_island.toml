@@ -12,14 +12,15 @@ n_islands = 10
 population_size = 10
 max_genomes = 2000
 bp_iterations = 10
-output_directory = 'experiments/rec_time_delay_dist/results/norm_global/'
+output_directory = 'experiments/rec_time_delay_dist/results/hist_island/'
 node_types = [ 'simple', 'delta', 'LSTM' ]
 parallelism = 9
 version = "multithreaded"
 
+# Experiment specific parameters
 [examm.rec]
 min = 1
 max = 100
 population_based_sampling = true
-population = "global"
-dist = "normal"
+population = "island"
+dist = "histogram"
