@@ -19,10 +19,16 @@ using std::vector;
 
 #include "rnn_genome.hxx"
 
+#define ISLAND_INITIALIZING 0
+#define ISLAND_FILLED 1
+#define ISLAND_REPOPULATING 2
+
 class EXAMM {
     private:
         int32_t population_size;
         int32_t number_islands;
+
+        vector<int32_t> island_states;
         vector< vector<RNN_Genome*> > genomes;
 
         int32_t max_genomes;
