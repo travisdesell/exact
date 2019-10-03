@@ -251,8 +251,8 @@ int main(int argc, char** argv) {
     int32_t max_genomes;
     get_argument(arguments, "--max_genomes", true, max_genomes);
 
-    int32_t num_genomes_check_worst_fit;
-    get_argument(arguments, "--num_genomes_check_worst_fit", false, num_genomes_check_worst_fit);
+    int32_t num_genomes_check_on_island;
+    get_argument(arguments, "--num_genomes_check_on_island", false, num_genomes_check_on_island);
 
     string check_on_island_method = "";
     get_argument(arguments, "--check_on_island_method", false, check_on_island_method);
@@ -280,7 +280,7 @@ int main(int argc, char** argv) {
 
 
     if (rank == 0) {
-        examm = new EXAMM(population_size, number_islands, max_genomes, num_genomes_check_worst_fit, check_on_island_method, time_series_sets->get_input_parameter_names(), time_series_sets->get_output_parameter_names(), time_series_sets->get_normalize_mins(), time_series_sets->get_normalize_maxs(), bp_iterations, learning_rate, use_high_threshold, high_threshold, use_low_threshold, low_threshold, use_dropout, dropout_probability, output_directory);
+        examm = new EXAMM(population_size, number_islands, max_genomes, num_genomes_check_on_island, check_on_island_method, time_series_sets->get_input_parameter_names(), time_series_sets->get_output_parameter_names(), time_series_sets->get_normalize_mins(), time_series_sets->get_normalize_maxs(), bp_iterations, learning_rate, use_high_threshold, high_threshold, use_low_threshold, low_threshold, use_dropout, dropout_probability, output_directory);
 
         if (possible_node_types.size() > 0) examm->set_possible_node_types(possible_node_types);
 
