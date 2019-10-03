@@ -387,8 +387,13 @@ bool EXAMM::insert_genome(RNN_Genome* genome) {
 }
 
 int32_t EXAMM::check_on_island() {
+    if (check_on_island_method == "") {
+        return -1;
+    }
+
     // only run this function every n inserted genomes
-    if (inserted_genomes % num_genomes_check_on_island != 0) {
+    if (   num_genomes_check_on_island == 0 
+        || inserted_genomes % num_genomes_check_on_island != 0) {
         return -1;
     }
 
