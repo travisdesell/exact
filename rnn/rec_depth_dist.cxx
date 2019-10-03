@@ -86,7 +86,7 @@ start:;
     double sample = distribution(rng);
     int32_t rounded = round(sample);
     if (rounded < min || rounded > max)
-        goto start; // Try again
+        goto start; // Try again since it is not within our range
     return rounded;
 }
 
@@ -129,7 +129,9 @@ void RecDepthHistDist::calculate_distribution(RecDepthFrequencyTable &freqs) {
 
 int32_t RecDepthHistDist::sample() {
     int32_t size = distribution.size();
-    int32_t index = rng() % size;
+    // Ignore the sign bit since some RNGs return unsigned numbers.
+    int32_t r = rng() & 0x7FFFFFFF;
+    int32_t index = r % size;
     return distribution[index];
 }
 
