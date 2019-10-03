@@ -26,10 +26,12 @@ class EXAMM {
         vector< vector<RNN_Genome*> > genomes;
 
         int32_t max_genomes;
-        int32_t num_genomes_check_worst_fit;
         int32_t generated_genomes;
         int32_t inserted_genomes;
         int32_t total_bp_epochs;
+
+        int32_t num_genomes_check_worst_fit;
+        string check_on_island_method;
 
         int32_t edge_innovation_count;
         int32_t node_innovation_count;
@@ -81,6 +83,7 @@ class EXAMM {
 
         vector<int> possible_node_types;
 
+
         string output_directory;
         ofstream *log_file;
 
@@ -95,7 +98,7 @@ class EXAMM {
         std::chrono::time_point<std::chrono::system_clock> startClock;
 
     public:
-        EXAMM(int32_t _population_size, int32_t _number_islands, int32_t _max_genomes, int32_t _num_genomes_check_worst_fit, const vector<string> &_input_parameter_names, const vector<string> &_output_parameter_names, const map<string,double> &_normalize_mins, const map<string,double> &_normalize_maxs, int32_t _bp_iterations, double _learning_rate, bool _use_high_threshold, double _high_threshold, bool _use_low_threshold, double _low_threshold, bool _use_dropout, double _dropout_probability, string _output_directory);
+        EXAMM(int32_t _population_size, int32_t _number_islands, int32_t _max_genomes, int32_t _num_genomes_check_worst_fit, string _check_on_island_method, const vector<string> &_input_parameter_names, const vector<string> &_output_parameter_names, const map<string,double> &_normalize_mins, const map<string,double> &_normalize_maxs, int32_t _bp_iterations, double _learning_rate, bool _use_high_threshold, double _high_threshold, bool _use_low_threshold, double _low_threshold, bool _use_dropout, double _dropout_probability, string _output_directory);
 
         ~EXAMM();
 
@@ -112,6 +115,8 @@ class EXAMM {
         int get_random_node_type();
 
         int32_t check_on_island();
+        // methods
+        int32_t clear_island_with_worst_best_genome();
 
         void initialize_genome_parameters(RNN_Genome* genome);
         RNN_Genome* generate_genome();
