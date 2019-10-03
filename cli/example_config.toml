@@ -21,10 +21,10 @@ output_parameters = [ 'Main_Flm_Int' ]
 # Number of separate islands to use
 n_islands = 10
                                                                                           
-# ?
+# Population size per island
 population_size = 10
 
-# ?
+# The number of genomes to create before EXAMM halts
 max_genomes = 2000
 
 # Number of bp iterations when training
@@ -36,6 +36,7 @@ output_directory = 'build/test_output'
 
 # OPTIONAL PARAMETER: the default value will be all possible node types
 # The types of nodes which can be used
+# You must specify at least one node type
 node_types = [ 'simple', 'UGRNN', 'MGU', 'GRU', 'delta', 'LSTM' ]
 
 # OPTIONAL PARAMETER: the default value will be 1 + the number of cores on the machine
