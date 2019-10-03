@@ -140,6 +140,7 @@ RecDepthUniformDist::RecDepthUniformDist(int32_t min_recurrent_depth, int32_t ma
 }
 
 int32_t RecDepthUniformDist::sample() {
-    int32_t rand_int = rng();
-    return min + (rand_int % (max - min)); 
+    // Ignore the sign bit since some RNGs return unsigned numbers.
+    int32_t rand_int = rng() & 0x7FFFFFFF; 
+    return min + (rand_int % (max - min));
 }
