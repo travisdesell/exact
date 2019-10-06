@@ -6,12 +6,11 @@
  * 
  * ./rnn_examples/evaluate_rnns_multi_offset --genome_filenames ~/Dropbox/1537\ MTI-RIT/2019_degruyter_results/boiler_best_bin_gv_files/net_plant_heat_rate/time_offset_*.bin --time_offsets 1 2 4 8 --testing_filenames ~/Dropbox/1537\ MTI-RIT/boiler_hourly/database_l_minus_10.csv --output_filename ~/Dropbox/1537\ MTI-RIT/2019_degruyter_results/net_plant_heat_rate_predictions.csv
  *
- * ./rnn_examples/evaluate_rnns_multi_offset --genome_filenames ~/Dropbox/1537\ MTI-RIT/2019_degruyter_results/plant_best_bin_gv_files/cyclone1/extra_plant_parameters/time_offset_*.bin --time_offsets 1 15 30 60 120 240 480 --testing_filenames ~/Dropbox/1537\ MTI-RIT/Field_Test_data/20190910_v0.2/cyclone1_file4.csv --output_filename ~/Dropbox/1537\ MTI-RIT/2019_degruyter_results/flame_intensity_extra.csv
+ * ./rnn_examples/evaluate_rnns_multi_offset --genome_filenames ~/Dropbox/1537\ MTI-RIT/2019_degruyter_results/plant_best_bin_gv_files/cyclone3/extra_plant_parameters/time_offset_*.bin --time_offsets 1 15 30 60 120 240 480 --testing_filenames ~/Dropbox/1537\ MTI-RIT/Field_Test_data/20190910_v0.2/cyclone3_file4.csv --output_filename ~/Dropbox/1537\ MTI-RIT/2019_degruyter_results/flame_intensity_extra_3.csv
  *
- * ./rnn_examples/evaluate_rnns_multi_offset --genome_filenames ~/Dropbox/1537\ MTI-RIT/2019_degruyter_results/plant_best_bin_gv_files/cyclone1/plant_fuel_parameters/time_offset_*.bin --time_offsets 1 15 30 60 120 240 480 --testing_filenames ~/Dropbox/1537\ MTI-RIT/Field_Test_data/20190910_v0.2/cyclone1_file4.csv --output_filename ~/Dropbox/1537\ MTI-RIT/2019_degruyter_results/flame_intensity_plant_fuel.csv
+ * ./rnn_examples/evaluate_rnns_multi_offset --genome_filenames ~/Dropbox/1537\ MTI-RIT/2019_degruyter_results/plant_best_bin_gv_files/cyclone3/plant_fuel_parameters/time_offset_*.bin --time_offsets 1 15 30 60 120 240 480 --testing_filenames ~/Dropbox/1537\ MTI-RIT/Field_Test_data/20190910_v0.2/cyclone3_file4.csv --output_filename ~/Dropbox/1537\ MTI-RIT/2019_degruyter_results/flame_intensity_plant_fuel_3.csv
  *
- * ./rnn_examples/evaluate_rnns_multi_offset --genome_filenames ~/Dropbox/1537\ MTI-RIT/2019_degruyter_results/plant_best_bin_gv_files/cyclone1/plant_parameters/time_offset_*.bin --time_offsets 1 15 30 60 120 240 480 --testing_filenames ~/Dropbox/1537\ MTI-RIT/Field_Test_data/20190910_v0.2/cyclone1_file4.csv --output_filename ~/Dropbox/1537\ MTI-RIT/2019_degruyter_results/flame_intensity_plant.csv
- *
+ * ./rnn_examples/evaluate_rnns_multi_offset --genome_filenames ~/Dropbox/1537\ MTI-RIT/2019_degruyter_results/plant_best_bin_gv_files/cyclone3/plant_parameters/time_offset_*.bin --time_offsets 1 15 30 60 120 240 480 --testing_filenames ~/Dropbox/1537\ MTI-RIT/Field_Test_data/20190910_v0.2/cyclone3_file4.csv --output_filename ~/Dropbox/1537\ MTI-RIT/2019_degruyter_results/flame_intensity_plant_3.csv
  *
  * then you can use plot_multi_time_series.py to generate a chart of the time series
  */

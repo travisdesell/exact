@@ -2,9 +2,9 @@
 usage examples:
     python plot_multi_time_series.py ~/Dropbox/1537\ MTI-RIT/2019_degruyter_results/net_plant_heat_rate_predictions.csv "Net Plant Heat Rate" "Hours" ~/Dropbox/1537\ MTI-RIT/2019_degruyter_results/net_plant_heat_rate_multi.png 1 2 4 8
     python plot_multi_time_series.py ~/Dropbox/1537\ MTI-RIT/2019_degruyter_results/nose_gas_temperature_predictons.csv "Nose Gas Temperature" "Hours" ~/Dropbox/1537\ MTI-RIT/2019_degruyter_results/nose_gas_temperature_multi.png 1 2 4 8
-    python plot_multi_time_series.py ~/Dropbox/1537\ MTI-RIT/2019_degruyter_results/flame_intensity_extra.csv "Flame Intensity (Plant ~ Fuel)" "Minutes" ~/Dropbox/1537\ MTI-RIT/2019_degruyter_results/flame_intensity_extra.png 1 15 30 60 120 240 480
-    python plot_multi_time_series.py ~/Dropbox/1537\ MTI-RIT/2019_degruyter_results/flame_intensity_plant_fuel.csv "Flame Intensity (Plant + Fuel)" "Minutes" ~/Dropbox/1537\ MTI-RIT/2019_degruyter_results/flame_intensity_plant_fuel.png 1 15 30 60 120 240 480
-    python plot_multi_time_series.py ~/Dropbox/1537\ MTI-RIT/2019_degruyter_results/flame_intensity_plant.csv "Flame Intensity (Plant Only)" "Minutes" ~/Dropbox/1537\ MTI-RIT/2019_degruyter_results/flame_intensity_plant.png 1 15 30 60 120 240 480
+    python plot_multi_time_series.py ~/Dropbox/1537\ MTI-RIT/2019_degruyter_results/flame_intensity_extra_3.csv "Flame Intensity (Plant ~ Fuel)" "Minutes" ~/Dropbox/1537\ MTI-RIT/2019_degruyter_results/flame_intensity_extra_3.png 1 15 30 60 120 240 480
+    python plot_multi_time_series.py ~/Dropbox/1537\ MTI-RIT/2019_degruyter_results/flame_intensity_plant_fuel_3.csv "Flame Intensity (Plant + Fuel)" "Minutes" ~/Dropbox/1537\ MTI-RIT/2019_degruyter_results/flame_intensity_plant_fuel_3.png 1 15 30 60 120 240 480
+    python plot_multi_time_series.py ~/Dropbox/1537\ MTI-RIT/2019_degruyter_results/flame_intensity_plant_3.csv "Flame Intensity (Plant Only)" "Minutes" ~/Dropbox/1537\ MTI-RIT/2019_degruyter_results/flame_intensity_plant_3.png 1 15 30 60 120 240 480
 
 '''
 
@@ -55,5 +55,5 @@ plt.title(parameter_name + " Predictions")
 plt.ylabel("Normalized " + parameter_name)
 plt.xlabel(xlabel_name)
 plt.grid(True)
-plt.savefig(output_filename)
+plt.savefig(output_filename, bbox_inches='tight')
 
