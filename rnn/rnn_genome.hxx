@@ -164,6 +164,8 @@ class RNN_Genome {
         double get_mse(const vector<double> &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, bool verbose = false);
         double get_mae(const vector<double> &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, bool verbose = false);
 
+
+        vector< vector<double> > get_predictions(const vector<double> &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs);
         void write_predictions(const vector<string> &input_filenames, const vector<double> &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs);
 
         void get_mu_sigma(const vector<double> &p, double &mu, double &sigma);

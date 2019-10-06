@@ -1223,6 +1223,23 @@ double RNN_Genome::get_mae(const vector<double> &parameters, const vector< vecto
     return avg_mae;
 }
 
+vector< vector<double> > RNN_Genome::get_predictions(const vector<double> &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs) {
+    RNN *rnn = get_rnn();
+    rnn->set_weights(parameters);
+
+    vector< vector<double> > all_results;
+    
+    //one input vector per testing file
+    for (uint32_t i = 0; i < inputs.size(); i++) {
+        all_results.push_back(rnn->get_predictions(inputs[i], outputs[i], use_dropout, dropout_probability));
+    }
+
+    delete rnn;
+
+    return all_results;
+}
+
+
 void RNN_Genome::write_predictions(const vector<string> &input_filenames, const vector<double> &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs) {
     RNN *rnn = get_rnn();
     rnn->set_weights(parameters);

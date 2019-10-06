@@ -52,6 +52,8 @@ class TimeSeries {
         void cut(int32_t start, int32_t stop);
 
         TimeSeries* copy();
+
+        void copy_values(vector<double> &series);
 };
 
 class TimeSeriesSet {
@@ -76,6 +78,8 @@ class TimeSeriesSet {
         string get_filename() const;
 
         vector<string> get_fields() const;
+
+        void get_series(string field_name, vector<double> &series);
 
         double get_min(string field);
         double get_average(string field);
@@ -142,6 +146,8 @@ class TimeSeriesSets {
         void export_training_series(int time_offset, vector< vector< vector<double> > > &inputs, vector< vector< vector<double> > > &outputs);
 
         void export_test_series(int time_offset, vector< vector< vector<double> > > &inputs, vector< vector< vector<double> > > &outputs);
+
+        void export_series_by_name(string field_name, vector< vector<double> > &exported_series);
 
         map<string,double> get_normalize_mins() const;
         map<string,double> get_normalize_maxs() const;
