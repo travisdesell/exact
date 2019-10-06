@@ -168,6 +168,10 @@ TimeSeries* TimeSeries::copy() {
     return ts;
 }
 
+void TimeSeries::copy_values(vector<double> &series) {
+    series = values;
+}
+
 
 void string_split(const string &s, char delim, vector<string> &result) {
     stringstream ss;
@@ -300,6 +304,10 @@ string TimeSeriesSet::get_filename() const {
 
 vector<string> TimeSeriesSet::get_fields() const {
     return fields;
+}
+
+void TimeSeriesSet::get_series(string field_name, vector<double> &series) {
+    time_series[field_name]->copy_values(series);
 }
 
 double TimeSeriesSet::get_min(string field) {
@@ -804,6 +812,21 @@ void TimeSeriesSets::export_test_series(int time_offset, vector< vector< vector<
     }
 
     export_time_series(test_indexes, time_offset, inputs, outputs);
+}
+
+
+/**
+ * This exports from all the loaded time series a particular column
+ */
+void TimeSeriesSets::export_series_by_name(string field_name, vector< vector<double> > &exported_series) {
+    exported_series.clear();
+
+    for (int32_t i = 0; i < time_series.size(); i++) {
+        vector<double> current_series;
+
+        time_series[i]->get_series(field_name, current_series);
+        exported_series.push_back(current_series);
+    }
 }
 
 

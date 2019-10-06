@@ -329,10 +329,29 @@ double RNN::prediction_mae(const vector< vector<double> > &series_data, const ve
     return calculate_error_mae(expected_outputs);
 }
 
+vector<double> RNN::get_predictions(const vector< vector<double> > &series_data, const vector< vector<double> > &expected_outputs, bool using_dropout, double dropout_probability) {
+    forward_pass(series_data, using_dropout, false, dropout_probability);
+
+    vector<double> result;
+
+    for (uint32_t j = 0; j < series_length; j++) {
+        for (uint32_t i = 0; i < output_nodes.size(); i++) {
+            result.push_back(output_nodes[i]->output_values[j]);
+        }
+    }
+
+    //TODO: returning a vector isn't the most efficient, but i don't think we'll be using this for things that are performance
+    //critical -- Travis
+    return result;
+}
+
 
 void RNN::write_predictions(string output_filename, const vector<string> &input_parameter_names, const vector<string> &output_parameter_names, const vector< vector<double> > &series_data, const vector< vector<double> > &expected_outputs, bool using_dropout, double dropout_probability) {
     forward_pass(series_data, using_dropout, false, dropout_probability);
 
+
+    cerr << "series_length: " << series_length << ", series_data.size(): " << series_data.size() << ", series_data[0].size(): " << series_data[0].size() << endl;
+    cerr << "input_nodes.size(): " << input_nodes.size() << ", output_nodes.size(): " << output_nodes.size() << endl;
     ofstream outfile(output_filename);
 
     outfile << "#";
@@ -340,11 +359,22 @@ void RNN::write_predictions(string output_filename, const vector<string> &input_
     for (uint32_t i = 0; i < input_nodes.size(); i++) {
         if (i > 0) outfile << ",";
         outfile << input_parameter_names[i];
+
+        cerr << "input_parameter_names[" << i << "]: " << input_parameter_names[i] << endl;
+    }
+
+    for (uint32_t i = 0; i < output_nodes.size(); i++) {
+        outfile << ",";
+        outfile << output_parameter_names[i];
+
+        cerr << "output_parameter_names[" << i << "]: " << output_parameter_names[i] << endl;
     }
 
     for (uint32_t i = 0; i < output_nodes.size(); i++) {
         outfile << ",";
         outfile << "predicted_" << output_parameter_names[i];
+
+        cerr << "output_parameter_names[" << i << "]: " << output_parameter_names[i] << endl;
     }
     outfile << endl;
 
@@ -352,6 +382,11 @@ void RNN::write_predictions(string output_filename, const vector<string> &input_
         for (uint32_t i = 0; i < input_nodes.size(); i++) {
             if (i > 0) outfile << ",";
             outfile << series_data[i][j];
+        }
+
+        for (uint32_t i = 0; i < output_nodes.size(); i++) {
+            outfile << ",";
+            outfile << expected_outputs[i][j];
         }
 
         for (uint32_t i = 0; i < output_nodes.size(); i++) {
