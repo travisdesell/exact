@@ -231,8 +231,24 @@ void EXAMM::print_population() {
             << "," << best_genome->best_validation_mse
             << "," << best_genome->get_enabled_node_count()
             << "," << best_genome->get_enabled_edge_count()
-            << "," << best_genome->get_enabled_recurrent_edge_count() << endl;
+            << "," << best_genome->get_enabled_recurrent_edge_count();
+        
+        /* // Commented out to prevent unecessary data collection - 
+         * // stores the frequency table of rec connection depth for each island
+            << ",";
+        for (int32_t i = 0; i < genomes.size(); i += 1) {
+            RecDepthFrequencyTable freqs(genomes[i], min_recurrent_depth, max_recurrent_depth);
+            for (int32_t d = min_recurrent_depth; d <= max_recurrent_depth; d += 1) {
+                (*log_file) << freqs[d];
+                if (d == max_recurrent_depth) continue;
+                (*log_file) << ";";
+            }
+            if (i != genomes.size()) 
+                (*log_file) << "$";
+        }*/
 
+        (*log_file) << endl;
+        
         memory_log << inserted_genomes
             << "," << total_bp_epochs
             << "," << milliseconds
