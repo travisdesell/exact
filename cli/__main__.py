@@ -45,7 +45,7 @@ def main():
             parsed = get_config(config)
             task = ExammTask(parsed, config, None)
             command = task.to_command()
-            print("Running the following command:")
+            print("Generated the following command:")
             print(command)
             if should_run:
                 subprocess.call(command)
@@ -56,7 +56,7 @@ def main():
             for i in range(args.n_runs):
                 task = ExammTask(parsed, config, i)
                 command = task.to_command()
-                print("Running the following command:")
+                print("Generated the following command:")
                 print(command)
                 if should_run:
                     subprocess.call(command)

@@ -1,9 +1,9 @@
 [examm]
 # Regex of the location of the training files
-training_files = './datasets/2018_coal/burner_[0-9].csv'
+training_files = ['./datasets/2018_coal/burner_[0-9].csv']
 
 # Regex of the location of the test files
-test_files = './datasets/2018_coal/burner_1[0-1].csv'
+test_files = ['./datasets/2018_coal/burner_1[0-1].csv']
 
 # How many time steps into the future examm should be predicting
 time_offset = 1
@@ -45,3 +45,13 @@ parallelism = 9
 
 # Either MPI ("mpi", "MPI") or multithreaded ("mt", "MT", "multithreaded", "MULTITHREADED")
 version = "multithreaded"
+
+[examm.rec]
+min = 5
+max = 42
+dist = 'normal'
+population = 'island'
+
+[examm.island_purging]
+period = 45
+selection_method = 'worst_best'
