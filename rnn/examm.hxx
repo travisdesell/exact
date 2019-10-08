@@ -101,7 +101,6 @@ class EXAMM {
 
         std::chrono::time_point<std::chrono::system_clock> startClock;
     
-        bool use_rec_depth_population_sampling;
         int32_t rec_sampling_population;
         int32_t rec_sampling_distribution;
 
@@ -116,9 +115,7 @@ class EXAMM {
             bool _use_low_threshold, double _low_threshold, 
             bool _use_dropout, double _dropout_probability,
             int32_t _min_recurrent_depth, int32_t _max_recurrent_depth,
-            bool _use_rec_depth_population_sampling, string _rec_sampling_population,
-            string _rec_sampling_distribution,
-            string _output_directory);
+            string _rec_sampling_population, string _rec_sampling_distribution, string _output_directory);
 
         ~EXAMM();
 
