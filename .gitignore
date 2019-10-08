@@ -4,3 +4,6 @@ build/*
 copy_binary_windows.sh
 copy_binary_linux.sh
 copy_binary_osx.sh
+*/__pycache__/*
+__pycache__/*
+*.pyc
