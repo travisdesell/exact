@@ -8,7 +8,7 @@ class Distribution {
             unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
             rng = mt19937(seed);
         }
-        ~Distribution() {}
+        virtual ~Distribution() { };
         
         virtual int32_t sample() = 0;
     protected:
