@@ -1,0 +1,22 @@
+[examm]
+training_files = ['./datasets/2018_coal/burner_[0-9].csv']
+test_files = ['./datasets/2018_coal/burner_1[0-1].csv']
+time_offset = 1
+input_parameters = [ 'Conditioner_Inlet_Temp', 'Conditioner_Outlet_Temp', 
+                     'Coal_Feeder_Rate', 'Primary_Air_Flow', 'Primary_Air_Split',
+                     'System_Secondary_Air_Flow_Total', 'Secondary_Air_Flow', 
+                     'Secondary_Air_Split', 'Tertiary_Air_Split', 'Total_Comb_Air_Flow', 
+                     'Supp_Fuel_Flow', 'Main_Flm_Int' ]
+output_parameters = [ 'Main_Flm_Int' ]
+n_islands = 10
+population_size = 20
+max_genomes = 4000
+bp_iterations = 10
+output_directory = 'experiments/rec_time_delay_dist/results/control/'
+node_types = [ 'simple', 'delta' ]
+parallelism = 9
+version = "multithreaded"
+
+[examm.rec]
+min = 1
+max = 50
