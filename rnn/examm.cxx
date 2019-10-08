@@ -52,9 +52,7 @@ EXAMM::EXAMM(int32_t _population_size, int32_t _number_islands, int32_t _max_gen
                 bool _use_low_threshold, double _low_threshold, 
                 bool _use_dropout, double _dropout_probability,
                 int32_t _min_recurrent_depth, int32_t _max_recurrent_depth,
-                bool _use_rec_depth_population_sampling, string _rec_sampling_population,
-                string _rec_sampling_distribution,
-                string _output_directory) : 
+                string _rec_sampling_population, string _rec_sampling_distribution, string _output_directory) : 
                                         population_size(_population_size), 
                                         number_islands(_number_islands), 
                                         max_genomes(_max_genomes), 
@@ -100,7 +98,6 @@ int mkpath(const char *path, mode_t mode);
     min_recurrent_depth = _min_recurrent_depth;
     max_recurrent_depth = _max_recurrent_depth;
 
-    use_rec_depth_population_sampling = _use_rec_depth_population_sampling;
     
     if (_rec_sampling_population.compare("global") == 0) {
         rec_sampling_population = GLOBAL_POPULATION;
@@ -615,7 +612,7 @@ int EXAMM::get_random_node_type() {
 
 Distribution *EXAMM::get_recurrent_depth_dist(int32_t island_index) {
     Distribution *d = NULL;
-    if (use_rec_depth_population_sampling && rec_sampling_distribution != UNIFORM_DISTRIBUTION) {
+    if (rec_sampling_distribution != UNIFORM_DISTRIBUTION) {
         if (rec_sampling_distribution == NORMAL_DISTRIBUTION) {
             if (rec_sampling_population == ISLAND_POPULATION)
                 d = new RecDepthNormalDist(genomes[island_index], min_recurrent_depth, max_recurrent_depth);

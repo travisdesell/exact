@@ -123,9 +123,6 @@ int main(int argc, char** argv) {
     int32_t rec_delay_max = 10;
     get_argument(arguments, "--rec_delay_max", false, rec_delay_max);
 
-    int32_t rec_delay_population_based_sampling = 0;
-    get_argument(arguments, "--rec_population_based_sampling", false, rec_delay_population_based_sampling);
-
     string rec_sampling_population = "global";
     get_argument(arguments, "--rec_sampling_population", false, rec_sampling_population);
 
@@ -141,7 +138,7 @@ int main(int argc, char** argv) {
             use_high_threshold, high_threshold,
             use_low_threshold, low_threshold, 
             use_dropout, dropout_probability, 
-            rec_delay_min, rec_delay_max, (bool) (rec_delay_population_based_sampling != 0),
+            rec_delay_min, rec_delay_max,
             rec_sampling_population, rec_sampling_distribution,
             output_directory);
 
