@@ -6,19 +6,22 @@ RecDepthFrequencyTable::RecDepthFrequencyTable() {}
 RecDepthFrequencyTable::RecDepthFrequencyTable(
         vector<RNN_Genome*> &genomes, int32_t _min_recurrent_depth, int32_t max_recurrent_depth) {
     n_samples = 0;
-    frequencies = new int32_t[max_recurrent_depth + 1];
+    frequencies = new int32_t[max_recurrent_depth + 1](); // the () ensures the memory is zeroed
     count_island_frequencies(genomes);
 }
 
 RecDepthFrequencyTable::RecDepthFrequencyTable(
         vector<vector<RNN_Genome*>> &islands, int32_t _min_recurrent_depth, int32_t max_recurrent_depth) {
     n_samples = 0;
-    frequencies = new int32_t[max_recurrent_depth + 1];
+    frequencies = new int32_t[max_recurrent_depth + 1](); // the () ensures the memory is zeroed
     for (int32_t i = 0; i < islands.size(); i += 1) count_island_frequencies(islands[i]);
 }
 
 RecDepthFrequencyTable::~RecDepthFrequencyTable() {
-    if (frequencies) delete frequencies;
+    if (frequencies) {
+        delete frequencies;
+        frequencies = 0;
+    }
 }
 
 int32_t & RecDepthFrequencyTable::operator[] (int32_t i) {
@@ -96,8 +99,6 @@ RecDepthHistDist::RecDepthHistDist(vector<RNN_Genome*> &genomes,
     min = min_recurrent_depth;
     max = max_recurrent_depth;
 
-    int32_t sum = 0;
-    int32_t n_samples = 0;
     RecDepthFrequencyTable freqs(genomes, min_recurrent_depth, max_recurrent_depth);
 
     calculate_distribution(freqs);
@@ -108,9 +109,6 @@ RecDepthHistDist::RecDepthHistDist(vector<vector<RNN_Genome*>> &islands,
     : Distribution() {
     min = min_recurrent_depth;
     max = max_recurrent_depth;
-
-    int32_t sum = 0;
-    int32_t n_samples = 0;
     RecDepthFrequencyTable freqs(islands, min_recurrent_depth, max_recurrent_depth);
     
     calculate_distribution(freqs);   

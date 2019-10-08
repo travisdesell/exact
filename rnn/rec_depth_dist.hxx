@@ -43,7 +43,7 @@ class RecDepthNormalDist : public Distribution {
     public:
         RecDepthNormalDist(vector<RNN_Genome*> &genomes, int32_t min_recurrent_depth, int32_t max_recurrent_depth); 
         RecDepthNormalDist(vector<vector<RNN_Genome*>> &islands, int32_t min_recurrent_depth, int32_t max_recurrent_depth);
-        ~RecDepthNormalDist() {}
+        virtual ~RecDepthNormalDist() {}
         int32_t sample() override;
     
     private:
@@ -58,7 +58,7 @@ class RecDepthHistDist : public Distribution {
     public:
         RecDepthHistDist(vector<RNN_Genome*> &genomes, int32_t min_recurrent_depth, int32_t max_recurrent_depth);
         RecDepthHistDist(vector<vector<RNN_Genome*>> &islands, int32_t min_recurrent_depth, int32_t max_recurrent_depth);
-        ~RecDepthHistDist() {}
+        virtual ~RecDepthHistDist() {}
         int32_t sample() override;
 
     private:
