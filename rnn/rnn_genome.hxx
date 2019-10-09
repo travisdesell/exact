@@ -30,7 +30,7 @@ using std::vector;
 
 string parse_fitness(double fitness);
 
-// NOTE: the include of distributions.hxx is at the end of this file since.
+// This needs to be forward declared here
 class Distribution;
 
 class RNN_Genome {
