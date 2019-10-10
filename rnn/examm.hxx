@@ -126,7 +126,7 @@ class EXAMM {
 
         void initialize_genome_parameters(RNN_Genome* genome);
         RNN_Genome* generate_genome();
-        void mutate(RNN_Genome *p1);
+        void mutate(int32_t max_mutations, RNN_Genome *p1);
 
         void attempt_node_insert(vector<RNN_Node_Interface*> &child_nodes, const RNN_Node_Interface *node, const vector<double> &new_weights);
         void attempt_edge_insert(vector<RNN_Edge*> &child_edges, vector<RNN_Node_Interface*> &child_nodes, RNN_Edge *edge, RNN_Edge *second_edge, bool set_enabled);
