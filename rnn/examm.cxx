@@ -49,8 +49,8 @@ EXAMM::EXAMM(int32_t _population_size, int32_t _number_islands, int32_t _max_gen
     normalize_mins = _normalize_mins;
     normalize_maxs = _normalize_maxs;
 
-//TODO: should move this into a util file
-int mkpath(const char *path, mode_t mode);
+    //TODO: should move this into a util file
+    //int mkpath(const char *path, mode_t mode);
 
     inserted_genomes = 0;
     generated_genomes = 0;
@@ -512,7 +512,9 @@ RNN_Genome* EXAMM::generate_genome() {
             while (genome == NULL) {
                 int32_t genome_position = genomes[island].size() * rng_0_1(generator);
                 genome = genomes[island][genome_position]->copy();
-                mutate(genome);
+
+                //TODO: make max_mutations an EXAMM option
+                mutate(1 /*max_mutations*/, genome);
 
                 genome->set_normalize_bounds(normalize_mins, normalize_maxs);
                 genome->set_island(island);
@@ -557,7 +559,9 @@ RNN_Genome* EXAMM::generate_genome() {
             if (!populations_full() || r < mutation_rate) {
                 int32_t genome_position = genomes[island].size() * rng_0_1(generator);
                 genome = genomes[island][genome_position]->copy();
-                mutate(genome);
+
+                //TODO: make max_mutations an EXAMM option
+                mutate(1 /*max_mutations*/, genome);
 
                 genome->set_normalize_bounds(normalize_mins, normalize_maxs);
                 genome->set_island(island);
@@ -648,7 +652,7 @@ int EXAMM::get_random_node_type() {
     return possible_node_types[rng_0_1(generator) * possible_node_types.size()];
 }
 
-void EXAMM::mutate(RNN_Genome *g) {
+void EXAMM::mutate(int32_t max_mutations, RNN_Genome *g) {
     double total = clone_rate + add_edge_rate + add_recurrent_edge_rate + enable_edge_rate + disable_edge_rate + split_edge_rate + add_node_rate + enable_node_rate + disable_node_rate + split_node_rate + merge_node_rate;
 
     bool modified = false;
@@ -671,7 +675,15 @@ void EXAMM::mutate(RNN_Genome *g) {
         g->get_mu_sigma(g->best_parameters, mu, sigma);
     }
 
+    int number_mutations = 0;
+
     while (!modified) {
+        if (modified) {
+            modified = false;
+            number_mutations++;
+            if (number_mutations >= max_mutations) break;
+        }
+
         g->assign_reachability();
         double rng = rng_0_1(generator) * total;
         int new_node_type = get_random_node_type();
