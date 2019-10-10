@@ -22,6 +22,12 @@ using std::vector;
 #define ISLAND_INITIALIZING 0
 #define ISLAND_FILLED 1
 #define ISLAND_REPOPULATING 2
+#define GLOBAL_POPULATION 0
+#define ISLAND_POPULATION 1
+
+#define UNIFORM_DISTRIBUTION 0
+#define HISTOGRAM_DISTRIBUTION 1
+#define NORMAL_DISTRIBUTION 2
 
 class EXAMM {
     private:
@@ -63,6 +69,7 @@ class EXAMM {
         uniform_real_distribution<double> rng_0_1;
         uniform_real_distribution<double> rng_crossover_weight;
 
+        int32_t min_recurrent_depth;
         int32_t max_recurrent_depth;
 
         bool epigenetic_weights;
@@ -102,9 +109,22 @@ class EXAMM {
         ostringstream memory_log;
 
         std::chrono::time_point<std::chrono::system_clock> startClock;
+    
+        int32_t rec_sampling_population;
+        int32_t rec_sampling_distribution;
 
     public:
-        EXAMM(int32_t _population_size, int32_t _number_islands, int32_t _max_genomes, int32_t _num_genomes_check_on_island, string _check_on_island_method, const vector<string> &_input_parameter_names, const vector<string> &_output_parameter_names, const map<string,double> &_normalize_mins, const map<string,double> &_normalize_maxs, int32_t _bp_iterations, double _learning_rate, bool _use_high_threshold, double _high_threshold, bool _use_low_threshold, double _low_threshold, bool _use_dropout, double _dropout_probability, string _output_directory);
+        EXAMM(int32_t _population_size, int32_t _number_islands, int32_t _max_genomes, int32_t _num_genomes_check_on_island, string _check_on_island_method,
+            const vector<string> &_input_parameter_names,
+            const vector<string> &_output_parameter_names, 
+            const map<string,double> &_normalize_mins,
+            const map<string,double> &_normalize_maxs,
+            int32_t _bp_iterations, double _learning_rate, 
+            bool _use_high_threshold, double _high_threshold, 
+            bool _use_low_threshold, double _low_threshold, 
+            bool _use_dropout, double _dropout_probability,
+            int32_t _min_recurrent_depth, int32_t _max_recurrent_depth,
+            string _rec_sampling_population, string _rec_sampling_distribution, string _output_directory);
 
         ~EXAMM();
 
@@ -117,6 +137,8 @@ class EXAMM {
         bool populations_full() const;
 
         bool insert_genome(RNN_Genome* genome);
+
+        Distribution *get_recurrent_depth_dist(int32_t island);
 
         int get_random_node_type();
 

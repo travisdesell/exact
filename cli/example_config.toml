@@ -1,0 +1,57 @@
+[examm]
+# Regex of the location of the training files
+training_files = ['./datasets/2018_coal/burner_[0-9].csv']
+
+# Regex of the location of the test files
+test_files = ['./datasets/2018_coal/burner_1[0-1].csv']
+
+# How many time steps into the future examm should be predicting
+time_offset = 1
+                                                                                          
+# List of the input parameters as they appear in the data sets.
+# The first row of the input file should contain labels for each of the columns.
+input_parameters = [ 'Conditioner_Inlet_Temp', 'Conditioner_Outlet_Temp', 
+                     'Coal_Feeder_Rate', 'Primary_Air_Flow', 'Primary_Air_Split',
+                     'System_Secondary_Air_Flow_Total', 'Secondary_Air_Flow', 
+                     'Secondary_Air_Split', 'Tertiary_Air_Split', 'Total_Comb_Air_Flow', 
+                     'Supp_Fuel_Flow', 'Main_Flm_Int' ]
+# List of the output parameters as they appear in the data sets.
+output_parameters = [ 'Main_Flm_Int' ]
+                                                                                          
+# Number of separate islands to use
+n_islands = 10
+                                                                                          
+# Population size per island
+population_size = 10
+
+# The number of genomes to create before EXAMM halts
+max_genomes = 2000
+
+# Number of bp iterations when training
+bp_iterations = 10
+                                                                                          
+# Where to write the binary ('.bin') files containing the best genomes,
+# along with graphvis ('.gv') files which can be used to create a pdf of the network.
+output_directory = 'build/test_output'
+
+# OPTIONAL PARAMETER: the default value will be all possible node types
+# The types of nodes which can be used
+# You must specify at least one node type
+node_types = [ 'simple', 'UGRNN', 'MGU', 'GRU', 'delta', 'LSTM' ]
+
+# OPTIONAL PARAMETER: the default value will be 1 + the number of cores on the machine
+# 9 threads or processes, depending on whether you're using the MPI or multithreaded version
+parallelism = 9
+
+# Either MPI ("mpi", "MPI") or multithreaded ("mt", "MT", "multithreaded", "MULTITHREADED")
+version = "multithreaded"
+
+[examm.rec]
+min = 5
+max = 42
+dist = 'normal'
+population = 'island'
+
+[examm.island_purging]
+period = 45
+selection_method = 'worst_best'
