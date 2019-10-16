@@ -625,34 +625,34 @@ RNN_Genome* EXAMM::generate_genome() {
         //select two other islands (non-overlapping) at random, and select genomes
         //from within those islands and generate a child via crossover
 
-        // if (genomes[island].size() == 0) {
-        //     //this is the first genome to be generated
-        //     //generate minimal genome, insert it into the population
-        //     genome = create_ff(number_inputs, 0, 0, number_outputs, 0);
-        //     genome->set_island(island);
-        //     genome->set_parameter_names(input_parameter_names, output_parameter_names);
-        //     genome->set_normalize_bounds(normalize_mins, normalize_maxs);
+        if (genomes[island].size() == 0) {
+            //this is the first genome to be generated
+            //generate minimal genome, insert it into the population
+            genome = create_ff(number_inputs, 0, 0, number_outputs, 0);
+            genome->set_island(island);
+            genome->set_parameter_names(input_parameter_names, output_parameter_names);
+            genome->set_normalize_bounds(normalize_mins, normalize_maxs);
 
-        //     edge_innovation_count = genome->edges.size() + genome->recurrent_edges.size();
-        //     node_innovation_count = genome->nodes.size();
+            edge_innovation_count = genome->edges.size() + genome->recurrent_edges.size();
+            node_innovation_count = genome->nodes.size();
 
-        //     genome->set_generated_by("initial");
-        //     initialize_genome_parameters(genome);
+            genome->set_generated_by("initial");
+            initialize_genome_parameters(genome);
 
-        //     //insert a copy of it into the population so
-        //     //additional requests can mutate it
-        //     genome->initialize_randomly();
-        //     double _mu, _sigma;
-        //     cout << "getting mu/sigma after random initialization!" << endl;
-        //     genome->get_mu_sigma(genome->best_parameters, _mu, _sigma);
+            //insert a copy of it into the population so
+            //additional requests can mutate it
+            genome->initialize_randomly();
+            double _mu, _sigma;
+            cout << "getting mu/sigma after random initialization!" << endl;
+            genome->get_mu_sigma(genome->best_parameters, _mu, _sigma);
 
-        //     genome->best_validation_mse = EXAMM_MAX_DOUBLE;
-        //     genome->best_validation_mae = EXAMM_MAX_DOUBLE;
-        //     genome->best_parameters.clear();
-        //     //genome->clear_generated_by();
+            genome->best_validation_mse = EXAMM_MAX_DOUBLE;
+            genome->best_validation_mae = EXAMM_MAX_DOUBLE;
+            genome->best_parameters.clear();
+            //genome->clear_generated_by();
 
-        //     insert_genome(genome->copy());
-        // } else {
+            insert_genome(genome->copy());
+        } else {
             
             while (genome == NULL) {
                 int32_t parent_island1;
