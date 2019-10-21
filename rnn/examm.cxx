@@ -679,13 +679,13 @@ RNN_Genome* EXAMM::generate_genome() {
                     genome = NULL;
                 }
             }
-        // }
+        }
     } else {
         cerr << "ERROR: unknown island state (" << island_states[island] << ")" << endl;
         cerr << "This should never happen!" << endl;
         exit(1);
+    
     }
-
     //genome->write_graphviz(output_directory + "/rnn_genome_" + to_string(generated_genomes) + ".gv");
     //genome->write_to_file(output_directory + "/rnn_genome_" + to_string(generated_genomes) + ".bin");
 
