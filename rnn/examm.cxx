@@ -127,8 +127,17 @@ int mkpath(const char *path, mode_t mode);
     if (output_directory != "") {
         mkpath(output_directory.c_str(), 0777);
         log_file = new ofstream(output_directory + "/" + "fitness_log.csv");
-        (*log_file) << "Inserted Genomes, Total BP Epochs, Time, Best Val. MAE, Best Val. MSE, Enabled Nodes, Enabled Edges, Enabled Rec. Edges" << endl;
-        memory_log << "Inserted Genomes, Total BP Epochs, Time, Best Val. MAE, Best Val. MSE, Enabled Nodes, Enabled Edges, Enabled Rec. Edges" << endl;
+        (*log_file) << "Inserted Genomes, Total BP Epochs, Time, Best Val. MAE, Best Val. MSE, Enabled Nodes, Enabled Edges, Enabled Rec. Edges";
+        memory_log << "Inserted Genomes, Total BP Epochs, Time, Best Val. MAE, Best Val. MSE, Enabled Nodes, Enabled Edges, Enabled Rec. Edges";
+        for (int i = 0; i < (int32_t)genomes.size(); i++)
+        {
+            (*log_file) << "," << "Island_" << i << "_best_fitness" ;
+            (*log_file) << "," << "Island_" << i << "_worst_fitness";
+            memory_log << "," << "Island_" << i << "_best_fitness";
+            memory_log << "," << "Island_" << i << "_worst_fitness";
+        }
+        (*log_file) << endl;
+        memory_log << endl;
     } else {
         log_file = NULL;
     }
@@ -178,16 +187,55 @@ void EXAMM::print_population() {
             << "," << best_genome->best_validation_mse
             << "," << best_genome->get_enabled_node_count()
             << "," << best_genome->get_enabled_edge_count()
-            << "," << best_genome->get_enabled_recurrent_edge_count() << endl;
+            << "," << best_genome->get_enabled_recurrent_edge_count();
 
-        memory_log << inserted_genomes
-            << "," << total_bp_epochs
-            << "," << milliseconds
-            << "," << best_genome->best_validation_mae
-            << "," << best_genome->best_validation_mse
-            << "," << best_genome->get_enabled_node_count()
-            << "," << best_genome->get_enabled_edge_count()
-            << "," << best_genome->get_enabled_recurrent_edge_count() << endl;
+            // log best fitness
+            for (int i = 0; i < (int32_t)genomes.size(); i++) {
+                double best_fitness = EXAMM_MAX_DOUBLE;
+                double worst_fitness = -EXAMM_MAX_DOUBLE;
+                for (int32_t j = 0; j < (int32_t)genomes[i].size(); j++) {
+                    if (genomes[i][j]->get_fitness() < best_fitness) {
+                        best_fitness = genomes[i][j]->get_fitness();
+                    }
+                    if (genomes[i][j]->get_fitness() > worst_fitness)
+                    {
+                        worst_fitness = genomes[i][j]->get_fitness();
+                    }
+                }
+                (*log_file) << "," << best_fitness << "," << worst_fitness;
+            }
+
+            (*log_file) << endl;
+
+            memory_log << inserted_genomes
+                       << "," << total_bp_epochs
+                       << "," << milliseconds
+                       << "," << best_genome->best_validation_mae
+                       << "," << best_genome->best_validation_mse
+                       << "," << best_genome->get_enabled_node_count()
+                       << "," << best_genome->get_enabled_edge_count()
+                       << "," << best_genome->get_enabled_recurrent_edge_count();
+
+            // log best fitness
+            for (int i = 0; i < (int32_t)genomes.size(); i++)
+            {
+                double best_fitness = EXAMM_MAX_DOUBLE;
+                double worst_fitness = -EXAMM_MAX_DOUBLE;
+                for (int32_t j = 0; j < (int32_t)genomes[i].size(); j++)
+                {
+                    if (genomes[i][j]->get_fitness() < best_fitness)
+                    {
+                        best_fitness = genomes[i][j]->get_fitness();
+                    }
+                    if (genomes[i][j]->get_fitness() > worst_fitness)
+                    {
+                        worst_fitness = genomes[i][j]->get_fitness();
+                    }
+                }
+                memory_log << "," << best_fitness << "," << worst_fitness;
+            }
+
+            memory_log << endl;
     }
 }
 
