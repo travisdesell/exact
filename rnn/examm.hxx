@@ -133,18 +133,9 @@ class EXAMM {
 
         void set_possible_node_types(vector<string> possible_node_type_strings);
 
-        int32_t population_contains(RNN_Genome* genome, int32_t island);
-        bool populations_full() const;
-
-        bool insert_genome(RNN_Genome* genome);
-
         Distribution *get_recurrent_depth_dist(int32_t island);
 
         int get_random_node_type();
-
-        int32_t check_on_island();
-        // methods
-        int32_t clear_island_with_worst_best_genome();
 
         void initialize_genome_parameters(RNN_Genome* genome);
         RNN_Genome* generate_genome();
@@ -157,9 +148,6 @@ class EXAMM {
 
         RNN_Genome* get_best_genome();
         RNN_Genome* get_worst_genome();
-
-        double get_best_fitness();
-        double get_worst_fitness();
 
         string get_output_directory() const;
 };
