@@ -489,8 +489,9 @@ int32_t EXAMM::clear_island_with_worst_best_genome() {
         cout << "check_on_island: clearing genomes from a bad island: " << worst_island << endl;
 
         while (genomes[worst_island].size() > 0) {
+            RNN_Genome *first_genome = genomes[worst_island][0];
             genomes[worst_island].erase(genomes[worst_island].begin());
-            delete genomes[worst_island][0];
+            delete first_genome;
         }
 
         island_states[worst_island] = ISLAND_REPOPULATING;
