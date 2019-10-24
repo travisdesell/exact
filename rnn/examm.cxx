@@ -127,8 +127,17 @@ int mkpath(const char *path, mode_t mode);
     if (output_directory != "") {
         mkpath(output_directory.c_str(), 0777);
         log_file = new ofstream(output_directory + "/" + "fitness_log.csv");
-        (*log_file) << "Inserted Genomes, Total BP Epochs, Time, Best Val. MAE, Best Val. MSE, Enabled Nodes, Enabled Edges, Enabled Rec. Edges" << endl;
-        memory_log << "Inserted Genomes, Total BP Epochs, Time, Best Val. MAE, Best Val. MSE, Enabled Nodes, Enabled Edges, Enabled Rec. Edges" << endl;
+        (*log_file) << "Inserted Genomes, Total BP Epochs, Time, Best Val. MAE, Best Val. MSE, Enabled Nodes, Enabled Edges, Enabled Rec. Edges";
+        memory_log << "Inserted Genomes, Total BP Epochs, Time, Best Val. MAE, Best Val. MSE, Enabled Nodes, Enabled Edges, Enabled Rec. Edges";
+        for (int i = 0; i < (int32_t)genomes.size(); i++)
+        {
+            (*log_file) << "," << "Island_" << i << "_best_fitness" ;
+            (*log_file) << "," << "Island_" << i << "_worst_fitness";
+            memory_log << "," << "Island_" << i << "_best_fitness";
+            memory_log << "," << "Island_" << i << "_worst_fitness";
+        }
+        (*log_file) << endl;
+        memory_log << endl;
     } else {
         log_file = NULL;
     }
@@ -178,16 +187,55 @@ void EXAMM::print_population() {
             << "," << best_genome->best_validation_mse
             << "," << best_genome->get_enabled_node_count()
             << "," << best_genome->get_enabled_edge_count()
-            << "," << best_genome->get_enabled_recurrent_edge_count() << endl;
+            << "," << best_genome->get_enabled_recurrent_edge_count();
 
-        memory_log << inserted_genomes
-            << "," << total_bp_epochs
-            << "," << milliseconds
-            << "," << best_genome->best_validation_mae
-            << "," << best_genome->best_validation_mse
-            << "," << best_genome->get_enabled_node_count()
-            << "," << best_genome->get_enabled_edge_count()
-            << "," << best_genome->get_enabled_recurrent_edge_count() << endl;
+            // log best fitness
+            for (int i = 0; i < (int32_t)genomes.size(); i++) {
+                double best_fitness = EXAMM_MAX_DOUBLE;
+                double worst_fitness = -EXAMM_MAX_DOUBLE;
+                for (int32_t j = 0; j < (int32_t)genomes[i].size(); j++) {
+                    if (genomes[i][j]->get_fitness() < best_fitness) {
+                        best_fitness = genomes[i][j]->get_fitness();
+                    }
+                    if (genomes[i][j]->get_fitness() > worst_fitness)
+                    {
+                        worst_fitness = genomes[i][j]->get_fitness();
+                    }
+                }
+                (*log_file) << "," << best_fitness << "," << worst_fitness;
+            }
+
+            (*log_file) << endl;
+
+            memory_log << inserted_genomes
+                       << "," << total_bp_epochs
+                       << "," << milliseconds
+                       << "," << best_genome->best_validation_mae
+                       << "," << best_genome->best_validation_mse
+                       << "," << best_genome->get_enabled_node_count()
+                       << "," << best_genome->get_enabled_edge_count()
+                       << "," << best_genome->get_enabled_recurrent_edge_count();
+
+            // log best fitness
+            for (int i = 0; i < (int32_t)genomes.size(); i++)
+            {
+                double best_fitness = EXAMM_MAX_DOUBLE;
+                double worst_fitness = -EXAMM_MAX_DOUBLE;
+                for (int32_t j = 0; j < (int32_t)genomes[i].size(); j++)
+                {
+                    if (genomes[i][j]->get_fitness() < best_fitness)
+                    {
+                        best_fitness = genomes[i][j]->get_fitness();
+                    }
+                    if (genomes[i][j]->get_fitness() > worst_fitness)
+                    {
+                        worst_fitness = genomes[i][j]->get_fitness();
+                    }
+                }
+                memory_log << "," << best_fitness << "," << worst_fitness;
+            }
+
+            memory_log << endl;
     }
 }
 
@@ -416,8 +464,14 @@ int32_t EXAMM::clear_island_with_worst_best_genome() {
     // find the best genome for each island and identify the 
     //island with the worst best genome
     for (int32_t i = 0; i < (int32_t)genomes.size(); i++) {
-        double best_fitness = EXAMM_MAX_DOUBLE;
+        // islands that are intializing or repopulating are
+        //not valid for clearing
+        if (island_states[i] != ISLAND_FILLED) {
+            continue;
+        }
 
+        // find best fitness genome
+        double best_fitness = EXAMM_MAX_DOUBLE;
         for (int32_t j = 0; j < (int32_t)genomes[i].size(); j++) {
             if (genomes[i][j]->get_fitness() < best_fitness) {
                 best_fitness = genomes[i][j]->get_fitness();
@@ -433,19 +487,10 @@ int32_t EXAMM::clear_island_with_worst_best_genome() {
     // clear the genomes from the identified island
     if (worst_island != -1) {
         cout << "check_on_island: clearing genomes from a bad island: " << worst_island << endl;
-        /*
-        for (int32_t i = 0; i < (int32_t)genomes[worst_island].size(); i++) {
-            if (genomes[worst_island][i] != NULL) {
-                delete genomes[worst_island][i];
-                genomes[worst_island].erase(genomes[worst_island].begin() + i);
-            }
-        }
-        */
 
         while (genomes[worst_island].size() > 0) {
-            RNN_Genome *genome = genomes[worst_island][0];
             genomes[worst_island].erase(genomes[worst_island].begin());
-            delete genome;
+            delete genomes[worst_island][0];
         }
 
         island_states[worst_island] = ISLAND_REPOPULATING;
@@ -466,15 +511,14 @@ void EXAMM::initialize_genome_parameters(RNN_Genome* genome) {
 RNN_Genome* EXAMM::generate_genome() {
     if (inserted_genomes > max_genomes) return NULL;
 
+    int32_t island = generated_genomes % number_islands;
+    if (genomes[island].size() >= number_islands) {
+        island_states[island] = ISLAND_FILLED;
+    }
+
     //check_on_island returns -1 if no island was killed, or the island number otherwise
     int32_t revisit_island = check_on_island();
     
-    //generate a new genome for te killed island if one exists, otherwise just generate from
-    //an island in a round robin manner
-    //int32_t island = revisit_island != -1 ? revisit_island : generated_genomes % number_islands;
-
-    int32_t island = generated_genomes % number_islands;
-
     generated_genomes++;
 
     RNN_Genome *genome = NULL;
@@ -567,6 +611,7 @@ RNN_Genome* EXAMM::generate_genome() {
                 //select two distinct parent genomes in the same island
                 int32_t p1 = genomes[island].size() * rng_0_1(generator);
                 int32_t p2 = (genomes[island].size() - 1) * rng_0_1(generator);
+// TODO: IS greater than here a bug? p2 will be even further than p1 if p2 > p1
                 if (p2 >= p1) p2++;
 
                 //swap so the first parent is the more fit parent
@@ -593,6 +638,7 @@ RNN_Genome* EXAMM::generate_genome() {
                 double best_other_fitness = EXAMM_MAX_DOUBLE;
                 for (int32_t i = 0; i < genomes.size(); i++) {
                     if (i == island) continue;
+                    if (island_states[i] == ISLAND_REPOPULATING) continue;
                     if (genomes[i][0]->get_fitness() < best_other_fitness) {
                         other_island = i;
                         best_other_fitness = genomes[i][0]->get_fitness();
@@ -627,14 +673,67 @@ RNN_Genome* EXAMM::generate_genome() {
         //select two other islands (non-overlapping) at random, and select genomes
         //from within those islands and generate a child via crossover
 
-        //note: don't kill an island if you still are repopulating an island
+        if (genomes[island].size() == 0) {
+            //this is the first genome to be generated
+            //generate minimal genome, insert it into the population
+            genome = create_ff(number_inputs, 0, 0, number_outputs, 0);
+            genome->set_island(island);
+            genome->set_parameter_names(input_parameter_names, output_parameter_names);
+            genome->set_normalize_bounds(normalize_mins, normalize_maxs);
 
+            edge_innovation_count = genome->edges.size() + genome->recurrent_edges.size();
+            node_innovation_count = genome->nodes.size();
+
+            genome->set_generated_by("initial");
+            initialize_genome_parameters(genome);
+
+            //insert a copy of it into the population so
+            //additional requests can mutate it
+            genome->initialize_randomly();
+            double _mu, _sigma;
+            cout << "getting mu/sigma after random initialization!" << endl;
+            genome->get_mu_sigma(genome->best_parameters, _mu, _sigma);
+
+            genome->best_validation_mse = EXAMM_MAX_DOUBLE;
+            genome->best_validation_mae = EXAMM_MAX_DOUBLE;
+            genome->best_parameters.clear();
+            //genome->clear_generated_by();
+
+            insert_genome(genome->copy());
+        } else {
+            
+            while (genome == NULL) {
+                int32_t parent_island1;
+                do {
+                    parent_island1 = genomes.size() * rng_0_1(generator);
+                } while (island_states[parent_island1] != ISLAND_FILLED);
+                
+                int32_t parent_island2;
+                do {
+                    parent_island2 = (genomes.size() - 1) * rng_0_1(generator);
+                } while (   parent_island1 == parent_island2 
+                         || island_states[parent_island2] != ISLAND_FILLED);
+
+                RNN_Genome* genome1 = genomes[parent_island1][genomes[parent_island1].size() * rng_0_1(generator)];
+                RNN_Genome* genome2 = genomes[parent_island2][(genomes[parent_island1].size() - 1) * rng_0_1(generator)];
+
+                genome = crossover(genome1, genome2);
+                genome->set_normalize_bounds(normalize_mins, normalize_maxs);
+                genome->set_island(island);
+
+                if (genome->outputs_unreachable()) {
+                    //no path from at least one input to the outputs
+                    delete genome;
+                    genome = NULL;
+                }
+            }
+        }
     } else {
         cerr << "ERROR: unknown island state (" << island_states[island] << ")" << endl;
         cerr << "This should never happen!" << endl;
         exit(1);
+    
     }
-
     //genome->write_graphviz(output_directory + "/rnn_genome_" + to_string(generated_genomes) + ".gv");
     //genome->write_to_file(output_directory + "/rnn_genome_" + to_string(generated_genomes) + ".bin");
 
