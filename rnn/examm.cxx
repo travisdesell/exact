@@ -30,6 +30,7 @@ using std::to_string;
 
 #include "common/files.hxx"
 
+
 EXAMM::~EXAMM() {
     RNN_Genome *genome;
     for (int32_t i = 0; i < genomes.size(); i++) {
@@ -48,9 +49,6 @@ EXAMM::EXAMM(int32_t _population_size, int32_t _number_islands, int32_t _max_gen
     output_parameter_names = _output_parameter_names;
     normalize_mins = _normalize_mins;
     normalize_maxs = _normalize_maxs;
-
-//TODO: should move this into a util file
-int mkpath(const char *path, mode_t mode);
 
     inserted_genomes = 0;
     generated_genomes = 0;
@@ -440,17 +438,22 @@ bool EXAMM::insert_genome(RNN_Genome* genome) {
 }
 
 int32_t EXAMM::check_on_island() {
-    if (check_on_island_method == "") {
+    cout << "check_on_island with method '" << check_on_island_method << "'" << endl;
+
+    if (check_on_island_method.compare("") == 0) {
         return -1;
     }
 
+    cout << "num_genomes_check_on_island: " << num_genomes_check_on_island << ", inserted genomes: " << inserted_genomes << endl;
     // only run this function every n inserted genomes
-    if (   num_genomes_check_on_island == 0 
-        || inserted_genomes % num_genomes_check_on_island != 0) {
+    if (num_genomes_check_on_island == 0 || inserted_genomes % num_genomes_check_on_island != 0) {
+        cout << "not trying to kill island" << endl;
         return -1;
     }
 
-    if (check_on_island_method == "clear_island_with_worst_best_genome") {
+    if (check_on_island_method.compare("clear_island_with_worst_best_genome") == 0) {
+        cout << "runnning clear island with worst best genome!" << endl;
+
         return clear_island_with_worst_best_genome();
     }
     
@@ -711,12 +714,12 @@ RNN_Genome* EXAMM::generate_genome() {
                 
                 int32_t parent_island2;
                 do {
-                    parent_island2 = (genomes.size() - 1) * rng_0_1(generator);
+                    parent_island2 = genomes.size() * rng_0_1(generator);
                 } while (   parent_island1 == parent_island2 
                          || island_states[parent_island2] != ISLAND_FILLED);
 
                 RNN_Genome* genome1 = genomes[parent_island1][genomes[parent_island1].size() * rng_0_1(generator)];
-                RNN_Genome* genome2 = genomes[parent_island2][(genomes[parent_island1].size() - 1) * rng_0_1(generator)];
+                RNN_Genome* genome2 = genomes[parent_island2][genomes[parent_island2].size() * rng_0_1(generator)];
 
                 genome = crossover(genome1, genome2);
                 genome->set_normalize_bounds(normalize_mins, normalize_maxs);
