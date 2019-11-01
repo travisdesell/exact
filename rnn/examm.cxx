@@ -42,7 +42,7 @@ EXAMM::~EXAMM() {
     }
 }
 
-EXAMM::EXAMM(int32_t _population_size, int32_t _number_islands, int32_t _max_genomes, int32_t _num_genomes_check_on_island, string _check_on_island_method,
+EXAMM::EXAMM(int32_t _population_size, int32_t _number_islands, int32_t _max_genomes, int32_t _num_genomes_check_on_island, string _speciation_method,
                 const vector<string> &_input_parameter_names,
                 const vector<string> &_output_parameter_names,
                 const map<string,double> &_normalize_mins,
@@ -99,6 +99,8 @@ EXAMM::EXAMM(int32_t _population_size, int32_t _number_islands, int32_t _max_gen
     min_recurrent_depth = _min_recurrent_depth;
     max_recurrent_depth = _max_recurrent_depth;
 
+    if (speciation_method.compare("island")) {
+    }
     
     if (_rec_sampling_population.compare("global") == 0) {
         rec_sampling_population = GLOBAL_POPULATION;
