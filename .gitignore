@@ -8,3 +8,4 @@ run.sh
 */__pycache__/*
 __pycache__/*
 *.pyc
+visualization/plots/*

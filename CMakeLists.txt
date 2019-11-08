@@ -63,7 +63,7 @@ ELSE (COMPILE_CLIENT STREQUAL "YES")
     #set(TIFF_LIBRARIES /usr/lib64/libtiffxx.so /usr/lib64/libtiff.so)
     #set(TIFF_FOUND true)
 
-    find_package(tiff)
+    find_package(TIFF)
 
     message(STATUS "TIFF found? ${TIFF_FOUND}")
     message(STATUS "TIFF libraries: ${TIFF_LIBRARIES}")

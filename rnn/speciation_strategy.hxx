@@ -6,19 +6,22 @@ class SpeciationStrategy {
     
     public:
         //utility functions
-        RNN_Genome* get_best_genome();
-        RNN_Genome* get_worst_genome();
+        virtual double get_best_fitness() = 0;
+        virtual double get_worst_fitness() = 0;
+
+        virtual RNN_Genome* get_best_genome() = 0;
+        virtual RNN_Genome* get_worst_genome() = 0;
 
 
-        void print_population();
-        void write_memory_log(string filename);
+        virtual void print_population() = 0;
+        virtual void write_memory_log(string filename) = 0;
 
 
         //basic functionality insert/generate
-        bool insert_genome(RNN_Genome* genome);
+        virtual bool insert_genome(RNN_Genome* genome) = 0;
 
-        RNN_Genome* generate_genome();
- }
+        virtual RNN_Genome* generate_genome() = 0;
+};
 
 
 #endif

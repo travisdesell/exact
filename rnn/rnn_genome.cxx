@@ -1599,6 +1599,8 @@ bool RNN_Genome::attempt_recurrent_edge_insert(RNN_Node_Interface *n1, RNN_Node_
     for (int32_t i = 0; i < (int32_t)recurrent_edges.size(); i++) {
         if (recurrent_edges[i]->input_innovation_number == n1->innovation_number &&
                 recurrent_edges[i]->output_innovation_number == n2->innovation_number) {
+            //TODO: we can add the recurrent edge if the  recurrent depths are different.
+
             if (!recurrent_edges[i]->enabled) {
                 //edge was disabled so we can enable it
                 cout << "\tedge already exists but was disabled, enabling it." << endl;
