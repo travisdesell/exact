@@ -18,10 +18,8 @@ using std::to_string;
 using std::vector;
 
 #include "rnn_genome.hxx"
+#include "speciation_strategy.hxx"
 
-#define ISLAND_INITIALIZING 0
-#define ISLAND_FILLED 1
-#define ISLAND_REPOPULATING 2
 #define GLOBAL_POPULATION 0
 #define ISLAND_POPULATION 1
 
@@ -34,7 +32,6 @@ class EXAMM {
         int32_t population_size;
         int32_t number_islands;
 
-        vector<int32_t> island_states;
         vector< vector<RNN_Genome*> > genomes;
 
         int32_t max_genomes;
@@ -42,8 +39,8 @@ class EXAMM {
         int32_t inserted_genomes;
         int32_t total_bp_epochs;
 
-        int32_t num_genomes_check_on_island;
-        string check_on_island_method;
+        string speciation_method;
+        SpeciationStrategy *speciation_strategy;
 
         int32_t edge_innovation_count;
         int32_t node_innovation_count;
@@ -114,7 +111,7 @@ class EXAMM {
         int32_t rec_sampling_distribution;
 
     public:
-        EXAMM(int32_t _population_size, int32_t _number_islands, int32_t _max_genomes, int32_t _num_genomes_check_on_island, string _check_on_island_method,
+        EXAMM(int32_t _population_size, int32_t _number_islands, int32_t _max_genomes, int32_t _num_genomes_check_on_island, string _speciation_method,
             const vector<string> &_input_parameter_names,
             const vector<string> &_output_parameter_names, 
             const map<string,double> &_normalize_mins,
@@ -138,7 +135,10 @@ class EXAMM {
         int get_random_node_type();
 
         void initialize_genome_parameters(RNN_Genome* genome);
+
         RNN_Genome* generate_genome();
+        bool insert_genome(RNN_Genome* genome);
+
         void mutate(int32_t max_mutations, RNN_Genome *p1);
 
         void attempt_node_insert(vector<RNN_Node_Interface*> &child_nodes, const RNN_Node_Interface *node, const vector<double> &new_weights);
@@ -146,6 +146,8 @@ class EXAMM {
         void attempt_recurrent_edge_insert(vector<RNN_Recurrent_Edge*> &child_recurrent_edges, vector<RNN_Node_Interface*> &child_nodes, RNN_Recurrent_Edge *recurrent_edge, RNN_Recurrent_Edge *second_edge, bool set_enabled);
         RNN_Genome* crossover(RNN_Genome *p1, RNN_Genome *p2);
 
+        double get_best_fitness();
+        double get_worst_fitness();
         RNN_Genome* get_best_genome();
         RNN_Genome* get_worst_genome();
 
