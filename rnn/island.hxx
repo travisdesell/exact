@@ -1,6 +1,10 @@
 #ifndef EXAMM_ISLAND_STRATEGY_HXX
 #define EXAMM_ISLAND_STRATEGY_HXX
 
+#include <random>
+using std::minstd_rand0;
+using std::uniform_real_distribution;
+
 #include <string>
 using std::string;
 
@@ -22,7 +26,6 @@ class Island {
         const static int32_t INITIALIZING = 0; /**< status flag for if the island is initializing. */
         const static int32_t FILLED = 1; /**< status flag for if the island is filled. */
         const static int32_t REPOPULATING = 2; /**< status flag for if the island is repopulating. */
-
 
         /**
          *  Initializes an island with a given max size.
@@ -60,12 +63,35 @@ class Island {
         RNN_Genome *get_worst_genome();
 
         /**
-         * Returns if the island has Island::max_size genomes.
+         * Returns the size of the island
+         *
+         * \return the number of genomes in this island.
+         */
+        int32_t size();
+
+        /**
+         * Returns true if the island has Island::max_size genomes.
          *
          * \return true if the number of genomes in the island is >= size (although 
          * it should never be > size).
          */
         bool is_full();
+
+        /**
+         * Returns true if the island is initializing, i.e., it's size is <= max_size
+         * and it hasn't been cleared out for repopulating.
+         *
+         * \return true if island is initializing.
+         */
+        bool is_initializing();
+
+        /**
+         * Returns true if the island is repopulating, i.e., it's size is <= max_size
+         * and it has been full before but cleared out for repopulation.
+         *
+         * \return true if island is repopulating.
+         */
+        bool is_repopulating();
 
         /**
          * Checks to see if a genome already exists in the island, using
@@ -77,6 +103,25 @@ class Island {
         int32_t contains(RNN_Genome* genome);
 
         /**
+         * Selects a genome from the island at random and returns a copy of it.
+         *
+         * \param rng_0_1 is the random number distribution that generates random numbers between 0 (inclusive) and 1 (non=inclusive).
+         * \param generator is the random number generator
+         * \param genome will be the copied genome, an addresss to a pointer needs to be passed.
+         */
+        void copy_random_genome(uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator, RNN_Genome **genome);
+
+        /**
+         * Selects two different genomes from the island at random and returns copies of them.
+         *
+         * \param rng_0_1 is the random number distribution that generates random numbers between 0 (inclusive) and 1 (non=inclusive).
+         * \param generator is the random number generator
+         * \param genome1 will be the first copied genome, an addresss to a pointer needs to be passed.
+         * \param genome2 will be the second copied genome, an addresss to a pointer needs to be passed.
+         */
+        void copy_two_random_genomes(uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator, RNN_Genome **genome1, RNN_Genome **genome2);
+
+        /**
          * Inserts a genome into the island.
          *
          * Genomes are inserted in best to worst order genomes[0] will have
@@ -86,6 +131,13 @@ class Island {
          * \return -1 if not inserted, otherwise the index it was inserted at
          */
         int32_t insert_genome(RNN_Genome* genome);
+
+        /**
+         * Prints out the state of this island.
+         *
+         * \param indent is how much to indent what is printed out
+         */
+        void print(string indent = "");
 };
 
 #endif

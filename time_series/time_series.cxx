@@ -220,18 +220,26 @@ TimeSeriesSet::TimeSeriesSet(string _filename, const vector<string> &_fields) {
         }
      }
 
+    cout << "fields.size(): " << fields.size() << ", file_fields.size(): " << file_fields.size() << endl;
     //specify which of the file fields (columns) are used
     vector<bool> file_fields_used(true, file_fields.size());
     for (int32_t i = 0; i < (int32_t)file_fields.size(); i++) {
+
+        cout << "\tchecking to see if '" << file_fields[i] << "' was in specified fields, file_fields_used[" << i << "]: " << file_fields_used[i];
+
         if (find(fields.begin(), fields.end(), file_fields[i]) == fields.end()) {
             //the ith file field wasn't found in the specified fields
+            cout << " -- field was not found!" << endl;
             file_fields_used[i] = false;
+        } else {
+            cout << " -- Field was found!" << endl;
+            file_fields_used[i] = true;
         }
     }
 
-    //cout << "number fields: " << fields.size() << endl;
+    cout << "number fields: " << fields.size() << endl;
     for (uint32_t i = 0; i < fields.size(); i++) {
-        //cout << "\t" << fields[i] << endl;
+        cout << "\t" << fields[i] << " used: " << file_fields_used[i] << endl;
 
         add_time_series(fields[i]);
     }
@@ -255,7 +263,7 @@ TimeSeriesSet::TimeSeriesSet(string _filename, const vector<string> &_fields) {
         for (uint32_t i = 0; i < parts.size(); i++) {
             if (!file_fields_used[i]) continue;
 
-            //cout << "parts[" << i << "]: " << parts[i] << endl;
+            //cout << "parts[" << i << "]: " << parts[i] << " being added to '" << file_fields[i] << "'" << endl;
             try {
                 time_series[ file_fields[i] ]->add_value( stod(parts[i]) );
             } catch (const invalid_argument& ia) {

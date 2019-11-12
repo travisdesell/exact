@@ -35,8 +35,6 @@ class EXAMM {
         vector< vector<RNN_Genome*> > genomes;
 
         int32_t max_genomes;
-        int32_t generated_genomes;
-        int32_t inserted_genomes;
         int32_t total_bp_epochs;
 
         string speciation_method;
@@ -70,9 +68,6 @@ class EXAMM {
         int32_t max_recurrent_depth;
 
         bool epigenetic_weights;
-        double mutation_rate;
-        double crossover_rate;
-        double island_crossover_rate;
 
         double more_fit_crossover_rate;
         double less_fit_crossover_rate;
@@ -125,7 +120,8 @@ class EXAMM {
 
         ~EXAMM();
 
-        void print_population();
+        void print();
+        void update_log();
         void write_memory_log(string filename);
 
         void set_possible_node_types(vector<string> possible_node_type_strings);
@@ -133,8 +129,6 @@ class EXAMM {
         Distribution *get_recurrent_depth_dist(int32_t island);
 
         int get_random_node_type();
-
-        void initialize_genome_parameters(RNN_Genome* genome);
 
         RNN_Genome* generate_genome();
         bool insert_genome(RNN_Genome* genome);

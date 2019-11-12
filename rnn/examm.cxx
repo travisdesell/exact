@@ -4,6 +4,10 @@ using std::sort;
 #include <chrono>
 #include <cstring>
 
+#include <functional>
+using std::bind;
+using std::function;
+
 #include <fstream>
 using std::ofstream;
 
@@ -76,8 +80,6 @@ EXAMM::EXAMM(int32_t _population_size, int32_t _number_islands, int32_t _max_gen
     normalize_mins = _normalize_mins;
     normalize_maxs = _normalize_maxs;
 
-    inserted_genomes = 0;
-    generated_genomes = 0;
     total_bp_epochs = 0;
 
     edge_innovation_count = 0;
@@ -99,7 +101,26 @@ EXAMM::EXAMM(int32_t _population_size, int32_t _number_islands, int32_t _max_gen
     max_recurrent_depth = _max_recurrent_depth;
 
     if (speciation_method.compare("island")) {
-        speciation_strategy = new IslandSpeciationStrategy(number_islands, max_genomes);
+        //generate a minimal feed foward network as the seed genome
+        RNN_Genome *seed_genome = create_ff(number_inputs, 0, 0, number_outputs, 0);
+
+        edge_innovation_count = seed_genome->edges.size() + seed_genome->recurrent_edges.size();
+        node_innovation_count = seed_genome->nodes.size();
+
+        seed_genome->set_generated_by("initial");
+
+        //insert a copy of it into the population so
+        //additional requests can mutate it
+        seed_genome->initialize_randomly();
+        //double _mu, _sigma;
+        //cout << "getting mu/sigma after random initialization!" << endl;
+        //seed_genome->get_mu_sigma(seed_genome->best_parameters, _mu, _sigma);
+
+        seed_genome->best_validation_mse = EXAMM_MAX_DOUBLE;
+        seed_genome->best_validation_mae = EXAMM_MAX_DOUBLE;
+        seed_genome->best_parameters.clear();
+
+        speciation_strategy = new IslandSpeciationStrategy(number_islands, population_size, 0.70, 0.20, 0.10, seed_genome);
     }
     
     if (_rec_sampling_population.compare("global") == 0) {
@@ -128,11 +149,6 @@ EXAMM::EXAMM(int32_t _population_size, int32_t _number_islands, int32_t _max_gen
     }
 
     epigenetic_weights = true;
-
-    mutation_rate = 0.70;
-    crossover_rate = 0.20 + mutation_rate;
-    island_crossover_rate = 0.10 + crossover_rate;
-    //all three should add up to 1.0
 
     more_fit_crossover_rate = 1.00;
     less_fit_crossover_rate = 0.50;
@@ -198,20 +214,11 @@ EXAMM::EXAMM(int32_t _population_size, int32_t _number_islands, int32_t _max_gen
     startClock = std::chrono::system_clock::now();
 }
 
-void EXAMM::print_population() {
-    cout << "POPULATIONS: " << endl;
-    for (int32_t i = 0; i < (int32_t)genomes.size(); i++) {
-        cout << "\tPOPULATION " << i << ":" << endl;
+void EXAMM::print() {
+    speciation_strategy->print();
+}
 
-        cout << "\t" << RNN_Genome::print_statistics_header() << endl;
-
-        for (int32_t j = 0; j < (int32_t)genomes[i].size(); j++) {
-            cout << "\t" << genomes[i][j]->print_statistics() << endl;
-        }
-    }
-
-    cout << endl << endl;
-
+void EXAMM::update_log() {
     if (log_file != NULL) {
 
         //make sure the log file is still good
@@ -227,13 +234,12 @@ void EXAMM::print_population() {
                 exit(1);
             }
         }
-
         RNN_Genome *best_genome = get_best_genome();
 
         std::chrono::time_point<std::chrono::system_clock> currentClock = std::chrono::system_clock::now();
         long milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(currentClock - startClock).count();
 
-        (*log_file) << inserted_genomes
+        (*log_file) << speciation_strategy->get_inserted_genomes()
             << "," << total_bp_epochs
             << "," << milliseconds
             << "," << best_genome->best_validation_mae
@@ -260,7 +266,7 @@ void EXAMM::print_population() {
 
         (*log_file) << endl;
 
-        memory_log << inserted_genomes
+        memory_log << speciation_strategy->get_inserted_genomes()
             << "," << total_bp_epochs
             << "," << milliseconds
             << "," << best_genome->best_validation_mae
@@ -289,8 +295,9 @@ void EXAMM::print_population() {
         }
 
         memory_log << endl;
+
     }
-}
+} 
 
 void EXAMM::write_memory_log(string filename) {
     ofstream log_file(filename);
@@ -343,10 +350,9 @@ RNN_Genome* EXAMM::get_worst_genome() {
 
 //this will insert a COPY, original needs to be deleted
 bool EXAMM::insert_genome(RNN_Genome* genome) {
-    inserted_genomes++;
     total_bp_epochs += genome->get_bp_iterations();
 
-    cout << "genomes evaluated: " << setw(10) << inserted_genomes << ", attempting to insert: " << parse_fitness(genome->get_fitness());
+    cout << "genomes evaluated: " << setw(10) << (speciation_strategy->get_inserted_genomes() + 1) << ", attempting to insert: " << parse_fitness(genome->get_fitness());
 
     if (!genome->sanity_check()) {
         cerr << "ERROR, genome failed sanity check on insert!" << endl;
@@ -364,24 +370,49 @@ bool EXAMM::insert_genome(RNN_Genome* genome) {
         genome->write_to_file(output_directory + "/rnn_genome_" + to_string(genome->get_generation_id()) + ".bin", true);
 
     }
-    speciation_strategy->print_population();
+    speciation_strategy->print();
+    update_log();
 
     return insert_position >= 0;
 }
 
-void EXAMM::initialize_genome_parameters(RNN_Genome* genome) {
+RNN_Genome* EXAMM::generate_genome() {
+    if (speciation_strategy->get_inserted_genomes() > max_genomes) return NULL;
+
+    function<void (int32_t, RNN_Genome*)> mutate_function = 
+        [=](int32_t max_mutations, RNN_Genome *genome) {
+            this->mutate(max_mutations, genome);
+        };
+
+    function<RNN_Genome* (RNN_Genome*, RNN_Genome*)> crossover_function =
+        [=](RNN_Genome *parent1, RNN_Genome *parent2) {
+            return this->crossover(parent1, parent2);
+        };
+
+    cout << "generating genome from speciation strategy" << endl;
+
+    RNN_Genome *genome = speciation_strategy->generate_genome(rng_0_1, generator, mutate_function, crossover_function);
+
+    cout << "generated genome from speciation strategy" << endl;
+
+    genome->set_parameter_names(input_parameter_names, output_parameter_names);
+    genome->set_normalize_bounds(normalize_mins, normalize_maxs);
     genome->set_bp_iterations(bp_iterations);
     genome->set_learning_rate(learning_rate);
 
     if (use_high_threshold) genome->enable_high_threshold(high_threshold);
     if (use_low_threshold) genome->enable_low_threshold(low_threshold);
     if (use_dropout) genome->enable_dropout(dropout_probability);
-}
 
-RNN_Genome* EXAMM::generate_genome() {
-    if (inserted_genomes > max_genomes) return NULL;
+    if (!epigenetic_weights) genome->initialize_randomly();
 
-    return speciation_strategy->generate_genome();
+    //this is just a sanity check, can most likely comment out (checking to see
+    //if all the paramemters are sane)
+    cout << "getting mu/sigma after random initialization of copy!" << endl;
+    double _mu, _sigma;
+    genome->get_mu_sigma(genome->best_parameters, _mu, _sigma);
+
+    return genome;
 }
 
 int EXAMM::get_random_node_type() {
@@ -415,7 +446,7 @@ void EXAMM::mutate(int32_t max_mutations, RNN_Genome *g) {
 
     double mu, sigma;
 
-    //g->write_graphviz("rnn_genome_premutate_" + to_string(generated_genomes) + ".gv");
+    //g->write_graphviz("rnn_genome_premutate_" + to_string(g->get_generation_id()) + ".gv");
 
     cout << "generating new genome by mutation" << endl;
     g->get_mu_sigma(g->best_parameters, mu, sigma);
@@ -463,7 +494,7 @@ void EXAMM::mutate(int32_t max_mutations, RNN_Genome *g) {
         rng -= add_edge_rate;
 
         if (rng < add_recurrent_edge_rate) {
-            Distribution *dist = get_recurrent_depth_dist(g->island);
+            Distribution *dist = get_recurrent_depth_dist(g->get_group_id());
             modified = g->add_recurrent_edge(mu, sigma, dist, edge_innovation_count);
             delete dist;
             cout << "\tadding recurrent edge, modified: " << modified << endl;
@@ -722,7 +753,7 @@ void EXAMM::attempt_recurrent_edge_insert(vector<RNN_Recurrent_Edge*> &child_rec
 
 RNN_Genome* EXAMM::crossover(RNN_Genome *p1, RNN_Genome *p2) {
     cerr << "generating new genome by crossover!" << endl;
-    cout << "p1->island: " << p1->get_island() << ", p2->island: " << p2->get_island() << endl;
+    cout << "p1->island: " << p1->get_group_id() << ", p2->island: " << p2->get_group_id() << endl;
 
     double _mu, _sigma;
     cout << "getting p1 mu/sigma!" << endl;
@@ -899,12 +930,11 @@ RNN_Genome* EXAMM::crossover(RNN_Genome *p1, RNN_Genome *p2) {
     child->set_normalize_bounds(normalize_mins, normalize_maxs);
 
 
-    if (p1->get_island() == p2->get_island()) {
+    if (p1->get_group_id() == p2->get_group_id()) {
         child->set_generated_by("crossover");
     } else {
         child->set_generated_by("island_crossover");
     }
-    initialize_genome_parameters(child);
 
     double mu, sigma;
 
