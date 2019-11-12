@@ -520,7 +520,8 @@ void EXAMM::mutate(int32_t max_mutations, RNN_Genome *g) {
         rng -= disable_edge_rate;
 
         if (rng < split_edge_rate) {
-            modified = g->split_edge(mu, sigma, new_node_type, max_recurrent_depth, edge_innovation_count, node_innovation_count);
+            Distribution *dist = get_recurrent_depth_dist(g->get_group_id());
+            modified = g->split_edge(mu, sigma, new_node_type, dist, edge_innovation_count, node_innovation_count);
             cout << "\tsplitting edge, modified: " << modified << endl;
             if (modified) g->set_generated_by("split_edge(" + node_type_str + ")");
             continue;
@@ -528,7 +529,8 @@ void EXAMM::mutate(int32_t max_mutations, RNN_Genome *g) {
         rng -= split_edge_rate;
 
         if (rng < add_node_rate) {
-            modified = g->add_node(mu, sigma, new_node_type, max_recurrent_depth, edge_innovation_count, node_innovation_count);
+            Distribution *dist = get_recurrent_depth_dist(g->get_group_id());
+            modified = g->add_node(mu, sigma, new_node_type, dist, edge_innovation_count, node_innovation_count);
             cout << "\tadding node, modified: " << modified << endl;
             if (modified) g->set_generated_by("add_node(" + node_type_str + ")");
             continue;
@@ -552,7 +554,8 @@ void EXAMM::mutate(int32_t max_mutations, RNN_Genome *g) {
         rng -= disable_node_rate;
 
         if (rng < split_node_rate) {
-            modified = g->split_node(mu, sigma, new_node_type, max_recurrent_depth, edge_innovation_count, node_innovation_count);
+            Distribution *dist = get_recurrent_depth_dist(g->get_group_id());
+            modified = g->split_node(mu, sigma, new_node_type, dist, edge_innovation_count, node_innovation_count);
             cout << "\tsplitting node, modified: " << modified << endl;
             if (modified) g->set_generated_by("split_node(" + node_type_str + ")");
             continue;
@@ -560,7 +563,8 @@ void EXAMM::mutate(int32_t max_mutations, RNN_Genome *g) {
         rng -= split_node_rate;
 
         if (rng < merge_node_rate) {
-            modified = g->merge_node(mu, sigma, new_node_type, max_recurrent_depth, edge_innovation_count, node_innovation_count);
+            Distribution *dist = get_recurrent_depth_dist(g->get_group_id());
+            modified = g->merge_node(mu, sigma, new_node_type, dist, edge_innovation_count, node_innovation_count);
             cout << "\tmerging node, modified: " << modified << endl;
             if (modified) g->set_generated_by("merge_node(" + node_type_str + ")");
             continue;
