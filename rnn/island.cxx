@@ -6,6 +6,10 @@ using std::cout;
 using std::cerr;
 using std::endl;
 
+#include <random>
+using std::minstd_rand0;
+using std::uniform_real_distribution;
+
 #include <string>
 using std::string;
 using std::to_string;
@@ -13,7 +17,7 @@ using std::to_string;
 #include "island.hxx"
 #include "rnn_genome.hxx"
 
-Island::Island(int32_t _id, int32_t _max_size) : id(_id), max_size(_max_size), status(Island::FILLED) {
+Island::Island(int32_t _id, int32_t _max_size) : id(_id), max_size(_max_size), status(Island::INITIALIZING) {
 }
 
 RNN_Genome* Island::get_best_genome() {
@@ -38,9 +42,22 @@ double Island::get_worst_fitness() {
     else return worst_genome->get_fitness();
 }
 
+int32_t Island::size() {
+    return genomes.size();
+}
+
 bool Island::is_full() {
     return genomes.size() >= max_size;
 }
+
+bool Island::is_initializing() {
+    return status == Island::INITIALIZING;
+}
+
+bool Island::is_repopulating() {
+    return status == Island::REPOPULATING;
+}
+
 
 int32_t Island::contains(RNN_Genome* genome) {
     for (int32_t j = 0; j < (int32_t)genomes.size(); j++) {
@@ -53,13 +70,35 @@ int32_t Island::contains(RNN_Genome* genome) {
 }
 
 
+void Island::copy_random_genome(uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator, RNN_Genome **genome) {
+    int32_t genome_position = size() * rng_0_1(generator);
+    *genome = genomes[genome_position]->copy();
+}
+
+void Island::copy_two_random_genomes(uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator, RNN_Genome **genome1, RNN_Genome **genome2) {
+    int32_t p1 = size() * rng_0_1(generator);
+    int32_t p2 = (size() - 1) * rng_0_1(generator);
+    if (p2 >= p1) p2++;
+
+    //swap the gnomes so that the first parent is the more fit parent
+    if (p1 > p2) {
+        int32_t tmp = p1;
+        p1 = p2;
+        p2 = tmp;
+    }
+
+    *genome1 = genomes[p1]->copy();
+    *genome1 = genomes[p2]->copy();
+}
+
+
 //returns -1 for not inserted, otherwise the index it was inserted at
 //inserts a copy of the genome, caller of the function will need to delete their
 //pointer
 int32_t Island::insert_genome(RNN_Genome *genome) {
-    double new_fitness = genome->get_fitness();
+    cout << "getting fitness of genome copy" << endl;
 
-    bool was_inserted = true;
+    double new_fitness = genome->get_fitness();
 
     cout << "inserting genome with fitness : " << parse_fitness(genome->get_fitness()) << " to island " << id << endl;
 
@@ -89,7 +128,7 @@ int32_t Island::insert_genome(RNN_Genome *genome) {
 
     //inorder insert the new individual
     RNN_Genome *copy = genome->copy();
-    cout << "created copy to insert to island: " << copy->get_island() << endl;
+    cout << "created copy to insert to island: " << copy->get_group_id() << endl;
 
     auto index_iterator = genomes.insert( upper_bound(genomes.begin(), genomes.end(), copy, sort_genomes_by_fitness()), copy);
     //calculate the index the genome was inseretd at from the iterator
@@ -136,3 +175,10 @@ int32_t Island::insert_genome(RNN_Genome *genome) {
     }
 }
 
+void Island::print(string indent) {
+    cout << indent << "\t" << RNN_Genome::print_statistics_header() << endl;
+
+    for (int32_t i = 0; i < genomes.size(); i++) {
+        cout << indent << "\t" << genomes[i]->print_statistics() << endl;
+    }
+}

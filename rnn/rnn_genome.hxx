@@ -36,7 +36,7 @@ class Distribution;
 class RNN_Genome {
     private:
         int32_t generation_id;
-        int32_t island;
+        int32_t group_id;
 
         int32_t bp_iterations;
         double learning_rate;
@@ -121,8 +121,8 @@ class RNN_Genome {
         vector<string> get_input_parameter_names() const;
         vector<string> get_output_parameter_names() const;
 
-        int32_t get_island() const;
-        void set_island(int32_t _island);
+        int32_t get_group_id() const;
+        void set_group_id(int32_t _group_id);
 
 
         void set_bp_iterations(int32_t _bp_iterations);
@@ -221,6 +221,7 @@ class RNN_Genome {
 
 
         friend class EXAMM;
+        friend class IslandSpeciationStrategy;
         friend class RecDepthFrequencyTable;
 };
 
