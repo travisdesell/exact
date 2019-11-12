@@ -180,26 +180,26 @@ class RNN_Genome {
         RNN_Node_Interface* create_node(double mu, double sigma, int node_type, int32_t &node_innovation_count, double depth);
 
         bool attempt_edge_insert(RNN_Node_Interface *n1, RNN_Node_Interface *n2, double mu, double sigma, int32_t &edge_innovation_count);
-        bool attempt_recurrent_edge_insert(RNN_Node_Interface *n1, RNN_Node_Interface *n2, double mu, double sigma, int32_t max_recurrent_depth, int32_t &edge_innovation_count);
+        bool attempt_recurrent_edge_insert(RNN_Node_Interface *n1, RNN_Node_Interface *n2, double mu, double sigma, Distribution *dist, int32_t &edge_innovation_count);
 
         //after adding an Elman or Jordan node, generate the circular RNN edge for Elman and the
         //edges from output to this node for Jordan.
-        void generate_recurrent_edges(RNN_Node_Interface *node, double mu, double sigma, int32_t max_recurrent_depth, int32_t &edge_innovation_count);
+        void generate_recurrent_edges(RNN_Node_Interface *node, double mu, double sigma, Distribution *dist, int32_t &edge_innovation_count);
 
         bool add_edge(double mu, double sigma, int32_t &edge_innovation_count);
         bool add_recurrent_edge(double mu, double sigma, Distribution *d, int32_t &edge_innovation_count);
         bool disable_edge();
         bool enable_edge();
-        bool split_edge(double mu, double sigma, int node_type, int32_t max_recurrent_depth, int32_t &edge_innovation_count, int32_t &node_innovation_count);
+        bool split_edge(double mu, double sigma, int node_type, Distribution *dist, int32_t &edge_innovation_count, int32_t &node_innovation_count);
 
 
-        bool add_node(double mu, double sigma, int node_type, int32_t max_recurrent_depth, int32_t &edge_innovation_count, int32_t &node_innovation_count);
+        bool add_node(double mu, double sigma, int node_type, Distribution *dist, int32_t &edge_innovation_count, int32_t &node_innovation_count);
 
         bool enable_node();
         bool disable_node();
-        bool split_node(double mu, double sigma, int node_type, int32_t max_recurrent_depth, int32_t &edge_innovation_count, int32_t &node_innovation_count);
+        bool split_node(double mu, double sigma, int node_type, Distribution *dist, int32_t &edge_innovation_count, int32_t &node_innovation_count);
 
-        bool merge_node(double mu, double sigma, int node_type, int32_t max_recurrent_depth, int32_t &edge_innovation_count, int32_t &node_innovation_count);
+        bool merge_node(double mu, double sigma, int node_type, Distribution *dist, int32_t &edge_innovation_count, int32_t &node_innovation_count);
 
 
 
