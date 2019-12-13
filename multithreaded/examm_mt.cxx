@@ -24,6 +24,7 @@ using std::thread;
 using std::vector;
 
 #include "common/arguments.hxx"
+#include "common/log.hxx"
 
 #include "rnn/examm.hxx"
 
@@ -55,19 +56,27 @@ void examm_thread(int id) {
 
         if (genome == NULL) break;  //generate_individual returns NULL when the search is done
 
+        string log_id = "thread_" + to_string(id) + "_genome_" + to_string(genome->get_generation_id());
+        Log::set_id(log_id);
         //genome->backpropagate(training_inputs, training_outputs, validation_inputs, validation_outputs);
         genome->backpropagate_stochastic(training_inputs, training_outputs, validation_inputs, validation_outputs);
+        Log::release_id();
 
         examm_mutex.lock();
+        Log::set_id("main");
         examm->insert_genome(genome);
         examm_mutex.unlock();
 
         delete genome;
     }
+
 }
 
 int main(int argc, char** argv) {
     arguments = vector<string>(argv, argv + argc);
+
+    Log::initialize();
+    Log::set_id("main");
 
     int number_threads;
     get_argument(arguments, "--number_threads", true, number_threads);
@@ -80,12 +89,12 @@ int main(int argc, char** argv) {
     time_series_sets->export_training_series(time_offset, training_inputs, training_outputs);
     time_series_sets->export_test_series(time_offset, validation_inputs, validation_outputs);
 
-    cout << "exported time series." << endl;
+    Log::info("exported time series.");
 
     int number_inputs = time_series_sets->get_number_inputs();
     int number_outputs = time_series_sets->get_number_outputs();
 
-    cout << "number_inputs: " << number_inputs << ", number_outputs: " << number_outputs << endl;
+    Log::info("number_inputs: %d, number_outputs: %d", number_inputs, number_outputs);
 
     int32_t population_size;
     get_argument(arguments, "--population_size", true, population_size);
@@ -163,7 +172,8 @@ int main(int argc, char** argv) {
 
     finished = true;
 
-    cout << "completed!" << endl;
+    Log::info("completed!");
+    Log::release_id();
 
     return 0;
 }
