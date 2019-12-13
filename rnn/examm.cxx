@@ -36,6 +36,7 @@ using std::to_string;
 #include "island_speciation_strategy.hxx"
 
 #include "common/files.hxx"
+#include "common/log.hxx"
 
 
 EXAMM::~EXAMM() {
@@ -112,9 +113,6 @@ EXAMM::EXAMM(int32_t _population_size, int32_t _number_islands, int32_t _max_gen
         //insert a copy of it into the population so
         //additional requests can mutate it
         seed_genome->initialize_randomly();
-        //double _mu, _sigma;
-        //cout << "getting mu/sigma after random initialization!" << endl;
-        //seed_genome->get_mu_sigma(seed_genome->best_parameters, _mu, _sigma);
 
         seed_genome->best_validation_mse = EXAMM_MAX_DOUBLE;
         seed_genome->best_validation_mae = EXAMM_MAX_DOUBLE;
@@ -128,9 +126,7 @@ EXAMM::EXAMM(int32_t _population_size, int32_t _number_islands, int32_t _max_gen
     } else if (_rec_sampling_population.compare("island") == 0) {
         rec_sampling_population = ISLAND_POPULATION;
     } else {
-        cout << "WARNING: value passed to --rec_sampling_population is not valid ('" 
-             << _rec_sampling_population
-             << "'), defaulting to global.\n";
+        Log::warning("value passed to --rec_sampling_population is not valid ('%s'), defaulting to global.", _rec_sampling_population.c_str());
         rec_sampling_population = GLOBAL_POPULATION;
     }
 
@@ -140,11 +136,8 @@ EXAMM::EXAMM(int32_t _population_size, int32_t _number_islands, int32_t _max_gen
         rec_sampling_population = HISTOGRAM_DISTRIBUTION;
     } else if (_rec_sampling_distribution.compare("uniform") == 0) {
         rec_sampling_population = UNIFORM_DISTRIBUTION;
-    }
-    else {
-        cout << "WARNING: value passed to --rec_sampling_distribution is not valid ('" 
-             << _rec_sampling_distribution
-             << "'), defaulting to uniform.\n";
+    } else {
+        Log::warning("value passed to --rec_sampling_distribution is not valid ('%s'), defaulting to uniform.", _rec_sampling_distribution.c_str());
         rec_sampling_distribution = UNIFORM_DISTRIBUTION;
     }
 
@@ -230,7 +223,7 @@ void EXAMM::update_log() {
             log_file = new ofstream(output_file, std::ios_base::app);
 
             if (!log_file->is_open()) {
-                cerr << "ERROR, could not open EXAMM output log: '" << output_file << "'" << endl;
+                Log::error("could not open EXAMM output log: '%s'", output_file.c_str());
                 exit(1);
             }
         }
@@ -321,7 +314,7 @@ void EXAMM::set_possible_node_types(vector<string> possible_node_type_strings) {
         }
 
         if (!found) {
-            cerr << "ERROR! unknown node type: '" << node_type_s << "'" << endl;
+            Log::error("unknown node type: '%s'", node_type_s.c_str());
             exit(1);
         }
     }
@@ -352,10 +345,10 @@ RNN_Genome* EXAMM::get_worst_genome() {
 bool EXAMM::insert_genome(RNN_Genome* genome) {
     total_bp_epochs += genome->get_bp_iterations();
 
-    cout << "genomes evaluated: " << setw(10) << (speciation_strategy->get_inserted_genomes() + 1) << ", attempting to insert: " << parse_fitness(genome->get_fitness());
+    Log::info("genomes evaluated: %10d , attempting to insert: %s", (speciation_strategy->get_inserted_genomes() + 1), parse_fitness(genome->get_fitness()).c_str());
 
     if (!genome->sanity_check()) {
-        cerr << "ERROR, genome failed sanity check on insert!" << endl;
+        Log::error("genome failed sanity check on insert!");
         exit(1);
     }
 
@@ -389,11 +382,7 @@ RNN_Genome* EXAMM::generate_genome() {
             return this->crossover(parent1, parent2);
         };
 
-    cout << "generating genome from speciation strategy" << endl;
-
     RNN_Genome *genome = speciation_strategy->generate_genome(rng_0_1, generator, mutate_function, crossover_function);
-
-    cout << "generated genome from speciation strategy" << endl;
 
     genome->set_parameter_names(input_parameter_names, output_parameter_names);
     genome->set_normalize_bounds(normalize_mins, normalize_maxs);
@@ -408,7 +397,7 @@ RNN_Genome* EXAMM::generate_genome() {
 
     //this is just a sanity check, can most likely comment out (checking to see
     //if all the paramemters are sane)
-    cout << "getting mu/sigma after random initialization of copy!" << endl;
+    Log::debug("getting mu/sigma after random initialization of copy!");
     double _mu, _sigma;
     genome->get_mu_sigma(genome->best_parameters, _mu, _sigma);
 
@@ -448,7 +437,7 @@ void EXAMM::mutate(int32_t max_mutations, RNN_Genome *g) {
 
     //g->write_graphviz("rnn_genome_premutate_" + to_string(g->get_generation_id()) + ".gv");
 
-    cout << "generating new genome by mutation" << endl;
+    Log::debug("generating new genome by mutation.");
     g->get_mu_sigma(g->best_parameters, mu, sigma);
     g->clear_generated_by();
 
@@ -475,10 +464,10 @@ void EXAMM::mutate(int32_t max_mutations, RNN_Genome *g) {
         double rng = rng_0_1(generator) * total;
         int new_node_type = get_random_node_type();
         string node_type_str = NODE_TYPES[new_node_type];
-        cout << "rng: " << rng << ", total: " << total << ", new node type: " << new_node_type << " (" << node_type_str << ")" << endl;
+        Log::debug( "rng: %lf, total: %lf, new node type: %d (%s)", rng, total, new_node_type, node_type_str.c_str());
 
         if (rng < clone_rate) {
-            cout << "\tcloned" << endl;
+            Log::debug("\tcloned");
             g->set_generated_by("clone");
             modified = true;
             continue;
@@ -487,7 +476,7 @@ void EXAMM::mutate(int32_t max_mutations, RNN_Genome *g) {
 
         if (rng < add_edge_rate) {
             modified = g->add_edge(mu, sigma, edge_innovation_count);
-            cout << "\tadding edge, modified: " << modified << endl;
+            Log::debug("\tadding edge, modified: %d", modified);
             if (modified) g->set_generated_by("add_edge");
             continue;
         }
@@ -497,7 +486,7 @@ void EXAMM::mutate(int32_t max_mutations, RNN_Genome *g) {
             Distribution *dist = get_recurrent_depth_dist(g->get_group_id());
             modified = g->add_recurrent_edge(mu, sigma, dist, edge_innovation_count);
             delete dist;
-            cout << "\tadding recurrent edge, modified: " << modified << endl;
+            Log::debug("\tadding recurrent edge, modified: %d", modified);
             if (modified) g->set_generated_by("add_recurrent_edge");
             continue;
         }
@@ -505,7 +494,7 @@ void EXAMM::mutate(int32_t max_mutations, RNN_Genome *g) {
 
         if (rng < enable_edge_rate) {
             modified = g->enable_edge();
-            cout << "\tenabling edge, modified: " << modified << endl;
+            Log::debug("\tenabling edge, modified: %d", modified);
             if (modified) g->set_generated_by("enable_edge");
             continue;
         }
@@ -513,7 +502,7 @@ void EXAMM::mutate(int32_t max_mutations, RNN_Genome *g) {
 
         if (rng < disable_edge_rate) {
             modified = g->disable_edge();
-            cout << "\tdisabling edge, modified: " << modified << endl;
+            Log::debug("\tdisabling edge, modified: %d", modified);
             if (modified) g->set_generated_by("disable_edge");
             continue;
         }
@@ -522,7 +511,7 @@ void EXAMM::mutate(int32_t max_mutations, RNN_Genome *g) {
         if (rng < split_edge_rate) {
             Distribution *dist = get_recurrent_depth_dist(g->get_group_id());
             modified = g->split_edge(mu, sigma, new_node_type, dist, edge_innovation_count, node_innovation_count);
-            cout << "\tsplitting edge, modified: " << modified << endl;
+            Log::debug("\tsplitting edge, modified: %d", modified);
             if (modified) g->set_generated_by("split_edge(" + node_type_str + ")");
             continue;
         }
@@ -531,7 +520,7 @@ void EXAMM::mutate(int32_t max_mutations, RNN_Genome *g) {
         if (rng < add_node_rate) {
             Distribution *dist = get_recurrent_depth_dist(g->get_group_id());
             modified = g->add_node(mu, sigma, new_node_type, dist, edge_innovation_count, node_innovation_count);
-            cout << "\tadding node, modified: " << modified << endl;
+            Log::debug("\tadding node, modified: %d", modified);
             if (modified) g->set_generated_by("add_node(" + node_type_str + ")");
             continue;
         }
@@ -539,7 +528,7 @@ void EXAMM::mutate(int32_t max_mutations, RNN_Genome *g) {
 
         if (rng < enable_node_rate) {
             modified = g->enable_node();
-            cout << "\tenabling node, modified: " << modified << endl;
+            Log::debug("\tenabling node, modified: %d", modified);
             if (modified) g->set_generated_by("enable_node");
             continue;
         }
@@ -547,7 +536,7 @@ void EXAMM::mutate(int32_t max_mutations, RNN_Genome *g) {
 
         if (rng < disable_node_rate) {
             modified = g->disable_node();
-            cout << "\tdisabling node, modified: " << modified << endl;
+            Log::debug("\tdisabling node, modified: %d", modified);
             if (modified) g->set_generated_by("disable_node");
             continue;
         }
@@ -556,7 +545,7 @@ void EXAMM::mutate(int32_t max_mutations, RNN_Genome *g) {
         if (rng < split_node_rate) {
             Distribution *dist = get_recurrent_depth_dist(g->get_group_id());
             modified = g->split_node(mu, sigma, new_node_type, dist, edge_innovation_count, node_innovation_count);
-            cout << "\tsplitting node, modified: " << modified << endl;
+            Log::debug("\tsplitting node, modified: %d", modified);
             if (modified) g->set_generated_by("split_node(" + node_type_str + ")");
             continue;
         }
@@ -565,15 +554,20 @@ void EXAMM::mutate(int32_t max_mutations, RNN_Genome *g) {
         if (rng < merge_node_rate) {
             Distribution *dist = get_recurrent_depth_dist(g->get_group_id());
             modified = g->merge_node(mu, sigma, new_node_type, dist, edge_innovation_count, node_innovation_count);
-            cout << "\tmerging node, modified: " << modified << endl;
+            Log::debug("\tmerging node, modified: %d", modified);
             if (modified) g->set_generated_by("merge_node(" + node_type_str + ")");
             continue;
         }
         rng -= merge_node_rate;
     }
 
+    //get the new set of parameters (as new paramters may have been
+    //added duriung mutation) and set them to the initial parameters
+    //for epigenetic_initialization
+
     vector<double> new_parameters;
     g->get_weights(new_parameters);
+    g->initial_parameters = new_parameters;
     //cout << "getting mu/sigma before assign reachability" << endl;
     //g->get_mu_sigma(new_parameters, mu, sigma);
 
@@ -582,12 +576,6 @@ void EXAMM::mutate(int32_t max_mutations, RNN_Genome *g) {
     //reset the genomes statistics (as these carry over on copy)
     g->best_validation_mse = EXAMM_MAX_DOUBLE;
     g->best_validation_mae = EXAMM_MAX_DOUBLE;
-
-    //get the new set of parameters (as new paramters may have been
-    //added duriung mutatino) and set them to the initial parameters
-    //for epigenetic_initialization
-    g->get_weights(new_parameters);
-    g->initial_parameters = new_parameters;
 
     //cout << "checking parameters after mutation" << endl;
     //g->get_mu_sigma(g->initial_parameters, mu, sigma);
@@ -610,24 +598,24 @@ void EXAMM::attempt_node_insert(vector<RNN_Node_Interface*> &child_nodes, const 
 void EXAMM::attempt_edge_insert(vector<RNN_Edge*> &child_edges, vector<RNN_Node_Interface*> &child_nodes, RNN_Edge *edge, RNN_Edge *second_edge, bool set_enabled) {
     for (int32_t i = 0; i < (int32_t)child_edges.size(); i++) {
         if (child_edges[i]->get_innovation_number() == edge->get_innovation_number()) {
-            cerr << "ERROR in crossover! trying to push an edge with innovation_number: " << edge->get_innovation_number() << " and it already exists in the vector!" << endl;
+            Log::fatal("ERROR in crossover! trying to push an edge with innovation_number: %d and it already exists in the vector!", edge->get_innovation_number());
             /*
             cerr << "p1_position: " << p1_position << ", p1_size: " << p1_child_edges.size() << endl;
             cerr << "p2_position: " << p2_position << ", p2_size: " << p2_child_edges.size() << endl;
             cerr << "vector innovation numbers: " << endl;
             */
             for (int32_t i = 0; i < (int32_t)child_edges.size(); i++) {
-                cerr << "\t" << child_edges[i]->get_innovation_number() << endl;
+                Log::fatal("\t%d", child_edges[i]->get_innovation_number());
             }
 
-            cerr << "This should never happen!" << endl;
+            Log::fatal("This should never happen!");
             exit(1);
 
             return;
         } else if (child_edges[i]->get_input_innovation_number() == edge->get_input_innovation_number() &&
                 child_edges[i]->get_output_innovation_number() == edge->get_output_innovation_number()) {
 
-            cerr << "Not inserting edge in crossover operation as there was already an edge with the same input and output innovation numbers!" << endl;
+            Log::debug("Not inserting edge in crossover operation as there was already an edge with the same input and output innovation numbers!");
             return;
         }
     }

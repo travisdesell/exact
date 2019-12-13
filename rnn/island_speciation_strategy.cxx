@@ -29,6 +29,10 @@ IslandSpeciationStrategy::IslandSpeciationStrategy(int32_t _number_of_islands, i
     for (uint32_t i = 0; i < number_of_islands; i++) {
         islands.push_back(new Island(i, max_island_size));
     }
+
+    //set the generation id for the initial minimal genome
+    minimal_genome->set_generation_id(generated_genomes);
+    generated_genomes++;
 }
 
 int32_t IslandSpeciationStrategy::get_generated_genomes() const {
