@@ -135,7 +135,7 @@ int32_t Island::insert_genome(RNN_Genome *genome) {
     if (insert_index == 0) {
         //this was a new best genome for this island
 
-        Log::info("new best fitness!\n");
+        Log::info("new best fitness for island: %d!\n", id);
 
         if (genome->get_fitness() != EXAMM_MAX_DOUBLE) {
             //need to set the weights for non-initial genomes so we

@@ -77,6 +77,16 @@ class Log {
         static map<thread::id, string> log_ids;
 
         /**
+         *  The MPI process rank for this Log instance. Set to -1 if not specified or not using MPI.
+         */
+        static int32_t process_rank;
+
+        /**
+         * Defaults at -1, when set to a process rank (>= 0) the Log will only print messages if its rank is the same as the restricted rank. This is useful, for allowing initialization messages to only be printed out by a single process.
+         */
+        static int32_t restricted_rank;
+
+        /**
          * A map of human readable ids to output files which the log messages
          * will be written to.
          */
@@ -132,6 +142,23 @@ class Log {
          */
         static void initialize(const vector<string> &arguments);
 
+        /**
+         * Sets the MPI process rank for this Log.
+         *
+         * \param _process_rank is the MPI rank of this process
+         */
+        static void set_rank(int32_t _process_rank);
+
+        /**
+         * Specifies which MPI process to allow messages from. A value < 0 will allow messages from any rank.
+         *\param _restricted_rank is the MPI rank to only print messages from
+         */
+        static void restrict_to_rank(int32_t _restricted_rank);
+
+        /**
+         * Clears the MPI process rank restriction from messages allowing any process to write to the log (sets Log::restricted_rank back to -1).
+         */
+        static void clear_rank_restriction();
 
         /**
          * Sets a human readable thread id for this thread.
@@ -143,22 +170,21 @@ class Log {
          * This will report an error and exit if another thread has already
          * reserved this human readable id.
          *
-         * \param human_readable_id a human readable thread id, this needs to be >= 0.
+         * \param human_readable_id a human readable thread id
          */
         static void set_id(string human_readable_id);
 
         /**
          * Releases a the human readable thread id previously set
-         * by this thread.
+         * by by the provided human readable id;
          *
-         * This will use std::this_thread::get_id() to get c++'s automatically
-         * generated thread id to look up the human readable id to remmove from
-         * the map.
+         * This will report an error and exit if this human readable id
+         * has not already been set, or if it has been relased by another
+         * thread.
          *
-         * This will report an error and exit if the thread has not already
-         * set a thread id.
+         * \param human_readable_id is a human readable thread id which has previously been set with Log::set_id(string)
          */
-        static void release_id();
+        static void release_id(string human_readable_id);
 
 
         /**
