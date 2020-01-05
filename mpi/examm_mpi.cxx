@@ -110,7 +110,6 @@ void receive_terminate_message(int source) {
 
 void master(int max_rank) {
     //the "main" id will have already been set by the main function so we do not need to re-set it here
-
     Log::debug("MAX INT: %d\n", numeric_limits<int>::max());
 
     int terminates_sent = 0;
@@ -170,8 +169,6 @@ void master(int max_rank) {
 }
 
 void worker(int rank) {
-    //the "main" id will have been set in the main function, the worker needs to release it for this process
-    Log::release_id();
     Log::set_id("worker_" + to_string(rank));
 
     while (true) {
@@ -195,12 +192,12 @@ void worker(int rank) {
             RNN_Genome* genome = receive_genome_from(0);
 
             //have each worker write the backproagation to a separate log file
-            Log::release_id();
-            Log::set_id("genome_" + to_string(genome->get_generation_id()) + "_worker_" + to_string(rank));
+            string log_id = "genome_" + to_string(genome->get_generation_id()) + "_worker_" + to_string(rank);
+            Log::set_id(log_id);
             genome->backpropagate_stochastic(training_inputs, training_outputs, validation_inputs, validation_outputs);
+            Log::release_id(log_id);
 
             //go back to the worker's log for MPI communication
-            Log::release_id();
             Log::set_id("worker_" + to_string(rank));
 
             send_genome_to(0, genome);
@@ -211,6 +208,9 @@ void worker(int rank) {
             MPI_Abort(MPI_COMM_WORLD, 1);
         }
     }
+
+    //release the log file for the worker communication
+    Log::release_id("worker_" + to_string(rank));
 }
 
 int main(int argc, char** argv) {
@@ -224,7 +224,7 @@ int main(int argc, char** argv) {
 
     Log::initialize(arguments);
     Log::set_rank(rank);
-    Log::set_id("main");
+    Log::set_id("main" + to_string(rank));
     Log::restrict_to_rank(0);
 
     TimeSeriesSets *time_series_sets = NULL;
@@ -326,6 +326,7 @@ int main(int argc, char** argv) {
     finished = true;
 
     Log::debug("rank %d completed!\n");
+    Log::release_id("main" + to_string(rank));
 
     MPI_Finalize();
 

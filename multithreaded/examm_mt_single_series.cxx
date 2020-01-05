@@ -53,7 +53,6 @@ void examm_thread(int id) {
         examm_mutex.lock();
         Log::set_id("main");
         RNN_Genome *genome = examm->generate_genome();
-        Log::release_id();
         examm_mutex.unlock();
 
         if (genome == NULL) break;  //generate_individual returns NULL when the search is done
@@ -61,12 +60,11 @@ void examm_thread(int id) {
         string log_id = "genome_" + to_string(genome->get_generation_id()) + "_thread_" + to_string(id);
         Log::set_id(log_id);
         genome->backpropagate_stochastic(training_inputs, training_outputs, validation_inputs, validation_outputs);
-        Log::release_id();
+        Log::release_id(log_id);
 
         examm_mutex.lock();
         Log::set_id("main");
         examm->insert_genome(genome);
-        Log::release_id();
         examm_mutex.unlock();
 
         delete genome;
@@ -219,7 +217,7 @@ int main(int argc, char** argv) {
         overall_results << endl;
     }
 
-    Log::release_id();
+    Log::release_id("main");
 
     return 0;
 }

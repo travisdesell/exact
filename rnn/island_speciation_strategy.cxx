@@ -107,6 +107,7 @@ bool IslandSpeciationStrategy::islands_full() const {
 
 
 //this will insert a COPY, original needs to be deleted
+//returns 0 if a new global best, < 0 if not inserted, > 0 otherwise
 int32_t IslandSpeciationStrategy::insert_genome(RNN_Genome* genome) {
     Log::debug("inserting genome!\n");
     inserted_genomes++;
@@ -114,9 +115,17 @@ int32_t IslandSpeciationStrategy::insert_genome(RNN_Genome* genome) {
 
     Log::info("inserting genome to island: %d\n", island);
 
-    bool was_inserted = islands[island]->insert_genome(genome);
+    int32_t insert_position = islands[island]->insert_genome(genome);
 
-    return was_inserted;
+    if (insert_position == 0) {
+        //check and see if the inserted genome has the same fitness as the best fitness
+        //of all islands
+        double best_fitness = get_best_fitness();
+        if (genome->get_fitness() == best_fitness) return 0;
+        else return 1; //was the best for the island but not the global best
+    } else {
+        return insert_position; //will be -1 if not inserted, or > 0 if not the global best
+    }
 }
 
 RNN_Genome* IslandSpeciationStrategy::generate_genome(uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator, function<void (int32_t, RNN_Genome*)> &mutate, function<RNN_Genome* (RNN_Genome*, RNN_Genome *)> &crossover) {
