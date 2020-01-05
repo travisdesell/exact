@@ -92,7 +92,7 @@ int mkpath(const char *path, mode_t mode) {
     status = 0;
     pp = copypath;
     while (status == 0 && (sp = strchr(pp, '/')) != 0) {
-        cerr << "trying to create directory: " << copypath << endl;
+        //cerr << "trying to create directory: " << copypath << endl;
         if (sp != pp) {
             /* Neither root nor double slash in path */
             *sp = '\0';

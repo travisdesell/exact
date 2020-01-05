@@ -8,8 +8,6 @@ using std::setw;
 using std::fixed;
 
 #include <iostream>
-using std::cerr;
-using std::cout;
 using std::endl;
 
 #include <mutex>
@@ -28,6 +26,7 @@ using std::vector;
 #include <sys/stat.h>
 
 #include "common/arguments.hxx"
+#include "common/log.hxx"
 
 #include "rnn/examm.hxx"
 
@@ -52,15 +51,22 @@ void examm_thread(int id) {
 
     while (true) {
         examm_mutex.lock();
+        Log::set_id("main");
         RNN_Genome *genome = examm->generate_genome();
+        Log::release_id();
         examm_mutex.unlock();
 
         if (genome == NULL) break;  //generate_individual returns NULL when the search is done
 
+        string log_id = "genome_" + to_string(genome->get_generation_id()) + "_thread_" + to_string(id);
+        Log::set_id(log_id);
         genome->backpropagate_stochastic(training_inputs, training_outputs, validation_inputs, validation_outputs);
+        Log::release_id();
 
         examm_mutex.lock();
+        Log::set_id("main");
         examm->insert_genome(genome);
+        Log::release_id();
         examm_mutex.unlock();
 
         delete genome;
@@ -69,6 +75,9 @@ void examm_thread(int id) {
 
 int main(int argc, char** argv) {
     arguments = vector<string>(argv, argv + argc);
+
+    Log::initialize(arguments);
+    Log::set_id("main");
 
     int number_threads;
     get_argument(arguments, "--number_threads", true, number_threads);
@@ -183,15 +192,15 @@ int main(int argc, char** argv) {
 
             finished = true;
 
-            cout << "completed!" << endl;
+            Log::info("completed!\n");
 
             RNN_Genome *best_genome = examm->get_best_genome();
 
             vector<double> best_parameters = best_genome->get_best_parameters();
-            cout << "training MSE: " << best_genome->get_mse(best_parameters, training_inputs, training_outputs) << endl;
-            cout << "training MSE: " << best_genome->get_mae(best_parameters, training_inputs, training_outputs) << endl;
-            cout << "validation MSE: " << best_genome->get_mse(best_parameters, validation_inputs, validation_outputs) << endl;
-            cout << "validation MSE: " << best_genome->get_mae(best_parameters, validation_inputs, validation_outputs) << endl;
+            Log::info("training MSE: %lf\n", best_genome->get_mse(best_parameters, training_inputs, training_outputs));
+            Log::info("training MSE: %lf\n", best_genome->get_mae(best_parameters, training_inputs, training_outputs));
+            Log::info("validation MSE: %lf\n", best_genome->get_mse(best_parameters, validation_inputs, validation_outputs));
+            Log::info("validation MSE: %lf\n", best_genome->get_mae(best_parameters, validation_inputs, validation_outputs));
 
             overall_results << setw(15) << fixed << best_genome->get_mse(best_parameters, training_inputs, training_outputs) << ", "
                 << setw(15) << fixed << best_genome->get_mae(best_parameters, training_inputs, training_outputs) << ", "
@@ -201,14 +210,16 @@ int main(int argc, char** argv) {
             best_genome->write_to_file(output_directory + "/" + output_filename + "_slice_" + to_string(i) + "_repeat_" + to_string(k) + ".bin", false);
             best_genome->write_graphviz(output_directory + "/" + output_filename + "_slice_" + to_string(i) + "_repeat_" + to_string(k) + ".gv");
 
-            cout << "deleting genome" << endl;
+            Log::debug("deleting genome\n");
             delete best_genome;
-            cout << "deleting exact" << endl;
+            Log::debug("deleting exact\n");
             delete examm;
-            cout << "deleted exact" << endl;
+            Log::debug("deleted exact\n");
         }
         overall_results << endl;
     }
+
+    Log::release_id();
 
     return 0;
 }
