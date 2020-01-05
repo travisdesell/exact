@@ -51,12 +51,14 @@ void examm_thread(int id) {
 
     while (true) {
         examm_mutex.lock();
+        Log::set_id("main");
         RNN_Genome *genome = examm->generate_genome();
+        Log::release_id();
         examm_mutex.unlock();
 
         if (genome == NULL) break;  //generate_individual returns NULL when the search is done
 
-        string log_id = "thread_" + to_string(id) + "_genome_" + to_string(genome->get_generation_id());
+        string log_id = "genome_" + to_string(genome->get_generation_id()) + "_thread_" + to_string(id);
         Log::set_id(log_id);
         //genome->backpropagate(training_inputs, training_outputs, validation_inputs, validation_outputs);
         genome->backpropagate_stochastic(training_inputs, training_outputs, validation_inputs, validation_outputs);
@@ -65,6 +67,7 @@ void examm_thread(int id) {
         examm_mutex.lock();
         Log::set_id("main");
         examm->insert_genome(genome);
+        Log::release_id();
         examm_mutex.unlock();
 
         delete genome;
@@ -75,7 +78,7 @@ void examm_thread(int id) {
 int main(int argc, char** argv) {
     arguments = vector<string>(argv, argv + argc);
 
-    Log::initialize();
+    Log::initialize(arguments);
     Log::set_id("main");
 
     int number_threads;
@@ -89,12 +92,12 @@ int main(int argc, char** argv) {
     time_series_sets->export_training_series(time_offset, training_inputs, training_outputs);
     time_series_sets->export_test_series(time_offset, validation_inputs, validation_outputs);
 
-    Log::info("exported time series.");
+    Log::info("exported time series.\n");
 
     int number_inputs = time_series_sets->get_number_inputs();
     int number_outputs = time_series_sets->get_number_outputs();
 
-    Log::info("number_inputs: %d, number_outputs: %d", number_inputs, number_outputs);
+    Log::info("number_inputs: %d, number_outputs: %d\n", number_inputs, number_outputs);
 
     int32_t population_size;
     get_argument(arguments, "--population_size", true, population_size);
@@ -172,7 +175,7 @@ int main(int argc, char** argv) {
 
     finished = true;
 
-    Log::info("completed!");
+    Log::info("completed!\n");
     Log::release_id();
 
     return 0;

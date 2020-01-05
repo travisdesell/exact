@@ -91,8 +91,6 @@ class LSTM_Node : public RNN_Node_Interface {
 
         void reset(int _series_length);
 
-        void print_cell_values();
-
         void write_to_stream(ostream &out);
 
         RNN_Node_Interface* copy() const;

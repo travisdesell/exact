@@ -6,11 +6,6 @@ using std::ostream;
 #include <iomanip>
 using std::setw;
 
-#include <iostream>
-using std::cerr;
-using std::cout;
-using std::endl;
-
 #include <string>
 using std::string;
 
@@ -22,6 +17,7 @@ using std::uniform_real_distribution;
 using std::vector;
 
 #include "common/random.hxx"
+#include "common/log.hxx"
 
 #include "rnn_node_interface.hxx"
 #include "mse.hxx"
@@ -65,7 +61,7 @@ double MGU_Node::get_gradient(string gradient_name) {
         } else if (gradient_name == "h_bias") {
             gradient_sum += d_h_bias[i];
         } else {
-            cerr << "ERROR: tried to get unknown gradient: '" << gradient_name << "'" << endl;
+            Log::fatal("ERROR: tried to get unknown gradient: '%s'\n", gradient_name.c_str());
             exit(1);
         }
     }
@@ -74,7 +70,7 @@ double MGU_Node::get_gradient(string gradient_name) {
 }
 
 void MGU_Node::print_gradient(string gradient_name) {
-    cout << "\tgradient['" << gradient_name << "']: " << get_gradient(gradient_name) << endl;
+    Log::info("\tgradient['%s']: %lf\n", gradient_name.c_str(), get_gradient(gradient_name));
 }
 
 void MGU_Node::input_fired(int time, double incoming_output) {
@@ -84,14 +80,12 @@ void MGU_Node::input_fired(int time, double incoming_output) {
 
     if (inputs_fired[time] < total_inputs) return;
     else if (inputs_fired[time] > total_inputs) {
-        cerr << "ERROR: inputs_fired on MGU_Node " << innovation_number << " at time " << time << " is " << inputs_fired[time] << " and total_inputs is " << total_inputs << endl;
+        Log::fatal("ERROR: inputs_fired on MGU_Node %d at time %d is %d and total_inputs is %d\n", innovation_number, time, inputs_fired[time], total_inputs);
         exit(1);
     }
 
     //update the reset gate bias so its centered around 1
     //r_bias += 1;
-
-    //cout << "PROPAGATING FORWARD" << endl;
 
     double x = input_values[time];
 
@@ -117,7 +111,7 @@ void MGU_Node::input_fired(int time, double incoming_output) {
 void MGU_Node::try_update_deltas(int time) {
     if (outputs_fired[time] < total_outputs) return;
     else if (outputs_fired[time] > total_outputs) {
-        cerr << "ERROR: outputs_fired on MGU_Node " << innovation_number << " at time " << time << " is " << outputs_fired[time] << " and total_outputs is " << total_outputs << endl;
+        Log::fatal("ERROR: outputs_fired on MGU_Node %d at time %d is %d and total_outputs is %d\n:", innovation_number, time, outputs_fired[time], total_outputs);
         exit(1);
     }
 
@@ -172,17 +166,6 @@ void MGU_Node::output_fired(int time, double delta) {
 }
 
 
-void MGU_Node::print_cell_values() {
-    /*
-    cerr << "\tinput_value: " << input_value << endl;
-    cerr << "\tinput_gate_value: " << input_gate_value << ", input_gate_update_weight: " << input_gate_update_weight << ", input_gate_bias: " << input_gate_bias << endl;
-    cerr << "\toutput_gate_value: " << output_gate_value << ", output_gate_update_weight: " << output_gate_update_weight << ", output_gate_bias: " << output_gate_bias << endl;
-    cerr << "\tforget_gate_value: " << forget_gate_value << ", forget_gate_update_weight: " << forget_gate_update_weight << "\tforget_gate_bias: " << forget_gate_bias << endl;
-    cerr << "\tcell_value: " << cell_value << ", cell_bias: " << cell_bias << endl;
-    */
-}
-
-
 uint32_t MGU_Node::get_number_weights() const {
     return NUMBER_MGU_WEIGHTS;
 }
@@ -212,8 +195,7 @@ void MGU_Node::set_weights(uint32_t &offset, const vector<double> &parameters) {
 
 
     //uint32_t end_offset = offset;
-
-    //cerr << "set weights from offset " << start_offset << " to " << end_offset << " on MGU_Node " << innovation_number << endl;
+    //Log::trace("set weights from offset %d to %d on MGU_Node %d\n", start_offset, end_offset, innovation_number);
 }
 
 void MGU_Node::get_weights(uint32_t &offset, vector<double> &parameters) const {
@@ -228,8 +210,7 @@ void MGU_Node::get_weights(uint32_t &offset, vector<double> &parameters) const {
     parameters[offset++] = h_bias;
 
     //uint32_t end_offset = offset;
-
-    //cerr << "set weights from offset " << start_offset << " to " << end_offset << " on MGU_Node " << innovation_number << endl;
+    //Log::trace("got weights from offset %d to %d on MGU_Node %d\n", start_offset, end_offset, innovation_number);
 }
 
 
@@ -281,8 +262,6 @@ void MGU_Node::reset(int _series_length) {
 
 RNN_Node_Interface* MGU_Node::copy() const {
     MGU_Node* n = new MGU_Node(innovation_number, layer_type, depth);
-
-    //cout << "COPYING!" << endl;
 
     //copy MGU_Node values
     n->fw = fw;

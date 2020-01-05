@@ -6,11 +6,6 @@ using std::ostream;
 #include <iomanip>
 using std::setw;
 
-#include <iostream>
-using std::cerr;
-using std::cout;
-using std::endl;
-
 #include <string>
 using std::string;
 
@@ -22,6 +17,7 @@ using std::uniform_real_distribution;
 using std::vector;
 
 #include "common/random.hxx"
+#include "common/log.hxx"
 
 #include "rnn_node_interface.hxx"
 #include "mse.hxx"
@@ -64,7 +60,7 @@ double Delta_Node::get_gradient(string gradient_name) {
         } else if (gradient_name == "z_hat_bias") {
             gradient_sum += d_z_hat_bias[i];
         } else {
-            cerr << "ERROR: tried to get unknown gradient: '" << gradient_name << "'" << endl;
+            Log::fatal("ERROR: tried to get unknown gradient: '%s'\n", gradient_name.c_str());
             exit(1);
         }
     }
@@ -73,7 +69,7 @@ double Delta_Node::get_gradient(string gradient_name) {
 }
 
 void Delta_Node::print_gradient(string gradient_name) {
-    cout << "\tgradient['" << gradient_name << "']: " << get_gradient(gradient_name) << endl;
+    Log::info("\tgradient['%s']: %lf\n", gradient_name.c_str(), get_gradient(gradient_name));
 }
 
 void Delta_Node::input_fired(int time, double incoming_output) {
@@ -83,7 +79,7 @@ void Delta_Node::input_fired(int time, double incoming_output) {
 
     if (inputs_fired[time] < total_inputs) return;
     else if (inputs_fired[time] > total_inputs) {
-        cerr << "ERROR: inputs_fired on Delta_Node " << innovation_number << " at time " << time << " is " << inputs_fired[time] << " and total_inputs is " << total_inputs << endl;
+        Log::fatal("ERROR: inputs_fired on Delta_Node %d at time %d is %d and total_inputs is %d\n", innovation_number, time, inputs_fired[time], total_inputs);
         exit(1);
     }
 
@@ -92,17 +88,10 @@ void Delta_Node::input_fired(int time, double incoming_output) {
     beta1 += 1;
     beta2 += 1;
 
-
-    //cout << "PROPAGATING FORWARD" << endl;
-
     double d2 = input_values[time];
-    //cout << "node " << innovation_number << " - input value[" << time << "] (d2): " << d2 << endl;
 
     double z_prev = 0.0;
     if (time > 0) z_prev = output_values[time - 1];
-    //cout << "node " << innovation_number << " - prev_output_value[" << time << "] (z_prev): " << z_prev << endl;
-
-    //cout << "r_bias: " << r_bias << endl;
 
     double d1 = v * z_prev;
 
@@ -132,31 +121,25 @@ void Delta_Node::input_fired(int time, double incoming_output) {
     alpha -= 2.0;
     beta1 -= 1.0;
     beta2 -= 1.0;
-
-    //cout << "node " << innovation_number << " - output_values[" << time << "]: " << output_values[time] << endl;
 }
 
 void Delta_Node::try_update_deltas(int time) {
     if (outputs_fired[time] < total_outputs) return;
     else if (outputs_fired[time] > total_outputs) {
-        cerr << "ERROR: outputs_fired on Delta_Node " << innovation_number << " at time " << time << " is " << outputs_fired[time] << " and total_outputs is " << total_outputs << endl;
+        Log::fatal("ERROR: outputs_fired on Delta_Node %d at time %d is %d and total_outputs is %d\n", innovation_number, time, outputs_fired[time], total_outputs);
         exit(1);
     }
 
-    //cout << "PROPAGATING BACKWARDS" << endl;
     //update the alpha and betas to be their actual value
     alpha += 2.0;
     beta1 += 1.0;
     beta2 += 1.0;
 
     double error = error_values[time];
-    //cout << "error_values[time]: " << error << endl;
     double d2 = input_values[time];
-    //cout << "input value[" << time << "]:" << d2 << endl;
 
     double z_prev = 0.0;
     if (time > 0) z_prev = output_values[time - 1];
-    //cout << "z_prev[" << (time - 1) << "]: " << z_prev << endl;
 
 
     //backprop output gate
@@ -164,9 +147,6 @@ void Delta_Node::try_update_deltas(int time) {
     if (time < (series_length - 1)) d_z += d_z_prev[time + 1];
     //get the error into the output (z), it's the error from ahead in the network
     //as well as from the previous output of the cell
-
-    //cout << "d_z: " << d_z << endl;
-    //cout << "ld_z_cap[" << time << "]: " << ld_z_cap[time] << endl;
 
     d_z *= ld_z[time];
 
@@ -179,7 +159,6 @@ void Delta_Node::try_update_deltas(int time) {
     double d_z_cap = d_z * ld_z_cap[time] * (1 - r[time]);
     //d_z_hat_bias route
     d_z_hat_bias[time] = d_z_cap;
-    //cout << "d_z_hat_bias[" << time << "]: " << d_z_hat_bias[time] << endl;
 
     //z_hat_3 route
     d_input[time] += d_z_cap * beta2;
@@ -195,11 +174,6 @@ void Delta_Node::try_update_deltas(int time) {
     double d_d1 = (d_z_cap * beta1) + (d2 * alpha * d_z_cap);
     d_v[time] = d_d1 * z_prev;
     d_z_prev[time] += d_d1 * v;
-
-    //cout << "d_input: " << d_input[time] << endl;
-    //cout << "d_beta2: " << d_beta2[time] << endl;
-
-    //cout << endl << endl;
 
     //reset the alpha/betas to be around 0
     alpha -= 2.0;
@@ -221,17 +195,6 @@ void Delta_Node::output_fired(int time, double delta) {
     error_values[time] += delta;
 
     try_update_deltas(time);
-}
-
-
-void Delta_Node::print_cell_values() {
-    /*
-    cerr << "\tinput_value: " << input_value << endl;
-    cerr << "\tinput_gate_value: " << input_gate_value << ", input_gate_update_weight: " << input_gate_update_weight << ", input_gate_bias: " << input_gate_bias << endl;
-    cerr << "\toutput_gate_value: " << output_gate_value << ", output_gate_update_weight: " << output_gate_update_weight << ", output_gate_bias: " << output_gate_bias << endl;
-    cerr << "\tforget_gate_value: " << forget_gate_value << ", forget_gate_update_weight: " << forget_gate_update_weight << "\tforget_gate_bias: " << forget_gate_bias << endl;
-    cerr << "\tcell_value: " << cell_value << ", cell_bias: " << cell_bias << endl;
-    */
 }
 
 
@@ -263,8 +226,7 @@ void Delta_Node::set_weights(uint32_t &offset, const vector<double> &parameters)
     z_hat_bias = bound(parameters[offset++]);
 
     //uint32_t end_offset = offset;
-
-    //cerr << "set weights from offset " << start_offset << " to " << end_offset << " on Delta_Node " << innovation_number << endl;
+    //Log::trace("set weights from offset %d to %d on Delta_node %d\n", start_offset, end_offset, innovation_number);
 }
 
 void Delta_Node::get_weights(uint32_t &offset, vector<double> &parameters) const {
@@ -279,8 +241,7 @@ void Delta_Node::get_weights(uint32_t &offset, vector<double> &parameters) const
     parameters[offset++] = z_hat_bias;
 
     //uint32_t end_offset = offset;
-
-    //cerr << "set weights from offset " << start_offset << " to " << end_offset << " on Delta_Node " << innovation_number << endl;
+    //Log::trace("got weights from offset %d to %d on Delta_node %d\n", start_offset, end_offset, innovation_number);
 }
 
 
@@ -331,8 +292,6 @@ void Delta_Node::reset(int _series_length) {
 
 RNN_Node_Interface* Delta_Node::copy() const {
     Delta_Node* n = new Delta_Node(innovation_number, layer_type, depth);
-
-    //cout << "COPYING!" << endl;
 
     //copy Delta_Node values
     n->d_alpha = d_alpha;

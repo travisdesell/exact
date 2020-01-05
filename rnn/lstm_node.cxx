@@ -6,11 +6,6 @@ using std::ostream;
 #include <iomanip>
 using std::setw;
 
-#include <iostream>
-using std::cerr;
-using std::cout;
-using std::endl;
-
 #include <string>
 using std::string;
 
@@ -22,6 +17,7 @@ using std::uniform_real_distribution;
 using std::vector;
 
 #include "common/random.hxx"
+#include "common/log.hxx"
 
 #include "rnn_node_interface.hxx"
 #include "mse.hxx"
@@ -84,7 +80,7 @@ double LSTM_Node::get_gradient(string gradient_name) {
         } else if (gradient_name == "cell_bias") {
             gradient_sum += d_cell_bias[i];
         } else {
-            cerr << "ERROR: tried to get unknown gradient: '" << gradient_name << "'" << endl;
+            Log::fatal("ERROR: tried to get unknown gradient: '%s'\n", gradient_name.c_str());
             exit(1);
         }
     }
@@ -93,7 +89,7 @@ double LSTM_Node::get_gradient(string gradient_name) {
 }
 
 void LSTM_Node::print_gradient(string gradient_name) {
-    cout << "\tgradient['" << gradient_name << "']: " << get_gradient(gradient_name) << endl;
+    Log::info("\tgradient['%s']: %lf\n", gradient_name.c_str(), get_gradient(gradient_name));
 }
 
 void LSTM_Node::input_fired(int time, double incoming_output) {
@@ -103,17 +99,14 @@ void LSTM_Node::input_fired(int time, double incoming_output) {
 
     if (inputs_fired[time] < total_inputs) return;
     else if (inputs_fired[time] > total_inputs) {
-        cerr << "ERROR: inputs_fired on LSTM_Node " << innovation_number << " at time " << time << " is " << inputs_fired[time] << " and total_inputs is " << total_inputs << endl;
+        Log::fatal("ERROR: inputs_fired on LSTM_Node %d at time %d is %d and total_inputs is %d\n", innovation_number, time, inputs_fired[time], total_inputs);
         exit(1);
     }
 
     double input_value = input_values[time];
-    //cout << "node " << innovation_number << " - input value[" << time << "]:" << input_value << endl;
 
     double previous_cell_value = 0.0;
     if (time > 0) previous_cell_value = cell_values[time - 1];
-    //previous_cell_value = 0.33;
-    //cout << "previous_cell_value[" << i << "]: " << previous_cell_value << endl;
 
     //forget gate bias should be around 1.0 intead of 0, but we do it here to not throw
     //off the mu/sigma of the parameters
@@ -153,33 +146,18 @@ void LSTM_Node::input_fired(int time, double incoming_output) {
     forget_gate_bias -= 1.0;
 }
 
-
-void LSTM_Node::print_cell_values() {
-    /*
-    cerr << "\tinput_value: " << input_value << endl;
-    cerr << "\tinput_gate_value: " << input_gate_value << ", input_gate_update_weight: " << input_gate_update_weight << ", input_gate_bias: " << input_gate_bias << endl;
-    cerr << "\toutput_gate_value: " << output_gate_value << ", output_gate_update_weight: " << output_gate_update_weight << ", output_gate_bias: " << output_gate_bias << endl;
-    cerr << "\tforget_gate_value: " << forget_gate_value << ", forget_gate_update_weight: " << forget_gate_update_weight << "\tforget_gate_bias: " << forget_gate_bias << endl;
-    cerr << "\tcell_value: " << cell_value << ", cell_bias: " << cell_bias << endl;
-    */
-}
-
 void LSTM_Node::try_update_deltas(int time) {
     if (outputs_fired[time] < total_outputs) return;
     else if (outputs_fired[time] > total_outputs) {
-        cerr << "ERROR: outputs_fired on LSTM_Node " << innovation_number << " at time " << time << " is " << outputs_fired[time] << " and total_outputs is " << total_outputs << endl;
+        Log::fatal("ERROR: outputs_fired on LSTM_Node %d at time %d is %d and total_outputs is %d\n", innovation_number, time, outputs_fired[time], total_outputs);
         exit(1);
     }
 
     double error = error_values[time];
     double input_value = input_values[time];
-    //cout << "input value[" << i << "]:" << input_value << endl;
 
     double previous_cell_value = 0.00;
     if (time > 0) previous_cell_value = cell_values[time - 1];
-    //previous_cell_value = 0.33;
-    //cout << "previous_cell_value[" << i << "]: " << previous_cell_value << endl;
-
 
     //backprop output gate
     double d_output_gate = error * cell_out_tanh[time] * ld_output_gate[time];
@@ -212,7 +190,6 @@ void LSTM_Node::try_update_deltas(int time) {
     d_input_gate_weight[time] = d_input_gate * input_value;
     d_prev_cell[time] += d_input_gate * input_gate_update_weight;
     d_input[time] += d_input_gate * input_gate_weight;
-
 
     //backprop cell input
     double d_cell_in = d_cell_out * input_gate_values[time] * ld_cell_in[time];
@@ -272,8 +249,7 @@ void LSTM_Node::set_weights(uint32_t &offset, const vector<double> &parameters) 
     cell_bias = bound(parameters[offset++]);
 
     //uint32_t end_offset = offset;
-
-    //cerr << "set weights from offset " << start_offset << " to " << end_offset << " on LSTM_Node " << innovation_number << endl;
+    //Log::trace("set weights from offset %d to %d on LSTM_Node %d\n", start_offset, end_offset, innovation_number);
 }
 
 void LSTM_Node::get_weights(uint32_t &offset, vector<double> &parameters) const {
@@ -295,8 +271,7 @@ void LSTM_Node::get_weights(uint32_t &offset, vector<double> &parameters) const 
     parameters[offset++] = cell_bias;
 
     //uint32_t end_offset = offset;
-
-    //cerr << "set weights from offset " << start_offset << " to " << end_offset << " on LSTM_Node " << innovation_number << endl;
+    //Log::trace("got weights from offset %d to %d on LSTM_Node %d\n", start_offset, end_offset, innovation_number);
 }
 
 

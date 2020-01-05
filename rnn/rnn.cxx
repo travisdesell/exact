@@ -4,10 +4,6 @@ using std::upper_bound;
 
 #include <chrono>
 
-#include <iostream>
-using std::cout;
-using std::endl;
-
 #include <limits>
 using std::numeric_limits;
 
@@ -16,7 +12,6 @@ using std::fixed;
 using std::setw;
 
 #include <iostream>
-using std::cerr;
 using std::endl;
 
 #include <fstream>
@@ -39,6 +34,8 @@ using std::vector;
 #include "gru_node.hxx"
 #include "mgu_node.hxx"
 #include "mse.hxx"
+
+#include "common/log.hxx"
 
 
 RNN::RNN(vector<RNN_Node_Interface*> &_nodes, vector<RNN_Edge*> &_edges) {
@@ -73,7 +70,7 @@ RNN::RNN(vector<RNN_Node_Interface*> &_nodes, vector<RNN_Edge*> &_edges, vector<
         }
     }
 
-    //cout << "got RNN with " << nodes.size() << " nodes, " << edges.size() << ", " << recurrent_edges.size() << " recurrent edges" << endl;
+    Log::trace("got RNN with %d nodes, %d edges, %d recurrent edges\n", nodes.size(), edges.size(), recurrent_edges.size());
 }
 
 RNN::~RNN() {
@@ -146,7 +143,7 @@ void RNN::get_weights(vector<double> &parameters) {
 
 void RNN::set_weights(const vector<double> &parameters) {
     if (parameters.size() != get_number_weights()) {
-        cerr << "ERROR! Trying to set weights where the RNN has " << get_number_weights() << " weights, and the parameters vector has << " << parameters.size() << " weights!" << endl;
+        Log::fatal("ERROR! Trying to set weights where the RNN has %d weights, and the parameters vector has %d weights!\n", get_number_weights(), parameters.size());
         exit(1);
     }
 
@@ -194,7 +191,7 @@ void RNN::forward_pass(const vector< vector<double> > &series_data, bool using_d
     series_length = series_data[0].size();
 
     if (input_nodes.size() != series_data.size()) {
-        cerr << "ERROR: number of input nodes (" << input_nodes.size() << ") != number of time series data input fields (" << series_data.size() << ")" << endl;
+        Log::fatal("ERROR: number of input nodes (%d) != number of time series data input fields (%d)\n", input_nodes.size(), series_data.size());
         exit(1);
     }
 
@@ -349,9 +346,8 @@ vector<double> RNN::get_predictions(const vector< vector<double> > &series_data,
 void RNN::write_predictions(string output_filename, const vector<string> &input_parameter_names, const vector<string> &output_parameter_names, const vector< vector<double> > &series_data, const vector< vector<double> > &expected_outputs, bool using_dropout, double dropout_probability) {
     forward_pass(series_data, using_dropout, false, dropout_probability);
 
-
-    cerr << "series_length: " << series_length << ", series_data.size(): " << series_data.size() << ", series_data[0].size(): " << series_data[0].size() << endl;
-    cerr << "input_nodes.size(): " << input_nodes.size() << ", output_nodes.size(): " << output_nodes.size() << endl;
+    Log::debug("series_length: %d, series_data.size(): %d, series_data[0].size(): %d\n", series_length, series_data.size(), series_data[0].size());
+    Log::debug("input_nodes.size(): %d, output_nodes.size(): %d\n", input_nodes.size(), output_nodes.size());
     ofstream outfile(output_filename);
 
     outfile << "#";
@@ -360,21 +356,21 @@ void RNN::write_predictions(string output_filename, const vector<string> &input_
         if (i > 0) outfile << ",";
         outfile << input_parameter_names[i];
 
-        cerr << "input_parameter_names[" << i << "]: " << input_parameter_names[i] << endl;
+        Log::debug("input_parameter_names[%d]: '%s'\n", i, input_parameter_names[i].c_str());
     }
 
     for (uint32_t i = 0; i < output_nodes.size(); i++) {
         outfile << ",";
         outfile << output_parameter_names[i];
 
-        cerr << "output_parameter_names[" << i << "]: " << output_parameter_names[i] << endl;
+        Log::debug("output_parameter_names[%d]: '%s'\n", i, output_parameter_names[i].c_str());
     }
 
     for (uint32_t i = 0; i < output_nodes.size(); i++) {
         outfile << ",";
         outfile << "predicted_" << output_parameter_names[i];
 
-        cerr << "output_parameter_names[" << i << "]: " << output_parameter_names[i] << endl;
+        Log::debug("output_parameter_names[%d]: '%s'\n", i, output_parameter_names[i].c_str());
     }
     outfile << endl;
 
@@ -446,9 +442,6 @@ void RNN::get_empirical_gradient(const vector<double> &test_parameters, const ve
     set_weights(test_parameters);
     forward_pass(inputs, using_dropout, training, dropout_probability);
     double original_mse = calculate_error_mse(outputs);
-
-    //cout << "EMPIRICAL statistics: " << endl;
-    //print_output_statistics(outputs);
 
     double save;
     double diff = 0.00001;

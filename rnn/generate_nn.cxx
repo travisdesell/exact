@@ -1,8 +1,3 @@
-#include <iostream>
-using std::cout;
-using std::cerr;
-using std::endl;
-
 #include <vector>
 using std::vector;
 
@@ -17,8 +12,10 @@ using std::vector;
 #include "rnn/rnn_node.hxx"
 #include "rnn/rnn_node_interface.hxx"
 
+#include "common/log.hxx"
+
 RNN_Genome* create_ff(int number_inputs, int number_hidden_layers, int number_hidden_nodes, int number_outputs, int max_recurrent_depth) {
-    //cout << "creating ff with inputs: " << number_inputs << ", hidden: " << number_hidden_layers << "x" << number_hidden_nodes << ", outputs: " << number_outputs << endl;
+    Log::debug("creating feed forward network with inputs: %d, hidden: %dx%d, outputs: %d, max recurrent depth: %d\n", number_inputs, number_hidden_layers, number_hidden_nodes, number_outputs, max_recurrent_depth);
     vector<RNN_Node_Interface*> rnn_nodes;
     vector< vector<RNN_Node_Interface*> > layer_nodes(2 + number_hidden_layers);
     vector<RNN_Edge*> rnn_edges;
@@ -71,6 +68,7 @@ RNN_Genome* create_ff(int number_inputs, int number_hidden_layers, int number_hi
 
 
 RNN_Genome* create_jordan(int number_inputs, int number_hidden_layers, int number_hidden_nodes, int number_outputs, int max_recurrent_depth) {
+    Log::debug("creating jordan neural network with inputs: %d, hidden: %dx%d, outputs: %d, max recurrent depth: %d\n", number_inputs, number_hidden_layers, number_hidden_nodes, number_outputs, max_recurrent_depth);
     vector<RNN_Node_Interface*> rnn_nodes;
     vector<RNN_Node_Interface*> output_layer;
     vector< vector<RNN_Node_Interface*> > layer_nodes(2 + number_hidden_layers);
@@ -128,6 +126,7 @@ RNN_Genome* create_jordan(int number_inputs, int number_hidden_layers, int numbe
 }
 
 RNN_Genome* create_elman(int number_inputs, int number_hidden_layers, int number_hidden_nodes, int number_outputs, int max_recurrent_depth) {
+    Log::debug("creating elman network with inputs: %d, hidden: %dx%d, outputs: %d, max recurrent depth: %d\n", number_inputs, number_hidden_layers, number_hidden_nodes, number_outputs, max_recurrent_depth);
     vector<RNN_Node_Interface*> rnn_nodes;
     vector<RNN_Node_Interface*> output_layer;
     vector< vector<RNN_Node_Interface*> > layer_nodes(2 + number_hidden_layers);
@@ -190,6 +189,7 @@ RNN_Genome* create_elman(int number_inputs, int number_hidden_layers, int number
 }
 
 RNN_Genome* create_lstm(int number_inputs, int number_hidden_layers, int number_hidden_nodes, int number_outputs, int max_recurrent_depth) {
+    Log::debug("creating LSTM network with inputs: %d, hidden: %dx%d, outputs: %d, max recurrent depth: %d\n", number_inputs, number_hidden_layers, number_hidden_nodes, number_outputs, max_recurrent_depth);
     vector<RNN_Node_Interface*> rnn_nodes;
     vector< vector<RNN_Node_Interface*> > layer_nodes(2 + number_hidden_layers);
     vector<RNN_Edge*> rnn_edges;
@@ -233,6 +233,7 @@ RNN_Genome* create_lstm(int number_inputs, int number_hidden_layers, int number_
 
 
 RNN_Genome* create_ugrnn(int number_inputs, int number_hidden_layers, int number_hidden_nodes, int number_outputs, int max_recurrent_depth) {
+    Log::debug("creating UGRNN network with inputs: %d, hidden: %dx%d, outputs: %d, max recurrent depth: %d\n", number_inputs, number_hidden_layers, number_hidden_nodes, number_outputs, max_recurrent_depth);
     vector<RNN_Node_Interface*> rnn_nodes;
     vector< vector<RNN_Node_Interface*> > layer_nodes(2 + number_hidden_layers);
     vector<RNN_Edge*> rnn_edges;
@@ -277,6 +278,7 @@ RNN_Genome* create_ugrnn(int number_inputs, int number_hidden_layers, int number
 
 
 RNN_Genome* create_gru(int number_inputs, int number_hidden_layers, int number_hidden_nodes, int number_outputs, int max_recurrent_depth) {
+    Log::debug("creating GRU network with inputs: %d, hidden: %dx%d, outputs: %d, max recurrent depth: %d\n", number_inputs, number_hidden_layers, number_hidden_nodes, number_outputs, max_recurrent_depth);
     vector<RNN_Node_Interface*> rnn_nodes;
     vector< vector<RNN_Node_Interface*> > layer_nodes(2 + number_hidden_layers);
     vector<RNN_Edge*> rnn_edges;
@@ -317,7 +319,9 @@ RNN_Genome* create_gru(int number_inputs, int number_hidden_layers, int number_h
 
     return new RNN_Genome(rnn_nodes, rnn_edges, recurrent_edges);
 }
+
 RNN_Genome* create_mgu(int number_inputs, int number_hidden_layers, int number_hidden_nodes, int number_outputs, int max_recurrent_depth) {
+    Log::debug("creating MGU network with inputs: %d, hidden: %dx%d, outputs: %d, max recurrent depth: %d\n", number_inputs, number_hidden_layers, number_hidden_nodes, number_outputs, max_recurrent_depth);
     vector<RNN_Node_Interface*> rnn_nodes;
     vector< vector<RNN_Node_Interface*> > layer_nodes(2 + number_hidden_layers);
     vector<RNN_Edge*> rnn_edges;
@@ -361,6 +365,7 @@ RNN_Genome* create_mgu(int number_inputs, int number_hidden_layers, int number_h
 
 
 RNN_Genome* create_delta(int number_inputs, int number_hidden_layers, int number_hidden_nodes, int number_outputs, int max_recurrent_depth) {
+    Log::debug("creating delta network with inputs: %d, hidden: %dx%d, outputs: %d, max recurrent depth: %d\n", number_inputs, number_hidden_layers, number_hidden_nodes, number_outputs, max_recurrent_depth);
     vector<RNN_Node_Interface*> rnn_nodes;
     vector< vector<RNN_Node_Interface*> > layer_nodes(2 + number_hidden_layers);
     vector<RNN_Edge*> rnn_edges;
