@@ -1,9 +1,6 @@
-#include <iostream>
-using std::cerr;
-using std::cout;
-using std::endl;
-
 #include "rnn_edge.hxx"
+
+#include "common/log.hxx"
 
 RNN_Edge::RNN_Edge(int _innovation_number, RNN_Node_Interface *_input_node, RNN_Node_Interface *_output_node) {
     innovation_number = _innovation_number;
@@ -20,7 +17,7 @@ RNN_Edge::RNN_Edge(int _innovation_number, RNN_Node_Interface *_input_node, RNN_
     input_node->total_outputs++;
     output_node->total_inputs++;
 
-    //cout << "created edge " << innovation_number << " from " << input_innovation_number << ", to " << output_innovation_number << endl;
+    Log::debug("created edge %d from %d to %d\n", innovation_number, input_innovation_number, output_innovation_number);
 }
 
 RNN_Edge::RNN_Edge(int _innovation_number, int _input_innovation_number, int _output_innovation_number, const vector<RNN_Node_Interface*> &nodes) {
@@ -34,7 +31,7 @@ RNN_Edge::RNN_Edge(int _innovation_number, int _input_innovation_number, int _ou
     for (int i = 0; i < nodes.size(); i++) {
         if (nodes[i]->innovation_number == _input_innovation_number) {
             if (input_node != NULL) {
-                cerr << "ERROR in copying RNN_Edge, list of nodes has multiple nodes with same input_innovation_number -- this should never happen." << endl;
+                Log::fatal("ERROR in copying RNN_Edge, list of nodes has multiple nodes with same input_innovation_number -- this should never happen.\n");
                 exit(1);
             }
 
@@ -43,7 +40,7 @@ RNN_Edge::RNN_Edge(int _innovation_number, int _input_innovation_number, int _ou
 
         if (nodes[i]->innovation_number == _output_innovation_number) {
             if (output_node != NULL) {
-                cerr << "ERROR in copying RNN_Edge, list of nodes has multiple nodes with same output_innovation_number -- this should never happen." << endl;
+                Log::fatal("ERROR in copying RNN_Edge, list of nodes has multiple nodes with same output_innovation_number -- this should never happen.\n");
                 exit(1);
             }
 
@@ -52,12 +49,12 @@ RNN_Edge::RNN_Edge(int _innovation_number, int _input_innovation_number, int _ou
     }
 
     if (input_node == NULL) {
-        cerr << "ERROR initializing RNN_Edge, input node with innovation number; " << input_innovation_number << " was not found!" << endl;
+        Log::fatal("ERROR initializing RNN_Edge, input node with innovation number; %d was not found!\n", input_innovation_number);
         exit(1);
     }
 
     if (output_node == NULL) {
-        cerr << "ERROR initializing RNN_Edge, output node with innovation number; " << output_innovation_number << " was not found!" << endl;
+        Log::fatal("ERROR initializing RNN_Edge, output node with innovation number; %d was not found!\n", output_innovation_number);
         exit(1);
     }
 }
@@ -82,14 +79,14 @@ RNN_Edge* RNN_Edge::copy(const vector<RNN_Node_Interface*> new_nodes) {
 
 void RNN_Edge::propagate_forward(int time) {
     if (input_node->inputs_fired[time] != input_node->total_inputs) {
-        cerr << "ERROR! propagate forward called on edge " << innovation_number << " where input_node->inputs_fired[" << time << "] (" << input_node->inputs_fired[time] << ") != total_inputs (" << input_node->total_inputs << ")" << endl;
-        cerr << "input innovation number: " << input_node->innovation_number << ", output innovation number: " << output_node->innovation_number << endl;
+        Log::fatal("ERROR! propagate forward called on edge %d where input_node->inputs_fired[%d] (%d) != total_inputs (%d)\n", innovation_number, time, input_node->inputs_fired[time], input_node->total_inputs);
+        Log::fatal("input innovation number: %d, output innovation number: %d\n", input_node->innovation_number, output_node->innovation_number);
         exit(1);
     }
 
     double output = input_node->output_values[time] * weight;
 
-    //cout << "propagating forward at time " << time << " from " << input_node->innovation_number << " to " << output_node->innovation_number << ", value: " << output << ", input: " << input_node->output_values[time] << ", weight: " << weight << endl;
+    //Log::trace("propagating forward at time %d from %d to %d, value: %lf, input: %lf, weight: %lf\n", time, input_node->innovation_number, output_node->innovation_number, output, input_node->output_values[time], weight);
 
     outputs[time] = output;
     output_node->input_fired(time, output);
@@ -98,13 +95,13 @@ void RNN_Edge::propagate_forward(int time) {
 
 void RNN_Edge::propagate_forward(int time, bool training, double dropout_probability) {
     if (input_node->inputs_fired[time] != input_node->total_inputs) {
-        cerr << "ERROR! propagate forward called on edge " << innovation_number << " where input_node->inputs_fired[" << time << "] (" << input_node->inputs_fired[time] << ") != total_inputs (" << input_node->total_inputs << ")" << endl;
+        Log::fatal("ERROR! propagate forward called on edge %d where input_node->inputs_fired[%d] (%d) != total_inputs (%d)\n", innovation_number, time, input_node->inputs_fired[time], input_node->total_inputs);
         exit(1);
     }
 
     double output = input_node->output_values[time] * weight;
 
-    //cout << "propagating forward at time " << time << " from " << input_node->innovation_number << " to " << output_node->innovation_number << ", value: " << output << ", input: " << input_node->output_values[time] << ", weight: " << weight << endl;
+    //Log::trace("propagating forward at time %d from %d to %d, value: %lf, input: %lf, weight: %lf\n", time, input_node->innovation_number, output_node->innovation_number, output, input_node->output_values[time], weight);
 
     if (training) {
         if (drand48() < dropout_probability) {
@@ -123,13 +120,13 @@ void RNN_Edge::propagate_forward(int time, bool training, double dropout_probabi
 
 void RNN_Edge::propagate_backward(int time) {
     if (output_node->outputs_fired[time] != output_node->total_outputs) {
-        cerr << "ERROR! propagate backward called on edge " << innovation_number << " where output_node->outputs_fired[" << time << "] (" << output_node->outputs_fired[time] << ") != total_outputs (" << output_node->total_outputs << ")" << endl;
-        cerr << "input innovation number: " << input_node->innovation_number << ", output innovation number: " << output_node->innovation_number << endl;
-        cerr << "series_length: " << input_node->series_length << endl;
+        Log::fatal("ERROR! propagate backward called on edge %d where output_node->outputs_fired[%d] (%d) != total_outputs (%d)\n", innovation_number, time, output_node->outputs_fired[time], output_node->total_outputs);
+        Log::fatal("input innovation number: %d, output innovation number: %d\n", input_node->innovation_number, output_node->innovation_number);
+        Log::fatal("series_length: %d\n", input_node->series_length);
         exit(1);
     }
 
-    //cout << "propgating backward on edge " << innovation_number << " at time " << time << " from node " << output_innovation_number << " to node " << input_innovation_number << endl;
+    //Log::trace("propgating backward on edge %d at time %d from node %d to node %d\n", innovation_number, time, output_innovation_number, input_innovation_number);
 
     double delta = output_node->d_input[time];
 
@@ -140,19 +137,13 @@ void RNN_Edge::propagate_backward(int time) {
 
 void RNN_Edge::propagate_backward(int time, bool training, double dropout_probability) {
     if (output_node->outputs_fired[time] != output_node->total_outputs) {
-        cerr << "ERROR! propagate backward called on edge " << innovation_number << " where output_node->outputs_fired[" << time << "] (" << output_node->outputs_fired[time] << ") != total_outputs (" << output_node->total_outputs << ")" << endl;
-        cerr << "input innovation number: " << input_node->innovation_number << ", output innovation number: " << output_node->innovation_number << endl;
-        cerr << "series_length: " << input_node->series_length << endl;
+        Log::fatal("ERROR! propagate backward called on edge %d where output_node->outputs_fired[%d] (%d) != total_outputs (%d)\n", innovation_number, time, output_node->outputs_fired[time], output_node->total_outputs);
+        Log::fatal("input innovation number: %d, output innovation number: %d\n", input_node->innovation_number, output_node->innovation_number);
+        Log::fatal("series_length: %d\n", input_node->series_length);
         exit(1);
     }
 
-    /*
-    cout << "edge " << innovation_number << " propagating backwards, input_node->series_length: " << input_node->series_length << endl;
-    cout << "input_innovation_number: " << input_innovation_number << endl;
-    cout << "output_innovation_number: " << output_innovation_number << endl;
-    cout << "input_node->output_values.size(): " << input_node->output_values.size() << endl;
-    cout << "output_node->d_input.size(): " << output_node->d_input.size() << endl;
-    */
+    //Log::trace("propgating backward on edge %d at time %d from node %d to node %d\n", innovation_number, time, output_innovation_number, input_innovation_number);
 
     double delta = output_node->d_input[time];
 

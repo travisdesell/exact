@@ -1,19 +1,16 @@
-#include <iostream>
-using std::cerr;
-using std::cout;
-using std::endl;
-
 #include "rnn_recurrent_edge.hxx"
+
+#include "common/log.hxx"
 
 RNN_Recurrent_Edge::RNN_Recurrent_Edge(int32_t _innovation_number, int32_t _recurrent_depth, RNN_Node_Interface *_input_node, RNN_Node_Interface *_output_node) {
     innovation_number = _innovation_number;
     recurrent_depth = _recurrent_depth;
 
     if (recurrent_depth <= 0) {
-        cerr << "ERROR, trying to create a recurrent edge with recurrent depth <= 0" << endl;
-        cerr << "innovation number: " << innovation_number << endl;
-        cerr << "input_node->innovation_number: " << input_node->get_innovation_number() << endl;
-        cerr << "output_node->innovation_number: " << output_node->get_innovation_number() << endl;
+        Log::fatal( "ERROR, trying to create a recurrent edge with recurrent depth <= 0\n");
+        Log::fatal("innovation number: %d\n", innovation_number);
+        Log::fatal("input_node->innovation_number: %d\n", input_node->get_innovation_number());
+        Log::fatal("output_node->innovation_number: %d\n", output_node->get_innovation_number());
         exit(1);
     }
 
@@ -30,7 +27,7 @@ RNN_Recurrent_Edge::RNN_Recurrent_Edge(int32_t _innovation_number, int32_t _recu
     forward_reachable = true;
     backward_reachable = true;
 
-    //cout << "created recurrent edge " << innovation_number << ", from " << input_innovation_number << ", to " << output_innovation_number << endl;
+    Log::debug("created recurrent edge %d from %d to %d\n", innovation_number, input_innovation_number, output_innovation_number);
 }
 
 RNN_Recurrent_Edge::RNN_Recurrent_Edge(int32_t _innovation_number, int32_t _recurrent_depth, int32_t _input_innovation_number, int32_t _output_innovation_number, const vector<RNN_Node_Interface*> &nodes) {
@@ -41,20 +38,19 @@ RNN_Recurrent_Edge::RNN_Recurrent_Edge(int32_t _innovation_number, int32_t _recu
     output_innovation_number = _output_innovation_number;
 
     if (recurrent_depth <= 0) {
-        cerr << "ERROR, trying to create a recurrent edge with recurrent depth <= 0" << endl;
-        cerr << "innovation number: " << innovation_number << endl;
-        cerr << "input_innovation_number: " << input_innovation_number << endl;
-        cerr << "output_innovation_number: " << output_innovation_number << endl;
+        Log::fatal( "ERROR, trying to create a recurrent edge with recurrent depth <= 0\n");
+        Log::fatal("innovation number: %d\n", innovation_number);
+        Log::fatal("input_node->innovation_number: %d\n", input_node->get_innovation_number());
+        Log::fatal("output_node->innovation_number: %d\n", output_node->get_innovation_number());
         exit(1);
     }
-
 
     input_node = NULL;
     output_node = NULL;
     for (int32_t i = 0; i < nodes.size(); i++) {
         if (nodes[i]->innovation_number == _input_innovation_number) {
             if (input_node != NULL) {
-                cerr << "ERROR in copying RNN_Recurrent_Edge, list of nodes has multiple nodes with same input_innovation_number -- this should never happen." << endl;
+                Log::fatal("ERROR in copying RNN_Recurrent_Edge, list of nodes has multiple nodes with same input_innovation_number -- this should never happen.\n");
                 exit(1);
             }
 
@@ -63,7 +59,7 @@ RNN_Recurrent_Edge::RNN_Recurrent_Edge(int32_t _innovation_number, int32_t _recu
 
         if (nodes[i]->innovation_number == _output_innovation_number) {
             if (output_node != NULL) {
-                cerr << "ERROR in copying RNN_Recurrent_Edge, list of nodes has multiple nodes with same output_innovation_number -- this should never happen." << endl;
+                Log::fatal("ERROR in copying RNN_Recurrent_Edge, list of nodes has multiple nodes with same output_innovation_number -- this should never happen.\n");
                 exit(1);
             }
 
@@ -72,12 +68,12 @@ RNN_Recurrent_Edge::RNN_Recurrent_Edge(int32_t _innovation_number, int32_t _recu
     }
 
     if (input_node == NULL) {
-        cerr << "ERROR initializing RNN_Edge, input node with innovation number; " << input_innovation_number << " was not found!" << endl;
+        Log::fatal("ERROR initializing RNN_Edge, input node with innovation number; %d was not found!\n", input_innovation_number);
         exit(1);
     }
 
     if (output_node == NULL) {
-        cerr << "ERROR initializing RNN_Edge, output node with innovation number; " << output_innovation_number << " was not found!" << endl;
+        Log::fatal("ERROR initializing RNN_Edge, output node with innovation number; %d was not found!\n", output_innovation_number);
         exit(1);
     }
 }
@@ -134,16 +130,15 @@ void RNN_Recurrent_Edge::first_propagate_forward() {
 
 void RNN_Recurrent_Edge::propagate_forward(int32_t time) {
     if (input_node->inputs_fired[time] != input_node->total_inputs) {
-        cerr << "ERROR! propagate forward called on recurrent edge " << innovation_number << " where input_node->inputs_fired[" << time << "] (" << input_node->inputs_fired[time] << ") != total_inputs (" << input_node->total_inputs << ")" << endl;
+        Log::fatal("ERROR! propagate forward called on recurrent edge %d where input_node->inputs_fired[%d] (%d) != total_inputs (%d)\n", innovation_number, time, input_node->inputs_fired[time], input_node->total_inputs);
         exit(1);
     }
 
 
     double output = input_node->output_values[time] * weight;
     if (time < series_length - recurrent_depth) {
-        //cout << "propagating forward on recurrent edge " << innovation_number << " from time " << time << " to time " << time + recurrent_depth << " from node " << input_innovation_number << " to node " << output_innovation_number << endl;
+        //Log::trace("propagating forward on recurrent edge %d from time %d to time %d from node %d to node %d\n", innovation_number, time, time + recurrent_depth, input_innovation_number, output_innovation_number);
 
-        //cout << "propagating recurrent at time " << time << " from " << input_node->innovation_number << " to " << output_node->innovation_number << ", value: " << output << ", input: " << input_node->output_values[time] << ", weight: " << weight << endl;
         outputs[time + recurrent_depth] = output;
         output_node->input_fired(time + recurrent_depth, output);
     }
@@ -153,7 +148,7 @@ void RNN_Recurrent_Edge::propagate_forward(int32_t time) {
 //output fireds are correct
 void RNN_Recurrent_Edge::first_propagate_backward() {
     for (uint32_t i = 0; i < recurrent_depth; i++) {
-        //cout << "FIRST propagating backward on recurrent edge " << innovation_number << " to time " << series_length - 1 - i << " from node " << output_innovation_number << " to node " << input_innovation_number << endl;
+        //Log::trace("FIRST propagating backward on recurrent edge %d to time %d from node %d to node %d\n", innovation_number, series_length - 1 - i, output_innovation_number, input_innovation_number);
         input_node->output_fired(series_length - 1 - i, 0.0);
     }
 }
@@ -162,32 +157,26 @@ void RNN_Recurrent_Edge::propagate_backward(int32_t time) {
     if (output_node->outputs_fired[time] != output_node->total_outputs) {
         //if (output_node->innovation_number == input_node->innovation_number) {
             //circular recurrent edge
+
             /*
             if (output_node->outputs_fired[time] != (output_node->total_outputs - 1)) {
-                cerr << "ERROR! propagate backward called on recurrent edge " << innovation_number << " where output_node->outputs_fired[" << time << "] (" << output_node->outputs_fired[time] << ") != total_outputs (" << output_node->total_outputs << ")" << endl;
-                cerr << "input innovation number: " << input_node->innovation_number << ", output innovation number: " << output_node->innovation_number << endl;
+                Log::fatal("ERROR! propagate backward called on recurrent edge %d where output_node->outputs_fired[%d] (%d) != total_outputs (%d)\n", innovation_number, time, output_node->outputs_fired[time], output_node->total_outputs);
+                Log::fatal("input innovation number: %d, output innovation number: %d\n", input_node->innovation_number, output_node->innovation_number);
                 exit(1);
             }
             */
+
         //} else {
-            cerr << "ERROR! propagate backward called on recurrent edge " << innovation_number << " where output_node->outputs_fired[" << time << "] (" << output_node->outputs_fired[time] << ") != total_outputs (" << output_node->total_outputs << ")" << endl;
-            cerr << "input innovation number: " << input_node->innovation_number << ", output innovation number: " << output_node->innovation_number << endl;
+            Log::fatal("ERROR! propagate backward called on recurrent edge %d where output_node->outputs_fired[%d] (%d) != total_outputs (%d)\n", innovation_number, time, output_node->outputs_fired[time], output_node->total_outputs);
+            Log::fatal("input innovation number: %d, output innovation number: %d\n", input_node->innovation_number, output_node->innovation_number);
             exit(1);
         //}
     }
 
-    /*
-    cout << "edge " << innovation_number << " propagating backwards, input_node->series_length: " << input_node->series_length << endl;
-    cout << "input_innovation_number: " << input_innovation_number << endl;
-    cout << "output_innovation_number: " << output_innovation_number << endl;
-    cout << "input_node->output_values.size(): " << input_node->output_values.size() << endl;
-    cout << "output_node->d_input.size(): " << output_node->d_input.size() << endl;
-    */
-
     double delta = output_node->d_input[time];
 
     if (time - recurrent_depth >= 0) {
-        //cout << "propagating backward on recurrent edge " << innovation_number << " from time " << time << " to time " << time - recurrent_depth << " from node " << output_innovation_number << " to node " << input_innovation_number << endl;
+        //Log::trace("propagating backward on recurrent edge %d from time %d to time %d from node %d to node %d\n", innovation_number, time, time - recurrent_depth, output_innovation_number, input_innovation_number);
 
         d_weight += delta * input_node->output_values[time - recurrent_depth];
         deltas[time] = delta * weight;

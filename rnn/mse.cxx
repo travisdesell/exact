@@ -1,9 +1,5 @@
 #include <cmath>
 
-#include <iostream>
-using std::cerr;
-using std::endl;
-
 #include <vector>
 using std::vector;
 

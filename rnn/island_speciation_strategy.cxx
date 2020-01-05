@@ -1,10 +1,7 @@
 #include <functional>
 using std::function;
 
-#include <iostream>
-using std::cout;
-using std::cerr;
-using std::endl;
+//#include <iostream>
 
 #include <random>
 using std::minstd_rand0;
@@ -16,6 +13,8 @@ using std::string;
 #include "examm.hxx"
 #include "rnn_genome.hxx"
 #include "island_speciation_strategy.hxx"
+
+#include "common/log.hxx"
 
 IslandSpeciationStrategy::IslandSpeciationStrategy(int32_t _number_of_islands, int32_t _max_island_size, double _mutation_rate, double _intra_island_crossover_rate, double _inter_island_crossover_rate, RNN_Genome *seed_genome) : generation_island(0), number_of_islands(_number_of_islands), max_island_size(_max_island_size), mutation_rate(_mutation_rate), intra_island_crossover_rate(_intra_island_crossover_rate), inter_island_crossover_rate(_inter_island_crossover_rate), generated_genomes(0), inserted_genomes(0), minimal_genome(seed_genome) {
 
@@ -109,11 +108,11 @@ bool IslandSpeciationStrategy::islands_full() const {
 
 //this will insert a COPY, original needs to be deleted
 int32_t IslandSpeciationStrategy::insert_genome(RNN_Genome* genome) {
-    cout << "inserting genome!" << endl;
+    Log::debug("inserting genome!\n");
     inserted_genomes++;
     int32_t island = genome->get_group_id();
 
-    cout << "inserting genome to island: " << island << endl;
+    Log::info("inserting genome to island: %d\n", island);
 
     bool was_inserted = islands[island]->insert_genome(genome);
 
@@ -125,19 +124,18 @@ RNN_Genome* IslandSpeciationStrategy::generate_genome(uniform_real_distribution<
     //robin fashion.
     RNN_Genome *genome = NULL;
 
-    cout << "getting island: " << generation_island << endl;
+    Log::debug("getting island: %d\n", generation_island);
     Island *island = islands[generation_island];
 
-    cout << "generating new genome for island[" << generation_island << "], island_size: " << island->size() << ", max_island_size: " << max_island_size << ", mutation_rate: " << mutation_rate << ", intra_island_crossover_rate: " << intra_island_crossover_rate << ", inter_island_crossover_rate: " << inter_island_crossover_rate << endl;
+    Log::info("generating new genome for island[%d], island_size: %d, max_island_size: %d, mutation_rate: %lf, intra_island_crossover_rate: %lf, inter_island_crossover_rate: %lf\n", generation_island, island->size(), max_island_size, mutation_rate, intra_island_crossover_rate, inter_island_crossover_rate);
 
-    cout << "islands.size(): " << islands.size() << endl;
-    cout << "island is null? " << (island == NULL) << endl;
+    Log::debug("islands.size(): %d, selected island is null? %d\n", islands.size(), (island == NULL));
 
     if (island->is_initializing()) {
-        cout << "island is initializing!" << endl;
+        Log::debug("island is initializing!\n");
 
         if (island->size() == 0) {
-            cout << "starting with minimal genome" << endl;
+            Log::debug("starting with minimal genome\n");
             RNN_Genome *genome_copy = minimal_genome->copy();
 
             //set the generation id for the copy and increment generated genomes 
@@ -145,14 +143,14 @@ RNN_Genome* IslandSpeciationStrategy::generate_genome(uniform_real_distribution<
             generated_genomes++;
             genome_copy->set_group_id(generation_island);
 
-            cout << "inserting genome copy!" << endl;
+            Log::debug("inserting genome copy!\n");
             insert_genome(genome_copy);
-            cout << "inserted genome copy!" << endl;
+            Log::debug("inserted genome copy!\n");
 
             //return a copy of the minimal genome to be trained for each island
             genome = minimal_genome->copy();
         } else {
-            cout << "island is not empty, mutating a random genome" << endl;
+            Log::debug("island is not empty, mutating a random genome\n");
 
             while (genome == NULL) {
                 island->copy_random_genome(rng_0_1, generator, &genome);
@@ -281,8 +279,8 @@ RNN_Genome* IslandSpeciationStrategy::generate_genome(uniform_real_distribution<
         }
 
     } else {
-        cerr << "ERROR: island was neither initializing, repopulating or full." << endl;
-        cerr << "This should never happen!" << endl;
+        Log::fatal("ERROR: island was neither initializing, repopulating or full.\n");
+        Log::fatal("This should never happen!\n");
         exit(1);
     
     }
@@ -297,8 +295,8 @@ RNN_Genome* IslandSpeciationStrategy::generate_genome(uniform_real_distribution<
         genome->set_generation_id(generated_genomes);
         generated_genomes++;
     } else {
-        cerr << "ERROR: genome was NULL at the end of generate genome!" << endl;
-        cerr << "This should never happen." << endl;
+        Log::fatal("ERROR: genome was NULL at the end of generate genome!\n");
+        Log::fatal( "This should never happen.\n");
         exit(1);
     }
 
@@ -307,11 +305,10 @@ RNN_Genome* IslandSpeciationStrategy::generate_genome(uniform_real_distribution<
 
 
 void IslandSpeciationStrategy::print(string indent) const {
-    cout << indent << "Islands: " << endl;
+    Log::info("%sIslands: \n", indent.c_str());
     for (int32_t i = 0; i < (int32_t)islands.size(); i++) {
-        cout << indent << "\tIsland " << i << ":" << endl;
+        Log::info("%sIsland %d:\n", indent.c_str(), i);
         islands[i]->print(indent + "\t");
     }
-    cout << endl << endl;
 }
  

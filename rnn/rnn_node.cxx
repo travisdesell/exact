@@ -1,24 +1,20 @@
 #include <cmath>
 
-#include <iostream>
-using std::cerr;
-using std::cout;
-using std::endl;
-
 #include <vector>
 using std::vector;
 
 #include "rnn_node.hxx"
 
+#include "common/log.hxx"
 
 
 RNN_Node::RNN_Node(int _innovation_number, int _layer_type, double _depth, int _node_type) : RNN_Node_Interface(_innovation_number, _layer_type, _depth) {
     if (layer_type == INPUT_LAYER) {
         total_inputs = 1;
     }
-    //cout << "created node: " << innovation_number << ", type: " << type << endl;
 
     node_type = _node_type;
+    Log::trace("created node: %d, type: %d\n", innovation_number, node_type);
 }
 
 RNN_Node::~RNN_Node() {
@@ -35,12 +31,11 @@ void RNN_Node::input_fired(int time, double incoming_output) {
 
     if (inputs_fired[time] < total_inputs) return;
     else if (inputs_fired[time] > total_inputs) {
-        cerr << "ERROR: inputs_fired on RNN_Node " << innovation_number << " at time " << time << " is " << inputs_fired[time] << " and total_inputs is " << total_inputs << endl;
+        Log::fatal("ERROR: inputs_fired on RNN_Node %d at time %d is %d and total_inputs is %d\n", innovation_number, time, inputs_fired[time], total_inputs);
         exit(1);
     }
 
-    //cout << "node " << innovation_number << " - input value[" << time << "]: " << input_values[time] << endl;
-
+    //Log::trace("node %d - input value[%d]: %lf\n", innovation_number, time, input_values[time]);
 
     output_values[time] = tanh(input_values[time] + bias);
     ld_output[time] = tanh_derivative(output_values[time]);
@@ -50,9 +45,9 @@ void RNN_Node::input_fired(int time, double incoming_output) {
 
 #ifdef NAN_CHECKS
     if (isnan(output_values[time]) || isinf(output_values[time])) {
-        cerr << "ERROR: output_value[" << time << "] became " << output_values[time] << " on RNN node: " << innovation_number << endl;
-        cerr << "\tinput_value[" << time << "]: " << input_values[time] << endl;
-        cerr << "\tnode bias: " << bias << endl;
+        Log::fatal("ERROR: output_value[%d] becaome %lf on RNN node: %d\n", time, output_values[time], innovation_number);
+        Log::fatal("\tinput_value[%dd]: %lf\n", time, input_values[time]);
+        Log::Fatal("\tnode bias: %lf", bias);
         exit(1);
     }
 #endif
@@ -61,7 +56,7 @@ void RNN_Node::input_fired(int time, double incoming_output) {
 void RNN_Node::try_update_deltas(int time) {
     if (outputs_fired[time] < total_outputs) return;
     else if (outputs_fired[time] > total_outputs) {
-        cerr << "ERROR: outputs_fired on RNN_Node " << innovation_number << " at time " << time << " is " << outputs_fired[time] << " and total_outputs is " << total_outputs << endl;
+        Log::fatal("ERROR: outputs_fired on RNN_Node %d at time %d is %d and total_outputs is %d\n", innovation_number, time, outputs_fired[time], total_outputs);
         exit(1);
     }
 
@@ -73,15 +68,7 @@ void RNN_Node::try_update_deltas(int time) {
 void RNN_Node::error_fired(int time, double error) {
     outputs_fired[time]++;
 
-    /*
-    cout << "error fired at time: " << time << " on node " << innovation_number
-        << ", d_input: " << d_input[time]
-        << ", ld_output: " << ld_output[time]
-        << ", error_values: " << error_values[time]
-        << ", output_values: " << output_values[time]
-        << endl;
-    */
-
+    //Log::trace("error fired at time: %d on node %d, d_input: %lf, ld_output %lf, error_values: %lf, output_values: %lf\n", time, innovation_number, d_input[time], ld_output[time], error_values[time], output_values[time]);
 
     d_input[time] += error_values[time] * error;
 

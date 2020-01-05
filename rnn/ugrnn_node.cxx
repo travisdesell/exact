@@ -6,11 +6,6 @@ using std::ostream;
 #include <iomanip>
 using std::setw;
 
-#include <iostream>
-using std::cerr;
-using std::cout;
-using std::endl;
-
 #include <string>
 using std::string;
 
@@ -22,6 +17,7 @@ using std::uniform_real_distribution;
 using std::vector;
 
 #include "common/random.hxx"
+#include "common/log.hxx"
 
 #include "rnn_node_interface.hxx"
 #include "mse.hxx"
@@ -65,7 +61,7 @@ double UGRNN_Node::get_gradient(string gradient_name) {
         } else if (gradient_name == "g_bias") {
             gradient_sum += d_g_bias[i];
         } else {
-            cerr << "ERROR: tried to get unknown gradient: '" << gradient_name << "'" << endl;
+            Log::fatal("ERROR: tried to get unknown gradient: '%s'\n", gradient_name.c_str());
             exit(1);
         }
     }
@@ -74,7 +70,7 @@ double UGRNN_Node::get_gradient(string gradient_name) {
 }
 
 void UGRNN_Node::print_gradient(string gradient_name) {
-    cout << "\tgradient['" << gradient_name << "']: " << get_gradient(gradient_name) << endl;
+    Log::info("\tgradient['%s']: %lf\n", gradient_name.c_str(), get_gradient(gradient_name));
 }
 
 void UGRNN_Node::input_fired(int time, double incoming_output) {
@@ -84,23 +80,17 @@ void UGRNN_Node::input_fired(int time, double incoming_output) {
 
     if (inputs_fired[time] < total_inputs) return;
     else if (inputs_fired[time] > total_inputs) {
-        cerr << "ERROR: inputs_fired on UGRNN_Node " << innovation_number << " at time " << time << " is " << inputs_fired[time] << " and total_inputs is " << total_inputs << endl;
+        Log::fatal("ERROR: inputs_fired on UGRNN_Node %d at time %d is %d and total_inputs is %d\n", innovation_number, time, inputs_fired[time], total_inputs);
         exit(1);
     }
 
     //update the reset gate bias so its centered around 1
     //g_bias += 1;
 
-    //cout << "PROPAGATING FORWARD" << endl;
-
     double x = input_values[time];
-    //cout << "node " << innovation_number << " - input value[" << time << "] (x): " << x << endl;
 
     double h_prev = 0.0;
     if (time > 0) h_prev = output_values[time - 1];
-    //cout << "node " << innovation_number << " - prev_output_value[" << time << "] (h_prev): " << h_prev << endl;
-
-    //cout << "g_bias: " << g_bias << endl;
 
     double xcw = x * cw;
     double hch = h_prev * ch;
@@ -120,39 +110,29 @@ void UGRNN_Node::input_fired(int time, double incoming_output) {
     //reset alpha, beta1, beta2 so they don't mess with mean/stddev calculations for
     //parameter generation
     //g_bias -= 1.0;
-
-    //cout << "node " << innovation_number << " - output_values[" << time << "]: " << output_values[time] << endl;
 }
 
 void UGRNN_Node::try_update_deltas(int time) {
     if (outputs_fired[time] < total_outputs) return;
     else if (outputs_fired[time] > total_outputs) {
-        cerr << "ERROR: outputs_fired on UGRNN_Node " << innovation_number << " at time " << time << " is " << outputs_fired[time] << " and total_outputs is " << total_outputs << endl;
+        Log::fatal("ERROR: outputs_fired on UGRNN_Node %d at time %d is %d and total_outputs is %d\n", innovation_number, time, outputs_fired[time], total_outputs);
         exit(1);
     }
 
-    //cout << "PROPAGATING BACKWARDS" << endl;
     //update the reset gate bias so its centered around 1   
     //g_bias += 1.0;
 
     double error = error_values[time];
-    //cout << "error_values[time]: " << error << endl;
     double x = input_values[time];
-    //cout << "input value[" << time << "]:" << x << endl;
 
     double h_prev = 0.0;
     if (time > 0) h_prev = output_values[time - 1];
-    //cout << "h_prev[" << (time - 1) << "]: " << h_prev << endl;
-
 
     //backprop output gate
     double d_h = error;
     if (time < (series_length - 1)) d_h += d_h_prev[time + 1];
     //get the error into the output (z), it's the error from ahead in the network
     //as well as from the previous output of the cell
-
-    //cout << "d_z: " << d_z << endl;
-    //cout << "ld_z_cap[" << time << "]: " << ld_z_cap[time] << endl;
 
     d_h_prev[time] = d_h * g[time];
 
@@ -173,11 +153,6 @@ void UGRNN_Node::try_update_deltas(int time) {
     d_ch[time] = d_c * h_prev;
     d_h_prev[time] += d_c * ch;
 
-    //cout << "d_input: " << d_input[time] << endl;
-    //cout << "d_beta2: " << d_beta2[time] << endl;
-
-    //cout << endl << endl;
-
     //reset the reset gate bias to be around 0
     //g_bias -= 1.0;
 }
@@ -196,17 +171,6 @@ void UGRNN_Node::output_fired(int time, double delta) {
     error_values[time] += delta;
 
     try_update_deltas(time);
-}
-
-
-void UGRNN_Node::print_cell_values() {
-    /*
-    cerr << "\tinput_value: " << input_value << endl;
-    cerr << "\tinput_gate_value: " << input_gate_value << ", input_gate_update_weight: " << input_gate_update_weight << ", input_gate_bias: " << input_gate_bias << endl;
-    cerr << "\toutput_gate_value: " << output_gate_value << ", output_gate_update_weight: " << output_gate_update_weight << ", output_gate_bias: " << output_gate_bias << endl;
-    cerr << "\tforget_gate_value: " << forget_gate_value << ", forget_gate_update_weight: " << forget_gate_update_weight << "\tforget_gate_bias: " << forget_gate_bias << endl;
-    cerr << "\tcell_value: " << cell_value << ", cell_bias: " << cell_bias << endl;
-    */
 }
 
 
@@ -238,8 +202,7 @@ void UGRNN_Node::set_weights(uint32_t &offset, const vector<double> &parameters)
     g_bias = bound(parameters[offset++]);
 
     //uint32_t end_offset = offset;
-
-    //cerr << "set weights from offset " << start_offset << " to " << end_offset << " on UGRNN_Node " << innovation_number << endl;
+    //Log::debug("set weights from offset %d to %d on UGRNN_Node %d\n", start_offset, end_offset, innovation_number);
 }
 
 void UGRNN_Node::get_weights(uint32_t &offset, vector<double> &parameters) const {
@@ -254,8 +217,7 @@ void UGRNN_Node::get_weights(uint32_t &offset, vector<double> &parameters) const
     parameters[offset++] = g_bias;
 
     //uint32_t end_offset = offset;
-
-    //cerr << "set weights from offset " << start_offset << " to " << end_offset << " on UGRNN_Node " << innovation_number << endl;
+    //Log::debug("got weights from offset %d to %d on UGRNN_Node %d\n", start_offset, end_offset, innovation_number);
 }
 
 
@@ -308,8 +270,6 @@ void UGRNN_Node::reset(int _series_length) {
 
 RNN_Node_Interface* UGRNN_Node::copy() const {
     UGRNN_Node* n = new UGRNN_Node(innovation_number, layer_type, depth);
-
-    //cout << "COPYING!" << endl;
 
     //copy UGRNN_Node values
     n->cw = cw;
