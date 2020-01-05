@@ -87,7 +87,7 @@ void Log::initialize(const vector<string> &arguments) {
     std_message_level = parse_level_from_string(std_message_level_str);
     file_message_level = parse_level_from_string(file_message_level_str);
 
-    cerr << "std_message_level: " << std_message_level << ", file_message_level: " << file_message_level << endl;
+    //cerr << "std_message_level: " << std_message_level << ", file_message_level: " << file_message_level << endl;
 
     get_argument(arguments, "--max_header_length", false, max_header_length);
     get_argument(arguments, "--max_message_length", false, max_message_length);

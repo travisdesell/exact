@@ -1439,7 +1439,7 @@ void RNN_Genome::get_mu_sigma(const vector<double> &p, double &mu, double &sigma
     if (p.size() == 0) {
         mu = 0.0;
         sigma = 0.25;
-        Log::info("\tmu: %lf, sigma: %lf, parameters.size() == 0\n", mu, sigma);
+        Log::debug("\tmu: %lf, sigma: %lf, parameters.size() == 0\n", mu, sigma);
         return;
     }
 
@@ -1473,7 +1473,7 @@ void RNN_Genome::get_mu_sigma(const vector<double> &p, double &mu, double &sigma
     sigma /= (p.size() - 1);
     sigma = sqrt(sigma);
 
-    Log::info("\tmu: %lf, sigma: %lf, parameters.size(): %d\n", mu, sigma, p.size());
+    Log::debug("\tmu: %lf, sigma: %lf, parameters.size(): %d\n", mu, sigma, p.size());
     if (std::isnan(mu) || std::isinf(mu) || std::isnan(sigma) || std::isinf(sigma)) {
         Log::fatal("mu or sigma was not a number, all parameters:\n");
         for (int32_t i = 0; i < (int32_t)p.size(); i++) {
@@ -2494,7 +2494,7 @@ void RNN_Genome::read_from_array(char *array, int32_t length, bool verbose) {
 }
 
 void RNN_Genome::read_from_stream(istream &bin_istream, bool verbose) {
-    Log::debug("READING GENOME FROM STREAM");
+    Log::debug("READING GENOME FROM STREAM\n");
 
     bin_istream.read((char*)&generation_id, sizeof(int32_t));
     bin_istream.read((char*)&group_id, sizeof(int32_t));

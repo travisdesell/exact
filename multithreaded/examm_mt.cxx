@@ -6,11 +6,6 @@ using std::condition_variable;
 #include <iomanip>
 using std::setw;
 
-#include <iostream>
-using std::cerr;
-using std::cout;
-using std::endl;
-
 #include <mutex>
 using std::mutex;
 
