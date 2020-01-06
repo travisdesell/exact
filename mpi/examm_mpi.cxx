@@ -224,7 +224,7 @@ int main(int argc, char** argv) {
 
     Log::initialize(arguments);
     Log::set_rank(rank);
-    Log::set_id("main" + to_string(rank));
+    Log::set_id("main_" + to_string(rank));
     Log::restrict_to_rank(0);
 
     TimeSeriesSets *time_series_sets = NULL;
@@ -326,7 +326,7 @@ int main(int argc, char** argv) {
     finished = true;
 
     Log::debug("rank %d completed!\n");
-    Log::release_id("main" + to_string(rank));
+    Log::release_id("main_" + to_string(rank));
 
     MPI_Finalize();
 
