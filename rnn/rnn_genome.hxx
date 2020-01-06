@@ -164,8 +164,8 @@ class RNN_Genome {
         void backpropagate_stochastic(const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, const vector< vector< vector<double> > > &validation_inputs, const vector< vector< vector<double> > > &validation_outputs);
 
 
-        double get_mse(const vector<double> &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, bool verbose = false);
-        double get_mae(const vector<double> &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, bool verbose = false);
+        double get_mse(const vector<double> &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs);
+        double get_mae(const vector<double> &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs);
 
 
         vector< vector<double> > get_predictions(const vector<double> &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs);
@@ -208,16 +208,16 @@ class RNN_Genome {
         string get_color(double weight, bool is_recurrent);
         void write_graphviz(string filename);
 
-        RNN_Genome(string binary_filename, bool verbose = false);
-        RNN_Genome(char* array, int32_t length, bool verbose = false);
-        RNN_Genome(istream &bin_infile, bool verbose = false);
+        RNN_Genome(string binary_filename);
+        RNN_Genome(char* array, int32_t length);
+        RNN_Genome(istream &bin_infile);
 
-        void read_from_array(char *array, int32_t length, bool verbose = false);
-        void read_from_stream(istream &bin_istream, bool verbose = false);
+        void read_from_array(char *array, int32_t length);
+        void read_from_stream(istream &bin_istream);
 
-        void write_to_array(char **array, int32_t &length, bool verbose = false);
-        void write_to_file(string bin_filename, bool verbose = false);
-        void write_to_stream(ostream &bin_stream, bool verbose = false);
+        void write_to_array(char **array, int32_t &length);
+        void write_to_file(string bin_filename);
+        void write_to_stream(ostream &bin_stream);
 
 
         friend class EXAMM;

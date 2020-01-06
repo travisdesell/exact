@@ -917,7 +917,7 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
     Log::trace("initialized previous values.\n");
 
     //TODO: need to get validation error on the RNN not the genome
-    double validation_mse = get_mse(parameters, validation_inputs, validation_outputs, false);
+    double validation_mse = get_mse(parameters, validation_inputs, validation_outputs);
     best_validation_mse = validation_mse;
     best_validation_mae = get_mae(parameters, validation_inputs, validation_outputs);
     best_parameters = parameters;
@@ -1153,7 +1153,7 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
     get_mu_sigma(best_parameters, _mu, _sigma);
 }
 
-double RNN_Genome::get_mse(const vector<double> &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, bool verbose) {
+double RNN_Genome::get_mse(const vector<double> &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs) {
     RNN *rnn = get_rnn();
     rnn->set_weights(parameters);
 
@@ -1175,7 +1175,7 @@ double RNN_Genome::get_mse(const vector<double> &parameters, const vector< vecto
     return avg_mse;
 }
 
-double RNN_Genome::get_mae(const vector<double> &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, bool verbose) {
+double RNN_Genome::get_mae(const vector<double> &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs) {
     RNN *rnn = get_rnn();
     rnn->set_weights(parameters);
 
@@ -2442,14 +2442,14 @@ void write_map(ostream &out, map<string, int> &m) {
 
 
 
-void write_binary_string(ostream &out, string s, string name, bool verbose) {
+void write_binary_string(ostream &out, string s, string name) {
     int32_t n = s.size();
     Log::debug("writing %d %s characters '%s'\n", n, name.c_str(), s.c_str());
     out.write((char*)&n, sizeof(int32_t));
     out.write((char*)&s[0], sizeof(char) * s.size());
 }
 
-void read_binary_string(istream &in, string &s, string name, bool verbose) {
+void read_binary_string(istream &in, string &s, string name) {
     int32_t n;
     in.read((char*)&n, sizeof(int32_t));
 
@@ -2463,7 +2463,7 @@ void read_binary_string(istream &in, string &s, string name, bool verbose) {
 }
 
 
-RNN_Genome::RNN_Genome(string binary_filename, bool verbose) {
+RNN_Genome::RNN_Genome(string binary_filename) {
     ifstream bin_infile(binary_filename, ios::in | ios::binary);
 
     if (!bin_infile.good()) {
@@ -2471,29 +2471,29 @@ RNN_Genome::RNN_Genome(string binary_filename, bool verbose) {
         exit(1);
     }
 
-    read_from_stream(bin_infile, verbose);
+    read_from_stream(bin_infile);
     bin_infile.close();
 }
 
-RNN_Genome::RNN_Genome(char *array, int32_t length, bool verbose) {
-    read_from_array(array, length, verbose);
+RNN_Genome::RNN_Genome(char *array, int32_t length) {
+    read_from_array(array, length);
 }
 
-RNN_Genome::RNN_Genome(istream &bin_infile, bool verbose) {
-    read_from_stream(bin_infile, verbose);
+RNN_Genome::RNN_Genome(istream &bin_infile) {
+    read_from_stream(bin_infile);
 }
 
-void RNN_Genome::read_from_array(char *array, int32_t length, bool verbose) {
+void RNN_Genome::read_from_array(char *array, int32_t length) {
     string array_str;
     for (uint32_t i = 0; i < length; i++) {
         array_str.push_back(array[i]);
     }
 
     istringstream iss(array_str);
-    read_from_stream(iss, verbose);
+    read_from_stream(iss);
 }
 
-void RNN_Genome::read_from_stream(istream &bin_istream, bool verbose) {
+void RNN_Genome::read_from_stream(istream &bin_istream) {
     Log::debug("READING GENOME FROM STREAM\n");
 
     bin_istream.read((char*)&generation_id, sizeof(int32_t));
@@ -2527,21 +2527,21 @@ void RNN_Genome::read_from_stream(istream &bin_istream, bool verbose) {
     Log::debug("use_dropout: %d\n", use_dropout);
     Log::debug("dropout_probability: %lf\n", dropout_probability);
 
-    read_binary_string(bin_istream, log_filename, "log_filename", verbose);
+    read_binary_string(bin_istream, log_filename, "log_filename");
 
     string generator_str;
-    read_binary_string(bin_istream, generator_str, "generator", verbose);
+    read_binary_string(bin_istream, generator_str, "generator");
     istringstream generator_iss(generator_str);
     generator_iss >> generator;
 
     string rng_0_1_str;
-    read_binary_string(bin_istream, rng_0_1_str, "rng_0_1", verbose);
+    read_binary_string(bin_istream, rng_0_1_str, "rng_0_1");
     istringstream rng_0_1_iss;
     rng_0_1_iss >> rng_0_1;
 
 
     string generated_by_map_str;
-    read_binary_string(bin_istream, generated_by_map_str, "generated_by_map", verbose);
+    read_binary_string(bin_istream, generated_by_map_str, "generated_by_map");
     istringstream generated_by_map_iss(generated_by_map_str);
     read_map(generated_by_map_iss, generated_by_map);
 
@@ -2571,7 +2571,7 @@ void RNN_Genome::read_from_stream(istream &bin_istream, bool verbose) {
     Log::debug("reading %d input parameter names.\n", n_input_parameter_names);
     for (int32_t i = 0; i < n_input_parameter_names; i++) {
         string input_parameter_name;
-        read_binary_string(bin_istream, input_parameter_name, "input_parameter_names[" + std::to_string(i) + "]", verbose);
+        read_binary_string(bin_istream, input_parameter_name, "input_parameter_names[" + std::to_string(i) + "]");
         input_parameter_names.push_back(input_parameter_name);
     }
 
@@ -2581,7 +2581,7 @@ void RNN_Genome::read_from_stream(istream &bin_istream, bool verbose) {
     Log::debug("reading %d output parameter names.\n", n_output_parameter_names);
     for (int32_t i = 0; i < n_output_parameter_names; i++) {
         string output_parameter_name;
-        read_binary_string(bin_istream, output_parameter_name, "output_parameter_names[" + std::to_string(i) + "]", verbose);
+        read_binary_string(bin_istream, output_parameter_name, "output_parameter_names[" + std::to_string(i) + "]");
         output_parameter_names.push_back(output_parameter_name);
     }
 
@@ -2680,21 +2680,21 @@ void RNN_Genome::read_from_stream(istream &bin_istream, bool verbose) {
     }
 
     string normalize_mins_str;
-    read_binary_string(bin_istream, normalize_mins_str, "normalize_mins", verbose);
+    read_binary_string(bin_istream, normalize_mins_str, "normalize_mins");
     istringstream normalize_mins_iss(normalize_mins_str);
     read_map(normalize_mins_iss, normalize_mins);
 
     string normalize_maxs_str;
-    read_binary_string(bin_istream, normalize_maxs_str, "normalize_maxs", verbose);
+    read_binary_string(bin_istream, normalize_maxs_str, "normalize_maxs");
     istringstream normalize_maxs_iss(normalize_maxs_str);
     read_map(normalize_maxs_iss, normalize_maxs);
 
     assign_reachability();
 }
 
-void RNN_Genome::write_to_array(char **bytes, int32_t &length, bool verbose) {
+void RNN_Genome::write_to_array(char **bytes, int32_t &length) {
     ostringstream oss;
-    write_to_stream(oss, verbose);
+    write_to_stream(oss);
 
     string bytes_str = oss.str();
     length = bytes_str.size();
@@ -2704,13 +2704,13 @@ void RNN_Genome::write_to_array(char **bytes, int32_t &length, bool verbose) {
     }
 }
 
-void RNN_Genome::write_to_file(string bin_filename, bool verbose) {
+void RNN_Genome::write_to_file(string bin_filename) {
     ofstream bin_outfile(bin_filename, ios::out | ios::binary);
-    write_to_stream(bin_outfile, verbose);
+    write_to_stream(bin_outfile);
     bin_outfile.close();
 }
 
-void RNN_Genome::write_to_stream(ostream &bin_ostream, bool verbose) {
+void RNN_Genome::write_to_stream(ostream &bin_ostream) {
     Log::debug("WRITING GENOME TO STREAM\n");
 
     bin_ostream.write((char*)&generation_id, sizeof(int32_t));
@@ -2744,22 +2744,22 @@ void RNN_Genome::write_to_stream(ostream &bin_ostream, bool verbose) {
     Log::debug("use_dropout: %d\n", use_dropout);
     Log::debug("dropout_probability: %lf\n", dropout_probability);
 
-    write_binary_string(bin_ostream, log_filename, "log_filename", verbose);
+    write_binary_string(bin_ostream, log_filename, "log_filename");
 
     ostringstream generator_oss;
     generator_oss << generator;
     string generator_str = generator_oss.str();
-    write_binary_string(bin_ostream, generator_str, "generator", verbose);
+    write_binary_string(bin_ostream, generator_str, "generator");
 
     ostringstream rng_0_1_oss;
     rng_0_1_oss << rng_0_1;
     string rng_0_1_str = rng_0_1_oss.str();
-    write_binary_string(bin_ostream, rng_0_1_str, "rng_0_1", verbose);
+    write_binary_string(bin_ostream, rng_0_1_str, "rng_0_1");
 
     ostringstream generated_by_map_oss;
     write_map(generated_by_map_oss, generated_by_map);
     string generated_by_map_str = generated_by_map_oss.str();
-    write_binary_string(bin_ostream, generated_by_map_str, "generated_by_map", verbose);
+    write_binary_string(bin_ostream, generated_by_map_str, "generated_by_map");
 
     bin_ostream.write((char*)&best_validation_mse, sizeof(double));
     bin_ostream.write((char*)&best_validation_mae, sizeof(double));
@@ -2777,13 +2777,13 @@ void RNN_Genome::write_to_stream(ostream &bin_ostream, bool verbose) {
     int32_t n_input_parameter_names = input_parameter_names.size();
     bin_ostream.write((char*)&n_input_parameter_names, sizeof(int32_t));
     for (int32_t i = 0; i < input_parameter_names.size(); i++) {
-        write_binary_string(bin_ostream, input_parameter_names[i], "input_parameter_names[" + std::to_string(i) + "]", verbose);
+        write_binary_string(bin_ostream, input_parameter_names[i], "input_parameter_names[" + std::to_string(i) + "]");
     }
 
     int32_t n_output_parameter_names = output_parameter_names.size();
     bin_ostream.write((char*)&n_output_parameter_names, sizeof(int32_t));
     for (int32_t i = 0; i < output_parameter_names.size(); i++) {
-        write_binary_string(bin_ostream, output_parameter_names[i], "output_parameter_names[" + std::to_string(i) + "]", verbose);
+        write_binary_string(bin_ostream, output_parameter_names[i], "output_parameter_names[" + std::to_string(i) + "]");
     }
 
     int32_t n_nodes = nodes.size();
@@ -2819,10 +2819,10 @@ void RNN_Genome::write_to_stream(ostream &bin_ostream, bool verbose) {
     ostringstream normalize_mins_oss;
     write_map(normalize_mins_oss, normalize_mins);
     string normalize_mins_str = normalize_mins_oss.str();
-    write_binary_string(bin_ostream, normalize_mins_str, "normalize_mins", verbose);
+    write_binary_string(bin_ostream, normalize_mins_str, "normalize_mins");
 
     ostringstream normalize_maxs_oss;
     write_map(normalize_maxs_oss, normalize_maxs);
     string normalize_maxs_str = normalize_maxs_oss.str();
-    write_binary_string(bin_ostream, normalize_maxs_str, "normalize_maxs", verbose);
+    write_binary_string(bin_ostream, normalize_maxs_str, "normalize_maxs");
 }

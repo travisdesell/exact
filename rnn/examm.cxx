@@ -358,7 +358,7 @@ bool EXAMM::insert_genome(RNN_Genome* genome) {
     //write this genome to disk if it was a new best found genome
     if (insert_position == 0) {
         genome->write_graphviz(output_directory + "/rnn_genome_" + to_string(genome->get_generation_id()) + ".gv");
-        genome->write_to_file(output_directory + "/rnn_genome_" + to_string(genome->get_generation_id()) + ".bin", true);
+        genome->write_to_file(output_directory + "/rnn_genome_" + to_string(genome->get_generation_id()) + ".bin");
 
     }
     speciation_strategy->print();

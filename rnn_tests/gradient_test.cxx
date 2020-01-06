@@ -4,11 +4,6 @@
 using std::getline;
 using std::ifstream;
 
-#include <iostream>
-using std::cout;
-using std::cerr;
-using std::endl;
-
 #include <random>
 using std::minstd_rand0;
 using std::uniform_real_distribution;
@@ -20,6 +15,7 @@ using std::string;
 using std::vector;
 
 #include "common/arguments.hxx"
+#include "common/log.hxx"
 
 #include "rnn/lstm_node.hxx"
 #include "rnn/rnn_edge.hxx"
@@ -53,22 +49,20 @@ void generate_random_vector(int number_parameters, vector<double> &v) {
 	}
 }
 
-void gradient_test(string name, RNN_Genome *genome, const vector< vector<double> > &inputs, const vector< vector<double> > &outputs, bool verbose) {
+void gradient_test(string name, RNN_Genome *genome, const vector< vector<double> > &inputs, const vector< vector<double> > &outputs) {
 	double analytic_mse, empirical_mse;
 	vector<double> parameters;
 	vector<double> analytic_gradient, empirical_gradient;
 
-	cout << "\ttesting gradient on '" << name << "' ... " << endl;
+    Log::info("\ttesting gradient on '%s'...\n", name.c_str());
 	bool failed = false;
 
 	RNN* rnn = genome->get_rnn();
 
 
 	for (uint32_t i = 0; i < test_iterations; i++) {
-		if (verbose) {
-			if (i == 0) cout << endl;
-			cout << "\tAttempt " << i << endl;
-		}
+        if (i == 0) Log::debug_no_header("\n");
+        Log::debug("\tAttempt %d\n", i);
 
 		generate_random_vector(rnn->get_number_weights(), parameters);
 
@@ -83,23 +77,23 @@ void gradient_test(string name, RNN_Genome *genome, const vector< vector<double>
 			if (fabs(difference) > 10e-10) {
 				failed = true;
                 iteration_failed = true;
-				cout << "\t\tFAILED analytic gradient[" << j << "]: " << analytic_gradient[j] << ", empirical gradient[" << j << "]: " << empirical_gradient[j] << ", difference: " << difference << endl;
+                Log::info("\t\tFAILED analytic gradient[%d]: %lf, empirical gradient[%d]: %lf, difference: %lf\n", j, analytic_gradient[j], j, empirical_gradient[j], difference);
 				//exit(1);
-			} else if (verbose) {
-				cout << "\t\tPASSED analytic gradient[" << j << "]: " << analytic_gradient[j] << ", empirical gradient[" << j << "]: " << empirical_gradient[j] << ", difference: " << difference << endl;
+			} else {
+                Log::debug("\t\tPASSED analytic gradient[%d]: %lf, empirical gradient[%d]: %lf, difference: %lf\n", j, analytic_gradient[j], j, empirical_gradient[j], difference);
             }
 		}
 
         if (iteration_failed) {
-            cout << "\tITERATION " << i << " FAILED!" << endl << endl;
-        } else if (verbose) {
-            cout << "\tITERATION " << i << " PASSED!" << endl << endl;
+            Log::info("\tITERATION %d FAILED!\n\n", i);
+        } else {
+            Log::debug("\tITERATION %d PASSED!\n\n", i);
         }
 	}
 
 	if (!failed) {
-		cout << "ALL PASSED!" << endl;
+        Log::info("ALL PASSED!\n");
 	} else {
-        cout << "SOME FAILED!" << endl;
+        Log::info("SOME FAILED!\n");
     }
 }

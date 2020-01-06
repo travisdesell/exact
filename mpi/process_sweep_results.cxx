@@ -83,7 +83,7 @@ void process_dir(string dir_name, int depth) {
 
             if (depth == 3 && extension_is(sub_dir_name, ".bin")) {
                 cout << "\tprocessing genome binary '" << sub_dir_name << "' for '" << current_output << "'" << " and " << current_run_type;
-                RNN_Genome *genome = new RNN_Genome(sub_dir_name, false);
+                RNN_Genome *genome = new RNN_Genome(sub_dir_name);
                 cout << ", fitness: " << genome->get_fitness() << endl;
 
                 genome_map[current_output][current_run_type].push_back(genome);

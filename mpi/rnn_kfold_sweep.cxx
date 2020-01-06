@@ -445,11 +445,11 @@ ResultSet handle_job(int rank, int current_job) {
     genome->get_weights(best_parameters);
     rnn->set_weights(best_parameters);
 
-    double training_mse = genome->get_mse(best_parameters, training_inputs, training_outputs, false);
-    double training_mae = genome->get_mae(best_parameters, training_inputs, training_outputs, false);
+    double training_mse = genome->get_mse(best_parameters, training_inputs, training_outputs);
+    double training_mae = genome->get_mae(best_parameters, training_inputs, training_outputs);
 
-    double test_mse = genome->get_mse(best_parameters, validation_inputs, validation_outputs, false);
-    double test_mae = genome->get_mae(best_parameters, validation_inputs, validation_outputs, false);
+    double test_mse = genome->get_mse(best_parameters, validation_inputs, validation_outputs);
+    double test_mae = genome->get_mae(best_parameters, validation_inputs, validation_outputs);
 
     Log::release_id(backprop_log_id);
     Log::set_id("worker_" + to_string(rank));

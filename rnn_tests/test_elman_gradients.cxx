@@ -4,11 +4,6 @@
 using std::getline;
 using std::ifstream;
 
-#include <iostream>
-using std::cout;
-using std::cerr;
-using std::endl;
-
 #include <random>
 using std::minstd_rand0;
 using std::uniform_real_distribution;
@@ -20,6 +15,7 @@ using std::string;
 using std::vector;
 
 #include "common/arguments.hxx"
+#include "common/log.hxx"
 
 #include "rnn/lstm_node.hxx"
 #include "rnn/rnn_edge.hxx"
@@ -36,21 +32,23 @@ using std::vector;
 int main(int argc, char **argv) {
     vector<string> arguments = vector<string>(argv, argv + argc);
 
+    Log::initialize(arguments);
+    Log::set_id("main");
+
     initialize_generator();
 
     RNN_Genome *genome;
 
-    cout << "TESTING ELMAN" << endl;
+    Log::info("TESTING ELMAN\n");
 
     vector< vector<double> > inputs;
     vector< vector<double> > outputs;
 
-    bool verbose = argument_exists(arguments, "--verbose");
     int input_length = 10;
     get_argument(arguments, "--input_length", true, input_length);
 
     for (int32_t max_recurrent_depth = 1; max_recurrent_depth <= 5; max_recurrent_depth++) {
-        cout << "\n\testing with max recurrent depth: " << max_recurrent_depth << endl;
+        Log::info("testing with max recurrent depth: %d\n", max_recurrent_depth);
 
         inputs.resize(1);
         outputs.resize(1);
@@ -61,19 +59,19 @@ int main(int argc, char **argv) {
 
         //Test 1 input, 1 output, no hidden
         genome = create_elman(1, 0, 0, 1, max_recurrent_depth);
-        gradient_test("ELMAN: 1 Input, 1 Output", genome, inputs, outputs, verbose);
+        gradient_test("ELMAN: 1 Input, 1 Output", genome, inputs, outputs);
         delete genome;
 
         genome = create_elman(1, 1, 1, 1, max_recurrent_depth);
-        gradient_test("ELMAN: 1 Input, 1x1 Hidden, 1 Output", genome, inputs, outputs, verbose);
+        gradient_test("ELMAN: 1 Input, 1x1 Hidden, 1 Output", genome, inputs, outputs);
         delete genome;
 
         genome = create_elman(1, 1, 2, 1, max_recurrent_depth);
-        gradient_test("ELMAN: 1 Input, 1x2 Hidden, 1 Output", genome, inputs, outputs, verbose);
+        gradient_test("ELMAN: 1 Input, 1x2 Hidden, 1 Output", genome, inputs, outputs);
         delete genome;
 
         genome = create_elman(1, 2, 2, 1, max_recurrent_depth);
-        gradient_test("ELMAN: 1 Input, 2x2 Hidden, 1 Output", genome, inputs, outputs, verbose);
+        gradient_test("ELMAN: 1 Input, 2x2 Hidden, 1 Output", genome, inputs, outputs);
         delete genome;
 
 
@@ -88,20 +86,20 @@ int main(int argc, char **argv) {
         generate_random_vector(input_length, inputs[1]);
         generate_random_vector(input_length, outputs[1]);
 
-        gradient_test("ELMAN: 2 Input, 2 Output", genome, inputs, outputs, verbose);
+        gradient_test("ELMAN: 2 Input, 2 Output", genome, inputs, outputs);
         delete genome;
 
 
         genome = create_elman(2, 2, 2, 2, max_recurrent_depth);
-        gradient_test("ELMAN: 2 Input, 2x2 Hidden, 2 Output", genome, inputs, outputs, verbose);
+        gradient_test("ELMAN: 2 Input, 2x2 Hidden, 2 Output", genome, inputs, outputs);
         delete genome;
 
         genome = create_elman(2, 2, 3, 2, max_recurrent_depth);
-        gradient_test("ELMAN: 2 Input, 2x3 Hidden, 2 Output", genome, inputs, outputs, verbose);
+        gradient_test("ELMAN: 2 Input, 2x3 Hidden, 2 Output", genome, inputs, outputs);
         delete genome;
 
         genome = create_elman(2, 3, 3, 2, max_recurrent_depth);
-        gradient_test("ELMAN: 2 Input, 3x3 Hidden, 2 Output", genome, inputs, outputs, verbose);
+        gradient_test("ELMAN: 2 Input, 3x3 Hidden, 2 Output", genome, inputs, outputs);
         delete genome;
 
 
@@ -118,19 +116,19 @@ int main(int argc, char **argv) {
         generate_random_vector(input_length, inputs[2]);
         generate_random_vector(input_length, outputs[2]);
 
-        gradient_test("ELMAN: Three Input, Three Output", genome, inputs, outputs, verbose);
+        gradient_test("ELMAN: Three Input, Three Output", genome, inputs, outputs);
         delete genome;
 
         genome = create_elman(3, 3, 3, 3, max_recurrent_depth);
-        gradient_test("ELMAN: 3 Input, 3x3 Hidden, 3 Output", genome, inputs, outputs, verbose);
+        gradient_test("ELMAN: 3 Input, 3x3 Hidden, 3 Output", genome, inputs, outputs);
         delete genome;
 
         genome = create_elman(3, 3, 4, 3, max_recurrent_depth);
-        gradient_test("ELMAN: 3 Input, 3x4 Hidden, 3 Output", genome, inputs, outputs, verbose);
+        gradient_test("ELMAN: 3 Input, 3x4 Hidden, 3 Output", genome, inputs, outputs);
         delete genome;
 
         genome = create_elman(3, 4, 4, 3, max_recurrent_depth);
-        gradient_test("ELMAN: 3 Input, 4x4 Hidden, 3 Output", genome, inputs, outputs, verbose);
+        gradient_test("ELMAN: 3 Input, 4x4 Hidden, 3 Output", genome, inputs, outputs);
         delete genome;
     }
 }

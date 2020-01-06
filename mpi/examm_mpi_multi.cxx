@@ -77,7 +77,7 @@ RNN_Genome* receive_genome_from(int source) {
 
     Log::trace("genome_str:\n%s\n", genome_str);
 
-    RNN_Genome* genome = new RNN_Genome(genome_str, length, false);
+    RNN_Genome* genome = new RNN_Genome(genome_str, length);
 
     delete [] genome_str;
     return genome;
@@ -363,7 +363,7 @@ int main(int argc, char** argv) {
                 string graphviz_file = slice_output_directory + "/repeat_best_" + to_string(k) + ".gv";
 
                 Log::debug("writing best genome to '%s' and '%s'\n", binary_file.c_str(), graphviz_file.c_str());
-                best_genome->write_to_file(binary_file, false);
+                best_genome->write_to_file(binary_file);
                 best_genome->write_graphviz(graphviz_file);
 
                 delete examm;
