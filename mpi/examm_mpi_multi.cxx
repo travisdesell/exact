@@ -268,9 +268,9 @@ int main(int argc, char** argv) {
     
     if (rank == 0) {
         //only have the master process be verbose
-        time_series_sets = TimeSeriesSets::generate_from_arguments(arguments, true);
+        time_series_sets = TimeSeriesSets::generate_from_arguments(arguments);
     } else {
-        time_series_sets = TimeSeriesSets::generate_from_arguments(arguments, false);
+        time_series_sets = TimeSeriesSets::generate_from_arguments(arguments);
     }
 
     int32_t time_offset = 1;

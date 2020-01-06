@@ -544,12 +544,14 @@ int main(int argc, char **argv) {
 
     if (rank == 0) {
         //only print verbose info from the master process
-        time_series_sets = TimeSeriesSets::generate_from_arguments(arguments, true);
+        time_series_sets = TimeSeriesSets::generate_from_arguments(arguments);
     } else {
-        time_series_sets = TimeSeriesSets::generate_from_arguments(arguments, false);
+        time_series_sets = TimeSeriesSets::generate_from_arguments(arguments);
     }
 
     //MPI_Barrier(MPI_COMM_WORLD);
+
+    Log::clear_rank_restriction();
 
     if (rank == 0) {
         master(max_rank);
