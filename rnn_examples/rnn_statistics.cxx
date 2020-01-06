@@ -6,11 +6,6 @@ using std::condition_variable;
 #include <iomanip>
 using std::setw;
 
-#include <iostream>
-using std::cerr;
-using std::cout;
-using std::endl;
-
 #include <mutex>
 using std::mutex;
 
@@ -24,6 +19,7 @@ using std::thread;
 using std::vector;
 
 #include "common/arguments.hxx"
+#include "common/log.hxx"
 
 #include "rnn/rnn_genome.hxx"
 
@@ -38,6 +34,9 @@ vector< vector< vector<double> > > testing_outputs;
 int main(int argc, char** argv) {
     arguments = vector<string>(argv, argv + argc);
 
+    Log::initialize(arguments);
+    Log::set_id("main");
+
     vector<string> rnn_filenames;
     get_argument_vector(arguments, "--rnn_filenames", true, rnn_filenames);
 
@@ -47,7 +46,7 @@ int main(int argc, char** argv) {
     double avg_weights = 0.0;
 
     for (int32_t i = 0; i < (int32_t)rnn_filenames.size(); i++) {
-        cout << "reading file: " << rnn_filenames[i] << endl;
+        Log::info("reading file: %s\n", rnn_filenames[i].c_str());
         RNN_Genome *genome = new RNN_Genome(rnn_filenames[i], true);
 
         int32_t nodes = genome->get_enabled_node_count();
@@ -55,7 +54,7 @@ int main(int argc, char** argv) {
         int32_t rec_edges = genome->get_enabled_recurrent_edge_count();
         int32_t weights = genome->get_number_weights();
 
-        cout << "RNN INFO FOR '" << rnn_filenames[i] << ", nodes: " << nodes << ", edges: " << edges << ", rec: " << rec_edges << ", weights: " << weights << endl;
+        Log::info("RNN INFO FOR '%s', nodes: %d, edges: %d, rec: %d, weights: %d\n", rnn_filenames[i].c_str(), nodes, edges, rec_edges, weights);
 
         avg_nodes += nodes;
         avg_edges += edges;
@@ -68,7 +67,9 @@ int main(int argc, char** argv) {
     avg_rec_edges /= rnn_filenames.size();
     avg_weights /= rnn_filenames.size();
 
-    cout << "AVG INFO, nodes: " << avg_nodes << ", edges: " << avg_edges << ", rec: " << avg_rec_edges << ", weights: " << avg_weights << endl;
+    Log::info("AVG INFO, nodes: %d, edges: %d, rec: %d, weights: %d\n", avg_nodes, avg_edges, avg_rec_edges, avg_weights);
+
+    Log::release_id("main");
 
     return 0;
 }

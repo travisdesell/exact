@@ -24,11 +24,6 @@ using std::condition_variable;
 #include <iomanip>
 using std::setw;
 
-#include <iostream>
-using std::cerr;
-using std::cout;
-using std::endl;
-
 #include <mutex>
 using std::mutex;
 
@@ -42,6 +37,7 @@ using std::thread;
 using std::vector;
 
 #include "common/arguments.hxx"
+#include "common/log.hxx"
 
 #include "rnn/rnn_genome.hxx"
 
@@ -56,12 +52,15 @@ vector< vector< vector<double> > > testing_outputs;
 int main(int argc, char** argv) {
     arguments = vector<string>(argv, argv + argc);
 
+    Log::initialize(arguments);
+    Log::set_id("main");
+
     vector<string> genome_filenames;
     get_argument_vector(arguments, "--genome_filenames", true, genome_filenames);
 
     vector<RNN_Genome*> genomes;
     for (int32_t i = 0; i < genome_filenames.size(); i++) {
-        cout << "reading genome filename: " << genome_filenames[i] << endl;
+        Log::info("reading genome filename: %s\n", genome_filenames[i].c_str());
         genomes.push_back(new RNN_Genome(genome_filenames[i], false));
     }
 
@@ -69,7 +68,7 @@ int main(int argc, char** argv) {
     get_argument_vector(arguments, "--time_offsets", true, time_offsets);
 
     if (time_offsets.size() != genome_filenames.size()) {
-        cerr << "ERROR: number of time_offsets (" << time_offsets.size() << ") != number of genome_files: (" << genome_filenames.size() << ")" << endl;
+        Log::fatal("ERROR: number of time_offsets (%d) != number of genome_files: (%d)\n", time_offsets.size(), genome_filenames.size());
         exit(1);
     }
 
@@ -94,39 +93,32 @@ int main(int argc, char** argv) {
     time_series_sets->export_series_by_name(output_parameter_name, full_series);
 
     all_series.push_back(full_series[0]);
-    cout << "output_parameter_name: " << output_parameter_name << ", full_series.size(): " << full_series.size() << ", full_series[0].size(): " << full_series[0].size() << endl;
+    Log::debug("output_parameter_name: %s, full_series.size(): %d, full_series[0].size(): %d\n", output_parameter_name.c_str(), full_series.size(), full_series[0].size());
 
     delete time_series_sets;
 
     for (int32_t i = 0; i < genomes.size(); i++) {
         time_series_sets = TimeSeriesSets::generate_test(testing_filenames, genomes[i]->get_input_parameter_names(), genomes[i]->get_output_parameter_names());
-        cout << "got time series sets" << endl;
+        Log::debug("got time series sets.\n");
         time_series_sets->normalize(genomes[i]->get_normalize_mins(), genomes[i]->get_normalize_maxs());
-        cout << "normalized time series." << endl;
+        Log::debug("normalized time series.\n");
 
         time_series_sets->export_test_series(time_offsets[i], testing_inputs, testing_outputs);
 
         vector<double> best_parameters = genomes[i]->get_best_parameters();
-        cout << "MSE: " << genomes[i]->get_mse(best_parameters, testing_inputs, testing_outputs) << endl;
-        cout << "MAE: " << genomes[i]->get_mae(best_parameters, testing_inputs, testing_outputs) << endl;
+        Log::info("MSE: %lf\n", genomes[i]->get_mse(best_parameters, testing_inputs, testing_outputs));
+        Log::info("MAE: %lf\n", genomes[i]->get_mae(best_parameters, testing_inputs, testing_outputs));
 
         vector< vector<double> > predictions = genomes[i]->get_predictions(best_parameters, testing_inputs, testing_outputs);
 
-        //cout << "predictions.size(): " << predictions.size() << endl;
+        Log::debug("predictions.size(): %d\n", predictions.size());
 
         if (predictions.size() != 1) {
-            cerr << "ERROR: had more than one testing file, currently only one supported" << endl;
+            Log::fatal("ERROR: had more than one testing file, currently only one supported.\n");
             exit(1);
         }
 
-
-        /*
-        for (int32_t j = 0; j < time_offsets[i]; j++) {
-            predictions[0].insert(predictions[0].begin(), 0);
-        }
-        */
-
-        cout << "genomes[" << i << "]: had " << predictions[0].size() << " outputs." << endl;
+        Log::debug("genomes[%d] had %d outputs.\n", i, predictions[0].size());
 
         all_series.push_back(predictions[0]);
 
@@ -142,10 +134,10 @@ int main(int argc, char** argv) {
     }
     outfile << endl;
 
-    //cout << "all_series.size(): " << all_series.size() << endl;
+    Log::debug("all_series.size(): %d\n", all_series.size());
     for (int32_t row = 0; row < all_series[0].size(); row++) {
         for (int32_t i = 0; i < all_series.size(); i++) {
-            //cout << "all_series[" << i << "].size(): " << all_series[i].size() << endl;
+            Log::debug("all_series[%d].size(): %d\n", i, all_series[i].size());
 
             if (i == 0) outfile << all_series[0][row];
             else {
@@ -156,6 +148,8 @@ int main(int argc, char** argv) {
         }
         outfile << endl;
     }
+
+    Log::release_id("main");
 
     return 0;
 }
