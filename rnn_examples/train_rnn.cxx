@@ -4,11 +4,6 @@
 using std::getline;
 using std::ifstream;
 
-#include <iostream>
-using std::cout;
-using std::cerr;
-using std::endl;
-
 #include <random>
 using std::minstd_rand0;
 using std::uniform_real_distribution;
@@ -20,6 +15,7 @@ using std::string;
 using std::vector;
 
 #include "common/arguments.hxx"
+#include "common/log.hxx"
 
 #include "rnn/lstm_node.hxx"
 #include "rnn/gru_node.hxx"
@@ -63,7 +59,7 @@ double test_objective_function(const vector<double> &parameters) {
         double error = rnn->prediction_mse(test_inputs[i], test_outputs[i], false, true, 0.0);
         total_error += error;
 
-        cout << "output for series[" << i << "]: " << error << endl;
+        Log::info("output for series[%d]: %lf\n", i, error);
     }
 
     return -total_error;
@@ -72,6 +68,9 @@ double test_objective_function(const vector<double> &parameters) {
 
 int main(int argc, char **argv) {
     vector<string> arguments = vector<string>(argv, argv + argc);
+
+    Log::initialize(arguments);
+    Log::set_id("main");
 
     TimeSeriesSets *time_series_sets = TimeSeriesSets::generate_from_arguments(arguments);
 
@@ -116,14 +115,14 @@ int main(int argc, char **argv) {
         genome = create_elman(number_inputs, 1, number_inputs, number_outputs, max_recurrent_depth);
 
     } else {
-        cerr << "ERROR: incorrect rnn type" << endl;
-        cerr << "Possibilities are:" << endl;
-        cerr << "    one_layer_lstm" << endl;
-        cerr << "    two_layer_lstm" << endl;
-        cerr << "    one_layer_gru" << endl;
-        cerr << "    two_layer_gru" << endl;
-        cerr << "    one_layer_ff" << endl;
-        cerr << "    two_layer_ff" << endl;
+        Log::fatal("ERROR: incorrect rnn type\n");
+        Log::fatal("Possibilities are:\n");
+        Log::fatal("    one_layer_lstm\n");
+        Log::fatal("    two_layer_lstm\n");
+        Log::fatal("    one_layer_gru\n");
+        Log::fatal("    two_layer_gru\n");
+        Log::fatal("    one_layer_ff\n");
+        Log::fatal("    two_layer_ff\n");
         exit(1);
     }
 
@@ -134,7 +133,7 @@ int main(int argc, char **argv) {
 
     uint32_t number_of_weights = genome->get_number_weights();
 
-    cout << "RNN has " << number_of_weights << " weights." << endl;
+    Log::info("RNN has %d weights.\n", number_of_weights);
     vector<double> min_bound(number_of_weights, -1.0);
     vector<double> max_bound(number_of_weights, 1.0);
 
@@ -175,17 +174,15 @@ int main(int argc, char **argv) {
     }
 
     genome->get_weights(best_parameters);
-    cout << "best test MSE: " << genome->get_fitness() << endl;
+    Log::info("best test MSE: %lf\n", genome->get_fitness());
     rnn->set_weights(best_parameters);
-    cout << "TRAINING ERRORS:" << endl;
-    genome->get_mse(best_parameters, training_inputs, training_outputs, true);
-    cout << endl;
-    genome->get_mae(best_parameters, training_inputs, training_outputs, true);
-    cout << endl;
+    Log::info("TRAINING ERRORS:\n");
+    Log::info("MSE: %lf\n", genome->get_mse(best_parameters, training_inputs, training_outputs, true));
+    Log::info("MAE: %lf\n", genome->get_mae(best_parameters, training_inputs, training_outputs, true));
 
-    cout << "TEST ERRORS:" << endl;
-    genome->get_mse(best_parameters, test_inputs, test_outputs, true);
-    cout << endl;
-    genome->get_mae(best_parameters, test_inputs, test_outputs, true);
-    cout << endl;
+    Log::info("TEST ERRORS:");
+    Log::info("MSE: %lf\n", genome->get_mse(best_parameters, test_inputs, test_outputs, true));
+    Log::info("MAE: %lf\n", genome->get_mae(best_parameters, test_inputs, test_outputs, true));
+
+    Log::release_id("main");
 }
