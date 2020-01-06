@@ -39,7 +39,7 @@ int main(int argc, char** argv) {
 
     string genome_filename;
     get_argument(arguments, "--genome_file", true, genome_filename);
-    RNN_Genome *genome = new RNN_Genome(genome_filename, true);
+    RNN_Genome *genome = new RNN_Genome(genome_filename);
 
     vector<string> testing_filenames;
     get_argument_vector(arguments, "--testing_filenames", true, testing_filenames);
@@ -64,11 +64,11 @@ int main(int argc, char** argv) {
         int length;
         char *byte_array;
 
-        genome->write_to_array(&byte_array, length, true);
+        genome->write_to_array(&byte_array, length);
 
         Log::debug("WROTE TO BYTE ARRAY WITH LENGTH: %d\n", length);
 
-        RNN_Genome *duplicate_genome = new RNN_Genome(byte_array, length, true);
+        RNN_Genome *duplicate_genome = new RNN_Genome(byte_array, length);
 
         vector<double> best_parameters_2 = duplicate_genome->get_best_parameters();
         Log::debug("duplicate MSE: %lf\n", duplicate_genome->get_mse(best_parameters_2, testing_inputs, testing_outputs));

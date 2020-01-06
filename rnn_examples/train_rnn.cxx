@@ -177,12 +177,12 @@ int main(int argc, char **argv) {
     Log::info("best test MSE: %lf\n", genome->get_fitness());
     rnn->set_weights(best_parameters);
     Log::info("TRAINING ERRORS:\n");
-    Log::info("MSE: %lf\n", genome->get_mse(best_parameters, training_inputs, training_outputs, true));
-    Log::info("MAE: %lf\n", genome->get_mae(best_parameters, training_inputs, training_outputs, true));
+    Log::info("MSE: %lf\n", genome->get_mse(best_parameters, training_inputs, training_outputs));
+    Log::info("MAE: %lf\n", genome->get_mae(best_parameters, training_inputs, training_outputs));
 
     Log::info("TEST ERRORS:");
-    Log::info("MSE: %lf\n", genome->get_mse(best_parameters, test_inputs, test_outputs, true));
-    Log::info("MAE: %lf\n", genome->get_mae(best_parameters, test_inputs, test_outputs, true));
+    Log::info("MSE: %lf\n", genome->get_mse(best_parameters, test_inputs, test_outputs));
+    Log::info("MAE: %lf\n", genome->get_mae(best_parameters, test_inputs, test_outputs));
 
     Log::release_id("main");
 }

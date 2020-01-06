@@ -7,11 +7,6 @@
 using std::getline;
 using std::ifstream;
 
-#include <iostream>
-using std::cout;
-using std::cerr;
-using std::endl;
-
 #include <random>
 using std::minstd_rand0;
 using std::uniform_real_distribution;
@@ -37,6 +32,6 @@ using std::vector;
 void initialize_generator();
 void generate_random_vector(int number_parameters, vector<double> &v);
 
-void gradient_test(string name, RNN_Genome *genome, const vector< vector<double> > &inputs, const vector< vector<double> > &outputs, bool verbose);
+void gradient_test(string name, RNN_Genome *genome, const vector< vector<double> > &inputs, const vector< vector<double> > &outputs);
 
 #endif

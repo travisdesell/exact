@@ -47,7 +47,7 @@ int main(int argc, char** argv) {
 
     for (int32_t i = 0; i < (int32_t)rnn_filenames.size(); i++) {
         Log::info("reading file: %s\n", rnn_filenames[i].c_str());
-        RNN_Genome *genome = new RNN_Genome(rnn_filenames[i], true);
+        RNN_Genome *genome = new RNN_Genome(rnn_filenames[i]);
 
         int32_t nodes = genome->get_enabled_node_count();
         int32_t edges = genome->get_enabled_edge_count();

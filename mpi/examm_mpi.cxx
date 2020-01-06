@@ -74,7 +74,7 @@ RNN_Genome* receive_genome_from(int source) {
 
     Log::trace("genome_str:\n%s\n", genome_str);
 
-    RNN_Genome* genome = new RNN_Genome(genome_str, length, false);
+    RNN_Genome* genome = new RNN_Genome(genome_str, length);
 
     delete [] genome_str;
     return genome;

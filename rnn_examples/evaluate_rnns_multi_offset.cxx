@@ -61,7 +61,7 @@ int main(int argc, char** argv) {
     vector<RNN_Genome*> genomes;
     for (int32_t i = 0; i < genome_filenames.size(); i++) {
         Log::info("reading genome filename: %s\n", genome_filenames[i].c_str());
-        genomes.push_back(new RNN_Genome(genome_filenames[i], false));
+        genomes.push_back(new RNN_Genome(genome_filenames[i]));
     }
 
     vector<int32_t> time_offsets;
