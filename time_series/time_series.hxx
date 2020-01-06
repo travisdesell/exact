@@ -35,7 +35,7 @@ class TimeSeries {
         double get_value(int i);
 
         void calculate_statistics();
-        void print_statistics(ostream &out);
+        //void print_statistics(ostream &out);
 
         int get_number_values() const;
 
@@ -47,7 +47,7 @@ class TimeSeries {
         double get_min_change() const;
         double get_max_change() const;
 
-        void normalize_min_max(double min, double max, bool verbose = false);
+        void normalize_min_max(double min, double max);
 
         void cut(int32_t start, int32_t stop);
 
@@ -89,7 +89,7 @@ class TimeSeriesSet {
         double get_min_change(string field);
         double get_max_change(string field);
 
-        void normalize_min_max(string field, double min, double max, bool verbose = false);
+        void normalize_min_max(string field, double min, double max);
 
         void export_time_series(vector< vector<double> > &data);
         void export_time_series(vector< vector<double> > &data, const vector<string> &requested_fields);
@@ -123,18 +123,18 @@ class TimeSeriesSets {
         map<string,double> normalize_maxs;
 
         void parse_parameters_string(const vector<string> &p);
-        void load_time_series(bool verbose = false);
+        void load_time_series();
 
     public:
         static void help_message();
 
         TimeSeriesSets();
 
-        static TimeSeriesSets* generate_from_arguments(const vector<string> &arguments, bool verbose = true);
-        static TimeSeriesSets* generate_test(const vector<string> &_test_filenames, const vector<string> &_input_parameter_names, const vector<string> &_output_parameter_names, bool verbose = true);
+        static TimeSeriesSets* generate_from_arguments(const vector<string> &arguments);
+        static TimeSeriesSets* generate_test(const vector<string> &_test_filenames, const vector<string> &_input_parameter_names, const vector<string> &_output_parameter_names);
 
-        void normalize(bool verbose = true);
-        void normalize(const map<string,double> &_normalize_mins, const map<string,double> &_normalize_maxs, bool verbose = true);
+        void normalize();
+        void normalize(const map<string,double> &_normalize_mins, const map<string,double> &_normalize_maxs);
 
         void split_series(int series, int number_slices);
         void split_all(int number_slices);
