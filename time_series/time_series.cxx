@@ -297,7 +297,7 @@ TimeSeriesSet::TimeSeriesSet(string _filename, const vector<string> &_fields) {
         }
     }
 
-    Log::debug("read time series '%s' with number rows: %d\n", filename.c_str(), number_rows);
+    Log::info("read time series '%s' with number rows: %d\n", filename.c_str(), number_rows);
 }
 
 int TimeSeriesSet::get_number_rows() const {
@@ -570,7 +570,7 @@ void TimeSeriesSets::load_time_series() {
     int32_t rows = 0;
     time_series.clear();
     if (Log::at_level(Log::DEBUG)) {
-        Log::debug("loading time series with parameters:");
+        Log::debug("loading time series with parameters:\n");
 
         for (uint32_t i = 0; i < all_parameter_names.size(); i++) {
             Log::debug("\t'%s'\n", all_parameter_names[i].c_str());
@@ -579,7 +579,7 @@ void TimeSeriesSets::load_time_series() {
     }
 
     for (uint32_t i = 0; i < filenames.size(); i++) {
-        Log::debug("\t%s", filenames[i].c_str());
+        Log::debug("\t%s\n", filenames[i].c_str());
 
         TimeSeriesSet *ts = new TimeSeriesSet(filenames[i], all_parameter_names);
         time_series.push_back( ts );
@@ -708,7 +708,7 @@ TimeSeriesSets* TimeSeriesSets::generate_test(const vector<string> &_test_filena
 }
 
 void TimeSeriesSets::normalize() {
-    Log::debug("normalizing:\n");
+    Log::info("normalizing:\n");
 
     for (int i = 0; i < all_parameter_names.size(); i++) {
         string parameter_name = all_parameter_names[i];
@@ -723,7 +723,7 @@ void TimeSeriesSets::normalize() {
             min = normalize_mins[parameter_name];
             max = normalize_maxs[parameter_name];
 
-            Log::debug("user specified bounds for ");
+            Log::info("user specified bounds for ");
 
         }  else {
             for (int j = 0; j < time_series.size(); j++) {
@@ -737,10 +737,10 @@ void TimeSeriesSets::normalize() {
             normalize_mins[parameter_name] = min;
             normalize_maxs[parameter_name] = max;
 
-            Log::debug("calculated bounds for     ");
+            Log::info("calculated bounds for     ");
         }
 
-        Log::debug_no_header("%30s, min: %5.10lf, max: %5.10lf\n", parameter_name.c_str(), min, max);
+        Log::info_no_header("%30s, min: %22.10lf, max: %22.10lf\n", parameter_name.c_str(), min, max);
 
         //for each series, subtract min, divide by (max - min)
         for (int j = 0; j < time_series.size(); j++) {
