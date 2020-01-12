@@ -212,6 +212,18 @@ void worker(int rank) {
     Log::release_id(worker_id);
 }
 
+void get_individual_inputs(string str, vector<string>& tokens) {
+   string word = "";
+   for (auto x : str) {
+       if (x == ',') {
+           tokens.push_back(word);
+           word = "";
+       }else
+           word = word + x;
+   }
+   tokens.push_back(word);
+}
+
 int main(int argc, char** argv) {
     MPI_Init(&argc, &argv);
 
@@ -265,7 +277,9 @@ int main(int argc, char** argv) {
     //mkpath(output_directory.c_str(), 0777);
 
     TimeSeriesSets *time_series_sets = NULL;
-    
+    vector<string> inputs_removed_tokens  ;
+    vector<string> outputs_removed_tokens ;
+
     if (rank == 0) {
         //only have the master process be verbose
         time_series_sets = TimeSeriesSets::generate_from_arguments(arguments);
@@ -284,7 +298,7 @@ int main(int argc, char** argv) {
 
     int32_t rec_delay_min = 1;
     get_argument(arguments, "--rec_delay_min", false, rec_delay_min);
-    
+
     int32_t rec_delay_max = 10;
     get_argument(arguments, "--rec_delay_max", false, rec_delay_max);
 
@@ -293,6 +307,34 @@ int main(int argc, char** argv) {
 
     string rec_sampling_distribution = "uniform";
     get_argument(arguments, "--rec_sampling_distribution", false, rec_sampling_distribution);
+
+    string genome_file_name = "";
+    get_argument(arguments, "--genome_bin", false, genome_file_name);
+    int no_extra_inputs = 0 ;
+    if (genome_file_name != "") {
+        get_argument(arguments, "--extra_inputs", true, no_extra_inputs);
+    }
+    int no_extra_outputs = 0 ;
+    if (genome_file_name != "") {
+        get_argument(arguments, "--extra_outputs", false, no_extra_outputs);
+    }
+    string inputs_to_remove = "" ;
+    if (genome_file_name != "") {
+        get_argument(arguments, "--inputs_to_remove", false, inputs_to_remove);
+    }
+
+    string outputs_to_remove = "" ;
+    if (genome_file_name != "") {
+        get_argument(arguments, "--outputs_to_remove", false, outputs_to_remove);
+    }
+
+    int tl_version = 1 ;
+    if (genome_file_name != "") {
+        get_argument(arguments, "--tl_version", false, tl_version);
+    }
+
+    get_individual_inputs( inputs_to_remove, inputs_removed_tokens) ;
+    get_individual_inputs( outputs_to_remove, outputs_removed_tokens) ;
 
     Log::clear_rank_restriction();
 
@@ -345,7 +387,12 @@ int main(int argc, char** argv) {
                 use_dropout, dropout_probability,
                 rec_delay_min, rec_delay_max,
                 rec_sampling_population, rec_sampling_distribution,
-                current_output_directory);
+                output_directory,
+                genome_file_name,
+                no_extra_inputs, no_extra_outputs,
+                inputs_removed_tokens, outputs_removed_tokens,
+                tl_version);
+
                 examm->set_possible_node_types(possible_node_types);
 
                 std::chrono::time_point<std::chrono::system_clock> start = std::chrono::system_clock::now();

@@ -157,6 +157,9 @@ class RNN_Genome {
         RNN* get_rnn();
         vector<double> get_best_parameters() const;
 
+        void set_best_parameters( vector<double> parameters);    //INFO: ADDED BY ABDELRAHMAN TO USE FOR TRANSFER LEARNING
+        void set_initial_parameter( vector<double> parameters);  //INFO: ADDED BY ABDELRAHMAN TO USE FOR TRANSFER LEARNING
+
         void get_analytic_gradient(vector<RNN*> &rnns, const vector<double> &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, double &mse, vector<double> &analytic_gradient, bool training);
 
         void backpropagate(const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, const vector< vector< vector<double> > > &validation_inputs, const vector< vector< vector<double> > > &validation_outputs);
@@ -219,6 +222,7 @@ class RNN_Genome {
         void write_to_file(string bin_filename);
         void write_to_stream(ostream &bin_stream);
 
+        bool connect_input_to_hid_nodes( double mu, double sig, RNN_Node_Interface *new_node, bool from_input, Distribution *dist, int32_t &edge_innovation_count );
 
         friend class EXAMM;
         friend class IslandSpeciationStrategy;

@@ -30,6 +30,16 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake/Modules/
 message (STATUS "CMAKE_MODULE_PATH is ${CMAKE_MODULE_PATH}")
 
 find_package(MPI)
+SET(MPI_INCLUDE_PATH /usr/local/Cellar/open-mpi/3.1.2/include)
+SET(MPI_INCLUDE_PATH /usr/local/Cellar/open-mpi/4.0.0/include)
+SET(MPI_INCLUDE_PATH /usr/local/Cellar/open-mpi/4.0.1/include)
+SET(MPI_LIBRARY /usr/local/Cellar/open-mpi/3.1.2/lib/libmpi.dylib)
+SET(MPI_LIBRARY /usr/local/Cellar/open-mpi/4.0.0/lib/libmpi.dylib)
+SET(MPI_LIBRARY /usr/local/Cellar/open-mpi/4.0.1/lib/libmpi.dylib)
+MESSAGE(STATUS "MPI include directory: ${MPI_INCLUDE_PATH}")
+MESSAGE(STATUS "MPI library: ${MPI_LIBRARY}")
+MESSAGE(STATUS "MPI extra: ${MPI_EXTRA}")
+include_directories(${MPI_INCLUDE_PATH})
 
 find_package(BOINC)
 MESSAGE(STATUS "BOINC_APP_FOUND: ${BOINC_APP_FOUND}")

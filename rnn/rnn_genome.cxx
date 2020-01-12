@@ -216,7 +216,7 @@ string RNN_Genome::print_statistics_header() {
     ostringstream oss;
 
     oss << std::left
-        << setw(12) << "MSE" 
+        << setw(12) << "MSE"
         << setw(12) << "MAE"
         << setw(12) << "Edges"
         << setw(12) << "Rec Edges"
@@ -237,18 +237,18 @@ string RNN_Genome::print_statistics_header() {
 string RNN_Genome::print_statistics() {
     ostringstream oss;
     oss << std::left
-        << setw(12) << parse_fitness(best_validation_mse)  
-        << setw(12) << parse_fitness(best_validation_mae)  
-        << setw(12) << get_edge_count_str(false) 
-        << setw(12) << get_edge_count_str(true) 
-        << setw(12) << get_node_count_str(SIMPLE_NODE) 
-        << setw(12) << get_node_count_str(JORDAN_NODE) 
-        << setw(12) << get_node_count_str(ELMAN_NODE) 
-        << setw(12) << get_node_count_str(UGRNN_NODE) 
-        << setw(12) << get_node_count_str(MGU_NODE) 
-        << setw(12) << get_node_count_str(GRU_NODE) 
-        << setw(12) << get_node_count_str(DELTA_NODE) 
-        << setw(12) << get_node_count_str(LSTM_NODE) 
+        << setw(12) << parse_fitness(best_validation_mse)
+        << setw(12) << parse_fitness(best_validation_mae)
+        << setw(12) << get_edge_count_str(false)
+        << setw(12) << get_edge_count_str(true)
+        << setw(12) << get_node_count_str(SIMPLE_NODE)
+        << setw(12) << get_node_count_str(JORDAN_NODE)
+        << setw(12) << get_node_count_str(ELMAN_NODE)
+        << setw(12) << get_node_count_str(UGRNN_NODE)
+        << setw(12) << get_node_count_str(MGU_NODE)
+        << setw(12) << get_node_count_str(GRU_NODE)
+        << setw(12) << get_node_count_str(DELTA_NODE)
+        << setw(12) << get_node_count_str(LSTM_NODE)
         << setw(12) << get_node_count_str(-1)  //-1 does all nodes
         << generated_by_string();
     return oss.str();
@@ -263,7 +263,7 @@ double RNN_Genome::get_avg_recurrent_depth() const {
             count++;
         }
     }
-    
+
     //in case there are no recurrent edges
     if (count == 0) return 0;
 
@@ -564,6 +564,16 @@ RNN* RNN_Genome::get_rnn() {
 
 vector<double> RNN_Genome::get_best_parameters() const {
     return best_parameters;
+}
+
+//INFO: ADDED BY ABDELRAHMAN TO USE FOR TRANSFER LEARNING
+void RNN_Genome::set_best_parameters( vector<double> parameters) {
+    best_parameters = parameters ;
+}
+
+//INFO: ADDED BY ABDELRAHMAN TO USE FOR TRANSFER LEARNING
+void RNN_Genome::set_initial_parameter( vector <double> parameters) {
+    initial_parameters = parameters ;
 }
 
 int32_t RNN_Genome::get_generation_id() const {
@@ -1202,7 +1212,7 @@ vector< vector<double> > RNN_Genome::get_predictions(const vector<double> &param
     rnn->set_weights(parameters);
 
     vector< vector<double> > all_results;
-    
+
     //one input vector per testing file
     for (uint32_t i = 0; i < inputs.size(); i++) {
         all_results.push_back(rnn->get_predictions(inputs[i], outputs[i], use_dropout, dropout_probability));
@@ -1664,7 +1674,7 @@ bool RNN_Genome::add_recurrent_edge(double mu, double sigma, Distribution* dist,
 
     if (possible_input_nodes.size() == 0) return false;
     if (possible_output_nodes.size() == 0) return false;
-    
+
     int p1 = rng_0_1(generator) * possible_input_nodes.size();
     int p2 = rng_0_1(generator) * possible_output_nodes.size();
     //no need to swap the nodes as recurrent connections can go backwards
@@ -1786,6 +1796,71 @@ bool RNN_Genome::split_edge(double mu, double sigma, int node_type, Distribution
 
     return true;
 }
+
+//INFO: ADDED BY ABDELRAHMAN TO USE FOR TRANSFER LEARNING
+bool RNN_Genome::connect_input_to_hid_nodes( double mu, double sig, RNN_Node_Interface *new_node, bool from_input, Distribution *dist, int32_t &edge_innovation_count ) {
+
+    vector<RNN_Node_Interface*> candidate_nodes;
+
+    int32_t enabled_count   = 0;
+    double avg_candidates   = 0.0;
+
+    for (int32_t i = 0; i < (int32_t)nodes.size(); i++) {
+        if (nodes[i]->get_layer_type()==HIDDEN_LAYER && nodes[i]->is_reachable())
+            candidate_nodes.push_back(nodes[i]);
+
+        if (nodes[i]->enabled) {
+            enabled_count++;
+            if (from_input)
+                avg_candidates += nodes[i]->total_inputs;
+            else
+                avg_candidates += nodes[i]->total_outputs;
+        }
+    }
+
+    avg_candidates /= enabled_count;
+
+    double sigma = 0.0;
+    double temp;
+
+
+    for (int32_t i = 0; i < (int32_t)nodes.size(); i++) {
+        if ( nodes[i]->enabled && nodes[i]->get_layer_type()==HIDDEN_LAYER ) {
+            if (from_input)
+                temp = (avg_candidates - nodes[i]->total_inputs);
+            else
+                temp = (avg_candidates - nodes[i]->total_outputs);
+            temp = temp * temp;
+            sigma += temp;
+        }
+    }
+
+    sigma /= (enabled_count - 1);
+    sigma = sqrt(sigma);
+
+    int32_t max_candidates = fmax(1, 2.0 + normal_distribution.random(generator, avg_candidates, sigma));
+
+    int32_t enabled_edges = get_enabled_edge_count();
+    int32_t enabled_recurrent_edges = get_enabled_recurrent_edge_count();
+
+    double recurrent_probability = (double)enabled_recurrent_edges / (double)(enabled_recurrent_edges + enabled_edges);
+
+    while (candidate_nodes.size() > max_candidates) {
+        int32_t position = rng_0_1(generator) * candidate_nodes.size();
+        candidate_nodes.erase(candidate_nodes.begin() + position);
+    }
+
+    for (auto node: candidate_nodes) {
+        if (rng_0_1(generator) < recurrent_probability)
+            attempt_recurrent_edge_insert(node, new_node, mu, sigma, dist, edge_innovation_count);
+        else
+            attempt_edge_insert(node, new_node, mu, sig, edge_innovation_count);
+    }
+
+    return true;
+}
+
+/*   ################# ################# ################# */
 
 bool RNN_Genome::add_node(double mu, double sigma, int node_type, Distribution *dist, int32_t &edge_innovation_count, int32_t &node_innovation_count) {
     Log::info("\tattempting to add a node!\n");

@@ -71,6 +71,18 @@ void examm_thread(int id) {
     }
 }
 
+void get_individual_inputs(string str, vector<string>& tokens) {
+   string word = "";
+   for (auto x : str) {
+       if (x == ',') {
+           tokens.push_back(word);
+           word = "";
+       }else
+           word = word + x;
+   }
+   tokens.push_back(word);
+}
+
 int main(int argc, char** argv) {
     arguments = vector<string>(argv, argv + argc);
 
@@ -94,7 +106,7 @@ int main(int argc, char** argv) {
 
     int32_t num_genomes_check_on_island;
     get_argument(arguments, "--num_genomes_check_on_island", false, num_genomes_check_on_island);
-    
+
     string check_on_island_method = "";
     get_argument(arguments, "--check_on_island_method", false, check_on_island_method);
 
@@ -115,7 +127,7 @@ int main(int argc, char** argv) {
 
     int32_t rec_delay_min = 1;
     get_argument(arguments, "--rec_delay_min", false, rec_delay_min);
-    
+
     int32_t rec_delay_max = 10;
     get_argument(arguments, "--rec_delay_max", false, rec_delay_max);
 
@@ -130,8 +142,39 @@ int main(int argc, char** argv) {
     string output_filename;
     get_argument(arguments, "--output_filename", true, output_filename);
 
+    string genome_file_name = "";
+    get_argument(arguments, "--genome_bin", false, genome_file_name);
+    int no_extra_inputs = 0 ;
+    if (genome_file_name != "") {
+        get_argument(arguments, "--extra_inputs", true, no_extra_inputs);
+    }
+    int no_extra_outputs = 0 ;
+    if (genome_file_name != "") {
+        get_argument(arguments, "--extra_outputs", false, no_extra_outputs);
+    }
+    string inputs_to_remove = "" ;
+    if (genome_file_name != "") {
+        get_argument(arguments, "--inputs_to_remove", false, inputs_to_remove);
+    }
+
+    string outputs_to_remove = "" ;
+    if (genome_file_name != "") {
+        get_argument(arguments, "--outputs_to_remove", false, outputs_to_remove);
+    }
+    
+    int tl_version = 1 ;
+    if (genome_file_name != "") {
+        get_argument(arguments, "--tl_version", false, tl_version);
+    }
+
+
 
     TimeSeriesSets *time_series_sets = TimeSeriesSets::generate_from_arguments(arguments);
+    vector<string> inputs_removed_tokens  ;
+    vector<string> outputs_removed_tokens ;
+
+    get_individual_inputs( inputs_to_remove, inputs_removed_tokens) ;
+    get_individual_inputs( outputs_to_remove, outputs_removed_tokens) ;
 
     int32_t number_slices;
     get_argument(arguments, "--number_slices", true, number_slices);
@@ -170,14 +213,18 @@ int main(int argc, char** argv) {
                 time_series_sets->get_input_parameter_names(),
                 time_series_sets->get_output_parameter_names(),
                 time_series_sets->get_normalize_mins(),
-                time_series_sets->get_normalize_maxs(), 
-                bp_iterations, learning_rate, 
+                time_series_sets->get_normalize_maxs(),
+                bp_iterations, learning_rate,
                 use_high_threshold, high_threshold,
                 use_low_threshold, low_threshold,
                 use_dropout, dropout_probability,
                 rec_delay_min, rec_delay_max,
                 rec_sampling_population, rec_sampling_distribution,
-                output_directory + "/slice_" + to_string(i) + "_repeat_" + to_string(k));
+                output_directory + "/slice_" + to_string(i) + "_repeat_" + to_string(k),
+                genome_file_name,
+                no_extra_inputs, no_extra_outputs,
+                inputs_removed_tokens, outputs_removed_tokens,
+                tl_version);
 
             vector<thread> threads;
             for (int32_t i = 0; i < number_threads; i++) {
