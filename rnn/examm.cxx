@@ -33,8 +33,19 @@ using std::to_string;
 #include "speciation_strategy.hxx"
 #include "island_speciation_strategy.hxx"
 
+
+//INFO: ADDED BY ABDELRAHMAN TO USE FOR TRANSFER LEARNING
+#include "rnn.hxx"
+#include "rnn_node.hxx"
+#include "lstm_node.hxx"
+#include "gru_node.hxx"
+#include "delta_node.hxx"
+#include "ugrnn_node.hxx"
+#include "mgu_node.hxx"
+
 #include "common/files.hxx"
 #include "common/log.hxx"
+
 
 
 EXAMM::~EXAMM() {
@@ -53,31 +64,42 @@ EXAMM::EXAMM(int32_t _population_size, int32_t _number_islands, int32_t _max_gen
                 const vector<string> &_output_parameter_names,
                 const map<string,double> &_normalize_mins,
                 const map<string,double> &_normalize_maxs,
-                int32_t _bp_iterations, double _learning_rate, 
+                int32_t _bp_iterations, double _learning_rate,
                 bool _use_high_threshold, double _high_threshold,
-                bool _use_low_threshold, double _low_threshold, 
+                bool _use_low_threshold, double _low_threshold,
                 bool _use_dropout, double _dropout_probability,
                 int32_t _min_recurrent_depth, int32_t _max_recurrent_depth,
-                string _rec_sampling_population, string _rec_sampling_distribution, string _output_directory) : 
-                                        population_size(_population_size), 
-                                        number_islands(_number_islands), 
-                                        max_genomes(_max_genomes), 
+                string _rec_sampling_population, string _rec_sampling_distribution, string _output_directory,
+                string _genome_file_name,
+                int _no_extra_inputs, int _no_extra_outputs,
+                vector<string> &_inputs_to_remove, vector<string> &_outputs_to_remove, int _tl_version) :
+                                        population_size(_population_size),
+                                        number_islands(_number_islands),
+                                        max_genomes(_max_genomes),
                                         number_inputs(_input_parameter_names.size()),
-                                        number_outputs(_output_parameter_names.size()), 
-                                        bp_iterations(_bp_iterations), 
-                                        learning_rate(_learning_rate), 
-                                        use_high_threshold(_use_high_threshold), 
-                                        high_threshold(_high_threshold), 
-                                        use_low_threshold(_use_low_threshold), 
-                                        low_threshold(_low_threshold), 
-                                        use_dropout(_use_dropout), 
-                                        dropout_probability(_dropout_probability), 
-                                        output_directory(_output_directory) {
+                                        number_outputs(_output_parameter_names.size()),
+                                        bp_iterations(_bp_iterations),
+                                        learning_rate(_learning_rate),
+                                        use_high_threshold(_use_high_threshold),
+                                        high_threshold(_high_threshold),
+                                        use_low_threshold(_use_low_threshold),
+                                        low_threshold(_low_threshold),
+                                        use_dropout(_use_dropout),
+                                        dropout_probability(_dropout_probability),
+                                        output_directory(_output_directory),
+                                        genome_file_name(_genome_file_name),
+                                        no_extra_inputs(_no_extra_inputs),
+                                        no_extra_outputs(_no_extra_outputs),
+                                        tl_version(_tl_version){
 
     input_parameter_names = _input_parameter_names;
     output_parameter_names = _output_parameter_names;
     normalize_mins = _normalize_mins;
     normalize_maxs = _normalize_maxs;
+
+    inputs_to_remove  = _inputs_to_remove;
+
+    outputs_to_remove = _outputs_to_remove ;
 
     total_bp_epochs = 0;
 
@@ -101,16 +123,22 @@ EXAMM::EXAMM(int32_t _population_size, int32_t _number_islands, int32_t _max_gen
 
     if (speciation_method.compare("island")) {
         //generate a minimal feed foward network as the seed genome
-        RNN_Genome *seed_genome = create_ff(number_inputs, 0, 0, number_outputs, 0);
+        RNN_Genome *seed_genome = NULL;
+        if (genome_file_name=="") {
+            seed_genome = create_ff(number_inputs, 0, 0, number_outputs, 0);
+            seed_genome->initialize_randomly();
+            edge_innovation_count = seed_genome->edges.size() + seed_genome->recurrent_edges.size();
+            node_innovation_count = seed_genome->nodes.size();
+        }
+        else
+            seed_genome = generate_for_transfer_learning(genome_file_name, no_extra_inputs, no_extra_outputs);
 
-        edge_innovation_count = seed_genome->edges.size() + seed_genome->recurrent_edges.size();
-        node_innovation_count = seed_genome->nodes.size();
 
         seed_genome->set_generated_by("initial");
 
         //insert a copy of it into the population so
         //additional requests can mutate it
-        seed_genome->initialize_randomly();
+
 
         seed_genome->best_validation_mse = EXAMM_MAX_DOUBLE;
         seed_genome->best_validation_mae = EXAMM_MAX_DOUBLE;
@@ -118,7 +146,7 @@ EXAMM::EXAMM(int32_t _population_size, int32_t _number_islands, int32_t _max_gen
 
         speciation_strategy = new IslandSpeciationStrategy(number_islands, population_size, 0.70, 0.20, 0.10, seed_genome);
     }
-    
+
     if (_rec_sampling_population.compare("global") == 0) {
         rec_sampling_population = GLOBAL_POPULATION;
     } else if (_rec_sampling_population.compare("island") == 0) {
@@ -203,6 +231,7 @@ EXAMM::EXAMM(int32_t _population_size, int32_t _number_islands, int32_t _max_gen
     }
 
     startClock = std::chrono::system_clock::now();
+
 }
 
 void EXAMM::print() {
@@ -288,7 +317,7 @@ void EXAMM::update_log() {
         memory_log << endl;
 
     }
-} 
+}
 
 void EXAMM::write_memory_log(string filename) {
     ofstream log_file(filename);
@@ -338,7 +367,6 @@ RNN_Genome* EXAMM::get_worst_genome() {
     return speciation_strategy->get_worst_genome();
 }
 
-
 //this will insert a COPY, original needs to be deleted
 bool EXAMM::insert_genome(RNN_Genome* genome) {
     total_bp_epochs += genome->get_bp_iterations();
@@ -359,7 +387,6 @@ bool EXAMM::insert_genome(RNN_Genome* genome) {
     if (insert_position == 0) {
         genome->write_graphviz(output_directory + "/rnn_genome_" + to_string(genome->get_generation_id()) + ".gv");
         genome->write_to_file(output_directory + "/rnn_genome_" + to_string(genome->get_generation_id()) + ".bin");
-
     }
     speciation_strategy->print();
     update_log();
@@ -367,10 +394,232 @@ bool EXAMM::insert_genome(RNN_Genome* genome) {
     return insert_position >= 0;
 }
 
+RNN_Genome* EXAMM::generate_for_transfer_learning(string file_name, int extra_inputs, int extra_outputs) {
+    RNN_Genome* genome = new RNN_Genome(file_name);
+    vector<RNN_Node_Interface*> output_nodes;
+    vector<RNN_Node_Interface*> new_output_nodes;
+    vector<RNN_Node_Interface*> new_input_nodes;
+    vector<double> new_parameters;
+
+    uniform_real_distribution<double> rng(-0.5, 0.5);
+
+    bool flag = true;
+    vector<int> new_input_parameter_id ;
+    for ( int32_t i=0; i<genome->input_parameter_names.size(); i++ ) {
+        for ( auto removed: inputs_to_remove ) {
+            if (genome->input_parameter_names[i]==removed ) {
+                flag = false ;
+                break;
+            }
+        }
+        if (flag)
+            new_input_parameter_id.push_back(i);
+        flag=true;
+    }
+
+    flag=true;
+    vector<int> new_output_parameter_id ;
+    for ( int32_t i=0; i<genome->output_parameter_names.size(); i++ ) {
+        for ( auto removed: outputs_to_remove ) {
+            if (genome->output_parameter_names[i]==removed ) {
+                flag = false ;
+                break;
+            }
+        }
+        if (flag)
+            new_output_parameter_id.push_back(i);
+        flag=true;
+    }
+
+    vector<RNN_Node_Interface*> New_nodes ;
+    int count = 0;
+    for ( int32_t i=0; i<genome->nodes.size(); i++ ) {
+        if (genome->nodes[i]->get_layer_type()==INPUT_LAYER) {
+            for ( auto id: new_input_parameter_id ) {
+                if (id==i){
+                    New_nodes.push_back(genome->nodes[i]);
+                }
+            }
+        }else if (genome->nodes[i]->get_layer_type()==HIDDEN_LAYER) {
+            New_nodes.push_back(genome->nodes[i]);
+        }else if (genome->nodes[i]->get_layer_type()==OUTPUT_LAYER) {
+            for ( auto id: new_output_parameter_id ) {
+                if (id==count){
+                    New_nodes.push_back(genome->nodes[i]);
+                }
+            }
+            count++;
+        }else {
+            std::cerr << "ERROR: Layer Type " << genome->nodes[i]->get_layer_type() << " Not Valid\n" ;
+            exit(1) ;
+        }
+    }
+
+    vector<RNN_Edge*> New_edges;
+    vector<RNN_Recurrent_Edge*> New_recurrent_edges;
+
+
+    int weights_count = 0;
+    flag = false ;
+    for (auto node:genome->nodes) {
+        for (auto new_node: New_nodes) {
+            if (node->get_innovation_number() == new_node->get_innovation_number()) {
+                flag = true ;
+                break;
+            }
+        }
+        if (flag) {
+            if (node_innovation_count<node->get_innovation_number())
+                node_innovation_count = node->get_innovation_number() ;
+            if (node->get_layer_type()==2)
+                output_nodes.push_back(node) ;
+
+            for (int32_t j=0; j<node->get_number_weights(); j++) {
+                new_parameters.push_back(genome->initial_parameters[weights_count++]) ;
+            }
+        } else {
+            for (int32_t j=0; j<node->get_number_weights(); j++)
+                weights_count++ ;
+        }
+        flag = false ;
+    }
+    genome->nodes = New_nodes ;
+
+    for (int32_t i = 0; i < extra_outputs; i++)
+    new_parameters.push_back( rng(generator) );
+
+    for (int32_t i = 0; i < extra_inputs; i++)
+        new_parameters.push_back( rng(generator) );
+
+    flag = false ;
+    for (auto edge: genome->edges) {
+        for ( auto InNode: genome->nodes) {
+            if (edge->get_input_innovation_number() == InNode->get_innovation_number() ) {
+                for ( auto OutNode: genome->nodes ) {
+                    if (edge->get_output_innovation_number() == OutNode->get_innovation_number()) {
+                        flag = true ;
+                        break;
+                    }
+                }
+                break;
+            }
+        }
+        if (flag) {
+            if (edge_innovation_count<edge->get_innovation_number())
+                edge_innovation_count = edge->get_innovation_number() ;
+            new_parameters.push_back( genome->initial_parameters[ weights_count ] ) ;
+            New_edges.push_back(edge) ;
+        }
+        else
+        Log::info("Execluding Edge: %d In: %d Out: %d\n", edge->get_innovation_number(), edge->get_input_innovation_number(), edge->get_output_innovation_number());
+        flag = false ;
+        weights_count++ ;
+    }
+
+    flag = false ;
+    for (auto recedge: genome->recurrent_edges) {
+        for ( auto InNode: genome->nodes ) {
+            if (recedge->get_input_innovation_number() == InNode->get_innovation_number() ) {
+                for ( auto OutNode: genome->nodes ) {
+                    if (recedge->get_output_innovation_number() == OutNode->get_innovation_number()) {
+                        flag = true ;
+                        break;
+                    }
+                }
+                break;
+            }
+        }
+        if (flag) {
+            if (edge_innovation_count<recedge->get_innovation_number())
+                edge_innovation_count = recedge->get_innovation_number() ;
+            new_parameters.push_back( genome->initial_parameters[ weights_count ] ) ;
+            New_recurrent_edges.push_back(recedge);
+        }
+        else
+            Log::info("Execluding Edge: %d In: %d Out: %d\n", recedge->get_innovation_number(), recedge->get_input_innovation_number(), recedge->get_output_innovation_number());
+        flag = false ;
+        weights_count++ ;
+    }
+
+    genome->edges = New_edges ;
+    genome->recurrent_edges = New_recurrent_edges ;
+
+    for (int32_t i = 0; i < extra_outputs; i++) {
+        RNN_Node *node = new RNN_Node(++node_innovation_count, OUTPUT_LAYER, 0, SIMPLE_NODE);
+        genome->nodes.push_back(node);
+        new_output_nodes.push_back(node) ;
+    }
+
+    /* TRANSFER LEARNING VERSIONS:
+        - V1: Inputs to Outputs
+        - V2: Inputs to Hidden
+        - V3: Outputs to Hidden
+    */
+
+    for (int32_t i = 0; i < extra_inputs; i++) {
+        RNN_Node *node = new RNN_Node(++node_innovation_count, INPUT_LAYER, 0, SIMPLE_NODE);
+        genome->nodes.push_back(node);
+        new_input_nodes.push_back(node) ;
+
+        //Connecting New Input Nodes to Old Output Nodes
+        if (tl_version == INPUTS_TO_OUTPUTS) {
+            for (auto out_node: output_nodes) {
+                genome->edges.push_back(new RNN_Edge(++edge_innovation_count, node, out_node)) ;
+                new_parameters.push_back(rng(generator));
+            }
+        }
+    }
+
+    //Connecting Input Nodes to New Output Nodes
+    if (tl_version == INPUTS_TO_OUTPUTS) {
+        for (auto node: genome->nodes) {
+            if (node->get_layer_type() == INPUT_LAYER) {
+                for (auto new_output_node: new_output_nodes) {
+                    genome->edges.push_back(new RNN_Edge(++edge_innovation_count, node, new_output_node)) ;
+                    new_parameters.push_back(rng(generator));
+                }
+            }
+        }
+    }
+
+    genome->set_initial_parameter( new_parameters );
+    genome->set_best_parameters( new_parameters );
+
+
+    double mu, sigma;
+    genome->get_mu_sigma(genome->best_parameters, mu, sigma);
+
+
+    auto rng_ = std::default_random_engine {};
+
+    // Connecting Inputs to Hidden Nodes:
+    if (tl_version == INPUTS_TO_HIDDEN) {
+        std::shuffle(std::begin(new_input_nodes), std::end(new_input_nodes), rng_);
+        for (auto node: new_input_nodes) {
+            Distribution *dist = get_recurrent_depth_dist(genome->get_group_id());
+            genome->connect_input_to_hid_nodes(mu, sigma, node, true, dist, edge_innovation_count);
+            delete dist;
+        }
+    }
+
+    // Connecting Outputs to Hidden Nodes:
+    if (tl_version == OUTPUTS_TO_HIDDEN) {
+        std::shuffle(std::begin(new_output_nodes), std::end(new_output_nodes), rng_);
+        for (auto node: new_output_nodes) {
+            Distribution *dist = get_recurrent_depth_dist(genome->get_group_id());
+            genome->connect_input_to_hid_nodes(mu, sigma, node, true, dist, edge_innovation_count);
+            delete dist;
+        }
+    }
+
+    Log::info("FINISHING PREPARING INITIAL GENOME\n");
+    return genome ;
+}
+
 RNN_Genome* EXAMM::generate_genome() {
     if (speciation_strategy->get_inserted_genomes() > max_genomes) return NULL;
 
-    function<void (int32_t, RNN_Genome*)> mutate_function = 
+    function<void (int32_t, RNN_Genome*)> mutate_function =
         [=](int32_t max_mutations, RNN_Genome *genome) {
             this->mutate(max_mutations, genome);
         };

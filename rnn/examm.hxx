@@ -27,6 +27,11 @@ using std::vector;
 #define HISTOGRAM_DISTRIBUTION 1
 #define NORMAL_DISTRIBUTION 2
 
+
+#define INPUTS_TO_OUTPUTS  1
+#define INPUTS_TO_HIDDEN   2
+#define OUTPUTS_TO_HIDDEN  3
+
 class EXAMM {
     private:
         int32_t population_size;
@@ -101,22 +106,35 @@ class EXAMM {
         ostringstream memory_log;
 
         std::chrono::time_point<std::chrono::system_clock> startClock;
-    
+
         int32_t rec_sampling_population;
         int32_t rec_sampling_distribution;
+
+        string  genome_file_name ;
+        int     no_extra_inputs ;
+        int     no_extra_outputs ;
+
+        vector<string> inputs_to_remove ;
+        vector<string> outputs_to_remove ;
+
+        int tl_version;
 
     public:
         EXAMM(int32_t _population_size, int32_t _number_islands, int32_t _max_genomes, int32_t _num_genomes_check_on_island, string _speciation_method,
             const vector<string> &_input_parameter_names,
-            const vector<string> &_output_parameter_names, 
+            const vector<string> &_output_parameter_names,
             const map<string,double> &_normalize_mins,
             const map<string,double> &_normalize_maxs,
-            int32_t _bp_iterations, double _learning_rate, 
-            bool _use_high_threshold, double _high_threshold, 
-            bool _use_low_threshold, double _low_threshold, 
+            int32_t _bp_iterations, double _learning_rate,
+            bool _use_high_threshold, double _high_threshold,
+            bool _use_low_threshold, double _low_threshold,
             bool _use_dropout, double _dropout_probability,
             int32_t _min_recurrent_depth, int32_t _max_recurrent_depth,
-            string _rec_sampling_population, string _rec_sampling_distribution, string _output_directory);
+            string _rec_sampling_population, string _rec_sampling_distribution, string _output_directory,
+            string _genome_file_name,
+            int _no_extra_inputs, int _no_extra_outputs,
+            vector<string> &_inputs_to_remove, vector<string> &_outputs_to_remove,
+            int _tl_version);
 
         ~EXAMM();
 
@@ -146,6 +164,7 @@ class EXAMM {
         RNN_Genome* get_worst_genome();
 
         string get_output_directory() const;
+        RNN_Genome* generate_for_transfer_learning(string file_name, int extra_inputs, int extra_outputs) ;
 };
 
 #endif
