@@ -368,6 +368,7 @@ int main(int argc, char** argv) {
     } else {
         worker(rank);
     }
+    Log::set_id("main_" + to_string(rank));
 
     finished = true;
 
