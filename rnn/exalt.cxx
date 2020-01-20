@@ -39,9 +39,10 @@ EXALT::~EXALT() {
             delete genome;
         }
     }
+    delete G;
 }
 
-EXALT::EXALT(int32_t _population_size, int32_t _number_islands, int32_t _max_genomes, const vector<string> &_input_parameter_names, const vector<string> &_output_parameter_names, const map<string,double> &_normalize_mins, const map<string,double> &_normalize_maxs, int32_t _bp_iterations, double _learning_rate, bool _use_high_threshold, double _high_threshold, bool _use_low_threshold, double _low_threshold, bool _use_dropout, double _dropout_probability, string _output_directory) : population_size(_population_size), number_islands(_number_islands), max_genomes(_max_genomes), number_inputs(_input_parameter_names.size()), number_outputs(_output_parameter_names.size()), bp_iterations(_bp_iterations), learning_rate(_learning_rate), use_high_threshold(_use_high_threshold), high_threshold(_high_threshold), use_low_threshold(_use_low_threshold), low_threshold(_low_threshold), use_dropout(_use_dropout), dropout_probability(_dropout_probability), output_directory(_output_directory) {
+EXALT::EXALT(int32_t _population_size, int32_t _number_islands, int32_t _max_genomes, const vector<string> &_input_parameter_names, const vector<string> &_output_parameter_names, const map<string,double> &_normalize_mins, const map<string,double> &_normalize_maxs, int32_t _bp_iterations, double _learning_rate, bool _use_high_threshold, double _high_threshold, bool _use_low_threshold, double _low_threshold, bool _use_dropout, double _dropout_probability, string _output_directory, string _genome_file_name, int _no_extra_inputs) : population_size(_population_size), number_islands(_number_islands), max_genomes(_max_genomes), number_inputs(_input_parameter_names.size()), number_outputs(_output_parameter_names.size()), bp_iterations(_bp_iterations), learning_rate(_learning_rate), use_high_threshold(_use_high_threshold), high_threshold(_high_threshold), use_low_threshold(_use_low_threshold), low_threshold(_low_threshold), use_dropout(_use_dropout), dropout_probability(_dropout_probability), output_directory(_output_directory), genome_file_name(_genome_file_name), no_extra_inputs(_no_extra_inputs) {
 
     input_parameter_names = _input_parameter_names;
     output_parameter_names = _output_parameter_names;
@@ -129,6 +130,9 @@ EXALT::EXALT(int32_t _population_size, int32_t _number_islands, int32_t _max_gen
     }
 
     startClock = std::chrono::system_clock::now();
+
+
+    if (genome_file_name!="") G = genrate_for_transfer_learning(genome_file_name, no_extra_inputs);
 }
 
 void EXALT::print_population() {
@@ -344,11 +348,12 @@ bool EXALT::insert_genome(RNN_Genome* genome) {
                 //need to set the weights for non-initial genomes so we
                 //can generate a proper graphviz file
                 vector<double> best_parameters = genome->get_best_parameters();
+                cout << "I'm in INSERT\n";
                 genome->set_weights(best_parameters);
             }
 
             genome->write_graphviz(output_directory + "/rnn_genome_" + to_string(inserted_genomes) + ".gv");
-            genome->write_to_file(output_directory + "/rnn_genome_" + to_string(inserted_genomes) + ".bin", true);
+            genome->write_to_file(output_directory + "/rnn_genome_" + to_string(inserted_genomes) + ".bin", false);
 
         }
 
@@ -391,6 +396,61 @@ void EXALT::initialize_genome_parameters(RNN_Genome* genome) {
     if (use_dropout) genome->enable_dropout(dropout_probability);
 }
 
+RNN_Genome* EXALT::genrate_for_transfer_learning(string file_name, int extra_inputs) {
+    RNN_Genome* genome = new RNN_Genome(file_name, false);
+
+    vector<RNN_Node_Interface*> output_nodes;
+    vector<double> new_parameters;
+    // int32_t node_innovation_count = 0;
+    // int32_t edge_innovation_count = 0;
+
+    uniform_real_distribution<double> rng(-0.5, 0.5);
+
+    int weights_count = 0;
+    for (int32_t i = 0; i < genome->nodes.size(); i++) {
+        if (node_innovation_count<genome->nodes[i]->get_innovation_number())
+            node_innovation_count = genome->nodes[i]->get_innovation_number() ;
+        if (genome->nodes[i]->get_layer_type()==2)
+            output_nodes.push_back(genome->nodes[i]) ;
+
+        for (int32_t j=0; j<genome->nodes[i]->get_number_weights(); j++) {
+            new_parameters.push_back(genome->initial_parameters[weights_count++]) ;
+        }
+    }
+
+    for (int32_t i = 0; i < extra_inputs; i++) {
+        new_parameters.push_back( rng(generator) );
+        weights_count++;
+    }
+
+    for (int32_t i = 0; i < genome->edges.size(); i++) {
+        if (edge_innovation_count<genome->edges[i]->get_innovation_number())
+            edge_innovation_count = genome->edges[i]->get_innovation_number() ;
+        new_parameters.push_back( genome->initial_parameters[ weights_count++ ] ) ;
+    }
+
+    for (int32_t i = 0; i < genome->recurrent_edges.size(); i++) {
+        if (edge_innovation_count<genome->recurrent_edges[i]->get_innovation_number())
+            edge_innovation_count = genome->recurrent_edges[i]->get_innovation_number() ;
+        new_parameters.push_back( genome->initial_parameters[ weights_count++ ] ) ;
+    }
+
+    for (int32_t i = 0; i < extra_inputs; i++) {
+        RNN_Node *node = new RNN_Node(++node_innovation_count, INPUT_LAYER, 0, FEED_FORWARD_NODE);
+        genome->nodes.push_back(node);
+
+        for (int32_t j=0; j<output_nodes.size(); j++) {
+            genome->edges.push_back(new RNN_Edge(++edge_innovation_count, node, output_nodes[j])) ;
+            new_parameters.push_back(rng(generator));
+        }
+    }
+
+    genome->set_initial_parameter( new_parameters );
+    genome->set_best_parameters( new_parameters );
+
+    return genome ;
+}
+
 RNN_Genome* EXALT::generate_genome() {
     if (inserted_genomes > max_genomes) return NULL;
     int island = generated_genomes % number_islands;
@@ -401,20 +461,28 @@ RNN_Genome* EXALT::generate_genome() {
     if (genomes[island].size() == 0) {
         //this is the first genome to be generated
         //generate minimal genome, insert it into the population
-        genome = create_ff(number_inputs, 0, 0, number_outputs, 0);
+        if (genome_file_name=="") {
+            genome = create_ff(number_inputs, 0, 0, number_outputs, 0);
+            edge_innovation_count = genome->edges.size() + genome->recurrent_edges.size();
+            node_innovation_count = genome->nodes.size();
+        }
+        else {
+            genome = G->copy();
+            // genome = genrate_for_transfer_learning( genome_file_name, no_extra_inputs ) ;
+            genome->set_generation_id(generated_genomes);
+        }
         genome->set_island(island);
         genome->set_parameter_names(input_parameter_names, output_parameter_names);
         genome->set_normalize_bounds(normalize_mins, normalize_maxs);
-
-        edge_innovation_count = genome->edges.size() + genome->recurrent_edges.size();
-        node_innovation_count = genome->nodes.size();
 
         genome->set_generated_by("initial");
         initialize_genome_parameters(genome);
 
         //insert a copy of it into the population so
         //additional requests can mutate it
-        genome->initialize_randomly();
+        if (genome_file_name=="")
+            genome->initialize_randomly();
+
         double _mu, _sigma;
         cout << "getting mu/sigma after random initialization!" << endl;
         genome->get_mu_sigma(genome->best_parameters, _mu, _sigma);
@@ -444,6 +512,7 @@ RNN_Genome* EXALT::generate_genome() {
 
                 genome->set_normalize_bounds(normalize_mins, normalize_maxs);
                 genome->set_island(island);
+
             } else if (r < crossover_rate || number_islands == 1) {
                 //intra-island crossover
 
@@ -462,6 +531,7 @@ RNN_Genome* EXALT::generate_genome() {
                 genome = crossover(genomes[island][p1], genomes[island][p2]);
                 genome->set_normalize_bounds(normalize_mins, normalize_maxs);
                 genome->set_island(island);
+
             } else {
                 //inter-island crossover
 
@@ -496,6 +566,10 @@ RNN_Genome* EXALT::generate_genome() {
                 genome->set_normalize_bounds(normalize_mins, normalize_maxs);
                 genome->set_island(island);
                 //genome->set_bp_iterations(2 * bp_iterations);
+
+
+                cout << "Island: " << island << endl;
+                cout << "Other Island: " << other_island << endl;
             }
 
             if (genome->outputs_unreachable()) {
@@ -554,6 +628,7 @@ void EXALT::mutate(RNN_Genome *g) {
 
     //the the weights in the genome to it's best parameters
     //for epigenetic iniitalization
+
     if (g->best_parameters.size() == 0) {
         g->set_weights(g->initial_parameters);
         g->get_mu_sigma(g->initial_parameters, mu, sigma);
@@ -1015,6 +1090,7 @@ RNN_Genome* EXALT::crossover(RNN_Genome *p1, RNN_Genome *p2) {
     sort(child_edges.begin(), child_edges.end(), sort_RNN_Edges_by_depth());
     sort(child_recurrent_edges.begin(), child_recurrent_edges.end(), sort_RNN_Recurrent_Edges_by_depth());
 
+    cout << "CHECKING AT CROSSOVER!\n";
     RNN_Genome *child = new RNN_Genome(child_nodes, child_edges, child_recurrent_edges);
     child->set_parameter_names(input_parameter_names, output_parameter_names);
     child->set_normalize_bounds(normalize_mins, normalize_maxs);

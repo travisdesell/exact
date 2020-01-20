@@ -38,6 +38,8 @@ void RNN_Node::input_fired(int time, double incoming_output) {
 
     // cerr << "inputs_fired on RNN_Node " << innovation_number << " at time " << time << " is " << inputs_fired[time] << " and total_inputs is " << total_inputs << endl;
 
+    // if (innovation_number==359)
+    // cout << "CCC--Total Inputs: " << total_inputs << " Current: " << inputs_fired[time] << endl;
     if (inputs_fired[time] < total_inputs) return;
     else if (inputs_fired[time] > total_inputs) {
         cerr << "ERROR: inputs_fired on RNN_Node " << innovation_number << " at time " << time << " is " << inputs_fired[time] << " and total_inputs is " << total_inputs << endl;
@@ -48,6 +50,7 @@ void RNN_Node::input_fired(int time, double incoming_output) {
 
 
     output_values[time] = tanh(input_values[time] + bias);
+    //cout << "-->Layer: " << layer_type << " -- NODE[" << innovation_number <<"] VALUE[" << time << "]: " << output_values[time] << endl ;
     ld_output[time] = tanh_derivative(output_values[time]);
 
     //output_values[time] = sigmoid(input_values[time] + bias);

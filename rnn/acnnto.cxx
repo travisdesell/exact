@@ -866,18 +866,17 @@ void ACNNTO::reward_colony_regularization(RNN_Genome* g, bool reward){
         W_reg =  get_norm( g ) ;
 
 
-    cout << "ACNNTO-REWARD_COLONY_REGULARIZATION:: W_reg: " << W_reg << endl ;
-    cout << "ACNNTO-REWARD_COLONY_REGULARIZATION:: 1 / ( fitness + W_reg ): " << 1 / ( fitness + W_reg ) << endl ;
+    // cout << "ACNNTO-REWARD_COLONY_REGULARIZATION:: W_reg: " << W_reg << endl ;
+    // cout << "ACNNTO-REWARD_COLONY_REGULARIZATION:: 1 / ( fitness + W_reg ): " << 1 / ( fitness + W_reg ) << endl ;
 
+    cout << g->nodes.size() << endl ;
     for ( int i=0; i<g->nodes.size(); i++){
         if ( g->nodes[i]->enabled==true ){
             int32_t node_inno = g->nodes[i]->get_innovation_number();
             int32_t node_type = g->nodes[i]->node_type;
-            // cout << "NODE ID: " << node_inno << endl;
-            // cout << "\tNODE LAYER: " << g->nodes[i]->layer_type << endl;
-            if (i==g->nodes.size()-1)
+            if (node_inno>=colony.size() - number_outputs - 1) {
                 node_inno*=-1;
-
+            }
             double pheromone_update;
 
             if ( reward )

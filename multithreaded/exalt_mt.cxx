@@ -114,7 +114,15 @@ int main(int argc, char** argv) {
     string output_directory = "";
     get_argument(arguments, "--output_directory", false, output_directory);
 
-    exalt = new EXALT(population_size, number_islands, max_genomes, time_series_sets->get_input_parameter_names(), time_series_sets->get_output_parameter_names(), time_series_sets->get_normalize_mins(), time_series_sets->get_normalize_maxs(), bp_iterations, learning_rate, use_high_threshold, high_threshold, use_low_threshold, low_threshold, use_dropout, dropout_probability, output_directory);
+    string genome_file_name = "";
+    get_argument(arguments, "--genome_bin", false, genome_file_name);
+    int no_extra_inputs = 0 ;
+    if (genome_file_name != "") {
+        get_argument(arguments, "--extra_inputs", true, no_extra_inputs);
+    }
+
+    // exalt = new EXALT(population_size, number_islands, max_genomes, time_series_sets->get_input_parameter_names(), time_series_sets->get_output_parameter_names(), time_series_sets->get_normalize_mins(), time_series_sets->get_normalize_maxs(), bp_iterations, learning_rate, use_high_threshold, high_threshold, use_low_threshold, low_threshold, use_dropout, dropout_probability, output_directory);
+    exalt = new EXALT(population_size, number_islands, max_genomes, time_series_sets->get_input_parameter_names(), time_series_sets->get_output_parameter_names(), time_series_sets->get_normalize_mins(), time_series_sets->get_normalize_maxs(), bp_iterations, learning_rate, use_high_threshold, high_threshold, use_low_threshold, low_threshold, use_dropout, dropout_probability, output_directory, genome_file_name, no_extra_inputs);
 
 
     vector<thread> threads;

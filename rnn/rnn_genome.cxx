@@ -498,7 +498,7 @@ void RNN_Genome::get_weights(vector<double> &parameters) {
 
     for (uint32_t i = 0; i < edges.size(); i++) {
         parameters[current++] = edges[i]->weight;
-        cout << "\tGENOME-GET_WEIGHTS():: edges[" << i << "]->weight: " << edges[i]->weight << endl;
+        // cout << "\tGENOME-GET_WEIGHTS():: edges[" << i << "]->weight: " << edges[i]->weight << endl;
         //if (edges[i]->is_reachable()) parameters[current++] = edges[i]->weight;
     }
 
@@ -1878,8 +1878,10 @@ bool RNN_Genome::add_node(double mu, double sigma, int node_type, int32_t max_re
     double avg_outputs = 0.0;
 
     for (int32_t i = 0; i < (int32_t)nodes.size(); i++) {
-        if (nodes[i]->depth < split_depth && nodes[i]->is_reachable()) possible_inputs.push_back(nodes[i]);
-        else if (nodes[i]->is_reachable()) possible_outputs.push_back(nodes[i]);
+        if (nodes[i]->depth < split_depth && nodes[i]->is_reachable())
+            possible_inputs.push_back(nodes[i]);
+        else if (nodes[i]->is_reachable())
+            possible_outputs.push_back(nodes[i]);
 
         if (nodes[i]->enabled) {
             enabled_count++;
@@ -2799,9 +2801,6 @@ void RNN_Genome::read_from_stream(istream &bin_istream, bool verbose) {
     read_map(normalize_maxs_iss, normalize_maxs);
 
     assign_reachability();
-    cout << "Worker=> Number of Nodes : " << this->nodes.size()   << endl;
-    cout << "Worker=> Number of Edges : " << this->edges.size()   << endl;
-    cout << "Worker=> Number of RexEdges : " << this->recurrent_edges.size()   << endl;
 }
 
 void RNN_Genome::write_to_array(char **bytes, int32_t &length, bool verbose) {

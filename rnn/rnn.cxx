@@ -222,7 +222,8 @@ void RNN::forward_pass(const vector< vector<double> > &series_data, bool using_d
 
     for (int32_t time = 0; time < series_length; time++) {
         for (uint32_t i = 0; i < input_nodes.size(); i++) {
-            if(input_nodes[i]->is_reachable()) input_nodes[i]->input_fired(time, series_data[i][time]);
+            if(input_nodes[i]->is_reachable())
+                input_nodes[i]->input_fired(time, series_data[i][time]);
         }
 
         //feed forward
@@ -232,12 +233,16 @@ void RNN::forward_pass(const vector< vector<double> > &series_data, bool using_d
             }
         } else {
             for (uint32_t i = 0; i < edges.size(); i++) {
-                if (edges[i]->is_reachable()) edges[i]->propagate_forward(time);
+                if (edges[i]->is_reachable()) {
+                     edges[i]->propagate_forward(time);
+                 }
+                // else cout << "\tCHECKING EDGE[" << edges[i]->get_innovation_number() << "] REACHABILITY: " << edges[i]->is_reachable() << endl ;
             }
         }
 
         for (uint32_t i = 0; i < recurrent_edges.size(); i++) {
             if (recurrent_edges[i]->is_reachable()) recurrent_edges[i]->propagate_forward(time);
+            // else cout << "\tCHECKING RecEDGE[" << recurrent_edges[i]->get_innovation_number() << "] REACHABILITY: " << recurrent_edges[i]->is_reachable() << endl ;
         }
     }
 }

@@ -78,6 +78,10 @@ class EXALT {
         double split_node_rate;
         double merge_node_rate;
 
+        string genome_file_name ;
+        int no_extra_inputs ;
+
+
         vector<int> possible_node_types;
 
         string output_directory;
@@ -91,10 +95,12 @@ class EXALT {
 
         ostringstream memory_log;
 
+        RNN_Genome* G = NULL;
+
         std::chrono::time_point<std::chrono::system_clock> startClock;
 
     public:
-        EXALT(int32_t _population_size, int32_t _number_islands, int32_t _max_genomes, const vector<string> &_input_parameter_names, const vector<string> &_output_parameter_names, const map<string,double> &_normalize_mins, const map<string,double> &_normalize_maxs, int32_t _bp_iterations, double _learning_rate, bool _use_high_threshold, double _high_threshold, bool _use_low_threshold, double _low_threshold, bool _use_dropout, double _dropout_probability, string _output_directory);
+        EXALT(int32_t _population_size, int32_t _number_islands, int32_t _max_genomes, const vector<string> &_input_parameter_names, const vector<string> &_output_parameter_names, const map<string,double> &_normalize_mins, const map<string,double> &_normalize_maxs, int32_t _bp_iterations, double _learning_rate, bool _use_high_threshold, double _high_threshold, bool _use_low_threshold, double _low_threshold, bool _use_dropout, double _dropout_probability, string _output_directory, string _genome_file_name, int _no_extra_inputs);
 
         ~EXALT();
 
@@ -113,6 +119,7 @@ class EXALT {
 
         void initialize_genome_parameters(RNN_Genome* genome);
         RNN_Genome* generate_genome();
+        RNN_Genome* genrate_for_transfer_learning(string file_name, int extra_inputs) ;
         void mutate(RNN_Genome *p1);
 
         void attempt_node_insert(vector<RNN_Node_Interface*> &child_nodes, const RNN_Node_Interface *node, const vector<double> &new_weights);

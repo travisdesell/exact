@@ -1,4 +1,4 @@
 target_link_libraries(neat exact_common exact_time_series neat_src)
 
-add_executable(run_neat)
+add_executable(new_run_neat)
 target_link_libraries(neat exact_time_series exact_common)

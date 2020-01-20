@@ -323,7 +323,7 @@ int main(int argc, char** argv) {
         exit(0) ;
     }
 
-    bool bias_forward_paths = true;
+    bool bias_forward_paths = false;
     for ( int i=0; i<argc; i++) {
         if ( string( argv[i] )=="--bias_forward_paths" ) {
             bias_forward_paths = true;
