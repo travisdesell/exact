@@ -222,7 +222,7 @@ class RNN_Genome {
         void write_to_file(string bin_filename);
         void write_to_stream(ostream &bin_stream);
 
-        bool connect_input_to_hid_nodes( double mu, double sig, RNN_Node_Interface *new_node, bool from_input, Distribution *dist, int32_t &edge_innovation_count );
+        bool connect_node_to_hid_nodes( double mu, double sig, RNN_Node_Interface *new_node, Distribution *dist, int32_t &edge_innovation_count, bool from_input );
 
         friend class EXAMM;
         friend class IslandSpeciationStrategy;

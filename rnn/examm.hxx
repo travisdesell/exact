@@ -28,10 +28,6 @@ using std::vector;
 #define NORMAL_DISTRIBUTION 2
 
 
-#define INPUTS_TO_OUTPUTS  1
-#define INPUTS_TO_HIDDEN   2
-#define OUTPUTS_TO_HIDDEN  3
-
 class EXAMM {
     private:
         int32_t population_size;
@@ -117,7 +113,9 @@ class EXAMM {
         vector<string> inputs_to_remove ;
         vector<string> outputs_to_remove ;
 
-        int tl_version;
+        bool tl_ver1;
+        bool tl_ver2;
+        bool tl_ver3;
 
     public:
         EXAMM(int32_t _population_size, int32_t _number_islands, int32_t _max_genomes, int32_t _num_genomes_check_on_island, string _speciation_method,
@@ -134,7 +132,7 @@ class EXAMM {
             string _genome_file_name,
             int _no_extra_inputs, int _no_extra_outputs,
             vector<string> &_inputs_to_remove, vector<string> &_outputs_to_remove,
-            int _tl_version);
+            bool _tl_ver1, bool _tl_ver2, bool _tl_ver3 );
 
         ~EXAMM();
 

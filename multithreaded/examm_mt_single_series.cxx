@@ -161,10 +161,18 @@ int main(int argc, char** argv) {
     if (genome_file_name != "") {
         get_argument(arguments, "--outputs_to_remove", false, outputs_to_remove);
     }
-    
-    int tl_version = 1 ;
+
+    bool tl_ver1 = true ;
     if (genome_file_name != "") {
-        get_argument(arguments, "--tl_version", false, tl_version);
+        get_argument(arguments, "--tl_version1", false, tl_ver1);
+    }
+    bool tl_ver2 = true ;
+    if (genome_file_name != "") {
+        get_argument(arguments, "--tl_version2", false, tl_ver2);
+    }
+    bool tl_ver3 = true ;
+    if (genome_file_name != "") {
+        get_argument(arguments, "--tl_version3", false, tl_ver3);
     }
 
 
@@ -224,7 +232,7 @@ int main(int argc, char** argv) {
                 genome_file_name,
                 no_extra_inputs, no_extra_outputs,
                 inputs_removed_tokens, outputs_removed_tokens,
-                tl_version);
+                tl_ver1, tl_ver2, tl_ver3);
 
             vector<thread> threads;
             for (int32_t i = 0; i < number_threads; i++) {

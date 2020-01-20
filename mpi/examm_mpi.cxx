@@ -213,6 +213,12 @@ void worker(int rank) {
     Log::release_id("worker_" + to_string(rank));
 }
 
+// void stop(int rank) {
+//     std::cout<<"RANK: " << rank <<" -- AAAA:: XXXXXXXXXXXXXXXXXXXX\n";
+//     MPI_Barrier(MPI_COMM_WORLD);
+//     getchar();
+// }
+
 void get_individual_inputs(string str, vector<string>& tokens) {
    string word = "";
    for (auto x : str) {
@@ -239,14 +245,16 @@ int main(int argc, char** argv) {
     Log::set_id("main_" + to_string(rank));
     Log::restrict_to_rank(0);
 
+
+
     TimeSeriesSets *time_series_sets = NULL;
     vector<string> inputs_removed_tokens  ;
     vector<string> outputs_removed_tokens ;
 
+
     if (rank == 0) {
         //only have the master process print TSS info
         time_series_sets = TimeSeriesSets::generate_from_arguments(arguments);
-
         if (argument_exists(arguments, "--write_time_series")) {
             string base_filename;
             get_argument(arguments, "--write_time_series", true, base_filename);
@@ -255,6 +263,8 @@ int main(int argc, char** argv) {
     } else {
         time_series_sets = TimeSeriesSets::generate_from_arguments(arguments);
     }
+
+
 
     int32_t time_offset = 1;
     get_argument(arguments, "--time_offset", true, time_offset);
@@ -319,7 +329,7 @@ int main(int argc, char** argv) {
     get_argument(arguments, "--genome_bin", false, genome_file_name);
     int no_extra_inputs = 0 ;
     if (genome_file_name != "") {
-        get_argument(arguments, "--extra_inputs", true, no_extra_inputs);
+        get_argument(arguments, "--extra_inputs", false, no_extra_inputs);
     }
     int no_extra_outputs = 0 ;
     if (genome_file_name != "") {
@@ -334,9 +344,20 @@ int main(int argc, char** argv) {
     if (genome_file_name != "") {
         get_argument(arguments, "--outputs_to_remove", false, outputs_to_remove);
     }
-    int tl_version = 1 ;
+
+    bool tl_ver1 = true ;
     if (genome_file_name != "") {
-        get_argument(arguments, "--tl_version", false, tl_version);
+        get_argument(arguments, "--tl_version1", false, tl_ver1);
+    }
+
+    bool tl_ver2 = true ;
+    if (genome_file_name != "") {
+        get_argument(arguments, "--tl_version2", false, tl_ver2);
+    }
+
+    bool tl_ver3 = true ;
+    if (genome_file_name != "") {
+        get_argument(arguments, "--tl_version3", false, tl_ver3);
     }
 
     get_individual_inputs( inputs_to_remove, inputs_removed_tokens) ;
@@ -360,7 +381,7 @@ int main(int argc, char** argv) {
             genome_file_name,
             no_extra_inputs, no_extra_outputs,
             inputs_removed_tokens, outputs_removed_tokens,
-            tl_version);
+            tl_ver1, tl_ver2, tl_ver3);
 
         if (possible_node_types.size() > 0) examm->set_possible_node_types(possible_node_types);
 

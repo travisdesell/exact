@@ -72,7 +72,8 @@ EXAMM::EXAMM(int32_t _population_size, int32_t _number_islands, int32_t _max_gen
                 string _rec_sampling_population, string _rec_sampling_distribution, string _output_directory,
                 string _genome_file_name,
                 int _no_extra_inputs, int _no_extra_outputs,
-                vector<string> &_inputs_to_remove, vector<string> &_outputs_to_remove, int _tl_version) :
+                vector<string> &_inputs_to_remove, vector<string> &_outputs_to_remove,
+                bool _tl_ver1, bool _tl_ver2, bool _tl_ver3 ) :
                                         population_size(_population_size),
                                         number_islands(_number_islands),
                                         max_genomes(_max_genomes),
@@ -90,13 +91,14 @@ EXAMM::EXAMM(int32_t _population_size, int32_t _number_islands, int32_t _max_gen
                                         genome_file_name(_genome_file_name),
                                         no_extra_inputs(_no_extra_inputs),
                                         no_extra_outputs(_no_extra_outputs),
-                                        tl_version(_tl_version){
+                                        tl_ver1(_tl_ver1),
+                                        tl_ver2(_tl_ver2),
+                                        tl_ver3(_tl_ver3) {
 
     input_parameter_names = _input_parameter_names;
     output_parameter_names = _output_parameter_names;
     normalize_mins = _normalize_mins;
     normalize_maxs = _normalize_maxs;
-
     inputs_to_remove  = _inputs_to_remove;
 
     outputs_to_remove = _outputs_to_remove ;
@@ -405,6 +407,7 @@ RNN_Genome* EXAMM::generate_for_transfer_learning(string file_name, int extra_in
 
     bool flag = true;
     vector<int> new_input_parameter_id ;
+
     for ( int32_t i=0; i<genome->input_parameter_names.size(); i++ ) {
         for ( auto removed: inputs_to_remove ) {
             if (genome->input_parameter_names[i]==removed ) {
@@ -562,7 +565,7 @@ RNN_Genome* EXAMM::generate_for_transfer_learning(string file_name, int extra_in
         new_input_nodes.push_back(node) ;
 
         //Connecting New Input Nodes to Old Output Nodes
-        if (tl_version == INPUTS_TO_OUTPUTS) {
+        if (tl_ver1) {
             for (auto out_node: output_nodes) {
                 genome->edges.push_back(new RNN_Edge(++edge_innovation_count, node, out_node)) ;
                 new_parameters.push_back(rng(generator));
@@ -571,7 +574,7 @@ RNN_Genome* EXAMM::generate_for_transfer_learning(string file_name, int extra_in
     }
 
     //Connecting Input Nodes to New Output Nodes
-    if (tl_version == INPUTS_TO_OUTPUTS) {
+    if (tl_ver1) {
         for (auto node: genome->nodes) {
             if (node->get_layer_type() == INPUT_LAYER) {
                 for (auto new_output_node: new_output_nodes) {
@@ -592,22 +595,24 @@ RNN_Genome* EXAMM::generate_for_transfer_learning(string file_name, int extra_in
 
     auto rng_ = std::default_random_engine {};
 
-    // Connecting Inputs to Hidden Nodes:
-    if (tl_version == INPUTS_TO_HIDDEN) {
+    // Connecting New Inputs to Hidden Nodes:
+    if (tl_ver2 && new_input_nodes.size()!=0) {
+        std::cout<<"Creating Edges between New-Inputs and Hid!\n";
         std::shuffle(std::begin(new_input_nodes), std::end(new_input_nodes), rng_);
         for (auto node: new_input_nodes) {
             Distribution *dist = get_recurrent_depth_dist(genome->get_group_id());
-            genome->connect_input_to_hid_nodes(mu, sigma, node, true, dist, edge_innovation_count);
+            genome->connect_node_to_hid_nodes(mu, sigma, node, dist, edge_innovation_count, true);
             delete dist;
         }
     }
 
-    // Connecting Outputs to Hidden Nodes:
-    if (tl_version == OUTPUTS_TO_HIDDEN) {
+    // Connecting New Outputs to Hidden Nodes:
+    if (tl_ver3 && new_output_nodes.size()!=0) {
+        std::cout<<"Creating Edges between New-Outputs and Hid!\n";
         std::shuffle(std::begin(new_output_nodes), std::end(new_output_nodes), rng_);
         for (auto node: new_output_nodes) {
             Distribution *dist = get_recurrent_depth_dist(genome->get_group_id());
-            genome->connect_input_to_hid_nodes(mu, sigma, node, true, dist, edge_innovation_count);
+            genome->connect_node_to_hid_nodes(mu, sigma, node, dist, edge_innovation_count, false);
             delete dist;
         }
     }
