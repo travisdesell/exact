@@ -1798,7 +1798,7 @@ bool RNN_Genome::split_edge(double mu, double sigma, int node_type, Distribution
 }
 
 //INFO: ADDED BY ABDELRAHMAN TO USE FOR TRANSFER LEARNING
-bool RNN_Genome::connect_input_to_hid_nodes( double mu, double sig, RNN_Node_Interface *new_node, bool from_input, Distribution *dist, int32_t &edge_innovation_count ) {
+bool RNN_Genome::connect_node_to_hid_nodes( double mu, double sig, RNN_Node_Interface *new_node, Distribution *dist, int32_t &edge_innovation_count, bool from_input ) {
 
     vector<RNN_Node_Interface*> candidate_nodes;
 
@@ -1850,12 +1850,43 @@ bool RNN_Genome::connect_input_to_hid_nodes( double mu, double sig, RNN_Node_Int
         candidate_nodes.erase(candidate_nodes.begin() + position);
     }
 
+
     for (auto node: candidate_nodes) {
-        if (rng_0_1(generator) < recurrent_probability)
-            attempt_recurrent_edge_insert(node, new_node, mu, sigma, dist, edge_innovation_count);
-        else
-            attempt_edge_insert(node, new_node, mu, sig, edge_innovation_count);
+        // if (rng_0_1(generator) < recurrent_probability) {
+        //     int32_t recurrent_depth = dist->sample();
+        //     RNN_Recurrent_Edge *e;
+        //     if (from_input)
+        //         e = new RNN_Recurrent_Edge(++edge_innovation_count, recurrent_depth, new_node, node);
+        //     else
+        //         e = new RNN_Recurrent_Edge(++edge_innovation_count, recurrent_depth, node, new_node);
+        //     e->weight = bound(normal_distribution.random(generator, mu, sigma));
+        //     Log::info("\tadding recurrent edge between nodes %d and %d, new edge weight: %d\n", e->input_innovation_number, e->output_innovation_number, e->weight);
+        //     recurrent_edges.insert( upper_bound(recurrent_edges.begin(), recurrent_edges.end(), e, sort_RNN_Recurrent_Edges_by_depth()), e);
+        //
+        //     initial_parameters.push_back(e->weight);
+        //     best_parameters.push_back(e->weight);
+        //
+        //     // attempt_recurrent_edge_insert(new_node, node, mu, sigma, dist, edge_innovation_count);
+        // }
+        // else {
+            RNN_Edge *e;
+            if (from_input)
+                e = new RNN_Edge(++edge_innovation_count, new_node, node);
+            else
+                e = new RNN_Edge(++edge_innovation_count, node, new_node);
+            e->weight = bound(normal_distribution.random(generator, mu, sigma));
+            Log::info("\tadding edge between nodes %d and %d, new edge weight: %lf\n", e->input_innovation_number, e->output_innovation_number, e->weight);
+            edges.insert( upper_bound(edges.begin(), edges.end(), e, sort_RNN_Edges_by_depth()), e);
+
+            initial_parameters.push_back(e->weight);
+            best_parameters.push_back(e->weight);
+
+            // attempt_edge_insert(node, new_node, mu, sig, edge_innovation_count);
+        // }
+        std::cout<<"****HERE:  "<< edge_innovation_count<<endl;
     }
+    std::cout<<"FINISHED INSERTING EDGES:  "<< edge_innovation_count<<endl;
+
 
     return true;
 }
