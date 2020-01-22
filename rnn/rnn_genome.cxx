@@ -536,6 +536,7 @@ void RNN_Genome::initialize_randomly() {
     for (uint32_t i = 0; i < initial_parameters.size(); i++) {
         initial_parameters[i] = rng(generator);
     }
+    this->set_best_parameters(initial_parameters); 
 }
 
 
@@ -2815,9 +2816,12 @@ void RNN_Genome::write_to_file(string bin_filename) {
     bin_outfile.close();
 }
 
+#define checkpoint(name) ; //printf("checkpoint %d\n", name++)
+
 void RNN_Genome::write_to_stream(ostream &bin_ostream) {
     Log::debug("WRITING GENOME TO STREAM\n");
-
+    int x = 0;
+    checkpoint(x);
     bin_ostream.write((char*)&generation_id, sizeof(int32_t));
     bin_ostream.write((char*)&group_id, sizeof(int32_t));
     bin_ostream.write((char*)&bp_iterations, sizeof(int32_t));
@@ -2826,11 +2830,13 @@ void RNN_Genome::write_to_stream(ostream &bin_ostream) {
     bin_ostream.write((char*)&use_nesterov_momentum, sizeof(bool));
     bin_ostream.write((char*)&use_reset_weights, sizeof(bool));
 
+    checkpoint(x);
     bin_ostream.write((char*)&use_high_norm, sizeof(bool));
     bin_ostream.write((char*)&high_threshold, sizeof(double));
     bin_ostream.write((char*)&use_low_norm, sizeof(bool));
     bin_ostream.write((char*)&low_threshold, sizeof(double));
 
+    checkpoint(x);
     bin_ostream.write((char*)&use_dropout, sizeof(bool));
     bin_ostream.write((char*)&dropout_probability, sizeof(double));
 
@@ -2849,6 +2855,7 @@ void RNN_Genome::write_to_stream(ostream &bin_ostream) {
     Log::debug("use_dropout: %d\n", use_dropout);
     Log::debug("dropout_probability: %lf\n", dropout_probability);
 
+    checkpoint(x);
     write_binary_string(bin_ostream, log_filename, "log_filename");
 
     ostringstream generator_oss;
@@ -2856,11 +2863,13 @@ void RNN_Genome::write_to_stream(ostream &bin_ostream) {
     string generator_str = generator_oss.str();
     write_binary_string(bin_ostream, generator_str, "generator");
 
+    checkpoint(x);
     ostringstream rng_0_1_oss;
     rng_0_1_oss << rng_0_1;
     string rng_0_1_str = rng_0_1_oss.str();
     write_binary_string(bin_ostream, rng_0_1_str, "rng_0_1");
 
+    checkpoint(x);
     ostringstream generated_by_map_oss;
     write_map(generated_by_map_oss, generated_by_map);
     string generated_by_map_str = generated_by_map_oss.str();
@@ -2874,10 +2883,12 @@ void RNN_Genome::write_to_stream(ostream &bin_ostream) {
     bin_ostream.write((char*)&n_initial_parameters, sizeof(int32_t));
     bin_ostream.write((char*)&initial_parameters[0], sizeof(double) * initial_parameters.size());
 
+    checkpoint(x);
     int32_t n_best_parameters = best_parameters.size();
-    Log::debug("writing %d best parameters.\n", n_best_parameters);
     bin_ostream.write((char*)&n_best_parameters, sizeof(int32_t));
-    bin_ostream.write((char*)&best_parameters[0], sizeof(double) * best_parameters.size());
+    if (n_best_parameters)
+        bin_ostream.write((char*)&best_parameters[0], sizeof(double) * best_parameters.size());
+
 
     int32_t n_input_parameter_names = input_parameter_names.size();
     bin_ostream.write((char*)&n_input_parameter_names, sizeof(int32_t));
@@ -2885,12 +2896,14 @@ void RNN_Genome::write_to_stream(ostream &bin_ostream) {
         write_binary_string(bin_ostream, input_parameter_names[i], "input_parameter_names[" + std::to_string(i) + "]");
     }
 
+    checkpoint(x);
     int32_t n_output_parameter_names = output_parameter_names.size();
     bin_ostream.write((char*)&n_output_parameter_names, sizeof(int32_t));
     for (int32_t i = 0; i < output_parameter_names.size(); i++) {
         write_binary_string(bin_ostream, output_parameter_names[i], "output_parameter_names[" + std::to_string(i) + "]");
     }
 
+    checkpoint(x);
     int32_t n_nodes = nodes.size();
     bin_ostream.write((char*)&n_nodes, sizeof(int32_t));
     Log::debug("writing %d nodes.\n", n_nodes);
@@ -2900,6 +2913,7 @@ void RNN_Genome::write_to_stream(ostream &bin_ostream) {
         nodes[i]->write_to_stream(bin_ostream);
     }
 
+    checkpoint(x);
 
     int32_t n_edges = edges.size();
     bin_ostream.write((char*)&n_edges, sizeof(int32_t));
@@ -2911,6 +2925,7 @@ void RNN_Genome::write_to_stream(ostream &bin_ostream) {
     }
 
 
+    checkpoint(x);
     int32_t n_recurrent_edges = recurrent_edges.size();
     bin_ostream.write((char*)&n_recurrent_edges, sizeof(int32_t));
     Log::debug("writing %d recurrent edges.\n", n_recurrent_edges);
@@ -2921,6 +2936,7 @@ void RNN_Genome::write_to_stream(ostream &bin_ostream) {
         recurrent_edges[i]->write_to_stream(bin_ostream);
     }
 
+    checkpoint(x);
     ostringstream normalize_mins_oss;
     write_map(normalize_mins_oss, normalize_mins);
     string normalize_mins_str = normalize_mins_oss.str();
