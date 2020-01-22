@@ -132,9 +132,9 @@ EXAMM::EXAMM(int32_t _population_size, int32_t _number_islands, int32_t _max_gen
             edge_innovation_count = seed_genome->edges.size() + seed_genome->recurrent_edges.size();
             node_innovation_count = seed_genome->nodes.size();
         }
-        else
-            seed_genome = generate_for_transfer_learning(genome_file_name, no_extra_inputs, no_extra_outputs);
-
+        else {
+            seed_genome = generate_for_transfer_learning(genome_file_name, no_extra_inputs, no_extra_outputs );
+        }
 
         seed_genome->set_generated_by("initial");
 
@@ -489,7 +489,7 @@ RNN_Genome* EXAMM::generate_for_transfer_learning(string file_name, int extra_in
     genome->nodes = New_nodes ;
 
     for (int32_t i = 0; i < extra_outputs; i++)
-    new_parameters.push_back( rng(generator) );
+        new_parameters.push_back( rng(generator) );
 
     for (int32_t i = 0; i < extra_inputs; i++)
         new_parameters.push_back( rng(generator) );
@@ -547,8 +547,13 @@ RNN_Genome* EXAMM::generate_for_transfer_learning(string file_name, int extra_in
     genome->edges = New_edges ;
     genome->recurrent_edges = New_recurrent_edges ;
 
+    //*** JUST CHECKING IF THIS WILL FIX THE BUG ***//
+    // node_innovation_count+=1000;
+    // edge_innovation_count+=1000;
+    //*** JUST CHECKING IF THIS WILL FIX THE BUG ***//
+
     for (int32_t i = 0; i < extra_outputs; i++) {
-        RNN_Node *node = new RNN_Node(++node_innovation_count, OUTPUT_LAYER, 0, SIMPLE_NODE);
+        RNN_Node *node = new RNN_Node(++node_innovation_count, OUTPUT_LAYER, output_nodes.back()->get_depth(), SIMPLE_NODE);
         genome->nodes.push_back(node);
         new_output_nodes.push_back(node) ;
     }
@@ -588,31 +593,33 @@ RNN_Genome* EXAMM::generate_for_transfer_learning(string file_name, int extra_in
     genome->set_initial_parameter( new_parameters );
     genome->set_best_parameters( new_parameters );
 
-
     double mu, sigma;
     genome->get_mu_sigma(genome->best_parameters, mu, sigma);
-
 
     auto rng_ = std::default_random_engine {};
 
     // Connecting New Inputs to Hidden Nodes:
     if (tl_ver2 && new_input_nodes.size()!=0) {
-        std::cout<<"Creating Edges between New-Inputs and Hid!\n";
+        Log::info("Creating Edges between New-Inputs and Hid!\n");
         std::shuffle(std::begin(new_input_nodes), std::end(new_input_nodes), rng_);
         for (auto node: new_input_nodes) {
             Distribution *dist = get_recurrent_depth_dist(genome->get_group_id());
+            Log::debug("\tBEFORE -- CHECK EDGE INNOVATION COUNT: %d\n", edge_innovation_count);
             genome->connect_node_to_hid_nodes(mu, sigma, node, dist, edge_innovation_count, true);
+            Log::debug("\tAFTER -- CHECK EDGE INNOVATION COUNT: %d\n", edge_innovation_count);
             delete dist;
         }
     }
 
     // Connecting New Outputs to Hidden Nodes:
     if (tl_ver3 && new_output_nodes.size()!=0) {
-        std::cout<<"Creating Edges between New-Outputs and Hid!\n";
+        Log::info("Creating Edges between New-Outputs and Hid!\n");
         std::shuffle(std::begin(new_output_nodes), std::end(new_output_nodes), rng_);
         for (auto node: new_output_nodes) {
             Distribution *dist = get_recurrent_depth_dist(genome->get_group_id());
+            Log::debug("\tBEFORE -- CHECK EDGE INNOVATION COUNT: %d\n", edge_innovation_count);
             genome->connect_node_to_hid_nodes(mu, sigma, node, dist, edge_innovation_count, false);
+            Log::debug("\tAFTER -- CHECK EDGE INNOVATION COUNT: %d\n", edge_innovation_count);
             delete dist;
         }
     }
