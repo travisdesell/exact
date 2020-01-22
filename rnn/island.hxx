@@ -1,12 +1,17 @@
 #ifndef EXAMM_ISLAND_STRATEGY_HXX
 #define EXAMM_ISLAND_STRATEGY_HXX
 
+#include <algorithm>
+using std::sort;
+using std::upper_bound;
+
 #include <random>
 using std::minstd_rand0;
 using std::uniform_real_distribution;
 
 #include <string>
 using std::string;
+
 
 #include "rnn_genome.hxx"
 
