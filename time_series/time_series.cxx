@@ -193,11 +193,18 @@ void TimeSeriesSet::add_time_series(string name) {
     }
 }
 
+#define checkpoint(name) ; // printf("checkpoint %d\n", name++)
+
 TimeSeriesSet::TimeSeriesSet(string _filename, const vector<string> &_fields) {
     filename = _filename;
     fields = _fields;
-
+    
+    int x = 0;
+    checkpoint(x);
+    
     ifstream ts_file(filename);
+    
+    checkpoint(x);
 
     string line;
 
@@ -206,8 +213,12 @@ TimeSeriesSet::TimeSeriesSet(string _filename, const vector<string> &_fields) {
         exit(1);
     }
 
+    checkpoint(x);
+    
     vector<string> file_fields;
     string_split(line, ',', file_fields);
+
+    checkpoint(x);
 
     //check to see that all the specified fields are in the file
     for (int32_t i = 0; i < (int32_t)fields.size(); i++) {
@@ -222,12 +233,13 @@ TimeSeriesSet::TimeSeriesSet(string _filename, const vector<string> &_fields) {
         }
      }
 
+    checkpoint(x);
+    
     Log::debug("fields.size(): %d, file_fields.size(): %d\n", fields.size(), file_fields.size());
 
     //specify which of the file fields (columns) are used
-    vector<bool> file_fields_used(true, file_fields.size());
+    vector<bool> file_fields_used(file_fields.size(), true);
     for (int32_t i = 0; i < (int32_t)file_fields.size(); i++) {
-
         Log::debug("\tchecking to see if '%s' was in specified fields, file_fields_used[%d]: %d", file_fields[i].c_str(), i, file_fields_used[i]);
 
         if (find(fields.begin(), fields.end(), file_fields[i]) == fields.end()) {
@@ -240,6 +252,8 @@ TimeSeriesSet::TimeSeriesSet(string _filename, const vector<string> &_fields) {
         }
     }
 
+    checkpoint(x);
+    
     Log::debug("number fields: %d\n", fields.size());
     for (uint32_t i = 0; i < fields.size(); i++) {
         Log::debug("\t%s used: %d\n", fields[i].c_str(), file_fields_used[i]);
