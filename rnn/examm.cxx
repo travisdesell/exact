@@ -126,6 +126,7 @@ EXAMM::EXAMM(int32_t _population_size, int32_t _number_islands, int32_t _max_gen
     if (speciation_method.compare("island")) {
         //generate a minimal feed foward network as the seed genome
         RNN_Genome *seed_genome = NULL;
+        printf("<%s>\n", genome_file_name.c_str());
         if (genome_file_name=="") {
             seed_genome = create_ff(number_inputs, 0, 0, number_outputs, 0);
             seed_genome->initialize_randomly();
@@ -133,7 +134,9 @@ EXAMM::EXAMM(int32_t _population_size, int32_t _number_islands, int32_t _max_gen
             node_innovation_count = seed_genome->nodes.size();
         }
         else {
+            printf("Hello1\n");
             seed_genome = generate_for_transfer_learning(genome_file_name, no_extra_inputs, no_extra_outputs );
+            printf("Hello2\n");
         }
 
         seed_genome->set_generated_by("initial");
