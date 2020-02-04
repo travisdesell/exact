@@ -19,7 +19,7 @@ RecDepthFrequencyTable::RecDepthFrequencyTable(
 
 RecDepthFrequencyTable::~RecDepthFrequencyTable() {
     if (frequencies) {
-        delete frequencies;
+        delete[] frequencies;
         frequencies = 0;
     }
 }
