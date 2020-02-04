@@ -90,12 +90,14 @@ class RNN_Node_Interface {
 
         void write_to_stream(ostream &out);
 
+        int32_t get_node_type() const;
         int32_t get_layer_type() const;
         int32_t get_innovation_number() const;
         double get_depth() const;
         bool equals(RNN_Node_Interface *other) const;
 
         bool is_reachable() const;
+        bool is_enabled() const;
 
         friend class RNN_Edge;
         friend class RNN_Recurrent_Edge;

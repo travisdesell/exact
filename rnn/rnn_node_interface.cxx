@@ -51,6 +51,10 @@ RNN_Node_Interface::RNN_Node_Interface(int32_t _innovation_number, int32_t _laye
 RNN_Node_Interface::~RNN_Node_Interface() {
 }
 
+int32_t RNN_Node_Interface::get_node_type() const {
+    return node_type;
+}
+
 int32_t RNN_Node_Interface::get_layer_type() const {
     return layer_type;
 }
@@ -66,6 +70,11 @@ double RNN_Node_Interface::get_depth() const {
 bool RNN_Node_Interface::is_reachable() const {
     return forward_reachable && backward_reachable;
 }
+
+bool RNN_Node_Interface::is_enabled() const {
+    return enabled;
+}
+
 
 bool RNN_Node_Interface::equals(RNN_Node_Interface *other) const {
     if (innovation_number == other->innovation_number && enabled == other->enabled) return true;

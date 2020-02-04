@@ -192,6 +192,9 @@ void RNN::forward_pass(const vector< vector<double> > &series_data, bool using_d
 
     if (input_nodes.size() != series_data.size()) {
         Log::fatal("ERROR: number of input nodes (%d) != number of time series data input fields (%d)\n", input_nodes.size(), series_data.size());
+        for (int i = 0; i < nodes.size(); i++) {
+            Log::fatal("node[%d], in: %d, depth: %lf, layer_type: %d, node_type: %d\n", i, nodes[i]->get_innovation_number(), nodes[i]->get_depth(), nodes[i]->get_layer_type(), nodes[i]->get_node_type());
+        }
         exit(1);
     }
 

@@ -506,6 +506,31 @@ void RNN_Genome::set_weights(const vector<double> &parameters) {
 
 }
 
+uint32_t RNN_Genome::get_number_inputs() {
+    uint32_t number_inputs = 0;
+
+    for (uint32_t i = 0; i < nodes.size(); i++) {
+        if (nodes[i]->get_layer_type() == INPUT_LAYER) {
+            number_inputs++;
+        }
+    }
+
+    return number_inputs;
+}
+
+uint32_t RNN_Genome::get_number_outputs() {
+    uint32_t number_outputs = 0;
+
+    for (uint32_t i = 0; i < nodes.size(); i++) {
+        if (nodes[i]->get_layer_type() == OUTPUT_LAYER) {
+            number_outputs++;
+        }
+    }
+
+    return number_outputs;
+}
+
+
 uint32_t RNN_Genome::get_number_weights() {
     uint32_t number_weights = 0;
 
@@ -569,12 +594,12 @@ vector<double> RNN_Genome::get_best_parameters() const {
 
 //INFO: ADDED BY ABDELRAHMAN TO USE FOR TRANSFER LEARNING
 void RNN_Genome::set_best_parameters( vector<double> parameters) {
-    best_parameters = parameters ;
+    best_parameters = parameters;
 }
 
 //INFO: ADDED BY ABDELRAHMAN TO USE FOR TRANSFER LEARNING
-void RNN_Genome::set_initial_parameter( vector <double> parameters) {
-    initial_parameters = parameters ;
+void RNN_Genome::set_initial_parameters( vector <double> parameters) {
+    initial_parameters = parameters;
 }
 
 int32_t RNN_Genome::get_generation_id() const {
@@ -1635,7 +1660,7 @@ bool RNN_Genome::add_edge(double mu, double sigma, int32_t &edge_innovation_coun
 
     RNN_Node_Interface *n1 = reachable_nodes[position];
     Log::info("\tselected first node %d with depth %d\n", n1->innovation_number, n1->depth);
-    printf("pos: %d, size: %d\n", position, reachable_nodes.size());
+    //printf("pos: %d, size: %d\n", position, reachable_nodes.size());
 
     for (int i = 0; i < reachable_nodes.size();) {
         auto it = reachable_nodes[i];
@@ -1808,6 +1833,134 @@ bool RNN_Genome::split_edge(double mu, double sigma, int node_type, Distribution
 
     return true;
 }
+
+bool RNN_Genome::connect_new_input_node(double mu, double sigma, RNN_Node_Interface *new_node, Distribution *dist, int32_t &edge_innovation_count) {
+    Log::info("\tattempting to connect a new input node for transfer learning!\n");
+
+    vector<RNN_Node_Interface*> possible_outputs;
+
+    int32_t enabled_count = 0;
+    double avg_outputs = 0.0;
+
+    for (int32_t i = 0; i < (int32_t)nodes.size(); i++) {
+        //can connect to output or hidden nodes
+        if ((nodes[i]->get_layer_type() == HIDDEN_LAYER || nodes[i]->get_layer_type() == OUTPUT_LAYER) && nodes[i]->is_reachable()) possible_outputs.push_back(nodes[i]);
+
+        if (nodes[i]->enabled) {
+            enabled_count++;
+            avg_outputs += nodes[i]->total_outputs;
+        }
+    }
+
+    avg_outputs /= enabled_count;
+
+    double output_sigma = 0.0;
+    double temp;
+    for (int32_t i = 0; i < (int32_t)nodes.size(); i++) {
+        if (nodes[i]->enabled) {
+            temp = (avg_outputs - nodes[i]->total_outputs);
+            temp = temp * temp;
+            output_sigma += temp;
+        }
+    }
+
+    output_sigma /= (enabled_count - 1);
+    output_sigma = sqrt(output_sigma);
+
+    int32_t max_outputs = fmax(1, 2.0 + normal_distribution.random(generator, avg_outputs, output_sigma));
+    Log::info("\tadd new input node, max_outputs: %d\n", max_outputs);
+
+    int32_t enabled_edges = get_enabled_edge_count();
+    int32_t enabled_recurrent_edges = get_enabled_recurrent_edge_count();
+
+    double recurrent_probability = (double)enabled_recurrent_edges / (double)(enabled_recurrent_edges + enabled_edges);
+    //recurrent_probability = fmax(0.2, recurrent_probability);
+
+    Log::info("\tadd new node for transfer recurrent probability: %lf\n", recurrent_probability);
+
+    while (possible_outputs.size() > max_outputs) {
+        int32_t position = rng_0_1(generator) * possible_outputs.size();
+        possible_outputs.erase(possible_outputs.begin() + position);
+    }
+
+    for (int32_t i = 0; i < possible_outputs.size(); i++) {
+        //TODO: remove after running tests without recurrent edges
+        //recurrent_probability = 0;
+
+        if (rng_0_1(generator) < recurrent_probability) {
+            attempt_recurrent_edge_insert(new_node, possible_outputs[i], mu, sigma, dist, edge_innovation_count);
+        } else {
+            attempt_edge_insert(new_node, possible_outputs[i], mu, sigma, edge_innovation_count);
+        }
+    }
+
+    return true;
+}
+
+bool RNN_Genome::connect_new_output_node(double mu, double sigma, RNN_Node_Interface *new_node, Distribution *dist, int32_t &edge_innovation_count) {
+    Log::info("\tattempting to connect a new input node for transfer learning!\n");
+
+    vector<RNN_Node_Interface*> possible_inputs;
+
+    int32_t enabled_count = 0;
+    double avg_inputs = 0.0;
+
+    for (int32_t i = 0; i < (int32_t)nodes.size(); i++) {
+        //can connect to input or hidden nodes
+        if ((nodes[i]->get_layer_type() == HIDDEN_LAYER || nodes[i]->get_layer_type() == INPUT_LAYER) && nodes[i]->is_reachable()) possible_inputs.push_back(nodes[i]);
+
+        if (nodes[i]->enabled) {
+            enabled_count++;
+            avg_inputs += nodes[i]->total_inputs;
+        }
+    }
+
+    avg_inputs /= enabled_count;
+
+    double input_sigma = 0.0;
+    double temp;
+    for (int32_t i = 0; i < (int32_t)nodes.size(); i++) {
+        if (nodes[i]->enabled) {
+            temp = (avg_inputs - nodes[i]->total_inputs);
+            temp = temp * temp;
+            input_sigma += temp;
+        }
+    }
+
+    input_sigma /= (enabled_count - 1);
+    input_sigma = sqrt(input_sigma);
+
+    int32_t max_inputs = fmax(1, 2.0 + normal_distribution.random(generator, avg_inputs, input_sigma));
+    Log::info("\tadd new output node, max_inputs: %d\n", max_inputs);
+
+    int32_t enabled_edges = get_enabled_edge_count();
+    int32_t enabled_recurrent_edges = get_enabled_recurrent_edge_count();
+
+    double recurrent_probability = (double)enabled_recurrent_edges / (double)(enabled_recurrent_edges + enabled_edges);
+    //recurrent_probability = fmax(0.2, recurrent_probability);
+
+    Log::info("\tadd new node for transfer recurrent probability: %lf\n", recurrent_probability);
+
+    while (possible_inputs.size() > max_inputs) {
+        int32_t position = rng_0_1(generator) * possible_inputs.size();
+        possible_inputs.erase(possible_inputs.begin() + position);
+    }
+
+    for (int32_t i = 0; i < possible_inputs.size(); i++) {
+        //TODO: remove after running tests without recurrent edges
+        //recurrent_probability = 0;
+
+        if (rng_0_1(generator) < recurrent_probability) {
+            attempt_recurrent_edge_insert(possible_inputs[i], new_node, mu, sigma, dist, edge_innovation_count);
+        } else {
+            attempt_edge_insert(possible_inputs[i], new_node, mu, sigma, edge_innovation_count);
+        }
+    }
+
+    return true;
+}
+
+
 
 //INFO: ADDED BY ABDELRAHMAN TO USE FOR TRANSFER LEARNING
 bool RNN_Genome::connect_node_to_hid_nodes( double mu, double sig, RNN_Node_Interface *new_node, Distribution *dist, int32_t &edge_innovation_count, bool from_input ) {
@@ -2646,27 +2799,27 @@ void RNN_Genome::read_from_stream(istream &bin_istream) {
 
     read_binary_string(bin_istream, log_filename, "log_filename");
     int x = 0;
-    printf("%d\n", x++);
+    //printf("%d\n", x++);
     string generator_str;
     read_binary_string(bin_istream, generator_str, "generator");
     istringstream generator_iss(generator_str);
-    printf("%d\n", x++);
+    //printf("%d\n", x++);
     generator_iss >> generator;
 
     string rng_0_1_str;
     read_binary_string(bin_istream, rng_0_1_str, "rng_0_1");
     istringstream rng_0_1_iss(rng_0_1_str);
-    printf("%d\n", x++);
+    //printf("%d\n", x++);
     string s = rng_0_1_iss.str();
     const char* cs = s.c_str();
-    printf("rng_0_1_iss length = %d\n", s.length());
+    //printf("rng_0_1_iss length = %d\n", s.length());
     // printf("cs length: %d \nStart: \n", s.length());
     // for (int i = 0 ; i < s.length() ; i += 1)
     //     printf("%x, ", cs[i]);
     // printf("End\n");
 
     rng_0_1_iss >> rng_0_1;
-    printf("%d\n", x++);
+    //printf("%d\n", x++);
     
 
     string generated_by_map_str;

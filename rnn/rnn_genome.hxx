@@ -142,7 +142,11 @@ class RNN_Genome {
 
         void get_weights(vector<double> &parameters);
         void set_weights(const vector<double> &parameters);
+
         uint32_t get_number_weights();
+        uint32_t get_number_inputs();
+        uint32_t get_number_outputs();
+
         void initialize_randomly();
 
         int32_t get_generation_id() const;
@@ -158,7 +162,7 @@ class RNN_Genome {
         vector<double> get_best_parameters() const;
 
         void set_best_parameters( vector<double> parameters);    //INFO: ADDED BY ABDELRAHMAN TO USE FOR TRANSFER LEARNING
-        void set_initial_parameter( vector<double> parameters);  //INFO: ADDED BY ABDELRAHMAN TO USE FOR TRANSFER LEARNING
+        void set_initial_parameters( vector<double> parameters);  //INFO: ADDED BY ABDELRAHMAN TO USE FOR TRANSFER LEARNING
 
         void get_analytic_gradient(vector<RNN*> &rnns, const vector<double> &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, double &mse, vector<double> &analytic_gradient, bool training);
 
@@ -222,6 +226,8 @@ class RNN_Genome {
         void write_to_file(string bin_filename);
         void write_to_stream(ostream &bin_stream);
 
+        bool connect_new_input_node( double mu, double sig, RNN_Node_Interface *new_node, Distribution *dist, int32_t &edge_innovation_count );
+        bool connect_new_output_node( double mu, double sig, RNN_Node_Interface *new_node, Distribution *dist, int32_t &edge_innovation_count );
         bool connect_node_to_hid_nodes( double mu, double sig, RNN_Node_Interface *new_node, Distribution *dist, int32_t &edge_innovation_count, bool from_input );
 
         friend class EXAMM;
