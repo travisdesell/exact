@@ -379,12 +379,6 @@ RNN_Genome* EXAMM::get_worst_genome() {
 bool EXAMM::insert_genome(RNN_Genome* genome) {
     total_bp_epochs += genome->get_bp_iterations();
 
-    Log::warning("inserted genome had %d input nodes.\n", genome->get_number_inputs());
-    if (genome->get_number_inputs() != 31) {
-        exit(1);
-    }
-
-
     Log::info("genomes evaluated: %10d , attempting to insert: %s\n", (speciation_strategy->get_inserted_genomes() + 1), parse_fitness(genome->get_fitness()).c_str());
 
     if (!genome->sanity_check()) {
@@ -680,11 +674,6 @@ RNN_Genome* EXAMM::generate_genome() {
     Log::debug("getting mu/sigma after random initialization of copy!\n");
     double _mu, _sigma;
     genome->get_mu_sigma(genome->best_parameters, _mu, _sigma);
-
-    Log::warning("generated genome had %d input nodes.\n", genome->get_number_inputs());
-    if (genome->get_number_inputs() != 31) {
-        exit(1);
-    }
 
     return genome;
 }
