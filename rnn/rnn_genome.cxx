@@ -1635,16 +1635,27 @@ bool RNN_Genome::add_edge(double mu, double sigma, int32_t &edge_innovation_coun
 
     RNN_Node_Interface *n1 = reachable_nodes[position];
     Log::info("\tselected first node %d with depth %d\n", n1->innovation_number, n1->depth);
+    printf("pos: %d, size: %d\n", position, reachable_nodes.size());
 
-    for (auto i = reachable_nodes.begin(); i != reachable_nodes.end();) {
-        if ((*i)->depth == n1->depth) {
-            Log::info("\t\terasing node %d with depth %d\n", (*i)->innovation_number, (*i)->depth);
-            reachable_nodes.erase(i);
+    for (int i = 0; i < reachable_nodes.size();) {
+        auto it = reachable_nodes[i];
+        if (it->depth == n1->depth) {
+            reachable_nodes.erase(reachable_nodes.begin() + i);        
         } else {
-            Log::info("\t\tkeeping node %d with depth %d\n", (*i)->innovation_number, (*i)->depth);
             i++;
         }
     }
+
+    // for (auto i = reachable_nodes.begin(); i < reachable_nodes.end();) {
+    //     if ((*i)->depth == n1->depth) {
+    //         Log::info("\t\terasing node %d with depth %d\n", (*i)->innovation_number, (*i)->depth);
+    //         reachable_nodes.erase(i);
+    //     } else {
+    //         Log::info("\t\tkeeping node %d with depth %d\n", (*i)->innovation_number, (*i)->depth);
+    //         i++;
+    //     }
+    // }
+
     Log::info("\treachable_nodes.size(): %d\n", reachable_nodes.size());
 
 
@@ -2634,17 +2645,29 @@ void RNN_Genome::read_from_stream(istream &bin_istream) {
     Log::debug("dropout_probability: %lf\n", dropout_probability);
 
     read_binary_string(bin_istream, log_filename, "log_filename");
-
+    int x = 0;
+    printf("%d\n", x++);
     string generator_str;
     read_binary_string(bin_istream, generator_str, "generator");
     istringstream generator_iss(generator_str);
+    printf("%d\n", x++);
     generator_iss >> generator;
 
     string rng_0_1_str;
     read_binary_string(bin_istream, rng_0_1_str, "rng_0_1");
-    istringstream rng_0_1_iss;
-    rng_0_1_iss >> rng_0_1;
+    istringstream rng_0_1_iss(rng_0_1_str);
+    printf("%d\n", x++);
+    string s = rng_0_1_iss.str();
+    const char* cs = s.c_str();
+    printf("rng_0_1_iss length = %d\n", s.length());
+    // printf("cs length: %d \nStart: \n", s.length());
+    // for (int i = 0 ; i < s.length() ; i += 1)
+    //     printf("%x, ", cs[i]);
+    // printf("End\n");
 
+    rng_0_1_iss >> rng_0_1;
+    printf("%d\n", x++);
+    
 
     string generated_by_map_str;
     read_binary_string(bin_istream, generated_by_map_str, "generated_by_map");
