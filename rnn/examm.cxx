@@ -123,20 +123,23 @@ EXAMM::EXAMM(int32_t _population_size, int32_t _number_islands, int32_t _max_gen
     min_recurrent_depth = _min_recurrent_depth;
     max_recurrent_depth = _max_recurrent_depth;
 
-    if (speciation_method.compare("island")) {
+    Log::error("Speciation method is: %s\n", speciation_method.c_str());
+    if (speciation_method.compare("island") == 0 || speciation_method.compare("") == 0) {
         //generate a minimal feed foward network as the seed genome
         RNN_Genome *seed_genome = NULL;
         printf("<%s>\n", genome_file_name.c_str());
-        if (genome_file_name=="") {
+        if (genome_file_name.compare("") == 0) {
             seed_genome = create_ff(number_inputs, 0, 0, number_outputs, 0);
             seed_genome->initialize_randomly();
             edge_innovation_count = seed_genome->edges.size() + seed_genome->recurrent_edges.size();
             node_innovation_count = seed_genome->nodes.size();
         }
         else {
-            printf("Hello1\n");
+            Log::error("doing transfer!\n");
             seed_genome = generate_for_transfer_learning(genome_file_name, no_extra_inputs, no_extra_outputs );
-            printf("Hello2\n");
+            Log::error("generated seed genome, number of inputs: %d, number of outputs: %d\n", seed_genome->get_number_inputs(), seed_genome->get_number_outputs());
+
+            //printf("Hello2\n");
         }
 
         seed_genome->set_generated_by("initial");
@@ -376,6 +379,12 @@ RNN_Genome* EXAMM::get_worst_genome() {
 bool EXAMM::insert_genome(RNN_Genome* genome) {
     total_bp_epochs += genome->get_bp_iterations();
 
+    Log::warning("inserted genome had %d input nodes.\n", genome->get_number_inputs());
+    if (genome->get_number_inputs() != 31) {
+        exit(1);
+    }
+
+
     Log::info("genomes evaluated: %10d , attempting to insert: %s\n", (speciation_strategy->get_inserted_genomes() + 1), parse_fitness(genome->get_fitness()).c_str());
 
     if (!genome->sanity_check()) {
@@ -593,7 +602,7 @@ RNN_Genome* EXAMM::generate_for_transfer_learning(string file_name, int extra_in
         }
     }
 
-    genome->set_initial_parameter( new_parameters );
+    genome->set_initial_parameters( new_parameters );
     genome->set_best_parameters( new_parameters );
 
     double mu, sigma;
@@ -608,7 +617,7 @@ RNN_Genome* EXAMM::generate_for_transfer_learning(string file_name, int extra_in
         for (auto node: new_input_nodes) {
             Distribution *dist = get_recurrent_depth_dist(genome->get_group_id());
             Log::debug("\tBEFORE -- CHECK EDGE INNOVATION COUNT: %d\n", edge_innovation_count);
-            genome->connect_node_to_hid_nodes(mu, sigma, node, dist, edge_innovation_count, true);
+            genome->connect_new_input_node(mu, sigma, node, dist, edge_innovation_count);
             Log::debug("\tAFTER -- CHECK EDGE INNOVATION COUNT: %d\n", edge_innovation_count);
             delete dist;
         }
@@ -621,14 +630,23 @@ RNN_Genome* EXAMM::generate_for_transfer_learning(string file_name, int extra_in
         for (auto node: new_output_nodes) {
             Distribution *dist = get_recurrent_depth_dist(genome->get_group_id());
             Log::debug("\tBEFORE -- CHECK EDGE INNOVATION COUNT: %d\n", edge_innovation_count);
-            genome->connect_node_to_hid_nodes(mu, sigma, node, dist, edge_innovation_count, false);
+            genome->connect_new_output_node(mu, sigma, node, dist, edge_innovation_count);
             Log::debug("\tAFTER -- CHECK EDGE INNOVATION COUNT: %d\n", edge_innovation_count);
             delete dist;
         }
     }
 
+    Log::info("new_parameters.size() before get weights: %d\n", new_parameters.size());
+
+    //update the new and best parameter lengths because this will have added edges
+    genome->get_weights( new_parameters );
+    genome->set_initial_parameters( new_parameters );
+    genome->set_best_parameters( new_parameters );
+
+    Log::info("new_parameters.size() after get weights: %d\n", new_parameters.size());
+
     Log::info("FINISHING PREPARING INITIAL GENOME\n");
-    return genome ;
+    return genome;
 }
 
 RNN_Genome* EXAMM::generate_genome() {
@@ -662,6 +680,11 @@ RNN_Genome* EXAMM::generate_genome() {
     Log::debug("getting mu/sigma after random initialization of copy!\n");
     double _mu, _sigma;
     genome->get_mu_sigma(genome->best_parameters, _mu, _sigma);
+
+    Log::warning("generated genome had %d input nodes.\n", genome->get_number_inputs());
+    if (genome->get_number_inputs() != 31) {
+        exit(1);
+    }
 
     return genome;
 }
@@ -890,7 +913,7 @@ void EXAMM::attempt_edge_insert(vector<RNN_Edge*> &child_edges, vector<RNN_Node_
         double crossover_value = rng_crossover_weight(generator);
         new_weight = crossover_value * (second_edge->weight - edge->weight) + edge->weight;
 
-        Log::debug("EDGE WEIGHT CROSSOVER :: better: %lf, worse: %lf, crossover_value: %lf, new_weight: %lf\n", edge->weight, second_edge->weight, crossover_value, new_weight);
+        Log::trace("EDGE WEIGHT CROSSOVER :: better: %lf, worse: %lf, crossover_value: %lf, new_weight: %lf\n", edge->weight, second_edge->weight, crossover_value, new_weight);
 
         vector<double> input_weights1, input_weights2, output_weights1, output_weights2;
         edge->get_input_node()->get_weights(input_weights1);
@@ -907,12 +930,12 @@ void EXAMM::attempt_edge_insert(vector<RNN_Edge*> &child_edges, vector<RNN_Node_
 
         for (int32_t i = 0; i < (int32_t)new_input_weights.size(); i++) {
             new_input_weights[i] = crossover_value * (input_weights2[i] - input_weights1[i]) + input_weights1[i];
-            Log::debug("\tnew input weights[%d]: %lf\n", i, new_input_weights[i]);
+            Log::trace("\tnew input weights[%d]: %lf\n", i, new_input_weights[i]);
         }
 
         for (int32_t i = 0; i < (int32_t)new_output_weights.size(); i++) {
             new_output_weights[i] = crossover_value * (output_weights2[i] - output_weights1[i]) + output_weights1[i];
-            Log::debug("\tnew output weights[%d]: %lf\n", i, new_output_weights[i]);
+            Log::trace("\tnew output weights[%d]: %lf\n", i, new_output_weights[i]);
         }
 
     } else {
@@ -1006,6 +1029,15 @@ void EXAMM::attempt_recurrent_edge_insert(vector<RNN_Recurrent_Edge*> &child_rec
 RNN_Genome* EXAMM::crossover(RNN_Genome *p1, RNN_Genome *p2) {
     Log::debug("generating new genome by crossover!\n");
     Log::debug("p1->island: %d, p2->island: %d\n", p1->get_group_id(), p2->get_group_id());
+    Log::debug("p1->number_inputs: %d, p2->number_inputs: %d\n", p1->get_number_inputs(), p2->get_number_inputs());
+
+    for (int i = 0; i < p1->nodes.size(); i++) {
+        Log::debug("p1 node[%d], in: %d, depth: %lf, layer_type: %d, node_type: %d, reachable: %d, enabled: %d\n", i, p1->nodes[i]->get_innovation_number(), p1->nodes[i]->get_depth(), p1->nodes[i]->get_layer_type(), p1->nodes[i]->get_node_type(), p1->nodes[i]->is_reachable(), p1->nodes[i]->is_enabled());
+    }
+
+    for (int i = 0; i < p2->nodes.size(); i++) {
+        Log::debug("p2 node[%d], in: %d, depth: %lf, layer_type: %d, node_type: %d, reachable: %d, enabled: %d\n", i, p2->nodes[i]->get_innovation_number(), p2->nodes[i]->get_depth(), p2->nodes[i]->get_layer_type(), p2->nodes[i]->get_node_type(), p2->nodes[i]->is_reachable(), p2->nodes[i]->is_enabled());
+    }
 
     double _mu, _sigma;
     Log::debug("getting p1 mu/sigma!\n");
@@ -1038,13 +1070,13 @@ RNN_Genome* EXAMM::crossover(RNN_Genome *p1, RNN_Genome *p2) {
     sort(p1_edges.begin(), p1_edges.end(), sort_RNN_Edges_by_innovation());
     sort(p2_edges.begin(), p2_edges.end(), sort_RNN_Edges_by_innovation());
 
-    Log::trace("\tp1 innovation numbers AFTER SORT:\n");
+    Log::debug("\tp1 innovation numbers AFTER SORT:\n");
     for (int32_t i = 0; i < (int32_t)p1_edges.size(); i++) {
         Log::trace("\t\t%d\n", p1_edges[i]->innovation_number);
     }
-    Log::trace("\tp2 innovation numbers AFTER SORT:\n");
+    Log::debug("\tp2 innovation numbers AFTER SORT:\n");
     for (int32_t i = 0; i < (int32_t)p2_edges.size(); i++) {
-        Log::trace("\t\t%d\n", p2_edges[i]->innovation_number);
+        Log::debug("\t\t%d\n", p2_edges[i]->innovation_number);
     }
 
     vector< RNN_Recurrent_Edge* > p1_recurrent_edges = p1->recurrent_edges;
