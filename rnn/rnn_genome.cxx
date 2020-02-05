@@ -1266,6 +1266,14 @@ void RNN_Genome::write_predictions(const vector<string> &input_filenames, const 
     delete rnn;
 }
 
+bool RNN_Genome::has_node_with_innovation(int32_t innovation_number) const {
+    for (int32_t i = 0; i < (int32_t)nodes.size(); i++) {
+        if (nodes[i]->get_innovation_number() == innovation_number) return true;
+    }
+
+    return false;
+}
+
 bool RNN_Genome::equals(RNN_Genome* other) {
 
     if (nodes.size() != other->nodes.size()) return false;

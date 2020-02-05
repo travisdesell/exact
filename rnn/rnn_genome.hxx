@@ -209,6 +209,15 @@ class RNN_Genome {
         bool merge_node(double mu, double sigma, int node_type, Distribution *dist, int32_t &edge_innovation_count, int32_t &node_innovation_count);
 
 
+        /**
+         * Determines if the genome contains a node with the given innovation number
+         *
+         * @param the innovation number to fine
+         *
+         * @return true if the genome has a node with the provided innovation number, false otherwise.
+         */
+        bool has_node_with_innovation(int32_t innovation_number) const;
+
 
         bool equals(RNN_Genome *other);
 
