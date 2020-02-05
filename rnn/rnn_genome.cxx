@@ -1852,7 +1852,7 @@ bool RNN_Genome::connect_new_input_node(double mu, double sigma, RNN_Node_Interf
 
     for (int32_t i = 0; i < (int32_t)nodes.size(); i++) {
         //can connect to output or hidden nodes
-        if ((nodes[i]->get_layer_type() == HIDDEN_LAYER || nodes[i]->get_layer_type() == OUTPUT_LAYER) && nodes[i]->is_reachable()) possible_outputs.push_back(nodes[i]);
+        if (nodes[i]->get_layer_type() == OUTPUT_LAYER || (nodes[i]->get_layer_type() == INPUT_LAYER && nodes[i]->is_reachable())) possible_outputs.push_back(nodes[i]);
 
         if (nodes[i]->enabled) {
             enabled_count++;
@@ -1915,7 +1915,7 @@ bool RNN_Genome::connect_new_output_node(double mu, double sigma, RNN_Node_Inter
 
     for (int32_t i = 0; i < (int32_t)nodes.size(); i++) {
         //can connect to input or hidden nodes
-        if ((nodes[i]->get_layer_type() == HIDDEN_LAYER || nodes[i]->get_layer_type() == INPUT_LAYER) && nodes[i]->is_reachable()) possible_inputs.push_back(nodes[i]);
+        if (nodes[i]->get_layer_type() == INPUT_LAYER || (nodes[i]->get_layer_type() == INPUT_LAYER && nodes[i]->is_reachable())) possible_inputs.push_back(nodes[i]);
 
         if (nodes[i]->enabled) {
             enabled_count++;
