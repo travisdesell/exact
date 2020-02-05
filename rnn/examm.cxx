@@ -624,7 +624,6 @@ RNN_Genome* EXAMM::generate_for_transfer_learning(string file_name, int extra_in
             Log::debug("\tBEFORE -- CHECK EDGE INNOVATION COUNT: %d\n", edge_innovation_count);
             genome->connect_new_input_node(mu, sigma, node, dist, edge_innovation_count);
             Log::debug("\tAFTER -- CHECK EDGE INNOVATION COUNT: %d\n", edge_innovation_count);
-            delete dist;
         }
     }
 
@@ -636,7 +635,6 @@ RNN_Genome* EXAMM::generate_for_transfer_learning(string file_name, int extra_in
             Log::debug("\tBEFORE -- CHECK EDGE INNOVATION COUNT: %d\n", edge_innovation_count);
             genome->connect_new_output_node(mu, sigma, node, dist, edge_innovation_count);
             Log::debug("\tAFTER -- CHECK EDGE INNOVATION COUNT: %d\n", edge_innovation_count);
-            delete dist;
         }
     }
 
@@ -659,6 +657,8 @@ RNN_Genome* EXAMM::generate_for_transfer_learning(string file_name, int extra_in
             }
         }
     }
+
+    delete dist;
 
     Log::info("new_parameters.size() before get weights: %d\n", new_parameters.size());
 
