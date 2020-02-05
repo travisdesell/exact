@@ -93,6 +93,9 @@ class RNN_Node_Interface {
         int32_t get_node_type() const;
         int32_t get_layer_type() const;
         int32_t get_innovation_number() const;
+        int32_t get_total_inputs() const;
+        int32_t get_total_outputs() const;
+
         double get_depth() const;
         bool equals(RNN_Node_Interface *other) const;
 

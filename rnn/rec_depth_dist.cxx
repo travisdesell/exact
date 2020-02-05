@@ -19,7 +19,7 @@ RecDepthFrequencyTable::RecDepthFrequencyTable(
 
 RecDepthFrequencyTable::~RecDepthFrequencyTable() {
     if (frequencies) {
-        delete frequencies;
+        delete [] frequencies;
         frequencies = 0;
     }
 }
@@ -65,7 +65,7 @@ RecDepthNormalDist::RecDepthNormalDist(vector<vector<RNN_Genome*>> &islands,
 
 void RecDepthNormalDist::calculate_distribution(RecDepthFrequencyTable &freqs) {
     // Yes, inclusive range
-    int32_t n_samples, sum;
+    int32_t n_samples = 0, sum = 0;
     for (int32_t i = min; i <= max; i += 1) {
         assert(sum >= 0); // Check for overflows! 
         int32_t f = freqs[i];
