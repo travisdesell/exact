@@ -63,6 +63,16 @@ int32_t RNN_Node_Interface::get_innovation_number() const {
     return innovation_number;
 }
 
+int32_t RNN_Node_Interface::get_total_inputs() const {
+    return total_inputs;
+}
+
+int32_t RNN_Node_Interface::get_total_outputs() const {
+    return total_outputs;
+}
+
+
+
 double RNN_Node_Interface::get_depth() const {
     return depth;
 }

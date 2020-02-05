@@ -405,94 +405,104 @@ bool EXAMM::insert_genome(RNN_Genome* genome) {
 RNN_Genome* EXAMM::generate_for_transfer_learning(string file_name, int extra_inputs, int extra_outputs) {
     RNN_Genome* genome = new RNN_Genome(file_name);
     vector<RNN_Node_Interface*> output_nodes;
+    vector<RNN_Node_Interface*> input_nodes;
     vector<RNN_Node_Interface*> new_output_nodes;
     vector<RNN_Node_Interface*> new_input_nodes;
     vector<double> new_parameters;
 
     uniform_real_distribution<double> rng(-0.5, 0.5);
 
-    bool flag = true;
-    vector<int> new_input_parameter_id ;
 
-    for ( int32_t i=0; i<genome->input_parameter_names.size(); i++ ) {
-        for ( auto removed: inputs_to_remove ) {
-            if (genome->input_parameter_names[i]==removed ) {
-                flag = false ;
+    //iterate over all the input parameters and determine which
+    //need to be kept
+    vector<int> new_input_parameter_id;
+    for (int32_t i = 0; i < genome->input_parameter_names.size(); i++) {
+        bool keep_parameter = true;
+        for (auto removed : inputs_to_remove) {
+            if (genome->input_parameter_names[i] == removed ) {
+                keep_parameter = false;
                 break;
             }
         }
-        if (flag)
-            new_input_parameter_id.push_back(i);
-        flag=true;
+
+        if (keep_parameter) new_input_parameter_id.push_back(i);
     }
 
-    flag=true;
-    vector<int> new_output_parameter_id ;
-    for ( int32_t i=0; i<genome->output_parameter_names.size(); i++ ) {
+    //iterate over all the output parameters and determine which
+    //need to be kept
+    vector<int> new_output_parameter_id;
+    for (int32_t i = 0; i < genome->output_parameter_names.size(); i++) {
+        bool keep_parameter = true;
         for ( auto removed: outputs_to_remove ) {
-            if (genome->output_parameter_names[i]==removed ) {
-                flag = false ;
+            if (genome->output_parameter_names[i] == removed) {
+                keep_parameter = false;
                 break;
             }
         }
-        if (flag)
-            new_output_parameter_id.push_back(i);
-        flag=true;
+
+        if (keep_parameter) new_output_parameter_id.push_back(i);
     }
 
-    vector<RNN_Node_Interface*> New_nodes ;
+    vector<RNN_Node_Interface*> new_nodes;
     int count = 0;
-    for ( int32_t i=0; i<genome->nodes.size(); i++ ) {
-        if (genome->nodes[i]->get_layer_type()==INPUT_LAYER) {
-            for ( auto id: new_input_parameter_id ) {
-                if (id==i){
-                    New_nodes.push_back(genome->nodes[i]);
+    for (int32_t i = 0; i < genome->nodes.size(); i++) {
+        if (genome->nodes[i]->get_layer_type() == INPUT_LAYER) {
+            for (auto id : new_input_parameter_id) {
+                if (id == i) {
+                    new_nodes.push_back(genome->nodes[i]);
                 }
             }
-        }else if (genome->nodes[i]->get_layer_type()==HIDDEN_LAYER) {
-            New_nodes.push_back(genome->nodes[i]);
-        }else if (genome->nodes[i]->get_layer_type()==OUTPUT_LAYER) {
-            for ( auto id: new_output_parameter_id ) {
-                if (id==count){
-                    New_nodes.push_back(genome->nodes[i]);
+
+        } else if (genome->nodes[i]->get_layer_type() == HIDDEN_LAYER) {
+            new_nodes.push_back(genome->nodes[i]);
+
+        } else if (genome->nodes[i]->get_layer_type() == OUTPUT_LAYER) {
+            for (auto id : new_output_parameter_id) {
+                if (id == count) {
+                    new_nodes.push_back(genome->nodes[i]);
                 }
             }
             count++;
-        }else {
+        } else {
             std::cerr << "ERROR: Layer Type " << genome->nodes[i]->get_layer_type() << " Not Valid\n" ;
             exit(1) ;
         }
     }
 
-    vector<RNN_Edge*> New_edges;
-    vector<RNN_Recurrent_Edge*> New_recurrent_edges;
-
+    vector<RNN_Edge*> new_edges;
+    vector<RNN_Recurrent_Edge*> new_recurrent_edges;
 
     int weights_count = 0;
-    flag = false ;
-    for (auto node:genome->nodes) {
-        for (auto new_node: New_nodes) {
+    bool flag = false;
+    for (auto node : genome->nodes) {
+        for (auto new_node : new_nodes) {
             if (node->get_innovation_number() == new_node->get_innovation_number()) {
-                flag = true ;
+                flag = true;
                 break;
             }
         }
-        if (flag) {
-            if (node_innovation_count<node->get_innovation_number())
-                node_innovation_count = node->get_innovation_number() ;
-            if (node->get_layer_type()==2)
-                output_nodes.push_back(node) ;
 
-            for (int32_t j=0; j<node->get_number_weights(); j++) {
-                new_parameters.push_back(genome->initial_parameters[weights_count++]) ;
+        if (flag) {
+            if (node_innovation_count < node->get_innovation_number()) {
+                node_innovation_count = node->get_innovation_number();
+            }
+
+            if (node->get_layer_type() == OUTPUT_LAYER) {
+                output_nodes.push_back(node);
+            } else if (node->get_layer_type() == INPUT_LAYER) {
+                input_nodes.push_back(node);
+            }
+
+            for (int32_t j = 0; j < node->get_number_weights(); j++) {
+                new_parameters.push_back(genome->initial_parameters[weights_count++]);
             }
         } else {
-            for (int32_t j=0; j<node->get_number_weights(); j++)
-                weights_count++ ;
+            for (int32_t j = 0; j < node->get_number_weights(); j++)
+                weights_count++;
         }
-        flag = false ;
+        flag = false;
     }
-    genome->nodes = New_nodes ;
+    genome->nodes = new_nodes;
 
     for (int32_t i = 0; i < extra_outputs; i++)
         new_parameters.push_back( rng(generator) );
@@ -500,13 +510,13 @@ RNN_Genome* EXAMM::generate_for_transfer_learning(string file_name, int extra_in
     for (int32_t i = 0; i < extra_inputs; i++)
         new_parameters.push_back( rng(generator) );
 
-    flag = false ;
-    for (auto edge: genome->edges) {
-        for ( auto InNode: genome->nodes) {
-            if (edge->get_input_innovation_number() == InNode->get_innovation_number() ) {
-                for ( auto OutNode: genome->nodes ) {
+    flag = false;
+    for (auto edge : genome->edges) {
+        for (auto InNode : genome->nodes) {
+            if (edge->get_input_innovation_number() == InNode->get_innovation_number()) {
+                for (auto OutNode : genome->nodes) {
                     if (edge->get_output_innovation_number() == OutNode->get_innovation_number()) {
-                        flag = true ;
+                        flag = true;
                         break;
                     }
                 }
@@ -517,7 +527,7 @@ RNN_Genome* EXAMM::generate_for_transfer_learning(string file_name, int extra_in
             if (edge_innovation_count<edge->get_innovation_number())
                 edge_innovation_count = edge->get_innovation_number() ;
             new_parameters.push_back( genome->initial_parameters[ weights_count ] ) ;
-            New_edges.push_back(edge) ;
+            new_edges.push_back(edge) ;
         }
         else
         Log::info("Execluding Edge: %d In: %d Out: %d\n", edge->get_innovation_number(), edge->get_input_innovation_number(), edge->get_output_innovation_number());
@@ -526,12 +536,12 @@ RNN_Genome* EXAMM::generate_for_transfer_learning(string file_name, int extra_in
     }
 
     flag = false ;
-    for (auto recedge: genome->recurrent_edges) {
-        for ( auto InNode: genome->nodes ) {
+    for (auto recedge : genome->recurrent_edges) {
+        for (auto InNode : genome->nodes) {
             if (recedge->get_input_innovation_number() == InNode->get_innovation_number() ) {
-                for ( auto OutNode: genome->nodes ) {
+                for (auto OutNode : genome->nodes ) {
                     if (recedge->get_output_innovation_number() == OutNode->get_innovation_number()) {
-                        flag = true ;
+                        flag = true;
                         break;
                     }
                 }
@@ -539,19 +549,19 @@ RNN_Genome* EXAMM::generate_for_transfer_learning(string file_name, int extra_in
             }
         }
         if (flag) {
-            if (edge_innovation_count<recedge->get_innovation_number())
-                edge_innovation_count = recedge->get_innovation_number() ;
-            new_parameters.push_back( genome->initial_parameters[ weights_count ] ) ;
-            New_recurrent_edges.push_back(recedge);
+            if (edge_innovation_count < recedge->get_innovation_number())
+                edge_innovation_count = recedge->get_innovation_number();
+            new_parameters.push_back(genome->initial_parameters[weights_count]) ;
+            new_recurrent_edges.push_back(recedge);
         }
         else
             Log::info("Execluding Edge: %d In: %d Out: %d\n", recedge->get_innovation_number(), recedge->get_input_innovation_number(), recedge->get_output_innovation_number());
-        flag = false ;
-        weights_count++ ;
+        flag = false;
+        weights_count++;
     }
 
-    genome->edges = New_edges ;
-    genome->recurrent_edges = New_recurrent_edges ;
+    genome->edges = new_edges;
+    genome->recurrent_edges = new_recurrent_edges;
 
     //*** JUST CHECKING IF THIS WILL FIX THE BUG ***//
     // node_innovation_count+=1000;
@@ -604,12 +614,13 @@ RNN_Genome* EXAMM::generate_for_transfer_learning(string file_name, int extra_in
 
     auto rng_ = std::default_random_engine {};
 
+    Distribution *dist = get_recurrent_depth_dist(genome->get_group_id());
+
     // Connecting New Inputs to Hidden Nodes:
     if (tl_ver2 && new_input_nodes.size()!=0) {
         Log::info("Creating Edges between New-Inputs and Hid!\n");
         std::shuffle(std::begin(new_input_nodes), std::end(new_input_nodes), rng_);
         for (auto node: new_input_nodes) {
-            Distribution *dist = get_recurrent_depth_dist(genome->get_group_id());
             Log::debug("\tBEFORE -- CHECK EDGE INNOVATION COUNT: %d\n", edge_innovation_count);
             genome->connect_new_input_node(mu, sigma, node, dist, edge_innovation_count);
             Log::debug("\tAFTER -- CHECK EDGE INNOVATION COUNT: %d\n", edge_innovation_count);
@@ -622,11 +633,30 @@ RNN_Genome* EXAMM::generate_for_transfer_learning(string file_name, int extra_in
         Log::info("Creating Edges between New-Outputs and Hid!\n");
         std::shuffle(std::begin(new_output_nodes), std::end(new_output_nodes), rng_);
         for (auto node: new_output_nodes) {
-            Distribution *dist = get_recurrent_depth_dist(genome->get_group_id());
             Log::debug("\tBEFORE -- CHECK EDGE INNOVATION COUNT: %d\n", edge_innovation_count);
             genome->connect_new_output_node(mu, sigma, node, dist, edge_innovation_count);
             Log::debug("\tAFTER -- CHECK EDGE INNOVATION COUNT: %d\n", edge_innovation_count);
             delete dist;
+        }
+    }
+
+    //need to recalculate the reachability of each node
+    genome->assign_reachability();
+
+    //need to make sure that each input and each output has at least one connection
+    for (auto node : genome->nodes) {
+        if (node->get_layer_type() == INPUT_LAYER) {
+            if (node->get_total_outputs() == 0) {
+                Log::info("input node[%d] had no outputs, connecting it!\n", node->get_innovation_number());
+                //if an input has no outgoing edges randomly connect it
+                genome->connect_new_input_node(mu, sigma, node, dist, edge_innovation_count);
+            }
+        } else if (node->get_layer_type() == OUTPUT_LAYER) {
+            if (node->get_total_inputs() == 0) {
+                Log::info("output node[%d] had no inputs, connecting it!\n", node->get_innovation_number());
+                //if an output has no incoming edges randomly connect it
+                genome->connect_new_output_node(mu, sigma, node, dist, edge_innovation_count);
+            }
         }
     }
 
