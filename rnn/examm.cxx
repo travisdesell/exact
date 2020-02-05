@@ -660,6 +660,9 @@ RNN_Genome* EXAMM::generate_for_transfer_learning(string file_name, int extra_in
 
     delete dist;
 
+    //update the reachabaility again
+    genome->assign_reachability();
+
     Log::info("new_parameters.size() before get weights: %d\n", new_parameters.size());
 
     //update the new and best parameter lengths because this will have added edges
