@@ -569,7 +569,7 @@ RNN_Genome* EXAMM::generate_for_transfer_learning(string file_name, int extra_in
     //*** JUST CHECKING IF THIS WILL FIX THE BUG ***//
 
     for (int32_t i = 0; i < extra_outputs; i++) {
-        RNN_Node *node = new RNN_Node(++node_innovation_count, OUTPUT_LAYER, output_nodes.back()->get_depth(), SIMPLE_NODE);
+        RNN_Node *node = new RNN_Node(++node_innovation_count, OUTPUT_LAYER, 1.0 /*output nodes should be depth 1*/, SIMPLE_NODE);
         genome->nodes.push_back(node);
         new_output_nodes.push_back(node) ;
     }
@@ -596,9 +596,9 @@ RNN_Genome* EXAMM::generate_for_transfer_learning(string file_name, int extra_in
 
     //Connecting Input Nodes to New Output Nodes
     if (tl_ver1) {
-        for (auto node: genome->nodes) {
+        for (auto node : genome->nodes) {
             if (node->get_layer_type() == INPUT_LAYER) {
-                for (auto new_output_node: new_output_nodes) {
+                for (auto new_output_node : new_output_nodes) {
                     genome->edges.push_back(new RNN_Edge(++edge_innovation_count, node, new_output_node)) ;
                     new_parameters.push_back(rng(generator));
                 }
@@ -620,7 +620,7 @@ RNN_Genome* EXAMM::generate_for_transfer_learning(string file_name, int extra_in
     if (tl_ver2 && new_input_nodes.size()!=0) {
         Log::info("Creating Edges between New-Inputs and Hid!\n");
         std::shuffle(std::begin(new_input_nodes), std::end(new_input_nodes), rng_);
-        for (auto node: new_input_nodes) {
+        for (auto node : new_input_nodes) {
             Log::debug("\tBEFORE -- CHECK EDGE INNOVATION COUNT: %d\n", edge_innovation_count);
             genome->connect_new_input_node(mu, sigma, node, dist, edge_innovation_count);
             Log::debug("\tAFTER -- CHECK EDGE INNOVATION COUNT: %d\n", edge_innovation_count);
@@ -631,7 +631,7 @@ RNN_Genome* EXAMM::generate_for_transfer_learning(string file_name, int extra_in
     if (tl_ver3 && new_output_nodes.size()!=0) {
         Log::info("Creating Edges between New-Outputs and Hid!\n");
         std::shuffle(std::begin(new_output_nodes), std::end(new_output_nodes), rng_);
-        for (auto node: new_output_nodes) {
+        for (auto node : new_output_nodes) {
             Log::debug("\tBEFORE -- CHECK EDGE INNOVATION COUNT: %d\n", edge_innovation_count);
             genome->connect_new_output_node(mu, sigma, node, dist, edge_innovation_count);
             Log::debug("\tAFTER -- CHECK EDGE INNOVATION COUNT: %d\n", edge_innovation_count);
@@ -643,12 +643,15 @@ RNN_Genome* EXAMM::generate_for_transfer_learning(string file_name, int extra_in
 
     //need to make sure that each input and each output has at least one connection
     for (auto node : genome->nodes) {
+        Log::info("node[%d], depth: %lf, total_inputs: %d, total_outputs: %d\n", node->get_innovation_number(), node->get_depth(), node->get_total_inputs(), node->get_total_outputs());
+
         if (node->get_layer_type() == INPUT_LAYER) {
             if (node->get_total_outputs() == 0) {
                 Log::info("input node[%d] had no outputs, connecting it!\n", node->get_innovation_number());
                 //if an input has no outgoing edges randomly connect it
                 genome->connect_new_input_node(mu, sigma, node, dist, edge_innovation_count);
             }
+
         } else if (node->get_layer_type() == OUTPUT_LAYER) {
             if (node->get_total_inputs() == 0) {
                 Log::info("output node[%d] had no inputs, connecting it!\n", node->get_innovation_number());

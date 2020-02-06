@@ -1566,7 +1566,7 @@ bool RNN_Genome::attempt_edge_insert(RNN_Node_Interface *n1, RNN_Node_Interface 
     Log::info("\tadding edge between nodes %d and %d\n", n1->innovation_number, n2->innovation_number);
 
     if (n1->depth == n2->depth) {
-        Log::info("\tcannot add edge between nodes as their depths are the same: %d and %d\n", n1->depth, n2->depth);
+        Log::info("\tcannot add edge between nodes as their depths are the same: %lf and %lf\n", n1->depth, n2->depth);
         return false;
     }
 
@@ -1852,7 +1852,10 @@ bool RNN_Genome::connect_new_input_node(double mu, double sigma, RNN_Node_Interf
 
     for (int32_t i = 0; i < (int32_t)nodes.size(); i++) {
         //can connect to output or hidden nodes
-        if (nodes[i]->get_layer_type() == OUTPUT_LAYER || (nodes[i]->get_layer_type() == INPUT_LAYER && nodes[i]->is_reachable())) possible_outputs.push_back(nodes[i]);
+        if (nodes[i]->get_layer_type() == OUTPUT_LAYER || (nodes[i]->get_layer_type() == HIDDEN_LAYER && nodes[i]->is_reachable())) {
+            Log::info("\tpotential connection node[%d], depth: %lf, total_inputs: %d, total_outputs: %d\n", nodes[i]->get_innovation_number(), nodes[i]->get_depth(), nodes[i]->get_total_inputs(), nodes[i]->get_total_outputs());
+            possible_outputs.push_back(nodes[i]);
+        }
 
         if (nodes[i]->enabled) {
             enabled_count++;
@@ -1906,7 +1909,7 @@ bool RNN_Genome::connect_new_input_node(double mu, double sigma, RNN_Node_Interf
 }
 
 bool RNN_Genome::connect_new_output_node(double mu, double sigma, RNN_Node_Interface *new_node, Distribution *dist, int32_t &edge_innovation_count) {
-    Log::info("\tattempting to connect a new input node for transfer learning!\n");
+    Log::info("\tattempting to connect a new output node for transfer learning!\n");
 
     vector<RNN_Node_Interface*> possible_inputs;
 
@@ -1915,7 +1918,10 @@ bool RNN_Genome::connect_new_output_node(double mu, double sigma, RNN_Node_Inter
 
     for (int32_t i = 0; i < (int32_t)nodes.size(); i++) {
         //can connect to input or hidden nodes
-        if (nodes[i]->get_layer_type() == INPUT_LAYER || (nodes[i]->get_layer_type() == INPUT_LAYER && nodes[i]->is_reachable())) possible_inputs.push_back(nodes[i]);
+        if (nodes[i]->get_layer_type() == INPUT_LAYER || (nodes[i]->get_layer_type() == HIDDEN_LAYER && nodes[i]->is_reachable())) {
+            possible_inputs.push_back(nodes[i]);
+            Log::info("\tpotential connection node[%d], depth: %lf, total_inputs: %d, total_outputs: %d\n", nodes[i]->get_innovation_number(), nodes[i]->get_depth(), nodes[i]->get_total_inputs(), nodes[i]->get_total_outputs());
+        }
 
         if (nodes[i]->enabled) {
             enabled_count++;
