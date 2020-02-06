@@ -408,9 +408,11 @@ RNN_Genome* EXAMM::generate_for_transfer_learning(string file_name, int extra_in
     vector<RNN_Node_Interface*> input_nodes;
     vector<RNN_Node_Interface*> new_output_nodes;
     vector<RNN_Node_Interface*> new_input_nodes;
-    vector<double> new_parameters;
 
     uniform_real_distribution<double> rng(-0.5, 0.5);
+
+    double mu, sigma;
+    genome->get_mu_sigma(genome->best_parameters, mu, sigma);
 
 
     //iterate over all the input parameters and determine which
@@ -492,10 +494,6 @@ RNN_Genome* EXAMM::generate_for_transfer_learning(string file_name, int extra_in
             } else if (node->get_layer_type() == INPUT_LAYER) {
                 input_nodes.push_back(node);
             }
-
-            for (int32_t j = 0; j < node->get_number_weights(); j++) {
-                new_parameters.push_back(genome->initial_parameters[weights_count++]);
-            }
         } else {
             for (int32_t j = 0; j < node->get_number_weights(); j++)
                 weights_count++;
@@ -504,11 +502,6 @@ RNN_Genome* EXAMM::generate_for_transfer_learning(string file_name, int extra_in
     }
     genome->nodes = new_nodes;
 
-    for (int32_t i = 0; i < extra_outputs; i++)
-        new_parameters.push_back( rng(generator) );
-
-    for (int32_t i = 0; i < extra_inputs; i++)
-        new_parameters.push_back( rng(generator) );
 
     flag = false;
     for (auto edge : genome->edges) {
@@ -526,7 +519,6 @@ RNN_Genome* EXAMM::generate_for_transfer_learning(string file_name, int extra_in
         if (flag) {
             if (edge_innovation_count<edge->get_innovation_number())
                 edge_innovation_count = edge->get_innovation_number() ;
-            new_parameters.push_back( genome->initial_parameters[ weights_count ] ) ;
             new_edges.push_back(edge) ;
         }
         else
@@ -551,7 +543,6 @@ RNN_Genome* EXAMM::generate_for_transfer_learning(string file_name, int extra_in
         if (flag) {
             if (edge_innovation_count < recedge->get_innovation_number())
                 edge_innovation_count = recedge->get_innovation_number();
-            new_parameters.push_back(genome->initial_parameters[weights_count]) ;
             new_recurrent_edges.push_back(recedge);
         }
         else
@@ -570,6 +561,7 @@ RNN_Genome* EXAMM::generate_for_transfer_learning(string file_name, int extra_in
 
     for (int32_t i = 0; i < extra_outputs; i++) {
         RNN_Node *node = new RNN_Node(++node_innovation_count, OUTPUT_LAYER, 1.0 /*output nodes should be depth 1*/, SIMPLE_NODE);
+        node->initialize_randomly(genome->generator, genome->normal_distribution, mu, sigma);
         genome->nodes.push_back(node);
         new_output_nodes.push_back(node) ;
     }
@@ -582,14 +574,15 @@ RNN_Genome* EXAMM::generate_for_transfer_learning(string file_name, int extra_in
 
     for (int32_t i = 0; i < extra_inputs; i++) {
         RNN_Node *node = new RNN_Node(++node_innovation_count, INPUT_LAYER, 0, SIMPLE_NODE);
+        node->initialize_randomly(genome->generator, genome->normal_distribution, mu, sigma);
         genome->nodes.push_back(node);
         new_input_nodes.push_back(node) ;
 
         //Connecting New Input Nodes to Old Output Nodes
         if (tl_ver1) {
             for (auto out_node: output_nodes) {
-                genome->edges.push_back(new RNN_Edge(++edge_innovation_count, node, out_node)) ;
-                new_parameters.push_back(rng(generator));
+                RNN_Edge *edge = new RNN_Edge(++edge_innovation_count, node, out_node);
+                edge->weight = bound(genome->normal_distribution.random(genome->generator, mu, sigma));
             }
         }
     }
@@ -600,17 +593,10 @@ RNN_Genome* EXAMM::generate_for_transfer_learning(string file_name, int extra_in
             if (node->get_layer_type() == INPUT_LAYER) {
                 for (auto new_output_node : new_output_nodes) {
                     genome->edges.push_back(new RNN_Edge(++edge_innovation_count, node, new_output_node)) ;
-                    new_parameters.push_back(rng(generator));
                 }
             }
         }
     }
-
-    genome->set_initial_parameters( new_parameters );
-    genome->set_best_parameters( new_parameters );
-
-    double mu, sigma;
-    genome->get_mu_sigma(genome->best_parameters, mu, sigma);
 
     auto rng_ = std::default_random_engine {};
 
@@ -666,14 +652,15 @@ RNN_Genome* EXAMM::generate_for_transfer_learning(string file_name, int extra_in
     //update the reachabaility again
     genome->assign_reachability();
 
-    Log::info("new_parameters.size() before get weights: %d\n", new_parameters.size());
+    Log::info("new_parameters.size() before get weights: %d\n", genome->initial_parameters.size());
 
     //update the new and best parameter lengths because this will have added edges
-    genome->get_weights( new_parameters );
-    genome->set_initial_parameters( new_parameters );
-    genome->set_best_parameters( new_parameters );
+    vector<double> updated_genome_parameters;
+    genome->get_weights(updated_genome_parameters);
+    genome->set_initial_parameters( updated_genome_parameters );
+    genome->set_best_parameters( updated_genome_parameters );
 
-    Log::info("new_parameters.size() after get weights: %d\n", new_parameters.size());
+    Log::info("new_parameters.size() after get weights: %d\n", updated_genome_parameters.size());
 
     Log::info("FINISHING PREPARING INITIAL GENOME\n");
     return genome;
