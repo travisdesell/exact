@@ -46,8 +46,10 @@ int main(int argc, char** argv) {
 
     TimeSeriesSets *time_series_sets = TimeSeriesSets::generate_test(testing_filenames, genome->get_input_parameter_names(), genome->get_output_parameter_names());
     Log::debug("got time series sets.\n");
-    time_series_sets->normalize(genome->get_normalize_mins(), genome->get_normalize_maxs());
-    Log::debug("normalized time series.\n");
+    if (argument_exists(arguments, "--normalize")) {
+        time_series_sets->normalize(genome->get_normalize_mins(), genome->get_normalize_maxs());
+        Log::debug("normalized time series.\n");
+    }
 
     int32_t time_offset = 1;
     get_argument(arguments, "--time_offset", true, time_offset);
