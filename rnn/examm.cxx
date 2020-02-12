@@ -409,8 +409,6 @@ RNN_Genome* EXAMM::generate_for_transfer_learning(string file_name, int extra_in
     vector<RNN_Node_Interface*> new_output_nodes;
     vector<RNN_Node_Interface*> new_input_nodes;
 
-    uniform_real_distribution<double> rng(-0.5, 0.5);
-
     double mu, sigma;
     genome->get_mu_sigma(genome->best_parameters, mu, sigma);
 
