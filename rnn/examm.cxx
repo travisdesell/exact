@@ -152,7 +152,11 @@ EXAMM::EXAMM(int32_t _population_size, int32_t _number_islands, int32_t _max_gen
         seed_genome->best_validation_mae = EXAMM_MAX_DOUBLE;
         //seed_genome->best_parameters.clear();
 
-        speciation_strategy = new IslandSpeciationStrategy(number_islands, population_size, 0.70, 0.20, 0.10, seed_genome);
+        if (number_islands == 1) {
+            speciation_strategy = new IslandSpeciationStrategy(number_islands, population_size, 0.70, 0.30, 0.00, seed_genome);
+        } else {
+            speciation_strategy = new IslandSpeciationStrategy(number_islands, population_size, 0.70, 0.20, 0.10, seed_genome);
+        }
     }
 
     if (_rec_sampling_population.compare("global") == 0) {
