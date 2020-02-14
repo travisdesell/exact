@@ -108,17 +108,8 @@ class EXAMM {
         int32_t rec_sampling_distribution;
 
         string  genome_file_name ;
-        int     no_extra_inputs ;
-        int     no_extra_outputs ;
 
-        int     no_stir_mutations = N_STIR_MUTATIONS;
-
-        vector<string> inputs_to_remove ;
-        vector<string> outputs_to_remove ;
-
-        bool tl_ver1;
-        bool tl_ver2;
-        bool tl_ver3;
+        int32_t     no_stir_mutations = N_STIR_MUTATIONS_DEFAULT;
 
     public:
         EXAMM(int32_t _population_size, int32_t _number_islands, int32_t _max_genomes, int32_t _num_genomes_check_on_island, string _speciation_method,
@@ -132,10 +123,7 @@ class EXAMM {
             bool _use_dropout, double _dropout_probability,
             int32_t _min_recurrent_depth, int32_t _max_recurrent_depth,
             string _rec_sampling_population, string _rec_sampling_distribution, string _output_directory,
-            string _genome_file_name,
-            int _no_extra_inputs, int _no_extra_outputs,
-            vector<string> &_inputs_to_remove, vector<string> &_outputs_to_remove,
-            bool _tl_ver1, bool _tl_ver2, bool _tl_ver3 );
+            string _genome_file_name, int32_t _no_stir_mutations);
 
         ~EXAMM();
 
@@ -165,7 +153,7 @@ class EXAMM {
         RNN_Genome* get_worst_genome();
 
         string get_output_directory() const;
-        RNN_Genome* generate_for_transfer_learning(string file_name, int extra_inputs, int extra_outputs) ;
+        RNN_Genome* stir_genome(string file_name) ;
 };
 
 #endif

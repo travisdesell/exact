@@ -98,7 +98,7 @@ add_subdirectory(rnn_examples)
 
 add_subdirectory(cnn_tests)
 add_subdirectory(cnn_examples)
-add_subdirectory(multithreaded)
+# add_subdirectory(multithreaded)
 add_subdirectory(mpi)
 
 

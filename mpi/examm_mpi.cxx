@@ -248,8 +248,6 @@ int main(int argc, char** argv) {
 
 
     TimeSeriesSets *time_series_sets = NULL;
-    vector<string> inputs_removed_tokens  ;
-    vector<string> outputs_removed_tokens ;
 
 
     if (rank == 0) {
@@ -327,41 +325,11 @@ int main(int argc, char** argv) {
 
     string genome_file_name = "";
     get_argument(arguments, "--genome_bin", false, genome_file_name);
-    int no_extra_inputs = 0 ;
-    if (genome_file_name != "") {
-        get_argument(arguments, "--extra_inputs", false, no_extra_inputs);
-    }
-    int no_extra_outputs = 0 ;
-    if (genome_file_name != "") {
-        get_argument(arguments, "--extra_outputs", false, no_extra_outputs);
-    }
-    string inputs_to_remove = "" ;
-    if (genome_file_name != "") {
-        get_argument(arguments, "--inputs_to_remove", false, inputs_to_remove);
-    }
 
-    string outputs_to_remove = "" ;
+    int32_t no_stir_mutations = 0;
     if (genome_file_name != "") {
-        get_argument(arguments, "--outputs_to_remove", false, outputs_to_remove);
+        get_argument(arguments, "--stir_mutations", false, no_stir_mutations);
     }
-
-    bool tl_ver1 = true ;
-    if (genome_file_name != "") {
-        get_argument(arguments, "--tl_version1", false, tl_ver1);
-    }
-
-    bool tl_ver2 = true ;
-    if (genome_file_name != "") {
-        get_argument(arguments, "--tl_version2", false, tl_ver2);
-    }
-
-    bool tl_ver3 = true ;
-    if (genome_file_name != "") {
-        get_argument(arguments, "--tl_version3", false, tl_ver3);
-    }
-
-    get_individual_inputs( inputs_to_remove, inputs_removed_tokens) ;
-    get_individual_inputs( outputs_to_remove, outputs_removed_tokens) ;
 
     Log::clear_rank_restriction();
 
@@ -379,9 +347,7 @@ int main(int argc, char** argv) {
             rec_sampling_population, rec_sampling_distribution,
             output_directory,
             genome_file_name,
-            no_extra_inputs, no_extra_outputs,
-            inputs_removed_tokens, outputs_removed_tokens,
-            tl_ver1, tl_ver2, tl_ver3);
+            no_stir_mutations);
 
         if (possible_node_types.size() > 0) examm->set_possible_node_types(possible_node_types);
 

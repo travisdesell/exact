@@ -396,10 +396,7 @@ int main(int argc, char** argv) {
                 rec_delay_min, rec_delay_max,
                 rec_sampling_population, rec_sampling_distribution,
                 output_directory,
-                genome_file_name,
-                no_extra_inputs, no_extra_outputs,
-                inputs_removed_tokens, outputs_removed_tokens,
-                tl_ver1, tl_ver2, tl_ver3);
+                genome_file_name, 0);
 
                 examm->set_possible_node_types(possible_node_types);
 

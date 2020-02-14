@@ -2813,27 +2813,29 @@ void RNN_Genome::read_from_stream(istream &bin_istream) {
 
     read_binary_string(bin_istream, log_filename, "log_filename");
     int x = 0;
-    //printf("%d\n", x++);
+    printf("%d\n", x++);
     string generator_str;
     read_binary_string(bin_istream, generator_str, "generator");
     istringstream generator_iss(generator_str);
-    //printf("%d\n", x++);
+    printf("%d\n", x++);
     generator_iss >> generator;
 
     string rng_0_1_str;
     read_binary_string(bin_istream, rng_0_1_str, "rng_0_1");
     istringstream rng_0_1_iss(rng_0_1_str);
-    //printf("%d\n", x++);
+    printf("%d\n", x++);
     string s = rng_0_1_iss.str();
     const char* cs = s.c_str();
+    printf("\n\n<%s>\n\n", cs);
     //printf("rng_0_1_iss length = %d\n", s.length());
     // printf("cs length: %d \nStart: \n", s.length());
     // for (int i = 0 ; i < s.length() ; i += 1)
     //     printf("%x, ", cs[i]);
     // printf("End\n");
 
-    rng_0_1_iss >> rng_0_1;
-    //printf("%d\n", x++);
+    // Rely on default initialization
+    // rng_0_1_iss >> rng_0_1;
+    printf("%d\n", x++);
     
 
     string generated_by_map_str;

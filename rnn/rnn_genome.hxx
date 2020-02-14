@@ -63,7 +63,7 @@ class RNN_Genome {
         vector<double> best_parameters;
 
         minstd_rand0 generator;
-        uniform_real_distribution<double> rng_0_1;
+        uniform_real_distribution<double> rng_0_1 = uniform_real_distribution<double>(0.0, 1.0);
         NormalDistribution normal_distribution;
 
         vector<RNN_Node_Interface*> nodes;
