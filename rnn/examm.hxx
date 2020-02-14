@@ -27,6 +27,7 @@ using std::vector;
 #define HISTOGRAM_DISTRIBUTION 1
 #define NORMAL_DISTRIBUTION 2
 
+#define N_STIR_MUTATIONS_DEFAULT 32
 
 class EXAMM {
     private:
@@ -109,6 +110,8 @@ class EXAMM {
         string  genome_file_name ;
         int     no_extra_inputs ;
         int     no_extra_outputs ;
+
+        int     no_stir_mutations = N_STIR_MUTATIONS;
 
         vector<string> inputs_to_remove ;
         vector<string> outputs_to_remove ;

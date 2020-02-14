@@ -125,9 +125,8 @@ EXAMM::EXAMM(int32_t _population_size, int32_t _number_islands, int32_t _max_gen
 
     Log::error("Speciation method is: %s\n", speciation_method.c_str());
     if (speciation_method.compare("island") == 0 || speciation_method.compare("") == 0) {
-        //generate a minimal feed foward network as the seed genome
+        //generate a minimal feed foward network as the seed genome if the seed is not a file
         RNN_Genome *seed_genome = NULL;
-        printf("<%s>\n", genome_file_name.c_str());
         if (genome_file_name.compare("") == 0) {
             seed_genome = create_ff(number_inputs, 0, 0, number_outputs, 0);
             seed_genome->initialize_randomly();
@@ -135,11 +134,9 @@ EXAMM::EXAMM(int32_t _population_size, int32_t _number_islands, int32_t _max_gen
             node_innovation_count = seed_genome->nodes.size();
         }
         else {
-            Log::error("doing transfer!\n");
-            seed_genome = generate_for_transfer_learning(genome_file_name, no_extra_inputs, no_extra_outputs );
-            Log::error("generated seed genome, number of inputs: %d, number of outputs: %d\n", seed_genome->get_number_inputs(), seed_genome->get_number_outputs());
-
-            //printf("Hello2\n");
+            Log::trace("Stirring!\n");
+            seed_genome = stir_genome(genome_file_name);
+            Log::trace("Done stirring!\n");
         }
 
         seed_genome->set_generated_by("initial");
@@ -147,10 +144,8 @@ EXAMM::EXAMM(int32_t _population_size, int32_t _number_islands, int32_t _max_gen
         //insert a copy of it into the population so
         //additional requests can mutate it
 
-
         seed_genome->best_validation_mse = EXAMM_MAX_DOUBLE;
         seed_genome->best_validation_mae = EXAMM_MAX_DOUBLE;
-        //seed_genome->best_parameters.clear();
 
         speciation_strategy = new IslandSpeciationStrategy(number_islands, population_size, 0.70, 0.20, 0.10, seed_genome);
     }
@@ -663,6 +658,19 @@ RNN_Genome* EXAMM::generate_for_transfer_learning(string file_name, int extra_in
     Log::info("new_parameters.size() after get weights: %d\n", updated_genome_parameters.size());
 
     Log::info("FINISHING PREPARING INITIAL GENOME\n");
+    return genome;
+}
+
+RNN_Genome* EXAMM::stir_genome(string file_name) {
+    RNN_Genome* genome = new RNN_Genome(file_name);
+
+    this->mutate(this->no_stir_mutations, genome);
+
+    // Alternatively:
+    // for (int32_t i = 0; i < this->no_stir_mutations; i += 1)
+    //     this->mutate(1, genome);
+    //
+
     return genome;
 }
 
