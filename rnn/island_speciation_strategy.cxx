@@ -207,6 +207,8 @@ RNN_Genome* IslandSpeciationStrategy::generate_genome(uniform_real_distribution<
 
             double r = rng_0_1(generator);
             if (!islands_full() || r < mutation_rate) {
+                Log::debug("performing mutation");
+
                 island->copy_random_genome(rng_0_1, generator, &genome);
 
                 //TODO: make max_mutations an IslandSpeciationStrategy option
@@ -214,6 +216,7 @@ RNN_Genome* IslandSpeciationStrategy::generate_genome(uniform_real_distribution<
 
             } else if (r < intra_island_crossover_rate || number_of_islands == 1) {
                 //intra-island crossover
+                Log::debug("performing intra-island crossover");
 
                 //select two distinct parent genomes in the same island
                 RNN_Genome *parent1 = NULL, *parent2 = NULL;
@@ -222,6 +225,7 @@ RNN_Genome* IslandSpeciationStrategy::generate_genome(uniform_real_distribution<
                 genome = crossover(parent1, parent2);
             } else {
                 //inter-island crossover
+                Log::debug("performing inter-island crossover");
 
                 //get a random genome from this island
                 RNN_Genome *parent1 = NULL; 
