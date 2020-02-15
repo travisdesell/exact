@@ -92,6 +92,8 @@ class RNN_Genome {
         static string print_statistics_header();
         string print_statistics();
 
+        void update_innovation_counts(int32_t &node_innovation_count, int32_t &edge_innovation_count);
+
         void set_parameter_names(const vector<string> &_input_parameter_names, const vector<string> &_output_parameter_names);
 
         string generated_by_string();
@@ -217,7 +219,6 @@ class RNN_Genome {
          * @return true if the genome has a node with the provided innovation number, false otherwise.
          */
         bool has_node_with_innovation(int32_t innovation_number) const;
-
 
         bool equals(RNN_Genome *other);
 

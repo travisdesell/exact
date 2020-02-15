@@ -113,6 +113,16 @@ EXAMM::EXAMM(int32_t _population_size, int32_t _number_islands, int32_t _max_gen
     min_recurrent_depth = _min_recurrent_depth;
     max_recurrent_depth = _max_recurrent_depth;
 
+    possible_node_types.clear();
+    possible_node_types.push_back(SIMPLE_NODE);
+    possible_node_types.push_back(JORDAN_NODE);
+    possible_node_types.push_back(ELMAN_NODE);
+    possible_node_types.push_back(UGRNN_NODE);
+    possible_node_types.push_back(MGU_NODE);
+    possible_node_types.push_back(GRU_NODE);
+    possible_node_types.push_back(LSTM_NODE);
+    possible_node_types.push_back(DELTA_NODE);
+
     Log::error("Speciation method is: %s\n", speciation_method.c_str());
     if (speciation_method.compare("island") == 0 || speciation_method.compare("") == 0) {
         //generate a minimal feed foward network as the seed genome if the seed is not a file
@@ -177,16 +187,6 @@ EXAMM::EXAMM(int32_t _population_size, int32_t _number_islands, int32_t _max_gen
     disable_edge_rate = 1.0;
     //split_edge_rate = 1.0;
     split_edge_rate = 0.0;
-
-    possible_node_types.clear();
-    possible_node_types.push_back(SIMPLE_NODE);
-    possible_node_types.push_back(JORDAN_NODE);
-    possible_node_types.push_back(ELMAN_NODE);
-    possible_node_types.push_back(UGRNN_NODE);
-    possible_node_types.push_back(MGU_NODE);
-    possible_node_types.push_back(GRU_NODE);
-    possible_node_types.push_back(LSTM_NODE);
-    possible_node_types.push_back(DELTA_NODE);
 
     bool node_ops = true;
     if (node_ops) {
@@ -390,12 +390,17 @@ bool EXAMM::insert_genome(RNN_Genome* genome) {
 RNN_Genome* EXAMM::stir_genome(string file_name) {
     RNN_Genome* genome = new RNN_Genome(file_name);
 
-    this->mutate(this->no_stir_mutations, genome);
+    // Gotta update these first so our mutations use sound innovation numbers
+    genome->update_innovation_counts(this->node_innovation_count, this->edge_innovation_count);
+    
+    // this->mutate(this->no_stir_mutations, genome);
 
     // Alternatively:
-    // for (int32_t i = 0; i < this->no_stir_mutations; i += 1)
-    //     this->mutate(1, genome);
-    //
+    for (int32_t i = 0; i < this->no_stir_mutations; i += 1) {
+        printf("Mutated!\n");
+        this->mutate(1, genome);
+    }
+    
 
     return genome;
 }
@@ -440,7 +445,8 @@ int EXAMM::get_random_node_type() {
 }
 
 Distribution *EXAMM::get_recurrent_depth_dist(int32_t island_index) {
-    Distribution *d = NULL;
+    return new RecDepthUniformDist(min_recurrent_depth, max_recurrent_depth);
+    /*Distribution *d = NULL;
     if (rec_sampling_distribution != UNIFORM_DISTRIBUTION) {
         if (rec_sampling_distribution == NORMAL_DISTRIBUTION) {
             if (rec_sampling_population == ISLAND_POPULATION)
@@ -456,8 +462,9 @@ Distribution *EXAMM::get_recurrent_depth_dist(int32_t island_index) {
     } else {
         d = new RecDepthUniformDist(min_recurrent_depth, max_recurrent_depth);
     }
-    return d;
+    return d;*/
 }
+
 
 void EXAMM::mutate(int32_t max_mutations, RNN_Genome *g) {
     double total = clone_rate + add_edge_rate + add_recurrent_edge_rate + enable_edge_rate + disable_edge_rate + split_edge_rate + add_node_rate + enable_node_rate + disable_node_rate + split_node_rate + merge_node_rate;

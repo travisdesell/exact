@@ -88,17 +88,15 @@ for x in 10 11 12; do
     TEST_FILES=$TEST_FILES$DATA_DIR/$AC_TYPE"_file$x.csv "
 done
 
-for no_stir_mutations in 1 4 16 64 256
-do
-  for folder in  0 1 2 3 4 5 6 7 8 9
-  do
+for no_stir_mutations in 0 8 16 32 64 128; do
+  for folder in  0 1 2 3 4 5 6 7 8 9; do
       exp_name="../results/stirred_$AC_TYPE/$no_stir_mutations/$folder"
       mkdir -p $exp_name
       echo "\tIteration: "$exp_name
       echo "\t###-------------------###"
       time mpirun \
           --oversubscribe \
-          -np $NO_CPU $EXAMM/build/mpi/examm_mpi \
+          -np $NO_CPU $EXAMM/Release/mpi/examm_mpi \
           --training_filenames $TRAIN_FILES \
           --test_filenames $TEST_FILES \
           --time_offset 1 \
