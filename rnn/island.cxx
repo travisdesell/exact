@@ -89,7 +89,7 @@ void Island::copy_two_random_genomes(uniform_real_distribution<double> &rng_0_1,
     }
 
     *genome1 = genomes[p1]->copy();
-    *genome1 = genomes[p2]->copy();
+    *genome2 = genomes[p2]->copy();
 }
 
 
