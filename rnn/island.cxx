@@ -149,10 +149,13 @@ int32_t Island::insert_genome(RNN_Genome *genome) {
         }
     }
 
+
     if (genomes.size() >= max_size) {
         //the island is filled
         status = Island::FILLED;
     }
+
+    Log::info("genomes.size(): %d, max_size: %d, status: %d\n", genomes.size(), max_size, status);
 
     if (genomes.size() > max_size) {
         //island was full before insert so now we need to 

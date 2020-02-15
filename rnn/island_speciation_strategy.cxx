@@ -27,6 +27,10 @@ IslandSpeciationStrategy::IslandSpeciationStrategy(int32_t _number_of_islands, i
         inter_island_crossover_rate = inter_island_crossover_rate / rate_sum;
     }
 
+    intra_island_crossover_rate += mutation_rate;
+    inter_island_crossover_rate += intra_island_crossover_rate;
+
+
     for (uint32_t i = 0; i < number_of_islands; i++) {
         islands.push_back(new Island(i, max_island_size));
     }
@@ -200,6 +204,7 @@ RNN_Genome* IslandSpeciationStrategy::generate_genome(uniform_real_distribution<
 
     } else if (island->is_full()) {
         //generate a genome via crossover or mutation
+        Log::info("island is full\n");
 
         while (genome == NULL) {
             //if we haven't filled ALL of the island populations yet, only use mutation
@@ -207,7 +212,7 @@ RNN_Genome* IslandSpeciationStrategy::generate_genome(uniform_real_distribution<
 
             double r = rng_0_1(generator);
             if (!islands_full() || r < mutation_rate) {
-                Log::debug("performing mutation");
+                Log::info("performing mutation\n");
 
                 island->copy_random_genome(rng_0_1, generator, &genome);
 
@@ -216,7 +221,7 @@ RNN_Genome* IslandSpeciationStrategy::generate_genome(uniform_real_distribution<
 
             } else if (r < intra_island_crossover_rate || number_of_islands == 1) {
                 //intra-island crossover
-                Log::debug("performing intra-island crossover");
+                Log::info("performing intra-island crossover\n");
 
                 //select two distinct parent genomes in the same island
                 RNN_Genome *parent1 = NULL, *parent2 = NULL;
@@ -225,7 +230,7 @@ RNN_Genome* IslandSpeciationStrategy::generate_genome(uniform_real_distribution<
                 genome = crossover(parent1, parent2);
             } else {
                 //inter-island crossover
-                Log::debug("performing inter-island crossover");
+                Log::info("performing inter-island crossover\n");
 
                 //get a random genome from this island
                 RNN_Genome *parent1 = NULL; 
@@ -259,6 +264,8 @@ RNN_Genome* IslandSpeciationStrategy::generate_genome(uniform_real_distribution<
         //here's where you put your repopulation code
         //select two other islands (non-overlapping) at random, and select genomes
         //from within those islands and generate a child via crossover
+
+        Log::info("island is repopulating");
 
         while (genome == NULL) {
             //get two other islands that are not the island we'r generating for
