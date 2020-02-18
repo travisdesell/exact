@@ -2243,7 +2243,7 @@ bool RNN_Genome::split_node(double mu, double sigma, int node_type, Distribution
     Log::info("\t\trecurrent_edges_1.size(): %d, recurrent_edges_2.size(): %d, input_edges.size(): %d, output_edges.size(): %d\n", recurrent_edges_1.size(), recurrent_edges_2.size(), input_edges.size(), output_edges.size());
 
     if (input_edges.size() == 0 || output_edges.size() == 0) {
-        Log::error("\tERROR, input or output edges size was 0, cannot split a node\n");
+        Log::warning("\tthe input or output edges size was 0 for the selected node, we cannot split it\n");
         //write_graphviz("error_genome.gv");
         //exit(1);
         return false;
