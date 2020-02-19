@@ -73,7 +73,7 @@ EXAMM::EXAMM(int32_t _population_size, int32_t _number_islands, int32_t _max_gen
                 string _genome_file_name,
                 int _no_extra_inputs, int _no_extra_outputs,
                 vector<string> &_inputs_to_remove, vector<string> &_outputs_to_remove,
-                bool _tl_ver1, bool _tl_ver2, bool _tl_ver3 ) :
+                bool _tl_ver1, bool _tl_ver2, bool _tl_ver3, int32_t stir_mutations ) :
                                         population_size(_population_size),
                                         number_islands(_number_islands),
                                         max_genomes(_max_genomes),
@@ -93,7 +93,8 @@ EXAMM::EXAMM(int32_t _population_size, int32_t _number_islands, int32_t _max_gen
                                         no_extra_outputs(_no_extra_outputs),
                                         tl_ver1(_tl_ver1),
                                         tl_ver2(_tl_ver2),
-                                        tl_ver3(_tl_ver3) {
+                                        tl_ver3(_tl_ver3),
+                                        number_stir_mutations(stir_mutations) {
 
     input_parameter_names = _input_parameter_names;
     output_parameter_names = _output_parameter_names;
@@ -133,8 +134,7 @@ EXAMM::EXAMM(int32_t _population_size, int32_t _number_islands, int32_t _max_gen
             seed_genome->initialize_randomly();
             edge_innovation_count = seed_genome->edges.size() + seed_genome->recurrent_edges.size();
             node_innovation_count = seed_genome->nodes.size();
-        }
-        else {
+        } else { 
             Log::error("doing transfer!\n");
             seed_genome = generate_for_transfer_learning(genome_file_name, no_extra_inputs, no_extra_outputs );
             Log::error("generated seed genome, number of inputs: %d, number of outputs: %d\n", seed_genome->get_number_inputs(), seed_genome->get_number_outputs());
@@ -153,9 +153,9 @@ EXAMM::EXAMM(int32_t _population_size, int32_t _number_islands, int32_t _max_gen
         //seed_genome->best_parameters.clear();
 
         if (number_islands == 1) {
-            speciation_strategy = new IslandSpeciationStrategy(number_islands, population_size, 0.70, 0.30, 0.00, seed_genome);
+            speciation_strategy = new IslandSpeciationStrategy(number_islands, population_size, 0.70, 0.30, 0.00, seed_genome, number_stir_mutations);
         } else {
-            speciation_strategy = new IslandSpeciationStrategy(number_islands, population_size, 0.70, 0.20, 0.10, seed_genome);
+            speciation_strategy = new IslandSpeciationStrategy(number_islands, population_size, 0.70, 0.20, 0.10, seed_genome, number_stir_mutations);
         }
     }
 

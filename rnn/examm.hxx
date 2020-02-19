@@ -117,6 +117,8 @@ class EXAMM {
         bool tl_ver2;
         bool tl_ver3;
 
+        int32_t number_stir_mutations;
+
     public:
         EXAMM(int32_t _population_size, int32_t _number_islands, int32_t _max_genomes, int32_t _num_genomes_check_on_island, string _speciation_method,
             const vector<string> &_input_parameter_names,
@@ -132,7 +134,8 @@ class EXAMM {
             string _genome_file_name,
             int _no_extra_inputs, int _no_extra_outputs,
             vector<string> &_inputs_to_remove, vector<string> &_outputs_to_remove,
-            bool _tl_ver1, bool _tl_ver2, bool _tl_ver3 );
+            bool _tl_ver1, bool _tl_ver2, bool _tl_ver3,
+            int32_t stir_mutations);
 
         ~EXAMM();
 

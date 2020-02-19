@@ -325,6 +325,9 @@ int main(int argc, char** argv) {
     string rec_sampling_distribution = "uniform";
     get_argument(arguments, "--rec_sampling_distribution", false, rec_sampling_distribution);
 
+    int32_t stir_mutations = 0;
+    get_argument(arguments, "--stir_mutations", false, stir_mutations);
+
     string genome_file_name = "";
     get_argument(arguments, "--genome_bin", false, genome_file_name);
     int no_extra_inputs = 0 ;
@@ -381,7 +384,7 @@ int main(int argc, char** argv) {
             genome_file_name,
             no_extra_inputs, no_extra_outputs,
             inputs_removed_tokens, outputs_removed_tokens,
-            tl_ver1, tl_ver2, tl_ver3);
+            tl_ver1, tl_ver2, tl_ver3, stir_mutations);
 
         if (possible_node_types.size() > 0) examm->set_possible_node_types(possible_node_types);
 

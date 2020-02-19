@@ -18,7 +18,7 @@ using std::string;
 
 #include "common/log.hxx"
 
-IslandSpeciationStrategy::IslandSpeciationStrategy(int32_t _number_of_islands, int32_t _max_island_size, double _mutation_rate, double _intra_island_crossover_rate, double _inter_island_crossover_rate, RNN_Genome *seed_genome) : generation_island(0), number_of_islands(_number_of_islands), max_island_size(_max_island_size), mutation_rate(_mutation_rate), intra_island_crossover_rate(_intra_island_crossover_rate), inter_island_crossover_rate(_inter_island_crossover_rate), generated_genomes(0), inserted_genomes(0), minimal_genome(seed_genome) {
+IslandSpeciationStrategy::IslandSpeciationStrategy(int32_t _number_of_islands, int32_t _max_island_size, double _mutation_rate, double _intra_island_crossover_rate, double _inter_island_crossover_rate, RNN_Genome *seed_genome, int32_t _number_stir_mutations) : generation_island(0), number_of_islands(_number_of_islands), max_island_size(_max_island_size), mutation_rate(_mutation_rate), intra_island_crossover_rate(_intra_island_crossover_rate), inter_island_crossover_rate(_inter_island_crossover_rate), generated_genomes(0), inserted_genomes(0), minimal_genome(seed_genome), number_stir_mutations(_number_stir_mutations) {
 
     double rate_sum = mutation_rate + intra_island_crossover_rate + inter_island_crossover_rate;
     if (rate_sum != 1.0) {
@@ -152,6 +152,13 @@ RNN_Genome* IslandSpeciationStrategy::generate_genome(uniform_real_distribution<
         if (island->size() == 0) {
             Log::debug("starting with minimal genome\n");
             RNN_Genome *genome_copy = minimal_genome->copy();
+            
+            // Stir the seed genome if need be
+            if (this->number_stir_mutations) {
+                Log::debug("Stirring seed genome for island %d by applying %d mutations!\n", 
+                            generation_island, this->number_stir_mutations);
+                mutate(this->number_stir_mutations, genome_copy);
+            }
 
             //set the generation id for the copy and increment generated genomes 
             genome_copy->set_generation_id(generated_genomes);
