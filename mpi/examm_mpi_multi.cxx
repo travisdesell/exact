@@ -341,6 +341,9 @@ int main(int argc, char** argv) {
         get_argument(arguments, "--tl_version3", false, tl_ver3);
     }
 
+    int32_t stir_mutations = 0;
+    get_argument(arguments, "--stir_mutations", false, stir_mutations);
+
     get_individual_inputs( inputs_to_remove, inputs_removed_tokens) ;
     get_individual_inputs( outputs_to_remove, outputs_removed_tokens) ;
 
@@ -399,7 +402,7 @@ int main(int argc, char** argv) {
                 genome_file_name,
                 no_extra_inputs, no_extra_outputs,
                 inputs_removed_tokens, outputs_removed_tokens,
-                tl_ver1, tl_ver2, tl_ver3);
+                tl_ver1, tl_ver2, tl_ver3, stir_mutations);
 
                 examm->set_possible_node_types(possible_node_types);
 

@@ -2812,29 +2812,21 @@ void RNN_Genome::read_from_stream(istream &bin_istream) {
     Log::debug("dropout_probability: %lf\n", dropout_probability);
 
     read_binary_string(bin_istream, log_filename, "log_filename");
-    int x = 0;
-    //printf("%d\n", x++);
     string generator_str;
     read_binary_string(bin_istream, generator_str, "generator");
     istringstream generator_iss(generator_str);
-    //printf("%d\n", x++);
     generator_iss >> generator;
 
     string rng_0_1_str;
     read_binary_string(bin_istream, rng_0_1_str, "rng_0_1");
-    istringstream rng_0_1_iss(rng_0_1_str);
-    //printf("%d\n", x++);
-    string s = rng_0_1_iss.str();
-    const char* cs = s.c_str();
-    //printf("rng_0_1_iss length = %d\n", s.length());
-    // printf("cs length: %d \nStart: \n", s.length());
-    // for (int i = 0 ; i < s.length() ; i += 1)
-    //     printf("%x, ", cs[i]);
-    // printf("End\n");
-
-    rng_0_1_iss >> rng_0_1;
-    //printf("%d\n", x++);
-    
+    // So for some reason this was serialized incorrectly for some genomes,
+    // but the value should always be the same so we really don't need to de-serialize it anways and can just
+    // assign it a constant value
+    rng_0_1 = uniform_real_distribution<double>(0.0, 1.0);
+    // Formerly:
+    // istringstream rng_0_1_iss(rng_0_1_str);
+    //rng_0_1_iss >> rng_0_1;
+     
 
     string generated_by_map_str;
     read_binary_string(bin_istream, generated_by_map_str, "generated_by_map");
@@ -3136,4 +3128,36 @@ void RNN_Genome::write_to_stream(ostream &bin_ostream) {
     write_map(normalize_maxs_oss, normalize_maxs);
     string normalize_maxs_str = normalize_maxs_oss.str();
     write_binary_string(bin_ostream, normalize_maxs_str, "normalize_maxs");
+}
+
+void RNN_Genome::update_innovation_counts(int32_t &node_innovation_count, int32_t &edge_innovation_count) {
+    int32_t max_node_innovation_count = -1;
+
+    for (int32_t i = 0; i < this->nodes.size(); i += 1) {
+        RNN_Node_Interface *node = this->nodes[i];
+        max_node_innovation_count = std::max(max_node_innovation_count, node->innovation_number);
+    }
+
+    int32_t max_edge_innovation_count = -1;
+    for (int32_t i = 0; i < this->edges.size(); i += 1) {
+        RNN_Edge *edge = this->edges[i];
+        max_edge_innovation_count = std::max(max_edge_innovation_count, edge->innovation_number);
+    }
+    for (int32_t i = 0; i < this->recurrent_edges.size(); i += 1) {
+        RNN_Recurrent_Edge *redge = this->recurrent_edges[i];
+        max_edge_innovation_count = std::max(max_edge_innovation_count, redge->innovation_number);
+    }
+
+    if (max_node_innovation_count == -1) {
+        // Fatal log message
+        Log::fatal("Seed genome had max node innovation number of -1 - this should never happen (unless the genome is empty :)");
+    }
+    if (max_edge_innovation_count == -1) {
+        // Fatal log message
+        Log::fatal("Seed genome had max node innovation number of -1 - this should never happen (and the genome isn't empty since max_node_innovation_count > -1)");
+    }
+
+    // One more than the highest we've seen should be good enough.
+    node_innovation_count = max_node_innovation_count + 1;
+    edge_innovation_count = max_edge_innovation_count + 1;
 }
