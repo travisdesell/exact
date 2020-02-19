@@ -97,6 +97,8 @@ void send_genome_to(int target, RNN_Genome* genome) {
 
     Log::debug("sending genome to: %d\n", target);
     MPI_Send(byte_array, length, MPI_CHAR, target, GENOME_TAG, MPI_COMM_WORLD);
+
+    free(byte_array);
 }
 
 void send_terminate_message(int target) {
