@@ -6,9 +6,11 @@ using std::function;
 //#include <iostream>
 
 #include <random>
-#include <string>
+
 using std::minstd_rand0;
 using std::uniform_real_distribution;
+
+#include <string>
 using std::string;
 
 #include "examm.hxx"
