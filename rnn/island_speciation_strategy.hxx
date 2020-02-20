@@ -125,12 +125,12 @@ class IslandSpeciationStrategy : public SpeciationStrategy {
         /**
          * Gets speciation strategy information headers for logs
          */
-        virtual string get_strategy_information_headers() const;
+        string get_strategy_information_headers() const;
 
         /**
          * Gets speciation strategy information values for logs
          */
-        virtual string get_strategy_information_values() const;
+        string get_strategy_information_values() const;
 };
 
 
