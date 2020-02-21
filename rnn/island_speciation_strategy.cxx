@@ -6,6 +6,7 @@ using std::function;
 //#include <iostream>
 
 #include <random>
+
 using std::minstd_rand0;
 using std::uniform_real_distribution;
 
@@ -339,5 +340,39 @@ void IslandSpeciationStrategy::print(string indent) const {
         Log::info("%sIsland %d:\n", indent.c_str(), i);
         islands[i]->print(indent + "\t");
     }
+}
+
+/**
+ * Gets speciation strategy information headers for logs
+ */
+string IslandSpeciationStrategy::get_strategy_information_headers() const {
+    string info_header="";
+    for (int32_t i = 0; i < (int32_t)islands.size(); i++) {
+        info_header.append(",");
+        info_header.append("Island_");
+        info_header.append(to_string(i));
+        info_header.append("_best_fitness");
+        info_header.append(",");
+        info_header.append("Island_");
+        info_header.append(to_string(i));
+        info_header.append("_worst_fitness");
+    }
+    return info_header;
+}
+
+/**
+ * Gets speciation strategy information values for logs
+ */
+string IslandSpeciationStrategy::get_strategy_information_values() const {
+    string info_value="";
+    for (int32_t i = 0; i < (int32_t)islands.size(); i++) {
+        double best_fitness = islands[i]->get_best_fitness();
+        double worst_fitness = islands[i]->get_worst_fitness();
+        info_value.append(",");
+        info_value.append(to_string(best_fitness));
+        info_value.append(",");
+        info_value.append(to_string(worst_fitness));
+    }
+    return info_value;
 }
  

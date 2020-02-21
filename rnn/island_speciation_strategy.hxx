@@ -121,6 +121,16 @@ class IslandSpeciationStrategy : public SpeciationStrategy {
          * \param indent is how much to indent what is printed out
          */
         void print(string indent = "") const;
+
+        /**
+         * Gets speciation strategy information headers for logs
+         */
+        string get_strategy_information_headers() const;
+
+        /**
+         * Gets speciation strategy information values for logs
+         */
+        string get_strategy_information_values() const;
 };
 
 
