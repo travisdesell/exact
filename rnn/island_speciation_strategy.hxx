@@ -34,6 +34,8 @@ class IslandSpeciationStrategy : public SpeciationStrategy {
 
         RNN_Genome *minimal_genome; /**< keep a reference to a minimal genome so we can re-use it across islands and not duplicate innovation numbers. */
 
+        string check_on_island_method;
+        int32_t num_genomes_check_on_island;
         /**
          * All the islands which contain the genomes for this speciation strategy.
          */ 
@@ -49,7 +51,7 @@ class IslandSpeciationStrategy : public SpeciationStrategy {
          * \param number_of_islands specifies how many islands it will us e
          * \param max_island_size specifies the maximum number of gneomes in an island
          */
-        IslandSpeciationStrategy(int32_t _number_of_islands, int32_t _max_island_size, double _mutation_rate, double _intra_island_crossover_rate, double _inter_island_crossover_rate, RNN_Genome *seed_genome, int32_t number_stir_mutations);
+        IslandSpeciationStrategy(int32_t _number_of_islands, int32_t _max_island_size, double _mutation_rate, double _intra_island_crossover_rate, double _inter_island_crossover_rate, RNN_Genome *seed_genome, string _check_on_island_method, int32_t _num_genomes_check_on_island, int32_t _number_stir_mutations);
 
         /**
          * \return the number of generated genomes.

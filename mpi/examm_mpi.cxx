@@ -288,6 +288,9 @@ int main(int argc, char** argv) {
     int32_t max_genomes;
     get_argument(arguments, "--max_genomes", true, max_genomes);
 
+    string speciation_method = "";
+    get_argument(arguments, "--speciation_method", false, speciation_method);
+
     int32_t num_genomes_check_on_island;
     get_argument(arguments, "--num_genomes_check_on_island", false, num_genomes_check_on_island);
 
@@ -371,7 +374,7 @@ int main(int argc, char** argv) {
     Log::clear_rank_restriction();
 
     if (rank == 0) {
-        examm = new EXAMM(population_size, number_islands, max_genomes, num_genomes_check_on_island, check_on_island_method,
+        examm = new EXAMM(population_size, number_islands, max_genomes, speciation_method, num_genomes_check_on_island, check_on_island_method,
             time_series_sets->get_input_parameter_names(),
             time_series_sets->get_output_parameter_names(),
             time_series_sets->get_normalize_mins(),
