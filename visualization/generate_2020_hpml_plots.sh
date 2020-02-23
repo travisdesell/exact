@@ -1,8 +1,9 @@
-python plot_examm_fitness_vs_inserted.py "/Users/tdesell/Dropbox/data/2020_hpml/coal/island_2_pop_100_cpu_*" 0.5  0 9800 "2x100 Islands MSE vs. Inserted Genomes" ./hpml_inserted_2_pop_100.png
-python plot_examm_fitness_vs_inserted.py "/Users/tdesell/Dropbox/data/2020_hpml/coal/island_10_pop_10_cpu_*" 0.5  0 9800 "10x10 Islands MSE vs. Inserted Genomes" ./hpml_inserted_10_pop_10.png
-python plot_examm_fitness_vs_inserted.py "/Users/tdesell/Dropbox/data/2020_hpml/coal/island_20_pop_5_cpu_*" 0.5  0 9800 "20x5 Islands MSE vs. Inserted Genomes" ./hpml_inserted_20_pop_5.png
+python plot_examm_fitness.py 0.0 0.25 time "1 Island" island_1_time.png ~/Dropbox/_extended_diff_islands_populations/coal/island_1_pop_*
+python plot_examm_fitness.py 0.0 0.25 time "5 Islands" island_5_time.png ~/Dropbox/_extended_diff_islands_populations/coal/island_5_pop_*
+python plot_examm_fitness.py 0.0 0.25 time "10 Islands" island_10_time.png ~/Dropbox/_extended_diff_islands_populations/coal/island_10_pop_*
+python plot_examm_fitness.py 0.0 0.25 time "20 Islands" island_20_time.png ~/Dropbox/_extended_diff_islands_populations/coal/island_20_pop_*
 
-python plot_examm_fitness_vs_time.py "/Users/tdesell/Dropbox/data/2020_hpml/coal/island_2_pop_100_cpu_*" 0.5  0 9800 "2x100 Islands MSE vs. Time" ./hpml_time_2_pop_100.png
-python plot_examm_fitness_vs_time.py "/Users/tdesell/Dropbox/data/2020_hpml/coal/island_10_pop_10_cpu_*" 0.5  0 9800 "10x10 Islands MSE vs. Time" ./hpml_time_10_pop_10.png
-python plot_examm_fitness_vs_time.py "/Users/tdesell/Dropbox/data/2020_hpml/coal/island_20_pop_5_cpu_*" 0.5  0 9800 "20x5 Islands MSE vs. Time" ./hpml_time_20_pop_5.png
-
+python plot_examm_fitness.py 0.0 0.25 inserted "1 Island" island_1_inserted.png ~/Dropbox/_extended_diff_islands_populations/coal/island_1_pop_*
+python plot_examm_fitness.py 0.0 0.25 inserted "5 Islands" island_5_inserted.png ~/Dropbox/_extended_diff_islands_populations/coal/island_5_pop_*
+python plot_examm_fitness.py 0.0 0.25 inserted "10 Islands" island_10_inserted.png ~/Dropbox/_extended_diff_islands_populations/coal/island_10_pop_*
+python plot_examm_fitness.py 0.0 0.25 inserted "20 Islands" island_20_inserted.png ~/Dropbox/_extended_diff_islands_populations/coal/island_20_pop_*
