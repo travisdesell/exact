@@ -97,6 +97,12 @@ void Island::copy_two_random_genomes(uniform_real_distribution<double> &rng_0_1,
 //inserts a copy of the genome, caller of the function will need to delete their
 //pointer
 int32_t Island::insert_genome(RNN_Genome *genome) {
+
+    if(genome->get_generation_id() <= erased_generation_id){
+        Log::info("genome already erased, not inserting");
+        return -1;
+    }
+
     Log::debug("getting fitness of genome copy\n");
 
     double new_fitness = genome->get_fitness();
@@ -186,3 +192,27 @@ void Island::print(string indent) {
         Log::info("%s\t%s\n", indent.c_str(), genomes[i]->print_statistics().c_str());
     }
 }
+
+void Island::erase_island() {
+
+    for (int32_t i = 0; i < genomes.size(); i++) {
+        if(genomes[i]->get_generation_id() > erased_generation_id){
+            erased_generation_id=genomes[i]->get_generation_id();
+        }
+    }
+    genomes.clear();
+    Log::info("Worst island size after erased: %d", genomes.size());
+    if(genomes.size()!=0){
+        Log::error("The worst island is not fully erased!");
+    }
+}
+
+int32_t Island::get_erased_generation_id(){
+
+    return erased_generation_id;
+}
+
+void Island::set_repopulating(){
+    status = REPOPULATING;
+}
+

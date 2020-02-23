@@ -130,6 +130,16 @@ bool IslandSpeciationStrategy::islands_full() const {
 //returns 0 if a new global best, < 0 if not inserted, > 0 otherwise
 int32_t IslandSpeciationStrategy::insert_genome(RNN_Genome* genome) {
     Log::debug("inserting genome!\n");
+    if(inserted_genomes >100 && inserted_genomes % num_genomes_check_on_island == 0){
+        if (check_on_island_method.compare("EraseWorst") ==0 || check_on_island_method.compare("") == 0){
+            int32_t worst_island = get_worst_island();
+            if (worst_island>=0){
+                islands[worst_island]->erase_island();
+            }
+            else Log::error("Didn't find the worst island!");
+            islands[worst_island]->set_repopulating();
+        }
+    }
     inserted_genomes++;
     int32_t island = genome->get_group_id();
 
@@ -146,6 +156,21 @@ int32_t IslandSpeciationStrategy::insert_genome(RNN_Genome* genome) {
     } else {
         return insert_position; //will be -1 if not inserted, or > 0 if not the global best
     }
+}
+
+int32_t IslandSpeciationStrategy::get_worst_island() {
+    int32_t worst_island = -1;
+    double worst_best_fitness = 0;
+    for (int32_t i = 0; i < (int32_t)islands.size(); i++) {
+        if (islands[i]->size() > 0) {
+            double island_best_fitness = islands[i]->get_best_fitness();
+            if (island_best_fitness > worst_best_fitness) {
+                worst_best_fitness = island_best_fitness;
+                worst_island = i;
+            }
+        }
+    }
+    return worst_island;
 }
 
 RNN_Genome* IslandSpeciationStrategy::generate_genome(uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator, function<void (int32_t, RNN_Genome*)> &mutate, function<RNN_Genome* (RNN_Genome*, RNN_Genome *)> &crossover) {

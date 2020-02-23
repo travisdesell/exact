@@ -34,8 +34,9 @@ class IslandSpeciationStrategy : public SpeciationStrategy {
 
         RNN_Genome *minimal_genome; /**< keep a reference to a minimal genome so we can re-use it across islands and not duplicate innovation numbers. */
 
-        string check_on_island_method;
-        int32_t num_genomes_check_on_island;
+        string check_on_island_method; /**< The method used to find the worst island in population */
+
+        int32_t num_genomes_check_on_island; /**< How frequently to find the worst island in population */
         /**
          * All the islands which contain the genomes for this speciation strategy.
          */ 
@@ -104,6 +105,13 @@ class IslandSpeciationStrategy : public SpeciationStrategy {
          * for all the islands, or > 0 otherwise.
          */
         int32_t insert_genome(RNN_Genome* genome);
+
+        /**
+         * find the worst island in the population
+         * 
+         *  \return the worst island id
+         */
+        int32_t get_worst_island();
 
         /**
          * Generates a new genome.
