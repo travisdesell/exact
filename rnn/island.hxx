@@ -21,7 +21,7 @@ class Island {
         int32_t id; /**< An integer ID for this island. */
         int32_t max_size; /**< The maximum number of genomes in the island. */
         int32_t status; /**> The status of this island (either Island:INITIALIZING, Island::FILLED or  Island::REPOPULATING */
-
+        int32_t erased_generation_id; /**< The largest generation id of an erased island, to prevent deleted genomes get inserted back */
         /**
          * The genomes on this island, stored in sorted order best (front) to worst (back).
          */
@@ -143,6 +143,21 @@ class Island {
          * \param indent is how much to indent what is printed out
          */
         void print(string indent = "");
+        
+        /**
+         * erases the entire island and set the erased_generation_id.
+         */
+        void erase_island();
+
+        /**
+         * returns the get_erased_generation_id.
+         */
+        int32_t get_erased_generation_id();
+
+        /**
+         * after erasing the island, sets the island status to repopulating.
+         */
+        void set_repopulating();
 };
 
 #endif
