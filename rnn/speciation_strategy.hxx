@@ -3,7 +3,8 @@
 
 #include <functional>
 using std::function;
-
+#include <string>
+using std::string;
 #include <random>
 using std::minstd_rand0;
 using std::uniform_real_distribution;
@@ -77,6 +78,16 @@ class SpeciationStrategy {
          * \param indent is how much to indent what is printed out
          */
         virtual void print(string indent = "") const = 0;
+
+        /**
+         * Gets speciation strategy information headers for logs
+         */
+        virtual string get_strategy_information_headers() const = 0;
+
+        /**
+         * Gets speciation strategy information values for logs
+         */
+        virtual string get_strategy_information_values() const = 0;
 };
 
 #endif
