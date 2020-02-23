@@ -50,7 +50,7 @@ using std::to_string;
 
 EXAMM::~EXAMM() {
     RNN_Genome *genome;
-    for (int32_t i = 0; i < genomes.size(); i++) {
+    for (uint32_t i = 0; i < genomes.size(); i++) {
         while (genomes[i].size() > 0) {
             genome = genomes[i].back();
             genomes[i].pop_back();
@@ -340,7 +340,7 @@ void EXAMM::write_memory_log(string filename) {
 void EXAMM::set_possible_node_types(vector<string> possible_node_type_strings) {
     possible_node_types.clear();
 
-    for (int32_t i = 0; i < possible_node_type_strings.size(); i++) {
+    for (uint32_t i = 0; i < possible_node_type_strings.size(); i++) {
         string node_type_s = possible_node_type_strings[i];
 
         bool found = false;
@@ -420,7 +420,7 @@ RNN_Genome* EXAMM::generate_for_transfer_learning(string file_name, int extra_in
     //iterate over all the input parameters and determine which
     //need to be kept
     vector<int> new_input_parameter_id;
-    for (int32_t i = 0; i < genome->input_parameter_names.size(); i++) {
+    for (uint32_t i = 0; i < genome->input_parameter_names.size(); i++) {
         bool keep_parameter = true;
         for (auto removed : inputs_to_remove) {
             if (genome->input_parameter_names[i] == removed ) {
@@ -435,7 +435,7 @@ RNN_Genome* EXAMM::generate_for_transfer_learning(string file_name, int extra_in
     //iterate over all the output parameters and determine which
     //need to be kept
     vector<int> new_output_parameter_id;
-    for (int32_t i = 0; i < genome->output_parameter_names.size(); i++) {
+    for (uint32_t i = 0; i < genome->output_parameter_names.size(); i++) {
         bool keep_parameter = true;
         for ( auto removed: outputs_to_remove ) {
             if (genome->output_parameter_names[i] == removed) {
@@ -449,10 +449,10 @@ RNN_Genome* EXAMM::generate_for_transfer_learning(string file_name, int extra_in
 
     vector<RNN_Node_Interface*> new_nodes;
     int count = 0;
-    for (int32_t i = 0; i < genome->nodes.size(); i++) {
+    for (uint32_t i = 0; i < genome->nodes.size(); i++) {
         if (genome->nodes[i]->get_layer_type() == INPUT_LAYER) {
             for (auto id : new_input_parameter_id) {
-                if (id == i) {
+                if (id == (signed) i) {
                     new_nodes.push_back(genome->nodes[i]);
                 }
             }
@@ -497,7 +497,7 @@ RNN_Genome* EXAMM::generate_for_transfer_learning(string file_name, int extra_in
                 input_nodes.push_back(node);
             }
         } else {
-            for (int32_t j = 0; j < node->get_number_weights(); j++)
+            for (uint32_t j = 0; j < node->get_number_weights(); j++)
                 weights_count++;
         }
         flag = false;
@@ -1045,11 +1045,11 @@ RNN_Genome* EXAMM::crossover(RNN_Genome *p1, RNN_Genome *p2) {
     Log::debug("p1->island: %d, p2->island: %d\n", p1->get_group_id(), p2->get_group_id());
     Log::debug("p1->number_inputs: %d, p2->number_inputs: %d\n", p1->get_number_inputs(), p2->get_number_inputs());
 
-    for (int i = 0; i < p1->nodes.size(); i++) {
+    for (uint32_t i = 0; i < p1->nodes.size(); i++) {
         Log::debug("p1 node[%d], in: %d, depth: %lf, layer_type: %d, node_type: %d, reachable: %d, enabled: %d\n", i, p1->nodes[i]->get_innovation_number(), p1->nodes[i]->get_depth(), p1->nodes[i]->get_layer_type(), p1->nodes[i]->get_node_type(), p1->nodes[i]->is_reachable(), p1->nodes[i]->is_enabled());
     }
 
-    for (int i = 0; i < p2->nodes.size(); i++) {
+    for (uint32_t i = 0; i < p2->nodes.size(); i++) {
         Log::debug("p2 node[%d], in: %d, depth: %lf, layer_type: %d, node_type: %d, reachable: %d, enabled: %d\n", i, p2->nodes[i]->get_innovation_number(), p2->nodes[i]->get_depth(), p2->nodes[i]->get_layer_type(), p2->nodes[i]->get_node_type(), p2->nodes[i]->is_reachable(), p2->nodes[i]->is_enabled());
     }
 
