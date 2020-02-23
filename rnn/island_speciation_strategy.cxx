@@ -355,7 +355,7 @@ RNN_Genome* IslandSpeciationStrategy::generate_genome(uniform_real_distribution<
         //set the island for the genome and increment to the next island
         genome->set_group_id(generation_island);
         generation_island++;
-        if (generation_island >= islands.size()) generation_island = 0; 
+        if (generation_island >= (signed) islands.size()) generation_island = 0; 
 
         //set th generation id and increment generated genomes
         genome->set_generation_id(generated_genomes);
