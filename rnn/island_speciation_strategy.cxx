@@ -19,7 +19,6 @@ using std::string;
 
 #include "common/log.hxx"
 
-<<<<<<< HEAD
 IslandSpeciationStrategy::IslandSpeciationStrategy(int32_t _number_of_islands, int32_t _max_island_size, double _mutation_rate, double _intra_island_crossover_rate, 
                                                         double _inter_island_crossover_rate, RNN_Genome *seed_genome, string _check_on_island_method, 
                                                         int32_t _num_genomes_check_on_island, int32_t _number_stir_mutations) : 
@@ -34,13 +33,6 @@ IslandSpeciationStrategy::IslandSpeciationStrategy(int32_t _number_of_islands, i
                                                             check_on_island_method(_check_on_island_method),
                                                             num_genomes_check_on_island(_num_genomes_check_on_island),
                                                             number_stir_mutations(_number_stir_mutations) {
-=======
-/**
- * 
- * \param start_filled if true, then islands will start out full of copies of the seed genome. _number_stir_mutations determines how many mutations are applied to these genome.
- */
-IslandSpeciationStrategy::IslandSpeciationStrategy(int32_t _number_of_islands, int32_t _max_island_size, double _mutation_rate, double _intra_island_crossover_rate, double _inter_island_crossover_rate, RNN_Genome *seed_genome, int32_t _number_stir_mutations) : generation_island(0), number_of_islands(_number_of_islands), max_island_size(_max_island_size), mutation_rate(_mutation_rate), intra_island_crossover_rate(_intra_island_crossover_rate), inter_island_crossover_rate(_inter_island_crossover_rate), generated_genomes(0), inserted_genomes(0), minimal_genome(seed_genome), number_stir_mutations(_number_stir_mutations) {
->>>>>>> 6c39632abe651809588ed7b8f5c0d2343fd7561d
 
     double rate_sum = mutation_rate + intra_island_crossover_rate + inter_island_crossover_rate;
     if (rate_sum != 1.0) {
