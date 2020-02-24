@@ -297,6 +297,12 @@ int main(int argc, char** argv) {
     string check_on_island_method = "";
     get_argument(arguments, "--check_on_island_method", false, check_on_island_method);
 
+    string repopulation_method = "";
+    get_argument(arguments, "--repopulation_method", false, repopulation_method);
+
+    int32_t repopulation_mutations = 0;
+    get_argument(arguments, "--repopulation_mutations", false, repopulation_mutations);
+
     int32_t bp_iterations;
     get_argument(arguments, "--bp_iterations", true, bp_iterations);
 
@@ -375,6 +381,7 @@ int main(int argc, char** argv) {
 
     if (rank == 0) {
         examm = new EXAMM(population_size, number_islands, max_genomes, speciation_method, num_genomes_check_on_island, check_on_island_method,
+            repopulation_method, repopulation_mutations,
             time_series_sets->get_input_parameter_names(),
             time_series_sets->get_output_parameter_names(),
             time_series_sets->get_normalize_mins(),

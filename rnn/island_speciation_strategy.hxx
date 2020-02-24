@@ -37,6 +37,12 @@ class IslandSpeciationStrategy : public SpeciationStrategy {
         string check_on_island_method; /**< The method used to find the worst island in population */
 
         int32_t num_genomes_check_on_island; /**< How frequently to find the worst island in population */
+
+        string repopulation_method; /**< The method used to repopulate the island after being erased */
+        
+        int32_t repopulation_mutations; /**< The number of mutations when coping the best island to an empty island */
+
+        // int32_t worst_island;
         /**
          * All the islands which contain the genomes for this speciation strategy.
          */ 
@@ -107,11 +113,18 @@ class IslandSpeciationStrategy : public SpeciationStrategy {
         int32_t insert_genome(RNN_Genome* genome);
 
         /**
-         * find the worst island in the population
+         * find the worst island in the population, the worst island's best genome is the worst among all the islands
          * 
          *  \return the worst island id
          */
-        int32_t get_worst_island();
+        int32_t get_worst_island_by_best_genome();
+
+        /**
+         * find the best island in the population, the best island's best genome is the best among all the islands
+         * 
+         *  \return the best island id
+         */
+        int32_t get_best_island_by_best_genome();
 
         /**
          * Generates a new genome.

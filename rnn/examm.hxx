@@ -41,6 +41,8 @@ class EXAMM {
         string speciation_method;
         string check_on_island_method;
         int32_t num_genomes_check_on_island;
+        string repopulation_method;
+        int32_t repopulation_mutations;
         SpeciationStrategy *speciation_strategy;
 
         int32_t edge_innovation_count;
@@ -123,6 +125,7 @@ class EXAMM {
 
     public:
         EXAMM(int32_t _population_size, int32_t _number_islands, int32_t _max_genomes, string _speciation_method, int32_t _num_genomes_check_on_island, string _check_on_island_method,
+            string _repopulation_method, int32_t _repopulation_mutations,
             const vector<string> &_input_parameter_names,
             const vector<string> &_output_parameter_names,
             const map<string,double> &_normalize_mins,
