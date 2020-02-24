@@ -50,14 +50,13 @@ class IslandSpeciationStrategy : public SpeciationStrategy {
          * \param number_of_islands specifies how many islands it will us e
          * \param max_island_size specifies the maximum number of gneomes in an island
          */
-        IslandSpeciationStrategy(int32_t _number_of_islands, int32_t _max_island_size, double _mutation_rate, double _intra_island_crossover_rate, double _inter_island_crossover_rate, RNN_Genome *seed_genome, int32_t number_stir_mutations);
+        IslandSpeciationStrategy(int32_t _number_of_islands, int32_t _max_island_size, double _mutation_rate, double _intra_island_crossover_rate, double _inter_island_crossover_rate, RNN_Genome *_seed_genome, int32_t _number_stir_mutations);
 
         /**
          *
-         * \param mutate used to apply mutations to the copies of the seed genome. 
-         * \param number_stir_mutations determines how many mutations are applied to each copy 
+         * \param Modification function to be applied to every copy of the seed_genome 
          */
-        IslandSpeciationStrategy(int32_t _number_of_islands, int32_t _max_island_size, double _mutation_rate, double _intra_island_crossover_rate, double _inter_island_crossover_rate, RNN_Genome *seed_genome, int32_t number_stir_mutations, function<void (int32_t, RNN_Genome*)> &mutate);
+        IslandSpeciationStrategy(int32_t _number_of_islands, int32_t _max_island_size, double _mutation_rate, double _intra_island_crossover_rate, double _inter_island_crossover_rate, RNN_Genome *_seed_genome, function<void (RNN_Genome*)> &modify);
         
         /**
          * \return the number of generated genomes.
