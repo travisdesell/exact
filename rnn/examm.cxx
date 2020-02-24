@@ -60,6 +60,7 @@ EXAMM::~EXAMM() {
 }
 
 EXAMM::EXAMM(int32_t _population_size, int32_t _number_islands, int32_t _max_genomes, string _speciation_method, int32_t _num_genomes_check_on_island, string _check_on_island_method,
+                string _repopulation_method, int32_t _repopulation_mutations,
                 const vector<string> &_input_parameter_names,
                 const vector<string> &_output_parameter_names,
                 const map<string,double> &_normalize_mins,
@@ -80,6 +81,8 @@ EXAMM::EXAMM(int32_t _population_size, int32_t _number_islands, int32_t _max_gen
                                         speciation_method(_speciation_method),
                                         num_genomes_check_on_island(_num_genomes_check_on_island),
                                         check_on_island_method(_check_on_island_method),
+                                        repopulation_method(_repopulation_method), 
+                                        repopulation_mutations(_repopulation_mutations),
                                         number_inputs(_input_parameter_names.size()),
                                         number_outputs(_output_parameter_names.size()),
                                         bp_iterations(_bp_iterations),
@@ -347,7 +350,7 @@ RNN_Genome* EXAMM::get_worst_genome() {
 bool EXAMM::insert_genome(RNN_Genome* genome) {
     total_bp_epochs += genome->get_bp_iterations();
 
-    Log::info("genomes evaluated: %10d , attempting to insert: %s\n", (speciation_strategy->get_inserted_genomes() + 1), parse_fitness(genome->get_fitness()).c_str());
+    // Log::info("genomes evaluated: %10d , attempting to insert: %s\n", (speciation_strategy->get_inserted_genomes() + 1), parse_fitness(genome->get_fitness()).c_str());
 
     if (!genome->sanity_check()) {
         Log::error("genome failed sanity check on insert!\n");

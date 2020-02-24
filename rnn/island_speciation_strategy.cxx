@@ -130,16 +130,20 @@ bool IslandSpeciationStrategy::islands_full() const {
 //returns 0 if a new global best, < 0 if not inserted, > 0 otherwise
 int32_t IslandSpeciationStrategy::insert_genome(RNN_Genome* genome) {
     Log::debug("inserting genome!\n");
-    if(inserted_genomes >100 && inserted_genomes % num_genomes_check_on_island == 0){
-        if (check_on_island_method.compare("EraseWorst") ==0 || check_on_island_method.compare("") == 0){
-            int32_t worst_island = get_worst_island();
-            if (worst_island>=0){
-                islands[worst_island]->erase_island();
+    if (num_genomes_check_on_island!=0){
+        if(inserted_genomes >1 && inserted_genomes % num_genomes_check_on_island == 0){
+            if (check_on_island_method.compare("EraseWorst") ==0 || check_on_island_method.compare("") == 0){
+                int32_t worst_island = get_worst_island_by_best_genome();
+                Log::info("found worst island: %d \n",worst_island);
+                if (worst_island>=0){
+                    islands[worst_island]->erase_island();
+                }
+                else Log::error("Didn't find the worst island!");
+                islands[worst_island]->set_repopulating();
             }
-            else Log::error("Didn't find the worst island!");
-            islands[worst_island]->set_repopulating();
         }
     }
+
     inserted_genomes++;
     int32_t island = genome->get_group_id();
 
@@ -158,7 +162,7 @@ int32_t IslandSpeciationStrategy::insert_genome(RNN_Genome* genome) {
     }
 }
 
-int32_t IslandSpeciationStrategy::get_worst_island() {
+int32_t IslandSpeciationStrategy::get_worst_island_by_best_genome() {
     int32_t worst_island = -1;
     double worst_best_fitness = 0;
     for (int32_t i = 0; i < (int32_t)islands.size(); i++) {
@@ -171,6 +175,21 @@ int32_t IslandSpeciationStrategy::get_worst_island() {
         }
     }
     return worst_island;
+}
+
+int32_t IslandSpeciationStrategy::get_best_island_by_best_genome(){
+    int32_t best_island = -1;
+    double best_best_fitness = 0;
+    for (int32_t i = 0; i < (int32_t)islands.size(); i++) {
+        if (islands[i]->size() > 0) {
+            double island_best_fitness = islands[i]->get_best_fitness();
+            if (island_best_fitness > best_best_fitness) {
+                best_best_fitness = island_best_fitness;
+                best_island = i;
+            }
+        }
+    }
+    return best_island;
 }
 
 RNN_Genome* IslandSpeciationStrategy::generate_genome(uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator, function<void (int32_t, RNN_Genome*)> &mutate, function<RNN_Genome* (RNN_Genome*, RNN_Genome *)> &crossover) {
@@ -276,7 +295,7 @@ RNN_Genome* IslandSpeciationStrategy::generate_genome(uniform_real_distribution<
                 genome = crossover(parent1, parent2);
             } else {
                 //inter-island crossover
-                Log::info("performing inter-island crossover\n");
+                // Log::info("performing inter-island crossover\n");
 
                 //get a random genome from this island
                 RNN_Genome *parent1 = NULL; 
@@ -307,23 +326,26 @@ RNN_Genome* IslandSpeciationStrategy::generate_genome(uniform_real_distribution<
         }
 
     } else if (island->is_repopulating()) {
-        //here's where you put your repopulation code
         //select two other islands (non-overlapping) at random, and select genomes
         //from within those islands and generate a child via crossover
 
         Log::info("island is repopulating");
 
         while (genome == NULL) {
-            //get two other islands that are not the island we'r generating for
-            //note the -1 and -2 on the number_of_islands. We subtract one from both
-            //so that if we randomly select this island id we increment the target
-            //island. Likewise, we increment parent island 2 
-            int32_t parent_island1 = (number_of_islands - 1) * rng_0_1(generator);
-            int32_t parent_island2 = (number_of_islands - 2) * rng_0_1(generator);
-            if (parent_island1 >= generation_island) parent_island1++;
-            if (parent_island2 >= generation_island) parent_island2++;
 
-            if (parent_island2 >= parent_island1) parent_island2++;
+            Log::info("generation island: %d \n", generation_island);
+
+            int32_t parent_island1;
+            do {
+                parent_island1 = (number_of_islands - 1) * rng_0_1(generator);
+            } while (parent_island1 == generation_island);
+            Log::info("parent island 1: %d \n", parent_island1);
+
+            int32_t parent_island2;
+            do {
+                parent_island2 = (number_of_islands - 1) * rng_0_1(generator);
+            } while (parent_island2 == generation_island || parent_island2 == parent_island1);
+            Log::info("parent island 2: %d \n", parent_island2);
 
             RNN_Genome *parent1 = NULL;
             islands[parent_island1]->copy_random_genome(rng_0_1, generator, &parent1);
