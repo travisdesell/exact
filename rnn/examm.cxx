@@ -138,8 +138,6 @@ EXAMM::EXAMM(int32_t _population_size, int32_t _number_islands, int32_t _max_gen
             Log::error("doing transfer!\n");
             seed_genome = generate_for_transfer_learning(genome_file_name, no_extra_inputs, no_extra_outputs );
             Log::error("generated seed genome, number of inputs: %d, number of outputs: %d\n", seed_genome->get_number_inputs(), seed_genome->get_number_outputs());
-
-            //printf("Hello2\n");
         }
 
         seed_genome->set_generated_by("initial");

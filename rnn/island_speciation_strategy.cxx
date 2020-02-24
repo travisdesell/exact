@@ -23,7 +23,13 @@ using std::string;
  * 
  * \param start_filled if true, then islands will start out full of copies of the seed genome. _number_stir_mutations determines how many mutations are applied to these genome.
  */
-IslandSpeciationStrategy::IslandSpeciationStrategy(int32_t _number_of_islands, int32_t _max_island_size, double _mutation_rate, double _intra_island_crossover_rate, double _inter_island_crossover_rate, RNN_Genome *seed_genome, int32_t _number_stir_mutations) : generation_island(0), number_of_islands(_number_of_islands), max_island_size(_max_island_size), mutation_rate(_mutation_rate), intra_island_crossover_rate(_intra_island_crossover_rate), inter_island_crossover_rate(_inter_island_crossover_rate), generated_genomes(0), inserted_genomes(0), minimal_genome(seed_genome), number_stir_mutations(_number_stir_mutations) {
+IslandSpeciationStrategy::IslandSpeciationStrategy(
+        int32_t _number_of_islands, int32_t _max_island_size, double _mutation_rate, double _intra_island_crossover_rate,
+        double _inter_island_crossover_rate, RNN_Genome *seed_genome, int32_t _number_stir_mutations) :
+            generation_island(0), number_of_islands(_number_of_islands), max_island_size(_max_island_size), 
+            mutation_rate(_mutation_rate), intra_island_crossover_rate(_intra_island_crossover_rate), 
+            inter_island_crossover_rate(_inter_island_crossover_rate), generated_genomes(0), inserted_genomes(0),
+            minimal_genome(seed_genome), number_stir_mutations(_number_stir_mutations) {
 
     double rate_sum = mutation_rate + intra_island_crossover_rate + inter_island_crossover_rate;
     if (rate_sum != 1.0) {
@@ -47,7 +53,13 @@ IslandSpeciationStrategy::IslandSpeciationStrategy(int32_t _number_of_islands, i
 /**
  * 
  */
-IslandSpeciationStrategy::IslandSpeciationStrategy(int32_t _number_of_islands, int32_t _max_island_size, double _mutation_rate, double _intra_island_crossover_rate, double _inter_island_crossover_rate, RNN_Genome *seed_genome, int32_t _number_stir_mutations, function<void (int32_t, RNN_Genome*)> &mutate) : generation_island(0), number_of_islands(_number_of_islands), max_island_size(_max_island_size), mutation_rate(_mutation_rate), intra_island_crossover_rate(_intra_island_crossover_rate), inter_island_crossover_rate(_inter_island_crossover_rate), generated_genomes(0), inserted_genomes(0), minimal_genome(seed_genome), number_stir_mutations(_number_stir_mutations) {
+IslandSpeciationStrategy::IslandSpeciationStrategy(
+        int32_t _number_of_islands, int32_t _max_island_size, double _mutation_rate, double _intra_island_crossover_rate,
+        double _inter_island_crossover_rate, RNN_Genome *seed_genome, function<void (RNN_Genome*)>& modify) : 
+            generation_island(0), number_of_islands(_number_of_islands), max_island_size(_max_island_size), 
+            mutation_rate(_mutation_rate), intra_island_crossover_rate(_intra_island_crossover_rate), 
+            inter_island_crossover_rate(_inter_island_crossover_rate), generated_genomes(_max_island_size * _number_of_islands),
+            inserted_genomes(0), minimal_genome(seed_genome), number_stir_mutations(0) {
 
     double rate_sum = mutation_rate + intra_island_crossover_rate + inter_island_crossover_rate;
     if (rate_sum != 1.0) {
@@ -64,7 +76,7 @@ IslandSpeciationStrategy::IslandSpeciationStrategy(int32_t _number_of_islands, i
         genomes.reserve(size);
         for (int i = 0 ; i < size ; i += 1) {
             RNN_Genome *clone = seed_genome->copy();
-            if (nmutations) mutate(nmutations, clone);
+            modify(clone);
             genomes.push_back(clone);
         }
 
@@ -73,8 +85,11 @@ IslandSpeciationStrategy::IslandSpeciationStrategy(int32_t _number_of_islands, i
 
     for (int i = 0 ; i < number_of_islands; i += 1)
         islands.push_back(make_filled_island(i, seed_genome, max_island_size, number_stir_mutations, mutate));
+    
     //set the generation id for the initial minimal genome
+    
     minimal_genome->set_generation_id(generated_genomes);
+    
     generated_genomes++;
 }
 
