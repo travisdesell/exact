@@ -21,6 +21,9 @@ using std::to_string;
 Island::Island(int32_t _id, int32_t _max_size) : id(_id), max_size(_max_size), status(Island::INITIALIZING) {
 }
 
+Island::Island(int32_t _id, vector<RNN_Genome*> _genomes) : id(_id), max_size(_genomes.size()), genomes(_genomes), status(Island::FILLED) {
+}
+
 RNN_Genome* Island::get_best_genome() {
     if (genomes.size() == 0)  return NULL;
     else return genomes[0];
