@@ -204,6 +204,7 @@ void Island::erase_island() {
         }
     }
     genomes.clear();
+    erased=true;
     Log::info("Worst island size after erased: %d", genomes.size());
     if(genomes.size()!=0){
         Log::error("The worst island is not fully erased!");
@@ -217,5 +218,9 @@ int32_t Island::get_erased_generation_id(){
 
 void Island::set_repopulating(){
     status = REPOPULATING;
+}
+
+bool Island::been_erased(){
+    return erased;
 }
 
