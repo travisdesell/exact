@@ -59,7 +59,7 @@ class IslandSpeciationStrategy : public SpeciationStrategy {
          * \param number_of_islands specifies how many islands it will us e
          * \param max_island_size specifies the maximum number of gneomes in an island
          */
-        IslandSpeciationStrategy(int32_t _number_of_islands, int32_t _max_island_size, double _mutation_rate, double _intra_island_crossover_rate, double _inter_island_crossover_rate, RNN_Genome *seed_genome, string _check_on_island_method, int32_t _num_genomes_check_on_island, int32_t _number_stir_mutations);
+        IslandSpeciationStrategy(int32_t _number_of_islands, int32_t _max_island_size, double _mutation_rate, double _intra_island_crossover_rate, double _inter_island_crossover_rate, RNN_Genome *seed_genome, string _check_on_island_method, string _repopulation_method, int32_t _repopulation_mutations, int32_t _num_genomes_check_on_island, int32_t _number_stir_mutations);
 
         /**
          *
@@ -162,6 +162,13 @@ class IslandSpeciationStrategy : public SpeciationStrategy {
          * Gets speciation strategy information values for logs
          */
         string get_strategy_information_values() const;
+
+        /**
+         * Island repopulation through two random parents from two seperate islands, 
+         * parents can be random genomes or best genome from the island
+         */
+        RNN_Genome* parents_repopulation(string method,uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator, function<void (int32_t, RNN_Genome*)> &mutate, function<RNN_Genome* (RNN_Genome*, RNN_Genome *)> &crossover);
+
 };
 
 

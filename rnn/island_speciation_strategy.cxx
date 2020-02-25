@@ -20,7 +20,8 @@ using std::string;
 #include "common/log.hxx"
 
 IslandSpeciationStrategy::IslandSpeciationStrategy(int32_t _number_of_islands, int32_t _max_island_size, double _mutation_rate, double _intra_island_crossover_rate, 
-                                                        double _inter_island_crossover_rate, RNN_Genome *seed_genome, string _check_on_island_method, 
+                                                        double _inter_island_crossover_rate, RNN_Genome *seed_genome, string _check_on_island_method,
+                                                        string _repopulation_method, int32_t _repopulation_mutations, 
                                                         int32_t _num_genomes_check_on_island, int32_t _number_stir_mutations) : 
                                                             generation_island(0), 
                                                             number_of_islands(_number_of_islands), 
@@ -31,6 +32,8 @@ IslandSpeciationStrategy::IslandSpeciationStrategy(int32_t _number_of_islands, i
                                                             generated_genomes(0), inserted_genomes(0), 
                                                             minimal_genome(seed_genome), 
                                                             check_on_island_method(_check_on_island_method),
+                                                            repopulation_method(_repopulation_method),
+                                                            repopulation_mutations(_repopulation_mutations),
                                                             num_genomes_check_on_island(_num_genomes_check_on_island),
                                                             number_stir_mutations(_number_stir_mutations) {
 
@@ -364,40 +367,22 @@ RNN_Genome* IslandSpeciationStrategy::generate_genome(uniform_real_distribution<
 
         Log::info("island is repopulating");
 
-        while (genome == NULL) {
-
-            Log::info("generation island: %d \n", generation_island);
-
-            int32_t parent_island1;
-            do {
-                parent_island1 = (number_of_islands - 1) * rng_0_1(generator);
-            } while (parent_island1 == generation_island);
-            Log::info("parent island 1: %d \n", parent_island1);
-
-            int32_t parent_island2;
-            do {
-                parent_island2 = (number_of_islands - 1) * rng_0_1(generator);
-            } while (parent_island2 == generation_island || parent_island2 == parent_island1);
-            Log::info("parent island 2: %d \n", parent_island2);
-
-            RNN_Genome *parent1 = NULL;
-            islands[parent_island1]->copy_random_genome(rng_0_1, generator, &parent1);
-            RNN_Genome *parent2 = NULL;
-            islands[parent_island2]->copy_random_genome(rng_0_1, generator, &parent2);
-
-            //swap so the first parent is the more fit parent
-            if (parent1->get_fitness() > parent2->get_fitness()) {
-                RNN_Genome *tmp = parent1;
-                parent1 = parent2;
-                parent2 = tmp;
+        while (genome == NULL) { 
+            if (repopulation_method.compare("randomParents")==0 || repopulation_method.compare("randomparents")==0){
+                Log::info("island is repopulating through random parents method!\n");
+                genome = parents_repopulation("random",rng_0_1, generator, mutate, crossover);
+            } else if (repopulation_method.compare("bestParents")==0 || repopulation_method.compare("bestparents")==0){
+                Log::info("island is repopulating through best parents method!\n");
+                genome = parents_repopulation("best",rng_0_1, generator, mutate, crossover);
+            } else if (repopulation_method.compare("bestGenome")==0 || repopulation_method.compare("bestgenome")==0){
+                genome = get_best_genome()->copy();
+                if (this->repopulation_mutations){
+                    mutate(this->repopulation_mutations, genome);
+                }
             }
-
-            genome = crossover(parent1, parent2);
-
-            if (genome->outputs_unreachable()) {
-                //no path from at least one input to the outputs
-                delete genome;
-                genome = NULL;
+            else{
+                Log::error("Wrong repopulation_method argument");
+                Log::debug("Wrong repopulation_method argument");
             }
         }
 
@@ -469,3 +454,40 @@ string IslandSpeciationStrategy::get_strategy_information_values() const {
     return info_value;
 }
  
+RNN_Genome* IslandSpeciationStrategy::parents_repopulation(string method, uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator, function<void (int32_t, RNN_Genome*)> &mutate, function<RNN_Genome* (RNN_Genome*, RNN_Genome *)> &crossover){
+    RNN_Genome* genome = NULL;
+    Log::info("generation island: %d \n", generation_island);
+    int32_t parent_island1;
+    do {
+        parent_island1 = (number_of_islands - 1) * rng_0_1(generator);
+    } while (parent_island1 == generation_island);
+    Log::info("parent island 1: %d \n", parent_island1);
+    int32_t parent_island2;
+    do {
+        parent_island2 = (number_of_islands - 1) * rng_0_1(generator);
+    } while (parent_island2 == generation_island || parent_island2 == parent_island1);
+    Log::info("parent island 2: %d \n", parent_island2);
+    RNN_Genome *parent1 = NULL;
+    RNN_Genome *parent2 = NULL;
+    if (method.compare("random")==0){
+        islands[parent_island1]->copy_random_genome(rng_0_1, generator, &parent1);
+        islands[parent_island2]->copy_random_genome(rng_0_1, generator, &parent2);
+    }else if(method.compare("best")==0){
+        parent1=islands[parent_island1]->get_best_genome();
+        parent2=islands[parent_island2]->get_best_genome();
+    }
+    //swap so the first parent is the more fit parent
+    if (parent1->get_fitness() > parent2->get_fitness()) {
+        RNN_Genome *tmp = parent1;
+        parent1 = parent2;
+        parent2 = tmp;
+    }
+    genome = crossover(parent1, parent2);
+    if (genome->outputs_unreachable()) {
+        //no path from at least one input to the outputs
+        delete genome;
+        genome = NULL;
+    }
+    return genome;
+}
+
