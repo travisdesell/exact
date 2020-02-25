@@ -127,7 +127,7 @@ EXAMM::EXAMM(int32_t _population_size, int32_t _number_islands, int32_t _max_gen
     if (speciation_method.compare("island") == 0 || speciation_method.compare("") == 0) {
         //generate a minimal feed foward network as the seed genome
         RNN_Genome *seed_genome = NULL;
-        printf("<%s>\n", genome_file_name.c_str());
+        //printf("<%s>\n", genome_file_name.c_str());
         if (genome_file_name.compare("") == 0) {
             seed_genome = create_ff(number_inputs, 0, 0, number_outputs, 0);
             seed_genome->initialize_randomly();
