@@ -170,7 +170,7 @@ int32_t IslandSpeciationStrategy::insert_genome(RNN_Genome* genome) {
         if(inserted_genomes >1 && inserted_genomes % num_genomes_check_on_island == 0){
             if (check_on_island_method.compare("EraseWorst") ==0 || check_on_island_method.compare("") == 0){
                 int32_t worst_island = get_worst_island_by_best_genome();
-                Log::info("found worst island: %d \n",worst_island);
+                Log::error("found worst island: %d \n",worst_island);
                 if (worst_island>=0){
                     islands[worst_island]->erase_island();
                 }
@@ -203,6 +203,7 @@ int32_t IslandSpeciationStrategy::get_worst_island_by_best_genome() {
     double worst_best_fitness = 0;
     for (int32_t i = 0; i < (int32_t)islands.size(); i++) {
         if (islands[i]->size() > 0) {
+            if (islands[i]->been_erased()) continue;
             double island_best_fitness = islands[i]->get_best_fitness();
             if (island_best_fitness > worst_best_fitness) {
                 worst_best_fitness = island_best_fitness;
@@ -376,13 +377,12 @@ RNN_Genome* IslandSpeciationStrategy::generate_genome(uniform_real_distribution<
                 genome = parents_repopulation("best",rng_0_1, generator, mutate, crossover);
             } else if (repopulation_method.compare("bestGenome")==0 || repopulation_method.compare("bestgenome")==0){
                 genome = get_best_genome()->copy();
-                if (this->repopulation_mutations){
-                    mutate(this->repopulation_mutations, genome);
+                if (repopulation_mutations){
+                    mutate(repopulation_mutations, genome);
                 }
             }
             else{
                 Log::error("Wrong repopulation_method argument");
-                Log::debug("Wrong repopulation_method argument");
             }
         }
 

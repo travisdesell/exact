@@ -48,7 +48,6 @@ class IslandSpeciationStrategy : public SpeciationStrategy {
          * All the islands which contain the genomes for this speciation strategy.
          */ 
         vector<Island*> islands;
-
     public:
         //static void register_command_line_arguments();
         //static IslandSpeciationStrategy* generate_from_command_line();

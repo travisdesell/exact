@@ -26,6 +26,7 @@ class Island {
          * The genomes on this island, stored in sorted order best (front) to worst (back).
          */
         vector<RNN_Genome *> genomes;
+        bool erased = false; /**< a flag to track if this islands has been erased */
 
     public:
         const static int32_t INITIALIZING = 0; /**< status flag for if the island is initializing. */
@@ -165,6 +166,11 @@ class Island {
          * after erasing the island, sets the island status to repopulating.
          */
         void set_repopulating();
+
+        /**
+         * return if this island has been erased before.
+         */
+        bool been_erased();
 };
 
 #endif
