@@ -165,12 +165,14 @@ class Island {
         /**
          * after erasing the island, sets the island status to repopulating.
          */
-        void set_repopulating();
+        void set_status(int32_t status_to_set);
 
         /**
          * return if this island has been erased before.
          */
         bool been_erased();
+
+        vector<RNN_Genome *> get_genomes();
 };
 
 #endif
