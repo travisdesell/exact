@@ -127,13 +127,6 @@ class IslandSpeciationStrategy : public SpeciationStrategy {
         int32_t get_worst_island_by_best_genome();
 
         /**
-         * find the best island in the population, the best island's best genome is the best among all the islands
-         * 
-         *  \return the best island id
-         */
-        int32_t get_best_island_by_best_genome();
-
-        /**
          * Generates a new genome.
          *
          * \param rng_0_1 is the random number distribution that generates random numbers between 0 (inclusive) and 1 (non=inclusive).
@@ -145,6 +138,7 @@ class IslandSpeciationStrategy : public SpeciationStrategy {
          */
         RNN_Genome* generate_genome(uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator, function<void (int32_t, RNN_Genome*)> &mutate, function<RNN_Genome* (RNN_Genome*, RNN_Genome *)> &crossover);
 
+        RNN_Genome* generate_for_filled_island(uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator, function<void (int32_t, RNN_Genome*)> &mutate, function<RNN_Genome* (RNN_Genome*, RNN_Genome *)> &crossover);
         /**
          * Prints out all the island's populations
          * 
@@ -167,6 +161,13 @@ class IslandSpeciationStrategy : public SpeciationStrategy {
          * parents can be random genomes or best genome from the island
          */
         RNN_Genome* parents_repopulation(string method,uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator, function<void (int32_t, RNN_Genome*)> &mutate, function<RNN_Genome* (RNN_Genome*, RNN_Genome *)> &crossover);
+       
+        /**
+         * fill a island with the best island. 
+         *  \param best_island is the island id of the best island
+         *  \param fill_island is the island is of the island to be filled
+         */
+        void fill_island(int32_t best_island, int32_t fill_island);
 
 };
 

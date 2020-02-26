@@ -175,7 +175,7 @@ int32_t IslandSpeciationStrategy::insert_genome(RNN_Genome* genome) {
                     islands[worst_island]->erase_island();
                 }
                 else Log::error("Didn't find the worst island!");
-                islands[worst_island]->set_repopulating();
+                islands[worst_island]->set_status(Island::REPOPULATING);
             }
         }
     }
@@ -214,20 +214,6 @@ int32_t IslandSpeciationStrategy::get_worst_island_by_best_genome() {
     return worst_island;
 }
 
-int32_t IslandSpeciationStrategy::get_best_island_by_best_genome(){
-    int32_t best_island = -1;
-    double best_best_fitness = 0;
-    for (int32_t i = 0; i < (int32_t)islands.size(); i++) {
-        if (islands[i]->size() > 0) {
-            double island_best_fitness = islands[i]->get_best_fitness();
-            if (island_best_fitness > best_best_fitness) {
-                best_best_fitness = island_best_fitness;
-                best_island = i;
-            }
-        }
-    }
-    return best_island;
-}
 
 RNN_Genome* IslandSpeciationStrategy::generate_genome(uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator, function<void (int32_t, RNN_Genome*)> &mutate, function<RNN_Genome* (RNN_Genome*, RNN_Genome *)> &crossover) {
     //generate the genome from the next island in a round
@@ -309,57 +295,7 @@ RNN_Genome* IslandSpeciationStrategy::generate_genome(uniform_real_distribution<
         Log::info("island is full\n");
 
         while (genome == NULL) {
-            //if we haven't filled ALL of the island populations yet, only use mutation
-            //otherwise do mutation at %, crossover at %, and island crossover at %
-
-            double r = rng_0_1(generator);
-            if (!islands_full() || r < mutation_rate) {
-                Log::info("performing mutation\n");
-
-                island->copy_random_genome(rng_0_1, generator, &genome);
-
-                //TODO: make max_mutations an IslandSpeciationStrategy option
-                mutate(1 /*max_mutations*/, genome);
-
-            } else if (r < intra_island_crossover_rate || number_of_islands == 1) {
-                //intra-island crossover
-                Log::info("performing intra-island crossover\n");
-
-                //select two distinct parent genomes in the same island
-                RNN_Genome *parent1 = NULL, *parent2 = NULL;
-                island->copy_two_random_genomes(rng_0_1, generator, &parent1, &parent2);
-
-                genome = crossover(parent1, parent2);
-            } else {
-                //inter-island crossover
-                // Log::info("performing inter-island crossover\n");
-
-                //get a random genome from this island
-                RNN_Genome *parent1 = NULL; 
-                island->copy_random_genome(rng_0_1, generator, &parent1);
-
-                //select a different island randomly
-                int32_t other_island = rng_0_1(generator) * (number_of_islands - 1);
-                if (other_island >= generation_island) other_island++;
-
-                //get the best genome from the other island
-                RNN_Genome *parent2 = islands[other_island]->get_best_genome()->copy();
-
-                //swap so the first parent is the more fit parent
-                if (parent1->get_fitness() > parent2->get_fitness()) {
-                    RNN_Genome *tmp = parent1;
-                    parent1 = parent2;
-                    parent2 = tmp;
-                }
-
-                genome = crossover(parent1, parent2);
-            }
-
-            if (genome->outputs_unreachable()) {
-                //no path from at least one input to the outputs
-                delete genome;
-                genome = NULL;
-            }
+            genome = generate_for_filled_island(rng_0_1, generator, mutate, crossover);
         }
 
     } else if (island->is_repopulating()) {
@@ -380,9 +316,21 @@ RNN_Genome* IslandSpeciationStrategy::generate_genome(uniform_real_distribution<
                 if (repopulation_mutations){
                     mutate(repopulation_mutations, genome);
                 }
-            }
-            else{
-                Log::error("Wrong repopulation_method argument");
+            } else if (repopulation_method.compare("bestIsland")==0 || repopulation_method.compare("bestisland")==0){
+                //copy the best island to the worst at once
+                //after the worst island is filled, set the island status to filled
+                //then generate a genome for filled status, so this function still return a generated genome
+                RNN_Genome *best_genome = get_best_genome()->copy();
+                int32_t best_island_id = best_genome->get_group_id();
+                fill_island(best_island_id, generation_island);
+                if(island->is_full()){
+                    island->set_status(Island::FILLED);
+                }else Log::error("Island is not full after coping the best island over!");
+                genome = generate_for_filled_island(rng_0_1, generator, mutate, crossover);
+ 
+            }else{
+                Log::fatal("Wrong repopulation_method argument");
+                exit(1);
             }
         }
 
@@ -408,6 +356,62 @@ RNN_Genome* IslandSpeciationStrategy::generate_genome(uniform_real_distribution<
         exit(1);
     }
 
+    return genome;
+}
+
+RNN_Genome* IslandSpeciationStrategy::generate_for_filled_island(uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator, function<void (int32_t, RNN_Genome*)> &mutate, function<RNN_Genome* (RNN_Genome*, RNN_Genome *)> &crossover){
+    //if we haven't filled ALL of the island populations yet, only use mutation
+    //otherwise do mutation at %, crossover at %, and island crossover at %
+    Island *island = islands[generation_island];
+    RNN_Genome* genome;
+    double r = rng_0_1(generator);
+    if (!islands_full() || r < mutation_rate) {
+        Log::info("performing mutation\n");
+
+        island->copy_random_genome(rng_0_1, generator, &genome);
+
+        //TODO: make max_mutations an IslandSpeciationStrategy option
+        mutate(1 /*max_mutations*/, genome);
+
+    } else if (r < intra_island_crossover_rate || number_of_islands == 1) {
+        //intra-island crossover
+        Log::info("performing intra-island crossover\n");
+
+        //select two distinct parent genomes in the same island
+        RNN_Genome *parent1 = NULL, *parent2 = NULL;
+        island->copy_two_random_genomes(rng_0_1, generator, &parent1, &parent2);
+
+        genome = crossover(parent1, parent2);
+    } else {
+        //inter-island crossover
+        // Log::info("performing inter-island crossover\n");
+
+        //get a random genome from this island
+        RNN_Genome *parent1 = NULL; 
+        island->copy_random_genome(rng_0_1, generator, &parent1);
+
+        //select a different island randomly
+        int32_t other_island = rng_0_1(generator) * (number_of_islands - 1);
+        if (other_island >= generation_island) other_island++;
+
+        //get the best genome from the other island
+        RNN_Genome *parent2 = islands[other_island]->get_best_genome()->copy(); // new RNN GENOME
+
+        //swap so the first parent is the more fit parent
+        if (parent1->get_fitness() > parent2->get_fitness()) {
+            RNN_Genome *tmp = parent1;
+            parent1 = parent2;
+            parent2 = tmp;
+        }
+
+        genome = crossover(parent1, parent2); // new RNN GENOME
+    }
+
+    if (genome->outputs_unreachable()) {
+        //no path from at least one input to the outputs
+        delete genome;
+        genome = NULL;
+    }
     return genome;
 }
 
@@ -489,5 +493,18 @@ RNN_Genome* IslandSpeciationStrategy::parents_repopulation(string method, unifor
         genome = NULL;
     }
     return genome;
+}
+
+void IslandSpeciationStrategy::fill_island(int32_t best_island_id, int32_t fill_island){
+    vector<RNN_Genome*>best_island = islands[best_island_id]->get_genomes();
+    for (int i=0; i < best_island.size(); i++){
+        // copy the genome from the best island
+        RNN_Genome *copy = best_island[i]->copy();
+    
+        copy->set_generation_id(generated_genomes);
+        generated_genomes++;
+        copy->set_group_id(generation_island);
+        insert_genome(copy);
+    }
 }
 
