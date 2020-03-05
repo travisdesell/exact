@@ -71,7 +71,7 @@ IslandSpeciationStrategy::IslandSpeciationStrategy(
     intra_island_crossover_rate += mutation_rate;
     inter_island_crossover_rate += intra_island_crossover_rate;
 
-    auto make_filled_island = [](int32_t id, RNN_Genome *seed_genome, int32_t size, int32_t nmutations, function<void (int32_t, RNN_Genome*)> &mutate) {
+    auto make_filled_island = [](int32_t id, RNN_Genome *seed_genome, int32_t size, int32_t nmutations, function<void (RNN_Genome*)> &modify) {
         vector<RNN_Genome*> genomes;
         genomes.reserve(size);
         for (int i = 0 ; i < size ; i += 1) {
@@ -84,7 +84,7 @@ IslandSpeciationStrategy::IslandSpeciationStrategy(
     };
 
     for (int i = 0 ; i < number_of_islands; i += 1)
-        islands.push_back(make_filled_island(i, seed_genome, max_island_size, number_stir_mutations, mutate));
+        islands.push_back(make_filled_island(i, seed_genome, max_island_size, number_stir_mutations, modify));
     
     //set the generation id for the initial minimal genome
     
