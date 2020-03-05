@@ -21,6 +21,7 @@ using std::endl;
 #include <random>
 using std::minstd_rand0;
 using std::uniform_real_distribution;
+using std::uniform_int_distribution;
 
 #include <string>
 using std::string;
@@ -29,7 +30,6 @@ using std::to_string;
 #include "examm.hxx"
 #include "rnn_genome.hxx"
 #include "generate_nn.hxx"
-#include "rec_depth_dist.hxx"
 #include "speciation_strategy.hxx"
 #include "island_speciation_strategy.hxx"
 
@@ -69,11 +69,11 @@ EXAMM::EXAMM(int32_t _population_size, int32_t _number_islands, int32_t _max_gen
                 bool _use_low_threshold, double _low_threshold,
                 bool _use_dropout, double _dropout_probability,
                 int32_t _min_recurrent_depth, int32_t _max_recurrent_depth,
-                string _rec_sampling_population, string _rec_sampling_distribution, string _output_directory,
-                string _genome_file_name,
+                string _output_directory, string _genome_file_name,
                 int _no_extra_inputs, int _no_extra_outputs,
                 vector<string> &_inputs_to_remove, vector<string> &_outputs_to_remove,
-                bool _tl_ver1, bool _tl_ver2, bool _tl_ver3, int32_t stir_mutations ) :
+                bool _tl_ver1, bool _tl_ver2, bool _tl_ver3, bool _tl_start_filled, 
+                int32_t stir_mutations ) :
                                         population_size(_population_size),
                                         number_islands(_number_islands),
                                         max_genomes(_max_genomes),
@@ -94,6 +94,7 @@ EXAMM::EXAMM(int32_t _population_size, int32_t _number_islands, int32_t _max_gen
                                         tl_ver1(_tl_ver1),
                                         tl_ver2(_tl_ver2),
                                         tl_ver3(_tl_ver3),
+                                        tl_start_filled(_tl_start_filled),
                                         number_stir_mutations(stir_mutations) {
 
     input_parameter_names = _input_parameter_names;
@@ -123,59 +124,6 @@ EXAMM::EXAMM(int32_t _population_size, int32_t _number_islands, int32_t _max_gen
 
     min_recurrent_depth = _min_recurrent_depth;
     max_recurrent_depth = _max_recurrent_depth;
-
-    Log::error("Speciation method is: %s\n", speciation_method.c_str());
-    if (speciation_method.compare("island") == 0 || speciation_method.compare("") == 0) {
-        //generate a minimal feed foward network as the seed genome
-        RNN_Genome *seed_genome = NULL;
-        
-        if (genome_file_name.compare("") == 0) {
-            seed_genome = create_ff(number_inputs, 0, 0, number_outputs, 0);
-            seed_genome->initialize_randomly();
-            edge_innovation_count = seed_genome->edges.size() + seed_genome->recurrent_edges.size();
-            node_innovation_count = seed_genome->nodes.size();
-        } else { 
-            Log::error("doing transfer!\n");
-            seed_genome = generate_for_transfer_learning(genome_file_name, no_extra_inputs, no_extra_outputs );
-            Log::error("generated seed genome, number of inputs: %d, number of outputs: %d\n", seed_genome->get_number_inputs(), seed_genome->get_number_outputs());
-        }
-
-        seed_genome->set_generated_by("initial");
-
-        //insert a copy of it into the population so
-        //additional requests can mutate it
-
-
-        seed_genome->best_validation_mse = EXAMM_MAX_DOUBLE;
-        seed_genome->best_validation_mae = EXAMM_MAX_DOUBLE;
-        //seed_genome->best_parameters.clear();
-
-        if (number_islands == 1) {
-            speciation_strategy = new IslandSpeciationStrategy(number_islands, population_size, 0.70, 0.30, 0.00, seed_genome, number_stir_mutations);
-        } else {
-            speciation_strategy = new IslandSpeciationStrategy(number_islands, population_size, 0.70, 0.20, 0.10, seed_genome, number_stir_mutations);
-        }
-    }
-
-    if (_rec_sampling_population.compare("global") == 0) {
-        rec_sampling_population = GLOBAL_POPULATION;
-    } else if (_rec_sampling_population.compare("island") == 0) {
-        rec_sampling_population = ISLAND_POPULATION;
-    } else {
-        Log::warning("value passed to --rec_sampling_population is not valid ('%s'), defaulting to global.\n", _rec_sampling_population.c_str());
-        rec_sampling_population = GLOBAL_POPULATION;
-    }
-
-    if (_rec_sampling_distribution.compare("global") == 0) {
-        rec_sampling_population = NORMAL_DISTRIBUTION;
-    } else if (_rec_sampling_distribution.compare("histogram") == 0) {
-        rec_sampling_population = HISTOGRAM_DISTRIBUTION;
-    } else if (_rec_sampling_distribution.compare("uniform") == 0) {
-        rec_sampling_population = UNIFORM_DISTRIBUTION;
-    } else {
-        Log::warning("value passed to --rec_sampling_distribution is not valid ('%s'), defaulting to uniform.\n", _rec_sampling_distribution.c_str());
-        rec_sampling_distribution = UNIFORM_DISTRIBUTION;
-    }
 
     epigenetic_weights = true;
 
@@ -220,6 +168,56 @@ EXAMM::EXAMM(int32_t _population_size, int32_t _number_islands, int32_t _max_gen
         disable_node_rate = 0.0;
         split_node_rate = 0.0;
         merge_node_rate = 0.0;
+    }
+
+    Log::error("Speciation method is: %s\n", speciation_method.c_str());
+    if (speciation_method.compare("island") == 0 || speciation_method.compare("") == 0) {
+        //generate a minimal feed foward network as the seed genome
+        RNN_Genome *seed_genome = NULL;
+        
+        if (genome_file_name.compare("") == 0) {
+            seed_genome = create_ff(number_inputs, 0, 0, number_outputs, 0);
+            seed_genome->initialize_randomly();
+            edge_innovation_count = seed_genome->edges.size() + seed_genome->recurrent_edges.size();
+            node_innovation_count = seed_genome->nodes.size();
+        } else { 
+            Log::error("doing transfer!\n");
+            seed_genome = generate_for_transfer_learning(genome_file_name, no_extra_inputs, no_extra_outputs );
+            Log::error("generated seed genome, number of inputs: %d, number of outputs: %d\n", seed_genome->get_number_inputs(), seed_genome->get_number_outputs());
+        }
+
+        seed_genome->set_generated_by("initial");
+
+        //insert a copy of it into the population so
+        //additional requests can mutate it
+
+
+        seed_genome->best_validation_mse = EXAMM_MAX_DOUBLE;
+        seed_genome->best_validation_mae = EXAMM_MAX_DOUBLE;
+        //seed_genome->best_parameters.clear();
+        
+        // Only used if tl_start_filled is enabled
+        function<void (RNN_Genome *)> apply_stir_mutations = [this](RNN_Genome *genome) {
+            RNN_Genome *copy = genome->copy();
+            this->mutate(number_stir_mutations, copy);
+            return copy;
+        };
+
+        double mutation_rate = 0.70, intra_island_co_rate = 0.20, inter_island_co_rate = 0.10;
+        
+        if (number_islands == 1) {
+            inter_island_co_rate = 0.0;
+            intra_island_co_rate = 0.30;
+        }
+        
+        if (tl_start_filled)
+            speciation_strategy = new IslandSpeciationStrategy(
+                    number_islands, population_size, mutation_rate, intra_island_co_rate, inter_island_co_rate,
+                    seed_genome, apply_stir_mutations);
+        else
+            speciation_strategy = new IslandSpeciationStrategy(
+                    number_islands, population_size, mutation_rate, intra_island_co_rate, inter_island_co_rate,
+                    seed_genome, number_stir_mutations);
     }
 
     if (output_directory != "") {
@@ -561,7 +559,7 @@ RNN_Genome* EXAMM::generate_for_transfer_learning(string file_name, int extra_in
 
     auto rng_ = std::default_random_engine {};
 
-    Distribution *dist = get_recurrent_depth_dist(genome->get_group_id());
+    uniform_int_distribution<int32_t> rec_depth_dist(this->min_recurrent_depth, this->max_recurrent_depth);
 
     // Connecting New Inputs to Hidden Nodes:
     if (tl_ver2 && new_input_nodes.size()!=0) {
@@ -569,7 +567,7 @@ RNN_Genome* EXAMM::generate_for_transfer_learning(string file_name, int extra_in
         std::shuffle(std::begin(new_input_nodes), std::end(new_input_nodes), rng_);
         for (auto node : new_input_nodes) {
             Log::debug("\tBEFORE -- CHECK EDGE INNOVATION COUNT: %d\n", edge_innovation_count);
-            genome->connect_new_input_node(mu, sigma, node, dist, edge_innovation_count);
+            genome->connect_new_input_node(mu, sigma, node, rec_depth_dist, edge_innovation_count);
             Log::debug("\tAFTER -- CHECK EDGE INNOVATION COUNT: %d\n", edge_innovation_count);
         }
     }
@@ -580,7 +578,7 @@ RNN_Genome* EXAMM::generate_for_transfer_learning(string file_name, int extra_in
         std::shuffle(std::begin(new_output_nodes), std::end(new_output_nodes), rng_);
         for (auto node : new_output_nodes) {
             Log::debug("\tBEFORE -- CHECK EDGE INNOVATION COUNT: %d\n", edge_innovation_count);
-            genome->connect_new_output_node(mu, sigma, node, dist, edge_innovation_count);
+            genome->connect_new_output_node(mu, sigma, node, rec_depth_dist, edge_innovation_count);
             Log::debug("\tAFTER -- CHECK EDGE INNOVATION COUNT: %d\n", edge_innovation_count);
         }
     }
@@ -596,19 +594,17 @@ RNN_Genome* EXAMM::generate_for_transfer_learning(string file_name, int extra_in
             if (node->get_total_outputs() == 0) {
                 Log::info("input node[%d] had no outputs, connecting it!\n", node->get_innovation_number());
                 //if an input has no outgoing edges randomly connect it
-                genome->connect_new_input_node(mu, sigma, node, dist, edge_innovation_count);
+                genome->connect_new_input_node(mu, sigma, node, rec_depth_dist, edge_innovation_count);
             }
 
         } else if (node->get_layer_type() == OUTPUT_LAYER) {
             if (node->get_total_inputs() == 0) {
                 Log::info("output node[%d] had no inputs, connecting it!\n", node->get_innovation_number());
                 //if an output has no incoming edges randomly connect it
-                genome->connect_new_output_node(mu, sigma, node, dist, edge_innovation_count);
+                genome->connect_new_output_node(mu, sigma, node, rec_depth_dist, edge_innovation_count);
             }
         }
     }
-
-    delete dist;
 
     //update the reachabaility again
     genome->assign_reachability();
@@ -666,25 +662,6 @@ int EXAMM::get_random_node_type() {
     return possible_node_types[rng_0_1(generator) * possible_node_types.size()];
 }
 
-Distribution *EXAMM::get_recurrent_depth_dist(int32_t island_index) {
-    Distribution *d = NULL;
-    if (rec_sampling_distribution != UNIFORM_DISTRIBUTION) {
-        if (rec_sampling_distribution == NORMAL_DISTRIBUTION) {
-            if (rec_sampling_population == ISLAND_POPULATION)
-                d = new RecDepthNormalDist(genomes[island_index], min_recurrent_depth, max_recurrent_depth);
-            else
-                d = new RecDepthNormalDist(genomes, min_recurrent_depth, max_recurrent_depth);
-        } else {
-            if (rec_sampling_population == ISLAND_POPULATION)
-                d = new RecDepthHistDist(genomes[island_index], min_recurrent_depth, max_recurrent_depth);
-            else
-                d = new RecDepthHistDist(genomes, min_recurrent_depth, max_recurrent_depth);
-        }
-    } else {
-        d = new RecDepthUniformDist(min_recurrent_depth, max_recurrent_depth);
-    }
-    return d;
-}
 
 void EXAMM::mutate(int32_t max_mutations, RNN_Genome *g) {
     double total = clone_rate + add_edge_rate + add_recurrent_edge_rate + enable_edge_rate + disable_edge_rate + split_edge_rate + add_node_rate + enable_node_rate + disable_node_rate + split_node_rate + merge_node_rate;
@@ -694,7 +671,6 @@ void EXAMM::mutate(int32_t max_mutations, RNN_Genome *g) {
     double mu, sigma;
 
     //g->write_graphviz("rnn_genome_premutate_" + to_string(g->get_generation_id()) + ".gv");
-
     Log::debug("generating new genome by mutation.\n");
     g->get_mu_sigma(g->best_parameters, mu, sigma);
     g->clear_generated_by();
@@ -731,7 +707,6 @@ void EXAMM::mutate(int32_t max_mutations, RNN_Genome *g) {
             continue;
         }
         rng -= clone_rate;
-
         if (rng < add_edge_rate) {
             modified = g->add_edge(mu, sigma, edge_innovation_count);
             Log::debug("\tadding edge, modified: %d\n", modified);
@@ -741,9 +716,8 @@ void EXAMM::mutate(int32_t max_mutations, RNN_Genome *g) {
         rng -= add_edge_rate;
 
         if (rng < add_recurrent_edge_rate) {
-            Distribution *dist = get_recurrent_depth_dist(g->get_group_id());
+            uniform_int_distribution<int32_t> dist = get_recurrent_depth_dist();
             modified = g->add_recurrent_edge(mu, sigma, dist, edge_innovation_count);
-            delete dist;
             Log::debug("\tadding recurrent edge, modified: %d\n", modified);
             if (modified) g->set_generated_by("add_recurrent_edge");
             continue;
@@ -767,7 +741,7 @@ void EXAMM::mutate(int32_t max_mutations, RNN_Genome *g) {
         rng -= disable_edge_rate;
 
         if (rng < split_edge_rate) {
-            Distribution *dist = get_recurrent_depth_dist(g->get_group_id());
+            uniform_int_distribution<int32_t> dist = get_recurrent_depth_dist();
             modified = g->split_edge(mu, sigma, new_node_type, dist, edge_innovation_count, node_innovation_count);
             Log::debug("\tsplitting edge, modified: %d\n", modified);
             if (modified) g->set_generated_by("split_edge(" + node_type_str + ")");
@@ -776,7 +750,7 @@ void EXAMM::mutate(int32_t max_mutations, RNN_Genome *g) {
         rng -= split_edge_rate;
 
         if (rng < add_node_rate) {
-            Distribution *dist = get_recurrent_depth_dist(g->get_group_id());
+            uniform_int_distribution<int32_t> dist = get_recurrent_depth_dist();
             modified = g->add_node(mu, sigma, new_node_type, dist, edge_innovation_count, node_innovation_count);
             Log::debug("\tadding node, modified: %d\n", modified);
             if (modified) g->set_generated_by("add_node(" + node_type_str + ")");
@@ -801,7 +775,7 @@ void EXAMM::mutate(int32_t max_mutations, RNN_Genome *g) {
         rng -= disable_node_rate;
 
         if (rng < split_node_rate) {
-            Distribution *dist = get_recurrent_depth_dist(g->get_group_id());
+            uniform_int_distribution<int32_t> dist = get_recurrent_depth_dist();
             modified = g->split_node(mu, sigma, new_node_type, dist, edge_innovation_count, node_innovation_count);
             Log::debug("\tsplitting node, modified: %d\n", modified);
             if (modified) g->set_generated_by("split_node(" + node_type_str + ")");
@@ -810,7 +784,7 @@ void EXAMM::mutate(int32_t max_mutations, RNN_Genome *g) {
         rng -= split_node_rate;
 
         if (rng < merge_node_rate) {
-            Distribution *dist = get_recurrent_depth_dist(g->get_group_id());
+            uniform_int_distribution<int32_t> dist = get_recurrent_depth_dist();
             modified = g->merge_node(mu, sigma, new_node_type, dist, edge_innovation_count, node_innovation_count);
             Log::debug("\tmerging node, modified: %d\n", modified);
             if (modified) g->set_generated_by("merge_node(" + node_type_str + ")");
@@ -1216,4 +1190,9 @@ RNN_Genome* EXAMM::crossover(RNN_Genome *p1, RNN_Genome *p2) {
     child->best_parameters.clear();
 
     return child;
+}
+
+
+uniform_int_distribution<int32_t> EXAMM::get_recurrent_depth_dist() {
+    return uniform_int_distribution<int32_t>(this->min_recurrent_depth, this->max_recurrent_depth);
 }

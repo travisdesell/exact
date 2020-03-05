@@ -321,12 +321,6 @@ int main(int argc, char** argv) {
     int32_t rec_delay_max = 10;
     get_argument(arguments, "--rec_delay_max", false, rec_delay_max);
 
-    string rec_sampling_population = "global";
-    get_argument(arguments, "--rec_sampling_population", false, rec_sampling_population);
-
-    string rec_sampling_distribution = "uniform";
-    get_argument(arguments, "--rec_sampling_distribution", false, rec_sampling_distribution);
-
     int32_t stir_mutations = 0;
     get_argument(arguments, "--stir_mutations", false, stir_mutations);
 
@@ -365,6 +359,11 @@ int main(int argc, char** argv) {
         get_argument(arguments, "--tl_version3", false, tl_ver3);
     }
 
+    bool tl_start_filled = false;
+    if (genome_file_name != "") {
+        get_argument(arguments, "--tl_start_filled", false, tl_start_filled);
+    }
+
     get_individual_inputs( inputs_to_remove, inputs_removed_tokens) ;
     get_individual_inputs( outputs_to_remove, outputs_removed_tokens) ;
 
@@ -381,12 +380,12 @@ int main(int argc, char** argv) {
             use_low_threshold, low_threshold,
             use_dropout, dropout_probability,
             rec_delay_min, rec_delay_max,
-            rec_sampling_population, rec_sampling_distribution,
             output_directory,
             genome_file_name,
             no_extra_inputs, no_extra_outputs,
             inputs_removed_tokens, outputs_removed_tokens,
-            tl_ver1, tl_ver2, tl_ver3, stir_mutations);
+            tl_ver1, tl_ver2, tl_ver3, tl_start_filled, 
+            stir_mutations);
 
         if (possible_node_types.size() > 0) examm->set_possible_node_types(possible_node_types);
 
