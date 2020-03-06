@@ -59,43 +59,63 @@ EXAMM::~EXAMM() {
     }
 }
 
-EXAMM::EXAMM(int32_t _population_size, int32_t _number_islands, int32_t _max_genomes, int32_t _num_genomes_check_on_island, string _speciation_method,
-                const vector<string> &_input_parameter_names,
-                const vector<string> &_output_parameter_names,
-                const map<string,double> &_normalize_mins,
-                const map<string,double> &_normalize_maxs,
-                int32_t _bp_iterations, double _learning_rate,
-                bool _use_high_threshold, double _high_threshold,
-                bool _use_low_threshold, double _low_threshold,
-                bool _use_dropout, double _dropout_probability,
-                int32_t _min_recurrent_depth, int32_t _max_recurrent_depth,
-                string _output_directory, string _genome_file_name,
-                int _no_extra_inputs, int _no_extra_outputs,
-                vector<string> &_inputs_to_remove, vector<string> &_outputs_to_remove,
-                bool _tl_ver1, bool _tl_ver2, bool _tl_ver3, bool _tl_start_filled, 
-                int32_t stir_mutations ) :
-                                        population_size(_population_size),
-                                        number_islands(_number_islands),
-                                        max_genomes(_max_genomes),
-                                        number_inputs(_input_parameter_names.size()),
-                                        number_outputs(_output_parameter_names.size()),
-                                        bp_iterations(_bp_iterations),
-                                        learning_rate(_learning_rate),
-                                        use_high_threshold(_use_high_threshold),
-                                        high_threshold(_high_threshold),
-                                        use_low_threshold(_use_low_threshold),
-                                        low_threshold(_low_threshold),
-                                        use_dropout(_use_dropout),
-                                        dropout_probability(_dropout_probability),
-                                        output_directory(_output_directory),
-                                        genome_file_name(_genome_file_name),
-                                        no_extra_inputs(_no_extra_inputs),
-                                        no_extra_outputs(_no_extra_outputs),
-                                        tl_ver1(_tl_ver1),
-                                        tl_ver2(_tl_ver2),
-                                        tl_ver3(_tl_ver3),
-                                        tl_start_filled(_tl_start_filled),
-                                        number_stir_mutations(stir_mutations) {
+EXAMM::EXAMM(
+        int32_t _population_size, 
+        int32_t _number_islands, 
+        int32_t _max_genomes, 
+        int32_t _extinction_event_generation_number,
+        int32_t islands_to_exterminate,
+        string _island_ranking_method, 
+        string _repopulation_method, 
+        int32_t _repopulation_mutations,
+        string _speciation_method, 
+        const vector<string> &_input_parameter_names,
+        const vector<string> &_output_parameter_names,
+        const map<string,double> &_normalize_mins,
+        const map<string,double> &_normalize_maxs,
+        int32_t _bp_iterations, 
+        double _learning_rate,
+        bool _use_high_threshold, 
+        double _high_threshold,
+        bool _use_low_threshold, 
+        double _low_threshold,
+        bool _use_dropout, 
+        double _dropout_probability,
+        int32_t _min_recurrent_depth,
+        int32_t _max_recurrent_depth,
+        string _output_directory,
+        string _genome_file_name,
+        int _no_extra_inputs,
+        int _no_extra_outputs,
+        vector<string> &_inputs_to_remove,
+        vector<string> &_outputs_to_remove,
+        bool _tl_ver1, bool _tl_ver2, bool _tl_ver3, bool _tl_start_filled ) :
+                        population_size(_population_size),
+                        number_islands(_number_islands),
+                        max_genomes(_max_genomes),
+                        speciation_method(_speciation_method),
+                        extinction_event_generation_number(_extinction_event_generation_number),
+                        island_ranking_method(_island_ranking_method), 
+                        repopulation_method(_repopulation_method), 
+                        repopulation_mutations(_repopulation_mutations),
+                        number_inputs(_input_parameter_names.size()),
+                        number_outputs(_output_parameter_names.size()),
+                        bp_iterations(_bp_iterations),
+                        learning_rate(_learning_rate),
+                        use_high_threshold(_use_high_threshold),
+                        high_threshold(_high_threshold),
+                        use_low_threshold(_use_low_threshold),
+                        low_threshold(_low_threshold),
+                        use_dropout(_use_dropout),
+                        dropout_probability(_dropout_probability),
+                        output_directory(_output_directory),
+                        genome_file_name(_genome_file_name),
+                        no_extra_inputs(_no_extra_inputs),
+                        no_extra_outputs(_no_extra_outputs),
+                        tl_ver1(_tl_ver1),
+                        tl_ver2(_tl_ver2),
+                        tl_ver3(_tl_ver3),
+                        tl_start_filled(_tl_start_filled) {
 
     input_parameter_names = _input_parameter_names;
     output_parameter_names = _output_parameter_names;
@@ -170,7 +190,7 @@ EXAMM::EXAMM(int32_t _population_size, int32_t _number_islands, int32_t _max_gen
         merge_node_rate = 0.0;
     }
 
-    Log::error("Speciation method is: %s\n", speciation_method.c_str());
+    Log::error("Speciation method is: \"%s\" (Default is the island-based speciation strategy).\n", speciation_method.c_str());
     if (speciation_method.compare("island") == 0 || speciation_method.compare("") == 0) {
         //generate a minimal feed foward network as the seed genome
         RNN_Genome *seed_genome = NULL;
@@ -199,7 +219,7 @@ EXAMM::EXAMM(int32_t _population_size, int32_t _number_islands, int32_t _max_gen
         // Only used if tl_start_filled is enabled
         function<void (RNN_Genome *)> apply_stir_mutations = [this](RNN_Genome *genome) {
             RNN_Genome *copy = genome->copy();
-            this->mutate(number_stir_mutations, copy);
+            this->mutate(repopulation_mutations, copy);
             return copy;
         };
 
@@ -209,15 +229,17 @@ EXAMM::EXAMM(int32_t _population_size, int32_t _number_islands, int32_t _max_gen
             inter_island_co_rate = 0.0;
             intra_island_co_rate = 0.30;
         }
-        
+       
+
+        // Only difference here is that the apply_stir_mutations lambda is passed if the island is supposed to start filled.
         if (tl_start_filled)
             speciation_strategy = new IslandSpeciationStrategy(
                     number_islands, population_size, mutation_rate, intra_island_co_rate, inter_island_co_rate,
-                    seed_genome, apply_stir_mutations);
+                    seed_genome, island_ranking_method, repopulation_method, extinction_event_generation_number, repopulation_mutations, islands_to_exterminate, apply_stir_mutations);
         else
             speciation_strategy = new IslandSpeciationStrategy(
                     number_islands, population_size, mutation_rate, intra_island_co_rate, inter_island_co_rate,
-                    seed_genome, number_stir_mutations);
+                    seed_genome, island_ranking_method, repopulation_method, extinction_event_generation_number, repopulation_mutations, islands_to_exterminate);
     }
 
     if (output_directory != "") {
@@ -340,7 +362,7 @@ RNN_Genome* EXAMM::get_worst_genome() {
 bool EXAMM::insert_genome(RNN_Genome* genome) {
     total_bp_epochs += genome->get_bp_iterations();
 
-    Log::info("genomes evaluated: %10d , attempting to insert: %s\n", (speciation_strategy->get_inserted_genomes() + 1), parse_fitness(genome->get_fitness()).c_str());
+    // Log::info("genomes evaluated: %10d , attempting to insert: %s\n", (speciation_strategy->get_inserted_genomes() + 1), parse_fitness(genome->get_fitness()).c_str());
 
     if (!genome->sanity_check()) {
         Log::error("genome failed sanity check on insert!\n");
@@ -351,7 +373,6 @@ bool EXAMM::insert_genome(RNN_Genome* genome) {
     genome->update_generation_map(generated_from_map);
 
     int32_t insert_position = speciation_strategy->insert_genome(genome);
-
     //write this genome to disk if it was a new best found genome
     if (insert_position == 0) {
         genome->write_graphviz(output_directory + "/rnn_genome_" + to_string(genome->get_generation_id()) + ".gv");

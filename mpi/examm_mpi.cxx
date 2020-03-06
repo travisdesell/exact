@@ -288,11 +288,20 @@ int main(int argc, char** argv) {
     int32_t max_genomes;
     get_argument(arguments, "--max_genomes", true, max_genomes);
 
-    int32_t num_genomes_check_on_island;
-    get_argument(arguments, "--num_genomes_check_on_island", false, num_genomes_check_on_island);
+    string speciation_method = "";
+    get_argument(arguments, "--speciation_method", false, speciation_method);
 
-    string check_on_island_method = "";
-    get_argument(arguments, "--check_on_island_method", false, check_on_island_method);
+    int32_t extinction_event_generation_number;
+    get_argument(arguments, "--extinction_event_generation_number", false, extinction_event_generation_number);
+
+    string island_ranking_method = "";
+    get_argument(arguments, "--island_ranking_method", false, island_ranking_method);
+
+    string repopulation_method = "";
+    get_argument(arguments, "--repopulation_method", false, repopulation_method);
+
+    int32_t repopulation_mutations = 0;
+    get_argument(arguments, "--repopulation_mutations", false, repopulation_mutations);
 
     int32_t bp_iterations;
     get_argument(arguments, "--bp_iterations", true, bp_iterations);
@@ -320,9 +329,6 @@ int main(int argc, char** argv) {
 
     int32_t rec_delay_max = 10;
     get_argument(arguments, "--rec_delay_max", false, rec_delay_max);
-
-    int32_t stir_mutations = 0;
-    get_argument(arguments, "--stir_mutations", false, stir_mutations);
 
     string genome_file_name = "";
     get_argument(arguments, "--genome_bin", false, genome_file_name);
@@ -370,7 +376,8 @@ int main(int argc, char** argv) {
     Log::clear_rank_restriction();
 
     if (rank == 0) {
-        examm = new EXAMM(population_size, number_islands, max_genomes, num_genomes_check_on_island, check_on_island_method,
+        examm = new EXAMM(population_size, number_islands, max_genomes, speciation_method, extinction_event_generation_number, island_ranking_method,
+            repopulation_method, repopulation_mutations,
             time_series_sets->get_input_parameter_names(),
             time_series_sets->get_output_parameter_names(),
             time_series_sets->get_normalize_mins(),
@@ -384,8 +391,7 @@ int main(int argc, char** argv) {
             genome_file_name,
             no_extra_inputs, no_extra_outputs,
             inputs_removed_tokens, outputs_removed_tokens,
-            tl_ver1, tl_ver2, tl_ver3, tl_start_filled, 
-            stir_mutations);
+            tl_ver1, tl_ver2, tl_ver3, tl_start_filled);
 
         if (possible_node_types.size() > 0) examm->set_possible_node_types(possible_node_types);
 
