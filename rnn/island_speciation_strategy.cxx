@@ -317,6 +317,7 @@ RNN_Genome* IslandSpeciationStrategy::generate_genome(uniform_real_distribution<
 
             //set the generation id for the copy and increment generated genomes 
             genome_copy->set_generation_id(generated_genomes);
+            islands[generation_island] -> set_latest_generation_id(generated_genomes);
             generated_genomes++;
             genome_copy->set_group_id(generation_island);
 
@@ -353,6 +354,7 @@ RNN_Genome* IslandSpeciationStrategy::generate_genome(uniform_real_distribution<
             
             //set the generation id for the copy and increment generated genomes 
             copy->set_generation_id(generated_genomes);
+            islands[generation_island] -> set_latest_generation_id(generated_genomes);
             generated_genomes++;
             copy->set_group_id(generation_island);
 
@@ -430,6 +432,7 @@ RNN_Genome* IslandSpeciationStrategy::generate_genome(uniform_real_distribution<
 
         //set th generation id and increment generated genomes
         genome->set_generation_id(generated_genomes);
+        islands[generation_island] -> set_latest_generation_id(generated_genomes);
         generated_genomes++;
     } else {
         Log::fatal("ERROR: genome was NULL at the end of generate genome!\n");
@@ -583,6 +586,7 @@ void IslandSpeciationStrategy::fill_island(int32_t best_island_id){
         RNN_Genome *copy = best_island[i]->copy();
     
         copy->set_generation_id(generated_genomes);
+        islands[generation_island] -> set_latest_generation_id(generated_genomes);
         generated_genomes++;
         copy->set_group_id(generation_island);
         insert_genome(copy);
