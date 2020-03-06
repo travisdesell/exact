@@ -31,6 +31,10 @@ class EXAMM {
         int32_t total_bp_epochs;
 
         string speciation_method;
+        string island_ranking_method;
+        int32_t extinction_event_generation_number;
+        string repopulation_method;
+        int32_t repopulation_mutations;
         SpeciationStrategy *speciation_strategy;
 
         int32_t edge_innovation_count;
@@ -107,13 +111,15 @@ class EXAMM {
         bool tl_ver3;
         bool tl_start_filled;
 
-        int32_t number_stir_mutations;
-
     public:
         EXAMM(  int32_t _population_size, 
                 int32_t _number_islands,
                 int32_t _max_genomes,
-                int32_t _num_genomes_check_on_island, 
+                int32_t _extinction_event_generation_number,
+                int32_t _islands_to_exterminate,
+                string _island_ranking_method,
+                string _repopulation_method,
+                int32_t _repopulation_mutations,
                 string _speciation_method,
                 const vector<string> &_input_parameter_names,
                 const vector<string> &_output_parameter_names,
@@ -135,9 +141,8 @@ class EXAMM {
                 int _no_extra_outputs,
                 vector<string> &_inputs_to_remove,
                 vector<string> &_outputs_to_remove,
-                bool _tl_ver1, bool _tl_ver2, bool _tl_ver3,
-                bool _tl_start_filled,
-                int32_t stir_mutations);
+                bool _tl_ver1, bool _tl_ver2, bool _tl_ver3, bool _tl_start_filled);
+
 
         ~EXAMM();
 
