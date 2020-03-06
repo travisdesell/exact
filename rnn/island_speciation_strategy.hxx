@@ -135,6 +135,13 @@ class IslandSpeciationStrategy : public SpeciationStrategy {
         int32_t get_worst_island_by_best_genome();
 
         /**
+         * rank the islands by their best fitness, the fitness of ranked islands are in descending order
+         * 
+         *  \return island rank from worst to the best
+         */
+        int32_t* rank_islands();
+
+        /**
          * Generates a new genome.
          *
          * \param rng_0_1 is the random number distribution that generates random numbers between 0 (inclusive) and 1 (non=inclusive).
@@ -175,10 +182,9 @@ class IslandSpeciationStrategy : public SpeciationStrategy {
          *  \param best_island is the island id of the best island
          *  \param fill_island is the island is of the island to be filled
          */
-        void fill_island(int32_t best_island, int32_t fill_island);
+        void fill_island(int32_t best_island);
 
 };
 
 
 #endif
-

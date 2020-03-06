@@ -190,7 +190,7 @@ EXAMM::EXAMM(
         merge_node_rate = 0.0;
     }
 
-    Log::error("Speciation method is: \"%s\" (Default is the island-based speciation strategy).\n", speciation_method.c_str());
+    Log::info("Speciation method is: \"%s\" (Default is the island-based speciation strategy).\n", speciation_method.c_str());
     if (speciation_method.compare("island") == 0 || speciation_method.compare("") == 0) {
         //generate a minimal feed foward network as the seed genome
         RNN_Genome *seed_genome = NULL;
