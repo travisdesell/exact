@@ -33,7 +33,7 @@ RNN_Genome* create_ff(int number_inputs, int number_hidden_layers, int number_hi
     current_layer++;
 
     for (int32_t i = 0; i < number_hidden_layers; i++) {
-        for (uint32_t j = 0; j < number_hidden_nodes; j++) {
+        for (int32_t j = 0; j < number_hidden_nodes; j++) {
             RNN_Node *node = new RNN_Node(++node_innovation_count, HIDDEN_LAYER, current_layer, SIMPLE_NODE);
             rnn_nodes.push_back(node);
             layer_nodes[current_layer].push_back(node);
@@ -41,7 +41,7 @@ RNN_Genome* create_ff(int number_inputs, int number_hidden_layers, int number_hi
             for (uint32_t k = 0; k < layer_nodes[current_layer - 1].size(); k++) {
                 rnn_edges.push_back(new RNN_Edge(++edge_innovation_count, layer_nodes[current_layer - 1][k], node));
 
-                for (uint32_t d = 1; d <= max_recurrent_depth; d++) {
+                for (int32_t d = 1; d <= max_recurrent_depth; d++) {
                     recurrent_edges.push_back(new RNN_Recurrent_Edge(++edge_innovation_count, d, layer_nodes[current_layer - 1][k], node));
                 }
             }
@@ -57,7 +57,7 @@ RNN_Genome* create_ff(int number_inputs, int number_hidden_layers, int number_hi
         for (uint32_t k = 0; k < layer_nodes[current_layer - 1].size(); k++) {
             rnn_edges.push_back(new RNN_Edge(++edge_innovation_count, layer_nodes[current_layer - 1][k], output_node));
 
-            for (uint32_t d = 1; d <= max_recurrent_depth; d++) {
+            for (int32_t d = 1; d <= max_recurrent_depth; d++) {
                 recurrent_edges.push_back(new RNN_Recurrent_Edge(++edge_innovation_count, d, layer_nodes[current_layer - 1][k], output_node));
             }
         }
@@ -87,7 +87,7 @@ RNN_Genome* create_jordan(int number_inputs, int number_hidden_layers, int numbe
     current_layer++;
 
     for (int32_t i = 0; i < number_hidden_layers; i++) {
-        for (uint32_t j = 0; j < number_hidden_nodes; j++) {
+        for (int32_t j = 0; j < number_hidden_nodes; j++) {
             RNN_Node *node = new RNN_Node(++node_innovation_count, HIDDEN_LAYER, current_layer, JORDAN_NODE);
             rnn_nodes.push_back(node);
             layer_nodes[current_layer].push_back(node);
@@ -111,10 +111,10 @@ RNN_Genome* create_jordan(int number_inputs, int number_hidden_layers, int numbe
     }
 
     //connect the output node with recurrent edges to each hidden node
-    for (int32_t k = 0; k < output_layer.size(); k++) {
+    for (uint32_t k = 0; k < output_layer.size(); k++) {
         for (int32_t i = 0; i < number_hidden_layers; i++) {
             for (int32_t j = 0; j < number_hidden_nodes; j++) {
-                for (uint32_t d = 1; d <= max_recurrent_depth; d++) {
+                for (int32_t d = 1; d <= max_recurrent_depth; d++) {
                     recurrent_edges.push_back(new RNN_Recurrent_Edge(++edge_innovation_count, d, output_layer[k], layer_nodes[i + 1][j]));
                 }
             }
@@ -145,7 +145,7 @@ RNN_Genome* create_elman(int number_inputs, int number_hidden_layers, int number
     current_layer++;
 
     for (int32_t i = 0; i < number_hidden_layers; i++) {
-        for (uint32_t j = 0; j < number_hidden_nodes; j++) {
+        for (int32_t j = 0; j < number_hidden_nodes; j++) {
             RNN_Node *node = new RNN_Node(++node_innovation_count, HIDDEN_LAYER, current_layer, ELMAN_NODE);
             rnn_nodes.push_back(node);
             layer_nodes[current_layer].push_back(node);
@@ -175,8 +175,7 @@ RNN_Genome* create_elman(int number_inputs, int number_hidden_layers, int number
             for (int32_t k = 0; k < number_hidden_layers; k++) {
                 for (int32_t l = 0; l < number_hidden_nodes; l++) {
 
-
-                    for (uint32_t d = 1; d <= max_recurrent_depth; d++) {
+                    for (int32_t d = 1; d <= max_recurrent_depth; d++) {
                         recurrent_edges.push_back(new RNN_Recurrent_Edge(++edge_innovation_count, d, layer_nodes[i+1][j], layer_nodes[k+1][l]));
                     }
                 }
@@ -207,7 +206,7 @@ RNN_Genome* create_lstm(int number_inputs, int number_hidden_layers, int number_
     current_layer++;
 
     for (int32_t i = 0; i < number_hidden_layers; i++) {
-        for (uint32_t j = 0; j < number_hidden_nodes; j++) {
+        for (int32_t j = 0; j < number_hidden_nodes; j++) {
             LSTM_Node *node = new LSTM_Node(++node_innovation_count, HIDDEN_LAYER, current_layer);
             rnn_nodes.push_back(node);
             layer_nodes[current_layer].push_back(node);
@@ -251,7 +250,7 @@ RNN_Genome* create_ugrnn(int number_inputs, int number_hidden_layers, int number
     current_layer++;
 
     for (int32_t i = 0; i < number_hidden_layers; i++) {
-        for (uint32_t j = 0; j < number_hidden_nodes; j++) {
+        for (int32_t j = 0; j < number_hidden_nodes; j++) {
             UGRNN_Node *node = new UGRNN_Node(++node_innovation_count, HIDDEN_LAYER, current_layer);
             rnn_nodes.push_back(node);
             layer_nodes[current_layer].push_back(node);
@@ -296,7 +295,7 @@ RNN_Genome* create_gru(int number_inputs, int number_hidden_layers, int number_h
     current_layer++;
 
     for (int32_t i = 0; i < number_hidden_layers; i++) {
-        for (uint32_t j = 0; j < number_hidden_nodes; j++) {
+        for (int32_t j = 0; j < number_hidden_nodes; j++) {
             GRU_Node *node = new GRU_Node(++node_innovation_count, HIDDEN_LAYER, current_layer);
             rnn_nodes.push_back(node);
             layer_nodes[current_layer].push_back(node);
@@ -339,7 +338,7 @@ RNN_Genome* create_mgu(int number_inputs, int number_hidden_layers, int number_h
     current_layer++;
 
     for (int32_t i = 0; i < number_hidden_layers; i++) {
-        for (uint32_t j = 0; j < number_hidden_nodes; j++) {
+        for (int32_t j = 0; j < number_hidden_nodes; j++) {
             MGU_Node *node = new MGU_Node(++node_innovation_count, HIDDEN_LAYER, current_layer);
             rnn_nodes.push_back(node);
             layer_nodes[current_layer].push_back(node);
@@ -383,7 +382,7 @@ RNN_Genome* create_delta(int number_inputs, int number_hidden_layers, int number
     current_layer++;
 
     for (int32_t i = 0; i < number_hidden_layers; i++) {
-        for (uint32_t j = 0; j < number_hidden_nodes; j++) {
+        for (int32_t j = 0; j < number_hidden_nodes; j++) {
             Delta_Node *node = new Delta_Node(++node_innovation_count, HIDDEN_LAYER, current_layer);
             rnn_nodes.push_back(node);
             layer_nodes[current_layer].push_back(node);

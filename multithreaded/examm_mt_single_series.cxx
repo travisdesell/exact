@@ -131,12 +131,6 @@ int main(int argc, char** argv) {
     int32_t rec_delay_max = 10;
     get_argument(arguments, "--rec_delay_max", false, rec_delay_max);
 
-    string rec_sampling_population = "global";
-    get_argument(arguments, "--rec_sampling_population", false, rec_sampling_population);
-
-    string rec_sampling_distribution = "uniform";
-    get_argument(arguments, "--rec_sampling_distribution", false, rec_sampling_distribution);
-
     get_argument(arguments, "--output_directory", true, output_directory);
 
     string output_filename;
@@ -173,6 +167,11 @@ int main(int argc, char** argv) {
     bool tl_ver3 = true ;
     if (genome_file_name != "") {
         get_argument(arguments, "--tl_version3", false, tl_ver3);
+    }
+    
+    bool tl_start_filled = false;
+    if (genome_file_name != "") {
+        get_argument(arguments, "--tl_start_filled", false, tl_start_filled);
     }
 
     int32_t stir_mutations = 0;
@@ -228,12 +227,12 @@ int main(int argc, char** argv) {
                 use_low_threshold, low_threshold,
                 use_dropout, dropout_probability,
                 rec_delay_min, rec_delay_max,
-                rec_sampling_population, rec_sampling_distribution,
                 output_directory + "/slice_" + to_string(i) + "_repeat_" + to_string(k),
                 genome_file_name,
                 no_extra_inputs, no_extra_outputs,
                 inputs_removed_tokens, outputs_removed_tokens,
-                tl_ver1, tl_ver2, tl_ver3, stir_mutations);
+                tl_ver1, tl_ver2, tl_ver3, tl_start_filled, 
+                stir_mutations);
 
             vector<thread> threads;
             for (int32_t i = 0; i < number_threads; i++) {
