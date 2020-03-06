@@ -33,21 +33,20 @@ class IslandSpeciationStrategy : public SpeciationStrategy {
 
         RNN_Genome *minimal_genome; /**< keep a reference to a minimal genome so we can re-use it across islands and not duplicate innovation numbers. */
         
-        int32_t number_stir_mutations; /**< How many mutations to apply to the minimal genome*/
-
-        string check_on_island_method; /**< The method used to find the worst island in population */
-
-        int32_t num_genomes_check_on_island; /**< How frequently to find the worst island in population */
+        string island_ranking_method; /**< The method used to find the worst island in population */
 
         string repopulation_method; /**< The method used to repopulate the island after being erased */
         
-        int32_t repopulation_mutations; /**< The number of mutations when coping the best island to an empty island */
+        int32_t extinction_event_generation_number; /**< When EXAMM reaches this generation id, an extinction event will be triggered (i.e. islands will be killed and repopulated). */
+        int32_t repopulation_mutations; /**< When an island is erradicated, it is repopulated with copies of the best genome that have this number of mutations applied to them. */
+        int32_t islands_to_exterminate; /**< When an extinction event is triggered, this is the number of islands that will be exterminated. */
 
         // int32_t worst_island;
         /**
          * All the islands which contain the genomes for this speciation strategy.
          */ 
         vector<Island*> islands;
+    
     public:
         //static void register_command_line_arguments();
         //static IslandSpeciationStrategy* generate_from_command_line();
@@ -58,14 +57,23 @@ class IslandSpeciationStrategy : public SpeciationStrategy {
          * \param number_of_islands specifies how many islands it will us e
          * \param max_island_size specifies the maximum number of gneomes in an island
          */
-        IslandSpeciationStrategy(int32_t _number_of_islands, int32_t _max_island_size, double _mutation_rate, double _intra_island_crossover_rate, double _inter_island_crossover_rate, RNN_Genome *seed_genome, string _check_on_island_method, string _repopulation_method, int32_t _repopulation_mutations, int32_t _num_genomes_check_on_island, int32_t _number_stir_mutations);
-
+        IslandSpeciationStrategy(int32_t _number_of_islands, int32_t _max_island_size, 
+                                double _mutation_rate, double _intra_island_crossover_rate, 
+                                double _inter_island_crossover_rate, RNN_Genome *_seed_genome,
+                                string _island_ranking_method, string _repopulation_method,
+                                int32_t _extinction_event_generation_number, int32_t _repopulation_mutations,
+                                int32_t islands_to_exterminate);
+        
         /**
-         *
-         * \param mutate used to apply mutations to the copies of the seed genome. 
-         * \param number_stir_mutations determines how many mutations are applied to each copy 
+         * Transfer learning constructor.
+         * \param Modification function to be applied to every copy of the seed_genome 
          */
-        IslandSpeciationStrategy(int32_t _number_of_islands, int32_t _max_island_size, double _mutation_rate, double _intra_island_crossover_rate, double _inter_island_crossover_rate, RNN_Genome *seed_genome, int32_t number_stir_mutations, function<void (int32_t, RNN_Genome*)> &mutate);
+        IslandSpeciationStrategy(int32_t _number_of_islands, int32_t _max_island_size,
+                                double _mutation_rate, double _intra_island_crossover_rate,
+                                double _inter_island_crossover_rate, RNN_Genome *_seed_genome, 
+                                string _island_ranking_method, string _repopulation_method,
+                                int32_t _extinction_event_generation_number, int32_t _repopulation_mutations,
+                                int32_t islands_to_exterminate, function<void (RNN_Genome*)> &modify);
         
         /**
          * \return the number of generated genomes.

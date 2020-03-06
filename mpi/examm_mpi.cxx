@@ -291,11 +291,14 @@ int main(int argc, char** argv) {
     string speciation_method = "";
     get_argument(arguments, "--speciation_method", false, speciation_method);
 
-    int32_t num_genomes_check_on_island;
-    get_argument(arguments, "--num_genomes_check_on_island", false, num_genomes_check_on_island);
+    int32_t extinction_event_generation_number = 0;
+    get_argument(arguments, "--extinction_event_generation_number", false, extinction_event_generation_number);
+  
+    int32_t islands_to_exterminate;
+    get_argument(arguments, "--islands_to_exterminate", false, extinction_event_generation_number);
 
-    string check_on_island_method = "";
-    get_argument(arguments, "--check_on_island_method", false, check_on_island_method);
+    string island_ranking_method = "";
+    get_argument(arguments, "--island_ranking_method", false, island_ranking_method);
 
     string repopulation_method = "";
     get_argument(arguments, "--repopulation_method", false, repopulation_method);
@@ -329,15 +332,6 @@ int main(int argc, char** argv) {
 
     int32_t rec_delay_max = 10;
     get_argument(arguments, "--rec_delay_max", false, rec_delay_max);
-
-    string rec_sampling_population = "global";
-    get_argument(arguments, "--rec_sampling_population", false, rec_sampling_population);
-
-    string rec_sampling_distribution = "uniform";
-    get_argument(arguments, "--rec_sampling_distribution", false, rec_sampling_distribution);
-
-    int32_t stir_mutations = 0;
-    get_argument(arguments, "--stir_mutations", false, stir_mutations);
 
     string genome_file_name = "";
     get_argument(arguments, "--genome_bin", false, genome_file_name);
@@ -374,14 +368,20 @@ int main(int argc, char** argv) {
         get_argument(arguments, "--tl_version3", false, tl_ver3);
     }
 
+    bool tl_start_filled = false;
+    if (genome_file_name != "") {
+        get_argument(arguments, "--tl_start_filled", false, tl_start_filled);
+    }
+
     get_individual_inputs( inputs_to_remove, inputs_removed_tokens) ;
     get_individual_inputs( outputs_to_remove, outputs_removed_tokens) ;
 
     Log::clear_rank_restriction();
 
     if (rank == 0) {
-        examm = new EXAMM(population_size, number_islands, max_genomes, speciation_method, num_genomes_check_on_island, check_on_island_method,
+        examm = new EXAMM(population_size, number_islands, max_genomes, extinction_event_generation_number, islands_to_exterminate, island_ranking_method,
             repopulation_method, repopulation_mutations,
+            speciation_method,
             time_series_sets->get_input_parameter_names(),
             time_series_sets->get_output_parameter_names(),
             time_series_sets->get_normalize_mins(),
@@ -391,12 +391,11 @@ int main(int argc, char** argv) {
             use_low_threshold, low_threshold,
             use_dropout, dropout_probability,
             rec_delay_min, rec_delay_max,
-            rec_sampling_population, rec_sampling_distribution,
             output_directory,
             genome_file_name,
             no_extra_inputs, no_extra_outputs,
             inputs_removed_tokens, outputs_removed_tokens,
-            tl_ver1, tl_ver2, tl_ver3, stir_mutations);
+            tl_ver1, tl_ver2, tl_ver3, tl_start_filled);
 
         if (possible_node_types.size() > 0) examm->set_possible_node_types(possible_node_types);
 

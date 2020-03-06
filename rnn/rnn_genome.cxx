@@ -55,7 +55,6 @@ using std::vector;
 #include "ugrnn_node.hxx"
 #include "mgu_node.hxx"
 #include "rnn_genome.hxx"
-#include "distribution.hxx"
 
 string parse_fitness(double fitness) {
     if (fitness == EXAMM_MAX_DOUBLE) {
@@ -1605,11 +1604,11 @@ bool RNN_Genome::attempt_edge_insert(RNN_Node_Interface *n1, RNN_Node_Interface 
     return true;
 }
 
-bool RNN_Genome::attempt_recurrent_edge_insert(RNN_Node_Interface *n1, RNN_Node_Interface *n2, double mu, double sigma, Distribution* dist, int32_t &edge_innovation_count) {
+bool RNN_Genome::attempt_recurrent_edge_insert(RNN_Node_Interface *n1, RNN_Node_Interface *n2, double mu, double sigma, uniform_int_distribution<int32_t> dist, int32_t &edge_innovation_count) {
     Log::info("\tadding recurrent edge between nodes %d and %d\n", n1->innovation_number, n2->innovation_number);
 
     //int32_t recurrent_depth = 1 + (rng_0_1(generator) * (max_recurrent_depth - 1));
-    int32_t recurrent_depth = dist->sample();
+    int32_t recurrent_depth = dist(generator);
 
     //check to see if an edge between the two nodes already exists
     for (int32_t i = 0; i < (int32_t)recurrent_edges.size(); i++) {
@@ -1639,7 +1638,7 @@ bool RNN_Genome::attempt_recurrent_edge_insert(RNN_Node_Interface *n1, RNN_Node_
     return true;
 }
 
-void RNN_Genome::generate_recurrent_edges(RNN_Node_Interface *node, double mu, double sigma, Distribution *dist, int32_t &edge_innovation_count) {
+void RNN_Genome::generate_recurrent_edges(RNN_Node_Interface *node, double mu, double sigma, uniform_int_distribution<int32_t> dist, int32_t &edge_innovation_count) {
 
     if (node->node_type == JORDAN_NODE) {
         for (int32_t i = 0; i < (int32_t)edges.size(); i++) {
@@ -1647,14 +1646,11 @@ void RNN_Genome::generate_recurrent_edges(RNN_Node_Interface *node, double mu, d
                 attempt_recurrent_edge_insert(edges[i]->output_node, node, mu, sigma, dist, edge_innovation_count);
             }
         }
-
     } else if (node->node_type == ELMAN_NODE) {
         //elman nodes have a circular reference to themselves
         attempt_recurrent_edge_insert(node, node, mu, sigma, dist, edge_innovation_count);
     }
 }
-
-
 
 bool RNN_Genome::add_edge(double mu, double sigma, int32_t &edge_innovation_count) {
     Log::info("\tattempting to add edge!\n");
@@ -1699,7 +1695,7 @@ bool RNN_Genome::add_edge(double mu, double sigma, int32_t &edge_innovation_coun
     return attempt_edge_insert(n1, n2, mu, sigma, edge_innovation_count);
 }
 
-bool RNN_Genome::add_recurrent_edge(double mu, double sigma, Distribution* dist, int32_t &edge_innovation_count) {
+bool RNN_Genome::add_recurrent_edge(double mu, double sigma, uniform_int_distribution<int32_t> dist, int32_t &edge_innovation_count) {
     Log::info("\tattempting to add recurrent edge!\n");
 
     vector<RNN_Node_Interface*> possible_input_nodes;
@@ -1793,7 +1789,7 @@ bool RNN_Genome::enable_edge() {
 }
 
 
-bool RNN_Genome::split_edge(double mu, double sigma, int node_type, Distribution *dist, int32_t &edge_innovation_count, int32_t &node_innovation_count) {
+bool RNN_Genome::split_edge(double mu, double sigma, int node_type, uniform_int_distribution<int32_t> dist, int32_t &edge_innovation_count, int32_t &node_innovation_count) {
     Log::info("\tattempting to split an edge!\n");
     vector<RNN_Edge*> enabled_edges;
     for (int32_t i = 0; i < edges.size(); i++) {
@@ -1842,7 +1838,7 @@ bool RNN_Genome::split_edge(double mu, double sigma, int node_type, Distribution
     return true;
 }
 
-bool RNN_Genome::connect_new_input_node(double mu, double sigma, RNN_Node_Interface *new_node, Distribution *dist, int32_t &edge_innovation_count) {
+bool RNN_Genome::connect_new_input_node(double mu, double sigma, RNN_Node_Interface *new_node, uniform_int_distribution<int32_t> dist, int32_t &edge_innovation_count) {
     Log::info("\tattempting to connect a new input node for transfer learning!\n");
 
     vector<RNN_Node_Interface*> possible_outputs;
@@ -1908,7 +1904,7 @@ bool RNN_Genome::connect_new_input_node(double mu, double sigma, RNN_Node_Interf
     return true;
 }
 
-bool RNN_Genome::connect_new_output_node(double mu, double sigma, RNN_Node_Interface *new_node, Distribution *dist, int32_t &edge_innovation_count) {
+bool RNN_Genome::connect_new_output_node(double mu, double sigma, RNN_Node_Interface *new_node, uniform_int_distribution<int32_t> dist, int32_t &edge_innovation_count) {
     Log::info("\tattempting to connect a new output node for transfer learning!\n");
 
     vector<RNN_Node_Interface*> possible_inputs;
@@ -1977,7 +1973,7 @@ bool RNN_Genome::connect_new_output_node(double mu, double sigma, RNN_Node_Inter
 
 
 //INFO: ADDED BY ABDELRAHMAN TO USE FOR TRANSFER LEARNING
-bool RNN_Genome::connect_node_to_hid_nodes( double mu, double sig, RNN_Node_Interface *new_node, Distribution *dist, int32_t &edge_innovation_count, bool from_input ) {
+bool RNN_Genome::connect_node_to_hid_nodes( double mu, double sig, RNN_Node_Interface *new_node, uniform_int_distribution<int32_t> dist, int32_t &edge_innovation_count, bool from_input ) {
 
     vector<RNN_Node_Interface*> candidate_nodes;
 
@@ -2034,7 +2030,7 @@ bool RNN_Genome::connect_node_to_hid_nodes( double mu, double sig, RNN_Node_Inte
 
     for (auto node: candidate_nodes) {
         if (rng_0_1(generator) < recurrent_probability) {
-            int32_t recurrent_depth = dist->sample();
+            int32_t recurrent_depth = dist(generator);
             RNN_Recurrent_Edge *e;
             if (from_input)
                 e = new RNN_Recurrent_Edge(++edge_innovation_count, recurrent_depth, new_node, node);
@@ -2071,7 +2067,7 @@ bool RNN_Genome::connect_node_to_hid_nodes( double mu, double sig, RNN_Node_Inte
 
 /*   ################# ################# ################# */
 
-bool RNN_Genome::add_node(double mu, double sigma, int node_type, Distribution *dist, int32_t &edge_innovation_count, int32_t &node_innovation_count) {
+bool RNN_Genome::add_node(double mu, double sigma, int node_type, uniform_int_distribution<int32_t> dist, int32_t &edge_innovation_count, int32_t &node_innovation_count) {
     Log::info("\tattempting to add a node!\n");
     double split_depth = rng_0_1(generator);
 
@@ -2201,7 +2197,7 @@ bool RNN_Genome::disable_node() {
     return true;
 }
 
-bool RNN_Genome::split_node(double mu, double sigma, int node_type, Distribution *dist, int32_t &edge_innovation_count, int32_t &node_innovation_count) {
+bool RNN_Genome::split_node(double mu, double sigma, int node_type, uniform_int_distribution<int32_t> dist, int32_t &edge_innovation_count, int32_t &node_innovation_count) {
     Log::info("\tattempting to split a node!\n");
     vector<RNN_Node_Interface*> possible_nodes;
     for (int32_t i = 0; i < (int32_t)nodes.size(); i++) {
@@ -2383,7 +2379,7 @@ bool RNN_Genome::split_node(double mu, double sigma, int node_type, Distribution
     return true;
 }
 
-bool RNN_Genome::merge_node(double mu, double sigma, int node_type, Distribution *dist, int32_t &edge_innovation_count, int32_t &node_innovation_count) {
+bool RNN_Genome::merge_node(double mu, double sigma, int node_type, uniform_int_distribution<int32_t> dist, int32_t &edge_innovation_count, int32_t &node_innovation_count) {
     Log::info("\tattempting to merge a node!\n");
     vector<RNN_Node_Interface*> possible_nodes;
     for (int32_t i = 0; i < (int32_t)nodes.size(); i++) {
@@ -2987,7 +2983,7 @@ void RNN_Genome::write_to_array(char **bytes, int32_t &length) {
     string bytes_str = oss.str();
     length = bytes_str.size();
     (*bytes) = (char*)malloc(length * sizeof(char));
-    for (uint32_t i = 0; i < length; i++) {
+    for (int32_t i = 0; i < length; i++) {
         (*bytes)[i] = bytes_str[i];
     }
 }
@@ -2998,12 +2994,9 @@ void RNN_Genome::write_to_file(string bin_filename) {
     bin_outfile.close();
 }
 
-#define checkpoint(name) ; //printf("checkpoint %d\n", name++)
 
 void RNN_Genome::write_to_stream(ostream &bin_ostream) {
     Log::debug("WRITING GENOME TO STREAM\n");
-    int x = 0;
-    checkpoint(x);
     bin_ostream.write((char*)&generation_id, sizeof(int32_t));
     bin_ostream.write((char*)&group_id, sizeof(int32_t));
     bin_ostream.write((char*)&bp_iterations, sizeof(int32_t));
@@ -3012,13 +3005,11 @@ void RNN_Genome::write_to_stream(ostream &bin_ostream) {
     bin_ostream.write((char*)&use_nesterov_momentum, sizeof(bool));
     bin_ostream.write((char*)&use_reset_weights, sizeof(bool));
 
-    checkpoint(x);
     bin_ostream.write((char*)&use_high_norm, sizeof(bool));
     bin_ostream.write((char*)&high_threshold, sizeof(double));
     bin_ostream.write((char*)&use_low_norm, sizeof(bool));
     bin_ostream.write((char*)&low_threshold, sizeof(double));
 
-    checkpoint(x);
     bin_ostream.write((char*)&use_dropout, sizeof(bool));
     bin_ostream.write((char*)&dropout_probability, sizeof(double));
 
@@ -3037,7 +3028,6 @@ void RNN_Genome::write_to_stream(ostream &bin_ostream) {
     Log::debug("use_dropout: %d\n", use_dropout);
     Log::debug("dropout_probability: %lf\n", dropout_probability);
 
-    checkpoint(x);
     write_binary_string(bin_ostream, log_filename, "log_filename");
 
     ostringstream generator_oss;
@@ -3045,13 +3035,11 @@ void RNN_Genome::write_to_stream(ostream &bin_ostream) {
     string generator_str = generator_oss.str();
     write_binary_string(bin_ostream, generator_str, "generator");
 
-    checkpoint(x);
     ostringstream rng_0_1_oss;
     rng_0_1_oss << rng_0_1;
     string rng_0_1_str = rng_0_1_oss.str();
     write_binary_string(bin_ostream, rng_0_1_str, "rng_0_1");
 
-    checkpoint(x);
     ostringstream generated_by_map_oss;
     write_map(generated_by_map_oss, generated_by_map);
     string generated_by_map_str = generated_by_map_oss.str();
@@ -3065,7 +3053,6 @@ void RNN_Genome::write_to_stream(ostream &bin_ostream) {
     bin_ostream.write((char*)&n_initial_parameters, sizeof(int32_t));
     bin_ostream.write((char*)&initial_parameters[0], sizeof(double) * initial_parameters.size());
 
-    checkpoint(x);
     int32_t n_best_parameters = best_parameters.size();
     bin_ostream.write((char*)&n_best_parameters, sizeof(int32_t));
     if (n_best_parameters)
@@ -3074,51 +3061,46 @@ void RNN_Genome::write_to_stream(ostream &bin_ostream) {
 
     int32_t n_input_parameter_names = input_parameter_names.size();
     bin_ostream.write((char*)&n_input_parameter_names, sizeof(int32_t));
-    for (int32_t i = 0; i < input_parameter_names.size(); i++) {
+    for (uint32_t i = 0; i < input_parameter_names.size(); i++) {
         write_binary_string(bin_ostream, input_parameter_names[i], "input_parameter_names[" + std::to_string(i) + "]");
     }
 
-    checkpoint(x);
     int32_t n_output_parameter_names = output_parameter_names.size();
     bin_ostream.write((char*)&n_output_parameter_names, sizeof(int32_t));
-    for (int32_t i = 0; i < output_parameter_names.size(); i++) {
+    for (uint32_t i = 0; i < output_parameter_names.size(); i++) {
         write_binary_string(bin_ostream, output_parameter_names[i], "output_parameter_names[" + std::to_string(i) + "]");
     }
 
-    checkpoint(x);
     int32_t n_nodes = nodes.size();
     bin_ostream.write((char*)&n_nodes, sizeof(int32_t));
     Log::debug("writing %d nodes.\n", n_nodes);
 
-    for (int32_t i = 0; i < nodes.size(); i++) {
+    for (uint32_t i = 0; i < nodes.size(); i++) {
         Log::debug("NODE: %d %d %d %d\n", nodes[i]->innovation_number, nodes[i]->layer_type, nodes[i]->node_type, nodes[i]->depth);
         nodes[i]->write_to_stream(bin_ostream);
     }
 
-    checkpoint(x);
 
     int32_t n_edges = edges.size();
     bin_ostream.write((char*)&n_edges, sizeof(int32_t));
     Log::debug("writing %d edges.\n", n_edges);
 
-    for (int32_t i = 0; i < edges.size(); i++) {
+    for (uint32_t i = 0; i < edges.size(); i++) {
         Log::debug("EDGE: %d %d %d\n", edges[i]->innovation_number, edges[i]->input_innovation_number, edges[i]->output_innovation_number);
         edges[i]->write_to_stream(bin_ostream);
     }
 
 
-    checkpoint(x);
     int32_t n_recurrent_edges = recurrent_edges.size();
     bin_ostream.write((char*)&n_recurrent_edges, sizeof(int32_t));
     Log::debug("writing %d recurrent edges.\n", n_recurrent_edges);
 
-    for (int32_t i = 0; i < recurrent_edges.size(); i++) {
+    for (uint32_t i = 0; i < recurrent_edges.size(); i++) {
         Log::debug("RECURRENT EDGE: %d %d %d %d\n", recurrent_edges[i]->innovation_number, recurrent_edges[i]->recurrent_depth, recurrent_edges[i]->input_innovation_number, recurrent_edges[i]->output_innovation_number);
 
         recurrent_edges[i]->write_to_stream(bin_ostream);
     }
 
-    checkpoint(x);
     ostringstream normalize_mins_oss;
     write_map(normalize_mins_oss, normalize_mins);
     string normalize_mins_str = normalize_mins_oss.str();
@@ -3133,17 +3115,17 @@ void RNN_Genome::write_to_stream(ostream &bin_ostream) {
 void RNN_Genome::update_innovation_counts(int32_t &node_innovation_count, int32_t &edge_innovation_count) {
     int32_t max_node_innovation_count = -1;
 
-    for (int32_t i = 0; i < this->nodes.size(); i += 1) {
+    for (uint32_t i = 0; i < this->nodes.size(); i += 1) {
         RNN_Node_Interface *node = this->nodes[i];
         max_node_innovation_count = std::max(max_node_innovation_count, node->innovation_number);
     }
 
     int32_t max_edge_innovation_count = -1;
-    for (int32_t i = 0; i < this->edges.size(); i += 1) {
+    for (uint32_t i = 0; i < this->edges.size(); i += 1) {
         RNN_Edge *edge = this->edges[i];
         max_edge_innovation_count = std::max(max_edge_innovation_count, edge->innovation_number);
     }
-    for (int32_t i = 0; i < this->recurrent_edges.size(); i += 1) {
+    for (uint32_t i = 0; i < this->recurrent_edges.size(); i += 1) {
         RNN_Recurrent_Edge *redge = this->recurrent_edges[i];
         max_edge_innovation_count = std::max(max_edge_innovation_count, redge->innovation_number);
     }
