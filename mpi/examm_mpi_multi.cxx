@@ -256,7 +256,7 @@ int main(int argc, char** argv) {
     get_argument(arguments, "--extinction_event_generation_number", false, extinction_event_generation_number);
     
     int32_t islands_to_exterminate;
-    get_argument(arguments, "--islands_to_exterminate", false, extinction_event_generation_number);
+    get_argument(arguments, "--islands_to_exterminate", false, islands_to_exterminate);
 
     string island_ranking_method = "";
     get_argument(arguments, "--island_ranking_method", false, island_ranking_method);
