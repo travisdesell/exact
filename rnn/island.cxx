@@ -198,11 +198,12 @@ void Island::print(string indent) {
 
 void Island::erase_island() {
 
-    for (int32_t i = 0; i < genomes.size(); i++) {
-        if(genomes[i]->get_generation_id() > erased_generation_id){
-            erased_generation_id=genomes[i]->get_generation_id();
-        }
-    }
+    // for (int32_t i = 0; i < genomes.size(); i++) {
+    //     if(genomes[i]->get_generation_id() > erased_generation_id){
+    //         erased_generation_id=genomes[i]->get_generation_id();
+    //     }
+    // }
+    erased_generation_id = latest_generation_id;
     genomes.clear();
     erased=true;
     Log::info("Worst island size after erased: %d", genomes.size());
@@ -235,3 +236,6 @@ vector<RNN_Genome *> Island::get_genomes(){
     return genomes;
 }
 
+void Island::set_latest_generation_id(int32_t _latest_generation_id){
+    latest_generation_id = _latest_generation_id;
+}
