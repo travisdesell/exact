@@ -312,14 +312,14 @@ RNN_Genome* IslandSpeciationStrategy::generate_genome(uniform_real_distribution<
             islands[generation_island] -> set_latest_generation_id(generated_genomes);
             generated_genomes++;
             genome_copy->set_group_id(generation_island);
-
+            generation_island++;
+            if (generation_island >= (signed) islands.size()) generation_island = 0; 
             Log::debug("inserting genome copy!\n");
             insert_genome(genome_copy);
             Log::debug("inserted genome copy!\n");
 
             //return a copy of the minimal genome to be trained for each island
             genome = genome_copy->copy();
-            return genome;
         } else {
             Log::info("island is not empty, mutating a random genome\n");
 
