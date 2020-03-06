@@ -320,13 +320,18 @@ RNN_Genome* IslandSpeciationStrategy::generate_genome(uniform_real_distribution<
                 //copy the best island to the worst at once
                 //after the worst island is filled, set the island status to filled
                 //then generate a genome for filled status, so this function still return a generated genome
+                Log::info("island is repopulating through bestIsland method!\n");
+                Log::info("island current size is: %d \n", islands[generation_island]->get_genomes().size());
                 RNN_Genome *best_genome = get_best_genome()->copy();
                 int32_t best_island_id = best_genome->get_group_id();
                 fill_island(best_island_id, generation_island);
                 if(island->is_full()){
+                    Log::info("island is full now, and generating a new one!\n");
                     island->set_status(Island::FILLED);
-                }else Log::error("Island is not full after coping the best island over!");
-                genome = generate_for_filled_island(rng_0_1, generator, mutate, crossover);
+                }else Log::error("Island is not full after coping the best island over!\n");
+                while(genome==NULL){
+                    genome = generate_for_filled_island(rng_0_1, generator, mutate, crossover);
+                }
  
             }else{
                 Log::fatal("Wrong repopulation_method argument");
