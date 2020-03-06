@@ -254,6 +254,9 @@ int main(int argc, char** argv) {
 
     int32_t extinction_event_generation_number;
     get_argument(arguments, "--extinction_event_generation_number", false, extinction_event_generation_number);
+    
+    int32_t islands_to_exterminate;
+    get_argument(arguments, "--islands_to_exterminate", false, extinction_event_generation_number);
 
     string island_ranking_method = "";
     get_argument(arguments, "--island_ranking_method", false, island_ranking_method);
@@ -350,9 +353,6 @@ int main(int argc, char** argv) {
         get_argument(arguments, "--tl_start_filled", false, tl_start_filled);
     }
 
-    int32_t stir_mutations = 0;
-    get_argument(arguments, "--stir_mutations", false, stir_mutations);
-
     get_individual_inputs( inputs_to_remove, inputs_removed_tokens) ;
     get_individual_inputs( outputs_to_remove, outputs_removed_tokens) ;
 
@@ -396,8 +396,9 @@ int main(int argc, char** argv) {
                 string examm_log_id = "examm_slice_" + to_string(global_slice) + "_repeat_" + to_string(global_repeat);
                 Log::set_id(examm_log_id);
 
-                examm = new EXAMM(population_size, number_islands, max_genomes, speciation_method, extinction_event_generation_number, island_ranking_method,
+                examm = new EXAMM(population_size, number_islands, max_genomes, extinction_event_generation_number, islands_to_exterminate, island_ranking_method,
                     repopulation_method, repopulation_mutations,
+                    speciation_method,
                     time_series_sets->get_input_parameter_names(),
                     time_series_sets->get_output_parameter_names(),
                     time_series_sets->get_normalize_mins(),
@@ -411,7 +412,7 @@ int main(int argc, char** argv) {
                     genome_file_name,
                     no_extra_inputs, no_extra_outputs,
                     inputs_removed_tokens, outputs_removed_tokens,
-                    tl_ver1, tl_ver2, tl_ver3);
+                    tl_ver1, tl_ver2, tl_ver3, tl_start_filled);
 
                 examm->set_possible_node_types(possible_node_types);
 
