@@ -312,8 +312,7 @@ RNN_Genome* IslandSpeciationStrategy::generate_genome(uniform_real_distribution<
             islands[generation_island] -> set_latest_generation_id(generated_genomes);
             generated_genomes++;
             genome_copy->set_group_id(generation_island);
-            generation_island++;
-            if (generation_island >= (signed) islands.size()) generation_island = 0; 
+
             Log::debug("inserting genome copy!\n");
             insert_genome(genome_copy);
             Log::debug("inserted genome copy!\n");
@@ -349,7 +348,8 @@ RNN_Genome* IslandSpeciationStrategy::generate_genome(uniform_real_distribution<
             islands[generation_island] -> set_latest_generation_id(generated_genomes);
             generated_genomes++;
             copy->set_group_id(generation_island);
-
+            generation_island++;
+            if (generation_island >= (signed) islands.size()) generation_island = 0; 
             insert_genome(copy);
 
             //also randomly initialize this genome as
