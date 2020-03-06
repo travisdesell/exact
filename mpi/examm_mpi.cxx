@@ -291,8 +291,11 @@ int main(int argc, char** argv) {
     string speciation_method = "";
     get_argument(arguments, "--speciation_method", false, speciation_method);
 
-    int32_t extinction_event_generation_number;
+    int32_t extinction_event_generation_number = 0;
     get_argument(arguments, "--extinction_event_generation_number", false, extinction_event_generation_number);
+  
+    int32_t islands_to_exterminate;
+    get_argument(arguments, "--islands_to_exterminate", false, extinction_event_generation_number);
 
     string island_ranking_method = "";
     get_argument(arguments, "--island_ranking_method", false, island_ranking_method);
@@ -376,8 +379,9 @@ int main(int argc, char** argv) {
     Log::clear_rank_restriction();
 
     if (rank == 0) {
-        examm = new EXAMM(population_size, number_islands, max_genomes, speciation_method, extinction_event_generation_number, island_ranking_method,
+        examm = new EXAMM(population_size, number_islands, max_genomes, extinction_event_generation_number, islands_to_exterminate, island_ranking_method,
             repopulation_method, repopulation_mutations,
+            speciation_method,
             time_series_sets->get_input_parameter_names(),
             time_series_sets->get_output_parameter_names(),
             time_series_sets->get_normalize_mins(),
