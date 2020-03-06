@@ -255,31 +255,23 @@ int32_t * IslandSpeciationStrategy::rank_islands() {
     double fitness_j1, fitness_j2;
     for (int32_t i = 0; i< number_of_islands; i++){
         island_rank[i]=i;
-        Log::error("original island: %d fitness %f \n", island_rank[i], islands[island_rank[i]]->get_best_fitness());
     } 
     for (int32_t i = 0; i < number_of_islands-1; i++)   {
         for (int32_t j = 0; j < number_of_islands-i-1; j++)  {
-            // for (int32_t a = 0; a< number_of_islands; a++){
-            //     Log::error("islanda: %d \n", island_rank[a]);
-            // }
+            for (int32_t a = 0; a< number_of_islands; a++){
+            }
             fitness_j1 = islands[island_rank[j]]->get_best_fitness();
             fitness_j2 = islands[island_rank[j+1]]->get_best_fitness();
             if (fitness_j1 < fitness_j2) {
-                // Log::error("j: %d\n",j);
                 temp = island_rank[j];
-                // Log::error("temp: %d\n", temp);
                 island_rank[j] = island_rank[j+1];
-                // Log::error("island_rank[j]: %d\n", island_rank[j]);
                 island_rank[j+1]= temp;
-                // Log::error("island_rank[j+1]: %d\n", island_rank[j+1]);
-                // Log::error("island rank: \n");
             }
         }
     }   
-      
-    Log::error("island rank: \n");
+    Log::info("island rank: \n");
     for (int32_t i = 0; i< number_of_islands; i++){
-        Log::error("island: %d fitness %f \n", island_rank[i], islands[island_rank[i]]->get_best_fitness());
+        Log::info("island: %d fitness %f \n", island_rank[i], islands[island_rank[i]]->get_best_fitness());
         // Log::error("island: %d \n", island_rank[i]);
     } 
     return island_rank;
