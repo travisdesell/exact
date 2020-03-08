@@ -70,7 +70,7 @@ class TimeSeriesSet {
 
 
         TimeSeriesSet(string _filename, const vector<string> &_fields);
-
+        ~TimeSeriesSet();
         void add_time_series(string name);
 
         int get_number_rows() const;
@@ -129,7 +129,7 @@ class TimeSeriesSets {
         static void help_message();
 
         TimeSeriesSets();
-
+        ~TimeSeriesSets();
         static TimeSeriesSets* generate_from_arguments(const vector<string> &arguments);
         static TimeSeriesSets* generate_test(const vector<string> &_test_filenames, const vector<string> &_input_parameter_names, const vector<string> &_output_parameter_names);
 

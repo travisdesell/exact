@@ -295,8 +295,8 @@ RNN_Genome* IslandSpeciationStrategy::generate_genome(uniform_real_distribution<
 
         if (island->size() == 0) {
             Log::debug("starting with minimal genome\n");
-            RNN_Genome *genome_copy = minimal_genome->copy();
-            
+            // RNN_Genome *genome_copy = minimal_genome->copy();
+            RNN_Genome *genome = minimal_genome->copy();
             // This is commented out because transfer learning islands should probably start out filled up.
             // it is probably going to be removed soon.
             
@@ -308,17 +308,20 @@ RNN_Genome* IslandSpeciationStrategy::generate_genome(uniform_real_distribution<
             // }
 
             //set the generation id for the copy and increment generated genomes 
-            genome_copy->set_generation_id(generated_genomes);
+            // genome_copy->set_generation_id(generated_genomes);
+            genome->set_generation_id(generated_genomes);
             islands[generation_island] -> set_latest_generation_id(generated_genomes);
             generated_genomes++;
-            genome_copy->set_group_id(generation_island);
+            // genome_copy->set_group_id(generation_island);
+            genome->set_group_id(generation_island);
             generation_island++;
             if (generation_island >= (signed) islands.size()) generation_island = 0; 
 
             Log::debug("inserting genome copy!\n");
-            insert_genome(genome_copy);
+            // insert_genome(genome_copy);
+            insert_genome(genome);
             //return a copy of the minimal genome to be trained for each island
-            genome = genome_copy->copy();
+            // genome = genome_copy->copy();
             return genome;
         } else {
             Log::info("island is not empty, mutating a random genome\n");
@@ -358,6 +361,7 @@ RNN_Genome* IslandSpeciationStrategy::generate_genome(uniform_real_distribution<
             //initialized as the population hasn't been
             //filled
             genome->initialize_randomly();
+            delete copy;
             return genome;
         }
 
@@ -403,7 +407,7 @@ RNN_Genome* IslandSpeciationStrategy::generate_genome(uniform_real_distribution<
                 while(genome==NULL){
                     genome = generate_for_filled_island(rng_0_1, generator, mutate, crossover);
                 }
- 
+                delete best_genome;
             }else{
                 Log::fatal("Wrong repopulation_method argument");
                 exit(1);
@@ -459,6 +463,8 @@ RNN_Genome* IslandSpeciationStrategy::generate_for_filled_island(uniform_real_di
         island->copy_two_random_genomes(rng_0_1, generator, &parent1, &parent2);
 
         genome = crossover(parent1, parent2);
+        delete parent1;
+        delete parent2;
     } else {
         //inter-island crossover
         // Log::info("performing inter-island crossover\n");
@@ -482,8 +488,10 @@ RNN_Genome* IslandSpeciationStrategy::generate_for_filled_island(uniform_real_di
         }
 
         genome = crossover(parent1, parent2); // new RNN GENOME
+        delete parent1;
+        delete parent2;
     }
-
+    
     if (genome->outputs_unreachable()) {
         //no path from at least one input to the outputs
         delete genome;

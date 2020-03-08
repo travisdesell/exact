@@ -314,6 +314,15 @@ TimeSeriesSet::TimeSeriesSet(string _filename, const vector<string> &_fields) {
     Log::info("read time series '%s' with number rows: %d\n", filename.c_str(), number_rows);
 }
 
+TimeSeriesSet::~TimeSeriesSet(){
+    for( std::map<string, TimeSeries*>::iterator it=time_series.begin(); it!=time_series.end(); it=time_series.begin())
+	{
+		TimeSeries* series = it->second;
+        time_series.erase (it);
+        delete series;
+	}
+}
+
 int TimeSeriesSet::get_number_rows() const {
     return number_rows;
 }
@@ -507,6 +516,12 @@ void TimeSeriesSets::help_message() {
 }
 
 TimeSeriesSets::TimeSeriesSets() : normalized(false) {
+}
+
+TimeSeriesSets::~TimeSeriesSets(){
+    for (uint32_t i = 0; i < time_series.size(); i++) {
+        delete time_series[i];
+    }
 }
 
 void merge_parameter_names(const vector<string> &input_parameter_names, const vector<string> &output_parameter_names, vector<string> &all_parameter_names) {
