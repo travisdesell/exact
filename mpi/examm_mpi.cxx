@@ -161,7 +161,7 @@ void master(int max_rank) {
             examm_mutex.lock();
             examm->insert_genome(genome);
             examm_mutex.unlock();
-
+            delete genome;
             //this genome will be deleted if/when removed from population
         } else {
             Log::fatal("ERROR: received message from %d with unknown tag: %d", source, tag);
@@ -411,6 +411,6 @@ int main(int argc, char** argv) {
     Log::release_id("main_" + to_string(rank));
 
     MPI_Finalize();
-
+    delete time_series_sets;
     return 0;
 }
