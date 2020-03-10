@@ -63,6 +63,7 @@ class RNN_Genome {
         vector<double> best_parameters;
 
         minstd_rand0 generator;
+        
         uniform_real_distribution<double> rng_0_1;
         NormalDistribution normal_distribution;
 
@@ -238,6 +239,8 @@ class RNN_Genome {
         bool connect_new_input_node( double mu, double sig, RNN_Node_Interface *new_node, Distribution *dist, int32_t &edge_innovation_count );
         bool connect_new_output_node( double mu, double sig, RNN_Node_Interface *new_node, Distribution *dist, int32_t &edge_innovation_count );
         bool connect_node_to_hid_nodes( double mu, double sig, RNN_Node_Interface *new_node, Distribution *dist, int32_t &edge_innovation_count, bool from_input );
+        
+        void update_innovation_counts(int32_t &node_innovation_count, int32_t &edge_innovation_count);
 
         friend class EXAMM;
         friend class IslandSpeciationStrategy;
