@@ -2812,29 +2812,21 @@ void RNN_Genome::read_from_stream(istream &bin_istream) {
     Log::debug("dropout_probability: %lf\n", dropout_probability);
 
     read_binary_string(bin_istream, log_filename, "log_filename");
-    int x = 0;
-    //printf("%d\n", x++);
     string generator_str;
     read_binary_string(bin_istream, generator_str, "generator");
     istringstream generator_iss(generator_str);
-    //printf("%d\n", x++);
     generator_iss >> generator;
 
     string rng_0_1_str;
     read_binary_string(bin_istream, rng_0_1_str, "rng_0_1");
-    istringstream rng_0_1_iss(rng_0_1_str);
-    //printf("%d\n", x++);
-    string s = rng_0_1_iss.str();
-    const char* cs = s.c_str();
-    //printf("rng_0_1_iss length = %d\n", s.length());
-    // printf("cs length: %d \nStart: \n", s.length());
-    // for (int i = 0 ; i < s.length() ; i += 1)
-    //     printf("%x, ", cs[i]);
-    // printf("End\n");
-
-    rng_0_1_iss >> rng_0_1;
-    //printf("%d\n", x++);
-    
+    // So for some reason this was serialized incorrectly for some genomes,
+    // but the value should always be the same so we really don't need to de-serialize it anways and can just
+    // assign it a constant value
+    rng_0_1 = uniform_real_distribution<double>(0.0, 1.0);
+    // Formerly:
+    // istringstream rng_0_1_iss(rng_0_1_str);
+    //rng_0_1_iss >> rng_0_1;
+     
 
     string generated_by_map_str;
     read_binary_string(bin_istream, generated_by_map_str, "generated_by_map");
@@ -3137,3 +3129,301 @@ void RNN_Genome::write_to_stream(ostream &bin_ostream) {
     string normalize_maxs_str = normalize_maxs_oss.str();
     write_binary_string(bin_ostream, normalize_maxs_str, "normalize_maxs");
 }
+
+void RNN_Genome::update_innovation_counts(int32_t &node_innovation_count, int32_t &edge_innovation_count) {
+    int32_t max_node_innovation_count = -1;
+
+    for (int32_t i = 0; i < this->nodes.size(); i += 1) {
+        RNN_Node_Interface *node = this->nodes[i];
+        max_node_innovation_count = std::max(max_node_innovation_count, node->innovation_number);
+    }
+
+    int32_t max_edge_innovation_count = -1;
+    for (int32_t i = 0; i < this->edges.size(); i += 1) {
+        RNN_Edge *edge = this->edges[i];
+        max_edge_innovation_count = std::max(max_edge_innovation_count, edge->innovation_number);
+    }
+    for (int32_t i = 0; i < this->recurrent_edges.size(); i += 1) {
+        RNN_Recurrent_Edge *redge = this->recurrent_edges[i];
+        max_edge_innovation_count = std::max(max_edge_innovation_count, redge->innovation_number);
+    }
+
+    if (max_node_innovation_count == -1) {
+        // Fatal log message
+        Log::fatal("Seed genome had max node innovation number of -1 - this should never happen (unless the genome is empty :)");
+    }
+    if (max_edge_innovation_count == -1) {
+        // Fatal log message
+        Log::fatal("Seed genome had max node innovation number of -1 - this should never happen (and the genome isn't empty since max_node_innovation_count > -1)");
+    }
+
+    // One more than the highest we've seen should be good enough.
+    node_innovation_count = max_node_innovation_count + 1;
+    edge_innovation_count = max_edge_innovation_count + 1;
+}
+
+
+void RNN_Genome::transfer_to(const vector<string> &new_input_parameter_names, const vector<string> &new_output_parameter_names) {
+    vector<RNN_Node_Interface*> output_nodes;
+    vector<RNN_Node_Interface*> input_nodes;
+    vector<RNN_Node_Interface*> new_output_nodes;
+    vector<RNN_Node_Interface*> new_input_nodes;
+
+    double mu, sigma;
+    genome->get_mu_sigma(genome->best_parameters, mu, sigma);
+
+
+    //iterate over all the input parameters and determine which
+    //need to be kept
+    vector<int> new_input_parameter_id;
+    for (uint32_t i = 0; i < genome->input_parameter_names.size(); i++) {
+        bool keep_parameter = true;
+        for (auto removed : inputs_to_remove) {
+            if (genome->input_parameter_names[i] == removed ) {
+                keep_parameter = false;
+                break;
+            }
+        }
+
+        if (keep_parameter) new_input_parameter_id.push_back(i);
+    }
+
+    //iterate over all the output parameters and determine which
+    //need to be kept
+    vector<int> new_output_parameter_id;
+    for (uint32_t i = 0; i < genome->output_parameter_names.size(); i++) {
+        bool keep_parameter = true;
+        for ( auto removed: outputs_to_remove ) {
+            if (genome->output_parameter_names[i] == removed) {
+                keep_parameter = false;
+                break;
+            }
+        }
+
+        if (keep_parameter) new_output_parameter_id.push_back(i);
+    }
+
+    vector<RNN_Node_Interface*> new_nodes;
+    int count = 0;
+    for (uint32_t i = 0; i < genome->nodes.size(); i++) {
+        if (genome->nodes[i]->get_layer_type() == INPUT_LAYER) {
+            for (auto id : new_input_parameter_id) {
+                if (id == (signed) i) {
+                    new_nodes.push_back(genome->nodes[i]);
+                }
+            }
+
+        } else if (genome->nodes[i]->get_layer_type() == HIDDEN_LAYER) {
+            new_nodes.push_back(genome->nodes[i]);
+
+        } else if (genome->nodes[i]->get_layer_type() == OUTPUT_LAYER) {
+            for (auto id : new_output_parameter_id) {
+                if (id == count) {
+                    new_nodes.push_back(genome->nodes[i]);
+                }
+            }
+            count++;
+        } else {
+            std::cerr << "ERROR: Layer Type " << genome->nodes[i]->get_layer_type() << " Not Valid\n" ;
+            exit(1) ;
+        }
+    }
+
+    vector<RNN_Edge*> new_edges;
+    vector<RNN_Recurrent_Edge*> new_recurrent_edges;
+
+    int weights_count = 0;
+    bool flag = false;
+    for (auto node : genome->nodes) {
+        for (auto new_node : new_nodes) {
+            if (node->get_innovation_number() == new_node->get_innovation_number()) {
+                flag = true;
+                break;
+            }
+        }
+
+        if (flag) {
+            if (node_innovation_count < node->get_innovation_number()) {
+                node_innovation_count = node->get_innovation_number();
+            }
+
+            if (node->get_layer_type() == OUTPUT_LAYER) {
+                output_nodes.push_back(node);
+            } else if (node->get_layer_type() == INPUT_LAYER) {
+                input_nodes.push_back(node);
+            }
+        } else {
+            for (uint32_t j = 0; j < node->get_number_weights(); j++)
+                weights_count++;
+        }
+        flag = false;
+    }
+    genome->nodes = new_nodes;
+
+
+    flag = false;
+    for (auto edge : genome->edges) {
+        for (auto InNode : genome->nodes) {
+            if (edge->get_input_innovation_number() == InNode->get_innovation_number()) {
+                for (auto OutNode : genome->nodes) {
+                    if (edge->get_output_innovation_number() == OutNode->get_innovation_number()) {
+                        flag = true;
+                        break;
+                    }
+                }
+                break;
+            }
+        }
+        if (flag) {
+            if (edge_innovation_count<edge->get_innovation_number())
+                edge_innovation_count = edge->get_innovation_number() ;
+            new_edges.push_back(edge) ;
+        }
+        else
+        Log::info("Execluding Edge: %d In: %d Out: %d\n", edge->get_innovation_number(), edge->get_input_innovation_number(), edge->get_output_innovation_number());
+        flag = false ;
+        weights_count++ ;
+    }
+
+    flag = false ;
+    for (auto recedge : genome->recurrent_edges) {
+        for (auto InNode : genome->nodes) {
+            if (recedge->get_input_innovation_number() == InNode->get_innovation_number() ) {
+                for (auto OutNode : genome->nodes ) {
+                    if (recedge->get_output_innovation_number() == OutNode->get_innovation_number()) {
+                        flag = true;
+                        break;
+                    }
+                }
+                break;
+            }
+        }
+        if (flag) {
+            if (edge_innovation_count < recedge->get_innovation_number())
+                edge_innovation_count = recedge->get_innovation_number();
+            new_recurrent_edges.push_back(recedge);
+        }
+        else
+            Log::info("Execluding Edge: %d In: %d Out: %d\n", recedge->get_innovation_number(), recedge->get_input_innovation_number(), recedge->get_output_innovation_number());
+        flag = false;
+        weights_count++;
+    }
+
+    genome->edges = new_edges;
+    genome->recurrent_edges = new_recurrent_edges;
+
+    //*** JUST CHECKING IF THIS WILL FIX THE BUG ***//
+    // node_innovation_count+=1000;
+    // edge_innovation_count+=1000;
+    //*** JUST CHECKING IF THIS WILL FIX THE BUG ***//
+
+    for (int32_t i = 0; i < extra_outputs; i++) {
+        RNN_Node *node = new RNN_Node(++node_innovation_count, OUTPUT_LAYER, 1.0 /*output nodes should be depth 1*/, SIMPLE_NODE);
+        node->initialize_randomly(genome->generator, genome->normal_distribution, mu, sigma);
+        genome->nodes.push_back(node);
+        new_output_nodes.push_back(node) ;
+    }
+
+    /* TRANSFER LEARNING VERSIONS:
+        - V1: Inputs to Outputs
+        - V2: Inputs to Hidden
+        - V3: Outputs to Hidden
+    */
+
+    for (int32_t i = 0; i < extra_inputs; i++) {
+        RNN_Node *node = new RNN_Node(++node_innovation_count, INPUT_LAYER, 0, SIMPLE_NODE);
+        node->initialize_randomly(genome->generator, genome->normal_distribution, mu, sigma);
+        genome->nodes.push_back(node);
+        new_input_nodes.push_back(node) ;
+
+        //Connecting New Input Nodes to Old Output Nodes
+        if (tl_ver1) {
+            for (auto out_node: output_nodes) {
+                RNN_Edge *edge = new RNN_Edge(++edge_innovation_count, node, out_node);
+                edge->weight = bound(genome->normal_distribution.random(genome->generator, mu, sigma));
+            }
+        }
+    }
+
+    //Connecting Input Nodes to New Output Nodes
+    if (tl_ver1) {
+        for (auto node : genome->nodes) {
+            if (node->get_layer_type() == INPUT_LAYER) {
+                for (auto new_output_node : new_output_nodes) {
+                    genome->edges.push_back(new RNN_Edge(++edge_innovation_count, node, new_output_node)) ;
+                }
+            }
+        }
+    }
+
+    auto rng_ = std::default_random_engine {};
+
+    Distribution *dist = get_recurrent_depth_dist(genome->get_group_id());
+
+    // Connecting New Inputs to Hidden Nodes:
+    if (tl_ver2 && new_input_nodes.size()!=0) {
+        Log::info("Creating Edges between New-Inputs and Hid!\n");
+        std::shuffle(std::begin(new_input_nodes), std::end(new_input_nodes), rng_);
+        for (auto node : new_input_nodes) {
+            Log::debug("\tBEFORE -- CHECK EDGE INNOVATION COUNT: %d\n", edge_innovation_count);
+            genome->connect_new_input_node(mu, sigma, node, dist, edge_innovation_count);
+            Log::debug("\tAFTER -- CHECK EDGE INNOVATION COUNT: %d\n", edge_innovation_count);
+        }
+    }
+
+    // Connecting New Outputs to Hidden Nodes:
+    if (tl_ver3 && new_output_nodes.size()!=0) {
+        Log::info("Creating Edges between New-Outputs and Hid!\n");
+        std::shuffle(std::begin(new_output_nodes), std::end(new_output_nodes), rng_);
+        for (auto node : new_output_nodes) {
+            Log::debug("\tBEFORE -- CHECK EDGE INNOVATION COUNT: %d\n", edge_innovation_count);
+            genome->connect_new_output_node(mu, sigma, node, dist, edge_innovation_count);
+            Log::debug("\tAFTER -- CHECK EDGE INNOVATION COUNT: %d\n", edge_innovation_count);
+        }
+    }
+
+    //need to recalculate the reachability of each node
+    genome->assign_reachability();
+
+    //need to make sure that each input and each output has at least one connection
+    for (auto node : genome->nodes) {
+        Log::info("node[%d], depth: %lf, total_inputs: %d, total_outputs: %d\n", node->get_innovation_number(), node->get_depth(), node->get_total_inputs(), node->get_total_outputs());
+
+        if (node->get_layer_type() == INPUT_LAYER) {
+            if (node->get_total_outputs() == 0) {
+                Log::info("input node[%d] had no outputs, connecting it!\n", node->get_innovation_number());
+                //if an input has no outgoing edges randomly connect it
+                genome->connect_new_input_node(mu, sigma, node, dist, edge_innovation_count);
+            }
+
+        } else if (node->get_layer_type() == OUTPUT_LAYER) {
+            if (node->get_total_inputs() == 0) {
+                Log::info("output node[%d] had no inputs, connecting it!\n", node->get_innovation_number());
+                //if an output has no incoming edges randomly connect it
+                genome->connect_new_output_node(mu, sigma, node, dist, edge_innovation_count);
+            }
+        }
+    }
+
+    delete dist;
+
+    //update the reachabaility again
+    genome->assign_reachability();
+
+    Log::info("new_parameters.size() before get weights: %d\n", genome->initial_parameters.size());
+
+    //update the new and best parameter lengths because this will have added edges
+    vector<double> updated_genome_parameters;
+    genome->get_weights(updated_genome_parameters);
+    genome->set_initial_parameters( updated_genome_parameters );
+    genome->set_best_parameters( updated_genome_parameters );
+
+    Log::info("new_parameters.size() after get weights: %d\n", updated_genome_parameters.size());
+
+    Log::info("FINISHING PREPARING INITIAL GENOME\n");
+    return genome;
+}
+
+
+
+

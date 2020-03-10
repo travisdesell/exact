@@ -40,6 +40,13 @@ class Island {
         Island(int32_t id, int32_t max_size);
 
         /**
+         * Initializes an island filled the supplied genomes. The size of the island will be the size
+         * of the supplied genome vector. The island status is set to filled.
+         *
+         */
+        Island(int32_t id, vector<RNN_Genome*> genomes);
+
+        /**
          * Returns the fitness of the best genome in the island
          *
          * \return the best fitness of the island
