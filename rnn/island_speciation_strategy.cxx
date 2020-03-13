@@ -144,15 +144,8 @@ RNN_Genome* IslandSpeciationStrategy::get_best_genome() {
             }
         }
     }
-
-    if (best_genome_island < 0) {
-        if (global_best_genome !=NULL){
-            return global_best_genome;
-        } else {
-            Log::error("This should never happen, all islands are empty and the global best genome is NULL\n");
-            return NULL;
-        } 
-    } else {
+    if (best_genome_island < 0)  return NULL;
+     else {
         return islands[best_genome_island]->get_best_genome();
     }
 }
@@ -391,7 +384,7 @@ RNN_Genome* IslandSpeciationStrategy::generate_genome(uniform_real_distribution<
                 Log::info("island is repopulating through best parents method!\n");
                 genome = parents_repopulation("best",rng_0_1, generator, mutate, crossover);
             } else if (repopulation_method.compare("bestGenome")==0 || repopulation_method.compare("bestgenome")==0){
-                genome = get_best_genome()->copy();
+                genome = get_global_best_genome()->copy();
                 if (repopulation_mutations){
                     mutate(repopulation_mutations, genome);
                 }
@@ -594,3 +587,6 @@ void IslandSpeciationStrategy::fill_island(int32_t best_island_id){
     }
 }
 
+RNN_Genome* IslandSpeciationStrategy::get_global_best_genome(){
+    return global_best_genome;
+}
