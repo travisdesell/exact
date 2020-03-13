@@ -21,7 +21,7 @@ class Island {
         int32_t id; /**< An integer ID for this island. */
         int32_t max_size; /**< The maximum number of genomes in the island. */
         int32_t status; /**> The status of this island (either Island:INITIALIZING, Island::FILLED or  Island::REPOPULATING */
-        int32_t erased_generation_id; /**< The latest generation id of an erased island, erased_generation_id = largest_generation_id when this island is erased,
+        int32_t erased_generation_id = -1; /**< The latest generation id of an erased island, erased_generation_id = largest_generation_id when this island is erased,
                                                 to prevent deleted genomes get inserted back */
         int32_t latest_generation_id; /**< The latest generation id of genome being generated, including the ones doing backprop by workers */
         /**

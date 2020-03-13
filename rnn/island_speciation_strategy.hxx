@@ -185,6 +185,8 @@ class IslandSpeciationStrategy : public SpeciationStrategy {
          */
         void fill_island(int32_t best_island);
 
+        RNN_Genome* get_global_best_genome();
+
 };
 
 

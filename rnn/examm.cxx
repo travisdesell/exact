@@ -283,7 +283,7 @@ void EXAMM::update_log() {
         }
         RNN_Genome *best_genome = get_best_genome();
         if (best_genome == NULL){
-            Log::error("best genome is null!\n");
+            best_genome = speciation_strategy->get_global_best_genome();
         }
 
         std::chrono::time_point<std::chrono::system_clock> currentClock = std::chrono::system_clock::now();
