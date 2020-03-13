@@ -46,6 +46,7 @@ class IslandSpeciationStrategy : public SpeciationStrategy {
          * All the islands which contain the genomes for this speciation strategy.
          */ 
         vector<Island*> islands;
+        RNN_Genome* global_best_genome;
     
     public:
         //static void register_command_line_arguments();
