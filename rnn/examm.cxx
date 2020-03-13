@@ -282,6 +282,9 @@ void EXAMM::update_log() {
             }
         }
         RNN_Genome *best_genome = get_best_genome();
+        if (best_genome == NULL){
+            Log::error("best genome is null!\n");
+        }
 
         std::chrono::time_point<std::chrono::system_clock> currentClock = std::chrono::system_clock::now();
         long milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(currentClock - startClock).count();
