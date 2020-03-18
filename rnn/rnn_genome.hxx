@@ -239,6 +239,8 @@ class RNN_Genome {
         
         void update_innovation_counts(int32_t &node_innovation_count, int32_t &edge_innovation_count);
 
+        void transfer_to(const vector<string> &new_input_parameter_names, const vector<string> &new_output_parameter_names);
+
         friend class EXAMM;
         friend class IslandSpeciationStrategy;
         friend class RecDepthFrequencyTable;

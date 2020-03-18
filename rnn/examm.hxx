@@ -30,11 +30,13 @@ class EXAMM {
         int32_t max_genomes;
         int32_t total_bp_epochs;
 
-        string speciation_method;
-        string island_ranking_method;
         int32_t extinction_event_generation_number;
+        string island_ranking_method;
+
+        string speciation_method;
         string repopulation_method;
         int32_t repopulation_mutations;
+
         SpeciationStrategy *speciation_strategy;
 
         int32_t edge_innovation_count;
@@ -106,9 +108,6 @@ class EXAMM {
         vector<string> inputs_to_remove ;
         vector<string> outputs_to_remove ;
 
-        bool tl_ver1;
-        bool tl_ver2;
-        bool tl_ver3;
         bool tl_start_filled;
 
     public:
@@ -141,7 +140,7 @@ class EXAMM {
                 int _no_extra_outputs,
                 vector<string> &_inputs_to_remove,
                 vector<string> &_outputs_to_remove,
-                bool _tl_ver1, bool _tl_ver2, bool _tl_ver3, bool _tl_start_filled);
+                bool _tl_start_filled);
 
 
         ~EXAMM();
