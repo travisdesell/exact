@@ -20,14 +20,6 @@ using std::vector;
 #include "rnn_genome.hxx"
 #include "speciation_strategy.hxx"
 
-#define GLOBAL_POPULATION 0
-#define ISLAND_POPULATION 1
-
-#define UNIFORM_DISTRIBUTION 0
-#define HISTOGRAM_DISTRIBUTION 1
-#define NORMAL_DISTRIBUTION 2
-
-
 class EXAMM {
     private:
         int32_t population_size;
@@ -39,6 +31,10 @@ class EXAMM {
         int32_t total_bp_epochs;
 
         string speciation_method;
+        string island_ranking_method;
+        int32_t extinction_event_generation_number;
+        string repopulation_method;
+        int32_t repopulation_mutations;
         SpeciationStrategy *speciation_strategy;
 
         int32_t edge_innovation_count;
@@ -103,9 +99,6 @@ class EXAMM {
 
         std::chrono::time_point<std::chrono::system_clock> startClock;
 
-        int32_t rec_sampling_population;
-        int32_t rec_sampling_distribution;
-
         string  genome_file_name ;
         int     no_extra_inputs ;
         int     no_extra_outputs ;
@@ -116,26 +109,40 @@ class EXAMM {
         bool tl_ver1;
         bool tl_ver2;
         bool tl_ver3;
-
-        int32_t number_stir_mutations;
+        bool tl_start_filled;
 
     public:
-        EXAMM(int32_t _population_size, int32_t _number_islands, int32_t _max_genomes, int32_t _num_genomes_check_on_island, string _speciation_method,
-            const vector<string> &_input_parameter_names,
-            const vector<string> &_output_parameter_names,
-            const map<string,double> &_normalize_mins,
-            const map<string,double> &_normalize_maxs,
-            int32_t _bp_iterations, double _learning_rate,
-            bool _use_high_threshold, double _high_threshold,
-            bool _use_low_threshold, double _low_threshold,
-            bool _use_dropout, double _dropout_probability,
-            int32_t _min_recurrent_depth, int32_t _max_recurrent_depth,
-            string _rec_sampling_population, string _rec_sampling_distribution, string _output_directory,
-            string _genome_file_name,
-            int _no_extra_inputs, int _no_extra_outputs,
-            vector<string> &_inputs_to_remove, vector<string> &_outputs_to_remove,
-            bool _tl_ver1, bool _tl_ver2, bool _tl_ver3,
-            int32_t stir_mutations);
+        EXAMM(  int32_t _population_size, 
+                int32_t _number_islands,
+                int32_t _max_genomes,
+                int32_t _extinction_event_generation_number,
+                int32_t _islands_to_exterminate,
+                string _island_ranking_method,
+                string _repopulation_method,
+                int32_t _repopulation_mutations,
+                string _speciation_method,
+                const vector<string> &_input_parameter_names,
+                const vector<string> &_output_parameter_names,
+                const map<string,double> &_normalize_mins,
+                const map<string,double> &_normalize_maxs,
+                int32_t _bp_iterations,
+                double _learning_rate,
+                bool _use_high_threshold,
+                double _high_threshold,
+                bool _use_low_threshold, 
+                double _low_threshold,
+                bool _use_dropout,
+                double _dropout_probability,
+                int32_t _min_recurrent_depth,
+                int32_t _max_recurrent_depth,
+                string _output_directory, 
+                string _genome_file_name,
+                int _no_extra_inputs,
+                int _no_extra_outputs,
+                vector<string> &_inputs_to_remove,
+                vector<string> &_outputs_to_remove,
+                bool _tl_ver1, bool _tl_ver2, bool _tl_ver3, bool _tl_start_filled);
+
 
         ~EXAMM();
 
@@ -145,7 +152,7 @@ class EXAMM {
 
         void set_possible_node_types(vector<string> possible_node_type_strings);
 
-        Distribution *get_recurrent_depth_dist(int32_t island);
+        uniform_int_distribution<int32_t> get_recurrent_depth_dist();
 
         int get_random_node_type();
 
