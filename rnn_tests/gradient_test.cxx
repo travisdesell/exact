@@ -44,7 +44,7 @@ void initialize_generator() {
 void generate_random_vector(int number_parameters, vector<double> &v) {
 	v.resize(number_parameters);
 
-	for (uint32_t i = 0; i < number_parameters; i++) {
+	for (int32_t i = 0; i < number_parameters; i++) {
 		v[i] = rng(generator);
 	}
 }
@@ -60,7 +60,7 @@ void gradient_test(string name, RNN_Genome *genome, const vector< vector<double>
 	RNN* rnn = genome->get_rnn();
 
 
-	for (uint32_t i = 0; i < test_iterations; i++) {
+	for (int32_t i = 0; i < test_iterations; i++) {
         if (i == 0) Log::debug_no_header("\n");
         Log::debug("\tAttempt %d\n", i);
 
