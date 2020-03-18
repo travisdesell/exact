@@ -333,6 +333,7 @@ int main(int argc, char** argv) {
     int32_t rec_delay_max = 10;
     get_argument(arguments, "--rec_delay_max", false, rec_delay_max);
 
+
     string genome_file_name = "";
     get_argument(arguments, "--genome_bin", false, genome_file_name);
     int no_extra_inputs = 0 ;
