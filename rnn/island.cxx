@@ -206,9 +206,9 @@ void Island::erase_island() {
     erased_generation_id = latest_generation_id;
     genomes.clear();
     erased=true;
-    Log::info("Worst island size after erased: %d", genomes.size());
+    Log::info("Worst island size after erased: %d\n", genomes.size());
     if(genomes.size()!=0){
-        Log::error("The worst island is not fully erased!");
+        Log::error("The worst island is not fully erased!\n");
     }
 }
 
