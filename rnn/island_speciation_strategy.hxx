@@ -46,6 +46,7 @@ class IslandSpeciationStrategy : public SpeciationStrategy {
          * All the islands which contain the genomes for this speciation strategy.
          */ 
         vector<Island*> islands;
+        RNN_Genome* global_best_genome;
     
     public:
         //static void register_command_line_arguments();
@@ -183,6 +184,8 @@ class IslandSpeciationStrategy : public SpeciationStrategy {
          *  \param fill_island is the island is of the island to be filled
          */
         void fill_island(int32_t best_island);
+
+        RNN_Genome* get_global_best_genome();
 
 };
 

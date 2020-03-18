@@ -88,6 +88,8 @@ class SpeciationStrategy {
          * Gets speciation strategy information values for logs
          */
         virtual string get_strategy_information_values() const = 0;
+
+        virtual RNN_Genome* get_global_best_genome() = 0;
 };
 
 #endif

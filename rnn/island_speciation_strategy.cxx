@@ -61,6 +61,7 @@ IslandSpeciationStrategy::IslandSpeciationStrategy(
     //set the generation id for the initial minimal genome
     minimal_genome->set_generation_id(generated_genomes);
     generated_genomes++;
+    global_best_genome = NULL;
 }
 
 /**
@@ -119,6 +120,7 @@ IslandSpeciationStrategy::IslandSpeciationStrategy(
     minimal_genome->set_generation_id(0);
     
     generated_genomes++;
+    global_best_genome = NULL;
 }
 
 int32_t IslandSpeciationStrategy::get_generated_genomes() const {
@@ -142,10 +144,8 @@ RNN_Genome* IslandSpeciationStrategy::get_best_genome() {
             }
         }
     }
-
-    if (best_genome_island < 0) {
-        return NULL;
-    } else {
+    if (best_genome_island < 0)  return NULL;
+     else {
         return islands[best_genome_island]->get_best_genome();
     }
 }
@@ -200,6 +200,7 @@ int32_t IslandSpeciationStrategy::insert_genome(RNN_Genome* genome) {
     if (extinction_event_generation_number != 0){
         if(inserted_genomes > 1 && inserted_genomes == extinction_event_generation_number) {
             if (island_ranking_method.compare("EraseWorst") == 0 || island_ranking_method.compare("") == 0){
+                global_best_genome = get_best_genome()->copy();
                 int32_t *rank = rank_islands();
                 // int32_t worst_island = get_worst_island_by_best_genome();
                 for (int32_t i = 0; i < islands_to_exterminate; i++){
@@ -480,7 +481,7 @@ RNN_Genome* IslandSpeciationStrategy::generate_genome(uniform_real_distribution<
                 Log::info("island is repopulating through best parents method!\n");
                 genome = parents_repopulation("best",rng_0_1, generator, mutate, crossover);
             } else if (repopulation_method.compare("bestGenome")==0 || repopulation_method.compare("bestgenome")==0){
-                genome = get_best_genome()->copy();
+                genome = get_global_best_genome()->copy();
                 if (repopulation_mutations){
                     mutate(repopulation_mutations, genome);
                 }
@@ -684,3 +685,6 @@ void IslandSpeciationStrategy::fill_island(int32_t best_island_id){
     }
 }
 
+RNN_Genome* IslandSpeciationStrategy::get_global_best_genome(){
+    return global_best_genome;
+}
