@@ -221,18 +221,6 @@ void worker(int rank) {
 //     getchar();
 // }
 
-void get_individual_inputs(string str, vector<string>& tokens) {
-   string word = "";
-   for (auto x : str) {
-       if (x == ',') {
-           tokens.push_back(word);
-           word = "";
-       }else
-           word = word + x;
-   }
-   tokens.push_back(word);
-}
-
 int main(int argc, char** argv) {
     MPI_Init(&argc, &argv);
 
@@ -250,8 +238,6 @@ int main(int argc, char** argv) {
 
 
     TimeSeriesSets *time_series_sets = NULL;
-    vector<string> inputs_removed_tokens;
-    vector<string> outputs_removed_tokens;
 
 
     if (rank == 0) {
@@ -334,48 +320,23 @@ int main(int argc, char** argv) {
     get_argument(arguments, "--rec_delay_max", false, rec_delay_max);
 
 
+    RNN_Genome *seed_genome = NULL;
     string genome_file_name = "";
-    get_argument(arguments, "--genome_bin", false, genome_file_name);
-    int no_extra_inputs = 0 ;
-    if (genome_file_name != "") {
-        get_argument(arguments, "--extra_inputs", false, no_extra_inputs);
-    }
-    int no_extra_outputs = 0 ;
-    if (genome_file_name != "") {
-        get_argument(arguments, "--extra_outputs", false, no_extra_outputs);
-    }
-    string inputs_to_remove = "" ;
-    if (genome_file_name != "") {
-        get_argument(arguments, "--inputs_to_remove", false, inputs_to_remove);
+    if (get_argument(arguments, "--genome_bin", false, genome_file_name)) {
+        seed_genome = new RNN_Genome(genome_file_name);
+
+        string transfer_learning_version;
+        get_argument(arguments, "--transfer_learning_version", true, transfer_learning_version);
+
+        bool epigenetic_weights = argument_exists(arguments, "--epigenetic_weights");
+
+        seed_genome->transfer_to(time_series_sets->get_input_parameter_names(), time_series_sets->get_output_parameter_names(), transfer_learning_version, epigenetic_weights);
     }
 
-    string outputs_to_remove = "" ;
+    bool start_filled = false;
     if (genome_file_name != "") {
-        get_argument(arguments, "--outputs_to_remove", false, outputs_to_remove);
+        get_argument(arguments, "--start_filled", false, start_filled);
     }
-
-    bool tl_ver1 = true ;
-    if (genome_file_name != "") {
-        get_argument(arguments, "--tl_version1", false, tl_ver1);
-    }
-
-    bool tl_ver2 = true ;
-    if (genome_file_name != "") {
-        get_argument(arguments, "--tl_version2", false, tl_ver2);
-    }
-
-    bool tl_ver3 = true ;
-    if (genome_file_name != "") {
-        get_argument(arguments, "--tl_version3", false, tl_ver3);
-    }
-
-    bool tl_start_filled = false;
-    if (genome_file_name != "") {
-        get_argument(arguments, "--tl_start_filled", false, tl_start_filled);
-    }
-
-    get_individual_inputs( inputs_to_remove, inputs_removed_tokens) ;
-    get_individual_inputs( outputs_to_remove, outputs_removed_tokens) ;
 
     Log::clear_rank_restriction();
 
@@ -393,10 +354,8 @@ int main(int argc, char** argv) {
             use_dropout, dropout_probability,
             rec_delay_min, rec_delay_max,
             output_directory,
-            genome_file_name,
-            no_extra_inputs, no_extra_outputs,
-            inputs_removed_tokens, outputs_removed_tokens,
-            tl_ver1, tl_ver2, tl_ver3, tl_start_filled);
+            seed_genome,
+            start_filled);
 
         if (possible_node_types.size() > 0) examm->set_possible_node_types(possible_node_types);
 

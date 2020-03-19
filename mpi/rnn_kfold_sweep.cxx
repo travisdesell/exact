@@ -358,57 +358,60 @@ ResultSet handle_job(int rank, int current_job) {
     time_series_sets->export_training_series(time_offset, training_inputs, training_outputs);
     time_series_sets->export_test_series(time_offset, validation_inputs, validation_outputs);
 
+    vector<string> input_parameter_names = time_series_sets->get_input_parameter_names();
+    vector<string> output_parameter_names = time_series_sets->get_output_parameter_names();
+
     int number_inputs = time_series_sets->get_number_inputs();
     int number_outputs = time_series_sets->get_number_outputs();
 
     RNN_Genome *genome = NULL;
     if (rnn_type == "one_layer_lstm") {
-        genome = create_lstm(number_inputs, 1, number_inputs, number_outputs, 1);
+        genome = create_lstm(input_parameter_names, 1, number_inputs, output_parameter_names, 1);
 
     } else if (rnn_type == "two_layer_lstm") {
-        genome = create_lstm(number_inputs, 2, number_inputs, number_outputs, 1);
+        genome = create_lstm(input_parameter_names, 2, number_inputs, output_parameter_names, 1);
 
     } else if (rnn_type == "one_layer_delta") {
-        genome = create_delta(number_inputs, 1, number_inputs, number_outputs, 1);
+        genome = create_delta(input_parameter_names, 1, number_inputs, output_parameter_names, 1);
 
     } else if (rnn_type == "two_layer_delta") {
-        genome = create_delta(number_inputs, 2, number_inputs, number_outputs, 1);
+        genome = create_delta(input_parameter_names, 2, number_inputs, output_parameter_names, 1);
 
     } else if (rnn_type == "one_layer_gru") {
-        genome = create_gru(number_inputs, 1, number_inputs, number_outputs, 1);
+        genome = create_gru(input_parameter_names, 1, number_inputs, output_parameter_names, 1);
 
     } else if (rnn_type == "two_layer_gru") {
-        genome = create_gru(number_inputs, 2, number_inputs, number_outputs, 1);
+        genome = create_gru(input_parameter_names, 2, number_inputs, output_parameter_names, 1);
 
     } else if (rnn_type == "one_layer_mgu") {
-        genome = create_mgu(number_inputs, 1, number_inputs, number_outputs, 1);
+        genome = create_mgu(input_parameter_names, 1, number_inputs, output_parameter_names, 1);
 
     } else if (rnn_type == "two_layer_mgu") {
-        genome = create_mgu(number_inputs, 2, number_inputs, number_outputs, 1);
+        genome = create_mgu(input_parameter_names, 2, number_inputs, output_parameter_names, 1);
 
     } else if (rnn_type == "one_layer_delta") {
-        genome = create_delta(number_inputs, 1, number_inputs, number_outputs, 1);
+        genome = create_delta(input_parameter_names, 1, number_inputs, output_parameter_names, 1);
 
     } else if (rnn_type == "two_layer_delta") {
-        genome = create_delta(number_inputs, 2, number_inputs, number_outputs, 1);
+        genome = create_delta(input_parameter_names, 2, number_inputs, output_parameter_names, 1);
 
     } else if (rnn_type == "one_layer_ugrnn") {
-        genome = create_ugrnn(number_inputs, 1, number_inputs, number_outputs, 1);
+        genome = create_ugrnn(input_parameter_names, 1, number_inputs, output_parameter_names, 1);
 
     } else if (rnn_type == "two_layer_ugrnn") {
-        genome = create_ugrnn(number_inputs, 2, number_inputs, number_outputs, 1);
+        genome = create_ugrnn(input_parameter_names, 2, number_inputs, output_parameter_names, 1);
 
     } else if (rnn_type == "one_layer_ff") {
-        genome = create_ff(number_inputs, 1, number_inputs, number_outputs, 0);
+        genome = create_ff(input_parameter_names, 1, number_inputs, output_parameter_names, 0);
 
     } else if (rnn_type == "two_layer_ff") {
-        genome = create_ff(number_inputs, 2, number_inputs, number_outputs, 0);
+        genome = create_ff(input_parameter_names, 2, number_inputs, output_parameter_names, 0);
 
     } else if (rnn_type == "jordan") {
-        genome = create_jordan(number_inputs, 1, number_inputs, number_outputs, 1);
+        genome = create_jordan(input_parameter_names, 1, number_inputs, output_parameter_names, 1);
 
     } else if (rnn_type == "elman") {
-        genome = create_elman(number_inputs, 1, number_inputs, number_outputs, 1);
+        genome = create_elman(input_parameter_names, 1, number_inputs, output_parameter_names, 1);
     }
 
     RNN* rnn = genome->get_rnn();
