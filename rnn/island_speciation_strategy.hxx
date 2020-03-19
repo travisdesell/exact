@@ -36,7 +36,7 @@ class IslandSpeciationStrategy : public SpeciationStrategy {
         string island_ranking_method; /**< The method used to find the worst island in population */
 
         string repopulation_method; /**< The method used to repopulate the island after being erased */
-        
+
         int32_t extinction_event_generation_number; /**< When EXAMM reaches this generation id, an extinction event will be triggered (i.e. islands will be killed and repopulated). */
         int32_t repopulation_mutations; /**< When an island is erradicated, it is repopulated with copies of the best genome that have this number of mutations applied to them. */
         int32_t islands_to_exterminate; /**< When an extinction event is triggered, this is the number of islands that will be exterminated. */
@@ -46,6 +46,7 @@ class IslandSpeciationStrategy : public SpeciationStrategy {
          * All the islands which contain the genomes for this speciation strategy.
          */ 
         vector<Island*> islands;
+        RNN_Genome* global_best_genome;
     
     public:
         //static void register_command_line_arguments();
@@ -62,7 +63,7 @@ class IslandSpeciationStrategy : public SpeciationStrategy {
                                 double _inter_island_crossover_rate, RNN_Genome *_seed_genome,
                                 string _island_ranking_method, string _repopulation_method,
                                 int32_t _extinction_event_generation_number, int32_t _repopulation_mutations,
-                                int32_t islands_to_exterminate);
+                                int32_t _islands_to_exterminate);
         
         /**
          * Transfer learning constructor.
@@ -73,7 +74,7 @@ class IslandSpeciationStrategy : public SpeciationStrategy {
                                 double _inter_island_crossover_rate, RNN_Genome *_seed_genome, 
                                 string _island_ranking_method, string _repopulation_method,
                                 int32_t _extinction_event_generation_number, int32_t _repopulation_mutations,
-                                int32_t islands_to_exterminate, function<void (RNN_Genome*)> &modify);
+                                int32_t _islands_to_exterminate, function<void (RNN_Genome*)> &modify);
         
         /**
          * \return the number of generated genomes.
@@ -183,6 +184,8 @@ class IslandSpeciationStrategy : public SpeciationStrategy {
          *  \param fill_island is the island is of the island to be filled
          */
         void fill_island(int32_t best_island);
+
+        RNN_Genome* get_global_best_genome();
 
 };
 
