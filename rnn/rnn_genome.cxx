@@ -2884,13 +2884,13 @@ void RNN_Genome::read_from_stream(istream &bin_istream) {
     nodes.clear();
     for (int32_t i = 0; i < n_nodes; i++) {
         int32_t innovation_number;
-        int32_t type;
+        int32_t layer_type;
         int32_t node_type;
         double depth;
         bool enabled;
 
         bin_istream.read((char*)&innovation_number, sizeof(int32_t));
-        bin_istream.read((char*)&type, sizeof(int32_t));
+        bin_istream.read((char*)&layer_type, sizeof(int32_t));
         bin_istream.read((char*)&node_type, sizeof(int32_t));
         bin_istream.read((char*)&depth, sizeof(double));
         bin_istream.read((char*)&enabled, sizeof(bool));
@@ -2898,21 +2898,25 @@ void RNN_Genome::read_from_stream(istream &bin_istream) {
         string parameter_name;
         read_binary_string(bin_istream, parameter_name, "parameter_name");
 
-        Log::debug("NODE: %d %d %lf %d '%s'\n", innovation_number, type, node_type, depth, enabled, parameter_name.c_str());
+        Log::debug("NODE: %d %d %lf %d '%s'\n", innovation_number, layer_type, node_type, depth, enabled, parameter_name.c_str());
 
         RNN_Node_Interface *node;
         if (node_type == LSTM_NODE) {
-            node = new LSTM_Node(innovation_number, type, depth);
+            node = new LSTM_Node(innovation_number, layer_type, depth);
         } else if (node_type == DELTA_NODE) {
-            node = new Delta_Node(innovation_number, type, depth);
+            node = new Delta_Node(innovation_number, layer_type, depth);
         } else if (node_type == GRU_NODE) {
-            node = new GRU_Node(innovation_number, type, depth);
+            node = new GRU_Node(innovation_number, layer_type, depth);
         } else if (node_type == MGU_NODE) {
-            node = new MGU_Node(innovation_number, type, depth);
+            node = new MGU_Node(innovation_number, layer_type, depth);
         } else if (node_type == UGRNN_NODE) {
-            node = new UGRNN_Node(innovation_number, type, depth);
+            node = new UGRNN_Node(innovation_number, layer_type, depth);
         } else if (node_type == SIMPLE_NODE || node_type == JORDAN_NODE || node_type == ELMAN_NODE) {
-            node = new RNN_Node(innovation_number, type, depth, node_type);
+            if (layer_type == HIDDEN_LAYER) {
+                node = new RNN_Node(innovation_number, layer_type, depth, node_type);
+            } else {
+                node = new RNN_Node(innovation_number, layer_type, depth, node_type, parameter_name);
+            }
         } else {
             Log::fatal("Error reading node from stream, unknown node_type: %d\n", node_type);
             exit(1);
