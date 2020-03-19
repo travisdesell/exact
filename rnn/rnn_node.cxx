@@ -9,13 +9,20 @@ using std::vector;
 
 
 RNN_Node::RNN_Node(int _innovation_number, int _layer_type, double _depth, int _node_type) : RNN_Node_Interface(_innovation_number, _layer_type, _depth) {
-    if (layer_type == INPUT_LAYER) {
-        total_inputs = 1;
-    }
 
+    //node type will be simple, jordan or elman
     node_type = _node_type;
     Log::trace("created node: %d, type: %d\n", innovation_number, node_type);
 }
+
+
+RNN_Node::RNN_Node(int _innovation_number, int _layer_type, double _depth, int _node_type, string _parameter_name) : RNN_Node_Interface(_innovation_number, _layer_type, _depth, _parameter_name) {
+
+    //node type will be simple, jordan or elman
+    node_type = _node_type;
+    Log::trace("created node: %d, type: %d\n", innovation_number, node_type);
+}
+
 
 RNN_Node::~RNN_Node() {
 }
@@ -130,7 +137,12 @@ void RNN_Node::set_weights(uint32_t &offset, const vector<double> &parameters) {
 }
 
 RNN_Node_Interface* RNN_Node::copy() const {
-    RNN_Node* n = new RNN_Node(innovation_number, layer_type, depth, node_type);
+    RNN_Node *n = NULL;
+    if (layer_type == HIDDEN_LAYER) {
+        n = new RNN_Node(innovation_number, layer_type, depth, node_type);
+    } else {
+        n = new RNN_Node(innovation_number, layer_type, depth, node_type, parameter_name);
+    }
 
     //copy RNN_Node values
     n->bias = bias;

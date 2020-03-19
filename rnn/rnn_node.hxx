@@ -15,7 +15,11 @@ class RNN_Node : public RNN_Node_Interface {
 
     public:
 
+        //constructor for hidden nodes
         RNN_Node(int _innovation_number, int _layer_type, double _depth, int _node_type);
+
+        //constructor for input and output nodes
+        RNN_Node(int _innovation_number, int _layer_type, double _depth, int _node_type, string _parameter_name);
         ~RNN_Node();
 
         void initialize_randomly(minstd_rand0 &generator, NormalDistribution &normal_distribution, double mu, double sigma);

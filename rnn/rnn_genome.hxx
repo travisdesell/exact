@@ -239,7 +239,17 @@ class RNN_Genome {
         
         void update_innovation_counts(int32_t &node_innovation_count, int32_t &edge_innovation_count);
 
-        void transfer_to(const vector<string> &new_input_parameter_names, const vector<string> &new_output_parameter_names);
+        /**
+         * \return the max innovation number of any node in the genome.
+         */
+        int get_max_node_innovation_count();
+
+        /**
+         * \return the max innovation number of any edge or recurrent edge in the genome.
+         */
+        int get_max_edge_innovation_count();
+
+        void transfer_to(const vector<string> &new_input_parameter_names, const vector<string> &new_output_parameter_names, string transfer_learning_version, bool epigenetic_weights);
 
         friend class EXAMM;
         friend class IslandSpeciationStrategy;
@@ -251,5 +261,8 @@ struct sort_genomes_by_fitness {
         return g1->get_fitness() < g2->get_fitness();
     }
 };
+
+void write_binary_string(ostream &out, string s, string name);
+void read_binary_string(istream &in, string &s, string name);
 
 #endif

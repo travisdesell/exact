@@ -74,12 +74,8 @@ EXAMM::EXAMM(
         int32_t _min_recurrent_depth,
         int32_t _max_recurrent_depth,
         string _output_directory,
-        string _genome_file_name,
-        int _no_extra_inputs,
-        int _no_extra_outputs,
-        vector<string> &_inputs_to_remove,
-        vector<string> &_outputs_to_remove,
-        bool _tl_start_filled) :
+        RNN_Genome *seed_genome,
+        bool _start_filled) :
                         population_size(_population_size),
                         number_islands(_number_islands),
                         max_genomes(_max_genomes),
@@ -99,18 +95,12 @@ EXAMM::EXAMM(
                         use_dropout(_use_dropout),
                         dropout_probability(_dropout_probability),
                         output_directory(_output_directory),
-                        genome_file_name(_genome_file_name),
-                        no_extra_inputs(_no_extra_inputs),
-                        no_extra_outputs(_no_extra_outputs),
-                        tl_start_filled(_tl_start_filled) {
+                        start_filled(_start_filled) {
 
     input_parameter_names = _input_parameter_names;
     output_parameter_names = _output_parameter_names;
     normalize_mins = _normalize_mins;
     normalize_maxs = _normalize_maxs;
-    inputs_to_remove  = _inputs_to_remove;
-
-    outputs_to_remove = _outputs_to_remove ;
 
     total_bp_epochs = 0;
 
@@ -182,22 +172,19 @@ EXAMM::EXAMM(
         //generate a minimal feed foward network as the seed genome
         RNN_Genome *seed_genome = NULL;
         
-        if (genome_file_name.compare("") == 0) {
-            seed_genome = create_ff(number_inputs, 0, 0, number_outputs, 0);
+        if (seed_genome == NULL) {
+            seed_genome = create_ff(input_parameter_names, 0, 0, output_parameter_names, 0);
             seed_genome->initialize_randomly();
-            edge_innovation_count = seed_genome->edges.size() + seed_genome->recurrent_edges.size();
-            node_innovation_count = seed_genome->nodes.size();
-        } else { 
-            Log::error("doing transfer!\n");
-            seed_genome = generate_for_transfer_learning(genome_file_name, no_extra_inputs, no_extra_outputs );
-            Log::error("generated seed genome, number of inputs: %d, number of outputs: %d\n", seed_genome->get_number_inputs(), seed_genome->get_number_outputs());
-        }
+        } //otherwise the seed genome was passed into EXAMM
+
+        //make sure we don't duplicate node or edge innovation numbers
+        edge_innovation_count = seed_genome->get_max_edge_innovation_count() + 1;
+        node_innovation_count = seed_genome->get_max_node_innovation_count() + 1;
 
         seed_genome->set_generated_by("initial");
 
         //insert a copy of it into the population so
         //additional requests can mutate it
-
 
         seed_genome->best_validation_mse = EXAMM_MAX_DOUBLE;
         seed_genome->best_validation_mae = EXAMM_MAX_DOUBLE;
@@ -210,10 +197,9 @@ EXAMM::EXAMM(
             intra_island_co_rate = 0.30;
         }
        
-
         // Only difference here is that the apply_stir_mutations lambda is passed if the island is supposed to start filled.
-        if (tl_start_filled) {
-            // Only used if tl_start_filled is enabled
+        if (start_filled) {
+            // Only used if start_filled is enabled
             function<void (RNN_Genome *)> apply_stir_mutations = [this](RNN_Genome *genome) {
                 RNN_Genome *copy = genome->copy();
                 this->mutate(repopulation_mutations, copy);
