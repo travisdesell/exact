@@ -230,7 +230,7 @@ EXAMM::EXAMM(
             intra_island_co_rate = 0.30;
         }
        
-
+       
         // Only difference here is that the apply_stir_mutations lambda is passed if the island is supposed to start filled.
         if (tl_start_filled)
             speciation_strategy = new IslandSpeciationStrategy(
@@ -239,7 +239,7 @@ EXAMM::EXAMM(
         else
             speciation_strategy = new IslandSpeciationStrategy(
                     number_islands, population_size, mutation_rate, intra_island_co_rate, inter_island_co_rate,
-                    seed_genome, island_ranking_method, repopulation_method, extinction_event_generation_number, repopulation_mutations, islands_to_exterminate);
+                    seed_genome, island_ranking_method, repopulation_method, extinction_event_generation_number, repopulation_mutations, islands_to_exterminate, max_genomes);
     }
 
     if (output_directory != "") {
