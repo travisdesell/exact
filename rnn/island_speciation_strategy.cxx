@@ -28,7 +28,7 @@ IslandSpeciationStrategy::IslandSpeciationStrategy(
         double _inter_island_crossover_rate, RNN_Genome *_seed_genome,
         string _island_ranking_method, string _repopulation_method,
         int32_t _extinction_event_generation_number, int32_t _repopulation_mutations,
-        int32_t _islands_to_exterminate) :
+        int32_t _islands_to_exterminate, int32_t _max_genomes) :
                         generation_island(0), 
                         number_of_islands(_number_of_islands), 
                         max_island_size(_max_island_size), 
@@ -42,7 +42,8 @@ IslandSpeciationStrategy::IslandSpeciationStrategy(
                         repopulation_method(_repopulation_method),
                         extinction_event_generation_number(_extinction_event_generation_number),
                         repopulation_mutations(_repopulation_mutations), 
-                        islands_to_exterminate(_islands_to_exterminate) {
+                        islands_to_exterminate(_islands_to_exterminate),
+                        max_genomes(_max_genomes) {
 
     double rate_sum = mutation_rate + intra_island_crossover_rate + inter_island_crossover_rate;
     if (rate_sum != 1.0) {
@@ -198,7 +199,7 @@ bool IslandSpeciationStrategy::islands_full() const {
 int32_t IslandSpeciationStrategy::insert_genome(RNN_Genome* genome) {
     Log::debug("inserting genome!\n");
     if (extinction_event_generation_number != 0){
-        if(inserted_genomes > 1 && inserted_genomes == extinction_event_generation_number) {
+        if(inserted_genomes > 1 && inserted_genomes % extinction_event_generation_number == 0 && max_genomes - inserted_genomes >= extinction_event_generation_number) {
             if (island_ranking_method.compare("EraseWorst") == 0 || island_ranking_method.compare("") == 0){
                 global_best_genome = get_best_genome()->copy();
                 int32_t *rank = rank_islands();
@@ -296,8 +297,7 @@ RNN_Genome* IslandSpeciationStrategy::generate_genome(uniform_real_distribution<
 
         if (island->size() == 0) {
             Log::debug("starting with minimal genome\n");
-            // RNN_Genome *genome_copy = minimal_genome->copy();
-            RNN_Genome *genome = minimal_genome->copy();
+            RNN_Genome *genome_copy = minimal_genome->copy();
             // This is commented out because transfer learning islands should probably start out filled up.
             // it is probably going to be removed soon.
             
@@ -309,20 +309,22 @@ RNN_Genome* IslandSpeciationStrategy::generate_genome(uniform_real_distribution<
             // }
 
             //set the generation id for the copy and increment generated genomes 
-            // genome_copy->set_generation_id(generated_genomes);
-            genome->set_generation_id(generated_genomes);
-            islands[generation_island] -> set_latest_generation_id(generated_genomes);
             generated_genomes++;
-            // genome_copy->set_group_id(generation_island);
-            genome->set_group_id(generation_island);
-            generation_island++;
-            if (generation_island >= (signed) islands.size()) generation_island = 0; 
+            genome_copy->set_generation_id(generated_genomes);
+            genome_copy->set_group_id(generation_island);
 
             Log::debug("inserting genome copy!\n");
-            // insert_genome(genome_copy);
-            insert_genome(genome);
+            insert_genome(genome_copy);
             //return a copy of the minimal genome to be trained for each island
-            // genome = genome_copy->copy();
+            genome = genome_copy->copy();
+            generated_genomes++;
+            genome->set_generation_id(generated_genomes);
+            genome->set_group_id(generation_island);
+            
+            generation_island++;
+            if (generation_island >= (signed) islands.size()) generation_island = 0; 
+            islands[generation_island] -> set_latest_generation_id(generated_genomes);
+
             return genome;
         } else {
             Log::info("island is not empty, mutating a random genome\n");
@@ -349,19 +351,25 @@ RNN_Genome* IslandSpeciationStrategy::generate_genome(uniform_real_distribution<
             copy->best_parameters.clear();
             
             //set the generation id for the copy and increment generated genomes 
-            copy->set_generation_id(generated_genomes);
-            islands[generation_island] -> set_latest_generation_id(generated_genomes);
             generated_genomes++;
+            copy->set_generation_id(generated_genomes);
             copy->set_group_id(generation_island);
-            generation_island++;
-            if (generation_island >= (signed) islands.size()) generation_island = 0; 
             insert_genome(copy);
 
             //also randomly initialize this genome as
             //what it was generated from was also randomly
             //initialized as the population hasn't been
             //filled
+
             genome->initialize_randomly();
+            generated_genomes++;
+            genome->set_generation_id(generated_genomes);
+            genome->set_group_id(generation_island);
+
+            generation_island++;
+            if (generation_island >= (signed) islands.size()) generation_island = 0; 
+            islands[generation_island] -> set_latest_generation_id(generated_genomes);
+
             delete copy;
             return genome;
         }
@@ -423,15 +431,16 @@ RNN_Genome* IslandSpeciationStrategy::generate_genome(uniform_real_distribution<
     }
 
     if (genome != NULL) { 
-        //set the island for the genome and increment to the next island
+        //set th generation id and increment generated genomes
+        generated_genomes++;
+        genome->set_generation_id(generated_genomes);
         genome->set_group_id(generation_island);
+
+        //set the island for the genome and increment to the next island
         generation_island++;
         if (generation_island >= (signed) islands.size()) generation_island = 0; 
+        islands[generation_island] -> set_latest_generation_id(generated_genomes);    
 
-        //set th generation id and increment generated genomes
-        genome->set_generation_id(generated_genomes);
-        islands[generation_island] -> set_latest_generation_id(generated_genomes);
-        generated_genomes++;
     } else {
         Log::fatal("ERROR: genome was NULL at the end of generate genome!\n");
         Log::fatal( "This should never happen.\n");
@@ -586,12 +595,12 @@ void IslandSpeciationStrategy::fill_island(int32_t best_island_id){
     for (uint32_t i = 0; i < best_island.size(); i++){
         // copy the genome from the best island
         RNN_Genome *copy = best_island[i]->copy();
-    
+        generated_genomes++;
         copy->set_generation_id(generated_genomes);
         islands[generation_island] -> set_latest_generation_id(generated_genomes);
-        generated_genomes++;
         copy->set_group_id(generation_island);
         insert_genome(copy);
+        delete copy;
     }
 }
 
