@@ -71,6 +71,34 @@ void RNN::validate_parameters(const vector<string> &input_parameter_names, const
     }
 }
 
+void RNN::fix_parameter_orders(const vector<string> &input_parameter_names, const vector<string> &output_parameter_names) {
+    vector<RNN_Node_Interface*> ordered_input_nodes;
+
+    for (int i = 0; i < input_parameter_names.size(); i++) {
+        for (int j = input_nodes.size() - 1; j >= 0; j--) {
+            if (input_nodes[j]->parameter_name.compare(input_parameter_names[i]) == 0) {
+                ordered_input_nodes.push_back(input_nodes[j]);
+                input_nodes.erase(input_nodes.begin() + j);
+            }
+        }
+    }
+
+    input_nodes = ordered_input_nodes;
+
+    vector<RNN_Node_Interface*> ordered_output_nodes;
+
+    for (int i = 0; i < output_parameter_names.size(); i++) {
+        for (int j = output_nodes.size() - 1; j >= 0; j--) {
+            if (output_nodes[j]->parameter_name.compare(output_parameter_names[i]) == 0) {
+                ordered_output_nodes.push_back(output_nodes[j]);
+                output_nodes.erase(output_nodes.begin() + j);
+            }
+        }
+    }
+
+    output_nodes = ordered_output_nodes;
+}
+
 RNN::RNN(vector<RNN_Node_Interface*> &_nodes, vector<RNN_Edge*> &_edges, const vector<string> &input_parameter_names, const vector<string> &output_parameter_names) {
     nodes = _nodes;
     edges = _edges;
@@ -86,6 +114,7 @@ RNN::RNN(vector<RNN_Node_Interface*> &_nodes, vector<RNN_Edge*> &_edges, const v
         }
     }
 
+    fix_parameter_orders(input_parameter_names, output_parameter_names);
     validate_parameters(input_parameter_names, output_parameter_names);
 }
 
@@ -105,6 +134,7 @@ RNN::RNN(vector<RNN_Node_Interface*> &_nodes, vector<RNN_Edge*> &_edges, vector<
         }
     }
 
+    fix_parameter_orders(input_parameter_names, output_parameter_names);
     validate_parameters(input_parameter_names, output_parameter_names);
 
     Log::trace("got RNN with %d nodes, %d edges, %d recurrent edges\n", nodes.size(), edges.size(), recurrent_edges.size());
