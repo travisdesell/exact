@@ -28,6 +28,7 @@ class RNN {
         RNN(vector<RNN_Node_Interface*> &_nodes, vector<RNN_Edge*> &_edges, vector<RNN_Recurrent_Edge*> &_recurrent_edges, const vector<string> &input_parameter_names, const vector<string> &output_parameter_names);
         ~RNN();
 
+        void fix_parameter_orders(const vector<string> &input_parameter_names, const vector<string> &output_parameter_names);
         void validate_parameters(const vector<string> &input_parameter_names, const vector<string> &output_parameter_names);
 
         int get_number_nodes();
