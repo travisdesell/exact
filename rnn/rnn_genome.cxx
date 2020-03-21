@@ -584,7 +584,7 @@ RNN* RNN_Genome::get_rnn() {
         //if (recurrent_edges[i]->is_reachable()) recurrent_edge_copies.push_back( recurrent_edges[i]->copy(node_copies) );
     }
 
-    return new RNN(node_copies, edge_copies, recurrent_edge_copies);
+    return new RNN(node_copies, edge_copies, recurrent_edge_copies, input_parameter_names, output_parameter_names);
 }
 
 vector<double> RNN_Genome::get_best_parameters() const {

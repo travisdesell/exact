@@ -209,7 +209,7 @@ int32_t IslandSpeciationStrategy::insert_genome(RNN_Genome* genome) {
     } else if (global_best_genome->get_fitness() > genome->get_fitness()) {
         //since we're re-setting this to a copy you need to delete it.
         delete global_best_genome;
-        global_best_genome = get_best_genome()->copy();
+        global_best_genome = genome->copy();
         new_global_best = true;
     }
 
