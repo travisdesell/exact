@@ -313,11 +313,11 @@ int main(int argc, char** argv) {
     vector<string> possible_node_types;
     get_argument_vector(arguments, "--possible_node_types", false, possible_node_types);
 
-    int32_t rec_delay_min = 1;
-    get_argument(arguments, "--rec_delay_min", false, rec_delay_min);
+    int32_t min_recurrent_depth = 1;
+    get_argument(arguments, "--min_recurrent_depth", false, min_recurrent_depth);
 
-    int32_t rec_delay_max = 10;
-    get_argument(arguments, "--rec_delay_max", false, rec_delay_max);
+    int32_t max_recurrent_depth = 10;
+    get_argument(arguments, "--max_recurrent_depth", false, max_recurrent_depth);
 
 
     RNN_Genome *seed_genome = NULL;
@@ -330,7 +330,7 @@ int main(int argc, char** argv) {
 
         bool epigenetic_weights = argument_exists(arguments, "--epigenetic_weights");
 
-        seed_genome->transfer_to(time_series_sets->get_input_parameter_names(), time_series_sets->get_output_parameter_names(), transfer_learning_version, epigenetic_weights);
+        seed_genome->transfer_to(time_series_sets->get_input_parameter_names(), time_series_sets->get_output_parameter_names(), transfer_learning_version, epigenetic_weights, min_recurrent_depth, max_recurrent_depth);
     }
 
     bool start_filled = false;
@@ -352,7 +352,7 @@ int main(int argc, char** argv) {
             use_high_threshold, high_threshold,
             use_low_threshold, low_threshold,
             use_dropout, dropout_probability,
-            rec_delay_min, rec_delay_max,
+            min_recurrent_depth, max_recurrent_depth,
             output_directory,
             seed_genome,
             start_filled);
