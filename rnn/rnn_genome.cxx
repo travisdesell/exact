@@ -73,6 +73,11 @@ void RNN_Genome::sort_edges_by_depth() {
     sort(edges.begin(), edges.end(), sort_RNN_Edges_by_depth());
 }
 
+void RNN_Genome::sort_recurrent_edges_by_depth() {
+    sort(recurrent_edges.begin(), recurrent_edges.end(), sort_RNN_Recurrent_Edges_by_depth());
+
+}
+
 RNN_Genome::RNN_Genome(vector<RNN_Node_Interface*> &_nodes, vector<RNN_Edge*> &_edges) {
     generation_id = -1;
     group_id = -1;
@@ -3404,6 +3409,9 @@ void RNN_Genome::transfer_to(const vector<string> &new_input_parameter_names, co
         exit(1);
     }
 
+    sort_edges_by_depth();
+    sort_recurrent_edges_by_depth();
+
     if (transfer_learning_version.compare("v1") == 0 || transfer_learning_version.compare("v1+v2") == 0) {
         Log::info("doing transfer v1\n");
         for (int i = 0; i < new_input_nodes.size(); i++) {
@@ -3411,8 +3419,7 @@ void RNN_Genome::transfer_to(const vector<string> &new_input_parameter_names, co
             Log::info("adding connections for new input node[%d] '%s'\n", i, new_input_nodes[i]->parameter_name.c_str());
 
             for (int j = 0; j < new_output_nodes.size(); j++) {
-                RNN_Edge *edge = new RNN_Edge(++edge_innovation_count, new_input_nodes[i], new_output_nodes[j]);
-                edge->weight = bound(normal_distribution.random(generator, mu, sigma));
+                attempt_edge_insert(new_input_nodes[i], new_output_nodes[j], mu, sigma, edge_innovation_count);
             }
         }
 
@@ -3421,8 +3428,7 @@ void RNN_Genome::transfer_to(const vector<string> &new_input_parameter_names, co
             Log::info("adding connections for new output node[%d] '%s'\n", i, new_output_nodes[i]->parameter_name.c_str());
 
             for (int j = 0; j < new_input_nodes.size(); j++) {
-                RNN_Edge *edge = new RNN_Edge(++edge_innovation_count, new_input_nodes[j], new_output_nodes[i]);
-                edge->weight = bound(normal_distribution.random(generator, mu, sigma));
+                attempt_edge_insert(new_input_nodes[j], new_output_nodes[i], mu, sigma, edge_innovation_count);
             }
         }
     }
@@ -3452,7 +3458,6 @@ void RNN_Genome::transfer_to(const vector<string> &new_input_parameter_names, co
     Log::info("assigning reachability\n");
     //need to recalculate the reachability of each node
     assign_reachability();
-
 
     //need to make sure that each input and each output has at least one connection
     for (auto node : nodes) {
