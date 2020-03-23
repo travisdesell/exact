@@ -78,6 +78,7 @@ class RNN_Genome {
     public:
         void sort_nodes_by_depth();
         void sort_edges_by_depth();
+        void sort_recurrent_edges_by_depth();
 
         RNN_Genome(vector<RNN_Node_Interface*> &_nodes, vector<RNN_Edge*> &_edges);
         RNN_Genome(vector<RNN_Node_Interface*> &_nodes, vector<RNN_Edge*> &_edges, vector<RNN_Recurrent_Edge*> &_recurrent_edges);
