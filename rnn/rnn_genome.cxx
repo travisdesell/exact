@@ -1606,6 +1606,8 @@ bool RNN_Genome::attempt_edge_insert(RNN_Node_Interface *n1, RNN_Node_Interface 
     Log::info("\tadding edge between nodes %d and %d, new edge weight: %lf\n", e->input_innovation_number, e->output_innovation_number, e->weight);
 
     edges.insert( upper_bound(edges.begin(), edges.end(), e, sort_RNN_Edges_by_depth()), e);
+
+
     return true;
 }
 
@@ -1637,7 +1639,7 @@ bool RNN_Genome::attempt_recurrent_edge_insert(RNN_Node_Interface *n1, RNN_Node_
     RNN_Recurrent_Edge *e = new RNN_Recurrent_Edge(++edge_innovation_count, recurrent_depth, n1, n2);
     e->weight = bound(normal_distribution.random(generator, mu, sigma));
 
-    Log::info("\tadding recurrent edge between nodes %d and %d, new edge weight: %d\n", e->input_innovation_number, e->output_innovation_number, e->weight);
+    Log::info("\tadding recurrent edge with innovation number %d between nodes %d and %d, new edge weight: %d\n", e->innovation_number, e->input_innovation_number, e->output_innovation_number, e->weight);
 
     recurrent_edges.insert( upper_bound(recurrent_edges.begin(), recurrent_edges.end(), e, sort_RNN_Recurrent_Edges_by_depth()), e);
     return true;
@@ -1844,7 +1846,7 @@ bool RNN_Genome::split_edge(double mu, double sigma, int node_type, uniform_int_
 }
 
 bool RNN_Genome::connect_new_input_node(double mu, double sigma, RNN_Node_Interface *new_node, uniform_int_distribution<int32_t> dist, int32_t &edge_innovation_count) {
-    Log::info("\tattempting to connect a new input node for transfer learning!\n");
+    Log::info("\tattempting to connect a new input node (%d) for transfer learning!\n", new_node->innovation_number);
 
     vector<RNN_Node_Interface*> possible_outputs;
 
@@ -1879,6 +1881,7 @@ bool RNN_Genome::connect_new_input_node(double mu, double sigma, RNN_Node_Interf
     output_sigma /= (enabled_count - 1);
     output_sigma = sqrt(output_sigma);
 
+ 
     int32_t max_outputs = fmax(1, 2.0 + normal_distribution.random(generator, avg_outputs, output_sigma));
     Log::info("\tadd new input node, max_outputs: %d\n", max_outputs);
 
@@ -1905,6 +1908,7 @@ bool RNN_Genome::connect_new_input_node(double mu, double sigma, RNN_Node_Interf
             attempt_edge_insert(new_node, possible_outputs[i], mu, sigma, edge_innovation_count);
         }
     }
+
 
     return true;
 }
@@ -2903,7 +2907,7 @@ void RNN_Genome::read_from_stream(istream &bin_istream) {
         string parameter_name;
         read_binary_string(bin_istream, parameter_name, "parameter_name");
 
-        Log::debug("NODE: %d %d %lf %d '%s'\n", innovation_number, layer_type, node_type, depth, enabled, parameter_name.c_str());
+        Log::debug("NODE: %d %d %d %lf %d '%s'\n", innovation_number, layer_type, node_type, depth, enabled, parameter_name.c_str());
 
         RNN_Node_Interface *node;
         if (node_type == LSTM_NODE) {
@@ -3291,7 +3295,8 @@ void RNN_Genome::transfer_to(const vector<string> &new_input_parameter_names, co
 
         //do the same for any outgoing recurrent edges
         for (int j = recurrent_edges.size() - 1; j >= 0; j--) {
-            if (recurrent_edges[j]->input_innovation_number == input_nodes[i]->innovation_number) {
+            //recurrent edges shouldn't go into input nodes, but check to see if it has a connection either way to the node being deleted
+            if (recurrent_edges[j]->input_innovation_number == input_nodes[i]->innovation_number || recurrent_edges[j]->output_innovation_number == input_nodes[i]->innovation_number) {
                 Log::info("deleting recurrent_edges[%d] with innovation number: %d and input_innovation_number %d\n", j, recurrent_edges[j]->innovation_number, recurrent_edges[j]->input_innovation_number);
                 delete recurrent_edges[j];
                 recurrent_edges.erase(recurrent_edges.begin() + j);
@@ -3378,7 +3383,8 @@ void RNN_Genome::transfer_to(const vector<string> &new_input_parameter_names, co
 
         //do the same for any outgoing recurrent edges
         for (int j = recurrent_edges.size() - 1; j >= 0; j--) {
-            if (recurrent_edges[j]->output_innovation_number == output_nodes[i]->innovation_number) {
+            //output nodes can be the input to a recurrent edge so we need to delete those recurrent edges too if the output node is being deleted
+            if (recurrent_edges[j]->output_innovation_number == output_nodes[i]->innovation_number || recurrent_edges[j]->input_innovation_number == output_nodes[i]->innovation_number) {
                 Log::info("deleting recurrent_edges[%d] with innovation number: %d and output_innovation_number %d\n", j, recurrent_edges[j]->innovation_number, recurrent_edges[j]->output_innovation_number);
                 delete recurrent_edges[j];
                 recurrent_edges.erase(recurrent_edges.begin() + j);
@@ -3441,15 +3447,15 @@ void RNN_Genome::transfer_to(const vector<string> &new_input_parameter_names, co
         Log::info("doing transfer v2\n");
 
         for (auto node : new_input_nodes) {
-            Log::debug("\tBEFORE -- CHECK EDGE INNOVATION COUNT: %d\n", edge_innovation_count);
+            Log::debug("BEFORE -- CHECK EDGE INNOVATION COUNT: %d\n", edge_innovation_count);
             connect_new_input_node(mu, sigma, node, rec_depth_dist, edge_innovation_count);
-            Log::debug("\tAFTER -- CHECK EDGE INNOVATION COUNT: %d\n", edge_innovation_count);
+            Log::debug("AFTER -- CHECK EDGE INNOVATION COUNT: %d\n", edge_innovation_count);
         }
 
         for (auto node : new_output_nodes) {
-            Log::debug("\tBEFORE -- CHECK EDGE INNOVATION COUNT: %d\n", edge_innovation_count);
+            Log::debug("BEFORE -- CHECK EDGE INNOVATION COUNT: %d\n", edge_innovation_count);
             connect_new_output_node(mu, sigma, node, rec_depth_dist, edge_innovation_count);
-            Log::debug("\tAFTER -- CHECK EDGE INNOVATION COUNT: %d\n", edge_innovation_count);
+            Log::debug("AFTER -- CHECK EDGE INNOVATION COUNT: %d\n", edge_innovation_count);
         }
     }
 
