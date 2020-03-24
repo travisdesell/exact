@@ -3433,6 +3433,9 @@ void RNN_Genome::transfer_to(const vector<string> &new_input_parameter_names, co
         }
     }
 
+    sort_edges_by_depth();
+    sort_recurrent_edges_by_depth();
+
     uniform_int_distribution<int32_t> rec_depth_dist(min_recurrent_depth, max_recurrent_depth);
     if (transfer_learning_version.compare("v2") == 0 || transfer_learning_version.compare("v1+v2") == 0) {
         Log::info("doing transfer v2\n");
@@ -3458,6 +3461,9 @@ void RNN_Genome::transfer_to(const vector<string> &new_input_parameter_names, co
     Log::info("assigning reachability\n");
     //need to recalculate the reachability of each node
     assign_reachability();
+
+    sort_edges_by_depth();
+    sort_recurrent_edges_by_depth();
 
     //need to make sure that each input and each output has at least one connection
     for (auto node : nodes) {
