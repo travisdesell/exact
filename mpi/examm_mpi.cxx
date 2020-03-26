@@ -334,9 +334,7 @@ int main(int argc, char** argv) {
     }
 
     bool start_filled = false;
-    if (genome_file_name != "") {
-        get_argument(arguments, "--start_filled", false, start_filled);
-    }
+    get_argument(arguments, "--start_filled", false, start_filled);
 
     Log::clear_rank_restriction();
 

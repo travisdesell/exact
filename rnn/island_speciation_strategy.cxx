@@ -291,6 +291,9 @@ RNN_Genome* IslandSpeciationStrategy::generate_genome(uniform_real_distribution<
         if (island->size() == 0) {
             Log::debug("starting with minimal genome\n");
             RNN_Genome *genome_copy = minimal_genome->copy();
+            //the architectures may be the same but we can give each copy of the minimal genome different
+            //starting weights for more variety
+            genome_copy->initialize_randomly();
             
             // This is commented out because transfer learning islands should probably start out filled up.
             // it is probably going to be removed soon.
