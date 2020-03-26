@@ -3501,9 +3501,12 @@ void RNN_Genome::transfer_to(const vector<string> &new_input_parameter_names, co
     vector<double> updated_genome_parameters;
     get_weights(updated_genome_parameters);
     if (!epigenetic_weights) {
+        Log::info("resetting genome parameters to randomly betwen -0.5 and 0.5\n");
         for (int i = 0; i < updated_genome_parameters.size(); i++) {
             updated_genome_parameters[i] = rng_0_1(generator) - 0.5;
         }
+    } else {
+        Log::info("not resetting weights\n");
     }
     set_initial_parameters( updated_genome_parameters );
     set_best_parameters( updated_genome_parameters );
