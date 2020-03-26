@@ -161,6 +161,7 @@ void master(int max_rank) {
             examm->insert_genome(genome);
             examm_mutex.unlock();
 
+            delete genome;
             //this genome will be deleted if/when removed from population
         } else {
             Log::fatal("ERROR: received message from %d with unknown tag: %d\n", source, tag);
