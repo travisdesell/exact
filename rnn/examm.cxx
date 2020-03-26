@@ -170,7 +170,6 @@ EXAMM::EXAMM(
     Log::info("Speciation method is: \"%s\" (Default is the island-based speciation strategy).\n", speciation_method.c_str());
     if (speciation_method.compare("island") == 0 || speciation_method.compare("") == 0) {
         //generate a minimal feed foward network as the seed genome
-        RNN_Genome *seed_genome = NULL;
         
         if (seed_genome == NULL) {
             seed_genome = create_ff(input_parameter_names, 0, 0, output_parameter_names, 0);
