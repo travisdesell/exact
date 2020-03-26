@@ -8,7 +8,7 @@ using std::vector;
 #include "common/log.hxx"
 
 
-RNN_Node::RNN_Node(int _innovation_number, int _layer_type, double _depth, int _node_type) : RNN_Node_Interface(_innovation_number, _layer_type, _depth) {
+RNN_Node::RNN_Node(int _innovation_number, int _layer_type, double _depth, int _node_type) : RNN_Node_Interface(_innovation_number, _layer_type, _depth), bias(0) {
 
     //node type will be simple, jordan or elman
     node_type = _node_type;
@@ -16,7 +16,7 @@ RNN_Node::RNN_Node(int _innovation_number, int _layer_type, double _depth, int _
 }
 
 
-RNN_Node::RNN_Node(int _innovation_number, int _layer_type, double _depth, int _node_type, string _parameter_name) : RNN_Node_Interface(_innovation_number, _layer_type, _depth, _parameter_name) {
+RNN_Node::RNN_Node(int _innovation_number, int _layer_type, double _depth, int _node_type, string _parameter_name) : RNN_Node_Interface(_innovation_number, _layer_type, _depth, _parameter_name), bias(0) {
 
     //node type will be simple, jordan or elman
     node_type = _node_type;

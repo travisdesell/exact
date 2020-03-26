@@ -28,7 +28,7 @@ IslandSpeciationStrategy::IslandSpeciationStrategy(
         double _inter_island_crossover_rate, RNN_Genome *_seed_genome,
         string _island_ranking_method, string _repopulation_method,
         int32_t _extinction_event_generation_number, int32_t _repopulation_mutations,
-        int32_t _islands_to_exterminate) :
+        int32_t _islands_to_exterminate, bool _seed_genome_was_minimal) :
                         generation_island(0), 
                         number_of_islands(_number_of_islands), 
                         max_island_size(_max_island_size), 
@@ -37,12 +37,12 @@ IslandSpeciationStrategy::IslandSpeciationStrategy(
                         inter_island_crossover_rate(_inter_island_crossover_rate), 
                         generated_genomes(0),
                         inserted_genomes(0), 
-                        minimal_genome(_seed_genome), 
+                        seed_genome(_seed_genome), 
                         island_ranking_method(_island_ranking_method),
                         repopulation_method(_repopulation_method),
                         extinction_event_generation_number(_extinction_event_generation_number),
                         repopulation_mutations(_repopulation_mutations), 
-                        islands_to_exterminate(_islands_to_exterminate) {
+                        islands_to_exterminate(_islands_to_exterminate), seed_genome_was_minimal(_seed_genome_was_minimal) {
 
     double rate_sum = mutation_rate + intra_island_crossover_rate + inter_island_crossover_rate;
     if (rate_sum != 1.0) {
@@ -59,7 +59,7 @@ IslandSpeciationStrategy::IslandSpeciationStrategy(
     }
     
     //set the generation id for the initial minimal genome
-    minimal_genome->set_generation_id(generated_genomes);
+    seed_genome->set_generation_id(generated_genomes);
     generated_genomes++;
     global_best_genome = NULL;
 }
@@ -73,7 +73,7 @@ IslandSpeciationStrategy::IslandSpeciationStrategy(
         double _inter_island_crossover_rate, RNN_Genome *_seed_genome, 
         string _island_ranking_method, string _repopulation_method,
         int32_t _extinction_event_generation_number, int32_t _repopulation_mutations,
-        int32_t _islands_to_exterminate, function<void (RNN_Genome*)> &modify) :                       
+        int32_t _islands_to_exterminate, bool _seed_genome_was_minimal, function<void (RNN_Genome*)> &modify) :                       
                         generation_island(0), 
                         number_of_islands(_number_of_islands), 
                         max_island_size(_max_island_size), 
@@ -82,12 +82,13 @@ IslandSpeciationStrategy::IslandSpeciationStrategy(
                         inter_island_crossover_rate(_inter_island_crossover_rate), 
                         generated_genomes(0), 
                         inserted_genomes(0), 
-                        minimal_genome(_seed_genome), 
+                        seed_genome(_seed_genome), 
                         island_ranking_method(_island_ranking_method),
                         repopulation_method(_repopulation_method),
                         extinction_event_generation_number(_extinction_event_generation_number),
                         repopulation_mutations(_repopulation_mutations), 
-                        islands_to_exterminate(_islands_to_exterminate) {
+                        islands_to_exterminate(_islands_to_exterminate),
+                        seed_genome_was_minimal(_seed_genome_was_minimal) {
 
     double rate_sum = mutation_rate + intra_island_crossover_rate + inter_island_crossover_rate;
     if (rate_sum != 1.0) {
@@ -117,7 +118,7 @@ IslandSpeciationStrategy::IslandSpeciationStrategy(
     
     //set the generation id for the initial minimal genome
     
-    minimal_genome->set_generation_id(0);
+    seed_genome->set_generation_id(0);
     
     generated_genomes++;
     global_best_genome = NULL;
@@ -290,10 +291,10 @@ RNN_Genome* IslandSpeciationStrategy::generate_genome(uniform_real_distribution<
 
         if (island->size() == 0) {
             Log::debug("starting with minimal genome\n");
-            RNN_Genome *genome_copy = minimal_genome->copy();
+            RNN_Genome *genome_copy = seed_genome->copy();
             //the architectures may be the same but we can give each copy of the minimal genome different
             //starting weights for more variety
-            genome_copy->initialize_randomly();
+            if (seed_genome_was_minimal) genome_copy->initialize_randomly();
             
             // This is commented out because transfer learning islands should probably start out filled up.
             // it is probably going to be removed soon.
