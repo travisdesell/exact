@@ -171,7 +171,9 @@ EXAMM::EXAMM(
     if (speciation_method.compare("island") == 0 || speciation_method.compare("") == 0) {
         //generate a minimal feed foward network as the seed genome
         
+        bool seed_genome_was_minimal = false;
         if (seed_genome == NULL) {
+            seed_genome_was_minimal = true;
             seed_genome = create_ff(input_parameter_names, 0, 0, output_parameter_names, 0);
             seed_genome->initialize_randomly();
         } //otherwise the seed genome was passed into EXAMM
@@ -207,11 +209,11 @@ EXAMM::EXAMM(
 
             speciation_strategy = new IslandSpeciationStrategy(
                     number_islands, population_size, mutation_rate, intra_island_co_rate, inter_island_co_rate,
-                    seed_genome, island_ranking_method, repopulation_method, extinction_event_generation_number, repopulation_mutations, islands_to_exterminate, apply_stir_mutations);
+                    seed_genome, island_ranking_method, repopulation_method, extinction_event_generation_number, repopulation_mutations, islands_to_exterminate, seed_genome_was_minimal, apply_stir_mutations);
         } else {
             speciation_strategy = new IslandSpeciationStrategy(
                     number_islands, population_size, mutation_rate, intra_island_co_rate, inter_island_co_rate,
-                    seed_genome, island_ranking_method, repopulation_method, extinction_event_generation_number, repopulation_mutations, islands_to_exterminate);
+                    seed_genome, island_ranking_method, repopulation_method, extinction_event_generation_number, repopulation_mutations, islands_to_exterminate, seed_genome_was_minimal);
         }
     }
 

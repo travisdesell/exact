@@ -1525,7 +1525,7 @@ void RNN_Genome::get_mu_sigma(const vector<double> &p, double &mu, double &sigma
     if (std::isnan(mu) || std::isinf(mu) || std::isnan(sigma) || std::isinf(sigma)) {
         Log::fatal("mu or sigma was not a number, all parameters:\n");
         for (int32_t i = 0; i < (int32_t)p.size(); i++) {
-            Log::fatal("\t%lf", p[i]);
+            Log::fatal("\t%lf\n", p[i]);
         }
         exit(1);
     }
@@ -1533,7 +1533,7 @@ void RNN_Genome::get_mu_sigma(const vector<double> &p, double &mu, double &sigma
     if (mu < -11.0 || mu > 11.0 || sigma < -30.0 || sigma > 30.0) {
         Log::fatal("mu or sigma exceeded possible bounds (11 or 30), all parameters:\n");
         for (int32_t i = 0; i < (int32_t)p.size(); i++) {
-            Log::fatal("\t%lf", p[i]);
+            Log::fatal("\t%lf\n", p[i]);
         }
         exit(1);
     }
@@ -3192,11 +3192,14 @@ int RNN_Genome::get_max_edge_innovation_count() {
 
 
 void RNN_Genome::transfer_to(const vector<string> &new_input_parameter_names, const vector<string> &new_output_parameter_names, string transfer_learning_version, bool epigenetic_weights, int32_t min_recurrent_depth, int32_t max_recurrent_depth) {
+    Log::info("DOING TRANSFER OF GENOME!\n");
 
     double mu, sigma;
+    set_weights(best_parameters);
     get_mu_sigma(best_parameters, mu, sigma);
-
+    Log::info("before transfer, mu: %lf, sigma: %lf\n", mu, sigma);
     //make sure we don't duplicate new node/edge innovation numbers
+
     int node_innovation_count = get_max_node_innovation_count() + 1;
     int edge_innovation_count = get_max_edge_innovation_count() + 1;
 
@@ -3268,7 +3271,6 @@ void RNN_Genome::transfer_to(const vector<string> &new_input_parameter_names, co
             //create a new input node for this parameter
             new_inputs.push_back(true);
             RNN_Node *node = new RNN_Node(++node_innovation_count, INPUT_LAYER, 0.0 /*input nodes should be depth 0*/, SIMPLE_NODE, new_input_parameter_names[i]);
-            node->initialize_randomly(generator, normal_distribution, mu, sigma);
             new_input_nodes.push_back(node);
         }
     }
@@ -3356,7 +3358,6 @@ void RNN_Genome::transfer_to(const vector<string> &new_input_parameter_names, co
             //create a new output node for this parameter
             new_outputs.push_back(true);
             RNN_Node *node = new RNN_Node(++node_innovation_count, OUTPUT_LAYER, 1.0 /*output nodes should be depth 1*/, SIMPLE_NODE, new_output_parameter_names[i]);
-            node->initialize_randomly(generator, normal_distribution, mu, sigma);
             new_output_nodes.push_back(node);
         }
     }
@@ -3513,6 +3514,10 @@ void RNN_Genome::transfer_to(const vector<string> &new_input_parameter_names, co
 
     best_validation_mse = EXAMM_MAX_DOUBLE;
     best_validation_mae = EXAMM_MAX_DOUBLE;
+
+    get_mu_sigma(best_parameters, mu, sigma);
+    Log::info("after transfer, mu: %lf, sigma: %lf\n", mu, sigma);
+    //make sure we don't duplicate new node/edge innovation numbers
 
     Log::info("new_parameters.size() after get weights: %d\n", updated_genome_parameters.size());
 
