@@ -87,13 +87,13 @@ class EXAMM {
 
         vector<int> possible_node_types;
 
-	vector<string> op_log_ordering;
-	map<string, int32_t> inserted_counts;
-	map<string, int32_t> generated_counts;
+        vector<string> op_log_ordering;
+        map<string, int32_t> inserted_counts;
+        map<string, int32_t> generated_counts;
 
         string output_directory;
         ofstream *log_file;
-	ofstream *op_log_file;
+        ofstream *op_log_file;
 
         vector<string> input_parameter_names;
         vector<string> output_parameter_names;

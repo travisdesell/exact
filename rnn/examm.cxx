@@ -277,7 +277,7 @@ EXAMM::EXAMM(
 
     } else {
         log_file = NULL;
-            op_log_file = NULL;
+        op_log_file = NULL;
     }
 
     startClock = std::chrono::system_clock::now();
