@@ -355,8 +355,12 @@ string RNN_Genome::generated_by_string() {
         first = false;
     }
     oss << "]";
-
+    
     return oss.str();
+}
+
+const map<string, int> *RNN_Genome::get_generated_by_map() {
+    return &generated_by_map;
 }
 
 vector<string> RNN_Genome::get_input_parameter_names() const {
