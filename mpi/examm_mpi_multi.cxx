@@ -161,6 +161,7 @@ void master(int max_rank) {
             examm->insert_genome(genome);
             examm_mutex.unlock();
 
+            delete genome;
             //this genome will be deleted if/when removed from population
         } else {
             Log::fatal("ERROR: received message from %d with unknown tag: %d\n", source, tag);
@@ -212,18 +213,6 @@ void worker(int rank) {
 
     //release the log file for the worker communication
     Log::release_id(worker_id);
-}
-
-void get_individual_inputs(string str, vector<string>& tokens) {
-   string word = "";
-   for (auto x : str) {
-       if (x == ',') {
-           tokens.push_back(word);
-           word = "";
-       }else
-           word = word + x;
-   }
-   tokens.push_back(word);
 }
 
 int main(int argc, char** argv) {
@@ -291,8 +280,6 @@ int main(int argc, char** argv) {
     //mkpath(output_directory.c_str(), 0777);
 
     TimeSeriesSets *time_series_sets = NULL;
-    vector<string> inputs_removed_tokens  ;
-    vector<string> outputs_removed_tokens ;
 
     if (rank == 0) {
         //only have the master process be verbose
@@ -310,51 +297,28 @@ int main(int argc, char** argv) {
     vector<string> possible_node_types;
     get_argument_vector(arguments, "--possible_node_types", true, possible_node_types);
 
-    int32_t rec_delay_min = 1;
-    get_argument(arguments, "--rec_delay_min", false, rec_delay_min);
+    int32_t min_recurrent_depth = 1;
+    get_argument(arguments, "--min_recurrent_depth", false, min_recurrent_depth);
 
-    int32_t rec_delay_max = 10;
-    get_argument(arguments, "--rec_delay_max", false, rec_delay_max);
+    int32_t max_recurrent_depth = 10;
+    get_argument(arguments, "--max_recurrent_depth", false, max_recurrent_depth);
 
+
+    RNN_Genome *seed_genome = NULL;
     string genome_file_name = "";
-    get_argument(arguments, "--genome_bin", false, genome_file_name);
-    int no_extra_inputs = 0 ;
-    if (genome_file_name != "") {
-        get_argument(arguments, "--extra_inputs", true, no_extra_inputs);
-    }
-    int no_extra_outputs = 0 ;
-    if (genome_file_name != "") {
-        get_argument(arguments, "--extra_outputs", false, no_extra_outputs);
-    }
-    string inputs_to_remove = "" ;
-    if (genome_file_name != "") {
-        get_argument(arguments, "--inputs_to_remove", false, inputs_to_remove);
+    if (get_argument(arguments, "--genome_bin", false, genome_file_name)) {
+        seed_genome = new RNN_Genome(genome_file_name);
+
+        string transfer_learning_version;
+        get_argument(arguments, "--transfer_learning_version", true, transfer_learning_version);
+
+        bool epigenetic_weights = argument_exists(arguments, "--epigenetic_weights");
+
+        seed_genome->transfer_to(time_series_sets->get_input_parameter_names(), time_series_sets->get_output_parameter_names(), transfer_learning_version, epigenetic_weights, min_recurrent_depth, max_recurrent_depth);
     }
 
-    string outputs_to_remove = "" ;
-    if (genome_file_name != "") {
-        get_argument(arguments, "--outputs_to_remove", false, outputs_to_remove);
-    }
-
-    bool tl_ver1 = true ;
-    if (genome_file_name != "") {
-        get_argument(arguments, "--tl_version1", false, tl_ver1);
-    }
-    bool tl_ver2 = true ;
-    if (genome_file_name != "") {
-        get_argument(arguments, "--tl_version2", false, tl_ver2);
-    }
-    bool tl_ver3 = true ;
-    if (genome_file_name != "") {
-        get_argument(arguments, "--tl_version3", false, tl_ver3);
-    }
-    bool tl_start_filled = false;
-    if (genome_file_name != "") {
-        get_argument(arguments, "--tl_start_filled", false, tl_start_filled);
-    }
-
-    get_individual_inputs( inputs_to_remove, inputs_removed_tokens) ;
-    get_individual_inputs( outputs_to_remove, outputs_removed_tokens) ;
+    bool start_filled = false;
+    get_argument(arguments, "--start_filled", false, start_filled);
 
     Log::clear_rank_restriction();
 
@@ -407,12 +371,10 @@ int main(int argc, char** argv) {
                     use_high_threshold, high_threshold,
                     use_low_threshold, low_threshold,
                     use_dropout, dropout_probability,
-                    rec_delay_min, rec_delay_max,
+                    min_recurrent_depth, max_recurrent_depth,
                     output_directory,
-                    genome_file_name,
-                    no_extra_inputs, no_extra_outputs,
-                    inputs_removed_tokens, outputs_removed_tokens,
-                    tl_ver1, tl_ver2, tl_ver3, tl_start_filled);
+                    seed_genome,
+                    start_filled);
 
                 examm->set_possible_node_types(possible_node_types);
 

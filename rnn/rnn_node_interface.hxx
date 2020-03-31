@@ -51,6 +51,10 @@ class RNN_Node_Interface {
 
         double depth;
 
+        //this is only used for input and output nodes to track
+        //which parameter they are assigned to
+        string parameter_name;
+
         bool enabled;
         bool backward_reachable;
         bool forward_reachable;
@@ -67,7 +71,11 @@ class RNN_Node_Interface {
         int32_t total_inputs;
         int32_t total_outputs;
     public:
+        //this constructor is for hidden nodes
         RNN_Node_Interface(int32_t _innovation_number, int32_t _layer_type, double _depth);
+
+        //this constructor is for input and output nodes (as they have an associated parameter name
+        RNN_Node_Interface(int32_t _innovation_number, int32_t _layer_type, double _depth, string _parameter_name);
         virtual ~RNN_Node_Interface();
 
         virtual void initialize_randomly(minstd_rand0 &generator, NormalDistribution &normal_distribution, double mu, double sigma) = 0;
