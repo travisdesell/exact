@@ -30,11 +30,13 @@ class EXAMM {
         int32_t max_genomes;
         int32_t total_bp_epochs;
 
-        string speciation_method;
-        string island_ranking_method;
         int32_t extinction_event_generation_number;
+        string island_ranking_method;
+
+        string speciation_method;
         string repopulation_method;
         int32_t repopulation_mutations;
+
         SpeciationStrategy *speciation_strategy;
 
         int32_t edge_innovation_count;
@@ -85,9 +87,13 @@ class EXAMM {
 
         vector<int> possible_node_types;
 
+        vector<string> op_log_ordering;
+        map<string, int32_t> inserted_counts;
+        map<string, int32_t> generated_counts;
 
         string output_directory;
         ofstream *log_file;
+        ofstream *op_log_file;
 
         vector<string> input_parameter_names;
         vector<string> output_parameter_names;
@@ -106,10 +112,7 @@ class EXAMM {
         vector<string> inputs_to_remove ;
         vector<string> outputs_to_remove ;
 
-        bool tl_ver1;
-        bool tl_ver2;
-        bool tl_ver3;
-        bool tl_start_filled;
+        bool start_filled;
 
     public:
         EXAMM(  int32_t _population_size, 
@@ -136,12 +139,8 @@ class EXAMM {
                 int32_t _min_recurrent_depth,
                 int32_t _max_recurrent_depth,
                 string _output_directory, 
-                string _genome_file_name,
-                int _no_extra_inputs,
-                int _no_extra_outputs,
-                vector<string> &_inputs_to_remove,
-                vector<string> &_outputs_to_remove,
-                bool _tl_ver1, bool _tl_ver2, bool _tl_ver3, bool _tl_start_filled);
+                RNN_Genome *seed_genome,
+                bool _start_filled);
 
 
         ~EXAMM();

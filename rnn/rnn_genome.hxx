@@ -78,6 +78,7 @@ class RNN_Genome {
     public:
         void sort_nodes_by_depth();
         void sort_edges_by_depth();
+        void sort_recurrent_edges_by_depth();
 
         RNN_Genome(vector<RNN_Node_Interface*> &_nodes, vector<RNN_Edge*> &_edges);
         RNN_Genome(vector<RNN_Node_Interface*> &_nodes, vector<RNN_Edge*> &_edges, vector<RNN_Recurrent_Edge*> &_recurrent_edges);
@@ -97,6 +98,8 @@ class RNN_Genome {
 
         string get_edge_count_str(bool recurrent);
         string get_node_count_str(int node_type);
+
+        const map<string, int> *get_generated_by_map();
 
         double get_avg_recurrent_depth() const;
 
@@ -239,6 +242,18 @@ class RNN_Genome {
         
         void update_innovation_counts(int32_t &node_innovation_count, int32_t &edge_innovation_count);
 
+        /**
+         * \return the max innovation number of any node in the genome.
+         */
+        int get_max_node_innovation_count();
+
+        /**
+         * \return the max innovation number of any edge or recurrent edge in the genome.
+         */
+        int get_max_edge_innovation_count();
+
+        void transfer_to(const vector<string> &new_input_parameter_names, const vector<string> &new_output_parameter_names, string transfer_learning_version, bool epigenetic_weights, int32_t min_recurrent_depth, int32_t max_recurrent_depth);
+
         friend class EXAMM;
         friend class IslandSpeciationStrategy;
         friend class RecDepthFrequencyTable;
@@ -249,5 +264,8 @@ struct sort_genomes_by_fitness {
         return g1->get_fitness() < g2->get_fitness();
     }
 };
+
+void write_binary_string(ostream &out, string s, string name);
+void read_binary_string(istream &in, string &s, string name);
 
 #endif

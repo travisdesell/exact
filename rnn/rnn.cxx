@@ -37,8 +37,69 @@ using std::vector;
 
 #include "common/log.hxx"
 
+void RNN::validate_parameters(const vector<string> &input_parameter_names, const vector<string> &output_parameter_names) {
+    if (input_nodes.size() != input_parameter_names.size()) {
+        Log::fatal("ERROR: number of input nodes (%d) != number of input parameters (%d)\n", input_nodes.size(), input_parameter_names.size());
+        exit(1);
+    }
 
-RNN::RNN(vector<RNN_Node_Interface*> &_nodes, vector<RNN_Edge*> &_edges) {
+    bool parameter_mismatch = false;
+    for (int i = 0; i < input_nodes.size(); i++) {
+        if (input_nodes[i]->parameter_name.compare(input_parameter_names[i]) != 0) {
+            Log::fatal("ERROR: input_nodes[%d]->parameter_name '%s' != input_parmater_names[%d] '%s'\n", i, input_nodes[i]->parameter_name.c_str(), i, input_parameter_names[i].c_str());
+            parameter_mismatch = true;
+        }
+    }
+    if (parameter_mismatch) {
+        exit(1);
+    }
+
+    if (output_nodes.size() != output_parameter_names.size()) {
+        Log::fatal("ERROR: number of output nodes (%d) != number of output parameters (%d)\n", output_nodes.size(), output_parameter_names.size());
+        exit(1);
+    }
+
+    parameter_mismatch = false;
+    for (int i = 0; i < output_nodes.size(); i++) {
+        if (output_nodes[i]->parameter_name.compare(output_parameter_names[i]) != 0) {
+            Log::fatal("ERROR: output_nodes[%d]->parameter_name '%s' != output_parmater_names[%d] '%s'\n", i, output_nodes[i]->parameter_name.c_str(), i, output_parameter_names[i].c_str());
+            parameter_mismatch = true;
+        }
+    }
+    if (parameter_mismatch) {
+        exit(1);
+    }
+}
+
+void RNN::fix_parameter_orders(const vector<string> &input_parameter_names, const vector<string> &output_parameter_names) {
+    vector<RNN_Node_Interface*> ordered_input_nodes;
+
+    for (int i = 0; i < input_parameter_names.size(); i++) {
+        for (int j = input_nodes.size() - 1; j >= 0; j--) {
+            if (input_nodes[j]->parameter_name.compare(input_parameter_names[i]) == 0) {
+                ordered_input_nodes.push_back(input_nodes[j]);
+                input_nodes.erase(input_nodes.begin() + j);
+            }
+        }
+    }
+
+    input_nodes = ordered_input_nodes;
+
+    vector<RNN_Node_Interface*> ordered_output_nodes;
+
+    for (int i = 0; i < output_parameter_names.size(); i++) {
+        for (int j = output_nodes.size() - 1; j >= 0; j--) {
+            if (output_nodes[j]->parameter_name.compare(output_parameter_names[i]) == 0) {
+                ordered_output_nodes.push_back(output_nodes[j]);
+                output_nodes.erase(output_nodes.begin() + j);
+            }
+        }
+    }
+
+    output_nodes = ordered_output_nodes;
+}
+
+RNN::RNN(vector<RNN_Node_Interface*> &_nodes, vector<RNN_Edge*> &_edges, const vector<string> &input_parameter_names, const vector<string> &output_parameter_names) {
     nodes = _nodes;
     edges = _edges;
 
@@ -52,9 +113,12 @@ RNN::RNN(vector<RNN_Node_Interface*> &_nodes, vector<RNN_Edge*> &_edges) {
             output_nodes.push_back(nodes[i]);
         }
     }
+
+    fix_parameter_orders(input_parameter_names, output_parameter_names);
+    validate_parameters(input_parameter_names, output_parameter_names);
 }
 
-RNN::RNN(vector<RNN_Node_Interface*> &_nodes, vector<RNN_Edge*> &_edges, vector<RNN_Recurrent_Edge*> &_recurrent_edges) {
+RNN::RNN(vector<RNN_Node_Interface*> &_nodes, vector<RNN_Edge*> &_edges, vector<RNN_Recurrent_Edge*> &_recurrent_edges, const vector<string> &input_parameter_names, const vector<string> &output_parameter_names) {
     nodes = _nodes;
     edges = _edges;
     recurrent_edges = _recurrent_edges;
@@ -69,6 +133,9 @@ RNN::RNN(vector<RNN_Node_Interface*> &_nodes, vector<RNN_Edge*> &_edges, vector<
             output_nodes.push_back(nodes[i]);
         }
     }
+
+    fix_parameter_orders(input_parameter_names, output_parameter_names);
+    validate_parameters(input_parameter_names, output_parameter_names);
 
     Log::trace("got RNN with %d nodes, %d edges, %d recurrent edges\n", nodes.size(), edges.size(), recurrent_edges.size());
 }
@@ -486,6 +553,7 @@ void RNN::initialize_randomly() {
     set_weights(parameters);
 }
 
+/*
 RNN* RNN::copy() {
     vector<RNN_Node_Interface*> node_copies;
     vector<RNN_Edge*> edge_copies;
@@ -506,4 +574,4 @@ RNN* RNN::copy() {
 
     return new RNN(node_copies, edge_copies, recurrent_edge_copies);
 }
-
+*/

@@ -89,30 +89,33 @@ int main(int argc, char **argv) {
     int32_t max_recurrent_depth;
     get_argument(arguments, "--max_recurrent_depth", true, max_recurrent_depth);
 
+    vector<string> input_parameter_names = time_series_sets->get_input_parameter_names();
+    vector<string> output_parameter_names = time_series_sets->get_output_parameter_names();
+
     RNN_Genome *genome;
     if (rnn_type == "one_layer_lstm") {
-        genome = create_lstm(number_inputs, 1, number_inputs, number_outputs, max_recurrent_depth);
+        genome = create_lstm(input_parameter_names, 1, number_inputs, output_parameter_names, max_recurrent_depth);
 
     } else if (rnn_type == "two_layer_lstm") {
-        genome = create_lstm(number_inputs, 1, number_inputs, number_outputs, max_recurrent_depth);
+        genome = create_lstm(input_parameter_names, 1, number_inputs, output_parameter_names, max_recurrent_depth);
 
     } else if (rnn_type == "one_layer_gru") {
-        genome = create_gru(number_inputs, 1, number_inputs, number_outputs, max_recurrent_depth);
+        genome = create_gru(input_parameter_names, 1, number_inputs, output_parameter_names, max_recurrent_depth);
 
     } else if (rnn_type == "two_layer_gru") {
-        genome = create_gru(number_inputs, 1, number_inputs, number_outputs, max_recurrent_depth);
+        genome = create_gru(input_parameter_names, 1, number_inputs, output_parameter_names, max_recurrent_depth);
 
     } else if (rnn_type == "one_layer_ff") {
-        genome = create_ff(number_inputs, 1, number_inputs, number_outputs, max_recurrent_depth);
+        genome = create_ff(input_parameter_names, 1, number_inputs, output_parameter_names, max_recurrent_depth);
 
     } else if (rnn_type == "two_layer_ff") {
-        genome = create_ff(number_inputs, 1, number_inputs, number_outputs, max_recurrent_depth);
+        genome = create_ff(input_parameter_names, 1, number_inputs, output_parameter_names, max_recurrent_depth);
 
     } else if (rnn_type == "jordan") {
-        genome = create_jordan(number_inputs, 1, number_inputs, number_outputs, max_recurrent_depth);
+        genome = create_jordan(input_parameter_names, 1, number_inputs, output_parameter_names, max_recurrent_depth);
 
     } else if (rnn_type == "elman") {
-        genome = create_elman(number_inputs, 1, number_inputs, number_outputs, max_recurrent_depth);
+        genome = create_elman(input_parameter_names, 1, number_inputs, output_parameter_names, max_recurrent_depth);
 
     } else {
         Log::fatal("ERROR: incorrect rnn type\n");
