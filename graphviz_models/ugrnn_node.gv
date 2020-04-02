@@ -79,8 +79,8 @@ digraph CNN {
         legend [shape=box,
             label=<
                 <table>
-                <tr><td>c = tanh(cw*x + ch*h_prev * c_bias)</td></tr>
-                <tr><td>g = &sigma;(gw*x + gh*h_prev * g_bias)</td></tr>
+                <tr><td>c = tanh(cw*x + ch*h_prev + c_bias)</td></tr>
+                <tr><td>g = &sigma;(gw*x + gh*h_prev + g_bias)</td></tr>
                 <tr><td>h = g*h_prev + (1-g)*c</td></tr>
                 </table>
                 >]

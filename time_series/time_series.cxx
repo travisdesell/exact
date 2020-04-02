@@ -80,18 +80,9 @@ void TimeSeries::calculate_statistics() {
     std_dev = sqrt(variance);
 }
 
-/*
-void TimeSeries::print_statistics(ostream &out) {
-    out << "\t" << setw(25) << name << " stats";
-    out << ", min: " << setw(13) << min;
-    out << ", avg: " << setw(13) << average;
-    out << ", max: " << setw(13) << max;
-    out << ", min_change: " << setw(13) << min_change;
-    out << ", max_change: " << setw(13) << max_change;
-    out << ", std_dev: " << setw(13) << std_dev;
-    out << ", variance: " << setw(13) << variance << endl;
+void TimeSeries::print_statistics() {
+    Log::info("\t%25s stats, min: %lf, avg: %lf, max: %lf, min_change: %lf, max_change: %lf, std_dev: %lf, variance: %lf\n", name.c_str(), min, average, max, min_change, max_change, std_dev, variance);
 }
-*/
 
 int TimeSeries::get_number_values() const {
     return values.size();
@@ -126,7 +117,7 @@ double TimeSeries::get_max_change() const {
 }
 
 void TimeSeries::normalize_min_max(double min, double max) {
-    Log::debug("normalizing time series '%s' with min: %lf and %lf, series min: %lf, series max: %lf\n", name.c_str(), min, max, this->min, this->max);
+    Log::debug("normalizing time series '%s' with min: %lf and max: %lf, series min: %lf, series max: %lf\n", name.c_str(), min, max, this->min, this->max);
 
     for (int i = 0; i < values.size(); i++) {
         if (values[i] < min) {
@@ -138,6 +129,15 @@ void TimeSeries::normalize_min_max(double min, double max) {
         }
 
         values[i] = (values[i] - min) / (max - min);
+    }
+}
+
+//divide by the normalized max to make things between -1 and 1
+void TimeSeries::normalize_avg_std_dev(double avg, double std_dev, double norm_max) {
+    Log::debug("normalizing time series '%s' with avg: %lf, std_dev: %lf and normalized max: %lf, series avg: %lf, series std_dev: %lf\n", name.c_str(), avg, std_dev, norm_max, this->average, this->std_dev);
+
+    for (int i = 0; i < values.size(); i++) {
+        values[i] = ((values[i] - avg) / std_dev) / norm_max;
     }
 }
 
@@ -193,32 +193,22 @@ void TimeSeriesSet::add_time_series(string name) {
     }
 }
 
-#define checkpoint(name) ; // printf("checkpoint %d\n", name++)
-
 TimeSeriesSet::TimeSeriesSet(string _filename, const vector<string> &_fields) {
     filename = _filename;
     fields = _fields;
     
-    int x = 0;
-    checkpoint(x);
-    
     ifstream ts_file(filename);
-    
-    checkpoint(x);
 
     string line;
-
     if (!getline(ts_file, line)) {
         Log::error("ERROR! Could not get headers from the CSV file. File potentially empty!\n");
         exit(1);
     }
 
-    checkpoint(x);
     
     vector<string> file_fields;
     string_split(line, ',', file_fields);
 
-    checkpoint(x);
 
     //check to see that all the specified fields are in the file
     for (int32_t i = 0; i < (int32_t)fields.size(); i++) {
@@ -233,7 +223,6 @@ TimeSeriesSet::TimeSeriesSet(string _filename, const vector<string> &_fields) {
         }
      }
 
-    checkpoint(x);
     
     Log::debug("fields.size(): %d, file_fields.size(): %d\n", fields.size(), file_fields.size());
 
@@ -252,7 +241,6 @@ TimeSeriesSet::TimeSeriesSet(string _filename, const vector<string> &_fields) {
         }
     }
 
-    checkpoint(x);
     
     Log::debug("number fields: %d\n", fields.size());
     for (uint32_t i = 0; i < fields.size(); i++) {
@@ -298,10 +286,10 @@ TimeSeriesSet::TimeSeriesSet(string _filename, const vector<string> &_fields) {
         if (series->second->get_min_change() == 0 && series->second->get_max_change() == 0) {
             Log::warning("WARNING: unchanging series: '%s'\n", series->first.c_str());
             //Log::warning("removing unchanging series: '%s'\n", series->first.c_str());
-            //series->second->print_statistics(cout);
+            series->second->print_statistics();
             //time_series.erase(series);
         } else {
-            //series->second->print_statistics(cout);
+            series->second->print_statistics();
         }
 
         int series_rows = series->second->get_number_values();
@@ -365,6 +353,11 @@ double TimeSeriesSet::get_max_change(string field) {
 void TimeSeriesSet::normalize_min_max(string field, double min, double max) {
     time_series[field]->normalize_min_max(min, max);
 }
+
+void TimeSeriesSet::normalize_avg_std_dev(string field, double avg, double std_dev, double norm_max) {
+    time_series[field]->normalize_avg_std_dev(avg, std_dev, norm_max);
+}
+
 
 
 
@@ -503,10 +496,10 @@ void TimeSeriesSets::help_message() {
     Log::info("\t\t\t\tThe settings string requires at one of 'i' or 'o'.\n");
 
     Log::info("\tNormalization:\n");
-    Log::info("\t\t--normalize : normalize the data. data will be normalized between user specified bounds if given, otherwise the min and max values for a parameter will be calculated over all input files.\n");
+    Log::info("\t\t--normalize <type>: (optional) normalize the data. Types can be 'min_max' or 'avg_std_dev'. 'min_max' will take each parameter and subtract the min, then divide by max-min. 'avg_std_dev' will subtract the average, divide by the standard deviation and then divide by the normalized max to ensure values are between -1 and 1.\n");
 }
 
-TimeSeriesSets::TimeSeriesSets() : normalized(false) {
+TimeSeriesSets::TimeSeriesSets() : normalize_type("none") {
 }
 
 void merge_parameter_names(const vector<string> &input_parameter_names, const vector<string> &output_parameter_names, vector<string> &all_parameter_names) {
@@ -645,6 +638,8 @@ TimeSeriesSets* TimeSeriesSets::generate_from_arguments(const vector<string> &ar
     tss->output_parameter_names.clear();
     tss->normalize_mins.clear();
     tss->normalize_maxs.clear();
+    tss->normalize_avgs.clear();
+    tss->normalize_std_devs.clear();
 
     if (argument_exists(arguments, "--parameters")) {
         vector<string> p;
@@ -683,16 +678,24 @@ TimeSeriesSets* TimeSeriesSets::generate_from_arguments(const vector<string> &ar
 
     tss->load_time_series();
 
-    bool _normalize = argument_exists(arguments, "--normalize");
-
-    if (_normalize) {
-        tss->normalized = true;
-
-        tss->normalize();
-        Log::debug("normalized all time series.\n");
+    tss->normalize_type = "";
+    if (get_argument(arguments, "--normalize", false, tss->normalize_type)) {
     } else {
-        tss->normalized = false;
+        tss->normalize_type = "none";
+    }
+
+    if (tss->normalize_type.compare("none") == 0) {
         Log::debug("not normalizing time series.\n");
+    } else if (tss->normalize_type.compare("min_max") == 0) {
+        Log::debug("doing min max normalization on the time series.\n");
+        tss->normalize_min_max();
+    } else if (tss->normalize_type.compare("avg_std_dev") == 0) {
+        Log::debug("doing avg std dev normalization on the time series.\n");
+        tss->normalize_avg_std_dev();
+    } else {
+        Log::fatal("Unknown normalize type: '%s'\n", tss->normalize_type.c_str());
+        help_message();
+        exit(1);
     }
 
     return tss;
@@ -716,13 +719,48 @@ TimeSeriesSets* TimeSeriesSets::generate_test(const vector<string> &_test_filena
     tss->normalize_mins.clear();
     tss->normalize_maxs.clear();
 
+    tss->normalize_avgs.clear();
+    tss->normalize_std_devs.clear();
+
     tss->load_time_series();
 
     return tss;
 }
 
-void TimeSeriesSets::normalize() {
-    Log::info("normalizing:\n");
+double TimeSeriesSets::denormalize(string field_name, double value) {
+    if (normalize_type.compare("none") == 0) {
+        return value;
+    } else if (normalize_type.compare("min_max") == 0) {
+        double min = normalize_mins[field_name];
+        double max = normalize_maxs[field_name];
+
+        value = (value * (max-min)) + min;
+
+        return value;
+
+    } else if (normalize_type.compare("avg_std_dev") == 0) {
+        double min = normalize_mins[field_name];
+        double max = normalize_maxs[field_name];
+        double avg = normalize_avgs[field_name];
+        double std_dev = normalize_std_devs[field_name];
+
+        double norm_min = (min - avg) / std_dev;
+        double norm_max = (max - avg) / std_dev;
+        
+        norm_max = fmax(norm_min, norm_max);
+
+        value = (value * norm_max * std_dev) + avg;
+
+        return value;
+
+    } else {
+        Log::fatal("Unknown normalize type on denormalize for '%s' and '%lf', '%s', this should never happen.\n", field_name.c_str(), value, normalize_type.c_str());
+        exit(1);
+    }
+}
+
+void TimeSeriesSets::normalize_min_max() {
+    Log::info("doing min/max normalization:\n");
 
     for (int i = 0; i < all_parameter_names.size(); i++) {
         string parameter_name = all_parameter_names[i];
@@ -761,9 +799,11 @@ void TimeSeriesSets::normalize() {
             time_series[j]->normalize_min_max(parameter_name, min, max);
         }
     }
+
+    normalize_type = "min_max";
 }
 
-void TimeSeriesSets::normalize(const map<string,double> &_normalize_mins, const map<string,double> &_normalize_maxs) {
+void TimeSeriesSets::normalize_min_max(const map<string,double> &_normalize_mins, const map<string,double> &_normalize_maxs) {
     normalize_mins = _normalize_mins;
     normalize_maxs = _normalize_maxs;
 
@@ -796,8 +836,153 @@ void TimeSeriesSets::normalize(const map<string,double> &_normalize_mins, const 
         }
     }
 
-    normalized = true;
+    normalize_type = "min_max";
 }
+
+void TimeSeriesSets::normalize_avg_std_dev() {
+    Log::info("doing min/max normalization:\n");
+
+    for (int i = 0; i < all_parameter_names.size(); i++) {
+        string parameter_name = all_parameter_names[i];
+
+        double min = numeric_limits<double>::max();
+        double max = -numeric_limits<double>::max();
+
+        double avg = 0.0;
+        double std_dev = 0.0;
+
+        if (normalize_avgs.count(parameter_name) > 0) {
+            min = normalize_mins[parameter_name];
+            max = normalize_maxs[parameter_name];
+            avg = normalize_avgs[parameter_name];
+            std_dev = normalize_std_devs[parameter_name];
+
+            Log::info("user specified avg/std dev for ");
+
+        }  else {
+            double numerator_average = 0.0;
+            long total_values = 0;
+
+            for (int j = 0; j < time_series.size(); j++) {
+                int n_values = time_series[j]->get_number_rows();
+                numerator_average += time_series[j]->get_average(parameter_name) * n_values;
+                total_values += n_values;
+
+                double current_min = time_series[j]->get_min(parameter_name);
+                double current_max = time_series[j]->get_max(parameter_name);
+
+                if (current_min < min) min = current_min;
+                if (current_max > max) max = current_max;
+            }
+
+            normalize_mins[parameter_name] = min;
+            normalize_maxs[parameter_name] = max;
+
+            avg = numerator_average / total_values;
+
+            double numerator_std_dev = 0.0;
+            //get the Bessel-corrected (n-1 denominator) combined standard deviation
+            for (int j = 0; j < time_series.size(); j++) {
+                int n_values = time_series[j]->get_number_rows();
+
+                double avg_diff = time_series[j]->get_average(parameter_name) - avg;
+                numerator_std_dev += ((n_values - 1) * time_series[j]->get_variance(parameter_name)) + (n_values * avg_diff * avg_diff);
+            }
+
+            std_dev = numerator_std_dev / (total_values - 1);
+
+            normalize_avgs[parameter_name] = avg;
+            normalize_std_devs[parameter_name] = std_dev;
+
+
+            Log::info("calculated bounds for     ");
+        }
+        
+        double norm_min = (min - avg) / std_dev;
+        double norm_max = (max - avg) / std_dev;
+        
+        norm_max = fmax(norm_min, norm_max);
+
+        Log::info_no_header("%30s, min: %22.10lf, max: %22.10lf, norm_max; %22.10lf, combined average: %22.10lf, combined std_dev: %22.10lf\n", parameter_name.c_str(), min, max, avg, norm_max, std_dev);
+
+        //for each series, subtract min, divide by (max - min)
+        for (int j = 0; j < time_series.size(); j++) {
+            time_series[j]->normalize_avg_std_dev(parameter_name, avg, std_dev, norm_max);
+        }
+    }
+
+    normalize_type = "avg_std_dev";
+}
+
+void TimeSeriesSets::normalize_avg_std_dev(const map<string,double> &_normalize_avgs, const map<string,double> &_normalize_std_devs, const map<string,double> &_normalize_mins, const map<string,double> &_normalize_maxs) {
+    normalize_avgs = _normalize_avgs;
+    normalize_std_devs = _normalize_std_devs;
+    normalize_mins = _normalize_mins;
+    normalize_maxs = _normalize_maxs;
+
+    for (int32_t i = 0; i < (int32_t)all_parameter_names.size(); i++) {
+        string field = all_parameter_names[i];
+
+        if (normalize_avgs.count(field) == 0) {
+            //field doesn't exist in the normalize values, report an error
+            Log::fatal("ERROR, couldn't find field '%s' in normalize avg values.\n", field.c_str());
+            Log::fatal("normalize avg fields/values:\n");
+            for (auto iterator = normalize_avgs.begin(); iterator != normalize_avgs.end(); iterator++) {
+                Log::fatal("\t%s: %lf\n", iterator->first.c_str(), iterator->second);
+            }
+            exit(1);
+        }
+
+        if (normalize_std_devs.count(field) == 0) {
+            //field doesn't exist in the normalize values, report an error
+            Log::fatal("ERROR, couldn't find field '%s' in normalize std_dev values.\n", field.c_str());
+            Log::fatal("normalize std_dev fields/values:\n");
+            for (auto iterator = normalize_std_devs.begin(); iterator != normalize_std_devs.end(); iterator++) {
+                Log::fatal("\t%s: %lf\n", iterator->first.c_str(), iterator->second);
+            }
+            exit(1);
+        }
+
+        if (normalize_mins.count(field) == 0) {
+            //field doesn't exist in the normalize values, report an error
+            Log::fatal("ERROR, couldn't find field '%s' in normalize min values.\n", field.c_str());
+            Log::fatal("normalize min fields/values:\n");
+            for (auto iterator = normalize_mins.begin(); iterator != normalize_mins.end(); iterator++) {
+                Log::fatal("\t%s: %lf\n", iterator->first.c_str(), iterator->second);
+            }
+            exit(1);
+        }
+
+        if (normalize_maxs.count(field) == 0) {
+            //field doesn't exist in the normalize values, report an error
+            Log::fatal("ERROR, couldn't find field '%s' in normalize max values.\n", field.c_str());
+            Log::fatal("normalize max fields/values:\n");
+            for (auto iterator = normalize_maxs.begin(); iterator != normalize_maxs.end(); iterator++) {
+                Log::fatal("\t%s: %lf\n", iterator->first.c_str(), iterator->second);
+            }
+            exit(1);
+        }
+
+        double min = normalize_mins[field];
+        double max = normalize_maxs[field];
+        double avg = normalize_avgs[field];
+        double std_dev = normalize_std_devs[field];
+
+        double norm_min = (min - avg) / std_dev;
+        double norm_max = (max - avg) / std_dev;
+        
+        norm_max = fmax(norm_min, norm_max);
+
+
+        //for each series, subtract avg, divide by std_dev; then divide by normalized_max to make between -1 and 1
+        for (int j = 0; j < time_series.size(); j++) {
+            time_series[j]->normalize_avg_std_dev(field, avg, std_dev, norm_max);
+        }
+    }
+
+    normalize_type = "avg_std_dev";
+}
+
 
 /**
  * the series argument is a vector of indexes of the time series that was 
@@ -899,6 +1084,10 @@ void TimeSeriesSets::split_all(int number_slices) {
     }
 }
 
+string TimeSeriesSets::get_normalize_type() const {
+    return normalize_type;
+}
+
 map<string,double> TimeSeriesSets::get_normalize_mins() const {
     return normalize_mins;
 }
@@ -906,6 +1095,15 @@ map<string,double> TimeSeriesSets::get_normalize_mins() const {
 map<string,double> TimeSeriesSets::get_normalize_maxs() const {
     return normalize_maxs;
 }
+
+map<string,double> TimeSeriesSets::get_normalize_avgs() const {
+    return normalize_avgs;
+}
+
+map<string,double> TimeSeriesSets::get_normalize_std_devs() const {
+    return normalize_std_devs;
+}
+
 
 vector<string> TimeSeriesSets::get_input_parameter_names() const {
     return input_parameter_names;

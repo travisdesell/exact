@@ -61,8 +61,11 @@ EXAMM::EXAMM(
         string _speciation_method, 
         const vector<string> &_input_parameter_names,
         const vector<string> &_output_parameter_names,
+        string _normalize_type,
         const map<string,double> &_normalize_mins,
         const map<string,double> &_normalize_maxs,
+        const map<string,double> &_normalize_avgs,
+        const map<string,double> &_normalize_std_devs,
         int32_t _bp_iterations, 
         double _learning_rate,
         bool _use_high_threshold, 
@@ -95,12 +98,15 @@ EXAMM::EXAMM(
                         use_dropout(_use_dropout),
                         dropout_probability(_dropout_probability),
                         output_directory(_output_directory),
+                        normalize_type(_normalize_type),
                         start_filled(_start_filled) {
 
     input_parameter_names = _input_parameter_names;
     output_parameter_names = _output_parameter_names;
     normalize_mins = _normalize_mins;
     normalize_maxs = _normalize_maxs;
+    normalize_avgs = _normalize_avgs;
+    normalize_std_devs = _normalize_std_devs;
 
     total_bp_epochs = 0;
 
@@ -380,7 +386,7 @@ RNN_Genome* EXAMM::generate_genome() {
     RNN_Genome *genome = speciation_strategy->generate_genome(rng_0_1, generator, mutate_function, crossover_function);
 
     genome->set_parameter_names(input_parameter_names, output_parameter_names);
-    genome->set_normalize_bounds(normalize_mins, normalize_maxs);
+    genome->set_normalize_bounds(normalize_type, normalize_mins, normalize_maxs, normalize_avgs, normalize_std_devs);
     genome->set_bp_iterations(bp_iterations);
     genome->set_learning_rate(learning_rate);
 
@@ -897,7 +903,7 @@ RNN_Genome* EXAMM::crossover(RNN_Genome *p1, RNN_Genome *p2) {
 
     RNN_Genome *child = new RNN_Genome(child_nodes, child_edges, child_recurrent_edges);
     child->set_parameter_names(input_parameter_names, output_parameter_names);
-    child->set_normalize_bounds(normalize_mins, normalize_maxs);
+    child->set_normalize_bounds(normalize_type, normalize_mins, normalize_maxs, normalize_avgs, normalize_std_devs);
 
 
     if (p1->get_group_id() == p2->get_group_id()) {
