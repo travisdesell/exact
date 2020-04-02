@@ -17,7 +17,7 @@ SET (PLATFORM 64)
 #SET (CMAKE_CXX_FLAGS                "-std=c++11 -Wall -O3 -funroll-loops -msse3 -DNAN_CHECKS")
 
 # 1 This line for local
-SET (CMAKE_CXX_FLAGS                "-std=c++17 -Wall -O3 -funroll-loops  -msse3 -fno-omit-frame-pointer -D_GLIBCXX_DEBUG")
+SET (CMAKE_CXX_FLAGS                "-std=c++17 -Wall -O3 -funroll-loops  -msse3 -fsanitize=address -fno-omit-frame-pointer -D_GLIBCXX_DEBUG")
 # 2 This line for cluster
 #SET (CMAKE_CXX_FLAGS                "-std=c++17 -Wall -O3 -funroll-loops  -msse3 -fno-omit-frame-pointer -D_GLIBCXX_DEBUG")
 

@@ -93,8 +93,8 @@ int main(int argc, char** argv) {
     get_argument(arguments, "--time_offset", true, time_offset);
 
     TimeSeriesSets* time_series_sets = TimeSeriesSets::generate_from_arguments(arguments);
-    vector<string> inputs_removed_tokens  ;
-    vector<string> outputs_removed_tokens ;
+    vector<string> inputs_removed_tokens;
+    vector<string> outputs_removed_tokens;
 
     time_series_sets->export_training_series(time_offset, training_inputs, training_outputs);
     time_series_sets->export_test_series(time_offset, validation_inputs, validation_outputs);
@@ -184,8 +184,11 @@ int main(int argc, char** argv) {
             speciation_method,
             time_series_sets->get_input_parameter_names(),
             time_series_sets->get_output_parameter_names(),
+            time_series_sets->get_normalize_type(),
             time_series_sets->get_normalize_mins(),
             time_series_sets->get_normalize_maxs(),
+            time_series_sets->get_normalize_avgs(),
+            time_series_sets->get_normalize_std_devs(),
             bp_iterations, learning_rate,
             use_high_threshold, high_threshold,
             use_low_threshold, low_threshold,

@@ -47,6 +47,8 @@ using std::vector;
 #include "common/color_table.hxx"
 #include "common/log.hxx"
 
+#include "time_series/time_series.hxx"
+
 #include "rnn.hxx"
 #include "rnn_node.hxx"
 #include "lstm_node.hxx"
@@ -181,8 +183,11 @@ RNN_Genome* RNN_Genome::copy() {
     other->input_parameter_names = input_parameter_names;
     other->output_parameter_names = output_parameter_names;
 
+    other->normalize_type = normalize_type;
     other->normalize_mins = normalize_mins;
     other->normalize_maxs = normalize_maxs;
+    other->normalize_avgs = normalize_avgs;
+    other->normalize_std_devs = normalize_std_devs;
 
     other->assign_reachability();
 
@@ -367,9 +372,16 @@ vector<string> RNN_Genome::get_output_parameter_names() const {
     return output_parameter_names;
 }
 
-void RNN_Genome::set_normalize_bounds(const map<string,double> &_normalize_mins, const map<string,double> &_normalize_maxs) {
+void RNN_Genome::set_normalize_bounds(string _normalize_type, const map<string,double> &_normalize_mins, const map<string,double> &_normalize_maxs, const map<string,double> &_normalize_avgs, const map<string,double> &_normalize_std_devs) {
+    normalize_type = _normalize_type;
     normalize_mins = _normalize_mins;
     normalize_maxs = _normalize_maxs;
+    normalize_avgs = _normalize_avgs;
+    normalize_std_devs = _normalize_std_devs;
+}
+
+string RNN_Genome::get_normalize_type() const {
+    return normalize_type;
 }
 
 map<string,double> RNN_Genome::get_normalize_mins() const {
@@ -379,6 +391,15 @@ map<string,double> RNN_Genome::get_normalize_mins() const {
 map<string,double> RNN_Genome::get_normalize_maxs() const {
     return normalize_maxs;
 }
+
+map<string,double> RNN_Genome::get_normalize_avgs() const {
+    return normalize_avgs;
+}
+
+map<string,double> RNN_Genome::get_normalize_std_devs() const {
+    return normalize_std_devs;
+}
+
 
 
 int32_t RNN_Genome::get_group_id() const {
@@ -1254,17 +1275,24 @@ vector< vector<double> > RNN_Genome::get_predictions(const vector<double> &param
 }
 
 
-void RNN_Genome::write_predictions(const vector<string> &input_filenames, const vector<double> &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs) {
+void RNN_Genome::write_predictions(const vector<string> &input_filenames, const vector<double> &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, TimeSeriesSets *time_series_sets) {
     RNN *rnn = get_rnn();
     rnn->set_weights(parameters);
 
     for (uint32_t i = 0; i < inputs.size(); i++) {
-        Log::info("input filename[%5d]: '%s'\n", i, input_filenames[i].c_str());
+        string filename = input_filenames[i];
+        Log::info("input filename[%5d]: '%s'\n", i, filename.c_str());
 
-        string output_filename = "predictions_" + std::to_string(i) + ".txt";
+        int last_dot_pos = filename.find_last_of(".");
+        string extension = filename.substr(last_dot_pos);
+        string prefix = filename.substr(0, last_dot_pos);
+
+
+
+        string output_filename = prefix + "_predictions" + extension;
         Log::info("output filename: '%s'\n", output_filename.c_str());
 
-        rnn->write_predictions(output_filename, input_parameter_names, output_parameter_names, inputs[i], outputs[i], use_dropout, dropout_probability);
+        rnn->write_predictions(output_filename, input_parameter_names, output_parameter_names, inputs[i], outputs[i], time_series_sets, use_dropout, dropout_probability);
     }
 
     delete rnn;
@@ -2985,6 +3013,8 @@ void RNN_Genome::read_from_stream(istream &bin_istream) {
         recurrent_edges.push_back(recurrent_edge);
     }
 
+    read_binary_string(bin_istream, normalize_type, "normalize_type");
+
     string normalize_mins_str;
     read_binary_string(bin_istream, normalize_mins_str, "normalize_mins");
     istringstream normalize_mins_iss(normalize_mins_str);
@@ -2994,6 +3024,17 @@ void RNN_Genome::read_from_stream(istream &bin_istream) {
     read_binary_string(bin_istream, normalize_maxs_str, "normalize_maxs");
     istringstream normalize_maxs_iss(normalize_maxs_str);
     read_map(normalize_maxs_iss, normalize_maxs);
+
+    string normalize_avgs_str;
+    read_binary_string(bin_istream, normalize_avgs_str, "normalize_avgs");
+    istringstream normalize_avgs_iss(normalize_avgs_str);
+    read_map(normalize_avgs_iss, normalize_avgs);
+
+    string normalize_std_devs_str;
+    read_binary_string(bin_istream, normalize_std_devs_str, "normalize_std_devs");
+    istringstream normalize_std_devs_iss(normalize_std_devs_str);
+    read_map(normalize_std_devs_iss, normalize_std_devs);
+
 
     assign_reachability();
 }
@@ -3123,6 +3164,8 @@ void RNN_Genome::write_to_stream(ostream &bin_ostream) {
         recurrent_edges[i]->write_to_stream(bin_ostream);
     }
 
+    write_binary_string(bin_ostream, normalize_type, "normalize_type");
+
     ostringstream normalize_mins_oss;
     write_map(normalize_mins_oss, normalize_mins);
     string normalize_mins_str = normalize_mins_oss.str();
@@ -3132,6 +3175,16 @@ void RNN_Genome::write_to_stream(ostream &bin_ostream) {
     write_map(normalize_maxs_oss, normalize_maxs);
     string normalize_maxs_str = normalize_maxs_oss.str();
     write_binary_string(bin_ostream, normalize_maxs_str, "normalize_maxs");
+
+    ostringstream normalize_avgs_oss;
+    write_map(normalize_avgs_oss, normalize_avgs);
+    string normalize_avgs_str = normalize_avgs_oss.str();
+    write_binary_string(bin_ostream, normalize_avgs_str, "normalize_avgs");
+
+    ostringstream normalize_std_devs_oss;
+    write_map(normalize_std_devs_oss, normalize_std_devs);
+    string normalize_std_devs_str = normalize_std_devs_oss.str();
+    write_binary_string(bin_ostream, normalize_std_devs_str, "normalize_std_devs");
 }
 
 void RNN_Genome::update_innovation_counts(int32_t &node_innovation_count, int32_t &edge_innovation_count) {

@@ -25,8 +25,9 @@ using std::vector;
 #include "rnn_recurrent_edge.hxx"
 
 #include "common/random.hxx"
+#include "time_series/time_series.hxx"
 
-//mysql can't handl the max float value for some reason
+//mysql can't handle the max float value for some reason
 #define EXAMM_MAX_DOUBLE 10000000
 
 string parse_fitness(double fitness);
@@ -72,8 +73,11 @@ class RNN_Genome {
         vector<string> input_parameter_names;
         vector<string> output_parameter_names;
 
+        string normalize_type;
         map<string,double> normalize_mins;
         map<string,double> normalize_maxs;
+        map<string,double> normalize_avgs;
+        map<string,double> normalize_std_devs;
 
     public:
         void sort_nodes_by_depth();
@@ -113,10 +117,13 @@ class RNN_Genome {
         double get_best_validation_mae() const;
 
 
-        void set_normalize_bounds(const map<string,double> &_normalize_mins, const map<string,double> &_normalize_maxs);
+        void set_normalize_bounds(string _normalize_type, const map<string,double> &_normalize_mins, const map<string,double> &_normalize_maxs, const map<string,double> &_normalize_avgs, const map<string,double> &_normalize_std_devs);
 
+        string get_normalize_type() const;
         map<string,double> get_normalize_mins() const;
         map<string,double> get_normalize_maxs() const;
+        map<string,double> get_normalize_avgs() const;
+        map<string,double> get_normalize_std_devs() const;
 
         vector<string> get_input_parameter_names() const;
         vector<string> get_output_parameter_names() const;
@@ -175,7 +182,7 @@ class RNN_Genome {
 
 
         vector< vector<double> > get_predictions(const vector<double> &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs);
-        void write_predictions(const vector<string> &input_filenames, const vector<double> &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs);
+        void write_predictions(const vector<string> &input_filenames, const vector<double> &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, TimeSeriesSets *time_series_sets);
 
         void get_mu_sigma(const vector<double> &p, double &mu, double &sigma);
 

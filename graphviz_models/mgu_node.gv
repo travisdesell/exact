@@ -86,8 +86,8 @@ digraph CNN {
         legend [shape=box,
             label=<
                 <table>
-                <tr><td>f = sigmoid(fw*x + fu*h_prev * f_bias)</td></tr>
-                <tr><td>h = tanh(hw*x + f*hu*h_prev * h_bias)</td></tr>
+                <tr><td>f = sigmoid(fw*x + fu*h_prev + f_bias)</td></tr>
+                <tr><td>h = tanh(hw*x + f*hu*h_prev + h_bias)</td></tr>
                 <tr><td>out = (1-f)*h_prev + f*h</td></tr>
                 </table>
                 >]

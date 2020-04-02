@@ -130,7 +130,7 @@ int main(int argc, char **argv) {
     }
 
     genome->set_parameter_names(time_series_sets->get_input_parameter_names(), time_series_sets->get_output_parameter_names());
-    genome->set_normalize_bounds(time_series_sets->get_normalize_mins(), time_series_sets->get_normalize_maxs());
+    genome->set_normalize_bounds(time_series_sets->get_normalize_type(), time_series_sets->get_normalize_mins(), time_series_sets->get_normalize_maxs(), time_series_sets->get_normalize_avgs(), time_series_sets->get_normalize_std_devs());
 
     rnn = genome->get_rnn();
 
