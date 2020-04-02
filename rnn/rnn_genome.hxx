@@ -103,6 +103,8 @@ class RNN_Genome {
         string get_edge_count_str(bool recurrent);
         string get_node_count_str(int node_type);
 
+        const map<string, int> *get_generated_by_map();
+
         double get_avg_recurrent_depth() const;
 
         int32_t get_enabled_edge_count();
