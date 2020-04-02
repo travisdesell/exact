@@ -503,10 +503,12 @@ RNN_Genome* IslandSpeciationStrategy::generate_for_filled_island(uniform_real_di
 
 
 void IslandSpeciationStrategy::print(string indent) const {
-    Log::info("%sIslands: \n", indent.c_str());
-    for (int32_t i = 0; i < (int32_t)islands.size(); i++) {
-        Log::info("%sIsland %d:\n", indent.c_str(), i);
-        islands[i]->print(indent + "\t");
+    if (Log::at_level(Log::INFO)) {
+        Log::info("%sIslands: \n", indent.c_str());
+        for (int32_t i = 0; i < (int32_t)islands.size(); i++) {
+            Log::info("%sIsland %d:\n", indent.c_str(), i);
+            islands[i]->print(indent + "\t");
+        }
     }
 }
 
