@@ -1279,7 +1279,7 @@ vector< vector<double> > RNN_Genome::get_predictions(const vector<double> &param
 }
 
 
-void RNN_Genome::write_predictions(const vector<string> &input_filenames, const vector<double> &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, TimeSeriesSets *time_series_sets) {
+void RNN_Genome::write_predictions(string output_directory, const vector<string> &input_filenames, const vector<double> &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, TimeSeriesSets *time_series_sets) {
     RNN *rnn = get_rnn();
     rnn->set_weights(parameters);
 
@@ -1292,8 +1292,9 @@ void RNN_Genome::write_predictions(const vector<string> &input_filenames, const 
         string prefix = filename.substr(0, last_dot_pos);
 
 
-
         string output_filename = prefix + "_predictions" + extension;
+        output_filename = output_directory + "/" + output_filename.substr(output_filename.find_last_of("/") + 1);
+
         Log::info("output filename: '%s'\n", output_filename.c_str());
 
         rnn->write_predictions(output_filename, input_parameter_names, output_parameter_names, inputs[i], outputs[i], time_series_sets, use_dropout, dropout_probability);
