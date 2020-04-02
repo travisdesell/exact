@@ -96,7 +96,7 @@ class TimeSeriesSet {
 
         void export_time_series(vector< vector<double> > &data);
         void export_time_series(vector< vector<double> > &data, const vector<string> &requested_fields);
-        void export_time_series(vector< vector<double> > &data, const vector<string> &requested_fields, int32_t time_offset);
+        void export_time_series(vector< vector<double> > &data, const vector<string> &requested_fields, const vector<string> &shift_fields, int32_t time_offset);
 
         TimeSeriesSet* copy();
 
@@ -118,6 +118,7 @@ class TimeSeriesSets {
 
         vector<string> input_parameter_names;
         vector<string> output_parameter_names;
+        vector<string> shift_parameter_names;
         vector<string> all_parameter_names;
 
         vector<TimeSeriesSet*> time_series;

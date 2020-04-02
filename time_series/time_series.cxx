@@ -365,7 +365,7 @@ void TimeSeriesSet::normalize_avg_std_dev(string field, double avg, double std_d
  *  Time offset < 0 generates input data. Do not use the last <time_offset> values
  *  Time offset > 0 generates output data. Do not use the first <time_offset> values
  */
-void TimeSeriesSet::export_time_series(vector< vector<double> > &data, const vector<string> &requested_fields, int32_t time_offset) {
+void TimeSeriesSet::export_time_series(vector< vector<double> > &data, const vector<string> &requested_fields, const vector<string> &shift_fields, int32_t time_offset) {
     Log::debug("clearing data\n");
     data.clear();
     Log::debug("resizing '%s' to %d by %d\n", filename.c_str(), requested_fields.size(), number_rows - fabs(time_offset));
@@ -381,14 +381,6 @@ void TimeSeriesSet::export_time_series(vector< vector<double> > &data, const vec
             }
         }
 
-    } else if (time_offset < 0) {
-        //input data, ignore the last N values
-        for (int i = 0; i != requested_fields.size(); i++) {
-            for (int j = 0; j < number_rows + time_offset; j++) {
-                data[i][j] = time_series[ requested_fields[i] ]->get_value(j);
-            }
-        }
-
     } else if (time_offset > 0) {
         //output data, ignore the first N values
         for (int i = 0; i != requested_fields.size(); i++) {
@@ -397,15 +389,32 @@ void TimeSeriesSet::export_time_series(vector< vector<double> > &data, const vec
             }
         }
 
+    } else if (time_offset < 0) {
+        //input data, ignore the last N values
+        for (int i = 0; i != requested_fields.size(); i++) {
+            if (find(shift_fields.begin(), shift_fields.end(), requested_fields[i]) != shift_fields.end()) {
+                //shift the shifted fields to the same as the output, not the input
+                for (int j = time_offset; j < number_rows; j++) {
+                    data[i][j - time_offset] = time_series[ requested_fields[i] ]->get_value(j);
+                }
+            } else {
+                for (int j = 0; j < number_rows + time_offset; j++) {
+                    data[i][j] = time_series[ requested_fields[i] ]->get_value(j);
+                }
+            }
+        }
+
     }
 }
 
 void TimeSeriesSet::export_time_series(vector< vector<double> > &data, const vector<string> &requested_fields) {
-    export_time_series(data, requested_fields, 0);
+    vector<string> shift_fields; //no fields will be shifted as this is empty
+    export_time_series(data, requested_fields, shift_fields, 0);
 }
 
 void TimeSeriesSet::export_time_series(vector< vector<double> > &data) {
-    export_time_series(data, fields, 0);
+    vector<string> shift_fields; //no fields will be shifted as this is empty
+    export_time_series(data, fields, shift_fields, 0);
 }
 
 TimeSeriesSet::TimeSeriesSet() {
@@ -487,6 +496,7 @@ void TimeSeriesSets::help_message() {
     Log::info("\tSpecifying parameters:\n");
     Log::info("\t\t\t--input_parameter_names <name>*: parameters to be used as inputs\n");
     Log::info("\t\t\t--output_parameter_names <name>*: parameters to be used as outputs\n");
+    Log::info("\t\t\t--shift_parameter_names <name>*: parameters to shift to same timestep as output\n");
     Log::info("\t\tOR:\n");
     Log::info("\t\t\t --parameters <name setting [min_bound max_bound]>* : list of parameters, with a settings string and potentially bounds\n");
     Log::info("\t\t\t\tThe settings string should consist of only the characters 'i', 'o', and 'b'.\n");
@@ -634,6 +644,7 @@ TimeSeriesSets* TimeSeriesSets::generate_from_arguments(const vector<string> &ar
     }
 
     tss->all_parameter_names.clear();
+    tss->shift_parameter_names.clear();
     tss->input_parameter_names.clear();
     tss->output_parameter_names.clear();
     tss->normalize_mins.clear();
@@ -650,6 +661,8 @@ TimeSeriesSets* TimeSeriesSets::generate_from_arguments(const vector<string> &ar
         get_argument_vector(arguments, "--input_parameter_names", true, tss->input_parameter_names);
 
         get_argument_vector(arguments, "--output_parameter_names", true, tss->output_parameter_names);
+
+        get_argument_vector(arguments, "--shift_parameter_names", false, tss->shift_parameter_names);
 
         merge_parameter_names(tss->input_parameter_names, tss->output_parameter_names, tss->all_parameter_names);
 
@@ -995,8 +1008,8 @@ void TimeSeriesSets::export_time_series(const vector<int> &series_indexes, int t
     for (uint32_t i = 0; i < series_indexes.size(); i++) {
         int series_index = series_indexes[i];
 
-        time_series[series_index]->export_time_series(inputs[i], input_parameter_names, -time_offset);
-        time_series[series_index]->export_time_series(outputs[i], output_parameter_names, time_offset);
+        time_series[series_index]->export_time_series(inputs[i], input_parameter_names, shift_parameter_names, -time_offset);
+        time_series[series_index]->export_time_series(outputs[i], output_parameter_names, shift_parameter_names, time_offset);
     }
 }
 
