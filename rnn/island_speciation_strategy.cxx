@@ -223,7 +223,7 @@ int32_t IslandSpeciationStrategy::insert_genome(RNN_Genome* genome) {
 
     if (insert_position == 0) {
         if (new_global_best) return 0;
-        else return 1;
+        else return insert_position;
     } else {
         return insert_position; //will be -1 if not inserted, or > 0 if not the global best
     }

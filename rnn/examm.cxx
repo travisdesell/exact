@@ -32,6 +32,7 @@ using std::to_string;
 #include "generate_nn.hxx"
 #include "speciation_strategy.hxx"
 #include "island_speciation_strategy.hxx"
+#include "beta_thompson_sampling.hxx"
 
 #include "common/files.hxx"
 #include "common/log.hxx"
@@ -76,9 +77,11 @@ EXAMM::EXAMM(
         double _dropout_probability,
         int32_t _min_recurrent_depth,
         int32_t _max_recurrent_depth,
+        vector<string> possible_node_type_strings,
         string _output_directory,
         RNN_Genome *seed_genome,
-        bool _start_filled) :
+        bool _start_filled,
+        bool _use_thompson_sampling) :
                         population_size(_population_size),
                         number_islands(_number_islands),
                         max_genomes(_max_genomes),
@@ -222,6 +225,56 @@ EXAMM::EXAMM(
                     seed_genome, island_ranking_method, repopulation_method, extinction_event_generation_number, repopulation_mutations, islands_to_exterminate, seed_genome_was_minimal);
         }
     }
+
+    // The following section just generates names for logging information about mutation success rates:
+    op_log_ordering = {
+        "genomes",
+        "crossover",
+        "island_crossover",
+        "clone",
+        "add_edge",
+        "add_recurrent_edge",
+        "enable_edge",
+        "disable_edge",
+        "enable_node",
+        "disable_node",
+    };
+
+    // To get data about these ops without respect to node type,
+    // you'll have to calculate the sum, e.g. sum split_node(x) for all node types x
+    // to get information about split_node as a whole.
+    vector<string> ops_with_node_type = {
+        "add_node",
+        "split_node",
+        "merge_node",
+        "split_edge"
+    };
+
+    for (int i = 0; i < ops_with_node_type.size(); i++) {
+        string op = ops_with_node_type[i];
+        for (int j = 0; j < possible_node_types.size(); j++) {
+            string s = op + "(" + NODE_TYPES[possible_node_types[j]] + ")";
+            op_log_ordering.push_back(s);
+        }
+    }
+
+    // Set the possible node types here so we can create our ThompsonSampling with the appropriate number of actions
+    if (possible_node_type_strings.size() > 0) this->set_possible_node_types(possible_node_type_strings);
+    
+    for (int i = 0; i < ops_with_node_type.size(); i++) {
+        string op = ops_with_node_type[i];
+        for (int j = 0; j < possible_node_types.size(); j++) {
+            string s = op + "(" + NODE_TYPES[possible_node_types[j]] + ")";
+            mutation_string_to_possible_node_ty_index[s] = j;
+        }
+    }
+
+    // Make the ThompsanSamplig if need be
+    if (_use_thompson_sampling) {
+        node_type_selector = new BetaThompsonSampling(possible_node_types.size());
+    } else {
+        node_type_selector = NULL;
+    }
     
     if (output_directory != "") {
         mkpath(output_directory.c_str(), 0777);
@@ -236,35 +289,6 @@ EXAMM::EXAMM(
         memory_log << endl;
 
         op_log_file = new ofstream(output_directory + "/op_log.csv");
-        
-        op_log_ordering = {
-            "genomes",
-            "crossover",
-            "island_crossover",
-            "clone",
-            "add_edge",
-            "add_recurrent_edge",
-            "enable_edge",
-            "disable_edge",
-            "enable_node",
-            "disable_node",
-        };
-
-        // To get data about these ops without respect to node type,
-        // you'll have to calculate the sum, e.g. sum split_node(x) for all node types x
-        // to get information about split_node as a whole.
-        vector<string> ops_with_node_type = {
-            "add_node",
-            "split_node",
-            "merge_node",
-            "split_edge"
-        };
-
-        for (int i = 0; i < ops_with_node_type.size(); i++) {
-            string op = ops_with_node_type[i];
-            for (int j = 0; j < possible_node_types.size(); j++)
-                op_log_ordering.push_back(op + "(" + NODE_TYPES[possible_node_types[j]] + ")");
-        }
 
         for (int i = 0; i < op_log_ordering.size(); i++) {
             string op = op_log_ordering[i];
@@ -276,8 +300,6 @@ EXAMM::EXAMM(
             inserted_counts[op] = 0;
             generated_counts[op] = 0;
         }
-
-        map<string, int>::iterator it;
 
         (*op_log_file) << endl;
 
@@ -451,6 +473,37 @@ bool EXAMM::insert_genome(RNN_Genome* genome) {
                 inserted_counts["genomes"] += 1;
                 inserted_counts[generated_by] += 1;
             }
+
+            // if we are using a ThompsonSampling for the node types and this mutation
+            // used a node type we need to update the ThompsonSampling, 
+            // and the islands are full so rejecting a genome is a possibility
+            if (node_type_selector != NULL &&
+                speciation_strategy->get_generated_genomes() >= number_islands * population_size &&
+                mutation_string_to_possible_node_ty_index.count(generated_by) > 0) {
+                int32_t index = mutation_string_to_possible_node_ty_index[generated_by];
+                printf("Generated %d\n", speciation_strategy->get_generated_genomes()); 
+                // double reward = 1.0 - ((double) insert_position / (double) population_size) - 0.5;
+                
+                double worst_fitness = get_worst_fitness();
+                double best_fitness = get_best_fitness();
+                double fitness = genome->get_fitness();
+
+                printf("worst: %f, best: %f, fitness: %f\n", worst_fitness, best_fitness, fitness);
+
+                double reward = 1 - ((fitness - best_fitness) / (worst_fitness - best_fitness));
+
+                if (insert_position < 0)
+                    reward = 0;
+                if (insert_position == 0)
+                    reward = 1;
+
+                printf("Reward for insert position %d with node type %s = %llf\n", insert_position, generated_by.c_str(), reward);
+                
+                // For now the reward is always 1.0, but in the future the reward can be increased for
+                // a better increase in performance.
+                node_type_selector->update(index, reward);
+                node_type_selector->print(this->possible_node_types, NODE_TYPES);
+            }
         } else {
             if (generated_by != "initial")
                 Log::error("unrecognized generated_by string '%s'\n", generated_by.c_str());
@@ -499,7 +552,14 @@ RNN_Genome* EXAMM::generate_genome() {
 }
 
 int EXAMM::get_random_node_type() {
-    return possible_node_types[rng_0_1(generator) * possible_node_types.size()];
+    int32_t node_type_index;
+
+    if (node_type_selector == NULL)
+        node_type_index = rng_0_1(generator) * possible_node_types.size();
+    else
+        node_type_index = node_type_selector->sample_action(generator);
+
+    return possible_node_types[node_type_index];
 }
 
 
@@ -535,9 +595,12 @@ void EXAMM::mutate(int32_t max_mutations, RNN_Genome *g) {
         if (number_mutations >= max_mutations) break;
 
         g->assign_reachability();
+        
         double rng = rng_0_1(generator) * total;
+        
         int new_node_type = get_random_node_type();
         string node_type_str = NODE_TYPES[new_node_type];
+        
         Log::debug( "rng: %lf, total: %lf, new node type: %d (%s)\n", rng, total, new_node_type, node_type_str.c_str());
 
         if (rng < clone_rate) {

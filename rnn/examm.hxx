@@ -19,6 +19,7 @@ using std::vector;
 
 #include "rnn_genome.hxx"
 #include "speciation_strategy.hxx"
+#include "thompson_sampling.hxx"
 
 class EXAMM {
     private:
@@ -87,6 +88,9 @@ class EXAMM {
 
         vector<int> possible_node_types;
 
+        ThompsonSampling *node_type_selector;
+        map<string, int> mutation_string_to_possible_node_ty_index;
+
         vector<string> op_log_ordering;
         map<string, int32_t> inserted_counts;
         map<string, int32_t> generated_counts;
@@ -139,9 +143,11 @@ class EXAMM {
                 double _dropout_probability,
                 int32_t _min_recurrent_depth,
                 int32_t _max_recurrent_depth,
+                vector<string> possible_node_type_strings,
                 string _output_directory, 
                 RNN_Genome *seed_genome,
-                bool _start_filled);
+                bool _start_filled,
+                bool _use_thompson_sampling);
 
 
         ~EXAMM();
