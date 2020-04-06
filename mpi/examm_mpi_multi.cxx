@@ -319,7 +319,10 @@ int main(int argc, char** argv) {
 
     bool start_filled = false;
     get_argument(arguments, "--start_filled", false, start_filled);
-
+    
+    bool use_thompson_sampling = false;
+    get_argument(arguments, "--use_thompson_sampling", false, use_thompson_sampling);
+    
     Log::clear_rank_restriction();
 
     for (int32_t i = 0; i < time_series_sets->get_number_series(); i += fold_size) {
@@ -375,11 +378,13 @@ int main(int argc, char** argv) {
                     use_low_threshold, low_threshold,
                     use_dropout, dropout_probability,
                     min_recurrent_depth, max_recurrent_depth,
+                    possible_node_types,
                     output_directory,
                     seed_genome,
-                    start_filled);
-
-                examm->set_possible_node_types(possible_node_types);
+                    start_filled,
+                    use_thompson_sampling);
+                // This gets done inside the cosntructor
+                // examm->set_possible_node_types(possible_node_types);
 
                 std::chrono::time_point<std::chrono::system_clock> start = std::chrono::system_clock::now();
                 master(max_rank);

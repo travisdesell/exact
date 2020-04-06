@@ -146,8 +146,8 @@ EXAMM::EXAMM(
     enable_edge_rate = 1.0;
     //disable_edge_rate = 3.0;
     disable_edge_rate = 1.0;
-    //split_edge_rate = 1.0;
-    split_edge_rate = 0.0;
+    split_edge_rate = 1.0;
+    //split_edge_rate = 0.0;
 
     possible_node_types.clear();
     possible_node_types.push_back(SIMPLE_NODE);
@@ -478,7 +478,7 @@ bool EXAMM::insert_genome(RNN_Genome* genome) {
             // used a node type we need to update the ThompsonSampling, 
             // and the islands are full so rejecting a genome is a possibility
             if (node_type_selector != NULL &&
-                speciation_strategy->get_generated_genomes() >= number_islands * population_size &&
+                speciation_strategy->get_generated_genomes() >= number_islands * population_size * 4 &&
                 mutation_string_to_possible_node_ty_index.count(generated_by) > 0) {
                 int32_t index = mutation_string_to_possible_node_ty_index[generated_by];
                 printf("Generated %d\n", speciation_strategy->get_generated_genomes()); 

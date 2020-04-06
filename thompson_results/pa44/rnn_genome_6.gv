@@ -1,0 +1,295 @@
+digraph RNN {
+labelloc="t";
+label="Genome Fitness: 402.493% MAE";
+
+	graph [pad="0.01", nodesep="0.05", ranksep="0.9"];
+	{
+		rank = source;
+		node1 [shape=box,color=green,label="input 1\ndepth 0\nAltAGL"];
+		node2 [shape=box,color=green,label="input 2\ndepth 0\nAltB"];
+		node3 [shape=box,color=green,label="input 3\ndepth 0\nAltGPS"];
+		node4 [shape=box,color=green,label="input 4\ndepth 0\nAltMSL"];
+		node5 [shape=box,color=green,label="input 5\ndepth 0\nBaroA"];
+		node6 [shape=box,color=green,label="input 6\ndepth 0\nE1_CHT1"];
+		node7 [shape=box,color=green,label="input 7\ndepth 0\nE1_EGT1"];
+		node8 [shape=box,color=green,label="input 8\ndepth 0\nE1_EGT2"];
+		node9 [shape=box,color=green,label="input 9\ndepth 0\nE1_EGT3"];
+		node10 [shape=box,color=green,label="input 10\ndepth 0\nE1_EGT4"];
+		node11 [shape=box,color=green,label="input 11\ndepth 0\nE1_FFlow"];
+		node12 [shape=box,color=green,label="input 12\ndepth 0\nE1_MAP"];
+		node13 [shape=box,color=green,label="input 13\ndepth 0\nE1_OilP"];
+		node14 [shape=box,color=green,label="input 14\ndepth 0\nE1_OilT"];
+		node15 [shape=box,color=green,label="input 15\ndepth 0\nE1_RPM"];
+		node16 [shape=box,color=green,label="input 16\ndepth 0\nE2_CHT1"];
+		node17 [shape=box,color=green,label="input 17\ndepth 0\nE2_EGT1"];
+		node18 [shape=box,color=green,label="input 18\ndepth 0\nE2_EGT2"];
+		node19 [shape=box,color=green,label="input 19\ndepth 0\nE2_EGT3"];
+		node20 [shape=box,color=green,label="input 20\ndepth 0\nE2_EGT4"];
+		node21 [shape=box,color=green,label="input 21\ndepth 0\nE2_FFlow"];
+		node22 [shape=box,color=green,label="input 22\ndepth 0\nE2_OilP"];
+		node23 [shape=box,color=green,label="input 23\ndepth 0\nE2_OilT"];
+		node24 [shape=box,color=green,label="input 24\ndepth 0\nE2_RPM"];
+		node25 [shape=box,color=green,label="input 25\ndepth 0\nFQtyL"];
+		node26 [shape=box,color=green,label="input 26\ndepth 0\nFQtyR"];
+		node27 [shape=box,color=green,label="input 27\ndepth 0\nGndSpd"];
+		node28 [shape=box,color=green,label="input 28\ndepth 0\nIAS"];
+		node29 [shape=box,color=green,label="input 29\ndepth 0\nLatAc"];
+		node30 [shape=box,color=green,label="input 30\ndepth 0\nNormAc"];
+		node31 [shape=box,color=green,label="input 31\ndepth 0\nOAT"];
+		node32 [shape=box,color=green,label="input 32\ndepth 0\nPitch"];
+		node33 [shape=box,color=green,label="input 33\ndepth 0\nRoll"];
+		node34 [shape=box,color=green,label="input 34\ndepth 0\nTAS"];
+		node35 [shape=box,color=green,label="input 35\ndepth 0\nVSpd"];
+		node36 [shape=box,color=green,label="input 36\ndepth 0\nVSpdG"];
+		node37 [shape=box,color=green,label="input 37\ndepth 0\nWndDr"];
+		node38 [shape=box,color=green,label="input 38\ndepth 0\nWndSpd"];
+	}
+
+	{
+		rank = sink;
+		node39 [shape=box,color=blue,label="output 39\ndepth 1\nPitch"];
+		node40 [shape=box,color=blue,label="output 40\ndepth 1\nRoll"];
+		node41 [shape=box,color=blue,label="output 41\ndepth 1\nAltMSL"];
+		node42 [shape=box,color=blue,label="output 42\ndepth 1\nIAS"];
+		node43 [shape=box,color=blue,label="output 43\ndepth 1\nLatAc"];
+		node44 [shape=box,color=blue,label="output 44\ndepth 1\nNormAc"];
+	}
+
+	node1 -> node2 -> node3 -> node4 -> node5 -> node6 -> node7 -> node8 -> node9 -> node10 -> node11 -> node12 -> node13 -> node14 -> node15 -> node16 -> node17 -> node18 -> node19 -> node20 -> node21 -> node22 -> node23 -> node24 -> node25 -> node26 -> node27 -> node28 -> node29 -> node30 -> node31 -> node32 -> node33 -> node34 -> node35 -> node36 -> node37 -> node38 [style=invis];
+
+
+	node39 -> node40 -> node41 -> node42 -> node43 -> node44 [style=invis];
+
+
+
+	node1 -> node39 [color="#929fe0"]; /* weight: -0.2524 */
+	node2 -> node39 [color="#e4c1af"]; /* weight: 0.126046 */
+	node3 -> node39 [color="#8793dd"]; /* weight: -0.288948 */
+	node4 -> node39 [color="#a4b1e5"]; /* weight: -0.19883 */
+	node5 -> node39 [color="#eee2db"]; /* weight: 0.0393889 */
+	node6 -> node39 [color="#7075d3"]; /* weight: -0.37363 */
+	node7 -> node39 [color="#deab94"]; /* weight: 0.178904 */
+	node8 -> node39 [color="#6565cd"]; /* weight: -0.421995 */
+	node9 -> node39 [color="#6a6dd0"]; /* weight: -0.397937 */
+	node10 -> node39 [color="#d99980"]; /* weight: 0.227234 */
+	node11 -> node39 [color="#d58c73"]; /* weight: 0.25822 */
+	node12 -> node39 [color="#ba3434"]; /* weight: 0.445263 */
+	node13 -> node39 [color="#cf7a62"]; /* weight: 0.300447 */
+	node14 -> node39 [color="#7a83d8"]; /* weight: -0.336966 */
+	node15 -> node39 [color="#a5b3e5"]; /* weight: -0.194561 */
+	node16 -> node39 [color="#e4c0ad"]; /* weight: 0.126944 */
+	node17 -> node39 [color="#adbbe7"]; /* weight: -0.173359 */
+	node18 -> node39 [color="#828edb"]; /* weight: -0.304043 */
+	node19 -> node39 [color="#b6242e"]; /* weight: 0.46731 */
+	node20 -> node39 [color="#e3e8f0"]; /* weight: -0.0366449 */
+	node21 -> node39 [color="#efe9e4"]; /* weight: 0.0244875 */
+	node22 -> node39 [color="#afbce7"]; /* weight: -0.170049 */
+	node23 -> node39 [color="#d58d74"]; /* weight: 0.255062 */
+	node24 -> node39 [color="#f0ece8"]; /* weight: 0.0161252 */
+	node25 -> node39 [color="#dda78f"]; /* weight: 0.192365 */
+	node26 -> node39 [color="#97a4e2"]; /* weight: -0.236699 */
+	node27 -> node39 [color="#e0b09a"]; /* weight: 0.165946 */
+	node28 -> node39 [color="#c96752"]; /* weight: 0.345054 */
+	node29 -> node39 [color="#acb9e7"]; /* weight: -0.176236 */
+	node30 -> node39 [color="#c5cfeb"]; /* weight: -0.111018 */
+	node31 -> node39 [color="#6869cf"]; /* weight: -0.408957 */
+	node32 -> node39 [color="#c5cfeb"]; /* weight: -0.109187 */
+	node33 -> node39 [color="#cb6e58"]; /* weight: 0.329437 */
+	node34 -> node39 [color="#dca58d"]; /* weight: 0.194025 */
+	node35 -> node39 [color="#deaa93"]; /* weight: 0.183756 */
+	node36 -> node39 [color="#d79279"]; /* weight: 0.242213 */
+	node37 -> node39 [color="#ca6954"]; /* weight: 0.33829 */
+	node38 -> node39 [color="#9dabe3"]; /* weight: -0.219573 */
+	node1 -> node40 [color="#a9b7e6"]; /* weight: -0.183108 */
+	node2 -> node40 [color="#db9f86"]; /* weight: 0.212236 */
+	node3 -> node40 [color="#dca58d"]; /* weight: 0.195232 */
+	node4 -> node40 [color="#c04a3e"]; /* weight: 0.406589 */
+	node5 -> node40 [color="#93a0e1"]; /* weight: -0.251602 */
+	node6 -> node40 [color="#d69177"]; /* weight: 0.24596 */
+	node7 -> node40 [color="#cdd6ed"]; /* weight: -0.0884123 */
+	node8 -> node40 [color="#c14e41"]; /* weight: 0.398891 */
+	node9 -> node40 [color="#d3dbee"]; /* weight: -0.0748066 */
+	node10 -> node40 [color="#d68f76"]; /* weight: 0.247785 */
+	node11 -> node40 [color="#a5b3e5"]; /* weight: -0.19472 */
+	node12 -> node40 [color="#c6d1ec"]; /* weight: -0.105907 */
+	node13 -> node40 [color="#b51d2c"]; /* weight: 0.474242 */
+	node14 -> node40 [color="#c86450"]; /* weight: 0.352178 */
+	node15 -> node40 [color="#bfcaea"]; /* weight: -0.123378 */
+	node16 -> node40 [color="#ce755d"]; /* weight: 0.310962 */
+	node17 -> node40 [color="#dda78f"]; /* weight: 0.192521 */
+	node18 -> node40 [color="#f1efed"]; /* weight: 0.00961293 */
+	node19 -> node40 [color="#cbd5ec"]; /* weight: -0.093472 */
+	node20 -> node40 [color="#b9c5e9"]; /* weight: -0.140205 */
+	node21 -> node40 [color="#d8957c"]; /* weight: 0.235784 */
+	node22 -> node40 [color="#cd735c"]; /* weight: 0.315374 */
+	node23 -> node40 [color="#c65f4c"]; /* weight: 0.363345 */
+	node24 -> node40 [color="#dca48c"]; /* weight: 0.199801 */
+	node25 -> node40 [color="#6d71d2"]; /* weight: -0.388928 */
+	node26 -> node40 [color="#6b6ed1"]; /* weight: -0.394365 */
+	node27 -> node40 [color="#c9d3ec"]; /* weight: -0.0959279 */
+	node28 -> node40 [color="#e7caba"]; /* weight: 0.10293 */
+	node29 -> node40 [color="#dca48c"]; /* weight: 0.200605 */
+	node30 -> node40 [color="#696cd0"]; /* weight: -0.404324 */
+	node31 -> node40 [color="#efe6e0"]; /* weight: 0.029983 */
+	node32 -> node40 [color="#6c70d1"]; /* weight: -0.389553 */
+	node33 -> node40 [color="#6261cb"]; /* weight: -0.433258 */
+	node34 -> node40 [color="#e2e6f0"]; /* weight: -0.0394203 */
+	node35 -> node40 [color="#cdd6ed"]; /* weight: -0.0880222 */
+	node36 -> node40 [color="#c25243"]; /* weight: 0.392034 */
+	node37 -> node40 [color="#9dabe3"]; /* weight: -0.219415 */
+	node38 -> node40 [color="#deab94"]; /* weight: 0.180758 */
+	node1 -> node41 [color="#ca6b55"]; /* weight: 0.337287 */
+	node2 -> node41 [color="#bac6ea"]; /* weight: -0.135384 */
+	node3 -> node41 [color="#9dabe3"]; /* weight: -0.218114 */
+	node4 -> node41 [color="#7c86d9"]; /* weight: -0.327473 */
+	node5 -> node41 [color="#c55948"]; /* weight: 0.372912 */
+	node6 -> node41 [color="#8996de"]; /* weight: -0.283433 */
+	node7 -> node41 [color="#a2b0e5"]; /* weight: -0.205111 */
+	node8 -> node41 [color="#d28269"]; /* weight: 0.281198 */
+	node9 -> node41 [color="#c2cdeb"]; /* weight: -0.118418 */
+	node10 -> node41 [color="#ede1d9"]; /* weight: 0.0410519 */
+	node11 -> node41 [color="#c45747"]; /* weight: 0.378446 */
+	node12 -> node41 [color="#f0f0f2"]; /* weight: -0.00590849 */
+	node13 -> node41 [color="#bac6ea"]; /* weight: -0.138398 */
+	node14 -> node41 [color="#b7c4e9"]; /* weight: -0.146076 */
+	node15 -> node41 [color="#8d9adf"]; /* weight: -0.271737 */
+	node16 -> node41 [color="#e4c0ad"]; /* weight: 0.13042 */
+	node17 -> node41 [color="#c25042"]; /* weight: 0.395356 */
+	node18 -> node41 [color="#b10127"]; /* weight: 0.497396 */
+	node19 -> node41 [color="#5a51c5"]; /* weight: -0.479053 */
+	node20 -> node41 [color="#686acf"]; /* weight: -0.408204 */
+	node21 -> node41 [color="#b5212d"]; /* weight: 0.472574 */
+	node22 -> node41 [color="#5548c1"]; /* weight: -0.498722 */
+	node23 -> node41 [color="#c35444"]; /* weight: 0.385224 */
+	node24 -> node41 [color="#6b6ed1"]; /* weight: -0.396161 */
+	node25 -> node41 [color="#cf7860"]; /* weight: 0.303051 */
+	node26 -> node41 [color="#dba28a"]; /* weight: 0.201638 */
+	node27 -> node41 [color="#c04a3e"]; /* weight: 0.404872 */
+	node28 -> node41 [color="#c25243"]; /* weight: 0.391091 */
+	node29 -> node41 [color="#d7947b"]; /* weight: 0.236182 */
+	node30 -> node41 [color="#e7c9b8"]; /* weight: 0.106234 */
+	node31 -> node41 [color="#e6c7b6"]; /* weight: 0.108149 */
+	node32 -> node41 [color="#acb9e7"]; /* weight: -0.177666 */
+	node33 -> node41 [color="#c9d3ec"]; /* weight: -0.0978872 */
+	node34 -> node41 [color="#c14c3f"]; /* weight: 0.402042 */
+	node35 -> node41 [color="#c5cfeb"]; /* weight: -0.108713 */
+	node36 -> node41 [color="#d58c73"]; /* weight: 0.256585 */
+	node37 -> node41 [color="#ebd8cd"]; /* weight: 0.0671393 */
+	node38 -> node41 [color="#deaa93"]; /* weight: 0.184611 */
+	node1 -> node42 [color="#d8957c"]; /* weight: 0.235583 */
+	node2 -> node42 [color="#c7604d"]; /* weight: 0.359936 */
+	node3 -> node42 [color="#6463cc"]; /* weight: -0.426144 */
+	node4 -> node42 [color="#594fc4"]; /* weight: -0.481805 */
+	node5 -> node42 [color="#afbce7"]; /* weight: -0.168552 */
+	node6 -> node42 [color="#e7caba"]; /* weight: 0.099892 */
+	node7 -> node42 [color="#97a4e2"]; /* weight: -0.237615 */
+	node8 -> node42 [color="#808bda"]; /* weight: -0.312161 */
+	node9 -> node42 [color="#929fe0"]; /* weight: -0.25287 */
+	node10 -> node42 [color="#5e58c8"]; /* weight: -0.455869 */
+	node11 -> node42 [color="#848fdc"]; /* weight: -0.302503 */
+	node12 -> node42 [color="#dfad96"]; /* weight: 0.173746 */
+	node13 -> node42 [color="#e5c4b2"]; /* weight: 0.118344 */
+	node14 -> node42 [color="#ca6b55"]; /* weight: 0.335699 */
+	node15 -> node42 [color="#cdd6ed"]; /* weight: -0.0883863 */
+	node16 -> node42 [color="#acb9e7"]; /* weight: -0.176611 */
+	node17 -> node42 [color="#6f74d3"]; /* weight: -0.378453 */
+	node18 -> node42 [color="#d69177"]; /* weight: 0.245989 */
+	node19 -> node42 [color="#94a2e1"]; /* weight: -0.246284 */
+	node20 -> node42 [color="#767dd6"]; /* weight: -0.352689 */
+	node21 -> node42 [color="#acb9e7"]; /* weight: -0.174936 */
+	node22 -> node42 [color="#95a3e1"]; /* weight: -0.242396 */
+	node23 -> node42 [color="#7379d5"]; /* weight: -0.362962 */
+	node24 -> node42 [color="#a2b0e5"]; /* weight: -0.202621 */
+	node25 -> node42 [color="#bc3b37"]; /* weight: 0.432023 */
+	node26 -> node42 [color="#b51d2c"]; /* weight: 0.476963 */
+	node27 -> node42 [color="#ecdbd1"]; /* weight: 0.0594371 */
+	node28 -> node42 [color="#a5b3e5"]; /* weight: -0.194573 */
+	node29 -> node42 [color="#6a6dd0"]; /* weight: -0.397691 */
+	node30 -> node42 [color="#b6242e"]; /* weight: 0.46805 */
+	node31 -> node42 [color="#d3dbee"]; /* weight: -0.0746536 */
+	node32 -> node42 [color="#d8977e"]; /* weight: 0.228796 */
+	node33 -> node42 [color="#d07c63"]; /* weight: 0.297732 */
+	node34 -> node42 [color="#f2f2f1"]; /* weight: 0.000655226 */
+	node35 -> node42 [color="#c0cceb"]; /* weight: -0.119678 */
+	node36 -> node42 [color="#828edb"]; /* weight: -0.304787 */
+	node37 -> node42 [color="#da9d85"]; /* weight: 0.214779 */
+	node38 -> node42 [color="#d3dbee"]; /* weight: -0.0758622 */
+	node1 -> node43 [color="#777fd7"]; /* weight: -0.349488 */
+	node2 -> node43 [color="#8d9adf"]; /* weight: -0.2689 */
+	node3 -> node43 [color="#d28269"]; /* weight: 0.280018 */
+	node4 -> node43 [color="#ba3735"]; /* weight: 0.441032 */
+	node5 -> node43 [color="#8590dc"]; /* weight: -0.297714 */
+	node6 -> node43 [color="#757cd6"]; /* weight: -0.354255 */
+	node7 -> node43 [color="#b82d31"]; /* weight: 0.456827 */
+	node8 -> node43 [color="#5c55c7"]; /* weight: -0.467012 */
+	node9 -> node43 [color="#bc3b37"]; /* weight: 0.432654 */
+	node10 -> node43 [color="#7379d5"]; /* weight: -0.365353 */
+	node11 -> node43 [color="#eee4dd"]; /* weight: 0.0364911 */
+	node12 -> node43 [color="#ecdcd3"]; /* weight: 0.0535943 */
+	node13 -> node43 [color="#edded5"]; /* weight: 0.0512174 */
+	node14 -> node43 [color="#5c55c7"]; /* weight: -0.466648 */
+	node15 -> node43 [color="#f0ece8"]; /* weight: 0.0144753 */
+	node16 -> node43 [color="#c3ceeb"]; /* weight: -0.11228 */
+	node17 -> node43 [color="#6768ce"]; /* weight: -0.414757 */
+	node18 -> node43 [color="#dda891"]; /* weight: 0.187877 */
+	node19 -> node43 [color="#e0b09a"]; /* weight: 0.167178 */
+	node20 -> node43 [color="#ebd9cf"]; /* weight: 0.0622241 */
+	node21 -> node43 [color="#b5212d"]; /* weight: 0.473977 */
+	node22 -> node43 [color="#8f9ce0"]; /* weight: -0.26062 */
+	node23 -> node43 [color="#e4c0ad"]; /* weight: 0.126849 */
+	node24 -> node43 [color="#93a0e1"]; /* weight: -0.248992 */
+	node25 -> node43 [color="#93a0e1"]; /* weight: -0.248671 */
+	node26 -> node43 [color="#c9d3ec"]; /* weight: -0.0993024 */
+	node27 -> node43 [color="#7075d3"]; /* weight: -0.374001 */
+	node28 -> node43 [color="#dda891"]; /* weight: 0.186051 */
+	node29 -> node43 [color="#e0b39e"]; /* weight: 0.160477 */
+	node30 -> node43 [color="#d3dbee"]; /* weight: -0.0753534 */
+	node31 -> node43 [color="#eee4dd"]; /* weight: 0.0357718 */
+	node32 -> node43 [color="#9eace4"]; /* weight: -0.215063 */
+	node33 -> node43 [color="#d48a71"]; /* weight: 0.259724 */
+	node34 -> node43 [color="#e5c3b0"]; /* weight: 0.122693 */
+	node35 -> node43 [color="#e5e9f0"]; /* weight: -0.0294216 */
+	node36 -> node43 [color="#7075d3"]; /* weight: -0.373948 */
+	node37 -> node43 [color="#d7947b"]; /* weight: 0.239498 */
+	node38 -> node43 [color="#e7caba"]; /* weight: 0.100099 */
+	node1 -> node44 [color="#e8cdbe"]; /* weight: 0.0929939 */
+	node2 -> node44 [color="#c7604d"]; /* weight: 0.360258 */
+	node3 -> node44 [color="#be443b"]; /* weight: 0.416241 */
+	node4 -> node44 [color="#dfad96"]; /* weight: 0.174253 */
+	node5 -> node44 [color="#5e58c8"]; /* weight: -0.456655 */
+	node6 -> node44 [color="#c3ceeb"]; /* weight: -0.114559 */
+	node7 -> node44 [color="#5a51c5"]; /* weight: -0.476764 */
+	node8 -> node44 [color="#6a6dd0"]; /* weight: -0.399563 */
+	node9 -> node44 [color="#7278d4"]; /* weight: -0.366979 */
+	node10 -> node44 [color="#afbce7"]; /* weight: -0.168506 */
+	node11 -> node44 [color="#808bda"]; /* weight: -0.311957 */
+	node12 -> node44 [color="#686acf"]; /* weight: -0.40712 */
+	node13 -> node44 [color="#e3e8f0"]; /* weight: -0.0337769 */
+	node14 -> node44 [color="#6f74d3"]; /* weight: -0.380729 */
+	node15 -> node44 [color="#8a97de"]; /* weight: -0.277278 */
+	node16 -> node44 [color="#6362cc"]; /* weight: -0.428485 */
+	node17 -> node44 [color="#e3bba7"]; /* weight: 0.139906 */
+	node18 -> node44 [color="#c7604d"]; /* weight: 0.358706 */
+	node19 -> node44 [color="#93a0e1"]; /* weight: -0.250954 */
+	node20 -> node44 [color="#dca48c"]; /* weight: 0.199923 */
+	node21 -> node44 [color="#6a6dd0"]; /* weight: -0.398809 */
+	node22 -> node44 [color="#6261cb"]; /* weight: -0.434854 */
+	node23 -> node44 [color="#e9ebf1"]; /* weight: -0.0244596 */
+	node24 -> node44 [color="#cf7860"]; /* weight: 0.305012 */
+	node25 -> node44 [color="#acb9e7"]; /* weight: -0.174809 */
+	node26 -> node44 [color="#cd725b"]; /* weight: 0.318082 */
+	node27 -> node44 [color="#818cdb"]; /* weight: -0.308596 */
+	node28 -> node44 [color="#6d71d2"]; /* weight: -0.385871 */
+	node29 -> node44 [color="#f2f2f1"]; /* weight: 0.00117629 */
+	node30 -> node44 [color="#c8624e"]; /* weight: 0.355043 */
+	node31 -> node44 [color="#c8d2ec"]; /* weight: -0.101863 */
+	node32 -> node44 [color="#f1efed"]; /* weight: 0.00970878 */
+	node33 -> node44 [color="#adbbe7"]; /* weight: -0.170947 */
+	node34 -> node44 [color="#efe9e4"]; /* weight: 0.0231768 */
+	node35 -> node44 [color="#c55948"]; /* weight: 0.373127 */
+	node36 -> node44 [color="#d3856c"]; /* weight: 0.272374 */
+	node37 -> node44 [color="#dca48c"]; /* weight: 0.19748 */
+	node38 -> node44 [color="#eddfd7"]; /* weight: 0.0463857 */
+
+
+}

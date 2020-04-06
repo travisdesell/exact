@@ -158,6 +158,9 @@ int main(int argc, char** argv) {
 
     int32_t number_slices;
     get_argument(arguments, "--number_slices", true, number_slices);
+    
+    bool use_thompson_sampling = false;
+    get_argument(arguments, "--use_thompson_sampling", false, use_thompson_sampling);
 
     time_series_sets->split_all(number_slices);
 
@@ -204,11 +207,13 @@ int main(int argc, char** argv) {
                     use_low_threshold, low_threshold,
                     use_dropout, dropout_probability,
                     min_recurrent_depth, max_recurrent_depth,
+                    possible_node_types,
                     output_directory,
                     NULL,
-                    start_filled);
-
-            if (possible_node_types.size() > 0) examm->set_possible_node_types(possible_node_types);
+                    start_filled,
+                    use_thompson_sampling);
+            // In examm constructor
+            // if (possible_node_types.size() > 0) examm->set_possible_node_types(possible_node_types);
 
             vector<thread> threads;
             for (int32_t i = 0; i < number_threads; i++) {

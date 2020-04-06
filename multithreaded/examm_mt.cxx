@@ -160,6 +160,8 @@ int main(int argc, char** argv) {
     int32_t max_recurrent_depth = 10;
     get_argument(arguments, "--max_recurrent_depth", false, max_recurrent_depth);
 
+    bool use_thompson_sampling = false;
+    get_argument(arguments, "--use_thompson_sampling", false, use_thompson_sampling);
 
     RNN_Genome *seed_genome = NULL;
     string genome_file_name = "";
@@ -194,13 +196,16 @@ int main(int argc, char** argv) {
             use_low_threshold, low_threshold,
             use_dropout, dropout_probability,
             min_recurrent_depth, max_recurrent_depth,
+            possible_node_types,
             output_directory,
             seed_genome,
-            start_filled);
-
-    if (possible_node_types.size() > 0)  {
-        examm->set_possible_node_types(possible_node_types);
-    }
+            start_filled,
+            use_thompson_sampling);
+    
+    // Moved this to the inside of the EXAMM constructor
+    // if (possible_node_types.size() > 0)  {
+    //     examm->set_possible_node_types(possible_node_types);
+    // }
 
     vector<thread> threads;
     for (int32_t i = 0; i < number_threads; i++) {
