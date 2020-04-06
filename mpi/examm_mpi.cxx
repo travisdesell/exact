@@ -241,7 +241,6 @@ int main(int argc, char** argv) {
 
     TimeSeriesSets *time_series_sets = NULL;
 
-
     if (rank == 0) {
         //only have the master process print TSS info
         time_series_sets = TimeSeriesSets::generate_from_arguments(arguments);
