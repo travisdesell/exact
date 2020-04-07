@@ -227,13 +227,13 @@ EXAMM::EXAMM(
         mkpath(output_directory.c_str(), 0777);
         log_file = new ofstream(output_directory + "/" + "fitness_log.csv");
         (*log_file) << "Inserted Genomes, Total BP Epochs, Time, Best Val. MAE, Best Val. MSE, Enabled Nodes, Enabled Edges, Enabled Rec. Edges";
-        memory_log << "Inserted Genomes, Total BP Epochs, Time, Best Val. MAE, Best Val. MSE, Enabled Nodes, Enabled Edges, Enabled Rec. Edges";
+        //memory_log << "Inserted Genomes, Total BP Epochs, Time, Best Val. MAE, Best Val. MSE, Enabled Nodes, Enabled Edges, Enabled Rec. Edges";
 
         (*log_file) << speciation_strategy->get_strategy_information_headers();
-        (memory_log) << speciation_strategy->get_strategy_information_headers();
+        //(memory_log) << speciation_strategy->get_strategy_information_headers();
 
         (*log_file) << endl;
-        memory_log << endl;
+        //memory_log << endl;
 
         op_log_file = new ofstream(output_directory + "/op_log.csv");
         
@@ -344,6 +344,7 @@ void EXAMM::update_log() {
             << speciation_strategy->get_strategy_information_values()
             << endl;
 
+        /*
         memory_log << speciation_strategy->get_inserted_genomes()
             << "," << total_bp_epochs
             << "," << milliseconds
@@ -354,7 +355,8 @@ void EXAMM::update_log() {
             << "," << best_genome->get_enabled_recurrent_edge_count()
             << speciation_strategy->get_strategy_information_values()
             << endl;
-        
+        */
+
         for (int i = 0; i < op_log_ordering.size(); i++) {
             string op = op_log_ordering[i];
             (*op_log_file) << generated_counts[op] << ", " << inserted_counts[op]  << ", ";
