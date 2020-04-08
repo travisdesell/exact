@@ -75,6 +75,8 @@ class RNN_Genome {
         map<string,double> normalize_mins;
         map<string,double> normalize_maxs;
 
+        // vector<int32_t> innovation_list;
+
     public:
         void sort_nodes_by_depth();
         void sort_edges_by_depth();
@@ -239,8 +241,11 @@ class RNN_Genome {
         
         void update_innovation_counts(int32_t &node_innovation_count, int32_t &edge_innovation_count);
 
+        vector<int32_t> get_innovation_list();
+
         friend class EXAMM;
         friend class IslandSpeciationStrategy;
+        friend class NeatSpeciationStrategy;
         friend class RecDepthFrequencyTable;
 };
 
