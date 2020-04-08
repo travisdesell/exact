@@ -561,6 +561,18 @@ uint32_t RNN_Genome::get_number_weights() {
     return number_weights;
 }
 
+
+double RNN_Genome::get_avg_edge_weight() {
+    double avg_weight;
+    double weights;
+    for (int i = 0; i < edges.size(); i++) {
+        weights += edges[i]->weight;
+    }
+    // Log::error("weights: %f\n", weights);
+    avg_weight = weights / (double) edges.size();
+    return avg_weight;
+}
+
 void RNN_Genome::initialize_randomly() {
     Log::trace("initializing genome %d of group %d randomly!\n", generation_id, group_id);
     int number_of_weights = get_number_weights();

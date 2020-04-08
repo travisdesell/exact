@@ -19,8 +19,11 @@ class NeatSpeciationStrategy : public SpeciationStrategy {
     private:
         int32_t generation_species; /**< Used to track which island to generate the next genome from. */
         int32_t species_count;
-        
-        double distance_th = 4;
+
+        double species_threshold;
+        int32_t neat_c1; 
+        int32_t neat_c2;
+        int32_t neat_c3;
         double mutation_rate; /**< How frequently to do mutations. Note that mutation_rate + intra_island_crossover_rate + inter_island_crossover_rate should equal 1, if not they will be scaled down such that they do. */
         double intra_island_crossover_rate; /**< How frequently to do intra-island crossovers. Note that mutation_rate + intra_island_crossover_rate + inter_island_crossover_rate should equal 1, if not they will be scaled down such that they do. */
         double inter_island_crossover_rate; /**< How frequently to do inter-island crossovers. Note that mutation_rate + intra_island_crossover_rate + inter_island_crossover_rate should equal 1, if not they will be scaled down such that they do. */
@@ -38,7 +41,8 @@ class NeatSpeciationStrategy : public SpeciationStrategy {
 
         NeatSpeciationStrategy( double _mutation_rate, double _intra_island_crossover_rate, 
                                 double _inter_island_crossover_rate, RNN_Genome *_seed_genome,
-                                int32_t _max_genomes);
+                                int32_t _max_genomes, double _species_threshold, 
+                                int32_t _neat_c1, int32_t _neat_c2, int32_t _neat_c3);
         /**
          * \return the number of generated genomes.
          */
@@ -121,6 +125,8 @@ class NeatSpeciationStrategy : public SpeciationStrategy {
         vector<int32_t> get_random_species_list();
         
         double get_distance(RNN_Genome* g1, RNN_Genome* g2);
+
+        int get_exceed_number(vector<int32_t> v1, vector<int32_t> v2);
 };
 
 #endif

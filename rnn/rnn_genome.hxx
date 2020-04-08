@@ -148,6 +148,7 @@ class RNN_Genome {
         uint32_t get_number_inputs();
         uint32_t get_number_outputs();
 
+        double get_avg_edge_weight();
         void initialize_randomly();
 
         int32_t get_generation_id() const;
