@@ -68,7 +68,11 @@ EXAMM::EXAMM(
         string _island_ranking_method, 
         string _repopulation_method, 
         int32_t _repopulation_mutations,
-        string _speciation_method, 
+        string _speciation_method,
+        double _species_threshold, 
+        int32_t _neat_c1, 
+        int32_t _neat_c2, 
+        int32_t _neat_c3, 
         const vector<string> &_input_parameter_names,
         const vector<string> &_output_parameter_names,
         const map<string,double> &_normalize_mins,
@@ -98,6 +102,10 @@ EXAMM::EXAMM(
                         island_ranking_method(_island_ranking_method), 
                         repopulation_method(_repopulation_method), 
                         repopulation_mutations(_repopulation_mutations),
+                        species_threshold(_species_threshold),
+                        neat_c1(_neat_c1),
+                        neat_c2(_neat_c2),
+                        neat_c3(_neat_c3),
                         number_inputs(_input_parameter_names.size()),
                         number_outputs(_output_parameter_names.size()),
                         bp_iterations(_bp_iterations),
@@ -274,7 +282,7 @@ EXAMM::EXAMM(
 
         double mutation_rate = 0.70, intra_island_co_rate = 0.20, inter_island_co_rate = 0.10;
 
-        speciation_strategy = new NeatSpeciationStrategy(mutation_rate, intra_island_co_rate, inter_island_co_rate, seed_genome,  max_genomes);
+        speciation_strategy = new NeatSpeciationStrategy(mutation_rate, intra_island_co_rate, inter_island_co_rate, seed_genome,  max_genomes, species_threshold, neat_c1, neat_c2, neat_c3);
         
     }
 

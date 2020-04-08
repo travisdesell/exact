@@ -93,22 +93,11 @@ void Species::copy_two_random_genomes(uniform_real_distribution<double> &rng_0_1
 //pointer
 int32_t Species::insert_genome(RNN_Genome *genome) {
 
-    // if(genome->get_generation_id() <= erased_generation_id){
-    //     Log::info("genome already erased, not inserting");
-    //     return -1;
-    // }
-
     Log::debug("getting fitness of genome copy\n");
 
     double new_fitness = genome->get_fitness();
 
     Log::info("inserting genome with fitness: %s to species %d\n", parse_fitness(genome->get_fitness()).c_str(), id);
-
-    //discard the genome if the island is full and it's fitness is worse than the worst in thte population
-    // if (is_full() && new_fitness > get_worst_fitness()) {
-    //     Log::info("ignoring genome, fitness: %lf > worst for island[%d] fitness: %lf\n", new_fitness, id, genomes.back()->get_fitness());
-    //     return false;
-    // }
 
     int32_t duplicate_genome_index = contains(genome);
     if (duplicate_genome_index >= 0) {
@@ -152,34 +141,6 @@ int32_t Species::insert_genome(RNN_Genome *genome) {
     latest_inserted_generation_position = insert_index;
 
     return insert_index;
-
-    // if (genomes.size() >= max_size) {
-    //     //the island is filled
-    //     status = Species::FILLED;
-    // }
-
-    // Log::info("genomes.size(): %d, max_size: %d, status: %d\n", genomes.size(), max_size, status);
-
-    // if (genomes.size() > max_size) {
-    //     //island was full before insert so now we need to 
-    //     //delete the worst genome in the island.
-
-    //     Log::debug("deleting worst genome\n");
-    //     RNN_Genome *worst = genomes.back();
-    //     genomes.pop_back();
-
-    //     delete worst;
-    // }
-
-    // if (insert_index >= max_size) {
-    //     //technically we shouldn't get here but it might happen
-    //     //if the genome's fitness == the worst fitness in the
-    //     //island. So in this case it was not inserted to the
-    //     //island and return -1
-    //     return -1;
-    // } else {
-    //     return insert_index;
-    // }
 }
 
 void Species::print(string indent) {
@@ -189,7 +150,6 @@ void Species::print(string indent) {
         Log::info("%s\t%s\n", indent.c_str(), genomes[i]->print_statistics().c_str());
     }
 }
-
 
 vector<RNN_Genome *> Species::get_genomes() {
     return genomes;

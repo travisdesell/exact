@@ -13,6 +13,8 @@ using std::uniform_real_distribution;
 #include <string>
 using std::string;
 
+#include <stdlib.h>
+
 #include "examm.hxx"
 #include "rnn_genome.hxx"
 #include "neat_speciation_strategy.hxx"
@@ -25,7 +27,8 @@ using std::string;
 NeatSpeciationStrategy::NeatSpeciationStrategy(
                 double _mutation_rate, double _intra_island_crossover_rate, 
                 double _inter_island_crossover_rate, RNN_Genome *_seed_genome,
-                int32_t _max_genomes) :
+                int32_t _max_genomes, double _species_threshold, 
+                int32_t _neat_c1, int32_t _neat_c2, int32_t _neat_c3) :
                         generation_species(0),
                         mutation_rate(_mutation_rate), 
                         intra_island_crossover_rate(_intra_island_crossover_rate), 
@@ -34,7 +37,11 @@ NeatSpeciationStrategy::NeatSpeciationStrategy(
                         inserted_genomes(0), 
                         species_count(0),
                         minimal_genome(_seed_genome), 
-                        max_genomes(_max_genomes) {
+                        max_genomes(_max_genomes),
+                        species_threshold(species_threshold),
+                        neat_c1(_neat_c1),
+                        neat_c2(_neat_c2),
+                        neat_c3(_neat_c3) {
 
     double rate_sum = mutation_rate + intra_island_crossover_rate + inter_island_crossover_rate;
     if (rate_sum != 1.0) {
@@ -62,11 +69,6 @@ NeatSpeciationStrategy::NeatSpeciationStrategy(
 
     global_best_genome = NULL;
 }
-
-/**
- * 
- */
-
 
 int32_t NeatSpeciationStrategy::get_generated_genomes() const {
     return generated_genomes;
@@ -140,9 +142,7 @@ int32_t NeatSpeciationStrategy::insert_genome(RNN_Genome* genome) {
     inserted_genomes++;
 
     vector<int32_t> species_list = get_random_species_list();
-    // if (species_list.size() == 0) {
-    //     insert_position = Neat_Species[0]
-    // }
+
     for (int i = 0; i < species_list.size(); i++){
         Species* random_species = Neat_Species[species_list[i]];
         if (Neat_Species[species_list[i]] -> size() == 0) {
@@ -152,7 +152,7 @@ int32_t NeatSpeciationStrategy::insert_genome(RNN_Genome* genome) {
         else {
             RNN_Genome* genome_representation = random_species->get_latested_genome();
             double distance = get_distance(genome_representation, genome);
-            if (distance < distance_th) {
+            if (distance < species_threshold) {
                 Log::info("inserting genome to species: %d\n", species_list[i]);
                 insert_position = Neat_Species[species_list[i]]->insert_genome(genome);
                 inserted = true;
@@ -329,10 +329,10 @@ string NeatSpeciationStrategy::get_strategy_information_headers() const {
         info_header.append("Species_");
         info_header.append(to_string(i));
         info_header.append("_best_fitness");
-        info_header.append(",");
-        info_header.append("Species_");
-        info_header.append(to_string(i));
-        info_header.append("_worst_fitness");
+        // info_header.append(",");
+        // info_header.append("Species_");
+        // info_header.append(to_string(i));
+        // info_header.append("_worst_fitness");
     }
     return info_header;
 }
@@ -347,8 +347,8 @@ string NeatSpeciationStrategy::get_strategy_information_values() const {
         double worst_fitness = Neat_Species[i]->get_worst_fitness();
         info_value.append(",");
         info_value.append(to_string(best_fitness));
-        info_value.append(",");
-        info_value.append(to_string(worst_fitness));
+        // info_value.append(",");
+        // info_value.append(to_string(worst_fitness));
     }
     return info_value;
 }
@@ -372,22 +372,85 @@ vector<int32_t> NeatSpeciationStrategy::get_random_species_list() {
 }
 
 double NeatSpeciationStrategy::get_distance(RNN_Genome* g1, RNN_Genome* g2) {
-    double distance = 5;
-    double c1 = 1;
-    double c2 = 1;
+    double distance;
+    int E;
+    int D;
     int32_t N;
-
+    // d = c1*E/N + c2*D/N + c3*w
     vector<int32_t> innovation1 = g1 -> get_innovation_list();
     vector<int32_t> innovation2 = g2 -> get_innovation_list();
+
+    double weight1 = g1-> get_avg_edge_weight();
+    double weight2 = g2-> get_avg_edge_weight();
+    double w = abs(weight1 - weight2);
+    Log::info("g1 avg weight: %f \n", weight1);
+    Log::info("g2 avg weight: %f \n", weight1);
+    Log::info("weight difference: %f \n", w);
+    Log::info("innovation1: \n");
+	for (auto const& i: innovation1) {
+		std::cout << i << " ";
+	}
+    std::cout <<"\n";
+
+    Log::info("innovation2: \n");
+	for (auto const& i: innovation2) {
+		std::cout << i << " ";
+	}
+    std::cout <<"\n";
     if (innovation1.size() >= innovation2.size()){
         N = innovation1.size();
-    }
-    else {
+
+    } else {
         N = innovation2.size();
+    } 
+
+    Log::info("size N: %d \n", N);
+    Log::info("v1.back: %d \n", innovation1.back());
+    Log::info("v2.back: %d \n", innovation2.back());
+    if (innovation1.back() == innovation2.back()) {
+        E = 0;
+    } else if (innovation1.back() > innovation2.back()) {
+        E = get_exceed_number(innovation1, innovation2);
+    } else {
+        // innovation1.back() < innovation2.back()
+        E = get_exceed_number(innovation2, innovation1);
     }
 
-    
+    std::vector<int32_t> setunion;
+    std::vector<int32_t> intersec;
 
+    std::set_union(innovation1.begin(), innovation1.end(), innovation2.begin(), innovation2.end(), std::inserter(setunion, setunion.begin()));
+    std::set_intersection(innovation1.begin(), innovation1.end(), innovation2.begin(), innovation2.end(), std::inserter(intersec, intersec.begin()));
+
+    Log::info("setunion: \n");
+    for (auto const& i: setunion) {
+		std::cout << i << " ";
+	}
+    std::cout <<"\n";
+
+    Log::info("inersection: \n");
+    for (auto const& i: intersec) {
+		std::cout << i << " ";
+	}
+    std::cout <<"\n";
+    D = setunion.size() - intersec.size() - E;
+    Log::info("D is : %d \n", D);
+    Log::error("exceed: %d \n", E);
+    distance = neat_c1 * E / N + neat_c2 * D / N + neat_c3 * w ;
+    Log::info("distance is %f \n", distance);
     return distance;
 
+}
+//v1.max > v2.max
+int NeatSpeciationStrategy::get_exceed_number(vector<int32_t> v1, vector<int32_t> v2) {
+    int exceed = 0;
+
+    for (auto it = v1.rbegin(); it != v1.rend(); ++it)  { 
+        if(*it > v2.back()){
+            exceed++;
+        } else {
+            break;
+        }
+    }
+    return exceed;
 }
