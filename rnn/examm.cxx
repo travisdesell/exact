@@ -32,7 +32,7 @@ using std::to_string;
 #include "generate_nn.hxx"
 #include "speciation_strategy.hxx"
 #include "island_speciation_strategy.hxx"
-
+#include "neat_speciation_strategy.hxx"
 
 //INFO: ADDED BY ABDELRAHMAN TO USE FOR TRANSFER LEARNING
 #include "rnn.hxx"
@@ -241,18 +241,54 @@ EXAMM::EXAMM(
                     number_islands, population_size, mutation_rate, intra_island_co_rate, inter_island_co_rate,
                     seed_genome, island_ranking_method, repopulation_method, extinction_event_generation_number, repopulation_mutations, islands_to_exterminate, max_genomes);
     }
+    else if (speciation_method.compare("neat") == 0) {
+        RNN_Genome *seed_genome = NULL;
+        
+        if (genome_file_name.compare("") == 0) {
+            seed_genome = create_ff(number_inputs, 0, 0, number_outputs, 0);
+            seed_genome->initialize_randomly();
+            edge_innovation_count = seed_genome->edges.size() + seed_genome->recurrent_edges.size();
+            node_innovation_count = seed_genome->nodes.size();
+        } else { 
+            Log::error("doing transfer!\n");
+            seed_genome = generate_for_transfer_learning(genome_file_name, no_extra_inputs, no_extra_outputs );
+            Log::error("generated seed genome, number of inputs: %d, number of outputs: %d\n", seed_genome->get_number_inputs(), seed_genome->get_number_outputs());
+        }
+
+        seed_genome->set_generated_by("initial");
+
+        //insert a copy of it into the population so
+        //additional requests can mutate it
+
+
+        seed_genome->best_validation_mse = EXAMM_MAX_DOUBLE;
+        seed_genome->best_validation_mae = EXAMM_MAX_DOUBLE;
+        //seed_genome->best_parameters.clear();
+        
+        // Only used if tl_start_filled is enabled
+        function<void (RNN_Genome *)> apply_stir_mutations = [this](RNN_Genome *genome) {
+            RNN_Genome *copy = genome->copy();
+            this->mutate(repopulation_mutations, copy);
+            return copy;
+        };
+
+        double mutation_rate = 0.70, intra_island_co_rate = 0.20, inter_island_co_rate = 0.10;
+
+        speciation_strategy = new NeatSpeciationStrategy(mutation_rate, intra_island_co_rate, inter_island_co_rate, seed_genome,  max_genomes);
+        
+    }
 
     if (output_directory != "") {
         mkpath(output_directory.c_str(), 0777);
         log_file = new ofstream(output_directory + "/" + "fitness_log.csv");
         (*log_file) << "Inserted Genomes, Total BP Epochs, Time, Best Val. MAE, Best Val. MSE, Enabled Nodes, Enabled Edges, Enabled Rec. Edges";
-        memory_log << "Inserted Genomes, Total BP Epochs, Time, Best Val. MAE, Best Val. MSE, Enabled Nodes, Enabled Edges, Enabled Rec. Edges";
+        // memory_log << "Inserted Genomes, Total BP Epochs, Time, Best Val. MAE, Best Val. MSE, Enabled Nodes, Enabled Edges, Enabled Rec. Edges";
 
         (*log_file) << speciation_strategy->get_strategy_information_headers();
-        (memory_log) << speciation_strategy->get_strategy_information_headers();
+        // (memory_log) << speciation_strategy->get_strategy_information_headers();
 
         (*log_file) << endl;
-        memory_log << endl;
+        // memory_log << endl;
     } else {
         log_file = NULL;
     }
@@ -300,16 +336,16 @@ void EXAMM::update_log() {
             << speciation_strategy->get_strategy_information_values()
             << endl;
 
-        memory_log << speciation_strategy->get_inserted_genomes()
-            << "," << total_bp_epochs
-            << "," << milliseconds
-            << "," << best_genome->best_validation_mae
-            << "," << best_genome->best_validation_mse
-            << "," << best_genome->get_enabled_node_count()
-            << "," << best_genome->get_enabled_edge_count()
-            << "," << best_genome->get_enabled_recurrent_edge_count()
-            << speciation_strategy->get_strategy_information_values()
-            << endl;
+        // memory_log << speciation_strategy->get_inserted_genomes()
+        //     << "," << total_bp_epochs
+        //     << "," << milliseconds
+        //     << "," << best_genome->best_validation_mae
+        //     << "," << best_genome->best_validation_mse
+        //     << "," << best_genome->get_enabled_node_count()
+        //     << "," << best_genome->get_enabled_edge_count()
+        //     << "," << best_genome->get_enabled_recurrent_edge_count()
+        //     << speciation_strategy->get_strategy_information_values()
+        //     << endl;
     }
 }
 

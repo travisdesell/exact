@@ -421,7 +421,7 @@ int main(int argc, char** argv) {
                 std::chrono::time_point<std::chrono::system_clock> end = std::chrono::system_clock::now();
                 long milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
 
-                examm->write_memory_log(current_output_directory + "/memory_fitness_log.csv");
+                // examm->write_memory_log(current_output_directory + "/memory_fitness_log.csv");
 
                 slice_times_file << milliseconds << endl;
 
