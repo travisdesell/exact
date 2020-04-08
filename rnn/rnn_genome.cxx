@@ -566,10 +566,12 @@ double RNN_Genome::get_avg_edge_weight() {
     double avg_weight;
     double weights;
     for (int i = 0; i < edges.size(); i++) {
-        weights += edges[i]->weight;
+        weights += edges[i] -> weight;
     }
-    // Log::error("weights: %f\n", weights);
-    avg_weight = weights / (double) edges.size();
+    for (int i = 0; i < recurrent_edges.size(); i++) {
+        weights += recurrent_edges[i] -> weight;
+    }
+    avg_weight = weights / (double) (edges.size() + recurrent_edges.size());
     return avg_weight;
 }
 

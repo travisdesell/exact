@@ -38,7 +38,7 @@ NeatSpeciationStrategy::NeatSpeciationStrategy(
                         species_count(0),
                         minimal_genome(_seed_genome), 
                         max_genomes(_max_genomes),
-                        species_threshold(species_threshold),
+                        species_threshold(_species_threshold),
                         neat_c1(_neat_c1),
                         neat_c2(_neat_c2),
                         neat_c3(_neat_c3) {
@@ -53,9 +53,7 @@ NeatSpeciationStrategy::NeatSpeciationStrategy(
     intra_island_crossover_rate += mutation_rate;
     inter_island_crossover_rate += intra_island_crossover_rate;
 
-    // for (int32_t i = 0; i < number_of_islands; i++) {
-    //     Neat_Species.push_back(new Species(i));
-    // }
+    Log::info("Neat speciation strategy, the species threshold is %f. \n", species_threshold);
     
     //set the generation id for the initial minimal genome
     minimal_genome->set_generation_id(generated_genomes);
