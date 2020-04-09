@@ -48,8 +48,9 @@ module load libtiff
 
 EXAMM="/home/zl7069/git/thompson/exact"
 
+
 for folder in 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19; do
-    flight="pa28"
+    flight="c172"
     
     if [ $flight = "c172" ]; then
         echo "\tUsing c172 dateset"
