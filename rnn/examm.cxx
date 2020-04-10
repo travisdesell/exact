@@ -326,7 +326,7 @@ void EXAMM::update_log() {
         }
 
         RNN_Genome *best_genome = get_best_genome();
-        if (best_genome == NULL){
+        if (best_genome == NULL) {
             best_genome = speciation_strategy->get_global_best_genome();
         }
 

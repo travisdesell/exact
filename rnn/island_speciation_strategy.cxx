@@ -113,8 +113,9 @@ IslandSpeciationStrategy::IslandSpeciationStrategy(
         return new Island(id, genomes);
     };
 
-    for (int i = 0 ; i < number_of_islands; i += 1)
+    for (int i = 0 ; i < number_of_islands; i += 1) {
         islands.push_back(make_filled_island(i, _seed_genome, max_island_size, repopulation_mutations, modify));
+    }
     
     //set the generation id for the initial minimal genome
     
