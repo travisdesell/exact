@@ -12,6 +12,9 @@ using std::uniform_real_distribution;
 #include <string>
 using std::string;
 
+#include <unordered_map>
+using std::unordered_map;
+
 
 #include "rnn_genome.hxx"
 
@@ -23,10 +26,13 @@ class Island {
         int32_t erased_generation_id = -1; /**< The latest generation id of an erased island, erased_generation_id = largest_generation_id when this island is erased,
                                                 to prevent deleted genomes get inserted back */
         int32_t latest_generation_id; /**< The latest generation id of genome being generated, including the ones doing backprop by workers */
+
         /**
          * The genomes on this island, stored in sorted order best (front) to worst (back).
          */
-        vector<RNN_Genome *> genomes;
+        vector<RNN_Genome*> genomes;
+
+        unordered_map<string, vector<RNN_Genome*>> structure_map;
 
         int32_t status; /**> The status of this island (either Island:INITIALIZING, Island::FILLED or  Island::REPOPULATING */
         bool erased = false; /**< a flag to track if this islands has been erased */
@@ -46,7 +52,6 @@ class Island {
         /**
          * Initializes an island filled the supplied genomes. The size of the island will be the size
          * of the supplied genome vector. The island status is set to filled.
-         *
          */
         Island(int32_t id, vector<RNN_Genome*> genomes);
 
