@@ -27,13 +27,13 @@
 #SBATCH --mail-type=ALL
 
 # Request 5 hours run time MAX, anything over will be KILLED
-#SBATCH -t 72:0:0
+#SBATCH -t 1-72:0:0
 
 # Put the job in the "work" partition and request FOUR cores for one task
 # "work" is the default partition so it can be omitted without issue.
 
 ## Please not that each node on the cluster is 36 cores
-#SBATCH -p tier3 -n 36
+#SBATCH -p tier3 -n 32
 
 
 # Job memory requirements in MB
