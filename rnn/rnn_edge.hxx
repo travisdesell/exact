@@ -47,6 +47,7 @@ class RNN_Edge {
         const RNN_Node_Interface* get_input_node() const;
         const RNN_Node_Interface* get_output_node() const;
 
+        bool is_enabled() const;
         bool is_reachable() const;
 
         bool equals (RNN_Edge *other) const;

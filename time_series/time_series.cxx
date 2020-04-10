@@ -392,12 +392,16 @@ void TimeSeriesSet::export_time_series(vector< vector<double> > &data, const vec
     } else if (time_offset < 0) {
         //input data, ignore the last N values
         for (int i = 0; i != requested_fields.size(); i++) {
+            Log::debug("exporting for field: '%s'\n", requested_fields[i].c_str());
             if (find(shift_fields.begin(), shift_fields.end(), requested_fields[i]) != shift_fields.end()) {
+                Log::debug("doing shift for field: '%s'\n", requested_fields[i].c_str());
                 //shift the shifted fields to the same as the output, not the input
-                for (int j = time_offset; j < number_rows; j++) {
-                    data[i][j - time_offset] = time_series[ requested_fields[i] ]->get_value(j);
+                for (int j = -time_offset; j < number_rows; j++) {
+                    data[i][j + time_offset] = time_series[ requested_fields[i] ]->get_value(j);
+                    //Log::info("\tdata[%d][%d]: %lf\n", i, j + time_offset, data[i][j + time_offset]);
                 }
             } else {
+                Log::debug("not doing shift for field: '%s'\n", requested_fields[i].c_str());
                 for (int j = 0; j < number_rows + time_offset; j++) {
                     data[i][j] = time_series[ requested_fields[i] ]->get_value(j);
                 }

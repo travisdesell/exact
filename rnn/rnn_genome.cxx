@@ -80,7 +80,7 @@ void RNN_Genome::sort_recurrent_edges_by_depth() {
 
 }
 
-RNN_Genome::RNN_Genome(vector<RNN_Node_Interface*> &_nodes, vector<RNN_Edge*> &_edges) {
+RNN_Genome::RNN_Genome(vector<RNN_Node_Interface*> &_nodes, vector<RNN_Edge*> &_edges, vector<RNN_Recurrent_Edge*> &_recurrent_edges) {
     generation_id = -1;
     group_id = -1;
 
@@ -89,6 +89,7 @@ RNN_Genome::RNN_Genome(vector<RNN_Node_Interface*> &_nodes, vector<RNN_Edge*> &_
 
     nodes = _nodes;
     edges = _edges;
+    recurrent_edges = _recurrent_edges;
 
     sort_nodes_by_depth();
     sort_edges_by_depth();
@@ -118,16 +119,9 @@ RNN_Genome::RNN_Genome(vector<RNN_Node_Interface*> &_nodes, vector<RNN_Edge*> &_
     assign_reachability();
 }
 
-RNN_Genome::RNN_Genome(vector<RNN_Node_Interface*> &_nodes, vector<RNN_Edge*> &_edges, vector<RNN_Recurrent_Edge*> &_recurrent_edges) : RNN_Genome(_nodes, _edges) {
-    recurrent_edges = _recurrent_edges;
-    assign_reachability();
-}
-
-RNN_Genome::RNN_Genome(vector<RNN_Node_Interface*> &_nodes, vector<RNN_Edge*> &_edges, vector<RNN_Recurrent_Edge*> &_recurrent_edges, uint16_t seed) : RNN_Genome(_nodes, _edges) {
-    recurrent_edges = _recurrent_edges;
+RNN_Genome::RNN_Genome(vector<RNN_Node_Interface*> &_nodes, vector<RNN_Edge*> &_edges, vector<RNN_Recurrent_Edge*> &_recurrent_edges, uint16_t seed) : RNN_Genome(_nodes, _edges, _recurrent_edges) {
 
     generator = minstd_rand0(seed);
-    assign_reachability();
 }
 
 void RNN_Genome::set_parameter_names(const vector<string> &_input_parameter_names, const vector<string> &_output_parameter_names) {
@@ -189,7 +183,8 @@ RNN_Genome* RNN_Genome::copy() {
     other->normalize_avgs = normalize_avgs;
     other->normalize_std_devs = normalize_std_devs;
 
-    other->assign_reachability();
+    //reachability is assigned in the constructor
+    //other->assign_reachability();
 
     return other;
 }
@@ -1503,6 +1498,31 @@ void RNN_Genome::assign_reachability() {
             Log::trace("recurrent edge %5d, e: %d, fr: %d, br: %d\n", e->innovation_number, e->enabled, e->forward_reachable, e->backward_reachable);
         }
     }
+
+    //calculate structural hash
+    long node_hash = 0;
+    for (int32_t i = 0; i < nodes.size(); i++) {
+        if (nodes[i]->is_reachable() && nodes[i]->is_enabled()) {
+            node_hash += nodes[i]->get_innovation_number();
+        }
+    }
+
+    long edge_hash = 0;
+    for (int32_t i = 0; i < edges.size(); i++) {
+        if (edges[i]->is_reachable() && edges[i]->is_enabled()) {
+            edge_hash += edges[i]->get_innovation_number();
+        }
+    }
+
+    long recurrent_edge_hash = 0;
+    for (int32_t i = 0; i < recurrent_edges.size(); i++) {
+        if (recurrent_edges[i]->is_reachable() && recurrent_edges[i]->is_enabled()) {
+            recurrent_edge_hash += recurrent_edges[i]->get_innovation_number();
+        }
+    }
+
+    structural_hash = to_string(node_hash) + "_" + to_string(edge_hash) + "_" + to_string(recurrent_edge_hash);
+    //Log::info("genome had structural hash: '%s'\n", structural_hash.c_str());
 }
 
 
@@ -3040,7 +3060,6 @@ void RNN_Genome::read_from_stream(istream &bin_istream) {
     istringstream normalize_std_devs_iss(normalize_std_devs_str);
     read_map(normalize_std_devs_iss, normalize_std_devs);
 
-
     assign_reachability();
 }
 
@@ -3222,6 +3241,10 @@ void RNN_Genome::update_innovation_counts(int32_t &node_innovation_count, int32_
     // One more than the highest we've seen should be good enough.
     node_innovation_count = max_node_innovation_count + 1;
     edge_innovation_count = max_edge_innovation_count + 1;
+}
+
+string RNN_Genome::get_structural_hash() const {
+    return structural_hash;
 }
 
 int RNN_Genome::get_max_node_innovation_count() {

@@ -43,6 +43,7 @@ class RNN_Recurrent_Edge {
 
         int32_t get_recurrent_depth() const;
         double get_gradient();
+        bool is_enabled() const;
         bool is_reachable() const;
 
         RNN_Recurrent_Edge* copy(const vector<RNN_Node_Interface*> new_nodes);

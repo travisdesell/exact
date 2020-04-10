@@ -199,6 +199,11 @@ double RNN_Recurrent_Edge::get_gradient() {
     return d_weight;
 }
 
+bool RNN_Recurrent_Edge::is_enabled() const {
+    return enabled;
+}
+
+
 bool RNN_Recurrent_Edge::is_reachable() const {
     return forward_reachable && backward_reachable;
 }

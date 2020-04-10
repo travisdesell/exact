@@ -51,6 +51,8 @@ class RNN_Genome {
         bool use_dropout;
         double dropout_probability;
 
+        string structural_hash;
+
         string log_filename;
 
         map<string, int> generated_by_map;
@@ -84,10 +86,8 @@ class RNN_Genome {
         void sort_edges_by_depth();
         void sort_recurrent_edges_by_depth();
 
-        RNN_Genome(vector<RNN_Node_Interface*> &_nodes, vector<RNN_Edge*> &_edges);
         RNN_Genome(vector<RNN_Node_Interface*> &_nodes, vector<RNN_Edge*> &_edges, vector<RNN_Recurrent_Edge*> &_recurrent_edges);
         RNN_Genome(vector<RNN_Node_Interface*> &_nodes, vector<RNN_Edge*> &_edges, vector<RNN_Recurrent_Edge*> &_recurrent_edges, uint16_t seed);
-
 
         RNN_Genome* copy();
 
@@ -248,6 +248,11 @@ class RNN_Genome {
         bool connect_node_to_hid_nodes( double mu, double sig, RNN_Node_Interface *new_node, uniform_int_distribution<int32_t> dist, int32_t &edge_innovation_count, bool from_input );
         
         void update_innovation_counts(int32_t &node_innovation_count, int32_t &edge_innovation_count);
+
+        /**
+         * \return the structural hash (calculated when assign_reachaability is called)
+         */
+        string get_structural_hash() const;
 
         /**
          * \return the max innovation number of any node in the genome.

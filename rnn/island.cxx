@@ -1,5 +1,6 @@
 #include <algorithm>
 using std::sort;
+using std::lower_bound;
 using std::upper_bound;
 
 #include <iomanip>
@@ -12,6 +13,9 @@ using std::uniform_real_distribution;
 #include <string>
 using std::string;
 using std::to_string;
+
+#include <unordered_map>
+using std::unordered_map;
 
 #include "island.hxx"
 #include "rnn_genome.hxx"
@@ -101,7 +105,7 @@ void Island::copy_two_random_genomes(uniform_real_distribution<double> &rng_0_1,
 //pointer
 int32_t Island::insert_genome(RNN_Genome *genome) {
 
-    if(genome->get_generation_id() <= erased_generation_id){
+    if (genome->get_generation_id() <= erased_generation_id) {
         Log::info("genome already erased, not inserting");
         return -1;
     }
@@ -118,32 +122,91 @@ int32_t Island::insert_genome(RNN_Genome *genome) {
         return false;
     }
 
-    int32_t duplicate_genome_index = contains(genome);
-    if (duplicate_genome_index >= 0) {
-        //if fitness is better, replace this genome with new one
-        Log::info("found duplicate genome at position: %d\n", duplicate_genome_index);
+    //check and see if the structural hash of the genome is in the
+    //set of hashes for this population
+    string structural_hash = genome->get_structural_hash();
 
-        RNN_Genome *duplicate = genomes[duplicate_genome_index];
-        if (duplicate->get_fitness() > new_fitness) {
-            //erase the genome with loewr fitness from the vector;
-            Log::info("REPLACING DUPLICATE GENOME, fitness of genome in search: %s, new fitness: %s\n", parse_fitness(duplicate->get_fitness()).c_str(), parse_fitness(genome->get_fitness()).c_str());
-            genomes.erase(genomes.begin() + duplicate_genome_index);
-            delete duplicate;
+    if (structure_map.count(structural_hash) > 0) {
+        vector<RNN_Genome*> &potential_matches = structure_map.find(structural_hash)->second;
 
-        } else {
-            Log::info("island already contains genome with a better fitness! not inserting.\n");
-            return -1;
+        Log::info("potential duplicate for hash '%s', had %d potential matches.\n", structural_hash.c_str(), potential_matches.size());
+
+        for (auto potential_match = potential_matches.begin(); potential_match != potential_matches.end(); ) {
+            Log::info("on potential match %d of %d\n", potential_match - potential_matches.begin(), potential_matches.size());
+            if ((*potential_match)->equals(genome)) {
+                if ((*potential_match)->get_fitness() > new_fitness) {
+                    Log::info("REPLACING DUPLICATE GENOME, fitness of genome in search: %s, new fitness: %s\n", parse_fitness((*potential_match)->get_fitness()).c_str(), parse_fitness(genome->get_fitness()).c_str());
+                    //we have an exact match for this genome in the island and its fitness is worse
+                    //than the genome we're trying to remove, so remove the duplicate it from the genomes
+                    //as well from the potential matches vector
+
+                    auto duplicate_genome_iterator = lower_bound(genomes.begin(), genomes.end(), *potential_match, sort_genomes_by_fitness());
+                    bool found = false;
+                    for (; duplicate_genome_iterator != genomes.end(); duplicate_genome_iterator++) {
+                        if ((*duplicate_genome_iterator)->equals(*potential_match)) {
+                            found = true;
+                            break;
+                        }
+                    }
+
+                    if (!found) {
+                        Log::fatal("ERROR: could not find duplicate genome even though its structural has was in the island, this should never happen!\n");
+                        exit(1);
+                    }
+
+                    Log::info("potential_match->get_fitness(): %lf, duplicate_genome_iterator->get_fitness(): %lf, new_fitness: %lf\n", (*potential_match)->get_fitness(), (*duplicate_genome_iterator)->get_fitness(), new_fitness);
+
+                    int32_t duplicate_genome_index = duplicate_genome_iterator - genomes.begin();
+                    Log::info("duplicate_genome_index: %d\n", duplicate_genome_index);
+                    //int32_t test_index = contains(genome);
+                    //Log::info("test_index: %d\n", test_index);
+
+                    RNN_Genome *duplicate = genomes[duplicate_genome_index];
+
+                    //Log::info("duplicate.equals(potential_match)? %d\n", duplicate->equals(*potential_match));
+
+                    genomes.erase(genomes.begin() + duplicate_genome_index);
+
+                    Log::info("potential_matches.size() before erase: %d\n", potential_matches.size());
+
+                    //erase the potential match from the structure map as well
+                    //returns an iterator to next element after the deleted one so
+                    //we don't need to increment it
+                    potential_match = potential_matches.erase(potential_match);
+
+                    delete duplicate;
+
+                    Log::info("potential_matches.size() after erase: %d\n", potential_matches.size());
+                    Log::info("structure_map[%s].size() after erase: %d\n", structural_hash.c_str(), structure_map[structural_hash].size());
+
+                    if (potential_matches.size() == 0) {
+                        Log::info("deleting the potential_matches vector for hash '%s' because it was empty.\n", structural_hash.c_str());
+                        structure_map.erase(structural_hash);
+                        break; //break because this vector is now empty and deleted
+                    }
+
+                } else {
+                    Log::info("island already contains a duplicate genome with a better fitness! not inserting.\n");
+                    return -1;
+                }
+            } else {
+                //increment potential match because we didn't delete an entry (or return from the method)
+                potential_match++;
+            }
         }
     }
 
     //inorder insert the new individual
     RNN_Genome *copy = genome->copy();
-    Log::debug("created copy to insert to island: %d\n", copy->get_group_id());
+    Log::info("created copy to insert to island: %d\n", copy->get_group_id());
 
     auto index_iterator = genomes.insert( upper_bound(genomes.begin(), genomes.end(), copy, sort_genomes_by_fitness()), copy);
     //calculate the index the genome was inseretd at from the iterator
     int32_t insert_index = index_iterator - genomes.begin();
     Log::info("inserted genome at index: %d\n", insert_index);
+
+    //add the genome to the vector for this structural hash
+    structure_map[structural_hash].push_back(copy);
 
     if (insert_index == 0) {
         //this was a new best genome for this island
@@ -173,6 +236,29 @@ int32_t Island::insert_genome(RNN_Genome *genome) {
         Log::debug("deleting worst genome\n");
         RNN_Genome *worst = genomes.back();
         genomes.pop_back();
+        structural_hash = worst->get_structural_hash();
+
+        vector<RNN_Genome*> &potential_matches = structure_map.find(structural_hash)->second;
+        for (auto potential_match = potential_matches.begin(); potential_match != potential_matches.end(); ) {
+            if ((*potential_match)->equals(worst)) {
+                Log::info("potential_matches.size() before erase: %d\n", potential_matches.size());
+
+                //erase the potential match from the structure map as well
+                potential_match = potential_matches.erase(potential_match);
+
+                Log::info("potential_matches.size() after erase: %d\n", potential_matches.size());
+                Log::info("structure_map[%s].size() after erase: %d\n", structural_hash.c_str(), structure_map[structural_hash].size());
+
+                //clean up the structure_map if no genomes in the population have this hash
+                if (potential_matches.size() == 0) {
+                    Log::info("deleting the potential_matches vector for hash '%s' because it was empty.\n", structural_hash.c_str());
+                    structure_map.erase(structural_hash);
+                    break;
+                }
+            } else {
+                potential_match++;
+            }
+        }
 
         delete worst;
     }
@@ -189,10 +275,13 @@ int32_t Island::insert_genome(RNN_Genome *genome) {
 }
 
 void Island::print(string indent) {
-    Log::info("%s\t%s\n", indent.c_str(), RNN_Genome::print_statistics_header().c_str());
+    if (Log::at_level(Log::INFO)) {
 
-    for (int32_t i = 0; i < genomes.size(); i++) {
-        Log::info("%s\t%s\n", indent.c_str(), genomes[i]->print_statistics().c_str());
+        Log::info("%s\t%s\n", indent.c_str(), RNN_Genome::print_statistics_header().c_str());
+
+        for (int32_t i = 0; i < genomes.size(); i++) {
+            Log::info("%s\t%s\n", indent.c_str(), genomes[i]->print_statistics().c_str());
+        }
     }
 }
 
