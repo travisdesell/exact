@@ -171,6 +171,12 @@ class Island {
         int32_t get_erased_generation_id();
 
         /**
+         * \return the status of the island
+         */
+        int32_t get_status();
+
+
+        /**
          * after erasing the island, sets the island status to repopulating.
          */
         void set_status(int32_t status_to_set);

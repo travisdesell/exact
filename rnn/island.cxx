@@ -143,14 +143,16 @@ int32_t Island::insert_genome(RNN_Genome *genome) {
                     auto duplicate_genome_iterator = lower_bound(genomes.begin(), genomes.end(), *potential_match, sort_genomes_by_fitness());
                     bool found = false;
                     for (; duplicate_genome_iterator != genomes.end(); duplicate_genome_iterator++) {
-                        if ((*duplicate_genome_iterator)->equals(*potential_match)) {
+                        Log::info("duplicate_genome_iterator: %p, (*potential_match): %p\n", (*duplicate_genome_iterator), (*potential_match));
+
+                        if ((*duplicate_genome_iterator) == (*potential_match)) {
                             found = true;
                             break;
                         }
                     }
 
                     if (!found) {
-                        Log::fatal("ERROR: could not find duplicate genome even though its structural has was in the island, this should never happen!\n");
+                        Log::fatal("ERROR: could not find duplicate genome even though its structural hash was in the island, this should never happen!\n");
                         exit(1);
                     }
 
@@ -200,13 +202,26 @@ int32_t Island::insert_genome(RNN_Genome *genome) {
     RNN_Genome *copy = genome->copy();
     Log::info("created copy to insert to island: %d\n", copy->get_group_id());
 
-    auto index_iterator = genomes.insert( upper_bound(genomes.begin(), genomes.end(), copy, sort_genomes_by_fitness()), copy);
-    //calculate the index the genome was inseretd at from the iterator
+    auto index_iterator = upper_bound(genomes.begin(), genomes.end(), copy, sort_genomes_by_fitness());
     int32_t insert_index = index_iterator - genomes.begin();
-    Log::info("inserted genome at index: %d\n", insert_index);
+    Log::info("inserting genome at index: %d\n", insert_index);
 
+    if (insert_index >= max_size) {
+        //if we're going to insert this at the back of the population
+        //its just going to get removed anyways, so we can delete 
+        //it and report it was not inserted.
+        Log::info("not inserting genome because it is worse than the worst fitness\n");
+        delete copy;
+        return -1;
+    }
+
+    genomes.insert(index_iterator, copy);
+    //calculate the index the genome was inseretd at from the iterator
+
+    structural_hash = copy->get_structural_hash();
     //add the genome to the vector for this structural hash
     structure_map[structural_hash].push_back(copy);
+    Log::info("adding to structure_map[%s] : %p\n", structural_hash.c_str(), &copy);
 
     if (insert_index == 0) {
         //this was a new best genome for this island
@@ -239,8 +254,13 @@ int32_t Island::insert_genome(RNN_Genome *genome) {
         structural_hash = worst->get_structural_hash();
 
         vector<RNN_Genome*> &potential_matches = structure_map.find(structural_hash)->second;
+
+        bool found = false;
         for (auto potential_match = potential_matches.begin(); potential_match != potential_matches.end(); ) {
-            if ((*potential_match)->equals(worst)) {
+            //make sure the addresses of the pointers are the same
+            Log::info("checking to remove worst from structure_map - &worst: %p, &(*potential_match): %p\n", worst, (*potential_match));
+            if ((*potential_match) == worst) {
+                found = true;
                 Log::info("potential_matches.size() before erase: %d\n", potential_matches.size());
 
                 //erase the potential match from the structure map as well
@@ -258,6 +278,11 @@ int32_t Island::insert_genome(RNN_Genome *genome) {
             } else {
                 potential_match++;
             }
+        }
+
+        if (!found) {
+            Log::info("could not erase from structure_map[%s], genome not found! This should never happen.\n", structural_hash.c_str());
+            exit(1);
         }
 
         delete worst;
@@ -304,6 +329,10 @@ void Island::erase_island() {
 int32_t Island::get_erased_generation_id(){
 
     return erased_generation_id;
+}
+
+int32_t Island::get_status() {
+    return status;
 }
 
 void Island::set_status(int32_t status_to_set){
