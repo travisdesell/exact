@@ -224,19 +224,26 @@ void worker(int rank) {
 // }
 
 int main(int argc, char** argv) {
+    std::cout << "starting up!" << std::endl;
     MPI_Init(&argc, &argv);
+    std::cout << "did mpi init!" << std::endl;
 
     int rank, max_rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &max_rank);
 
+    std::cout << "got rank " << rank << " and max rank " << max_rank << std::endl;
+
     arguments = vector<string>(argv, argv + argc);
+
+    std::cout << "got arguments!" << std::endl;
 
     Log::initialize(arguments);
     Log::set_rank(rank);
-    Log::set_id("main_" + to_string(rank));
+    Log::set_i("main_" + to_string(rank));
     Log::restrict_to_rank(0);
 
+    std::cout << "initailized log!" << std::endl;
 
 
     TimeSeriesSets *time_series_sets = NULL;
