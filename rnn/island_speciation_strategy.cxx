@@ -190,16 +190,18 @@ int32_t IslandSpeciationStrategy::insert_genome(RNN_Genome* genome) {
         if(inserted_genomes > 1 && inserted_genomes % extinction_event_generation_number == 0 && max_genomes - inserted_genomes >= extinction_event_generation_number) {
             if (island_ranking_method.compare("EraseWorst") == 0 || island_ranking_method.compare("") == 0){
                 global_best_genome = get_best_genome()->copy();
-                int32_t *rank = rank_islands();
+                vector<int32_t> rank = rank_islands();
                 // int32_t worst_island = get_worst_island_by_best_genome();
                 for (int32_t i = 0; i < islands_to_exterminate; i++){
-                    if (rank[0] >= 0){
+                    if (rank[i] >= 0){
                         Log::info("found island: %d is not doing well \n",rank[0]);
-                        islands[rank[0]]->erase_island();
-                        islands[rank[0]]->set_status(Island::REPOPULATING);
-                        rank++;
+                        islands[rank[i]]->erase_island();
+                        islands[rank[i]]->set_status(Island::REPOPULATING);
+                        // rank++;
                     }
-                    else Log::error("Didn't find the worst island!");    
+                    else Log::error("Didn't find the worst island!");
+                    // set this so the island would not be re-killed in 5 rounds   
+                    set_erased_islands_status(); 
                 }
             }
         }
@@ -237,7 +239,7 @@ int32_t IslandSpeciationStrategy::get_worst_island_by_best_genome() {
     double worst_best_fitness = 0;
     for (int32_t i = 0; i < (int32_t)islands.size(); i++) {
         if (islands[i]->size() > 0) {
-            if (islands[i]->been_erased()) continue;
+            if (islands[i]->get_erase_again_num() > 0) continue;
             double island_best_fitness = islands[i]->get_best_fitness();
             if (island_best_fitness > worst_best_fitness) {
                 worst_best_fitness = island_best_fitness;
@@ -248,17 +250,22 @@ int32_t IslandSpeciationStrategy::get_worst_island_by_best_genome() {
     return worst_island;
 }
 
-int32_t * IslandSpeciationStrategy::rank_islands() {
-    int32_t* island_rank = new int32_t[number_of_islands];
+vector<int32_t> IslandSpeciationStrategy::rank_islands() {
+    vector<int32_t> island_rank;
+    // int32_t* island_rank = new int32_t[number_of_islands];
     int32_t temp;
     double fitness_j1, fitness_j2;
     for (int32_t i = 0; i< number_of_islands; i++){
-        island_rank[i]=i;
-    } 
-    for (int32_t i = 0; i < number_of_islands-1; i++)   {
-        for (int32_t j = 0; j < number_of_islands-i-1; j++)  {
-            for (int32_t a = 0; a< number_of_islands; a++){
-            }
+        if (islands[i] -> get_erase_again_num() == 0) {
+            island_rank.push_back(i);
+        }
+    }
+    Log::info("islands can get killed: \n"); 
+    // for (int32_t i = 0; i< island_rank.size(); i++){
+    //     Log::error("%d \n",island_rank[i]);
+    // }
+    for (int32_t i = 0; i < island_rank.size() - 1; i++)   {
+        for (int32_t j = 0; j < island_rank.size() - i - 1; j++)  {
             fitness_j1 = islands[island_rank[j]]->get_best_fitness();
             fitness_j2 = islands[island_rank[j+1]]->get_best_fitness();
             if (fitness_j1 < fitness_j2) {
@@ -269,9 +276,8 @@ int32_t * IslandSpeciationStrategy::rank_islands() {
         }
     }   
     Log::info("island rank: \n");
-    for (int32_t i = 0; i< number_of_islands; i++){
+    for (int32_t i = 0; i< island_rank.size(); i++){
         Log::info("island: %d fitness %f \n", island_rank[i], islands[island_rank[i]]->get_best_fitness());
-        // Log::error("island: %d \n", island_rank[i]);
     } 
     return island_rank;
 }
@@ -609,4 +615,13 @@ void IslandSpeciationStrategy::fill_island(int32_t best_island_id){
 
 RNN_Genome* IslandSpeciationStrategy::get_global_best_genome(){
     return global_best_genome;
+}
+
+void IslandSpeciationStrategy::set_erased_islands_status() {
+    for (int i = 0; i < islands.size(); i++) {
+        if (islands[i] -> get_erase_again_num() > 0) {
+            islands[i] -> set_erase_again_num();
+            Log::info("Island %d can be removed in %d rounds.\n", i, islands[i] -> get_erase_again_num());
+        }
+    }
 }

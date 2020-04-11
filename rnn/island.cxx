@@ -18,10 +18,10 @@ using std::to_string;
 
 #include "common/log.hxx"
 
-Island::Island(int32_t _id, int32_t _max_size) : id(_id), max_size(_max_size), status(Island::INITIALIZING) {
+Island::Island(int32_t _id, int32_t _max_size) : id(_id), max_size(_max_size), status(Island::INITIALIZING), erase_again(0), erased(false) {
 }
 
-Island::Island(int32_t _id, vector<RNN_Genome*> _genomes) : id(_id), max_size(_genomes.size()), genomes(_genomes), status(Island::FILLED) {
+Island::Island(int32_t _id, vector<RNN_Genome*> _genomes) : id(_id), max_size(_genomes.size()), genomes(_genomes), status(Island::FILLED), erase_again(0), erased(false) {
 }
 
 RNN_Genome* Island::get_best_genome() {
@@ -205,7 +205,8 @@ void Island::erase_island() {
     // }
     erased_generation_id = latest_generation_id;
     genomes.clear();
-    erased=true;
+    erased = true;
+    erase_again = 5;
     Log::info("Worst island size after erased: %d\n", genomes.size());
     if(genomes.size()!=0){
         Log::error("The worst island is not fully erased!\n");
@@ -238,4 +239,12 @@ vector<RNN_Genome *> Island::get_genomes(){
 
 void Island::set_latest_generation_id(int32_t _latest_generation_id){
     latest_generation_id = _latest_generation_id;
+}
+
+int32_t Island::get_erase_again_num() {
+    return erase_again;
+}
+
+void Island::set_erase_again_num() {
+    erase_again--;
 }
