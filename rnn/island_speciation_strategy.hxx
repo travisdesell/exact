@@ -144,7 +144,7 @@ class IslandSpeciationStrategy : public SpeciationStrategy {
          * 
          *  \return island rank from worst to the best
          */
-        int32_t* rank_islands();
+        vector<int32_t> rank_islands();
 
         /**
          * Generates a new genome.
@@ -190,6 +190,8 @@ class IslandSpeciationStrategy : public SpeciationStrategy {
         void fill_island(int32_t best_island);
 
         RNN_Genome* get_global_best_genome();
+
+        void set_erased_islands_status();
 
 };
 
