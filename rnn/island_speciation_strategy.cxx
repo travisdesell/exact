@@ -422,7 +422,7 @@ RNN_Genome* IslandSpeciationStrategy::generate_genome(uniform_real_distribution<
         }
 
     } else {
-        Log::fatal("ERROR: island was neither initializing, repopulating or full. Island status: %D\n", island->get_status());
+        Log::fatal("ERROR: island was neither initializing, repopulating or full. Island status: %d\n", island->get_status());
         Log::fatal("This should never happen!\n");
     
     }
