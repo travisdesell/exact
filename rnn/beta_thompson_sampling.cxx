@@ -36,7 +36,7 @@ int32_t BetaThompsonSampling::sample_action(minstd_rand0 &generator) {
 void BetaThompsonSampling::update(int32_t action, double reward) {
     alphas[action] += reward;
     betas[action] += 1 - reward;
-#define min(x, y) x > y ? x : y
+#define max(x, y) x > y ? x : y
     for (int32_t i = 0; i < n_actions; i++) {
         alphas[action] = max(1.0, alphas[action] * 0.99);
         betas[action] = max(1.0, alphas[action] * 0.99);
