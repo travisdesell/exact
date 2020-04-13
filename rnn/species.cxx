@@ -94,9 +94,7 @@ void Species::copy_two_random_genomes(uniform_real_distribution<double> &rng_0_1
 int32_t Species::insert_genome(RNN_Genome *genome) {
 
     Log::debug("getting fitness of genome copy\n");
-
     double new_fitness = genome->get_fitness();
-
     Log::info("inserting genome with fitness: %s to species %d\n", parse_fitness(genome->get_fitness()).c_str(), id);
 
     int32_t duplicate_genome_index = contains(genome);
@@ -119,18 +117,17 @@ int32_t Species::insert_genome(RNN_Genome *genome) {
 
     //inorder insert the new individual
     RNN_Genome *copy = genome->copy();
-    Log::debug("created copy to insert to island: %d\n", copy->get_group_id());
-
+    copy -> set_generation_id(genome -> get_generation_id());
+    copy -> set_group_id(id);
     auto index_iterator = genomes.insert( upper_bound(genomes.begin(), genomes.end(), copy, sort_genomes_by_fitness()), copy);
+    Log::info("created copy to insert to island: %d\n", copy -> get_group_id());
     //calculate the index the genome was inseretd at from the iterator
     int32_t insert_index = index_iterator - genomes.begin();
     Log::info("inserted genome at index: %d\n", insert_index);
 
     if (insert_index == 0) {
         //this was a new best genome for this island
-
         Log::info("new best fitness for island: %d!\n", id);
-
         if (genome->get_fitness() != EXAMM_MAX_DOUBLE) {
             //need to set the weights for non-initial genomes so we
             //can generate a proper graphviz file
@@ -138,14 +135,13 @@ int32_t Species::insert_genome(RNN_Genome *genome) {
             genome->set_weights(best_parameters);
         }
     }
-    latest_inserted_generation_position = insert_index;
-
+    inserted_genome_id.push_back( copy -> get_generation_id());
+    Log::info("latest inserted generation id is: %d \n", inserted_genome_id.back());
     return insert_index;
 }
 
 void Species::print(string indent) {
     Log::info("%s\t%s\n", indent.c_str(), RNN_Genome::print_statistics_header().c_str());
-
     for (int32_t i = 0; i < genomes.size(); i++) {
         Log::info("%s\t%s\n", indent.c_str(), genomes[i]->print_statistics().c_str());
     }
@@ -156,5 +152,66 @@ vector<RNN_Genome *> Species::get_genomes() {
 }
 
 RNN_Genome* Species::get_latested_genome() {
-    return genomes[latest_inserted_generation_position];
+    int32_t position;
+    RNN_Genome* latest = NULL;
+    for (auto it = inserted_genome_id.rbegin(); it != inserted_genome_id.rend(); ++it){
+        int32_t latest_id = *it;
+        for (int i = 0; i < genomes.size(); i++){
+            if (genomes[i] -> get_generation_id() == latest_id){
+                latest = genomes[i];
+                break;
+            }
+        } 
+        if (latest) {
+            break;
+        }
+    }
+    return latest;
+}
+
+void Species::fitness_sharing_remove(double fitness_threshold, function<double (RNN_Genome*, RNN_Genome*)> &get_distance) {
+    int32_t N = genomes.size();
+    double distance_sum[N];
+    double fitness_share[N];
+    double fitness_share_total = 0;
+    double sum_square = 0;
+    double distance [N][N];
+    for (int i = 0; i < N; i++) {
+        distance_sum[i] = 0;
+        for(int j = 0; j < N; j++) {
+            if (i < j){
+                distance[i][j] = get_distance(genomes[i], genomes[j]);
+            }
+            else if (i > j) {
+                distance[i][j] = distance[j][i]; 
+            }
+            else {
+                distance[i][j] = 0;
+            }
+            if (distance[i][j] > fitness_threshold){
+                distance_sum[i] += 0;
+            } else {
+                distance_sum[i] += 1;
+            }
+        }
+        fitness_share[i] = (genomes[i] -> get_fitness()) / distance_sum[i];
+        fitness_share_total += fitness_share[i];
+        sum_square += fitness_share[i] * fitness_share[i];
+    }
+    double fitness_share_mean = fitness_share_total / N;
+    double fitness_share_std = sqrt(sum_square/(N-1));
+    double upper_cut_off = fitness_share_mean + fitness_share_std *3;
+
+    int32_t i = 0;
+    auto it = genomes.begin();
+	while (it != genomes.end()) {
+		if (fitness_share[i] > upper_cut_off) {
+			it = genomes.erase(it);
+		}
+		else {
+			++it;
+		}
+        i++;
+	}
+    
 }

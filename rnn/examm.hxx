@@ -38,9 +38,10 @@ class EXAMM {
         SpeciationStrategy *speciation_strategy;
 
         double species_threshold;
-        int32_t neat_c1;
-        int32_t neat_c2;
-        int32_t neat_c3;
+        double fitness_threshold;
+        double neat_c1;
+        double neat_c2;
+        double neat_c3;
 
         int32_t edge_innovation_count;
         int32_t node_innovation_count;
@@ -126,10 +127,11 @@ class EXAMM {
                 string _repopulation_method,
                 int32_t _repopulation_mutations,
                 string _speciation_method,
-                double species_threshold, 
-                int32_t neat_c1, 
-                int32_t neat_c2, 
-                int32_t neat_c3,
+                double _species_threshold, 
+                double _fitness_threshold,
+                double _neat_c1, 
+                double _neat_c2, 
+                double _neat_c3,
                 const vector<string> &_input_parameter_names,
                 const vector<string> &_output_parameter_names,
                 const map<string,double> &_normalize_mins,

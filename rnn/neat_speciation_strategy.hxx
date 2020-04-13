@@ -21,9 +21,10 @@ class NeatSpeciationStrategy : public SpeciationStrategy {
         int32_t species_count;
 
         double species_threshold;
-        int32_t neat_c1; 
-        int32_t neat_c2;
-        int32_t neat_c3;
+        double fitness_threshold;
+        double neat_c1; 
+        double neat_c2;
+        double neat_c3;
         double mutation_rate; /**< How frequently to do mutations. Note that mutation_rate + intra_island_crossover_rate + inter_island_crossover_rate should equal 1, if not they will be scaled down such that they do. */
         double intra_island_crossover_rate; /**< How frequently to do intra-island crossovers. Note that mutation_rate + intra_island_crossover_rate + inter_island_crossover_rate should equal 1, if not they will be scaled down such that they do. */
         double inter_island_crossover_rate; /**< How frequently to do inter-island crossovers. Note that mutation_rate + intra_island_crossover_rate + inter_island_crossover_rate should equal 1, if not they will be scaled down such that they do. */
@@ -41,8 +42,8 @@ class NeatSpeciationStrategy : public SpeciationStrategy {
 
         NeatSpeciationStrategy( double _mutation_rate, double _intra_island_crossover_rate, 
                                 double _inter_island_crossover_rate, RNN_Genome *_seed_genome,
-                                int32_t _max_genomes, double _species_threshold, 
-                                int32_t _neat_c1, int32_t _neat_c2, int32_t _neat_c3);
+                                int32_t _max_genomes, double _species_threshold, double _fitness_threshold,
+                                double _neat_c1, double _neat_c2, double _neat_c3);
         /**
          * \return the number of generated genomes.
          */
@@ -127,6 +128,7 @@ class NeatSpeciationStrategy : public SpeciationStrategy {
         double get_distance(RNN_Genome* g1, RNN_Genome* g2);
 
         int get_exceed_number(vector<int32_t> v1, vector<int32_t> v2);
+
 };
 
 #endif

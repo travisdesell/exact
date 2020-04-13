@@ -1,6 +1,9 @@
 #ifndef EXAMM_NEAT_STRATEGY_HXX
 #define EXAMM_NEAT_STRATEGY_HXX
 
+#include <functional>
+using std::function;
+
 #include <algorithm>
 using std::sort;
 using std::upper_bound;
@@ -12,6 +15,7 @@ using std::uniform_real_distribution;
 #include <string>
 using std::string;
 
+#include <vector>
 
 #include "rnn_genome.hxx"
 
@@ -19,15 +23,16 @@ using std::string;
 class Species {
     private:
         int32_t id; /**< An integer ID for this species. */
-    
-        int32_t erased_generation_id = -1; /**< The latest generation id of an erased island, erased_generation_id = largest_generation_id when this island is erased,
-                                                to prevent deleted genomes get inserted back */
-        int32_t latest_inserted_generation_position; /**< The latest generation id of genome being generated, including the ones doing backprop by workers */
+
+        // int32_t latest_inserted_generation_id; /**< The latest generation id of genome being generated, including the ones doing backprop by workers */
+
+        vector<int32_t> inserted_genome_id;
         /**
-         * The genomes on this island, stored in sorted order best (front) to worst (back).
+         * The genomes on this species, stored in sorted order best (front) to worst (back).
          */
         vector<RNN_Genome *> genomes;
-        bool erased = false; /**< a flag to track if this islands has been erased */
+
+        double fitness_threshold = 5;
 
     public:
         /**
@@ -128,6 +133,7 @@ class Species {
 
         RNN_Genome* get_latested_genome();
 
+        void fitness_sharing_remove(double fitness_threshold, function<double (RNN_Genome*, RNN_Genome*)> &get_distance);
 };
 
 #endif
