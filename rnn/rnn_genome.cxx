@@ -564,14 +564,15 @@ uint32_t RNN_Genome::get_number_weights() {
 
 double RNN_Genome::get_avg_edge_weight() {
     double avg_weight;
-    double weights;
+    double weights = 0;
     for (int i = 0; i < edges.size(); i++) {
         weights += edges[i] -> weight;
     }
     for (int i = 0; i < recurrent_edges.size(); i++) {
         weights += recurrent_edges[i] -> weight;
     }
-    avg_weight = weights / (double) (edges.size() + recurrent_edges.size());
+    int32_t N = edges.size() + recurrent_edges.size();
+    avg_weight = weights / N;
     return avg_weight;
 }
 

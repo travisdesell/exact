@@ -27,8 +27,8 @@ using std::string;
 NeatSpeciationStrategy::NeatSpeciationStrategy(
                 double _mutation_rate, double _intra_island_crossover_rate, 
                 double _inter_island_crossover_rate, RNN_Genome *_seed_genome,
-                int32_t _max_genomes, double _species_threshold, 
-                int32_t _neat_c1, int32_t _neat_c2, int32_t _neat_c3) :
+                int32_t _max_genomes, double _species_threshold, double _fitness_threshold,
+                double _neat_c1, double _neat_c2, double _neat_c3) :
                         generation_species(0),
                         mutation_rate(_mutation_rate), 
                         intra_island_crossover_rate(_intra_island_crossover_rate), 
@@ -39,6 +39,7 @@ NeatSpeciationStrategy::NeatSpeciationStrategy(
                         minimal_genome(_seed_genome), 
                         max_genomes(_max_genomes),
                         species_threshold(_species_threshold),
+                        fitness_threshold(_fitness_threshold),
                         neat_c1(_neat_c1),
                         neat_c2(_neat_c2),
                         neat_c3(_neat_c3) {
@@ -56,9 +57,8 @@ NeatSpeciationStrategy::NeatSpeciationStrategy(
     Log::info("Neat speciation strategy, the species threshold is %f. \n", species_threshold);
     
     //set the generation id for the initial minimal genome
-    minimal_genome->set_generation_id(generated_genomes);
     generated_genomes++;
-
+    minimal_genome->set_generation_id(generated_genomes);
     // set the fitst species with minimal genome
     Neat_Species.push_back(new Species(species_count)); 
     Log::info("initialized the first species, current neat species size: %d \n", Neat_Species.size() );
@@ -66,6 +66,8 @@ NeatSpeciationStrategy::NeatSpeciationStrategy(
     insert_genome(minimal_genome);
 
     global_best_genome = NULL;
+
+    
 }
 
 int32_t NeatSpeciationStrategy::get_generated_genomes() const {
@@ -133,43 +135,45 @@ double NeatSpeciationStrategy::get_worst_fitness() {
 //this will insert a COPY, original needs to be deleted
 //returns 0 if a new global best, < 0 if not inserted, > 0 otherwise
 int32_t NeatSpeciationStrategy::insert_genome(RNN_Genome* genome) {
-    bool inserted = false;
+    // bool inserted = false;
     int32_t insert_position;
-    Log::debug("inserting genome!\n");
-
+    Log::info("inserting genome!\n");
     inserted_genomes++;
-
     vector<int32_t> species_list = get_random_species_list();
-
     for (int i = 0; i < species_list.size(); i++){
-        Species* random_species = Neat_Species[species_list[i]];
-        if (Neat_Species[species_list[i]] -> size() == 0) {
-            insert_position = Neat_Species[species_list[i]]->insert_genome(genome);
+        if (Neat_Species.size() == 1 and Neat_Species[0] -> size() == 0) {
+            // insert the first genome in the evolution
+            insert_position = Neat_Species[0] -> insert_genome(genome);
+            Log::info("first genome of this species inserted \n");
             break;
-        }
-        else {
-            RNN_Genome* genome_representation = random_species->get_latested_genome();
+        } else {
+            Species* random_species = Neat_Species[species_list[i]];
+            RNN_Genome* genome_representation = random_species -> get_latested_genome();
+            if (genome_representation == NULL){
+                Log::fatal("the latest genome is null, this should never happen!");
+            }
             double distance = get_distance(genome_representation, genome);
             if (distance < species_threshold) {
                 Log::info("inserting genome to species: %d\n", species_list[i]);
-                insert_position = Neat_Species[species_list[i]]->insert_genome(genome);
-                inserted = true;
+                insert_position = random_species -> insert_genome(genome);
+                // inserted = true;
+                // delete random_species;
                 break;
             }
         }
-
     }
-    //1. get random island
-    //2. get last genome
-    //3. get distance
-    //4. insert or make new species
-    if (!inserted) {
+
+    if (insert_position < 0) {
         Species* new_species = new Species(species_count);
         species_count++;
         Neat_Species.push_back(new_species);
+        if (species_count != Neat_Species.size()){
+            Log::error("this should never happen, the species count is not the same as the number of species we have! \n");
+            Log::error("num of species: %d, and species count is %d \n", Neat_Species.size(), species_count);
+        }
         insert_position = new_species->insert_genome(genome);
     }
-
+    
     if (insert_position == 0) {
         //check and see if the inserted genome has the same fitness as the best fitness
         //of all islands
@@ -190,17 +194,19 @@ RNN_Genome* NeatSpeciationStrategy::generate_genome(uniform_real_distribution<do
     Log::debug("getting species: %d\n", generation_species);
     Species *currentSpecies = Neat_Species[generation_species];
 
-    // Log::info("generating new genome for island[%d], island_size: %d, max_island_size: %d, mutation_rate: %lf, intra_island_crossover_rate: %lf, inter_island_crossover_rate: %lf\n", generation_island, island->size(), max_island_size, mutation_rate, intra_island_crossover_rate, inter_island_crossover_rate);
+    function<double (RNN_Genome*, RNN_Genome*)> distance_function =
+    [=](RNN_Genome *g1, RNN_Genome *g2) {
+        return this->get_distance(g1, g2);
+    };
 
-    // Log::debug("islands.size(): %d, selected island is null? %d\n", islands.size(), (island == NULL));
+    Log::info("generating new genome for species[%d], species_size: %d, mutation_rate: %lf, intra_island_crossover_rate: %lf, inter_island_crossover_rate: %lf\n", generation_species, currentSpecies->size(), mutation_rate, intra_island_crossover_rate, inter_island_crossover_rate);
 
-    if (currentSpecies->size() <= 1) {
+    if (currentSpecies->size() <= 2) {
         Log::info("current species has less than 2 genomes, doing mutation!\n");
 
         while (genome == NULL) {
             currentSpecies->copy_random_genome(rng_0_1, generator, &genome);
 
-            //TODO: make max_mutations an IslandSpeciationStrategy option
             mutate(1 /*max_mutations*/, genome);
 
             if (genome->outputs_unreachable()) {
@@ -216,18 +222,19 @@ RNN_Genome* NeatSpeciationStrategy::generate_genome(uniform_real_distribution<do
 
             generation_species++;
             if (generation_species >= (signed) Neat_Species.size()) generation_species = 0; 
-
             return genome;
         }
-
     } else {
+        //first eliminate genomes who have low fitness sharing in this species
+            if (currentSpecies -> size() > 10){
+                currentSpecies -> fitness_sharing_remove(fitness_threshold, distance_function);
+            }
         //generate a genome via crossover or mutation
         Log::info("current species size %d, doing mutaion or crossover\n", currentSpecies->size());
 
         while (genome == NULL) {
             genome = generate_for_species(rng_0_1, generator, mutate, crossover);
         }
-
     }
     if (genome != NULL) { 
         //set th generation id and increment generated genomes
@@ -363,13 +370,14 @@ vector<int32_t> NeatSpeciationStrategy::get_random_species_list() {
     }
     std::random_shuffle ( species_list.begin(), species_list.end() );
     Log::info("species shuffle list: \n");
-    for (std::vector<int32_t>::iterator it=species_list.begin(); it!=species_list.end(); ++it) 
-        std::cout << ' ' << *it;
-    std::cout << '\n';
+    // for (std::vector<int32_t>::iterator it=species_list.begin(); it!=species_list.end(); ++it) 
+    //     std::cout << ' ' << *it;
+    // std::cout << '\n';
     return species_list;
 }
 
 double NeatSpeciationStrategy::get_distance(RNN_Genome* g1, RNN_Genome* g2) {
+    
     double distance;
     int E;
     int D;
@@ -377,34 +385,16 @@ double NeatSpeciationStrategy::get_distance(RNN_Genome* g1, RNN_Genome* g2) {
     // d = c1*E/N + c2*D/N + c3*w
     vector<int32_t> innovation1 = g1 -> get_innovation_list();
     vector<int32_t> innovation2 = g2 -> get_innovation_list();
-
     double weight1 = g1-> get_avg_edge_weight();
     double weight2 = g2-> get_avg_edge_weight();
     double w = abs(weight1 - weight2);
-    Log::info("g1 avg weight: %f \n", weight1);
-    Log::info("g2 avg weight: %f \n", weight1);
     Log::info("weight difference: %f \n", w);
-    Log::info("innovation1: \n");
-	for (auto const& i: innovation1) {
-		std::cout << i << " ";
-	}
-    std::cout <<"\n";
-
-    Log::info("innovation2: \n");
-	for (auto const& i: innovation2) {
-		std::cout << i << " ";
-	}
-    std::cout <<"\n";
     if (innovation1.size() >= innovation2.size()){
         N = innovation1.size();
 
     } else {
         N = innovation2.size();
     } 
-
-    Log::info("size N: %d \n", N);
-    Log::info("v1.back: %d \n", innovation1.back());
-    Log::info("v2.back: %d \n", innovation2.back());
     if (innovation1.back() == innovation2.back()) {
         E = 0;
     } else if (innovation1.back() > innovation2.back()) {
@@ -416,24 +406,10 @@ double NeatSpeciationStrategy::get_distance(RNN_Genome* g1, RNN_Genome* g2) {
 
     std::vector<int32_t> setunion;
     std::vector<int32_t> intersec;
-
     std::set_union(innovation1.begin(), innovation1.end(), innovation2.begin(), innovation2.end(), std::inserter(setunion, setunion.begin()));
     std::set_intersection(innovation1.begin(), innovation1.end(), innovation2.begin(), innovation2.end(), std::inserter(intersec, intersec.begin()));
 
-    Log::info("setunion: \n");
-    for (auto const& i: setunion) {
-		std::cout << i << " ";
-	}
-    std::cout <<"\n";
-
-    Log::info("inersection: \n");
-    for (auto const& i: intersec) {
-		std::cout << i << " ";
-	}
-    std::cout <<"\n";
     D = setunion.size() - intersec.size() - E;
-    Log::info("D is : %d \n", D);
-    Log::error("exceed: %d \n", E);
     distance = neat_c1 * E / N + neat_c2 * D / N + neat_c3 * w ;
     Log::info("distance is %f \n", distance);
     return distance;

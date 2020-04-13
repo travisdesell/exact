@@ -70,9 +70,10 @@ EXAMM::EXAMM(
         int32_t _repopulation_mutations,
         string _speciation_method,
         double _species_threshold, 
-        int32_t _neat_c1, 
-        int32_t _neat_c2, 
-        int32_t _neat_c3, 
+        double _fitness_threshold,
+        double _neat_c1, 
+        double _neat_c2, 
+        double _neat_c3, 
         const vector<string> &_input_parameter_names,
         const vector<string> &_output_parameter_names,
         const map<string,double> &_normalize_mins,
@@ -103,6 +104,7 @@ EXAMM::EXAMM(
                         repopulation_method(_repopulation_method), 
                         repopulation_mutations(_repopulation_mutations),
                         species_threshold(_species_threshold),
+                        fitness_threshold(_fitness_threshold),
                         neat_c1(_neat_c1),
                         neat_c2(_neat_c2),
                         neat_c3(_neat_c3),
@@ -265,24 +267,13 @@ EXAMM::EXAMM(
 
         seed_genome->set_generated_by("initial");
 
-        //insert a copy of it into the population so
-        //additional requests can mutate it
-
-
         seed_genome->best_validation_mse = EXAMM_MAX_DOUBLE;
         seed_genome->best_validation_mae = EXAMM_MAX_DOUBLE;
         //seed_genome->best_parameters.clear();
-        
-        // Only used if tl_start_filled is enabled
-        function<void (RNN_Genome *)> apply_stir_mutations = [this](RNN_Genome *genome) {
-            RNN_Genome *copy = genome->copy();
-            this->mutate(repopulation_mutations, copy);
-            return copy;
-        };
 
         double mutation_rate = 0.70, intra_island_co_rate = 0.20, inter_island_co_rate = 0.10;
 
-        speciation_strategy = new NeatSpeciationStrategy(mutation_rate, intra_island_co_rate, inter_island_co_rate, seed_genome,  max_genomes, species_threshold, neat_c1, neat_c2, neat_c3);
+        speciation_strategy = new NeatSpeciationStrategy(mutation_rate, intra_island_co_rate, inter_island_co_rate, seed_genome,  max_genomes, species_threshold, fitness_threshold, neat_c1, neat_c2, neat_c3);
         
     }
 
