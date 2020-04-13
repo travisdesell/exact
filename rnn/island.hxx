@@ -84,6 +84,14 @@ class Island {
         RNN_Genome *get_worst_genome();
 
         /**
+         * Returns the maximum number of genomes the island can hold
+         *
+         * \return the maximum number of genomes this island can have
+         */
+        int32_t get_max_size();
+
+
+        /**
          * Returns the size of the island
          *
          * \return the number of genomes in this island.
@@ -141,6 +149,8 @@ class Island {
          * \param genome2 will be the second copied genome, an addresss to a pointer needs to be passed.
          */
         void copy_two_random_genomes(uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator, RNN_Genome **genome1, RNN_Genome **genome2);
+
+        void do_population_check(int line);
 
         /**
          * Inserts a genome into the island.

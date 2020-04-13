@@ -365,9 +365,18 @@ RNN_Genome* IslandSpeciationStrategy::generate_genome(uniform_real_distribution<
             return genome;
         }
 
-    } else if (island->is_full()) {
+    } else if (island->get_status() == Island::FILLED || island->is_full()) {
         //generate a genome via crossover or mutation
         Log::info("island is full\n");
+
+        if (!island->is_full()) {
+            Log::error("ERROR! Island status was FILLED but size was: %d, and not max_size: %d\n", island->size(), island->get_max_size());
+            if (island->get_max_size() != max_island_size) {
+                //if the island's max size got changed/corrupted then we have a memory problem somewhere
+                Log::fatal("ERROR! Island max size was not max_island_size: %d\n", max_island_size);
+                exit(1);
+            }
+        }
 
         while (genome == NULL) {
             genome = generate_for_filled_island(rng_0_1, generator, mutate, crossover);
@@ -423,8 +432,8 @@ RNN_Genome* IslandSpeciationStrategy::generate_genome(uniform_real_distribution<
 
     } else {
         Log::fatal("ERROR: island was neither initializing, repopulating or full. Island status: %d\n", island->get_status());
+        Log::fatal("ERROR! Island size was: %d, and max_size was : %d\n", island->size(), island->get_max_size());
         Log::fatal("This should never happen!\n");
-    
     }
 
     if (genome != NULL) { 

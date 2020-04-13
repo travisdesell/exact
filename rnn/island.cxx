@@ -50,6 +50,10 @@ double Island::get_worst_fitness() {
     else return worst_genome->get_fitness();
 }
 
+int32_t Island::get_max_size() {
+    return max_size;
+}
+
 int32_t Island::size() {
     return genomes.size();
 }
@@ -99,6 +103,13 @@ void Island::copy_two_random_genomes(uniform_real_distribution<double> &rng_0_1,
     *genome2 = genomes[p2]->copy();
 }
 
+void Island::do_population_check(int line) {
+    if (status == Island::FILLED && genomes.size() < max_size) {
+        Log::error("ERROR: do_population_check had issue on island.cxx line %d, status was FILLED and genomes.size() was: %d\n", line, genomes.size());
+        status = Island::INITIALIZING;
+    }
+}
+
 
 //returns -1 for not inserted, otherwise the index it was inserted at
 //inserts a copy of the genome, caller of the function will need to delete their
@@ -107,6 +118,7 @@ int32_t Island::insert_genome(RNN_Genome *genome) {
 
     if (genome->get_generation_id() <= erased_generation_id) {
         Log::info("genome already erased, not inserting");
+        do_population_check(__LINE__);
         return -1;
     }
 
@@ -119,6 +131,7 @@ int32_t Island::insert_genome(RNN_Genome *genome) {
     //discard the genome if the island is full and it's fitness is worse than the worst in thte population
     if (is_full() && new_fitness > get_worst_fitness()) {
         Log::info("ignoring genome, fitness: %lf > worst for island[%d] fitness: %lf\n", new_fitness, id, genomes.back()->get_fitness());
+        do_population_check(__LINE__);
         return false;
     }
 
@@ -189,6 +202,7 @@ int32_t Island::insert_genome(RNN_Genome *genome) {
 
                 } else {
                     Log::info("island already contains a duplicate genome with a better fitness! not inserting.\n");
+                    do_population_check(__LINE__);
                     return -1;
                 }
             } else {
@@ -212,6 +226,7 @@ int32_t Island::insert_genome(RNN_Genome *genome) {
         //it and report it was not inserted.
         Log::info("not inserting genome because it is worse than the worst fitness\n");
         delete copy;
+        do_population_check(__LINE__);
         return -1;
     }
 
@@ -293,8 +308,10 @@ int32_t Island::insert_genome(RNN_Genome *genome) {
         //if the genome's fitness == the worst fitness in the
         //island. So in this case it was not inserted to the
         //island and return -1
+        do_population_check(__LINE__);
         return -1;
     } else {
+        do_population_check(__LINE__);
         return insert_index;
     }
 }
