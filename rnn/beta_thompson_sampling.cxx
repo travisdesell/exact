@@ -38,8 +38,8 @@ void BetaThompsonSampling::update(int32_t action, double reward) {
     betas[action] += 1 - reward;
 #define max(x, y) x > y ? x : y
     for (int32_t i = 0; i < n_actions; i++) {
-        alphas[action] = max(1.0, alphas[action] * 0.99);
-        betas[action] = max(1.0, alphas[action] * 0.99);
+        alphas[action] = max(1.0, alphas[action] * 0.9);
+        betas[action] = max(1.0, alphas[action] * 0.9);
     }
 }
 
