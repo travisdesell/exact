@@ -15,12 +15,13 @@ class BetaThompsonSampling : public ThompsonSampling {
     private:
         vector<double> alphas;
         vector<double> betas;
+        double decay_rate;
 
     public:
         /**
          * Creates a new ThompsonSampling object with _n_actions actions (identified by integer keys 0 through _n_actions - 1)
          **/
-        BetaThompsonSampling(int32_t _n_actions);
+        BetaThompsonSampling(int32_t _n_actions, double _decay_rate);
         ~BetaThompsonSampling();
 
         int32_t sample_action(minstd_rand0 &generator);

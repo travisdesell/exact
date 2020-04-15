@@ -1,6 +1,6 @@
 #include "beta_thompson_sampling.hxx"
 
-BetaThompsonSampling::BetaThompsonSampling(int32_t _n_actions) : ThompsonSampling(_n_actions) {
+BetaThompsonSampling::BetaThompsonSampling(int32_t _n_actions, double _decay_rate) : ThompsonSampling(_n_actions), decay_rate(_decay_rate) {
     for (int32_t i = 0; i < n_actions; i++) {
         alphas.push_back(1.0);
         betas.push_back(1.0);
@@ -38,8 +38,8 @@ void BetaThompsonSampling::update(int32_t action, double reward) {
     betas[action] += 1 - reward;
 #define max(x, y) x > y ? x : y
     for (int32_t i = 0; i < n_actions; i++) {
-        alphas[action] = max(1.0, alphas[action] * 0.9);
-        betas[action] = max(1.0, alphas[action] * 0.9);
+        alphas[action] = max(1.0, alphas[action] * decay_rate);
+        betas[action] = max(1.0, alphas[action] * decay_rate);
     }
 }
 

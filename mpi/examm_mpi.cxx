@@ -321,8 +321,17 @@ int main(int argc, char** argv) {
     int32_t max_recurrent_depth = 10;
     get_argument(arguments, "--max_recurrent_depth", false, max_recurrent_depth);
    
-    bool use_thompson_sampling = false;
-    get_argument(arguments, "--use_thompson_sampling", false, use_thompson_sampling);
+    bool use_node_type_thompson_sampling = false;
+    get_argument(arguments, "--use_node_type_thompson_sampling", false, use_node_type_thompson_sampling);
+
+    bool use_mutation_thompson_sampling = false;
+    get_argument(arguments, "--use_mutation_thompson_sampling", false, use_mutation_thompson_sampling);
+
+    double mutation_sampling_decay_rate = 1.0;
+    get_argument(arguments, "--mutation_sampling_decay_rate", false, mutation_sampling_decay_rate);
+
+    double node_type_sampling_decay_rate = 1.0;
+    get_argument(arguments, "--node_type_sampling_decay_rate", false, node_type_sampling_decay_rate);
 
     RNN_Genome *seed_genome = NULL;
     string genome_file_name = "";
@@ -362,7 +371,8 @@ int main(int argc, char** argv) {
             output_directory,
             seed_genome,
             start_filled,
-            use_thompson_sampling);
+            use_node_type_thompson_sampling, node_type_sampling_decay_rate,
+            use_mutation_thompson_sampling, mutation_sampling_decay_rate);
 
         master(max_rank);
     } else {

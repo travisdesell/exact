@@ -91,6 +91,10 @@ class EXAMM {
         ThompsonSampling *node_type_selector;
         map<string, int> mutation_string_to_possible_node_ty_index;
 
+        vector<string> possible_mutations;
+        ThompsonSampling *mutation_selector;
+        map<string, int> mutation_string_to_mutation_index;
+
         vector<string> op_log_ordering;
         map<string, int32_t> inserted_counts;
         map<string, int32_t> generated_counts;
@@ -147,7 +151,10 @@ class EXAMM {
                 string _output_directory, 
                 RNN_Genome *seed_genome,
                 bool _start_filled,
-                bool _use_thompson_sampling);
+                double _node_type_sampling_decay_rate,
+                bool _use_node_type_thompson_sampling,
+                double _mutation_sampling_decay_rate,
+                bool _use_mutation_thompson_sampling);
 
 
         ~EXAMM();

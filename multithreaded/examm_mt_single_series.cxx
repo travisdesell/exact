@@ -159,8 +159,17 @@ int main(int argc, char** argv) {
     int32_t number_slices;
     get_argument(arguments, "--number_slices", true, number_slices);
     
-    bool use_thompson_sampling = false;
-    get_argument(arguments, "--use_thompson_sampling", false, use_thompson_sampling);
+    bool use_node_type_thompson_sampling = false;
+    get_argument(arguments, "--use_node_type_thompson_sampling", false, use_node_type_thompson_sampling);
+
+    bool use_mutation_thompson_sampling = false;
+    get_argument(arguments, "--use_mutation_thompson_sampling", false, use_mutation_thompson_sampling);
+
+    double mutation_sampling_decay_rate = 1.0;
+    get_argument(arguments, "--mutation_sampling_decay_rate", false, mutation_sampling_decay_rate);
+
+    double node_type_sampling_decay_rate = 1.0;
+    get_argument(arguments, "--node_type_sampling_decay_rate", false, node_type_sampling_decay_rate);   
 
     time_series_sets->split_all(number_slices);
 
@@ -211,7 +220,8 @@ int main(int argc, char** argv) {
                     output_directory,
                     NULL,
                     start_filled,
-                    use_thompson_sampling);
+                    use_node_type_thompson_sampling, node_type_sampling_decay_rate,
+                    use_mutation_thompson_sampling, mutation_sampling_decay_rate);
             // In examm constructor
             // if (possible_node_types.size() > 0) examm->set_possible_node_types(possible_node_types);
 
