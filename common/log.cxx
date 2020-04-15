@@ -124,8 +124,9 @@ void Log::set_id(string human_readable_id) {
 
 void Log::release_id(string human_readable_id) {
 
+    //cerr << "locking thread from human readable id: '" << human_readable_id << "'" << endl;
     log_ids_mutex.lock();
-    //cerr << "releasing thread id " << id << " from human readable id: '" << human_readable_id << "'" << endl;
+    //cerr << "releasing thread from human readable id: '" << human_readable_id << "'" << endl;
 
     if (output_files.count(human_readable_id) == 0) {
         //this file was never created and written to
@@ -181,15 +182,18 @@ void Log::write_message(bool print_header, int8_t message_level, const char *mes
     }
 
     if (file_message_level >= message_level) {
-        LogFile* log_file;
+        LogFile* log_file = NULL;
 
         //check and see if we've already opened a file for this human readable id, if we haven't
         //open a new one for it
+
         if (output_files.count(human_readable_id) == 0) {
             string output_filename = output_directory + "/" + human_readable_id;
             FILE *outfile = fopen(output_filename.c_str(), "w");
             log_file = new LogFile(outfile);
             output_files[human_readable_id] = log_file;
+        } else {
+            log_file = output_files[human_readable_id];
         }
 
         //lock this log_file in case multiple threads are trying to write
