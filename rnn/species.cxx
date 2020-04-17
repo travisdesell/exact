@@ -119,6 +119,18 @@ int32_t Species::insert_genome(RNN_Genome *genome) {
     RNN_Genome *copy = genome->copy();
     copy -> set_generation_id(genome -> get_generation_id());
     copy -> set_group_id(id);
+    vector<double> best = copy -> get_best_parameters();
+    // Log::error("best parameter size is: %d \n" , best.size());
+
+    if(best.size() != 0){
+    //     // for (int i = 0; i < best.size(); i++) {
+    //     //     Log::error("best parameter %d of copy: %f \n",i, best[i] );
+    //     // }
+        copy->set_weights(copy -> get_best_parameters());
+    }
+    vector<double> copy_weights;
+    copy->get_weights(copy_weights);
+    double avg = copy->get_avg_edge_weight();
     auto index_iterator = genomes.insert( upper_bound(genomes.begin(), genomes.end(), copy, sort_genomes_by_fitness()), copy);
     Log::info("created copy to insert to island: %d\n", copy -> get_group_id());
     //calculate the index the genome was inseretd at from the iterator
@@ -140,7 +152,7 @@ int32_t Species::insert_genome(RNN_Genome *genome) {
     }
     inserted_genome_id.push_back( copy -> get_generation_id());
     Log::info("latest inserted generation id is: %d \n", inserted_genome_id.back());
-    Log::error("genome %d inserted! \n", genome -> get_generation_id());
+    Log::info("genome %d inserted! \n", genome -> get_generation_id());
     return insert_index;
 }
 

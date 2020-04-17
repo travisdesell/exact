@@ -139,9 +139,13 @@ int32_t NeatSpeciationStrategy::insert_genome(RNN_Genome* genome) {
 
     // check_population();
     // check_species();
+    vector<double> best = genome -> get_best_parameters();
 
+    if(best.size() != 0){
+        genome->set_weights(best);
+    }
     int32_t insert_position;
-    Log::error("inserting genome id %d!\n", genome -> get_generation_id());
+    Log::info("inserting genome id %d!\n", genome -> get_generation_id());
     double avg_weight = genome -> get_avg_edge_weight();
     inserted_genomes++;
     vector<int32_t> species_list = get_random_species_list();
@@ -161,8 +165,7 @@ int32_t NeatSpeciationStrategy::insert_genome(RNN_Genome* genome) {
             if (distance < species_threshold) {
                 Log::info("inserting genome to species: %d\n", species_list[i]);
                 insert_position = random_species -> insert_genome(genome);
-                // inserted = true;
-                // delete random_species;
+
                 break;
             }
         }
@@ -215,8 +218,8 @@ RNN_Genome* NeatSpeciationStrategy::generate_genome(uniform_real_distribution<do
     Log::info("generating new genome for species[%d], species_size: %d, mutation_rate: %lf, intra_island_crossover_rate: %lf, inter_island_crossover_rate: %lf\n", generation_species, currentSpecies->size(), mutation_rate, intra_island_crossover_rate, inter_island_crossover_rate);
 
     if (currentSpecies->size() <= 2) {
-        Log::error("current species has less than 2 genomes, doing mutation!\n");
-        Log::error("generating genome with id: %d \n", generated_genomes);
+        Log::info("current species has less than 2 genomes, doing mutation!\n");
+        Log::info("generating genome with id: %d \n", generated_genomes);
         while (genome == NULL) {
             currentSpecies->copy_random_genome(rng_0_1, generator, &genome);
 
@@ -243,8 +246,8 @@ RNN_Genome* NeatSpeciationStrategy::generate_genome(uniform_real_distribution<do
                 currentSpecies -> fitness_sharing_remove(fitness_threshold, distance_function);
             }
         //generate a genome via crossover or mutation
-        Log::error("current species size %d, doing mutaion or crossover\n", currentSpecies->size());
-        Log::error("generating genome with id: %d \n", generated_genomes);
+        Log::info("current species size %d, doing mutaion or crossover\n", currentSpecies->size());
+        Log::info("generating genome with id: %d \n", generated_genomes);
         while (genome == NULL) {
             genome = generate_for_species(rng_0_1, generator, mutate, crossover);
         }
@@ -451,10 +454,7 @@ vector<int32_t> NeatSpeciationStrategy::rank_species() {
     for (int32_t i = 0; i< Neat_Species.size(); i++){
         species_rank.push_back(i);
     }
-    // Log::info("islands can get killed: \n"); 
-    // for (int32_t i = 0; i< species_rank.size(); i++){
-    //     Log::error("%d \n",species_rank[i]);
-    // }
+
     for (int32_t i = 0; i < species_rank.size() - 1; i++)   {
         for (int32_t j = 0; j < species_rank.size() - i - 1; j++)  {
             fitness_j1 = Neat_Species[species_rank[j]]->get_best_fitness();

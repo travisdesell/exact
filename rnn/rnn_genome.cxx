@@ -595,7 +595,6 @@ void RNN_Genome::initialize_randomly() {
     uniform_real_distribution<double> rng(-0.5, 0.5);
     for (uint32_t i = 0; i < initial_parameters.size(); i++) {
         initial_parameters[i] = rng(generator);
-        Log::debug("initial parameter %d is %f\n", i, initial_parameters[i]);
     }
     this->set_best_parameters(initial_parameters); 
     this->set_weights(initial_parameters);
@@ -942,20 +941,6 @@ void RNN_Genome::backpropagate(const vector< vector< vector<double> > > &inputs,
 
 void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, const vector< vector< vector<double> > > &validation_inputs, const vector< vector< vector<double> > > &validation_outputs) {
     vector<double> parameters = initial_parameters;
-    vector<double> weight_parameters;
-    this -> get_weights(weight_parameters);
-
-    // if (initial_parameters.size() != weight_parameters.size()) {
-    //     Log::error("initial parameter size != weight parameter size \n");
-    //     Log::error("backpropagate: initial parameters size:, %d \n", initial_parameters.size());
-    //     Log::error("backpropagate: weight parameters size:, %d \n", weight_parameters.size());
-    // } else {
-    //     for (int i = 0; i < initial_parameters.size(); i++) {
-    //         if (initial_parameters[i] != weight_parameters[i]) {
-    //             Log::error("initial parameter %f doesn't match weight parameter %f \n", initial_parameters[i], weight_parameters[i]);
-    //         }
-    //     }
-    // }
 
     int n_parameters = this->get_number_weights();
     vector<double> prev_parameters(n_parameters, 0.0);
@@ -1552,15 +1537,8 @@ void RNN_Genome::get_mu_sigma(const vector<double> &p, double &mu, double &sigma
         }
         */
 
-        if (p[i] < -10) {
-            
-            mu += -10.0;
-            // Log::error("checking mu: %f, pi %f \n", mu, p[i]);
-        }
-        else if (p[i] > 10) {
-            mu += 10.0;
-            // Log::error("checking mu: %f, pi %f \n", mu, p[i]);
-        }
+        if (p[i] < -10) mu += -10.0; 
+        else if (p[i] > 10)  mu += 10.0;
         else mu += p[i];
     }
     mu /= p.size();
@@ -1657,9 +1635,7 @@ bool RNN_Genome::attempt_edge_insert(RNN_Node_Interface *n1, RNN_Node_Interface 
     e->weight = bound(normal_distribution.random(generator, mu, sigma));
     
     Log::info("\tadding edge between nodes %d and %d, new edge weight: %lf\n", e->input_innovation_number, e->output_innovation_number, e->weight);
-    int32_t edge_p = upper_bound(edges.begin(), edges.end(), e, sort_RNN_Edges_by_depth()) - edges.begin();
     edges.insert( upper_bound(edges.begin(), edges.end(), e, sort_RNN_Edges_by_depth()), e);
-    Log::error("new inserted edge weight: %f \n", edges[edge_p] -> weight);
 
     return true;
 }
