@@ -17,7 +17,7 @@ using std::setprecision;
 
 #include <iostream>
 using std::endl;
-
+using std::cout;
 #include <random>
 using std::minstd_rand0;
 using std::uniform_real_distribution;
@@ -728,12 +728,12 @@ void EXAMM::mutate(int32_t max_mutations, RNN_Genome *g) {
     bool modified = false;
 
     double mu, sigma;
-
+ 
     //g->write_graphviz("rnn_genome_premutate_" + to_string(g->get_generation_id()) + ".gv");
-    Log::debug("generating new genome by mutation.\n");
+    Log::error("generating new genome by mutation.\n");
+
     g->get_mu_sigma(g->best_parameters, mu, sigma);
     g->clear_generated_by();
-
     //the the weights in the genome to it's best parameters
     //for epigenetic iniitalization
     if (g->best_parameters.size() == 0) {
@@ -757,10 +757,10 @@ void EXAMM::mutate(int32_t max_mutations, RNN_Genome *g) {
         double rng = rng_0_1(generator) * total;
         int new_node_type = get_random_node_type();
         string node_type_str = NODE_TYPES[new_node_type];
-        Log::debug( "rng: %lf, total: %lf, new node type: %d (%s)\n", rng, total, new_node_type, node_type_str.c_str());
+        Log::error( "rng: %lf, total: %lf, new node type: %d (%s)\n", rng, total, new_node_type, node_type_str.c_str());
 
         if (rng < clone_rate) {
-            Log::debug("\tcloned\n");
+            Log::error("\tcloned\n");
             g->set_generated_by("clone");
             modified = true;
             continue;
@@ -768,7 +768,7 @@ void EXAMM::mutate(int32_t max_mutations, RNN_Genome *g) {
         rng -= clone_rate;
         if (rng < add_edge_rate) {
             modified = g->add_edge(mu, sigma, edge_innovation_count);
-            Log::debug("\tadding edge, modified: %d\n", modified);
+            Log::error("\tadding edge, modified: %d\n", modified);
             if (modified) g->set_generated_by("add_edge");
             continue;
         }
@@ -777,7 +777,7 @@ void EXAMM::mutate(int32_t max_mutations, RNN_Genome *g) {
         if (rng < add_recurrent_edge_rate) {
             uniform_int_distribution<int32_t> dist = get_recurrent_depth_dist();
             modified = g->add_recurrent_edge(mu, sigma, dist, edge_innovation_count);
-            Log::debug("\tadding recurrent edge, modified: %d\n", modified);
+            Log::error("\tadding recurrent edge, modified: %d\n", modified);
             if (modified) g->set_generated_by("add_recurrent_edge");
             continue;
         }
@@ -785,7 +785,7 @@ void EXAMM::mutate(int32_t max_mutations, RNN_Genome *g) {
 
         if (rng < enable_edge_rate) {
             modified = g->enable_edge();
-            Log::debug("\tenabling edge, modified: %d\n", modified);
+            Log::error("\tenabling edge, modified: %d\n", modified);
             if (modified) g->set_generated_by("enable_edge");
             continue;
         }
@@ -793,7 +793,7 @@ void EXAMM::mutate(int32_t max_mutations, RNN_Genome *g) {
 
         if (rng < disable_edge_rate) {
             modified = g->disable_edge();
-            Log::debug("\tdisabling edge, modified: %d\n", modified);
+            Log::error("\tdisabling edge, modified: %d\n", modified);
             if (modified) g->set_generated_by("disable_edge");
             continue;
         }
@@ -802,7 +802,7 @@ void EXAMM::mutate(int32_t max_mutations, RNN_Genome *g) {
         if (rng < split_edge_rate) {
             uniform_int_distribution<int32_t> dist = get_recurrent_depth_dist();
             modified = g->split_edge(mu, sigma, new_node_type, dist, edge_innovation_count, node_innovation_count);
-            Log::debug("\tsplitting edge, modified: %d\n", modified);
+            Log::error("\tsplitting edge, modified: %d\n", modified);
             if (modified) g->set_generated_by("split_edge(" + node_type_str + ")");
             continue;
         }
@@ -811,7 +811,7 @@ void EXAMM::mutate(int32_t max_mutations, RNN_Genome *g) {
         if (rng < add_node_rate) {
             uniform_int_distribution<int32_t> dist = get_recurrent_depth_dist();
             modified = g->add_node(mu, sigma, new_node_type, dist, edge_innovation_count, node_innovation_count);
-            Log::debug("\tadding node, modified: %d\n", modified);
+            Log::error("\tadding node, modified: %d\n", modified);
             if (modified) g->set_generated_by("add_node(" + node_type_str + ")");
             continue;
         }
@@ -819,7 +819,7 @@ void EXAMM::mutate(int32_t max_mutations, RNN_Genome *g) {
 
         if (rng < enable_node_rate) {
             modified = g->enable_node();
-            Log::debug("\tenabling node, modified: %d\n", modified);
+            Log::error("\tenabling node, modified: %d\n", modified);
             if (modified) g->set_generated_by("enable_node");
             continue;
         }
@@ -827,7 +827,7 @@ void EXAMM::mutate(int32_t max_mutations, RNN_Genome *g) {
 
         if (rng < disable_node_rate) {
             modified = g->disable_node();
-            Log::debug("\tdisabling node, modified: %d\n", modified);
+            Log::error("\tdisabling node, modified: %d\n", modified);
             if (modified) g->set_generated_by("disable_node");
             continue;
         }
@@ -836,7 +836,7 @@ void EXAMM::mutate(int32_t max_mutations, RNN_Genome *g) {
         if (rng < split_node_rate) {
             uniform_int_distribution<int32_t> dist = get_recurrent_depth_dist();
             modified = g->split_node(mu, sigma, new_node_type, dist, edge_innovation_count, node_innovation_count);
-            Log::debug("\tsplitting node, modified: %d\n", modified);
+            Log::error("\tsplitting node, modified: %d\n", modified);
             if (modified) g->set_generated_by("split_node(" + node_type_str + ")");
             continue;
         }
@@ -845,23 +845,22 @@ void EXAMM::mutate(int32_t max_mutations, RNN_Genome *g) {
         if (rng < merge_node_rate) {
             uniform_int_distribution<int32_t> dist = get_recurrent_depth_dist();
             modified = g->merge_node(mu, sigma, new_node_type, dist, edge_innovation_count, node_innovation_count);
-            Log::debug("\tmerging node, modified: %d\n", modified);
+            Log::error("\tmerging node, modified: %d\n", modified);
             if (modified) g->set_generated_by("merge_node(" + node_type_str + ")");
             continue;
         }
         rng -= merge_node_rate;
     }
-
+    
     //get the new set of parameters (as new paramters may have been
     //added duriung mutation) and set them to the initial parameters
     //for epigenetic_initialization
-
+    Log::error("number of mutations: %d \n", number_mutations);
     vector<double> new_parameters;
     g->get_weights(new_parameters);
     g->initial_parameters = new_parameters;
-
+    
     if (Log::at_level(Log::DEBUG)) {
-        Log::debug("getting mu/sigma before assign reachability\n");
         g->get_mu_sigma(new_parameters, mu, sigma);
     }
 
@@ -872,7 +871,7 @@ void EXAMM::mutate(int32_t max_mutations, RNN_Genome *g) {
     g->best_validation_mae = EXAMM_MAX_DOUBLE;
 
     if (Log::at_level(Log::DEBUG)) {
-        Log::debug("checking parameters after mutation\n");
+        Log::error("checking parameters after mutation\n");
         g->get_mu_sigma(g->initial_parameters, mu, sigma);
     }
 

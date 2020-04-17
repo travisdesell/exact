@@ -34,6 +34,8 @@ class Species {
 
         double fitness_threshold = 5;
 
+        int32_t species_not_improving_count;
+
     public:
         /**
          *  Initializes a species.
@@ -134,6 +136,10 @@ class Species {
         RNN_Genome* get_latested_genome();
 
         void fitness_sharing_remove(double fitness_threshold, function<double (RNN_Genome*, RNN_Genome*)> &get_distance);
+
+        void erase_species();
+
+        int32_t get_species_not_improving_count();
 };
 
 #endif

@@ -36,6 +36,7 @@ NeatSpeciationStrategy::NeatSpeciationStrategy(
                         generated_genomes(0),
                         inserted_genomes(0), 
                         species_count(0),
+                        population_not_improving_count(0),
                         minimal_genome(_seed_genome), 
                         max_genomes(_max_genomes),
                         species_threshold(_species_threshold),
@@ -135,9 +136,13 @@ double NeatSpeciationStrategy::get_worst_fitness() {
 //this will insert a COPY, original needs to be deleted
 //returns 0 if a new global best, < 0 if not inserted, > 0 otherwise
 int32_t NeatSpeciationStrategy::insert_genome(RNN_Genome* genome) {
-    // bool inserted = false;
+
+    // check_population();
+    // check_species();
+
     int32_t insert_position;
-    Log::info("inserting genome!\n");
+    Log::error("inserting genome id %d!\n", genome -> get_generation_id());
+    double avg_weight = genome -> get_avg_edge_weight();
     inserted_genomes++;
     vector<int32_t> species_list = get_random_species_list();
     for (int i = 0; i < species_list.size(); i++){
@@ -178,9 +183,16 @@ int32_t NeatSpeciationStrategy::insert_genome(RNN_Genome* genome) {
         //check and see if the inserted genome has the same fitness as the best fitness
         //of all islands
         double best_fitness = get_best_fitness();
-        if (genome->get_fitness() == best_fitness) return 0;
-        else return 1; //was the best for the island but not the global best
+        if (genome->get_fitness() == best_fitness) {
+            population_not_improving_count = 0;
+            return 0;
+        }
+        else {
+            population_not_improving_count ++;
+            return 1;
+        } //was the best for the island but not the global best
     } else {
+        population_not_improving_count ++;
         return insert_position; //will be -1 if not inserted, or > 0 if not the global best
     }
 }
@@ -192,6 +204,7 @@ RNN_Genome* NeatSpeciationStrategy::generate_genome(uniform_real_distribution<do
     RNN_Genome *genome = NULL;
 
     Log::debug("getting species: %d\n", generation_species);
+
     Species *currentSpecies = Neat_Species[generation_species];
 
     function<double (RNN_Genome*, RNN_Genome*)> distance_function =
@@ -202,8 +215,8 @@ RNN_Genome* NeatSpeciationStrategy::generate_genome(uniform_real_distribution<do
     Log::info("generating new genome for species[%d], species_size: %d, mutation_rate: %lf, intra_island_crossover_rate: %lf, inter_island_crossover_rate: %lf\n", generation_species, currentSpecies->size(), mutation_rate, intra_island_crossover_rate, inter_island_crossover_rate);
 
     if (currentSpecies->size() <= 2) {
-        Log::info("current species has less than 2 genomes, doing mutation!\n");
-
+        Log::error("current species has less than 2 genomes, doing mutation!\n");
+        Log::error("generating genome with id: %d \n", generated_genomes);
         while (genome == NULL) {
             currentSpecies->copy_random_genome(rng_0_1, generator, &genome);
 
@@ -215,7 +228,7 @@ RNN_Genome* NeatSpeciationStrategy::generate_genome(uniform_real_distribution<do
                 genome = NULL;
             }
 
-            genome->initialize_randomly();
+            // genome->initialize_randomly();
             generated_genomes++;
             genome->set_generation_id(generated_genomes);
             genome->set_group_id(generation_species);
@@ -230,8 +243,8 @@ RNN_Genome* NeatSpeciationStrategy::generate_genome(uniform_real_distribution<do
                 currentSpecies -> fitness_sharing_remove(fitness_threshold, distance_function);
             }
         //generate a genome via crossover or mutation
-        Log::info("current species size %d, doing mutaion or crossover\n", currentSpecies->size());
-
+        Log::error("current species size %d, doing mutaion or crossover\n", currentSpecies->size());
+        Log::error("generating genome with id: %d \n", generated_genomes);
         while (genome == NULL) {
             genome = generate_for_species(rng_0_1, generator, mutate, crossover);
         }
@@ -427,4 +440,68 @@ int NeatSpeciationStrategy::get_exceed_number(vector<int32_t> v1, vector<int32_t
         }
     }
     return exceed;
+}
+
+vector<int32_t> NeatSpeciationStrategy::rank_species() {
+    vector<int32_t> species_rank;
+    // int32_t* species_rank = new int32_t[number_of_islands];
+    int32_t temp;
+    double fitness_j1, fitness_j2;
+    
+    for (int32_t i = 0; i< Neat_Species.size(); i++){
+        species_rank.push_back(i);
+    }
+    // Log::info("islands can get killed: \n"); 
+    // for (int32_t i = 0; i< species_rank.size(); i++){
+    //     Log::error("%d \n",species_rank[i]);
+    // }
+    for (int32_t i = 0; i < species_rank.size() - 1; i++)   {
+        for (int32_t j = 0; j < species_rank.size() - i - 1; j++)  {
+            fitness_j1 = Neat_Species[species_rank[j]]->get_best_fitness();
+            fitness_j2 = Neat_Species[species_rank[j+1]]->get_best_fitness();
+            if (fitness_j1 < fitness_j2) {
+                temp = species_rank[j];
+                species_rank[j] = species_rank[j+1];
+                species_rank[j+1]= temp;
+            }
+        }
+    }   
+    Log::error("species rank: \n");
+    for (int32_t i = 0; i< species_rank.size(); i++){
+        Log::error("species: %d fitness %f \n", species_rank[i], Neat_Species[species_rank[i]]->get_best_fitness());
+    } 
+    return species_rank;
+}
+
+void NeatSpeciationStrategy::check_population() {
+    // check if the population fitness is not improving for 2250 genomes, 
+    // if so only save the top 2 species and erase the rest
+        Log::error("checking population \n");
+    if (population_not_improving_count >= 10) {
+        vector<int32_t> species_rank = rank_species();
+        Log::error ("current number of species: %d \n", Neat_Species.size());
+        for (int i = 0; i < species_rank.size() - 2; i++) {
+            Neat_Species[species_rank[i+2]] -> erase_species();
+            //vec.erase(vec.begin() + index)
+            Neat_Species.erase(Neat_Species.begin() + species_rank[i+2]);
+        }
+        if (Neat_Species.size() != 2) {
+            Log::error("It should never happen, the population has %d number of species instead of 2! \n", Neat_Species.size());
+        }
+        Log::error("erase finished!");
+        Log::error ("current number of species: %d \n", Neat_Species.size());
+    }
+}
+
+void NeatSpeciationStrategy::check_species() {
+    Log::error("checking speies \n");
+    for (int i = 0; i < Neat_Species.size(); i ++) {
+        if (Neat_Species[i] -> get_species_not_improving_count() >= 5) {
+            Log::error("Species at position %d hasn't been improving for 3000 genomes, erasing it \n", i );
+            Log::error ("current number of species: %d \n", Neat_Species.size());
+            Neat_Species[i] -> erase_species();
+            Neat_Species.erase(Neat_Species.begin() + i);
+        }
+    }
+    Log::error("finished checking species, current number of species: %d \n", Neat_Species.size());
 }
