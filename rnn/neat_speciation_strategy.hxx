@@ -18,8 +18,8 @@ using std::uniform_real_distribution;
 class NeatSpeciationStrategy : public SpeciationStrategy {
     private:
         int32_t generation_species; /**< Used to track which island to generate the next genome from. */
-        int32_t species_count;
-
+        int32_t species_count; /** < Used to keep track of the number of species generated . */
+        int32_t population_not_improving_count;
         double species_threshold;
         double fitness_threshold;
         double neat_c1; 
@@ -128,6 +128,12 @@ class NeatSpeciationStrategy : public SpeciationStrategy {
         double get_distance(RNN_Genome* g1, RNN_Genome* g2);
 
         int get_exceed_number(vector<int32_t> v1, vector<int32_t> v2);
+
+        vector<int32_t> rank_species();
+
+        void check_population();
+
+        void check_species();
 
 };
 

@@ -18,7 +18,7 @@ using std::to_string;
 
 #include "common/log.hxx"
         // Species(int32_t id, double fitness_th);
-Species::Species(int32_t _id) : id(_id) {
+Species::Species(int32_t _id) : id(_id), species_not_improving_count(0) {
 }
 
 RNN_Genome* Species::get_best_genome() {
@@ -134,9 +134,13 @@ int32_t Species::insert_genome(RNN_Genome *genome) {
             vector<double> best_parameters = genome->get_best_parameters();
             genome->set_weights(best_parameters);
         }
+        species_not_improving_count = 0;
+    } else  {
+        species_not_improving_count ++;
     }
     inserted_genome_id.push_back( copy -> get_generation_id());
     Log::info("latest inserted generation id is: %d \n", inserted_genome_id.back());
+    Log::error("genome %d inserted! \n", genome -> get_generation_id());
     return insert_index;
 }
 
@@ -214,4 +218,16 @@ void Species::fitness_sharing_remove(double fitness_threshold, function<double (
         i++;
 	}
     
+}
+
+void Species::erase_species() {
+    genomes.clear();
+    Log::error("current species size after erased: %d\n", genomes.size());
+    if(genomes.size()!=0){
+        Log::error("The worst island is not fully erased!\n");
+    }
+}
+
+int32_t Species::get_species_not_improving_count() {
+    return species_not_improving_count;
 }
