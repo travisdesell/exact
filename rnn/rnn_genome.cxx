@@ -566,10 +566,16 @@ double RNN_Genome::get_avg_edge_weight() {
     double avg_weight;
     double weights = 0;
     for (int i = 0; i < edges.size(); i++) {
+        if(edges[i] -> weight > 10) {
+            Log::error("ERROR: edge %d has weight %f \n", i, edges[i]-> weight);
+        }
         weights += edges[i] -> weight;
     }
     for (int i = 0; i < recurrent_edges.size(); i++) {
         weights += recurrent_edges[i] -> weight;
+        if(recurrent_edges[i] -> weight > 10) {
+            Log::error("ERROR: recurrent edge %d has weight %f \n", i, recurrent_edges[i]-> weight);
+        }
     }
     int32_t N = edges.size() + recurrent_edges.size();
     avg_weight = weights / N;
@@ -586,6 +592,7 @@ void RNN_Genome::initialize_randomly() {
         initial_parameters[i] = rng(generator);
     }
     this->set_best_parameters(initial_parameters); 
+    this->set_weights(initial_parameters);
 }
 
 
