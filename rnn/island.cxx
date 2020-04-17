@@ -215,8 +215,12 @@ int32_t Island::insert_genome(RNN_Genome *genome) {
 
     //inorder insert the new individual
     RNN_Genome *copy = genome->copy();
+    vector<double> best = copy -> get_best_parameters();
+    if(best.size() != 0){
+        copy->set_weights(best);
+    }
+    copy -> set_generation_id (genome -> get_generation_id());
     Log::info("created copy to insert to island: %d\n", copy->get_group_id());
-
     auto index_iterator = upper_bound(genomes.begin(), genomes.end(), copy, sort_genomes_by_fitness());
     int32_t insert_index = index_iterator - genomes.begin();
     Log::info("inserting genome at index: %d\n", insert_index);
