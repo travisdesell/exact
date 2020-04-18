@@ -129,9 +129,9 @@ class NeatSpeciationStrategy : public SpeciationStrategy {
 
         int get_exceed_number(vector<int32_t> v1, vector<int32_t> v2);
 
-        vector<int32_t> rank_species();
+        void rank_species();
 
-        void check_population();
+        bool check_population();
 
         void check_species();
 
