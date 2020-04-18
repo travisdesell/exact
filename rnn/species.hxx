@@ -32,8 +32,6 @@ class Species {
          */
         vector<RNN_Genome *> genomes;
 
-        double fitness_threshold = 5;
-
         int32_t species_not_improving_count;
 
     public:

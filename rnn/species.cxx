@@ -67,7 +67,7 @@ int32_t Species::contains(RNN_Genome* genome) {
 
 
 void Species::copy_random_genome(uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator, RNN_Genome **genome) {
-    int32_t genome_position = size() * rng_0_1(generator);
+    int32_t genome_position = size() * rng_0_1(generator); 
     *genome = genomes[genome_position]->copy();
 }
 
@@ -97,23 +97,23 @@ int32_t Species::insert_genome(RNN_Genome *genome) {
     double new_fitness = genome->get_fitness();
     Log::info("inserting genome with fitness: %s to species %d\n", parse_fitness(genome->get_fitness()).c_str(), id);
 
-    int32_t duplicate_genome_index = contains(genome);
-    if (duplicate_genome_index >= 0) {
-        //if fitness is better, replace this genome with new one
-        Log::info("found duplicate genome at position: %d\n", duplicate_genome_index);
+    // int32_t duplicate_genome_index = contains(genome);
+    // if (duplicate_genome_index >= 0) {
+    //     //if fitness is better, replace this genome with new one
+    //     Log::info("found duplicate genome at position: %d\n", duplicate_genome_index);
 
-        RNN_Genome *duplicate = genomes[duplicate_genome_index];
-        if (duplicate->get_fitness() > new_fitness) {
-            //erase the genome with loewr fitness from the vector;
-            Log::info("REPLACING DUPLICATE GENOME, fitness of genome in search: %s, new fitness: %s\n", parse_fitness(duplicate->get_fitness()).c_str(), parse_fitness(genome->get_fitness()).c_str());
-            genomes.erase(genomes.begin() + duplicate_genome_index);
-            delete duplicate;
+    //     RNN_Genome *duplicate = genomes[duplicate_genome_index];
+    //     if (duplicate->get_fitness() > new_fitness) {
+    //         //erase the genome with loewr fitness from the vector;
+    //         Log::info("REPLACING DUPLICATE GENOME, fitness of genome in search: %s, new fitness: %s\n", parse_fitness(duplicate->get_fitness()).c_str(), parse_fitness(genome->get_fitness()).c_str());
+    //         genomes.erase(genomes.begin() + duplicate_genome_index);
+    //         delete duplicate;
 
-        } else {
-            Log::info("island already contains genome with a better fitness! not inserting.\n");
-            return -1;
-        }
-    }
+    //     } else {
+    //         Log::info("island already contains genome with a better fitness! not inserting.\n");
+    //         return -1;
+    //     }
+    // }
 
     //inorder insert the new individual
     RNN_Genome *copy = genome->copy();
@@ -151,7 +151,6 @@ int32_t Species::insert_genome(RNN_Genome *genome) {
         species_not_improving_count ++;
     }
     inserted_genome_id.push_back( copy -> get_generation_id());
-    Log::info("latest inserted generation id is: %d \n", inserted_genome_id.back());
     Log::info("genome %d inserted! \n", genome -> get_generation_id());
     return insert_index;
 }
@@ -234,7 +233,7 @@ void Species::fitness_sharing_remove(double fitness_threshold, function<double (
 
 void Species::erase_species() {
     genomes.clear();
-    Log::error("current species size after erased: %d\n", genomes.size());
+    // Log::error("current species size after erased: %d\n", genomes.size());
     if(genomes.size()!=0){
         Log::error("The worst island is not fully erased!\n");
     }
