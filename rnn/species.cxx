@@ -242,3 +242,7 @@ void Species::erase_species() {
 int32_t Species::get_species_not_improving_count() {
     return species_not_improving_count;
 }
+
+void Species::set_species_not_improving_count(int32_t count) {
+    species_not_improving_count = count;
+}

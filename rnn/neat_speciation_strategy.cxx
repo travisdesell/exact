@@ -142,6 +142,9 @@ int32_t NeatSpeciationStrategy::insert_genome(RNN_Genome* genome) {
     if (!erased_population) {
             check_species();
     }
+    else {
+        population_not_improving_count = 0;
+    }
     vector<double> best = genome -> get_best_parameters();
 
     if(best.size() != 0){
@@ -489,7 +492,7 @@ void NeatSpeciationStrategy::rank_species() {
 
 bool NeatSpeciationStrategy::check_population() {
     bool erased = false;
-    // check if the population fitness is not improving for 2250 genomes, 
+    // check if the population fitness is not improving for 3000 genomes, 
     // if so only save the top 2 species and erase the rest
 
     if (population_not_improving_count >= 3000) {
@@ -503,6 +506,7 @@ bool NeatSpeciationStrategy::check_population() {
         for (int i = 0; i < 2; i++){
             Log::error("species %d size %d\n",i, Neat_Species[i]->size() );
             Log::error("species %d fitness %f\n",i, Neat_Species[i]->get_best_fitness() );
+            Neat_Species[i]->set_species_not_improving_count(0);
         }
         Log::error("erase finished!\n");
         Log::error ("current number of species: %d \n", Neat_Species.size());

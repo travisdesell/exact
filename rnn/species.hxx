@@ -138,6 +138,8 @@ class Species {
         void erase_species();
 
         int32_t get_species_not_improving_count();
+
+        void set_species_not_improving_count(int32_t count);
 };
 
 #endif
