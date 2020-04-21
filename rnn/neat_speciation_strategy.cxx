@@ -180,7 +180,7 @@ int32_t NeatSpeciationStrategy::insert_genome(RNN_Genome* genome) {
             }
             double distance = get_distance(genome_representation, genome);
   
-            Log::info("distance is %f \n", distance);
+            // Log::error("distance is %f \n", distance);
 
             if (distance < species_threshold) {
                 Log::info("inserting genome to species: %d\n", species_list[i]);
@@ -481,7 +481,10 @@ void NeatSpeciationStrategy::rank_species() {
                 Neat_Species[j+1]= temp;
             }
         }
-    }   
+    }  
+    for (int32_t i = 0; i < Neat_Species.size() -1; i++) {
+        Log::error("Neat specis rank: %f \n", Neat_Species[i]->get_best_fitness());
+    } 
 }
 
 bool NeatSpeciationStrategy::check_population() {
@@ -493,12 +496,13 @@ bool NeatSpeciationStrategy::check_population() {
         Log::error("the population fitness has not been improved for 3000 genomes, start to erasing \n");
         rank_species();
 
-	    Neat_Species.erase(Neat_Species.begin() + 2, Neat_Species.end());
+	    Neat_Species.erase(Neat_Species.begin(), Neat_Species.end()-2);
         if (Neat_Species.size() != 2) {
             Log::error("It should never happen, the population has %d number of species instead of 2! \n", Neat_Species.size());
         }
         for (int i = 0; i < 2; i++){
             Log::error("species %d size %d\n",i, Neat_Species[i]->size() );
+            Log::error("species %d fitness %f\n",i, Neat_Species[i]->get_best_fitness() );
         }
         Log::error("erase finished!\n");
         Log::error ("current number of species: %d \n", Neat_Species.size());
