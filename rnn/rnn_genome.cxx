@@ -1656,7 +1656,7 @@ bool RNN_Genome::attempt_edge_insert(RNN_Node_Interface *n1, RNN_Node_Interface 
 
     RNN_Edge *e = new RNN_Edge(++edge_innovation_count, n1, n2);
     e->weight = bound(normal_distribution.random(generator, mu, sigma));
-
+    // Log::error("attempt edge insert weight: %f \n", e->weight);
     Log::info("\tadding edge between nodes %d and %d, new edge weight: %lf\n", e->input_innovation_number, e->output_innovation_number, e->weight);
 
     edges.insert( upper_bound(edges.begin(), edges.end(), e, sort_RNN_Edges_by_depth()), e);
@@ -2568,7 +2568,7 @@ bool RNN_Genome::merge_node(double mu, double sigma, int node_type, uniform_int_
 
     if (node_type == JORDAN_NODE || node_type == ELMAN_NODE) generate_recurrent_edges(new_node, mu, sigma, dist, edge_innovation_count);
 
-    return false;
+    return true;
 }
 
 string RNN_Genome::get_color(double weight, bool is_recurrent) {
