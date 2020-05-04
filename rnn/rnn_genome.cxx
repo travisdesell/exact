@@ -585,6 +585,7 @@ void RNN_Genome::initialize_randomly() {
     for (uint32_t i = 0; i < initial_parameters.size(); i++) {
         initial_parameters[i] = rng(generator);
     }
+    this->set_weights(initial_parameters);
     this->set_best_parameters(initial_parameters); 
 }
 

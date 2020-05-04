@@ -408,7 +408,7 @@ RNN_Genome* IslandSpeciationStrategy::generate_genome(uniform_real_distribution<
                 //after the worst island is filled, set the island status to filled
                 //then generate a genome for filled status, so this function still return a generated genome
                 Log::info("island is repopulating through bestIsland method!\n");
-                Log::info("island current size is: %d \n", islands[generation_island]->get_genomes().size());
+                Log::info("island current size is: %d \n", islands[generation_island]->size());
                 RNN_Genome *best_genome = get_best_genome()->copy();
                 int32_t best_island_id = best_genome->get_group_id();
                 fill_island(best_island_id);
