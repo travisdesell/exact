@@ -71,16 +71,6 @@ bool Island::is_repopulating() {
 }
 
 
-int32_t Island::contains(RNN_Genome* genome) {
-    for (int32_t j = 0; j < (int32_t)genomes.size(); j++) {
-        if (genomes[j]->equals(genome)) {
-            return j;
-        }
-    }
-
-    return -1;
-}
-
 
 void Island::copy_random_genome(uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator, RNN_Genome **genome) {
     int32_t genome_position = size() * rng_0_1(generator);
@@ -344,8 +334,7 @@ void Island::erase_island() {
     }
 }
 
-int32_t Island::get_erased_generation_id(){
-
+int32_t Island::get_erased_generation_id() {
     return erased_generation_id;
 }
 
@@ -353,8 +342,8 @@ int32_t Island::get_status() {
     return status;
 }
 
-void Island::set_status(int32_t status_to_set){
-    if(status_to_set >=0 || status_to_set <=2){
+void Island::set_status(int32_t status_to_set) {
+    if(status_to_set >= 0 || status_to_set <= 2){
         status = status_to_set;
     }
     else{
@@ -364,11 +353,11 @@ void Island::set_status(int32_t status_to_set){
 
 }
 
-bool Island::been_erased(){
+bool Island::been_erased() {
     return erased;
 }
 
-vector<RNN_Genome *> Island::get_genomes(){
+vector<RNN_Genome *> Island::get_genomes() {
     return genomes;
 }
 

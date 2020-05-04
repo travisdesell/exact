@@ -123,15 +123,6 @@ class Island {
         bool is_repopulating();
 
         /**
-         * Checks to see if a genome already exists in the island, using
-         * the RNN_Genome::equals method (which checks to see if all edges
-         * and nodes are the same, but not necessarily weights).
-         *
-         * \return the index in the island of the duplicate genome, -1 otherwise.
-         */
-        int32_t contains(RNN_Genome* genome);
-
-        /**
          * Selects a genome from the island at random and returns a copy of it.
          *
          * \param rng_0_1 is the random number distribution that generates random numbers between 0 (inclusive) and 1 (non=inclusive).
