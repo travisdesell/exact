@@ -224,6 +224,8 @@ void worker(int rank) {
 // }
 
 int main(int argc, char** argv) {
+
+
     MPI_Init(&argc, &argv);
 
     int rank, max_rank;
@@ -360,6 +362,8 @@ int main(int argc, char** argv) {
 
     Log::clear_rank_restriction();
 
+    printf("wtf\n");
+    fflush(stdout);
     if (rank == 0) {
         examm = new EXAMM(population_size, number_islands, max_genomes, extinction_event_generation_number, islands_to_exterminate, island_ranking_method,
             repopulation_method, repopulation_mutations,

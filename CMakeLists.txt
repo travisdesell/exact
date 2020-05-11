@@ -17,9 +17,9 @@ SET (PLATFORM 64)
 #SET (CMAKE_CXX_FLAGS                "-std=c++11 -Wall -O3 -funroll-loops -msse3 -DNAN_CHECKS")
 
 # 1 This line for local
-SET (CMAKE_CXX_FLAGS                "-std=c++17 -Wall -O3 -funroll-loops  -msse3 -fsanitize=address -fno-omit-frame-pointer -D_GLIBCXX_DEBUG")
+# SET (CMAKE_CXX_FLAGS                "-std=c++17 -Wall -O3 -funroll-loops  -msse3 -fsanitize=address -fno-omit-frame-pointer -D_GLIBCXX_DEBUG")
 # 2 This line for cluster
-#SET (CMAKE_CXX_FLAGS                "-std=c++17 -Wall -O3 -funroll-loops  -msse3 -fno-omit-frame-pointer -D_GLIBCXX_DEBUG")
+SET (CMAKE_CXX_FLAGS                "-std=c++17 -Wall -O3 -funroll-loops  -msse3 -fno-omit-frame-pointer -D_GLIBCXX_DEBUG")
 
 #SET (CMAKE_CXX_FLAGS                "-std=c++17 -Wall -O3 -funroll-loops -msse3")
 SET (CMAKE_CXX_FLAGS_DEBUG          "-g")
@@ -46,13 +46,7 @@ MESSAGE(STATUS "MPI library: ${MPI_LIBRARY}")
 MESSAGE(STATUS "MPI extra: ${MPI_EXTRA}")
 include_directories(${MPI_INCLUDE_PATH})
 
-find_package(BOINC)
-MESSAGE(STATUS "BOINC_APP_FOUND: ${BOINC_APP_FOUND}")
-MESSAGE(STATUS "BOINC_SERVER_FOUND: ${BOINC_SERVER_FOUND}")
-
 include_directories(${PROJECT_SOURCE_DIR})
-
-SET(COMPILE_CLIENT "NO" CACHE STRING "Compile the BOINC client app or not")
 
 MESSAGE(STATUS "COMPILE CLIENT SET TO: ${COMPILE_CLIENT}")
 
@@ -91,50 +85,8 @@ ENDIF (COMPILE_CLIENT STREQUAL "YES")
 
 
 add_subdirectory(common)
-add_subdirectory(image_tools)
 add_subdirectory(time_series)
-add_subdirectory(cnn)
 
 add_subdirectory(rnn)
-add_subdirectory(rnn_tests)
-add_subdirectory(rnn_examples)
 
-#add_subdirectory(opencl)
-
-add_subdirectory(cnn_tests)
-add_subdirectory(cnn_examples)
-add_subdirectory(multithreaded)
 add_subdirectory(mpi)
-
-
-
-IF (COMPILE_CLIENT STREQUAL "YES")
-    if (BOINC_APP_FOUND)
-        message(STATUS "BOINC APP FOUND!")
-        include_directories(${BOINC_INCLUDE_DIR})
-        include_directories(${BOINC_INCLUDE_DIR}/api)
-        include_directories(${BOINC_INCLUDE_DIR}/lib)
-
-        add_subdirectory(client)
-    ENDIF (BOINC_APP_FOUND)
-ENDIF (COMPILE_CLIENT STREQUAL "YES")
-
-
-IF (BOINC_SERVER_FOUND)
-    MESSAGE(STATUS "BOINC_SERVER_FOUND")
-
-    MESSAGE(STATUS "OpenSSL required.")
-    find_package(OpenSSL REQUIRED)
-
-    include_directories(
-        ${BOINC_INCLUDE_DIR}
-        ${BOINC_INCLUDE_DIR}/api
-        ${BOINC_INCLUDE_DIR}/db
-        ${BOINC_INCLUDE_DIR}/lib
-        ${BOINC_INCLUDE_DIR}/sched
-        ${BOINC_INCLUDE_DIR}/tools/
-        ${MYSQL_INCLUDE_DIR}
-        )
-
-    #    add_subdirectory(server)
-ENDIF(BOINC_SERVER_FOUND)

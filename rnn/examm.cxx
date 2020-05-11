@@ -255,7 +255,8 @@ EXAMM::EXAMM(
         "merge_node",
         "split_edge"
     };
-
+	
+    printf("1\n");
     for (int i = 0; i < ops_with_node_type.size(); i++) {
         string op = ops_with_node_type[i];
         for (int j = 0; j < possible_node_types.size(); j++) {
@@ -264,6 +265,7 @@ EXAMM::EXAMM(
         }
     }
 
+    printf("2\n");
     // Set the possible node types here so we can create our ThompsonSampling with the appropriate number of actions
     if (possible_node_type_strings.size() > 0) this->set_possible_node_types(possible_node_type_strings);
     
@@ -275,6 +277,7 @@ EXAMM::EXAMM(
         }
     }
 
+    printf("3\n");
     // Make the ThompsanSamplig if need be
     if (_use_node_type_thompson_sampling) {
         node_type_selector = new BetaThompsonSampling(possible_node_types.size(), _node_type_sampling_decay_rate);
@@ -324,6 +327,7 @@ EXAMM::EXAMM(
         mutation_selector = new BetaThompsonSampling(possible_mutations.size(), _mutation_sampling_decay_rate);
     }
     
+    printf("4\n");
     if (output_directory != "") {
         mkpath(output_directory.c_str(), 0777);
         log_file = new ofstream(output_directory + "/" + "fitness_log.csv");
@@ -356,6 +360,7 @@ EXAMM::EXAMM(
         op_log_file = NULL;
     }
 
+    printf("5\n");
     startClock = std::chrono::system_clock::now();
 }
 
@@ -538,7 +543,7 @@ bool EXAMM::insert_genome(RNN_Genome* genome) {
                 speciation_strategy->get_generated_genomes() >= number_islands * population_size * 4 &&
                 mutation_string_to_possible_node_ty_index.count(generated_by) > 0) {
                 int32_t index = mutation_string_to_possible_node_ty_index[generated_by];
-                printf("Generated %d\n", speciation_strategy->get_generated_genomes()); 
+                // printf("Generated %d\n", speciation_strategy->get_generated_genomes()); 
                 // double reward = 1.0 - ((double) insert_position / (double) population_size) - 0.5;
 
                 if (insert_position < 0)
@@ -546,8 +551,6 @@ bool EXAMM::insert_genome(RNN_Genome* genome) {
                 if (insert_position == 0)
                     reward = 1;
 
-                printf("Reward for insert position %d with node type %s = %f\n", insert_position, generated_by.c_str(), reward);
-                
                 // For now the reward is always 1.0, but in the future the reward can be increased for
                 // a better increase in performance.
                 node_type_selector->update(index, reward);
@@ -607,7 +610,7 @@ RNN_Genome* EXAMM::generate_genome() {
 int EXAMM::get_random_node_type() {
     int32_t node_type_index;
 
-    if (node_type_selector == NULL)
+    if (node_type_selector == NULL || speciation_strategy->get_inserted_genomes() < 2000)
         node_type_index = rng_0_1(generator) * possible_node_types.size();
     else
         node_type_index = node_type_selector->sample_action(generator);
