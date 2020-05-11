@@ -84,7 +84,10 @@ EXAMM::EXAMM(
         double _node_type_sampling_decay_rate,
         bool _use_mutation_thompson_sampling,
         double _mutation_sampling_decay_rate,
-        bool _use_node_type_thompson_sampling) :
+        bool _use_node_type_thompson_sampling,
+        int32_t _max_number_mutations,
+        double _number_mutation_sampling_decay_rate,
+        bool _use_number_mutations_sampling) :
                         population_size(_population_size),
                         number_islands(_number_islands),
                         max_genomes(_max_genomes),
@@ -275,8 +278,11 @@ EXAMM::EXAMM(
     // Make the ThompsanSamplig if need be
     if (_use_node_type_thompson_sampling) {
         node_type_selector = new BetaThompsonSampling(possible_node_types.size(), _node_type_sampling_decay_rate);
-    } else {
-        node_type_selector = NULL;
+    }
+
+    if (_use_number_mutations_sampling) {
+        max_number_mutations = _max_number_mutations;
+        number_mutations_selector = new BetaThompsonSampling(max_number_mutations, _number_mutation_sampling_decay_rate);
     }
 
     // This section fills up the 'mutation_string_to_mutation_index' which maps
@@ -316,8 +322,6 @@ EXAMM::EXAMM(
 
     if (_use_mutation_thompson_sampling) {
         mutation_selector = new BetaThompsonSampling(possible_mutations.size(), _mutation_sampling_decay_rate);
-    } else {
-        mutation_selector = NULL;
     }
     
     if (output_directory != "") {
@@ -502,10 +506,19 @@ bool EXAMM::insert_genome(RNN_Genome* genome) {
 
     // Name of the operator
     const map<string, int> *generated_by_map = genome->get_generated_by_map();
+    int32_t number_mutations = 0;
+
+    double worst_fitness = get_worst_fitness();
+    double best_fitness = get_best_fitness();
+    double fitness = genome->get_fitness();
+
+    printf("worst: %f, best: %f, fitness: %f\n", worst_fitness, best_fitness, fitness);
+
+    double reward = 1 - ((fitness - best_fitness) / (worst_fitness - best_fitness));
 
     for (auto it = generated_by_map->begin(); it != generated_by_map->end(); it++) {
         string generated_by = it->first;
-
+        number_mutations += it->second;
         if (generated_counts.count(generated_by) > 0) {
             generated_counts["genomes"] += 1;
 
@@ -527,21 +540,13 @@ bool EXAMM::insert_genome(RNN_Genome* genome) {
                 int32_t index = mutation_string_to_possible_node_ty_index[generated_by];
                 printf("Generated %d\n", speciation_strategy->get_generated_genomes()); 
                 // double reward = 1.0 - ((double) insert_position / (double) population_size) - 0.5;
-                
-                double worst_fitness = get_worst_fitness();
-                double best_fitness = get_best_fitness();
-                double fitness = genome->get_fitness();
-
-                printf("worst: %f, best: %f, fitness: %f\n", worst_fitness, best_fitness, fitness);
-
-                double reward = 1 - ((fitness - best_fitness) / (worst_fitness - best_fitness));
 
                 if (insert_position < 0)
                     reward = 0;
                 if (insert_position == 0)
                     reward = 1;
 
-                printf("Reward for insert position %d with node type %s = %llf\n", insert_position, generated_by.c_str(), reward);
+                printf("Reward for insert position %d with node type %s = %f\n", insert_position, generated_by.c_str(), reward);
                 
                 // For now the reward is always 1.0, but in the future the reward can be increased for
                 // a better increase in performance.
@@ -554,6 +559,9 @@ bool EXAMM::insert_genome(RNN_Genome* genome) {
         }
     }
 
+    if (number_mutations_selector != NULL)
+        number_mutations_selector->update(number_mutations - 1, reward);
+
     speciation_strategy->print();
     update_log();
 
@@ -565,7 +573,8 @@ RNN_Genome* EXAMM::generate_genome() {
 
     function<void (int32_t, RNN_Genome*)> mutate_function =
         [=](int32_t max_mutations, RNN_Genome *genome) {
-            this->mutate(max_mutations, genome);
+            int32_t n_mutations = max_mutations <= 0 ? max_mutations : this->get_random_number_mutations();
+            this->mutate(n_mutations, genome);
         };
 
     function<RNN_Genome* (RNN_Genome*, RNN_Genome*)> crossover_function =
@@ -606,6 +615,16 @@ int EXAMM::get_random_node_type() {
     return possible_node_types[node_type_index];
 }
 
+int32_t EXAMM::get_random_number_mutations() {
+    int32_t number_mutations;
+
+    if (number_mutations_selector == NULL)
+        number_mutations = 1;
+    else
+        number_mutations = number_mutations_selector->sample_action(generator) + 1;
+
+    return number_mutations;
+}
 
 void EXAMM::mutate(int32_t max_mutations, RNN_Genome *g) {
     double total = clone_rate + add_edge_rate + add_recurrent_edge_rate + enable_edge_rate + disable_edge_rate + split_edge_rate + add_node_rate + enable_node_rate + disable_node_rate + split_node_rate + merge_node_rate;

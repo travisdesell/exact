@@ -158,18 +158,27 @@ int main(int argc, char** argv) {
 
     int32_t number_slices;
     get_argument(arguments, "--number_slices", true, number_slices);
-    
+
     bool use_node_type_thompson_sampling = false;
     get_argument(arguments, "--use_node_type_thompson_sampling", false, use_node_type_thompson_sampling);
 
     bool use_mutation_thompson_sampling = false;
     get_argument(arguments, "--use_mutation_thompson_sampling", false, use_mutation_thompson_sampling);
 
+    bool use_number_mutations_thompson_sampling = false;
+    get_argument(arguments, "--use_number_mutations_thompson_sampling", false, use_number_mutations_thompson_sampling);
+
+    int32_t max_number_mutations = 1;
+    get_argument(arguments, "--max_number_mutations", false, max_number_mutations);
+
     double mutation_sampling_decay_rate = 1.0;
     get_argument(arguments, "--mutation_sampling_decay_rate", false, mutation_sampling_decay_rate);
 
     double node_type_sampling_decay_rate = 1.0;
-    get_argument(arguments, "--node_type_sampling_decay_rate", false, node_type_sampling_decay_rate);   
+    get_argument(arguments, "--node_type_sampling_decay_rate", false, node_type_sampling_decay_rate);
+
+    double number_mutations_sampling_decay_rate = 1.0;
+    get_argument(arguments, "--number_mutations_sampling_decay_rate", false, number_mutations_sampling_decay_rate);
 
     time_series_sets->split_all(number_slices);
 
@@ -221,7 +230,8 @@ int main(int argc, char** argv) {
                     NULL,
                     start_filled,
                     use_node_type_thompson_sampling, node_type_sampling_decay_rate,
-                    use_mutation_thompson_sampling, mutation_sampling_decay_rate);
+                    use_mutation_thompson_sampling, mutation_sampling_decay_rate,
+                    max_number_mutations, number_mutations_sampling_decay_rate, use_number_mutations_thompson_sampling);
             // In examm constructor
             // if (possible_node_types.size() > 0) examm->set_possible_node_types(possible_node_types);
 

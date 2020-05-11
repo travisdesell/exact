@@ -319,19 +319,28 @@ int main(int argc, char** argv) {
 
     bool start_filled = false;
     get_argument(arguments, "--start_filled", false, start_filled);
-    
+   
     bool use_node_type_thompson_sampling = false;
     get_argument(arguments, "--use_node_type_thompson_sampling", false, use_node_type_thompson_sampling);
 
     bool use_mutation_thompson_sampling = false;
     get_argument(arguments, "--use_mutation_thompson_sampling", false, use_mutation_thompson_sampling);
 
+    bool use_number_mutations_thompson_sampling = false;
+    get_argument(arguments, "--use_number_mutations_thompson_sampling", false, use_number_mutations_thompson_sampling);
+
+    int32_t max_number_mutations = 1;
+    get_argument(arguments, "--max_number_mutations", false, max_number_mutations);
+
     double mutation_sampling_decay_rate = 1.0;
     get_argument(arguments, "--mutation_sampling_decay_rate", false, mutation_sampling_decay_rate);
 
     double node_type_sampling_decay_rate = 1.0;
-    get_argument(arguments, "--node_type_sampling_decay_rate", false, node_type_sampling_decay_rate);   
- 
+    get_argument(arguments, "--node_type_sampling_decay_rate", false, node_type_sampling_decay_rate);
+
+    double number_mutations_sampling_decay_rate = 1.0;
+    get_argument(arguments, "--number_mutations_sampling_decay_rate", false, number_mutations_sampling_decay_rate);
+
     Log::clear_rank_restriction();
 
     for (int32_t i = 0; i < time_series_sets->get_number_series(); i += fold_size) {
@@ -392,7 +401,8 @@ int main(int argc, char** argv) {
                     seed_genome,
                     start_filled,
                     use_node_type_thompson_sampling, node_type_sampling_decay_rate,
-                    use_mutation_thompson_sampling, mutation_sampling_decay_rate);
+                    use_mutation_thompson_sampling, mutation_sampling_decay_rate,
+                    max_number_mutations, number_mutations_sampling_decay_rate, use_number_mutations_thompson_sampling);
                 // This gets done inside the cosntructor
                 // examm->set_possible_node_types(possible_node_types);
 

@@ -88,12 +88,15 @@ class EXAMM {
 
         vector<int> possible_node_types;
 
-        ThompsonSampling *node_type_selector;
+        ThompsonSampling *node_type_selector = NULL;
         map<string, int> mutation_string_to_possible_node_ty_index;
 
         vector<string> possible_mutations;
-        ThompsonSampling *mutation_selector;
+        ThompsonSampling *mutation_selector = NULL;
         map<string, int> mutation_string_to_mutation_index;
+
+        int32_t max_number_mutations;
+        ThompsonSampling *number_mutations_selector = NULL;
 
         vector<string> op_log_ordering;
         map<string, int32_t> inserted_counts;
@@ -154,7 +157,10 @@ class EXAMM {
                 double _node_type_sampling_decay_rate,
                 bool _use_node_type_thompson_sampling,
                 double _mutation_sampling_decay_rate,
-                bool _use_mutation_thompson_sampling);
+                bool _use_mutation_thompson_sampling,
+                int32_t _max_number_mutations,
+                double _number_mutation_sampling_decay_rate,
+                bool _use_number_mutations_sampling);
 
 
         ~EXAMM();
@@ -172,6 +178,7 @@ class EXAMM {
         RNN_Genome* generate_genome();
         bool insert_genome(RNN_Genome* genome);
 
+        int32_t get_random_number_mutations();
         void mutate(int32_t max_mutations, RNN_Genome *p1);
 
         void attempt_node_insert(vector<RNN_Node_Interface*> &child_nodes, const RNN_Node_Interface *node, const vector<double> &new_weights);

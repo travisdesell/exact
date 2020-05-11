@@ -457,7 +457,9 @@ RNN_Genome* IslandSpeciationStrategy::generate_for_filled_island(uniform_real_di
         island->copy_random_genome(rng_0_1, generator, &genome);
 
         //TODO: make max_mutations an IslandSpeciationStrategy option
-        mutate(1 /*max_mutations*/, genome);
+        //TODO: Think of a better way to get a random number of mutations here, but for now if max mutations is <= 0, a random number will be generated
+        //       otherwise the supplied number will be used.
+        mutate(-1 /*max_mutations*/, genome);
 
     } else if (r < intra_island_crossover_rate || number_of_islands == 1) {
         //intra-island crossover

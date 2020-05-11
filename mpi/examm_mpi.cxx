@@ -327,11 +327,20 @@ int main(int argc, char** argv) {
     bool use_mutation_thompson_sampling = false;
     get_argument(arguments, "--use_mutation_thompson_sampling", false, use_mutation_thompson_sampling);
 
+    bool use_number_mutations_thompson_sampling = false;
+    get_argument(arguments, "--use_number_mutations_thompson_sampling", false, use_number_mutations_thompson_sampling);
+
+    int32_t max_number_mutations = 1;
+    get_argument(arguments, "--max_number_mutations", false, max_number_mutations);
+
     double mutation_sampling_decay_rate = 1.0;
     get_argument(arguments, "--mutation_sampling_decay_rate", false, mutation_sampling_decay_rate);
 
     double node_type_sampling_decay_rate = 1.0;
     get_argument(arguments, "--node_type_sampling_decay_rate", false, node_type_sampling_decay_rate);
+
+    double number_mutations_sampling_decay_rate = 1.0;
+    get_argument(arguments, "--number_mutations_sampling_decay_rate", false, number_mutations_sampling_decay_rate);
 
     RNN_Genome *seed_genome = NULL;
     string genome_file_name = "";
@@ -372,7 +381,8 @@ int main(int argc, char** argv) {
             seed_genome,
             start_filled,
             use_node_type_thompson_sampling, node_type_sampling_decay_rate,
-            use_mutation_thompson_sampling, mutation_sampling_decay_rate);
+            use_mutation_thompson_sampling, mutation_sampling_decay_rate,
+            max_number_mutations, number_mutations_sampling_decay_rate, use_number_mutations_thompson_sampling);
 
         master(max_rank);
     } else {
