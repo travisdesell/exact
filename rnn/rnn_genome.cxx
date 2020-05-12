@@ -83,6 +83,7 @@ void RNN_Genome::sort_recurrent_edges_by_depth() {
 RNN_Genome::RNN_Genome(vector<RNN_Node_Interface*> &_nodes, vector<RNN_Edge*> &_edges) {
     generation_id = -1;
     group_id = -1;
+    number_mutations_generated_by = 0;
 
     best_validation_mse = EXAMM_MAX_DOUBLE;
     best_validation_mae = EXAMM_MAX_DOUBLE;
@@ -155,6 +156,7 @@ RNN_Genome* RNN_Genome::copy() {
 
     RNN_Genome *other = new RNN_Genome(node_copies, edge_copies, recurrent_edge_copies);
 
+    other->number_mutations_generated_by = number_mutations_generated_by;
     other->group_id = group_id;
     other->bp_iterations = bp_iterations;
     other->learning_rate = learning_rate;
@@ -366,6 +368,10 @@ string RNN_Genome::generated_by_string() {
 
 const map<string, int> *RNN_Genome::get_generated_by_map() {
     return &generated_by_map;
+}
+
+int32_t RNN_Genome::get_number_mutations_generated_by() {
+    return number_mutations_generated_by;
 }
 
 vector<string> RNN_Genome::get_input_parameter_names() const {
@@ -2826,6 +2832,7 @@ void RNN_Genome::read_from_stream(istream &bin_istream) {
 
     bin_istream.read((char*)&generation_id, sizeof(int32_t));
     bin_istream.read((char*)&group_id, sizeof(int32_t));
+    bin_istream.read((char*)&number_mutations_generated_by, sizeof(int32_t));
     bin_istream.read((char*)&bp_iterations, sizeof(int32_t));
     bin_istream.read((char*)&learning_rate, sizeof(double));
     bin_istream.read((char*)&adapt_learning_rate, sizeof(bool));
@@ -3067,6 +3074,7 @@ void RNN_Genome::write_to_stream(ostream &bin_ostream) {
     Log::debug("WRITING GENOME TO STREAM\n");
     bin_ostream.write((char*)&generation_id, sizeof(int32_t));
     bin_ostream.write((char*)&group_id, sizeof(int32_t));
+    bin_ostream.write((char*)&number_mutations_generated_by, sizeof(int32_t));
     bin_ostream.write((char*)&bp_iterations, sizeof(int32_t));
     bin_ostream.write((char*)&learning_rate, sizeof(double));
     bin_ostream.write((char*)&adapt_learning_rate, sizeof(bool));
