@@ -100,7 +100,6 @@ EXAMM::EXAMM(
                         output_directory(_output_directory),
                         normalize_type(_normalize_type),
                         start_filled(_start_filled) {
-
     input_parameter_names = _input_parameter_names;
     output_parameter_names = _output_parameter_names;
     normalize_mins = _normalize_mins;

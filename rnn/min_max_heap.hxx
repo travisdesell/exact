@@ -34,7 +34,7 @@ class min_max_heap {
     typedef typename std::vector<T>::const_iterator const_iterator;
     
     vector<T> heap;
-    function<bool(const T&, const T&)> less_than;
+    std::function<bool(const T&, const T&)> less_than;
     
     static inline uint32_t parent(uint32_t z) { return (z - 1) / 2; }
 
@@ -158,7 +158,7 @@ public:
      * and determine if the first is less than the second. This could probably be done in a better way
      * with generics but I'm not confident in doing so.
      **/
-    min_max_heap(std::function<bool(const T&, const T&)> _less_than, uint32_t size_hint=-1) 
+    min_max_heap(std::function<bool(const T&, const T&)> _less_than, int32_t size_hint=-1) 
         : less_than(_less_than) {
         if (size_hint >= 0)
             heap.reserve(size_hint);
@@ -210,6 +210,24 @@ public:
             throw std::underflow_error("No minimum element exists because the heap is empty");
 
         return delete_element(find_min_index());
+    }
+
+    /**
+     * Remove the worst thing and add something else in O(log(n)) time. Doing so with a call to
+     * pop_max and enqueue would call two O(log(n)) operations rather than just one.
+     **/
+    T replace_max(const T& e) {
+        if (empty())
+            throw std::underflow_error("There is no max element because the heap is empty");
+
+        // Take out the max (always in position 0) and put the supplied element in its place.
+        T max = e;
+        std::swap(heap[0], max);
+
+        // Trickle the element down to an appropriate position.
+        trickle_down(0);
+        
+        return max;
     }
 
     /**
