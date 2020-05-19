@@ -100,7 +100,7 @@ for decayrate in "1.0" "0.99" "0.95" "0.90" "0.85" "0.80" "0.75" "0.70"; do
                     --file_message_level ERROR \
                     --use_number_mutations_thompson_sampling $use_thompson \
     		        --number_mutations_sampling_decay_rate $decayrate \
-                    --max_number_mutations 16
+                    --max_number_mutations 10
             done
         done
     done
