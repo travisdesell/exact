@@ -255,7 +255,7 @@ EXAMM::EXAMM(
         "merge_node",
         "split_edge"
     };
-	
+
     printf("1\n");
     for (int i = 0; i < ops_with_node_type.size(); i++) {
         string op = ops_with_node_type[i];
@@ -454,13 +454,22 @@ void EXAMM::update_log() {
         }
 
         (*op_log_file) << endl;
-        
-        for (int i = 0; i < max_number_mutations; i++) {
-            double alpha = number_mutations_selector->alphas[i];
-            double beta = number_mutations_selector->betas[i];
+       
+        if (number_mutations_selector != NULL)
+            for (int i = 0; i < max_number_mutations; i++) {
+                double alpha = number_mutations_selector->alphas[i];
+                double beta = number_mutations_selector->betas[i];
 
-            (*thompson_mutation_log_file) << alpha << ", " << beta << ", ";
-        }
+                (*thompson_mutation_log_file) << alpha << ", " << beta << ", ";
+            }
+        else
+            for (int i = 0; i < max_number_mutations; i++) {
+                double alpha = 1.0;
+                double beta = 1.0;
+
+                (*thompson_mutation_log_file) << alpha << ", " << beta << ", ";
+            }
+         
 
         (*thompson_mutation_log_file) << endl;
     }
