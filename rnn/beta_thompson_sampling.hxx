@@ -12,12 +12,11 @@ using std::string;
 using std::gamma_distribution;
 
 class BetaThompsonSampling : public ThompsonSampling {
-    private:
+    public:
         vector<double> alphas;
         vector<double> betas;
         double decay_rate;
 
-    public:
         /**
          * Creates a new ThompsonSampling object with _n_actions actions (identified by integer keys 0 through _n_actions - 1)
          **/

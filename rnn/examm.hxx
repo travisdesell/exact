@@ -20,6 +20,7 @@ using std::vector;
 #include "rnn_genome.hxx"
 #include "speciation_strategy.hxx"
 #include "thompson_sampling.hxx"
+#include "beta_thompson_sampling.hxx"
 
 class EXAMM {
     private:
@@ -96,7 +97,7 @@ class EXAMM {
         map<string, int> mutation_string_to_mutation_index;
 
         int32_t max_number_mutations;
-        ThompsonSampling *number_mutations_selector = NULL;
+        BetaThompsonSampling *number_mutations_selector = NULL;
 
         vector<string> op_log_ordering;
         map<string, int32_t> inserted_counts;
@@ -105,6 +106,7 @@ class EXAMM {
         string output_directory;
         ofstream *log_file;
         ofstream *op_log_file;
+        ofstream *thompson_mutation_log_file;
 
         vector<string> input_parameter_names;
         vector<string> output_parameter_names;

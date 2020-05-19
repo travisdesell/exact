@@ -355,6 +355,11 @@ EXAMM::EXAMM(
 
         (*op_log_file) << endl;
 
+        thompson_mutation_log_file = new ofstream(output_directory + "/thompson_mutation_log.csv");
+        for (int i = 0; i < max_number_mutations; i++) {
+            (*thompson_mutation_log_file) << (i + 1) << " Mutations Alpha, ";
+            (*thompson_mutation_log_file) << (i + 1) << " Mutations Beta, ";
+        }
     } else {
         log_file = NULL;
         op_log_file = NULL;
@@ -400,6 +405,19 @@ void EXAMM::update_log() {
             }
         }
 
+        if (!thompson_mutation_log_file->good()) {
+            op_log_file->close();
+            delete op_log_file;
+
+            string output_file = output_directory + "/thompson_mutation_log.csv";
+            op_log_file = new ofstream(output_file, std::ios_base::app);
+
+            if (!op_log_file->is_open()) {
+                Log::error("could not open EXAMM output log: '%s'\n", output_file.c_str());
+                exit(1);
+            }
+        }
+
         RNN_Genome *best_genome = get_best_genome();
         if (best_genome == NULL){
             best_genome = speciation_strategy->get_global_best_genome();
@@ -436,7 +454,15 @@ void EXAMM::update_log() {
         }
 
         (*op_log_file) << endl;
+        
+        for (int i = 0; i < max_number_mutations; i++) {
+            double alpha = number_mutations_selector->alphas[i];
+            double beta = number_mutations_selector->betas[i];
 
+            (*thompson_mutation_log_file) << alpha << ", " << beta << ", ";
+        }
+
+        (*thompson_mutation_log_file) << endl;
     }
 }
 
@@ -561,7 +587,7 @@ bool EXAMM::insert_genome(RNN_Genome* genome) {
         }
     }
 
-    if (number_mutations_selector != NULL && number_mutations > 0)
+    if (number_mutations_selector != NULL && number_mutations > 0 && speciation_strategy->get_generated_genomes() >= 4000)
         number_mutations_selector->update(number_mutations - 1, reward);
 
     speciation_strategy->print();
@@ -575,7 +601,7 @@ RNN_Genome* EXAMM::generate_genome() {
 
     function<void (int32_t, RNN_Genome*)> mutate_function =
         [=](int32_t max_mutations, RNN_Genome *genome) {
-            int32_t n_mutations = max_mutations <= 0 ? max_mutations : this->get_random_number_mutations();
+            int32_t n_mutations = this->get_random_number_mutations();
             this->mutate(n_mutations, genome);
         };
 
@@ -620,7 +646,7 @@ int EXAMM::get_random_node_type() {
 int32_t EXAMM::get_random_number_mutations() {
     int32_t number_mutations;
 
-    if (number_mutations_selector == NULL)
+    if (number_mutations_selector == NULL || speciation_strategy->get_generated_genomes() < 4000)
         number_mutations = 1;
     else
         number_mutations = number_mutations_selector->sample_action(generator) + 1;
