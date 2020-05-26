@@ -1,3 +1,5 @@
+#include <functional>
+
 inline uint32_t log2(uint32_t x) {
   // This won't work on non x86 platforms
   // https://stackoverflow.com/questions/994593/how-to-do-an-integer-log2-in-c
