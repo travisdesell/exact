@@ -150,6 +150,27 @@ void TimeSeries::cut(int32_t start, int32_t stop) {
     calculate_statistics();
 }
 
+double TimeSeries::get_correlation(const TimeSeries *other, int32_t lag) const {
+    double other_average = other->get_average();
+
+    int32_t length = fmin(values.size(), other->values.size()) - lag;
+
+    double covariance_sum = 0.0;
+    for (int32_t i = 0; i < length; i++) {
+        covariance_sum += (values[i + lag] - average) * (other->values[i] - other_average);
+    }
+
+    double other_variance = other->get_variance();
+    double correlation;
+    if (variance < 1e-12 || other_variance < 1e-12) {
+        correlation = 0.0;
+    } else {
+        correlation = (covariance_sum / sqrt(variance * other_variance)) / length;
+    }
+
+    return correlation;
+}
+
 TimeSeries::TimeSeries() {
 }
 
@@ -358,6 +379,12 @@ void TimeSeriesSet::normalize_avg_std_dev(string field, double avg, double std_d
     time_series[field]->normalize_avg_std_dev(avg, std_dev, norm_max);
 }
 
+double TimeSeriesSet::get_correlation(string field1, string field2, int32_t lag) const {
+    const TimeSeries *first_series = time_series.at(field1);
+    const TimeSeries *second_series = time_series.at(field2);
+
+    return first_series->get_correlation(second_series, lag);
+}
 
 
 
@@ -1148,4 +1175,8 @@ void TimeSeriesSets::set_training_indexes(const vector<int> &_training_indexes) 
 
 void TimeSeriesSets::set_test_indexes(const vector<int> &_test_indexes) {
     test_indexes = _test_indexes;
+}
+
+TimeSeriesSet* TimeSeriesSets::get_set(int32_t i) {
+    return time_series.at(i);
 }
