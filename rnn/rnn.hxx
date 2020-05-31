@@ -12,6 +12,8 @@ using std::vector;
 #include "rnn_edge.hxx"
 #include "rnn_recurrent_edge.hxx"
 
+#include "time_series/time_series.hxx"
+
 class RNN {
     private:
         int series_length;
@@ -49,7 +51,7 @@ class RNN {
 
         vector<double> get_predictions(const vector< vector<double> > &series_data, const vector< vector<double> > &expected_outputs, bool usng_dropout, double dropout_probability);
 
-        void write_predictions(string output_filename, const vector<string> &input_parameter_names, const vector<string> &output_parameter_names, const vector< vector<double> > &series_data, const vector< vector<double> > &expected_outputs, bool using_dropout, double dropout_probability);
+        void write_predictions(string output_filename, const vector<string> &input_parameter_names, const vector<string> &output_parameter_names, const vector< vector<double> > &series_data, const vector< vector<double> > &expected_outputs, TimeSeriesSets *time_series_sets, bool using_dropout, double dropout_probability);
 
         void initialize_randomly();
         void get_weights(vector<double> &parameters);

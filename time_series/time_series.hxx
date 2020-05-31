@@ -35,7 +35,7 @@ class TimeSeries {
         double get_value(int i);
 
         void calculate_statistics();
-        //void print_statistics(ostream &out);
+        void print_statistics();
 
         int get_number_values() const;
 
@@ -47,9 +47,13 @@ class TimeSeries {
         double get_min_change() const;
         double get_max_change() const;
 
+
         void normalize_min_max(double min, double max);
+        void normalize_avg_std_dev(double avg, double std_dev, double norm_max);
 
         void cut(int32_t start, int32_t stop);
+
+        double get_correlation(const TimeSeries *other, int32_t lag) const;
 
         TimeSeries* copy();
 
@@ -89,11 +93,14 @@ class TimeSeriesSet {
         double get_min_change(string field);
         double get_max_change(string field);
 
+        double get_correlation(string field1, string field2, int32_t lag) const;
+
         void normalize_min_max(string field, double min, double max);
+        void normalize_avg_std_dev(string field, double avg, double std_dev, double norm_max);
 
         void export_time_series(vector< vector<double> > &data);
         void export_time_series(vector< vector<double> > &data, const vector<string> &requested_fields);
-        void export_time_series(vector< vector<double> > &data, const vector<string> &requested_fields, int32_t time_offset);
+        void export_time_series(vector< vector<double> > &data, const vector<string> &requested_fields, const vector<string> &shift_fields, int32_t time_offset);
 
         TimeSeriesSet* copy();
 
@@ -106,7 +113,7 @@ class TimeSeriesSet {
 
 class TimeSeriesSets {
     private:
-        bool normalized;
+        string normalize_type;
 
         vector<string> filenames;
 
@@ -115,12 +122,16 @@ class TimeSeriesSets {
 
         vector<string> input_parameter_names;
         vector<string> output_parameter_names;
+        vector<string> shift_parameter_names;
         vector<string> all_parameter_names;
 
         vector<TimeSeriesSet*> time_series;
 
         map<string,double> normalize_mins;
         map<string,double> normalize_maxs;
+
+        map<string,double> normalize_avgs;
+        map<string,double> normalize_std_devs;
 
         void parse_parameters_string(const vector<string> &p);
         void load_time_series();
@@ -133,8 +144,11 @@ class TimeSeriesSets {
         static TimeSeriesSets* generate_from_arguments(const vector<string> &arguments);
         static TimeSeriesSets* generate_test(const vector<string> &_test_filenames, const vector<string> &_input_parameter_names, const vector<string> &_output_parameter_names);
 
-        void normalize();
-        void normalize(const map<string,double> &_normalize_mins, const map<string,double> &_normalize_maxs);
+        void normalize_min_max();
+        void normalize_min_max(const map<string,double> &_normalize_mins, const map<string,double> &_normalize_maxs);
+
+        void normalize_avg_std_dev();
+        void normalize_avg_std_dev(const map<string,double> &_normalize_avgs, const map<string,double> &_normalize_std_devs, const map<string,double> &_normalize_mins, const map<string,double> &_normalize_maxs);
 
         void split_series(int series, int number_slices);
         void split_all(int number_slices);
@@ -149,8 +163,13 @@ class TimeSeriesSets {
 
         void export_series_by_name(string field_name, vector< vector<double> > &exported_series);
 
+        double denormalize(string field_name, double value);
+
+        string get_normalize_type() const;
         map<string,double> get_normalize_mins() const;
         map<string,double> get_normalize_maxs() const;
+        map<string,double> get_normalize_avgs() const;
+        map<string,double> get_normalize_std_devs() const;
 
         vector<string> get_input_parameter_names() const;
         vector<string> get_output_parameter_names() const;
@@ -162,6 +181,8 @@ class TimeSeriesSets {
 
         void set_training_indexes(const vector<int> &_training_indexes);
         void set_test_indexes(const vector<int> &_test_indexes);
+
+        TimeSeriesSet *get_set(int32_t i);
 };
 
 #endif
