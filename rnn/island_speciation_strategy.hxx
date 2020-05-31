@@ -44,6 +44,7 @@ class IslandSpeciationStrategy : public SpeciationStrategy {
 
         bool seed_genome_was_minimal; /**< is true if we passed in a minimal genome (i.e., are not using transfer learning) */
 
+        bool repeat_extinction;
         // int32_t worst_island;
         /**
          * All the islands which contain the genomes for this speciation strategy.
@@ -67,7 +68,7 @@ class IslandSpeciationStrategy : public SpeciationStrategy {
                                 string _island_ranking_method, string _repopulation_method,
                                 int32_t _extinction_event_generation_number, int32_t _repopulation_mutations,
                                 int32_t _islands_to_exterminate, int32_t _max_genomes,
-                                bool seed_genome_was_minimal);
+                                bool _repeat_extinction, bool seed_genome_was_minimal);
         
         /**
          * Transfer learning constructor.

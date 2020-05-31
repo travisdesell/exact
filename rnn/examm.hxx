@@ -36,7 +36,8 @@ class EXAMM {
         string speciation_method;
         string repopulation_method;
         int32_t repopulation_mutations;
-
+        bool repeat_extinction;
+        
         SpeciationStrategy *speciation_strategy;
 
         int32_t edge_innovation_count;
@@ -123,6 +124,7 @@ class EXAMM {
                 string _island_ranking_method,
                 string _repopulation_method,
                 int32_t _repopulation_mutations,
+                bool _repeat_extinction,
                 string _speciation_method,
                 const vector<string> &_input_parameter_names,
                 const vector<string> &_output_parameter_names,

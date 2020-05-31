@@ -256,6 +256,9 @@ int main(int argc, char** argv) {
     int32_t repopulation_mutations = 0;
     get_argument(arguments, "--repopulation_mutations", false, repopulation_mutations);
 
+    bool repeat_extinction = false;
+    get_argument(arguments, "--repeat_extinction", false, repeat_extinction);
+
     int32_t bp_iterations;
     get_argument(arguments, "--bp_iterations", true, bp_iterations);
 
@@ -361,7 +364,7 @@ int main(int argc, char** argv) {
                 Log::set_id(examm_log_id);
 
                 examm = new EXAMM(population_size, number_islands, max_genomes, extinction_event_generation_number, islands_to_exterminate, island_ranking_method,
-                    repopulation_method, repopulation_mutations,
+                    repopulation_method, repopulation_mutations, repeat_extinction,
                     speciation_method,
                     time_series_sets->get_input_parameter_names(),
                     time_series_sets->get_output_parameter_names(),

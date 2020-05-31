@@ -28,7 +28,8 @@ IslandSpeciationStrategy::IslandSpeciationStrategy(
         double _inter_island_crossover_rate, RNN_Genome *_seed_genome,
         string _island_ranking_method, string _repopulation_method,
         int32_t _extinction_event_generation_number, int32_t _repopulation_mutations,
-        int32_t _islands_to_exterminate, int32_t _max_genomes, bool _seed_genome_was_minimal) :
+        int32_t _islands_to_exterminate, int32_t _max_genomes, 
+        bool _repeat_extinction, bool _seed_genome_was_minimal) :
                         generation_island(0), 
                         number_of_islands(_number_of_islands), 
                         max_island_size(_max_island_size), 
@@ -44,6 +45,7 @@ IslandSpeciationStrategy::IslandSpeciationStrategy(
                         repopulation_mutations(_repopulation_mutations), 
                         islands_to_exterminate(_islands_to_exterminate),
                         max_genomes(_max_genomes),
+                        repeat_extinction(_repeat_extinction),
                         seed_genome_was_minimal(_seed_genome_was_minimal) {
 
     double rate_sum = mutation_rate + intra_island_crossover_rate + inter_island_crossover_rate;
@@ -201,7 +203,9 @@ int32_t IslandSpeciationStrategy::insert_genome(RNN_Genome* genome) {
                     }
                     else Log::error("Didn't find the worst island!");
                     // set this so the island would not be re-killed in 5 rounds   
-                    set_erased_islands_status(); 
+                    if (!repeat_extinction) {
+                        set_erased_islands_status();  
+                    }
                 }
             }
         }
@@ -255,12 +259,20 @@ vector<int32_t> IslandSpeciationStrategy::rank_islands() {
     // int32_t* island_rank = new int32_t[number_of_islands];
     int32_t temp;
     double fitness_j1, fitness_j2;
+    Log::info("ranking islands \n");
+    Log::info("repeat extinction: %s \n", repeat_extinction? "true":"false");
+
     for (int32_t i = 0; i< number_of_islands; i++){
-        if (islands[i] -> get_erase_again_num() == 0) {
+        if (repeat_extinction) {
             island_rank.push_back(i);
+        } else {
+            if (islands[i] -> get_erase_again_num() == 0) {
+                island_rank.push_back(i);
+            }
         }
+
     }
-    Log::info("islands can get killed: \n"); 
+    // Log::error("islands can get killed: \n"); 
     // for (int32_t i = 0; i< island_rank.size(); i++){
     //     Log::error("%d \n",island_rank[i]);
     // }
