@@ -58,6 +58,7 @@ EXAMM::EXAMM(
         string _island_ranking_method, 
         string _repopulation_method, 
         int32_t _repopulation_mutations,
+        bool _repeat_extinction,
         string _speciation_method, 
         const vector<string> &_input_parameter_names,
         const vector<string> &_output_parameter_names,
@@ -84,6 +85,7 @@ EXAMM::EXAMM(
                         speciation_method(_speciation_method),
                         repopulation_method(_repopulation_method), 
                         repopulation_mutations(_repopulation_mutations),
+                        repeat_extinction(_repeat_extinction),
                         number_inputs(_input_parameter_names.size()),
                         number_outputs(_output_parameter_names.size()),
                         bp_iterations(_bp_iterations),
@@ -96,7 +98,6 @@ EXAMM::EXAMM(
                         dropout_probability(_dropout_probability),
                         output_directory(_output_directory),
                         start_filled(_start_filled) {
-
     input_parameter_names = _input_parameter_names;
     output_parameter_names = _output_parameter_names;
     normalize_mins = _normalize_mins;
@@ -213,7 +214,7 @@ EXAMM::EXAMM(
         } else {
             speciation_strategy = new IslandSpeciationStrategy(
                     number_islands, population_size, mutation_rate, intra_island_co_rate, inter_island_co_rate,
-                    seed_genome, island_ranking_method, repopulation_method, extinction_event_generation_number, repopulation_mutations, islands_to_exterminate, max_genomes, seed_genome_was_minimal);
+                    seed_genome, island_ranking_method, repopulation_method, extinction_event_generation_number, repopulation_mutations, islands_to_exterminate, max_genomes, repeat_extinction, seed_genome_was_minimal);
         }
     }
     
