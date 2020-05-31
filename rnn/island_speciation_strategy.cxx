@@ -117,9 +117,8 @@ IslandSpeciationStrategy::IslandSpeciationStrategy(
         return new Island(id, genomes);
     };
 
-    for (int i = 0 ; i < number_of_islands; i += 1) {
+    for (int i = 0 ; i < number_of_islands; i += 1)
         islands.push_back(make_filled_island(i, _seed_genome, max_island_size, repopulation_mutations, modify));
-    }
     
     //set the generation id for the initial minimal genome
     
@@ -385,18 +384,9 @@ RNN_Genome* IslandSpeciationStrategy::generate_genome(uniform_real_distribution<
             return genome;
         }
 
-    } else if (island->get_status() == Island::FILLED || island->is_full()) {
+    } else if (island->is_full()) {
         //generate a genome via crossover or mutation
         Log::info("island is full\n");
-
-        if (!island->is_full()) {
-            Log::error("ERROR! Island status was FILLED but size was: %d, and not max_size: %d\n", island->size(), island->get_max_size());
-            if (island->get_max_size() != max_island_size) {
-                //if the island's max size got changed/corrupted then we have a memory problem somewhere
-                Log::fatal("ERROR! Island max size was not max_island_size: %d\n", max_island_size);
-                exit(1);
-            }
-        }
 
         while (genome == NULL) {
             genome = generate_for_filled_island(rng_0_1, generator, mutate, crossover);
@@ -428,7 +418,7 @@ RNN_Genome* IslandSpeciationStrategy::generate_genome(uniform_real_distribution<
                 //after the worst island is filled, set the island status to filled
                 //then generate a genome for filled status, so this function still return a generated genome
                 Log::info("island is repopulating through bestIsland method!\n");
-                Log::info("island current size is: %d \n", islands[generation_island]->size());
+                Log::info("island current size is: %d \n", islands[generation_island]->get_genomes().size());
                 RNN_Genome *best_genome = get_best_genome()->copy();
                 int32_t best_island_id = best_genome->get_group_id();
                 fill_island(best_island_id);
@@ -451,9 +441,9 @@ RNN_Genome* IslandSpeciationStrategy::generate_genome(uniform_real_distribution<
         }
 
     } else {
-        Log::fatal("ERROR: island was neither initializing, repopulating or full. Island status: %d\n", island->get_status());
-        Log::fatal("ERROR! Island size was: %d, and max_size was : %d\n", island->size(), island->get_max_size());
+        Log::fatal("ERROR: island was neither initializing, repopulating or full.\n");
         Log::fatal("This should never happen!\n");
+    
     }
 
     if (genome != NULL) { 
@@ -538,12 +528,10 @@ RNN_Genome* IslandSpeciationStrategy::generate_for_filled_island(uniform_real_di
 
 
 void IslandSpeciationStrategy::print(string indent) const {
-    if (Log::at_level(Log::INFO)) {
-        Log::info("%sIslands: \n", indent.c_str());
-        for (int32_t i = 0; i < (int32_t)islands.size(); i++) {
-            Log::info("%sIsland %d:\n", indent.c_str(), i);
-            islands[i]->print(indent + "\t");
-        }
+    Log::info("%sIslands: \n", indent.c_str());
+    for (int32_t i = 0; i < (int32_t)islands.size(); i++) {
+        Log::info("%sIsland %d:\n", indent.c_str(), i);
+        islands[i]->print(indent + "\t");
     }
 }
 
