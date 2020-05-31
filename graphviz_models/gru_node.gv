@@ -99,16 +99,16 @@ digraph CNN {
 
 	{
 		rank = sink;
-					/*<tr><td>z = sigmoid(zw*x + zu*h_prev * z_bias)</td></tr>
-						<tr><td>r = sigmoid(rw*x + lu*h_prev * r_bias)</td></tr> */
+					/*<tr><td>z = sigmoid(zw*x + zu*h_prev + z_bias)</td></tr>
+						<tr><td>r = sigmoid(rw*x + lu*h_prev + r_bias)</td></tr> */
         legend [shape=box,
             label=<
                 <table>
-                <tr><td>z = &sigma;(zw*x + zu*h_prev * z_bias)</td></tr>
+                <tr><td>z = &sigma;(zw*x + zu*h_prev + z_bias)</td></tr>
 
 
-                <tr><td>r = &sigma;(rw*x + lu*h_prev * r_bias)</td></tr>
-                <tr><td>h = z*h_prev + (1-z)*tanh(hw*x + hu*r*h_prev * h_bias)</td></tr>
+                <tr><td>r = &sigma;(rw*x + lu*h_prev + r_bias)</td></tr>
+                <tr><td>h = z*h_prev + (1-z)*tanh(hw*x + hu*r*h_prev + h_bias)</td></tr>
                 </table>
                 >]
 

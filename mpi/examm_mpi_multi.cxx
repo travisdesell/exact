@@ -368,8 +368,11 @@ int main(int argc, char** argv) {
                     speciation_method,
                     time_series_sets->get_input_parameter_names(),
                     time_series_sets->get_output_parameter_names(),
+                    time_series_sets->get_normalize_type(),
                     time_series_sets->get_normalize_mins(),
                     time_series_sets->get_normalize_maxs(),
+                    time_series_sets->get_normalize_avgs(),
+                    time_series_sets->get_normalize_std_devs(),
                     bp_iterations, learning_rate,
                     use_high_threshold, high_threshold,
                     use_low_threshold, low_threshold,
@@ -386,7 +389,7 @@ int main(int argc, char** argv) {
                 std::chrono::time_point<std::chrono::system_clock> end = std::chrono::system_clock::now();
                 long milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
 
-                examm->write_memory_log(current_output_directory + "/memory_fitness_log.csv");
+                //examm->write_memory_log(current_output_directory + "/memory_fitness_log.csv");
 
                 slice_times_file << milliseconds << endl;
 

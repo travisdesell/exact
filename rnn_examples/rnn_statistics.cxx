@@ -55,6 +55,8 @@ int main(int argc, char** argv) {
         int32_t weights = genome->get_number_weights();
 
         Log::info("RNN INFO FOR '%s', nodes: %d, edges: %d, rec: %d, weights: %d\n", rnn_filenames[i].c_str(), nodes, edges, rec_edges, weights);
+        Log::info("\t%s\n", genome->print_statistics_header().c_str());
+        Log::info("\t%s\n", genome->print_statistics().c_str());
 
         avg_nodes += nodes;
         avg_edges += edges;

@@ -132,9 +132,9 @@ digraph CNN {
         legend [shape=box,
             label=<
                 <table>
-                <tr><td>f = &sigma;(W_f*x + U_f*c_prev * f_bias)</td></tr>
-                <tr><td>i = &sigma;(W_i*x + U_i*c_prev * i_bias)</td></tr>
-                <tr><td>o = &sigma;(W_o*x + U_o*c_prev * o_bias)</td></tr>
+                <tr><td>f = &sigma;(W_f*x + U_f*c_prev + f_bias)</td></tr>
+                <tr><td>i = &sigma;(W_i*x + U_i*c_prev + i_bias)</td></tr>
+                <tr><td>o = &sigma;(W_o*x + U_o*c_prev + o_bias)</td></tr>
 
 
                 <tr><td>c = f * c_prev + i * tanh(W_c*x + c_bias)</td></tr>

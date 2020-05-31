@@ -1,1 +1,4 @@
 add_library(exact_time_series time_series)
+
+add_executable(correlation_heatmap correlation_heatmap)
+target_link_libraries(correlation_heatmap exact_time_series exact_common pthread)

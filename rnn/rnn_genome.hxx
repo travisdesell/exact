@@ -25,8 +25,9 @@ using std::vector;
 #include "rnn_recurrent_edge.hxx"
 
 #include "common/random.hxx"
+#include "time_series/time_series.hxx"
 
-//mysql can't handl the max float value for some reason
+//mysql can't handle the max float value for some reason
 #define EXAMM_MAX_DOUBLE 10000000
 
 string parse_fitness(double fitness);
@@ -50,6 +51,8 @@ class RNN_Genome {
         bool use_dropout;
         double dropout_probability;
 
+        string structural_hash;
+
         string log_filename;
 
         map<string, int> generated_by_map;
@@ -72,18 +75,19 @@ class RNN_Genome {
         vector<string> input_parameter_names;
         vector<string> output_parameter_names;
 
+        string normalize_type;
         map<string,double> normalize_mins;
         map<string,double> normalize_maxs;
+        map<string,double> normalize_avgs;
+        map<string,double> normalize_std_devs;
 
     public:
         void sort_nodes_by_depth();
         void sort_edges_by_depth();
         void sort_recurrent_edges_by_depth();
 
-        RNN_Genome(vector<RNN_Node_Interface*> &_nodes, vector<RNN_Edge*> &_edges);
         RNN_Genome(vector<RNN_Node_Interface*> &_nodes, vector<RNN_Edge*> &_edges, vector<RNN_Recurrent_Edge*> &_recurrent_edges);
         RNN_Genome(vector<RNN_Node_Interface*> &_nodes, vector<RNN_Edge*> &_edges, vector<RNN_Recurrent_Edge*> &_recurrent_edges, uint16_t seed);
-
 
         RNN_Genome* copy();
 
@@ -115,10 +119,13 @@ class RNN_Genome {
         double get_best_validation_mae() const;
 
 
-        void set_normalize_bounds(const map<string,double> &_normalize_mins, const map<string,double> &_normalize_maxs);
+        void set_normalize_bounds(string _normalize_type, const map<string,double> &_normalize_mins, const map<string,double> &_normalize_maxs, const map<string,double> &_normalize_avgs, const map<string,double> &_normalize_std_devs);
 
+        string get_normalize_type() const;
         map<string,double> get_normalize_mins() const;
         map<string,double> get_normalize_maxs() const;
+        map<string,double> get_normalize_avgs() const;
+        map<string,double> get_normalize_std_devs() const;
 
         vector<string> get_input_parameter_names() const;
         vector<string> get_output_parameter_names() const;
@@ -177,7 +184,7 @@ class RNN_Genome {
 
 
         vector< vector<double> > get_predictions(const vector<double> &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs);
-        void write_predictions(const vector<string> &input_filenames, const vector<double> &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs);
+        void write_predictions(string output_directory, const vector<string> &input_filenames, const vector<double> &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, TimeSeriesSets *time_series_sets);
 
         void get_mu_sigma(const vector<double> &p, double &mu, double &sigma);
 
@@ -241,6 +248,11 @@ class RNN_Genome {
         bool connect_node_to_hid_nodes( double mu, double sig, RNN_Node_Interface *new_node, uniform_int_distribution<int32_t> dist, int32_t &edge_innovation_count, bool from_input );
         
         void update_innovation_counts(int32_t &node_innovation_count, int32_t &edge_innovation_count);
+
+        /**
+         * \return the structural hash (calculated when assign_reachaability is called)
+         */
+        string get_structural_hash() const;
 
         /**
          * \return the max innovation number of any node in the genome.
