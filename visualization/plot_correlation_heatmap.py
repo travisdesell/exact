@@ -1,106 +1,78 @@
 import matplotlib.pyplot as plt
 import numpy as np
+import math
+
 from numpy import genfromtxt
+from numpy import loadtxt
 #from pylab import polyfit
-from scipy.stats import linregress
+#from scipy.stats import linregress
 import pandas as pd
 import sys
 
+if len(sys.argv) != 4:
+    print("usage: python " + sys.argv[0] + " <input_file> <header_file> <output_file>")
+    exit(1)
 
-fitness_hyperparameters_file = sys.argv[1]
+for arg in sys.argv:
+        print(arg)
 
-v1 = genfromtxt(fitness_hyperparameters_file,delimiter=',', names=True)
-#print v1
 
-#print v1
+input_file = sys.argv[1]
+header_file = sys.argv[2]
+output_file = sys.argv[3]
 
-#print "first column of v1:\n"
 
-def write_file(parameter_name, output_file, v1, first_row):
-    fitness = [row[0] for row in v1]
-    value = [row[first_row] for row in v1]
+headers_file = open(header_file, "r")
+headers = headers_file.read().split("\n")
 
-    print parameter_name
-    print value
-    print "\n\n\n"
+print(headers)
 
-    # plot it!
-    plt.plot(fitness, value, "o", alpha=0.5)
-
-    #fig, ax = plt.subplots(1)
-
-    plt.title(parameter_name + ' vs. Gen+Test Error')
-    #ax.legend(loc='upper left')
-    plt.xlabel('Fitness')
-    plt.ylabel(parameter_name)
-    plt.grid()
-
-    plt.savefig(output_file)
-    plt.clf()
-
-    return
-
-fitness = [row[0] for row in v1]
-
-initial_mu = [row[1] for row in v1]
-mu_delta = [row[2] for row in v1]
-initial_learning_rate = [row[3] for row in v1]
-learning_rate_delta = [row[4] for row in v1]
-initial_weight_decay = [row[5] for row in v1]
-weight_decay_delta = [row[6] for row in v1]
-
-alpha = [row[7] for row in v1]
-batch_size = [row[8] for row in v1]
-velocity_reset = [row[9] for row in v1]
-
-input_dropout_probabilty = [row[10] for row in v1]
-hidden_dropout_probabilty = [row[11] for row in v1]
-
-names = ["Fitness", "Initial Mu", "Mu Delta", "Initial Learning Rate", "Learning Rate Delta", "Initial Weight Decay", "Weight Decay Delta", "Alpha", "Batch Size", "Velocity Reset", "Input Dropout Prob.", "Hidden Dropout Prob."]
-
-values = []
-
-for i in range(0, len(v1[0])):
-    rv = np.array([row[i] for row in v1])
-    print "average of row '{0}' is: {1}".format(names[i], np.mean(rv))
-    print "std of row '{0}' is: {1}".format(names[i], np.std(rv))
-
-    rv = (rv - np.mean(rv)) / np.std(rv)
-    values.append(rv)
-
-values = np.array(values)
-
-print names
-print values
-
-correlations = []
-for i in range(0, len(v1[0])):
-    r = []
-    for j in range(0, len(v1[0])):
-        r.append(np.correlate(values[i], values[j])[0] / len(v1))
-    correlations.append(r)
-
-print correlations
+data = genfromtxt(input_file, delimiter=',')
+print(data)
 
 fig, ax = plt.subplots()
-heatmap = plt.pcolor(correlations, cmap='RdBu', alpha = 0.8, vmin=-1, vmax=1)
+#heatmap = plt.pcolor(data, cmap = plt.cm.Blues, alpha = 0.8)
+heatmap = plt.pcolor(data, cmap='RdBu', alpha = 0.8, vmin=-1, vmax=1)
 plt.colorbar()
 
-ax.set_xticks(np.arange(len(v1[0])) + 0.5, minor = False)
-ax.set_yticks(np.arange(len(v1[0])) + 0.5, minor = False)
+
+SMALL_SIZE = 8
+MEDIUM_SIZE = 10
+BIGGER_SIZE = 12
+
+plt.rc('font', size=SMALL_SIZE)          # controls default text sizes
+plt.rc('axes', titlesize=SMALL_SIZE)     # fontsize of the axes title
+plt.rc('axes', labelsize=MEDIUM_SIZE)    # fontsize of the x and y labels
+plt.rc('xtick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
+plt.rc('ytick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
+plt.rc('legend', fontsize=SMALL_SIZE)    # legend fontsize
+
+
+ax.set_xticks(np.arange(data.shape[1])      , minor = False)
+ax.set_yticks(np.arange(data.shape[0]) + 0.5, minor = False)
 
 ax.invert_yaxis()
 ax.xaxis.tick_top()
 
-ax.set_xticklabels(names, minor = False)
-ax.set_yticklabels(names, minor = False)
+fig.set_size_inches(40,10)
+#fig.set_size_inches(90,90)
+ax.set_xticklabels(range(0,data.shape[1]), minor = False, fontsize = 4)
+ax.set_yticklabels(headers, minor = False, fontsize = 8)
+
 
 ax.set_frame_on(False)
 ax.grid(False)
 ax = plt.gca()
+
 plt.xticks(rotation=90)
 
-plt.tight_layout()
+for t in ax.xaxis.get_major_ticks():
+    t.tick1On = False
+    t.tick2On = False
 
-plt.savefig("hyperparameter_correlations.png")
+for t in ax.yaxis.get_major_ticks():
+    t.tick1On = False
+    t.tick2On = False
 
+
+plt.savefig(output_file)

@@ -119,34 +119,29 @@ void Log::set_id(string human_readable_id) {
 
     log_ids[id] = human_readable_id;
 
-    if (write_to_file) {
-        //check and see if we've already opened a file for this human readable id
-        if (output_files.count(human_readable_id) == 0) {
-            string output_filename = output_directory + "/" + human_readable_id;
-            FILE *outfile = fopen(output_filename.c_str(), "w");
-            output_files[human_readable_id] = new LogFile(outfile);
-        }
-    }
-
     log_ids_mutex.unlock();
 }
 
 void Log::release_id(string human_readable_id) {
 
+    //cerr << "locking thread from human readable id: '" << human_readable_id << "'" << endl;
     log_ids_mutex.lock();
-    //cerr << "releasing thread id " << id << " from human readable id: '" << human_readable_id << "'" << endl;
+    //cerr << "releasing thread from human readable id: '" << human_readable_id << "'" << endl;
 
     if (output_files.count(human_readable_id) == 0) {
-        cerr << "ERROR: log id '" << human_readable_id << "' was either already released or not previously set!" << endl;
-        exit(1);
+        //this file was never created and written to
+
+        //cerr << "ERROR: log id '" << human_readable_id << "' was either already released or not previously set!" << endl;
+        //exit(1);
+    } else {
+
+        LogFile *log_file = output_files[human_readable_id];
+        fflush(log_file->file);
+        fclose(log_file->file);
+
+        delete log_file;
+        output_files.erase(human_readable_id);
     }
-
-    LogFile *log_file = output_files[human_readable_id];
-    fflush(log_file->file);
-    fclose(log_file->file);
-
-    delete log_file;
-    output_files.erase(human_readable_id);
 
     log_ids_mutex.unlock();
 }
@@ -165,11 +160,6 @@ void Log::write_message(bool print_header, int8_t message_level, const char *mes
     }
 
     string human_readable_id = log_ids[id];
-
-    if (output_files.count(human_readable_id) == 0) {
-        cerr << "ERROR: There was no log information for this human readable id '" << human_readable_id << "' from thread '" << id << "'. This should never happen." << endl;
-        exit(1);
-    }
 
     //print the message header into a string
     char header_buffer[max_header_length];
@@ -192,7 +182,19 @@ void Log::write_message(bool print_header, int8_t message_level, const char *mes
     }
 
     if (file_message_level >= message_level) {
-        LogFile* log_file = output_files[human_readable_id];
+        LogFile* log_file = NULL;
+
+        //check and see if we've already opened a file for this human readable id, if we haven't
+        //open a new one for it
+
+        if (output_files.count(human_readable_id) == 0) {
+            string output_filename = output_directory + "/" + human_readable_id;
+            FILE *outfile = fopen(output_filename.c_str(), "w");
+            log_file = new LogFile(outfile);
+            output_files[human_readable_id] = log_file;
+        } else {
+            log_file = output_files[human_readable_id];
+        }
 
         //lock this log_file in case multiple threads are trying to write
         //to the same file

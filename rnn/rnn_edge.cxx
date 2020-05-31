@@ -189,6 +189,10 @@ const RNN_Node_Interface* RNN_Edge::get_output_node() const {
     return output_node;
 }
 
+bool RNN_Edge::is_enabled() const {
+    return enabled;
+}
+
 bool RNN_Edge::is_reachable() const {
     return forward_reachable && backward_reachable;
 }

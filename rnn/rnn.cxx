@@ -37,6 +37,8 @@ using std::vector;
 
 #include "common/log.hxx"
 
+#include "time_series/time_series.hxx"
+
 void RNN::validate_parameters(const vector<string> &input_parameter_names, const vector<string> &output_parameter_names) {
     if (input_nodes.size() != input_parameter_names.size()) {
         Log::fatal("ERROR: number of input nodes (%d) != number of input parameters (%d)\n", input_nodes.size(), input_parameter_names.size());
@@ -413,7 +415,7 @@ vector<double> RNN::get_predictions(const vector< vector<double> > &series_data,
 }
 
 
-void RNN::write_predictions(string output_filename, const vector<string> &input_parameter_names, const vector<string> &output_parameter_names, const vector< vector<double> > &series_data, const vector< vector<double> > &expected_outputs, bool using_dropout, double dropout_probability) {
+void RNN::write_predictions(string output_filename, const vector<string> &input_parameter_names, const vector<string> &output_parameter_names, const vector< vector<double> > &series_data, const vector< vector<double> > &expected_outputs, TimeSeriesSets *time_series_sets, bool using_dropout, double dropout_probability) {
     forward_pass(series_data, using_dropout, false, dropout_probability);
 
     Log::debug("series_length: %d, series_data.size(): %d, series_data[0].size(): %d\n", series_length, series_data.size(), series_data[0].size());
@@ -431,7 +433,7 @@ void RNN::write_predictions(string output_filename, const vector<string> &input_
 
     for (uint32_t i = 0; i < output_nodes.size(); i++) {
         outfile << ",";
-        outfile << output_parameter_names[i];
+        outfile << "expected_" << output_parameter_names[i];
 
         Log::debug("output_parameter_names[%d]: '%s'\n", i, output_parameter_names[i].c_str());
     }
@@ -447,17 +449,20 @@ void RNN::write_predictions(string output_filename, const vector<string> &input_
     for (uint32_t j = 0; j < series_length; j++) {
         for (uint32_t i = 0; i < input_nodes.size(); i++) {
             if (i > 0) outfile << ",";
-            outfile << series_data[i][j];
+            //outfile << series_data[i][j];
+            outfile << time_series_sets->denormalize(input_parameter_names[i], series_data[i][j]);
         }
 
         for (uint32_t i = 0; i < output_nodes.size(); i++) {
             outfile << ",";
-            outfile << expected_outputs[i][j];
+            //outfile << expected_outputs[i][j];
+            outfile << time_series_sets->denormalize(output_parameter_names[i], expected_outputs[i][j]);
         }
 
         for (uint32_t i = 0; i < output_nodes.size(); i++) {
             outfile << ",";
-            outfile << output_nodes[i]->output_values[j];
+            //outfile << output_nodes[i]->output_values[j];
+            outfile << time_series_sets->denormalize(output_parameter_names[i], output_nodes[i]->output_values[j]);
         }
         outfile << endl;
     }
