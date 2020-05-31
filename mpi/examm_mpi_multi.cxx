@@ -256,8 +256,7 @@ int main(int argc, char** argv) {
     int32_t repopulation_mutations = 0;
     get_argument(arguments, "--repopulation_mutations", false, repopulation_mutations);
 
-    bool repeat_extinction = false;
-    get_argument(arguments, "--repeat_extinction", false, repeat_extinction);
+    bool repeat_extinction = argument_exists(arguments, "--repeat_extinction");
 
     int32_t bp_iterations;
     get_argument(arguments, "--bp_iterations", true, bp_iterations);

@@ -33,7 +33,7 @@ class Island {
         vector<RNN_Genome*> genomes;
 
         unordered_map<string, vector<RNN_Genome*>> structure_map;
-
+        bool erased; /**< a flag to track if this islands has been erased */
         int32_t status; /**> The status of this island (either Island:INITIALIZING, Island::FILLED or  Island::REPOPULATING */
         int32_t erase_again; /**< a flag to track if this islands has been erased */
 
