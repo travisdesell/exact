@@ -281,6 +281,8 @@ EXAMM::EXAMM(
     // Make the ThompsanSamplig if need be
     if (_use_node_type_thompson_sampling) {
         node_type_selector = new BetaThompsonSampling(possible_node_types.size(), _node_type_sampling_decay_rate);
+    } else {
+        node_type_selector = NULL;
     }
 
     if (_use_number_mutations_sampling) {
@@ -327,7 +329,6 @@ EXAMM::EXAMM(
         mutation_selector = new BetaThompsonSampling(possible_mutations.size(), _mutation_sampling_decay_rate);
     }
     
-    printf("4\n");
     if (output_directory != "") {
         mkpath(output_directory.c_str(), 0777);
         log_file = new ofstream(output_directory + "/" + "fitness_log.csv");
@@ -360,12 +361,12 @@ EXAMM::EXAMM(
             (*thompson_mutation_log_file) << (i + 1) << " Mutations Alpha, ";
             (*thompson_mutation_log_file) << (i + 1) << " Mutations Beta, ";
         }
+        (*thompson_mutation_log_file) << endl;
     } else {
         log_file = NULL;
         op_log_file = NULL;
     }
 
-    printf("5\n");
     startClock = std::chrono::system_clock::now();
 }
 
@@ -656,7 +657,7 @@ int32_t EXAMM::get_random_number_mutations() {
     int32_t number_mutations;
 
     if (number_mutations_selector == NULL || speciation_strategy->get_generated_genomes() < 4000)
-        number_mutations = 1;
+        number_mutations = ((int32_t) (rng_0_1(generator) * max_number_mutations)) + 1;
     else
         number_mutations = number_mutations_selector->sample_action(generator) + 1;
 

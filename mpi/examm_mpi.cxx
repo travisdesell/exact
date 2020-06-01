@@ -384,8 +384,8 @@ int main(int argc, char** argv) {
             output_directory,
             seed_genome,
             start_filled,
-            use_node_type_thompson_sampling, node_type_sampling_decay_rate,
-            use_mutation_thompson_sampling, mutation_sampling_decay_rate,
+            node_type_sampling_decay_rate, use_node_type_thompson_sampling, 
+            mutation_sampling_decay_rate, use_mutation_thompson_sampling,
             max_number_mutations, number_mutations_sampling_decay_rate, use_number_mutations_thompson_sampling);
 
         master(max_rank);
