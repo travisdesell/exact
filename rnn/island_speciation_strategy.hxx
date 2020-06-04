@@ -40,9 +40,11 @@ class IslandSpeciationStrategy : public SpeciationStrategy {
         int32_t extinction_event_generation_number; /**< When EXAMM reaches this generation id, an extinction event will be triggered (i.e. islands will be killed and repopulated). */
         int32_t repopulation_mutations; /**< When an island is erradicated, it is repopulated with copies of the best genome that have this number of mutations applied to them. */
         int32_t islands_to_exterminate; /**< When an extinction event is triggered, this is the number of islands that will be exterminated. */
+        int32_t max_genomes;
 
         bool seed_genome_was_minimal; /**< is true if we passed in a minimal genome (i.e., are not using transfer learning) */
 
+        bool repeat_extinction;
         // int32_t worst_island;
         /**
          * All the islands which contain the genomes for this speciation strategy.
@@ -65,7 +67,8 @@ class IslandSpeciationStrategy : public SpeciationStrategy {
                                 double _inter_island_crossover_rate, RNN_Genome *_seed_genome,
                                 string _island_ranking_method, string _repopulation_method,
                                 int32_t _extinction_event_generation_number, int32_t _repopulation_mutations,
-                                int32_t _islands_to_exterminate, bool seed_genome_was_minimal);
+                                int32_t _islands_to_exterminate, int32_t _max_genomes,
+                                bool _repeat_extinction, bool seed_genome_was_minimal);
         
         /**
          * Transfer learning constructor.
@@ -142,7 +145,7 @@ class IslandSpeciationStrategy : public SpeciationStrategy {
          * 
          *  \return island rank from worst to the best
          */
-        int32_t* rank_islands();
+        vector<int32_t> rank_islands();
 
         /**
          * Generates a new genome.
@@ -188,6 +191,8 @@ class IslandSpeciationStrategy : public SpeciationStrategy {
         void fill_island(int32_t best_island);
 
         RNN_Genome* get_global_best_genome();
+
+        void set_erased_islands_status();
 
 };
 
