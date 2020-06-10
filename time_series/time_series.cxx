@@ -229,6 +229,10 @@ TimeSeriesSet::TimeSeriesSet(string _filename, const vector<string> &_fields) {
     
     vector<string> file_fields;
     string_split(line, ',', file_fields);
+    for (int32_t i = 0; i < file_fields.size(); i++) {
+        //get rid of carriage returns (sometimes windows messes this up)
+        file_fields[i].erase( std::remove(file_fields[i].begin(), file_fields[i].end(), '\r'), file_fields[i].end() );
+    }
 
 
     //check to see that all the specified fields are in the file
