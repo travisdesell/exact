@@ -21,3 +21,6 @@ target_link_libraries(test_mgu_gradients examm_strategy exact_common exact_time_
 
 add_executable(test_lstm_gradients test_lstm_gradients gradient_test)
 target_link_libraries(test_lstm_gradients examm_strategy exact_common exact_time_series ${MYSQL_LIBRARIES} pthread)
+
+add_executable(test_enarc_gradients test_enarc_gradients gradient_test)
+target_link_libraries(test_enarc_gradients examm_strategy exact_common exact_time_series ${MYSQL_LIBRARIES} pthread)
