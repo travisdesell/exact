@@ -35,11 +35,17 @@ extern const string NODE_TYPES[];
 #define GRU_NODE 5
 #define DELTA_NODE 6
 #define LSTM_NODE 7
+#define ENARC_NODE 8
 
 
 double sigmoid(double value);
 double sigmoid_derivative(double value);
 double tanh_derivative(double value);
+double swish(double value);
+double swish_derivative(double value, double input);
+double leakyReLU(double value);
+double leakyReLU_derivative(double input);
+
 
 double bound(double value);
 

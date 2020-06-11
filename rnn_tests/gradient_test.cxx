@@ -33,7 +33,7 @@ using std::vector;
 minstd_rand0 generator;
 uniform_real_distribution<double> rng(-0.5, 0.5);
 
-int test_iterations = 1000;
+int test_iterations = 10;
 
 void initialize_generator() {
 	unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();

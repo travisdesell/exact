@@ -12,8 +12,8 @@ using std::string;
 #include "common/log.hxx"
 
 
-extern const int32_t NUMBER_NODE_TYPES = 8;
-extern const string NODE_TYPES[] = { "simple" , "jordan", "elman", "UGRNN", "MGU", "GRU", "delta", "LSTM" };
+extern const int32_t NUMBER_NODE_TYPES = 9;
+extern const string NODE_TYPES[] = { "simple" , "jordan", "elman", "UGRNN", "MGU", "GRU", "delta", "LSTM" , "ENARC" };
 
 double bound(double value) {
     if (value < -10.0) value = -10.0;
@@ -34,6 +34,30 @@ double tanh_derivative(double input) {
     return 1 - (input * input);
     //return 1 - (tanh(input) * tanh(input));
 }
+
+double swish(double value){
+    double exp_value = exp(-value);
+    return value*(1.0 / (1.0 + exp_value));
+}
+
+double swish_derivative(double value, double input){
+    double sigmoid_value = sigmoid(value);
+    return sigmoid_value + input*(1 - sigmoid_value);
+}
+
+double leakyReLU(double value){
+    double alpha = 0.01;
+    return max(alpha*value,value);
+}
+
+double leakyReLU_derivative(double input){
+    double alpha = 0.01;
+    if(input > 0) return 1;
+    return alpha;
+}
+
+
+
 
 RNN_Node_Interface::RNN_Node_Interface(int32_t _innovation_number, int32_t _layer_type, double _depth) : innovation_number(_innovation_number), layer_type(_layer_type), depth(_depth) {
     total_inputs = 0;

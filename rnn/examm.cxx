@@ -155,6 +155,7 @@ EXAMM::EXAMM(
     possible_node_types.push_back(MGU_NODE);
     possible_node_types.push_back(GRU_NODE);
     possible_node_types.push_back(LSTM_NODE);
+    possible_node_types.push_back(ENARC_NODE);
     possible_node_types.push_back(DELTA_NODE);
 
     bool node_ops = true;

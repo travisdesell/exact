@@ -13,7 +13,7 @@ class ExammTask(ConfigToArg):
             a = a + glob.glob(path)
         return list(set(a))
 
-    ALL_NODE_TYPES = [ 'simple', 'UGRNN', 'MGU', 'GRU', 'delta', 'LSTM' ]
+    ALL_NODE_TYPES = [ 'simple', 'UGRNN', 'MGU', 'GRU', 'delta', 'LSTM' , 'ENARC' ]
     CONFIG_OPTIONS = {
             "training_files":       lambda self, x: ['--training_filenames'] + ExammTask.glob_to_all(x),
             "test_files":           lambda self, x: ['--test_filenames'] + ExammTask.glob_to_all(x),
