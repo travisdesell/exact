@@ -135,14 +135,18 @@ EXAMM::EXAMM(
     //more_fit_crossover_rate = 0.75;
     //less_fit_crossover_rate = 0.25;
 
-    clone_rate = 1.0;
+    clone_rate = 0.0;
+
+    /////////////////////////////////////////////////////////////////////////////////////////////
+    // Establish mutation Rates
+    is_growth_era = true;				// for regulating mutaiton types by era
 
     add_edge_rate = 1.0;
     //add_recurrent_edge_rate = 3.0;
     add_recurrent_edge_rate = 1.0;
     enable_edge_rate = 1.0;
-    //disable_edge_rate = 3.0;
     disable_edge_rate = 1.0;
+    //disable_edge_rate = 0.0;
     //split_edge_rate = 1.0;
     split_edge_rate = 0.0;
 
@@ -160,10 +164,12 @@ EXAMM::EXAMM(
     if (node_ops) {
         add_node_rate = 1.0;
         enable_node_rate = 1.0;
-        //disable_node_rate = 3.0;
         disable_node_rate = 1.0;
-        split_node_rate = 1.0;
-        merge_node_rate = 1.0;
+        //disable_node_rate = 0.0;
+        //split_node_rate = 1.0;
+        //merge_node_rate = 1.0;
+	split_node_rate = 0.0;
+	merge_node_rate = 0.0;
 
     } else {
         add_node_rate = 0.0;
@@ -479,6 +485,24 @@ RNN_Genome* EXAMM::generate_genome() {
         };
 
     RNN_Genome *genome = speciation_strategy->generate_genome(rng_0_1, generator, mutate_function, crossover_function);
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // check generation_id and switch mutation rates
+    if (genome->generation_id % 1000 == 0) {
+	// growth era
+	EXAMM::is_growth_era = true;
+	std::cout << "NEW GROWTH ERA\n";
+    } else if (genome->generation_id % 500 == 0) {
+	// shrink era
+	EXAMM::is_growth_era = false;
+	std::cout << "NEW CONSOLIDATION ERA\n";
+    }
+	
+    this->change_mutation_era();
+
+    std::cout << "Enable Edge Rate: " << enable_edge_rate << "\n";		// sanity check
+    
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     genome->set_parameter_names(input_parameter_names, output_parameter_names);
     genome->set_normalize_bounds(normalize_type, normalize_mins, normalize_maxs, normalize_avgs, normalize_std_devs);
@@ -1038,3 +1062,48 @@ RNN_Genome* EXAMM::crossover(RNN_Genome *p1, RNN_Genome *p2) {
 uniform_int_distribution<int32_t> EXAMM::get_recurrent_depth_dist() {
     return uniform_int_distribution<int32_t>(this->min_recurrent_depth, this->max_recurrent_depth);
 }
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void EXAMM::change_mutation_era() {
+    if (is_growth_era) {
+	// set mutation rates to bias additions
+	add_edge_rate = 1.0;
+	add_recurrent_edge_rate = 1.0;
+	enable_edge_rate = 1.0;
+	add_node_rate = 1.0;
+	enable_node_rate = 1.0;
+	// clone_rate
+	// split_edge_rate
+	split_node_rate = 0.0;					// look into specifics of split & clone mutations*
+	
+	disable_edge_rate = 0.0;
+	disable_node_rate = 0.0;
+	merge_node_rate = 0.0;
+
+	more_fit_crossover_rate = 1.00;
+    	less_fit_crossover_rate = 0.50;
+
+
+    } else {
+	// set mutation rates to bias deletions
+	add_edge_rate = 0.0;
+	add_recurrent_edge_rate = 0.0;
+	enable_edge_rate = 0.0;
+	add_node_rate = 0.0;
+	enable_node_rate = 0.0;
+	// clone_rate
+	// split_edge_rate
+	// split_node_rate
+	
+	disable_edge_rate = 3.0;
+	disable_node_rate = 1.0;
+	merge_node_rate = 0.0;
+
+	more_fit_crossover_rate = 0.00;
+    	less_fit_crossover_rate = 0.00;
+
+    }
+}
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+

@@ -85,6 +85,8 @@ class EXAMM {
         double split_node_rate;
         double merge_node_rate;
 
+	bool is_growth_era;
+
         vector<int> possible_node_types;
 
         vector<string> op_log_ordering;
@@ -173,6 +175,8 @@ class EXAMM {
 
         string get_output_directory() const;
         RNN_Genome* generate_for_transfer_learning(string file_name, int extra_inputs, int extra_outputs) ;
+
+	void change_mutation_era();
 };
 
 #endif
