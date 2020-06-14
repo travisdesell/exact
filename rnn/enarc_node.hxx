@@ -21,11 +21,14 @@ class ENARC_Node : public RNN_Node_Interface{
 		double rw;
 		double zw;
 		double w1;
+		
 		double w2;
 		double w3;
+		double w6;
+		
 		double w4;
 		double w5;
-		double w6;
+		
 		double w7;
 		double w8;
 
@@ -33,11 +36,13 @@ class ENARC_Node : public RNN_Node_Interface{
 		vector<double> d_rw;
 
 		vector<double> d_w1;
+
 		vector<double> d_w2; 
 		vector<double> d_w3; 
+		vector<double> d_w6; 
+
 		vector<double> d_w4; 
 		vector<double> d_w5; 
-		vector<double> d_w6; 
 		vector<double> d_w7;
 		vector<double> d_w8; 
 	
