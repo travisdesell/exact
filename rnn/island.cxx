@@ -115,7 +115,7 @@ int32_t Island::insert_genome(RNN_Genome *genome) {
     //discard the genome if the island is full and it's fitness is worse than the worst in thte population
     if (is_full() && new_fitness > get_worst_fitness()) {
         Log::info("ignoring genome, fitness: %lf > worst for island[%d] fitness: %lf\n", new_fitness, id, genomes.back()->get_fitness());
-        return false;
+        return -1;
     }
 
     int32_t duplicate_genome_index = contains(genome);

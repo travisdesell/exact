@@ -39,7 +39,7 @@ void BetaThompsonSampling::update(int32_t action, double reward) {
 #define max(x, y) x > y ? x : y
     for (int32_t i = 0; i < n_actions; i++) {
         alphas[action] = max(1.0, alphas[action] * decay_rate);
-        betas[action] = max(1.0, alphas[action] * decay_rate);
+        betas[action] = max(1.0, betas[action] * decay_rate);
     }
 }
 
