@@ -2,42 +2,28 @@
 # NOTE the -l flag!
 #
 
-# This is an example job file for a Serial Multi-Process job.
-# Note that all of the following statements below that begin
-# with #SBATCH are actually commands to the SLURM scheduler.
-# Please copy this file to your home directory and modify it
-# to suit your needs.
-# 
-# If you need any help, please email rc-help@rit.edu
-#
-
-# Name of the job - You'll probably want to customize this.
 #SBATCH -J examm_thompson
 
 #SBATCH -A examm    #just examm examm_thompson is not a valid account
 
-# Standard out and Standard Error output files
-#SBATCH -o examm_test_%A.output
-#SBATCH -e examm_test_%A.error
+#SBATCH -o cluster_logs/examm_test_%A.output
+#SBATCH -e cluster_logs/examm_test_%A.error
 
-#To send emails, set the adcdress below and remove one of the "#" signs.
 #SBATCH --mail-user jak5763@rit.edu
 
-# notify on state change: BEGIN, END, FAIL or ALL
 #SBATCH --mail-type=ALL
 
-# Request 5 hours run time MAX, anything over will be KILLED
-#SBATCH -t 4-0     # if you want to run for 4 days 1-72:0:0
+#SBATCH -t 5-0     # if you want to run for 4 days 1-72:0:0
 
 # Put the job in the "work" partition and request FOUR cores for one task
 # "work" is the default partition so it can be omitted without issue.
 
 ## Please not that each node on the cluster is 36 cores
-#SBATCH -p tier3 -n 144
+#SBATCH -p tier3 -n 288
 
 
 # Job memory requirements in MB
-#SBATCH --mem-per-cpu=5G  # I like to mem with a suffix [K|M|G|T] 5000
+#SBATCH --mem-per-cpu=4G  # I like to mem with a suffix [K|M|G|T] 5000
 
 #module load module_future
 #module load openmpi-1.10-x86_64
@@ -47,14 +33,10 @@ module load libtiff
 
 EXAMM="/home/jak5763/exact/"
 
-for decayrate in "1.0" "0.99" "0.95" "0.90" "0.85" "0.80" "0.75" "0.70"; do
-    for aircraft in "c172" "pa28" "pa44"; do
+for decayrate in "0.999" "0.99" "0.98" "0.97"; do
+    for aircraft in "c172"; do
         for use_thompson in 1; do
-           for folder in 0 1 2 3 4 5 6 7 8 9; do
-# for decayrate in "1.0"; do
-#     for aircraft in "pa44"; do
-#         for use_thompson in 1; do
-#            for folder in 0; do
+           for folder in 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19; do
                 flight=$aircraft
                 
                 if [ $flight = "c172" ]; then
@@ -87,7 +69,7 @@ for decayrate in "1.0" "0.99" "0.95" "0.90" "0.85" "0.80" "0.75" "0.70"; do
                     --normalize min_max \
                     --number_islands 10 \
                     --population_size 5 \
-                    --max_genomes 16000 \
+                    --max_genomes 16200 \
                     --speciation_method "island" \
                     --extinction_event_generation_number 400 \
                     --island_ranking_method "EraseWorst" \
@@ -99,8 +81,8 @@ for decayrate in "1.0" "0.99" "0.95" "0.90" "0.85" "0.80" "0.75" "0.70"; do
                     --std_message_level ERROR \
                     --file_message_level ERROR \
                     --use_number_mutations_thompson_sampling $use_thompson \
-    		        --number_mutations_sampling_decay_rate $decayrate \
-                    --max_number_mutations 10
+                    --number_mutations_sampling_decay_rate $decayrate \
+                    --max_number_mutations 5
             done
         done
     done
