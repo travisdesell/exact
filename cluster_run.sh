@@ -27,11 +27,11 @@
 
 #module load module_future
 #module load openmpi-1.10-x86_64
-module load openmpi
-module load gcc
-module load libtiff
+#module load openmpi
+#module load gcc
+#module load libtiff
 
-EXAMM="/home/jak5763/exact/"
+EXAMM="/Users/josh/Programming/exact_thompson"
 
 for decayrate in "0.999" "0.99" "0.98" "0.97"; do
     for aircraft in "c172"; do
@@ -81,7 +81,11 @@ for decayrate in "0.999" "0.99" "0.98" "0.97"; do
                     --std_message_level ERROR \
                     --file_message_level ERROR \
                     --use_number_mutations_thompson_sampling $use_thompson \
+<<<<<<< HEAD
                     --number_mutations_sampling_decay_rate $decayrate \
+=======
+    		        --number_mutations_sampling_decay_rate $decayrate \
+>>>>>>> e481eeda40e7b5e7590c4bc464f01680fd89877d
                     --max_number_mutations 5
             done
         done

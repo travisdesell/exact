@@ -556,6 +556,8 @@ bool EXAMM::insert_genome(RNN_Genome* genome) {
     printf("worst: %f, best: %f, fitness: %f\n", worst_fitness, best_fitness, fitness);
 
     double reward = 1 - ((fitness - best_fitness) / (worst_fitness - best_fitness));
+    reward = reward < 0.0 ? 0.0 : reward;
+    reward = reward > 1.0 ? 1.0 : reward;
 
     for (auto it = generated_by_map->begin(); it != generated_by_map->end(); it++) {
         string generated_by = it->first;
@@ -596,6 +598,8 @@ bool EXAMM::insert_genome(RNN_Genome* genome) {
                 Log::error("unrecognized generated_by string '%s'\n", generated_by.c_str());
         }
     }
+    
+    printf("reward = %f\n", reward);
 
     if (number_mutations_selector != NULL && number_mutations > 0 && speciation_strategy->get_generated_genomes() >= 4000)
         number_mutations_selector->update(number_mutations - 1, reward);
