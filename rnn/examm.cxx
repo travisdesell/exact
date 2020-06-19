@@ -586,6 +586,8 @@ bool EXAMM::insert_genome(RNN_Genome* genome) {
                 Log::error("unrecognized generated_by string '%s'\n", generated_by.c_str());
         }
     }
+    
+    printf("reward = %f\n", reward);
 
     if (number_mutations_selector != NULL && number_mutations > 0 && speciation_strategy->get_generated_genomes() >= 4000)
         number_mutations_selector->update(number_mutations - 1, reward);

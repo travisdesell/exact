@@ -41,16 +41,16 @@
 
 #module load module_future
 #module load openmpi-1.10-x86_64
-module load openmpi
-module load gcc
-module load libtiff
+#module load openmpi
+#module load gcc
+#module load libtiff
 
-EXAMM="/home/jak5763/exact/"
+EXAMM="/Users/josh/Programming/exact_thompson"
 
-for decayrate in "1.0" "0.99" "0.95" "0.90" "0.85" "0.80" "0.75" "0.70"; do
-    for aircraft in "c172" "pa28" "pa44"; do
+for decayrate in "0.99"; do
+    for aircraft in "c172"; do
         for use_thompson in 1; do
-           for folder in 0 1 2 3 4 5 6 7 8 9; do
+           for folder in 0; do
 # for decayrate in "1.0"; do
 #     for aircraft in "pa44"; do
 #         for use_thompson in 1; do
@@ -100,7 +100,7 @@ for decayrate in "1.0" "0.99" "0.95" "0.90" "0.85" "0.80" "0.75" "0.70"; do
                     --file_message_level ERROR \
                     --use_number_mutations_thompson_sampling $use_thompson \
     		        --number_mutations_sampling_decay_rate $decayrate \
-                    --max_number_mutations 10
+                    --max_number_mutations 5
             done
         done
     done
