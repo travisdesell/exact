@@ -55,6 +55,10 @@ class RNN_Genome {
 
         string log_filename;
 
+        string weight_initialize;
+        string weight_inheritance;
+        string new_component_weight;
+
         map<string, int> generated_by_map;
 
         vector<double> initial_parameters;
@@ -64,8 +68,10 @@ class RNN_Genome {
         vector<double> best_parameters;
 
         minstd_rand0 generator;
-        
+
+        uniform_real_distribution<double> rng;
         uniform_real_distribution<double> rng_0_1;
+        uniform_real_distribution<double> rng_1_1;
         NormalDistribution normal_distribution;
 
         vector<RNN_Node_Interface*> nodes;
@@ -86,8 +92,8 @@ class RNN_Genome {
         void sort_edges_by_depth();
         void sort_recurrent_edges_by_depth();
 
-        RNN_Genome(vector<RNN_Node_Interface*> &_nodes, vector<RNN_Edge*> &_edges, vector<RNN_Recurrent_Edge*> &_recurrent_edges);
-        RNN_Genome(vector<RNN_Node_Interface*> &_nodes, vector<RNN_Edge*> &_edges, vector<RNN_Recurrent_Edge*> &_recurrent_edges, uint16_t seed);
+        RNN_Genome(vector<RNN_Node_Interface*> &_nodes, vector<RNN_Edge*> &_edges, vector<RNN_Recurrent_Edge*> &_recurrent_edges, string _weight_initialize, string _weight_inheritance, string _new_component_weight);
+        RNN_Genome(vector<RNN_Node_Interface*> &_nodes, vector<RNN_Edge*> &_edges, vector<RNN_Recurrent_Edge*> &_recurrent_edges, uint16_t seed, string _weight_initialize, string _weight_inheritance, string _new_component_weight);
 
         RNN_Genome* copy();
 
@@ -157,6 +163,17 @@ class RNN_Genome {
         uint32_t get_number_outputs();
 
         void initialize_randomly();
+        void node_initialize_xavier(RNN_Node_Interface* n);
+        void node_initialize_kaiming(RNN_Node_Interface* n);
+        void node_initialize(RNN_Node_Interface* n);
+        double get_xavier_weight(RNN_Node_Interface* output_node);
+        double get_kaiming_weight(RNN_Node_Interface* output_node);
+        double get_random_weight();
+
+
+        void get_input_edges(int32_t node_innovation, vector< RNN_Edge*> &input_edges, vector< RNN_Recurrent_Edge*> &input_recurrent_edges);
+        int32_t get_fan_in(int32_t node_innovation);
+        int32_t get_fan_out(int32_t node_innovation);
 
         int32_t get_generation_id() const;
         void set_generation_id(int32_t generation_id);

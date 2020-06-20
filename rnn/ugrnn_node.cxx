@@ -44,6 +44,19 @@ void UGRNN_Node::initialize_randomly(minstd_rand0 &generator, NormalDistribution
     g_bias = bound(normal_distribution.random(generator, mu, sigma));
 }
 
+void UGRNN_Node::initialize_xavier(minstd_rand0 &generator, uniform_real_distribution<double> &rng_1_1, double range) {
+
+    cw = range * (rng_1_1(generator));
+    ch = range * (rng_1_1(generator));
+    c_bias = range * (rng_1_1(generator));
+
+    gw = range * (rng_1_1(generator));
+    gh = range * (rng_1_1(generator));
+    g_bias = range * (rng_1_1(generator));
+}
+
+void UGRNN_Node::initialize_kaiming(){}
+
 double UGRNN_Node::get_gradient(string gradient_name) {
     double gradient_sum = 0.0;
 

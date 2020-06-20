@@ -54,7 +54,8 @@ class GRU_Node : public RNN_Node_Interface {
         ~GRU_Node();
 
         void initialize_randomly(minstd_rand0 &generator, NormalDistribution &normal_distribution, double mu, double sigma);
-
+        void initialize_xavier(minstd_rand0 &generator, uniform_real_distribution<double> &rng1_1, double range);
+        void initialize_kaiming();
         double get_gradient(string gradient_name);
         void print_gradient(string gradient_name);
 

@@ -43,6 +43,18 @@ void Delta_Node::initialize_randomly(minstd_rand0 &generator, NormalDistribution
     z_hat_bias = bound(normal_distribution.random(generator, mu, sigma));
 }
 
+void Delta_Node::initialize_xavier(minstd_rand0 &generator, uniform_real_distribution<double> &rng_1_1, double range) {
+
+    alpha = range * (rng_1_1(generator));
+    beta1 = range * (rng_1_1(generator));
+    beta2 = range * (rng_1_1(generator));
+    v = range * (rng_1_1(generator));
+    r_bias = range * (rng_1_1(generator));
+    z_hat_bias = range * (rng_1_1(generator));
+}
+
+void Delta_Node::initialize_kaiming(){}
+
 double Delta_Node::get_gradient(string gradient_name) {
     double gradient_sum = 0.0;
 

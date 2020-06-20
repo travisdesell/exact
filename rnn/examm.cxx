@@ -67,6 +67,9 @@ EXAMM::EXAMM(
         const map<string,double> &_normalize_maxs,
         const map<string,double> &_normalize_avgs,
         const map<string,double> &_normalize_std_devs,
+        string _weight_initialize,
+        string _weight_inheritance,
+        string _new_component_weight,
         int32_t _bp_iterations, 
         double _learning_rate,
         bool _use_high_threshold, 
@@ -101,6 +104,9 @@ EXAMM::EXAMM(
                         dropout_probability(_dropout_probability),
                         output_directory(_output_directory),
                         normalize_type(_normalize_type),
+                        weight_initialize(_weight_initialize),
+                        weight_inheritance(_weight_inheritance),
+                        new_component_weight(_new_component_weight),
                         start_filled(_start_filled) {
     input_parameter_names = _input_parameter_names;
     output_parameter_names = _output_parameter_names;
@@ -174,6 +180,10 @@ EXAMM::EXAMM(
         merge_node_rate = 0.0;
     }
 
+    Log::error("weight initialize: %s\n", weight_initialize.c_str());
+    Log::error("weight inheritance: %s \n", weight_inheritance.c_str());
+    Log::error("new component weight: %s\n", new_component_weight.c_str());
+
     Log::info("Speciation method is: \"%s\" (Default is the island-based speciation strategy).\n", speciation_method.c_str());
     if (speciation_method.compare("island") == 0 || speciation_method.compare("") == 0) {
         //generate a minimal feed foward network as the seed genome
@@ -181,8 +191,8 @@ EXAMM::EXAMM(
         bool seed_genome_was_minimal = false;
         if (seed_genome == NULL) {
             seed_genome_was_minimal = true;
-            seed_genome = create_ff(input_parameter_names, 0, 0, output_parameter_names, 0);
-            seed_genome->initialize_randomly();
+            seed_genome = create_ff(input_parameter_names, 0, 0, output_parameter_names, 0, weight_initialize, weight_inheritance, new_component_weight);
+            seed_genome ->initialize_randomly();
         } //otherwise the seed genome was passed into EXAMM
 
         //make sure we don't duplicate node or edge innovation numbers
@@ -641,6 +651,12 @@ void EXAMM::mutate(int32_t max_mutations, RNN_Genome *g) {
     //for epigenetic_initialization
 
     vector<double> new_parameters;
+
+    // if weight_inheritance is same, all the weights of the mutated genome would be initialized as weight_initialize method
+    if (weight_inheritance.compare("same") == 0) {
+        g->initialize_randomly();
+    }
+
     g->get_weights(new_parameters);
     g->initial_parameters = new_parameters;
 
@@ -997,7 +1013,7 @@ RNN_Genome* EXAMM::crossover(RNN_Genome *p1, RNN_Genome *p2) {
     sort(child_edges.begin(), child_edges.end(), sort_RNN_Edges_by_depth());
     sort(child_recurrent_edges.begin(), child_recurrent_edges.end(), sort_RNN_Recurrent_Edges_by_depth());
 
-    RNN_Genome *child = new RNN_Genome(child_nodes, child_edges, child_recurrent_edges);
+    RNN_Genome *child = new RNN_Genome(child_nodes, child_edges, child_recurrent_edges, weight_initialize, weight_inheritance, new_component_weight);
     child->set_parameter_names(input_parameter_names, output_parameter_names);
     child->set_normalize_bounds(normalize_type, normalize_mins, normalize_maxs, normalize_avgs, normalize_std_devs);
 
@@ -1011,6 +1027,12 @@ RNN_Genome* EXAMM::crossover(RNN_Genome *p1, RNN_Genome *p2) {
     double mu, sigma;
 
     vector<double> new_parameters;
+
+    // if weight_inheritance is same, all the weights of the child genome would be initialized as weight_initialize method
+    if (weight_inheritance.compare("same") == 0) {
+        child->initialize_randomly();
+    }
+
     child->get_weights(new_parameters);
     Log::debug("getting mu/sigma before assign reachability\n");
     child->get_mu_sigma(new_parameters, mu, sigma);

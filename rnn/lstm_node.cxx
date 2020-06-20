@@ -53,6 +53,29 @@ void LSTM_Node::initialize_randomly(minstd_rand0 &generator, NormalDistribution 
     //cell_bias = 0.0;
 }
 
+void LSTM_Node::initialize_xavier(minstd_rand0 &generator, uniform_real_distribution<double> &rng_1_1, double range) {
+
+    output_gate_update_weight = range * (rng_1_1(generator));
+    output_gate_weight = range * (rng_1_1(generator));
+    output_gate_bias = range * (rng_1_1(generator));
+    //output_gate_bias = 0.0;
+
+    input_gate_update_weight = range * (rng_1_1(generator));
+    input_gate_weight = range * (rng_1_1(generator));
+    input_gate_bias = range * (rng_1_1(generator));
+    //input_gate_bias = 0.0;
+
+    forget_gate_update_weight = range * (rng_1_1(generator));
+    forget_gate_weight = range * (rng_1_1(generator));
+    forget_gate_bias = range * (rng_1_1(generator));
+    //forget_gate_bias = 1.0 + bound(normal_distribution.random(generator, mu, sigma));
+
+    cell_weight = range * (rng_1_1(generator));
+    cell_bias = range * (rng_1_1(generator));
+}
+
+void LSTM_Node::initialize_kaiming(){}
+
 double LSTM_Node::get_gradient(string gradient_name) {
     double gradient_sum = 0.0;
 

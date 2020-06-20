@@ -31,6 +31,13 @@ void RNN_Node::initialize_randomly(minstd_rand0 &generator, NormalDistribution &
     bias = bound(normal_distribution.random(generator, mu, sigma));
 }
 
+void RNN_Node::initialize_xavier(minstd_rand0 &generator, uniform_real_distribution<double> &rng_1_1, double range) {
+
+    bias = range * (rng_1_1(generator));
+}
+
+void RNN_Node::initialize_kaiming(){}
+
 void RNN_Node::input_fired(int time, double incoming_output) {
     inputs_fired[time]++;
 

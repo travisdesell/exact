@@ -44,6 +44,20 @@ void MGU_Node::initialize_randomly(minstd_rand0 &generator, NormalDistribution &
     h_bias = bound(normal_distribution.random(generator, mu, sigma));
 }
 
+void MGU_Node::initialize_xavier(minstd_rand0 &generator, uniform_real_distribution<double> &rng_1_1, double range) {
+
+    fw = range * (rng_1_1(generator));
+    fu = range * (rng_1_1(generator));
+    f_bias = range * (rng_1_1(generator));
+
+    hw = range * (rng_1_1(generator));
+    hu = range * (rng_1_1(generator));
+    h_bias = range * (rng_1_1(generator));
+    
+}
+
+void MGU_Node::initialize_kaiming(){}
+
 double MGU_Node::get_gradient(string gradient_name) {
     double gradient_sum = 0.0;
 

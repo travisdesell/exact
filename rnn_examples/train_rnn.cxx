@@ -89,33 +89,42 @@ int main(int argc, char **argv) {
     int32_t max_recurrent_depth;
     get_argument(arguments, "--max_recurrent_depth", true, max_recurrent_depth);
 
+    string weight_initialize = "random";
+    get_argument(arguments, "--weight_initialize", false, weight_initialize);
+
+    string weight_inheritance = "lamarckian";
+    get_argument(arguments, "--weight_inheritance", false, weight_inheritance);
+
+    string new_component_weight = "lamarckian";
+    get_argument(arguments, "--new_component_weight", false, new_component_weight);
+
     vector<string> input_parameter_names = time_series_sets->get_input_parameter_names();
     vector<string> output_parameter_names = time_series_sets->get_output_parameter_names();
 
     RNN_Genome *genome;
     if (rnn_type == "one_layer_lstm") {
-        genome = create_lstm(input_parameter_names, 1, number_inputs, output_parameter_names, max_recurrent_depth);
+        genome = create_lstm(input_parameter_names, 1, number_inputs, output_parameter_names, max_recurrent_depth, weight_initialize, weight_inheritance, new_component_weight);
 
     } else if (rnn_type == "two_layer_lstm") {
-        genome = create_lstm(input_parameter_names, 1, number_inputs, output_parameter_names, max_recurrent_depth);
+        genome = create_lstm(input_parameter_names, 1, number_inputs, output_parameter_names, max_recurrent_depth, weight_initialize, weight_inheritance, new_component_weight);
 
     } else if (rnn_type == "one_layer_gru") {
-        genome = create_gru(input_parameter_names, 1, number_inputs, output_parameter_names, max_recurrent_depth);
+        genome = create_gru(input_parameter_names, 1, number_inputs, output_parameter_names, max_recurrent_depth, weight_initialize, weight_inheritance, new_component_weight);
 
     } else if (rnn_type == "two_layer_gru") {
-        genome = create_gru(input_parameter_names, 1, number_inputs, output_parameter_names, max_recurrent_depth);
+        genome = create_gru(input_parameter_names, 1, number_inputs, output_parameter_names, max_recurrent_depth, weight_initialize, weight_inheritance, new_component_weight);
 
     } else if (rnn_type == "one_layer_ff") {
-        genome = create_ff(input_parameter_names, 1, number_inputs, output_parameter_names, max_recurrent_depth);
+        genome = create_ff(input_parameter_names, 1, number_inputs, output_parameter_names, max_recurrent_depth, weight_initialize, weight_inheritance, new_component_weight);
 
     } else if (rnn_type == "two_layer_ff") {
-        genome = create_ff(input_parameter_names, 1, number_inputs, output_parameter_names, max_recurrent_depth);
+        genome = create_ff(input_parameter_names, 1, number_inputs, output_parameter_names, max_recurrent_depth, weight_initialize, weight_inheritance, new_component_weight);
 
     } else if (rnn_type == "jordan") {
-        genome = create_jordan(input_parameter_names, 1, number_inputs, output_parameter_names, max_recurrent_depth);
+        genome = create_jordan(input_parameter_names, 1, number_inputs, output_parameter_names, max_recurrent_depth, weight_initialize, weight_inheritance, new_component_weight);
 
     } else if (rnn_type == "elman") {
-        genome = create_elman(input_parameter_names, 1, number_inputs, output_parameter_names, max_recurrent_depth);
+        genome = create_elman(input_parameter_names, 1, number_inputs, output_parameter_names, max_recurrent_depth, weight_initialize, weight_inheritance, new_component_weight);
 
     } else {
         Log::fatal("ERROR: incorrect rnn type\n");
