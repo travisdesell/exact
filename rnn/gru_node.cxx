@@ -64,7 +64,34 @@ void GRU_Node::initialize_xavier(minstd_rand0 &generator, uniform_real_distribut
 
 }
 
-void GRU_Node::initialize_kaiming(){}
+void GRU_Node::initialize_kaiming(minstd_rand0 &generator, NormalDistribution &normal_distribution, double range){
+    zw = range * normal_distribution.random(generator, 0, 1);
+    zu = range * normal_distribution.random(generator, 0, 1);
+    z_bias = range * normal_distribution.random(generator, 0, 1);
+
+    rw = range * normal_distribution.random(generator, 0, 1);
+    ru = range * normal_distribution.random(generator, 0, 1);
+    r_bias = range * normal_distribution.random(generator, 0, 1);
+
+    hw = range * normal_distribution.random(generator, 0, 1);
+    hu = range * normal_distribution.random(generator, 0, 1);
+    h_bias = range * normal_distribution.random(generator, 0, 1);
+}
+
+void GRU_Node::randomly_initialize_node(minstd_rand0 &generator, uniform_real_distribution<double> &rng) {
+    zw = rng(generator);
+    zu = rng(generator);
+    z_bias = rng(generator);
+
+    rw = rng(generator);
+    ru = rng(generator);
+    r_bias = rng(generator);
+
+    hw = rng(generator);
+    hu = rng(generator);
+    h_bias = rng(generator);
+    
+}
 
 double GRU_Node::get_gradient(string gradient_name) {
     double gradient_sum = 0.0;

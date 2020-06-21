@@ -74,7 +74,45 @@ void LSTM_Node::initialize_xavier(minstd_rand0 &generator, uniform_real_distribu
     cell_bias = range * (rng_1_1(generator));
 }
 
-void LSTM_Node::initialize_kaiming(){}
+void LSTM_Node::initialize_kaiming(minstd_rand0 &generator, NormalDistribution &normal_distribution, double range){
+    output_gate_update_weight = range * normal_distribution.random(generator, 0, 1);
+    output_gate_weight = range * normal_distribution.random(generator, 0, 1);
+    output_gate_bias = range * normal_distribution.random(generator, 0, 1);
+    //output_gate_bias = 0.0;
+
+    input_gate_update_weight = range * normal_distribution.random(generator, 0, 1);
+    input_gate_weight = range * normal_distribution.random(generator, 0, 1);
+    input_gate_bias = range * normal_distribution.random(generator, 0, 1);
+    //input_gate_bias = 0.0;
+
+    forget_gate_update_weight = range * normal_distribution.random(generator, 0, 1);
+    forget_gate_weight = range * normal_distribution.random(generator, 0, 1);
+    forget_gate_bias = range * normal_distribution.random(generator, 0, 1);
+    //forget_gate_bias = 1.0 + bound(normal_distribution.random(generator, mu, sigma));
+
+    cell_weight = range * normal_distribution.random(generator, 0, 1);
+    cell_bias = range * normal_distribution.random(generator, 0, 1);
+}
+
+void LSTM_Node::randomly_initialize_node(minstd_rand0 &generator, uniform_real_distribution<double> &rng) {
+    output_gate_update_weight = rng(generator);
+    output_gate_weight = rng(generator);
+    output_gate_bias = rng(generator);
+    //output_gate_bias = 0.0;
+
+    input_gate_update_weight = rng(generator);
+    input_gate_weight = rng(generator);
+    input_gate_bias = rng(generator);
+    //input_gate_bias = 0.0;
+
+    forget_gate_update_weight = rng(generator);
+    forget_gate_weight = rng(generator);
+    forget_gate_bias = rng(generator);
+    //forget_gate_bias = 1.0 + bound(normal_distribution.random(generator, mu, sigma));
+
+    cell_weight = rng(generator);
+    cell_bias = rng(generator);
+}
 
 double LSTM_Node::get_gradient(string gradient_name) {
     double gradient_sum = 0.0;
