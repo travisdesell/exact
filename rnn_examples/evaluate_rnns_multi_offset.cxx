@@ -84,7 +84,15 @@ int main(int argc, char** argv) {
     //TODO: should check that all genomes have the same output parameter name(s)
 
     TimeSeriesSets *time_series_sets = TimeSeriesSets::generate_test(testing_filenames, genomes[0]->get_input_parameter_names(), genomes[0]->get_output_parameter_names());
-    time_series_sets->normalize(genomes[0]->get_normalize_mins(), genomes[0]->get_normalize_maxs());
+
+
+    string normalize_type = genomes[0]->get_normalize_type();
+    if (normalize_type.compare("min_max") == 0) {
+        time_series_sets->normalize_min_max(genomes[0]->get_normalize_mins(), genomes[0]->get_normalize_maxs());
+    } else if (normalize_type.compare("avg_std_dev") == 0) {
+        time_series_sets->normalize_avg_std_dev(genomes[0]->get_normalize_avgs(), genomes[0]->get_normalize_std_devs(), genomes[0]->get_normalize_mins(), genomes[0]->get_normalize_maxs());
+    }
+
     vector< vector<double> > full_series;
 
     //TODO: only working with one output type currently
@@ -100,8 +108,14 @@ int main(int argc, char** argv) {
     for (int32_t i = 0; i < genomes.size(); i++) {
         time_series_sets = TimeSeriesSets::generate_test(testing_filenames, genomes[i]->get_input_parameter_names(), genomes[i]->get_output_parameter_names());
         Log::debug("got time series sets.\n");
-        time_series_sets->normalize(genomes[i]->get_normalize_mins(), genomes[i]->get_normalize_maxs());
-        Log::debug("normalized time series.\n");
+        string normalize_type = genomes[i]->get_normalize_type();
+        if (normalize_type.compare("min_max") == 0) {
+            time_series_sets->normalize_min_max(genomes[i]->get_normalize_mins(), genomes[i]->get_normalize_maxs());
+        } else if (normalize_type.compare("avg_std_dev") == 0) {
+            time_series_sets->normalize_avg_std_dev(genomes[i]->get_normalize_avgs(), genomes[i]->get_normalize_std_devs(), genomes[i]->get_normalize_mins(), genomes[i]->get_normalize_maxs());
+        }
+
+       Log::debug("normalized time series.\n");
 
         time_series_sets->export_test_series(time_offsets[i], testing_inputs, testing_outputs);
 

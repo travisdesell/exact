@@ -104,11 +104,41 @@ int main(int argc, char** argv) {
     int32_t max_genomes;
     get_argument(arguments, "--max_genomes", true, max_genomes);
 
-    int32_t num_genomes_check_on_island;
-    get_argument(arguments, "--num_genomes_check_on_island", false, num_genomes_check_on_island);
+    string speciation_method = "";
+    get_argument(arguments, "--speciation_method", false, speciation_method);
 
-    string check_on_island_method = "";
-    get_argument(arguments, "--check_on_island_method", false, check_on_island_method);
+    int32_t extinction_event_generation_number = 0;
+    get_argument(arguments, "--extinction_event_generation_number", false, extinction_event_generation_number);
+  
+    int32_t islands_to_exterminate;
+    get_argument(arguments, "--islands_to_exterminate", false, islands_to_exterminate);
+
+    string island_ranking_method = "";
+    get_argument(arguments, "--island_ranking_method", false, island_ranking_method);
+
+    string repopulation_method = "";
+    get_argument(arguments, "--repopulation_method", false, repopulation_method);
+
+    int32_t repopulation_mutations = 0;
+    get_argument(arguments, "--repopulation_mutations", false, repopulation_mutations);
+
+    double species_threshold = 0.0;
+    get_argument(arguments, "--species_threshold", false, species_threshold);
+        
+    double fitness_threshold = 100;
+    get_argument(arguments, "--fitness_threshold", false, fitness_threshold);
+
+    double neat_c1 = 1;
+    get_argument(arguments, "--neat_c1", false, neat_c1);
+
+    double neat_c2 = 1;
+    get_argument(arguments, "--neat_c2", false, neat_c2);
+
+    double neat_c3 = 1;
+    get_argument(arguments, "--neat_c3", false, neat_c3);
+
+    bool repeat_extinction = false;
+    get_argument(arguments, "--repeat_extinction", false, repeat_extinction);
 
     int32_t bp_iterations;
     get_argument(arguments, "--bp_iterations", true, bp_iterations);
@@ -125,64 +155,24 @@ int main(int argc, char** argv) {
     double dropout_probability = 0.0;
     bool use_dropout = get_argument(arguments, "--dropout_probability", false, dropout_probability);
 
-    int32_t rec_delay_min = 1;
-    get_argument(arguments, "--rec_delay_min", false, rec_delay_min);
-
-    int32_t rec_delay_max = 10;
-    get_argument(arguments, "--rec_delay_max", false, rec_delay_max);
-
     get_argument(arguments, "--output_directory", true, output_directory);
 
     string output_filename;
     get_argument(arguments, "--output_filename", true, output_filename);
 
-    string genome_file_name = "";
-    get_argument(arguments, "--genome_bin", false, genome_file_name);
-    int no_extra_inputs = 0 ;
-    if (genome_file_name != "") {
-        get_argument(arguments, "--extra_inputs", true, no_extra_inputs);
-    }
-    int no_extra_outputs = 0 ;
-    if (genome_file_name != "") {
-        get_argument(arguments, "--extra_outputs", false, no_extra_outputs);
-    }
-    string inputs_to_remove = "" ;
-    if (genome_file_name != "") {
-        get_argument(arguments, "--inputs_to_remove", false, inputs_to_remove);
-    }
+    vector<string> possible_node_types;
+    get_argument_vector(arguments, "--possible_node_types", false, possible_node_types);
 
-    string outputs_to_remove = "" ;
-    if (genome_file_name != "") {
-        get_argument(arguments, "--outputs_to_remove", false, outputs_to_remove);
-    }
+    int32_t min_recurrent_depth = 1;
+    get_argument(arguments, "--min_recurrent_depth", false, min_recurrent_depth);
 
-    bool tl_ver1 = true ;
-    if (genome_file_name != "") {
-        get_argument(arguments, "--tl_version1", false, tl_ver1);
-    }
-    bool tl_ver2 = true ;
-    if (genome_file_name != "") {
-        get_argument(arguments, "--tl_version2", false, tl_ver2);
-    }
-    bool tl_ver3 = true ;
-    if (genome_file_name != "") {
-        get_argument(arguments, "--tl_version3", false, tl_ver3);
-    }
-    
-    bool tl_start_filled = false;
-    if (genome_file_name != "") {
-        get_argument(arguments, "--tl_start_filled", false, tl_start_filled);
-    }
+    int32_t max_recurrent_depth = 10;
+    get_argument(arguments, "--max_recurrent_depth", false, max_recurrent_depth);
 
-    int32_t stir_mutations = 0;
-    get_argument(arguments, "--stir_mutations", false, stir_mutations);
+    bool start_filled = false;
+    get_argument(arguments, "--start_filled", false, start_filled);
 
     TimeSeriesSets *time_series_sets = TimeSeriesSets::generate_from_arguments(arguments);
-    vector<string> inputs_removed_tokens  ;
-    vector<string> outputs_removed_tokens ;
-
-    get_individual_inputs( inputs_to_remove, inputs_removed_tokens) ;
-    get_individual_inputs( outputs_to_remove, outputs_removed_tokens) ;
 
     int32_t number_slices;
     get_argument(arguments, "--number_slices", true, number_slices);
@@ -217,22 +207,28 @@ int main(int argc, char** argv) {
         overall_results << "results for slice " << i << " of " << time_series_sets->get_number_series() << " as test data." << endl;
 
         for (uint32_t k = 0; k < repeats; k++) {
-            examm = new EXAMM(population_size, number_islands, max_genomes, num_genomes_check_on_island, check_on_island_method,
-                time_series_sets->get_input_parameter_names(),
-                time_series_sets->get_output_parameter_names(),
-                time_series_sets->get_normalize_mins(),
-                time_series_sets->get_normalize_maxs(),
-                bp_iterations, learning_rate,
-                use_high_threshold, high_threshold,
-                use_low_threshold, low_threshold,
-                use_dropout, dropout_probability,
-                rec_delay_min, rec_delay_max,
-                output_directory + "/slice_" + to_string(i) + "_repeat_" + to_string(k),
-                genome_file_name,
-                no_extra_inputs, no_extra_outputs,
-                inputs_removed_tokens, outputs_removed_tokens,
-                tl_ver1, tl_ver2, tl_ver3, tl_start_filled, 
-                stir_mutations);
+            examm = new EXAMM(population_size, number_islands, max_genomes, extinction_event_generation_number, islands_to_exterminate, island_ranking_method,
+                    repopulation_method, repopulation_mutations, repeat_extinction,
+                    speciation_method,
+                    species_threshold, fitness_threshold,
+                    neat_c1, neat_c2, neat_c3,
+                    time_series_sets->get_input_parameter_names(),
+                    time_series_sets->get_output_parameter_names(),
+                    time_series_sets->get_normalize_type(),
+                    time_series_sets->get_normalize_mins(),
+                    time_series_sets->get_normalize_maxs(),
+                    time_series_sets->get_normalize_avgs(),
+                    time_series_sets->get_normalize_std_devs(),
+                    bp_iterations, learning_rate,
+                    use_high_threshold, high_threshold,
+                    use_low_threshold, low_threshold,
+                    use_dropout, dropout_probability,
+                    min_recurrent_depth, max_recurrent_depth,
+                    output_directory,
+                    NULL,
+                    start_filled);
+
+            if (possible_node_types.size() > 0) examm->set_possible_node_types(possible_node_types);
 
             vector<thread> threads;
             for (int32_t i = 0; i < number_threads; i++) {

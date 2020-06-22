@@ -27,7 +27,7 @@ RNN_Recurrent_Edge::RNN_Recurrent_Edge(int32_t _innovation_number, int32_t _recu
     forward_reachable = true;
     backward_reachable = true;
 
-    Log::debug("created recurrent edge %d from %d to %d\n", innovation_number, input_innovation_number, output_innovation_number);
+    Log::debug("\t\tcreated recurrent edge %d from %d to %d\n", innovation_number, input_innovation_number, output_innovation_number);
 }
 
 RNN_Recurrent_Edge::RNN_Recurrent_Edge(int32_t _innovation_number, int32_t _recurrent_depth, int32_t _input_innovation_number, int32_t _output_innovation_number, const vector<RNN_Node_Interface*> &nodes) {
@@ -198,6 +198,11 @@ int32_t RNN_Recurrent_Edge::get_recurrent_depth() const {
 double RNN_Recurrent_Edge::get_gradient() {
     return d_weight;
 }
+
+bool RNN_Recurrent_Edge::is_enabled() const {
+    return enabled;
+}
+
 
 bool RNN_Recurrent_Edge::is_reachable() const {
     return forward_reachable && backward_reachable;

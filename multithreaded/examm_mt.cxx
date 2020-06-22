@@ -93,8 +93,8 @@ int main(int argc, char** argv) {
     get_argument(arguments, "--time_offset", true, time_offset);
 
     TimeSeriesSets* time_series_sets = TimeSeriesSets::generate_from_arguments(arguments);
-    vector<string> inputs_removed_tokens  ;
-    vector<string> outputs_removed_tokens ;
+    vector<string> inputs_removed_tokens;
+    vector<string> outputs_removed_tokens;
 
     time_series_sets->export_training_series(time_offset, training_inputs, training_outputs);
     time_series_sets->export_test_series(time_offset, validation_inputs, validation_outputs);
@@ -148,6 +148,8 @@ int main(int argc, char** argv) {
     double neat_c3 = 1;
     get_argument(arguments, "--neat_c3", false, neat_c3);
 
+    bool repeat_extinction = argument_exists(arguments, "--repeat_extinction");
+
     int32_t bp_iterations;
     get_argument(arguments, "--bp_iterations", true, bp_iterations);
 
@@ -169,76 +171,51 @@ int main(int argc, char** argv) {
     vector<string> possible_node_types;
     get_argument_vector(arguments, "--possible_node_types", false, possible_node_types);
 
-    int32_t rec_delay_min = 1;
-    get_argument(arguments, "--rec_delay_min", false, rec_delay_min);
+    int32_t min_recurrent_depth = 1;
+    get_argument(arguments, "--min_recurrent_depth", false, min_recurrent_depth);
 
-    int32_t rec_delay_max = 10;
-    get_argument(arguments, "--rec_delay_max", false, rec_delay_max);
+    int32_t max_recurrent_depth = 10;
+    get_argument(arguments, "--max_recurrent_depth", false, max_recurrent_depth);
 
+
+    RNN_Genome *seed_genome = NULL;
     string genome_file_name = "";
-    get_argument(arguments, "--genome_bin", false, genome_file_name);
-    int no_extra_inputs = 0 ;
-    if (genome_file_name != "") {
-        get_argument(arguments, "--extra_inputs", true, no_extra_inputs);
-    }
-    int no_extra_outputs = 0 ;
-    if (genome_file_name != "") {
-        get_argument(arguments, "--extra_outputs", false, no_extra_outputs);
-    }
-    string inputs_to_remove = "" ;
-    if (genome_file_name != "") {
-        get_argument(arguments, "--inputs_to_remove", false, inputs_to_remove);
+    if (get_argument(arguments, "--genome_bin", false, genome_file_name)) {
+        seed_genome = new RNN_Genome(genome_file_name);
+
+        string transfer_learning_version;
+        get_argument(arguments, "--transfer_learning_version", true, transfer_learning_version);
+
+        bool epigenetic_weights = argument_exists(arguments, "--epigenetic_weights");
+
+        seed_genome->transfer_to(time_series_sets->get_input_parameter_names(), time_series_sets->get_output_parameter_names(), transfer_learning_version, epigenetic_weights, min_recurrent_depth, max_recurrent_depth);
     }
 
-    string outputs_to_remove = "" ;
+    bool start_filled = false;
     if (genome_file_name != "") {
-        get_argument(arguments, "--outputs_to_remove", false, outputs_to_remove);
+        get_argument(arguments, "--start_filled", false, start_filled);
     }
-
-    int32_t stir_mutations = 0;
-    get_argument(arguments, "--stir_mutations", false, stir_mutations);
-
-    bool tl_ver1 = true ;
-    if (genome_file_name != "") {
-        get_argument(arguments, "--tl_version1", false, tl_ver1);
-    }
-    
-    bool tl_ver2 = true ;
-    if (genome_file_name != "") {
-        get_argument(arguments, "--tl_version2", false, tl_ver2);
-    }
-    bool tl_ver3 = true ;
-    if (genome_file_name != "") {
-        get_argument(arguments, "--tl_version3", false, tl_ver3);
-    }
-    
-    bool tl_start_filled = false;
-    if (genome_file_name != "") {
-        get_argument(arguments, "--tl_start_filled", false, tl_start_filled);
-    }
-    get_individual_inputs( inputs_to_remove, inputs_removed_tokens) ;
-    get_individual_inputs( outputs_to_remove, outputs_removed_tokens) ;
-
 
     examm = new EXAMM(population_size, number_islands, max_genomes, extinction_event_generation_number, islands_to_exterminate, island_ranking_method,
-                    repopulation_method, repopulation_mutations,
-                    speciation_method,
-                    species_threshold, fitness_threshold, 
-                    neat_c1, neat_c2, neat_c3,
-                    time_series_sets->get_input_parameter_names(),
-                    time_series_sets->get_output_parameter_names(),
-                    time_series_sets->get_normalize_mins(),
-                    time_series_sets->get_normalize_maxs(),
-                    bp_iterations, learning_rate,
-                    use_high_threshold, high_threshold,
-                    use_low_threshold, low_threshold,
-                    use_dropout, dropout_probability,
-                    rec_delay_min, rec_delay_max,
-                    output_directory,
-                    genome_file_name,
-                    no_extra_inputs, no_extra_outputs,
-                    inputs_removed_tokens, outputs_removed_tokens,
-                    tl_ver1, tl_ver2, tl_ver3, tl_start_filled);
+            repopulation_method, repopulation_mutations, repeat_extinction,
+            speciation_method,
+            species_threshold, fitness_threshold,
+            neat_c1, neat_c2, neat_c3,
+            time_series_sets->get_input_parameter_names(),
+            time_series_sets->get_output_parameter_names(),
+            time_series_sets->get_normalize_type(),
+            time_series_sets->get_normalize_mins(),
+            time_series_sets->get_normalize_maxs(),
+            time_series_sets->get_normalize_avgs(),
+            time_series_sets->get_normalize_std_devs(),
+            bp_iterations, learning_rate,
+            use_high_threshold, high_threshold,
+            use_low_threshold, low_threshold,
+            use_dropout, dropout_probability,
+            min_recurrent_depth, max_recurrent_depth,
+            output_directory,
+            seed_genome,
+            start_filled);
 
     if (possible_node_types.size() > 0)  {
         examm->set_possible_node_types(possible_node_types);

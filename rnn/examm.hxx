@@ -30,11 +30,14 @@ class EXAMM {
         int32_t max_genomes;
         int32_t total_bp_epochs;
 
-        string speciation_method;
-        string island_ranking_method;
         int32_t extinction_event_generation_number;
+        string island_ranking_method;
+
+        string speciation_method;
         string repopulation_method;
         int32_t repopulation_mutations;
+        bool repeat_extinction;
+        
         SpeciationStrategy *speciation_strategy;
 
         double species_threshold;
@@ -91,31 +94,30 @@ class EXAMM {
 
         vector<int> possible_node_types;
 
+        vector<string> op_log_ordering;
+        map<string, int32_t> inserted_counts;
+        map<string, int32_t> generated_counts;
 
         string output_directory;
         ofstream *log_file;
+        ofstream *op_log_file;
 
         vector<string> input_parameter_names;
         vector<string> output_parameter_names;
 
+        string normalize_type;
         map<string,double> normalize_mins;
         map<string,double> normalize_maxs;
+        map<string,double> normalize_avgs;
+        map<string,double> normalize_std_devs;
 
         ostringstream memory_log;
 
         std::chrono::time_point<std::chrono::system_clock> startClock;
 
-        string  genome_file_name ;
-        int     no_extra_inputs ;
-        int     no_extra_outputs ;
+        string  genome_file_name;
 
-        vector<string> inputs_to_remove ;
-        vector<string> outputs_to_remove ;
-
-        bool tl_ver1;
-        bool tl_ver2;
-        bool tl_ver3;
-        bool tl_start_filled;
+        bool start_filled;
 
     public:
         EXAMM(  int32_t _population_size, 
@@ -126,6 +128,7 @@ class EXAMM {
                 string _island_ranking_method,
                 string _repopulation_method,
                 int32_t _repopulation_mutations,
+                bool _repeat_extinction,
                 string _speciation_method,
                 double _species_threshold, 
                 double _fitness_threshold,
@@ -134,8 +137,11 @@ class EXAMM {
                 double _neat_c3,
                 const vector<string> &_input_parameter_names,
                 const vector<string> &_output_parameter_names,
+                string _normalize_type,
                 const map<string,double> &_normalize_mins,
                 const map<string,double> &_normalize_maxs,
+                const map<string,double> &_normalize_avgs,
+                const map<string,double> &_normalize_std_devs,
                 int32_t _bp_iterations,
                 double _learning_rate,
                 bool _use_high_threshold,
@@ -147,12 +153,8 @@ class EXAMM {
                 int32_t _min_recurrent_depth,
                 int32_t _max_recurrent_depth,
                 string _output_directory, 
-                string _genome_file_name,
-                int _no_extra_inputs,
-                int _no_extra_outputs,
-                vector<string> &_inputs_to_remove,
-                vector<string> &_outputs_to_remove,
-                bool _tl_ver1, bool _tl_ver2, bool _tl_ver3, bool _tl_start_filled);
+                RNN_Genome *seed_genome,
+                bool _start_filled);
 
 
         ~EXAMM();
