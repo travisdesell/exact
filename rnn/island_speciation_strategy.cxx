@@ -29,7 +29,9 @@ IslandSpeciationStrategy::IslandSpeciationStrategy(
         string _island_ranking_method, string _repopulation_method,
         int32_t _extinction_event_generation_number, int32_t _repopulation_mutations,
         int32_t _islands_to_exterminate, int32_t _max_genomes, 
-        bool _repeat_extinction, bool _seed_genome_was_minimal) :
+        bool _seed_genome_was_minimal,
+        bool _repeat_extinction
+        ) :
                         generation_island(0), 
                         number_of_islands(_number_of_islands), 
                         max_island_size(_max_island_size), 
@@ -45,8 +47,8 @@ IslandSpeciationStrategy::IslandSpeciationStrategy(
                         repopulation_mutations(_repopulation_mutations), 
                         islands_to_exterminate(_islands_to_exterminate),
                         max_genomes(_max_genomes),
-                        repeat_extinction(_repeat_extinction),
-                        seed_genome_was_minimal(_seed_genome_was_minimal) {
+                        seed_genome_was_minimal(_seed_genome_was_minimal),
+                        repeat_extinction(_repeat_extinction) {
 
     double rate_sum = mutation_rate + intra_island_crossover_rate + inter_island_crossover_rate;
     if (rate_sum != 1.0) {

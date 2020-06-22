@@ -42,12 +42,12 @@ double swish(double value){
 
 double swish_derivative(double value, double input){
     double sigmoid_value = sigmoid(value);
-    return sigmoid_value + input*(1 - sigmoid_value);
+    return sigmoid_value + (input * (1 - sigmoid_value));
 }
 
 double leakyReLU(double value){
     double alpha = 0.01;
-    return max(alpha*value,value);
+    return fmax(alpha*value, value);
 }
 
 double leakyReLU_derivative(double input){

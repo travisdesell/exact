@@ -196,10 +196,10 @@ void ENARC_Node::try_update_deltas(int time){
 
   	double d_h_tanh = d_h_tanh1*l_w1_z[time]*w1;
 
-  	d_h_prev[time] = d_h_tanh*l_d_z[time]*rw;
+    d_h_prev[time] += d_h_tanh*l_d_z[time]*rw;
   	d_rw[time] = d_h_tanh*l_d_z[time]*h_prev;
 
-  	d_input[time] = d_h_tanh*l_d_z[time]*zw;
+  	d_input[time] += d_h_tanh*l_d_z[time]*zw;
   	d_zw[time] = d_h_tanh*l_d_z[time]*x;
 
 }
