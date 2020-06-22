@@ -17,7 +17,7 @@ RNN_Edge::RNN_Edge(int _innovation_number, RNN_Node_Interface *_input_node, RNN_
     input_node->total_outputs++;
     output_node->total_inputs++;
 
-    Log::debug("created edge %d from %d to %d\n", innovation_number, input_innovation_number, output_innovation_number);
+    Log::debug("\t\tcreated edge %d from %d to %d\n", innovation_number, input_innovation_number, output_innovation_number);
 }
 
 RNN_Edge::RNN_Edge(int _innovation_number, int _input_innovation_number, int _output_innovation_number, const vector<RNN_Node_Interface*> &nodes) {
@@ -187,6 +187,10 @@ const RNN_Node_Interface* RNN_Edge::get_input_node() const {
 
 const RNN_Node_Interface* RNN_Edge::get_output_node() const {
     return output_node;
+}
+
+bool RNN_Edge::is_enabled() const {
+    return enabled;
 }
 
 bool RNN_Edge::is_reachable() const {

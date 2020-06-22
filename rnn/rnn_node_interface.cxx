@@ -7,6 +7,9 @@ using std::ostream;
 using std::string;
 
 #include "rnn_node_interface.hxx"
+#include "rnn_genome.hxx"
+
+#include "common/log.hxx"
 
 
 extern const int32_t NUMBER_NODE_TYPES = 8;
@@ -41,12 +44,35 @@ RNN_Node_Interface::RNN_Node_Interface(int32_t _innovation_number, int32_t _laye
 
     //outputs don't have an official output node but
     //deltas are passed in via the output_fired method
+    if (layer_type != HIDDEN_LAYER) {
+        Log::fatal("ERROR: Attempted to create a new RNN_Node that was an input or output node without using the constructor which specifies it's parameter name");
+        exit(1);
+    }
+}
+
+RNN_Node_Interface::RNN_Node_Interface(int32_t _innovation_number, int32_t _layer_type, double _depth, string _parameter_name) : innovation_number(_innovation_number), layer_type(_layer_type), depth(_depth), parameter_name(_parameter_name) {
+    total_inputs = 0;
+
+    enabled = true;
+    forward_reachable = false;
+    backward_reachable = false;
+    
+    if (layer_type == HIDDEN_LAYER) {
+        Log::fatal("ERROR: assigned a parameter name '%s' to a hidden node! This should never happen.", parameter_name.c_str());
+        exit(1);
+    }
+
+    //outputs don't have an official output node but
+    //deltas are passed in via the output_fired method
     if (layer_type == OUTPUT_LAYER) {
         total_outputs = 1;
     } else {
+        //this is an input node
         total_outputs = 0;
+        total_inputs = 1;
     }
 }
+
 
 RNN_Node_Interface::~RNN_Node_Interface() {
 }
@@ -97,4 +123,6 @@ void RNN_Node_Interface::write_to_stream(ostream &out) {
     out.write((char*)&node_type, sizeof(int32_t));
     out.write((char*)&depth, sizeof(double));
     out.write((char*)&enabled, sizeof(bool));
+
+    write_binary_string(out, parameter_name, "parameter_name");
 }
