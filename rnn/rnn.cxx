@@ -33,6 +33,7 @@ using std::vector;
 #include "lstm_node.hxx"
 #include "gru_node.hxx"
 #include "enarc_node.hxx"
+#include "enas_dag_node.hxx"
 #include "mgu_node.hxx"
 #include "mse.hxx"
 

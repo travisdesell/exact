@@ -36,6 +36,7 @@ extern const string NODE_TYPES[];
 #define DELTA_NODE 6
 #define LSTM_NODE 7
 #define ENARC_NODE 8
+#define ENAS_DAG_NODE 9
 
 
 double sigmoid(double value);
@@ -45,6 +46,8 @@ double swish(double value);
 double swish_derivative(double value, double input);
 double leakyReLU(double value);
 double leakyReLU_derivative(double input);
+double identity(double value);
+double identity_derivative();
 
 
 double bound(double value);

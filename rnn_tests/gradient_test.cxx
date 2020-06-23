@@ -59,12 +59,15 @@ void gradient_test(string name, RNN_Genome *genome, const vector< vector<double>
 
 	RNN* rnn = genome->get_rnn();
 
+    Log::debug("got genome \n");
+
 
 	for (int32_t i = 0; i < test_iterations; i++) {
         if (i == 0) Log::debug_no_header("\n");
         Log::debug("\tAttempt %d\n", i);
 
 		generate_random_vector(rnn->get_number_weights(), parameters);
+		Log::debug("DEBUG: firing weights are %d \n", rnn->get_number_weights());    
 
 		rnn->get_analytic_gradient(parameters, inputs, outputs, analytic_mse, analytic_gradient, false, true, 0.0);
 		rnn->get_empirical_gradient(parameters, inputs, outputs, empirical_mse, empirical_gradient, false, true, 0.0);
