@@ -52,8 +52,7 @@ void ENAS_DAG_Node::initialize_randomly(minstd_rand0 &generator, NormalDistribut
   int assigned_node_weights = 2; // 2 weights for the starting node assigned above
 
   for (int new_node_weight = 0; new_node_weight < NUMBER_ENAS_DAG_WEIGHTS - assigned_node_weights; ++new_node_weight){
-    cout<<"Entering weights"<<endl;
-    weights[new_node_weight] = bound(normal_distribution.random(generator, mu, sigma));
+        weights.at(new_node_weight)= bound(normal_distribution.random(generator, mu, sigma));
   }
 
 }
@@ -116,7 +115,7 @@ double ENAS_DAG_Node::activation_derivative(double value, double input, int act_
 
 void ENAS_DAG_Node::input_fired(int time, double incoming_output) {
 
-    vector<int> connections {0,1,2,2,3,4,2,4,4};
+    vector<int> connections {0,1,1,1,2,5,3,5,4};
     vector<int> operations {1,1,1,3,3,0,2,1,2};
     vector<int> node_output(connections.size(),1);
     inputs_fired[time]++;
@@ -130,8 +129,8 @@ void ENAS_DAG_Node::input_fired(int time, double incoming_output) {
 
     //update the reset gate bias so its centered around 1
     //r_bias += 1;
-    double no_of_nodes = connections.size();
-    Log::fatal("ERROR: inputs_fired on ENAS_DAG_Node %d at time %d is %d and no_of_nodes is %d\n", innovation_number, time, inputs_fired[time], no_of_nodes);
+    int no_of_nodes = connections.size();
+    Log::debug("ERROR: inputs_fired on ENAS_DAG_Node %d at time %d is %d and no_of_nodes is %d\n", innovation_number, time, inputs_fired[time], no_of_nodes);
 
 
     int fan_out = 0; 
@@ -166,6 +165,8 @@ void ENAS_DAG_Node::input_fired(int time, double incoming_output) {
         } 
     }
 
+   // output_values[time] += Nodes[0][time];
+
     // output_values[time] /= fan_out;
 
     Log::debug("DEBUG: input_fired on ENAS_DAG_Node %d at time %d is %d and total_outputs is %d\n", innovation_number, time, outputs_fired[time], total_outputs);
@@ -191,7 +192,7 @@ void ENAS_DAG_Node::try_update_deltas(int time){
 
     //d_h *= fan_out;
 
-    vector<int> connections {0,1,2,2,3,4,2,4,4};
+    vector<int> connections {0,1,1,1,2,5,3,5,4};
     int no_of_nodes = connections.size();
     vector<int> node_output(no_of_nodes,1);
     vector<double> d_node_h(no_of_nodes,0.0);
@@ -207,7 +208,7 @@ void ENAS_DAG_Node::try_update_deltas(int time){
         if(node_output[i]) d_node_h[i] = d_h;
     }
 
-    for (int i = no_of_nodes - 1; i >=  1; ++i)
+    for (int i = no_of_nodes - 1; i >=  1; i--)
     {
         int incoming_node = connections[i] - 1;
         d_weights[i-1][time] = d_node_h[i]*l_Nodes[i][time]*Nodes[incoming_node][time];
@@ -219,6 +220,13 @@ void ENAS_DAG_Node::try_update_deltas(int time){
 
     d_input[time] +=  d_node_h[0]*l_Nodes[0][time]*zw;
     d_zw[time] = d_node_h[0]*l_Nodes[0][time]*x;
+
+    // d_h_prev[time] += d_h*l_Nodes[0][time]*rw;
+    // d_rw[time] =  d_h*l_Nodes[0][time]*h_prev;
+
+    // d_input[time] +=  d_h*l_Nodes[0][time]*zw;
+    // d_zw[time] = d_h*l_Nodes[0][time]*x;
+
 
     Log::debug("DEBUG: output_fired on ENAS_DAG_Node %d at time %d is %d and total_outputs is %d\n", innovation_number, time, outputs_fired[time], total_outputs);
 
@@ -266,8 +274,11 @@ void ENAS_DAG_Node::set_weights(uint32_t &offset, const vector<double> &paramete
     rw = bound(parameters[offset++]);
 
     for (int new_node_weight = 0; new_node_weight < NUMBER_ENAS_DAG_WEIGHTS - assigned_node_weights; ++new_node_weight){
-        cout<<"Entering weight"<<endl;
-        weights[new_node_weight] = bound(parameters[offset++]);
+        if(weights.size() < NUMBER_ENAS_DAG_WEIGHTS - assigned_node_weights){
+            weights.push_back(bound(parameters[offset++]));            
+        }
+        else
+            weights.at(new_node_weight) = bound(parameters[offset++]);
     }
     Log::debug("DEBUG: no of  weights  on ENAS_DAG_Node %d at time %d is %d \n", innovation_number, time, weights.size());
 
@@ -320,23 +331,11 @@ void ENAS_DAG_Node::reset(int _series_length) {
     d_zw.assign(series_length, 0.0);
     d_rw.assign(series_length, 0.0);
 
-    d_weights[0].assign(series_length, 0.0);
-
-    d_weights[1].assign(series_length, 0.0); 
-    d_weights[2].assign(series_length, 0.0); 
-    d_weights[3].assign(series_length, 0.0); 
-    d_weights[4].assign(series_length, 0.0); 
-    d_weights[5].assign(series_length, 0.0); 
-    d_weights[6].assign(series_length, 0.0);
-    d_weights[7].assign(series_length, 0.0); 
-  
+    d_weights.assign(NUMBER_ENAS_DAG_WEIGHTS, vector<double>(series_length,0.0)); 
     d_h_prev.assign(series_length, 0.0);
+    Nodes.assign(NUMBER_ENAS_DAG_WEIGHTS, vector<double>(series_length,0.0));
+    l_Nodes.assign(NUMBER_ENAS_DAG_WEIGHTS, vector<double>(series_length,0.0));
 
-    for (int i = 0; i < Nodes.size(); ++i)
-    {
-        Nodes[i].assign(series_length,0.0);
-        l_Nodes[i].assign(series_length,0.0);
-    }
 
 
     //reset values from rnn_node_interface
@@ -357,26 +356,16 @@ RNN_Node_Interface* ENAS_DAG_Node::copy() const {
     n->rw = rw;
     n->zw = zw;
 
-    n->weights[0] = weights[0];
-    n->weights[1] = weights[1];
-    n->weights[2] = weights[2];
-    n->weights[3] = weights[3];
-    n->weights[4] = weights[4];
-    n->weights[5] = weights[5];
-    n->weights[6] = weights[6];
-    n->weights[7] = weights[7];
-
     n->d_zw = d_zw;
     n->d_rw = d_rw;
 
-    n->d_weights[0] = d_weights[0];
-    n->d_weights[1] = d_weights[1];
-    n->d_weights[2] = d_weights[2];
-    n->d_weights[3] = d_weights[3];
-    n->d_weights[4] = d_weights[4];
-    n->d_weights[5] = d_weights[5];
-    n->d_weights[6] = d_weights[6];
-    n->d_weights[7] = d_weights[7];
+
+     for (int i = 0; i < weights.size(); ++i)
+    {
+        n->weights[i] = weights[i];
+        n->d_weights[i] = d_weights[i];
+    }
+
 
    
     n->d_h_prev = d_h_prev;
