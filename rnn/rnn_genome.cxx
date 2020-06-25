@@ -609,15 +609,11 @@ void RNN_Genome::initialize_randomly() {
         this->set_weights(initial_parameters);
     } else if (weight_initialize.compare("xavier") == 0) {
         for (int i = 0; i < nodes.size(); i++) {
-
-            Log::error("node %d \n", i);
             node_initialize_xavier(nodes[i]);
         }
         get_weights(initial_parameters);
     } else if (weight_initialize.compare("kaiming") == 0){
         for (int i = 0; i < nodes.size(); i++) {
-
-            Log::error("node %d \n", i);
             node_initialize_kaiming(nodes[i]);
         }
         get_weights(initial_parameters);
@@ -633,21 +629,16 @@ void RNN_Genome::node_initialize_xavier(RNN_Node_Interface* n) {
     get_input_edges(n->innovation_number, input_edges, input_recurrent_edges);
     int32_t fan_in = input_edges.size() + input_recurrent_edges.size();
     int32_t fan_out = get_fan_out(n->innovation_number);
-    Log::error("fan in is %d \n", fan_in);
-    Log::error("fan out is %d \n", fan_out);
     int32_t sum = fan_in + fan_out;
     if(sum <= 0) sum = 1;
     double range = sqrt(6)/sqrt(sum);
-    Log::error("range is %f \n", range);
     for(int j = 0; j < input_edges.size(); j++) {
         double edge_weight = range * rng_1_1(generator);
         input_edges[j]->weight = edge_weight;
-        Log::error("input edge: %d weight is %f\n", input_edges[j]->innovation_number, edge_weight);
     }
     for(int j = 0; j < input_recurrent_edges.size(); j++) {
         double edge_weight = range * rng_1_1(generator);
         input_recurrent_edges[j]->weight = edge_weight;
-        Log::error("input recurrent edge: %d weight is %f\n", input_recurrent_edges[j]->innovation_number, edge_weight);
     }
     n->initialize_xavier(generator, rng_1_1, range);
 }
@@ -657,22 +648,16 @@ void RNN_Genome::node_initialize_kaiming(RNN_Node_Interface* n) {
     vector <RNN_Recurrent_Edge*> input_recurrent_edges;
     get_input_edges(n->innovation_number, input_edges, input_recurrent_edges);
     int32_t fan_in = input_edges.size() + input_recurrent_edges.size();
-    // int32_t fan_out = get_fan_out(n->innovation_number);
-    Log::error("fan in is %d \n", fan_in);
-    // Log::error("fan out is %d \n", fan_out);
-    // int32_t sum = fan_in + fan_out;
+
     if(fan_in <= 0) fan_in = 1;
     double range = sqrt(2) / sqrt(fan_in);
-    Log::error("range is %f \n", range);
     for(int j = 0; j < input_edges.size(); j++) {
         double edge_weight = range * normal_distribution.random(generator, 0, 1);
         input_edges[j]->weight = edge_weight;
-        Log::error("input edge: %d weight is %f\n", input_edges[j]->innovation_number, edge_weight);
     }
     for(int j = 0; j < input_recurrent_edges.size(); j++) {
         double edge_weight = range * normal_distribution.random(generator, 0, 1);
         input_recurrent_edges[j]->weight = edge_weight;
-        Log::error("input recurrent edge: %d weight is %f\n", input_recurrent_edges[j]->innovation_number, edge_weight);
     }
     n->initialize_kaiming(generator, normal_distribution, range);
 }
@@ -680,7 +665,6 @@ void RNN_Genome::node_initialize_kaiming(RNN_Node_Interface* n) {
 
 double RNN_Genome::get_xavier_weight(RNN_Node_Interface* output_node) {
     int32_t sum = get_fan_in(output_node->innovation_number) + get_fan_out(output_node->innovation_number);
-    Log::error("sum is: %d \n", sum);
     if(sum <= 0) sum =1;
     double range = sqrt(6)/sqrt(sum);
     // double range = sqrt(6)/sqrt(output_node->fan_in + output_node->fan_out);
@@ -689,7 +673,6 @@ double RNN_Genome::get_xavier_weight(RNN_Node_Interface* output_node) {
 
 double RNN_Genome::get_kaiming_weight(RNN_Node_Interface* output_node) {
     int32_t fan_in = get_fan_in(output_node->innovation_number);
-    Log::error("fan_in is: %d \n", fan_in);
     if(fan_in <= 0) fan_in =1;
     double range = sqrt(2) / sqrt(fan_in);
     // double range = sqrt(6)/sqrt(output_node->fan_in + output_node->fan_out);
@@ -702,17 +685,15 @@ double RNN_Genome::get_random_weight() {
 }
 
 void RNN_Genome::node_initialize(RNN_Node_Interface* n) {
-    if (weight_inheritance.compare("same") == 0) {
+    if (new_component_weight.compare("same") == 0) {
         if (weight_initialize.compare("xavier") == 0) {
             int32_t sum = get_fan_in(n->innovation_number) + get_fan_out(n->innovation_number);
-            // Log::error("fan in  is %d\n", sum);
             if(sum <= 0) sum = 1;
             double range = sqrt(6)/sqrt(sum);
             // double range = sqrt(6)/sqrt(n->fan_in + n->fan_out);
             n->initialize_xavier(generator, rng_1_1, range);
         } else if (weight_initialize.compare("kaiming") == 0) {
             int32_t fan_in = get_fan_in(n->innovation_number);
-            // Log::error("fan_in is: %d \n", fan_in);
             if(fan_in <= 0) fan_in =1;
             double range = sqrt(2) / sqrt(fan_in);
             n->initialize_kaiming(generator, normal_distribution, range);

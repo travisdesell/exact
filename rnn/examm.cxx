@@ -180,9 +180,9 @@ EXAMM::EXAMM(
         merge_node_rate = 0.0;
     }
 
-    Log::error("weight initialize: %s\n", weight_initialize.c_str());
-    Log::error("weight inheritance: %s \n", weight_inheritance.c_str());
-    Log::error("new component weight: %s\n", new_component_weight.c_str());
+    Log::info("weight initialize: %s\n", weight_initialize.c_str());
+    Log::info("weight inheritance: %s \n", weight_inheritance.c_str());
+    Log::info("new component weight: %s\n", new_component_weight.c_str());
 
     Log::info("Speciation method is: \"%s\" (Default is the island-based speciation strategy).\n", speciation_method.c_str());
     if (speciation_method.compare("island") == 0 || speciation_method.compare("") == 0) {
