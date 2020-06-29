@@ -538,6 +538,13 @@ void EXAMM::mutate(int32_t max_mutations, RNN_Genome *g) {
         g->get_mu_sigma(g->best_parameters, mu, sigma);
     }
 
+    // if new component weight is lamarckian and weight inheritance is same, 
+    // we reset the weights for old components before doing mutations
+    // and we do this after getting the mu, sigma for lamarckian 
+    if (weight_inheritance.compare("same") == 0 && new_component_weight.compare("lamarckian") == 0) {
+        g->initialize_randomly();
+    }
+
     int number_mutations = 0;
 
     for (;;) {
@@ -652,8 +659,8 @@ void EXAMM::mutate(int32_t max_mutations, RNN_Genome *g) {
 
     vector<double> new_parameters;
 
-    // if weight_inheritance is same, all the weights of the mutated genome would be initialized as weight_initialize method
-    if (weight_inheritance.compare("same") == 0) {
+    // if all the weights are set to re-initialize, we do it after mutation happens
+    if (weight_inheritance.compare("same") == 0 && new_component_weight.compare("same") == 0) {
         g->initialize_randomly();
     }
 
