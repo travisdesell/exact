@@ -55,6 +55,7 @@ using std::vector;
 #include "gru_node.hxx"
 #include "enarc_node.hxx"
 #include "enas_dag_node.hxx"
+#include "random_dag_node.hxx"
 #include "delta_node.hxx"
 #include "ugrnn_node.hxx"
 #include "mgu_node.hxx"
@@ -236,6 +237,7 @@ string RNN_Genome::print_statistics_header() {
         << setw(12) << "LSTM"
         << setw(12) << "ENARC"
         << setw(12) << "ENAS_DAG"
+        << setw(12) << "RANDOM_DAG"
         << setw(12) << "Total"
         << "Generated";
 
@@ -259,6 +261,7 @@ string RNN_Genome::print_statistics() {
         << setw(12) << get_node_count_str(LSTM_NODE)
         << setw(12) << get_node_count_str(ENARC_NODE)
         << setw(12) << get_node_count_str(ENAS_DAG_NODE)
+        << setw(12) << get_node_count_str(RANDOM_DAG_NODE)
         << setw(12) << get_node_count_str(-1)  //-1 does all nodes
         << generated_by_string();
     return oss.str();
@@ -1614,6 +1617,8 @@ RNN_Node_Interface* RNN_Genome::create_node(double mu, double sigma, int node_ty
         n = new ENARC_Node(++node_innovation_count, HIDDEN_LAYER, depth);  
     }  else if (node_type == ENAS_DAG_NODE) {
         n = new ENAS_DAG_Node(++node_innovation_count, HIDDEN_LAYER, depth);      
+    }  else if (node_type == RANDOM_DAG_NODE) {
+        n = new RANDOM_DAG_Node(++node_innovation_count, HIDDEN_LAYER, depth);          
     } else if (node_type == MGU_NODE) {
         n = new MGU_Node(++node_innovation_count, HIDDEN_LAYER, depth);
     } else if (node_type == UGRNN_NODE) {
@@ -2984,6 +2989,8 @@ void RNN_Genome::read_from_stream(istream &bin_istream) {
             node = new ENARC_Node(innovation_number, layer_type, depth);
         } else if (node_type == ENAS_DAG_NODE) {
             node = new ENAS_DAG_Node(innovation_number, layer_type, depth);
+        } else if (node_type == RANDOM_DAG_NODE) {
+            node = new RANDOM_DAG_Node(innovation_number, layer_type, depth);
         } else if (node_type == MGU_NODE) {
             node = new MGU_Node(innovation_number, layer_type, depth);
         } else if (node_type == UGRNN_NODE) {
