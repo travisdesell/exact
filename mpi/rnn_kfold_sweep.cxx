@@ -17,6 +17,10 @@ using std::uniform_real_distribution;
 #include <string>
 using std::string;
 
+#include <cstring>
+using std::memcpy;
+using std::strchr;
+
 #include <vector>
 using std::vector;
 

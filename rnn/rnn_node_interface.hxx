@@ -37,6 +37,8 @@ extern const string NODE_TYPES[];
 #define LSTM_NODE 7
 #define ENARC_NODE 8
 #define ENAS_DAG_NODE 9
+#define RANDOM_DAG_NODE 10
+
 
 
 double sigmoid(double value);
