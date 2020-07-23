@@ -6,6 +6,9 @@ using std::ostream;
 #include <string>
 using std::string;
 
+#include<cmath>
+using std::max;
+
 #include "rnn_node_interface.hxx"
 #include "rnn_genome.hxx"
 
@@ -13,7 +16,7 @@ using std::string;
 
 
 extern const int32_t NUMBER_NODE_TYPES = 9;
-extern const string NODE_TYPES[] = { "simple" , "jordan", "elman", "UGRNN", "MGU", "GRU", "delta", "LSTM" , "ENARC" };
+extern const string NODE_TYPES[] = { "simple" , "jordan", "elman", "UGRNN", "MGU", "GRU", "delta", "LSTM" , "ENARC" , "ENAS_DAG" };
 
 double bound(double value) {
     if (value < -10.0) value = -10.0;
@@ -28,6 +31,14 @@ double sigmoid(double value) {
 
 double sigmoid_derivative(double input) {
     return input * (1 - input);
+}
+
+double identity(double value) {
+    return value;
+}
+
+double identity_derivative() {
+    return 1.0;
 }
 
 double tanh_derivative(double input) {

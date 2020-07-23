@@ -1,5 +1,5 @@
-#ifndef EXAMM_ENARC_NODE_HXX
-#define EXAMM_ENARC_NODE_HXX
+#ifndef EXAMM_ENAS_DAG_NODE_HXX
+#define EXAMM_ENAS_DAG_NODE_HXX
 
 #include <string>
 using std::string;
@@ -11,77 +11,55 @@ using std::uniform_real_distribution;
 #include <vector>
 using std::vector;
 
+#include <utility>
+using std::pair;
+using std::make_pair;
+
+
 #include "common/random.hxx"
 
 #include "rnn_node_interface.hxx"
 
-class ENARC_Node : public RNN_Node_Interface{
+class ENAS_DAG_Node : public RNN_Node_Interface{
 	private:
 		
+		// starting node 0
 		double rw;
 		double zw;
+		
+		// weights for other nodes
+		vector<double> weights;
 
-		double w1;
-		double w2;
-		double w3;
-		double w6;
-		double w4;
-		double w5;
-		double w7;
-		double w8;
 
+		// gradients of starting node 0
 		vector<double> d_zw;
 		vector<double> d_rw;
 
-		vector<double> d_w1;
-
-		vector<double> d_w2; 
-		vector<double> d_w3; 
-		vector<double> d_w6; 
-
-		vector<double> d_w4; 
-		vector<double> d_w5; 
-		vector<double> d_w7;
-		vector<double> d_w8; 
-	
+		// gradients of other nodes 
+		vector<vector<double>> d_weights;
+		
+		// gradient of prev output
 		vector<double> d_h_prev;
 
-		vector<double> z;
-		vector<double> l_d_z;
+		// output of edge between node with weight wj from node with weight wi 	
+		vector<vector<double>> Nodes;
+		// derivative of edge between node with weight wj from node with weight wi 	
+		vector<vector<double>> l_Nodes;
 
-		vector<double> w1_z;
-		vector<double> l_w1_z;
-
-		vector<double> w2_w1;
-		vector<double> l_w2_w1;
-
-		vector<double> w3_w1;
-		vector<double> l_w3_w1;
-
-		vector<double> w6_w1;
-		vector<double> l_w6_w1;
-
-		vector<double> w4_w2;
-		vector<double> l_w4_w2;
-
-		vector<double> w5_w3;
-		vector<double> l_w5_w3;
-
-		vector<double> w7_w3;
-		vector<double> l_w7_w3;
-
-		vector<double> w8_w3;
-		vector<double> l_w8_w3;
-
-
+		
 	public:
-		ENARC_Node(int _innovation_number, int _type, double _depth);
-		~ENARC_Node();
+
+		ENAS_DAG_Node(int _innovation_number, int _type, double _depth);
+		~ENAS_DAG_Node();
+
 
 		void initialize_randomly(minstd_rand0 &generator, NormalDistribution &normal_distribution, double mu, double sigma);
 
         double get_gradient(string gradient_name);
         void print_gradient(string gradient_name);
+
+        double activation(double value, int act_operator);
+        double activation_derivative(double value, double input, int act_operator);
 
         void input_fired(int time, double incoming_output);
 
