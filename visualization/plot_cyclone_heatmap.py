@@ -1,3 +1,6 @@
+#example usage:
+#python3 plot_cyclone_heatmap.py ../build/heatmap_output.csv ../build/cyclone_heatmap.png
+
 import matplotlib.pyplot as plt
 import numpy as np
 import math
@@ -19,6 +22,7 @@ for arg in sys.argv:
 
 input_file = sys.argv[1]
 output_file = sys.argv[2]
+
 
 headers = []
 for cyclone in range(1,13):
