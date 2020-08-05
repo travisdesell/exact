@@ -1,6 +1,5 @@
 //example usage:
 //  ./rnn_examples/rnn_heatmap --std_message_level info --file_message_level none --output_directory ./ --input_directory ~/Dropbox/microbeam_cbm/Cyclone_binaries/120_min/ --testing_directory ~/Dropbox/microbeam_cbm/2019_08-09_data/ --time_offset 120
-
 #include <chrono>
 
 #include <condition_variable>
