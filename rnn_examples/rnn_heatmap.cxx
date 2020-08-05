@@ -62,13 +62,11 @@ int main(int argc, char** argv) {
     string output_filename = output_directory + "heatmap_output.csv";
     ofstream output_file(output_filename);
 
-    //for (int cyclone = 1; cyclone <= 12; cyclone++) {
-    for (int cyclone = 11; cyclone <= 11; cyclone++) {
+    for (int cyclone = 1; cyclone <= 12; cyclone++) {
         string cyclone_directory = input_directory + "cyclone_" + to_string(cyclone);
         Log::info("analyzing cyclone %d with directory: '%s'\n", cyclone, cyclone_directory.c_str());
 
         for (int target_cyclone = 1; target_cyclone <= 12; target_cyclone++) {
-        //for (int target_cyclone = 11; target_cyclone <= 11; target_cyclone++) {
             double average_mae = 0.0;
 
             for (int repeat = 0; repeat < 20; repeat++) {
@@ -111,6 +109,7 @@ int main(int argc, char** argv) {
                 time_series_sets->export_test_series(time_offset, testing_inputs, testing_outputs);
 
                 vector<double> best_parameters = genome->get_best_parameters();
+
                 //Log::info("MSE: %lf\n", genome->get_mse(best_parameters, testing_inputs, testing_outputs));
                 //Log::info("MAE: %lf\n", genome->get_mae(best_parameters, testing_inputs, testing_outputs));
                 double mae = genome->get_mae(best_parameters, testing_inputs, testing_outputs);
@@ -118,6 +117,7 @@ int main(int argc, char** argv) {
                 cout << "MAE: " << mae << endl;
 
                 average_mae += mae;
+
                 delete time_series_sets;
                 delete genome;
             }
@@ -125,6 +125,7 @@ int main(int argc, char** argv) {
             if (target_cyclone > 1) output_file << ",";
             average_mae /= 20.0;
             output_file << average_mae;
+
             cout << "average MAE: " << average_mae << endl << endl;
         }
         output_file << endl;
