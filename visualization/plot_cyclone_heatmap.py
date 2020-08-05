@@ -1,7 +1,10 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 #example usage:
 #python3 plot_cyclone_heatmap.py ../build/heatmap_output.csv ../build/cyclone_heatmap.png
 
+=======
+>>>>>>> a86376b73f6b8e478b03b94e644c15ba49fe7e5d
 =======
 >>>>>>> a86376b73f6b8e478b03b94e644c15ba49fe7e5d
 import matplotlib.pyplot as plt
@@ -27,7 +30,10 @@ input_file = sys.argv[1]
 output_file = sys.argv[2]
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 
+=======
+>>>>>>> a86376b73f6b8e478b03b94e644c15ba49fe7e5d
 =======
 >>>>>>> a86376b73f6b8e478b03b94e644c15ba49fe7e5d
 headers = []
