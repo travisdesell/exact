@@ -1,6 +1,9 @@
 add_executable(train_rnn train_rnn)
 target_link_libraries(train_rnn examm_strategy exact_common exact_time_series ${MPI_LIBRARIES} ${MPI_EXTRA} ${MYSQL_LIBRARIES} ${TIFF_LIBRARIES} pthread)
 
+add_executable(rnn_heatmap rnn_heatmap)
+target_link_libraries(rnn_heatmap examm_strategy exact_common exact_time_series ${MPI_LIBRARIES} ${MPI_EXTRA} ${MYSQL_LIBRARIES} pthread)
+
 add_executable(evaluate_rnn evaluate_rnn)
 target_link_libraries(evaluate_rnn examm_strategy exact_common exact_time_series ${MPI_LIBRARIES} ${MPI_EXTRA} ${MYSQL_LIBRARIES} pthread)
 

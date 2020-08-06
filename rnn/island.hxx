@@ -33,9 +33,9 @@ class Island {
         vector<RNN_Genome*> genomes;
 
         unordered_map<string, vector<RNN_Genome*>> structure_map;
-
+        bool erased; /**< a flag to track if this islands has been erased */
         int32_t status; /**> The status of this island (either Island:INITIALIZING, Island::FILLED or  Island::REPOPULATING */
-        bool erased = false; /**< a flag to track if this islands has been erased */
+        int32_t erase_again; /**< a flag to track if this islands has been erased */
 
     public:
         const static int32_t INITIALIZING = 0; /**< status flag for if the island is initializing. */
@@ -84,6 +84,14 @@ class Island {
         RNN_Genome *get_worst_genome();
 
         /**
+         * Returns the maximum number of genomes the island can hold
+         *
+         * \return the maximum number of genomes this island can have
+         */
+        int32_t get_max_size();
+
+
+        /**
          * Returns the size of the island
          *
          * \return the number of genomes in this island.
@@ -115,15 +123,6 @@ class Island {
         bool is_repopulating();
 
         /**
-         * Checks to see if a genome already exists in the island, using
-         * the RNN_Genome::equals method (which checks to see if all edges
-         * and nodes are the same, but not necessarily weights).
-         *
-         * \return the index in the island of the duplicate genome, -1 otherwise.
-         */
-        int32_t contains(RNN_Genome* genome);
-
-        /**
          * Selects a genome from the island at random and returns a copy of it.
          *
          * \param rng_0_1 is the random number distribution that generates random numbers between 0 (inclusive) and 1 (non=inclusive).
@@ -141,6 +140,8 @@ class Island {
          * \param genome2 will be the second copied genome, an addresss to a pointer needs to be passed.
          */
         void copy_two_random_genomes(uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator, RNN_Genome **genome1, RNN_Genome **genome2);
+
+        void do_population_check(int line, int initial_size);
 
         /**
          * Inserts a genome into the island.
@@ -171,6 +172,12 @@ class Island {
         int32_t get_erased_generation_id();
 
         /**
+         * \return the status of the island
+         */
+        int32_t get_status();
+
+
+        /**
          * after erasing the island, sets the island status to repopulating.
          */
         void set_status(int32_t status_to_set);
@@ -183,6 +190,10 @@ class Island {
         vector<RNN_Genome *> get_genomes();
 
         void set_latest_generation_id(int32_t _latest_generation_id);
+
+        int32_t get_erase_again_num();
+
+        void set_erase_again_num();
 };
 
 #endif

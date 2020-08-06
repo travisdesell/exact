@@ -36,8 +36,15 @@ class EXAMM {
         string speciation_method;
         string repopulation_method;
         int32_t repopulation_mutations;
-
+        bool repeat_extinction;
+        
         SpeciationStrategy *speciation_strategy;
+
+        double species_threshold;
+        double fitness_threshold;
+        double neat_c1;
+        double neat_c2;
+        double neat_c3;
 
         int32_t edge_innovation_count;
         int32_t node_innovation_count;
@@ -121,7 +128,13 @@ class EXAMM {
                 string _island_ranking_method,
                 string _repopulation_method,
                 int32_t _repopulation_mutations,
+                bool _repeat_extinction,
                 string _speciation_method,
+                double _species_threshold, 
+                double _fitness_threshold,
+                double _neat_c1, 
+                double _neat_c2, 
+                double _neat_c3,
                 const vector<string> &_input_parameter_names,
                 const vector<string> &_output_parameter_names,
                 string _normalize_type,

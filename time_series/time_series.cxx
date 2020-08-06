@@ -150,6 +150,27 @@ void TimeSeries::cut(int32_t start, int32_t stop) {
     calculate_statistics();
 }
 
+double TimeSeries::get_correlation(const TimeSeries *other, int32_t lag) const {
+    double other_average = other->get_average();
+
+    int32_t length = fmin(values.size(), other->values.size()) - lag;
+
+    double covariance_sum = 0.0;
+    for (int32_t i = 0; i < length; i++) {
+        covariance_sum += (values[i + lag] - average) * (other->values[i] - other_average);
+    }
+
+    double other_variance = other->get_variance();
+    double correlation;
+    if (variance < 1e-12 || other_variance < 1e-12) {
+        correlation = 0.0;
+    } else {
+        correlation = (covariance_sum / sqrt(variance * other_variance)) / length;
+    }
+
+    return correlation;
+}
+
 TimeSeries::TimeSeries() {
 }
 
@@ -208,6 +229,10 @@ TimeSeriesSet::TimeSeriesSet(string _filename, const vector<string> &_fields) {
     
     vector<string> file_fields;
     string_split(line, ',', file_fields);
+    for (int32_t i = 0; i < file_fields.size(); i++) {
+        //get rid of carriage returns (sometimes windows messes this up)
+        file_fields[i].erase( std::remove(file_fields[i].begin(), file_fields[i].end(), '\r'), file_fields[i].end() );
+    }
 
 
     //check to see that all the specified fields are in the file
@@ -302,6 +327,15 @@ TimeSeriesSet::TimeSeriesSet(string _filename, const vector<string> &_fields) {
     Log::info("read time series '%s' with number rows: %d\n", filename.c_str(), number_rows);
 }
 
+TimeSeriesSet::~TimeSeriesSet(){
+    for( std::map<string, TimeSeries*>::iterator it=time_series.begin(); it!=time_series.end(); it=time_series.begin())
+	{
+		TimeSeries* series = it->second;
+        time_series.erase (it);
+        delete series;
+	}
+}
+
 int TimeSeriesSet::get_number_rows() const {
     return number_rows;
 }
@@ -358,6 +392,12 @@ void TimeSeriesSet::normalize_avg_std_dev(string field, double avg, double std_d
     time_series[field]->normalize_avg_std_dev(avg, std_dev, norm_max);
 }
 
+double TimeSeriesSet::get_correlation(string field1, string field2, int32_t lag) const {
+    const TimeSeries *first_series = time_series.at(field1);
+    const TimeSeries *second_series = time_series.at(field2);
+
+    return first_series->get_correlation(second_series, lag);
+}
 
 
 
@@ -514,6 +554,12 @@ void TimeSeriesSets::help_message() {
 }
 
 TimeSeriesSets::TimeSeriesSets() : normalize_type("none") {
+}
+
+TimeSeriesSets::~TimeSeriesSets(){
+    for (uint32_t i = 0; i < time_series.size(); i++) {
+        delete time_series[i];
+    }
 }
 
 void merge_parameter_names(const vector<string> &input_parameter_names, const vector<string> &output_parameter_names, vector<string> &all_parameter_names) {
@@ -1148,4 +1194,8 @@ void TimeSeriesSets::set_training_indexes(const vector<int> &_training_indexes) 
 
 void TimeSeriesSets::set_test_indexes(const vector<int> &_test_indexes) {
     test_indexes = _test_indexes;
+}
+
+TimeSeriesSet* TimeSeriesSets::get_set(int32_t i) {
+    return time_series.at(i);
 }

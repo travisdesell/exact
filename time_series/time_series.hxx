@@ -53,6 +53,8 @@ class TimeSeries {
 
         void cut(int32_t start, int32_t stop);
 
+        double get_correlation(const TimeSeries *other, int32_t lag) const;
+
         TimeSeries* copy();
 
         void copy_values(vector<double> &series);
@@ -72,7 +74,7 @@ class TimeSeriesSet {
 
 
         TimeSeriesSet(string _filename, const vector<string> &_fields);
-
+        ~TimeSeriesSet();
         void add_time_series(string name);
 
         int get_number_rows() const;
@@ -90,6 +92,8 @@ class TimeSeriesSet {
         double get_variance(string field);
         double get_min_change(string field);
         double get_max_change(string field);
+
+        double get_correlation(string field1, string field2, int32_t lag) const;
 
         void normalize_min_max(string field, double min, double max);
         void normalize_avg_std_dev(string field, double avg, double std_dev, double norm_max);
@@ -136,7 +140,7 @@ class TimeSeriesSets {
         static void help_message();
 
         TimeSeriesSets();
-
+        ~TimeSeriesSets();
         static TimeSeriesSets* generate_from_arguments(const vector<string> &arguments);
         static TimeSeriesSets* generate_test(const vector<string> &_test_filenames, const vector<string> &_input_parameter_names, const vector<string> &_output_parameter_names);
 
@@ -177,6 +181,8 @@ class TimeSeriesSets {
 
         void set_training_indexes(const vector<int> &_training_indexes);
         void set_test_indexes(const vector<int> &_test_indexes);
+
+        TimeSeriesSet *get_set(int32_t i);
 };
 
 #endif

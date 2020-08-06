@@ -122,6 +122,24 @@ int main(int argc, char** argv) {
     int32_t repopulation_mutations = 0;
     get_argument(arguments, "--repopulation_mutations", false, repopulation_mutations);
 
+    double species_threshold = 0.0;
+    get_argument(arguments, "--species_threshold", false, species_threshold);
+        
+    double fitness_threshold = 100;
+    get_argument(arguments, "--fitness_threshold", false, fitness_threshold);
+
+    double neat_c1 = 1;
+    get_argument(arguments, "--neat_c1", false, neat_c1);
+
+    double neat_c2 = 1;
+    get_argument(arguments, "--neat_c2", false, neat_c2);
+
+    double neat_c3 = 1;
+    get_argument(arguments, "--neat_c3", false, neat_c3);
+
+    bool repeat_extinction = false;
+    get_argument(arguments, "--repeat_extinction", false, repeat_extinction);
+
     int32_t bp_iterations;
     get_argument(arguments, "--bp_iterations", true, bp_iterations);
 
@@ -190,8 +208,10 @@ int main(int argc, char** argv) {
 
         for (uint32_t k = 0; k < repeats; k++) {
             examm = new EXAMM(population_size, number_islands, max_genomes, extinction_event_generation_number, islands_to_exterminate, island_ranking_method,
-                    repopulation_method, repopulation_mutations,
+                    repopulation_method, repopulation_mutations, repeat_extinction,
                     speciation_method,
+                    species_threshold, fitness_threshold,
+                    neat_c1, neat_c2, neat_c3,
                     time_series_sets->get_input_parameter_names(),
                     time_series_sets->get_output_parameter_names(),
                     time_series_sets->get_normalize_type(),

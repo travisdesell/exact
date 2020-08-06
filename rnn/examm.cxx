@@ -32,6 +32,16 @@ using std::to_string;
 #include "generate_nn.hxx"
 #include "speciation_strategy.hxx"
 #include "island_speciation_strategy.hxx"
+#include "neat_speciation_strategy.hxx"
+
+//INFO: ADDED BY ABDELRAHMAN TO USE FOR TRANSFER LEARNING
+#include "rnn.hxx"
+#include "rnn_node.hxx"
+#include "lstm_node.hxx"
+#include "gru_node.hxx"
+#include "delta_node.hxx"
+#include "ugrnn_node.hxx"
+#include "mgu_node.hxx"
 
 #include "common/files.hxx"
 #include "common/log.hxx"
@@ -58,7 +68,13 @@ EXAMM::EXAMM(
         string _island_ranking_method, 
         string _repopulation_method, 
         int32_t _repopulation_mutations,
-        string _speciation_method, 
+        bool _repeat_extinction,
+        string _speciation_method,
+        double _species_threshold, 
+        double _fitness_threshold,
+        double _neat_c1, 
+        double _neat_c2, 
+        double _neat_c3, 
         const vector<string> &_input_parameter_names,
         const vector<string> &_output_parameter_names,
         string _normalize_type,
@@ -87,6 +103,12 @@ EXAMM::EXAMM(
                         speciation_method(_speciation_method),
                         repopulation_method(_repopulation_method), 
                         repopulation_mutations(_repopulation_mutations),
+                        species_threshold(_species_threshold),
+                        fitness_threshold(_fitness_threshold),
+                        neat_c1(_neat_c1),
+                        neat_c2(_neat_c2),
+                        neat_c3(_neat_c3),
+                        repeat_extinction(_repeat_extinction),
                         number_inputs(_input_parameter_names.size()),
                         number_outputs(_output_parameter_names.size()),
                         bp_iterations(_bp_iterations),
@@ -100,7 +122,6 @@ EXAMM::EXAMM(
                         output_directory(_output_directory),
                         normalize_type(_normalize_type),
                         start_filled(_start_filled) {
-
     input_parameter_names = _input_parameter_names;
     output_parameter_names = _output_parameter_names;
     normalize_mins = _normalize_mins;
@@ -219,10 +240,42 @@ EXAMM::EXAMM(
         } else {
             speciation_strategy = new IslandSpeciationStrategy(
                     number_islands, population_size, mutation_rate, intra_island_co_rate, inter_island_co_rate,
-                    seed_genome, island_ranking_method, repopulation_method, extinction_event_generation_number, repopulation_mutations, islands_to_exterminate, seed_genome_was_minimal);
+                    seed_genome, island_ranking_method, repopulation_method, extinction_event_generation_number, repopulation_mutations, islands_to_exterminate, max_genomes, repeat_extinction, seed_genome_was_minimal);
         }
     }
-    
+    else if (speciation_method.compare("neat") == 0) {
+        
+        bool seed_genome_was_minimal = false;
+        if (seed_genome == NULL) {
+            seed_genome_was_minimal = true;
+            seed_genome = create_ff(input_parameter_names, 0, 0, output_parameter_names, 0);
+            seed_genome->initialize_randomly();
+        } //otherwise the seed genome was passed into EXAMM
+
+        //make sure we don't duplicate node or edge innovation numbers
+        edge_innovation_count = seed_genome->get_max_edge_innovation_count() + 1;
+        node_innovation_count = seed_genome->get_max_node_innovation_count() + 1;
+
+        seed_genome->set_generated_by("initial");
+
+        //insert a copy of it into the population so
+        //additional requests can mutate it
+
+        seed_genome->best_validation_mse = EXAMM_MAX_DOUBLE;
+        seed_genome->best_validation_mae = EXAMM_MAX_DOUBLE;
+        //seed_genome->best_parameters.clear();
+        
+        double mutation_rate = 0.70, intra_island_co_rate = 0.20, inter_island_co_rate = 0.10;
+        
+        if (number_islands == 1) {
+            inter_island_co_rate = 0.0;
+            intra_island_co_rate = 0.30;
+        }
+        // no transfer learning for NEAT
+        speciation_strategy = new NeatSpeciationStrategy(mutation_rate, intra_island_co_rate, inter_island_co_rate, seed_genome,  max_genomes, species_threshold, fitness_threshold, neat_c1, neat_c2, neat_c3, generator);
+        
+    }
+
     if (output_directory != "") {
         mkpath(output_directory.c_str(), 0777);
         log_file = new ofstream(output_directory + "/" + "fitness_log.csv");
@@ -432,6 +485,7 @@ bool EXAMM::insert_genome(RNN_Genome* genome) {
     int32_t insert_position = speciation_strategy->insert_genome(genome);
     //write this genome to disk if it was a new best found genome
     if (insert_position == 0) {
+        genome ->normalize_type = normalize_type;
         genome->write_graphviz(output_directory + "/rnn_genome_" + to_string(genome->get_generation_id()) + ".gv");
         genome->write_to_file(output_directory + "/rnn_genome_" + to_string(genome->get_generation_id()) + ".bin");
     }
@@ -511,12 +565,12 @@ void EXAMM::mutate(int32_t max_mutations, RNN_Genome *g) {
     bool modified = false;
 
     double mu, sigma;
-
+ 
     //g->write_graphviz("rnn_genome_premutate_" + to_string(g->get_generation_id()) + ".gv");
-    Log::debug("generating new genome by mutation.\n");
+    Log::info("generating new genome by mutation.\n");
+
     g->get_mu_sigma(g->best_parameters, mu, sigma);
     g->clear_generated_by();
-
     //the the weights in the genome to it's best parameters
     //for epigenetic iniitalization
     if (g->best_parameters.size() == 0) {
@@ -634,7 +688,7 @@ void EXAMM::mutate(int32_t max_mutations, RNN_Genome *g) {
         }
         rng -= merge_node_rate;
     }
-
+    
     //get the new set of parameters (as new paramters may have been
     //added duriung mutation) and set them to the initial parameters
     //for epigenetic_initialization
@@ -642,9 +696,8 @@ void EXAMM::mutate(int32_t max_mutations, RNN_Genome *g) {
     vector<double> new_parameters;
     g->get_weights(new_parameters);
     g->initial_parameters = new_parameters;
-
+    
     if (Log::at_level(Log::DEBUG)) {
-        Log::debug("getting mu/sigma before assign reachability\n");
         g->get_mu_sigma(new_parameters, mu, sigma);
     }
 

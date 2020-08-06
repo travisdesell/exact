@@ -81,6 +81,8 @@ class RNN_Genome {
         map<string,double> normalize_avgs;
         map<string,double> normalize_std_devs;
 
+        // vector<int32_t> innovation_list;
+
     public:
         void sort_nodes_by_depth();
         void sort_edges_by_depth();
@@ -156,6 +158,7 @@ class RNN_Genome {
         uint32_t get_number_inputs();
         uint32_t get_number_outputs();
 
+        double get_avg_edge_weight();
         void initialize_randomly();
 
         int32_t get_generation_id() const;
@@ -249,6 +252,7 @@ class RNN_Genome {
         
         void update_innovation_counts(int32_t &node_innovation_count, int32_t &edge_innovation_count);
 
+        vector<int32_t> get_innovation_list();
         /**
          * \return the structural hash (calculated when assign_reachaability is called)
          */
@@ -268,6 +272,7 @@ class RNN_Genome {
 
         friend class EXAMM;
         friend class IslandSpeciationStrategy;
+        friend class NeatSpeciationStrategy;
         friend class RecDepthFrequencyTable;
 };
 
