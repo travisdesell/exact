@@ -305,6 +305,10 @@ TimeSeriesSet::TimeSeriesSet(string _filename, const vector<string> &_fields) {
     }
 
     number_rows = time_series.begin()->second->get_number_values();
+    if (number_rows <= 0) {
+        Log::fatal("ERROR, number rows: %d <= 0\n", number_rows);
+        exit(1);
+    }
 
     for (auto series = time_series.begin(); series != time_series.end(); series++) {
         series->second->calculate_statistics();
@@ -408,7 +412,7 @@ double TimeSeriesSet::get_correlation(string field1, string field2, int32_t lag)
 void TimeSeriesSet::export_time_series(vector< vector<double> > &data, const vector<string> &requested_fields, const vector<string> &shift_fields, int32_t time_offset) {
     Log::debug("clearing data\n");
     data.clear();
-    Log::debug("resizing '%s' to %d by %d\n", filename.c_str(), requested_fields.size(), number_rows - fabs(time_offset));
+    Log::debug("resizing '%s' (number rows: %d, time offset: %d)  to %d by %d\n", filename.c_str(), number_rows, time_offset, requested_fields.size(), number_rows - fabs(time_offset));
 
     data.resize(requested_fields.size(), vector<double>(number_rows - fabs(time_offset), 0.0));
 
