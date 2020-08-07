@@ -3208,7 +3208,7 @@ void RNN_Genome::write_to_stream(ostream &bin_ostream) {
     Log::debug("writing %d nodes.\n", n_nodes);
 
     for (uint32_t i = 0; i < nodes.size(); i++) {
-        Log::debug("NODE: %d %d %d %d '%s'\n", nodes[i]->innovation_number, nodes[i]->layer_type, nodes[i]->node_type, nodes[i]->depth, nodes[i]->parameter_name.c_str());
+        Log::debug("NODE: %d %d %d %lf '%s'\n", nodes[i]->innovation_number, nodes[i]->layer_type, nodes[i]->node_type, nodes[i]->depth, nodes[i]->parameter_name.c_str());
         nodes[i]->write_to_stream(bin_ostream);
     }
 

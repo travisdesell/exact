@@ -412,9 +412,16 @@ double TimeSeriesSet::get_correlation(string field1, string field2, int32_t lag)
 void TimeSeriesSet::export_time_series(vector< vector<double> > &data, const vector<string> &requested_fields, const vector<string> &shift_fields, int32_t time_offset) {
     Log::debug("clearing data\n");
     data.clear();
-    Log::debug("resizing '%s' (number rows: %d, time offset: %d)  to %d by %d\n", filename.c_str(), number_rows, time_offset, requested_fields.size(), number_rows - fabs(time_offset));
 
-    data.resize(requested_fields.size(), vector<double>(number_rows - fabs(time_offset), 0.0));
+    //for some reason fabs is not working right
+    int abs_time_offset = time_offset;
+    if (abs_time_offset < 0) abs_time_offset *= -1;
+
+    Log::debug("resizing '%s' (number rows: %d, time offset: %d)  to %d by %d\n", filename.c_str(), number_rows, time_offset, requested_fields.size(), number_rows - abs_time_offset);
+    Log::debug("time offset: %d\n", time_offset);
+    Log::debug("abs_time_offset: %d\n", abs_time_offset);
+
+    data.resize(requested_fields.size(), vector<double>(number_rows - abs_time_offset, 0.0));
 
     Log::debug("resized! time_offset = %d\n", time_offset);
 
