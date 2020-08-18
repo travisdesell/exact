@@ -76,9 +76,14 @@ void RNN::validate_parameters(const vector<string> &input_parameter_names, const
 void RNN::fix_parameter_orders(const vector<string> &input_parameter_names, const vector<string> &output_parameter_names) {
     vector<RNN_Node_Interface*> ordered_input_nodes;
 
+    Log::debug("input_parameter_names.size(): %d, output_parameter_names.size(): %d\n", input_parameter_names.size(), output_parameter_names.size());
+
     for (int i = 0; i < input_parameter_names.size(); i++) {
         for (int j = input_nodes.size() - 1; j >= 0; j--) {
+            Log::debug("checking input node name 's' vs parameter name '%s'\n", input_nodes[j]->parameter_name.c_str(), input_parameter_names[i].c_str());
+
             if (input_nodes[j]->parameter_name.compare(input_parameter_names[i]) == 0) {
+                Log::debug("erasing node!\n");
                 ordered_input_nodes.push_back(input_nodes[j]);
                 input_nodes.erase(input_nodes.begin() + j);
             }
@@ -127,16 +132,21 @@ RNN::RNN(vector<RNN_Node_Interface*> &_nodes, vector<RNN_Edge*> &_edges, vector<
 
     //sort nodes by depth
     //sort edges by depth
+    Log::debug("creating rnn with %d nodes, %d edges\n", nodes.size(), edges.size());
 
     for (uint32_t i = 0; i < nodes.size(); i++) {
         if (nodes[i]->layer_type == INPUT_LAYER) {
             input_nodes.push_back(nodes[i]);
+            Log::debug("had input node!\n");
         } else if (nodes[i]->layer_type == OUTPUT_LAYER) {
             output_nodes.push_back(nodes[i]);
+            Log::debug("had output node!\n");
         }
     }
 
+    Log::debug("fixing parameter orders, input_node.size: %d\n", input_nodes.size());
     fix_parameter_orders(input_parameter_names, output_parameter_names);
+    Log::debug("validating parameters, input_node.size: %d\n", input_nodes.size());
     validate_parameters(input_parameter_names, output_parameter_names);
 
     Log::trace("got RNN with %d nodes, %d edges, %d recurrent edges\n", nodes.size(), edges.size(), recurrent_edges.size());

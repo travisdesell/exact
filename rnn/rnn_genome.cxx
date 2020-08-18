@@ -99,6 +99,10 @@ RNN_Genome::RNN_Genome(vector<RNN_Node_Interface*> &_nodes,
     weight_inheritance = _weight_inheritance;
     new_component_weight = _new_component_weight;
 
+    // for (int i =0; i < edges.size(); i++){
+    //     innovation_list.push_back(edges[i]->get_innovation_number());
+    // }
+
     sort_nodes_by_depth();
     sort_edges_by_depth();
 
@@ -597,6 +601,32 @@ uint32_t RNN_Genome::get_number_weights() {
     return number_weights;
 }
 
+
+double RNN_Genome::get_avg_edge_weight() {
+    double avg_weight;
+    double weights = 0;
+    for (int i = 0; i < edges.size(); i++) {
+        if (edges[i] -> enabled) {
+            if(edges[i] -> weight > 10) {
+                Log::error("ERROR: edge %d has weight %f \n", i, edges[i]-> weight);
+            }
+            weights += edges[i] -> weight;
+        }
+
+    }
+    for (int i = 0; i < recurrent_edges.size(); i++) {
+        if (recurrent_edges[i] -> enabled) {
+            if(recurrent_edges[i] -> weight > 10) {
+                Log::error("ERROR: recurrent edge %d has weight %f \n", i, recurrent_edges[i]-> weight);
+            }
+            weights += recurrent_edges[i] -> weight;
+        }
+    }
+    int32_t N = edges.size() + recurrent_edges.size();
+    avg_weight = weights / N;
+    return avg_weight;
+}
+
 void RNN_Genome::initialize_randomly() {
     Log::trace("initializing genome %d of group %d randomly!\n", generation_id, group_id);
     int number_of_weights = get_number_weights();
@@ -620,6 +650,7 @@ void RNN_Genome::initialize_randomly() {
     }
 
     this->set_best_parameters(initial_parameters); 
+    this->set_weights(initial_parameters);
 }
 
 void RNN_Genome::node_initialize_xavier(RNN_Node_Interface* n) {
@@ -987,7 +1018,7 @@ void RNN_Genome::backpropagate(const vector< vector< vector<double> > > &inputs,
                 << " " << best_validation_mse << endl;
         }
 
-        Log::info("iteration %10d, mse: %10lf, v_mse: %10lf, bv_mse: %10lf, lr: %lf, norm: %lf, p_norm: %lf, v_norm: %lf", iteration, mse, validation_mse, best_validation_mse, learning_rate, norm, parameter_norm, velocity_norm);
+        // Log::info("iteration %10d, mse: %10lf, v_mse: %10lf, bv_mse: %10lf, lr: %lf, norm: %lf, p_norm: %lf, v_norm: %lf", iteration, mse, validation_mse, best_validation_mse, learning_rate, norm, parameter_norm, velocity_norm);
 
         if (use_reset_weights && prev_mse * 1.25 < mse) {
             Log::info_no_header(", RESETTING WEIGHTS %d", reset_count);
@@ -1102,7 +1133,6 @@ void RNN_Genome::backpropagate(const vector< vector< vector<double> > > &inputs,
 }
 
 void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, const vector< vector< vector<double> > > &validation_inputs, const vector< vector< vector<double> > > &validation_outputs) {
-
     vector<double> parameters = initial_parameters;
 
     int n_parameters = this->get_number_weights();
@@ -1369,7 +1399,7 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
         }
 
 
-        Log::info("iteration %4d, mse: %5.10lf, v_mse: %5.10lf, bv_mse: %5.10lf, avg_norm: %5.10lf\n", iteration, training_error, validation_mse, best_validation_mse, avg_norm);
+        // Log::info("iteration %4d, mse: %5.10lf, v_mse: %5.10lf, bv_mse: %5.10lf, avg_norm: %5.10lf\n", iteration, training_error, validation_mse, best_validation_mse, avg_norm);
 
     }
 
@@ -1733,8 +1763,8 @@ void RNN_Genome::get_mu_sigma(const vector<double> &p, double &mu, double &sigma
         }
         */
 
-        if (p[i] < -10) mu += -10.0;
-        else if (p[i] > 10) mu += 10.0;
+        if (p[i] < -10) mu += -10.0; 
+        else if (p[i] > 10)  mu += 10.0;
         else mu += p[i];
     }
     mu /= p.size();
@@ -1747,7 +1777,6 @@ void RNN_Genome::get_mu_sigma(const vector<double> &p, double &mu, double &sigma
 
     sigma /= (p.size() - 1);
     sigma = sqrt(sigma);
-
     Log::debug("\tmu: %lf, sigma: %lf, parameters.size(): %d\n", mu, sigma, p.size());
     if (std::isnan(mu) || std::isinf(mu) || std::isnan(sigma) || std::isinf(sigma)) {
         Log::fatal("mu or sigma was not a number, all parameters:\n");
@@ -1844,9 +1873,7 @@ bool RNN_Genome::attempt_edge_insert(RNN_Node_Interface *n1, RNN_Node_Interface 
 
     // Log::error("attempt edge insert weight: %f \n", e->weight);
     Log::info("\tadding edge between nodes %d and %d, new edge weight: %lf\n", e->input_innovation_number, e->output_innovation_number, e->weight);
-
     edges.insert( upper_bound(edges.begin(), edges.end(), e, sort_RNN_Edges_by_depth()), e);
-
 
     return true;
 }
@@ -2014,10 +2041,12 @@ bool RNN_Genome::disable_edge() {
 
     if (position < enabled_edges.size()) {
         enabled_edges[position]->enabled = false;
+        // innovation_list.erase(std::remove(innovation_list.begin(), innovation_list.end(), enabled_edges[position]->get_innovation_number()), innovation_list.end());
         return true;
     } else {
         position -= enabled_edges.size();
         enabled_recurrent_edges[position]->enabled = false;
+        // innovation_list.erase(std::remove(innovation_list.begin(), innovation_list.end(), enabled_edges[position]->get_innovation_number()), innovation_list.end());
         return true;
     }
 }
@@ -2042,10 +2071,12 @@ bool RNN_Genome::enable_edge() {
 
     if (position < disabled_edges.size()) {
         disabled_edges[position]->enabled = true;
+        // innovation_list.push_back(disabled_edges[position]->get_innovation_number);
         return true;
     } else {
         position -= disabled_edges.size();
         disabled_recurrent_edges[position]->enabled = true;
+        // innovation_list.push_back(disabled_recurrent_edges[position]->get_innovation_number);
         return true;
     }
 }
@@ -2298,10 +2329,16 @@ bool RNN_Genome::connect_node_to_hid_nodes( double mu, double sig, RNN_Node_Inte
         if (rng_0_1(generator) < recurrent_probability) {
             int32_t recurrent_depth = dist(generator);
             RNN_Recurrent_Edge *e;
-            if (from_input)
+            if (from_input) {
                 e = new RNN_Recurrent_Edge(++edge_innovation_count, recurrent_depth, new_node, node);
-            else
+                // innovation_list.push_back(edge_innovation_count);
+            }
+
+            else {
                 e = new RNN_Recurrent_Edge(++edge_innovation_count, recurrent_depth, node, new_node);
+                // innovation_list.push_back(edge_innovation_count);
+            }
+
             e->weight = bound(normal_distribution.random(generator, mu, sigma));
             Log::debug("\tadding recurrent edge between nodes %d and %d, new edge weight: %d\n", e->input_innovation_number, e->output_innovation_number, e->weight);
             recurrent_edges.insert( upper_bound(recurrent_edges.begin(), recurrent_edges.end(), e, sort_RNN_Recurrent_Edges_by_depth()), e);
@@ -2313,10 +2350,13 @@ bool RNN_Genome::connect_node_to_hid_nodes( double mu, double sig, RNN_Node_Inte
         }
         else {
             RNN_Edge *e;
-            if (from_input)
+            if (from_input){
                 e = new RNN_Edge(++edge_innovation_count, new_node, node);
+                // innovation_list.push_back(edge_innovation_count);
+            }
             else{
                 e = new RNN_Edge(++edge_innovation_count, node, new_node);
+                // innovation_list.push_back(edge_innovation_count);
             }
             e->weight = bound(normal_distribution.random(generator, mu, sigma));
             Log::info("\tadding edge between nodes %d and %d, new edge weight: %lf\n", e->input_innovation_number, e->output_innovation_number, e->weight);
@@ -2333,7 +2373,7 @@ bool RNN_Genome::connect_node_to_hid_nodes( double mu, double sig, RNN_Node_Inte
 
 /*   ################# ################# ################# */
 
-bool RNN_Genome::add_node(double mu, double sigma, int node_type, uniform_int_distribution<int32_t> dist, int32_t &edge_innovation_count, int32_t &node_innovation_count) {
+bool RNN_Genome::  add_node(double mu, double sigma, int node_type, uniform_int_distribution<int32_t> dist, int32_t &edge_innovation_count, int32_t &node_innovation_count) {
     Log::info("\tattempting to add a node!\n");
     double split_depth = rng_0_1(generator);
 
@@ -3219,6 +3259,7 @@ void RNN_Genome::read_from_stream(istream &bin_istream) {
         Log::debug("EDGE: %d %d %d %d\n", innovation_number, input_innovation_number, output_innovation_number, enabled);
 
         RNN_Edge *edge = new RNN_Edge(innovation_number, input_innovation_number, output_innovation_number, nodes);
+        // innovation_list.push_back(innovation_number);
         edge->enabled = enabled;
         edges.push_back(edge);
     }
@@ -3245,6 +3286,7 @@ void RNN_Genome::read_from_stream(istream &bin_istream) {
         Log::debug("RECURRENT EDGE: %d %d %d %d %d\n", innovation_number, recurrent_depth, input_innovation_number, output_innovation_number, enabled);
 
         RNN_Recurrent_Edge *recurrent_edge = new RNN_Recurrent_Edge(innovation_number, recurrent_depth, input_innovation_number, output_innovation_number, nodes);
+        // innovation_list.push_back(innovation_number);
         recurrent_edge->enabled = enabled;
         recurrent_edges.push_back(recurrent_edge);
     }
@@ -3374,7 +3416,7 @@ void RNN_Genome::write_to_stream(ostream &bin_ostream) {
     Log::debug("writing %d nodes.\n", n_nodes);
 
     for (uint32_t i = 0; i < nodes.size(); i++) {
-        Log::debug("NODE: %d %d %d %d '%s'\n", nodes[i]->innovation_number, nodes[i]->layer_type, nodes[i]->node_type, nodes[i]->depth, nodes[i]->parameter_name.c_str());
+        Log::debug("NODE: %d %d %d %lf '%s'\n", nodes[i]->innovation_number, nodes[i]->layer_type, nodes[i]->node_type, nodes[i]->depth, nodes[i]->parameter_name.c_str());
         nodes[i]->write_to_stream(bin_ostream);
     }
 
@@ -3453,6 +3495,17 @@ void RNN_Genome::update_innovation_counts(int32_t &node_innovation_count, int32_
     node_innovation_count = max_node_innovation_count + 1;
     edge_innovation_count = max_edge_innovation_count + 1;
 }
+// return sorted innovation list
+vector<int32_t> RNN_Genome::get_innovation_list() {
+    vector<int32_t> innovations;
+    for (int32_t i = 0; i < edges.size(); i++){
+        int32_t innovation = edges[i]->get_innovation_number();
+        auto it = std::upper_bound(innovations.begin(), innovations.end(), innovation); 
+        innovations.insert(it, innovation);
+    }
+    return innovations;
+}
+
 
 string RNN_Genome::get_structural_hash() const {
     return structural_hash;

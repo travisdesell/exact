@@ -12,7 +12,7 @@ RNN_Node::RNN_Node(int _innovation_number, int _layer_type, double _depth, int _
 
     //node type will be simple, jordan or elman
     node_type = _node_type;
-    Log::trace("created node: %d, type: %d\n", innovation_number, node_type);
+    Log::trace("created node: %d, layer type: %d, node type: %d\n", innovation_number, layer_type, node_type);
 }
 
 
@@ -20,7 +20,7 @@ RNN_Node::RNN_Node(int _innovation_number, int _layer_type, double _depth, int _
 
     //node type will be simple, jordan or elman
     node_type = _node_type;
-    Log::trace("created node: %d, type: %d\n", innovation_number, node_type);
+    Log::trace("created node: %d, layer type: %d, node type: %d\n", innovation_number, layer_type, node_type);
 }
 
 

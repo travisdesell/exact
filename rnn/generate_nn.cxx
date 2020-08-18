@@ -66,7 +66,9 @@ RNN_Genome* create_ff(const vector<string> &input_parameter_names, int number_hi
         }
     }
 
-    return new RNN_Genome(rnn_nodes, rnn_edges, recurrent_edges, weight_initialize, weight_inheritance, new_component_weight);
+    RNN_Genome *genome = new RNN_Genome(rnn_nodes, rnn_edges, recurrent_edges, weight_initialize, weight_inheritance, new_component_weight);
+    genome->set_parameter_names(input_parameter_names, output_parameter_names);
+    return genome;
 }
 
 
@@ -124,8 +126,9 @@ RNN_Genome* create_jordan(const vector<string> &input_parameter_names, int numbe
         }
     }
 
-
-    return new RNN_Genome(rnn_nodes, rnn_edges, recurrent_edges, weight_initialize, weight_inheritance, new_component_weight);
+    RNN_Genome *genome = new RNN_Genome(rnn_nodes, rnn_edges, recurrent_edges, weight_initialize, weight_inheritance, new_component_weight);
+    genome->set_parameter_names(input_parameter_names, output_parameter_names);
+    return genome;
 }
 
 RNN_Genome* create_elman(const vector<string> &input_parameter_names, int number_hidden_layers, int number_hidden_nodes, const vector<string> &output_parameter_names, int max_recurrent_depth, string weight_initialize, string weight_inheritance, string new_component_weight) {
@@ -187,7 +190,9 @@ RNN_Genome* create_elman(const vector<string> &input_parameter_names, int number
         }
     }
 
-    return new RNN_Genome(rnn_nodes, rnn_edges, recurrent_edges, weight_initialize, weight_inheritance, new_component_weight);
+    RNN_Genome *genome = new RNN_Genome(rnn_nodes, rnn_edges, recurrent_edges, weight_initialize, weight_inheritance, new_component_weight);
+    genome->set_parameter_names(input_parameter_names, output_parameter_names);
+    return genome;
 }
 
 RNN_Genome* create_lstm(const vector<string> &input_parameter_names, int number_hidden_layers, int number_hidden_nodes, const vector<string> &output_parameter_names, int max_recurrent_depth, string weight_initialize, string weight_inheritance, string new_component_weight) {
@@ -230,7 +235,9 @@ RNN_Genome* create_lstm(const vector<string> &input_parameter_names, int number_
         }
     }
 
-    return new RNN_Genome(rnn_nodes, rnn_edges, recurrent_edges, weight_initialize, weight_inheritance, new_component_weight);
+    RNN_Genome *genome = new RNN_Genome(rnn_nodes, rnn_edges, recurrent_edges, weight_initialize, weight_inheritance, new_component_weight);
+    genome->set_parameter_names(input_parameter_names, output_parameter_names);
+    return genome;
 }
 
 
@@ -274,7 +281,9 @@ RNN_Genome* create_ugrnn(const vector<string> &input_parameter_names, int number
         }
     }
 
-    return new RNN_Genome(rnn_nodes, rnn_edges, recurrent_edges, weight_initialize, weight_inheritance, new_component_weight);
+    RNN_Genome *genome = new RNN_Genome(rnn_nodes, rnn_edges, recurrent_edges, weight_initialize, weight_inheritance, new_component_weight);
+    genome->set_parameter_names(input_parameter_names, output_parameter_names);
+    return genome;
 }
 
 
@@ -319,7 +328,9 @@ RNN_Genome* create_gru(const vector<string> &input_parameter_names, int number_h
         }
     }
 
-    return new RNN_Genome(rnn_nodes, rnn_edges, recurrent_edges, weight_initialize, weight_inheritance, new_component_weight);
+    RNN_Genome *genome = new RNN_Genome(rnn_nodes, rnn_edges, recurrent_edges, weight_initialize, weight_inheritance, new_component_weight);
+    genome->set_parameter_names(input_parameter_names, output_parameter_names);
+    return genome;
 }
 
 RNN_Genome* create_mgu(const vector<string> &input_parameter_names, int number_hidden_layers, int number_hidden_nodes, const vector<string> &output_parameter_names, int max_recurrent_depth, string weight_initialize, string weight_inheritance, string new_component_weight) {
@@ -362,7 +373,9 @@ RNN_Genome* create_mgu(const vector<string> &input_parameter_names, int number_h
         }
     }
 
-    return new RNN_Genome(rnn_nodes, rnn_edges, recurrent_edges, weight_initialize, weight_inheritance, new_component_weight);
+    RNN_Genome *genome = new RNN_Genome(rnn_nodes, rnn_edges, recurrent_edges, weight_initialize, weight_inheritance, new_component_weight);
+    genome->set_parameter_names(input_parameter_names, output_parameter_names);
+    return genome;
 }
 
 
@@ -406,5 +419,7 @@ RNN_Genome* create_delta(const vector<string> &input_parameter_names, int number
         }
     }
 
-    return new RNN_Genome(rnn_nodes, rnn_edges, recurrent_edges, weight_initialize, weight_inheritance, new_component_weight);
+    RNN_Genome *genome = new RNN_Genome(rnn_nodes, rnn_edges, recurrent_edges, weight_initialize, weight_inheritance, new_component_weight);
+    genome->set_parameter_names(input_parameter_names, output_parameter_names);
+    return genome;
 }
