@@ -19,15 +19,21 @@ public class ParseTurbines {
 
     //time format is like: 2013-01-07T01:20:00+01:00
     public static SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX");
-
+    // there are datapoints whose values at the last 16 columns are empty from the original data, and it would cause EXAMM fail at reading those files
+    // since we are not using parameters which has empty values, the last 16 columns are not written into the files
+    public static int num_column = 122;
     public static class TurbineLine {
 
         Date date;
+        String date_time;
         String[] values;
-
+        boolean isEmpty = false;
         public TurbineLine(String[] values) throws ParseException {
             this.values = values;
             date = sdf.parse(values[1]);
+            if (values[2].length() <= 0) {
+                this.isEmpty = true;
+            }
         }
 
         public long getDiffMinutes(Date lastDate) {
@@ -38,12 +44,21 @@ public class ParseTurbines {
 
         public boolean writeTo(BufferedWriter bw, Date lastDate, String turbine) throws IOException {
             boolean weirdMinutes = false;
+            // there are datapoints from the same time point
+            // so check if the time difference is 0 brfore print this line, if so, skip writing this line to file
+            if (lastDate != null) {
+                long diffMinutes = getDiffMinutes(lastDate);       
+                if (diffMinutes == 0) {
+                    System.out.println("turbine '" + turbine + ", " + date + ", minutes since last: " + diffMinutes);
+                    return true;
+                }
 
-            for (int i = 0; i < values.length; i++) {
+            }
+            for (int i = 0; i < num_column; i++) {
                 if (i != 0) bw.write(",");
                 if (i == 1) {
                     if (lastDate != null) {
-                        long diffMinutes = getDiffMinutes(lastDate);
+                        long diffMinutes = getDiffMinutes(lastDate);  
                         if (diffMinutes != 10) {
                             System.out.println("turbine '" + turbine + ", " + date + ", minutes since last: " + diffMinutes);
                             weirdMinutes = true;
@@ -52,9 +67,7 @@ public class ParseTurbines {
                     } else {
                         bw.write(",");
                     }
-
                 }
-
                 bw.write(values[i]);
             }   
             bw.write("\n");
@@ -65,7 +78,7 @@ public class ParseTurbines {
     }
 
     public static void writeHeaders(BufferedWriter bw, String[] columnNames) throws IOException {
-        for (int i = 0; i < columnNames.length; i++) {
+        for (int i = 0; i < num_column; i++) {
             if (i != 0) bw.write(",");
 
             if (i == 1) {
@@ -137,15 +150,29 @@ public class ParseTurbines {
                 int maxLines = 55000;
                 int lineCount = 0;
                 Date lastDate = null;
+                boolean file_closed = false;
                 TurbineLine prevLine = null;
                 for (TurbineLine line : lines) {
-                    if (lineCount == maxLines) {
-                        lineCount = 0;
-                        fileNumber++;
-                        bw.close();
+                    if (line.isEmpty || lineCount >= maxLines) {
+                        if (!file_closed) {
+                            bw.close();
+                            file_closed = true;
+                        }
+                        continue;
+                        // bw = new BufferedWriter(new FileWriter(new File("turbine_" + key + "_" + addition + "_" + fileNumber + ".csv")));
+                        // writeHeaders(bw, columnNames);
+                    }
 
+                    if (file_closed) {
+                        if (lineCount > 10){
+                            fileNumber++;
+                        }
+                        lastDate = null;
+                        prevLine = null;
+                        lineCount = 0;
                         bw = new BufferedWriter(new FileWriter(new File("turbine_" + key + "_" + addition + "_" + fileNumber + ".csv")));
                         writeHeaders(bw, columnNames);
+                        file_closed = false;
                     }
 
                     Date date = line.date;
