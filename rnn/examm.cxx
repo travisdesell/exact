@@ -212,7 +212,7 @@ EXAMM::EXAMM(
         if (seed_genome == NULL) {
             seed_genome_was_minimal = true;
             seed_genome = create_ff(input_parameter_names, 0, 0, output_parameter_names, 0, weight_initialize, weight_inheritance, new_component_weight);
-            seed_genome ->initialize_randomly();
+            seed_genome->initialize_randomly();
         } //otherwise the seed genome was passed into EXAMM
 
         //make sure we don't duplicate node or edge innovation numbers
@@ -495,7 +495,7 @@ bool EXAMM::insert_genome(RNN_Genome* genome) {
     int32_t insert_position = speciation_strategy->insert_genome(genome);
     //write this genome to disk if it was a new best found genome
     if (insert_position == 0) {
-        genome ->normalize_type = normalize_type;
+        genome->normalize_type = normalize_type;
         genome->write_graphviz(output_directory + "/rnn_genome_" + to_string(genome->get_generation_id()) + ".gv");
         genome->write_to_file(output_directory + "/rnn_genome_" + to_string(genome->get_generation_id()) + ".bin");
     }

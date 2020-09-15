@@ -128,20 +128,20 @@ void Log::release_id(string human_readable_id) {
     log_ids_mutex.lock();
     //cerr << "releasing thread from human readable id: '" << human_readable_id << "'" << endl;
 
-    // if (output_files.count(human_readable_id) == 0) {
-    //     //this file was never created and written to
+    if (output_files.count(human_readable_id) == 0) {
+        //this file was never created and written to
 
-    //     //cerr << "ERROR: log id '" << human_readable_id << "' was either already released or not previously set!" << endl;
-    //     //exit(1);
-    // } else {
+        //cerr << "ERROR: log id '" << human_readable_id << "' was either already released or not previously set!" << endl;
+        //exit(1);
+    } else {
 
-    //     LogFile *log_file = output_files[human_readable_id];
-    //     fflush(log_file->file);
-    //     fclose(log_file->file);
+        LogFile *log_file = output_files[human_readable_id];
+        fflush(log_file->file);
+        fclose(log_file->file);
 
-    //     delete log_file;
-    //     output_files.erase(human_readable_id);
-    // }
+        delete log_file;
+        output_files.erase(human_readable_id);
+    }
 
     log_ids_mutex.unlock();
 }

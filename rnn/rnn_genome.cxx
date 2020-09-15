@@ -1018,7 +1018,7 @@ void RNN_Genome::backpropagate(const vector< vector< vector<double> > > &inputs,
                 << " " << best_validation_mse << endl;
         }
 
-        // Log::info("iteration %10d, mse: %10lf, v_mse: %10lf, bv_mse: %10lf, lr: %lf, norm: %lf, p_norm: %lf, v_norm: %lf", iteration, mse, validation_mse, best_validation_mse, learning_rate, norm, parameter_norm, velocity_norm);
+        Log::info("iteration %10d, mse: %10lf, v_mse: %10lf, bv_mse: %10lf, lr: %lf, norm: %lf, p_norm: %lf, v_norm: %lf", iteration, mse, validation_mse, best_validation_mse, learning_rate, norm, parameter_norm, velocity_norm);
 
         if (use_reset_weights && prev_mse * 1.25 < mse) {
             Log::info_no_header(", RESETTING WEIGHTS %d", reset_count);
