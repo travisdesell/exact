@@ -2373,7 +2373,7 @@ bool RNN_Genome::connect_node_to_hid_nodes( double mu, double sig, RNN_Node_Inte
 
 /*   ################# ################# ################# */
 
-bool RNN_Genome::  add_node(double mu, double sigma, int node_type, uniform_int_distribution<int32_t> dist, int32_t &edge_innovation_count, int32_t &node_innovation_count) {
+bool RNN_Genome::add_node(double mu, double sigma, int node_type, uniform_int_distribution<int32_t> dist, int32_t &edge_innovation_count, int32_t &node_innovation_count) {
     Log::info("\tattempting to add a node!\n");
     double split_depth = rng_0_1(generator);
 
