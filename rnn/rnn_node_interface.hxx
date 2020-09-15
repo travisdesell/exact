@@ -79,6 +79,9 @@ class RNN_Node_Interface {
         virtual ~RNN_Node_Interface();
 
         virtual void initialize_randomly(minstd_rand0 &generator, NormalDistribution &normal_distribution, double mu, double sigma) = 0;
+        virtual void initialize_xavier(minstd_rand0 &generator, uniform_real_distribution<double> &rng_1_1, double range) = 0;
+        virtual void initialize_kaiming(minstd_rand0 &generator, NormalDistribution &normal_distribution, double range) = 0;
+        virtual void randomly_initialize_node(minstd_rand0 &generator, uniform_real_distribution<double> &rng) = 0;
 
         virtual void input_fired(int32_t time, double incoming_output) = 0;
         virtual void output_fired(int32_t time, double delta) = 0;

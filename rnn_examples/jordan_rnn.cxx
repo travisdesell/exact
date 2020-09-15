@@ -68,6 +68,15 @@ int main(int argc, char **argv) {
     int32_t max_recurrent_depth;
     get_argument(arguments, "--max_recurrent_depth", true, max_recurrent_depth);
 
+    string weight_initialize = "random";
+    get_argument(arguments, "--weight_initialize", false, weight_initialize);
+
+    string weight_inheritance = "lamarckian";
+    get_argument(arguments, "--weight_inheritance", false, weight_inheritance);
+
+    string new_component_weight = "lamarckian";
+    get_argument(arguments, "--new_component_weight", false, new_component_weight);
+
     vector<string> input_parameter_names = time_series_sets->get_input_parameter_names();
     vector<string> output_parameter_names = time_series_sets->get_output_parameter_names();
 
@@ -127,7 +136,7 @@ int main(int argc, char **argv) {
         }
     }
 
-    RNN_Genome *genome = new RNN_Genome(rnn_nodes, rnn_edges, recurrent_edges);
+    RNN_Genome *genome = new RNN_Genome(rnn_nodes, rnn_edges, recurrent_edges, weight_initialize, weight_inheritance, new_component_weight);
 
     genome->set_parameter_names(time_series_sets->get_input_parameter_names(), time_series_sets->get_output_parameter_names());
     genome->set_normalize_bounds(time_series_sets->get_normalize_type(), time_series_sets->get_normalize_mins(), time_series_sets->get_normalize_maxs(), time_series_sets->get_normalize_avgs(), time_series_sets->get_normalize_std_devs());

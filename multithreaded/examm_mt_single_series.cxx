@@ -177,6 +177,15 @@ int main(int argc, char** argv) {
     int32_t number_slices;
     get_argument(arguments, "--number_slices", true, number_slices);
 
+    string weight_initialize = "random";
+    get_argument(arguments, "--weight_initialize", false, weight_initialize);
+    
+    string weight_inheritance = "lamarckian";
+    get_argument(arguments, "--weight_inheritance", false, weight_inheritance);
+
+    string new_component_weight = "lamarckian";
+    get_argument(arguments, "--new_component_weight", false, new_component_weight);
+
     time_series_sets->split_all(number_slices);
 
     int32_t repeats = 5;
@@ -219,6 +228,7 @@ int main(int argc, char** argv) {
                     time_series_sets->get_normalize_maxs(),
                     time_series_sets->get_normalize_avgs(),
                     time_series_sets->get_normalize_std_devs(),
+                    weight_initialize ,weight_inheritance ,new_component_weight,
                     bp_iterations, learning_rate,
                     use_high_threshold, high_threshold,
                     use_low_threshold, low_threshold,

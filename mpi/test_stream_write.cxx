@@ -138,6 +138,15 @@ int main(int argc, char** argv) {
     bool repeat_extinction = argument_exists(arguments, "--repeat_extinction");
     // get_argument(arguments, "--repeat_extinction", false, repeat_extinction);
 
+    string weight_initialize = "random";
+    get_argument(arguments, "--weight_initialize", false, weight_initialize);
+    
+    string weight_inheritance = "lamarckian";
+    get_argument(arguments, "--weight_inheritance", false, weight_inheritance);
+
+    string new_component_weight = "lamarckian";
+    get_argument(arguments, "--new_component_weight", false, new_component_weight);
+
     int32_t bp_iterations;
     get_argument(arguments, "--bp_iterations", true, bp_iterations);
 
@@ -196,6 +205,7 @@ int main(int argc, char** argv) {
             time_series_sets->get_normalize_maxs(),
             time_series_sets->get_normalize_avgs(),
             time_series_sets->get_normalize_std_devs(),
+            weight_initialize, weight_inheritance, new_component_weight,
             bp_iterations, learning_rate,
             use_high_threshold, high_threshold,
             use_low_threshold, low_threshold,

@@ -111,6 +111,10 @@ class EXAMM {
         map<string,double> normalize_avgs;
         map<string,double> normalize_std_devs;
 
+        string weight_initialize;
+        string weight_inheritance;
+        string new_component_weight;
+
         ostringstream memory_log;
 
         std::chrono::time_point<std::chrono::system_clock> startClock;
@@ -142,6 +146,9 @@ class EXAMM {
                 const map<string,double> &_normalize_maxs,
                 const map<string,double> &_normalize_avgs,
                 const map<string,double> &_normalize_std_devs,
+                string _weight_initialize,
+                string _weight_inheritance,
+                string _new_component_weight,
                 int32_t _bp_iterations,
                 double _learning_rate,
                 bool _use_high_threshold,
