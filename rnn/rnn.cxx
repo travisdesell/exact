@@ -40,6 +40,29 @@ using std::vector;
 #include "time_series/time_series.hxx"
 
 void RNN::validate_parameters(const vector<string> &input_parameter_names, const vector<string> &output_parameter_names) {
+    Log::debug("validating parameters -- input_parameter_names.size(): %d, output_parameter_names.size(): %d\n", input_parameter_names.size(), output_parameter_names.size());
+    if (Log::at_level(Log::DEBUG)) {
+        Log::debug("\tinput_parameter_names:");
+        for (int32_t i = 0; i < input_parameter_names.size(); i++) {
+            Log::debug("\t\t'%s'\n", input_parameter_names[i].c_str());
+        }
+
+        Log::debug("\tinput_node names:");
+        for (int32_t i = 0; i < input_nodes.size(); i++) {
+            Log::debug("\t\t'%s'\n", input_nodes[i]->parameter_name.c_str());
+        }
+
+        Log::debug("\toutput_parameter_names:");
+        for (int32_t i = 0; i < output_parameter_names.size(); i++) {
+            Log::debug("\t\t'%s'\n", output_parameter_names[i].c_str());
+        }
+
+        Log::debug("\toutput_node names:");
+        for (int32_t i = 0; i < output_nodes.size(); i++) {
+            Log::debug("\t\t'%s'\n", output_nodes[i]->parameter_name.c_str());
+        }
+    }
+
     if (input_nodes.size() != input_parameter_names.size()) {
         Log::fatal("ERROR: number of input nodes (%d) != number of input parameters (%d)\n", input_nodes.size(), input_parameter_names.size());
         exit(1);
@@ -76,11 +99,33 @@ void RNN::validate_parameters(const vector<string> &input_parameter_names, const
 void RNN::fix_parameter_orders(const vector<string> &input_parameter_names, const vector<string> &output_parameter_names) {
     vector<RNN_Node_Interface*> ordered_input_nodes;
 
-    Log::debug("input_parameter_names.size(): %d, output_parameter_names.size(): %d\n", input_parameter_names.size(), output_parameter_names.size());
+    Log::debug("fixing parameter orders -- input_parameter_names.size(): %d, output_parameter_names.size(): %d\n", input_parameter_names.size(), output_parameter_names.size());
+    if (Log::at_level(Log::DEBUG)) {
+        Log::debug("\tinput_parameter_names:");
+        for (int32_t i = 0; i < input_parameter_names.size(); i++) {
+            Log::debug("\t\t'%s'\n", input_parameter_names[i].c_str());
+        }
+
+        Log::debug("\tinput_node names:");
+        for (int32_t i = 0; i < input_nodes.size(); i++) {
+            Log::debug("\t\t'%s'\n", input_nodes[i]->parameter_name.c_str());
+        }
+
+        Log::debug("\toutput_parameter_names:");
+        for (int32_t i = 0; i < output_parameter_names.size(); i++) {
+            Log::debug("\t\t'%s'\n", output_parameter_names[i].c_str());
+        }
+
+        Log::debug("\toutput_node names:");
+        for (int32_t i = 0; i < output_nodes.size(); i++) {
+            Log::debug("\t\t'%s'\n", output_nodes[i]->parameter_name.c_str());
+        }
+    }
+
 
     for (int i = 0; i < input_parameter_names.size(); i++) {
         for (int j = input_nodes.size() - 1; j >= 0; j--) {
-            Log::debug("checking input node name 's' vs parameter name '%s'\n", input_nodes[j]->parameter_name.c_str(), input_parameter_names[i].c_str());
+            Log::debug("checking input node name '%s' vs parameter name '%s'\n", input_nodes[j]->parameter_name.c_str(), input_parameter_names[i].c_str());
 
             if (input_nodes[j]->parameter_name.compare(input_parameter_names[i]) == 0) {
                 Log::debug("erasing node!\n");
