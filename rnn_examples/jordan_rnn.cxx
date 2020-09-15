@@ -62,13 +62,16 @@ int main(int argc, char **argv) {
     int32_t number_hidden_nodes;
     get_argument(arguments, "--number_hidden_nodes", true, number_hidden_nodes);
 
+    int32_t max_input_lags;
+    get_argument(arguments, "--max_input_lags", true, max_input_lags);
+
     int32_t max_recurrent_depth;
     get_argument(arguments, "--max_recurrent_depth", true, max_recurrent_depth);
 
     vector<string> input_parameter_names = time_series_sets->get_input_parameter_names();
     vector<string> output_parameter_names = time_series_sets->get_output_parameter_names();
 
-    Log::debug("creating jordan neural network with inputs: %d, hidden: %dx%d, outputs: %d, max recurrent depth: %d\n", input_parameter_names.size(), number_hidden_layers, number_hidden_nodes, output_parameter_names.size(), max_recurrent_depth);
+    Log::debug("creating jordan neural network with inputs: %d, hidden: %dx%d, outputs: %d, max recurrent depth: %d\n", input_parameter_names.size(), number_hidden_layers, number_hidden_nodes, output_parameter_names.size(), max_input_lags, max_recurrent_depth);
     vector<RNN_Node_Interface*> rnn_nodes;
     vector<RNN_Node_Interface*> output_layer;
     vector< vector<RNN_Node_Interface*> > layer_nodes(2 + number_hidden_layers);
@@ -94,7 +97,7 @@ int main(int argc, char **argv) {
 
             for (uint32_t k = 0; k < layer_nodes[current_layer - 1].size(); k++) {
                 rnn_edges.push_back(new RNN_Edge(++edge_innovation_count, layer_nodes[current_layer - 1][k], node));
-                for (uint32_t d = 1; d <= max_recurrent_depth; d++) {
+                for (uint32_t d = 1; d <= max_input_lags; d++) {
                     recurrent_edges.push_back(new RNN_Recurrent_Edge(++edge_innovation_count, d, layer_nodes[current_layer - 1][k], node));
                  }
             }
