@@ -1255,7 +1255,7 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
             norm = sqrt(norm);
             avg_norm += norm;
 
-            Log::info("iteration %4d, series: %4d, mse: %5.10lf, lr: %lf, norm: %lf", iteration, random_selection, mse, learning_rate, norm);
+            Log::info("iteration %7d, series: %4d, mse: %5.10lf, lr: %lf, norm: %lf", iteration, random_selection, mse, learning_rate, norm);
 
             if (use_reset_weights && prev_mse[random_selection] * 2 < mse) {
                 Log::info_no_header(", RESETTING WEIGHTS");
@@ -1359,6 +1359,8 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
 
         double training_error = get_mse(parameters, inputs, outputs);
         validation_mse = get_mse(parameters, validation_inputs, validation_outputs);
+        Log::info("iteration %7d, validation mse: %5.10lf\n", iteration, validation_mse);
+
         if (validation_mse < best_validation_mse) {
             best_validation_mse = validation_mse;
             best_validation_mae = get_mae(parameters, validation_inputs, validation_outputs);
