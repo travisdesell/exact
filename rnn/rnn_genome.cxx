@@ -632,7 +632,7 @@ void RNN_Genome::initialize_randomly() {
     int number_of_weights = get_number_weights();
     initial_parameters.assign(number_of_weights, 0.0);
 
-    if(weight_initialize.compare("random") == 0) {
+    if (weight_initialize.compare("random") == 0) {
         for (uint32_t i = 0; i < initial_parameters.size(); i++) {
             initial_parameters[i] = rng(generator);
         }
@@ -642,11 +642,14 @@ void RNN_Genome::initialize_randomly() {
             node_initialize_xavier(nodes[i]);
         }
         get_weights(initial_parameters);
-    } else if (weight_initialize.compare("kaiming") == 0){
+    } else if (weight_initialize.compare("kaiming") == 0) {
         for (int i = 0; i < nodes.size(); i++) {
             node_initialize_kaiming(nodes[i]);
         }
         get_weights(initial_parameters);
+    } else {
+        Log::fatal("ERROR: trying to initialize a genome randomly with unknown weight initalization strategy: '%s'\n", weight_initialize.c_str());
+        exit(1);
     }
 
     this->set_best_parameters(initial_parameters); 
@@ -1252,10 +1255,10 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
             norm = sqrt(norm);
             avg_norm += norm;
 
-            Log::debug("iteration %4d, series: %4d, mse: %5.10lf, lr: %lf, norm: %lf", iteration, random_selection, mse, learning_rate, norm);
+            Log::info("iteration %4d, series: %4d, mse: %5.10lf, lr: %lf, norm: %lf", iteration, random_selection, mse, learning_rate, norm);
 
             if (use_reset_weights && prev_mse[random_selection] * 2 < mse) {
-                Log::debug_no_header(", RESETTING WEIGHTS");
+                Log::info_no_header(", RESETTING WEIGHTS");
 
                 parameters = prev_parameters;
                 //prev_velocity = prev_prev_velocity;
@@ -1291,13 +1294,13 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
                     learning_rate *= 1.10;
                     if (learning_rate > 1.0) learning_rate = 1.0;
 
-                    Log::debug_no_header(", INCREASING LR");
+                    Log::info_no_header(", INCREASING LR");
                 }
             }
 
             if (use_high_norm && norm > high_threshold) {
                 double high_threshold_norm = high_threshold / norm;
-                Log::debug_no_header(", OVER THRESHOLD, multiplier: %lf", high_threshold_norm);
+                Log::info_no_header(", OVER THRESHOLD, multiplier: %lf", high_threshold_norm);
 
                 for (int32_t i = 0; i < parameters.size(); i++) {
                     analytic_gradient[i] = high_threshold_norm * analytic_gradient[i];
@@ -1310,7 +1313,7 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
 
             } else if (use_low_norm && norm < low_threshold) {
                 double low_threshold_norm = low_threshold / norm;
-                Log::debug_no_header(", UNDER THRESHOLD, multiplier: %lf", low_threshold_norm);
+                Log::info_no_header(", UNDER THRESHOLD, multiplier: %lf", low_threshold_norm);
 
                 for (int32_t i = 0; i < parameters.size(); i++) {
                     analytic_gradient[i] = low_threshold_norm * analytic_gradient[i];
@@ -1318,14 +1321,14 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
 
                 if (adapt_learning_rate) {
                     if (prev_mse[random_selection] * 1.05 < mse) {
-                        Log::debug_no_header(", WORSE");
+                        Log::info_no_header(", WORSE");
                         learning_rate *= 0.5;
                         if (learning_rate < 0.0000001) learning_rate = 0.0000001;
                     }
                 }
             }
 
-            Log::debug_no_header("\n");
+            Log::info_no_header("\n");
 
             if (use_nesterov_momentum) {
                 for (int32_t i = 0; i < parameters.size(); i++) {

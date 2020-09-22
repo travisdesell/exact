@@ -68,7 +68,7 @@ int main(int argc, char **argv) {
     int32_t max_recurrent_depth;
     get_argument(arguments, "--max_recurrent_depth", true, max_recurrent_depth);
 
-    string weight_initialize = "random";
+    string weight_initialize = "xavier";
     get_argument(arguments, "--weight_initialize", false, weight_initialize);
 
     string weight_inheritance = "lamarckian";
@@ -77,10 +77,13 @@ int main(int argc, char **argv) {
     string new_component_weight = "lamarckian";
     get_argument(arguments, "--new_component_weight", false, new_component_weight);
 
+    string output_filename;
+    get_argument(arguments, "--output_filename", true, output_filename);
+
     vector<string> input_parameter_names = time_series_sets->get_input_parameter_names();
     vector<string> output_parameter_names = time_series_sets->get_output_parameter_names();
 
-    Log::debug("creating jordan neural network with inputs: %d, hidden: %dx%d, outputs: %d, max recurrent depth: %d\n", input_parameter_names.size(), number_hidden_layers, number_hidden_nodes, output_parameter_names.size(), max_input_lags, max_recurrent_depth);
+    Log::info("creating jordan neural network with inputs: %d, hidden: %dx%d, outputs: %d, max input lags: %d, max recurrent depth: %d\n", input_parameter_names.size(), number_hidden_layers, number_hidden_nodes, output_parameter_names.size(), max_input_lags, max_recurrent_depth);
     vector<RNN_Node_Interface*> rnn_nodes;
     vector<RNN_Node_Interface*> output_layer;
     vector< vector<RNN_Node_Interface*> > layer_nodes(2 + number_hidden_layers);
@@ -181,6 +184,8 @@ int main(int argc, char **argv) {
     } else {
         genome->backpropagate(training_inputs, training_outputs, test_inputs, test_outputs);
     }
+
+    genome->write_to_file(output_filename);
 
     genome->get_weights(best_parameters);
     Log::info("best test MSE: %lf\n", genome->get_fitness());
