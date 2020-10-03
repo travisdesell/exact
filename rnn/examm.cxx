@@ -45,7 +45,7 @@ using std::to_string;
 
 #include "common/files.hxx"
 #include "common/log.hxx"
-
+#include "common/weight_initialize.hxx"
 
 
 EXAMM::~EXAMM() {
@@ -124,9 +124,6 @@ EXAMM::EXAMM(
                         dropout_probability(_dropout_probability),
                         output_directory(_output_directory),
                         normalize_type(_normalize_type),
-                        weight_initialize(_weight_initialize),
-                        weight_inheritance(_weight_inheritance),
-                        new_component_weight(_new_component_weight),
                         start_filled(_start_filled) {
     input_parameter_names = _input_parameter_names;
     output_parameter_names = _output_parameter_names;
@@ -200,9 +197,11 @@ EXAMM::EXAMM(
         merge_node_rate = 0.0;
     }
 
-    Log::info("weight initialize: %s\n", weight_initialize.c_str());
-    Log::info("weight inheritance: %s \n", weight_inheritance.c_str());
-    Log::info("new component weight: %s\n", new_component_weight.c_str());
+    set_weight_initialize_method(_weight_initialize, _weight_inheritance, _new_component_weight);
+    check_weight_initialize_validity();
+    Log::info("weight initialize: %s\n", WEIGHT_TYPES_STRING[weight_initialize].c_str());
+    Log::info("weight inheritance: %s \n", WEIGHT_TYPES_STRING[weight_inheritance].c_str());
+    Log::info("new component weight: %s\n", WEIGHT_TYPES_STRING[new_component_weight].c_str());
 
     Log::info("Speciation method is: \"%s\" (Default is the island-based speciation strategy).\n", speciation_method.c_str());
     if (speciation_method.compare("island") == 0 || speciation_method.compare("") == 0) {
@@ -591,12 +590,13 @@ void EXAMM::mutate(int32_t max_mutations, RNN_Genome *g) {
         g->get_mu_sigma(g->best_parameters, mu, sigma);
     }
 
-    // if new component weight is lamarckian and weight inheritance is same, 
+    // if new component weight is lamarckian and weight inheritance is same as initialization, 
     // we reset the weights for old components before doing mutations
     // and we do this after getting the mu, sigma for lamarckian 
-    if (weight_inheritance.compare("same") == 0 && new_component_weight.compare("lamarckian") == 0) {
-        g->initialize_randomly();
-    }
+    // if (weight_inheritance == weight_initialize && new_component_weight == LAMARCKIAN) {
+    //     Log::error("before doing mutation: new component weight is lamarckian, inheritance is same as initialization, setting all the weights to %s now \n", WEIGHT_TYPES_STRING[weight_initialize].c_str());
+    //     g->initialize_randomly();
+    // }
 
     int number_mutations = 0;
 
@@ -713,9 +713,9 @@ void EXAMM::mutate(int32_t max_mutations, RNN_Genome *g) {
     vector<double> new_parameters;
 
     // if all the weights are set to re-initialize, we do it after mutation happens
-    if (weight_inheritance.compare("same") == 0 && new_component_weight.compare("same") == 0) {
-        g->initialize_randomly();
-    }
+    // if (weight_inheritance == weight_initialize && new_component_weight == weight_initialize) {
+    //     g->initialize_randomly();
+    // }
 
     g->get_weights(new_parameters);
     g->initial_parameters = new_parameters;
@@ -1088,7 +1088,8 @@ RNN_Genome* EXAMM::crossover(RNN_Genome *p1, RNN_Genome *p2) {
     vector<double> new_parameters;
 
     // if weight_inheritance is same, all the weights of the child genome would be initialized as weight_initialize method
-    if (weight_inheritance.compare("same") == 0) {
+    if (weight_inheritance == weight_initialize) {
+        Log::debug("weight inheritance at crossover method is %s, setting weights to %s randomly \n", WEIGHT_TYPES_STRING[weight_inheritance].c_str(), WEIGHT_TYPES_STRING[weight_inheritance].c_str());
         child->initialize_randomly();
     }
 
@@ -1119,4 +1120,47 @@ RNN_Genome* EXAMM::crossover(RNN_Genome *p1, RNN_Genome *p2) {
 
 uniform_int_distribution<int32_t> EXAMM::get_recurrent_depth_dist() {
     return uniform_int_distribution<int32_t>(this->min_recurrent_depth, this->max_recurrent_depth);
+}
+
+void EXAMM::set_weight_initialize_method(string weight_initialize_string, string weight_inheritance_string, string new_component_string) {
+
+    for (int i = 0 ; i < NUM_WEIGHT_TYPES; i++) {
+        if (weight_initialize_string == WEIGHT_TYPES_STRING[i]) {
+            weight_initialize = i;
+        }
+        if (weight_inheritance_string == WEIGHT_TYPES_STRING[i]) {
+            weight_inheritance = i;
+        }
+        if (new_component_string == WEIGHT_TYPES_STRING[i]) {
+            new_component_weight = i;
+        }
+    }
+}
+
+void EXAMM::check_weight_initialize_validity() {
+    if (weight_initialize < 0 || weight_initialize >= NUM_WEIGHT_TYPES) {
+        Log::fatal("The weight initialization method %d is set wrong \n", weight_initialize);
+        exit(1);
+    }
+    if (weight_inheritance < 0 || weight_inheritance >= NUM_WEIGHT_TYPES) {
+        Log::fatal("The weight initialization method %d is set wrong \n", weight_initialize);
+        exit(1);
+    }
+    if (new_component_weight < 0 || new_component_weight >= NUM_WEIGHT_TYPES) {
+        Log::fatal("The weight initialization method %d is set wrong \n", weight_initialize);
+        exit(1);
+    }
+    if (weight_initialize == LAMARCKIAN) {
+        Log::fatal("Weight initialization method is set to Lamarckian! \n");
+        exit(1);
+    }
+    if (weight_inheritance != weight_initialize && weight_inheritance != LAMARCKIAN) {
+        Log::fatal("Weight initialize is %s, weight inheritance is %s\n", WEIGHT_TYPES_STRING[weight_initialize].c_str(), WEIGHT_TYPES_STRING[weight_inheritance].c_str());
+        exit(1);
+    }
+    if (new_component_weight != weight_initialize && new_component_weight != LAMARCKIAN) {
+        Log::fatal("Weight initialize is %s, new component weight is %s\n", WEIGHT_TYPES_STRING[weight_initialize].c_str(), WEIGHT_TYPES_STRING[new_component_weight].c_str());
+        exit(1);
+    }
+
 }

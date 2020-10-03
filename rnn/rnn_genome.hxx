@@ -55,9 +55,9 @@ class RNN_Genome {
 
         string log_filename;
 
-        string weight_initialize;
-        string weight_inheritance;
-        string new_component_weight;
+        int32_t weight_initialize;
+        int32_t weight_inheritance;
+        int32_t new_component_weight;
 
         map<string, int> generated_by_map;
 
@@ -94,8 +94,8 @@ class RNN_Genome {
         void sort_edges_by_depth();
         void sort_recurrent_edges_by_depth();
 
-        RNN_Genome(vector<RNN_Node_Interface*> &_nodes, vector<RNN_Edge*> &_edges, vector<RNN_Recurrent_Edge*> &_recurrent_edges, string _weight_initialize, string _weight_inheritance, string _new_component_weight);
-        RNN_Genome(vector<RNN_Node_Interface*> &_nodes, vector<RNN_Edge*> &_edges, vector<RNN_Recurrent_Edge*> &_recurrent_edges, uint16_t seed, string _weight_initialize, string _weight_inheritance, string _new_component_weight);
+        RNN_Genome(vector<RNN_Node_Interface*> &_nodes, vector<RNN_Edge*> &_edges, vector<RNN_Recurrent_Edge*> &_recurrent_edges, int32_t _weight_initialize, int32_t _weight_inheritance, int32_t _new_component_weight);
+        RNN_Genome(vector<RNN_Node_Interface*> &_nodes, vector<RNN_Edge*> &_edges, vector<RNN_Recurrent_Edge*> &_recurrent_edges, uint16_t seed, int32_t _weight_initialize, int32_t _weight_inheritance, int32_t _new_component_weight);
 
         RNN_Genome* copy();
 
@@ -166,9 +166,9 @@ class RNN_Genome {
 
         double get_avg_edge_weight();
         void initialize_randomly();
-        void node_initialize_xavier(RNN_Node_Interface* n);
-        void node_initialize_kaiming(RNN_Node_Interface* n);
-        void node_initialize(RNN_Node_Interface* n);
+        void initialize_xavier(RNN_Node_Interface* n);
+        void initialize_kaiming(RNN_Node_Interface* n);
+        void initialize_node_randomly(RNN_Node_Interface* n);
         double get_xavier_weight(RNN_Node_Interface* output_node);
         double get_kaiming_weight(RNN_Node_Interface* output_node);
         double get_random_weight();

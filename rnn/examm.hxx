@@ -111,9 +111,9 @@ class EXAMM {
         map<string,double> normalize_avgs;
         map<string,double> normalize_std_devs;
 
-        string weight_initialize;
-        string weight_inheritance;
-        string new_component_weight;
+        int32_t weight_initialize;
+        int32_t weight_inheritance;
+        int32_t new_component_weight;
 
         ostringstream memory_log;
 
@@ -193,6 +193,9 @@ class EXAMM {
 
         string get_output_directory() const;
         RNN_Genome* generate_for_transfer_learning(string file_name, int extra_inputs, int extra_outputs) ;
+
+        void set_weight_initialize_method(string weight_initialize_string, string weight_inheritance_string, string new_component_string);
+        void check_weight_initialize_validity();
 };
 
 #endif

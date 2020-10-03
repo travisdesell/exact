@@ -34,6 +34,7 @@ typedef struct stat Stat;
 
 #include "common/arguments.hxx"
 #include "common/log.hxx"
+#include "common/weight_initialize.hxx"
 
 #include "rnn/lstm_node.hxx"
 #include "rnn/rnn_edge.hxx"
@@ -56,10 +57,10 @@ string output_directory;
 int32_t repeats = 5;
 int fold_size = 2;
 
+string weight_initialize_string = "random";
+int weight_initialize = -1;
+
 string process_name;
-string weight_initialize = "random";
-string weight_inheritance = "lamarckian";
-string new_component_weight = "lamarckian";
 
 vector<string> rnn_types({
         "one_layer_ff", "two_layer_ff",
@@ -369,52 +370,52 @@ ResultSet handle_job(int rank, int current_job) {
 
     RNN_Genome *genome = NULL;
     if (rnn_type == "one_layer_lstm") {
-        genome = create_lstm(input_parameter_names, 1, number_inputs, output_parameter_names, 1, weight_initialize, weight_inheritance, new_component_weight);
+        genome = create_lstm(input_parameter_names, 1, number_inputs, output_parameter_names, 1, weight_initialize);
 
     } else if (rnn_type == "two_layer_lstm") {
-        genome = create_lstm(input_parameter_names, 2, number_inputs, output_parameter_names, 1, weight_initialize, weight_inheritance, new_component_weight);
+        genome = create_lstm(input_parameter_names, 2, number_inputs, output_parameter_names, 1, weight_initialize);
 
     } else if (rnn_type == "one_layer_delta") {
-        genome = create_delta(input_parameter_names, 1, number_inputs, output_parameter_names, 1, weight_initialize, weight_inheritance, new_component_weight);
+        genome = create_delta(input_parameter_names, 1, number_inputs, output_parameter_names, 1, weight_initialize);
 
     } else if (rnn_type == "two_layer_delta") {
-        genome = create_delta(input_parameter_names, 2, number_inputs, output_parameter_names, 1, weight_initialize, weight_inheritance, new_component_weight);
+        genome = create_delta(input_parameter_names, 2, number_inputs, output_parameter_names, 1, weight_initialize);
 
     } else if (rnn_type == "one_layer_gru") {
-        genome = create_gru(input_parameter_names, 1, number_inputs, output_parameter_names, 1, weight_initialize, weight_inheritance, new_component_weight);
+        genome = create_gru(input_parameter_names, 1, number_inputs, output_parameter_names, 1, weight_initialize);
 
     } else if (rnn_type == "two_layer_gru") {
-        genome = create_gru(input_parameter_names, 2, number_inputs, output_parameter_names, 1, weight_initialize, weight_inheritance, new_component_weight);
+        genome = create_gru(input_parameter_names, 2, number_inputs, output_parameter_names, 1, weight_initialize);
 
     } else if (rnn_type == "one_layer_mgu") {
-        genome = create_mgu(input_parameter_names, 1, number_inputs, output_parameter_names, 1, weight_initialize, weight_inheritance, new_component_weight);
+        genome = create_mgu(input_parameter_names, 1, number_inputs, output_parameter_names, 1, weight_initialize);
 
     } else if (rnn_type == "two_layer_mgu") {
-        genome = create_mgu(input_parameter_names, 2, number_inputs, output_parameter_names, 1, weight_initialize, weight_inheritance, new_component_weight);
+        genome = create_mgu(input_parameter_names, 2, number_inputs, output_parameter_names, 1, weight_initialize);
 
     } else if (rnn_type == "one_layer_delta") {
-        genome = create_delta(input_parameter_names, 1, number_inputs, output_parameter_names, 1, weight_initialize, weight_inheritance, new_component_weight);
+        genome = create_delta(input_parameter_names, 1, number_inputs, output_parameter_names, 1, weight_initialize);
 
     } else if (rnn_type == "two_layer_delta") {
-        genome = create_delta(input_parameter_names, 2, number_inputs, output_parameter_names, 1, weight_initialize, weight_inheritance, new_component_weight);
+        genome = create_delta(input_parameter_names, 2, number_inputs, output_parameter_names, 1, weight_initialize);
 
     } else if (rnn_type == "one_layer_ugrnn") {
-        genome = create_ugrnn(input_parameter_names, 1, number_inputs, output_parameter_names, 1, weight_initialize, weight_inheritance, new_component_weight);
+        genome = create_ugrnn(input_parameter_names, 1, number_inputs, output_parameter_names, 1, weight_initialize);
 
     } else if (rnn_type == "two_layer_ugrnn") {
-        genome = create_ugrnn(input_parameter_names, 2, number_inputs, output_parameter_names, 1, weight_initialize, weight_inheritance, new_component_weight);
+        genome = create_ugrnn(input_parameter_names, 2, number_inputs, output_parameter_names, 1, weight_initialize);
 
     } else if (rnn_type == "one_layer_ff") {
-        genome = create_ff(input_parameter_names, 1, number_inputs, output_parameter_names, 0, weight_initialize, weight_inheritance, new_component_weight);
+        genome = create_ff(input_parameter_names, 1, number_inputs, output_parameter_names, 0, weight_initialize, 0, 0);
 
     } else if (rnn_type == "two_layer_ff") {
-        genome = create_ff(input_parameter_names, 2, number_inputs, output_parameter_names, 0, weight_initialize, weight_inheritance, new_component_weight);
+        genome = create_ff(input_parameter_names, 2, number_inputs, output_parameter_names, 0, weight_initialize, 0, 0);
 
     } else if (rnn_type == "jordan") {
-        genome = create_jordan(input_parameter_names, 1, number_inputs, output_parameter_names, 1, weight_initialize, weight_inheritance, new_component_weight);
+        genome = create_jordan(input_parameter_names, 1, number_inputs, output_parameter_names, 1, weight_initialize);
 
     } else if (rnn_type == "elman") {
-        genome = create_elman(input_parameter_names, 1, number_inputs, output_parameter_names, 1, weight_initialize, weight_inheritance, new_component_weight);
+        genome = create_elman(input_parameter_names, 1, number_inputs, output_parameter_names, 1, weight_initialize);
     }
 
     RNN* rnn = genome->get_rnn();
@@ -547,11 +548,17 @@ int main(int argc, char **argv) {
 
     get_argument(arguments, "--fold_size", true, fold_size);
 
-    get_argument(arguments, "--weight_initialize", false, weight_initialize);
+    get_argument(arguments, "--weight_initialize", false, weight_initialize_string);
 
-    get_argument(arguments, "--weight_inheritance", false, weight_inheritance);
-
-    get_argument(arguments, "--new_component_weight", false, new_component_weight);
+    for (int i = 0; i < NUM_WEIGHT_TYPES; i++) {
+       if (weight_initialize_string == WEIGHT_TYPES_STRING[i]) {
+           weight_initialize = i;
+           break;
+       } 
+    }
+    if (weight_initialize < 0 || weight_initialize >= NUM_WEIGHT_TYPES - 1) {
+        Log::fatal("weight initialization method %s is set wrong \n", weight_initialize_string.c_str());
+    }
 
 
     if (rank == 0) {
