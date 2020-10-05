@@ -133,7 +133,7 @@
     #     --bp_iterations 10 \
     #     --weight_initialize xavier \
     #     --weight_inheritance xavier \
-    #     --new_component_weight lamarckian \
+    #     --mutated_component_weight lamarckian \
     #     --output_directory $out_dir \
     #     --possible_node_types simple UGRNN MGU GRU delta LSTM \
     #     --std_message_level INFO \

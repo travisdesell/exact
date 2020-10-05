@@ -19,6 +19,7 @@ using std::vector;
 
 #include "rnn_genome.hxx"
 #include "speciation_strategy.hxx"
+#include "common/weight_initialize.hxx"
 
 class EXAMM {
     private:
@@ -111,9 +112,9 @@ class EXAMM {
         map<string,double> normalize_avgs;
         map<string,double> normalize_std_devs;
 
-        int32_t weight_initialize;
-        int32_t weight_inheritance;
-        int32_t new_component_weight;
+        WeightType weight_initialize;
+        WeightType weight_inheritance;
+        WeightType mutated_component_weight;
 
         ostringstream memory_log;
 
@@ -146,9 +147,9 @@ class EXAMM {
                 const map<string,double> &_normalize_maxs,
                 const map<string,double> &_normalize_avgs,
                 const map<string,double> &_normalize_std_devs,
-                string _weight_initialize,
-                string _weight_inheritance,
-                string _new_component_weight,
+                WeightType _weight_initialize,
+                WeightType _weight_inheritance,
+                WeightType _mutated_component_weight,
                 int32_t _bp_iterations,
                 double _learning_rate,
                 bool _use_high_threshold,
@@ -194,7 +195,6 @@ class EXAMM {
         string get_output_directory() const;
         RNN_Genome* generate_for_transfer_learning(string file_name, int extra_inputs, int extra_outputs) ;
 
-        void set_weight_initialize_method(string weight_initialize_string, string weight_inheritance_string, string new_component_string);
         void check_weight_initialize_validity();
 };
 

@@ -46,7 +46,6 @@ using std::vector;
 #include "common/random.hxx"
 #include "common/color_table.hxx"
 #include "common/log.hxx"
-#include "common/weight_initialize.hxx"
 
 #include "time_series/time_series.hxx"
 
@@ -84,9 +83,9 @@ void RNN_Genome::sort_recurrent_edges_by_depth() {
 RNN_Genome::RNN_Genome(vector<RNN_Node_Interface*> &_nodes, 
                         vector<RNN_Edge*> &_edges, 
                         vector<RNN_Recurrent_Edge*> &_recurrent_edges, 
-                        int32_t _weight_initialize, 
-                        int32_t _weight_inheritance, 
-                        int32_t _new_component_weight) {
+                        WeightType _weight_initialize, 
+                        WeightType _weight_inheritance, 
+                        WeightType _mutated_component_weight) {
     generation_id = -1;
     group_id = -1;
 
@@ -98,11 +97,7 @@ RNN_Genome::RNN_Genome(vector<RNN_Node_Interface*> &_nodes,
     recurrent_edges = _recurrent_edges;
     weight_initialize = _weight_initialize;
     weight_inheritance = _weight_inheritance;
-    new_component_weight = _new_component_weight;
-
-    // for (int i =0; i < edges.size(); i++){
-    //     innovation_list.push_back(edges[i]->get_innovation_number());
-    // }
+    mutated_component_weight = _mutated_component_weight;
 
     sort_nodes_by_depth();
     sort_edges_by_depth();
@@ -138,10 +133,10 @@ RNN_Genome::RNN_Genome(vector<RNN_Node_Interface*> &_nodes,
                         vector<RNN_Edge*> &_edges, 
                         vector<RNN_Recurrent_Edge*> &_recurrent_edges, 
                         uint16_t seed, 
-                        int32_t _weight_initialize, 
-                        int32_t _weight_inheritance, 
-                        int32_t _new_component_weight) : 
-                                RNN_Genome(_nodes, _edges, _recurrent_edges, weight_initialize, weight_inheritance, new_component_weight) {
+                        WeightType _weight_initialize, 
+                        WeightType _weight_inheritance, 
+                        WeightType _mutated_component_weight) : 
+                                RNN_Genome(_nodes, _edges, _recurrent_edges, _weight_initialize, _weight_inheritance, _mutated_component_weight) {
 
     generator = minstd_rand0(seed);
 }
@@ -169,7 +164,7 @@ RNN_Genome* RNN_Genome::copy() {
         recurrent_edge_copies.push_back( recurrent_edges[i]->copy(node_copies) );
     }
 
-    RNN_Genome *other = new RNN_Genome(node_copies, edge_copies, recurrent_edge_copies, weight_initialize, weight_inheritance, new_component_weight);
+    RNN_Genome *other = new RNN_Genome(node_copies, edge_copies, recurrent_edge_copies, weight_initialize, weight_inheritance, mutated_component_weight);
 
     other->group_id = group_id;
     other->bp_iterations = bp_iterations;
@@ -204,10 +199,6 @@ RNN_Genome* RNN_Genome::copy() {
     other->normalize_maxs = normalize_maxs;
     other->normalize_avgs = normalize_avgs;
     other->normalize_std_devs = normalize_std_devs;
-
-    other->weight_initialize = weight_initialize;
-    other->weight_inheritance = weight_inheritance;
-    other->new_component_weight = new_component_weight;
 
     //reachability is assigned in the constructor
     //other->assign_reachability();
@@ -633,17 +624,17 @@ void RNN_Genome::initialize_randomly() {
     int number_of_weights = get_number_weights();
     initial_parameters.assign(number_of_weights, 0.0);
 
-    if (weight_initialize == RANDOM) {
+    if (weight_initialize == WeightType::RANDOM) {
         for (uint32_t i = 0; i < initial_parameters.size(); i++) {
             initial_parameters[i] = rng(generator);
         }
         this->set_weights(initial_parameters);
-    } else if (weight_initialize == XAVIER) {
+    } else if (weight_initialize == WeightType::XAVIER) {
         for (int i = 0; i < nodes.size(); i++) {
             initialize_xavier(nodes[i]);
         }
         get_weights(initial_parameters);
-    } else if (weight_initialize == KAIMING) {
+    } else if (weight_initialize == WeightType::KAIMING) {
         for (int i = 0; i < nodes.size(); i++) {
             initialize_kaiming(nodes[i]);
         }
@@ -720,19 +711,19 @@ double RNN_Genome::get_random_weight() {
 }
 
 void RNN_Genome::initialize_node_randomly(RNN_Node_Interface* n) {
-    if (new_component_weight == weight_initialize) {
-        if (weight_initialize == XAVIER) {
+    if (mutated_component_weight == weight_initialize) {
+        if (weight_initialize == WeightType::XAVIER) {
             int32_t sum = get_fan_in(n->innovation_number) + get_fan_out(n->innovation_number);
             if(sum <= 0) sum = 1;
             double range = sqrt(6)/sqrt(sum);
             // double range = sqrt(6)/sqrt(n->fan_in + n->fan_out);
             n->initialize_xavier(generator, rng_1_1, range);
-        } else if (weight_initialize == KAIMING) {
+        } else if (weight_initialize == WeightType::KAIMING) {
             int32_t fan_in = get_fan_in(n->innovation_number);
             if(fan_in <= 0) fan_in =1;
             double range = sqrt(2) / sqrt(fan_in);
             n->initialize_kaiming(generator, normal_distribution, range);
-        } else if (weight_initialize == RANDOM) {
+        } else if (weight_initialize == WeightType::RANDOM) {
             // random weight
             n->randomly_initialize_node(generator, rng);  
         } else {
@@ -1825,14 +1816,14 @@ RNN_Node_Interface* RNN_Genome::create_node(double mu, double sigma, int node_ty
         exit(1);
     }
 
-    if (new_component_weight == LAMARCKIAN) {
+    if (mutated_component_weight == WeightType::LAMARCKIAN) {
         Log::debug("new component weight is lamarckian, setting new node weight to lamarckian \n");
         n->initialize_randomly(generator, normal_distribution, mu, sigma);
-    } else if (new_component_weight == weight_initialize) {
-        Log::debug("new component weight is %s, setting new node's weight randomly with %s method \n", WEIGHT_TYPES_STRING[new_component_weight].c_str(), WEIGHT_TYPES_STRING[new_component_weight].c_str());
+    } else if (mutated_component_weight == weight_initialize) {
+        Log::debug("new component weight is %s, setting new node's weight randomly with %s method \n", WEIGHT_TYPES_STRING[mutated_component_weight].c_str(), WEIGHT_TYPES_STRING[mutated_component_weight].c_str());
         initialize_node_randomly(n);
     } else {
-        Log::fatal("new component weight is not set correctly, weight initialize: %s, new component weight: %s. \n", WEIGHT_TYPES_STRING[weight_initialize].c_str(), WEIGHT_TYPES_STRING[new_component_weight].c_str());
+        Log::fatal("new component weight is not set correctly, weight initialize: %s, new component weight: %s. \n", WEIGHT_TYPES_STRING[weight_initialize].c_str(), WEIGHT_TYPES_STRING[mutated_component_weight].c_str());
         exit(1);
     }
 
@@ -1877,25 +1868,25 @@ bool RNN_Genome::attempt_edge_insert(RNN_Node_Interface *n1, RNN_Node_Interface 
     }
 
     RNN_Edge *e = new RNN_Edge(++edge_innovation_count, n1, n2);
-    if (new_component_weight == weight_initialize) {
-        Log::debug("setting new edge weight with %s method \n", WEIGHT_TYPES_STRING[new_component_weight].c_str());
-        if (weight_initialize == XAVIER) {
+    if (mutated_component_weight == weight_initialize) {
+        Log::debug("setting new edge weight with %s method \n", WEIGHT_TYPES_STRING[mutated_component_weight].c_str());
+        if (weight_initialize == WeightType::XAVIER) {
             Log::debug("setting new edge weight to Xavier \n");
             e->weight = get_xavier_weight(n2);
-        } else if (weight_initialize == KAIMING) {
+        } else if (weight_initialize == WeightType::KAIMING) {
             Log::debug("setting new edge weight to Kaiming \n");
             e->weight = get_kaiming_weight(n2);
-        } else if (weight_initialize == RANDOM) {
+        } else if (weight_initialize == WeightType::RANDOM) {
             Log::debug("setting new edge weight to Random \n");
             e->weight = get_random_weight();
         } else {
             Log::fatal("weight initialization method %d is not set correctly \n", weight_initialize);
         }
-    } else if (new_component_weight == LAMARCKIAN){
+    } else if (mutated_component_weight == WeightType::LAMARCKIAN){
         Log::debug("setting new edge weight with Lamarckian method \n");
         e->weight = bound(normal_distribution.random(generator, mu, sigma));
     } else {
-        Log::fatal("new component weight method is not set correctly, weight initialize: %s, new component weight: %s\n", WEIGHT_TYPES_STRING[weight_initialize].c_str(), WEIGHT_TYPES_STRING[new_component_weight].c_str());
+        Log::fatal("new component weight method is not set correctly, weight initialize: %s, new component weight: %s\n", WEIGHT_TYPES_STRING[weight_initialize].c_str(), WEIGHT_TYPES_STRING[mutated_component_weight].c_str());
     }
     
     Log::info("\tadding edge between nodes %d and %d, new edge weight: %lf\n", e->input_innovation_number, e->output_innovation_number, e->weight);
@@ -1932,25 +1923,25 @@ bool RNN_Genome::attempt_recurrent_edge_insert(RNN_Node_Interface *n1, RNN_Node_
     }
 
     RNN_Recurrent_Edge *e = new RNN_Recurrent_Edge(++edge_innovation_count, recurrent_depth, n1, n2);
-    if (new_component_weight == weight_initialize) {
-        Log::debug("setting new recurrent edge weight with %s method \n", WEIGHT_TYPES_STRING[new_component_weight].c_str());
-        if (weight_initialize == XAVIER) {
+    if (mutated_component_weight == weight_initialize) {
+        Log::debug("setting new recurrent edge weight with %s method \n", WEIGHT_TYPES_STRING[mutated_component_weight].c_str());
+        if (weight_initialize == WeightType::XAVIER) {
             Log::debug("setting new recurrent edge weight to Xavier \n");
             e->weight = get_xavier_weight(n2);
-        } else if (weight_initialize == KAIMING) {
+        } else if (weight_initialize == WeightType::KAIMING) {
             Log::debug("setting new recurrent edge weight to Kaiming \n");
             e->weight = get_kaiming_weight(n2);
-        } else if (weight_initialize == RANDOM) {
+        } else if (weight_initialize == WeightType::RANDOM) {
             Log::debug("setting new recurrent edge weight to Random \n");
             e->weight = get_random_weight();
         } else {
             Log::fatal("Weight initialization method %d is not set correctly \n", weight_initialize);
         }
-    } else if (new_component_weight == LAMARCKIAN){
+    } else if (mutated_component_weight == WeightType::LAMARCKIAN){
         Log::debug("setting new recurrent edge weight with Lamarckian method \n");
         e->weight = bound(normal_distribution.random(generator, mu, sigma));
     } else {
-        Log::fatal("new component weight method is not set correctly, weight initialize: %s, new component weight: %s\n", WEIGHT_TYPES_STRING[weight_initialize].c_str(), WEIGHT_TYPES_STRING[new_component_weight].c_str());
+        Log::fatal("new component weight method is not set correctly, weight initialize: %s, new component weight: %s\n", WEIGHT_TYPES_STRING[weight_initialize].c_str(), WEIGHT_TYPES_STRING[mutated_component_weight].c_str());
     }
 
     Log::info("\tadding recurrent edge with innovation number %d between nodes %d and %d, new edge weight: %d\n", e->innovation_number, e->input_innovation_number, e->output_innovation_number, e->weight);
@@ -3145,7 +3136,7 @@ void RNN_Genome::read_from_stream(istream &bin_istream) {
 
     bin_istream.read((char*)&weight_initialize, sizeof(int32_t));
     bin_istream.read((char*)&weight_inheritance, sizeof(int32_t));
-    bin_istream.read((char*)&new_component_weight, sizeof(int32_t));
+    bin_istream.read((char*)&mutated_component_weight, sizeof(int32_t));
 
     Log::debug("generation_id: %d\n", generation_id);
     Log::debug("bp_iterations: %d\n", bp_iterations);
@@ -3164,7 +3155,7 @@ void RNN_Genome::read_from_stream(istream &bin_istream) {
 
     Log::debug("weight initialize: %s\n", WEIGHT_TYPES_STRING[weight_initialize].c_str());
     Log::debug("weight inheritance: %s\n", WEIGHT_TYPES_STRING[weight_inheritance].c_str());
-    Log::debug("new component weight: %s\n", WEIGHT_TYPES_STRING[new_component_weight].c_str());
+    Log::debug("new component weight: %s\n", WEIGHT_TYPES_STRING[mutated_component_weight].c_str());
 
     read_binary_string(bin_istream, log_filename, "log_filename");
     string generator_str;
@@ -3395,7 +3386,7 @@ void RNN_Genome::write_to_stream(ostream &bin_ostream) {
 
     bin_ostream.write((char*)&weight_initialize, sizeof(int32_t));
     bin_ostream.write((char*)&weight_inheritance, sizeof(int32_t));
-    bin_ostream.write((char*)&new_component_weight, sizeof(int32_t));
+    bin_ostream.write((char*)&mutated_component_weight, sizeof(int32_t));
 
     Log::debug("generation_id: %d\n", generation_id);
     Log::debug("bp_iterations: %d\n", bp_iterations);
@@ -3414,7 +3405,7 @@ void RNN_Genome::write_to_stream(ostream &bin_ostream) {
 
     Log::debug("weight initialize: %s\n", WEIGHT_TYPES_STRING[weight_initialize].c_str());
     Log::debug("weight inheritance: %s\n", WEIGHT_TYPES_STRING[weight_inheritance].c_str());
-    Log::debug("new component weight: %s\n", WEIGHT_TYPES_STRING[new_component_weight].c_str());
+    Log::debug("new component weight: %s\n", WEIGHT_TYPES_STRING[mutated_component_weight].c_str());
 
     write_binary_string(bin_ostream, log_filename, "log_filename");
 

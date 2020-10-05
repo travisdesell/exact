@@ -25,6 +25,7 @@ using std::vector;
 #include "rnn_recurrent_edge.hxx"
 
 #include "common/random.hxx"
+#include "common/weight_initialize.hxx"
 #include "time_series/time_series.hxx"
 
 //mysql can't handle the max float value for some reason
@@ -55,9 +56,9 @@ class RNN_Genome {
 
         string log_filename;
 
-        int32_t weight_initialize;
-        int32_t weight_inheritance;
-        int32_t new_component_weight;
+        WeightType weight_initialize;
+        WeightType weight_inheritance;
+        WeightType mutated_component_weight;
 
         map<string, int> generated_by_map;
 
@@ -94,8 +95,8 @@ class RNN_Genome {
         void sort_edges_by_depth();
         void sort_recurrent_edges_by_depth();
 
-        RNN_Genome(vector<RNN_Node_Interface*> &_nodes, vector<RNN_Edge*> &_edges, vector<RNN_Recurrent_Edge*> &_recurrent_edges, int32_t _weight_initialize, int32_t _weight_inheritance, int32_t _new_component_weight);
-        RNN_Genome(vector<RNN_Node_Interface*> &_nodes, vector<RNN_Edge*> &_edges, vector<RNN_Recurrent_Edge*> &_recurrent_edges, uint16_t seed, int32_t _weight_initialize, int32_t _weight_inheritance, int32_t _new_component_weight);
+        RNN_Genome(vector<RNN_Node_Interface*> &_nodes, vector<RNN_Edge*> &_edges, vector<RNN_Recurrent_Edge*> &_recurrent_edges, WeightType _weight_initialize, WeightType _weight_inheritance, WeightType _mutated_component_weight);
+        RNN_Genome(vector<RNN_Node_Interface*> &_nodes, vector<RNN_Edge*> &_edges, vector<RNN_Recurrent_Edge*> &_recurrent_edges, uint16_t seed, WeightType _weight_initialize, WeightType _weight_inheritance, WeightType _mutated_component_weight);
 
         RNN_Genome* copy();
 

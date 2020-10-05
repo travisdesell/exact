@@ -51,13 +51,9 @@ int main(int argc, char **argv) {
     string weight_initialize_string = "random";
     get_argument(arguments, "--weight_initialize", false, weight_initialize_string);
 
-    int weight_initialize = -1;
-    for (int i = 0; i < NUM_WEIGHT_TYPES; i++) {
-       if (weight_initialize_string == WEIGHT_TYPES_STRING[i]) {
-           weight_initialize = i;
-           break;
-       } 
-    }
+    WeightType weight_initialize;
+    weight_initialize = get_enum_from_string(weight_initialize_string);
+    
     if (weight_initialize < 0 || weight_initialize >= NUM_WEIGHT_TYPES - 1) {
         Log::fatal("weight initialization method %s is set wrong \n", weight_initialize_string.c_str());
     }

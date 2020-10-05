@@ -58,7 +58,7 @@ int32_t repeats = 5;
 int fold_size = 2;
 
 string weight_initialize_string = "random";
-int weight_initialize = -1;
+WeightType weight_initialize = get_enum_from_string(weight_initialize_string);
 
 string process_name;
 
@@ -406,10 +406,10 @@ ResultSet handle_job(int rank, int current_job) {
         genome = create_ugrnn(input_parameter_names, 2, number_inputs, output_parameter_names, 1, weight_initialize);
 
     } else if (rnn_type == "one_layer_ff") {
-        genome = create_ff(input_parameter_names, 1, number_inputs, output_parameter_names, 0, weight_initialize, 0, 0);
+        genome = create_ff(input_parameter_names, 1, number_inputs, output_parameter_names, 0, weight_initialize, WeightType::NONE, WeightType::NONE);
 
     } else if (rnn_type == "two_layer_ff") {
-        genome = create_ff(input_parameter_names, 2, number_inputs, output_parameter_names, 0, weight_initialize, 0, 0);
+        genome = create_ff(input_parameter_names, 2, number_inputs, output_parameter_names, 0, weight_initialize, WeightType::NONE, WeightType::NONE);
 
     } else if (rnn_type == "jordan") {
         genome = create_jordan(input_parameter_names, 1, number_inputs, output_parameter_names, 1, weight_initialize);
@@ -550,12 +550,8 @@ int main(int argc, char **argv) {
 
     get_argument(arguments, "--weight_initialize", false, weight_initialize_string);
 
-    for (int i = 0; i < NUM_WEIGHT_TYPES; i++) {
-       if (weight_initialize_string == WEIGHT_TYPES_STRING[i]) {
-           weight_initialize = i;
-           break;
-       } 
-    }
+    weight_initialize = get_enum_from_string(weight_initialize_string);
+
     if (weight_initialize < 0 || weight_initialize >= NUM_WEIGHT_TYPES - 1) {
         Log::fatal("weight initialization method %s is set wrong \n", weight_initialize_string.c_str());
     }

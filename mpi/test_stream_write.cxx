@@ -138,14 +138,20 @@ int main(int argc, char** argv) {
     bool repeat_extinction = argument_exists(arguments, "--repeat_extinction");
     // get_argument(arguments, "--repeat_extinction", false, repeat_extinction);
 
-    string weight_initialize = "random";
-    get_argument(arguments, "--weight_initialize", false, weight_initialize);
+    string weight_initialize_string = "random";
+    get_argument(arguments, "--weight_initialize", false, weight_initialize_string);
+    WeightType weight_initialize;
+    weight_initialize = get_enum_from_string(weight_initialize_string);
     
-    string weight_inheritance = "lamarckian";
-    get_argument(arguments, "--weight_inheritance", false, weight_inheritance);
+    string weight_inheritance_string = "lamarckian";
+    get_argument(arguments, "--weight_inheritance", false, weight_inheritance_string);
+    WeightType weight_inheritance;
+    weight_inheritance = get_enum_from_string(weight_inheritance_string);
 
-    string new_component_weight = "lamarckian";
-    get_argument(arguments, "--new_component_weight", false, new_component_weight);
+    string mutated_component_weight_string = "lamarckian";
+    get_argument(arguments, "--mutated_component_weight", false, mutated_component_weight_string);
+    WeightType mutated_component_weight;
+    mutated_component_weight = get_enum_from_string(mutated_component_weight_string);
 
     int32_t bp_iterations;
     get_argument(arguments, "--bp_iterations", true, bp_iterations);
@@ -205,7 +211,7 @@ int main(int argc, char** argv) {
             time_series_sets->get_normalize_maxs(),
             time_series_sets->get_normalize_avgs(),
             time_series_sets->get_normalize_std_devs(),
-            weight_initialize, weight_inheritance, new_component_weight,
+            weight_initialize, weight_inheritance, mutated_component_weight,
             bp_iterations, learning_rate,
             use_high_threshold, high_threshold,
             use_low_threshold, low_threshold,
