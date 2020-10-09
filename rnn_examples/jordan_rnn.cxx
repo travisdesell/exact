@@ -16,7 +16,7 @@ using std::vector;
 
 #include "common/arguments.hxx"
 #include "common/log.hxx"
-#include "weight_initialize.hxx"
+#include "common/weight_initialize.hxx"
 
 #include "rnn/lstm_node.hxx"
 #include "rnn/gru_node.hxx"
