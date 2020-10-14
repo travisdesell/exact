@@ -305,6 +305,9 @@ int main(int argc, char** argv) {
     int32_t max_recurrent_depth = 10;
     get_argument(arguments, "--max_recurrent_depth", false, max_recurrent_depth);
 
+    int32_t use_regression = 1;
+    get_argument(arguments,"--use_regression",false,use_regression);
+
 
     RNN_Genome *seed_genome = NULL;
     string genome_file_name = "";
@@ -377,6 +380,7 @@ int main(int argc, char** argv) {
                     use_low_threshold, low_threshold,
                     use_dropout, dropout_probability,
                     min_recurrent_depth, max_recurrent_depth,
+                    use_regression,
                     output_directory,
                     seed_genome,
                     start_filled);

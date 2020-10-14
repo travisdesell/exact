@@ -25,6 +25,7 @@ using std::vector;
 #include "rnn/examm.hxx"
 
 #include "time_series/time_series.hxx"
+#include "word_series/word_series.hxx"
 
 #define WORK_REQUEST_TAG 1
 #define GENOME_LENGTH_TAG 2
@@ -239,32 +240,34 @@ int main(int argc, char** argv) {
 
 
 
-    TimeSeriesSets *time_series_sets = NULL;
+    Corpus* corpus_sets = NULL;
 
     if (rank == 0) {
         //only have the master process print TSS info
-        time_series_sets = TimeSeriesSets::generate_from_arguments(arguments);
-        if (argument_exists(arguments, "--write_time_series")) {
+        corpus_sets = Corpus::generate_from_arguments(arguments);
+        if (argument_exists(arguments, "--write_word_series")) {
             string base_filename;
-            get_argument(arguments, "--write_time_series", true, base_filename);
-            time_series_sets->write_time_series_sets(base_filename);
+            get_argument(arguments, "--write_word_series", true, base_filename);
+            corpus_sets->write_sentence_series_sets(base_filename);
         }
     } else {
-        time_series_sets = TimeSeriesSets::generate_from_arguments(arguments);
+        corpus_sets = Corpus::generate_from_arguments(arguments);
     }
 
 
 
-    int32_t time_offset = 1;
-    get_argument(arguments, "--time_offset", true, time_offset);
+    int32_t word_offset = 1;
+    get_argument(arguments, "--word_offset", true, word_offset);
 
-    time_series_sets->export_training_series(time_offset, training_inputs, training_outputs);
-    time_series_sets->export_test_series(time_offset, validation_inputs, validation_outputs);
+    corpus_sets->export_training_series(word_offset,training_inputs,training_outputs);
+    corpus_sets->export_test_series(word_offset,validation_inputs,validation_outputs);
 
-    int number_inputs = time_series_sets->get_number_inputs();
-    int number_outputs = time_series_sets->get_number_outputs();
+    Log::info("exported word series.\n");
 
-    Log::debug("number_inputs: %d, number_outputs: %d\n", number_inputs, number_outputs);
+    int number_inputs = corpus_sets->get_number_inputs();
+    int number_outputs = corpus_sets->get_number_outputs();
+
+    Log::info("number_inputs: %d, number_outputs: %d\n", number_inputs, number_outputs);
 
     int32_t population_size;
     get_argument(arguments, "--population_size", true, population_size);
@@ -294,7 +297,6 @@ int main(int argc, char** argv) {
     get_argument(arguments, "--repopulation_mutations", false, repopulation_mutations);
 
     bool repeat_extinction = argument_exists(arguments, "--repeat_extinction");
-    // get_argument(arguments, "--repeat_extinction", false, repeat_extinction);
 
     int32_t bp_iterations;
     get_argument(arguments, "--bp_iterations", true, bp_iterations);
@@ -323,6 +325,10 @@ int main(int argc, char** argv) {
     int32_t max_recurrent_depth = 10;
     get_argument(arguments, "--max_recurrent_depth", false, max_recurrent_depth);
 
+    int32_t use_regression = 1;
+    get_argument(arguments,"--use_regression",false,use_regression);
+
+
 
     RNN_Genome *seed_genome = NULL;
     string genome_file_name = "";
@@ -334,8 +340,9 @@ int main(int argc, char** argv) {
 
         bool epigenetic_weights = argument_exists(arguments, "--epigenetic_weights");
 
-        seed_genome->transfer_to(time_series_sets->get_input_parameter_names(), time_series_sets->get_output_parameter_names(), transfer_learning_version, epigenetic_weights, min_recurrent_depth, max_recurrent_depth);
+        seed_genome->transfer_to(corpus_sets->get_input_parameter_names(), corpus_sets->get_output_parameter_names(), transfer_learning_version, epigenetic_weights, min_recurrent_depth, max_recurrent_depth);
     }
+
 
     bool start_filled = false;
     get_argument(arguments, "--start_filled", false, start_filled);
@@ -344,25 +351,28 @@ int main(int argc, char** argv) {
 
     if (rank == 0) {
         examm = new EXAMM(population_size, number_islands, max_genomes, extinction_event_generation_number, islands_to_exterminate, island_ranking_method,
-            repopulation_method, repopulation_mutations, repeat_extinction,
-            speciation_method,
-            time_series_sets->get_input_parameter_names(),
-            time_series_sets->get_output_parameter_names(),
-            time_series_sets->get_normalize_type(),
-            time_series_sets->get_normalize_mins(),
-            time_series_sets->get_normalize_maxs(),
-            time_series_sets->get_normalize_avgs(),
-            time_series_sets->get_normalize_std_devs(),
+            repopulation_method, repopulation_mutations,
+            repeat_extinction, speciation_method,
+            corpus_sets->get_input_parameter_names(),
+            corpus_sets->get_output_parameter_names(),
+            corpus_sets->get_normalize_type(),
+            corpus_sets->get_normalize_mins(),
+            corpus_sets->get_normalize_maxs(),
+            corpus_sets->get_normalize_avgs(),
+            corpus_sets->get_normalize_std_devs(),
             bp_iterations, learning_rate,
             use_high_threshold, high_threshold,
             use_low_threshold, low_threshold,
             use_dropout, dropout_probability,
             min_recurrent_depth, max_recurrent_depth,
+            use_regression,
             output_directory,
             seed_genome,
             start_filled);
 
-        if (possible_node_types.size() > 0) examm->set_possible_node_types(possible_node_types);
+        if (possible_node_types.size() > 0)  {
+            examm->set_possible_node_types(possible_node_types);
+        }
 
         master(max_rank);
     } else {
@@ -376,6 +386,6 @@ int main(int argc, char** argv) {
     Log::release_id("main_" + to_string(rank));
 
     MPI_Finalize();
-    delete time_series_sets;
+    delete corpus_sets;
     return 0;
 }

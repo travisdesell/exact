@@ -13,6 +13,8 @@ using std::vector;
 #include "rnn_recurrent_edge.hxx"
 
 #include "time_series/time_series.hxx"
+#include "word_series/word_series.hxx"
+
 
 class RNN {
     private:
@@ -42,9 +44,11 @@ class RNN {
         void forward_pass(const vector< vector<double> > &series_data, bool using_dropout, bool training, double dropout_probability);
         void backward_pass(double error, bool using_dropout, bool training, double dropout_probability);
 
+        double calculate_error_softmax(const vector< vector<double> > &expected_outputs);
         double calculate_error_mse(const vector< vector<double> > &expected_outputs);
         double calculate_error_mae(const vector< vector<double> > &expected_outputs);
 
+        double prediction_softmax(const vector< vector<double> > &series_data, const vector< vector<double> > &expected_outputs, bool using_dropout, bool training, double dropout_probability);
         double prediction_mse(const vector< vector<double> > &series_data, const vector< vector<double> > &expected_outputs, bool using_dropout, bool training, double dropout_probability);
         double prediction_mae(const vector< vector<double> > &series_data, const vector< vector<double> > &expected_outputs, bool using_dropout, bool training, double dropout_probability);
 
@@ -52,6 +56,7 @@ class RNN {
         vector<double> get_predictions(const vector< vector<double> > &series_data, const vector< vector<double> > &expected_outputs, bool usng_dropout, double dropout_probability);
 
         void write_predictions(string output_filename, const vector<string> &input_parameter_names, const vector<string> &output_parameter_names, const vector< vector<double> > &series_data, const vector< vector<double> > &expected_outputs, TimeSeriesSets *time_series_sets, bool using_dropout, double dropout_probability);
+        void write_predictions(string output_filename, const vector<string> &input_parameter_names, const vector<string> &output_parameter_names, const vector< vector<double> > &series_data, const vector< vector<double> > &expected_outputs, Corpus *word_series_sets, bool using_dropout, double dropout_probability);
 
         void initialize_randomly();
         void get_weights(vector<double> &parameters);

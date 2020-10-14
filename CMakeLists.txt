@@ -17,11 +17,11 @@ SET (PLATFORM 64)
 #SET (CMAKE_CXX_FLAGS                "-std=c++11 -Wall -O3 -funroll-loops -msse3 -DNAN_CHECKS")
 
 # 1 This line for local
-#SET (CMAKE_CXX_FLAGS                "-std=gnu++17 -Wall -O3 -funroll-loops  -msse3 -fsanitize=address -fno-omit-frame-pointer -D_GLIBCXX_DEBUG")
+#SET (CMAKE_CXX_FLAGS                "-std=c++17 -Wall -O3 -funroll-loops  -msse3 -fsanitize=address -fno-omit-frame-pointer -D_GLIBCXX_DEBUG")
 # 2 This line for cluster
-SET (CMAKE_CXX_FLAGS                "-std=gnu++17 -Wall -O3 -funroll-loops  -msse3 -fno-omit-frame-pointer -D_GLIBCXX_DEBUG")
+#SET (CMAKE_CXX_FLAGS                "-std=c++17 -Wall -O3 -funroll-loops  -msse3 -fno-omit-frame-pointer -D_GLIBCXX_DEBUG")
 
-#SET (CMAKE_CXX_FLAGS                "-std=c++17 -Wall -O3 -funroll-loops -msse3")
+SET (CMAKE_CXX_FLAGS                "-std=c++17 -Wall -O3 -funroll-loops -msse3")
 SET (CMAKE_CXX_FLAGS_DEBUG          "-g")
 SET (CMAKE_CXX_FLAGS_MINSIZEREL     "-Os -DNDEBUG")
 SET (CMAKE_CXX_FLAGS_RELEASE        "-O4 -funroll-loops -DNDEBUG")
@@ -93,6 +93,7 @@ ENDIF (COMPILE_CLIENT STREQUAL "YES")
 add_subdirectory(common)
 add_subdirectory(image_tools)
 add_subdirectory(time_series)
+add_subdirectory(word_series)
 add_subdirectory(cnn)
 
 add_subdirectory(rnn)

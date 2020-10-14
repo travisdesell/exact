@@ -361,7 +361,7 @@ RNN_Genome* IslandSpeciationStrategy::generate_genome(uniform_real_distribution<
             //the genome into the population so it can be further mutated
             RNN_Genome *copy = genome->copy();
             copy->initialize_randomly();
-            copy->best_validation_mse = EXAMM_MAX_DOUBLE;
+            copy->best_validation_error = EXAMM_MAX_DOUBLE;
             copy->best_validation_mae = EXAMM_MAX_DOUBLE;
             copy->best_parameters.clear();
             

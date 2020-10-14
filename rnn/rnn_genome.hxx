@@ -26,6 +26,7 @@ using std::vector;
 
 #include "common/random.hxx"
 #include "time_series/time_series.hxx"
+#include "word_series/word_series.hxx"
 
 //mysql can't handle the max float value for some reason
 #define EXAMM_MAX_DOUBLE 10000000
@@ -48,6 +49,8 @@ class RNN_Genome {
         bool use_low_norm;
         double low_threshold;
 
+        int32_t use_regression;
+
         bool use_dropout;
         double dropout_probability;
 
@@ -59,7 +62,7 @@ class RNN_Genome {
 
         vector<double> initial_parameters;
 
-        double best_validation_mse;
+        double best_validation_error;
         double best_validation_mae;
         vector<double> best_parameters;
 
@@ -115,7 +118,7 @@ class RNN_Genome {
         int32_t get_node_count();
 
         double get_fitness() const;
-        double get_best_validation_mse() const;
+        double get_best_validation_error() const;
         double get_best_validation_mae() const;
 
 
@@ -147,6 +150,7 @@ class RNN_Genome {
         void enable_low_threshold(double _low_threshold);
         void disable_dropout();
         void enable_dropout(double _dropout_probability);
+        void enable_use_regression(int32_t _use_regression);
         void set_log_filename(string _log_filename);
 
         void get_weights(vector<double> &parameters);
@@ -173,18 +177,22 @@ class RNN_Genome {
         void set_best_parameters( vector<double> parameters);    //INFO: ADDED BY ABDELRAHMAN TO USE FOR TRANSFER LEARNING
         void set_initial_parameters( vector<double> parameters);  //INFO: ADDED BY ABDELRAHMAN TO USE FOR TRANSFER LEARNING
 
-        void get_analytic_gradient(vector<RNN*> &rnns, const vector<double> &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, double &mse, vector<double> &analytic_gradient, bool training);
+
+
+        void get_analytic_gradient(vector<RNN*> &rnns, const vector<double> &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, double &error, vector<double> &analytic_gradient, bool training);
 
         void backpropagate(const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, const vector< vector< vector<double> > > &validation_inputs, const vector< vector< vector<double> > > &validation_outputs);
 
         void backpropagate_stochastic(const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, const vector< vector< vector<double> > > &validation_inputs, const vector< vector< vector<double> > > &validation_outputs);
 
+        double get_softmax(const vector<double> &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs);
         double get_mse(const vector<double> &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs);
         double get_mae(const vector<double> &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs);
 
 
         vector< vector<double> > get_predictions(const vector<double> &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs);
         void write_predictions(string output_directory, const vector<string> &input_filenames, const vector<double> &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, TimeSeriesSets *time_series_sets);
+        void write_predictions(string output_directory, const vector<string> &input_filenames, const vector<double> &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, Corpus * word_series_sets);
 
         void get_mu_sigma(const vector<double> &p, double &mu, double &sigma);
 

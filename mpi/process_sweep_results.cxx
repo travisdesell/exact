@@ -131,7 +131,7 @@ int main(int argc, char** argv) {
                 RNN_Genome *genome = *k;
 
                 cout << i->first << "," << j->first << ","
-                    << genome->get_best_validation_mse() << ","
+                    << genome->get_best_validation_error() << ","
                     << genome->get_best_validation_mae() << ","
                     << genome->get_enabled_edge_count() << ","
                     << genome->get_enabled_recurrent_edge_count() << ","
@@ -143,7 +143,7 @@ int main(int argc, char** argv) {
                     << genome->get_enabled_node_count(MGU_NODE) << ","
                     << genome->get_enabled_node_count(GRU_NODE) << endl;
 
-                rs->mse.track(genome->get_best_validation_mse());
+                rs->mse.track(genome->get_best_validation_error());
                 rs->mae.track(genome->get_best_validation_mae());
                 rs->edge.track(genome->get_enabled_edge_count());
                 rs->rec_edge.track(genome->get_enabled_recurrent_edge_count());
