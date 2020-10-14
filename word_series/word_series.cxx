@@ -884,17 +884,6 @@ vector<vector<vector<double> > > batchify(int batch_size, vector<vector<vector<d
     }
 
 
-    for (int k = 0; k < batchData.size(); ++k) {
-        for (int i = 0; i < batchData[k].size(); ++i) {
-            for (int j = 0; j < batchData[k][i].size(); ++j) {
-                
-                std::cout<<batchData[k][i][j]<<" ";
-            }
-            std::cout<<std::endl;
-        }
-        std::cout<<"***************\n"<<std::endl;
-    }
-
     return batchData;
 
 }
