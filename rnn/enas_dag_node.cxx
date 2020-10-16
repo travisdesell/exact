@@ -44,19 +44,53 @@ ENAS_DAG_Node::~ENAS_DAG_Node(){
 
 }
 
-void ENAS_DAG_Node::initialize_randomly(minstd_rand0 &generator, NormalDistribution &normal_distribution, double mu, double sigma) {
+void ENAS_DAG_Node::initialize_lamarckian(minstd_rand0 &generator, NormalDistribution &normal_distribution, double mu, double sigma) {
 
-  zw = bound(normal_distribution.random(generator, mu, sigma));
-  rw = bound(normal_distribution.random(generator, mu, sigma));
+    zw = bound(normal_distribution.random(generator, mu, sigma));
+    rw = bound(normal_distribution.random(generator, mu, sigma));
 
-  int assigned_node_weights = 2; // 2 weights for the starting node assigned above
+    int assigned_node_weights = 2; // 2 weights for the starting node assigned above
 
-  for (int new_node_weight = 0; new_node_weight < NUMBER_ENAS_DAG_WEIGHTS - assigned_node_weights; ++new_node_weight){
+    for (int new_node_weight = 0; new_node_weight < NUMBER_ENAS_DAG_WEIGHTS - assigned_node_weights; ++new_node_weight){
         weights.at(new_node_weight)= bound(normal_distribution.random(generator, mu, sigma));
-  }
+    }
 
 }
 
+void ENAS_DAG_Node::initialize_xavier(minstd_rand0 &generator, uniform_real_distribution<double> &rng_1_1, double range) {
+    zw = range * (rng_1_1(generator));
+    rw = range * (rng_1_1(generator));
+
+    int assigned_node_weights = 2; // 2 weights for the starting node assigned above
+
+    for (int new_node_weight = 0; new_node_weight < NUMBER_ENAS_DAG_WEIGHTS - assigned_node_weights; ++new_node_weight){
+        weights.at(new_node_weight) = range * (rng_1_1(generator));
+    }
+
+}
+
+void ENAS_DAG_Node::initialize_kaiming(minstd_rand0 &generator, NormalDistribution &normal_distribution, double range) {
+    zw = range * normal_distribution.random(generator, 0, 1);
+    rw = range * normal_distribution.random(generator, 0, 1);
+
+    int assigned_node_weights = 2; // 2 weights for the starting node assigned above
+
+    for (int new_node_weight = 0; new_node_weight < NUMBER_ENAS_DAG_WEIGHTS - assigned_node_weights; ++new_node_weight){
+        weights.at(new_node_weight) = range * normal_distribution.random(generator, 0, 1);
+    }
+
+}
+
+void ENAS_DAG_Node::initialize_uniform_random(minstd_rand0 &generator, uniform_real_distribution<double> &rng) {
+    zw = rng(generator);
+    rw = rng(generator);
+
+    int assigned_node_weights = 2; // 2 weights for the starting node assigned above
+
+    for (int new_node_weight = 0; new_node_weight < NUMBER_ENAS_DAG_WEIGHTS - assigned_node_weights; ++new_node_weight){
+        weights.at(new_node_weight) = rng(generator);
+    }
+}
 
 
 double ENAS_DAG_Node::get_gradient(string gradient_name) {

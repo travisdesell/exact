@@ -11,6 +11,9 @@ if (MPI_FOUND)
     #add_executable(exact_mpi exact_mpi)
     #target_link_libraries(exact_mpi exact_strategy exact_image_tools exact_common ${MPI_LIBRARIES} ${MPI_EXTRA} ${MYSQL_LIBRARIES} ${TIFF_LIBRARIES} pthread)
 
+    add_executable(test_stream_write test_stream_write)
+    target_link_libraries(test_stream_write examm_strategy exact_time_series exact_word_series exact_common ${MPI_LIBRARIES} ${MPI_EXTRA} ${MYSQL_LIBRARIES} ${TIFF_LIBRARIES} pthread)
+
     add_executable(examm_mpi examm_mpi)
     target_link_libraries(examm_mpi examm_strategy exact_time_series exact_word_series exact_common ${MPI_LIBRARIES} ${MPI_EXTRA} ${MYSQL_LIBRARIES} ${TIFF_LIBRARIES} pthread)
 

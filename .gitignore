@@ -9,3 +9,4 @@ run.sh
 __pycache__/*
 *.pyc
 visualization/plots/*
+test_output/*

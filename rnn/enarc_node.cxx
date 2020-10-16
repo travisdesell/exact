@@ -29,26 +29,78 @@ ENARC_Node::ENARC_Node(int _innovation_number, int _type, double _depth) : RNN_N
   node_type = ENARC_NODE;
 }
 
-ENARC_Node::~ENARC_Node(){
+ENARC_Node::~ENARC_Node() {
 
 }
 
-void ENARC_Node::initialize_randomly(minstd_rand0 &generator, NormalDistribution &normal_distribution, double mu, double sigma) {
+void ENARC_Node::initialize_lamarckian(minstd_rand0 &generator, NormalDistribution &normal_distribution, double mu, double sigma) {
 
-  zw = bound(normal_distribution.random(generator, mu, sigma));
-  rw = bound(normal_distribution.random(generator, mu, sigma));
+    zw = bound(normal_distribution.random(generator, mu, sigma));
+    rw = bound(normal_distribution.random(generator, mu, sigma));
 
-  w1 = bound(normal_distribution.random(generator, mu, sigma));
+    w1 = bound(normal_distribution.random(generator, mu, sigma));
 
-  w2 = bound(normal_distribution.random(generator, mu, sigma));
-  w3 = bound(normal_distribution.random(generator, mu, sigma));
-  w6 = bound(normal_distribution.random(generator, mu, sigma));
+    w2 = bound(normal_distribution.random(generator, mu, sigma));
+    w3 = bound(normal_distribution.random(generator, mu, sigma));
+    w6 = bound(normal_distribution.random(generator, mu, sigma));
 
-  w4 = bound(normal_distribution.random(generator, mu, sigma));
-  w5 = bound(normal_distribution.random(generator, mu, sigma));
-  w7 = bound(normal_distribution.random(generator, mu, sigma));
-  w8 = bound(normal_distribution.random(generator, mu, sigma));
+    w4 = bound(normal_distribution.random(generator, mu, sigma));
+    w5 = bound(normal_distribution.random(generator, mu, sigma));
+    w7 = bound(normal_distribution.random(generator, mu, sigma));
+    w8 = bound(normal_distribution.random(generator, mu, sigma));
 }
+
+void ENARC_Node::initialize_xavier(minstd_rand0 &generator, uniform_real_distribution<double> &rng_1_1, double range) {
+
+    zw = range * (rng_1_1(generator));
+    rw = range * (rng_1_1(generator));
+
+    w1 = range * (rng_1_1(generator));
+
+    w2 = range * (rng_1_1(generator));
+    w3 = range * (rng_1_1(generator));
+    w6 = range * (rng_1_1(generator));
+
+    w4 = range * (rng_1_1(generator));
+    w5 = range * (rng_1_1(generator));
+    w7 = range * (rng_1_1(generator));
+    w8 = range * (rng_1_1(generator));
+}
+
+void ENARC_Node::initialize_kaiming(minstd_rand0 &generator, NormalDistribution &normal_distribution, double range) {
+    zw = range * normal_distribution.random(generator, 0, 1);
+    rw = range * normal_distribution.random(generator, 0, 1);
+
+    w1 = range * normal_distribution.random(generator, 0, 1);
+
+    w2 = range * normal_distribution.random(generator, 0, 1);
+    w3 = range * normal_distribution.random(generator, 0, 1);
+    w6 = range * normal_distribution.random(generator, 0, 1);
+
+    w4 = range * normal_distribution.random(generator, 0, 1);
+    w5 = range * normal_distribution.random(generator, 0, 1);
+    w7 = range * normal_distribution.random(generator, 0, 1);
+    w8 = range * normal_distribution.random(generator, 0, 1);
+}
+
+void ENARC_Node::initialize_uniform_random(minstd_rand0 &generator, uniform_real_distribution<double> &rng) {
+    zw = rng(generator);
+    rw = rng(generator);
+
+    w1 = rng(generator);
+
+    w2 = rng(generator);
+    w3 = rng(generator);
+    w6 = rng(generator);
+
+    w4 = rng(generator);
+    w5 = rng(generator);
+    w7 = rng(generator);
+    w8 = rng(generator);
+}
+
+
+
 
 double ENARC_Node::get_gradient(string gradient_name) {
     double gradient_sum = 0.0;

@@ -27,8 +27,22 @@ RNN_Node::RNN_Node(int _innovation_number, int _layer_type, double _depth, int _
 RNN_Node::~RNN_Node() {
 }
 
-void RNN_Node::initialize_randomly(minstd_rand0 &generator, NormalDistribution &normal_distribution, double mu, double sigma) {
+void RNN_Node::initialize_lamarckian(minstd_rand0 &generator, NormalDistribution &normal_distribution, double mu, double sigma) {
     bias = bound(normal_distribution.random(generator, mu, sigma));
+}
+
+void RNN_Node::initialize_xavier(minstd_rand0 &generator, uniform_real_distribution<double> &rng_1_1, double range) {
+
+    bias = range * (rng_1_1(generator));
+}
+
+void RNN_Node::initialize_kaiming(minstd_rand0 &generator, NormalDistribution &normal_distribution, double range) {
+
+    bias = range * normal_distribution.random(generator, 0, 1);
+}
+
+void RNN_Node::initialize_uniform_random(minstd_rand0 &generator, uniform_real_distribution<double> &rng) {
+    bias = rng(generator);
 }
 
 void RNN_Node::input_fired(int time, double incoming_output) {

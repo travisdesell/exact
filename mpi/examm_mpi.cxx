@@ -21,6 +21,7 @@ using std::vector;
 
 #include "common/arguments.hxx"
 #include "common/log.hxx"
+#include "common/weight_initialize.hxx"
 
 #include "rnn/examm.hxx"
 
@@ -224,19 +225,26 @@ void worker(int rank) {
 // }
 
 int main(int argc, char** argv) {
+    std::cout << "starting up!" << std::endl;
     MPI_Init(&argc, &argv);
+    std::cout << "did mpi init!" << std::endl;
 
     int rank, max_rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &max_rank);
 
+    std::cout << "got rank " << rank << " and max rank " << max_rank << std::endl;
+
     arguments = vector<string>(argv, argv + argc);
+
+    std::cout << "got arguments!" << std::endl;
 
     Log::initialize(arguments);
     Log::set_rank(rank);
     Log::set_id("main_" + to_string(rank));
     Log::restrict_to_rank(0);
 
+    std::cout << "initailized log!" << std::endl;
 
 
     TimeSeriesSets *time_series_sets = NULL;
@@ -293,8 +301,21 @@ int main(int argc, char** argv) {
     int32_t repopulation_mutations = 0;
     get_argument(arguments, "--repopulation_mutations", false, repopulation_mutations);
 
+    double species_threshold = 0.0;
+    get_argument(arguments, "--species_threshold", false, species_threshold);
+    
+    double fitness_threshold = 100;
+    get_argument(arguments, "--fitness_threshold", false, fitness_threshold);
+
+    double neat_c1 = 1;
+    get_argument(arguments, "--neat_c1", false, neat_c1);
+
+    double neat_c2 = 1;
+    get_argument(arguments, "--neat_c2", false, neat_c2);
+
+    double neat_c3 = 1;
+    get_argument(arguments, "--neat_c3", false, neat_c3);
     bool repeat_extinction = argument_exists(arguments, "--repeat_extinction");
-    // get_argument(arguments, "--repeat_extinction", false, repeat_extinction);
 
     int32_t bp_iterations;
     get_argument(arguments, "--bp_iterations", true, bp_iterations);
@@ -323,9 +344,23 @@ int main(int argc, char** argv) {
     int32_t max_recurrent_depth = 10;
     get_argument(arguments, "--max_recurrent_depth", false, max_recurrent_depth);
 
-    int32_t use_regression = 1;
-    get_argument(arguments,"--use_regression",false,use_regression);
+    //bool use_regression = argument_exists(arguments, "--use_regression");
+    bool use_regression = true; //time series will always use regression
 
+    string weight_initialize_string = "random";
+    get_argument(arguments, "--weight_initialize", false, weight_initialize_string);
+    WeightType weight_initialize;
+    weight_initialize = get_enum_from_string(weight_initialize_string);
+    
+    string weight_inheritance_string = "lamarckian";
+    get_argument(arguments, "--weight_inheritance", false, weight_inheritance_string);
+    WeightType weight_inheritance;
+    weight_inheritance = get_enum_from_string(weight_inheritance_string);
+
+    string mutated_component_weight_string = "lamarckian";
+    get_argument(arguments, "--mutated_component_weight", false, mutated_component_weight_string);
+    WeightType mutated_component_weight;
+    mutated_component_weight = get_enum_from_string(mutated_component_weight_string);
 
     RNN_Genome *seed_genome = NULL;
     string genome_file_name = "";
@@ -350,6 +385,8 @@ int main(int argc, char** argv) {
         examm = new EXAMM(population_size, number_islands, max_genomes, extinction_event_generation_number, islands_to_exterminate, island_ranking_method,
             repopulation_method, repopulation_mutations, repeat_extinction,
             speciation_method,
+            species_threshold, fitness_threshold,
+            neat_c1, neat_c2, neat_c3,
             time_series_sets->get_input_parameter_names(),
             time_series_sets->get_output_parameter_names(),
             time_series_sets->get_normalize_type(),
@@ -357,6 +394,7 @@ int main(int argc, char** argv) {
             time_series_sets->get_normalize_maxs(),
             time_series_sets->get_normalize_avgs(),
             time_series_sets->get_normalize_std_devs(),
+            weight_initialize, weight_inheritance, mutated_component_weight,
             bp_iterations, learning_rate,
             use_high_threshold, high_threshold,
             use_low_threshold, low_threshold,

@@ -33,7 +33,7 @@ Delta_Node::Delta_Node(int _innovation_number, int _type, double _depth) : RNN_N
 Delta_Node::~Delta_Node() {
 }
 
-void Delta_Node::initialize_randomly(minstd_rand0 &generator, NormalDistribution &normal_distribution, double mu, double sigma) {
+void Delta_Node::initialize_lamarckian(minstd_rand0 &generator, NormalDistribution &normal_distribution, double mu, double sigma) {
 
     alpha = bound(normal_distribution.random(generator, mu, sigma));
     beta1 = bound(normal_distribution.random(generator, mu, sigma));
@@ -41,6 +41,34 @@ void Delta_Node::initialize_randomly(minstd_rand0 &generator, NormalDistribution
     v = bound(normal_distribution.random(generator, mu, sigma));
     r_bias = bound(normal_distribution.random(generator, mu, sigma));
     z_hat_bias = bound(normal_distribution.random(generator, mu, sigma));
+}
+
+void Delta_Node::initialize_xavier(minstd_rand0 &generator, uniform_real_distribution<double> &rng_1_1, double range) {
+
+    alpha = range * (rng_1_1(generator));
+    beta1 = range * (rng_1_1(generator));
+    beta2 = range * (rng_1_1(generator));
+    v = range * (rng_1_1(generator));
+    r_bias = range * (rng_1_1(generator));
+    z_hat_bias = range * (rng_1_1(generator));
+}
+
+void Delta_Node::initialize_kaiming(minstd_rand0 &generator, NormalDistribution &normal_distribution, double range){
+    alpha = range * normal_distribution.random(generator, 0, 1);
+    beta1 = range * normal_distribution.random(generator, 0, 1);
+    beta2 = range * normal_distribution.random(generator, 0, 1);
+    v = range * normal_distribution.random(generator, 0, 1);
+    r_bias = range * normal_distribution.random(generator, 0, 1);
+    z_hat_bias = range * normal_distribution.random(generator, 0, 1);
+}
+
+void Delta_Node::initialize_uniform_random(minstd_rand0 &generator, uniform_real_distribution<double> &rng) {
+    alpha = rng(generator);
+    beta1 = rng(generator);
+    beta2 = rng(generator);
+    v = rng(generator);
+    r_bias = rng(generator);
+    z_hat_bias = rng(generator);
 }
 
 double Delta_Node::get_gradient(string gradient_name) {

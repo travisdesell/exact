@@ -89,7 +89,10 @@ class RNN_Node_Interface {
         RNN_Node_Interface(int32_t _innovation_number, int32_t _layer_type, double _depth, string _parameter_name);
         virtual ~RNN_Node_Interface();
 
-        virtual void initialize_randomly(minstd_rand0 &generator, NormalDistribution &normal_distribution, double mu, double sigma) = 0;
+        virtual void initialize_lamarckian(minstd_rand0 &generator, NormalDistribution &normal_distribution, double mu, double sigma) = 0;
+        virtual void initialize_xavier(minstd_rand0 &generator, uniform_real_distribution<double> &rng_1_1, double range) = 0;
+        virtual void initialize_kaiming(minstd_rand0 &generator, NormalDistribution &normal_distribution, double range) = 0;
+        virtual void initialize_uniform_random(minstd_rand0 &generator, uniform_real_distribution<double> &rng) = 0;
 
         virtual void input_fired(int32_t time, double incoming_output) = 0;
         virtual void output_fired(int32_t time, double delta) = 0;

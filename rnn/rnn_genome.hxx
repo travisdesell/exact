@@ -25,6 +25,7 @@ using std::vector;
 #include "rnn_recurrent_edge.hxx"
 
 #include "common/random.hxx"
+#include "common/weight_initialize.hxx"
 #include "time_series/time_series.hxx"
 #include "word_series/word_series.hxx"
 
@@ -49,7 +50,7 @@ class RNN_Genome {
         bool use_low_norm;
         double low_threshold;
 
-        int32_t use_regression;
+        bool use_regression;
 
         bool use_dropout;
         double dropout_probability;
@@ -57,6 +58,10 @@ class RNN_Genome {
         string structural_hash;
 
         string log_filename;
+
+        WeightType weight_initialize;
+        WeightType weight_inheritance;
+        WeightType mutated_component_weight;
 
         map<string, int> generated_by_map;
 
@@ -67,8 +72,10 @@ class RNN_Genome {
         vector<double> best_parameters;
 
         minstd_rand0 generator;
-        
+
+        uniform_real_distribution<double> rng;
         uniform_real_distribution<double> rng_0_1;
+        uniform_real_distribution<double> rng_1_1;
         NormalDistribution normal_distribution;
 
         vector<RNN_Node_Interface*> nodes;
@@ -84,13 +91,15 @@ class RNN_Genome {
         map<string,double> normalize_avgs;
         map<string,double> normalize_std_devs;
 
+        // vector<int32_t> innovation_list;
+
     public:
         void sort_nodes_by_depth();
         void sort_edges_by_depth();
         void sort_recurrent_edges_by_depth();
 
-        RNN_Genome(vector<RNN_Node_Interface*> &_nodes, vector<RNN_Edge*> &_edges, vector<RNN_Recurrent_Edge*> &_recurrent_edges);
-        RNN_Genome(vector<RNN_Node_Interface*> &_nodes, vector<RNN_Edge*> &_edges, vector<RNN_Recurrent_Edge*> &_recurrent_edges, uint16_t seed);
+        RNN_Genome(vector<RNN_Node_Interface*> &_nodes, vector<RNN_Edge*> &_edges, vector<RNN_Recurrent_Edge*> &_recurrent_edges, WeightType _weight_initialize, WeightType _weight_inheritance, WeightType _mutated_component_weight);
+        RNN_Genome(vector<RNN_Node_Interface*> &_nodes, vector<RNN_Edge*> &_edges, vector<RNN_Recurrent_Edge*> &_recurrent_edges, uint16_t seed, WeightType _weight_initialize, WeightType _weight_inheritance, WeightType _mutated_component_weight);
 
         RNN_Genome* copy();
 
@@ -150,7 +159,7 @@ class RNN_Genome {
         void enable_low_threshold(double _low_threshold);
         void disable_dropout();
         void enable_dropout(double _dropout_probability);
-        void enable_use_regression(int32_t _use_regression);
+        void enable_use_regression(bool _use_regression);
         void set_log_filename(string _log_filename);
 
         void get_weights(vector<double> &parameters);
@@ -160,7 +169,19 @@ class RNN_Genome {
         uint32_t get_number_inputs();
         uint32_t get_number_outputs();
 
+        double get_avg_edge_weight();
         void initialize_randomly();
+        void initialize_xavier(RNN_Node_Interface* n);
+        void initialize_kaiming(RNN_Node_Interface* n);
+        void initialize_node_randomly(RNN_Node_Interface* n);
+        double get_xavier_weight(RNN_Node_Interface* output_node);
+        double get_kaiming_weight(RNN_Node_Interface* output_node);
+        double get_random_weight();
+
+
+        void get_input_edges(int32_t node_innovation, vector< RNN_Edge*> &input_edges, vector< RNN_Recurrent_Edge*> &input_recurrent_edges);
+        int32_t get_fan_in(int32_t node_innovation);
+        int32_t get_fan_out(int32_t node_innovation);
 
         int32_t get_generation_id() const;
         void set_generation_id(int32_t generation_id);
@@ -252,6 +273,7 @@ class RNN_Genome {
         
         void update_innovation_counts(int32_t &node_innovation_count, int32_t &edge_innovation_count);
 
+        vector<int32_t> get_innovation_list();
         /**
          * \return the structural hash (calculated when assign_reachaability is called)
          */
@@ -271,6 +293,7 @@ class RNN_Genome {
 
         friend class EXAMM;
         friend class IslandSpeciationStrategy;
+        friend class NeatSpeciationStrategy;
         friend class RecDepthFrequencyTable;
 };
 

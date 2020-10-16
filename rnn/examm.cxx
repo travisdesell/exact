@@ -32,10 +32,19 @@ using std::to_string;
 #include "generate_nn.hxx"
 #include "speciation_strategy.hxx"
 #include "island_speciation_strategy.hxx"
+#include "neat_speciation_strategy.hxx"
+
+//INFO: ADDED BY ABDELRAHMAN TO USE FOR TRANSFER LEARNING
+#include "rnn.hxx"
+#include "rnn_node.hxx"
+#include "lstm_node.hxx"
+#include "gru_node.hxx"
+#include "delta_node.hxx"
+#include "ugrnn_node.hxx"
+#include "mgu_node.hxx"
 
 #include "common/files.hxx"
 #include "common/log.hxx"
-
 
 
 EXAMM::~EXAMM() {
@@ -59,7 +68,12 @@ EXAMM::EXAMM(
         string _repopulation_method, 
         int32_t _repopulation_mutations,
         bool _repeat_extinction,
-        string _speciation_method, 
+        string _speciation_method,
+        double _species_threshold, 
+        double _fitness_threshold,
+        double _neat_c1, 
+        double _neat_c2, 
+        double _neat_c3, 
         const vector<string> &_input_parameter_names,
         const vector<string> &_output_parameter_names,
         string _normalize_type,
@@ -67,6 +81,9 @@ EXAMM::EXAMM(
         const map<string,double> &_normalize_maxs,
         const map<string,double> &_normalize_avgs,
         const map<string,double> &_normalize_std_devs,
+        WeightType _weight_initialize,
+        WeightType _weight_inheritance,
+        WeightType _mutated_component_weight,
         int32_t _bp_iterations, 
         double _learning_rate,
         bool _use_high_threshold, 
@@ -77,7 +94,7 @@ EXAMM::EXAMM(
         double _dropout_probability,
         int32_t _min_recurrent_depth,
         int32_t _max_recurrent_depth,
-        int32_t _use_regression,
+        bool _use_regression,
         string _output_directory,
         RNN_Genome *seed_genome,
         bool _start_filled) :
@@ -90,6 +107,11 @@ EXAMM::EXAMM(
                         repopulation_method(_repopulation_method), 
                         repopulation_mutations(_repopulation_mutations),
                         repeat_extinction(_repeat_extinction),
+                        species_threshold(_species_threshold),
+                        fitness_threshold(_fitness_threshold),
+                        neat_c1(_neat_c1),
+                        neat_c2(_neat_c2),
+                        neat_c3(_neat_c3),
                         number_inputs(_input_parameter_names.size()),
                         number_outputs(_output_parameter_names.size()),
                         bp_iterations(_bp_iterations),
@@ -98,11 +120,14 @@ EXAMM::EXAMM(
                         high_threshold(_high_threshold),
                         use_low_threshold(_use_low_threshold),
                         low_threshold(_low_threshold),
+                        use_regression(_use_regression),
                         use_dropout(_use_dropout),
                         dropout_probability(_dropout_probability),
-                        use_regression(_use_regression),
                         output_directory(_output_directory),
                         normalize_type(_normalize_type),
+                        weight_initialize(_weight_initialize),
+                        weight_inheritance(_weight_inheritance),
+                        mutated_component_weight(_mutated_component_weight),
                         start_filled(_start_filled) {
     input_parameter_names = _input_parameter_names;
     output_parameter_names = _output_parameter_names;
@@ -177,6 +202,12 @@ EXAMM::EXAMM(
         merge_node_rate = 0.0;
     }
 
+    check_weight_initialize_validity();
+
+    Log::info("weight initialize: %s\n", WEIGHT_TYPES_STRING[weight_initialize].c_str());
+    Log::info("weight inheritance: %s \n", WEIGHT_TYPES_STRING[weight_inheritance].c_str());
+    Log::info("mutated component weight: %s\n", WEIGHT_TYPES_STRING[mutated_component_weight].c_str());
+
     Log::info("Speciation method is: \"%s\" (Default is the island-based speciation strategy).\n", speciation_method.c_str());
     if (speciation_method.compare("island") == 0 || speciation_method.compare("") == 0) {
         //generate a minimal feed foward network as the seed genome
@@ -184,7 +215,7 @@ EXAMM::EXAMM(
         bool seed_genome_was_minimal = false;
         if (seed_genome == NULL) {
             seed_genome_was_minimal = true;
-            seed_genome = create_ff(input_parameter_names, 0, 0, output_parameter_names, 0);
+            seed_genome = create_ff(input_parameter_names, 0, 0, output_parameter_names, 0, weight_initialize, weight_inheritance, mutated_component_weight);
             seed_genome->initialize_randomly();
         } //otherwise the seed genome was passed into EXAMM
 
@@ -229,7 +260,39 @@ EXAMM::EXAMM(
                     seed_genome, island_ranking_method, repopulation_method, extinction_event_generation_number, repopulation_mutations, islands_to_exterminate, max_genomes, repeat_extinction, seed_genome_was_minimal);
         }
     }
-    
+    else if (speciation_method.compare("neat") == 0) {
+        
+        bool seed_genome_was_minimal = false;
+        if (seed_genome == NULL) {
+            seed_genome_was_minimal = true;
+            seed_genome = create_ff(input_parameter_names, 0, 0, output_parameter_names, 0, weight_initialize, weight_inheritance, mutated_component_weight);
+            seed_genome->initialize_randomly();
+        } //otherwise the seed genome was passed into EXAMM
+
+        //make sure we don't duplicate node or edge innovation numbers
+        edge_innovation_count = seed_genome->get_max_edge_innovation_count() + 1;
+        node_innovation_count = seed_genome->get_max_node_innovation_count() + 1;
+
+        seed_genome->set_generated_by("initial");
+
+        //insert a copy of it into the population so
+        //additional requests can mutate it
+
+        seed_genome->best_validation_mse = EXAMM_MAX_DOUBLE;
+        seed_genome->best_validation_mae = EXAMM_MAX_DOUBLE;
+        //seed_genome->best_parameters.clear();
+        
+        double mutation_rate = 0.70, intra_island_co_rate = 0.20, inter_island_co_rate = 0.10;
+        
+        if (number_islands == 1) {
+            inter_island_co_rate = 0.0;
+            intra_island_co_rate = 0.30;
+        }
+        // no transfer learning for NEAT
+        speciation_strategy = new NeatSpeciationStrategy(mutation_rate, intra_island_co_rate, inter_island_co_rate, seed_genome,  max_genomes, species_threshold, fitness_threshold, neat_c1, neat_c2, neat_c3, generator);
+        
+    }
+
     if (output_directory != "") {
         mkpath(output_directory.c_str(), 0777);
         log_file = new ofstream(output_directory + "/" + "fitness_log.csv");
@@ -520,12 +583,12 @@ void EXAMM::mutate(int32_t max_mutations, RNN_Genome *g) {
     bool modified = false;
 
     double mu, sigma;
-
+ 
     //g->write_graphviz("rnn_genome_premutate_" + to_string(g->get_generation_id()) + ".gv");
-    Log::debug("generating new genome by mutation.\n");
+    Log::info("generating new genome by mutation.\n");
+
     g->get_mu_sigma(g->best_parameters, mu, sigma);
     g->clear_generated_by();
-
     //the the weights in the genome to it's best parameters
     //for epigenetic iniitalization
     if (g->best_parameters.size() == 0) {
@@ -643,17 +706,17 @@ void EXAMM::mutate(int32_t max_mutations, RNN_Genome *g) {
         }
         rng -= merge_node_rate;
     }
-
+    
     //get the new set of parameters (as new paramters may have been
     //added duriung mutation) and set them to the initial parameters
     //for epigenetic_initialization
 
     vector<double> new_parameters;
+
     g->get_weights(new_parameters);
     g->initial_parameters = new_parameters;
-
+    
     if (Log::at_level(Log::DEBUG)) {
-        Log::debug("getting mu/sigma before assign reachability\n");
         g->get_mu_sigma(new_parameters, mu, sigma);
     }
 
@@ -1005,7 +1068,7 @@ RNN_Genome* EXAMM::crossover(RNN_Genome *p1, RNN_Genome *p2) {
     sort(child_edges.begin(), child_edges.end(), sort_RNN_Edges_by_depth());
     sort(child_recurrent_edges.begin(), child_recurrent_edges.end(), sort_RNN_Recurrent_Edges_by_depth());
 
-    RNN_Genome *child = new RNN_Genome(child_nodes, child_edges, child_recurrent_edges);
+    RNN_Genome *child = new RNN_Genome(child_nodes, child_edges, child_recurrent_edges, weight_initialize, weight_inheritance, mutated_component_weight);
     child->set_parameter_names(input_parameter_names, output_parameter_names);
     child->set_normalize_bounds(normalize_type, normalize_mins, normalize_maxs, normalize_avgs, normalize_std_devs);
 
@@ -1019,6 +1082,13 @@ RNN_Genome* EXAMM::crossover(RNN_Genome *p1, RNN_Genome *p2) {
     double mu, sigma;
 
     vector<double> new_parameters;
+
+    // if weight_inheritance is same, all the weights of the child genome would be initialized as weight_initialize method
+    if (weight_inheritance == weight_initialize) {
+        Log::debug("weight inheritance at crossover method is %s, setting weights to %s randomly \n", WEIGHT_TYPES_STRING[weight_inheritance].c_str(), WEIGHT_TYPES_STRING[weight_inheritance].c_str());
+        child->initialize_randomly();
+    }
+
     child->get_weights(new_parameters);
     Log::debug("getting mu/sigma before assign reachability\n");
     child->get_mu_sigma(new_parameters, mu, sigma);
@@ -1046,4 +1116,32 @@ RNN_Genome* EXAMM::crossover(RNN_Genome *p1, RNN_Genome *p2) {
 
 uniform_int_distribution<int32_t> EXAMM::get_recurrent_depth_dist() {
     return uniform_int_distribution<int32_t>(this->min_recurrent_depth, this->max_recurrent_depth);
+}
+
+void EXAMM::check_weight_initialize_validity() {
+    if (weight_initialize < 0) {
+        Log::fatal("Weight initalization is set to NONE, this should not happen! \n");
+        exit(1);    
+    }
+    if (weight_inheritance < 0) {
+        Log::fatal("Weight inheritance is set to NONE, this should not happen! \n");
+        exit(1);
+    }
+    if (mutated_component_weight < 0) {
+        Log::fatal("Mutated component weight is set to NONE, this should not happen! \n");
+        exit(1);    
+    }
+    if (weight_initialize == WeightType::LAMARCKIAN) {
+        Log::fatal("Weight initialization method is set to Lamarckian! \n");
+        exit(1);
+    }
+    if (weight_inheritance != weight_initialize && weight_inheritance != WeightType::LAMARCKIAN) {
+        Log::fatal("Weight initialize is %s, weight inheritance is %s\n", WEIGHT_TYPES_STRING[weight_initialize].c_str(), WEIGHT_TYPES_STRING[weight_inheritance].c_str());
+        exit(1);
+    }
+    if (mutated_component_weight != weight_initialize && mutated_component_weight != WeightType::LAMARCKIAN) {
+        Log::fatal("Weight initialize is %s, new component weight is %s\n", WEIGHT_TYPES_STRING[weight_initialize].c_str(), WEIGHT_TYPES_STRING[mutated_component_weight].c_str());
+        exit(1);
+    }
+
 }

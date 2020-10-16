@@ -33,7 +33,7 @@ GRU_Node::GRU_Node(int _innovation_number, int _type, double _depth) : RNN_Node_
 GRU_Node::~GRU_Node() {
 }
 
-void GRU_Node::initialize_randomly(minstd_rand0 &generator, NormalDistribution &normal_distribution, double mu, double sigma) {
+void GRU_Node::initialize_lamarckian(minstd_rand0 &generator, NormalDistribution &normal_distribution, double mu, double sigma) {
 
     zw = bound(normal_distribution.random(generator, mu, sigma));
     zu = bound(normal_distribution.random(generator, mu, sigma));
@@ -46,6 +46,51 @@ void GRU_Node::initialize_randomly(minstd_rand0 &generator, NormalDistribution &
     hw = bound(normal_distribution.random(generator, mu, sigma));
     hu = bound(normal_distribution.random(generator, mu, sigma));
     h_bias = bound(normal_distribution.random(generator, mu, sigma));
+}
+
+void GRU_Node::initialize_xavier(minstd_rand0 &generator, uniform_real_distribution<double> &rng_1_1, double range) {
+    
+    zw = range * (rng_1_1(generator));
+    zu = range * (rng_1_1(generator));
+    z_bias = range * (rng_1_1(generator));
+
+    rw = range * (rng_1_1(generator));
+    ru = range * (rng_1_1(generator));
+    r_bias = range * (rng_1_1(generator));
+
+    hw = range * (rng_1_1(generator));
+    hu = range * (rng_1_1(generator));
+    h_bias = range * (rng_1_1(generator));
+
+}
+
+void GRU_Node::initialize_kaiming(minstd_rand0 &generator, NormalDistribution &normal_distribution, double range){
+    zw = range * normal_distribution.random(generator, 0, 1);
+    zu = range * normal_distribution.random(generator, 0, 1);
+    z_bias = range * normal_distribution.random(generator, 0, 1);
+
+    rw = range * normal_distribution.random(generator, 0, 1);
+    ru = range * normal_distribution.random(generator, 0, 1);
+    r_bias = range * normal_distribution.random(generator, 0, 1);
+
+    hw = range * normal_distribution.random(generator, 0, 1);
+    hu = range * normal_distribution.random(generator, 0, 1);
+    h_bias = range * normal_distribution.random(generator, 0, 1);
+}
+
+void GRU_Node::initialize_uniform_random(minstd_rand0 &generator, uniform_real_distribution<double> &rng) {
+    zw = rng(generator);
+    zu = rng(generator);
+    z_bias = rng(generator);
+
+    rw = rng(generator);
+    ru = rng(generator);
+    r_bias = rng(generator);
+
+    hw = rng(generator);
+    hu = rng(generator);
+    h_bias = rng(generator);
+    
 }
 
 double GRU_Node::get_gradient(string gradient_name) {
