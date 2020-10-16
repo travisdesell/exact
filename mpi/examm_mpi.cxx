@@ -323,6 +323,9 @@ int main(int argc, char** argv) {
     int32_t max_recurrent_depth = 10;
     get_argument(arguments, "--max_recurrent_depth", false, max_recurrent_depth);
 
+    int32_t use_regression = 1;
+    get_argument(arguments,"--use_regression",false,use_regression);
+
 
     RNN_Genome *seed_genome = NULL;
     string genome_file_name = "";
@@ -336,6 +339,7 @@ int main(int argc, char** argv) {
 
         seed_genome->transfer_to(time_series_sets->get_input_parameter_names(), time_series_sets->get_output_parameter_names(), transfer_learning_version, epigenetic_weights, min_recurrent_depth, max_recurrent_depth);
     }
+
 
     bool start_filled = false;
     get_argument(arguments, "--start_filled", false, start_filled);
@@ -358,11 +362,14 @@ int main(int argc, char** argv) {
             use_low_threshold, low_threshold,
             use_dropout, dropout_probability,
             min_recurrent_depth, max_recurrent_depth,
+            use_regression,
             output_directory,
             seed_genome,
             start_filled);
 
-        if (possible_node_types.size() > 0) examm->set_possible_node_types(possible_node_types);
+        if (possible_node_types.size() > 0)  {
+            examm->set_possible_node_types(possible_node_types);
+        }
 
         master(max_rank);
     } else {
@@ -377,5 +384,6 @@ int main(int argc, char** argv) {
 
     MPI_Finalize();
     delete time_series_sets;
+
     return 0;
 }

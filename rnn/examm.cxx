@@ -77,6 +77,7 @@ EXAMM::EXAMM(
         double _dropout_probability,
         int32_t _min_recurrent_depth,
         int32_t _max_recurrent_depth,
+        int32_t _use_regression,
         string _output_directory,
         RNN_Genome *seed_genome,
         bool _start_filled) :
@@ -99,6 +100,7 @@ EXAMM::EXAMM(
                         low_threshold(_low_threshold),
                         use_dropout(_use_dropout),
                         dropout_probability(_dropout_probability),
+                        use_regression(_use_regression),
                         output_directory(_output_directory),
                         normalize_type(_normalize_type),
                         start_filled(_start_filled) {
@@ -194,6 +196,9 @@ EXAMM::EXAMM(
 
         //insert a copy of it into the population so
         //additional requests can mutate it
+
+        seed_genome->enable_use_regression(use_regression);
+        seed_genome->best_validation_mse = EXAMM_MAX_DOUBLE;
 
         seed_genome->best_validation_mse = EXAMM_MAX_DOUBLE;
         seed_genome->best_validation_mae = EXAMM_MAX_DOUBLE;
@@ -487,6 +492,7 @@ RNN_Genome* EXAMM::generate_genome() {
     genome->set_normalize_bounds(normalize_type, normalize_mins, normalize_maxs, normalize_avgs, normalize_std_devs);
     genome->set_bp_iterations(bp_iterations);
     genome->set_learning_rate(learning_rate);
+    genome->enable_use_regression(use_regression);
 
     if (use_high_threshold) genome->enable_high_threshold(high_threshold);
     if (use_low_threshold) genome->enable_low_threshold(low_threshold);

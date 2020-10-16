@@ -26,6 +26,7 @@ using std::vector;
 
 #include "common/random.hxx"
 #include "time_series/time_series.hxx"
+#include "word_series/word_series.hxx"
 
 //mysql can't handle the max float value for some reason
 #define EXAMM_MAX_DOUBLE 10000000
@@ -47,6 +48,8 @@ class RNN_Genome {
         double high_threshold;
         bool use_low_norm;
         double low_threshold;
+
+        int32_t use_regression;
 
         bool use_dropout;
         double dropout_probability;
@@ -147,6 +150,7 @@ class RNN_Genome {
         void enable_low_threshold(double _low_threshold);
         void disable_dropout();
         void enable_dropout(double _dropout_probability);
+        void enable_use_regression(int32_t _use_regression);
         void set_log_filename(string _log_filename);
 
         void get_weights(vector<double> &parameters);
@@ -179,12 +183,14 @@ class RNN_Genome {
 
         void backpropagate_stochastic(const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, const vector< vector< vector<double> > > &validation_inputs, const vector< vector< vector<double> > > &validation_outputs);
 
+        double get_softmax(const vector<double> &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs);
         double get_mse(const vector<double> &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs);
         double get_mae(const vector<double> &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs);
 
 
         vector< vector<double> > get_predictions(const vector<double> &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs);
         void write_predictions(string output_directory, const vector<string> &input_filenames, const vector<double> &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, TimeSeriesSets *time_series_sets);
+        void write_predictions(string output_directory, const vector<string> &input_filenames, const vector<double> &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, Corpus * word_series_sets);
 
         void get_mu_sigma(const vector<double> &p, double &mu, double &sigma);
 
@@ -213,9 +219,7 @@ class RNN_Genome {
         bool enable_node();
         bool disable_node();
         bool split_node(double mu, double sigma, int node_type, uniform_int_distribution<int32_t> dist, int32_t &edge_innovation_count, int32_t &node_innovation_count);
-
         bool merge_node(double mu, double sigma, int node_type, uniform_int_distribution<int32_t> dist, int32_t &edge_innovation_count, int32_t &node_innovation_count);
-
 
         /**
          * Determines if the genome contains a node with the given innovation number
@@ -225,7 +229,6 @@ class RNN_Genome {
          * @return true if the genome has a node with the provided innovation number, false otherwise.
          */
         bool has_node_with_innovation(int32_t innovation_number) const;
-
 
         bool equals(RNN_Genome *other);
 

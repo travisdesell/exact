@@ -67,6 +67,8 @@ class EXAMM {
         int32_t min_recurrent_depth;
         int32_t max_recurrent_depth;
 
+        int32_t use_regression;
+
         bool epigenetic_weights;
 
         double more_fit_crossover_rate;
@@ -141,6 +143,7 @@ class EXAMM {
                 double _dropout_probability,
                 int32_t _min_recurrent_depth,
                 int32_t _max_recurrent_depth,
+                int32_t _use_regression,
                 string _output_directory, 
                 RNN_Genome *seed_genome,
                 bool _start_filled);

@@ -408,8 +408,6 @@ map<string,double> RNN_Genome::get_normalize_std_devs() const {
     return normalize_std_devs;
 }
 
-
-
 int32_t RNN_Genome::get_group_id() const {
     return group_id;
 }
@@ -487,6 +485,10 @@ void RNN_Genome::disable_dropout() {
 
 void RNN_Genome::enable_dropout(double _dropout_probability) {
     dropout_probability = _dropout_probability;
+}
+
+void RNN_Genome::enable_use_regression(int32_t _use_regression) {
+    use_regression = _use_regression;
 }
 
 void RNN_Genome::set_log_filename(string _log_filename) {
@@ -694,11 +696,16 @@ void RNN_Genome::get_analytic_gradient(vector<RNN*> &rnns, const vector<double> 
     for (uint32_t i = 0; i < rnns.size(); i++) {
         threads[i].join();
         mse_sum += mses[i];
-    }
+    }   
     delete [] mses;
 
     for (uint32_t i = 0; i < rnns.size(); i++) {
-        double d_mse = mse_sum * (1.0 / outputs[i][0].size()) * 2.0;
+        double d_mse = 0.0;
+        if(use_regression == 1){
+            d_mse = mse_sum * (1.0 / outputs[i][0].size()) * 2.0;   
+        }else{
+            d_mse = mse_sum * (1.0 / outputs[i][0].size());
+        }
         rnns[i]->backward_pass(d_mse, use_dropout, training, dropout_probability);
 
         //double d_mae = mse_sum * (1.0 / outputs[i][0].size());
@@ -768,7 +775,12 @@ void RNN_Genome::backpropagate(const vector< vector< vector<double> > > &inputs,
 
     //initialize the initial previous values
     get_analytic_gradient(rnns, parameters, inputs, outputs, mse, analytic_gradient, true);
-    double validation_mse = get_mse(parameters, validation_inputs, validation_outputs);
+    double validation_mse = 0.0;
+    if(use_regression == 1){
+        validation_mse = get_mse(parameters, validation_inputs, validation_outputs);
+    }else{
+        validation_mse = get_softmax(parameters, validation_inputs, validation_outputs);
+    }
     best_validation_mse = validation_mse;
     best_validation_mae = get_mae(parameters, validation_inputs, validation_outputs);
     best_parameters = parameters;
@@ -798,7 +810,11 @@ void RNN_Genome::backpropagate(const vector< vector< vector<double> > > &inputs,
         get_analytic_gradient(rnns, parameters, inputs, outputs, mse, analytic_gradient, true);
 
         this->set_weights(parameters);
-        validation_mse = get_mse(parameters, validation_inputs, validation_outputs);
+        if(use_regression == 1){
+            validation_mse = get_mse(parameters, validation_inputs, validation_outputs);
+        }else{
+            validation_mse = get_softmax(parameters, validation_inputs, validation_outputs);
+        }
         if (validation_mse < best_validation_mse) {
             best_validation_mse = validation_mse;
             best_validation_mae = get_mae(parameters, validation_inputs, validation_outputs);
@@ -986,15 +1002,16 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
     }
     Log::trace("initialized previous values.\n");
 
-    //TODO: need to get validation error on the RNN not the genome
+    //TODO: need to get validation mse on the RNN not the genome
     double validation_mse = get_mse(parameters, validation_inputs, validation_outputs);
     best_validation_mse = validation_mse;
     best_validation_mae = get_mae(parameters, validation_inputs, validation_outputs);
     best_parameters = parameters;
 
-    Log::trace("got initial errors.\n");
+    Log::trace("got initial mses.\n");
 
-    Log::trace("initial validation_mse: %lf, best validation error: %lf\n", validation_mse, best_validation_mse);
+    Log::trace("initial validation_mse: %lf, best validation mse: %lf\n", validation_mse, best_validation_mse);
+
     double m = 0.0, s = 0.0;
     get_mu_sigma(parameters, m, s);
     for (int32_t i = 0; i < parameters.size(); i++) {
@@ -1160,8 +1177,14 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
 
         this->set_weights(parameters);
 
-        double training_error = get_mse(parameters, inputs, outputs);
-        validation_mse = get_mse(parameters, validation_inputs, validation_outputs);
+        double training_mse = 0.0;
+        if(use_regression == 1){
+            training_mse = get_mse(parameters, inputs, outputs);
+            validation_mse = get_mse(parameters, validation_inputs, validation_outputs);
+        }else{
+            training_mse = get_softmax(parameters, inputs, outputs);
+            validation_mse = get_softmax(parameters, validation_inputs, validation_outputs);
+        }
         if (validation_mse < best_validation_mse) {
             best_validation_mse = validation_mse;
             best_validation_mae = get_mae(parameters, validation_inputs, validation_outputs);
@@ -1189,7 +1212,7 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
 
             (*output_log) << iteration
                 << "," << milliseconds
-                << "," << training_error
+                << "," << training_mse
                 << "," << validation_mse
                 << "," << best_validation_mse
                 << "," << best_validation_mae
@@ -1197,7 +1220,7 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
 
             memory_log << iteration
                 << "," << milliseconds
-                << "," << training_error
+                << "," << training_mse
                 << "," << validation_mse
                 << "," << best_validation_mse
                 << "," << best_validation_mae
@@ -1205,8 +1228,7 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
         }
 
 
-        Log::info("iteration %4d, mse: %5.10lf, v_mse: %5.10lf, bv_mse: %5.10lf, avg_norm: %5.10lf\n", iteration, training_error, validation_mse, best_validation_mse, avg_norm);
-
+        Log::info("iteration %4d, mse: %5.10lf, v_mse: %5.10lf, bv_mse: %5.10lf, avg_norm: %5.10lf\n", iteration, training_mse, validation_mse, best_validation_mse, avg_norm);
     }
 
     if (log_filename != "") {
@@ -1221,6 +1243,28 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
     Log::trace("backpropagation completed, getting mu/sigma\n");
     double _mu, _sigma;
     get_mu_sigma(best_parameters, _mu, _sigma);
+}
+
+double RNN_Genome::get_softmax(const vector<double> &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs) {
+    RNN *rnn = get_rnn();
+    rnn->set_weights(parameters);
+
+    double softmax = 0.0;
+    double avg_softmax = 0.0;
+
+    for (uint32_t i = 0; i < inputs.size(); i++) {
+        softmax = rnn->prediction_softmax(inputs[i], outputs[i], use_dropout, false, dropout_probability);
+
+        avg_softmax += softmax;
+
+        Log::trace("series[%5d]: Softmax: %5.10lf\n", i, softmax);
+    }
+
+    delete rnn;
+
+    avg_softmax /= inputs.size();
+    Log::trace("average Softmax: %5.10lf\n", avg_softmax);
+    return avg_softmax;
 }
 
 double RNN_Genome::get_mse(const vector<double> &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs) {
@@ -1303,6 +1347,34 @@ void RNN_Genome::write_predictions(string output_directory, const vector<string>
         Log::info("output filename: '%s'\n", output_filename.c_str());
 
         rnn->write_predictions(output_filename, input_parameter_names, output_parameter_names, inputs[i], outputs[i], time_series_sets, use_dropout, dropout_probability);
+    }
+
+    delete rnn;
+}
+
+
+void RNN_Genome::write_predictions(string output_directory, const vector<string> &input_filenames, const vector<double> &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, Corpus *word_series_sets) {
+    RNN *rnn = get_rnn();
+    rnn->set_weights(parameters);
+
+    vector< vector<double> > all_results;
+
+    //one input vector per testing file
+    for (uint32_t i = 0; i < inputs.size(); i++) {
+        string filename = input_filenames[i];
+        Log::info("input filename[%5d]: '%s'\n", i, filename.c_str());
+
+        int last_dot_pos = filename.find_last_of(".");
+        string extension = filename.substr(last_dot_pos);
+        string prefix = filename.substr(0, last_dot_pos);
+
+
+        string output_filename = prefix + "_predictions" + extension;
+        output_filename = output_directory + "/" + output_filename.substr(output_filename.find_last_of("/") + 1);
+
+        Log::info("output filename: '%s'\n", output_filename.c_str());
+
+        rnn->write_predictions(output_filename, input_parameter_names, output_parameter_names, inputs[i], outputs[i], word_series_sets, use_dropout, dropout_probability);
     }
 
     delete rnn;
@@ -2873,6 +2945,7 @@ void RNN_Genome::read_from_stream(istream &bin_istream) {
     bin_istream.read((char*)&use_low_norm, sizeof(bool));
     bin_istream.read((char*)&low_threshold, sizeof(double));
 
+    bin_istream.read((char*)&use_regression, sizeof(int32_t));
     bin_istream.read((char*)&use_dropout, sizeof(bool));
     bin_istream.read((char*)&dropout_probability, sizeof(double));
 
@@ -2888,6 +2961,7 @@ void RNN_Genome::read_from_stream(istream &bin_istream) {
     Log::debug("use_low_norm: %d\n", use_low_norm);
     Log::debug("low_threshold: %lf\n", low_threshold);
 
+    Log::debug("use_dropout: %d\n", use_regression);
     Log::debug("use_dropout: %d\n", use_dropout);
     Log::debug("dropout_probability: %lf\n", dropout_probability);
 
@@ -3119,6 +3193,7 @@ void RNN_Genome::write_to_stream(ostream &bin_ostream) {
     bin_ostream.write((char*)&use_low_norm, sizeof(bool));
     bin_ostream.write((char*)&low_threshold, sizeof(double));
 
+    bin_ostream.write((char*)&use_regression, sizeof(int32_t));
     bin_ostream.write((char*)&use_dropout, sizeof(bool));
     bin_ostream.write((char*)&dropout_probability, sizeof(double));
 
@@ -3134,6 +3209,7 @@ void RNN_Genome::write_to_stream(ostream &bin_ostream) {
     Log::debug("use_low_norm: %d\n", use_low_norm);
     Log::debug("low_threshold: %lf\n", low_threshold);
 
+    Log::debug("use_dropout: %d\n", use_regression);
     Log::debug("use_dropout: %d\n", use_dropout);
     Log::debug("dropout_probability: %lf\n", dropout_probability);
 
@@ -3626,7 +3702,3 @@ void RNN_Genome::transfer_to(const vector<string> &new_input_parameter_names, co
 
     Log::info("FINISHING PREPARING INITIAL GENOME\n");
 }
-
-
-
-

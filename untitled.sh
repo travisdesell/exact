@@ -1,0 +1,1 @@
+mpirun -np 2 ./mpi/examm_mpi --training_filenames ../datasets/pennchar/input.txt --test_filenames ../datasets/pennchar/input.txt --word_offset 1 --number_islands 10 --population_size 10 --max_genomes 2000 --bp_iterations 10 --output_directory $exp_name --possible_node_types simple ENARC --normalize min_max --std_message_level INFO --file_message_level INFO

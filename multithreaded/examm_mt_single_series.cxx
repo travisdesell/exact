@@ -154,6 +154,9 @@ int main(int argc, char** argv) {
     int32_t max_recurrent_depth = 10;
     get_argument(arguments, "--max_recurrent_depth", false, max_recurrent_depth);
 
+    int32_t use_regression = 0;
+    get_argument(arguments,"--use_regression",false,use_regression);
+
     bool start_filled = false;
     get_argument(arguments, "--start_filled", false, start_filled);
 
@@ -207,6 +210,7 @@ int main(int argc, char** argv) {
                     use_low_threshold, low_threshold,
                     use_dropout, dropout_probability,
                     min_recurrent_depth, max_recurrent_depth,
+                    use_regression,
                     output_directory,
                     NULL,
                     start_filled);

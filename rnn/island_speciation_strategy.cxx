@@ -49,7 +49,6 @@ IslandSpeciationStrategy::IslandSpeciationStrategy(
                         max_genomes(_max_genomes),
                         seed_genome_was_minimal(_seed_genome_was_minimal),
                         repeat_extinction(_repeat_extinction) {
-
     double rate_sum = mutation_rate + intra_island_crossover_rate + inter_island_crossover_rate;
     if (rate_sum != 1.0) {
         mutation_rate = mutation_rate / rate_sum;
