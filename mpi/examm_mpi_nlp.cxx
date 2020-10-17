@@ -198,7 +198,10 @@ void worker(int rank) {
             //have each worker write the backproagation to a separate log file
             string log_id = "genome_" + to_string(genome->get_generation_id()) + "_worker_" + to_string(rank);
             Log::set_id(log_id);
-            genome->backpropagate_stochastic(training_inputs, training_outputs, validation_inputs, validation_outputs);
+
+            genome->backpropagate(training_inputs, training_outputs, validation_inputs, validation_outputs);
+            //genome->backpropagate_stochastic(training_inputs, training_outputs, validation_inputs, validation_outputs);
+
             Log::release_id(log_id);
 
             //go back to the worker's log for MPI communication
@@ -340,7 +343,7 @@ int main(int argc, char** argv) {
     get_argument(arguments, "--max_recurrent_depth", false, max_recurrent_depth);
 
     //bool use_regression = argument_exists(arguments, "--use_regression");
-    bool use_regression = false; //NLP will always use softmax
+    bool use_regression = false; //NLP will never use regression
 
     string weight_initialize_string = "random";
     get_argument(arguments, "--weight_initialize", false, weight_initialize_string);
@@ -356,8 +359,6 @@ int main(int argc, char** argv) {
     get_argument(arguments, "--mutated_component_weight", false, mutated_component_weight_string);
     WeightType mutated_component_weight;
     mutated_component_weight = get_enum_from_string(mutated_component_weight_string);
-
-
 
 
     RNN_Genome *seed_genome = NULL;
@@ -402,7 +403,7 @@ int main(int argc, char** argv) {
             output_directory,
             seed_genome,
             start_filled);
-
+        
         if (possible_node_types.size() > 0)  {
             examm->set_possible_node_types(possible_node_types);
         }

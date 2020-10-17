@@ -249,6 +249,7 @@ RNN_Edge* RNN::get_edge(int i) {
 }
 
 
+
 void RNN::get_weights(vector<double> &parameters) {
     parameters.resize(get_number_weights());
 
@@ -293,6 +294,10 @@ void RNN::set_weights(const vector<double> &parameters) {
         //if (recurrent_edges[i]->is_reachable()) recurrent_edges[i]->weight = parameters[current++];
     }
 
+}
+
+void RNN::enable_use_regression(bool _use_regression) {
+    use_regression = _use_regression;
 }
 
 uint32_t RNN::get_number_weights() {
@@ -401,45 +406,11 @@ void RNN::backward_pass(double error, bool using_dropout, bool training, double 
     }
 }
 
-// double RNN::calculate_error_softmax(const vector< vector<double> > &expected_outputs) {
-//     double softmax_sum = 0.0;
-//     double softmax;
-//     double error;
-
-//     std::cout<<"output size : "<<output_nodes.size()<<", expected_outputs_Size : "<<expected_outputs[0].size()<<std::endl;
-
-//     for (uint32_t i = 0; i < output_nodes.size(); i++) {
-//         output_nodes[i]->error_values.resize(expected_outputs[i].size());
-
-//         double temp_softmax_sum = 0.0;
-//         for (uint32_t j = 0; j < output_nodes.size(); j++) {
-//                 temp_softmax_sum += exp(output_nodes[i]->output_values[j]);
-//         }
-//         softmax = 0.0;
-//         for (uint32_t j = 0; j < expected_outputs[i].size(); j++) {
-
-//             error = exp(output_nodes[i]->output_values[j])/temp_softmax_sum;
-            
-//             if(expected_outputs[i][j]){
-//                 softmax = -log(error);
-//                 error -= expected_outputs[i][j];
-//             }
-//             std::cout<<"error :: "<<error<<", output_values  "<<i<<" "<<output_nodes[i]->output_values[j]<<", expected_outputs :: "<<j<<" "<<expected_outputs[i][j]<<"\n ********* \n"<<std::endl;
-//             output_nodes[i]->error_values[j] = error;
-
-//         }
-//         softmax_sum += softmax / expected_outputs[i].size();
-//     }
-
-//     return softmax_sum;
-// }
-
-
 double RNN::calculate_error_softmax(const vector< vector<double> > &expected_outputs) {
+    
     
     double cross_entropy_sum = 0.0;
     double error;
-
     double softmax = 0.0;
 
     for (uint32_t i = 0; i < output_nodes.size(); i++) {
@@ -461,32 +432,32 @@ double RNN::calculate_error_softmax(const vector< vector<double> > &expected_out
             softmax = exp(output_nodes[i]->output_values[j]) / softmax_sum;
             error = softmax - expected_outputs[i][j];
             output_nodes[i]->error_values[j] = error;
-            //std::cout<<"softmax ::::: "<<error<<" "<<output_nodes[i]->output_values[j]<<" "<<expected_outputs[i][j]<<"\n"<<std::endl;
-            cross_entropy = -expected_outputs[i][j] * log(softmax);
-            //if(cross_entropy)std::cout<<"cross_entropy ::::: "<<cross_entropy<<"\n"<<std::endl;
-            cross_entropy_sum += cross_entropy;
 
+            // std::cout<<"softmax ::::: "<<error<<" "<<output_nodes[i]->output_values[j]<<" "<<expected_outputs[i][j]<<"\n"<<std::endl;
+            cross_entropy = -expected_outputs[i][j] * log(softmax);
+            // if(cross_entropy)std::cout<<"cross_entropy ::::: "<<cross_entropy<<"\n"<<std::endl;
+
+            cross_entropy_sum += cross_entropy;
         }
 
     }
 
-    //std::cout<<"cross_entropy_sum ::::: "<<cross_entropy_sum<<std::endl;
-    return cross_entropy_sum;
-
-
+  return cross_entropy_sum;
 }
 
 double RNN::calculate_error_mse(const vector< vector<double> > &expected_outputs) {
     double mse_sum = 0.0;
     double mse;
     double error;
+  
     for (uint32_t i = 0; i < output_nodes.size(); i++) {
         output_nodes[i]->error_values.resize(expected_outputs[i].size());
 
         mse = 0.0;
         for (uint32_t j = 0; j < expected_outputs[i].size(); j++) {
             error = output_nodes[i]->output_values[j] - expected_outputs[i][j];
-            std::cout<<"mse ::::: "<<error<<" "<<output_nodes[i]->output_values[j]<<" "<<expected_outputs[i][j]<<std::endl;
+
+          // std::cout<<"why this  ???? mse ::::: "<<error<<" "<<output_nodes[i]->output_values[j]<<" "<<expected_outputs[i][j]<<std::endl;
 
             output_nodes[i]->error_values[j] = error;
             mse += error * error;
@@ -673,10 +644,16 @@ void RNN::get_analytic_gradient(const vector<double> &test_parameters, const vec
     set_weights(test_parameters);
     forward_pass(inputs, using_dropout, training, dropout_probability);
 
-    mse = calculate_error_softmax(outputs);
+    if(use_regression) {
+        mse = calculate_error_mse(outputs);
+        backward_pass(mse * (1.0 / outputs[0].size())*2.0, using_dropout, training, dropout_probability);
 
-    backward_pass(mse * (1.0 / outputs[0].size()), using_dropout, training, dropout_probability);
-
+    } else {
+        mse = calculate_error_softmax(outputs);
+        backward_pass(mse * (1.0 / outputs[0].size()), using_dropout, training, dropout_probability);
+    
+    }
+    
     vector<double> current_gradients;
 
     uint32_t current = 0;
@@ -761,20 +738,15 @@ RNN* RNN::copy() {
     vector<RNN_Node_Interface*> node_copies;
     vector<RNN_Edge*> edge_copies;
     vector<RNN_Recurrent_Edge*> recurrent_edge_copies;
-
     for (uint32_t i = 0; i < nodes.size(); i++) {
         node_copies.push_back( nodes[i]->copy() );
     }
-
     for (uint32_t i = 0; i < edges.size(); i++) {
         edge_copies.push_back( edges[i]->copy(node_copies) );
     }
-
     for (uint32_t i = 0; i < recurrent_edges.size(); i++) {
         recurrent_edge_copies.push_back( recurrent_edges[i]->copy(node_copies) );
     }
-
-
     return new RNN(node_copies, edge_copies, recurrent_edge_copies);
 }
 */
