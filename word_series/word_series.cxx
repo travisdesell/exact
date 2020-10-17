@@ -90,7 +90,7 @@ void WordSeries::calculate_statistics() {
 }
 
 void WordSeries::print_statistics() {
-    Log::info ("\t%25s stats, min: %lf, avg: %lf, max: %lf, min_change: %lf, max_change: %lf, std_dev: %lf, variance: %lf\n", name.c_str(), min, average, max, min_change, max_change, std_dev, variance);
+    Log::info("\t%25s stats, min: %lf, avg: %lf, max: %lf, min_change: %lf, max_change: %lf, std_dev: %lf, variance: %lf\n", name.c_str(), min, average, max, min_change, max_change, std_dev, variance);
 }
 
 int WordSeries::get_number_values() const {
@@ -857,28 +857,26 @@ vector<vector<vector<double> > > batchify(int batch_size, vector<vector<vector<d
     int batchNo =  -1;
 
 
-    for (int i = 0; i < data.size(); ++i)
-    {
+    for (int i = 0; i < data.size(); ++i) {
         no_batches += (data[i][0].size() -1) / batch_size +1;
-        std:cout<<no_batches<<" "<<std::endl;
+        std:cout << no_batches << " " << std::endl;
     }
 
-    if (data[0][0].size() < batch_size)
-    {
-        batchData.resize(no_batches,vector<vector<double> >(no_features,vector<double> (data[0][0].size())));
-    }else{
-        batchData.resize(no_batches,vector<vector<double> >(no_features,vector<double> (batch_size)));
+    if (data[0][0].size() < batch_size) {
+        batchData.resize(no_batches, vector<vector<double> >(no_features, vector<double>(data[0][0].size())));
+    } else {
+        batchData.resize(no_batches, vector<vector<double> >(no_features, vector<double>(batch_size)));
     }
 
 
-    std::cout<<batchData.size()<<" "<<data[0].size()<<" "<<batchData[0][0].size()<<std::endl;
+    std::cout << batchData.size() << " " << data[0].size() << " " << batchData[0][0].size() << std::endl;
 
     for (int k = 0; k < data.size(); ++k) {
         for (int j = 0; j < data[k][0].size(); ++j) {
             for (int i = 0; i < data[k].size(); ++i) {
-                if(i == 0 && j%batch_size == 0)batchNo++;
+                if (i == 0 && (j % batch_size)== 0) batchNo++;
 
-                batchData[batchNo][i][j%batch_size] = data[k][i][j];
+                batchData[batchNo][i][j % batch_size] = data[k][i][j];
             }
         }
     }
@@ -908,8 +906,8 @@ void Corpus::export_sent_series(const vector<int> &series_indexes, int word_offs
         sent_series[series_index]->export_word_series(temp_outputs[i], word_offset);
     }
 
-    inputs  = batchify(64,temp_inputs);
-    outputs = batchify(64,temp_outputs);
+    inputs  = batchify(64, temp_inputs);
+    outputs = batchify(64, temp_outputs);
 
 }
 

@@ -644,7 +644,7 @@ void RNN::get_analytic_gradient(const vector<double> &test_parameters, const vec
     set_weights(test_parameters);
     forward_pass(inputs, using_dropout, training, dropout_probability);
 
-    if(use_regression) {
+    if (use_regression) {
         mse = calculate_error_mse(outputs);
         backward_pass(mse * (1.0 / outputs[0].size())*2.0, using_dropout, training, dropout_probability);
 
