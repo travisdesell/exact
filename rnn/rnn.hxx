@@ -18,6 +18,7 @@ using std::vector;
 class RNN {
     private:
         int series_length;
+        bool use_regression;
 
         vector<RNN_Node_Interface*> input_nodes;
         vector<RNN_Node_Interface*> output_nodes;
@@ -60,6 +61,7 @@ class RNN {
         void initialize_randomly();
         void get_weights(vector<double> &parameters);
         void set_weights(const vector<double> &parameters);
+        void enable_use_regression(bool _use_regression);
 
         uint32_t get_number_weights();
 
