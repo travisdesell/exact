@@ -67,6 +67,7 @@ class RNN_Genome {
 
         vector<double> initial_parameters;
 
+        
         double best_validation_mse;
         double best_validation_mae;
         vector<double> best_parameters;
@@ -127,6 +128,7 @@ class RNN_Genome {
         int32_t get_node_count();
 
         double get_fitness() const;
+        double get_best_validation_softmax() const; 
         double get_best_validation_mse() const;
         double get_best_validation_mae() const;
 
