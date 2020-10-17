@@ -527,6 +527,7 @@ Corpus* Corpus::generate_from_arguments(const vector<string> &arguments){
 	cs->filenames.clear();
 	cs->word_index.clear();
 	cs->vocab.clear();
+    uint32_t _batch_size;
 
 	if (argument_exists(arguments, "--training_filenames") && argument_exists(arguments, "--test_filenames")) {
         vector<string> training_filenames;
@@ -554,6 +555,11 @@ Corpus* Corpus::generate_from_arguments(const vector<string> &arguments){
         exit(1);
     }
 
+
+
+    get_argument(arguments,"--batch_size", true,_batch_size);
+
+    cs->batch_size =_batch_size;
     cs->all_parameter_names.clear();
     cs->input_parameter_names.clear();
     cs->output_parameter_names.clear();
@@ -908,8 +914,8 @@ void Corpus::export_sent_series(const vector<int> &series_indexes, int word_offs
         sent_series[series_index]->export_word_series(temp_outputs[i], word_offset);
     }
 
-    inputs  = batchify(64,temp_inputs);
-    outputs = batchify(64,temp_outputs);
+    inputs  = batchify(batch_size,temp_inputs);
+    outputs = batchify(batch_size,temp_outputs);
 
 }
 

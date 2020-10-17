@@ -117,6 +117,7 @@ class Corpus {
 
 	private:
 
+        uint32_t batch_size;
 		string normalize_type;
 
         vector<string> filenames;
