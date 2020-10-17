@@ -411,7 +411,6 @@ double RNN::calculate_error_softmax(const vector< vector<double> > &expected_out
     
     double cross_entropy_sum = 0.0;
     double error;
-
     double softmax = 0.0;
 
     for (uint32_t i = 0; i < output_nodes.size(); i++) {
@@ -433,34 +432,32 @@ double RNN::calculate_error_softmax(const vector< vector<double> > &expected_out
             softmax = exp(output_nodes[i]->output_values[j]) / softmax_sum;
             error = softmax - expected_outputs[i][j];
             output_nodes[i]->error_values[j] = error;
+
             // std::cout<<"softmax ::::: "<<error<<" "<<output_nodes[i]->output_values[j]<<" "<<expected_outputs[i][j]<<"\n"<<std::endl;
             cross_entropy = -expected_outputs[i][j] * log(softmax);
             // if(cross_entropy)std::cout<<"cross_entropy ::::: "<<cross_entropy<<"\n"<<std::endl;
-            cross_entropy_sum += cross_entropy;
 
+            cross_entropy_sum += cross_entropy;
         }
 
     }
 
-    
-    return cross_entropy_sum;
-
-
+  return cross_entropy_sum;
 }
 
 double RNN::calculate_error_mse(const vector< vector<double> > &expected_outputs) {
-
-    
     double mse_sum = 0.0;
     double mse;
     double error;
+  
     for (uint32_t i = 0; i < output_nodes.size(); i++) {
         output_nodes[i]->error_values.resize(expected_outputs[i].size());
 
         mse = 0.0;
         for (uint32_t j = 0; j < expected_outputs[i].size(); j++) {
             error = output_nodes[i]->output_values[j] - expected_outputs[i][j];
-            // std::cout<<"why this  ???? mse ::::: "<<error<<" "<<output_nodes[i]->output_values[j]<<" "<<expected_outputs[i][j]<<std::endl;
+
+          // std::cout<<"why this  ???? mse ::::: "<<error<<" "<<output_nodes[i]->output_values[j]<<" "<<expected_outputs[i][j]<<std::endl;
 
             output_nodes[i]->error_values[j] = error;
             mse += error * error;
@@ -741,20 +738,15 @@ RNN* RNN::copy() {
     vector<RNN_Node_Interface*> node_copies;
     vector<RNN_Edge*> edge_copies;
     vector<RNN_Recurrent_Edge*> recurrent_edge_copies;
-
     for (uint32_t i = 0; i < nodes.size(); i++) {
         node_copies.push_back( nodes[i]->copy() );
     }
-
     for (uint32_t i = 0; i < edges.size(); i++) {
         edge_copies.push_back( edges[i]->copy(node_copies) );
     }
-
     for (uint32_t i = 0; i < recurrent_edges.size(); i++) {
         recurrent_edge_copies.push_back( recurrent_edges[i]->copy(node_copies) );
     }
-
-
     return new RNN(node_copies, edge_copies, recurrent_edge_copies);
 }
 */

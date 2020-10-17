@@ -848,6 +848,7 @@ void RNN_Genome::set_generation_id(int32_t _generation_id) {
 }
 
 double RNN_Genome::get_fitness() const {
+
     return best_validation_mse;
     //return best_validation_mae;
 }
@@ -859,7 +860,6 @@ double RNN_Genome::get_best_validation_mse() const {
 double RNN_Genome::get_best_validation_mae() const {
     return best_validation_mae;
 }
-
 
 
 void RNN_Genome::set_generated_by(string type) {
@@ -875,11 +875,19 @@ bool RNN_Genome::sanity_check() {
 }
 
 
-void forward_pass_thread(RNN* rnn, const vector<double> &parameters, const vector< vector<double> > &inputs, const vector< vector<double> > &outputs, uint32_t i, double *mses, bool use_dropout, bool training, double dropout_probability) {
+void forward_pass_thread_regression(RNN* rnn, const vector<double> &parameters, const vector< vector<double> > &inputs, const vector< vector<double> > &outputs, uint32_t i, double *mses, bool use_dropout, bool training, double dropout_probability) {
     rnn->set_weights(parameters);
     rnn->forward_pass(inputs, use_dropout, training, dropout_probability);
-
     mses[i] = rnn->calculate_error_mse(outputs);
+    //mses[i] = rnn->calculate_error_mae(outputs);
+
+    Log::trace("mse[%d]: %lf\n", i, mses[i]);
+}
+
+void forward_pass_thread_classification(RNN* rnn, const vector<double> &parameters, const vector< vector<double> > &inputs, const vector< vector<double> > &outputs, uint32_t i, double *mses, bool use_dropout, bool training, double dropout_probability) {
+    rnn->set_weights(parameters);
+    rnn->forward_pass(inputs, use_dropout, training, dropout_probability);
+    mses[i] = rnn->calculate_error_softmax(outputs);
     //mses[i] = rnn->calculate_error_mae(outputs);
 
     Log::trace("mse[%d]: %lf\n", i, mses[i]);
@@ -891,7 +899,13 @@ void RNN_Genome::get_analytic_gradient(vector<RNN*> &rnns, const vector<double> 
     double mse_sum = 0.0;
     vector<thread> threads;
     for (uint32_t i = 0; i < rnns.size(); i++) {
-        threads.push_back( thread(forward_pass_thread, rnns[i], parameters, inputs[i], outputs[i], i, mses, use_dropout, training, dropout_probability) );
+        if(use_regression) {
+            threads.push_back( thread(forward_pass_thread_regression, rnns[i], parameters, inputs[i], outputs[i], i, mses, use_dropout, training, dropout_probability) );
+
+        } else {
+            threads.push_back( thread(forward_pass_thread_classification, rnns[i], parameters, inputs[i], outputs[i], i, mses, use_dropout, training, dropout_probability) );
+
+        }
     }
 
     for (uint32_t i = 0; i < rnns.size(); i++) {
@@ -947,6 +961,8 @@ void RNN_Genome::backpropagate(const vector< vector< vector<double> > > &inputs,
     int32_t n_series = inputs.size();
     vector<RNN*> rnns;
     for (int32_t i = 0; i < n_series; i++) {
+        RNN* r = this->get_rnn();
+        r->enable_use_regression(use_regression);
         rnns.push_back( this->get_rnn() );
     }
 
@@ -1181,6 +1197,7 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
     std::chrono::time_point<std::chrono::system_clock> startClock = std::chrono::system_clock::now();
 
     RNN* rnn = get_rnn();
+    rnn->enable_use_regression(use_regression);
     rnn->set_weights(parameters);
 
     //initialize the initial previous values
@@ -1449,6 +1466,7 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
 
 double RNN_Genome::get_softmax(const vector<double> &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs) {
     RNN *rnn = get_rnn();
+    rnn->enable_use_regression(use_regression);
     rnn->set_weights(parameters);
 
     double softmax = 0.0;
@@ -1471,6 +1489,7 @@ double RNN_Genome::get_softmax(const vector<double> &parameters, const vector< v
 
 double RNN_Genome::get_mse(const vector<double> &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs) {
     RNN *rnn = get_rnn();
+    rnn->enable_use_regression(use_regression);
     rnn->set_weights(parameters);
 
     double mse = 0.0;
@@ -1493,6 +1512,7 @@ double RNN_Genome::get_mse(const vector<double> &parameters, const vector< vecto
 
 double RNN_Genome::get_mae(const vector<double> &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs) {
     RNN *rnn = get_rnn();
+    rnn->enable_use_regression(use_regression);
     rnn->set_weights(parameters);
 
     double mae;
