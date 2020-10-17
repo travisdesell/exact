@@ -25,7 +25,7 @@ using std::vector;
 #include "rnn/examm.hxx"
 
 #include "time_series/time_series.hxx"
-#include "word_series/word_series.hxx"
+#include "word_series/word_series.hxx"  
 
 #define WORK_REQUEST_TAG 1
 #define GENOME_LENGTH_TAG 2
@@ -199,8 +199,10 @@ void worker(int rank) {
             //have each worker write the backproagation to a separate log file
             string log_id = "genome_" + to_string(genome->get_generation_id()) + "_worker_" + to_string(rank);
             Log::set_id(log_id);
+
             genome->backpropagate(training_inputs, training_outputs, validation_inputs, validation_outputs);
             //genome->backpropagate_stochastic(training_inputs, training_outputs, validation_inputs, validation_outputs);
+
             Log::release_id(log_id);
 
             //go back to the worker's log for MPI communication
@@ -266,7 +268,7 @@ int main(int argc, char** argv) {
     Log::info("exported word series.\n");
 
     int number_inputs = corpus_sets->get_number_inputs();
-    int number_outputs = corpus_sets->get_number_outputs();;
+    int number_outputs = corpus_sets->get_number_outputs();
 
     Log::debug("number_inputs: %d, number_outputs: %d\n", number_inputs, number_outputs);
 
@@ -311,6 +313,7 @@ int main(int argc, char** argv) {
 
     double neat_c3 = 1;
     get_argument(arguments, "--neat_c3", false, neat_c3);
+
     bool repeat_extinction = argument_exists(arguments, "--repeat_extinction");
 
     int32_t bp_iterations;
@@ -341,7 +344,7 @@ int main(int argc, char** argv) {
     get_argument(arguments, "--max_recurrent_depth", false, max_recurrent_depth);
 
     //bool use_regression = argument_exists(arguments, "--use_regression");
-    bool use_regression = false; //nlp  will never use regression
+    bool use_regression = false; //nlp will never use regression
 
     string weight_initialize_string = "random";
     get_argument(arguments, "--weight_initialize", false, weight_initialize_string);
@@ -357,6 +360,7 @@ int main(int argc, char** argv) {
     get_argument(arguments, "--mutated_component_weight", false, mutated_component_weight_string);
     WeightType mutated_component_weight;
     mutated_component_weight = get_enum_from_string(mutated_component_weight_string);
+
 
     RNN_Genome *seed_genome = NULL;
     string genome_file_name = "";

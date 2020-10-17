@@ -557,7 +557,7 @@ Corpus* Corpus::generate_from_arguments(const vector<string> &arguments){
 
 
 
-    get_argument(arguments, "--batch_size", true, _batch_size);
+    get_argument(arguments,"--batch_size", true,_batch_size);
 
     cs->batch_size =_batch_size;
     cs->all_parameter_names.clear();
@@ -863,21 +863,26 @@ vector<vector<vector<double> > > batchify(int batch_size, vector<vector<vector<d
     int batchNo =  -1;
 
 
-    for (int i = 0; i < data.size(); ++i) {
+    for (int i = 0; i < data.size(); ++i)
+    {
         no_batches += (data[i][0].size() -1) / batch_size +1;
+        std:cout<<no_batches<<" "<<std::endl;
     }
 
-    if (data[0][0].size() < batch_size) {
-
-        batchData.resize(no_batches, vector<vector<double> >(no_features, vector<double>(data[0][0].size())));
-    }else {
-        batchData.resize(no_batches, vector<vector<double> >(no_features, vector<double>(batch_size)));
+    if (data[0][0].size() < batch_size)
+    {
+        batchData.resize(no_batches,vector<vector<double> >(no_features,vector<double> (data[0][0].size())));
+    }else{
+        batchData.resize(no_batches,vector<vector<double> >(no_features,vector<double> (batch_size)));
     }
+
+
+    std::cout<<batchData.size()<<" "<<data[0].size()<<" "<<batchData[0][0].size()<<std::endl;
 
     for (int k = 0; k < data.size(); ++k) {
         for (int j = 0; j < data[k][0].size(); ++j) {
             for (int i = 0; i < data[k].size(); ++i) {
-                if (i == 0 && j%batch_size == 0) batchNo++;
+                if(i == 0 && j%batch_size == 0)batchNo++;
 
                 batchData[batchNo][i][j%batch_size] = data[k][i][j];
             }
