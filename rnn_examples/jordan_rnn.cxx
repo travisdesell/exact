@@ -54,8 +54,8 @@ int main(int argc, char **argv) {
     time_series_sets->export_training_series(time_offset, training_inputs, training_outputs);
     time_series_sets->export_test_series(time_offset, test_inputs, test_outputs);
 
-    int number_inputs = time_series_sets->get_number_inputs();
-    int number_outputs = time_series_sets->get_number_outputs();
+    //int number_inputs = time_series_sets->get_number_inputs();
+    //int number_outputs = time_series_sets->get_number_outputs();
 
     int32_t number_hidden_layers;
     get_argument(arguments, "--number_hidden_layers", true, number_hidden_layers);

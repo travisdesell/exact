@@ -151,12 +151,11 @@ int32_t NeatSpeciationStrategy::insert_genome(RNN_Genome* genome) {
     if(best.size() != 0){
         genome->set_weights(best);
     }
-    int32_t insert_position ;
+    
     Log::info("inserting genome id %d!\n", genome->get_generation_id());
-    double avg_weight = genome->get_avg_edge_weight();
     inserted_genomes++;
 
-
+    int32_t insert_position;
     if (Neat_Species.size() == 1 && Neat_Species[0]->size() == 0) {
         // insert the first genome in the evolution
         insert_position = Neat_Species[0]->insert_genome(genome);
@@ -390,7 +389,7 @@ string NeatSpeciationStrategy::get_strategy_information_values() const {
     string info_value="";
     for (int32_t i = 0; i < (int32_t)Neat_Species.size(); i++) {
         double best_fitness = Neat_Species[i]->get_best_fitness();
-        double worst_fitness = Neat_Species[i]->get_worst_fitness();
+        // double worst_fitness = Neat_Species[i]->get_worst_fitness();
         info_value.append(",");
         info_value.append(to_string(best_fitness));
         // info_value.append(",");

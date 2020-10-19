@@ -137,6 +137,9 @@ double RANDOM_DAG_Node::activation(double value, int act_operator){
     if(act_operator == 2) return swish(value);
     if(act_operator == 3) return leakyReLU(value);
     if(act_operator == 4) return identity(value);
+
+    Log::fatal("ERROR: invalid act_operator: %d\n", act_operator); 
+    exit(1);
 }
 
 double RANDOM_DAG_Node::activation_derivative(double value, double input, int act_operator){
@@ -146,6 +149,9 @@ double RANDOM_DAG_Node::activation_derivative(double value, double input, int ac
     if(act_operator == 2) return swish_derivative(value,input);
     if(act_operator == 3) return leakyReLU_derivative(input);
     if(act_operator == 4) return identity_derivative();
+
+    Log::fatal("ERROR: invalid act_operator: %d\n", act_operator); 
+    exit(1);
 }
 
 void RANDOM_DAG_Node::input_fired(int time, double incoming_output) {
@@ -185,7 +191,6 @@ void RANDOM_DAG_Node::input_fired(int time, double incoming_output) {
     Log::debug("ERROR: inputs_fired on RANDOM_DAG_Node %d at time %d is %d and no_of_nodes is %d\n", innovation_number, time, inputs_fired[time], no_of_nodes);
 
 
-    int fan_out = 0; 
     double x = input_values[time];
 
     double h_prev = 0.0;
@@ -218,7 +223,7 @@ void RANDOM_DAG_Node::input_fired(int time, double incoming_output) {
         
     }
 
-
+    //int fan_out = 0; 
     for (int i = 0; i < node_output.size(); ++i)
     {
         //std::cout<<" for node output  === "<<i<<"\n"<<std::endl;
