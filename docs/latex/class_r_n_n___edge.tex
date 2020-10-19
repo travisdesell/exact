@@ -1,0 +1,119 @@
+\hypertarget{class_r_n_n___edge}{}\doxysection{R\+N\+N\+\_\+\+Edge Class Reference}
+\label{class_r_n_n___edge}\index{RNN\_Edge@{RNN\_Edge}}
+\doxysubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{class_r_n_n___edge_a5ac3e7d542f6c73630fa2fa6180e6a6e}\label{class_r_n_n___edge_a5ac3e7d542f6c73630fa2fa6180e6a6e}} 
+{\bfseries R\+N\+N\+\_\+\+Edge} (int32\+\_\+t \+\_\+innovation\+\_\+number, \mbox{\hyperlink{class_r_n_n___node___interface}{R\+N\+N\+\_\+\+Node\+\_\+\+Interface}} $\ast$\+\_\+input\+\_\+node, \mbox{\hyperlink{class_r_n_n___node___interface}{R\+N\+N\+\_\+\+Node\+\_\+\+Interface}} $\ast$\+\_\+output\+\_\+node)
+\item 
+\mbox{\Hypertarget{class_r_n_n___edge_a83cead431f54004364db7a35a1b28b33}\label{class_r_n_n___edge_a83cead431f54004364db7a35a1b28b33}} 
+{\bfseries R\+N\+N\+\_\+\+Edge} (int32\+\_\+t \+\_\+innovation\+\_\+number, int32\+\_\+t \+\_\+input\+\_\+innovation\+\_\+number, int32\+\_\+t \+\_\+output\+\_\+innovation\+\_\+number, const \textbf{ vector}$<$ \mbox{\hyperlink{class_r_n_n___node___interface}{R\+N\+N\+\_\+\+Node\+\_\+\+Interface}} $\ast$ $>$ \&nodes)
+\item 
+\mbox{\Hypertarget{class_r_n_n___edge_affee08331aa22823e144e44575a624c8}\label{class_r_n_n___edge_affee08331aa22823e144e44575a624c8}} 
+\mbox{\hyperlink{class_r_n_n___edge}{R\+N\+N\+\_\+\+Edge}} $\ast$ {\bfseries copy} (const \textbf{ vector}$<$ \mbox{\hyperlink{class_r_n_n___node___interface}{R\+N\+N\+\_\+\+Node\+\_\+\+Interface}} $\ast$ $>$ new\+\_\+nodes)
+\item 
+\mbox{\Hypertarget{class_r_n_n___edge_af2dabd1c3c19630cd73091220369db9a}\label{class_r_n_n___edge_af2dabd1c3c19630cd73091220369db9a}} 
+void {\bfseries reset} (int32\+\_\+t series\+\_\+length)
+\item 
+\mbox{\Hypertarget{class_r_n_n___edge_abf10ac845aca38a8a4348c9f9882a3f8}\label{class_r_n_n___edge_abf10ac845aca38a8a4348c9f9882a3f8}} 
+void {\bfseries propagate\+\_\+forward} (int32\+\_\+t time)
+\item 
+\mbox{\Hypertarget{class_r_n_n___edge_ac30711ae1b1d5cd4de60c8d36b4f2402}\label{class_r_n_n___edge_ac30711ae1b1d5cd4de60c8d36b4f2402}} 
+void {\bfseries propagate\+\_\+backward} (int32\+\_\+t time)
+\item 
+\mbox{\Hypertarget{class_r_n_n___edge_a2ce7cd502eb446048a50c73dbbee3fa8}\label{class_r_n_n___edge_a2ce7cd502eb446048a50c73dbbee3fa8}} 
+void {\bfseries propagate\+\_\+forward} (int32\+\_\+t time, bool training, double dropout\+\_\+probability)
+\item 
+\mbox{\Hypertarget{class_r_n_n___edge_a8dfd3965968c1f388c167740d5d467b1}\label{class_r_n_n___edge_a8dfd3965968c1f388c167740d5d467b1}} 
+void {\bfseries propagate\+\_\+backward} (int32\+\_\+t time, bool training, double dropout\+\_\+probability)
+\item 
+\mbox{\Hypertarget{class_r_n_n___edge_a9da85112ebe0c15a130561512416ac50}\label{class_r_n_n___edge_a9da85112ebe0c15a130561512416ac50}} 
+double {\bfseries get\+\_\+gradient} () const
+\item 
+\mbox{\Hypertarget{class_r_n_n___edge_a6e46cad9dc07f64dd53bc69c4cc24cbf}\label{class_r_n_n___edge_a6e46cad9dc07f64dd53bc69c4cc24cbf}} 
+int32\+\_\+t {\bfseries get\+\_\+innovation\+\_\+number} () const
+\item 
+\mbox{\Hypertarget{class_r_n_n___edge_a08c8bcf4490c93eacb8b56f138a5cdc9}\label{class_r_n_n___edge_a08c8bcf4490c93eacb8b56f138a5cdc9}} 
+int32\+\_\+t {\bfseries get\+\_\+input\+\_\+innovation\+\_\+number} () const
+\item 
+\mbox{\Hypertarget{class_r_n_n___edge_a19acff4994685e5511fe68c7e023ee1f}\label{class_r_n_n___edge_a19acff4994685e5511fe68c7e023ee1f}} 
+int32\+\_\+t {\bfseries get\+\_\+output\+\_\+innovation\+\_\+number} () const
+\item 
+\mbox{\Hypertarget{class_r_n_n___edge_ad23ce64daa1ca24e3b44ba7921178e05}\label{class_r_n_n___edge_ad23ce64daa1ca24e3b44ba7921178e05}} 
+const \mbox{\hyperlink{class_r_n_n___node___interface}{R\+N\+N\+\_\+\+Node\+\_\+\+Interface}} $\ast$ {\bfseries get\+\_\+input\+\_\+node} () const
+\item 
+\mbox{\Hypertarget{class_r_n_n___edge_a41e97bea2f6bd77f7d4a37537e5fcccd}\label{class_r_n_n___edge_a41e97bea2f6bd77f7d4a37537e5fcccd}} 
+const \mbox{\hyperlink{class_r_n_n___node___interface}{R\+N\+N\+\_\+\+Node\+\_\+\+Interface}} $\ast$ {\bfseries get\+\_\+output\+\_\+node} () const
+\item 
+\mbox{\Hypertarget{class_r_n_n___edge_a93635d648cef357f25b4be265f0d35b4}\label{class_r_n_n___edge_a93635d648cef357f25b4be265f0d35b4}} 
+bool {\bfseries is\+\_\+enabled} () const
+\item 
+\mbox{\Hypertarget{class_r_n_n___edge_a82f0ba53ee029112f11764d600253c0b}\label{class_r_n_n___edge_a82f0ba53ee029112f11764d600253c0b}} 
+bool {\bfseries is\+\_\+reachable} () const
+\item 
+\mbox{\Hypertarget{class_r_n_n___edge_a37e3db9194813ac62f97e12c787a3ab8}\label{class_r_n_n___edge_a37e3db9194813ac62f97e12c787a3ab8}} 
+bool {\bfseries equals} (\mbox{\hyperlink{class_r_n_n___edge}{R\+N\+N\+\_\+\+Edge}} $\ast$other) const
+\item 
+\mbox{\Hypertarget{class_r_n_n___edge_adfd1832a680684a52bd5cb2a01516bab}\label{class_r_n_n___edge_adfd1832a680684a52bd5cb2a01516bab}} 
+void {\bfseries write\+\_\+to\+\_\+stream} (\textbf{ ostream} \&out)
+\end{DoxyCompactItemize}
+\doxysubsection*{Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{class_r_n_n___edge_a0b5b4a80326fce5684fc3ce8f6ead337}\label{class_r_n_n___edge_a0b5b4a80326fce5684fc3ce8f6ead337}} 
+int32\+\_\+t {\bfseries innovation\+\_\+number}
+\item 
+\mbox{\Hypertarget{class_r_n_n___edge_a95ca42172215ae81b0746a72ed626379}\label{class_r_n_n___edge_a95ca42172215ae81b0746a72ed626379}} 
+\textbf{ vector}$<$ double $>$ {\bfseries outputs}
+\item 
+\mbox{\Hypertarget{class_r_n_n___edge_a6d46039bb8ac92466a2abbd7cf926aab}\label{class_r_n_n___edge_a6d46039bb8ac92466a2abbd7cf926aab}} 
+\textbf{ vector}$<$ double $>$ {\bfseries deltas}
+\item 
+\mbox{\Hypertarget{class_r_n_n___edge_a12b8c7737fc0cd6d625de8ed52615f0d}\label{class_r_n_n___edge_a12b8c7737fc0cd6d625de8ed52615f0d}} 
+\textbf{ vector}$<$ bool $>$ {\bfseries dropped\+\_\+out}
+\item 
+\mbox{\Hypertarget{class_r_n_n___edge_a62d076001bdfe871de0fb94f19caab3a}\label{class_r_n_n___edge_a62d076001bdfe871de0fb94f19caab3a}} 
+double {\bfseries weight}
+\item 
+\mbox{\Hypertarget{class_r_n_n___edge_a6ccfe9204c48430f1c6291098827ea6e}\label{class_r_n_n___edge_a6ccfe9204c48430f1c6291098827ea6e}} 
+double {\bfseries d\+\_\+weight}
+\item 
+\mbox{\Hypertarget{class_r_n_n___edge_a35d14d51918ce7ac7ce0ac36ed24914b}\label{class_r_n_n___edge_a35d14d51918ce7ac7ce0ac36ed24914b}} 
+bool {\bfseries enabled}
+\item 
+\mbox{\Hypertarget{class_r_n_n___edge_ada1c0cfe252b6ce5e09ff3661e4e1836}\label{class_r_n_n___edge_ada1c0cfe252b6ce5e09ff3661e4e1836}} 
+bool {\bfseries forward\+\_\+reachable}
+\item 
+\mbox{\Hypertarget{class_r_n_n___edge_aea5850e5b85d87c34ea6e3311a432c37}\label{class_r_n_n___edge_aea5850e5b85d87c34ea6e3311a432c37}} 
+bool {\bfseries backward\+\_\+reachable}
+\item 
+\mbox{\Hypertarget{class_r_n_n___edge_a25d80a7b19c875dc36d7060439388f0d}\label{class_r_n_n___edge_a25d80a7b19c875dc36d7060439388f0d}} 
+int32\+\_\+t {\bfseries input\+\_\+innovation\+\_\+number}
+\item 
+\mbox{\Hypertarget{class_r_n_n___edge_a6748311dc4fbac3f4c7b9653a7966667}\label{class_r_n_n___edge_a6748311dc4fbac3f4c7b9653a7966667}} 
+int32\+\_\+t {\bfseries output\+\_\+innovation\+\_\+number}
+\item 
+\mbox{\Hypertarget{class_r_n_n___edge_ad7ca422248fcb876d3f1f2656099f32c}\label{class_r_n_n___edge_ad7ca422248fcb876d3f1f2656099f32c}} 
+\mbox{\hyperlink{class_r_n_n___node___interface}{R\+N\+N\+\_\+\+Node\+\_\+\+Interface}} $\ast$ {\bfseries input\+\_\+node}
+\item 
+\mbox{\Hypertarget{class_r_n_n___edge_a8f9625396d3501fd1158f726b632df89}\label{class_r_n_n___edge_a8f9625396d3501fd1158f726b632df89}} 
+\mbox{\hyperlink{class_r_n_n___node___interface}{R\+N\+N\+\_\+\+Node\+\_\+\+Interface}} $\ast$ {\bfseries output\+\_\+node}
+\end{DoxyCompactItemize}
+\doxysubsection*{Friends}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{class_r_n_n___edge_ad7617134ea6662be9dc1ad79223de4d1}\label{class_r_n_n___edge_ad7617134ea6662be9dc1ad79223de4d1}} 
+class {\bfseries R\+N\+N\+\_\+\+Genome}
+\item 
+\mbox{\Hypertarget{class_r_n_n___edge_a67a4ae33f841a6e1d186c84e9490a802}\label{class_r_n_n___edge_a67a4ae33f841a6e1d186c84e9490a802}} 
+class {\bfseries R\+NN}
+\item 
+\mbox{\Hypertarget{class_r_n_n___edge_a7850c8d4e61c10934acf1a9a98347cf3}\label{class_r_n_n___edge_a7850c8d4e61c10934acf1a9a98347cf3}} 
+class {\bfseries E\+X\+A\+MM}
+\end{DoxyCompactItemize}
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+rnn/rnn\+\_\+edge.\+hxx\item 
+rnn/rnn\+\_\+edge.\+cxx\end{DoxyCompactItemize}

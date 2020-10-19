@@ -1,0 +1,123 @@
+\hypertarget{class_r_a_n_d_o_m___d_a_g___node}{}\doxysection{R\+A\+N\+D\+O\+M\+\_\+\+D\+A\+G\+\_\+\+Node Class Reference}
+\label{class_r_a_n_d_o_m___d_a_g___node}\index{RANDOM\_DAG\_Node@{RANDOM\_DAG\_Node}}
+Inheritance diagram for R\+A\+N\+D\+O\+M\+\_\+\+D\+A\+G\+\_\+\+Node\+:\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[height=2.000000cm]{class_r_a_n_d_o_m___d_a_g___node}
+\end{center}
+\end{figure}
+\doxysubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{class_r_a_n_d_o_m___d_a_g___node_adec1b9be9f1931ba4cf7aa01741ffed3}\label{class_r_a_n_d_o_m___d_a_g___node_adec1b9be9f1931ba4cf7aa01741ffed3}} 
+{\bfseries R\+A\+N\+D\+O\+M\+\_\+\+D\+A\+G\+\_\+\+Node} (int \+\_\+innovation\+\_\+number, int \+\_\+type, double \+\_\+depth)
+\item 
+\mbox{\Hypertarget{class_r_a_n_d_o_m___d_a_g___node_a2e4c0aec006309beaf41684fd7f2d283}\label{class_r_a_n_d_o_m___d_a_g___node_a2e4c0aec006309beaf41684fd7f2d283}} 
+void {\bfseries initialize\+\_\+lamarckian} (\textbf{ minstd\+\_\+rand0} \&generator, \mbox{\hyperlink{class_normal_distribution}{Normal\+Distribution}} \&normal\+\_\+distribution, double mu, double sigma)
+\item 
+\mbox{\Hypertarget{class_r_a_n_d_o_m___d_a_g___node_a58bd17b4e9c7209fccf861f8fab687aa}\label{class_r_a_n_d_o_m___d_a_g___node_a58bd17b4e9c7209fccf861f8fab687aa}} 
+void {\bfseries initialize\+\_\+xavier} (\textbf{ minstd\+\_\+rand0} \&generator, \textbf{ uniform\+\_\+real\+\_\+distribution}$<$ double $>$ \&rng1\+\_\+1, double range)
+\item 
+\mbox{\Hypertarget{class_r_a_n_d_o_m___d_a_g___node_af66b9326a1c62354bf529f4d7ab1b6ad}\label{class_r_a_n_d_o_m___d_a_g___node_af66b9326a1c62354bf529f4d7ab1b6ad}} 
+void {\bfseries initialize\+\_\+kaiming} (\textbf{ minstd\+\_\+rand0} \&generator, \mbox{\hyperlink{class_normal_distribution}{Normal\+Distribution}} \&normal\+\_\+distribution, double range)
+\item 
+\mbox{\Hypertarget{class_r_a_n_d_o_m___d_a_g___node_a740ccf88947098a40be51070483508e5}\label{class_r_a_n_d_o_m___d_a_g___node_a740ccf88947098a40be51070483508e5}} 
+void {\bfseries initialize\+\_\+uniform\+\_\+random} (\textbf{ minstd\+\_\+rand0} \&generator, \textbf{ uniform\+\_\+real\+\_\+distribution}$<$ double $>$ \&rng)
+\item 
+\mbox{\Hypertarget{class_r_a_n_d_o_m___d_a_g___node_a67dd4045bf2333a399caee534469b5f7}\label{class_r_a_n_d_o_m___d_a_g___node_a67dd4045bf2333a399caee534469b5f7}} 
+double {\bfseries get\+\_\+gradient} (\textbf{ string} gradient\+\_\+name)
+\item 
+\mbox{\Hypertarget{class_r_a_n_d_o_m___d_a_g___node_a7cc10fd4d34b8b0e36cd91304041fdc1}\label{class_r_a_n_d_o_m___d_a_g___node_a7cc10fd4d34b8b0e36cd91304041fdc1}} 
+void {\bfseries print\+\_\+gradient} (\textbf{ string} gradient\+\_\+name)
+\item 
+\mbox{\Hypertarget{class_r_a_n_d_o_m___d_a_g___node_a4495aaab90263b73dfdc7cb1abfa235d}\label{class_r_a_n_d_o_m___d_a_g___node_a4495aaab90263b73dfdc7cb1abfa235d}} 
+double {\bfseries activation} (double value, int act\+\_\+operator)
+\item 
+\mbox{\Hypertarget{class_r_a_n_d_o_m___d_a_g___node_a5d6bb3b52bb80226009f89a4ec84de28}\label{class_r_a_n_d_o_m___d_a_g___node_a5d6bb3b52bb80226009f89a4ec84de28}} 
+double {\bfseries activation\+\_\+derivative} (double value, double input, int act\+\_\+operator)
+\item 
+\mbox{\Hypertarget{class_r_a_n_d_o_m___d_a_g___node_a1d9556dd97cc2d1b784f172666fe7015}\label{class_r_a_n_d_o_m___d_a_g___node_a1d9556dd97cc2d1b784f172666fe7015}} 
+void {\bfseries input\+\_\+fired} (int time, double incoming\+\_\+output)
+\item 
+\mbox{\Hypertarget{class_r_a_n_d_o_m___d_a_g___node_a6314cb9edd1d044c3092891976cb5239}\label{class_r_a_n_d_o_m___d_a_g___node_a6314cb9edd1d044c3092891976cb5239}} 
+void {\bfseries try\+\_\+update\+\_\+deltas} (int time)
+\item 
+\mbox{\Hypertarget{class_r_a_n_d_o_m___d_a_g___node_a04b077e1127db3212b5453457d32960c}\label{class_r_a_n_d_o_m___d_a_g___node_a04b077e1127db3212b5453457d32960c}} 
+void {\bfseries error\+\_\+fired} (int time, double error)
+\item 
+\mbox{\Hypertarget{class_r_a_n_d_o_m___d_a_g___node_a516182d6897e7ae6ce88cbe1978a9bb2}\label{class_r_a_n_d_o_m___d_a_g___node_a516182d6897e7ae6ce88cbe1978a9bb2}} 
+void {\bfseries output\+\_\+fired} (int time, double delta)
+\item 
+\mbox{\Hypertarget{class_r_a_n_d_o_m___d_a_g___node_ab30c087e233c86c0d07722ae1f755075}\label{class_r_a_n_d_o_m___d_a_g___node_ab30c087e233c86c0d07722ae1f755075}} 
+uint32\+\_\+t {\bfseries get\+\_\+number\+\_\+weights} () const
+\item 
+\mbox{\Hypertarget{class_r_a_n_d_o_m___d_a_g___node_a13a43059ceda27b97579e6437c48a3d1}\label{class_r_a_n_d_o_m___d_a_g___node_a13a43059ceda27b97579e6437c48a3d1}} 
+void {\bfseries get\+\_\+weights} (\textbf{ vector}$<$ double $>$ \&parameters) const
+\item 
+\mbox{\Hypertarget{class_r_a_n_d_o_m___d_a_g___node_adc220aff7ecee8b15ae0919fe8ca1071}\label{class_r_a_n_d_o_m___d_a_g___node_adc220aff7ecee8b15ae0919fe8ca1071}} 
+void {\bfseries set\+\_\+weights} (const \textbf{ vector}$<$ double $>$ \&parameters)
+\item 
+\mbox{\Hypertarget{class_r_a_n_d_o_m___d_a_g___node_a36381c7fea6088573b91811d9e02ff42}\label{class_r_a_n_d_o_m___d_a_g___node_a36381c7fea6088573b91811d9e02ff42}} 
+void {\bfseries get\+\_\+weights} (uint32\+\_\+t \&offset, \textbf{ vector}$<$ double $>$ \&parameters) const
+\item 
+\mbox{\Hypertarget{class_r_a_n_d_o_m___d_a_g___node_a8e05477f90a398d0ae066b17ad192583}\label{class_r_a_n_d_o_m___d_a_g___node_a8e05477f90a398d0ae066b17ad192583}} 
+void {\bfseries set\+\_\+weights} (uint32\+\_\+t \&offset, const \textbf{ vector}$<$ double $>$ \&parameters)
+\item 
+\mbox{\Hypertarget{class_r_a_n_d_o_m___d_a_g___node_a8407b237aa07eeac13d6729e7e414130}\label{class_r_a_n_d_o_m___d_a_g___node_a8407b237aa07eeac13d6729e7e414130}} 
+void {\bfseries get\+\_\+gradients} (\textbf{ vector}$<$ double $>$ \&gradients)
+\item 
+\mbox{\Hypertarget{class_r_a_n_d_o_m___d_a_g___node_a4896518988d24bce6d87abef2a8ff618}\label{class_r_a_n_d_o_m___d_a_g___node_a4896518988d24bce6d87abef2a8ff618}} 
+void {\bfseries reset} (int \+\_\+series\+\_\+length)
+\item 
+\mbox{\Hypertarget{class_r_a_n_d_o_m___d_a_g___node_a16a7e4e713cc5cfb0981b89306ae4d40}\label{class_r_a_n_d_o_m___d_a_g___node_a16a7e4e713cc5cfb0981b89306ae4d40}} 
+void {\bfseries write\+\_\+to\+\_\+stream} (\textbf{ ostream} \&out)
+\item 
+\mbox{\Hypertarget{class_r_a_n_d_o_m___d_a_g___node_a095f8dce9c8d61f98f305ed1b4699afa}\label{class_r_a_n_d_o_m___d_a_g___node_a095f8dce9c8d61f98f305ed1b4699afa}} 
+\mbox{\hyperlink{class_r_n_n___node___interface}{R\+N\+N\+\_\+\+Node\+\_\+\+Interface}} $\ast$ {\bfseries copy} () const
+\end{DoxyCompactItemize}
+\doxysubsection*{Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{class_r_a_n_d_o_m___d_a_g___node_af0f334e481df8d85e25782ae57d18ab4}\label{class_r_a_n_d_o_m___d_a_g___node_af0f334e481df8d85e25782ae57d18ab4}} 
+\textbf{ vector}$<$ int $>$ {\bfseries node\+\_\+output}
+\item 
+\mbox{\Hypertarget{class_r_a_n_d_o_m___d_a_g___node_a6d00d0b268d442a0b37ceb3856f85be9}\label{class_r_a_n_d_o_m___d_a_g___node_a6d00d0b268d442a0b37ceb3856f85be9}} 
+double {\bfseries rw}
+\item 
+\mbox{\Hypertarget{class_r_a_n_d_o_m___d_a_g___node_a2e51ac16c91ff6bf22aa217a26c7d956}\label{class_r_a_n_d_o_m___d_a_g___node_a2e51ac16c91ff6bf22aa217a26c7d956}} 
+double {\bfseries zw}
+\item 
+\mbox{\Hypertarget{class_r_a_n_d_o_m___d_a_g___node_a6639205d23348856f0c8591121131830}\label{class_r_a_n_d_o_m___d_a_g___node_a6639205d23348856f0c8591121131830}} 
+\textbf{ vector}$<$ double $>$ {\bfseries weights}
+\item 
+\mbox{\Hypertarget{class_r_a_n_d_o_m___d_a_g___node_a48afb2bea453a271dce3e005b9bc8510}\label{class_r_a_n_d_o_m___d_a_g___node_a48afb2bea453a271dce3e005b9bc8510}} 
+\textbf{ vector}$<$ double $>$ {\bfseries d\+\_\+zw}
+\item 
+\mbox{\Hypertarget{class_r_a_n_d_o_m___d_a_g___node_ab67321581146fae8017c8b19a7f83383}\label{class_r_a_n_d_o_m___d_a_g___node_ab67321581146fae8017c8b19a7f83383}} 
+\textbf{ vector}$<$ double $>$ {\bfseries d\+\_\+rw}
+\item 
+\mbox{\Hypertarget{class_r_a_n_d_o_m___d_a_g___node_a273ce64dcabb4bf4c4722285c62924be}\label{class_r_a_n_d_o_m___d_a_g___node_a273ce64dcabb4bf4c4722285c62924be}} 
+\textbf{ vector}$<$ \textbf{ vector}$<$ double $>$ $>$ {\bfseries d\+\_\+weights}
+\item 
+\mbox{\Hypertarget{class_r_a_n_d_o_m___d_a_g___node_a4884b63d89fd68219f26dde4cbd4915f}\label{class_r_a_n_d_o_m___d_a_g___node_a4884b63d89fd68219f26dde4cbd4915f}} 
+\textbf{ vector}$<$ double $>$ {\bfseries d\+\_\+h\+\_\+prev}
+\item 
+\mbox{\Hypertarget{class_r_a_n_d_o_m___d_a_g___node_aec949ee089f5998c899c9f0c69759378}\label{class_r_a_n_d_o_m___d_a_g___node_aec949ee089f5998c899c9f0c69759378}} 
+\textbf{ vector}$<$ \textbf{ vector}$<$ double $>$ $>$ {\bfseries Nodes}
+\item 
+\mbox{\Hypertarget{class_r_a_n_d_o_m___d_a_g___node_abbd47151e3b1d958829706925f5f3eff}\label{class_r_a_n_d_o_m___d_a_g___node_abbd47151e3b1d958829706925f5f3eff}} 
+\textbf{ vector}$<$ \textbf{ vector}$<$ double $>$ $>$ {\bfseries l\+\_\+\+Nodes}
+\end{DoxyCompactItemize}
+\doxysubsection*{Friends}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{class_r_a_n_d_o_m___d_a_g___node_a6ed93c885e63e64a8aa0ab2b7f637f0e}\label{class_r_a_n_d_o_m___d_a_g___node_a6ed93c885e63e64a8aa0ab2b7f637f0e}} 
+class {\bfseries R\+N\+N\+\_\+\+Edge}
+\end{DoxyCompactItemize}
+\doxysubsection*{Additional Inherited Members}
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+rnn/random\+\_\+dag\+\_\+node.\+hxx\item 
+rnn/random\+\_\+dag\+\_\+node.\+cxx\end{DoxyCompactItemize}

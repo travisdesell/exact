@@ -1,0 +1,211 @@
+\hypertarget{class_speciation_strategy}{}\doxysection{Speciation\+Strategy Class Reference}
+\label{class_speciation_strategy}\index{SpeciationStrategy@{SpeciationStrategy}}
+Inheritance diagram for Speciation\+Strategy\+:\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[height=2.000000cm]{class_speciation_strategy}
+\end{center}
+\end{figure}
+\doxysubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+virtual int32\+\_\+t \mbox{\hyperlink{class_speciation_strategy_a7699a7050ed5a66693f19e834e9ba082}{get\+\_\+generated\+\_\+genomes}} () const =0
+\item 
+virtual int32\+\_\+t \mbox{\hyperlink{class_speciation_strategy_a1f07309130568d8cc79da44c8da6ca69}{get\+\_\+inserted\+\_\+genomes}} () const =0
+\item 
+virtual double \mbox{\hyperlink{class_speciation_strategy_afa3f2d35da2172a32ed06588ef09d4d0}{get\+\_\+best\+\_\+fitness}} ()=0
+\begin{DoxyCompactList}\small\item\em Gets the fitness of the best genome of all the islands. \end{DoxyCompactList}\item 
+virtual double \mbox{\hyperlink{class_speciation_strategy_a6bdef578fe33c628a81db35d75eaa473}{get\+\_\+worst\+\_\+fitness}} ()=0
+\begin{DoxyCompactList}\small\item\em Gets the fitness of the worst genome of all the islands. \end{DoxyCompactList}\item 
+virtual \mbox{\hyperlink{class_r_n_n___genome}{R\+N\+N\+\_\+\+Genome}} $\ast$ \mbox{\hyperlink{class_speciation_strategy_ad0796098d09c25bfee14d9f264bcba2d}{get\+\_\+best\+\_\+genome}} ()=0
+\begin{DoxyCompactList}\small\item\em Gets the best genome of all the islands. \end{DoxyCompactList}\item 
+virtual \mbox{\hyperlink{class_r_n_n___genome}{R\+N\+N\+\_\+\+Genome}} $\ast$ \mbox{\hyperlink{class_speciation_strategy_ae84e9c1e0eaf02886b41b1d9adf488f4}{get\+\_\+worst\+\_\+genome}} ()=0
+\begin{DoxyCompactList}\small\item\em Gets the the worst genome of all the islands. \end{DoxyCompactList}\item 
+virtual int32\+\_\+t \mbox{\hyperlink{class_speciation_strategy_a1fd87178f38052aa934312e49819e509}{insert\+\_\+genome}} (\mbox{\hyperlink{class_r_n_n___genome}{R\+N\+N\+\_\+\+Genome}} $\ast$genome)=0
+\begin{DoxyCompactList}\small\item\em Inserts a {\bfseries{copy}} of the genome into this speciation strategy. \end{DoxyCompactList}\item 
+virtual \mbox{\hyperlink{class_r_n_n___genome}{R\+N\+N\+\_\+\+Genome}} $\ast$ \mbox{\hyperlink{class_speciation_strategy_a76f36f0dd7c47727aef912d48f0fa26b}{generate\+\_\+genome}} (\textbf{ uniform\+\_\+real\+\_\+distribution}$<$ double $>$ \&rng\+\_\+0\+\_\+1, \textbf{ minstd\+\_\+rand0} \&generator, \textbf{ function}$<$ void(int32\+\_\+t, \mbox{\hyperlink{class_r_n_n___genome}{R\+N\+N\+\_\+\+Genome}} $\ast$)$>$ \&mutate, \textbf{ function}$<$ \mbox{\hyperlink{class_r_n_n___genome}{R\+N\+N\+\_\+\+Genome}} $\ast$(\mbox{\hyperlink{class_r_n_n___genome}{R\+N\+N\+\_\+\+Genome}} $\ast$, \mbox{\hyperlink{class_r_n_n___genome}{R\+N\+N\+\_\+\+Genome}} $\ast$)$>$ \&crossover)=0
+\begin{DoxyCompactList}\small\item\em Generates a new genome. \end{DoxyCompactList}\item 
+virtual void \mbox{\hyperlink{class_speciation_strategy_a1d44f4c87ab00182e61f0fb364f274a9}{print}} (\textbf{ string} indent=\char`\"{}\char`\"{}) const =0
+\begin{DoxyCompactList}\small\item\em Prints out all the island\textquotesingle{}s populations. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{class_speciation_strategy_a163f199bc1dbf37157942cd3778cca20}\label{class_speciation_strategy_a163f199bc1dbf37157942cd3778cca20}} 
+virtual \textbf{ string} \mbox{\hyperlink{class_speciation_strategy_a163f199bc1dbf37157942cd3778cca20}{get\+\_\+strategy\+\_\+information\+\_\+headers}} () const =0
+\begin{DoxyCompactList}\small\item\em Gets speciation strategy information headers for logs. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{class_speciation_strategy_a5c6bbff0c19e3d347cef936d7b357fc0}\label{class_speciation_strategy_a5c6bbff0c19e3d347cef936d7b357fc0}} 
+virtual \textbf{ string} \mbox{\hyperlink{class_speciation_strategy_a5c6bbff0c19e3d347cef936d7b357fc0}{get\+\_\+strategy\+\_\+information\+\_\+values}} () const =0
+\begin{DoxyCompactList}\small\item\em Gets speciation strategy information values for logs. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{class_speciation_strategy_a2f6f73672fca1cc43a761c9bd15a2888}\label{class_speciation_strategy_a2f6f73672fca1cc43a761c9bd15a2888}} 
+virtual \mbox{\hyperlink{class_r_n_n___genome}{R\+N\+N\+\_\+\+Genome}} $\ast$ {\bfseries get\+\_\+global\+\_\+best\+\_\+genome} ()=0
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Member Function Documentation}
+\mbox{\Hypertarget{class_speciation_strategy_a76f36f0dd7c47727aef912d48f0fa26b}\label{class_speciation_strategy_a76f36f0dd7c47727aef912d48f0fa26b}} 
+\index{SpeciationStrategy@{SpeciationStrategy}!generate\_genome@{generate\_genome}}
+\index{generate\_genome@{generate\_genome}!SpeciationStrategy@{SpeciationStrategy}}
+\doxysubsubsection{\texorpdfstring{generate\_genome()}{generate\_genome()}}
+{\footnotesize\ttfamily virtual \mbox{\hyperlink{class_r_n_n___genome}{R\+N\+N\+\_\+\+Genome}}$\ast$ Speciation\+Strategy\+::generate\+\_\+genome (\begin{DoxyParamCaption}\item[{\textbf{ uniform\+\_\+real\+\_\+distribution}$<$ double $>$ \&}]{rng\+\_\+0\+\_\+1,  }\item[{\textbf{ minstd\+\_\+rand0} \&}]{generator,  }\item[{\textbf{ function}$<$ void(int32\+\_\+t, \mbox{\hyperlink{class_r_n_n___genome}{R\+N\+N\+\_\+\+Genome}} $\ast$)$>$ \&}]{mutate,  }\item[{\textbf{ function}$<$ \mbox{\hyperlink{class_r_n_n___genome}{R\+N\+N\+\_\+\+Genome}} $\ast$(\mbox{\hyperlink{class_r_n_n___genome}{R\+N\+N\+\_\+\+Genome}} $\ast$, \mbox{\hyperlink{class_r_n_n___genome}{R\+N\+N\+\_\+\+Genome}} $\ast$)$>$ \&}]{crossover }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [pure virtual]}}
+
+
+
+Generates a new genome. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em rng\+\_\+0\+\_\+1} & is the random number distribution that generates random numbers between 0 (inclusive) and 1 (non=inclusive). \\
+\hline
+{\em generator} & is the random number generator \\
+\hline
+{\em mutate} & is the a function which performs a mutation on a genome \\
+\hline
+{\em crossover} & is the function which performs crossover between two genomes\\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+the newly generated genome. 
+\end{DoxyReturn}
+
+
+Implemented in \mbox{\hyperlink{class_island_speciation_strategy_a1d209dc38c374ffcb8ac7c34f72b2ce9}{Island\+Speciation\+Strategy}}, and \mbox{\hyperlink{class_neat_speciation_strategy_ae86f8696ddab1b6cc595b6e2ef0371ae}{Neat\+Speciation\+Strategy}}.
+
+\mbox{\Hypertarget{class_speciation_strategy_afa3f2d35da2172a32ed06588ef09d4d0}\label{class_speciation_strategy_afa3f2d35da2172a32ed06588ef09d4d0}} 
+\index{SpeciationStrategy@{SpeciationStrategy}!get\_best\_fitness@{get\_best\_fitness}}
+\index{get\_best\_fitness@{get\_best\_fitness}!SpeciationStrategy@{SpeciationStrategy}}
+\doxysubsubsection{\texorpdfstring{get\_best\_fitness()}{get\_best\_fitness()}}
+{\footnotesize\ttfamily virtual double Speciation\+Strategy\+::get\+\_\+best\+\_\+fitness (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [pure virtual]}}
+
+
+
+Gets the fitness of the best genome of all the islands. 
+
+\begin{DoxyReturn}{Returns}
+the best fitness over all islands 
+\end{DoxyReturn}
+
+
+Implemented in \mbox{\hyperlink{class_island_speciation_strategy_a4db5c946c86373cf256177b35553b808}{Island\+Speciation\+Strategy}}, and \mbox{\hyperlink{class_neat_speciation_strategy_a4aab3d6d1abf3b1f2fd7cf7b8a4a1d99}{Neat\+Speciation\+Strategy}}.
+
+\mbox{\Hypertarget{class_speciation_strategy_ad0796098d09c25bfee14d9f264bcba2d}\label{class_speciation_strategy_ad0796098d09c25bfee14d9f264bcba2d}} 
+\index{SpeciationStrategy@{SpeciationStrategy}!get\_best\_genome@{get\_best\_genome}}
+\index{get\_best\_genome@{get\_best\_genome}!SpeciationStrategy@{SpeciationStrategy}}
+\doxysubsubsection{\texorpdfstring{get\_best\_genome()}{get\_best\_genome()}}
+{\footnotesize\ttfamily virtual \mbox{\hyperlink{class_r_n_n___genome}{R\+N\+N\+\_\+\+Genome}}$\ast$ Speciation\+Strategy\+::get\+\_\+best\+\_\+genome (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [pure virtual]}}
+
+
+
+Gets the best genome of all the islands. 
+
+\begin{DoxyReturn}{Returns}
+the best genome of all islands 
+\end{DoxyReturn}
+
+
+Implemented in \mbox{\hyperlink{class_island_speciation_strategy_a1a8a770c165b22a5070e11a3f579375e}{Island\+Speciation\+Strategy}}, and \mbox{\hyperlink{class_neat_speciation_strategy_aecf62aeba94c1f8d786215c10ea4774b}{Neat\+Speciation\+Strategy}}.
+
+\mbox{\Hypertarget{class_speciation_strategy_a7699a7050ed5a66693f19e834e9ba082}\label{class_speciation_strategy_a7699a7050ed5a66693f19e834e9ba082}} 
+\index{SpeciationStrategy@{SpeciationStrategy}!get\_generated\_genomes@{get\_generated\_genomes}}
+\index{get\_generated\_genomes@{get\_generated\_genomes}!SpeciationStrategy@{SpeciationStrategy}}
+\doxysubsubsection{\texorpdfstring{get\_generated\_genomes()}{get\_generated\_genomes()}}
+{\footnotesize\ttfamily virtual int32\+\_\+t Speciation\+Strategy\+::get\+\_\+generated\+\_\+genomes (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [pure virtual]}}
+
+\begin{DoxyReturn}{Returns}
+the number of generated genomes. 
+\end{DoxyReturn}
+
+
+Implemented in \mbox{\hyperlink{class_island_speciation_strategy_a2b75aca60616268e4a6aee93ee4e5aee}{Island\+Speciation\+Strategy}}, and \mbox{\hyperlink{class_neat_speciation_strategy_af7e48fd1afb5a9c1b422ad251366263e}{Neat\+Speciation\+Strategy}}.
+
+\mbox{\Hypertarget{class_speciation_strategy_a1f07309130568d8cc79da44c8da6ca69}\label{class_speciation_strategy_a1f07309130568d8cc79da44c8da6ca69}} 
+\index{SpeciationStrategy@{SpeciationStrategy}!get\_inserted\_genomes@{get\_inserted\_genomes}}
+\index{get\_inserted\_genomes@{get\_inserted\_genomes}!SpeciationStrategy@{SpeciationStrategy}}
+\doxysubsubsection{\texorpdfstring{get\_inserted\_genomes()}{get\_inserted\_genomes()}}
+{\footnotesize\ttfamily virtual int32\+\_\+t Speciation\+Strategy\+::get\+\_\+inserted\+\_\+genomes (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [pure virtual]}}
+
+\begin{DoxyReturn}{Returns}
+the number of inserted genomes. 
+\end{DoxyReturn}
+
+
+Implemented in \mbox{\hyperlink{class_island_speciation_strategy_ab44e2abd372cd97932dd87ed1b9c62c2}{Island\+Speciation\+Strategy}}, and \mbox{\hyperlink{class_neat_speciation_strategy_aba55a9f0006af882fd613bd0676555eb}{Neat\+Speciation\+Strategy}}.
+
+\mbox{\Hypertarget{class_speciation_strategy_a6bdef578fe33c628a81db35d75eaa473}\label{class_speciation_strategy_a6bdef578fe33c628a81db35d75eaa473}} 
+\index{SpeciationStrategy@{SpeciationStrategy}!get\_worst\_fitness@{get\_worst\_fitness}}
+\index{get\_worst\_fitness@{get\_worst\_fitness}!SpeciationStrategy@{SpeciationStrategy}}
+\doxysubsubsection{\texorpdfstring{get\_worst\_fitness()}{get\_worst\_fitness()}}
+{\footnotesize\ttfamily virtual double Speciation\+Strategy\+::get\+\_\+worst\+\_\+fitness (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [pure virtual]}}
+
+
+
+Gets the fitness of the worst genome of all the islands. 
+
+\begin{DoxyReturn}{Returns}
+the worst fitness over all islands 
+\end{DoxyReturn}
+
+
+Implemented in \mbox{\hyperlink{class_island_speciation_strategy_a516627db390391867d6dd02f78e27caf}{Island\+Speciation\+Strategy}}, and \mbox{\hyperlink{class_neat_speciation_strategy_acbd3eaa05db725de60074276cd0bb449}{Neat\+Speciation\+Strategy}}.
+
+\mbox{\Hypertarget{class_speciation_strategy_ae84e9c1e0eaf02886b41b1d9adf488f4}\label{class_speciation_strategy_ae84e9c1e0eaf02886b41b1d9adf488f4}} 
+\index{SpeciationStrategy@{SpeciationStrategy}!get\_worst\_genome@{get\_worst\_genome}}
+\index{get\_worst\_genome@{get\_worst\_genome}!SpeciationStrategy@{SpeciationStrategy}}
+\doxysubsubsection{\texorpdfstring{get\_worst\_genome()}{get\_worst\_genome()}}
+{\footnotesize\ttfamily virtual \mbox{\hyperlink{class_r_n_n___genome}{R\+N\+N\+\_\+\+Genome}}$\ast$ Speciation\+Strategy\+::get\+\_\+worst\+\_\+genome (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [pure virtual]}}
+
+
+
+Gets the the worst genome of all the islands. 
+
+\begin{DoxyReturn}{Returns}
+the worst genome of all islands 
+\end{DoxyReturn}
+
+
+Implemented in \mbox{\hyperlink{class_island_speciation_strategy_a563860351e5f176d539bc297949d490f}{Island\+Speciation\+Strategy}}, and \mbox{\hyperlink{class_neat_speciation_strategy_a8bc6ad6a0740e2f6072aef3ad14dd3f7}{Neat\+Speciation\+Strategy}}.
+
+\mbox{\Hypertarget{class_speciation_strategy_a1fd87178f38052aa934312e49819e509}\label{class_speciation_strategy_a1fd87178f38052aa934312e49819e509}} 
+\index{SpeciationStrategy@{SpeciationStrategy}!insert\_genome@{insert\_genome}}
+\index{insert\_genome@{insert\_genome}!SpeciationStrategy@{SpeciationStrategy}}
+\doxysubsubsection{\texorpdfstring{insert\_genome()}{insert\_genome()}}
+{\footnotesize\ttfamily virtual int32\+\_\+t Speciation\+Strategy\+::insert\+\_\+genome (\begin{DoxyParamCaption}\item[{\mbox{\hyperlink{class_r_n_n___genome}{R\+N\+N\+\_\+\+Genome}} $\ast$}]{genome }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [pure virtual]}}
+
+
+
+Inserts a {\bfseries{copy}} of the genome into this speciation strategy. 
+
+The caller of this method will need to free the memory of the genome passed into this method.
+
+
+\begin{DoxyParams}{Parameters}
+{\em genome} & is the genome to insert. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+a value $<$ 0 if the genome was not inserted, 0 if it was a new best genome or $>$ 0 otherwise. 
+\end{DoxyReturn}
+
+
+Implemented in \mbox{\hyperlink{class_island_speciation_strategy_a6ae98982d01c68214e4bd703fe18146f}{Island\+Speciation\+Strategy}}, and \mbox{\hyperlink{class_neat_speciation_strategy_aa2b2521a400435cbd1856aadda2051e0}{Neat\+Speciation\+Strategy}}.
+
+\mbox{\Hypertarget{class_speciation_strategy_a1d44f4c87ab00182e61f0fb364f274a9}\label{class_speciation_strategy_a1d44f4c87ab00182e61f0fb364f274a9}} 
+\index{SpeciationStrategy@{SpeciationStrategy}!print@{print}}
+\index{print@{print}!SpeciationStrategy@{SpeciationStrategy}}
+\doxysubsubsection{\texorpdfstring{print()}{print()}}
+{\footnotesize\ttfamily virtual void Speciation\+Strategy\+::print (\begin{DoxyParamCaption}\item[{\textbf{ string}}]{indent = {\ttfamily \char`\"{}\char`\"{}} }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [pure virtual]}}
+
+
+
+Prints out all the island\textquotesingle{}s populations. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em indent} & is how much to indent what is printed out \\
+\hline
+\end{DoxyParams}
+
+
+Implemented in \mbox{\hyperlink{class_island_speciation_strategy_a4ba6785df117932f3c465cbc31a5ca3f}{Island\+Speciation\+Strategy}}, and \mbox{\hyperlink{class_neat_speciation_strategy_abef17e0293c2e0a64b3b4b3b9b7775d2}{Neat\+Speciation\+Strategy}}.
+
+
+
+The documentation for this class was generated from the following file\+:\begin{DoxyCompactItemize}
+\item 
+rnn/speciation\+\_\+strategy.\+hxx\end{DoxyCompactItemize}

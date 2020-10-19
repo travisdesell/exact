@@ -1,0 +1,68 @@
+\hypertarget{class_image}{}\doxysection{Image Class Reference}
+\label{class_image}\index{Image@{Image}}
+Inheritance diagram for Image\+:\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[height=2.000000cm]{class_image}
+\end{center}
+\end{figure}
+\doxysubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{class_image_a00263b59b18cd105c6ec282f76fd499a}\label{class_image_a00263b59b18cd105c6ec282f76fd499a}} 
+{\bfseries Image} (\textbf{ ifstream} \&infile, int \+\_\+channels, int \+\_\+width, int \+\_\+height, int \+\_\+padding, int \+\_\+classification, const \mbox{\hyperlink{class_images}{Images}} $\ast$\+\_\+images)
+\item 
+\mbox{\Hypertarget{class_image_ae35418c50cee043b8f24d75d0d5c125d}\label{class_image_ae35418c50cee043b8f24d75d0d5c125d}} 
+int {\bfseries get\+\_\+classification} () const
+\item 
+\mbox{\Hypertarget{class_image_a48a37444c7bf67df9b0345ce5643f7e7}\label{class_image_a48a37444c7bf67df9b0345ce5643f7e7}} 
+void {\bfseries scale\+\_\+0\+\_\+1} ()
+\item 
+\mbox{\Hypertarget{class_image_a4075190e36763e3bd418de444692f413}\label{class_image_a4075190e36763e3bd418de444692f413}} 
+float {\bfseries get\+\_\+pixel} (int z, int y, int x) const
+\item 
+\mbox{\Hypertarget{class_image_a20dc44298e59932e7eb7815d689ddf41}\label{class_image_a20dc44298e59932e7eb7815d689ddf41}} 
+void {\bfseries get\+\_\+pixel\+\_\+avg} (\textbf{ vector}$<$ float $>$ \&channel\+\_\+avgs) const
+\item 
+\mbox{\Hypertarget{class_image_a77d042408cb32c534d9d290861269574}\label{class_image_a77d042408cb32c534d9d290861269574}} 
+void {\bfseries get\+\_\+pixel\+\_\+variance} (const \textbf{ vector}$<$ float $>$ \&channel\+\_\+avgs, \textbf{ vector}$<$ float $>$ \&channel\+\_\+variances) const
+\item 
+\mbox{\Hypertarget{class_image_adb6a48efc25c7c12df5984c578e131d7}\label{class_image_adb6a48efc25c7c12df5984c578e131d7}} 
+void {\bfseries print} (\textbf{ ostream} \&out)
+\end{DoxyCompactItemize}
+\doxysubsection*{Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{class_image_a3378bec385533755ab2877c8e552e36e}\label{class_image_a3378bec385533755ab2877c8e552e36e}} 
+int {\bfseries padding}
+\item 
+\mbox{\Hypertarget{class_image_a73572ed4b7f15054c5a598c6aabffd86}\label{class_image_a73572ed4b7f15054c5a598c6aabffd86}} 
+int {\bfseries channels}
+\item 
+\mbox{\Hypertarget{class_image_a51df43db420c9c0b57536cb2dd36de5c}\label{class_image_a51df43db420c9c0b57536cb2dd36de5c}} 
+int {\bfseries height}
+\item 
+\mbox{\Hypertarget{class_image_ab8d12f635013c04159cd4d3d972bac88}\label{class_image_ab8d12f635013c04159cd4d3d972bac88}} 
+int {\bfseries width}
+\item 
+\mbox{\Hypertarget{class_image_afffa25f14f8c9aca3e6014c71fb33937}\label{class_image_afffa25f14f8c9aca3e6014c71fb33937}} 
+int {\bfseries classification}
+\item 
+\mbox{\Hypertarget{class_image_a42870ee0359c95f19672220f40c02ade}\label{class_image_a42870ee0359c95f19672220f40c02ade}} 
+\textbf{ vector}$<$ \textbf{ vector}$<$ \textbf{ vector}$<$ uint8\+\_\+t $>$ $>$ $>$ {\bfseries pixels}
+\item 
+\mbox{\Hypertarget{class_image_af8e17e1591540036cbd27ee309df7cff}\label{class_image_af8e17e1591540036cbd27ee309df7cff}} 
+const \mbox{\hyperlink{class_images}{Images}} $\ast$ {\bfseries images}
+\end{DoxyCompactItemize}
+\doxysubsection*{Friends}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{class_image_a29a8da4b8508c35f965394bec8b4af16}\label{class_image_a29a8da4b8508c35f965394bec8b4af16}} 
+class {\bfseries Images}
+\end{DoxyCompactItemize}
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+image\+\_\+tools/image\+\_\+set.\+hxx\item 
+image\+\_\+tools/image\+\_\+set.\+cxx\end{DoxyCompactItemize}

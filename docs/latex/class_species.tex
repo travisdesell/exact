@@ -1,0 +1,238 @@
+\hypertarget{class_species}{}\doxysection{Species Class Reference}
+\label{class_species}\index{Species@{Species}}
+\doxysubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{class_species_a58b75aebb5ad400b89cb41e5d7700092}\label{class_species_a58b75aebb5ad400b89cb41e5d7700092}} 
+\mbox{\hyperlink{class_species_a58b75aebb5ad400b89cb41e5d7700092}{Species}} (int32\+\_\+t \mbox{\hyperlink{class_species_a2e22624d59864dbecd5ee16103b458bd}{id}})
+\begin{DoxyCompactList}\small\item\em Initializes a species. \end{DoxyCompactList}\item 
+double \mbox{\hyperlink{class_species_a2e3034b48d9ed1f263128ffc8ca3a295}{get\+\_\+best\+\_\+fitness}} ()
+\begin{DoxyCompactList}\small\item\em Returns the fitness of the best genome in the island. \end{DoxyCompactList}\item 
+double \mbox{\hyperlink{class_species_a10669846e7646b47696d90838e379a94}{get\+\_\+worst\+\_\+fitness}} ()
+\begin{DoxyCompactList}\small\item\em Returns the fitness of the worst genome in the island. \end{DoxyCompactList}\item 
+\mbox{\hyperlink{class_r_n_n___genome}{R\+N\+N\+\_\+\+Genome}} $\ast$ \mbox{\hyperlink{class_species_a01dcea3ec17810b46167e751b2e6f4cf}{get\+\_\+best\+\_\+genome}} ()
+\begin{DoxyCompactList}\small\item\em Returns the best genomme in the island. \end{DoxyCompactList}\item 
+\mbox{\hyperlink{class_r_n_n___genome}{R\+N\+N\+\_\+\+Genome}} $\ast$ \mbox{\hyperlink{class_species_a0a224a20baa5eb5055dada490c738d30}{get\+\_\+worst\+\_\+genome}} ()
+\begin{DoxyCompactList}\small\item\em Returns the worst genomme in the island. \end{DoxyCompactList}\item 
+\mbox{\hyperlink{class_r_n_n___genome}{R\+N\+N\+\_\+\+Genome}} $\ast$ \mbox{\hyperlink{class_species_afceb50adb6350b2576e897c30380fee5}{get\+\_\+random\+\_\+genome}} (\textbf{ uniform\+\_\+real\+\_\+distribution}$<$ double $>$ \&rng\+\_\+0\+\_\+1, \textbf{ minstd\+\_\+rand0} \&generator)
+\begin{DoxyCompactList}\small\item\em Returns the best genomme in the island. \end{DoxyCompactList}\item 
+int32\+\_\+t \mbox{\hyperlink{class_species_af9978e8876f3d43c5238225ad7b8de34}{size}} ()
+\begin{DoxyCompactList}\small\item\em Returns the size of the island. \end{DoxyCompactList}\item 
+int32\+\_\+t \mbox{\hyperlink{class_species_aac66b182441d124023b4df1167c7bc35}{contains}} (\mbox{\hyperlink{class_r_n_n___genome}{R\+N\+N\+\_\+\+Genome}} $\ast$genome)
+\begin{DoxyCompactList}\small\item\em Checks to see if a genome already exists in the island, using the R\+N\+N\+\_\+\+Genome\+::equals method (which checks to see if all edges and nodes are the same, but not necessarily weights). \end{DoxyCompactList}\item 
+void \mbox{\hyperlink{class_species_add70418d8b64a815998e66c89824d646}{copy\+\_\+random\+\_\+genome}} (\textbf{ uniform\+\_\+real\+\_\+distribution}$<$ double $>$ \&rng\+\_\+0\+\_\+1, \textbf{ minstd\+\_\+rand0} \&generator, \mbox{\hyperlink{class_r_n_n___genome}{R\+N\+N\+\_\+\+Genome}} $\ast$$\ast$genome)
+\begin{DoxyCompactList}\small\item\em Selects a genome from the island at random and returns a copy of it. \end{DoxyCompactList}\item 
+void \mbox{\hyperlink{class_species_a1f3a1b23040cc266a8c9e49436f0c8a7}{copy\+\_\+two\+\_\+random\+\_\+genomes}} (\textbf{ uniform\+\_\+real\+\_\+distribution}$<$ double $>$ \&rng\+\_\+0\+\_\+1, \textbf{ minstd\+\_\+rand0} \&generator, \mbox{\hyperlink{class_r_n_n___genome}{R\+N\+N\+\_\+\+Genome}} $\ast$$\ast$genome1, \mbox{\hyperlink{class_r_n_n___genome}{R\+N\+N\+\_\+\+Genome}} $\ast$$\ast$genome2)
+\begin{DoxyCompactList}\small\item\em Selects two different genomes from the island at random and returns copies of them. \end{DoxyCompactList}\item 
+int32\+\_\+t \mbox{\hyperlink{class_species_a459a9676c5c86837233c6cc4c3843475}{insert\+\_\+genome}} (\mbox{\hyperlink{class_r_n_n___genome}{R\+N\+N\+\_\+\+Genome}} $\ast$genome)
+\begin{DoxyCompactList}\small\item\em Inserts a genome into the island. \end{DoxyCompactList}\item 
+void \mbox{\hyperlink{class_species_a2e9e0780d547c253c8532b5866b7bd4d}{print}} (\textbf{ string} indent=\char`\"{}\char`\"{})
+\begin{DoxyCompactList}\small\item\em Prints out the state of this island. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{class_species_aa17a7a4dbde760d366939d913b2274e0}\label{class_species_aa17a7a4dbde760d366939d913b2274e0}} 
+\textbf{ vector}$<$ \mbox{\hyperlink{class_r_n_n___genome}{R\+N\+N\+\_\+\+Genome}} $\ast$ $>$ {\bfseries get\+\_\+genomes} ()
+\item 
+\mbox{\Hypertarget{class_species_aae7bdabaf8e88c01b611543baa5f3e29}\label{class_species_aae7bdabaf8e88c01b611543baa5f3e29}} 
+\mbox{\hyperlink{class_r_n_n___genome}{R\+N\+N\+\_\+\+Genome}} $\ast$ {\bfseries get\+\_\+latested\+\_\+genome} ()
+\item 
+\mbox{\Hypertarget{class_species_ac49adf285a7511ee9d0eef9abb84cb66}\label{class_species_ac49adf285a7511ee9d0eef9abb84cb66}} 
+void {\bfseries fitness\+\_\+sharing\+\_\+remove} (double fitness\+\_\+threshold, \textbf{ function}$<$ double(\mbox{\hyperlink{class_r_n_n___genome}{R\+N\+N\+\_\+\+Genome}} $\ast$, \mbox{\hyperlink{class_r_n_n___genome}{R\+N\+N\+\_\+\+Genome}} $\ast$)$>$ \&get\+\_\+distance)
+\item 
+\mbox{\Hypertarget{class_species_a0121e0eb365c4f4b599fe8f352c4e90d}\label{class_species_a0121e0eb365c4f4b599fe8f352c4e90d}} 
+void {\bfseries erase\+\_\+species} ()
+\item 
+\mbox{\Hypertarget{class_species_a83f64a0c9132b5c21e625500211ba130}\label{class_species_a83f64a0c9132b5c21e625500211ba130}} 
+int32\+\_\+t {\bfseries get\+\_\+species\+\_\+not\+\_\+improving\+\_\+count} ()
+\item 
+\mbox{\Hypertarget{class_species_aa2ee080743b2d5ee89f156482736d704}\label{class_species_aa2ee080743b2d5ee89f156482736d704}} 
+void {\bfseries set\+\_\+species\+\_\+not\+\_\+improving\+\_\+count} (int32\+\_\+t count)
+\end{DoxyCompactItemize}
+\doxysubsection*{Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{class_species_a2e22624d59864dbecd5ee16103b458bd}\label{class_species_a2e22624d59864dbecd5ee16103b458bd}} 
+int32\+\_\+t \mbox{\hyperlink{class_species_a2e22624d59864dbecd5ee16103b458bd}{id}}
+\begin{DoxyCompactList}\small\item\em An integer ID for this species. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{class_species_a995da794f2f4a8b8b314d3d402875d5b}\label{class_species_a995da794f2f4a8b8b314d3d402875d5b}} 
+\textbf{ vector}$<$ int32\+\_\+t $>$ {\bfseries inserted\+\_\+genome\+\_\+id}
+\item 
+\mbox{\Hypertarget{class_species_a6b156c1f48620bc39bc9efe6c9324e81}\label{class_species_a6b156c1f48620bc39bc9efe6c9324e81}} 
+\textbf{ vector}$<$ \mbox{\hyperlink{class_r_n_n___genome}{R\+N\+N\+\_\+\+Genome}} $\ast$ $>$ \mbox{\hyperlink{class_species_a6b156c1f48620bc39bc9efe6c9324e81}{genomes}}
+\begin{DoxyCompactList}\small\item\em The genomes on this species, stored in sorted order best (front) to worst (back). \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{class_species_a5b23e228631a99dadd9602b46324a20e}\label{class_species_a5b23e228631a99dadd9602b46324a20e}} 
+int32\+\_\+t {\bfseries species\+\_\+not\+\_\+improving\+\_\+count}
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Member Function Documentation}
+\mbox{\Hypertarget{class_species_aac66b182441d124023b4df1167c7bc35}\label{class_species_aac66b182441d124023b4df1167c7bc35}} 
+\index{Species@{Species}!contains@{contains}}
+\index{contains@{contains}!Species@{Species}}
+\doxysubsubsection{\texorpdfstring{contains()}{contains()}}
+{\footnotesize\ttfamily int32\+\_\+t Species\+::contains (\begin{DoxyParamCaption}\item[{\mbox{\hyperlink{class_r_n_n___genome}{R\+N\+N\+\_\+\+Genome}} $\ast$}]{genome }\end{DoxyParamCaption})}
+
+
+
+Checks to see if a genome already exists in the island, using the R\+N\+N\+\_\+\+Genome\+::equals method (which checks to see if all edges and nodes are the same, but not necessarily weights). 
+
+\begin{DoxyReturn}{Returns}
+the index in the island of the duplicate genome, -\/1 otherwise. 
+\end{DoxyReturn}
+\mbox{\Hypertarget{class_species_add70418d8b64a815998e66c89824d646}\label{class_species_add70418d8b64a815998e66c89824d646}} 
+\index{Species@{Species}!copy\_random\_genome@{copy\_random\_genome}}
+\index{copy\_random\_genome@{copy\_random\_genome}!Species@{Species}}
+\doxysubsubsection{\texorpdfstring{copy\_random\_genome()}{copy\_random\_genome()}}
+{\footnotesize\ttfamily void Species\+::copy\+\_\+random\+\_\+genome (\begin{DoxyParamCaption}\item[{\textbf{ uniform\+\_\+real\+\_\+distribution}$<$ double $>$ \&}]{rng\+\_\+0\+\_\+1,  }\item[{\textbf{ minstd\+\_\+rand0} \&}]{generator,  }\item[{\mbox{\hyperlink{class_r_n_n___genome}{R\+N\+N\+\_\+\+Genome}} $\ast$$\ast$}]{genome }\end{DoxyParamCaption})}
+
+
+
+Selects a genome from the island at random and returns a copy of it. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em rng\+\_\+0\+\_\+1} & is the random number distribution that generates random numbers between 0 (inclusive) and 1 (non=inclusive). \\
+\hline
+{\em generator} & is the random number generator \\
+\hline
+{\em genome} & will be the copied genome, an addresss to a pointer needs to be passed. \\
+\hline
+\end{DoxyParams}
+\mbox{\Hypertarget{class_species_a1f3a1b23040cc266a8c9e49436f0c8a7}\label{class_species_a1f3a1b23040cc266a8c9e49436f0c8a7}} 
+\index{Species@{Species}!copy\_two\_random\_genomes@{copy\_two\_random\_genomes}}
+\index{copy\_two\_random\_genomes@{copy\_two\_random\_genomes}!Species@{Species}}
+\doxysubsubsection{\texorpdfstring{copy\_two\_random\_genomes()}{copy\_two\_random\_genomes()}}
+{\footnotesize\ttfamily void Species\+::copy\+\_\+two\+\_\+random\+\_\+genomes (\begin{DoxyParamCaption}\item[{\textbf{ uniform\+\_\+real\+\_\+distribution}$<$ double $>$ \&}]{rng\+\_\+0\+\_\+1,  }\item[{\textbf{ minstd\+\_\+rand0} \&}]{generator,  }\item[{\mbox{\hyperlink{class_r_n_n___genome}{R\+N\+N\+\_\+\+Genome}} $\ast$$\ast$}]{genome1,  }\item[{\mbox{\hyperlink{class_r_n_n___genome}{R\+N\+N\+\_\+\+Genome}} $\ast$$\ast$}]{genome2 }\end{DoxyParamCaption})}
+
+
+
+Selects two different genomes from the island at random and returns copies of them. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em rng\+\_\+0\+\_\+1} & is the random number distribution that generates random numbers between 0 (inclusive) and 1 (non=inclusive). \\
+\hline
+{\em generator} & is the random number generator \\
+\hline
+{\em genome1} & will be the first copied genome, an addresss to a pointer needs to be passed. \\
+\hline
+{\em genome2} & will be the second copied genome, an addresss to a pointer needs to be passed. \\
+\hline
+\end{DoxyParams}
+\mbox{\Hypertarget{class_species_a2e3034b48d9ed1f263128ffc8ca3a295}\label{class_species_a2e3034b48d9ed1f263128ffc8ca3a295}} 
+\index{Species@{Species}!get\_best\_fitness@{get\_best\_fitness}}
+\index{get\_best\_fitness@{get\_best\_fitness}!Species@{Species}}
+\doxysubsubsection{\texorpdfstring{get\_best\_fitness()}{get\_best\_fitness()}}
+{\footnotesize\ttfamily double Species\+::get\+\_\+best\+\_\+fitness (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+Returns the fitness of the best genome in the island. 
+
+\begin{DoxyReturn}{Returns}
+the best fitness of the island 
+\end{DoxyReturn}
+\mbox{\Hypertarget{class_species_a01dcea3ec17810b46167e751b2e6f4cf}\label{class_species_a01dcea3ec17810b46167e751b2e6f4cf}} 
+\index{Species@{Species}!get\_best\_genome@{get\_best\_genome}}
+\index{get\_best\_genome@{get\_best\_genome}!Species@{Species}}
+\doxysubsubsection{\texorpdfstring{get\_best\_genome()}{get\_best\_genome()}}
+{\footnotesize\ttfamily \mbox{\hyperlink{class_r_n_n___genome}{R\+N\+N\+\_\+\+Genome}} $\ast$ Species\+::get\+\_\+best\+\_\+genome (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+Returns the best genomme in the island. 
+
+\begin{DoxyReturn}{Returns}
+the best genome in the island 
+\end{DoxyReturn}
+\mbox{\Hypertarget{class_species_afceb50adb6350b2576e897c30380fee5}\label{class_species_afceb50adb6350b2576e897c30380fee5}} 
+\index{Species@{Species}!get\_random\_genome@{get\_random\_genome}}
+\index{get\_random\_genome@{get\_random\_genome}!Species@{Species}}
+\doxysubsubsection{\texorpdfstring{get\_random\_genome()}{get\_random\_genome()}}
+{\footnotesize\ttfamily \mbox{\hyperlink{class_r_n_n___genome}{R\+N\+N\+\_\+\+Genome}} $\ast$ Species\+::get\+\_\+random\+\_\+genome (\begin{DoxyParamCaption}\item[{\textbf{ uniform\+\_\+real\+\_\+distribution}$<$ double $>$ \&}]{rng\+\_\+0\+\_\+1,  }\item[{\textbf{ minstd\+\_\+rand0} \&}]{generator }\end{DoxyParamCaption})}
+
+
+
+Returns the best genomme in the island. 
+
+\begin{DoxyReturn}{Returns}
+the best genome in the island 
+\end{DoxyReturn}
+\mbox{\Hypertarget{class_species_a10669846e7646b47696d90838e379a94}\label{class_species_a10669846e7646b47696d90838e379a94}} 
+\index{Species@{Species}!get\_worst\_fitness@{get\_worst\_fitness}}
+\index{get\_worst\_fitness@{get\_worst\_fitness}!Species@{Species}}
+\doxysubsubsection{\texorpdfstring{get\_worst\_fitness()}{get\_worst\_fitness()}}
+{\footnotesize\ttfamily double Species\+::get\+\_\+worst\+\_\+fitness (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+Returns the fitness of the worst genome in the island. 
+
+\begin{DoxyReturn}{Returns}
+the worst fitness of the island 
+\end{DoxyReturn}
+\mbox{\Hypertarget{class_species_a0a224a20baa5eb5055dada490c738d30}\label{class_species_a0a224a20baa5eb5055dada490c738d30}} 
+\index{Species@{Species}!get\_worst\_genome@{get\_worst\_genome}}
+\index{get\_worst\_genome@{get\_worst\_genome}!Species@{Species}}
+\doxysubsubsection{\texorpdfstring{get\_worst\_genome()}{get\_worst\_genome()}}
+{\footnotesize\ttfamily \mbox{\hyperlink{class_r_n_n___genome}{R\+N\+N\+\_\+\+Genome}} $\ast$ Species\+::get\+\_\+worst\+\_\+genome (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+Returns the worst genomme in the island. 
+
+\begin{DoxyReturn}{Returns}
+the worst genome in the island 
+\end{DoxyReturn}
+\mbox{\Hypertarget{class_species_a459a9676c5c86837233c6cc4c3843475}\label{class_species_a459a9676c5c86837233c6cc4c3843475}} 
+\index{Species@{Species}!insert\_genome@{insert\_genome}}
+\index{insert\_genome@{insert\_genome}!Species@{Species}}
+\doxysubsubsection{\texorpdfstring{insert\_genome()}{insert\_genome()}}
+{\footnotesize\ttfamily int32\+\_\+t Species\+::insert\+\_\+genome (\begin{DoxyParamCaption}\item[{\mbox{\hyperlink{class_r_n_n___genome}{R\+N\+N\+\_\+\+Genome}} $\ast$}]{genome }\end{DoxyParamCaption})}
+
+
+
+Inserts a genome into the island. 
+
+Genomes are inserted in best to worst order genomes\mbox{[}0\mbox{]} will have the best fitness and genomes\mbox{[}size -\/ 1\mbox{]} will have the worst.
+
+
+\begin{DoxyParams}{Parameters}
+{\em genome} & is the genome to be inserted. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+-\/1 if not inserted, otherwise the index it was inserted at 
+\end{DoxyReturn}
+\mbox{\Hypertarget{class_species_a2e9e0780d547c253c8532b5866b7bd4d}\label{class_species_a2e9e0780d547c253c8532b5866b7bd4d}} 
+\index{Species@{Species}!print@{print}}
+\index{print@{print}!Species@{Species}}
+\doxysubsubsection{\texorpdfstring{print()}{print()}}
+{\footnotesize\ttfamily void Species\+::print (\begin{DoxyParamCaption}\item[{\textbf{ string}}]{indent = {\ttfamily \char`\"{}\char`\"{}} }\end{DoxyParamCaption})}
+
+
+
+Prints out the state of this island. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em indent} & is how much to indent what is printed out \\
+\hline
+\end{DoxyParams}
+\mbox{\Hypertarget{class_species_af9978e8876f3d43c5238225ad7b8de34}\label{class_species_af9978e8876f3d43c5238225ad7b8de34}} 
+\index{Species@{Species}!size@{size}}
+\index{size@{size}!Species@{Species}}
+\doxysubsubsection{\texorpdfstring{size()}{size()}}
+{\footnotesize\ttfamily int32\+\_\+t Species\+::size (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+Returns the size of the island. 
+
+\begin{DoxyReturn}{Returns}
+the number of genomes in this island. 
+\end{DoxyReturn}
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+rnn/species.\+hxx\item 
+rnn/species.\+cxx\end{DoxyCompactItemize}

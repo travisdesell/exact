@@ -23,27 +23,49 @@ using std::make_pair;
 class ENAS_DAG_Node : public RNN_Node_Interface{
 	private:
 		
-		// starting node 0
+		/**
+         * Weight of the start node in the memory cell.
+         */
 		double rw;
+		/**
+         * Weight of the start node in the memory cell.
+         */
 		double zw;
 		
-		// weights for other nodes
+
+		/**
+         * Weights of the subseqeuent nodes in topological order the memory cell.
+         */
 		vector<double> weights;
 
 
-		// gradients of starting node 0
+		/**
+         * Gradient of the weight of the start node in the memory cell.
+         */
 		vector<double> d_zw;
+		/**
+         * Gradient of the weight of the start node in the memory cell.
+         */
 		vector<double> d_rw;
 
-		// gradients of other nodes 
+		/**
+         * Gradient of the  weights of the other nodes in the memory cell
+         */ 
 		vector<vector<double>> d_weights;
 		
-		// gradient of prev output
+		/**
+         * Gradient of the previous output i.e. t-1 in the memory cell.
+         */
 		vector<double> d_h_prev;
 
-		// output of edge between node with weight wj from node with weight wi 	
+		/**
+         * Outputs of the nodes in the memory cell connecting with weight wj from node with weight wi.
+         */
 		vector<vector<double>> Nodes;
-		// derivative of edge between node with weight wj from node with weight wi 	
+		
+		/**
+         * Derivative of the nodes in the memory cell connecting with weight wj from node with weight wi.
+         */ 	
 		vector<vector<double>> l_Nodes;
 
 		
@@ -59,10 +81,44 @@ class ENAS_DAG_Node : public RNN_Node_Interface{
         void initialize_uniform_random(minstd_rand0 &generator, uniform_real_distribution<double> &rng);
 
 
+        /**
+        *   Gives the gradients in essence the deriviative  of the weights in the memory cell in  the network.    
+        *   
+        *   \param gradient_name in the weight name.
+        *   
+        *   \return gradient. 
+        */
         double get_gradient(string gradient_name);
+        
+        /**
+        *   Gives the gradients in essence the deriviative  of the weights in the memory cell in  the network.    
+        *   
+        *   \param gradient_name in the weight name.
+        *   
+        * 	prints the gradient. 
+        */
         void print_gradient(string gradient_name);
 
+
+        /**
+        *   Gives the activations of the node in the memory cell in the network.    
+        *   
+        *   \param value is  the output of the node after multiplying weights
+        *   \param act_operator is the actiation type : sigmoid, tanh, swish, identity
+        *   
+        *   \return output of the node after applying activation
+        */
         double activation(double value, int act_operator);
+        
+        /**
+        *   Gives the activations derviative of the node in the memory cell in the network.    
+        *   
+        *   \param input is the input of the node before multiplying weights
+        *   \param value is  the output of the node after multiplying weights
+        *   \param act_operator is the actiation type : sigmoid, tanh, swish, identity
+        *   
+        *   \return output derivative of the node after applying activation
+        */
         double activation_derivative(double value, double input, int act_operator);
 
         void input_fired(int time, double incoming_output);

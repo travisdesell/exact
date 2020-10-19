@@ -1,0 +1,218 @@
+\hypertarget{class_e_n_a_s___d_a_g___node}{}\doxysection{E\+N\+A\+S\+\_\+\+D\+A\+G\+\_\+\+Node Class Reference}
+\label{class_e_n_a_s___d_a_g___node}\index{ENAS\_DAG\_Node@{ENAS\_DAG\_Node}}
+Inheritance diagram for E\+N\+A\+S\+\_\+\+D\+A\+G\+\_\+\+Node\+:\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[height=2.000000cm]{class_e_n_a_s___d_a_g___node}
+\end{center}
+\end{figure}
+\doxysubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{class_e_n_a_s___d_a_g___node_ad2e4167a9eef0cebb3204926e8f6631d}\label{class_e_n_a_s___d_a_g___node_ad2e4167a9eef0cebb3204926e8f6631d}} 
+{\bfseries E\+N\+A\+S\+\_\+\+D\+A\+G\+\_\+\+Node} (int \+\_\+innovation\+\_\+number, int \+\_\+type, double \+\_\+depth)
+\item 
+\mbox{\Hypertarget{class_e_n_a_s___d_a_g___node_a88d5ba425f633f19849d395e636d2d9d}\label{class_e_n_a_s___d_a_g___node_a88d5ba425f633f19849d395e636d2d9d}} 
+void {\bfseries initialize\+\_\+lamarckian} (\textbf{ minstd\+\_\+rand0} \&generator, \mbox{\hyperlink{class_normal_distribution}{Normal\+Distribution}} \&normal\+\_\+distribution, double mu, double sigma)
+\item 
+\mbox{\Hypertarget{class_e_n_a_s___d_a_g___node_aa5441589f008b822d9a67b9bda3f77d6}\label{class_e_n_a_s___d_a_g___node_aa5441589f008b822d9a67b9bda3f77d6}} 
+void {\bfseries initialize\+\_\+xavier} (\textbf{ minstd\+\_\+rand0} \&generator, \textbf{ uniform\+\_\+real\+\_\+distribution}$<$ double $>$ \&rng1\+\_\+1, double range)
+\item 
+\mbox{\Hypertarget{class_e_n_a_s___d_a_g___node_ac1807ef7a5ec4801f352564e675468d0}\label{class_e_n_a_s___d_a_g___node_ac1807ef7a5ec4801f352564e675468d0}} 
+void {\bfseries initialize\+\_\+kaiming} (\textbf{ minstd\+\_\+rand0} \&generator, \mbox{\hyperlink{class_normal_distribution}{Normal\+Distribution}} \&normal\+\_\+distribution, double range)
+\item 
+\mbox{\Hypertarget{class_e_n_a_s___d_a_g___node_ab3f1568013cb9e1e4f7543c7e8e82fd7}\label{class_e_n_a_s___d_a_g___node_ab3f1568013cb9e1e4f7543c7e8e82fd7}} 
+void {\bfseries initialize\+\_\+uniform\+\_\+random} (\textbf{ minstd\+\_\+rand0} \&generator, \textbf{ uniform\+\_\+real\+\_\+distribution}$<$ double $>$ \&rng)
+\item 
+double \mbox{\hyperlink{class_e_n_a_s___d_a_g___node_afac6a8241afd3cae5c8d7955e8518c59}{get\+\_\+gradient}} (\textbf{ string} gradient\+\_\+name)
+\begin{DoxyCompactList}\small\item\em Gives the gradients in essence the deriviative of the weights in the memory cell in the network. \end{DoxyCompactList}\item 
+void \mbox{\hyperlink{class_e_n_a_s___d_a_g___node_a0676683aa9a220611f4e99a8a44e6e96}{print\+\_\+gradient}} (\textbf{ string} gradient\+\_\+name)
+\begin{DoxyCompactList}\small\item\em Gives the gradients in essence the deriviative of the weights in the memory cell in the network. \end{DoxyCompactList}\item 
+double \mbox{\hyperlink{class_e_n_a_s___d_a_g___node_a58e17b40715e32a28a57c2ec34cd1997}{activation}} (double value, int act\+\_\+operator)
+\begin{DoxyCompactList}\small\item\em Gives the activations of the node in the memory cell in the network. \end{DoxyCompactList}\item 
+double \mbox{\hyperlink{class_e_n_a_s___d_a_g___node_ae73d6fdfcaa9f0ae60628e9529c4373d}{activation\+\_\+derivative}} (double value, double input, int act\+\_\+operator)
+\begin{DoxyCompactList}\small\item\em Gives the activations derviative of the node in the memory cell in the network. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{class_e_n_a_s___d_a_g___node_a4b43e0a43e9a6cfc5602571747bd2ee9}\label{class_e_n_a_s___d_a_g___node_a4b43e0a43e9a6cfc5602571747bd2ee9}} 
+void {\bfseries input\+\_\+fired} (int time, double incoming\+\_\+output)
+\item 
+\mbox{\Hypertarget{class_e_n_a_s___d_a_g___node_aaa7340e05d8634d6a51e4a8f7b76179a}\label{class_e_n_a_s___d_a_g___node_aaa7340e05d8634d6a51e4a8f7b76179a}} 
+void {\bfseries try\+\_\+update\+\_\+deltas} (int time)
+\item 
+\mbox{\Hypertarget{class_e_n_a_s___d_a_g___node_a575a87ce22d5db310f2d41022a0cdfb2}\label{class_e_n_a_s___d_a_g___node_a575a87ce22d5db310f2d41022a0cdfb2}} 
+void {\bfseries error\+\_\+fired} (int time, double error)
+\item 
+\mbox{\Hypertarget{class_e_n_a_s___d_a_g___node_a0383c06026dff9751fd5449a845508bf}\label{class_e_n_a_s___d_a_g___node_a0383c06026dff9751fd5449a845508bf}} 
+void {\bfseries output\+\_\+fired} (int time, double delta)
+\item 
+\mbox{\Hypertarget{class_e_n_a_s___d_a_g___node_a155c08c18ff6af0b5a828459b5e91534}\label{class_e_n_a_s___d_a_g___node_a155c08c18ff6af0b5a828459b5e91534}} 
+uint32\+\_\+t {\bfseries get\+\_\+number\+\_\+weights} () const
+\item 
+\mbox{\Hypertarget{class_e_n_a_s___d_a_g___node_a0cbec5c4e3155dcd89a46d780afe6e71}\label{class_e_n_a_s___d_a_g___node_a0cbec5c4e3155dcd89a46d780afe6e71}} 
+void {\bfseries get\+\_\+weights} (\textbf{ vector}$<$ double $>$ \&parameters) const
+\item 
+\mbox{\Hypertarget{class_e_n_a_s___d_a_g___node_a4616ae3f60ecb167ea02ed781d32dc09}\label{class_e_n_a_s___d_a_g___node_a4616ae3f60ecb167ea02ed781d32dc09}} 
+void {\bfseries set\+\_\+weights} (const \textbf{ vector}$<$ double $>$ \&parameters)
+\item 
+\mbox{\Hypertarget{class_e_n_a_s___d_a_g___node_a2765dfaa7273f9da0fccdda0d9358311}\label{class_e_n_a_s___d_a_g___node_a2765dfaa7273f9da0fccdda0d9358311}} 
+void {\bfseries get\+\_\+weights} (uint32\+\_\+t \&offset, \textbf{ vector}$<$ double $>$ \&parameters) const
+\item 
+\mbox{\Hypertarget{class_e_n_a_s___d_a_g___node_acc6c518fc61f9c8b9e35972b88022176}\label{class_e_n_a_s___d_a_g___node_acc6c518fc61f9c8b9e35972b88022176}} 
+void {\bfseries set\+\_\+weights} (uint32\+\_\+t \&offset, const \textbf{ vector}$<$ double $>$ \&parameters)
+\item 
+\mbox{\Hypertarget{class_e_n_a_s___d_a_g___node_a7569014230b09b47e3307ad371e78a10}\label{class_e_n_a_s___d_a_g___node_a7569014230b09b47e3307ad371e78a10}} 
+void {\bfseries get\+\_\+gradients} (\textbf{ vector}$<$ double $>$ \&gradients)
+\item 
+\mbox{\Hypertarget{class_e_n_a_s___d_a_g___node_a0e3e26638335941ec7b174990218330e}\label{class_e_n_a_s___d_a_g___node_a0e3e26638335941ec7b174990218330e}} 
+void {\bfseries reset} (int \+\_\+series\+\_\+length)
+\item 
+\mbox{\Hypertarget{class_e_n_a_s___d_a_g___node_ab84b22eaca81b3f627c7022aac03576f}\label{class_e_n_a_s___d_a_g___node_ab84b22eaca81b3f627c7022aac03576f}} 
+void {\bfseries write\+\_\+to\+\_\+stream} (\textbf{ ostream} \&out)
+\item 
+\mbox{\Hypertarget{class_e_n_a_s___d_a_g___node_aea98ee85dae02da8fa3ecb5bc2b4f895}\label{class_e_n_a_s___d_a_g___node_aea98ee85dae02da8fa3ecb5bc2b4f895}} 
+\mbox{\hyperlink{class_r_n_n___node___interface}{R\+N\+N\+\_\+\+Node\+\_\+\+Interface}} $\ast$ {\bfseries copy} () const
+\end{DoxyCompactItemize}
+\doxysubsection*{Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{class_e_n_a_s___d_a_g___node_a96691f6c8700d1443045691b435db9b4}\label{class_e_n_a_s___d_a_g___node_a96691f6c8700d1443045691b435db9b4}} 
+double \mbox{\hyperlink{class_e_n_a_s___d_a_g___node_a96691f6c8700d1443045691b435db9b4}{rw}}
+\begin{DoxyCompactList}\small\item\em Weight of the start node in the memory cell. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{class_e_n_a_s___d_a_g___node_a543c626068b87030fb140a4ebeb38f30}\label{class_e_n_a_s___d_a_g___node_a543c626068b87030fb140a4ebeb38f30}} 
+double \mbox{\hyperlink{class_e_n_a_s___d_a_g___node_a543c626068b87030fb140a4ebeb38f30}{zw}}
+\begin{DoxyCompactList}\small\item\em Weight of the start node in the memory cell. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{class_e_n_a_s___d_a_g___node_a169c584563029fdec7d51390c6bef838}\label{class_e_n_a_s___d_a_g___node_a169c584563029fdec7d51390c6bef838}} 
+\textbf{ vector}$<$ double $>$ \mbox{\hyperlink{class_e_n_a_s___d_a_g___node_a169c584563029fdec7d51390c6bef838}{weights}}
+\begin{DoxyCompactList}\small\item\em Weights of the subseqeuent nodes in topological order the memory cell. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{class_e_n_a_s___d_a_g___node_a6df39cdee9de29977d989383c312afeb}\label{class_e_n_a_s___d_a_g___node_a6df39cdee9de29977d989383c312afeb}} 
+\textbf{ vector}$<$ double $>$ \mbox{\hyperlink{class_e_n_a_s___d_a_g___node_a6df39cdee9de29977d989383c312afeb}{d\+\_\+zw}}
+\begin{DoxyCompactList}\small\item\em Gradient of the weight of the start node in the memory cell. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{class_e_n_a_s___d_a_g___node_a4c2c49ca7aed21901ad5d79d3f921459}\label{class_e_n_a_s___d_a_g___node_a4c2c49ca7aed21901ad5d79d3f921459}} 
+\textbf{ vector}$<$ double $>$ \mbox{\hyperlink{class_e_n_a_s___d_a_g___node_a4c2c49ca7aed21901ad5d79d3f921459}{d\+\_\+rw}}
+\begin{DoxyCompactList}\small\item\em Gradient of the weight of the start node in the memory cell. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{class_e_n_a_s___d_a_g___node_a127cf43bd1e8014d9fb951cf26c9b737}\label{class_e_n_a_s___d_a_g___node_a127cf43bd1e8014d9fb951cf26c9b737}} 
+\textbf{ vector}$<$ \textbf{ vector}$<$ double $>$ $>$ \mbox{\hyperlink{class_e_n_a_s___d_a_g___node_a127cf43bd1e8014d9fb951cf26c9b737}{d\+\_\+weights}}
+\begin{DoxyCompactList}\small\item\em Gradient of the weights of the other nodes in the memory cell. \end{DoxyCompactList}\item 
+\textbf{ vector}$<$ double $>$ \mbox{\hyperlink{class_e_n_a_s___d_a_g___node_a366df37adbb4bc2824846ef60b6707e3}{d\+\_\+h\+\_\+prev}}
+\begin{DoxyCompactList}\small\item\em Gradient of the previous output i.\+e. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{class_e_n_a_s___d_a_g___node_ae96b8e1d3d379d097aff2d879ca25fdb}\label{class_e_n_a_s___d_a_g___node_ae96b8e1d3d379d097aff2d879ca25fdb}} 
+\textbf{ vector}$<$ \textbf{ vector}$<$ double $>$ $>$ \mbox{\hyperlink{class_e_n_a_s___d_a_g___node_ae96b8e1d3d379d097aff2d879ca25fdb}{Nodes}}
+\begin{DoxyCompactList}\small\item\em Outputs of the nodes in the memory cell connecting with weight wj from node with weight wi. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{class_e_n_a_s___d_a_g___node_a0b7939ba90a6db0ba2dda9731eefc38a}\label{class_e_n_a_s___d_a_g___node_a0b7939ba90a6db0ba2dda9731eefc38a}} 
+\textbf{ vector}$<$ \textbf{ vector}$<$ double $>$ $>$ \mbox{\hyperlink{class_e_n_a_s___d_a_g___node_a0b7939ba90a6db0ba2dda9731eefc38a}{l\+\_\+\+Nodes}}
+\begin{DoxyCompactList}\small\item\em Derivative of the nodes in the memory cell connecting with weight wj from node with weight wi. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\doxysubsection*{Friends}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{class_e_n_a_s___d_a_g___node_a6ed93c885e63e64a8aa0ab2b7f637f0e}\label{class_e_n_a_s___d_a_g___node_a6ed93c885e63e64a8aa0ab2b7f637f0e}} 
+class {\bfseries R\+N\+N\+\_\+\+Edge}
+\end{DoxyCompactItemize}
+\doxysubsection*{Additional Inherited Members}
+
+
+\doxysubsection{Member Function Documentation}
+\mbox{\Hypertarget{class_e_n_a_s___d_a_g___node_a58e17b40715e32a28a57c2ec34cd1997}\label{class_e_n_a_s___d_a_g___node_a58e17b40715e32a28a57c2ec34cd1997}} 
+\index{ENAS\_DAG\_Node@{ENAS\_DAG\_Node}!activation@{activation}}
+\index{activation@{activation}!ENAS\_DAG\_Node@{ENAS\_DAG\_Node}}
+\doxysubsubsection{\texorpdfstring{activation()}{activation()}}
+{\footnotesize\ttfamily double E\+N\+A\+S\+\_\+\+D\+A\+G\+\_\+\+Node\+::activation (\begin{DoxyParamCaption}\item[{double}]{value,  }\item[{int}]{act\+\_\+operator }\end{DoxyParamCaption})}
+
+
+
+Gives the activations of the node in the memory cell in the network. 
+
+~\newline
+
+
+
+\begin{DoxyParams}{Parameters}
+{\em value} & is the output of the node after multiplying weights \\
+\hline
+{\em act\+\_\+operator} & is the actiation type \+: sigmoid, tanh, swish, identity\\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+output of the node after applying activation 
+\end{DoxyReturn}
+\mbox{\Hypertarget{class_e_n_a_s___d_a_g___node_ae73d6fdfcaa9f0ae60628e9529c4373d}\label{class_e_n_a_s___d_a_g___node_ae73d6fdfcaa9f0ae60628e9529c4373d}} 
+\index{ENAS\_DAG\_Node@{ENAS\_DAG\_Node}!activation\_derivative@{activation\_derivative}}
+\index{activation\_derivative@{activation\_derivative}!ENAS\_DAG\_Node@{ENAS\_DAG\_Node}}
+\doxysubsubsection{\texorpdfstring{activation\_derivative()}{activation\_derivative()}}
+{\footnotesize\ttfamily double E\+N\+A\+S\+\_\+\+D\+A\+G\+\_\+\+Node\+::activation\+\_\+derivative (\begin{DoxyParamCaption}\item[{double}]{value,  }\item[{double}]{input,  }\item[{int}]{act\+\_\+operator }\end{DoxyParamCaption})}
+
+
+
+Gives the activations derviative of the node in the memory cell in the network. 
+
+~\newline
+
+
+
+\begin{DoxyParams}{Parameters}
+{\em input} & is the input of the node before multiplying weights \\
+\hline
+{\em value} & is the output of the node after multiplying weights \\
+\hline
+{\em act\+\_\+operator} & is the actiation type \+: sigmoid, tanh, swish, identity\\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+output derivative of the node after applying activation 
+\end{DoxyReturn}
+\mbox{\Hypertarget{class_e_n_a_s___d_a_g___node_afac6a8241afd3cae5c8d7955e8518c59}\label{class_e_n_a_s___d_a_g___node_afac6a8241afd3cae5c8d7955e8518c59}} 
+\index{ENAS\_DAG\_Node@{ENAS\_DAG\_Node}!get\_gradient@{get\_gradient}}
+\index{get\_gradient@{get\_gradient}!ENAS\_DAG\_Node@{ENAS\_DAG\_Node}}
+\doxysubsubsection{\texorpdfstring{get\_gradient()}{get\_gradient()}}
+{\footnotesize\ttfamily double E\+N\+A\+S\+\_\+\+D\+A\+G\+\_\+\+Node\+::get\+\_\+gradient (\begin{DoxyParamCaption}\item[{\textbf{ string}}]{gradient\+\_\+name }\end{DoxyParamCaption})}
+
+
+
+Gives the gradients in essence the deriviative of the weights in the memory cell in the network. 
+
+~\newline
+
+
+
+\begin{DoxyParams}{Parameters}
+{\em gradient\+\_\+name} & in the weight name.\\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+gradient. 
+\end{DoxyReturn}
+\mbox{\Hypertarget{class_e_n_a_s___d_a_g___node_a0676683aa9a220611f4e99a8a44e6e96}\label{class_e_n_a_s___d_a_g___node_a0676683aa9a220611f4e99a8a44e6e96}} 
+\index{ENAS\_DAG\_Node@{ENAS\_DAG\_Node}!print\_gradient@{print\_gradient}}
+\index{print\_gradient@{print\_gradient}!ENAS\_DAG\_Node@{ENAS\_DAG\_Node}}
+\doxysubsubsection{\texorpdfstring{print\_gradient()}{print\_gradient()}}
+{\footnotesize\ttfamily void E\+N\+A\+S\+\_\+\+D\+A\+G\+\_\+\+Node\+::print\+\_\+gradient (\begin{DoxyParamCaption}\item[{\textbf{ string}}]{gradient\+\_\+name }\end{DoxyParamCaption})}
+
+
+
+Gives the gradients in essence the deriviative of the weights in the memory cell in the network. 
+
+~\newline
+
+
+
+\begin{DoxyParams}{Parameters}
+{\em gradient\+\_\+name} & in the weight name.\\
+\hline
+\end{DoxyParams}
+prints the gradient. 
+
+\doxysubsection{Member Data Documentation}
+\mbox{\Hypertarget{class_e_n_a_s___d_a_g___node_a366df37adbb4bc2824846ef60b6707e3}\label{class_e_n_a_s___d_a_g___node_a366df37adbb4bc2824846ef60b6707e3}} 
+\index{ENAS\_DAG\_Node@{ENAS\_DAG\_Node}!d\_h\_prev@{d\_h\_prev}}
+\index{d\_h\_prev@{d\_h\_prev}!ENAS\_DAG\_Node@{ENAS\_DAG\_Node}}
+\doxysubsubsection{\texorpdfstring{d\_h\_prev}{d\_h\_prev}}
+{\footnotesize\ttfamily \textbf{ vector}$<$double$>$ E\+N\+A\+S\+\_\+\+D\+A\+G\+\_\+\+Node\+::d\+\_\+h\+\_\+prev\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+Gradient of the previous output i.\+e. 
+
+t-\/1 in the memory cell. 
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+rnn/enas\+\_\+dag\+\_\+node.\+hxx\item 
+rnn/enas\+\_\+dag\+\_\+node.\+cxx\end{DoxyCompactItemize}

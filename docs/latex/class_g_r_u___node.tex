@@ -1,0 +1,162 @@
+\hypertarget{class_g_r_u___node}{}\doxysection{G\+R\+U\+\_\+\+Node Class Reference}
+\label{class_g_r_u___node}\index{GRU\_Node@{GRU\_Node}}
+Inheritance diagram for G\+R\+U\+\_\+\+Node\+:\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[height=2.000000cm]{class_g_r_u___node}
+\end{center}
+\end{figure}
+\doxysubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{class_g_r_u___node_a9290627eb7f65f0a817166fc9a83deaf}\label{class_g_r_u___node_a9290627eb7f65f0a817166fc9a83deaf}} 
+{\bfseries G\+R\+U\+\_\+\+Node} (int \+\_\+innovation\+\_\+number, int \+\_\+type, double \+\_\+depth)
+\item 
+\mbox{\Hypertarget{class_g_r_u___node_a6276428b8f55291b39827fad7c13c568}\label{class_g_r_u___node_a6276428b8f55291b39827fad7c13c568}} 
+void {\bfseries initialize\+\_\+lamarckian} (\textbf{ minstd\+\_\+rand0} \&generator, \mbox{\hyperlink{class_normal_distribution}{Normal\+Distribution}} \&normal\+\_\+distribution, double mu, double sigma)
+\item 
+\mbox{\Hypertarget{class_g_r_u___node_a59a18ab71467975aad4f6b50fc8c033c}\label{class_g_r_u___node_a59a18ab71467975aad4f6b50fc8c033c}} 
+void {\bfseries initialize\+\_\+xavier} (\textbf{ minstd\+\_\+rand0} \&generator, \textbf{ uniform\+\_\+real\+\_\+distribution}$<$ double $>$ \&rng1\+\_\+1, double range)
+\item 
+\mbox{\Hypertarget{class_g_r_u___node_a4df65c67bf73824f7c0b4a5f141c2925}\label{class_g_r_u___node_a4df65c67bf73824f7c0b4a5f141c2925}} 
+void {\bfseries initialize\+\_\+kaiming} (\textbf{ minstd\+\_\+rand0} \&generator, \mbox{\hyperlink{class_normal_distribution}{Normal\+Distribution}} \&normal\+\_\+distribution, double range)
+\item 
+\mbox{\Hypertarget{class_g_r_u___node_a8acb6dac67ef6265dce246020c505092}\label{class_g_r_u___node_a8acb6dac67ef6265dce246020c505092}} 
+void {\bfseries initialize\+\_\+uniform\+\_\+random} (\textbf{ minstd\+\_\+rand0} \&generator, \textbf{ uniform\+\_\+real\+\_\+distribution}$<$ double $>$ \&rng)
+\item 
+\mbox{\Hypertarget{class_g_r_u___node_a7d2c49b8a815898f193ed62d24cc059a}\label{class_g_r_u___node_a7d2c49b8a815898f193ed62d24cc059a}} 
+double {\bfseries get\+\_\+gradient} (\textbf{ string} gradient\+\_\+name)
+\item 
+\mbox{\Hypertarget{class_g_r_u___node_a750f2894c1e9cde9c2e4cf1799950dbd}\label{class_g_r_u___node_a750f2894c1e9cde9c2e4cf1799950dbd}} 
+void {\bfseries print\+\_\+gradient} (\textbf{ string} gradient\+\_\+name)
+\item 
+\mbox{\Hypertarget{class_g_r_u___node_a2626d54382771db603ee92bdb0edb623}\label{class_g_r_u___node_a2626d54382771db603ee92bdb0edb623}} 
+void {\bfseries input\+\_\+fired} (int time, double incoming\+\_\+output)
+\item 
+\mbox{\Hypertarget{class_g_r_u___node_a4741a9a2b0524e5eeb4da5588bfa4878}\label{class_g_r_u___node_a4741a9a2b0524e5eeb4da5588bfa4878}} 
+void {\bfseries try\+\_\+update\+\_\+deltas} (int time)
+\item 
+\mbox{\Hypertarget{class_g_r_u___node_a4c088bf430f95e1e1a309ad49e4d0e88}\label{class_g_r_u___node_a4c088bf430f95e1e1a309ad49e4d0e88}} 
+void {\bfseries error\+\_\+fired} (int time, double error)
+\item 
+\mbox{\Hypertarget{class_g_r_u___node_af8a4d1b2158cf5abd5ff0fd19cdb8f52}\label{class_g_r_u___node_af8a4d1b2158cf5abd5ff0fd19cdb8f52}} 
+void {\bfseries output\+\_\+fired} (int time, double delta)
+\item 
+\mbox{\Hypertarget{class_g_r_u___node_a8c618720c3ebd3220698495867c7918e}\label{class_g_r_u___node_a8c618720c3ebd3220698495867c7918e}} 
+uint32\+\_\+t {\bfseries get\+\_\+number\+\_\+weights} () const
+\item 
+\mbox{\Hypertarget{class_g_r_u___node_acff5bfeb130f64e47ac92f1f6f35ea68}\label{class_g_r_u___node_acff5bfeb130f64e47ac92f1f6f35ea68}} 
+void {\bfseries get\+\_\+weights} (\textbf{ vector}$<$ double $>$ \&parameters) const
+\item 
+\mbox{\Hypertarget{class_g_r_u___node_a7a98506b58b829ef58531fd042ffecde}\label{class_g_r_u___node_a7a98506b58b829ef58531fd042ffecde}} 
+void {\bfseries set\+\_\+weights} (const \textbf{ vector}$<$ double $>$ \&parameters)
+\item 
+\mbox{\Hypertarget{class_g_r_u___node_ad80f886343ea7ce8474b07f82a4c90b7}\label{class_g_r_u___node_ad80f886343ea7ce8474b07f82a4c90b7}} 
+void {\bfseries get\+\_\+weights} (uint32\+\_\+t \&offset, \textbf{ vector}$<$ double $>$ \&parameters) const
+\item 
+\mbox{\Hypertarget{class_g_r_u___node_a2ed0b01e09a7f4b0fe40375b3a18e57b}\label{class_g_r_u___node_a2ed0b01e09a7f4b0fe40375b3a18e57b}} 
+void {\bfseries set\+\_\+weights} (uint32\+\_\+t \&offset, const \textbf{ vector}$<$ double $>$ \&parameters)
+\item 
+\mbox{\Hypertarget{class_g_r_u___node_a875ecae1dfd8ca7a73260db90981f59f}\label{class_g_r_u___node_a875ecae1dfd8ca7a73260db90981f59f}} 
+void {\bfseries get\+\_\+gradients} (\textbf{ vector}$<$ double $>$ \&gradients)
+\item 
+\mbox{\Hypertarget{class_g_r_u___node_a4c99a90aafead390cfa5f28b49d103f5}\label{class_g_r_u___node_a4c99a90aafead390cfa5f28b49d103f5}} 
+void {\bfseries reset} (int \+\_\+series\+\_\+length)
+\item 
+\mbox{\Hypertarget{class_g_r_u___node_a17025c5da3d8f8a4b3852ebf51c1ec56}\label{class_g_r_u___node_a17025c5da3d8f8a4b3852ebf51c1ec56}} 
+void {\bfseries write\+\_\+to\+\_\+stream} (\textbf{ ostream} \&out)
+\item 
+\mbox{\Hypertarget{class_g_r_u___node_a8e6614d26cafdb1b54809194cf99039d}\label{class_g_r_u___node_a8e6614d26cafdb1b54809194cf99039d}} 
+\mbox{\hyperlink{class_r_n_n___node___interface}{R\+N\+N\+\_\+\+Node\+\_\+\+Interface}} $\ast$ {\bfseries copy} () const
+\end{DoxyCompactItemize}
+\doxysubsection*{Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{class_g_r_u___node_adfda8cf730509abc7be08aaa5eece7c8}\label{class_g_r_u___node_adfda8cf730509abc7be08aaa5eece7c8}} 
+double {\bfseries zw}
+\item 
+\mbox{\Hypertarget{class_g_r_u___node_a0681570d4c2eb97b148fc09652351c3b}\label{class_g_r_u___node_a0681570d4c2eb97b148fc09652351c3b}} 
+double {\bfseries zu}
+\item 
+\mbox{\Hypertarget{class_g_r_u___node_ae40e512f1fa08d0ac1d786ba0b9c4e1d}\label{class_g_r_u___node_ae40e512f1fa08d0ac1d786ba0b9c4e1d}} 
+double {\bfseries z\+\_\+bias}
+\item 
+\mbox{\Hypertarget{class_g_r_u___node_a7f83e2f0370545f9fa9fdeed2641663e}\label{class_g_r_u___node_a7f83e2f0370545f9fa9fdeed2641663e}} 
+double {\bfseries rw}
+\item 
+\mbox{\Hypertarget{class_g_r_u___node_a21d746b030090ad6cc58990af3f5c84b}\label{class_g_r_u___node_a21d746b030090ad6cc58990af3f5c84b}} 
+double {\bfseries ru}
+\item 
+\mbox{\Hypertarget{class_g_r_u___node_a88f13121e1bd3f6405dd1e351e74df32}\label{class_g_r_u___node_a88f13121e1bd3f6405dd1e351e74df32}} 
+double {\bfseries r\+\_\+bias}
+\item 
+\mbox{\Hypertarget{class_g_r_u___node_a92916dfb0c9a09c1d9b489a4b6d502f1}\label{class_g_r_u___node_a92916dfb0c9a09c1d9b489a4b6d502f1}} 
+double {\bfseries hw}
+\item 
+\mbox{\Hypertarget{class_g_r_u___node_a62fd634e0fdad504d25d79ddbf1e8c19}\label{class_g_r_u___node_a62fd634e0fdad504d25d79ddbf1e8c19}} 
+double {\bfseries hu}
+\item 
+\mbox{\Hypertarget{class_g_r_u___node_a213aa84800bae687954e45cb2d4ee740}\label{class_g_r_u___node_a213aa84800bae687954e45cb2d4ee740}} 
+double {\bfseries h\+\_\+bias}
+\item 
+\mbox{\Hypertarget{class_g_r_u___node_ae9c001b84a7e2bdb50be16b3a8d9b5cd}\label{class_g_r_u___node_ae9c001b84a7e2bdb50be16b3a8d9b5cd}} 
+\textbf{ vector}$<$ double $>$ {\bfseries d\+\_\+zw}
+\item 
+\mbox{\Hypertarget{class_g_r_u___node_a959cb5095ecfe19bbecf337bb2f6067c}\label{class_g_r_u___node_a959cb5095ecfe19bbecf337bb2f6067c}} 
+\textbf{ vector}$<$ double $>$ {\bfseries d\+\_\+zu}
+\item 
+\mbox{\Hypertarget{class_g_r_u___node_a3d5b01282977ff8c7d829d493746a018}\label{class_g_r_u___node_a3d5b01282977ff8c7d829d493746a018}} 
+\textbf{ vector}$<$ double $>$ {\bfseries d\+\_\+z\+\_\+bias}
+\item 
+\mbox{\Hypertarget{class_g_r_u___node_ac0a8249393c540d37e2a688e90297f93}\label{class_g_r_u___node_ac0a8249393c540d37e2a688e90297f93}} 
+\textbf{ vector}$<$ double $>$ {\bfseries d\+\_\+rw}
+\item 
+\mbox{\Hypertarget{class_g_r_u___node_a23ea806db494beac6d543b9c663ef983}\label{class_g_r_u___node_a23ea806db494beac6d543b9c663ef983}} 
+\textbf{ vector}$<$ double $>$ {\bfseries d\+\_\+ru}
+\item 
+\mbox{\Hypertarget{class_g_r_u___node_aa72325a1ebfe041b9c59f5d82b012d1c}\label{class_g_r_u___node_aa72325a1ebfe041b9c59f5d82b012d1c}} 
+\textbf{ vector}$<$ double $>$ {\bfseries d\+\_\+r\+\_\+bias}
+\item 
+\mbox{\Hypertarget{class_g_r_u___node_a0be3f045d49a8e5d0e49fa82aca34c27}\label{class_g_r_u___node_a0be3f045d49a8e5d0e49fa82aca34c27}} 
+\textbf{ vector}$<$ double $>$ {\bfseries d\+\_\+hw}
+\item 
+\mbox{\Hypertarget{class_g_r_u___node_a7120f96783cc01048a3ced5ed14cb328}\label{class_g_r_u___node_a7120f96783cc01048a3ced5ed14cb328}} 
+\textbf{ vector}$<$ double $>$ {\bfseries d\+\_\+hu}
+\item 
+\mbox{\Hypertarget{class_g_r_u___node_a80a58648994dcbfb96b0b08eb59af26c}\label{class_g_r_u___node_a80a58648994dcbfb96b0b08eb59af26c}} 
+\textbf{ vector}$<$ double $>$ {\bfseries d\+\_\+h\+\_\+bias}
+\item 
+\mbox{\Hypertarget{class_g_r_u___node_aee14707bf605402f11aa4c5d70f26064}\label{class_g_r_u___node_aee14707bf605402f11aa4c5d70f26064}} 
+\textbf{ vector}$<$ double $>$ {\bfseries d\+\_\+h\+\_\+prev}
+\item 
+\mbox{\Hypertarget{class_g_r_u___node_a1a07fb4eeb68aa877191a7fa84719a8c}\label{class_g_r_u___node_a1a07fb4eeb68aa877191a7fa84719a8c}} 
+\textbf{ vector}$<$ double $>$ {\bfseries z}
+\item 
+\mbox{\Hypertarget{class_g_r_u___node_a18dec99edc33a59b20bcfdb56f3f3b61}\label{class_g_r_u___node_a18dec99edc33a59b20bcfdb56f3f3b61}} 
+\textbf{ vector}$<$ double $>$ {\bfseries ld\+\_\+z}
+\item 
+\mbox{\Hypertarget{class_g_r_u___node_a7ce42080b2c04b8ba839c2b9247be546}\label{class_g_r_u___node_a7ce42080b2c04b8ba839c2b9247be546}} 
+\textbf{ vector}$<$ double $>$ {\bfseries r}
+\item 
+\mbox{\Hypertarget{class_g_r_u___node_aa91cab5d6d2d591df54de73fe828f61d}\label{class_g_r_u___node_aa91cab5d6d2d591df54de73fe828f61d}} 
+\textbf{ vector}$<$ double $>$ {\bfseries ld\+\_\+r}
+\item 
+\mbox{\Hypertarget{class_g_r_u___node_ab382c6061700a43df3d6a1ae1ef476b0}\label{class_g_r_u___node_ab382c6061700a43df3d6a1ae1ef476b0}} 
+\textbf{ vector}$<$ double $>$ {\bfseries h\+\_\+tanh}
+\item 
+\mbox{\Hypertarget{class_g_r_u___node_a2a820bf16d1e4f0853e56274eeec028f}\label{class_g_r_u___node_a2a820bf16d1e4f0853e56274eeec028f}} 
+\textbf{ vector}$<$ double $>$ {\bfseries ld\+\_\+h\+\_\+tanh}
+\end{DoxyCompactItemize}
+\doxysubsection*{Friends}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{class_g_r_u___node_a6ed93c885e63e64a8aa0ab2b7f637f0e}\label{class_g_r_u___node_a6ed93c885e63e64a8aa0ab2b7f637f0e}} 
+class {\bfseries R\+N\+N\+\_\+\+Edge}
+\end{DoxyCompactItemize}
+\doxysubsection*{Additional Inherited Members}
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+rnn/gru\+\_\+node.\+hxx\item 
+rnn/gru\+\_\+node.\+cxx\end{DoxyCompactItemize}

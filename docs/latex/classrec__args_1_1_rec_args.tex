@@ -1,0 +1,104 @@
+\hypertarget{classrec__args_1_1_rec_args}{}\doxysection{rec\+\_\+args.\+Rec\+Args Class Reference}
+\label{classrec__args_1_1_rec_args}\index{rec\_args.RecArgs@{rec\_args.RecArgs}}
+\doxysubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{classrec__args_1_1_rec_args_ae258306971ce88fe84711f2b45b25ce2}\label{classrec__args_1_1_rec_args_ae258306971ce88fe84711f2b45b25ce2}} 
+def {\bfseries \+\_\+\+\_\+init\+\_\+\+\_\+} (self, rec, filename)
+\item 
+\mbox{\Hypertarget{classrec__args_1_1_rec_args_adb2ba8e6bea883cedfe9734738288c67}\label{classrec__args_1_1_rec_args_adb2ba8e6bea883cedfe9734738288c67}} 
+def {\bfseries to\+\_\+args} (self)
+\end{DoxyCompactItemize}
+\doxysubsection*{Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{classrec__args_1_1_rec_args_ac2af995aff9e83dcc76135264391505f}\label{classrec__args_1_1_rec_args_ac2af995aff9e83dcc76135264391505f}} 
+{\bfseries c2a}
+\end{DoxyCompactItemize}
+\doxysubsection*{Static Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+dictionary {\bfseries C\+O\+N\+F\+I\+G\+\_\+\+O\+P\+T\+I\+O\+NS}
+\item 
+dictionary {\bfseries D\+E\+F\+A\+U\+L\+TS}
+\item 
+dictionary {\bfseries T\+Y\+P\+ES}
+\item 
+dictionary {\bfseries C\+O\+N\+S\+T\+R\+A\+I\+N\+TS}
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Member Data Documentation}
+\mbox{\Hypertarget{classrec__args_1_1_rec_args_a91b75b05d716ac2324963ebc39901b23}\label{classrec__args_1_1_rec_args_a91b75b05d716ac2324963ebc39901b23}} 
+\index{rec\_args.RecArgs@{rec\_args.RecArgs}!CONFIG\_OPTIONS@{CONFIG\_OPTIONS}}
+\index{CONFIG\_OPTIONS@{CONFIG\_OPTIONS}!rec\_args.RecArgs@{rec\_args.RecArgs}}
+\doxysubsubsection{\texorpdfstring{CONFIG\_OPTIONS}{CONFIG\_OPTIONS}}
+{\footnotesize\ttfamily dictionary rec\+\_\+args.\+Rec\+Args.\+C\+O\+N\+F\+I\+G\+\_\+\+O\+P\+T\+I\+O\+NS\hspace{0.3cm}{\ttfamily [static]}}
+
+{\bfseries Initial value\+:}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{=  \{}
+\DoxyCodeLine{            \textcolor{stringliteral}{'min'}: \textcolor{keyword}{lambda} self, x: [\textcolor{stringliteral}{'-\/-\/rec\_delay\_min'}, str(x)],}
+\DoxyCodeLine{            \textcolor{stringliteral}{'max'}: \textcolor{keyword}{lambda} self, x: [\textcolor{stringliteral}{'-\/-\/rec\_delay\_max'}, str(x)],}
+\DoxyCodeLine{            \textcolor{stringliteral}{'dist'}: \textcolor{keyword}{lambda} self, x: [\textcolor{stringliteral}{'-\/-\/rec\_sampling\_distribution'}, str(x)],}
+\DoxyCodeLine{            \textcolor{stringliteral}{'population'}: \textcolor{keyword}{lambda} self, x: [\textcolor{stringliteral}{'-\/-\/rec\_sampling\_population'}, str(x)],}
+\DoxyCodeLine{    \}}
+
+\end{DoxyCode}
+\mbox{\Hypertarget{classrec__args_1_1_rec_args_a2146df883b85dde5a5385fb586a5e193}\label{classrec__args_1_1_rec_args_a2146df883b85dde5a5385fb586a5e193}} 
+\index{rec\_args.RecArgs@{rec\_args.RecArgs}!CONSTRAINTS@{CONSTRAINTS}}
+\index{CONSTRAINTS@{CONSTRAINTS}!rec\_args.RecArgs@{rec\_args.RecArgs}}
+\doxysubsubsection{\texorpdfstring{CONSTRAINTS}{CONSTRAINTS}}
+{\footnotesize\ttfamily dictionary rec\+\_\+args.\+Rec\+Args.\+C\+O\+N\+S\+T\+R\+A\+I\+N\+TS\hspace{0.3cm}{\ttfamily [static]}}
+
+{\bfseries Initial value\+:}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{=  \{}
+\DoxyCodeLine{            \textcolor{stringliteral}{'min'}: (\textcolor{keyword}{lambda} self: self.min < self.max \textcolor{keywordflow}{and} self.min >= 1,}
+\DoxyCodeLine{                    \textcolor{stringliteral}{"must be less than examm.rec.max and at least 1"}),}
+\DoxyCodeLine{            \textcolor{stringliteral}{'max'}: (\textcolor{keyword}{lambda} self: self.max > self.min \textcolor{keywordflow}{and} self.max >= 2,}
+\DoxyCodeLine{                    \textcolor{stringliteral}{"must be greater than examm.rec.min and at least 2"}),}
+\DoxyCodeLine{            \textcolor{stringliteral}{'dist'}: (\textcolor{keyword}{lambda} self: self.dist \textcolor{keywordflow}{in} \{\textcolor{stringliteral}{'uniform'}, \textcolor{stringliteral}{'histogram'}, \textcolor{stringliteral}{'normal'}\},}
+\DoxyCodeLine{                    \textcolor{stringliteral}{"must be one of 'uniform', 'histogram', or 'normal'"}),}
+\DoxyCodeLine{            \textcolor{stringliteral}{'population'}: (\textcolor{keyword}{lambda} self: self.population \textcolor{keywordflow}{in} \{\textcolor{stringliteral}{'global'}, \textcolor{stringliteral}{'island'}\},}
+\DoxyCodeLine{                    \textcolor{stringliteral}{"must be either 'global' or 'island'"})}
+\DoxyCodeLine{    \}}
+
+\end{DoxyCode}
+\mbox{\Hypertarget{classrec__args_1_1_rec_args_a57018418c93e6e6ed69550fb4dbfbd3f}\label{classrec__args_1_1_rec_args_a57018418c93e6e6ed69550fb4dbfbd3f}} 
+\index{rec\_args.RecArgs@{rec\_args.RecArgs}!DEFAULTS@{DEFAULTS}}
+\index{DEFAULTS@{DEFAULTS}!rec\_args.RecArgs@{rec\_args.RecArgs}}
+\doxysubsubsection{\texorpdfstring{DEFAULTS}{DEFAULTS}}
+{\footnotesize\ttfamily dictionary rec\+\_\+args.\+Rec\+Args.\+D\+E\+F\+A\+U\+L\+TS\hspace{0.3cm}{\ttfamily [static]}}
+
+{\bfseries Initial value\+:}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{=  \{}
+\DoxyCodeLine{            \textcolor{stringliteral}{'min'}: \textcolor{keyword}{lambda}: 1,}
+\DoxyCodeLine{            \textcolor{stringliteral}{'max'}: \textcolor{keyword}{lambda}: 50,}
+\DoxyCodeLine{            \textcolor{stringliteral}{'dist'}: \textcolor{keyword}{lambda}: \textcolor{stringliteral}{'uniform'},}
+\DoxyCodeLine{            \textcolor{stringliteral}{'population'}: \textcolor{keyword}{lambda}: \textcolor{stringliteral}{'global'},}
+\DoxyCodeLine{    \}}
+
+\end{DoxyCode}
+\mbox{\Hypertarget{classrec__args_1_1_rec_args_a446093f75b5a05a2d5968868600288e0}\label{classrec__args_1_1_rec_args_a446093f75b5a05a2d5968868600288e0}} 
+\index{rec\_args.RecArgs@{rec\_args.RecArgs}!TYPES@{TYPES}}
+\index{TYPES@{TYPES}!rec\_args.RecArgs@{rec\_args.RecArgs}}
+\doxysubsubsection{\texorpdfstring{TYPES}{TYPES}}
+{\footnotesize\ttfamily dictionary rec\+\_\+args.\+Rec\+Args.\+T\+Y\+P\+ES\hspace{0.3cm}{\ttfamily [static]}}
+
+{\bfseries Initial value\+:}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{=  \{}
+\DoxyCodeLine{            \textcolor{stringliteral}{'min'}: \{int\},}
+\DoxyCodeLine{            \textcolor{stringliteral}{'max'}: \{int\},}
+\DoxyCodeLine{            \textcolor{stringliteral}{'population'}: \{str\},}
+\DoxyCodeLine{            \textcolor{stringliteral}{'dist'}: \{str\},}
+\DoxyCodeLine{    \}}
+
+\end{DoxyCode}
+
+
+The documentation for this class was generated from the following file\+:\begin{DoxyCompactItemize}
+\item 
+cli/rec\+\_\+args.\+py\end{DoxyCompactItemize}

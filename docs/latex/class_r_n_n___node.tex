@@ -1,0 +1,93 @@
+\hypertarget{class_r_n_n___node}{}\doxysection{R\+N\+N\+\_\+\+Node Class Reference}
+\label{class_r_n_n___node}\index{RNN\_Node@{RNN\_Node}}
+Inheritance diagram for R\+N\+N\+\_\+\+Node\+:\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[height=2.000000cm]{class_r_n_n___node}
+\end{center}
+\end{figure}
+\doxysubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{class_r_n_n___node_a02f17cf2588bda29b9dc48bc963a82f8}\label{class_r_n_n___node_a02f17cf2588bda29b9dc48bc963a82f8}} 
+{\bfseries R\+N\+N\+\_\+\+Node} (int \+\_\+innovation\+\_\+number, int \+\_\+layer\+\_\+type, double \+\_\+depth, int \+\_\+node\+\_\+type)
+\item 
+\mbox{\Hypertarget{class_r_n_n___node_a3b9ceb06fe24c27175e51eb844981aeb}\label{class_r_n_n___node_a3b9ceb06fe24c27175e51eb844981aeb}} 
+{\bfseries R\+N\+N\+\_\+\+Node} (int \+\_\+innovation\+\_\+number, int \+\_\+layer\+\_\+type, double \+\_\+depth, int \+\_\+node\+\_\+type, \textbf{ string} \+\_\+parameter\+\_\+name)
+\item 
+\mbox{\Hypertarget{class_r_n_n___node_a1f51482502ea3a9d60398e9118664cc7}\label{class_r_n_n___node_a1f51482502ea3a9d60398e9118664cc7}} 
+void {\bfseries initialize\+\_\+lamarckian} (\textbf{ minstd\+\_\+rand0} \&generator, \mbox{\hyperlink{class_normal_distribution}{Normal\+Distribution}} \&normal\+\_\+distribution, double mu, double sigma)
+\item 
+\mbox{\Hypertarget{class_r_n_n___node_aeb4837a7203200646cca4292bf162651}\label{class_r_n_n___node_aeb4837a7203200646cca4292bf162651}} 
+void {\bfseries initialize\+\_\+xavier} (\textbf{ minstd\+\_\+rand0} \&generator, \textbf{ uniform\+\_\+real\+\_\+distribution}$<$ double $>$ \&rng1\+\_\+1, double range)
+\item 
+\mbox{\Hypertarget{class_r_n_n___node_af9918b6e717a2fa6123a94a3af730ea3}\label{class_r_n_n___node_af9918b6e717a2fa6123a94a3af730ea3}} 
+void {\bfseries initialize\+\_\+kaiming} (\textbf{ minstd\+\_\+rand0} \&generator, \mbox{\hyperlink{class_normal_distribution}{Normal\+Distribution}} \&normal\+\_\+distribution, double range)
+\item 
+\mbox{\Hypertarget{class_r_n_n___node_aadea7251fb3737601dd54fced64c4493}\label{class_r_n_n___node_aadea7251fb3737601dd54fced64c4493}} 
+void {\bfseries initialize\+\_\+uniform\+\_\+random} (\textbf{ minstd\+\_\+rand0} \&generator, \textbf{ uniform\+\_\+real\+\_\+distribution}$<$ double $>$ \&rng)
+\item 
+\mbox{\Hypertarget{class_r_n_n___node_a86910e07f7ea5b5f4e2623ef3c3c98c3}\label{class_r_n_n___node_a86910e07f7ea5b5f4e2623ef3c3c98c3}} 
+void {\bfseries input\+\_\+fired} (int time, double incoming\+\_\+output)
+\item 
+\mbox{\Hypertarget{class_r_n_n___node_a1c98a7abaf87ab32c938a1e24f2b01ca}\label{class_r_n_n___node_a1c98a7abaf87ab32c938a1e24f2b01ca}} 
+void {\bfseries try\+\_\+update\+\_\+deltas} (int time)
+\item 
+\mbox{\Hypertarget{class_r_n_n___node_a29c50ad9a3f633b06428d9db93b64ae8}\label{class_r_n_n___node_a29c50ad9a3f633b06428d9db93b64ae8}} 
+void {\bfseries output\+\_\+fired} (int time, double delta)
+\item 
+\mbox{\Hypertarget{class_r_n_n___node_a03edb0e838cde2e01b73d845d9d6ca62}\label{class_r_n_n___node_a03edb0e838cde2e01b73d845d9d6ca62}} 
+void {\bfseries error\+\_\+fired} (int time, double error)
+\item 
+\mbox{\Hypertarget{class_r_n_n___node_ac1a3bf5e7c4fe93b67e927899d4a0263}\label{class_r_n_n___node_ac1a3bf5e7c4fe93b67e927899d4a0263}} 
+uint32\+\_\+t {\bfseries get\+\_\+number\+\_\+weights} () const
+\item 
+\mbox{\Hypertarget{class_r_n_n___node_a7749f740fb57f65d8b0778929d8f8668}\label{class_r_n_n___node_a7749f740fb57f65d8b0778929d8f8668}} 
+void {\bfseries get\+\_\+weights} (\textbf{ vector}$<$ double $>$ \&parameters) const
+\item 
+\mbox{\Hypertarget{class_r_n_n___node_a13192a2c1d1e587827be5d8e003cbe05}\label{class_r_n_n___node_a13192a2c1d1e587827be5d8e003cbe05}} 
+void {\bfseries set\+\_\+weights} (const \textbf{ vector}$<$ double $>$ \&parameters)
+\item 
+\mbox{\Hypertarget{class_r_n_n___node_a8c02e26e838585a48aa8639950f5cd9c}\label{class_r_n_n___node_a8c02e26e838585a48aa8639950f5cd9c}} 
+void {\bfseries get\+\_\+weights} (uint32\+\_\+t \&offset, \textbf{ vector}$<$ double $>$ \&parameters) const
+\item 
+\mbox{\Hypertarget{class_r_n_n___node_aae3fe04e2c6eb18466c6e6fcb19bc97b}\label{class_r_n_n___node_aae3fe04e2c6eb18466c6e6fcb19bc97b}} 
+void {\bfseries set\+\_\+weights} (uint32\+\_\+t \&offset, const \textbf{ vector}$<$ double $>$ \&parameters)
+\item 
+\mbox{\Hypertarget{class_r_n_n___node_a209e68001af6e3eac8fd2903cd1fc967}\label{class_r_n_n___node_a209e68001af6e3eac8fd2903cd1fc967}} 
+void {\bfseries reset} (int \+\_\+series\+\_\+length)
+\item 
+\mbox{\Hypertarget{class_r_n_n___node_abf695f8d9775e998eef3a47875608081}\label{class_r_n_n___node_abf695f8d9775e998eef3a47875608081}} 
+void {\bfseries get\+\_\+gradients} (\textbf{ vector}$<$ double $>$ \&gradients)
+\item 
+\mbox{\Hypertarget{class_r_n_n___node_a4774edbef71ad13050408a285e7a9c4f}\label{class_r_n_n___node_a4774edbef71ad13050408a285e7a9c4f}} 
+\mbox{\hyperlink{class_r_n_n___node___interface}{R\+N\+N\+\_\+\+Node\+\_\+\+Interface}} $\ast$ {\bfseries copy} () const
+\item 
+\mbox{\Hypertarget{class_r_n_n___node_a8028785fee24985de849c1d30d602fbe}\label{class_r_n_n___node_a8028785fee24985de849c1d30d602fbe}} 
+void {\bfseries write\+\_\+to\+\_\+stream} (\textbf{ ostream} \&out)
+\end{DoxyCompactItemize}
+\doxysubsection*{Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{class_r_n_n___node_ab99c963decabc8c825187d04c99ef882}\label{class_r_n_n___node_ab99c963decabc8c825187d04c99ef882}} 
+double {\bfseries bias}
+\item 
+\mbox{\Hypertarget{class_r_n_n___node_a429f8cfe7d6ffc993ea52d6165ee895e}\label{class_r_n_n___node_a429f8cfe7d6ffc993ea52d6165ee895e}} 
+double {\bfseries d\+\_\+bias}
+\item 
+\mbox{\Hypertarget{class_r_n_n___node_aa531ec01369636171d6551fbf9c347c0}\label{class_r_n_n___node_aa531ec01369636171d6551fbf9c347c0}} 
+\textbf{ vector}$<$ double $>$ {\bfseries ld\+\_\+output}
+\end{DoxyCompactItemize}
+\doxysubsection*{Friends}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{class_r_n_n___node_a6ed93c885e63e64a8aa0ab2b7f637f0e}\label{class_r_n_n___node_a6ed93c885e63e64a8aa0ab2b7f637f0e}} 
+class {\bfseries R\+N\+N\+\_\+\+Edge}
+\end{DoxyCompactItemize}
+\doxysubsection*{Additional Inherited Members}
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+rnn/rnn\+\_\+node.\+hxx\item 
+rnn/rnn\+\_\+node.\+cxx\end{DoxyCompactItemize}

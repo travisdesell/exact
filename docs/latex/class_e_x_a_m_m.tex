@@ -1,0 +1,293 @@
+\hypertarget{class_e_x_a_m_m}{}\doxysection{E\+X\+A\+MM Class Reference}
+\label{class_e_x_a_m_m}\index{EXAMM@{EXAMM}}
+\doxysubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{class_e_x_a_m_m_a6a5ab3247fb1b1dc0804095181a690e8}\label{class_e_x_a_m_m_a6a5ab3247fb1b1dc0804095181a690e8}} 
+{\bfseries E\+X\+A\+MM} (int32\+\_\+t \+\_\+population\+\_\+size, int32\+\_\+t \+\_\+number\+\_\+islands, int32\+\_\+t \+\_\+max\+\_\+genomes, int32\+\_\+t \+\_\+extinction\+\_\+event\+\_\+generation\+\_\+number, int32\+\_\+t \+\_\+islands\+\_\+to\+\_\+exterminate, \textbf{ string} \+\_\+island\+\_\+ranking\+\_\+method, \textbf{ string} \+\_\+repopulation\+\_\+method, int32\+\_\+t \+\_\+repopulation\+\_\+mutations, bool \+\_\+repeat\+\_\+extinction, \textbf{ string} \+\_\+speciation\+\_\+method, double \+\_\+species\+\_\+threshold, double \+\_\+fitness\+\_\+threshold, double \+\_\+neat\+\_\+c1, double \+\_\+neat\+\_\+c2, double \+\_\+neat\+\_\+c3, const \textbf{ vector}$<$ \textbf{ string} $>$ \&\+\_\+input\+\_\+parameter\+\_\+names, const \textbf{ vector}$<$ \textbf{ string} $>$ \&\+\_\+output\+\_\+parameter\+\_\+names, \textbf{ string} \+\_\+normalize\+\_\+type, const \textbf{ map}$<$ \textbf{ string}, double $>$ \&\+\_\+normalize\+\_\+mins, const \textbf{ map}$<$ \textbf{ string}, double $>$ \&\+\_\+normalize\+\_\+maxs, const \textbf{ map}$<$ \textbf{ string}, double $>$ \&\+\_\+normalize\+\_\+avgs, const \textbf{ map}$<$ \textbf{ string}, double $>$ \&\+\_\+normalize\+\_\+std\+\_\+devs, Weight\+Type \+\_\+weight\+\_\+initialize, Weight\+Type \+\_\+weight\+\_\+inheritance, Weight\+Type \+\_\+mutated\+\_\+component\+\_\+weight, int32\+\_\+t \+\_\+bp\+\_\+iterations, double \+\_\+learning\+\_\+rate, bool \+\_\+use\+\_\+high\+\_\+threshold, double \+\_\+high\+\_\+threshold, bool \+\_\+use\+\_\+low\+\_\+threshold, double \+\_\+low\+\_\+threshold, bool \+\_\+use\+\_\+dropout, double \+\_\+dropout\+\_\+probability, int32\+\_\+t \+\_\+min\+\_\+recurrent\+\_\+depth, int32\+\_\+t \+\_\+max\+\_\+recurrent\+\_\+depth, bool \+\_\+use\+\_\+regression, \textbf{ string} \+\_\+output\+\_\+directory, \mbox{\hyperlink{class_r_n_n___genome}{R\+N\+N\+\_\+\+Genome}} $\ast$seed\+\_\+genome, bool \+\_\+start\+\_\+filled)
+\item 
+\mbox{\Hypertarget{class_e_x_a_m_m_a513a581a6f62588c171a020769a00721}\label{class_e_x_a_m_m_a513a581a6f62588c171a020769a00721}} 
+void {\bfseries print} ()
+\item 
+\mbox{\Hypertarget{class_e_x_a_m_m_a3f1d179ed9868a6ea31f540a1f2dd01d}\label{class_e_x_a_m_m_a3f1d179ed9868a6ea31f540a1f2dd01d}} 
+void {\bfseries update\+\_\+log} ()
+\item 
+\mbox{\Hypertarget{class_e_x_a_m_m_ac515c3c0da368cfead977258dc4c5fcf}\label{class_e_x_a_m_m_ac515c3c0da368cfead977258dc4c5fcf}} 
+void {\bfseries write\+\_\+memory\+\_\+log} (\textbf{ string} filename)
+\item 
+\mbox{\Hypertarget{class_e_x_a_m_m_a18b82d31a77efaf4ab29c3f1b35c9d05}\label{class_e_x_a_m_m_a18b82d31a77efaf4ab29c3f1b35c9d05}} 
+void {\bfseries set\+\_\+possible\+\_\+node\+\_\+types} (\textbf{ vector}$<$ \textbf{ string} $>$ possible\+\_\+node\+\_\+type\+\_\+strings)
+\item 
+\mbox{\Hypertarget{class_e_x_a_m_m_af933b3e3977086cc79576228228d204e}\label{class_e_x_a_m_m_af933b3e3977086cc79576228228d204e}} 
+\textbf{ uniform\+\_\+int\+\_\+distribution}$<$ int32\+\_\+t $>$ {\bfseries get\+\_\+recurrent\+\_\+depth\+\_\+dist} ()
+\item 
+\mbox{\Hypertarget{class_e_x_a_m_m_a610c44be6274f9210ed97c4ade988c5c}\label{class_e_x_a_m_m_a610c44be6274f9210ed97c4ade988c5c}} 
+int {\bfseries get\+\_\+random\+\_\+node\+\_\+type} ()
+\item 
+\mbox{\Hypertarget{class_e_x_a_m_m_a39367bdce7e9eae18d62da785875a106}\label{class_e_x_a_m_m_a39367bdce7e9eae18d62da785875a106}} 
+\mbox{\hyperlink{class_r_n_n___genome}{R\+N\+N\+\_\+\+Genome}} $\ast$ {\bfseries generate\+\_\+genome} ()
+\item 
+\mbox{\Hypertarget{class_e_x_a_m_m_a1ce57d9a370a0a62185b883378d01fac}\label{class_e_x_a_m_m_a1ce57d9a370a0a62185b883378d01fac}} 
+bool {\bfseries insert\+\_\+genome} (\mbox{\hyperlink{class_r_n_n___genome}{R\+N\+N\+\_\+\+Genome}} $\ast$genome)
+\item 
+\mbox{\Hypertarget{class_e_x_a_m_m_ae3a5a9f5fbaf9d8a7ac0ce7e5d649afa}\label{class_e_x_a_m_m_ae3a5a9f5fbaf9d8a7ac0ce7e5d649afa}} 
+void {\bfseries mutate} (int32\+\_\+t max\+\_\+mutations, \mbox{\hyperlink{class_r_n_n___genome}{R\+N\+N\+\_\+\+Genome}} $\ast$p1)
+\item 
+\mbox{\Hypertarget{class_e_x_a_m_m_aa35e9d1a7c791b18e887dbc50fc9c31e}\label{class_e_x_a_m_m_aa35e9d1a7c791b18e887dbc50fc9c31e}} 
+void {\bfseries attempt\+\_\+node\+\_\+insert} (\textbf{ vector}$<$ \mbox{\hyperlink{class_r_n_n___node___interface}{R\+N\+N\+\_\+\+Node\+\_\+\+Interface}} $\ast$ $>$ \&child\+\_\+nodes, const \mbox{\hyperlink{class_r_n_n___node___interface}{R\+N\+N\+\_\+\+Node\+\_\+\+Interface}} $\ast$node, const \textbf{ vector}$<$ double $>$ \&new\+\_\+weights)
+\item 
+\mbox{\Hypertarget{class_e_x_a_m_m_a4a4ebe08b32e094f864ac195c52bec0c}\label{class_e_x_a_m_m_a4a4ebe08b32e094f864ac195c52bec0c}} 
+void {\bfseries attempt\+\_\+edge\+\_\+insert} (\textbf{ vector}$<$ \mbox{\hyperlink{class_r_n_n___edge}{R\+N\+N\+\_\+\+Edge}} $\ast$ $>$ \&child\+\_\+edges, \textbf{ vector}$<$ \mbox{\hyperlink{class_r_n_n___node___interface}{R\+N\+N\+\_\+\+Node\+\_\+\+Interface}} $\ast$ $>$ \&child\+\_\+nodes, \mbox{\hyperlink{class_r_n_n___edge}{R\+N\+N\+\_\+\+Edge}} $\ast$edge, \mbox{\hyperlink{class_r_n_n___edge}{R\+N\+N\+\_\+\+Edge}} $\ast$second\+\_\+edge, bool set\+\_\+enabled)
+\item 
+\mbox{\Hypertarget{class_e_x_a_m_m_a742756b154742bcb13b2a0c39213434e}\label{class_e_x_a_m_m_a742756b154742bcb13b2a0c39213434e}} 
+void {\bfseries attempt\+\_\+recurrent\+\_\+edge\+\_\+insert} (\textbf{ vector}$<$ \mbox{\hyperlink{class_r_n_n___recurrent___edge}{R\+N\+N\+\_\+\+Recurrent\+\_\+\+Edge}} $\ast$ $>$ \&child\+\_\+recurrent\+\_\+edges, \textbf{ vector}$<$ \mbox{\hyperlink{class_r_n_n___node___interface}{R\+N\+N\+\_\+\+Node\+\_\+\+Interface}} $\ast$ $>$ \&child\+\_\+nodes, \mbox{\hyperlink{class_r_n_n___recurrent___edge}{R\+N\+N\+\_\+\+Recurrent\+\_\+\+Edge}} $\ast$recurrent\+\_\+edge, \mbox{\hyperlink{class_r_n_n___recurrent___edge}{R\+N\+N\+\_\+\+Recurrent\+\_\+\+Edge}} $\ast$second\+\_\+edge, bool set\+\_\+enabled)
+\item 
+\mbox{\Hypertarget{class_e_x_a_m_m_a00fc892dfaa53823f794546763d7ea01}\label{class_e_x_a_m_m_a00fc892dfaa53823f794546763d7ea01}} 
+\mbox{\hyperlink{class_r_n_n___genome}{R\+N\+N\+\_\+\+Genome}} $\ast$ {\bfseries crossover} (\mbox{\hyperlink{class_r_n_n___genome}{R\+N\+N\+\_\+\+Genome}} $\ast$p1, \mbox{\hyperlink{class_r_n_n___genome}{R\+N\+N\+\_\+\+Genome}} $\ast$p2)
+\item 
+\mbox{\Hypertarget{class_e_x_a_m_m_ad4ccccc7c2e33b3648f00a4d7ea51e04}\label{class_e_x_a_m_m_ad4ccccc7c2e33b3648f00a4d7ea51e04}} 
+double {\bfseries get\+\_\+best\+\_\+fitness} ()
+\item 
+\mbox{\Hypertarget{class_e_x_a_m_m_a22845d05f489e0b6f4fe40161648e9d2}\label{class_e_x_a_m_m_a22845d05f489e0b6f4fe40161648e9d2}} 
+double {\bfseries get\+\_\+worst\+\_\+fitness} ()
+\item 
+\mbox{\Hypertarget{class_e_x_a_m_m_adde23dd0f662da31b946331c94263ad1}\label{class_e_x_a_m_m_adde23dd0f662da31b946331c94263ad1}} 
+\mbox{\hyperlink{class_r_n_n___genome}{R\+N\+N\+\_\+\+Genome}} $\ast$ {\bfseries get\+\_\+best\+\_\+genome} ()
+\item 
+\mbox{\Hypertarget{class_e_x_a_m_m_ad71eb3566c412c44ab4807274c12ed6e}\label{class_e_x_a_m_m_ad71eb3566c412c44ab4807274c12ed6e}} 
+\mbox{\hyperlink{class_r_n_n___genome}{R\+N\+N\+\_\+\+Genome}} $\ast$ {\bfseries get\+\_\+worst\+\_\+genome} ()
+\item 
+\mbox{\Hypertarget{class_e_x_a_m_m_a5ac84a240c9e9bd191106099da210ae8}\label{class_e_x_a_m_m_a5ac84a240c9e9bd191106099da210ae8}} 
+\textbf{ string} {\bfseries get\+\_\+output\+\_\+directory} () const
+\item 
+\mbox{\Hypertarget{class_e_x_a_m_m_a7bbe9fdf1c7385c055b89fcf91be344a}\label{class_e_x_a_m_m_a7bbe9fdf1c7385c055b89fcf91be344a}} 
+\mbox{\hyperlink{class_r_n_n___genome}{R\+N\+N\+\_\+\+Genome}} $\ast$ {\bfseries generate\+\_\+for\+\_\+transfer\+\_\+learning} (\textbf{ string} file\+\_\+name, int extra\+\_\+inputs, int extra\+\_\+outputs)
+\item 
+\mbox{\Hypertarget{class_e_x_a_m_m_aa079110bb4851d500353e50603098ff8}\label{class_e_x_a_m_m_aa079110bb4851d500353e50603098ff8}} 
+void {\bfseries check\+\_\+weight\+\_\+initialize\+\_\+validity} ()
+\end{DoxyCompactItemize}
+\doxysubsection*{Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{class_e_x_a_m_m_a484f9db7741fbeb220562e547eb52295}\label{class_e_x_a_m_m_a484f9db7741fbeb220562e547eb52295}} 
+int32\+\_\+t {\bfseries population\+\_\+size}
+\item 
+\mbox{\Hypertarget{class_e_x_a_m_m_a0d131ef4be4ce8eb6cf26928a50b339d}\label{class_e_x_a_m_m_a0d131ef4be4ce8eb6cf26928a50b339d}} 
+int32\+\_\+t {\bfseries number\+\_\+islands}
+\item 
+\mbox{\Hypertarget{class_e_x_a_m_m_a333cfbb8e95c9f8f8e04132469809670}\label{class_e_x_a_m_m_a333cfbb8e95c9f8f8e04132469809670}} 
+\textbf{ vector}$<$ \textbf{ vector}$<$ \mbox{\hyperlink{class_r_n_n___genome}{R\+N\+N\+\_\+\+Genome}} $\ast$ $>$ $>$ {\bfseries genomes}
+\item 
+\mbox{\Hypertarget{class_e_x_a_m_m_aeba31aef7fc9e9cd0e0352f817564fea}\label{class_e_x_a_m_m_aeba31aef7fc9e9cd0e0352f817564fea}} 
+int32\+\_\+t {\bfseries max\+\_\+genomes}
+\item 
+\mbox{\Hypertarget{class_e_x_a_m_m_a3a6adb05377e0575d2ddc5b306310bf0}\label{class_e_x_a_m_m_a3a6adb05377e0575d2ddc5b306310bf0}} 
+int32\+\_\+t {\bfseries total\+\_\+bp\+\_\+epochs}
+\item 
+\mbox{\Hypertarget{class_e_x_a_m_m_ab0a89db7d6ec3cfcff466495b09473d9}\label{class_e_x_a_m_m_ab0a89db7d6ec3cfcff466495b09473d9}} 
+int32\+\_\+t {\bfseries extinction\+\_\+event\+\_\+generation\+\_\+number}
+\item 
+\mbox{\Hypertarget{class_e_x_a_m_m_a514b2a26b5de5a5b65c1e52e91b5204e}\label{class_e_x_a_m_m_a514b2a26b5de5a5b65c1e52e91b5204e}} 
+\textbf{ string} {\bfseries island\+\_\+ranking\+\_\+method}
+\item 
+\mbox{\Hypertarget{class_e_x_a_m_m_a800b29f78aa4f81fd4b7208b0f91d144}\label{class_e_x_a_m_m_a800b29f78aa4f81fd4b7208b0f91d144}} 
+\textbf{ string} {\bfseries speciation\+\_\+method}
+\item 
+\mbox{\Hypertarget{class_e_x_a_m_m_aa7da68d2505e066e5cf0d5cc86278984}\label{class_e_x_a_m_m_aa7da68d2505e066e5cf0d5cc86278984}} 
+\textbf{ string} {\bfseries repopulation\+\_\+method}
+\item 
+\mbox{\Hypertarget{class_e_x_a_m_m_a14a1db987175b6c9ae5a9ccabdb3de09}\label{class_e_x_a_m_m_a14a1db987175b6c9ae5a9ccabdb3de09}} 
+int32\+\_\+t {\bfseries repopulation\+\_\+mutations}
+\item 
+\mbox{\Hypertarget{class_e_x_a_m_m_a9191e3d50d547a989cfa991bf5642dbb}\label{class_e_x_a_m_m_a9191e3d50d547a989cfa991bf5642dbb}} 
+bool {\bfseries repeat\+\_\+extinction}
+\item 
+\mbox{\Hypertarget{class_e_x_a_m_m_adad5ab744a0cd4ef16932e97c9f2c736}\label{class_e_x_a_m_m_adad5ab744a0cd4ef16932e97c9f2c736}} 
+\mbox{\hyperlink{class_speciation_strategy}{Speciation\+Strategy}} $\ast$ {\bfseries speciation\+\_\+strategy}
+\item 
+\mbox{\Hypertarget{class_e_x_a_m_m_a686d89db5d70648447f124aefaaa05eb}\label{class_e_x_a_m_m_a686d89db5d70648447f124aefaaa05eb}} 
+double {\bfseries species\+\_\+threshold}
+\item 
+\mbox{\Hypertarget{class_e_x_a_m_m_a29eb789be88cc49b7355378ec23ba2e1}\label{class_e_x_a_m_m_a29eb789be88cc49b7355378ec23ba2e1}} 
+double {\bfseries fitness\+\_\+threshold}
+\item 
+\mbox{\Hypertarget{class_e_x_a_m_m_af9de69d98c5eedd108c8e98f42a80801}\label{class_e_x_a_m_m_af9de69d98c5eedd108c8e98f42a80801}} 
+double {\bfseries neat\+\_\+c1}
+\item 
+\mbox{\Hypertarget{class_e_x_a_m_m_ade22ef3e79195e273731bdaa469d172d}\label{class_e_x_a_m_m_ade22ef3e79195e273731bdaa469d172d}} 
+double {\bfseries neat\+\_\+c2}
+\item 
+\mbox{\Hypertarget{class_e_x_a_m_m_ab8f06eee79de903077e623c036a618b0}\label{class_e_x_a_m_m_ab8f06eee79de903077e623c036a618b0}} 
+double {\bfseries neat\+\_\+c3}
+\item 
+\mbox{\Hypertarget{class_e_x_a_m_m_af65c12c7da090b34a9ee1fb2820c881c}\label{class_e_x_a_m_m_af65c12c7da090b34a9ee1fb2820c881c}} 
+int32\+\_\+t {\bfseries edge\+\_\+innovation\+\_\+count}
+\item 
+\mbox{\Hypertarget{class_e_x_a_m_m_a73b2ab576001cd4dbc68a7f85e5d010b}\label{class_e_x_a_m_m_a73b2ab576001cd4dbc68a7f85e5d010b}} 
+int32\+\_\+t {\bfseries node\+\_\+innovation\+\_\+count}
+\item 
+\mbox{\Hypertarget{class_e_x_a_m_m_ae87d5ff7f1c0741b5b63c8f3e13cb6c1}\label{class_e_x_a_m_m_ae87d5ff7f1c0741b5b63c8f3e13cb6c1}} 
+\textbf{ map}$<$ \textbf{ string}, int32\+\_\+t $>$ {\bfseries inserted\+\_\+from\+\_\+map}
+\item 
+\mbox{\Hypertarget{class_e_x_a_m_m_a038e0d921ba95959bc1ba3e2597d2278}\label{class_e_x_a_m_m_a038e0d921ba95959bc1ba3e2597d2278}} 
+\textbf{ map}$<$ \textbf{ string}, int32\+\_\+t $>$ {\bfseries generated\+\_\+from\+\_\+map}
+\item 
+\mbox{\Hypertarget{class_e_x_a_m_m_a82e7a9bb676cd8e50c674ea327ae0105}\label{class_e_x_a_m_m_a82e7a9bb676cd8e50c674ea327ae0105}} 
+int32\+\_\+t {\bfseries number\+\_\+inputs}
+\item 
+\mbox{\Hypertarget{class_e_x_a_m_m_a976f696e48c644ac8ca4db0564c68fae}\label{class_e_x_a_m_m_a976f696e48c644ac8ca4db0564c68fae}} 
+int32\+\_\+t {\bfseries number\+\_\+outputs}
+\item 
+\mbox{\Hypertarget{class_e_x_a_m_m_af728315e072eff293edf414463cfa8ee}\label{class_e_x_a_m_m_af728315e072eff293edf414463cfa8ee}} 
+int32\+\_\+t {\bfseries bp\+\_\+iterations}
+\item 
+\mbox{\Hypertarget{class_e_x_a_m_m_a8f4526ee7f5025ddfd3c3e8508d35a31}\label{class_e_x_a_m_m_a8f4526ee7f5025ddfd3c3e8508d35a31}} 
+double {\bfseries learning\+\_\+rate}
+\item 
+\mbox{\Hypertarget{class_e_x_a_m_m_a523b65221a3c6a12109566d546ca8eb4}\label{class_e_x_a_m_m_a523b65221a3c6a12109566d546ca8eb4}} 
+bool {\bfseries use\+\_\+high\+\_\+threshold}
+\item 
+\mbox{\Hypertarget{class_e_x_a_m_m_ad5f96a3f30dacb0a07bc9a36b4d14587}\label{class_e_x_a_m_m_ad5f96a3f30dacb0a07bc9a36b4d14587}} 
+double {\bfseries high\+\_\+threshold}
+\item 
+\mbox{\Hypertarget{class_e_x_a_m_m_ae14437846948541c0fb7858b28902b2d}\label{class_e_x_a_m_m_ae14437846948541c0fb7858b28902b2d}} 
+bool {\bfseries use\+\_\+low\+\_\+threshold}
+\item 
+\mbox{\Hypertarget{class_e_x_a_m_m_a695ffdd5e759e6c9d9871e4ef062a71b}\label{class_e_x_a_m_m_a695ffdd5e759e6c9d9871e4ef062a71b}} 
+double {\bfseries low\+\_\+threshold}
+\item 
+\mbox{\Hypertarget{class_e_x_a_m_m_a86f61e92b5f305b6fd5d0a97525c65c3}\label{class_e_x_a_m_m_a86f61e92b5f305b6fd5d0a97525c65c3}} 
+bool {\bfseries use\+\_\+regression}
+\item 
+\mbox{\Hypertarget{class_e_x_a_m_m_afd4fa3e5efd0e9cb766c9231d8171346}\label{class_e_x_a_m_m_afd4fa3e5efd0e9cb766c9231d8171346}} 
+bool {\bfseries use\+\_\+dropout}
+\item 
+\mbox{\Hypertarget{class_e_x_a_m_m_af6f7f042753a4558c725cdd9f908387d}\label{class_e_x_a_m_m_af6f7f042753a4558c725cdd9f908387d}} 
+double {\bfseries dropout\+\_\+probability}
+\item 
+\mbox{\Hypertarget{class_e_x_a_m_m_a52f1620736849808b77c6cdfbbbc1eb2}\label{class_e_x_a_m_m_a52f1620736849808b77c6cdfbbbc1eb2}} 
+\textbf{ minstd\+\_\+rand0} {\bfseries generator}
+\item 
+\mbox{\Hypertarget{class_e_x_a_m_m_a736bad0d6f9fa49ab69cf04f7a22e719}\label{class_e_x_a_m_m_a736bad0d6f9fa49ab69cf04f7a22e719}} 
+\textbf{ uniform\+\_\+real\+\_\+distribution}$<$ double $>$ {\bfseries rng\+\_\+0\+\_\+1}
+\item 
+\mbox{\Hypertarget{class_e_x_a_m_m_adc21cb4fdd3a8b8e6c563cfe51680809}\label{class_e_x_a_m_m_adc21cb4fdd3a8b8e6c563cfe51680809}} 
+\textbf{ uniform\+\_\+real\+\_\+distribution}$<$ double $>$ {\bfseries rng\+\_\+crossover\+\_\+weight}
+\item 
+\mbox{\Hypertarget{class_e_x_a_m_m_a8286ca108523787eb1600809c5e83a44}\label{class_e_x_a_m_m_a8286ca108523787eb1600809c5e83a44}} 
+int32\+\_\+t {\bfseries min\+\_\+recurrent\+\_\+depth}
+\item 
+\mbox{\Hypertarget{class_e_x_a_m_m_abada195a47a6b78f2854937503dec80a}\label{class_e_x_a_m_m_abada195a47a6b78f2854937503dec80a}} 
+int32\+\_\+t {\bfseries max\+\_\+recurrent\+\_\+depth}
+\item 
+\mbox{\Hypertarget{class_e_x_a_m_m_a8f098192b53805162bb0d1bdf9bbf35d}\label{class_e_x_a_m_m_a8f098192b53805162bb0d1bdf9bbf35d}} 
+bool {\bfseries epigenetic\+\_\+weights}
+\item 
+\mbox{\Hypertarget{class_e_x_a_m_m_a84cb33ac5b43b633888ef5f75a47b3e3}\label{class_e_x_a_m_m_a84cb33ac5b43b633888ef5f75a47b3e3}} 
+double {\bfseries more\+\_\+fit\+\_\+crossover\+\_\+rate}
+\item 
+\mbox{\Hypertarget{class_e_x_a_m_m_aaa95489eda646a34c816ab9f406e621c}\label{class_e_x_a_m_m_aaa95489eda646a34c816ab9f406e621c}} 
+double {\bfseries less\+\_\+fit\+\_\+crossover\+\_\+rate}
+\item 
+\mbox{\Hypertarget{class_e_x_a_m_m_a827faaa986b2d591d34fd0f424770baa}\label{class_e_x_a_m_m_a827faaa986b2d591d34fd0f424770baa}} 
+double {\bfseries clone\+\_\+rate}
+\item 
+\mbox{\Hypertarget{class_e_x_a_m_m_af811390efbd47f3e351d6ff5ba80359b}\label{class_e_x_a_m_m_af811390efbd47f3e351d6ff5ba80359b}} 
+double {\bfseries add\+\_\+edge\+\_\+rate}
+\item 
+\mbox{\Hypertarget{class_e_x_a_m_m_a1ae178e015d9f5bedf3bf3fa0612cc46}\label{class_e_x_a_m_m_a1ae178e015d9f5bedf3bf3fa0612cc46}} 
+double {\bfseries add\+\_\+recurrent\+\_\+edge\+\_\+rate}
+\item 
+\mbox{\Hypertarget{class_e_x_a_m_m_abd9f2255296d2b27da1daa630ae03468}\label{class_e_x_a_m_m_abd9f2255296d2b27da1daa630ae03468}} 
+double {\bfseries enable\+\_\+edge\+\_\+rate}
+\item 
+\mbox{\Hypertarget{class_e_x_a_m_m_a65f2a5d6b82b598400b45fd7d36ec5ae}\label{class_e_x_a_m_m_a65f2a5d6b82b598400b45fd7d36ec5ae}} 
+double {\bfseries disable\+\_\+edge\+\_\+rate}
+\item 
+\mbox{\Hypertarget{class_e_x_a_m_m_ac1e7ce6ba10c3e7e55e033aea5ee8c8f}\label{class_e_x_a_m_m_ac1e7ce6ba10c3e7e55e033aea5ee8c8f}} 
+double {\bfseries split\+\_\+edge\+\_\+rate}
+\item 
+\mbox{\Hypertarget{class_e_x_a_m_m_a14dda5bb350c0b577fe5eaccdcf0c27d}\label{class_e_x_a_m_m_a14dda5bb350c0b577fe5eaccdcf0c27d}} 
+double {\bfseries add\+\_\+node\+\_\+rate}
+\item 
+\mbox{\Hypertarget{class_e_x_a_m_m_ad0ca4fa9b18313a353f79037a61abd25}\label{class_e_x_a_m_m_ad0ca4fa9b18313a353f79037a61abd25}} 
+double {\bfseries enable\+\_\+node\+\_\+rate}
+\item 
+\mbox{\Hypertarget{class_e_x_a_m_m_a401b1c9cd83e67aa903444fac445aa73}\label{class_e_x_a_m_m_a401b1c9cd83e67aa903444fac445aa73}} 
+double {\bfseries disable\+\_\+node\+\_\+rate}
+\item 
+\mbox{\Hypertarget{class_e_x_a_m_m_af6796f889761d669e40e4ca0594bc35e}\label{class_e_x_a_m_m_af6796f889761d669e40e4ca0594bc35e}} 
+double {\bfseries split\+\_\+node\+\_\+rate}
+\item 
+\mbox{\Hypertarget{class_e_x_a_m_m_a16705344fd24daac4e32c71378732e43}\label{class_e_x_a_m_m_a16705344fd24daac4e32c71378732e43}} 
+double {\bfseries merge\+\_\+node\+\_\+rate}
+\item 
+\mbox{\Hypertarget{class_e_x_a_m_m_a7168959e8a00a01a0685efdbdf12b69f}\label{class_e_x_a_m_m_a7168959e8a00a01a0685efdbdf12b69f}} 
+\textbf{ vector}$<$ int $>$ {\bfseries possible\+\_\+node\+\_\+types}
+\item 
+\mbox{\Hypertarget{class_e_x_a_m_m_aaa892b6fb59c969da5b2692a71f1c0be}\label{class_e_x_a_m_m_aaa892b6fb59c969da5b2692a71f1c0be}} 
+\textbf{ vector}$<$ \textbf{ string} $>$ {\bfseries op\+\_\+log\+\_\+ordering}
+\item 
+\mbox{\Hypertarget{class_e_x_a_m_m_a3c123b0e57634c8fd5c9579c646ff246}\label{class_e_x_a_m_m_a3c123b0e57634c8fd5c9579c646ff246}} 
+\textbf{ map}$<$ \textbf{ string}, int32\+\_\+t $>$ {\bfseries inserted\+\_\+counts}
+\item 
+\mbox{\Hypertarget{class_e_x_a_m_m_aa80c7e4ac359e29d3598de579d2e3955}\label{class_e_x_a_m_m_aa80c7e4ac359e29d3598de579d2e3955}} 
+\textbf{ map}$<$ \textbf{ string}, int32\+\_\+t $>$ {\bfseries generated\+\_\+counts}
+\item 
+\mbox{\Hypertarget{class_e_x_a_m_m_ae90d743c11e1caf3bcec50a0f047500f}\label{class_e_x_a_m_m_ae90d743c11e1caf3bcec50a0f047500f}} 
+\textbf{ string} {\bfseries output\+\_\+directory}
+\item 
+\mbox{\Hypertarget{class_e_x_a_m_m_a96cad2561f2de297758077cb2073eb01}\label{class_e_x_a_m_m_a96cad2561f2de297758077cb2073eb01}} 
+\textbf{ ofstream} $\ast$ {\bfseries log\+\_\+file}
+\item 
+\mbox{\Hypertarget{class_e_x_a_m_m_a013871c8b00cc0b0c2bafc2a9e3430bf}\label{class_e_x_a_m_m_a013871c8b00cc0b0c2bafc2a9e3430bf}} 
+\textbf{ ofstream} $\ast$ {\bfseries op\+\_\+log\+\_\+file}
+\item 
+\mbox{\Hypertarget{class_e_x_a_m_m_aa27aa494864eb7d644d1a9a40e46b296}\label{class_e_x_a_m_m_aa27aa494864eb7d644d1a9a40e46b296}} 
+\textbf{ vector}$<$ \textbf{ string} $>$ {\bfseries input\+\_\+parameter\+\_\+names}
+\item 
+\mbox{\Hypertarget{class_e_x_a_m_m_a1e8eda421e0f5b6657fc1de1f3aab061}\label{class_e_x_a_m_m_a1e8eda421e0f5b6657fc1de1f3aab061}} 
+\textbf{ vector}$<$ \textbf{ string} $>$ {\bfseries output\+\_\+parameter\+\_\+names}
+\item 
+\mbox{\Hypertarget{class_e_x_a_m_m_aac15f2d814d064d532654163bdfe59b7}\label{class_e_x_a_m_m_aac15f2d814d064d532654163bdfe59b7}} 
+\textbf{ string} {\bfseries normalize\+\_\+type}
+\item 
+\mbox{\Hypertarget{class_e_x_a_m_m_af6c66967a76ab7fec38d51f58ee16c23}\label{class_e_x_a_m_m_af6c66967a76ab7fec38d51f58ee16c23}} 
+\textbf{ map}$<$ \textbf{ string}, double $>$ {\bfseries normalize\+\_\+mins}
+\item 
+\mbox{\Hypertarget{class_e_x_a_m_m_adca5b3f12b8a76084bf33ff1d1f6bb86}\label{class_e_x_a_m_m_adca5b3f12b8a76084bf33ff1d1f6bb86}} 
+\textbf{ map}$<$ \textbf{ string}, double $>$ {\bfseries normalize\+\_\+maxs}
+\item 
+\mbox{\Hypertarget{class_e_x_a_m_m_ab79d11a8a1de85eda433c2f2b113d76f}\label{class_e_x_a_m_m_ab79d11a8a1de85eda433c2f2b113d76f}} 
+\textbf{ map}$<$ \textbf{ string}, double $>$ {\bfseries normalize\+\_\+avgs}
+\item 
+\mbox{\Hypertarget{class_e_x_a_m_m_a5d5c51686b6a4c29d7dde79cc1f672e3}\label{class_e_x_a_m_m_a5d5c51686b6a4c29d7dde79cc1f672e3}} 
+\textbf{ map}$<$ \textbf{ string}, double $>$ {\bfseries normalize\+\_\+std\+\_\+devs}
+\item 
+\mbox{\Hypertarget{class_e_x_a_m_m_ac3c271a84c7011a8f497d0aafc99abe3}\label{class_e_x_a_m_m_ac3c271a84c7011a8f497d0aafc99abe3}} 
+Weight\+Type {\bfseries weight\+\_\+initialize}
+\item 
+\mbox{\Hypertarget{class_e_x_a_m_m_a6bbec074d37309ed972e79e533881495}\label{class_e_x_a_m_m_a6bbec074d37309ed972e79e533881495}} 
+Weight\+Type {\bfseries weight\+\_\+inheritance}
+\item 
+\mbox{\Hypertarget{class_e_x_a_m_m_a7910e24ff2f54bc8dc8473e5008df2a7}\label{class_e_x_a_m_m_a7910e24ff2f54bc8dc8473e5008df2a7}} 
+Weight\+Type {\bfseries mutated\+\_\+component\+\_\+weight}
+\item 
+\mbox{\Hypertarget{class_e_x_a_m_m_af5137255c6f1d41f20d85a81f00e17e0}\label{class_e_x_a_m_m_af5137255c6f1d41f20d85a81f00e17e0}} 
+\textbf{ ostringstream} {\bfseries memory\+\_\+log}
+\item 
+\mbox{\Hypertarget{class_e_x_a_m_m_a4372a02836f005b24e05d2625cdb9a94}\label{class_e_x_a_m_m_a4372a02836f005b24e05d2625cdb9a94}} 
+\textbf{ std\+::chrono\+::time\+\_\+point}$<$ \textbf{ std\+::chrono\+::system\+\_\+clock} $>$ {\bfseries start\+Clock}
+\item 
+\mbox{\Hypertarget{class_e_x_a_m_m_af3f2803027dace8f58cc1de4108a5969}\label{class_e_x_a_m_m_af3f2803027dace8f58cc1de4108a5969}} 
+\textbf{ string} {\bfseries genome\+\_\+file\+\_\+name}
+\item 
+\mbox{\Hypertarget{class_e_x_a_m_m_af769d270e5f7e8f1e7318b085a2ccef6}\label{class_e_x_a_m_m_af769d270e5f7e8f1e7318b085a2ccef6}} 
+bool {\bfseries start\+\_\+filled}
+\end{DoxyCompactItemize}
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+rnn/examm.\+hxx\item 
+rnn/examm.\+cxx\end{DoxyCompactItemize}

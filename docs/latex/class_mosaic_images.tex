@@ -1,0 +1,155 @@
+\hypertarget{class_mosaic_images}{}\doxysection{Mosaic\+Images Class Reference}
+\label{class_mosaic_images}\index{MosaicImages@{MosaicImages}}
+Inheritance diagram for Mosaic\+Images\+:\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[height=3.000000cm]{class_mosaic_images}
+\end{center}
+\end{figure}
+\doxysubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{class_mosaic_images_aac889fdea29db07b12f263cc9a825d6b}\label{class_mosaic_images_aac889fdea29db07b12f263cc9a825d6b}} 
+void {\bfseries get\+\_\+mosaic\+\_\+pixels} (\textbf{ string} filename, \textbf{ vector}$<$ \textbf{ vector}$<$ \textbf{ vector}$<$ uint8\+\_\+t $>$ $>$ $>$ \&pixels, uint32\+\_\+t \&height, uint32\+\_\+t \&width)
+\item 
+\mbox{\Hypertarget{class_mosaic_images_adc8995b0e2b7e50c5fb9e4bcff1fa1c0}\label{class_mosaic_images_adc8995b0e2b7e50c5fb9e4bcff1fa1c0}} 
+void {\bfseries read\+\_\+mosaic} (\textbf{ string} filename, const \textbf{ vector}$<$ \mbox{\hyperlink{class_point}{Point}} $>$ \&box\+\_\+centers, int box\+\_\+radius, const \textbf{ vector}$<$ int $>$ \&box\+\_\+classes)
+\item 
+\mbox{\Hypertarget{class_mosaic_images_a6f523557b38a1d27c2dc0ddbe1521025}\label{class_mosaic_images_a6f523557b38a1d27c2dc0ddbe1521025}} 
+void {\bfseries read\+\_\+mosaic} (\textbf{ string} filename, const \textbf{ vector}$<$ \mbox{\hyperlink{class_line}{Line}} $>$ \&lines, int line\+\_\+height, const \textbf{ vector}$<$ int $>$ \&line\+\_\+classes)
+\item 
+\mbox{\Hypertarget{class_mosaic_images_ad0b8a3629672e88622581dba57b90128}\label{class_mosaic_images_ad0b8a3629672e88622581dba57b90128}} 
+void {\bfseries initialize\+\_\+counts} (const \textbf{ vector}$<$ \textbf{ vector}$<$ int $>$ $>$ \&classes)
+\item 
+\mbox{\Hypertarget{class_mosaic_images_a007e0e06db88264a28c46a62b92f04c6}\label{class_mosaic_images_a007e0e06db88264a28c46a62b92f04c6}} 
+{\bfseries Mosaic\+Images} (\textbf{ vector}$<$ \textbf{ string} $>$ \+\_\+filenames, const \textbf{ vector}$<$ \textbf{ vector}$<$ \mbox{\hyperlink{class_point}{Point}} $>$ $>$ \&\+\_\+box\+\_\+centers, int \+\_\+box\+\_\+radius, const \textbf{ vector}$<$ \textbf{ vector}$<$ int $>$ $>$ \&\+\_\+box\+\_\+classes, int \+\_\+padding, int \+\_\+subimage\+\_\+height, int \+\_\+subimage\+\_\+width)
+\item 
+\mbox{\Hypertarget{class_mosaic_images_a510a0ce5a0a2c67edd7c8366edd5eaaf}\label{class_mosaic_images_a510a0ce5a0a2c67edd7c8366edd5eaaf}} 
+{\bfseries Mosaic\+Images} (\textbf{ vector}$<$ \textbf{ string} $>$ \+\_\+filenames, const \textbf{ vector}$<$ \textbf{ vector}$<$ \mbox{\hyperlink{class_point}{Point}} $>$ $>$ \&\+\_\+box\+\_\+centers, int \+\_\+box\+\_\+radius, const \textbf{ vector}$<$ \textbf{ vector}$<$ int $>$ $>$ \&\+\_\+box\+\_\+classes, int \+\_\+padding, int \+\_\+subimage\+\_\+height, int \+\_\+subimage\+\_\+width, const \textbf{ vector}$<$ float $>$ \&\+\_\+channel\+\_\+avg, const \textbf{ vector}$<$ float $>$ \&\+\_\+channel\+\_\+std\+\_\+dev)
+\item 
+\mbox{\Hypertarget{class_mosaic_images_af882240a89407c0d6bde0d61f6feeb85}\label{class_mosaic_images_af882240a89407c0d6bde0d61f6feeb85}} 
+{\bfseries Mosaic\+Images} (\textbf{ vector}$<$ \textbf{ string} $>$ \+\_\+filenames, const \textbf{ vector}$<$ \textbf{ vector}$<$ \mbox{\hyperlink{class_line}{Line}} $>$ $>$ \&\+\_\+lines, int \+\_\+line\+\_\+height, const \textbf{ vector}$<$ \textbf{ vector}$<$ int $>$ $>$ \&\+\_\+line\+\_\+classes, int \+\_\+padding, int \+\_\+subimage\+\_\+height, int \+\_\+subimage\+\_\+width)
+\item 
+\mbox{\Hypertarget{class_mosaic_images_acc91ef7b0131e03ec4a1a20f3ac0880d}\label{class_mosaic_images_acc91ef7b0131e03ec4a1a20f3ac0880d}} 
+{\bfseries Mosaic\+Images} (\textbf{ vector}$<$ \textbf{ string} $>$ \+\_\+filenames, const \textbf{ vector}$<$ \textbf{ vector}$<$ \mbox{\hyperlink{class_line}{Line}} $>$ $>$ \&\+\_\+lines, int \+\_\+line\+\_\+height, const \textbf{ vector}$<$ \textbf{ vector}$<$ int $>$ $>$ \&\+\_\+line\+\_\+classes, int \+\_\+padding, int \+\_\+subimage\+\_\+height, int \+\_\+subimage\+\_\+width, const \textbf{ vector}$<$ float $>$ \&\+\_\+channel\+\_\+avg, const \textbf{ vector}$<$ float $>$ \&\+\_\+channel\+\_\+std\+\_\+dev)
+\item 
+\mbox{\Hypertarget{class_mosaic_images_ad325fceab4348f86cd8be5b38e937b64}\label{class_mosaic_images_ad325fceab4348f86cd8be5b38e937b64}} 
+\textbf{ string} {\bfseries get\+\_\+filename} () const
+\item 
+\mbox{\Hypertarget{class_mosaic_images_a1de525feb692019108e19c1e6d1db3df}\label{class_mosaic_images_a1de525feb692019108e19c1e6d1db3df}} 
+int {\bfseries get\+\_\+class\+\_\+size} (int i) const
+\item 
+\mbox{\Hypertarget{class_mosaic_images_abe86913cd32ce1c6180fe407cec91c0c}\label{class_mosaic_images_abe86913cd32ce1c6180fe407cec91c0c}} 
+int {\bfseries get\+\_\+number\+\_\+classes} () const
+\item 
+\mbox{\Hypertarget{class_mosaic_images_a8af1006d26fd60bf2ae38b4a823be4e3}\label{class_mosaic_images_a8af1006d26fd60bf2ae38b4a823be4e3}} 
+int {\bfseries get\+\_\+number\+\_\+images} () const
+\item 
+\mbox{\Hypertarget{class_mosaic_images_a37fe41bb67e68a3807f41e3058b25046}\label{class_mosaic_images_a37fe41bb67e68a3807f41e3058b25046}} 
+int {\bfseries get\+\_\+number\+\_\+large\+\_\+images} () const
+\item 
+\mbox{\Hypertarget{class_mosaic_images_aec5dfeb2f1962ac5050b0e632fba6389}\label{class_mosaic_images_aec5dfeb2f1962ac5050b0e632fba6389}} 
+int {\bfseries get\+\_\+number\+\_\+subimages} (int i) const
+\item 
+\mbox{\Hypertarget{class_mosaic_images_aab4cddd13b516d914939895447a62020}\label{class_mosaic_images_aab4cddd13b516d914939895447a62020}} 
+int {\bfseries get\+\_\+padding} () const
+\item 
+\mbox{\Hypertarget{class_mosaic_images_abccc75a668b25f1049d8320dd8ace724}\label{class_mosaic_images_abccc75a668b25f1049d8320dd8ace724}} 
+int {\bfseries get\+\_\+image\+\_\+channels} () const
+\item 
+\mbox{\Hypertarget{class_mosaic_images_a5cdccfed470bc8afc913694749a74e17}\label{class_mosaic_images_a5cdccfed470bc8afc913694749a74e17}} 
+int {\bfseries get\+\_\+image\+\_\+width} () const
+\item 
+\mbox{\Hypertarget{class_mosaic_images_acf2376a5ceeeaa7bfb20ed982b0fd092}\label{class_mosaic_images_acf2376a5ceeeaa7bfb20ed982b0fd092}} 
+int {\bfseries get\+\_\+image\+\_\+height} () const
+\item 
+\mbox{\Hypertarget{class_mosaic_images_ac65a01146d8b06d51466d8e90abd5d8f}\label{class_mosaic_images_ac65a01146d8b06d51466d8e90abd5d8f}} 
+int {\bfseries get\+\_\+large\+\_\+image\+\_\+channels} (int image) const
+\item 
+\mbox{\Hypertarget{class_mosaic_images_ac006d53107ac14108f51d5098b8fb4a1}\label{class_mosaic_images_ac006d53107ac14108f51d5098b8fb4a1}} 
+int {\bfseries get\+\_\+large\+\_\+image\+\_\+width} (int image) const
+\item 
+\mbox{\Hypertarget{class_mosaic_images_a6bf73d95f96cf4fd2285f758381e40f2}\label{class_mosaic_images_a6bf73d95f96cf4fd2285f758381e40f2}} 
+int {\bfseries get\+\_\+large\+\_\+image\+\_\+height} (int image) const
+\item 
+\mbox{\Hypertarget{class_mosaic_images_a4cf8078f212d403536c419d0e96c764f}\label{class_mosaic_images_a4cf8078f212d403536c419d0e96c764f}} 
+int {\bfseries get\+\_\+image\+\_\+classification} (int image) const
+\item 
+\mbox{\Hypertarget{class_mosaic_images_afeefc659cd491256bbc2e15f68eec4d2}\label{class_mosaic_images_afeefc659cd491256bbc2e15f68eec4d2}} 
+int {\bfseries get\+\_\+classification} (int subimage) const
+\item 
+\mbox{\Hypertarget{class_mosaic_images_a92fe7f2591f600788c4059760291ef06}\label{class_mosaic_images_a92fe7f2591f600788c4059760291ef06}} 
+float {\bfseries get\+\_\+pixel} (int subimage, int z, int y, int x) const
+\item 
+\mbox{\Hypertarget{class_mosaic_images_ac5276c1194c374a9f70f2b87cbeca2e3}\label{class_mosaic_images_ac5276c1194c374a9f70f2b87cbeca2e3}} 
+float {\bfseries get\+\_\+raw\+\_\+pixel} (int subimage, int z, int y, int x) const
+\item 
+\mbox{\Hypertarget{class_mosaic_images_a20866c4ca79cddad3f077b49ed4be769}\label{class_mosaic_images_a20866c4ca79cddad3f077b49ed4be769}} 
+void {\bfseries calculate\+\_\+avg\+\_\+std\+\_\+dev} ()
+\item 
+\mbox{\Hypertarget{class_mosaic_images_a02c1a6124ef802c69eee55b48423b196}\label{class_mosaic_images_a02c1a6124ef802c69eee55b48423b196}} 
+float {\bfseries get\+\_\+channel\+\_\+avg} (int channel) const
+\item 
+\mbox{\Hypertarget{class_mosaic_images_afb638a6ac9a51208ba1bdfa0b935c723}\label{class_mosaic_images_afb638a6ac9a51208ba1bdfa0b935c723}} 
+float {\bfseries get\+\_\+channel\+\_\+std\+\_\+dev} (int channel) const
+\item 
+\mbox{\Hypertarget{class_mosaic_images_ac46141d659f627ee6e12b6a685edb45c}\label{class_mosaic_images_ac46141d659f627ee6e12b6a685edb45c}} 
+const \textbf{ vector}$<$ float $>$ \& {\bfseries get\+\_\+average} () const
+\item 
+\mbox{\Hypertarget{class_mosaic_images_a1114957ecf2c38040141bd285b9e9e18}\label{class_mosaic_images_a1114957ecf2c38040141bd285b9e9e18}} 
+const \textbf{ vector}$<$ float $>$ \& {\bfseries get\+\_\+std\+\_\+dev} () const
+\item 
+\mbox{\Hypertarget{class_mosaic_images_a04f7e20bb3beb0d21a8d65c51502f858}\label{class_mosaic_images_a04f7e20bb3beb0d21a8d65c51502f858}} 
+void {\bfseries normalize} ()
+\item 
+\mbox{\Hypertarget{class_mosaic_images_a0d5ff3a4cb10356d89b695ab1999abde}\label{class_mosaic_images_a0d5ff3a4cb10356d89b695ab1999abde}} 
+\mbox{\hyperlink{class_large_image}{Large\+Image}} $\ast$ {\bfseries copy\+\_\+image} (int i) const
+\item 
+\mbox{\Hypertarget{class_mosaic_images_a546fc5bb15eec99eeb740a8874f91f51}\label{class_mosaic_images_a546fc5bb15eec99eeb740a8874f91f51}} 
+void {\bfseries set\+\_\+alpha} (int i, const \textbf{ vector}$<$ \textbf{ vector}$<$ float $>$ $>$ \&\+\_\+alpha)
+\item 
+\mbox{\Hypertarget{class_mosaic_images_a8c27e81fdf358f3715e012a35241e731}\label{class_mosaic_images_a8c27e81fdf358f3715e012a35241e731}} 
+void {\bfseries set\+\_\+alpha} (int i, const \textbf{ vector}$<$ \textbf{ vector}$<$ uint8\+\_\+t $>$ $>$ \&\+\_\+alpha)
+\end{DoxyCompactItemize}
+\doxysubsection*{Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{class_mosaic_images_a42e432357c571bb533bccd097c392c6c}\label{class_mosaic_images_a42e432357c571bb533bccd097c392c6c}} 
+\textbf{ vector}$<$ \textbf{ string} $>$ {\bfseries filenames}
+\item 
+\mbox{\Hypertarget{class_mosaic_images_ae8179fe59198f2d18d51c3b351c67b82}\label{class_mosaic_images_ae8179fe59198f2d18d51c3b351c67b82}} 
+int {\bfseries number\+\_\+classes}
+\item 
+\mbox{\Hypertarget{class_mosaic_images_af592a7b3101ce41d452a839226ddcc2f}\label{class_mosaic_images_af592a7b3101ce41d452a839226ddcc2f}} 
+int {\bfseries number\+\_\+images}
+\item 
+\mbox{\Hypertarget{class_mosaic_images_a59e127dbdda91e7471b2db6bdcae3d22}\label{class_mosaic_images_a59e127dbdda91e7471b2db6bdcae3d22}} 
+\textbf{ vector}$<$ int $>$ {\bfseries class\+\_\+sizes}
+\item 
+\mbox{\Hypertarget{class_mosaic_images_a2e6260212e557a17be7c6f3032e5ca97}\label{class_mosaic_images_a2e6260212e557a17be7c6f3032e5ca97}} 
+int {\bfseries padding}
+\item 
+\mbox{\Hypertarget{class_mosaic_images_a62edb4acb537c33da7d41d17e7057b6b}\label{class_mosaic_images_a62edb4acb537c33da7d41d17e7057b6b}} 
+int {\bfseries channels}
+\item 
+\mbox{\Hypertarget{class_mosaic_images_a15a3ff69b78833031233d2aa12242984}\label{class_mosaic_images_a15a3ff69b78833031233d2aa12242984}} 
+int {\bfseries subimage\+\_\+width}
+\item 
+\mbox{\Hypertarget{class_mosaic_images_a6012320a1b04d0e567db136a1366c886}\label{class_mosaic_images_a6012320a1b04d0e567db136a1366c886}} 
+int {\bfseries subimage\+\_\+height}
+\item 
+\mbox{\Hypertarget{class_mosaic_images_a039ae8bf2073e0582416497c6c76b2fd}\label{class_mosaic_images_a039ae8bf2073e0582416497c6c76b2fd}} 
+\textbf{ vector}$<$ \mbox{\hyperlink{class_large_image}{Large\+Image}} $>$ {\bfseries images}
+\item 
+\mbox{\Hypertarget{class_mosaic_images_ae4292e50a95fa6c690978b3ebd8bb2e7}\label{class_mosaic_images_ae4292e50a95fa6c690978b3ebd8bb2e7}} 
+\textbf{ vector}$<$ float $>$ {\bfseries channel\+\_\+avg}
+\item 
+\mbox{\Hypertarget{class_mosaic_images_a2aac949f567bbf8c2805c4131b76dfe4}\label{class_mosaic_images_a2aac949f567bbf8c2805c4131b76dfe4}} 
+\textbf{ vector}$<$ float $>$ {\bfseries channel\+\_\+std\+\_\+dev}
+\end{DoxyCompactItemize}
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+image\+\_\+tools/mosaic\+\_\+image\+\_\+set.\+hxx\item 
+image\+\_\+tools/mosaic\+\_\+image\+\_\+set.\+cxx\end{DoxyCompactItemize}

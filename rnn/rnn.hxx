@@ -17,7 +17,18 @@ using std::vector;
 
 class RNN {
     private:
+
+        /**
+        *   Specifies the length of the dataset.   
+        *   It can be the number of the files in case of time series or number of batches in case of word series
+        */
         int series_length;
+        
+        /**
+        *   Specifies whether to use the regression or not.   
+        *   It will use regression in case of time series and will not use regression in case of word series
+        */
+
         bool use_regression;
 
         vector<RNN_Node_Interface*> input_nodes;
@@ -44,10 +55,31 @@ class RNN {
         void forward_pass(const vector< vector<double> > &series_data, bool using_dropout, bool training, double dropout_probability);
         void backward_pass(double error, bool using_dropout, bool training, double dropout_probability);
 
+
+        /**
+        *   Calculates the sum of cross entropy error by comparing the expected outputs and the predicted outputs.    
+        *   
+        *   \param expected_outputs is the expected outputs according the dataset.
+        *   
+        *   \return sum of the cross entropy error. 
+        */
         double calculate_error_softmax(const vector< vector<double> > &expected_outputs);
         double calculate_error_mse(const vector< vector<double> > &expected_outputs);
         double calculate_error_mae(const vector< vector<double> > &expected_outputs);
 
+        
+        
+        /**
+        *   Calls the calculate_error_softmax after the forward pass across the rnn genome.       
+        *
+        *   \param series_data is the dataset used for the forward pass.
+        *   \param expected_outputs is the expected outputs according to the dataset.
+        *   \param using_dropout is the probability for the node being disabled while forward pass training and not during testing.   
+        *   \param training is to specify whether it is training stage or not to use dropout.
+        *   \param dropout_probability is the probability by which the the nodes will be disabled. will not work during testing stage and without use_droput = true.
+        *   
+        *   \return sum of the cross entropy error over the dataset. 
+        */       
         double prediction_softmax(const vector< vector<double> > &series_data, const vector< vector<double> > &expected_outputs, bool using_dropout, bool training, double dropout_probability);
         double prediction_mse(const vector< vector<double> > &series_data, const vector< vector<double> > &expected_outputs, bool using_dropout, bool training, double dropout_probability);
         double prediction_mae(const vector< vector<double> > &series_data, const vector< vector<double> > &expected_outputs, bool using_dropout, bool training, double dropout_probability);
@@ -65,6 +97,20 @@ class RNN {
 
         uint32_t get_number_weights();
 
+
+         /**
+        *   Updates the analytic gradients after the forward pass across the rnn genome and the backward pass sequentially.       
+        *
+        *   \param test_parameters is the dataset parameters used for the forward pass.
+        *   \param inputs are the inputs according to the dataset that is pass to the for forward pass.
+        *   \param outputs are the expected outputs according to the dataset that is pass to the calculate error for backward pass.
+        *   \param analytic_gradients are the current gradients in the rnn genome that are going to be update after a single pass across the rnn genome.
+        *   \param using_dropout is the probability for the node being disabled while forward pass training and not during testing.   
+        *   \param training is to specify whether it is training stage or not to use dropout.
+        *   \param dropout_probability is the probability by which the the nodes will be disabled. will not work during testing stage and without use_droput = true.
+        *   
+        *   \return sum of the cross entropy error over the dataset. 
+        */ 
         void get_analytic_gradient(const vector<double> &test_parameters, const vector< vector<double> > &inputs, const vector< vector<double> > &outputs, double &mse, vector<double> &analytic_gradient, bool using_dropout, bool training, double dropout_probability);
         void get_empirical_gradient(const vector<double> &test_parameters, const vector< vector<double> > &inputs, const vector< vector<double> > &outputs, double &mae, vector<double> &empirical_gradient, bool using_dropout, bool training, double dropout_probability);
 

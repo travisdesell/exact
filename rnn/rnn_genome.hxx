@@ -50,6 +50,11 @@ class RNN_Genome {
         bool use_low_norm;
         double low_threshold;
 
+        /**
+        *   Specifies whether to use the regression or not.   
+        *   It will use regression in case of time series and will not use regression in case of word series
+        */
+
         bool use_regression;
 
         bool use_dropout;
@@ -67,7 +72,11 @@ class RNN_Genome {
 
         vector<double> initial_parameters;
 
-        
+        /**
+        *   Specifies the validation error across the dataset.   
+        *   It will use mean squared error when regression in case of time series and cross entropy loss when regression not used in case of word series
+        */
+
         double best_validation_mse;
         double best_validation_mae;
         vector<double> best_parameters;
@@ -127,7 +136,16 @@ class RNN_Genome {
         int32_t get_enabled_node_count();
         int32_t get_node_count();
 
+
+        /**
+        *   Calculates the fitness of the rnn genome across the dataset.    
+        *   This will be the mean squared error in case of regression and cross entropy loss in case of classification.
+        *   
+        *   \return MSE or SOFTMAX ERROR. 
+        */
         double get_fitness() const;
+
+
         double get_best_validation_softmax() const; 
         double get_best_validation_mse() const;
         double get_best_validation_mae() const;
@@ -206,6 +224,16 @@ class RNN_Genome {
 
         void backpropagate_stochastic(const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, const vector< vector< vector<double> > > &validation_inputs, const vector< vector< vector<double> > > &validation_outputs);
 
+
+        /**
+        *   Predicts the softmax error after a single pass across the rnn genome.       
+        *
+        *   \param parameters is the parameters such as dropout, momentum type used for the forward pass.
+        *   \param inputs are the inputs according to the dataset that is pass to the for forward pass.
+        *   \param outputs are the expected outputs according to the dataset that is pass to the calculate error for backward pass.
+        *   
+        *   \return average of the cross entropy error over the dataset. 
+        */ 
         double get_softmax(const vector<double> &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs);
         double get_mse(const vector<double> &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs);
         double get_mae(const vector<double> &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs);
@@ -213,6 +241,19 @@ class RNN_Genome {
 
         vector< vector<double> > get_predictions(const vector<double> &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs);
         void write_predictions(string output_directory, const vector<string> &input_filenames, const vector<double> &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, TimeSeriesSets *time_series_sets);
+        
+        /**
+        *   Predicts the cross entropy loss after a single pass across the rnn genome.       
+        *
+        *   \param output_directory is the file directory that contains all the output files.
+        *   \param inputs_filenames are the inputs files according to the dataset that is pass to the for forward pass.
+        *   \param inputs are the inputs according to the dataset that is pass to the for forward pass.        
+        *   \param outputs are the expected outputs according to the dataset that is pass to the calculate error for backward pass.
+        *   \param parameters is the parameters such as dropout, momentum type used for the forward pass.
+        *   \param word_series_sets is the Corpus from the word series dataset.
+        *   
+        *   Calls the write predictions from the rnn class.  
+        */ 
         void write_predictions(string output_directory, const vector<string> &input_filenames, const vector<double> &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, Corpus * word_series_sets);
 
         void get_mu_sigma(const vector<double> &p, double &mu, double &sigma);
