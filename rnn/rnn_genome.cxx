@@ -899,7 +899,7 @@ void RNN_Genome::get_analytic_gradient(vector<RNN*> &rnns, const vector<double> 
     double mse_sum = 0.0;
     vector<thread> threads;
     for (uint32_t i = 0; i < rnns.size(); i++) {
-        if(use_regression) {
+        if (use_regression) {
             threads.push_back( thread(forward_pass_thread_regression, rnns[i], parameters, inputs[i], outputs[i], i, mses, use_dropout, training, dropout_probability) );
 
         } else {
