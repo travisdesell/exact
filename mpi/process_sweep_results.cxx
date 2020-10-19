@@ -214,19 +214,19 @@ int main(int argc, char** argv) {
                             string s;
 
                             getline(ss, s, ',');
-                            int fold = stoi(s);
+                            //int fold = stoi(s);
 
                             getline(ss, s, ',');
-                            int repeat = stoi(s);
+                            //int repeat = stoi(s);
 
                             getline(ss, s, ',');
-                            int runtime = stoi(s);
+                            //int runtime = stoi(s);
 
                             getline(ss, s, ',');
-                            double training_mse = stod(s);
+                            //double training_mse = stod(s);
 
                             getline(ss, s, ',');
-                            double training_mae = stod(s);
+                            //double training_mae = stod(s);
 
                             getline(ss, s, ',');
                             double test_mse = stod(s);

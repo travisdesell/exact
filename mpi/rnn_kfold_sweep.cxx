@@ -370,7 +370,7 @@ ResultSet handle_job(int rank, int current_job) {
     vector<string> output_parameter_names = time_series_sets->get_output_parameter_names();
 
     int number_inputs = time_series_sets->get_number_inputs();
-    int number_outputs = time_series_sets->get_number_outputs();
+    //int number_outputs = time_series_sets->get_number_outputs();
 
     RNN_Genome *genome = NULL;
     if (rnn_type == "one_layer_lstm") {

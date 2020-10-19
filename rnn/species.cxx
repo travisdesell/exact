@@ -87,62 +87,34 @@ void Species::copy_two_random_genomes(uniform_real_distribution<double> &rng_0_1
     *genome2 = genomes[p2]->copy();
 }
 
-
 //returns -1 for not inserted, otherwise the index it was inserted at
 //inserts a copy of the genome, caller of the function will need to delete their
 //pointer
 int32_t Species::insert_genome(RNN_Genome *genome) {
-
-    Log::debug("getting fitness of genome copy\n");
-    double new_fitness = genome->get_fitness();
     Log::info("inserting genome with fitness: %s to species %d\n", parse_fitness(genome->get_fitness()).c_str(), id);
 
-    // int32_t duplicate_genome_index = contains(genome);
-    // if (duplicate_genome_index >= 0) {
-    //     //if fitness is better, replace this genome with new one
-    //     Log::info("found duplicate genome at position: %d\n", duplicate_genome_index);
-
-    //     RNN_Genome *duplicate = genomes[duplicate_genome_index];
-    //     if (duplicate->get_fitness() > new_fitness) {
-    //         //erase the genome with loewr fitness from the vector;
-    //         Log::info("REPLACING DUPLICATE GENOME, fitness of genome in search: %s, new fitness: %s\n", parse_fitness(duplicate->get_fitness()).c_str(), parse_fitness(genome->get_fitness()).c_str());
-    //         genomes.erase(genomes.begin() + duplicate_genome_index);
-    //         delete duplicate;
-
-    //     } else {
-    //         Log::info("island already contains genome with a better fitness! not inserting.\n");
-    //         return -1;
-    //     }
-    // }
-
-    //inorder insert the new individual
+    // inorder insert the new individual
     RNN_Genome *copy = genome->copy();
-    copy -> set_generation_id(genome -> get_generation_id());
-    copy -> set_group_id(id);
-    vector<double> best = copy -> get_best_parameters();
-    // Log::error("best parameter size is: %d \n" , best.size());
+    copy->set_generation_id(genome->get_generation_id());
+    copy->set_group_id(id);
+    vector<double> best = copy->get_best_parameters();
 
     if(best.size() != 0){
-    //     // for (int i = 0; i < best.size(); i++) {
-    //     //     Log::error("best parameter %d of copy: %f \n",i, best[i] );
-    //     // }
-        copy->set_weights(copy -> get_best_parameters());
+        copy->set_weights(copy->get_best_parameters());
     }
     vector<double> copy_weights;
     copy->get_weights(copy_weights);
-    double avg = copy->get_avg_edge_weight();
     auto index_iterator = genomes.insert( upper_bound(genomes.begin(), genomes.end(), copy, sort_genomes_by_fitness()), copy);
-    Log::info("created copy to insert to island: %d\n", copy -> get_group_id());
-    //calculate the index the genome was inseretd at from the iterator
+   
+    // calculate the index the genome was inseretd at from the iterator
     int32_t insert_index = index_iterator - genomes.begin();
-    Log::info("inserted genome at index: %d\n", insert_index);
 
     if (insert_index == 0) {
-        //this was a new best genome for this island
+        // this was a new best genome for this island
         Log::info("new best fitness for island: %d!\n", id);
         if (genome->get_fitness() != EXAMM_MAX_DOUBLE) {
-            //need to set the weights for non-initial genomes so we
-            //can generate a proper graphviz file
+            // need to set the weights for non-initial genomes so we
+            // can generate a proper graphviz file
             vector<double> best_parameters = genome->get_best_parameters();
             genome->set_weights(best_parameters);
         }
@@ -150,8 +122,10 @@ int32_t Species::insert_genome(RNN_Genome *genome) {
     } else  {
         species_not_improving_count ++;
     }
-    inserted_genome_id.push_back( copy -> get_generation_id());
-    Log::info("genome %d inserted! \n", genome -> get_generation_id());
+
+    inserted_genome_id.push_back( copy->get_generation_id());
+
+    Log::info("Inserted genome %d at index %d\n", genome->get_generation_id(), insert_index);
     return insert_index;
 }
 
@@ -167,12 +141,11 @@ vector<RNN_Genome *> Species::get_genomes() {
 }
 
 RNN_Genome* Species::get_latested_genome() {
-    int32_t position;
     RNN_Genome* latest = NULL;
     for (auto it = inserted_genome_id.rbegin(); it != inserted_genome_id.rend(); ++it){
         int32_t latest_id = *it;
-        for (int i = 0; i < genomes.size(); i++){
-            if (genomes[i] -> get_generation_id() == latest_id){
+        for (int i = 0; i < genomes.size(); i++) {
+            if (genomes[i]->get_generation_id() == latest_id) {
                 latest = genomes[i];
                 break;
             }
@@ -193,8 +166,8 @@ void Species::fitness_sharing_remove(double fitness_threshold, function<double (
     double distance [N][N];
     for (int i = 0; i < N; i++) {
         distance_sum[i] = 0;
-        for(int j = 0; j < N; j++) {
-            if (i < j){
+        for (int j = 0; j < N; j++) {
+            if (i < j) {
                 distance[i][j] = get_distance(genomes[i], genomes[j]);
             }
             else if (i > j) {
@@ -203,7 +176,7 @@ void Species::fitness_sharing_remove(double fitness_threshold, function<double (
             else {
                 distance[i][j] = 0;
             }
-            if (distance[i][j] > fitness_threshold){
+            if (distance[i][j] > fitness_threshold) {
                 distance_sum[i] += 0;
             } else {
                 distance_sum[i] += 1;
@@ -214,8 +187,8 @@ void Species::fitness_sharing_remove(double fitness_threshold, function<double (
         sum_square += fitness_share[i] * fitness_share[i];
     }
     double fitness_share_mean = fitness_share_total / N;
-    double fitness_share_std = sqrt(sum_square/(N-1));
-    double upper_cut_off = fitness_share_mean + fitness_share_std *3;
+    double fitness_share_std = sqrt( sum_square / (N-1) );
+    double upper_cut_off = fitness_share_mean + fitness_share_std * 3;
 
     int32_t i = 0;
     auto it = genomes.begin();
@@ -233,8 +206,7 @@ void Species::fitness_sharing_remove(double fitness_threshold, function<double (
 
 void Species::erase_species() {
     genomes.clear();
-    // Log::error("current species size after erased: %d\n", genomes.size());
-    if(genomes.size()!=0){
+    if(genomes.size() != 0){
         Log::error("The worst island is not fully erased!\n");
     }
 }

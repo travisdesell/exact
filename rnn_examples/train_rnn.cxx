@@ -82,7 +82,7 @@ int main(int argc, char **argv) {
     time_series_sets->export_test_series(time_offset, test_inputs, test_outputs);
 
     int number_inputs = time_series_sets->get_number_inputs();
-    int number_outputs = time_series_sets->get_number_outputs();
+    //int number_outputs = time_series_sets->get_number_outputs();
 
     string rnn_type;
     get_argument(arguments, "--rnn_type", true, rnn_type);

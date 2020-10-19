@@ -1601,7 +1601,7 @@ void CNN_Genome::evaluate_images(const ImagesInterface &images, const vector<int
 
         double previous_error = total_error;
 
-        float beta = 0.0; //controls the strength of the confidence penalty
+        //float beta = 0.0; //controls the strength of the confidence penalty
 
         float error = values_out[expected_class];
         if (error == 0) error = 1.0 / EXACT_MAX_FLOAT;
