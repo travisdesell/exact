@@ -130,20 +130,18 @@ void RANDOM_DAG_Node::print_gradient(string gradient_name) {
     Log::info("\tgradient['%s']: %lf\n", gradient_name.c_str(), get_gradient(gradient_name));
 }
 
-double RANDOM_DAG_Node::activation(double value, int act_operator){
-
-    if(act_operator == 0) return sigmoid(value);
-    if(act_operator == 1) return tanh(value);
-    if(act_operator == 2) return swish(value);
-    if(act_operator == 3) return leakyReLU(value);
-    if(act_operator == 4) return identity(value);
+double RANDOM_DAG_Node::activation(double value, int act_operator) {
+    if (act_operator == 0) return sigmoid(value);
+    if (act_operator == 1) return tanh(value);
+    if (act_operator == 2) return swish(value);
+    if (act_operator == 3) return leakyReLU(value);
+    if (act_operator == 4) return identity(value);
 
     Log::fatal("ERROR: invalid act_operator: %d\n", act_operator); 
     exit(1);
 }
 
-double RANDOM_DAG_Node::activation_derivative(double value, double input, int act_operator){
-
+double RANDOM_DAG_Node::activation_derivative(double value, double input, int act_operator) {
     if(act_operator == 0) return sigmoid_derivative(input);
     if(act_operator == 1) return tanh_derivative(input);
     if(act_operator == 2) return swish_derivative(value,input);
