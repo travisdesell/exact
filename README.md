@@ -7,9 +7,12 @@ The EXACT algorithm can also checkpoint to a database, however this is not requi
 If you are using OSX, to set up the environment:
 
 ```
-$ brew install cmake
-$ brew install mysql
-$ xcode-select --install
+brew install cmake
+brew install mysql
+brew install open-mpi
+brew install libtiff
+brew install libpng
+xcode-select --install
 ```
 
 To build:
