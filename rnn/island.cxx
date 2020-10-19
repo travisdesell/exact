@@ -348,7 +348,7 @@ int32_t Island::get_status() {
 }
 
 void Island::set_status(int32_t status_to_set) {
-    if(status_to_set >= 0 && status_to_set <= 2) {
+    if (status_to_set >= Island::INITIALIZING && status_to_set <= Island::REPOPULATING) {
         status = status_to_set;
     } else {
         Log::error("Island::set_status: Wrong island status to set! %d\n", status_to_set);
