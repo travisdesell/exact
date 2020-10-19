@@ -334,7 +334,8 @@ void Island::erase_island() {
     erased = true;
     erase_again = 5;
     Log::info("Worst island size after erased: %d\n", genomes.size());
-    if(genomes.size()!=0){
+
+    if (genomes.size() != 0) {
         Log::error("The worst island is not fully erased!\n");
     }
 }
@@ -348,7 +349,7 @@ int32_t Island::get_status() {
 }
 
 void Island::set_status(int32_t status_to_set) {
-    if (status_to_set >= Island::INITIALIZING && status_to_set <= Island::REPOPULATING) {
+    if (status_to_set == Island::INITIALIZING || status_to_set == Island::FILLED || status_to_set == Island::REPOPULATING) {
         status = status_to_set;
     } else {
         Log::error("Island::set_status: Wrong island status to set! %d\n", status_to_set);
