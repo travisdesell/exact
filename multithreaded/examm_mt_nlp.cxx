@@ -94,6 +94,8 @@ int main(int argc, char  **argv)
     int32_t word_offset = 1;
     get_argument(arguments,"--word_offset",true,word_offset);
 
+    uint32_t batch_size = 64;
+    get_argument(arguments,"--batch_size",true,batch_size);
 
 	Corpus* corpus_sets = Corpus::generate_from_arguments(arguments);
 

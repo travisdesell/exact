@@ -1,0 +1,109 @@
+\hypertarget{classisland__purging__args_1_1_island_purging_args}{}\doxysection{island\+\_\+purging\+\_\+args.\+Island\+Purging\+Args Class Reference}
+\label{classisland__purging__args_1_1_island_purging_args}\index{island\_purging\_args.IslandPurgingArgs@{island\_purging\_args.IslandPurgingArgs}}
+\doxysubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{classisland__purging__args_1_1_island_purging_args_a4b9638c5cda5ea696b73d0bac5b7b646}\label{classisland__purging__args_1_1_island_purging_args_a4b9638c5cda5ea696b73d0bac5b7b646}} 
+def {\bfseries \+\_\+\+\_\+init\+\_\+\+\_\+} (self, rec, filename)
+\item 
+\mbox{\Hypertarget{classisland__purging__args_1_1_island_purging_args_a989d7b5c2711f982f060ea0b60a7393a}\label{classisland__purging__args_1_1_island_purging_args_a989d7b5c2711f982f060ea0b60a7393a}} 
+def {\bfseries to\+\_\+args} (self)
+\end{DoxyCompactItemize}
+\doxysubsection*{Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{classisland__purging__args_1_1_island_purging_args_a120817e8732b70bd03a800994496540e}\label{classisland__purging__args_1_1_island_purging_args_a120817e8732b70bd03a800994496540e}} 
+{\bfseries c2a}
+\end{DoxyCompactItemize}
+\doxysubsection*{Static Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+dictionary {\bfseries S\+E\+L\+E\+C\+T\+I\+O\+N\+\_\+\+M\+E\+T\+H\+O\+D\+\_\+\+M\+AP}
+\item 
+dictionary {\bfseries C\+O\+N\+F\+I\+G\+\_\+\+O\+P\+T\+I\+O\+NS}
+\item 
+dictionary {\bfseries D\+E\+F\+A\+U\+L\+TS}
+\item 
+dictionary {\bfseries T\+Y\+P\+ES}
+\item 
+dictionary {\bfseries C\+O\+N\+S\+T\+R\+A\+I\+N\+TS}
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Member Data Documentation}
+\mbox{\Hypertarget{classisland__purging__args_1_1_island_purging_args_ac0408cda21769d62b29c0b07080ea541}\label{classisland__purging__args_1_1_island_purging_args_ac0408cda21769d62b29c0b07080ea541}} 
+\index{island\_purging\_args.IslandPurgingArgs@{island\_purging\_args.IslandPurgingArgs}!CONFIG\_OPTIONS@{CONFIG\_OPTIONS}}
+\index{CONFIG\_OPTIONS@{CONFIG\_OPTIONS}!island\_purging\_args.IslandPurgingArgs@{island\_purging\_args.IslandPurgingArgs}}
+\doxysubsubsection{\texorpdfstring{CONFIG\_OPTIONS}{CONFIG\_OPTIONS}}
+{\footnotesize\ttfamily dictionary island\+\_\+purging\+\_\+args.\+Island\+Purging\+Args.\+C\+O\+N\+F\+I\+G\+\_\+\+O\+P\+T\+I\+O\+NS\hspace{0.3cm}{\ttfamily [static]}}
+
+{\bfseries Initial value\+:}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{=  \{}
+\DoxyCodeLine{            \textcolor{stringliteral}{'selection\_method'}: \textcolor{keyword}{lambda} self, x: [\textcolor{stringliteral}{'-\/-\/check\_on\_island\_method'}, IslandPurgingArgs.SELECTION\_METHOD\_MAP[x]],}
+\DoxyCodeLine{            \textcolor{stringliteral}{'period'}:           \textcolor{keyword}{lambda} self, x: [\textcolor{stringliteral}{'-\/-\/num\_genomes\_check\_worst\_fit'}, str(x)],}
+\DoxyCodeLine{    \}}
+
+\end{DoxyCode}
+\mbox{\Hypertarget{classisland__purging__args_1_1_island_purging_args_a688ff9b68d60391090be6f49ee90cc27}\label{classisland__purging__args_1_1_island_purging_args_a688ff9b68d60391090be6f49ee90cc27}} 
+\index{island\_purging\_args.IslandPurgingArgs@{island\_purging\_args.IslandPurgingArgs}!CONSTRAINTS@{CONSTRAINTS}}
+\index{CONSTRAINTS@{CONSTRAINTS}!island\_purging\_args.IslandPurgingArgs@{island\_purging\_args.IslandPurgingArgs}}
+\doxysubsubsection{\texorpdfstring{CONSTRAINTS}{CONSTRAINTS}}
+{\footnotesize\ttfamily dictionary island\+\_\+purging\+\_\+args.\+Island\+Purging\+Args.\+C\+O\+N\+S\+T\+R\+A\+I\+N\+TS\hspace{0.3cm}{\ttfamily [static]}}
+
+{\bfseries Initial value\+:}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{=  \{}
+\DoxyCodeLine{            \textcolor{stringliteral}{'period'}: (\textcolor{keyword}{lambda} self: self.period > 0,}
+\DoxyCodeLine{                    \textcolor{stringliteral}{"must be a positive integer"}),}
+\DoxyCodeLine{            \textcolor{stringliteral}{'selection\_method'}: (\textcolor{keyword}{lambda} self: self.selection\_method \textcolor{keywordflow}{in} \{\textcolor{stringliteral}{'worst\_best'}\},}
+\DoxyCodeLine{                    \textcolor{stringliteral}{"must be unset or 'worst\_best'"})}
+\DoxyCodeLine{    \}}
+
+\end{DoxyCode}
+\mbox{\Hypertarget{classisland__purging__args_1_1_island_purging_args_af4b7da43c0947f3b0964a07c0df81748}\label{classisland__purging__args_1_1_island_purging_args_af4b7da43c0947f3b0964a07c0df81748}} 
+\index{island\_purging\_args.IslandPurgingArgs@{island\_purging\_args.IslandPurgingArgs}!DEFAULTS@{DEFAULTS}}
+\index{DEFAULTS@{DEFAULTS}!island\_purging\_args.IslandPurgingArgs@{island\_purging\_args.IslandPurgingArgs}}
+\doxysubsubsection{\texorpdfstring{DEFAULTS}{DEFAULTS}}
+{\footnotesize\ttfamily dictionary island\+\_\+purging\+\_\+args.\+Island\+Purging\+Args.\+D\+E\+F\+A\+U\+L\+TS\hspace{0.3cm}{\ttfamily [static]}}
+
+{\bfseries Initial value\+:}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{=  \{}
+\DoxyCodeLine{            \textcolor{stringliteral}{'selection\_method'}: \textcolor{keyword}{lambda}: \textcolor{keywordtype}{None},}
+\DoxyCodeLine{            \textcolor{stringliteral}{'period'}: \textcolor{keyword}{lambda}: \textcolor{keywordtype}{None},}
+\DoxyCodeLine{    \}}
+
+\end{DoxyCode}
+\mbox{\Hypertarget{classisland__purging__args_1_1_island_purging_args_a3777a6ef4fac9e1e48234b5f76169614}\label{classisland__purging__args_1_1_island_purging_args_a3777a6ef4fac9e1e48234b5f76169614}} 
+\index{island\_purging\_args.IslandPurgingArgs@{island\_purging\_args.IslandPurgingArgs}!SELECTION\_METHOD\_MAP@{SELECTION\_METHOD\_MAP}}
+\index{SELECTION\_METHOD\_MAP@{SELECTION\_METHOD\_MAP}!island\_purging\_args.IslandPurgingArgs@{island\_purging\_args.IslandPurgingArgs}}
+\doxysubsubsection{\texorpdfstring{SELECTION\_METHOD\_MAP}{SELECTION\_METHOD\_MAP}}
+{\footnotesize\ttfamily dictionary island\+\_\+purging\+\_\+args.\+Island\+Purging\+Args.\+S\+E\+L\+E\+C\+T\+I\+O\+N\+\_\+\+M\+E\+T\+H\+O\+D\+\_\+\+M\+AP\hspace{0.3cm}{\ttfamily [static]}}
+
+{\bfseries Initial value\+:}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{=  \{}
+\DoxyCodeLine{            \textcolor{stringliteral}{'worst\_best'}: \textcolor{stringliteral}{'clear\_island\_with\_worst\_best\_genome'}}
+\DoxyCodeLine{    \}}
+
+\end{DoxyCode}
+\mbox{\Hypertarget{classisland__purging__args_1_1_island_purging_args_ababdf6b88eef9038a42ca6c03c8337ab}\label{classisland__purging__args_1_1_island_purging_args_ababdf6b88eef9038a42ca6c03c8337ab}} 
+\index{island\_purging\_args.IslandPurgingArgs@{island\_purging\_args.IslandPurgingArgs}!TYPES@{TYPES}}
+\index{TYPES@{TYPES}!island\_purging\_args.IslandPurgingArgs@{island\_purging\_args.IslandPurgingArgs}}
+\doxysubsubsection{\texorpdfstring{TYPES}{TYPES}}
+{\footnotesize\ttfamily dictionary island\+\_\+purging\+\_\+args.\+Island\+Purging\+Args.\+T\+Y\+P\+ES\hspace{0.3cm}{\ttfamily [static]}}
+
+{\bfseries Initial value\+:}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{=  \{}
+\DoxyCodeLine{            \textcolor{stringliteral}{'period'}: \{int\},}
+\DoxyCodeLine{            \textcolor{stringliteral}{'selection\_method'}: \{str\}}
+\DoxyCodeLine{    \}}
+
+\end{DoxyCode}
+
+
+The documentation for this class was generated from the following file\+:\begin{DoxyCompactItemize}
+\item 
+cli/island\+\_\+purging\+\_\+args.\+py\end{DoxyCompactItemize}

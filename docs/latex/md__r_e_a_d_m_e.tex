@@ -1,0 +1,155 @@
+E\+X\+O\+NA has been developed to compile using C\+Make, which should be installed before attempting to compile. To use the M\+PI version, a version of M\+PI (such as Open\+M\+PI) should be installed. \mbox{\hyperlink{class_e_x_a_c_t}{E\+X\+A\+CT}} currently requires libtiff and libpng The \mbox{\hyperlink{class_e_x_a_c_t}{E\+X\+A\+CT}} algorithm can also checkpoint to a database, however this is not required. To enable this I recommend installing libmysql-\/dev via apt-\/get on Linux systems, or mysql via \href{https://brew.sh}{\texttt{ homebrew}} on O\+SX. Other than that, E\+X\+A\+C\+T/\+E\+X\+A\+L\+T/\+E\+X\+A\+MM has no prerequesites other than c++11 compatible compiler.
+
+If you are using O\+SX, to set up the environment\+:
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{\$ brew install cmake}
+\DoxyCodeLine{\$ brew install mysql}
+\DoxyCodeLine{\$ xcode-\/select -\/-\/install}
+\end{DoxyCode}
+
+
+To build\+:
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{\string~/exact \$ mkdir build}
+\DoxyCodeLine{\string~/exact \$ cd build}
+\DoxyCodeLine{\string~/exact/build \$ cmake ..}
+\DoxyCodeLine{\string~/exact/build \$ make}
+\end{DoxyCode}
+
+
+You may also want to have graphviz installed so you can generate images of the evolved neural networks. E\+X\+A\+C\+T/\+E\+X\+A\+L\+T/\+E\+X\+A\+MM will write out evolved genomes in a .gv (graphviz) format for this. For example, can generate a pdf from a gv file (assuming graphviz is installed with)\+:
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{\$ dot -\/Tpdf genome.gv -\/o genome.pdf}
+\end{DoxyCode}
+\hypertarget{md__r_e_a_d_m_e_autotoc_md1}{}\doxysection{E\+X\+A\+M\+M\+: Evolutionary e\+Xploration of Augmenting Memory Models and E\+X\+A\+L\+T\+: Evolutionary e\+Xploration of Augmenting L\+S\+T\+M Topologies}\label{md__r_e_a_d_m_e_autotoc_md1}
+Source code for E\+X\+A\+L\+T/\+E\+X\+A\+MM can be found in the rnn subdirectory. E\+X\+A\+LT has been enhanced with the ability to utilize more recurrent memory cells and has been renamed \mbox{\hyperlink{class_e_x_a_m_m}{E\+X\+A\+MM}}. The memory cells currently implemented are Delta-\/\+R\+NN, G\+RU, L\+S\+TM, M\+GU, and U\+G\+R\+N\+Ns. Some example time series data has been provided as part of two publications on E\+X\+A\+LT and \mbox{\hyperlink{class_e_x_a_m_m}{E\+X\+A\+MM}}, which also provide implementation details\+:
+
+
+\begin{DoxyEnumerate}
+\item Alex Ororbia, Abd\+El\+Rahman El\+Said, and Travis Desell. {\bfseries{\href{https://dl.acm.org/citation.cfm?id=3321795}{\texttt{ Investigating Recurrent Neural Network Memory Structures using Neuro-\/\+Evolution}}.}} {\itshape The Genetic and Evolutionary Computation Conference (G\+E\+C\+CO 2019).} Prague, Czech Republic. July 8-\/12, 2019.
+\item Abd\+El\+Rahman El\+Said, Steven Benson, Shuchita Patwardhan, David Stadem and Travis Desell. {\bfseries{\href{https://link.springer.com/chapter/10.1007/978-3-030-16692-2_33}{\texttt{ Evolving Recurrent Neural Networks for Time Series Data Prediction of Coal Plant Parameters}}.}} {\itshape The 22nd International Conference on the Applications of Evolutionary Computation (Evo\+Star\+: Evo\+Apps 2019).} Leipzig, Germany. April 24-\/26, 2019.
+\end{DoxyEnumerate}
+
+These datasets can be found in the {\itshape datasets} directory, and provide example C\+SV files which you can use with \mbox{\hyperlink{class_e_x_a_m_m}{E\+X\+A\+MM}}. \mbox{\hyperlink{class_e_x_a_m_m}{E\+X\+A\+MM}} can be run in two different ways, a multithreaded version\+:
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{./multithreaded/examm\_mt -\/-\/number\_threads 9 -\/-\/training\_filenames ../datasets/2018\_coal/burner\_[0-\/9].csv -\/-\/test\_filenames ../datasets/2018\_coal/burner\_1[0-\/1].csv -\/-\/time\_offset 1 -\/-\/input\_parameter\_names Conditioner\_Inlet\_Temp Conditioner\_Outlet\_Temp Coal\_Feeder\_Rate Primary\_Air\_Flow Primary\_Air\_Split System\_Secondary\_Air\_Flow\_Total Secondary\_Air\_Flow Secondary\_Air\_Split Tertiary\_Air\_Split Total\_Comb\_Air\_Flow Supp\_Fuel\_Flow Main\_Flm\_Int -\/-\/output\_parameter\_names Main\_Flm\_Int -\/-\/number\_islands 10 -\/-\/population\_size 10 -\/-\/max\_genomes 2000 -\/-\/bp\_iterations 10 -\/-\/output\_directory "./test\_output" -\/-\/possible\_node\_types simple UGRNN MGU GRU delta LSTM -\/-\/std\_message\_level INFO -\/-\/file\_message\_level INFO}
+\end{DoxyCode}
+
+
+And a parallel version using M\+PI\+:
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{\string~/exact/build/ \$ mpirun -\/np 9 ./mpi/examm\_mpi -\/-\/training\_filenames ../datasets/2018\_coal/burner\_[0-\/9].csv -\/-\/test\_filenames ../datasets/2018\_coal/burner\_1[0-\/1].csv -\/-\/time\_offset 1 -\/-\/input\_parameter\_names Conditioner\_Inlet\_Temp Conditioner\_Outlet\_Temp Coal\_Feeder\_Rate Primary\_Air\_Flow Primary\_Air\_Split System\_Secondary\_Air\_Flow\_Total Secondary\_Air\_Flow Secondary\_Air\_Split Tertiary\_Air\_Split Total\_Comb\_Air\_Flow Supp\_Fuel\_Flow Main\_Flm\_Int -\/-\/output\_parameter\_names Main\_Flm\_Int -\/-\/number\_islands 10 -\/-\/population\_size 10 -\/-\/max\_genomes 2000 -\/-\/bp\_iterations 10 -\/-\/output\_directory "./test\_output" -\/-\/possible\_node\_types simple UGRNN MGU GRU delta LSTM -\/-\/std\_message\_level INFO -\/-\/file\_message\_level INFO}
+\end{DoxyCode}
+
+
+Which will run \mbox{\hyperlink{class_e_x_a_m_m}{E\+X\+A\+MM}} with 9 threads or 9 processes, respectively. Note that \mbox{\hyperlink{class_e_x_a_m_m}{E\+X\+A\+MM}} uses one thread/process as the master and this typically just waits on the results of backprop so you if you have 8 processors/cores available you can usually run \mbox{\hyperlink{class_e_x_a_m_m}{E\+X\+A\+MM}} with 9 processes/threads for better performance. A performance log of \mbox{\hyperlink{class_r_n_n}{R\+NN}} fitnesses will be exported into fitness\+\_\+log.\+csv, as well as the best found R\+N\+Ns into the specified output directory, in this case $\ast$./test\+\_\+output$\ast$. You can control the level of message logging for standard output with {\itshape --std\+\_\+message\+\_\+level} (options are N\+O\+NE, F\+A\+T\+AL, E\+R\+R\+OR, W\+A\+R\+N\+I\+NG, I\+N\+FO, D\+E\+B\+UG, T\+R\+A\+CE and A\+LL) and message logging to files (which will be placed in the output directory) with {\itshape --file\+\_\+message\+\_\+level}. Separate logging files will be made for each thread/process.
+
+The aviation data can be run similarly, however it the data should be normalized first (which can be done with the {\itshape --normalize} command line parameter), e.\+g.\+:
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{./multithreaded/examm\_mt -\/-\/number\_threads 9 -\/-\/training\_filenames ../datasets/2018\_ngafid/flight\_[0-\/7].csv -\/-\/test\_filenames ../datasets/2018\_ngafid/flight\_[8-\/9].csv -\/-\/time\_offset 1 -\/-\/input\_parameter\_names "AltAGL" "E1 CHT1" "E1 CHT2" "E1 CHT3" "E1 CHT4" "E1 EGT1" "E1 EGT2" "E1 EGT3" "E1 EGT4" "E1 OilP" "E1 OilT" "E1 RPM" "FQtyL" "FQtyR" "GndSpd" "IAS" "LatAc" "NormAc" "OAT" "Pitch" "Roll" "TAS" "volt1" "volt2" "VSpd" "VSpdG" -\/-\/output\_parameter\_names Pitch -\/-\/number\_islands 10 -\/-\/population\_size 10 -\/-\/max\_genomes 2000 -\/-\/bp\_iterations 10 -\/-\/output\_directory "./test\_output" -\/-\/possible\_node\_types simple UGRNN MGU GRU delta LSTM -\/-\/normalize -\/-\/std\_message\_level INFO -\/-\/file\_message\_level INFO}
+\end{DoxyCode}
+
+
+The {\itshape --time\+\_\+offset} parameter specifies how many time steps in the future \mbox{\hyperlink{class_e_x_a_m_m}{E\+X\+A\+MM}} should predict for the output parameter(s). The {\itshape --number\+\_\+islands} is the number of islands of populations that \mbox{\hyperlink{class_e_x_a_m_m}{E\+X\+A\+MM}} will use, and the {\itshape --population\+\_\+size} parameter specifies how many individuals/genomes are in each island. The {\itshape --bp\+\_\+iterations} specifies how many epochs/iterations backpropagation should be run for each generated \mbox{\hyperlink{class_r_n_n}{R\+NN}} genome.
+
+The\hypertarget{md__r_e_a_d_m_e_autotoc_md2}{}\doxysection{E\+X\+A\+C\+T\+: Evolutionary Exploration of Augmenting Convolutional Topologies}\label{md__r_e_a_d_m_e_autotoc_md2}
+This repository provides source code for the Evolutionary Exploration of Augmenting Convolutional Topologies algorithm. This algorithm progressively evolves convolutional neural networks for image classification problems. The algorithm is asychronous, which allows for easy multithreading and parallelization. Code is provided for running \mbox{\hyperlink{class_e_x_a_c_t}{E\+X\+A\+CT}} as a B\+O\+I\+NC volunteer computing project, on a cluster or supercomputer using M\+PI or on a desktop or laptop using threads.
+
+We\textquotesingle{}ve built and run \mbox{\hyperlink{class_e_x_a_c_t}{E\+X\+A\+CT}} on both an Ubuntu Linux high performance computing cluser and O\+SX laptops and desktops. We have not tried it on Windows. If there are issues with the C\+Make scripts please let us know and we\textquotesingle{}ll update them.
+
+If you want to set this up on your own B\+O\+I\+NC volunteer computing project, we recommend sending us an email as this is a rather complicated process.
+
+For more information on \mbox{\hyperlink{class_e_x_a_c_t}{E\+X\+A\+CT}} please see our following publications\+:
+
+
+\begin{DoxyEnumerate}
+\item Travis Desell. {\bfseries{\href{https://arxiv.org/abs/1811.08286}{\texttt{ Accelerating the Evolution of Convolutional Neural Networks with Node-\/\+Level Mutations and Epigenetic Weight Initialization}}.}} {\itshape ar\+Xiv\+: Neural and Evolutionary Computing (cs.\+NE).} November, 2018.
+\item Travis Desell. {\bfseries{\href{https://ieeexplore.ieee.org/document/8109119}{\texttt{ Developing a Volunteer Computing Project to Evolve Convolutional Neural Networks and Their Hyperparameters}}.}} {\itshape The 13th I\+E\+EE International Conference on e\+Science (e\+Science 2017).} Auckland, New Zealand. October 24-\/27 2017.
+\end{DoxyEnumerate}\hypertarget{md__r_e_a_d_m_e_autotoc_md3}{}\doxysubsection{Setting up Training and Testing Data}\label{md__r_e_a_d_m_e_autotoc_md3}
+This version \mbox{\hyperlink{class_e_x_a_c_t}{E\+X\+A\+CT}} is set up to run using the \href{http://yann.lecun.com/exdb/mnist/}{\texttt{ M\+N\+I\+ST Handwritten Digits Dataset}}. However it expects a different data format where the images and labels are combined. You can download the data and convert it as follows\+:
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{\string~/exact \$ mkdir datasets}
+\DoxyCodeLine{\string~/exact \$ cd datasets}
+\DoxyCodeLine{}
+\DoxyCodeLine{\string~/exact/datasets \$ wget http://yann.lecun.com/exdb/mnist/train-\/images-\/idx3-\/ubyte.gz}
+\DoxyCodeLine{\string~/exact/datasets \$ wget http://yann.lecun.com/exdb/mnist/train-\/labels-\/idx1-\/ubyte.gz}
+\DoxyCodeLine{\string~/exact/datasets \$ wget http://yann.lecun.com/exdb/mnist/t10k-\/images-\/idx3-\/ubyte.gz}
+\DoxyCodeLine{\string~/exact/datasets \$ wget http://yann.lecun.com/exdb/mnist/t10k-\/labels-\/idx1-\/ubyte.gz}
+\DoxyCodeLine{}
+\DoxyCodeLine{\string~/exact/datasets \$ unzip train-\/images-\/idx3-\/ubyte.gz}
+\DoxyCodeLine{\string~/exact/datasets \$ unzip train-\/labels-\/idx1-\/ubyte.gz}
+\DoxyCodeLine{\string~/exact/datasets \$ unzip t10k-\/images-\/idx3-\/ubyte.gz}
+\DoxyCodeLine{\string~/exact/datasets \$ unzip t10k-\/labels-\/idx1-\/ubyte.gz}
+\DoxyCodeLine{}
+\DoxyCodeLine{\string~/exact/datasets \$ cd ../build}
+\DoxyCodeLine{\string~/exact/build \$ ./image\_tools/convert\_mnist\_data ../datasets/train-\/images-\/idx3-\/ubyte ../datasets/train-\/labels-\/idx1-\/ubyte ../datasets/mnist\_training\_data.bin 60000}
+\DoxyCodeLine{\string~/exact/build \$ ./image\_tools/convert\_mnist\_data ../datasets/t10k-\/images-\/idx3-\/ubyte ../datasets/t10k-\/labels-\/idx1-\/ubyte ../datasets/mnist\_testing\_data.bin 10000}
+\end{DoxyCode}
+
+
+You can also split up either the training or test data to add a third dataset of validation images for more robust analysis, e.\+g., so you can train on one set, use the validation set to determine the best C\+N\+Ns for \mbox{\hyperlink{class_e_x_a_c_t}{E\+X\+A\+CT}} to keep, and then after the evolution process is completed you can test the best found genome(s) on the test set which has not been seen before. You can split up the M\+N\+I\+ST training data into a 50k training set and 10k validation set as follows\+:
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{\string~/exact/build/ \$ ./image\_tools/split\_mnist\_data ../datasets/train-\/images-\/idx3-\/ubyte ../datasets/train-\/labels-\/idx1-\/ubyte ../datasets/mnist\_train\_50k.bin ../datasets/mnist\_validation\_10k.bin 60000 1000}
+\end{DoxyCode}
+
+
+Where the usage is\+:
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{./image\_tools/split\_mnist\_data <mnist image file> <mnist label file> <output training file> <output validation file> <expected number of images> <validation images per label>}
+\end{DoxyCode}
+
+
+So this will take 1000 images of each type from the training data and put them into the specified validation file ({\itshape mnist\+\_\+validation\+\_\+10k.\+bin}) and the rest of the images will be in the training set ({\itshape mnist\+\_\+train\+\_\+50k.\+bin}).\hypertarget{md__r_e_a_d_m_e_autotoc_md4}{}\doxysubsection{Running E\+X\+A\+CT}\label{md__r_e_a_d_m_e_autotoc_md4}
+You can then run \mbox{\hyperlink{class_e_x_a_c_t}{E\+X\+A\+CT}} in a similar manner to \mbox{\hyperlink{class_e_x_a_m_m}{E\+X\+A\+MM}}, either using threads or M\+PI. For the threaded version\+:
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{\string~/exact/build/ \$ ./multithreaded/exact\_mt -\/-\/number\_threads 9 -\/-\/padding 2 -\/-\/training\_file ../datasets/mnist\_train\_50k.bin -\/-\/validation\_file ../datasets/mnist\_validation\_10k.bin  -\/-\/testing\_file ../datasets/mnist\_testing\_data.bin -\/-\/population\_size 30 -\/-\/max\_epochs 5 -\/-\/use\_sfmp 1 -\/-\/use\_node\_operations 1 -\/-\/max\_genomes 1000 -\/-\/output\_directory ./test\_exact -\/-\/search\_name "test" -\/-\/reset\_edges 0 -\/-\/images\_resize 50000}
+\end{DoxyCode}
+
+
+And for the M\+PI version\+:
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{\string~/exact/build/ \$ mpirun -\/np 9 ./mpi/exact\_mpi -\/-\/padding 2 -\/-\/training\_file ../datasets/mnist\_train\_50k.bin -\/-\/validation\_file ../datasets/mnist\_validation\_10k.bin  -\/-\/testing\_file ../datasets/mnist\_testing\_data.bin -\/-\/population\_size 30 -\/-\/max\_epochs 5 -\/-\/use\_sfmp 1 -\/-\/use\_node\_operations 1 -\/-\/max\_genomes 1000 -\/-\/output\_directory ./test\_exact -\/-\/search\_name "test" -\/-\/reset\_edges 0 -\/-\/images\_resize 50000}
+\end{DoxyCode}
+
+
+Which will run \mbox{\hyperlink{class_e_x_a_c_t}{E\+X\+A\+CT}} with 9 threads or processes, respectively. The {\itshape --use\+\_\+sfmp} argument turns on or off scaled fractional max pooling (which allows for pooling operations between feature maps of any size), the {\itshape --use\+\_\+node\+\_\+operations} argument turns on or off node level mutations (see the \mbox{\hyperlink{class_e_x_a_c_t}{E\+X\+A\+CT}} and \mbox{\hyperlink{class_e_x_a_m_m}{E\+X\+A\+MM}} papers), the {\itshape --reset\+\_\+edges} parameter turns on or off Lamarckian weight evolution (turning it on will evolve and train networks faster) and the {\itshape --images\+\_\+resize} parameter allows \mbox{\hyperlink{class_e_x_a_c_t}{E\+X\+A\+CT}} to train C\+N\+Ns on a subset of the training data to speed the evolution process (e.\+g., --images\+\_\+resize 5000 would train each C\+NN on a different subset of 5k images from the training data, as opposed to the full 50k).\hypertarget{md__r_e_a_d_m_e_autotoc_md5}{}\doxysubsection{Example Genomes from G\+E\+C\+C\+O 2017}\label{md__r_e_a_d_m_e_autotoc_md5}
+Our submission to G\+E\+C\+CO describes a set of best found genomes for the M\+N\+I\+ST handwritten digits dataset. These can be found in the genomes subdirectory of the project. Please checkout the tag for the G\+E\+C\+CO paper to use the version of \mbox{\hyperlink{class_e_x_a_c_t}{E\+X\+A\+CT}} these C\+NN genome files were generated with\+:
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{git checkout -\/b exact\_gecco gecco\_2017}
+\end{DoxyCode}
+
+
+After compiling this version and setting up the M\+N\+I\+ST training and testing data as described in the previous section, these genomes can be run over the training and testing data for validation as follows\+:
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{\string~/exact/build/ \$ ./tests/evaluate\_cnn -\/-\/training\_data ../datasets/mnist\_training\_data.bin -\/-\/testing\_data ../datasets/mnist\_testing\_data.bin -\/-\/genome\_file ../genomes/genome\_46823}
+\DoxyCodeLine{\string~/exact/build/ \$ ./tests/evaluate\_cnn -\/-\/training\_data ../datasets/mnist\_training\_data.bin -\/-\/testing\_data ../datasets/mnist\_testing\_data.bin -\/-\/genome\_file ../genomes/genome\_57302}
+\DoxyCodeLine{\string~/exact/build/ \$ ./tests/evaluate\_cnn -\/-\/training\_data ../datasets/mnist\_training\_data.bin -\/-\/testing\_data ../datasets/mnist\_testing\_data.bin -\/-\/genome\_file ../genomes/genome\_59455}
+\DoxyCodeLine{\string~/exact/build/ \$ ./tests/evaluate\_cnn -\/-\/training\_data ../datasets/mnist\_training\_data.bin -\/-\/testing\_data ../datasets/mnist\_testing\_data.bin -\/-\/genome\_file ../genomes/genome\_59920}
+\end{DoxyCode}
+ 

@@ -1,0 +1,113 @@
+\hypertarget{class_time_series_set}{}\doxysection{Time\+Series\+Set Class Reference}
+\label{class_time_series_set}\index{TimeSeriesSet@{TimeSeriesSet}}
+\doxysubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{class_time_series_set_a755abcf37b7074e042e88f1110911bde}\label{class_time_series_set_a755abcf37b7074e042e88f1110911bde}} 
+{\bfseries Time\+Series\+Set} (\textbf{ string} \+\_\+filename, const \textbf{ vector}$<$ \textbf{ string} $>$ \&\+\_\+fields)
+\item 
+\mbox{\Hypertarget{class_time_series_set_aacbb4f17ae19d87e33d14da1eadd9e1c}\label{class_time_series_set_aacbb4f17ae19d87e33d14da1eadd9e1c}} 
+void {\bfseries add\+\_\+time\+\_\+series} (\textbf{ string} name)
+\item 
+\mbox{\Hypertarget{class_time_series_set_a8cb306ad530c7fd6d5ac2a46e0a2e380}\label{class_time_series_set_a8cb306ad530c7fd6d5ac2a46e0a2e380}} 
+int {\bfseries get\+\_\+number\+\_\+rows} () const
+\item 
+\mbox{\Hypertarget{class_time_series_set_ac1c657e69b5b9cfe2d556e57eaf0a97c}\label{class_time_series_set_ac1c657e69b5b9cfe2d556e57eaf0a97c}} 
+int {\bfseries get\+\_\+number\+\_\+columns} () const
+\item 
+\mbox{\Hypertarget{class_time_series_set_a09e2668a0f2e47d0542ad0d0600050fc}\label{class_time_series_set_a09e2668a0f2e47d0542ad0d0600050fc}} 
+\textbf{ string} {\bfseries get\+\_\+filename} () const
+\item 
+\mbox{\Hypertarget{class_time_series_set_a3e3ef7b133e911ae4fc9bf9f273f7b37}\label{class_time_series_set_a3e3ef7b133e911ae4fc9bf9f273f7b37}} 
+\textbf{ vector}$<$ \textbf{ string} $>$ {\bfseries get\+\_\+fields} () const
+\item 
+\mbox{\Hypertarget{class_time_series_set_a389df753e39d4061306f6e194139537f}\label{class_time_series_set_a389df753e39d4061306f6e194139537f}} 
+void {\bfseries get\+\_\+series} (\textbf{ string} field\+\_\+name, \textbf{ vector}$<$ double $>$ \&series)
+\item 
+\mbox{\Hypertarget{class_time_series_set_a01c4671a033ea5796718106a76f9f532}\label{class_time_series_set_a01c4671a033ea5796718106a76f9f532}} 
+double {\bfseries get\+\_\+min} (\textbf{ string} field)
+\item 
+\mbox{\Hypertarget{class_time_series_set_a457d0766952cd6403105fbfb468dd8b4}\label{class_time_series_set_a457d0766952cd6403105fbfb468dd8b4}} 
+double {\bfseries get\+\_\+average} (\textbf{ string} field)
+\item 
+\mbox{\Hypertarget{class_time_series_set_a25ffdd437ba30df4953206f0554cb5a9}\label{class_time_series_set_a25ffdd437ba30df4953206f0554cb5a9}} 
+double {\bfseries get\+\_\+max} (\textbf{ string} field)
+\item 
+\mbox{\Hypertarget{class_time_series_set_a8d55aa333f30f362a2f4074f48d2690a}\label{class_time_series_set_a8d55aa333f30f362a2f4074f48d2690a}} 
+double {\bfseries get\+\_\+std\+\_\+dev} (\textbf{ string} field)
+\item 
+\mbox{\Hypertarget{class_time_series_set_a6185f4f4193eb125c9814608aab8f743}\label{class_time_series_set_a6185f4f4193eb125c9814608aab8f743}} 
+double {\bfseries get\+\_\+variance} (\textbf{ string} field)
+\item 
+\mbox{\Hypertarget{class_time_series_set_a0b39178fddc2bf0e2ba66b2e2025161e}\label{class_time_series_set_a0b39178fddc2bf0e2ba66b2e2025161e}} 
+double {\bfseries get\+\_\+min\+\_\+change} (\textbf{ string} field)
+\item 
+\mbox{\Hypertarget{class_time_series_set_a4db801d1a487c0f6f025b1523a42b9a4}\label{class_time_series_set_a4db801d1a487c0f6f025b1523a42b9a4}} 
+double {\bfseries get\+\_\+max\+\_\+change} (\textbf{ string} field)
+\item 
+\mbox{\Hypertarget{class_time_series_set_a47eecbd2fcfc2733ea6e8c6b236fbb03}\label{class_time_series_set_a47eecbd2fcfc2733ea6e8c6b236fbb03}} 
+double {\bfseries get\+\_\+correlation} (\textbf{ string} field1, \textbf{ string} field2, \textbf{ int32\+\_\+t} lag) const
+\item 
+\mbox{\Hypertarget{class_time_series_set_a6d800188060b9d30a1c6dd2100a05423}\label{class_time_series_set_a6d800188060b9d30a1c6dd2100a05423}} 
+void {\bfseries normalize\+\_\+min\+\_\+max} (\textbf{ string} field, double min, double max)
+\item 
+\mbox{\Hypertarget{class_time_series_set_a183ed4556eea1c313c4ab50d9dde251c}\label{class_time_series_set_a183ed4556eea1c313c4ab50d9dde251c}} 
+void {\bfseries normalize\+\_\+avg\+\_\+std\+\_\+dev} (\textbf{ string} field, double avg, double std\+\_\+dev, double norm\+\_\+max)
+\item 
+\mbox{\Hypertarget{class_time_series_set_aa55e6945dfc550f36fab50178dc06ffe}\label{class_time_series_set_aa55e6945dfc550f36fab50178dc06ffe}} 
+void {\bfseries export\+\_\+time\+\_\+series} (\textbf{ vector}$<$ \textbf{ vector}$<$ double $>$ $>$ \&data)
+\item 
+\mbox{\Hypertarget{class_time_series_set_af91af3295680f6596fc68eb10c2a7845}\label{class_time_series_set_af91af3295680f6596fc68eb10c2a7845}} 
+void {\bfseries export\+\_\+time\+\_\+series} (\textbf{ vector}$<$ \textbf{ vector}$<$ double $>$ $>$ \&data, const \textbf{ vector}$<$ \textbf{ string} $>$ \&requested\+\_\+fields)
+\item 
+void \mbox{\hyperlink{class_time_series_set_ad85e413579132f448ec10545f733d452}{export\+\_\+time\+\_\+series}} (\textbf{ vector}$<$ \textbf{ vector}$<$ double $>$ $>$ \&data, const \textbf{ vector}$<$ \textbf{ string} $>$ \&requested\+\_\+fields, const \textbf{ vector}$<$ \textbf{ string} $>$ \&shift\+\_\+fields, \textbf{ int32\+\_\+t} time\+\_\+offset)
+\begin{DoxyCompactList}\small\item\em Time offset $<$ 0 generates input data. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{class_time_series_set_aec44a37363eaecc446c81b58cb44781b}\label{class_time_series_set_aec44a37363eaecc446c81b58cb44781b}} 
+\mbox{\hyperlink{class_time_series_set}{Time\+Series\+Set}} $\ast$ {\bfseries copy} ()
+\item 
+\mbox{\Hypertarget{class_time_series_set_a04988df43c793bdf97f9d2d94ca40b74}\label{class_time_series_set_a04988df43c793bdf97f9d2d94ca40b74}} 
+void {\bfseries cut} (\textbf{ int32\+\_\+t} start, \textbf{ int32\+\_\+t} stop)
+\item 
+\mbox{\Hypertarget{class_time_series_set_a9e5eff858b9fb54cff400103e47932af}\label{class_time_series_set_a9e5eff858b9fb54cff400103e47932af}} 
+void {\bfseries split} (int slices, \textbf{ vector}$<$ \mbox{\hyperlink{class_time_series_set}{Time\+Series\+Set}} $\ast$ $>$ \&sub\+\_\+series)
+\item 
+\mbox{\Hypertarget{class_time_series_set_a4c775dbf6a7d679b812f74582db413c4}\label{class_time_series_set_a4c775dbf6a7d679b812f74582db413c4}} 
+void {\bfseries select\+\_\+parameters} (const \textbf{ vector}$<$ \textbf{ string} $>$ \&parameter\+\_\+names)
+\item 
+\mbox{\Hypertarget{class_time_series_set_aa52318fd9b6ae2c91e4bbd0c73901b92}\label{class_time_series_set_aa52318fd9b6ae2c91e4bbd0c73901b92}} 
+void {\bfseries select\+\_\+parameters} (const \textbf{ vector}$<$ \textbf{ string} $>$ \&input\+\_\+parameter\+\_\+names, const \textbf{ vector}$<$ \textbf{ string} $>$ \&output\+\_\+parameter\+\_\+names)
+\end{DoxyCompactItemize}
+\doxysubsection*{Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{class_time_series_set_a03997d74a405f641741509f14d3adfa5}\label{class_time_series_set_a03997d74a405f641741509f14d3adfa5}} 
+int {\bfseries number\+\_\+rows}
+\item 
+\mbox{\Hypertarget{class_time_series_set_a92f2df07d70032d4bf466011583f8fbb}\label{class_time_series_set_a92f2df07d70032d4bf466011583f8fbb}} 
+\textbf{ string} {\bfseries filename}
+\item 
+\mbox{\Hypertarget{class_time_series_set_ae82ba27c516b80c9f581dc61298cdf09}\label{class_time_series_set_ae82ba27c516b80c9f581dc61298cdf09}} 
+\textbf{ vector}$<$ \textbf{ string} $>$ {\bfseries fields}
+\item 
+\mbox{\Hypertarget{class_time_series_set_a3a63032b26d8ace6e9ab5f9ea1e0acff}\label{class_time_series_set_a3a63032b26d8ace6e9ab5f9ea1e0acff}} 
+\textbf{ map}$<$ \textbf{ string}, \mbox{\hyperlink{class_time_series}{Time\+Series}} $\ast$ $>$ {\bfseries time\+\_\+series}
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Member Function Documentation}
+\mbox{\Hypertarget{class_time_series_set_ad85e413579132f448ec10545f733d452}\label{class_time_series_set_ad85e413579132f448ec10545f733d452}} 
+\index{TimeSeriesSet@{TimeSeriesSet}!export\_time\_series@{export\_time\_series}}
+\index{export\_time\_series@{export\_time\_series}!TimeSeriesSet@{TimeSeriesSet}}
+\doxysubsubsection{\texorpdfstring{export\_time\_series()}{export\_time\_series()}}
+{\footnotesize\ttfamily void Time\+Series\+Set\+::export\+\_\+time\+\_\+series (\begin{DoxyParamCaption}\item[{\textbf{ vector}$<$ \textbf{ vector}$<$ double $>$ $>$ \&}]{data,  }\item[{const \textbf{ vector}$<$ \textbf{ string} $>$ \&}]{requested\+\_\+fields,  }\item[{const \textbf{ vector}$<$ \textbf{ string} $>$ \&}]{shift\+\_\+fields,  }\item[{\textbf{ int32\+\_\+t}}]{time\+\_\+offset }\end{DoxyParamCaption})}
+
+
+
+Time offset $<$ 0 generates input data. 
+
+Do not use the last $<$time\+\_\+offset$>$ values Time offset $>$ 0 generates output data. Do not use the first $<$time\+\_\+offset$>$ values 
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+time\+\_\+series/time\+\_\+series.\+hxx\item 
+time\+\_\+series/time\+\_\+series.\+cxx\end{DoxyCompactItemize}

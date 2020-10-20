@@ -1,0 +1,110 @@
+\hypertarget{class_images}{}\doxysection{Images Class Reference}
+\label{class_images}\index{Images@{Images}}
+Inheritance diagram for Images\+:\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[height=2.000000cm]{class_images}
+\end{center}
+\end{figure}
+\doxysubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{class_images_a9d399faae60bbf9104dfdf64e2acfef1}\label{class_images_a9d399faae60bbf9104dfdf64e2acfef1}} 
+int {\bfseries read\+\_\+images} (\textbf{ string} binary\+\_\+filename)
+\item 
+\mbox{\Hypertarget{class_images_a63e020cd282310d87bc7b299b14dfc50}\label{class_images_a63e020cd282310d87bc7b299b14dfc50}} 
+{\bfseries Images} (\textbf{ string} binary\+\_\+filename, int \+\_\+padding)
+\item 
+\mbox{\Hypertarget{class_images_aa47b6fec71913825b91b591c4084de82}\label{class_images_aa47b6fec71913825b91b591c4084de82}} 
+{\bfseries Images} (\textbf{ string} binary\+\_\+filename, int \+\_\+padding, const \textbf{ vector}$<$ float $>$ \&\+\_\+channe\+L\+\_\+avg, const \textbf{ vector}$<$ float $>$ \&channel\+\_\+std\+\_\+dev)
+\item 
+\mbox{\Hypertarget{class_images_a909d6de83dc353e9b9cd652396ff654b}\label{class_images_a909d6de83dc353e9b9cd652396ff654b}} 
+\textbf{ string} {\bfseries get\+\_\+filename} () const
+\item 
+\mbox{\Hypertarget{class_images_a72094ddc5c4bc6d130e96a44e698ae1d}\label{class_images_a72094ddc5c4bc6d130e96a44e698ae1d}} 
+int {\bfseries get\+\_\+class\+\_\+size} (int i) const
+\item 
+\mbox{\Hypertarget{class_images_a194730c90f956efc9fa10d51a76a2c96}\label{class_images_a194730c90f956efc9fa10d51a76a2c96}} 
+int {\bfseries get\+\_\+number\+\_\+classes} () const
+\item 
+\mbox{\Hypertarget{class_images_a7274ea0aa64b25606927e292e1a7feec}\label{class_images_a7274ea0aa64b25606927e292e1a7feec}} 
+int {\bfseries get\+\_\+number\+\_\+images} () const
+\item 
+\mbox{\Hypertarget{class_images_a3f7c87e587cc3cd7226858255c91b7ca}\label{class_images_a3f7c87e587cc3cd7226858255c91b7ca}} 
+int {\bfseries get\+\_\+image\+\_\+channels} () const
+\item 
+\mbox{\Hypertarget{class_images_a152be30298d1509d10f6ee51be3fee65}\label{class_images_a152be30298d1509d10f6ee51be3fee65}} 
+int {\bfseries get\+\_\+image\+\_\+width} () const
+\item 
+\mbox{\Hypertarget{class_images_aa6ad2d0286b2140348e247ce35f6ec45}\label{class_images_aa6ad2d0286b2140348e247ce35f6ec45}} 
+int {\bfseries get\+\_\+image\+\_\+height} () const
+\item 
+\mbox{\Hypertarget{class_images_a8563bde202920005b9c28aeab015ebef}\label{class_images_a8563bde202920005b9c28aeab015ebef}} 
+int {\bfseries get\+\_\+classification} (int image) const
+\item 
+\mbox{\Hypertarget{class_images_adec8e3768a8e9cfc42cd966a04a343e4}\label{class_images_adec8e3768a8e9cfc42cd966a04a343e4}} 
+float {\bfseries get\+\_\+pixel} (int image, int z, int y, int x) const
+\item 
+\mbox{\Hypertarget{class_images_a7a849e6fc03f758f8c7f27c7efc89e53}\label{class_images_a7a849e6fc03f758f8c7f27c7efc89e53}} 
+void {\bfseries calculate\+\_\+avg\+\_\+std\+\_\+dev} ()
+\item 
+\mbox{\Hypertarget{class_images_a775524150347fc76ed292285d6f6089e}\label{class_images_a775524150347fc76ed292285d6f6089e}} 
+float {\bfseries get\+\_\+channel\+\_\+avg} (int channel) const
+\item 
+\mbox{\Hypertarget{class_images_ad3069b2400be30a99774cacbc3bc53fc}\label{class_images_ad3069b2400be30a99774cacbc3bc53fc}} 
+float {\bfseries get\+\_\+channel\+\_\+std\+\_\+dev} (int channel) const
+\item 
+\mbox{\Hypertarget{class_images_a5ca7a107de1b4465ee2a8a69fc46975c}\label{class_images_a5ca7a107de1b4465ee2a8a69fc46975c}} 
+bool {\bfseries loaded\+\_\+correctly} () const
+\item 
+\mbox{\Hypertarget{class_images_aea5a7b61eb7ceaa3e7151b474371af5e}\label{class_images_aea5a7b61eb7ceaa3e7151b474371af5e}} 
+const \textbf{ vector}$<$ float $>$ \& {\bfseries get\+\_\+average} () const
+\item 
+\mbox{\Hypertarget{class_images_a1e1cc16fbc25f065dcd9d0019cbe996b}\label{class_images_a1e1cc16fbc25f065dcd9d0019cbe996b}} 
+const \textbf{ vector}$<$ float $>$ \& {\bfseries get\+\_\+std\+\_\+dev} () const
+\end{DoxyCompactItemize}
+\doxysubsection*{Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{class_images_aeadfc5719508f55f8c59ca0e14405e18}\label{class_images_aeadfc5719508f55f8c59ca0e14405e18}} 
+\textbf{ string} {\bfseries filename}
+\item 
+\mbox{\Hypertarget{class_images_a296b6e987241f10969b59f55f11d6b40}\label{class_images_a296b6e987241f10969b59f55f11d6b40}} 
+int {\bfseries number\+\_\+classes}
+\item 
+\mbox{\Hypertarget{class_images_a354e40904956ddc5034d5471714fec06}\label{class_images_a354e40904956ddc5034d5471714fec06}} 
+int {\bfseries number\+\_\+images}
+\item 
+\mbox{\Hypertarget{class_images_ad2dc57d3d9071b3b71f5263eff9b2340}\label{class_images_ad2dc57d3d9071b3b71f5263eff9b2340}} 
+\textbf{ vector}$<$ int $>$ {\bfseries class\+\_\+sizes}
+\item 
+\mbox{\Hypertarget{class_images_a1bdc541858b398b563120ad63f668dee}\label{class_images_a1bdc541858b398b563120ad63f668dee}} 
+int {\bfseries padding}
+\item 
+\mbox{\Hypertarget{class_images_a8b73593cbd007c65351f007181c9a305}\label{class_images_a8b73593cbd007c65351f007181c9a305}} 
+int {\bfseries channels}
+\item 
+\mbox{\Hypertarget{class_images_a8b5be76a044a2a5fea1defde5f890cc7}\label{class_images_a8b5be76a044a2a5fea1defde5f890cc7}} 
+int {\bfseries width}
+\item 
+\mbox{\Hypertarget{class_images_a744614362ca31b78143cea5914c6bfc3}\label{class_images_a744614362ca31b78143cea5914c6bfc3}} 
+int {\bfseries height}
+\item 
+\mbox{\Hypertarget{class_images_aaccaeb7f13a167d16ecb31806fcb1d59}\label{class_images_aaccaeb7f13a167d16ecb31806fcb1d59}} 
+\textbf{ vector}$<$ \mbox{\hyperlink{class_image}{Image}} $>$ {\bfseries images}
+\item 
+\mbox{\Hypertarget{class_images_a3ffa1cfdb4d88855ae6c37c3bf19f39c}\label{class_images_a3ffa1cfdb4d88855ae6c37c3bf19f39c}} 
+\textbf{ vector}$<$ float $>$ {\bfseries channel\+\_\+avg}
+\item 
+\mbox{\Hypertarget{class_images_a98034433657ad03b7e6eabaa0c8576c3}\label{class_images_a98034433657ad03b7e6eabaa0c8576c3}} 
+\textbf{ vector}$<$ float $>$ {\bfseries channel\+\_\+std\+\_\+dev}
+\item 
+\mbox{\Hypertarget{class_images_aeadb139b6ea3fbaf594ad9f8e4146e83}\label{class_images_aeadb139b6ea3fbaf594ad9f8e4146e83}} 
+bool {\bfseries had\+\_\+error}
+\end{DoxyCompactItemize}
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+image\+\_\+tools/image\+\_\+set.\+hxx\item 
+image\+\_\+tools/image\+\_\+set.\+cxx\end{DoxyCompactItemize}

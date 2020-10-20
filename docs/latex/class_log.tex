@@ -1,0 +1,452 @@
+\hypertarget{class_log}{}\doxysection{Log Class Reference}
+\label{class_log}\index{Log@{Log}}
+\doxysubsection*{Static Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+static void \mbox{\hyperlink{class_log_a1e95d22090ba14b096609c67487f9761}{register\+\_\+command\+\_\+line\+\_\+arguments}} ()
+\begin{DoxyCompactList}\small\item\em Registers used command line arguments and instructions with the Command\+Line class. \end{DoxyCompactList}\item 
+static \textbf{ int8\+\_\+t} \mbox{\hyperlink{class_log_a92a5eb55bc8e480aa984d6d592f07d69}{parse\+\_\+level\+\_\+from\+\_\+string}} (\textbf{ string} level)
+\item 
+static void \mbox{\hyperlink{class_log_afc35697517d849ab8cf4a774d2b32ba8}{initialize}} (const \textbf{ vector}$<$ \textbf{ string} $>$ \&arguments)
+\begin{DoxyCompactList}\small\item\em Initializes the \mbox{\hyperlink{class_log}{Log}} given arguments retreived from the Command\+Line class. \end{DoxyCompactList}\item 
+static void \mbox{\hyperlink{class_log_a6183417026fe34b0d1494f1504b52b8f}{set\+\_\+rank}} (\textbf{ int32\+\_\+t} \+\_\+process\+\_\+rank)
+\begin{DoxyCompactList}\small\item\em Sets the M\+PI process rank for this \mbox{\hyperlink{class_log}{Log}}. \end{DoxyCompactList}\item 
+static void \mbox{\hyperlink{class_log_a4718a27c58db20d66ac3c511931d475b}{restrict\+\_\+to\+\_\+rank}} (\textbf{ int32\+\_\+t} \+\_\+restricted\+\_\+rank)
+\begin{DoxyCompactList}\small\item\em Specifies which M\+PI process to allow messages from. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{class_log_a1cecca268a9c418480a0ac325303f7a0}\label{class_log_a1cecca268a9c418480a0ac325303f7a0}} 
+static void \mbox{\hyperlink{class_log_a1cecca268a9c418480a0ac325303f7a0}{clear\+\_\+rank\+\_\+restriction}} ()
+\begin{DoxyCompactList}\small\item\em Clears the M\+PI process rank restriction from messages allowing any process to write to the log (sets \mbox{\hyperlink{class_log_a47ec200a53bfc6b8b6a39bc91d5dbc86}{Log\+::restricted\+\_\+rank}} back to -\/1). \end{DoxyCompactList}\item 
+static void \mbox{\hyperlink{class_log_ac02fea24138d69a35521d82ee64bb90d}{set\+\_\+id}} (\textbf{ string} human\+\_\+readable\+\_\+id)
+\begin{DoxyCompactList}\small\item\em Sets a human readable thread id for this thread. \end{DoxyCompactList}\item 
+static void \mbox{\hyperlink{class_log_aecae136e87aadf153c98f4f1f92ac44f}{release\+\_\+id}} (\textbf{ string} human\+\_\+readable\+\_\+id)
+\begin{DoxyCompactList}\small\item\em Releases a the human readable thread id previously set by by the provided human readable id;. \end{DoxyCompactList}\item 
+static bool \mbox{\hyperlink{class_log_afdfbb3c30e059607ccf10a6ef5e0de9a}{at\+\_\+level}} (\textbf{ int8\+\_\+t} level)
+\begin{DoxyCompactList}\small\item\em Determines if either output level (the file or standard output) level is above the level passed as a parameter. \end{DoxyCompactList}\item 
+static void \mbox{\hyperlink{class_log_a805517b44b61d2b5151a2f4794596a7e}{fatal}} (const char $\ast$format,...)
+\begin{DoxyCompactList}\small\item\em Logs a fatal message. \end{DoxyCompactList}\item 
+static void \mbox{\hyperlink{class_log_a89f6eebb445913e66423614839225db2}{error}} (const char $\ast$format,...)
+\begin{DoxyCompactList}\small\item\em Logs an error message. \end{DoxyCompactList}\item 
+static void \mbox{\hyperlink{class_log_a477d1ab8cce3a2ef12cb8006fa3c6bf5}{warning}} (const char $\ast$format,...)
+\begin{DoxyCompactList}\small\item\em Logs a warning message. \end{DoxyCompactList}\item 
+static void \mbox{\hyperlink{class_log_adb225c396180e0d8f73580e71eae6554}{info}} (const char $\ast$format,...)
+\begin{DoxyCompactList}\small\item\em Logs an info message. \end{DoxyCompactList}\item 
+static void \mbox{\hyperlink{class_log_a044ee1254485cb519d0576dc71103f0a}{debug}} (const char $\ast$format,...)
+\begin{DoxyCompactList}\small\item\em Logs a debug message. \end{DoxyCompactList}\item 
+static void \mbox{\hyperlink{class_log_ad0d504bc7f5957a814e9de5ea08f982a}{trace}} (const char $\ast$format,...)
+\begin{DoxyCompactList}\small\item\em Logs a trace message. \end{DoxyCompactList}\item 
+static void \mbox{\hyperlink{class_log_ad2850dbb9d26c84c3fc2bcecc93493d6}{fatal\+\_\+no\+\_\+header}} (const char $\ast$format,...)
+\begin{DoxyCompactList}\small\item\em Logs a fatal message. \end{DoxyCompactList}\item 
+static void \mbox{\hyperlink{class_log_ac3e898dc093679bb7d1e3a3f98872158}{error\+\_\+no\+\_\+header}} (const char $\ast$format,...)
+\begin{DoxyCompactList}\small\item\em Logs an error message. \end{DoxyCompactList}\item 
+static void \mbox{\hyperlink{class_log_a9bbfa4b8f4fb2262d914f00ba04dd6c6}{warning\+\_\+no\+\_\+header}} (const char $\ast$format,...)
+\begin{DoxyCompactList}\small\item\em Logs a warning message. \end{DoxyCompactList}\item 
+static void \mbox{\hyperlink{class_log_a4b4380a986ebf18e448221d78a236bc3}{info\+\_\+no\+\_\+header}} (const char $\ast$format,...)
+\begin{DoxyCompactList}\small\item\em Logs an info message. \end{DoxyCompactList}\item 
+static void \mbox{\hyperlink{class_log_a6c4b9de38585df6c03defcbe0e420268}{debug\+\_\+no\+\_\+header}} (const char $\ast$format,...)
+\begin{DoxyCompactList}\small\item\em Logs a debug message. \end{DoxyCompactList}\item 
+static void \mbox{\hyperlink{class_log_a5eca5217a6fc23a54cff35ff12ad04f6}{trace\+\_\+no\+\_\+header}} (const char $\ast$format,...)
+\begin{DoxyCompactList}\small\item\em Logs a trace message. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\doxysubsection*{Static Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{class_log_a44e61f1a4560b557bd8b3374cd87e0e3}\label{class_log_a44e61f1a4560b557bd8b3374cd87e0e3}} 
+static const int8\+\_\+t \mbox{\hyperlink{class_log_a44e61f1a4560b557bd8b3374cd87e0e3}{N\+O\+NE}} = 0
+\begin{DoxyCompactList}\small\item\em Specifies no messages will be logged. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{class_log_a829c89b207740611e743a6e2f07e477f}\label{class_log_a829c89b207740611e743a6e2f07e477f}} 
+static const int8\+\_\+t \mbox{\hyperlink{class_log_a829c89b207740611e743a6e2f07e477f}{F\+A\+T\+AL}} = 1
+\begin{DoxyCompactList}\small\item\em Specifies only fatal messages will be logged. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{class_log_af3c3afdba50a451fd24b6014a9f6e427}\label{class_log_af3c3afdba50a451fd24b6014a9f6e427}} 
+static const int8\+\_\+t \mbox{\hyperlink{class_log_af3c3afdba50a451fd24b6014a9f6e427}{E\+R\+R\+OR}} = 2
+\begin{DoxyCompactList}\small\item\em Specifies error and above messages will be logged. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{class_log_a02c6c399678d6687f38c6600751aa2e7}\label{class_log_a02c6c399678d6687f38c6600751aa2e7}} 
+static const int8\+\_\+t \mbox{\hyperlink{class_log_a02c6c399678d6687f38c6600751aa2e7}{W\+A\+R\+N\+I\+NG}} = 3
+\begin{DoxyCompactList}\small\item\em Specifies warning and above messages will be logged. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{class_log_a70efafdaaf797f644bb24a8e1c7f5643}\label{class_log_a70efafdaaf797f644bb24a8e1c7f5643}} 
+static const int8\+\_\+t \mbox{\hyperlink{class_log_a70efafdaaf797f644bb24a8e1c7f5643}{I\+N\+FO}} = 4
+\begin{DoxyCompactList}\small\item\em Specifies info and above messages will be logged. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{class_log_addf4eb67a84c9ee39ed3028005f25e40}\label{class_log_addf4eb67a84c9ee39ed3028005f25e40}} 
+static const int8\+\_\+t \mbox{\hyperlink{class_log_addf4eb67a84c9ee39ed3028005f25e40}{D\+E\+B\+UG}} = 5
+\begin{DoxyCompactList}\small\item\em Specifies debug and above messages will be logged. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{class_log_a696a49a4d58146f0ee69be1562991e12}\label{class_log_a696a49a4d58146f0ee69be1562991e12}} 
+static const int8\+\_\+t \mbox{\hyperlink{class_log_a696a49a4d58146f0ee69be1562991e12}{T\+R\+A\+CE}} = 6
+\begin{DoxyCompactList}\small\item\em Specifies trace and above messages will be logged. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{class_log_a4249272125f8149b2d042101bcc6b49f}\label{class_log_a4249272125f8149b2d042101bcc6b49f}} 
+static const int8\+\_\+t \mbox{\hyperlink{class_log_a4249272125f8149b2d042101bcc6b49f}{A\+LL}} = 7
+\begin{DoxyCompactList}\small\item\em Specifies all messages will be logged. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\doxysubsection*{Static Private Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+static void \mbox{\hyperlink{class_log_aff6a4531e693fd53ad051c7fef28c6aa}{write\+\_\+message}} (bool print\+\_\+header, \textbf{ int8\+\_\+t} message\+\_\+level, const char $\ast$message\+\_\+type, const char $\ast$format, \textbf{ va\+\_\+list} arguments)
+\begin{DoxyCompactList}\small\item\em Potentially writes the message to either standard output or the log file if the message level is high enough. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\doxysubsection*{Static Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+static int32\+\_\+t \mbox{\hyperlink{class_log_a633c6eafa442ecfb3b3322f89496e52e}{std\+\_\+message\+\_\+level}} = \mbox{\hyperlink{class_log_a70efafdaaf797f644bb24a8e1c7f5643}{I\+N\+FO}}
+\begin{DoxyCompactList}\small\item\em Specifies which messages to log. \end{DoxyCompactList}\item 
+static int32\+\_\+t \mbox{\hyperlink{class_log_a08b261dd43ff89110e602a3a61f6ec61}{file\+\_\+message\+\_\+level}} = \mbox{\hyperlink{class_log_a70efafdaaf797f644bb24a8e1c7f5643}{I\+N\+FO}}
+\begin{DoxyCompactList}\small\item\em Specifies which messages to log. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{class_log_a20bd437aa24965f6e9650fd5e2d48923}\label{class_log_a20bd437aa24965f6e9650fd5e2d48923}} 
+static bool \mbox{\hyperlink{class_log_a20bd437aa24965f6e9650fd5e2d48923}{write\+\_\+to\+\_\+file}} = true
+\begin{DoxyCompactList}\small\item\em Specifies if the logs should also be written to a flie. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{class_log_aec94f82d0ed91efcb398ce15f2f14a34}\label{class_log_aec94f82d0ed91efcb398ce15f2f14a34}} 
+static int32\+\_\+t \mbox{\hyperlink{class_log_aec94f82d0ed91efcb398ce15f2f14a34}{max\+\_\+header\+\_\+length}} = 256
+\begin{DoxyCompactList}\small\item\em Specifies the maximum length for the message header. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{class_log_a5503fcf17f82f95b1090a797af98343c}\label{class_log_a5503fcf17f82f95b1090a797af98343c}} 
+static int32\+\_\+t \mbox{\hyperlink{class_log_a5503fcf17f82f95b1090a797af98343c}{max\+\_\+message\+\_\+length}} = 1024
+\begin{DoxyCompactList}\small\item\em Specifies the maximum message buffer length. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{class_log_a18dc29ac4d511d8eab1bb9bc5771e7bf}\label{class_log_a18dc29ac4d511d8eab1bb9bc5771e7bf}} 
+static \textbf{ string} \mbox{\hyperlink{class_log_a18dc29ac4d511d8eab1bb9bc5771e7bf}{output\+\_\+directory}} = \char`\"{}./logs\char`\"{}
+\begin{DoxyCompactList}\small\item\em Specifies which directory to write the log files to (if the logs are being writtten to a file). \end{DoxyCompactList}\item 
+static \textbf{ map}$<$ thread\+::id, \textbf{ string} $>$ \mbox{\hyperlink{class_log_a814d0d060c29987d5d43d55b3d8d542c}{log\+\_\+ids}}
+\begin{DoxyCompactList}\small\item\em A map of C++ thread ids (which are not human readable) to human readable integer ids. \end{DoxyCompactList}\item 
+static int32\+\_\+t \mbox{\hyperlink{class_log_ad6bd8ce041323bb69e69aeb9edbe12ee}{process\+\_\+rank}} = -\/1
+\begin{DoxyCompactList}\small\item\em The M\+PI process rank for this \mbox{\hyperlink{class_log}{Log}} instance. \end{DoxyCompactList}\item 
+static int32\+\_\+t \mbox{\hyperlink{class_log_a47ec200a53bfc6b8b6a39bc91d5dbc86}{restricted\+\_\+rank}} = -\/1
+\begin{DoxyCompactList}\small\item\em Defaults at -\/1, when set to a process rank ($>$= 0) the \mbox{\hyperlink{class_log}{Log}} will only print messages if its rank is the same as the restricted rank. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{class_log_afe8e50d6e52f39d4ed931f13eb49af5f}\label{class_log_afe8e50d6e52f39d4ed931f13eb49af5f}} 
+static \textbf{ map}$<$ \textbf{ string}, \mbox{\hyperlink{class_log_file}{Log\+File}} $\ast$ $>$ \mbox{\hyperlink{class_log_afe8e50d6e52f39d4ed931f13eb49af5f}{output\+\_\+files}}
+\begin{DoxyCompactList}\small\item\em A map of human readable ids to output files which the log messages will be written to. \end{DoxyCompactList}\item 
+static shared\+\_\+mutex \mbox{\hyperlink{class_log_aa8bf3e23cf88dc4e48aafd791fe93cd7}{log\+\_\+ids\+\_\+mutex}}
+\begin{DoxyCompactList}\small\item\em A std\+::shared\+\_\+mutex protecting the Log\+::thread\+\_\+ids map. \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\doxysubsection{Member Function Documentation}
+\mbox{\Hypertarget{class_log_afdfbb3c30e059607ccf10a6ef5e0de9a}\label{class_log_afdfbb3c30e059607ccf10a6ef5e0de9a}} 
+\index{Log@{Log}!at\_level@{at\_level}}
+\index{at\_level@{at\_level}!Log@{Log}}
+\doxysubsubsection{\texorpdfstring{at\_level()}{at\_level()}}
+{\footnotesize\ttfamily bool Log\+::at\+\_\+level (\begin{DoxyParamCaption}\item[{\textbf{ int8\+\_\+t}}]{level }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}}
+
+
+
+Determines if either output level (the file or standard output) level is above the level passed as a parameter. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em level} & is the level to be greater than or equal to\\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+true if either the file or standard output level is greater than or equal to the passed level 
+\end{DoxyReturn}
+\mbox{\Hypertarget{class_log_a044ee1254485cb519d0576dc71103f0a}\label{class_log_a044ee1254485cb519d0576dc71103f0a}} 
+\index{Log@{Log}!debug@{debug}}
+\index{debug@{debug}!Log@{Log}}
+\doxysubsubsection{\texorpdfstring{debug()}{debug()}}
+{\footnotesize\ttfamily void Log\+::debug (\begin{DoxyParamCaption}\item[{const char $\ast$}]{format,  }\item[{}]{... }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}}
+
+
+
+Logs a debug message. 
+
+varargs are the same as in printf. \mbox{\Hypertarget{class_log_a6c4b9de38585df6c03defcbe0e420268}\label{class_log_a6c4b9de38585df6c03defcbe0e420268}} 
+\index{Log@{Log}!debug\_no\_header@{debug\_no\_header}}
+\index{debug\_no\_header@{debug\_no\_header}!Log@{Log}}
+\doxysubsubsection{\texorpdfstring{debug\_no\_header()}{debug\_no\_header()}}
+{\footnotesize\ttfamily void Log\+::debug\+\_\+no\+\_\+header (\begin{DoxyParamCaption}\item[{const char $\ast$}]{format,  }\item[{}]{... }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}}
+
+
+
+Logs a debug message. 
+
+Does not print the message header (useful if doing multiple log prints to the same line). varargs are the same as in printf. \mbox{\Hypertarget{class_log_a89f6eebb445913e66423614839225db2}\label{class_log_a89f6eebb445913e66423614839225db2}} 
+\index{Log@{Log}!error@{error}}
+\index{error@{error}!Log@{Log}}
+\doxysubsubsection{\texorpdfstring{error()}{error()}}
+{\footnotesize\ttfamily void Log\+::error (\begin{DoxyParamCaption}\item[{const char $\ast$}]{format,  }\item[{}]{... }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}}
+
+
+
+Logs an error message. 
+
+varargs are the same as in printf. \mbox{\Hypertarget{class_log_ac3e898dc093679bb7d1e3a3f98872158}\label{class_log_ac3e898dc093679bb7d1e3a3f98872158}} 
+\index{Log@{Log}!error\_no\_header@{error\_no\_header}}
+\index{error\_no\_header@{error\_no\_header}!Log@{Log}}
+\doxysubsubsection{\texorpdfstring{error\_no\_header()}{error\_no\_header()}}
+{\footnotesize\ttfamily void Log\+::error\+\_\+no\+\_\+header (\begin{DoxyParamCaption}\item[{const char $\ast$}]{format,  }\item[{}]{... }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}}
+
+
+
+Logs an error message. 
+
+Does not print the message header (useful if doing multiple log prints to the same line). varargs are the same as in printf. \mbox{\Hypertarget{class_log_a805517b44b61d2b5151a2f4794596a7e}\label{class_log_a805517b44b61d2b5151a2f4794596a7e}} 
+\index{Log@{Log}!fatal@{fatal}}
+\index{fatal@{fatal}!Log@{Log}}
+\doxysubsubsection{\texorpdfstring{fatal()}{fatal()}}
+{\footnotesize\ttfamily void Log\+::fatal (\begin{DoxyParamCaption}\item[{const char $\ast$}]{format,  }\item[{}]{... }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}}
+
+
+
+Logs a fatal message. 
+
+varargs are the same as in printf. \mbox{\Hypertarget{class_log_ad2850dbb9d26c84c3fc2bcecc93493d6}\label{class_log_ad2850dbb9d26c84c3fc2bcecc93493d6}} 
+\index{Log@{Log}!fatal\_no\_header@{fatal\_no\_header}}
+\index{fatal\_no\_header@{fatal\_no\_header}!Log@{Log}}
+\doxysubsubsection{\texorpdfstring{fatal\_no\_header()}{fatal\_no\_header()}}
+{\footnotesize\ttfamily void Log\+::fatal\+\_\+no\+\_\+header (\begin{DoxyParamCaption}\item[{const char $\ast$}]{format,  }\item[{}]{... }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}}
+
+
+
+Logs a fatal message. 
+
+Does not print the message header (useful if doing multiple log prints to the same line). varargs are the same as in printf. \mbox{\Hypertarget{class_log_adb225c396180e0d8f73580e71eae6554}\label{class_log_adb225c396180e0d8f73580e71eae6554}} 
+\index{Log@{Log}!info@{info}}
+\index{info@{info}!Log@{Log}}
+\doxysubsubsection{\texorpdfstring{info()}{info()}}
+{\footnotesize\ttfamily void Log\+::info (\begin{DoxyParamCaption}\item[{const char $\ast$}]{format,  }\item[{}]{... }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}}
+
+
+
+Logs an info message. 
+
+varargs are the same as in printf. \mbox{\Hypertarget{class_log_a4b4380a986ebf18e448221d78a236bc3}\label{class_log_a4b4380a986ebf18e448221d78a236bc3}} 
+\index{Log@{Log}!info\_no\_header@{info\_no\_header}}
+\index{info\_no\_header@{info\_no\_header}!Log@{Log}}
+\doxysubsubsection{\texorpdfstring{info\_no\_header()}{info\_no\_header()}}
+{\footnotesize\ttfamily void Log\+::info\+\_\+no\+\_\+header (\begin{DoxyParamCaption}\item[{const char $\ast$}]{format,  }\item[{}]{... }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}}
+
+
+
+Logs an info message. 
+
+Does not print the message header (useful if doing multiple log prints to the same line). varargs are the same as in printf. \mbox{\Hypertarget{class_log_afc35697517d849ab8cf4a774d2b32ba8}\label{class_log_afc35697517d849ab8cf4a774d2b32ba8}} 
+\index{Log@{Log}!initialize@{initialize}}
+\index{initialize@{initialize}!Log@{Log}}
+\doxysubsubsection{\texorpdfstring{initialize()}{initialize()}}
+{\footnotesize\ttfamily void Log\+::initialize (\begin{DoxyParamCaption}\item[{const \textbf{ vector}$<$ \textbf{ string} $>$ \&}]{arguments }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}}
+
+
+
+Initializes the \mbox{\hyperlink{class_log}{Log}} given arguments retreived from the Command\+Line class. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em arguments} & the command line arguments \mbox{\hyperlink{class_log_a1e95d22090ba14b096609c67487f9761}{Log\+::register\+\_\+command\+\_\+line\+\_\+arguments()}} must be called before \mbox{\hyperlink{class_log_afc35697517d849ab8cf4a774d2b32ba8}{Log\+::initialize()}} \\
+\hline
+\end{DoxyParams}
+\mbox{\Hypertarget{class_log_a92a5eb55bc8e480aa984d6d592f07d69}\label{class_log_a92a5eb55bc8e480aa984d6d592f07d69}} 
+\index{Log@{Log}!parse\_level\_from\_string@{parse\_level\_from\_string}}
+\index{parse\_level\_from\_string@{parse\_level\_from\_string}!Log@{Log}}
+\doxysubsubsection{\texorpdfstring{parse\_level\_from\_string()}{parse\_level\_from\_string()}}
+{\footnotesize\ttfamily \textbf{ int8\+\_\+t} Log\+::parse\+\_\+level\+\_\+from\+\_\+string (\begin{DoxyParamCaption}\item[{\textbf{ string}}]{level }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}}
+
+
+\begin{DoxyParams}{Parameters}
+{\em a} & string representation of the message level, either as text (e.\+g., \char`\"{}\+I\+N\+F\+O\char`\"{}) or as a number (e.\+g., 4)\\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+the message level as an int8\+\_\+t (i.\+e., one of the message level constants) 
+\end{DoxyReturn}
+\mbox{\Hypertarget{class_log_a1e95d22090ba14b096609c67487f9761}\label{class_log_a1e95d22090ba14b096609c67487f9761}} 
+\index{Log@{Log}!register\_command\_line\_arguments@{register\_command\_line\_arguments}}
+\index{register\_command\_line\_arguments@{register\_command\_line\_arguments}!Log@{Log}}
+\doxysubsubsection{\texorpdfstring{register\_command\_line\_arguments()}{register\_command\_line\_arguments()}}
+{\footnotesize\ttfamily void Log\+::register\+\_\+command\+\_\+line\+\_\+arguments (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}}
+
+
+
+Registers used command line arguments and instructions with the Command\+Line class. 
+
+Needs to be called at the beginning of the main method of any programming using the \mbox{\hyperlink{class_log}{Log}} class. Will register the following command line arguments and instructions\+:
+\begin{DoxyEnumerate}
+\item log\+\_\+level \+: specifies the max message level of messages to be printed
+\item log\+\_\+directory \+: specifies the output directory for message logs 
+\end{DoxyEnumerate}\mbox{\Hypertarget{class_log_aecae136e87aadf153c98f4f1f92ac44f}\label{class_log_aecae136e87aadf153c98f4f1f92ac44f}} 
+\index{Log@{Log}!release\_id@{release\_id}}
+\index{release\_id@{release\_id}!Log@{Log}}
+\doxysubsubsection{\texorpdfstring{release\_id()}{release\_id()}}
+{\footnotesize\ttfamily void Log\+::release\+\_\+id (\begin{DoxyParamCaption}\item[{\textbf{ string}}]{human\+\_\+readable\+\_\+id }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}}
+
+
+
+Releases a the human readable thread id previously set by by the provided human readable id;. 
+
+This will report an error and exit if this human readable id has not already been set, or if it has been relased by another thread.
+
+
+\begin{DoxyParams}{Parameters}
+{\em human\+\_\+readable\+\_\+id} & is a human readable thread id which has previously been set with \mbox{\hyperlink{class_log_ac02fea24138d69a35521d82ee64bb90d}{Log\+::set\+\_\+id(string)}} \\
+\hline
+\end{DoxyParams}
+\mbox{\Hypertarget{class_log_a4718a27c58db20d66ac3c511931d475b}\label{class_log_a4718a27c58db20d66ac3c511931d475b}} 
+\index{Log@{Log}!restrict\_to\_rank@{restrict\_to\_rank}}
+\index{restrict\_to\_rank@{restrict\_to\_rank}!Log@{Log}}
+\doxysubsubsection{\texorpdfstring{restrict\_to\_rank()}{restrict\_to\_rank()}}
+{\footnotesize\ttfamily void Log\+::restrict\+\_\+to\+\_\+rank (\begin{DoxyParamCaption}\item[{\textbf{ int32\+\_\+t}}]{\+\_\+restricted\+\_\+rank }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}}
+
+
+
+Specifies which M\+PI process to allow messages from. 
+
+A value $<$ 0 will allow messages from any rank. 
+\begin{DoxyParams}{Parameters}
+{\em \+\_\+restricted\+\_\+rank} & is the M\+PI rank to only print messages from \\
+\hline
+\end{DoxyParams}
+\mbox{\Hypertarget{class_log_ac02fea24138d69a35521d82ee64bb90d}\label{class_log_ac02fea24138d69a35521d82ee64bb90d}} 
+\index{Log@{Log}!set\_id@{set\_id}}
+\index{set\_id@{set\_id}!Log@{Log}}
+\doxysubsubsection{\texorpdfstring{set\_id()}{set\_id()}}
+{\footnotesize\ttfamily void Log\+::set\+\_\+id (\begin{DoxyParamCaption}\item[{\textbf{ string}}]{human\+\_\+readable\+\_\+id }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}}
+
+
+
+Sets a human readable thread id for this thread. 
+
+This will use \textbf{ std\+::this\+\_\+thread\+::get\+\_\+id()} to get c++\textquotesingle{}s automatically generated thread id, and then put it in the Log\+::thread\+\_\+ids map, so it can be used to write cleaner logs.
+
+This will report an error and exit if another thread has already reserved this human readable id.
+
+
+\begin{DoxyParams}{Parameters}
+{\em human\+\_\+readable\+\_\+id} & a human readable thread id \\
+\hline
+\end{DoxyParams}
+\mbox{\Hypertarget{class_log_a6183417026fe34b0d1494f1504b52b8f}\label{class_log_a6183417026fe34b0d1494f1504b52b8f}} 
+\index{Log@{Log}!set\_rank@{set\_rank}}
+\index{set\_rank@{set\_rank}!Log@{Log}}
+\doxysubsubsection{\texorpdfstring{set\_rank()}{set\_rank()}}
+{\footnotesize\ttfamily void Log\+::set\+\_\+rank (\begin{DoxyParamCaption}\item[{\textbf{ int32\+\_\+t}}]{\+\_\+process\+\_\+rank }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}}
+
+
+
+Sets the M\+PI process rank for this \mbox{\hyperlink{class_log}{Log}}. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em \+\_\+process\+\_\+rank} & is the M\+PI rank of this process \\
+\hline
+\end{DoxyParams}
+\mbox{\Hypertarget{class_log_ad0d504bc7f5957a814e9de5ea08f982a}\label{class_log_ad0d504bc7f5957a814e9de5ea08f982a}} 
+\index{Log@{Log}!trace@{trace}}
+\index{trace@{trace}!Log@{Log}}
+\doxysubsubsection{\texorpdfstring{trace()}{trace()}}
+{\footnotesize\ttfamily void Log\+::trace (\begin{DoxyParamCaption}\item[{const char $\ast$}]{format,  }\item[{}]{... }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}}
+
+
+
+Logs a trace message. 
+
+varargs are the same as in printf. \mbox{\Hypertarget{class_log_a5eca5217a6fc23a54cff35ff12ad04f6}\label{class_log_a5eca5217a6fc23a54cff35ff12ad04f6}} 
+\index{Log@{Log}!trace\_no\_header@{trace\_no\_header}}
+\index{trace\_no\_header@{trace\_no\_header}!Log@{Log}}
+\doxysubsubsection{\texorpdfstring{trace\_no\_header()}{trace\_no\_header()}}
+{\footnotesize\ttfamily void Log\+::trace\+\_\+no\+\_\+header (\begin{DoxyParamCaption}\item[{const char $\ast$}]{format,  }\item[{}]{... }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}}
+
+
+
+Logs a trace message. 
+
+Does not print the message header (useful if doing multiple log prints to the same line). varargs are the same as in printf. \mbox{\Hypertarget{class_log_a477d1ab8cce3a2ef12cb8006fa3c6bf5}\label{class_log_a477d1ab8cce3a2ef12cb8006fa3c6bf5}} 
+\index{Log@{Log}!warning@{warning}}
+\index{warning@{warning}!Log@{Log}}
+\doxysubsubsection{\texorpdfstring{warning()}{warning()}}
+{\footnotesize\ttfamily void Log\+::warning (\begin{DoxyParamCaption}\item[{const char $\ast$}]{format,  }\item[{}]{... }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}}
+
+
+
+Logs a warning message. 
+
+varargs are the same as in printf. \mbox{\Hypertarget{class_log_a9bbfa4b8f4fb2262d914f00ba04dd6c6}\label{class_log_a9bbfa4b8f4fb2262d914f00ba04dd6c6}} 
+\index{Log@{Log}!warning\_no\_header@{warning\_no\_header}}
+\index{warning\_no\_header@{warning\_no\_header}!Log@{Log}}
+\doxysubsubsection{\texorpdfstring{warning\_no\_header()}{warning\_no\_header()}}
+{\footnotesize\ttfamily void Log\+::warning\+\_\+no\+\_\+header (\begin{DoxyParamCaption}\item[{const char $\ast$}]{format,  }\item[{}]{... }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}}
+
+
+
+Logs a warning message. 
+
+Does not print the message header (useful if doing multiple log prints to the same line). varargs are the same as in printf. \mbox{\Hypertarget{class_log_aff6a4531e693fd53ad051c7fef28c6aa}\label{class_log_aff6a4531e693fd53ad051c7fef28c6aa}} 
+\index{Log@{Log}!write\_message@{write\_message}}
+\index{write\_message@{write\_message}!Log@{Log}}
+\doxysubsubsection{\texorpdfstring{write\_message()}{write\_message()}}
+{\footnotesize\ttfamily void Log\+::write\+\_\+message (\begin{DoxyParamCaption}\item[{bool}]{print\+\_\+header,  }\item[{\textbf{ int8\+\_\+t}}]{message\+\_\+level,  }\item[{const char $\ast$}]{message\+\_\+type,  }\item[{const char $\ast$}]{format,  }\item[{\textbf{ va\+\_\+list}}]{arguments }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}
+
+
+
+Potentially writes the message to either standard output or the log file if the message level is high enough. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em print\+\_\+header} & specifies if the header to the message should be printed out \\
+\hline
+{\em message\+\_\+level} & the level of the message to potentially be printed out \\
+\hline
+{\em message\+\_\+type} & a string representation of this message type \\
+\hline
+{\em message\+\_\+type} & the format string for this message (as in printf) \\
+\hline
+{\em arguments} & the arguments for the print statement \\
+\hline
+\end{DoxyParams}
+
+
+\doxysubsection{Member Data Documentation}
+\mbox{\Hypertarget{class_log_a08b261dd43ff89110e602a3a61f6ec61}\label{class_log_a08b261dd43ff89110e602a3a61f6ec61}} 
+\index{Log@{Log}!file\_message\_level@{file\_message\_level}}
+\index{file\_message\_level@{file\_message\_level}!Log@{Log}}
+\doxysubsubsection{\texorpdfstring{file\_message\_level}{file\_message\_level}}
+{\footnotesize\ttfamily int32\+\_\+t Log\+::file\+\_\+message\+\_\+level = \mbox{\hyperlink{class_log_a70efafdaaf797f644bb24a8e1c7f5643}{I\+N\+FO}}\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}
+
+
+
+Specifies which messages to log. 
+
+Messages will be written to the log file if their type is $<$= message\+\_\+level. \mbox{\Hypertarget{class_log_a814d0d060c29987d5d43d55b3d8d542c}\label{class_log_a814d0d060c29987d5d43d55b3d8d542c}} 
+\index{Log@{Log}!log\_ids@{log\_ids}}
+\index{log\_ids@{log\_ids}!Log@{Log}}
+\doxysubsubsection{\texorpdfstring{log\_ids}{log\_ids}}
+{\footnotesize\ttfamily \textbf{ map}$<$ thread\+::id, \textbf{ string} $>$ Log\+::log\+\_\+ids\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}
+
+
+
+A map of C++ thread ids (which are not human readable) to human readable integer ids. 
+
+Thread ids are specified with the \mbox{\hyperlink{class_log_ac02fea24138d69a35521d82ee64bb90d}{Log\+::set\+\_\+id(string)}} method. \mbox{\Hypertarget{class_log_aa8bf3e23cf88dc4e48aafd791fe93cd7}\label{class_log_aa8bf3e23cf88dc4e48aafd791fe93cd7}} 
+\index{Log@{Log}!log\_ids\_mutex@{log\_ids\_mutex}}
+\index{log\_ids\_mutex@{log\_ids\_mutex}!Log@{Log}}
+\doxysubsubsection{\texorpdfstring{log\_ids\_mutex}{log\_ids\_mutex}}
+{\footnotesize\ttfamily shared\+\_\+mutex Log\+::log\+\_\+ids\+\_\+mutex\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}
+
+
+
+A std\+::shared\+\_\+mutex protecting the Log\+::thread\+\_\+ids map. 
+
+The Log\+::set\+\_\+thread\+\_\+id(int32\+\_\+t) mehod needs write access so it will use the std\+::shared\+\_\+mutex\+::lock()x and std\+::shared\+\_\+mutex()\+::unlock() mechanism, while the Log\+::get\+\_\+thread\+\_\+id() only needs read access and can used the std\+::shared\+\_\+mutex\+::lock\+\_\+shared() and std\+::shared\+\_\+mutex\+::unlock\+\_\+shared() methods. \mbox{\Hypertarget{class_log_ad6bd8ce041323bb69e69aeb9edbe12ee}\label{class_log_ad6bd8ce041323bb69e69aeb9edbe12ee}} 
+\index{Log@{Log}!process\_rank@{process\_rank}}
+\index{process\_rank@{process\_rank}!Log@{Log}}
+\doxysubsubsection{\texorpdfstring{process\_rank}{process\_rank}}
+{\footnotesize\ttfamily int32\+\_\+t Log\+::process\+\_\+rank = -\/1\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}
+
+
+
+The M\+PI process rank for this \mbox{\hyperlink{class_log}{Log}} instance. 
+
+Set to -\/1 if not specified or not using M\+PI. \mbox{\Hypertarget{class_log_a47ec200a53bfc6b8b6a39bc91d5dbc86}\label{class_log_a47ec200a53bfc6b8b6a39bc91d5dbc86}} 
+\index{Log@{Log}!restricted\_rank@{restricted\_rank}}
+\index{restricted\_rank@{restricted\_rank}!Log@{Log}}
+\doxysubsubsection{\texorpdfstring{restricted\_rank}{restricted\_rank}}
+{\footnotesize\ttfamily int32\+\_\+t Log\+::restricted\+\_\+rank = -\/1\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}
+
+
+
+Defaults at -\/1, when set to a process rank ($>$= 0) the \mbox{\hyperlink{class_log}{Log}} will only print messages if its rank is the same as the restricted rank. 
+
+This is useful, for allowing initialization messages to only be printed out by a single process. \mbox{\Hypertarget{class_log_a633c6eafa442ecfb3b3322f89496e52e}\label{class_log_a633c6eafa442ecfb3b3322f89496e52e}} 
+\index{Log@{Log}!std\_message\_level@{std\_message\_level}}
+\index{std\_message\_level@{std\_message\_level}!Log@{Log}}
+\doxysubsubsection{\texorpdfstring{std\_message\_level}{std\_message\_level}}
+{\footnotesize\ttfamily int32\+\_\+t Log\+::std\+\_\+message\+\_\+level = \mbox{\hyperlink{class_log_a70efafdaaf797f644bb24a8e1c7f5643}{I\+N\+FO}}\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}
+
+
+
+Specifies which messages to log. 
+
+Messages will be written to the standard output log if their type is $<$= message\+\_\+level. 
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+common/log.\+hxx\item 
+common/log.\+cxx\end{DoxyCompactItemize}

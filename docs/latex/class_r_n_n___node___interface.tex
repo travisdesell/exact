@@ -1,0 +1,173 @@
+\hypertarget{class_r_n_n___node___interface}{}\doxysection{R\+N\+N\+\_\+\+Node\+\_\+\+Interface Class Reference}
+\label{class_r_n_n___node___interface}\index{RNN\_Node\_Interface@{RNN\_Node\_Interface}}
+Inheritance diagram for R\+N\+N\+\_\+\+Node\+\_\+\+Interface\+:\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[height=10.000000cm]{class_r_n_n___node___interface}
+\end{center}
+\end{figure}
+\doxysubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{class_r_n_n___node___interface_a1ed251d94070783d6b2b0c1cf86d242c}\label{class_r_n_n___node___interface_a1ed251d94070783d6b2b0c1cf86d242c}} 
+{\bfseries R\+N\+N\+\_\+\+Node\+\_\+\+Interface} (int32\+\_\+t \+\_\+innovation\+\_\+number, int32\+\_\+t \+\_\+layer\+\_\+type, double \+\_\+depth)
+\item 
+\mbox{\Hypertarget{class_r_n_n___node___interface_a12039a9af458fd5891dab3a8ea50ffb1}\label{class_r_n_n___node___interface_a12039a9af458fd5891dab3a8ea50ffb1}} 
+{\bfseries R\+N\+N\+\_\+\+Node\+\_\+\+Interface} (int32\+\_\+t \+\_\+innovation\+\_\+number, int32\+\_\+t \+\_\+layer\+\_\+type, double \+\_\+depth, \textbf{ string} \+\_\+parameter\+\_\+name)
+\item 
+\mbox{\Hypertarget{class_r_n_n___node___interface_aa7c16f34b699b23e2d30dbd6fe871913}\label{class_r_n_n___node___interface_aa7c16f34b699b23e2d30dbd6fe871913}} 
+virtual void {\bfseries initialize\+\_\+lamarckian} (\textbf{ minstd\+\_\+rand0} \&generator, \mbox{\hyperlink{class_normal_distribution}{Normal\+Distribution}} \&normal\+\_\+distribution, double mu, double sigma)=0
+\item 
+\mbox{\Hypertarget{class_r_n_n___node___interface_a82a6cd2740ad9ec251ce70b9ccf7d996}\label{class_r_n_n___node___interface_a82a6cd2740ad9ec251ce70b9ccf7d996}} 
+virtual void {\bfseries initialize\+\_\+xavier} (\textbf{ minstd\+\_\+rand0} \&generator, \textbf{ uniform\+\_\+real\+\_\+distribution}$<$ double $>$ \&rng\+\_\+1\+\_\+1, double range)=0
+\item 
+\mbox{\Hypertarget{class_r_n_n___node___interface_a151b062476ee718b6fa2c3dad7e1321e}\label{class_r_n_n___node___interface_a151b062476ee718b6fa2c3dad7e1321e}} 
+virtual void {\bfseries initialize\+\_\+kaiming} (\textbf{ minstd\+\_\+rand0} \&generator, \mbox{\hyperlink{class_normal_distribution}{Normal\+Distribution}} \&normal\+\_\+distribution, double range)=0
+\item 
+\mbox{\Hypertarget{class_r_n_n___node___interface_a98663b8e304619c8d8605f5a56432ea5}\label{class_r_n_n___node___interface_a98663b8e304619c8d8605f5a56432ea5}} 
+virtual void {\bfseries initialize\+\_\+uniform\+\_\+random} (\textbf{ minstd\+\_\+rand0} \&generator, \textbf{ uniform\+\_\+real\+\_\+distribution}$<$ double $>$ \&rng)=0
+\item 
+\mbox{\Hypertarget{class_r_n_n___node___interface_abb54d5403840c537bc19682349d3e762}\label{class_r_n_n___node___interface_abb54d5403840c537bc19682349d3e762}} 
+virtual void {\bfseries input\+\_\+fired} (int32\+\_\+t time, double incoming\+\_\+output)=0
+\item 
+\mbox{\Hypertarget{class_r_n_n___node___interface_a7494e26e1a8f314c8b7d9b74317d3d50}\label{class_r_n_n___node___interface_a7494e26e1a8f314c8b7d9b74317d3d50}} 
+virtual void {\bfseries output\+\_\+fired} (int32\+\_\+t time, double delta)=0
+\item 
+\mbox{\Hypertarget{class_r_n_n___node___interface_ab633cfb84590079eb3ebea113d61ba4f}\label{class_r_n_n___node___interface_ab633cfb84590079eb3ebea113d61ba4f}} 
+virtual void {\bfseries error\+\_\+fired} (int32\+\_\+t time, double error)=0
+\item 
+\mbox{\Hypertarget{class_r_n_n___node___interface_a9dae249230f9d8e11110194a640e80c6}\label{class_r_n_n___node___interface_a9dae249230f9d8e11110194a640e80c6}} 
+virtual uint32\+\_\+t {\bfseries get\+\_\+number\+\_\+weights} () const =0
+\item 
+\mbox{\Hypertarget{class_r_n_n___node___interface_abba707a02d11beb0fe4c2e03cc0dc42a}\label{class_r_n_n___node___interface_abba707a02d11beb0fe4c2e03cc0dc42a}} 
+virtual void {\bfseries get\+\_\+weights} (\textbf{ vector}$<$ double $>$ \&parameters) const =0
+\item 
+\mbox{\Hypertarget{class_r_n_n___node___interface_af688d6a3b57727e8911231e1d5eebd33}\label{class_r_n_n___node___interface_af688d6a3b57727e8911231e1d5eebd33}} 
+virtual void {\bfseries set\+\_\+weights} (const \textbf{ vector}$<$ double $>$ \&parameters)=0
+\item 
+\mbox{\Hypertarget{class_r_n_n___node___interface_aedcd5447e23943fe1da641ada677d534}\label{class_r_n_n___node___interface_aedcd5447e23943fe1da641ada677d534}} 
+virtual void {\bfseries get\+\_\+weights} (uint32\+\_\+t \&offset, \textbf{ vector}$<$ double $>$ \&parameters) const =0
+\item 
+\mbox{\Hypertarget{class_r_n_n___node___interface_a649275fa498dc678b3ca338d1cb9d783}\label{class_r_n_n___node___interface_a649275fa498dc678b3ca338d1cb9d783}} 
+virtual void {\bfseries set\+\_\+weights} (uint32\+\_\+t \&offset, const \textbf{ vector}$<$ double $>$ \&parameters)=0
+\item 
+\mbox{\Hypertarget{class_r_n_n___node___interface_afc25f125bd5cb202da61775a129aa8e7}\label{class_r_n_n___node___interface_afc25f125bd5cb202da61775a129aa8e7}} 
+virtual void {\bfseries reset} (int32\+\_\+t \+\_\+series\+\_\+length)=0
+\item 
+\mbox{\Hypertarget{class_r_n_n___node___interface_acd325630d2e23b6474cac709a6fe8aa9}\label{class_r_n_n___node___interface_acd325630d2e23b6474cac709a6fe8aa9}} 
+virtual void {\bfseries get\+\_\+gradients} (\textbf{ vector}$<$ double $>$ \&gradients)=0
+\item 
+\mbox{\Hypertarget{class_r_n_n___node___interface_a39bcbf8e1dfda95c76c4b4dde3756aab}\label{class_r_n_n___node___interface_a39bcbf8e1dfda95c76c4b4dde3756aab}} 
+virtual \mbox{\hyperlink{class_r_n_n___node___interface}{R\+N\+N\+\_\+\+Node\+\_\+\+Interface}} $\ast$ {\bfseries copy} () const =0
+\item 
+\mbox{\Hypertarget{class_r_n_n___node___interface_a4d8c4486d28d4868ec1278412af9e475}\label{class_r_n_n___node___interface_a4d8c4486d28d4868ec1278412af9e475}} 
+void {\bfseries write\+\_\+to\+\_\+stream} (\textbf{ ostream} \&out)
+\item 
+\mbox{\Hypertarget{class_r_n_n___node___interface_a79fbf0876637a93db67d589c94c60eeb}\label{class_r_n_n___node___interface_a79fbf0876637a93db67d589c94c60eeb}} 
+int32\+\_\+t {\bfseries get\+\_\+node\+\_\+type} () const
+\item 
+\mbox{\Hypertarget{class_r_n_n___node___interface_a07da15405db940a34d98ca1d2558fc3d}\label{class_r_n_n___node___interface_a07da15405db940a34d98ca1d2558fc3d}} 
+int32\+\_\+t {\bfseries get\+\_\+layer\+\_\+type} () const
+\item 
+\mbox{\Hypertarget{class_r_n_n___node___interface_a2889720fbe6f13b3429e425054adee10}\label{class_r_n_n___node___interface_a2889720fbe6f13b3429e425054adee10}} 
+int32\+\_\+t {\bfseries get\+\_\+innovation\+\_\+number} () const
+\item 
+\mbox{\Hypertarget{class_r_n_n___node___interface_a50ae2eb211394265e4e3a1f852fc11f0}\label{class_r_n_n___node___interface_a50ae2eb211394265e4e3a1f852fc11f0}} 
+int32\+\_\+t {\bfseries get\+\_\+total\+\_\+inputs} () const
+\item 
+\mbox{\Hypertarget{class_r_n_n___node___interface_ac8140b8f6edb1bc09684506d5c73aed4}\label{class_r_n_n___node___interface_ac8140b8f6edb1bc09684506d5c73aed4}} 
+int32\+\_\+t {\bfseries get\+\_\+total\+\_\+outputs} () const
+\item 
+\mbox{\Hypertarget{class_r_n_n___node___interface_a9b0894ad2ea635baeff5412cb28ad9c8}\label{class_r_n_n___node___interface_a9b0894ad2ea635baeff5412cb28ad9c8}} 
+double {\bfseries get\+\_\+depth} () const
+\item 
+\mbox{\Hypertarget{class_r_n_n___node___interface_a6ed255dc833d76ee085c28c386de98a5}\label{class_r_n_n___node___interface_a6ed255dc833d76ee085c28c386de98a5}} 
+bool {\bfseries equals} (\mbox{\hyperlink{class_r_n_n___node___interface}{R\+N\+N\+\_\+\+Node\+\_\+\+Interface}} $\ast$other) const
+\item 
+\mbox{\Hypertarget{class_r_n_n___node___interface_aa257c9ad4810286a299bd2dbf4bb60c5}\label{class_r_n_n___node___interface_aa257c9ad4810286a299bd2dbf4bb60c5}} 
+bool {\bfseries is\+\_\+reachable} () const
+\item 
+\mbox{\Hypertarget{class_r_n_n___node___interface_a06c31a95dd9778bb6514ddcd52686787}\label{class_r_n_n___node___interface_a06c31a95dd9778bb6514ddcd52686787}} 
+bool {\bfseries is\+\_\+enabled} () const
+\end{DoxyCompactItemize}
+\doxysubsection*{Protected Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{class_r_n_n___node___interface_ab3d935f5a1caa3900c4505da98e915f1}\label{class_r_n_n___node___interface_ab3d935f5a1caa3900c4505da98e915f1}} 
+int32\+\_\+t {\bfseries innovation\+\_\+number}
+\item 
+\mbox{\Hypertarget{class_r_n_n___node___interface_aa54842fb73233d8f91a159d87aeb381e}\label{class_r_n_n___node___interface_aa54842fb73233d8f91a159d87aeb381e}} 
+int32\+\_\+t {\bfseries layer\+\_\+type}
+\item 
+\mbox{\Hypertarget{class_r_n_n___node___interface_a91dcdce3c6c1e68304d51f44fa73d576}\label{class_r_n_n___node___interface_a91dcdce3c6c1e68304d51f44fa73d576}} 
+int32\+\_\+t {\bfseries node\+\_\+type}
+\item 
+\mbox{\Hypertarget{class_r_n_n___node___interface_a2aecf23b8204552a75b1f3e94ce3459c}\label{class_r_n_n___node___interface_a2aecf23b8204552a75b1f3e94ce3459c}} 
+double {\bfseries depth}
+\item 
+\mbox{\Hypertarget{class_r_n_n___node___interface_aa58f88dcf01abb3960b55e8ed30a3255}\label{class_r_n_n___node___interface_aa58f88dcf01abb3960b55e8ed30a3255}} 
+\textbf{ string} {\bfseries parameter\+\_\+name}
+\item 
+\mbox{\Hypertarget{class_r_n_n___node___interface_a3a3a3a7db0f530439a25e83d79cb87d4}\label{class_r_n_n___node___interface_a3a3a3a7db0f530439a25e83d79cb87d4}} 
+bool {\bfseries enabled}
+\item 
+\mbox{\Hypertarget{class_r_n_n___node___interface_a0b6f3cfc74d94eee742bb4e397018d3f}\label{class_r_n_n___node___interface_a0b6f3cfc74d94eee742bb4e397018d3f}} 
+bool {\bfseries backward\+\_\+reachable}
+\item 
+\mbox{\Hypertarget{class_r_n_n___node___interface_a191a9b1cc5fa8f7dd97fbf6028abfe40}\label{class_r_n_n___node___interface_a191a9b1cc5fa8f7dd97fbf6028abfe40}} 
+bool {\bfseries forward\+\_\+reachable}
+\item 
+\mbox{\Hypertarget{class_r_n_n___node___interface_afb2167b706fbbc8caf8b364d7934c3d9}\label{class_r_n_n___node___interface_afb2167b706fbbc8caf8b364d7934c3d9}} 
+int32\+\_\+t {\bfseries series\+\_\+length}
+\item 
+\mbox{\Hypertarget{class_r_n_n___node___interface_a9395b960e01323ccd24183a1f45d5938}\label{class_r_n_n___node___interface_a9395b960e01323ccd24183a1f45d5938}} 
+\textbf{ vector}$<$ double $>$ {\bfseries input\+\_\+values}
+\item 
+\mbox{\Hypertarget{class_r_n_n___node___interface_ad7ed0327697e9492b383b8779ea52a29}\label{class_r_n_n___node___interface_ad7ed0327697e9492b383b8779ea52a29}} 
+\textbf{ vector}$<$ double $>$ {\bfseries output\+\_\+values}
+\item 
+\mbox{\Hypertarget{class_r_n_n___node___interface_a511a9004d71ce185b061ce8d5022ca64}\label{class_r_n_n___node___interface_a511a9004d71ce185b061ce8d5022ca64}} 
+\textbf{ vector}$<$ double $>$ {\bfseries error\+\_\+values}
+\item 
+\mbox{\Hypertarget{class_r_n_n___node___interface_a7c6204d57bb37a40c7b243110c0f7a34}\label{class_r_n_n___node___interface_a7c6204d57bb37a40c7b243110c0f7a34}} 
+\textbf{ vector}$<$ double $>$ {\bfseries d\+\_\+input}
+\item 
+\mbox{\Hypertarget{class_r_n_n___node___interface_a396bea6cb6d6dd595e53e252356f09c6}\label{class_r_n_n___node___interface_a396bea6cb6d6dd595e53e252356f09c6}} 
+\textbf{ vector}$<$ int32\+\_\+t $>$ {\bfseries inputs\+\_\+fired}
+\item 
+\mbox{\Hypertarget{class_r_n_n___node___interface_af1cbfce95ce6034addf1696a045d8d12}\label{class_r_n_n___node___interface_af1cbfce95ce6034addf1696a045d8d12}} 
+\textbf{ vector}$<$ int32\+\_\+t $>$ {\bfseries outputs\+\_\+fired}
+\item 
+\mbox{\Hypertarget{class_r_n_n___node___interface_a772814201f16a86ee6ea1f8700e7826b}\label{class_r_n_n___node___interface_a772814201f16a86ee6ea1f8700e7826b}} 
+int32\+\_\+t {\bfseries total\+\_\+inputs}
+\item 
+\mbox{\Hypertarget{class_r_n_n___node___interface_a0148cba9d2537a52d5402e246e14209c}\label{class_r_n_n___node___interface_a0148cba9d2537a52d5402e246e14209c}} 
+int32\+\_\+t {\bfseries total\+\_\+outputs}
+\end{DoxyCompactItemize}
+\doxysubsection*{Friends}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{class_r_n_n___node___interface_a6ed93c885e63e64a8aa0ab2b7f637f0e}\label{class_r_n_n___node___interface_a6ed93c885e63e64a8aa0ab2b7f637f0e}} 
+class {\bfseries R\+N\+N\+\_\+\+Edge}
+\item 
+\mbox{\Hypertarget{class_r_n_n___node___interface_a4a4558cee1b41082e2c3123452a35b99}\label{class_r_n_n___node___interface_a4a4558cee1b41082e2c3123452a35b99}} 
+class {\bfseries R\+N\+N\+\_\+\+Recurrent\+\_\+\+Edge}
+\item 
+\mbox{\Hypertarget{class_r_n_n___node___interface_a67a4ae33f841a6e1d186c84e9490a802}\label{class_r_n_n___node___interface_a67a4ae33f841a6e1d186c84e9490a802}} 
+class {\bfseries R\+NN}
+\item 
+\mbox{\Hypertarget{class_r_n_n___node___interface_ad7617134ea6662be9dc1ad79223de4d1}\label{class_r_n_n___node___interface_ad7617134ea6662be9dc1ad79223de4d1}} 
+class {\bfseries R\+N\+N\+\_\+\+Genome}
+\item 
+\mbox{\Hypertarget{class_r_n_n___node___interface_a3c6fd1b1841f1808870f8f228c5d021e}\label{class_r_n_n___node___interface_a3c6fd1b1841f1808870f8f228c5d021e}} 
+void {\bfseries get\+\_\+mse} (\mbox{\hyperlink{class_r_n_n}{R\+NN}} $\ast$genome, const \textbf{ vector}$<$ \textbf{ vector}$<$ double $>$ $>$ \&expected, double \&mse, \textbf{ vector}$<$ \textbf{ vector}$<$ double $>$ $>$ \&deltas)
+\item 
+\mbox{\Hypertarget{class_r_n_n___node___interface_a744ea213e57442af35ac90ea397ce97c}\label{class_r_n_n___node___interface_a744ea213e57442af35ac90ea397ce97c}} 
+void {\bfseries get\+\_\+mae} (\mbox{\hyperlink{class_r_n_n}{R\+NN}} $\ast$genome, const \textbf{ vector}$<$ \textbf{ vector}$<$ double $>$ $>$ \&expected, double \&mae, \textbf{ vector}$<$ \textbf{ vector}$<$ double $>$ $>$ \&deltas)
+\end{DoxyCompactItemize}
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+rnn/rnn\+\_\+node\+\_\+interface.\+hxx\item 
+rnn/rnn\+\_\+node\+\_\+interface.\+cxx\end{DoxyCompactItemize}

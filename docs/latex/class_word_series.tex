@@ -1,0 +1,158 @@
+\hypertarget{class_word_series}{}\doxysection{Word\+Series Class Reference}
+\label{class_word_series}\index{WordSeries@{WordSeries}}
+\doxysubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{class_word_series_ad0632eb627c4275f0c01877084a265d3}\label{class_word_series_ad0632eb627c4275f0c01877084a265d3}} 
+{\bfseries Word\+Series} (\textbf{ string} \+\_\+name)
+\item 
+\mbox{\Hypertarget{class_word_series_ac40abcdb2bf29aac109e4663590697cd}\label{class_word_series_ac40abcdb2bf29aac109e4663590697cd}} 
+void {\bfseries add\+\_\+value} (double value)
+\item 
+\mbox{\Hypertarget{class_word_series_a6b53ae1e5b35716ad4f905b1eb6d665c}\label{class_word_series_a6b53ae1e5b35716ad4f905b1eb6d665c}} 
+double {\bfseries get\+\_\+value} (int i)
+\item 
+\mbox{\Hypertarget{class_word_series_af40e1cae4cecb85c62a95f96443ebd5a}\label{class_word_series_af40e1cae4cecb85c62a95f96443ebd5a}} 
+void {\bfseries calculate\+\_\+statistics} ()
+\item 
+\mbox{\Hypertarget{class_word_series_af0641d8c6f711ebd3de17507b67997d1}\label{class_word_series_af0641d8c6f711ebd3de17507b67997d1}} 
+void {\bfseries print\+\_\+statistics} ()
+\item 
+\mbox{\Hypertarget{class_word_series_a828c95b1330e9327a207949560885af1}\label{class_word_series_a828c95b1330e9327a207949560885af1}} 
+int {\bfseries get\+\_\+number\+\_\+values} () const
+\item 
+\mbox{\Hypertarget{class_word_series_a741c2546aa8b032570813b5c6ee137a8}\label{class_word_series_a741c2546aa8b032570813b5c6ee137a8}} 
+double {\bfseries get\+\_\+min} () const
+\item 
+\mbox{\Hypertarget{class_word_series_abe65b98aea1f4f78e4e55fe8ce6735e3}\label{class_word_series_abe65b98aea1f4f78e4e55fe8ce6735e3}} 
+double {\bfseries get\+\_\+average} () const
+\item 
+\mbox{\Hypertarget{class_word_series_ac00878158175877d31997cd5cd271198}\label{class_word_series_ac00878158175877d31997cd5cd271198}} 
+double {\bfseries get\+\_\+max} () const
+\item 
+\mbox{\Hypertarget{class_word_series_a73c60c775afb633cd34064860dbd6d4a}\label{class_word_series_a73c60c775afb633cd34064860dbd6d4a}} 
+double {\bfseries get\+\_\+std\+\_\+dev} () const
+\item 
+\mbox{\Hypertarget{class_word_series_a175cd6233bb96f88779a22223a819d2d}\label{class_word_series_a175cd6233bb96f88779a22223a819d2d}} 
+double {\bfseries get\+\_\+variance} () const
+\item 
+\mbox{\Hypertarget{class_word_series_a8d1197bee0719710feb3a4cc0558c7bb}\label{class_word_series_a8d1197bee0719710feb3a4cc0558c7bb}} 
+double {\bfseries get\+\_\+min\+\_\+change} () const
+\item 
+\mbox{\Hypertarget{class_word_series_ae0c1de06176025d5f8d5460391f5bbcf}\label{class_word_series_ae0c1de06176025d5f8d5460391f5bbcf}} 
+double {\bfseries get\+\_\+max\+\_\+change} () const
+\item 
+\mbox{\Hypertarget{class_word_series_a2019e6699fc8eb8b18439bdb38a18ed6}\label{class_word_series_a2019e6699fc8eb8b18439bdb38a18ed6}} 
+void {\bfseries normalize\+\_\+min\+\_\+max} (double \mbox{\hyperlink{class_word_series_a93302deb50a92c6aa6f7b2d8da29fee5}{min}}, double \mbox{\hyperlink{class_word_series_ab61bb7ef53fe10c4ef2077ad70700c25}{max}})
+\item 
+\mbox{\Hypertarget{class_word_series_ab45a95958471a4255ad7ecf990ab2cd3}\label{class_word_series_ab45a95958471a4255ad7ecf990ab2cd3}} 
+void {\bfseries normalize\+\_\+avg\+\_\+std\+\_\+dev} (double avg, double \mbox{\hyperlink{class_word_series_a6902b4c4b6bb2f865a59e4c5e27d7f18}{std\+\_\+dev}}, double norm\+\_\+max)
+\item 
+\mbox{\Hypertarget{class_word_series_a89582ef3e5cd7a9fb39ac37e629b0287}\label{class_word_series_a89582ef3e5cd7a9fb39ac37e629b0287}} 
+void {\bfseries cut} (\textbf{ int32\+\_\+t} start, \textbf{ int32\+\_\+t} stop)
+\item 
+\mbox{\Hypertarget{class_word_series_ae940ee5743cacb86076aac66f6010fa8}\label{class_word_series_ae940ee5743cacb86076aac66f6010fa8}} 
+double {\bfseries get\+\_\+correlation} (const \mbox{\hyperlink{class_word_series}{Word\+Series}} $\ast$other, \textbf{ int32\+\_\+t} lag) const
+\item 
+\mbox{\Hypertarget{class_word_series_a39fe4ada8a08d95968e4b4e00665a78b}\label{class_word_series_a39fe4ada8a08d95968e4b4e00665a78b}} 
+\mbox{\hyperlink{class_word_series}{Word\+Series}} $\ast$ {\bfseries copy} ()
+\item 
+\mbox{\Hypertarget{class_word_series_aab0949df22d0b2caad5ee6885a196180}\label{class_word_series_aab0949df22d0b2caad5ee6885a196180}} 
+void {\bfseries copy\+\_\+values} (\textbf{ vector}$<$ double $>$ \&series)
+\end{DoxyCompactItemize}
+\doxysubsection*{Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\textbf{ string} \mbox{\hyperlink{class_word_series_ad40f74a195876908084a743b66c7b208}{name}}
+\begin{DoxyCompactList}\small\item\em Specifies the string name in the data. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{class_word_series_a0db2200d32c40a69f28f55457d05afac}\label{class_word_series_a0db2200d32c40a69f28f55457d05afac}} 
+int \mbox{\hyperlink{class_word_series_a0db2200d32c40a69f28f55457d05afac}{vocab\+\_\+size}}
+\begin{DoxyCompactList}\small\item\em Specifies the number of the unique strings in the dataset. \end{DoxyCompactList}\item 
+double \mbox{\hyperlink{class_word_series_a93302deb50a92c6aa6f7b2d8da29fee5}{min}}
+\begin{DoxyCompactList}\small\item\em Specifies the minimum of the word series in a particular string. \end{DoxyCompactList}\item 
+double \mbox{\hyperlink{class_word_series_a3422e982c01b71612924ac5f1f0d2181}{average}}
+\begin{DoxyCompactList}\small\item\em Specifies the average of the word series in a particular string. \end{DoxyCompactList}\item 
+double \mbox{\hyperlink{class_word_series_ab61bb7ef53fe10c4ef2077ad70700c25}{max}}
+\begin{DoxyCompactList}\small\item\em Specifies the maximum of the word series in a particular string. \end{DoxyCompactList}\item 
+double \mbox{\hyperlink{class_word_series_a6902b4c4b6bb2f865a59e4c5e27d7f18}{std\+\_\+dev}}
+\begin{DoxyCompactList}\small\item\em Specifies the std. \end{DoxyCompactList}\item 
+double \mbox{\hyperlink{class_word_series_ad1b8dc0e4f367bf0aa4a46ddb114f8c0}{variance}}
+\begin{DoxyCompactList}\small\item\em Specifies the variance of the word series in a particular string. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{class_word_series_a56eeff54503c725b99284c6524f704a0}\label{class_word_series_a56eeff54503c725b99284c6524f704a0}} 
+double {\bfseries min\+\_\+change}
+\item 
+\mbox{\Hypertarget{class_word_series_a9aee1f87534f0fff5c814afb122b69d0}\label{class_word_series_a9aee1f87534f0fff5c814afb122b69d0}} 
+double {\bfseries max\+\_\+change}
+\item 
+\mbox{\Hypertarget{class_word_series_aed7840684ce132999a2d34a7e26dcd97}\label{class_word_series_aed7840684ce132999a2d34a7e26dcd97}} 
+\textbf{ vector}$<$ double $>$ \mbox{\hyperlink{class_word_series_aed7840684ce132999a2d34a7e26dcd97}{values}}
+\begin{DoxyCompactList}\small\item\em Storers the values in the word series respective of the time in a particular string. \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\doxysubsection{Member Data Documentation}
+\mbox{\Hypertarget{class_word_series_a3422e982c01b71612924ac5f1f0d2181}\label{class_word_series_a3422e982c01b71612924ac5f1f0d2181}} 
+\index{WordSeries@{WordSeries}!average@{average}}
+\index{average@{average}!WordSeries@{WordSeries}}
+\doxysubsubsection{\texorpdfstring{average}{average}}
+{\footnotesize\ttfamily double Word\+Series\+::average\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+Specifies the average of the word series in a particular string. 
+
+This tells about the words which are used the most. \mbox{\Hypertarget{class_word_series_ab61bb7ef53fe10c4ef2077ad70700c25}\label{class_word_series_ab61bb7ef53fe10c4ef2077ad70700c25}} 
+\index{WordSeries@{WordSeries}!max@{max}}
+\index{max@{max}!WordSeries@{WordSeries}}
+\doxysubsubsection{\texorpdfstring{max}{max}}
+{\footnotesize\ttfamily double Word\+Series\+::max\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+Specifies the maximum of the word series in a particular string. 
+
+This could be 0 or 1 \mbox{\Hypertarget{class_word_series_a93302deb50a92c6aa6f7b2d8da29fee5}\label{class_word_series_a93302deb50a92c6aa6f7b2d8da29fee5}} 
+\index{WordSeries@{WordSeries}!min@{min}}
+\index{min@{min}!WordSeries@{WordSeries}}
+\doxysubsubsection{\texorpdfstring{min}{min}}
+{\footnotesize\ttfamily double Word\+Series\+::min\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+Specifies the minimum of the word series in a particular string. 
+
+This could be 0 or 1 \mbox{\Hypertarget{class_word_series_ad40f74a195876908084a743b66c7b208}\label{class_word_series_ad40f74a195876908084a743b66c7b208}} 
+\index{WordSeries@{WordSeries}!name@{name}}
+\index{name@{name}!WordSeries@{WordSeries}}
+\doxysubsubsection{\texorpdfstring{name}{name}}
+{\footnotesize\ttfamily \textbf{ string} Word\+Series\+::name\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+Specifies the string name in the data. 
+
+All the unique strings in the datasets will have its each word series. \mbox{\Hypertarget{class_word_series_a6902b4c4b6bb2f865a59e4c5e27d7f18}\label{class_word_series_a6902b4c4b6bb2f865a59e4c5e27d7f18}} 
+\index{WordSeries@{WordSeries}!std\_dev@{std\_dev}}
+\index{std\_dev@{std\_dev}!WordSeries@{WordSeries}}
+\doxysubsubsection{\texorpdfstring{std\_dev}{std\_dev}}
+{\footnotesize\ttfamily double Word\+Series\+::std\+\_\+dev\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+Specifies the std. 
+
+deviation of the word series in a particular string. \mbox{\Hypertarget{class_word_series_ad1b8dc0e4f367bf0aa4a46ddb114f8c0}\label{class_word_series_ad1b8dc0e4f367bf0aa4a46ddb114f8c0}} 
+\index{WordSeries@{WordSeries}!variance@{variance}}
+\index{variance@{variance}!WordSeries@{WordSeries}}
+\doxysubsubsection{\texorpdfstring{variance}{variance}}
+{\footnotesize\ttfamily double Word\+Series\+::variance\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+Specifies the variance of the word series in a particular string. 
+
+This tells about the closeness of a word in the dataset. 
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+word\+\_\+series/word\+\_\+series.\+hxx\item 
+word\+\_\+series/word\+\_\+series.\+cxx\end{DoxyCompactItemize}

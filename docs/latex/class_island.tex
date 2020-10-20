@@ -1,0 +1,360 @@
+\hypertarget{class_island}{}\doxysection{Island Class Reference}
+\label{class_island}\index{Island@{Island}}
+\doxysubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\hyperlink{class_island_a32f068675c8a7f999cb18464d00e8119}{Island}} (int32\+\_\+t \mbox{\hyperlink{class_island_a859a134cc183618af109dd69b85f2955}{id}}, int32\+\_\+t \mbox{\hyperlink{class_island_a5973473a3aad42bec285f02522cacce8}{max\+\_\+size}})
+\begin{DoxyCompactList}\small\item\em Initializes an island with a given max size. \end{DoxyCompactList}\item 
+\mbox{\hyperlink{class_island_a02fc26cf7fb95d750c501494b855707d}{Island}} (int32\+\_\+t \mbox{\hyperlink{class_island_a859a134cc183618af109dd69b85f2955}{id}}, \textbf{ vector}$<$ \mbox{\hyperlink{class_r_n_n___genome}{R\+N\+N\+\_\+\+Genome}} $\ast$ $>$ \mbox{\hyperlink{class_island_a41c1201d69104c49438c97dbc8c93db2}{genomes}})
+\begin{DoxyCompactList}\small\item\em Initializes an island filled the supplied genomes. \end{DoxyCompactList}\item 
+double \mbox{\hyperlink{class_island_aea94baab5d4faa09454131236baf187c}{get\+\_\+best\+\_\+fitness}} ()
+\begin{DoxyCompactList}\small\item\em Returns the fitness of the best genome in the island. \end{DoxyCompactList}\item 
+double \mbox{\hyperlink{class_island_ac135f9b252512f04afcd7f8c2f3f621f}{get\+\_\+worst\+\_\+fitness}} ()
+\begin{DoxyCompactList}\small\item\em Returns the fitness of the worst genome in the island. \end{DoxyCompactList}\item 
+\mbox{\hyperlink{class_r_n_n___genome}{R\+N\+N\+\_\+\+Genome}} $\ast$ \mbox{\hyperlink{class_island_abf327f29018863338f4eb351c1f4a2c8}{get\+\_\+best\+\_\+genome}} ()
+\begin{DoxyCompactList}\small\item\em Returns the best genomme in the island. \end{DoxyCompactList}\item 
+\mbox{\hyperlink{class_r_n_n___genome}{R\+N\+N\+\_\+\+Genome}} $\ast$ \mbox{\hyperlink{class_island_a2f5d1d504a6bc11d0d63cf9d4bea5a63}{get\+\_\+worst\+\_\+genome}} ()
+\begin{DoxyCompactList}\small\item\em Returns the worst genomme in the island. \end{DoxyCompactList}\item 
+int32\+\_\+t \mbox{\hyperlink{class_island_ac5cae801aac1403f3523a7949e415417}{get\+\_\+max\+\_\+size}} ()
+\begin{DoxyCompactList}\small\item\em Returns the maximum number of genomes the island can hold. \end{DoxyCompactList}\item 
+int32\+\_\+t \mbox{\hyperlink{class_island_a41f743dc56fa3c26f1e709222416cadf}{size}} ()
+\begin{DoxyCompactList}\small\item\em Returns the size of the island. \end{DoxyCompactList}\item 
+bool \mbox{\hyperlink{class_island_a42a519a1626c5db6004173529a5e2627}{is\+\_\+full}} ()
+\begin{DoxyCompactList}\small\item\em Returns true if the island has \mbox{\hyperlink{class_island_a5973473a3aad42bec285f02522cacce8}{Island\+::max\+\_\+size}} genomes. \end{DoxyCompactList}\item 
+bool \mbox{\hyperlink{class_island_a4d7e730b2c3e9cc53ae3205b1fbe2930}{is\+\_\+initializing}} ()
+\begin{DoxyCompactList}\small\item\em Returns true if the island is initializing, i.\+e., it\textquotesingle{}s size is $<$= max\+\_\+size and it hasn\textquotesingle{}t been cleared out for repopulating. \end{DoxyCompactList}\item 
+bool \mbox{\hyperlink{class_island_a79525b52b34ef3674b837072b5d34d19}{is\+\_\+repopulating}} ()
+\begin{DoxyCompactList}\small\item\em Returns true if the island is repopulating, i.\+e., it\textquotesingle{}s size is $<$= max\+\_\+size and it has been full before but cleared out for repopulation. \end{DoxyCompactList}\item 
+void \mbox{\hyperlink{class_island_a7c3b5331a7ee1dff6206a855e6b5c8b8}{copy\+\_\+random\+\_\+genome}} (\textbf{ uniform\+\_\+real\+\_\+distribution}$<$ double $>$ \&rng\+\_\+0\+\_\+1, \textbf{ minstd\+\_\+rand0} \&generator, \mbox{\hyperlink{class_r_n_n___genome}{R\+N\+N\+\_\+\+Genome}} $\ast$$\ast$genome)
+\begin{DoxyCompactList}\small\item\em Selects a genome from the island at random and returns a copy of it. \end{DoxyCompactList}\item 
+void \mbox{\hyperlink{class_island_ac49713b90f9110f52c5083540448df8d}{copy\+\_\+two\+\_\+random\+\_\+genomes}} (\textbf{ uniform\+\_\+real\+\_\+distribution}$<$ double $>$ \&rng\+\_\+0\+\_\+1, \textbf{ minstd\+\_\+rand0} \&generator, \mbox{\hyperlink{class_r_n_n___genome}{R\+N\+N\+\_\+\+Genome}} $\ast$$\ast$genome1, \mbox{\hyperlink{class_r_n_n___genome}{R\+N\+N\+\_\+\+Genome}} $\ast$$\ast$genome2)
+\begin{DoxyCompactList}\small\item\em Selects two different genomes from the island at random and returns copies of them. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{class_island_af4b7a1caadd05d62d95ae4f6b2e2d378}\label{class_island_af4b7a1caadd05d62d95ae4f6b2e2d378}} 
+void {\bfseries do\+\_\+population\+\_\+check} (int line, int initial\+\_\+size)
+\item 
+int32\+\_\+t \mbox{\hyperlink{class_island_a105174354a7313b3c6520892a3de653e}{insert\+\_\+genome}} (\mbox{\hyperlink{class_r_n_n___genome}{R\+N\+N\+\_\+\+Genome}} $\ast$genome)
+\begin{DoxyCompactList}\small\item\em Inserts a genome into the island. \end{DoxyCompactList}\item 
+void \mbox{\hyperlink{class_island_a9d092c81f7d97c72972dfbdf6fb7cb14}{print}} (\textbf{ string} indent=\char`\"{}\char`\"{})
+\begin{DoxyCompactList}\small\item\em Prints out the state of this island. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{class_island_a733a2accb72bce21194747fd3c1ee819}\label{class_island_a733a2accb72bce21194747fd3c1ee819}} 
+void \mbox{\hyperlink{class_island_a733a2accb72bce21194747fd3c1ee819}{erase\+\_\+island}} ()
+\begin{DoxyCompactList}\small\item\em erases the entire island and set the erased\+\_\+generation\+\_\+id. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{class_island_acb96603328b5dff91b41470424e7494e}\label{class_island_acb96603328b5dff91b41470424e7494e}} 
+int32\+\_\+t \mbox{\hyperlink{class_island_acb96603328b5dff91b41470424e7494e}{get\+\_\+erased\+\_\+generation\+\_\+id}} ()
+\begin{DoxyCompactList}\small\item\em returns the get\+\_\+erased\+\_\+generation\+\_\+id. \end{DoxyCompactList}\item 
+int32\+\_\+t \mbox{\hyperlink{class_island_a8c941beca36c75f2c4fc2fd0d2dfc2c5}{get\+\_\+status}} ()
+\item 
+\mbox{\Hypertarget{class_island_abee9ebff7f0da46fa3dde1718f675689}\label{class_island_abee9ebff7f0da46fa3dde1718f675689}} 
+void \mbox{\hyperlink{class_island_abee9ebff7f0da46fa3dde1718f675689}{set\+\_\+status}} (int32\+\_\+t status\+\_\+to\+\_\+set)
+\begin{DoxyCompactList}\small\item\em after erasing the island, sets the island status to repopulating. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{class_island_abb653cd2fc60819a0ab2c204930a7e8a}\label{class_island_abb653cd2fc60819a0ab2c204930a7e8a}} 
+bool \mbox{\hyperlink{class_island_abb653cd2fc60819a0ab2c204930a7e8a}{been\+\_\+erased}} ()
+\begin{DoxyCompactList}\small\item\em return if this island has been erased before. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{class_island_a8a6f5c217a58f9a2b58c00372bea85f2}\label{class_island_a8a6f5c217a58f9a2b58c00372bea85f2}} 
+\textbf{ vector}$<$ \mbox{\hyperlink{class_r_n_n___genome}{R\+N\+N\+\_\+\+Genome}} $\ast$ $>$ {\bfseries get\+\_\+genomes} ()
+\item 
+\mbox{\Hypertarget{class_island_acc95dd5cc774123a9b0a24416d090c95}\label{class_island_acc95dd5cc774123a9b0a24416d090c95}} 
+void {\bfseries set\+\_\+latest\+\_\+generation\+\_\+id} (int32\+\_\+t \+\_\+latest\+\_\+generation\+\_\+id)
+\item 
+\mbox{\Hypertarget{class_island_ab821afe58054f2a256d3bbd5c08fbee0}\label{class_island_ab821afe58054f2a256d3bbd5c08fbee0}} 
+int32\+\_\+t {\bfseries get\+\_\+erase\+\_\+again\+\_\+num} ()
+\item 
+\mbox{\Hypertarget{class_island_ad0d7c02825f98385aa9ff00ef66e20b5}\label{class_island_ad0d7c02825f98385aa9ff00ef66e20b5}} 
+void {\bfseries set\+\_\+erase\+\_\+again\+\_\+num} ()
+\end{DoxyCompactItemize}
+\doxysubsection*{Static Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{class_island_acb98955eb9f69a25c7e3af81f4d5cc5c}\label{class_island_acb98955eb9f69a25c7e3af81f4d5cc5c}} 
+const static int32\+\_\+t \mbox{\hyperlink{class_island_acb98955eb9f69a25c7e3af81f4d5cc5c}{I\+N\+I\+T\+I\+A\+L\+I\+Z\+I\+NG}} = 0
+\begin{DoxyCompactList}\small\item\em status flag for if the island is initializing. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{class_island_a857212729b8405e77721f499d0b85513}\label{class_island_a857212729b8405e77721f499d0b85513}} 
+const static int32\+\_\+t \mbox{\hyperlink{class_island_a857212729b8405e77721f499d0b85513}{F\+I\+L\+L\+ED}} = 1
+\begin{DoxyCompactList}\small\item\em status flag for if the island is filled. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{class_island_a26a2558e99586f017335aa0ef4612758}\label{class_island_a26a2558e99586f017335aa0ef4612758}} 
+const static int32\+\_\+t \mbox{\hyperlink{class_island_a26a2558e99586f017335aa0ef4612758}{R\+E\+P\+O\+P\+U\+L\+A\+T\+I\+NG}} = 2
+\begin{DoxyCompactList}\small\item\em status flag for if the island is repopulating. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\doxysubsection*{Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{class_island_a859a134cc183618af109dd69b85f2955}\label{class_island_a859a134cc183618af109dd69b85f2955}} 
+int32\+\_\+t \mbox{\hyperlink{class_island_a859a134cc183618af109dd69b85f2955}{id}}
+\begin{DoxyCompactList}\small\item\em An integer ID for this island. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{class_island_a5973473a3aad42bec285f02522cacce8}\label{class_island_a5973473a3aad42bec285f02522cacce8}} 
+int32\+\_\+t \mbox{\hyperlink{class_island_a5973473a3aad42bec285f02522cacce8}{max\+\_\+size}}
+\begin{DoxyCompactList}\small\item\em The maximum number of genomes in the island. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{class_island_a054b583b4364d07d8c7819daf9bcdb47}\label{class_island_a054b583b4364d07d8c7819daf9bcdb47}} 
+int32\+\_\+t \mbox{\hyperlink{class_island_a054b583b4364d07d8c7819daf9bcdb47}{erased\+\_\+generation\+\_\+id}} = -\/1
+\begin{DoxyCompactList}\small\item\em The latest generation id of an erased island, erased\+\_\+generation\+\_\+id = largest\+\_\+generation\+\_\+id when this island is erased, to prevent deleted genomes get inserted back. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{class_island_a24a6f4f8d54cb448ccd3be82385c2e02}\label{class_island_a24a6f4f8d54cb448ccd3be82385c2e02}} 
+int32\+\_\+t \mbox{\hyperlink{class_island_a24a6f4f8d54cb448ccd3be82385c2e02}{latest\+\_\+generation\+\_\+id}}
+\begin{DoxyCompactList}\small\item\em The latest generation id of genome being generated, including the ones doing backprop by workers. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{class_island_a41c1201d69104c49438c97dbc8c93db2}\label{class_island_a41c1201d69104c49438c97dbc8c93db2}} 
+\textbf{ vector}$<$ \mbox{\hyperlink{class_r_n_n___genome}{R\+N\+N\+\_\+\+Genome}} $\ast$ $>$ \mbox{\hyperlink{class_island_a41c1201d69104c49438c97dbc8c93db2}{genomes}}
+\begin{DoxyCompactList}\small\item\em The genomes on this island, stored in sorted order best (front) to worst (back). \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{class_island_acec5d3319641d6b494157fdb737e0622}\label{class_island_acec5d3319641d6b494157fdb737e0622}} 
+\textbf{ unordered\+\_\+map}$<$ \textbf{ string}, \textbf{ vector}$<$ \mbox{\hyperlink{class_r_n_n___genome}{R\+N\+N\+\_\+\+Genome}} $\ast$ $>$ $>$ {\bfseries structure\+\_\+map}
+\item 
+\mbox{\Hypertarget{class_island_a6cd2fa92f5e9a23dbabc47f050c1837d}\label{class_island_a6cd2fa92f5e9a23dbabc47f050c1837d}} 
+int32\+\_\+t {\bfseries status}
+\item 
+int32\+\_\+t \mbox{\hyperlink{class_island_ae46bdcec5ad489d18a4bbd9f22d9cabc}{erase\+\_\+again}}
+\begin{DoxyCompactList}\small\item\em \begin{quote}
+The status of this island (either \mbox{\hyperlink{class_island}{Island}}\+:I\+N\+I\+T\+I\+A\+L\+I\+Z\+I\+NG, \mbox{\hyperlink{class_island_a857212729b8405e77721f499d0b85513}{Island\+::\+F\+I\+L\+L\+ED}} or \mbox{\hyperlink{class_island_a26a2558e99586f017335aa0ef4612758}{Island\+::\+R\+E\+P\+O\+P\+U\+L\+A\+T\+I\+NG}} \end{quote}
+\end{DoxyCompactList}\item 
+\mbox{\Hypertarget{class_island_aa676d36c51b69868c42d08fbcf6733c8}\label{class_island_aa676d36c51b69868c42d08fbcf6733c8}} 
+bool \mbox{\hyperlink{class_island_aa676d36c51b69868c42d08fbcf6733c8}{erased}}
+\begin{DoxyCompactList}\small\item\em a flag to track if this islands has been erased \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\doxysubsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{class_island_a32f068675c8a7f999cb18464d00e8119}\label{class_island_a32f068675c8a7f999cb18464d00e8119}} 
+\index{Island@{Island}!Island@{Island}}
+\index{Island@{Island}!Island@{Island}}
+\doxysubsubsection{\texorpdfstring{Island()}{Island()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily Island\+::\+Island (\begin{DoxyParamCaption}\item[{int32\+\_\+t}]{id,  }\item[{int32\+\_\+t}]{max\+\_\+size }\end{DoxyParamCaption})}
+
+
+
+Initializes an island with a given max size. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em max\+\_\+size} & is the maximum number of genomes in the island. \\
+\hline
+\end{DoxyParams}
+\mbox{\Hypertarget{class_island_a02fc26cf7fb95d750c501494b855707d}\label{class_island_a02fc26cf7fb95d750c501494b855707d}} 
+\index{Island@{Island}!Island@{Island}}
+\index{Island@{Island}!Island@{Island}}
+\doxysubsubsection{\texorpdfstring{Island()}{Island()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily Island\+::\+Island (\begin{DoxyParamCaption}\item[{int32\+\_\+t}]{id,  }\item[{\textbf{ vector}$<$ \mbox{\hyperlink{class_r_n_n___genome}{R\+N\+N\+\_\+\+Genome}} $\ast$ $>$}]{genomes }\end{DoxyParamCaption})}
+
+
+
+Initializes an island filled the supplied genomes. 
+
+The size of the island will be the size of the supplied genome vector. The island status is set to filled. 
+
+\doxysubsection{Member Function Documentation}
+\mbox{\Hypertarget{class_island_a7c3b5331a7ee1dff6206a855e6b5c8b8}\label{class_island_a7c3b5331a7ee1dff6206a855e6b5c8b8}} 
+\index{Island@{Island}!copy\_random\_genome@{copy\_random\_genome}}
+\index{copy\_random\_genome@{copy\_random\_genome}!Island@{Island}}
+\doxysubsubsection{\texorpdfstring{copy\_random\_genome()}{copy\_random\_genome()}}
+{\footnotesize\ttfamily void Island\+::copy\+\_\+random\+\_\+genome (\begin{DoxyParamCaption}\item[{\textbf{ uniform\+\_\+real\+\_\+distribution}$<$ double $>$ \&}]{rng\+\_\+0\+\_\+1,  }\item[{\textbf{ minstd\+\_\+rand0} \&}]{generator,  }\item[{\mbox{\hyperlink{class_r_n_n___genome}{R\+N\+N\+\_\+\+Genome}} $\ast$$\ast$}]{genome }\end{DoxyParamCaption})}
+
+
+
+Selects a genome from the island at random and returns a copy of it. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em rng\+\_\+0\+\_\+1} & is the random number distribution that generates random numbers between 0 (inclusive) and 1 (non=inclusive). \\
+\hline
+{\em generator} & is the random number generator \\
+\hline
+{\em genome} & will be the copied genome, an addresss to a pointer needs to be passed. \\
+\hline
+\end{DoxyParams}
+\mbox{\Hypertarget{class_island_ac49713b90f9110f52c5083540448df8d}\label{class_island_ac49713b90f9110f52c5083540448df8d}} 
+\index{Island@{Island}!copy\_two\_random\_genomes@{copy\_two\_random\_genomes}}
+\index{copy\_two\_random\_genomes@{copy\_two\_random\_genomes}!Island@{Island}}
+\doxysubsubsection{\texorpdfstring{copy\_two\_random\_genomes()}{copy\_two\_random\_genomes()}}
+{\footnotesize\ttfamily void Island\+::copy\+\_\+two\+\_\+random\+\_\+genomes (\begin{DoxyParamCaption}\item[{\textbf{ uniform\+\_\+real\+\_\+distribution}$<$ double $>$ \&}]{rng\+\_\+0\+\_\+1,  }\item[{\textbf{ minstd\+\_\+rand0} \&}]{generator,  }\item[{\mbox{\hyperlink{class_r_n_n___genome}{R\+N\+N\+\_\+\+Genome}} $\ast$$\ast$}]{genome1,  }\item[{\mbox{\hyperlink{class_r_n_n___genome}{R\+N\+N\+\_\+\+Genome}} $\ast$$\ast$}]{genome2 }\end{DoxyParamCaption})}
+
+
+
+Selects two different genomes from the island at random and returns copies of them. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em rng\+\_\+0\+\_\+1} & is the random number distribution that generates random numbers between 0 (inclusive) and 1 (non=inclusive). \\
+\hline
+{\em generator} & is the random number generator \\
+\hline
+{\em genome1} & will be the first copied genome, an addresss to a pointer needs to be passed. \\
+\hline
+{\em genome2} & will be the second copied genome, an addresss to a pointer needs to be passed. \\
+\hline
+\end{DoxyParams}
+\mbox{\Hypertarget{class_island_aea94baab5d4faa09454131236baf187c}\label{class_island_aea94baab5d4faa09454131236baf187c}} 
+\index{Island@{Island}!get\_best\_fitness@{get\_best\_fitness}}
+\index{get\_best\_fitness@{get\_best\_fitness}!Island@{Island}}
+\doxysubsubsection{\texorpdfstring{get\_best\_fitness()}{get\_best\_fitness()}}
+{\footnotesize\ttfamily double Island\+::get\+\_\+best\+\_\+fitness (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+Returns the fitness of the best genome in the island. 
+
+\begin{DoxyReturn}{Returns}
+the best fitness of the island 
+\end{DoxyReturn}
+\mbox{\Hypertarget{class_island_abf327f29018863338f4eb351c1f4a2c8}\label{class_island_abf327f29018863338f4eb351c1f4a2c8}} 
+\index{Island@{Island}!get\_best\_genome@{get\_best\_genome}}
+\index{get\_best\_genome@{get\_best\_genome}!Island@{Island}}
+\doxysubsubsection{\texorpdfstring{get\_best\_genome()}{get\_best\_genome()}}
+{\footnotesize\ttfamily \mbox{\hyperlink{class_r_n_n___genome}{R\+N\+N\+\_\+\+Genome}} $\ast$ Island\+::get\+\_\+best\+\_\+genome (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+Returns the best genomme in the island. 
+
+\begin{DoxyReturn}{Returns}
+the best genome in the island 
+\end{DoxyReturn}
+\mbox{\Hypertarget{class_island_ac5cae801aac1403f3523a7949e415417}\label{class_island_ac5cae801aac1403f3523a7949e415417}} 
+\index{Island@{Island}!get\_max\_size@{get\_max\_size}}
+\index{get\_max\_size@{get\_max\_size}!Island@{Island}}
+\doxysubsubsection{\texorpdfstring{get\_max\_size()}{get\_max\_size()}}
+{\footnotesize\ttfamily int32\+\_\+t Island\+::get\+\_\+max\+\_\+size (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+Returns the maximum number of genomes the island can hold. 
+
+\begin{DoxyReturn}{Returns}
+the maximum number of genomes this island can have 
+\end{DoxyReturn}
+\mbox{\Hypertarget{class_island_a8c941beca36c75f2c4fc2fd0d2dfc2c5}\label{class_island_a8c941beca36c75f2c4fc2fd0d2dfc2c5}} 
+\index{Island@{Island}!get\_status@{get\_status}}
+\index{get\_status@{get\_status}!Island@{Island}}
+\doxysubsubsection{\texorpdfstring{get\_status()}{get\_status()}}
+{\footnotesize\ttfamily int32\+\_\+t Island\+::get\+\_\+status (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+\begin{DoxyReturn}{Returns}
+the status of the island 
+\end{DoxyReturn}
+\mbox{\Hypertarget{class_island_ac135f9b252512f04afcd7f8c2f3f621f}\label{class_island_ac135f9b252512f04afcd7f8c2f3f621f}} 
+\index{Island@{Island}!get\_worst\_fitness@{get\_worst\_fitness}}
+\index{get\_worst\_fitness@{get\_worst\_fitness}!Island@{Island}}
+\doxysubsubsection{\texorpdfstring{get\_worst\_fitness()}{get\_worst\_fitness()}}
+{\footnotesize\ttfamily double Island\+::get\+\_\+worst\+\_\+fitness (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+Returns the fitness of the worst genome in the island. 
+
+\begin{DoxyReturn}{Returns}
+the worst fitness of the island 
+\end{DoxyReturn}
+\mbox{\Hypertarget{class_island_a2f5d1d504a6bc11d0d63cf9d4bea5a63}\label{class_island_a2f5d1d504a6bc11d0d63cf9d4bea5a63}} 
+\index{Island@{Island}!get\_worst\_genome@{get\_worst\_genome}}
+\index{get\_worst\_genome@{get\_worst\_genome}!Island@{Island}}
+\doxysubsubsection{\texorpdfstring{get\_worst\_genome()}{get\_worst\_genome()}}
+{\footnotesize\ttfamily \mbox{\hyperlink{class_r_n_n___genome}{R\+N\+N\+\_\+\+Genome}} $\ast$ Island\+::get\+\_\+worst\+\_\+genome (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+Returns the worst genomme in the island. 
+
+\begin{DoxyReturn}{Returns}
+the worst genome in the island 
+\end{DoxyReturn}
+\mbox{\Hypertarget{class_island_a105174354a7313b3c6520892a3de653e}\label{class_island_a105174354a7313b3c6520892a3de653e}} 
+\index{Island@{Island}!insert\_genome@{insert\_genome}}
+\index{insert\_genome@{insert\_genome}!Island@{Island}}
+\doxysubsubsection{\texorpdfstring{insert\_genome()}{insert\_genome()}}
+{\footnotesize\ttfamily int32\+\_\+t Island\+::insert\+\_\+genome (\begin{DoxyParamCaption}\item[{\mbox{\hyperlink{class_r_n_n___genome}{R\+N\+N\+\_\+\+Genome}} $\ast$}]{genome }\end{DoxyParamCaption})}
+
+
+
+Inserts a genome into the island. 
+
+Genomes are inserted in best to worst order genomes\mbox{[}0\mbox{]} will have the best fitness and genomes\mbox{[}size -\/ 1\mbox{]} will have the worst.
+
+
+\begin{DoxyParams}{Parameters}
+{\em genome} & is the genome to be inserted. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+-\/1 if not inserted, otherwise the index it was inserted at 
+\end{DoxyReturn}
+\mbox{\Hypertarget{class_island_a42a519a1626c5db6004173529a5e2627}\label{class_island_a42a519a1626c5db6004173529a5e2627}} 
+\index{Island@{Island}!is\_full@{is\_full}}
+\index{is\_full@{is\_full}!Island@{Island}}
+\doxysubsubsection{\texorpdfstring{is\_full()}{is\_full()}}
+{\footnotesize\ttfamily bool Island\+::is\+\_\+full (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+Returns true if the island has \mbox{\hyperlink{class_island_a5973473a3aad42bec285f02522cacce8}{Island\+::max\+\_\+size}} genomes. 
+
+\begin{DoxyReturn}{Returns}
+true if the number of genomes in the island is $>$= size (although it should never be $>$ size). 
+\end{DoxyReturn}
+\mbox{\Hypertarget{class_island_a4d7e730b2c3e9cc53ae3205b1fbe2930}\label{class_island_a4d7e730b2c3e9cc53ae3205b1fbe2930}} 
+\index{Island@{Island}!is\_initializing@{is\_initializing}}
+\index{is\_initializing@{is\_initializing}!Island@{Island}}
+\doxysubsubsection{\texorpdfstring{is\_initializing()}{is\_initializing()}}
+{\footnotesize\ttfamily bool Island\+::is\+\_\+initializing (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+Returns true if the island is initializing, i.\+e., it\textquotesingle{}s size is $<$= max\+\_\+size and it hasn\textquotesingle{}t been cleared out for repopulating. 
+
+\begin{DoxyReturn}{Returns}
+true if island is initializing. 
+\end{DoxyReturn}
+\mbox{\Hypertarget{class_island_a79525b52b34ef3674b837072b5d34d19}\label{class_island_a79525b52b34ef3674b837072b5d34d19}} 
+\index{Island@{Island}!is\_repopulating@{is\_repopulating}}
+\index{is\_repopulating@{is\_repopulating}!Island@{Island}}
+\doxysubsubsection{\texorpdfstring{is\_repopulating()}{is\_repopulating()}}
+{\footnotesize\ttfamily bool Island\+::is\+\_\+repopulating (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+Returns true if the island is repopulating, i.\+e., it\textquotesingle{}s size is $<$= max\+\_\+size and it has been full before but cleared out for repopulation. 
+
+\begin{DoxyReturn}{Returns}
+true if island is repopulating. 
+\end{DoxyReturn}
+\mbox{\Hypertarget{class_island_a9d092c81f7d97c72972dfbdf6fb7cb14}\label{class_island_a9d092c81f7d97c72972dfbdf6fb7cb14}} 
+\index{Island@{Island}!print@{print}}
+\index{print@{print}!Island@{Island}}
+\doxysubsubsection{\texorpdfstring{print()}{print()}}
+{\footnotesize\ttfamily void Island\+::print (\begin{DoxyParamCaption}\item[{\textbf{ string}}]{indent = {\ttfamily \char`\"{}\char`\"{}} }\end{DoxyParamCaption})}
+
+
+
+Prints out the state of this island. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em indent} & is how much to indent what is printed out \\
+\hline
+\end{DoxyParams}
+\mbox{\Hypertarget{class_island_a41f743dc56fa3c26f1e709222416cadf}\label{class_island_a41f743dc56fa3c26f1e709222416cadf}} 
+\index{Island@{Island}!size@{size}}
+\index{size@{size}!Island@{Island}}
+\doxysubsubsection{\texorpdfstring{size()}{size()}}
+{\footnotesize\ttfamily int32\+\_\+t Island\+::size (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+Returns the size of the island. 
+
+\begin{DoxyReturn}{Returns}
+the number of genomes in this island. 
+\end{DoxyReturn}
+
+
+\doxysubsection{Member Data Documentation}
+\mbox{\Hypertarget{class_island_ae46bdcec5ad489d18a4bbd9f22d9cabc}\label{class_island_ae46bdcec5ad489d18a4bbd9f22d9cabc}} 
+\index{Island@{Island}!erase\_again@{erase\_again}}
+\index{erase\_again@{erase\_again}!Island@{Island}}
+\doxysubsubsection{\texorpdfstring{erase\_again}{erase\_again}}
+{\footnotesize\ttfamily int32\+\_\+t Island\+::erase\+\_\+again\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+\begin{quote}
+The status of this island (either \mbox{\hyperlink{class_island}{Island}}\+:I\+N\+I\+T\+I\+A\+L\+I\+Z\+I\+NG, \mbox{\hyperlink{class_island_a857212729b8405e77721f499d0b85513}{Island\+::\+F\+I\+L\+L\+ED}} or \mbox{\hyperlink{class_island_a26a2558e99586f017335aa0ef4612758}{Island\+::\+R\+E\+P\+O\+P\+U\+L\+A\+T\+I\+NG}} \end{quote}
+
+
+a flag to track if this islands has been erased 
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+rnn/island.\+hxx\item 
+rnn/island.\+cxx\end{DoxyCompactItemize}

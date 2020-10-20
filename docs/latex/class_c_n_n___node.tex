@@ -1,0 +1,368 @@
+\hypertarget{class_c_n_n___node}{}\doxysection{C\+N\+N\+\_\+\+Node Class Reference}
+\label{class_c_n_n___node}\index{CNN\_Node@{CNN\_Node}}
+\doxysubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_a7fac811a3a94c72d882a6d32fbcb1331}\label{class_c_n_n___node_a7fac811a3a94c72d882a6d32fbcb1331}} 
+{\bfseries C\+N\+N\+\_\+\+Node} (int \+\_\+innovation\+\_\+number, float \+\_\+depth, int \+\_\+batch\+\_\+size, int \+\_\+input\+\_\+size\+\_\+x, int \+\_\+input\+\_\+size\+\_\+y, int type)
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_a3ddd61a216467d8291b295df007bed14}\label{class_c_n_n___node_a3ddd61a216467d8291b295df007bed14}} 
+\mbox{\hyperlink{class_c_n_n___node}{C\+N\+N\+\_\+\+Node}} $\ast$ {\bfseries copy} () const
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_a10ccc5ceee1c8ca77c3f239614f37b89}\label{class_c_n_n___node_a10ccc5ceee1c8ca77c3f239614f37b89}} 
+bool {\bfseries needs\+\_\+init} () const
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_a0c7ee6105f2fc7d6772f51af08c3f7f2}\label{class_c_n_n___node_a0c7ee6105f2fc7d6772f51af08c3f7f2}} 
+int {\bfseries get\+\_\+batch\+\_\+size} () const
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_ab133cb2d976c9ac2f834b15109e17c76}\label{class_c_n_n___node_ab133cb2d976c9ac2f834b15109e17c76}} 
+int {\bfseries get\+\_\+size\+\_\+x} () const
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_a9631d419115cce60208a7f5da8f26458}\label{class_c_n_n___node_a9631d419115cce60208a7f5da8f26458}} 
+int {\bfseries get\+\_\+size\+\_\+y} () const
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_a1aa0396fa302785e75e77cd0feb048c1}\label{class_c_n_n___node_a1aa0396fa302785e75e77cd0feb048c1}} 
+bool {\bfseries vectors\+\_\+correct} () const
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_a93f322e7b1614a5cb9143c2ba4f23468}\label{class_c_n_n___node_a93f322e7b1614a5cb9143c2ba4f23468}} 
+void {\bfseries initialize} ()
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_a7c0d3c9ce3aca0d696d44b6e06e90f78}\label{class_c_n_n___node_a7c0d3c9ce3aca0d696d44b6e06e90f78}} 
+void {\bfseries reset\+\_\+velocities} ()
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_a9016ca96dcc2ccaed39cd2c7486e0b5e}\label{class_c_n_n___node_a9016ca96dcc2ccaed39cd2c7486e0b5e}} 
+void {\bfseries reset\+\_\+weight\+\_\+count} ()
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_afdb33fe03f23336cb00b32d8c177e947}\label{class_c_n_n___node_afdb33fe03f23336cb00b32d8c177e947}} 
+void {\bfseries add\+\_\+weight\+\_\+count} (int \+\_\+weight\+\_\+count)
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_ac349298a69de8dd6e1f09f87844c20c7}\label{class_c_n_n___node_ac349298a69de8dd6e1f09f87844c20c7}} 
+int {\bfseries get\+\_\+weight\+\_\+count} () const
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_a82c31aa7775b78f3b496144cc6dd014d}\label{class_c_n_n___node_a82c31aa7775b78f3b496144cc6dd014d}} 
+int {\bfseries get\+\_\+innovation\+\_\+number} () const
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_ab0d3c239cf7da939115b5ad0f3ca932f}\label{class_c_n_n___node_ab0d3c239cf7da939115b5ad0f3ca932f}} 
+float {\bfseries get\+\_\+depth} () const
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_a4bee46b025cb107e543d54cf2ad92be2}\label{class_c_n_n___node_a4bee46b025cb107e543d54cf2ad92be2}} 
+bool {\bfseries is\+\_\+fixed} () const
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_a50032c817d28ed666d934f252ced849f}\label{class_c_n_n___node_a50032c817d28ed666d934f252ced849f}} 
+bool {\bfseries is\+\_\+hidden} () const
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_a26bb78e53b932cdd9a4905a027e278a3}\label{class_c_n_n___node_a26bb78e53b932cdd9a4905a027e278a3}} 
+bool {\bfseries is\+\_\+input} () const
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_aa6ffb6ef2242ea80a274bf7f8ab5aa9b}\label{class_c_n_n___node_aa6ffb6ef2242ea80a274bf7f8ab5aa9b}} 
+bool {\bfseries is\+\_\+output} () const
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_ac50b24ab52445fecefd3f9323d708714}\label{class_c_n_n___node_ac50b24ab52445fecefd3f9323d708714}} 
+bool {\bfseries is\+\_\+softmax} () const
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_aa14b29627546c76ebd175ff8a2ab5cdc}\label{class_c_n_n___node_aa14b29627546c76ebd175ff8a2ab5cdc}} 
+bool {\bfseries is\+\_\+reachable} () const
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_a44b7064159403af223b83edb821bba45}\label{class_c_n_n___node_a44b7064159403af223b83edb821bba45}} 
+bool {\bfseries is\+\_\+forward\+\_\+visited} () const
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_a4b6df2f1c1198f2e279028ad5b98d502}\label{class_c_n_n___node_a4b6df2f1c1198f2e279028ad5b98d502}} 
+bool {\bfseries is\+\_\+reverse\+\_\+visited} () const
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_a0e943c8a1fa356c99b5e62912ca14ffd}\label{class_c_n_n___node_a0e943c8a1fa356c99b5e62912ca14ffd}} 
+void {\bfseries forward\+\_\+visit} ()
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_a896c1950897a167716129d6a7d11f20d}\label{class_c_n_n___node_a896c1950897a167716129d6a7d11f20d}} 
+void {\bfseries reverse\+\_\+visit} ()
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_a0eb70dfab0003755fc8122c1eb6fca64}\label{class_c_n_n___node_a0eb70dfab0003755fc8122c1eb6fca64}} 
+void {\bfseries set\+\_\+unvisited} ()
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_ab7f02bda228d0b621033d3416ce9b37f}\label{class_c_n_n___node_ab7f02bda228d0b621033d3416ce9b37f}} 
+bool {\bfseries has\+\_\+nan} () const
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_addacf3e2055ec68a569fdbcaf2cb9803}\label{class_c_n_n___node_addacf3e2055ec68a569fdbcaf2cb9803}} 
+void {\bfseries set\+\_\+values} (const \mbox{\hyperlink{class_images_interface}{Images\+Interface}} \&images, const \textbf{ vector}$<$ int $>$ \&batch, int channel, bool perform\+\_\+dropout, bool accumulate\+\_\+test\+\_\+statistics, float input\+\_\+dropout\+\_\+probability, \textbf{ minstd\+\_\+rand0} \&generator)
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_adcf8d2efd9f7beb871bd32aed3c20c7f}\label{class_c_n_n___node_adcf8d2efd9f7beb871bd32aed3c20c7f}} 
+float {\bfseries get\+\_\+value\+\_\+in} (int batch\+\_\+number, int y, int x)
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_a78f492da74637456031434b81f4763c9}\label{class_c_n_n___node_a78f492da74637456031434b81f4763c9}} 
+void {\bfseries set\+\_\+value\+\_\+in} (int batch\+\_\+number, int y, int x, float value)
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_aaaa5d54832589fa38dba19785949698e}\label{class_c_n_n___node_aaaa5d54832589fa38dba19785949698e}} 
+float $\ast$ {\bfseries get\+\_\+values\+\_\+in} ()
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_a7e55f5caafbf85b61416c538ecd28e16}\label{class_c_n_n___node_a7e55f5caafbf85b61416c538ecd28e16}} 
+float {\bfseries get\+\_\+value\+\_\+out} (int batch\+\_\+number, int y, int x)
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_a5e9494c537fe15d6f24b8f14fef41caf}\label{class_c_n_n___node_a5e9494c537fe15d6f24b8f14fef41caf}} 
+void {\bfseries set\+\_\+value\+\_\+out} (int batch\+\_\+number, int y, int x, float value)
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_a7c1dae2f0efc24198d13e5615b4f17d5}\label{class_c_n_n___node_a7c1dae2f0efc24198d13e5615b4f17d5}} 
+float $\ast$ {\bfseries get\+\_\+values\+\_\+out} ()
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_a9f8098a04cc00329861336f523164e5c}\label{class_c_n_n___node_a9f8098a04cc00329861336f523164e5c}} 
+void {\bfseries set\+\_\+error\+\_\+in} (int batch\+\_\+number, int y, int x, float error)
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_aa89763d32219a2ab847401f6d9459c12}\label{class_c_n_n___node_aa89763d32219a2ab847401f6d9459c12}} 
+float $\ast$ {\bfseries get\+\_\+errors\+\_\+in} ()
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_a9e1cc30fe980bf7d8680634e12527ba2}\label{class_c_n_n___node_a9e1cc30fe980bf7d8680634e12527ba2}} 
+void {\bfseries set\+\_\+error\+\_\+out} (int batch\+\_\+number, int y, int x, float error)
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_a5e304d0072441b5e064d352844b589d5}\label{class_c_n_n___node_a5e304d0072441b5e064d352844b589d5}} 
+float $\ast$ {\bfseries get\+\_\+errors\+\_\+out} ()
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_a94552e9df3b03247a1ac4acc1f53104b}\label{class_c_n_n___node_a94552e9df3b03247a1ac4acc1f53104b}} 
+float $\ast$ {\bfseries get\+\_\+relu\+\_\+gradients} ()
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_a9c148a8bf4c8308159463097dacb546a}\label{class_c_n_n___node_a9c148a8bf4c8308159463097dacb546a}} 
+float $\ast$ {\bfseries get\+\_\+pool\+\_\+gradients} ()
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_a5545a477e5cf1c47f918287c0ee8991e}\label{class_c_n_n___node_a5545a477e5cf1c47f918287c0ee8991e}} 
+void {\bfseries print} (\textbf{ ostream} \&out)
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_af3ff47519ff3ca15ec77f54fc7bff575}\label{class_c_n_n___node_af3ff47519ff3ca15ec77f54fc7bff575}} 
+void {\bfseries reset\+\_\+times} ()
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_a2fc877dfc8daf04f99974a6c0e1681c8}\label{class_c_n_n___node_a2fc877dfc8daf04f99974a6c0e1681c8}} 
+void {\bfseries accumulate\+\_\+times} (float \&total\+\_\+input\+\_\+time, float \&total\+\_\+output\+\_\+time)
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_a45914da7893271c41437339c44260457}\label{class_c_n_n___node_a45914da7893271c41437339c44260457}} 
+void {\bfseries reset} ()
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_ae1a095bae6efd0662fb636bd7af2580d}\label{class_c_n_n___node_ae1a095bae6efd0662fb636bd7af2580d}} 
+void {\bfseries save\+\_\+best\+\_\+weights} ()
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_a5df980bded9a293c72d02e51ffd424c3}\label{class_c_n_n___node_a5df980bded9a293c72d02e51ffd424c3}} 
+void {\bfseries set\+\_\+weights\+\_\+to\+\_\+best} ()
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_a77a9fe238761e081479de9dcda5bec19}\label{class_c_n_n___node_a77a9fe238761e081479de9dcda5bec19}} 
+void {\bfseries resize\+\_\+arrays} ()
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_acf89a51d610460a9d12fe775f3dadc41}\label{class_c_n_n___node_acf89a51d610460a9d12fe775f3dadc41}} 
+void {\bfseries update\+\_\+batch\+\_\+size} (int new\+\_\+batch\+\_\+size)
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_a7308e8d3046605cb3f1bbd7fd1e7935f}\label{class_c_n_n___node_a7308e8d3046605cb3f1bbd7fd1e7935f}} 
+bool {\bfseries modify\+\_\+size\+\_\+x} (int change)
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_ad6541f7c55b7159b1eee403ab4172063}\label{class_c_n_n___node_ad6541f7c55b7159b1eee403ab4172063}} 
+bool {\bfseries modify\+\_\+size\+\_\+y} (int change)
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_a6bdf7998cffe6ad25b50b6accc14ac92}\label{class_c_n_n___node_a6bdf7998cffe6ad25b50b6accc14ac92}} 
+bool {\bfseries is\+\_\+disabled} () const
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_ad9cefd57c67147c84a5a9fbb39b958fd}\label{class_c_n_n___node_ad9cefd57c67147c84a5a9fbb39b958fd}} 
+bool {\bfseries is\+\_\+enabled} () const
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_a2026883925174924c1f6ad861e628a48}\label{class_c_n_n___node_a2026883925174924c1f6ad861e628a48}} 
+void {\bfseries disable} ()
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_a35a124b721b0f688acfbf9c898796412}\label{class_c_n_n___node_a35a124b721b0f688acfbf9c898796412}} 
+void {\bfseries enable} ()
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_a8a502ddc219b178c89979a4380031c4e}\label{class_c_n_n___node_a8a502ddc219b178c89979a4380031c4e}} 
+void {\bfseries add\+\_\+input} ()
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_aaa18eee36c34b5876fd0be8eb73c1695}\label{class_c_n_n___node_aaa18eee36c34b5876fd0be8eb73c1695}} 
+void {\bfseries disable\+\_\+input} ()
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_aa74369ca703333e20f3749c1a7c7d942}\label{class_c_n_n___node_aa74369ca703333e20f3749c1a7c7d942}} 
+int {\bfseries get\+\_\+number\+\_\+inputs} () const
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_a34a6a332fbe96ff58a21234686165ce2}\label{class_c_n_n___node_a34a6a332fbe96ff58a21234686165ce2}} 
+int {\bfseries get\+\_\+inputs\+\_\+fired} () const
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_a95f9e09d3b30e92cfb484761834007fe}\label{class_c_n_n___node_a95f9e09d3b30e92cfb484761834007fe}} 
+void {\bfseries input\+\_\+fired} (bool training, bool accumulate\+\_\+test\+\_\+statistics, float epsilon, float alpha, bool perform\+\_\+dropout, float hidden\+\_\+dropout\+\_\+probability, \textbf{ minstd\+\_\+rand0} \&generator)
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_a82c8a76bcdccdeb744d0d98ac5fcc8f7}\label{class_c_n_n___node_a82c8a76bcdccdeb744d0d98ac5fcc8f7}} 
+void {\bfseries add\+\_\+output} ()
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_a874a74001c153eabc0903b1e2cfbc816}\label{class_c_n_n___node_a874a74001c153eabc0903b1e2cfbc816}} 
+void {\bfseries disable\+\_\+output} ()
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_ac90c64c548b3fcaaa635e7e70dd28a75}\label{class_c_n_n___node_ac90c64c548b3fcaaa635e7e70dd28a75}} 
+int {\bfseries get\+\_\+number\+\_\+outputs} () const
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_a8b3bcb6a8bec755478d124d8eb4d7bcb}\label{class_c_n_n___node_a8b3bcb6a8bec755478d124d8eb4d7bcb}} 
+int {\bfseries get\+\_\+outputs\+\_\+fired} () const
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_a73e631513cac0f8386e653d772124ec8}\label{class_c_n_n___node_a73e631513cac0f8386e653d772124ec8}} 
+void {\bfseries output\+\_\+fired} (bool training, float mu, float learning\+\_\+rate, float epsilon)
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_a416215a5a047d685d20994e6d0514faf}\label{class_c_n_n___node_a416215a5a047d685d20994e6d0514faf}} 
+void {\bfseries zero\+\_\+test\+\_\+statistics} ()
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_af733af754d399ed4d96f7ada035b1fa0}\label{class_c_n_n___node_af733af754d399ed4d96f7ada035b1fa0}} 
+void {\bfseries divide\+\_\+test\+\_\+statistics} (int number\+\_\+batches)
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_ad51e4f8982a2be914a9621cec7140f17}\label{class_c_n_n___node_ad51e4f8982a2be914a9621cec7140f17}} 
+void {\bfseries print\+\_\+batch\+\_\+statistics} ()
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_a7b56c38a2b36b767e360cc06201111e0}\label{class_c_n_n___node_a7b56c38a2b36b767e360cc06201111e0}} 
+void {\bfseries batch\+\_\+normalize} (bool training, bool accumulating\+\_\+test\+\_\+statistics, float epsilon, float alpha)
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_ada7ad72a17075fb7480896459ea2dec0}\label{class_c_n_n___node_ada7ad72a17075fb7480896459ea2dec0}} 
+void {\bfseries apply\+\_\+relu} (float $\ast$values, float $\ast$gradients)
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_ac124771e160359ed84d5da7de57e90ed}\label{class_c_n_n___node_ac124771e160359ed84d5da7de57e90ed}} 
+void {\bfseries apply\+\_\+dropout} (float $\ast$values, float $\ast$gradients, bool perform\+\_\+dropout, bool accumulate\+\_\+test\+\_\+statistics, float dropout\+\_\+probability, \textbf{ minstd\+\_\+rand0} \&generator)
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_aea17b6b82653892fbe35c5f23856c920}\label{class_c_n_n___node_aea17b6b82653892fbe35c5f23856c920}} 
+void {\bfseries backpropagate\+\_\+relu} (float $\ast$errors, float $\ast$gradients)
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_a6899f13b532e45adf9ed220a29c8e31c}\label{class_c_n_n___node_a6899f13b532e45adf9ed220a29c8e31c}} 
+void {\bfseries backpropagate\+\_\+batch\+\_\+normalization} (bool training, float mu, float learning\+\_\+rate, float epsilon)
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_a524e825e83aba98b41ae3a74dce5fd35}\label{class_c_n_n___node_a524e825e83aba98b41ae3a74dce5fd35}} 
+void {\bfseries print\+\_\+statistics} ()
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_a019d38e2c4af8891732fef5404cba275}\label{class_c_n_n___node_a019d38e2c4af8891732fef5404cba275}} 
+void {\bfseries print\+\_\+statistics} (const float $\ast$values, const float $\ast$errors, const float $\ast$gradients)
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_ad41d106565981c6b0a71532785cd1cbe}\label{class_c_n_n___node_ad41d106565981c6b0a71532785cd1cbe}} 
+bool {\bfseries is\+\_\+identical} (const \mbox{\hyperlink{class_c_n_n___node}{C\+N\+N\+\_\+\+Node}} $\ast$other, bool testing\+\_\+checkpoint)
+\end{DoxyCompactItemize}
+\doxysubsection*{Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_a03966e763ef4accb0e28df17abb892b1}\label{class_c_n_n___node_a03966e763ef4accb0e28df17abb892b1}} 
+int {\bfseries node\+\_\+id}
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_ada66344b8f4741a540e2454a827943e2}\label{class_c_n_n___node_ada66344b8f4741a540e2454a827943e2}} 
+int {\bfseries exact\+\_\+id}
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_ae663ed7191d7a87159cec7cdc9f5d09f}\label{class_c_n_n___node_ae663ed7191d7a87159cec7cdc9f5d09f}} 
+int {\bfseries genome\+\_\+id}
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_acd634a60f4d480e3a8304dfe4ec1bb3c}\label{class_c_n_n___node_acd634a60f4d480e3a8304dfe4ec1bb3c}} 
+int {\bfseries innovation\+\_\+number}
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_aabba69c0213b99b444f66176b7696053}\label{class_c_n_n___node_aabba69c0213b99b444f66176b7696053}} 
+float {\bfseries depth}
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_a5cb0c9502b1201c50848aff3f2833bf5}\label{class_c_n_n___node_a5cb0c9502b1201c50848aff3f2833bf5}} 
+int {\bfseries batch\+\_\+size}
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_addf9f0af701825e8e9f1c680e34dddcc}\label{class_c_n_n___node_addf9f0af701825e8e9f1c680e34dddcc}} 
+int {\bfseries size\+\_\+y}
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_afcdc28ad54efad4bf65d9b371de48ae8}\label{class_c_n_n___node_afcdc28ad54efad4bf65d9b371de48ae8}} 
+int {\bfseries size\+\_\+x}
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_a14b71944753522d0b129f9f4414b3ef6}\label{class_c_n_n___node_a14b71944753522d0b129f9f4414b3ef6}} 
+int {\bfseries total\+\_\+size}
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_a7006c7aff1fd01323a29f050fe8e3f55}\label{class_c_n_n___node_a7006c7aff1fd01323a29f050fe8e3f55}} 
+int {\bfseries weight\+\_\+count}
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_af12bb6a121f0187dad4bba3eee98b4b1}\label{class_c_n_n___node_af12bb6a121f0187dad4bba3eee98b4b1}} 
+int {\bfseries type}
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_ab4988c3c511d321cfc62f2df0db4e558}\label{class_c_n_n___node_ab4988c3c511d321cfc62f2df0db4e558}} 
+int {\bfseries total\+\_\+inputs}
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_af164ba232f24240d857ce6adc73fa9ac}\label{class_c_n_n___node_af164ba232f24240d857ce6adc73fa9ac}} 
+int {\bfseries inputs\+\_\+fired}
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_a920df63ffc1999c9b5656118f1ce1d4f}\label{class_c_n_n___node_a920df63ffc1999c9b5656118f1ce1d4f}} 
+int {\bfseries total\+\_\+outputs}
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_a62be452864b38e8add79da1a6855c6b5}\label{class_c_n_n___node_a62be452864b38e8add79da1a6855c6b5}} 
+int {\bfseries outputs\+\_\+fired}
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_ae4f2f7364c1299faad66979a708803f7}\label{class_c_n_n___node_ae4f2f7364c1299faad66979a708803f7}} 
+bool {\bfseries forward\+\_\+visited}
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_ae43eb8c82a5aa1efbcf493b56e782ca3}\label{class_c_n_n___node_ae43eb8c82a5aa1efbcf493b56e782ca3}} 
+bool {\bfseries reverse\+\_\+visited}
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_a93e5c12387161ad0ae20f9132dc59f70}\label{class_c_n_n___node_a93e5c12387161ad0ae20f9132dc59f70}} 
+bool {\bfseries needs\+\_\+initialization}
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_a3d1ce55fe8704f7c48befecdf77595d2}\label{class_c_n_n___node_a3d1ce55fe8704f7c48befecdf77595d2}} 
+bool {\bfseries disabled}
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_a551836af838cafd882e6ebc48d745476}\label{class_c_n_n___node_a551836af838cafd882e6ebc48d745476}} 
+float {\bfseries gamma}
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_a340aac04a2e9d6e0f3d4298ba361a3e4}\label{class_c_n_n___node_a340aac04a2e9d6e0f3d4298ba361a3e4}} 
+float {\bfseries best\+\_\+gamma}
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_a0b1c0b1b1ee2747d88a94b55b96ca3d5}\label{class_c_n_n___node_a0b1c0b1b1ee2747d88a94b55b96ca3d5}} 
+float {\bfseries previous\+\_\+velocity\+\_\+gamma}
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_add699ffb2c54aca9d5f0864f82a21d67}\label{class_c_n_n___node_add699ffb2c54aca9d5f0864f82a21d67}} 
+float {\bfseries beta}
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_a08c236f1208b0daadef49828863dd0b4}\label{class_c_n_n___node_a08c236f1208b0daadef49828863dd0b4}} 
+float {\bfseries best\+\_\+beta}
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_a9aaa89b5aa3cf824d6315d6979706c50}\label{class_c_n_n___node_a9aaa89b5aa3cf824d6315d6979706c50}} 
+float {\bfseries previous\+\_\+velocity\+\_\+beta}
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_ae0dfab82a1999d1175d0317bea4b85fa}\label{class_c_n_n___node_ae0dfab82a1999d1175d0317bea4b85fa}} 
+float {\bfseries batch\+\_\+mean}
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_ac512a27a5d17c6466a64deba39609635}\label{class_c_n_n___node_ac512a27a5d17c6466a64deba39609635}} 
+float {\bfseries batch\+\_\+variance}
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_a53015a2df4ccafa3e9de321bc370f54b}\label{class_c_n_n___node_a53015a2df4ccafa3e9de321bc370f54b}} 
+float {\bfseries batch\+\_\+std\+\_\+dev}
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_a5918a89bfe2d064fa2bf53c726ff08e4}\label{class_c_n_n___node_a5918a89bfe2d064fa2bf53c726ff08e4}} 
+float {\bfseries inverse\+\_\+variance}
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_aac811c7ca46293b25bea7b3c200c10b5}\label{class_c_n_n___node_aac811c7ca46293b25bea7b3c200c10b5}} 
+float {\bfseries running\+\_\+mean}
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_aacf47230fe9a7ec45ce80d69c2bae043}\label{class_c_n_n___node_aacf47230fe9a7ec45ce80d69c2bae043}} 
+float {\bfseries best\+\_\+running\+\_\+mean}
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_ae833075e2cb7ffb50a3c3b31b3f4481f}\label{class_c_n_n___node_ae833075e2cb7ffb50a3c3b31b3f4481f}} 
+float {\bfseries running\+\_\+variance}
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_af7d13376400403b35d47e64feea3c728}\label{class_c_n_n___node_af7d13376400403b35d47e64feea3c728}} 
+float {\bfseries best\+\_\+running\+\_\+variance}
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_ac3141d4b38090d5af50cfe9390f555a0}\label{class_c_n_n___node_ac3141d4b38090d5af50cfe9390f555a0}} 
+float $\ast$ {\bfseries values\+\_\+out}
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_a82183f346839f30b7fc125fd30435987}\label{class_c_n_n___node_a82183f346839f30b7fc125fd30435987}} 
+float $\ast$ {\bfseries errors\+\_\+out}
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_a379c92d540105cb445eac690a8203c89}\label{class_c_n_n___node_a379c92d540105cb445eac690a8203c89}} 
+float $\ast$ {\bfseries relu\+\_\+gradients}
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_ac2b84c2825549f9b2a0ccbe608c7b300}\label{class_c_n_n___node_ac2b84c2825549f9b2a0ccbe608c7b300}} 
+float $\ast$ {\bfseries pool\+\_\+gradients}
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_acfb7cb01d52549ab277412991dcd862b}\label{class_c_n_n___node_acfb7cb01d52549ab277412991dcd862b}} 
+float $\ast$ {\bfseries values\+\_\+in}
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_a47b823b6dc8e0ca2cbc5378d12c7bcba}\label{class_c_n_n___node_a47b823b6dc8e0ca2cbc5378d12c7bcba}} 
+float $\ast$ {\bfseries errors\+\_\+in}
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_a782b427e7bd9ec698412d25380edd59b}\label{class_c_n_n___node_a782b427e7bd9ec698412d25380edd59b}} 
+float {\bfseries input\+\_\+fired\+\_\+time}
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_a83fc5bf2ac3d28ad3fe624cd7e2760b2}\label{class_c_n_n___node_a83fc5bf2ac3d28ad3fe624cd7e2760b2}} 
+float {\bfseries output\+\_\+fired\+\_\+time}
+\end{DoxyCompactItemize}
+\doxysubsection*{Friends}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_aff36aced5b29a9f389582b74da662d49}\label{class_c_n_n___node_aff36aced5b29a9f389582b74da662d49}} 
+\textbf{ ostream} \& {\bfseries operator$<$$<$} (\textbf{ ostream} \&os, const \mbox{\hyperlink{class_c_n_n___node}{C\+N\+N\+\_\+\+Node}} $\ast$node)
+\item 
+\mbox{\Hypertarget{class_c_n_n___node_a3da48b7b2c40c40a7c9fa64b5b0e630e}\label{class_c_n_n___node_a3da48b7b2c40c40a7c9fa64b5b0e630e}} 
+\textbf{ istream} \& {\bfseries operator$>$$>$} (\textbf{ istream} \&is, \mbox{\hyperlink{class_c_n_n___node}{C\+N\+N\+\_\+\+Node}} $\ast$node)
+\end{DoxyCompactItemize}
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+cnn/cnn\+\_\+node.\+hxx\item 
+cnn/cnn\+\_\+node.\+cxx\end{DoxyCompactItemize}

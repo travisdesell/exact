@@ -432,14 +432,9 @@ double RNN::calculate_error_softmax(const vector< vector<double> > &expected_out
             softmax = exp(output_nodes[i]->output_values[j]) / softmax_sum;
             error = softmax - expected_outputs[i][j];
             output_nodes[i]->error_values[j] = error;
-
-            // std::cout<<"softmax ::::: "<<error<<" "<<output_nodes[i]->output_values[j]<<" "<<expected_outputs[i][j]<<"\n"<<std::endl;
             cross_entropy = -expected_outputs[i][j] * log(softmax);
-            // if(cross_entropy)std::cout<<"cross_entropy ::::: "<<cross_entropy<<"\n"<<std::endl;
-
             cross_entropy_sum += cross_entropy;
         }
-
     }
 
   return cross_entropy_sum;
@@ -456,9 +451,6 @@ double RNN::calculate_error_mse(const vector< vector<double> > &expected_outputs
         mse = 0.0;
         for (uint32_t j = 0; j < expected_outputs[i].size(); j++) {
             error = output_nodes[i]->output_values[j] - expected_outputs[i][j];
-
-          // std::cout<<"why this  ???? mse ::::: "<<error<<" "<<output_nodes[i]->output_values[j]<<" "<<expected_outputs[i][j]<<std::endl;
-
             output_nodes[i]->error_values[j] = error;
             mse += error * error;
         }
@@ -644,7 +636,7 @@ void RNN::get_analytic_gradient(const vector<double> &test_parameters, const vec
     set_weights(test_parameters);
     forward_pass(inputs, using_dropout, training, dropout_probability);
 
-    if (use_regression) {
+    if(use_regression) {
         mse = calculate_error_mse(outputs);
         backward_pass(mse * (1.0 / outputs[0].size())*2.0, using_dropout, training, dropout_probability);
 

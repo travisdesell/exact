@@ -1,0 +1,243 @@
+\hypertarget{class_corpus}{}\doxysection{Corpus Class Reference}
+\label{class_corpus}\index{Corpus@{Corpus}}
+\doxysubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{class_corpus_a23d832cf3a12a9ee603a1f53bb038154}\label{class_corpus_a23d832cf3a12a9ee603a1f53bb038154}} 
+void {\bfseries normalize\+\_\+min\+\_\+max} ()
+\item 
+\mbox{\Hypertarget{class_corpus_a8a64fb7be666c2b8405042d8969da4ad}\label{class_corpus_a8a64fb7be666c2b8405042d8969da4ad}} 
+void {\bfseries normalize\+\_\+min\+\_\+max} (const \textbf{ map}$<$ \textbf{ string}, double $>$ \&\+\_\+normalize\+\_\+mins, const \textbf{ map}$<$ \textbf{ string}, double $>$ \&\+\_\+normalize\+\_\+maxs)
+\item 
+\mbox{\Hypertarget{class_corpus_a26fbbb6a85a20a132739fc4ac716e918}\label{class_corpus_a26fbbb6a85a20a132739fc4ac716e918}} 
+void {\bfseries normalize\+\_\+avg\+\_\+std\+\_\+dev} ()
+\item 
+\mbox{\Hypertarget{class_corpus_a0e0f6f33a28ee2aa0df884dfa449694b}\label{class_corpus_a0e0f6f33a28ee2aa0df884dfa449694b}} 
+void {\bfseries normalize\+\_\+avg\+\_\+std\+\_\+dev} (const \textbf{ map}$<$ \textbf{ string}, double $>$ \&\+\_\+normalize\+\_\+avgs, const \textbf{ map}$<$ \textbf{ string}, double $>$ \&\+\_\+normalize\+\_\+std\+\_\+devs, const \textbf{ map}$<$ \textbf{ string}, double $>$ \&\+\_\+normalize\+\_\+mins, const \textbf{ map}$<$ \textbf{ string}, double $>$ \&\+\_\+normalize\+\_\+maxs)
+\item 
+void \mbox{\hyperlink{class_corpus_a45ee2e625bab4930a20b8448d0e168b0}{write\+\_\+sentence\+\_\+series\+\_\+sets}} (\textbf{ string} base\+\_\+filename)
+\begin{DoxyCompactList}\small\item\em Generates the csv data file. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{class_corpus_ab48e664f5d9a26ccfaa4c7cdae4bd6c5}\label{class_corpus_ab48e664f5d9a26ccfaa4c7cdae4bd6c5}} 
+void {\bfseries export\+\_\+sent\+\_\+series} (const \textbf{ vector}$<$ int $>$ \&series\+\_\+indexes, int word\+\_\+offset, \textbf{ vector}$<$ \textbf{ vector}$<$ \textbf{ vector}$<$ double $>$ $>$ $>$ \&inputs, \textbf{ vector}$<$ \textbf{ vector}$<$ \textbf{ vector}$<$ double $>$ $>$ $>$ \&outputs)
+\item 
+void \mbox{\hyperlink{class_corpus_a241439045ad1a83d6104b4350961e1b3}{export\+\_\+training\+\_\+series}} (int word\+\_\+offset, \textbf{ vector}$<$ \textbf{ vector}$<$ \textbf{ vector}$<$ double $>$ $>$ $>$ \&inputs, \textbf{ vector}$<$ \textbf{ vector}$<$ \textbf{ vector}$<$ double $>$ $>$ $>$ \&outputs)
+\begin{DoxyCompactList}\small\item\em Exports \mbox{\hyperlink{class_corpus}{Corpus}} Dataset to be used for training in \mbox{\hyperlink{class_r_n_n}{R\+NN}} genome. \end{DoxyCompactList}\item 
+void \mbox{\hyperlink{class_corpus_a1559311071b5de22e15561a39225ec12}{export\+\_\+test\+\_\+series}} (int word\+\_\+offset, \textbf{ vector}$<$ \textbf{ vector}$<$ \textbf{ vector}$<$ double $>$ $>$ $>$ \&inputs, \textbf{ vector}$<$ \textbf{ vector}$<$ \textbf{ vector}$<$ double $>$ $>$ $>$ \&outputs)
+\begin{DoxyCompactList}\small\item\em Exports \mbox{\hyperlink{class_corpus}{Corpus}} Dataset to be used for testing in \mbox{\hyperlink{class_r_n_n}{R\+NN}} genome. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{class_corpus_a7ef4daa0e73036729c3a9663d1bc519e}\label{class_corpus_a7ef4daa0e73036729c3a9663d1bc519e}} 
+void {\bfseries export\+\_\+series\+\_\+by\+\_\+name} (\textbf{ string} field\+\_\+name, \textbf{ vector}$<$ \textbf{ vector}$<$ double $>$ $>$ \&exported\+\_\+series)
+\item 
+\mbox{\Hypertarget{class_corpus_a7fed4b5ae39cc83fea053d77e90ea277}\label{class_corpus_a7fed4b5ae39cc83fea053d77e90ea277}} 
+double {\bfseries denormalize} (\textbf{ string} field\+\_\+name, double value)
+\item 
+\mbox{\Hypertarget{class_corpus_a8e15b1120aee21462550b7d20c90d9d3}\label{class_corpus_a8e15b1120aee21462550b7d20c90d9d3}} 
+\textbf{ string} {\bfseries get\+\_\+normalize\+\_\+type} () const
+\item 
+\mbox{\Hypertarget{class_corpus_a50481b3ece46954b7f82ee2ec8332c8d}\label{class_corpus_a50481b3ece46954b7f82ee2ec8332c8d}} 
+\textbf{ map}$<$ \textbf{ string}, double $>$ {\bfseries get\+\_\+normalize\+\_\+mins} () const
+\item 
+\mbox{\Hypertarget{class_corpus_a00d42e7ff99d2ae4f5bd20efb9050dc6}\label{class_corpus_a00d42e7ff99d2ae4f5bd20efb9050dc6}} 
+\textbf{ map}$<$ \textbf{ string}, double $>$ {\bfseries get\+\_\+normalize\+\_\+maxs} () const
+\item 
+\mbox{\Hypertarget{class_corpus_a6db7e7bf9035bf0a37663a67b09576b8}\label{class_corpus_a6db7e7bf9035bf0a37663a67b09576b8}} 
+\textbf{ map}$<$ \textbf{ string}, double $>$ {\bfseries get\+\_\+normalize\+\_\+avgs} () const
+\item 
+\mbox{\Hypertarget{class_corpus_a3c45272a3f18d0eae2de38cd856d7bf1}\label{class_corpus_a3c45272a3f18d0eae2de38cd856d7bf1}} 
+\textbf{ map}$<$ \textbf{ string}, double $>$ {\bfseries get\+\_\+normalize\+\_\+std\+\_\+devs} () const
+\item 
+\mbox{\Hypertarget{class_corpus_a409ed06f61136525286e544102041ed9}\label{class_corpus_a409ed06f61136525286e544102041ed9}} 
+\textbf{ vector}$<$ \textbf{ string} $>$ {\bfseries get\+\_\+input\+\_\+parameter\+\_\+names} () const
+\item 
+\mbox{\Hypertarget{class_corpus_a16bb6db54fb5a33906c93390fa225355}\label{class_corpus_a16bb6db54fb5a33906c93390fa225355}} 
+\textbf{ vector}$<$ \textbf{ string} $>$ {\bfseries get\+\_\+output\+\_\+parameter\+\_\+names} () const
+\item 
+\mbox{\Hypertarget{class_corpus_addfbd62c925c543856502c9e026f33f2}\label{class_corpus_addfbd62c925c543856502c9e026f33f2}} 
+int {\bfseries get\+\_\+number\+\_\+series} () const
+\item 
+\mbox{\Hypertarget{class_corpus_a000a739a06e012f98d8ac7128c75f2eb}\label{class_corpus_a000a739a06e012f98d8ac7128c75f2eb}} 
+int {\bfseries get\+\_\+number\+\_\+inputs} () const
+\item 
+\mbox{\Hypertarget{class_corpus_a8a81ce0bea175ce0dea77e85eafeb12b}\label{class_corpus_a8a81ce0bea175ce0dea77e85eafeb12b}} 
+int {\bfseries get\+\_\+number\+\_\+outputs} () const
+\item 
+\mbox{\Hypertarget{class_corpus_a8fa96a8aa8dee4d4c5de9e2d67130e23}\label{class_corpus_a8fa96a8aa8dee4d4c5de9e2d67130e23}} 
+void {\bfseries set\+\_\+training\+\_\+indexes} (const \textbf{ vector}$<$ int $>$ \&\+\_\+training\+\_\+indexes)
+\item 
+\mbox{\Hypertarget{class_corpus_a8f69c56c30fbc39495911946c6323c7e}\label{class_corpus_a8f69c56c30fbc39495911946c6323c7e}} 
+void {\bfseries set\+\_\+test\+\_\+indexes} (const \textbf{ vector}$<$ int $>$ \&\+\_\+test\+\_\+indexes)
+\item 
+\mbox{\Hypertarget{class_corpus_a9f476c6ad48e92bb80531d314115377f}\label{class_corpus_a9f476c6ad48e92bb80531d314115377f}} 
+\mbox{\hyperlink{class_sentence_series}{Sentence\+Series}} $\ast$ {\bfseries get\+\_\+set} (\textbf{ int32\+\_\+t} i)
+\end{DoxyCompactItemize}
+\doxysubsection*{Static Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{class_corpus_aacb92512dd5c353c1085f9dcd303d440}\label{class_corpus_aacb92512dd5c353c1085f9dcd303d440}} 
+static \mbox{\hyperlink{class_corpus}{Corpus}} $\ast$ {\bfseries generate\+\_\+from\+\_\+arguments} (const \textbf{ vector}$<$ \textbf{ string} $>$ \&arguments)
+\item 
+\mbox{\Hypertarget{class_corpus_a184bd2800418e018f0650a9f59fbc4cb}\label{class_corpus_a184bd2800418e018f0650a9f59fbc4cb}} 
+static \mbox{\hyperlink{class_corpus}{Corpus}} $\ast$ {\bfseries generate\+\_\+test} (const \textbf{ vector}$<$ \textbf{ string} $>$ \&\+\_\+test\+\_\+filenames, const \textbf{ vector}$<$ \textbf{ string} $>$ \&\+\_\+input\+\_\+parameter\+\_\+names, const \textbf{ vector}$<$ \textbf{ string} $>$ \&\+\_\+output\+\_\+parameter\+\_\+names)
+\end{DoxyCompactItemize}
+\doxysubsection*{Private Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{class_corpus_aef1a06e5a764a0ffa2ecc8b4df042692}\label{class_corpus_aef1a06e5a764a0ffa2ecc8b4df042692}} 
+void \mbox{\hyperlink{class_corpus_aef1a06e5a764a0ffa2ecc8b4df042692}{load\+\_\+word\+\_\+library}} ()
+\begin{DoxyCompactList}\small\item\em Loads the filenames, word index and the vocabulary of the files. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\doxysubsection*{Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{class_corpus_aaf5714da66d6475437fdae9fe262bb6a}\label{class_corpus_aaf5714da66d6475437fdae9fe262bb6a}} 
+uint32\+\_\+t \mbox{\hyperlink{class_corpus_aaf5714da66d6475437fdae9fe262bb6a}{batch\+\_\+size}}
+\begin{DoxyCompactList}\small\item\em Specifices the batches in which the dataset is to be divided into chunks. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{class_corpus_a8f5019313c7f0e7067755f79df4dcbe5}\label{class_corpus_a8f5019313c7f0e7067755f79df4dcbe5}} 
+\textbf{ string} {\bfseries normalize\+\_\+type}
+\item 
+\mbox{\Hypertarget{class_corpus_acdc26dc71f4664b914bc6f4ddd08f5c7}\label{class_corpus_acdc26dc71f4664b914bc6f4ddd08f5c7}} 
+\textbf{ vector}$<$ \textbf{ string} $>$ \mbox{\hyperlink{class_corpus_acdc26dc71f4664b914bc6f4ddd08f5c7}{filenames}}
+\begin{DoxyCompactList}\small\item\em Stores all the filenames including training and testing. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{class_corpus_acc4af3ddc788396aede04a140e15f8b6}\label{class_corpus_acc4af3ddc788396aede04a140e15f8b6}} 
+\textbf{ vector}$<$ int $>$ \mbox{\hyperlink{class_corpus_acc4af3ddc788396aede04a140e15f8b6}{training\+\_\+indexes}}
+\begin{DoxyCompactList}\small\item\em stores the training index of the filenames. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{class_corpus_a5bfd2fe992d2f34b735b21196b9bd18b}\label{class_corpus_a5bfd2fe992d2f34b735b21196b9bd18b}} 
+\textbf{ vector}$<$ int $>$ \mbox{\hyperlink{class_corpus_a5bfd2fe992d2f34b735b21196b9bd18b}{test\+\_\+indexes}}
+\begin{DoxyCompactList}\small\item\em stores the testing index of the filenames. \end{DoxyCompactList}\item 
+\textbf{ vector}$<$ \textbf{ string} $>$ \mbox{\hyperlink{class_corpus_a21a1934fd5493a82fc572226639525c6}{input\+\_\+parameter\+\_\+names}}
+\begin{DoxyCompactList}\small\item\em stores the input parameter names of the filenames. \end{DoxyCompactList}\item 
+\textbf{ vector}$<$ \textbf{ string} $>$ \mbox{\hyperlink{class_corpus_ac7b85b5b0a376016c63b58200aa03e19}{output\+\_\+parameter\+\_\+names}}
+\begin{DoxyCompactList}\small\item\em stores the input parameter names of the filenames. \end{DoxyCompactList}\item 
+\textbf{ vector}$<$ \textbf{ string} $>$ \mbox{\hyperlink{class_corpus_a084591c7f27b8ad55bc68266fe461161}{all\+\_\+parameter\+\_\+names}}
+\begin{DoxyCompactList}\small\item\em stores the input parameter names of the filenames. \end{DoxyCompactList}\item 
+\textbf{ vector}$<$ \mbox{\hyperlink{class_sentence_series}{Sentence\+Series}} $\ast$ $>$ \mbox{\hyperlink{class_corpus_a96d8a8ed499eb739f08d8d7536008688}{sent\+\_\+series}}
+\begin{DoxyCompactList}\small\item\em stores the Sentence series used in the filenames. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{class_corpus_a0a851ff0d48771c3b6f2573d7476966a}\label{class_corpus_a0a851ff0d48771c3b6f2573d7476966a}} 
+\textbf{ map}$<$ \textbf{ string}, double $>$ {\bfseries normalize\+\_\+mins}
+\item 
+\mbox{\Hypertarget{class_corpus_a22f825861bbb3139717013a6301e3add}\label{class_corpus_a22f825861bbb3139717013a6301e3add}} 
+\textbf{ map}$<$ \textbf{ string}, double $>$ {\bfseries normalize\+\_\+maxs}
+\item 
+\mbox{\Hypertarget{class_corpus_a2344bdd0b80ef4fdb30c2f67ef1a1ea0}\label{class_corpus_a2344bdd0b80ef4fdb30c2f67ef1a1ea0}} 
+\textbf{ map}$<$ \textbf{ string}, double $>$ {\bfseries normalize\+\_\+avgs}
+\item 
+\mbox{\Hypertarget{class_corpus_aaaee4f6927310905cf812db4fc2e268a}\label{class_corpus_aaaee4f6927310905cf812db4fc2e268a}} 
+\textbf{ map}$<$ \textbf{ string}, double $>$ {\bfseries normalize\+\_\+std\+\_\+devs}
+\item 
+\mbox{\Hypertarget{class_corpus_ad420d9f3cecbc7ea4af0ff68a37e386d}\label{class_corpus_ad420d9f3cecbc7ea4af0ff68a37e386d}} 
+\textbf{ vector}$<$ \textbf{ string} $>$ \mbox{\hyperlink{class_corpus_ad420d9f3cecbc7ea4af0ff68a37e386d}{word\+\_\+index}}
+\begin{DoxyCompactList}\small\item\em Maps the index to word string of the word series in a particular filename. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{class_corpus_a7c44a0b8ab422b3fbe30e165e6f1bd34}\label{class_corpus_a7c44a0b8ab422b3fbe30e165e6f1bd34}} 
+\textbf{ map}$<$ \textbf{ string}, int $>$ \mbox{\hyperlink{class_corpus_a7c44a0b8ab422b3fbe30e165e6f1bd34}{vocab}}
+\begin{DoxyCompactList}\small\item\em Maps the word string to the word series in a particular filename. \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\doxysubsection{Member Function Documentation}
+\mbox{\Hypertarget{class_corpus_a1559311071b5de22e15561a39225ec12}\label{class_corpus_a1559311071b5de22e15561a39225ec12}} 
+\index{Corpus@{Corpus}!export\_test\_series@{export\_test\_series}}
+\index{export\_test\_series@{export\_test\_series}!Corpus@{Corpus}}
+\doxysubsubsection{\texorpdfstring{export\_test\_series()}{export\_test\_series()}}
+{\footnotesize\ttfamily void Corpus\+::export\+\_\+test\+\_\+series (\begin{DoxyParamCaption}\item[{int}]{word\+\_\+offset,  }\item[{\textbf{ vector}$<$ \textbf{ vector}$<$ \textbf{ vector}$<$ double $>$ $>$ $>$ \&}]{inputs,  }\item[{\textbf{ vector}$<$ \textbf{ vector}$<$ \textbf{ vector}$<$ double $>$ $>$ $>$ \&}]{outputs }\end{DoxyParamCaption})}
+
+
+
+Exports \mbox{\hyperlink{class_corpus}{Corpus}} Dataset to be used for testing in \mbox{\hyperlink{class_r_n_n}{R\+NN}} genome. 
+
+This exports the time series marked as test series by the test\+\_\+indexes vector.
+
+
+\begin{DoxyParams}{Parameters}
+{\em series\+\_\+indexes} & are the indexes of the input parameters to be used in the dataset \\
+\hline
+{\em word\+\_\+offset} & is used to predict the after how many words, the predictions to be done in the future. \\
+\hline
+{\em inputs} & is the data used for testing in the \mbox{\hyperlink{class_r_n_n}{R\+NN}} genome \\
+\hline
+{\em outpus} & is the data used for testing in the \mbox{\hyperlink{class_r_n_n}{R\+NN}} genome \\
+\hline
+\end{DoxyParams}
+\mbox{\Hypertarget{class_corpus_a241439045ad1a83d6104b4350961e1b3}\label{class_corpus_a241439045ad1a83d6104b4350961e1b3}} 
+\index{Corpus@{Corpus}!export\_training\_series@{export\_training\_series}}
+\index{export\_training\_series@{export\_training\_series}!Corpus@{Corpus}}
+\doxysubsubsection{\texorpdfstring{export\_training\_series()}{export\_training\_series()}}
+{\footnotesize\ttfamily void Corpus\+::export\+\_\+training\+\_\+series (\begin{DoxyParamCaption}\item[{int}]{word\+\_\+offset,  }\item[{\textbf{ vector}$<$ \textbf{ vector}$<$ \textbf{ vector}$<$ double $>$ $>$ $>$ \&}]{inputs,  }\item[{\textbf{ vector}$<$ \textbf{ vector}$<$ \textbf{ vector}$<$ double $>$ $>$ $>$ \&}]{outputs }\end{DoxyParamCaption})}
+
+
+
+Exports \mbox{\hyperlink{class_corpus}{Corpus}} Dataset to be used for training in \mbox{\hyperlink{class_r_n_n}{R\+NN}} genome. 
+
+This exports the time series marked as training series by the training\+\_\+indexes vector.
+
+
+\begin{DoxyParams}{Parameters}
+{\em series\+\_\+indexes} & are the indexes of the input parameters to be used in the dataset \\
+\hline
+{\em word\+\_\+offset} & is used to predict the after how many words, the predictions to be done in the future. \\
+\hline
+{\em inputs} & is the data used for training in the \mbox{\hyperlink{class_r_n_n}{R\+NN}} genome \\
+\hline
+{\em outpus} & is the data used for training in the \mbox{\hyperlink{class_r_n_n}{R\+NN}} genome \\
+\hline
+\end{DoxyParams}
+\mbox{\Hypertarget{class_corpus_a45ee2e625bab4930a20b8448d0e168b0}\label{class_corpus_a45ee2e625bab4930a20b8448d0e168b0}} 
+\index{Corpus@{Corpus}!write\_sentence\_series\_sets@{write\_sentence\_series\_sets}}
+\index{write\_sentence\_series\_sets@{write\_sentence\_series\_sets}!Corpus@{Corpus}}
+\doxysubsubsection{\texorpdfstring{write\_sentence\_series\_sets()}{write\_sentence\_series\_sets()}}
+{\footnotesize\ttfamily void Corpus\+::write\+\_\+sentence\+\_\+series\+\_\+sets (\begin{DoxyParamCaption}\item[{\textbf{ string}}]{base\+\_\+filename }\end{DoxyParamCaption})}
+
+
+
+Generates the csv data file. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em base\+\_\+filename} & is the filename to be used. \\
+\hline
+\end{DoxyParams}
+
+
+\doxysubsection{Member Data Documentation}
+\mbox{\Hypertarget{class_corpus_a084591c7f27b8ad55bc68266fe461161}\label{class_corpus_a084591c7f27b8ad55bc68266fe461161}} 
+\index{Corpus@{Corpus}!all\_parameter\_names@{all\_parameter\_names}}
+\index{all\_parameter\_names@{all\_parameter\_names}!Corpus@{Corpus}}
+\doxysubsubsection{\texorpdfstring{all\_parameter\_names}{all\_parameter\_names}}
+{\footnotesize\ttfamily \textbf{ vector}$<$\textbf{ string}$>$ Corpus\+::all\+\_\+parameter\+\_\+names\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+stores the input parameter names of the filenames. 
+
+stores the unique words used in the filenames. \mbox{\Hypertarget{class_corpus_a21a1934fd5493a82fc572226639525c6}\label{class_corpus_a21a1934fd5493a82fc572226639525c6}} 
+\index{Corpus@{Corpus}!input\_parameter\_names@{input\_parameter\_names}}
+\index{input\_parameter\_names@{input\_parameter\_names}!Corpus@{Corpus}}
+\doxysubsubsection{\texorpdfstring{input\_parameter\_names}{input\_parameter\_names}}
+{\footnotesize\ttfamily \textbf{ vector}$<$\textbf{ string}$>$ Corpus\+::input\+\_\+parameter\+\_\+names\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+stores the input parameter names of the filenames. 
+
+stores the unique words used in the filenames. \mbox{\Hypertarget{class_corpus_ac7b85b5b0a376016c63b58200aa03e19}\label{class_corpus_ac7b85b5b0a376016c63b58200aa03e19}} 
+\index{Corpus@{Corpus}!output\_parameter\_names@{output\_parameter\_names}}
+\index{output\_parameter\_names@{output\_parameter\_names}!Corpus@{Corpus}}
+\doxysubsubsection{\texorpdfstring{output\_parameter\_names}{output\_parameter\_names}}
+{\footnotesize\ttfamily \textbf{ vector}$<$\textbf{ string}$>$ Corpus\+::output\+\_\+parameter\+\_\+names\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+stores the input parameter names of the filenames. 
+
+stores the unique words used in the filenames. \mbox{\Hypertarget{class_corpus_a96d8a8ed499eb739f08d8d7536008688}\label{class_corpus_a96d8a8ed499eb739f08d8d7536008688}} 
+\index{Corpus@{Corpus}!sent\_series@{sent\_series}}
+\index{sent\_series@{sent\_series}!Corpus@{Corpus}}
+\doxysubsubsection{\texorpdfstring{sent\_series}{sent\_series}}
+{\footnotesize\ttfamily \textbf{ vector}$<$\mbox{\hyperlink{class_sentence_series}{Sentence\+Series}}$\ast$$>$ Corpus\+::sent\+\_\+series\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+stores the Sentence series used in the filenames. 
+
+Each file is divided into sentences and word series is made for each word in the sentence. 
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+word\+\_\+series/word\+\_\+series.\+hxx\item 
+word\+\_\+series/word\+\_\+series.\+cxx\end{DoxyCompactItemize}

@@ -1,0 +1,98 @@
+\hypertarget{class_time_series}{}\doxysection{Time\+Series Class Reference}
+\label{class_time_series}\index{TimeSeries@{TimeSeries}}
+\doxysubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{class_time_series_a94dec87ce25a87b4efbbfc49234d34e1}\label{class_time_series_a94dec87ce25a87b4efbbfc49234d34e1}} 
+{\bfseries Time\+Series} (\textbf{ string} \+\_\+name)
+\item 
+\mbox{\Hypertarget{class_time_series_af5210b5c89d3753c6ee188195c0bcd44}\label{class_time_series_af5210b5c89d3753c6ee188195c0bcd44}} 
+void {\bfseries add\+\_\+value} (double value)
+\item 
+\mbox{\Hypertarget{class_time_series_a60c68c99c8dc1e093c48d8ff87878a89}\label{class_time_series_a60c68c99c8dc1e093c48d8ff87878a89}} 
+double {\bfseries get\+\_\+value} (int i)
+\item 
+\mbox{\Hypertarget{class_time_series_aff81a5561bc2d42a2a4b47d81548a5e6}\label{class_time_series_aff81a5561bc2d42a2a4b47d81548a5e6}} 
+void {\bfseries calculate\+\_\+statistics} ()
+\item 
+\mbox{\Hypertarget{class_time_series_a67adbe58dcc6dbf93fd6b8663ea008af}\label{class_time_series_a67adbe58dcc6dbf93fd6b8663ea008af}} 
+void {\bfseries print\+\_\+statistics} ()
+\item 
+\mbox{\Hypertarget{class_time_series_aebd5cdea1096573ecb1c06cc7eda66a5}\label{class_time_series_aebd5cdea1096573ecb1c06cc7eda66a5}} 
+int {\bfseries get\+\_\+number\+\_\+values} () const
+\item 
+\mbox{\Hypertarget{class_time_series_a913b6c3364c5505da43489514b4f2819}\label{class_time_series_a913b6c3364c5505da43489514b4f2819}} 
+double {\bfseries get\+\_\+min} () const
+\item 
+\mbox{\Hypertarget{class_time_series_af1489ec51ebbf6871add6a5c6220d9d5}\label{class_time_series_af1489ec51ebbf6871add6a5c6220d9d5}} 
+double {\bfseries get\+\_\+average} () const
+\item 
+\mbox{\Hypertarget{class_time_series_a214c4e79f8850a38f5a70826fdf0201e}\label{class_time_series_a214c4e79f8850a38f5a70826fdf0201e}} 
+double {\bfseries get\+\_\+max} () const
+\item 
+\mbox{\Hypertarget{class_time_series_a674dc685e1792210bf9a47adadf6425d}\label{class_time_series_a674dc685e1792210bf9a47adadf6425d}} 
+double {\bfseries get\+\_\+std\+\_\+dev} () const
+\item 
+\mbox{\Hypertarget{class_time_series_a1aaa0b6a8ddf7ce5120580005fcf39a7}\label{class_time_series_a1aaa0b6a8ddf7ce5120580005fcf39a7}} 
+double {\bfseries get\+\_\+variance} () const
+\item 
+\mbox{\Hypertarget{class_time_series_ada09d4dbd4bbe50b8fca5295e66797a4}\label{class_time_series_ada09d4dbd4bbe50b8fca5295e66797a4}} 
+double {\bfseries get\+\_\+min\+\_\+change} () const
+\item 
+\mbox{\Hypertarget{class_time_series_aead2c24ed81ffe155f8216c3f7b9095e}\label{class_time_series_aead2c24ed81ffe155f8216c3f7b9095e}} 
+double {\bfseries get\+\_\+max\+\_\+change} () const
+\item 
+\mbox{\Hypertarget{class_time_series_a9f747fa2694e96804f20a0626f7cb46c}\label{class_time_series_a9f747fa2694e96804f20a0626f7cb46c}} 
+void {\bfseries normalize\+\_\+min\+\_\+max} (double min, double max)
+\item 
+\mbox{\Hypertarget{class_time_series_a5a54bcfbadba29460621c974e2a94f44}\label{class_time_series_a5a54bcfbadba29460621c974e2a94f44}} 
+void {\bfseries normalize\+\_\+avg\+\_\+std\+\_\+dev} (double avg, double std\+\_\+dev, double norm\+\_\+max)
+\item 
+\mbox{\Hypertarget{class_time_series_a1c87cf135c425de70550710f9c5f1d0f}\label{class_time_series_a1c87cf135c425de70550710f9c5f1d0f}} 
+void {\bfseries cut} (\textbf{ int32\+\_\+t} start, \textbf{ int32\+\_\+t} stop)
+\item 
+\mbox{\Hypertarget{class_time_series_ac3868470a5ed960f9a737e42b49baa4e}\label{class_time_series_ac3868470a5ed960f9a737e42b49baa4e}} 
+double {\bfseries get\+\_\+correlation} (const \mbox{\hyperlink{class_time_series}{Time\+Series}} $\ast$other, \textbf{ int32\+\_\+t} lag) const
+\item 
+\mbox{\Hypertarget{class_time_series_aff3fd5901ab67b755fec5a7d767c35a2}\label{class_time_series_aff3fd5901ab67b755fec5a7d767c35a2}} 
+\mbox{\hyperlink{class_time_series}{Time\+Series}} $\ast$ {\bfseries copy} ()
+\item 
+\mbox{\Hypertarget{class_time_series_a309faa5de03f6011ed67c83a6976d16a}\label{class_time_series_a309faa5de03f6011ed67c83a6976d16a}} 
+void {\bfseries copy\+\_\+values} (\textbf{ vector}$<$ double $>$ \&series)
+\end{DoxyCompactItemize}
+\doxysubsection*{Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{class_time_series_aa9fdde695032e2f5e0c5e3f48924bd49}\label{class_time_series_aa9fdde695032e2f5e0c5e3f48924bd49}} 
+\textbf{ string} {\bfseries name}
+\item 
+\mbox{\Hypertarget{class_time_series_a5dabaf7e9ae4c56b97a377ce8bd24558}\label{class_time_series_a5dabaf7e9ae4c56b97a377ce8bd24558}} 
+double {\bfseries min}
+\item 
+\mbox{\Hypertarget{class_time_series_afc947d70351cc4ef3b10ed6e6d77c7ce}\label{class_time_series_afc947d70351cc4ef3b10ed6e6d77c7ce}} 
+double {\bfseries average}
+\item 
+\mbox{\Hypertarget{class_time_series_ae34f322d950a627c902923ff82bcae19}\label{class_time_series_ae34f322d950a627c902923ff82bcae19}} 
+double {\bfseries max}
+\item 
+\mbox{\Hypertarget{class_time_series_a15bfcb1deb136cd05624a6da9c4be8cc}\label{class_time_series_a15bfcb1deb136cd05624a6da9c4be8cc}} 
+double {\bfseries std\+\_\+dev}
+\item 
+\mbox{\Hypertarget{class_time_series_ab6f7818746f7178a4be203fd8add0daa}\label{class_time_series_ab6f7818746f7178a4be203fd8add0daa}} 
+double {\bfseries variance}
+\item 
+\mbox{\Hypertarget{class_time_series_a3aadd7d227502c90f655004014c35879}\label{class_time_series_a3aadd7d227502c90f655004014c35879}} 
+double {\bfseries min\+\_\+change}
+\item 
+\mbox{\Hypertarget{class_time_series_a44bebfe451c623358a16af4d4e2d4a38}\label{class_time_series_a44bebfe451c623358a16af4d4e2d4a38}} 
+double {\bfseries max\+\_\+change}
+\item 
+\mbox{\Hypertarget{class_time_series_a18f879a5a1d1b4efd3ed3063b1d6bf17}\label{class_time_series_a18f879a5a1d1b4efd3ed3063b1d6bf17}} 
+\textbf{ vector}$<$ double $>$ {\bfseries values}
+\end{DoxyCompactItemize}
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+time\+\_\+series/time\+\_\+series.\+hxx\item 
+time\+\_\+series/time\+\_\+series.\+cxx\end{DoxyCompactItemize}

@@ -24,7 +24,8 @@ using std::vector;
 
 #include "rnn/examm.hxx"
 
-#include "word_series/word_series.hxx"
+#include "time_series/time_series.hxx"
+#include "word_series/word_series.hxx"  
 
 #define WORK_REQUEST_TAG 1
 #define GENOME_LENGTH_TAG 2
@@ -269,7 +270,7 @@ int main(int argc, char** argv) {
     int number_inputs = corpus_sets->get_number_inputs();
     int number_outputs = corpus_sets->get_number_outputs();
 
-    Log::info("number_inputs: %d, number_outputs: %d\n", number_inputs, number_outputs);
+    Log::debug("number_inputs: %d, number_outputs: %d\n", number_inputs, number_outputs);
 
     int32_t population_size;
     get_argument(arguments, "--population_size", true, population_size);
@@ -343,7 +344,7 @@ int main(int argc, char** argv) {
     get_argument(arguments, "--max_recurrent_depth", false, max_recurrent_depth);
 
     //bool use_regression = argument_exists(arguments, "--use_regression");
-    bool use_regression = false; //NLP will never use regression
+    bool use_regression = false; //nlp will never use regression
 
     string weight_initialize_string = "random";
     get_argument(arguments, "--weight_initialize", false, weight_initialize_string);

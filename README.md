@@ -30,6 +30,68 @@ You may also want to have graphviz installed so you can generate images of the e
 $ dot -Tpdf genome.gv -o genome.pdf
 ```
 
+# EXAMM: Neural Architectural Search using Parameter Sharing and Augmenting Memory Models
+
+The datasets used for this part of the code are PennChar, PennTreeBank and WikiText. These datasets can be found in the *datasets* directory. These datasets can be used in both mpi as well as multithreaded version.
+
+### To use Pennchar as dataset and use Simple and ENARC as memory cell
+ 
+
+```
+/multithreaded/examm_nlp --number_threads 9 --training_filenames ../datasets/pennchar/train.txt --test_filenames ../datasets/pennchar/test.txt --word_offset 1 --number_islands 2 --population_size 2 --max_genomes 20 --bp_iterations 2 --use_regression 0 --output_directory "./test_output" --possible_node_types simple ENARC --normalize min_max --std_message_level info --file_message_level info
+
+```
+
+And a parallel version using MPI:
+
+```
+~/exact/build/ $ mpirun -np 9 ./mpi/examm_mpi_nlp --training_filenames ../datasets/pennchar/train.txt --test_filenames ../datasets/pennchar/test.txt --word_offset 1 --number_islands 2 --population_size 2 --max_genomes 20 --bp_iterations 2 --use_regression 0 --output_directory "./test_output" --possible_node_types simple ENARC --normalize min_max --std_message_level info --file_message_level info
+
+```
+
+### To use PennTreeBank Word Prediction as dataset and use Simple and ENARC as memory cell 
+ 
+
+```
+/multithreaded/examm_nlp --number_threads 9 --training_filenames ../datasets/penn/train.txt --test_filenames ../datasets/penn/test.txt --word_offset 1 --number_islands 2 --population_size 2 --max_genomes 20 --bp_iterations 2 --use_regression 0 --output_directory "./test_output" --possible_node_types simple ENARC--normalize min_max --std_message_level info --file_message_level info
+
+```
+
+And a parallel version using MPI:
+
+```
+~/exact/build/ $ mpirun -np 9 ./mpi/examm_mpi_nlp --training_filenames ../datasets/pennchar/train.txt --test_filenames ../datasets/pennchar/test.txt --word_offset 1 --number_islands 2 --population_size 2 --max_genomes 20 --bp_iterations 2 --use_regression 0 --output_directory "./test_output" --possible_node_types simple ENARC --normalize min_max --std_message_level info --file_message_level info
+
+```
+
+The std_out can be seen in file *main_out* for 20 genomes. The number of genomes can be increase. For ideal results, use 20000 genomes.
+
+
+### To use ENARC as Memory Cell on Coal Dataset
+
+
+```
+./multithreaded/examm_mt --number_threads 9 --training_filenames ../datasets/2018_coal/burner_[0-9].csv --test_filenames ../datasets/2018_coal/burner_1[0-1].csv --time_offset 1 --input_parameter_names Conditioner_Inlet_Temp Conditioner_Outlet_Temp Coal_Feeder_Rate Primary_Air_Flow Primary_Air_Split System_Secondary_Air_Flow_Total Secondary_Air_Flow Secondary_Air_Split Tertiary_Air_Split Total_Comb_Air_Flow Supp_Fuel_Flow Main_Flm_Int --output_parameter_names Main_Flm_Int --number_islands 10 --population_size 10 --max_genomes 2000 --bp_iterations 10 --output_directory "./test_output" --possible_node_types simple ENARC --std_message_level INFO --file_message_level INFO
+```
+
+![Results on Coal using ENARC cell](https://github.com/travisdesell/exact/tree/enarc/images/result_enarc.png)
+
+![Results Comparison](https://github.com/travisdesell/exact/tree/enarc/images/result_comp.png)
+
+![Results Comparison](https://github.com/travisdesell/exact/tree/enarc/images/result_comp.png)
+
+## To visualize the ENARC memory cell, it in *images* directory as Node.pdf
+
+### Domain Diagram
+
+![Domain Diagram](https://github.com/travisdesell/exact/tree/enarc/images/domain.png)
+
+### Architecture Diagram
+
+![Architecture Diagram](https://github.com/travisdesell/exact/tree/enarc/images/arch.png)
+
+
+
 # EXAMM: Evolutionary eXploration of Augmenting Memory Models and EXALT: Evolutionary eXploration of Augmenting LSTM Topologies
 
 Source code for EXALT/EXAMM can be found in the rnn subdirectory. EXALT has been enhanced with the ability to utilize more recurrent memory cells and has been renamed EXAMM.  The memory cells currently implemented are Delta-RNN, GRU, LSTM, MGU, and UGRNNs. Some example time series data has been provided as part of two publications on EXALT and EXAMM, which also provide implementation details:

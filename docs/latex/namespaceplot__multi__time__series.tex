@@ -1,0 +1,54 @@
+\hypertarget{namespaceplot__multi__time__series}{}\doxysection{plot\+\_\+multi\+\_\+time\+\_\+series Namespace Reference}
+\label{namespaceplot__multi__time__series}\index{plot\_multi\_time\_series@{plot\_multi\_time\_series}}
+\doxysubsection*{Variables}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{namespaceplot__multi__time__series_a97885b5fee72386f66a4ee6a763127eb}\label{namespaceplot__multi__time__series_a97885b5fee72386f66a4ee6a763127eb}} 
+{\bfseries csv\+\_\+filename} = sys.\+argv\mbox{[}1\mbox{]}
+\item 
+\mbox{\Hypertarget{namespaceplot__multi__time__series_a92e6b9a89914d7f9da239fa5bbc1acfe}\label{namespaceplot__multi__time__series_a92e6b9a89914d7f9da239fa5bbc1acfe}} 
+{\bfseries parameter\+\_\+name} = sys.\+argv\mbox{[}2\mbox{]}
+\item 
+\mbox{\Hypertarget{namespaceplot__multi__time__series_a4f43b211d6980967d37938bf82f23fa3}\label{namespaceplot__multi__time__series_a4f43b211d6980967d37938bf82f23fa3}} 
+{\bfseries xlabel\+\_\+name} = sys.\+argv\mbox{[}3\mbox{]}
+\item 
+\mbox{\Hypertarget{namespaceplot__multi__time__series_afcca6556fbb99c4fbd70bc121118c4dd}\label{namespaceplot__multi__time__series_afcca6556fbb99c4fbd70bc121118c4dd}} 
+{\bfseries output\+\_\+filename} = sys.\+argv\mbox{[}4\mbox{]}
+\item 
+\mbox{\Hypertarget{namespaceplot__multi__time__series_a7dc670c7b7bfa2e141cf6d139b60c1aa}\label{namespaceplot__multi__time__series_a7dc670c7b7bfa2e141cf6d139b60c1aa}} 
+{\bfseries offsets} = sys.\+argv\mbox{[}5\+:\mbox{]}
+\item 
+\mbox{\Hypertarget{namespaceplot__multi__time__series_a2e2a6c223dca82e734daffb0d74ad4d3}\label{namespaceplot__multi__time__series_a2e2a6c223dca82e734daffb0d74ad4d3}} 
+{\bfseries values} = genfromtxt(csv\+\_\+filename, delimiter=\char`\"{},\char`\"{})
+\item 
+\mbox{\Hypertarget{namespaceplot__multi__time__series_aa698bc6b1ecc18309117c6adbc11d76c}\label{namespaceplot__multi__time__series_aa698bc6b1ecc18309117c6adbc11d76c}} 
+{\bfseries rows} = len(values)
+\item 
+\mbox{\Hypertarget{namespaceplot__multi__time__series_aec8d4ebcb56e41ffc414583034915951}\label{namespaceplot__multi__time__series_aec8d4ebcb56e41ffc414583034915951}} 
+{\bfseries cols} = len(values\mbox{[}0\mbox{]})
+\item 
+\mbox{\Hypertarget{namespaceplot__multi__time__series_a0a178be487d773ac674426e6c9048a74}\label{namespaceplot__multi__time__series_a0a178be487d773ac674426e6c9048a74}} 
+{\bfseries figsize}
+\item 
+\mbox{\Hypertarget{namespaceplot__multi__time__series_a7327695ce7e1f3f6b0a8ac72f329d86b}\label{namespaceplot__multi__time__series_a7327695ce7e1f3f6b0a8ac72f329d86b}} 
+{\bfseries label}
+\item 
+\mbox{\Hypertarget{namespaceplot__multi__time__series_a612556db538d7e149f21512f77799395}\label{namespaceplot__multi__time__series_a612556db538d7e149f21512f77799395}} 
+{\bfseries linewidth}
+\item 
+\mbox{\Hypertarget{namespaceplot__multi__time__series_a444969616e4eb0a685ce5d5f096a463f}\label{namespaceplot__multi__time__series_a444969616e4eb0a685ce5d5f096a463f}} 
+{\bfseries loc}
+\item 
+\mbox{\Hypertarget{namespaceplot__multi__time__series_a68da059582342c21aa9c664534182f7b}\label{namespaceplot__multi__time__series_a68da059582342c21aa9c664534182f7b}} 
+{\bfseries bbox\+\_\+inches}
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+\begin{DoxyVerb}usage examples:
+    python plot_multi_time_series.py ~/Dropbox/1537\ MTI-RIT/2019_degruyter_results/net_plant_heat_rate_predictions.csv "Net Plant Heat Rate" "Hours" ~/Dropbox/1537\ MTI-RIT/2019_degruyter_results/net_plant_heat_rate_multi.png 1 2 4 8
+    python plot_multi_time_series.py ~/Dropbox/1537\ MTI-RIT/2019_degruyter_results/nose_gas_temperature_predictons.csv "Nose Gas Temperature" "Hours" ~/Dropbox/1537\ MTI-RIT/2019_degruyter_results/nose_gas_temperature_multi.png 1 2 4 8
+    python plot_multi_time_series.py ~/Dropbox/1537\ MTI-RIT/2019_degruyter_results/flame_intensity_extra_3.csv "Flame Intensity (Plant ~ Fuel)" "Minutes" ~/Dropbox/1537\ MTI-RIT/2019_degruyter_results/flame_intensity_extra_3.png 1 15 30 60 120 240 480
+    python plot_multi_time_series.py ~/Dropbox/1537\ MTI-RIT/2019_degruyter_results/flame_intensity_plant_fuel_3.csv "Flame Intensity (Plant + Fuel)" "Minutes" ~/Dropbox/1537\ MTI-RIT/2019_degruyter_results/flame_intensity_plant_fuel_3.png 1 15 30 60 120 240 480
+    python plot_multi_time_series.py ~/Dropbox/1537\ MTI-RIT/2019_degruyter_results/flame_intensity_plant_3.csv "Flame Intensity (Plant Only)" "Minutes" ~/Dropbox/1537\ MTI-RIT/2019_degruyter_results/flame_intensity_plant_3.png 1 15 30 60 120 240 480\end{DoxyVerb}
+ 

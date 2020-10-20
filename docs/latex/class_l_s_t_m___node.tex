@@ -1,0 +1,189 @@
+\hypertarget{class_l_s_t_m___node}{}\doxysection{L\+S\+T\+M\+\_\+\+Node Class Reference}
+\label{class_l_s_t_m___node}\index{LSTM\_Node@{LSTM\_Node}}
+Inheritance diagram for L\+S\+T\+M\+\_\+\+Node\+:\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[height=2.000000cm]{class_l_s_t_m___node}
+\end{center}
+\end{figure}
+\doxysubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{class_l_s_t_m___node_aede0ded08385b7de9cd3f7be255c62c6}\label{class_l_s_t_m___node_aede0ded08385b7de9cd3f7be255c62c6}} 
+{\bfseries L\+S\+T\+M\+\_\+\+Node} (int \+\_\+innovation\+\_\+number, int \+\_\+type, double \+\_\+depth)
+\item 
+\mbox{\Hypertarget{class_l_s_t_m___node_a32cc552ae0bbdc9363b5a02266eb6094}\label{class_l_s_t_m___node_a32cc552ae0bbdc9363b5a02266eb6094}} 
+void {\bfseries initialize\+\_\+lamarckian} (\textbf{ minstd\+\_\+rand0} \&generator, \mbox{\hyperlink{class_normal_distribution}{Normal\+Distribution}} \&normal\+\_\+distribution, double mu, double sigma)
+\item 
+\mbox{\Hypertarget{class_l_s_t_m___node_af334b263e401ddcf653439a4ca930f40}\label{class_l_s_t_m___node_af334b263e401ddcf653439a4ca930f40}} 
+void {\bfseries initialize\+\_\+xavier} (\textbf{ minstd\+\_\+rand0} \&generator, \textbf{ uniform\+\_\+real\+\_\+distribution}$<$ double $>$ \&rng1\+\_\+1, double range)
+\item 
+\mbox{\Hypertarget{class_l_s_t_m___node_a5509f1d068fd6c70c84425d782a2416a}\label{class_l_s_t_m___node_a5509f1d068fd6c70c84425d782a2416a}} 
+void {\bfseries initialize\+\_\+kaiming} (\textbf{ minstd\+\_\+rand0} \&generator, \mbox{\hyperlink{class_normal_distribution}{Normal\+Distribution}} \&normal\+\_\+distribution, double range)
+\item 
+\mbox{\Hypertarget{class_l_s_t_m___node_a41c8c24423dee73f7b54fb2bd545c44b}\label{class_l_s_t_m___node_a41c8c24423dee73f7b54fb2bd545c44b}} 
+void {\bfseries initialize\+\_\+uniform\+\_\+random} (\textbf{ minstd\+\_\+rand0} \&generator, \textbf{ uniform\+\_\+real\+\_\+distribution}$<$ double $>$ \&rng)
+\item 
+\mbox{\Hypertarget{class_l_s_t_m___node_ae57827aeae92a3dd7f9b483d9007194d}\label{class_l_s_t_m___node_ae57827aeae92a3dd7f9b483d9007194d}} 
+double {\bfseries get\+\_\+gradient} (\textbf{ string} gradient\+\_\+name)
+\item 
+\mbox{\Hypertarget{class_l_s_t_m___node_a66fd6d160869bb0b61019375a74ff950}\label{class_l_s_t_m___node_a66fd6d160869bb0b61019375a74ff950}} 
+void {\bfseries print\+\_\+gradient} (\textbf{ string} gradient\+\_\+name)
+\item 
+\mbox{\Hypertarget{class_l_s_t_m___node_a74414bdd00d5a21f85d1eab3c24f5f5b}\label{class_l_s_t_m___node_a74414bdd00d5a21f85d1eab3c24f5f5b}} 
+void {\bfseries input\+\_\+fired} (int time, double incoming\+\_\+output)
+\item 
+\mbox{\Hypertarget{class_l_s_t_m___node_ab92c179e7b6cb7f6e300e7220b0a5252}\label{class_l_s_t_m___node_ab92c179e7b6cb7f6e300e7220b0a5252}} 
+void {\bfseries try\+\_\+update\+\_\+deltas} (int time)
+\item 
+\mbox{\Hypertarget{class_l_s_t_m___node_a808eec94e42e90324bf6cba6252aa7b5}\label{class_l_s_t_m___node_a808eec94e42e90324bf6cba6252aa7b5}} 
+void {\bfseries error\+\_\+fired} (int time, double error)
+\item 
+\mbox{\Hypertarget{class_l_s_t_m___node_aa49da071b12d581368555ef6e3eb835c}\label{class_l_s_t_m___node_aa49da071b12d581368555ef6e3eb835c}} 
+void {\bfseries output\+\_\+fired} (int time, double delta)
+\item 
+\mbox{\Hypertarget{class_l_s_t_m___node_afcfe9e362541835c8aff72a0d476792f}\label{class_l_s_t_m___node_afcfe9e362541835c8aff72a0d476792f}} 
+uint32\+\_\+t {\bfseries get\+\_\+number\+\_\+weights} () const
+\item 
+\mbox{\Hypertarget{class_l_s_t_m___node_aca551a5602ae11f34ea0cfa6eb09691a}\label{class_l_s_t_m___node_aca551a5602ae11f34ea0cfa6eb09691a}} 
+void {\bfseries get\+\_\+weights} (\textbf{ vector}$<$ double $>$ \&parameters) const
+\item 
+\mbox{\Hypertarget{class_l_s_t_m___node_a8cdeac6ef873c5a2309e72130747cd5f}\label{class_l_s_t_m___node_a8cdeac6ef873c5a2309e72130747cd5f}} 
+void {\bfseries set\+\_\+weights} (const \textbf{ vector}$<$ double $>$ \&parameters)
+\item 
+\mbox{\Hypertarget{class_l_s_t_m___node_abd1e2bc87e77ce1267d88acb9828f2be}\label{class_l_s_t_m___node_abd1e2bc87e77ce1267d88acb9828f2be}} 
+void {\bfseries get\+\_\+weights} (uint32\+\_\+t \&offset, \textbf{ vector}$<$ double $>$ \&parameters) const
+\item 
+\mbox{\Hypertarget{class_l_s_t_m___node_ac3ded3843152582159a225424b4c50f9}\label{class_l_s_t_m___node_ac3ded3843152582159a225424b4c50f9}} 
+void {\bfseries set\+\_\+weights} (uint32\+\_\+t \&offset, const \textbf{ vector}$<$ double $>$ \&parameters)
+\item 
+\mbox{\Hypertarget{class_l_s_t_m___node_af0e1d6c248dafce960d35f592d4b7bdc}\label{class_l_s_t_m___node_af0e1d6c248dafce960d35f592d4b7bdc}} 
+void {\bfseries get\+\_\+gradients} (\textbf{ vector}$<$ double $>$ \&gradients)
+\item 
+\mbox{\Hypertarget{class_l_s_t_m___node_ae4bb4af65e14318814141a4665de48fa}\label{class_l_s_t_m___node_ae4bb4af65e14318814141a4665de48fa}} 
+void {\bfseries reset} (int \+\_\+series\+\_\+length)
+\item 
+\mbox{\Hypertarget{class_l_s_t_m___node_a3d9171e8745d4ab00becd86753f11911}\label{class_l_s_t_m___node_a3d9171e8745d4ab00becd86753f11911}} 
+void {\bfseries write\+\_\+to\+\_\+stream} (\textbf{ ostream} \&out)
+\item 
+\mbox{\Hypertarget{class_l_s_t_m___node_ac2db752af703b1a3a184499bf6fa8fc8}\label{class_l_s_t_m___node_ac2db752af703b1a3a184499bf6fa8fc8}} 
+\mbox{\hyperlink{class_r_n_n___node___interface}{R\+N\+N\+\_\+\+Node\+\_\+\+Interface}} $\ast$ {\bfseries copy} () const
+\end{DoxyCompactItemize}
+\doxysubsection*{Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{class_l_s_t_m___node_a0ee8e33b0259807850d054abb243e7be}\label{class_l_s_t_m___node_a0ee8e33b0259807850d054abb243e7be}} 
+double {\bfseries output\+\_\+gate\+\_\+update\+\_\+weight}
+\item 
+\mbox{\Hypertarget{class_l_s_t_m___node_aa533f17d8ec43d66c6c88d92aa084769}\label{class_l_s_t_m___node_aa533f17d8ec43d66c6c88d92aa084769}} 
+double {\bfseries output\+\_\+gate\+\_\+weight}
+\item 
+\mbox{\Hypertarget{class_l_s_t_m___node_a05f10b65b2219956ee48a6fc8e874d36}\label{class_l_s_t_m___node_a05f10b65b2219956ee48a6fc8e874d36}} 
+double {\bfseries output\+\_\+gate\+\_\+bias}
+\item 
+\mbox{\Hypertarget{class_l_s_t_m___node_a8f88d74ac21b891f39a6cc65f0d6a81b}\label{class_l_s_t_m___node_a8f88d74ac21b891f39a6cc65f0d6a81b}} 
+double {\bfseries input\+\_\+gate\+\_\+update\+\_\+weight}
+\item 
+\mbox{\Hypertarget{class_l_s_t_m___node_aef26f0572b7a7d44d8af55ffa133319b}\label{class_l_s_t_m___node_aef26f0572b7a7d44d8af55ffa133319b}} 
+double {\bfseries input\+\_\+gate\+\_\+weight}
+\item 
+\mbox{\Hypertarget{class_l_s_t_m___node_ae5753340e5e520cd1971c3bbddc4cbe3}\label{class_l_s_t_m___node_ae5753340e5e520cd1971c3bbddc4cbe3}} 
+double {\bfseries input\+\_\+gate\+\_\+bias}
+\item 
+\mbox{\Hypertarget{class_l_s_t_m___node_a307883e974538d4d052657cd14a0bdb3}\label{class_l_s_t_m___node_a307883e974538d4d052657cd14a0bdb3}} 
+double {\bfseries forget\+\_\+gate\+\_\+update\+\_\+weight}
+\item 
+\mbox{\Hypertarget{class_l_s_t_m___node_a10353c2533f369c5dcaee1424ab50c04}\label{class_l_s_t_m___node_a10353c2533f369c5dcaee1424ab50c04}} 
+double {\bfseries forget\+\_\+gate\+\_\+weight}
+\item 
+\mbox{\Hypertarget{class_l_s_t_m___node_a087f9f583012fecda4b6f76944dae8bf}\label{class_l_s_t_m___node_a087f9f583012fecda4b6f76944dae8bf}} 
+double {\bfseries forget\+\_\+gate\+\_\+bias}
+\item 
+\mbox{\Hypertarget{class_l_s_t_m___node_a2c59e3299528daf0183436dd3d9a6e96}\label{class_l_s_t_m___node_a2c59e3299528daf0183436dd3d9a6e96}} 
+double {\bfseries cell\+\_\+weight}
+\item 
+\mbox{\Hypertarget{class_l_s_t_m___node_a575b460baecb27f1767af35501432df9}\label{class_l_s_t_m___node_a575b460baecb27f1767af35501432df9}} 
+double {\bfseries cell\+\_\+bias}
+\item 
+\mbox{\Hypertarget{class_l_s_t_m___node_af02f45197f76e91e54c3fd994e4ed543}\label{class_l_s_t_m___node_af02f45197f76e91e54c3fd994e4ed543}} 
+\textbf{ vector}$<$ double $>$ {\bfseries output\+\_\+gate\+\_\+values}
+\item 
+\mbox{\Hypertarget{class_l_s_t_m___node_ae1f98fdddfa0603a4a16f671f3787ee3}\label{class_l_s_t_m___node_ae1f98fdddfa0603a4a16f671f3787ee3}} 
+\textbf{ vector}$<$ double $>$ {\bfseries input\+\_\+gate\+\_\+values}
+\item 
+\mbox{\Hypertarget{class_l_s_t_m___node_ae2ec5871a40cb5c1b6d175058e92b6e9}\label{class_l_s_t_m___node_ae2ec5871a40cb5c1b6d175058e92b6e9}} 
+\textbf{ vector}$<$ double $>$ {\bfseries forget\+\_\+gate\+\_\+values}
+\item 
+\mbox{\Hypertarget{class_l_s_t_m___node_a2eb15e5c51ecb1a34d7a516aca40e8b4}\label{class_l_s_t_m___node_a2eb15e5c51ecb1a34d7a516aca40e8b4}} 
+\textbf{ vector}$<$ double $>$ {\bfseries cell\+\_\+values}
+\item 
+\mbox{\Hypertarget{class_l_s_t_m___node_a37ac337386988e8e8d7b02a3b35a295b}\label{class_l_s_t_m___node_a37ac337386988e8e8d7b02a3b35a295b}} 
+\textbf{ vector}$<$ double $>$ {\bfseries ld\+\_\+output\+\_\+gate}
+\item 
+\mbox{\Hypertarget{class_l_s_t_m___node_a62deef47dedd6e588abca9f3ca1a872e}\label{class_l_s_t_m___node_a62deef47dedd6e588abca9f3ca1a872e}} 
+\textbf{ vector}$<$ double $>$ {\bfseries ld\+\_\+input\+\_\+gate}
+\item 
+\mbox{\Hypertarget{class_l_s_t_m___node_a64907518e1f7ef82c378c414eef3d781}\label{class_l_s_t_m___node_a64907518e1f7ef82c378c414eef3d781}} 
+\textbf{ vector}$<$ double $>$ {\bfseries ld\+\_\+forget\+\_\+gate}
+\item 
+\mbox{\Hypertarget{class_l_s_t_m___node_a04b0c5d9ca313d9ed9c2a20186764e4c}\label{class_l_s_t_m___node_a04b0c5d9ca313d9ed9c2a20186764e4c}} 
+\textbf{ vector}$<$ double $>$ {\bfseries cell\+\_\+in\+\_\+tanh}
+\item 
+\mbox{\Hypertarget{class_l_s_t_m___node_ae077cebf907c23dc9c1ae367307cc016}\label{class_l_s_t_m___node_ae077cebf907c23dc9c1ae367307cc016}} 
+\textbf{ vector}$<$ double $>$ {\bfseries cell\+\_\+out\+\_\+tanh}
+\item 
+\mbox{\Hypertarget{class_l_s_t_m___node_af940e2f222935ea7c8558e45c58078ed}\label{class_l_s_t_m___node_af940e2f222935ea7c8558e45c58078ed}} 
+\textbf{ vector}$<$ double $>$ {\bfseries ld\+\_\+cell\+\_\+in}
+\item 
+\mbox{\Hypertarget{class_l_s_t_m___node_ae6bebf6c0d8927d824584b26b47e7edd}\label{class_l_s_t_m___node_ae6bebf6c0d8927d824584b26b47e7edd}} 
+\textbf{ vector}$<$ double $>$ {\bfseries ld\+\_\+cell\+\_\+out}
+\item 
+\mbox{\Hypertarget{class_l_s_t_m___node_a68956f741805cac46a7f9e87589a7aa9}\label{class_l_s_t_m___node_a68956f741805cac46a7f9e87589a7aa9}} 
+\textbf{ vector}$<$ double $>$ {\bfseries d\+\_\+prev\+\_\+cell}
+\item 
+\mbox{\Hypertarget{class_l_s_t_m___node_a0c8a1839e23d87173fae7c7b91750cd8}\label{class_l_s_t_m___node_a0c8a1839e23d87173fae7c7b91750cd8}} 
+\textbf{ vector}$<$ double $>$ {\bfseries d\+\_\+output\+\_\+gate\+\_\+update\+\_\+weight}
+\item 
+\mbox{\Hypertarget{class_l_s_t_m___node_accba317d9c292c7f1c872387de3473b1}\label{class_l_s_t_m___node_accba317d9c292c7f1c872387de3473b1}} 
+\textbf{ vector}$<$ double $>$ {\bfseries d\+\_\+output\+\_\+gate\+\_\+weight}
+\item 
+\mbox{\Hypertarget{class_l_s_t_m___node_a1c669909ae6998acf1cc23b211208e6c}\label{class_l_s_t_m___node_a1c669909ae6998acf1cc23b211208e6c}} 
+\textbf{ vector}$<$ double $>$ {\bfseries d\+\_\+output\+\_\+gate\+\_\+bias}
+\item 
+\mbox{\Hypertarget{class_l_s_t_m___node_a45ab782fe8f43b2a87a3a7ed09dc32c8}\label{class_l_s_t_m___node_a45ab782fe8f43b2a87a3a7ed09dc32c8}} 
+\textbf{ vector}$<$ double $>$ {\bfseries d\+\_\+input\+\_\+gate\+\_\+update\+\_\+weight}
+\item 
+\mbox{\Hypertarget{class_l_s_t_m___node_a3177d6ec68b192e8f6ddeafefbf4a241}\label{class_l_s_t_m___node_a3177d6ec68b192e8f6ddeafefbf4a241}} 
+\textbf{ vector}$<$ double $>$ {\bfseries d\+\_\+input\+\_\+gate\+\_\+weight}
+\item 
+\mbox{\Hypertarget{class_l_s_t_m___node_a4e73a481f84892fa0635b8aa82a480df}\label{class_l_s_t_m___node_a4e73a481f84892fa0635b8aa82a480df}} 
+\textbf{ vector}$<$ double $>$ {\bfseries d\+\_\+input\+\_\+gate\+\_\+bias}
+\item 
+\mbox{\Hypertarget{class_l_s_t_m___node_a9b8655deb08ca139ecb2fb367bf87bf8}\label{class_l_s_t_m___node_a9b8655deb08ca139ecb2fb367bf87bf8}} 
+\textbf{ vector}$<$ double $>$ {\bfseries d\+\_\+forget\+\_\+gate\+\_\+update\+\_\+weight}
+\item 
+\mbox{\Hypertarget{class_l_s_t_m___node_a7c0cdb3462828384fb13d3814f4fe08d}\label{class_l_s_t_m___node_a7c0cdb3462828384fb13d3814f4fe08d}} 
+\textbf{ vector}$<$ double $>$ {\bfseries d\+\_\+forget\+\_\+gate\+\_\+weight}
+\item 
+\mbox{\Hypertarget{class_l_s_t_m___node_ad99e90d6fb339a17fbe437cf8723c40e}\label{class_l_s_t_m___node_ad99e90d6fb339a17fbe437cf8723c40e}} 
+\textbf{ vector}$<$ double $>$ {\bfseries d\+\_\+forget\+\_\+gate\+\_\+bias}
+\item 
+\mbox{\Hypertarget{class_l_s_t_m___node_a44a1d1fb77379e1e13c6a79bce066e9c}\label{class_l_s_t_m___node_a44a1d1fb77379e1e13c6a79bce066e9c}} 
+\textbf{ vector}$<$ double $>$ {\bfseries d\+\_\+cell\+\_\+weight}
+\item 
+\mbox{\Hypertarget{class_l_s_t_m___node_aef7404e8bf566f1b453da5b144c8198d}\label{class_l_s_t_m___node_aef7404e8bf566f1b453da5b144c8198d}} 
+\textbf{ vector}$<$ double $>$ {\bfseries d\+\_\+cell\+\_\+bias}
+\end{DoxyCompactItemize}
+\doxysubsection*{Friends}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{class_l_s_t_m___node_a6ed93c885e63e64a8aa0ab2b7f637f0e}\label{class_l_s_t_m___node_a6ed93c885e63e64a8aa0ab2b7f637f0e}} 
+class {\bfseries R\+N\+N\+\_\+\+Edge}
+\end{DoxyCompactItemize}
+\doxysubsection*{Additional Inherited Members}
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+rnn/lstm\+\_\+node.\+hxx\item 
+rnn/lstm\+\_\+node.\+cxx\end{DoxyCompactItemize}

@@ -1,0 +1,1114 @@
+[INFO    main                 ] 	                        ' stats, min: 0.000000, avg: 0.001545, max: 1.000000, min_change: -1.000000, max_change: 1.000000, std_dev: 0.039284, variance: 0.001543
+[INFO    main                 ] 	                        - stats, min: 0.000000, avg: 0.001545, max: 1.000000, min_change: -1.000000, max_change: 1.000000, std_dev: 0.039284, variance: 0.001543
+[INFO    main                 ] 	                        . stats, min: 0.000000, avg: 0.004119, max: 1.000000, min_change: -1.000000, max_change: 1.000000, std_dev: 0.064067, variance: 0.004105
+[INFO    main                 ] 	                        0 stats, min: 0.000000, avg: 0.000515, max: 1.000000, min_change: -1.000000, max_change: 1.000000, std_dev: 0.022692, variance: 0.000515
+[INFO    main                 ] 	                        1 stats, min: 0.000000, avg: 0.000515, max: 1.000000, min_change: -1.000000, max_change: 1.000000, std_dev: 0.022692, variance: 0.000515
+[INFO    main                 ] 	                        5 stats, min: 0.000000, avg: 0.000515, max: 1.000000, min_change: -1.000000, max_change: 1.000000, std_dev: 0.022692, variance: 0.000515
+[INFO    main                 ] 	                        9 stats, min: 0.000000, avg: 0.000515, max: 1.000000, min_change: -1.000000, max_change: 1.000000, std_dev: 0.022692, variance: 0.000515
+[INFO    main                 ] 	                        < stats, min: 0.000000, avg: 0.009784, max: 1.000000, min_change: -1.000000, max_change: 1.000000, std_dev: 0.098453, variance: 0.009693
+[INFO    main                 ] 	                    <eos> stats, min: 0.000000, avg: 0.008239, max: 1.000000, min_change: -1.000000, max_change: 1.000000, std_dev: 0.090417, variance: 0.008175
+[INFO    main                 ] 	                        > stats, min: 0.000000, avg: 0.009784, max: 1.000000, min_change: -1.000000, max_change: 1.000000, std_dev: 0.098453, variance: 0.009693
+[INFO    main                 ] 	                        N stats, min: 0.000000, avg: 0.004634, max: 1.000000, min_change: -1.000000, max_change: 1.000000, std_dev: 0.067936, variance: 0.004615
+[INFO    main                 ] 	                        _ stats, min: 0.000000, avg: 0.162204, max: 1.000000, min_change: -1.000000, max_change: 1.000000, std_dev: 0.368733, variance: 0.135964
+[INFO    main                 ] 	                        a stats, min: 0.000000, avg: 0.065396, max: 1.000000, min_change: -1.000000, max_change: 1.000000, std_dev: 0.247288, variance: 0.061151
+[INFO    main                 ] 	                        b stats, min: 0.000000, avg: 0.012358, max: 1.000000, min_change: -1.000000, max_change: 1.000000, std_dev: 0.110508, variance: 0.012212
+[INFO    main                 ] 	                        c stats, min: 0.000000, avg: 0.024202, max: 1.000000, min_change: -1.000000, max_change: 1.000000, std_dev: 0.153715, variance: 0.023628
+[INFO    main                 ] 	                        d stats, min: 0.000000, avg: 0.026777, max: 1.000000, min_change: -1.000000, max_change: 1.000000, std_dev: 0.161471, variance: 0.026073
+[INFO    main                 ] 	                        e stats, min: 0.000000, avg: 0.096807, max: 1.000000, min_change: -1.000000, max_change: 1.000000, std_dev: 0.295772, variance: 0.087481
+[INFO    main                 ] 	                        f stats, min: 0.000000, avg: 0.018538, max: 1.000000, min_change: -1.000000, max_change: 1.000000, std_dev: 0.134920, variance: 0.018203
+[INFO    main                 ] 	                        g stats, min: 0.000000, avg: 0.015448, max: 1.000000, min_change: -1.000000, max_change: 1.000000, std_dev: 0.123358, variance: 0.015217
+[INFO    main                 ] 	                        h stats, min: 0.000000, avg: 0.029351, max: 1.000000, min_change: -1.000000, max_change: 1.000000, std_dev: 0.168832, variance: 0.028504
+[INFO    main                 ] 	                        i stats, min: 0.000000, avg: 0.049949, max: 1.000000, min_change: -1.000000, max_change: 1.000000, std_dev: 0.217895, variance: 0.047478
+[INFO    main                 ] 	                        j stats, min: 0.000000, avg: 0.001545, max: 1.000000, min_change: -1.000000, max_change: 1.000000, std_dev: 0.039284, variance: 0.001543
+[INFO    main                 ] 	                        k stats, min: 0.000000, avg: 0.019567, max: 1.000000, min_change: -1.000000, max_change: 1.000000, std_dev: 0.138544, variance: 0.019194
+[INFO    main                 ] 	                        l stats, min: 0.000000, avg: 0.023687, max: 1.000000, min_change: -1.000000, max_change: 1.000000, std_dev: 0.152111, variance: 0.023138
+[INFO    main                 ] 	                        m stats, min: 0.000000, avg: 0.018538, max: 1.000000, min_change: -1.000000, max_change: 1.000000, std_dev: 0.134920, variance: 0.018203
+[INFO    main                 ] 	                        n stats, min: 0.000000, avg: 0.062307, max: 1.000000, min_change: -1.000000, max_change: 1.000000, std_dev: 0.241774, variance: 0.058455
+[INFO    main                 ] 	                        o stats, min: 0.000000, avg: 0.060247, max: 1.000000, min_change: -1.000000, max_change: 1.000000, std_dev: 0.238005, variance: 0.056647
+[INFO    main                 ] 	                        p stats, min: 0.000000, avg: 0.016478, max: 1.000000, min_change: -1.000000, max_change: 1.000000, std_dev: 0.127337, variance: 0.016215
+[INFO    main                 ] 	                        q stats, min: 0.000000, avg: 0.001030, max: 1.000000, min_change: -1.000000, max_change: 1.000000, std_dev: 0.032083, variance: 0.001029
+[INFO    main                 ] 	                        r stats, min: 0.000000, avg: 0.061792, max: 1.000000, min_change: -1.000000, max_change: 1.000000, std_dev: 0.240839, variance: 0.058004
+[INFO    main                 ] 	                        s stats, min: 0.000000, avg: 0.060247, max: 1.000000, min_change: -1.000000, max_change: 1.000000, std_dev: 0.238005, variance: 0.056647
+[INFO    main                 ] 	                        t stats, min: 0.000000, avg: 0.066426, max: 1.000000, min_change: -1.000000, max_change: 1.000000, std_dev: 0.249090, variance: 0.062046
+[INFO    main                 ] 	                        u stats, min: 0.000000, avg: 0.031411, max: 1.000000, min_change: -1.000000, max_change: 1.000000, std_dev: 0.174470, variance: 0.030440
+[INFO    main                 ] 	                        v stats, min: 0.000000, avg: 0.005664, max: 1.000000, min_change: -1.000000, max_change: 1.000000, std_dev: 0.075067, variance: 0.005635
+[INFO    main                 ] 	                        w stats, min: 0.000000, avg: 0.012873, max: 1.000000, min_change: -1.000000, max_change: 1.000000, std_dev: 0.112757, variance: 0.012714
+[INFO    main                 ] 	                        x stats, min: 0.000000, avg: 0.002575, max: 1.000000, min_change: -1.000000, max_change: 1.000000, std_dev: 0.050689, variance: 0.002569
+[INFO    main                 ] 	                        y stats, min: 0.000000, avg: 0.012358, max: 1.000000, min_change: -1.000000, max_change: 1.000000, std_dev: 0.110508, variance: 0.012212
+[INFO    main                 ] 	                        z stats, min: 0.000000, avg: 0.000515, max: 1.000000, min_change: -1.000000, max_change: 1.000000, std_dev: 0.022692, variance: 0.000515
+[INFO    main                 ] read time series '../datasets/pennchar/input.txt' with number rows: 1942
+[INFO    main                 ] 	                        ' stats, min: 0.000000, avg: 0.001545, max: 1.000000, min_change: -1.000000, max_change: 1.000000, std_dev: 0.039284, variance: 0.001543
+[INFO    main                 ] 	                        - stats, min: 0.000000, avg: 0.001545, max: 1.000000, min_change: -1.000000, max_change: 1.000000, std_dev: 0.039284, variance: 0.001543
+[INFO    main                 ] 	                        . stats, min: 0.000000, avg: 0.004119, max: 1.000000, min_change: -1.000000, max_change: 1.000000, std_dev: 0.064067, variance: 0.004105
+[INFO    main                 ] 	                        0 stats, min: 0.000000, avg: 0.000515, max: 1.000000, min_change: -1.000000, max_change: 1.000000, std_dev: 0.022692, variance: 0.000515
+[INFO    main                 ] 	                        1 stats, min: 0.000000, avg: 0.000515, max: 1.000000, min_change: -1.000000, max_change: 1.000000, std_dev: 0.022692, variance: 0.000515
+[INFO    main                 ] 	                        5 stats, min: 0.000000, avg: 0.000515, max: 1.000000, min_change: -1.000000, max_change: 1.000000, std_dev: 0.022692, variance: 0.000515
+[INFO    main                 ] 	                        9 stats, min: 0.000000, avg: 0.000515, max: 1.000000, min_change: -1.000000, max_change: 1.000000, std_dev: 0.022692, variance: 0.000515
+[INFO    main                 ] 	                        < stats, min: 0.000000, avg: 0.009784, max: 1.000000, min_change: -1.000000, max_change: 1.000000, std_dev: 0.098453, variance: 0.009693
+[INFO    main                 ] 	                    <eos> stats, min: 0.000000, avg: 0.008239, max: 1.000000, min_change: -1.000000, max_change: 1.000000, std_dev: 0.090417, variance: 0.008175
+[INFO    main                 ] 	                        > stats, min: 0.000000, avg: 0.009784, max: 1.000000, min_change: -1.000000, max_change: 1.000000, std_dev: 0.098453, variance: 0.009693
+[INFO    main                 ] 	                        N stats, min: 0.000000, avg: 0.004634, max: 1.000000, min_change: -1.000000, max_change: 1.000000, std_dev: 0.067936, variance: 0.004615
+[INFO    main                 ] 	                        _ stats, min: 0.000000, avg: 0.162204, max: 1.000000, min_change: -1.000000, max_change: 1.000000, std_dev: 0.368733, variance: 0.135964
+[INFO    main                 ] 	                        a stats, min: 0.000000, avg: 0.065396, max: 1.000000, min_change: -1.000000, max_change: 1.000000, std_dev: 0.247288, variance: 0.061151
+[INFO    main                 ] 	                        b stats, min: 0.000000, avg: 0.012358, max: 1.000000, min_change: -1.000000, max_change: 1.000000, std_dev: 0.110508, variance: 0.012212
+[INFO    main                 ] 	                        c stats, min: 0.000000, avg: 0.024202, max: 1.000000, min_change: -1.000000, max_change: 1.000000, std_dev: 0.153715, variance: 0.023628
+[INFO    main                 ] 	                        d stats, min: 0.000000, avg: 0.026777, max: 1.000000, min_change: -1.000000, max_change: 1.000000, std_dev: 0.161471, variance: 0.026073
+[INFO    main                 ] 	                        e stats, min: 0.000000, avg: 0.096807, max: 1.000000, min_change: -1.000000, max_change: 1.000000, std_dev: 0.295772, variance: 0.087481
+[INFO    main                 ] 	                        f stats, min: 0.000000, avg: 0.018538, max: 1.000000, min_change: -1.000000, max_change: 1.000000, std_dev: 0.134920, variance: 0.018203
+[INFO    main                 ] 	                        g stats, min: 0.000000, avg: 0.015448, max: 1.000000, min_change: -1.000000, max_change: 1.000000, std_dev: 0.123358, variance: 0.015217
+[INFO    main                 ] 	                        h stats, min: 0.000000, avg: 0.029351, max: 1.000000, min_change: -1.000000, max_change: 1.000000, std_dev: 0.168832, variance: 0.028504
+[INFO    main                 ] 	                        i stats, min: 0.000000, avg: 0.049949, max: 1.000000, min_change: -1.000000, max_change: 1.000000, std_dev: 0.217895, variance: 0.047478
+[INFO    main                 ] 	                        j stats, min: 0.000000, avg: 0.001545, max: 1.000000, min_change: -1.000000, max_change: 1.000000, std_dev: 0.039284, variance: 0.001543
+[INFO    main                 ] 	                        k stats, min: 0.000000, avg: 0.019567, max: 1.000000, min_change: -1.000000, max_change: 1.000000, std_dev: 0.138544, variance: 0.019194
+[INFO    main                 ] 	                        l stats, min: 0.000000, avg: 0.023687, max: 1.000000, min_change: -1.000000, max_change: 1.000000, std_dev: 0.152111, variance: 0.023138
+[INFO    main                 ] 	                        m stats, min: 0.000000, avg: 0.018538, max: 1.000000, min_change: -1.000000, max_change: 1.000000, std_dev: 0.134920, variance: 0.018203
+[INFO    main                 ] 	                        n stats, min: 0.000000, avg: 0.062307, max: 1.000000, min_change: -1.000000, max_change: 1.000000, std_dev: 0.241774, variance: 0.058455
+[INFO    main                 ] 	                        o stats, min: 0.000000, avg: 0.060247, max: 1.000000, min_change: -1.000000, max_change: 1.000000, std_dev: 0.238005, variance: 0.056647
+[INFO    main                 ] 	                        p stats, min: 0.000000, avg: 0.016478, max: 1.000000, min_change: -1.000000, max_change: 1.000000, std_dev: 0.127337, variance: 0.016215
+[INFO    main                 ] 	                        q stats, min: 0.000000, avg: 0.001030, max: 1.000000, min_change: -1.000000, max_change: 1.000000, std_dev: 0.032083, variance: 0.001029
+[INFO    main                 ] 	                        r stats, min: 0.000000, avg: 0.061792, max: 1.000000, min_change: -1.000000, max_change: 1.000000, std_dev: 0.240839, variance: 0.058004
+[INFO    main                 ] 	                        s stats, min: 0.000000, avg: 0.060247, max: 1.000000, min_change: -1.000000, max_change: 1.000000, std_dev: 0.238005, variance: 0.056647
+[INFO    main                 ] 	                        t stats, min: 0.000000, avg: 0.066426, max: 1.000000, min_change: -1.000000, max_change: 1.000000, std_dev: 0.249090, variance: 0.062046
+[INFO    main                 ] 	                        u stats, min: 0.000000, avg: 0.031411, max: 1.000000, min_change: -1.000000, max_change: 1.000000, std_dev: 0.174470, variance: 0.030440
+[INFO    main                 ] 	                        v stats, min: 0.000000, avg: 0.005664, max: 1.000000, min_change: -1.000000, max_change: 1.000000, std_dev: 0.075067, variance: 0.005635
+[INFO    main                 ] 	                        w stats, min: 0.000000, avg: 0.012873, max: 1.000000, min_change: -1.000000, max_change: 1.000000, std_dev: 0.112757, variance: 0.012714
+[INFO    main                 ] 	                        x stats, min: 0.000000, avg: 0.002575, max: 1.000000, min_change: -1.000000, max_change: 1.000000, std_dev: 0.050689, variance: 0.002569
+[INFO    main                 ] 	                        y stats, min: 0.000000, avg: 0.012358, max: 1.000000, min_change: -1.000000, max_change: 1.000000, std_dev: 0.110508, variance: 0.012212
+[INFO    main                 ] 	                        z stats, min: 0.000000, avg: 0.000515, max: 1.000000, min_change: -1.000000, max_change: 1.000000, std_dev: 0.022692, variance: 0.000515
+[INFO    main                 ] read time series '../datasets/pennchar/input.txt' with number rows: 1942
+word_offset:: -1
+training
+word_offset:: 1
+testing
+486 
+486 38 4
+486 
+486 38 4
+word_offset:: -1
+training
+word_offset:: 1
+testing
+486 
+486 38 4
+486 
+486 38 4
+[INFO    main                 ] exported word series.
+[INFO    main                 ] The size of the input is :: 486,38,4 
+[INFO    main                 ] number_inputs: 38, number_outputs: 38
+[INFO    main                 ] weight initialize: random
+[INFO    main                 ] weight inheritance: lamarckian 
+[INFO    main                 ] mutated component weight: lamarckian
+[INFO    main                 ] Speciation method is: "" (Default is the island-based speciation strategy).
+[INFO    main                 ] generating new genome for island[0], island_size: 0, max_island_size: 2, mutation_rate: 0.700000, intra_island_crossover_rate: 0.900000, inter_island_crossover_rate: 1.000000
+[INFO    main                 ] island is initializing!
+[INFO    main                 ] inserting genome to island: 0
+[INFO    main                 ] inserting genome with fitness: UNEVAL to island 0
+[INFO    main                 ] created copy to insert to island: 0
+[INFO    main                 ] inserting genome at index: 0
+[INFO    main                 ] adding to structure_map[2926_1043290_0] : 0x7f52a02cfac8
+[INFO    main                 ] new best fitness for island: 0!
+[INFO    main                 ] genomes.size(): 1, max_size: 2, status: 0
+[INFO    main                 ] generating new genome for island[0], island_size: 1, max_island_size: 2, mutation_rate: 0.700000, intra_island_crossover_rate: 0.900000, inter_island_crossover_rate: 1.000000
+[INFO    main                 ] island is initializing!
+[INFO    main                 ] island is not empty, mutating a random genome
+[INFO    main                 ] generating new genome by mutation.
+[INFO    main                 ] inserting genome to island: 0
+[INFO    main                 ] inserting genome with fitness: UNEVAL to island 0
+[INFO    main                 ] potential duplicate for hash '2926_1043290_0', had 1 potential matches.
+[INFO    main                 ] on potential match 0 of 1
+[INFO    main                 ] created copy to insert to island: 0
+[INFO    main                 ] inserting genome at index: 1
+[INFO    main                 ] adding to structure_map[2926_1043290_0] : 0x7f529f2cdac8
+[INFO    main                 ] genomes.size(): 2, max_size: 2, status: 1
+[INFO    main                 ] generating new genome for island[0], island_size: 2, max_island_size: 2, mutation_rate: 0.700000, intra_island_crossover_rate: 0.900000, inter_island_crossover_rate: 1.000000
+[INFO    main                 ] island is full
+[INFO    main                 ] performing mutation
+[INFO    main                 ] generating new genome by mutation.
+[INFO    main                 ] 	attempting to merge a node!
+[INFO    main                 ] 	attempting to disable a node!
+[INFO    main                 ] 	disabling node 6 at depth 0.000000
+[INFO    main                 ] generating new genome for island[1], island_size: 0, max_island_size: 2, mutation_rate: 0.700000, intra_island_crossover_rate: 0.900000, inter_island_crossover_rate: 1.000000
+[INFO    main                 ] island is initializing!
+[INFO    main                 ] inserting genome to island: 1
+[INFO    main                 ] inserting genome with fitness: UNEVAL to island 1
+[INFO    main                 ] created copy to insert to island: 1
+[INFO    main                 ] inserting genome at index: 0
+[INFO    main                 ] adding to structure_map[2926_1043290_0] : 0x7f5296accac8
+[INFO    main                 ] new best fitness for island: 1!
+[INFO    main                 ] genomes.size(): 1, max_size: 2, status: 0
+[INFO    main                 ] generating new genome for island[1], island_size: 1, max_island_size: 2, mutation_rate: 0.700000, intra_island_crossover_rate: 0.900000, inter_island_crossover_rate: 1.000000
+[INFO    main                 ] island is initializing!
+[INFO    main                 ] island is not empty, mutating a random genome
+[INFO    main                 ] generating new genome by mutation.
+[INFO    main                 ] inserting genome to island: 1
+[INFO    main                 ] inserting genome with fitness: UNEVAL to island 1
+[INFO    main                 ] created copy to insert to island: 1
+[INFO    main                 ] inserting genome at index: 1
+[INFO    main                 ] adding to structure_map[2926_1041910_0] : 0x7f529eaccac8
+[INFO    main                 ] genomes.size(): 2, max_size: 2, status: 1
+[INFO    main                 ] generating new genome for island[1], island_size: 2, max_island_size: 2, mutation_rate: 0.700000, intra_island_crossover_rate: 0.900000, inter_island_crossover_rate: 1.000000
+[INFO    main                 ] island is full
+[INFO    main                 ] performing mutation
+[INFO    main                 ] generating new genome by mutation.
+[INFO    main                 ] 	attempting to add edge!
+[INFO    main                 ] 	reachable_nodes.size(): 76
+[INFO    main                 ] 	selected first node 7 with depth 845
+[INFO    main                 ] 	reachable_nodes.size(): 38
+[INFO    main                 ] 	selected second node 48 with depth 4628
+[INFO    main                 ] 	adding edge between nodes 7 and 48
+[INFO    main                 ] 	edge already exists, not adding.
+[INFO    main                 ] 	attempting to disable a node!
+[INFO    main                 ] 	disabling node 26 at depth 0.000000
+[INFO    main                 ] generating new genome for island[0], island_size: 2, max_island_size: 2, mutation_rate: 0.700000, intra_island_crossover_rate: 0.900000, inter_island_crossover_rate: 1.000000
+[INFO    main                 ] island is full
+[INFO    main                 ] performing mutation
+[INFO    main                 ] generating new genome by mutation.
+[INFO    main                 ] 	attempting to add a node!
+[INFO    main                 ] 	add node, split depth: 0.201243, max_inputs: 21, max_outputs: 1
+[INFO    main                 ] 	add node recurrent probability: 0.000000
+[INFO    main                 ] CREATING NODE, type: 'simple'
+[INFO    main                 ] 	adding edge between nodes 9 and 78
+[INFO    main                 ] 	adding edge between nodes 9 and 78, new edge weight: -0.156685
+[INFO    main                 ] 	adding edge between nodes 30 and 78
+[INFO    main                 ] 	adding edge between nodes 30 and 78, new edge weight: -0.152126
+[INFO    main                 ] 	adding edge between nodes 20 and 78
+[INFO    main                 ] 	adding edge between nodes 20 and 78, new edge weight: 0.040005
+[INFO    main                 ] 	adding edge between nodes 3 and 78
+[INFO    main                 ] 	adding edge between nodes 3 and 78, new edge weight: 0.366074
+[INFO    main                 ] 	adding edge between nodes 4 and 78
+[INFO    main                 ] 	adding edge between nodes 4 and 78, new edge weight: -0.179001
+[INFO    main                 ] 	adding edge between nodes 6 and 78
+[INFO    main                 ] 	adding edge between nodes 6 and 78, new edge weight: -0.483166
+[INFO    main                 ] 	adding edge between nodes 38 and 78
+[INFO    main                 ] 	adding edge between nodes 38 and 78, new edge weight: 0.472341
+[INFO    main                 ] 	adding edge between nodes 14 and 78
+[INFO    main                 ] 	adding edge between nodes 14 and 78, new edge weight: -0.011813
+[INFO    main                 ] 	adding edge between nodes 17 and 78
+[INFO    main                 ] 	adding edge between nodes 17 and 78, new edge weight: 0.147622
+[INFO    main                 ] 	adding edge between nodes 18 and 78
+[INFO    main                 ] 	adding edge between nodes 18 and 78, new edge weight: 0.224630
+[INFO    main                 ] 	adding edge between nodes 1 and 78
+[INFO    main                 ] 	adding edge between nodes 1 and 78, new edge weight: 0.134234
+[INFO    main                 ] 	adding edge between nodes 22 and 78
+[INFO    main                 ] 	adding edge between nodes 22 and 78, new edge weight: 0.006210
+[INFO    main                 ] 	adding edge between nodes 23 and 78
+[INFO    main                 ] 	adding edge between nodes 23 and 78, new edge weight: 0.244998
+[INFO    main                 ] 	adding edge between nodes 25 and 78
+[INFO    main                 ] 	adding edge between nodes 25 and 78, new edge weight: -0.243366
+[INFO    main                 ] 	adding edge between nodes 28 and 78
+[INFO    main                 ] 	adding edge between nodes 28 and 78, new edge weight: -0.387377
+[INFO    main                 ] 	adding edge between nodes 31 and 78
+[INFO    main                 ] 	adding edge between nodes 31 and 78, new edge weight: 0.263492
+[INFO    main                 ] 	adding edge between nodes 32 and 78
+[INFO    main                 ] 	adding edge between nodes 32 and 78, new edge weight: -0.058932
+[INFO    main                 ] 	adding edge between nodes 34 and 78
+[INFO    main                 ] 	adding edge between nodes 34 and 78, new edge weight: -0.080912
+[INFO    main                 ] 	adding edge between nodes 36 and 78
+[INFO    main                 ] 	adding edge between nodes 36 and 78, new edge weight: 0.267297
+[INFO    main                 ] 	adding edge between nodes 37 and 78
+[INFO    main                 ] 	adding edge between nodes 37 and 78, new edge weight: -0.383394
+[INFO    main                 ] 	adding edge between nodes 19 and 78
+[INFO    main                 ] 	adding edge between nodes 19 and 78, new edge weight: -0.025244
+[INFO    main                 ] 	adding edge between nodes 78 and 60
+[INFO    main                 ] 	adding edge between nodes 78 and 60, new edge weight: -0.278417
+[INFO    main                 ] generating new genome for island[1], island_size: 2, max_island_size: 2, mutation_rate: 0.700000, intra_island_crossover_rate: 0.900000, inter_island_crossover_rate: 1.000000
+[INFO    main                 ] island is full
+[INFO    main                 ] performing intra-island crossover
+[INFO    main                 ] generating new genome for island[0], island_size: 2, max_island_size: 2, mutation_rate: 0.700000, intra_island_crossover_rate: 0.900000, inter_island_crossover_rate: 1.000000
+[INFO    main                 ] island is full
+[INFO    main                 ] performing intra-island crossover
+[INFO    genome_4_thread_3    ] iteration          0, mse: 7733.529611, v_mse:  15.912612, bv_mse:  15.912612, lr: 0.000002, norm: 1686668.297044, p_norm: 127.667555, v_norm: 0.000000, OVER THRESHOLD, multiplier: 0.000013
+[INFO    genome_7_thread_4    ] iteration          0, mse: 7326.705177, v_mse:  15.075525, bv_mse:  15.075525, lr: 0.000002, norm: 1689712.887290, p_norm: 128.151778, v_norm: 0.000000, OVER THRESHOLD, multiplier: 0.000013
+[INFO    genome_6_thread_2    ] iteration          0, mse: 7340.652115, v_mse:  15.104222, bv_mse:  15.104222, lr: 0.000002, norm: 1557641.165275, p_norm: 128.151778, v_norm: 0.000000, OVER THRESHOLD, multiplier: 0.000014
+[INFO    genome_9_thread_5    ] iteration          0, mse: 7386.622085, v_mse:  15.198811, bv_mse:  15.198811, lr: 0.000002, norm: 1779943.389892, p_norm: 130.303026, v_norm: 0.000000, OVER THRESHOLD, multiplier: 0.000012
+[INFO    genome_2_thread_1    ] iteration          0, mse: 7326.705177, v_mse:  15.075525, bv_mse:  15.075525, lr: 0.000002, norm: 1689712.887290, p_norm: 128.151778, v_norm: 0.000000, OVER THRESHOLD, multiplier: 0.000013
+[INFO    genome_12_thread_7   ] iteration          0, mse: 7363.670893, v_mse:  15.151586, bv_mse:  15.151586, lr: 0.000002, norm: 1540645.237973, p_norm: 129.563464, v_norm: 0.000000, OVER THRESHOLD, multiplier: 0.000014
+[INFO    genome_14_thread_0   ] iteration          0, mse: 7238.272640, v_mse:  14.893565, bv_mse:  14.893565, lr: 0.000002, norm: 1706117.844996, p_norm: 153.730517, v_norm: 0.000000, OVER THRESHOLD, multiplier: 0.000013
+[INFO    genome_4_thread_3    ] iteration          1, mse: 6298.940161, v_mse:  12.960782, bv_mse:  12.960782, lr: 0.000002, norm: 606591.629021, p_norm: 158.816187, v_norm: 3.470511, OVER THRESHOLD, multiplier: 0.000036
+[INFO    genome_11_thread_6   ] iteration          0, mse: 7098.992183, v_mse:  14.606980, bv_mse:  14.606980, lr: 0.000002, norm: 1522644.952689, p_norm: 125.784153, v_norm: 0.000000, OVER THRESHOLD, multiplier: 0.000014
+[INFO    genome_13_thread_8   ] iteration          0, mse: 6802.457521, v_mse:  13.996826, bv_mse:  13.996826, lr: 0.000002, norm: 1200348.173889, p_norm: 148.500648, v_norm: 0.000000, OVER THRESHOLD, multiplier: 0.000018
+[INFO    genome_7_thread_4    ] iteration          1, mse: 6327.792787, v_mse:  13.020150, bv_mse:  13.020150, lr: 0.000002, norm: 613568.932167, p_norm: 162.464627, v_norm: 3.476775, OVER THRESHOLD, multiplier: 0.000036
+[INFO    genome_6_thread_2    ] iteration          1, mse: 6330.032413, v_mse:  13.024758, bv_mse:  13.024758, lr: 0.000002, norm: 539654.215121, p_norm: 156.808846, v_norm: 3.205023[INFO    main                 ] inserting genome to island: 0
+[INFO    main                 ] inserting genome with fitness: 12.960782 to island 0
+[INFO    main                 ] potential duplicate for hash '2926_1043290_0', had 2 potential matches.
+[INFO    main                 ] on potential match 0 of 2
+[INFO    main                 ] on potential match 1 of 2
+[INFO    main                 ] created copy to insert to island: 0
+[INFO    main                 ] inserting genome at index: 0
+[INFO    main                 ] adding to structure_map[2926_1043290_0] : 0x7f529f2cdb48
+[INFO    main                 ] new best fitness for island: 0!
+[INFO    main                 ] genomes.size(): 3, max_size: 2, status: 1
+[INFO    main                 ] checking to remove worst from structure_map - &worst: 0x7f52900d1ad0, &(*potential_match): 0x7f52980d1ad0
+[INFO    main                 ] checking to remove worst from structure_map - &worst: 0x7f52900d1ad0, &(*potential_match): 0x7f52900d1ad0
+[INFO    main                 ] potential_matches.size() before erase: 3
+[INFO    main                 ] potential_matches.size() after erase: 2
+[INFO    main                 ] structure_map[2926_1043290_0].size() after erase: 2
+[INFO    main                 ] checking to remove worst from structure_map - &worst: 0x7f52900d1ad0, &(*potential_match): 0x7f521fde8970
+, OVER THRESHOLD, multiplier: 0.000041
+[INFO    main                 ] Islands: 
+[INFO    main                 ] Island 0:
+[INFO    main                 ] 		MSE         MAE         Edges       Rec Edges   Simple      Jordan      Elman       UGRNN       MGU         GRU         Delta       LSTM        ENARC       ENAS_DAG    RANDOM_DAG  Total       Generated
+[INFO    main                 ] 		12.960782   24.488416   1444 (1444) 0 (0)       0 (76)                                                                                                                              76 (76)     [clone:1]
+[INFO    main                 ] 		UNEVAL      UNEVAL      1444 (1444) 0 (0)       0 (76)                                                                                                                              76 (76)     [initial:1]
+[INFO    main                 ] Island 1:
+[INFO    main                 ] 		MSE         MAE         Edges       Rec Edges   Simple      Jordan      Elman       UGRNN       MGU         GRU         Delta       LSTM        ENARC       ENAS_DAG    RANDOM_DAG  Total       Generated
+[INFO    main                 ] 		UNEVAL      UNEVAL      1444 (1444) 0 (0)       0 (76)                                                                                                                              76 (76)     [initial:1]
+[INFO    main                 ] 		UNEVAL      UNEVAL      1443 (1444) 0 (0)       0 (76)                                                                                                                              76 (76)     [disable_edge:1]
+[INFO    main                 ] generating new genome for island[1], island_size: 2, max_island_size: 2, mutation_rate: 0.700000, intra_island_crossover_rate: 0.900000, inter_island_crossover_rate: 1.000000
+[INFO    main                 ] island is full
+[INFO    main                 ] performing intra-island crossover
+[INFO    main                 ] inserting genome to island: 1
+[INFO    main                 ] inserting genome with fitness: 13.020150 to island 1
+[INFO    main                 ] potential duplicate for hash '2926_1043290_0', had 1 potential matches.
+[INFO    main                 ] on potential match 0 of 1
+[INFO    main                 ] REPLACING DUPLICATE GENOME, fitness of genome in search: UNEVAL, new fitness: 13.020150
+[INFO    main                 ] duplicate_genome_iterator: 0x7f528c08a700, (*potential_match): 0x7f528c08a700
+[INFO    main                 ] potential_match->get_fitness(): 10000000.000000, duplicate_genome_iterator->get_fitness(): 10000000.000000, new_fitness: 13.020150
+[INFO    main                 ] duplicate_genome_index: 0
+[INFO    main                 ] potential_matches.size() before erase: 1
+[INFO    main                 ] potential_matches.size() after erase: 0
+[INFO    main                 ] structure_map[2926_1043290_0].size() after erase: 0
+[INFO    main                 ] deleting the potential_matches vector for hash '2926_1043290_0' because it was empty.
+[INFO    genome_9_thread_5    ] iteration          1, mse: 6232.487039, v_mse:  12.824047, bv_mse:  12.824047, lr: 0.000002, norm: 527931.122526, p_norm: 170.004606, v_norm: 3.662435, OVER THRESHOLD, multiplier: 0.000042
+[INFO    main                 ] created copy to insert to island: 1
+[INFO    main                 ] inserting genome at index: 0
+[INFO    main                 ] adding to structure_map[2926_1043290_0] : 0x7f5296accb48
+[INFO    main                 ] new best fitness for island: 1!
+[INFO    main                 ] genomes.size(): 2, max_size: 2, status: 1
+[INFO    main                 ] Islands: 
+[INFO    main                 ] Island 0:
+[INFO    main                 ] 		MSE         MAE         Edges       Rec Edges   Simple      Jordan      Elman       UGRNN       MGU         GRU         Delta       LSTM        ENARC       ENAS_DAG    RANDOM_DAG  Total       Generated
+[INFO    main                 ] 		12.960782   24.488416   1444 (1444) 0 (0)       0 (76)                                                                                                                              76 (76)     [clone:1]
+[INFO    main                 ] 		UNEVAL      UNEVAL      1444 (1444) 0 (0)       0 (76)                                                                                                                              76 (76)     [initial:1]
+[INFO    main                 ] Island 1:
+[INFO    main                 ] 		MSE         MAE         Edges       Rec Edges   Simple      Jordan      Elman       UGRNN       MGU         GRU         Delta       LSTM        ENARC       ENAS_DAG    RANDOM_DAG  Total       Generated
+[INFO    main                 ] 		13.020150   23.667082   1444 (1444) 0 (0)       0 (76)                                                                                                                              76 (76)     [initial:1]
+[INFO    main                 ] 		UNEVAL      UNEVAL      1443 (1444) 0 (0)       0 (76)                                                                                                                              76 (76)     [disable_edge:1]
+[INFO    main                 ] generating new genome for island[0], island_size: 2, max_island_size: 2, mutation_rate: 0.700000, intra_island_crossover_rate: 0.900000, inter_island_crossover_rate: 1.000000
+[INFO    main                 ] island is full
+[INFO    main                 ] performing mutation
+[INFO    main                 ] generating new genome by mutation.
+[INFO    main                 ] 	attempting to add a node!
+[INFO    main                 ] 	add node, split depth: 0.560641, max_inputs: 21, max_outputs: 8
+[INFO    main                 ] 	add node recurrent probability: 0.000000
+[INFO    main                 ] CREATING NODE, type: 'simple'
+[INFO    main                 ] 	adding edge between nodes 9 and 79
+[INFO    main                 ] 	adding edge between nodes 9 and 79, new edge weight: -0.035635
+[INFO    main                 ] 	adding edge between nodes 11 and 79
+[INFO    main                 ] 	adding edge between nodes 11 and 79, new edge weight: -0.262195
+[INFO    main                 ] 	adding edge between nodes 30 and 79
+[INFO    main                 ] 	adding edge between nodes 30 and 79, new edge weight: -0.310779
+[INFO    main                 ] 	adding edge between nodes 20 and 79
+[INFO    main                 ] 	adding edge between nodes 20 and 79, new edge weight: 0.308397
+[INFO    main                 ] 	adding edge between nodes 3 and 79
+[INFO    main                 ] 	adding edge between nodes 3 and 79, new edge weight: -0.131418
+[INFO    main                 ] 	adding edge between nodes 8 and 79
+[INFO    main                 ] 	adding edge between nodes 8 and 79, new edge weight: -0.505568
+[INFO    main                 ] 	adding edge between nodes 38 and 79
+[INFO    main                 ] 	adding edge between nodes 38 and 79, new edge weight: -0.020145
+[INFO    main                 ] 	adding edge between nodes 16 and 79
+[INFO    main                 ] 	adding edge between nodes 16 and 79, new edge weight: 0.221037
+[INFO    main                 ] 	adding edge between nodes 17 and 79
+[INFO    main                 ] 	adding edge between nodes 17 and 79, new edge weight: -0.243482
+[INFO    main                 ] 	adding edge between nodes 18 and 79
+[INFO    main                 ] 	adding edge between nodes 18 and 79, new edge weight: 0.110130
+[INFO    main                 ] 	adding edge between nodes 21 and 79
+[INFO    main                 ] 	adding edge between nodes 21 and 79, new edge weight: -0.159293
+[INFO    main                 ] 	adding edge between nodes 29 and 79
+[INFO    main                 ] 	adding edge between nodes 29 and 79, new edge weight: 0.361482
+[INFO    main                 ] 	adding edge between nodes 10 and 79
+[INFO    main                 ] 	adding edge between nodes 10 and 79, new edge weight: 0.113179
+[INFO    main                 ] 	adding edge between nodes 1 and 79
+[INFO    main                 ] 	adding edge between nodes 1 and 79, new edge weight: -0.250825
+[INFO    main                 ] 	adding edge between nodes 22 and 79
+[INFO    main                 ] 	adding edge between nodes 22 and 79, new edge weight: -0.022429
+[INFO    main                 ] 	adding edge between nodes 24 and 79
+[INFO    main                 ] 	adding edge between nodes 24 and 79, new edge weight: -0.191066
+[INFO    main                 ] 	adding edge between nodes 26 and 79
+[INFO    main                 ] 	adding edge between nodes 26 and 79, new edge weight: -0.449681
+[INFO    main                 ] 	adding edge between nodes 28 and 79
+[INFO    main                 ] 	adding edge between nodes 28 and 79, new edge weight: 0.247844
+[INFO    main                 ] 	adding edge between nodes 31 and 79
+[INFO    main                 ] 	adding edge between nodes 31 and 79, new edge weight: -0.409950
+[INFO    main                 ] 	adding edge between nodes 32 and 79
+[INFO    main                 ] 	adding edge between nodes 32 and 79, new edge weight: -0.033563
+[INFO    main                 ] 	adding edge between nodes 37 and 79
+[INFO    main                 ] 	adding edge between nodes 37 and 79, new edge weight: 0.562051
+[INFO    main                 ] 	adding edge between nodes 79 and 42
+[INFO    main                 ] 	adding edge between nodes 79 and 42, new edge weight: 0.079454
+[INFO    main                 ] 	adding edge between nodes 79 and 47
+[INFO    main                 ] 	adding edge between nodes 79 and 47, new edge weight: -0.221006
+[INFO    main                 ] 	adding edge between nodes 79 and 51
+[INFO    main                 ] 	adding edge between nodes 79 and 51, new edge weight: 0.098147
+[INFO    main                 ] 	adding edge between nodes 79 and 52
+[INFO    main                 ] 	adding edge between nodes 79 and 52, new edge weight: -0.286536
+[INFO    main                 ] 	adding edge between nodes 79 and 54
+[INFO    main                 ] 	adding edge between nodes 79 and 54, new edge weight: 0.050287
+[INFO    main                 ] 	adding edge between nodes 79 and 62
+[INFO    main                 ] 	adding edge between nodes 79 and 62, new edge weight: 0.677715
+[INFO    main                 ] 	adding edge between nodes 79 and 64
+[INFO    main                 ] 	adding edge between nodes 79 and 64, new edge weight: 0.669388
+[INFO    main                 ] 	adding edge between nodes 79 and 69
+[INFO    main                 ] 	adding edge between nodes 79 and 69, new edge weight: -0.773083
+[INFO    main                 ] inserting genome to island: 0
+[INFO    main                 ] inserting genome with fitness: 13.024758 to island 0
+[INFO    main                 ] created copy to insert to island: 0
+[INFO    main                 ] inserting genome at index: 1
+[INFO    main                 ] adding to structure_map[2920_1016348_0] : 0x7f529faceb48
+[INFO    main                 ] genomes.size(): 3, max_size: 2, status: 1
+[INFO    main                 ] checking to remove worst from structure_map - &worst: 0x7f52980d1ad0, &(*potential_match): 0x7f52980d1ad0
+[INFO    main                 ] potential_matches.size() before erase: 2
+[INFO    main                 ] potential_matches.size() after erase: 1
+[INFO    main                 ] structure_map[2926_1043290_0].size() after erase: 1
+[INFO    main                 ] checking to remove worst from structure_map - &worst: 0x7f52980d1ad0, &(*potential_match): 0x7f521fde8970
+[INFO    main                 ] Islands: 
+[INFO    main                 ] Island 0:
+[INFO    main                 ] 		MSE         MAE         Edges       Rec Edges   Simple      Jordan      Elman       UGRNN       MGU         GRU         Delta       LSTM        ENARC       ENAS_DAG    RANDOM_DAG  Total       Generated
+[INFO    main                 ] 		12.960782   24.488416   1444 (1444) 0 (0)       0 (76)                                                                                                                              76 (76)     [clone:1]
+[INFO    main                 ] 		13.024758   23.115156   1444 (1444) 0 (0)       0 (76)                                                                                                                              75 (76)     [disable_node:1]
+[INFO    main                 ] Island 1:
+[INFO    main                 ] 		MSE         MAE         Edges       Rec Edges   Simple      Jordan      Elman       UGRNN       MGU         GRU         Delta       LSTM        ENARC       ENAS_DAG    RANDOM_DAG  Total       Generated
+[INFO    main                 ] 		13.020150   23.667082   1444 (1444) 0 (0)       0 (76)                                                                                                                              76 (76)     [initial:1]
+[INFO    main                 ] 		UNEVAL      UNEVAL      1443 (1444) 0 (0)       0 (76)                                                                                                                              76 (76)     [disable_edge:1]
+[INFO    main                 ] generating new genome for island[1], island_size: 2, max_island_size: 2, mutation_rate: 0.700000, intra_island_crossover_rate: 0.900000, inter_island_crossover_rate: 1.000000
+[INFO    main                 ] island is full
+[INFO    main                 ] performing intra-island crossover
+[INFO    genome_2_thread_1    ] iteration          1, mse: 6327.792787, v_mse:  13.020150, bv_mse:  13.020150, lr: 0.000002, norm: 613568.932167, p_norm: 162.464627, v_norm: 3.476775, OVER THRESHOLD, multiplier: 0.000036
+[INFO    genome_12_thread_7   ] iteration          1, mse: 6330.648142, v_mse:  13.026025, bv_mse:  13.026025, lr: 0.000002, norm: 543161.125093, p_norm: 156.190941, v_norm: 3.170052, OVER THRESHOLD, multiplier: 0.000041
+[INFO    main                 ] inserting genome to island: 1
+[INFO    main                 ] inserting genome with fitness: 12.824047 to island 1
+[INFO    main                 ] potential duplicate for hash '2926_1041910_0', had 1 potential matches.
+[INFO    main                 ] on potential match 0 of 1
+[INFO    main                 ] created copy to insert to island: 1
+[INFO    main                 ] inserting genome at index: 0
+[INFO    main                 ] adding to structure_map[2926_1041910_0] : 0x7f529eaccb48
+[INFO    main                 ] new best fitness for island: 1!
+[INFO    main                 ] genomes.size(): 3, max_size: 2, status: 1
+[INFO    main                 ] checking to remove worst from structure_map - &worst: 0x7f52800d1ad0, &(*potential_match): 0x7f52800d1ad0
+[INFO    main                 ] potential_matches.size() before erase: 2
+[INFO    main                 ] potential_matches.size() after erase: 1
+[INFO    main                 ] structure_map[2926_1041910_0].size() after erase: 1
+[INFO    main                 ] checking to remove worst from structure_map - &worst: 0x7f52800d1ad0, &(*potential_match): 0x7f50686cc090
+[INFO    main                 ] Islands: 
+[INFO    main                 ] Island 0:
+[INFO    main                 ] 		MSE         MAE         Edges       Rec Edges   Simple      Jordan      Elman       UGRNN       MGU         GRU         Delta       LSTM        ENARC       ENAS_DAG    RANDOM_DAG  Total       Generated
+[INFO    main                 ] 		12.960782   24.488416   1444 (1444) 0 (0)       0 (76)                                                                                                                              76 (76)     [clone:1]
+[INFO    main                 ] 		13.024758   23.115156   1444 (1444) 0 (0)       0 (76)                                                                                                                              75 (76)     [disable_node:1]
+[INFO    main                 ] Island 1:
+[INFO    main                 ] 		MSE         MAE         Edges       Rec Edges   Simple      Jordan      Elman       UGRNN       MGU         GRU         Delta       LSTM        ENARC       ENAS_DAG    RANDOM_DAG  Total       Generated
+[INFO    main                 ] 		12.824047   27.219320   1443 (1444) 0 (0)       0 (76)                                                                                                                              76 (76)     [disable_edge:1]
+[INFO    main                 ] 		13.020150   23.667082   1444 (1444) 0 (0)       0 (76)                                                                                                                              76 (76)     [initial:1]
+[INFO    main                 ] generating new genome for island[0], island_size: 2, max_island_size: 2, mutation_rate: 0.700000, intra_island_crossover_rate: 0.900000, inter_island_crossover_rate: 1.000000
+[INFO    main                 ] island is full
+[INFO    main                 ] performing mutation
+[INFO    main                 ] generating new genome by mutation.
+[INFO    main                 ] 	attempting to add a node!
+[INFO    main                 ] 	add node, split depth: 0.849617, max_inputs: 21, max_outputs: 3
+[INFO    main                 ] 	add node recurrent probability: 0.000000
+[INFO    main                 ] CREATING NODE, type: 'simple'
+[INFO    main                 ] 	adding edge between nodes 21 and 80
+[INFO    main                 ] 	adding edge between nodes 21 and 80, new edge weight: -0.246043
+[INFO    main                 ] 	adding edge between nodes 30 and 80
+[INFO    main                 ] 	adding edge between nodes 30 and 80, new edge weight: 0.030043
+[INFO    main                 ] 	adding edge between nodes 3 and 80
+[INFO    main                 ] 	adding edge between nodes 3 and 80, new edge weight: -0.034008
+[INFO    main                 ] 	adding edge between nodes 4 and 80
+[INFO    main                 ] 	adding edge between nodes 4 and 80, new edge weight: 0.369791
+[INFO    main                 ] 	adding edge between nodes 5 and 80
+[INFO    main                 ] 	adding edge between nodes 5 and 80, new edge weight: -0.058420
+[INFO    main                 ] 	adding edge between nodes 2 and 80
+[INFO    main                 ] 	adding edge between nodes 2 and 80, new edge weight: -0.649818
+[INFO    main                 ] 	adding edge between nodes 13 and 80
+[INFO    main                 ] 	adding edge between nodes 13 and 80, new edge weight: -0.206339
+[INFO    main                 ] 	adding edge between nodes 15 and 80
+[INFO    main                 ] 	adding edge between nodes 15 and 80, new edge weight: -0.502198
+[INFO    main                 ] 	adding edge between nodes 18 and 80
+[INFO    main                 ] 	adding edge between nodes 18 and 80, new edge weight: -0.023026
+[INFO    main                 ] 	adding edge between nodes 28 and 80
+[INFO    main                 ] 	adding edge between nodes 28 and 80, new edge weight: -0.183560
+[INFO    main                 ] 	adding edge between nodes 9 and 80
+[INFO    main                 ] 	adding edge between nodes 9 and 80, new edge weight: 0.632474
+[INFO    main                 ] 	adding edge between nodes 10 and 80
+[INFO    main                 ] 	adding edge between nodes 10 and 80, new edge weight: -0.149075
+[INFO    main                 ] 	adding edge between nodes 1 and 80
+[INFO    main                 ] 	adding edge between nodes 1 and 80, new edge weight: 0.121135
+[INFO    main                 ] 	adding edge between nodes 23 and 80
+[INFO    main                 ] 	adding edge between nodes 23 and 80, new edge weight: -0.379970
+[INFO    main                 ] 	adding edge between nodes 24 and 80
+[INFO    main                 ] 	adding edge between nodes 24 and 80, new edge weight: 0.192683
+[INFO    main                 ] 	adding edge between nodes 31 and 80
+[INFO    main                 ] 	adding edge between nodes 31 and 80, new edge weight: -0.150028
+[INFO    main                 ] 	adding edge between nodes 32 and 80
+[INFO    main                 ] 	adding edge between nodes 32 and 80, new edge weight: -0.734131
+[INFO    main                 ] 	adding edge between nodes 34 and 80
+[INFO    main                 ] 	adding edge between nodes 34 and 80, new edge weight: 0.018146
+[INFO    main                 ] 	adding edge between nodes 35 and 80
+[INFO    main                 ] 	adding edge between nodes 35 and 80, new edge weight: 0.431549
+[INFO    main                 ] 	adding edge between nodes 36 and 80
+[INFO    main                 ] 	adding edge between nodes 36 and 80, new edge weight: 0.324393
+[INFO    main                 ] 	adding edge between nodes 11 and 80
+[INFO    main                 ] 	adding edge between nodes 11 and 80, new edge weight: -0.172874
+[INFO    main                 ] 	adding edge between nodes 80 and 42
+[INFO    main                 ] 	adding edge between nodes 80 and 42, new edge weight: -0.193806
+[INFO    main                 ] 	adding edge between nodes 80 and 52
+[INFO    main                 ] 	adding edge between nodes 80 and 52, new edge weight: 0.996493
+[INFO    main                 ] 	adding edge between nodes 80 and 75
+[INFO    main                 ] 	adding edge between nodes 80 and 75, new edge weight: -0.219244
+[INFO    genome_14_thread_0   ] iteration          1, mse: 6264.922622, v_mse:  12.890787, bv_mse:  12.890787, lr: 0.000002, norm: 447479.521429, p_norm: 193.518512, v_norm: 3.510531, OVER THRESHOLD, multiplier: 0.000049
+[INFO    main                 ] inserting genome to island: 0
+[INFO    main                 ] inserting genome with fitness: 13.020150 to island 0
+[INFO    main                 ] potential duplicate for hash '2926_1043290_0', had 1 potential matches.
+[INFO    main                 ] on potential match 0 of 1
+[INFO    main                 ] created copy to insert to island: 0
+[INFO    main                 ] inserting genome at index: 1
+[INFO    main                 ] adding to structure_map[2926_1043290_0] : 0x7f52a02cfb48
+[INFO    main                 ] genomes.size(): 3, max_size: 2, status: 1
+[INFO    main                 ] checking to remove worst from structure_map - &worst: 0x7f521b3ab4d0, &(*potential_match): 0x7f521b3ab4d0
+[INFO    main                 ] potential_matches.size() before erase: 1
+[INFO    main                 ] potential_matches.size() after erase: 0
+[INFO    main                 ] structure_map[2920_1016348_0].size() after erase: 0
+[INFO    main                 ] deleting the potential_matches vector for hash '2920_1016348_0' because it was empty.
+[INFO    main                 ] Islands: 
+[INFO    main                 ] Island 0:
+[INFO    main                 ] 		MSE         MAE         Edges       Rec Edges   Simple      Jordan      Elman       UGRNN       MGU         GRU         Delta       LSTM        ENARC       ENAS_DAG    RANDOM_DAG  Total       Generated
+[INFO    main                 ] 		12.960782   24.488416   1444 (1444) 0 (0)       0 (76)                                                                                                                              76 (76)     [clone:1]
+[INFO    main                 ] 		13.020150   23.667082   1444 (1444) 0 (0)       0 (76)                                                                                                                              76 (76)     [initial:1]
+[INFO    main                 ] Island 1:
+[INFO    main                 ] 		MSE         MAE         Edges       Rec Edges   Simple      Jordan      Elman       UGRNN       MGU         GRU         Delta       LSTM        ENARC       ENAS_DAG    RANDOM_DAG  Total       Generated
+[INFO    main                 ] 		12.824047   27.219320   1443 (1444) 0 (0)       0 (76)                                                                                                                              76 (76)     [disable_edge:1]
+[INFO    main                 ] 		13.020150   23.667082   1444 (1444) 0 (0)       0 (76)                                                                                                                              76 (76)     [initial:1]
+[INFO    main                 ] generating new genome for island[1], island_size: 2, max_island_size: 2, mutation_rate: 0.700000, intra_island_crossover_rate: 0.900000, inter_island_crossover_rate: 1.000000
+[INFO    main                 ] island is full
+[INFO    main                 ] inserting genome to island: 0
+[INFO    main                 ] inserting genome with fitness: 13.026025 to island 0
+[INFO    main                 ] ignoring genome, fitness: 13.026025 > worst for island[0] fitness: 13.020150
+[INFO    main                 ] Islands: 
+[INFO    main                 ] Island 0:
+[INFO    main                 ] 		MSE         MAE         Edges       Rec Edges   Simple      Jordan      Elman       UGRNN       MGU         GRU         Delta       LSTM        ENARC       ENAS_DAG    RANDOM_DAG  Total       Generated
+[INFO    main                 ] 		12.960782   24.488416   1444 (1444) 0 (0)       0 (76)                                                                                                                              76 (76)     [clone:1]
+[INFO    main                 ] 		13.020150   23.667082   1444 (1444) 0 (0)       0 (76)                                                                                                                              76 (76)     [initial:1]
+[INFO    main                 ] Island 1:
+[INFO    main                 ] 		MSE         MAE         Edges       Rec Edges   Simple      Jordan      Elman       UGRNN       MGU         GRU         Delta       LSTM        ENARC       ENAS_DAG    RANDOM_DAG  Total       Generated
+[INFO    main                 ] 		12.824047   27.219320   1443 (1444) 0 (0)       0 (76)                                                                                                                              76 (76)     [disable_edge:1]
+[INFO    main                 ] 		13.020150   23.667082   1444 (1444) 0 (0)       0 (76)                                                                                                                              76 (76)     [initial:1]
+[INFO    main                 ] generating new genome for island[0], island_size: 2, max_island_size: 2, mutation_rate: 0.700000, intra_island_crossover_rate: 0.900000, inter_island_crossover_rate: 1.000000
+[INFO    main                 ] island is full
+[INFO    main                 ] performing mutation
+[INFO    main                 ] generating new genome by mutation.
+[INFO    genome_13_thread_8   ] iteration          1, mse: 6214.359412, v_mse:  12.786748, bv_mse:  12.786748, lr: 0.000002, norm: 474456.939792, p_norm: 172.678960, v_norm: 2.469852[INFO    genome_11_thread_6   ] iteration          1, mse: 6270.977832, v_mse:  12.903247, bv_mse:  12.903247, lr: 0.000002, norm: 568216.793745, p_norm: 157.694918, v_norm: 3.133014, OVER THRESHOLD, multiplier: 0.000039
+, OVER THRESHOLD, multiplier: 0.000046
+[INFO    main                 ] inserting genome to island: 0
+[INFO    main                 ] inserting genome with fitness: 12.890787 to island 0
+[INFO    main                 ] potential duplicate for hash '2926_1043290_0', had 2 potential matches.
+[INFO    main                 ] on potential match 0 of 2
+[INFO    main                 ] on potential match 1 of 2
+[INFO    main                 ] created copy to insert to island: 0
+[INFO    main                 ] inserting genome at index: 0
+[INFO    main                 ] adding to structure_map[2926_1043290_0] : 0x7f52a0ad0b48
+[INFO    main                 ] new best fitness for island: 0!
+[INFO    main                 ] genomes.size(): 3, max_size: 2, status: 1
+[INFO    main                 ] checking to remove worst from structure_map - &worst: 0x7f4f2c29bae0, &(*potential_match): 0x7f521fde8970
+[INFO    main                 ] checking to remove worst from structure_map - &worst: 0x7f4f2c29bae0, &(*potential_match): 0x7f4f2c29bae0
+[INFO    main                 ] potential_matches.size() before erase: 3
+[INFO    main                 ] potential_matches.size() after erase: 2
+[INFO    main                 ] structure_map[2926_1043290_0].size() after erase: 2
+[INFO    main                 ] checking to remove worst from structure_map - &worst: 0x7f4f2c29bae0, &(*potential_match): 0x7f527008a700
+[INFO    main                 ] Islands: 
+[INFO    main                 ] Island 0:
+[INFO    main                 ] 		MSE         MAE         Edges       Rec Edges   Simple      Jordan      Elman       UGRNN       MGU         GRU         Delta       LSTM        ENARC       ENAS_DAG    RANDOM_DAG  Total       Generated
+[INFO    main                 ] 		12.890787   26.518804   1444 (1444) 0 (0)       0 (76)                                                                                                                              76 (76)     [crossover:1]
+[INFO    main                 ] 		12.960782   24.488416   1444 (1444) 0 (0)       0 (76)                                                                                                                              76 (76)     [clone:1]
+[INFO    main                 ] Island 1:
+[INFO    main                 ] 		MSE         MAE         Edges       Rec Edges   Simple      Jordan      Elman       UGRNN       MGU         GRU         Delta       LSTM        ENARC       ENAS_DAG    RANDOM_DAG  Total       Generated
+[INFO    main                 ] 		12.824047   27.219320   1443 (1444) 0 (0)       0 (76)                                                                                                                              76 (76)     [disable_edge:1]
+[INFO    main                 ] 		13.020150   23.667082   1444 (1444) 0 (0)       0 (76)                                                                                                                              76 (76)     [initial:1]
+[INFO    main                 ] generating new genome for island[1], island_size: 2, max_island_size: 2, mutation_rate: 0.700000, intra_island_crossover_rate: 0.900000, inter_island_crossover_rate: 1.000000
+[INFO    main                 ] island is full
+[INFO    main                 ] performing intra-island crossover
+[INFO    main                 ] inserting genome to island: 1
+[INFO    main                 ] inserting genome with fitness: 12.786748 to island 1
+[INFO    main                 ] potential duplicate for hash '2926_1043290_0', had 1 potential matches.
+[INFO    main                 ] on potential match 0 of 1
+[INFO    main                 ] created copy to insert to island: 1
+[INFO    main                 ] inserting genome at index: 0
+[INFO    main                 ] adding to structure_map[2926_1043290_0] : 0x7f529d2c9b48
+[INFO    main                 ] new best fitness for island: 1!
+[INFO    main                 ] genomes.size(): 3, max_size: 2, status: 1
+[INFO    main                 ] checking to remove worst from structure_map - &worst: 0x7f528c08a700, &(*potential_match): 0x7f528c08a700
+[INFO    main                 ] potential_matches.size() before erase: 2
+[INFO    main                 ] potential_matches.size() after erase: 1
+[INFO    main                 ] structure_map[2926_1043290_0].size() after erase: 1
+[INFO    main                 ] checking to remove worst from structure_map - &worst: 0x7f528c08a700, &(*potential_match): 0x7f527c08a700
+[INFO    main                 ] Islands: 
+[INFO    main                 ] Island 0:
+[INFO    main                 ] 		MSE         MAE         Edges       Rec Edges   Simple      Jordan      Elman       UGRNN       MGU         GRU         Delta       LSTM        ENARC       ENAS_DAG    RANDOM_DAG  Total       Generated
+[INFO    main                 ] 		12.890787   26.518804   1444 (1444) 0 (0)       0 (76)                                                                                                                              76 (76)     [crossover:1]
+[INFO    main                 ] 		12.960782   24.488416   1444 (1444) 0 (0)       0 (76)                                                                                                                              76 (76)     [clone:1]
+[INFO    main                 ] Island 1:
+[INFO    main                 ] 		MSE         MAE         Edges       Rec Edges   Simple      Jordan      Elman       UGRNN       MGU         GRU         Delta       LSTM        ENARC       ENAS_DAG    RANDOM_DAG  Total       Generated
+[INFO    main                 ] 		12.786748   25.846512   1444 (1444) 0 (0)       0 (76)                                                                                                                              76 (76)     [crossover:1]
+[INFO    main                 ] 		12.824047   27.219320   1443 (1444) 0 (0)       0 (76)                                                                                                                              76 (76)     [disable_edge:1]
+[INFO    main                 ] inserting genome to island: 1
+[INFO    main                 ] inserting genome with fitness: 12.903247 to island 1
+[INFO    main                 ] ignoring genome, fitness: 12.903247 > worst for island[1] fitness: 12.824047
+[INFO    main                 ] Islands: 
+[INFO    main                 ] Island 0:
+[INFO    main                 ] 		MSE         MAE         Edges       Rec Edges   Simple      Jordan      Elman       UGRNN       MGU         GRU         Delta       LSTM        ENARC       ENAS_DAG    RANDOM_DAG  Total       Generated
+[INFO    main                 ] 		12.890787   26.518804   1444 (1444) 0 (0)       0 (76)                                                                                                                              76 (76)     [crossover:1]
+[INFO    main                 ] 		12.960782   24.488416   1444 (1444) 0 (0)       0 (76)                                                                                                                              76 (76)     [clone:1]
+[INFO    main                 ] Island 1:
+[INFO    main                 ] 		MSE         MAE         Edges       Rec Edges   Simple      Jordan      Elman       UGRNN       MGU         GRU         Delta       LSTM        ENARC       ENAS_DAG    RANDOM_DAG  Total       Generated
+[INFO    main                 ] 		12.786748   25.846512   1444 (1444) 0 (0)       0 (76)                                                                                                                              76 (76)     [crossover:1]
+[INFO    main                 ] 		12.824047   27.219320   1443 (1444) 0 (0)       0 (76)                                                                                                                              76 (76)     [disable_edge:1]
+[INFO    main                 ] generating new genome for island[0], island_size: 2, max_island_size: 2, mutation_rate: 0.700000, intra_island_crossover_rate: 0.900000, inter_island_crossover_rate: 1.000000
+[INFO    main                 ] island is full
+[INFO    main                 ] performing mutation
+[INFO    main                 ] generating new genome by mutation.
+[INFO    main                 ] 	attempting to add a node!
+[INFO    main                 ] 	add node, split depth: 0.595336, max_inputs: 21, max_outputs: 13
+[INFO    main                 ] 	add node recurrent probability: 0.000000
+[INFO    main                 ] CREATING NODE, type: 'simple'
+[INFO    main                 ] 	adding edge between nodes 8 and 81
+[INFO    main                 ] 	adding edge between nodes 8 and 81, new edge weight: -0.136597
+[INFO    main                 ] 	adding edge between nodes 21 and 81
+[INFO    main                 ] 	adding edge between nodes 21 and 81, new edge weight: 0.219903
+[INFO    main                 ] 	adding edge between nodes 29 and 81
+[INFO    main                 ] 	adding edge between nodes 29 and 81, new edge weight: 0.172819
+[INFO    main                 ] 	adding edge between nodes 30 and 81
+[INFO    main                 ] 	adding edge between nodes 30 and 81, new edge weight: 0.355953
+[INFO    main                 ] 	adding edge between nodes 3 and 81
+[INFO    main                 ] 	adding edge between nodes 3 and 81, new edge weight: -0.304653
+[INFO    main                 ] 	adding edge between nodes 5 and 81
+[INFO    main                 ] 	adding edge between nodes 5 and 81, new edge weight: -0.342059
+[INFO    main                 ] 	adding edge between nodes 7 and 81
+[INFO    main                 ] 	adding edge between nodes 7 and 81, new edge weight: 0.373446
+[INFO    main                 ] 	adding edge between nodes 15 and 81
+[INFO    main                 ] 	adding edge between nodes 15 and 81, new edge weight: -0.271002
+[INFO    main                 ] 	adding edge between nodes 16 and 81
+[INFO    main                 ] 	adding edge between nodes 16 and 81, new edge weight: -0.420364
+[INFO    main                 ] 	adding edge between nodes 17 and 81
+[INFO    main                 ] 	adding edge between nodes 17 and 81, new edge weight: 0.135258
+[INFO    main                 ] 	adding edge between nodes 10 and 81
+[INFO    main                 ] 	adding edge between nodes 10 and 81, new edge weight: -0.248146
+[INFO    main                 ] 	adding edge between nodes 22 and 81
+[INFO    main                 ] 	adding edge between nodes 22 and 81, new edge weight: 0.522175
+[INFO    main                 ] 	adding edge between nodes 24 and 81
+[INFO    main                 ] 	adding edge between nodes 24 and 81, new edge weight: 0.124579
+[INFO    main                 ] 	adding edge between nodes 25 and 81
+[INFO    main                 ] 	adding edge between nodes 25 and 81, new edge weight: 0.171521
+[INFO    main                 ] 	adding edge between nodes 27 and 81
+[INFO    main                 ] 	adding edge between nodes 27 and 81, new edge weight: 0.125798
+[INFO    main                 ] 	adding edge between nodes 31 and 81
+[INFO    main                 ] 	adding edge between nodes 31 and 81, new edge weight: -0.005519
+[INFO    main                 ] 	adding edge between nodes 32 and 81
+[INFO    main                 ] 	adding edge between nodes 32 and 81, new edge weight: 0.264706
+[INFO    main                 ] 	adding edge between nodes 34 and 81
+[INFO    main                 ] 	adding edge between nodes 34 and 81, new edge weight: -0.310501
+[INFO    main                 ] 	adding edge between nodes 36 and 81
+[INFO    main                 ] 	adding edge between nodes 36 and 81, new edge weight: 0.139972
+[INFO    main                 ] 	adding edge between nodes 37 and 81
+[INFO    main                 ] 	adding edge between nodes 37 and 81, new edge weight: 0.012641
+[INFO    main                 ] 	adding edge between nodes 11 and 81
+[INFO    main                 ] 	adding edge between nodes 11 and 81, new edge weight: 0.685450
+[INFO    main                 ] 	adding edge between nodes 81 and 45
+[INFO    main                 ] 	adding edge between nodes 81 and 45, new edge weight: -0.361658
+[INFO    main                 ] 	adding edge between nodes 81 and 43
+[INFO    main                 ] 	adding edge between nodes 81 and 43, new edge weight: 0.188658
+[INFO    main                 ] 	adding edge between nodes 81 and 57
+[INFO    main                 ] 	adding edge between nodes 81 and 57, new edge weight: 0.723042
+[INFO    main                 ] 	adding edge between nodes 81 and 50
+[INFO    main                 ] 	adding edge between nodes 81 and 50, new edge weight: 0.016008
+[INFO    main                 ] 	adding edge between nodes 81 and 53
+[INFO    main                 ] 	adding edge between nodes 81 and 53, new edge weight: 0.393925
+[INFO    main                 ] 	adding edge between nodes 81 and 66
+[INFO    main                 ] 	adding edge between nodes 81 and 66, new edge weight: -0.016428
+[INFO    main                 ] 	adding edge between nodes 81 and 65
+[INFO    main                 ] 	adding edge between nodes 81 and 65, new edge weight: 0.075208
+[INFO    main                 ] 	adding edge between nodes 81 and 63
+[INFO    main                 ] 	adding edge between nodes 81 and 63, new edge weight: -0.194695
+[INFO    main                 ] 	adding edge between nodes 81 and 62
+[INFO    main                 ] 	adding edge between nodes 81 and 62, new edge weight: 0.048143
+[INFO    main                 ] 	adding edge between nodes 81 and 74
+[INFO    main                 ] 	adding edge between nodes 81 and 74, new edge weight: 0.033704
+[INFO    main                 ] 	adding edge between nodes 81 and 70
+[INFO    main                 ] 	adding edge between nodes 81 and 70, new edge weight: 0.258209
+[INFO    main                 ] 	adding edge between nodes 81 and 71
+[INFO    main                 ] 	adding edge between nodes 81 and 71, new edge weight: -0.050983
+[INFO    main                 ] 	adding edge between nodes 81 and 72
+[INFO    main                 ] 	adding edge between nodes 81 and 72, new edge weight: 0.277614
+[INFO    main                 ] generating new genome for island[1], island_size: 2, max_island_size: 2, mutation_rate: 0.700000, intra_island_crossover_rate: 0.900000, inter_island_crossover_rate: 1.000000
+[INFO    main                 ] island is full
+[INFO    main                 ] performing mutation
+[INFO    main                 ] generating new genome by mutation.
+[INFO    main                 ] 	attempting to disable a node!
+[INFO    main                 ] 	disabling node 17 at depth 0.000000
+[INFO    genome_15_thread_3   ] iteration          0, mse: 7257.768468, v_mse:  14.933680, bv_mse:  14.933680, lr: 0.000002, norm: 1854846.366558, p_norm: 151.835173, v_norm: 0.000000[INFO    genome_17_thread_2   ] iteration          0, mse: 7125.284456, v_mse:  14.661079, bv_mse:  14.661079, lr: 0.000002, norm: 1345813.626528, p_norm: 176.832944, v_norm: 0.000000, OVER THRESHOLD, multiplier: 0.000012
+, OVER THRESHOLD, multiplier: 0.000016
+[INFO    genome_16_thread_4   ] iteration          0, mse: 7339.527342, v_mse:  15.101908, bv_mse:  15.101908, lr: 0.000002, norm: 1510305.755211, p_norm: 131.498007, v_norm: 0.000000, OVER THRESHOLD, multiplier: 0.000015
+[INFO    genome_18_thread_5   ] iteration          0, mse: 7243.038227, v_mse:  14.903371, bv_mse:  14.903371, lr: 0.000002, norm: 2065244.760592, p_norm: 160.383597, v_norm: 0.000000, OVER THRESHOLD, multiplier: 0.000011
+[INFO    genome_15_thread_3   ] iteration          1, mse: 6245.168962, v_mse:  12.850142, bv_mse:  12.850142, lr: 0.000002, norm: 633324.431810, p_norm: 196.589876, v_norm: 3.816556, OVER THRESHOLD, multiplier: 0.000035
+[INFO    genome_17_thread_2   ] iteration          1, mse: 6317.668588, v_mse:  12.999318, bv_mse:  12.999318, lr: 0.000002, norm: 415079.723750, p_norm: 199.700853, v_norm: 2.769164, OVER THRESHOLD, multiplier: 0.000053
+[INFO    main                 ] inserting genome to island: 1
+[INFO    main                 ] inserting genome with fitness: 12.850142 to island 1
+[INFO    main                 ] ignoring genome, fitness: 12.850142 > worst for island[1] fitness: 12.824047
+[INFO    main                 ] Islands: 
+[INFO    main                 ] Island 0:
+[INFO    genome_20_thread_7   ] iteration          0, mse: 6799.275863, v_mse:  13.990280, bv_mse:  13.990280, lr: 0.000002, norm: 1350437.295612, p_norm: 162.464627, v_norm: 0.000000, OVER THRESHOLD, multiplier: 0.000016
+[INFO    genome_18_thread_5   ] iteration          1, mse: 6223.957684, v_mse:  12.806497, bv_mse:  12.806497, lr: 0.000002, norm: 478093.744754, p_norm: 219.697699, v_norm: 4.249475, OVER THRESHOLD, multiplier: 0.000046
+[INFO    main                 ] 		MSE         MAE         Edges       Rec Edges   Simple      Jordan      Elman       UGRNN       MGU         GRU         Delta       LSTM        ENARC       ENAS_DAG    RANDOM_DAG  Total       Generated
+[INFO    genome_22_thread_8   ] iteration          0, mse: 7248.078167, v_mse:  14.913741, bv_mse:  14.913741, lr: 0.000002, norm: 2042612.907146, p_norm: 161.770810, v_norm: 0.000000, OVER THRESHOLD, multiplier: 0.000011
+[INFO    genome_19_thread_1   ] iteration          0, mse: 7471.193607, v_mse:  15.372826, bv_mse:  15.372826, lr: 0.000002, norm: 1220041.659055, p_norm: 181.837990, v_norm: 0.000000, OVER THRESHOLD, multiplier: 0.000018
+[INFO    main                 ] 		12.890787   26.518804   1444 (1444) 0 (0)       0 (76)                                                                                                                              76 (76)     [crossover:1]
+[INFO    main                 ] 		12.960782   24.488416   1444 (1444) 0 (0)       0 (76)                                                                                                                              76 (76)     [clone:1]
+[INFO    main                 ] Island 1:
+[INFO    main                 ] 		MSE         MAE         Edges       Rec Edges   Simple      Jordan      Elman       UGRNN       MGU         GRU         Delta       LSTM        ENARC       ENAS_DAG    RANDOM_DAG  Total       Generated
+[INFO    genome_16_thread_4   ] iteration          1, mse: 6339.507457, v_mse:  13.044254, bv_mse:  13.044254, lr: 0.000002, norm: 612213.087440, p_norm: 157.878111, v_norm: 3.107625[INFO    main                 ] 		12.786748   25.846512   1444 (1444) 0 (0)       0 (76)                                                                                                                              76 (76)     [crossover:1]
+[INFO    main                 ] 		12.824047   27.219320   1443 (1444) 0 (0)       0 (76)                                                                                                                              76 (76)     [disable_edge:1]
+[INFO    genome_21_thread_0   ] iteration          0, mse: 6694.796766, v_mse:  13.775302, bv_mse:  13.775302, lr: 0.000002, norm: 1299363.711451, p_norm: 199.913509, v_norm: 0.000000, OVER THRESHOLD, multiplier: 0.000017
+[INFO    genome_20_thread_7   ] iteration          1, mse: 6183.965405, v_mse:  12.724209, bv_mse:  12.724209, lr: 0.000002, norm: 307411.911338, p_norm: 186.376312, v_norm: 2.778678, OVER THRESHOLD, multiplier: 0.000072
+, OVER THRESHOLD, multiplier: 0.000036
+[INFO    genome_23_thread_6   ] iteration          0, mse: 7049.005931, v_mse:  14.504127, bv_mse:  14.504127, lr: 0.000002, norm: 1473281.940970, p_norm: 172.678960, v_norm: 0.000000, OVER THRESHOLD, multiplier: 0.000015
+[INFO    genome_22_thread_8   ] iteration          1, mse: 6140.370933, v_mse:  12.634508, bv_mse:  12.634508, lr: 0.000002, norm: 136914.355993, p_norm: 220.695043, v_norm: 4.202907, OVER THRESHOLD, multiplier: 0.000161
+[INFO    genome_21_thread_0   ] iteration          1, mse: 6172.754494, v_mse:  12.701141, bv_mse:  12.701141, lr: 0.000002, norm: 262315.513345, p_norm: 225.552883, v_norm: 2.673588, OVER THRESHOLD, multiplier: 0.000084
+[INFO    genome_19_thread_1   ] iteration          1, mse: 6183.387876, v_mse:  12.723020, bv_mse:  12.723020, lr: 0.000002, norm: 601863.179826, p_norm: 199.865040, v_norm: 2.510374, OVER THRESHOLD, multiplier: 0.000037
+[INFO    main                 ] generating new genome for island[0], island_size: 2, max_island_size: 2, mutation_rate: 0.700000, intra_island_crossover_rate: 0.900000, inter_island_crossover_rate: 1.000000
+[INFO    main                 ] island is full
+[INFO    main                 ] performing mutation
+[INFO    main                 ] generating new genome by mutation.
+[INFO    main                 ] inserting genome to island: 0
+[INFO    main                 ] inserting genome with fitness: 12.806497 to island 0
+[INFO    main                 ] created copy to insert to island: 0
+[INFO    main                 ] inserting genome at index: 0
+[INFO    main                 ] adding to structure_map[3000_1052552_0] : 0x7f529eaccb48
+[INFO    main                 ] new best fitness for island: 0!
+[INFO    main                 ] genomes.size(): 3, max_size: 2, status: 1
+[INFO    main                 ] checking to remove worst from structure_map - &worst: 0x7f521fde8970, &(*potential_match): 0x7f521fde8970
+[INFO    main                 ] potential_matches.size() before erase: 2
+[INFO    main                 ] potential_matches.size() after erase: 1
+[INFO    main                 ] structure_map[2926_1043290_0].size() after erase: 1
+[INFO    main                 ] checking to remove worst from structure_map - &worst: 0x7f521fde8970, &(*potential_match): 0x7f527008a700
+[INFO    main                 ] Islands: 
+[INFO    main                 ] Island 0:
+[INFO    main                 ] 		MSE         MAE         Edges       Rec Edges   Simple      Jordan      Elman       UGRNN       MGU         GRU         Delta       LSTM        ENARC       ENAS_DAG    RANDOM_DAG  Total       Generated
+[INFO    main                 ] 		12.806497   30.599308   1468 (1468) 0 (0)       1 (77)                                                                                                                              76 (77)     [add_node(simple):1]
+[INFO    main                 ] 		12.890787   26.518804   1444 (1444) 0 (0)       0 (76)                                                                                                                              76 (76)     [crossover:1]
+[INFO    main                 ] Island 1:
+[INFO    main                 ] 		MSE         MAE         Edges       Rec Edges   Simple      Jordan      Elman       UGRNN       MGU         GRU         Delta       LSTM        ENARC       ENAS_DAG    RANDOM_DAG  Total       Generated
+[INFO    main                 ] 		12.786748   25.846512   1444 (1444) 0 (0)       0 (76)                                                                                                                              76 (76)     [crossover:1]
+[INFO    main                 ] 		12.824047   27.219320   1443 (1444) 0 (0)       0 (76)                                                                                                                              76 (76)     [disable_edge:1]
+[INFO    main                 ] inserting genome to island: 1
+[INFO    main                 ] inserting genome with fitness: 12.701141 to island 1
+[INFO    main                 ] potential duplicate for hash '2926_1043290_0', had 1 potential matches.
+[INFO    main                 ] on potential match 0 of 1
+[INFO    main                 ] created copy to insert to island: 1
+[INFO    main                 ] inserting genome at index: 0
+[INFO    main                 ] adding to structure_map[2926_1043290_0] : 0x7f52a0ad0b48
+[INFO    main                 ] new best fitness for island: 1!
+[INFO    main                 ] genomes.size(): 3, max_size: 2, status: 1
+[INFO    main                 ] checking to remove worst from structure_map - &worst: 0x7f50686cc090, &(*potential_match): 0x7f50686cc090
+[INFO    main                 ] potential_matches.size() before erase: 1
+[INFO    main                 ] potential_matches.size() after erase: 0
+[INFO    main                 ] structure_map[2926_1041910_0].size() after erase: 0
+[INFO    main                 ] deleting the potential_matches vector for hash '2926_1041910_0' because it was empty.
+[INFO    genome_23_thread_6   ] iteration          1, mse: 6252.648207, v_mse:  12.865531, bv_mse:  12.865531, lr: 0.000002, norm: 474364.587553, p_norm: 198.934544, v_norm: 3.031444, OVER THRESHOLD, multiplier: 0.000046
+[INFO    main                 ] Islands: 
+[INFO    main                 ] Island 0:
+[INFO    main                 ] 		MSE         MAE         Edges       Rec Edges   Simple      Jordan      Elman       UGRNN       MGU         GRU         Delta       LSTM        ENARC       ENAS_DAG    RANDOM_DAG  Total       Generated
+[INFO    main                 ] 		12.806497   30.599308   1468 (1468) 0 (0)       1 (77)                                                                                                                              76 (77)     [add_node(simple):1]
+[INFO    main                 ] 		12.890787   26.518804   1444 (1444) 0 (0)       0 (76)                                                                                                                              76 (76)     [crossover:1]
+[INFO    main                 ] Island 1:
+[INFO    main                 ] 		MSE         MAE         Edges       Rec Edges   Simple      Jordan      Elman       UGRNN       MGU         GRU         Delta       LSTM        ENARC       ENAS_DAG    RANDOM_DAG  Total       Generated
+[INFO    main                 ] 		12.701141   32.476173   1444 (1444) 0 (0)       0 (76)                                                                                                                              76 (76)     [crossover:1]
+[INFO    main                 ] 		12.786748   25.846512   1444 (1444) 0 (0)       0 (76)                                                                                                                              76 (76)     [crossover:1]
+[INFO    main                 ] inserting genome to island: 1
+[INFO    main                 ] inserting genome with fitness: 12.723020 to island 1
+[INFO    main                 ] potential duplicate for hash '2926_1043290_0', had 2 potential matches.
+[INFO    main                 ] on potential match 0 of 2
+[INFO    main                 ] on potential match 1 of 2
+[INFO    main                 ] created copy to insert to island: 1
+[INFO    main                 ] inserting genome at index: 1
+[INFO    main                 ] adding to structure_map[2926_1043290_0] : 0x7f52a02cfb48
+[INFO    main                 ] genomes.size(): 3, max_size: 2, status: 1
+[INFO    main                 ] checking to remove worst from structure_map - &worst: 0x7f527c08a700, &(*potential_match): 0x7f527c08a700
+[INFO    main                 ] potential_matches.size() before erase: 3
+[INFO    main                 ] potential_matches.size() after erase: 2
+[INFO    main                 ] structure_map[2926_1043290_0].size() after erase: 2
+[INFO    main                 ] checking to remove worst from structure_map - &worst: 0x7f527c08a700, &(*potential_match): 0x7f4f2c29bae0
+[INFO    main                 ] checking to remove worst from structure_map - &worst: 0x7f527c08a700, &(*potential_match): 0x7f521b3ab4d0
+[INFO    main                 ] Islands: 
+[INFO    main                 ] Island 0:
+[INFO    main                 ] 		MSE         MAE         Edges       Rec Edges   Simple      Jordan      Elman       UGRNN       MGU         GRU         Delta       LSTM        ENARC       ENAS_DAG    RANDOM_DAG  Total       Generated
+[INFO    main                 ] 		12.806497   30.599308   1468 (1468) 0 (0)       1 (77)                                                                                                                              76 (77)     [add_node(simple):1]
+[INFO    main                 ] 		12.890787   26.518804   1444 (1444) 0 (0)       0 (76)                                                                                                                              76 (76)     [crossover:1]
+[INFO    main                 ] Island 1:
+[INFO    main                 ] 		MSE         MAE         Edges       Rec Edges   Simple      Jordan      Elman       UGRNN       MGU         GRU         Delta       LSTM        ENARC       ENAS_DAG    RANDOM_DAG  Total       Generated
+[INFO    main                 ] 		12.701141   32.476173   1444 (1444) 0 (0)       0 (76)                                                                                                                              76 (76)     [crossover:1]
+[INFO    main                 ] 		12.723020   30.346558   1444 (1444) 0 (0)       0 (76)                                                                                                                              76 (76)     [island_crossover:1]
+[INFO    main                 ] inserting genome to island: 0
+[INFO    main                 ] inserting genome with fitness: 12.634508 to island 0
+[INFO    main                 ] created copy to insert to island: 0
+[INFO    main                 ] inserting genome at index: 0
+[INFO    main                 ] adding to structure_map[3007_1095565_0] : 0x7f529d2c9b48
+[INFO    main                 ] new best fitness for island: 0!
+[INFO    main                 ] genomes.size(): 3, max_size: 2, status: 1
+[INFO    main                 ] checking to remove worst from structure_map - &worst: 0x7f527008a700, &(*potential_match): 0x7f527008a700
+[INFO    main                 ] potential_matches.size() before erase: 1
+[INFO    main                 ] potential_matches.size() after erase: 0
+[INFO    main                 ] structure_map[2926_1043290_0].size() after erase: 0
+[INFO    main                 ] deleting the potential_matches vector for hash '2926_1043290_0' because it was empty.
+[INFO    main                 ] Islands: 
+[INFO    main                 ] Island 0:
+[INFO    main                 ] 		MSE         MAE         Edges       Rec Edges   Simple      Jordan      Elman       UGRNN       MGU         GRU         Delta       LSTM        ENARC       ENAS_DAG    RANDOM_DAG  Total       Generated
+[INFO    main                 ] 		12.634508   33.495271   1478 (1478) 0 (0)       1 (77)                                                                                                                              77 (77)     [add_node(simple):1]
+[INFO    main                 ] 		12.806497   30.599308   1468 (1468) 0 (0)       1 (77)                                                                                                                              76 (77)     [add_node(simple):1]
+[INFO    main                 ] Island 1:
+[INFO    main                 ] 		MSE         MAE         Edges       Rec Edges   Simple      Jordan      Elman       UGRNN       MGU         GRU         Delta       LSTM        ENARC       ENAS_DAG    RANDOM_DAG  Total       Generated
+[INFO    main                 ] 		12.701141   32.476173   1444 (1444) 0 (0)       0 (76)                                                                                                                              76 (76)     [crossover:1]
+[INFO    main                 ] 		12.723020   30.346558   1444 (1444) 0 (0)       0 (76)                                                                                                                              76 (76)     [island_crossover:1]
+[INFO    main                 ] inserting genome to island: 0
+[INFO    main                 ] inserting genome with fitness: 12.724209 to island 0
+[INFO    main                 ] created copy to insert to island: 0
+[INFO    main                 ] inserting genome at index: 1
+[INFO    main                 ] adding to structure_map[2926_1041911_0] : 0x7f529dacab48
+[INFO    main                 ] genomes.size(): 3, max_size: 2, status: 1
+[INFO    main                 ] checking to remove worst from structure_map - &worst: 0x7f52800d1ad0, &(*potential_match): 0x7f52800d1ad0
+[INFO    main                 ] potential_matches.size() before erase: 1
+[INFO    main                 ] potential_matches.size() after erase: 0
+[INFO    main                 ] structure_map[3000_1052552_0].size() after erase: 0
+[INFO    main                 ] deleting the potential_matches vector for hash '3000_1052552_0' because it was empty.
+[INFO    main                 ] Islands: 
+[INFO    main                 ] Island 0:
+[INFO    main                 ] 		MSE         MAE         Edges       Rec Edges   Simple      Jordan      Elman       UGRNN       MGU         GRU         Delta       LSTM        ENARC       ENAS_DAG    RANDOM_DAG  Total       Generated
+[INFO    main                 ] 		12.634508   33.495271   1478 (1478) 0 (0)       1 (77)                                                                                                                              77 (77)     [add_node(simple):1]
+[INFO    main                 ] 		12.724209   31.164939   1443 (1444) 0 (0)       0 (76)                                                                                                                              76 (76)     [disable_edge:1]
+[INFO    main                 ] Island 1:
+[INFO    main                 ] 		MSE         MAE         Edges       Rec Edges   Simple      Jordan      Elman       UGRNN       MGU         GRU         Delta       LSTM        ENARC       ENAS_DAG    RANDOM_DAG  Total       Generated
+[INFO    main                 ] 		12.701141   32.476173   1444 (1444) 0 (0)       0 (76)                                                                                                                              76 (76)     [crossover:1]
+[INFO    main                 ] 		12.723020   30.346558   1444 (1444) 0 (0)       0 (76)                                                                                                                              76 (76)     [island_crossover:1]
+[INFO    main                 ] inserting genome to island: 1
+[INFO    main                 ] inserting genome with fitness: 12.999318 to island 1
+[INFO    main                 ] ignoring genome, fitness: 12.999318 > worst for island[1] fitness: 12.723020
+[INFO    main                 ] Islands: 
+[INFO    main                 ] Island 0:
+[INFO    main                 ] 		MSE         MAE         Edges       Rec Edges   Simple      Jordan      Elman       UGRNN       MGU         GRU         Delta       LSTM        ENARC       ENAS_DAG    RANDOM_DAG  Total       Generated
+[INFO    main                 ] 		12.634508   33.495271   1478 (1478) 0 (0)       1 (77)                                                                                                                              77 (77)     [add_node(simple):1]
+[INFO    main                 ] 		12.724209   31.164939   1443 (1444) 0 (0)       0 (76)                                                                                                                              76 (76)     [disable_edge:1]
+[INFO    main                 ] Island 1:
+[INFO    main                 ] 		MSE         MAE         Edges       Rec Edges   Simple      Jordan      Elman       UGRNN       MGU         GRU         Delta       LSTM        ENARC       ENAS_DAG    RANDOM_DAG  Total       Generated
+[INFO    main                 ] 		12.701141   32.476173   1444 (1444) 0 (0)       0 (76)                                                                                                                              76 (76)     [crossover:1]
+[INFO    main                 ] 		12.723020   30.346558   1444 (1444) 0 (0)       0 (76)                                                                                                                              76 (76)     [island_crossover:1]
+[INFO    main                 ] generating new genome for island[1], island_size: 2, max_island_size: 2, mutation_rate: 0.700000, intra_island_crossover_rate: 0.900000, inter_island_crossover_rate: 1.000000
+[INFO    main                 ] island is full
+[INFO    main                 ] performing mutation
+[INFO    main                 ] generating new genome by mutation.
+[INFO    main                 ] 	attempting to merge a node!
+[INFO    main                 ] 	attempting to add a node!
+[INFO    main                 ] 	add node, split depth: 0.296837, max_inputs: 21, max_outputs: 20
+[INFO    main                 ] 	add node recurrent probability: 0.000000
+[INFO    main                 ] CREATING NODE, type: 'simple'
+[INFO    main                 ] 	adding edge between nodes 30 and 82
+[INFO    main                 ] 	adding edge between nodes 30 and 82, new edge weight: 0.279580
+[INFO    main                 ] 	adding edge between nodes 20 and 82
+[INFO    main                 ] 	adding edge between nodes 20 and 82, new edge weight: -0.258901
+[INFO    main                 ] 	adding edge between nodes 3 and 82
+[INFO    main                 ] 	adding edge between nodes 3 and 82, new edge weight: -0.324174
+[INFO    main                 ] 	adding edge between nodes 4 and 82
+[INFO    main                 ] 	adding edge between nodes 4 and 82, new edge weight: 0.059251
+[INFO    main                 ] 	adding edge between nodes 6 and 82
+[INFO    main                 ] 	adding edge between nodes 6 and 82, new edge weight: -0.040719
+[INFO    main                 ] 	adding edge between nodes 7 and 82
+[INFO    main                 ] 	adding edge between nodes 7 and 82, new edge weight: -0.133197
+[INFO    main                 ] 	adding edge between nodes 8 and 82
+[INFO    main                 ] 	adding edge between nodes 8 and 82, new edge weight: -0.174522
+[INFO    main                 ] 	adding edge between nodes 13 and 82
+[INFO    main                 ] 	adding edge between nodes 13 and 82, new edge weight: -0.034339
+[INFO    main                 ] 	adding edge between nodes 14 and 82
+[INFO    main                 ] 	adding edge between nodes 14 and 82, new edge weight: 0.070591
+[INFO    main                 ] 	adding edge between nodes 15 and 82
+[INFO    main                 ] 	adding edge between nodes 15 and 82, new edge weight: -0.725389
+[INFO    main                 ] 	adding edge between nodes 16 and 82
+[INFO    main                 ] 	adding edge between nodes 16 and 82, new edge weight: 0.216987
+[INFO    main                 ] 	adding edge between nodes 17 and 82
+[INFO    main                 ] 	adding edge between nodes 17 and 82, new edge weight: 0.324859
+[INFO    main                 ] 	adding edge between nodes 18 and 82
+[INFO    main                 ] 	adding edge between nodes 18 and 82, new edge weight: 0.163352
+[INFO    main                 ] 	adding edge between nodes 2 and 82
+[INFO    main                 ] 	adding edge between nodes 2 and 82, new edge weight: -0.080235
+[INFO    main                 ] 	adding edge between nodes 22 and 82
+[INFO    main                 ] 	adding edge between nodes 22 and 82, new edge weight: -0.339971
+[INFO    main                 ] 	adding edge between nodes 24 and 82
+[INFO    main                 ] 	adding edge between nodes 24 and 82, new edge weight: -0.021835
+[INFO    main                 ] 	adding edge between nodes 25 and 82
+[INFO    main                 ] 	adding edge between nodes 25 and 82, new edge weight: -0.128952
+[INFO    main                 ] 	adding edge between nodes 31 and 82
+[INFO    main                 ] 	adding edge between nodes 31 and 82, new edge weight: -0.695552
+[INFO    main                 ] 	adding edge between nodes 32 and 82
+[INFO    main                 ] 	adding edge between nodes 32 and 82, new edge weight: -0.121489
+[INFO    main                 ] 	adding edge between nodes 33 and 82
+[INFO    main                 ] 	adding edge between nodes 33 and 82, new edge weight: -0.388146
+[INFO    main                 ] 	adding edge between nodes 37 and 82
+[INFO    main                 ] 	adding edge between nodes 37 and 82, new edge weight: 0.611324
+[INFO    main                 ] 	adding edge between nodes 82 and 39
+[INFO    main                 ] 	adding edge between nodes 82 and 39, new edge weight: 0.219600
+[INFO    main                 ] 	adding edge between nodes 82 and 40
+[INFO    main                 ] 	adding edge between nodes 82 and 40, new edge weight: 0.407370
+[INFO    main                 ] 	adding edge between nodes 82 and 41
+[INFO    main                 ] 	adding edge between nodes 82 and 41, new edge weight: -0.063108
+[INFO    main                 ] 	adding edge between nodes 82 and 43
+[INFO    main                 ] 	adding edge between nodes 82 and 43, new edge weight: -0.422589
+[INFO    main                 ] 	adding edge between nodes 82 and 47
+[INFO    main                 ] 	adding edge between nodes 82 and 47, new edge weight: -0.005029
+[INFO    main                 ] 	adding edge between nodes 82 and 48
+[INFO    main                 ] 	adding edge between nodes 82 and 48, new edge weight: 0.495100
+[INFO    main                 ] 	adding edge between nodes 82 and 56
+[INFO    main                 ] 	adding edge between nodes 82 and 56, new edge weight: 0.293628
+[INFO    main                 ] 	adding edge between nodes 82 and 49
+[INFO    main                 ] 	adding edge between nodes 82 and 49, new edge weight: 0.553851
+[INFO    main                 ] 	adding edge between nodes 82 and 50
+[INFO    main                 ] 	adding edge between nodes 82 and 50, new edge weight: 0.436134
+[INFO    main                 ] 	adding edge between nodes 82 and 51
+[INFO    main                 ] 	adding edge between nodes 82 and 51, new edge weight: 0.175278
+[INFO    main                 ] 	adding edge between nodes 82 and 53
+[INFO    main                 ] 	adding edge between nodes 82 and 53, new edge weight: 0.167612
+[INFO    main                 ] 	adding edge between nodes 82 and 62
+[INFO    main                 ] 	adding edge between nodes 82 and 62, new edge weight: 0.003861
+[INFO    main                 ] 	adding edge between nodes 82 and 63
+[INFO    main                 ] 	adding edge between nodes 82 and 63, new edge weight: -0.111817
+[INFO    main                 ] 	adding edge between nodes 82 and 65
+[INFO    main                 ] 	adding edge between nodes 82 and 65, new edge weight: -0.351988
+[INFO    main                 ] 	adding edge between nodes 82 and 67
+[INFO    main                 ] 	adding edge between nodes 82 and 67, new edge weight: -0.461250
+[INFO    main                 ] 	adding edge between nodes 82 and 75
+[INFO    main                 ] 	adding edge between nodes 82 and 75, new edge weight: 0.189152
+[INFO    main                 ] 	adding edge between nodes 82 and 76
+[INFO    main                 ] 	adding edge between nodes 82 and 76, new edge weight: 0.241920
+[INFO    main                 ] 	adding edge between nodes 82 and 68
+[INFO    main                 ] 	adding edge between nodes 82 and 68, new edge weight: 0.332228
+[INFO    main                 ] 	adding edge between nodes 82 and 72
+[INFO    main                 ] 	adding edge between nodes 82 and 72, new edge weight: 0.388992
+[INFO    main                 ] 	adding edge between nodes 82 and 74
+[INFO    main                 ] 	adding edge between nodes 82 and 74, new edge weight: 0.054794
+[INFO    main                 ] generating new genome for island[0], island_size: 2, max_island_size: 2, mutation_rate: 0.700000, intra_island_crossover_rate: 0.900000, inter_island_crossover_rate: 1.000000
+[INFO    main                 ] island is full
+[INFO    main                 ] performing mutation
+[INFO    main                 ] generating new genome by mutation.
+[INFO    main                 ] 	attempting to add edge!
+[INFO    main                 ] 	reachable_nodes.size(): 77
+[INFO    main                 ] 	selected first node 28 with depth 4097
+[INFO    main                 ] 	reachable_nodes.size(): 39
+[INFO    main                 ] 	selected second node 54 with depth 5885
+[INFO    main                 ] 	adding edge between nodes 28 and 54
+[INFO    main                 ] 	edge already exists, not adding.
+[INFO    main                 ] generating new genome for island[1], island_size: 2, max_island_size: 2, mutation_rate: 0.700000, intra_island_crossover_rate: 0.900000, inter_island_crossover_rate: 1.000000
+[INFO    main                 ] island is full
+[INFO    main                 ] generating new genome for island[0], island_size: 2, max_island_size: 2, mutation_rate: 0.700000, intra_island_crossover_rate: 0.900000, inter_island_crossover_rate: 1.000000
+[INFO    main                 ] island is full
+[INFO    main                 ] performing mutation
+[INFO    main                 ] generating new genome by mutation.
+[INFO    main                 ] generating new genome for island[1], island_size: 2, max_island_size: 2, mutation_rate: 0.700000, intra_island_crossover_rate: 0.900000, inter_island_crossover_rate: 1.000000
+[INFO    main                 ] island is full
+[INFO    main                 ] performing mutation
+[INFO    main                 ] generating new genome by mutation.
+[INFO    main                 ] 	attempting to split a node!
+[INFO    main                 ] 	attempting to add a node!
+[INFO    main                 ] 	add node, split depth: 0.840017, max_inputs: 21, max_outputs: 1
+[INFO    main                 ] 	add node recurrent probability: 0.000000
+[INFO    main                 ] CREATING NODE, type: 'simple'
+[INFO    main                 ] 	adding edge between nodes 20 and 83
+[INFO    main                 ] 	adding edge between nodes 20 and 83, new edge weight: -0.210757
+[INFO    main                 ] 	adding edge between nodes 7 and 83
+[INFO    main                 ] 	adding edge between nodes 7 and 83, new edge weight: 0.019640
+[INFO    main                 ] 	adding edge between nodes 38 and 83
+[INFO    main                 ] 	adding edge between nodes 38 and 83, new edge weight: 0.314756
+[INFO    main                 ] 	adding edge between nodes 12 and 83
+[INFO    main                 ] 	adding edge between nodes 12 and 83, new edge weight: 0.207615
+[INFO    main                 ] 	adding edge between nodes 15 and 83
+[INFO    main                 ] 	adding edge between nodes 15 and 83, new edge weight: -0.051694
+[INFO    main                 ] 	adding edge between nodes 16 and 83
+[INFO    main                 ] 	adding edge between nodes 16 and 83, new edge weight: -0.392008
+[INFO    main                 ] 	adding edge between nodes 17 and 83
+[INFO    main                 ] 	adding edge between nodes 17 and 83, new edge weight: 0.251033
+[INFO    main                 ] 	adding edge between nodes 29 and 83
+[INFO    main                 ] 	adding edge between nodes 29 and 83, new edge weight: -0.404156
+[INFO    main                 ] 	adding edge between nodes 2 and 83
+[INFO    main                 ] 	adding edge between nodes 2 and 83, new edge weight: -0.295159
+[INFO    main                 ] 	adding edge between nodes 10 and 83
+[INFO    main                 ] 	adding edge between nodes 10 and 83, new edge weight: 0.210130
+[INFO    main                 ] 	adding edge between nodes 1 and 83
+[INFO    main                 ] 	adding edge between nodes 1 and 83, new edge weight: -0.052025
+[INFO    main                 ] 	adding edge between nodes 22 and 83
+[INFO    main                 ] 	adding edge between nodes 22 and 83, new edge weight: -0.235988
+[INFO    main                 ] 	adding edge between nodes 26 and 83
+[INFO    main                 ] 	adding edge between nodes 26 and 83, new edge weight: -0.168626
+[INFO    main                 ] 	adding edge between nodes 27 and 83
+[INFO    main                 ] 	adding edge between nodes 27 and 83, new edge weight: 0.063415
+[INFO    main                 ] 	adding edge between nodes 28 and 83
+[INFO    main                 ] 	adding edge between nodes 28 and 83, new edge weight: -0.218475
+[INFO    main                 ] 	adding edge between nodes 31 and 83
+[INFO    main                 ] 	adding edge between nodes 31 and 83, new edge weight: 0.069493
+[INFO    main                 ] 	adding edge between nodes 32 and 83
+[INFO    main                 ] 	adding edge between nodes 32 and 83, new edge weight: 0.112906
+[INFO    main                 ] 	adding edge between nodes 34 and 83
+[INFO    main                 ] 	adding edge between nodes 34 and 83, new edge weight: -0.091466
+[INFO    main                 ] 	adding edge between nodes 35 and 83
+[INFO    main                 ] 	adding edge between nodes 35 and 83, new edge weight: 0.011092
+[INFO    main                 ] 	adding edge between nodes 36 and 83
+[INFO    main                 ] 	adding edge between nodes 36 and 83, new edge weight: -0.016694
+[INFO    main                 ] 	adding edge between nodes 19 and 83
+[INFO    main                 ] 	adding edge between nodes 19 and 83, new edge weight: 0.161173
+[INFO    main                 ] 	adding edge between nodes 83 and 53
+[INFO    main                 ] 	adding edge between nodes 83 and 53, new edge weight: -0.618857
+[INFO    main                 ] generating new genome for island[0], island_size: 2, max_island_size: 2, mutation_rate: 0.700000, intra_island_crossover_rate: 0.900000, inter_island_crossover_rate: 1.000000
+[INFO    main                 ] island is full
+[INFO    main                 ] performing intra-island crossover
+[INFO    main                 ] inserting genome to island: 1
+[INFO    main                 ] inserting genome with fitness: 12.865531 to island 1
+[INFO    main                 ] ignoring genome, fitness: 12.865531 > worst for island[1] fitness: 12.723020
+[INFO    main                 ] Islands: 
+[INFO    main                 ] Island 0:
+[INFO    main                 ] 		MSE         MAE         Edges       Rec Edges   Simple      Jordan      Elman       UGRNN       MGU         GRU         Delta       LSTM        ENARC       ENAS_DAG    RANDOM_DAG  Total       Generated
+[INFO    main                 ] 		12.634508   33.495271   1478 (1478) 0 (0)       1 (77)                                                                                                                              77 (77)     [add_node(simple):1]
+[INFO    main                 ] 		12.724209   31.164939   1443 (1444) 0 (0)       0 (76)                                                                                                                              76 (76)     [disable_edge:1]
+[INFO    main                 ] Island 1:
+[INFO    main                 ] 		MSE         MAE         Edges       Rec Edges   Simple      Jordan      Elman       UGRNN       MGU         GRU         Delta       LSTM        ENARC       ENAS_DAG    RANDOM_DAG  Total       Generated
+[INFO    main                 ] 		12.701141   32.476173   1444 (1444) 0 (0)       0 (76)                                                                                                                              76 (76)     [crossover:1]
+[INFO    main                 ] 		12.723020   30.346558   1444 (1444) 0 (0)       0 (76)                                                                                                                              76 (76)     [island_crossover:1]
+[INFO    main                 ] inserting genome to island: 0
+[INFO    main                 ] inserting genome with fitness: 13.044254 to island 0
+[INFO    main                 ] ignoring genome, fitness: 13.044254 > worst for island[0] fitness: 12.724209
+[INFO    main                 ] Islands: 
+[INFO    main                 ] Island 0:
+[INFO    main                 ] 		MSE         MAE         Edges       Rec Edges   Simple      Jordan      Elman       UGRNN       MGU         GRU         Delta       LSTM        ENARC       ENAS_DAG    RANDOM_DAG  Total       Generated
+[INFO    main                 ] 		12.634508   33.495271   1478 (1478) 0 (0)       1 (77)                                                                                                                              77 (77)     [add_node(simple):1]
+[INFO    main                 ] 		12.724209   31.164939   1443 (1444) 0 (0)       0 (76)                                                                                                                              76 (76)     [disable_edge:1]
+[INFO    main                 ] Island 1:
+[INFO    main                 ] 		MSE         MAE         Edges       Rec Edges   Simple      Jordan      Elman       UGRNN       MGU         GRU         Delta       LSTM        ENARC       ENAS_DAG    RANDOM_DAG  Total       Generated
+[INFO    main                 ] 		12.701141   32.476173   1444 (1444) 0 (0)       0 (76)                                                                                                                              76 (76)     [crossover:1]
+[INFO    main                 ] 		12.723020   30.346558   1444 (1444) 0 (0)       0 (76)                                                                                                                              76 (76)     [island_crossover:1]
+[INFO    genome_24_thread_3   ] iteration          0, mse: 6977.146138, v_mse:  14.356268, bv_mse:  14.356268, lr: 0.000002, norm: 1749985.520766, p_norm: 193.518512, v_norm: 0.000000, OVER THRESHOLD, multiplier: 0.000013
+[INFO    genome_24_thread_3   ] iteration          1, mse: 6227.171460, v_mse:  12.813110, bv_mse:  12.813110, lr: 0.000002, norm: 368392.591111, p_norm: 233.873892, v_norm: 3.600793, OVER THRESHOLD, multiplier: 0.000060
+[INFO    main                 ] inserting genome to island: 0
+[INFO    main                 ] inserting genome with fitness: 12.813110 to island 0
+[INFO    main                 ] ignoring genome, fitness: 12.813110 > worst for island[0] fitness: 12.724209
+[INFO    main                 ] Islands: 
+[INFO    main                 ] Island 0:
+[INFO    main                 ] 		MSE         MAE         Edges       Rec Edges   Simple      Jordan      Elman       UGRNN       MGU         GRU         Delta       LSTM        ENARC       ENAS_DAG    RANDOM_DAG  Total       Generated
+[INFO    main                 ] 		12.634508   33.495271   1478 (1478) 0 (0)       1 (77)                                                                                                                              77 (77)     [add_node(simple):1]
+[INFO    main                 ] 		12.724209   31.164939   1443 (1444) 0 (0)       0 (76)                                                                                                                              76 (76)     [disable_edge:1]
+[INFO    main                 ] Island 1:
+[INFO    main                 ] 		MSE         MAE         Edges       Rec Edges   Simple      Jordan      Elman       UGRNN       MGU         GRU         Delta       LSTM        ENARC       ENAS_DAG    RANDOM_DAG  Total       Generated
+[INFO    main                 ] 		12.701141   32.476173   1444 (1444) 0 (0)       0 (76)                                                                                                                              76 (76)     [crossover:1]
+[INFO    main                 ] 		12.723020   30.346558   1444 (1444) 0 (0)       0 (76)                                                                                                                              76 (76)     [island_crossover:1]
+[INFO    genome_28_thread_8   ] iteration          0, mse: 6291.566431, v_mse:  12.945610, bv_mse:  12.945610, lr: 0.000002, norm: 700931.712769, p_norm: 186.376312, v_norm: 0.000000[INFO    genome_26_thread_0   ] iteration          0, mse: 6221.955994, v_mse:  12.802379, bv_mse:  12.802379, lr: 0.000002, norm: 601356.639195, p_norm: 220.695043, v_norm: 0.000000, OVER THRESHOLD, multiplier: 0.000031
+, OVER THRESHOLD, multiplier: 0.000037
+[INFO    genome_27_thread_1   ] iteration          0, mse: 6374.400669, v_mse:  13.116051, bv_mse:  13.116051, lr: 0.000002, norm: 613164.075958, p_norm: 261.681514, v_norm: 0.000000, OVER THRESHOLD, multiplier: 0.000036
+[INFO    genome_28_thread_8   ] iteration          1, mse: 6099.737200, v_mse:  12.550900, bv_mse:  12.550900, lr: 0.000002, norm: 219989.367748, p_norm: 194.838409, v_norm: 1.442246, OVER THRESHOLD, multiplier: 0.000100
+[INFO    genome_26_thread_0   ] iteration          1, mse: 6147.884451, v_mse:  12.649968, bv_mse:  12.649968, lr: 0.000002, norm: 234739.147240, p_norm: 224.938350, v_norm: 1.237359, OVER THRESHOLD, multiplier: 0.000094
+[INFO    genome_27_thread_1   ] iteration          1, mse: 6161.125020, v_mse:  12.677212, bv_mse:  12.677212, lr: 0.000002, norm: 316932.774403, p_norm: 266.386952, v_norm: 1.261654, OVER THRESHOLD, multiplier: 0.000070
+[INFO    genome_30_thread_2   ] iteration          0, mse: 6617.779869, v_mse:  13.616831, bv_mse:  13.616831, lr: 0.000002, norm: 1188227.503510, p_norm: 237.380107, v_norm: 0.000000, OVER THRESHOLD, multiplier: 0.000019
+[INFO    main                 ] inserting genome to island: 1
+[INFO    main                 ] inserting genome with fitness: 12.677212 to island 1
+[INFO    main                 ] created copy to insert to island: 1
+[INFO    main                 ] inserting genome at index: 0
+[INFO    main                 ] adding to structure_map[3007_1095565_0] : 0x7f52a02cfb48
+[INFO    main                 ] new best fitness for island: 1!
+[INFO    main                 ] genomes.size(): 3, max_size: 2, status: 1
+[INFO    main                 ] checking to remove worst from structure_map - &worst: 0x7f521b3ab4d0, &(*potential_match): 0x7f4f2c29bae0
+[INFO    main                 ] checking to remove worst from structure_map - &worst: 0x7f521b3ab4d0, &(*potential_match): 0x7f521b3ab4d0
+[INFO    main                 ] potential_matches.size() before erase: 2
+[INFO    main                 ] potential_matches.size() after erase: 1
+[INFO    main                 ] structure_map[2926_1043290_0].size() after erase: 1
+[INFO    genome_30_thread_2   ] iteration          1, mse: 6149.999677, v_mse:  12.654320, bv_mse:  12.654320, lr: 0.000002, norm: 400368.692373, p_norm: 256.944696, v_norm: 2.444913, OVER THRESHOLD, multiplier: 0.000055
+[INFO    main                 ] Islands: 
+[INFO    main                 ] Island 0:
+[INFO    main                 ] 		MSE         MAE         Edges       Rec Edges   Simple      Jordan      Elman       UGRNN       MGU         GRU         Delta       LSTM        ENARC       ENAS_DAG    RANDOM_DAG  Total       Generated
+[INFO    main                 ] 		12.634508   33.495271   1478 (1478) 0 (0)       1 (77)                                                                                                                              77 (77)     [add_node(simple):1]
+[INFO    main                 ] 		12.724209   31.164939   1443 (1444) 0 (0)       0 (76)                                                                                                                              76 (76)     [disable_edge:1]
+[INFO    main                 ] Island 1:
+[INFO    main                 ] 		MSE         MAE         Edges       Rec Edges   Simple      Jordan      Elman       UGRNN       MGU         GRU         Delta       LSTM        ENARC       ENAS_DAG    RANDOM_DAG  Total       Generated
+[INFO    main                 ] 		12.677212   32.905165   1478 (1478) 0 (0)       1 (77)                                                                                                                              77 (77)     [island_crossover:1]
+[INFO    main                 ] 		12.701141   32.476173   1444 (1444) 0 (0)       0 (76)                                                                                                                              76 (76)     [crossover:1]
+[INFO    main                 ] inserting genome to island: 0
+[INFO    main                 ] inserting genome with fitness: 12.550900 to island 0
+[INFO    main                 ] potential duplicate for hash '2926_1041911_0', had 1 potential matches.
+[INFO    main                 ] on potential match 0 of 1
+[INFO    main                 ] created copy to insert to island: 0
+[INFO    main                 ] inserting genome at index: 0
+[INFO    main                 ] adding to structure_map[2926_1041911_0] : 0x7f529d2c9b48
+[INFO    main                 ] new best fitness for island: 0!
+[INFO    main                 ] genomes.size(): 3, max_size: 2, status: 1
+[INFO    main                 ] checking to remove worst from structure_map - &worst: 0x7f4d68a19620, &(*potential_match): 0x7f4d68a19620
+[INFO    main                 ] potential_matches.size() before erase: 2
+[INFO    main                 ] potential_matches.size() after erase: 1
+[INFO    main                 ] structure_map[2926_1041911_0].size() after erase: 1
+[INFO    main                 ] checking to remove worst from structure_map - &worst: 0x7f4d68a19620, &(*potential_match): 0x7f527008a700
+[INFO    main                 ] Islands: 
+[INFO    main                 ] Island 0:
+[INFO    main                 ] 		MSE         MAE         Edges       Rec Edges   Simple      Jordan      Elman       UGRNN       MGU         GRU         Delta       LSTM        ENARC       ENAS_DAG    RANDOM_DAG  Total       Generated
+[INFO    main                 ] 		12.550900   31.207737   1443 (1444) 0 (0)       0 (76)                                                                                                                              76 (76)     [clone:1]
+[INFO    main                 ] 		12.634508   33.495271   1478 (1478) 0 (0)       1 (77)                                                                                                                              77 (77)     [add_node(simple):1]
+[INFO    main                 ] Island 1:
+[INFO    main                 ] 		MSE         MAE         Edges       Rec Edges   Simple      Jordan      Elman       UGRNN       MGU         GRU         Delta       LSTM        ENARC       ENAS_DAG    RANDOM_DAG  Total       Generated
+[INFO    main                 ] 		12.677212   32.905165   1478 (1478) 0 (0)       1 (77)                                                                                                                              77 (77)     [island_crossover:1]
+[INFO    main                 ] 		12.701141   32.476173   1444 (1444) 0 (0)       0 (76)                                                                                                                              76 (76)     [crossover:1]
+[INFO    main                 ] inserting genome to island: 0
+[INFO    main                 ] inserting genome with fitness: 12.649968 to island 0
+[INFO    main                 ] ignoring genome, fitness: 12.649968 > worst for island[0] fitness: 12.634508
+[INFO    main                 ] Islands: 
+[INFO    main                 ] Island 0:
+[INFO    main                 ] 		MSE         MAE         Edges       Rec Edges   Simple      Jordan      Elman       UGRNN       MGU         GRU         Delta       LSTM        ENARC       ENAS_DAG    RANDOM_DAG  Total       Generated
+[INFO    main                 ] 		12.550900   31.207737   1443 (1444) 0 (0)       0 (76)                                                                                                                              76 (76)     [clone:1]
+[INFO    main                 ] 		12.634508   33.495271   1478 (1478) 0 (0)       1 (77)                                                                                                                              77 (77)     [add_node(simple):1]
+[INFO    main                 ] Island 1:
+[INFO    main                 ] 		MSE         MAE         Edges       Rec Edges   Simple      Jordan      Elman       UGRNN       MGU         GRU         Delta       LSTM        ENARC       ENAS_DAG    RANDOM_DAG  Total       Generated
+[INFO    main                 ] 		12.677212   32.905165   1478 (1478) 0 (0)       1 (77)                                                                                                                              77 (77)     [island_crossover:1]
+[INFO    main                 ] 		12.701141   32.476173   1444 (1444) 0 (0)       0 (76)                                                                                                                              76 (76)     [crossover:1]
+[INFO    main                 ] inserting genome to island: 0
+[INFO    main                 ] inserting genome with fitness: 12.654320 to island 0
+[INFO    main                 ] ignoring genome, fitness: 12.654320 > worst for island[0] fitness: 12.634508
+[INFO    main                 ] Islands: 
+[INFO    main                 ] Island 0:
+[INFO    main                 ] 		MSE         MAE         Edges       Rec Edges   Simple      Jordan      Elman       UGRNN       MGU         GRU         Delta       LSTM        ENARC       ENAS_DAG    RANDOM_DAG  Total       Generated
+[INFO    main                 ] 		12.550900   31.207737   1443 (1444) 0 (0)       0 (76)                                                                                                                              76 (76)     [clone:1]
+[INFO    main                 ] 		12.634508   33.495271   1478 (1478) 0 (0)       1 (77)                                                                                                                              77 (77)     [add_node(simple):1]
+[INFO    main                 ] Island 1:
+[INFO    main                 ] 		MSE         MAE         Edges       Rec Edges   Simple      Jordan      Elman       UGRNN       MGU         GRU         Delta       LSTM        ENARC       ENAS_DAG    RANDOM_DAG  Total       Generated
+[INFO    main                 ] 		12.677212   32.905165   1478 (1478) 0 (0)       1 (77)                                                                                                                              77 (77)     [island_crossover:1]
+[INFO    main                 ] 		12.701141   32.476173   1444 (1444) 0 (0)       0 (76)                                                                                                                              76 (76)     [crossover:1]
+[INFO    genome_29_thread_7   ] iteration          0, mse: 6456.630060, v_mse:  13.285247, bv_mse:  13.285247, lr: 0.000002, norm: 803789.890614, p_norm: 226.926870, v_norm: 0.000000, OVER THRESHOLD, multiplier: 0.000027
+[INFO    genome_29_thread_7   ] iteration          1, mse: 6166.705618, v_mse:  12.688695, bv_mse:  12.688695, lr: 0.000002, norm: 236572.743822, p_norm: 235.391483, v_norm: 1.653889, OVER THRESHOLD, multiplier: 0.000093
+[INFO    main                 ] inserting genome to island: 1
+[INFO    main                 ] inserting genome with fitness: 12.688695 to island 1
+[INFO    main                 ] created copy to insert to island: 1
+[INFO    main                 ] inserting genome at index: 1
+[INFO    main                 ] adding to structure_map[3009_1078633_0] : 0x7f529dacab48
+[INFO    main                 ] genomes.size(): 3, max_size: 2, status: 1
+[INFO    main                 ] checking to remove worst from structure_map - &worst: 0x7f4f2c29bae0, &(*potential_match): 0x7f4f2c29bae0
+[INFO    main                 ] potential_matches.size() before erase: 1
+[INFO    main                 ] potential_matches.size() after erase: 0
+[INFO    main                 ] structure_map[2926_1043290_0].size() after erase: 0
+[INFO    main                 ] deleting the potential_matches vector for hash '2926_1043290_0' because it was empty.
+[INFO    main                 ] Islands: 
+[INFO    main                 ] Island 0:
+[INFO    main                 ] 		MSE         MAE         Edges       Rec Edges   Simple      Jordan      Elman       UGRNN       MGU         GRU         Delta       LSTM        ENARC       ENAS_DAG    RANDOM_DAG  Total       Generated
+[INFO    main                 ] 		12.550900   31.207737   1443 (1444) 0 (0)       0 (76)                                                                                                                              76 (76)     [clone:1]
+[INFO    main                 ] 		12.634508   33.495271   1478 (1478) 0 (0)       1 (77)                                                                                                                              77 (77)     [add_node(simple):1]
+[INFO    main                 ] Island 1:
+[INFO    main                 ] 		MSE         MAE         Edges       Rec Edges   Simple      Jordan      Elman       UGRNN       MGU         GRU         Delta       LSTM        ENARC       ENAS_DAG    RANDOM_DAG  Total       Generated
+[INFO    main                 ] 		12.677212   32.905165   1478 (1478) 0 (0)       1 (77)                                                                                                                              77 (77)     [island_crossover:1]
+[INFO    main                 ] 		12.688695   33.741960   1466 (1466) 0 (0)       1 (77)                                                                                                                              77 (77)     [add_node(simple):1]
+[INFO    genome_25_thread_5   ] iteration          0, mse: 6471.066972, v_mse:  13.314953, bv_mse:  13.314953, lr: 0.000002, norm: 818111.719508, p_norm: 229.745328, v_norm: 0.000000, OVER THRESHOLD, multiplier: 0.000027
+[INFO    genome_25_thread_5   ] iteration          1, mse: 6175.179782, v_mse:  12.706131, bv_mse:  12.706131, lr: 0.000002, norm: 270825.772208, p_norm: 238.658480, v_norm: 1.683357, OVER THRESHOLD, multiplier: 0.000081
+[INFO    main                 ] inserting genome to island: 1
+[INFO    main                 ] inserting genome with fitness: 12.706131 to island 1
+[INFO    main                 ] ignoring genome, fitness: 12.706131 > worst for island[1] fitness: 12.688695
+[INFO    main                 ] Islands: 
+[INFO    main                 ] Island 0:
+[INFO    main                 ] 		MSE         MAE         Edges       Rec Edges   Simple      Jordan      Elman       UGRNN       MGU         GRU         Delta       LSTM        ENARC       ENAS_DAG    RANDOM_DAG  Total       Generated
+[INFO    main                 ] 		12.550900   31.207737   1443 (1444) 0 (0)       0 (76)                                                                                                                              76 (76)     [clone:1]
+[INFO    main                 ] 		12.634508   33.495271   1478 (1478) 0 (0)       1 (77)                                                                                                                              77 (77)     [add_node(simple):1]
+[INFO    main                 ] Island 1:
+[INFO    main                 ] 		MSE         MAE         Edges       Rec Edges   Simple      Jordan      Elman       UGRNN       MGU         GRU         Delta       LSTM        ENARC       ENAS_DAG    RANDOM_DAG  Total       Generated
+[INFO    main                 ] 		12.677212   32.905165   1478 (1478) 0 (0)       1 (77)                                                                                                                              77 (77)     [island_crossover:1]
+[INFO    main                 ] 		12.688695   33.741960   1466 (1466) 0 (0)       1 (77)                                                                                                                              77 (77)     [add_node(simple):1]
+[INFO    main                 ] completed!

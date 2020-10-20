@@ -20,35 +20,111 @@ using std::vector;
 
 class RNN;
 
-#define INPUT_LAYER 0
-#define HIDDEN_LAYER 1
-#define OUTPUT_LAYER 2
+#define INPUT_LAYER 0   /**< Specifices the Input Layer of the rnn network. */
+#define HIDDEN_LAYER 1  /**< Specifices the Hidden Layer of the rnn network. */
+#define OUTPUT_LAYER 2  /**< Specifices the Output Layer of the rnn network. */
 
 extern const int32_t NUMBER_NODE_TYPES;
 extern const string NODE_TYPES[];
 
-#define SIMPLE_NODE 0
-#define JORDAN_NODE 1
-#define ELMAN_NODE 2
-#define UGRNN_NODE 3
-#define MGU_NODE 4
-#define GRU_NODE 5
-#define DELTA_NODE 6
-#define LSTM_NODE 7
-#define ENARC_NODE 8
-#define ENAS_DAG_NODE 9
-#define RANDOM_DAG_NODE 10
+#define SIMPLE_NODE 0  /**< Specifices the rnn network to use the Simple Node as the memory cell. */
+#define JORDAN_NODE 1  /**< Specifices the rnn network to use the Jordan Node as the memory cell. */
+#define ELMAN_NODE 2  /**< Specifices the rnn network to use the Elman Node as the memory cell. */
+#define UGRNN_NODE 3  /**< Specifices the rnn network to use the UGRNN Node as the memory cell. */
+#define MGU_NODE 4  /**< Specifices the rnn network to use the MGU Node as the memory cell. */
+#define GRU_NODE 5  /**< Specifices the rnn network to use the GRU Node as the memory cell. */
+#define DELTA_NODE 6  /**< Specifices the rnn network to use the Delta Node as the memory cell. */
+#define LSTM_NODE 7  /**< Specifices the rnn network to use the LSTM Node as the memory cell. */
+#define ENARC_NODE 8  /**< Specifices the rnn network to use the ENARC Node as the memory cell. */
+#define ENAS_DAG_NODE 9  /**< Specifices the rnn network to use the ENAS_DAG Node as the memory cell. */
+#define RANDOM_DAG_NODE 10  /**< Specifices the rnn network to use the Random_DAG Node as the memory cell. */
 
 
 
+/**
+ * Gives the sigmoid of the value to apply non-linearity in the network.
+ *
+ * \param value is the output of the node after multiplying with weights. 
+ *
+ * \return sigmoid of the value
+ */
 double sigmoid(double value);
-double sigmoid_derivative(double value);
-double tanh_derivative(double value);
+
+/**
+ * Gives the swish  = (identity * sigmoid) of the value to apply non-linearity in the network.
+ *
+ * \param value is the output of the node after multiplying with weights. 
+ *
+ * \return swish of the value
+ */
+
 double swish(double value);
-double swish_derivative(double value, double input);
+
+/**
+ * Gives the leakyReLU of the value to apply non-linearity in the network. 
+ *
+ * \param value is the output of the node after multiplying with weights. 
+ *
+ * \return LeakyReLU of the value
+ */
+
 double leakyReLU(double value);
-double leakyReLU_derivative(double input);
+
+/**
+ * Gives the identity of the value. Linearlty is preserved in this case.
+ *
+ * \param value is the output of the node after multiplying with weights. 
+ *
+ * \return value
+ */
+
 double identity(double value);
+
+
+/**
+ * Gives the sigmoid derivative of the value used during the backward pass.
+ *
+ * \param value is the output of the node after multiplying with weights. 
+ *
+ * \return sigmoid derivative of the value
+ */
+
+double sigmoid_derivative(double value);
+
+/**
+ * Gives the tanh derivative of the value used during the backward pass.
+ *
+ * \param value is the output of the node after multiplying with weights. 
+ *
+ * \return tanh derivative of the value
+ */
+
+double tanh_derivative(double value);
+
+/**
+ * Gives the swish derivative of the value used during the backward pass.
+ *
+ * \param input is the input of the node before multiplying with weights. 
+ * \param value is the output of the node after multiplying with weights. 
+ *
+ * \return swish derivative
+ */
+double swish_derivative(double value, double input);
+
+/**
+ * Gives the leakyReLU derivative of the value used during the backward pass.
+ *
+ * \param input is the output of the node after multiplying with weights. 
+ *
+ * \return leakyReLU derivative of the input
+ */
+double leakyReLU_derivative(double input);
+
+/**
+ * Gives the derivative of the identity used during the backward pass.
+ *
+ * \return unit
+ */
 double identity_derivative();
 
 

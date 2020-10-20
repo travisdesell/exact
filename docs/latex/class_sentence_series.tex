@@ -1,0 +1,107 @@
+\hypertarget{class_sentence_series}{}\doxysection{Sentence\+Series Class Reference}
+\label{class_sentence_series}\index{SentenceSeries@{SentenceSeries}}
+\doxysubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{class_sentence_series_a9dd5e8b2b6405969ec0b6f1639a0cd49}\label{class_sentence_series_a9dd5e8b2b6405969ec0b6f1639a0cd49}} 
+{\bfseries Sentence\+Series} (const \textbf{ string} \+\_\+filename, const \textbf{ vector}$<$ \textbf{ string} $>$ \&\+\_\+word\+\_\+index, const \textbf{ map}$<$ \textbf{ string}, int $>$ \&\+\_\+vocab)
+\item 
+\mbox{\Hypertarget{class_sentence_series_a86183fa3e7691b3f4956e33eb5ed5036}\label{class_sentence_series_a86183fa3e7691b3f4956e33eb5ed5036}} 
+void {\bfseries add\+\_\+word\+\_\+series} (\textbf{ string} name)
+\item 
+\mbox{\Hypertarget{class_sentence_series_a256748d3020dfb23320fec748285bfcd}\label{class_sentence_series_a256748d3020dfb23320fec748285bfcd}} 
+int {\bfseries get\+\_\+number\+\_\+rows} () const
+\item 
+\mbox{\Hypertarget{class_sentence_series_aa9d03674846a3ca929bf4c19f6d159a2}\label{class_sentence_series_aa9d03674846a3ca929bf4c19f6d159a2}} 
+int {\bfseries get\+\_\+number\+\_\+columns} () const
+\item 
+\mbox{\Hypertarget{class_sentence_series_aa98fbace558de995c1d09fe9320786a0}\label{class_sentence_series_aa98fbace558de995c1d09fe9320786a0}} 
+\textbf{ string} {\bfseries get\+\_\+filename} () const
+\item 
+\mbox{\Hypertarget{class_sentence_series_ae508f8a74847a39cd05f43933b652380}\label{class_sentence_series_ae508f8a74847a39cd05f43933b652380}} 
+\textbf{ vector}$<$ \textbf{ string} $>$ {\bfseries get\+\_\+word\+\_\+index} () const
+\item 
+\mbox{\Hypertarget{class_sentence_series_a912fbfb10140e366162396c82a260a8c}\label{class_sentence_series_a912fbfb10140e366162396c82a260a8c}} 
+void {\bfseries get\+\_\+series} (\textbf{ string} word\+\_\+name, \textbf{ vector}$<$ double $>$ \&series)
+\item 
+\mbox{\Hypertarget{class_sentence_series_a192d7b7c36b2974d1a757bca19fd7116}\label{class_sentence_series_a192d7b7c36b2974d1a757bca19fd7116}} 
+double {\bfseries get\+\_\+min} (\textbf{ string} word)
+\item 
+\mbox{\Hypertarget{class_sentence_series_ada1c70ab14a3af0961fa5f9536bc7a73}\label{class_sentence_series_ada1c70ab14a3af0961fa5f9536bc7a73}} 
+double {\bfseries get\+\_\+average} (\textbf{ string} word)
+\item 
+\mbox{\Hypertarget{class_sentence_series_a15e2b176f35810f7b2732aad331e71df}\label{class_sentence_series_a15e2b176f35810f7b2732aad331e71df}} 
+double {\bfseries get\+\_\+max} (\textbf{ string} word)
+\item 
+\mbox{\Hypertarget{class_sentence_series_a5257b87e1506b11490c25a2189d18fec}\label{class_sentence_series_a5257b87e1506b11490c25a2189d18fec}} 
+double {\bfseries get\+\_\+std\+\_\+dev} (\textbf{ string} word)
+\item 
+\mbox{\Hypertarget{class_sentence_series_a229548660c2d523582d9cefada876a83}\label{class_sentence_series_a229548660c2d523582d9cefada876a83}} 
+double {\bfseries get\+\_\+variance} (\textbf{ string} word)
+\item 
+\mbox{\Hypertarget{class_sentence_series_a9a769265817ce471dd8c5d12c8e95bd2}\label{class_sentence_series_a9a769265817ce471dd8c5d12c8e95bd2}} 
+double {\bfseries get\+\_\+min\+\_\+change} (\textbf{ string} word)
+\item 
+\mbox{\Hypertarget{class_sentence_series_a92b13d7397a094e5f377f2fbc4215c19}\label{class_sentence_series_a92b13d7397a094e5f377f2fbc4215c19}} 
+double {\bfseries get\+\_\+max\+\_\+change} (\textbf{ string} word)
+\item 
+\mbox{\Hypertarget{class_sentence_series_a69379261de439200738732a3af56b2c4}\label{class_sentence_series_a69379261de439200738732a3af56b2c4}} 
+double {\bfseries get\+\_\+correlation} (\textbf{ string} word1, \textbf{ string} word2, \textbf{ int32\+\_\+t} lag) const
+\item 
+\mbox{\Hypertarget{class_sentence_series_ab4b3eae0c436701a5350037ac0119c10}\label{class_sentence_series_ab4b3eae0c436701a5350037ac0119c10}} 
+void {\bfseries normalize\+\_\+min\+\_\+max} (\textbf{ string} word, double min, double max)
+\item 
+\mbox{\Hypertarget{class_sentence_series_a6ab9942ca671b0b6b1f445ef992db753}\label{class_sentence_series_a6ab9942ca671b0b6b1f445ef992db753}} 
+void {\bfseries normalize\+\_\+avg\+\_\+std\+\_\+dev} (\textbf{ string} word, double avg, double std\+\_\+dev, double norm\+\_\+max)
+\item 
+\mbox{\Hypertarget{class_sentence_series_a68a6931ce95999cb1d23ef6a39d2c65d}\label{class_sentence_series_a68a6931ce95999cb1d23ef6a39d2c65d}} 
+void {\bfseries export\+\_\+word\+\_\+series} (\textbf{ vector}$<$ \textbf{ vector}$<$ double $>$ $>$ \&data, int word\+\_\+offset)
+\item 
+\mbox{\Hypertarget{class_sentence_series_ad6acf989bd60775b629ed3c854c024a0}\label{class_sentence_series_ad6acf989bd60775b629ed3c854c024a0}} 
+void {\bfseries export\+\_\+word\+\_\+series} (\textbf{ vector}$<$ \textbf{ vector}$<$ double $>$ $>$ \&data)
+\item 
+\mbox{\Hypertarget{class_sentence_series_a836512c4aa3a805780bbc67483a78cd5}\label{class_sentence_series_a836512c4aa3a805780bbc67483a78cd5}} 
+\mbox{\hyperlink{class_sentence_series}{Sentence\+Series}} $\ast$ {\bfseries copy} ()
+\item 
+\mbox{\Hypertarget{class_sentence_series_ac28370290290d06f8207884a4abe9465}\label{class_sentence_series_ac28370290290d06f8207884a4abe9465}} 
+void {\bfseries select\+\_\+parameters} (const \textbf{ vector}$<$ \textbf{ string} $>$ \&input\+\_\+parameter\+\_\+names, const \textbf{ vector}$<$ \textbf{ string} $>$ \&output\+\_\+parameter\+\_\+names)
+\item 
+\mbox{\Hypertarget{class_sentence_series_ac179ff27ac1d0d2373cf40ddddcf7189}\label{class_sentence_series_ac179ff27ac1d0d2373cf40ddddcf7189}} 
+void {\bfseries select\+\_\+parameters} (const \textbf{ vector}$<$ \textbf{ string} $>$ \&parameter\+\_\+names)
+\end{DoxyCompactItemize}
+\doxysubsection*{Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+int \mbox{\hyperlink{class_sentence_series_a8051bf7722f693797d589fbb6835afc2}{number\+\_\+rows}}
+\begin{DoxyCompactList}\small\item\em Specifies the number of the rows in the dataset. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{class_sentence_series_a71ecf2220dbde9a683361a418fd79caa}\label{class_sentence_series_a71ecf2220dbde9a683361a418fd79caa}} 
+\textbf{ string} \mbox{\hyperlink{class_sentence_series_a71ecf2220dbde9a683361a418fd79caa}{filename}}
+\begin{DoxyCompactList}\small\item\em Specifices the filename for the training or testing data. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{class_sentence_series_a12648e58e8101346fb1d0b9008f89084}\label{class_sentence_series_a12648e58e8101346fb1d0b9008f89084}} 
+\textbf{ map}$<$ \textbf{ string}, int $>$ \mbox{\hyperlink{class_sentence_series_a12648e58e8101346fb1d0b9008f89084}{vocab}}
+\begin{DoxyCompactList}\small\item\em Maps the word string to index of the word series in a particular string. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{class_sentence_series_ad0c1da927f87e6778900f1e93faf8a8e}\label{class_sentence_series_ad0c1da927f87e6778900f1e93faf8a8e}} 
+\textbf{ vector}$<$ \textbf{ string} $>$ \mbox{\hyperlink{class_sentence_series_ad0c1da927f87e6778900f1e93faf8a8e}{word\+\_\+index}}
+\begin{DoxyCompactList}\small\item\em Maps the index to word string of the word series in a particular string. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{class_sentence_series_a78609974545b5e015f3a5f477d876c4b}\label{class_sentence_series_a78609974545b5e015f3a5f477d876c4b}} 
+\textbf{ map}$<$ \textbf{ string}, \mbox{\hyperlink{class_word_series}{Word\+Series}} $\ast$ $>$ \mbox{\hyperlink{class_sentence_series_a78609974545b5e015f3a5f477d876c4b}{word\+\_\+series}}
+\begin{DoxyCompactList}\small\item\em Maps the word string to the word series in a particular string. \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\doxysubsection{Member Data Documentation}
+\mbox{\Hypertarget{class_sentence_series_a8051bf7722f693797d589fbb6835afc2}\label{class_sentence_series_a8051bf7722f693797d589fbb6835afc2}} 
+\index{SentenceSeries@{SentenceSeries}!number\_rows@{number\_rows}}
+\index{number\_rows@{number\_rows}!SentenceSeries@{SentenceSeries}}
+\doxysubsubsection{\texorpdfstring{number\_rows}{number\_rows}}
+{\footnotesize\ttfamily int Sentence\+Series\+::number\+\_\+rows\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+Specifies the number of the rows in the dataset. 
+
+This tells about the number of the unique words in the dataset. 
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+word\+\_\+series/word\+\_\+series.\+hxx\item 
+word\+\_\+series/word\+\_\+series.\+cxx\end{DoxyCompactItemize}

@@ -1,0 +1,230 @@
+\hypertarget{class_r_n_n}{}\doxysection{R\+NN Class Reference}
+\label{class_r_n_n}\index{RNN@{RNN}}
+\doxysubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{class_r_n_n_a21abeabbb35cbd741947ad14dd2b34ee}\label{class_r_n_n_a21abeabbb35cbd741947ad14dd2b34ee}} 
+{\bfseries R\+NN} (\textbf{ vector}$<$ \mbox{\hyperlink{class_r_n_n___node___interface}{R\+N\+N\+\_\+\+Node\+\_\+\+Interface}} $\ast$ $>$ \&\+\_\+nodes, \textbf{ vector}$<$ \mbox{\hyperlink{class_r_n_n___edge}{R\+N\+N\+\_\+\+Edge}} $\ast$ $>$ \&\+\_\+edges, const \textbf{ vector}$<$ \textbf{ string} $>$ \&input\+\_\+parameter\+\_\+names, const \textbf{ vector}$<$ \textbf{ string} $>$ \&output\+\_\+parameter\+\_\+names)
+\item 
+\mbox{\Hypertarget{class_r_n_n_a64568874f663d44ee0fef78b439e36b1}\label{class_r_n_n_a64568874f663d44ee0fef78b439e36b1}} 
+{\bfseries R\+NN} (\textbf{ vector}$<$ \mbox{\hyperlink{class_r_n_n___node___interface}{R\+N\+N\+\_\+\+Node\+\_\+\+Interface}} $\ast$ $>$ \&\+\_\+nodes, \textbf{ vector}$<$ \mbox{\hyperlink{class_r_n_n___edge}{R\+N\+N\+\_\+\+Edge}} $\ast$ $>$ \&\+\_\+edges, \textbf{ vector}$<$ \mbox{\hyperlink{class_r_n_n___recurrent___edge}{R\+N\+N\+\_\+\+Recurrent\+\_\+\+Edge}} $\ast$ $>$ \&\+\_\+recurrent\+\_\+edges, const \textbf{ vector}$<$ \textbf{ string} $>$ \&input\+\_\+parameter\+\_\+names, const \textbf{ vector}$<$ \textbf{ string} $>$ \&output\+\_\+parameter\+\_\+names)
+\item 
+\mbox{\Hypertarget{class_r_n_n_a800ff6a57eda063798e081d56dad4659}\label{class_r_n_n_a800ff6a57eda063798e081d56dad4659}} 
+void {\bfseries fix\+\_\+parameter\+\_\+orders} (const \textbf{ vector}$<$ \textbf{ string} $>$ \&input\+\_\+parameter\+\_\+names, const \textbf{ vector}$<$ \textbf{ string} $>$ \&output\+\_\+parameter\+\_\+names)
+\item 
+\mbox{\Hypertarget{class_r_n_n_a77c4b96d7c7f5ae4a0424b89299c3596}\label{class_r_n_n_a77c4b96d7c7f5ae4a0424b89299c3596}} 
+void {\bfseries validate\+\_\+parameters} (const \textbf{ vector}$<$ \textbf{ string} $>$ \&input\+\_\+parameter\+\_\+names, const \textbf{ vector}$<$ \textbf{ string} $>$ \&output\+\_\+parameter\+\_\+names)
+\item 
+\mbox{\Hypertarget{class_r_n_n_a6b6ed3e806e12ab441a05983ede06338}\label{class_r_n_n_a6b6ed3e806e12ab441a05983ede06338}} 
+int {\bfseries get\+\_\+number\+\_\+nodes} ()
+\item 
+\mbox{\Hypertarget{class_r_n_n_a88e40fc2dee042a8812aefce69c0c6b7}\label{class_r_n_n_a88e40fc2dee042a8812aefce69c0c6b7}} 
+int {\bfseries get\+\_\+number\+\_\+edges} ()
+\item 
+\mbox{\Hypertarget{class_r_n_n_afd9b76cd6e8b6b7412fd7604e414a8e2}\label{class_r_n_n_afd9b76cd6e8b6b7412fd7604e414a8e2}} 
+\mbox{\hyperlink{class_r_n_n___node___interface}{R\+N\+N\+\_\+\+Node\+\_\+\+Interface}} $\ast$ {\bfseries get\+\_\+node} (int i)
+\item 
+\mbox{\Hypertarget{class_r_n_n_a6c481f94d0d061a102a0d4d6586452ac}\label{class_r_n_n_a6c481f94d0d061a102a0d4d6586452ac}} 
+\mbox{\hyperlink{class_r_n_n___edge}{R\+N\+N\+\_\+\+Edge}} $\ast$ {\bfseries get\+\_\+edge} (int i)
+\item 
+\mbox{\Hypertarget{class_r_n_n_a09548131fe6647737628f8803f7555b9}\label{class_r_n_n_a09548131fe6647737628f8803f7555b9}} 
+void {\bfseries forward\+\_\+pass} (const \textbf{ vector}$<$ \textbf{ vector}$<$ double $>$ $>$ \&series\+\_\+data, bool using\+\_\+dropout, bool training, double dropout\+\_\+probability)
+\item 
+\mbox{\Hypertarget{class_r_n_n_a36a017fe90949a25e8368a03482712b0}\label{class_r_n_n_a36a017fe90949a25e8368a03482712b0}} 
+void {\bfseries backward\+\_\+pass} (double error, bool using\+\_\+dropout, bool training, double dropout\+\_\+probability)
+\item 
+double \mbox{\hyperlink{class_r_n_n_aa5fb8d612f560a05bfa188453578c1a2}{calculate\+\_\+error\+\_\+softmax}} (const \textbf{ vector}$<$ \textbf{ vector}$<$ double $>$ $>$ \&expected\+\_\+outputs)
+\begin{DoxyCompactList}\small\item\em Calculates the sum of cross entropy error by comparing the expected outputs and the predicted outputs. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{class_r_n_n_a99cb157b0238b827561808c92719b24f}\label{class_r_n_n_a99cb157b0238b827561808c92719b24f}} 
+double {\bfseries calculate\+\_\+error\+\_\+mse} (const \textbf{ vector}$<$ \textbf{ vector}$<$ double $>$ $>$ \&expected\+\_\+outputs)
+\item 
+\mbox{\Hypertarget{class_r_n_n_a4b33d44e30062abd3caf1582aeadadd6}\label{class_r_n_n_a4b33d44e30062abd3caf1582aeadadd6}} 
+double {\bfseries calculate\+\_\+error\+\_\+mae} (const \textbf{ vector}$<$ \textbf{ vector}$<$ double $>$ $>$ \&expected\+\_\+outputs)
+\item 
+double \mbox{\hyperlink{class_r_n_n_a7245cfe333987f29d59dd1c1442391ec}{prediction\+\_\+softmax}} (const \textbf{ vector}$<$ \textbf{ vector}$<$ double $>$ $>$ \&series\+\_\+data, const \textbf{ vector}$<$ \textbf{ vector}$<$ double $>$ $>$ \&expected\+\_\+outputs, bool using\+\_\+dropout, bool training, double dropout\+\_\+probability)
+\begin{DoxyCompactList}\small\item\em Calls the calculate\+\_\+error\+\_\+softmax after the forward pass across the rnn genome. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{class_r_n_n_a70c2fd7634e15fcceba72dcc350f3cd9}\label{class_r_n_n_a70c2fd7634e15fcceba72dcc350f3cd9}} 
+double {\bfseries prediction\+\_\+mse} (const \textbf{ vector}$<$ \textbf{ vector}$<$ double $>$ $>$ \&series\+\_\+data, const \textbf{ vector}$<$ \textbf{ vector}$<$ double $>$ $>$ \&expected\+\_\+outputs, bool using\+\_\+dropout, bool training, double dropout\+\_\+probability)
+\item 
+\mbox{\Hypertarget{class_r_n_n_abc61ce5eb7ccb4b027aab28f01dfb578}\label{class_r_n_n_abc61ce5eb7ccb4b027aab28f01dfb578}} 
+double {\bfseries prediction\+\_\+mae} (const \textbf{ vector}$<$ \textbf{ vector}$<$ double $>$ $>$ \&series\+\_\+data, const \textbf{ vector}$<$ \textbf{ vector}$<$ double $>$ $>$ \&expected\+\_\+outputs, bool using\+\_\+dropout, bool training, double dropout\+\_\+probability)
+\item 
+\mbox{\Hypertarget{class_r_n_n_a5ccda82155037f616c6db9bb73c52b3b}\label{class_r_n_n_a5ccda82155037f616c6db9bb73c52b3b}} 
+\textbf{ vector}$<$ double $>$ {\bfseries get\+\_\+predictions} (const \textbf{ vector}$<$ \textbf{ vector}$<$ double $>$ $>$ \&series\+\_\+data, const \textbf{ vector}$<$ \textbf{ vector}$<$ double $>$ $>$ \&expected\+\_\+outputs, bool usng\+\_\+dropout, double dropout\+\_\+probability)
+\item 
+\mbox{\Hypertarget{class_r_n_n_a6b951718d90f8a3398a500816aa0b25a}\label{class_r_n_n_a6b951718d90f8a3398a500816aa0b25a}} 
+void {\bfseries write\+\_\+predictions} (\textbf{ string} output\+\_\+filename, const \textbf{ vector}$<$ \textbf{ string} $>$ \&input\+\_\+parameter\+\_\+names, const \textbf{ vector}$<$ \textbf{ string} $>$ \&output\+\_\+parameter\+\_\+names, const \textbf{ vector}$<$ \textbf{ vector}$<$ double $>$ $>$ \&series\+\_\+data, const \textbf{ vector}$<$ \textbf{ vector}$<$ double $>$ $>$ \&expected\+\_\+outputs, \mbox{\hyperlink{class_time_series_sets}{Time\+Series\+Sets}} $\ast$time\+\_\+series\+\_\+sets, bool using\+\_\+dropout, double dropout\+\_\+probability)
+\item 
+\mbox{\Hypertarget{class_r_n_n_a45ff518bedc99a07d557b9bdaacd3bcc}\label{class_r_n_n_a45ff518bedc99a07d557b9bdaacd3bcc}} 
+void {\bfseries write\+\_\+predictions} (\textbf{ string} output\+\_\+filename, const \textbf{ vector}$<$ \textbf{ string} $>$ \&input\+\_\+parameter\+\_\+names, const \textbf{ vector}$<$ \textbf{ string} $>$ \&output\+\_\+parameter\+\_\+names, const \textbf{ vector}$<$ \textbf{ vector}$<$ double $>$ $>$ \&series\+\_\+data, const \textbf{ vector}$<$ \textbf{ vector}$<$ double $>$ $>$ \&expected\+\_\+outputs, \mbox{\hyperlink{class_corpus}{Corpus}} $\ast$word\+\_\+series\+\_\+sets, bool using\+\_\+dropout, double dropout\+\_\+probability)
+\item 
+\mbox{\Hypertarget{class_r_n_n_a32e059e267405b96be71b7476d96e3d4}\label{class_r_n_n_a32e059e267405b96be71b7476d96e3d4}} 
+void {\bfseries initialize\+\_\+randomly} ()
+\item 
+\mbox{\Hypertarget{class_r_n_n_a69e4bba4cb37eae14acbb56027c3ac69}\label{class_r_n_n_a69e4bba4cb37eae14acbb56027c3ac69}} 
+void {\bfseries get\+\_\+weights} (\textbf{ vector}$<$ double $>$ \&parameters)
+\item 
+\mbox{\Hypertarget{class_r_n_n_a5ab51c54eafb4349472563cd75c8da6e}\label{class_r_n_n_a5ab51c54eafb4349472563cd75c8da6e}} 
+void {\bfseries set\+\_\+weights} (const \textbf{ vector}$<$ double $>$ \&parameters)
+\item 
+\mbox{\Hypertarget{class_r_n_n_a31b31a223ac1d528361e537765942784}\label{class_r_n_n_a31b31a223ac1d528361e537765942784}} 
+void {\bfseries enable\+\_\+use\+\_\+regression} (bool \+\_\+use\+\_\+regression)
+\item 
+\mbox{\Hypertarget{class_r_n_n_a5078184d1b06414742a10cdf413283c2}\label{class_r_n_n_a5078184d1b06414742a10cdf413283c2}} 
+uint32\+\_\+t {\bfseries get\+\_\+number\+\_\+weights} ()
+\item 
+void \mbox{\hyperlink{class_r_n_n_aad5f51508b5cb978a6343e3234bb8892}{get\+\_\+analytic\+\_\+gradient}} (const \textbf{ vector}$<$ double $>$ \&test\+\_\+parameters, const \textbf{ vector}$<$ \textbf{ vector}$<$ double $>$ $>$ \&inputs, const \textbf{ vector}$<$ \textbf{ vector}$<$ double $>$ $>$ \&outputs, double \&mse, \textbf{ vector}$<$ double $>$ \&analytic\+\_\+gradient, bool using\+\_\+dropout, bool training, double dropout\+\_\+probability)
+\begin{DoxyCompactList}\small\item\em Updates the analytic gradients after the forward pass across the rnn genome and the backward pass sequentially. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{class_r_n_n_a7a81b82f7e69907f7d5f2ce37048db68}\label{class_r_n_n_a7a81b82f7e69907f7d5f2ce37048db68}} 
+void {\bfseries get\+\_\+empirical\+\_\+gradient} (const \textbf{ vector}$<$ double $>$ \&test\+\_\+parameters, const \textbf{ vector}$<$ \textbf{ vector}$<$ double $>$ $>$ \&inputs, const \textbf{ vector}$<$ \textbf{ vector}$<$ double $>$ $>$ \&outputs, double \&mae, \textbf{ vector}$<$ double $>$ \&empirical\+\_\+gradient, bool using\+\_\+dropout, bool training, double dropout\+\_\+probability)
+\end{DoxyCompactItemize}
+\doxysubsection*{Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+int \mbox{\hyperlink{class_r_n_n_ad70d91c21e6cd8890467d3f64eac0b9a}{series\+\_\+length}}
+\begin{DoxyCompactList}\small\item\em Specifies the length of the dataset. \end{DoxyCompactList}\item 
+bool \mbox{\hyperlink{class_r_n_n_a17b9ce91b0ad9f0848f296021e5acd5f}{use\+\_\+regression}}
+\begin{DoxyCompactList}\small\item\em Specifies whether to use the regression or not. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{class_r_n_n_a1737ef6591c418cd8accf3c55c1909c1}\label{class_r_n_n_a1737ef6591c418cd8accf3c55c1909c1}} 
+\textbf{ vector}$<$ \mbox{\hyperlink{class_r_n_n___node___interface}{R\+N\+N\+\_\+\+Node\+\_\+\+Interface}} $\ast$ $>$ {\bfseries input\+\_\+nodes}
+\item 
+\mbox{\Hypertarget{class_r_n_n_a40e160514ff6c67b7c13d9ac98cd4027}\label{class_r_n_n_a40e160514ff6c67b7c13d9ac98cd4027}} 
+\textbf{ vector}$<$ \mbox{\hyperlink{class_r_n_n___node___interface}{R\+N\+N\+\_\+\+Node\+\_\+\+Interface}} $\ast$ $>$ {\bfseries output\+\_\+nodes}
+\item 
+\mbox{\Hypertarget{class_r_n_n_afe1275047d2603912692c9ee4ce371b5}\label{class_r_n_n_afe1275047d2603912692c9ee4ce371b5}} 
+\textbf{ vector}$<$ \mbox{\hyperlink{class_r_n_n___node___interface}{R\+N\+N\+\_\+\+Node\+\_\+\+Interface}} $\ast$ $>$ {\bfseries nodes}
+\item 
+\mbox{\Hypertarget{class_r_n_n_a6db496ced949fb7a2374b436d516cfa9}\label{class_r_n_n_a6db496ced949fb7a2374b436d516cfa9}} 
+\textbf{ vector}$<$ \mbox{\hyperlink{class_r_n_n___edge}{R\+N\+N\+\_\+\+Edge}} $\ast$ $>$ {\bfseries edges}
+\item 
+\mbox{\Hypertarget{class_r_n_n_a8538540654aacffe64fda78d83f14c69}\label{class_r_n_n_a8538540654aacffe64fda78d83f14c69}} 
+\textbf{ vector}$<$ \mbox{\hyperlink{class_r_n_n___recurrent___edge}{R\+N\+N\+\_\+\+Recurrent\+\_\+\+Edge}} $\ast$ $>$ {\bfseries recurrent\+\_\+edges}
+\end{DoxyCompactItemize}
+\doxysubsection*{Friends}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{class_r_n_n_a3c6fd1b1841f1808870f8f228c5d021e}\label{class_r_n_n_a3c6fd1b1841f1808870f8f228c5d021e}} 
+void {\bfseries get\+\_\+mse} (\mbox{\hyperlink{class_r_n_n}{R\+NN}} $\ast$genome, const \textbf{ vector}$<$ \textbf{ vector}$<$ double $>$ $>$ \&expected, double \&mse, \textbf{ vector}$<$ \textbf{ vector}$<$ double $>$ $>$ \&deltas)
+\item 
+\mbox{\Hypertarget{class_r_n_n_a744ea213e57442af35ac90ea397ce97c}\label{class_r_n_n_a744ea213e57442af35ac90ea397ce97c}} 
+void {\bfseries get\+\_\+mae} (\mbox{\hyperlink{class_r_n_n}{R\+NN}} $\ast$genome, const \textbf{ vector}$<$ \textbf{ vector}$<$ double $>$ $>$ \&expected, double \&mae, \textbf{ vector}$<$ \textbf{ vector}$<$ double $>$ $>$ \&deltas)
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Member Function Documentation}
+\mbox{\Hypertarget{class_r_n_n_aa5fb8d612f560a05bfa188453578c1a2}\label{class_r_n_n_aa5fb8d612f560a05bfa188453578c1a2}} 
+\index{RNN@{RNN}!calculate\_error\_softmax@{calculate\_error\_softmax}}
+\index{calculate\_error\_softmax@{calculate\_error\_softmax}!RNN@{RNN}}
+\doxysubsubsection{\texorpdfstring{calculate\_error\_softmax()}{calculate\_error\_softmax()}}
+{\footnotesize\ttfamily double R\+N\+N\+::calculate\+\_\+error\+\_\+softmax (\begin{DoxyParamCaption}\item[{const \textbf{ vector}$<$ \textbf{ vector}$<$ double $>$ $>$ \&}]{expected\+\_\+outputs }\end{DoxyParamCaption})}
+
+
+
+Calculates the sum of cross entropy error by comparing the expected outputs and the predicted outputs. 
+
+~\newline
+
+
+
+\begin{DoxyParams}{Parameters}
+{\em expected\+\_\+outputs} & is the expected outputs according the dataset.\\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+sum of the cross entropy error. 
+\end{DoxyReturn}
+\mbox{\Hypertarget{class_r_n_n_aad5f51508b5cb978a6343e3234bb8892}\label{class_r_n_n_aad5f51508b5cb978a6343e3234bb8892}} 
+\index{RNN@{RNN}!get\_analytic\_gradient@{get\_analytic\_gradient}}
+\index{get\_analytic\_gradient@{get\_analytic\_gradient}!RNN@{RNN}}
+\doxysubsubsection{\texorpdfstring{get\_analytic\_gradient()}{get\_analytic\_gradient()}}
+{\footnotesize\ttfamily void R\+N\+N\+::get\+\_\+analytic\+\_\+gradient (\begin{DoxyParamCaption}\item[{const \textbf{ vector}$<$ double $>$ \&}]{test\+\_\+parameters,  }\item[{const \textbf{ vector}$<$ \textbf{ vector}$<$ double $>$ $>$ \&}]{inputs,  }\item[{const \textbf{ vector}$<$ \textbf{ vector}$<$ double $>$ $>$ \&}]{outputs,  }\item[{double \&}]{mse,  }\item[{\textbf{ vector}$<$ double $>$ \&}]{analytic\+\_\+gradient,  }\item[{bool}]{using\+\_\+dropout,  }\item[{bool}]{training,  }\item[{double}]{dropout\+\_\+probability }\end{DoxyParamCaption})}
+
+
+
+Updates the analytic gradients after the forward pass across the rnn genome and the backward pass sequentially. 
+
+~\newline
+
+
+
+\begin{DoxyParams}{Parameters}
+{\em test\+\_\+parameters} & is the dataset parameters used for the forward pass. \\
+\hline
+{\em inputs} & are the inputs according to the dataset that is pass to the for forward pass. \\
+\hline
+{\em outputs} & are the expected outputs according to the dataset that is pass to the calculate error for backward pass. \\
+\hline
+{\em analytic\+\_\+gradients} & are the current gradients in the rnn genome that are going to be update after a single pass across the rnn genome. \\
+\hline
+{\em using\+\_\+dropout} & is the probability for the node being disabled while forward pass training and not during testing. ~\newline
+ \\
+\hline
+{\em training} & is to specify whether it is training stage or not to use dropout. \\
+\hline
+{\em dropout\+\_\+probability} & is the probability by which the the nodes will be disabled. will not work during testing stage and without use\+\_\+droput = true.\\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+sum of the cross entropy error over the dataset. 
+\end{DoxyReturn}
+\mbox{\Hypertarget{class_r_n_n_a7245cfe333987f29d59dd1c1442391ec}\label{class_r_n_n_a7245cfe333987f29d59dd1c1442391ec}} 
+\index{RNN@{RNN}!prediction\_softmax@{prediction\_softmax}}
+\index{prediction\_softmax@{prediction\_softmax}!RNN@{RNN}}
+\doxysubsubsection{\texorpdfstring{prediction\_softmax()}{prediction\_softmax()}}
+{\footnotesize\ttfamily double R\+N\+N\+::prediction\+\_\+softmax (\begin{DoxyParamCaption}\item[{const \textbf{ vector}$<$ \textbf{ vector}$<$ double $>$ $>$ \&}]{series\+\_\+data,  }\item[{const \textbf{ vector}$<$ \textbf{ vector}$<$ double $>$ $>$ \&}]{expected\+\_\+outputs,  }\item[{bool}]{using\+\_\+dropout,  }\item[{bool}]{training,  }\item[{double}]{dropout\+\_\+probability }\end{DoxyParamCaption})}
+
+
+
+Calls the calculate\+\_\+error\+\_\+softmax after the forward pass across the rnn genome. 
+
+~\newline
+
+
+
+\begin{DoxyParams}{Parameters}
+{\em series\+\_\+data} & is the dataset used for the forward pass. \\
+\hline
+{\em expected\+\_\+outputs} & is the expected outputs according to the dataset. \\
+\hline
+{\em using\+\_\+dropout} & is the probability for the node being disabled while forward pass training and not during testing. ~\newline
+ \\
+\hline
+{\em training} & is to specify whether it is training stage or not to use dropout. \\
+\hline
+{\em dropout\+\_\+probability} & is the probability by which the the nodes will be disabled. will not work during testing stage and without use\+\_\+droput = true.\\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+sum of the cross entropy error over the dataset. 
+\end{DoxyReturn}
+
+
+\doxysubsection{Member Data Documentation}
+\mbox{\Hypertarget{class_r_n_n_ad70d91c21e6cd8890467d3f64eac0b9a}\label{class_r_n_n_ad70d91c21e6cd8890467d3f64eac0b9a}} 
+\index{RNN@{RNN}!series\_length@{series\_length}}
+\index{series\_length@{series\_length}!RNN@{RNN}}
+\doxysubsubsection{\texorpdfstring{series\_length}{series\_length}}
+{\footnotesize\ttfamily int R\+N\+N\+::series\+\_\+length\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+Specifies the length of the dataset. 
+
+~\newline
+ It can be the number of the files in case of time series or number of batches in case of word series \mbox{\Hypertarget{class_r_n_n_a17b9ce91b0ad9f0848f296021e5acd5f}\label{class_r_n_n_a17b9ce91b0ad9f0848f296021e5acd5f}} 
+\index{RNN@{RNN}!use\_regression@{use\_regression}}
+\index{use\_regression@{use\_regression}!RNN@{RNN}}
+\doxysubsubsection{\texorpdfstring{use\_regression}{use\_regression}}
+{\footnotesize\ttfamily bool R\+N\+N\+::use\+\_\+regression\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+Specifies whether to use the regression or not. 
+
+~\newline
+ It will use regression in case of time series and will not use regression in case of word series 
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+rnn/rnn.\+hxx\item 
+rnn/rnn.\+cxx\end{DoxyCompactItemize}

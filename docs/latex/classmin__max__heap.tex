@@ -1,0 +1,184 @@
+\hypertarget{classmin__max__heap}{}\doxysection{min\+\_\+max\+\_\+heap$<$ T $>$ Class Template Reference}
+\label{classmin__max__heap}\index{min\_max\_heap$<$ T $>$@{min\_max\_heap$<$ T $>$}}
+
+
+This implementation of a \mbox{\hyperlink{classmin__max__heap}{min\+\_\+max\+\_\+heap}} was basically ripped from here\+: \href{https://github.com/itsjohncs/minmaxheap-cpp/blob/master/MinMaxHeap.hpp}{\texttt{ https\+://github.\+com/itsjohncs/minmaxheap-\/cpp/blob/master/\+Min\+Max\+Heap.\+hpp}}.  
+
+
+
+
+{\ttfamily \#include $<$min\+\_\+max\+\_\+heap.\+hxx$>$}
+
+\doxysubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\hyperlink{classmin__max__heap_a8150a4c81beed0795529f923cdc57751}{min\+\_\+max\+\_\+heap}} (\textbf{ std\+::function}$<$ bool(const T \&, const T \&)$>$ \+\_\+less\+\_\+than, uint32\+\_\+t size\+\_\+hint=-\/1)
+\begin{DoxyCompactList}\small\item\em Creates a new \mbox{\hyperlink{classmin__max__heap}{min\+\_\+max\+\_\+heap}}. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{classmin__max__heap_ae1ae5ecbdcec9be68322b8b369beb5a4}\label{classmin__max__heap_ae1ae5ecbdcec9be68322b8b369beb5a4}} 
+bool {\bfseries empty} () const
+\item 
+\mbox{\Hypertarget{classmin__max__heap_a75d5cef5d4098a9b8c1d5ba27438b44f}\label{classmin__max__heap_a75d5cef5d4098a9b8c1d5ba27438b44f}} 
+uint32\+\_\+t {\bfseries size} () const
+\item 
+\mbox{\Hypertarget{classmin__max__heap_af3daad04ceab28dbd8f262c251925a9d}\label{classmin__max__heap_af3daad04ceab28dbd8f262c251925a9d}} 
+void \mbox{\hyperlink{classmin__max__heap_af3daad04ceab28dbd8f262c251925a9d}{enqueue}} (const T \&e)
+\begin{DoxyCompactList}\small\item\em Adds the element e to the heap (in the correct order of course). \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{classmin__max__heap_a44435bb29db7b94beffa474be7a1ea3f}\label{classmin__max__heap_a44435bb29db7b94beffa474be7a1ea3f}} 
+const T \& {\bfseries find\+\_\+max} () const
+\item 
+\mbox{\Hypertarget{classmin__max__heap_a662b330984f8c17e7af014091b85a5e4}\label{classmin__max__heap_a662b330984f8c17e7af014091b85a5e4}} 
+const T \& {\bfseries find\+\_\+min} () const
+\item 
+T \mbox{\hyperlink{classmin__max__heap_a9184c94f7909bc98b6097cad8a49f4bc}{pop\+\_\+max}} ()
+\begin{DoxyCompactList}\small\item\em Returns and removes the maximum item in this min-\/max heap. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{classmin__max__heap_a180790e37a1d72856b3cd28a84f53287}\label{classmin__max__heap_a180790e37a1d72856b3cd28a84f53287}} 
+T {\bfseries pop} ()
+\item 
+T \mbox{\hyperlink{classmin__max__heap_aa80b1443a03ec6c6f63382b8d93a4b11}{pop\+\_\+min}} ()
+\begin{DoxyCompactList}\small\item\em Returns and removes the minimum item in this min-\/max heap. \end{DoxyCompactList}\item 
+const\+\_\+iterator \mbox{\hyperlink{classmin__max__heap_a42e3ecf3ab992eddf731bba3cdd5ce9d}{cbegin}} ()
+\begin{DoxyCompactList}\small\item\em returns the const\+\_\+iterator to the beginning of the underlying vector. \end{DoxyCompactList}\item 
+const\+\_\+iterator \mbox{\hyperlink{classmin__max__heap_afeaa2d61f64081af3645044292dac605}{cend}} ()
+\begin{DoxyCompactList}\small\item\em returns the const\+\_\+iterator pointing past the end of the underlying vector (i.\+e. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{classmin__max__heap_a296ebbc3fe939b962f339d62aff83d15}\label{classmin__max__heap_a296ebbc3fe939b962f339d62aff83d15}} 
+T \& \mbox{\hyperlink{classmin__max__heap_a296ebbc3fe939b962f339d62aff83d15}{operator\mbox{[}$\,$\mbox{]}}} (size\+\_\+t index)
+\begin{DoxyCompactList}\small\item\em Implementation of the indexing operator to allow direct access. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{classmin__max__heap_a3296e9f6f5b4eab2818d0ae9f8510e06}\label{classmin__max__heap_a3296e9f6f5b4eab2818d0ae9f8510e06}} 
+T \mbox{\hyperlink{classmin__max__heap_a3296e9f6f5b4eab2818d0ae9f8510e06}{erase}} (size\+\_\+t index)
+\begin{DoxyCompactList}\small\item\em Allows for deletion of an element at a specified index in O(log(n)) time. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{classmin__max__heap_a962166c243c1a1278b41b59d397a5189}\label{classmin__max__heap_a962166c243c1a1278b41b59d397a5189}} 
+void \mbox{\hyperlink{classmin__max__heap_a962166c243c1a1278b41b59d397a5189}{reserve}} (size\+\_\+t n)
+\begin{DoxyCompactList}\small\item\em Ensures that the underlying vector can hold at least n elements. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{classmin__max__heap_a7bc015a4db5cc82870e23732e0b01c60}\label{classmin__max__heap_a7bc015a4db5cc82870e23732e0b01c60}} 
+void \mbox{\hyperlink{classmin__max__heap_a7bc015a4db5cc82870e23732e0b01c60}{clear}} ()
+\begin{DoxyCompactList}\small\item\em Deletes every element in this heap. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\doxysubsection*{Private Types}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{classmin__max__heap_ac30e7b7215bebb739cd3eb9eba912a85}\label{classmin__max__heap_ac30e7b7215bebb739cd3eb9eba912a85}} 
+typedef \textbf{ std\+::vector}$<$ T $>$\+::const\+\_\+iterator {\bfseries const\+\_\+iterator}
+\end{DoxyCompactItemize}
+\doxysubsection*{Private Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{classmin__max__heap_a295f6c99a8b902cc1d688eefe5779736}\label{classmin__max__heap_a295f6c99a8b902cc1d688eefe5779736}} 
+{\footnotesize template$<$bool max\+\_\+level$>$ }\\void {\bfseries trickle\+\_\+up\+\_\+inner} (uint32\+\_\+t z)
+\item 
+\mbox{\Hypertarget{classmin__max__heap_a606a7c04315e6d4f415d0dec3464cf9d}\label{classmin__max__heap_a606a7c04315e6d4f415d0dec3464cf9d}} 
+void {\bfseries trickle\+\_\+up} (uint32\+\_\+t z)
+\item 
+\mbox{\Hypertarget{classmin__max__heap_a1d893c1254f50fcd2ee84e4d2c9fad46}\label{classmin__max__heap_a1d893c1254f50fcd2ee84e4d2c9fad46}} 
+{\footnotesize template$<$bool max\+\_\+level$>$ }\\void {\bfseries trickle\+\_\+down\+\_\+inner} (const uint32\+\_\+t z)
+\item 
+\mbox{\Hypertarget{classmin__max__heap_a6fc48c130f871bbcd343141fdfee8176}\label{classmin__max__heap_a6fc48c130f871bbcd343141fdfee8176}} 
+void {\bfseries trickle\+\_\+down} (uint32\+\_\+t z)
+\item 
+\mbox{\Hypertarget{classmin__max__heap_abf72fb5bec7655ab16fe1c178ebfa06e}\label{classmin__max__heap_abf72fb5bec7655ab16fe1c178ebfa06e}} 
+uint32\+\_\+t {\bfseries find\+\_\+min\+\_\+index} () const
+\item 
+\mbox{\Hypertarget{classmin__max__heap_af7217da00ac35b2811b624d93a1d8e7a}\label{classmin__max__heap_af7217da00ac35b2811b624d93a1d8e7a}} 
+T {\bfseries delete\+\_\+element} (uint32\+\_\+t z)
+\end{DoxyCompactItemize}
+\doxysubsection*{Static Private Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{classmin__max__heap_a813d3838b295f27a52f8f986f4d5cdbe}\label{classmin__max__heap_a813d3838b295f27a52f8f986f4d5cdbe}} 
+static uint32\+\_\+t {\bfseries parent} (uint32\+\_\+t z)
+\item 
+\mbox{\Hypertarget{classmin__max__heap_a6f85d95a22907d30d6a099e75c00518e}\label{classmin__max__heap_a6f85d95a22907d30d6a099e75c00518e}} 
+static uint32\+\_\+t {\bfseries left\+\_\+child} (uint32\+\_\+t z)
+\item 
+\mbox{\Hypertarget{classmin__max__heap_a2249d6b56d22b8833c15efe07c2dd1d0}\label{classmin__max__heap_a2249d6b56d22b8833c15efe07c2dd1d0}} 
+static uint32\+\_\+t {\bfseries right\+\_\+child} (uint32\+\_\+t z)
+\item 
+\mbox{\Hypertarget{classmin__max__heap_a59893aed50ba7c69dbec36ce0300ee41}\label{classmin__max__heap_a59893aed50ba7c69dbec36ce0300ee41}} 
+static bool {\bfseries is\+\_\+on\+\_\+min\+\_\+level} (uint32\+\_\+t z)
+\item 
+\mbox{\Hypertarget{classmin__max__heap_a3f588656c909df8ecfd3686b1f6dcd91}\label{classmin__max__heap_a3f588656c909df8ecfd3686b1f6dcd91}} 
+static bool {\bfseries is\+\_\+on\+\_\+max\+\_\+level} (uint32\+\_\+t z)
+\end{DoxyCompactItemize}
+\doxysubsection*{Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{classmin__max__heap_adfbc5da06a1e984ab32754342df4d46f}\label{classmin__max__heap_adfbc5da06a1e984ab32754342df4d46f}} 
+vector$<$ T $>$ {\bfseries heap}
+\item 
+\mbox{\Hypertarget{classmin__max__heap_aff5a71e4120a281f3b470fefe0eae260}\label{classmin__max__heap_aff5a71e4120a281f3b470fefe0eae260}} 
+function$<$ bool(const T \&, const T \&)$>$ {\bfseries less\+\_\+than}
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+\subsubsection*{template$<$class T$>$\newline
+class min\+\_\+max\+\_\+heap$<$ T $>$}
+
+This implementation of a \mbox{\hyperlink{classmin__max__heap}{min\+\_\+max\+\_\+heap}} was basically ripped from here\+: \href{https://github.com/itsjohncs/minmaxheap-cpp/blob/master/MinMaxHeap.hpp}{\texttt{ https\+://github.\+com/itsjohncs/minmaxheap-\/cpp/blob/master/\+Min\+Max\+Heap.\+hpp}}. 
+
+Along with this for reference \href{https://en.wikipedia.org/wiki/Min-max_heap}{\texttt{ https\+://en.\+wikipedia.\+org/wiki/\+Min-\/max\+\_\+heap}}
+
+The first layer (e.\+g. the layer which only contains the root node) contains the maximum element. 
+
+\doxysubsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{classmin__max__heap_a8150a4c81beed0795529f923cdc57751}\label{classmin__max__heap_a8150a4c81beed0795529f923cdc57751}} 
+\index{min\_max\_heap$<$ T $>$@{min\_max\_heap$<$ T $>$}!min\_max\_heap@{min\_max\_heap}}
+\index{min\_max\_heap@{min\_max\_heap}!min\_max\_heap$<$ T $>$@{min\_max\_heap$<$ T $>$}}
+\doxysubsubsection{\texorpdfstring{min\_max\_heap()}{min\_max\_heap()}}
+{\footnotesize\ttfamily template$<$class T $>$ \\
+\mbox{\hyperlink{classmin__max__heap}{min\+\_\+max\+\_\+heap}}$<$ T $>$\+::\mbox{\hyperlink{classmin__max__heap}{min\+\_\+max\+\_\+heap}} (\begin{DoxyParamCaption}\item[{\textbf{ std\+::function}$<$ bool(const T \&, const T \&)$>$}]{\+\_\+less\+\_\+than,  }\item[{uint32\+\_\+t}]{size\+\_\+hint = {\ttfamily -\/1} }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Creates a new \mbox{\hyperlink{classmin__max__heap}{min\+\_\+max\+\_\+heap}}. 
+
+The only parameter is a function that will compare two elements, and determine if the first is less than the second. This could probably be done in a better way with generics but I\textquotesingle{}m not confident in doing so. 
+
+\doxysubsection{Member Function Documentation}
+\mbox{\Hypertarget{classmin__max__heap_a42e3ecf3ab992eddf731bba3cdd5ce9d}\label{classmin__max__heap_a42e3ecf3ab992eddf731bba3cdd5ce9d}} 
+\index{min\_max\_heap$<$ T $>$@{min\_max\_heap$<$ T $>$}!cbegin@{cbegin}}
+\index{cbegin@{cbegin}!min\_max\_heap$<$ T $>$@{min\_max\_heap$<$ T $>$}}
+\doxysubsubsection{\texorpdfstring{cbegin()}{cbegin()}}
+{\footnotesize\ttfamily template$<$class T $>$ \\
+const\+\_\+iterator \mbox{\hyperlink{classmin__max__heap}{min\+\_\+max\+\_\+heap}}$<$ T $>$\+::cbegin (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+returns the const\+\_\+iterator to the beginning of the underlying vector. 
+
+There is no non-\/const iterator because the ordering of the data structure could potentially be changed. \mbox{\Hypertarget{classmin__max__heap_afeaa2d61f64081af3645044292dac605}\label{classmin__max__heap_afeaa2d61f64081af3645044292dac605}} 
+\index{min\_max\_heap$<$ T $>$@{min\_max\_heap$<$ T $>$}!cend@{cend}}
+\index{cend@{cend}!min\_max\_heap$<$ T $>$@{min\_max\_heap$<$ T $>$}}
+\doxysubsubsection{\texorpdfstring{cend()}{cend()}}
+{\footnotesize\ttfamily template$<$class T $>$ \\
+const\+\_\+iterator \mbox{\hyperlink{classmin__max__heap}{min\+\_\+max\+\_\+heap}}$<$ T $>$\+::cend (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+returns the const\+\_\+iterator pointing past the end of the underlying vector (i.\+e. 
+
+this is an invalid reference). There is no non-\/const end iterator because the ordering of the data structure must be preserved. \mbox{\Hypertarget{classmin__max__heap_a9184c94f7909bc98b6097cad8a49f4bc}\label{classmin__max__heap_a9184c94f7909bc98b6097cad8a49f4bc}} 
+\index{min\_max\_heap$<$ T $>$@{min\_max\_heap$<$ T $>$}!pop\_max@{pop\_max}}
+\index{pop\_max@{pop\_max}!min\_max\_heap$<$ T $>$@{min\_max\_heap$<$ T $>$}}
+\doxysubsubsection{\texorpdfstring{pop\_max()}{pop\_max()}}
+{\footnotesize\ttfamily template$<$class T $>$ \\
+T \mbox{\hyperlink{classmin__max__heap}{min\+\_\+max\+\_\+heap}}$<$ T $>$\+::pop\+\_\+max (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Returns and removes the maximum item in this min-\/max heap. 
+
+If the heap is emoty it will throw an underflow\+\_\+error \mbox{\Hypertarget{classmin__max__heap_aa80b1443a03ec6c6f63382b8d93a4b11}\label{classmin__max__heap_aa80b1443a03ec6c6f63382b8d93a4b11}} 
+\index{min\_max\_heap$<$ T $>$@{min\_max\_heap$<$ T $>$}!pop\_min@{pop\_min}}
+\index{pop\_min@{pop\_min}!min\_max\_heap$<$ T $>$@{min\_max\_heap$<$ T $>$}}
+\doxysubsubsection{\texorpdfstring{pop\_min()}{pop\_min()}}
+{\footnotesize\ttfamily template$<$class T $>$ \\
+T \mbox{\hyperlink{classmin__max__heap}{min\+\_\+max\+\_\+heap}}$<$ T $>$\+::pop\+\_\+min (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Returns and removes the minimum item in this min-\/max heap. 
+
+If the heap is empty, it will throw an underflow\+\_\+error 
+
+The documentation for this class was generated from the following file\+:\begin{DoxyCompactItemize}
+\item 
+rnn/min\+\_\+max\+\_\+heap.\+hxx\end{DoxyCompactItemize}
