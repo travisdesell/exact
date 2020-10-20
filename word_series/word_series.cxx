@@ -635,11 +635,13 @@ void Corpus::normalize_min_max() {
         //get the min of all series of the same name
         //get the max of all series of the same name
 
+        string log_str = "";
+
         if (normalize_mins.count(parameter_name) > 0) {
             min = normalize_mins[parameter_name];
             max = normalize_maxs[parameter_name];
 
-            Log::info("user specified bounds for ");
+            log_str = "user specified bounds for ";
 
         }  else {
             for (int j = 0; j < sent_series.size(); j++) {
@@ -653,10 +655,12 @@ void Corpus::normalize_min_max() {
             normalize_mins[parameter_name] = min;
             normalize_maxs[parameter_name] = max;
 
-            Log::info("calculated bounds for     ");
+            log_str = "calculated bounds for     ";
         }
 
-        Log::info_no_header("%30s, min: %22.10lf, max: %22.10lf\n", parameter_name.c_str(), min, max);
+        log_str = log_str + string_format("%30s, min: %22.10lf, max: %22.10lf\n", parameter_name.c_str(), min, max);
+
+        Log::info(log_str.c_str());
 
         //for each series, subtract min, divide by (max - min)
         for (int j = 0; j < sent_series.size(); j++) {
@@ -715,13 +719,15 @@ void Corpus::normalize_avg_std_dev() {
         double avg = 0.0;
         double std_dev = 0.0;
 
+        string log_str = "";
+
         if (normalize_avgs.count(parameter_name) > 0) {
             min = normalize_mins[parameter_name];
             max = normalize_maxs[parameter_name];
             avg = normalize_avgs[parameter_name];
             std_dev = normalize_std_devs[parameter_name];
 
-            Log::info("user specified avg/std dev for ");
+            log_str = "user specified avg/std dev for ";
 
         }  else {
             double numerator_average = 0.0;
@@ -759,7 +765,7 @@ void Corpus::normalize_avg_std_dev() {
             normalize_std_devs[parameter_name] = std_dev;
 
 
-            Log::info("calculated bounds for     ");
+            log_str = "calculated bounds for     ";
         }
         
         double norm_min = (min - avg) / std_dev;
@@ -767,7 +773,9 @@ void Corpus::normalize_avg_std_dev() {
         
         norm_max = fmax(norm_min, norm_max);
 
-        Log::info_no_header("%30s, min: %22.10lf, max: %22.10lf, norm_max; %22.10lf, combined average: %22.10lf, combined std_dev: %22.10lf\n", parameter_name.c_str(), min, max, avg, norm_max, std_dev);
+        log_str = log_str + string_format("%30s, min: %22.10lf, max: %22.10lf, norm_max; %22.10lf, combined average: %22.10lf, combined std_dev: %22.10lf\n", parameter_name.c_str(), min, max, avg, norm_max, std_dev);
+
+        Log::info(log_str.c_str());
 
         //for each series, subtract min, divide by (max - min)
         for (int j = 0; j < sent_series.size(); j++) {

@@ -312,7 +312,7 @@ int32_t Island::insert_genome(RNN_Genome *genome) {
 }
 
 void Island::print(string indent) {
-    if (Log::at_level(Log::INFO)) {
+    if (Log::at_level(LOG_LEVEL_INFO)) {
 
         Log::info("%s\t%s\n", indent.c_str(), RNN_Genome::print_statistics_header().c_str());
 

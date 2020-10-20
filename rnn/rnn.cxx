@@ -46,7 +46,7 @@ using std::vector;
 
 void RNN::validate_parameters(const vector<string> &input_parameter_names, const vector<string> &output_parameter_names) {
     Log::debug("validating parameters -- input_parameter_names.size(): %d, output_parameter_names.size(): %d\n", input_parameter_names.size(), output_parameter_names.size());
-    if (Log::at_level(Log::DEBUG)) {
+    if (Log::at_level(LOG_LEVEL_DEBUG)) {
         Log::debug("\tinput_parameter_names:");
         for (int32_t i = 0; i < input_parameter_names.size(); i++) {
             Log::debug("\t\t'%s'\n", input_parameter_names[i].c_str());
@@ -105,7 +105,7 @@ void RNN::fix_parameter_orders(const vector<string> &input_parameter_names, cons
     vector<RNN_Node_Interface*> ordered_input_nodes;
 
     Log::debug("fixing parameter orders -- input_parameter_names.size(): %d, output_parameter_names.size(): %d\n", input_parameter_names.size(), output_parameter_names.size());
-    if (Log::at_level(Log::DEBUG)) {
+    if (Log::at_level(LOG_LEVEL_DEBUG)) {
         Log::debug("\tinput_parameter_names:");
         for (int32_t i = 0; i < input_parameter_names.size(); i++) {
             Log::debug("\t\t'%s'\n", input_parameter_names[i].c_str());

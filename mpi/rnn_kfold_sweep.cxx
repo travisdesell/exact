@@ -284,19 +284,18 @@ void master(int max_rank) {
 
             bool rnn_finished = true;
             Log::debug("testing finished for rnn: '%s'\n", rnn_types[rnn].c_str());
+
+            string log_str = "";
             for (int i = rnn_job_start; i < rnn_job_end; i++) {
-                if (i == rnn_job_start) {
-                    Log::debug(" %d", results[i].job);
-                } else {
-                    Log::debug_no_header(" %d", results[i].job);
-                }
+                log_str = log_str + string_format(" %d", results[i].job);
 
                 if (results[i].job < 0) {
                     rnn_finished = false;
                     break;
                 }
             }
-            Log::debug_no_header("\n");
+            log_str = log_str + "\n";
+            Log::debug(log_str.c_str());
 
             Log::debug("rnn '%s' finished? %d\n", rnn_types[rnn].c_str(), rnn_finished);
 

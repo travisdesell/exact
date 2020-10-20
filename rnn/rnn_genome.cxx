@@ -1056,10 +1056,12 @@ void RNN_Genome::backpropagate(const vector< vector< vector<double> > > &inputs,
                 << " " << best_validation_mse << endl;
         }
 
-        Log::info("iteration %10d, mse: %10lf, v_mse: %10lf, bv_mse: %10lf, lr: %lf, norm: %lf, p_norm: %lf, v_norm: %lf", iteration, mse, validation_mse, best_validation_mse, learning_rate, norm, parameter_norm, velocity_norm);
+        string log_str = "";
+
+        log_str = log_str + string_format("iteration %10d, mse: %10lf, v_mse: %10lf, bv_mse: %10lf, lr: %lf, norm: %lf, p_norm: %lf, v_norm: %lf", iteration, mse, validation_mse, best_validation_mse, learning_rate, norm, parameter_norm, velocity_norm);
 
         if (use_reset_weights && prev_mse * 1.25 < mse) {
-            Log::info_no_header(", RESETTING WEIGHTS %d", reset_count);
+            log_str = log_str + string_format(", RESETTING WEIGHTS %d", reset_count);
             parameters = prev_parameters;
             //prev_velocity = prev_prev_velocity;
             prev_velocity.assign(parameters.size(), 0.0);
@@ -1093,14 +1095,14 @@ void RNN_Genome::backpropagate(const vector< vector< vector<double> > > &inputs,
                 learning_rate *= 1.10;
                 if (learning_rate > 1.0) learning_rate = 1.0;
 
-                Log::info_no_header(", INCREASING LR");
+                log_str = log_str + ", INCREASING LR";
             }
         }
 
         if (use_high_norm && norm > high_threshold) {
             double high_threshold_norm = high_threshold / norm;
 
-            Log::info_no_header(", OVER THRESHOLD, multiplier: %lf", high_threshold_norm);
+            log_str = log_str + string_format(", OVER THRESHOLD, multiplier: %lf", high_threshold_norm);
 
             for (int32_t i = 0; i < parameters.size(); i++) {
                 analytic_gradient[i] = high_threshold_norm * analytic_gradient[i];
@@ -1113,7 +1115,7 @@ void RNN_Genome::backpropagate(const vector< vector< vector<double> > > &inputs,
 
         } else if (use_low_norm && norm < low_threshold) {
             double low_threshold_norm = low_threshold / norm;
-            Log::info_no_header(", UNDER THRESHOLD, multiplier: %lf", low_threshold_norm);
+            log_str = log_str + string_format(", UNDER THRESHOLD, multiplier: %lf", low_threshold_norm);
 
             for (int32_t i = 0; i < parameters.size(); i++) {
                 analytic_gradient[i] = low_threshold_norm * analytic_gradient[i];
@@ -1121,7 +1123,7 @@ void RNN_Genome::backpropagate(const vector< vector< vector<double> > > &inputs,
 
             if (adapt_learning_rate) {
                 if (prev_mse * 1.05 < mse) {
-                    Log::info_no_header(", WORSE");
+                    log_str = log_str + ", WORSE";
                     learning_rate *= 0.5;
                     if (learning_rate < 0.0000001) learning_rate = 0.0000001;
                 }
@@ -1130,7 +1132,7 @@ void RNN_Genome::backpropagate(const vector< vector< vector<double> > > &inputs,
 
         if (reset_count > 0) {
             double reset_penalty = pow(5.0, -reset_count);
-            Log::info_no_header(", RESET PENALTY (%d): %lf", reset_count, reset_penalty);
+            log_str = log_str + string_format(", RESET PENALTY (%d): %lf", reset_count, reset_penalty);
 
             for (int32_t i = 0; i < parameters.size(); i++) {
                 analytic_gradient[i] = reset_penalty * analytic_gradient[i];
@@ -1138,7 +1140,8 @@ void RNN_Genome::backpropagate(const vector< vector< vector<double> > > &inputs,
 
         }
 
-        Log::info_no_header("\n");
+        log_str = log_str + "\n";
+        Log::info(log_str.c_str());
 
         if (use_nesterov_momentum) {
             for (int32_t i = 0; i < parameters.size(); i++) {
@@ -1292,10 +1295,12 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
             norm = sqrt(norm);
             avg_norm += norm;
 
-            Log::info("iteration %7d, series: %4d, mse: %5.10lf, lr: %lf, norm: %lf", iteration, random_selection, mse, learning_rate, norm);
+            string log_str = "";
+
+            log_str = string_format("iteration %7d, series: %4d, mse: %5.10lf, lr: %lf, norm: %lf", iteration, random_selection, mse, learning_rate, norm);
 
             if (use_reset_weights && prev_mse[random_selection] * 2 < mse) {
-                Log::info_no_header(", RESETTING WEIGHTS");
+                log_str = log_str + ", RESETTING WEIGHTS";
 
                 parameters = prev_parameters;
                 //prev_velocity = prev_prev_velocity;
@@ -1331,13 +1336,13 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
                     learning_rate *= 1.10;
                     if (learning_rate > 1.0) learning_rate = 1.0;
 
-                    Log::info_no_header(", INCREASING LR");
+                    log_str = log_str + ", INCREASING LR";
                 }
             }
 
             if (use_high_norm && norm > high_threshold) {
                 double high_threshold_norm = high_threshold / norm;
-                Log::info_no_header(", OVER THRESHOLD, multiplier: %lf", high_threshold_norm);
+                log_str = log_str + string_format(", OVER THRESHOLD, multiplier: %lf", high_threshold_norm);
 
                 for (int32_t i = 0; i < parameters.size(); i++) {
                     analytic_gradient[i] = high_threshold_norm * analytic_gradient[i];
@@ -1350,7 +1355,7 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
 
             } else if (use_low_norm && norm < low_threshold) {
                 double low_threshold_norm = low_threshold / norm;
-                Log::info_no_header(", UNDER THRESHOLD, multiplier: %lf", low_threshold_norm);
+                log_str = log_str + string_format(", UNDER THRESHOLD, multiplier: %lf", low_threshold_norm);
 
                 for (int32_t i = 0; i < parameters.size(); i++) {
                     analytic_gradient[i] = low_threshold_norm * analytic_gradient[i];
@@ -1358,14 +1363,16 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
 
                 if (adapt_learning_rate) {
                     if (prev_mse[random_selection] * 1.05 < mse) {
-                        Log::info_no_header(", WORSE");
+                        log_str = log_str + ", WORSE";
                         learning_rate *= 0.5;
                         if (learning_rate < 0.0000001) learning_rate = 0.0000001;
                     }
                 }
             }
 
-            Log::info_no_header("\n");
+            log_str = log_str + "\n";
+
+            Log::info(log_str.c_str());
 
             if (use_nesterov_momentum) {
                 for (int32_t i = 0; i < parameters.size(); i++) {
@@ -1783,7 +1790,7 @@ void RNN_Genome::assign_reachability() {
         }
     }
 
-    if (Log::at_level(Log::TRACE)) {
+    if (Log::at_level(LOG_LEVEL_TRACE)) {
         Log::trace("node reachabiltity:\n");
         for (int32_t i = 0; i < nodes.size(); i++) {
             RNN_Node_Interface *n = nodes[i];
@@ -3728,17 +3735,23 @@ void RNN_Genome::transfer_to(const vector<string> &new_input_parameter_names, co
         }
     }
 
-    Log::info("original input parameter names:\n");
-    for (int i = 0; i < input_parameter_names.size(); i++) {
-        Log::info_no_header(" %s", input_parameter_names[i].c_str());
-    }
-    Log::info_no_header("\n");
+    string log_str = "";
 
-    Log::info("new input parameter names:\n");
-    for (int i = 0; i < new_input_parameter_names.size(); i++) {
-        Log::info_no_header(" %s", new_input_parameter_names[i].c_str());
+    log_str = "original input parameter names:\n";
+    for (int i = 0; i < input_parameter_names.size(); i++) {
+        log_str = log_str + string_format(" %s", input_parameter_names[i].c_str());
     }
-    Log::info_no_header("\n");
+    log_str = log_str + "\n";
+    Log::info(log_str.c_str());
+
+    log_str = "";
+
+    log_str = "new input parameter names:\n";
+    for (int i = 0; i < new_input_parameter_names.size(); i++) {
+        log_str = log_str + string_format(" %s", new_input_parameter_names[i].c_str());
+    }
+    log_str = log_str + "\n";
+    Log::info(log_str.c_str());
 
 
     //first figure out which input nodes we're keeping, and add new input
@@ -3811,18 +3824,23 @@ void RNN_Genome::transfer_to(const vector<string> &new_input_parameter_names, co
     }
 
 
-    Log::info("original output parameter names:\n");
+    log_str = "";
+
+    log_str = "original output parameter names:\n";
     for (int i = 0; i < output_parameter_names.size(); i++) {
-        Log::info_no_header(" %s", output_parameter_names[i].c_str());
+        log_str = log_str + string_format(" %s", output_parameter_names[i].c_str());
     }
-    Log::info_no_header("\n");
+    log_str = log_str + "\n";
+    Log::info(log_str.c_str());
 
-    Log::info("new output parameter names:\n");
+    log_str = "";
+
+    log_str = "new output parameter names:\n";
     for (int i = 0; i < new_output_parameter_names.size(); i++) {
-        Log::info_no_header(" %s", new_output_parameter_names[i].c_str());
+        log_str = log_str + string_format(" %s", new_output_parameter_names[i].c_str());
     }
-    Log::info_no_header("\n");
-
+    log_str = log_str + "\n";
+    Log::info(log_str.c_str());
 
     //first figure out which output nodes we're keeping, and add new output
     //nodes as needed

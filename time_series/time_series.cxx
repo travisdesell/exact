@@ -251,20 +251,26 @@ TimeSeriesSet::TimeSeriesSet(string _filename, const vector<string> &_fields) {
     
     Log::debug("fields.size(): %d, file_fields.size(): %d\n", fields.size(), file_fields.size());
 
+    string log_str = "";
+
     //specify which of the file fields (columns) are used
     vector<bool> file_fields_used(file_fields.size(), true);
     for (int32_t i = 0; i < (int32_t)file_fields.size(); i++) {
-        Log::debug("\tchecking to see if '%s' was in specified fields, file_fields_used[%d]: %d", file_fields[i].c_str(), i, file_fields_used[i]);
+        
+// TODO: log_str = string_format("\tchecking to see if '%s' was in specified fields, file_fields_used[%d]: %d", file_fields[i].c_str(), i, file_fields_used[i]);
 
         if (find(fields.begin(), fields.end(), file_fields[i]) == fields.end()) {
             //the ith file field wasn't found in the specified fields
-            Log::debug_no_header(" -- field was not found!\n");
+            log_str = log_str + " -- field was not found!\n";
             file_fields_used[i] = false;
         } else {
-            Log::debug_no_header(" -- Field was found!\n");
+            log_str = log_str + " -- Field was found!\n";
             file_fields_used[i] = true;
         }
+        
+        Log::debug(log_str.c_str());
     }
+
 
     
     Log::debug("number fields: %d\n", fields.size());
@@ -634,12 +640,17 @@ void TimeSeriesSets::parse_parameters_string(const vector<string> &p) {
             exit(1);
         }
 
-        Log::info("parsed parameter '%s' as ");
-        if (has_input) Log::info_no_header("input");
-        if (has_output && has_input) Log::info_no_header(", ");
-        if (has_output) Log::info_no_header("output");
-        if (has_bounds) Log::info_no_header(", min_bound: %lf, max_bound: %lf", min_bound, max_bound);
-        Log::info_no_header("\n");
+        string log_str = "";
+
+        log_str = log_str + string_format("parsed parameter '%s' as ", parameter.c_str());
+        
+        if (has_input) log_str = log_str + "input";
+        if (has_output && has_input) log_str = log_str + ", ";
+        if (has_output) log_str = log_str + "output";
+        if (has_bounds) log_str = log_str + string_format(", min_bound: %lf, max_bound: %lf", min_bound, max_bound);
+        
+        log_str = log_str + "\n";
+        Log::info(log_str.c_str());
     }
 }
 
@@ -647,7 +658,7 @@ void TimeSeriesSets::parse_parameters_string(const vector<string> &p) {
 void TimeSeriesSets::load_time_series() {
     int32_t rows = 0;
     time_series.clear();
-    if (Log::at_level(Log::DEBUG)) {
+    if (Log::at_level(LOG_LEVEL_DEBUG)) {
         Log::debug("loading time series with parameters:\n");
 
         for (uint32_t i = 0; i < all_parameter_names.size(); i++) {
@@ -727,7 +738,7 @@ TimeSeriesSets* TimeSeriesSets::generate_from_arguments(const vector<string> &ar
 
         merge_parameter_names(tss->input_parameter_names, tss->output_parameter_names, tss->all_parameter_names);
 
-        if (Log::at_level(Log::DEBUG)) {
+        if (Log::at_level(LOG_LEVEL_DEBUG)) {
             Log::debug("input parameter names:\n");
             for (int i = 0; i < tss->input_parameter_names.size(); i++) {
                 Log::debug("\t%s\n", tss->input_parameter_names[i].c_str());
@@ -866,7 +877,7 @@ void TimeSeriesSets::normalize_min_max() {
             Log::info("calculated bounds for     ");
         }
 
-        Log::info_no_header("%30s, min: %22.10lf, max: %22.10lf\n", parameter_name.c_str(), min, max);
+        Log::info("%30s, min: %22.10lf, max: %22.10lf\n", parameter_name.c_str(), min, max);
 
         //for each series, subtract min, divide by (max - min)
         for (int j = 0; j < time_series.size(); j++) {
@@ -977,7 +988,7 @@ void TimeSeriesSets::normalize_avg_std_dev() {
         
         norm_max = fmax(norm_min, norm_max);
 
-        Log::info_no_header("%30s, min: %22.10lf, max: %22.10lf, norm_max; %22.10lf, combined average: %22.10lf, combined std_dev: %22.10lf\n", parameter_name.c_str(), min, max, avg, norm_max, std_dev);
+        Log::info("%30s, min: %22.10lf, max: %22.10lf, norm_max; %22.10lf, combined average: %22.10lf, combined std_dev: %22.10lf\n", parameter_name.c_str(), min, max, avg, norm_max, std_dev);
 
         //for each series, subtract min, divide by (max - min)
         for (int j = 0; j < time_series.size(); j++) {

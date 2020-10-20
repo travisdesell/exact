@@ -58,12 +58,12 @@ void gradient_test(string name, RNN_Genome *genome, const vector< vector<double>
 	bool failed = false;
 
 	RNN* rnn = genome->get_rnn();
-    Log::debug("got genome \n");
+
+	Log::debug("got genome \n\n");
 
     rnn->enable_use_regression(true);
 
 	for (int32_t i = 0; i < test_iterations; i++) {
-        if (i == 0) Log::debug_no_header("\n");
         Log::debug("\tAttempt %d USING REGRESSION\n", i);
 
 		generate_random_vector(rnn->get_number_weights(), parameters);
@@ -96,8 +96,9 @@ void gradient_test(string name, RNN_Genome *genome, const vector< vector<double>
 
     rnn->enable_use_regression(false);
 
+	Log::debug("\n");
+
 	for (int32_t i = 0; i < test_iterations; i++) {
-        if (i == 0) Log::debug_no_header("\n");
         Log::debug("\tAttempt %d USING SOFTMAX\n", i);
 
 		generate_random_vector(rnn->get_number_weights(), parameters);

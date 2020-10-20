@@ -21,6 +21,38 @@ using std::string;
 #include <thread>
 using std::thread;
 
+#include "string_format.hxx"
+
+typedef enum log_level {
+    LOG_LEVEL_NONE = 0,
+    LOG_LEVEL_FATAL = 20,
+    LOG_LEVEL_ERROR = 40,
+    LOG_LEVEL_WARNING = 60,
+    LOG_LEVEL_INFO = 80,
+    LOG_LEVEL_DEBUG = 100,
+    LOG_LEVEL_TRACE = 120,
+    LOG_LEVEL_ALL = 140
+} log_level_t;
+
+#define fatal(format, ...) \
+    log(__FILE__, sizeof(__FILE__)-1, __func__, sizeof(__func__)-1, __LINE__, \
+    LOG_LEVEL_FATAL, format, ##__VA_ARGS__)
+#define error(format, ...) \
+    log(__FILE__, sizeof(__FILE__)-1, __func__, sizeof(__func__)-1, __LINE__, \
+    LOG_LEVEL_ERROR, format, ##__VA_ARGS__)
+#define warning(format, ...) \
+    log(__FILE__, sizeof(__FILE__)-1, __func__, sizeof(__func__)-1, __LINE__, \
+    LOG_LEVEL_WARNING, format, ##__VA_ARGS__)
+#define info(format, ...) \
+    log(__FILE__, sizeof(__FILE__)-1, __func__, sizeof(__func__)-1, __LINE__, \
+    LOG_LEVEL_INFO, format, ##__VA_ARGS__)
+#define debug(format, ...) \
+    log(__FILE__, sizeof(__FILE__)-1, __func__, sizeof(__func__)-1, __LINE__, \
+    LOG_LEVEL_DEBUG, format, ##__VA_ARGS__)
+#define trace(format, ...) \
+    log(__FILE__, sizeof(__FILE__)-1, __func__, sizeof(__func__)-1, __LINE__, \
+    LOG_LEVEL_TRACE, format, ##__VA_ARGS__)
+
 class LogFile {
     private:
         FILE* file;
@@ -38,14 +70,14 @@ class Log {
          * Specifies which messages to log.
          * Messages will be written to the standard output log if their type is <= message_level.
          */
-        static int32_t std_message_level;
+        static log_level_t std_message_level;
 
         /**
          * Specifies which messages to log.
          * Messages will be written to the log file if their type is <= message_level.
          */
 
-        static int32_t file_message_level;
+        static log_level_t file_message_level;
 
         /**
          * Specifies if the logs should also be written to a flie.
@@ -99,26 +131,8 @@ class Log {
         static shared_mutex log_ids_mutex;
 
 
-        /**
-         * Potentially writes the message to either standard output or the log file if the message level is high enough.
-         *
-         * \param print_header specifies if the header to the message should be printed out
-         * \param message_level the level of the message to potentially be printed out
-         * \param message_type a string representation of this message type
-         * \param message_type the format string for this message (as in printf)
-         * \param arguments the arguments for the print statement
-         */
-        static void write_message(bool print_header, int8_t message_level, const char *message_type, const char *format, va_list arguments);
-
     public:
-        static const int8_t NONE = 0;  /**< Specifies no messages will be logged. */
-        static const int8_t FATAL = 1; /**< Specifies only fatal messages will be logged. */
-        static const int8_t ERROR = 2; /**< Specifies error and above messages will be logged. */
-        static const int8_t WARNING = 3; /**< Specifies warning and above messages will be logged. */
-        static const int8_t INFO = 4; /**< Specifies info and above messages will be logged. */
-        static const int8_t DEBUG = 5; /**< Specifies debug and above messages will be logged. */
-        static const int8_t TRACE = 6; /**< Specifies trace and above messages will be logged. */
-        static const int8_t ALL = 7; /**< Specifies all messages will be logged. */
+        static string get_level_str(log_level_t level);
 
         /**
          * Registers used command line arguments and instructions with the CommandLine class.
@@ -133,7 +147,7 @@ class Log {
          *
          * \return the message level as an int8_t (i.e., one of the message level constants)
          */
-        static int8_t parse_level_from_string(string level);
+        static log_level_t parse_level_from_string(string level);
 
         /**
          *  Initializes the Log given arguments retreived from the CommandLine class.
@@ -186,7 +200,6 @@ class Log {
          */
         static void release_id(string human_readable_id);
 
-
         /**
          * Determines if either output level (the file or standard output) level
          * is above the level passed as a parameter.
@@ -195,23 +208,25 @@ class Log {
          *
          * \return true if either the file or standard output level is greater than or equal to the passed level
          */
-        static bool at_level(int8_t level);
+        static bool at_level(log_level_t level);
 
-        static void fatal(const char* format, ...); /**< Logs a fatal message. varargs are the same as in printf. */
-        static void error(const char* format, ...); /**< Logs an error message. varargs are the same as in printf. */
-        static void warning(const char* format, ...); /**< Logs a warning message. varargs are the same as in printf. */
-        static void info(const char* format, ...); /**< Logs an info message. varargs are the same as in printf. */
-        static void debug(const char* format, ...); /**< Logs a debug message. varargs are the same as in printf. */
-        static void trace(const char* format, ...); /**< Logs a trace message. varargs are the same as in printf. */
-
-        static void fatal_no_header(const char* format, ...); /**< Logs a fatal message. Does not print the message header (useful if doing multiple log prints to the same line). varargs are the same as in printf. */
-        static void error_no_header(const char* format, ...); /**< Logs an error message. Does not print the message header (useful if doing multiple log prints to the same line).  varargs are the same as in printf. */
-        static void warning_no_header(const char* format, ...); /**< Logs a warning message. Does not print the message header (useful if doing multiple log prints to the same line).  varargs are the same as in printf. */
-        static void info_no_header(const char* format, ...); /**< Logs an info message. Does not print the message header (useful if doing multiple log prints to the same line).  varargs are the same as in printf. */
-        static void debug_no_header(const char* format, ...); /**< Logs a debug message. Does not print the message header (useful if doing multiple log prints to the same line).  varargs are the same as in printf. */
-        static void trace_no_header(const char* format, ...); /**< Logs a trace message. Does not print the message header (useful if doing multiple log prints to the same line).  varargs are the same as in printf. */
+        /**
+         * Don't use log directly. Use one of the log macros (info, debug, trace etc)
+         * The log macros will automatically provide the file, function and line of the calling function
+         *
+         * Potentially writes the message to either standard output or the log file if the message level is high enough.
+         *
+         * \param file the c string of the file name
+         * \param filelen the length of the file name string
+         * \param func the c string of the function name
+         * \param funclen the length of the function name
+         * \param line the line number where log was called
+         * \param level the log level to write to
+         * \param format the format string, e.g. "my name is %s"
+         * \param args the args for the formated string
+         */
+        static void log(const char *file, size_t filelen, const char *func, size_t funclen, long line, log_level_t level, const char *format, ...);
 
 };
-
 
 #endif

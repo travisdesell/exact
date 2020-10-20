@@ -69,7 +69,7 @@ int main(int argc, char** argv) {
     Log::info("MAE: %lf\n", genome->get_mae(best_parameters, testing_inputs, testing_outputs));
     genome->write_predictions(output_directory, testing_filenames, best_parameters, testing_inputs, testing_outputs, time_series_sets);
 
-    if (Log::at_level(Log::DEBUG)) {
+    if (Log::at_level(LOG_LEVEL_DEBUG)) {
         int length;
         char *byte_array;
 

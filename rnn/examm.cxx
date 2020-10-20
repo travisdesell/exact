@@ -360,7 +360,7 @@ EXAMM::EXAMM(
 }
 
 void EXAMM::print() {
-    if (Log::at_level(Log::INFO)) {
+    if (Log::at_level(LOG_LEVEL_INFO)) {
         speciation_strategy->print();
     }
 }
@@ -716,7 +716,7 @@ void EXAMM::mutate(int32_t max_mutations, RNN_Genome *g) {
     g->get_weights(new_parameters);
     g->initial_parameters = new_parameters;
     
-    if (Log::at_level(Log::DEBUG)) {
+    if (Log::at_level(LOG_LEVEL_DEBUG)) {
         g->get_mu_sigma(new_parameters, mu, sigma);
     }
 
@@ -726,7 +726,7 @@ void EXAMM::mutate(int32_t max_mutations, RNN_Genome *g) {
     g->best_validation_mse = EXAMM_MAX_DOUBLE;
     g->best_validation_mae = EXAMM_MAX_DOUBLE;
 
-    if (Log::at_level(Log::DEBUG)) {
+    if (Log::at_level(LOG_LEVEL_DEBUG)) {
         Log::debug("checking parameters after mutation\n");
         g->get_mu_sigma(g->initial_parameters, mu, sigma);
     }
