@@ -170,6 +170,11 @@ void Log::release_id(string human_readable_id) {
 }
 
 void Log::log(const char *file, size_t filelen, const char *func, size_t funclen, long line, log_level_t level, const char *format, ...) {
+    if (restricted_rank >= 0 && restricted_rank != process_rank) return;
+
+    //not writing this type of message to either std out or a file
+    if (std_message_level < level && file_message_level < level) return;
+    
     va_list arguments;
     va_start(arguments, format);
     
