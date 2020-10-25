@@ -1,0 +1,124 @@
+digraph CNN {
+	{
+		rank = source;
+        x           [shape=box,color=blue,label="x",xlabel="input"];
+        h_prev      [shape=box,color=blue,label="h_prev", xlabel="previous output"];
+	}
+
+    z_bias      [shape=diamond,color=blue,label="z_bias"];
+    zw          [shape=diamond,color=blue,label="zw"];
+    zu          [shape=diamond,color=blue,label="zu"];
+
+    xzw         [shape=circle,color=red,label="*",xlabel="x * zw"];
+    hzu         [shape=circle,color=red,label="*",xlabel="h * zu"];
+
+    x -> xzw;
+    zw -> xzw;
+
+    h_prev -> hzu;
+    zu -> hzu;
+
+    z_sum       [shape=circle,color=orange,label="+",xlabel="z_sum"];
+    //z           [shape=circle,color=purple,label="sigmoid",xlabel="z"];
+    z           [shape=circle,color=purple,label="&sigma;",xlabel="z"];
+
+    z_bias -> z_sum;
+    xzw -> z_sum;
+    hzu -> z_sum;
+
+    z_sum -> z;
+
+    r_bias      [shape=diamond,color=blue,label="r_bias"];
+    rw          [shape=diamond,color=blue,label="rw"];
+    ru          [shape=diamond,color=blue,label="ru"];
+
+    xrw         [shape=circle,color=red,label="*",xlabel="x * rw"];
+    hru         [shape=circle,color=red,label="*",xlabel="h * ru"];
+
+    x -> xrw;
+    rw -> xrw;
+
+    h_prev -> hru;
+    ru -> hru;
+
+    r_sum       [shape=circle,color=orange,label="+",xlabel="r_sum"];
+    //r           [shape=circle,color=purple,label="sigmoid",xlabel="r"];
+    r           [shape=circle,color=purple,label="&sigma;",xlabel="r"];
+
+    r_bias -> r_sum;
+    xrw -> r_sum;
+    hru -> r_sum;
+
+    r_sum -> r;
+
+    h_bias      [shape=diamond,color=blue,label="h_bias"];
+    hw          [shape=diamond,color=blue,label="hw"];
+    hu          [shape=diamond,color=blue,label="hu"];
+
+    xhw         [shape=circle,color=red,label="*",xlabel="x * hw"];
+    hurh        [shape=circle,color=red,label="*",xlabel="hu * r * h_prev"];
+
+    x -> xhw;
+    hw -> xhw;
+
+    hu -> hurh;
+    r -> hurh;
+    h_prev -> hurh;
+
+    h_sum       [shape=circle,color=orange,label="+",xlabel="h_sum"];
+    h_tanh      [shape=circle,color=purple,label="tanh",xlabel="h_tanh"];
+
+    xhw -> h_sum;
+    hurh -> h_sum;
+    h_bias -> h_sum;
+
+    h_sum -> h_tanh;
+
+    zh          [shape=circle,color=red,label="*",xlabel="z * h_prev"];
+
+    h_prev -> zh;
+    z -> zh;
+
+
+    neg_1           [shape=box,color=blue,label="-1"];
+    neg_z           [shape=circle,color=red,label="*", xlabel="-z"]
+
+    neg_1 -> neg_z;
+    z -> neg_z;
+
+    plus_1          [shape=box,color=blue,label="1"];
+    one_minus_z     [shape=circle,color=orange,label="+",xlabel="(1 - z)"];
+
+    plus_1 -> one_minus_z;
+    neg_z -> one_minus_z;
+
+    z_h_tanh        [shape=circle,color=red,label="*",xlabel="(1 - z) * h_tanh"];
+
+    one_minus_z -> z_h_tanh;
+    h_tanh -> z_h_tanh;
+
+	{
+		rank = sink;
+					/*<tr><td>z = sigmoid(zw*x + zu*h_prev * z_bias)</td></tr>
+						<tr><td>r = sigmoid(rw*x + lu*h_prev * r_bias)</td></tr> */
+        legend [shape=box,
+            label=<
+                <table>
+                <tr><td>z = &sigma;(zw*x + zu*h_prev * z_bias)</td></tr>
+
+
+                <tr><td>r = &sigma;(rw*x + lu*h_prev * r_bias)</td></tr>
+                <tr><td>h = z*h_prev + (1-z)*tanh(hw*x + hu*r*h_prev * h_bias)</td></tr>
+                </table>
+                >]
+
+        h       [shape=circle,color=orange,label="+",xlabel="h (output)"];
+    }
+
+    z_h_tanh -> h;
+    zh -> h;
+    h -> h_prev;
+
+    legend -> h [style=invis];
+
+}

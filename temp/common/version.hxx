@@ -1,0 +1,6 @@
+#ifndef EXACT_VERSION_HXX
+#define EXACT_VERSION_HXX
+
+#define EXACT_VERSION_STR "v0.33"
+
+#endif

@@ -1,0 +1,27 @@
+<table class='table table-striped table-bordered'>
+    <thead>
+        <th>Name</th>
+        <th>Training Error</th>
+        <th>Training Predictions</th>
+        <th>Generalizability Error</th>
+        <th>Generalizability Predictions</th>
+        <th>Test Error</th>
+        <th>Test Predictions</th>
+        <th>Best Error Epoch</th>
+    </thead>
+
+    <tbody>
+        {{#row}}
+            <tr {{#is_hidden}}class='inactive-search' hidden{{/is_hidden}}>
+                <td><a href='./genome.php?id={{id}}&db={{db_name}}'>Genome {{generation_id}}</a></td>
+                <td>{{best_error}}</td>
+                <td>{{best_predictions}}</td>
+                <td>{{generalizability_error}}</td>
+                <td>{{generalizability_predictions}}</td>
+                <td>{{test_error}}</td>
+                <td>{{test_predictions}}</td>
+                <td>{{best_error_epoch}}</td>
+            </tr>
+        {{/row}}
+    </tbody>
+</table>

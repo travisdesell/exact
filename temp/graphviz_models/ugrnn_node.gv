@@ -1,0 +1,97 @@
+digraph CNN {
+	{
+		rank = source;
+        x           [shape=box,color=blue,label="x",xlabel="input"];
+        h_prev      [shape=box,color=blue,label="h_prev", xlabel="previous output"];
+	}
+
+    c_bias      [shape=diamond,color=blue,label="c_bias"];
+    cw          [shape=diamond,color=blue,label="cw"];
+    ch          [shape=diamond,color=blue,label="ch"];
+
+    xcw         [shape=circle,color=red,label="*",xlabel="x * cw"];
+    hch         [shape=circle,color=red,label="*",xlabel="h * ch"];
+
+    x -> xcw;
+    cw -> xcw;
+
+    h_prev -> hch;
+    ch -> hch;
+
+    c_sum       [shape=circle,color=orange,label="+",xlabel="c_sum"];
+    c           [shape=circle,color=purple,label="tanh",xlabel="c"];
+
+    c_bias -> c_sum;
+    xcw -> c_sum;
+    hch -> c_sum;
+
+    c_sum -> c;
+
+    g_bias      [shape=diamond,color=blue,label="g_bias"];
+    gw          [shape=diamond,color=blue,label="gw"];
+    gh          [shape=diamond,color=blue,label="gh"];
+
+    xgw         [shape=circle,color=red,label="*",xlabel="x * gw"];
+    hgh         [shape=circle,color=red,label="*",xlabel="h * gh"];
+
+    x -> xgw;
+    gw -> xgw;
+
+    h_prev -> hgh;
+    gh -> hgh;
+
+    g_sum       [shape=circle,color=orange,label="+",xlabel="g_sum"];
+    //g           [shape=circle,color=purple,label="sigmoid",xlabel="g"];
+    g           [shape=circle,color=purple,label="&sigma;",xlabel="g"];
+
+    g_bias -> g_sum;
+    xgw -> g_sum;
+    hgh -> g_sum;
+
+    g_sum -> g;
+
+    neg_1           [shape=box,color=blue,label="-1"];
+    neg_g           [shape=circle,color=red,label="*", xlabel="-g"]
+
+    neg_1 -> neg_g;
+    g -> neg_g;
+
+    plus_1          [shape=box,color=blue,label="1"];
+    one_minus_g     [shape=circle,color=orange,label="+",xlabel="(1 - g)"];
+
+    plus_1 -> one_minus_g;
+    neg_g -> one_minus_g;
+
+    g_c             [shape=circle,color=red,label="*",xlabel="(1 - g) * c"];
+
+    one_minus_g -> g_c;
+    c -> g_c;
+
+    g_h             [shape=circle,color=red,label="*",xlabel="g * h_prev"];
+
+    g -> g_h;
+    h_prev -> g_h;
+
+
+	{
+		rank = sink;
+				/* <tr><td>g = sigmoid(gw*x + gh*h_prev * g_bias)</td></tr> */
+        legend [shape=box,
+            label=<
+                <table>
+                <tr><td>c = tanh(cw*x + ch*h_prev * c_bias)</td></tr>
+                <tr><td>g = &sigma;(gw*x + gh*h_prev * g_bias)</td></tr>
+                <tr><td>h = g*h_prev + (1-g)*c</td></tr>
+                </table>
+                >]
+
+        h       [shape=circle,color=orange,label="+",xlabel="h (output)"];
+    }
+
+    g_c -> h;
+    g_h -> h;
+    h -> h_prev;
+
+    legend -> h [style=invis];
+
+}

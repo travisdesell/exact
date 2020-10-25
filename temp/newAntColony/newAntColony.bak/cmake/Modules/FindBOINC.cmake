@@ -1,0 +1,78 @@
+# - Find BOINC 
+# Find the native BOINC includes and libraries
+#
+#  BOINC_INCLUDE_DIR        - where to find boinc.h, etc.
+#  BOINC_SERVER_FOUND       - true if libraries required for compiling boinc server code are found
+#  BOINC_SERVER_LIBRARIES   - all the libraries required for compiling boinc server code
+#  BOINC_APP_FOUND          - true if libraries required for compiling boinc apps are found 
+#  BOINC_APP_LIBRARIES      - all the libraries required for compiling boinc apps
+
+IF (BOINC_INCLUDE_DIR)
+    # Already in cache, be silent
+    SET(BOINC_FIND_QUIETLY TRUE)
+ENDIF (BOINC_INCLUDE_DIR)
+
+FIND_PATH(BOINC_INCLUDE_DIR api/boinc_api.h
+    $ENV{BOINC_SOURCE} ~/Code/boinc ~/Dropbox/code/boinc
+)
+MESSAGE(STATUS "BOINC include directory: ${BOINC_INCLUDE_DIR}")
+
+FIND_LIBRARY(BOINC_LIBRARY
+    NAMES boinc libboinc.lib
+    PATHS $ENV{BOINC_SOURCE} $ENV{BOINC_SOURCE}/mac_build/build/Deployment ~/Code/boinc/win_build/Build/x64
+    PATH_SUFFIXES lib Release
+)
+MESSAGE(STATUS "BOINC library: ${BOINC_LIBRARY}")
+
+FIND_LIBRARY(BOINC_CRYPT_LIBRARY
+    NAMES boinc_crypt
+    PATHS $ENV{BOINC_SOURCE} $ENV{BOINC_SOURCE}/mac_build/build/Deployment ~/Code/boinc/win_build/Build/x64
+    PATH_SUFFIXES lib Release
+)
+MESSAGE(STATUS "BOINC crypt library: ${BOINC_CRYPT_LIBRARY}")
+
+FIND_LIBRARY(BOINC_API_LIBRARY
+    NAMES boinc_api libboincapi_staticcrt.lib
+    PATHS $ENV{BOINC_SOURCE} $ENV{BOINC_SOURCE}/mac_build/build/Deployment ~/Code/boinc/win_build/Build/x64
+    PATH_SUFFIXES api Release
+)
+MESSAGE(STATUS "BOINC api library: ${BOINC_API_LIBRARY}")
+
+FIND_LIBRARY(BOINC_SCHED_LIBRARY
+    NAMES sched
+    PATHS $ENV{BOINC_SOURCE} $ENV{BOINC_SOURCE}/mac_build/build/Deployment ~/Code/boinc/win_build/Build/x64
+    PATH_SUFFIXES sched Release
+)
+MESSAGE(STATUS "BOINC sched library: ${BOINC_SCHED_LIBRARY}")
+
+IF (BOINC_INCLUDE_DIR AND BOINC_LIBRARY AND BOINC_API_LIBRARY)
+    add_definitions( -D_BOINC_APP_ )
+    SET (BOINC_APP_FOUND TRUE)
+    SET (BOINC_APP_LIBRARIES ${BOINC_API_LIBRARY} ${BOINC_LIBRARY})
+
+    MESSAGE(STATUS "Found BOINC_APP_LIBRARIES: ${BOINC_APP_LIBRARIES}")
+    MESSAGE(STATUS "BOINC include directory: ${BOINC_INCLUDE_DIR}")
+ELSE (BOINC_INCLUDE_DIR AND BOINC_LIBRARY AND BOINC_API_LIBRARY)
+    MESSAGE(STATUS "Could not find BOINC_APP_LIBRARIES, is your BOINC_SOURCE environment variable set?")
+    SET (BOINC_APP_FOUND FALSE)
+    SET (BOINC_APP_LIBRARIES )
+ENDIF (BOINC_INCLUDE_DIR AND BOINC_LIBRARY AND BOINC_API_LIBRARY)
+
+IF (BOINC_INCLUDE_DIR AND BOINC_LIBRARY AND BOINC_API_LIBRARY AND BOINC_SCHED_LIBRARY AND BOINC_CRYPT_LIBRARY)
+    add_definitions( -D_BOINC_SERVER_ )
+    SET(BOINC_SERVER_FOUND TRUE)
+    SET( BOINC_SERVER_LIBRARIES ${BOINC_SCHED_LIBRARY} ${BOINC_LIBRARY} ${BOINC_CRYPT_LIBRARY})
+
+    MESSAGE(STATUS "Found BOINC_SERVER_LIBRARIES: ${BOINC_SERVER_LIBRARIES}")
+    MESSAGE(STATUS "BOINC include directory: ${BOINC_INCLUDE_DIR}")
+ELSE (BOINC_INCLUDE_DIR AND BOINC_LIBRARY AND BOINC_API_LIBRARY AND BOINC_SCHED_LIBRARY AND BOINC_CRYPT_LIBRARY)
+    MESSAGE(STATUS "Could not find BOINC_SCHED_LIBRARIES, is your BOINC_SOURCE environment variable set?")
+    SET(BOINC_FOUND FALSE)
+    SET( BOINC_LIBRARIES )
+ENDIF (BOINC_INCLUDE_DIR AND BOINC_LIBRARY AND BOINC_API_LIBRARY AND BOINC_SCHED_LIBRARY AND BOINC_CRYPT_LIBRARY)
+
+MARK_AS_ADVANCED(
+    BOINC_APP_LIBRARIES
+    BOINC_SCHED_LIBRARIES
+    BOINC_INCLUDE_DIR
+    )
