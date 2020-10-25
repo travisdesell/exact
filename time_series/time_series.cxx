@@ -217,13 +217,23 @@ TimeSeriesSet::TimeSeriesSet(string _filename, const vector<string> &_fields) {
      }
 
     //specify which of the file fields (columns) are used
-    vector<bool> file_fields_used(true, file_fields.size());
+    vector<bool> file_fields_used(file_fields.size(), true);
+    cout << "size of fields: " << file_fields.size() << endl;
+    cout << "size of used fields: " << file_fields_used.size() << endl;
+    // exit(1);
     for (int32_t i = 0; i < (int32_t)file_fields.size(); i++) {
+        cout << "Checking " << file_fields[i] << endl;
         if (find(fields.begin(), fields.end(), file_fields[i]) == fields.end()) {
+            cout << " Caught one!" << endl;
             //the ith file field wasn't found in the specified fields
             file_fields_used[i] = false;
         }
+        cout << "---------" << endl;
     }
+
+
+    for (auto x: file_fields_used)
+        cout << "X: " << x<< endl;
 
     //cout << "number fields: " << fields.size() << endl;
     for (uint32_t i = 0; i < fields.size(); i++) {
@@ -392,7 +402,7 @@ TimeSeriesSet* TimeSeriesSet::copy() {
     tss->number_rows = number_rows;
     tss->filename = filename;
     tss->fields = fields;
-    
+
     for (auto series = time_series.begin(); series != time_series.end(); series++) {
         tss->time_series[series->first] = series->second->copy();
     }
@@ -675,7 +685,7 @@ TimeSeriesSets* TimeSeriesSets::generate_test(const vector<string> &_test_filena
     for (int32_t i = 0; i < (int32_t)tss->filenames.size(); i++) {
         tss->test_indexes.push_back(i);
     }
-        
+
     tss->input_parameter_names = _input_parameter_names;
     tss->output_parameter_names = _output_parameter_names;
     merge_parameter_names(tss->input_parameter_names, tss->output_parameter_names, tss->all_parameter_names);
@@ -767,7 +777,7 @@ void TimeSeriesSets::normalize(const map<string,double> &_normalize_mins, const 
 }
 
 /**
- * the series argument is a vector of indexes of the time series that was 
+ * the series argument is a vector of indexes of the time series that was
  * initially loaded that are to be exported
  */
 void TimeSeriesSets::export_time_series(const vector<int> &series_indexes, int time_offset, vector< vector< vector<double> > > &inputs, vector< vector< vector<double> > > &outputs) {

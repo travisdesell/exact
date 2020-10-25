@@ -135,17 +135,16 @@ void RNN_Recurrent_Edge::first_propagate_forward() {
 
 void RNN_Recurrent_Edge::propagate_forward(int32_t time) {
     if (input_node->inputs_fired[time] != input_node->total_inputs) {
-        // cerr << "ERROR! propagate forward called on recurrent edge " << innovation_number << " where input_node->inputs_fired[" << time << "] (" << input_node->inputs_fired[time] << ") != total_inputs (" << input_node->total_inputs << ")" << endl;
+        cerr << "ERROR! propagate forward called on recurrent edge " << innovation_number << " where input_node->inputs_fired[" << time << "] (" << input_node->inputs_fired[time] << ") != total_inputs (" << input_node->total_inputs << ")" << endl;
         exit(1);
     }
 
 
     double output = input_node->output_values[time] * weight;
     if (time < series_length - recurrent_depth) {
-        // cout << "\tpropagating forward on RecEdge " << innovation_number << " from time " << time << " to time " << time + recurrent_depth << " from node " << input_innovation_number << " to node " << output_innovation_number << ", value: " << output << ", input: " << input_node->output_values[time] << ", weight: " << weight << endl;
+        // cout << "propagating forward on RecEdge " << innovation_number << " from time " << time << " to time " << time + recurrent_depth << " from node " << input_innovation_number << " to node " << output_innovation_number << ", value: " << output << ", input: " << input_node->output_values[time] << ", weight: " << weight << endl;
 
         //cout << "propagating recurrent at time " << time << " from " << input_node->innovation_number << " to " << output_node->innovation_number << ", value: " << output << ", input: " << input_node->output_values[time] << ", weight: " << weight << endl;
-        // outputs[time + recurrent_depth] = output;
         outputs[time + recurrent_depth] = output;
         output_node->input_fired(time + recurrent_depth, output);
     }

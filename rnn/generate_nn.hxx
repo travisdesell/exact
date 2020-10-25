@@ -14,6 +14,9 @@ using std::vector;
 #include<map>
 using std::map;
 
+#include<cstring>
+#include<chrono>
+
 #include "rnn/rnn_genome.hxx"
 #include "edge_pheromone.hxx"
 #include "node_pheromone.hxx"

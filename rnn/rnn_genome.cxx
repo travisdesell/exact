@@ -56,6 +56,7 @@ using std::vector;
 #include "ugrnn_node.hxx"
 #include "mgu_node.hxx"
 #include "rnn_genome.hxx"
+#include <exception>
 
 string parse_fitness(double fitness) {
     if (fitness == EXALT_MAX_DOUBLE) {
@@ -498,7 +499,7 @@ void RNN_Genome::get_weights(vector<double> &parameters) {
 
     for (uint32_t i = 0; i < edges.size(); i++) {
         parameters[current++] = edges[i]->weight;
-        // cout << "\tGENOME-GET_WEIGHTS():: edges[" << i << "]->weight: " << edges[i]->weight << endl;
+        cout << "\tGENOME-GET_WEIGHTS():: edges[" << i << "]->weight: " << edges[i]->weight << endl;
         //if (edges[i]->is_reachable()) parameters[current++] = edges[i]->weight;
     }
 
@@ -944,6 +945,7 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
 
     double norm = 0.0;
 
+	//cerr << "TTTTTTTTTT1" << endl ;
     std::chrono::time_point<std::chrono::system_clock> startClock = std::chrono::system_clock::now();
 
     RNN* rnn = get_rnn();
@@ -969,6 +971,7 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
         prev_mse[i] = mse;
         prev_learning_rate[i] = learning_rate;
     }
+	//cerr << "TTTTTTTTTT2" << endl ;
     //cout << "initialized previous values on: " << log_filename << endl;
 
     //TODO: need to get validation error on the RNN not the genome
@@ -977,6 +980,7 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
     best_validation_mae = get_mae(parameters, validation_inputs, validation_outputs);
     best_parameters = parameters;
 
+	//cerr << "TTTTTTTTTT3" << endl ;
     //cout << "got initial errors on: " << log_filename << endl;
 
     /*
@@ -1001,6 +1005,7 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
     ofstream *output_log = NULL;
     ostringstream memory_log;
 
+	//cerr << "TTTTTTTTTT4" << endl ;
     if (log_filename != "") {
         //cout << "craeting new log stream for " << log_filename << endl;
         output_log = new ofstream(log_filename);
@@ -1014,15 +1019,24 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
         //cout << "opened log file '" << log_filename << "'" << endl;
     }
 
+	//cerr << "TTTTTTTTTT5" << endl ;
     vector<int32_t> shuffle_order;
     for (int32_t i = 0; i < (int32_t)inputs.size(); i++) {
+		try{
         shuffle_order.push_back(i);
+		}
+		catch (int e) {
+			cerr << "TTTTTTTTTT501 ERROR: " << e << endl ;
+			exit(0);
+		}
     }
 
     bool was_reset = false;
     int reset_count = 0;
 
+	cerr << "TOTAL BP ITERATIONS: " << bp_iterations << endl ;
     for (uint32_t iteration = 0; iteration < bp_iterations; iteration++) {
+		//cerr << "GGGGGGGGGGG_ZZ" << endl;
         fisher_yates_shuffle(generator, shuffle_order);
 
         double avg_norm = 0.0;
@@ -1030,13 +1044,15 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
             random_selection = shuffle_order[k];
 
             prev_mu[random_selection] = mu;
-            prev_norm[random_selection] = norm;
-            prev_mse[random_selection] = mse;
-            prev_learning_rate[random_selection] = learning_rate;
+           	prev_norm[random_selection] = norm;
+           	prev_mse[random_selection] = mse;
+           	prev_learning_rate[random_selection] = learning_rate;
 
-            prev_gradient = analytic_gradient;
+           	prev_gradient = analytic_gradient;
 
-            rnn->get_analytic_gradient(parameters, inputs[random_selection], outputs[random_selection], mse, analytic_gradient, use_dropout, true, dropout_probability);
+		//cerr << generation_id << "GGGGGGGGGGG_AA" << endl;
+           	rnn->get_analytic_gradient(parameters, inputs[random_selection], outputs[random_selection], mse, analytic_gradient, use_dropout, true, dropout_probability);
+		//cerr << generation_id << "GGGGGGGGGGG_BB" << endl;
 
             norm = 0.0;
             for (int32_t i = 0; i < parameters.size(); i++) {
@@ -1084,7 +1100,6 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
                     //cout << ", INCREASING LR";
                 }
             }
-
             if (use_high_norm && norm > high_threshold) {
                 double high_threshold_norm = high_threshold / norm;
                 //cout << ", OVER THRESHOLD, multiplier: " << high_threshold_norm;
@@ -1114,6 +1129,7 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
                     }
                 }
             }
+		
 
             //cout << endl;
 
@@ -1139,20 +1155,23 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
                     if (parameters[i] < -10.0) parameters[i] = -10.0;
                     else if (parameters[i] > 10.0) parameters[i] = 10.0;
                 }
-            }
+			}
         }
 
+		//cerr << "GGGGGGGGGGG_CC" << endl;
         this->set_weights(parameters);
+		//cerr << "GGGGGGGGGGG_DD" << endl;
 
         double training_error = get_mse(parameters, inputs, outputs);
         validation_mse = get_mse(parameters, validation_inputs, validation_outputs);
         if (validation_mse < best_validation_mse) {
             best_validation_mse = validation_mse;
+		//cerr << "GGGGGGGGGGG_EE" << endl;
             best_validation_mae = get_mae(parameters, validation_inputs, validation_outputs);
+		//cerr << "GGGGGGGGGGG_FF" << endl;
 
             best_parameters = parameters;
         }
-
         if (output_log != NULL) {
             std::chrono::time_point<std::chrono::system_clock> currentClock = std::chrono::system_clock::now();
             long milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(currentClock - startClock).count();
@@ -1192,6 +1211,7 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
         cout << "iteration " << setw(5) << iteration << ", mse: " << training_error << ", v_mse: " << validation_mse << ", bv_mse: " << best_validation_mse << ", avg_norm: " << avg_norm << endl;
     }
 
+	//cerr << "TTTTTTTTTT6" << endl ;
     if (log_filename != "") {
         ofstream memory_log_file(log_filename + "_mem");
         memory_log_file << memory_log.str();
@@ -1204,6 +1224,7 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
     cout << "backpropagation completed, getting mu/sigma" << endl;
     double _mu, _sigma;
     get_mu_sigma(best_parameters, _mu, _sigma);
+	//cerr << "TTTTTTTTTT7" << endl ;
 }
 
 double RNN_Genome::get_mse(const vector<double> &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, bool verbose) {
@@ -1878,10 +1899,8 @@ bool RNN_Genome::add_node(double mu, double sigma, int node_type, int32_t max_re
     double avg_outputs = 0.0;
 
     for (int32_t i = 0; i < (int32_t)nodes.size(); i++) {
-        if (nodes[i]->depth < split_depth && nodes[i]->is_reachable())
-            possible_inputs.push_back(nodes[i]);
-        else if (nodes[i]->is_reachable())
-            possible_outputs.push_back(nodes[i]);
+        if (nodes[i]->depth < split_depth && nodes[i]->is_reachable()) possible_inputs.push_back(nodes[i]);
+        else if (nodes[i]->is_reachable()) possible_outputs.push_back(nodes[i]);
 
         if (nodes[i]->enabled) {
             enabled_count++;
@@ -2801,6 +2820,9 @@ void RNN_Genome::read_from_stream(istream &bin_istream, bool verbose) {
     read_map(normalize_maxs_iss, normalize_maxs);
 
     assign_reachability();
+    cout << "Worker=> Number of Nodes : " << this->nodes.size()   << endl;
+    cout << "Worker=> Number of Edges : " << this->edges.size()   << endl;
+    cout << "Worker=> Number of RexEdges : " << this->recurrent_edges.size()   << endl;
 }
 
 void RNN_Genome::write_to_array(char **bytes, int32_t &length, bool verbose) {

@@ -111,13 +111,6 @@ int main(int argc, char** argv) {
     int32_t number_slices;
     get_argument(arguments, "--number_slices", true, number_slices);
 
-    string genome_file_name = "";
-    get_argument(arguments, "--genome_bin", false, genome_file_name);
-    int no_extra_inputs = 0 ;
-    if (genome_file_name != "") {
-        get_argument(arguments, "--extra_inputs", true, no_extra_inputs);
-    }
-
     time_series_sets->split_all(number_slices);
 
     int32_t repeats = 5;
@@ -148,8 +141,7 @@ int main(int argc, char** argv) {
         overall_results << "results for slice " << i << " of " << time_series_sets->get_number_series() << " as test data." << endl;
 
         for (uint32_t k = 0; k < repeats; k++) {
-            // exalt = new EXALT(population_size, number_islands, max_genomes, time_series_sets->get_input_parameter_names(), time_series_sets->get_output_parameter_names(), time_series_sets->get_normalize_mins(), time_series_sets->get_normalize_maxs(), bp_iterations, learning_rate, use_high_threshold, high_threshold, use_low_threshold, low_threshold, use_dropout, dropout_probability, output_directory + "/slice_" + to_string(i) + "_repeat_" + to_string(k));
-            exalt = new EXALT(population_size, number_islands, max_genomes, time_series_sets->get_input_parameter_names(), time_series_sets->get_output_parameter_names(), time_series_sets->get_normalize_mins(), time_series_sets->get_normalize_maxs(), bp_iterations, learning_rate, use_high_threshold, high_threshold, use_low_threshold, low_threshold, use_dropout, dropout_probability, output_directory + "/slice_" + to_string(i) + "_repeat_" + to_string(k), genome_file_name, no_extra_inputs);
+            exalt = new EXALT(population_size, number_islands, max_genomes, time_series_sets->get_input_parameter_names(), time_series_sets->get_output_parameter_names(), time_series_sets->get_normalize_mins(), time_series_sets->get_normalize_maxs(), bp_iterations, learning_rate, use_high_threshold, high_threshold, use_low_threshold, low_threshold, use_dropout, dropout_probability, output_directory + "/slice_" + to_string(i) + "_repeat_" + to_string(k));
 
             vector<thread> threads;
             for (int32_t i = 0; i < number_threads; i++) {

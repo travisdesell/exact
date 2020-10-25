@@ -83,7 +83,7 @@ int main(int argc, char** argv){
 	// p.import_fromfile("xor_test.res");
 	srand(time(NULL));
     int count = 0 ;
-	while (count <  200000){
+	while (count < 100000){
 		double current_fitness = 0.0;
 		for (auto s = p.species.begin(); s != p.species.end(); s++)
 			for (size_t i=0; i<(*s).genomes.size(); i++){
@@ -102,22 +102,6 @@ int main(int argc, char** argv){
 					Best_mae = results[1];
 
 				g.fitness = 1-current_fitness;
-
-
-				if ( count==100000 ) {
-					string filename = work_dir+"/"+file_name+"_"+experiment+"_half.best" ;
-					std::ofstream output;
-					output.open(filename);
-					if (!output.is_open()){
-						std::cerr << "cannot open file '" << filename << "' !";
-						return 0;
-					}
-					output << count << ": "  << " Best MSE fitness: " << Best_mse << "  -  Best MAE fitness: " << Best_mae << endl;
-					output.close();
-				}
-
-
-
 				count++ ;
 			}
 
@@ -125,6 +109,7 @@ int main(int argc, char** argv){
 		p.new_generation();
 
 		cout << count << ": "  << " Best MSE fitness: " << Best_mse << "  -  Best MAE fitness: " << Best_mae << endl;
+		// getchar();
 	}
 	// test_output();
 	p.export_tofile(file_name+"_"+experiment+".res");

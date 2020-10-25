@@ -90,9 +90,6 @@ int main(int argc, char **argv) {
     int32_t max_recurrent_depth;
     get_argument(arguments, "--max_recurrent_depth", true, max_recurrent_depth);
 
-    int32_t nn_depth;
-    get_argument(arguments, "--nn_depth", false, nn_depth);
-
     RNN_Genome *genome;
     if (rnn_type == "one_layer_lstm") {
         genome = create_lstm(number_inputs, 1, number_inputs, number_outputs, max_recurrent_depth);
@@ -111,28 +108,6 @@ int main(int argc, char **argv) {
 
     } else if (rnn_type == "two_layer_ff") {
         genome = create_ff(number_inputs, 1, number_inputs, number_outputs, max_recurrent_depth);
-
-
-
-    } else if (rnn_type == "ff") {
-        genome = create_ff(number_inputs, nn_depth, number_inputs, number_outputs, max_recurrent_depth);
-
-    } else if (rnn_type == "lstm") {
-        genome = create_lstm(number_inputs, nn_depth, number_inputs, number_outputs, max_recurrent_depth);
-
-    } else if (rnn_type == "gru") {
-        genome = create_gru(number_inputs, nn_depth, number_inputs, number_outputs, max_recurrent_depth);
-
-    } else if (rnn_type == "mgu") {
-        genome = create_mgu(number_inputs, nn_depth, number_inputs, number_outputs, max_recurrent_depth);
-
-    } else if (rnn_type == "delta") {
-        genome = create_delta(number_inputs, nn_depth, number_inputs, number_outputs, max_recurrent_depth);
-
-    } else if (rnn_type == "ugrnn") {
-        genome = create_ugrnn(number_inputs, nn_depth, number_inputs, number_outputs, max_recurrent_depth);
-
-
 
     } else if (rnn_type == "jordan") {
         genome = create_jordan(number_inputs, 1, number_inputs, number_outputs, max_recurrent_depth);

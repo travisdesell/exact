@@ -199,7 +199,7 @@ ACNNTO::ACNNTO(int32_t _population_size, int32_t _max_genomes, const vector<stri
     create_colony_pheromones(number_inputs, hidden_layers_depth, hidden_layer_nodes, number_outputs, max_recurrent_depth, colony, INITIAL_PHEROMONE, colony_edges) ;
     if ( bias_forward_paths ) bias_for_forward_paths() ;
     if ( bias_edges ) bias_for_edges() ;
-    // if ( use_two_ants_types ) bias_for_forward_rec_edges() ;
+    if ( use_two_ants_types ) bias_for_forward_rec_edges() ;
     if ( const_phi!=0.0 ) phi = const_phi ;
 }
 
@@ -838,9 +838,6 @@ double ACNNTO::get_norm(RNN_Genome* g) {
         }
         return ( weight_reg_parameter * weights_sum / ( 2 * ( g->recurrent_edges.size() + g->edges.size() ) ) );
     }
-    else if ( norm == "no_edges"){
-        return  ( g->edges.size() + g->recurrent_edges.size() ) / colony_edges.size() ;
-    }
     else {
         cerr << "ERROR: Wrong Norm Option: " <<  norm << endl ;
         exit(0) ;
@@ -865,18 +862,18 @@ void ACNNTO::reward_colony_regularization(RNN_Genome* g, bool reward){
     if (reward && weight_reg_parameter!=0.0)
         W_reg =  get_norm( g ) ;
 
+    cout << "ACNNTO-REWARD_COLONY_REGULARIZATION:: W_reg: " << W_reg << endl ;
+    cout << "ACNNTO-REWARD_COLONY_REGULARIZATION:: 1 / ( fitness + W_reg ): " << 1 / ( fitness + W_reg ) << endl ;
 
-    // cout << "ACNNTO-REWARD_COLONY_REGULARIZATION:: W_reg: " << W_reg << endl ;
-    // cout << "ACNNTO-REWARD_COLONY_REGULARIZATION:: 1 / ( fitness + W_reg ): " << 1 / ( fitness + W_reg ) << endl ;
-
-    cout << g->nodes.size() << endl ;
     for ( int i=0; i<g->nodes.size(); i++){
         if ( g->nodes[i]->enabled==true ){
             int32_t node_inno = g->nodes[i]->get_innovation_number();
             int32_t node_type = g->nodes[i]->node_type;
-            if (node_inno>=colony.size() - number_outputs - 1) {
+            // cout << "NODE ID: " << node_inno << endl;
+            // cout << "\tNODE LAYER: " << g->nodes[i]->layer_type << endl;
+            if (i==g->nodes.size()-1)
                 node_inno*=-1;
-            }
+
             double pheromone_update;
 
             if ( reward )
@@ -1043,13 +1040,12 @@ void ACNNTO::reward_colony_constant_rate(RNN_Genome* g, int treat_pheromone){
             if (i==g->nodes.size()-1)
                 node_inno*=-1;
 
-            double pheromone_update = colony[node_inno]->type_pheromones[node_types[node_type]] + treat_pheromone ;
-            if (pheromone_update > PHEROMONES_THERESHOLD )
+
+            colony[node_inno]->type_pheromones[node_types[node_type]]+=treat_pheromone;
+            if (colony[node_inno]->type_pheromones[node_types[node_type]] > PHEROMONES_THERESHOLD )
                 colony[node_inno]->type_pheromones[node_types[node_type]] = PHEROMONES_THERESHOLD ;
-            else if (pheromone_update < 0 )
+            if (colony[node_inno]->type_pheromones[node_types[node_type]] < 0 )
                 colony[node_inno]->type_pheromones[node_types[node_type]] = MINIMUM_PHEROMONE_VALUE ;
-            else
-                colony[node_inno]->type_pheromones[node_types[node_type]] = pheromone_update ;
         }
 
 
@@ -1071,13 +1067,13 @@ void ACNNTO::reward_colony_constant_rate(RNN_Genome* g, int treat_pheromone){
         if (g->edges[i]->enabled){
             int32_t edge_inno = g->edges[i]->get_innovation_number();
 
-            double pheromoe_update = colony_edges[edge_inno]->edge_pheromone + treat_pheromone;
-            if ( pheromoe_update > PHEROMONES_THERESHOLD )
+
+            if ( colony_edges[edge_inno]->edge_pheromone * treat_pheromone < PHEROMONES_THERESHOLD && colony_edges[edge_inno]->edge_pheromone * treat_pheromone > 0 )
+                colony_edges[edge_inno]->edge_pheromone+= treat_pheromone;
+            if ( colony_edges[edge_inno]->edge_pheromone > PHEROMONES_THERESHOLD )
                 colony_edges[edge_inno]->edge_pheromone = PHEROMONES_THERESHOLD ;
-            else if ( pheromoe_update < 0 )
+            if ( colony_edges[edge_inno]->edge_pheromone < 0 )
                 colony_edges[edge_inno]->edge_pheromone = MINIMUM_PHEROMONE_VALUE ;
-            else
-                colony_edges[edge_inno]->edge_pheromone = pheromoe_update;
         }
     }
 
@@ -1085,13 +1081,13 @@ void ACNNTO::reward_colony_constant_rate(RNN_Genome* g, int treat_pheromone){
         if (g->recurrent_edges[i]->enabled){
             int32_t edge_inno = g->recurrent_edges[i]->get_innovation_number();
 
-            double pheromone_update = colony_edges[edge_inno]->edge_pheromone + treat_pheromone ;
-            if ( pheromone_update > PHEROMONES_THERESHOLD )
+
+            if ( colony_edges[edge_inno]->edge_pheromone * treat_pheromone < PHEROMONES_THERESHOLD && colony_edges[edge_inno]->edge_pheromone * treat_pheromone > 0 )
+                colony_edges[edge_inno]->edge_pheromone+= treat_pheromone;
+            if ( colony_edges[edge_inno]->edge_pheromone > PHEROMONES_THERESHOLD )
                 colony_edges[edge_inno]->edge_pheromone = PHEROMONES_THERESHOLD;
-            else if ( pheromone_update < 0 )
+            if ( colony_edges[edge_inno]->edge_pheromone < 0 )
                 colony_edges[edge_inno]->edge_pheromone = MINIMUM_PHEROMONE_VALUE ;
-            else
-                colony_edges[edge_inno]->edge_pheromone = pheromone_update;
         }
     }
 }

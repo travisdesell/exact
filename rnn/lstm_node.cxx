@@ -151,7 +151,6 @@ void LSTM_Node::input_fired(int time, double incoming_output) {
     output_values[time] = output_gate_values[time] * cell_out_tanh[time];
 
     forget_gate_bias -= 1.0;
-    //cout << "-->Layer: " << layer_type << " -- NODE[" << innovation_number <<"] VALUE[" << time << "]: " << output_values[time] << endl ;
 }
 
 

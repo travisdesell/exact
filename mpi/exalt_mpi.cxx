@@ -141,10 +141,12 @@ void master(int max_rank) {
             if (genome == NULL) { //search was completed if it returns NULL for an individual
                 //send terminate message
                 cout << "[" << setw(10) << name << "] terminating worker: " << source << endl;
+                cerr << "[" << setw(10) << name << "] terminating worker: " << source << endl;
                 send_terminate_message(source);
                 terminates_sent++;
 
                 cout << "[" << setw(10) << name << "] sent: " << terminates_sent << " terminates of: " << (max_rank - 1) << endl;
+                cerr << "[" << setw(10) << name << "] sent: " << terminates_sent << " terminates of: " << (max_rank - 1) << endl;
                 if (terminates_sent >= max_rank - 1) return;
 
             } else {
@@ -152,18 +154,22 @@ void master(int max_rank) {
 
                 //send genome
                 cout << "[" << setw(10) << name << "] sending genome to: " << source << endl;
+                cerr << "[" << setw(10) << name << "] sending genome to: " << source << endl;
                 send_genome_to(name, source, genome);
 
                 //delete this genome as it will not be used again
                 delete genome;
+				cerr << "FINISHED SENDING GEMONE: " << genome->get_generation_id() << " TO WORKER AND DELETED LOCAL COPY" << endl ;
             }
         } else if (tag == GENOME_LENGTH_TAG) {
             cout << "[" << setw(10) << name << "] received genome from: " << source << endl;
+            cerr << "[" << setw(10) << name << "] received genome from: " << source << endl;
             RNN_Genome *genome = receive_genome_from(name, source);
 
             exalt_mutex.lock();
             exalt->insert_genome(genome);
             exalt_mutex.unlock();
+			cerr << "FINISHED INSERTING GENOME: " << genome->get_generation_id() << endl ;
 
             //this genome will be deleted if/when removed from population
         } else {
@@ -195,8 +201,11 @@ void worker(int rank) {
         } else if (tag == GENOME_LENGTH_TAG) {
             cout << "[" << setw(10) << name << "] received genome!" << endl;
             RNN_Genome* genome = receive_genome_from(name, 0);
-
+			cerr << "WORKER SAYING: Starting BP for Genome: "<< genome->get_generation_id() << endl ;
+			//genome->write_graphviz(to_string(genome->get_generation_id()) +".gv") ;
+			//genome->write_to_file(to_string(genome->get_generation_id())  +".bin") ;
             genome->backpropagate_stochastic(training_inputs, training_outputs, validation_inputs, validation_outputs);
+			cerr << "WORKER SAYING: Finished BP for Genome: "<< genome->get_generation_id() << endl ;
 
             send_genome_to(name, 0, genome);
 
@@ -269,15 +278,8 @@ int main(int argc, char** argv) {
     string output_directory = "";
     get_argument(arguments, "--output_directory", false, output_directory);
 
-    string genome_file_name = "";
-    get_argument(arguments, "--genome_bin", false, genome_file_name);
-    int no_extra_inputs = 0 ;
-    if (genome_file_name != "") {
-        get_argument(arguments, "--extra_inputs", true, no_extra_inputs);
-    }
-
     if (rank == 0) {
-        exalt = new EXALT(population_size, number_islands, max_genomes, time_series_sets->get_input_parameter_names(), time_series_sets->get_output_parameter_names(), time_series_sets->get_normalize_mins(), time_series_sets->get_normalize_maxs(), bp_iterations, learning_rate, use_high_threshold, high_threshold, use_low_threshold, low_threshold, use_dropout, dropout_probability, output_directory, genome_file_name, no_extra_inputs);
+        exalt = new EXALT(population_size, number_islands, max_genomes, time_series_sets->get_input_parameter_names(), time_series_sets->get_output_parameter_names(), time_series_sets->get_normalize_mins(), time_series_sets->get_normalize_maxs(), bp_iterations, learning_rate, use_high_threshold, high_threshold, use_low_threshold, low_threshold, use_dropout, dropout_probability, output_directory);
 
         master(max_rank);
     } else {

@@ -55,14 +55,6 @@ int main(int argc, char** argv) {
 
     time_series_sets->export_test_series(time_offset, testing_inputs, testing_outputs);
 
-    // for ( int i=0; i<testing_outputs.size(); i++) {
-    //     for ( int j=0; j<testing_outputs[i].size(); j++){
-    //         for ( int k=0; k<testing_outputs[i][j].size(); k++)
-    //             cout << "Testing Outputs: " << testing_outputs[i][j][k] << endl ;
-    //         cout << "____________________\n";
-    //     }
-    // }
-
 
     vector<double> best_parameters = genome->get_best_parameters();
     cout << "MSE: " << genome->get_mse(best_parameters, testing_inputs, testing_outputs) << endl;

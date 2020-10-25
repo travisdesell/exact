@@ -27,17 +27,16 @@ other_percentage_file = output_directory + search_name + "_other_percentage_prog
 f = open(progress_file, 'rb')
 reader = csv.reader(f)
 headers = reader.next()
-print headers
+
 #print headers
 
-v1 = genfromtxt(progress_file, delimiter=',')
+v1 = genfromtxt(progress_file)
 #v2 = genfromtxt('migration_ring_salsa_10_320.txt', delimiter=' ')
 #print v1
 
 #print v1
 
 #print "first column of v1:\n"
-print v1.shape
 t = [row[3] for row in v1]
 '''
 print "t:\n"

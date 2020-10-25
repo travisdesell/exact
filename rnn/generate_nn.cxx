@@ -9,6 +9,9 @@ using std::vector;
 #include<map>
 using std::map;
 
+#include<cstring>
+#include<chrono>
+
 #include "edge_pheromone.hxx"
 #include "node_pheromone.hxx"
 #include "rnn/delta_node.hxx"
@@ -470,7 +473,7 @@ void create_colony_pheromones(int number_inputs, int number_hidden_layers, int n
     /*
        - Using the nodes the build the colony.
        - Every node holds all the edges and recurrent edges comming out of it.
-       - Every node also holds the pheromones for the node type.
+       - Every node also holds the pheromones to for the node type.
    */
     for ( uint32_t i = 0; i<layer_nodes.size(); i++){
         int layer_type;

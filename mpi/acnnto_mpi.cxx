@@ -291,6 +291,9 @@ int main(int argc, char** argv) {
     double pheromone_heuristic = 0.3;
     get_argument(arguments, "--pheromone_heuristic", false, pheromone_heuristic);
 
+    double weight_reg_parameter = 0.3;
+    get_argument(arguments, "--weight_reg_parameter", false, weight_reg_parameter);
+
     int32_t bp_iterations;
     get_argument(arguments, "--bp_iterations", true, bp_iterations);
 
@@ -309,21 +312,10 @@ int main(int argc, char** argv) {
     string reward_type = "";
     get_argument(arguments, "--reward_type", true, reward_type);
 
-    double weight_reg_parameter = 0.0;
-    get_argument(arguments, "--weight_reg_parameter", false, weight_reg_parameter);
-
-    string norm = "";
+    string norm = "l2";
     get_argument(arguments, "--norm", false, norm);
-    if (weight_reg_parameter=0.0 && norm!=""){
-        cerr << "Error: Trying to use Normalization " << norm << " without specifying Normalizaton Weight\n" ;
-        exit(0) ;
-    }
-    else if (weight_reg_parameter!=0.0 && norm==""){
-        cerr << "Error: Trying to use Normalization (Reg. weight provided) without specifying Normalizaton Type (l1/l2)\n" ;
-        exit(0) ;
-    }
 
-    bool bias_forward_paths = false;
+    bool bias_forward_paths = true;
     for ( int i=0; i<argc; i++) {
         if ( string( argv[i] )=="--bias_forward_paths" ) {
             bias_forward_paths = true;
@@ -373,8 +365,6 @@ int main(int argc, char** argv) {
             cout << "Using Two Ants Scheme\n" ;
             break;
         }
-        // std::cerr << "ERROR: --use_two_ants_types required but not given." << '\n';
-        // exit(0);
     }
     bool use_all_jumps = false;
     for ( int i=0; i<argc; i++) {
@@ -396,7 +386,7 @@ int main(int argc, char** argv) {
         if ( string( argv[i] )=="--use_forward_social_ants" ) {
             use_forward_social_ants = true;
             if (!use_two_ants_types){
-                cerr <<"FORWARD SCOIAL: " << use_two_ants_types << " --" << "Error: Trying to use Two Ants Species while One Ant species is used\n" ;
+                cerr << "Error: Trying to use All Jumps while One Ant species is used\n" ;
                 exit(0) ;
             }
             cout << "Using Forward Social Ants\n" ;
@@ -408,7 +398,7 @@ int main(int argc, char** argv) {
         if ( string( argv[i] )=="--use_backward_social_ants" ) {
             use_backward_social_ants = true;
             if (!use_two_ants_types){
-                cerr <<"BACKWARD SCOIAL: " << use_two_ants_types << " --" << "Error: Trying to use Two Ants Species while One Ant species is used\n" ;
+                cerr << "Error: Trying to use All Jumps while One Ant species is used\n" ;
                 exit(0) ;
             }
             cout << "Using Backward Social Ants\n" ;
@@ -417,7 +407,7 @@ int main(int argc, char** argv) {
     }
 
     double const_phi = 0.0 ;
-    get_argument(arguments, "--const_phi", true, const_phi);
+    get_argument(arguments, "--const_phi", false, const_phi);
 
     if (rank == 0) {
         cout << "NUMBER OF ANTS:: " << number_of_ants << endl;
