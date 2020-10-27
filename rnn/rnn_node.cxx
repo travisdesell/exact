@@ -12,7 +12,7 @@ RNN_Node::RNN_Node(int _innovation_number, int _layer_type, double _depth, int _
 
     //node type will be simple, jordan or elman
     node_type = _node_type;
-    Log::trace("created node: %d, layer type: %d, node type: %d\n", innovation_number, layer_type, node_type);
+    LOG_TRACE("created node: %d, layer type: %d, node type: %d\n", innovation_number, layer_type, node_type);
 }
 
 
@@ -20,7 +20,7 @@ RNN_Node::RNN_Node(int _innovation_number, int _layer_type, double _depth, int _
 
     //node type will be simple, jordan or elman
     node_type = _node_type;
-    Log::trace("created node: %d, layer type: %d, node type: %d\n", innovation_number, layer_type, node_type);
+    LOG_TRACE("created node: %d, layer type: %d, node type: %d\n", innovation_number, layer_type, node_type);
 }
 
 
@@ -52,11 +52,11 @@ void RNN_Node::input_fired(int time, double incoming_output) {
 
     if (inputs_fired[time] < total_inputs) return;
     else if (inputs_fired[time] > total_inputs) {
-        Log::fatal("ERROR: inputs_fired on RNN_Node %d at time %d is %d and total_inputs is %d\n", innovation_number, time, inputs_fired[time], total_inputs);
+        LOG_FATAL("ERROR: inputs_fired on RNN_Node %d at time %d is %d and total_inputs is %d\n", innovation_number, time, inputs_fired[time], total_inputs);
         exit(1);
     }
 
-    //Log::trace("node %d - input value[%d]: %lf\n", innovation_number, time, input_values[time]);
+    //LOG_TRACE("node %d - input value[%d]: %lf\n", innovation_number, time, input_values[time]);
 
     output_values[time] = tanh(input_values[time] + bias);
     ld_output[time] = tanh_derivative(output_values[time]);
@@ -66,9 +66,9 @@ void RNN_Node::input_fired(int time, double incoming_output) {
 
 #ifdef NAN_CHECKS
     if (isnan(output_values[time]) || isinf(output_values[time])) {
-        Log::fatal("ERROR: output_value[%d] becaome %lf on RNN node: %d\n", time, output_values[time], innovation_number);
-        Log::fatal("\tinput_value[%dd]: %lf\n", time, input_values[time]);
-        Log::Fatal("\tnode bias: %lf", bias);
+        LOG_FATAL("ERROR: output_value[%d] becaome %lf on RNN node: %d\n", time, output_values[time], innovation_number);
+        LOG_FATAL("\tinput_value[%dd]: %lf\n", time, input_values[time]);
+        LOG_FATAL("\tnode bias: %lf", bias);
         exit(1);
     }
 #endif
@@ -77,7 +77,7 @@ void RNN_Node::input_fired(int time, double incoming_output) {
 void RNN_Node::try_update_deltas(int time) {
     if (outputs_fired[time] < total_outputs) return;
     else if (outputs_fired[time] > total_outputs) {
-        Log::fatal("ERROR: outputs_fired on RNN_Node %d at time %d is %d and total_outputs is %d\n", innovation_number, time, outputs_fired[time], total_outputs);
+        LOG_FATAL("ERROR: outputs_fired on RNN_Node %d at time %d is %d and total_outputs is %d\n", innovation_number, time, outputs_fired[time], total_outputs);
         exit(1);
     }
 
@@ -89,7 +89,7 @@ void RNN_Node::try_update_deltas(int time) {
 void RNN_Node::error_fired(int time, double error) {
     outputs_fired[time]++;
 
-    //Log::trace("error fired at time: %d on node %d, d_input: %lf, ld_output %lf, error_values: %lf, output_values: %lf\n", time, innovation_number, d_input[time], ld_output[time], error_values[time], output_values[time]);
+    //LOG_TRACE("error fired at time: %d on node %d, d_input: %lf, ld_output %lf, error_values: %lf, output_values: %lf\n", time, innovation_number, d_input[time], ld_output[time], error_values[time], output_values[time]);
 
     d_input[time] += error_values[time] * error;
 

@@ -93,7 +93,7 @@ double MGU_Node::get_gradient(string gradient_name) {
         } else if (gradient_name == "h_bias") {
             gradient_sum += d_h_bias[i];
         } else {
-            Log::fatal("ERROR: tried to get unknown gradient: '%s'\n", gradient_name.c_str());
+            LOG_FATAL("ERROR: tried to get unknown gradient: '%s'\n", gradient_name.c_str());
             exit(1);
         }
     }
@@ -102,7 +102,7 @@ double MGU_Node::get_gradient(string gradient_name) {
 }
 
 void MGU_Node::print_gradient(string gradient_name) {
-    Log::info("\tgradient['%s']: %lf\n", gradient_name.c_str(), get_gradient(gradient_name));
+    LOG_INFO("\tgradient['%s']: %lf\n", gradient_name.c_str(), get_gradient(gradient_name));
 }
 
 void MGU_Node::input_fired(int time, double incoming_output) {
@@ -112,7 +112,7 @@ void MGU_Node::input_fired(int time, double incoming_output) {
 
     if (inputs_fired[time] < total_inputs) return;
     else if (inputs_fired[time] > total_inputs) {
-        Log::fatal("ERROR: inputs_fired on MGU_Node %d at time %d is %d and total_inputs is %d\n", innovation_number, time, inputs_fired[time], total_inputs);
+        LOG_FATAL("ERROR: inputs_fired on MGU_Node %d at time %d is %d and total_inputs is %d\n", innovation_number, time, inputs_fired[time], total_inputs);
         exit(1);
     }
 
@@ -143,7 +143,7 @@ void MGU_Node::input_fired(int time, double incoming_output) {
 void MGU_Node::try_update_deltas(int time) {
     if (outputs_fired[time] < total_outputs) return;
     else if (outputs_fired[time] > total_outputs) {
-        Log::fatal("ERROR: outputs_fired on MGU_Node %d at time %d is %d and total_outputs is %d\n:", innovation_number, time, outputs_fired[time], total_outputs);
+        LOG_FATAL("ERROR: outputs_fired on MGU_Node %d at time %d is %d and total_outputs is %d\n:", innovation_number, time, outputs_fired[time], total_outputs);
         exit(1);
     }
 
@@ -227,7 +227,7 @@ void MGU_Node::set_weights(uint32_t &offset, const vector<double> &parameters) {
 
 
     //uint32_t end_offset = offset;
-    //Log::trace("set weights from offset %d to %d on MGU_Node %d\n", start_offset, end_offset, innovation_number);
+    //LOG_TRACE("set weights from offset %d to %d on MGU_Node %d\n", start_offset, end_offset, innovation_number);
 }
 
 void MGU_Node::get_weights(uint32_t &offset, vector<double> &parameters) const {
@@ -242,7 +242,7 @@ void MGU_Node::get_weights(uint32_t &offset, vector<double> &parameters) const {
     parameters[offset++] = h_bias;
 
     //uint32_t end_offset = offset;
-    //Log::trace("got weights from offset %d to %d on MGU_Node %d\n", start_offset, end_offset, innovation_number);
+    //LOG_TRACE("got weights from offset %d to %d on MGU_Node %d\n", start_offset, end_offset, innovation_number);
 }
 
 

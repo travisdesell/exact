@@ -92,7 +92,7 @@ double UGRNN_Node::get_gradient(string gradient_name) {
         } else if (gradient_name == "g_bias") {
             gradient_sum += d_g_bias[i];
         } else {
-            Log::fatal("ERROR: tried to get unknown gradient: '%s'\n", gradient_name.c_str());
+            LOG_FATAL("ERROR: tried to get unknown gradient: '%s'\n", gradient_name.c_str());
             exit(1);
         }
     }
@@ -101,7 +101,7 @@ double UGRNN_Node::get_gradient(string gradient_name) {
 }
 
 void UGRNN_Node::print_gradient(string gradient_name) {
-    Log::info("\tgradient['%s']: %lf\n", gradient_name.c_str(), get_gradient(gradient_name));
+    LOG_INFO("\tgradient['%s']: %lf\n", gradient_name.c_str(), get_gradient(gradient_name));
 }
 
 void UGRNN_Node::input_fired(int time, double incoming_output) {
@@ -111,7 +111,7 @@ void UGRNN_Node::input_fired(int time, double incoming_output) {
 
     if (inputs_fired[time] < total_inputs) return;
     else if (inputs_fired[time] > total_inputs) {
-        Log::fatal("ERROR: inputs_fired on UGRNN_Node %d at time %d is %d and total_inputs is %d\n", innovation_number, time, inputs_fired[time], total_inputs);
+        LOG_FATAL("ERROR: inputs_fired on UGRNN_Node %d at time %d is %d and total_inputs is %d\n", innovation_number, time, inputs_fired[time], total_inputs);
         exit(1);
     }
 
@@ -146,7 +146,7 @@ void UGRNN_Node::input_fired(int time, double incoming_output) {
 void UGRNN_Node::try_update_deltas(int time) {
     if (outputs_fired[time] < total_outputs) return;
     else if (outputs_fired[time] > total_outputs) {
-        Log::fatal("ERROR: outputs_fired on UGRNN_Node %d at time %d is %d and total_outputs is %d\n", innovation_number, time, outputs_fired[time], total_outputs);
+        LOG_FATAL("ERROR: outputs_fired on UGRNN_Node %d at time %d is %d and total_outputs is %d\n", innovation_number, time, outputs_fired[time], total_outputs);
         exit(1);
     }
 
@@ -233,7 +233,7 @@ void UGRNN_Node::set_weights(uint32_t &offset, const vector<double> &parameters)
     g_bias = bound(parameters[offset++]);
 
     //uint32_t end_offset = offset;
-    //Log::debug("set weights from offset %d to %d on UGRNN_Node %d\n", start_offset, end_offset, innovation_number);
+    //LOG_DEBUG("set weights from offset %d to %d on UGRNN_Node %d\n", start_offset, end_offset, innovation_number);
 }
 
 void UGRNN_Node::get_weights(uint32_t &offset, vector<double> &parameters) const {
@@ -248,7 +248,7 @@ void UGRNN_Node::get_weights(uint32_t &offset, vector<double> &parameters) const
     parameters[offset++] = g_bias;
 
     //uint32_t end_offset = offset;
-    //Log::debug("got weights from offset %d to %d on UGRNN_Node %d\n", start_offset, end_offset, innovation_number);
+    //LOG_DEBUG("got weights from offset %d to %d on UGRNN_Node %d\n", start_offset, end_offset, innovation_number);
 }
 
 

@@ -100,14 +100,14 @@ int main(int argc, char  **argv)
 	corpus_sets->export_training_series(word_offset,training_inputs,training_outputs);
 	corpus_sets->export_test_series(word_offset,validation_inputs,validation_outputs);
 
-	Log::info("exported word series.\n");
+	LOG_INFO("exported word series.\n");
     
 	int number_inputs = corpus_sets->get_number_inputs();
     int number_outputs = corpus_sets->get_number_outputs();
 
-    Log::info("The size of the input is :: %d,%d,%d \n",training_inputs.size(),training_inputs[0].size(),training_inputs[0][0].size());
+    LOG_INFO("The size of the input is :: %d,%d,%d \n",training_inputs.size(),training_inputs[0].size(),training_inputs[0][0].size());
 
-	Log::info("number_inputs: %d, number_outputs: %d\n", number_inputs, number_outputs);
+	LOG_INFO("number_inputs: %d, number_outputs: %d\n", number_inputs, number_outputs);
 
 	int32_t population_size;
     get_argument(arguments, "--population_size", true, population_size);
@@ -255,7 +255,7 @@ int main(int argc, char  **argv)
 
     finished = true;
 
-    Log::info("completed!\n");
+    LOG_INFO("completed!\n");
     Log::release_id("main");
 
     return 0;

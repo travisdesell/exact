@@ -90,7 +90,7 @@ void WordSeries::calculate_statistics() {
 }
 
 void WordSeries::print_statistics() {
-    Log::info("\t%25s stats, min: %lf, avg: %lf, max: %lf, min_change: %lf, max_change: %lf, std_dev: %lf, variance: %lf\n", name.c_str(), min, average, max, min_change, max_change, std_dev, variance);
+    LOG_INFO("\t%25s stats, min: %lf, avg: %lf, max: %lf, min_change: %lf, max_change: %lf, std_dev: %lf, variance: %lf\n", name.c_str(), min, average, max, min_change, max_change, std_dev, variance);
 }
 
 int WordSeries::get_number_values() const {
@@ -126,15 +126,15 @@ double WordSeries::get_max_change() const {
 }
 
 void WordSeries::normalize_min_max(double min, double max) {
-    Log::debug("normalizing time series '%s' with min: %lf and max: %lf, series min: %lf, series max: %lf\n", name.c_str(), min, max, this->min, this->max);
+    LOG_DEBUG("normalizing time series '%s' with min: %lf and max: %lf, series min: %lf, series max: %lf\n", name.c_str(), min, max, this->min, this->max);
 
     for (int i = 0; i < values.size(); i++) {
         if (values[i] < min) {
-            Log::warning("normalizing series %s, value[%d] %lf was less than min for normalization: %lf\n", name.c_str(), i, values[i], min);
+            LOG_WARNING("normalizing series %s, value[%d] %lf was less than min for normalization: %lf\n", name.c_str(), i, values[i], min);
         }
 
         if (values[i] > max) {
-            Log::warning("normalizing series %s, value[%d] %lf was greater than max for normalization: %lf\n", name.c_str(), i, values[i], max);
+            LOG_WARNING("normalizing series %s, value[%d] %lf was greater than max for normalization: %lf\n", name.c_str(), i, values[i], max);
         }
 
         values[i] = (values[i] - min) / (max - min);
@@ -143,7 +143,7 @@ void WordSeries::normalize_min_max(double min, double max) {
 
 //divide by the normalized max to make things between -1 and 1
 void WordSeries::normalize_avg_std_dev(double avg, double std_dev, double norm_max) {
-    Log::debug("normalizing time series '%s' with avg: %lf, std_dev: %lf and normalized max: %lf, series avg: %lf, series std_dev: %lf\n", name.c_str(), avg, std_dev, norm_max, this->average, this->std_dev);
+    LOG_DEBUG("normalizing time series '%s' with avg: %lf, std_dev: %lf and normalized max: %lf, series avg: %lf, series std_dev: %lf\n", name.c_str(), avg, std_dev, norm_max, this->average, this->std_dev);
 
     for (int i = 0; i < values.size(); i++) {
         values[i] = ((values[i] - avg) / std_dev) / norm_max;
@@ -219,7 +219,7 @@ void SentenceSeries::add_word_series(string name) {
     if (word_series.count(name) == 0) {
         word_series[name] = new WordSeries(name);
     } else {
-        Log::error("ERROR! Trying to add a time series to a time series set with name '%s' which already exists in the set!\n", name.c_str());
+        LOG_ERROR("ERROR! Trying to add a time series to a time series set with name '%s' which already exists in the set!\n", name.c_str());
     }
 }
 
@@ -268,8 +268,8 @@ SentenceSeries::SentenceSeries(const string _filename,const vector<string> & _wo
     for (auto series = word_series.begin(); series != word_series.end(); series++) {
         series->second->calculate_statistics();
         if (series->second->get_min_change() == 0 && series->second->get_max_change() == 0) {
-            Log::warning("WARNING: unchanging series: '%s'\n", series->first.c_str());
-            Log::warning("removing unchanging series: '%s'\n", series->first.c_str());
+            LOG_WARNING("WARNING: unchanging series: '%s'\n", series->first.c_str());
+            LOG_WARNING("removing unchanging series: '%s'\n", series->first.c_str());
             series->second->print_statistics();
             //word_series.erase(series);
         } else {
@@ -279,12 +279,12 @@ SentenceSeries::SentenceSeries(const string _filename,const vector<string> & _wo
         int series_rows = series->second->get_number_values();
 
         if (series_rows != number_rows) {
-            Log::error("ERROR! number of rows for field '%s' (%d) doesn't equal number of rows in first field '%s' (%d)\n", series->first.c_str(), series->second->get_number_values(), word_series.begin()->first.c_str(), word_series.begin()->second->get_number_values());
+            LOG_ERROR("ERROR! number of rows for field '%s' (%d) doesn't equal number of rows in first field '%s' (%d)\n", series->first.c_str(), series->second->get_number_values(), word_series.begin()->first.c_str(), word_series.begin()->second->get_number_values());
         }
 
     }
 
-    Log::info("read time series '%s' with number rows: %d\n", filename.c_str(), number_rows);
+    LOG_INFO("read time series '%s' with number rows: %d\n", filename.c_str(), number_rows);
 
 
 }
@@ -429,7 +429,7 @@ SentenceSeries* SentenceSeries::copy(){
 void SentenceSeries::select_parameters(const vector<string> &parameter_names) {
     for (auto series = word_series.begin(); series != word_series.end(); series++) {
         if (std::find(parameter_names.begin(), parameter_names.end(), series->first) == parameter_names.end()) {
-            Log::info("removing series: '%s'\n", series->first.c_str());
+            LOG_INFO("removing series: '%s'\n", series->first.c_str());
             word_series.erase(series->first);
         }
     }
@@ -510,7 +510,7 @@ void Corpus::load_word_library(){
 
 
     for (uint32_t i = 0; i < filenames.size(); i++) {
-        Log::debug("\t%s\n", filenames[i].c_str());
+        LOG_DEBUG("\t%s\n", filenames[i].c_str());
 
         SentenceSeries *ss = new SentenceSeries(filenames[i], word_index,vocab);
         sent_series.push_back( ss );
@@ -549,7 +549,7 @@ Corpus* Corpus::generate_from_arguments(const vector<string> &arguments){
         }
 
     } else {
-        Log::fatal("Could not find the '--filenames' or the '--training_filenames' and '--test_filenames' command line arguments.  Usage instructions:\n");
+        LOG_FATAL("Could not find the '--filenames' or the '--training_filenames' and '--test_filenames' command line arguments.  Usage instructions:\n");
         //help_message();
         exit(1);
     }
@@ -618,13 +618,13 @@ double Corpus::denormalize(string field_name, double value) {
         return value;
 
     } else {
-        Log::fatal("Unknown normalize type on denormalize for '%s' and '%lf', '%s', this should never happen.\n", field_name.c_str(), value, normalize_type.c_str());
+        LOG_FATAL("Unknown normalize type on denormalize for '%s' and '%lf', '%s', this should never happen.\n", field_name.c_str(), value, normalize_type.c_str());
         exit(1);
     }
 }
 
 void Corpus::normalize_min_max() {
-    Log::info("doing min/max normalization:\n");
+    LOG_INFO("doing min/max normalization:\n");
 
     for (int i = 0; i < all_parameter_names.size(); i++) {
         string parameter_name = all_parameter_names[i];
@@ -660,7 +660,7 @@ void Corpus::normalize_min_max() {
 
         log_str = log_str + string_format("%30s, min: %22.10lf, max: %22.10lf\n", parameter_name.c_str(), min, max);
 
-        Log::info(log_str.c_str());
+        LOG_INFO(log_str.c_str());
 
         //for each series, subtract min, divide by (max - min)
         for (int j = 0; j < sent_series.size(); j++) {
@@ -680,20 +680,20 @@ void Corpus::normalize_min_max(const map<string,double> &_normalize_mins, const 
 
         if (normalize_mins.count(field) == 0) {
             //field doesn't exist in the normalize values, report an error
-            Log::fatal("ERROR, couldn't find field '%s' in normalize min values.\n", field.c_str());
-            Log::fatal("normalize min fields/values:\n");
+            LOG_FATAL("ERROR, couldn't find field '%s' in normalize min values.\n", field.c_str());
+            LOG_FATAL("normalize min fields/values:\n");
             for (auto iterator = normalize_mins.begin(); iterator != normalize_mins.end(); iterator++) {
-                Log::fatal("\t%s: %lf\n", iterator->first.c_str(), iterator->second);
+                LOG_FATAL("\t%s: %lf\n", iterator->first.c_str(), iterator->second);
             }
             exit(1);
         }
 
         if (normalize_maxs.count(field) == 0) {
             //field doesn't exist in the normalize values, report an error
-            Log::fatal("ERROR, couldn't find field '%s' in normalize max values.\n", field.c_str());
-            Log::fatal("normalize max fields/values:\n");
+            LOG_FATAL("ERROR, couldn't find field '%s' in normalize max values.\n", field.c_str());
+            LOG_FATAL("normalize max fields/values:\n");
             for (auto iterator = normalize_maxs.begin(); iterator != normalize_maxs.end(); iterator++) {
-                Log::fatal("\t%s: %lf\n", iterator->first.c_str(), iterator->second);
+                LOG_FATAL("\t%s: %lf\n", iterator->first.c_str(), iterator->second);
             }
             exit(1);
         }
@@ -708,7 +708,7 @@ void Corpus::normalize_min_max(const map<string,double> &_normalize_mins, const 
 }
 
 void Corpus::normalize_avg_std_dev() {
-    Log::info("doing min/max normalization:\n");
+    LOG_INFO("doing min/max normalization:\n");
 
     for (int i = 0; i < all_parameter_names.size(); i++) {
         string parameter_name = all_parameter_names[i];
@@ -775,7 +775,7 @@ void Corpus::normalize_avg_std_dev() {
 
         log_str = log_str + string_format("%30s, min: %22.10lf, max: %22.10lf, norm_max; %22.10lf, combined average: %22.10lf, combined std_dev: %22.10lf\n", parameter_name.c_str(), min, max, avg, norm_max, std_dev);
 
-        Log::info(log_str.c_str());
+        LOG_INFO(log_str.c_str());
 
         //for each series, subtract min, divide by (max - min)
         for (int j = 0; j < sent_series.size(); j++) {
@@ -797,40 +797,40 @@ void Corpus::normalize_avg_std_dev(const map<string,double> &_normalize_avgs, co
 
         if (normalize_avgs.count(field) == 0) {
             //field doesn't exist in the normalize values, report an error
-            Log::fatal("ERROR, couldn't find field '%s' in normalize avg values.\n", field.c_str());
-            Log::fatal("normalize avg fields/values:\n");
+            LOG_FATAL("ERROR, couldn't find field '%s' in normalize avg values.\n", field.c_str());
+            LOG_FATAL("normalize avg fields/values:\n");
             for (auto iterator = normalize_avgs.begin(); iterator != normalize_avgs.end(); iterator++) {
-                Log::fatal("\t%s: %lf\n", iterator->first.c_str(), iterator->second);
+                LOG_FATAL("\t%s: %lf\n", iterator->first.c_str(), iterator->second);
             }
             exit(1);
         }
 
         if (normalize_std_devs.count(field) == 0) {
             //field doesn't exist in the normalize values, report an error
-            Log::fatal("ERROR, couldn't find field '%s' in normalize std_dev values.\n", field.c_str());
-            Log::fatal("normalize std_dev fields/values:\n");
+            LOG_FATAL("ERROR, couldn't find field '%s' in normalize std_dev values.\n", field.c_str());
+            LOG_FATAL("normalize std_dev fields/values:\n");
             for (auto iterator = normalize_std_devs.begin(); iterator != normalize_std_devs.end(); iterator++) {
-                Log::fatal("\t%s: %lf\n", iterator->first.c_str(), iterator->second);
+                LOG_FATAL("\t%s: %lf\n", iterator->first.c_str(), iterator->second);
             }
             exit(1);
         }
 
         if (normalize_mins.count(field) == 0) {
             //field doesn't exist in the normalize values, report an error
-            Log::fatal("ERROR, couldn't find field '%s' in normalize min values.\n", field.c_str());
-            Log::fatal("normalize min fields/values:\n");
+            LOG_FATAL("ERROR, couldn't find field '%s' in normalize min values.\n", field.c_str());
+            LOG_FATAL("normalize min fields/values:\n");
             for (auto iterator = normalize_mins.begin(); iterator != normalize_mins.end(); iterator++) {
-                Log::fatal("\t%s: %lf\n", iterator->first.c_str(), iterator->second);
+                LOG_FATAL("\t%s: %lf\n", iterator->first.c_str(), iterator->second);
             }
             exit(1);
         }
 
         if (normalize_maxs.count(field) == 0) {
             //field doesn't exist in the normalize values, report an error
-            Log::fatal("ERROR, couldn't find field '%s' in normalize max values.\n", field.c_str());
-            Log::fatal("normalize max fields/values:\n");
+            LOG_FATAL("ERROR, couldn't find field '%s' in normalize max values.\n", field.c_str());
+            LOG_FATAL("normalize max fields/values:\n");
             for (auto iterator = normalize_maxs.begin(); iterator != normalize_maxs.end(); iterator++) {
-                Log::fatal("\t%s: %lf\n", iterator->first.c_str(), iterator->second);
+                LOG_FATAL("\t%s: %lf\n", iterator->first.c_str(), iterator->second);
             }
             exit(1);
         }
@@ -924,7 +924,7 @@ void Corpus::export_sent_series(const vector<int> &series_indexes, int word_offs
  */
 void Corpus::export_training_series(int word_offset, vector< vector< vector<double> > > &inputs, vector< vector< vector<double> > > &outputs) {
     if (training_indexes.size() == 0) {
-        Log::fatal("ERROR: attempting to export training time series, however the training_indexes were not specified.\n");
+        LOG_FATAL("ERROR: attempting to export training time series, however the training_indexes were not specified.\n");
         exit(1);
     }
 
@@ -936,7 +936,7 @@ void Corpus::export_training_series(int word_offset, vector< vector< vector<doub
  */
 void Corpus::export_test_series(int word_offset, vector< vector< vector<double> > > &inputs, vector< vector< vector<double> > > &outputs) {
     if (test_indexes.size() == 0) {
-        Log::fatal("ERROR: attempting to export test time series, however the test_indexes were not specified.\n");
+        LOG_FATAL("ERROR: attempting to export test time series, however the test_indexes were not specified.\n");
         exit(1);
     }
 

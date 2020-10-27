@@ -91,7 +91,7 @@ void Species::copy_two_random_genomes(uniform_real_distribution<double> &rng_0_1
 //inserts a copy of the genome, caller of the function will need to delete their
 //pointer
 int32_t Species::insert_genome(RNN_Genome *genome) {
-    Log::info("inserting genome with fitness: %s to species %d\n", parse_fitness(genome->get_fitness()).c_str(), id);
+    LOG_INFO("inserting genome with fitness: %s to species %d\n", parse_fitness(genome->get_fitness()).c_str(), id);
 
     // inorder insert the new individual
     RNN_Genome *copy = genome->copy();
@@ -111,7 +111,7 @@ int32_t Species::insert_genome(RNN_Genome *genome) {
 
     if (insert_index == 0) {
         // this was a new best genome for this island
-        Log::info("new best fitness for island: %d!\n", id);
+        LOG_INFO("new best fitness for island: %d!\n", id);
         if (genome->get_fitness() != EXAMM_MAX_DOUBLE) {
             // need to set the weights for non-initial genomes so we
             // can generate a proper graphviz file
@@ -125,14 +125,14 @@ int32_t Species::insert_genome(RNN_Genome *genome) {
 
     inserted_genome_id.push_back( copy->get_generation_id());
 
-    Log::info("Inserted genome %d at index %d\n", genome->get_generation_id(), insert_index);
+    LOG_INFO("Inserted genome %d at index %d\n", genome->get_generation_id(), insert_index);
     return insert_index;
 }
 
 void Species::print(string indent) {
-    Log::info("%s\t%s\n", indent.c_str(), RNN_Genome::print_statistics_header().c_str());
+    LOG_INFO("%s\t%s\n", indent.c_str(), RNN_Genome::print_statistics_header().c_str());
     for (int32_t i = 0; i < genomes.size(); i++) {
-        Log::info("%s\t%s\n", indent.c_str(), genomes[i]->print_statistics().c_str());
+        LOG_INFO("%s\t%s\n", indent.c_str(), genomes[i]->print_statistics().c_str());
     }
 }
 
@@ -207,7 +207,7 @@ void Species::fitness_sharing_remove(double fitness_threshold, function<double (
 void Species::erase_species() {
     genomes.clear();
     if(genomes.size() != 0){
-        Log::error("The worst island is not fully erased!\n");
+        LOG_ERROR("The worst island is not fully erased!\n");
     }
 }
 

@@ -81,7 +81,7 @@ void TimeSeries::calculate_statistics() {
 }
 
 void TimeSeries::print_statistics() {
-    Log::info("\t%25s stats, min: %lf, avg: %lf, max: %lf, min_change: %lf, max_change: %lf, std_dev: %lf, variance: %lf\n", name.c_str(), min, average, max, min_change, max_change, std_dev, variance);
+    LOG_INFO("\t%25s stats, min: %lf, avg: %lf, max: %lf, min_change: %lf, max_change: %lf, std_dev: %lf, variance: %lf\n", name.c_str(), min, average, max, min_change, max_change, std_dev, variance);
 }
 
 int TimeSeries::get_number_values() const {
@@ -117,15 +117,15 @@ double TimeSeries::get_max_change() const {
 }
 
 void TimeSeries::normalize_min_max(double min, double max) {
-    Log::debug("normalizing time series '%s' with min: %lf and max: %lf, series min: %lf, series max: %lf\n", name.c_str(), min, max, this->min, this->max);
+    LOG_DEBUG("normalizing time series '%s' with min: %lf and max: %lf, series min: %lf, series max: %lf\n", name.c_str(), min, max, this->min, this->max);
 
     for (int i = 0; i < values.size(); i++) {
         if (values[i] < min) {
-            Log::warning("normalizing series %s, value[%d] %lf was less than min for normalization: %lf\n", name.c_str(), i, values[i], min);
+            LOG_WARNING("normalizing series %s, value[%d] %lf was less than min for normalization: %lf\n", name.c_str(), i, values[i], min);
         }
 
         if (values[i] > max) {
-            Log::warning("normalizing series %s, value[%d] %lf was greater than max for normalization: %lf\n", name.c_str(), i, values[i], max);
+            LOG_WARNING("normalizing series %s, value[%d] %lf was greater than max for normalization: %lf\n", name.c_str(), i, values[i], max);
         }
 
         values[i] = (values[i] - min) / (max - min);
@@ -134,7 +134,7 @@ void TimeSeries::normalize_min_max(double min, double max) {
 
 //divide by the normalized max to make things between -1 and 1
 void TimeSeries::normalize_avg_std_dev(double avg, double std_dev, double norm_max) {
-    Log::debug("normalizing time series '%s' with avg: %lf, std_dev: %lf and normalized max: %lf, series avg: %lf, series std_dev: %lf\n", name.c_str(), avg, std_dev, norm_max, this->average, this->std_dev);
+    LOG_DEBUG("normalizing time series '%s' with avg: %lf, std_dev: %lf and normalized max: %lf, series avg: %lf, series std_dev: %lf\n", name.c_str(), avg, std_dev, norm_max, this->average, this->std_dev);
 
     for (int i = 0; i < values.size(); i++) {
         values[i] = ((values[i] - avg) / std_dev) / norm_max;
@@ -210,7 +210,7 @@ void TimeSeriesSet::add_time_series(string name) {
     if (time_series.count(name) == 0) {
         time_series[name] = new TimeSeries(name);
     } else {
-        Log::error("ERROR! Trying to add a time series to a time series set with name '%s' which already exists in the set!\n", name.c_str());
+        LOG_ERROR("ERROR! Trying to add a time series to a time series set with name '%s' which already exists in the set!\n", name.c_str());
     }
 }
 
@@ -222,7 +222,7 @@ TimeSeriesSet::TimeSeriesSet(string _filename, const vector<string> &_fields) {
 
     string line;
     if (!getline(ts_file, line)) {
-        Log::error("ERROR! Could not get headers from the CSV file. File potentially empty!\n");
+        LOG_ERROR("ERROR! Could not get headers from the CSV file. File potentially empty!\n");
         exit(1);
     }
 
@@ -239,17 +239,17 @@ TimeSeriesSet::TimeSeriesSet(string _filename, const vector<string> &_fields) {
     for (int32_t i = 0; i < (int32_t)fields.size(); i++) {
         if (find(file_fields.begin(), file_fields.end(), fields[i]) == file_fields.end()) {
             //one of the given fields didn't exist in the time series file
-            Log::fatal("ERROR: could not find specified field '%s' in time series file: '%s'\n", fields[i].c_str(), _filename.c_str());
-            Log::fatal("file's fields:\n");
+            LOG_FATAL("ERROR: could not find specified field '%s' in time series file: '%s'\n", fields[i].c_str(), _filename.c_str());
+            LOG_FATAL("file's fields:\n");
             for (int32_t j = 0; j < (int32_t)file_fields.size(); j++) {
-                Log::fatal("'%s'\n", file_fields[j].c_str());
+                LOG_FATAL("'%s'\n", file_fields[j].c_str());
             }
             exit(1);
         }
      }
 
     
-    Log::debug("fields.size(): %d, file_fields.size(): %d\n", fields.size(), file_fields.size());
+    LOG_DEBUG("fields.size(): %d, file_fields.size(): %d\n", fields.size(), file_fields.size());
 
     string log_str = "";
 
@@ -268,14 +268,14 @@ TimeSeriesSet::TimeSeriesSet(string _filename, const vector<string> &_fields) {
             file_fields_used[i] = true;
         }
         
-        Log::debug(log_str.c_str());
+        LOG_DEBUG(log_str.c_str());
     }
 
 
     
-    Log::debug("number fields: %d\n", fields.size());
+    LOG_DEBUG("number fields: %d\n", fields.size());
     for (uint32_t i = 0; i < fields.size(); i++) {
-        Log::debug("\t%s used: %d\n", fields[i].c_str(), file_fields_used[i]);
+        LOG_DEBUG("\t%s used: %d\n", fields[i].c_str(), file_fields_used[i]);
 
         add_time_series(fields[i]);
     }
@@ -291,19 +291,19 @@ TimeSeriesSet::TimeSeriesSet(string _filename, const vector<string> &_fields) {
         string_split(line, ',', parts);
 
         if (parts.size() != file_fields.size()) {
-            Log::fatal("ERROR! number of values in row %d was %d, but there were %d fields in the header.\n", row, parts.size(), file_fields.size());
+            LOG_FATAL("ERROR! number of values in row %d was %d, but there were %d fields in the header.\n", row, parts.size(), file_fields.size());
             exit(1);
         }
 
         for (uint32_t i = 0; i < parts.size(); i++) {
             if (!file_fields_used[i]) continue;
 
-            Log::trace("parts[%d]: %s being added to '%s'\n", i, parts[i].c_str(), file_fields[i].c_str());
+            LOG_TRACE("parts[%d]: %s being added to '%s'\n", i, parts[i].c_str(), file_fields[i].c_str());
 
             try {
                 time_series[ file_fields[i] ]->add_value( stod(parts[i]) );
             } catch (const invalid_argument& ia) {
-                Log::error("file: '%s' -- invalid argument: '%s' on row %d and column %d: '%s', value: '%s'\n", filename.c_str(), ia.what(), row, i, file_fields[i].c_str(), parts[i].c_str());
+                LOG_ERROR("file: '%s' -- invalid argument: '%s' on row %d and column %d: '%s', value: '%s'\n", filename.c_str(), ia.what(), row, i, file_fields[i].c_str(), parts[i].c_str());
             }
         }
 
@@ -312,15 +312,15 @@ TimeSeriesSet::TimeSeriesSet(string _filename, const vector<string> &_fields) {
 
     number_rows = time_series.begin()->second->get_number_values();
     if (number_rows <= 0) {
-        Log::fatal("ERROR, number rows: %d <= 0\n", number_rows);
+        LOG_FATAL("ERROR, number rows: %d <= 0\n", number_rows);
         exit(1);
     }
 
     for (auto series = time_series.begin(); series != time_series.end(); series++) {
         series->second->calculate_statistics();
         if (series->second->get_min_change() == 0 && series->second->get_max_change() == 0) {
-            Log::warning("WARNING: unchanging series: '%s'\n", series->first.c_str());
-            //Log::warning("removing unchanging series: '%s'\n", series->first.c_str());
+            LOG_WARNING("WARNING: unchanging series: '%s'\n", series->first.c_str());
+            //LOG_WARNING("removing unchanging series: '%s'\n", series->first.c_str());
             series->second->print_statistics();
             //time_series.erase(series);
         } else {
@@ -330,11 +330,11 @@ TimeSeriesSet::TimeSeriesSet(string _filename, const vector<string> &_fields) {
         int series_rows = series->second->get_number_values();
 
         if (series_rows != number_rows) {
-            Log::error("ERROR! number of rows for field '%s' (%d) doesn't equal number of rows in first field '%s' (%d)\n", series->first.c_str(), series->second->get_number_values(), time_series.begin()->first.c_str(), time_series.begin()->second->get_number_values());
+            LOG_ERROR("ERROR! number of rows for field '%s' (%d) doesn't equal number of rows in first field '%s' (%d)\n", series->first.c_str(), series->second->get_number_values(), time_series.begin()->first.c_str(), time_series.begin()->second->get_number_values());
         }
     }
 
-    Log::info("read time series '%s' with number rows: %d\n", filename.c_str(), number_rows);
+    LOG_INFO("read time series '%s' with number rows: %d\n", filename.c_str(), number_rows);
 }
 
 TimeSeriesSet::~TimeSeriesSet(){
@@ -416,20 +416,20 @@ double TimeSeriesSet::get_correlation(string field1, string field2, int32_t lag)
  *  Time offset > 0 generates output data. Do not use the first <time_offset> values
  */
 void TimeSeriesSet::export_time_series(vector< vector<double> > &data, const vector<string> &requested_fields, const vector<string> &shift_fields, int32_t time_offset) {
-    Log::debug("clearing data\n");
+    LOG_DEBUG("clearing data\n");
     data.clear();
 
     //for some reason fabs is not working right
     int abs_time_offset = time_offset;
     if (abs_time_offset < 0) abs_time_offset *= -1;
 
-    Log::debug("resizing '%s' (number rows: %d, time offset: %d)  to %d by %d\n", filename.c_str(), number_rows, time_offset, requested_fields.size(), number_rows - abs_time_offset);
-    Log::debug("time offset: %d\n", time_offset);
-    Log::debug("abs_time_offset: %d\n", abs_time_offset);
+    LOG_DEBUG("resizing '%s' (number rows: %d, time offset: %d)  to %d by %d\n", filename.c_str(), number_rows, time_offset, requested_fields.size(), number_rows - abs_time_offset);
+    LOG_DEBUG("time offset: %d\n", time_offset);
+    LOG_DEBUG("abs_time_offset: %d\n", abs_time_offset);
 
     data.resize(requested_fields.size(), vector<double>(number_rows - abs_time_offset, 0.0));
 
-    Log::debug("resized! time_offset = %d\n", time_offset);
+    LOG_DEBUG("resized! time_offset = %d\n", time_offset);
 
     if (time_offset == 0) {
         for (int i = 0; i != requested_fields.size(); i++) {
@@ -449,16 +449,16 @@ void TimeSeriesSet::export_time_series(vector< vector<double> > &data, const vec
     } else if (time_offset < 0) {
         //input data, ignore the last N values
         for (int i = 0; i != requested_fields.size(); i++) {
-            Log::debug("exporting for field: '%s'\n", requested_fields[i].c_str());
+            LOG_DEBUG("exporting for field: '%s'\n", requested_fields[i].c_str());
             if (find(shift_fields.begin(), shift_fields.end(), requested_fields[i]) != shift_fields.end()) {
-                Log::debug("doing shift for field: '%s'\n", requested_fields[i].c_str());
+                LOG_DEBUG("doing shift for field: '%s'\n", requested_fields[i].c_str());
                 //shift the shifted fields to the same as the output, not the input
                 for (int j = -time_offset; j < number_rows; j++) {
                     data[i][j + time_offset] = time_series[ requested_fields[i] ]->get_value(j);
-                    //Log::info("\tdata[%d][%d]: %lf\n", i, j + time_offset, data[i][j + time_offset]);
+                    //LOG_INFO("\tdata[%d][%d]: %lf\n", i, j + time_offset, data[i][j + time_offset]);
                 }
             } else {
-                Log::debug("not doing shift for field: '%s'\n", requested_fields[i].c_str());
+                LOG_DEBUG("not doing shift for field: '%s'\n", requested_fields[i].c_str());
                 for (int j = 0; j < number_rows + time_offset; j++) {
                     data[i][j] = time_series[ requested_fields[i] ]->get_value(j);
                 }
@@ -520,7 +520,7 @@ void TimeSeriesSet::split(int slices, vector<TimeSeriesSet*> &sub_series) {
         slice->cut((int32_t)start, (int32_t)stop);
         sub_series.push_back( this->copy() );
 
-        Log::info("split series from time %d to %d\n",  (int32_t)start, (int32_t)stop);
+        LOG_INFO("split series from time %d to %d\n",  (int32_t)start, (int32_t)stop);
 
         start += slice_size;
         stop += slice_size;
@@ -530,7 +530,7 @@ void TimeSeriesSet::split(int slices, vector<TimeSeriesSet*> &sub_series) {
 void TimeSeriesSet::select_parameters(const vector<string> &parameter_names) {
     for (auto series = time_series.begin(); series != time_series.end(); series++) {
         if (std::find(parameter_names.begin(), parameter_names.end(), series->first) == parameter_names.end()) {
-            Log::info("removing series: '%s'\n", series->first.c_str());
+            LOG_INFO("removing series: '%s'\n", series->first.c_str());
             time_series.erase(series->first);
         }
     }
@@ -544,30 +544,30 @@ void TimeSeriesSet::select_parameters(const vector<string> &input_parameter_name
 }
 
 void TimeSeriesSets::help_message() {
-    Log::info("TimeSeriesSets initialization options from arguments:\n");
-    Log::info("\tFile input:\n");
-    Log::info("\t\t\t--filenames <filenames>* : list of input CSV files\n");
-    Log::info("\t\tWith the following are optional unless you want to split the data into training/testing sets:\n");
-    Log::info("\t\t\t--training_indexes : array of ints (starting at 0) specifying which files are training files\n");
-    Log::info("\t\t\t--test_indexes : array of ints (starting at 0) specifying which files are test files\n");
-    Log::info("\tOR:\n");
-    Log::info("\t\t\t--training_filenames : list of input CSV files for training time series\n");
-    Log::info("\t\t\t--test_filenames : list of input CSV files for test time series\n");
+    LOG_INFO("TimeSeriesSets initialization options from arguments:\n");
+    LOG_INFO("\tFile input:\n");
+    LOG_INFO("\t\t\t--filenames <filenames>* : list of input CSV files\n");
+    LOG_INFO("\t\tWith the following are optional unless you want to split the data into training/testing sets:\n");
+    LOG_INFO("\t\t\t--training_indexes : array of ints (starting at 0) specifying which files are training files\n");
+    LOG_INFO("\t\t\t--test_indexes : array of ints (starting at 0) specifying which files are test files\n");
+    LOG_INFO("\tOR:\n");
+    LOG_INFO("\t\t\t--training_filenames : list of input CSV files for training time series\n");
+    LOG_INFO("\t\t\t--test_filenames : list of input CSV files for test time series\n");
 
-    Log::info("\tSpecifying parameters:\n");
-    Log::info("\t\t\t--input_parameter_names <name>*: parameters to be used as inputs\n");
-    Log::info("\t\t\t--output_parameter_names <name>*: parameters to be used as outputs\n");
-    Log::info("\t\t\t--shift_parameter_names <name>*: parameters to shift to same timestep as output\n");
-    Log::info("\t\tOR:\n");
-    Log::info("\t\t\t --parameters <name setting [min_bound max_bound]>* : list of parameters, with a settings string and potentially bounds\n");
-    Log::info("\t\t\t\tThe settings string should consist of only the characters 'i', 'o', and 'b'.\n");
-    Log::info("\t\t\t\t'i' denotes the parameter as an input parameter.\n");
-    Log::info("\t\t\t\t'o' denoting the parameter as an output parameter.\n");
-    Log::info("\t\t\t\t'b' denoting the parameter as having user specified bounds, if this is specified the following two values should be the min and max bounds for the parameter.\n");
-    Log::info("\t\t\t\tThe settings string requires at one of 'i' or 'o'.\n");
+    LOG_INFO("\tSpecifying parameters:\n");
+    LOG_INFO("\t\t\t--input_parameter_names <name>*: parameters to be used as inputs\n");
+    LOG_INFO("\t\t\t--output_parameter_names <name>*: parameters to be used as outputs\n");
+    LOG_INFO("\t\t\t--shift_parameter_names <name>*: parameters to shift to same timestep as output\n");
+    LOG_INFO("\t\tOR:\n");
+    LOG_INFO("\t\t\t --parameters <name setting [min_bound max_bound]>* : list of parameters, with a settings string and potentially bounds\n");
+    LOG_INFO("\t\t\t\tThe settings string should consist of only the characters 'i', 'o', and 'b'.\n");
+    LOG_INFO("\t\t\t\t'i' denotes the parameter as an input parameter.\n");
+    LOG_INFO("\t\t\t\t'o' denoting the parameter as an output parameter.\n");
+    LOG_INFO("\t\t\t\t'b' denoting the parameter as having user specified bounds, if this is specified the following two values should be the min and max bounds for the parameter.\n");
+    LOG_INFO("\t\t\t\tThe settings string requires at one of 'i' or 'o'.\n");
 
-    Log::info("\tNormalization:\n");
-    Log::info("\t\t--normalize <type>: (optional) normalize the data. Types can be 'min_max' or 'avg_std_dev'. 'min_max' will take each parameter and subtract the min, then divide by max-min. 'avg_std_dev' will subtract the average, divide by the standard deviation and then divide by the normalized max to ensure values are between -1 and 1.\n");
+    LOG_INFO("\tNormalization:\n");
+    LOG_INFO("\t\t--normalize <type>: (optional) normalize the data. Types can be 'min_max' or 'avg_std_dev'. 'min_max' will take each parameter and subtract the min, then divide by max-min. 'avg_std_dev' will subtract the average, divide by the standard deviation and then divide by the normalized max to ensure values are between -1 and 1.\n");
 }
 
 TimeSeriesSets::TimeSeriesSets() : normalize_type("none") {
@@ -603,7 +603,7 @@ void TimeSeriesSets::parse_parameters_string(const vector<string> &p) {
         i++;
 
         if (settings.find_first_not_of("iob")) {
-            Log::fatal("Settings string for parameter '%s' was invalid, should consist only of characters 'i', 'o', or 'b'; i : input, o : output, b : bounded.\n", parameter.c_str());
+            LOG_FATAL("Settings string for parameter '%s' was invalid, should consist only of characters 'i', 'o', or 'b'; i : input, o : output, b : bounded.\n", parameter.c_str());
             help_message();
             exit(1);
         }
@@ -635,7 +635,7 @@ void TimeSeriesSets::parse_parameters_string(const vector<string> &p) {
         }
 
         if (!has_input && !has_output) {
-            Log::fatal("Settings string for parameter '%s' was invalid, did not contain an 'i' for input or 'o' for output.\n", parameter.c_str());
+            LOG_FATAL("Settings string for parameter '%s' was invalid, did not contain an 'i' for input or 'o' for output.\n", parameter.c_str());
             help_message();
             exit(1);
         }
@@ -650,7 +650,7 @@ void TimeSeriesSets::parse_parameters_string(const vector<string> &p) {
         if (has_bounds) log_str = log_str + string_format(", min_bound: %lf, max_bound: %lf", min_bound, max_bound);
         
         log_str = log_str + "\n";
-        Log::info(log_str.c_str());
+        LOG_INFO(log_str.c_str());
     }
 }
 
@@ -659,23 +659,23 @@ void TimeSeriesSets::load_time_series() {
     int32_t rows = 0;
     time_series.clear();
     if (Log::at_level(LOG_LEVEL_DEBUG)) {
-        Log::debug("loading time series with parameters:\n");
+        LOG_DEBUG("loading time series with parameters:\n");
 
         for (uint32_t i = 0; i < all_parameter_names.size(); i++) {
-            Log::debug("\t'%s'\n", all_parameter_names[i].c_str());
+            LOG_DEBUG("\t'%s'\n", all_parameter_names[i].c_str());
         }
-        Log::debug("got time series filenames:\n");
+        LOG_DEBUG("got time series filenames:\n");
     }
 
     for (uint32_t i = 0; i < filenames.size(); i++) {
-        Log::debug("\t%s\n", filenames[i].c_str());
+        LOG_DEBUG("\t%s\n", filenames[i].c_str());
 
         TimeSeriesSet *ts = new TimeSeriesSet(filenames[i], all_parameter_names);
         time_series.push_back( ts );
 
         rows += ts->get_number_rows();
     }
-    Log::debug("number of time series files: %d, total rows: %d\n", filenames.size(), rows);
+    LOG_DEBUG("number of time series files: %d, total rows: %d\n", filenames.size(), rows);
 }
 
 
@@ -710,7 +710,7 @@ TimeSeriesSets* TimeSeriesSets::generate_from_arguments(const vector<string> &ar
         }
 
     } else {
-        Log::fatal("Could not find the '--filenames' or the '--training_filenames' and '--test_filenames' command line arguments.  Usage instructions:\n");
+        LOG_FATAL("Could not find the '--filenames' or the '--training_filenames' and '--test_filenames' command line arguments.  Usage instructions:\n");
         help_message();
         exit(1);
     }
@@ -739,23 +739,23 @@ TimeSeriesSets* TimeSeriesSets::generate_from_arguments(const vector<string> &ar
         merge_parameter_names(tss->input_parameter_names, tss->output_parameter_names, tss->all_parameter_names);
 
         if (Log::at_level(LOG_LEVEL_DEBUG)) {
-            Log::debug("input parameter names:\n");
+            LOG_DEBUG("input parameter names:\n");
             for (int i = 0; i < tss->input_parameter_names.size(); i++) {
-                Log::debug("\t%s\n", tss->input_parameter_names[i].c_str());
+                LOG_DEBUG("\t%s\n", tss->input_parameter_names[i].c_str());
             }
 
-            Log::debug("output parameter names:\n");
+            LOG_DEBUG("output parameter names:\n");
             for (int i = 0; i < tss->output_parameter_names.size(); i++) {
-                Log::debug("\t%s\n", tss->output_parameter_names[i].c_str());
+                LOG_DEBUG("\t%s\n", tss->output_parameter_names[i].c_str());
             }
 
-            Log::debug("all parameter names:\n");
+            LOG_DEBUG("all parameter names:\n");
             for (int i = 0; i < tss->all_parameter_names.size(); i++) {
-                Log::debug("\t%s\n", tss->all_parameter_names[i].c_str());
+                LOG_DEBUG("\t%s\n", tss->all_parameter_names[i].c_str());
             }
         }
     } else {
-        Log::fatal("Could not find the '--parameters' or the '--input_parameter_names' and '--output_parameter_names' command line arguments.  Usage instructions:\n");
+        LOG_FATAL("Could not find the '--parameters' or the '--input_parameter_names' and '--output_parameter_names' command line arguments.  Usage instructions:\n");
         help_message();
         exit(1);
     }
@@ -770,15 +770,15 @@ TimeSeriesSets* TimeSeriesSets::generate_from_arguments(const vector<string> &ar
     }
 
     if (tss->normalize_type.compare("none") == 0) {
-        Log::debug("not normalizing time series.\n");
+        LOG_DEBUG("not normalizing time series.\n");
     } else if (tss->normalize_type.compare("min_max") == 0) {
-        Log::debug("doing min max normalization on the time series.\n");
+        LOG_DEBUG("doing min max normalization on the time series.\n");
         tss->normalize_min_max();
     } else if (tss->normalize_type.compare("avg_std_dev") == 0) {
-        Log::debug("doing avg std dev normalization on the time series.\n");
+        LOG_DEBUG("doing avg std dev normalization on the time series.\n");
         tss->normalize_avg_std_dev();
     } else {
-        Log::fatal("Unknown normalize type: '%s'\n", tss->normalize_type.c_str());
+        LOG_FATAL("Unknown normalize type: '%s'\n", tss->normalize_type.c_str());
         help_message();
         exit(1);
     }
@@ -839,13 +839,13 @@ double TimeSeriesSets::denormalize(string field_name, double value) {
         return value;
 
     } else {
-        Log::fatal("Unknown normalize type on denormalize for '%s' and '%lf', '%s', this should never happen.\n", field_name.c_str(), value, normalize_type.c_str());
+        LOG_FATAL("Unknown normalize type on denormalize for '%s' and '%lf', '%s', this should never happen.\n", field_name.c_str(), value, normalize_type.c_str());
         exit(1);
     }
 }
 
 void TimeSeriesSets::normalize_min_max() {
-    Log::info("doing min/max normalization:\n");
+    LOG_INFO("doing min/max normalization:\n");
 
     for (int i = 0; i < all_parameter_names.size(); i++) {
         string parameter_name = all_parameter_names[i];
@@ -860,7 +860,7 @@ void TimeSeriesSets::normalize_min_max() {
             min = normalize_mins[parameter_name];
             max = normalize_maxs[parameter_name];
 
-            Log::info("user specified bounds for ");
+            LOG_INFO("user specified bounds for ");
 
         }  else {
             for (int j = 0; j < time_series.size(); j++) {
@@ -874,10 +874,10 @@ void TimeSeriesSets::normalize_min_max() {
             normalize_mins[parameter_name] = min;
             normalize_maxs[parameter_name] = max;
 
-            Log::info("calculated bounds for     ");
+            LOG_INFO("calculated bounds for     ");
         }
 
-        Log::info("%30s, min: %22.10lf, max: %22.10lf\n", parameter_name.c_str(), min, max);
+        LOG_INFO("%30s, min: %22.10lf, max: %22.10lf\n", parameter_name.c_str(), min, max);
 
         //for each series, subtract min, divide by (max - min)
         for (int j = 0; j < time_series.size(); j++) {
@@ -897,20 +897,20 @@ void TimeSeriesSets::normalize_min_max(const map<string,double> &_normalize_mins
 
         if (normalize_mins.count(field) == 0) {
             //field doesn't exist in the normalize values, report an error
-            Log::fatal("ERROR, couldn't find field '%s' in normalize min values.\n", field.c_str());
-            Log::fatal("normalize min fields/values:\n");
+            LOG_FATAL("ERROR, couldn't find field '%s' in normalize min values.\n", field.c_str());
+            LOG_FATAL("normalize min fields/values:\n");
             for (auto iterator = normalize_mins.begin(); iterator != normalize_mins.end(); iterator++) {
-                Log::fatal("\t%s: %lf\n", iterator->first.c_str(), iterator->second);
+                LOG_FATAL("\t%s: %lf\n", iterator->first.c_str(), iterator->second);
             }
             exit(1);
         }
 
         if (normalize_maxs.count(field) == 0) {
             //field doesn't exist in the normalize values, report an error
-            Log::fatal("ERROR, couldn't find field '%s' in normalize max values.\n", field.c_str());
-            Log::fatal("normalize max fields/values:\n");
+            LOG_FATAL("ERROR, couldn't find field '%s' in normalize max values.\n", field.c_str());
+            LOG_FATAL("normalize max fields/values:\n");
             for (auto iterator = normalize_maxs.begin(); iterator != normalize_maxs.end(); iterator++) {
-                Log::fatal("\t%s: %lf\n", iterator->first.c_str(), iterator->second);
+                LOG_FATAL("\t%s: %lf\n", iterator->first.c_str(), iterator->second);
             }
             exit(1);
         }
@@ -925,7 +925,7 @@ void TimeSeriesSets::normalize_min_max(const map<string,double> &_normalize_mins
 }
 
 void TimeSeriesSets::normalize_avg_std_dev() {
-    Log::info("doing min/max normalization:\n");
+    LOG_INFO("doing min/max normalization:\n");
 
     for (int i = 0; i < all_parameter_names.size(); i++) {
         string parameter_name = all_parameter_names[i];
@@ -942,7 +942,7 @@ void TimeSeriesSets::normalize_avg_std_dev() {
             avg = normalize_avgs[parameter_name];
             std_dev = normalize_std_devs[parameter_name];
 
-            Log::info("user specified avg/std dev for ");
+            LOG_INFO("user specified avg/std dev for ");
 
         }  else {
             double numerator_average = 0.0;
@@ -980,7 +980,7 @@ void TimeSeriesSets::normalize_avg_std_dev() {
             normalize_std_devs[parameter_name] = std_dev;
 
 
-            Log::info("calculated bounds for     ");
+            LOG_INFO("calculated bounds for     ");
         }
         
         double norm_min = (min - avg) / std_dev;
@@ -988,7 +988,7 @@ void TimeSeriesSets::normalize_avg_std_dev() {
         
         norm_max = fmax(norm_min, norm_max);
 
-        Log::info("%30s, min: %22.10lf, max: %22.10lf, norm_max; %22.10lf, combined average: %22.10lf, combined std_dev: %22.10lf\n", parameter_name.c_str(), min, max, avg, norm_max, std_dev);
+        LOG_INFO("%30s, min: %22.10lf, max: %22.10lf, norm_max; %22.10lf, combined average: %22.10lf, combined std_dev: %22.10lf\n", parameter_name.c_str(), min, max, avg, norm_max, std_dev);
 
         //for each series, subtract min, divide by (max - min)
         for (int j = 0; j < time_series.size(); j++) {
@@ -1010,40 +1010,40 @@ void TimeSeriesSets::normalize_avg_std_dev(const map<string,double> &_normalize_
 
         if (normalize_avgs.count(field) == 0) {
             //field doesn't exist in the normalize values, report an error
-            Log::fatal("ERROR, couldn't find field '%s' in normalize avg values.\n", field.c_str());
-            Log::fatal("normalize avg fields/values:\n");
+            LOG_FATAL("ERROR, couldn't find field '%s' in normalize avg values.\n", field.c_str());
+            LOG_FATAL("normalize avg fields/values:\n");
             for (auto iterator = normalize_avgs.begin(); iterator != normalize_avgs.end(); iterator++) {
-                Log::fatal("\t%s: %lf\n", iterator->first.c_str(), iterator->second);
+                LOG_FATAL("\t%s: %lf\n", iterator->first.c_str(), iterator->second);
             }
             exit(1);
         }
 
         if (normalize_std_devs.count(field) == 0) {
             //field doesn't exist in the normalize values, report an error
-            Log::fatal("ERROR, couldn't find field '%s' in normalize std_dev values.\n", field.c_str());
-            Log::fatal("normalize std_dev fields/values:\n");
+            LOG_FATAL("ERROR, couldn't find field '%s' in normalize std_dev values.\n", field.c_str());
+            LOG_FATAL("normalize std_dev fields/values:\n");
             for (auto iterator = normalize_std_devs.begin(); iterator != normalize_std_devs.end(); iterator++) {
-                Log::fatal("\t%s: %lf\n", iterator->first.c_str(), iterator->second);
+                LOG_FATAL("\t%s: %lf\n", iterator->first.c_str(), iterator->second);
             }
             exit(1);
         }
 
         if (normalize_mins.count(field) == 0) {
             //field doesn't exist in the normalize values, report an error
-            Log::fatal("ERROR, couldn't find field '%s' in normalize min values.\n", field.c_str());
-            Log::fatal("normalize min fields/values:\n");
+            LOG_FATAL("ERROR, couldn't find field '%s' in normalize min values.\n", field.c_str());
+            LOG_FATAL("normalize min fields/values:\n");
             for (auto iterator = normalize_mins.begin(); iterator != normalize_mins.end(); iterator++) {
-                Log::fatal("\t%s: %lf\n", iterator->first.c_str(), iterator->second);
+                LOG_FATAL("\t%s: %lf\n", iterator->first.c_str(), iterator->second);
             }
             exit(1);
         }
 
         if (normalize_maxs.count(field) == 0) {
             //field doesn't exist in the normalize values, report an error
-            Log::fatal("ERROR, couldn't find field '%s' in normalize max values.\n", field.c_str());
-            Log::fatal("normalize max fields/values:\n");
+            LOG_FATAL("ERROR, couldn't find field '%s' in normalize max values.\n", field.c_str());
+            LOG_FATAL("normalize max fields/values:\n");
             for (auto iterator = normalize_maxs.begin(); iterator != normalize_maxs.end(); iterator++) {
-                Log::fatal("\t%s: %lf\n", iterator->first.c_str(), iterator->second);
+                LOG_FATAL("\t%s: %lf\n", iterator->first.c_str(), iterator->second);
             }
             exit(1);
         }
@@ -1090,7 +1090,7 @@ void TimeSeriesSets::export_time_series(const vector<int> &series_indexes, int t
  */
 void TimeSeriesSets::export_training_series(int time_offset, vector< vector< vector<double> > > &inputs, vector< vector< vector<double> > > &outputs) {
     if (training_indexes.size() == 0) {
-        Log::fatal("ERROR: attempting to export training time series, however the training_indexes were not specified.\n");
+        LOG_FATAL("ERROR: attempting to export training time series, however the training_indexes were not specified.\n");
         exit(1);
     }
 
@@ -1102,7 +1102,7 @@ void TimeSeriesSets::export_training_series(int time_offset, vector< vector< vec
  */
 void TimeSeriesSets::export_test_series(int time_offset, vector< vector< vector<double> > > &inputs, vector< vector< vector<double> > > &outputs) {
     if (test_indexes.size() == 0) {
-        Log::fatal("ERROR: attempting to export test time series, however the test_indexes were not specified.\n");
+        LOG_FATAL("ERROR: attempting to export test time series, however the test_indexes were not specified.\n");
         exit(1);
     }
 

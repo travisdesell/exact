@@ -34,24 +34,23 @@ typedef enum log_level {
     LOG_LEVEL_ALL = 140
 } log_level_t;
 
-#define fatal(format, ...) \
-    log(__FILE__, sizeof(__FILE__)-1, __func__, sizeof(__func__)-1, __LINE__, \
-    LOG_LEVEL_FATAL, format, ##__VA_ARGS__)
-#define error(format, ...) \
-    log(__FILE__, sizeof(__FILE__)-1, __func__, sizeof(__func__)-1, __LINE__, \
-    LOG_LEVEL_ERROR, format, ##__VA_ARGS__)
-#define warning(format, ...) \
-    log(__FILE__, sizeof(__FILE__)-1, __func__, sizeof(__func__)-1, __LINE__, \
-    LOG_LEVEL_WARNING, format, ##__VA_ARGS__)
-#define info(format, ...) \
-    log(__FILE__, sizeof(__FILE__)-1, __func__, sizeof(__func__)-1, __LINE__, \
-    LOG_LEVEL_INFO, format, ##__VA_ARGS__)
-#define debug(format, ...) \
-    log(__FILE__, sizeof(__FILE__)-1, __func__, sizeof(__func__)-1, __LINE__, \
-    LOG_LEVEL_DEBUG, format, ##__VA_ARGS__)
-#define trace(format, ...) \
-    log(__FILE__, sizeof(__FILE__)-1, __func__, sizeof(__func__)-1, __LINE__, \
-    LOG_LEVEL_TRACE, format, ##__VA_ARGS__)
+#define LOG_GUARD(level, format, ...) {if(Log::should_log(level)) { \
+        Log::log(__FILE__, sizeof(__FILE__)-1, __func__, sizeof(__func__)-1, __LINE__, \
+    level, format, ##__VA_ARGS__); \
+    }}
+
+#define LOG_FATAL(format, ...) \
+    LOG_GUARD(LOG_LEVEL_FATAL, format, ##__VA_ARGS__)
+#define LOG_ERROR(format, ...) \
+    LOG_GUARD(LOG_LEVEL_ERROR, format, ##__VA_ARGS__)
+#define LOG_WARNING(format, ...) \
+    LOG_GUARD(LOG_LEVEL_WARNING, format, ##__VA_ARGS__)
+#define LOG_INFO(format, ...) \
+    LOG_GUARD(LOG_LEVEL_INFO, format, ##__VA_ARGS__)
+#define LOG_DEBUG(format, ...) \
+    LOG_GUARD(LOG_LEVEL_DEBUG, format, ##__VA_ARGS__)
+#define LOG_TRACE(format, ...) \
+    LOG_GUARD(LOG_LEVEL_TRACE, format, ##__VA_ARGS__)
 
 class LogFile {
     private:
@@ -209,6 +208,13 @@ class Log {
          * \return true if either the file or standard output level is greater than or equal to the passed level
          */
         static bool at_level(log_level_t level);
+
+        /**
+         * 
+         *
+         * \return true if 
+         */
+        static bool should_log(log_level_t level);
 
         /**
          * Don't use log directly. Use one of the log macros (info, debug, trace etc)

@@ -54,20 +54,20 @@ void gradient_test(string name, RNN_Genome *genome, const vector< vector<double>
 	vector<double> parameters;
 	vector<double> analytic_gradient, empirical_gradient;
 
-    Log::info("\ttesting gradient on '%s'...\n", name.c_str());
+    LOG_INFO("\ttesting gradient on '%s'...\n", name.c_str());
 	bool failed = false;
 
 	RNN* rnn = genome->get_rnn();
 
-	Log::debug("got genome \n\n");
+	LOG_DEBUG("got genome \n\n");
 
     rnn->enable_use_regression(true);
 
 	for (int32_t i = 0; i < test_iterations; i++) {
-        Log::debug("\tAttempt %d USING REGRESSION\n", i);
+        LOG_DEBUG("\tAttempt %d USING REGRESSION\n", i);
 
 		generate_random_vector(rnn->get_number_weights(), parameters);
-		Log::debug("DEBUG: firing weights are %d \n", rnn->get_number_weights());    
+		LOG_DEBUG("DEBUG: firing weights are %d \n", rnn->get_number_weights());    
 
 		rnn->get_analytic_gradient(parameters, inputs, outputs, analytic_mse, analytic_gradient, false, true, 0.0);
 		rnn->get_empirical_gradient(parameters, inputs, outputs, empirical_mse, empirical_gradient, false, true, 0.0);
@@ -80,29 +80,29 @@ void gradient_test(string name, RNN_Genome *genome, const vector< vector<double>
 			if (fabs(difference) > 10e-10) {
 				failed = true;
                 iteration_failed = true;
-                Log::info("\t\tFAILED analytic gradient[%d]: %lf, empirical gradient[%d]: %lf, difference: %lf, REGRESSION\n", j, analytic_gradient[j], j, empirical_gradient[j], difference);
+                LOG_INFO("\t\tFAILED analytic gradient[%d]: %lf, empirical gradient[%d]: %lf, difference: %lf, REGRESSION\n", j, analytic_gradient[j], j, empirical_gradient[j], difference);
 				//exit(1);
 			} else {
-                Log::debug("\t\tPASSED analytic gradient[%d]: %lf, empirical gradient[%d]: %lf, difference: %lf, REGRESSION\n", j, analytic_gradient[j], j, empirical_gradient[j], difference);
+                LOG_DEBUG("\t\tPASSED analytic gradient[%d]: %lf, empirical gradient[%d]: %lf, difference: %lf, REGRESSION\n", j, analytic_gradient[j], j, empirical_gradient[j], difference);
             }
 		}
 
         if (iteration_failed) {
-            Log::info("\tITERATION %d FAILED!\n\n", i);
+            LOG_INFO("\tITERATION %d FAILED!\n\n", i);
         } else {
-            Log::debug("\tITERATION %d PASSED!\n\n", i);
+            LOG_DEBUG("\tITERATION %d PASSED!\n\n", i);
         }
 	}
 
     rnn->enable_use_regression(false);
 
-	Log::debug("\n");
+	LOG_DEBUG("\n");
 
 	for (int32_t i = 0; i < test_iterations; i++) {
-        Log::debug("\tAttempt %d USING SOFTMAX\n", i);
+        LOG_DEBUG("\tAttempt %d USING SOFTMAX\n", i);
 
 		generate_random_vector(rnn->get_number_weights(), parameters);
-		Log::debug("DEBUG: firing weights are %d \n", rnn->get_number_weights());    
+		LOG_DEBUG("DEBUG: firing weights are %d \n", rnn->get_number_weights());    
 
 		rnn->get_analytic_gradient(parameters, inputs, outputs, analytic_mse, analytic_gradient, false, true, 0.0);
 		rnn->get_empirical_gradient(parameters, inputs, outputs, empirical_mse, empirical_gradient, false, true, 0.0);
@@ -115,25 +115,25 @@ void gradient_test(string name, RNN_Genome *genome, const vector< vector<double>
 			if (fabs(difference) > 10e-10) {
 				failed = true;
                 iteration_failed = true;
-                Log::info("\t\tFAILED analytic gradient[%d]: %lf, empirical gradient[%d]: %lf, difference: %lf, SOFTMAX\n", j, analytic_gradient[j], j, empirical_gradient[j], difference);
+                LOG_INFO("\t\tFAILED analytic gradient[%d]: %lf, empirical gradient[%d]: %lf, difference: %lf, SOFTMAX\n", j, analytic_gradient[j], j, empirical_gradient[j], difference);
 				//exit(1);
 			} else {
-                Log::debug("\t\tPASSED analytic gradient[%d]: %lf, empirical gradient[%d]: %lf, difference: %lf, SOFTMAX\n", j, analytic_gradient[j], j, empirical_gradient[j], difference);
+                LOG_DEBUG("\t\tPASSED analytic gradient[%d]: %lf, empirical gradient[%d]: %lf, difference: %lf, SOFTMAX\n", j, analytic_gradient[j], j, empirical_gradient[j], difference);
             }
 		}
 
         if (iteration_failed) {
-            Log::info("\tITERATION %d FAILED!\n\n", i);
+            LOG_INFO("\tITERATION %d FAILED!\n\n", i);
         } else {
-            Log::debug("\tITERATION %d PASSED!\n\n", i);
+            LOG_DEBUG("\tITERATION %d PASSED!\n\n", i);
         }
 	}
 
     delete rnn;
 
 	if (!failed) {
-        Log::info("ALL PASSED!\n");
+        LOG_INFO("ALL PASSED!\n");
 	} else {
-        Log::info("SOME FAILED!\n");
+        LOG_INFO("SOME FAILED!\n");
     }
 }
