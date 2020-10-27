@@ -210,9 +210,11 @@ class Log {
         static bool at_level(log_level_t level);
 
         /**
-         * 
+         * Determines if log should be invoked, including arg parameter functions calls
          *
-         * \return true if 
+         * Note: side effect includes not calling arg parameter functions such as prefix/postfix increment, e.g. i++ will be skipped!
+         *
+         * \return true if the level is greater than the file or standard output level and process rank is allowed to log 
          */
         static bool should_log(log_level_t level);
 
