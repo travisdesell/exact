@@ -80,7 +80,7 @@ RNN_Node_Interface::RNN_Node_Interface(int32_t _innovation_number, int32_t _laye
     //outputs don't have an official output node but
     //deltas are passed in via the output_fired method
     if (layer_type != HIDDEN_LAYER) {
-        Log::fatal("ERROR: Attempted to create a new RNN_Node that was an input or output node without using the constructor which specifies it's parameter name");
+        LOG_FATAL("ERROR: Attempted to create a new RNN_Node that was an input or output node without using the constructor which specifies it's parameter name");
         exit(1);
     }
 }
@@ -93,7 +93,7 @@ RNN_Node_Interface::RNN_Node_Interface(int32_t _innovation_number, int32_t _laye
     backward_reachable = false;
     
     if (layer_type == HIDDEN_LAYER) {
-        Log::fatal("ERROR: assigned a parameter name '%s' to a hidden node! This should never happen.", parameter_name.c_str());
+        LOG_FATAL("ERROR: assigned a parameter name '%s' to a hidden node! This should never happen.", parameter_name.c_str());
         exit(1);
     }
 

@@ -57,7 +57,7 @@
 # Sample script for examm:
     out_dir="./test_output/"
     mkdir -p $out_dir
-    mpirun -np 8 ./build/mpi/examm_mpi --training_filenames ./datasets/2018_coal/burner_[0-9].csv \
+    mpirun -np 4 ./build/mpi/examm_mpi --training_filenames ./datasets/2018_coal/burner_[0-9].csv \
         --test_filenames ./datasets/2018_coal/burner_1[0-1].csv \
         --time_offset 1 \
         --input_parameter_names Conditioner_Inlet_Temp Conditioner_Outlet_Temp Coal_Feeder_Rate Primary_Air_Flow Primary_Air_Split System_Secondary_Air_Flow_Total Secondary_Air_Flow Secondary_Air_Split Tertiary_Air_Split Total_Comb_Air_Flow Supp_Fuel_Flow Main_Flm_Int \
@@ -69,8 +69,8 @@
         --bp_iterations 10 \
         --output_directory $out_dir \
         --possible_node_types simple UGRNN MGU GRU delta LSTM \
-        --std_message_level INFO \
-        --file_message_level INFO 
+        --std_message_level DEBUG \
+        --file_message_level DEBUG 
 
 # Sample script for speciation repopulation:
     # out_dir="./test_output/"

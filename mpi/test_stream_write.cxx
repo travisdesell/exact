@@ -92,7 +92,7 @@ int main(int argc, char** argv) {
     int number_inputs = time_series_sets->get_number_inputs();
     int number_outputs = time_series_sets->get_number_outputs();
 
-    Log::debug("number_inputs: %d, number_outputs: %d\n", number_inputs, number_outputs);
+    LOG_DEBUG("number_inputs: %d, number_outputs: %d\n", number_inputs, number_outputs);
 
     int32_t population_size;
     get_argument(arguments, "--population_size", true, population_size);
@@ -236,13 +236,13 @@ int main(int argc, char** argv) {
     genome->write_to_array(&byte_array, length);
 
 
-    Log::debug("write to array successful!\n");
+    LOG_DEBUG("write to array successful!\n");
 
     Log::set_id("main_" + to_string(rank));
 
     finished = true;
 
-    Log::debug("rank %d completed!\n");
+    LOG_DEBUG("rank %d completed!\n");
     Log::release_id("main_" + to_string(rank));
 
     MPI_Finalize();

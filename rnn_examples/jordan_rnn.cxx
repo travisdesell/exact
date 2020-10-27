@@ -80,7 +80,7 @@ int main(int argc, char **argv) {
     vector<string> input_parameter_names = time_series_sets->get_input_parameter_names();
     vector<string> output_parameter_names = time_series_sets->get_output_parameter_names();
 
-    Log::info("creating jordan neural network with inputs: %d, hidden: %dx%d, outputs: %d, max input lags: %d, max recurrent depth: %d\n", input_parameter_names.size(), number_hidden_layers, number_hidden_nodes, output_parameter_names.size(), max_input_lags, max_recurrent_depth);
+    LOG_INFO("creating jordan neural network with inputs: %d, hidden: %dx%d, outputs: %d, max input lags: %d, max recurrent depth: %d\n", input_parameter_names.size(), number_hidden_layers, number_hidden_nodes, output_parameter_names.size(), max_input_lags, max_recurrent_depth);
     vector<RNN_Node_Interface*> rnn_nodes;
     vector<RNN_Node_Interface*> output_layer;
     vector< vector<RNN_Node_Interface*> > layer_nodes(2 + number_hidden_layers);
@@ -145,7 +145,7 @@ int main(int argc, char **argv) {
 
     uint32_t number_of_weights = genome->get_number_weights();
 
-    Log::info("RNN has %d weights.\n", number_of_weights);
+    LOG_INFO("RNN has %d weights.\n", number_of_weights);
     vector<double> min_bound(number_of_weights, -1.0);
     vector<double> max_bound(number_of_weights, 1.0);
 
@@ -185,15 +185,15 @@ int main(int argc, char **argv) {
     genome->write_to_file(output_filename);
 
     genome->get_weights(best_parameters);
-    Log::info("best test MSE: %lf\n", genome->get_fitness());
+    LOG_INFO("best test MSE: %lf\n", genome->get_fitness());
     rnn->set_weights(best_parameters);
-    Log::info("TRAINING ERRORS:\n");
-    Log::info("MSE: %lf\n", genome->get_mse(best_parameters, training_inputs, training_outputs));
-    Log::info("MAE: %lf\n", genome->get_mae(best_parameters, training_inputs, training_outputs));
+    LOG_INFO("TRAINING ERRORS:\n");
+    LOG_INFO("MSE: %lf\n", genome->get_mse(best_parameters, training_inputs, training_outputs));
+    LOG_INFO("MAE: %lf\n", genome->get_mae(best_parameters, training_inputs, training_outputs));
 
-    Log::info("TEST ERRORS:");
-    Log::info("MSE: %lf\n", genome->get_mse(best_parameters, test_inputs, test_outputs));
-    Log::info("MAE: %lf\n", genome->get_mae(best_parameters, test_inputs, test_outputs));
+    LOG_INFO("TEST ERRORS:");
+    LOG_INFO("MSE: %lf\n", genome->get_mse(best_parameters, test_inputs, test_outputs));
+    LOG_INFO("MAE: %lf\n", genome->get_mae(best_parameters, test_inputs, test_outputs));
 
     Log::release_id("main");
 }

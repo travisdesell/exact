@@ -60,7 +60,7 @@ double test_objective_function(const vector<double> &parameters) {
         double error = rnn->prediction_mse(test_inputs[i], test_outputs[i], false, true, 0.0);
         total_error += error;
 
-        Log::info("output for series[%d]: %lf\n", i, error);
+        LOG_INFO("output for series[%d]: %lf\n", i, error);
     }
 
     return -total_error;
@@ -124,14 +124,14 @@ int main(int argc, char **argv) {
         genome = create_elman(input_parameter_names, 1, number_inputs, output_parameter_names, max_recurrent_depth, weight_initialize);
 
     } else {
-        Log::fatal("ERROR: incorrect rnn type\n");
-        Log::fatal("Possibilities are:\n");
-        Log::fatal("    one_layer_lstm\n");
-        Log::fatal("    two_layer_lstm\n");
-        Log::fatal("    one_layer_gru\n");
-        Log::fatal("    two_layer_gru\n");
-        Log::fatal("    one_layer_ff\n");
-        Log::fatal("    two_layer_ff\n");
+        LOG_FATAL("ERROR: incorrect rnn type\n");
+        LOG_FATAL("Possibilities are:\n");
+        LOG_FATAL("    one_layer_lstm\n");
+        LOG_FATAL("    two_layer_lstm\n");
+        LOG_FATAL("    one_layer_gru\n");
+        LOG_FATAL("    two_layer_gru\n");
+        LOG_FATAL("    one_layer_ff\n");
+        LOG_FATAL("    two_layer_ff\n");
         exit(1);
     }
 
@@ -142,7 +142,7 @@ int main(int argc, char **argv) {
 
     uint32_t number_of_weights = genome->get_number_weights();
 
-    Log::info("RNN has %d weights.\n", number_of_weights);
+    LOG_INFO("RNN has %d weights.\n", number_of_weights);
     vector<double> min_bound(number_of_weights, -1.0);
     vector<double> max_bound(number_of_weights, 1.0);
 
@@ -183,15 +183,15 @@ int main(int argc, char **argv) {
     }
 
     genome->get_weights(best_parameters);
-    Log::info("best test MSE: %lf\n", genome->get_fitness());
+    LOG_INFO("best test MSE: %lf\n", genome->get_fitness());
     rnn->set_weights(best_parameters);
-    Log::info("TRAINING ERRORS:\n");
-    Log::info("MSE: %lf\n", genome->get_mse(best_parameters, training_inputs, training_outputs));
-    Log::info("MAE: %lf\n", genome->get_mae(best_parameters, training_inputs, training_outputs));
+    LOG_INFO("TRAINING ERRORS:\n");
+    LOG_INFO("MSE: %lf\n", genome->get_mse(best_parameters, training_inputs, training_outputs));
+    LOG_INFO("MAE: %lf\n", genome->get_mae(best_parameters, training_inputs, training_outputs));
 
-    Log::info("TEST ERRORS:");
-    Log::info("MSE: %lf\n", genome->get_mse(best_parameters, test_inputs, test_outputs));
-    Log::info("MAE: %lf\n", genome->get_mae(best_parameters, test_inputs, test_outputs));
+    LOG_INFO("TEST ERRORS:");
+    LOG_INFO("MSE: %lf\n", genome->get_mse(best_parameters, test_inputs, test_outputs));
+    LOG_INFO("MAE: %lf\n", genome->get_mae(best_parameters, test_inputs, test_outputs));
 
     Log::release_id("main");
 }

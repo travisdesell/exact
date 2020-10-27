@@ -99,12 +99,12 @@ int main(int argc, char** argv) {
     time_series_sets->export_training_series(time_offset, training_inputs, training_outputs);
     time_series_sets->export_test_series(time_offset, validation_inputs, validation_outputs);
 
-    Log::info("exported time series.\n");
+    LOG_INFO("exported time series.\n");
 
     int number_inputs = time_series_sets->get_number_inputs();
     int number_outputs = time_series_sets->get_number_outputs();
 
-    Log::info("number_inputs: %d, number_outputs: %d\n", number_inputs, number_outputs);
+    LOG_INFO("number_inputs: %d, number_outputs: %d\n", number_inputs, number_outputs);
 
     int32_t population_size;
     get_argument(arguments, "--population_size", true, population_size);
@@ -251,7 +251,7 @@ int main(int argc, char** argv) {
 
     finished = true;
 
-    Log::info("completed!\n");
+    LOG_INFO("completed!\n");
     Log::release_id("main");
 
     return 0;

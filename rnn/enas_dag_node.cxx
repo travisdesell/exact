@@ -118,7 +118,7 @@ double ENAS_DAG_Node::get_gradient(string gradient_name) {
         } else if (gradient_name == "w8") {
             gradient_sum +=  d_weights[7][i];
         } else {
-            Log::fatal("ERROR: tried to get unknown gradient: '%s'\n", gradient_name.c_str()); 
+            LOG_FATAL("ERROR: tried to get unknown gradient: '%s'\n", gradient_name.c_str()); 
             exit(1);
         }
     }
@@ -126,7 +126,7 @@ double ENAS_DAG_Node::get_gradient(string gradient_name) {
 }
 
 void ENAS_DAG_Node::print_gradient(string gradient_name) {
-    Log::info("\tgradient['%s']: %lf\n", gradient_name.c_str(), get_gradient(gradient_name));
+    LOG_INFO("\tgradient['%s']: %lf\n", gradient_name.c_str(), get_gradient(gradient_name));
 }
 
 double ENAS_DAG_Node::activation(double value, int act_operator) {
@@ -136,7 +136,7 @@ double ENAS_DAG_Node::activation(double value, int act_operator) {
     if (act_operator == 3) return leakyReLU(value);
     if (act_operator == 4) return identity(value);
 
-    Log::fatal("ERROR: invalid act_operator: %d\n", act_operator); 
+    LOG_FATAL("ERROR: invalid act_operator: %d\n", act_operator); 
     exit(1);
 }
 
@@ -147,7 +147,7 @@ double ENAS_DAG_Node::activation_derivative(double value, double input, int act_
     if (act_operator == 3) return leakyReLU_derivative(input);
     if (act_operator == 4) return identity_derivative();
 
-    Log::fatal("ERROR: invalid act_operator: %d\n", act_operator); 
+    LOG_FATAL("ERROR: invalid act_operator: %d\n", act_operator); 
     exit(1);
 }
 
@@ -161,14 +161,14 @@ void ENAS_DAG_Node::input_fired(int time, double incoming_output) {
 
     if (inputs_fired[time] < total_inputs) return;
     else if (inputs_fired[time] > total_inputs) {
-        Log::fatal("ERROR: inputs_fired on ENAS_DAG_Node %d at time %d is %d and total_inputs is %d\n", innovation_number, time, inputs_fired[time], total_inputs);
+        LOG_FATAL("ERROR: inputs_fired on ENAS_DAG_Node %d at time %d is %d and total_inputs is %d\n", innovation_number, time, inputs_fired[time], total_inputs);
         exit(1);
     }
 
     //update the reset gate bias so its centered around 1
     //r_bias += 1;
     int no_of_nodes = connections.size();
-    Log::debug("ERROR: inputs_fired on ENAS_DAG_Node %d at time %d is %d and no_of_nodes is %d\n", innovation_number, time, inputs_fired[time], no_of_nodes);
+    LOG_DEBUG("ERROR: inputs_fired on ENAS_DAG_Node %d at time %d is %d and no_of_nodes is %d\n", innovation_number, time, inputs_fired[time], no_of_nodes);
 
     double x = input_values[time];
 
@@ -203,7 +203,7 @@ void ENAS_DAG_Node::input_fired(int time, double incoming_output) {
 
     // output_values[time] /= fan_out;
 
-    Log::debug("DEBUG: input_fired on ENAS_DAG_Node %d at time %d is %d and total_outputs is %d\n", innovation_number, time, outputs_fired[time], total_outputs);
+    LOG_DEBUG("DEBUG: input_fired on ENAS_DAG_Node %d at time %d is %d and total_outputs is %d\n", innovation_number, time, outputs_fired[time], total_outputs);
 
 
 }
@@ -211,7 +211,7 @@ void ENAS_DAG_Node::input_fired(int time, double incoming_output) {
 void ENAS_DAG_Node::try_update_deltas(int time){
   if (outputs_fired[time] < total_outputs) return;
     else if (outputs_fired[time] > total_outputs) {
-        Log::fatal("ERROR: outputs_fired on ENAS_DAG_Node %d at time %d is %d and total_outputs is %d\n", innovation_number, time, outputs_fired[time], total_outputs);
+        LOG_FATAL("ERROR: outputs_fired on ENAS_DAG_Node %d at time %d is %d and total_outputs is %d\n", innovation_number, time, outputs_fired[time], total_outputs);
         exit(1);
     }
 
@@ -262,7 +262,7 @@ void ENAS_DAG_Node::try_update_deltas(int time){
     // d_zw[time] = d_h*l_Nodes[0][time]*x;
 
 
-    Log::debug("DEBUG: output_fired on ENAS_DAG_Node %d at time %d is %d and total_outputs is %d\n", innovation_number, time, outputs_fired[time], total_outputs);
+    LOG_DEBUG("DEBUG: output_fired on ENAS_DAG_Node %d at time %d is %d and total_outputs is %d\n", innovation_number, time, outputs_fired[time], total_outputs);
 
 
 }
@@ -314,7 +314,7 @@ void ENAS_DAG_Node::set_weights(uint32_t &offset, const vector<double> &paramete
         else
             weights.at(new_node_weight) = bound(parameters[offset++]);
     }
-    Log::debug("DEBUG: no of  weights  on ENAS_DAG_Node %d at time %d is %d \n", innovation_number, time, weights.size());
+    LOG_DEBUG("DEBUG: no of  weights  on ENAS_DAG_Node %d at time %d is %d \n", innovation_number, time, weights.size());
 
 
 }

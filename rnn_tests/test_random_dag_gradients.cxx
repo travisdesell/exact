@@ -40,7 +40,7 @@ int main(int argc, char **argv) {
 
     RNN_Genome *genome;
 
-    Log::info("TESTING RANDOM_DAG\n");
+    LOG_INFO("TESTING RANDOM_DAG\n");
 
     vector< vector<double> > inputs;
     vector< vector<double> > outputs;
@@ -55,12 +55,12 @@ int main(int argc, char **argv) {
     weight_initialize = get_enum_from_string(weight_initialize_string);
     
     if (weight_initialize < 0 || weight_initialize >= NUM_WEIGHT_TYPES - 1) {
-        Log::fatal("weight initialization method %s is set wrong \n", weight_initialize_string.c_str());
+        LOG_FATAL("weight initialization method %s is set wrong \n", weight_initialize_string.c_str());
     }
 
 
     for (int32_t max_recurrent_depth = 1; max_recurrent_depth <= 5; max_recurrent_depth++) {
-        Log::info("testing with max recurrent depth: %d\n", max_recurrent_depth);
+        LOG_INFO("testing with max recurrent depth: %d\n", max_recurrent_depth);
 
         inputs.resize(1);
         outputs.resize(1);
@@ -77,7 +77,7 @@ int main(int argc, char **argv) {
         delete genome;
 
         genome = create_random_dag(inputs1, 1, 1, outputs1, max_recurrent_depth, weight_initialize);
-        Log::debug("created enas dag\n");
+        LOG_DEBUG("created enas dag\n");
         gradient_test("RANDOM_DAG: 1 Input, 1x1 Hidden, 1 Output", genome, inputs, outputs);
         delete genome;
 

@@ -31,7 +31,7 @@ int main(int argc, char** argv) {
     get_argument(arguments, "--output_directory", true, output_directory);
 
     TimeSeriesSets *time_series_sets = TimeSeriesSets::generate_from_arguments(arguments);
-    Log::debug("got time series sets.\n");
+    LOG_DEBUG("got time series sets.\n");
 
     int32_t max_lag = 0;
     get_argument(arguments, "--max_lag", true, max_lag);

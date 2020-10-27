@@ -261,15 +261,15 @@ int main(int argc, char** argv) {
 
             finished = true;
 
-            Log::info("completed!\n");
+            LOG_INFO("completed!\n");
 
             RNN_Genome *best_genome = examm->get_best_genome();
 
             vector<double> best_parameters = best_genome->get_best_parameters();
-            Log::info("training MSE: %lf\n", best_genome->get_mse(best_parameters, training_inputs, training_outputs));
-            Log::info("training MSE: %lf\n", best_genome->get_mae(best_parameters, training_inputs, training_outputs));
-            Log::info("validation MSE: %lf\n", best_genome->get_mse(best_parameters, validation_inputs, validation_outputs));
-            Log::info("validation MSE: %lf\n", best_genome->get_mae(best_parameters, validation_inputs, validation_outputs));
+            LOG_INFO("training MSE: %lf\n", best_genome->get_mse(best_parameters, training_inputs, training_outputs));
+            LOG_INFO("training MSE: %lf\n", best_genome->get_mae(best_parameters, training_inputs, training_outputs));
+            LOG_INFO("validation MSE: %lf\n", best_genome->get_mse(best_parameters, validation_inputs, validation_outputs));
+            LOG_INFO("validation MSE: %lf\n", best_genome->get_mae(best_parameters, validation_inputs, validation_outputs));
 
             overall_results << setw(15) << fixed << best_genome->get_mse(best_parameters, training_inputs, training_outputs) << ", "
                 << setw(15) << fixed << best_genome->get_mae(best_parameters, training_inputs, training_outputs) << ", "
@@ -279,11 +279,11 @@ int main(int argc, char** argv) {
             best_genome->write_to_file(output_directory + "/" + output_filename + "_slice_" + to_string(i) + "_repeat_" + to_string(k) + ".bin");
             best_genome->write_graphviz(output_directory + "/" + output_filename + "_slice_" + to_string(i) + "_repeat_" + to_string(k) + ".gv");
 
-            Log::debug("deleting genome\n");
+            LOG_DEBUG("deleting genome\n");
             delete best_genome;
-            Log::debug("deleting exact\n");
+            LOG_DEBUG("deleting exact\n");
             delete examm;
-            Log::debug("deleted exact\n");
+            LOG_DEBUG("deleted exact\n");
         }
         overall_results << endl;
     }

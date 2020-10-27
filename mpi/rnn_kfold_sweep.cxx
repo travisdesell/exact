@@ -109,7 +109,7 @@ void send_job_to(int target, int current_job) {
     int job_message[1];
     job_message[0] = current_job;
 
-    Log::debug("sending job %d of %d to %d\n", current_job, results.size(), target);
+    LOG_DEBUG("sending job %d of %d to %d\n", current_job, results.size(), target);
     MPI_Send(job_message, 1, MPI_INT, target, JOB_TAG, MPI_COMM_WORLD);
 }
 
@@ -121,7 +121,7 @@ int receive_job_from(int source) {
 
     int current_job = job_message[0];
 
-    Log::debug("receiving current_job: %d from %d\n", current_job, source);
+    LOG_DEBUG("receiving current_job: %d from %d\n", current_job, source);
 
     return current_job;
 }
@@ -199,7 +199,7 @@ int mkpath(const char *path, mode_t mode) {
     status = 0;
     pp = copypath;
     while (status == 0 && (sp = strchr(pp, '/')) != 0) {
-        Log::debug("trying to create directory: '%s'\n", copypath);
+        LOG_DEBUG("trying to create directory: '%s'\n", copypath);
         if (sp != pp) {
             /* Neither root nor double slash in path */
             *sp = '\0';
@@ -222,7 +222,7 @@ int mkpath(const char *path, mode_t mode) {
 
 void master(int max_rank) {
     if (output_directory != "") {
-        Log::debug("creating directory: '%s'\n", output_directory.c_str());
+        LOG_DEBUG("creating directory: '%s'\n", output_directory.c_str());
         mkpath(output_directory.c_str(), 0777);
 
         mkdir(output_directory.c_str(), 0777);
@@ -242,7 +242,7 @@ void master(int max_rank) {
 
         int message_source = status.MPI_SOURCE;
         int tag = status.MPI_TAG;
-        Log::debug("probe returned message from: %d with tag: %d\n", message_source, tag);
+        LOG_DEBUG("probe returned message from: %d with tag: %d\n", message_source, tag);
 
         //if the message is a work request, send a genome
 
@@ -252,23 +252,23 @@ void master(int max_rank) {
             if (current_job >= last_job) {
                 //no more jobs to process if the current job is >= the result vector
                 //send terminate message
-                Log::debug("terminating worker: %d\n", message_source);
+                LOG_DEBUG("terminating worker: %d\n", message_source);
                 send_terminate_to(message_source);
                 terminates_sent++;
 
-                Log::debug("sent: %d terminates of: %d\n", terminates_sent, (max_rank - 1));
+                LOG_DEBUG("sent: %d terminates of: %d\n", terminates_sent, (max_rank - 1));
                 if (terminates_sent >= max_rank - 1) return;
 
             } else {
                 //send job
-                Log::debug("sending job to: %d\n", message_source);
+                LOG_DEBUG("sending job to: %d\n", message_source);
                 send_job_to(message_source, current_job);
 
                 //increment the current job for the next worker
                 current_job++;
             }
         } else if (tag == RESULT_TAG) {
-            Log::debug("receiving job from: %d\n", message_source);
+            LOG_DEBUG("receiving job from: %d\n", message_source);
             ResultSet result = receive_result_from(message_source);
             results[result.job] = result;
 
@@ -283,22 +283,21 @@ void master(int max_rank) {
             int32_t rnn_job_end = (rnn + 1) * jobs_per_rnn;
 
             bool rnn_finished = true;
-            Log::debug("testing finished for rnn: '%s'\n", rnn_types[rnn].c_str());
+            LOG_DEBUG("testing finished for rnn: '%s'\n", rnn_types[rnn].c_str());
+
+            string log_str = "";
             for (int i = rnn_job_start; i < rnn_job_end; i++) {
-                if (i == rnn_job_start) {
-                    Log::debug(" %d", results[i].job);
-                } else {
-                    Log::debug_no_header(" %d", results[i].job);
-                }
+                log_str = log_str + string_format(" %d", results[i].job);
 
                 if (results[i].job < 0) {
                     rnn_finished = false;
                     break;
                 }
             }
-            Log::debug_no_header("\n");
+            log_str = log_str + "\n";
+            LOG_DEBUG(log_str.c_str());
 
-            Log::debug("rnn '%s' finished? %d\n", rnn_types[rnn].c_str(), rnn_finished);
+            LOG_DEBUG("rnn '%s' finished? %d\n", rnn_types[rnn].c_str(), rnn_finished);
 
             if (rnn_finished) {
                 ofstream outfile(output_directory + "/combined_" + rnn_types[rnn] + ".csv");
@@ -309,7 +308,7 @@ void master(int max_rank) {
 
                         outfile << j << "," << k << "," << results[current].milliseconds << "," << results[current].training_mse << "," << results[current].training_mae << "," << results[current].test_mse << "," << results[current].test_mae << endl;
 
-                        Log::debug("%s, tested on series[%d], repeat: %d, result: %s\n", rnn_types[rnn].c_str(), j, k, result_to_string(results[current]).c_str());
+                        LOG_DEBUG("%s, tested on series[%d], repeat: %d, result: %s\n", rnn_types[rnn].c_str(), j, k, result_to_string(results[current]).c_str());
                         current++;
                     }
                 }
@@ -318,7 +317,7 @@ void master(int max_rank) {
 
 
         } else {
-            Log::fatal("ERROR: received message from %d with unknown tag: %d\n", message_source, tag);
+            LOG_FATAL("ERROR: received message from %d with unknown tag: %d\n", message_source, tag);
             MPI_Abort(MPI_COMM_WORLD, 1);
         }
     }
@@ -336,7 +335,7 @@ ResultSet handle_job(int rank, int current_job) {
     //get repeat
     int32_t repeat = current_job % jobs_per_j;
 
-    Log::debug("evaluating rnn type '%s' with j: %d, repeat: %d\n", rnn_type.c_str(), j, repeat);
+    LOG_DEBUG("evaluating rnn type '%s' with j: %d, repeat: %d\n", rnn_type.c_str(), j, repeat);
 
     vector<int> training_indexes;
     vector<int> test_indexes;
@@ -353,7 +352,7 @@ ResultSet handle_job(int rank, int current_job) {
         }
     }
 
-    Log::debug("test_indexes.size(): %d, training_indexes.size(): %d\n", test_indexes.size(), training_indexes.size());
+    LOG_DEBUG("test_indexes.size(): %d, training_indexes.size(): %d\n", test_indexes.size(), training_indexes.size());
 
     time_series_sets->set_training_indexes(training_indexes);
     time_series_sets->set_test_indexes(test_indexes);
@@ -425,7 +424,7 @@ ResultSet handle_job(int rank, int current_job) {
     RNN* rnn = genome->get_rnn();
 
     uint32_t number_of_weights = genome->get_number_weights();
-    Log::debug("RNN INFO FOR '%s', nodes: %d, edges: %d, rec: %d, weights: %d\n", rnn_type.c_str(), genome->get_enabled_node_count(), genome->get_enabled_edge_count(), genome->get_enabled_recurrent_edge_count(), number_of_weights);
+    LOG_DEBUG("RNN INFO FOR '%s', nodes: %d, edges: %d, rec: %d, weights: %d\n", rnn_type.c_str(), genome->get_enabled_node_count(), genome->get_enabled_edge_count(), genome->get_enabled_recurrent_edge_count(), number_of_weights);
 
     vector<double> min_bound(number_of_weights, -1.0); 
     vector<double> max_bound(number_of_weights, 1.0); 
@@ -465,7 +464,7 @@ ResultSet handle_job(int rank, int current_job) {
     Log::release_id(backprop_log_id);
     Log::set_id("worker_" + to_string(rank));
 
-    Log::debug("deleting genome and rnn.\n");
+    LOG_DEBUG("deleting genome and rnn.\n");
 
     delete genome;
     delete rnn;
@@ -478,7 +477,7 @@ ResultSet handle_job(int rank, int current_job) {
     result.test_mae = test_mae;
     result.milliseconds = milliseconds;
 
-    Log::debug("finished job, result: %s\n", result_to_string(result).c_str());
+    LOG_DEBUG("finished job, result: %s\n", result_to_string(result).c_str());
 
     return result;
 }
@@ -488,33 +487,33 @@ void worker(int rank) {
     Log::set_id("worker_" + to_string(rank));
 
     while (true) {
-        Log::debug("sending work request!\n");
+        LOG_DEBUG("sending work request!\n");
         send_work_request_to(master_rank);
-        Log::debug("sent work request!\n");
+        LOG_DEBUG("sent work request!\n");
 
         MPI_Status status;
         MPI_Probe(master_rank, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
         int tag = status.MPI_TAG;
 
-        Log::debug("probe received message with tag: %d\n", tag);
+        LOG_DEBUG("probe received message with tag: %d\n", tag);
 
         if (tag == TERMINATE_TAG) {
-            Log::debug("received terminate tag!\n");
+            LOG_DEBUG("received terminate tag!\n");
             receive_terminate_from(master_rank);
             break;
 
         } else if (tag == JOB_TAG) {
-            Log::debug("received genome!\n");
+            LOG_DEBUG("received genome!\n");
             int current_job = receive_job_from(master_rank);
 
             ResultSet result = handle_job(rank, current_job);
 
-            Log::debug("calculated_result: %s\n", result_to_string(result).c_str());
+            LOG_DEBUG("calculated_result: %s\n", result_to_string(result).c_str());
 
             send_result_to(master_rank, result);
 
         } else {
-            Log::fatal("ERROR: received message with unknown tag: %d\n", tag);
+            LOG_FATAL("ERROR: received message with unknown tag: %d\n", tag);
             MPI_Abort(MPI_COMM_WORLD, 1);
         }
     }
@@ -538,7 +537,7 @@ int main(int argc, char **argv) {
     Log::set_rank(rank);
     Log::set_id("main_" + to_string(rank));
 
-    Log::debug("process %d of %d\n", rank, max_rank);
+    LOG_DEBUG("process %d of %d\n", rank, max_rank);
     Log::restrict_to_rank(0);
 
 
@@ -557,7 +556,7 @@ int main(int argc, char **argv) {
     weight_initialize = get_enum_from_string(weight_initialize_string);
 
     if (weight_initialize < 0 || weight_initialize >= NUM_WEIGHT_TYPES - 1) {
-        Log::fatal("weight initialization method %s is set wrong \n", weight_initialize_string.c_str());
+        LOG_FATAL("weight initialization method %s is set wrong \n", weight_initialize_string.c_str());
     }
 
 
