@@ -169,6 +169,14 @@ int main(int argc, char** argv) {
     int32_t max_recurrent_depth = 10;
     get_argument(arguments, "--max_recurrent_depth", false, max_recurrent_depth);
 
+    int32_t min_node_recurrent_depth = 1;
+    get_argument(arguments, "--min_node_recurrent_depth", false, min_node_recurrent_depth);
+
+    int32_t max_node_recurrent_depth = 1;
+    get_argument(arguments, "--max_node_recurrent_depth", false, max_node_recurrent_depth);
+
+    bool various_node_recurrent_depth = argument_exists(arguments, "--various_node_recurrent_depth");
+
     bool start_filled = false;
     get_argument(arguments, "--start_filled", false, start_filled);
 
@@ -240,6 +248,7 @@ int main(int argc, char** argv) {
                     use_low_threshold, low_threshold,
                     use_dropout, dropout_probability,
                     min_recurrent_depth, max_recurrent_depth,
+                    min_node_recurrent_depth, max_node_recurrent_depth, various_node_recurrent_depth,   
                     output_directory,
                     NULL,
                     start_filled);

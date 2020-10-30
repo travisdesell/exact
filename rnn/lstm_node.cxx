@@ -24,8 +24,10 @@ using std::vector;
 #include "lstm_node.hxx"
 
 
-LSTM_Node::LSTM_Node(int _innovation_number, int _type, double _depth) : RNN_Node_Interface(_innovation_number, _type, _depth) {
+LSTM_Node::LSTM_Node(int _innovation_number, int _type, double _depth, int _node_recurrent_depth, Recurrent_Depth* _rec_depth) : RNN_Node_Interface(_innovation_number, _type, _depth) {
     node_type = LSTM_NODE;
+    rec_depth = _rec_depth;
+    node_recurrent_depth = _node_recurrent_depth;
 }
 
 LSTM_Node::~LSTM_Node() {
@@ -166,9 +168,7 @@ void LSTM_Node::input_fired(int time, double incoming_output) {
 
     double input_value = input_values[time];
 
-    double previous_cell_value = 0.0;
-    if (time > 0) previous_cell_value = cell_values[time - 1];
-
+    double previous_cell_value = get_previous_value_forward(time);
     //forget gate bias should be around 1.0 intead of 0, but we do it here to not throw
     //off the mu/sigma of the parameters
     forget_gate_bias = forget_gate_bias + 1.0;
@@ -217,8 +217,7 @@ void LSTM_Node::try_update_deltas(int time) {
     double error = error_values[time];
     double input_value = input_values[time];
 
-    double previous_cell_value = 0.00;
-    if (time > 0) previous_cell_value = cell_values[time - 1];
+    double previous_cell_value = get_previous_value_forward(time);
 
     //backprop output gate
     double d_output_gate = error * cell_out_tanh[time] * ld_output_gate[time];
@@ -230,9 +229,7 @@ void LSTM_Node::try_update_deltas(int time) {
 
     //backprop the cell path
 
-    double d_cell_out = error * output_gate_values[time] * ld_cell_out[time];
-    //propagate error back from the next cell value if there is one
-    if (time < (series_length - 1)) d_cell_out += d_prev_cell[time + 1];
+    double d_cell_out = get_previous_value_backword(time, error);
 
     //backprop forget gate
     d_prev_cell[time] += d_cell_out * forget_gate_values[time];
@@ -406,7 +403,7 @@ void LSTM_Node::reset(int _series_length) {
 }
 
 RNN_Node_Interface* LSTM_Node::copy() const {
-    LSTM_Node* n = new LSTM_Node(innovation_number, layer_type, depth);
+    LSTM_Node* n = new LSTM_Node(innovation_number, layer_type, depth, node_recurrent_depth, rec_depth);
 
     //copy LSTM_Node values
     n->output_gate_update_weight = output_gate_update_weight;
@@ -476,4 +473,35 @@ RNN_Node_Interface* LSTM_Node::copy() const {
 
 void LSTM_Node::write_to_stream(ostream &out) {
     RNN_Node_Interface::write_to_stream(out);
+}
+
+double LSTM_Node::get_previous_value_forward(int32_t time) {
+    double prev = 0.0;
+    if (!rec_depth->is_various_recurrent_depth()) {
+        if (time - node_recurrent_depth >= 0) {
+            prev = cell_values[time - node_recurrent_depth];
+        }
+    } else {
+        for (int i = 1; i <= node_recurrent_depth; i++) {
+            if (time - i >= 0) {
+                prev += cell_values[time - i];
+            }
+        }
+    }
+    return prev;
+}
+
+double LSTM_Node::get_previous_value_backword(int32_t time, double error) {
+    double previous = error * output_gate_values[time] * ld_cell_out[time];
+    // double previous = error;
+    if (!rec_depth->is_various_recurrent_depth()) {
+        if (time < (series_length - node_recurrent_depth)) previous += d_prev_cell[time + node_recurrent_depth];
+    } else {
+        for (int i = 1; i <= node_recurrent_depth; i++) {
+            if (time < (series_length - i)) {
+                previous += d_prev_cell[time + i];
+            }
+        }
+    }
+    return previous;
 }

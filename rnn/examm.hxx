@@ -20,6 +20,7 @@ using std::vector;
 #include "rnn_genome.hxx"
 #include "speciation_strategy.hxx"
 #include "common/weight_initialize.hxx"
+#include "recurrent_depth.hxx"
 
 class EXAMM {
     private:
@@ -71,8 +72,8 @@ class EXAMM {
         uniform_real_distribution<double> rng_0_1;
         uniform_real_distribution<double> rng_crossover_weight;
 
-        int32_t min_recurrent_depth;
-        int32_t max_recurrent_depth;
+        Recurrent_Depth *node_rec_depth;
+        Recurrent_Depth *edge_rec_depth;
 
         bool epigenetic_weights;
 
@@ -160,6 +161,9 @@ class EXAMM {
                 double _dropout_probability,
                 int32_t _min_recurrent_depth,
                 int32_t _max_recurrent_depth,
+                int32_t _min_node_recurrent_depth,
+                int32_t _max_node_recurrent_depth,
+                bool _various_node_recurrent_depth,
                 string _output_directory, 
                 RNN_Genome *seed_genome,
                 bool _start_filled);
@@ -172,8 +176,6 @@ class EXAMM {
         void write_memory_log(string filename);
 
         void set_possible_node_types(vector<string> possible_node_type_strings);
-
-        uniform_int_distribution<int32_t> get_recurrent_depth_dist();
 
         int get_random_node_type();
 

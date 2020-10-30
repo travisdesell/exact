@@ -87,7 +87,7 @@ void RNN_Edge::propagate_forward(int time) {
     double output = input_node->output_values[time] * weight;
 
     //Log::trace("propagating forward at time %d from %d to %d, value: %lf, input: %lf, weight: %lf\n", time, input_node->innovation_number, output_node->innovation_number, output, input_node->output_values[time], weight);
-
+   
     outputs[time] = output;
     output_node->input_fired(time, output);
 }
@@ -113,7 +113,7 @@ void RNN_Edge::propagate_forward(int time, bool training, double dropout_probabi
     } else {
         output *= (1.0 - dropout_probability);
     }
-
+    
     outputs[time] = output;
     output_node->input_fired(time, output);
 }

@@ -121,8 +121,13 @@ void RNN_Node_Interface::write_to_stream(ostream &out) {
     out.write((char*)&innovation_number, sizeof(int32_t));
     out.write((char*)&layer_type, sizeof(int32_t));
     out.write((char*)&node_type, sizeof(int32_t));
+    out.write((char*)&node_recurrent_depth, sizeof(int32_t));
     out.write((char*)&depth, sizeof(double));
     out.write((char*)&enabled, sizeof(bool));
 
     write_binary_string(out, parameter_name, "parameter_name");
+
+    if(node_type != SIMPLE_NODE && node_type != ELMAN_NODE && node_type != JORDAN_NODE) {
+        rec_depth->write_to_stream(out);
+    }
 }

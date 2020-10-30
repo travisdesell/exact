@@ -12,6 +12,8 @@ RNN_Node::RNN_Node(int _innovation_number, int _layer_type, double _depth, int _
 
     //node type will be simple, jordan or elman
     node_type = _node_type;
+    node_recurrent_depth = 0;
+    rec_depth = NULL;
     Log::trace("created node: %d, layer type: %d, node type: %d\n", innovation_number, layer_type, node_type);
 }
 
@@ -20,6 +22,8 @@ RNN_Node::RNN_Node(int _innovation_number, int _layer_type, double _depth, int _
 
     //node type will be simple, jordan or elman
     node_type = _node_type;
+    node_recurrent_depth = 0;
+    rec_depth = NULL;
     Log::trace("created node: %d, layer type: %d, node type: %d\n", innovation_number, layer_type, node_type);
 }
 
@@ -177,6 +181,8 @@ RNN_Node_Interface* RNN_Node::copy() const {
     n->enabled = enabled;
     n->forward_reachable = forward_reachable;
     n->backward_reachable = backward_reachable;
+    n->node_recurrent_depth = node_recurrent_depth;
+
 
     return n;
 }

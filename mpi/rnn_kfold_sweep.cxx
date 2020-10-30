@@ -41,7 +41,7 @@ typedef struct stat Stat;
 #include "rnn/rnn_genome.hxx"
 #include "rnn/rnn_node.hxx"
 #include "rnn/rnn_node_interface.hxx"
-
+#include "rnn/recurrent_depth.hxx"
 #include "rnn/generate_nn.hxx"
 
 #include "time_series/time_series.hxx"
@@ -56,6 +56,9 @@ int bp_iterations;
 string output_directory;
 int32_t repeats = 5;
 int fold_size = 2;
+int min_node_recurrent_depth = 1;
+int max_node_recurrent_depth = 1;
+bool various_node_recurrent_depth = false;
 
 string weight_initialize_string = "random";
 WeightType weight_initialize = get_enum_from_string(weight_initialize_string);
@@ -368,42 +371,44 @@ ResultSet handle_job(int rank, int current_job) {
     int number_inputs = time_series_sets->get_number_inputs();
     int number_outputs = time_series_sets->get_number_outputs();
 
+    Recurrent_Depth *node_rec_depth = new Recurrent_Depth(NODE_RECURRENT_DEPTH, min_node_recurrent_depth, max_node_recurrent_depth, various_node_recurrent_depth);
+
     RNN_Genome *genome = NULL;
     if (rnn_type == "one_layer_lstm") {
-        genome = create_lstm(input_parameter_names, 1, number_inputs, output_parameter_names, 1, weight_initialize);
+        genome = create_lstm(input_parameter_names, 1, number_inputs, output_parameter_names, weight_initialize, node_rec_depth);
 
     } else if (rnn_type == "two_layer_lstm") {
-        genome = create_lstm(input_parameter_names, 2, number_inputs, output_parameter_names, 1, weight_initialize);
+        genome = create_lstm(input_parameter_names, 2, number_inputs, output_parameter_names, weight_initialize, node_rec_depth);
 
     } else if (rnn_type == "one_layer_delta") {
-        genome = create_delta(input_parameter_names, 1, number_inputs, output_parameter_names, 1, weight_initialize);
+        genome = create_delta(input_parameter_names, 1, number_inputs, output_parameter_names, weight_initialize, node_rec_depth);
 
     } else if (rnn_type == "two_layer_delta") {
-        genome = create_delta(input_parameter_names, 2, number_inputs, output_parameter_names, 1, weight_initialize);
+        genome = create_delta(input_parameter_names, 2, number_inputs, output_parameter_names, weight_initialize, node_rec_depth);
 
     } else if (rnn_type == "one_layer_gru") {
-        genome = create_gru(input_parameter_names, 1, number_inputs, output_parameter_names, 1, weight_initialize);
+        genome = create_gru(input_parameter_names, 1, number_inputs, output_parameter_names, weight_initialize, node_rec_depth);
 
     } else if (rnn_type == "two_layer_gru") {
-        genome = create_gru(input_parameter_names, 2, number_inputs, output_parameter_names, 1, weight_initialize);
+        genome = create_gru(input_parameter_names, 2, number_inputs, output_parameter_names, weight_initialize, node_rec_depth);
 
     } else if (rnn_type == "one_layer_mgu") {
-        genome = create_mgu(input_parameter_names, 1, number_inputs, output_parameter_names, 1, weight_initialize);
+        genome = create_mgu(input_parameter_names, 1, number_inputs, output_parameter_names, weight_initialize, node_rec_depth);
 
     } else if (rnn_type == "two_layer_mgu") {
-        genome = create_mgu(input_parameter_names, 2, number_inputs, output_parameter_names, 1, weight_initialize);
+        genome = create_mgu(input_parameter_names, 2, number_inputs, output_parameter_names, weight_initialize, node_rec_depth);
 
     } else if (rnn_type == "one_layer_delta") {
-        genome = create_delta(input_parameter_names, 1, number_inputs, output_parameter_names, 1, weight_initialize);
+        genome = create_delta(input_parameter_names, 1, number_inputs, output_parameter_names, weight_initialize, node_rec_depth);
 
     } else if (rnn_type == "two_layer_delta") {
-        genome = create_delta(input_parameter_names, 2, number_inputs, output_parameter_names, 1, weight_initialize);
+        genome = create_delta(input_parameter_names, 2, number_inputs, output_parameter_names, weight_initialize, node_rec_depth);
 
     } else if (rnn_type == "one_layer_ugrnn") {
-        genome = create_ugrnn(input_parameter_names, 1, number_inputs, output_parameter_names, 1, weight_initialize);
+        genome = create_ugrnn(input_parameter_names, 1, number_inputs, output_parameter_names, weight_initialize, node_rec_depth);
 
     } else if (rnn_type == "two_layer_ugrnn") {
-        genome = create_ugrnn(input_parameter_names, 2, number_inputs, output_parameter_names, 1, weight_initialize);
+        genome = create_ugrnn(input_parameter_names, 2, number_inputs, output_parameter_names, weight_initialize, node_rec_depth);
 
     } else if (rnn_type == "one_layer_ff") {
         genome = create_ff(input_parameter_names, 1, number_inputs, output_parameter_names, 0, weight_initialize, WeightType::NONE, WeightType::NONE);
@@ -556,6 +561,11 @@ int main(int argc, char **argv) {
         Log::fatal("weight initialization method %s is set wrong \n", weight_initialize_string.c_str());
     }
 
+    get_argument(arguments, "--min_node_recurrent_depth", false, min_node_recurrent_depth);
+
+    get_argument(arguments, "--max_node_recurrent_depth", false, max_node_recurrent_depth);
+
+    various_node_recurrent_depth = argument_exists(arguments, "--various_node_recurrent_depth");
 
     if (rank == 0) {
         //only print verbose info from the master process

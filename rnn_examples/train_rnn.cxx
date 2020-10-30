@@ -24,7 +24,7 @@ using std::vector;
 #include "rnn/rnn_genome.hxx"
 #include "rnn/rnn_node.hxx"
 #include "rnn/rnn_node_interface.hxx"
-
+#include "rnn/recurrent_depth.hxx"
 #include "rnn/generate_nn.hxx"
 
 #include "time_series/time_series.hxx"
@@ -95,21 +95,32 @@ int main(int argc, char **argv) {
     WeightType weight_initialize;
     weight_initialize = get_enum_from_string(weight_initialize_string);
 
+    int32_t min_node_recurrent_depth = 1;
+    get_argument(arguments, "--min_node_recurrent_depth", false, min_node_recurrent_depth);
+
+    int32_t max_node_recurrent_depth = 1;
+    get_argument(arguments, "--max_node_recurrent_depth", false, max_node_recurrent_depth);
+
+    bool various_node_recurrent_depth = argument_exists(arguments, "--various_node_recurrent_depth");
+
+    Recurrent_Depth *node_rec_depth = new Recurrent_Depth(NODE_RECURRENT_DEPTH, min_node_recurrent_depth, max_node_recurrent_depth, various_node_recurrent_depth);
+    int32_t node_recurrent_depth = node_rec_depth->get_recurrent_depth();
+
     vector<string> input_parameter_names = time_series_sets->get_input_parameter_names();
     vector<string> output_parameter_names = time_series_sets->get_output_parameter_names();
 
     RNN_Genome *genome;
     if (rnn_type == "one_layer_lstm") {
-        genome = create_lstm(input_parameter_names, 1, number_inputs, output_parameter_names, max_recurrent_depth, weight_initialize);
+        genome = create_lstm(input_parameter_names, 1, number_inputs, output_parameter_names, weight_initialize, node_rec_depth);
 
     } else if (rnn_type == "two_layer_lstm") {
-        genome = create_lstm(input_parameter_names, 1, number_inputs, output_parameter_names, max_recurrent_depth, weight_initialize);
+        genome = create_lstm(input_parameter_names, 1, number_inputs, output_parameter_names, weight_initialize, node_rec_depth);
 
     } else if (rnn_type == "one_layer_gru") {
-        genome = create_gru(input_parameter_names, 1, number_inputs, output_parameter_names, max_recurrent_depth, weight_initialize);
+        genome = create_gru(input_parameter_names, 1, number_inputs, output_parameter_names, weight_initialize, node_rec_depth);
 
     } else if (rnn_type == "two_layer_gru") {
-        genome = create_gru(input_parameter_names, 1, number_inputs, output_parameter_names, max_recurrent_depth, weight_initialize);
+        genome = create_gru(input_parameter_names, 1, number_inputs, output_parameter_names, weight_initialize, node_rec_depth);
 
     } else if (rnn_type == "one_layer_ff") {
         genome = create_ff(input_parameter_names, 1, number_inputs, output_parameter_names, max_recurrent_depth, weight_initialize, WeightType::NONE, WeightType::NONE);

@@ -26,8 +26,10 @@ using std::vector;
 
 #define NUMBER_DELTA_WEIGHTS 6
 
-Delta_Node::Delta_Node(int _innovation_number, int _type, double _depth) : RNN_Node_Interface(_innovation_number, _type, _depth) {
+Delta_Node::Delta_Node(int _innovation_number, int _type, double _depth, int _node_recurrent_depth, Recurrent_Depth* _rec_depth) : RNN_Node_Interface(_innovation_number, _type, _depth) {
     node_type = DELTA_NODE;
+    rec_depth = _rec_depth;
+    node_recurrent_depth = _node_recurrent_depth;
 }
 
 Delta_Node::~Delta_Node() {
@@ -118,9 +120,8 @@ void Delta_Node::input_fired(int time, double incoming_output) {
 
     double d2 = input_values[time];
 
-    double z_prev = 0.0;
-    if (time > 0) z_prev = output_values[time - 1];
-
+    double z_prev = get_previous_value_forward(time);
+    
     double d1 = v * z_prev;
 
     double z_hat_1 = d1 * d2 * alpha;
@@ -166,13 +167,12 @@ void Delta_Node::try_update_deltas(int time) {
     double error = error_values[time];
     double d2 = input_values[time];
 
-    double z_prev = 0.0;
-    if (time > 0) z_prev = output_values[time - 1];
+    double z_prev = get_previous_value_forward(time);
 
 
     //backprop output gate
-    double d_z = error;
-    if (time < (series_length - 1)) d_z += d_z_prev[time + 1];
+    double d_z = get_previous_value_backword(time, error);
+
     //get the error into the output (z), it's the error from ahead in the network
     //as well as from the previous output of the cell
 
@@ -319,7 +319,7 @@ void Delta_Node::reset(int _series_length) {
 }
 
 RNN_Node_Interface* Delta_Node::copy() const {
-    Delta_Node* n = new Delta_Node(innovation_number, layer_type, depth);
+    Delta_Node* n = new Delta_Node(innovation_number, layer_type, depth, node_recurrent_depth, rec_depth);
 
     //copy Delta_Node values
     n->d_alpha = d_alpha;
@@ -356,4 +356,36 @@ RNN_Node_Interface* Delta_Node::copy() const {
 
 void Delta_Node::write_to_stream(ostream &out) {
     RNN_Node_Interface::write_to_stream(out);
+}
+
+double Delta_Node::get_previous_value_forward(int32_t time) {
+    double prev = 0.0;
+    if (!rec_depth->is_various_recurrent_depth()) {
+        if (time - node_recurrent_depth >= 0) {
+            prev = output_values[time - node_recurrent_depth];
+        }
+    } else {
+        for (int i = 1; i <= node_recurrent_depth; i++) {
+            if (time - i >= 0) {
+                prev += output_values[time - i];
+            }
+        }
+    }
+    return prev;
+}
+
+double Delta_Node::get_previous_value_backword(int32_t time, double error) {
+
+    // if (time < (series_length - node_recurrent_depth)) d_z += d_z_prev[time + node_recurrent_depth];
+    double previous = error;
+    if (!rec_depth->is_various_recurrent_depth()) {
+        if (time < (series_length - node_recurrent_depth)) previous += d_z_prev[time + node_recurrent_depth];
+    } else {
+        for (int i = 1; i <= node_recurrent_depth; i++) {
+            if (time < (series_length - i)) {
+                previous += d_z_prev[time + i];
+            }
+        }
+    }
+    return previous;
 }

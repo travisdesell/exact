@@ -17,6 +17,7 @@ using std::string;
 using std::vector;
 
 #include "common/random.hxx"
+#include "recurrent_depth.hxx"
 
 class RNN;
 
@@ -50,6 +51,9 @@ class RNN_Node_Interface {
         int32_t node_type;
 
         double depth;
+
+        int32_t node_recurrent_depth;
+        Recurrent_Depth *rec_depth;
 
         //this is only used for input and output nodes to track
         //which parameter they are assigned to

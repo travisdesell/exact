@@ -14,7 +14,7 @@ using std::vector;
 #include "common/random.hxx"
 
 #include "rnn_node_interface.hxx"
-
+#include "recurrent_depth.hxx"
 class LSTM_Node : public RNN_Node_Interface {
     private:
         double output_gate_update_weight;
@@ -65,7 +65,7 @@ class LSTM_Node : public RNN_Node_Interface {
 
     public:
 
-        LSTM_Node(int _innovation_number, int _type, double _depth);
+        LSTM_Node(int _innovation_number, int _type, double _depth, int _node_recurrent_depth, Recurrent_Depth* _rec_depth);
         ~LSTM_Node();
 
         void initialize_randomly(minstd_rand0 &generator, NormalDistribution &normal_distribution, double mu, double sigma);
@@ -95,6 +95,9 @@ class LSTM_Node : public RNN_Node_Interface {
         void reset(int _series_length);
 
         void write_to_stream(ostream &out);
+
+        double get_previous_value_forward(int32_t time);
+        double get_previous_value_backword(int32_t time, double error);
 
         RNN_Node_Interface* copy() const;
 

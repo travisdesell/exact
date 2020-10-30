@@ -275,21 +275,21 @@ string RNN_Genome::print_statistics() {
     return oss.str();
 }
 
-double RNN_Genome::get_avg_recurrent_depth() const {
-    int32_t count = 0;
-    double average = 0.0;
-    for (int32_t i = 0; i < recurrent_edges.size(); i++) {
-        if (recurrent_edges[i]->is_reachable()) {
-            average += recurrent_edges[i]->get_recurrent_depth();
-            count++;
-        }
-    }
+// double RNN_Genome::get_avg_recurrent_depth() const {
+//     int32_t count = 0;
+//     double average = 0.0;
+//     for (int32_t i = 0; i < recurrent_edges.size(); i++) {
+//         if (recurrent_edges[i]->is_reachable()) {
+//             average += recurrent_edges[i]->get_recurrent_depth();
+//             count++;
+//         }
+//     }
 
-    //in case there are no recurrent edges
-    if (count == 0) return 0;
+//     //in case there are no recurrent edges
+//     if (count == 0) return 0;
 
-    return average / count;
-}
+//     return average / count;
+// }
 
 string RNN_Genome::get_edge_count_str(bool recurrent) {
     ostringstream oss;
@@ -591,6 +591,20 @@ uint32_t RNN_Genome::get_number_weights() {
     }
 
     return number_weights;
+}
+
+void RNN_Genome::get_node_edge_count() {
+    uint32_t number_weights = 0;
+
+    for (uint32_t i = 0; i < nodes.size(); i++) {
+        number_weights += nodes[i]->get_number_weights();
+    }
+    for (uint32_t i = 0; i < edges.size(); i++) {
+        number_weights++;
+    }
+    for (uint32_t i = 0; i < recurrent_edges.size(); i++) {
+        number_weights++;
+    }
 }
 
 
@@ -1131,7 +1145,6 @@ void RNN_Genome::backpropagate(const vector< vector< vector<double> > > &inputs,
 
 void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, const vector< vector< vector<double> > > &validation_inputs, const vector< vector< vector<double> > > &validation_outputs) {
     vector<double> parameters = initial_parameters;
-
     int n_parameters = this->get_number_weights();
     vector<double> prev_parameters(n_parameters, 0.0);
 
@@ -1150,7 +1163,6 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
     double prev_learning_rate[n_series];
     double prev_mse[n_series];
     double mse;
-
     double norm = 0.0;
 
     std::chrono::time_point<std::chrono::system_clock> startClock = std::chrono::system_clock::now();
@@ -1795,26 +1807,30 @@ void RNN_Genome::get_mu_sigma(const vector<double> &p, double &mu, double &sigma
 }
 
 
-RNN_Node_Interface* RNN_Genome::create_node(double mu, double sigma, int node_type, int32_t &node_innovation_count, double depth) {
+RNN_Node_Interface* RNN_Genome::create_node(double mu, double sigma, int node_type, int32_t &node_innovation_count, double depth, Recurrent_Depth* node_rec_depth) {
     RNN_Node_Interface *n = NULL;
+
+    int32_t node_depth = node_rec_depth->get_recurrent_depth();
 
     Log::info("CREATING NODE, type: '%s'\n", NODE_TYPES[node_type].c_str());
     if (node_type == LSTM_NODE) {
-        n = new LSTM_Node(++node_innovation_count, HIDDEN_LAYER, depth);
+        n = new LSTM_Node(++node_innovation_count, HIDDEN_LAYER, depth, node_depth, node_rec_depth);
     } else if (node_type == DELTA_NODE) {
-        n = new Delta_Node(++node_innovation_count, HIDDEN_LAYER, depth);
+        n = new Delta_Node(++node_innovation_count, HIDDEN_LAYER, depth, node_depth, node_rec_depth);
     } else if (node_type == GRU_NODE) {
-        n = new GRU_Node(++node_innovation_count, HIDDEN_LAYER, depth);
+        n = new GRU_Node(++node_innovation_count, HIDDEN_LAYER, depth, node_depth, node_rec_depth);
     } else if (node_type == MGU_NODE) {
-        n = new MGU_Node(++node_innovation_count, HIDDEN_LAYER, depth);
+        n = new MGU_Node(++node_innovation_count, HIDDEN_LAYER, depth, node_depth, node_rec_depth);
     } else if (node_type == UGRNN_NODE) {
-        n = new UGRNN_Node(++node_innovation_count, HIDDEN_LAYER, depth);
+        n = new UGRNN_Node(++node_innovation_count, HIDDEN_LAYER, depth, node_depth, node_rec_depth);
     } else if (node_type == SIMPLE_NODE || node_type == JORDAN_NODE || node_type == ELMAN_NODE) {
         n = new RNN_Node(++node_innovation_count, HIDDEN_LAYER, depth, node_type);
     } else {
         Log::fatal("ERROR: attempted to create a node with an unknown node type: %d\n", node_type);
         exit(1);
     }
+
+    Log::debug("added new node %d with node depth %d \n", node_innovation_count, node_depth);
 
     if (mutated_component_weight == WeightType::LAMARCKIAN) {
         Log::debug("new component weight is lamarckian, setting new node weight to lamarckian \n");
@@ -1895,11 +1911,11 @@ bool RNN_Genome::attempt_edge_insert(RNN_Node_Interface *n1, RNN_Node_Interface 
     return true;
 }
 
-bool RNN_Genome::attempt_recurrent_edge_insert(RNN_Node_Interface *n1, RNN_Node_Interface *n2, double mu, double sigma, uniform_int_distribution<int32_t> dist, int32_t &edge_innovation_count) {
+bool RNN_Genome::attempt_recurrent_edge_insert(RNN_Node_Interface *n1, RNN_Node_Interface *n2, double mu, double sigma, Recurrent_Depth* edge_rec_depth, int32_t &edge_innovation_count) {
     Log::info("\tadding recurrent edge between nodes %d and %d\n", n1->innovation_number, n2->innovation_number);
 
     //int32_t recurrent_depth = 1 + (rng_0_1(generator) * (max_recurrent_depth - 1));
-    int32_t recurrent_depth = dist(generator);
+    int32_t recurrent_depth = edge_rec_depth->get_recurrent_depth();
 
     //check to see if an edge between the two nodes already exists
     for (int32_t i = 0; i < (int32_t)recurrent_edges.size(); i++) {
@@ -1922,7 +1938,7 @@ bool RNN_Genome::attempt_recurrent_edge_insert(RNN_Node_Interface *n1, RNN_Node_
         }
     }
 
-    RNN_Recurrent_Edge *e = new RNN_Recurrent_Edge(++edge_innovation_count, recurrent_depth, n1, n2);
+    RNN_Recurrent_Edge *e = new RNN_Recurrent_Edge(++edge_innovation_count, recurrent_depth,n1, n2);
     if (mutated_component_weight == weight_initialize) {
         Log::debug("setting new recurrent edge weight with %s method \n", WEIGHT_TYPES_STRING[mutated_component_weight].c_str());
         if (weight_initialize == WeightType::XAVIER) {
@@ -1950,17 +1966,17 @@ bool RNN_Genome::attempt_recurrent_edge_insert(RNN_Node_Interface *n1, RNN_Node_
     return true;
 }
 
-void RNN_Genome::generate_recurrent_edges(RNN_Node_Interface *node, double mu, double sigma, uniform_int_distribution<int32_t> dist, int32_t &edge_innovation_count) {
+void RNN_Genome::generate_recurrent_edges(RNN_Node_Interface *node, double mu, double sigma, Recurrent_Depth* edge_rec_depth, int32_t &edge_innovation_count) {
 
     if (node->node_type == JORDAN_NODE) {
         for (int32_t i = 0; i < (int32_t)edges.size(); i++) {
             if (edges[i]->input_innovation_number == node->innovation_number && edges[i]->enabled) {
-                attempt_recurrent_edge_insert(edges[i]->output_node, node, mu, sigma, dist, edge_innovation_count);
+                attempt_recurrent_edge_insert(edges[i]->output_node, node, mu, sigma, edge_rec_depth, edge_innovation_count);
             }
         }
     } else if (node->node_type == ELMAN_NODE) {
         //elman nodes have a circular reference to themselves
-        attempt_recurrent_edge_insert(node, node, mu, sigma, dist, edge_innovation_count);
+        attempt_recurrent_edge_insert(node, node, mu, sigma, edge_rec_depth, edge_innovation_count);
     }
 }
 
@@ -2007,7 +2023,7 @@ bool RNN_Genome::add_edge(double mu, double sigma, int32_t &edge_innovation_coun
     return attempt_edge_insert(n1, n2, mu, sigma, edge_innovation_count);
 }
 
-bool RNN_Genome::add_recurrent_edge(double mu, double sigma, uniform_int_distribution<int32_t> dist, int32_t &edge_innovation_count) {
+bool RNN_Genome::add_recurrent_edge(double mu, double sigma, Recurrent_Depth* edge_rec_depth, int32_t &edge_innovation_count) {
     Log::info("\tattempting to add recurrent edge!\n");
 
     vector<RNN_Node_Interface*> possible_input_nodes;
@@ -2038,7 +2054,7 @@ bool RNN_Genome::add_recurrent_edge(double mu, double sigma, uniform_int_distrib
     RNN_Node_Interface *n2 = possible_output_nodes[p2];
     Log::info("\tselected second node %d with depth %d\n", n2->innovation_number, n2->depth);
 
-    return attempt_recurrent_edge_insert(n1, n2, mu, sigma, dist, edge_innovation_count);
+    return attempt_recurrent_edge_insert(n1, n2, mu, sigma, edge_rec_depth, edge_innovation_count);
 }
 
 
@@ -2105,7 +2121,7 @@ bool RNN_Genome::enable_edge() {
 }
 
 
-bool RNN_Genome::split_edge(double mu, double sigma, int node_type, uniform_int_distribution<int32_t> dist, int32_t &edge_innovation_count, int32_t &node_innovation_count) {
+bool RNN_Genome::split_edge(double mu, double sigma, int node_type, Recurrent_Depth* edge_rec_depth, Recurrent_Depth* node_rec_depth, int32_t &edge_innovation_count, int32_t &node_innovation_count) {
     Log::info("\tattempting to split an edge!\n");
     vector<RNN_Edge*> enabled_edges;
     for (int32_t i = 0; i < edges.size(); i++) {
@@ -2137,7 +2153,8 @@ bool RNN_Genome::split_edge(double mu, double sigma, int node_type, uniform_int_
     }
 
     double new_depth = (n1->get_depth() + n2->get_depth()) / 2.0;
-    RNN_Node_Interface *new_node = create_node(mu, sigma, node_type, node_innovation_count, new_depth);
+
+    RNN_Node_Interface *new_node = create_node(mu, sigma, node_type, node_innovation_count, new_depth, node_rec_depth);
 
     nodes.insert( upper_bound(nodes.begin(), nodes.end(), new_node, sort_RNN_Nodes_by_depth()), new_node);
 
@@ -2145,18 +2162,18 @@ bool RNN_Genome::split_edge(double mu, double sigma, int node_type, uniform_int_
         attempt_edge_insert(n1, new_node, mu, sigma, edge_innovation_count);
         attempt_edge_insert(new_node, n2, mu, sigma, edge_innovation_count);
     } else {
-        attempt_recurrent_edge_insert(n1, new_node, mu, sigma, dist, edge_innovation_count);
-        attempt_recurrent_edge_insert(new_node, n2, mu, sigma, dist, edge_innovation_count);
+        attempt_recurrent_edge_insert(n1, new_node, mu, sigma, edge_rec_depth, edge_innovation_count);
+        attempt_recurrent_edge_insert(new_node, n2, mu, sigma, edge_rec_depth, edge_innovation_count);
     }
 
-    if (node_type == JORDAN_NODE || node_type == ELMAN_NODE) generate_recurrent_edges(new_node, mu, sigma, dist, edge_innovation_count);
+    if (node_type == JORDAN_NODE || node_type == ELMAN_NODE) generate_recurrent_edges(new_node, mu, sigma, edge_rec_depth, edge_innovation_count);
 
     // node_initialize(new_node);
 
     return true;
 }
 
-bool RNN_Genome::connect_new_input_node(double mu, double sigma, RNN_Node_Interface *new_node, uniform_int_distribution<int32_t> dist, int32_t &edge_innovation_count) {
+bool RNN_Genome::connect_new_input_node(double mu, double sigma, RNN_Node_Interface *new_node, Recurrent_Depth* edge_rec_depth, int32_t &edge_innovation_count) {
     Log::info("\tattempting to connect a new input node (%d) for transfer learning!\n", new_node->innovation_number);
 
     vector<RNN_Node_Interface*> possible_outputs;
@@ -2214,7 +2231,7 @@ bool RNN_Genome::connect_new_input_node(double mu, double sigma, RNN_Node_Interf
         //recurrent_probability = 0;
 
         if (rng_0_1(generator) < recurrent_probability) {
-            attempt_recurrent_edge_insert(new_node, possible_outputs[i], mu, sigma, dist, edge_innovation_count);
+            attempt_recurrent_edge_insert(new_node, possible_outputs[i], mu, sigma, edge_rec_depth, edge_innovation_count);
         } else {
             attempt_edge_insert(new_node, possible_outputs[i], mu, sigma, edge_innovation_count);
         }
@@ -2224,7 +2241,7 @@ bool RNN_Genome::connect_new_input_node(double mu, double sigma, RNN_Node_Interf
     return true;
 }
 
-bool RNN_Genome::connect_new_output_node(double mu, double sigma, RNN_Node_Interface *new_node, uniform_int_distribution<int32_t> dist, int32_t &edge_innovation_count) {
+bool RNN_Genome::connect_new_output_node(double mu, double sigma, RNN_Node_Interface *new_node, Recurrent_Depth* edge_rec_depth, int32_t &edge_innovation_count) {
     Log::info("\tattempting to connect a new output node for transfer learning!\n");
 
     vector<RNN_Node_Interface*> possible_inputs;
@@ -2281,7 +2298,7 @@ bool RNN_Genome::connect_new_output_node(double mu, double sigma, RNN_Node_Inter
         //recurrent_probability = 0;
 
         if (rng_0_1(generator) < recurrent_probability) {
-            attempt_recurrent_edge_insert(possible_inputs[i], new_node, mu, sigma, dist, edge_innovation_count);
+            attempt_recurrent_edge_insert(possible_inputs[i], new_node, mu, sigma, edge_rec_depth, edge_innovation_count);
         } else {
             attempt_edge_insert(possible_inputs[i], new_node, mu, sigma, edge_innovation_count);
         }
@@ -2293,7 +2310,7 @@ bool RNN_Genome::connect_new_output_node(double mu, double sigma, RNN_Node_Inter
 
 
 //INFO: ADDED BY ABDELRAHMAN TO USE FOR TRANSFER LEARNING
-bool RNN_Genome::connect_node_to_hid_nodes( double mu, double sig, RNN_Node_Interface *new_node, uniform_int_distribution<int32_t> dist, int32_t &edge_innovation_count, bool from_input ) {
+bool RNN_Genome::connect_node_to_hid_nodes( double mu, double sig, RNN_Node_Interface *new_node, Recurrent_Depth* edge_rec_depth, int32_t &edge_innovation_count, bool from_input ) {
 
     vector<RNN_Node_Interface*> candidate_nodes;
 
@@ -2350,7 +2367,7 @@ bool RNN_Genome::connect_node_to_hid_nodes( double mu, double sig, RNN_Node_Inte
 
     for (auto node: candidate_nodes) {
         if (rng_0_1(generator) < recurrent_probability) {
-            int32_t recurrent_depth = dist(generator);
+            int32_t recurrent_depth = edge_rec_depth->get_recurrent_depth();
             RNN_Recurrent_Edge *e;
             if (from_input) {
                 e = new RNN_Recurrent_Edge(++edge_innovation_count, recurrent_depth, new_node, node);
@@ -2396,7 +2413,7 @@ bool RNN_Genome::connect_node_to_hid_nodes( double mu, double sig, RNN_Node_Inte
 
 /*   ################# ################# ################# */
 
-bool RNN_Genome::add_node(double mu, double sigma, int node_type, uniform_int_distribution<int32_t> dist, int32_t &edge_innovation_count, int32_t &node_innovation_count) {
+bool RNN_Genome::add_node(double mu, double sigma, int node_type, Recurrent_Depth* edge_rec_depth, Recurrent_Depth* node_rec_depth, int32_t &edge_innovation_count, int32_t &node_innovation_count) {
     Log::info("\tattempting to add a node!\n");
     double split_depth = rng_0_1(generator);
 
@@ -2463,8 +2480,8 @@ bool RNN_Genome::add_node(double mu, double sigma, int node_type, uniform_int_di
         int32_t position = rng_0_1(generator) * possible_outputs.size();
         possible_outputs.erase(possible_outputs.begin() + position);
     }
-
-    RNN_Node_Interface *new_node = create_node(mu, sigma, node_type, node_innovation_count, split_depth);
+    
+    RNN_Node_Interface *new_node = create_node(mu, sigma, node_type, node_innovation_count, split_depth,  node_rec_depth);
     nodes.insert( upper_bound(nodes.begin(), nodes.end(), new_node, sort_RNN_Nodes_by_depth()), new_node);
 
     for (int32_t i = 0; i < possible_inputs.size(); i++) {
@@ -2472,7 +2489,7 @@ bool RNN_Genome::add_node(double mu, double sigma, int node_type, uniform_int_di
         //recurrent_probability = 0;
 
         if (rng_0_1(generator) < recurrent_probability) {
-            attempt_recurrent_edge_insert(possible_inputs[i], new_node, mu, sigma, dist, edge_innovation_count);
+            attempt_recurrent_edge_insert(possible_inputs[i], new_node, mu, sigma, edge_rec_depth, edge_innovation_count);
         } else {
             attempt_edge_insert(possible_inputs[i], new_node, mu, sigma, edge_innovation_count);
         }
@@ -2483,13 +2500,13 @@ bool RNN_Genome::add_node(double mu, double sigma, int node_type, uniform_int_di
         //recurrent_probability = 0;
 
         if (rng_0_1(generator) < recurrent_probability) {
-            attempt_recurrent_edge_insert(new_node, possible_outputs[i], mu, sigma, dist, edge_innovation_count);
+            attempt_recurrent_edge_insert(new_node, possible_outputs[i], mu, sigma, edge_rec_depth, edge_innovation_count);
         } else {
             attempt_edge_insert(new_node, possible_outputs[i], mu, sigma, edge_innovation_count);
         }
     }
 
-    if (node_type == JORDAN_NODE || node_type == ELMAN_NODE) generate_recurrent_edges(new_node, mu, sigma, dist, edge_innovation_count);
+    if (node_type == JORDAN_NODE || node_type == ELMAN_NODE) generate_recurrent_edges(new_node, mu, sigma, edge_rec_depth, edge_innovation_count);
 
     // node_initialize(new_node);
 
@@ -2528,7 +2545,7 @@ bool RNN_Genome::disable_node() {
     return true;
 }
 
-bool RNN_Genome::split_node(double mu, double sigma, int node_type, uniform_int_distribution<int32_t> dist, int32_t &edge_innovation_count, int32_t &node_innovation_count) {
+bool RNN_Genome::split_node(double mu, double sigma, int node_type, Recurrent_Depth* edge_rec_depth, Recurrent_Depth* node_rec_depth, int32_t &edge_innovation_count, int32_t &node_innovation_count) {
     Log::info("\tattempting to split a node!\n");
     vector<RNN_Node_Interface*> possible_nodes;
     for (int32_t i = 0; i < (int32_t)nodes.size(); i++) {
@@ -2641,8 +2658,8 @@ bool RNN_Genome::split_node(double mu, double sigma, int node_type, uniform_int_
     double new_depth_1 = (n1_avg_input + n1_avg_output) / 2.0;
     double new_depth_2 = (n2_avg_input + n2_avg_output) / 2.0;
 
-    RNN_Node_Interface *new_node_1 = create_node(mu, sigma, node_type, node_innovation_count, new_depth_1);
-    RNN_Node_Interface *new_node_2 = create_node(mu, sigma, node_type, node_innovation_count, new_depth_2);
+    RNN_Node_Interface *new_node_1 = create_node(mu, sigma, node_type, node_innovation_count, new_depth_1, node_rec_depth);
+    RNN_Node_Interface *new_node_2 = create_node(mu, sigma, node_type, node_innovation_count, new_depth_2, node_rec_depth);
 
     //create the new edges
     for (int32_t i = 0; i < (int32_t)input_edges_1.size(); i++) {
@@ -2665,9 +2682,9 @@ bool RNN_Genome::split_node(double mu, double sigma, int node_type, uniform_int_
 
     for (int32_t i = 0; i < (int32_t)recurrent_edges_1.size(); i++) {
         if (recurrent_edges_1[i]->input_innovation_number == selected_node->innovation_number) {
-            attempt_recurrent_edge_insert(new_node_1, recurrent_edges_1[i]->output_node, mu, sigma, dist, edge_innovation_count);
+            attempt_recurrent_edge_insert(new_node_1, recurrent_edges_1[i]->output_node, mu, sigma, edge_rec_depth, edge_innovation_count);
         } else if (recurrent_edges_1[i]->output_innovation_number == selected_node->innovation_number) {
-            attempt_recurrent_edge_insert(recurrent_edges_1[i]->input_node, new_node_1, mu, sigma, dist, edge_innovation_count);
+            attempt_recurrent_edge_insert(recurrent_edges_1[i]->input_node, new_node_1, mu, sigma, edge_rec_depth, edge_innovation_count);
         } else {
             Log::fatal("\trecurrent edge list for split had an edge which was not connected to the selected node! This should never happen.\n");
             exit(1);
@@ -2678,9 +2695,9 @@ bool RNN_Genome::split_node(double mu, double sigma, int node_type, uniform_int_
 
     for (int32_t i = 0; i < (int32_t)recurrent_edges_2.size(); i++) {
         if (recurrent_edges_2[i]->input_innovation_number == selected_node->innovation_number) {
-            attempt_recurrent_edge_insert(new_node_2, recurrent_edges_2[i]->output_node, mu, sigma, dist, edge_innovation_count);
+            attempt_recurrent_edge_insert(new_node_2, recurrent_edges_2[i]->output_node, mu, sigma, edge_rec_depth, edge_innovation_count);
         } else if (recurrent_edges_2[i]->output_innovation_number == selected_node->innovation_number) {
-            attempt_recurrent_edge_insert(recurrent_edges_2[i]->input_node, new_node_2, mu, sigma, dist, edge_innovation_count);
+            attempt_recurrent_edge_insert(recurrent_edges_2[i]->input_node, new_node_2, mu, sigma, edge_rec_depth, edge_innovation_count);
         } else {
             Log::fatal("\trecurrent edge list for split had an edge which was not connected to the selected node! This should never happen.\n");
             exit(1);
@@ -2703,9 +2720,9 @@ bool RNN_Genome::split_node(double mu, double sigma, int node_type, uniform_int_
 
     selected_node->enabled = false;
 
-    if (node_type == JORDAN_NODE || node_type == ELMAN_NODE) generate_recurrent_edges(new_node_1, mu, sigma, dist, edge_innovation_count);
+    if (node_type == JORDAN_NODE || node_type == ELMAN_NODE) generate_recurrent_edges(new_node_1, mu, sigma, edge_rec_depth, edge_innovation_count);
 
-    if (node_type == JORDAN_NODE || node_type == ELMAN_NODE) generate_recurrent_edges(new_node_2, mu, sigma, dist, edge_innovation_count);
+    if (node_type == JORDAN_NODE || node_type == ELMAN_NODE) generate_recurrent_edges(new_node_2, mu, sigma, edge_rec_depth, edge_innovation_count);
 
     // node_initialize(new_node_1);
     // node_initialize(new_node_2);
@@ -2713,7 +2730,7 @@ bool RNN_Genome::split_node(double mu, double sigma, int node_type, uniform_int_
     return true;
 }
 
-bool RNN_Genome::merge_node(double mu, double sigma, int node_type, uniform_int_distribution<int32_t> dist, int32_t &edge_innovation_count, int32_t &node_innovation_count) {
+bool RNN_Genome::merge_node(double mu, double sigma, int node_type, Recurrent_Depth* edge_rec_depth, Recurrent_Depth* node_rec_depth, int32_t &edge_innovation_count, int32_t &node_innovation_count) {
     Log::info("\tattempting to merge a node!\n");
     vector<RNN_Node_Interface*> possible_nodes;
     for (int32_t i = 0; i < (int32_t)nodes.size(); i++) {
@@ -2734,7 +2751,7 @@ bool RNN_Genome::merge_node(double mu, double sigma, int node_type, uniform_int_
 
     double new_depth = (n1->depth + n2->depth) / 2.0;
 
-    RNN_Node_Interface *new_node = create_node(mu, sigma, node_type, node_innovation_count, new_depth);
+    RNN_Node_Interface *new_node = create_node(mu, sigma, node_type, node_innovation_count, new_depth, node_rec_depth);
     nodes.insert( upper_bound(nodes.begin(), nodes.end(), new_node, sort_RNN_Nodes_by_depth()), new_node);
 
     vector<RNN_Edge*> merged_edges;
@@ -2834,10 +2851,10 @@ bool RNN_Genome::merge_node(double mu, double sigma, int node_type, uniform_int_
             output_node = e->output_node;
         }
 
-        attempt_recurrent_edge_insert(input_node, output_node, mu, sigma, dist, edge_innovation_count);
+        attempt_recurrent_edge_insert(input_node, output_node, mu, sigma, edge_rec_depth, edge_innovation_count);
     }
 
-    if (node_type == JORDAN_NODE || node_type == ELMAN_NODE) generate_recurrent_edges(new_node, mu, sigma, dist, edge_innovation_count);
+    if (node_type == JORDAN_NODE || node_type == ELMAN_NODE) generate_recurrent_edges(new_node, mu, sigma, edge_rec_depth, edge_innovation_count);
 
     // node_initialize(new_node);
 
@@ -3230,31 +3247,54 @@ void RNN_Genome::read_from_stream(istream &bin_istream) {
         int32_t innovation_number;
         int32_t layer_type;
         int32_t node_type;
+        int32_t node_recurrent_depth;
         double depth;
         bool enabled;
 
         bin_istream.read((char*)&innovation_number, sizeof(int32_t));
         bin_istream.read((char*)&layer_type, sizeof(int32_t));
         bin_istream.read((char*)&node_type, sizeof(int32_t));
+        bin_istream.read((char*)&node_recurrent_depth, sizeof(int32_t));
         bin_istream.read((char*)&depth, sizeof(double));
         bin_istream.read((char*)&enabled, sizeof(bool));
 
         string parameter_name;
         read_binary_string(bin_istream, parameter_name, "parameter_name");
 
+        Recurrent_Depth *node_rec_depth = NULL;
+
+        if (node_type != SIMPLE_NODE && node_type != ELMAN_NODE && node_type != JORDAN_NODE) {
+            int32_t min_recurrent_depth;
+            int32_t max_recurrent_depth;
+            int32_t recurrent_depth_type;
+            bool various_recurrent_depth;
+
+            bin_istream.read((char*)&min_recurrent_depth, sizeof(int32_t));
+            bin_istream.read((char*)&max_recurrent_depth, sizeof(int32_t));
+            bin_istream.read((char*)&recurrent_depth_type, sizeof(int32_t));
+            bin_istream.read((char*)&various_recurrent_depth, sizeof(bool));
+
+            node_rec_depth = new Recurrent_Depth(recurrent_depth_type, min_recurrent_depth, max_recurrent_depth, various_recurrent_depth);
+
+            if (node_rec_depth == NULL) {
+                Log::fatal("Node %d recurrent depth is still null, this should never happen! \n", innovation_number);
+                exit(1);
+            }
+        }
+
         Log::debug("NODE: %d %d %d %lf %d '%s'\n", innovation_number, layer_type, node_type, depth, enabled, parameter_name.c_str());
 
         RNN_Node_Interface *node;
         if (node_type == LSTM_NODE) {
-            node = new LSTM_Node(innovation_number, layer_type, depth);
+            node = new LSTM_Node(innovation_number, layer_type, depth, node_recurrent_depth, node_rec_depth);
         } else if (node_type == DELTA_NODE) {
-            node = new Delta_Node(innovation_number, layer_type, depth);
+            node = new Delta_Node(innovation_number, layer_type, depth, node_recurrent_depth, node_rec_depth);
         } else if (node_type == GRU_NODE) {
-            node = new GRU_Node(innovation_number, layer_type, depth);
+            node = new GRU_Node(innovation_number, layer_type, depth, node_recurrent_depth, node_rec_depth);
         } else if (node_type == MGU_NODE) {
-            node = new MGU_Node(innovation_number, layer_type, depth);
+            node = new MGU_Node(innovation_number, layer_type, depth, node_recurrent_depth, node_rec_depth);
         } else if (node_type == UGRNN_NODE) {
-            node = new UGRNN_Node(innovation_number, layer_type, depth);
+            node = new UGRNN_Node(innovation_number, layer_type, depth, node_recurrent_depth, node_rec_depth);
         } else if (node_type == SIMPLE_NODE || node_type == JORDAN_NODE || node_type == ELMAN_NODE) {
             if (layer_type == HIDDEN_LAYER) {
                 node = new RNN_Node(innovation_number, layer_type, depth, node_type);
@@ -3455,7 +3495,7 @@ void RNN_Genome::write_to_stream(ostream &bin_ostream) {
     Log::debug("writing %d nodes.\n", n_nodes);
 
     for (uint32_t i = 0; i < nodes.size(); i++) {
-        Log::debug("NODE: %d %d %d %lf '%s'\n", nodes[i]->innovation_number, nodes[i]->layer_type, nodes[i]->node_type, nodes[i]->depth, nodes[i]->parameter_name.c_str());
+        Log::debug("NODE: %d %d %d %d %lf '%s'\n", nodes[i]->innovation_number, nodes[i]->layer_type, nodes[i]->node_type, nodes[i]->node_recurrent_depth, nodes[i]->depth, nodes[i]->parameter_name.c_str());
         nodes[i]->write_to_stream(bin_ostream);
     }
 
@@ -3589,6 +3629,8 @@ void RNN_Genome::transfer_to(const vector<string> &new_input_parameter_names, co
 
     vector<RNN_Node_Interface*> input_nodes;
     vector<RNN_Node_Interface*> output_nodes;
+
+    Recurrent_Depth *edge_rec_depth = new Recurrent_Depth(EDGE_RECURRENT_DEPTH, min_recurrent_depth, max_recurrent_depth, false);
 
     //work backwards so we don't skip removing anything
     for (int i = nodes.size() - 1; i >= 0; i--) {
@@ -3833,13 +3875,13 @@ void RNN_Genome::transfer_to(const vector<string> &new_input_parameter_names, co
 
         for (auto node : new_input_nodes) {
             Log::debug("BEFORE -- CHECK EDGE INNOVATION COUNT: %d\n", edge_innovation_count);
-            connect_new_input_node(mu, sigma, node, rec_depth_dist, edge_innovation_count);
+            connect_new_input_node(mu, sigma, node, edge_rec_depth, edge_innovation_count);
             Log::debug("AFTER -- CHECK EDGE INNOVATION COUNT: %d\n", edge_innovation_count);
         }
 
         for (auto node : new_output_nodes) {
             Log::debug("BEFORE -- CHECK EDGE INNOVATION COUNT: %d\n", edge_innovation_count);
-            connect_new_output_node(mu, sigma, node, rec_depth_dist, edge_innovation_count);
+            connect_new_output_node(mu, sigma, node, edge_rec_depth, edge_innovation_count);
             Log::debug("AFTER -- CHECK EDGE INNOVATION COUNT: %d\n", edge_innovation_count);
         }
     }
@@ -3864,14 +3906,14 @@ void RNN_Genome::transfer_to(const vector<string> &new_input_parameter_names, co
             if (node->get_total_outputs() == 0) {
                 Log::info("input node[%d] had no outputs, connecting it!\n", node->get_innovation_number());
                 //if an input has no outgoing edges randomly connect it
-                connect_new_input_node(mu, sigma, node, rec_depth_dist, edge_innovation_count);
+                connect_new_input_node(mu, sigma, node, edge_rec_depth, edge_innovation_count);
             }
 
         } else if (node->get_layer_type() == OUTPUT_LAYER) {
             if (node->get_total_inputs() == 0) {
                 Log::info("output node[%d] had no inputs, connecting it!\n", node->get_innovation_number());
                 //if an output has no incoming edges randomly connect it
-                connect_new_output_node(mu, sigma, node, rec_depth_dist, edge_innovation_count);
+                connect_new_output_node(mu, sigma, node, edge_rec_depth, edge_innovation_count);
             }
         }
     }

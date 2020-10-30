@@ -26,8 +26,10 @@ using std::vector;
 
 #define NUMBER_MGU_WEIGHTS 6
 
-MGU_Node::MGU_Node(int _innovation_number, int _layer_type, double _depth) : RNN_Node_Interface(_innovation_number, _layer_type, _depth) {
+MGU_Node::MGU_Node(int _innovation_number, int _layer_type, double _depth, int _node_recurrent_depth, Recurrent_Depth* _rec_depth) : RNN_Node_Interface(_innovation_number, _layer_type, _depth) {
     node_type = MGU_NODE;
+    rec_depth = _rec_depth;
+    node_recurrent_depth = _node_recurrent_depth;
 }
 
 MGU_Node::~MGU_Node() {
@@ -121,9 +123,7 @@ void MGU_Node::input_fired(int time, double incoming_output) {
 
     double x = input_values[time];
 
-    double h_prev = 0.0;
-    if (time > 0) h_prev = output_values[time - 1];
-
+    double h_prev = get_previous_value_forward(time);
     double hfu = h_prev * fu;
     double xfw = x * fw;
     double f_sum = f_bias + hfu + xfw;
@@ -151,12 +151,9 @@ void MGU_Node::try_update_deltas(int time) {
 
     double x = input_values[time];
 
-    double h_prev = 0.0;
-    if (time > 0) h_prev = output_values[time - 1];
-
+    double h_prev = get_previous_value_forward(time);
     //backprop output gate
-    double d_out = error;
-    if (time < (series_length - 1)) d_out += d_h_prev[time + 1];
+    double d_out = get_previous_value_backword(time, error);
 
 
     d_h_prev[time] = d_out * (1-f[time]);
@@ -293,7 +290,7 @@ void MGU_Node::reset(int _series_length) {
 }
 
 RNN_Node_Interface* MGU_Node::copy() const {
-    MGU_Node* n = new MGU_Node(innovation_number, layer_type, depth);
+    MGU_Node* n = new MGU_Node(innovation_number, layer_type, depth, node_recurrent_depth, rec_depth);
 
     //copy MGU_Node values
     n->fw = fw;
@@ -337,4 +334,34 @@ RNN_Node_Interface* MGU_Node::copy() const {
 
 void MGU_Node::write_to_stream(ostream &out) {
     RNN_Node_Interface::write_to_stream(out);
+}
+
+double MGU_Node::get_previous_value_forward(int32_t time) {
+    double prev = 0.0;
+    if (!rec_depth->is_various_recurrent_depth()) {
+        if (time - node_recurrent_depth >= 0) {
+            prev = output_values[time - node_recurrent_depth];
+        }
+    } else {
+        for (int i = 1; i <= node_recurrent_depth; i++) {
+            if (time - i >= 0) {
+                prev += output_values[time - i];
+            }
+        }
+    }
+    return prev;
+}
+
+double MGU_Node::get_previous_value_backword(int32_t time, double error) {
+    double previous = error;
+    if (!rec_depth->is_various_recurrent_depth()) {
+        if (time < (series_length - node_recurrent_depth)) previous += d_h_prev[time + node_recurrent_depth];
+    } else {
+        for (int i = 1; i <= node_recurrent_depth; i++) {
+            if (time < (series_length - i)) {
+                previous += d_h_prev[time + i];
+            }
+        }
+    }
+    return previous;
 }

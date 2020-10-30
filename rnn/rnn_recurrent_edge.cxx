@@ -138,7 +138,7 @@ void RNN_Recurrent_Edge::propagate_forward(int32_t time) {
     double output = input_node->output_values[time] * weight;
     if (time < series_length - recurrent_depth) {
         //Log::trace("propagating forward on recurrent edge %d from time %d to time %d from node %d to node %d\n", innovation_number, time, time + recurrent_depth, input_innovation_number, output_innovation_number);
-
+        
         outputs[time + recurrent_depth] = output;
         output_node->input_fired(time + recurrent_depth, output);
     }

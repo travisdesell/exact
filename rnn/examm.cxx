@@ -94,6 +94,9 @@ EXAMM::EXAMM(
         double _dropout_probability,
         int32_t _min_recurrent_depth,
         int32_t _max_recurrent_depth,
+        int32_t _min_node_recurrent_depth,
+        int32_t _max_node_recurrent_depth,
+        bool _various_node_recurrent_depth,
         string _output_directory,
         RNN_Genome *seed_genome,
         bool _start_filled) :
@@ -151,9 +154,9 @@ EXAMM::EXAMM(
     rng_crossover_weight = uniform_real_distribution<double>(-0.5, 1.5);
     //rng_crossover_weight = uniform_real_distribution<double>(0.45, 0.55);
 
-    min_recurrent_depth = _min_recurrent_depth;
-    max_recurrent_depth = _max_recurrent_depth;
-
+    node_rec_depth = new Recurrent_Depth(NODE_RECURRENT_DEPTH, _min_node_recurrent_depth, _max_node_recurrent_depth, _various_node_recurrent_depth);
+    edge_rec_depth = new Recurrent_Depth(EDGE_RECURRENT_DEPTH, _min_recurrent_depth, _max_recurrent_depth, false);
+    
     epigenetic_weights = true;
 
     more_fit_crossover_rate = 1.00;
@@ -623,8 +626,7 @@ void EXAMM::mutate(int32_t max_mutations, RNN_Genome *g) {
         rng -= add_edge_rate;
 
         if (rng < add_recurrent_edge_rate) {
-            uniform_int_distribution<int32_t> dist = get_recurrent_depth_dist();
-            modified = g->add_recurrent_edge(mu, sigma, dist, edge_innovation_count);
+            modified = g->add_recurrent_edge(mu, sigma, edge_rec_depth, edge_innovation_count);
             Log::debug("\tadding recurrent edge, modified: %d\n", modified);
             if (modified) g->set_generated_by("add_recurrent_edge");
             continue;
@@ -648,8 +650,7 @@ void EXAMM::mutate(int32_t max_mutations, RNN_Genome *g) {
         rng -= disable_edge_rate;
 
         if (rng < split_edge_rate) {
-            uniform_int_distribution<int32_t> dist = get_recurrent_depth_dist();
-            modified = g->split_edge(mu, sigma, new_node_type, dist, edge_innovation_count, node_innovation_count);
+            modified = g->split_edge(mu, sigma, new_node_type, edge_rec_depth, node_rec_depth, edge_innovation_count, node_innovation_count);
             Log::debug("\tsplitting edge, modified: %d\n", modified);
             if (modified) g->set_generated_by("split_edge(" + node_type_str + ")");
             continue;
@@ -657,8 +658,7 @@ void EXAMM::mutate(int32_t max_mutations, RNN_Genome *g) {
         rng -= split_edge_rate;
 
         if (rng < add_node_rate) {
-            uniform_int_distribution<int32_t> dist = get_recurrent_depth_dist();
-            modified = g->add_node(mu, sigma, new_node_type, dist, edge_innovation_count, node_innovation_count);
+            modified = g->add_node(mu, sigma, new_node_type, edge_rec_depth, node_rec_depth, edge_innovation_count, node_innovation_count);
             Log::debug("\tadding node, modified: %d\n", modified);
             if (modified) g->set_generated_by("add_node(" + node_type_str + ")");
             continue;
@@ -682,8 +682,7 @@ void EXAMM::mutate(int32_t max_mutations, RNN_Genome *g) {
         rng -= disable_node_rate;
 
         if (rng < split_node_rate) {
-            uniform_int_distribution<int32_t> dist = get_recurrent_depth_dist();
-            modified = g->split_node(mu, sigma, new_node_type, dist, edge_innovation_count, node_innovation_count);
+            modified = g->split_node(mu, sigma, new_node_type, edge_rec_depth, node_rec_depth, edge_innovation_count, node_innovation_count);
             Log::debug("\tsplitting node, modified: %d\n", modified);
             if (modified) g->set_generated_by("split_node(" + node_type_str + ")");
             continue;
@@ -691,8 +690,7 @@ void EXAMM::mutate(int32_t max_mutations, RNN_Genome *g) {
         rng -= split_node_rate;
 
         if (rng < merge_node_rate) {
-            uniform_int_distribution<int32_t> dist = get_recurrent_depth_dist();
-            modified = g->merge_node(mu, sigma, new_node_type, dist, edge_innovation_count, node_innovation_count);
+            modified = g->merge_node(mu, sigma, new_node_type, edge_rec_depth, node_rec_depth, edge_innovation_count, node_innovation_count);
             Log::debug("\tmerging node, modified: %d\n", modified);
             if (modified) g->set_generated_by("merge_node(" + node_type_str + ")");
             continue;
@@ -1106,10 +1104,6 @@ RNN_Genome* EXAMM::crossover(RNN_Genome *p1, RNN_Genome *p2) {
     return child;
 }
 
-
-uniform_int_distribution<int32_t> EXAMM::get_recurrent_depth_dist() {
-    return uniform_int_distribution<int32_t>(this->min_recurrent_depth, this->max_recurrent_depth);
-}
 
 void EXAMM::check_weight_initialize_validity() {
     if (weight_initialize < 0) {

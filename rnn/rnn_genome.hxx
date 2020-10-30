@@ -88,8 +88,6 @@ class RNN_Genome {
         map<string,double> normalize_avgs;
         map<string,double> normalize_std_devs;
 
-        // vector<int32_t> innovation_list;
-
     public:
         void sort_nodes_by_depth();
         void sort_edges_by_depth();
@@ -213,30 +211,31 @@ class RNN_Genome {
         void assign_reachability();
         bool outputs_unreachable();
 
-        RNN_Node_Interface* create_node(double mu, double sigma, int node_type, int32_t &node_innovation_count, double depth);
+        RNN_Node_Interface* create_node(double mu, double sigma, int node_type, int32_t &node_innovation_count, double depth, Recurrent_Depth *node_rec_depth);
 
         bool attempt_edge_insert(RNN_Node_Interface *n1, RNN_Node_Interface *n2, double mu, double sigma, int32_t &edge_innovation_count);
-        bool attempt_recurrent_edge_insert(RNN_Node_Interface *n1, RNN_Node_Interface *n2, double mu, double sigma, uniform_int_distribution<int32_t> dist, int32_t &edge_innovation_count);
+        bool attempt_recurrent_edge_insert(RNN_Node_Interface *n1, RNN_Node_Interface *n2, double mu, double sigma, Recurrent_Depth* edge_rec_depth, int32_t &edge_innovation_count);
 
         //after adding an Elman or Jordan node, generate the circular RNN edge for Elman and the
         //edges from output to this node for Jordan.
-        void generate_recurrent_edges(RNN_Node_Interface *node, double mu, double sigma, uniform_int_distribution<int32_t> dist, int32_t &edge_innovation_count);
+        void generate_recurrent_edges(RNN_Node_Interface *node, double mu, double sigma, Recurrent_Depth* edge_rec_depth, int32_t &edge_innovation_count);
 
         bool add_edge(double mu, double sigma, int32_t &edge_innovation_count);
-        bool add_recurrent_edge(double mu, double sigma, uniform_int_distribution<int32_t> rec_depth_dist, int32_t &edge_innovation_count);
+        bool add_recurrent_edge(double mu, double sigma, Recurrent_Depth* edge_rec_depth, int32_t &edge_innovation_count);
         bool disable_edge();
         bool enable_edge();
-        bool split_edge(double mu, double sigma, int node_type, uniform_int_distribution<int32_t> rec_depth_dist, int32_t &edge_innovation_count, int32_t &node_innovation_count);
+        bool split_edge(double mu, double sigma, int node_type, Recurrent_Depth* edge_rec_depth, Recurrent_Depth* node_rec_depth, int32_t &edge_innovation_count, int32_t &node_innovation_count);
 
 
-        bool add_node(double mu, double sigma, int node_type, uniform_int_distribution<int32_t> dist, int32_t &edge_innovation_count, int32_t &node_innovation_count);
+        bool add_node(double mu, double sigma, int node_type, Recurrent_Depth* edge_rec_depth, Recurrent_Depth* node_rec_depth, int32_t &edge_innovation_count, int32_t &node_innovation_count);
 
         bool enable_node();
         bool disable_node();
-        bool split_node(double mu, double sigma, int node_type, uniform_int_distribution<int32_t> dist, int32_t &edge_innovation_count, int32_t &node_innovation_count);
+        bool split_node(double mu, double sigma, int node_type, Recurrent_Depth* edge_rec_depth, Recurrent_Depth* node_rec_depth, int32_t &edge_innovation_count, int32_t &node_innovation_count);
 
-        bool merge_node(double mu, double sigma, int node_type, uniform_int_distribution<int32_t> dist, int32_t &edge_innovation_count, int32_t &node_innovation_count);
+        bool merge_node(double mu, double sigma, int node_type, Recurrent_Depth* edge_rec_depth, Recurrent_Depth* node_rec_depth, int32_t &edge_innovation_count, int32_t &node_innovation_count);
 
+        void get_node_edge_count();
 
         /**
          * Determines if the genome contains a node with the given innovation number
@@ -264,9 +263,9 @@ class RNN_Genome {
         void write_to_file(string bin_filename);
         void write_to_stream(ostream &bin_stream);
 
-        bool connect_new_input_node( double mu, double sig, RNN_Node_Interface *new_node, uniform_int_distribution<int32_t> dist, int32_t &edge_innovation_count );
-        bool connect_new_output_node( double mu, double sig, RNN_Node_Interface *new_node, uniform_int_distribution<int32_t> dist, int32_t &edge_innovation_count );
-        bool connect_node_to_hid_nodes( double mu, double sig, RNN_Node_Interface *new_node, uniform_int_distribution<int32_t> dist, int32_t &edge_innovation_count, bool from_input );
+        bool connect_new_input_node( double mu, double sig, RNN_Node_Interface *new_node, Recurrent_Depth* edge_rec_depth, int32_t &edge_innovation_count );
+        bool connect_new_output_node( double mu, double sig, RNN_Node_Interface *new_node, Recurrent_Depth* edge_rec_depth, int32_t &edge_innovation_count );
+        bool connect_node_to_hid_nodes( double mu, double sig, RNN_Node_Interface *new_node, Recurrent_Depth* edge_rec_depth, int32_t &edge_innovation_count, bool from_input );
         
         void update_innovation_counts(int32_t &node_innovation_count, int32_t &edge_innovation_count);
 

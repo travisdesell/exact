@@ -26,8 +26,10 @@ using std::vector;
 
 #define NUMBER_UGRNN_WEIGHTS 6
 
-UGRNN_Node::UGRNN_Node(int _innovation_number, int _type, double _depth) : RNN_Node_Interface(_innovation_number, _type, _depth) {
+UGRNN_Node::UGRNN_Node(int _innovation_number, int _type, double _depth, int _node_recurrent_depth, Recurrent_Depth* _rec_depth) : RNN_Node_Interface(_innovation_number, _type, _depth) {
     node_type = UGRNN_NODE;
+    rec_depth = _rec_depth;
+    node_recurrent_depth = _node_recurrent_depth;
 }
 
 UGRNN_Node::~UGRNN_Node() {
@@ -120,8 +122,7 @@ void UGRNN_Node::input_fired(int time, double incoming_output) {
 
     double x = input_values[time];
 
-    double h_prev = 0.0;
-    if (time > 0) h_prev = output_values[time - 1];
+    double h_prev = get_previous_value_forward(time);
 
     double xcw = x * cw;
     double hch = h_prev * ch;
@@ -156,12 +157,10 @@ void UGRNN_Node::try_update_deltas(int time) {
     double error = error_values[time];
     double x = input_values[time];
 
-    double h_prev = 0.0;
-    if (time > 0) h_prev = output_values[time - 1];
+    double h_prev = get_previous_value_forward(time);
 
     //backprop output gate
-    double d_h = error;
-    if (time < (series_length - 1)) d_h += d_h_prev[time + 1];
+    double d_h = get_previous_value_backword(time, error);
     //get the error into the output (z), it's the error from ahead in the network
     //as well as from the previous output of the cell
 
@@ -300,7 +299,7 @@ void UGRNN_Node::reset(int _series_length) {
 }
 
 RNN_Node_Interface* UGRNN_Node::copy() const {
-    UGRNN_Node* n = new UGRNN_Node(innovation_number, layer_type, depth);
+    UGRNN_Node* n = new UGRNN_Node(innovation_number, layer_type, depth, node_recurrent_depth, rec_depth);
 
     //copy UGRNN_Node values
     n->cw = cw;
@@ -344,5 +343,35 @@ RNN_Node_Interface* UGRNN_Node::copy() const {
 
 void UGRNN_Node::write_to_stream(ostream &out) {
     RNN_Node_Interface::write_to_stream(out);
+}
+
+double UGRNN_Node::get_previous_value_forward(int32_t time) {
+    double prev = 0.0;
+    if (!rec_depth->is_various_recurrent_depth()) {
+        if (time - node_recurrent_depth >= 0) {
+            prev = output_values[time - node_recurrent_depth];
+        }
+    } else {
+        for (int i = 1; i <= node_recurrent_depth; i++) {
+            if (time - i >= 0) {
+                prev += output_values[time - i];
+            }
+        }
+    }
+    return prev;
+}
+
+double UGRNN_Node::get_previous_value_backword(int32_t time, double error) {
+    double previous = error;
+    if (!rec_depth->is_various_recurrent_depth()) {
+        if (time < (series_length - node_recurrent_depth)) previous += d_h_prev[time + node_recurrent_depth];
+    } else {
+        for (int i = 1; i <= node_recurrent_depth; i++) {
+            if (time < (series_length - i)) {
+                previous += d_h_prev[time + i];
+            }
+        }
+    }
+    return previous;
 }
 

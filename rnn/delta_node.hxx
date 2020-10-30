@@ -14,6 +14,7 @@ using std::vector;
 #include "common/random.hxx"
 
 #include "rnn_node_interface.hxx"
+#include "recurrent_depth.hxx"
 
 class Delta_Node : public RNN_Node_Interface {
     private:
@@ -41,7 +42,7 @@ class Delta_Node : public RNN_Node_Interface {
 
     public:
 
-        Delta_Node(int _innovation_number, int _type, double _depth);
+        Delta_Node(int _innovation_number, int _type, double _depth, int _node_recurrent_depth, Recurrent_Depth *_rec_depth);
         ~Delta_Node();
 
         void initialize_randomly(minstd_rand0 &generator, NormalDistribution &normal_distribution, double mu, double sigma);
@@ -67,6 +68,8 @@ class Delta_Node : public RNN_Node_Interface {
         void set_weights(uint32_t &offset, const vector<double> &parameters);
 
         void get_gradients(vector<double> &gradients);
+        double get_previous_value_forward(int32_t time);
+        double get_previous_value_backword(int32_t time, double error);
 
         void reset(int _series_length);
 

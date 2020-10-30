@@ -4,6 +4,7 @@
 class RNN;
 
 #include "rnn_node_interface.hxx"
+#include "recurrent_depth.hxx"
 
 class RNN_Recurrent_Edge {
     private:
