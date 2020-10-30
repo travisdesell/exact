@@ -2025,6 +2025,10 @@ bool RNN_Genome::add_edge(double mu, double sigma, int32_t &edge_innovation_coun
 
 bool RNN_Genome::add_recurrent_edge(double mu, double sigma, Recurrent_Depth* edge_rec_depth, int32_t &edge_innovation_count) {
     Log::info("\tattempting to add recurrent edge!\n");
+    if (!edge_rec_depth->has_recurrent_depth()) {
+        Log::info("No recurrent edge would be created because min and max edge recurrent depth are set to 0\n");
+        return false;
+    }
 
     vector<RNN_Node_Interface*> possible_input_nodes;
     vector<RNN_Node_Interface*> possible_output_nodes;

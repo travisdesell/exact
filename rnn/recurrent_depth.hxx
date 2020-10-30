@@ -37,7 +37,7 @@ class Recurrent_Depth {
         int32_t get_edge_recurrent_depth();
         int32_t get_recurrent_depth_type();
         bool is_various_recurrent_depth();
-
+        bool has_recurrent_depth();
         Recurrent_Depth* copy();
         void write_to_stream(ostream &out);
 

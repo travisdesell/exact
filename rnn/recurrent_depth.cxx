@@ -76,6 +76,12 @@ bool Recurrent_Depth::is_various_recurrent_depth() {
     return various_recurrent_depth;
 }
 
+bool Recurrent_Depth::has_recurrent_depth() {
+    if (min_recurrent_depth <= 0 && max_recurrent_depth <=0) {
+        return false;
+    } else return true;
+}
+
 void Recurrent_Depth::write_to_stream(ostream &out_stream) {
     out_stream.write((char*)&min_recurrent_depth, sizeof(int32_t));
     out_stream.write((char*)&max_recurrent_depth, sizeof(int32_t));
