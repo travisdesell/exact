@@ -207,6 +207,7 @@ class RNN_Node_Interface {
 
         friend void get_mse(RNN* genome, const vector< vector<double> > &expected, double &mse, vector< vector<double> > &deltas);
         friend void get_mae(RNN* genome, const vector< vector<double> > &expected, double &mae, vector< vector<double> > &deltas);
+        friend void get_se(RNN *genome, const vector<vector<double>> &expected, double &mae, vector<vector<double>> &deltas);
 };
 
 

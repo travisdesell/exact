@@ -7,6 +7,7 @@ using std::ifstream;
 #include <random>
 using std::minstd_rand0;
 using std::uniform_real_distribution;
+using std::uniform_int_distribution;
 
 #include <string>
 using std::string;
@@ -49,6 +50,13 @@ void generate_random_vector(int number_parameters, vector<double> &v) {
 	}
 }
 
+void generate_random_oneHot_vector(int number_parameters, vector<double> &v) {
+	uniform_int_distribution<int> dist(0,number_parameters);
+	v.resize(number_parameters,0);
+	int index = dist(generator);
+	v[index] = 1.0;
+}
+
 void gradient_test(string name, RNN_Genome *genome, const vector< vector<double> > &inputs, const vector< vector<double> > &outputs) {
 	double analytic_mse, empirical_mse;
 	vector<double> parameters;
@@ -61,6 +69,7 @@ void gradient_test(string name, RNN_Genome *genome, const vector< vector<double>
 
     Log::debug("got genome \n");
 
+    rnn->enable_use_regression(true);
 
 	for (int32_t i = 0; i < test_iterations; i++) {
         if (i == 0) Log::debug_no_header("\n");

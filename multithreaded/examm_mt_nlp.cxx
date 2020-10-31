@@ -94,15 +94,44 @@ int main(int argc, char  **argv)
     int32_t word_offset = 1;
     get_argument(arguments,"--word_offset",true,word_offset);
 
-    uint32_t batch_size = 64;
-    get_argument(arguments,"--batch_size",true,batch_size);
+    uint32_t sequence_length = 4;
+    get_argument(arguments,"--sequence_length",false,sequence_length);
 
 	Corpus* corpus_sets = Corpus::generate_from_arguments(arguments);
 
 	corpus_sets->export_training_series(word_offset,training_inputs,training_outputs);
 	corpus_sets->export_test_series(word_offset,validation_inputs,validation_outputs);
 
-	Log::info("exported word series.\n");
+
+    for (size_t i = 0; i < training_inputs.size(); i++)
+    {
+        for (size_t j = 0; j < training_inputs[i].size(); j++)
+        {
+            for (size_t k = 0; k < training_inputs[i][j].size(); k++)
+            {
+                std::cout<<training_inputs[i][j][k]<<std::endl;
+            }
+            std::cout<<std::endl;
+        }
+        std::cout<<std::endl;
+    }
+
+    std::cout<<"********************\n\n\n\n"<<std::endl;
+
+    for (size_t i = 0; i < training_outputs.size(); i++)
+    {
+        for (size_t j = 0; j < training_outputs[i].size(); j++)
+        {
+            for (size_t k = 0; k < training_outputs[i][j].size(); k++)
+            {
+                std::cout << training_outputs[i][j][k] << std::endl;
+            }
+            std::cout << std::endl;
+        }
+        std::cout << std::endl;
+    }
+
+    Log::info("exported word series.\n");
     
 	int number_inputs = corpus_sets->get_number_inputs();
     int number_outputs = corpus_sets->get_number_outputs();

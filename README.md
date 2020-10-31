@@ -35,7 +35,7 @@ The datasets used for this part of the code are PennChar, PennTreeBank and WikiT
  
 
 ```
-/multithreaded/examm_nlp --number_threads 9 --training_filenames ../datasets/pennchar/train.txt --test_filenames ../datasets/pennchar/test.txt --word_offset 1 --number_islands 2 --population_size 2 --max_genomes 20 --bp_iterations 2 --use_regression 0 --output_directory "./test_output" --possible_node_types simple ENARC --normalize min_max --std_message_level info --file_message_level info
+./multithreaded/examm_mt_nlp --number_threads 9 --training_filenames ../datasets/pennchar/train.txt --test_filenames ../datasets/pennchar/test.txt --word_offset 1 --sequence_length 4 --number_islands 2 --population_size 2 --max_genomes 20 --bp_iterations 2 --use_regression 0 --output_directory "./test_output" --possible_node_types simple ENARC --normalize min_max --std_message_level info --file_message_level 
 
 ```
 
@@ -50,7 +50,7 @@ And a parallel version using MPI:
  
 
 ```
-/multithreaded/examm_nlp --number_threads 9 --training_filenames ../datasets/penn/train.txt --test_filenames ../datasets/penn/test.txt --word_offset 1 --number_islands 2 --population_size 2 --max_genomes 20 --bp_iterations 2 --use_regression 0 --output_directory "./test_output" --possible_node_types simple ENARC--normalize min_max --std_message_level info --file_message_level info
+./multithreaded/examm_mt_nlp --number_threads 9 --training_filenames ../datasets/penn/train.txt --test_filenames ../datasets/pennchar/test.txt --word_offset 1 --sequence_length 4 --number_islands 2 --population_size 2 --max_genomes 20 --bp_iterations 2 --use_regression 0 --output_directory "./test_output" --possible_node_types simple ENARC --normalize min_max --std_message_level info --file_message_level info
 
 ```
 

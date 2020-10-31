@@ -116,8 +116,10 @@ class RNN {
 
         //RNN* copy();
 
-        friend void get_mse(RNN* genome, const vector< vector<double> > &expected, double &mse, vector< vector<double> > &deltas);
-        friend void get_mae(RNN* genome, const vector< vector<double> > &expected, double &mae, vector< vector<double> > &deltas);
+        friend void get_mse(RNN* genome, const vector< vector<double> > &expected, double &mse_sum, vector< vector<double> > &deltas);
+        friend void get_mae(RNN* genome, const vector< vector<double> > &expected, double &mae_sum, vector< vector<double> > &deltas);
+        friend void get_se(RNN* genome, const vector< vector<double> > &expected, double &ce_sum, vector< vector<double> > &deltas);
+
 };
 
 #endif

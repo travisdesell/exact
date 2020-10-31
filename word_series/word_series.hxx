@@ -165,9 +165,9 @@ class Corpus {
 	private:
 
         /**
-         *  Specifices the batches in which the dataset is to be divided into chunks.
+         *  Specifices the chunks in which the dataset is to be divided into chunks.
          */
-        uint32_t batch_size;
+        uint32_t sequence_length;
 		string normalize_type;
 
         /**

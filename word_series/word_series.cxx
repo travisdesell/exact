@@ -527,7 +527,7 @@ Corpus* Corpus::generate_from_arguments(const vector<string> &arguments){
 	cs->filenames.clear();
 	cs->word_index.clear();
 	cs->vocab.clear();
-    uint32_t _batch_size;
+    uint32_t _sequence_length;
 
 	if (argument_exists(arguments, "--training_filenames") && argument_exists(arguments, "--test_filenames")) {
         vector<string> training_filenames;
@@ -555,11 +555,9 @@ Corpus* Corpus::generate_from_arguments(const vector<string> &arguments){
         exit(1);
     }
 
+    get_argument(arguments, "--sequence_length", true, _sequence_length);
 
-
-    get_argument(arguments, "--batch_size", true, _batch_size);
-
-    cs->batch_size =_batch_size;
+    cs->sequence_length = _sequence_length;
     cs->all_parameter_names.clear();
     cs->input_parameter_names.clear();
     cs->output_parameter_names.clear();
@@ -853,39 +851,43 @@ void Corpus::normalize_avg_std_dev(const map<string,double> &_normalize_avgs, co
     normalize_type = "avg_std_dev";
 }
 
-vector<vector<vector<double> > > batchify(int batch_size, vector<vector<vector<double> > > data) {
+vector<vector<vector<double> > > split_sequence_length(int sequence_length, vector<vector<vector<double> > > data) {
 
 
-    vector<vector<vector<double> > > batchData;
+    vector<vector<vector<double> > > sequenceData;
         
     int no_features = data[0].size();
-    int no_batches  =  0;
-    int batchNo =  -1;
+    int no_sequences = 0;
+    int sequenceNo =  -1;
 
 
     for (int i = 0; i < data.size(); ++i) {
-        no_batches += (data[i][0].size() -1) / batch_size +1;
+        no_sequences += (data[i][0].size() - 1) / sequence_length + 1;
     }
 
-    if (data[0][0].size() < batch_size) {
+    if (data[0][0].size() < sequence_length)
+    {
 
-        batchData.resize(no_batches, vector<vector<double> >(no_features, vector<double>(data[0][0].size())));
-    }else {
-        batchData.resize(no_batches, vector<vector<double> >(no_features, vector<double>(batch_size)));
+        sequenceData.resize(no_sequences, vector<vector<double>>(no_features, vector<double>(data[0][0].size())));
+    }
+    else
+    {
+        sequenceData.resize(no_sequences, vector<vector<double>>(no_features, vector<double>(sequence_length)));
     }
 
     for (int k = 0; k < data.size(); ++k) {
         for (int j = 0; j < data[k][0].size(); ++j) {
             for (int i = 0; i < data[k].size(); ++i) {
-                if (i == 0 && j%batch_size == 0) batchNo++;
+                if (i == 0 && j % sequence_length == 0)
+                    sequenceNo++;
 
-                batchData[batchNo][i][j%batch_size] = data[k][i][j];
+                sequenceData[sequenceNo][i][j % sequence_length] = data[k][i][j];
             }
         }
     }
 
 
-    return batchData;
+    return sequenceData;
 
 }
 
@@ -909,9 +911,8 @@ void Corpus::export_sent_series(const vector<int> &series_indexes, int word_offs
         sent_series[series_index]->export_word_series(temp_outputs[i], word_offset);
     }
 
-    inputs  = batchify(batch_size,temp_inputs);
-    outputs = batchify(batch_size,temp_outputs);
-
+    inputs = split_sequence_length(sequence_length, temp_inputs);
+    outputs = split_sequence_length(sequence_length, temp_outputs);
 }
 
 /**

@@ -413,6 +413,16 @@ double RNN::calculate_error_softmax(const vector< vector<double> > &expected_out
     double error;
     double softmax = 0.0;
 
+    // for (size_t j = 0; j < expected_outputs[0].size(); j++)
+    // {
+        
+    //     for (size_t i = 0; i < expected_outputs.size(); i++)
+    //     {
+    //         std::cout << expected_outputs[i][j] << " ";
+    //     }
+    //     std::cout << std::endl;
+    // }
+
     for (uint32_t i = 0; i < output_nodes.size(); i++) {
         output_nodes[i]->error_values.resize(expected_outputs[i].size());
     }
@@ -437,7 +447,7 @@ double RNN::calculate_error_softmax(const vector< vector<double> > &expected_out
         }
     }
 
-  return cross_entropy_sum;
+    return cross_entropy_sum;
 }
 
 double RNN::calculate_error_mse(const vector< vector<double> > &expected_outputs) {
@@ -638,7 +648,7 @@ void RNN::get_analytic_gradient(const vector<double> &test_parameters, const vec
 
     if(use_regression) {
         mse = calculate_error_mse(outputs);
-        backward_pass(mse * (1.0 / outputs[0].size())*2.0, using_dropout, training, dropout_probability);
+        backward_pass(mse * (1.0 / outputs[0].size()) * 2.0, using_dropout, training, dropout_probability);
 
     } else {
         mse = calculate_error_softmax(outputs);
@@ -679,11 +689,17 @@ void RNN::get_empirical_gradient(const vector<double> &test_parameters, const ve
     empirical_gradient.assign(test_parameters.size(), 0.0);
 
     vector< vector<double> > deltas;
-
+    double original_mse = 0.0;
 
     set_weights(test_parameters);
     forward_pass(inputs, using_dropout, training, dropout_probability);
-    double original_mse = calculate_error_mse(outputs);
+
+
+    if (use_regression) {
+        original_mse = calculate_error_mse(outputs);
+    } else {
+        original_mse = calculate_error_softmax(outputs);
+    }
 
     double save;
     double diff = 0.00001;
@@ -696,13 +712,22 @@ void RNN::get_empirical_gradient(const vector<double> &test_parameters, const ve
         parameters[i] = save - diff;
         set_weights(parameters);
         forward_pass(inputs, using_dropout, training, dropout_probability);
-        get_mse(this, outputs, mse1, deltas);
 
+        if (use_regression) {
+            get_mse(this,outputs,mse1,deltas);
+        } else {
+            get_se(this,outputs,mse1,deltas);
+        }
+        
         parameters[i] = save + diff;
         set_weights(parameters);
         forward_pass(inputs, using_dropout, training, dropout_probability);
-        get_mse(this, outputs, mse2, deltas);
-
+        
+        if (use_regression) {
+            get_mse(this,outputs,mse2,deltas);
+        } else {
+            get_se(this,outputs,mse2,deltas);
+        }
         empirical_gradient[i] = (mse2 - mse1) / (2.0 * diff);
         empirical_gradient[i] *= original_mse;
 

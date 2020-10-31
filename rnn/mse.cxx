@@ -110,3 +110,45 @@ void get_mae(RNN *genome, const vector< vector<double> > &expected, double &mae_
         }
     }
 }
+
+
+void get_se(RNN *genome, const vector< vector<double> > &expected, double &ce_sum, vector< vector<double> > &deltas) {
+    deltas.assign(genome->output_nodes.size(), vector<double>(expected[0].size(), 0.0));
+
+    ce_sum = 0.0;
+    double softmax;
+    double error;
+
+    for (uint32_t i = 0; i < genome->output_nodes.size(); i++) {
+        genome->output_nodes[i]->error_values.resize(expected[i].size());
+    }
+
+
+    for (uint32_t j = 0; j < expected[0].size(); j++) {
+        double softmax_sum = 0.0;
+        double cross_entropy = 0.0;
+        // get sum of all the outputs of the timestep j from all output node i
+        for (uint32_t i = 0; i < genome->output_nodes.size(); i++) {
+            softmax_sum += exp(genome->output_nodes[i]->output_values[j]);
+        }
+
+        // for each 
+
+        for (uint32_t i = 0; i < genome->output_nodes.size(); i++) {
+            softmax = exp(genome->output_nodes[i]->output_values[j]) / softmax_sum;
+            error = softmax - expected[i][j];
+            deltas[i][j] = error;
+            genome->output_nodes[i]->error_values[j] = error;
+            cross_entropy = -expected[i][j] * log(softmax);
+            ce_sum += cross_entropy;
+        }
+    }
+
+
+    double d_ce = ce_sum * (1.0 / expected[0].size());
+    for (uint32_t i = 0; i < genome->output_nodes.size(); i++) {
+        for (uint32_t j = 0; j < expected[i].size(); j++) {
+            deltas[i][j] *= d_ce;
+        }
+    }
+}
