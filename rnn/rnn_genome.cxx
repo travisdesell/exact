@@ -961,9 +961,9 @@ void RNN_Genome::backpropagate(const vector< vector< vector<double> > > &inputs,
     int32_t n_series = inputs.size();
     vector<RNN*> rnns;
     for (int32_t i = 0; i < n_series; i++) {
-        RNN* r = this->get_rnn();
-        r->enable_use_regression(use_regression);
-        rnns.push_back(r);
+        //RNN* r = this->get_rnn();
+        //r->enable_use_regression(use_regression);
+        rnns.push_back(this->get_rnn());
     }
 
     vector<double> parameters = initial_parameters;

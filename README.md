@@ -35,33 +35,51 @@ The datasets used for this part of the code are PennChar, PennTreeBank and WikiT
  
 
 ```
-./multithreaded/examm_mt_nlp --number_threads 9 --training_filenames ../datasets/pennchar/train.txt --test_filenames ../datasets/pennchar/test.txt --word_offset 1 --sequence_length 4 --number_islands 2 --population_size 2 --max_genomes 20 --bp_iterations 2 --use_regression 0 --output_directory "./test_output" --possible_node_types simple ENARC --normalize min_max --std_message_level info --file_message_level 
+.//multithreaded/examm_mt_nlp --number_threads 9 --training_filenames ../datasets/pennchar/train_small.txt --test_filenames ../datasets/pennchar/valid_small.txt --word_offset 1 --sequence_length 64 --number_islands 2 --population_size 2 --max_genomes 20 --bp_iterations 2 --use_regression 0 --output_directory "./test_output" --possible_node_types simple ENARC --normalize min_max --std_message_level info --file_message_level info
+
+
 
 ```
 
-And a parallel version using MPI:
-
-```
-~/exact/build/ $ mpirun -np 9 ./mpi/examm_mpi_nlp --training_filenames ../datasets/pennchar/train.txt --test_filenames ../datasets/pennchar/test.txt --word_offset 1 --number_islands 2 --population_size 2 --max_genomes 20 --bp_iterations 2 --use_regression 0 --output_directory "./test_output" --possible_node_types simple ENARC --normalize min_max --std_message_level info --file_message_level info
-
-```
 
 ### To use PennTreeBank Word Prediction as dataset and use Simple and ENARC as memory cell 
  
 
 ```
-./multithreaded/examm_mt_nlp --number_threads 9 --training_filenames ../datasets/penn/train.txt --test_filenames ../datasets/pennchar/test.txt --word_offset 1 --sequence_length 4 --number_islands 2 --population_size 2 --max_genomes 20 --bp_iterations 2 --use_regression 0 --output_directory "./test_output" --possible_node_types simple ENARC --normalize min_max --std_message_level info --file_message_level info
-
-```
-
-And a parallel version using MPI:
-
-```
-~/exact/build/ $ mpirun -np 9 ./mpi/examm_mpi_nlp --training_filenames ../datasets/pennchar/train.txt --test_filenames ../datasets/pennchar/test.txt --word_offset 1 --number_islands 2 --population_size 2 --max_genomes 20 --bp_iterations 2 --use_regression 0 --output_directory "./test_output" --possible_node_types simple ENARC --normalize min_max --std_message_level info --file_message_level info
+./multithreaded/examm_mt_nlp --number_threads 9 --training_filenames ../datasets/penn/train_small.txt --test_filenames ../datasets/pennchar/valid_small.txt --word_offset 1 --sequence_length 64 --number_islands 2 --population_size 2 --max_genomes 20 --bp_iterations 2 --use_regression 0 --output_directory "./test_output" --possible_node_types simple ENARC --normalize min_max --std_message_level info --file_message_level info
 
 ```
 
 The std_out can be seen in file *main_out* for 20 genomes. The number of genomes can be increase. For ideal results, use 20000 genomes.
+
+
+### To check gradients for ENARC cell 
+
+```
+/rnn_tests/test_enarc_gradients --std_message_level info --file_message_level info --output_directory "./test_output" --input_length 2
+
+```
+
+
+### To check gradients for ENAS_DAG cell 
+
+```
+/rnn_tests/test_enas_dag_gradients --std_message_level info --file_message_level info --output_directory "./test_output" --input_length 2
+
+```
+
+
+### To check gradients for Random DAG cell 
+
+```
+/rnn_tests/test_random_dag_gradients --std_message_level info --file_message_level info --output_directory "./test_output" --input_length 2
+
+```
+
+
+
+
+
 
 
 ### To use ENARC as Memory Cell on Coal Dataset
