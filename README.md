@@ -56,7 +56,7 @@ The std_out can be seen in file *main_out* for 20 genomes. The number of genomes
 ### To check gradients for ENARC cell 
 
 ```
-/rnn_tests/test_enarc_gradients --std_message_level info --file_message_level info --output_directory "./test_output" --input_length 2
+./rnn_tests/test_enarc_gradients --std_message_level info --file_message_level info --output_directory "./test_output" --input_length 2
 
 ```
 
@@ -64,7 +64,7 @@ The std_out can be seen in file *main_out* for 20 genomes. The number of genomes
 ### To check gradients for ENAS_DAG cell 
 
 ```
-/rnn_tests/test_enas_dag_gradients --std_message_level info --file_message_level info --output_directory "./test_output" --input_length 2
+./rnn_tests/test_enas_dag_gradients --std_message_level info --file_message_level info --output_directory "./test_output" --input_length 2
 
 ```
 
@@ -72,7 +72,7 @@ The std_out can be seen in file *main_out* for 20 genomes. The number of genomes
 ### To check gradients for Random DAG cell 
 
 ```
-/rnn_tests/test_random_dag_gradients --std_message_level info --file_message_level info --output_directory "./test_output" --input_length 2
+./rnn_tests/test_random_dag_gradients --std_message_level info --file_message_level info --output_directory "./test_output" --input_length 2
 
 ```
 
