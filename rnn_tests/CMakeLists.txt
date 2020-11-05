@@ -30,3 +30,7 @@ target_link_libraries(test_random_dag_gradients examm_strategy exact_common exac
 
 add_executable(test_enas_dag_gradients test_enas_dag_gradients gradient_test)
 target_link_libraries(test_enas_dag_gradients examm_strategy exact_common exact_time_series exact_word_series ${MYSQL_LIBRARIES} pthread)
+
+add_executable(test_softmax_output test_softmax_output gradient_test)
+target_link_libraries(test_softmax_output examm_strategy exact_common exact_time_series exact_word_series ${MYSQL_LIBRARIES} pthread)
+

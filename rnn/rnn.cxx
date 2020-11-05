@@ -1,6 +1,7 @@
 #include <algorithm>
 using std::sort;
 using std::upper_bound;
+using std::max;
 
 #include <chrono>
 
@@ -413,15 +414,17 @@ double RNN::calculate_error_softmax(const vector< vector<double> > &expected_out
     double error;
     double softmax = 0.0;
 
-    // for (size_t j = 0; j < expected_outputs[0].size(); j++)
-    // {
+
+
+    for (uint32_t j = 0; j < expected_outputs[0].size(); j++)
+    {
+        for (uint32_t i = 0; i < output_nodes.size(); i++)
+        {
         
-    //     for (size_t i = 0; i < expected_outputs.size(); i++)
-    //     {
-    //         std::cout << expected_outputs[i][j] << " ";
-    //     }
-    //     std::cout << std::endl;
-    // }
+            Log::info("%f  ",output_nodes[i]->output_values[j]);
+        }
+        Log::info("\n");
+    }
 
     for (uint32_t i = 0; i < output_nodes.size(); i++) {
         output_nodes[i]->error_values.resize(expected_outputs[i].size());
@@ -431,15 +434,25 @@ double RNN::calculate_error_softmax(const vector< vector<double> > &expected_out
     for (uint32_t j = 0; j < expected_outputs[0].size(); j++) {
         double softmax_sum = 0.0;
         double cross_entropy = 0.0;
+
+
+        //find max at each timestep
+        double max_output_node_value = output_nodes[0]->output_values[j];
+        for (uint32_t i = 0; i < output_nodes.size(); i++){
+            max_output_node_value = max(max_output_node_value,output_nodes[i]->output_values[j]);
+        }
+
+        Log::info("Max value in softmax : %f\n\n\n",max_output_node_value);
+
         // get sum of all the outputs of the timestep j from all output node i
         for (uint32_t i = 0; i < output_nodes.size(); i++) {
-            softmax_sum += exp(output_nodes[i]->output_values[j]);
+            softmax_sum += exp(output_nodes[i]->output_values[j] - max_output_node_value);
         }
 
         // for each 
 
         for (uint32_t i = 0; i < output_nodes.size(); i++) {
-            softmax = exp(output_nodes[i]->output_values[j]) / softmax_sum;
+            softmax = exp(output_nodes[i]->output_values[j] - max_output_node_value) / softmax_sum;
             error = softmax - expected_outputs[i][j];
             output_nodes[i]->error_values[j] = error;
             cross_entropy = -expected_outputs[i][j] * log(softmax);
@@ -454,7 +467,22 @@ double RNN::calculate_error_mse(const vector< vector<double> > &expected_outputs
     double mse_sum = 0.0;
     double mse;
     double error;
-  
+
+    for (uint32_t j = 0; j < expected_outputs.size(); j++) {
+        for (uint32_t i = 0; i < expected_outputs[j].size(); i++) {
+            std::cout<<expected_outputs[j][i]<<" ";            
+        }
+        std::cout<<std::endl;
+    }
+    
+
+    for (uint32_t j = 0; j < expected_outputs[0].size(); j++) {
+        for (uint32_t i = 0; i < output_nodes.size(); i++) {
+            Log::info("%f  ", output_nodes[i]->output_values[j]);
+        }
+        Log::info("\n");
+    }
+
     for (uint32_t i = 0; i < output_nodes.size(); i++) {
         output_nodes[i]->error_values.resize(expected_outputs[i].size());
 
@@ -647,10 +675,12 @@ void RNN::get_analytic_gradient(const vector<double> &test_parameters, const vec
     forward_pass(inputs, using_dropout, training, dropout_probability);
 
     if(use_regression) {
+        Log::trace("Using regression\n");
         mse = calculate_error_mse(outputs);
         backward_pass(mse * (1.0 / outputs[0].size()) * 2.0, using_dropout, training, dropout_probability);
 
     } else {
+        Log::trace("Using classification\n");
         mse = calculate_error_softmax(outputs);
         backward_pass(mse * (1.0 / outputs[0].size()), using_dropout, training, dropout_probability);
     
@@ -696,8 +726,10 @@ void RNN::get_empirical_gradient(const vector<double> &test_parameters, const ve
 
 
     if (use_regression) {
+        Log::info("Using regression\n");
         original_mse = calculate_error_mse(outputs);
     } else {
+        Log::trace("Using classification\n");
         original_mse = calculate_error_softmax(outputs);
     }
 
@@ -714,8 +746,10 @@ void RNN::get_empirical_gradient(const vector<double> &test_parameters, const ve
         forward_pass(inputs, using_dropout, training, dropout_probability);
 
         if (use_regression) {
+            Log::info("Using regression\n");
             get_mse(this,outputs,mse1,deltas);
         } else {
+            Log::trace("Using classification\n");
             get_se(this,outputs,mse1,deltas);
         }
         
@@ -724,8 +758,10 @@ void RNN::get_empirical_gradient(const vector<double> &test_parameters, const ve
         forward_pass(inputs, using_dropout, training, dropout_probability);
         
         if (use_regression) {
+            Log::info("Using regression\n");
             get_mse(this,outputs,mse2,deltas);
         } else {
+            Log::trace("Using classification\n");
             get_se(this,outputs,mse2,deltas);
         }
         empirical_gradient[i] = (mse2 - mse1) / (2.0 * diff);

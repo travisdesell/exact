@@ -4,6 +4,9 @@
 #include <vector>
 using std::vector;
 
+#include<algorithm>
+using std::max;
+
 #include "rnn.hxx"
 
 void get_mse(const vector<double> &output_values, const vector<double> &expected, double &mse, vector<double> &deltas);

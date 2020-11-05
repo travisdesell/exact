@@ -3,6 +3,9 @@
 #include <vector>
 using std::vector;
 
+#include<algorithm>
+using std::max;
+
 #include "rnn.hxx"
 
 void get_mse(const vector<double> &output_values, const vector<double> &expected, double &mse, vector<double> &deltas) {
@@ -123,19 +126,25 @@ void get_se(RNN *genome, const vector< vector<double> > &expected, double &ce_su
         genome->output_nodes[i]->error_values.resize(expected[i].size());
     }
 
-
+    
     for (uint32_t j = 0; j < expected[0].size(); j++) {
         double softmax_sum = 0.0;
         double cross_entropy = 0.0;
         // get sum of all the outputs of the timestep j from all output node i
+
+        double max_output_node_value = genome->output_nodes[0]->output_values[j];
         for (uint32_t i = 0; i < genome->output_nodes.size(); i++) {
-            softmax_sum += exp(genome->output_nodes[i]->output_values[j]);
+            max_output_node_value = max(max_output_node_value, genome->output_nodes[i]->output_values[j]);
+        }
+
+        for (uint32_t i = 0; i < genome->output_nodes.size(); i++) {
+            softmax_sum += exp(genome->output_nodes[i]->output_values[j] - max_output_node_value);
         }
 
         // for each 
 
         for (uint32_t i = 0; i < genome->output_nodes.size(); i++) {
-            softmax = exp(genome->output_nodes[i]->output_values[j]) / softmax_sum;
+            softmax = exp(genome->output_nodes[i]->output_values[j] - max_output_node_value) / softmax_sum;
             error = softmax - expected[i][j];
             deltas[i][j] = error;
             genome->output_nodes[i]->error_values[j] = error;
@@ -144,6 +153,7 @@ void get_se(RNN *genome, const vector< vector<double> > &expected, double &ce_su
         }
     }
 
+      //  double d_ce = ce_sum * (1.0 / expected[0].size());
 
     double d_ce = ce_sum * (1.0 / expected[0].size());
     for (uint32_t i = 0; i < genome->output_nodes.size(); i++) {
