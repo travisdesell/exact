@@ -5,9 +5,6 @@
 #include <condition_variable>
 using std::condition_variable;
 
-#include <filesystem>
-namespace fs = std::filesystem;
-
 #include <iomanip>
 using std::setw;
 
