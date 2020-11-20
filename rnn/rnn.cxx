@@ -414,18 +414,6 @@ double RNN::calculate_error_softmax(const vector< vector<double> > &expected_out
     double error;
     double softmax = 0.0;
 
-
-
-    for (uint32_t j = 0; j < expected_outputs[0].size(); j++)
-    {
-        for (uint32_t i = 0; i < output_nodes.size(); i++)
-        {
-        
-            Log::info("%f  ",output_nodes[i]->output_values[j]);
-        }
-        Log::info("\n");
-    }
-
     for (uint32_t i = 0; i < output_nodes.size(); i++) {
         output_nodes[i]->error_values.resize(expected_outputs[i].size());
     }
@@ -457,7 +445,7 @@ double RNN::calculate_error_softmax(const vector< vector<double> > &expected_out
             output_nodes[i]->error_values[j] = error;
             cross_entropy = -expected_outputs[i][j] * log(softmax);
             cross_entropy_sum += cross_entropy;
-        }
+        }  
     }
 
     return cross_entropy_sum;
@@ -468,20 +456,6 @@ double RNN::calculate_error_mse(const vector< vector<double> > &expected_outputs
     double mse;
     double error;
 
-    for (uint32_t j = 0; j < expected_outputs.size(); j++) {
-        for (uint32_t i = 0; i < expected_outputs[j].size(); i++) {
-            std::cout<<expected_outputs[j][i]<<" ";            
-        }
-        std::cout<<std::endl;
-    }
-    
-
-    for (uint32_t j = 0; j < expected_outputs[0].size(); j++) {
-        for (uint32_t i = 0; i < output_nodes.size(); i++) {
-            Log::info("%f  ", output_nodes[i]->output_values[j]);
-        }
-        Log::info("\n");
-    }
 
     for (uint32_t i = 0; i < output_nodes.size(); i++) {
         output_nodes[i]->error_values.resize(expected_outputs[i].size());
@@ -494,6 +468,8 @@ double RNN::calculate_error_mse(const vector< vector<double> > &expected_outputs
         }
         mse_sum += mse / expected_outputs[i].size();
     }
+
+    
 
     return mse_sum;
 }
@@ -682,7 +658,7 @@ void RNN::get_analytic_gradient(const vector<double> &test_parameters, const vec
     } else {
         Log::trace("Using classification\n");
         mse = calculate_error_softmax(outputs);
-        backward_pass(mse * (1.0 / outputs[0].size()), using_dropout, training, dropout_probability);
+        backward_pass(mse, using_dropout, training, dropout_probability);
     
     }
     
@@ -773,7 +749,42 @@ void RNN::get_empirical_gradient(const vector<double> &test_parameters, const ve
     mse = original_mse;
 }
 
-void RNN::initialize_randomly() {
+vector<vector<double>>  RNN::get_softmax_gradient(const vector<double> &test_parameters, const vector<vector<double>> &inputs, const vector<vector<double>> &outputs, double &mse, vector<vector<double>> &softmax_gradient, bool using_dropout, bool training, double dropout_probability) {
+
+    softmax_gradient.assign(output_nodes.size(), vector<double>(outputs[0].size(), 0.0));
+    vector<vector<double>> deltas;
+    double original_mse = 0.0;
+
+    set_weights(test_parameters);
+    forward_pass(inputs, using_dropout, training, dropout_probability);
+
+    get_se(this, outputs, original_mse, deltas);
+
+    double save;
+    double diff = 0.00001;
+    double mse1, mse2;
+
+    // get gradient for each output node starting from each time step and each output node in each time step
+
+    for (uint32_t timestep = 0; timestep < outputs[0].size(); timestep++) {
+        for (uint32_t outputNode = 0; outputNode < output_nodes.size(); outputNode++) {
+            save = output_nodes[outputNode]->output_values[timestep];
+            output_nodes[outputNode]->output_values[timestep] = save - diff;
+            mse1 = calculate_error_softmax(outputs);
+            output_nodes[outputNode]->output_values[timestep] = save + diff;
+            mse2 = calculate_error_softmax(outputs);
+
+            softmax_gradient[outputNode][timestep] = (mse2 - mse1) / (2.0 * diff);
+            output_nodes[outputNode]->output_values[timestep] = save;
+        }  
+    }
+
+    mse = original_mse;
+    return deltas;
+}
+
+    void RNN::initialize_randomly()
+{
     int number_of_weights = get_number_weights();
     vector<double> parameters(number_of_weights, 0.0);
 

@@ -6,10 +6,12 @@ using std::ifstream;
 
 #include <random>
 using std::minstd_rand0;
+using std::uniform_int_distribution;
 using std::uniform_real_distribution;
 
 #include <string>
 using std::string;
+using std::to_string;
 
 #include <vector>
 using std::vector;
@@ -30,6 +32,8 @@ using std::vector;
 
 #include "gradient_test.hxx"
 
+
+
 int main(int argc, char **argv)
 {
     vector<string> arguments = vector<string>(argv, argv + argc);
@@ -40,14 +44,6 @@ int main(int argc, char **argv)
     initialize_generator();
 
     RNN_Genome *genome;
-
-    Log::info("TESTING FEED FORWARD\n");
-
-    vector<vector<double>> inputs;
-    vector<vector<double>> outputs;
-
-    int input_length = 10;
-    get_argument(arguments, "--input_length", true, input_length);
 
     string weight_initialize_string = "random";
     get_argument(arguments, "--weight_initialize", false, weight_initialize_string);
@@ -60,60 +56,71 @@ int main(int argc, char **argv)
         Log::fatal("weight initialization method %s is set wrong \n", weight_initialize_string.c_str());
     }
 
-    inputs.resize(1);
-    outputs.resize(1);
+    Log::info("TESTING FEED FORWARD\n");
 
-    generate_random_oneHot_vector(input_length, inputs[0]);
-    generate_random_oneHot_vector(input_length, outputs[0]);
+    vector<vector<double>> inputs;
+    vector<vector<double>> outputs;
 
-    vector<string> inputs1{"input 1"};
-    vector<string> outputs1{"output 1"};
+    int timesteps = 10;
+    get_argument(arguments, "--timestep", true, timesteps);
+
+    int input_length = 1;
+    get_argument(arguments,"--input_length",true,input_length);
+
+    inputs.resize(input_length);
+    for (size_t i = 0; i < inputs.size(); i++) {
+        inputs[i].resize(timesteps);
+    }
+
+    outputs.resize(input_length);
+    for (size_t i = 0; i < outputs.size(); i++) {
+        outputs[i].resize(timesteps);
+    }
+
+    generate_random_oneHot_matrix(timesteps,input_length,inputs);
+    generate_random_oneHot_matrix(timesteps, input_length, outputs);
 
     vector<double> parameters;
+    double mse;
+    vector<vector<double>> softmax_gradients, deltas;
 
-    //Test 1 input, 1 output, no hidden
 
-    Log::info("****************Using Inputs :: ***************************\n");
+    vector<string> inputs1;
+    vector<string> outputs1;
 
-    genome = create_lstm(inputs1, 0, 0, outputs1, 1, weight_initialize);
-
-    for (size_t i = 0; i < inputs.size(); i++)
-    {
-        for (size_t j = 0; j < inputs[i].size(); j++)
-        {
-            Log::info("%f ",inputs[i][j]);
-        }
-        Log::info("\n");
-        
+    string input_par = "input";
+    string output_par = "output";
+    for (int32_t i = 0; i < input_length; i++) {
+        string temp_input_par = input_par + to_string(i);
+        string temp_output_par = output_par + to_string(i);
+        inputs1.push_back(temp_input_par);
+        outputs1.push_back(temp_output_par);
     }
 
-    Log::info("****************Outputs :: ***************************\n");
 
-    for (size_t i = 0; i < inputs.size(); i++)
-    {
-        for (size_t j = 0; j < inputs[i].size(); j++)
-        {
-            Log::info("%f ", inputs[i][j]);
-        }
-        Log::info("\n");
-    }
+    genome = create_lstm(inputs1, 1, 1, outputs1, 3, weight_initialize);
 
     RNN *rnn = genome->get_rnn();
 
-
     generate_random_vector(rnn->get_number_weights(), parameters);
     rnn->set_weights(parameters);
-
-    Log::info("****************Using Softmax :: ***************************\n");
-
     rnn->enable_use_regression(false);
-    rnn->forward_pass(inputs, false, true, 0.0);
-    rnn->calculate_error_softmax(outputs);
+    deltas = rnn->get_softmax_gradient(parameters, inputs, outputs, mse, softmax_gradients, false, true, 0.0);
 
-    Log::info("****************Using MSE :: ***************************\n");
 
-    rnn->enable_use_regression(true);
-    rnn->forward_pass(inputs, false, true, 0.0);
-    rnn->calculate_error_mse(outputs);
+    for (uint32_t j = 0; j < deltas[0].size(); j++) {
+        for (uint32_t i = 0; i < deltas.size(); i++) {
+            double difference = softmax_gradients[i][j] - deltas[i][j];
+            if (fabs(difference) > 10e-10)
+            {
+                Log::info("\t\tFAILED softmax gradient[%d][%d]: %lf, deltas[%d][%d]: %lf, difference: %lf\n",i, j, softmax_gradients[i][j],i, j, deltas[i][j], difference);
+                //exit(1);
+            }
+            else
+            {
+                Log::info("\t\tPASSED softmax gradient[%d][%d]: %lf, deltas[%d][%d]: %lf, difference: %lf\n", i, j, softmax_gradients[i][j], i, j, deltas[i][j], difference);
+            }
+        }
+    }
 }
 

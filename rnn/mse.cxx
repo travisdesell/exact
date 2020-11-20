@@ -80,6 +80,7 @@ void get_mae(const vector<double> &output_values, const vector<double> &expected
     for (uint32_t j = 0; j < expected.size(); j++) {
         deltas[j] *= d_mae;
     }
+
 }
 
 void get_mae(RNN *genome, const vector< vector<double> > &expected, double &mae_sum, vector< vector<double> > &deltas) {
@@ -146,19 +147,14 @@ void get_se(RNN *genome, const vector< vector<double> > &expected, double &ce_su
         for (uint32_t i = 0; i < genome->output_nodes.size(); i++) {
             softmax = exp(genome->output_nodes[i]->output_values[j] - max_output_node_value) / softmax_sum;
             error = softmax - expected[i][j];
+
             deltas[i][j] = error;
-            genome->output_nodes[i]->error_values[j] = error;
             cross_entropy = -expected[i][j] * log(softmax);
-            ce_sum += cross_entropy;
+            ce_sum += cross_entropy ;
         }
+        
     }
 
-      //  double d_ce = ce_sum * (1.0 / expected[0].size());
-
-    double d_ce = ce_sum * (1.0 / expected[0].size());
-    for (uint32_t i = 0; i < genome->output_nodes.size(); i++) {
-        for (uint32_t j = 0; j < expected[i].size(); j++) {
-            deltas[i][j] *= d_ce;
-        }
-    }
+   
 }
+

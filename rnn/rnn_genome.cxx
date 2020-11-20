@@ -924,7 +924,7 @@ void RNN_Genome::get_analytic_gradient(vector<RNN*> &rnns, const vector<double> 
         } else {
             Log::info("Using classification\n");
 
-            d_mse = mse_sum * (1.0 / outputs[i][0].size());
+            d_mse = mse_sum;
         }
         rnns[i]->backward_pass(d_mse, use_dropout, training, dropout_probability);
 

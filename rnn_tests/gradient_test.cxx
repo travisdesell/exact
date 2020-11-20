@@ -57,6 +57,16 @@ void generate_random_oneHot_vector(int number_parameters, vector<double> &v) {
 	v[index] = 1.0;
 }
 
+void generate_random_oneHot_matrix(int timesteps, int number_parameters, vector<vector<double>> &v) {
+
+	for (int32_t j = 0; j < timesteps; j++) {
+		uniform_int_distribution<int> dist(0, number_parameters-1);
+		int i = dist(generator);
+		v[i][j] = 1.0;
+	}
+
+}
+
 void gradient_test(string name, RNN_Genome *genome, const vector< vector<double> > &inputs, const vector< vector<double> > &outputs) {
 	double analytic_mse, empirical_mse;
 	vector<double> parameters;
@@ -69,7 +79,7 @@ void gradient_test(string name, RNN_Genome *genome, const vector< vector<double>
 
     Log::debug("got genome \n");
 
-    rnn->enable_use_regression(true);
+    rnn->enable_use_regression(false);
 
 	for (int32_t i = 0; i < test_iterations; i++) {
         if (i == 0) Log::debug_no_header("\n");

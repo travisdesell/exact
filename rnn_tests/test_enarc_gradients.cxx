@@ -59,7 +59,7 @@ int main(int argc, char **argv) {
     }
 
 
-    for (int32_t max_recurrent_depth = 1; max_recurrent_depth <= 5; max_recurrent_depth++) {
+    for (int32_t max_recurrent_depth = 1; max_recurrent_depth <= 2; max_recurrent_depth++) {
         Log::info("testing with max recurrent depth: %d\n", max_recurrent_depth);
 
         inputs.resize(1);

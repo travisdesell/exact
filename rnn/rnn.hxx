@@ -113,6 +113,7 @@ class RNN {
         */ 
         void get_analytic_gradient(const vector<double> &test_parameters, const vector< vector<double> > &inputs, const vector< vector<double> > &outputs, double &mse, vector<double> &analytic_gradient, bool using_dropout, bool training, double dropout_probability);
         void get_empirical_gradient(const vector<double> &test_parameters, const vector< vector<double> > &inputs, const vector< vector<double> > &outputs, double &mae, vector<double> &empirical_gradient, bool using_dropout, bool training, double dropout_probability);
+        vector<vector<double>> get_softmax_gradient(const vector<double> &test_parameters, const vector<vector<double>> &inputs, const vector<vector<double>> &outputs, double &mae, vector<vector<double>> &softmax_gradient, bool using_dropout, bool training, double dropout_probability);
 
         //RNN* copy();
 
