@@ -41,7 +41,6 @@ The datasets used for this part of the code are PennChar, PennTreeBank and WikiT
 
 ```
 
-
 ### To use PennTreeBank Word Prediction as dataset and use Simple and ENARC as memory cell 
  
 
@@ -76,10 +75,18 @@ The std_out can be seen in file *main_out* for 20 genomes. The number of genomes
 
 ```
 
+### To check outputs for Softmax Layer 
 
+```
+./rnn_tests/test_softmax_output --std_message_level info --file_message_level info --output_directory "./test_output"  --timesteps 2 --output_length 6
 
+```
 
+### To check gradients for Softmax Layer 
 
+```
+./rnn_tests/test_softmax_gradient --std_message_level debug --file_message_level debug --output_directory "./test_output" --input_length 4 --timesteps 3 --max_recurrent_depth 10
+```
 
 
 ### To use ENARC as Memory Cell on Coal Dataset
