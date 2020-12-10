@@ -31,6 +31,8 @@ class RNN {
 
         bool use_regression;
 
+        vector<double> cross_entropy_losses;
+
         vector<RNN_Node_Interface*> input_nodes;
         vector<RNN_Node_Interface*> output_nodes;
 
@@ -54,9 +56,9 @@ class RNN {
 
         void forward_pass(const vector< vector<double> > &series_data, bool using_dropout, bool training, double dropout_probability);
         void backward_pass(double error, bool using_dropout, bool training, double dropout_probability);
+        void backward_pass_class(double error, bool using_dropout, bool training, double dropout_probability);
 
-
-        /**
+            /**
         *   Calculates the sum of cross entropy error by comparing the expected outputs and the predicted outputs.    
         *   
         *   \param expected_outputs is the expected outputs according the dataset.
@@ -113,14 +115,13 @@ class RNN {
         */ 
         void get_analytic_gradient(const vector<double> &test_parameters, const vector< vector<double> > &inputs, const vector< vector<double> > &outputs, double &mse, vector<double> &analytic_gradient, bool using_dropout, bool training, double dropout_probability);
         void get_empirical_gradient(const vector<double> &test_parameters, const vector< vector<double> > &inputs, const vector< vector<double> > &outputs, double &mae, vector<double> &empirical_gradient, bool using_dropout, bool training, double dropout_probability);
-        vector<vector<double>> get_softmax_gradient(const vector<double> &test_parameters, const vector<vector<double>> &inputs, const vector<vector<double>> &outputs, double &mae, vector<vector<double>> &softmax_gradient, bool using_dropout, bool training, double dropout_probability);
+        vector< vector<double> > get_softmax_gradient(const vector< vector<double> > &outputs, const vector< vector<double> > &expected, double &mse, vector< vector<double> > &softmax_gradient);
 
         //RNN* copy();
 
-        friend void get_mse(RNN* genome, const vector< vector<double> > &expected, double &mse_sum, vector< vector<double> > &deltas);
-        friend void get_mae(RNN* genome, const vector< vector<double> > &expected, double &mae_sum, vector< vector<double> > &deltas);
-        friend void get_se(RNN* genome, const vector< vector<double> > &expected, double &ce_sum, vector< vector<double> > &deltas);
-
+        friend void get_mse(RNN * genome, const vector<vector<double>> &expected, double &mse_sum, vector<vector<double>> &deltas);
+        friend void get_mae(RNN * genome, const vector<vector<double>> &expected, double &mae_sum, vector<vector<double>> &deltas);
+        friend void get_se(RNN * genome, const vector<vector<double>> &expected, double &ce_sum, vector<vector<double>> &deltas);
 };
 
 #endif

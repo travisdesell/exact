@@ -407,12 +407,61 @@ void RNN::backward_pass(double error, bool using_dropout, bool training, double 
     }
 }
 
+void RNN::backward_pass_class(double error, bool using_dropout, bool training, double dropout_probability)
+{
+    //do a propagate forward for time == (series_length - 1) so that the
+    // output fired count on each node will be correct for the first pass
+    //through the RNN
+    for (uint32_t i = 0; i < recurrent_edges.size(); i++)
+    {
+        if (recurrent_edges[i]->is_reachable())
+            recurrent_edges[i]->first_propagate_backward();
+    }
+
+    for (int32_t time = series_length - 1; time >= 0; time--)
+    {
+
+        for (uint32_t i = 0; i < output_nodes.size(); i++)
+        {
+            //output_nodes[i]->error_fired(time, 1);
+
+            output_nodes[i]->error_fired(time, cross_entropy_losses[time]);
+        }
+
+        if (using_dropout)
+        {
+            for (int32_t i = (int32_t)edges.size() - 1; i >= 0; i--)
+            {
+                if (edges[i]->is_reachable())
+                    edges[i]->propagate_backward(time, training, dropout_probability);
+            }
+        }
+        else
+        {
+            for (int32_t i = (int32_t)edges.size() - 1; i >= 0; i--)
+            {
+                if (edges[i]->is_reachable())
+                    edges[i]->propagate_backward(time);
+            }
+        }
+
+        for (int32_t i = (int32_t)recurrent_edges.size() - 1; i >= 0; i--)
+        {
+            if (recurrent_edges[i]->is_reachable())
+                recurrent_edges[i]->propagate_backward(time);
+        }
+    }
+}
+
 double RNN::calculate_error_softmax(const vector< vector<double> > &expected_outputs) {
     
     
-    double cross_entropy_sum = 0.0;
+    double cross_entropy_sum = 0.000000001;
+    double cross_entropy_time_sum = 0.000000001;
     double error;
     double softmax = 0.0;
+    cross_entropy_losses.assign(expected_outputs[0].size(),0.0);
+    //cross_entropy_losses.resize(expected_outputs[0].size());
 
     for (uint32_t i = 0; i < output_nodes.size(); i++) {
         output_nodes[i]->error_values.resize(expected_outputs[i].size());
@@ -420,9 +469,9 @@ double RNN::calculate_error_softmax(const vector< vector<double> > &expected_out
 
     // for each time step j 
     for (uint32_t j = 0; j < expected_outputs[0].size(); j++) {
-        double softmax_sum = 0.0;
-        double cross_entropy = 0.0;
-
+        double softmax_sum = 0.000000001;
+        double cross_entropy = 0.000000001;
+        double cross_entropy_time_sum = 0.000000001;
 
         //find max at each timestep
         double max_output_node_value = output_nodes[0]->output_values[j];
@@ -430,7 +479,7 @@ double RNN::calculate_error_softmax(const vector< vector<double> > &expected_out
             max_output_node_value = max(max_output_node_value,output_nodes[i]->output_values[j]);
         }
 
-        Log::info("Max value in softmax : %f\n\n\n",max_output_node_value);
+        //Log::info("Max value in softmax : %f\n\n\n",max_output_node_value);
 
         // get sum of all the outputs of the timestep j from all output node i
         for (uint32_t i = 0; i < output_nodes.size(); i++) {
@@ -443,11 +492,22 @@ double RNN::calculate_error_softmax(const vector< vector<double> > &expected_out
             softmax = exp(output_nodes[i]->output_values[j] - max_output_node_value) / softmax_sum;
             error = softmax - expected_outputs[i][j];
             output_nodes[i]->error_values[j] = error;
+
             cross_entropy = -expected_outputs[i][j] * log(softmax);
-            cross_entropy_sum += cross_entropy;
-        }  
+            cross_entropy_time_sum += cross_entropy;
+            
+        }
+        cross_entropy_sum += cross_entropy_time_sum;
+        cross_entropy_losses[j] = cross_entropy_time_sum;
+        Log::debug("Cross_Entropy_time_sum :%f\n\n", cross_entropy_time_sum);
+
+        for (uint32_t i = 0; i < output_nodes.size(); i++) {
+            
+            output_nodes[i]->error_values[j] /=cross_entropy_losses[j];
+        }
     }
 
+    Log::debug("Cross_Entropy_sum :%f\n\n",cross_entropy_sum);
     return cross_entropy_sum;
 }
 
@@ -658,9 +718,9 @@ void RNN::get_analytic_gradient(const vector<double> &test_parameters, const vec
     } else {
         Log::trace("Using classification\n");
         mse = calculate_error_softmax(outputs);
-        backward_pass(mse, using_dropout, training, dropout_probability);
-    
-    }
+        //        backward_pass(mse * (1.0 / outputs[0].size()), using_dropout, training, dropout_probability);
+            backward_pass_class(1, using_dropout, training, dropout_probability);
+        }
     
     vector<double> current_gradients;
 
@@ -722,11 +782,10 @@ void RNN::get_empirical_gradient(const vector<double> &test_parameters, const ve
         forward_pass(inputs, using_dropout, training, dropout_probability);
 
         if (use_regression) {
-            Log::info("Using regression\n");
             get_mse(this,outputs,mse1,deltas);
         } else {
-            Log::trace("Using classification\n");
             get_se(this,outputs,mse1,deltas);
+            //Log::trace("MSE:1 = %f\n",mse1);
         }
         
         parameters[i] = save + diff;
@@ -734,14 +793,14 @@ void RNN::get_empirical_gradient(const vector<double> &test_parameters, const ve
         forward_pass(inputs, using_dropout, training, dropout_probability);
         
         if (use_regression) {
-            Log::info("Using regression\n");
             get_mse(this,outputs,mse2,deltas);
+            empirical_gradient[i] = (mse2 - mse1) / (2.0 * diff);
+            empirical_gradient[i] *= original_mse;
         } else {
-            Log::trace("Using classification\n");
             get_se(this,outputs,mse2,deltas);
+            empirical_gradient[i] = (mse2 - mse1) / (2.0 * diff);
         }
-        empirical_gradient[i] = (mse2 - mse1) / (2.0 * diff);
-        empirical_gradient[i] *= original_mse;
+        
 
         parameters[i] = save;
     }
@@ -749,16 +808,25 @@ void RNN::get_empirical_gradient(const vector<double> &test_parameters, const ve
     mse = original_mse;
 }
 
-vector<vector<double>>  RNN::get_softmax_gradient(const vector<double> &test_parameters, const vector<vector<double>> &inputs, const vector<vector<double>> &outputs, double &mse, vector<vector<double>> &softmax_gradient, bool using_dropout, bool training, double dropout_probability) {
+vector<vector<double>>  RNN::get_softmax_gradient(const vector<vector<double>> &outputs, const vector<vector<double>> &expected, double &mse, vector<vector<double>> &softmax_gradient) {
 
     softmax_gradient.assign(output_nodes.size(), vector<double>(outputs[0].size(), 0.0));
     vector<vector<double>> deltas;
     double original_mse = 0.0;
 
-    set_weights(test_parameters);
-    forward_pass(inputs, using_dropout, training, dropout_probability);
+    int timesteps = outputs[0].size();
 
-    get_se(this, outputs, original_mse, deltas);
+    for (uint32_t outputNode = 0; outputNode < output_nodes.size(); outputNode++) {
+        output_nodes[outputNode]->output_values.assign(timesteps, 0.0);
+    }
+
+    for (uint32_t timestep = 0; timestep < outputs[0].size(); timestep++) {
+        for (uint32_t outputNode = 0; outputNode < output_nodes.size(); outputNode++) {           
+            output_nodes[outputNode]->output_values[timestep] = outputs[outputNode][timestep];
+        }
+    }
+
+    get_se(this, expected, original_mse, deltas);
 
     double save;
     double diff = 0.00001;
@@ -766,17 +834,20 @@ vector<vector<double>>  RNN::get_softmax_gradient(const vector<double> &test_par
 
     // get gradient for each output node starting from each time step and each output node in each time step
 
-    for (uint32_t timestep = 0; timestep < outputs[0].size(); timestep++) {
-        for (uint32_t outputNode = 0; outputNode < output_nodes.size(); outputNode++) {
+    for (uint32_t timestep = 0; timestep < outputs[0].size(); timestep++)
+    {
+        for (uint32_t outputNode = 0; outputNode < output_nodes.size(); outputNode++)
+        {
             save = output_nodes[outputNode]->output_values[timestep];
             output_nodes[outputNode]->output_values[timestep] = save - diff;
-            mse1 = calculate_error_softmax(outputs);
+            mse1 = calculate_error_softmax(expected);
             output_nodes[outputNode]->output_values[timestep] = save + diff;
-            mse2 = calculate_error_softmax(outputs);
+            mse2 = calculate_error_softmax(expected);
 
             softmax_gradient[outputNode][timestep] = (mse2 - mse1) / (2.0 * diff);
+         
             output_nodes[outputNode]->output_values[timestep] = save;
-        }  
+        }
     }
 
     mse = original_mse;

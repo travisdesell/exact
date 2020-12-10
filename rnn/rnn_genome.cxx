@@ -900,11 +900,11 @@ void RNN_Genome::get_analytic_gradient(vector<RNN*> &rnns, const vector<double> 
     vector<thread> threads;
     for (uint32_t i = 0; i < rnns.size(); i++) {
         if(use_regression) {
-            Log::info("Using regression\n");
+            
             threads.push_back( thread(forward_pass_thread_regression, rnns[i], parameters, inputs[i], outputs[i], i, mses, use_dropout, training, dropout_probability) );
 
         } else {
-            Log::info("Using classification\n");
+            
             threads.push_back( thread(forward_pass_thread_classification, rnns[i], parameters, inputs[i], outputs[i], i, mses, use_dropout, training, dropout_probability) );
 
         }
@@ -920,13 +920,14 @@ void RNN_Genome::get_analytic_gradient(vector<RNN*> &rnns, const vector<double> 
         double d_mse = 0.0;
         if (use_regression) {
             Log::info("Using regression\n");
-            d_mse = mse_sum * (1.0 / outputs[i][0].size()) * 2.0;   
+            d_mse = mse_sum * (1.0 / outputs[i][0].size()) * 2.0;
+            rnns[i]->backward_pass(d_mse, use_dropout, training, dropout_probability);
         } else {
             Log::info("Using classification\n");
-
-            d_mse = mse_sum;
+            d_mse = 1;
+            rnns[i]->backward_pass_class(d_mse, use_dropout, training, dropout_probability);
         }
-        rnns[i]->backward_pass(d_mse, use_dropout, training, dropout_probability);
+        
 
         //double d_mae = mse_sum * (1.0 / outputs[i][0].size());
         //rnns[i]->backward_pass(d_mae);
