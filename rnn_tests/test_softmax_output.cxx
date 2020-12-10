@@ -1,3 +1,5 @@
+// ./rnn_tests/test_softmax_output --std_message_level info --file_message_level info --output_directory "./test_output"  --timestep 4 --input_length 6
+
 #include <chrono>
 
 #include <fstream>
@@ -19,17 +21,13 @@ using std::vector;
 #include "common/arguments.hxx"
 #include "common/log.hxx"
 #include "common/weight_initialize.hxx"
-
 #include "rnn/lstm_node.hxx"
 #include "rnn/rnn_edge.hxx"
 #include "rnn/rnn_genome.hxx"
 #include "rnn/rnn_node.hxx"
 #include "rnn/rnn_node_interface.hxx"
-
 #include "rnn/generate_nn.hxx"
-
 #include "time_series/time_series.hxx"
-
 #include "gradient_test.hxx"
 
 
@@ -56,31 +54,29 @@ int main(int argc, char **argv)
         Log::fatal("weight initialization method %s is set wrong \n", weight_initialize_string.c_str());
     }
 
-    Log::info("TESTING FEED FORWARD\n");
 
-    vector<vector<double>> inputs;
     vector<vector<double>> outputs;
+    vector<vector<double>> expected;
 
     int timesteps = 10;
-    get_argument(arguments, "--timestep", true, timesteps);
+    get_argument(arguments, "--timesteps", true, timesteps);
 
-    int input_length = 1;
-    get_argument(arguments,"--input_length",true,input_length);
+    int output_length = 1;
+    get_argument(arguments,"--output_length",true,output_length);
 
-    inputs.resize(input_length);
-    for (size_t i = 0; i < inputs.size(); i++) {
-        inputs[i].resize(timesteps);
-    }
-
-    outputs.resize(input_length);
+    outputs.resize(output_length);
     for (size_t i = 0; i < outputs.size(); i++) {
         outputs[i].resize(timesteps);
     }
 
-    generate_random_oneHot_matrix(timesteps,input_length,inputs);
-    generate_random_oneHot_matrix(timesteps, input_length, outputs);
+    expected.resize(output_length);
+    for (size_t i = 0; i < expected.size(); i++) {
+        expected[i].resize(timesteps);
+    }
 
-    vector<double> parameters;
+    generate_random_matrix(timesteps, output_length, outputs);
+    generate_random_oneHot_matrix(timesteps, output_length, expected);
+
     double mse;
     vector<vector<double>> softmax_gradients, deltas;
 
@@ -90,7 +86,7 @@ int main(int argc, char **argv)
 
     string input_par = "input";
     string output_par = "output";
-    for (int32_t i = 0; i < input_length; i++) {
+    for (int32_t i = 0; i < output_length; i++) {
         string temp_input_par = input_par + to_string(i);
         string temp_output_par = output_par + to_string(i);
         inputs1.push_back(temp_input_par);
@@ -98,15 +94,35 @@ int main(int argc, char **argv)
     }
 
 
-    genome = create_lstm(inputs1, 1, 1, outputs1, 3, weight_initialize);
+    genome = create_lstm(inputs1, 1, 1, outputs1, timesteps, weight_initialize);
 
     RNN *rnn = genome->get_rnn();
 
-    generate_random_vector(rnn->get_number_weights(), parameters);
-    rnn->set_weights(parameters);
-    rnn->enable_use_regression(false);
-    deltas = rnn->get_softmax_gradient(parameters, inputs, outputs, mse, softmax_gradients, false, true, 0.0);
 
+    rnn->enable_use_regression(false);
+
+
+    deltas = rnn->get_softmax_gradient(outputs, expected, mse, softmax_gradients);
+
+    for (uint32_t j = 0; j < outputs[0].size(); j++) {
+        for (uint32_t i = 0; i < outputs.size(); i++) {
+            std::cout<<outputs[i][j]<<" ";
+        }
+        std::cout<<std::endl;
+    }
+
+    std::cout<<std::endl;
+
+    for (uint32_t j = 0; j < expected[0].size(); j++)
+    {
+        for (uint32_t i = 0; i < expected.size(); i++)
+        {
+            std::cout << expected[i][j] << " ";
+        }
+        std::cout << std::endl;
+    }
+
+    std::cout<<std::endl;
 
     for (uint32_t j = 0; j < deltas[0].size(); j++) {
         for (uint32_t i = 0; i < deltas.size(); i++) {
