@@ -31,6 +31,8 @@ $ dot -Tpdf genome.gv -o genome.pdf
 
 The datasets used for this part of the code are PennChar, PennTreeBank and WikiText. These datasets can be found in the *datasets* directory. These datasets can be used in both mpi as well as multithreaded version.
 
+## Work done this semester : 
+
 ### To use Pennchar as dataset and use Simple and ENARC as memory cell
  
 
@@ -112,7 +114,7 @@ The std_out can be seen in file *main_out* for 20 genomes. The number of genomes
 
 ![Architecture Diagram](https://github.com/travisdesell/exact/tree/enarc/images/arch.png)
 
-
+## Work done before
 
 # EXAMM: Evolutionary eXploration of Augmenting Memory Models and EXALT: Evolutionary eXploration of Augmenting LSTM Topologies
 
