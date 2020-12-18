@@ -9,7 +9,7 @@ using std::setprecision;
 using std::mutex;
 
 #include <string>
-using std::string;
+using std::string;  
 
 #include <thread>
 using std::thread;

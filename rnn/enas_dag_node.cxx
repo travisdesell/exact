@@ -149,8 +149,8 @@ double ENAS_DAG_Node::activation_derivative(double value, double input, int act_
 
 void ENAS_DAG_Node::input_fired(int time, double incoming_output) {
 
-    vector<int> connections {0,1,1,1,2,5,3,5,4};
-    vector<int> operations {1,1,1,3,3,0,2,1,2};
+    vector<int> connections{0, 1, 1, 1, 2, 5, 3, 5, 4};
+    vector<int> operations{1, 1, 1, 3, 3, 0, 2, 1, 2};
     vector<int> node_output(connections.size(),1);
     inputs_fired[time]++;
     input_values[time] += incoming_output;

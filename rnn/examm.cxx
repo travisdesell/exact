@@ -42,6 +42,9 @@ using std::to_string;
 #include "delta_node.hxx"
 #include "ugrnn_node.hxx"
 #include "mgu_node.hxx"
+#include "enas_dag_node.hxx"
+#include "enarc_node.hxx"
+#include "random_dag_node.hxx"
 
 #include "common/files.hxx"
 #include "common/log.hxx"
@@ -184,6 +187,8 @@ EXAMM::EXAMM(
     possible_node_types.push_back(LSTM_NODE);
     possible_node_types.push_back(ENARC_NODE);
     possible_node_types.push_back(DELTA_NODE);
+    possible_node_types.push_back(ENAS_DAG_NODE);
+    possible_node_types.push_back(RANDOM_DAG_NODE);
 
     bool node_ops = true;
     if (node_ops) {

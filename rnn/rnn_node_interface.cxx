@@ -15,8 +15,8 @@ using std::max;
 #include "common/log.hxx"
 
 
-extern const int32_t NUMBER_NODE_TYPES = 9;
-extern const string NODE_TYPES[] = { "simple" , "jordan", "elman", "UGRNN", "MGU", "GRU", "delta", "LSTM" , "ENARC" , "ENAS_DAG" };
+extern const int32_t NUMBER_NODE_TYPES = 11;
+extern const string NODE_TYPES[] = { "simple" , "jordan", "elman", "UGRNN", "MGU", "GRU", "delta", "LSTM" , "ENARC" , "ENAS_DAG" , "RANDOM_DAG"};
 
 double bound(double value) {
     if (value < -10.0) value = -10.0;

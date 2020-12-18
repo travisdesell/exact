@@ -1,9 +1,9 @@
 #include <chrono>
 
 #include <iomanip>
-using std::setw;
 using std::fixed;
 using std::setprecision;
+using std::setw;
 
 #include <mutex>
 using std::mutex;
@@ -21,11 +21,11 @@ using std::vector;
 
 #include "common/arguments.hxx"
 #include "common/log.hxx"
+#include "common/weight_initialize.hxx"
 
 #include "rnn/examm.hxx"
 
-#include "time_series/time_series.hxx"
-#include "word_series/word_series.hxx"  
+#include "word_series/word_series.hxx"
 
 #define WORK_REQUEST_TAG 1
 #define GENOME_LENGTH_TAG 2
@@ -40,10 +40,10 @@ EXAMM *examm;
 
 bool finished = false;
 
-vector< vector< vector<double> > > training_inputs;
-vector< vector< vector<double> > > training_outputs;
-vector< vector< vector<double> > > validation_inputs;
-vector< vector< vector<double> > > validation_outputs;
+vector<vector<vector<double>>> training_inputs;
+vector<vector<vector<double>>> training_outputs;
+vector<vector<vector<double>>> validation_inputs;
+vector<vector<vector<double>>> validation_outputs;
 
 void send_work_request(int target) {
     int work_request_message[1];
@@ -57,7 +57,7 @@ void receive_work_request(int source) {
     MPI_Recv(work_request_message, 1, MPI_INT, source, WORK_REQUEST_TAG, MPI_COMM_WORLD, &status);
 }
 
-RNN_Genome* receive_genome_from(int source) {
+RNN_Genome *receive_genome_from(int source) {
     MPI_Status status;
     int length_message[1];
     MPI_Recv(length_message, 1, MPI_INT, source, GENOME_LENGTH_TAG, MPI_COMM_WORLD, &status);
@@ -66,7 +66,7 @@ RNN_Genome* receive_genome_from(int source) {
 
     Log::debug("receiving genome of length: %d from: %d\n", length, source);
 
-    char* genome_str = new char[length + 1];
+    char *genome_str = new char[length + 1];
 
     Log::debug("receiving genome from: %d\n", source);
     MPI_Recv(genome_str, length, MPI_CHAR, source, GENOME_TAG, MPI_COMM_WORLD, &status);
@@ -75,13 +75,13 @@ RNN_Genome* receive_genome_from(int source) {
 
     Log::trace("genome_str:\n%s\n", genome_str);
 
-    RNN_Genome* genome = new RNN_Genome(genome_str, length);
+    RNN_Genome *genome = new RNN_Genome(genome_str, length);
 
-    delete [] genome_str;
+    delete[] genome_str;
     return genome;
 }
 
-void send_genome_to(int target, RNN_Genome* genome) {
+void send_genome_to(int target, RNN_Genome *genome) {
     char *byte_array;
     int32_t length;
 
@@ -126,7 +126,6 @@ void master(int max_rank) {
         int tag = status.MPI_TAG;
         Log::debug("probe returned message from: %d with tag: %d\n", source, tag);
 
-
         //if the message is a work request, send a genome
 
         if (tag == WORK_REQUEST_TAG) {
@@ -136,16 +135,18 @@ void master(int max_rank) {
             RNN_Genome *genome = examm->generate_genome();
             examm_mutex.unlock();
 
-            if (genome == NULL) { //search was completed if it returns NULL for an individual
+            if (genome == NULL) {
+                //search was completed if it returns NULL for an individual
                 //send terminate message
                 Log::info("terminating worker: %d\n", source);
                 send_terminate_message(source);
                 terminates_sent++;
 
                 Log::debug("sent: %d terminates of %d\n", terminates_sent, (max_rank - 1));
-                if (terminates_sent >= max_rank - 1) return;
-
-            } else {
+                if (terminates_sent >= max_rank - 1)
+                    return;
+            }
+            else {
                 //genome->write_to_file( examm->get_output_directory() + "/before_send_gen_" + to_string(genome->get_generation_id()) );
 
                 //send genome
@@ -155,7 +156,8 @@ void master(int max_rank) {
                 //delete this genome as it will not be used again
                 delete genome;
             }
-        } else if (tag == GENOME_LENGTH_TAG) {
+        }
+        else if (tag == GENOME_LENGTH_TAG) {
             Log::debug("received genome from: %d\n", source);
             RNN_Genome *genome = receive_genome_from(source);
 
@@ -166,7 +168,8 @@ void master(int max_rank) {
             //delete the genome as it won't be used again, a copy was inserted
             delete genome;
             //this genome will be deleted if/when removed from population
-        } else {
+        }
+        else {
             Log::fatal("ERROR: received message from %d with unknown tag: %d", source, tag);
             MPI_Abort(MPI_COMM_WORLD, 1);
         }
@@ -191,18 +194,15 @@ void worker(int rank) {
             Log::debug("received terminate tag!\n");
             receive_terminate_message(0);
             break;
-
-        } else if (tag == GENOME_LENGTH_TAG) {
+        }
+        else if (tag == GENOME_LENGTH_TAG) {
             Log::debug("received genome!\n");
-            RNN_Genome* genome = receive_genome_from(0);
+            RNN_Genome *genome = receive_genome_from(0);
 
             //have each worker write the backproagation to a separate log file
             string log_id = "genome_" + to_string(genome->get_generation_id()) + "_worker_" + to_string(rank);
             Log::set_id(log_id);
-
-            genome->backpropagate(training_inputs, training_outputs, validation_inputs, validation_outputs);
-            //genome->backpropagate_stochastic(training_inputs, training_outputs, validation_inputs, validation_outputs);
-
+            genome->backpropagate_stochastic(training_inputs, training_outputs, validation_inputs, validation_outputs);
             Log::release_id(log_id);
 
             //go back to the worker's log for MPI communication
@@ -211,7 +211,8 @@ void worker(int rank) {
             send_genome_to(0, genome);
 
             delete genome;
-        } else {
+        }
+        else {
             Log::fatal("ERROR: received message with unknown tag: %d\n", tag);
             MPI_Abort(MPI_COMM_WORLD, 1);
         }
@@ -227,23 +228,35 @@ void worker(int rank) {
 //     getchar();
 // }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
+    std::cout << "starting up!" << std::endl;
     MPI_Init(&argc, &argv);
+    std::cout << "did mpi init!" << std::endl;
 
     int rank, max_rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &max_rank);
 
+    std::cout << "got rank " << rank << " and max rank " << max_rank << std::endl;
+
     arguments = vector<string>(argv, argv + argc);
+
+    std::cout << "got arguments!" << std::endl;
 
     Log::initialize(arguments);
     Log::set_rank(rank);
     Log::set_id("main_" + to_string(rank));
     Log::restrict_to_rank(0);
 
+    std::cout << "initailized log!" << std::endl;
 
+    int32_t word_offset = 1;
+    get_argument(arguments, "--word_offset", true, word_offset);
 
-    Corpus* corpus_sets = NULL;
+    int32_t sequence_length = 64;
+    get_argument(arguments, "--sequence_length", false, sequence_length);
+
+    Corpus *corpus_sets = NULL;
 
     if (rank == 0) {
         //only have the master process print TSS info
@@ -253,19 +266,13 @@ int main(int argc, char** argv) {
             get_argument(arguments, "--write_word_series", true, base_filename);
             corpus_sets->write_sentence_series_sets(base_filename);
         }
-    } else {
+    }
+    else {
         corpus_sets = Corpus::generate_from_arguments(arguments);
     }
 
-
-
-    int32_t word_offset = 1;
-    get_argument(arguments, "--word_offset", true, word_offset);
-
-    corpus_sets->export_training_series(word_offset,training_inputs,training_outputs);
-    corpus_sets->export_test_series(word_offset,validation_inputs,validation_outputs);
-
-    Log::info("exported word series.\n");
+    corpus_sets->export_training_series(word_offset, training_inputs, training_outputs);
+    corpus_sets->export_test_series(word_offset, validation_inputs, validation_outputs);
 
     int number_inputs = corpus_sets->get_number_inputs();
     int number_outputs = corpus_sets->get_number_outputs();
@@ -286,7 +293,7 @@ int main(int argc, char** argv) {
 
     int32_t extinction_event_generation_number = 0;
     get_argument(arguments, "--extinction_event_generation_number", false, extinction_event_generation_number);
-  
+
     int32_t islands_to_exterminate;
     get_argument(arguments, "--islands_to_exterminate", false, islands_to_exterminate);
 
@@ -301,7 +308,7 @@ int main(int argc, char** argv) {
 
     double species_threshold = 0.0;
     get_argument(arguments, "--species_threshold", false, species_threshold);
-    
+
     double fitness_threshold = 100;
     get_argument(arguments, "--fitness_threshold", false, fitness_threshold);
 
@@ -313,7 +320,6 @@ int main(int argc, char** argv) {
 
     double neat_c3 = 1;
     get_argument(arguments, "--neat_c3", false, neat_c3);
-
     bool repeat_extinction = argument_exists(arguments, "--repeat_extinction");
 
     int32_t bp_iterations;
@@ -344,13 +350,13 @@ int main(int argc, char** argv) {
     get_argument(arguments, "--max_recurrent_depth", false, max_recurrent_depth);
 
     //bool use_regression = argument_exists(arguments, "--use_regression");
-    bool use_regression = false; //nlp will never use regression
+    bool use_regression = false; //time series will always use regression
 
     string weight_initialize_string = "random";
     get_argument(arguments, "--weight_initialize", false, weight_initialize_string);
     WeightType weight_initialize;
     weight_initialize = get_enum_from_string(weight_initialize_string);
-    
+
     string weight_inheritance_string = "lamarckian";
     get_argument(arguments, "--weight_inheritance", false, weight_inheritance_string);
     WeightType weight_inheritance;
@@ -360,7 +366,6 @@ int main(int argc, char** argv) {
     get_argument(arguments, "--mutated_component_weight", false, mutated_component_weight_string);
     WeightType mutated_component_weight;
     mutated_component_weight = get_enum_from_string(mutated_component_weight_string);
-
 
     RNN_Genome *seed_genome = NULL;
     string genome_file_name = "";
@@ -375,7 +380,6 @@ int main(int argc, char** argv) {
         seed_genome->transfer_to(corpus_sets->get_input_parameter_names(), corpus_sets->get_output_parameter_names(), transfer_learning_version, epigenetic_weights, min_recurrent_depth, max_recurrent_depth);
     }
 
-
     bool start_filled = false;
     get_argument(arguments, "--start_filled", false, start_filled);
 
@@ -383,34 +387,35 @@ int main(int argc, char** argv) {
 
     if (rank == 0) {
         examm = new EXAMM(population_size, number_islands, max_genomes, extinction_event_generation_number, islands_to_exterminate, island_ranking_method,
-            repopulation_method, repopulation_mutations,
-            repeat_extinction, speciation_method,
-            species_threshold, fitness_threshold,
-            neat_c1, neat_c2, neat_c3,
-            corpus_sets->get_input_parameter_names(),
-            corpus_sets->get_output_parameter_names(),
-            corpus_sets->get_normalize_type(),
-            corpus_sets->get_normalize_mins(),
-            corpus_sets->get_normalize_maxs(),
-            corpus_sets->get_normalize_avgs(),
-            corpus_sets->get_normalize_std_devs(),
-            weight_initialize, weight_inheritance, mutated_component_weight,
-            bp_iterations, learning_rate,
-            use_high_threshold, high_threshold,
-            use_low_threshold, low_threshold,
-            use_dropout, dropout_probability,
-            min_recurrent_depth, max_recurrent_depth,
-            use_regression,
-            output_directory,
-            seed_genome,
-            start_filled);
-        
-        if (possible_node_types.size() > 0)  {
+                          repopulation_method, repopulation_mutations, repeat_extinction,
+                          speciation_method,
+                          species_threshold, fitness_threshold,
+                          neat_c1, neat_c2, neat_c3,
+                          corpus_sets->get_input_parameter_names(),
+                          corpus_sets->get_output_parameter_names(),
+                          corpus_sets->get_normalize_type(),
+                          corpus_sets->get_normalize_mins(),
+                          corpus_sets->get_normalize_maxs(),
+                          corpus_sets->get_normalize_avgs(),
+                          corpus_sets->get_normalize_std_devs(),
+                          weight_initialize, weight_inheritance, mutated_component_weight,
+                          bp_iterations, learning_rate,
+                          use_high_threshold, high_threshold,
+                          use_low_threshold, low_threshold,
+                          use_dropout, dropout_probability,
+                          min_recurrent_depth, max_recurrent_depth,
+                          use_regression,
+                          output_directory,
+                          seed_genome,
+                          start_filled);
+
+        if (possible_node_types.size() > 0) {
             examm->set_possible_node_types(possible_node_types);
         }
 
         master(max_rank);
-    } else {
+    }
+    else {
         worker(rank);
     }
     Log::set_id("main_" + to_string(rank));
@@ -422,5 +427,6 @@ int main(int argc, char** argv) {
 
     MPI_Finalize();
     delete corpus_sets;
+
     return 0;
 }

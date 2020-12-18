@@ -160,12 +160,13 @@ void RANDOM_DAG_Node::input_fired(int time, double incoming_output) {
                                 {0,0,0,0,0,0,0,1},
                                 {0,0,0,0,0,0,0,0}
                             };
-    vector<int> operations {1,1,1,3,3,0,2,1,2};
-    int no_of_nodes = connections.size();
-    for(int i = 0;i<no_of_nodes;i++){
-        if(node_output.size() < no_of_nodes){
-            node_output.push_back(1);   
-        }else{
+         vector<int> operations{1, 1, 1, 3, 3, 0, 2, 1, 2};
+         int no_of_nodes = connections.size();
+         for (int i = 0; i < no_of_nodes; i++) {
+             if (node_output.size() < no_of_nodes) {
+                 node_output.push_back(1);
+             }
+             else{
             node_output[i] = 1;
         }
     }
