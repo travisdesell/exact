@@ -60,17 +60,12 @@ class SpeciationStrategy {
         virtual int32_t insert_genome(RNN_Genome* genome) = 0;
 
         /**
-         * Generates a new genome.
+         * Fetches a copy of some random genomes.
          *
-         * \param rng_0_1 is the random number distribution that generates random numbers between 0 (inclusive) and 1 (non=inclusive).
-         * \param generator is the random number generator
-         * \param mutate is the a function which performs a mutation on a genome
-         * \param crossover is the function which performs crossover between two genomes
-         *
-         * \return the newly generated genome.
+         * This method will fetch 1 genome if mutation is to be performed by the worker,
+         * and 2 genomes if crossover is to be performed.
          */
-        virtual RNN_Genome* generate_genome(uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator, function<void (int32_t, RNN_Genome*)> &mutate, function<RNN_Genome* (RNN_Genome*, RNN_Genome *)> &crossover) = 0;
-
+        virtual vector<RNN_Genome*> fetch_genomes(uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator) = 0;
 
         /**
          * Prints out all the island's populations

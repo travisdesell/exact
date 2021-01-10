@@ -15,11 +15,11 @@ using std::vector;
 
 
  class WordSeries{
- 	private:
- 		string name;
- 		int vocab_size;
+     private:
+         string name;
+         int vocab_size;
 
- 		double min;
+         double min;
         double average;
         double max;
         double std_dev;
@@ -27,11 +27,11 @@ using std::vector;
         double min_change;
         double max_change;
 
- 		vector<double> values;
- 		WordSeries(); 
+         vector<double> values;
+         WordSeries(); 
 
- 	public:
- 		WordSeries(string _name);
+     public:
+         WordSeries(string _name);
 
         void add_value(double value);
         double get_value(int i);
@@ -64,11 +64,11 @@ using std::vector;
  };
 
  class SentenceSeries {
-	private:
+    private:
         int number_rows;
         string filename;
-      	map<string,int> vocab;
-      	vector<string> word_index;
+          map<string,int> vocab;
+          vector<string> word_index;
         map <string,WordSeries*> word_series;
 
 
@@ -85,7 +85,7 @@ SentenceSeries(const string _filename,const vector<string> & _word_index , const
         string get_filename() const;
         
         vector<string> get_word_index() const;
-		
+        
 
         void get_series(string word_name, vector<double> &series);
 
@@ -115,9 +115,9 @@ SentenceSeries(const string _filename,const vector<string> & _word_index , const
 
 class Corpus {
 
-	private:
+    private:
 
-		string normalize_type;
+        string normalize_type;
 
         vector<string> filenames;
 
@@ -136,19 +136,19 @@ class Corpus {
         map<string,double> normalize_avgs;
         map<string,double> normalize_std_devs;
 
-		vector<string> word_index;
-		map<string,int> vocab;
+        vector<string> word_index;
+        map<string,int> vocab;
 
-		void load_word_library();
+        void load_word_library();
 
 
-	public:
+    public:
 
-		Corpus();
-		~Corpus();
+        Corpus();
+        ~Corpus();
 
-		static Corpus* generate_from_arguments(const vector<string> &arguments);
-		static Corpus* generate_test(const vector<string> &_test_filenames, const vector<string> &_input_parameter_names, const vector<string> &_output_parameter_names);
+        static Corpus* generate_from_arguments(const vector<string> &arguments);
+        static Corpus* generate_test(const vector<string> &_test_filenames, const vector<string> &_input_parameter_names, const vector<string> &_output_parameter_names);
 
         void normalize_min_max();
         void normalize_min_max(const map<string,double> &_normalize_mins, const map<string,double> &_normalize_maxs);

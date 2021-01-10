@@ -296,10 +296,10 @@ vector<int32_t> IslandSpeciationStrategy::rank_islands() {
 }
 
 
-RNN_Genome* IslandSpeciationStrategy::generate_genome(uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator, function<void (int32_t, RNN_Genome*)> &mutate, function<RNN_Genome* (RNN_Genome*, RNN_Genome *)> &crossover) {
+Work *IslandSpeciationStrategy::generate_work(uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator) {
     //generate the genome from the next island in a round
     //robin fashion.
-    RNN_Genome *genome = NULL;
+    vector<RNN_Genome*> genomes;
 
     Log::debug("getting island: %d\n", generation_island);
     Island *island = islands[generation_island];
@@ -340,16 +340,15 @@ RNN_Genome* IslandSpeciationStrategy::generate_genome(uniform_real_distribution<
             //return a copy of the minimal genome to be trained for each island
             genome = genome_copy->copy();
             genome->set_generation_id(generated_genomes);
+        
+            genomes.push(genome);
+            
             generated_genomes++;
-            return genome;
         } else {
             Log::info("island is not empty, mutating a random genome\n");
 
             while (genome == NULL) {
                 island->copy_random_genome(rng_0_1, generator, &genome);
-
-                //TODO: make max_mutations an IslandSpeciationStrategy option
-                mutate(1 /*max_mutations*/, genome);
 
                 if (genome->outputs_unreachable()) {
                     //no path from at least one input to the outputs
@@ -381,22 +380,20 @@ RNN_Genome* IslandSpeciationStrategy::generate_genome(uniform_real_distribution<
 
             genome->initialize_randomly();
             genome->set_generation_id(generated_genomes);
+            
+            genomes.push(genome);
             generated_genomes++;
-            return genome;
         }
 
     } else if (island->is_full()) {
         //generate a genome via crossover or mutation
         Log::info("island is full\n");
 
-        while (genome == NULL) {
-            genome = generate_for_filled_island(rng_0_1, generator, mutate, crossover);
-        }
+        genomes = generate_for_filled_island(rng_0_1, generator, mutate, crossover);
 
     } else if (island->is_repopulating()) {
         //select two other islands (non-overlapping) at random, and select genomes
         //from within those islands and generate a child via crossover
-
         Log::info("island is repopulating \n");
 
         while (genome == NULL) { 
@@ -467,19 +464,16 @@ RNN_Genome* IslandSpeciationStrategy::generate_genome(uniform_real_distribution<
     return genome;
 }
 
-RNN_Genome* IslandSpeciationStrategy::generate_for_filled_island(uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator, function<void (int32_t, RNN_Genome*)> &mutate, function<RNN_Genome* (RNN_Genome*, RNN_Genome *)> &crossover){
+Work *IslandSpeciationStrategy::generate_work_for_filled_island(uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator) {
     //if we haven't filled ALL of the island populations yet, only use mutation
     //otherwise do mutation at %, crossover at %, and island crossover at %
     Island *island = islands[generation_island];
-    RNN_Genome* genome;
+    vector<RNN_Genome*> genomes;
     double r = rng_0_1(generator);
     if (!islands_full() || r < mutation_rate) {
         Log::info("performing mutation\n");
 
         island->copy_random_genome(rng_0_1, generator, &genome);
-
-        //TODO: make max_mutations an IslandSpeciationStrategy option
-        mutate(1 /*max_mutations*/, genome);
 
     } else if (r < intra_island_crossover_rate || number_of_islands == 1) {
         //intra-island crossover
@@ -488,10 +482,6 @@ RNN_Genome* IslandSpeciationStrategy::generate_for_filled_island(uniform_real_di
         //select two distinct parent genomes in the same island
         RNN_Genome *parent1 = NULL, *parent2 = NULL;
         island->copy_two_random_genomes(rng_0_1, generator, &parent1, &parent2);
-
-        genome = crossover(parent1, parent2);
-        delete parent1;
-        delete parent2;
     } else {
         //inter-island crossover
         // Log::info("performing inter-island crossover\n");
@@ -513,10 +503,6 @@ RNN_Genome* IslandSpeciationStrategy::generate_for_filled_island(uniform_real_di
             parent1 = parent2;
             parent2 = tmp;
         }
-
-        genome = crossover(parent1, parent2); // new RNN GENOME
-        delete parent1;
-        delete parent2;
     }
     
     if (genome->outputs_unreachable()) {
@@ -524,6 +510,7 @@ RNN_Genome* IslandSpeciationStrategy::generate_for_filled_island(uniform_real_di
         delete genome;
         genome = NULL;
     }
+
     return genome;
 }
 

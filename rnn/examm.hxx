@@ -17,16 +17,17 @@ using std::to_string;
 #include <vector>
 using std::vector;
 
+
 #include "rnn_genome.hxx"
 #include "speciation_strategy.hxx"
 #include "common/weight_initialize.hxx"
+#include "genome_operators.hxx"
+#include "work/work.hxx"
 
 class EXAMM {
     private:
         int32_t population_size;
         int32_t number_islands;
-
-        vector< vector<RNN_Genome*> > genomes;
 
         int32_t max_genomes;
         int32_t total_bp_epochs;
@@ -34,68 +35,21 @@ class EXAMM {
         int32_t extinction_event_generation_number;
         string island_ranking_method;
 
-        string speciation_method;
+        bool start_filled;
+
+        // string speciation_method;
         string repopulation_method;
         int32_t repopulation_mutations;
         bool repeat_extinction;
         
         SpeciationStrategy *speciation_strategy;
 
-        double species_threshold;
-        double fitness_threshold;
-        double neat_c1;
-        double neat_c2;
-        double neat_c3;
-
-        int32_t edge_innovation_count;
-        int32_t node_innovation_count;
-
         map<string, int32_t> inserted_from_map;
         map<string, int32_t> generated_from_map;
-
-        int32_t number_inputs;
-        int32_t number_outputs;
-        int32_t bp_iterations;
-        double learning_rate;
-
-        bool use_high_threshold;
-        double high_threshold;
-
-        bool use_low_threshold;
-        double low_threshold;
-
-        bool use_regression;
-        bool use_dropout;
-        double dropout_probability;
-
+    
         minstd_rand0 generator;
-        uniform_real_distribution<double> rng_0_1;
+        constexpr uniform_real_distribution<double> rng_0_1{0.0, 1.0};
         uniform_real_distribution<double> rng_crossover_weight;
-
-        int32_t min_recurrent_depth;
-        int32_t max_recurrent_depth;
-
-
-        bool epigenetic_weights;
-
-        double more_fit_crossover_rate;
-        double less_fit_crossover_rate;
-
-        double clone_rate;
-
-        double add_edge_rate;
-        double add_recurrent_edge_rate;
-        double enable_edge_rate;
-        double disable_edge_rate;
-        double split_edge_rate;
-
-        double add_node_rate;
-        double enable_node_rate;
-        double disable_node_rate;
-        double split_node_rate;
-        double merge_node_rate;
-
-        vector<int> possible_node_types;
 
         vector<string> op_log_ordering;
         map<string, int32_t> inserted_counts;
@@ -105,15 +59,6 @@ class EXAMM {
         ofstream *log_file;
         ofstream *op_log_file;
 
-        vector<string> input_parameter_names;
-        vector<string> output_parameter_names;
-
-        string normalize_type;
-        map<string,double> normalize_mins;
-        map<string,double> normalize_maxs;
-        map<string,double> normalize_avgs;
-        map<string,double> normalize_std_devs;
-
         WeightType weight_initialize;
         WeightType weight_inheritance;
         WeightType mutated_component_weight;
@@ -122,9 +67,7 @@ class EXAMM {
 
         std::chrono::time_point<std::chrono::system_clock> startClock;
 
-        string  genome_file_name;
-
-        bool start_filled;
+        string genome_file_name;
 
     public:
         EXAMM(  int32_t _population_size, 
@@ -142,27 +85,9 @@ class EXAMM {
                 double _neat_c1, 
                 double _neat_c2, 
                 double _neat_c3,
-                const vector<string> &_input_parameter_names,
-                const vector<string> &_output_parameter_names,
-                string _normalize_type,
-                const map<string,double> &_normalize_mins,
-                const map<string,double> &_normalize_maxs,
-                const map<string,double> &_normalize_avgs,
-                const map<string,double> &_normalize_std_devs,
                 WeightType _weight_initialize,
                 WeightType _weight_inheritance,
                 WeightType _mutated_component_weight,
-                int32_t _bp_iterations,
-                double _learning_rate,
-                bool _use_high_threshold,
-                double _high_threshold,
-                bool _use_low_threshold, 
-                double _low_threshold,
-                bool _use_dropout,
-                double _dropout_probability,
-                int32_t _min_recurrent_depth,
-                int32_t _max_recurrent_depth,
-                bool _use_regression,
                 string _output_directory, 
                 RNN_Genome *seed_genome,
                 bool _start_filled);
@@ -180,7 +105,7 @@ class EXAMM {
 
         int get_random_node_type();
 
-        RNN_Genome* generate_genome();
+        Work *generate_work();
         bool insert_genome(RNN_Genome* genome);
 
         void mutate(int32_t max_mutations, RNN_Genome *p1);

@@ -15,6 +15,7 @@ using std::string;
 #include "island.hxx"
 #include "rnn_genome.hxx"
 #include "speciation_strategy.hxx"
+#include "work/work.hxx"
 
 class IslandSpeciationStrategy : public SpeciationStrategy {
     private:
@@ -148,18 +149,16 @@ class IslandSpeciationStrategy : public SpeciationStrategy {
         vector<int32_t> rank_islands();
 
         /**
-         * Generates a new genome.
+         * See speciation_strategy.hxx
          *
          * \param rng_0_1 is the random number distribution that generates random numbers between 0 (inclusive) and 1 (non=inclusive).
          * \param generator is the random number generator
-         * \param mutate is the a function which performs a mutation on a genome
-         * \param crossover is the function which performs crossover between two genomes
          *
          * \return the newly generated genome.
          */
-        RNN_Genome* generate_genome(uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator, function<void (int32_t, RNN_Genome*)> &mutate, function<RNN_Genome* (RNN_Genome*, RNN_Genome *)> &crossover);
+        Work *generate_work(uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator);
 
-        RNN_Genome* generate_for_filled_island(uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator, function<void (int32_t, RNN_Genome*)> &mutate, function<RNN_Genome* (RNN_Genome*, RNN_Genome *)> &crossover);
+        Work *generate_work_for_filled_island(uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator);
         /**
          * Prints out all the island's populations
          * 
