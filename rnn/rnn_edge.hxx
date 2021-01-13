@@ -56,6 +56,7 @@ class RNN_Edge {
 
         friend class RNN_Genome;
         friend class RNN;
+        friend class GenomeOperators;
         friend class EXAMM;
 };
 

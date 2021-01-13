@@ -5,6 +5,8 @@
 #include <string>
 #include <map>
 
+using namespace std;
+
 /**
  * Meta information about the dataset that is needed to train a genome
  **/

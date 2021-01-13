@@ -14,6 +14,7 @@ using std::uniform_real_distribution;
 #include "species.hxx"
 #include "rnn_genome.hxx"
 #include "speciation_strategy.hxx"
+#include "work/work.hxx"
 
 class NeatSpeciationStrategy : public SpeciationStrategy {
     private:
@@ -34,17 +35,17 @@ class NeatSpeciationStrategy : public SpeciationStrategy {
 
         RNN_Genome *minimal_genome; /**< keep a reference to a minimal genome so we can re-use it across islands and not duplicate innovation numbers. */
 
-        int32_t max_genomes;
+        // int32_t max_genomes;
 
         minstd_rand0 generator;
 
-        vector<Species*> Neat_Species;
+        vector<Species*> neat_species;
         RNN_Genome* global_best_genome;
     public:
 
         NeatSpeciationStrategy( double _mutation_rate, double _intra_island_crossover_rate, 
                                 double _inter_island_crossover_rate, RNN_Genome *_seed_genome,
-                                int32_t _max_genomes, double _species_threshold, double _fitness_threshold,
+                                double _species_threshold, double _fitness_threshold,
                                 double _neat_c1, double _neat_c2, double _neat_c3, minstd_rand0 &_generator);
         /**
          * \return the number of generated genomes.
@@ -102,9 +103,9 @@ class NeatSpeciationStrategy : public SpeciationStrategy {
          *
          * \return the newly generated genome.
          */
-        RNN_Genome* generate_genome(uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator, function<void (int32_t, RNN_Genome*)> &mutate, function<RNN_Genome* (RNN_Genome*, RNN_Genome *)> &crossover);
+        Work* generate_work(uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator);
 
-        RNN_Genome* generate_for_species(uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator, function<void (int32_t, RNN_Genome*)> &mutate, function<RNN_Genome* (RNN_Genome*, RNN_Genome *)> &crossover);
+        Work* generate_work_for_species(uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator);
 
         /**
          * Prints out all the island's populations

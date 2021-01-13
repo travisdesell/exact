@@ -4,11 +4,12 @@ class CrossoverWork : public Work {
         
         RNN_Genome *more_fit;
         RNN_Genome *less_fit;
+        const int32_t island_id;
     
     public:
-        CrossoverWork(RNN_Genome *more_fit, RNN_Genome *less_fit);
+        CrossoverWork(RNN_Genome *more_fit, RNN_Genome *less_fit, int32_t generation_id=0, int32_t generation_island=0);
         CrossoverWork(istream &bin_istream);
-        ~CrosoverWork();
+        ~CrossoverWork();
 
         void write_to_stream(ostream &bin_ostream);
         RNN_Genome *get_genome(GenomeOperators &operators);

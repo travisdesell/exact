@@ -1,4 +1,4 @@
-#include "mutator.hxx"
+#include "genome_operators.hxx"
 
 GenomeOperators::GenomeOperators(
                 int32_t _number_workers,
@@ -10,11 +10,15 @@ GenomeOperators::GenomeOperators(
                 int32_t _min_recurrent_depth,
                 int32_t _max_recurrent_depth,
                 double _dropout_probability,
-                DatasetMeta _datasetMeta,
+                WeightType _weight_initialize,
+                WeightType _weight_inheritance,
+                WeightType _mutated_component_weight,
+                DatasetMeta _dataset_meta,
+                TrainingParameters _training_parameters,
                 vector<string> _possible_node_type_strings) 
-    : dropout_probability(_dropout_probability), dataset_meta(_dataset_meta),
-      number_inputs(_number_inputs), number_outputs(_number_outputs), 
-      training_parameterss(_training_parameters) {
+    : dataset_meta(_dataset_meta),
+      training_parameters(_training_parameters),
+      generator((unsigned int) time(0)) {
 
     number_workers          = _number_workers;
     worker_id               = _worker_id;
@@ -47,6 +51,9 @@ GenomeOperators::GenomeOperators(
     
     edge_innovation_count   = _edge_innovation_count + worker_id;
     node_innovation_count   = _node_innovation_count + worker_id;
+
+    next_edge_innovation_number = [&]() { return this->next_edge_innovation_number(); };
+    next_node_innovation_number = [&]() { return this->next_node_innovation_number(); };
 
     set_possible_node_types(_possible_node_type_strings);
     
@@ -107,9 +114,9 @@ int GenomeOperators::get_random_node_type() {
     return GenomeOperators::possible_node_types[node_index_dist(generator)];
 }
 
-void GenomeOperators::finalize_genome(RNN_Genome *g) {
-    genome->set_parameter_names(datasetMeta.input_parameter_names, datasetMeta.output_parameter_names);
-    genome->set_normalize_bounds(datasetMeta.normalize_type, datasetMeta.normalize_mins, datasetMeta.normalize_maxs, datasetMeta.normalize_avgs, datasetMeta.normalize_std_devs);
+void GenomeOperators::finalize_genome(RNN_Genome *genome) {
+    genome->set_parameter_names(dataset_meta.input_parameter_names, dataset_meta.output_parameter_names);
+    genome->set_normalize_bounds(dataset_meta.normalize_type, dataset_meta.normalize_mins, dataset_meta.normalize_maxs, dataset_meta.normalize_avgs, dataset_meta.normalize_std_devs);
     genome->set_bp_iterations(training_parameters.bp_iterations);
     genome->set_learning_rate(training_parameters.learning_rate);
     genome->enable_use_regression(training_parameters.use_regression);
@@ -118,7 +125,7 @@ void GenomeOperators::finalize_genome(RNN_Genome *g) {
     if (training_parameters.use_low_threshold) genome->enable_low_threshold(training_parameters.low_threshold);
     if (training_parameters.use_dropout) genome->enable_dropout(training_parameters.dropout_probability);
 
-    if (!TrainingParameters::epigenetic_weights) genome->initialize_randomly();
+    if (!TrainingParameters::use_epigenetic_weights) genome->initialize_randomly();
 }
 
 RNN_Genome *GenomeOperators::mutate(RNN_Genome *g, int32_t n_mutations) {
@@ -151,10 +158,9 @@ RNN_Genome *GenomeOperators::mutate(RNN_Genome *g, int32_t n_mutations) {
         if (number_mutations >= n_mutations) break;
 
         g->assign_reachability();
-        double rng = unit_dist(generator);
+        double rng = rng_0_1(generator);
         int new_node_type = get_random_node_type();
         string node_type_str = NODE_TYPES[new_node_type];
-        Log::debug( "rng: %lf, total: %lf, new node type: %d (%s)\n", rng, total, new_node_type, node_type_str.c_str());
 
         if (rng < clone_rate) {
             Log::debug("\tcloned\n");
@@ -164,7 +170,7 @@ RNN_Genome *GenomeOperators::mutate(RNN_Genome *g, int32_t n_mutations) {
         }
         rng -= clone_rate;
         if (rng < add_edge_rate) {
-            modified = g->add_edge(mu, sigma, get_next_edge_innovation_number);
+            modified = g->add_edge(mu, sigma, next_edge_innovation_number);
             Log::debug("\tadding edge, modified: %d\n", modified);
             if (modified) g->set_generated_by("add_edge");
             continue;
@@ -172,7 +178,7 @@ RNN_Genome *GenomeOperators::mutate(RNN_Genome *g, int32_t n_mutations) {
         rng -= add_edge_rate;
 
         if (rng < add_recurrent_edge_rate) {
-            modified = g->add_recurrent_edge(mu, sigma, recurrent_depth_dist, get_next_edge_innovation_number);
+            modified = g->add_recurrent_edge(mu, sigma, recurrent_depth_dist, next_edge_innovation_number);
             Log::debug("\tadding recurrent edge, modified: %d\n", modified);
             if (modified) g->set_generated_by("add_recurrent_edge");
             continue;
@@ -196,7 +202,7 @@ RNN_Genome *GenomeOperators::mutate(RNN_Genome *g, int32_t n_mutations) {
         rng -= disable_edge_rate;
 
         if (rng < split_edge_rate) {
-            modified = g->split_edge(mu, sigma, new_node_type, recurrent_depth_dist, get_next_edge_innovation_number, get_next_node_innovation_number);
+            modified = g->split_edge(mu, sigma, new_node_type, recurrent_depth_dist, next_edge_innovation_number, next_node_innovation_number);
             Log::debug("\tsplitting edge, modified: %d\n", modified);
             if (modified) g->set_generated_by("split_edge(" + node_type_str + ")");
             continue;
@@ -204,7 +210,7 @@ RNN_Genome *GenomeOperators::mutate(RNN_Genome *g, int32_t n_mutations) {
         rng -= split_edge_rate;
 
         if (rng < add_node_rate) {
-            modified = g->add_node(mu, sigma, new_node_type, recurrent_depth_dist, get_next_edge_innovation_number, get_next_node_innovation_number);
+            modified = g->add_node(mu, sigma, new_node_type, recurrent_depth_dist, next_edge_innovation_number, next_node_innovation_number);
             Log::debug("\tadding node, modified: %d\n", modified);
             if (modified) g->set_generated_by("add_node(" + node_type_str + ")");
             continue;
@@ -228,7 +234,7 @@ RNN_Genome *GenomeOperators::mutate(RNN_Genome *g, int32_t n_mutations) {
         rng -= disable_node_rate;
 
         if (rng < split_node_rate) {
-            modified = g->split_node(mu, sigma, new_node_type, recurrent_depth_dist, get_next_edge_innovation_number, get_next_node_innovation_number);
+            modified = g->split_node(mu, sigma, new_node_type, recurrent_depth_dist, next_edge_innovation_number, next_node_innovation_number);
             Log::debug("\tsplitting node, modified: %d\n", modified);
             if (modified) g->set_generated_by("split_node(" + node_type_str + ")");
             continue;
@@ -236,7 +242,7 @@ RNN_Genome *GenomeOperators::mutate(RNN_Genome *g, int32_t n_mutations) {
         rng -= split_node_rate;
 
         if (rng < merge_node_rate) {
-            modified = g->merge_node(mu, sigma, new_node_type, recurrent_depth_dist, get_next_edge_innovation_number, get_next_node_innovation_number);
+            modified = g->merge_node(mu, sigma, new_node_type, recurrent_depth_dist, next_edge_innovation_number, next_node_innovation_number);
             Log::debug("\tmerging node, modified: %d\n", modified);
             if (modified) g->set_generated_by("merge_node(" + node_type_str + ")");
             continue;
@@ -455,9 +461,8 @@ RNN_Genome *GenomeOperators::crossover(RNN_Genome *more_fit, RNN_Genome *less_fi
     sort(child_recurrent_edges.begin(), child_recurrent_edges.end(), sort_RNN_Recurrent_Edges_by_depth());
     
     RNN_Genome *child = new RNN_Genome(child_nodes, child_edges, child_recurrent_edges, weight_initialize, weight_inheritance, mutated_component_weight);
-    child->set_parameter_names(input_parameter_names, output_parameter_names);
-    child->set_normalize_bounds(normalize_type, normalize_mins, normalize_maxs, normalize_avgs, normalize_std_devs);
-    
+    child->set_parameter_names(dataset_meta.input_parameter_names, dataset_meta.output_parameter_names);
+    child->set_normalize_bounds(dataset_meta.normalize_type, dataset_meta.normalize_mins, dataset_meta.normalize_maxs, dataset_meta.normalize_avgs, dataset_meta.normalize_std_devs);
     
     if (more_fit->get_group_id() == less_fit->get_group_id()) {
         child->set_generated_by("crossover");
@@ -499,3 +504,156 @@ RNN_Genome *GenomeOperators::crossover(RNN_Genome *more_fit, RNN_Genome *less_fi
     return child;
 
 }
+
+void GenomeOperators::attempt_node_insert(vector<RNN_Node_Interface*> &child_nodes, const RNN_Node_Interface *node, const vector<double> &new_weights) {
+    for (int32_t i = 0; i < (int32_t)child_nodes.size(); i++) {
+        if (child_nodes[i]->get_innovation_number() == node->get_innovation_number()) return;
+    }
+
+    RNN_Node_Interface *node_copy = node->copy();
+    node_copy->set_weights(new_weights);
+
+    child_nodes.insert( upper_bound(child_nodes.begin(), child_nodes.end(), node_copy, sort_RNN_Nodes_by_depth()), node_copy);
+}
+
+void GenomeOperators::attempt_edge_insert(vector<RNN_Edge*> &child_edges, vector<RNN_Node_Interface*> &child_nodes, RNN_Edge *edge, RNN_Edge *second_edge, bool set_enabled) {
+    for (int32_t i = 0; i < (int32_t)child_edges.size(); i++) {
+        if (child_edges[i]->get_innovation_number() == edge->get_innovation_number()) {
+            Log::fatal("ERROR in crossover! trying to push an edge with innovation_number: %d and it already exists in the vector!\n", edge->get_innovation_number());
+
+            Log::fatal("vector innovation numbers: ");
+            for (int32_t i = 0; i < (int32_t)child_edges.size(); i++) {
+                Log::fatal("\t%d", child_edges[i]->get_innovation_number());
+            }
+
+            Log::fatal("This should never happen!\n");
+            exit(1);
+
+            return;
+        } else if (child_edges[i]->get_input_innovation_number() == edge->get_input_innovation_number() &&
+                child_edges[i]->get_output_innovation_number() == edge->get_output_innovation_number()) {
+
+            Log::debug("Not inserting edge in crossover operation as there was already an edge with the same input and output innovation numbers!\n");
+            return;
+        }
+    }
+
+    vector<double> new_input_weights, new_output_weights;
+    double new_weight = 0.0;
+    if (second_edge != NULL) {
+        double crossover_value = rng_crossover_weight(generator);
+        new_weight = crossover_value * (second_edge->weight - edge->weight) + edge->weight;
+
+        Log::trace("EDGE WEIGHT CROSSOVER :: better: %lf, worse: %lf, crossover_value: %lf, new_weight: %lf\n", edge->weight, second_edge->weight, crossover_value, new_weight);
+
+        vector<double> input_weights1, input_weights2, output_weights1, output_weights2;
+        edge->get_input_node()->get_weights(input_weights1);
+        edge->get_output_node()->get_weights(output_weights1);
+
+        second_edge->get_input_node()->get_weights(input_weights2);
+        second_edge->get_output_node()->get_weights(output_weights2);
+
+        new_input_weights.resize(input_weights1.size());
+        new_output_weights.resize(output_weights1.size());
+
+        //can check to see if input weights lengths are same
+        //can check to see if output weights lengths are same
+
+        for (int32_t i = 0; i < (int32_t)new_input_weights.size(); i++) {
+            new_input_weights[i] = crossover_value * (input_weights2[i] - input_weights1[i]) + input_weights1[i];
+            Log::trace("\tnew input weights[%d]: %lf\n", i, new_input_weights[i]);
+        }
+
+        for (int32_t i = 0; i < (int32_t)new_output_weights.size(); i++) {
+            new_output_weights[i] = crossover_value * (output_weights2[i] - output_weights1[i]) + output_weights1[i];
+            Log::trace("\tnew output weights[%d]: %lf\n", i, new_output_weights[i]);
+        }
+
+    } else {
+        new_weight = edge->weight;
+        edge->get_input_node()->get_weights(new_input_weights);
+        edge->get_output_node()->get_weights(new_output_weights);
+    }
+
+    attempt_node_insert(child_nodes, edge->get_input_node(), new_input_weights);
+    attempt_node_insert(child_nodes, edge->get_output_node(), new_output_weights);
+
+    RNN_Edge *edge_copy = edge->copy(child_nodes);
+
+    edge_copy->enabled = set_enabled;
+    edge_copy->weight = new_weight;
+
+    //edges have already been copied
+    child_edges.insert( upper_bound(child_edges.begin(), child_edges.end(), edge_copy, sort_RNN_Edges_by_depth()), edge_copy);
+}
+
+void GenomeOperators::attempt_recurrent_edge_insert(vector<RNN_Recurrent_Edge*> &child_recurrent_edges, vector<RNN_Node_Interface*> &child_nodes, RNN_Recurrent_Edge *recurrent_edge, RNN_Recurrent_Edge *second_edge, bool set_enabled) {
+    for (int32_t i = 0; i < (int32_t)child_recurrent_edges.size(); i++) {
+        if (child_recurrent_edges[i]->get_innovation_number() == recurrent_edge->get_innovation_number()) {
+            Log::fatal("ERROR in crossover! trying to push an recurrent_edge with innovation_number: %d  and it already exists in the vector!\n", recurrent_edge->get_innovation_number());
+            Log::fatal("vector innovation numbers:\n");
+            for (int32_t i = 0; i < (int32_t)child_recurrent_edges.size(); i++) {
+                Log::fatal("\t %d", child_recurrent_edges[i]->get_innovation_number());
+            }
+
+            Log::fatal("This should never happen!\n");
+            exit(1);
+
+            return;
+        } else if (child_recurrent_edges[i]->get_input_innovation_number() == recurrent_edge->get_input_innovation_number() &&
+                child_recurrent_edges[i]->get_output_innovation_number() == recurrent_edge->get_output_innovation_number()) {
+
+            Log::debug("Not inserting recurrent_edge in crossover operation as there was already an recurrent_edge with the same input and output innovation numbers!\n");
+            return;
+        }
+    }
+
+
+    vector<double> new_input_weights, new_output_weights;
+    double new_weight = 0.0;
+    if (second_edge != NULL) {
+        double crossover_value = rng_crossover_weight(generator);
+        new_weight = crossover_value * (second_edge->weight - recurrent_edge->weight) + recurrent_edge->weight;
+
+        Log::debug("RECURRENT EDGE WEIGHT CROSSOVER :: better: %lf, worse: %lf, crossover_value: %lf, new_weight: %lf\n", recurrent_edge->weight, second_edge->weight, crossover_value, new_weight);
+
+        vector<double> input_weights1, input_weights2, output_weights1, output_weights2;
+        recurrent_edge->get_input_node()->get_weights(input_weights1);
+        recurrent_edge->get_output_node()->get_weights(output_weights1);
+
+        second_edge->get_input_node()->get_weights(input_weights2);
+        second_edge->get_output_node()->get_weights(output_weights2);
+
+        new_input_weights.resize(input_weights1.size());
+        new_output_weights.resize(output_weights1.size());
+
+        for (int32_t i = 0; i < (int32_t)new_input_weights.size(); i++) {
+            new_input_weights[i] = crossover_value * (input_weights2[i] - input_weights1[i]) + input_weights1[i];
+            Log::trace("\tnew input weights[%d]: %lf\n", i, new_input_weights[i]);
+        }
+
+        for (int32_t i = 0; i < (int32_t)new_output_weights.size(); i++) {
+            new_output_weights[i] = crossover_value * (output_weights2[i] - output_weights1[i]) + output_weights1[i];
+            Log::trace("\tnew output weights[%d]: %lf\n", i, new_output_weights[i]);
+        }
+
+    } else {
+        new_weight = recurrent_edge->weight;
+        recurrent_edge->get_input_node()->get_weights(new_input_weights);
+        recurrent_edge->get_output_node()->get_weights(new_output_weights);
+    }
+
+    attempt_node_insert(child_nodes, recurrent_edge->get_input_node(), new_input_weights);
+    attempt_node_insert(child_nodes, recurrent_edge->get_output_node(), new_output_weights);
+
+    RNN_Recurrent_Edge *recurrent_edge_copy = recurrent_edge->copy(child_nodes);
+
+    recurrent_edge_copy->enabled = set_enabled;
+    recurrent_edge_copy->weight = new_weight;
+
+
+    //recurrent_edges have already been copied
+    child_recurrent_edges.insert( upper_bound(child_recurrent_edges.begin(), child_recurrent_edges.end(), recurrent_edge_copy, sort_RNN_Recurrent_Edges_by_depth()), recurrent_edge_copy);
+}
+
+

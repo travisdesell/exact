@@ -17,6 +17,11 @@ Work *read_from_stream(istream &bin_istream) {
     return NULL;
 }
 
-#include "work/mutation_work.cxx"
-#include "work/crossover_work.cxx"
-#include "work/terminate_work.cxx"
+void set_generation_id(int32_t generation_id) { this->generation_id = generation_id; }
+
+void set_group_id(int32_t group_id) { this->group_id = group_id; }
+
+#include "mutation_work.cxx"
+#include "crossover_work.cxx"
+#include "terminate_work.cxx"
+#include "initialize_work.cxx"

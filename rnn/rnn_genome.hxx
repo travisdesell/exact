@@ -19,6 +19,8 @@ using std::mt19937;
 #include <vector>
 using std::vector;
 
+using namespace std;
+
 #include "rnn.hxx"
 #include "rnn_node_interface.hxx"
 #include "rnn_edge.hxx"
@@ -221,28 +223,28 @@ class RNN_Genome {
         void assign_reachability();
         bool outputs_unreachable();
 
-        RNN_Node_Interface* create_node(double mu, double sigma, int node_type, int32_t &node_innovation_count, double depth);
+        RNN_Node_Interface* create_node(double mu, double sigma, int node_type, function<int32_t ()> &get_next_node_innovation_count, double depth);
 
-        bool attempt_edge_insert(RNN_Node_Interface *n1, RNN_Node_Interface *n2, double mu, double sigma, int32_t &edge_innovation_count);
-        bool attempt_recurrent_edge_insert(RNN_Node_Interface *n1, RNN_Node_Interface *n2, double mu, double sigma, uniform_int_distribution<int32_t> dist, int32_t &edge_innovation_count);
+        bool attempt_edge_insert(RNN_Node_Interface *n1, RNN_Node_Interface *n2, double mu, double sigma, function<int32_t ()> &get_next_edge_innovation_count);
+        bool attempt_recurrent_edge_insert(RNN_Node_Interface *n1, RNN_Node_Interface *n2, double mu, double sigma, uniform_int_distribution<int32_t> dist, function<int32_t ()> &get_next_edge_innovation_count);
 
         //after adding an Elman or Jordan node, generate the circular RNN edge for Elman and the
         //edges from output to this node for Jordan.
-        void generate_recurrent_edges(RNN_Node_Interface *node, double mu, double sigma, uniform_int_distribution<int32_t> dist, int32_t &edge_innovation_count);
+        void generate_recurrent_edges(RNN_Node_Interface *node, double mu, double sigma, uniform_int_distribution<int32_t> dist, function<int32_t ()> &get_next_edge_innovation_count);
 
-        bool add_edge(double mu, double sigma, int32_t &edge_innovation_count);
-        bool add_recurrent_edge(double mu, double sigma, uniform_int_distribution<int32_t> rec_depth_dist, int32_t &edge_innovation_count);
+        bool add_edge(double mu, double sigma, function<int32_t ()> &get_next_edge_innovation_count);
+        bool add_recurrent_edge(double mu, double sigma, uniform_int_distribution<int32_t> rec_depth_dist, function<int32_t ()> &get_next_edge_innovation_count);
         bool disable_edge();
         bool enable_edge();
-        bool split_edge(double mu, double sigma, int node_type, uniform_int_distribution<int32_t> rec_depth_dist, int32_t &edge_innovation_count, int32_t &node_innovation_count);
+        bool split_edge(double mu, double sigma, int node_type, uniform_int_distribution<int32_t> rec_depth_dist, function<int32_t ()> &get_next_edge_innovation_count, function<int32_t ()> &get_next_node_innovation_count);
 
 
-        bool add_node(double mu, double sigma, int node_type, uniform_int_distribution<int32_t> dist, int32_t &edge_innovation_count, int32_t &node_innovation_count);
+        bool add_node(double mu, double sigma, int node_type, uniform_int_distribution<int32_t> dist, function<int32_t ()> &get_next_edge_innovation_count, function<int32_t ()> &get_next_node_innovation_count);
 
         bool enable_node();
         bool disable_node();
-        bool split_node(double mu, double sigma, int node_type, uniform_int_distribution<int32_t> dist, int32_t &edge_innovation_count, int32_t &node_innovation_count);
-        bool merge_node(double mu, double sigma, int node_type, uniform_int_distribution<int32_t> dist, int32_t &edge_innovation_count, int32_t &node_innovation_count);
+        bool split_node(double mu, double sigma, int node_type, uniform_int_distribution<int32_t> dist, function<int32_t ()> &get_next_edge_innovation_count, function<int32_t ()> &get_next_node_innovation_count);
+        bool merge_node(double mu, double sigma, int node_type, uniform_int_distribution<int32_t> dist, function<int32_t ()>  &get_next_edge_innovation_count, function<int32_t ()> &get_next_node_innovation_count);
 
         /**
          * Determines if the genome contains a node with the given innovation number
@@ -269,11 +271,11 @@ class RNN_Genome {
         void write_to_file(string bin_filename);
         void write_to_stream(ostream &bin_stream);
 
-        bool connect_new_input_node( double mu, double sig, RNN_Node_Interface *new_node, uniform_int_distribution<int32_t> dist, int32_t &edge_innovation_count );
-        bool connect_new_output_node( double mu, double sig, RNN_Node_Interface *new_node, uniform_int_distribution<int32_t> dist, int32_t &edge_innovation_count );
-        bool connect_node_to_hid_nodes( double mu, double sig, RNN_Node_Interface *new_node, uniform_int_distribution<int32_t> dist, int32_t &edge_innovation_count, bool from_input );
+        bool connect_new_input_node( double mu, double sig, RNN_Node_Interface *new_node, uniform_int_distribution<int32_t> dist, function<int32_t ()> &get_next_edge_innovation_count );
+        bool connect_new_output_node( double mu, double sig, RNN_Node_Interface *new_node, uniform_int_distribution<int32_t> dist, function<int32_t ()> &get_next_edge_innovation_count );
+        bool connect_node_to_hid_nodes( double mu, double sig, RNN_Node_Interface *new_node, uniform_int_distribution<int32_t> dist, function<int32_t ()> &get_next_edge_innovation_count, bool from_input );
         
-        void update_innovation_counts(int32_t &node_innovation_count, int32_t &edge_innovation_count);
+        void update_innovation_counts(function<int32_t ()> &get_next_node_innovation_count, function<int32_t ()> &get_next_edge_innovation_count);
 
         vector<int32_t> get_innovation_list();
         /**
@@ -284,17 +286,17 @@ class RNN_Genome {
         /**
          * \return the max innovation number of any node in the genome.
          */
-        int get_max_node_innovation_count();
+        int get_max_node_innovation_number();
 
         /**
          * \return the max innovation number of any edge or recurrent edge in the genome.
          */
-        int get_max_edge_innovation_count();
+        int get_max_edge_innovation_number();
 
         void transfer_to(const vector<string> &new_input_parameter_names, const vector<string> &new_output_parameter_names, string transfer_learning_version, bool epigenetic_weights, int32_t min_recurrent_depth, int32_t max_recurrent_depth);
 
         friend class EXAMM;
-        friend class Mutator;
+        friend class GenomeOperators;
         friend class IslandSpeciationStrategy;
         friend class NeatSpeciationStrategy;
         friend class RecDepthFrequencyTable;

@@ -1,4 +1,4 @@
-TerminateWork::TerminateWork() {}
+TerminateWork::TerminateWork() : generation_id(-1), group_id(-1) {}
 TerminateWork::TerminateWork(istream &bin_istream) {
     int class_id = bin_istream.get();
     if (class_id != TerminateWork::class_id) {

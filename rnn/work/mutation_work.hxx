@@ -9,7 +9,7 @@ class MutationWork : public Work {
         /**
          * The supplied genome must not be null! 
          **/
-        MutationWork(RNN_Genome *_genome, int32_t _n_mutations);
+        MutationWork(RNN_Genome *_genome, int32_t _n_mutations, int32_t generation_id=0, int32_t generation_island=0);
         MutationWork(istream &bin_istream);
         ~MutationWork();
 

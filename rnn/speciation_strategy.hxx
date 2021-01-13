@@ -9,6 +9,7 @@ using std::string;
 using std::minstd_rand0;
 using std::uniform_real_distribution;
 
+#include "work/work.hxx"
 
 class SpeciationStrategy {
     
@@ -60,12 +61,10 @@ class SpeciationStrategy {
         virtual int32_t insert_genome(RNN_Genome* genome) = 0;
 
         /**
-         * Fetches a copy of some random genomes.
-         *
-         * This method will fetch 1 genome if mutation is to be performed by the worker,
-         * and 2 genomes if crossover is to be performed.
+         * Generates a unit of work. It will either be a MutationWork object
+         * or a CrossoverWork object. The work unit is to be sent to a worker.
          */
-        virtual vector<RNN_Genome*> fetch_genomes(uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator) = 0;
+        virtual Work *generate_work(uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator) = 0;
 
         /**
          * Prints out all the island's populations

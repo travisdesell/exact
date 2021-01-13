@@ -22,6 +22,8 @@ using std::vector;
 #include "speciation_strategy.hxx"
 #include "common/weight_initialize.hxx"
 #include "genome_operators.hxx"
+#include "training_parameters.hxx"
+#include "dataset_meta.hxx"
 #include "work/work.hxx"
 
 class EXAMM {
@@ -31,6 +33,10 @@ class EXAMM {
 
         int32_t max_genomes;
         int32_t total_bp_epochs;
+
+        DatasetMeta dataset_meta;
+        TrainingParameters training_parameters;
+        GenomeOperators genome_operators;
 
         int32_t extinction_event_generation_number;
         string island_ranking_method;
@@ -48,7 +54,7 @@ class EXAMM {
         map<string, int32_t> generated_from_map;
     
         minstd_rand0 generator;
-        constexpr uniform_real_distribution<double> rng_0_1{0.0, 1.0};
+        uniform_real_distribution<double> rng_0_1{0.0, 1.0};
         uniform_real_distribution<double> rng_crossover_weight;
 
         vector<string> op_log_ordering;
@@ -76,7 +82,7 @@ class EXAMM {
                 int32_t _extinction_event_generation_number,
                 int32_t _islands_to_exterminate,
                 string _island_ranking_method,
-                string _repopulation_method,
+                string repopulation_method,
                 int32_t _repopulation_mutations,
                 bool _repeat_extinction,
                 string _speciation_method,
@@ -88,7 +94,10 @@ class EXAMM {
                 WeightType _weight_initialize,
                 WeightType _weight_inheritance,
                 WeightType _mutated_component_weight,
-                string _output_directory, 
+                string _output_directory,
+                GenomeOperators _genome_operators,
+                DatasetMeta _dataset_meta,
+                TrainingParameters _training_parameters,
                 RNN_Genome *seed_genome,
                 bool _start_filled);
 

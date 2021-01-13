@@ -1,6 +1,8 @@
 #ifndef TRAINING_PARAMETERS_HXX
 #define TRAINING_PARAMETERS_HXX 1
 
+#include <stdint.h>
+
 /**
  * Parameters regarding the training of genomes 
  **/
@@ -9,7 +11,7 @@ class TrainingParameters {
         /**
          * Static training parameters
          **/
-        static constexpr bool epigenetic_weights = true;
+        static constexpr bool use_epigenetic_weights = true;
        
 
         /**
@@ -20,11 +22,12 @@ class TrainingParameters {
         const double high_threshold;
         const double low_threshold;
         const double learning_rate;
-        
-        const bool epigenetic_weights;
+        const double dropout_probability;
+
         const bool use_high_threshold;
         const bool use_low_threshold;
         const bool use_regression;
+        const bool use_dropout;
 
 
         TrainingParameters(
@@ -32,10 +35,11 @@ class TrainingParameters {
                 double _high_threshold,
                 double _low_threshold,
                 double _learning_rate,
-                bool _epigenetic_weights,
+                double dropout_probability,
                 bool _use_high_threshold,
                 bool _use_low_threshold,
-                bool _use_regression);
+                bool _use_regression,
+                bool _use_dropout);
 };
 
 #endif

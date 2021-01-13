@@ -78,9 +78,7 @@ void Species::copy_two_random_genomes(uniform_real_distribution<double> &rng_0_1
 
     //swap the gnomes so that the first parent is the more fit parent
     if (p1 > p2) {
-        int32_t tmp = p1;
-        p1 = p2;
-        p2 = tmp;
+        std::swap(p1, p2);
     }
 
     *genome1 = genomes[p1]->copy();

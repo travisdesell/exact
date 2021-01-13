@@ -1,3 +1,5 @@
+#include "dataset_meta.hxx"
+
 DatasetMeta::DatasetMeta(
         const vector<string> &_input_parameter_names,
         const vector<string> &_output_parameter_names,
@@ -12,7 +14,4 @@ DatasetMeta::DatasetMeta(
         normalize_mins(_normalize_mins),
         normalize_maxs(_normalize_maxs),
         normalize_avgs(_normalize_avgs),
-        normalize_std_devs(_normalize_std_devs) {
-    // Test
-    input_parameter_names.push("hi");
-}
+        normalize_std_devs(_normalize_std_devs) { }
