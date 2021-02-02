@@ -35,7 +35,7 @@ module load libtiff
 EXAMM="/home/vj6810/EXAMM/exact"
 
 for folder in 0 1 2 3 4 ; do
-    exp_name="$EXAMM/nlp_results/all_cells/$folder"
+    exp_name="$EXAMM/nlp_results/delta/$folder"
     mkdir -p $exp_name
     echo "\t Iteration: $exp_name"
     srun -n 60 $EXAMM/build/mpi/examm_mpi_nlp  \
@@ -49,7 +49,7 @@ for folder in 0 1 2 3 4 ; do
     --bp_iterations 10 \
     --use_regression 0 \
     --output_directory $exp_name \
-    --possible_node_types simple UGRNN MGU GRU delta LSTM \
+    --possible_node_types simple delta \
     --normalize min_max \
     --std_message_level ERROR \
     --file_message_level ERROR

@@ -1,0 +1,781 @@
+\t Iteration: /home/vj6810/EXAMM/exact/nlp_results/MGU/0
+starting up!
+starting up!
+starting up!
+starting up!
+starting up!
+starting up!
+starting up!
+starting up!
+starting up!
+starting up!
+starting up!
+starting up!
+starting up!
+starting up!
+starting up!
+starting up!
+starting up!
+starting up!
+starting up!
+did mpi init!
+got rank 17 and max rank 60
+got arguments!
+initailized log!
+did mpi init!
+got rank 18 and max rank 60
+got arguments!
+initailized log!
+did mpi init!
+got rank 4 and max rank 60
+got arguments!
+initailized log!
+did mpi init!
+got rank 6 and max rank 60
+got arguments!
+initailized log!
+did mpi init!
+got rank 0 and max rank 60
+got arguments!
+initailized log!
+did mpi init!
+got rank 2 and max rank 60
+got arguments!
+initailized log!
+did mpi init!
+did mpi init!
+got rank 3 and max rank 60
+got arguments!
+did mpi init!
+got rank 1 and max rank 60
+got arguments!
+initailized log!
+initailized log!
+got rank 5 and max rank 60
+got arguments!
+did mpi init!
+initailized log!
+got rank 7 and max rank 60
+got arguments!
+initailized log!
+did mpi init!
+got rank 8 and max rank 60
+got arguments!
+initailized log!
+starting up!
+starting up!
+starting up!
+starting up!
+starting up!
+starting up!
+starting up!
+starting up!
+did mpi init!
+got rank 22 and max rank 60
+got arguments!
+did mpi init!
+got rank 25 and max rank 60
+got arguments!
+did mpi init!
+got rank 20 and max rank 60
+got arguments!
+did mpi init!
+did mpi init!
+got rank 23 and max rank 60
+did mpi init!
+got rank 24 and max rank 60
+got rank 19 and max rank 60
+got arguments!
+did mpi init!
+got arguments!
+got arguments!
+got rank 21 and max rank 60
+got arguments!
+initailized log!
+initailized log!
+initailized log!
+initailized log!
+initailized log!
+initailized log!
+initailized log!
+did mpi init!
+got rank 26 and max rank 60
+got arguments!
+initailized log!
+did mpi init!
+got rank 10 and max rank 60
+got arguments!
+did mpi init!
+got rank 9 and max rank 60
+got arguments!
+did mpi init!
+did mpi init!
+got rank 16 and max rank 60
+got rank 12 and max rank 60
+got arguments!
+did mpi init!
+got rank 14 and max rank 60
+got arguments!
+got arguments!
+did mpi init!
+did mpi init!
+did mpi init!
+got rank 11 and max rank 60
+got arguments!
+got rank 13 and max rank 60
+got arguments!
+got rank 15 and max rank 60
+got arguments!
+initailized log!
+initailized log!
+initailized log!
+initailized log!
+initailized log!
+initailized log!
+initailized log!
+initailized log!
+starting up!
+starting up!
+starting up!
+starting up!
+starting up!
+starting up!
+starting up!
+starting up!
+starting up!
+starting up!
+starting up!
+starting up!
+starting up!
+starting up!
+starting up!
+starting up!
+starting up!
+starting up!
+starting up!
+starting up!
+starting up!
+starting up!
+starting up!
+starting up!
+starting up!
+starting up!
+starting up!
+starting up!
+starting up!
+starting up!
+starting up!
+starting up!
+starting up!
+word_offset:: -1
+word_offset:: -1
+word_offset:: -1
+word_offset:: -1
+word_offset:: -1
+word_offset:: -1
+word_offset:: -1
+word_offset:: -1
+word_offset:: -1
+word_offset:: -1
+word_offset:: -1
+word_offset:: -1
+word_offset:: -1
+word_offset:: -1
+word_offset:: -1
+word_offset:: -1
+word_offset:: -1
+word_offset:: -1
+word_offset:: -1
+training
+word_offset:: -1
+word_offset:: -1
+training
+word_offset:: -1
+word_offset:: -1
+training
+training
+training
+training
+training
+word_offset:: -1
+training
+training
+training
+training
+word_offset:: -1
+word_offset:: -1
+training
+training
+training
+training
+training
+word_offset:: -1
+training
+training
+training
+training
+training
+training
+training
+training
+training
+training
+training
+word_offset:: 1
+word_offset:: 1
+word_offset:: 1
+word_offset:: 1
+word_offset:: 1
+word_offset:: 1
+word_offset:: 1
+word_offset:: 1
+word_offset:: 1
+word_offset:: 1
+word_offset:: 1
+word_offset:: 1
+word_offset:: 1
+word_offset:: 1
+word_offset:: 1
+word_offset:: 1
+word_offset:: 1
+word_offset:: 1
+word_offset:: 1
+word_offset:: 1
+did mpi init!
+got rank 46 and max rank 60
+got arguments!
+did mpi init!
+got rank 42 and max rank 60
+got arguments!
+did mpi init!
+got rank 34 and max rank 60
+got arguments!
+did mpi init!
+did mpi init!
+got rank 56 and max rank 60
+got rank 32 and max rank 60
+did mpi init!
+got arguments!
+did mpi init!
+got arguments!
+did mpi init!
+got rank 48 and max rank 60
+got arguments!
+got rank 57 and max rank 60
+got arguments!
+got rank 45 and max rank 60
+did mpi init!
+got arguments!
+got rank 27 and max rank 60
+got arguments!
+did mpi init!
+did mpi init!
+did mpi init!
+got rank 38 and max rank 60
+got arguments!
+got rank 28 and max rank 60
+got arguments!
+did mpi init!
+got rank 31 and max rank 60
+got arguments!
+did mpi init!
+did mpi init!
+did mpi init!
+got rank 51 and max rank 60
+got arguments!
+did mpi init!
+got rank 55 and max rank 60
+got arguments!
+did mpi init!
+did mpi init!
+did mpi init!
+did mpi init!
+got rank 37 and max rank 60
+got arguments!
+got rank 43 and max rank 60
+got arguments!
+got rank 47 and max rank 60
+got arguments!
+did mpi init!
+got rank 30 and max rank 60
+got arguments!
+got rank 36 and max rank 60
+got arguments!
+word_offset:: 1
+did mpi init!
+did mpi init!
+got rank 59 and max rank 60
+got arguments!
+did mpi init!
+got rank 35 and max rank 60
+got arguments!
+did mpi init!
+got rank 40 and max rank 60
+did mpi init!
+got rank 50 and max rank 60
+did mpi init!
+got rank 52 and max rank 60
+did mpi init!
+got rank 53 and max rank 60
+got rank 58 and max rank 60
+got arguments!
+did mpi init!
+got rank 29 and max rank 60
+got rank 33 and max rank 60
+got rank 39 and max rank 60
+got arguments!
+did mpi init!
+got rank 41 and max rank 60
+got arguments!
+got arguments!
+got arguments!
+got arguments!
+got arguments!
+got arguments!
+got arguments!
+initailized log!
+initailized log!
+initailized log!
+initailized log!
+initailized log!
+initailized log!
+initailized log!
+initailized log!
+got rank 54 and max rank 60
+initailized log!
+initailized log!
+initailized log!
+initailized log!
+got arguments!
+initailized log!
+initailized log!
+initailized log!
+initailized log!
+initailized log!
+initailized log!
+initailized log!
+initailized log!
+initailized log!
+initailized log!
+initailized log!
+initailized log!
+initailized log!
+initailized log!
+did mpi init!
+got rank 44 and max rank 60
+got arguments!
+initailized log!
+initailized log!
+initailized log!
+initailized log!
+initailized log!
+initailized log!
+word_offset:: 1
+did mpi init!
+got rank 49 and max rank 60
+got arguments!
+initailized log!
+testing
+testing
+word_offset:: 1
+testing
+testing
+word_offset:: 1
+testing
+testing
+testing
+word_offset:: 1
+word_offset:: 1
+testing
+testing
+testing
+testing
+testing
+testing
+testing
+testing
+word_offset:: 1
+testing
+testing
+testing
+testing
+testing
+testing
+testing
+testing
+testing
+testing
+testing
+testing
+word_offset:: -1
+word_offset:: -1
+word_offset:: -1
+word_offset:: -1
+word_offset:: -1
+word_offset:: -1
+word_offset:: -1
+word_offset:: -1
+word_offset:: -1
+word_offset:: -1
+word_offset:: -1
+word_offset:: -1
+word_offset:: -1
+word_offset:: -1
+word_offset:: -1
+word_offset:: -1
+word_offset:: -1
+word_offset:: -1
+word_offset:: -1
+word_offset:: -1
+word_offset:: -1
+word_offset:: -1
+word_offset:: -1
+word_offset:: -1
+word_offset:: -1
+word_offset:: -1
+word_offset:: -1
+word_offset:: -1
+word_offset:: -1
+word_offset:: -1
+word_offset:: -1
+word_offset:: -1
+word_offset:: -1
+training
+training
+training
+training
+training
+training
+training
+training
+training
+training
+training
+training
+training
+training
+training
+training
+training
+training
+training
+training
+training
+training
+training
+training
+training
+training
+training
+training
+training
+training
+training
+training
+training
+word_offset:: -1
+training
+word_offset:: -1
+word_offset:: -1
+word_offset:: -1
+training
+training
+word_offset:: -1
+training
+word_offset:: -1
+training
+word_offset:: -1
+training
+word_offset:: -1
+word_offset:: -1
+word_offset:: -1
+word_offset:: -1
+word_offset:: -1
+word_offset:: -1
+training
+training
+word_offset:: -1
+word_offset:: -1
+training
+training
+word_offset:: -1
+training
+training
+training
+word_offset:: -1
+word_offset:: -1
+word_offset:: -1
+word_offset:: 1
+training
+training
+training
+training
+training
+training
+word_offset:: -1
+testing
+training
+word_offset:: 1
+word_offset:: 1
+word_offset:: 1
+word_offset:: -1
+word_offset:: -1
+word_offset:: -1
+testing
+word_offset:: 1
+testing
+testing
+training
+training
+training
+word_offset:: 1
+testing
+word_offset:: -1
+word_offset:: -1
+word_offset:: 1
+testing
+word_offset:: 1
+training
+word_offset:: 1
+word_offset:: 1
+training
+word_offset:: 1
+word_offset:: -1
+word_offset:: 1
+word_offset:: 1
+testing
+testing
+word_offset:: 1
+word_offset:: 1
+testing
+testing
+word_offset:: 1
+testing
+testing
+word_offset:: 1
+word_offset:: 1
+training
+testing
+word_offset:: 1
+testing
+testing
+testing
+word_offset:: -1
+testing
+testing
+word_offset:: 1
+testing
+testing
+training
+word_offset:: 1
+word_offset:: 1
+word_offset:: 1
+testing
+testing
+testing
+word_offset:: 1
+word_offset:: 1
+testing
+word_offset:: 1
+testing
+testing
+word_offset:: 1
+testing
+word_offset:: 1
+word_offset:: 1
+word_offset:: 1
+word_offset:: 1
+word_offset:: 1
+word_offset:: 1
+word_offset:: 1
+word_offset:: 1
+word_offset:: 1
+word_offset:: 1
+word_offset:: 1
+word_offset:: 1
+word_offset:: 1
+word_offset:: 1
+word_offset:: 1
+word_offset:: 1
+word_offset:: 1
+word_offset:: 1
+word_offset:: 1
+word_offset:: 1
+word_offset:: 1
+word_offset:: 1
+word_offset:: 1
+word_offset:: 1
+word_offset:: 1
+word_offset:: 1
+word_offset:: 1
+word_offset:: 1
+word_offset:: 1
+word_offset:: 1
+word_offset:: 1
+word_offset:: 1
+word_offset:: 1
+testing
+testing
+testing
+testing
+testing
+testing
+testing
+testing
+testing
+testing
+testing
+testing
+testing
+testing
+testing
+testing
+testing
+testing
+testing
+testing
+testing
+testing
+testing
+testing
+testing
+testing
+testing
+testing
+testing
+testing
+testing
+testing
+testing
+word_offset:: -1
+training
+word_offset:: -1
+training
+word_offset:: -1
+word_offset:: -1
+word_offset:: -1
+word_offset:: -1
+training
+training
+word_offset:: -1
+word_offset:: -1
+word_offset:: -1
+training
+word_offset:: -1
+word_offset:: -1
+word_offset:: -1
+training
+word_offset:: -1
+word_offset:: 1
+word_offset:: -1
+training
+training
+word_offset:: -1
+training
+word_offset:: -1
+training
+word_offset:: -1
+training
+word_offset:: -1
+word_offset:: -1
+training
+training
+testing
+training
+word_offset:: -1
+word_offset:: -1
+training
+training
+training
+word_offset:: -1
+word_offset:: -1
+training
+word_offset:: -1
+word_offset:: 1
+training
+word_offset:: -1
+word_offset:: -1
+training
+training
+word_offset:: -1
+word_offset:: -1
+word_offset:: -1
+training
+training
+word_offset:: -1
+training
+word_offset:: -1
+testing
+word_offset:: -1
+word_offset:: -1
+training
+training
+training
+training
+training
+training
+word_offset:: 1
+training
+word_offset:: 1
+training
+training
+word_offset:: 1
+word_offset:: 1
+testing
+testing
+word_offset:: 1
+testing
+word_offset:: 1
+word_offset:: 1
+word_offset:: 1
+word_offset:: 1
+testing
+word_offset:: 1
+word_offset:: 1
+word_offset:: 1
+testing
+testing
+testing
+testing
+word_offset:: 1
+word_offset:: 1
+word_offset:: 1
+testing
+testing
+word_offset:: 1
+testing
+word_offset:: 1
+testing
+word_offset:: 1
+word_offset:: 1
+testing
+testing
+testing
+word_offset:: 1
+word_offset:: 1
+testing
+testing
+word_offset:: 1
+word_offset:: 1
+word_offset:: 1
+testing
+testing
+word_offset:: 1
+word_offset:: 1
+word_offset:: 1
+testing
+word_offset:: 1
+testing
+testing
+word_offset:: 1
+word_offset:: 1
+word_offset:: 1
+testing
+testing
+testing
+testing
+testing
+testing
+testing
+testing
+testing

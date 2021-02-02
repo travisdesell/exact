@@ -13,17 +13,17 @@
 
 #SBATCH --mail-type=ALL
 
-#SBATCH -t 4-0     # if you want to run for 4 days 1-72:0:0
+#SBATCH -t 1-0     # if you want to run for 4 days 1-72:0:0
 
 # Put the job in the "work" partition and request FOUR cores for one task
 # "work" is the default partition so it can be omitted without issue.
 
 ## Please not that each node on the cluster is 36 cores
-#SBATCH -p tier3 -n 61
+#SBATCH -p tier3 -n 9
 
 
 # Job memory requirements in MB
-#SBATCH --mem-per-cpu=40G  # I like to mem with a suffix [K|M|G|T] 5000
+#SBATCH --mem-per-cpu=4G  # I like to mem with a suffix [K|M|G|T] 5000
 
 #module load module_future
 #module load openmpi-1.10-x86_64
@@ -38,7 +38,7 @@ for folder in 0 1 2 3 4 ; do
     exp_name="$EXAMM/nlp_results/all_cells/$folder"
     mkdir -p $exp_name
     echo "\t Iteration: $exp_name"
-    srun -n 60 $EXAMM/build/mpi/examm_mpi_nlp  \
+    $EXAMM/build/multithreaded/examm_mt_nlp --number_threads 9 \
     --training_filenames $EXAMM/datasets/pennchar/train.txt \
     --test_filenames $EXAMM/datasets/pennchar/valid.txt \
     --word_offset 1 \
