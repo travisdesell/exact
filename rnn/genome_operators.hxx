@@ -1,18 +1,18 @@
-#ifndef MUTATOR_HXX
-#define MUTATOR_HXX
+#ifndef GENOME_OPERATORS_HXX
+#define GENOME_OPERATORS_HXX
 
-using namespace std;
 
 #include <vector>
 #include <random>
 
 #include "rnn_genome.hxx"
 #include "rnn_node_interface.hxx"
-#include "dataset_meta.hxx"
+#include "common/dataset_meta.hxx"
 #include "training_parameters.hxx"
 
 #include "common/log.hxx"
 #include "common/weight_initialize.hxx"
+using namespace std;
 
 class GenomeOperators {
     private:
@@ -56,7 +56,7 @@ class GenomeOperators {
         int32_t worker_id;
 
         int32_t number_inputs;
-        int32_t number_output;
+        int32_t number_outputs;
 
         int32_t edge_innovation_count;
         int32_t node_innovation_count;
@@ -94,7 +94,6 @@ class GenomeOperators {
                 int32_t _node_innovation_count,
                 int32_t _min_recurrent_depth,
                 int32_t _max_recurrent_depth,
-                double _dropout_probability,
                 WeightType _weight_initialize,
                 WeightType _weight_inheritance,
                 WeightType _mutated_component_weight,
@@ -105,7 +104,12 @@ class GenomeOperators {
         RNN_Genome *mutate(RNN_Genome *g, int32_t n_mutations);
         RNN_Genome *crossover(RNN_Genome *more_fit, RNN_Genome *less_fit);
 
+        void set_edge_innovation_count(int32_t);
+        void set_node_innovation_count(int32_t);
         const vector<int> &get_possible_node_types();
+
+        int get_number_inputs();
+        int get_number_outputs();
 };
 
 #endif

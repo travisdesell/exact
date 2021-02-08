@@ -249,7 +249,6 @@ RNN_Edge* RNN::get_edge(int i) {
 }
 
 
-
 void RNN::get_weights(vector<double> &parameters) {
     parameters.resize(get_number_weights());
 

@@ -13,6 +13,8 @@ using std::map;
 #include <vector>
 using std::vector;
 
+#include "common/dataset_meta.hxx"
+
 class TimeSeries {
     private:
         string name;
@@ -143,6 +145,8 @@ class TimeSeriesSets {
         ~TimeSeriesSets();
         static TimeSeriesSets* generate_from_arguments(const vector<string> &arguments);
         static TimeSeriesSets* generate_test(const vector<string> &_test_filenames, const vector<string> &_input_parameter_names, const vector<string> &_output_parameter_names);
+
+        DatasetMeta get_dataset_meta();
 
         void normalize_min_max();
         void normalize_min_max(const map<string,double> &_normalize_mins, const map<string,double> &_normalize_maxs);

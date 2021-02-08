@@ -72,24 +72,24 @@ EXAMM::EXAMM(
         GenomeOperators _genome_operators,
         DatasetMeta _dataset_meta,
         TrainingParameters _training_parameters,
-        RNN_Genome *seed_genome,
+        RNN_Genome *_seed_genome,
         bool _start_filled) :
                         population_size(_population_size),
                         number_islands(_number_islands),
                         max_genomes(_max_genomes),
+                        dataset_meta(_dataset_meta),
+                        training_parameters(_training_parameters),
+                        genome_operators(_genome_operators),
                         extinction_event_generation_number(_extinction_event_generation_number),
+                        start_filled(_start_filled),
                         island_ranking_method(_island_ranking_method), 
                         repopulation_method(_repopulation_method), 
                         repopulation_mutations(_repopulation_mutations),
                         repeat_extinction(_repeat_extinction),
                         output_directory(_output_directory),
                         weight_initialize(_weight_initialize),
-                        start_filled(_start_filled),
                         weight_inheritance(_weight_inheritance),
-                        dataset_meta(_dataset_meta),
-                        mutated_component_weight(_mutated_component_weight),
-                        training_parameters(_training_parameters),
-                        genome_operators(_genome_operators) {
+                        mutated_component_weight(_mutated_component_weight) {
     total_bp_epochs = 0;
 
     uint16_t seed = std::chrono::system_clock::now().time_since_epoch().count();
@@ -106,6 +106,8 @@ EXAMM::EXAMM(
     Log::info("weight initialize: %s\n", WEIGHT_TYPES_STRING[weight_initialize].c_str());
     Log::info("weight inheritance: %s \n", WEIGHT_TYPES_STRING[weight_inheritance].c_str());
     Log::info("mutated component weight: %s\n", WEIGHT_TYPES_STRING[mutated_component_weight].c_str());
+
+    seed_genome = _seed_genome;
 
     bool seed_genome_was_minimal = seed_genome == NULL;
     if (seed_genome_was_minimal) {
@@ -231,7 +233,7 @@ EXAMM::EXAMM(
         op_log_file = NULL;
     }
 
-    startClock = std::chrono::system_clock::now();
+    start_clock = std::chrono::system_clock::now();
 }
 
 void EXAMM::print() {
@@ -276,7 +278,7 @@ void EXAMM::update_log() {
         }
 
         std::chrono::time_point<std::chrono::system_clock> currentClock = std::chrono::system_clock::now();
-        long milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(currentClock - startClock).count();
+        long milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(currentClock - start_clock).count();
 
         (*log_file) << speciation_strategy->get_inserted_genomes()
             << "," << total_bp_epochs
@@ -389,12 +391,18 @@ bool EXAMM::insert_genome(RNN_Genome* genome) {
     return insert_position >= 0;
 }
 
+Work* EXAMM::get_initialize_work() {
+    int max_node_innovation_number = seed_genome->get_max_node_innovation_number();
+    int max_edge_innovation_number = seed_genome->get_max_edge_innovation_number();
+
+    return new InitializeWork(max_node_innovation_number + 1, max_edge_innovation_number + 1);
+}
+
 Work* EXAMM::generate_work() {
     if (speciation_strategy->get_inserted_genomes() > max_genomes)
         return new TerminateWork();
 
     return speciation_strategy->generate_work(rng_0_1, generator);
-    
     // function<void (int32_t, RNN_Genome*)> mutate_function =
     //     [=](int32_t max_mutations, RNN_Genome *genome) {
     //         this->mutate(max_mutations, genome);
@@ -423,6 +431,10 @@ Work* EXAMM::generate_work() {
     // double _mu, _sigma;
     // genome->get_mu_sigma(genome->best_parameters, _mu, _sigma);
 
+}
+
+RNN_Genome *EXAMM::get_seed_genome() {
+    return seed_genome;
 }
 
 void EXAMM::check_weight_initialize_validity() {

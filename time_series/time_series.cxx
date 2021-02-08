@@ -1207,6 +1207,18 @@ void TimeSeriesSets::set_test_indexes(const vector<int> &_test_indexes) {
     test_indexes = _test_indexes;
 }
 
+DatasetMeta TimeSeriesSets::get_dataset_meta() {
+    DatasetMeta value(
+            input_parameter_names,
+            output_parameter_names,
+            normalize_type,
+            normalize_mins,
+            normalize_maxs,
+            normalize_avgs,
+            normalize_std_devs);
+    return value;
+}
+
 TimeSeriesSet* TimeSeriesSets::get_set(int32_t i) {
     return time_series.at(i);
 }

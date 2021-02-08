@@ -255,7 +255,7 @@ int32_t IslandSpeciationStrategy::insert_genome(RNN_Genome* genome) {
 int32_t IslandSpeciationStrategy::get_worst_island_by_best_genome() {
     int32_t worst_island = -1;
     double worst_best_fitness = 0;
-    for (int32_t i = 0; i < (int32_t)islands.size(); i++) {
+    for (int32_t i = 0; i < (int32_t) islands.size(); i++) {
         if (islands[i]->size() > 0) {
             if (islands[i]->get_erase_again_num() > 0) continue;
             double island_best_fitness = islands[i]->get_best_fitness();
@@ -346,7 +346,7 @@ Work *IslandSpeciationStrategy::generate_work(uniform_real_distribution<double> 
         Log::fatal( "This should never happen.\n");
         exit(1);
     }
-
+    
     return work;
 }
 
@@ -376,6 +376,8 @@ Work *IslandSpeciationStrategy::generate_work_for_initializing_island(uniform_re
 
     if (island->size() == 0) {
         RNN_Genome *genome_copy = genome->copy();
+        genome_copy->set_generation_id(generated_genomes + 1);
+        genome_copy->set_group_id(island->get_id());
         insert_genome(genome_copy);
     }
 

@@ -107,7 +107,7 @@ void Island::do_population_check(int line, int initial_size) {
 int32_t Island::insert_genome(RNN_Genome *genome) {
     int initial_size = genomes.size();
 
-    if (genome->get_generation_id() <= erased_generation_id) {
+    if (erased_generation_id >= 0 && genome->get_generation_id() <= erased_generation_id) {
         Log::info("genome already erased, not inserting");
         do_population_check(__LINE__, initial_size);
         return -1;
@@ -342,6 +342,10 @@ void Island::erase_island() {
 
 int32_t Island::get_erased_generation_id() {
     return erased_generation_id;
+}
+
+int32_t Island::get_id() {
+    return id;
 }
 
 int32_t Island::get_status() {

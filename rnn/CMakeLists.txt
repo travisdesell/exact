@@ -1,1 +1,3 @@
-add_library(examm_strategy generate_nn examm rnn_genome rnn lstm_node ugrnn_node delta_node gru_node enarc_node enas_dag_node random_dag_node mgu_node mse rnn_node rnn_edge rnn_recurrent_edge rnn_node_interface species island island_speciation_strategy species neat_speciation_strategy genome_operators training_parameters dataset_meta)
+add_library(examm_strategy generate_nn examm rnn_genome rnn lstm_node ugrnn_node delta_node gru_node enarc_node enas_dag_node random_dag_node mgu_node mse rnn_node rnn_edge rnn_recurrent_edge rnn_node_interface species island island_speciation_strategy species neat_speciation_strategy genome_operators training_parameters work)
+
+add_subdirectory(work)

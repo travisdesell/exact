@@ -9,15 +9,17 @@ GenomeOperators::GenomeOperators(
                 int32_t _node_innovation_count,
                 int32_t _min_recurrent_depth,
                 int32_t _max_recurrent_depth,
-                double _dropout_probability,
                 WeightType _weight_initialize,
                 WeightType _weight_inheritance,
                 WeightType _mutated_component_weight,
                 DatasetMeta _dataset_meta,
                 TrainingParameters _training_parameters,
                 vector<string> _possible_node_type_strings) 
-    : dataset_meta(_dataset_meta),
-      training_parameters(_training_parameters),
+    : training_parameters(_training_parameters),
+      dataset_meta(_dataset_meta),
+      weight_initialize(_weight_initialize),
+      weight_inheritance(_weight_inheritance),
+      mutated_component_weight(_mutated_component_weight),
       generator((unsigned int) time(0)) {
 
     number_workers          = _number_workers;
@@ -52,34 +54,29 @@ GenomeOperators::GenomeOperators(
     edge_innovation_count   = _edge_innovation_count + worker_id;
     node_innovation_count   = _node_innovation_count + worker_id;
 
-    next_edge_innovation_number = [&]() { return this->next_edge_innovation_number(); };
-    next_node_innovation_number = [&]() { return this->next_node_innovation_number(); };
+    next_edge_innovation_number = [&]() { return this->get_next_edge_innovation_number(); };
+    next_node_innovation_number = [&]() { return this->get_next_node_innovation_number(); };
 
     set_possible_node_types(_possible_node_type_strings);
     
     recurrent_depth_dist = uniform_int_distribution(_min_recurrent_depth, _max_recurrent_depth);
     node_index_dist = uniform_int_distribution(0, (int) possible_node_types.size() - 1);
+
+    this->number_inputs = _number_inputs;
+    this->number_outputs = _number_outputs;
 }
 
 int32_t GenomeOperators::get_next_node_innovation_number() {
-    return node_innovation_count++;
+    return node_innovation_count += number_workers;
 }
 
 int32_t GenomeOperators::get_next_edge_innovation_number() {
-    return edge_innovation_count++;
+    return edge_innovation_count += number_workers;
 }
 
 void GenomeOperators::set_possible_node_types(vector<string> &possible_node_type_strings) {
     if (possible_node_type_strings.size() == 0) {
-        possible_node_types.push_back(SIMPLE_NODE);
-        possible_node_types.push_back(JORDAN_NODE);
-        possible_node_types.push_back(ELMAN_NODE);
-        possible_node_types.push_back(UGRNN_NODE);
-        possible_node_types.push_back(MGU_NODE);
-        possible_node_types.push_back(GRU_NODE);
-        possible_node_types.push_back(LSTM_NODE);
-        possible_node_types.push_back(ENARC_NODE);
-        possible_node_types.push_back(DELTA_NODE);
+        possible_node_types = vector({ SIMPLE_NODE, JORDAN_NODE, ELMAN_NODE, UGRNN_NODE, MGU_NODE, GRU_NODE, LSTM_NODE, ENARC_NODE, DELTA_NODE });
         return;
     }
 
@@ -125,16 +122,17 @@ void GenomeOperators::finalize_genome(RNN_Genome *genome) {
     if (training_parameters.use_low_threshold) genome->enable_low_threshold(training_parameters.low_threshold);
     if (training_parameters.use_dropout) genome->enable_dropout(training_parameters.dropout_probability);
 
+
+
     if (!TrainingParameters::use_epigenetic_weights) genome->initialize_randomly();
 }
 
 RNN_Genome *GenomeOperators::mutate(RNN_Genome *g, int32_t n_mutations) {
-    bool modified = false;
 
     double mu, sigma;
  
     //g->write_graphviz("rnn_genome_premutate_" + to_string(g->get_generation_id()) + ".gv");
-    Log::info("generating new genome by mutation.\n");
+    Log::info("generating new genome by mutation(%d).\n", n_mutations);
 
     g->get_mu_sigma(g->best_parameters, mu, sigma);
     g->clear_generated_by();
@@ -149,16 +147,19 @@ RNN_Genome *GenomeOperators::mutate(RNN_Genome *g, int32_t n_mutations) {
     }
 
     int number_mutations = 0;
+    bool modified = false;
 
     for (;;) {
         if (modified) {
             modified = false;
             number_mutations++;
         }
+
         if (number_mutations >= n_mutations) break;
 
         g->assign_reachability();
-        double rng = rng_0_1(generator);
+        double rng = rng_0_1(generator) * mutation_rates_total;
+        Log::info("rng %f %f\n", rng, clone_rate);
         int new_node_type = get_random_node_type();
         string node_type_str = NODE_TYPES[new_node_type];
 
@@ -168,6 +169,7 @@ RNN_Genome *GenomeOperators::mutate(RNN_Genome *g, int32_t n_mutations) {
             modified = true;
             continue;
         }
+
         rng -= clone_rate;
         if (rng < add_edge_rate) {
             modified = g->add_edge(mu, sigma, next_edge_innovation_number);
@@ -175,78 +177,79 @@ RNN_Genome *GenomeOperators::mutate(RNN_Genome *g, int32_t n_mutations) {
             if (modified) g->set_generated_by("add_edge");
             continue;
         }
-        rng -= add_edge_rate;
 
+        rng -= add_edge_rate;
         if (rng < add_recurrent_edge_rate) {
             modified = g->add_recurrent_edge(mu, sigma, recurrent_depth_dist, next_edge_innovation_number);
             Log::debug("\tadding recurrent edge, modified: %d\n", modified);
             if (modified) g->set_generated_by("add_recurrent_edge");
             continue;
         }
-        rng -= add_recurrent_edge_rate;
 
+        rng -= add_recurrent_edge_rate;
         if (rng < enable_edge_rate) {
             modified = g->enable_edge();
             Log::debug("\tenabling edge, modified: %d\n", modified);
             if (modified) g->set_generated_by("enable_edge");
             continue;
         }
-        rng -= enable_edge_rate;
 
+        rng -= enable_edge_rate;
         if (rng < disable_edge_rate) {
             modified = g->disable_edge();
             Log::debug("\tdisabling edge, modified: %d\n", modified);
             if (modified) g->set_generated_by("disable_edge");
             continue;
         }
-        rng -= disable_edge_rate;
 
+        rng -= disable_edge_rate;
         if (rng < split_edge_rate) {
             modified = g->split_edge(mu, sigma, new_node_type, recurrent_depth_dist, next_edge_innovation_number, next_node_innovation_number);
             Log::debug("\tsplitting edge, modified: %d\n", modified);
             if (modified) g->set_generated_by("split_edge(" + node_type_str + ")");
             continue;
         }
-        rng -= split_edge_rate;
 
+        rng -= split_edge_rate;
         if (rng < add_node_rate) {
             modified = g->add_node(mu, sigma, new_node_type, recurrent_depth_dist, next_edge_innovation_number, next_node_innovation_number);
             Log::debug("\tadding node, modified: %d\n", modified);
             if (modified) g->set_generated_by("add_node(" + node_type_str + ")");
             continue;
         }
-        rng -= add_node_rate;
 
+        rng -= add_node_rate;
         if (rng < enable_node_rate) {
             modified = g->enable_node();
             Log::debug("\tenabling node, modified: %d\n", modified);
             if (modified) g->set_generated_by("enable_node");
             continue;
         }
-        rng -= enable_node_rate;
 
+        rng -= enable_node_rate;
         if (rng < disable_node_rate) {
             modified = g->disable_node();
             Log::debug("\tdisabling node, modified: %d\n", modified);
             if (modified) g->set_generated_by("disable_node");
             continue;
         }
-        rng -= disable_node_rate;
 
+        rng -= disable_node_rate;
         if (rng < split_node_rate) {
             modified = g->split_node(mu, sigma, new_node_type, recurrent_depth_dist, next_edge_innovation_number, next_node_innovation_number);
             Log::debug("\tsplitting node, modified: %d\n", modified);
             if (modified) g->set_generated_by("split_node(" + node_type_str + ")");
             continue;
         }
-        rng -= split_node_rate;
 
+        rng -= split_node_rate;
         if (rng < merge_node_rate) {
             modified = g->merge_node(mu, sigma, new_node_type, recurrent_depth_dist, next_edge_innovation_number, next_node_innovation_number);
             Log::debug("\tmerging node, modified: %d\n", modified);
             if (modified) g->set_generated_by("merge_node(" + node_type_str + ")");
             continue;
         }
+
         rng -= merge_node_rate;
     }
     
@@ -316,6 +319,7 @@ RNN_Genome *GenomeOperators::crossover(RNN_Genome *more_fit, RNN_Genome *less_fi
     vector< RNN_Edge* > child_edges;
     vector< RNN_Recurrent_Edge* > child_recurrent_edges;
     
+    
     //edges are not sorted in order of innovation number, they need to be
     vector< RNN_Edge* > more_fit_edges = more_fit->edges;
     vector< RNN_Edge* > less_fit_edges = less_fit->edges;
@@ -325,13 +329,14 @@ RNN_Genome *GenomeOperators::crossover(RNN_Genome *more_fit, RNN_Genome *less_fi
     
     Log::debug("\tmore_fit innovation numbers AFTER SORT:\n");
     for (int32_t i = 0; i < (int32_t)more_fit_edges.size(); i++) {
-        Log::trace("\t\t%d\n", more_fit_edges[i]->innovation_number);
+        Log::debug("\t\t%d\n", more_fit_edges[i]->innovation_number);
     }
     Log::debug("\tless_fit innovation numbers AFTER SORT:\n");
     for (int32_t i = 0; i < (int32_t)less_fit_edges.size(); i++) {
         Log::debug("\t\t%d\n", less_fit_edges[i]->innovation_number);
     }
     
+
     vector< RNN_Recurrent_Edge* > more_fit_recurrent_edges = more_fit->recurrent_edges;
     vector< RNN_Recurrent_Edge* > less_fit_recurrent_edges = less_fit->recurrent_edges;
     
@@ -459,7 +464,6 @@ RNN_Genome *GenomeOperators::crossover(RNN_Genome *more_fit, RNN_Genome *less_fi
     sort(child_nodes.begin(), child_nodes.end(), sort_RNN_Nodes_by_depth());
     sort(child_edges.begin(), child_edges.end(), sort_RNN_Edges_by_depth());
     sort(child_recurrent_edges.begin(), child_recurrent_edges.end(), sort_RNN_Recurrent_Edges_by_depth());
-    
     RNN_Genome *child = new RNN_Genome(child_nodes, child_edges, child_recurrent_edges, weight_initialize, weight_inheritance, mutated_component_weight);
     child->set_parameter_names(dataset_meta.input_parameter_names, dataset_meta.output_parameter_names);
     child->set_normalize_bounds(dataset_meta.normalize_type, dataset_meta.normalize_mins, dataset_meta.normalize_maxs, dataset_meta.normalize_avgs, dataset_meta.normalize_std_devs);
@@ -501,8 +505,8 @@ RNN_Genome *GenomeOperators::crossover(RNN_Genome *more_fit, RNN_Genome *less_fi
     
     child->best_parameters.clear();
     
+    this->finalize_genome(child);
     return child;
-
 }
 
 void GenomeOperators::attempt_node_insert(vector<RNN_Node_Interface*> &child_nodes, const RNN_Node_Interface *node, const vector<double> &new_weights) {
@@ -656,4 +660,18 @@ void GenomeOperators::attempt_recurrent_edge_insert(vector<RNN_Recurrent_Edge*> 
     child_recurrent_edges.insert( upper_bound(child_recurrent_edges.begin(), child_recurrent_edges.end(), recurrent_edge_copy, sort_RNN_Recurrent_Edges_by_depth()), recurrent_edge_copy);
 }
 
+const vector<int> &GenomeOperators::get_possible_node_types() {
+    return possible_node_types;
+}
+
+void GenomeOperators::set_edge_innovation_count(int32_t eic) {
+    edge_innovation_count = eic;
+}
+
+void GenomeOperators::set_node_innovation_count(int32_t nic) {
+    node_innovation_count = nic;
+}
+
+int GenomeOperators::get_number_inputs() { return number_inputs; }
+int GenomeOperators::get_number_outputs() { return number_outputs; }
 

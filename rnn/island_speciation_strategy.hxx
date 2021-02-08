@@ -16,6 +16,8 @@ using std::string;
 #include "rnn_genome.hxx"
 #include "speciation_strategy.hxx"
 #include "work/work.hxx"
+#include "work/mutation_work.hxx"
+#include "work/crossover_work.hxx"
 
 // Used in IslandSpeciationStrategy::parents_repopulation
 

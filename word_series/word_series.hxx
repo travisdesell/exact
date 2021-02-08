@@ -13,13 +13,14 @@ using std::map;
 #include <vector>
 using std::vector;
 
+#include "common/dataset_meta.hxx"
 
- class WordSeries{
-     private:
-         string name;
-         int vocab_size;
+class WordSeries {
+    private:
+        string name;
+        int vocab_size;
 
-         double min;
+        double min;
         double average;
         double max;
         double std_dev;
@@ -31,7 +32,7 @@ using std::vector;
          WordSeries(); 
 
      public:
-         WordSeries(string _name);
+        WordSeries(string _name);
 
         void add_value(double value);
         double get_value(int i);
@@ -63,7 +64,7 @@ using std::vector;
 
  };
 
- class SentenceSeries {
+class SentenceSeries {
     private:
         int number_rows;
         string filename;
@@ -186,6 +187,8 @@ class Corpus {
         void set_test_indexes(const vector<int> &_test_indexes);
 
         SentenceSeries *get_set(int32_t i);
+
+        DatasetMeta get_dataset_meta();
 };
 
 #endif

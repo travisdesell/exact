@@ -2,18 +2,18 @@
 #define EXAMM_NEAT_STRATEGY_HXX
 
 #include <functional>
-using std::function;
+    using std::function;
 
 #include <algorithm>
-using std::sort;
-using std::upper_bound;
+    using std::sort;
+    using std::upper_bound;
 
 #include <random>
-using std::minstd_rand0;
-using std::uniform_real_distribution;
+    using std::minstd_rand0;
+    using std::uniform_real_distribution;
 
 #include <string>
-using std::string;
+    using std::string;
 
 #include <vector>
 
@@ -75,6 +75,8 @@ class Species {
          * \return the best genome in the island
          */
         RNN_Genome *get_random_genome(uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator);
+
+        int32_t get_id();
 
         /**
          * Returns the size of the island

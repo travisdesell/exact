@@ -1,5 +1,5 @@
-CrossoverWork::CrossoverWork(RNN_Genome *_more_fit, RNN_Genome *_less_fit, int32_t _generation_id=0, int32_t _group_id=0)
-    : more_fit(_more_fit), less_fit(_less_fit), generation_id(_generation_id), group_id(_group_id) { }
+CrossoverWork::CrossoverWork(RNN_Genome *_more_fit, RNN_Genome *_less_fit, int32_t _generation_id, int32_t _group_id)
+    : Work(_generation_id, _group_id), more_fit(_more_fit), less_fit(_less_fit) { }
 
 CrossoverWork::CrossoverWork(istream &bin_istream) {
     int class_id = bin_istream.get();
@@ -9,14 +9,14 @@ CrossoverWork::CrossoverWork(istream &bin_istream) {
         exit(0);
     }
 
-    bin_ostream.read((char *) &generation_id, sizeof(int32_t));
-    bin_ostream.read((char *) &group_id, sizeof(int32_t));
+    bin_istream.read((char *) &generation_id, sizeof(int32_t));
+    bin_istream.read((char *) &group_id, sizeof(int32_t));
 
     more_fit = new RNN_Genome(bin_istream);
     less_fit = new RNN_Genome(bin_istream);
 }
 
-CrossoverWork::~CrossoverWork(istream &bin_istream) {
+CrossoverWork::~CrossoverWork() {
     delete more_fit;
     delete less_fit;
 }

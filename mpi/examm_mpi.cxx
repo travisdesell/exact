@@ -24,205 +24,11 @@ using std::vector;
 #include "common/weight_initialize.hxx"
 
 #include "rnn/examm.hxx"
+#include "rnn/work/work.hxx"
 
 #include "time_series/time_series.hxx"
 
-#define WORK_REQUEST_TAG 1
-#define GENOME_LENGTH_TAG 2
-#define GENOME_TAG 3
-#define TERMINATE_TAG 4
-
-mutex examm_mutex;
-
-vector<string> arguments;
-
-EXAMM *examm;
-
-bool finished = false;
-
-vector< vector< vector<double> > > training_inputs;
-vector< vector< vector<double> > > training_outputs;
-vector< vector< vector<double> > > validation_inputs;
-vector< vector< vector<double> > > validation_outputs;
-
-void send_work_request(int target) {
-    int work_request_message[1];
-    work_request_message[0] = 0;
-    MPI_Send(work_request_message, 1, MPI_INT, target, WORK_REQUEST_TAG, MPI_COMM_WORLD);
-}
-
-void receive_work_request(int source) {
-    MPI_Status status;
-    int work_request_message[1];
-    MPI_Recv(work_request_message, 1, MPI_INT, source, WORK_REQUEST_TAG, MPI_COMM_WORLD, &status);
-}
-
-RNN_Genome* receive_genome_from(int source) {
-    MPI_Status status;
-    int length_message[1];
-    MPI_Recv(length_message, 1, MPI_INT, source, GENOME_LENGTH_TAG, MPI_COMM_WORLD, &status);
-
-    int length = length_message[0];
-
-    Log::debug("receiving genome of length: %d from: %d\n", length, source);
-
-    char* genome_str = new char[length + 1];
-
-    Log::debug("receiving genome from: %d\n", source);
-    MPI_Recv(genome_str, length, MPI_CHAR, source, GENOME_TAG, MPI_COMM_WORLD, &status);
-
-    genome_str[length] = '\0';
-
-    Log::trace("genome_str:\n%s\n", genome_str);
-
-    RNN_Genome* genome = new RNN_Genome(genome_str, length);
-
-    delete [] genome_str;
-    return genome;
-}
-
-void send_genome_to(int target, RNN_Genome* genome) {
-    char *byte_array;
-    int32_t length;
-
-    genome->write_to_array(&byte_array, length);
-
-    Log::debug("sending genome of length: %d to: %d\n", length, target);
-
-    int length_message[1];
-    length_message[0] = length;
-    MPI_Send(length_message, 1, MPI_INT, target, GENOME_LENGTH_TAG, MPI_COMM_WORLD);
-
-    Log::debug("sending genome to: %d\n", target);
-    MPI_Send(byte_array, length, MPI_CHAR, target, GENOME_TAG, MPI_COMM_WORLD);
-
-    free(byte_array);
-}
-
-void send_terminate_message(int target) {
-    int terminate_message[1];
-    terminate_message[0] = 0;
-    MPI_Send(terminate_message, 1, MPI_INT, target, TERMINATE_TAG, MPI_COMM_WORLD);
-}
-
-void receive_terminate_message(int source) {
-    MPI_Status status;
-    int terminate_message[1];
-    MPI_Recv(terminate_message, 1, MPI_INT, source, TERMINATE_TAG, MPI_COMM_WORLD, &status);
-}
-
-void master(int max_rank) {
-    //the "main" id will have already been set by the main function so we do not need to re-set it here
-    Log::debug("MAX INT: %d\n", numeric_limits<int>::max());
-
-    int terminates_sent = 0;
-
-    while (true) {
-        //wait for a incoming message
-        MPI_Status status;
-        MPI_Probe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
-
-        int source = status.MPI_SOURCE;
-        int tag = status.MPI_TAG;
-        Log::debug("probe returned message from: %d with tag: %d\n", source, tag);
-
-
-        //if the message is a work request, send a genome
-
-        if (tag == WORK_REQUEST_TAG) {
-            receive_work_request(source);
-
-            examm_mutex.lock();
-            RNN_Genome *genome = examm->generate_genome();
-            examm_mutex.unlock();
-
-            if (genome == NULL) { //search was completed if it returns NULL for an individual
-                //send terminate message
-                Log::info("terminating worker: %d\n", source);
-                send_terminate_message(source);
-                terminates_sent++;
-
-                Log::debug("sent: %d terminates of %d\n", terminates_sent, (max_rank - 1));
-                if (terminates_sent >= max_rank - 1) return;
-
-            } else {
-                //genome->write_to_file( examm->get_output_directory() + "/before_send_gen_" + to_string(genome->get_generation_id()) );
-
-                //send genome
-                Log::debug("sending genome to: %d\n", source);
-                send_genome_to(source, genome);
-
-                //delete this genome as it will not be used again
-                delete genome;
-            }
-        } else if (tag == GENOME_LENGTH_TAG) {
-            Log::debug("received genome from: %d\n", source);
-            RNN_Genome *genome = receive_genome_from(source);
-
-            examm_mutex.lock();
-            examm->insert_genome(genome);
-            examm_mutex.unlock();
-
-            //delete the genome as it won't be used again, a copy was inserted
-            delete genome;
-            //this genome will be deleted if/when removed from population
-        } else {
-            Log::fatal("ERROR: received message from %d with unknown tag: %d", source, tag);
-            MPI_Abort(MPI_COMM_WORLD, 1);
-        }
-    }
-}
-
-void worker(int rank) {
-    Log::set_id("worker_" + to_string(rank));
-
-    while (true) {
-        Log::debug("sending work request!\n");
-        send_work_request(0);
-        Log::debug("sent work request!\n");
-
-        MPI_Status status;
-        MPI_Probe(0, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
-        int tag = status.MPI_TAG;
-
-        Log::debug("probe received message with tag: %d\n", tag);
-
-        if (tag == TERMINATE_TAG) {
-            Log::debug("received terminate tag!\n");
-            receive_terminate_message(0);
-            break;
-
-        } else if (tag == GENOME_LENGTH_TAG) {
-            Log::debug("received genome!\n");
-            RNN_Genome* genome = receive_genome_from(0);
-
-            //have each worker write the backproagation to a separate log file
-            string log_id = "genome_" + to_string(genome->get_generation_id()) + "_worker_" + to_string(rank);
-            Log::set_id(log_id);
-            genome->backpropagate_stochastic(training_inputs, training_outputs, validation_inputs, validation_outputs);
-            Log::release_id(log_id);
-
-            //go back to the worker's log for MPI communication
-            Log::set_id("worker_" + to_string(rank));
-
-            send_genome_to(0, genome);
-
-            delete genome;
-        } else {
-            Log::fatal("ERROR: received message with unknown tag: %d\n", tag);
-            MPI_Abort(MPI_COMM_WORLD, 1);
-        }
-    }
-
-    //release the log file for the worker communication
-    Log::release_id("worker_" + to_string(rank));
-}
-
-// void stop(int rank) {
-//     std::cout<<"RANK: " << rank <<" -- AAAA:: XXXXXXXXXXXXXXXXXXXX\n";
-//     MPI_Barrier(MPI_COMM_WORLD);
-//     getchar();
-// }
+#include "examm_mpi_core.cxx"
 
 int main(int argc, char** argv) {
     std::cout << "starting up!" << std::endl;
@@ -246,7 +52,7 @@ int main(int argc, char** argv) {
 
     std::cout << "initailized log!" << std::endl;
    
-#include "rnn/argparse.cxx"
+#include "common/examm_argparse.cxx"
 
     //only have the master process print TSS info
     if (rank == 0 && argument_exists(arguments, "--write_time_series")) {
@@ -258,37 +64,13 @@ int main(int argc, char** argv) {
     Log::clear_rank_restriction();
 
     if (rank == 0) {
-        examm = new EXAMM(population_size, number_islands, max_genomes, extinction_event_generation_number, islands_to_exterminate, island_ranking_method,
-            repopulation_method, repopulation_mutations, repeat_extinction,
-            speciation_method,
-            species_threshold, fitness_threshold,
-            neat_c1, neat_c2, neat_c3,
-            time_series_sets->get_input_parameter_names(),
-            time_series_sets->get_output_parameter_names(),
-            time_series_sets->get_normalize_type(),
-            time_series_sets->get_normalize_mins(),
-            time_series_sets->get_normalize_maxs(),
-            time_series_sets->get_normalize_avgs(),
-            time_series_sets->get_normalize_std_devs(),
-            weight_initialize, weight_inheritance, mutated_component_weight,
-            bp_iterations, learning_rate,
-            use_high_threshold, high_threshold,
-            use_low_threshold, low_threshold,
-            use_dropout, dropout_probability,
-            min_recurrent_depth, max_recurrent_depth,
-            use_regression,
-            output_directory,
-            seed_genome,
-            start_filled);
-
-        if (possible_node_types.size() > 0)  {
-            examm->set_possible_node_types(possible_node_types);
-        }
-
-        master(max_rank);
+        examm = make_examm();
+        master(max_rank, genome_operators);
     } else {
-        worker(rank);
+        Log::info("starting worker %d\n", rank);
+        worker(rank, make_genome_operators(rank, -1, -1));
     }
+
     Log::set_id("main_" + to_string(rank));
 
     finished = true;

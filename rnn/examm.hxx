@@ -23,8 +23,11 @@ using std::vector;
 #include "common/weight_initialize.hxx"
 #include "genome_operators.hxx"
 #include "training_parameters.hxx"
-#include "dataset_meta.hxx"
+
 #include "work/work.hxx"
+#include "work/terminate_work.hxx"
+
+#include "common/dataset_meta.hxx"
 
 class EXAMM {
     private:
@@ -34,15 +37,19 @@ class EXAMM {
         int32_t max_genomes;
         int32_t total_bp_epochs;
 
+        int32_t genome_id = 0;
+
         DatasetMeta dataset_meta;
         TrainingParameters training_parameters;
         GenomeOperators genome_operators;
 
         int32_t extinction_event_generation_number;
-        string island_ranking_method;
 
         bool start_filled;
+        
+        RNN_Genome *seed_genome;
 
+        string island_ranking_method;
         // string speciation_method;
         string repopulation_method;
         int32_t repopulation_mutations;
@@ -71,7 +78,7 @@ class EXAMM {
 
         ostringstream memory_log;
 
-        std::chrono::time_point<std::chrono::system_clock> startClock;
+        std::chrono::time_point<std::chrono::system_clock> start_clock;
 
         string genome_file_name;
 
@@ -108,26 +115,17 @@ class EXAMM {
         void update_log();
         void write_memory_log(string filename);
 
-        void set_possible_node_types(vector<string> possible_node_type_strings);
-
         uniform_int_distribution<int32_t> get_recurrent_depth_dist();
-
-        int get_random_node_type();
-
+        
+        Work *get_initialize_work();
         Work *generate_work();
         bool insert_genome(RNN_Genome* genome);
-
-        void mutate(int32_t max_mutations, RNN_Genome *p1);
-
-        void attempt_node_insert(vector<RNN_Node_Interface*> &child_nodes, const RNN_Node_Interface *node, const vector<double> &new_weights);
-        void attempt_edge_insert(vector<RNN_Edge*> &child_edges, vector<RNN_Node_Interface*> &child_nodes, RNN_Edge *edge, RNN_Edge *second_edge, bool set_enabled);
-        void attempt_recurrent_edge_insert(vector<RNN_Recurrent_Edge*> &child_recurrent_edges, vector<RNN_Node_Interface*> &child_nodes, RNN_Recurrent_Edge *recurrent_edge, RNN_Recurrent_Edge *second_edge, bool set_enabled);
-        RNN_Genome* crossover(RNN_Genome *p1, RNN_Genome *p2);
 
         double get_best_fitness();
         double get_worst_fitness();
         RNN_Genome* get_best_genome();
         RNN_Genome* get_worst_genome();
+        RNN_Genome* get_seed_genome();
 
         string get_output_directory() const;
         RNN_Genome* generate_for_transfer_learning(string file_name, int extra_inputs, int extra_outputs) ;

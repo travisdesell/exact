@@ -106,7 +106,7 @@ RNN_Genome::RNN_Genome(vector<RNN_Node_Interface*> &_nodes,
     sort_edges_by_depth();
 
     //set default values
-    bp_iterations = 20000;
+    bp_iterations = -1;
     learning_rate = 0.001;
     adapt_learning_rate = false;
     use_nesterov_momentum = true;
@@ -807,17 +807,22 @@ RNN* RNN_Genome::get_rnn() {
     vector<RNN_Edge*> edge_copies;
     vector<RNN_Recurrent_Edge*> recurrent_edge_copies;
 
+    Log::info("get_rnn: %d, %d, %d\n", nodes.size(), edges.size(), recurrent_edges.size());
+
     for (uint32_t i = 0; i < nodes.size(); i++) {
+        Log::info("node %d\n", i);
         node_copies.push_back( nodes[i]->copy() );
         //if (nodes[i]->layer_type == INPUT_LAYER || nodes[i]->layer_type == OUTPUT_LAYER || nodes[i]->is_reachable()) node_copies.push_back( nodes[i]->copy() );
     }
 
     for (uint32_t i = 0; i < edges.size(); i++) {
+        Log::info("edge %d\n", i);
         edge_copies.push_back( edges[i]->copy(node_copies) );
         //if (edges[i]->is_reachable()) edge_copies.push_back( edges[i]->copy(node_copies) );
     }
 
     for (uint32_t i = 0; i < recurrent_edges.size(); i++) {
+        Log::info("redge %d\n", i);
         recurrent_edge_copies.push_back( recurrent_edges[i]->copy(node_copies) );
         //if (recurrent_edges[i]->is_reachable()) recurrent_edge_copies.push_back( recurrent_edges[i]->copy(node_copies) );
     }
@@ -1272,6 +1277,7 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
     for (uint32_t iteration = 0; iteration < bp_iterations; iteration++) {
         fisher_yates_shuffle(generator, shuffle_order);
 
+        Log::debug("BP_ITERS = %d\n", bp_iterations);
         double avg_norm = 0.0;
         for (uint32_t k = 0; k < shuffle_order.size(); k++) {
             random_selection = shuffle_order[k];
@@ -1923,7 +1929,7 @@ RNN_Node_Interface* RNN_Genome::create_node(double mu, double sigma, int node_ty
         Log::fatal("ERROR: attempted to create a node with an unknown node type: %d\n", node_type);
         exit(1);
     }
-
+    
     if (mutated_component_weight == WeightType::LAMARCKIAN) {
         Log::debug("new component weight is lamarckian, setting new node weight to lamarckian \n");
         n->initialize_lamarckian(generator, normal_distribution, mu, sigma);
@@ -3213,13 +3219,16 @@ RNN_Genome::RNN_Genome(istream &bin_infile) {
 }
 
 void RNN_Genome::read_from_array(char *array, int32_t length) {
-    string array_str;
-    for (uint32_t i = 0; i < length; i++) {
-        array_str.push_back(array[i]);
-    }
 
-    istringstream iss(array_str);
-    read_from_stream(iss);
+    struct membuf : std::streambuf {
+        membuf(const char* begin, const char* end) {
+            this->setg((char *) begin, (char *) begin, (char *) end);
+        }
+    };
+
+    membuf mb(array, array + length);
+    istream is(&mb);
+    read_from_stream(is);
 }
 
 void RNN_Genome::read_from_stream(istream &bin_istream) {
@@ -3468,10 +3477,13 @@ void RNN_Genome::write_to_array(char **bytes, int32_t &length) {
 
     string bytes_str = oss.str();
     length = bytes_str.size();
-    (*bytes) = (char*)malloc(length * sizeof(char));
+    
+    // (*bytes) = (char*)malloc(length * sizeof(char));
+    char *ch = (char*)malloc(length * sizeof(char));
     for (int32_t i = 0; i < length; i++) {
-        (*bytes)[i] = bytes_str[i];
+        ch[i] = bytes_str[i];
     }
+    *bytes = ch;
 }
 
 void RNN_Genome::write_to_file(string bin_filename) {
@@ -3522,6 +3534,7 @@ void RNN_Genome::write_to_stream(ostream &bin_ostream) {
 
     Log::debug("weight initialize: %s\n", WEIGHT_TYPES_STRING[weight_initialize].c_str());
     Log::debug("weight inheritance: %s\n", WEIGHT_TYPES_STRING[weight_inheritance].c_str());
+
     Log::debug("new component weight: %s\n", WEIGHT_TYPES_STRING[mutated_component_weight].c_str());
 
     write_binary_string(bin_ostream, log_filename, "log_filename");

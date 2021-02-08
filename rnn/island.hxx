@@ -15,7 +15,6 @@ using std::string;
 #include <unordered_map>
 using std::unordered_map;
 
-
 #include "rnn_genome.hxx"
 
 
@@ -91,6 +90,11 @@ class Island {
          */
         int32_t get_max_size();
 
+        /**
+         * returns this island ID
+         * \return integer id
+         */
+        int32_t get_id();
 
         /**
          * Returns the size of the island

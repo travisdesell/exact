@@ -1,4 +1,4 @@
-TerminateWork::TerminateWork() : generation_id(-1), group_id(-1) {}
+TerminateWork::TerminateWork() : Work(-1, -1) {}
 TerminateWork::TerminateWork(istream &bin_istream) {
     int class_id = bin_istream.get();
     if (class_id != TerminateWork::class_id) {
@@ -7,13 +7,13 @@ TerminateWork::TerminateWork(istream &bin_istream) {
     }
 }
 
-~TerminateWork::TerminateWork() {}
+TerminateWork::~TerminateWork() {}
 
 void TerminateWork::write_to_stream(ostream &bin_ostream) {
     bin_ostream.put(TerminateWork::class_id);
 }
 
-RNN_Genome *TerminateWork:get_genome(GenomeOperators &operators) {
+RNN_Genome *TerminateWork::get_genome(GenomeOperators &operators) {
     return NULL;
 }
 
