@@ -18,7 +18,7 @@ using std::mt19937;
 
 #include <vector>
 using std::vector;
-
+#include <functional>
 using namespace std;
 
 #include "rnn.hxx"
