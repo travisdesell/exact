@@ -1,3 +1,0 @@
-add_library(exact_word_series word_series)
-
-target_link_libraries(exact_word_series exact_common pthread)

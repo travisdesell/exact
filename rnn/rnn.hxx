@@ -13,7 +13,7 @@ using std::vector;
 #include "rnn_recurrent_edge.hxx"
 
 #include "time_series/time_series.hxx"
-#include "word_series/word_series.hxx"
+#include "character_series/character_series.hxx"
 
 class RNN {
     private:

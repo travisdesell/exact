@@ -27,7 +27,7 @@ using std::vector;
 #include "common/random.hxx"
 #include "common/weight_initialize.hxx"
 #include "time_series/time_series.hxx"
-#include "word_series/word_series.hxx"
+#include "character_series/character_series.hxx"
 
 //mysql can't handle the max float value for some reason
 #define EXAMM_MAX_DOUBLE 10000000

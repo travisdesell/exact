@@ -23,7 +23,7 @@ using std::vector;
 
 #include "rnn/examm.hxx"
 
-#include"word_series/word_series.hxx"
+#include "character_series/character_series.hxx"
 #include "time_series/time_series.hxx"
 
 mutex examm_mutex;

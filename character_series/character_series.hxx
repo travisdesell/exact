@@ -1,5 +1,5 @@
-#ifndef EXAMM_WORD_SERIES_HXX
-#define EXAMM_WORD_SERIES_HXX
+#ifndef EXAMM_CHARACTER_SERIES_HXX
+#define EXAMM_CHARACTER_SERIES_HXX
 
 #include <iostream>
 using std::ostream;
@@ -14,11 +14,11 @@ using std::map;
 using std::vector;
 
 
- class WordSeries{
+ class CharacterSeries{
  	private:
         /**
          * Specifies the string name in the data.
-         * All the unique strings in the datasets will have its each word series.
+         * All the unique strings in the datasets will have its each character series.
          */
  		string name;
  		/**
@@ -27,39 +27,39 @@ using std::vector;
         int vocab_size;
 
         /**
-         *  Specifies the minimum of the word series in a particular string.
+         *  Specifies the minimum of the character series in a particular string.
          *  This could be 0 or 1
          */
  		double min;
         /**
-         *  Specifies the average of the word series in a particular string.
-         *  This tells about the words which are used the most.
+         *  Specifies the average of the character series in a particular string.
+         *  This tells about the characters which are used the most.
          */
         double average;
         /**
-         *  Specifies the maximum of the word series in a particular string.
+         *  Specifies the maximum of the character series in a particular string.
          *  This could be 0 or 1
          */
         double max;
         /**
-         *  Specifies the std. deviation  of the word series in a particular string.
+         *  Specifies the std. deviation  of the character series in a particular string.
          */
         double std_dev;
         /**
-         *  Specifies the variance of the word series in a particular string.
-         *  This tells about the closeness of a word in the dataset. 
+         *  Specifies the variance of the character series in a particular string.
+         *  This tells about the closeness of a character in the dataset. 
          */
         double variance;
         double min_change;
         double max_change;
         /**
-         *  Storers the values in the word series respective of the time in a particular string.
+         *  Storers the values in the character series respective of the time in a particular string.
          */
  		vector<double> values;
- 		WordSeries(); 
+ 		CharacterSeries(); 
 
  	public:
- 		WordSeries(string _name);
+ 		CharacterSeries(string _name);
         void add_value(double value);
         double get_value(int i);
         void calculate_statistics();
@@ -75,8 +75,8 @@ using std::vector;
         void normalize_min_max(double min, double max);
         void normalize_avg_std_dev(double avg, double std_dev, double norm_max);
         void cut(int32_t start, int32_t stop);
-        double get_correlation(const WordSeries *other, int32_t lag) const;
-        WordSeries* copy();
+        double get_correlation(const CharacterSeries *other, int32_t lag) const;
+        CharacterSeries* copy();
         void copy_values(vector<double> &series);
 
  };
@@ -86,7 +86,7 @@ using std::vector;
 
         /**
          *  Specifies the number of the rows in the dataset.
-         *  This tells about the number of the unique words in the dataset. 
+         *  This tells about the number of the unique characters in the dataset. 
          */
         int number_rows;
         /**
@@ -94,41 +94,41 @@ using std::vector;
          */
         string sentence;
         /**
-         *  Maps the word string to index of the word series in a particular string. 
+         *  Maps the character string to index of the character series in a particular string. 
          */
       	map<string,int> vocab;
         /**
-         *  Maps the index to word string of the word series in a particular string.
+         *  Maps the index to character string of the character series in a particular string.
          */
-      	vector<string> word_index;
+      	vector<string> character_index;
         /**
-         *  Maps the word string to the word series in a particular string.
+         *  Maps the character string to the character series in a particular string.
          */
-        map <string,WordSeries*> word_series;
+        map <string,CharacterSeries*> character_series;
 
         SentenceSeries();
 
     public:
-        SentenceSeries(const string _sentence,const vector<string> & _word_index , const map<string,int> &_vocab);        
+        SentenceSeries(const string _sentence,const vector<string> & _character_index , const map<string,int> &_vocab);        
         ~SentenceSeries();
-        void add_word_series(string name);
+        void add_character_series(string name);
         int get_number_rows() const;
         int get_number_columns() const;
         string get_filename() const;
-        vector<string> get_word_index() const;
-        void get_series(string word_name, vector<double> &series);
-        double get_min(string word);
-        double get_average(string word);
-        double get_max(string word);
-        double get_std_dev(string word);
-        double get_variance(string word);
-        double get_min_change(string word);
-        double get_max_change(string word);
-        double get_correlation(string word1, string word2, int32_t lag) const;
-        void normalize_min_max(string word, double min, double max);
-        void normalize_avg_std_dev(string word, double avg, double std_dev, double norm_max);
-        void export_word_series(vector< vector<double> > &data , int word_offset);
-        void export_word_series(vector< vector<double> > &data );
+        vector<string> get_character_index() const;
+        void get_series(string character_name, vector<double> &series);
+        double get_min(string character);
+        double get_average(string character);
+        double get_max(string character);
+        double get_std_dev(string character);
+        double get_variance(string character);
+        double get_min_change(string character);
+        double get_max_change(string character);
+        double get_correlation(string character1, string character2, int32_t lag) const;
+        void normalize_min_max(string character, double min, double max);
+        void normalize_avg_std_dev(string character, double avg, double std_dev, double norm_max);
+        void export_character_series(vector< vector<double> > &data , int character_offset);
+        void export_character_series(vector< vector<double> > &data );
         SentenceSeries* copy();
         void select_parameters(const vector<string> &input_parameter_names, const vector<string> &output_parameter_names);
         void select_parameters(const vector<string> &parameter_names);
@@ -161,44 +161,44 @@ class Corpus {
 
         /**
          *  stores the input parameter names of the filenames.
-         *  stores the unique words used in the filenames. 
+         *  stores the unique characters used in the filenames. 
          */          
         vector<string> input_parameter_names;
         /**
          *  stores the input parameter names of the filenames.
-         *  stores the unique words used in the filenames. 
+         *  stores the unique characters used in the filenames. 
          */
         vector<string> output_parameter_names;
         /**
          *  stores the input parameter names of the filenames.
-         *  stores the unique words used in the filenames. 
+         *  stores the unique characters used in the filenames. 
          */
         vector<string> all_parameter_names;
 
         /**
          *  stores the Sentence series used in the filenames.
-         * Each file is divided into sentences and word series is made for each word in the sentence. 
+         * Each file is divided into sentences and character series is made for each character in the sentence. 
          */
-        vector<SentenceSeries*> sent_series;
+        vector<SentenceSeries*> sentence_series;
         map<string,double> normalize_mins;
         map<string,double> normalize_maxs;
         map<string,double> normalize_avgs;
         map<string,double> normalize_std_devs;
 
         /**
-         *  Maps the index to word string of the word series in a particular filename.
+         *  Maps the index to character string of the character series in a particular filename.
          */
-		vector<string> word_index;
+		vector<string> character_index;
 		
         /**
-         *  Maps the word string to the word series in a particular filename.
+         *  Maps the character string to the character series in a particular filename.
          */
         map<string,int> vocab;
 
         /**
-        * Loads the filenames, word index and the vocabulary of the files.
+        * Loads the filenames, character index and the vocabulary of the files.
         */
-		void load_word_library();
+		void load_character_library();
 
 
 	public:
@@ -217,28 +217,28 @@ class Corpus {
          *
          */
         void write_sentence_series_sets(string base_filename);
-        void export_sent_series(const vector<int> &series_indexes, int word_offset, vector< vector< vector<double> > > &inputs, vector< vector< vector<double> > > &outputs);
+        void export_sentence_series(const vector<int> &series_indexes, int character_offset, vector< vector< vector<double> > > &inputs, vector< vector< vector<double> > > &outputs);
         /**
          * Exports Corpus Dataset to be used for training in  RNN genome.
          *
          * \param series_indexes are the indexes of the input parameters to be used in the dataset
-         * \param word_offset is used to predict the after how many words, the predictions to be done in the future. 
+         * \param character_offset is used to predict the after how many characters, the predictions to be done in the future. 
          * \param inputs is the data used for training in the RNN genome
          * \param outpus is the data used for training in the RNN genome
          *
          */
-        void export_training_series(int word_offset, vector< vector< vector<double> > > &inputs, vector< vector< vector<double> > > &outputs);
+        void export_training_series(int character_offset, vector< vector< vector<double> > > &inputs, vector< vector< vector<double> > > &outputs);
         /**
          * Exports Corpus Dataset to be used for testing in RNN genome.
          *
          * \param series_indexes are the indexes of the input parameters to be used in the dataset
-         * \param word_offset is used to predict the after how many words, the predictions to be done in the future. 
+         * \param character_offset is used to predict the after how many characters, the predictions to be done in the future. 
          * \param inputs is the data used for testing in the RNN genome
          * \param outpus is the data used for testing in the RNN genome
          *
          */
 
-        void export_test_series(int word_offset, vector< vector< vector<double> > > &inputs, vector< vector< vector<double> > > &outputs);
+        void export_test_series(int character_offset, vector< vector< vector<double> > > &inputs, vector< vector< vector<double> > > &outputs);
         void export_series_by_name(string field_name, vector< vector<double> > &exported_series);
         double denormalize(string field_name, double value);
         string get_normalize_type() const;

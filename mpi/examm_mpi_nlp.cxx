@@ -25,7 +25,7 @@ using std::vector;
 
 #include "rnn/examm.hxx"
 
-#include "word_series/word_series.hxx"
+#include "character_series/character_series.hxx"
 
 #define WORK_REQUEST_TAG 1
 #define GENOME_LENGTH_TAG 2
@@ -230,29 +230,22 @@ void worker(int rank) {
 
 int main(int argc, char **argv) {
 
-    // Log::info("EXAMM is starting up! \n");
     MPI_Init(&argc, &argv);
-    // Log::info("MPI init finished. \n");
 
     int rank, max_rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &max_rank);
 
-    // Log::debug("got rank %d and max rank %d \n", rank, max_rank);
-
     arguments = vector<string>(argv, argv + argc);
-
-    // Log::info("got arguments! \n");
 
     Log::initialize(arguments);
     Log::set_rank(rank);
     Log::set_id("main_" + to_string(rank));
     Log::restrict_to_rank(0);
-
     Log::info("initailized log! \n");
 
-    int32_t word_offset = 1;
-    get_argument(arguments, "--word_offset", true, word_offset);
+    int32_t character_offset = 1;
+    get_argument(arguments, "--character_offset", true, character_offset);
 
     int32_t sequence_length = 64;
     get_argument(arguments, "--sequence_length", false, sequence_length);
@@ -262,9 +255,9 @@ int main(int argc, char **argv) {
     if (rank == 0) {
         //only have the master process print TSS info
         corpus_sets = Corpus::generate_from_arguments(arguments);
-        if (argument_exists(arguments, "--write_word_series")) {
+        if (argument_exists(arguments, "--write_character_series")) {
             string base_filename;
-            get_argument(arguments, "--write_word_series", true, base_filename);
+            get_argument(arguments, "--write_character_series", true, base_filename);
             corpus_sets->write_sentence_series_sets(base_filename);
         }
     }
@@ -272,8 +265,8 @@ int main(int argc, char **argv) {
         corpus_sets = Corpus::generate_from_arguments(arguments);
     }
 
-    corpus_sets->export_training_series(word_offset, training_inputs, training_outputs);
-    corpus_sets->export_test_series(word_offset, validation_inputs, validation_outputs);
+    corpus_sets->export_training_series(character_offset, training_inputs, training_outputs);
+    corpus_sets->export_test_series(character_offset, validation_inputs, validation_outputs);
 
     int number_inputs = corpus_sets->get_number_inputs();
     int number_outputs = corpus_sets->get_number_outputs();

@@ -1,0 +1,3 @@
+add_library(exact_character_series character_series)
+
+target_link_libraries(exact_character_series exact_common pthread)

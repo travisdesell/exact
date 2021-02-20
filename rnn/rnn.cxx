@@ -43,7 +43,7 @@ using std::vector;
 #include "common/log.hxx"
 
 #include "time_series/time_series.hxx"
-#include "word_series/word_series.hxx"
+#include "character_series/character_series.hxx"
 
 void RNN::validate_parameters(const vector<string> &input_parameter_names, const vector<string> &output_parameter_names) {
     Log::debug("validating parameters -- input_parameter_names.size(): %d, output_parameter_names.size(): %d\n", input_parameter_names.size(), output_parameter_names.size());

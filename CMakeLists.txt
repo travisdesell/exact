@@ -95,7 +95,7 @@ ENDIF (COMPILE_CLIENT STREQUAL "YES")
 add_subdirectory(common)
 add_subdirectory(image_tools)
 add_subdirectory(time_series)
-add_subdirectory(word_series)
+add_subdirectory(character_series)
 add_subdirectory(cnn)
 
 add_subdirectory(rnn)
