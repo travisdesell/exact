@@ -229,26 +229,27 @@ void worker(int rank) {
 // }
 
 int main(int argc, char **argv) {
-    std::cout << "starting up!" << std::endl;
+
+    // Log::info("EXAMM is starting up! \n");
     MPI_Init(&argc, &argv);
-    std::cout << "did mpi init!" << std::endl;
+    // Log::info("MPI init finished. \n");
 
     int rank, max_rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &max_rank);
 
-    std::cout << "got rank " << rank << " and max rank " << max_rank << std::endl;
+    // Log::debug("got rank %d and max rank %d \n", rank, max_rank);
 
     arguments = vector<string>(argv, argv + argc);
 
-    std::cout << "got arguments!" << std::endl;
+    // Log::info("got arguments! \n");
 
     Log::initialize(arguments);
     Log::set_rank(rank);
     Log::set_id("main_" + to_string(rank));
     Log::restrict_to_rank(0);
 
-    std::cout << "initailized log!" << std::endl;
+    Log::info("initailized log! \n");
 
     int32_t word_offset = 1;
     get_argument(arguments, "--word_offset", true, word_offset);
@@ -277,7 +278,7 @@ int main(int argc, char **argv) {
     int number_inputs = corpus_sets->get_number_inputs();
     int number_outputs = corpus_sets->get_number_outputs();
 
-    Log::debug("number_inputs: %d, number_outputs: %d\n", number_inputs, number_outputs);
+    Log::info("number_inputs: %d, number_outputs: %d\n", number_inputs, number_outputs);
 
     int32_t population_size;
     get_argument(arguments, "--population_size", true, population_size);

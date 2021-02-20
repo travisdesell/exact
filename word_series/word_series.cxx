@@ -41,16 +41,15 @@ using std::regex_replace;
 
 #include "word_series.hxx"
 
-WordSeries::WordSeries(string _name){
+WordSeries::WordSeries(string _name) {
 	name = _name;
-
 }
 
-void WordSeries::add_value(double value){
+void WordSeries::add_value(double value) {
 	values.push_back(value);
 }
 
-double WordSeries::get_value(int i){
+double WordSeries::get_value(int i) {
 	return values[i];
 }
 
@@ -60,7 +59,6 @@ void WordSeries::calculate_statistics() {
     average = 0.0;
     max = -numeric_limits<double>::max();
     max_change = -numeric_limits<double>::max();
-
     std_dev = 0.0;
     variance = 0.0;
 
@@ -69,23 +67,18 @@ void WordSeries::calculate_statistics() {
 
         if (min > values[i]) min = values[i];
         if (max < values[i]) max = values[i];
-
         if (i > 0) {
             double diff = values[i] - values[i-1];
-
             if (diff < min_change) min_change = diff;
             if (diff > max_change) max_change = diff;
         }
     }
-
     average /= values.size();
-
     for (uint32_t i = 0; i < values.size(); i++) {
         double diff = values[i] - average;
         variance += diff * diff;
     }
     variance /= values.size() - 1;
-
     std_dev = sqrt(variance);
 }
 
@@ -132,7 +125,6 @@ void WordSeries::normalize_min_max(double min, double max) {
         if (values[i] < min) {
             Log::warning("normalizing series %s, value[%d] %lf was less than min for normalization: %lf\n", name.c_str(), i, values[i], min);
         }
-
         if (values[i] > max) {
             Log::warning("normalizing series %s, value[%d] %lf was greater than max for normalization: %lf\n", name.c_str(), i, values[i], max);
         }
@@ -154,17 +146,15 @@ void WordSeries::cut(int32_t start, int32_t stop) {
     auto first = values.begin() + start;
     auto last = values.begin() + stop;
     values = vector<double>(first, last);
-
     //update the statistics after the cut
     calculate_statistics();
 }
 
 double WordSeries::get_correlation(const WordSeries *other, int32_t lag) const {
     double other_average = other->get_average();
-
     int32_t length = fmin(values.size(), other->values.size()) - lag;
-
     double covariance_sum = 0.0;
+
     for (int32_t i = 0; i < length; i++) {
         covariance_sum += (values[i + lag] - average) * (other->values[i] - other_average);
     }
@@ -176,7 +166,6 @@ double WordSeries::get_correlation(const WordSeries *other, int32_t lag) const {
     } else {
         correlation = (covariance_sum / sqrt(variance * other_variance)) / length;
     }
-
     return correlation;
 }
 
@@ -194,9 +183,7 @@ WordSeries* WordSeries::copy() {
     ws->variance = variance;
     ws->min_change = min_change;
     ws->max_change = max_change;
-
     ws->values = values;
-
     return ws;
 }
 
@@ -204,11 +191,9 @@ void WordSeries::copy_values(vector<double> &series) {
     series = values;
 }
 
-
 void string_split_word(const string &s, char delim, vector<string> &result) {
     stringstream ss;
     ss.str(s);
-
     string item;
     while (getline(ss, item, delim)) {
         result.push_back(item);
@@ -223,47 +208,29 @@ void SentenceSeries::add_word_series(string name) {
     }
 }
 
-
-
-SentenceSeries::SentenceSeries(const string _filename,const vector<string> & _word_index , const map<string,int> &_vocab){
-   filename = _filename;
-   word_index = _word_index;
-   vocab = _vocab;  
-
-    ifstream cs_file(filename.c_str());
+SentenceSeries::SentenceSeries(const string _line, const vector<string> & _word_index , const map<string,int> &_vocab) {
+    sentence = _line;
+    word_index = _word_index;
+    vocab = _vocab;  
 
     vector<string> file_words;
-
-    for(string line;getline(cs_file,line);){
-        
-        line = regex_replace(line, std::regex("^ +| +$|( ) +"), "$1");
-        string_split_word(line,' ',file_words);
-        file_words.push_back("<eos>");
-    }
-
-    for(int i  = 0; i < word_index.size();i++){
+    string_split_word(sentence,' ',file_words);
+    file_words.push_back("<eos>");
+    for(int i  = 0; i < word_index.size(); i++) {
        add_word_series(word_index[i]);
     }
-
-    for (int i = 0; i < file_words.size(); ++i)
-    {
+    for (int i = 0; i < file_words.size(); ++i) {
         int  current_word = vocab[file_words[i]];
-        for (int i = 0; i < word_index.size(); ++i)
-        {
-            if(i != current_word){
+        for (int i = 0; i < word_index.size(); ++i) {
+            if(i != current_word) {
                 word_series[word_index[i]]->add_value(0);
-            }
-            else{
+            } else {
                 word_series[word_index[i]]->add_value(1);
             }
         }
     }
-
-
-   
-
-
-   number_rows = file_words.size();
+    
+    number_rows = file_words.size();
 
     for (auto series = word_series.begin(); series != word_series.end(); series++) {
         series->second->calculate_statistics();
@@ -275,21 +242,14 @@ SentenceSeries::SentenceSeries(const string _filename,const vector<string> & _wo
         } else {
             series->second->print_statistics();
         }
-
         int series_rows = series->second->get_number_values();
-
         if (series_rows != number_rows) {
             Log::error("ERROR! number of rows for field '%s' (%d) doesn't equal number of rows in first field '%s' (%d)\n", series->first.c_str(), series->second->get_number_values(), word_series.begin()->first.c_str(), word_series.begin()->second->get_number_values());
         }
-
     }
-
-    Log::info("read time series '%s' with number rows: %d\n", filename.c_str(), number_rows);
-
-
 }
 
-SentenceSeries::~SentenceSeries(){
+SentenceSeries::~SentenceSeries() {
     for( std::map<string, WordSeries*>::iterator it=word_series.begin(); it!=word_series.end(); it=word_series.begin())
     {
         WordSeries* series = it->second;
@@ -297,9 +257,6 @@ SentenceSeries::~SentenceSeries(){
         delete series;
     }
 }
-
-
-
 
 int SentenceSeries::get_number_rows() const {
     return number_rows;
@@ -309,9 +266,9 @@ int SentenceSeries::get_number_columns() const {
     return word_index.size();
 }
 
-string SentenceSeries::get_filename() const {
-    return filename;
-}
+// string SentenceSeries::get_filename() const {
+//     return filename;
+// }
 
 vector<string> SentenceSeries::get_word_index() const {
     return word_index;
@@ -360,70 +317,56 @@ void SentenceSeries::normalize_avg_std_dev(string word, double avg, double std_d
 double SentenceSeries::get_correlation(string word1, string word2, int32_t lag) const {
     const WordSeries *first_series = word_series.at(word1);
     const WordSeries *second_series = word_series.at(word2);
-
     return first_series->get_correlation(second_series, lag);
 }
 
-void SentenceSeries::export_word_series(vector< vector<double> > &data , int word_offset){
-    
+void SentenceSeries::export_word_series(vector< vector<double> > &data , int word_offset) {
     cout<<"word_offset:: "<<word_offset<<endl;
     data.clear();
     data.resize(word_index.size(),vector<double> (number_rows - fabs(word_offset),0.0));
 
-
-    if(word_offset > 0){
+    if(word_offset > 0) {
         cout<<"testing"<<endl;
-        for (int i = 0; i < word_index.size(); ++i)
-        {
-            for (int j = word_offset; j < number_rows; ++j)
-            {
+        for (int i = 0; i < word_index.size(); ++i) {
+            for (int j = word_offset; j < number_rows; ++j) {
                 data[i][j - word_offset] = word_series[word_index[i]]->get_value(j);
             }
         }    
-    } else if (word_offset < 0){
+    } else if (word_offset < 0) {
         cout<<"training"<<endl; 
-        for (int i = 0; i < word_index.size(); ++i)
-        {
-            for (int j = 0; j < number_rows + word_offset; ++j)
-            {
+        for (int i = 0; i < word_index.size(); ++i){
+            for (int j = 0; j < number_rows + word_offset; ++j) {
                 data[i][j] = word_series[word_index[i]]->get_value(j);
             }
         }
-    } else{
-        for (int i = 0; i < word_index.size(); ++i)
-        {
-            for (int j = 0; j < number_rows; ++j)
-            {
+    } else {
+        for (int i = 0; i < word_index.size(); ++i) {
+            for (int j = 0; j < number_rows; ++j) {
                 data[i][j] = word_series[word_index[i]]->get_value(j);
             }
         }
-
     }
-
-
 }
 
-void SentenceSeries::export_word_series(vector< vector<double> > &data ){
+void SentenceSeries::export_word_series(vector< vector<double> > &data) {
     export_word_series(data , 0);
 }
 
-SentenceSeries::SentenceSeries(){
+SentenceSeries::SentenceSeries() {
 
 }
 
-SentenceSeries* SentenceSeries::copy(){
+SentenceSeries* SentenceSeries::copy() {
     SentenceSeries* ss = new SentenceSeries();
     ss->number_rows = number_rows;
-    ss->filename = filename;
+    ss->sentence = sentence;
     ss->word_index = word_index;
     ss->vocab= vocab;
 
     for (auto series = word_series.begin(); series != word_series.end(); series++) {
         ss->word_series[series->first] = series->second->copy();
     }
-
     return ss;
-
 }
 
 void SentenceSeries::select_parameters(const vector<string> &parameter_names) {
@@ -438,26 +381,18 @@ void SentenceSeries::select_parameters(const vector<string> &parameter_names) {
 void SentenceSeries::select_parameters(const vector<string> &input_parameter_names, const vector<string> &output_parameter_names) {
     vector<string> combined_parameters = input_parameter_names;
     combined_parameters.insert(combined_parameters.end(), output_parameter_names.begin(), output_parameter_names.end());
-
     select_parameters(combined_parameters);
 }
-
-
-
-
-
 
 Corpus::Corpus() : normalize_type("none") { 
 
 }
 
-
-Corpus::~Corpus(){
+Corpus::~Corpus() {
     for (uint32_t i = 0; i < sent_series.size(); i++) {
         delete sent_series[i];
     }
 }
-
 
 void merge_parameter_names_word(const vector<string> &input_parameter_names, const vector<string> &output_parameter_names, vector<string> &all_parameter_names) {
     all_parameter_names.clear();
@@ -475,55 +410,43 @@ void merge_parameter_names_word(const vector<string> &input_parameter_names, con
     }
 }
 
-
-void Corpus::load_word_library(){
-	
-    
-    for (int i = 0; i < training_indexes.size(); ++i)
-    {
+void Corpus::load_word_library() {
+    for (int i = 0; i < training_indexes.size(); ++i) {
         vector<string> words;
         string filename = filenames[training_indexes[i]];
         ifstream cs_file(filename.c_str());
 
-        for(string line;getline(cs_file,line);){
+        for(string line; getline(cs_file,line); ) {
             line = regex_replace(line, std::regex("^ +| +$|( ) +"), "$1");
-            
             string_split_word(line,' ',words);
             words.push_back("<eos>");
         }
 
         set<string> word_index_set(words.begin(), words.end());
-
-        for (set<string>::iterator i = word_index_set.begin(); i != word_index_set.end(); ++i)
-        {
+        for (set<string>::iterator i = word_index_set.begin(); i != word_index_set.end(); ++i) {
             word_index.push_back(*i);
             vocab[*i] = vocab.size();
-
         }
-
     }
-
 
     input_parameter_names = word_index;
     output_parameter_names = word_index;
     all_parameter_names = word_index;
 
-
-    for (uint32_t i = 0; i < filenames.size(); i++) {
+    for (int i = 0; i < filenames.size(); i++) {
         Log::debug("\t%s\n", filenames[i].c_str());
-
-        SentenceSeries *ss = new SentenceSeries(filenames[i], word_index,vocab);
-        sent_series.push_back( ss );
-
+        ifstream cs_file(filenames[i].c_str());
+        for(string line; getline(cs_file,line); ) {
+            line = regex_replace(line, std::regex("^ +| +$|( ) +"), "$1");
+            SentenceSeries *ss = new SentenceSeries(line, word_index,vocab);
+            sent_series.push_back( ss );
+        }
     }
+    Log::info("number of sentences: %d \n", sent_series.size());
 }
 
-
-
-
-Corpus* Corpus::generate_from_arguments(const vector<string> &arguments){
+Corpus* Corpus::generate_from_arguments(const vector<string> &arguments) {
 	Corpus *cs = new Corpus();
-
 	cs->filenames.clear();
 	cs->word_index.clear();
 	cs->vocab.clear();
@@ -556,40 +479,32 @@ Corpus* Corpus::generate_from_arguments(const vector<string> &arguments){
     }
 
     get_argument(arguments, "--sequence_length", true, _sequence_length);
-
     cs->sequence_length = _sequence_length;
     cs->all_parameter_names.clear();
     cs->input_parameter_names.clear();
     cs->output_parameter_names.clear();
-
 	cs->load_word_library();
-
+    cs->normalize_type = "none";
 
 	return cs;
-
 }
 
 Corpus* Corpus::generate_test(const vector<string> &_test_filenames, const vector<string> &_input_parameter_names, const vector<string> &_output_parameter_names) {
     Corpus *cs = new Corpus();
 
     cs->filenames = _test_filenames;
-
     cs->training_indexes.clear();
     cs->test_indexes.clear();
     for (int32_t i = 0; i < (int32_t)cs->filenames.size(); i++) {
         cs->test_indexes.push_back(i);
-    }
-        
+    }   
     cs->input_parameter_names = _input_parameter_names;
     cs->output_parameter_names = _output_parameter_names;
     merge_parameter_names_word(cs->input_parameter_names, cs->output_parameter_names, cs->all_parameter_names);
-
     cs->normalize_mins.clear();
     cs->normalize_maxs.clear();
-
     cs->normalize_avgs.clear();
     cs->normalize_std_devs.clear();
-
     cs->load_word_library();
 
     return cs;
@@ -601,26 +516,18 @@ double Corpus::denormalize(string field_name, double value) {
     } else if (normalize_type.compare("min_max") == 0) {
         double min = normalize_mins[field_name];
         double max = normalize_maxs[field_name];
-
         value = (value * (max-min)) + min;
-
         return value;
-
     } else if (normalize_type.compare("avg_std_dev") == 0) {
         double min = normalize_mins[field_name];
         double max = normalize_maxs[field_name];
         double avg = normalize_avgs[field_name];
         double std_dev = normalize_std_devs[field_name];
-
         double norm_min = (min - avg) / std_dev;
         double norm_max = (max - avg) / std_dev;
-        
         norm_max = fmax(norm_min, norm_max);
-
         value = (value * norm_max * std_dev) + avg;
-
         return value;
-
     } else {
         Log::fatal("Unknown normalize type on denormalize for '%s' and '%lf', '%s', this should never happen.\n", field_name.c_str(), value, normalize_type.c_str());
         exit(1);
@@ -629,45 +536,35 @@ double Corpus::denormalize(string field_name, double value) {
 
 void Corpus::normalize_min_max() {
     Log::info("doing min/max normalization:\n");
-
     for (int i = 0; i < all_parameter_names.size(); i++) {
         string parameter_name = all_parameter_names[i];
-
         double min = numeric_limits<double>::max();
         double max = -numeric_limits<double>::max();
-
         //get the min of all series of the same name
         //get the max of all series of the same name
 
         if (normalize_mins.count(parameter_name) > 0) {
             min = normalize_mins[parameter_name];
             max = normalize_maxs[parameter_name];
-
             Log::info("user specified bounds for ");
-
         }  else {
             for (int j = 0; j < sent_series.size(); j++) {
                 double current_min = sent_series[j]->get_min(parameter_name);
                 double current_max = sent_series[j]->get_max(parameter_name);
-
                 if (current_min < min) min = current_min;
                 if (current_max > max) max = current_max;
             }
-
             normalize_mins[parameter_name] = min;
             normalize_maxs[parameter_name] = max;
-
             Log::info("calculated bounds for     ");
         }
 
         Log::info_no_header("%30s, min: %22.10lf, max: %22.10lf\n", parameter_name.c_str(), min, max);
-
         //for each series, subtract min, divide by (max - min)
         for (int j = 0; j < sent_series.size(); j++) {
             sent_series[j]->normalize_min_max(parameter_name, min, max);
         }
     }
-
     normalize_type = "min_max";
 }
 
@@ -677,7 +574,6 @@ void Corpus::normalize_min_max(const map<string,double> &_normalize_mins, const 
 
     for (int32_t i = 0; i < (int32_t)all_parameter_names.size(); i++) {
         string field = all_parameter_names[i];
-
         if (normalize_mins.count(field) == 0) {
             //field doesn't exist in the normalize values, report an error
             Log::fatal("ERROR, couldn't find field '%s' in normalize min values.\n", field.c_str());
@@ -697,13 +593,11 @@ void Corpus::normalize_min_max(const map<string,double> &_normalize_mins, const 
             }
             exit(1);
         }
-
         //for each series, subtract min, divide by (max - min)
         for (int j = 0; j < sent_series.size(); j++) {
             sent_series[j]->normalize_min_max(field, normalize_mins[field], normalize_maxs[field]);
         }
     }
-
     normalize_type = "min_max";
 }
 
@@ -712,73 +606,53 @@ void Corpus::normalize_avg_std_dev() {
 
     for (int i = 0; i < all_parameter_names.size(); i++) {
         string parameter_name = all_parameter_names[i];
-
         double min = numeric_limits<double>::max();
         double max = -numeric_limits<double>::max();
-
         double avg = 0.0;
         double std_dev = 0.0;
-
         if (normalize_avgs.count(parameter_name) > 0) {
             min = normalize_mins[parameter_name];
             max = normalize_maxs[parameter_name];
             avg = normalize_avgs[parameter_name];
             std_dev = normalize_std_devs[parameter_name];
-
             Log::info("user specified avg/std dev for ");
-
         }  else {
             double numerator_average = 0.0;
             long total_values = 0;
-
             for (int j = 0; j < sent_series.size(); j++) {
                 int n_values = sent_series[j]->get_number_rows();
                 numerator_average += sent_series[j]->get_average(parameter_name) * n_values;
                 total_values += n_values;
-
                 double current_min = sent_series[j]->get_min(parameter_name);
                 double current_max = sent_series[j]->get_max(parameter_name);
-
                 if (current_min < min) min = current_min;
                 if (current_max > max) max = current_max;
             }
-
             normalize_mins[parameter_name] = min;
             normalize_maxs[parameter_name] = max;
-
             avg = numerator_average / total_values;
-
             double numerator_std_dev = 0.0;
             //get the Bessel-corrected (n-1 denominator) combined standard deviation
             for (int j = 0; j < sent_series.size(); j++) {
                 int n_values = sent_series[j]->get_number_rows();
-
                 double avg_diff = sent_series[j]->get_average(parameter_name) - avg;
                 numerator_std_dev += ((n_values - 1) * sent_series[j]->get_variance(parameter_name)) + (n_values * avg_diff * avg_diff);
             }
-
             std_dev = numerator_std_dev / (total_values - 1);
-
             normalize_avgs[parameter_name] = avg;
             normalize_std_devs[parameter_name] = std_dev;
-
-
             Log::info("calculated bounds for     ");
         }
         
         double norm_min = (min - avg) / std_dev;
         double norm_max = (max - avg) / std_dev;
-        
         norm_max = fmax(norm_min, norm_max);
-
         Log::info_no_header("%30s, min: %22.10lf, max: %22.10lf, norm_max; %22.10lf, combined average: %22.10lf, combined std_dev: %22.10lf\n", parameter_name.c_str(), min, max, avg, norm_max, std_dev);
-
         //for each series, subtract min, divide by (max - min)
         for (int j = 0; j < sent_series.size(); j++) {
             sent_series[j]->normalize_avg_std_dev(parameter_name, avg, std_dev, norm_max);
         }
     }
-
     normalize_type = "avg_std_dev";
 }
 
@@ -790,7 +664,6 @@ void Corpus::normalize_avg_std_dev(const map<string,double> &_normalize_avgs, co
 
     for (int32_t i = 0; i < (int32_t)all_parameter_names.size(); i++) {
         string field = all_parameter_names[i];
-
         if (normalize_avgs.count(field) == 0) {
             //field doesn't exist in the normalize values, report an error
             Log::fatal("ERROR, couldn't find field '%s' in normalize avg values.\n", field.c_str());
@@ -800,7 +673,6 @@ void Corpus::normalize_avg_std_dev(const map<string,double> &_normalize_avgs, co
             }
             exit(1);
         }
-
         if (normalize_std_devs.count(field) == 0) {
             //field doesn't exist in the normalize values, report an error
             Log::fatal("ERROR, couldn't find field '%s' in normalize std_dev values.\n", field.c_str());
@@ -810,7 +682,6 @@ void Corpus::normalize_avg_std_dev(const map<string,double> &_normalize_avgs, co
             }
             exit(1);
         }
-
         if (normalize_mins.count(field) == 0) {
             //field doesn't exist in the normalize values, report an error
             Log::fatal("ERROR, couldn't find field '%s' in normalize min values.\n", field.c_str());
@@ -820,7 +691,6 @@ void Corpus::normalize_avg_std_dev(const map<string,double> &_normalize_avgs, co
             }
             exit(1);
         }
-
         if (normalize_maxs.count(field) == 0) {
             //field doesn't exist in the normalize values, report an error
             Log::fatal("ERROR, couldn't find field '%s' in normalize max values.\n", field.c_str());
@@ -835,60 +705,40 @@ void Corpus::normalize_avg_std_dev(const map<string,double> &_normalize_avgs, co
         double max = normalize_maxs[field];
         double avg = normalize_avgs[field];
         double std_dev = normalize_std_devs[field];
-
         double norm_min = (min - avg) / std_dev;
         double norm_max = (max - avg) / std_dev;
-        
         norm_max = fmax(norm_min, norm_max);
-
-
         //for each series, subtract avg, divide by std_dev; then divide by normalized_max to make between -1 and 1
         for (int j = 0; j < sent_series.size(); j++) {
             sent_series[j]->normalize_avg_std_dev(field, avg, std_dev, norm_max);
         }
     }
-
     normalize_type = "avg_std_dev";
 }
 
 vector<vector<vector<double> > > split_sequence_length(int sequence_length, vector<vector<vector<double> > > data) {
-
-
     vector<vector<vector<double> > > sequenceData;
-        
     int no_features = data[0].size();
     int no_sequences = 0;
     int sequenceNo =  -1;
-
-
     for (int i = 0; i < data.size(); ++i) {
         no_sequences += (data[i][0].size() - 1) / sequence_length + 1;
     }
-
-    if (data[0][0].size() < sequence_length)
-    {
-
+    if (data[0][0].size() < sequence_length) {
         sequenceData.resize(no_sequences, vector<vector<double>>(no_features, vector<double>(data[0][0].size())));
-    }
-    else
-    {
+    } else {
         sequenceData.resize(no_sequences, vector<vector<double>>(no_features, vector<double>(sequence_length)));
     }
 
     for (int k = 0; k < data.size(); ++k) {
         for (int j = 0; j < data[k][0].size(); ++j) {
             for (int i = 0; i < data[k].size(); ++i) {
-                if (i == 0 && j % sequence_length == 0)
-                    sequenceNo++;
-
+                if (i == 0 && j % sequence_length == 0) sequenceNo++;
                 sequenceData[sequenceNo][i][j % sequence_length] = data[k][i][j];
             }
         }
     }
-
-
     return sequenceData;
-
 }
 
 
@@ -896,17 +746,12 @@ void Corpus::export_sent_series(const vector<int> &series_indexes, int word_offs
     
     vector< vector< vector<double> > > temp_inputs;
     vector< vector< vector<double> > > temp_outputs;
-
     inputs.resize(series_indexes.size());
     outputs.resize(series_indexes.size());
-
     temp_inputs.resize(series_indexes.size());
     temp_outputs.resize(series_indexes.size());
-
-
     for (uint32_t i = 0; i < series_indexes.size(); i++) {
         int series_index = series_indexes[i];
-
         sent_series[series_index]->export_word_series(temp_inputs[i], -word_offset);
         sent_series[series_index]->export_word_series(temp_outputs[i], word_offset);
     }
@@ -923,7 +768,6 @@ void Corpus::export_training_series(int word_offset, vector< vector< vector<doub
         Log::fatal("ERROR: attempting to export training time series, however the training_indexes were not specified.\n");
         exit(1);
     }
-
     export_sent_series(training_indexes, word_offset, inputs, outputs);
 }
 
@@ -935,7 +779,6 @@ void Corpus::export_test_series(int word_offset, vector< vector< vector<double> 
         Log::fatal("ERROR: attempting to export test time series, however the test_indexes were not specified.\n");
         exit(1);
     }
-
     export_sent_series(test_indexes, word_offset, inputs, outputs);
 }
 
@@ -944,17 +787,14 @@ void Corpus::export_series_by_name(string field_name, vector< vector<double> > &
 
     for (int32_t i = 0; i < sent_series.size(); i++) {
         vector<double> current_series;
-
         sent_series[i]->get_series(field_name, current_series);
         exported_series.push_back(current_series);
     }
 }
 
-
 void Corpus::write_sentence_series_sets(string base_filename) {
     for (uint32_t i = 0; i < sent_series.size(); i++) {
         ofstream outfile(base_filename + to_string(i) + ".csv");
-
         vector< vector<double> > data;
         sent_series[i]->export_word_series(data);
 
@@ -971,7 +811,6 @@ void Corpus::write_sentence_series_sets(string base_filename) {
                 if (k > 0) {
                     outfile << ",";
                 }
-
                 outfile << data[k][j];
             }
             outfile << endl;
