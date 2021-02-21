@@ -21,10 +21,10 @@ using std::vector;
          * All the unique strings in the datasets will have its each character series.
          */
  		string name;
- 		/**
-         * Specifies the number of the unique strings in the dataset.
-         */
-        int vocab_size;
+ 		// /**
+        //  * Specifies the number of the unique strings in the dataset.
+        //  */
+        // int vocab_size;
 
         /**
          *  Specifies the minimum of the character series in a particular string.
@@ -85,10 +85,9 @@ using std::vector;
 	private:
 
         /**
-         *  Specifies the number of the rows in the dataset.
-         *  This tells about the number of the unique characters in the dataset. 
+         *  the number of chars in a sentence
          */
-        int number_rows;
+        int number_chars;
         /**
          *  Specifices the filename for the training or testing data. 
          */
@@ -109,10 +108,10 @@ using std::vector;
         SentenceSeries();
 
     public:
-        SentenceSeries(const string _sentence,const vector<string> & _character_index , const map<string,int> &_vocab);        
+        SentenceSeries(const string _sentence, const vector<string> & _character_index , const map<string,int> &_vocab);        
         ~SentenceSeries();
         void add_character_series(string name);
-        int get_number_rows() const;
+        int get_number_chars() const;
         int get_number_columns() const;
         string get_filename() const;
         vector<string> get_character_index() const;
@@ -127,8 +126,8 @@ using std::vector;
         double get_correlation(string character1, string character2, int32_t lag) const;
         void normalize_min_max(string character, double min, double max);
         void normalize_avg_std_dev(string character, double avg, double std_dev, double norm_max);
-        void export_character_series(vector< vector<double> > &data , int character_offset);
-        void export_character_series(vector< vector<double> > &data );
+        void export_character_series(vector< vector<double> > &data , int32_t character_offset);
+        // void export_character_series(vector< vector<double> > &data );
         SentenceSeries* copy();
         void select_parameters(const vector<string> &input_parameter_names, const vector<string> &output_parameter_names);
         void select_parameters(const vector<string> &parameter_names);
@@ -138,10 +137,10 @@ using std::vector;
 class Corpus {
 
 	private:
-        /**
-         *  Specifices the chunks in which the dataset is to be divided into chunks.
-         */
-        uint32_t sequence_length;
+        // /**
+        //  *  Specifices the chunks in which the dataset is to be divided into chunks.
+        //  */
+        // uint32_t sequence_length;
 		string normalize_type;
 
         /**
@@ -152,12 +151,24 @@ class Corpus {
         /**
          *  stores the training index of the filenames. 
          */
-        vector<int> training_indexes;
+        vector<int> training_file_indexes;
         
         /**
          *  stores the testing index of the filenames. 
          */        
-        vector<int> test_indexes;
+        vector<int> test_file_indexes;
+
+        /**
+         *  stores the training index of the sentences. 
+         *  it's different from the training_file_indexes because 1 file can have many sentences
+         */
+        vector<int> training_sentence_indexes;
+        
+        /**
+         *  stores the testing index of the sentences. 
+         *  it's different from the test_file_indexes because 1 file can have many sentences
+         */        
+        vector<int> test_sentence_indexes;
 
         /**
          *  stores the input parameter names of the filenames.
@@ -206,6 +217,11 @@ class Corpus {
 		Corpus();
 		~Corpus();
 		static Corpus* generate_from_arguments(const vector<string> &arguments);
+        /**
+         *  TODO: generate_test function is not implemented. 
+         *  Different from time series, which each file is a time series
+         *  For Charater level prediction, need to load the input files and put each sentence into a seperate sentence class
+         */
 		static Corpus* generate_test(const vector<string> &_test_filenames, const vector<string> &_input_parameter_names, const vector<string> &_output_parameter_names);
         void normalize_min_max();
         void normalize_min_max(const map<string,double> &_normalize_mins, const map<string,double> &_normalize_maxs);
@@ -252,8 +268,8 @@ class Corpus {
         int get_number_series() const;
         int get_number_inputs() const;
         int get_number_outputs() const;
-        void set_training_indexes(const vector<int> &_training_indexes);
-        void set_test_indexes(const vector<int> &_test_indexes);
+        void set_training_file_indexes(const vector<int> &_training_file_indexes);
+        void set_test_file_indexes(const vector<int> &_test_file_indexes);
         SentenceSeries *get_set(int32_t i);
 };
 

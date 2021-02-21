@@ -230,7 +230,7 @@ SentenceSeries::SentenceSeries(const string _line, const vector<string> & _chara
         }
     }
     
-    number_rows = file_characters.size();
+    number_chars = file_characters.size();
 
     for (auto series = character_series.begin(); series != character_series.end(); series++) {
         series->second->calculate_statistics();
@@ -243,7 +243,7 @@ SentenceSeries::SentenceSeries(const string _line, const vector<string> & _chara
             series->second->print_statistics();
         }
         int series_rows = series->second->get_number_values();
-        if (series_rows != number_rows) {
+        if (series_rows != number_chars) {
             Log::error("ERROR! number of rows for field '%s' (%d) doesn't equal number of rows in first field '%s' (%d)\n", series->first.c_str(), series->second->get_number_values(), character_series.begin()->first.c_str(), character_series.begin()->second->get_number_values());
         }
     }
@@ -258,8 +258,8 @@ SentenceSeries::~SentenceSeries() {
     }
 }
 
-int SentenceSeries::get_number_rows() const {
-    return number_rows;
+int SentenceSeries::get_number_chars() const {
+    return number_chars;
 }
 
 int SentenceSeries::get_number_columns() const {
@@ -320,36 +320,44 @@ double SentenceSeries::get_correlation(string character1, string character2, int
     return first_series->get_correlation(second_series, lag);
 }
 
-void SentenceSeries::export_character_series(vector< vector<double> > &data , int character_offset) {
-    cout<<"character_offset:: "<<character_offset<<endl;
+/**
+ *   character_offset < 0 generates input data. Do not use the last <character_offset> values
+ *   character_offset > 0 generates output data. Do not use the first <character_offset> values
+ */
+void SentenceSeries::export_character_series(vector< vector<double> > &data, int32_t character_offset) {
+    Log::debug("clearing data\n");
     data.clear();
-    data.resize(character_index.size(),vector<double> (number_rows - fabs(character_offset),0.0));
 
-    if(character_offset > 0) {
-        cout<<"testing"<<endl;
-        for (int i = 0; i < character_index.size(); ++i) {
-            for (int j = character_offset; j < number_rows; ++j) {
+    //for some reason fabs is not working right
+    int abs_character_offset = character_offset;
+    if (abs_character_offset < 0) abs_character_offset *= -1;
+    Log::debug("character offset: %d\n", character_offset);
+    Log::debug("abs_character_offset: %d\n", abs_character_offset);
+
+    data.resize(character_index.size(), vector<double>(number_chars - abs_character_offset, 0.0));
+    Log::debug("resized! character_offset = %d\n", character_offset);
+
+    // output data
+    if(character_offset > 0) { 
+        for (int i = 0; i < character_index.size(); i++) {
+            for (int j = character_offset; j < number_chars; j++) {
                 data[i][j - character_offset] = character_series[character_index[i]]->get_value(j);
             }
-        }    
+        } 
+    // input data   
     } else if (character_offset < 0) {
-        cout<<"training"<<endl; 
-        for (int i = 0; i < character_index.size(); ++i){
-            for (int j = 0; j < number_rows + character_offset; ++j) {
+        for (int i = 0; i < character_index.size(); i++){
+            for (int j = 0; j < number_chars + character_offset; j++) {
                 data[i][j] = character_series[character_index[i]]->get_value(j);
             }
         }
     } else {
-        for (int i = 0; i < character_index.size(); ++i) {
-            for (int j = 0; j < number_rows; ++j) {
+        for (int i = 0; i < character_index.size(); i++) {
+            for (int j = 0; j < number_chars; j++) {
                 data[i][j] = character_series[character_index[i]]->get_value(j);
             }
         }
     }
-}
-
-void SentenceSeries::export_character_series(vector< vector<double> > &data) {
-    export_character_series(data , 0);
 }
 
 SentenceSeries::SentenceSeries() {
@@ -358,7 +366,7 @@ SentenceSeries::SentenceSeries() {
 
 SentenceSeries* SentenceSeries::copy() {
     SentenceSeries* ss = new SentenceSeries();
-    ss->number_rows = number_rows;
+    ss->number_chars = number_chars;
     ss->sentence = sentence;
     ss->character_index = character_index;
     ss->vocab= vocab;
@@ -411,9 +419,11 @@ void merge_parameter_names_character(const vector<string> &input_parameter_names
 }
 
 void Corpus::load_character_library() {
-    for (int i = 0; i < training_indexes.size(); ++i) {
+    training_sentence_indexes.clear();
+    test_sentence_indexes.clear();
+    for (int i = 0; i < training_file_indexes.size(); ++i) {
         vector<string> characters;
-        string filename = filenames[training_indexes[i]];
+        string filename = filenames[training_file_indexes[i]];
         ifstream cs_file(filename.c_str());
 
         for(string line; getline(cs_file,line); ) {
@@ -433,16 +443,29 @@ void Corpus::load_character_library() {
     output_parameter_names = character_index;
     all_parameter_names = character_index;
 
-    for (int i = 0; i < filenames.size(); i++) {
-        Log::debug("\t%s\n", filenames[i].c_str());
-        ifstream cs_file(filenames[i].c_str());
+    int current = 0;
+    for (int i = 0; i < training_file_indexes.size(); i++) {
+        Log::debug("\t%s\n", filenames[training_file_indexes[i]].c_str());
+        ifstream cs_file(filenames[training_file_indexes[i]].c_str());
         for(string line; getline(cs_file,line); ) {
             line = regex_replace(line, std::regex("^ +| +$|( ) +"), "$1");
             SentenceSeries *ss = new SentenceSeries(line, character_index,vocab);
             sentence_series.push_back( ss );
+            training_sentence_indexes.push_back(current);
+            current++;
         }
     }
-    Log::info("number of sentences: %d \n", sentence_series.size());
+    for (int i = 0; i < test_file_indexes.size(); i++) {
+        Log::debug("\t%s\n", filenames[test_file_indexes[i]].c_str());
+        ifstream cs_file(filenames[test_file_indexes[i]].c_str());
+        for(string line; getline(cs_file,line); ) {
+            line = regex_replace(line, std::regex("^ +| +$|( ) +"), "$1");
+            SentenceSeries *ss = new SentenceSeries(line, character_index,vocab);
+            sentence_series.push_back( ss );
+            test_sentence_indexes.push_back(current);
+            current++;
+        }
+    }
 }
 
 Corpus* Corpus::generate_from_arguments(const vector<string> &arguments) {
@@ -450,7 +473,6 @@ Corpus* Corpus::generate_from_arguments(const vector<string> &arguments) {
 	cs->filenames.clear();
 	cs->character_index.clear();
 	cs->vocab.clear();
-    uint32_t _sequence_length;
 
 	if (argument_exists(arguments, "--training_filenames") && argument_exists(arguments, "--test_filenames")) {
         vector<string> training_filenames;
@@ -462,13 +484,13 @@ Corpus* Corpus::generate_from_arguments(const vector<string> &arguments) {
         int current = 0;
         for (int i = 0; i < training_filenames.size(); i++) {
             cs->filenames.push_back(training_filenames[i]);
-            cs->training_indexes.push_back(current);
+            cs->training_file_indexes.push_back(current);
             current++;
         }
 
         for (int i = 0; i < test_filenames.size(); i++) {
             cs->filenames.push_back(test_filenames[i]);
-            cs->test_indexes.push_back(current);
+            cs->test_file_indexes.push_back(current);
             current++;
         }
 
@@ -478,8 +500,6 @@ Corpus* Corpus::generate_from_arguments(const vector<string> &arguments) {
         exit(1);
     }
 
-    get_argument(arguments, "--sequence_length", true, _sequence_length);
-    cs->sequence_length = _sequence_length;
     cs->all_parameter_names.clear();
     cs->input_parameter_names.clear();
     cs->output_parameter_names.clear();
@@ -487,27 +507,6 @@ Corpus* Corpus::generate_from_arguments(const vector<string> &arguments) {
     cs->normalize_type = "none";
 
 	return cs;
-}
-
-Corpus* Corpus::generate_test(const vector<string> &_test_filenames, const vector<string> &_input_parameter_names, const vector<string> &_output_parameter_names) {
-    Corpus *cs = new Corpus();
-
-    cs->filenames = _test_filenames;
-    cs->training_indexes.clear();
-    cs->test_indexes.clear();
-    for (int32_t i = 0; i < (int32_t)cs->filenames.size(); i++) {
-        cs->test_indexes.push_back(i);
-    }   
-    cs->input_parameter_names = _input_parameter_names;
-    cs->output_parameter_names = _output_parameter_names;
-    merge_parameter_names_character(cs->input_parameter_names, cs->output_parameter_names, cs->all_parameter_names);
-    cs->normalize_mins.clear();
-    cs->normalize_maxs.clear();
-    cs->normalize_avgs.clear();
-    cs->normalize_std_devs.clear();
-    cs->load_character_library();
-
-    return cs;
 }
 
 double Corpus::denormalize(string field_name, double value) {
@@ -620,7 +619,7 @@ void Corpus::normalize_avg_std_dev() {
             double numerator_average = 0.0;
             long total_values = 0;
             for (int j = 0; j < sentence_series.size(); j++) {
-                int n_values = sentence_series[j]->get_number_rows();
+                int n_values = sentence_series[j]->get_number_chars();
                 numerator_average += sentence_series[j]->get_average(parameter_name) * n_values;
                 total_values += n_values;
                 double current_min = sentence_series[j]->get_min(parameter_name);
@@ -634,7 +633,7 @@ void Corpus::normalize_avg_std_dev() {
             double numerator_std_dev = 0.0;
             //get the Bessel-corrected (n-1 denominator) combined standard deviation
             for (int j = 0; j < sentence_series.size(); j++) {
-                int n_values = sentence_series[j]->get_number_rows();
+                int n_values = sentence_series[j]->get_number_chars();
                 double avg_diff = sentence_series[j]->get_average(parameter_name) - avg;
                 numerator_std_dev += ((n_values - 1) * sentence_series[j]->get_variance(parameter_name)) + (n_values * avg_diff * avg_diff);
             }
@@ -716,70 +715,45 @@ void Corpus::normalize_avg_std_dev(const map<string,double> &_normalize_avgs, co
     normalize_type = "avg_std_dev";
 }
 
-vector<vector<vector<double> > > split_sequence_length(int sequence_length, vector<vector<vector<double> > > data) {
-    vector<vector<vector<double> > > sequenceData;
-    int no_features = data[0].size();
-    int no_sequences = 0;
-    int sequenceNo =  -1;
-    for (int i = 0; i < data.size(); ++i) {
-        no_sequences += (data[i][0].size() - 1) / sequence_length + 1;
-    }
-    if (data[0][0].size() < sequence_length) {
-        sequenceData.resize(no_sequences, vector<vector<double>>(no_features, vector<double>(data[0][0].size())));
-    } else {
-        sequenceData.resize(no_sequences, vector<vector<double>>(no_features, vector<double>(sequence_length)));
-    }
-
-    for (int k = 0; k < data.size(); ++k) {
-        for (int j = 0; j < data[k][0].size(); ++j) {
-            for (int i = 0; i < data[k].size(); ++i) {
-                if (i == 0 && j % sequence_length == 0) sequenceNo++;
-                sequenceData[sequenceNo][i][j % sequence_length] = data[k][i][j];
-            }
-        }
-    }
-    return sequenceData;
-}
-
-
-void Corpus::export_sentence_series(const vector<int> &series_indexes, int character_offset, vector< vector< vector<double> > > &inputs, vector< vector< vector<double> > > &outputs) {
+void Corpus::export_sentence_series(const vector<int> &sentence_indexes, int character_offset, vector< vector< vector<double> > > &inputs, vector< vector< vector<double> > > &outputs) {
+    inputs.resize(sentence_indexes.size());
+    outputs.resize(sentence_indexes.size());
     
-    vector< vector< vector<double> > > temp_inputs;
-    vector< vector< vector<double> > > temp_outputs;
-    inputs.resize(series_indexes.size());
-    outputs.resize(series_indexes.size());
-    temp_inputs.resize(series_indexes.size());
-    temp_outputs.resize(series_indexes.size());
-    for (uint32_t i = 0; i < series_indexes.size(); i++) {
-        int series_index = series_indexes[i];
-        sentence_series[series_index]->export_character_series(temp_inputs[i], -character_offset);
-        sentence_series[series_index]->export_character_series(temp_outputs[i], character_offset);
+    for (int i = 0; i < sentence_indexes.size(); i++) {
+        int sentence_index = sentence_indexes[i];
+        sentence_series[sentence_index]->export_character_series(inputs[i], -character_offset);
+        sentence_series[sentence_index]->export_character_series(outputs[i], character_offset);
     }
-
-    inputs = split_sequence_length(sequence_length, temp_inputs);
-    outputs = split_sequence_length(sequence_length, temp_outputs);
 }
 
 /**
  * This exports the time series marked as training series by the training_indexes vector.
+ * vector input: < sentence < character index < value over the sentence (onehot)> > >
  */
 void Corpus::export_training_series(int character_offset, vector< vector< vector<double> > > &inputs, vector< vector< vector<double> > > &outputs) {
-    if (training_indexes.size() == 0) {
-        Log::fatal("ERROR: attempting to export training time series, however the training_indexes were not specified.\n");
+    for (int i = 0; i < training_sentence_indexes.size(); i++) {
+        Log::error("training sentence indexes: %d\n", training_sentence_indexes[i]);
+    }
+    if (training_sentence_indexes.size() == 0) {
+        Log::fatal("ERROR: attempting to export training time series, however the training_sentence_indexes were not specified.\n");
         exit(1);
     }
-    export_sentence_series(training_indexes, character_offset, inputs, outputs);
+    export_sentence_series(training_sentence_indexes, character_offset, inputs, outputs);
 }
 
 /**
  * This exports the time series marked as test series by the test_indexes vector.
+ * vector input: < sentence < character index < value over the sentence (onehot)> > >
  */
 void Corpus::export_test_series(int character_offset, vector< vector< vector<double> > > &inputs, vector< vector< vector<double> > > &outputs) {
-    if (test_indexes.size() == 0) {
-        Log::fatal("ERROR: attempting to export test time series, however the test_indexes were not specified.\n");
+    for (int i = 0; i < test_sentence_indexes.size(); i++) {
+        Log::error("test setentence indexes: %d\n", test_sentence_indexes[i]);
+    }
+    if (test_sentence_indexes.size() == 0) {
+        Log::fatal("ERROR: attempting to export test time series, however the test_sentence_indexes were not specified.\n");
         exit(1);
     }
-    export_sentence_series(test_indexes, character_offset, inputs, outputs);
+    export_sentence_series(test_sentence_indexes, character_offset, inputs, outputs);
 }
 
 void Corpus::export_series_by_name(string field_name, vector< vector<double> > &exported_series) {
@@ -789,32 +763,6 @@ void Corpus::export_series_by_name(string field_name, vector< vector<double> > &
         vector<double> current_series;
         sentence_series[i]->get_series(field_name, current_series);
         exported_series.push_back(current_series);
-    }
-}
-
-void Corpus::write_sentence_series_sets(string base_filename) {
-    for (uint32_t i = 0; i < sentence_series.size(); i++) {
-        ofstream outfile(base_filename + to_string(i) + ".csv");
-        vector< vector<double> > data;
-        sentence_series[i]->export_character_series(data);
-
-        for (int j = 0; j < all_parameter_names.size(); j++) {
-            if (j > 0) {
-                outfile << ",";
-            }
-            outfile << all_parameter_names[j];
-        }
-        outfile << endl;
-
-        for (int j = 0; j < data[0].size(); j++) {
-            for (int k = 0; k < data.size(); k++) {
-                if (k > 0) {
-                    outfile << ",";
-                }
-                outfile << data[k][j];
-            }
-            outfile << endl;
-        }
     }
 }
 
@@ -859,12 +807,12 @@ int Corpus::get_number_outputs() const {
     return output_parameter_names.size();
 }
 
-void Corpus::set_training_indexes(const vector<int> &_training_indexes) {
-    training_indexes = _training_indexes;
+void Corpus::set_training_file_indexes(const vector<int> &_training_file_indexes) {
+    training_file_indexes = _training_file_indexes;
 }
 
-void Corpus::set_test_indexes(const vector<int> &_test_indexes) {
-    test_indexes = _test_indexes;
+void Corpus::set_test_file_indexes(const vector<int> &_test_file_indexes) {
+    test_file_indexes = _test_file_indexes;
 }
 
 SentenceSeries* Corpus::get_set(int32_t i) {

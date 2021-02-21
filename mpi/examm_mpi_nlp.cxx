@@ -247,19 +247,11 @@ int main(int argc, char **argv) {
     int32_t character_offset = 1;
     get_argument(arguments, "--character_offset", true, character_offset);
 
-    int32_t sequence_length = 64;
-    get_argument(arguments, "--sequence_length", false, sequence_length);
-
     Corpus *corpus_sets = NULL;
 
     if (rank == 0) {
         //only have the master process print TSS info
         corpus_sets = Corpus::generate_from_arguments(arguments);
-        if (argument_exists(arguments, "--write_character_series")) {
-            string base_filename;
-            get_argument(arguments, "--write_character_series", true, base_filename);
-            corpus_sets->write_sentence_series_sets(base_filename);
-        }
     }
     else {
         corpus_sets = Corpus::generate_from_arguments(arguments);
