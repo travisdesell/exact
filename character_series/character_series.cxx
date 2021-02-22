@@ -196,6 +196,13 @@ void string_split_character(const string &s, char delim, vector<string> &result)
     ss.str(s);
     string item;
     while (getline(ss, item, delim)) {
+        if (item.compare("<") == 0) {
+            while (item.compare(">") != 0) {
+                getline(ss, item, delim);
+            }
+            result.push_back("<unk>");
+            continue;
+        }
         result.push_back(item);
     }
 }
@@ -432,10 +439,14 @@ void Corpus::load_character_library() {
             characters.push_back("<eos>");
         }
 
+        int current = 0;
         set<string> character_index_set(characters.begin(), characters.end());
+        Log::info("there are %d different inputs in training file! \n", character_index_set.size());
         for (set<string>::iterator i = character_index_set.begin(); i != character_index_set.end(); ++i) {
             character_index.push_back(*i);
-            vocab[*i] = vocab.size();
+            vocab[*i] = current;
+            Log::info("charator %d is %s \n", current, (*i).c_str());
+            current ++;
         }
     }
 
@@ -731,9 +742,6 @@ void Corpus::export_sentence_series(const vector<int> &sentence_indexes, int cha
  * vector input: < sentence < character index < value over the sentence (onehot)> > >
  */
 void Corpus::export_training_series(int character_offset, vector< vector< vector<double> > > &inputs, vector< vector< vector<double> > > &outputs) {
-    for (int i = 0; i < training_sentence_indexes.size(); i++) {
-        Log::error("training sentence indexes: %d\n", training_sentence_indexes[i]);
-    }
     if (training_sentence_indexes.size() == 0) {
         Log::fatal("ERROR: attempting to export training time series, however the training_sentence_indexes were not specified.\n");
         exit(1);
@@ -746,9 +754,6 @@ void Corpus::export_training_series(int character_offset, vector< vector< vector
  * vector input: < sentence < character index < value over the sentence (onehot)> > >
  */
 void Corpus::export_test_series(int character_offset, vector< vector< vector<double> > > &inputs, vector< vector< vector<double> > > &outputs) {
-    for (int i = 0; i < test_sentence_indexes.size(); i++) {
-        Log::error("test setentence indexes: %d\n", test_sentence_indexes[i]);
-    }
     if (test_sentence_indexes.size() == 0) {
         Log::fatal("ERROR: attempting to export test time series, however the test_sentence_indexes were not specified.\n");
         exit(1);
