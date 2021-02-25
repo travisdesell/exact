@@ -48,7 +48,6 @@ class GenomeOperators {
         static constexpr double mutation_rates_total = clone_rate + add_edge_rate + add_recurrent_edge_rate + enable_edge_rate + disable_edge_rate + split_edge_rate + add_node_rate + enable_node_rate + disable_node_rate + split_node_rate + merge_node_rate;
 
         // Instance variables
-        const TrainingParameters training_parameters;
         const DatasetMeta dataset_meta;
         vector<int> possible_node_types;
 
@@ -85,6 +84,8 @@ class GenomeOperators {
 
 
     public:
+        const TrainingParameters training_parameters;
+        
         GenomeOperators(
                 int32_t _number_workers,
                 int32_t _worker_id,

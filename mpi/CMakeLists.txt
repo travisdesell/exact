@@ -17,6 +17,10 @@ if (MPI_FOUND)
     add_executable(examm_mpi examm_mpi)
     target_link_libraries(examm_mpi examm_strategy exact_time_series exact_word_series exact_common ${MPI_LIBRARIES} ${MPI_EXTRA} ${MYSQL_LIBRARIES} ${TIFF_LIBRARIES} work pthread)
 
+    add_executable(examm_mpi_stress_test examm_mpi_stress_test)
+    target_link_libraries(examm_mpi_stress_test examm_strategy exact_time_series exact_word_series exact_common ${MPI_LIBRARIES} ${MPI_EXTRA} ${MYSQL_LIBRARIES} ${TIFF_LIBRARIES} work pthread)
+
+
     add_executable(examm_mpi_nlp examm_mpi_nlp)
     target_link_libraries(examm_mpi_nlp examm_strategy exact_time_series exact_word_series exact_common ${MPI_LIBRARIES} ${MPI_EXTRA} ${MYSQL_LIBRARIES} ${TIFF_LIBRARIES} work pthread)
 

@@ -141,7 +141,6 @@ void master(int max_rank, GenomeOperators genome_operators) {
             Log::info("Sent work to %d\n", source);
         } else if (tag == RESULT_TAG) {
             Log::info("Received results from %d\n", source);
-            // this genome will be deleted if/when removed from population
             Work *work = receive_work_from(source, RESULT_TAG);
             RNN_Genome *genome = work->get_genome(genome_operators);
            
@@ -194,10 +193,16 @@ void worker(int rank, GenomeOperators genome_operators, string id="") {
             break;
         }
         
-        //have each worker write the backproagation to a separate log file
+        // have each worker write to a separate log file
         string log_id = "genome_" + to_string(genome->get_generation_id()) + "_worker_" + to_string(rank);
-        Log::set_id(log_id);
-        genome->backpropagate_stochastic(training_inputs, training_outputs, validation_inputs, validation_outputs);
+        Log::set_id(log_id);       
+
+        if (genome_operators.training_parameters.bp_iterations) {
+            genome->backpropagate_stochastic(training_inputs, training_outputs, validation_inputs, validation_outputs);
+        } else {
+            genome->calculate_fitness(validation_inputs, validation_outputs);
+        }
+
         Log::release_id(log_id);
         Log::info("Done training\n");
 

@@ -122,8 +122,6 @@ void GenomeOperators::finalize_genome(RNN_Genome *genome) {
     if (training_parameters.use_low_threshold) genome->enable_low_threshold(training_parameters.low_threshold);
     if (training_parameters.use_dropout) genome->enable_dropout(training_parameters.dropout_probability);
 
-
-
     if (!TrainingParameters::use_epigenetic_weights) genome->initialize_randomly();
 }
 

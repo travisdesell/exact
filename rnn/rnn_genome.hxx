@@ -129,12 +129,12 @@ class RNN_Genome {
         int32_t get_enabled_node_count();
         int32_t get_node_count();
 
+        double calculate_fitness(const vector< vector< vector<double> > > &validation_inputs, const vector< vector< vector<double> > > &validation_outputs);
         double get_fitness() const;
         double get_best_validation_softmax() const; 
         double get_best_validation_mse() const;
         double get_best_validation_mae() const;
-        double evaluate();
-
+        
         void set_normalize_bounds(string _normalize_type, const map<string,double> &_normalize_mins, const map<string,double> &_normalize_maxs, const map<string,double> &_normalize_avgs, const map<string,double> &_normalize_std_devs);
 
         string get_normalize_type() const;

@@ -858,6 +858,11 @@ double RNN_Genome::get_fitness() const {
     //return best_validation_mae;
 }
 
+double RNN_Genome::calculate_fitness(const vector< vector< vector<double> > > &validation_inputs, const vector< vector< vector<double> > > &validation_outputs) {
+    best_validation_mse = get_mse(best_parameters, validation_inputs, validation_outputs);
+    return best_validation_mse;
+}
+
 double RNN_Genome::get_best_validation_mse() const {
     return best_validation_mse;
 }

@@ -650,7 +650,6 @@ void RNN::get_analytic_gradient(const vector<double> &test_parameters, const vec
     } else {
         mse = calculate_error_softmax(outputs);
         backward_pass(mse * (1.0 / outputs[0].size()), using_dropout, training, dropout_probability);
-    
     }
     
     vector<double> current_gradients;
