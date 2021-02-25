@@ -33,10 +33,21 @@ void MutationWork::write_to_stream(ostream &bin_ostream) {
 }
 
 RNN_Genome *MutationWork::get_genome(GenomeOperators &operators) {
-    RNN_Genome *clone = genome->copy();
-    operators.mutate(clone, n_mutations);
-    clone->set_generation_id(generation_id);
+    RNN_Genome *clone = NULL;   
+    
+    while (clone == NULL) {
+        clone = genome->copy();
+        operators.mutate(clone, n_mutations);
+
+        if (clone->outputs_unreachable()) {
+            delete clone;
+            clone = NULL;
+        }
+    }
+    
     clone->set_group_id(group_id);
+    clone->set_generation_id(generation_id);
+
     return clone;
 }
 
