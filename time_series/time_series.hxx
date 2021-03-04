@@ -101,6 +101,7 @@ class TimeSeriesSet {
         void export_time_series(vector< vector<double> > &data);
         void export_time_series(vector< vector<double> > &data, const vector<string> &requested_fields);
         void export_time_series(vector< vector<double> > &data, const vector<string> &requested_fields, const vector<string> &shift_fields, int32_t time_offset);
+        void export_time_series(int input_sequence_length, int output_sequence_length, vector< vector<double> > &data, const vector<string> &requested_fields);
 
         TimeSeriesSet* copy();
 
@@ -114,6 +115,10 @@ class TimeSeriesSet {
 class TimeSeriesSets {
     private:
         string normalize_type;
+
+        int32_t input_sequence_length;
+        int32_t output_sequence_length;
+        bool multi_step_prediction;
 
         vector<string> filenames;
 
@@ -139,7 +144,7 @@ class TimeSeriesSets {
     public:
         static void help_message();
 
-        TimeSeriesSets();
+        TimeSeriesSets(bool _multi_step_prediction, int32_t _input_sequence_length, int32_t _output_sequence_length);
         ~TimeSeriesSets();
         static TimeSeriesSets* generate_from_arguments(const vector<string> &arguments);
         static TimeSeriesSets* generate_test(const vector<string> &_test_filenames, const vector<string> &_input_parameter_names, const vector<string> &_output_parameter_names);
@@ -154,6 +159,7 @@ class TimeSeriesSets {
         void split_all(int number_slices);
 
         void write_time_series_sets(string base_filename);
+        void write_multi_time_series_files(string base_filename, vector< vector< vector<double> > > &inputs, vector< vector< vector<double> > > &outputs);
 
         void export_time_series(const vector<int> &series_indexes, int time_offset, vector< vector< vector<double> > > &inputs, vector< vector< vector<double> > > &outputs);
 
@@ -178,6 +184,9 @@ class TimeSeriesSets {
 
         int get_number_inputs() const;
         int get_number_outputs() const;
+        int get_input_sequence_length() const;
+        int get_output_sequence_length() const;
+        bool if_multi_step_prediction() const;
 
         void set_training_indexes(const vector<int> &_training_indexes);
         void set_test_indexes(const vector<int> &_test_indexes);

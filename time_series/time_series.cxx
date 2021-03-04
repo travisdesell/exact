@@ -462,6 +462,55 @@ void TimeSeriesSet::export_time_series(vector< vector<double> > &data, const vec
     }
 }
 
+void TimeSeriesSet::export_time_series(int input_sequence_length, int output_sequence_length, vector< vector<double> > &data, const vector<string> &requested_fields) {
+    Log::debug("clearing data\n");
+    data.clear();
+
+    //for some reason fabs is not working right
+    int abs_output_sequence_length = output_sequence_length;
+    if (abs_output_sequence_length < 0) abs_output_sequence_length *= -1;
+
+    // when feed in multiple input timesteps, the input parameters of different timesteps are concatenated, same for outputs
+    int num_fields = input_sequence_length * requested_fields.size();
+
+    // number_rows is the number of rows in the original input data file
+    // num_instances is the number of instances that feed in for training/testing. 
+    // For example, id number_rows = 40, input_sequence_length = 20, output_sequence_length = 20, then there is only 40-(20+20)+1 = 1 instance for training/testing
+    int num_instances = number_rows - (input_sequence_length + abs_output_sequence_length) + 1;
+
+    Log::debug("generating dataset for multiple input timesteps and multiple output timesteps\n");
+    Log::debug("resizing '%s' (number rows: %d, input sequence length: %d, output sequence length: %d)  to %d by %d\n", filename.c_str(), number_rows, input_sequence_length, abs_output_sequence_length, num_fields, num_instances);
+    Log::debug("output sequence length: %d\n", output_sequence_length);
+    Log::debug("abs_output_sequence_length: %d\n", abs_output_sequence_length);
+
+    data.resize(num_fields, vector<double>(num_instances, 0.0));
+    if (output_sequence_length > 0) {
+        //output data, ignore the first N values
+        for (int k = 0; k < abs_output_sequence_length; k++) {
+            for (int i = 0; i < requested_fields.size(); i++) {
+                for (int j = 0; j < num_instances ; j++) {
+                    int parameter_index = i + k * requested_fields.size();
+                    int output_timestep = j + abs_output_sequence_length + k;
+                    data[parameter_index][j] = time_series[ requested_fields[i] ]->get_value(output_timestep);
+                }
+            }
+        }
+    } else if (output_sequence_length < 0) {
+        //  input data
+        for (int k = 0; k < input_sequence_length; k++) {
+            for (int i = 0; i < requested_fields.size(); i++) {
+                for (int j = 0; j < num_instances; j++) {
+                    int parameter_index = i + k * requested_fields.size();
+                    data[parameter_index][j] = time_series[ requested_fields[i] ]->get_value(j + k);
+                }
+            }
+        }
+    } else {
+        Log::fatal("the output sequence length is %d, this should never happen! \n", output_sequence_length);
+        exit(1);
+    }
+}
+
 void TimeSeriesSet::export_time_series(vector< vector<double> > &data, const vector<string> &requested_fields) {
     vector<string> shift_fields; //no fields will be shifted as this is empty
     export_time_series(data, requested_fields, shift_fields, 0);
@@ -564,7 +613,11 @@ void TimeSeriesSets::help_message() {
     Log::info("\t\t--normalize <type>: (optional) normalize the data. Types can be 'min_max' or 'avg_std_dev'. 'min_max' will take each parameter and subtract the min, then divide by max-min. 'avg_std_dev' will subtract the average, divide by the standard deviation and then divide by the normalized max to ensure values are between -1 and 1.\n");
 }
 
-TimeSeriesSets::TimeSeriesSets() : normalize_type("none") {
+TimeSeriesSets::TimeSeriesSets(bool _multi_step_prediction, int32_t _input_sequence_length, int32_t _output_sequence_length) {
+    normalize_type = "none";
+    multi_step_prediction = _multi_step_prediction;
+    input_sequence_length = _input_sequence_length;
+    output_sequence_length = _output_sequence_length;
 }
 
 TimeSeriesSets::~TimeSeriesSets(){
@@ -669,7 +722,14 @@ void TimeSeriesSets::load_time_series() {
 
 
 TimeSeriesSets* TimeSeriesSets::generate_from_arguments(const vector<string> &arguments) {
-    TimeSeriesSets *tss = new TimeSeriesSets();
+    bool multi_step_prediction = argument_exists(arguments, "--multi_step_prediction");
+    int32_t input_sequence_length = 1;
+    int32_t output_sequence_length = 1;
+    if (multi_step_prediction) {
+        get_argument(arguments, "--input_sequence_length", true, input_sequence_length);
+        get_argument(arguments, "--output_sequence_length", true, output_sequence_length);
+    }
+    TimeSeriesSets *tss = new TimeSeriesSets(multi_step_prediction, input_sequence_length, output_sequence_length);
 
     tss->filenames.clear();
 
@@ -776,7 +836,7 @@ TimeSeriesSets* TimeSeriesSets::generate_from_arguments(const vector<string> &ar
 }
 
 TimeSeriesSets* TimeSeriesSets::generate_test(const vector<string> &_test_filenames, const vector<string> &_input_parameter_names, const vector<string> &_output_parameter_names) {
-    TimeSeriesSets *tss = new TimeSeriesSets();
+    TimeSeriesSets *tss = new TimeSeriesSets(false, 1, 1);
 
     tss->filenames = _test_filenames;
 
@@ -1066,11 +1126,18 @@ void TimeSeriesSets::export_time_series(const vector<int> &series_indexes, int t
     inputs.resize(series_indexes.size());
     outputs.resize(series_indexes.size());
 
-    for (uint32_t i = 0; i < series_indexes.size(); i++) {
-        int series_index = series_indexes[i];
-
-        time_series[series_index]->export_time_series(inputs[i], input_parameter_names, shift_parameter_names, -time_offset);
-        time_series[series_index]->export_time_series(outputs[i], output_parameter_names, shift_parameter_names, time_offset);
+    if (multi_step_prediction) {
+        for (uint32_t i = 0; i < series_indexes.size(); i++) {
+            int series_index = series_indexes[i];
+            time_series[series_index]->export_time_series(input_sequence_length, -output_sequence_length, inputs[i], input_parameter_names);
+            time_series[series_index]->export_time_series(input_sequence_length, output_sequence_length, outputs[i], output_parameter_names);
+        }
+    } else {
+        for (uint32_t i = 0; i < series_indexes.size(); i++) {
+            int series_index = series_indexes[i];
+            time_series[series_index]->export_time_series(inputs[i], input_parameter_names, shift_parameter_names, -time_offset);
+            time_series[series_index]->export_time_series(outputs[i], output_parameter_names, shift_parameter_names, time_offset);
+        }
     }
 }
 
@@ -1097,7 +1164,6 @@ void TimeSeriesSets::export_test_series(int time_offset, vector< vector< vector<
 
     export_time_series(test_indexes, time_offset, inputs, outputs);
 }
-
 
 /**
  * This exports from all the loaded time series a particular column
@@ -1142,6 +1208,45 @@ void TimeSeriesSets::write_time_series_sets(string base_filename) {
     }
 }
 
+void TimeSeriesSets::write_multi_time_series_files(string base_filename, vector< vector< vector<double> > > &inputs, vector< vector< vector<double> > > &outputs) {
+    Log::info("writing time series files, the first %d x %d columns are input parameters from %d timesteps, the last %d x %d columns are output parameters from %d time steps\n", input_parameter_names.size(), input_sequence_length, input_sequence_length, output_parameter_names.size(), output_sequence_length, output_sequence_length);
+    for (uint32_t i = 0; i < inputs.size(); i++) {
+        ofstream outfile(base_filename + to_string(i) + ".csv");
+
+        for (int k = 0; k < input_sequence_length; k++) {
+            for (int j = 0; j < input_parameter_names.size(); j++) {
+                if (j > 0 || k > 0) {
+                    outfile << ",";
+                }
+                outfile << input_parameter_names[j] + to_string(k);
+            }
+        }
+        for (int k = 0; k < output_sequence_length; k++) {
+            for (int j = 0; j < output_parameter_names.size(); j++) {
+                outfile << ",";
+                outfile << output_parameter_names[j] + to_string(k);
+            }
+        }
+        outfile << endl;
+
+        int num_of_instance = time_series[i]->get_number_rows() - (input_sequence_length + output_sequence_length) +1;
+        for (int j = 0; j < num_of_instance; j++) {
+            for (int k = 0; k < input_parameter_names.size() * input_sequence_length; k++) {
+                if (k > 0) {
+                    outfile << ",";
+                }
+                outfile << inputs[i][k][j];
+            }
+            for (int k = 0; k < output_parameter_names.size() * output_sequence_length; k++) {
+                outfile << ",";
+                outfile << outputs[i][k][j];
+            }
+            outfile << endl;
+        }
+        Log::info("Wrote time series file %s%d.csv\n", base_filename.c_str(), i);
+    }
+}
+
 void TimeSeriesSets::split_series(int series, int number_slices) {
     TimeSeriesSet *ts = time_series[series];
 
@@ -1180,11 +1285,31 @@ map<string,double> TimeSeriesSets::get_normalize_std_devs() const {
 
 
 vector<string> TimeSeriesSets::get_input_parameter_names() const {
-    return input_parameter_names;
+    if (multi_step_prediction) {
+        vector<string> multi_time_input_names;
+        for (int i = 0; i < input_sequence_length; i++) {
+            for (int j = 0; j < input_parameter_names.size(); j++) {
+                multi_time_input_names.push_back(input_parameter_names[j] + "_" + to_string(i));
+            }
+        }
+        return multi_time_input_names;
+    } else {
+        return input_parameter_names;
+    }
 }
 
 vector<string> TimeSeriesSets::get_output_parameter_names() const {
-    return output_parameter_names;
+    if (multi_step_prediction) {
+        vector<string> multi_time_output_names;
+        for (int i = 0; i < output_sequence_length; i++) {
+            for (int j = 0; j < output_parameter_names.size(); j++) {
+                multi_time_output_names.push_back(output_parameter_names[j] + "_" + to_string(i));
+            }
+        }
+        return multi_time_output_names;
+    } else {
+        return output_parameter_names;
+    }
 }
 
 int TimeSeriesSets::get_number_series() const {
@@ -1192,11 +1317,32 @@ int TimeSeriesSets::get_number_series() const {
 }
 
 int TimeSeriesSets::get_number_inputs() const {
-    return input_parameter_names.size();
+    if (multi_step_prediction) {
+        return input_sequence_length * input_parameter_names.size();
+    } else {
+        return input_parameter_names.size();
+    }
 }
 
 int TimeSeriesSets::get_number_outputs() const {
-    return output_parameter_names.size();
+    if (multi_step_prediction) {
+        return output_sequence_length * output_parameter_names.size();
+    } else {
+        return output_parameter_names.size();
+    }
+
+}
+
+int TimeSeriesSets::get_input_sequence_length() const {
+    return input_sequence_length;
+}
+
+int TimeSeriesSets::get_output_sequence_length() const {
+    return input_sequence_length;
+}
+
+bool TimeSeriesSets::if_multi_step_prediction() const {
+    return multi_step_prediction;
 }
 
 void TimeSeriesSets::set_training_indexes(const vector<int> &_training_indexes) {

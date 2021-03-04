@@ -261,10 +261,12 @@ int main(int argc, char** argv) {
         time_series_sets = TimeSeriesSets::generate_from_arguments(arguments);
     }
 
-
+    bool multi_step_prediction = argument_exists(arguments, "--multi_step_prediction");
 
     int32_t time_offset = 1;
-    get_argument(arguments, "--time_offset", true, time_offset);
+    if (!multi_step_prediction) {
+        get_argument(arguments, "--time_offset", true, time_offset);
+    }
 
     time_series_sets->export_training_series(time_offset, training_inputs, training_outputs);
     time_series_sets->export_test_series(time_offset, validation_inputs, validation_outputs);
