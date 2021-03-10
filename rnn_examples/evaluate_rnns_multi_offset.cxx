@@ -83,7 +83,7 @@ int main(int argc, char** argv) {
 
     //TODO: should check that all genomes have the same output parameter name(s)
 
-    TimeSeriesSets *time_series_sets = TimeSeriesSets::generate_test(testing_filenames, genomes[0]->get_input_parameter_names(), genomes[0]->get_output_parameter_names());
+    TimeSeriesSets *time_series_sets = TimeSeriesSets::generate_test(false, 1, 1, testing_filenames, genomes[0]->get_input_parameter_names(), genomes[0]->get_output_parameter_names());
 
 
     string normalize_type = genomes[0]->get_normalize_type();
@@ -106,7 +106,7 @@ int main(int argc, char** argv) {
     delete time_series_sets;
 
     for (int32_t i = 0; i < genomes.size(); i++) {
-        time_series_sets = TimeSeriesSets::generate_test(testing_filenames, genomes[i]->get_input_parameter_names(), genomes[i]->get_output_parameter_names());
+        time_series_sets = TimeSeriesSets::generate_test(false, 1, 1, testing_filenames, genomes[i]->get_input_parameter_names(), genomes[i]->get_output_parameter_names());
         Log::debug("got time series sets.\n");
         string normalize_type = genomes[i]->get_normalize_type();
         if (normalize_type.compare("min_max") == 0) {

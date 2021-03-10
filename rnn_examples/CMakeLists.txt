@@ -16,3 +16,5 @@ target_link_libraries(evaluate_rnns_multi_offset examm_strategy exact_common exa
 add_executable(rnn_statistics rnn_statistics)
 target_link_libraries(rnn_statistics examm_strategy exact_common exact_time_series exact_word_series ${MPI_LIBRARIES} ${MPI_EXTRA} ${MYSQL_LIBRARIES} pthread)
 
+add_executable(evaluate_rnn_multi_step evaluate_rnn_multi_step)
+target_link_libraries(evaluate_rnn_multi_step examm_strategy exact_common exact_time_series exact_word_series ${MPI_LIBRARIES} ${MPI_EXTRA} ${MYSQL_LIBRARIES} pthread)

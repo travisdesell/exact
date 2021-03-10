@@ -47,7 +47,21 @@ int main(int argc, char** argv) {
     vector<string> testing_filenames;
     get_argument_vector(arguments, "--testing_filenames", true, testing_filenames);
 
-    TimeSeriesSets *time_series_sets = TimeSeriesSets::generate_test(false, 1, 1, testing_filenames, genome->get_input_parameter_names(), genome->get_output_parameter_names());
+    bool multi_step_prediction = argument_exists(arguments, "--multi_step_prediction");
+
+    int32_t input_sequence_length = 1;
+    int32_t output_sequence_length = 1;
+    get_argument(arguments, "--input_sequence_length", true, input_sequence_length);
+    get_argument(arguments, "--output_sequence_length", true, output_sequence_length);
+
+    vector<string> input_parameter_names;
+    vector<string> output_parameter_names;
+    get_argument_vector(arguments, "--input_parameter_names", true, input_parameter_names);
+    get_argument_vector(arguments, "--output_parameter_names", true, output_parameter_names);
+    
+    Log::info("input sequence length is %d, and output sequence length is %d\n", input_sequence_length, output_sequence_length);
+
+    TimeSeriesSets *time_series_sets = TimeSeriesSets::generate_test(multi_step_prediction, input_sequence_length, output_sequence_length, testing_filenames, input_parameter_names, output_parameter_names);
     Log::debug("got time series sets.\n");
 
     string normalize_type = genome->get_normalize_type();
@@ -65,8 +79,11 @@ int main(int argc, char** argv) {
     time_series_sets->export_test_series(time_offset, testing_inputs, testing_outputs);
 
     vector<double> best_parameters = genome->get_best_parameters();
+
     Log::info("MSE: %lf\n", genome->get_mse(best_parameters, testing_inputs, testing_outputs));
+
     Log::info("MAE: %lf\n", genome->get_mae(best_parameters, testing_inputs, testing_outputs));
+
     genome->write_predictions(output_directory, testing_filenames, best_parameters, testing_inputs, testing_outputs, time_series_sets);
 
     if (Log::at_level(Log::DEBUG)) {

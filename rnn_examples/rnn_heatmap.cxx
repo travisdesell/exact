@@ -93,7 +93,7 @@ int main(int argc, char** argv) {
                 vector<string> testing_filenames;
                 testing_filenames.push_back(testing_filename);
 
-                TimeSeriesSets *time_series_sets = TimeSeriesSets::generate_test(testing_filenames, genome->get_input_parameter_names(), genome->get_output_parameter_names());
+                TimeSeriesSets *time_series_sets = TimeSeriesSets::generate_test(false, 1, 1, testing_filenames, genome->get_input_parameter_names(), genome->get_output_parameter_names());
                 Log::debug("got time series sets.\n");
 
                 string normalize_type = genome->get_normalize_type();

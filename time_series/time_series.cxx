@@ -471,8 +471,12 @@ void TimeSeriesSet::export_time_series(int input_sequence_length, int output_seq
     if (abs_output_sequence_length < 0) abs_output_sequence_length *= -1;
 
     // when feed in multiple input timesteps, the input parameters of different timesteps are concatenated, same for outputs
-    int num_fields = input_sequence_length * requested_fields.size();
-
+    int num_fields;
+    if (output_sequence_length < 0) {
+        num_fields = input_sequence_length * requested_fields.size();
+    } else {
+        num_fields = abs_output_sequence_length * requested_fields.size();
+    }
     // number_rows is the number of rows in the original input data file
     // num_instances is the number of instances that feed in for training/testing. 
     // For example, id number_rows = 40, input_sequence_length = 20, output_sequence_length = 20, then there is only 40-(20+20)+1 = 1 instance for training/testing
@@ -490,7 +494,7 @@ void TimeSeriesSet::export_time_series(int input_sequence_length, int output_seq
             for (int i = 0; i < requested_fields.size(); i++) {
                 for (int j = 0; j < num_instances ; j++) {
                     int parameter_index = i + k * requested_fields.size();
-                    int output_timestep = j + abs_output_sequence_length + k;
+                    int output_timestep = j + input_sequence_length + k;
                     data[parameter_index][j] = time_series[ requested_fields[i] ]->get_value(output_timestep);
                 }
             }
@@ -835,8 +839,9 @@ TimeSeriesSets* TimeSeriesSets::generate_from_arguments(const vector<string> &ar
     return tss;
 }
 
-TimeSeriesSets* TimeSeriesSets::generate_test(const vector<string> &_test_filenames, const vector<string> &_input_parameter_names, const vector<string> &_output_parameter_names) {
-    TimeSeriesSets *tss = new TimeSeriesSets(false, 1, 1);
+TimeSeriesSets* TimeSeriesSets::generate_test(bool _multi_step_prediction, int32_t _input_sequence_length, int32_t _output_sequence_length, const vector<string> &_test_filenames, const vector<string> &_input_parameter_names, const vector<string> &_output_parameter_names) {
+
+    TimeSeriesSets *tss = new TimeSeriesSets(_multi_step_prediction, _input_sequence_length, _output_sequence_length);
 
     tss->filenames = _test_filenames;
 
@@ -1338,7 +1343,7 @@ int TimeSeriesSets::get_input_sequence_length() const {
 }
 
 int TimeSeriesSets::get_output_sequence_length() const {
-    return input_sequence_length;
+    return output_sequence_length;
 }
 
 bool TimeSeriesSets::if_multi_step_prediction() const {

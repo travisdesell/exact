@@ -147,7 +147,7 @@ class TimeSeriesSets {
         TimeSeriesSets(bool _multi_step_prediction, int32_t _input_sequence_length, int32_t _output_sequence_length);
         ~TimeSeriesSets();
         static TimeSeriesSets* generate_from_arguments(const vector<string> &arguments);
-        static TimeSeriesSets* generate_test(const vector<string> &_test_filenames, const vector<string> &_input_parameter_names, const vector<string> &_output_parameter_names);
+        static TimeSeriesSets* generate_test(bool _multi_step_prediction, int32_t _input_sequence_length, int32_t _output_sequence_length, const vector<string> &_test_filenames, const vector<string> &_input_parameter_names, const vector<string> &_output_parameter_names);
 
         void normalize_min_max();
         void normalize_min_max(const map<string,double> &_normalize_mins, const map<string,double> &_normalize_maxs);
