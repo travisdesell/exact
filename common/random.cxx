@@ -63,12 +63,10 @@ float NormalDistribution::random(minstd_rand0 &generator, float mu, float sigma)
     const float epsilon = std::numeric_limits<float>::min();
     const float two_pi = 2.0*3.14159265358979323846;
 
-    generate = !generate;
-
-    if (!generate) {
+    if (generate = !generate) {
         return z1 * sigma + mu;
     }
-
+    
     float u1, u2;
     do {
         u1 = ((float)generator() - (float)generator.min()) / ((float)generator.max() - (float)generator.min());
