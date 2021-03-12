@@ -126,6 +126,7 @@ void GenomeOperators::finalize_genome(RNN_Genome *genome) {
 }
 
 RNN_Genome *GenomeOperators::mutate(RNN_Genome *g, int32_t n_mutations) {
+    Log::info("mutate genome ptr = %p\n", g);
 
     double mu, sigma;
  

@@ -432,7 +432,7 @@ Work *IslandSpeciationStrategy::generate_work_for_filled_island(uniform_real_dis
         Log::info("performing mutation\n");
         RNN_Genome *genome;
         island->copy_random_genome(rng_0_1, generator, &genome);
-        work = new MutationWork(genome, 1);
+        work = new MutationWork(genome, 32);
     } else {
         RNN_Genome *parent1, *parent2;
 

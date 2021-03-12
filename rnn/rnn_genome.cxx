@@ -811,6 +811,7 @@ RNN* RNN_Genome::get_rnn() {
 
     for (uint32_t i = 0; i < nodes.size(); i++) {
         Log::info("node %d\n", i);
+        fflush(stdout);
         node_copies.push_back( nodes[i]->copy() );
         //if (nodes[i]->layer_type == INPUT_LAYER || nodes[i]->layer_type == OUTPUT_LAYER || nodes[i]->is_reachable()) node_copies.push_back( nodes[i]->copy() );
     }
@@ -826,6 +827,8 @@ RNN* RNN_Genome::get_rnn() {
         recurrent_edge_copies.push_back( recurrent_edges[i]->copy(node_copies) );
         //if (recurrent_edges[i]->is_reachable()) recurrent_edge_copies.push_back( recurrent_edges[i]->copy(node_copies) );
     }
+
+    Log::info("Test\n");
 
     return new RNN(node_copies, edge_copies, recurrent_edge_copies, input_parameter_names, output_parameter_names);
 }
@@ -2062,7 +2065,7 @@ bool RNN_Genome::attempt_recurrent_edge_insert(RNN_Node_Interface *n1, RNN_Node_
         Log::fatal("new component weight method is not set correctly, weight initialize: %s, new component weight: %s\n", WEIGHT_TYPES_STRING[weight_initialize].c_str(), WEIGHT_TYPES_STRING[mutated_component_weight].c_str());
     }
 
-    Log::info("\tadding recurrent edge with innovation number %d between nodes %d and %d, new edge weight: %d\n", e->innovation_number, e->input_innovation_number, e->output_innovation_number, e->weight);
+    Log::info("\tadding recurrent edge with innovation number %d between nodes %d and %d, new edge weight: %f\n", e->innovation_number, e->input_innovation_number, e->output_innovation_number, e->weight);
 
     recurrent_edges.insert( upper_bound(recurrent_edges.begin(), recurrent_edges.end(), e, sort_RNN_Recurrent_Edges_by_depth()), e);
     return true;
@@ -2089,6 +2092,9 @@ bool RNN_Genome::add_edge(double mu, double sigma, function<int32_t ()>& next_ed
         if (nodes[i]->is_reachable()) reachable_nodes.push_back(nodes[i]);
     }
     Log::info("\treachable_nodes.size(): %d\n", reachable_nodes.size());
+
+    if (reachable_nodes.size() == 0)
+        return false;
 
     int position = rng_0_1(generator) * reachable_nodes.size();
 
