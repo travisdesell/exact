@@ -91,8 +91,16 @@
     get_argument(arguments, "--neat_c3", false, neat_c3);
     bool repeat_extinction = argument_exists(arguments, "--repeat_extinction");
 
+    // The stress test is used to see what throughput the EXAMM master process can
+    // give when the workers are as fast as possible. This would mean all workers
+    // do is evaluate the fitness of the genomes they receive (and perform mutation
+    // or crossover)
+#ifndef EXAMM_MPI_STRESS_TEST
     int32_t bp_iterations;
     get_argument(arguments, "--bp_iterations", true, bp_iterations);
+#else
+    int32_t bp_iterations = 0;
+#endif
 
     double learning_rate = 0.001;
     get_argument(arguments, "--learning_rate", false, learning_rate);
