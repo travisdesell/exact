@@ -2100,7 +2100,6 @@ bool RNN_Genome::add_edge(double mu, double sigma, function<int32_t ()>& next_ed
 
     RNN_Node_Interface *n1 = reachable_nodes[position];
     Log::info("\tselected first node %d with depth %d\n", n1->innovation_number, n1->depth);
-    //printf("pos: %d, size: %d\n", position, reachable_nodes.size());
 
     for (int i = 0; i < reachable_nodes.size();) {
         auto it = reachable_nodes[i];

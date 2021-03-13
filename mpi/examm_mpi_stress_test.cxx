@@ -54,7 +54,7 @@ int main(int argc, char** argv) {
    
 #define EXAMM_MPI_STRESS_TEST 1
 #include "common/examm_argparse.cxx"
-
+        
     //only have the master process print TSS info
     if (rank == 0 && argument_exists(arguments, "--write_time_series")) {
         string base_filename;
