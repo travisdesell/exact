@@ -186,6 +186,8 @@ void worker(int rank, GenomeOperators genome_operators, string id="") {
 
         RNN_Genome *genome = work->get_genome(genome_operators);
         delete work;
+    
+        Log::debug("gid = %d\n", genome->get_generation_id());
 
         // if genome is null we're done.
         if (genome == NULL) {
@@ -197,17 +199,17 @@ void worker(int rank, GenomeOperators genome_operators, string id="") {
         string log_id = "genome_" + to_string(genome->get_generation_id()) + "_worker_" + to_string(rank);
         Log::set_id(log_id);       
 
-        if (genome_operators.training_parameters.bp_iterations) {
+        if (genome_operators.training_parameters.bp_iterations > 0) {
             genome->backpropagate_stochastic(training_inputs, training_outputs, validation_inputs, validation_outputs);
         } else {
             genome->calculate_fitness(validation_inputs, validation_outputs);
         }
 
         Log::release_id(log_id);
+        Log::set_id("worker_" + to_string(rank) + "_" + id);
         Log::info("Done training\n");
 
         //go back to the worker's log for MPI communication
-        Log::set_id("worker_" + to_string(rank) + "_" + id);
         
         // Ownership of genome has been transfered to result (when result is deleted so will the genome
         Log::info("Creating result\n");

@@ -52,6 +52,7 @@ int main(int argc, char** argv) {
 
     std::cout << "initailized log!" << std::endl;
    
+#define EXAMM_MPI_STRESS_TEST 1
 #include "common/examm_argparse.cxx"
 
     //only have the master process print TSS info

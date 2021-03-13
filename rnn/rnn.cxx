@@ -182,15 +182,19 @@ RNN::RNN(vector<RNN_Node_Interface*> &_nodes, vector<RNN_Edge*> &_edges, vector<
 
     //sort nodes by depth
     //sort edges by depth
-    Log::debug("creating rnn with %d nodes, %d edges\n", nodes.size(), edges.size());
+    for (int i = 0; i < 10; i++)
+    printf("creating rnn with %lu nodes, %lu edges\n", nodes.size(), edges.size());
 
     for (uint32_t i = 0; i < nodes.size(); i++) {
+        Log::debug("i=%d\n", i);
         if (nodes[i]->layer_type == INPUT_LAYER) {
             input_nodes.push_back(nodes[i]);
             Log::debug("had input node!\n");
         } else if (nodes[i]->layer_type == OUTPUT_LAYER) {
             output_nodes.push_back(nodes[i]);
             Log::debug("had output node!\n");
+        } else {
+            Log::debug("Okay\n");
         }
     }
 

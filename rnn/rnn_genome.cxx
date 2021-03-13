@@ -807,28 +807,24 @@ RNN* RNN_Genome::get_rnn() {
     vector<RNN_Edge*> edge_copies;
     vector<RNN_Recurrent_Edge*> recurrent_edge_copies;
 
-    Log::info("get_rnn: %d, %d, %d\n", nodes.size(), edges.size(), recurrent_edges.size());
+    // Log::info("get_rnn: %d, %d, %d\n", nodes.size(), edges.size(), recurrent_edges.size());
 
     for (uint32_t i = 0; i < nodes.size(); i++) {
-        Log::info("node %d\n", i);
         fflush(stdout);
         node_copies.push_back( nodes[i]->copy() );
         //if (nodes[i]->layer_type == INPUT_LAYER || nodes[i]->layer_type == OUTPUT_LAYER || nodes[i]->is_reachable()) node_copies.push_back( nodes[i]->copy() );
     }
 
     for (uint32_t i = 0; i < edges.size(); i++) {
-        Log::info("edge %d\n", i);
         edge_copies.push_back( edges[i]->copy(node_copies) );
         //if (edges[i]->is_reachable()) edge_copies.push_back( edges[i]->copy(node_copies) );
     }
-
     for (uint32_t i = 0; i < recurrent_edges.size(); i++) {
-        Log::info("redge %d\n", i);
         recurrent_edge_copies.push_back( recurrent_edges[i]->copy(node_copies) );
         //if (recurrent_edges[i]->is_reachable()) recurrent_edge_copies.push_back( recurrent_edges[i]->copy(node_copies) );
     }
 
-    Log::info("Test\n");
+    // Log::info("Test\n");
 
     return new RNN(node_copies, edge_copies, recurrent_edge_copies, input_parameter_names, output_parameter_names);
 }
@@ -862,7 +858,11 @@ double RNN_Genome::get_fitness() const {
 }
 
 double RNN_Genome::calculate_fitness(const vector< vector< vector<double> > > &validation_inputs, const vector< vector< vector<double> > > &validation_outputs) {
-    best_validation_mse = get_mse(best_parameters, validation_inputs, validation_outputs);
+    vector<double> &params = best_parameters;
+    if (best_parameters.size() == 0) {
+        params = initial_parameters;
+    }
+    best_validation_mse = get_mse(params, validation_inputs, validation_outputs);
     return best_validation_mse;
 }
 
