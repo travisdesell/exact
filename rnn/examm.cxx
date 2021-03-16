@@ -385,7 +385,8 @@ bool EXAMM::insert_genome(RNN_Genome* genome) {
         }
     }
 
-    speciation_strategy->print();
+    // This is the culprit right here...
+    // speciation_strategy->print();
     update_log();
 
     return insert_position >= 0;
