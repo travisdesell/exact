@@ -2093,7 +2093,7 @@ bool RNN_Genome::add_edge(double mu, double sigma, function<int32_t ()>& next_ed
     }
     Log::info("\treachable_nodes.size(): %d\n", reachable_nodes.size());
 
-    if (reachable_nodes.size() == 0)
+    if (reachable_nodes.size() < 2)
         return false;
 
     int position = rng_0_1(generator) * reachable_nodes.size();
