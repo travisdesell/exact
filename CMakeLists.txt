@@ -20,12 +20,12 @@ SET (PLATFORM 64)
 #SET (CMAKE_CXX_FLAGS                "-std=c++17 -Wall -O3 -funroll-loops  -msse3 -fsanitize=address -fno-omit-frame-pointer -D_GLIBCXX_DEBUG")
 
 # Uncomment to perform genome operators on the master
-add_compile_definitions(MASTER_PERFORMS_OPERATORS)
+# add_compile_definitions(MASTER_PERFORMS_OPERATORS)
 
 # If this is uncommented, all logging levels other than warning, error, and fatal
 # will be surpressed. Using this may make it more difficult to find segfaults, 
 # but will probably give some significant performance gains
-add_compile_definitions(MINIMAL_LOGGING)
+# add_compile_definitions(MINIMAL_LOGGING)
 
 
 
