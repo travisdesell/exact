@@ -16,20 +16,28 @@ SET (PLATFORM 64)
 #SET (CMAKE_CXX_FLAGS                "-std=c++11 -Wall -O3 -funroll-loops -msse3 -D_GLIBCXX_DEBUG")
 #SET (CMAKE_CXX_FLAGS                "-std=c++11 -Wall -O3 -funroll-loops -msse3 -DNAN_CHECKS")
 
-# 1 This line for local
-SET (CMAKE_CXX_FLAGS                "-std=gnu++17 -Wall -O3 -funroll-loops  -msse3 -fsanitize=address -fno-omit-frame-pointer -D_GLIBCXX_DEBUG")
+# SET (CMAKE_CXX_FLAGS                "-std=gnu++17 -Wall -O3 -funroll-loops -flto -msse3 -fsanitize=address -fno-omit-frame-pointer -D_GLIBCXX_DEBUG")
 #SET (CMAKE_CXX_FLAGS                "-std=c++17 -Wall -O3 -funroll-loops  -msse3 -fsanitize=address -fno-omit-frame-pointer -D_GLIBCXX_DEBUG")
 
 # Uncomment to perform genome operators on the master
-# add_compile_definitions(MASTER_PERFORMS_OPERATORS)
+add_compile_definitions(MASTER_PERFORMS_OPERATORS)
 
+# If this is uncommented, all logging levels other than warning, error, and fatal
+# will be surpressed. Using this may make it more difficult to find segfaults, 
+# but will probably give some significant performance gains
+add_compile_definitions(MINIMAL_LOGGING)
+
+
+
+# 1 This line for local - THIS CODE IS SLOW BUT WILL COMPILE FASTER! Use a Release build for fast code!
+SET (CMAKE_CXX_FLAGS                "-std=gnu++17 -funroll-loops -fno-omit-frame-pointer")
 # 2 This line for cluster
-#SET (CMAKE_CXX_FLAGS                "-std=gnu++17 -Wall -O3 -funroll-loops  -msse3 -fno-omit-frame-pointer -D_GLIBCXX_DEBUG")
+#SET (CMAKE_CXX_FLAGS                "-std=gnu++17 -Wall -O3 -funroll-loops -flto -msse3 -fomit-frame-pointer")
 
-SET (CMAKE_CXX_FLAGS                "-std=c++17 -Wall -O3 -funroll-loops -msse3")
-SET (CMAKE_CXX_FLAGS_DEBUG          "-g")
+# Address sanitizer enabled
+SET (CMAKE_CXX_FLAGS_DEBUG          "-g -fsanitize=address -D_GLIBCXX_DEBUG")
 SET (CMAKE_CXX_FLAGS_MINSIZEREL     "-Os -DNDEBUG")
-SET (CMAKE_CXX_FLAGS_RELEASE        "-O4 -funroll-loops -DNDEBUG")
+SET (CMAKE_CXX_FLAGS_RELEASE        "-Wall -O4 -funroll-loops -DNDEBUG -flto -msse3")
 
 set(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH} /opt/local/lib)
 
