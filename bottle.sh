@@ -52,9 +52,9 @@ DATA_DIR="/home/jak5763/exact/datasets/2020_wind_turbine"
 # DATA_DIR="/home/zl7069/datasets/2020_wind_turbine"
 
 MAX_GENOME=20000
+n_nodes=x
 
-for fold in 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20;
-do
+for fold in 0 1 2 3 4 5 6 7 8 9 10; do #  11 12 13 14 15 16 17 18 19 20;
     # REPOPULATION_METHOD = "bestGenome"
     exp_name=${EXAMM}/results/bottle/$n_nodes/$fold
     mkdir -p $exp_name
