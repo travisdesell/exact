@@ -50,6 +50,7 @@ int main(int argc, char** argv) {
     Log::set_id("main_" + to_string(rank));
     Log::restrict_to_rank(0);
 
+
     std::cout << "initailized log!" << std::endl;
    
 #define EXAMM_MPI_STRESS_TEST 1

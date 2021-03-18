@@ -1,3 +1,6 @@
+#ifndef LOG_CXX
+#define LOG_CXX
+
 #include <cstdio>
 using std::fprintf;
 using std::printf;
@@ -16,7 +19,6 @@ using std::thread;
 #include "arguments.hxx"
 #include "files.hxx"
 #include "log.hxx"
-
 
 using std::cerr;
 using std::endl;
@@ -250,6 +252,7 @@ void Log::warning(const char* format, ...) {
 }
 
 void Log::info(const char* format, ...) {
+#ifndef MINIMAL_LOGGING
     //don't write if this is the wrong process rank
     if (restricted_rank >= 0 && restricted_rank != process_rank) return;
 
@@ -259,9 +262,11 @@ void Log::info(const char* format, ...) {
     va_list arguments;
     va_start(arguments, format);
     write_message(true, INFO, "INFO", format, arguments);
+#endif
 }
 
 void Log::debug(const char* format, ...) {
+#ifndef MINIMAL_LOGGING
     //don't write if this is the wrong process rank
     if (restricted_rank >= 0 && restricted_rank != process_rank) return;
 
@@ -271,9 +276,11 @@ void Log::debug(const char* format, ...) {
     va_list arguments;
     va_start(arguments, format);
     write_message(true, DEBUG, "DEBUG", format, arguments);
+#endif
 }
 
 void Log::trace(const char* format, ...) {
+#ifndef MINIMAL_LOGGING
     //don't write if this is the wrong process rank
     if (restricted_rank >= 0 && restricted_rank != process_rank) return;
 
@@ -283,6 +290,7 @@ void Log::trace(const char* format, ...) {
     va_list arguments;
     va_start(arguments, format);
     write_message(true, TRACE, "TRACE", format, arguments);
+#endif
 }
 
 void Log::fatal_no_header(const char *format, ...) {
@@ -322,6 +330,7 @@ void Log::warning_no_header(const char* format, ...) {
 }
 
 void Log::info_no_header(const char* format, ...) {
+#ifndef MINIMAL_LOGGING
     //don't write if this is the wrong process rank
     if (restricted_rank >= 0 && restricted_rank != process_rank) return;
 
@@ -331,9 +340,11 @@ void Log::info_no_header(const char* format, ...) {
     va_list arguments;
     va_start(arguments, format);
     write_message(false, INFO, "INFO", format, arguments);
+#endif
 }
 
 void Log::debug_no_header(const char* format, ...) {
+#ifndef MINIMAL_LOGGING
     //don't write if this is the wrong process rank
     if (restricted_rank >= 0 && restricted_rank != process_rank) return;
 
@@ -343,9 +354,11 @@ void Log::debug_no_header(const char* format, ...) {
     va_list arguments;
     va_start(arguments, format);
     write_message(false, DEBUG, "DEBUG", format, arguments);
+#endif
 }
 
 void Log::trace_no_header(const char* format, ...) {
+#ifndef MINIMAL_LOGGING
     //don't write if this is the wrong process rank
     if (restricted_rank >= 0 && restricted_rank != process_rank) return;
 
@@ -355,5 +368,6 @@ void Log::trace_no_header(const char* format, ...) {
     va_list arguments;
     va_start(arguments, format);
     write_message(false, TRACE, "TRACE", format, arguments);
+#endif
 }
-
+#endif
