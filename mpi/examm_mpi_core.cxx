@@ -8,8 +8,6 @@
 #define TERMINATE_TAG 8
 #define INITIALIZE_TAG 16
 
-// mutex examm_mutex;
-
 vector<string> arguments;
 
 EXAMM *examm;
@@ -71,7 +69,7 @@ Work *receive_work_from(int source, int tag=WORK_TAG) {
     return work;
 }
 
-void generate_and_send_work(int32_t dst, int32_t max_rank) {
+void generate_and_send_work(GenomeOperators& go, int32_t dst, int32_t max_rank) {
     assert(dst != 0);
 
     Work *work = examm->generate_work();
@@ -86,8 +84,30 @@ void generate_and_send_work(int32_t dst, int32_t max_rank) {
     switch (work->get_class_id()) {
         case MutationWork::class_id:
         case CrossoverWork::class_id:
+        case TrainWork::class_id: {
+
+            // If we should perform the operators on the master process.
+            // This code will perform the operator then create a MutationWork
+            // object with zero mutations, meaning nothing will be done on the
+            // workers.
+#ifdef MASTER_PERFORMS_OPERATORS 
+            Work *before_operator = work;
+            work = NULL;
+
+            RNN_Genome *genome = before_operator->get_genome(go);
+            if (genome == NULL) {
+                Log::fatal("This should never happen - examm_mpi_core::generate_and_send_work\n");
+                exit(1);
+            }
+            
+            delete before_operator;
+            before_operator = NULL;
+
+            work = new TrainWork(genome, genome->get_generation_id(), genome->get_group_id());
+#endif
             Log::debug("sending work to: %d\n", dst);
             break;
+        }
 
         case TerminateWork::class_id:
             //send terminate message
@@ -137,7 +157,7 @@ void master(int max_rank, GenomeOperators genome_operators) {
         if (tag == WORK_REQUEST_TAG) {
             Log::info("Received work request from %d\n", source);
             receive_work_request(source);
-            generate_and_send_work(source, max_rank);
+            generate_and_send_work(genome_operators, source, max_rank);
             Log::info("Sent work to %d\n", source);
         } else if (tag == RESULT_TAG) {
             Log::info("Received results from %d\n", source);

@@ -28,6 +28,8 @@ Work *Work::read_from_stream(istream &bin_istream) {
         return new InitializeWork(bin_istream);
     else if (class_id == WorkResult::class_id)
         return new WorkResult(bin_istream);
+    else if (class_id == TrainWork::class_id)
+        return new TrainWork(bin_istream);
     
     Log::fatal("encountered unrecognized work class_id %d", class_id);
     exit(0);
@@ -45,3 +47,4 @@ void Work::set_group_id(int32_t group_id) { this->group_id = group_id; }
 #include "terminate_work.cxx"
 #include "initialize_work.cxx"
 #include "work_result.cxx"
+#include "train_work.cxx"

@@ -33,5 +33,6 @@ class Work {
 #include "terminate_work.hxx"
 #include "initialize_work.hxx"
 #include "work_result.hxx"
+#include "train_work.hxx"
 
 #endif

@@ -37,7 +37,9 @@ RNN_Genome *MutationWork::get_genome(GenomeOperators &operators) {
     
     while (clone == NULL) {
         clone = genome->copy();
-        operators.mutate(clone, n_mutations);
+
+        if (n_mutations) 
+            operators.mutate(clone, n_mutations);
 
         if (clone->outputs_unreachable()) {
             delete clone;
