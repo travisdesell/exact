@@ -2,6 +2,9 @@
 
 #include <assert.h>
 
+#include <chrono>
+using namespace std::literals;
+
 #define WORK_REQUEST_TAG 1
 #define WORK_TAG 2
 #define RESULT_TAG 4
@@ -127,6 +130,16 @@ void generate_and_send_work(GenomeOperators& go, int32_t dst, int32_t max_rank) 
     delete work;
 }
 
+void write_time_log(string path, vector<long> ls) {
+    auto log_file = new ofstream(path, std::ios_base::app);
+
+    for (size_t i = 0; i < ls.size(); i++) {
+        (*log_file) << ls[i] << endl;
+    }
+
+    log_file->close();
+}
+
 void master(int max_rank, GenomeOperators genome_operators) {
     Log::set_id("master");
     //the "main" id will have already been set by the main function so we do not need to re-set it here
@@ -142,11 +155,23 @@ void master(int max_rank, GenomeOperators genome_operators) {
         Log::debug("Sent init to rank %d\n", worker_rank);
     }
 
+    vector<long> gen_genome_times;
+    vector<long> insert_genome_times;
+    vector<long> recv_result_times;
+    vector<long> probe_times;
+
+#define diff_as_nanos(start, end) std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count()
+
     while (terminates_sent < max_rank - 1) {
         //wait for a incoming message
         Log::debug("probing...\n");
         MPI_Status status;
+        chrono::time_point<chrono::system_clock> start_probe = chrono::system_clock::now();
         MPI_Probe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+        chrono::time_point<chrono::system_clock> end_probe = chrono::system_clock::now();
+
+        long probe_nanos = diff_as_nanos(start_probe, end_probe);
+        probe_times.push_back(probe_nanos);
 
         int source = status.MPI_SOURCE;
         int tag = status.MPI_TAG;
@@ -157,18 +182,38 @@ void master(int max_rank, GenomeOperators genome_operators) {
         if (tag == WORK_REQUEST_TAG) {
             Log::info("Received work request from %d\n", source);
             receive_work_request(source);
+
+            chrono::time_point<chrono::system_clock> start_gen = chrono::system_clock::now();
             generate_and_send_work(genome_operators, source, max_rank);
+            chrono::time_point<chrono::system_clock> end_gen = chrono::system_clock::now();
+
+            long gen_nanos = diff_as_nanos(start_gen, end_gen);
+            gen_genome_times.push_back(gen_nanos);
+
             Log::info("Sent work to %d\n", source);
         } else if (tag == RESULT_TAG) {
             Log::info("Received results from %d\n", source);
+
+            
+            chrono::time_point<chrono::system_clock> start_recv_result = chrono::system_clock::now();
             Work *work = receive_work_from(source, RESULT_TAG);
+            chrono::time_point<chrono::system_clock> end_recv_result = chrono::system_clock::now();
+  
+            long recv_result_nanos = diff_as_nanos(start_recv_result, end_recv_result);
+            recv_result_times.push_back(recv_result_nanos);           
+            
             RNN_Genome *genome = work->get_genome(genome_operators);
            
             int class_id = work->get_class_id();
             assert(class_id == WorkResult::class_id);
             
+            chrono::time_point<chrono::system_clock> start_insert = chrono::system_clock::now();
             examm->insert_genome(genome);
+            chrono::time_point<chrono::system_clock> end_insert = chrono::system_clock::now();
             
+            long insert_nanos = diff_as_nanos(start_insert, end_insert);
+            insert_genome_times.push_back(insert_nanos);
+        
             delete genome;
             delete work;
         } else {
@@ -176,6 +221,18 @@ void master(int max_rank, GenomeOperators genome_operators) {
             MPI_Abort(MPI_COMM_WORLD, 1);
         }
     }
+
+    // vector<long> gen_genome_times;
+    // vector<long> insert_genome_times;
+    // vector<long> recv_result_times;
+    // vector<long> probe_times;
+    
+    string output_directory = examm->get_output_directory();
+    write_time_log(output_directory + "/gen_genomes.dat", gen_genome_times);
+    write_time_log(output_directory + "/insert_genome_times.dat", insert_genome_times);
+    write_time_log(output_directory + "/recv_result_times.dat", recv_result_times);
+    write_time_log(output_directory + "/probe_times.dat", probe_times);
+
     cout << "MASTER FINISHED >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n";
 }
 
@@ -203,17 +260,17 @@ void worker(int rank, GenomeOperators genome_operators, string id="") {
         
         Work* work = receive_work_from(0);
         Log::info("Received work; class_id = %d\n", work->get_class_id());
-
         RNN_Genome *genome = work->get_genome(genome_operators);
         delete work;
     
-        Log::debug("gid = %d\n", genome->get_generation_id());
 
         // if genome is null we're done.
         if (genome == NULL) {
             Log::debug("Terminating worker %d %s\n", rank, id.c_str());
             break;
         }
+        
+        Log::debug("gid = %d\n", genome->get_generation_id());
         
         // have each worker write to a separate log file
         string log_id = "genome_" + to_string(genome->get_generation_id()) + "_worker_" + to_string(rank);
