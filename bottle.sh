@@ -62,7 +62,7 @@ for fold in 0 1 2 3 4 5 6 7 8 9 10; do #  11 12 13 14 15 16 17 18 19 20;
     
     time srun $EXAMM/build/mpi/examm_mpi_stress_test \
         --training_filenames $DATA_DIR/burner_[0-12].csv \
-        --test_filenames $DATA_DIR/burner_1[0-1].csv 
+        --test_filenames $DATA_DIR/burner_1[0-1].csv \
         --time_offset 1 \
         --input_parameter_names $INPUT_PARAMETERS \
         --output_parameter_names $OUTPUT_PARAMETERS \
