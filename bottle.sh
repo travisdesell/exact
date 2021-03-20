@@ -12,7 +12,7 @@
 #
 
 # Name of the job - You'll probably want to customize this.
-#SBATCH -J bottle_x
+#SBATCH -J bottle_<<NN>>_<<NI>>
 
 #SBATCH -A examm
 
@@ -34,25 +34,21 @@
 
 ## Please not that each node on the cluster is 36 cores
 #SBATCH -p tier3
-#SBATCH --nodes x
+#SBATCH --nodes <<NN>>
 
 
 # Job memory requirements in MB
 #SBATCH --mem-per-cpu=5000
-
 
 #module load module_future
 #module load openmpi-1.10-x86_64
 module load openmpi
 module load gcc
 EXAMM="/home/jak5763/exact"
-DATA_DIR="/home/jak5763/exact/datasets/2020_wind_turbine"
-
-# EXAMM="/home/zl7069/git/weight_initialize/exact"
-# DATA_DIR="/home/zl7069/datasets/2020_wind_turbine"
+DATA_DIR="/home/jak5763/exact/datasets/2018_coal"
 
 MAX_GENOME=20000
-n_nodes=x
+n_nodes=<<NN>>
 
 for fold in 0 1 2 3 4 5 6 7 8 9 10; do #  11 12 13 14 15 16 17 18 19 20;
     # REPOPULATION_METHOD = "bestGenome"
@@ -65,13 +61,13 @@ for fold in 0 1 2 3 4 5 6 7 8 9 10; do #  11 12 13 14 15 16 17 18 19 20;
     OUTPUT_PARAMETERS="Main_Flm_Int"
     
     time srun $EXAMM/build/mpi/examm_mpi_stress_test \
-        --training_filenames ../datasets/2018_coal/burner_[0-12].csv \
-        --test_filenames ../datasets/2018_coal/burner_1[0-1].csv 
+        --training_filenames $DATA_DIR/burner_[0-12].csv \
+        --test_filenames $DATA_DIR/burner_1[0-1].csv 
         --time_offset 1 \
         --input_parameter_names $INPUT_PARAMETERS \
         --output_parameter_names $OUTPUT_PARAMETERS \
-        --number_islands 10 \
-        --population_size 50 \
+        --number_islands <<NI>> \
+        --population_size 64 \
         --max_genomes $MAX_GENOME \
         --speciation_method "island" \
         --weight_initialize $WEIGET_INITIALIZE \
