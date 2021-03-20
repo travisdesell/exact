@@ -1,9 +1,5 @@
-
-nn=$1
-ni=$2
-
-for $nn in 3 6 12 24; do
-  for $ni in 1 4 16 64; do
+for nn in 3 6 12 24; do
+  for ni in 1 4 16 64; do
     echo $nn
     echo $ni
     
