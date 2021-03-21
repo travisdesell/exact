@@ -36,7 +36,7 @@
     // This is actually n workers + 1, since master is counted.
     // This function gets the n of processes in total
     MPI_Comm_size(MPI_COMM_WORLD, &number_workers);
-    number_workers -= 1;
+    //number_workers -= 1;
 
 #endif
 
@@ -222,10 +222,10 @@
             node_innovation_count = genome->get_max_node_innovation_number() + 1;
         };
 
-    function<GenomeOperators (int32_t, int32_t, int32_t)> make_genome_operators =
-        [&](int32_t worker_id, int32_t edge_innovation_count, int32_t node_innovation_count) {
+    function<GenomeOperators (int32_t)> make_genome_operators =
+        [&](int32_t worker_id) {
             GenomeOperators go(
-                number_workers,
+                number_workers + 1,
                 worker_id,
                 number_inputs,
                 number_outputs,
