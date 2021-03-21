@@ -38,7 +38,7 @@ int main(int argc, char  **argv) {
 
     vector<thread> threads;
     for (int32_t i = 0; i < number_threads; i++) {
-        threads.push_back( thread(examm_thread, i, make_genome_operators(i, edge_innovation_count, node_innovation_count)) );
+        threads.push_back( thread(examm_thread, i, make_genome_operators(i)) );
     }
 
     for (int32_t i = 0; i < number_threads; i++) {
