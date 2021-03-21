@@ -126,8 +126,6 @@ void GenomeOperators::finalize_genome(RNN_Genome *genome) {
 }
 
 RNN_Genome *GenomeOperators::mutate(RNN_Genome *g, int32_t n_mutations) {
-    Log::info("mutate genome ptr = %p\n", g);
-
     double mu, sigma;
  
     //g->write_graphviz("rnn_genome_premutate_" + to_string(g->get_generation_id()) + ".gv");
@@ -251,7 +249,8 @@ RNN_Genome *GenomeOperators::mutate(RNN_Genome *g, int32_t n_mutations) {
 
         rng -= merge_node_rate;
     }
-    
+
+
     //get the new set of parameters (as new paramters may have been
     //added duriung mutation) and set them to the initial parameters
     //for epigenetic_initialization
@@ -665,10 +664,12 @@ const vector<int> &GenomeOperators::get_possible_node_types() {
 
 void GenomeOperators::set_edge_innovation_count(int32_t eic) {
     edge_innovation_count = eic;
+    next_edge_innovation_number = [&]() { return this->get_next_edge_innovation_number(); };
 }
 
 void GenomeOperators::set_node_innovation_count(int32_t nic) {
     node_innovation_count = nic;
+    next_node_innovation_number = [&]() { return this->get_next_node_innovation_number(); };
 }
 
 int GenomeOperators::get_number_inputs() { return number_inputs; }
