@@ -58,9 +58,9 @@ int main(int argc, char** argv) {
 
     if (rank == 0) {
         examm = make_examm();
-        master(max_rank, genome_operators);
+        master(max_rank, make_genome_operators(rank));
     } else {
-        worker(rank, genome_operators);
+        worker(rank, make_genome_operators(rank));
     }
     Log::set_id("main_" + to_string(rank));
 

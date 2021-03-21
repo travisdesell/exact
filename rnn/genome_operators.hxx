@@ -57,11 +57,6 @@ class GenomeOperators {
         int32_t number_inputs;
         int32_t number_outputs;
 
-        int32_t edge_innovation_count;
-        int32_t node_innovation_count;
-        function<int32_t ()> next_edge_innovation_number;
-        function<int32_t ()> next_node_innovation_number;
-
         WeightType weight_initialize;
         WeightType weight_inheritance;
         WeightType mutated_component_weight;
@@ -85,7 +80,12 @@ class GenomeOperators {
 
     public:
         const TrainingParameters training_parameters;
-        
+        int32_t edge_innovation_count;
+        int32_t node_innovation_count;
+        function<int32_t ()> next_edge_innovation_number;
+        function<int32_t ()> next_node_innovation_number;
+
+
         GenomeOperators(
                 int32_t _number_workers,
                 int32_t _worker_id,

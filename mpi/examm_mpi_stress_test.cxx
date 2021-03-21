@@ -70,7 +70,7 @@ int main(int argc, char** argv) {
         master(max_rank, genome_operators);
     } else {
         Log::info("starting worker %d\n", rank);
-        worker(rank, make_genome_operators(rank, -1, -1));
+        worker(rank, make_genome_operators(rank));
     }
 
     Log::set_id("main_" + to_string(rank));

@@ -82,7 +82,8 @@ void generate_and_send_work(GenomeOperators& go, int32_t dst, int32_t max_rank) 
 
     assert( class_id == MutationWork::class_id
          || class_id == CrossoverWork::class_id
-         || class_id == TerminateWork::class_id);
+         || class_id == TerminateWork::class_id
+         || class_id == TrainWork::class_id);
 
     switch (work->get_class_id()) {
         case MutationWork::class_id:
@@ -96,7 +97,7 @@ void generate_and_send_work(GenomeOperators& go, int32_t dst, int32_t max_rank) 
 #ifdef MASTER_PERFORMS_OPERATORS 
             Work *before_operator = work;
             work = NULL;
-
+    
             RNN_Genome *genome = before_operator->get_genome(go);
             if (genome == NULL) {
                 Log::fatal("This should never happen - examm_mpi_core::generate_and_send_work\n");
@@ -154,6 +155,15 @@ void master(int max_rank, GenomeOperators genome_operators) {
         send_work_to(worker_rank, initialize_work, INITIALIZE_TAG);
         Log::debug("Sent init to rank %d\n", worker_rank);
     }
+    
+    if (InitializeWork *init_work = dynamic_cast<InitializeWork*>(initialize_work)) {
+        init_work->update_genome_operators(0, genome_operators);
+    } else {
+        Log::fatal("Unreachable code path was reached\n");
+        exit(-1);
+    }
+
+    delete initialize_work;
 
     vector<long> gen_genome_times;
     vector<long> insert_genome_times;

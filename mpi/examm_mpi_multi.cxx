@@ -101,7 +101,7 @@ int main(int argc, char** argv) {
                 examm = make_examm();
 
                 std::chrono::time_point<std::chrono::system_clock> start = std::chrono::system_clock::now();
-                master(max_rank, make_genome_operators(0, -1, -1));
+                master(max_rank, make_genome_operators(0));
                 std::chrono::time_point<std::chrono::system_clock> end = std::chrono::system_clock::now();
                 long milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
 
@@ -121,7 +121,7 @@ int main(int argc, char** argv) {
                 delete examm;
                 Log::release_id(examm_log_id);
             } else {
-                worker(rank, make_genome_operators(rank, -1, -1), "slice_" + to_string(global_slice) + "_repeat_" + to_string(global_repeat));
+                worker(rank, make_genome_operators(rank), "slice_" + to_string(global_slice) + "_repeat_" + to_string(global_repeat));
             }
             Log::set_id("main_" + to_string(rank));
 
