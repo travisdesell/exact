@@ -276,7 +276,6 @@ RNN_Genome *GenomeOperators::mutate(RNN_Genome *g, int32_t n_mutations) {
     }
 
     g->best_parameters.clear();
-    this->finalize_genome(g);
     return g;
 }
 
@@ -503,7 +502,6 @@ RNN_Genome *GenomeOperators::crossover(RNN_Genome *more_fit, RNN_Genome *less_fi
     
     child->best_parameters.clear();
     
-    this->finalize_genome(child);
     return child;
 }
 

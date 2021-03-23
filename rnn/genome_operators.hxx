@@ -71,7 +71,6 @@ class GenomeOperators {
         int32_t get_next_edge_innovation_number();
         void set_possible_node_types(vector<string> &node_types);
         int get_random_node_type();
-        void finalize_genome(RNN_Genome *g);
 
         void attempt_node_insert(vector<RNN_Node_Interface*> &child_nodes, const RNN_Node_Interface *node, const vector<double> &new_weights);
         void attempt_edge_insert(vector<RNN_Edge*> &child_edges, vector<RNN_Node_Interface*> &child_nodes, RNN_Edge *edge, RNN_Edge *second_edge, bool set_enabled);
@@ -84,7 +83,6 @@ class GenomeOperators {
         int32_t node_innovation_count;
         function<int32_t ()> next_edge_innovation_number;
         function<int32_t ()> next_node_innovation_number;
-
 
         GenomeOperators(
                 int32_t _number_workers,
@@ -105,6 +103,7 @@ class GenomeOperators {
         RNN_Genome *mutate(RNN_Genome *g, int32_t n_mutations);
         RNN_Genome *crossover(RNN_Genome *more_fit, RNN_Genome *less_fit);
 
+        void finalize_genome(RNN_Genome *g);
         void set_edge_innovation_count(int32_t);
         void set_node_innovation_count(int32_t);
         const vector<int> &get_possible_node_types();

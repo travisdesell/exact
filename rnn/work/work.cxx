@@ -3,6 +3,13 @@
 Work::Work() : generation_id(-1), group_id(-1) { }
 Work::Work(int32_t gen_id, int32_t grp_id) : generation_id(gen_id), group_id(grp_id) { }
 
+RNN_Genome *Work::get_genome(Work *work, GenomeOperators &operators) {
+    RNN_Genome *result = work->get_genome(operators);
+    if (result)
+        operators.finalize_genome(result);
+    return result;
+}
+
 Work *Work::read_from_array(const char *array, int32_t length) {
     struct membuf : std::streambuf {
         membuf(const char* begin, const char* end) {

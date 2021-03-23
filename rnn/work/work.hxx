@@ -15,6 +15,7 @@ class Work {
     public:
         static Work *read_from_stream(istream &bin_istream);
         static Work *read_from_array(const char *array, int32_t length);
+        static RNN_Genome *get_genome(Work *work, GenomeOperators &operators);
        
         Work(int32_t _gen_id, int32_t _grp_id);
         Work(istream &bin_istream);

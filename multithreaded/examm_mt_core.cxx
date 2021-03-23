@@ -36,7 +36,8 @@ void examm_thread(int id, GenomeOperators genome_operators) {
         Work *work = examm->generate_work();
         examm_mutex.unlock();
 
-        RNN_Genome *genome = work->get_genome(genome_operators);
+        // RNN_Genome *genome = work->get_genome(genome_operators);
+        RNN_Genome *genome = Work::get_genome(work, genome_operators);
 
         if (genome == NULL) break;  //generate_individual returns NULL when the search is done
 

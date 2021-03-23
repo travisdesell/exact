@@ -98,7 +98,7 @@ void generate_and_send_work(GenomeOperators& go, int32_t dst, int32_t max_rank) 
             Work *before_operator = work;
             work = NULL;
     
-            RNN_Genome *genome = before_operator->get_genome(go);
+            RNN_Genome *genome = Work::get_genome(before_operator, go);
             if (genome == NULL) {
                 Log::fatal("This should never happen - examm_mpi_core::generate_and_send_work\n");
                 exit(1);
@@ -212,7 +212,8 @@ void master(int max_rank, GenomeOperators genome_operators) {
             long recv_result_nanos = diff_as_nanos(start_recv_result, end_recv_result);
             recv_result_times.push_back(recv_result_nanos);           
             
-            RNN_Genome *genome = work->get_genome(genome_operators);
+            // RNN_Genome *genome = work->get_genome(genome_operators);
+            RNN_Genome *genome = Work::get_genome(work, genome_operators);
            
             int class_id = work->get_class_id();
             assert(class_id == WorkResult::class_id);
@@ -270,7 +271,8 @@ void worker(int rank, GenomeOperators genome_operators, string id="") {
         
         Work* work = receive_work_from(0);
         Log::info("Received work; class_id = %d\n", work->get_class_id());
-        RNN_Genome *genome = work->get_genome(genome_operators);
+        // RNN_Genome *genome = work->get_genome(genome_operators);
+        RNN_Genome *genome = Work::get_genome(work, genome_operators);
         delete work;
     
 

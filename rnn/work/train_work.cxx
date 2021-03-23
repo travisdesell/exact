@@ -33,7 +33,6 @@ RNN_Genome *TrainWork::get_genome(GenomeOperators &operators) {
     
     clone->set_group_id(group_id);
     clone->set_generation_id(generation_id);
-
     return clone;
 }
 
