@@ -67,7 +67,7 @@ class RNN_Genome {
 
         vector<double> initial_parameters;
 
-        
+
         double best_validation_mse;
         double best_validation_mae;
         vector<double> best_parameters;
@@ -128,7 +128,7 @@ class RNN_Genome {
         int32_t get_node_count();
 
         double get_fitness() const;
-        double get_best_validation_softmax() const; 
+        double get_best_validation_softmax() const;
         double get_best_validation_mse() const;
         double get_best_validation_mae() const;
 
@@ -269,10 +269,11 @@ class RNN_Genome {
         void write_to_file(string bin_filename);
         void write_to_stream(ostream &bin_stream);
 
-        bool connect_new_input_node( double mu, double sig, RNN_Node_Interface *new_node, uniform_int_distribution<int32_t> dist, int32_t &edge_innovation_count );
-        bool connect_new_output_node( double mu, double sig, RNN_Node_Interface *new_node, uniform_int_distribution<int32_t> dist, int32_t &edge_innovation_count );
+        bool connect_new_input_node( double mu, double sig, RNN_Node_Interface *new_node, uniform_int_distribution<int32_t> dist, int32_t &edge_innovation_count, bool not_all_hidden );
+        bool connect_new_output_node( double mu, double sig, RNN_Node_Interface *new_node, uniform_int_distribution<int32_t> dist, int32_t &edge_innovation_count, bool not_all_hidden );
         bool connect_node_to_hid_nodes( double mu, double sig, RNN_Node_Interface *new_node, uniform_int_distribution<int32_t> dist, int32_t &edge_innovation_count, bool from_input );
-        
+        vector<RNN_Node_Interface*> pick_possible_nodes(int layer_type, bool not_all_hidden, string node_type);
+
         void update_innovation_counts(int32_t &node_innovation_count, int32_t &edge_innovation_count);
 
         vector<int32_t> get_innovation_list();
