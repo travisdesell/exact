@@ -2377,7 +2377,7 @@ vector<RNN_Node_Interface*> RNN_Genome::pick_possible_nodes(int layer_type, bool
             int32_t position = rng_0_1(generator) * possible_nodes.size();
             possible_nodes.erase(possible_nodes.begin() + position);
         }
-        Log::info("\tadd new %s node, max_inputs: %d\n", node_type, max_nodes);
+        Log::info("\tadd new %s node, max_inputs: %d\n", node_type.c_str(), max_nodes);
     }
 
     return possible_nodes;
