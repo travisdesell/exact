@@ -249,6 +249,7 @@ int main(int argc, char** argv) {
 
     TimeSeriesSets *time_series_sets = NULL;
 
+    cout << "AA- REACHED HERE!" << endl;
     if (rank == 0) {
         //only have the master process print TSS info
         time_series_sets = TimeSeriesSets::generate_from_arguments(arguments);
@@ -260,6 +261,7 @@ int main(int argc, char** argv) {
     } else {
         time_series_sets = TimeSeriesSets::generate_from_arguments(arguments);
     }
+    cout << "BB- REACHED HERE!" << endl;
 
 
 
@@ -288,7 +290,7 @@ int main(int argc, char** argv) {
 
     int32_t extinction_event_generation_number = 0;
     get_argument(arguments, "--extinction_event_generation_number", false, extinction_event_generation_number);
-  
+
     int32_t islands_to_exterminate;
     get_argument(arguments, "--islands_to_exterminate", false, islands_to_exterminate);
 
@@ -303,7 +305,7 @@ int main(int argc, char** argv) {
 
     double species_threshold = 0.0;
     get_argument(arguments, "--species_threshold", false, species_threshold);
-    
+
     double fitness_threshold = 100;
     get_argument(arguments, "--fitness_threshold", false, fitness_threshold);
 
@@ -351,7 +353,7 @@ int main(int argc, char** argv) {
     get_argument(arguments, "--weight_initialize", false, weight_initialize_string);
     WeightType weight_initialize;
     weight_initialize = get_enum_from_string(weight_initialize_string);
-    
+
     string weight_inheritance_string = "lamarckian";
     get_argument(arguments, "--weight_inheritance", false, weight_inheritance_string);
     WeightType weight_inheritance;
@@ -362,22 +364,42 @@ int main(int argc, char** argv) {
     WeightType mutated_component_weight;
     mutated_component_weight = get_enum_from_string(mutated_component_weight_string);
 
-    RNN_Genome *seed_genome = NULL;
-    string genome_file_name = "";
-    if (get_argument(arguments, "--genome_bin", false, genome_file_name)) {
-        seed_genome = new RNN_Genome(genome_file_name);
 
+    // RNN_Genome *seed_genome = NULL;
+    // string genome_file_name = "";
+    vector <RNN_Genome *> seed_genomes ;
+    vector <string> genome_files_names ;
+    // if (get_argument(arguments, "--genome_bin", false, genome_file_name)) {
+    if (get_argument_vector(arguments, "--genome_bin", false, genome_files_names)) {
         string transfer_learning_version;
         get_argument(arguments, "--transfer_learning_version", true, transfer_learning_version);
-
         bool epigenetic_weights = argument_exists(arguments, "--epigenetic_weights");
+        int32_t edge_innovation_count;
+        int32_t node_innovation_count;
+        for (auto file_name: genome_files_names) {
+            seed_genomes.push_back( new RNN_Genome( file_name ) ) ;
+            /* Getting max inno numbers in all the seed genomes */
+            edge_innovation_count = fmax(edge_innovation_count, seed_genomes.back()->get_max_edge_innovation_count() ) ;
+            node_innovation_count = fmax(node_innovation_count, seed_genomes.back()->get_max_node_innovation_count() ) ;
+            edge_innovation_count++;
+            node_innovation_count++;
+        }
+        for (int i=0; i<seed_genomes.size(); i++) {
+            edge_innovation_count = seed_genomes[i]->transfer_to(time_series_sets->get_input_parameter_names(), time_series_sets->get_output_parameter_names(), transfer_learning_version, epigenetic_weights, min_recurrent_depth, max_recurrent_depth, node_innovation_count, edge_innovation_count);
+        }
 
-        seed_genome->transfer_to(time_series_sets->get_input_parameter_names(), time_series_sets->get_output_parameter_names(), transfer_learning_version, epigenetic_weights, min_recurrent_depth, max_recurrent_depth);
+        /*AbdElRahman: Moved seed genomes creation to the examm class to find the max inno numbers becasue the inno numbers are defined there */
+        // seed_genome = new RNN_Genome(genome_file_name);
+        // seed_genome->transfer_to(time_series_sets->get_input_parameter_names(), time_series_sets->get_output_parameter_names(), transfer_learning_version, epigenetic_weights, min_recurrent_depth, max_recurrent_depth);
+    }
+    if (seed_genomes.size() > 1) {
+        number_islands = seed_genomes.size() ;
     }
 
-
     bool start_filled = false;
-    get_argument(arguments, "--start_filled", false, start_filled);
+    if (genome_files_names.size() != 0) {
+      get_argument(arguments, "--start_filled", false, start_filled);
+  }
 
     Log::clear_rank_restriction();
 
@@ -402,7 +424,8 @@ int main(int argc, char** argv) {
             min_recurrent_depth, max_recurrent_depth,
             use_regression,
             output_directory,
-            seed_genome,
+            // seed_genome,
+            seed_genomes,
             start_filled);
 
         if (possible_node_types.size() > 0)  {

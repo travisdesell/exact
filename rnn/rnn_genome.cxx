@@ -3750,7 +3750,7 @@ int RNN_Genome::get_max_edge_innovation_count() {
 }
 
 
-void RNN_Genome::transfer_to(const vector<string> &new_input_parameter_names, const vector<string> &new_output_parameter_names, string transfer_learning_version, bool epigenetic_weights, int32_t min_recurrent_depth, int32_t max_recurrent_depth) {
+int32_t RNN_Genome::transfer_to(const vector<string> &new_input_parameter_names, const vector<string> &new_output_parameter_names, string transfer_learning_version, bool epigenetic_weights, int32_t min_recurrent_depth, int32_t max_recurrent_depth, int32_t node_innovation_count, int32_t edge_innovation_count) {
     Log::info("DOING TRANSFER OF GENOME!\n");
 
     double mu, sigma;
@@ -3759,8 +3759,8 @@ void RNN_Genome::transfer_to(const vector<string> &new_input_parameter_names, co
     Log::info("before transfer, mu: %lf, sigma: %lf\n", mu, sigma);
     //make sure we don't duplicate new node/edge innovation numbers
 
-    int node_innovation_count = get_max_node_innovation_count() + 1;
-    int edge_innovation_count = get_max_edge_innovation_count() + 1;
+    // int node_innovation_count = get_max_node_innovation_count() + 1;
+    // int edge_innovation_count = get_max_edge_innovation_count() + 1;
 
     vector<RNN_Node_Interface*> input_nodes;
     vector<RNN_Node_Interface*> output_nodes;
@@ -4101,4 +4101,5 @@ void RNN_Genome::transfer_to(const vector<string> &new_input_parameter_names, co
     Log::info("new_parameters.size() after get weights: %d\n", updated_genome_parameters.size());
 
     Log::info("FINISHING PREPARING INITIAL GENOME\n");
+    return edge_innovation_count ;
 }
