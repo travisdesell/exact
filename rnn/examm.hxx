@@ -38,7 +38,7 @@ class EXAMM {
         string repopulation_method;
         int32_t repopulation_mutations;
         bool repeat_extinction;
-        
+
         SpeciationStrategy *speciation_strategy;
 
         double species_threshold;
@@ -127,7 +127,7 @@ class EXAMM {
         bool start_filled;
 
     public:
-        EXAMM(  int32_t _population_size, 
+        EXAMM(  int32_t _population_size,
                 int32_t _number_islands,
                 int32_t _max_genomes,
                 int32_t _extinction_event_generation_number,
@@ -137,10 +137,10 @@ class EXAMM {
                 int32_t _repopulation_mutations,
                 bool _repeat_extinction,
                 string _speciation_method,
-                double _species_threshold, 
+                double _species_threshold,
                 double _fitness_threshold,
-                double _neat_c1, 
-                double _neat_c2, 
+                double _neat_c1,
+                double _neat_c2,
                 double _neat_c3,
                 const vector<string> &_input_parameter_names,
                 const vector<string> &_output_parameter_names,
@@ -156,15 +156,15 @@ class EXAMM {
                 double _learning_rate,
                 bool _use_high_threshold,
                 double _high_threshold,
-                bool _use_low_threshold, 
+                bool _use_low_threshold,
                 double _low_threshold,
                 bool _use_dropout,
                 double _dropout_probability,
                 int32_t _min_recurrent_depth,
                 int32_t _max_recurrent_depth,
                 bool _use_regression,
-                string _output_directory, 
-                RNN_Genome *seed_genome,
+                string _output_directory,
+                vector<RNN_Genome *> seed_genomes,
                 bool _start_filled);
 
 
