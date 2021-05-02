@@ -164,7 +164,7 @@ class EXAMM {
                 int32_t _max_recurrent_depth,
                 bool _use_regression,
                 string _output_directory,
-                vector<RNN_Genome *> seed_genomes,
+                RNN_Genome *seed_genome,
                 bool _start_filled);
 
 
@@ -180,7 +180,7 @@ class EXAMM {
 
         int get_random_node_type();
 
-        RNN_Genome* generate_genome();
+        RNN_Genome* generate_genome(int32_t seed_genome_stirs = 0);
         bool insert_genome(RNN_Genome* genome);
 
         void mutate(int32_t max_mutations, RNN_Genome *p1);

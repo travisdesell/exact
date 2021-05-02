@@ -22,7 +22,7 @@ class NeatSpeciationStrategy : public SpeciationStrategy {
         int32_t population_not_improving_count;
         double species_threshold;
         double fitness_threshold;
-        double neat_c1; 
+        double neat_c1;
         double neat_c2;
         double neat_c3;
         double mutation_rate; /**< How frequently to do mutations. Note that mutation_rate + intra_island_crossover_rate + inter_island_crossover_rate should equal 1, if not they will be scaled down such that they do. */
@@ -42,7 +42,7 @@ class NeatSpeciationStrategy : public SpeciationStrategy {
         RNN_Genome* global_best_genome;
     public:
 
-        NeatSpeciationStrategy( double _mutation_rate, double _intra_island_crossover_rate, 
+        NeatSpeciationStrategy( double _mutation_rate, double _intra_island_crossover_rate,
                                 double _inter_island_crossover_rate, RNN_Genome *_seed_genome,
                                 int32_t _max_genomes, double _species_threshold, double _fitness_threshold,
                                 double _neat_c1, double _neat_c2, double _neat_c3, minstd_rand0 &_generator);
@@ -102,7 +102,7 @@ class NeatSpeciationStrategy : public SpeciationStrategy {
          *
          * \return the newly generated genome.
          */
-        RNN_Genome* generate_genome(uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator, function<void (int32_t, RNN_Genome*)> &mutate, function<RNN_Genome* (RNN_Genome*, RNN_Genome *)> &crossover);
+        RNN_Genome* generate_genome(uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator, function<void (int32_t, RNN_Genome*)> &mutate, function<RNN_Genome* (RNN_Genome*, RNN_Genome *)> &crossover, int32_t number_stir_mutations);
 
         RNN_Genome* generate_for_species(uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator, function<void (int32_t, RNN_Genome*)> &mutate, function<RNN_Genome* (RNN_Genome*, RNN_Genome *)> &crossover);
 
@@ -126,7 +126,7 @@ class NeatSpeciationStrategy : public SpeciationStrategy {
         RNN_Genome* get_global_best_genome();
 
         vector<int32_t> get_random_species_list();
-        
+
         double get_distance(RNN_Genome* g1, RNN_Genome* g2);
 
         int get_exceed_number(vector<int32_t> v1, vector<int32_t> v2);
@@ -140,4 +140,3 @@ class NeatSpeciationStrategy : public SpeciationStrategy {
 };
 
 #endif
-
