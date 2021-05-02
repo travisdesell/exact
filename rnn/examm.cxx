@@ -96,7 +96,7 @@ EXAMM::EXAMM(
         int32_t _max_recurrent_depth,
         bool _use_regression,
         string _output_directory,
-        vector <RNN_Genome *> seed_genomes,
+        RNN_Genome *seed_genome,
         bool _start_filled) :
                         population_size(_population_size),
                         number_islands(_number_islands),
@@ -213,40 +213,26 @@ EXAMM::EXAMM(
         //generate a minimal feed foward network as the seed genome
 
         bool seed_genome_was_minimal = false;
-        // if (seed_genome == NULL) {
-        if (seed_genomes.size() == 0) {
-            seed_genomes.push_back(create_ff(input_parameter_names, 0, 0, output_parameter_names, 0, weight_initialize, weight_inheritance, mutated_component_weight));
-            seed_genomes.back()->initialize_randomly();
+        if (seed_genome == NULL) {
             seed_genome_was_minimal = true;
-            //seed_genome = create_ff(input_parameter_names, 0, 0, output_parameter_names, 0, weight_initialize, weight_inheritance, mutated_component_weight);
-            //seed_genome->initialize_randomly();
+            seed_genome = create_ff(input_parameter_names, 0, 0, output_parameter_names, 0, weight_initialize, weight_inheritance, mutated_component_weight);
+            seed_genome->initialize_randomly();
         } //otherwise the seed genome was passed into EXAMM
 
         //make sure we don't duplicate node or edge innovation numbers
-        for (int i=0; i<seed_genomes.size(); i++) {
-            edge_innovation_count = fmax(edge_innovation_count, seed_genomes[i]->get_max_edge_innovation_count() ) ;
-            node_innovation_count = fmax(node_innovation_count, seed_genomes[i]->get_max_node_innovation_count() ) ;
-            seed_genomes[i]->set_generated_by("initial");
-            seed_genomes[i]->enable_use_regression(use_regression);
-            seed_genomes[i]->best_validation_mse = EXAMM_MAX_DOUBLE;
-            seed_genomes[i]->best_validation_mse = EXAMM_MAX_DOUBLE;
-            seed_genomes[i]->best_validation_mae = EXAMM_MAX_DOUBLE;
-        }
-        edge_innovation_count++;
-        node_innovation_count++;
-        // edge_innovation_count = seed_genome->get_max_edge_innovation_count() + 1;
-        // node_innovation_count = seed_genome->get_max_node_innovation_count() + 1;
+        edge_innovation_count = seed_genome->get_max_edge_innovation_count() + 1;
+        node_innovation_count = seed_genome->get_max_node_innovation_count() + 1;
 
-        // seed_genome->set_generated_by("initial");
+        seed_genome->set_generated_by("initial");
 
         //insert a copy of it into the population so
         //additional requests can mutate it
 
-        // seed_genome->enable_use_regression(use_regression);
-        // seed_genome->best_validation_mse = EXAMM_MAX_DOUBLE;
-        //
-        // seed_genome->best_validation_mse = EXAMM_MAX_DOUBLE;
-        // seed_genome->best_validation_mae = EXAMM_MAX_DOUBLE;
+        seed_genome->enable_use_regression(use_regression);
+        seed_genome->best_validation_mse = EXAMM_MAX_DOUBLE;
+
+        seed_genome->best_validation_mse = EXAMM_MAX_DOUBLE;
+        seed_genome->best_validation_mae = EXAMM_MAX_DOUBLE;
         //seed_genome->best_parameters.clear();
 
         double mutation_rate = 0.70, intra_island_co_rate = 0.20, inter_island_co_rate = 0.10;
@@ -267,48 +253,33 @@ EXAMM::EXAMM(
 
             speciation_strategy = new IslandSpeciationStrategy(
                     number_islands, population_size, mutation_rate, intra_island_co_rate, inter_island_co_rate,
-                    seed_genomes, island_ranking_method, repopulation_method, extinction_event_generation_number, repopulation_mutations, islands_to_exterminate, seed_genome_was_minimal, apply_stir_mutations);
+                    seed_genome, island_ranking_method, repopulation_method, extinction_event_generation_number, repopulation_mutations, islands_to_exterminate, seed_genome_was_minimal, apply_stir_mutations);
         } else {
             speciation_strategy = new IslandSpeciationStrategy(
                     number_islands, population_size, mutation_rate, intra_island_co_rate, inter_island_co_rate,
-                    seed_genomes, island_ranking_method, repopulation_method, extinction_event_generation_number, repopulation_mutations, islands_to_exterminate, max_genomes, repeat_extinction, seed_genome_was_minimal);
+                    seed_genome, island_ranking_method, repopulation_method, extinction_event_generation_number, repopulation_mutations, islands_to_exterminate, max_genomes, repeat_extinction, seed_genome_was_minimal);
         }
     }
     else if (speciation_method.compare("neat") == 0) {
 
         bool seed_genome_was_minimal = false;
-        // if (seed_genome == NULL) {
-        if ( seed_genomes.size() == 0 ) {
+        if (seed_genome == NULL) {
             seed_genome_was_minimal = true;
-            seed_genomes.push_back(create_ff(input_parameter_names, 0, 0, output_parameter_names, 0, weight_initialize, weight_inheritance, mutated_component_weight));
-            seed_genomes.back()->initialize_randomly();
-            // RNN_Genome  *seed_genome = create_ff(input_parameter_names, 0, 0, output_parameter_names, 0, weight_initialize, weight_inheritance, mutated_component_weight);
-            // seed_genome->initialize_randomly();
+            seed_genome = create_ff(input_parameter_names, 0, 0, output_parameter_names, 0, weight_initialize, weight_inheritance, mutated_component_weight);
+            seed_genome->initialize_randomly();
         } //otherwise the seed genome was passed into EXAMM
 
-        /* Getting max inno numbers in all the seed genomes */
-        for (int i=0; i<seed_genomes.size(); i++) {
-            edge_innovation_count = fmax(edge_innovation_count, seed_genomes[i]->get_max_edge_innovation_count() ) ;
-            node_innovation_count = fmax(node_innovation_count, seed_genomes[i]->get_max_node_innovation_count() ) ;
-            seed_genomes[i]->set_generated_by("initial");
-            seed_genomes[i]->enable_use_regression(use_regression);
-            seed_genomes[i]->best_validation_mse = EXAMM_MAX_DOUBLE;
-            seed_genomes[i]->best_validation_mae = EXAMM_MAX_DOUBLE;
-        }
-        edge_innovation_count++;
-        node_innovation_count++;
-
         //make sure we don't duplicate node or edge innovation numbers
-        // edge_innovation_count = seed_genome->get_max_edge_innovation_count() + 1;
-        // node_innovation_count = seed_genome->get_max_node_innovation_count() + 1;
+        edge_innovation_count = seed_genome->get_max_edge_innovation_count() + 1;
+        node_innovation_count = seed_genome->get_max_node_innovation_count() + 1;
 
-        // seed_genome->set_generated_by("initial");
+        seed_genome->set_generated_by("initial");
 
         //insert a copy of it into the population so
         //additional requests can mutate it
 
-        // seed_genome->best_validation_mse = EXAMM_MAX_DOUBLE;
-        // seed_genome->best_validation_mae = EXAMM_MAX_DOUBLE;
+        seed_genome->best_validation_mse = EXAMM_MAX_DOUBLE;
+        seed_genome->best_validation_mae = EXAMM_MAX_DOUBLE;
         //seed_genome->best_parameters.clear();
 
         double mutation_rate = 0.70, intra_island_co_rate = 0.20, inter_island_co_rate = 0.10;
@@ -318,7 +289,7 @@ EXAMM::EXAMM(
             intra_island_co_rate = 0.30;
         }
         // no transfer learning for NEAT
-        speciation_strategy = new NeatSpeciationStrategy(mutation_rate, intra_island_co_rate, inter_island_co_rate, seed_genomes[0],  max_genomes, species_threshold, fitness_threshold, neat_c1, neat_c2, neat_c3, generator);
+        speciation_strategy = new NeatSpeciationStrategy(mutation_rate, intra_island_co_rate, inter_island_co_rate, seed_genome,  max_genomes, species_threshold, fitness_threshold, neat_c1, neat_c2, neat_c3, generator);
 
     }
 
@@ -565,7 +536,7 @@ bool EXAMM::insert_genome(RNN_Genome* genome) {
     return insert_position >= 0;
 }
 
-RNN_Genome* EXAMM::generate_genome() {
+RNN_Genome* EXAMM::generate_genome(int32_t seed_genome_stirs) {
     if (speciation_strategy->get_inserted_genomes() > max_genomes) return NULL;
 
     function<void (int32_t, RNN_Genome*)> mutate_function =
@@ -578,7 +549,7 @@ RNN_Genome* EXAMM::generate_genome() {
             return this->crossover(parent1, parent2);
         };
 
-    RNN_Genome *genome = speciation_strategy->generate_genome(rng_0_1, generator, mutate_function, crossover_function);
+    RNN_Genome *genome = speciation_strategy->generate_genome(rng_0_1, generator, mutate_function, crossover_function, seed_genome_stirs);
 
     genome->set_parameter_names(input_parameter_names, output_parameter_names);
     genome->set_normalize_bounds(normalize_type, normalize_mins, normalize_maxs, normalize_avgs, normalize_std_devs);
@@ -915,6 +886,7 @@ void EXAMM::attempt_recurrent_edge_insert(vector<RNN_Recurrent_Edge*> &child_rec
     child_recurrent_edges.insert( upper_bound(child_recurrent_edges.begin(), child_recurrent_edges.end(), recurrent_edge_copy, sort_RNN_Recurrent_Edges_by_depth()), recurrent_edge_copy);
 }
 
+
 RNN_Genome* EXAMM::crossover(RNN_Genome *p1, RNN_Genome *p2) {
     Log::debug("generating new genome by crossover!\n");
     Log::debug("p1->island: %d, p2->island: %d\n", p1->get_group_id(), p2->get_group_id());
@@ -1140,6 +1112,7 @@ RNN_Genome* EXAMM::crossover(RNN_Genome *p1, RNN_Genome *p2) {
 
     return child;
 }
+
 
 uniform_int_distribution<int32_t> EXAMM::get_recurrent_depth_dist() {
     return uniform_int_distribution<int32_t>(this->min_recurrent_depth, this->max_recurrent_depth);

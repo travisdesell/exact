@@ -109,7 +109,7 @@ int main(int argc, char** argv) {
 
     int32_t extinction_event_generation_number = 0;
     get_argument(arguments, "--extinction_event_generation_number", false, extinction_event_generation_number);
-
+  
     int32_t islands_to_exterminate;
     get_argument(arguments, "--islands_to_exterminate", false, islands_to_exterminate);
 
@@ -124,7 +124,7 @@ int main(int argc, char** argv) {
 
     double species_threshold = 0.0;
     get_argument(arguments, "--species_threshold", false, species_threshold);
-
+        
     double fitness_threshold = 100;
     get_argument(arguments, "--fitness_threshold", false, fitness_threshold);
 
@@ -184,7 +184,7 @@ int main(int argc, char** argv) {
     get_argument(arguments, "--weight_initialize", false, weight_initialize_string);
     WeightType weight_initialize;
     weight_initialize = get_enum_from_string(weight_initialize_string);
-
+    
     string weight_inheritance_string = "lamarckian";
     get_argument(arguments, "--weight_inheritance", false, weight_inheritance_string);
     WeightType weight_inheritance;
@@ -224,8 +224,6 @@ int main(int argc, char** argv) {
 
         overall_results << "results for slice " << i << " of " << time_series_sets->get_number_series() << " as test data." << endl;
 
-
-        vector <RNN_Genome *> seed_genomes ;
         for (uint32_t k = 0; k < repeats; k++) {
             examm = new EXAMM(population_size, number_islands, max_genomes, extinction_event_generation_number, islands_to_exterminate, island_ranking_method,
                     repopulation_method, repopulation_mutations, repeat_extinction,
@@ -247,7 +245,7 @@ int main(int argc, char** argv) {
                     min_recurrent_depth, max_recurrent_depth,
                     use_regression,
                     output_directory,
-                    seed_genomes,
+                    NULL,
                     start_filled);
 
             if (possible_node_types.size() > 0) examm->set_possible_node_types(possible_node_types);

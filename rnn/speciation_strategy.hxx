@@ -11,7 +11,7 @@ using std::uniform_real_distribution;
 
 
 class SpeciationStrategy {
-    
+
     public:
         /**
          * \return the number of generated genomes.
@@ -69,7 +69,7 @@ class SpeciationStrategy {
          *
          * \return the newly generated genome.
          */
-        virtual RNN_Genome* generate_genome(uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator, function<void (int32_t, RNN_Genome*)> &mutate, function<RNN_Genome* (RNN_Genome*, RNN_Genome *)> &crossover) = 0;
+        virtual RNN_Genome* generate_genome(uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator, function<void (int32_t, RNN_Genome*)> &mutate, function<RNN_Genome* (RNN_Genome*, RNN_Genome *)> &crossover, int32_t number_stir_mutations) = 0;
 
 
         /**
@@ -93,4 +93,3 @@ class SpeciationStrategy {
 };
 
 #endif
-
