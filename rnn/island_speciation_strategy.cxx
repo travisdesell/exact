@@ -319,6 +319,7 @@ RNN_Genome* IslandSpeciationStrategy::generate_genome(uniform_real_distribution<
             //starting weights for more variety
 
             if (seed_genome_was_minimal) genome_copy->initialize_randomly();
+            if (!genome_copy->tl_with_epigenetic) genome_copy->initialize_randomly();
 
             // This is commented out because transfer learning islands should probably start out filled up.
             // it is probably going to be removed soon.

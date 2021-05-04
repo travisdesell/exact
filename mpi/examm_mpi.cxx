@@ -222,12 +222,6 @@ void worker(int rank) {
     Log::release_id("worker_" + to_string(rank));
 }
 
-// void stop(int rank) {
-//     std::cout<<"RANK: " << rank <<" -- AAAA:: XXXXXXXXXXXXXXXXXXXX\n";
-//     MPI_Barrier(MPI_COMM_WORLD);
-//     getchar();
-// }
-
 int main(int argc, char** argv) {
     std::cout << "starting up!" << std::endl;
     MPI_Init(&argc, &argv);
@@ -369,7 +363,7 @@ int main(int argc, char** argv) {
 
     RNN_Genome *seed_genome = NULL;
     string genome_file_name = "";
-    string transfer_learning_version;
+    string transfer_learning_version = "";
     if (get_argument(arguments, "--genome_bin", false, genome_file_name)) {
         seed_genome = new RNN_Genome(genome_file_name);
 
@@ -379,15 +373,17 @@ int main(int argc, char** argv) {
         bool epigenetic_weights = argument_exists(arguments, "--epigenetic_weights");
 
         seed_genome->transfer_to(time_series_sets->get_input_parameter_names(), time_series_sets->get_output_parameter_names(), transfer_learning_version, epigenetic_weights, min_recurrent_depth, max_recurrent_depth);
+        seed_genome->tl_with_epigenetic = epigenetic_weights ;
     }
 
     int32_t seed_stirs = 0;
-    get_argument(arguments, "--seed_stirs", true, seed_stirs);
+    get_argument(arguments, "--seed_stirs", false, seed_stirs);
 
     bool start_filled = false;
     get_argument(arguments, "--start_filled", false, start_filled);
 
     Log::clear_rank_restriction();
+
 
     if (rank == 0) {
         examm = new EXAMM(population_size, number_islands, max_genomes, extinction_event_generation_number, islands_to_exterminate, island_ranking_method,
