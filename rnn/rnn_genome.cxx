@@ -3250,8 +3250,11 @@ void read_binary_string(istream &in, string &s, string name) {
 }
 
 
-RNN_Genome::RNN_Genome(string binary_filename) {
+RNN_Genome::RNN_Genome(string binary_filename, bool _tl_with_epigenetic):
+                                    tl_with_epigenetic(_tl_with_epigenetic)  {
     ifstream bin_infile(binary_filename, ios::in | ios::binary);
+
+
 
     if (!bin_infile.good()) {
         Log::fatal("ERROR: could not open RNN genome file '%s' for reading.\n", binary_filename.c_str());
