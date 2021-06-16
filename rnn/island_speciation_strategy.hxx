@@ -188,7 +188,7 @@ class IslandSpeciationStrategy : public SpeciationStrategy {
          *  \param best_island is the island id of the best island
          *  \param fill_island is the island is of the island to be filled
          */
-        void fill_island(int32_t best_island);
+        void fill_island(int32_t best_island, function<void (int32_t, RNN_Genome*)> &mutate);
 
         RNN_Genome* get_global_best_genome();
 

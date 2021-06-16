@@ -137,9 +137,11 @@ int main(int argc, char** argv) {
     double neat_c3 = 1;
     get_argument(arguments, "--neat_c3", false, neat_c3);
 
-    bool repeat_extinction = false;
-    get_argument(arguments, "--repeat_extinction", false, repeat_extinction);
+    bool repeat_extinction = argument_exists(arguments, "--repeat_extinction");
 
+    int32_t epochs_acc_freq = 0;
+    get_argument(arguments, "--epochs_acc_freq", false, epochs_acc_freq);
+    
     int32_t bp_iterations;
     get_argument(arguments, "--bp_iterations", true, bp_iterations);
 
@@ -226,7 +228,7 @@ int main(int argc, char** argv) {
 
         for (uint32_t k = 0; k < repeats; k++) {
             examm = new EXAMM(population_size, number_islands, max_genomes, extinction_event_generation_number, islands_to_exterminate, island_ranking_method,
-                    repopulation_method, repopulation_mutations, repeat_extinction,
+                    repopulation_method, repopulation_mutations, repeat_extinction, epochs_acc_freq,
                     speciation_method,
                     species_threshold, fitness_threshold,
                     neat_c1, neat_c2, neat_c3,

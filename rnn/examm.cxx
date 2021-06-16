@@ -68,6 +68,7 @@ EXAMM::EXAMM(
         string _repopulation_method,
         int32_t _repopulation_mutations,
         bool _repeat_extinction,
+        int32_t _epochs_acc_freq,
         string _speciation_method,
         double _species_threshold,
         double _fitness_threshold,
@@ -107,6 +108,7 @@ EXAMM::EXAMM(
                         repopulation_method(_repopulation_method),
                         repopulation_mutations(_repopulation_mutations),
                         repeat_extinction(_repeat_extinction),
+                        epochs_acc_freq(_epochs_acc_freq),
                         species_threshold(_species_threshold),
                         fitness_threshold(_fitness_threshold),
                         neat_c1(_neat_c1),
@@ -553,7 +555,7 @@ RNN_Genome* EXAMM::generate_genome(int32_t seed_genome_stirs) {
 
     genome->set_parameter_names(input_parameter_names, output_parameter_names);
     genome->set_normalize_bounds(normalize_type, normalize_mins, normalize_maxs, normalize_avgs, normalize_std_devs);
-    genome->set_bp_iterations(bp_iterations);
+    genome->set_bp_iterations(bp_iterations, epochs_acc_freq);
     genome->set_learning_rate(learning_rate);
     genome->enable_use_regression(use_regression);
 
