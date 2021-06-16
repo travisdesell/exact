@@ -33,7 +33,7 @@ UGRNN_Node::UGRNN_Node(int _innovation_number, int _type, double _depth) : RNN_N
 UGRNN_Node::~UGRNN_Node() {
 }
 
-void UGRNN_Node::initialize_randomly(minstd_rand0 &generator, NormalDistribution &normal_distribution, double mu, double sigma) {
+void UGRNN_Node::initialize_lamarckian(minstd_rand0 &generator, NormalDistribution &normal_distribution, double mu, double sigma) {
 
     cw = bound(normal_distribution.random(generator, mu, sigma));
     ch = bound(normal_distribution.random(generator, mu, sigma));
@@ -42,6 +42,37 @@ void UGRNN_Node::initialize_randomly(minstd_rand0 &generator, NormalDistribution
     gw = bound(normal_distribution.random(generator, mu, sigma));
     gh = bound(normal_distribution.random(generator, mu, sigma));
     g_bias = bound(normal_distribution.random(generator, mu, sigma));
+}
+
+void UGRNN_Node::initialize_xavier(minstd_rand0 &generator, uniform_real_distribution<double> &rng_1_1, double range) {
+
+    cw = range * (rng_1_1(generator));
+    ch = range * (rng_1_1(generator));
+    c_bias = range * (rng_1_1(generator));
+
+    gw = range * (rng_1_1(generator));
+    gh = range * (rng_1_1(generator));
+    g_bias = range * (rng_1_1(generator));
+}
+
+void UGRNN_Node::initialize_kaiming(minstd_rand0 &generator, NormalDistribution &normal_distribution, double range){
+    cw = range * normal_distribution.random(generator, 0, 1);
+    ch = range * normal_distribution.random(generator, 0, 1);
+    c_bias = range * normal_distribution.random(generator, 0, 1);
+
+    gw = range * normal_distribution.random(generator, 0, 1);
+    gh = range * normal_distribution.random(generator, 0, 1);
+    g_bias = range * normal_distribution.random(generator, 0, 1);
+}
+
+void UGRNN_Node::initialize_uniform_random(minstd_rand0 &generator, uniform_real_distribution<double> &rng) {
+    cw = rng(generator);
+    ch = rng(generator);
+    c_bias = rng(generator);
+
+    gw = rng(generator);
+    gh = rng(generator);
+    g_bias = rng(generator);
 }
 
 double UGRNN_Node::get_gradient(string gradient_name) {

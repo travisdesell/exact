@@ -35,11 +35,22 @@ extern const string NODE_TYPES[];
 #define GRU_NODE 5
 #define DELTA_NODE 6
 #define LSTM_NODE 7
+#define ENARC_NODE 8
+#define ENAS_DAG_NODE 9
+#define RANDOM_DAG_NODE 10
+
 
 
 double sigmoid(double value);
 double sigmoid_derivative(double value);
 double tanh_derivative(double value);
+double swish(double value);
+double swish_derivative(double value, double input);
+double leakyReLU(double value);
+double leakyReLU_derivative(double input);
+double identity(double value);
+double identity_derivative();
+
 
 double bound(double value);
 
@@ -78,7 +89,10 @@ class RNN_Node_Interface {
         RNN_Node_Interface(int32_t _innovation_number, int32_t _layer_type, double _depth, string _parameter_name);
         virtual ~RNN_Node_Interface();
 
-        virtual void initialize_randomly(minstd_rand0 &generator, NormalDistribution &normal_distribution, double mu, double sigma) = 0;
+        virtual void initialize_lamarckian(minstd_rand0 &generator, NormalDistribution &normal_distribution, double mu, double sigma) = 0;
+        virtual void initialize_xavier(minstd_rand0 &generator, uniform_real_distribution<double> &rng_1_1, double range) = 0;
+        virtual void initialize_kaiming(minstd_rand0 &generator, NormalDistribution &normal_distribution, double range) = 0;
+        virtual void initialize_uniform_random(minstd_rand0 &generator, uniform_real_distribution<double> &rng) = 0;
 
         virtual void input_fired(int32_t time, double incoming_output) = 0;
         virtual void output_fired(int32_t time, double delta) = 0;

@@ -17,6 +17,10 @@ using std::uniform_real_distribution;
 #include <string>
 using std::string;
 
+#include <cstring>
+using std::memcpy;
+using std::strchr;
+
 #include <vector>
 using std::vector;
 
@@ -34,6 +38,7 @@ typedef struct stat Stat;
 
 #include "common/arguments.hxx"
 #include "common/log.hxx"
+#include "common/weight_initialize.hxx"
 
 #include "rnn/lstm_node.hxx"
 #include "rnn/rnn_edge.hxx"
@@ -55,6 +60,9 @@ int bp_iterations;
 string output_directory;
 int32_t repeats = 5;
 int fold_size = 2;
+
+string weight_initialize_string = "random";
+WeightType weight_initialize = get_enum_from_string(weight_initialize_string);
 
 string process_name;
 
@@ -362,56 +370,56 @@ ResultSet handle_job(int rank, int current_job) {
     vector<string> output_parameter_names = time_series_sets->get_output_parameter_names();
 
     int number_inputs = time_series_sets->get_number_inputs();
-    int number_outputs = time_series_sets->get_number_outputs();
+    //int number_outputs = time_series_sets->get_number_outputs();
 
     RNN_Genome *genome = NULL;
     if (rnn_type == "one_layer_lstm") {
-        genome = create_lstm(input_parameter_names, 1, number_inputs, output_parameter_names, 1);
+        genome = create_lstm(input_parameter_names, 1, number_inputs, output_parameter_names, 1, weight_initialize);
 
     } else if (rnn_type == "two_layer_lstm") {
-        genome = create_lstm(input_parameter_names, 2, number_inputs, output_parameter_names, 1);
+        genome = create_lstm(input_parameter_names, 2, number_inputs, output_parameter_names, 1, weight_initialize);
 
     } else if (rnn_type == "one_layer_delta") {
-        genome = create_delta(input_parameter_names, 1, number_inputs, output_parameter_names, 1);
+        genome = create_delta(input_parameter_names, 1, number_inputs, output_parameter_names, 1, weight_initialize);
 
     } else if (rnn_type == "two_layer_delta") {
-        genome = create_delta(input_parameter_names, 2, number_inputs, output_parameter_names, 1);
+        genome = create_delta(input_parameter_names, 2, number_inputs, output_parameter_names, 1, weight_initialize);
 
     } else if (rnn_type == "one_layer_gru") {
-        genome = create_gru(input_parameter_names, 1, number_inputs, output_parameter_names, 1);
+        genome = create_gru(input_parameter_names, 1, number_inputs, output_parameter_names, 1, weight_initialize);
 
     } else if (rnn_type == "two_layer_gru") {
-        genome = create_gru(input_parameter_names, 2, number_inputs, output_parameter_names, 1);
+        genome = create_gru(input_parameter_names, 2, number_inputs, output_parameter_names, 1, weight_initialize);
 
     } else if (rnn_type == "one_layer_mgu") {
-        genome = create_mgu(input_parameter_names, 1, number_inputs, output_parameter_names, 1);
+        genome = create_mgu(input_parameter_names, 1, number_inputs, output_parameter_names, 1, weight_initialize);
 
     } else if (rnn_type == "two_layer_mgu") {
-        genome = create_mgu(input_parameter_names, 2, number_inputs, output_parameter_names, 1);
+        genome = create_mgu(input_parameter_names, 2, number_inputs, output_parameter_names, 1, weight_initialize);
 
     } else if (rnn_type == "one_layer_delta") {
-        genome = create_delta(input_parameter_names, 1, number_inputs, output_parameter_names, 1);
+        genome = create_delta(input_parameter_names, 1, number_inputs, output_parameter_names, 1, weight_initialize);
 
     } else if (rnn_type == "two_layer_delta") {
-        genome = create_delta(input_parameter_names, 2, number_inputs, output_parameter_names, 1);
+        genome = create_delta(input_parameter_names, 2, number_inputs, output_parameter_names, 1, weight_initialize);
 
     } else if (rnn_type == "one_layer_ugrnn") {
-        genome = create_ugrnn(input_parameter_names, 1, number_inputs, output_parameter_names, 1);
+        genome = create_ugrnn(input_parameter_names, 1, number_inputs, output_parameter_names, 1, weight_initialize);
 
     } else if (rnn_type == "two_layer_ugrnn") {
-        genome = create_ugrnn(input_parameter_names, 2, number_inputs, output_parameter_names, 1);
+        genome = create_ugrnn(input_parameter_names, 2, number_inputs, output_parameter_names, 1, weight_initialize);
 
     } else if (rnn_type == "one_layer_ff") {
-        genome = create_ff(input_parameter_names, 1, number_inputs, output_parameter_names, 0);
+        genome = create_ff(input_parameter_names, 1, number_inputs, output_parameter_names, 0, weight_initialize, WeightType::NONE, WeightType::NONE);
 
     } else if (rnn_type == "two_layer_ff") {
-        genome = create_ff(input_parameter_names, 2, number_inputs, output_parameter_names, 0);
+        genome = create_ff(input_parameter_names, 2, number_inputs, output_parameter_names, 0, weight_initialize, WeightType::NONE, WeightType::NONE);
 
     } else if (rnn_type == "jordan") {
-        genome = create_jordan(input_parameter_names, 1, number_inputs, output_parameter_names, 1);
+        genome = create_jordan(input_parameter_names, 1, number_inputs, output_parameter_names, 1, weight_initialize);
 
     } else if (rnn_type == "elman") {
-        genome = create_elman(input_parameter_names, 1, number_inputs, output_parameter_names, 1);
+        genome = create_elman(input_parameter_names, 1, number_inputs, output_parameter_names, 1, weight_initialize);
     }
 
     RNN* rnn = genome->get_rnn();
@@ -543,6 +551,14 @@ int main(int argc, char **argv) {
     get_argument(arguments, "--repeats", true, repeats);
 
     get_argument(arguments, "--fold_size", true, fold_size);
+
+    get_argument(arguments, "--weight_initialize", false, weight_initialize_string);
+
+    weight_initialize = get_enum_from_string(weight_initialize_string);
+
+    if (weight_initialize < 0 || weight_initialize >= NUM_WEIGHT_TYPES - 1) {
+        Log::fatal("weight initialization method %s is set wrong \n", weight_initialize_string.c_str());
+    }
 
 
     if (rank == 0) {

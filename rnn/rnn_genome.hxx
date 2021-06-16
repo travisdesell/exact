@@ -25,7 +25,9 @@ using std::vector;
 #include "rnn_recurrent_edge.hxx"
 
 #include "common/random.hxx"
+#include "common/weight_initialize.hxx"
 #include "time_series/time_series.hxx"
+#include "word_series/word_series.hxx"
 
 //mysql can't handle the max float value for some reason
 #define EXAMM_MAX_DOUBLE 10000000
@@ -48,6 +50,8 @@ class RNN_Genome {
         bool use_low_norm;
         double low_threshold;
 
+        bool use_regression;
+
         bool use_dropout;
         double dropout_probability;
 
@@ -55,17 +59,24 @@ class RNN_Genome {
 
         string log_filename;
 
+        WeightType weight_initialize;
+        WeightType weight_inheritance;
+        WeightType mutated_component_weight;
+
         map<string, int> generated_by_map;
 
         vector<double> initial_parameters;
+
 
         double best_validation_mse;
         double best_validation_mae;
         vector<double> best_parameters;
 
         minstd_rand0 generator;
-        
+
+        uniform_real_distribution<double> rng;
         uniform_real_distribution<double> rng_0_1;
+        uniform_real_distribution<double> rng_1_1;
         NormalDistribution normal_distribution;
 
         vector<RNN_Node_Interface*> nodes;
@@ -81,13 +92,16 @@ class RNN_Genome {
         map<string,double> normalize_avgs;
         map<string,double> normalize_std_devs;
 
+        // vector<int32_t> innovation_list;
+
     public:
+        bool tl_with_epigenetic;
         void sort_nodes_by_depth();
         void sort_edges_by_depth();
         void sort_recurrent_edges_by_depth();
 
-        RNN_Genome(vector<RNN_Node_Interface*> &_nodes, vector<RNN_Edge*> &_edges, vector<RNN_Recurrent_Edge*> &_recurrent_edges);
-        RNN_Genome(vector<RNN_Node_Interface*> &_nodes, vector<RNN_Edge*> &_edges, vector<RNN_Recurrent_Edge*> &_recurrent_edges, uint16_t seed);
+        RNN_Genome(vector<RNN_Node_Interface*> &_nodes, vector<RNN_Edge*> &_edges, vector<RNN_Recurrent_Edge*> &_recurrent_edges, WeightType _weight_initialize, WeightType _weight_inheritance, WeightType _mutated_component_weight);
+        RNN_Genome(vector<RNN_Node_Interface*> &_nodes, vector<RNN_Edge*> &_edges, vector<RNN_Recurrent_Edge*> &_recurrent_edges, uint16_t seed, WeightType _weight_initialize, WeightType _weight_inheritance, WeightType _mutated_component_weight);
 
         RNN_Genome* copy();
 
@@ -115,6 +129,7 @@ class RNN_Genome {
         int32_t get_node_count();
 
         double get_fitness() const;
+        double get_best_validation_softmax() const;
         double get_best_validation_mse() const;
         double get_best_validation_mae() const;
 
@@ -147,6 +162,7 @@ class RNN_Genome {
         void enable_low_threshold(double _low_threshold);
         void disable_dropout();
         void enable_dropout(double _dropout_probability);
+        void enable_use_regression(bool _use_regression);
         void set_log_filename(string _log_filename);
 
         void get_weights(vector<double> &parameters);
@@ -156,7 +172,19 @@ class RNN_Genome {
         uint32_t get_number_inputs();
         uint32_t get_number_outputs();
 
+        double get_avg_edge_weight();
         void initialize_randomly();
+        void initialize_xavier(RNN_Node_Interface* n);
+        void initialize_kaiming(RNN_Node_Interface* n);
+        void initialize_node_randomly(RNN_Node_Interface* n);
+        double get_xavier_weight(RNN_Node_Interface* output_node);
+        double get_kaiming_weight(RNN_Node_Interface* output_node);
+        double get_random_weight();
+
+
+        void get_input_edges(int32_t node_innovation, vector< RNN_Edge*> &input_edges, vector< RNN_Recurrent_Edge*> &input_recurrent_edges);
+        int32_t get_fan_in(int32_t node_innovation);
+        int32_t get_fan_out(int32_t node_innovation);
 
         int32_t get_generation_id() const;
         void set_generation_id(int32_t generation_id);
@@ -179,12 +207,14 @@ class RNN_Genome {
 
         void backpropagate_stochastic(const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, const vector< vector< vector<double> > > &validation_inputs, const vector< vector< vector<double> > > &validation_outputs);
 
+        double get_softmax(const vector<double> &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs);
         double get_mse(const vector<double> &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs);
         double get_mae(const vector<double> &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs);
 
 
         vector< vector<double> > get_predictions(const vector<double> &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs);
         void write_predictions(string output_directory, const vector<string> &input_filenames, const vector<double> &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, TimeSeriesSets *time_series_sets);
+        void write_predictions(string output_directory, const vector<string> &input_filenames, const vector<double> &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, Corpus * word_series_sets);
 
         void get_mu_sigma(const vector<double> &p, double &mu, double &sigma);
 
@@ -213,9 +243,7 @@ class RNN_Genome {
         bool enable_node();
         bool disable_node();
         bool split_node(double mu, double sigma, int node_type, uniform_int_distribution<int32_t> dist, int32_t &edge_innovation_count, int32_t &node_innovation_count);
-
         bool merge_node(double mu, double sigma, int node_type, uniform_int_distribution<int32_t> dist, int32_t &edge_innovation_count, int32_t &node_innovation_count);
-
 
         /**
          * Determines if the genome contains a node with the given innovation number
@@ -226,13 +254,12 @@ class RNN_Genome {
          */
         bool has_node_with_innovation(int32_t innovation_number) const;
 
-
         bool equals(RNN_Genome *other);
 
         string get_color(double weight, bool is_recurrent);
         void write_graphviz(string filename);
 
-        RNN_Genome(string binary_filename);
+        RNN_Genome(string binary_filename, bool _tl_with_epigenetic=false);
         RNN_Genome(char* array, int32_t length);
         RNN_Genome(istream &bin_infile);
 
@@ -243,12 +270,14 @@ class RNN_Genome {
         void write_to_file(string bin_filename);
         void write_to_stream(ostream &bin_stream);
 
-        bool connect_new_input_node( double mu, double sig, RNN_Node_Interface *new_node, uniform_int_distribution<int32_t> dist, int32_t &edge_innovation_count );
-        bool connect_new_output_node( double mu, double sig, RNN_Node_Interface *new_node, uniform_int_distribution<int32_t> dist, int32_t &edge_innovation_count );
+        bool connect_new_input_node( double mu, double sig, RNN_Node_Interface *new_node, uniform_int_distribution<int32_t> dist, int32_t &edge_innovation_count, bool not_all_hidden );
+        bool connect_new_output_node( double mu, double sig, RNN_Node_Interface *new_node, uniform_int_distribution<int32_t> dist, int32_t &edge_innovation_count, bool not_all_hidden );
         bool connect_node_to_hid_nodes( double mu, double sig, RNN_Node_Interface *new_node, uniform_int_distribution<int32_t> dist, int32_t &edge_innovation_count, bool from_input );
-        
+        vector<RNN_Node_Interface*> pick_possible_nodes(int layer_type, bool not_all_hidden, string node_type);
+
         void update_innovation_counts(int32_t &node_innovation_count, int32_t &edge_innovation_count);
 
+        vector<int32_t> get_innovation_list();
         /**
          * \return the structural hash (calculated when assign_reachaability is called)
          */
@@ -268,6 +297,7 @@ class RNN_Genome {
 
         friend class EXAMM;
         friend class IslandSpeciationStrategy;
+        friend class NeatSpeciationStrategy;
         friend class RecDepthFrequencyTable;
 };
 

@@ -19,6 +19,7 @@ using std::vector;
 
 #include "rnn_genome.hxx"
 #include "speciation_strategy.hxx"
+#include "common/weight_initialize.hxx"
 
 class EXAMM {
     private:
@@ -37,8 +38,14 @@ class EXAMM {
         string repopulation_method;
         int32_t repopulation_mutations;
         bool repeat_extinction;
-        
+
         SpeciationStrategy *speciation_strategy;
+
+        double species_threshold;
+        double fitness_threshold;
+        double neat_c1;
+        double neat_c2;
+        double neat_c3;
 
         int32_t edge_innovation_count;
         int32_t node_innovation_count;
@@ -57,6 +64,7 @@ class EXAMM {
         bool use_low_threshold;
         double low_threshold;
 
+        bool use_regression;
         bool use_dropout;
         double dropout_probability;
 
@@ -66,6 +74,7 @@ class EXAMM {
 
         int32_t min_recurrent_depth;
         int32_t max_recurrent_depth;
+
 
         bool epigenetic_weights;
 
@@ -105,6 +114,10 @@ class EXAMM {
         map<string,double> normalize_avgs;
         map<string,double> normalize_std_devs;
 
+        WeightType weight_initialize;
+        WeightType weight_inheritance;
+        WeightType mutated_component_weight;
+
         ostringstream memory_log;
 
         std::chrono::time_point<std::chrono::system_clock> startClock;
@@ -114,7 +127,7 @@ class EXAMM {
         bool start_filled;
 
     public:
-        EXAMM(  int32_t _population_size, 
+        EXAMM(  int32_t _population_size,
                 int32_t _number_islands,
                 int32_t _max_genomes,
                 int32_t _extinction_event_generation_number,
@@ -124,6 +137,11 @@ class EXAMM {
                 int32_t _repopulation_mutations,
                 bool _repeat_extinction,
                 string _speciation_method,
+                double _species_threshold,
+                double _fitness_threshold,
+                double _neat_c1,
+                double _neat_c2,
+                double _neat_c3,
                 const vector<string> &_input_parameter_names,
                 const vector<string> &_output_parameter_names,
                 string _normalize_type,
@@ -131,17 +149,21 @@ class EXAMM {
                 const map<string,double> &_normalize_maxs,
                 const map<string,double> &_normalize_avgs,
                 const map<string,double> &_normalize_std_devs,
+                WeightType _weight_initialize,
+                WeightType _weight_inheritance,
+                WeightType _mutated_component_weight,
                 int32_t _bp_iterations,
                 double _learning_rate,
                 bool _use_high_threshold,
                 double _high_threshold,
-                bool _use_low_threshold, 
+                bool _use_low_threshold,
                 double _low_threshold,
                 bool _use_dropout,
                 double _dropout_probability,
                 int32_t _min_recurrent_depth,
                 int32_t _max_recurrent_depth,
-                string _output_directory, 
+                bool _use_regression,
+                string _output_directory,
                 RNN_Genome *seed_genome,
                 bool _start_filled);
 
@@ -158,7 +180,7 @@ class EXAMM {
 
         int get_random_node_type();
 
-        RNN_Genome* generate_genome();
+        RNN_Genome* generate_genome(int32_t seed_genome_stirs = 0);
         bool insert_genome(RNN_Genome* genome);
 
         void mutate(int32_t max_mutations, RNN_Genome *p1);
@@ -175,6 +197,8 @@ class EXAMM {
 
         string get_output_directory() const;
         RNN_Genome* generate_for_transfer_learning(string file_name, int extra_inputs, int extra_outputs) ;
+
+        void check_weight_initialize_validity();
 };
 
 #endif

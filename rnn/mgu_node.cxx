@@ -33,7 +33,7 @@ MGU_Node::MGU_Node(int _innovation_number, int _layer_type, double _depth) : RNN
 MGU_Node::~MGU_Node() {
 }
 
-void MGU_Node::initialize_randomly(minstd_rand0 &generator, NormalDistribution &normal_distribution, double mu, double sigma) {
+void MGU_Node::initialize_lamarckian(minstd_rand0 &generator, NormalDistribution &normal_distribution, double mu, double sigma) {
 
     fw = bound(normal_distribution.random(generator, mu, sigma));
     fu = bound(normal_distribution.random(generator, mu, sigma));
@@ -42,6 +42,38 @@ void MGU_Node::initialize_randomly(minstd_rand0 &generator, NormalDistribution &
     hw = bound(normal_distribution.random(generator, mu, sigma));
     hu = bound(normal_distribution.random(generator, mu, sigma));
     h_bias = bound(normal_distribution.random(generator, mu, sigma));
+}
+
+void MGU_Node::initialize_xavier(minstd_rand0 &generator, uniform_real_distribution<double> &rng_1_1, double range) {
+
+    fw = range * (rng_1_1(generator));
+    fu = range * (rng_1_1(generator));
+    f_bias = range * (rng_1_1(generator));
+
+    hw = range * (rng_1_1(generator));
+    hu = range * (rng_1_1(generator));
+    h_bias = range * (rng_1_1(generator));
+    
+}
+
+void MGU_Node::initialize_kaiming(minstd_rand0 &generator, NormalDistribution &normal_distribution, double range){
+    fw = range * normal_distribution.random(generator, 0, 1);
+    fu = range * normal_distribution.random(generator, 0, 1);
+    f_bias = range * normal_distribution.random(generator, 0, 1);
+
+    hw = range * normal_distribution.random(generator, 0, 1);
+    hu = range * normal_distribution.random(generator, 0, 1);
+    h_bias = range * normal_distribution.random(generator, 0, 1);
+}
+
+void MGU_Node::initialize_uniform_random(minstd_rand0 &generator, uniform_real_distribution<double> &rng) {
+    fw = rng(generator);
+    fu = rng(generator);
+    f_bias = rng(generator);
+
+    hw = rng(generator);
+    hu = rng(generator);
+    h_bias = rng(generator);
 }
 
 double MGU_Node::get_gradient(string gradient_name) {
