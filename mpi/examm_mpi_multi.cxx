@@ -344,6 +344,7 @@ int main(int argc, char** argv) {
     string genome_file_name = "";
     if (get_argument(arguments, "--genome_bin", false, genome_file_name)) {
         seed_genome = new RNN_Genome(genome_file_name);
+        seed_genome->set_normalize_bounds(time_series_sets->get_normalize_type(), time_series_sets->get_normalize_mins(), time_series_sets->get_normalize_maxs(), time_series_sets->get_normalize_avgs(), time_series_sets->get_normalize_std_devs());
 
         string transfer_learning_version;
         get_argument(arguments, "--transfer_learning_version", true, transfer_learning_version);

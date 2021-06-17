@@ -461,7 +461,7 @@ void RNN_Genome::set_bp_iterations(int32_t _bp_iterations, int32_t epochs_acc_fr
             bp_iterations = (int32_t)pow(2, n);
         }
 
-        Log::error("Setting bp interation %d to genome %d \n", bp_iterations, generation_id);
+        Log::info("Setting bp interation %d to genome %d \n", bp_iterations, generation_id);
     } else {
         bp_iterations = _bp_iterations;
     }

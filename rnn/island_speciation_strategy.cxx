@@ -592,13 +592,23 @@ RNN_Genome* IslandSpeciationStrategy::parents_repopulation(string method, unifor
     RNN_Genome *parent1 = NULL;
     RNN_Genome *parent2 = NULL;
 
-    if (method.compare("randomParents") == 0) {
-        islands[parent_island1]->copy_random_genome(rng_0_1, generator, &parent1);
-        islands[parent_island2]->copy_random_genome(rng_0_1, generator, &parent2);
-    } else if (method.compare("bestParents") == 0) {
-        parent1 = islands[parent_island1]->get_best_genome();
-        parent2 = islands[parent_island2]->get_best_genome();
+    while (parent1 == NULL) {
+        if (method.compare("randomParents") == 0) {
+            islands[parent_island1]->copy_random_genome(rng_0_1, generator, &parent1);
+        } else if (method.compare("bestParents") == 0) {
+            parent1 = islands[parent_island1]->get_best_genome();
+        }
     }
+
+    while (parent2 == NULL) {
+        if (method.compare("randomParents") == 0) {
+            islands[parent_island2]->copy_random_genome(rng_0_1, generator, &parent2);
+        } else if (method.compare("bestParents") == 0) {
+            parent2 = islands[parent_island2]->get_best_genome();
+        }   
+    }
+
+    Log::error("current island is %d, the parent1 island is %d, parent 2 island is %d\n", generation_island, parent_island1, parent_island2);
 
     //swap so the first parent is the more fit parent
     if (parent1->get_fitness() > parent2->get_fitness()) {
