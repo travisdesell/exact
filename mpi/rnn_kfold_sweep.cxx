@@ -433,7 +433,7 @@ ResultSet handle_job(int rank, int current_job) {
     vector<double> best_parameters;
 
     genome->initialize_randomly();
-    genome->set_bp_iterations(bp_iterations);
+    genome->set_bp_iterations(bp_iterations, 0);
 
     string first_directory = output_directory + "/" + rnn_type;
     mkdir(first_directory.c_str(), 0777);

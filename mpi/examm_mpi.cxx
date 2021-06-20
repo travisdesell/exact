@@ -299,6 +299,9 @@ int main(int argc, char** argv) {
     int32_t repopulation_mutations = 0;
     get_argument(arguments, "--repopulation_mutations", false, repopulation_mutations);
 
+    int32_t epochs_acc_freq = 0;
+    get_argument(arguments, "--epochs_acc_freq", false, epochs_acc_freq);
+
     double species_threshold = 0.0;
     get_argument(arguments, "--species_threshold", false, species_threshold);
 
@@ -366,7 +369,7 @@ int main(int argc, char** argv) {
     string transfer_learning_version = "";
     if (get_argument(arguments, "--genome_bin", false, genome_file_name)) {
         seed_genome = new RNN_Genome(genome_file_name);
-
+        seed_genome->set_normalize_bounds(time_series_sets->get_normalize_type(), time_series_sets->get_normalize_mins(), time_series_sets->get_normalize_maxs(), time_series_sets->get_normalize_avgs(), time_series_sets->get_normalize_std_devs());
 
         get_argument(arguments, "--transfer_learning_version", true, transfer_learning_version);
 
@@ -387,7 +390,7 @@ int main(int argc, char** argv) {
 
     if (rank == 0) {
         examm = new EXAMM(population_size, number_islands, max_genomes, extinction_event_generation_number, islands_to_exterminate, island_ranking_method,
-            repopulation_method, repopulation_mutations, repeat_extinction,
+            repopulation_method, repopulation_mutations, repeat_extinction, epochs_acc_freq,
             speciation_method,
             species_threshold, fitness_threshold,
             neat_c1, neat_c2, neat_c3,

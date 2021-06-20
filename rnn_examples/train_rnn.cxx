@@ -157,7 +157,7 @@ int main(int argc, char **argv) {
 
     int bp_iterations;
     get_argument(arguments, "--bp_iterations", true, bp_iterations);
-    genome->set_bp_iterations(bp_iterations);
+    genome->set_bp_iterations(bp_iterations, 0);
 
     double learning_rate = 0.001;
     get_argument(arguments, "--learning_rate", false, learning_rate);

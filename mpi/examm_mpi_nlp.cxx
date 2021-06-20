@@ -315,6 +315,9 @@ int main(int argc, char** argv) {
 
     bool repeat_extinction = argument_exists(arguments, "--repeat_extinction");
 
+    int32_t epochs_acc_freq = 0;
+    get_argument(arguments, "--epochs_acc_freq", false, epochs_acc_freq);
+
     int32_t bp_iterations;
     get_argument(arguments, "--bp_iterations", true, bp_iterations);
 
@@ -365,6 +368,7 @@ int main(int argc, char** argv) {
     string genome_file_name = "";
     if (get_argument(arguments, "--genome_bin", false, genome_file_name)) {
         seed_genome = new RNN_Genome(genome_file_name);
+        seed_genome->set_normalize_bounds(corpus_sets->get_normalize_type(), corpus_sets->get_normalize_mins(), corpus_sets->get_normalize_maxs(), corpus_sets->get_normalize_avgs(), corpus_sets->get_normalize_std_devs());
 
         string transfer_learning_version;
         get_argument(arguments, "--transfer_learning_version", true, transfer_learning_version);
@@ -383,7 +387,7 @@ int main(int argc, char** argv) {
     if (rank == 0) {
         examm = new EXAMM(population_size, number_islands, max_genomes, extinction_event_generation_number, islands_to_exterminate, island_ranking_method,
             repopulation_method, repopulation_mutations,
-            repeat_extinction, speciation_method,
+            repeat_extinction, epochs_acc_freq, speciation_method,
             species_threshold, fitness_threshold,
             neat_c1, neat_c2, neat_c3,
             corpus_sets->get_input_parameter_names(),

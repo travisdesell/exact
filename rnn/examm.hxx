@@ -38,6 +38,7 @@ class EXAMM {
         string repopulation_method;
         int32_t repopulation_mutations;
         bool repeat_extinction;
+        int32_t epochs_acc_freq;
 
         SpeciationStrategy *speciation_strategy;
 
@@ -136,6 +137,7 @@ class EXAMM {
                 string _repopulation_method,
                 int32_t _repopulation_mutations,
                 bool _repeat_extinction,
+                int32_t _epochs_acc_freq,
                 string _speciation_method,
                 double _species_threshold,
                 double _fitness_threshold,

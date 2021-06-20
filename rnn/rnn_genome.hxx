@@ -51,7 +51,7 @@ class RNN_Genome {
         double low_threshold;
 
         bool use_regression;
-
+    
         bool use_dropout;
         double dropout_probability;
 
@@ -149,7 +149,7 @@ class RNN_Genome {
         void set_group_id(int32_t _group_id);
 
 
-        void set_bp_iterations(int32_t _bp_iterations);
+        void set_bp_iterations(int32_t _bp_iterations, int32_t epochs_acc_freq);
         int32_t get_bp_iterations();
 
         void set_learning_rate(double _learning_rate);

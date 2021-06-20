@@ -453,8 +453,18 @@ int32_t RNN_Genome::get_enabled_recurrent_edge_count() {
     return count;
 }
 
-void RNN_Genome::set_bp_iterations(int32_t _bp_iterations) {
-    bp_iterations = _bp_iterations;
+void RNN_Genome::set_bp_iterations(int32_t _bp_iterations, int32_t epochs_acc_freq) {
+    if (epochs_acc_freq > 0) {
+        if (generation_id < epochs_acc_freq) bp_iterations = 0;
+        else {
+            int32_t n = floor(generation_id/epochs_acc_freq) - 1;
+            bp_iterations = (int32_t)pow(2, n);
+        }
+
+        Log::info("Setting bp interation %d to genome %d \n", bp_iterations, generation_id);
+    } else {
+        bp_iterations = _bp_iterations;
+    }
 }
 
 int32_t RNN_Genome::get_bp_iterations() {
