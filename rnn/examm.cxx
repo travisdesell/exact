@@ -259,8 +259,7 @@ EXAMM::EXAMM(
                     number_islands, population_size, mutation_rate, intra_island_co_rate, inter_island_co_rate,
                     seed_genome, island_ranking_method, repopulation_method, extinction_event_generation_number, repopulation_mutations, islands_to_exterminate, max_genomes, repeat_extinction, seed_genome_was_minimal);
         }
-    }
-    else if (speciation_method.compare("neat") == 0) {
+    } else if (speciation_method.compare("neat") == 0) {
 
         bool seed_genome_was_minimal = false;
         if (seed_genome == NULL) {
