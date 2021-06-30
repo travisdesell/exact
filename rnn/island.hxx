@@ -167,6 +167,8 @@ class Island {
          */
         void erase_island();
 
+        void erase_structure_map();
+
         /**
          * returns the get_erased_generation_id.
          */

@@ -323,13 +323,10 @@ void Island::print(string indent) {
 }
 
 void Island::erase_island() {
-
-    // for (int32_t i = 0; i < genomes.size(); i++) {
-    //     if(genomes[i]->get_generation_id() > erased_generation_id){
-    //         erased_generation_id=genomes[i]->get_generation_id();
-    //     }
-    // }
     erased_generation_id = latest_generation_id;
+    for (int i = 0; i < genomes.size(); i++) {
+        delete genomes[i];
+    }
     genomes.clear();
     erased = true;
     erase_again = 5;
@@ -338,6 +335,12 @@ void Island::erase_island() {
     if (genomes.size() != 0) {
         Log::error("The worst island is not fully erased!\n");
     }
+}
+
+void Island::erase_structure_map() {
+    Log::info("Erasing the structure map in the worst performing island\n");
+    structure_map.clear();
+    Log::debug("after erase structure map size is %d\n", structure_map.size());
 }
 
 int32_t Island::get_erased_generation_id() {

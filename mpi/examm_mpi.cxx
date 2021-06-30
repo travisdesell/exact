@@ -316,6 +316,7 @@ int main(int argc, char** argv) {
 
     double neat_c3 = 1;
     get_argument(arguments, "--neat_c3", false, neat_c3);
+
     bool repeat_extinction = argument_exists(arguments, "--repeat_extinction");
 
     int32_t bp_iterations;
