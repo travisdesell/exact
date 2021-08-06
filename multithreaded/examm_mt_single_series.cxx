@@ -59,7 +59,7 @@ void examm_thread(int id) {
 
         string log_id = "genome_" + to_string(genome->get_generation_id()) + "_thread_" + to_string(id);
         Log::set_id(log_id);
-        genome->backpropagate_stochastic(training_inputs, training_outputs, validation_inputs, validation_outputs);
+        genome->backpropagate_stochastic(training_inputs, training_outputs, validation_inputs, validation_outputs, false, 30, 100);
         Log::release_id(log_id);
 
         examm_mutex.lock();

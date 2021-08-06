@@ -44,6 +44,10 @@ vector< vector< vector<double> > > training_outputs;
 vector< vector< vector<double> > > validation_inputs;
 vector< vector< vector<double> > > validation_outputs;
 
+bool random_sequence_length;
+int sequence_length_lower_bound = 30;
+int sequence_length_upper_bound = 100;
+
 int32_t global_slice;
 int32_t global_repeat;
 
@@ -196,7 +200,7 @@ void worker(int rank) {
 
             string log_id = "slice_" + to_string(global_slice) + "_repeat_" + to_string(global_repeat) + "_genome_" + to_string(genome->get_generation_id()) + "_worker_" + to_string(rank);
             Log::set_id(log_id);
-            genome->backpropagate_stochastic(training_inputs, training_outputs, validation_inputs, validation_outputs);
+            genome->backpropagate_stochastic(training_inputs, training_outputs, validation_inputs, validation_outputs, random_sequence_length, sequence_length_lower_bound, sequence_length_upper_bound);
             Log::release_id(log_id);
 
             //go back to the worker's log for MPI communication
@@ -292,6 +296,10 @@ int main(int argc, char** argv) {
 
     int32_t repeats;
     get_argument(arguments, "--repeats", true, repeats);
+
+    random_sequence_length = argument_exists(arguments, "--random_sequence_length");
+    get_argument(arguments, "--sequence_length_lower_bound", false, sequence_length_lower_bound);
+    get_argument(arguments, "--sequence_length_upper_bound", false, sequence_length_upper_bound);
 
     string output_directory = "";
     get_argument(arguments, "--output_directory", false, output_directory);

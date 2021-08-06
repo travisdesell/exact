@@ -41,6 +41,9 @@ vector< vector< vector<double> > > training_outputs;
 vector< vector< vector<double> > > validation_inputs;
 vector< vector< vector<double> > > validation_outputs;
 
+bool random_sequence_length;
+int sequence_length_lower_bound = 30;
+int sequence_length_upper_bound = 100;
 
 void examm_thread(int id) {
 
@@ -55,7 +58,7 @@ void examm_thread(int id) {
         string log_id = "genome_" + to_string(genome->get_generation_id()) + "_thread_" + to_string(id);
         Log::set_id(log_id);
         //genome->backpropagate(training_inputs, training_outputs, validation_inputs, validation_outputs);
-        genome->backpropagate_stochastic(training_inputs, training_outputs, validation_inputs, validation_outputs);
+        genome->backpropagate_stochastic(training_inputs, training_outputs, validation_inputs, validation_outputs, random_sequence_length, sequence_length_lower_bound, sequence_length_upper_bound);
         Log::release_id(log_id);
 
         examm_mutex.lock();
@@ -182,6 +185,10 @@ int main(int argc, char** argv) {
 
     //bool use_regression = argument_exists(arguments, "--use_regression");
     bool use_regression = true; //time series will always use regression
+
+    random_sequence_length = argument_exists(arguments, "--random_sequence_length");
+    get_argument(arguments, "--sequence_length_lower_bound", false, sequence_length_lower_bound);
+    get_argument(arguments, "--sequence_length_upper_bound", false, sequence_length_upper_bound);
 
     string weight_initialize_string = "random";
     get_argument(arguments, "--weight_initialize", false, weight_initialize_string);
