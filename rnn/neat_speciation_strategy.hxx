@@ -34,8 +34,6 @@ class NeatSpeciationStrategy : public SpeciationStrategy {
 
         RNN_Genome *minimal_genome; /**< keep a reference to a minimal genome so we can re-use it across islands and not duplicate innovation numbers. */
 
-        // int32_t max_genomes;
-
         minstd_rand0 generator;
 
         vector<Species*> Neat_Species;
@@ -44,7 +42,7 @@ class NeatSpeciationStrategy : public SpeciationStrategy {
 
         NeatSpeciationStrategy( double _mutation_rate, double _intra_island_crossover_rate,
                                 double _inter_island_crossover_rate, RNN_Genome *_seed_genome,
-                                int32_t _max_genomes, double _species_threshold, double _fitness_threshold,
+                                double _species_threshold, double _fitness_threshold,
                                 double _neat_c1, double _neat_c2, double _neat_c3, minstd_rand0 &_generator);
         /**
          * \return the number of generated genomes.

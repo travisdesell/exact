@@ -27,7 +27,7 @@ using std::string;
 NeatSpeciationStrategy::NeatSpeciationStrategy(
                 double _mutation_rate, double _intra_island_crossover_rate,
                 double _inter_island_crossover_rate, RNN_Genome *_seed_genome,
-                int32_t _max_genomes, double _species_threshold, double _fitness_threshold,
+                double _species_threshold, double _fitness_threshold,
                 double _neat_c1, double _neat_c2, double _neat_c3, minstd_rand0 &_generator) :
                         generation_species(0),
                         species_count(0),
@@ -43,7 +43,6 @@ NeatSpeciationStrategy::NeatSpeciationStrategy(
                         generated_genomes(0),
                         inserted_genomes(0),
                         minimal_genome(_seed_genome),
-                        max_genomes(_max_genomes),
                         generator(_generator) {
 
     double rate_sum = mutation_rate + intra_island_crossover_rate + inter_island_crossover_rate;
@@ -428,7 +427,7 @@ double NeatSpeciationStrategy::get_distance(RNN_Genome* g1, RNN_Genome* g2) {
     double weight1 = g1-> get_avg_edge_weight();
     double weight2 = g2-> get_avg_edge_weight();
     double w = abs(weight1 - weight2);
-    Log::info("weight difference: %f \n", w);
+    Log::debug("weight difference: %f \n", w);
     if (innovation1.size() >= innovation2.size()){
         N = innovation1.size();
 
@@ -451,7 +450,7 @@ double NeatSpeciationStrategy::get_distance(RNN_Genome* g1, RNN_Genome* g2) {
 
     D = setunion.size() - intersec.size() - E;
     distance = neat_c1 * E / N + neat_c2 * D / N + neat_c3 * w ;
-    Log::info("distance is %f \n", distance);
+    Log::debug("distance is %f \n", distance);
     return distance;
 
 }
