@@ -983,7 +983,6 @@ void RNN_Genome::backpropagate(const vector< vector< vector<double> > > &inputs,
 
     double mu = 0.9;
 
-    double prev_mu;
     double mse;
 
     double parameter_norm = 0.0;
@@ -1014,7 +1013,6 @@ void RNN_Genome::backpropagate(const vector< vector< vector<double> > > &inputs,
     }
 
     for (uint32_t iteration = 0; iteration < bp_iterations; iteration++) {
-        prev_mu = mu;
         prev_gradient = analytic_gradient;
 
         get_analytic_gradient(rnns, parameters, inputs, outputs, mse, analytic_gradient, true);
@@ -1076,7 +1074,7 @@ void RNN_Genome::backpropagate(const vector< vector< vector<double> > > &inputs,
                 prev_parameters[i] = parameters[i];
                 prev_prev_velocity[i] = prev_velocity[i];
 
-                double mu_v = prev_velocity[i] * prev_mu;
+                double mu_v = prev_velocity[i] * mu;
 
                 prev_velocity[i] = mu_v  - (learning_rate * prev_gradient[i]);
                 parameters[i] += mu_v + ((mu + 1) * prev_velocity[i]);
@@ -1114,10 +1112,8 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
     vector<double> prev_gradient(n_parameters, 0.0);
 
     double mu = 0.9;
-    double original_learning_rate = learning_rate;
 
     int n_series = inputs.size();
-    double prev_mu;
 
     vector< vector< vector<double> > > training_inputs;
     vector< vector< vector<double> > > training_outputs;
@@ -1175,16 +1171,9 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
         for (int32_t j = 0; j < parameters.size(); j++) {
             norm += analytic_gradient[j] * analytic_gradient[j];
         }
-        /*
         norm = sqrt(norm);
-        prev_mu[i] = mu;
-        prev_norm[i] = norm;
-        prev_mse[i] = mse;
-        prev_learning_rate[i] = learning_rate;
-        */
     }
     Log::trace("initialized previous values.\n");
-    prev_mu = mu;
 
     //TODO: need to get validation mse on the RNN not the genome
     double validation_mse = get_mse(parameters, validation_inputs, validation_outputs);
@@ -1234,7 +1223,6 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
         for (uint32_t k = 0; k < shuffle_order.size(); k++) {
             int random_selection = shuffle_order[k];
 
-            prev_mu = mu;
             prev_gradient = analytic_gradient;
 
             rnn->get_analytic_gradient(parameters, training_inputs[random_selection], training_outputs[random_selection], mse, analytic_gradient, use_dropout, true, dropout_probability);
@@ -1246,11 +1234,11 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
             norm = sqrt(norm);
             avg_norm += norm;
 
-            Log::info("iteration %7d, series: %4d, mse: %5.10lf, lr: %lf, norm: %lf", iteration, random_selection, mse, learning_rate, norm);
+            //Log::info("iteration %7d, series: %4d, mse: %5.10lf, lr: %lf, norm: %lf", iteration, random_selection, mse, learning_rate, norm);
 
             if (use_high_norm && norm > high_threshold) {
                 double high_threshold_norm = high_threshold / norm;
-                Log::trace_no_header(", OVER THRESHOLD, multiplier: %lf", high_threshold_norm);
+                //Log::info_no_header(", OVER THRESHOLD, multiplier: %lf", high_threshold_norm);
 
                 for (int32_t i = 0; i < parameters.size(); i++) {
                     analytic_gradient[i] = high_threshold_norm * analytic_gradient[i];
@@ -1258,21 +1246,23 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
 
             } else if (use_low_norm && norm < low_threshold) {
                 double low_threshold_norm = low_threshold / norm;
-                Log::trace_no_header(", UNDER THRESHOLD, multiplier: %lf", low_threshold_norm);
+                //Log::info_no_header(", UNDER THRESHOLD, multiplier: %lf", low_threshold_norm);
 
                 for (int32_t i = 0; i < parameters.size(); i++) {
                     analytic_gradient[i] = low_threshold_norm * analytic_gradient[i];
                 }
             }
 
-            Log::trace_no_header("\n");
+            //Log::info_no_header("\n");
 
             if (use_nesterov_momentum) {
                 for (int32_t i = 0; i < parameters.size(); i++) {
+                    //Log::info("parameters[%d]: %lf\n", i, parameters[i]);
+
                     prev_parameters[i] = parameters[i];
                     prev_prev_velocity[i] = prev_velocity[i];
 
-                    double mu_v = prev_velocity[i] * prev_mu;
+                    double mu_v = prev_velocity[i] * mu;
 
                     prev_velocity[i] = mu_v  - (learning_rate * prev_gradient[i]);
                     parameters[i] += mu_v + ((mu + 1) * prev_velocity[i]);
