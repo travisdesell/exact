@@ -34,7 +34,7 @@ class NeatSpeciationStrategy : public SpeciationStrategy {
 
         RNN_Genome *minimal_genome; /**< keep a reference to a minimal genome so we can re-use it across islands and not duplicate innovation numbers. */
 
-        int32_t max_genomes;
+        // int32_t max_genomes;
 
         minstd_rand0 generator;
 

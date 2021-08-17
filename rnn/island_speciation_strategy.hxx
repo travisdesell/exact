@@ -42,9 +42,10 @@ class IslandSpeciationStrategy : public SpeciationStrategy {
         int32_t islands_to_exterminate; /**< When an extinction event is triggered, this is the number of islands that will be exterminated. */
         int32_t max_genomes;
 
+        bool repeat_extinction;
+
         bool seed_genome_was_minimal; /**< is true if we passed in a minimal genome (i.e., are not using transfer learning) */
 
-        bool repeat_extinction;
         // int32_t worst_island;
         /**
          * All the islands which contain the genomes for this speciation strategy.
