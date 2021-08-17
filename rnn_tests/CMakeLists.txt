@@ -1,32 +1,32 @@
 add_executable(test_feed_forward_gradients test_feed_forward_gradients.cxx gradient_test.cxx)
-target_link_libraries(test_feed_forward_gradients examm_strategy.cxx exact_common.cxx exact_time_series.cxx exact_word_series.cxx  ${MYSQL_LIBRARIES} pthread.cxx)
+target_link_libraries(test_feed_forward_gradients examm_strategy exact_common exact_time_series exact_word_series  ${MYSQL_LIBRARIES} pthread)
 
 add_executable(test_elman_gradients test_elman_gradients.cxx gradient_test.cxx)
 target_link_libraries(test_elman_gradients examm_strategy exact_common exact_time_series exact_word_series  ${MYSQL_LIBRARIES} pthread)
 
 add_executable(test_jordan_gradients test_jordan_gradients.cxx gradient_test.cxx)
-target_link_libraries(test_jordan_gradients examm_strategy.cxx exact_common.cxx exact_time_series.cxx exact_word_series.cxx  ${MYSQL_LIBRARIES} pthread.cxx)
+target_link_libraries(test_jordan_gradients examm_strategy exact_common exact_time_series exact_word_series  ${MYSQL_LIBRARIES} pthread)
 
 add_executable(test_delta_gradients test_delta_gradients.cxx gradient_test.cxx)
-target_link_libraries(test_delta_gradients examm_strategy exact_common exact_time_series.cxx exact_word_series.cxx  ${MYSQL_LIBRARIES} pthread.cxx)
+target_link_libraries(test_delta_gradients examm_strategy exact_common exact_time_series exact_word_series  ${MYSQL_LIBRARIES} pthread)
 
 add_executable(test_ugrnn_gradients test_ugrnn_gradients.cxx gradient_test.cxx)
-target_link_libraries(test_ugrnn_gradients examm_strategy.cxx exact_common exact_time_series.cxx exact_word_series.cxx  ${MYSQL_LIBRARIES} pthread.cxx)
+target_link_libraries(test_ugrnn_gradients examm_strategy exact_common exact_time_series exact_word_series  ${MYSQL_LIBRARIES} pthread)
 
 add_executable(test_gru_gradients test_gru_gradients.cxx gradient_test.cxx)
-target_link_libraries(test_gru_gradients examm_strategy.cxx exact_common exact_time_series exact_word_series  ${MYSQL_LIBRARIES} pthread.cxx)
+target_link_libraries(test_gru_gradients examm_strategy exact_common exact_time_series exact_word_series  ${MYSQL_LIBRARIES} pthread)
 
 add_executable(test_mgu_gradients test_mgu_gradients.cxx gradient_test.cxx)
-target_link_libraries(test_mgu_gradients examm_strategy exact_common exact_time_series exact_word_series  ${MYSQL_LIBRARIES} pthread.cxx)
+target_link_libraries(test_mgu_gradients examm_strategy exact_common exact_time_series exact_word_series  ${MYSQL_LIBRARIES} pthread)
 
 add_executable(test_lstm_gradients test_lstm_gradients.cxx gradient_test.cxx)
-target_link_libraries(test_lstm_gradients examm_strategy exact_common exact_time_series exact_word_series ${MYSQL_LIBRARIES} pthread.cxx)
+target_link_libraries(test_lstm_gradients examm_strategy exact_common exact_time_series exact_word_series ${MYSQL_LIBRARIES} pthread)
 
 add_executable(test_enarc_gradients test_enarc_gradients.cxx gradient_test.cxx)
-target_link_libraries(test_enarc_gradients examm_strategy exact_common exact_time_series exact_word_series ${MYSQL_LIBRARIES} pthread.cxx)
+target_link_libraries(test_enarc_gradients examm_strategy exact_common exact_time_series exact_word_series ${MYSQL_LIBRARIES} pthread)
 
 add_executable(test_random_dag_gradients test_random_dag_gradients.cxx gradient_test.cxx)
-target_link_libraries(test_random_dag_gradients examm_strategy exact_common exact_time_series exact_word_series ${MYSQL_LIBRARIES} pthread.cxx)
+target_link_libraries(test_random_dag_gradients examm_strategy exact_common exact_time_series exact_word_series ${MYSQL_LIBRARIES} pthread)
 
 add_executable(test_enas_dag_gradients test_enas_dag_gradients.cxx gradient_test.cxx)
-target_link_libraries(test_enas_dag_gradients examm_strategy exact_common exact_time_series exact_word_series ${MYSQL_LIBRARIES} pthread.cxx)
+target_link_libraries(test_enas_dag_gradients examm_strategy exact_common exact_time_series exact_word_series ${MYSQL_LIBRARIES} pthread)

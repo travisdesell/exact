@@ -41,9 +41,9 @@ class RNN_Genome {
 
         int32_t bp_iterations;
         double learning_rate;
-        //bool adapt_learning_rate; //TODO: deprecated and needs to be removed but don't want to change the genome binary file yet
+        bool adapt_learning_rate; //TODO: deprecated and needs to be removed but don't want to change the genome binary file yet
         bool use_nesterov_momentum;
-        //bool use_reset_weights; //TODO: deprecated and needs to be removed but don't want to change the genome binary file yet
+        bool use_reset_weights; //TODO: deprecated and needs to be removed but don't want to change the genome binary file yet
 
 
         bool use_high_norm;
@@ -154,9 +154,7 @@ class RNN_Genome {
         int32_t get_bp_iterations();
 
         void set_learning_rate(double _learning_rate);
-        void set_adapt_learning_rate(bool _adapt_learning_rate);
         void set_nesterov_momentum(bool _use_nesterov_momentum);
-        void set_reset_weights(bool _use_reset_weights);
         void disable_high_threshold();
         void enable_high_threshold(double _high_threshold);
         void disable_low_threshold();

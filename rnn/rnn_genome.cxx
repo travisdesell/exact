@@ -108,10 +108,10 @@ RNN_Genome::RNN_Genome(vector<RNN_Node_Interface*> &_nodes,
     //set default values
     bp_iterations = 20000;
     learning_rate = 0.001;
-    adapt_learning_rate = false;
+    //adapt_learning_rate = false;
     use_nesterov_momentum = true;
     //use_nesterov_momentum = false;
-    use_reset_weights = false;
+    //use_reset_weights = false;
 
     use_high_norm = true;
     high_threshold = 1.0;
@@ -172,9 +172,9 @@ RNN_Genome* RNN_Genome::copy() {
     other->group_id = group_id;
     other->bp_iterations = bp_iterations;
     other->learning_rate = learning_rate;
-    other->adapt_learning_rate = adapt_learning_rate;
+    //other->adapt_learning_rate = adapt_learning_rate;
     other->use_nesterov_momentum = use_nesterov_momentum;
-    other->use_reset_weights = use_reset_weights;
+    //other->use_reset_weights = use_reset_weights;
 
     other->use_high_norm = use_high_norm;
     other->high_threshold = high_threshold;
@@ -475,16 +475,9 @@ void RNN_Genome::set_learning_rate(double _learning_rate) {
     learning_rate = _learning_rate;
 }
 
-void RNN_Genome::set_adapt_learning_rate(bool _adapt_learning_rate) {
-    adapt_learning_rate = _adapt_learning_rate;
-}
 
 void RNN_Genome::set_nesterov_momentum(bool _use_nesterov_momentum) {
     use_nesterov_momentum = _use_nesterov_momentum;
-}
-
-void RNN_Genome::set_reset_weights(bool _use_reset_weights) {
-    use_reset_weights = _use_reset_weights;
 }
 
 
@@ -988,12 +981,8 @@ void RNN_Genome::backpropagate(const vector< vector< vector<double> > > &inputs,
     vector<double> prev_gradient(n_parameters, 0.0);
 
     double mu = 0.9;
-    double original_learning_rate = learning_rate;
 
     double prev_mu;
-    double prev_norm;
-    double prev_learning_rate;
-    double prev_mse;
     double mse;
 
     double parameter_norm = 0.0;
@@ -1023,15 +1012,8 @@ void RNN_Genome::backpropagate(const vector< vector< vector<double> > > &inputs,
         output_log = new ofstream(log_filename);
     }
 
-    bool was_reset = false;
-    double reset_count = 0;
     for (uint32_t iteration = 0; iteration < bp_iterations; iteration++) {
         prev_mu = mu;
-        prev_norm  = norm;
-        prev_mse = mse;
-        prev_learning_rate = learning_rate;
-
-
         prev_gradient = analytic_gradient;
 
         get_analytic_gradient(rnns, parameters, inputs, outputs, mse, analytic_gradient, true);
@@ -1068,57 +1050,12 @@ void RNN_Genome::backpropagate(const vector< vector< vector<double> > > &inputs,
 
         Log::info("iteration %10d, mse: %10lf, v_mse: %10lf, bv_mse: %10lf, lr: %lf, norm: %lf, p_norm: %lf, v_norm: %lf", iteration, mse, validation_mse, best_validation_mse, learning_rate, norm, parameter_norm, velocity_norm);
 
-        if (use_reset_weights && prev_mse * 1.25 < mse) {
-            Log::info_no_header(", RESETTING WEIGHTS %d", reset_count);
-            parameters = prev_parameters;
-            //prev_velocity = prev_prev_velocity;
-            prev_velocity.assign(parameters.size(), 0.0);
-            mse = prev_mse;
-            mu = prev_mu;
-            learning_rate = prev_learning_rate;
-            analytic_gradient = prev_gradient;
-
-
-            //learning_rate *= 0.5;
-            //if (learning_rate < 0.0000001) learning_rate = 0.0000001;
-
-            reset_count++;
-            if (reset_count > 20) break;
-
-            was_reset = true;
-            continue;
-        }
-
-        if (was_reset) {
-            was_reset = false;
-        } else {
-            reset_count -= 0.1;
-            if (reset_count < 0) reset_count = 0;
-            if (adapt_learning_rate) learning_rate = original_learning_rate;
-        }
-
-
-        if (adapt_learning_rate) {
-            if (prev_mse > mse) {
-                learning_rate *= 1.10;
-                if (learning_rate > 1.0) learning_rate = 1.0;
-
-                Log::info_no_header(", INCREASING LR");
-            }
-        }
-
         if (use_high_norm && norm > high_threshold) {
             double high_threshold_norm = high_threshold / norm;
-
             Log::info_no_header(", OVER THRESHOLD, multiplier: %lf", high_threshold_norm);
 
             for (int32_t i = 0; i < parameters.size(); i++) {
                 analytic_gradient[i] = high_threshold_norm * analytic_gradient[i];
-            }
-
-            if (adapt_learning_rate) {
-                learning_rate *= 0.5;
-                if (learning_rate < 0.0000001) learning_rate = 0.0000001;
             }
 
         } else if (use_low_norm && norm < low_threshold) {
@@ -1127,23 +1064,6 @@ void RNN_Genome::backpropagate(const vector< vector< vector<double> > > &inputs,
 
             for (int32_t i = 0; i < parameters.size(); i++) {
                 analytic_gradient[i] = low_threshold_norm * analytic_gradient[i];
-            }
-
-            if (adapt_learning_rate) {
-                if (prev_mse * 1.05 < mse) {
-                    Log::info_no_header(", WORSE");
-                    learning_rate *= 0.5;
-                    if (learning_rate < 0.0000001) learning_rate = 0.0000001;
-                }
-            }
-        }
-
-        if (reset_count > 0) {
-            double reset_penalty = pow(5.0, -reset_count);
-            Log::info_no_header(", RESET PENALTY (%d): %lf", reset_count, reset_penalty);
-
-            for (int32_t i = 0; i < parameters.size(); i++) {
-                analytic_gradient[i] = reset_penalty * analytic_gradient[i];
             }
 
         }
@@ -1157,7 +1077,7 @@ void RNN_Genome::backpropagate(const vector< vector< vector<double> > > &inputs,
 
                 double mu_v = prev_velocity[i] * prev_mu;
 
-                prev_velocity[i] = mu_v  - (prev_learning_rate * prev_gradient[i]);
+                prev_velocity[i] = mu_v  - (learning_rate * prev_gradient[i]);
                 parameters[i] += mu_v + ((mu + 1) * prev_velocity[i]);
             }
         } else {
@@ -1237,7 +1157,7 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
 
     Log::trace("got initial mses.\n");
 
-    Log::trace("initial validation_mse: %lf, best validation mse: %lf\n", validation_mse, best_validation_mse);
+    Log::info("initial validation_mse: %lf, best validation mse: %lf\n", validation_mse, best_validation_mse);
 
     double m = 0.0, s = 0.0;
     get_mu_sigma(parameters, m, s);
@@ -1248,13 +1168,6 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
     unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
     minstd_rand0 generator(seed);
     uniform_real_distribution<double> rng(0, 1);
-
-    //int random_selection = rng(generator);
-    /*
-    norm = prev_norm[random_selection];
-    mse = prev_mse[random_selection];
-    learning_rate = prev_learning_rate[random_selection];
-    */
 
     ofstream *output_log = NULL;
     ostringstream memory_log;
@@ -1276,9 +1189,6 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
     for (int32_t i = 0; i < (int32_t)inputs.size(); i++) {
         shuffle_order.push_back(i);
     }
-
-    bool was_reset = false;
-    int reset_count = 0;
 
     for (uint32_t iteration = 0; iteration < bp_iterations; iteration++) {
         fisher_yates_shuffle(generator, shuffle_order);
@@ -1317,7 +1227,6 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
                 for (int32_t i = 0; i < parameters.size(); i++) {
                     analytic_gradient[i] = low_threshold_norm * analytic_gradient[i];
                 }
-
             }
 
             Log::trace_no_header("\n");
@@ -1327,9 +1236,9 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
                     prev_parameters[i] = parameters[i];
                     prev_prev_velocity[i] = prev_velocity[i];
 
-                    double mu_v = prev_velocity[i] * prev_mu[random_selection];
+                    double mu_v = prev_velocity[i] * prev_mu;
 
-                    prev_velocity[i] = mu_v  - (prev_learning_rate[random_selection] * prev_gradient[i]);
+                    prev_velocity[i] = mu_v  - (learning_rate * prev_gradient[i]);
                     parameters[i] += mu_v + ((mu + 1) * prev_velocity[i]);
 
                     if (parameters[i] < -10.0) parameters[i] = -10.0;

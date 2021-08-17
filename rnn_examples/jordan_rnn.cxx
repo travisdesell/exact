@@ -163,9 +163,7 @@ int main(int argc, char **argv) {
     get_argument(arguments, "--learning_rate", false, learning_rate);
 
     genome->set_learning_rate(learning_rate);
-    genome->set_adapt_learning_rate(false);
     genome->set_nesterov_momentum(true);
-    genome->set_reset_weights(false);
     genome->enable_high_threshold(1.0);
     genome->enable_low_threshold(0.05);
     genome->disable_dropout();
