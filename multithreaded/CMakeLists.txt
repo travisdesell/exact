@@ -1,11 +1,11 @@
 #add_executable(exact_mt exact_mt)
 #target_link_libraries(exact_mt exact_strategy exact_image_tools exact_common ${MYSQL_LIBRARIES} ${TIFF_LIBRARIES} pthread)
 
-add_executable(examm_mt_single_series examm_mt_single_series)
+add_executable(examm_mt_single_series examm_mt_single_series.cxx)
 target_link_libraries(examm_mt_single_series examm_strategy exact_time_series exact_word_series exact_common pthread)
 
-add_executable(examm_mt examm_mt)
+add_executable(examm_mt examm_mt.cxx)
 target_link_libraries(examm_mt examm_strategy exact_time_series exact_word_series exact_common pthread)
 
-add_executable(examm_mt_nlp examm_mt_nlp)
+add_executable(examm_mt_nlp examm_mt_nlp.cxx)
 target_link_libraries(examm_mt_nlp examm_strategy exact_time_series exact_word_series exact_common pthread)

@@ -1196,10 +1196,7 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
     double original_learning_rate = learning_rate;
 
     int n_series = inputs.size();
-    double prev_mu[n_series];
-    double prev_norm[n_series];
-    double prev_learning_rate[n_series];
-    double prev_mse[n_series];
+    double prev_mu;
     double mse;
 
     double norm = 0.0;
@@ -1221,13 +1218,16 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
         for (int32_t j = 0; j < parameters.size(); j++) {
             norm += analytic_gradient[j] * analytic_gradient[j];
         }
+        /*
         norm = sqrt(norm);
         prev_mu[i] = mu;
         prev_norm[i] = norm;
         prev_mse[i] = mse;
         prev_learning_rate[i] = learning_rate;
+        */
     }
     Log::trace("initialized previous values.\n");
+    prev_mu = mu;
 
     //TODO: need to get validation mse on the RNN not the genome
     double validation_mse = get_mse(parameters, validation_inputs, validation_outputs);
@@ -1249,11 +1249,12 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
     minstd_rand0 generator(seed);
     uniform_real_distribution<double> rng(0, 1);
 
-    int random_selection = rng(generator);
-    mu = prev_mu[random_selection];
+    //int random_selection = rng(generator);
+    /*
     norm = prev_norm[random_selection];
     mse = prev_mse[random_selection];
     learning_rate = prev_learning_rate[random_selection];
+    */
 
     ofstream *output_log = NULL;
     ostringstream memory_log;
@@ -1284,13 +1285,9 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
 
         double avg_norm = 0.0;
         for (uint32_t k = 0; k < shuffle_order.size(); k++) {
-            random_selection = shuffle_order[k];
+            int random_selection = shuffle_order[k];
 
-            prev_mu[random_selection] = mu;
-            prev_norm[random_selection] = norm;
-            prev_mse[random_selection] = mse;
-            prev_learning_rate[random_selection] = learning_rate;
-
+            prev_mu = mu;
             prev_gradient = analytic_gradient;
 
             rnn->get_analytic_gradient(parameters, inputs[random_selection], outputs[random_selection], mse, analytic_gradient, use_dropout, true, dropout_probability);
@@ -1304,46 +1301,6 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
 
             Log::trace("iteration %7d, series: %4d, mse: %5.10lf, lr: %lf, norm: %lf", iteration, random_selection, mse, learning_rate, norm);
 
-            if (use_reset_weights && prev_mse[random_selection] * 2 < mse) {
-                Log::trace_no_header(", RESETTING WEIGHTS");
-
-                parameters = prev_parameters;
-                //prev_velocity = prev_prev_velocity;
-                prev_velocity.assign(parameters.size(), 0.0);
-                mse = prev_mse[random_selection];
-                mu = prev_mu[random_selection];
-                learning_rate = prev_learning_rate[random_selection];
-                analytic_gradient = prev_gradient;
-
-                random_selection = rng(generator) * inputs.size();
-
-                learning_rate *= 0.5;
-                if (learning_rate < 0.0000001) learning_rate = 0.0000001;
-
-                reset_count++;
-                if (reset_count > 20) break;
-
-                was_reset = true;
-                k--;
-                continue;
-            }
-
-            if (was_reset) {
-                was_reset = false;
-            } else {
-                reset_count = 0;
-                learning_rate = original_learning_rate;
-            }
-
-
-            if (adapt_learning_rate) {
-                if (prev_mse[random_selection] > mse) {
-                    learning_rate *= 1.10;
-                    if (learning_rate > 1.0) learning_rate = 1.0;
-
-                    Log::trace_no_header(", INCREASING LR");
-                }
-            }
 
             if (use_high_norm && norm > high_threshold) {
                 double high_threshold_norm = high_threshold / norm;
@@ -1351,11 +1308,6 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
 
                 for (int32_t i = 0; i < parameters.size(); i++) {
                     analytic_gradient[i] = high_threshold_norm * analytic_gradient[i];
-                }
-
-                if (adapt_learning_rate) {
-                    learning_rate *= 0.5;
-                    if (learning_rate < 0.0000001) learning_rate = 0.0000001;
                 }
 
             } else if (use_low_norm && norm < low_threshold) {
@@ -1366,13 +1318,6 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
                     analytic_gradient[i] = low_threshold_norm * analytic_gradient[i];
                 }
 
-                if (adapt_learning_rate) {
-                    if (prev_mse[random_selection] * 1.05 < mse) {
-                        Log::trace_no_header(", WORSE");
-                        learning_rate *= 0.5;
-                        if (learning_rate < 0.0000001) learning_rate = 0.0000001;
-                    }
-                }
             }
 
             Log::trace_no_header("\n");
