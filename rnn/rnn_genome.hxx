@@ -78,6 +78,7 @@ class RNN_Genome {
         uniform_real_distribution<double> rng;
         uniform_real_distribution<double> rng_0_1;
         uniform_real_distribution<double> rng_1_1;
+        uniform_int_distribution<int> rng_int;
         NormalDistribution normal_distribution;
 
         vector<RNN_Node_Interface*> nodes;
@@ -204,8 +205,10 @@ class RNN_Genome {
 
         void backpropagate(const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, const vector< vector< vector<double> > > &validation_inputs, const vector< vector< vector<double> > > &validation_outputs);
 
-        void backpropagate_stochastic(const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, const vector< vector< vector<double> > > &validation_inputs, const vector< vector< vector<double> > > &validation_outputs);
+        void backpropagate_stochastic(const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, const vector< vector< vector<double> > > &validation_inputs, const vector< vector< vector<double> > > &validation_outputs, bool random_sequence_length, int sequence_length_lower_bound, int sequence_length_upper_bound);
 
+        vector< vector<double> > slice_time_series(int start_index, int sequence_length, int num_parameter, const vector< vector<double> > &inputs);
+        
         double get_softmax(const vector<double> &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs);
         double get_mse(const vector<double> &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs);
         double get_mae(const vector<double> &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs);

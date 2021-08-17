@@ -29,8 +29,8 @@ IslandSpeciationStrategy::IslandSpeciationStrategy(
         string _island_ranking_method, string _repopulation_method,
         int32_t _extinction_event_generation_number, int32_t _repopulation_mutations,
         int32_t _islands_to_exterminate, int32_t _max_genomes,
-        bool _seed_genome_was_minimal,
-        bool _repeat_extinction
+        bool _repeat_extinction,
+        bool _seed_genome_was_minimal
         ) :
                         generation_island(0),
                         number_of_islands(_number_of_islands),
@@ -47,8 +47,8 @@ IslandSpeciationStrategy::IslandSpeciationStrategy(
                         repopulation_mutations(_repopulation_mutations),
                         islands_to_exterminate(_islands_to_exterminate),
                         max_genomes(_max_genomes),
-                        seed_genome_was_minimal(_seed_genome_was_minimal),
-                        repeat_extinction(_repeat_extinction) {
+                        repeat_extinction(_repeat_extinction),
+                        seed_genome_was_minimal(_seed_genome_was_minimal) {
     double rate_sum = mutation_rate + intra_island_crossover_rate + inter_island_crossover_rate;
     if (rate_sum != 1.0) {
         mutation_rate = mutation_rate / rate_sum;
@@ -194,13 +194,12 @@ int32_t IslandSpeciationStrategy::insert_genome(RNN_Genome* genome) {
             if (island_ranking_method.compare("EraseWorst") == 0 || island_ranking_method.compare("") == 0){
                 global_best_genome = get_best_genome()->copy();
                 vector<int32_t> rank = rank_islands();
-                // int32_t worst_island = get_worst_island_by_best_genome();
                 for (int32_t i = 0; i < islands_to_exterminate; i++){
                     if (rank[i] >= 0){
-                        Log::info("found island: %d is not doing well \n",rank[0]);
+                        Log::info("found island: %d is the worst island \n",rank[0]);
                         islands[rank[i]]->erase_island();
+                        islands[rank[i]]->erase_structure_map();
                         islands[rank[i]]->set_status(Island::REPOPULATING);
-                        // rank++;
                     }
                     else Log::error("Didn't find the worst island!");
                     // set this so the island would not be re-killed in 5 rounds
@@ -257,12 +256,10 @@ int32_t IslandSpeciationStrategy::get_worst_island_by_best_genome() {
 
 vector<int32_t> IslandSpeciationStrategy::rank_islands() {
     vector<int32_t> island_rank;
-    // int32_t* island_rank = new int32_t[number_of_islands];
     int32_t temp;
     double fitness_j1, fitness_j2;
     Log::info("ranking islands \n");
     Log::info("repeat extinction: %s \n", repeat_extinction? "true":"false");
-
     for (int32_t i = 0; i< number_of_islands; i++){
         if (repeat_extinction) {
             island_rank.push_back(i);
@@ -271,12 +268,8 @@ vector<int32_t> IslandSpeciationStrategy::rank_islands() {
                 island_rank.push_back(i);
             }
         }
-
     }
-    // Log::error("islands can get killed: \n");
-    // for (int32_t i = 0; i< island_rank.size(); i++){
-    //     Log::error("%d \n",island_rank[i]);
-    // }
+
     for (int32_t i = 0; i < island_rank.size() - 1; i++)   {
         for (int32_t j = 0; j < island_rank.size() - i - 1; j++)  {
             fitness_j1 = islands[island_rank[j]]->get_best_fitness();
@@ -608,7 +601,7 @@ RNN_Genome* IslandSpeciationStrategy::parents_repopulation(string method, unifor
         }   
     }
 
-    Log::error("current island is %d, the parent1 island is %d, parent 2 island is %d\n", generation_island, parent_island1, parent_island2);
+    Log::info("current island is %d, the parent1 island is %d, parent 2 island is %d\n", generation_island, parent_island1, parent_island2);
 
     //swap so the first parent is the more fit parent
     if (parent1->get_fitness() > parent2->get_fitness()) {

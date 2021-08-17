@@ -211,6 +211,7 @@ EXAMM::EXAMM(
     Log::info("mutated component weight: %s\n", WEIGHT_TYPES_STRING[mutated_component_weight].c_str());
 
     Log::info("Speciation method is: \"%s\" (Default is the island-based speciation strategy).\n", speciation_method.c_str());
+    Log::info("Repeat extinction is set to %s\n", repeat_extinction? "true":"false");
     if (speciation_method.compare("island") == 0 || speciation_method.compare("") == 0) {
         //generate a minimal feed foward network as the seed genome
 

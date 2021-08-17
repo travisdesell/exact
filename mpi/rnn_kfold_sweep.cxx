@@ -448,7 +448,7 @@ ResultSet handle_job(int rank, int current_job) {
     Log::set_id(backprop_log_id);
 
     std::chrono::time_point<std::chrono::system_clock> start = std::chrono::system_clock::now();
-    genome->backpropagate_stochastic(training_inputs, training_outputs, validation_inputs, validation_outputs);
+    genome->backpropagate_stochastic(training_inputs, training_outputs, validation_inputs, validation_outputs, false, 30, 100);
     std::chrono::time_point<std::chrono::system_clock> end = std::chrono::system_clock::now();
 
     long milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
