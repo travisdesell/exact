@@ -1180,8 +1180,8 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
 
         if (random_sequence_length) {
             rng_int = uniform_int_distribution<int>(sequence_length_lower_bound, sequence_length_upper_bound);
-            int sequence_length = rng_int(generator);
-            Log::info("using uniform random sequence length for training, random sequence length for current training epoch is %d\n", sequence_length);
+            
+            Log::info("using uniform random sequence length for training%d");
             Log::debug("Time series length lower bound is %d, upper bound is%d\n", sequence_length_lower_bound, sequence_length_upper_bound);
 
             // put the original sliced time series as a new sets of timeseries data
@@ -1190,6 +1190,7 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
                 int num_inputs = inputs[n].size();
                 int num_outputs = outputs[n].size();
                 int i = 0;
+                int sequence_length = rng_int(generator);
                 while (i + sequence_length <= num_row) {
                     vector< vector<double> > current_time_series_input; // <each parameter <time series values>>
                     vector< vector<double> > current_time_series_output; // <each parameter <time series values>>
@@ -1402,7 +1403,7 @@ double RNN_Genome::get_mse(const vector<double> &parameters, const vector< vecto
 
     delete rnn;
 
-    avg_mse /= inputs.size();
+    // avg_mse /= inputs.size();
     Log::trace("average MSE: %5.10lf\n", avg_mse);
     return avg_mse;
 }
