@@ -502,6 +502,7 @@ void RNN_Genome::enable_low_threshold(double _low_threshold) {
 
 void RNN_Genome::disable_dropout() {
     use_dropout = false;
+    dropout_probability = 0;
 }
 
 void RNN_Genome::enable_dropout(double _dropout_probability) {
@@ -1170,6 +1171,9 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
         }
 
         Log::trace("opened log file '%s'\n", log_filename.c_str());
+
+        (*output_log) << "Total BP Epochs, Time, Train MSE, Val. MSE, BEST Val. MSE, BEST Val. MAE, norm";
+        (*output_log) << endl;
     }
 
     for (uint32_t iteration = 0; iteration < bp_iterations; iteration++) {
@@ -1181,8 +1185,8 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
         if (random_sequence_length) {
             rng_int = uniform_int_distribution<int>(sequence_length_lower_bound, sequence_length_upper_bound);
             
-            Log::info("using uniform random sequence length for training%d");
-            Log::debug("Time series length lower bound is %d, upper bound is%d\n", sequence_length_lower_bound, sequence_length_upper_bound);
+            Log::trace("using uniform random sequence length for training\n");
+            Log::trace("Time series length lower bound is %d, upper bound is %d\n", sequence_length_lower_bound, sequence_length_upper_bound);
 
             // put the original sliced time series as a new sets of timeseries data
             for (int n = 0; n < inputs.size(); n++) {
@@ -1191,6 +1195,7 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
                 int num_outputs = outputs[n].size();
                 int i = 0;
                 int sequence_length = rng_int(generator);
+                Log::trace("random sequence length is %d\n", sequence_length);
                 while (i + sequence_length <= num_row) {
                     vector< vector<double> > current_time_series_input; // <each parameter <time series values>>
                     vector< vector<double> > current_time_series_output; // <each parameter <time series values>>
@@ -1283,6 +1288,7 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
         this->set_weights(parameters);
 
         double training_mse = 0.0;
+        Log::trace("use regression is %s\n", use_regression ? "yes" : "no");
         if (use_regression) {
             training_mse = get_mse(parameters, training_inputs, training_outputs);
             validation_mse = get_mse(parameters, validation_inputs, validation_outputs);
@@ -1403,7 +1409,7 @@ double RNN_Genome::get_mse(const vector<double> &parameters, const vector< vecto
 
     delete rnn;
 
-    // avg_mse /= inputs.size();
+    avg_mse /= inputs.size();
     Log::trace("average MSE: %5.10lf\n", avg_mse);
     return avg_mse;
 }
