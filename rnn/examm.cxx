@@ -405,7 +405,7 @@ void EXAMM::update_log() {
         std::chrono::time_point<std::chrono::system_clock> currentClock = std::chrono::system_clock::now();
         long milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(currentClock - startClock).count();
 
-        (*log_file) << speciation_strategy->get_inserted_genomes()
+        (*log_file) << speciation_strategy->get_evaluated_genomes()
             << "," << total_bp_epochs
             << "," << milliseconds
             << "," << best_genome->best_validation_mae
@@ -417,7 +417,7 @@ void EXAMM::update_log() {
             << endl;
 
         /*
-        memory_log << speciation_strategy->get_inserted_genomes()
+        memory_log << speciation_strategy->get_evaluated_genomes()
             << "," << total_bp_epochs
             << "," << milliseconds
             << "," << best_genome->best_validation_mae
@@ -491,7 +491,7 @@ RNN_Genome* EXAMM::get_worst_genome() {
 bool EXAMM::insert_genome(RNN_Genome* genome) {
     total_bp_epochs += genome->get_bp_iterations();
 
-    // Log::info("genomes evaluated: %10d , attempting to insert: %s\n", (speciation_strategy->get_inserted_genomes() + 1), parse_fitness(genome->get_fitness()).c_str());
+    // Log::info("genomes evaluated: %10d , attempting to insert: %s\n", (speciation_strategy->get_evaluated_genomes() + 1), parse_fitness(genome->get_fitness()).c_str());
 
     if (!genome->sanity_check()) {
         Log::error("genome failed sanity check on insert!\n");
@@ -539,7 +539,7 @@ bool EXAMM::insert_genome(RNN_Genome* genome) {
 }
 
 RNN_Genome* EXAMM::generate_genome(int32_t seed_genome_stirs) {
-    if (speciation_strategy->get_inserted_genomes() > max_genomes) return NULL;
+    if (speciation_strategy->get_evaluated_genomes() > max_genomes) return NULL;
 
     function<void (int32_t, RNN_Genome*)> mutate_function =
         [=](int32_t max_mutations, RNN_Genome *genome) {

@@ -39,7 +39,7 @@ IslandSpeciationStrategy::IslandSpeciationStrategy(
                         intra_island_crossover_rate(_intra_island_crossover_rate),
                         inter_island_crossover_rate(_inter_island_crossover_rate),
                         generated_genomes(0),
-                        inserted_genomes(0),
+                        evaluated_genomes(0),
                         seed_genome(_seed_genome),
                         island_ranking_method(_island_ranking_method),
                         repopulation_method(_repopulation_method),
@@ -86,7 +86,7 @@ IslandSpeciationStrategy::IslandSpeciationStrategy(
                         intra_island_crossover_rate(_intra_island_crossover_rate),
                         inter_island_crossover_rate(_inter_island_crossover_rate),
                         generated_genomes(0),
-                        inserted_genomes(0),
+                        evaluated_genomes(0),
                         seed_genome(_seed_genome),
                         island_ranking_method(_island_ranking_method),
                         repopulation_method(_repopulation_method),
@@ -133,8 +133,8 @@ int32_t IslandSpeciationStrategy::get_generated_genomes() const {
     return generated_genomes;
 }
 
-int32_t IslandSpeciationStrategy::get_inserted_genomes() const {
-    return inserted_genomes;
+int32_t IslandSpeciationStrategy::get_evaluated_genomes() const {
+    return evaluated_genomes;
 }
 
 RNN_Genome* IslandSpeciationStrategy::get_best_genome() {
@@ -190,7 +190,7 @@ bool IslandSpeciationStrategy::islands_full() const {
 int32_t IslandSpeciationStrategy::insert_genome(RNN_Genome* genome) {
     Log::debug("inserting genome!\n");
     if (extinction_event_generation_number != 0){
-        if(inserted_genomes > 1 && inserted_genomes % extinction_event_generation_number == 0 && max_genomes - inserted_genomes >= extinction_event_generation_number) {
+        if(evaluated_genomes > 1 && evaluated_genomes % extinction_event_generation_number == 0 && max_genomes - evaluated_genomes >= extinction_event_generation_number) {
             if (island_ranking_method.compare("EraseWorst") == 0 || island_ranking_method.compare("") == 0){
                 global_best_genome = get_best_genome()->copy();
                 vector<int32_t> rank = rank_islands();
@@ -223,7 +223,7 @@ int32_t IslandSpeciationStrategy::insert_genome(RNN_Genome* genome) {
         new_global_best = true;
     }
 
-    inserted_genomes++;
+    evaluated_genomes++;
     int32_t island = genome->get_group_id();
 
     Log::info("inserting genome to island: %d\n", island);

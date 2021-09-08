@@ -41,7 +41,7 @@ NeatSpeciationStrategy::NeatSpeciationStrategy(
                         intra_island_crossover_rate(_intra_island_crossover_rate),
                         inter_island_crossover_rate(_inter_island_crossover_rate),
                         generated_genomes(0),
-                        inserted_genomes(0),
+                        evaluated_genomes(0),
                         minimal_genome(_seed_genome),
                         generator(_generator) {
 
@@ -75,8 +75,8 @@ int32_t NeatSpeciationStrategy::get_generated_genomes() const {
     return generated_genomes;
 }
 
-int32_t NeatSpeciationStrategy::get_inserted_genomes() const {
-    return inserted_genomes;
+int32_t NeatSpeciationStrategy::get_evaluated_genomes() const {
+    return evaluated_genomes;
 }
 
 RNN_Genome* NeatSpeciationStrategy::get_best_genome() {
@@ -152,7 +152,7 @@ int32_t NeatSpeciationStrategy::insert_genome(RNN_Genome* genome) {
     }
 
     Log::info("inserting genome id %d!\n", genome->get_generation_id());
-    inserted_genomes++;
+    evaluated_genomes++;
 
     int32_t insert_position;
     if (Neat_Species.size() == 1 && Neat_Species[0]->size() == 0) {

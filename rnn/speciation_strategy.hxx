@@ -21,7 +21,7 @@ class SpeciationStrategy {
         /**
          * \return the number of inserted genomes.
          */
-        virtual int32_t get_inserted_genomes() const = 0;
+        virtual int32_t get_evaluated_genomes() const = 0;
 
         /**
          * Gets the fitness of the best genome of all the islands
