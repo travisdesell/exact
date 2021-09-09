@@ -90,6 +90,14 @@ class SpeciationStrategy {
         virtual string get_strategy_information_values() const = 0;
 
         virtual RNN_Genome* get_global_best_genome() = 0;
+        
+        /**
+         * Used to set the rates to allow for dynamic rate adaptation
+         *  \param _mutation_rate is the new mutation rate
+         *  \param _intra_island_crossover_rate is the new intra-island crossover rate
+         *  \param _inter_island_crossover_rate is the new inter-island crossover rate
+         */
+        virtual void set_rates(double _mutation_rate, double _intra_island_crossover_rate, double _inter_island_crossover_rate) = 0;
 };
 
 #endif

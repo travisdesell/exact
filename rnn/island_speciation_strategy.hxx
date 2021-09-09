@@ -194,6 +194,14 @@ class IslandSpeciationStrategy : public SpeciationStrategy {
         RNN_Genome* get_global_best_genome();
 
         void set_erased_islands_status();
+        
+        /**
+         * Used to set the rates to allow for dynamic rate adaptation
+         *  \param _mutation_rate is the new mutation rate
+         *  \param _intra_island_crossover_rate is the new intra-island crossover rate
+         *  \param _inter_island_crossover_rate is the new inter-island crossover rate
+         */
+        void set_rates(double _mutation_rate, double _intra_island_crossover_rate, double _inter_island_crossover_rate);
 
 };
 

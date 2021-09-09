@@ -653,3 +653,9 @@ void IslandSpeciationStrategy::set_erased_islands_status() {
         }
     }
 }
+
+void IslandSpeciationStrategy::set_rates(double _mutation_rate, double _intra_island_crossover_rate, double _inter_island_crossover_rate){
+    mutation_rate = _mutation_rate;
+    intra_island_crossover_rate = _intra_island_crossover_rate;
+    inter_island_crossover_rate = _inter_island_crossover_rate;
+}

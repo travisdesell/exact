@@ -164,18 +164,22 @@ EXAMM::EXAMM(
     less_fit_crossover_rate = 0.50;
     //more_fit_crossover_rate = 0.75;
     //less_fit_crossover_rate = 0.25;
+    
+    //Initialize the rates array and the reinforcement signal
+    rates.resize(NUM_RATES);
+    reinforcement_signal.resize(NUM_RATES);
+    //Set the FALA learning rate
+    fala_lr = 0.025;
+    //Calculate the threshold to start FALA
+    fala_threshold = number_islands*population_size;
 
-    clone_rate = 1.0;
-
-    add_edge_rate = 1.0;
-    //add_recurrent_edge_rate = 3.0;
-    add_recurrent_edge_rate = 1.0;
-    enable_edge_rate = 1.0;
-    //disable_edge_rate = 3.0;
-    disable_edge_rate = 1.0;
-    //split_edge_rate = 1.0;
-    split_edge_rate = 0.0;
-
+    rates[CLONE_RATE_I] = 1.0;
+    rates[ADD_EDGE_RATE_I] = 1.0;
+    rates[ADD_REDGE_RATE_I] = 1.0;
+    rates[ENABLE_EDGE_RATE_I] = 1.0;
+    rates[DISABLE_EDGE_RATE_I] = 1.0;
+    rates[SPLIT_EDGE_RATE_I] = 0.0;
+    
     possible_node_types.clear();
     possible_node_types.push_back(SIMPLE_NODE);
     possible_node_types.push_back(JORDAN_NODE);
@@ -188,21 +192,37 @@ EXAMM::EXAMM(
     possible_node_types.push_back(DELTA_NODE);
 
     bool node_ops = true;
+    
     if (node_ops) {
-        add_node_rate = 1.0;
-        enable_node_rate = 1.0;
-        //disable_node_rate = 3.0;
-        disable_node_rate = 1.0;
-        split_node_rate = 1.0;
-        merge_node_rate = 1.0;
-
+        rates[ADD_NODE_RATE_I] = 1.0;
+        rates[ENABLE_NODE_RATE_I] = 1.0;
+        rates[DISABLE_NODE_RATE_I] = 1.0;
+        rates[SPLIT_NODE_RATE_I] = 1.0;
+        rates[MERGE_NODE_RATE_I] = 1.0;
     } else {
-        add_node_rate = 0.0;
-        enable_node_rate = 0.0;
-        disable_node_rate = 0.0;
-        split_node_rate = 0.0;
-        merge_node_rate = 0.0;
+        rates[ADD_NODE_RATE_I] = 0.0;
+        rates[ENABLE_NODE_RATE_I] = 0.0;
+        rates[DISABLE_NODE_RATE_I] = 0.0;
+        rates[SPLIT_NODE_RATE_I] = 0.0;
+        rates[MERGE_NODE_RATE_I] = 0.0;
     }
+    
+    
+    
+    //map the generate_by words to their indices in the rates array and reinforcement signal
+    generated_fala_indices["clone"] = 0;
+    generated_fala_indices["add_edge"] = 1;
+    generated_fala_indices["add_recurrent_edge"] = 2;
+    generated_fala_indices["enable_edge"] = 3;
+    generated_fala_indices["disable_edge"] = 4;
+    generated_fala_indices["split_edge"] = 5;
+    generated_fala_indices["add_node"] = 6;
+    generated_fala_indices["enable_node"] = 7;
+    generated_fala_indices["disable_node"] = 8;
+    generated_fala_indices["split_node"] = 9;
+    generated_fala_indices["merge_node"] = 10;   
+    generated_fala_indices["crossover"] = 11;
+    generated_fala_indices["island_crossover"] = 12;
 
     check_weight_initialize_validity();
 
@@ -237,12 +257,13 @@ EXAMM::EXAMM(
         seed_genome->best_validation_mse = EXAMM_MAX_DOUBLE;
         seed_genome->best_validation_mae = EXAMM_MAX_DOUBLE;
         //seed_genome->best_parameters.clear();
-
-        double mutation_rate = 0.70, intra_island_co_rate = 0.20, inter_island_co_rate = 0.10;
+        
+        rates[INTRA_ISLAND_CO_RATE_I] = 0.2;
+        rates[INTER_ISLAND_CO_RATE_I] = 0.1;
 
         if (number_islands == 1) {
-            inter_island_co_rate = 0.0;
-            intra_island_co_rate = 0.30;
+            rates[INTRA_ISLAND_CO_RATE_I] = 0.3;
+            rates[INTER_ISLAND_CO_RATE_I] = 0.0;
         }
 
         // Only difference here is that the apply_stir_mutations lambda is passed if the island is supposed to start filled.
@@ -255,11 +276,11 @@ EXAMM::EXAMM(
             };
 
             speciation_strategy = new IslandSpeciationStrategy(
-                    number_islands, population_size, mutation_rate, intra_island_co_rate, inter_island_co_rate,
+                    number_islands, population_size, 1.0 - rates[INTRA_ISLAND_CO_RATE_I] - rates[INTER_ISLAND_CO_RATE_I], rates[INTRA_ISLAND_CO_RATE_I], rates[INTER_ISLAND_CO_RATE_I],
                     seed_genome, island_ranking_method, repopulation_method, extinction_event_generation_number, repopulation_mutations, islands_to_exterminate, seed_genome_was_minimal, apply_stir_mutations);
         } else {
             speciation_strategy = new IslandSpeciationStrategy(
-                    number_islands, population_size, mutation_rate, intra_island_co_rate, inter_island_co_rate,
+                    number_islands, population_size, 1.0 - rates[INTRA_ISLAND_CO_RATE_I] - rates[INTER_ISLAND_CO_RATE_I], rates[INTRA_ISLAND_CO_RATE_I], rates[INTER_ISLAND_CO_RATE_I],
                     seed_genome, island_ranking_method, repopulation_method, extinction_event_generation_number, repopulation_mutations, islands_to_exterminate, max_genomes, repeat_extinction, seed_genome_was_minimal);
         }
     } else if (speciation_method.compare("neat") == 0) {
@@ -283,15 +304,16 @@ EXAMM::EXAMM(
         seed_genome->best_validation_mse = EXAMM_MAX_DOUBLE;
         seed_genome->best_validation_mae = EXAMM_MAX_DOUBLE;
         //seed_genome->best_parameters.clear();
-
-        double mutation_rate = 0.70, intra_island_co_rate = 0.20, inter_island_co_rate = 0.10;
+        
+        rates[INTRA_ISLAND_CO_RATE_I] = 0.2;
+        rates[INTER_ISLAND_CO_RATE_I] = 0.1;
 
         if (number_islands == 1) {
-            inter_island_co_rate = 0.0;
-            intra_island_co_rate = 0.30;
+            rates[INTRA_ISLAND_CO_RATE_I] = 0.3;
+            rates[INTER_ISLAND_CO_RATE_I] = 0.0;
         }
         // no transfer learning for NEAT
-        speciation_strategy = new NeatSpeciationStrategy(mutation_rate, intra_island_co_rate, inter_island_co_rate, seed_genome, species_threshold, fitness_threshold, neat_c1, neat_c2, neat_c3, generator);
+        speciation_strategy = new NeatSpeciationStrategy(1.0 - rates[INTRA_ISLAND_CO_RATE_I] - rates[INTER_ISLAND_CO_RATE_I], rates[INTRA_ISLAND_CO_RATE_I], rates[INTER_ISLAND_CO_RATE_I], seed_genome, species_threshold, fitness_threshold, neat_c1, neat_c2, neat_c3, generator);
 
     }
 
@@ -502,6 +524,7 @@ bool EXAMM::insert_genome(RNN_Genome* genome) {
     genome->update_generation_map(generated_from_map);
 
     int32_t insert_position = speciation_strategy->insert_genome(genome);
+    
     //write this genome to disk if it was a new best found genome
     if (insert_position == 0) {
         genome->normalize_type = normalize_type;
@@ -511,6 +534,12 @@ bool EXAMM::insert_genome(RNN_Genome* genome) {
 
     // Name of the operator
     const map<string, int> *generated_by_map = genome->get_generated_by_map();
+    
+    //Reset the mutation count and the reinforcement signal
+    double num_mutations = 0;
+    for(int i = 0; i < NUM_RATES; i++){
+        reinforcement_signal[i] = 0;
+    }
 
     for (auto it = generated_by_map->begin(); it != generated_by_map->end(); it++) {
         string generated_by = it->first;
@@ -525,14 +554,35 @@ bool EXAMM::insert_genome(RNN_Genome* genome) {
             if (insert_position >= 0) {
                 inserted_counts["genomes"] += 1;
                 inserted_counts[generated_by] += 1;
+                //If the FALA threshold has been crossed, calculate the reinforcement signal
+                if(speciation_strategy->get_inserted_genomes() > fala_threshold){
+                    reinforcement_signal[generated_fala_indices[generated_by]] += (population_size - insert_position + 1.0)/population_size;
+                    num_mutations += 1.0;
+                }
             }
         } else {
             if (generated_by != "initial")
                 Log::error("unrecognized generated_by string '%s'\n", generated_by.c_str());
         }
     }
-
+    
+    //If the FALA threshol has been crossed and an update needs to be made, perform FALA
+    if(speciation_strategy->get_inserted_genomes() > fala_threshold && num_mutations > 0){
+        Log::info("Insert position: %d/%d\n", insert_position, population_size);
+        Log::info("Number mutations: %f\n", num_mutations);
+        //Adjust reinforcement signal
+        for(int i = 0; i < NUM_RATES; i++){
+            reinforcement_signal[i] = reinforcement_signal[i]*fala_lr/num_mutations;
+            Log::info("Reinforcement[%d] = %f\n", i, reinforcement_signal[i]);
+        }
+        // --- Need to update rates here ---
+        //Update the rates in the speciation strategy
+        speciation_strategy->set_rates(1.0 - rates[INTRA_ISLAND_CO_RATE_I] - rates[INTER_ISLAND_CO_RATE_I], rates[INTRA_ISLAND_CO_RATE_I], rates[INTER_ISLAND_CO_RATE_I]);
+        Log::info("New rates set - mutation: %f, intra: %f, inter: %f.\n", 1.0 - rates[INTRA_ISLAND_CO_RATE_I] - rates[INTER_ISLAND_CO_RATE_I], rates[INTRA_ISLAND_CO_RATE_I], rates[INTER_ISLAND_CO_RATE_I]);
+    }
+    
     speciation_strategy->print();
+    
     update_log();
 
     return insert_position >= 0;
@@ -580,8 +630,13 @@ int EXAMM::get_random_node_type() {
 
 
 void EXAMM::mutate(int32_t max_mutations, RNN_Genome *g) {
-    double total = clone_rate + add_edge_rate + add_recurrent_edge_rate + enable_edge_rate + disable_edge_rate + split_edge_rate + add_node_rate + enable_node_rate + disable_node_rate + split_node_rate + merge_node_rate;
-
+    
+    double total = 0;
+    
+    for(int i = 0; i < NUM_RATES - 2; i++){
+        total += rates[i];
+    }
+    
     bool modified = false;
 
     double mu, sigma;
@@ -616,97 +671,98 @@ void EXAMM::mutate(int32_t max_mutations, RNN_Genome *g) {
         string node_type_str = NODE_TYPES[new_node_type];
         Log::debug( "rng: %lf, total: %lf, new node type: %d (%s)\n", rng, total, new_node_type, node_type_str.c_str());
 
-        if (rng < clone_rate) {
+        if (rng < rates[CLONE_RATE_I]) {
             Log::debug("\tcloned\n");
             g->set_generated_by("clone");
             modified = true;
             continue;
         }
-        rng -= clone_rate;
-        if (rng < add_edge_rate) {
+        rng -= rates[CLONE_RATE_I];
+        
+        if (rng < rates[ADD_EDGE_RATE_I]) {
             modified = g->add_edge(mu, sigma, edge_innovation_count);
             Log::debug("\tadding edge, modified: %d\n", modified);
             if (modified) g->set_generated_by("add_edge");
             continue;
         }
-        rng -= add_edge_rate;
+        rng -= rates[ADD_EDGE_RATE_I];
 
-        if (rng < add_recurrent_edge_rate) {
+        if (rng < rates[ADD_REDGE_RATE_I]) {
             uniform_int_distribution<int32_t> dist = get_recurrent_depth_dist();
             modified = g->add_recurrent_edge(mu, sigma, dist, edge_innovation_count);
             Log::debug("\tadding recurrent edge, modified: %d\n", modified);
             if (modified) g->set_generated_by("add_recurrent_edge");
             continue;
         }
-        rng -= add_recurrent_edge_rate;
+        rng -= rates[ADD_REDGE_RATE_I];
 
-        if (rng < enable_edge_rate) {
+        if (rng < rates[ENABLE_EDGE_RATE_I]) {
             modified = g->enable_edge();
             Log::debug("\tenabling edge, modified: %d\n", modified);
             if (modified) g->set_generated_by("enable_edge");
             continue;
         }
-        rng -= enable_edge_rate;
+        rng -= rates[ENABLE_EDGE_RATE_I];
 
-        if (rng < disable_edge_rate) {
+        if (rng < rates[DISABLE_EDGE_RATE_I]) {
             modified = g->disable_edge();
             Log::debug("\tdisabling edge, modified: %d\n", modified);
             if (modified) g->set_generated_by("disable_edge");
             continue;
         }
-        rng -= disable_edge_rate;
+        rng -= rates[DISABLE_EDGE_RATE_I];
 
-        if (rng < split_edge_rate) {
+        if (rng < rates[SPLIT_EDGE_RATE_I]) {
             uniform_int_distribution<int32_t> dist = get_recurrent_depth_dist();
             modified = g->split_edge(mu, sigma, new_node_type, dist, edge_innovation_count, node_innovation_count);
             Log::debug("\tsplitting edge, modified: %d\n", modified);
             if (modified) g->set_generated_by("split_edge(" + node_type_str + ")");
             continue;
         }
-        rng -= split_edge_rate;
+        rng -= rates[SPLIT_EDGE_RATE_I];
 
-        if (rng < add_node_rate) {
+        if (rng < rates[ADD_NODE_RATE_I]) {
             uniform_int_distribution<int32_t> dist = get_recurrent_depth_dist();
             modified = g->add_node(mu, sigma, new_node_type, dist, edge_innovation_count, node_innovation_count);
             Log::debug("\tadding node, modified: %d\n", modified);
             if (modified) g->set_generated_by("add_node(" + node_type_str + ")");
             continue;
         }
-        rng -= add_node_rate;
+        rng -= rates[ADD_NODE_RATE_I];
 
-        if (rng < enable_node_rate) {
+        if (rng < rates[ENABLE_NODE_RATE_I]) {
             modified = g->enable_node();
             Log::debug("\tenabling node, modified: %d\n", modified);
             if (modified) g->set_generated_by("enable_node");
             continue;
         }
-        rng -= enable_node_rate;
+        rng -= rates[ENABLE_NODE_RATE_I];
 
-        if (rng < disable_node_rate) {
+        if (rng < rates[DISABLE_NODE_RATE_I]) {
             modified = g->disable_node();
             Log::debug("\tdisabling node, modified: %d\n", modified);
             if (modified) g->set_generated_by("disable_node");
             continue;
         }
-        rng -= disable_node_rate;
+        rng -= rates[DISABLE_NODE_RATE_I];
 
-        if (rng < split_node_rate) {
+        if (rng < rates[SPLIT_NODE_RATE_I]) {
             uniform_int_distribution<int32_t> dist = get_recurrent_depth_dist();
             modified = g->split_node(mu, sigma, new_node_type, dist, edge_innovation_count, node_innovation_count);
             Log::debug("\tsplitting node, modified: %d\n", modified);
             if (modified) g->set_generated_by("split_node(" + node_type_str + ")");
             continue;
         }
-        rng -= split_node_rate;
+        rng -= rates[SPLIT_NODE_RATE_I];
 
-        if (rng < merge_node_rate) {
+        if (rng < rates[MERGE_NODE_RATE_I]) {
             uniform_int_distribution<int32_t> dist = get_recurrent_depth_dist();
             modified = g->merge_node(mu, sigma, new_node_type, dist, edge_innovation_count, node_innovation_count);
             Log::debug("\tmerging node, modified: %d\n", modified);
             if (modified) g->set_generated_by("merge_node(" + node_type_str + ")");
             continue;
         }
-        rng -= merge_node_rate;
+        rng -= rates[MERGE_NODE_RATE_I];
     }
 
     //get the new set of parameters (as new paramters may have been

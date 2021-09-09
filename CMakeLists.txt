@@ -1,5 +1,5 @@
 cmake_minimum_required (VERSION 2.6)
-project (EXACT)
+project (exact)
 
 # The version number.
 set (EXACT_VERSION_MAJOR 0)
@@ -93,19 +93,19 @@ ENDIF (COMPILE_CLIENT STREQUAL "YES")
 
 
 add_subdirectory(common)
-add_subdirectory(image_tools)
+#add_subdirectory(image_tools)
 add_subdirectory(time_series)
 add_subdirectory(word_series)
-add_subdirectory(cnn)
+#add_subdirectory(cnn)
 
 add_subdirectory(rnn)
 add_subdirectory(rnn_tests)
 add_subdirectory(rnn_examples)
 
-add_subdirectory(opencl)
+#add_subdirectory(opencl)
 
-add_subdirectory(cnn_tests)
-add_subdirectory(cnn_examples)
+#add_subdirectory(cnn_tests)
+#add_subdirectory(cnn_examples)
 add_subdirectory(multithreaded)
 add_subdirectory(mpi)
 

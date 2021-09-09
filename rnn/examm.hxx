@@ -21,6 +21,22 @@ using std::vector;
 #include "speciation_strategy.hxx"
 #include "common/weight_initialize.hxx"
 
+#define NUM_RATES 13
+        
+#define CLONE_RATE_I 0
+#define ADD_EDGE_RATE_I 1
+#define ADD_REDGE_RATE_I 2
+#define ENABLE_EDGE_RATE_I 3
+#define DISABLE_EDGE_RATE_I 4
+#define SPLIT_EDGE_RATE_I 5
+#define ADD_NODE_RATE_I 6
+#define ENABLE_NODE_RATE_I 7
+#define DISABLE_NODE_RATE_I 8
+#define SPLIT_NODE_RATE_I 9
+#define MERGE_NODE_RATE_I 10
+#define INTRA_ISLAND_CO_RATE_I 11
+#define INTER_ISLAND_CO_RATE_I 12
+
 class EXAMM {
     private:
         int32_t population_size;
@@ -82,19 +98,6 @@ class EXAMM {
         double more_fit_crossover_rate;
         double less_fit_crossover_rate;
 
-        double clone_rate;
-
-        double add_edge_rate;
-        double add_recurrent_edge_rate;
-        double enable_edge_rate;
-        double disable_edge_rate;
-        double split_edge_rate;
-
-        double add_node_rate;
-        double enable_node_rate;
-        double disable_node_rate;
-        double split_node_rate;
-        double merge_node_rate;
 
         vector<int> possible_node_types;
 
@@ -126,7 +129,13 @@ class EXAMM {
         string  genome_file_name;
 
         bool start_filled;
-
+                      
+        vector<double> rates;
+        vector<double> reinforcement_signal;
+        int fala_threshold;
+        double fala_lr;
+        map<string,int> generated_fala_indices;
+        
     public:
         EXAMM(  int32_t _population_size,
                 int32_t _number_islands,
@@ -201,6 +210,7 @@ class EXAMM {
         RNN_Genome* generate_for_transfer_learning(string file_name, int extra_inputs, int extra_outputs) ;
 
         void check_weight_initialize_validity();
+        
 };
 
 #endif
