@@ -169,15 +169,15 @@ EXAMM::EXAMM(
     rates.resize(NUM_RATES);
     reinforcement_signal.resize(NUM_RATES);
     //Set the FALA learning rate
-    fala_lr = 0.025;
+    fala_lr = 0.01;
     //Calculate the threshold to start FALA
-    fala_threshold = number_islands*population_size;
+    fala_threshold = number_islands*population_size*4;
 
-    rates[CLONE_RATE_I] = 1.0;
-    rates[ADD_EDGE_RATE_I] = 1.0;
-    rates[ADD_REDGE_RATE_I] = 1.0;
-    rates[ENABLE_EDGE_RATE_I] = 1.0;
-    rates[DISABLE_EDGE_RATE_I] = 1.0;
+    rates[CLONE_RATE_I] = 0.07;
+    rates[ADD_EDGE_RATE_I] = 0.07;
+    rates[ADD_REDGE_RATE_I] = 0.07;
+    rates[ENABLE_EDGE_RATE_I] = 0.07;
+    rates[DISABLE_EDGE_RATE_I] = 0.07;
     rates[SPLIT_EDGE_RATE_I] = 0.0;
     
     possible_node_types.clear();
@@ -194,11 +194,11 @@ EXAMM::EXAMM(
     bool node_ops = true;
     
     if (node_ops) {
-        rates[ADD_NODE_RATE_I] = 1.0;
-        rates[ENABLE_NODE_RATE_I] = 1.0;
-        rates[DISABLE_NODE_RATE_I] = 1.0;
-        rates[SPLIT_NODE_RATE_I] = 1.0;
-        rates[MERGE_NODE_RATE_I] = 1.0;
+        rates[ADD_NODE_RATE_I] = 0.07;
+        rates[ENABLE_NODE_RATE_I] = 0.07;
+        rates[DISABLE_NODE_RATE_I] = 0.07;
+        rates[SPLIT_NODE_RATE_I] = 0.07;
+        rates[MERGE_NODE_RATE_I] = 0.07;
     } else {
         rates[ADD_NODE_RATE_I] = 0.0;
         rates[ENABLE_NODE_RATE_I] = 0.0;
@@ -559,6 +559,11 @@ bool EXAMM::insert_genome(RNN_Genome* genome) {
                     reinforcement_signal[generated_fala_indices[generated_by]] += (population_size - insert_position + 1.0)/population_size;
                     num_mutations += 1.0;
                 }
+            } else {
+                if(speciation_strategy->get_inserted_genomes() > fala_threshold){
+                    reinforcement_signal[generated_fala_indices[generated_by]] -= 0.3;
+                    num_mutations += 1.0;
+                }
             }
         } else {
             if (generated_by != "initial")
@@ -570,12 +575,19 @@ bool EXAMM::insert_genome(RNN_Genome* genome) {
     if(speciation_strategy->get_inserted_genomes() > fala_threshold && num_mutations > 0){
         Log::info("Insert position: %d/%d\n", insert_position, population_size);
         Log::info("Number mutations: %f\n", num_mutations);
+        double norm_factor = 0;
         //Adjust reinforcement signal
         for(int i = 0; i < NUM_RATES; i++){
             reinforcement_signal[i] = reinforcement_signal[i]*fala_lr/num_mutations;
+            norm_factor += reinforcement_signal[i];
             Log::info("Reinforcement[%d] = %f\n", i, reinforcement_signal[i]);
         }
-        // --- Need to update rates here ---
+        norm_factor += 1;
+        //Update the rates
+        for(int i = 0; i < NUM_RATES; i++){
+            rates[i] = (rates[i] + reinforcement_signal[i])/norm_factor;
+            Log::info("Rates[%d] = %f\n", i, rates[i]);
+        }
         //Update the rates in the speciation strategy
         speciation_strategy->set_rates(1.0 - rates[INTRA_ISLAND_CO_RATE_I] - rates[INTER_ISLAND_CO_RATE_I], rates[INTRA_ISLAND_CO_RATE_I], rates[INTER_ISLAND_CO_RATE_I]);
         Log::info("New rates set - mutation: %f, intra: %f, inter: %f.\n", 1.0 - rates[INTRA_ISLAND_CO_RATE_I] - rates[INTER_ISLAND_CO_RATE_I], rates[INTRA_ISLAND_CO_RATE_I], rates[INTER_ISLAND_CO_RATE_I]);
