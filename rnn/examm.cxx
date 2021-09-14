@@ -559,12 +559,14 @@ bool EXAMM::insert_genome(RNN_Genome* genome) {
                     reinforcement_signal[generated_fala_indices[generated_by]] += (population_size - insert_position + 1.0)/population_size;
                     num_mutations += 1.0;
                 }
-            } else {
+            } 
+            //Potential for negative reinforcement
+            /*else {
                 if(speciation_strategy->get_inserted_genomes() > fala_threshold){
                     reinforcement_signal[generated_fala_indices[generated_by]] -= 0.3;
                     num_mutations += 1.0;
                 }
-            }
+            }*/
         } else {
             if (generated_by != "initial")
                 Log::error("unrecognized generated_by string '%s'\n", generated_by.c_str());
