@@ -169,9 +169,11 @@ EXAMM::EXAMM(
     rates.resize(NUM_RATES);
     reinforcement_signal.resize(NUM_RATES);
     //Set the FALA learning rate
-    fala_lr = 0.01;
+    fala_lr = 0.0025;
     //Calculate the threshold to start FALA
     fala_threshold = number_islands*population_size*4;
+    //Minimum values for each action probability
+    mins = {0.05, 0.05, 0.05, 0.05, 0.05, 0, 0.05, 0.05, 0.05, 0.05, 0.05, 0.1, 0.07};
 
     rates[CLONE_RATE_I] = 0.07;
     rates[ADD_EDGE_RATE_I] = 0.07;
@@ -560,13 +562,13 @@ bool EXAMM::insert_genome(RNN_Genome* genome) {
                     num_mutations += 1.0;
                 }
             } 
-            //Potential for negative reinforcement
-            /*else {
+            //Potential for negative reinforcement, 30% of positive reinforcement
+            else {
                 if(speciation_strategy->get_inserted_genomes() > fala_threshold){
                     reinforcement_signal[generated_fala_indices[generated_by]] -= 0.3;
                     num_mutations += 1.0;
                 }
-            }*/
+            }
         } else {
             if (generated_by != "initial")
                 Log::error("unrecognized generated_by string '%s'\n", generated_by.c_str());
@@ -577,17 +579,27 @@ bool EXAMM::insert_genome(RNN_Genome* genome) {
     if(speciation_strategy->get_inserted_genomes() > fala_threshold && num_mutations > 0){
         Log::info("Insert position: %d/%d\n", insert_position, population_size);
         Log::info("Number mutations: %f\n", num_mutations);
-        double norm_factor = 0;
-        //Adjust reinforcement signal
+        double norm_to = 1.0;
+        double norm_factor = 1.0;
+        std::vector<bool> normalize(NUM_RATES, true);
+        //Adjust reinforcement signal and update rates
         for(int i = 0; i < NUM_RATES; i++){
             reinforcement_signal[i] = reinforcement_signal[i]*fala_lr/num_mutations;
-            norm_factor += reinforcement_signal[i];
             Log::info("Reinforcement[%d] = %f\n", i, reinforcement_signal[i]);
+            rates[i] += reinforcement_signal[i];
+            norm_factor += reinforcement_signal[i];
+            if(rates[i] < mins[i]){
+                norm_factor -= rates[i];
+                normalize[i] = false;
+                rates[i] = mins[i];
+                norm_to -= rates[i];
+            }
         }
-        norm_factor += 1;
-        //Update the rates
+        //Normalize the rates
         for(int i = 0; i < NUM_RATES; i++){
-            rates[i] = (rates[i] + reinforcement_signal[i])/norm_factor;
+            if(normalize[i]){
+                rates[i] = (rates[i])*norm_to/norm_factor;
+            }
             Log::info("Rates[%d] = %f\n", i, rates[i]);
         }
         //Update the rates in the speciation strategy
