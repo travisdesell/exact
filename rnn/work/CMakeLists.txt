@@ -1,1 +1,1 @@
-add_library(work work)
+add_library(work work.cxx)

@@ -157,15 +157,13 @@ int main(int argc, char **argv) {
 
     int bp_iterations;
     get_argument(arguments, "--bp_iterations", true, bp_iterations);
-    genome->set_bp_iterations(bp_iterations);
+    genome->set_bp_iterations(bp_iterations, 0);
 
     double learning_rate = 0.0001;
     get_argument(arguments, "--learning_rate", false, learning_rate);
 
     genome->set_learning_rate(learning_rate);
-    genome->set_adapt_learning_rate(false);
     genome->set_nesterov_momentum(true);
-    genome->set_reset_weights(false);
     genome->enable_high_threshold(1.0);
     genome->enable_low_threshold(0.05);
     genome->disable_dropout();
@@ -177,7 +175,7 @@ int main(int argc, char **argv) {
     }
 
     if (argument_exists(arguments, "--stochastic")) {
-        genome->backpropagate_stochastic(training_inputs, training_outputs, test_inputs, test_outputs);
+        genome->backpropagate_stochastic(training_inputs, training_outputs, test_inputs, test_outputs, false, 30, 100);
     } else {
         genome->backpropagate(training_inputs, training_outputs, test_inputs, test_outputs);
     }

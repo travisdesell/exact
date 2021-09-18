@@ -81,7 +81,6 @@ int main(int argc, char** argv) {
         for (uint32_t k = 0; k < repeats; k++) {
             examm = make_examm();
             set_innovation_counts(examm);
-
             vector<thread> threads;
             for (int32_t i = 0; i < number_threads; i++) {
                 threads.push_back( thread(examm_thread, i, make_genome_operators(i)) );

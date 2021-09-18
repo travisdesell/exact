@@ -12,17 +12,20 @@ using std::uniform_real_distribution;
 #include "work/work.hxx"
 
 class SpeciationStrategy {
-    
+    protected:
+        int32_t generated_genomes = 0;
+        int32_t inserted_genomes = 0;
+
     public:
         /**
          * \return the number of generated genomes.
          */
-        virtual int32_t get_generated_genomes() const = 0;
+        int32_t get_generated_genomes();
 
         /**
          * \return the number of inserted genomes.
          */
-        virtual int32_t get_inserted_genomes() const = 0;
+        int32_t get_inserted_genomes();
 
         /**
          * Gets the fitness of the best genome of all the islands
@@ -87,4 +90,3 @@ class SpeciationStrategy {
 };
 
 #endif
-

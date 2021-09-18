@@ -30,14 +30,21 @@ SET (PLATFORM 64)
 
 
 # 1 This line for local - THIS CODE IS SLOW BUT WILL COMPILE FASTER! Use a Release build for fast code!
-SET (CMAKE_CXX_FLAGS                "-std=gnu++17 -funroll-loops -fno-omit-frame-pointer")
-# 2 This line for cluster
-#SET (CMAKE_CXX_FLAGS                "-std=gnu++17 -Wall -O3 -funroll-loops -flto -msse3 -fomit-frame-pointer")
+SET (CMAKE_CXX_FLAGS                "-Wall -Wextra -std=gnu++17 -funroll-loops -march=native")
 
+# DEBUG BUILD
 # Address sanitizer enabled
-SET (CMAKE_CXX_FLAGS_DEBUG          "-g -fsanitize=address -D_GLIBCXX_DEBUG")
+# Better stacktraces with -fnoemitframepointer
+# This is the default build type
+SET (CMAKE_CXX_FLAGS_DEBUG          "-g -fsanitize=address -D_GLIBCXX_DEBUG -fno-omit-frame-pointer")
+
+# Smaller binary
 SET (CMAKE_CXX_FLAGS_MINSIZEREL     "-Os -DNDEBUG")
-SET (CMAKE_CXX_FLAGS_RELEASE        "-Wall -O4 -funroll-loops -DNDEBUG -flto -msse3")
+
+# Release build, optimized for current CPU architecutre (i.e. the binaries are not going to be portable).
+# run CMAKE CMAKE_BUILD_TYPE=Release ..
+# Fastest possible code + no debugging
+SET (CMAKE_CXX_FLAGS_RELEASE        "-O3 -funroll-loops -DNDEBUG -flto -march=native")
 
 set(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH} /opt/local/lib)
 
@@ -119,6 +126,8 @@ add_subdirectory(cnn_tests)
 add_subdirectory(cnn_examples)
 add_subdirectory(multithreaded)
 add_subdirectory(mpi)
+
+# add_subdirectory(exona)
 
 
 

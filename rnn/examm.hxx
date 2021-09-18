@@ -46,7 +46,7 @@ class EXAMM {
         int32_t extinction_event_generation_number;
 
         bool start_filled;
-        
+
         RNN_Genome *seed_genome;
 
         string island_ranking_method;
@@ -54,7 +54,8 @@ class EXAMM {
         string repopulation_method;
         int32_t repopulation_mutations;
         bool repeat_extinction;
-        
+        int32_t epochs_acc_freq;
+
         SpeciationStrategy *speciation_strategy;
 
         map<string, int32_t> inserted_from_map;
@@ -83,7 +84,7 @@ class EXAMM {
         string genome_file_name;
 
     public:
-        EXAMM(  int32_t _population_size, 
+        EXAMM(  int32_t _population_size,
                 int32_t _number_islands,
                 int32_t _max_genomes,
                 int32_t _extinction_event_generation_number,
@@ -92,11 +93,12 @@ class EXAMM {
                 string repopulation_method,
                 int32_t _repopulation_mutations,
                 bool _repeat_extinction,
-                string _speciation_method,
-                double _species_threshold, 
+                int32_t _epochs_acc_freq,
+                string speciation_method,
+                double _species_threshold,
                 double _fitness_threshold,
-                double _neat_c1, 
-                double _neat_c2, 
+                double _neat_c1,
+                double _neat_c2,
                 double _neat_c3,
                 WeightType _weight_initialize,
                 WeightType _weight_inheritance,
@@ -105,6 +107,18 @@ class EXAMM {
                 GenomeOperators _genome_operators,
                 DatasetMeta _dataset_meta,
                 TrainingParameters _training_parameters,
+                // int32_t _bp_iterations,
+                // double _learning_rate,
+                // bool _use_high_threshold,
+                // double _high_threshold,
+                // bool _use_low_threshold,
+                // double _low_threshold,
+                // bool _use_dropout,
+                // double _dropout_probability,
+                // int32_t _min_recurrent_depth,
+                // int32_t _max_recurrent_depth,
+                // bool _use_regression,
+                // string _output_directory,
                 RNN_Genome *seed_genome,
                 bool _start_filled);
 
@@ -119,6 +133,9 @@ class EXAMM {
         
         Work *get_initialize_work();
         Work *generate_work();
+
+        int get_random_node_type();
+
         bool insert_genome(RNN_Genome* genome);
 
         double get_best_fitness();

@@ -231,11 +231,11 @@ RNN::~RNN() {
 }
 
 
-int RNN::get_number_nodes() {
+uint32_t RNN::get_number_nodes() {
     return nodes.size();
 }
 
-int RNN::get_number_edges() {
+uint32_t RNN::get_number_edges() {
     return edges.size();
 }
 
@@ -470,6 +470,7 @@ double RNN::calculate_error_mae(const vector< vector<double> > &expected_outputs
     double mae_sum = 0.0;
     double mae;
     double error;
+
     for (uint32_t i = 0; i < output_nodes.size(); i++) {
         output_nodes[i]->error_values.resize(expected_outputs[i].size());
 

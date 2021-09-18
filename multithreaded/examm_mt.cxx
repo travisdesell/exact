@@ -22,7 +22,6 @@ using std::vector;
 #include "common/dataset_meta.hxx"
 
 #include "examm_mt_core.cxx"
-
 int main(int argc, char** argv) {
     arguments = vector<string>(argv, argv + argc);
 

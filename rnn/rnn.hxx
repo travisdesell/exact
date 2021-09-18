@@ -35,8 +35,8 @@ class RNN {
         void fix_parameter_orders(const vector<string> &input_parameter_names, const vector<string> &output_parameter_names);
         void validate_parameters(const vector<string> &input_parameter_names, const vector<string> &output_parameter_names);
 
-        int get_number_nodes();
-        int get_number_edges();
+        uint32_t get_number_nodes();
+        uint32_t get_number_edges();
 
         RNN_Node_Interface* get_node(int i);
         RNN_Edge* get_edge(int i);

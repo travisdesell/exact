@@ -49,47 +49,50 @@ using std::to_string;
 
 EXAMM::~EXAMM() { }
 
-EXAMM::EXAMM(
-        int32_t _population_size, 
-        int32_t _number_islands, 
-        int32_t _max_genomes, 
-        int32_t _extinction_event_generation_number,
-        int32_t islands_to_exterminate,
-        string _island_ranking_method, 
-        string _repopulation_method, 
-        int32_t _repopulation_mutations,
-        bool _repeat_extinction,
-        string speciation_method,
-        double _species_threshold, 
-        double _fitness_threshold,
-        double _neat_c1, 
-        double _neat_c2, 
-        double _neat_c3,
-        WeightType _weight_initialize,
-        WeightType _weight_inheritance,
-        WeightType _mutated_component_weight,
-        string _output_directory,
-        GenomeOperators _genome_operators,
-        DatasetMeta _dataset_meta,
-        TrainingParameters _training_parameters,
-        RNN_Genome *_seed_genome,
-        bool _start_filled) :
-                        population_size(_population_size),
-                        number_islands(_number_islands),
-                        max_genomes(_max_genomes),
-                        dataset_meta(_dataset_meta),
-                        training_parameters(_training_parameters),
-                        genome_operators(_genome_operators),
-                        extinction_event_generation_number(_extinction_event_generation_number),
-                        start_filled(_start_filled),
-                        island_ranking_method(_island_ranking_method), 
-                        repopulation_method(_repopulation_method), 
-                        repopulation_mutations(_repopulation_mutations),
-                        repeat_extinction(_repeat_extinction),
-                        output_directory(_output_directory),
-                        weight_initialize(_weight_initialize),
-                        weight_inheritance(_weight_inheritance),
-                        mutated_component_weight(_mutated_component_weight) {
+EXAMM::EXAMM(   int32_t population_size,
+                int32_t number_islands,
+                int32_t max_genomes,
+                int32_t extinction_event_generation_number,
+                int32_t islands_to_exterminate,
+                string island_ranking_method,
+                string repopulation_method,
+                int32_t repopulation_mutations,
+                bool repeat_extinction,
+                int32_t epochs_acc_freq,
+                string speciation_method,
+                double species_threshold,
+                double fitness_threshold,
+                double neat_c1,
+                double neat_c2,
+                double neat_c3,
+                WeightType weight_initialize,
+                WeightType weight_inheritance,
+                WeightType mutated_component_weight,
+                string output_directory,
+                GenomeOperators genome_operators,
+                DatasetMeta dataset_meta,
+                TrainingParameters training_parameters,
+                RNN_Genome *seed_genome,
+                bool start_filled) :
+                        population_size(population_size),
+                        number_islands(number_islands),
+                        max_genomes(max_genomes),
+                        dataset_meta(dataset_meta),
+                        training_parameters(training_parameters),
+                        genome_operators(genome_operators),
+                        extinction_event_generation_number(extinction_event_generation_number),
+                        start_filled(start_filled),
+                        seed_genome(seed_genome), 
+                        island_ranking_method(island_ranking_method), 
+                        repopulation_method(repopulation_method), 
+                        repopulation_mutations(repopulation_mutations),
+                        repeat_extinction(repeat_extinction),
+                        epochs_acc_freq(epochs_acc_freq),
+//                         use_regression(use_regression),
+                        output_directory(output_directory),
+                        weight_initialize(weight_initialize),
+                        weight_inheritance(weight_inheritance),
+                        mutated_component_weight(mutated_component_weight) {
     total_bp_epochs = 0;
 
     uint16_t seed = std::chrono::system_clock::now().time_since_epoch().count();
@@ -107,19 +110,13 @@ EXAMM::EXAMM(
     Log::info("weight inheritance: %s \n", WEIGHT_TYPES_STRING[weight_inheritance].c_str());
     Log::info("mutated component weight: %s\n", WEIGHT_TYPES_STRING[mutated_component_weight].c_str());
 
-    seed_genome = _seed_genome;
-
+    Log::info("Speciation method is: \"%s\" (Default is the island-based speciation strategy).\n", speciation_method.c_str());
+    Log::info("Repeat extinction is set to %s\n", repeat_extinction? "true":"false");
     bool seed_genome_was_minimal = seed_genome == NULL;
     if (seed_genome_was_minimal) {
         seed_genome = create_ff(dataset_meta.input_parameter_names, 0, 0, dataset_meta.output_parameter_names, 0, weight_initialize, weight_inheritance, mutated_component_weight);
         seed_genome->initialize_randomly();
     } 
-    // otherwise a seed genome was passed into EXAMM
-
-    //make sure we don't duplicate node or edge innovation numbers
-    // TODO: Move this to the main function and send these values to the workers.
-    // edge_innovation_count = seed_genome->get_max_edge_innovation_count() + 1;
-    // node_innovation_count = seed_genome->get_max_node_innovation_count() + 1;
 
     seed_genome->set_generated_by("initial");
 
@@ -134,16 +131,16 @@ EXAMM::EXAMM(
     Log::info("Speciation method is: \"%s\" (Default is the island-based speciation strategy).\n", speciation_method.c_str());
     if (speciation_method.compare("island") == 0 || speciation_method.compare("") == 0) {
         double mutation_rate = 0.70, intra_island_co_rate = 0.20, inter_island_co_rate = 0.10;
-        
+
         if (number_islands == 1) {
             intra_island_co_rate += inter_island_co_rate;
             inter_island_co_rate = 0.0;
         }
-       
+
         // Only difference here is that the apply_stir_mutations lambda is passed if the island is supposed to start filled.
         if (start_filled) {
             // Only used if start_filled is enabled
-            function<void (RNN_Genome *)> apply_stir_mutations = [this](RNN_Genome *genome) {
+            function<void (RNN_Genome *)> apply_stir_mutations = [&](RNN_Genome *genome) {
                 RNN_Genome *copy = genome->copy();
                 genome_operators.mutate(copy, repopulation_mutations);
                 return copy;
@@ -157,17 +154,16 @@ EXAMM::EXAMM(
                     number_islands, population_size, mutation_rate, intra_island_co_rate, inter_island_co_rate,
                     seed_genome, island_ranking_method, repopulation_method, extinction_event_generation_number, repopulation_mutations, islands_to_exterminate, max_genomes, repeat_extinction, seed_genome_was_minimal);
         }
-    }
-    else if (speciation_method.compare("neat") == 0) {
+    } else if (speciation_method.compare("neat") == 0) {
+        //make sure we don't duplicate node or edge innovation numbers
         double mutation_rate = 0.70, intra_island_co_rate = 0.20, inter_island_co_rate = 0.10;
-        
+
         if (number_islands == 1) {
             inter_island_co_rate = 0.0;
             intra_island_co_rate = 0.30;
         }
         // no transfer learning for NEAT
-        speciation_strategy = new NeatSpeciationStrategy(mutation_rate, intra_island_co_rate, inter_island_co_rate, seed_genome, _species_threshold, _fitness_threshold, _neat_c1, _neat_c2, _neat_c3, generator);
-        
+        speciation_strategy = new NeatSpeciationStrategy(mutation_rate, intra_island_co_rate, inter_island_co_rate, seed_genome, species_threshold, fitness_threshold, neat_c1, neat_c2, neat_c3, generator);
     }
 
     if (output_directory != "") {
@@ -183,7 +179,7 @@ EXAMM::EXAMM(
         //memory_log << endl;
 
         op_log_file = new ofstream(output_directory + "/op_log.csv");
-        
+
         op_log_ordering = {
             "genomes",
             "crossover",
@@ -207,19 +203,19 @@ EXAMM::EXAMM(
             "split_edge"
         };
 
-        for (int i = 0; i < ops_with_node_type.size(); i++) {
+        for (uint32_t i = 0; i < ops_with_node_type.size(); i++) {
             string op = ops_with_node_type[i];
-            for (int j = 0; j < genome_operators.get_possible_node_types().size(); j++)
+            for (uint32_t j = 0; j < genome_operators.get_possible_node_types().size(); j++)
                 op_log_ordering.push_back(op + "(" + NODE_TYPES[genome_operators.get_possible_node_types()[j]] + ")");
         }
 
-        for (int i = 0; i < op_log_ordering.size(); i++) {
+        for (uint32_t i = 0; i < op_log_ordering.size(); i++) {
             string op = op_log_ordering[i];
             (*op_log_file) << op;
             (*op_log_file) << " Generated, ";
             (*op_log_file) << op;
             (*op_log_file) << " Inserted, ";
-            
+
             inserted_counts[op] = 0;
             generated_counts[op] = 0;
         }
@@ -280,7 +276,7 @@ void EXAMM::update_log() {
         std::chrono::time_point<std::chrono::system_clock> currentClock = std::chrono::system_clock::now();
         long milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(currentClock - start_clock).count();
 
-        (*log_file) << speciation_strategy->get_inserted_genomes()
+        (*log_file) << speciation_strategy->get_generated_genomes()
             << "," << total_bp_epochs
             << "," << milliseconds
             << "," << best_genome->best_validation_mae
@@ -292,7 +288,7 @@ void EXAMM::update_log() {
             << endl;
 
         /*
-        memory_log << speciation_strategy->get_inserted_genomes()
+        memory_log << speciation_strategy->get_evaluated_genomes()
             << "," << total_bp_epochs
             << "," << milliseconds
             << "," << best_genome->best_validation_mae
@@ -304,7 +300,7 @@ void EXAMM::update_log() {
             << endl;
         */
 
-        for (int i = 0; i < op_log_ordering.size(); i++) {
+        for (uint32_t i = 0; i < op_log_ordering.size(); i++) {
             string op = op_log_ordering[i];
             (*op_log_file) << generated_counts[op] << ", " << inserted_counts[op]  << ", ";
         }
@@ -344,7 +340,7 @@ RNN_Genome* EXAMM::get_worst_genome() {
 bool EXAMM::insert_genome(RNN_Genome* genome) {
     total_bp_epochs += genome->get_bp_iterations();
 
-    // Log::info("genomes evaluated: %10d , attempting to insert: %s\n", (speciation_strategy->get_inserted_genomes() + 1), parse_fitness(genome->get_fitness()).c_str());
+    // Log::info("genomes evaluated: %10d , attempting to insert: %s\n", (speciation_strategy->get_evaluated_genomes() + 1), parse_fitness(genome->get_fitness()).c_str());
 
     if (!genome->sanity_check()) {
         Log::error("genome failed sanity check on insert!\n");
@@ -441,7 +437,7 @@ RNN_Genome *EXAMM::get_seed_genome() {
 void EXAMM::check_weight_initialize_validity() {
     if (weight_initialize < 0) {
         Log::fatal("Weight initalization is set to NONE, this should not happen! \n");
-        exit(1);    
+        exit(1);
     }
     if (weight_inheritance < 0) {
         Log::fatal("Weight inheritance is set to NONE, this should not happen! \n");
@@ -449,7 +445,7 @@ void EXAMM::check_weight_initialize_validity() {
     }
     if (mutated_component_weight < 0) {
         Log::fatal("Mutated component weight is set to NONE, this should not happen! \n");
-        exit(1);    
+        exit(1);
     }
     if (weight_initialize == WeightType::LAMARCKIAN) {
         Log::fatal("Weight initialization method is set to Lamarckian! \n");

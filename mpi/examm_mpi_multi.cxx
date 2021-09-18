@@ -51,13 +51,6 @@ int main(int argc, char** argv) {
         get_argument(arguments, "--write_time_series", true, base_filename);
         time_series_sets->write_time_series_sets(base_filename);
     }
-
-    int32_t repeats;
-    get_argument(arguments, "--repeats", true, repeats);
-
-    int fold_size = 2;
-    get_argument(arguments, "--fold_size", true, fold_size);
-
     Log::clear_rank_restriction();
 
     for (int32_t i = 0; i < time_series_sets->get_number_series(); i += fold_size) {

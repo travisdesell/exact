@@ -43,9 +43,10 @@ class RNN_Genome {
 
         int32_t bp_iterations;
         double learning_rate;
-        bool adapt_learning_rate;
+        bool adapt_learning_rate; //TODO: deprecated and needs to be removed but don't want to change the genome binary file yet
         bool use_nesterov_momentum;
-        bool use_reset_weights;
+        bool use_reset_weights; //TODO: deprecated and needs to be removed but don't want to change the genome binary file yet
+
 
         bool use_high_norm;
         double high_threshold;
@@ -53,7 +54,7 @@ class RNN_Genome {
         double low_threshold;
 
         bool use_regression;
-
+    
         bool use_dropout;
         double dropout_probability;
 
@@ -69,7 +70,7 @@ class RNN_Genome {
 
         vector<double> initial_parameters;
 
-        
+
         double best_validation_mse;
         double best_validation_mae;
         vector<double> best_parameters;
@@ -79,6 +80,7 @@ class RNN_Genome {
         uniform_real_distribution<double> rng;
         uniform_real_distribution<double> rng_0_1;
         uniform_real_distribution<double> rng_1_1;
+        uniform_int_distribution<int> rng_int;
         NormalDistribution normal_distribution;
 
         vector<RNN_Node_Interface*> nodes;
@@ -97,6 +99,7 @@ class RNN_Genome {
         // vector<int32_t> innovation_list;
 
     public:
+        bool tl_with_epigenetic;
         void sort_nodes_by_depth();
         void sort_edges_by_depth();
         void sort_recurrent_edges_by_depth();
@@ -131,7 +134,7 @@ class RNN_Genome {
 
         double calculate_fitness(const vector< vector< vector<double> > > &validation_inputs, const vector< vector< vector<double> > > &validation_outputs);
         double get_fitness() const;
-        double get_best_validation_softmax() const; 
+        double get_best_validation_softmax() const;
         double get_best_validation_mse() const;
         double get_best_validation_mae() const;
         
@@ -150,13 +153,11 @@ class RNN_Genome {
         void set_group_id(int32_t _group_id);
 
 
-        void set_bp_iterations(int32_t _bp_iterations);
+        void set_bp_iterations(int32_t _bp_iterations, int32_t epochs_acc_freq);
         int32_t get_bp_iterations();
 
         void set_learning_rate(double _learning_rate);
-        void set_adapt_learning_rate(bool _adapt_learning_rate);
         void set_nesterov_momentum(bool _use_nesterov_momentum);
-        void set_reset_weights(bool _use_reset_weights);
         void disable_high_threshold();
         void enable_high_threshold(double _high_threshold);
         void disable_low_threshold();
@@ -206,8 +207,10 @@ class RNN_Genome {
 
         void backpropagate(const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, const vector< vector< vector<double> > > &validation_inputs, const vector< vector< vector<double> > > &validation_outputs);
 
-        void backpropagate_stochastic(const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, const vector< vector< vector<double> > > &validation_inputs, const vector< vector< vector<double> > > &validation_outputs);
+        void backpropagate_stochastic(const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, const vector< vector< vector<double> > > &validation_inputs, const vector< vector< vector<double> > > &validation_outputs, bool random_sequence_length, int sequence_length_lower_bound, int sequence_length_upper_bound);
 
+        vector< vector<double> > slice_time_series(uint32_t start_index, uint32_t sequence_length, uint32_t num_parameter, const vector< vector<double> > &inputs);
+        
         double get_softmax(const vector<double> &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs);
         double get_mse(const vector<double> &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs);
         double get_mae(const vector<double> &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs);
@@ -260,22 +263,23 @@ class RNN_Genome {
         string get_color(double weight, bool is_recurrent);
         void write_graphviz(string filename);
 
-        RNN_Genome(string binary_filename);
-        RNN_Genome(char* array, int32_t length);
+        RNN_Genome(string binary_filename, bool _tl_with_epigenetic=false);
+        RNN_Genome(char* array, uint32_t length);
         RNN_Genome(istream &bin_infile);
 
-        void read_from_array(char *array, int32_t length);
+        void read_from_array(char *array, uint32_t length);
         void read_from_stream(istream &bin_istream);
 
-        void write_to_array(char **array, int32_t &length);
+        void write_to_array(char **array, uint32_t &length);
         void write_to_file(string bin_filename);
         void write_to_stream(ostream &bin_stream);
 
-        bool connect_new_input_node( double mu, double sig, RNN_Node_Interface *new_node, uniform_int_distribution<int32_t> dist, function<int32_t ()> &get_next_edge_innovation_count );
-        bool connect_new_output_node( double mu, double sig, RNN_Node_Interface *new_node, uniform_int_distribution<int32_t> dist, function<int32_t ()> &get_next_edge_innovation_count );
-        bool connect_node_to_hid_nodes( double mu, double sig, RNN_Node_Interface *new_node, uniform_int_distribution<int32_t> dist, function<int32_t ()> &get_next_edge_innovation_count, bool from_input );
+        bool connect_new_input_node( double mu, double sig, RNN_Node_Interface *new_node, uniform_int_distribution<int32_t> dist, function<int32_t ()> &get_next_edge_innovation_count, bool not_all_hidden);
+        bool connect_new_output_node( double mu, double sig, RNN_Node_Interface *new_node, uniform_int_distribution<int32_t> dist, function<int32_t ()> &get_next_edge_innovation_count, bool not_all_hidden);
         
         void update_innovation_counts(function<int32_t ()> &get_next_node_innovation_count, function<int32_t ()> &get_next_edge_innovation_count);
+
+        vector<RNN_Node_Interface*> pick_possible_nodes(int layer_type, bool not_all_hidden, string node_type);
 
         vector<int32_t> get_innovation_list();
         /**
