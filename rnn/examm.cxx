@@ -169,7 +169,7 @@ EXAMM::EXAMM(
     rates.resize(NUM_RATES);
     reinforcement_signal.resize(NUM_RATES);
     //Set the FALA learning rate
-    fala_lr = 0.0025;
+    fala_lr = 0.001;
     //Calculate the threshold to start FALA
     fala_threshold = number_islands*population_size*4;
     //Minimum values for each action probability
@@ -562,7 +562,7 @@ bool EXAMM::insert_genome(RNN_Genome* genome) {
                     num_mutations += 1.0;
                 }
             } 
-            //Potential for negative reinforcement, 30% of positive reinforcement
+            //Negative reinforcement for generating bad genome
             else {
                 if(speciation_strategy->get_inserted_genomes() > fala_threshold){
                     reinforcement_signal[generated_fala_indices[generated_by]] -= 0.3;
@@ -584,8 +584,18 @@ bool EXAMM::insert_genome(RNN_Genome* genome) {
         std::vector<bool> normalize(NUM_RATES, true);
         //Adjust reinforcement signal and update rates
         for(int i = 0; i < NUM_RATES; i++){
-            reinforcement_signal[i] = reinforcement_signal[i]*fala_lr/num_mutations;
             Log::info("Reinforcement[%d] = %f\n", i, reinforcement_signal[i]);
+            double max_rate = *max_element(rates.begin(), rates.end());
+            if(i == SPLIT_EDGE_RATE_I){ //This move is not used
+                continue;
+            }
+            else if(reinforcement_signal[i] > 0){
+                reinforcement_signal[i] = reinforcement_signal[i]*fala_lr/num_mutations/rates[i]*max_rate;
+            }
+            else if(reinforcement_signal[i] < 0){
+                reinforcement_signal[i] = reinforcement_signal[i]*fala_lr/num_mutations*rates[i]/max_rate;
+            }
+            //reinforcement_signal[i] = reinforcement_signal[i]*fala_lr/num_mutations;
             rates[i] += reinforcement_signal[i];
             norm_factor += reinforcement_signal[i];
             if(rates[i] < mins[i]){

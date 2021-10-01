@@ -123,7 +123,7 @@ int32_t Island::insert_genome(RNN_Genome *genome) {
     if (is_full() && new_fitness > get_worst_fitness()) {
         Log::info("ignoring genome, fitness: %lf > worst for island[%d] fitness: %lf\n", new_fitness, id, genomes.back()->get_fitness());
         do_population_check(__LINE__, initial_size);
-        return false;
+        return -1;
     }
 
     //check and see if the structural hash of the genome is in the
