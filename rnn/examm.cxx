@@ -173,7 +173,7 @@ EXAMM::EXAMM(
     //Calculate the threshold to start FALA
     fala_threshold = number_islands*population_size*4;
     //Minimum values for each action probability
-    mins = {0.05, 0.05, 0.05, 0.05, 0.05, 0, 0.05, 0.05, 0.05, 0.05, 0.05, 0.1, 0.07};
+    mins = {0.05, 0.05, 0.05, 0.05, 0.05, 0, 0.05, 0.05, 0.05, 0.05, 0.05, 0.1, 0.1};
 
     rates[CLONE_RATE_I] = 0.07;
     rates[ADD_EDGE_RATE_I] = 0.07;
@@ -565,7 +565,7 @@ bool EXAMM::insert_genome(RNN_Genome* genome) {
             //Negative reinforcement for generating bad genome
             else {
                 if(speciation_strategy->get_inserted_genomes() > fala_threshold){
-                    reinforcement_signal[generated_fala_indices[generated_by]] -= 0.3;
+                    reinforcement_signal[generated_fala_indices[generated_by]] -= 0.5;
                     num_mutations += 1.0;
                 }
             }
