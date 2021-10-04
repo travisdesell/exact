@@ -169,11 +169,11 @@ EXAMM::EXAMM(
     rates.resize(NUM_RATES);
     reinforcement_signal.resize(NUM_RATES);
     //Set the FALA learning rate
-    fala_lr = 0.002;
+    fala_lr = 0.0015;
     //Calculate the threshold to start FALA
     fala_threshold = number_islands*population_size*4;
     //Minimum values for each action probability
-    mins = {0.05, 0.05, 0.05, 0.05, 0.05, 0, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05};
+    mins = {0.05, 0.05, 0.05, 0.05, 0.05, 0, 0.05, 0.05, 0.05, 0.05, 0.05, 0.07, 0.07};
 
     rates[CLONE_RATE_I] = 0.07;
     rates[ADD_EDGE_RATE_I] = 0.07;
@@ -565,7 +565,7 @@ bool EXAMM::insert_genome(RNN_Genome* genome) {
             //Negative reinforcement for generating bad genome
             else {
                 if(speciation_strategy->get_inserted_genomes() > fala_threshold){
-                    reinforcement_signal[generated_fala_indices[generated_by]] -= 0.5;
+                    reinforcement_signal[generated_fala_indices[generated_by]] -= 1.0;
                     num_mutations += 1.0;
                 }
             }
@@ -583,9 +583,9 @@ bool EXAMM::insert_genome(RNN_Genome* genome) {
         double norm_factor = 1.0;
         std::vector<bool> normalize(NUM_RATES, true);
         //Adjust reinforcement signal and update rates
+        double max_rate = *max_element(rates.begin(), rates.end());
         for(int i = 0; i < NUM_RATES; i++){
-            Log::info("Reinforcement[%d] = %f\n", i, reinforcement_signal[i]);
-            double max_rate = *max_element(rates.begin(), rates.end());
+            Log::info("Base Reinforcement[%d] = %f\n", i, reinforcement_signal[i]);
             if(i == SPLIT_EDGE_RATE_I){ //This move is not used
                 continue;
             }
@@ -595,6 +595,7 @@ bool EXAMM::insert_genome(RNN_Genome* genome) {
             else if(reinforcement_signal[i] < 0){
                 reinforcement_signal[i] = reinforcement_signal[i]*fala_lr/num_mutations*rates[i]/max_rate;
             }
+            Log::info("Adjusted Reinforcement[%d] = %f\n", i, reinforcement_signal[i]);
             //reinforcement_signal[i] = reinforcement_signal[i]*fala_lr/num_mutations;
             rates[i] += reinforcement_signal[i];
             norm_factor += reinforcement_signal[i];
