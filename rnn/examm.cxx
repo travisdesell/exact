@@ -565,7 +565,7 @@ bool EXAMM::insert_genome(RNN_Genome* genome) {
             //Negative reinforcement for generating bad genome
             else {
                 if(speciation_strategy->get_inserted_genomes() > fala_threshold){
-                    reinforcement_signal[generated_fala_indices[generated_by]] -= 1.0;
+                    reinforcement_signal[generated_fala_indices[generated_by]] -= 0.5;
                     num_mutations += 1.0;
                 }
             }
@@ -615,7 +615,6 @@ bool EXAMM::insert_genome(RNN_Genome* genome) {
         }
         //Update the rates in the speciation strategy
         speciation_strategy->set_rates(1.0 - rates[INTRA_ISLAND_CO_RATE_I] - rates[INTER_ISLAND_CO_RATE_I], rates[INTRA_ISLAND_CO_RATE_I], rates[INTER_ISLAND_CO_RATE_I]);
-        Log::info("New rates set - mutation: %f, intra: %f, inter: %f.\n", 1.0 - rates[INTRA_ISLAND_CO_RATE_I] - rates[INTER_ISLAND_CO_RATE_I], rates[INTRA_ISLAND_CO_RATE_I], rates[INTER_ISLAND_CO_RATE_I]);
     }
     
     speciation_strategy->print();
