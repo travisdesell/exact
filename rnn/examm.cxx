@@ -171,7 +171,7 @@ EXAMM::EXAMM(
     //Set the FALA learning rate
     fala_lr = 0.001;
     //Calculate the threshold to start FALA
-    fala_threshold = max(max_genomes/10, 100);
+    fala_threshold = std::max(max_genomes/10, 100);
     //Minimum values for each action probability
     mins = {0.04, 0.04, 0.04, 0.04, 0.04, 0, 0.04, 0.04, 0.04, 0.04, 0.04, 0.1, 0.08};
 
