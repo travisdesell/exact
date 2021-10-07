@@ -169,11 +169,11 @@ EXAMM::EXAMM(
     rates.resize(NUM_RATES);
     reinforcement_signal.resize(NUM_RATES);
     //Set the FALA learning rate
-    fala_lr = 0.002;
+    fala_lr = 0.001;
     //Calculate the threshold to start FALA
-    fala_threshold = max_genomes/10;
+    fala_threshold = max(max_genomes/10, 100);
     //Minimum values for each action probability
-    mins = {0.03, 0.03, 0.03, 0.03, 0.03, 0, 0.03, 0.03, 0.03, 0.03, 0.03, 0.07, 0.07};
+    mins = {0.04, 0.04, 0.04, 0.04, 0.04, 0, 0.04, 0.04, 0.04, 0.04, 0.04, 0.1, 0.08};
 
     rates[CLONE_RATE_I] = 0.07;
     rates[ADD_EDGE_RATE_I] = 0.07;
@@ -565,7 +565,7 @@ bool EXAMM::insert_genome(RNN_Genome* genome) {
             //Negative reinforcement for generating bad genome
             else {
                 if(speciation_strategy->get_inserted_genomes() > fala_threshold){
-                    reinforcement_signal[generated_fala_indices[generated_by]] -= 0.3;
+                    reinforcement_signal[generated_fala_indices[generated_by]] -= 0.6;
                     num_mutations += 1.0;
                 }
             }

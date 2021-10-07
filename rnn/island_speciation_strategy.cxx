@@ -490,7 +490,7 @@ RNN_Genome* IslandSpeciationStrategy::generate_for_filled_island(uniform_real_di
         delete parent2;
     } else {
         //inter-island crossover
-        // Log::info("performing inter-island crossover\n");
+        Log::info("performing inter-island crossover\n");
 
         //get a random genome from this island
         RNN_Genome *parent1 = NULL;
@@ -658,5 +658,7 @@ void IslandSpeciationStrategy::set_rates(double _mutation_rate, double _intra_is
     mutation_rate = _mutation_rate;
     intra_island_crossover_rate = _intra_island_crossover_rate;
     inter_island_crossover_rate = _inter_island_crossover_rate;
+    intra_island_crossover_rate += mutation_rate;
+    inter_island_crossover_rate += intra_island_crossover_rate;
     Log::info("New rates set - mutation: %f, intra: %f, inter: %f\n", mutation_rate, intra_island_crossover_rate, inter_island_crossover_rate );
 }
