@@ -169,11 +169,11 @@ EXAMM::EXAMM(
     rates.resize(NUM_RATES);
     reinforcement_signal.resize(NUM_RATES);
     //Set the FALA learning rate
-    fala_lr = 0.0015;
+    fala_lr = 0.002;
     //Calculate the threshold to start FALA
-    fala_threshold = number_islands*population_size*4;
+    fala_threshold = max_genomes/10;
     //Minimum values for each action probability
-    mins = {0.05, 0.05, 0.05, 0.05, 0.05, 0, 0.05, 0.05, 0.05, 0.05, 0.05, 0.07, 0.07};
+    mins = {0.03, 0.03, 0.03, 0.03, 0.03, 0, 0.03, 0.03, 0.03, 0.03, 0.03, 0.07, 0.07};
 
     rates[CLONE_RATE_I] = 0.07;
     rates[ADD_EDGE_RATE_I] = 0.07;
@@ -565,7 +565,7 @@ bool EXAMM::insert_genome(RNN_Genome* genome) {
             //Negative reinforcement for generating bad genome
             else {
                 if(speciation_strategy->get_inserted_genomes() > fala_threshold){
-                    reinforcement_signal[generated_fala_indices[generated_by]] -= 0.5;
+                    reinforcement_signal[generated_fala_indices[generated_by]] -= 0.3;
                     num_mutations += 1.0;
                 }
             }
@@ -576,7 +576,7 @@ bool EXAMM::insert_genome(RNN_Genome* genome) {
     }
     
     //If the FALA threshol has been crossed and an update needs to be made, perform FALA
-    if(speciation_strategy->get_inserted_genomes() > fala_threshold && num_mutations > 0){
+    if(speciation_strategy->get_inserted_genomes() > fala_threshold){
         Log::info("Insert position: %d/%d\n", insert_position, population_size);
         Log::info("Number mutations: %f\n", num_mutations);
         double norm_to = 1.0;
