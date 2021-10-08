@@ -169,11 +169,11 @@ EXAMM::EXAMM(
     rates.resize(NUM_RATES);
     reinforcement_signal.resize(NUM_RATES);
     //Set the FALA learning rate
-    fala_lr = 0.0005;
+    fala_lr = 0.0015;
     //Calculate the threshold to start FALA
     fala_threshold = std::max(max_genomes/10, 100);
     //Minimum values for each action probability
-    mins = {0.05, 0.05, 0.05, 0.05, 0.05, 0, 0.05, 0.05, 0.05, 0.05, 0.05, 0.1, 0.1};
+    mins = {0.05, 0.05, 0.05, 0.05, 0.05, 0, 0.05, 0.05, 0.05, 0.05, 0.05, 0.07, 0.07};
 
     rates[CLONE_RATE_I] = 0.07;
     rates[ADD_EDGE_RATE_I] = 0.07;
@@ -553,7 +553,7 @@ bool EXAMM::insert_genome(RNN_Genome* genome) {
             generated_counts[generated_by] += 1;
 
             // If it was inserted add one to the number of genomes generated AND inserted by this operator
-            if (insert_position >= 0) {
+            if (insert_position > 0) {
                 inserted_counts["genomes"] += 1;
                 inserted_counts[generated_by] += 1;
                 //If the FALA threshold has been crossed, calculate the reinforcement signal
@@ -561,7 +561,9 @@ bool EXAMM::insert_genome(RNN_Genome* genome) {
                     reinforcement_signal[generated_fala_indices[generated_by]] += (population_size - insert_position + 1.0)/population_size;
                     num_mutations += 1.0;
                 }
-            } 
+            } else if (insert_position == 0){
+                reinforcement_signal[generated_fala_indices[generated_by]] += 3.0
+            }
             //Negative reinforcement for generating bad genome
             /*else {
                 if(speciation_strategy->get_inserted_genomes() > fala_threshold){
