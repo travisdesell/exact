@@ -169,7 +169,7 @@ EXAMM::EXAMM(
     rates.resize(NUM_RATES);
     reinforcement_signal.resize(NUM_RATES);
     //Set the FALA learning rate
-    fala_lr = 0.0015;
+    fala_lr = 0.001;
     //Calculate the threshold to start FALA
     fala_threshold = std::max(max_genomes/10, 100);
     //Minimum values for each action probability
@@ -560,18 +560,20 @@ bool EXAMM::insert_genome(RNN_Genome* genome) {
                 if(speciation_strategy->get_inserted_genomes() > fala_threshold){
                     reinforcement_signal[generated_fala_indices[generated_by]] += (population_size - insert_position + 1.0)/population_size;
                     num_mutations += 1.0;
+                    fala_lr = 0.001;
                 }
             } else if (insert_position == 0){
-                reinforcement_signal[generated_fala_indices[generated_by]] += 3.0;
-                num_mutations += 1.0;
-            }
-            //Negative reinforcement for generating bad genome
-            /*else {
                 if(speciation_strategy->get_inserted_genomes() > fala_threshold){
-                    reinforcement_signal[generated_fala_indices[generated_by]] -= 0.6;
+                    reinforcement_signal[generated_fala_indices[generated_by]] += 3.0;
                     num_mutations += 1.0;
+                    fala_lr = 0.001;
                 }
-            }*/
+            }
+            else {
+                if(speciation_strategy->get_inserted_genomes() > fala_threshold){
+                    fala_lr += 0.0002;
+                }
+            }
         } else {
             if (generated_by != "initial")
                 Log::error("unrecognized generated_by string '%s'\n", generated_by.c_str());
