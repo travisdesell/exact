@@ -169,11 +169,11 @@ EXAMM::EXAMM(
     rates.resize(NUM_RATES);
     reinforcement_signal.resize(NUM_RATES);
     //Set the FALA learning rate
-    fala_lr = 0.001;
+    fala_lr = 0.004;
     //Calculate the threshold to start FALA
     fala_threshold = std::max(max_genomes/10, 100);
     //Minimum values for each action probability
-    mins = {0.05, 0.05, 0.05, 0.05, 0.05, 0, 0.05, 0.05, 0.05, 0.05, 0.05, 0.07, 0.07};
+    mins = {0.05, 0.05, 0.05, 0.05, 0.05, 0, 0.05, 0.05, 0.05, 0.05, 0.05, 0.16, 0.8};
 
     rates[CLONE_RATE_I] = 0.07;
     rates[ADD_EDGE_RATE_I] = 0.07;
@@ -560,18 +560,11 @@ bool EXAMM::insert_genome(RNN_Genome* genome) {
                 if(speciation_strategy->get_inserted_genomes() > fala_threshold){
                     reinforcement_signal[generated_fala_indices[generated_by]] += (population_size - insert_position + 1.0)/population_size;
                     num_mutations += 1.0;
-                    fala_lr = 0.001;
                 }
             } else if (insert_position == 0){
                 if(speciation_strategy->get_inserted_genomes() > fala_threshold){
-                    reinforcement_signal[generated_fala_indices[generated_by]] += 3.0;
+                    reinforcement_signal[generated_fala_indices[generated_by]] += 2.0;
                     num_mutations += 1.0;
-                    fala_lr = 0.001;
-                }
-            }
-            else {
-                if(speciation_strategy->get_inserted_genomes() > fala_threshold){
-                    fala_lr += 0.0002;
                 }
             }
         } else {
@@ -590,12 +583,11 @@ bool EXAMM::insert_genome(RNN_Genome* genome) {
         //Adjust reinforcement signal and update rates
         double max_rate = *max_element(rates.begin(), rates.end());
         for(int i = 0; i < NUM_RATES; i++){
-            Log::info("Base Reinforcement[%d] = %f\n", i, reinforcement_signal[i]);
             if(i == SPLIT_EDGE_RATE_I){ //This move is not used
                 continue;
             }
             else if(reinforcement_signal[i] > 0){
-                reinforcement_signal[i] = reinforcement_signal[i]*fala_lr/num_mutations/*/rates[i]*max_rate*/;
+                reinforcement_signal[i] = reinforcement_signal[i]*fala_lr/num_mutations/rates[i]*max_rate;
             }
             /*else if(reinforcement_signal[i] < 0){
                 reinforcement_signal[i] = reinforcement_signal[i]*fala_lr/num_mutations*rates[i]/max_rate;
