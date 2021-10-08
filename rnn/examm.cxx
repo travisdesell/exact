@@ -169,11 +169,11 @@ EXAMM::EXAMM(
     rates.resize(NUM_RATES);
     reinforcement_signal.resize(NUM_RATES);
     //Set the FALA learning rate
-    fala_lr = 0.001;
+    fala_lr = 0.0005;
     //Calculate the threshold to start FALA
     fala_threshold = std::max(max_genomes/10, 100);
     //Minimum values for each action probability
-    mins = {0.04, 0.04, 0.04, 0.04, 0.04, 0, 0.04, 0.04, 0.04, 0.04, 0.04, 0.1, 0.08};
+    mins = {0.05, 0.05, 0.05, 0.05, 0.05, 0, 0.05, 0.05, 0.05, 0.05, 0.05, 0.1, 0.1};
 
     rates[CLONE_RATE_I] = 0.07;
     rates[ADD_EDGE_RATE_I] = 0.07;
