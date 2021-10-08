@@ -563,12 +563,12 @@ bool EXAMM::insert_genome(RNN_Genome* genome) {
                 }
             } 
             //Negative reinforcement for generating bad genome
-            else {
+            /*else {
                 if(speciation_strategy->get_inserted_genomes() > fala_threshold){
                     reinforcement_signal[generated_fala_indices[generated_by]] -= 0.6;
                     num_mutations += 1.0;
                 }
-            }
+            }*/
         } else {
             if (generated_by != "initial")
                 Log::error("unrecognized generated_by string '%s'\n", generated_by.c_str());
@@ -590,11 +590,11 @@ bool EXAMM::insert_genome(RNN_Genome* genome) {
                 continue;
             }
             else if(reinforcement_signal[i] > 0){
-                reinforcement_signal[i] = reinforcement_signal[i]*fala_lr/num_mutations/rates[i]*max_rate;
+                reinforcement_signal[i] = reinforcement_signal[i]*fala_lr/num_mutations/*/rates[i]*max_rate*/;
             }
-            else if(reinforcement_signal[i] < 0){
+            /*else if(reinforcement_signal[i] < 0){
                 reinforcement_signal[i] = reinforcement_signal[i]*fala_lr/num_mutations*rates[i]/max_rate;
-            }
+            }*/
             Log::info("Adjusted Reinforcement[%d] = %f\n", i, reinforcement_signal[i]);
             //reinforcement_signal[i] = reinforcement_signal[i]*fala_lr/num_mutations;
             rates[i] += reinforcement_signal[i];
