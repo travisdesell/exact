@@ -133,6 +133,8 @@ class EXAMM {
         vector<double> rates;
         vector<double> reinforcement_signal;
         vector<double> mins;
+        vector<double> start_rates;
+        vector<double> degrade_thres;
         int fala_threshold;
         double fala_lr;
         map<string,int> generated_fala_indices;
