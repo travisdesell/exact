@@ -173,7 +173,7 @@ EXAMM::EXAMM(
     //Calculate the threshold to start FALA
     fala_threshold = std::max(max_genomes/10, 100);
     //Minimum values for each action probability
-    mins = {0.05, 0.05, 0.05, 0.05, 0.05, 0, 0.05, 0.05, 0.05, 0.05, 0.05, 0.16, 0.8};
+    mins = {0.05, 0.05, 0.05, 0.05, 0.05, 0, 0.05, 0.05, 0.05, 0.05, 0.05, 0.16, 0.08};
 
     rates[CLONE_RATE_I] = 0.07;
     rates[ADD_EDGE_RATE_I] = 0.07;
