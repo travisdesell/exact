@@ -562,7 +562,8 @@ bool EXAMM::insert_genome(RNN_Genome* genome) {
                     num_mutations += 1.0;
                 }
             } else if (insert_position == 0){
-                reinforcement_signal[generated_fala_indices[generated_by]] += 3.0
+                reinforcement_signal[generated_fala_indices[generated_by]] += 3.0;
+                num_mutations += 1.0;
             }
             //Negative reinforcement for generating bad genome
             /*else {
