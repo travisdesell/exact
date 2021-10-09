@@ -169,7 +169,7 @@ EXAMM::EXAMM(
     rates.resize(NUM_RATES);
     reinforcement_signal.resize(NUM_RATES);
     //Set the FALA learning rate
-    fala_lr = 0.0015;
+    fala_lr = 0.002;
     //Calculate the threshold to start FALA
     fala_threshold = number_inputs*population_size*4;
     //Minimum, starting, and degredation threshold values for each action probability
@@ -565,6 +565,7 @@ bool EXAMM::insert_genome(RNN_Genome* genome) {
                 inserted_counts[generated_by] += 1;
                 //If the FALA threshold has been crossed, calculate the reinforcement signal
                 if(speciation_strategy->get_inserted_genomes() > fala_threshold){
+                    Log::info("Fala threshold: %d\n", fala_threshold)
                     reinforcement_signal[generated_fala_indices[generated_by_map]] += (population_size - insert_position + 1.0)/population_size;
                     //reinforcement_signal[generated_fala_indices[generated_by_map]] += 1.0/(genome->get_fitness()/speciation_strategy->get_best_genome()->get_fitness());
                     num_mutations += 1.0;
@@ -593,13 +594,13 @@ bool EXAMM::insert_genome(RNN_Genome* genome) {
         double norm_factor = 1.0;
         std::vector<bool> normalize(NUM_RATES, true);
         //Adjust reinforcement signal and update rates
-        //double max_rate = *max_element(rates.begin(), rates.end());
+        double max_rate = *max_element(rates.begin(), rates.end());
         for(int i = 0; i < NUM_RATES; i++){
             if(i == SPLIT_EDGE_RATE_I){ //This move is not used
                 continue;
             }
             else if(reinforcement_signal[i] > 0){
-                reinforcement_signal[i] = reinforcement_signal[i]*fala_lr/num_mutations/**start_rates[i]/rates[i]*/;
+                reinforcement_signal[i] = reinforcement_signal[i]*fala_lr/num_mutations*max_rate/rates[i];
             }
             /*else if(reinforcement_signal[i] < 0){
                 reinforcement_signal[i] = reinforcement_signal[i]*fala_lr/num_mutations///start_rates[i]*rates[i];
