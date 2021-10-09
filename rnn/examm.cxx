@@ -593,16 +593,16 @@ bool EXAMM::insert_genome(RNN_Genome* genome) {
         double norm_factor = 1.0;
         std::vector<bool> normalize(NUM_RATES, true);
         //Adjust reinforcement signal and update rates
-        double max_rate = *max_element(rates.begin(), rates.end());
+        //double max_rate = *max_element(rates.begin(), rates.end());
         for(int i = 0; i < NUM_RATES; i++){
             if(i == SPLIT_EDGE_RATE_I){ //This move is not used
                 continue;
             }
             else if(reinforcement_signal[i] > 0){
-                reinforcement_signal[i] = reinforcement_signal[i]*fala_lr/num_mutations*start_rates[i]/rates[i];
+                reinforcement_signal[i] = reinforcement_signal[i]*fala_lr/num_mutations/**start_rates[i]/rates[i]*/;
             }
             else if(reinforcement_signal[i] < 0){
-                reinforcement_signal[i] = reinforcement_signal[i]*fala_lr/num_mutations/start_rates[i]*rates[i];
+                reinforcement_signal[i] = reinforcement_signal[i]*fala_lr/num_mutations/*/start_rates[i]*rates[i]*/;
             }
             Log::info("Adjusted Reinforcement[%d] = %f\n", i, reinforcement_signal[i]);
             //reinforcement_signal[i] = reinforcement_signal[i]*fala_lr/num_mutations;
