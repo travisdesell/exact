@@ -569,16 +569,16 @@ bool EXAMM::insert_genome(RNN_Genome* genome) {
                     //reinforcement_signal[generated_fala_indices[generated_by_map]] += 1.0/(genome->get_fitness()/speciation_strategy->get_best_genome()->get_fitness());
                     num_mutations += 1.0;
                 }
-            } else {
-                /*for(int i = 0; i < NUM_RATES; i++){
+            } /*else {
+                for(int i = 0; i < NUM_RATES; i++){
                     if(rates[i] > degrade_thres[i]){
                         reinforcement_signal[i] -= (1.0/(speciation_strategy->get_best_genome()->get_fitness()/genome->get_fitness()))*(rates[i]/mins[i]);
                         num_mutations += 1.0;
                     }
-                }*/
+                }
                 reinforcement_signal[generated_fala_indices[generated_by_map]] -= 0.3;
                 num_mutations += 1.0;
-            }
+            }*/
         } else {
             if (generated_by != "initial")
                 Log::error("unrecognized generated_by string '%s'\n", generated_by.c_str());
@@ -601,9 +601,9 @@ bool EXAMM::insert_genome(RNN_Genome* genome) {
             else if(reinforcement_signal[i] > 0){
                 reinforcement_signal[i] = reinforcement_signal[i]*fala_lr/num_mutations/**start_rates[i]/rates[i]*/;
             }
-            else if(reinforcement_signal[i] < 0){
-                reinforcement_signal[i] = reinforcement_signal[i]*fala_lr/num_mutations/*/start_rates[i]*rates[i]*/;
-            }
+            /*else if(reinforcement_signal[i] < 0){
+                reinforcement_signal[i] = reinforcement_signal[i]*fala_lr/num_mutations///start_rates[i]*rates[i];
+            }*/
             Log::info("Adjusted Reinforcement[%d] = %f\n", i, reinforcement_signal[i]);
             //reinforcement_signal[i] = reinforcement_signal[i]*fala_lr/num_mutations;
             rates[i] += reinforcement_signal[i];
