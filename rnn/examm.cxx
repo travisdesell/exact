@@ -597,10 +597,10 @@ bool EXAMM::insert_genome(RNN_Genome* genome) {
                 continue;
             }
             else if(reinforcement_signal[i] > 0){
-                reinforcement_signal[i] = reinforcement_signal[i]*fala_lr/num_mutations//*max_rate/rates[i];
+                reinforcement_signal[i] = reinforcement_signal[i]*fala_lr/num_mutations/*max_rate/rates[i]*/;
             }
             else if(reinforcement_signal[i] < 0){
-                reinforcement_signal[i] = reinforcement_signal[i]*fala_lr/num_mutations//start_rates[i]*rates[i];
+                reinforcement_signal[i] = reinforcement_signal[i]*fala_lr/num_mutations/*/start_rates[i]*rates[i]*/;
             }
             Log::info("Adjusted Reinforcement[%d] = %f\n", i, reinforcement_signal[i]);
             //reinforcement_signal[i] = reinforcement_signal[i]*fala_lr/num_mutations;
