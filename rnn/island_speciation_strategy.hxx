@@ -52,6 +52,15 @@ class IslandSpeciationStrategy : public SpeciationStrategy {
          */
         vector<Island*> islands;
         RNN_Genome* global_best_genome;
+        
+        //Island FALA variables
+        vector<double> island_rates;
+        vector<double> island_mins;
+        vector<bool> island_learning_stages;
+        double island_lr;
+        double island_reduction_rate;
+        double passive_reinforcement;
+        int best_island;
 
     public:
         //static void register_command_line_arguments();
@@ -202,6 +211,8 @@ class IslandSpeciationStrategy : public SpeciationStrategy {
          *  \param _inter_island_crossover_rate is the new inter-island crossover rate
          */
         void set_rates(double _mutation_rate, double _intra_island_crossover_rate, double _inter_island_crossover_rate);
+        
+        int get_generation_island(uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator);
 
 };
 

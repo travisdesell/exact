@@ -61,7 +61,22 @@ IslandSpeciationStrategy::IslandSpeciationStrategy(
 
     for (int32_t i = 0; i < number_of_islands; i++) {
         islands.push_back(new Island(i, max_island_size));
+        //Island FALA variables
+        double init_rate = 1.0/number_of_islands;
+        island_rates.push_back(init_rate);
+        island_mins.push_back(init_rate);
     }
+    
+    //Island FALA stages (4 stages)
+    island_learning_stages = {false, false, false, false};
+    
+    //Island FALA rates
+    island_lr = 0.005;
+    island_reduction_rate = 0.97;
+    passive_reinforcement = 0.3;
+    
+    //Best island
+    best_island = -1;
 
     //set the generation id for the initial minimal genome
     seed_genome->set_generation_id(generated_genomes);
@@ -210,7 +225,25 @@ int32_t IslandSpeciationStrategy::insert_genome(RNN_Genome* genome) {
             }
         }
     }
+    
+    int32_t island = genome->get_group_id();
+    
+    //Vector to hold reinforcement signal
+    std::vector<double> reinforcement(number_of_islands, 0);
+    
+    Log::info("inserting genome to island: %d\n", island);
 
+    int32_t insert_position = islands[island]->insert_genome(genome);
+    
+    //Reinforcement based on performance of genome
+    if(island_learning_stages[0]){
+        if(insert_position != -1){
+            reinforcement[island] += global_best_genome->get_fitness()/genome->get_fitness();
+        } else if (island_rates[island] > 1.0/number_of_islands){
+            reinforcement[island] -= passive_reinforcement;
+        }
+    }
+    
     bool new_global_best = false;
     if (global_best_genome == NULL) {
         //this is the first insert of a genome so it's the global best by default
@@ -221,14 +254,91 @@ int32_t IslandSpeciationStrategy::insert_genome(RNN_Genome* genome) {
         delete global_best_genome;
         global_best_genome = genome->copy();
         new_global_best = true;
+        //Keep track of best island
+        if(island != best_island){
+            best_island = island;
+            Log::info("Best island: %d\n", best_island);
+            double max_rate = *max_element(island_rates.begin(), island_rates.end());
+            for(int i = 0; i < 4; i++){
+                if(island_learning_stages[i]){
+                    reinforcement[island] += 2.0*max_rate/island_rates[island];
+                }
+            }
+        }
     }
 
     inserted_genomes++;
-    int32_t island = genome->get_group_id();
+    
 
-    Log::info("inserting genome to island: %d\n", island);
-
-    int32_t insert_position = islands[island]->insert_genome(genome);
+    
+    
+    if(island_learning_stages[0]){
+    
+        //Reinforcement based on best island
+        //reinforcement[best_island] += passive_reinforcement/2;
+    
+        //Update island rates using FALA
+        double norm_to = 1.0;
+        double norm_factor = 1.0;
+        std::vector<bool> normalize(NUM_RATES, true);
+        //Check if any rates are below min threshold
+        for(int i = 0; i < number_of_islands; i++){
+            reinforcement[i] = reinforcement[i]*island_lr;
+            Log::info("Island Reinforcement [%d] = %f\n", i, reinforcement[i]);
+            norm_factor += reinforcement[i];
+            island_rates[i] += reinforcement[i];
+            if(island_rates[i] < island_mins[i]){
+                norm_factor -= island_rates[i];
+                normalize[i] = false;
+                island_rates[i] = island_mins[i];
+                norm_to -= island_rates[i];
+            }
+        }
+        //Normalize the rates
+        for(int i = 0; i < number_of_islands; i++){
+            if(normalize[i]){
+                island_rates[i] = (island_rates[i])*norm_to/norm_factor;
+            }
+            Log::info("Island Rates [%d] = %f\n", i, island_rates[i]);
+        }
+    }
+    
+    //Calculate complete ration to progress though stages
+    double complete_ratio = inserted_genomes*1.0/max_genomes;
+    
+    //Update island mins depending on stages
+    if(island_learning_stages[0] == false && complete_ratio >= 0.2){
+        island_learning_stages[0] = true;
+        double new_min = island_mins[0]*island_reduction_rate;
+        Log::info("Stage 1 reached, starting FALA, minimum island rate: %f\n", new_min);
+        for(int i = 0; i < number_of_islands; i++){
+            island_mins[i] = new_min;
+        }
+    } else if(island_learning_stages[1] == false && complete_ratio >= 0.4){
+        island_learning_stages[1] = true;
+        double new_min = island_mins[0]*island_reduction_rate;
+        Log::info("Stage 2 reached, minimum island rate: %f\n", new_min);
+        for(int i = 0; i < number_of_islands; i++){
+            island_mins[i] = new_min;
+        }
+        passive_reinforcement += 0.08;
+    } else if(island_learning_stages[2] == false && complete_ratio >= 0.6){
+        island_learning_stages[2] = true;
+        double new_min = island_mins[0]*island_reduction_rate;
+        Log::info("Stage 3 reached, minimum island rate: %f\n", new_min);
+        for(int i = 0; i < number_of_islands; i++){
+            island_mins[i] = new_min;
+        }
+        passive_reinforcement += 0.08;
+    } else if(island_learning_stages[3] == false && complete_ratio >= 0.8){
+        island_learning_stages[3] = true;
+        double new_min = island_mins[0]*island_reduction_rate;
+        Log::info("Stage 4 reached, minimum island rate: %f\n", new_min);
+        for(int i = 0; i < number_of_islands; i++){
+            island_mins[i] = new_min;
+        }
+        passive_reinforcement += 0.08;
+    }
 
     if (insert_position == 0) {
         if (new_global_best) return 0;
@@ -293,6 +403,8 @@ RNN_Genome* IslandSpeciationStrategy::generate_genome(uniform_real_distribution<
     //generate the genome from the next island in a round
     //robin fashion.
     RNN_Genome *genome = NULL;
+    
+    
 
     Log::debug("getting island: %d\n", generation_island);
     Island *island = islands[generation_island];
@@ -450,8 +562,9 @@ RNN_Genome* IslandSpeciationStrategy::generate_genome(uniform_real_distribution<
         genome->set_group_id(generation_island);
 
         //set the island for the genome and increment to the next island
-        generation_island++;
-        if (generation_island >= (signed) islands.size()) generation_island = 0;
+        generation_island = get_generation_island(rng_0_1, generator);
+        //generation_island++;
+        //if (generation_island >= (signed) islands.size()) generation_island = 0;
         islands[generation_island] -> set_latest_generation_id(generated_genomes);
 
     } else {
@@ -661,4 +774,23 @@ void IslandSpeciationStrategy::set_rates(double _mutation_rate, double _intra_is
     intra_island_crossover_rate += mutation_rate;
     inter_island_crossover_rate += intra_island_crossover_rate;
     Log::info("New rates set - mutation: %f, intra: %f, inter: %f\n", mutation_rate, intra_island_crossover_rate, inter_island_crossover_rate );
+}
+
+int IslandSpeciationStrategy::get_generation_island(uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator){
+    if(island_learning_stages[0] == false){
+        generation_island += 1;
+        if (generation_island >= (signed) islands.size()) generation_island = 0;
+        Log::info("Current island: %d\n", generation_island);
+        return generation_island;
+    } else {
+        double r = rng_0_1(generator);
+        double cum_sum = 0;
+        for(int i = 0; i < number_of_islands; i++){
+            cum_sum += island_rates[i];
+            if(r <= cum_sum){
+                Log::info("Current island: %d\n", i);
+                return i;
+            }
+        }
+    }
 }

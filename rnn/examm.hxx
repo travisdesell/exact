@@ -138,7 +138,7 @@ class EXAMM {
         int fala_threshold;
         double fala_lr;
         map<string,int> generated_fala_indices;
-        
+       
     public:
         EXAMM(  int32_t _population_size,
                 int32_t _number_islands,
