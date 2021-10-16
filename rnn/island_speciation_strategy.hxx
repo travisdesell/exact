@@ -55,12 +55,15 @@ class IslandSpeciationStrategy : public SpeciationStrategy {
         
         //Island FALA variables
         vector<double> island_rates;
-        vector<double> island_mins;
+        double std_rate;
+        double min_rate;
+        double degr_rate;
         vector<bool> island_learning_stages;
         double island_lr;
         double island_reduction_rate;
         double passive_reinforcement;
         int best_island;
+        int curr_stage;
 
     public:
         //static void register_command_line_arguments();

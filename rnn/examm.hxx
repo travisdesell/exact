@@ -129,7 +129,8 @@ class EXAMM {
         string  genome_file_name;
 
         bool start_filled;
-                      
+        
+        //Genetic Operation FALA Variables
         vector<double> rates;
         vector<double> reinforcement_signal;
         vector<double> mins;
@@ -138,6 +139,12 @@ class EXAMM {
         int fala_threshold;
         double fala_lr;
         map<string,int> generated_fala_indices;
+        
+        //Recurrent Depth FALA Variables
+        int total_depths;
+        vector<double> recurrent_depth_rates;
+        vector<double> recurrent_depth_reinforcement_signal;
+        double recurrent_depth_min;
        
     public:
         EXAMM(  int32_t _population_size,
@@ -190,7 +197,13 @@ class EXAMM {
 
         void set_possible_node_types(vector<string> possible_node_type_strings);
 
-        uniform_int_distribution<int32_t> get_recurrent_depth_dist();
+        
+        
+        //Recurrent Depth FALA distribution
+        discrete_distribution<int32_t> get_recurrent_depth_dist();
+        //uniform_int_distribution<int32_t> get_recurrent_depth_dist();
+        
+        
 
         int get_random_node_type();
 
