@@ -75,7 +75,7 @@ IslandSpeciationStrategy::IslandSpeciationStrategy(
     min_rate = std_rate;
     degr_rate = std_rate;
     island_lr = 0.005;
-    island_reduction_rate = 0.96;
+    island_reduction_rate = 0.965;
     passive_reinforcement = 0.3;
     
     //Best island
@@ -279,7 +279,7 @@ int32_t IslandSpeciationStrategy::insert_genome(RNN_Genome* genome) {
     
         //Reinforcement based on best island
         if(island_rates[best_island] < degr_rate){
-            reinforcement[best_island] += passive_reinforcement*island_rates[best_island]/degr_rate/4;
+            reinforcement[best_island] += passive_reinforcement*island_rates[best_island]/degr_rate/10;
         }
         //Update island rates using FALA
         double norm_to = 1.0;
@@ -307,12 +307,12 @@ int32_t IslandSpeciationStrategy::insert_genome(RNN_Genome* genome) {
         }
     }
     
-    //Calculate complete ration and progress though stages
+    //Calculate complete ratio and progress though stages
     double complete_ratio = inserted_genomes*1.0/max_genomes;
     if(island_learning_stages[curr_stage] == false && complete_ratio >= (curr_stage + 1)*0.2){
         island_learning_stages[curr_stage] = true;
         min_rate *= island_reduction_rate;
-        degr_rate += 0.015;
+        degr_rate += 0.02;
         passive_reinforcement += 0.05;
         curr_stage++;
         Log::info("Stage %d reached, minimum island rate: %f, degradation start rate: %f\n", curr_stage, min_rate, degr_rate);
