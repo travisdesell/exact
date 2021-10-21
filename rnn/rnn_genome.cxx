@@ -1453,6 +1453,26 @@ vector< vector<double> > RNN_Genome::get_predictions(const vector<double> &param
     return all_results;
 }
 
+void RNN_Genome::evaluate_online(const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &output) {
+    online_validation_mse = get_mse(best_parameters, inputs, output);
+}
+
+double RNN_Genome::get_online_validation_mse() {
+    return online_validation_mse;
+}
+
+void RNN_Genome::write_predictions(string output_directory, string filename, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, TimeSeriesSets *time_series_sets) {
+    RNN *rnn = get_rnn();
+    rnn->set_weights(best_parameters);
+
+    string output_filename = output_directory + "/" + filename + ".csv";
+
+    Log::info("output filename: '%s'\n", output_filename.c_str());
+
+    rnn->write_predictions(output_filename, input_parameter_names, output_parameter_names, inputs[0], outputs[0], time_series_sets, use_dropout, dropout_probability);
+
+    delete rnn;
+}
 
 void RNN_Genome::write_predictions(string output_directory, const vector<string> &input_filenames, const vector<double> &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, TimeSeriesSets *time_series_sets) {
     RNN *rnn = get_rnn();

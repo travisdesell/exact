@@ -106,6 +106,7 @@ class TimeSeriesSet {
 
         void cut(int32_t start, int32_t stop);
         void split(int slices, vector<TimeSeriesSet*> &sub_series);
+        void slice(int32_t start, int32_t series_length, TimeSeriesSet* &sub_series);
 
         void select_parameters(const vector<string> &parameter_names);
         void select_parameters(const vector<string> &input_parameter_names, const vector<string> &output_parameter_names);
@@ -135,6 +136,7 @@ class TimeSeriesSets {
 
         void parse_parameters_string(const vector<string> &p);
         void load_time_series();
+        void slice_time_series(int32_t slice_length);
 
     public:
         static void help_message();

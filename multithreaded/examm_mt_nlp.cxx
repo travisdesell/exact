@@ -221,7 +221,7 @@ int main(int argc, char  **argv)
         get_argument(arguments, "--start_filled", false, start_filled);
     }
 
-    examm = new EXAMM(population_size, number_islands, max_genomes, extinction_event_generation_number, islands_to_exterminate, island_ranking_method,
+    examm = new EXAMM(population_size, number_islands, max_genomes, 0, extinction_event_generation_number, islands_to_exterminate, island_ranking_method,
             repopulation_method, repopulation_mutations,
             repeat_extinction, epochs_acc_freq, speciation_method,
             species_threshold, fitness_threshold,

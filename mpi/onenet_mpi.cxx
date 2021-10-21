@@ -1,9 +1,11 @@
 #include <chrono>
-
+#include <algorithm>  
 #include <iomanip>
+using std::random_shuffle;
 using std::setw;
 using std::fixed;
 using std::setprecision;
+using std::min;
 
 #include <mutex>
 using std::mutex;
@@ -24,6 +26,7 @@ using std::vector;
 #include "common/weight_initialize.hxx"
 
 #include "rnn/examm.hxx"
+#include "rnn/onenet_speciation_strategy.hxx"
 
 #include "time_series/time_series.hxx"
 
@@ -42,12 +45,18 @@ bool finished = false;
 
 vector< vector< vector<double> > > training_inputs;
 vector< vector< vector<double> > > training_outputs;
-vector< vector< vector<double> > > validation_inputs;
-vector< vector< vector<double> > > validation_outputs;
+// vector< vector< vector<double> > > validation_inputs;
+// vector< vector< vector<double> > > validation_outputs;
 
 bool random_sequence_length;
 int sequence_length_lower_bound = 30;
 int sequence_length_upper_bound = 100;
+
+vector<int32_t> time_series_index;
+int32_t current_time_index = 0;
+int32_t num_training_sets = 50;
+int32_t generation_genomes = 10;
+
 
 void send_work_request(int target) {
     int work_request_message[1];
@@ -115,53 +124,80 @@ void receive_terminate_message(int source) {
     MPI_Recv(terminate_message, 1, MPI_INT, source, TERMINATE_TAG, MPI_COMM_WORLD, &status);
 }
 
+void get_online_data(vector< vector< vector<double> > > &current_inputs, vector< vector< vector<double> > > &current_outputs, vector< vector< vector<double> > > &validation_inputs, vector< vector< vector<double> > > &validation_outputs) {
+    current_inputs.clear();
+    current_outputs.clear();
+    validation_inputs.clear();
+    validation_outputs.clear();
+    int num_sets = min(num_training_sets, current_time_index);
+    // Log::error("generating data for worker, current num index is %d, num training sets are %d, so the num sets is %d\n", current_time_index, num_training_sets, num_sets);
+    // Log::error("current time series set has %d sets\n", training_inputs.size());
+    // Log::error("the shuffled time series index is:\n");
+    random_shuffle(time_series_index.begin(), time_series_index.end());
+    // for (int i = 0; i < time_series_index.size(); i++) {
+    //     Log::error("%d \n", time_series_index[i]);
+    // }
+    // Log::error("number of training inputs are %d\n", num_training_sets);
+    // Log::error("training input size is %d by %d by %d\n", training_inputs.size(), training_inputs[0].size(), training_inputs[0][0].size());
+    for (int i = 0; i < num_sets; i++) {
+        current_inputs.push_back(training_inputs[time_series_index[i]]);
+        current_outputs.push_back(training_outputs[time_series_index[i]]);
+    }
+    validation_inputs.push_back(training_inputs[current_time_index+1]);
+    validation_outputs.push_back(training_outputs[current_time_index+1]);
+    // Log::error("getting input dataset finished\n");
+}
+
+void validate_generation_number(int32_t num_generation, int32_t num_training_sets) {
+    if (current_time_index + num_generation + 2 > num_training_sets) {
+        Log::fatal("Fatal: too many generations for this dataset!\n");
+        Log::fatal("There are %d training sets in total, initial training set size is %d, number of generation is set to %d \n", num_training_sets, current_time_index, num_generation);
+        Log::fatal("Will need at least %d number of training sets to be able to handle %d generations\n", current_time_index + num_generation + 2, num_generation);
+        exit(1);
+    }
+}
+
 void master(int max_rank, string transfer_learning_version, int32_t seed_stirs) {
     //the "main" id will have already been set by the main function so we do not need to re-set it here
     Log::debug("MAX INT: %d\n", numeric_limits<int>::max());
-
     int terminates_sent = 0;
-
+    int generated_genome = 0;
+    int evaluated_genome = 0;
     while (true) {
-        //wait for a incoming message
         MPI_Status status;
         MPI_Probe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
 
         int source = status.MPI_SOURCE;
         int tag = status.MPI_TAG;
         Log::debug("probe returned message from: %d with tag: %d\n", source, tag);
-
-
-        //if the message is a work request, send a genome
-
         if (tag == WORK_REQUEST_TAG) {
             receive_work_request(source);
+            if (generated_genome < generation_genomes) {
+                examm_mutex.lock();
+                RNN_Genome *genome = examm->generate_genome(seed_stirs);
+                examm_mutex.unlock();
 
+                if (genome != NULL) {
+                    Log::debug("sending genome to: %d\n", source);
+                    send_genome_to(source, genome);
 
-            if (transfer_learning_version.compare("v3") == 0 || transfer_learning_version.compare("v1+v3") == 0) {
-                seed_stirs = 3;
-            }
-            examm_mutex.lock();
-            RNN_Genome *genome = examm->generate_genome(seed_stirs);
-            examm_mutex.unlock();
-
-            if (genome == NULL) { //search was completed if it returns NULL for an individual
-                //send terminate message
+                    //delete this genome as it will not be used again
+                    delete genome;
+                    generated_genome ++;
+                } else {
+                    Log::fatal("Returned NULL genome from generate genome function, this should never happen!\n");
+                    exit(1);
+                }
+            } else {
                 Log::info("terminating worker: %d\n", source);
                 send_terminate_message(source);
                 terminates_sent++;
 
-                Log::debug("sent: %d terminates of %d\n", terminates_sent, (max_rank - 1));
-                if (terminates_sent >= max_rank - 1) return;
-
-            } else {
-                //genome->write_to_file( examm->get_output_directory() + "/before_send_gen_" + to_string(genome->get_generation_id()) );
-
-                //send genome
-                Log::debug("sending genome to: %d\n", source);
-                send_genome_to(source, genome);
-
-                //delete this genome as it will not be used again
-                delete genome;
+                Log::info("sent: %d terminates of %d\n", terminates_sent, (max_rank - 1));
+                if (terminates_sent >= max_rank - 1) {
+                    Log::debug("Ending genome, generated genome is %d, evaluated genome is %d\n", generated_genome, evaluated_genome);
+                    return;
+                }
             }
         } else if (tag == GENOME_LENGTH_TAG) {
             Log::debug("received genome from: %d\n", source);
@@ -173,7 +209,8 @@ void master(int max_rank, string transfer_learning_version, int32_t seed_stirs) 
 
             //delete the genome as it won't be used again, a copy was inserted
             delete genome;
-            //this genome will be deleted if/when removed from population
+            evaluated_genome++;
+
         } else {
             Log::fatal("ERROR: received message from %d with unknown tag: %d", source, tag);
             MPI_Abort(MPI_COMM_WORLD, 1);
@@ -203,11 +240,18 @@ void worker(int rank) {
         } else if (tag == GENOME_LENGTH_TAG) {
             Log::debug("received genome!\n");
             RNN_Genome* genome = receive_genome_from(0);
+            vector< vector< vector<double> > > current_training_inputs;
+            vector< vector< vector<double> > > current_training_outputs;
+            vector< vector< vector<double> > > current_validation_inputs;
+            vector< vector< vector<double> > > current_validation_outputs;
 
+            get_online_data(current_training_inputs, current_training_outputs, current_validation_inputs, current_validation_outputs);
             //have each worker write the backproagation to a separate log file
             string log_id = "genome_" + to_string(genome->get_generation_id()) + "_worker_" + to_string(rank);
             Log::set_id(log_id);
-            genome->backpropagate_stochastic(training_inputs, training_outputs, validation_inputs, validation_outputs, random_sequence_length, sequence_length_lower_bound, sequence_length_upper_bound);
+            genome->backpropagate_stochastic(current_training_inputs, current_training_outputs, current_validation_inputs, current_validation_outputs, random_sequence_length, sequence_length_lower_bound, sequence_length_upper_bound);
+            genome->set_group_id(OneNetSpeciationStrategy::TRAINED);
+            genome->evaluate_online(current_validation_inputs, current_validation_outputs);
             Log::release_id(log_id);
 
             //go back to the worker's log for MPI communication
@@ -263,27 +307,28 @@ int main(int argc, char** argv) {
         time_series_sets = TimeSeriesSets::generate_from_arguments(arguments);
     }
 
-
-
     int32_t time_offset = 1;
     get_argument(arguments, "--time_offset", true, time_offset);
 
     time_series_sets->export_training_series(time_offset, training_inputs, training_outputs);
-    time_series_sets->export_test_series(time_offset, validation_inputs, validation_outputs);
+    // time_series_sets->export_test_series(time_offset, validation_inputs, validation_outputs);
 
     int number_inputs = time_series_sets->get_number_inputs();
     int number_outputs = time_series_sets->get_number_outputs();
 
     Log::debug("number_inputs: %d, number_outputs: %d\n", number_inputs, number_outputs);
 
-    int32_t population_size;
-    get_argument(arguments, "--population_size", true, population_size);
-
     int32_t number_islands;
     get_argument(arguments, "--number_islands", true, number_islands);
 
-    int32_t max_genomes;
-    get_argument(arguments, "--max_genomes", true, max_genomes);
+    get_argument(arguments, "--generation_genomes", true, generation_genomes);
+
+    int32_t num_generations;
+    get_argument(arguments, "--num_generations", true, num_generations);
+    validate_generation_number(num_generations, training_inputs.size());
+
+    int32_t elite_population_size;
+    get_argument(arguments, "--elite_population_size", true, elite_population_size);
 
     string speciation_method = "";
     get_argument(arguments, "--speciation_method", false, speciation_method);
@@ -306,26 +351,8 @@ int main(int argc, char** argv) {
     int32_t epochs_acc_freq = 0;
     get_argument(arguments, "--epochs_acc_freq", false, epochs_acc_freq);
 
-    double species_threshold = 0.0;
-    get_argument(arguments, "--species_threshold", false, species_threshold);
-
-    double fitness_threshold = 100;
-    get_argument(arguments, "--fitness_threshold", false, fitness_threshold);
-
-    double neat_c1 = 1;
-    get_argument(arguments, "--neat_c1", false, neat_c1);
-
-    double neat_c2 = 1;
-    get_argument(arguments, "--neat_c2", false, neat_c2);
-
-    double neat_c3 = 1;
-    get_argument(arguments, "--neat_c3", false, neat_c3);
-
-    bool repeat_extinction = argument_exists(arguments, "--repeat_extinction");
-
     int32_t bp_iterations;
     get_argument(arguments, "--bp_iterations", true, bp_iterations);
-
 
     double learning_rate = 0.001;
     get_argument(arguments, "--learning_rate", false, learning_rate);
@@ -398,11 +425,10 @@ int main(int argc, char** argv) {
 
 
     if (rank == 0) {
-        examm = new EXAMM(population_size, number_islands, max_genomes, 0, extinction_event_generation_number, islands_to_exterminate, island_ranking_method,
-            repopulation_method, repopulation_mutations, repeat_extinction, epochs_acc_freq,
+        examm = new EXAMM(0, 0, generation_genomes, elite_population_size, extinction_event_generation_number, islands_to_exterminate, island_ranking_method,
+            repopulation_method, repopulation_mutations, false, epochs_acc_freq,
             speciation_method,
-            species_threshold, fitness_threshold,
-            neat_c1, neat_c2, neat_c3,
+            0, 0, 0, 0, 0,
             time_series_sets->get_input_parameter_names(),
             time_series_sets->get_output_parameter_names(),
             time_series_sets->get_normalize_type(),
@@ -424,11 +450,35 @@ int main(int argc, char** argv) {
         if (possible_node_types.size() > 0)  {
             examm->set_possible_node_types(possible_node_types);
         }
-
-        master(max_rank, transfer_learning_version, seed_stirs);
-    } else {
-        worker(rank);
     }
+
+    for (int current_generation = 1; current_generation <= num_generations; current_generation++) {
+        if (rank ==0) {
+            Log::error("generation %d\n", current_generation);
+            Log::debug("current time index is %d\n", current_time_index);
+            master(max_rank, transfer_learning_version, seed_stirs);           
+        } else {
+            worker(rank);
+        }
+        MPI_Barrier(MPI_COMM_WORLD);
+        if (rank == 0) {
+            vector< vector< vector<double> > > test_input;
+            vector< vector< vector<double> > > test_output;
+            vector< vector< vector<double> > > validation_input;
+            vector< vector< vector<double> > > validation_output;
+
+            validation_input.push_back(training_inputs[current_time_index+1]);
+            validation_output.push_back(training_outputs[current_time_index+1]);
+            test_input.push_back(training_inputs[current_time_index+2]);
+            test_output.push_back(training_outputs[current_time_index+2]);
+            RNN_Genome* best_genome = examm->finalize_generation(validation_input, validation_output, test_input, test_output);
+            best_genome->write_predictions(output_directory, "generation_" + std::to_string(current_generation), test_input, test_output, time_series_sets );
+            examm->update_log();
+        }
+        current_time_index++;
+        time_series_index.push_back(current_time_index);
+    }
+
     Log::set_id("main_" + to_string(rank));
 
     finished = true;

@@ -194,6 +194,8 @@ class IslandSpeciationStrategy : public SpeciationStrategy {
         RNN_Genome* get_global_best_genome();
 
         void set_erased_islands_status();
+        
+        RNN_Genome* finalize_generation(const vector< vector< vector<double> > > &validation_input, const vector< vector< vector<double> > > &validation_output, const vector< vector< vector<double> > > &test_input, const vector< vector< vector<double> > > &test_output);
 
 };
 

@@ -73,6 +73,8 @@ class RNN_Genome {
         double best_validation_mae;
         vector<double> best_parameters;
 
+        double online_validation_mse;
+
         minstd_rand0 generator;
 
         uniform_real_distribution<double> rng;
@@ -213,8 +215,11 @@ class RNN_Genome {
         double get_mse(const vector<double> &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs);
         double get_mae(const vector<double> &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs);
 
+        double get_online_validation_mse();
+        void evaluate_online(const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &output);
 
         vector< vector<double> > get_predictions(const vector<double> &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs);
+        void write_predictions(string output_directory, string filename, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, TimeSeriesSets *time_series_sets);
         void write_predictions(string output_directory, const vector<string> &input_filenames, const vector<double> &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, TimeSeriesSets *time_series_sets);
         void write_predictions(string output_directory, const vector<string> &input_filenames, const vector<double> &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, Corpus * word_series_sets);
 
@@ -300,12 +305,14 @@ class RNN_Genome {
         friend class EXAMM;
         friend class IslandSpeciationStrategy;
         friend class NeatSpeciationStrategy;
+        friend class OneNetSpeciationStrategy;
         friend class RecDepthFrequencyTable;
 };
 
 struct sort_genomes_by_fitness {
     bool operator()(RNN_Genome *g1, RNN_Genome *g2) {
-        return g1->get_fitness() < g2->get_fitness();
+        // return g1->get_fitness() < g2->get_fitness();
+        return g1->get_online_validation_mse() < g2->get_online_validation_mse();
     }
 };
 

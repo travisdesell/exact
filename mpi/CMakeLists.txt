@@ -23,6 +23,9 @@ if (MPI_FOUND)
     add_executable(examm_mpi_multi examm_mpi_multi.cxx)
     target_link_libraries(examm_mpi_multi examm_strategy exact_time_series exact_word_series exact_common ${MPI_LIBRARIES} ${MPI_EXTRA} ${MYSQL_LIBRARIES} ${TIFF_LIBRARIES} pthread)
 
+    add_executable(onenet_mpi onenet_mpi.cxx)
+    target_link_libraries(onenet_mpi examm_strategy exact_time_series exact_word_series exact_common ${MPI_LIBRARIES} ${MPI_EXTRA} ${MYSQL_LIBRARIES} ${TIFF_LIBRARIES} pthread)
+
     set (CMAKE_CXX_COMPILE_FLAGS "${CMAKE_COMPILE_FLAGS} ${MPI_COMPILE_FLAGS}")
     set (CMAKE_CXX_LINK_FLAGS "${CMAKE_CXX_LINK_FLAGS} ${MPI_LINK_FLAGS}")
     include_directories(${MPI_INCLUDE_PATH})

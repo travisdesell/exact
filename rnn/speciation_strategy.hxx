@@ -90,6 +90,8 @@ class SpeciationStrategy {
         virtual string get_strategy_information_values() const = 0;
 
         virtual RNN_Genome* get_global_best_genome() = 0;
+
+        virtual RNN_Genome* finalize_generation(const vector< vector< vector<double> > > &validation_input, const vector< vector< vector<double> > > &validation_output, const vector< vector< vector<double> > > &test_input, const vector< vector< vector<double> > > &test_output) = 0;
 };
 
 #endif

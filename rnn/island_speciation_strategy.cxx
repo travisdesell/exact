@@ -653,3 +653,7 @@ void IslandSpeciationStrategy::set_erased_islands_status() {
         }
     }
 }
+
+RNN_Genome* IslandSpeciationStrategy::finalize_generation(const vector< vector< vector<double> > > &validation_input, const vector< vector< vector<double> > > &validation_output, const vector< vector< vector<double> > > &test_input, const vector< vector< vector<double> > > &test_output) {
+    return NULL;
+}

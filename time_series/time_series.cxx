@@ -496,6 +496,17 @@ void TimeSeriesSet::cut(int32_t start, int32_t stop) {
     number_rows = stop - start;
 }
 
+void TimeSeriesSet::slice(int32_t start, int32_t series_length, TimeSeriesSet* &sub_series) {
+    int32_t stop = start + series_length + 1;
+    if (stop > number_rows) {
+        Log::error("Cannot slice time series with start index %d, length %d, and total number of rows in this TimeSeries is %d\n", start, series_length, number_rows);
+    }
+    sub_series = this->copy();
+    sub_series->filename = filename + "_split_" + to_string(start);
+
+    sub_series->cut(start, stop);
+}
+
 void TimeSeriesSet::split(int slices, vector<TimeSeriesSet*> &sub_series) {
     sub_series.clear();
 
@@ -670,6 +681,7 @@ void TimeSeriesSets::load_time_series() {
 
 TimeSeriesSets* TimeSeriesSets::generate_from_arguments(const vector<string> &arguments) {
     TimeSeriesSets *tss = new TimeSeriesSets();
+    bool generate_for_online_evolution = argument_exists(arguments, "--time_series_length");
 
     tss->filenames.clear();
 
@@ -678,12 +690,9 @@ TimeSeriesSets* TimeSeriesSets::generate_from_arguments(const vector<string> &ar
         get_argument_vector(arguments, "--training_indexes", false, tss->training_indexes);
         get_argument_vector(arguments, "--test_indexes", false, tss->test_indexes);
 
-    } else if (argument_exists(arguments, "--training_filenames") && argument_exists(arguments, "--test_filenames")) {
+    } else if (argument_exists(arguments, "--training_filenames")) {
         vector<string> training_filenames;
         get_argument_vector(arguments, "--training_filenames", true, training_filenames);
-
-        vector<string> test_filenames;
-        get_argument_vector(arguments, "--test_filenames", true, test_filenames);
 
         int current = 0;
         for (int i = 0; i < training_filenames.size(); i++) {
@@ -691,11 +700,15 @@ TimeSeriesSets* TimeSeriesSets::generate_from_arguments(const vector<string> &ar
             tss->training_indexes.push_back(current);
             current++;
         }
-
-        for (int i = 0; i < test_filenames.size(); i++) {
-            tss->filenames.push_back(test_filenames[i]);
-            tss->test_indexes.push_back(current);
-            current++;
+        if (!generate_for_online_evolution) {
+            vector<string> test_filenames;
+            get_argument_vector(arguments, "--test_filenames", true, test_filenames);
+            int current = 0;
+            for (int i = 0; i < test_filenames.size(); i++) {
+                tss->filenames.push_back(test_filenames[i]);
+                tss->test_indexes.push_back(current);
+                current++;
+            }
         }
 
     } else {
@@ -751,6 +764,37 @@ TimeSeriesSets* TimeSeriesSets::generate_from_arguments(const vector<string> &ar
 
 
     tss->load_time_series();
+
+    if (generate_for_online_evolution) {
+        Log::debug("loading data for online learning\n");
+        Log::debug("before loding the data, number of sets: %d \n", tss->get_number_series());
+
+        int32_t time_series_length;
+        get_argument(arguments, "--time_series_length", true, time_series_length);
+        vector<TimeSeriesSet*> sliced_time_series_sets;
+        Log::debug("time series length is set to %d \n", time_series_length);
+        for (int i = 0; i < tss->time_series.size(); i++) {
+            int row_count = 0;
+            int max_rows = tss->time_series[i]->get_number_rows();
+            TimeSeriesSet* ts = tss->time_series[i];
+            while (row_count + time_series_length < max_rows) {
+                TimeSeriesSet* time_series_slice;
+                ts->slice(row_count, time_series_length, time_series_slice);
+                row_count += time_series_length;
+                sliced_time_series_sets.push_back(time_series_slice->copy());
+                Log::debug("doing slice, row count is %d, max rows is %d, sliced time series size is %d\n", row_count, max_rows,sliced_time_series_sets.size());
+            }
+        }
+        Log::debug("After slice, sliced time series set size is %d\n", sliced_time_series_sets.size());
+        tss->time_series.clear();
+        tss->training_indexes.clear();
+
+        for (int i = 0; i < sliced_time_series_sets.size(); i++) {
+            tss->time_series.push_back(sliced_time_series_sets[i]->copy());
+            tss->training_indexes.push_back(i);
+        }
+        Log::debug("After replace original time series with sliced time series sets, time series sets size is %d\n", tss->time_series.size());
+    }
 
     tss->normalize_type = "";
     if (get_argument(arguments, "--normalize", false, tss->normalize_type)) {

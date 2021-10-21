@@ -33,6 +33,7 @@ using std::to_string;
 #include "speciation_strategy.hxx"
 #include "island_speciation_strategy.hxx"
 #include "neat_speciation_strategy.hxx"
+#include "onenet_speciation_strategy.hxx"
 
 //INFO: ADDED BY ABDELRAHMAN TO USE FOR TRANSFER LEARNING
 #include "rnn.hxx"
@@ -62,6 +63,7 @@ EXAMM::EXAMM(
         int32_t _population_size,
         int32_t _number_islands,
         int32_t _max_genomes,
+        int32_t _elite_population_size,
         int32_t _extinction_event_generation_number,
         int32_t islands_to_exterminate,
         string _island_ranking_method,
@@ -102,6 +104,7 @@ EXAMM::EXAMM(
                         population_size(_population_size),
                         number_islands(_number_islands),
                         max_genomes(_max_genomes),
+                        elite_population_size(_elite_population_size),
                         extinction_event_generation_number(_extinction_event_generation_number),
                         island_ranking_method(_island_ranking_method),
                         speciation_method(_speciation_method),
@@ -212,38 +215,39 @@ EXAMM::EXAMM(
 
     Log::info("Speciation method is: \"%s\" (Default is the island-based speciation strategy).\n", speciation_method.c_str());
     Log::info("Repeat extinction is set to %s\n", repeat_extinction? "true":"false");
+
+    //generate a minimal feed foward network as the seed genome
+    bool seed_genome_was_minimal = false;
+    if (seed_genome == NULL) {
+        seed_genome_was_minimal = true;
+        seed_genome = create_ff(input_parameter_names, 0, 0, output_parameter_names, 0, weight_initialize, weight_inheritance, mutated_component_weight);
+        seed_genome->initialize_randomly();
+    } //otherwise the seed genome was passed into EXAMM
+
+    //make sure we don't duplicate node or edge innovation numbers
+    edge_innovation_count = seed_genome->get_max_edge_innovation_count() + 1;
+    node_innovation_count = seed_genome->get_max_node_innovation_count() + 1;
+
+    seed_genome->set_generated_by("initial");
+
+    //insert a copy of it into the population so
+    //additional requests can mutate it
+
+    seed_genome->enable_use_regression(use_regression);
+    seed_genome->best_validation_mse = EXAMM_MAX_DOUBLE;
+
+    seed_genome->best_validation_mse = EXAMM_MAX_DOUBLE;
+    seed_genome->best_validation_mae = EXAMM_MAX_DOUBLE;
+    //seed_genome->best_parameters.clear();
+
+    double mutation_rate = 0.70, intra_island_co_rate = 0.20, inter_island_co_rate = 0.10;
+
+    if (number_islands == 1) {
+        inter_island_co_rate = 0.0;
+        intra_island_co_rate = 0.30;
+    }
+
     if (speciation_method.compare("island") == 0 || speciation_method.compare("") == 0) {
-        //generate a minimal feed foward network as the seed genome
-
-        bool seed_genome_was_minimal = false;
-        if (seed_genome == NULL) {
-            seed_genome_was_minimal = true;
-            seed_genome = create_ff(input_parameter_names, 0, 0, output_parameter_names, 0, weight_initialize, weight_inheritance, mutated_component_weight);
-            seed_genome->initialize_randomly();
-        } //otherwise the seed genome was passed into EXAMM
-
-        //make sure we don't duplicate node or edge innovation numbers
-        edge_innovation_count = seed_genome->get_max_edge_innovation_count() + 1;
-        node_innovation_count = seed_genome->get_max_node_innovation_count() + 1;
-
-        seed_genome->set_generated_by("initial");
-
-        //insert a copy of it into the population so
-        //additional requests can mutate it
-
-        seed_genome->enable_use_regression(use_regression);
-        seed_genome->best_validation_mse = EXAMM_MAX_DOUBLE;
-
-        seed_genome->best_validation_mse = EXAMM_MAX_DOUBLE;
-        seed_genome->best_validation_mae = EXAMM_MAX_DOUBLE;
-        //seed_genome->best_parameters.clear();
-
-        double mutation_rate = 0.70, intra_island_co_rate = 0.20, inter_island_co_rate = 0.10;
-
-        if (number_islands == 1) {
-            inter_island_co_rate = 0.0;
-            intra_island_co_rate = 0.30;
-        }
 
         // Only difference here is that the apply_stir_mutations lambda is passed if the island is supposed to start filled.
         if (start_filled) {
@@ -263,37 +267,14 @@ EXAMM::EXAMM(
                     seed_genome, island_ranking_method, repopulation_method, extinction_event_generation_number, repopulation_mutations, islands_to_exterminate, max_genomes, repeat_extinction, seed_genome_was_minimal);
         }
     } else if (speciation_method.compare("neat") == 0) {
-
-        bool seed_genome_was_minimal = false;
-        if (seed_genome == NULL) {
-            seed_genome_was_minimal = true;
-            seed_genome = create_ff(input_parameter_names, 0, 0, output_parameter_names, 0, weight_initialize, weight_inheritance, mutated_component_weight);
-            seed_genome->initialize_randomly();
-        } //otherwise the seed genome was passed into EXAMM
-
-        //make sure we don't duplicate node or edge innovation numbers
-        edge_innovation_count = seed_genome->get_max_edge_innovation_count() + 1;
-        node_innovation_count = seed_genome->get_max_node_innovation_count() + 1;
-
-        seed_genome->set_generated_by("initial");
-
-        //insert a copy of it into the population so
-        //additional requests can mutate it
-
-        seed_genome->best_validation_mse = EXAMM_MAX_DOUBLE;
-        seed_genome->best_validation_mae = EXAMM_MAX_DOUBLE;
-        //seed_genome->best_parameters.clear();
-
-        double mutation_rate = 0.70, intra_island_co_rate = 0.20, inter_island_co_rate = 0.10;
-
-        if (number_islands == 1) {
-            inter_island_co_rate = 0.0;
-            intra_island_co_rate = 0.30;
-        }
         // no transfer learning for NEAT
         speciation_strategy = new NeatSpeciationStrategy(mutation_rate, intra_island_co_rate, inter_island_co_rate, seed_genome, species_threshold, fitness_threshold, neat_c1, neat_c2, neat_c3, generator);
-
-    }
+    } else if (speciation_method.compare("onenet") == 0) {
+        // no transfer learning for NEAT
+        Log::error("Speciation strategy: onenet \n");
+        speciation_strategy = new OneNetSpeciationStrategy(elite_population_size, max_genomes, 0.5, 0.5,
+        seed_genome, seed_genome_was_minimal);
+    } 
 
     if (output_directory != "") {
         mkpath(output_directory.c_str(), 0777);
@@ -531,16 +512,16 @@ bool EXAMM::insert_genome(RNN_Genome* genome) {
                 Log::error("unrecognized generated_by string '%s'\n", generated_by.c_str());
         }
     }
-
-    speciation_strategy->print();
-    update_log();
-
+    if (speciation_method.compare("onenet") != 0) {
+        speciation_strategy->print();
+        update_log();
+    }
     return insert_position >= 0;
 }
 
 RNN_Genome* EXAMM::generate_genome(int32_t seed_genome_stirs) {
-    if (speciation_strategy->get_evaluated_genomes() > max_genomes) return NULL;
-
+    if (speciation_method.compare("onenet") != 0 && speciation_strategy->get_evaluated_genomes() > max_genomes) return NULL; // never return NULL genome to OneNet speciation Strategy
+    
     function<void (int32_t, RNN_Genome*)> mutate_function =
         [=](int32_t max_mutations, RNN_Genome *genome) {
             this->mutate(max_mutations, genome);
@@ -1146,4 +1127,9 @@ void EXAMM::check_weight_initialize_validity() {
         exit(1);
     }
 
+}
+
+RNN_Genome* EXAMM::finalize_generation(const vector< vector< vector<double> > > &validation_input, const vector< vector< vector<double> > > &validation_output, const vector< vector< vector<double> > > &test_input, const vector< vector< vector<double> > > &test_output) {
+    RNN_Genome* g = speciation_strategy->finalize_generation(validation_input, validation_output, test_input, test_output);
+    return g;
 }

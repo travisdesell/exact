@@ -30,6 +30,7 @@ class EXAMM {
 
         int32_t max_genomes;
         int32_t total_bp_epochs;
+        int32_t elite_population_size;
 
         int32_t extinction_event_generation_number;
         string island_ranking_method;
@@ -131,6 +132,7 @@ class EXAMM {
         EXAMM(  int32_t _population_size,
                 int32_t _number_islands,
                 int32_t _max_genomes,
+                int32_t _elite_population_size,
                 int32_t _extinction_event_generation_number,
                 int32_t _islands_to_exterminate,
                 string _island_ranking_method,
@@ -201,6 +203,8 @@ class EXAMM {
         RNN_Genome* generate_for_transfer_learning(string file_name, int extra_inputs, int extra_outputs) ;
 
         void check_weight_initialize_validity();
+        
+        RNN_Genome* finalize_generation(const vector< vector< vector<double> > > &validation_input, const vector< vector< vector<double> > > &validation_output, const vector< vector< vector<double> > > &test_input, const vector< vector< vector<double> > > &test_output);
 };
 
 #endif

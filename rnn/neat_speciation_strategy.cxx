@@ -532,3 +532,7 @@ void NeatSpeciationStrategy::check_species() {
     }
     Log::info("finished checking species, current number of species: %d \n", Neat_Species.size());
 }
+
+RNN_Genome* NeatSpeciationStrategy::finalize_generation(const vector< vector< vector<double> > > &validation_input, const vector< vector< vector<double> > > &validation_output, const vector< vector< vector<double> > > &test_input, const vector< vector< vector<double> > > &test_output) {
+    return NULL;
+}

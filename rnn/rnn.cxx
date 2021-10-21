@@ -558,9 +558,16 @@ void RNN::write_predictions(string output_filename, const vector<string> &input_
 
         Log::debug("output_parameter_names[%d]: '%s'\n", i, output_parameter_names[i].c_str());
     }
+
+    for (uint32_t i = 0; i < output_nodes.size(); i++) {
+        outfile << ",";
+        outfile << "naive_" << output_parameter_names[i];
+
+        Log::debug("output_parameter_names[%d]: '%s'\n", i, output_parameter_names[i].c_str());
+    }
     outfile << endl;
 
-    for (uint32_t j = 0; j < series_length; j++) {
+    for (uint32_t j = 1; j < series_length; j++) {
         for (uint32_t i = 0; i < input_nodes.size(); i++) {
             if (i > 0) outfile << ",";
             //outfile << series_data[i][j];
@@ -577,6 +584,12 @@ void RNN::write_predictions(string output_filename, const vector<string> &input_
             outfile << ",";
             //outfile << output_nodes[i]->output_values[j];
             outfile << time_series_sets->denormalize(output_parameter_names[i], output_nodes[i]->output_values[j]);
+        }
+        
+        for (uint32_t i = 0; i < output_nodes.size(); i++) {
+            outfile << ",";
+            //outfile << output_nodes[i]->output_values[j];
+            outfile << time_series_sets->denormalize(output_parameter_names[i], expected_outputs[i][j-1]);
         }
         outfile << endl;
     }
