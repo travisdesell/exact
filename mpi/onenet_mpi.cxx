@@ -1,7 +1,7 @@
 #include <chrono>
 #include <algorithm>  
 #include <iomanip>
-using std::random_shuffle;
+using std::shuffle;
 using std::setw;
 using std::fixed;
 using std::setprecision;
@@ -54,7 +54,7 @@ int sequence_length_upper_bound = 100;
 
 vector<int32_t> time_series_index;
 int32_t current_time_index = 0;
-int32_t num_training_sets = 50;
+int32_t num_training_sets = 200;
 int32_t generation_genomes = 10;
 
 
@@ -133,7 +133,8 @@ void get_online_data(vector< vector< vector<double> > > &current_inputs, vector<
     // Log::error("generating data for worker, current num index is %d, num training sets are %d, so the num sets is %d\n", current_time_index, num_training_sets, num_sets);
     // Log::error("current time series set has %d sets\n", training_inputs.size());
     // Log::error("the shuffled time series index is:\n");
-    random_shuffle(time_series_index.begin(), time_series_index.end());
+    auto rng = std::default_random_engine {};
+    shuffle(time_series_index.begin(), time_series_index.end(), rng);
     // for (int i = 0; i < time_series_index.size(); i++) {
     //     Log::error("%d \n", time_series_index[i]);
     // }
