@@ -204,7 +204,7 @@ class EXAMM {
 
         void check_weight_initialize_validity();
         
-        RNN_Genome* finalize_generation(const vector< vector< vector<double> > > &validation_input, const vector< vector< vector<double> > > &validation_output, const vector< vector< vector<double> > > &test_input, const vector< vector< vector<double> > > &test_output);
+        void finalize_generation(const vector< vector< vector<double> > > &validation_input, const vector< vector< vector<double> > > &validation_output, const vector< vector< vector<double> > > &test_input, const vector< vector< vector<double> > > &test_output, TimeSeriesSets *time_series_Sets);
 };
 
 #endif

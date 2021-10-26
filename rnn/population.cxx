@@ -14,6 +14,9 @@ using std::uniform_real_distribution;
 using std::string;
 using std::to_string;
 
+#include <iostream>
+using std::endl;
+
 #include <unordered_map>
 using std::unordered_map;
 
@@ -328,3 +331,87 @@ void Population::sort_population(string sort_by) {
 
 }
 
+void Population::write_prediction(string filename, const vector< vector< vector<double> > > &test_input, const vector< vector< vector<double> > > &test_output, TimeSeriesSets *time_series_sets) {
+    vector <vector <vector <vector<double>>>> predictions; // <genome <input sets < output parameter <value>>>>
+    int32_t num_genomes = genomes.size();
+    int32_t num_outputs = genomes[0]->get_number_outputs();
+    vector <string> input_parameter_names = genomes[0]->get_input_parameter_names();
+    vector <string> output_parameter_names = genomes[0]->get_output_parameter_names();
+
+    for (int i = 0; i < num_genomes; i++) {
+        predictions.push_back(genomes[i]->get_predictions(genomes[i]->get_best_parameters(), test_input, test_output));
+    }
+    ofstream outfile(filename + ".csv");
+
+    outfile << "#";
+
+    // for (uint32_t i = 0; i < input_parameter_names.size(); i++) {
+    //     if (i > 0) outfile << ",";
+    //     outfile << input_parameter_names[i];
+
+    //     Log::debug("input_parameter_names[%d]: '%s'\n", i, input_parameter_names[i].c_str());
+    // }
+
+    for (uint32_t i = 0; i < num_outputs; i++) {
+        if (i > 0) outfile << ",";
+        outfile << "expected_" << output_parameter_names[i];
+
+        Log::debug("output_parameter_names[%d]: '%s'\n", i, output_parameter_names[i].c_str());
+    }
+    
+    for (uint32_t i = 0; i < num_outputs; i++) {
+        outfile << ",";
+        outfile << "naive_" << output_parameter_names[i];
+
+        Log::debug("output_parameter_names[%d]: '%s'\n", i, output_parameter_names[i].c_str());
+    }
+
+    for (uint32_t g = 0; g < num_genomes; g++) {
+        for (uint32_t i = 0; i < num_outputs; i++) {
+            outfile << ",";
+            outfile << "genome_" << g << "_predicted_" << output_parameter_names[i];
+
+            Log::debug("output_parameter_names[%d]: '%s'\n", i, output_parameter_names[i].c_str());
+        }
+
+
+    }
+
+    outfile << endl;
+
+    int32_t time_length = test_input[0][0].size();
+    for (uint32_t j = 1; j < time_length; j++) {
+        // for (uint32_t i = 0; i < input_parameter_names.size(); i++) {
+        //     if (i > 0) outfile << ",";
+        //     //outfile << series_data[i][j];
+        //     outfile << time_series_sets->denormalize(input_parameter_names[i], test_input[0][i][j]);
+        // }
+
+        for (uint32_t i = 0; i < num_outputs; i++) {
+            if (i > 0) outfile << ",";
+            //outfile << expected_outputs[i][j];
+            outfile << time_series_sets->denormalize(output_parameter_names[i], test_output[0][i][j]);
+        }
+
+        for (uint32_t i = 0; i < num_outputs; i++) {
+            outfile << ",";
+            //outfile << output_nodes[i]->output_values[j];
+            outfile << time_series_sets->denormalize(output_parameter_names[i], test_output[0][i][j-1]);
+        }
+
+        for (uint32_t g = 0; g < num_genomes; g++) {
+            for (uint32_t i = 0; i < num_outputs; i++) {
+                outfile << ",";
+                //outfile << output_nodes[i]->output_values[j];
+                outfile << time_series_sets->denormalize(output_parameter_names[i], predictions[g][0][i][j]);
+            }
+            
+
+        }
+
+        outfile << endl;
+    }
+    outfile.close();
+
+    
+}

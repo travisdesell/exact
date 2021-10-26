@@ -1437,14 +1437,14 @@ double RNN_Genome::get_mae(const vector<double> &parameters, const vector< vecto
     return avg_mae;
 }
 
-vector< vector<double> > RNN_Genome::get_predictions(const vector<double> &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs) {
+vector< vector< vector<double> > > RNN_Genome::get_predictions(const vector<double> &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs) {
     RNN *rnn = get_rnn();
     rnn->set_weights(parameters);
 
-    vector< vector<double> > all_results;
+    vector< vector< vector<double> > > all_results;
+    Log::error("RNN_Genome: number of test examples is %d\n", inputs.size());
 
-    //one input vector per testing file
-    for (uint32_t i = 0; i < inputs.size(); i++) {
+    for (int i = 0; i < inputs.size(); i++ ) {
         all_results.push_back(rnn->get_predictions(inputs[i], outputs[i], use_dropout, dropout_probability));
     }
 

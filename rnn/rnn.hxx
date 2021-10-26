@@ -53,7 +53,8 @@ class RNN {
         double prediction_mae(const vector< vector<double> > &series_data, const vector< vector<double> > &expected_outputs, bool using_dropout, bool training, double dropout_probability);
 
 
-        vector<double> get_predictions(const vector< vector<double> > &series_data, const vector< vector<double> > &expected_outputs, bool usng_dropout, double dropout_probability);
+        // vector<double> get_predictions(const vector< vector<double> > &series_data, const vector< vector<double> > &expected_outputs, bool usng_dropout, double dropout_probability);
+        vector<vector<double>> get_predictions(const vector< vector<double> > &series_data, const vector< vector<double> > &expected_outputs, bool using_dropout, double dropout_probability);
 
         void write_predictions(string output_filename, const vector<string> &input_parameter_names, const vector<string> &output_parameter_names, const vector< vector<double> > &series_data, const vector< vector<double> > &expected_outputs, TimeSeriesSets *time_series_sets, bool using_dropout, double dropout_probability);
         void write_predictions(string output_filename, const vector<string> &input_parameter_names, const vector<string> &output_parameter_names, const vector< vector<double> > &series_data, const vector< vector<double> > &expected_outputs, Corpus *word_series_sets, bool using_dropout, double dropout_probability);

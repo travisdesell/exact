@@ -142,6 +142,8 @@ class Population {
 
         void sort_population(string sort_by);
 
+        void write_prediction(string filename, const vector< vector< vector<double> > > &test_input, const vector< vector< vector<double> > > &test_output, TimeSeriesSets *time_series_sets);
+
 };
 
 // struct compare_online_mse {

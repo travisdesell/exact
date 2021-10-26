@@ -54,7 +54,7 @@ int sequence_length_upper_bound = 100;
 
 vector<int32_t> time_series_index;
 int32_t current_time_index = 0;
-int32_t num_training_sets = 200;
+int32_t num_training_sets = 300;
 int32_t generation_genomes = 10;
 
 
@@ -134,15 +134,16 @@ void get_online_data(vector< vector< vector<double> > > &current_inputs, vector<
     // Log::error("current time series set has %d sets\n", training_inputs.size());
     // Log::error("the shuffled time series index is:\n");
     auto rng = std::default_random_engine {};
-    shuffle(time_series_index.begin(), time_series_index.end(), rng);
-    // for (int i = 0; i < time_series_index.size(); i++) {
-    //     Log::error("%d \n", time_series_index[i]);
+    vector<int> data_index = time_series_index;
+    shuffle(data_index.begin(), data_index.end(), rng);
+    // for (int i = 0; i < data_index.size(); i++) {
+    //     Log::error("%d \n", data_index[i]);
     // }
     // Log::error("number of training inputs are %d\n", num_training_sets);
     // Log::error("training input size is %d by %d by %d\n", training_inputs.size(), training_inputs[0].size(), training_inputs[0][0].size());
     for (int i = 0; i < num_sets; i++) {
-        current_inputs.push_back(training_inputs[time_series_index[i]]);
-        current_outputs.push_back(training_outputs[time_series_index[i]]);
+        current_inputs.push_back(training_inputs[data_index[i]]);
+        current_outputs.push_back(training_outputs[data_index[i]]);
     }
     validation_inputs.push_back(training_inputs[current_time_index+1]);
     validation_outputs.push_back(training_outputs[current_time_index+1]);
@@ -472,12 +473,14 @@ int main(int argc, char** argv) {
             validation_output.push_back(training_outputs[current_time_index+1]);
             test_input.push_back(training_inputs[current_time_index+2]);
             test_output.push_back(training_outputs[current_time_index+2]);
-            RNN_Genome* best_genome = examm->finalize_generation(validation_input, validation_output, test_input, test_output);
-            best_genome->write_predictions(output_directory, "generation_" + std::to_string(current_generation), test_input, test_output, time_series_sets );
-            examm->update_log();
+            examm->finalize_generation(validation_input, validation_output, test_input, test_output, time_series_sets);
+            // best_genome->write_predictions(output_directory, "generation_" + std::to_string(current_generation), test_input, test_output, time_series_sets );
+            // examm->update_log();
         }
         current_time_index++;
+        if(current_time_index > num_training_sets) time_series_index.erase(time_series_index.begin());
         time_series_index.push_back(current_time_index);
+        
     }
 
     Log::set_id("main_" + to_string(rank));

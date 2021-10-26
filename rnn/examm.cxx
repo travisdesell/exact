@@ -1129,7 +1129,7 @@ void EXAMM::check_weight_initialize_validity() {
 
 }
 
-RNN_Genome* EXAMM::finalize_generation(const vector< vector< vector<double> > > &validation_input, const vector< vector< vector<double> > > &validation_output, const vector< vector< vector<double> > > &test_input, const vector< vector< vector<double> > > &test_output) {
-    RNN_Genome* g = speciation_strategy->finalize_generation(validation_input, validation_output, test_input, test_output);
-    return g;
+void EXAMM::finalize_generation(const vector< vector< vector<double> > > &validation_input, const vector< vector< vector<double> > > &validation_output, const vector< vector< vector<double> > > &test_input, const vector< vector< vector<double> > > &test_output, TimeSeriesSets * time_series_sets) {
+    speciation_strategy->finalize_generation(validation_input, validation_output, test_input, test_output, time_series_sets, output_directory);
+    // return g;
 }

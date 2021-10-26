@@ -9,7 +9,6 @@ using std::string;
 using std::minstd_rand0;
 using std::uniform_real_distribution;
 
-
 class SpeciationStrategy {
 
     public:
@@ -91,7 +90,7 @@ class SpeciationStrategy {
 
         virtual RNN_Genome* get_global_best_genome() = 0;
 
-        virtual RNN_Genome* finalize_generation(const vector< vector< vector<double> > > &validation_input, const vector< vector< vector<double> > > &validation_output, const vector< vector< vector<double> > > &test_input, const vector< vector< vector<double> > > &test_output) = 0;
+        virtual void finalize_generation(const vector< vector< vector<double> > > &validation_input, const vector< vector< vector<double> > > &validation_output, const vector< vector< vector<double> > > &test_input, const vector< vector< vector<double> > > &test_output, TimeSeriesSets* time_series_sets, string result_dir) = 0;
 };
 
 #endif
