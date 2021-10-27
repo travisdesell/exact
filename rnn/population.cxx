@@ -390,20 +390,23 @@ void Population::write_prediction(string filename, const vector< vector< vector<
         for (uint32_t i = 0; i < num_outputs; i++) {
             if (i > 0) outfile << ",";
             //outfile << expected_outputs[i][j];
-            outfile << time_series_sets->denormalize(output_parameter_names[i], test_output[0][i][j]);
+            // outfile << time_series_sets->denormalize(output_parameter_names[i], test_output[0][i][j]);
+            outfile << output_parameter_names[i], test_output[0][i][j];
         }
 
         for (uint32_t i = 0; i < num_outputs; i++) {
             outfile << ",";
             //outfile << output_nodes[i]->output_values[j];
-            outfile << time_series_sets->denormalize(output_parameter_names[i], test_output[0][i][j-1]);
+            // outfile << time_series_sets->denormalize(output_parameter_names[i], test_output[0][i][j-1]);
+            outfile << output_parameter_names[i], test_output[0][i][j-1];
         }
 
         for (uint32_t g = 0; g < num_genomes; g++) {
             for (uint32_t i = 0; i < num_outputs; i++) {
                 outfile << ",";
                 //outfile << output_nodes[i]->output_values[j];
-                outfile << time_series_sets->denormalize(output_parameter_names[i], predictions[g][0][i][j]);
+                // outfile << time_series_sets->denormalize(output_parameter_names[i], predictions[g][0][i][j]);
+                outfile << output_parameter_names[i], predictions[g][0][i][j];
             }
             
 
