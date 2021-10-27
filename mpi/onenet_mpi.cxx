@@ -475,7 +475,7 @@ int main(int argc, char** argv) {
             test_output.push_back(training_outputs[current_time_index+2]);
             examm->finalize_generation(validation_input, validation_output, test_input, test_output, time_series_sets);
             // best_genome->write_predictions(output_directory, "generation_" + std::to_string(current_generation), test_input, test_output, time_series_sets );
-            // examm->update_log();
+            examm->update_log();
         }
         current_time_index++;
         if(current_time_index > num_training_sets) time_series_index.erase(time_series_index.begin());

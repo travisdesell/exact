@@ -1442,7 +1442,6 @@ vector< vector< vector<double> > > RNN_Genome::get_predictions(const vector<doub
     rnn->set_weights(parameters);
 
     vector< vector< vector<double> > > all_results;
-    Log::error("RNN_Genome: number of test examples is %d\n", inputs.size());
 
     for (int i = 0; i < inputs.size(); i++ ) {
         all_results.push_back(rnn->get_predictions(inputs[i], outputs[i], use_dropout, dropout_probability));

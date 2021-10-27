@@ -342,79 +342,74 @@ void Population::write_prediction(string filename, const vector< vector< vector<
         predictions.push_back(genomes[i]->get_predictions(genomes[i]->get_best_parameters(), test_input, test_output));
     }
     ofstream outfile(filename + ".csv");
-
     outfile << "#";
 
-    // for (uint32_t i = 0; i < input_parameter_names.size(); i++) {
-    //     if (i > 0) outfile << ",";
-    //     outfile << input_parameter_names[i];
-
-    //     Log::debug("input_parameter_names[%d]: '%s'\n", i, input_parameter_names[i].c_str());
-    // }
+    ofstream outfile_original(filename + "_original.csv");
+    outfile_original << "#";
 
     for (uint32_t i = 0; i < num_outputs; i++) {
         if (i > 0) outfile << ",";
-        outfile << "expected_" << output_parameter_names[i];
+        if (i > 0) outfile_original << ",";
 
+        outfile << "expected_" << output_parameter_names[i];
+        outfile_original << "expected_" << output_parameter_names[i];
         Log::debug("output_parameter_names[%d]: '%s'\n", i, output_parameter_names[i].c_str());
     }
     
     for (uint32_t i = 0; i < num_outputs; i++) {
         outfile << ",";
-        outfile << "naive_" << output_parameter_names[i];
+        outfile_original << ",";
 
+        outfile << "naive_" << output_parameter_names[i];
+        outfile_original << "naive_" << output_parameter_names[i];
         Log::debug("output_parameter_names[%d]: '%s'\n", i, output_parameter_names[i].c_str());
     }
 
     for (uint32_t g = 0; g < num_genomes; g++) {
         for (uint32_t i = 0; i < num_outputs; i++) {
             outfile << ",";
-            outfile << "genome_" << g << "_predicted_" << output_parameter_names[i];
+            outfile_original << ",";
 
+            outfile << "genome_" << g << "_predicted_" << output_parameter_names[i];
+            outfile_original << "genome_" << g << "_predicted_" << output_parameter_names[i];
             Log::debug("output_parameter_names[%d]: '%s'\n", i, output_parameter_names[i].c_str());
         }
-
-
     }
 
     outfile << endl;
+    outfile_original << endl;
 
     int32_t time_length = test_input[0][0].size();
     for (uint32_t j = 1; j < time_length; j++) {
-        // for (uint32_t i = 0; i < input_parameter_names.size(); i++) {
-        //     if (i > 0) outfile << ",";
-        //     //outfile << series_data[i][j];
-        //     outfile << time_series_sets->denormalize(input_parameter_names[i], test_input[0][i][j]);
-        // }
 
         for (uint32_t i = 0; i < num_outputs; i++) {
             if (i > 0) outfile << ",";
-            //outfile << expected_outputs[i][j];
-            // outfile << time_series_sets->denormalize(output_parameter_names[i], test_output[0][i][j]);
-            outfile << output_parameter_names[i], test_output[0][i][j];
+            if (i > 0) outfile_original << ",";
+
+            outfile << test_output[0][i][j];
+            outfile_original << time_series_sets->denormalize(output_parameter_names[i], test_output[0][i][j]);
         }
 
         for (uint32_t i = 0; i < num_outputs; i++) {
             outfile << ",";
-            //outfile << output_nodes[i]->output_values[j];
-            // outfile << time_series_sets->denormalize(output_parameter_names[i], test_output[0][i][j-1]);
-            outfile << output_parameter_names[i], test_output[0][i][j-1];
+            outfile_original << ",";
+
+            outfile << test_output[0][i][j-1];
+            outfile_original << time_series_sets->denormalize(output_parameter_names[i], test_output[0][i][j-1]);
         }
 
         for (uint32_t g = 0; g < num_genomes; g++) {
             for (uint32_t i = 0; i < num_outputs; i++) {
                 outfile << ",";
-                //outfile << output_nodes[i]->output_values[j];
-                // outfile << time_series_sets->denormalize(output_parameter_names[i], predictions[g][0][i][j]);
-                outfile << output_parameter_names[i], predictions[g][0][i][j];
+                outfile_original << ",";
+
+                outfile << predictions[g][0][i][j];
+                outfile_original << time_series_sets->denormalize(output_parameter_names[i], predictions[g][0][i][j]);
             }
-            
-
         }
-
         outfile << endl;
+        outfile_original << endl;
     }
     outfile.close();
-
-    
+    outfile_original.close();
 }

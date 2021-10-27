@@ -338,7 +338,7 @@ void OneNetSpeciationStrategy::finalize_generation(const vector< vector< vector<
     Log::error("Generated population size %d, trained population size %d\n", Generated_population->get_genomes().size(), Trained_population->get_genomes().size());
     evaluate_elite_population(validation_input, validation_output);
     select_elite_population();
-    // global_best_genome = Elite_population->get_best_genome();
+    global_best_genome = Elite_population->get_best_genome();
     Elite_population->write_prediction(result_dir + "/generation_" + std::to_string(generation), test_input, test_output, time_series_sets);
     // make_online_predictions(test_input, test_output);
     generation ++;
