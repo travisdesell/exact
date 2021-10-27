@@ -480,7 +480,8 @@ int main(int argc, char** argv) {
                 validation_output.push_back(training_outputs[current_time_index+1]);
                 test_input.push_back(training_inputs[current_time_index+2]);
                 test_output.push_back(training_outputs[current_time_index+2]);
-                examm->finalize_generation(validation_input, validation_output, test_input, test_output, time_series_sets);
+                string filename = output_directory + "/generation" + std::to_string(current_generation);
+                examm->finalize_generation(filename, validation_input, validation_output, test_input, test_output, time_series_sets);
                 // best_genome->write_predictions(output_directory, "generation_" + std::to_string(current_generation), test_input, test_output, time_series_sets );
                 last_mini_generation_time = examm->update_log();
                 time_left -= last_mini_generation_time;

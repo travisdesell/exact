@@ -90,7 +90,7 @@ class SpeciationStrategy {
 
         virtual RNN_Genome* get_global_best_genome() = 0;
 
-        virtual void finalize_generation(const vector< vector< vector<double> > > &validation_input, const vector< vector< vector<double> > > &validation_output, const vector< vector< vector<double> > > &test_input, const vector< vector< vector<double> > > &test_output, TimeSeriesSets* time_series_sets, string result_dir) = 0;
+        virtual void finalize_generation(string filename, const vector< vector< vector<double> > > &validation_input, const vector< vector< vector<double> > > &validation_output, const vector< vector< vector<double> > > &test_input, const vector< vector< vector<double> > > &test_output, TimeSeriesSets* time_series_sets, string result_dir) = 0;
 };
 
 #endif

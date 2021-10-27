@@ -334,12 +334,12 @@ RNN_Genome* OneNetSpeciationStrategy::get_global_best_genome(){
     return global_best_genome;
 }
 
-void OneNetSpeciationStrategy::finalize_generation(const vector< vector< vector<double> > > &validation_input, const vector< vector< vector<double> > > &validation_output, const vector< vector< vector<double> > > &test_input, const vector< vector< vector<double> > > &test_output, TimeSeriesSets *time_series_sets, string result_dir) {
+void OneNetSpeciationStrategy::finalize_generation(string filename, const vector< vector< vector<double> > > &validation_input, const vector< vector< vector<double> > > &validation_output, const vector< vector< vector<double> > > &test_input, const vector< vector< vector<double> > > &test_output, TimeSeriesSets *time_series_sets, string result_dir) {
     // Log::error("Generated population size %d, trained population size %d\n", Generated_population->get_genomes().size(), Trained_population->get_genomes().size());
     evaluate_elite_population(validation_input, validation_output);
     select_elite_population();
     global_best_genome = Elite_population->get_best_genome();
-    Elite_population->write_prediction(result_dir + "/generation_" + std::to_string(generation), test_input, test_output, time_series_sets);
+    Elite_population->write_prediction(filename, test_input, test_output, time_series_sets);
     // make_online_predictions(test_input, test_output);
     generation ++;
     // return global_best_genome;

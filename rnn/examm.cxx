@@ -1130,7 +1130,7 @@ void EXAMM::check_weight_initialize_validity() {
 
 }
 
-void EXAMM::finalize_generation(const vector< vector< vector<double> > > &validation_input, const vector< vector< vector<double> > > &validation_output, const vector< vector< vector<double> > > &test_input, const vector< vector< vector<double> > > &test_output, TimeSeriesSets * time_series_sets) {
-    speciation_strategy->finalize_generation(validation_input, validation_output, test_input, test_output, time_series_sets, output_directory);
+void EXAMM::finalize_generation(string filename, const vector< vector< vector<double> > > &validation_input, const vector< vector< vector<double> > > &validation_output, const vector< vector< vector<double> > > &test_input, const vector< vector< vector<double> > > &test_output, TimeSeriesSets * time_series_sets) {
+    speciation_strategy->finalize_generation(filename, validation_input, validation_output, test_input, test_output, time_series_sets, output_directory);
     // return g;
 }
