@@ -348,7 +348,7 @@ void EXAMM::print() {
     }
 }
 
-void EXAMM::update_log() {
+long EXAMM::update_log() {
     if (log_file != NULL) {
 
         //make sure the log file is still good
@@ -385,7 +385,7 @@ void EXAMM::update_log() {
 
         std::chrono::time_point<std::chrono::system_clock> currentClock = std::chrono::system_clock::now();
         long milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(currentClock - startClock).count();
-
+        startClock = std::chrono::system_clock::now();
         (*log_file) << speciation_strategy->get_evaluated_genomes()
             << "," << total_bp_epochs
             << "," << milliseconds
@@ -416,8 +416,9 @@ void EXAMM::update_log() {
         }
 
         (*op_log_file) << endl;
-
+        return milliseconds;
     }
+    return 0;
 }
 
 void EXAMM::write_memory_log(string filename) {

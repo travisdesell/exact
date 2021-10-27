@@ -175,7 +175,7 @@ class EXAMM {
         ~EXAMM();
 
         void print();
-        void update_log();
+        long update_log();
         void write_memory_log(string filename);
 
         void set_possible_node_types(vector<string> possible_node_type_strings);
