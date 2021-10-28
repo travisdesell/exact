@@ -1361,18 +1361,16 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
 
 double RNN_Genome::resn_fitness(const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, const vector< vector< vector<double> > > &validation_inputs, const vector< vector< vector<double> > > &validation_outputs, bool random_sequence_length, int sequence_length_lower_bound, int sequence_length_upper_bound) {
     vector<double> errors;
-    
-    int32_t n_series = inputs.size();
+    RNN* rnn = this->get_rnn();
 
-    // vector<RNN*> rnns;
-    for (int32_t i = 0; i < n_series; i++) {
-        RNN* r = this->get_rnn();
-        std::cout << "RNN: ";
-        std::cout << r << endl;
-
-        // for (int j = 0; j < 
-        errors.push_back(r->calculate_error_mae(const int &expected_outputs));
+    for (int i = sequence_length_lower_bound; i < sequence_length_upper_bound; i++) {
+        rnn->initialize_randomly();
+        
     }
+    // std::chrono::time_point<std::chrono::system_clock> startClock = std::chrono::system_clock::now();
+    // vector<RNN*> rnns;
+
+    // long milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(currentClock - startClock).count();
 
     return 0.d;
 }
