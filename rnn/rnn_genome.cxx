@@ -1361,6 +1361,7 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
 
 double RNN_Genome::resn_fitness(const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, const vector< vector< vector<double> > > &validation_inputs, const vector< vector< vector<double> > > &validation_outputs, bool random_sequence_length, int n_runs) {
     vector<double> errors;
+    vector<double> parameters = initial_parameters;
     RNN* rnn = this->get_rnn();
 
     for (int i = 0; i < n_runs; i++) {
@@ -1368,9 +1369,7 @@ double RNN_Genome::resn_fitness(const vector< vector< vector<double> > > &inputs
 
         for (int i = 0; i < outputs.size(); i++) {
             vector< vector<double> > time_series = outputs[i];
-            std::cout<<"this:"<<endl;
-            std::cout<<time_series.size()<<endl;
-            double mae = rnn->calculate_error_mae(time_series);
+            double mae = rnn->prediction_mae(inputs[i], time_series, true, true, .10);
 
             errors.push_back(mae);
         }
@@ -1409,7 +1408,10 @@ double RNN_Genome::resn_fitness(const vector< vector< vector<double> > > &inputs
     double z = threshValue/(1.0/sqrt(errors.size()));
     double p = (1.0/2.0)*(1+ std::erf(z/sqrt(2.0)));
 
-    return 1.0-p;
+    double p_value = 1.0-p;
+
+    best_validation_mae = p_value;
+    return p_value;
 }
 
 vector< vector<double> > RNN_Genome::slice_time_series(int start_index, int sequence_length, int num_parameter, const vector< vector<double> > &time_series) {

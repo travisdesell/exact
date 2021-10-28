@@ -475,7 +475,7 @@ double RNN::calculate_error_mae(const vector< vector<double> > &expected_outputs
 
     for (uint32_t i = 0; i < output_nodes.size(); i++) {
         output_nodes[i]->error_values.resize(expected_outputs[i].size());
-        output_nodes[i]->output_values.resize(expected_outputs[i].size());
+        // output_nodes[i]->output_values.resize(expected_outputs[i].size());
 
         mae = 0.0;
         for (uint32_t j = 0; j < expected_outputs[i].size(); j++) {
