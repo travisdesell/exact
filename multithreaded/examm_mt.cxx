@@ -61,12 +61,10 @@ void examm_thread(int id) {
         //genome->backpropagate(training_inputs, training_outputs, validation_inputs, validation_outputs);
 
         //TODO: evaluate what happens here? 
-        genome->backpropagate_stochastic(training_inputs, training_outputs, validation_inputs, validation_outputs, random_sequence_length, sequence_length_lower_bound, sequence_length_upper_bound);
+        // genome->backpropagate_stochastic(training_inputs, training_outputs, validation_inputs, validation_outputs, random_sequence_length, sequence_length_lower_bound, sequence_length_upper_bound);
 
-        vector<double>* errors = new vector<double>;
 
-        genome->initialize_randomly();
-        (void) genome->resn_fitness(training_inputs, training_outputs, errors);
+        (void) genome->resn_fitness(training_inputs, training_outputs, validation_inputs, validation_outputs, random_sequence_length, 10);
 
         Log::release_id(log_id);
 

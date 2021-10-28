@@ -131,7 +131,7 @@ class RNN_Genome {
         int32_t get_node_count();
 
         double get_fitness() const;
-        double resn_fitness(const vector< vector< vector<double> > >&, const vector< vector< vector<double> > >&, const vector< vector<double> >&, vector<double>*);
+        double resn_fitness(const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, const vector< vector< vector<double> > > &validation_inputs, const vector< vector< vector<double> > > &validation_outputs, bool random_sequence_length, int n_runs);
         double get_best_validation_softmax() const;
         double get_best_validation_mse() const;
         double get_best_validation_mae() const;

@@ -1359,14 +1359,28 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
     get_mu_sigma(best_parameters, _mu, _sigma);
 }
 
-double RNN_Genome::resn_fitness(const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, const vector< vector< vector<double> > > &validation_inputs, const vector< vector< vector<double> > > &validation_outputs, bool random_sequence_length, int sequence_length_lower_bound, int sequence_length_upper_bound) {
+double RNN_Genome::resn_fitness(const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, const vector< vector< vector<double> > > &validation_inputs, const vector< vector< vector<double> > > &validation_outputs, bool random_sequence_length, int n_runs) {
     vector<double> errors;
     RNN* rnn = this->get_rnn();
 
-    for (int i = sequence_length_lower_bound; i < sequence_length_upper_bound; i++) {
+    for (int i = 0; i < n_runs; i++) {
         rnn->initialize_randomly();
-        
+
+        for (int i = 0; i < outputs.size(); i++) {
+            vector< vector<double> > time_series = outputs[i];
+            std::cout<<"this:"<<endl;
+            std::cout<<time_series.size()<<endl;
+            double mae = rnn->calculate_error_mae(time_series);
+
+            errors.push_back(mae);
+        }
     }
+
+    for (int i = 0; i < errors.size(); i++) {
+        std::cout << errors[i] << endl;
+    }
+
+    
     // std::chrono::time_point<std::chrono::system_clock> startClock = std::chrono::system_clock::now();
     // vector<RNN*> rnns;
 
