@@ -358,7 +358,7 @@ int main(int argc, char** argv) {
 
     int32_t time_series_length;
     get_argument(arguments, "--time_series_length", true, time_series_length);
-    long time_per_generation = time_series_length * 1000;
+    long time_per_generation = time_series_length * 500;
 
     double learning_rate = 0.001;
     get_argument(arguments, "--learning_rate", false, learning_rate);
@@ -462,7 +462,9 @@ int main(int argc, char** argv) {
         int mini_generation = 1;
         long time_left = time_per_generation;
         long last_mini_generation_time = 0;
-        while (time_left >= last_mini_generation_time) {
+        bool still_in_generation = true;
+        while (still_in_generation) {
+            // std::chrono::time_point<std::chrono::system_clock> startClock = std::chrono::system_clock::now();
             if (rank ==0) {
                 Log::debug("current time index is %d\n", current_time_index);
                 master(max_rank, transfer_learning_version, seed_stirs);           
@@ -470,6 +472,7 @@ int main(int argc, char** argv) {
                 worker(rank);
             }
             MPI_Barrier(MPI_COMM_WORLD);
+
             if (rank == 0) {
                 vector< vector< vector<double> > > test_input;
                 vector< vector< vector<double> > > test_output;
@@ -480,15 +483,21 @@ int main(int argc, char** argv) {
                 validation_output.push_back(training_outputs[current_time_index+1]);
                 test_input.push_back(training_inputs[current_time_index+2]);
                 test_output.push_back(training_outputs[current_time_index+2]);
-                string filename = output_directory + "/generation" + std::to_string(current_generation);
+                string filename = output_directory + "/generation_" + std::to_string(current_generation);
                 examm->finalize_generation(filename, validation_input, validation_output, test_input, test_output, time_series_sets);
                 // best_genome->write_predictions(output_directory, "generation_" + std::to_string(current_generation), test_input, test_output, time_series_sets );
                 last_mini_generation_time = examm->update_log();
                 time_left -= last_mini_generation_time;
+                mini_generation ++;
+                if (time_left <= last_mini_generation_time) {
+                    still_in_generation = false;
+                }
+                MPI_Bcast(&still_in_generation, 1, MPI_INT, 0, MPI_COMM_WORLD);
+            } else {
+                MPI_Bcast(&still_in_generation, 1, MPI_INT, 0, MPI_COMM_WORLD);
             }
-            mini_generation ++;
         }
-        Log::error("generation %d finished, total mini generation %d\n", current_generation, mini_generation);
+        if (rank == 0) Log::error("generation %d finished, total mini generation %d\n", current_generation, mini_generation);
         current_time_index++;
         if(current_time_index > num_training_sets) time_series_index.erase(time_series_index.begin());
         time_series_index.push_back(current_time_index);
