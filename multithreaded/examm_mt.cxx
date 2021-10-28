@@ -1,6 +1,7 @@
 #include <chrono>
 
 #include <condition_variable>
+#include <cstdint>
 using std::condition_variable;
 
 #include <iomanip>
@@ -58,7 +59,15 @@ void examm_thread(int id) {
         string log_id = "genome_" + to_string(genome->get_generation_id()) + "_thread_" + to_string(id);
         Log::set_id(log_id);
         //genome->backpropagate(training_inputs, training_outputs, validation_inputs, validation_outputs);
+
+        //TODO: evaluate what happens here? 
         genome->backpropagate_stochastic(training_inputs, training_outputs, validation_inputs, validation_outputs, random_sequence_length, sequence_length_lower_bound, sequence_length_upper_bound);
+
+        vector<double>* errors = new vector<double>;
+
+        genome->initialize_randomly();
+        (void) genome->resn_fitness(training_inputs, training_outputs, errors);
+
         Log::release_id(log_id);
 
         examm_mutex.lock();

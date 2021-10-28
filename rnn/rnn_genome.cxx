@@ -1100,6 +1100,7 @@ void RNN_Genome::backpropagate(const vector< vector< vector<double> > > &inputs,
     this->set_weights(best_parameters);
 }
 
+//TODO: work here for the RESN paper
 void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, const vector< vector< vector<double> > > &validation_inputs, const vector< vector< vector<double> > > &validation_outputs, bool random_sequence_length, int sequence_length_lower_bound, int sequence_length_upper_bound) {
     vector<double> parameters = initial_parameters;
 
@@ -1356,6 +1357,24 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
     Log::trace("backpropagation completed, getting mu/sigma\n");
     double _mu, _sigma;
     get_mu_sigma(best_parameters, _mu, _sigma);
+}
+
+double RNN_Genome::resn_fitness(const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, const vector< vector< vector<double> > > &validation_inputs, const vector< vector< vector<double> > > &validation_outputs, bool random_sequence_length, int sequence_length_lower_bound, int sequence_length_upper_bound) {
+    vector<double> errors;
+    
+    int32_t n_series = inputs.size();
+
+    // vector<RNN*> rnns;
+    for (int32_t i = 0; i < n_series; i++) {
+        RNN* r = this->get_rnn();
+        std::cout << "RNN: ";
+        std::cout << r << endl;
+
+        // for (int j = 0; j < 
+        errors.push_back(r->calculate_error_mae(const int &expected_outputs));
+    }
+
+    return 0.d;
 }
 
 vector< vector<double> > RNN_Genome::slice_time_series(int start_index, int sequence_length, int num_parameter, const vector< vector<double> > &time_series) {

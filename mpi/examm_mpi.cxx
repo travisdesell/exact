@@ -115,6 +115,7 @@ void receive_terminate_message(int source) {
     MPI_Recv(terminate_message, 1, MPI_INT, source, TERMINATE_TAG, MPI_COMM_WORLD, &status);
 }
 
+//TODO: Work here
 void master(int max_rank, string transfer_learning_version, int32_t seed_stirs) {
     //the "main" id will have already been set by the main function so we do not need to re-set it here
     Log::debug("MAX INT: %d\n", numeric_limits<int>::max());
@@ -207,6 +208,8 @@ void worker(int rank) {
             //have each worker write the backproagation to a separate log file
             string log_id = "genome_" + to_string(genome->get_generation_id()) + "_worker_" + to_string(rank);
             Log::set_id(log_id);
+
+            //TODO: work here
             genome->backpropagate_stochastic(training_inputs, training_outputs, validation_inputs, validation_outputs, random_sequence_length, sequence_length_lower_bound, sequence_length_upper_bound);
             Log::release_id(log_id);
 
