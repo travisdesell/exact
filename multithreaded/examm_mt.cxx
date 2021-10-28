@@ -64,7 +64,8 @@ void examm_thread(int id) {
         // genome->backpropagate_stochastic(training_inputs, training_outputs, validation_inputs, validation_outputs, random_sequence_length, sequence_length_lower_bound, sequence_length_upper_bound);
 
 
-        (void) genome->resn_fitness(training_inputs, training_outputs, validation_inputs, validation_outputs, random_sequence_length, 10);
+        double resn_value = genome->resn_fitness(training_inputs, training_outputs, validation_inputs, validation_outputs, random_sequence_length, 10);
+        std::cout<<"RESN: " << resn_value;
 
         Log::release_id(log_id);
 

@@ -1376,9 +1376,9 @@ double RNN_Genome::resn_fitness(const vector< vector< vector<double> > > &inputs
         }
     }
 
-    for (int i = 0; i < errors.size(); i++) {
-        std::cout << errors[i] << endl;
-    }
+    // for (int i = 0; i < errors.size(); i++) {
+    //     std::cout << errors[i] << endl;
+    // }
 
     
     // std::chrono::time_point<std::chrono::system_clock> startClock = std::chrono::system_clock::now();
@@ -1386,7 +1386,30 @@ double RNN_Genome::resn_fitness(const vector< vector< vector<double> > > &inputs
 
     // long milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(currentClock - startClock).count();
 
-    return 0.d;
+    //find min and max values in error array
+    double min = errors[0];
+    double max = errors[0];
+
+    for (int i = 0; i < errors.size(); i++) {
+        if (errors[i] < min) {
+            min = errors[i];
+        }
+
+        if (errors[i] > max) {
+            max = errors[i];
+        }
+    }
+
+    //get range or min and max
+    double range = max - min;
+
+    double threshold = .05;
+    double threshValue = threshold*range;
+
+    double z = threshValue/(1.0/sqrt(errors.size()));
+    double p = (1.0/2.0)*(1+ std::erf(z/sqrt(2.0)));
+
+    return 1.0-p;
 }
 
 vector< vector<double> > RNN_Genome::slice_time_series(int start_index, int sequence_length, int num_parameter, const vector< vector<double> > &time_series) {
