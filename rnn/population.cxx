@@ -307,15 +307,19 @@ vector<RNN_Genome *> Population::get_genomes() {
 }
 
 void Population::erase_population() {
-    for (int i = 0; i < genomes.size(); i++) {
-        delete genomes[i];
+    RNN_Genome* genome;
+
+    while (genomes.size() > 0) {
+        genome = genomes.back();
+        genomes.pop_back();
+        delete genome;
     }
-    genomes.clear();
+
     erase_structure_map();
 }
 
 void Population::erase_structure_map() {
-    Log::info("Erasing the structure map in the worst performing island\n");
+    Log::debug("Erasing the structure map in the worst performing island\n");
     structure_map.clear();
     Log::debug("after erase structure map size is %d\n", structure_map.size());
 }

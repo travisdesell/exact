@@ -327,7 +327,7 @@ int main(int argc, char** argv) {
 
     int32_t num_generations;
     get_argument(arguments, "--num_generations", true, num_generations);
-    validate_generation_number(num_generations, training_inputs.size());
+    // validate_generation_number(num_generations, training_inputs.size());
 
     int32_t elite_population_size;
     get_argument(arguments, "--elite_population_size", true, elite_population_size);
@@ -458,47 +458,41 @@ int main(int argc, char** argv) {
         }
     }
 
-    for (int current_generation = 1; current_generation <= num_generations; current_generation++) {
-        int mini_generation = 1;
-        long time_left = time_per_generation;
-        long last_mini_generation_time = 0;
-        bool still_in_generation = true;
-        while (still_in_generation) {
-            // std::chrono::time_point<std::chrono::system_clock> startClock = std::chrono::system_clock::now();
-            if (rank ==0) {
-                Log::debug("current time index is %d\n", current_time_index);
-                master(max_rank, transfer_learning_version, seed_stirs);           
-            } else {
-                worker(rank);
-            }
-            MPI_Barrier(MPI_COMM_WORLD);
+    for (int current_generation = 1; current_generation <= num_generations; current_generation ++) {
 
-            if (rank == 0) {
-                vector< vector< vector<double> > > test_input;
-                vector< vector< vector<double> > > test_output;
-                vector< vector< vector<double> > > validation_input;
-                vector< vector< vector<double> > > validation_output;
-
-                validation_input.push_back(training_inputs[current_time_index+1]);
-                validation_output.push_back(training_outputs[current_time_index+1]);
-                test_input.push_back(training_inputs[current_time_index+2]);
-                test_output.push_back(training_outputs[current_time_index+2]);
-                string filename = output_directory + "/generation_" + std::to_string(current_generation);
-                examm->finalize_generation(filename, validation_input, validation_output, test_input, test_output, time_series_sets);
-                // best_genome->write_predictions(output_directory, "generation_" + std::to_string(current_generation), test_input, test_output, time_series_sets );
-                last_mini_generation_time = examm->update_log();
-                time_left -= last_mini_generation_time;
-                mini_generation ++;
-                if (time_left <= last_mini_generation_time) {
-                    still_in_generation = false;
-                }
-                MPI_Bcast(&still_in_generation, 1, MPI_INT, 0, MPI_COMM_WORLD);
-            } else {
-                MPI_Bcast(&still_in_generation, 1, MPI_INT, 0, MPI_COMM_WORLD);
-            }
+        if (rank ==0) {
+            Log::debug("current time index is %d\n", current_time_index);
+            master(max_rank, transfer_learning_version, seed_stirs);           
+        } else {
+            worker(rank);
         }
-        if (rank == 0) Log::error("generation %d finished, total mini generation %d\n", current_generation, mini_generation);
-        current_time_index++;
+        MPI_Barrier(MPI_COMM_WORLD);
+        if (rank == 0) {
+            vector< vector< vector<double> > > test_input;
+            vector< vector< vector<double> > > test_output;
+            vector< vector< vector<double> > > validation_input;
+            vector< vector< vector<double> > > validation_output;
+
+            validation_input.push_back(training_inputs[current_time_index+1]);
+            validation_output.push_back(training_outputs[current_time_index+1]);
+            test_input.push_back(training_inputs[current_time_index+2]);
+            test_output.push_back(training_outputs[current_time_index+2]);
+            string filename = output_directory + "/generation_" + std::to_string(current_generation);
+            examm->finalize_generation(filename, validation_input, validation_output, test_input, test_output, time_series_sets);
+            // best_genome->write_predictions(output_directory, "generation_"  std::to_string(current_generation), test_input, test_output, time_series_sets );
+            examm->update_log();
+            test_input.clear();
+            test_input.shrink_to_fit();
+            test_output.clear();
+            test_output.shrink_to_fit();
+            validation_input.clear();
+            validation_input.shrink_to_fit();
+            validation_output.clear();
+            validation_output.shrink_to_fit();
+
+        }
+        if (rank == 0) Log::error("generation %d finished\n", current_generation);
+        current_time_index ++;
         if(current_time_index > num_training_sets) time_series_index.erase(time_series_index.begin());
         time_series_index.push_back(current_time_index);
         

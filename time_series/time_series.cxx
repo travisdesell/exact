@@ -779,7 +779,7 @@ TimeSeriesSets* TimeSeriesSets::generate_from_arguments(const vector<string> &ar
             TimeSeriesSet* ts = tss->time_series[i];
             while (row_count + time_series_length < max_rows) {
                 TimeSeriesSet* time_series_slice;
-                ts->slice(row_count, time_series_length, time_series_slice);
+                ts->slice(row_count, time_series_length + 1, time_series_slice);
                 row_count += time_series_length;
                 sliced_time_series_sets.push_back(time_series_slice->copy());
                 Log::debug("doing slice, row count is %d, max rows is %d, sliced time series size is %d\n", row_count, max_rows,sliced_time_series_sets.size());
@@ -793,7 +793,7 @@ TimeSeriesSets* TimeSeriesSets::generate_from_arguments(const vector<string> &ar
             tss->time_series.push_back(sliced_time_series_sets[i]->copy());
             tss->training_indexes.push_back(i);
         }
-        Log::debug("After replace original time series with sliced time series sets, time series sets size is %d\n", tss->time_series.size());
+        Log::error("After replace original time series with sliced time series sets, time series sets size is %d\n", tss->time_series.size());
     }
 
     tss->normalize_type = "";
