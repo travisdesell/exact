@@ -54,6 +54,9 @@ class RNN_Edge {
 
         void write_to_stream(ostream &out);
 
+        double get_weight() const;
+        void set_weight(double w);
+
         friend class RNN_Genome;
         friend class RNN;
         friend class EXAMM;

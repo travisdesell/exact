@@ -4028,3 +4028,15 @@ void RNN_Genome::transfer_to(const vector<string> &new_input_parameter_names, co
 
     Log::info("FINISHING PREPARING INITIAL GENOME\n");
 }
+
+void RNN_Genome::set_naive_weights() {
+    for (int i = 0; i < edges.size(); i++) {
+        RNN_Edge* e = edges[i];
+        if (e->get_input_node()->layer_type == INPUT_LAYER && e->get_output_node()->layer_type == OUTPUT_LAYER) {
+            double naive_weight = e->get_weight();
+            Log::error("before setting edge %d weight, weight is %f\n", i, naive_weight);
+            e->set_weight(naive_weight + 1);
+            Log::error("after setting edge %d weight, now weight is %f\n", i, e->get_weight());
+        }
+    }
+}

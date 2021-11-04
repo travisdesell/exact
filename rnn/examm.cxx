@@ -239,6 +239,7 @@ EXAMM::EXAMM(
     seed_genome->best_validation_mse = EXAMM_MAX_DOUBLE;
     seed_genome->best_validation_mae = EXAMM_MAX_DOUBLE;
     //seed_genome->best_parameters.clear();
+    seed_genome->set_naive_weights();
 
     double mutation_rate = 0.70, intra_island_co_rate = 0.20, inter_island_co_rate = 0.10;
 

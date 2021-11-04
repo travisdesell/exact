@@ -19,7 +19,7 @@ OUTPUT_PARAMETERS="P_avg"
 DATA_DIR="/home/jefhai/Dropbox/D2S2Lab/Datasets/2020_wind_turbine"
 
 cd build
-for i in 0 1 2 3 4 
+for i in 1 2 3 4 
 do
     NUM_GEN=1000
     ELITESIZE=20

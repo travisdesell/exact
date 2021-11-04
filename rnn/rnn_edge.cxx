@@ -209,3 +209,11 @@ void RNN_Edge::write_to_stream(ostream &out) {
     out.write((char*)&output_innovation_number, sizeof(int32_t));
     out.write((char*)&enabled, sizeof(bool));
 }
+
+double RNN_Edge::get_weight() const {
+    return weight;
+}
+
+void RNN_Edge::set_weight(double w) {
+    weight = w;
+}
