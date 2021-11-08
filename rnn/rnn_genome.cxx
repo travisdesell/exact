@@ -24,6 +24,7 @@ using std::endl;
 #include <random>
 using std::minstd_rand0;
 using std::uniform_real_distribution;
+using std::normal_distribution;
 
 #include <thread>
 using std::thread;
@@ -32,6 +33,7 @@ using std::thread;
 using std::minstd_rand0;
 using std::uniform_real_distribution;
 using std::uniform_int_distribution;
+using std::default_random_engine;
 
 #include <sstream>
 using std::istringstream;
@@ -1227,6 +1229,10 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
             int random_selection = shuffle_order[k];
 
             prev_gradient = analytic_gradient;
+
+            if (iteration >= 5) {
+                add_gaussion_noise(training_inputs[random_selection]);
+            }
 
             rnn->get_analytic_gradient(parameters, training_inputs[random_selection], training_outputs[random_selection], mse, analytic_gradient, use_dropout, true, dropout_probability);
 
@@ -4037,6 +4043,36 @@ void RNN_Genome::set_naive_weights() {
             Log::error("before setting edge %d weight, weight is %f\n", i, naive_weight);
             e->set_weight(naive_weight + 1);
             Log::error("after setting edge %d weight, now weight is %f\n", i, e->get_weight());
+        }
+    }
+}
+
+void RNN_Genome::add_gaussion_noise(vector< vector< double > > &input_data) {
+    double mean = 0;
+    default_random_engine noise_generator;
+    
+    // vector< double> std;
+    for (int i = 0; i < input_data.size(); i++) {
+        double sum = 0;
+        double mean_temp = 0;
+        for (int j = 0; j < input_data[i].size(); j++) {
+            sum += input_data[i][j];
+            // Log::error("input [%d] [%d] is %f\n", i, j, input_data[i][j]);
+        }
+        mean_temp = sum / input_data[i].size();
+        // Log::error("mean of input [%d] is %f\n", i, mean_temp);
+        sum = 0;
+        for (int j = 0; j < input_data[i].size(); j++) {
+            sum += (input_data[i][j] - mean_temp) * (input_data[i][j] - mean_temp);
+        } 
+        sum /= input_data[i].size();
+        double std = sqrt(sum);
+        // Log::error("std of input [%d] is %f\n", i, std);
+        std::normal_distribution<double> gaussian(mean_temp, std);
+        for (int j = 0; j < input_data[i].size(); j++) {
+            double noise = gaussian(noise_generator) * 0.05;
+            // Log::error("noise is %f\n", noise);
+            input_data[i][j] += noise;
         }
     }
 }

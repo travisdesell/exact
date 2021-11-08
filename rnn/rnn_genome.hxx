@@ -304,6 +304,8 @@ class RNN_Genome {
         void transfer_to(const vector<string> &new_input_parameter_names, const vector<string> &new_output_parameter_names, string transfer_learning_version, bool epigenetic_weights, int32_t min_recurrent_depth, int32_t max_recurrent_depth);
 
         void set_naive_weights();
+
+        void add_gaussion_noise(vector< vector<double> > &input_data);
         
         friend class EXAMM;
         friend class IslandSpeciationStrategy;

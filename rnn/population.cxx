@@ -348,72 +348,72 @@ void Population::write_prediction(string filename, const vector< vector< vector<
     ofstream outfile(filename + ".csv");
     outfile << "#";
 
-    ofstream outfile_original(filename + "_original.csv");
-    outfile_original << "#";
+    // ofstream outfile_original(filename + "_original.csv");
+    // outfile_original << "#";
 
     for (uint32_t i = 0; i < num_outputs; i++) {
         if (i > 0) outfile << ",";
-        if (i > 0) outfile_original << ",";
+        // if (i > 0) outfile_original << ",";
 
         outfile << "expected_" << output_parameter_names[i];
-        outfile_original << "expected_" << output_parameter_names[i];
+        // outfile_original << "expected_" << output_parameter_names[i];
         Log::debug("output_parameter_names[%d]: '%s'\n", i, output_parameter_names[i].c_str());
     }
     
     for (uint32_t i = 0; i < num_outputs; i++) {
         outfile << ",";
-        outfile_original << ",";
+        // outfile_original << ",";
 
         outfile << "naive_" << output_parameter_names[i];
-        outfile_original << "naive_" << output_parameter_names[i];
+        // outfile_original << "naive_" << output_parameter_names[i];
         Log::debug("output_parameter_names[%d]: '%s'\n", i, output_parameter_names[i].c_str());
     }
 
     for (uint32_t g = 0; g < num_genomes; g++) {
         for (uint32_t i = 0; i < num_outputs; i++) {
             outfile << ",";
-            outfile_original << ",";
+            // outfile_original << ",";
 
             outfile << "genome_" << g << "_predicted_" << output_parameter_names[i];
-            outfile_original << "genome_" << g << "_predicted_" << output_parameter_names[i];
+            // outfile_original << "genome_" << g << "_predicted_" << output_parameter_names[i];
             Log::debug("output_parameter_names[%d]: '%s'\n", i, output_parameter_names[i].c_str());
         }
     }
 
     outfile << endl;
-    outfile_original << endl;
+    // outfile_original << endl;
 
     int32_t time_length = test_input[0][0].size();
     for (uint32_t j = 1; j < time_length; j++) {
 
         for (uint32_t i = 0; i < num_outputs; i++) {
             if (i > 0) outfile << ",";
-            if (i > 0) outfile_original << ",";
+            // if (i > 0) outfile_original << ",";
 
             outfile << test_output[0][i][j];
-            outfile_original << time_series_sets->denormalize(output_parameter_names[i], test_output[0][i][j]);
+            // outfile_original << time_series_sets->denormalize(output_parameter_names[i], test_output[0][i][j]);
         }
 
         for (uint32_t i = 0; i < num_outputs; i++) {
             outfile << ",";
-            outfile_original << ",";
+            // outfile_original << ",";
 
             outfile << test_output[0][i][j-1];
-            outfile_original << time_series_sets->denormalize(output_parameter_names[i], test_output[0][i][j-1]);
+            // outfile_original << time_series_sets->denormalize(output_parameter_names[i], test_output[0][i][j-1]);
         }
 
         for (uint32_t g = 0; g < num_genomes; g++) {
             for (uint32_t i = 0; i < num_outputs; i++) {
                 outfile << ",";
-                outfile_original << ",";
+                // outfile_original << ",";
 
                 outfile << predictions[g][0][i][j];
-                outfile_original << time_series_sets->denormalize(output_parameter_names[i], predictions[g][0][i][j]);
+                // outfile_original << time_series_sets->denormalize(output_parameter_names[i], predictions[g][0][i][j]);
             }
         }
         outfile << endl;
-        outfile_original << endl;
+        // outfile_original << endl;
     }
     outfile.close();
-    outfile_original.close();
+    // outfile_original.close();
 }

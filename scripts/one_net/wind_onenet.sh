@@ -19,20 +19,20 @@ OUTPUT_PARAMETERS="P_avg"
 DATA_DIR="/home/jefhai/Dropbox/D2S2Lab/Datasets/2020_wind_turbine"
 
 cd build
-for i in 1 2 3 4 
+for i in 0 1 2 3 4 
 do
     NUM_GEN=1000
     ELITESIZE=20
-    GENERATESIZE=50
+    GENERATESIZE=100
     BP=10
     CHUNK=50
 
-    exp_name="/home/jefhai/Dropbox/Research/experiment_results/onenet/onenet_mpi/wind/chunk_$CHUNK/gen_$NUM_GEN/bp_$BP/generated_$GENERATESIZE/elite_$ELITESIZE/$i"
+    exp_name="/home/jefhai/Dropbox/Research/experiment_results/onenet/onenet_mpi/wind_1107/chunk_$CHUNK/gen_$NUM_GEN/bp_$BP/generated_$GENERATESIZE/elite_$ELITESIZE/$i"
     mkdir -p $exp_name
     echo "Running base EXAMM code with coal dataset, results will be saved to: "$exp_name
     echo "###-------------------###"
 
-    mpirun -np 3 ./mpi/onenet_mpi \
+    mpirun -np 16 ./mpi/onenet_mpi \
     --training_filenames $DATA_DIR/turbine_R80711_2017-2020_[1-9].csv $DATA_DIR/turbine_R80711_2017-2020_1[0-9].csv $DATA_DIR/turbine_R80711_2017-2020_2[0-9].csv $DATA_DIR/turbine_R80711_2017-2020_3[0-1].csv \
     --time_offset 1 \
     --speciation_method "onenet" \

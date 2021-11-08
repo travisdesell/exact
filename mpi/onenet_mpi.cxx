@@ -56,6 +56,7 @@ vector<int32_t> time_series_index;
 int32_t current_time_index = 0;
 int32_t num_training_sets = 300;
 int32_t generation_genomes = 10;
+int32_t validation_size = 50;
 
 
 void send_work_request(int target) {
@@ -145,8 +146,13 @@ void get_online_data(vector< vector< vector<double> > > &current_inputs, vector<
         current_inputs.push_back(training_inputs[data_index[i]]);
         current_outputs.push_back(training_outputs[data_index[i]]);
     }
-    validation_inputs.push_back(training_inputs[current_time_index+1]);
-    validation_outputs.push_back(training_outputs[current_time_index+1]);
+
+    for (int i = 0; i < validation_size; i++) {
+        validation_inputs.push_back(training_inputs[current_time_index+i]);
+        validation_outputs.push_back(training_outputs[current_time_index+i]);
+    }
+    // validation_inputs.push_back(training_inputs[current_time_index+1]);
+    // validation_outputs.push_back(training_outputs[current_time_index+1]);
     // Log::error("getting input dataset finished\n");
 }
 
@@ -473,10 +479,14 @@ int main(int argc, char** argv) {
             vector< vector< vector<double> > > validation_input;
             vector< vector< vector<double> > > validation_output;
 
-            validation_input.push_back(training_inputs[current_time_index+1]);
-            validation_output.push_back(training_outputs[current_time_index+1]);
-            test_input.push_back(training_inputs[current_time_index+2]);
-            test_output.push_back(training_outputs[current_time_index+2]);
+            for (int i = 0; i < validation_size; i++) {
+                validation_input.push_back(training_inputs[current_time_index+i]);
+                validation_output.push_back(training_outputs[current_time_index+i]);
+            }
+            // validation_input.push_back(training_inputs[current_time_index+1]);
+            // validation_output.push_back(training_outputs[current_time_index+1]);
+            test_input.push_back(training_inputs[current_time_index + validation_size]);
+            test_output.push_back(training_outputs[current_time_index + validation_size]);
             string filename = output_directory + "/generation_" + std::to_string(current_generation);
             examm->finalize_generation(filename, validation_input, validation_output, test_input, test_output, time_series_sets);
             // best_genome->write_predictions(output_directory, "generation_"  std::to_string(current_generation), test_input, test_output, time_series_sets );
