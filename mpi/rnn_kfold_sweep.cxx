@@ -374,52 +374,52 @@ ResultSet handle_job(int rank, int current_job) {
 
     RNN_Genome *genome = NULL;
     if (rnn_type == "one_layer_lstm") {
-        genome = create_lstm(input_parameter_names, 1, number_inputs, output_parameter_names, 1, weight_initialize);
+        genome = create_lstm(input_parameter_names, 1, number_inputs, output_parameter_names, 1, TrainingParameters(), weight_initialize);
 
     } else if (rnn_type == "two_layer_lstm") {
-        genome = create_lstm(input_parameter_names, 2, number_inputs, output_parameter_names, 1, weight_initialize);
+        genome = create_lstm(input_parameter_names, 2, number_inputs, output_parameter_names, 1, TrainingParameters(), weight_initialize);
 
     } else if (rnn_type == "one_layer_delta") {
-        genome = create_delta(input_parameter_names, 1, number_inputs, output_parameter_names, 1, weight_initialize);
+        genome = create_delta(input_parameter_names, 1, number_inputs, output_parameter_names, 1, TrainingParameters(), weight_initialize);
 
     } else if (rnn_type == "two_layer_delta") {
-        genome = create_delta(input_parameter_names, 2, number_inputs, output_parameter_names, 1, weight_initialize);
+        genome = create_delta(input_parameter_names, 2, number_inputs, output_parameter_names, 1, TrainingParameters(), weight_initialize);
 
     } else if (rnn_type == "one_layer_gru") {
-        genome = create_gru(input_parameter_names, 1, number_inputs, output_parameter_names, 1, weight_initialize);
+        genome = create_gru(input_parameter_names, 1, number_inputs, output_parameter_names, 1, TrainingParameters(), weight_initialize);
 
     } else if (rnn_type == "two_layer_gru") {
-        genome = create_gru(input_parameter_names, 2, number_inputs, output_parameter_names, 1, weight_initialize);
+        genome = create_gru(input_parameter_names, 2, number_inputs, output_parameter_names, 1, TrainingParameters(), weight_initialize);
 
     } else if (rnn_type == "one_layer_mgu") {
-        genome = create_mgu(input_parameter_names, 1, number_inputs, output_parameter_names, 1, weight_initialize);
+        genome = create_mgu(input_parameter_names, 1, number_inputs, output_parameter_names, 1, TrainingParameters(), weight_initialize);
 
     } else if (rnn_type == "two_layer_mgu") {
-        genome = create_mgu(input_parameter_names, 2, number_inputs, output_parameter_names, 1, weight_initialize);
+        genome = create_mgu(input_parameter_names, 2, number_inputs, output_parameter_names, 1, TrainingParameters(), weight_initialize);
 
     } else if (rnn_type == "one_layer_delta") {
-        genome = create_delta(input_parameter_names, 1, number_inputs, output_parameter_names, 1, weight_initialize);
+        genome = create_delta(input_parameter_names, 1, number_inputs, output_parameter_names, 1, TrainingParameters(), weight_initialize);
 
     } else if (rnn_type == "two_layer_delta") {
-        genome = create_delta(input_parameter_names, 2, number_inputs, output_parameter_names, 1, weight_initialize);
+        genome = create_delta(input_parameter_names, 2, number_inputs, output_parameter_names, 1, TrainingParameters(), weight_initialize);
 
     } else if (rnn_type == "one_layer_ugrnn") {
-        genome = create_ugrnn(input_parameter_names, 1, number_inputs, output_parameter_names, 1, weight_initialize);
+        genome = create_ugrnn(input_parameter_names, 1, number_inputs, output_parameter_names, 1, TrainingParameters(), weight_initialize);
 
     } else if (rnn_type == "two_layer_ugrnn") {
-        genome = create_ugrnn(input_parameter_names, 2, number_inputs, output_parameter_names, 1, weight_initialize);
+        genome = create_ugrnn(input_parameter_names, 2, number_inputs, output_parameter_names, 1, TrainingParameters(), weight_initialize);
 
     } else if (rnn_type == "one_layer_ff") {
-        genome = create_ff(input_parameter_names, 1, number_inputs, output_parameter_names, 0, weight_initialize, WeightType::NONE, WeightType::NONE);
+        genome = create_ff(input_parameter_names, 1, number_inputs, output_parameter_names, 0, TrainingParameters(), weight_initialize, WeightType::NONE, WeightType::NONE);
 
     } else if (rnn_type == "two_layer_ff") {
-        genome = create_ff(input_parameter_names, 2, number_inputs, output_parameter_names, 0, weight_initialize, WeightType::NONE, WeightType::NONE);
+        genome = create_ff(input_parameter_names, 2, number_inputs, output_parameter_names, 0, TrainingParameters(), weight_initialize, WeightType::NONE, WeightType::NONE);
 
     } else if (rnn_type == "jordan") {
-        genome = create_jordan(input_parameter_names, 1, number_inputs, output_parameter_names, 1, weight_initialize);
+        genome = create_jordan(input_parameter_names, 1, number_inputs, output_parameter_names, 1, TrainingParameters(), weight_initialize);
 
     } else if (rnn_type == "elman") {
-        genome = create_elman(input_parameter_names, 1, number_inputs, output_parameter_names, 1, weight_initialize);
+        genome = create_elman(input_parameter_names, 1, number_inputs, output_parameter_names, 1, TrainingParameters(), weight_initialize);
     }
 
     RNN* rnn = genome->get_rnn();
@@ -433,7 +433,6 @@ ResultSet handle_job(int rank, int current_job) {
     vector<double> best_parameters;
 
     genome->initialize_randomly();
-    genome->set_bp_iterations(bp_iterations, 0);
 
     string first_directory = output_directory + "/" + rnn_type;
     mkdir(first_directory.c_str(), 0777);
@@ -448,7 +447,7 @@ ResultSet handle_job(int rank, int current_job) {
     Log::set_id(backprop_log_id);
 
     std::chrono::time_point<std::chrono::system_clock> start = std::chrono::system_clock::now();
-    genome->backpropagate_stochastic(training_inputs, training_outputs, validation_inputs, validation_outputs, false, 30, 100);
+    genome->backpropagate_stochastic(training_inputs, training_outputs, validation_inputs, validation_outputs);
     std::chrono::time_point<std::chrono::system_clock> end = std::chrono::system_clock::now();
 
     long milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
@@ -559,7 +558,6 @@ int main(int argc, char **argv) {
     if (weight_initialize < 0 || weight_initialize >= NUM_WEIGHT_TYPES - 1) {
         Log::fatal("weight initialization method %s is set wrong \n", weight_initialize_string.c_str());
     }
-
 
     if (rank == 0) {
         //only print verbose info from the master process

@@ -28,7 +28,7 @@ vector< vector< vector<double> > > training_outputs;
 vector< vector< vector<double> > > validation_inputs;
 vector< vector< vector<double> > > validation_outputs;
 
-void examm_thread(int id, GenomeOperators genome_operators) {
+void examm_thread(int id, GenomeOperators genome_operators, bool random_sequence_length, int lower_length_bound, int upper_length_bound) {
 
     while (true) {
         examm_mutex.lock();

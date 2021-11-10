@@ -106,10 +106,13 @@
     get_argument(arguments, "--learning_rate", false, learning_rate);
 
     double high_threshold = 1.0;
-    bool use_high_threshold = get_argument(arguments, "--high_threshold", false, high_threshold);
+    bool use_high_threshold = !argument_exists(arguments, "--no_high_threshold");
+    get_argument(arguments, "--high_threshold", false, high_threshold);
+    
 
     double low_threshold = 0.05;
-    bool use_low_threshold = get_argument(arguments, "--low_threshold", false, low_threshold);
+    bool use_low_threshold = !argument_exists(arguments, "--no_high_threshold");
+    get_argument(arguments, "--low_threshold", false, low_threshold);
 
     double dropout_probability = 0.0;
     bool use_dropout = get_argument(arguments, "--dropout_probability", false, dropout_probability);
@@ -161,18 +164,44 @@
 
     bool start_filled = false;
     get_argument(arguments, "--start_filled", false, start_filled);
+   
+    int32_t epochs_acc_freq = 0;
+    get_argument(arguments, "--epochs_acc_freq", false, epochs_acc_freq);
+
+    bool random_sequence_length = false;
+    int sequence_length_lower_bound = 30;
+    int sequence_length_upper_bound = 100;
+    random_sequence_length = argument_exists(arguments, "--random_sequence_length");
+    get_argument(arguments, "--sequence_length_lower_bound", false, sequence_length_lower_bound);
+    get_argument(arguments, "--sequence_length_upper_bound", false, sequence_length_upper_bound);
     
+    double mu = 0.9;
+    get_argument(arguments, "--mu", false, mu);
+    bool use_nesterov_momentum = !argument_exists(arguments, "--no_nesterov_momentum");
+
+#ifdef EXAMM_MULTI
+    uint32_t repeats;
+    get_argument(arguments, "--repeats", true, repeats);
+    uint32_t fold_size;
+    get_argument(arguments, "--fold_size", true, fold_size);
+#endif
+
     DatasetMeta dataset_meta = dataset->get_dataset_meta();
     TrainingParameters training_parameters(
             bp_iterations,
-            high_threshold,
+            sequence_length_lower_bound,
+            sequence_length_upper_bound,
             low_threshold,
+            high_threshold,
             learning_rate,
             dropout_probability,
-            use_high_threshold,
-            use_low_threshold,
+            mu,
+            use_nesterov_momentum,
             use_regression,
-            use_dropout);
+            use_dropout,
+            use_low_threshold, // aka use_low_norm
+            use_high_threshold, // aka use_high_norm
+            random_sequence_length);
     GenomeOperators genome_operators(
             number_workers,
             0,
@@ -198,6 +227,7 @@
                     repopulation_method, 
                     repopulation_mutations, 
                     repeat_extinction,
+                    epochs_acc_freq,
                     speciation_method,
                     species_threshold, 
                     fitness_threshold,
@@ -240,3 +270,4 @@
                 possible_node_types);
             return go;
         };
+    Log::info("woah\n");

@@ -65,6 +65,7 @@ int main(int argc, char** argv) {
 
     if (rank == 0) {
         examm = make_examm();
+        printf("seed %p\n", examm->get_seed_genome());
         master(max_rank, make_genome_operators(rank));
     } else {
         Log::info("starting worker %d\n", rank);

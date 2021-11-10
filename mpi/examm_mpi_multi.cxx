@@ -43,6 +43,7 @@ int main(int argc, char** argv) {
     Log::set_id("main_" + to_string(rank));
     Log::restrict_to_rank(0);
 
+#define EXAMM_MULTI
 #include "common/examm_argparse.cxx"
 
     //only have the master process print TSS info

@@ -70,7 +70,7 @@ int main(int argc, char** argv) {
     genome->write_predictions(output_directory, testing_filenames, best_parameters, testing_inputs, testing_outputs, time_series_sets);
 
     if (Log::at_level(Log::DEBUG)) {
-        int length;
+        uint32_t length;
         char *byte_array;
 
         genome->write_to_array(&byte_array, length);

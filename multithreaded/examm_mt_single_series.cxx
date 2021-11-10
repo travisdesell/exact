@@ -51,18 +51,18 @@ int main(int argc, char** argv) {
 
     time_series_sets->split_all(number_slices);
 
-    int32_t repeats = 5;
+    uint32_t repeats = 5;
 
     if (output_directory != "") {
         mkdir(output_directory.c_str(), 0777);
     }
     ofstream overall_results(output_directory + "/overall_results.txt");
 
-    for (uint32_t i = 0; i < time_series_sets->get_number_series(); i++) {
+    for (uint32_t i = 0; i < (uint32_t) time_series_sets->get_number_series(); i++) {
         vector<int> training_indexes;
         vector<int> test_indexes;
 
-        for (int j = 0; j < time_series_sets->get_number_series(); j++) {
+        for (uint32_t j = 0; j < (uint32_t) time_series_sets->get_number_series(); j++) {
             if (j == i) {
                 test_indexes.push_back(j);
             } else {
@@ -83,7 +83,7 @@ int main(int argc, char** argv) {
             set_innovation_counts(examm);
             vector<thread> threads;
             for (int32_t i = 0; i < number_threads; i++) {
-                threads.push_back( thread(examm_thread, i, make_genome_operators(i)) );
+                threads.push_back( thread(examm_thread, i, make_genome_operators(i), random_sequence_length, sequence_length_lower_bound, sequence_length_upper_bound) );
             }
 
             for (int32_t i = 0; i < number_threads; i++) {

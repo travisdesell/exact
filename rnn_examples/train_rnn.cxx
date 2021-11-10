@@ -43,8 +43,8 @@ int sequence_length_upper_bound = 100;
 RNN_Genome *genome;
 RNN* rnn;
 int bp_iterations;
-bool using_dropout;
-double dropout_probability;
+bool use_dropout = false;
+double dropout_probability = 0.0;
 
 ofstream *log_file;
 string output_directory;
@@ -107,34 +107,81 @@ int main(int argc, char **argv) {
     get_argument(arguments, "--weight_initialize", false, weight_initialize_string);
     WeightType weight_initialize;
     weight_initialize = get_enum_from_string(weight_initialize_string);
+    get_argument(arguments, "--bp_iterations", true, bp_iterations);
+
+    get_argument(arguments, "--output_directory", true, output_directory);
+    if (output_directory != "") {
+        mkpath(output_directory.c_str(), 0777);
+    }
+    if (argument_exists(arguments, "--log_filename")) {
+        string log_filename;
+        get_argument(arguments, "--log_filename", true, log_filename);
+        genome->set_log_filename(output_directory + "/" + log_filename);
+    } 
+    use_dropout = get_argument(arguments, "--dropout_probability", false, dropout_probability);
+
+    uint32_t sequence_lower_bound;
+    uint32_t sequence_upper_bound;
+
+    random_sequence_length = argument_exists(arguments, "--random_sequence_length");
+    get_argument(arguments, "--sequence_length_lower_bound", false, sequence_lower_bound);
+    get_argument(arguments, "--sequence_length_upper_bound", false, sequence_upper_bound);
 
     vector<string> input_parameter_names = time_series_sets->get_input_parameter_names();
     vector<string> output_parameter_names = time_series_sets->get_output_parameter_names();
+    
+    double learning_rate = 0.001;
+    get_argument(arguments, "--learning_rate", false, learning_rate);
+    double low_threshold = 0.05;
+    bool use_low_threshold = get_argument(arguments, "--low_threshold", false, low_threshold);
+    double high_threshold = 1.0;
+    bool use_high_threshold = get_argument(arguments, "--high_threshold", false, high_threshold);
+    double mu = 0.9;
+    get_argument(arguments, "--mu", false, mu);
+    bool use_nesterov_momentum = !argument_exists(arguments, "--no_nesterov_momentum");
+
+    bool use_regression = true; //time series will always use regression
+
+    TrainingParameters training_parameters(
+            bp_iterations,
+            sequence_lower_bound,
+            sequence_upper_bound,
+            low_threshold,
+            high_threshold,
+            learning_rate,
+            dropout_probability,
+            mu,
+            use_nesterov_momentum,
+            use_high_threshold,
+            use_low_threshold,
+            use_regression,
+            use_dropout,
+            random_sequence_length);
 
     RNN_Genome *genome;
     if (rnn_type == "lstm") {
-        genome = create_lstm(input_parameter_names, num_hidden_layers, number_inputs, output_parameter_names, max_recurrent_depth, weight_initialize);
+        genome = create_lstm(input_parameter_names, num_hidden_layers, number_inputs, output_parameter_names, max_recurrent_depth, training_parameters, weight_initialize);
 
     } else if (rnn_type == "gru") {
-        genome = create_gru(input_parameter_names, num_hidden_layers, number_inputs, output_parameter_names, max_recurrent_depth, weight_initialize);
+        genome = create_gru(input_parameter_names, num_hidden_layers, number_inputs, output_parameter_names, max_recurrent_depth, training_parameters, weight_initialize);
 
     } else if (rnn_type == "delta") {
-        genome = create_delta(input_parameter_names, num_hidden_layers, number_inputs, output_parameter_names, max_recurrent_depth, weight_initialize);
+        genome = create_delta(input_parameter_names, num_hidden_layers, number_inputs, output_parameter_names, max_recurrent_depth, training_parameters, weight_initialize);
 
     } else if (rnn_type == "mgu") {
-        genome = create_mgu(input_parameter_names, num_hidden_layers, number_inputs, output_parameter_names, max_recurrent_depth, weight_initialize);
+        genome = create_mgu(input_parameter_names, num_hidden_layers, number_inputs, output_parameter_names, max_recurrent_depth, training_parameters, weight_initialize);
 
     } else if (rnn_type == "ugrnn") {
-        genome = create_ugrnn(input_parameter_names, num_hidden_layers, number_inputs, output_parameter_names, max_recurrent_depth, weight_initialize);
+        genome = create_ugrnn(input_parameter_names, num_hidden_layers, number_inputs, output_parameter_names, max_recurrent_depth, training_parameters, weight_initialize);
 
     } else if (rnn_type == "ff") {
-        genome = create_ff(input_parameter_names, num_hidden_layers, number_inputs, output_parameter_names, max_recurrent_depth, weight_initialize, WeightType::NONE, WeightType::NONE);
+        genome = create_ff(input_parameter_names, num_hidden_layers, number_inputs, output_parameter_names, max_recurrent_depth, training_parameters, weight_initialize, WeightType::NONE, WeightType::NONE);
 
     } else if (rnn_type == "jordan") {
-        genome = create_jordan(input_parameter_names, num_hidden_layers, number_inputs, output_parameter_names, max_recurrent_depth, weight_initialize);
+        genome = create_jordan(input_parameter_names, num_hidden_layers, number_inputs, output_parameter_names, max_recurrent_depth, training_parameters, weight_initialize);
 
     } else if (rnn_type == "elman") {
-        genome = create_elman(input_parameter_names, num_hidden_layers, number_inputs, output_parameter_names, max_recurrent_depth, weight_initialize);
+        genome = create_elman(input_parameter_names, num_hidden_layers, number_inputs, output_parameter_names, max_recurrent_depth, training_parameters, weight_initialize);
 
     } else {
         Log::fatal("ERROR: incorrect rnn type\n");
@@ -146,19 +193,6 @@ int main(int argc, char **argv) {
         Log::fatal("    elman\n");        
         exit(1);
     }
-
-    get_argument(arguments, "--bp_iterations", true, bp_iterations);
-    genome->set_bp_iterations(bp_iterations, 0);
-
-    get_argument(arguments, "--output_directory", true, output_directory);
-    if (output_directory != "") {
-        mkpath(output_directory.c_str(), 0777);
-    }
-    if (argument_exists(arguments, "--log_filename")) {
-        string log_filename;
-        get_argument(arguments, "--log_filename", true, log_filename);
-        genome->set_log_filename(output_directory + "/" + log_filename);
-    } 
 
     genome->set_parameter_names(time_series_sets->get_input_parameter_names(), time_series_sets->get_output_parameter_names());
     genome->set_normalize_bounds(time_series_sets->get_normalize_type(), time_series_sets->get_normalize_mins(), time_series_sets->get_normalize_maxs(), time_series_sets->get_normalize_avgs(), time_series_sets->get_normalize_std_devs());
@@ -173,27 +207,11 @@ int main(int argc, char **argv) {
 
     vector<double> best_parameters;
 
-    using_dropout = false;
-
     genome->initialize_randomly();
-
-    double learning_rate = 0.001;
-    get_argument(arguments, "--learning_rate", false, learning_rate);
-
-    genome->set_learning_rate(learning_rate);
-    genome->set_nesterov_momentum(true);
-    genome->enable_high_threshold(1.0);
-    genome->enable_low_threshold(0.05);
-    genome->disable_dropout();
-    genome->enable_use_regression(true);
-
-    random_sequence_length = argument_exists(arguments, "--random_sequence_length");
-    get_argument(arguments, "--sequence_length_lower_bound", false, sequence_length_lower_bound);
-    get_argument(arguments, "--sequence_length_upper_bound", false, sequence_length_upper_bound);
 
     if (argument_exists(arguments, "--stochastic")) {
         Log::info("running stochastic back prop \n");
-        genome->backpropagate_stochastic(training_inputs, training_outputs, test_inputs, test_outputs, random_sequence_length, sequence_length_lower_bound, sequence_length_upper_bound);
+        genome->backpropagate_stochastic(training_inputs, training_outputs, test_inputs, test_outputs);
     } else {
         genome->backpropagate(training_inputs, training_outputs, test_inputs, test_outputs);
     }

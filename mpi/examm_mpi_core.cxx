@@ -72,7 +72,11 @@ Work *receive_work_from(int source, int tag=WORK_TAG) {
     return work;
 }
 
+#ifdef MASTER_PERFORMS_OPERATORS
 void generate_and_send_work(GenomeOperators& go, int32_t dst, int32_t max_rank) {
+#else
+void generate_and_send_work(int32_t dst, int32_t max_rank) {
+#endif
     assert(dst != 0);
 
     Work *work = examm->generate_work();
@@ -85,11 +89,10 @@ void generate_and_send_work(GenomeOperators& go, int32_t dst, int32_t max_rank) 
          || class_id == TerminateWork::class_id
          || class_id == TrainWork::class_id);
 
+    // Do the mutation / crossover (if master performs operations)
     switch (work->get_class_id()) {
         case MutationWork::class_id:
-        case CrossoverWork::class_id:
-        case TrainWork::class_id: {
-
+        case CrossoverWork::class_id: {
             // If we should perform the operators on the master process.
             // This code will perform the operator then create a MutationWork
             // object with zero mutations, meaning nothing will be done on the
@@ -112,7 +115,7 @@ void generate_and_send_work(GenomeOperators& go, int32_t dst, int32_t max_rank) 
             Log::debug("sending work to: %d\n", dst);
             break;
         }
-
+        case TrainWork::class_id: break;
         case TerminateWork::class_id:
             //send terminate message
             Log::info("terminating worker: %d\n", dst);
@@ -194,7 +197,11 @@ void master(int max_rank, GenomeOperators genome_operators) {
             receive_work_request(source);
 
             chrono::time_point<chrono::system_clock> start_gen = chrono::system_clock::now();
+#ifdef MASTER_PERFORMS_OPERATORS
             generate_and_send_work(genome_operators, source, max_rank);
+#else
+            generate_and_send_work(source, max_rank);
+#endif
             chrono::time_point<chrono::system_clock> end_gen = chrono::system_clock::now();
 
             long gen_nanos = diff_as_nanos(start_gen, end_gen);
@@ -288,11 +295,10 @@ void worker(int rank, GenomeOperators genome_operators, string id="") {
         string log_id = "genome_" + to_string(genome->get_generation_id()) + "_worker_" + to_string(rank);
         Log::set_id(log_id);       
 
-        if (genome_operators.training_parameters.bp_iterations > 0) {
+        if (genome_operators.training_parameters.bp_iterations > 0)
             genome->backpropagate_stochastic(training_inputs, training_outputs, validation_inputs, validation_outputs);
-        } else {
+        else
             genome->calculate_fitness(validation_inputs, validation_outputs);
-        }
 
         Log::release_id(log_id);
         Log::set_id("worker_" + to_string(rank) + "_" + id);

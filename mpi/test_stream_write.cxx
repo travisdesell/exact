@@ -61,7 +61,7 @@ int main(int argc, char** argv) {
     RNN_Genome *genome = examm->generate_work()->get_genome(genome_operators);
 
     char *byte_array;
-    int32_t length;
+    uint32_t length;
 
     genome->write_to_array(&byte_array, length);
 
