@@ -1102,7 +1102,7 @@ void RNN_Genome::backpropagate(const vector< vector< vector<double> > > &inputs,
     this->set_weights(best_parameters);
 }
 
-void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, const vector< vector< vector<double> > > &validation_inputs, const vector< vector< vector<double> > > &validation_outputs, bool random_sequence_length, int sequence_length_lower_bound, int sequence_length_upper_bound) {
+void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, const vector< vector< vector<double> > > &validation_inputs, const vector< vector< vector<double> > > &validation_outputs, bool random_sequence_length, int sequence_length_lower_bound, int sequence_length_upper_bound, const double noise_std) {
     vector<double> parameters = initial_parameters;
 
     int n_parameters = this->get_number_weights();
@@ -1230,12 +1230,12 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
 
             prev_gradient = analytic_gradient;
             vector<vector<double>> temp_chunk = training_inputs[random_selection];
-            vector< double > chunk_mean;
-            vector< double > chunk_std;
+            // vector< double > chunk_mean;
+            // vector< double > chunk_std;
             
-            if (iteration > 5 ) {
-                get_mean_std(temp_chunk, chunk_mean, chunk_std);
-                add_gaussion_noise(temp_chunk, chunk_mean, chunk_mean);
+            if (iteration != 0 ) {
+                // get_mean_std(temp_chunk, chunk_mean, chunk_std);
+                add_gaussion_noise(temp_chunk, noise_std);
             }
 
             rnn->get_analytic_gradient(parameters, temp_chunk, training_outputs[random_selection], mse, analytic_gradient, use_dropout, true, dropout_probability);
@@ -4051,15 +4051,16 @@ void RNN_Genome::set_naive_weights() {
     }
 }
 
-void RNN_Genome::add_gaussion_noise(vector< vector< double > > &input_data, const vector< double > &mean, const vector< double > &std) {
+void RNN_Genome::add_gaussion_noise(vector< vector< double > > &input_data, double noise_std) {
 
     default_random_engine noise_generator;
-
+    std::normal_distribution<double> gaussian(0, noise_std);
+    // Log::error("noise std is %f\n", noise_std);
     for (int i = 0; i < input_data.size(); i++) {
-        std::normal_distribution<double> gaussian(mean[i], std[i]);
+        
         for (int j = 0; j < input_data[i].size(); j++) {
             double noise = gaussian(noise_generator) * 0.1;
-            // Log::error("noise is %f\n", noise);
+            // Log::error("original data is %f, noise is %f\n", input_data[i][j], noise);
             input_data[i][j] += noise;
         }
     }

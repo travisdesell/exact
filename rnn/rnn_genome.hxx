@@ -207,7 +207,7 @@ class RNN_Genome {
 
         void backpropagate(const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, const vector< vector< vector<double> > > &validation_inputs, const vector< vector< vector<double> > > &validation_outputs);
 
-        void backpropagate_stochastic(const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, const vector< vector< vector<double> > > &validation_inputs, const vector< vector< vector<double> > > &validation_outputs, bool random_sequence_length, int sequence_length_lower_bound, int sequence_length_upper_bound);
+        void backpropagate_stochastic(const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, const vector< vector< vector<double> > > &validation_inputs, const vector< vector< vector<double> > > &validation_outputs, bool random_sequence_length, int sequence_length_lower_bound, int sequence_length_upper_bound, const double noise_std);
 
         vector< vector<double> > slice_time_series(int start_index, int sequence_length, int num_parameter, const vector< vector<double> > &inputs);
         
@@ -305,7 +305,7 @@ class RNN_Genome {
 
         void set_naive_weights();
 
-        void add_gaussion_noise(vector< vector<double> > &input_data, const vector< double > &mean, const vector< double > &std);
+        void add_gaussion_noise(vector< vector<double> > &input_data, double noise_std);
         void get_mean_std(vector< vector<double> > &input_data, vector<double> &mean,  vector<double> &std);
         
         friend class EXAMM;

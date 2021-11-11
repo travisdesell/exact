@@ -200,7 +200,7 @@ void worker(int rank) {
 
             string log_id = "slice_" + to_string(global_slice) + "_repeat_" + to_string(global_repeat) + "_genome_" + to_string(genome->get_generation_id()) + "_worker_" + to_string(rank);
             Log::set_id(log_id);
-            genome->backpropagate_stochastic(training_inputs, training_outputs, validation_inputs, validation_outputs, random_sequence_length, sequence_length_lower_bound, sequence_length_upper_bound);
+            genome->backpropagate_stochastic(training_inputs, training_outputs, validation_inputs, validation_outputs, random_sequence_length, sequence_length_lower_bound, sequence_length_upper_bound, 0.1);
             Log::release_id(log_id);
 
             //go back to the worker's log for MPI communication

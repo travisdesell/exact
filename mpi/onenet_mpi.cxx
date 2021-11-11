@@ -57,6 +57,7 @@ int32_t current_time_index = 0;
 int32_t num_training_sets = 300;
 int32_t generation_genomes = 10;
 int32_t validation_size = 50;
+double noise_std = 0.1;
 
 
 void send_work_request(int target) {
@@ -257,7 +258,7 @@ void worker(int rank) {
             //have each worker write the backproagation to a separate log file
             string log_id = "genome_" + to_string(genome->get_generation_id()) + "_worker_" + to_string(rank);
             Log::set_id(log_id);
-            genome->backpropagate_stochastic(current_training_inputs, current_training_outputs, current_validation_inputs, current_validation_outputs, random_sequence_length, sequence_length_lower_bound, sequence_length_upper_bound);
+            genome->backpropagate_stochastic(current_training_inputs, current_training_outputs, current_validation_inputs, current_validation_outputs, random_sequence_length, sequence_length_lower_bound, sequence_length_upper_bound, noise_std);
             genome->set_group_id(OneNetSpeciationStrategy::TRAINED);
             genome->evaluate_online(current_validation_inputs, current_validation_outputs);
             Log::release_id(log_id);
@@ -377,6 +378,9 @@ int main(int argc, char** argv) {
 
     double dropout_probability = 0.0;
     bool use_dropout = get_argument(arguments, "--dropout_probability", false, dropout_probability);
+
+
+    get_argument(arguments, "--noise_std", false, noise_std);
 
     string output_directory = "";
     get_argument(arguments, "--output_directory", false, output_directory);
