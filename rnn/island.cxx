@@ -97,7 +97,7 @@ void Island::copy_two_random_genomes(uniform_real_distribution<double> &rng_0_1,
 }
 
 void Island::do_population_check(int line, int initial_size) {
-  if (is_initializing() && genomes.size() < max_size) {
+  if (is_full() && genomes.size() < max_size) {
     Log::error("ERROR: do_population_check had issue on island.cxx line %d, "
                "status was FILLED and genomes.size() was: %d, size at "
                "beginning of insert was: %d\n",

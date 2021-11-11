@@ -1,27 +1,23 @@
 #include "genome_operators.hxx"
 
-GenomeOperators::GenomeOperators(
-    int32_t _number_workers, int32_t _worker_id, int32_t _number_inputs,
-    int32_t _number_outputs, int32_t _edge_innovation_count,
-    int32_t _node_innovation_count, int32_t _min_recurrent_depth,
-    int32_t _max_recurrent_depth, WeightType _weight_initialize,
-    WeightType _weight_inheritance, WeightType _mutated_component_weight,
-    DatasetMeta _dataset_meta, TrainingParameters _training_parameters,
-    vector<string> _possible_node_type_strings)
-    : dataset_meta(_dataset_meta), weight_initialize(_weight_initialize),
-      weight_inheritance(_weight_inheritance),
-      mutated_component_weight(_mutated_component_weight),
-      generator((unsigned int)time(0)),
+GenomeOperators::GenomeOperators(int32_t _number_workers, int32_t _worker_id, int32_t _number_inputs,
+                                 int32_t _number_outputs, int32_t _edge_innovation_count,
+                                 int32_t _node_innovation_count, int32_t _min_recurrent_depth,
+                                 int32_t _max_recurrent_depth, WeightType _weight_initialize,
+                                 WeightType _weight_inheritance, WeightType _mutated_component_weight,
+                                 DatasetMeta _dataset_meta, TrainingParameters _training_parameters,
+                                 vector<string> _possible_node_type_strings)
+    : dataset_meta(_dataset_meta), weight_initialize(_weight_initialize), weight_inheritance(_weight_inheritance),
+      mutated_component_weight(_mutated_component_weight), generator((unsigned int)time(0)),
       training_parameters(_training_parameters) {
-
   number_workers = _number_workers;
   worker_id = _worker_id;
 
-  // To ensure that these are unique among workers (each worker gets a separate
-  // mutator), each worker adds its id to the count. Next, they are to be
-  // incremented by the number of total workers. This ensures unique id's among
-  // workers by forcing the innovation numbers for any given worker to be
-  // congruent modulo the number of workers.
+  // To ensure that these are unique among workers (each worker gets a
+  // separate mutator), each worker adds its id to the count. Next, they are
+  // to be incremented by the number of total workers. This ensures unique
+  // id's among workers by forcing the innovation numbers for any given worker
+  // to be congruent modulo the number of workers.
   //
   // rough proof innovation numbers are unique among threads:
   // Given: worker_id w, number of workers N, and starting count s.
@@ -47,38 +43,26 @@ GenomeOperators::GenomeOperators(
   edge_innovation_count = _edge_innovation_count + worker_id;
   node_innovation_count = _node_innovation_count + worker_id;
 
-  next_edge_innovation_number = [&]() {
-    return this->get_next_edge_innovation_number();
-  };
-  next_node_innovation_number = [&]() {
-    return this->get_next_node_innovation_number();
-  };
+  next_edge_innovation_number = [&]() { return this->get_next_edge_innovation_number(); };
+  next_node_innovation_number = [&]() { return this->get_next_node_innovation_number(); };
 
   set_possible_node_types(_possible_node_type_strings);
 
-  recurrent_depth_dist =
-      uniform_int_distribution(_min_recurrent_depth, _max_recurrent_depth);
-  node_index_dist =
-      uniform_int_distribution(0, (int)possible_node_types.size() - 1);
+  recurrent_depth_dist = uniform_int_distribution(_min_recurrent_depth, _max_recurrent_depth);
+  node_index_dist = uniform_int_distribution(0, (int)possible_node_types.size() - 1);
 
   this->number_inputs = _number_inputs;
   this->number_outputs = _number_outputs;
 }
 
-int32_t GenomeOperators::get_next_node_innovation_number() {
-  return node_innovation_count += number_workers;
-}
+int32_t GenomeOperators::get_next_node_innovation_number() { return node_innovation_count += number_workers; }
 
-int32_t GenomeOperators::get_next_edge_innovation_number() {
-  return edge_innovation_count += number_workers;
-}
+int32_t GenomeOperators::get_next_edge_innovation_number() { return edge_innovation_count += number_workers; }
 
-void GenomeOperators::set_possible_node_types(
-    vector<string> &possible_node_type_strings) {
+void GenomeOperators::set_possible_node_types(vector<string> &possible_node_type_strings) {
   if (possible_node_type_strings.size() == 0) {
-    possible_node_types =
-        vector({SIMPLE_NODE, JORDAN_NODE, ELMAN_NODE, UGRNN_NODE, MGU_NODE,
-                GRU_NODE, LSTM_NODE, ENARC_NODE, DELTA_NODE});
+    possible_node_types = vector(
+        {SIMPLE_NODE, JORDAN_NODE, ELMAN_NODE, UGRNN_NODE, MGU_NODE, GRU_NODE, LSTM_NODE, ENARC_NODE, DELTA_NODE});
     return;
   }
 
@@ -109,17 +93,12 @@ void GenomeOperators::set_possible_node_types(
   }
 }
 
-int GenomeOperators::get_random_node_type() {
-  return GenomeOperators::possible_node_types[node_index_dist(generator)];
-}
+int GenomeOperators::get_random_node_type() { return GenomeOperators::possible_node_types[node_index_dist(generator)]; }
 
 void GenomeOperators::finalize_genome(RNN_Genome *genome) {
-  genome->set_parameter_names(dataset_meta.input_parameter_names,
-                              dataset_meta.output_parameter_names);
-  genome->set_normalize_bounds(
-      dataset_meta.normalize_type, dataset_meta.normalize_mins,
-      dataset_meta.normalize_maxs, dataset_meta.normalize_avgs,
-      dataset_meta.normalize_std_devs);
+  genome->set_parameter_names(dataset_meta.input_parameter_names, dataset_meta.output_parameter_names);
+  genome->set_normalize_bounds(dataset_meta.normalize_type, dataset_meta.normalize_mins, dataset_meta.normalize_maxs,
+                               dataset_meta.normalize_avgs, dataset_meta.normalize_std_devs);
 
   if (!TrainingParameters::use_epigenetic_weights)
     genome->initialize_randomly();
@@ -180,8 +159,7 @@ RNN_Genome *GenomeOperators::mutate(RNN_Genome *g, int32_t n_mutations) {
 
     rng -= add_edge_rate;
     if (rng < add_recurrent_edge_rate) {
-      modified = g->add_recurrent_edge(mu, sigma, recurrent_depth_dist,
-                                       next_edge_innovation_number);
+      modified = g->add_recurrent_edge(mu, sigma, recurrent_depth_dist, next_edge_innovation_number);
       Log::debug("\tadding recurrent edge, modified: %d\n", modified);
       if (modified)
         g->set_generated_by("add_recurrent_edge");
@@ -208,8 +186,7 @@ RNN_Genome *GenomeOperators::mutate(RNN_Genome *g, int32_t n_mutations) {
 
     rng -= disable_edge_rate;
     if (rng < split_edge_rate) {
-      modified = g->split_edge(mu, sigma, new_node_type, recurrent_depth_dist,
-                               next_edge_innovation_number,
+      modified = g->split_edge(mu, sigma, new_node_type, recurrent_depth_dist, next_edge_innovation_number,
                                next_node_innovation_number);
       Log::debug("\tsplitting edge, modified: %d\n", modified);
       if (modified)
@@ -219,9 +196,8 @@ RNN_Genome *GenomeOperators::mutate(RNN_Genome *g, int32_t n_mutations) {
 
     rng -= split_edge_rate;
     if (rng < add_node_rate) {
-      modified =
-          g->add_node(mu, sigma, new_node_type, recurrent_depth_dist,
-                      next_edge_innovation_number, next_node_innovation_number);
+      modified = g->add_node(mu, sigma, new_node_type, recurrent_depth_dist, next_edge_innovation_number,
+                             next_node_innovation_number);
       Log::debug("\tadding node, modified: %d\n", modified);
       if (modified)
         g->set_generated_by("add_node(" + node_type_str + ")");
@@ -248,8 +224,7 @@ RNN_Genome *GenomeOperators::mutate(RNN_Genome *g, int32_t n_mutations) {
 
     rng -= disable_node_rate;
     if (rng < split_node_rate) {
-      modified = g->split_node(mu, sigma, new_node_type, recurrent_depth_dist,
-                               next_edge_innovation_number,
+      modified = g->split_node(mu, sigma, new_node_type, recurrent_depth_dist, next_edge_innovation_number,
                                next_node_innovation_number);
       Log::debug("\tsplitting node, modified: %d\n", modified);
       if (modified)
@@ -259,8 +234,7 @@ RNN_Genome *GenomeOperators::mutate(RNN_Genome *g, int32_t n_mutations) {
 
     rng -= split_node_rate;
     if (rng < merge_node_rate) {
-      modified = g->merge_node(mu, sigma, new_node_type, recurrent_depth_dist,
-                               next_edge_innovation_number,
+      modified = g->merge_node(mu, sigma, new_node_type, recurrent_depth_dist, next_edge_innovation_number,
                                next_node_innovation_number);
       Log::debug("\tmerging node, modified: %d\n", modified);
       if (modified)
@@ -299,32 +273,28 @@ RNN_Genome *GenomeOperators::mutate(RNN_Genome *g, int32_t n_mutations) {
   return g;
 }
 
-RNN_Genome *GenomeOperators::crossover(RNN_Genome *more_fit,
-                                       RNN_Genome *less_fit) {
+RNN_Genome *GenomeOperators::crossover(RNN_Genome *more_fit, RNN_Genome *less_fit) {
   Log::debug("generating new genome by crossover!\n");
-  Log::debug("more_fit->island: %d, less_fit->island: %d\n",
-             more_fit->get_group_id(), less_fit->get_group_id());
-  Log::debug("more_fit->number_inputs: %d, less_fit->number_inputs: %d\n",
-             more_fit->get_number_inputs(), less_fit->get_number_inputs());
+  Log::debug("more_fit->island: %d, less_fit->island: %d\n", more_fit->get_group_id(), less_fit->get_group_id());
+  Log::debug("more_fit->number_inputs: %d, less_fit->number_inputs: %d\n", more_fit->get_number_inputs(),
+             less_fit->get_number_inputs());
 
   for (uint32_t i = 0; i < more_fit->nodes.size(); i++) {
-    Log::debug(
-        "more_fit node[%d], in: %d, depth: %lf, layer_type: %d, node_type: %d, "
-        "reachable: %d, enabled: %d\n",
-        i, more_fit->nodes[i]->get_innovation_number(),
-        more_fit->nodes[i]->get_depth(), more_fit->nodes[i]->get_layer_type(),
-        more_fit->nodes[i]->get_node_type(), more_fit->nodes[i]->is_reachable(),
-        more_fit->nodes[i]->is_enabled());
+    Log::debug("more_fit node[%d], in: %d, depth: %lf, layer_type: %d, node_type: "
+               "%d, "
+               "reachable: %d, enabled: %d\n",
+               i, more_fit->nodes[i]->get_innovation_number(), more_fit->nodes[i]->get_depth(),
+               more_fit->nodes[i]->get_layer_type(), more_fit->nodes[i]->get_node_type(),
+               more_fit->nodes[i]->is_reachable(), more_fit->nodes[i]->is_enabled());
   }
 
   for (uint32_t i = 0; i < less_fit->nodes.size(); i++) {
-    Log::debug(
-        "less_fit node[%d], in: %d, depth: %lf, layer_type: %d, node_type: %d, "
-        "reachable: %d, enabled: %d\n",
-        i, less_fit->nodes[i]->get_innovation_number(),
-        less_fit->nodes[i]->get_depth(), less_fit->nodes[i]->get_layer_type(),
-        less_fit->nodes[i]->get_node_type(), less_fit->nodes[i]->is_reachable(),
-        less_fit->nodes[i]->is_enabled());
+    Log::debug("less_fit node[%d], in: %d, depth: %lf, layer_type: %d, node_type: "
+               "%d, "
+               "reachable: %d, enabled: %d\n",
+               i, less_fit->nodes[i]->get_innovation_number(), less_fit->nodes[i]->get_depth(),
+               less_fit->nodes[i]->get_layer_type(), less_fit->nodes[i]->get_node_type(),
+               less_fit->nodes[i]->is_reachable(), less_fit->nodes[i]->is_enabled());
   }
 
   double _mu, _sigma;
@@ -355,10 +325,8 @@ RNN_Genome *GenomeOperators::crossover(RNN_Genome *more_fit,
   vector<RNN_Edge *> more_fit_edges = more_fit->edges;
   vector<RNN_Edge *> less_fit_edges = less_fit->edges;
 
-  sort(more_fit_edges.begin(), more_fit_edges.end(),
-       sort_RNN_Edges_by_innovation());
-  sort(less_fit_edges.begin(), less_fit_edges.end(),
-       sort_RNN_Edges_by_innovation());
+  sort(more_fit_edges.begin(), more_fit_edges.end(), sort_RNN_Edges_by_innovation());
+  sort(less_fit_edges.begin(), less_fit_edges.end(), sort_RNN_Edges_by_innovation());
 
   Log::debug("\tmore_fit innovation numbers AFTER SORT:\n");
   for (int32_t i = 0; i < (int32_t)more_fit_edges.size(); i++) {
@@ -369,21 +337,16 @@ RNN_Genome *GenomeOperators::crossover(RNN_Genome *more_fit,
     Log::debug("\t\t%d\n", less_fit_edges[i]->innovation_number);
   }
 
-  vector<RNN_Recurrent_Edge *> more_fit_recurrent_edges =
-      more_fit->recurrent_edges;
-  vector<RNN_Recurrent_Edge *> less_fit_recurrent_edges =
-      less_fit->recurrent_edges;
+  vector<RNN_Recurrent_Edge *> more_fit_recurrent_edges = more_fit->recurrent_edges;
+  vector<RNN_Recurrent_Edge *> less_fit_recurrent_edges = less_fit->recurrent_edges;
 
-  sort(more_fit_recurrent_edges.begin(), more_fit_recurrent_edges.end(),
-       sort_RNN_Recurrent_Edges_by_innovation());
-  sort(less_fit_recurrent_edges.begin(), less_fit_recurrent_edges.end(),
-       sort_RNN_Recurrent_Edges_by_innovation());
+  sort(more_fit_recurrent_edges.begin(), more_fit_recurrent_edges.end(), sort_RNN_Recurrent_Edges_by_innovation());
+  sort(less_fit_recurrent_edges.begin(), less_fit_recurrent_edges.end(), sort_RNN_Recurrent_Edges_by_innovation());
 
   int32_t more_fit_position = 0;
   int32_t less_fit_position = 0;
 
-  while (more_fit_position < (int32_t)more_fit_edges.size() &&
-         less_fit_position < (int32_t)less_fit_edges.size()) {
+  while (more_fit_position < (int32_t)more_fit_edges.size() && less_fit_position < (int32_t)less_fit_edges.size()) {
     RNN_Edge *more_fit_edge = more_fit_edges[more_fit_position];
     RNN_Edge *less_fit_edge = less_fit_edges[less_fit_position];
 
@@ -391,8 +354,7 @@ RNN_Genome *GenomeOperators::crossover(RNN_Genome *more_fit,
     int less_fit_innovation = less_fit_edge->innovation_number;
 
     if (more_fit_innovation == less_fit_innovation) {
-      attempt_edge_insert(child_edges, child_nodes, more_fit_edge,
-                          less_fit_edge, true);
+      attempt_edge_insert(child_edges, child_nodes, more_fit_edge, less_fit_edge, true);
 
       more_fit_position++;
       less_fit_position++;
@@ -403,8 +365,7 @@ RNN_Genome *GenomeOperators::crossover(RNN_Genome *more_fit,
       else
         set_enabled = false;
 
-      attempt_edge_insert(child_edges, child_nodes, more_fit_edge, NULL,
-                          set_enabled);
+      attempt_edge_insert(child_edges, child_nodes, more_fit_edge, NULL, set_enabled);
 
       more_fit_position++;
     } else {
@@ -414,8 +375,7 @@ RNN_Genome *GenomeOperators::crossover(RNN_Genome *more_fit,
       else
         set_enabled = false;
 
-      attempt_edge_insert(child_edges, child_nodes, less_fit_edge, NULL,
-                          set_enabled);
+      attempt_edge_insert(child_edges, child_nodes, less_fit_edge, NULL, set_enabled);
 
       less_fit_position++;
     }
@@ -430,8 +390,7 @@ RNN_Genome *GenomeOperators::crossover(RNN_Genome *more_fit,
     else
       set_enabled = false;
 
-    attempt_edge_insert(child_edges, child_nodes, more_fit_edge, NULL,
-                        set_enabled);
+    attempt_edge_insert(child_edges, child_nodes, more_fit_edge, NULL, set_enabled);
 
     more_fit_position++;
   }
@@ -445,8 +404,7 @@ RNN_Genome *GenomeOperators::crossover(RNN_Genome *more_fit,
     else
       set_enabled = false;
 
-    attempt_edge_insert(child_edges, child_nodes, less_fit_edge, NULL,
-                        set_enabled);
+    attempt_edge_insert(child_edges, child_nodes, less_fit_edge, NULL, set_enabled);
 
     less_fit_position++;
   }
@@ -457,18 +415,15 @@ RNN_Genome *GenomeOperators::crossover(RNN_Genome *more_fit,
 
   while (more_fit_position < (int32_t)more_fit_recurrent_edges.size() &&
          less_fit_position < (int32_t)less_fit_recurrent_edges.size()) {
-    RNN_Recurrent_Edge *more_fit_recurrent_edge =
-        more_fit_recurrent_edges[more_fit_position];
-    RNN_Recurrent_Edge *less_fit_recurrent_edge =
-        less_fit_recurrent_edges[less_fit_position];
+    RNN_Recurrent_Edge *more_fit_recurrent_edge = more_fit_recurrent_edges[more_fit_position];
+    RNN_Recurrent_Edge *less_fit_recurrent_edge = less_fit_recurrent_edges[less_fit_position];
 
     int more_fit_innovation = more_fit_recurrent_edge->innovation_number;
     int less_fit_innovation = less_fit_recurrent_edge->innovation_number;
 
     if (more_fit_innovation == less_fit_innovation) {
       // do weight crossover
-      attempt_recurrent_edge_insert(child_recurrent_edges, child_nodes,
-                                    more_fit_recurrent_edge,
+      attempt_recurrent_edge_insert(child_recurrent_edges, child_nodes, more_fit_recurrent_edge,
                                     less_fit_recurrent_edge, true);
 
       more_fit_position++;
@@ -480,8 +435,7 @@ RNN_Genome *GenomeOperators::crossover(RNN_Genome *more_fit,
       else
         set_enabled = false;
 
-      attempt_recurrent_edge_insert(child_recurrent_edges, child_nodes,
-                                    more_fit_recurrent_edge, NULL, set_enabled);
+      attempt_recurrent_edge_insert(child_recurrent_edges, child_nodes, more_fit_recurrent_edge, NULL, set_enabled);
 
       more_fit_position++;
     } else {
@@ -491,16 +445,14 @@ RNN_Genome *GenomeOperators::crossover(RNN_Genome *more_fit,
       else
         set_enabled = false;
 
-      attempt_recurrent_edge_insert(child_recurrent_edges, child_nodes,
-                                    less_fit_recurrent_edge, NULL, set_enabled);
+      attempt_recurrent_edge_insert(child_recurrent_edges, child_nodes, less_fit_recurrent_edge, NULL, set_enabled);
 
       less_fit_position++;
     }
   }
 
   while (more_fit_position < (int32_t)more_fit_recurrent_edges.size()) {
-    RNN_Recurrent_Edge *more_fit_recurrent_edge =
-        more_fit_recurrent_edges[more_fit_position];
+    RNN_Recurrent_Edge *more_fit_recurrent_edge = more_fit_recurrent_edges[more_fit_position];
 
     bool set_enabled = rng_0_1(generator) < more_fit_crossover_rate;
     if (more_fit_recurrent_edge->is_reachable())
@@ -508,15 +460,13 @@ RNN_Genome *GenomeOperators::crossover(RNN_Genome *more_fit,
     else
       set_enabled = false;
 
-    attempt_recurrent_edge_insert(child_recurrent_edges, child_nodes,
-                                  more_fit_recurrent_edge, NULL, set_enabled);
+    attempt_recurrent_edge_insert(child_recurrent_edges, child_nodes, more_fit_recurrent_edge, NULL, set_enabled);
 
     more_fit_position++;
   }
 
   while (less_fit_position < (int32_t)less_fit_recurrent_edges.size()) {
-    RNN_Recurrent_Edge *less_fit_recurrent_edge =
-        less_fit_recurrent_edges[less_fit_position];
+    RNN_Recurrent_Edge *less_fit_recurrent_edge = less_fit_recurrent_edges[less_fit_position];
 
     bool set_enabled = rng_0_1(generator) < less_fit_crossover_rate;
     if (less_fit_recurrent_edge->is_reachable())
@@ -524,25 +474,19 @@ RNN_Genome *GenomeOperators::crossover(RNN_Genome *more_fit,
     else
       set_enabled = false;
 
-    attempt_recurrent_edge_insert(child_recurrent_edges, child_nodes,
-                                  less_fit_recurrent_edge, NULL, set_enabled);
+    attempt_recurrent_edge_insert(child_recurrent_edges, child_nodes, less_fit_recurrent_edge, NULL, set_enabled);
 
     less_fit_position++;
   }
 
   sort(child_nodes.begin(), child_nodes.end(), sort_RNN_Nodes_by_depth());
   sort(child_edges.begin(), child_edges.end(), sort_RNN_Edges_by_depth());
-  sort(child_recurrent_edges.begin(), child_recurrent_edges.end(),
-       sort_RNN_Recurrent_Edges_by_depth());
-  RNN_Genome *child = new RNN_Genome(
-      child_nodes, child_edges, child_recurrent_edges, training_parameters,
-      weight_initialize, weight_inheritance, mutated_component_weight);
-  child->set_parameter_names(dataset_meta.input_parameter_names,
-                             dataset_meta.output_parameter_names);
-  child->set_normalize_bounds(
-      dataset_meta.normalize_type, dataset_meta.normalize_mins,
-      dataset_meta.normalize_maxs, dataset_meta.normalize_avgs,
-      dataset_meta.normalize_std_devs);
+  sort(child_recurrent_edges.begin(), child_recurrent_edges.end(), sort_RNN_Recurrent_Edges_by_depth());
+  RNN_Genome *child = new RNN_Genome(child_nodes, child_edges, child_recurrent_edges, training_parameters,
+                                     weight_initialize, weight_inheritance, mutated_component_weight);
+  child->set_parameter_names(dataset_meta.input_parameter_names, dataset_meta.output_parameter_names);
+  child->set_normalize_bounds(dataset_meta.normalize_type, dataset_meta.normalize_mins, dataset_meta.normalize_maxs,
+                              dataset_meta.normalize_avgs, dataset_meta.normalize_std_devs);
 
   if (more_fit->get_group_id() == less_fit->get_group_id()) {
     child->set_generated_by("crossover");
@@ -554,13 +498,12 @@ RNN_Genome *GenomeOperators::crossover(RNN_Genome *more_fit,
 
   vector<double> new_parameters;
 
-  // if weight_inheritance is same, all the weights of the child genome would be
-  // initialized as weight_initialize method
+  // if weight_inheritance is same, all the weights of the child genome would
+  // be initialized as weight_initialize method
   if (weight_inheritance == weight_initialize) {
     Log::debug("weight inheritance at crossover method is %s, setting weights "
                "to %s randomly \n",
-               WEIGHT_TYPES_STRING[weight_inheritance].c_str(),
-               WEIGHT_TYPES_STRING[weight_inheritance].c_str());
+               WEIGHT_TYPES_STRING[weight_inheritance].c_str(), WEIGHT_TYPES_STRING[weight_inheritance].c_str());
     child->initialize_randomly();
   }
 
@@ -588,29 +531,300 @@ RNN_Genome *GenomeOperators::crossover(RNN_Genome *more_fit,
   return child;
 }
 
-void GenomeOperators::attempt_node_insert(
-    vector<RNN_Node_Interface *> &child_nodes, const RNN_Node_Interface *node,
-    const vector<double> &new_weights) {
+RNN_Genome *GenomeOperators::ncrossover(vector<RNN_Genome *> parents) {
+  Log::debug("performing ncrossover with %d parents\n", parents.size());
+
+  if (parents.size() == 0) {
+    Log::fatal("Cannot perform crossover with 0 parents - this shouldn't happen "
+               "so the program will exit\n");
+    exit(1);
+  }
+
+  std::sort(parents.begin(), parents.end(),
+            [](RNN_Genome *a, RNN_Genome *b) { return a.get_fitness() < b.get_fitness(); });
+
+  int32_t max_edge_in = 0;
+  int32_t min_edge_in = 0;
+
+  int32_t max_rec_edge_in = 0;
+  int32_t min_rec_edge_in = 0;
+
+  int32_t max_node_in = 0;
+  int32_t min_node_in = 0;
+
+  for (auto gi = parents.begin(); gi != parents.end(); gi++) {
+    RNN_Genome *g = *gi;
+    Log::debug("Parent %d: id = %d, fitness = %f\n", i, g->generation_id, g->get_fitness());
+
+    // Make sure everything is sorted. This may be redundant?
+    sort(g->edges.begin(), g->edges.end(), sort_RNN_Edges_by_innovation());
+    if (g->edges.size() != 0)
+      max_edge_in = max(max_edge_in, g->edges.back().innovation_number);
+
+    sort(g->recurrent_edges.begin(), g->recurrent_edges.end(), sort_RNN_Recurrent_Edges_by_innovation());
+    if (g->recurrent_edges.size() != 0)
+      max_rec_edge_in = max(max_rec_edge_in, g->recurrent_edges.back().innovation_number);
+  }
+
+  // nodes are copied in the attempt_node_insert_function
+  vector<RNN_Node_Interface *> child_nodes;
+  vector<RNN_Edge *> child_edges;
+  vector<RNN_Recurrent_Edge *> child_recurrent_edges;
+
+  // maps innovation number to a bool representing whether it should be enabled in the child
+  // shared with rec edges too since there should be no overlap.
+  bool edge_enabled[max(max_rec_edge_in, max_edge_in)];
+  memset(0, edge_inserted, sizeof(edge_enabled));
+
+  // Maps edge innovation numbers to a vector of weights for that edge.
+  // Each element in the weight vector is from a different genome.
+  // Recurrent edges and regular edges will never have the same innovation number
+  // so we don't have to have a separate vector.
+  //
+  // The order the vectors are populated ensures that the first element always corresponds to the best weight.
+  unordered_map<int32_t, vector<double> > weights(max(max_rec_edge_in, max_edge_in));
+
+  // Maps innovation number to edge. This will be populated with every edge that appears in the parents,
+  // we need a reference to it so we can insert them after we figure out which edges should be enabled.
+  unordered_map<int32_t, RNN_Edge *> edge_map(max_edge_in);
+  unordered_map<int32_t, RNN_Recurrent_Edge *> rec_edge_map(max_rec_edge_in);
+  unordered_map<int32_t, RNN_Node_Interface *> node_map(max_node_in);
+
+  for (auto i = 0; i < parents.size(); i++) {
+    RNN_Genome *p = parents[i];
+    
+    double probability = 1.0 / ((double) (1 << i));
+
+    for (auto j = 0; j < p->edges.size(); j++) {
+      auto e = p->edges[j];
+      weights[e->innovation_number].push_back(e->weight);
+
+      if (edge_enabled[e->innovation_number])
+        continue;
+      
+      if (rng_0_1(generator) < probability)
+        edge_enabled[e->innovation_number] = true;
+      
+      edge_map[edge->innovation_number] = *e;
+    }
+
+    for (auto j = 0; j < p->recurrent_edges.size(); j++) {
+      auto re = p->recurrent_edges[j];
+      weights[re->innovation_number].push_back(re->weight);
+
+      if (edge_enabled[re->innovation_number])
+        continue;
+
+      if (rng_0_1(generator) < probability)
+        edge_enabled[re->innovation_number] = true;
+      
+      rec_edge_map[re->innovation_number] = re;
+    }
+  }
+
+  while (more_fit_position < (int32_t)more_fit_edges.size() && less_fit_position < (int32_t)less_fit_edges.size()) {
+    RNN_Edge *more_fit_edge = more_fit_edges[more_fit_position];
+    RNN_Edge *less_fit_edge = less_fit_edges[less_fit_position];
+
+    int more_fit_innovation = more_fit_edge->innovation_number;
+    int less_fit_innovation = less_fit_edge->innovation_number;
+
+    if (more_fit_innovation == less_fit_innovation) {
+      attempt_edge_insert(child_edges, child_nodes, more_fit_edge, less_fit_edge, true);
+
+      more_fit_position++;
+      less_fit_position++;
+    } else if (more_fit_innovation < less_fit_innovation) {
+      bool set_enabled = rng_0_1(generator) < more_fit_crossover_rate;
+      if (more_fit_edge->is_reachable())
+        set_enabled = true;
+      else
+        set_enabled = false;
+
+      attempt_edge_insert(child_edges, child_nodes, more_fit_edge, NULL, set_enabled);
+
+      more_fit_position++;
+    } else {
+      bool set_enabled = rng_0_1(generator) < less_fit_crossover_rate;
+      if (less_fit_edge->is_reachable())
+        set_enabled = true;
+      else
+        set_enabled = false;
+
+      attempt_edge_insert(child_edges, child_nodes, less_fit_edge, NULL, set_enabled);
+
+      less_fit_position++;
+    }
+  }
+
+  while (more_fit_position < (int32_t)more_fit_edges.size()) {
+    RNN_Edge *more_fit_edge = more_fit_edges[more_fit_position];
+
+    bool set_enabled = rng_0_1(generator) < more_fit_crossover_rate;
+    if (more_fit_edge->is_reachable())
+      set_enabled = true;
+    else
+      set_enabled = false;
+
+    attempt_edge_insert(child_edges, child_nodes, more_fit_edge, NULL, set_enabled);
+
+    more_fit_position++;
+  }
+
+  while (less_fit_position < (int32_t)less_fit_edges.size()) {
+    RNN_Edge *less_fit_edge = less_fit_edges[less_fit_position];
+
+    bool set_enabled = rng_0_1(generator) < less_fit_crossover_rate;
+    if (less_fit_edge->is_reachable())
+      set_enabled = true;
+    else
+      set_enabled = false;
+
+    attempt_edge_insert(child_edges, child_nodes, less_fit_edge, NULL, set_enabled);
+
+    less_fit_position++;
+  }
+
+  // do the same for recurrent_edges
+  more_fit_position = 0;
+  less_fit_position = 0;
+
+  while (more_fit_position < (int32_t)more_fit_recurrent_edges.size() &&
+         less_fit_position < (int32_t)less_fit_recurrent_edges.size()) {
+    RNN_Recurrent_Edge *more_fit_recurrent_edge = more_fit_recurrent_edges[more_fit_position];
+    RNN_Recurrent_Edge *less_fit_recurrent_edge = less_fit_recurrent_edges[less_fit_position];
+
+    int more_fit_innovation = more_fit_recurrent_edge->innovation_number;
+    int less_fit_innovation = less_fit_recurrent_edge->innovation_number;
+
+    if (more_fit_innovation == less_fit_innovation) {
+      // do weight crossover
+      attempt_recurrent_edge_insert(child_recurrent_edges, child_nodes, more_fit_recurrent_edge,
+                                    less_fit_recurrent_edge, true);
+
+      more_fit_position++;
+      less_fit_position++;
+    } else if (more_fit_innovation < less_fit_innovation) {
+      bool set_enabled = rng_0_1(generator) < more_fit_crossover_rate;
+      if (more_fit_recurrent_edge->is_reachable())
+        set_enabled = true;
+      else
+        set_enabled = false;
+
+      attempt_recurrent_edge_insert(child_recurrent_edges, child_nodes, more_fit_recurrent_edge, NULL, set_enabled);
+
+      more_fit_position++;
+    } else {
+      bool set_enabled = rng_0_1(generator) < less_fit_crossover_rate;
+      if (less_fit_recurrent_edge->is_reachable())
+        set_enabled = true;
+      else
+        set_enabled = false;
+
+      attempt_recurrent_edge_insert(child_recurrent_edges, child_nodes, less_fit_recurrent_edge, NULL, set_enabled);
+
+      less_fit_position++;
+    }
+  }
+
+  while (more_fit_position < (int32_t)more_fit_recurrent_edges.size()) {
+    RNN_Recurrent_Edge *more_fit_recurrent_edge = more_fit_recurrent_edges[more_fit_position];
+
+    bool set_enabled = rng_0_1(generator) < more_fit_crossover_rate;
+    if (more_fit_recurrent_edge->is_reachable())
+      set_enabled = true;
+    else
+      set_enabled = false;
+
+    attempt_recurrent_edge_insert(child_recurrent_edges, child_nodes, more_fit_recurrent_edge, NULL, set_enabled);
+
+    more_fit_position++;
+  }
+
+  while (less_fit_position < (int32_t)less_fit_recurrent_edges.size()) {
+    RNN_Recurrent_Edge *less_fit_recurrent_edge = less_fit_recurrent_edges[less_fit_position];
+
+    bool set_enabled = rng_0_1(generator) < less_fit_crossover_rate;
+    if (less_fit_recurrent_edge->is_reachable())
+      set_enabled = true;
+    else
+      set_enabled = false;
+
+    attempt_recurrent_edge_insert(child_recurrent_edges, child_nodes, less_fit_recurrent_edge, NULL, set_enabled);
+
+    less_fit_position++;
+  }
+
+  sort(child_nodes.begin(), child_nodes.end(), sort_RNN_Nodes_by_depth());
+  sort(child_edges.begin(), child_edges.end(), sort_RNN_Edges_by_depth());
+  sort(child_recurrent_edges.begin(), child_recurrent_edges.end(), sort_RNN_Recurrent_Edges_by_depth());
+  RNN_Genome *child = new RNN_Genome(child_nodes, child_edges, child_recurrent_edges, training_parameters,
+                                     weight_initialize, weight_inheritance, mutated_component_weight);
+  child->set_parameter_names(dataset_meta.input_parameter_names, dataset_meta.output_parameter_names);
+  child->set_normalize_bounds(dataset_meta.normalize_type, dataset_meta.normalize_mins, dataset_meta.normalize_maxs,
+                              dataset_meta.normalize_avgs, dataset_meta.normalize_std_devs);
+
+  if (more_fit->get_group_id() == less_fit->get_group_id()) {
+    child->set_generated_by("crossover");
+  } else {
+    child->set_generated_by("island_crossover");
+  }
+
+  double mu, sigma;
+
+  vector<double> new_parameters;
+
+  // if weight_inheritance is same, all the weights of the child genome would
+  // be initialized as weight_initialize method
+  if (weight_inheritance == weight_initialize) {
+    Log::debug("weight inheritance at crossover method is %s, setting weights "
+               "to %s randomly \n",
+               WEIGHT_TYPES_STRING[weight_inheritance].c_str(), WEIGHT_TYPES_STRING[weight_inheritance].c_str());
+    child->initialize_randomly();
+  }
+
+  child->get_weights(new_parameters);
+  Log::debug("getting mu/sigma before assign reachability\n");
+  child->get_mu_sigma(new_parameters, mu, sigma);
+
+  child->assign_reachability();
+
+  // reset the genomes statistics (as these carry over on copy)
+  child->best_validation_mse = EXAMM_MAX_DOUBLE;
+  child->best_validation_mae = EXAMM_MAX_DOUBLE;
+
+  // get the new set of parameters (as new paramters may have been
+  // added duriung mutatino) and set them to the initial parameters
+  // for epigenetic_initialization
+  child->get_weights(new_parameters);
+  child->initial_parameters = new_parameters;
+
+  Log::debug("checking parameters after crossover\n");
+  child->get_mu_sigma(child->initial_parameters, mu, sigma);
+
+  child->best_parameters.clear();
+
+  return child;
+}
+
+void GenomeOperators::attempt_node_insert(vector<RNN_Node_Interface *> &child_nodes, const RNN_Node_Interface *node,
+                                          const vector<double> &new_weights) {
   for (int32_t i = 0; i < (int32_t)child_nodes.size(); i++) {
-    if (child_nodes[i]->get_innovation_number() ==
-        node->get_innovation_number())
+    if (child_nodes[i]->get_innovation_number() == node->get_innovation_number())
       return;
   }
 
   RNN_Node_Interface *node_copy = node->copy();
   node_copy->set_weights(new_weights);
 
-  child_nodes.insert(upper_bound(child_nodes.begin(), child_nodes.end(),
-                                 node_copy, sort_RNN_Nodes_by_depth()),
+  child_nodes.insert(upper_bound(child_nodes.begin(), child_nodes.end(), node_copy, sort_RNN_Nodes_by_depth()),
                      node_copy);
 }
 
-void GenomeOperators::attempt_edge_insert(
-    vector<RNN_Edge *> &child_edges, vector<RNN_Node_Interface *> &child_nodes,
-    RNN_Edge *edge, RNN_Edge *second_edge, bool set_enabled) {
+void GenomeOperators::attempt_edge_insert(vector<RNN_Edge *> &child_edges, vector<RNN_Node_Interface *> &child_nodes,
+                                          RNN_Edge *edge, RNN_Edge *second_edge, bool set_enabled) {
   for (int32_t i = 0; i < (int32_t)child_edges.size(); i++) {
-    if (child_edges[i]->get_innovation_number() ==
-        edge->get_innovation_number()) {
+    if (child_edges[i]->get_innovation_number() == edge->get_innovation_number()) {
       Log::fatal("ERROR in crossover! trying to push an edge with "
                  "innovation_number: %d and it already exists in the vector!\n",
                  edge->get_innovation_number());
@@ -624,14 +838,11 @@ void GenomeOperators::attempt_edge_insert(
       exit(1);
 
       return;
-    } else if (child_edges[i]->get_input_innovation_number() ==
-                   edge->get_input_innovation_number() &&
-               child_edges[i]->get_output_innovation_number() ==
-                   edge->get_output_innovation_number()) {
-
-      Log::debug(
-          "Not inserting edge in crossover operation as there was already an "
-          "edge with the same input and output innovation numbers!\n");
+    } else if (child_edges[i]->get_input_innovation_number() == edge->get_input_innovation_number() &&
+               child_edges[i]->get_output_innovation_number() == edge->get_output_innovation_number()) {
+      Log::debug("Not inserting edge in crossover operation as there was "
+                 "already an "
+                 "edge with the same input and output innovation numbers!\n");
       return;
     }
   }
@@ -640,15 +851,13 @@ void GenomeOperators::attempt_edge_insert(
   double new_weight = 0.0;
   if (second_edge != NULL) {
     double crossover_value = rng_crossover_weight(generator);
-    new_weight =
-        crossover_value * (second_edge->weight - edge->weight) + edge->weight;
+    new_weight = crossover_value * (second_edge->weight - edge->weight) + edge->weight;
 
     Log::trace("EDGE WEIGHT CROSSOVER :: better: %lf, worse: %lf, "
                "crossover_value: %lf, new_weight: %lf\n",
                edge->weight, second_edge->weight, crossover_value, new_weight);
 
-    vector<double> input_weights1, input_weights2, output_weights1,
-        output_weights2;
+    vector<double> input_weights1, input_weights2, output_weights1, output_weights2;
     edge->get_input_node()->get_weights(input_weights1);
     edge->get_output_node()->get_weights(output_weights1);
 
@@ -662,16 +871,12 @@ void GenomeOperators::attempt_edge_insert(
     // can check to see if output weights lengths are same
 
     for (int32_t i = 0; i < (int32_t)new_input_weights.size(); i++) {
-      new_input_weights[i] =
-          crossover_value * (input_weights2[i] - input_weights1[i]) +
-          input_weights1[i];
+      new_input_weights[i] = crossover_value * (input_weights2[i] - input_weights1[i]) + input_weights1[i];
       Log::trace("\tnew input weights[%d]: %lf\n", i, new_input_weights[i]);
     }
 
     for (int32_t i = 0; i < (int32_t)new_output_weights.size(); i++) {
-      new_output_weights[i] =
-          crossover_value * (output_weights2[i] - output_weights1[i]) +
-          output_weights1[i];
+      new_output_weights[i] = crossover_value * (output_weights2[i] - output_weights1[i]) + output_weights1[i];
       Log::trace("\tnew output weights[%d]: %lf\n", i, new_output_weights[i]);
     }
 
@@ -690,23 +895,19 @@ void GenomeOperators::attempt_edge_insert(
   edge_copy->weight = new_weight;
 
   // edges have already been copied
-  child_edges.insert(upper_bound(child_edges.begin(), child_edges.end(),
-                                 edge_copy, sort_RNN_Edges_by_depth()),
+  child_edges.insert(upper_bound(child_edges.begin(), child_edges.end(), edge_copy, sort_RNN_Edges_by_depth()),
                      edge_copy);
 }
 
-void GenomeOperators::attempt_recurrent_edge_insert(
-    vector<RNN_Recurrent_Edge *> &child_recurrent_edges,
-    vector<RNN_Node_Interface *> &child_nodes,
-    RNN_Recurrent_Edge *recurrent_edge, RNN_Recurrent_Edge *second_edge,
-    bool set_enabled) {
+void GenomeOperators::attempt_recurrent_edge_insert(vector<RNN_Recurrent_Edge *> &child_recurrent_edges,
+                                                    vector<RNN_Node_Interface *> &child_nodes,
+                                                    RNN_Recurrent_Edge *recurrent_edge, RNN_Recurrent_Edge *second_edge,
+                                                    bool set_enabled) {
   for (int32_t i = 0; i < (int32_t)child_recurrent_edges.size(); i++) {
-    if (child_recurrent_edges[i]->get_innovation_number() ==
-        recurrent_edge->get_innovation_number()) {
-      Log::fatal(
-          "ERROR in crossover! trying to push an recurrent_edge with "
-          "innovation_number: %d  and it already exists in the vector!\n",
-          recurrent_edge->get_innovation_number());
+    if (child_recurrent_edges[i]->get_innovation_number() == recurrent_edge->get_innovation_number()) {
+      Log::fatal("ERROR in crossover! trying to push an recurrent_edge with "
+                 "innovation_number: %d  and it already exists in the vector!\n",
+                 recurrent_edge->get_innovation_number());
       Log::fatal("vector innovation numbers:\n");
       for (int32_t i = 0; i < (int32_t)child_recurrent_edges.size(); i++) {
         Log::fatal("\t %d", child_recurrent_edges[i]->get_innovation_number());
@@ -720,7 +921,6 @@ void GenomeOperators::attempt_recurrent_edge_insert(
                    recurrent_edge->get_input_innovation_number() &&
                child_recurrent_edges[i]->get_output_innovation_number() ==
                    recurrent_edge->get_output_innovation_number()) {
-
       Log::debug("Not inserting recurrent_edge in crossover operation as there "
                  "was already an recurrent_edge with the same input and output "
                  "innovation numbers!\n");
@@ -732,17 +932,13 @@ void GenomeOperators::attempt_recurrent_edge_insert(
   double new_weight = 0.0;
   if (second_edge != NULL) {
     double crossover_value = rng_crossover_weight(generator);
-    new_weight =
-        crossover_value * (second_edge->weight - recurrent_edge->weight) +
-        recurrent_edge->weight;
+    new_weight = crossover_value * (second_edge->weight - recurrent_edge->weight) + recurrent_edge->weight;
 
     Log::debug("RECURRENT EDGE WEIGHT CROSSOVER :: better: %lf, worse: %lf, "
                "crossover_value: %lf, new_weight: %lf\n",
-               recurrent_edge->weight, second_edge->weight, crossover_value,
-               new_weight);
+               recurrent_edge->weight, second_edge->weight, crossover_value, new_weight);
 
-    vector<double> input_weights1, input_weights2, output_weights1,
-        output_weights2;
+    vector<double> input_weights1, input_weights2, output_weights1, output_weights2;
     recurrent_edge->get_input_node()->get_weights(input_weights1);
     recurrent_edge->get_output_node()->get_weights(output_weights1);
 
@@ -753,16 +949,12 @@ void GenomeOperators::attempt_recurrent_edge_insert(
     new_output_weights.resize(output_weights1.size());
 
     for (int32_t i = 0; i < (int32_t)new_input_weights.size(); i++) {
-      new_input_weights[i] =
-          crossover_value * (input_weights2[i] - input_weights1[i]) +
-          input_weights1[i];
+      new_input_weights[i] = crossover_value * (input_weights2[i] - input_weights1[i]) + input_weights1[i];
       Log::trace("\tnew input weights[%d]: %lf\n", i, new_input_weights[i]);
     }
 
     for (int32_t i = 0; i < (int32_t)new_output_weights.size(); i++) {
-      new_output_weights[i] =
-          crossover_value * (output_weights2[i] - output_weights1[i]) +
-          output_weights1[i];
+      new_output_weights[i] = crossover_value * (output_weights2[i] - output_weights1[i]) + output_weights1[i];
       Log::trace("\tnew output weights[%d]: %lf\n", i, new_output_weights[i]);
     }
 
@@ -772,10 +964,8 @@ void GenomeOperators::attempt_recurrent_edge_insert(
     recurrent_edge->get_output_node()->get_weights(new_output_weights);
   }
 
-  attempt_node_insert(child_nodes, recurrent_edge->get_input_node(),
-                      new_input_weights);
-  attempt_node_insert(child_nodes, recurrent_edge->get_output_node(),
-                      new_output_weights);
+  attempt_node_insert(child_nodes, recurrent_edge->get_input_node(), new_input_weights);
+  attempt_node_insert(child_nodes, recurrent_edge->get_output_node(), new_output_weights);
 
   RNN_Recurrent_Edge *recurrent_edge_copy = recurrent_edge->copy(child_nodes);
 
@@ -783,28 +973,21 @@ void GenomeOperators::attempt_recurrent_edge_insert(
   recurrent_edge_copy->weight = new_weight;
 
   // recurrent_edges have already been copied
-  child_recurrent_edges.insert(
-      upper_bound(child_recurrent_edges.begin(), child_recurrent_edges.end(),
-                  recurrent_edge_copy, sort_RNN_Recurrent_Edges_by_depth()),
-      recurrent_edge_copy);
+  child_recurrent_edges.insert(upper_bound(child_recurrent_edges.begin(), child_recurrent_edges.end(),
+                                           recurrent_edge_copy, sort_RNN_Recurrent_Edges_by_depth()),
+                               recurrent_edge_copy);
 }
 
-const vector<int> &GenomeOperators::get_possible_node_types() {
-  return possible_node_types;
-}
+const vector<int> &GenomeOperators::get_possible_node_types() { return possible_node_types; }
 
 void GenomeOperators::set_edge_innovation_count(int32_t eic) {
   edge_innovation_count = eic;
-  next_edge_innovation_number = [&]() {
-    return this->get_next_edge_innovation_number();
-  };
+  next_edge_innovation_number = [&]() { return this->get_next_edge_innovation_number(); };
 }
 
 void GenomeOperators::set_node_innovation_count(int32_t nic) {
   node_innovation_count = nic;
-  next_node_innovation_number = [&]() {
-    return this->get_next_node_innovation_number();
-  };
+  next_node_innovation_number = [&]() { return this->get_next_node_innovation_number(); };
 }
 
 int GenomeOperators::get_number_inputs() { return number_inputs; }
