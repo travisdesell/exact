@@ -35,6 +35,7 @@ EXAMM *examm;
 
 
 bool finished = false;
+bool using_resn = false;
 
 
 vector< vector< vector<double> > > training_inputs;
@@ -60,12 +61,13 @@ void examm_thread(int id) {
         Log::set_id(log_id);
         //genome->backpropagate(training_inputs, training_outputs, validation_inputs, validation_outputs);
 
-        //TODO: evaluate what happens here? 
-        // genome->backpropagate_stochastic(training_inputs, training_outputs, validation_inputs, validation_outputs, random_sequence_length, sequence_length_lower_bound, sequence_length_upper_bound);
+        if (using_resn) {
+            double resn_value = genome->resn_fitness(training_inputs, training_outputs, validation_inputs, validation_outputs, random_sequence_length, 10);
+            std::cout<<"RESN: " << resn_value;
+        } else {
+            genome->backpropagate_stochastic(training_inputs, training_outputs, validation_inputs, validation_outputs, random_sequence_length, sequence_length_lower_bound, sequence_length_upper_bound);
+        }
 
-
-        double resn_value = genome->resn_fitness(training_inputs, training_outputs, validation_inputs, validation_outputs, random_sequence_length, 10);
-        std::cout<<"RESN: " << resn_value;
 
         Log::release_id(log_id);
 
@@ -190,6 +192,9 @@ int main(int argc, char** argv) {
 
     int32_t max_recurrent_depth = 10;
     get_argument(arguments, "--max_recurrent_depth", false, max_recurrent_depth);
+
+    //RESN switch
+    get_argument(arguments, "--use_resn", false, using_resn);
 
     //bool use_regression = argument_exists(arguments, "--use_regression");
     bool use_regression = true; //time series will always use regression
