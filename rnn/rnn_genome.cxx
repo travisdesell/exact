@@ -1359,11 +1359,46 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
     get_mu_sigma(best_parameters, _mu, _sigma);
 }
 
-double RNN_Genome::resn_fitness(const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, const vector< vector< vector<double> > > &validation_inputs, const vector< vector< vector<double> > > &validation_outputs, bool random_sequence_length, int n_runs) {
+double RNN_Genome::resn_fitness(const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, const vector< vector< vector<double> > > &validation_inputs, const vector< vector< vector<double> > > &validation_outputs, bool random_sequence_length, int n_samples, int sample_length) {
     vector<double> errors;
     vector<double> parameters = initial_parameters;
     RNN* rnn = this->get_rnn();
 
+    for (int i = 0; i < n_samples; i++) {
+        rnn->initialize_randomly();
+
+        //first get a random sequence
+        int random_time_series = rng_0_1(generator) * inputs.size();
+        int sequence_length = inputs[random_time_series].size();
+
+        const vector< vector<double> > &random_sequence = inputs[random_time_series];
+        const vector< vector<double> > &random_output_sequence = outputs[random_time_series];
+
+        //then get a random sample of sample_length from that sequence
+        if (sequence_length < sample_length) {
+            //error if sequence length is less than sample length
+            Log::fatal("ERROR, provided sample length: %d was less than sequence[%d] length: %d", sample_length, random_time_series, sequence_length);
+            exit(1);
+        }
+
+        int sequence_start = rng_0_1(generator) * (sequence_length - sample_length);
+
+        //initialize a vector with the same numbers of parameters of the sample length
+        vector< vector<double> > sample(random_sequence.size(), vector<double>(sample_length, 0));
+        vector< vector<double> > sample_output(random_sequence.size(), vector<double>(sample_length, 0));
+        for (int j = 0; j < sample_length; j++) {
+            for (int k = 0; k < random_sequence.size(); k++) {
+                sample[k][j] = random_sequence[k][j + sequence_start];
+                sample_output[k][j] = random_output_sequence[k][j + sequence_start];
+            }
+        }
+
+        double mae = rnn->prediction_mae(sample, sample_output, true, true, .10);
+
+        errors.push_back(mae);
+    }
+
+    /*
     for (int i = 0; i < n_runs; i++) {
         rnn->initialize_randomly();
 
@@ -1374,6 +1409,8 @@ double RNN_Genome::resn_fitness(const vector< vector< vector<double> > > &inputs
             errors.push_back(mae);
         }
     }
+    */
+
 
     // for (int i = 0; i < errors.size(); i++) {
     //     std::cout << errors[i] << endl;
@@ -1403,12 +1440,12 @@ double RNN_Genome::resn_fitness(const vector< vector< vector<double> > > &inputs
     double range = max - min;
 
     double threshold = .05;
-    double threshValue = threshold*range;
+    double threshValue = threshold * range;
 
-    double z = threshValue/(1.0/sqrt(errors.size()));
-    double p = (1.0/2.0)*(1+ std::erf(z/sqrt(2.0)));
+    double z = threshValue / (1.0 / sqrt(errors.size()));
+    double p = 0.5 * (1 + std::erf(z / sqrt(2.0)));
 
-    double p_value = 1.0-p;
+    double p_value = 1.0 - p;
 
     best_validation_mae = p_value;
     return p_value;
