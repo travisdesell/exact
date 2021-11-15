@@ -14,7 +14,7 @@ cd build
 echo "Running base EXAMM code with coal dataset, results will be saved to: "$exp_name
 echo "###-------------------###"
 
-./multithreaded/examm_mt --number_threads 2 --use_resn \
+./multithreaded/examm_mt --number_threads 2 --using_resn \
 --training_filenames ../datasets/2018_coal/burner_[0-9].csv --test_filenames \
 ../datasets/2018_coal/burner_1[0-1].csv \
 --time_offset 1 \
