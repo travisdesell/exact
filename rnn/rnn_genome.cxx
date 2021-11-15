@@ -1450,7 +1450,7 @@ void RNN_Genome::resn_fitness(const vector< vector< vector<double> > > &inputs, 
     best_validation_mae = p_value;
 
     //For debugging
-    std::cout << "RESN Fitness: " << p_value << end;
+    std::cout << "RESN Fitness: " << p_value << endl;
 }
 
 vector< vector<double> > RNN_Genome::slice_time_series(int start_index, int sequence_length, int num_parameter, const vector< vector<double> > &time_series) {
