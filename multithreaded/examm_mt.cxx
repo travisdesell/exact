@@ -64,8 +64,8 @@ void examm_thread(int id) {
         //genome->backpropagate(training_inputs, training_outputs, validation_inputs, validation_outputs);
 
         if (using_resn) {
-            double resn_value = genome->resn_fitness(training_inputs, training_outputs, validation_inputs, validation_outputs, random_sequence_length, n_samples,  sample_length);
-            std::cout<<"RESN: " << resn_value;
+            genome->resn_fitness(training_inputs, training_outputs, validation_inputs, validation_outputs, random_sequence_length, n_samples,  sample_length);
+            // std::cout<<"RESN: " << resn_value;
         } else {
             genome->backpropagate_stochastic(training_inputs, training_outputs, validation_inputs, validation_outputs, random_sequence_length, sequence_length_lower_bound, sequence_length_upper_bound);
         }
@@ -279,8 +279,6 @@ int main(int argc, char** argv) {
 	if (using_resn) {
         RNN_Genome* genome = examm->get_best_genome();
 		genome->backpropagate_stochastic(training_inputs, training_outputs, validation_inputs, validation_outputs, random_sequence_length, sequence_length_lower_bound, sequence_length_upper_bound);
-		double accuracy = genome->get_fitness();
-		std::cout<<"Final fitness: "<<accuracy;    	
     }
 
 

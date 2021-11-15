@@ -1359,7 +1359,7 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
     get_mu_sigma(best_parameters, _mu, _sigma);
 }
 
-double RNN_Genome::resn_fitness(const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, const vector< vector< vector<double> > > &validation_inputs, const vector< vector< vector<double> > > &validation_outputs, bool random_sequence_length, int n_samples, int sample_length) {
+void RNN_Genome::resn_fitness(const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, const vector< vector< vector<double> > > &validation_inputs, const vector< vector< vector<double> > > &validation_outputs, bool random_sequence_length, int n_samples, int sample_length) {
     vector<double> errors;
     vector<double> parameters = initial_parameters;
     RNN* rnn = this->get_rnn();
@@ -1448,7 +1448,9 @@ double RNN_Genome::resn_fitness(const vector< vector< vector<double> > > &inputs
     double p_value = 1.0 - p;
 
     best_validation_mae = p_value;
-    return p_value;
+
+    //For debugging
+    std::cout << "RESN Fitness: " << p_value << end;
 }
 
 vector< vector<double> > RNN_Genome::slice_time_series(int start_index, int sequence_length, int num_parameter, const vector< vector<double> > &time_series) {
