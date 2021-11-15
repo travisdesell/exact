@@ -307,6 +307,7 @@ class RNN_Genome {
 
         void add_gaussion_noise(vector< vector<double> > &input_data, double noise_std);
         void get_mean_std(vector< vector<double> > &input_data, vector<double> &mean,  vector<double> &std);
+        void add_gaussion_noise(vector< vector< double > > &input_data, vector<double> chunk_std);
         
         friend class EXAMM;
         friend class IslandSpeciationStrategy;
