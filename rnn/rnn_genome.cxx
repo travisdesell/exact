@@ -1423,27 +1423,13 @@ void RNN_Genome::resn_fitness(const vector< vector< vector<double> > > &inputs, 
     // long milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(currentClock - startClock).count();
 
     //find min and max values in error array
-    double min = errors[0];
-    double max = errors[0];
+    double sum = 0;
 
     for (int i = 0; i < errors.size(); i++) {
-        if (errors[i] < min) {
-            min = errors[i];
-        }
-
-        if (errors[i] > max) {
-            max = errors[i];
-        }
+        sum += errors[i];
     }
 
-    //get range or min and max
-    double range = max - min;
-
-    double threshold = .05;
-    double threshValue = threshold * range;
-
-    double z = threshValue / (1.0 / sqrt(errors.size()));
-    double p = 0.5 * (1 + std::erf(z / sqrt(2.0)));
+    double p = sum/errors.size();
 
     double p_value = 1.0 - p;
 
