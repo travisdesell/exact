@@ -1106,7 +1106,7 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
     vector<double> parameters = initial_parameters;
 
     int n_parameters = this->get_number_weights();
-    int n_series = inputs.size();
+
 
     vector<double> prev_parameters(n_parameters, 0.0);
     vector<double> prev_velocity(n_parameters, 0.0);
@@ -1117,6 +1117,33 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
     double mu = 0.9;
     double mse;
     double norm = 0.0;
+
+    vector< vector< vector<double> > > training_inputs;
+    vector< vector< vector<double> > > training_outputs;
+
+    Log::error("before data augmentation, training size is %d, output %d\n", inputs.size(), outputs.size());
+
+
+    for (int i = 0; i < inputs.size(); i++) {
+        training_inputs.push_back(inputs[i]);
+        training_outputs.push_back(outputs[i]);
+        vector<vector<double>> temp_chunk = inputs[i];
+        vector< double > chunk_mean;
+        vector< double > chunk_std;
+            
+        get_mean_std(temp_chunk, chunk_mean, chunk_std);
+        add_gaussion_noise(temp_chunk, chunk_std);
+        training_inputs.push_back(temp_chunk);
+        training_outputs.push_back(outputs[i]);
+    }
+
+    Log::error("after data augmentation, training size is %d, output %d\n", training_inputs.size(), training_outputs.size());
+    int n_series = training_inputs.size();
+
+    vector<int32_t> shuffle_order;
+    for (int32_t i = 0; i < n_series; i++) {
+        shuffle_order.push_back(i);
+    }
     
     std::chrono::time_point<std::chrono::system_clock> startClock = std::chrono::system_clock::now();
 
@@ -1126,9 +1153,9 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
 
     //initialize the initial previous values
     for (uint32_t i = 0; i < n_series; i++) {
-        Log::trace("getting analytic gradient for input/output: %d, n_series: %d, parameters.size: %d, inputs.size(): %d, outputs.size(): %d, log filename: '%s'\n", i, n_series, parameters.size(), inputs.size(), outputs.size(), log_filename.c_str());
+        Log::trace("getting analytic gradient for input/output: %d, n_series: %d, parameters.size: %d, inputs.size(): %d, outputs.size(): %d, log filename: '%s'\n", i, n_series, parameters.size(), training_inputs.size(), training_outputs.size(), log_filename.c_str());
 
-        rnn->get_analytic_gradient(parameters, inputs[i], outputs[i], mse, analytic_gradient, use_dropout, true, dropout_probability);
+        rnn->get_analytic_gradient(parameters, training_inputs[i], training_outputs[i], mse, analytic_gradient, use_dropout, true, dropout_probability);
         Log::trace("got analytic gradient.\n");
 
         norm = 0.0;
@@ -1181,46 +1208,43 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
     for (uint32_t iteration = 0; iteration < bp_iterations; iteration++) {
         Log::info("iteration %d \n", iteration);
 
-        vector< vector< vector<double> > > training_inputs;
-        vector< vector< vector<double> > > training_outputs;
+        // vector< vector< vector<double> > > training_inputs;
+        // vector< vector< vector<double> > > training_outputs;
 
-        if (random_sequence_length) {
-            rng_int = uniform_int_distribution<int>(sequence_length_lower_bound, sequence_length_upper_bound);
+        // if (random_sequence_length) {
+        //     rng_int = uniform_int_distribution<int>(sequence_length_lower_bound, sequence_length_upper_bound);
             
-            Log::trace("using uniform random sequence length for training\n");
-            Log::trace("Time series length lower bound is %d, upper bound is %d\n", sequence_length_lower_bound, sequence_length_upper_bound);
+        //     Log::trace("using uniform random sequence length for training\n");
+        //     Log::trace("Time series length lower bound is %d, upper bound is %d\n", sequence_length_lower_bound, sequence_length_upper_bound);
 
-            // put the original sliced time series as a new sets of timeseries data
-            for (int n = 0; n < inputs.size(); n++) {
-                int num_row = inputs[n][0].size();
-                int num_inputs = inputs[n].size();
-                int num_outputs = outputs[n].size();
-                int i = 0;
-                int sequence_length = rng_int(generator);
-                Log::trace("random sequence length is %d\n", sequence_length);
-                while (i + sequence_length <= num_row) {
-                    vector< vector<double> > current_time_series_input; // <each parameter <time series values>>
-                    vector< vector<double> > current_time_series_output; // <each parameter <time series values>>
-                    current_time_series_input = slice_time_series(i, sequence_length, num_inputs, inputs[n]);
-                    current_time_series_output = slice_time_series(i, sequence_length, num_outputs, outputs[n]);
-                    training_inputs.push_back(current_time_series_input);
-                    training_outputs.push_back(current_time_series_output);
+        //     // put the original sliced time series as a new sets of timeseries data
+        //     for (int n = 0; n < inputs.size(); n++) {
+        //         int num_row = inputs[n][0].size();
+        //         int num_inputs = inputs[n].size();
+        //         int num_outputs = outputs[n].size();
+        //         int i = 0;
+        //         int sequence_length = rng_int(generator);
+        //         Log::trace("random sequence length is %d\n", sequence_length);
+        //         while (i + sequence_length <= num_row) {
+        //             vector< vector<double> > current_time_series_input; // <each parameter <time series values>>
+        //             vector< vector<double> > current_time_series_output; // <each parameter <time series values>>
+        //             current_time_series_input = slice_time_series(i, sequence_length, num_inputs, inputs[n]);
+        //             current_time_series_output = slice_time_series(i, sequence_length, num_outputs, outputs[n]);
+        //             training_inputs.push_back(current_time_series_input);
+        //             training_outputs.push_back(current_time_series_output);
 
-                    i = i + sequence_length;
-                }
-                Log::debug("original time series %d has %d parameters, and %d length\n", n, num_inputs, num_row);
-            }
-            Log::debug("new time series has %d sets, and %d inputs and %d length\n", training_inputs.size(), training_inputs[0].size(), training_inputs[0][0].size());
-            n_series = training_inputs.size();
-        } else {
-            training_inputs = inputs;
-            training_outputs = outputs;
-        }
+        //             i = i + sequence_length;
+        //         }
+        //         Log::debug("original time series %d has %d parameters, and %d length\n", n, num_inputs, num_row);
+        //     }
+        //     Log::debug("new time series has %d sets, and %d inputs and %d length\n", training_inputs.size(), training_inputs[0].size(), training_inputs[0][0].size());
+        //     n_series = training_inputs.size();
+        // } else {
+        //     training_inputs = inputs;
+        //     training_outputs = outputs;
+        // }
 
-        vector<int32_t> shuffle_order;
-        for (int32_t i = 0; i < n_series; i++) {
-            shuffle_order.push_back(i);
-        }
+
 
         fisher_yates_shuffle(generator, shuffle_order);
 
@@ -1229,17 +1253,17 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
             int random_selection = shuffle_order[k];
 
             prev_gradient = analytic_gradient;
-            vector<vector<double>> temp_chunk = training_inputs[random_selection];
-            vector< double > chunk_mean;
-            vector< double > chunk_std;
+            // vector<vector<double>> temp_chunk = training_inputs[random_selection];
+            // vector< double > chunk_mean;
+            // vector< double > chunk_std;
             
-            if (iteration != 0 ) {
-                get_mean_std(temp_chunk, chunk_mean, chunk_std);
-                add_gaussion_noise(temp_chunk, chunk_std);
-                // add_gaussion_noise(temp_chunk, noise_std);
-            }
+            // if (iteration != 0 ) {
+            //     get_mean_std(temp_chunk, chunk_mean, chunk_std);
+            //     add_gaussion_noise(temp_chunk, chunk_std);
+            //     // add_gaussion_noise(temp_chunk, noise_std);
+            // }
 
-            rnn->get_analytic_gradient(parameters, temp_chunk, training_outputs[random_selection], mse, analytic_gradient, use_dropout, true, dropout_probability);
+            rnn->get_analytic_gradient(parameters, training_inputs[random_selection], training_outputs[random_selection], mse, analytic_gradient, use_dropout, true, dropout_probability);
 
             norm = 0.0;
             for (int32_t i = 0; i < parameters.size(); i++) {
