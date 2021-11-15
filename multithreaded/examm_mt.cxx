@@ -46,6 +46,8 @@ vector< vector< vector<double> > > validation_outputs;
 bool random_sequence_length;
 int sequence_length_lower_bound = 30;
 int sequence_length_upper_bound = 100;
+int n_samples = 10;
+int sample_length = 10;
 
 void examm_thread(int id) {
 
@@ -62,7 +64,7 @@ void examm_thread(int id) {
         //genome->backpropagate(training_inputs, training_outputs, validation_inputs, validation_outputs);
 
         if (using_resn) {
-            double resn_value = genome->resn_fitness(training_inputs, training_outputs, validation_inputs, validation_outputs, random_sequence_length, 10);
+            double resn_value = genome->resn_fitness(training_inputs, training_outputs, validation_inputs, validation_outputs, random_sequence_length, n_samples,  sample_length);
             std::cout<<"RESN: " << resn_value;
         } else {
             genome->backpropagate_stochastic(training_inputs, training_outputs, validation_inputs, validation_outputs, random_sequence_length, sequence_length_lower_bound, sequence_length_upper_bound);
@@ -272,6 +274,14 @@ int main(int argc, char** argv) {
     for (int32_t i = 0; i < number_threads; i++) {
         threads[i].join();
     }
+    
+    
+	if (using_resn) {
+	//	genome->examm;
+    
+
+    }
+
 
     finished = true;
 
