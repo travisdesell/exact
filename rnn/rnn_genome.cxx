@@ -1386,17 +1386,17 @@ void RNN_Genome::resn_fitness(const vector< vector< vector<double> > > &inputs, 
         //initialize a vector with the same numbers of parameters of the sample length
         vector< vector<double> > sample(random_sequence.size(), vector<double>(sample_length, 0));
         vector< vector<double> > sample_output(random_sequence.size(), vector<double>(sample_length, 0));
+
         for (int j = 0; j < sample_length; j++) {
-            std::cout << "errors" << endl;
             for (int k = 0; k < random_sequence.size(); k++) {
                 sample[k][j] = random_sequence[k][j + sequence_start];
+
+                //TODO this line is erroneous
                 sample_output[k][j] = random_output_sequence[k][j + sequence_start];
             }
         }
 
-
         double mae = rnn->prediction_mae(sample, sample_output, true, true, .10);
-
 
         errors.push_back(mae);
     }
