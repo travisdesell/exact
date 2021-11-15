@@ -2,6 +2,7 @@
 
 #include <condition_variable>
 #include <cstdint>
+#include <cstdlib>
 using std::condition_variable;
 
 #include <iomanip>
@@ -196,7 +197,7 @@ int main(int argc, char** argv) {
     get_argument(arguments, "--max_recurrent_depth", false, max_recurrent_depth);
 
     //RESN switch
-    get_argument(arguments, "--use_resn", false, using_resn);
+    using_resn = argument_exists(arguments, "--use_resn");
 
     //bool use_regression = argument_exists(arguments, "--use_regression");
     bool use_regression = true; //time series will always use regression
