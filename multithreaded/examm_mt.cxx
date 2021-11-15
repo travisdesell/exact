@@ -277,9 +277,8 @@ int main(int argc, char** argv) {
     
     
 	if (using_resn) {
-	//	genome->examm;
-    
-
+		examm->get_best_genome()->backpropagate_stochastic(training_inputs, training_outputs, validation_inputs, validation_outputs, random_sequence_length, sequence_length_lower_bound, sequence_length_upper_bound);
+    	
     }
 
 
