@@ -1117,11 +1117,15 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
     double mu = 0.9;
     double mse;
     double norm = 0.0;
+    double noise_decay_rate = 0.9;
+    double _mu, _sigma;
+
+    default_random_engine noise_generator;
 
     vector< vector< vector<double> > > training_inputs;
     vector< vector< vector<double> > > training_outputs;
 
-    Log::error("before data augmentation, training size is %d, output %d\n", inputs.size(), outputs.size());
+    // Log::error("before data augmentation, training size is %d, output %d\n", inputs.size(), outputs.size());
 
 
     for (int i = 0; i < inputs.size(); i++) {
@@ -1137,7 +1141,7 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
         training_outputs.push_back(outputs[i]);
     }
 
-    Log::error("after data augmentation, training size is %d, output %d\n", training_inputs.size(), training_outputs.size());
+    // Log::error("after data augmentation, training size is %d, output %d\n", training_inputs.size(), training_outputs.size());
     int n_series = training_inputs.size();
 
     vector<int32_t> shuffle_order;
@@ -1207,44 +1211,8 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
 
     for (uint32_t iteration = 0; iteration < bp_iterations; iteration++) {
         Log::info("iteration %d \n", iteration);
-
-        // vector< vector< vector<double> > > training_inputs;
-        // vector< vector< vector<double> > > training_outputs;
-
-        // if (random_sequence_length) {
-        //     rng_int = uniform_int_distribution<int>(sequence_length_lower_bound, sequence_length_upper_bound);
-            
-        //     Log::trace("using uniform random sequence length for training\n");
-        //     Log::trace("Time series length lower bound is %d, upper bound is %d\n", sequence_length_lower_bound, sequence_length_upper_bound);
-
-        //     // put the original sliced time series as a new sets of timeseries data
-        //     for (int n = 0; n < inputs.size(); n++) {
-        //         int num_row = inputs[n][0].size();
-        //         int num_inputs = inputs[n].size();
-        //         int num_outputs = outputs[n].size();
-        //         int i = 0;
-        //         int sequence_length = rng_int(generator);
-        //         Log::trace("random sequence length is %d\n", sequence_length);
-        //         while (i + sequence_length <= num_row) {
-        //             vector< vector<double> > current_time_series_input; // <each parameter <time series values>>
-        //             vector< vector<double> > current_time_series_output; // <each parameter <time series values>>
-        //             current_time_series_input = slice_time_series(i, sequence_length, num_inputs, inputs[n]);
-        //             current_time_series_output = slice_time_series(i, sequence_length, num_outputs, outputs[n]);
-        //             training_inputs.push_back(current_time_series_input);
-        //             training_outputs.push_back(current_time_series_output);
-
-        //             i = i + sequence_length;
-        //         }
-        //         Log::debug("original time series %d has %d parameters, and %d length\n", n, num_inputs, num_row);
-        //     }
-        //     Log::debug("new time series has %d sets, and %d inputs and %d length\n", training_inputs.size(), training_inputs[0].size(), training_inputs[0][0].size());
-        //     n_series = training_inputs.size();
-        // } else {
-        //     training_inputs = inputs;
-        //     training_outputs = outputs;
-        // }
-
-
+        std::normal_distribution<double> weight_gaussian(0, _sigma * noise_decay_rate);
+        noise_decay_rate *= noise_decay_rate;
 
         fisher_yates_shuffle(generator, shuffle_order);
 
@@ -1296,7 +1264,6 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
             if (use_nesterov_momentum) {
                 for (int32_t i = 0; i < parameters.size(); i++) {
                     //Log::info("parameters[%d]: %lf\n", i, parameters[i]);
-
                     prev_parameters[i] = parameters[i];
                     prev_prev_velocity[i] = prev_velocity[i];
 
@@ -1304,7 +1271,10 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
 
                     prev_velocity[i] = mu_v  - (learning_rate * prev_gradient[i]);
                     parameters[i] += mu_v + ((mu + 1) * prev_velocity[i]);
-
+                    // Log::error("weight is %f\n", parameters[i]);
+                    double noise = weight_gaussian(noise_generator);
+                    parameters[i] += noise;
+                    // Log::error("noise is %f, after noise weight is %f\n", noise, parameters[i]);
                     if (parameters[i] < -10.0) parameters[i] = -10.0;
                     else if (parameters[i] > 10.0) parameters[i] = 10.0;
                 }
@@ -1321,6 +1291,8 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
         }
 
         this->set_weights(parameters);
+        // double _mu, _sigma;
+        get_mu_sigma(parameters, _mu, _sigma);
 
         double training_mse = 0.0;
         Log::trace("use regression is %s\n", use_regression ? "yes" : "no");
@@ -1389,7 +1361,7 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
 
     this->set_weights(best_parameters);
     Log::trace("backpropagation completed, getting mu/sigma\n");
-    double _mu, _sigma;
+    // double _mu, _sigma;
     get_mu_sigma(best_parameters, _mu, _sigma);
 }
 
