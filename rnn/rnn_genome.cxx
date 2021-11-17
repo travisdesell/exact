@@ -1390,8 +1390,9 @@ void RNN_Genome::resn_fitness(const vector< vector< vector<double> > > &inputs, 
         for (int j = 0; j < sample_length; j++) {
             for (int k = 0; k < random_sequence.size(); k++) {
                 sample[k][j] = random_sequence[k][j + sequence_start];
+            }
 
-                //TODO this line is erroneous
+            for (int k = 0; k < random_output_sequence.size(); k++) {
                 sample_output[k][j] = random_output_sequence[k][j + sequence_start];
             }
         }
