@@ -1107,7 +1107,6 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
 
     int n_parameters = this->get_number_weights();
 
-
     vector<double> prev_parameters(n_parameters, 0.0);
     vector<double> prev_velocity(n_parameters, 0.0);
     vector<double> prev_prev_velocity(n_parameters, 0.0);
@@ -1117,8 +1116,8 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
     double mu = 0.9;
     double mse;
     double norm = 0.0;
-    double noise_decay_rate = 0.9;
-    double _mu, _sigma;
+    double noise_decay_rate = 0.005;
+    double weight_mu = 0.0, weight_std = 0.01;
 
     default_random_engine noise_generator;
 
@@ -1180,8 +1179,6 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
 
     Log::info("initial validation_mse: %lf, best validation mse: %lf\n", validation_mse, best_validation_mse);
 
-    double m = 0.0, s = 0.0;
-    get_mu_sigma(parameters, m, s);
     for (int32_t i = 0; i < parameters.size(); i++) {
         Log::trace("parameters[%d]: %lf\n", i, parameters[i]);
     }
@@ -1211,11 +1208,13 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
 
     for (uint32_t iteration = 0; iteration < bp_iterations; iteration++) {
         Log::info("iteration %d \n", iteration);
-        std::normal_distribution<double> weight_gaussian(0, _sigma * noise_decay_rate);
-        noise_decay_rate *= noise_decay_rate;
+        weight_std *= noise_decay_rate;
+        // Log::error("weight std is %f\n", weight_std);
+        // noise_decay_rate *= noise_decay_rate;
+        std::normal_distribution<double> weight_gaussian(0, weight_std);
 
         fisher_yates_shuffle(generator, shuffle_order);
-
+        
         double avg_norm = 0.0;
         for (uint32_t k = 0; k < shuffle_order.size(); k++) {
             int random_selection = shuffle_order[k];
@@ -1271,10 +1270,13 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
 
                     prev_velocity[i] = mu_v  - (learning_rate * prev_gradient[i]);
                     parameters[i] += mu_v + ((mu + 1) * prev_velocity[i]);
-                    // Log::error("weight is %f\n", parameters[i]);
+
                     double noise = weight_gaussian(noise_generator);
+                    while (abs(noise) > weight_std) {
+                        noise = weight_gaussian(noise_generator);
+                    }
                     parameters[i] += noise;
-                    // Log::error("noise is %f, after noise weight is %f\n", noise, parameters[i]);
+                    // Log::error("iteration %d, noise is %f, after noise weight is %f\n", iteration, noise, parameters[i]);
                     if (parameters[i] < -10.0) parameters[i] = -10.0;
                     else if (parameters[i] > 10.0) parameters[i] = 10.0;
                 }
@@ -1291,8 +1293,7 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
         }
 
         this->set_weights(parameters);
-        // double _mu, _sigma;
-        get_mu_sigma(parameters, _mu, _sigma);
+        get_mu_sigma(parameters, weight_mu, weight_std);
 
         double training_mse = 0.0;
         Log::trace("use regression is %s\n", use_regression ? "yes" : "no");
@@ -1361,7 +1362,7 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
 
     this->set_weights(best_parameters);
     Log::trace("backpropagation completed, getting mu/sigma\n");
-    // double _mu, _sigma;
+    double _mu, _sigma;
     get_mu_sigma(best_parameters, _mu, _sigma);
 }
 
