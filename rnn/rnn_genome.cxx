@@ -1461,6 +1461,7 @@ void RNN_Genome::resn_fitness(const vector< vector< vector<double> > > &inputs, 
 
     double p_value = 1.0 - p;
 
+    best_validation_mae = p_value;
     best_validation_mse = p_value;
 
     //For debugging
