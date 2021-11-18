@@ -164,6 +164,7 @@ class RNN_Genome {
         void disable_dropout();
         void enable_dropout(double _dropout_probability);
         void enable_use_regression(bool _use_regression);
+        bool get_use_regression();
         void set_log_filename(string _log_filename);
 
         void get_weights(vector<double> &parameters);

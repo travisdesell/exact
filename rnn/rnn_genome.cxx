@@ -182,6 +182,7 @@ RNN_Genome* RNN_Genome::copy() {
     other->use_low_norm = use_low_norm;
     other->low_threshold = low_threshold;
 
+    other->use_regression = use_regression;
     other->use_dropout = use_dropout;
     other->dropout_probability = dropout_probability;
 
@@ -511,6 +512,10 @@ void RNN_Genome::enable_dropout(double _dropout_probability) {
 
 void RNN_Genome::enable_use_regression(bool _use_regression) {
     use_regression = _use_regression;
+}
+
+bool RNN_Genome::get_use_regression() {
+    return use_regression;
 }
 
 void RNN_Genome::set_log_filename(string _log_filename) {
@@ -1125,14 +1130,18 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
 
     //initialize the initial previous values
     for (uint32_t i = 0; i < n_series; i++) {
-        Log::trace("getting analytic gradient for input/output: %d, n_series: %d, parameters.size: %d, inputs.size(): %d, outputs.size(): %d, log filename: '%s'\n", i, n_series, parameters.size(), inputs.size(), outputs.size(), log_filename.c_str());
+        //Log::info("getting analytic gradient for input/output: %d, n_series: %d, parameters.size: %d, inputs.size(): %d, outputs.size(): %d, log filename: '%s'\n", i, n_series, parameters.size(), inputs.size(), outputs.size(), log_filename.c_str());
+        //Log::info("inputs[%d].size(): %d, outputs[%d].size(): %d\n", i, inputs[i].size(), i, outputs[i].size());
+        //Log::info("inputs[%d][0].size(): %d, outputs[%d][0].size(): %d\n", i, inputs[i][0].size(), i, outputs[i][0].size());
 
         rnn->get_analytic_gradient(parameters, inputs[i], outputs[i], mse, analytic_gradient, use_dropout, true, dropout_probability);
-        Log::trace("got analytic gradient.\n");
+        //Log::trace("got analytic gradient.\n");
 
         norm = 0.0;
         for (int32_t j = 0; j < parameters.size(); j++) {
             norm += analytic_gradient[j] * analytic_gradient[j];
+            //Log::info("parameters[%d]: %lf\n", j, parameters[j]);
+            //Log::info("analytic_gradient[%d]: %lf\n", j, analytic_gradient[j]);
         }
         norm = sqrt(norm);
     }
@@ -1151,7 +1160,7 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
     double m = 0.0, s = 0.0;
     get_mu_sigma(parameters, m, s);
     for (int32_t i = 0; i < parameters.size(); i++) {
-        Log::trace("parameters[%d]: %lf\n", i, parameters[i]);
+        Log::info("parameters[%d]: %lf\n", i, parameters[i]);
     }
 
     unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
@@ -1178,7 +1187,7 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
     }
 
     for (uint32_t iteration = 0; iteration < bp_iterations; iteration++) {
-        Log::info("iteration %d \n", iteration);
+        //Log::info("iteration %d \n", iteration);
 
         vector< vector< vector<double> > > training_inputs;
         vector< vector< vector<double> > > training_outputs;
@@ -1364,6 +1373,8 @@ void RNN_Genome::resn_fitness(const vector< vector< vector<double> > > &inputs, 
     vector<double> parameters = initial_parameters;
     RNN* rnn = this->get_rnn();
 
+    Log::info("getting resn fitness with %d samples of length %d\n", n_samples, sample_length);
+
     for (int i = 0; i < n_samples; i++) {
         rnn->initialize_randomly();
 
@@ -1440,7 +1451,7 @@ void RNN_Genome::resn_fitness(const vector< vector< vector<double> > > &inputs, 
     best_validation_mae = p_value;
 
     //For debugging
-    std::cout << "RESN Fitness: " << p_value << endl;
+    Log::info("RESN Fitness: %lf, use regression: %d\n", p_value, use_regression);
 }
 
 vector< vector<double> > RNN_Genome::slice_time_series(int start_index, int sequence_length, int num_parameter, const vector< vector<double> > &time_series) {

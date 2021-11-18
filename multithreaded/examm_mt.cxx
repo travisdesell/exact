@@ -206,7 +206,7 @@ int main(int argc, char** argv) {
     get_argument(arguments, "--sequence_length_lower_bound", false, sequence_length_lower_bound);
     get_argument(arguments, "--sequence_length_upper_bound", false, sequence_length_upper_bound);
 
-    string weight_initialize_string = "random";
+    string weight_initialize_string = "xavier";
     get_argument(arguments, "--weight_initialize", false, weight_initialize_string);
     WeightType weight_initialize;
     weight_initialize = get_enum_from_string(weight_initialize_string);
@@ -278,7 +278,11 @@ int main(int argc, char** argv) {
     
     
 	if (using_resn) {
+        Log::info("training best found genome with random sequence length %d, sequence length lower bound %d, sequence length upper bound %d\n", random_sequence_length, sequence_length_lower_bound, sequence_length_upper_bound);
         RNN_Genome* genome = examm->get_best_genome();
+        Log::info("best genome use regression is: %d\n", genome->get_use_regression());
+        genome->write_graphviz("resn_genome.gv");
+        genome->initialize_randomly();
 		genome->backpropagate_stochastic(training_inputs, training_outputs, validation_inputs, validation_outputs, random_sequence_length, sequence_length_lower_bound, sequence_length_upper_bound);
     }
 
