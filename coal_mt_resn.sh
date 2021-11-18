@@ -14,7 +14,7 @@ cd build
 echo "Running base EXAMM code with coal dataset, results will be saved to: "$exp_name
 echo "###-------------------###"
 
-./multithreaded/examm_mt --number_threads 2 --using_resn \
+./multithreaded/examm_mt --number_threads $1 \
 --training_filenames ../datasets/2018_coal/burner_[0-9].csv --test_filenames \
 ../datasets/2018_coal/burner_1[0-1].csv \
 --time_offset 1 \
@@ -22,7 +22,8 @@ echo "###-------------------###"
 --output_parameter_names Main_Flm_Int \
 --number_islands 10 \
 --population_size 10 \
---max_genomes 2000 \
+--use_resn \
+--max_genomes $2 \
 --bp_iterations 5 \
 --output_directory $exp_name \
 --possible_node_types simple UGRNN MGU GRU delta LSTM \
