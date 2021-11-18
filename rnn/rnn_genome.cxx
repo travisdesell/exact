@@ -1380,7 +1380,7 @@ void RNN_Genome::resn_fitness(const vector< vector< vector<double> > > &inputs, 
 
         //first get a random sequence
         int random_time_series = rng_0_1(generator) * inputs.size();
-        int sequence_length = inputs[random_time_series].size();
+        int sequence_length = inputs[random_time_series][0].size();
 
         const vector< vector<double> > &random_sequence = inputs[random_time_series];
         const vector< vector<double> > &random_output_sequence = outputs[random_time_series];
@@ -1396,7 +1396,10 @@ void RNN_Genome::resn_fitness(const vector< vector< vector<double> > > &inputs, 
 
         //initialize a vector with the same numbers of parameters of the sample length
         vector< vector<double> > sample(random_sequence.size(), vector<double>(sample_length, 0));
-        vector< vector<double> > sample_output(random_sequence.size(), vector<double>(sample_length, 0));
+        vector< vector<double> > sample_output(random_output_sequence.size(), vector<double>(sample_length, 0));
+
+        Log::info("getting subsequences, random_time_series: %d, sequence_start: %d, sequence_length: %d, sample_length: %d, random_sequence[0].size(): %d, random_output_sequence[0].size(): %d\n", random_time_series, sequence_start, sequence_length, sample_length, random_sequence[0].size(), random_output_sequence[0].size());
+        fflush(0);
 
         for (int j = 0; j < sample_length; j++) {
             for (int k = 0; k < random_sequence.size(); k++) {
@@ -1407,11 +1410,21 @@ void RNN_Genome::resn_fitness(const vector< vector< vector<double> > > &inputs, 
                 sample_output[k][j] = random_output_sequence[k][j + sequence_start];
             }
         }
+        Log::info("got subsequences\n");
+        fflush(0);
 
         double mae = rnn->prediction_mae(sample, sample_output, true, true, .10);
+        Log::info("got mae: %lf\n", mae);
+        fflush(0);
 
         errors.push_back(mae);
     }
+    Log::info("finished loop");
+    fflush(0);
+
+    delete rnn;
+    Log::info("deleted rnn");
+    fflush(0);
 
     /*
     for (int i = 0; i < n_runs; i++) {
@@ -1448,7 +1461,7 @@ void RNN_Genome::resn_fitness(const vector< vector< vector<double> > > &inputs, 
 
     double p_value = 1.0 - p;
 
-    best_validation_mae = p_value;
+    best_validation_mse = p_value;
 
     //For debugging
     Log::info("RESN Fitness: %lf, use regression: %d\n", p_value, use_regression);
