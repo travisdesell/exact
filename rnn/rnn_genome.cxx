@@ -1374,9 +1374,11 @@ void RNN_Genome::resn_fitness(const vector< vector< vector<double> > > &inputs, 
     RNN* rnn = this->get_rnn();
 
     Log::info("getting resn fitness with %d samples of length %d\n", n_samples, sample_length);
+    Log::info("inputs.size(): %d, outputs.size(): %d, validation_inputs.size(): %d, validation_outputs.size(): %d\n", inputs.size(), outputs.size(), validation_inputs.size(), validation_outputs.size());
 
     for (int i = 0; i < n_samples; i++) {
-        rnn->initialize_randomly();
+        initialize_randomly();
+        rnn->set_weights(initial_parameters);
 
         //first get a random sequence
         int random_time_series = rng_0_1(generator) * inputs.size();
@@ -1401,13 +1403,15 @@ void RNN_Genome::resn_fitness(const vector< vector< vector<double> > > &inputs, 
         Log::info("getting subsequences, random_time_series: %d, sequence_start: %d, sequence_length: %d, sample_length: %d, random_sequence[0].size(): %d, random_output_sequence[0].size(): %d\n", random_time_series, sequence_start, sequence_length, sample_length, random_sequence[0].size(), random_output_sequence[0].size());
         fflush(0);
 
-        for (int j = 0; j < sample_length; j++) {
-            for (int k = 0; k < random_sequence.size(); k++) {
-                sample[k][j] = random_sequence[k][j + sequence_start];
+        for (int time_step = 0; time_step < sample_length; time_step++) {
+            for (int column = 0; column < random_sequence.size(); column++) {
+                //Log::info("s: %d %d %d\n", column, sequence_start, time_step);
+                sample[column][time_step] = random_sequence[column][sequence_start + time_step];
             }
 
-            for (int k = 0; k < random_output_sequence.size(); k++) {
-                sample_output[k][j] = random_output_sequence[k][j + sequence_start];
+            for (int column = 0; column < random_output_sequence.size(); column++) {
+                //Log::info("so: %d %d %d\n", column, sequence_start, time_step);
+                sample_output[column][time_step] = random_output_sequence[column][sequence_start + time_step];
             }
         }
         Log::info("got subsequences\n");
@@ -1422,10 +1426,7 @@ void RNN_Genome::resn_fitness(const vector< vector< vector<double> > > &inputs, 
     Log::info("finished loop");
     fflush(0);
 
-    vector<double> rnn_parameters;
-    rnn->get_weights(rnn_parameters);
-    set_weights(rnn_parameters);
-    set_best_parameters(rnn_parameters);
+    best_parameters = initial_parameters;
 
     delete rnn;
     Log::info("deleted rnn");

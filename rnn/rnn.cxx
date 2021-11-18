@@ -723,6 +723,7 @@ void RNN::get_empirical_gradient(const vector<double> &test_parameters, const ve
 }
 
 void RNN::initialize_randomly() {
+    //TODO: this should use the specified random weight initialization type
     int number_of_weights = get_number_weights();
     vector<double> parameters(number_of_weights, 0.0);
 

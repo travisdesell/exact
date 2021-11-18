@@ -98,6 +98,12 @@ class Log {
          */
         static shared_mutex log_ids_mutex;
 
+        /**
+         * A std::shared_mutex protecting the Log::output_files map.
+         */
+        static shared_mutex output_files_mutex;
+
+
 
         /**
          * Potentially writes the message to either standard output or the log file if the message level is high enough.

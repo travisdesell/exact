@@ -35,6 +35,7 @@ map<thread::id, string> Log::log_ids;
 map<string, LogFile*> Log::output_files;
 
 shared_mutex Log::log_ids_mutex;
+shared_mutex Log::output_files_mutex;
 
 LogFile::LogFile(FILE* _file) {
     file = _file;
@@ -128,6 +129,7 @@ void Log::release_id(string human_readable_id) {
     log_ids_mutex.lock();
     //cerr << "releasing thread from human readable id: '" << human_readable_id << "'" << endl;
 
+    output_files_mutex.lock();
     if (output_files.count(human_readable_id) == 0) {
         //this file was never created and written to
 
@@ -142,6 +144,7 @@ void Log::release_id(string human_readable_id) {
         delete log_file;
         output_files.erase(human_readable_id);
     }
+    output_files_mutex.unlock();
 
     log_ids_mutex.unlock();
 }
@@ -187,14 +190,17 @@ void Log::write_message(bool print_header, int8_t message_level, const char *mes
         //check and see if we've already opened a file for this human readable id, if we haven't
         //open a new one for it
 
+        output_files_mutex.lock();
         if (output_files.count(human_readable_id) == 0) {
             string output_filename = output_directory + "/" + human_readable_id;
             FILE *outfile = fopen(output_filename.c_str(), "w");
             log_file = new LogFile(outfile);
+
             output_files[human_readable_id] = log_file;
         } else {
             log_file = output_files[human_readable_id];
         }
+        output_files_mutex.unlock();
 
         //lock this log_file in case multiple threads are trying to write
         //to the same file

@@ -28,4 +28,4 @@ echo "###-------------------###"
 --output_directory $3 \
 --possible_node_types simple UGRNN MGU GRU delta LSTM \
 --std_message_level INFO \
---file_message_level INFO \ 
+--file_message_level NONE \ 
