@@ -1048,6 +1048,7 @@ void RNN_Genome::backpropagate(const vector< vector< vector<double> > > &inputs,
 
         if (output_log != NULL) {
             (*output_log) << iteration
+itness: -0.0799103
                 << " " << mse
                 << " " << validation_mse
                 << " " << best_validation_mse << endl;
@@ -1449,6 +1450,7 @@ void RNN_Genome::resn_fitness(const vector< vector< vector<double> > > &inputs, 
     double p_value = 1.0 - p;
 
     best_validation_mae = p_value;
+    best_validation_mse = p_value;
 
     //For debugging
     Log::info("RESN Fitness: %lf, use regression: %d\n", p_value, use_regression);
