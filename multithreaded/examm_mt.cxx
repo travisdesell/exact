@@ -206,12 +206,12 @@ int main(int argc, char** argv) {
     get_argument(arguments, "--sequence_length_lower_bound", false, sequence_length_lower_bound);
     get_argument(arguments, "--sequence_length_upper_bound", false, sequence_length_upper_bound);
 
-    string weight_initialize_string = "random";
+    string weight_initialize_string = "xavier";
     get_argument(arguments, "--weight_initialize", false, weight_initialize_string);
     WeightType weight_initialize;
     weight_initialize = get_enum_from_string(weight_initialize_string);
     
-    string weight_inheritance_string = "lamarckian";
+    string weight_inheritance_string = "xavier";
     get_argument(arguments, "--weight_inheritance", false, weight_inheritance_string);
     WeightType weight_inheritance;
     weight_inheritance = get_enum_from_string(weight_inheritance_string);
@@ -279,6 +279,7 @@ int main(int argc, char** argv) {
     
 	if (using_resn) {
         RNN_Genome* genome = examm->get_best_genome();
+
 		genome->backpropagate_stochastic(training_inputs, training_outputs, validation_inputs, validation_outputs, random_sequence_length, sequence_length_lower_bound, sequence_length_upper_bound);
     }
 

@@ -9,7 +9,7 @@
 
 cd build
 
-#exp_name="/test_output/coal_mt"
+exp_name="/test_output/coal_mt"
 #mkdir -p $exp_name
 echo "Running base EXAMM code with coal dataset, results will be saved to: "$exp_name
 echo "###-------------------###"
@@ -25,7 +25,7 @@ echo "###-------------------###"
 --use_resn \
 --max_genomes $2 \
 --bp_iterations 5 \
---output_directory $exp_name \
+--output_directory $3 \
 --possible_node_types simple UGRNN MGU GRU delta LSTM \
 --std_message_level INFO \
 --file_message_level INFO \ 
