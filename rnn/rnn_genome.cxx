@@ -1422,6 +1422,11 @@ void RNN_Genome::resn_fitness(const vector< vector< vector<double> > > &inputs, 
     Log::info("finished loop");
     fflush(0);
 
+    vector<double> rnn_parameters;
+    rnn->get_weights(rnn_parameters);
+    set_weights(rnn_parameters);
+    set_best_parameters(rnn_parameters);
+
     delete rnn;
     Log::info("deleted rnn");
     fflush(0);
