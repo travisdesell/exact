@@ -7,7 +7,7 @@
 #    --normalize avg_std_dev for Z-score normalization
 
 
-cd build
+#cd build
 
 #exp_name="/test_output/coal_mt"
 #mkdir -p $exp_name
