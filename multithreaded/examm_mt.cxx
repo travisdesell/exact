@@ -211,7 +211,7 @@ int main(int argc, char** argv) {
     WeightType weight_initialize;
     weight_initialize = get_enum_from_string(weight_initialize_string);
     
-    string weight_inheritance_string = "lamarckian";
+    string weight_inheritance_string = "xavier";
     get_argument(arguments, "--weight_inheritance", false, weight_inheritance_string);
     WeightType weight_inheritance;
     weight_inheritance = get_enum_from_string(weight_inheritance_string);

@@ -9,7 +9,7 @@
 
 #cd build
 
-#exp_name="/test_output/coal_mt"
+exp_name="/test_output/coal_mt"
 #mkdir -p $exp_name
 echo "Running base EXAMM code with coal dataset, results will be saved to: "$3
 echo "###-------------------###"
