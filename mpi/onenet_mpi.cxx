@@ -131,7 +131,7 @@ void get_online_data(vector< vector< vector<double> > > &current_inputs, vector<
     current_outputs.clear();
     validation_inputs.clear();
     validation_outputs.clear();
-    int num_sets = min(num_training_sets, current_time_index);
+    int num_sets = min(num_training_sets, current_time_index) + 1;
     // Log::error("generating data for worker, current num index is %d, num training sets are %d, so the num sets is %d\n", current_time_index, num_training_sets, num_sets);
     // Log::error("current time series set has %d sets\n", training_inputs.size());
     // Log::error("the shuffled time series index is:\n");
@@ -256,6 +256,7 @@ void worker(int rank) {
 
             get_online_data(current_training_inputs, current_training_outputs, current_validation_inputs, current_validation_outputs);
             //have each worker write the backproagation to a separate log file
+            // Log::error(" num training sets is %d\n", current_training_inputs.size());
             string log_id = "genome_" + to_string(genome->get_generation_id()) + "_worker_" + to_string(rank);
             Log::set_id(log_id);
             genome->backpropagate_stochastic(current_training_inputs, current_training_outputs, current_validation_inputs, current_validation_outputs, random_sequence_length, sequence_length_lower_bound, sequence_length_upper_bound, noise_std);
@@ -468,10 +469,11 @@ int main(int argc, char** argv) {
         }
     }
 
+    time_series_index.push_back(current_time_index);
     for (int current_generation = 1; current_generation <= num_generations; current_generation ++) {
 
         if (rank ==0) {
-            Log::debug("current time index is %d\n", current_time_index);
+            Log::error("current time index is %d\n", current_time_index);
             master(max_rank, transfer_learning_version, seed_stirs);           
         } else {
             worker(rank);

@@ -1130,14 +1130,14 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
     for (int i = 0; i < inputs.size(); i++) {
         training_inputs.push_back(inputs[i]);
         training_outputs.push_back(outputs[i]);
-        vector<vector<double>> temp_chunk = inputs[i];
-        vector< double > chunk_mean;
-        vector< double > chunk_std;
+        // vector<vector<double>> temp_chunk = inputs[i];
+        // vector< double > chunk_mean;
+        // vector< double > chunk_std;
             
-        get_mean_std(temp_chunk, chunk_mean, chunk_std);
-        add_gaussion_noise(temp_chunk, chunk_std);
-        training_inputs.push_back(temp_chunk);
-        training_outputs.push_back(outputs[i]);
+        // get_mean_std(temp_chunk, chunk_mean, chunk_std);
+        // add_gaussion_noise(temp_chunk, chunk_std);
+        // training_inputs.push_back(temp_chunk);
+        // training_outputs.push_back(outputs[i]);
     }
 
     // Log::error("after data augmentation, training size is %d, output %d\n", training_inputs.size(), training_outputs.size());
@@ -1220,15 +1220,15 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
             int random_selection = shuffle_order[k];
 
             prev_gradient = analytic_gradient;
-            // vector<vector<double>> temp_chunk = training_inputs[random_selection];
-            // vector< double > chunk_mean;
-            // vector< double > chunk_std;
+            vector<vector<double>> temp_chunk = training_inputs[random_selection];
+            vector< double > chunk_mean;
+            vector< double > chunk_std;
             
-            // if (iteration != 0 ) {
-            //     get_mean_std(temp_chunk, chunk_mean, chunk_std);
-            //     add_gaussion_noise(temp_chunk, chunk_std);
-            //     // add_gaussion_noise(temp_chunk, noise_std);
-            // }
+            if (iteration != 0 ) {
+                get_mean_std(temp_chunk, chunk_mean, chunk_std);
+                add_gaussion_noise(temp_chunk, chunk_std);
+                // add_gaussion_noise(temp_chunk, noise_std);
+            }
 
             rnn->get_analytic_gradient(parameters, training_inputs[random_selection], training_outputs[random_selection], mse, analytic_gradient, use_dropout, true, dropout_probability);
 
@@ -1271,11 +1271,11 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
                     prev_velocity[i] = mu_v  - (learning_rate * prev_gradient[i]);
                     parameters[i] += mu_v + ((mu + 1) * prev_velocity[i]);
 
-                    double noise = weight_gaussian(noise_generator);
-                    while (abs(noise) > weight_std) {
-                        noise = weight_gaussian(noise_generator);
-                    }
-                    parameters[i] += noise;
+                    // double noise = weight_gaussian(noise_generator);
+                    // while (abs(noise) > weight_std) {
+                    //     noise = weight_gaussian(noise_generator);
+                    // }
+                    // parameters[i] += noise;
                     // Log::error("iteration %d, noise is %f, after noise weight is %f\n", iteration, noise, parameters[i]);
                     if (parameters[i] < -10.0) parameters[i] = -10.0;
                     else if (parameters[i] > 10.0) parameters[i] = 10.0;
@@ -1293,7 +1293,7 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
         }
 
         this->set_weights(parameters);
-        get_mu_sigma(parameters, weight_mu, weight_std);
+        // get_mu_sigma(parameters, weight_mu, weight_std);
 
         double training_mse = 0.0;
         Log::trace("use regression is %s\n", use_regression ? "yes" : "no");
