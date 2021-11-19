@@ -284,20 +284,19 @@ int main(int argc, char** argv) {
     }
     
     
-    /*
-     * use train_rnn to train the output genome
-     */
-    /*
 	if (using_resn) {
         Log::info("training best found genome with random sequence length %d, sequence length lower bound %d, sequence length upper bound %d\n", random_sequence_length, sequence_length_lower_bound, sequence_length_upper_bound);
         RNN_Genome* genome = examm->get_best_genome();
         Log::info("best genome use regression is: %d\n", genome->get_use_regression());
         genome->write_graphviz(output_directory + "/" + output_genome_name + ".gv");
         genome->write_to_file(output_directory + "/" + output_genome_name + ".bin");
-        genome->initialize_randomly();
-		genome->backpropagate_stochastic(training_inputs, training_outputs, validation_inputs, validation_outputs, random_sequence_length, sequence_length_lower_bound, sequence_length_upper_bound);
+
+        /*
+         * use train_rnn to train the output genome
+         */
+        //genome->initialize_randomly();
+		//genome->backpropagate_stochastic(training_inputs, training_outputs, validation_inputs, validation_outputs, random_sequence_length, sequence_length_lower_bound, sequence_length_upper_bound);
     }
-    */
 
 
     finished = true;
