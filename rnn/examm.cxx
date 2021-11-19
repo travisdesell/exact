@@ -406,7 +406,6 @@ Work *EXAMM::get_initialize_work() {
       seed_genome->get_max_node_innovation_number();
   int max_edge_innovation_number =
       seed_genome->get_max_edge_innovation_number();
-
   return new InitializeWork(max_node_innovation_number + 1,
                             max_edge_innovation_number + 1);
 }
