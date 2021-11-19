@@ -774,7 +774,7 @@ void EXAMM::attempt_edge_insert(vector<RNN_Edge*> &child_edges, vector<RNN_Node_
     double new_weight = 0.0;
     if (second_edge != NULL) {
         double crossover_value = rng_crossover_weight(generator);
-        new_weight = crossover_value * (second_edge->weight - edge->weight) + edge->weight;
+        new_weight = crossover_value * -(second_edge->weight - edge->weight) + edge->weight;
 
         Log::trace("EDGE WEIGHT CROSSOVER :: better: %lf, worse: %lf, crossover_value: %lf, new_weight: %lf\n", edge->weight, second_edge->weight, crossover_value, new_weight);
 
@@ -792,12 +792,12 @@ void EXAMM::attempt_edge_insert(vector<RNN_Edge*> &child_edges, vector<RNN_Node_
         //can check to see if output weights lengths are same
 
         for (int32_t i = 0; i < (int32_t)new_input_weights.size(); i++) {
-            new_input_weights[i] = crossover_value * (input_weights2[i] - input_weights1[i]) + input_weights1[i];
+            new_input_weights[i] = crossover_value * -(input_weights2[i] - input_weights1[i]) + input_weights1[i];
             Log::trace("\tnew input weights[%d]: %lf\n", i, new_input_weights[i]);
         }
 
         for (int32_t i = 0; i < (int32_t)new_output_weights.size(); i++) {
-            new_output_weights[i] = crossover_value * (output_weights2[i] - output_weights1[i]) + output_weights1[i];
+            new_output_weights[i] = crossover_value * -(output_weights2[i] - output_weights1[i]) + output_weights1[i];
             Log::trace("\tnew output weights[%d]: %lf\n", i, new_output_weights[i]);
         }
 
@@ -845,7 +845,7 @@ void EXAMM::attempt_recurrent_edge_insert(vector<RNN_Recurrent_Edge*> &child_rec
     double new_weight = 0.0;
     if (second_edge != NULL) {
         double crossover_value = rng_crossover_weight(generator);
-        new_weight = crossover_value * (second_edge->weight - recurrent_edge->weight) + recurrent_edge->weight;
+        new_weight = crossover_value * -(second_edge->weight - recurrent_edge->weight) + recurrent_edge->weight;
 
         Log::debug("RECURRENT EDGE WEIGHT CROSSOVER :: better: %lf, worse: %lf, crossover_value: %lf, new_weight: %lf\n", recurrent_edge->weight, second_edge->weight, crossover_value, new_weight);
 
@@ -860,12 +860,12 @@ void EXAMM::attempt_recurrent_edge_insert(vector<RNN_Recurrent_Edge*> &child_rec
         new_output_weights.resize(output_weights1.size());
 
         for (int32_t i = 0; i < (int32_t)new_input_weights.size(); i++) {
-            new_input_weights[i] = crossover_value * (input_weights2[i] - input_weights1[i]) + input_weights1[i];
+            new_input_weights[i] = crossover_value * -(input_weights2[i] - input_weights1[i]) + input_weights1[i];
             Log::trace("\tnew input weights[%d]: %lf\n", i, new_input_weights[i]);
         }
 
         for (int32_t i = 0; i < (int32_t)new_output_weights.size(); i++) {
-            new_output_weights[i] = crossover_value * (output_weights2[i] - output_weights1[i]) + output_weights1[i];
+            new_output_weights[i] = crossover_value * -(output_weights2[i] - output_weights1[i]) + output_weights1[i];
             Log::trace("\tnew output weights[%d]: %lf\n", i, new_output_weights[i]);
         }
 
@@ -973,7 +973,7 @@ RNN_Genome* EXAMM::crossover(RNN_Genome *p1, RNN_Genome *p2) {
             p1_position++;
         } else {
             bool set_enabled = rng_0_1(generator) < less_fit_crossover_rate;
-            if (p2_edge->is_reachable()) set_enabled = true;
+            if (p2_edge->is_reachable() && set_enabled) set_enabled = true;
             else set_enabled = false;
 
             attempt_edge_insert(child_edges, child_nodes, p2_edge, NULL, set_enabled);
@@ -998,7 +998,7 @@ RNN_Genome* EXAMM::crossover(RNN_Genome *p1, RNN_Genome *p2) {
         RNN_Edge* p2_edge = p2_edges[p2_position];
 
         bool set_enabled = rng_0_1(generator) < less_fit_crossover_rate;
-        if (p2_edge->is_reachable()) set_enabled = true;
+        if (p2_edge->is_reachable() && set_enabled) set_enabled = true;
         else set_enabled = false;
 
         attempt_edge_insert(child_edges, child_nodes, p2_edge, NULL, set_enabled);
@@ -1033,7 +1033,7 @@ RNN_Genome* EXAMM::crossover(RNN_Genome *p1, RNN_Genome *p2) {
             p1_position++;
         } else {
             bool set_enabled = rng_0_1(generator) < less_fit_crossover_rate;
-            if (p2_recurrent_edge->is_reachable()) set_enabled = true;
+            if (p2_recurrent_edge->is_reachable() && set_enabled) set_enabled = true;
             else set_enabled = false;
 
             attempt_recurrent_edge_insert(child_recurrent_edges, child_nodes, p2_recurrent_edge, NULL, set_enabled);
@@ -1058,7 +1058,7 @@ RNN_Genome* EXAMM::crossover(RNN_Genome *p1, RNN_Genome *p2) {
         RNN_Recurrent_Edge* p2_recurrent_edge = p2_recurrent_edges[p2_position];
 
         bool set_enabled = rng_0_1(generator) < less_fit_crossover_rate;
-        if (p2_recurrent_edge->is_reachable()) set_enabled = true;
+        if (p2_recurrent_edge->is_reachable() && set_enabled) set_enabled = true;
         else set_enabled = false;
 
         attempt_recurrent_edge_insert(child_recurrent_edges, child_nodes, p2_recurrent_edge, NULL, set_enabled);
