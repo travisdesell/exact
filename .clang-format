@@ -1,1 +1,3 @@
 ColumnLimit: 120
+BasedOnStyle: Google
+IndentWidth: 4

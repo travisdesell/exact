@@ -139,6 +139,7 @@ public:
   friend class RNN_Recurrent_Edge;
   friend class RNN;
   friend class RNN_Genome;
+  friend class GenomeOperators;
 
   friend void get_mse(RNN *genome, const vector<vector<double>> &expected,
                       double &mse, vector<vector<double>> &deltas);

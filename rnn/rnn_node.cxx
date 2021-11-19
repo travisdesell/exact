@@ -91,9 +91,9 @@ void RNN_Node::input_fired(int time, double incoming_output) {
 }
 
 void RNN_Node::try_update_deltas(int time) {
-  if (outputs_fired[time] < total_outputs)
+  if (outputs_fired[time] < total_outputs) {
     return;
-  else if (outputs_fired[time] > total_outputs) {
+  } else if (outputs_fired[time] > total_outputs) {
     Log::fatal("ERROR: outputs_fired on RNN_Node %d at time %d is %d and "
                "total_outputs is %d\n",
                innovation_number, time, outputs_fired[time], total_outputs);
