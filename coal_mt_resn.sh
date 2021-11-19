@@ -24,8 +24,11 @@ echo "###-------------------###"
 --population_size 10 \
 --use_resn \
 --max_genomes $2 \
---bp_iterations 5 \
+--bp_iterations 500 \
 --output_directory $3 \
 --possible_node_types simple UGRNN MGU GRU delta LSTM \
 --std_message_level INFO \
---file_message_level NONE \ 
+--file_message_level NONE \
+--resn_n_samples $4 \
+--resn_sample_length $5 \
+--output_genome_name resn_genome_n_$4_l_$5

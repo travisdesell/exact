@@ -645,6 +645,8 @@ void RNN_Genome::initialize_randomly() {
     int number_of_weights = get_number_weights();
     initial_parameters.assign(number_of_weights, 0.0);
 
+    Log::info("initializing genome with type: %d\n", weight_initialize);
+
     if (weight_initialize == WeightType::RANDOM) {
         for (uint32_t i = 0; i < initial_parameters.size(); i++) {
             initial_parameters[i] = rng(generator);

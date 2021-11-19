@@ -47,8 +47,8 @@ vector< vector< vector<double> > > validation_outputs;
 bool random_sequence_length;
 int sequence_length_lower_bound = 30;
 int sequence_length_upper_bound = 100;
-int n_samples = 10;
-int sample_length = 10;
+int resn_n_samples = 10;
+int resn_sample_length = 10;
 
 void examm_thread(int id) {
 
@@ -65,7 +65,7 @@ void examm_thread(int id) {
         //genome->backpropagate(training_inputs, training_outputs, validation_inputs, validation_outputs);
 
         if (using_resn) {
-            genome->resn_fitness(training_inputs, training_outputs, validation_inputs, validation_outputs, random_sequence_length, n_samples,  sample_length);
+            genome->resn_fitness(training_inputs, training_outputs, validation_inputs, validation_outputs, random_sequence_length, resn_n_samples,  resn_sample_length);
             // std::cout<<"RESN: " << resn_value;
         } else {
             genome->backpropagate_stochastic(training_inputs, training_outputs, validation_inputs, validation_outputs, random_sequence_length, sequence_length_lower_bound, sequence_length_upper_bound);
@@ -199,6 +199,13 @@ int main(int argc, char** argv) {
     //RESN switch
     using_resn = argument_exists(arguments, "--use_resn");
 
+    string output_genome_name = "output_genome";
+    if (using_resn) {
+        get_argument(arguments, "--resn_n_samples", true, resn_n_samples);
+        get_argument(arguments, "--resn_sample_length", true, resn_n_samples);
+        get_argument(arguments, "--output_genome_name", true, output_genome_name);
+    }
+
     //bool use_regression = argument_exists(arguments, "--use_regression");
     bool use_regression = true; //time series will always use regression
 
@@ -277,14 +284,20 @@ int main(int argc, char** argv) {
     }
     
     
+    /*
+     * use train_rnn to train the output genome
+     */
+    /*
 	if (using_resn) {
         Log::info("training best found genome with random sequence length %d, sequence length lower bound %d, sequence length upper bound %d\n", random_sequence_length, sequence_length_lower_bound, sequence_length_upper_bound);
         RNN_Genome* genome = examm->get_best_genome();
         Log::info("best genome use regression is: %d\n", genome->get_use_regression());
-        genome->write_graphviz("resn_genome.gv");
+        genome->write_graphviz(output_directory + "/" + output_genome_name + ".gv");
+        genome->write_to_file(output_directory + "/" + output_genome_name + ".bin");
         genome->initialize_randomly();
 		genome->backpropagate_stochastic(training_inputs, training_outputs, validation_inputs, validation_outputs, random_sequence_length, sequence_length_lower_bound, sequence_length_upper_bound);
     }
+    */
 
 
     finished = true;

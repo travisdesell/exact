@@ -41,41 +41,12 @@ int sequence_length_lower_bound = 30;
 int sequence_length_upper_bound = 100;
 
 RNN_Genome *genome;
-RNN* rnn;
 int bp_iterations;
 bool using_dropout;
 double dropout_probability;
 
 ofstream *log_file;
 string output_directory;
-
-double objective_function(const vector<double> &parameters) {
-    rnn->set_weights(parameters);
-
-    double error = 0.0;
-
-    for (uint32_t i = 0; i < training_inputs.size(); i++) {
-        error += rnn->prediction_mae(training_inputs[i], training_outputs[i], false, true, 0.0);
-    }
-
-    return -error;
-}
-
-double test_objective_function(const vector<double> &parameters) {
-    rnn->set_weights(parameters);
-
-    double total_error = 0.0;
-
-    for (uint32_t i = 0; i < test_inputs.size(); i++) {
-        double error = rnn->prediction_mse(test_inputs[i], test_outputs[i], false, true, 0.0);
-        total_error += error;
-
-        Log::info("output for series[%d]: %lf\n", i, error);
-    }
-
-    return -total_error;
-}
-
 
 int main(int argc, char **argv) {
     vector<string> arguments = vector<string>(argv, argv + argc);
@@ -97,12 +68,6 @@ int main(int argc, char **argv) {
     string rnn_type;
     get_argument(arguments, "--rnn_type", true, rnn_type);
 
-    int32_t num_hidden_layers;
-    get_argument(arguments, "--num_hidden_layers", true, num_hidden_layers);
-
-    int32_t max_recurrent_depth;
-    get_argument(arguments, "--max_recurrent_depth", true, max_recurrent_depth);
-
     string weight_initialize_string = "random";
     get_argument(arguments, "--weight_initialize", false, weight_initialize_string);
     WeightType weight_initialize;
@@ -112,39 +77,54 @@ int main(int argc, char **argv) {
     vector<string> output_parameter_names = time_series_sets->get_output_parameter_names();
 
     RNN_Genome *genome;
-    if (rnn_type == "lstm") {
-        genome = create_lstm(input_parameter_names, num_hidden_layers, number_inputs, output_parameter_names, max_recurrent_depth, weight_initialize);
-
-    } else if (rnn_type == "gru") {
-        genome = create_gru(input_parameter_names, num_hidden_layers, number_inputs, output_parameter_names, max_recurrent_depth, weight_initialize);
-
-    } else if (rnn_type == "delta") {
-        genome = create_delta(input_parameter_names, num_hidden_layers, number_inputs, output_parameter_names, max_recurrent_depth, weight_initialize);
-
-    } else if (rnn_type == "mgu") {
-        genome = create_mgu(input_parameter_names, num_hidden_layers, number_inputs, output_parameter_names, max_recurrent_depth, weight_initialize);
-
-    } else if (rnn_type == "ugrnn") {
-        genome = create_ugrnn(input_parameter_names, num_hidden_layers, number_inputs, output_parameter_names, max_recurrent_depth, weight_initialize);
-
-    } else if (rnn_type == "ff") {
-        genome = create_ff(input_parameter_names, num_hidden_layers, number_inputs, output_parameter_names, max_recurrent_depth, weight_initialize, WeightType::NONE, WeightType::NONE);
-
-    } else if (rnn_type == "jordan") {
-        genome = create_jordan(input_parameter_names, num_hidden_layers, number_inputs, output_parameter_names, max_recurrent_depth, weight_initialize);
-
-    } else if (rnn_type == "elman") {
-        genome = create_elman(input_parameter_names, num_hidden_layers, number_inputs, output_parameter_names, max_recurrent_depth, weight_initialize);
+    if (rnn_type == "binary") {
+        string binary_filename;
+        get_argument(arguments, "--binary_filename", true, binary_filename);
+        genome = new RNN_Genome(binary_filename);
 
     } else {
-        Log::fatal("ERROR: incorrect rnn type\n");
-        Log::fatal("Possibilities are:\n");
-        Log::fatal("    lstm\n");
-        Log::fatal("    gru\n");
-        Log::fatal("    ff\n");
-        Log::fatal("    jordan\n");
-        Log::fatal("    elman\n");        
-        exit(1);
+        int32_t num_hidden_layers;
+        get_argument(arguments, "--num_hidden_layers", true, num_hidden_layers);
+
+        int32_t max_recurrent_depth;
+        get_argument(arguments, "--max_recurrent_depth", true, max_recurrent_depth);
+
+
+        if (rnn_type == "lstm") {
+            genome = create_lstm(input_parameter_names, num_hidden_layers, number_inputs, output_parameter_names, max_recurrent_depth, weight_initialize);
+
+        } else if (rnn_type == "gru") {
+            genome = create_gru(input_parameter_names, num_hidden_layers, number_inputs, output_parameter_names, max_recurrent_depth, weight_initialize);
+
+        } else if (rnn_type == "delta") {
+            genome = create_delta(input_parameter_names, num_hidden_layers, number_inputs, output_parameter_names, max_recurrent_depth, weight_initialize);
+
+        } else if (rnn_type == "mgu") {
+            genome = create_mgu(input_parameter_names, num_hidden_layers, number_inputs, output_parameter_names, max_recurrent_depth, weight_initialize);
+
+        } else if (rnn_type == "ugrnn") {
+            genome = create_ugrnn(input_parameter_names, num_hidden_layers, number_inputs, output_parameter_names, max_recurrent_depth, weight_initialize);
+
+        } else if (rnn_type == "ff") {
+            genome = create_ff(input_parameter_names, num_hidden_layers, number_inputs, output_parameter_names, max_recurrent_depth, weight_initialize, WeightType::NONE, WeightType::NONE);
+
+        } else if (rnn_type == "jordan") {
+            genome = create_jordan(input_parameter_names, num_hidden_layers, number_inputs, output_parameter_names, max_recurrent_depth, weight_initialize);
+
+        } else if (rnn_type == "elman") {
+            genome = create_elman(input_parameter_names, num_hidden_layers, number_inputs, output_parameter_names, max_recurrent_depth, weight_initialize);
+
+        } else {
+            Log::fatal("ERROR: incorrect rnn type\n");
+            Log::fatal("Possibilities are:\n");
+            Log::fatal("    binary");
+            Log::fatal("    lstm\n");
+            Log::fatal("    gru\n");
+            Log::fatal("    ff\n");
+            Log::fatal("    jordan\n");
+            Log::fatal("    elman\n");        
+            exit(1);
+        }
     }
 
     get_argument(arguments, "--bp_iterations", true, bp_iterations);
@@ -162,8 +142,6 @@ int main(int argc, char **argv) {
 
     genome->set_parameter_names(time_series_sets->get_input_parameter_names(), time_series_sets->get_output_parameter_names());
     genome->set_normalize_bounds(time_series_sets->get_normalize_type(), time_series_sets->get_normalize_mins(), time_series_sets->get_normalize_maxs(), time_series_sets->get_normalize_avgs(), time_series_sets->get_normalize_std_devs());
-
-    rnn = genome->get_rnn();
 
     uint32_t number_of_weights = genome->get_number_weights();
 
@@ -200,7 +178,6 @@ int main(int argc, char **argv) {
 
     Log::info("Training finished\n");
     genome->get_weights(best_parameters);
-    rnn->set_weights(best_parameters);
 
     Log::info("TRAINING ERRORS:\n");
     Log::info("MSE: %lf\n", genome->get_mse(best_parameters, training_inputs, training_outputs));
