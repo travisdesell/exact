@@ -65,8 +65,7 @@ void examm_thread(int id) {
         //genome->backpropagate(training_inputs, training_outputs, validation_inputs, validation_outputs);
 
         if (using_resn) {
-            genome->resn_fitness(training_inputs, training_outputs, validation_inputs, validation_outputs, random_sequence_length, n_samples,  sample_length);
-            // std::cout<<"RESN: " << resn_value;
+            genome->resn_fitness(training_inputs, training_outputs, validation_inputs, validation_outputs, random_sequence_length, n_samples, sample_length);
         } else {
             genome->backpropagate_stochastic(training_inputs, training_outputs, validation_inputs, validation_outputs, random_sequence_length, sequence_length_lower_bound, sequence_length_upper_bound);
         }
@@ -198,6 +197,10 @@ int main(int argc, char** argv) {
 
     //RESN switch
     using_resn = argument_exists(arguments, "--use_resn");
+    if (using_resn) {
+        get_argument(arguments, "--resn_number_samples", false, n_samples);
+        get_argument(arguments, "--resn_sample_length", false, sample_length);
+    }
 
     //bool use_regression = argument_exists(arguments, "--use_regression");
     bool use_regression = true; //time series will always use regression
@@ -281,7 +284,10 @@ int main(int argc, char** argv) {
         Log::info("training best found genome with random sequence length %d, sequence length lower bound %d, sequence length upper bound %d\n", random_sequence_length, sequence_length_lower_bound, sequence_length_upper_bound);
         RNN_Genome* genome = examm->get_best_genome();
         Log::info("best genome use regression is: %d\n", genome->get_use_regression());
-        genome->write_graphviz("resn_genome.gv");
+
+        genome->write_graphviz(output_directory + "/resn_genome.gv");
+        genome->write_to_file(output_directory + "/resn_genome.bin");
+
         genome->initialize_randomly();
 		genome->backpropagate_stochastic(training_inputs, training_outputs, validation_inputs, validation_outputs, random_sequence_length, sequence_length_lower_bound, sequence_length_upper_bound);
     }
