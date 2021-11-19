@@ -1208,10 +1208,10 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
 
     for (uint32_t iteration = 0; iteration < bp_iterations; iteration++) {
         Log::info("iteration %d \n", iteration);
-        weight_std *= noise_decay_rate;
+        // weight_std *= noise_decay_rate;
         // Log::error("weight std is %f\n", weight_std);
         // noise_decay_rate *= noise_decay_rate;
-        std::normal_distribution<double> weight_gaussian(0, weight_std);
+        // std::normal_distribution<double> weight_gaussian(0, weight_std);
 
         fisher_yates_shuffle(generator, shuffle_order);
         
@@ -1224,13 +1224,14 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
             vector< double > chunk_mean;
             vector< double > chunk_std;
             
-            if (iteration != 0 ) {
+            if (iteration > 5 ) {
                 get_mean_std(temp_chunk, chunk_mean, chunk_std);
                 add_gaussion_noise(temp_chunk, chunk_std);
                 // add_gaussion_noise(temp_chunk, noise_std);
             }
 
-            rnn->get_analytic_gradient(parameters, training_inputs[random_selection], training_outputs[random_selection], mse, analytic_gradient, use_dropout, true, dropout_probability);
+            // rnn->get_analytic_gradient(parameters, training_inputs[random_selection], training_outputs[random_selection], mse, analytic_gradient, use_dropout, true, dropout_probability);
+            rnn->get_analytic_gradient(parameters, temp_chunk, training_outputs[random_selection], mse, analytic_gradient, use_dropout, true, dropout_probability);
 
             norm = 0.0;
             for (int32_t i = 0; i < parameters.size(); i++) {
@@ -4070,7 +4071,7 @@ void RNN_Genome::add_gaussion_noise(vector< vector< double > > &input_data, vect
     for (int i = 0; i < input_data.size(); i++) {
         std::normal_distribution<double> gaussian(0, chunk_std[i]);
         for (int j = 0; j < input_data[i].size(); j++) {
-            double noise = gaussian(noise_generator) * 0.2;
+            double noise = gaussian(noise_generator) * 0.1;
             // Log::error("original data is %f, noise is %f\n", input_data[i][j], noise);
             input_data[i][j] += noise;
         }
