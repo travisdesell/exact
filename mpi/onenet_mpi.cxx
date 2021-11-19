@@ -45,8 +45,8 @@ bool finished = false;
 
 vector< vector< vector<double> > > training_inputs;
 vector< vector< vector<double> > > training_outputs;
-// vector< vector< vector<double> > > validation_inputs;
-// vector< vector< vector<double> > > validation_outputs;
+vector< vector< vector<double> > > validation_inputs;
+vector< vector< vector<double> > > validation_outputs;
 
 bool random_sequence_length;
 int sequence_length_lower_bound = 30;
@@ -126,11 +126,11 @@ void receive_terminate_message(int source) {
     MPI_Recv(terminate_message, 1, MPI_INT, source, TERMINATE_TAG, MPI_COMM_WORLD, &status);
 }
 
-void get_online_data(vector< vector< vector<double> > > &current_inputs, vector< vector< vector<double> > > &current_outputs, vector< vector< vector<double> > > &validation_inputs, vector< vector< vector<double> > > &validation_outputs) {
+void get_online_data(vector< vector< vector<double> > > &current_inputs, vector< vector< vector<double> > > &current_outputs, vector< vector< vector<double> > > &current_validation_inputs, vector< vector< vector<double> > > &current_validation_outputs) {
     current_inputs.clear();
     current_outputs.clear();
-    validation_inputs.clear();
-    validation_outputs.clear();
+    current_validation_inputs.clear();
+    current_validation_outputs.clear();
     int num_sets = min(num_training_sets, current_time_index) + 1;
     // Log::error("generating data for worker, current num index is %d, num training sets are %d, so the num sets is %d\n", current_time_index, num_training_sets, num_sets);
     // Log::error("current time series set has %d sets\n", training_inputs.size());
@@ -149,20 +149,66 @@ void get_online_data(vector< vector< vector<double> > > &current_inputs, vector<
     }
 
     for (int i = 0; i < validation_size; i++) {
-        validation_inputs.push_back(training_inputs[current_time_index+i]);
-        validation_outputs.push_back(training_outputs[current_time_index+i]);
+        current_validation_inputs.push_back(validation_inputs[current_time_index+i]);
+        current_validation_outputs.push_back(validation_outputs[current_time_index+i]);
     }
     // validation_inputs.push_back(training_inputs[current_time_index+1]);
     // validation_outputs.push_back(training_outputs[current_time_index+1]);
     // Log::error("getting input dataset finished\n");
 }
 
-void validate_generation_number(int32_t num_generation, int32_t num_training_sets) {
+void validate_generation_number(int32_t num_generation) {
     if (current_time_index + num_generation + 2 > num_training_sets) {
         Log::fatal("Fatal: too many generations for this dataset!\n");
         Log::fatal("There are %d training sets in total, initial training set size is %d, number of generation is set to %d \n", num_training_sets, current_time_index, num_generation);
         Log::fatal("Will need at least %d number of training sets to be able to handle %d generations\n", current_time_index + num_generation + 2, num_generation);
         exit(1);
+    }
+}
+
+void smooth_data_moving_average(int32_t smooth_window) {
+    Log::error("smothing data ma\n");
+    for (int i = 0; i < training_inputs.size(); i++) {
+        for (int j = 0; j < training_inputs[i].size(); j++) {
+            for (int k = smooth_window; k < training_inputs[i][j].size(); k++) {
+                double sum = 0;
+                for (int t = 1; t <= smooth_window; t++) {
+                    sum += validation_inputs[i][j][k-t];
+                }
+                training_inputs[i][j][k] = sum / smooth_window;
+            }
+        }
+    }
+
+    for (int i = 0; i < training_outputs.size(); i++) {
+        for (int j = 0; j < training_outputs[i].size(); j++) {
+            for (int k = smooth_window; k < training_outputs[i][j].size(); k++) {
+                double sum = 0;
+                for (int t = 1; t <= smooth_window; t++) {
+                    sum += validation_outputs[i][j][k-t];
+                }
+                training_outputs[i][j][k] = sum / smooth_window;
+            }
+        }
+    }
+}
+
+void smooth_data_exponential(double alpha) {
+    Log::error("smoothing data exp\n");
+    for (int i = 0; i < training_inputs.size(); i++) {
+        for (int j = 0; j < training_inputs[i].size(); j++) {
+            for (int k = 1; k < training_inputs[i][j].size(); k++) {
+                training_inputs[i][j][k] = alpha * validation_inputs[i][j][k-1] + (1 - alpha) * training_inputs[i][j][k-1];
+            }
+        }
+    }
+
+    for (int i = 0; i < training_outputs.size(); i++) {
+        for (int j = 0; j < training_outputs[i].size(); j++) {
+            for (int k = 1; k < training_outputs[i][j].size(); k++) {
+                training_outputs[i][j][k] = alpha * validation_outputs[i][j][k-1] + (1 - alpha) * training_outputs[i][j][k-1];
+            }
+        }
     }
 }
 
@@ -319,9 +365,33 @@ int main(int argc, char** argv) {
 
     int32_t time_offset = 1;
     get_argument(arguments, "--time_offset", true, time_offset);
-
-    time_series_sets->export_training_series(time_offset, training_inputs, training_outputs);
+    
+    // training data will be smoothed
+    time_series_sets->export_training_series(time_offset, training_inputs, training_outputs); 
+    // validation data is original without smooth
+    validation_inputs = training_inputs;
+    validation_outputs = training_outputs;
+     
     // time_series_sets->export_test_series(time_offset, validation_inputs, validation_outputs);
+
+    if (argument_exists(arguments, "--data_smooth_method")) {
+        int32_t moving_average_smooth_window = 3;
+        get_argument(arguments, "--moving_average_smooth_window", false, moving_average_smooth_window);
+
+        double exponential_smooth_alpha = 0.8;
+        get_argument(arguments, "--exponential_smooth_alpha", false, exponential_smooth_alpha);
+
+        string data_smooth_method = "";
+        get_argument(arguments, "--data_smooth_method", true, data_smooth_method);
+        
+        if (data_smooth_method.compare("ma") == 0) {
+            smooth_data_moving_average(moving_average_smooth_window);
+        } else if (data_smooth_method.compare("exp") == 0) {
+            smooth_data_exponential(exponential_smooth_alpha);
+        } else {
+            Log::error("Wrong data smothing method %s\n", data_smooth_method.c_str());
+        }
+    }
 
     int number_inputs = time_series_sets->get_number_inputs();
     int number_outputs = time_series_sets->get_number_outputs();
@@ -380,8 +450,9 @@ int main(int argc, char** argv) {
     double dropout_probability = 0.0;
     bool use_dropout = get_argument(arguments, "--dropout_probability", false, dropout_probability);
 
-
     get_argument(arguments, "--noise_std", false, noise_std);
+    get_argument(arguments, "--validation_size", false, validation_size);
+    get_argument(arguments, "--num_training_sets", false, num_training_sets);
 
     string output_directory = "";
     get_argument(arguments, "--output_directory", false, output_directory);
@@ -440,7 +511,7 @@ int main(int argc, char** argv) {
 
     Log::clear_rank_restriction();
 
-
+    Log::error("validation size is %d, num training example is %d\n", validation_size, num_training_sets);
     if (rank == 0) {
         examm = new EXAMM(0, 0, generation_genomes, elite_population_size, extinction_event_generation_number, islands_to_exterminate, island_ranking_method,
             repopulation_method, repopulation_mutations, false, epochs_acc_freq,
@@ -486,13 +557,13 @@ int main(int argc, char** argv) {
             vector< vector< vector<double> > > validation_output;
 
             for (int i = 0; i < validation_size; i++) {
-                validation_input.push_back(training_inputs[current_time_index+i]);
-                validation_output.push_back(training_outputs[current_time_index+i]);
+                validation_input.push_back(validation_inputs[current_time_index+i]);
+                validation_output.push_back(validation_outputs[current_time_index+i]);
             }
             // validation_input.push_back(training_inputs[current_time_index+1]);
             // validation_output.push_back(training_outputs[current_time_index+1]);
-            test_input.push_back(training_inputs[current_time_index + validation_size]);
-            test_output.push_back(training_outputs[current_time_index + validation_size]);
+            test_input.push_back(validation_inputs[current_time_index + validation_size]);
+            test_output.push_back(validation_outputs[current_time_index + validation_size]);
             string filename = output_directory + "/generation_" + std::to_string(current_generation);
             examm->finalize_generation(filename, validation_input, validation_output, test_input, test_output, time_series_sets);
             // best_genome->write_predictions(output_directory, "generation_"  std::to_string(current_generation), test_input, test_output, time_series_sets );
