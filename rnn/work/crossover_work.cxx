@@ -32,7 +32,11 @@ void CrossoverWork::write_to_stream(ostream &bin_ostream) {
 }
 
 RNN_Genome *CrossoverWork::get_genome(GenomeOperators &operators) {
-    RNN_Genome *genome = operators.crossover(more_fit, less_fit);
+    vector<RNN_Genome *> parents;
+    parents.push_back(more_fit);
+    parents.push_back(less_fit);
+
+    RNN_Genome *genome = operators.ncrossover(parents);
     genome->set_generation_id(generation_id);
     genome->set_group_id(group_id);
     return genome;

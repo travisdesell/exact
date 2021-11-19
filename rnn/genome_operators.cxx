@@ -681,7 +681,9 @@ RNN_Genome *GenomeOperators::ncrossover(vector<RNN_Genome *> &parents) {
         return crossover_weight * (centroid - weights.back().second) + centroid;
     };
 
-    auto weight_crossover_2d = [this](vector<pair<int32_t, vector<double> > > &weights) {
+    auto weight_crossover_2d = [this, get_centroid_mass](vector<pair<int32_t, vector<double> > > &weights, vector<double>& new_weights) {
+        new_weights.clear();
+
         auto n_weights = weights[0].second.size();
         double centroid_sum[n_weights];
         memset(centroid_sum, 0, sizeof(centroid_sum));
@@ -695,30 +697,28 @@ RNN_Genome *GenomeOperators::ncrossover(vector<RNN_Genome *> &parents) {
                 centroid_sum[j] += weights_i[j] * centroid_weight;
             }
 
-            weight_sum += centroid_weight;
+            centroid_mass_sum += centroid_weight;
         }
 
-        for (auto i = 0; i < n_weights; j++) centroid_sum[i] /= centroid_mass_sum;
+        for (auto i = 0; i < n_weights; i++) centroid_sum[i] /= centroid_mass_sum;
 
         const double *const centroid = centroid_sum;
-        double new_weights[n_weights];
         vector<double> &worst_weights = weights.back().second;
         double crossover_weight = rng_crossover_weight(generator);
 
         for (int i = 0; i < n_weights; i++) {
-            new_weights[i] = crossover_weight * (centroid[i] - worst_weights[i]) + centroid[i];
+            new_weights.push_back(crossover_weight * (centroid[i] - worst_weights[i]) + centroid[i]);
         }
-
-        return vector<double>(new_weights, new_weights + n_weights);
-    }
+    };
 
     // So now we have a list of every edge and node that should be enabled, possible weights for them, and a copy of
     // every component. Time to start adding everything. First, add all of the nodes. This means copying every node.
     // Since we will need to get nodes by ID later for edge insertion, we will create a map
-    for (auto& it = node_map.begin(); it != node_map.end(); it++) {
+    vector<double> new_weights;
+    for (auto it = node_map.begin(); it != node_map.end(); it++) {
         auto copy = it->second->copy();
         it->second = copy;
-        child_nodes.pusb_back(copy);
+        child_nodes.push_back(copy);
 
         copy->enabled = node_enabled[it->first];
 
@@ -726,17 +726,17 @@ RNN_Genome *GenomeOperators::ncrossover(vector<RNN_Genome *> &parents) {
         if (weights.size() == 1) {
             copy->set_weights(weights[0].second);
         } else {
-            vector<double> new_weights = weight_crossover_nd(weights);
+            weight_crossover_2d(weights, new_weights);
             copy->set_weights(new_weights);
         }
 
         // Update the map with the copy, so we can use this map for grabbing the appropriate nodes when copying edges.
-        node_map[i] = copy;
+        node_map[it->second->innovation_number] = copy;
     }
 
     sort(child_nodes.begin(), child_nodes.end(), sort_RNN_Nodes_by_innovation());
 
-    for (auto& it = edge_map.begin(); it != edge_map.end(); it++) {
+    for (auto it = edge_map.begin(); it != edge_map.end(); it++) {
         auto copy = it->second->copy(node_map);
 
         copy->enabled = edge_enabled[it->first];
@@ -753,7 +753,7 @@ RNN_Genome *GenomeOperators::ncrossover(vector<RNN_Genome *> &parents) {
 
     sort(child_edges.begin(), child_edges.end(), sort_RNN_Edges_by_innovation());
 
-    for (auto& it = rec_edge_map.begin(); it != rec_edge_map.end(); it++) {
+    for (auto it = rec_edge_map.begin(); it != rec_edge_map.end(); it++) {
         auto copy = it->second->copy(node_map);
 
         copy->enabled = edge_enabled[it->first];
@@ -776,7 +776,12 @@ RNN_Genome *GenomeOperators::ncrossover(vector<RNN_Genome *> &parents) {
     child->set_normalize_bounds(dataset_meta.normalize_type, dataset_meta.normalize_mins, dataset_meta.normalize_maxs,
                                 dataset_meta.normalize_avgs, dataset_meta.normalize_std_devs);
 
-    if (more_fit->get_group_id() == less_fit->get_group_id()) {
+    bool intra_island_crossover = true;
+    for (int i = 0; i < parents.size() - 1 && intra_island_crossover; i++) {
+        intra_island_crossover = parents[i]->group_id == parents[i + 1]->group_id;
+    }
+
+    if (intra_island_crossover) {
         child->set_generated_by("crossover");
     } else {
         child->set_generated_by("island_crossover");
