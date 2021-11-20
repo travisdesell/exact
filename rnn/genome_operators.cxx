@@ -605,15 +605,31 @@ RNN_Genome *GenomeOperators::ncrossover(vector<RNN_Genome *> &parents) {
 
         double probability = 1.0 / ((double) (1 << i));
 
+        for (auto j = 0; j < p->nodes.size(); j++) {
+            auto node = p->nodes[j];
+            // Copy of the best node
+            if (node_map.count(node->innovation_number) == 0)
+                node_map[node->innovation_number] = node;
+
+            if (node->enabled) {
+                // Only consider weights from enabled nodes.
+                vector<double> weights(node->get_number_weights());
+                node->get_weights(weights);
+                node_weights[node->innovation_number].push_back({ (int32_t) i, move(weights) });
+                if (!node_enabled[node->innovation_number] && rng_0_1(generator) < probability)
+                    node_enabled[node->innovation_number] = true;
+            }
+        }
+
         for (auto j = 0; j < p->edges.size(); j++) {
             auto e = p->edges[j];
 
-            // Store a pointer to a copy of this edge to be used later for insertion
-            edge_map[e->innovation_number] = e;
+            if (edge_map.count(e->innovation_number) == 0)
+                edge_map[e->innovation_number] = e;
 
             if (e->enabled) {
-                // Only consider weights of edges that are enabled
-                edge_weights[e->innovation_number].push_back({ (int32_t) i, e->weight });
+                if (e->input_node->enabled && e->output_node->enabled)
+                    edge_weights[e->innovation_number].push_back({ (int32_t) i, e->weight });
 
                 if (!edge_enabled[e->innovation_number] && rng_0_1(generator) < probability)
                     edge_enabled[e->innovation_number] = true;
@@ -623,32 +639,15 @@ RNN_Genome *GenomeOperators::ncrossover(vector<RNN_Genome *> &parents) {
         for (auto j = 0; j < p->recurrent_edges.size(); j++) {
             auto e = p->recurrent_edges[j];
 
-            // Store a pointer to a copy of this edge to be used later for insertion
-            rec_edge_map[e->innovation_number] = e;
+            if (rec_edge_map.count(e->innovation_number) == 0)
+                rec_edge_map[e->innovation_number] = e;
 
             if (e->enabled) {
-                // Only consider weights of edges that are enabled
-                edge_weights[e->innovation_number].push_back({ (int32_t) i, e->weight });
+                if (e->input_node->enabled && e->output_node->enabled)
+                    edge_weights[e->innovation_number].push_back({ (int32_t) i, e->weight });
 
                 if (!edge_enabled[e->innovation_number] && rng_0_1(generator) < probability)
                     edge_enabled[e->innovation_number] = true;
-            }
-        }
-
-        for (auto j = 0; j < p->nodes.size(); j++) {
-            auto node = p->nodes[j];
-
-            // place it in the map
-            node_map[node->innovation_number] = node;
-
-            if (node->enabled) {
-                // Only consider weights from enabled nodes.
-                vector<double> weights(node->get_number_weights());
-                node->get_weights(weights);
-                node_weights[node->innovation_number].push_back({ (int32_t) i, move(weights) });
-
-                if (!node_enabled[node->innovation_number] && rng_0_1(generator) < probability)
-                    node_enabled[node->innovation_number] = true;
             }
         }
     }
@@ -674,11 +673,11 @@ RNN_Genome *GenomeOperators::ncrossover(vector<RNN_Genome *> &parents) {
             centroid_sum += weights[i].second * weight;
             centroid_mass_sum += weight;
         }
-
         double centroid = centroid_sum / centroid_mass_sum;
         double crossover_weight = rng_crossover_weight(generator);
 
-        return crossover_weight * (centroid - weights.back().second) + centroid;
+        double weight =  crossover_weight * (centroid - weights.back().second) + centroid;
+        return weight;
     };
 
     auto weight_crossover_2d = [this, get_centroid_mass](vector<pair<int32_t, vector<double> > > &weights, vector<double>& new_weights) {
@@ -692,7 +691,6 @@ RNN_Genome *GenomeOperators::ncrossover(vector<RNN_Genome *> &parents) {
         for (auto i = 1; i < weights.size(); i += 1) {
             double centroid_weight = get_centroid_mass(weights[i].first);
             vector<double> &weights_i = weights[i].second;
-
             for (auto j = 0; j < n_weights; j++) {
                 centroid_sum[j] += weights_i[j] * centroid_weight;
             }
@@ -700,7 +698,10 @@ RNN_Genome *GenomeOperators::ncrossover(vector<RNN_Genome *> &parents) {
             centroid_mass_sum += centroid_weight;
         }
 
-        for (auto i = 0; i < n_weights; i++) centroid_sum[i] /= centroid_mass_sum;
+        for (auto i = 0; i < n_weights; i++) {
+            centroid_sum[i] /= centroid_mass_sum;
+            Log::info("weight = %f \n", centroid_sum[i]);
+        }
 
         const double *const centroid = centroid_sum;
         vector<double> &worst_weights = weights.back().second;
@@ -723,18 +724,22 @@ RNN_Genome *GenomeOperators::ncrossover(vector<RNN_Genome *> &parents) {
         copy->enabled = node_enabled[it->first];
 
         vector<pair<int32_t, vector<double> > > &weights = node_weights[it->first];
-        if (weights.size() == 1) {
+        if (weights.size() == 0) {
+        } else if (weights.size() == 1) {
             copy->set_weights(weights[0].second);
         } else {
             weight_crossover_2d(weights, new_weights);
             copy->set_weights(new_weights);
         }
 
+        vector<double> parameters;
+        it->second->get_weights(parameters);
+        vector<double> copy_parameters;
+        copy->get_weights(copy_parameters);
+
         // Update the map with the copy, so we can use this map for grabbing the appropriate nodes when copying edges.
         node_map[it->second->innovation_number] = copy;
     }
-
-    sort(child_nodes.begin(), child_nodes.end(), sort_RNN_Nodes_by_innovation());
 
     for (auto it = edge_map.begin(); it != edge_map.end(); it++) {
         auto copy = it->second->copy(node_map);
@@ -742,16 +747,17 @@ RNN_Genome *GenomeOperators::ncrossover(vector<RNN_Genome *> &parents) {
         copy->enabled = edge_enabled[it->first];
 
         vector<pair<int32_t, double> > &weights = edge_weights[it->first];
-        if (weights.size() == 1) {
-            copy->weight = weights[0].second;
-        } else {
-            copy->weight = weight_crossover_1d(weights);
+        switch (weights.size()) {
+            case 1:
+                copy->weight = weights[0].second;
+            case 0:
+                break;
+            default:
+                copy->weight = weight_crossover_1d(weights);
         }
 
         child_edges.push_back(copy);
     }
-
-    sort(child_edges.begin(), child_edges.end(), sort_RNN_Edges_by_innovation());
 
     for (auto it = rec_edge_map.begin(); it != rec_edge_map.end(); it++) {
         auto copy = it->second->copy(node_map);
@@ -759,16 +765,17 @@ RNN_Genome *GenomeOperators::ncrossover(vector<RNN_Genome *> &parents) {
         copy->enabled = edge_enabled[it->first];
 
         vector<pair<int32_t, double> > &weights = edge_weights[it->first];
-        if (weights.size() == 1) {
-            copy->weight = weights[0].second;
-        } else {
-            copy->weight = weight_crossover_1d(weights);
+        switch (weights.size()) {
+            case 1:
+                copy->weight = weights[0].second;
+            case 0:
+                break;
+            default:
+                copy->weight = weight_crossover_1d(weights);
         }
 
         child_recurrent_edges.push_back(copy);
     }
-
-    sort(child_recurrent_edges.begin(), child_recurrent_edges.end(), sort_RNN_Recurrent_Edges_by_innovation());
 
     RNN_Genome *child = new RNN_Genome(child_nodes, child_edges, child_recurrent_edges, training_parameters,
                                        weight_initialize, weight_inheritance, mutated_component_weight);

@@ -427,19 +427,25 @@ void RNN_Genome::get_weights(vector<double> &parameters) {
   uint32_t current = 0;
 
   for (uint32_t i = 0; i < nodes.size(); i++) {
+    Log::info("Node = %d\n", nodes[i]->innovation_number);
+    uint32_t current0 = current;
     nodes[i]->get_weights(current, parameters);
+    for (int i = current0; i < current; i++)
+        Log::info("GW node %d %f\n", i, parameters[i]);
     // if (nodes[i]->is_reachable()) nodes[i]->get_weights(current,
     // parameters);
   }
 
   for (uint32_t i = 0; i < edges.size(); i++) {
     parameters[current++] = edges[i]->weight;
+    Log::info("GW edge %d %f\n", current - 1, parameters[current - 1]);
     // if (edges[i]->is_reachable()) parameters[current++] =
     // edges[i]->weight;
   }
 
   for (uint32_t i = 0; i < recurrent_edges.size(); i++) {
     parameters[current++] = recurrent_edges[i]->weight;
+    Log::info("GW recedge %d %f\n", current - 1, parameters[current - 1]);
     // if (recurrent_edges[i]->is_reachable()) parameters[current++] =
     // recurrent_edges[i]->weight;
   }
@@ -2010,6 +2016,7 @@ bool RNN_Genome::attempt_edge_insert(
                WEIGHT_TYPES_STRING[weight_initialize].c_str(),
                WEIGHT_TYPES_STRING[mutated_component_weight].c_str());
   }
+  Log::info("Generated weight = %f\n", e->weight);
 
   Log::info("\tadding edge between nodes %d and %d, new edge weight: %lf\n",
             e->input_innovation_number, e->output_innovation_number, e->weight);
@@ -3599,6 +3606,7 @@ void RNN_Genome::read_from_stream(istream &bin_istream) {
   read_magic();
   
   assign_reachability();
+  set_weights(best_parameters);
 }
 
 void RNN_Genome::write_to_array(char **bytes, uint32_t &length) {

@@ -332,6 +332,14 @@ void Delta_Node::reset(uint32_t _series_length) {
 RNN_Node_Interface *Delta_Node::copy() const {
   Delta_Node *n = new Delta_Node(innovation_number, layer_type, depth);
 
+  // copy Delta_Node weights
+  n->alpha = alpha;
+  n->beta1 = beta1;
+  n->beta2 = beta2;
+  n->v = v;
+  n->r_bias = r_bias;
+  n->z_hat_bias = z_hat_bias;
+
   // copy Delta_Node values
   n->d_alpha = d_alpha;
   n->d_beta1 = d_beta1;
