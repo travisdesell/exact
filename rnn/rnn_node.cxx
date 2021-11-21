@@ -58,10 +58,10 @@ void RNN_Node::input_fired(int time, double incoming_output) {
 
     //Log::trace("node %d - input value[%d]: %lf\n", innovation_number, time, input_values[time]);
 
-    // output_values[time] = tanh(input_values[time] + bias);
-    // ld_output[time] = tanh_derivative(output_values[time]);
-    output_values[time] = input_values[time] + bias;
-    ld_output[time] = output_values[time];
+    output_values[time] = tanh(input_values[time] + bias);
+    ld_output[time] = tanh_derivative(output_values[time]);
+    // output_values[time] = input_values[time] + bias;
+    // ld_output[time] = output_values[time];
 
     //output_values[time] = sigmoid(input_values[time] + bias);
     //ld_output[time] = sigmoid_derivative(output_values[time]);

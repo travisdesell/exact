@@ -497,7 +497,7 @@ void TimeSeriesSet::cut(int32_t start, int32_t stop) {
 }
 
 void TimeSeriesSet::slice(int32_t start, int32_t series_length, TimeSeriesSet* &sub_series) {
-    int32_t stop = start + series_length + 1;
+    int32_t stop = start + series_length;
     if (stop > number_rows) {
         Log::error("Cannot slice time series with start index %d, length %d, and total number of rows in this TimeSeries is %d\n", start, series_length, number_rows);
     }

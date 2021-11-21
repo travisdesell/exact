@@ -126,7 +126,7 @@ void receive_terminate_message(int source) {
     MPI_Recv(terminate_message, 1, MPI_INT, source, TERMINATE_TAG, MPI_COMM_WORLD, &status);
 }
 
-void get_online_data(vector< vector< vector<double> > > &current_inputs, vector< vector< vector<double> > > &current_outputs, vector< vector< vector<double> > > &current_validation_inputs, vector< vector< vector<double> > > &current_validation_outputs) {
+void get_online_data(vector< vector< vector<double> > > &current_inputs, vector< vector< vector<double> > > &current_outputs, vector< vector< vector<double> > > &current_validation_inputs, vector< vector< vector<double> > > &current_validation_outputs, bool data_smooth) {
     current_inputs.clear();
     current_outputs.clear();
     current_validation_inputs.clear();
@@ -147,10 +147,16 @@ void get_online_data(vector< vector< vector<double> > > &current_inputs, vector<
         current_inputs.push_back(training_inputs[data_index[i]]);
         current_outputs.push_back(training_outputs[data_index[i]]);
     }
-
+    // Log::error("data smooth is %d\n", data_smooth);
     for (int i = 0; i < validation_size; i++) {
-        current_validation_inputs.push_back(validation_inputs[current_time_index+i]);
-        current_validation_outputs.push_back(validation_outputs[current_time_index+i]);
+        if (data_smooth) {
+            current_validation_inputs.push_back(validation_inputs[current_time_index+i]);
+            current_validation_outputs.push_back(validation_outputs[current_time_index+i]);
+        } else {
+            current_validation_inputs.push_back(training_inputs[current_time_index+i]);
+            current_validation_outputs.push_back(training_outputs[current_time_index+i]);
+        }
+
     }
     // validation_inputs.push_back(training_inputs[current_time_index+1]);
     // validation_outputs.push_back(training_outputs[current_time_index+1]);
@@ -273,7 +279,7 @@ void master(int max_rank, string transfer_learning_version, int32_t seed_stirs) 
     }
 }
 
-void worker(int rank) {
+void worker(int rank, bool smooth_data) {
     Log::set_id("worker_" + to_string(rank));
 
     while (true) {
@@ -300,9 +306,8 @@ void worker(int rank) {
             vector< vector< vector<double> > > current_validation_inputs;
             vector< vector< vector<double> > > current_validation_outputs;
 
-            get_online_data(current_training_inputs, current_training_outputs, current_validation_inputs, current_validation_outputs);
+            get_online_data(current_training_inputs, current_training_outputs, current_validation_inputs, current_validation_outputs, smooth_data);
             //have each worker write the backproagation to a separate log file
-            // Log::error(" num training sets is %d\n", current_training_inputs.size());
             string log_id = "genome_" + to_string(genome->get_generation_id()) + "_worker_" + to_string(rank);
             Log::set_id(log_id);
             genome->backpropagate_stochastic(current_training_inputs, current_training_outputs, current_validation_inputs, current_validation_outputs, random_sequence_length, sequence_length_lower_bound, sequence_length_upper_bound, noise_std);
@@ -369,12 +374,14 @@ int main(int argc, char** argv) {
     // training data will be smoothed
     time_series_sets->export_training_series(time_offset, training_inputs, training_outputs); 
     // validation data is original without smooth
-    validation_inputs = training_inputs;
-    validation_outputs = training_outputs;
+
      
     // time_series_sets->export_test_series(time_offset, validation_inputs, validation_outputs);
+    bool smooth_data = argument_exists(arguments, "--data_smooth_method");
 
-    if (argument_exists(arguments, "--data_smooth_method")) {
+    if (smooth_data) {
+        validation_inputs = training_inputs;
+        validation_outputs = training_outputs;
         int32_t moving_average_smooth_window = 3;
         get_argument(arguments, "--moving_average_smooth_window", false, moving_average_smooth_window);
 
@@ -547,7 +554,7 @@ int main(int argc, char** argv) {
             Log::error("current time index is %d\n", current_time_index);
             master(max_rank, transfer_learning_version, seed_stirs);           
         } else {
-            worker(rank);
+            worker(rank, smooth_data);
         }
         MPI_Barrier(MPI_COMM_WORLD);
         if (rank == 0) {
@@ -557,13 +564,25 @@ int main(int argc, char** argv) {
             vector< vector< vector<double> > > validation_output;
 
             for (int i = 0; i < validation_size; i++) {
-                validation_input.push_back(validation_inputs[current_time_index+i]);
-                validation_output.push_back(validation_outputs[current_time_index+i]);
+                if (smooth_data) {
+                    validation_input.push_back(validation_inputs[current_time_index+i]);
+                    validation_output.push_back(validation_outputs[current_time_index+i]);
+                } else {
+                    validation_input.push_back(training_inputs[current_time_index+i]);
+                    validation_output.push_back(training_outputs[current_time_index+i]);
+                }
+
             }
             // validation_input.push_back(training_inputs[current_time_index+1]);
             // validation_output.push_back(training_outputs[current_time_index+1]);
-            test_input.push_back(validation_inputs[current_time_index + validation_size]);
-            test_output.push_back(validation_outputs[current_time_index + validation_size]);
+            if (smooth_data) {
+                test_input.push_back(validation_inputs[current_time_index + validation_size]);
+                test_output.push_back(validation_outputs[current_time_index + validation_size]);
+            } else {
+                test_input.push_back(training_inputs[current_time_index + validation_size]);
+                test_output.push_back(training_outputs[current_time_index + validation_size]);
+            }
+
             string filename = output_directory + "/generation_" + std::to_string(current_generation);
             examm->finalize_generation(filename, validation_input, validation_output, test_input, test_output, time_series_sets);
             // best_genome->write_predictions(output_directory, "generation_"  std::to_string(current_generation), test_input, test_output, time_series_sets );
