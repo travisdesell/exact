@@ -25,7 +25,7 @@ using std::unordered_map;
 
 #include "common/log.hxx"
 
-Population::Population(int32_t _id, int32_t _max_size) :  id(_id), max_size(_max_size) {
+Population::Population(int32_t _id, int32_t _max_size, int32_t _island_id) :  id(_id), max_size(_max_size), island_id(_island_id) {
 }
 
 RNN_Genome* Population::get_best_genome() {
@@ -93,21 +93,14 @@ void Population::copy_two_random_genomes(uniform_real_distribution<double> &rng_
 //pointer
 int32_t Population::insert_genome(RNN_Genome *genome) {
     int initial_size = genomes.size();
-    int32_t genome_group = genome->get_group_id();
-    if (genome_group != id) {
-        Log::fatal("genome group id is %d, does not belong to this population %d\n", genome_group, id);
-        exit(1);
-    }
-
+    Log::info("inserting genomes to population %d, genome size is %d\n", id, genomes.size());
     Log::debug("getting fitness of genome copy\n");
 
     double new_fitness = genome->get_fitness();
 
-    Log::info("inserting genome with fitness: %s to population \n", parse_fitness(genome->get_fitness()).c_str());
-
-    //discard the genome if the population is full and it's fitness is worse than the worst in thte population
+    //discard the genome if the island is full and it's fitness is worse than the worst in thte population
     if (is_full() && new_fitness > get_worst_fitness()) {
-        Log::info("population %d, ignoring genome, fitness: %lf > worst fitness: %lf\n", id, new_fitness, genomes.back()->get_fitness());
+        Log::info("ignoring genome, fitness: %lf > worst for island[%d] fitness: %lf\n", new_fitness, id, genomes.back()->get_fitness());
         // do_population_check(__LINE__, initial_size);
         return false;
     }
@@ -126,7 +119,7 @@ int32_t Population::insert_genome(RNN_Genome *genome) {
             if ((*potential_match)->equals(genome)) {
                 if ((*potential_match)->get_fitness() > new_fitness) {
                     Log::info("REPLACING DUPLICATE GENOME, fitness of genome in search: %s, new fitness: %s\n", parse_fitness((*potential_match)->get_fitness()).c_str(), parse_fitness(genome->get_fitness()).c_str());
-                    //we have an exact match for this genome in the population and its fitness is worse
+                    //we have an exact match for this genome in the island and its fitness is worse
                     //than the genome we're trying to remove, so remove the duplicate it from the genomes
                     //as well from the potential matches vector
 
@@ -142,7 +135,7 @@ int32_t Population::insert_genome(RNN_Genome *genome) {
                     }
 
                     if (!found) {
-                        Log::fatal("ERROR: could not find duplicate genome even though its structural hash was in the population, this should never happen!\n");
+                        Log::fatal("ERROR: could not find duplicate genome even though its structural hash was in the island, this should never happen!\n");
                         exit(1);
                     }
 
@@ -178,7 +171,7 @@ int32_t Population::insert_genome(RNN_Genome *genome) {
                     }
 
                 } else {
-                    Log::info("population already contains a duplicate genome with a better fitness! not inserting.\n");
+                    Log::info("island already contains a duplicate genome with a better fitness! not inserting.\n");
                     // do_population_check(__LINE__, initial_size);
                     return -1;
                 }
@@ -196,7 +189,7 @@ int32_t Population::insert_genome(RNN_Genome *genome) {
         copy->set_weights(best);
     }
     copy -> set_generation_id (genome -> get_generation_id());
-    Log::info("created copy to insert to population: %d\n", copy->get_group_id());
+    Log::info("created copy to insert to island: %d\n", copy->get_group_id());
     auto index_iterator = upper_bound(genomes.begin(), genomes.end(), copy, sort_genomes_by_fitness());
     int32_t insert_index = index_iterator - genomes.begin();
     Log::info("inserting genome at index: %d\n", insert_index);
@@ -220,9 +213,9 @@ int32_t Population::insert_genome(RNN_Genome *genome) {
     Log::info("adding to structure_map[%s] : %p\n", structural_hash.c_str(), &copy);
 
     if (insert_index == 0) {
-        //this was a new best genome for this population
+        //this was a new best genome for this island
 
-        Log::info("new best fitness for population!\n");
+        Log::info("new best fitness for island: %d!\n", id);
 
         if (genome->get_fitness() != EXAMM_MAX_DOUBLE) {
             //need to set the weights for non-initial genomes so we
@@ -232,11 +225,11 @@ int32_t Population::insert_genome(RNN_Genome *genome) {
         }
     }
 
-    Log::info("genomes.size(): %d, max_size: %d\n", genomes.size(), max_size);
+    // Log::info("genomes.size(): %d, max_size: %d, status: %d\n", genomes.size(), max_size, status);
 
     if (genomes.size() > max_size) {
-        //population was full before insert so now we need to 
-        //delete the worst genome in the population.
+        //island was full before insert so now we need to 
+        //delete the worst genome in the island.
 
         Log::debug("deleting worst genome\n");
         RNN_Genome *worst = genomes.back();
@@ -281,8 +274,8 @@ int32_t Population::insert_genome(RNN_Genome *genome) {
     if (insert_index >= max_size) {
         //technically we shouldn't get here but it might happen
         //if the genome's fitness == the worst fitness in the
-        //population. So in this case it was not inserted to the
-        //population and return -1
+        //island. So in this case it was not inserted to the
+        //island and return -1
         // do_population_check(__LINE__, initial_size);
         return -1;
     } else {
@@ -335,17 +328,21 @@ void Population::sort_population(string sort_by) {
 
 }
 
-void Population::write_prediction(string filename, const vector< vector< vector<double> > > &test_input, const vector< vector< vector<double> > > &test_output, TimeSeriesSets *time_series_sets) {
+void Population::write_prediction(string filename, const vector< vector< vector<double> > > &test_input, const vector< vector< vector<double> > > &test_output) {
     vector <vector <vector <vector<double>>>> predictions; // <genome <input sets < output parameter <value>>>>
     int32_t num_genomes = genomes.size();
     int32_t num_outputs = genomes[0]->get_number_outputs();
     vector <string> input_parameter_names = genomes[0]->get_input_parameter_names();
     vector <string> output_parameter_names = genomes[0]->get_output_parameter_names();
-
     for (int i = 0; i < num_genomes; i++) {
-        predictions.push_back(genomes[i]->get_predictions(genomes[i]->get_best_parameters(), test_input, test_output));
+        vector<double> parameters = genomes[i]->get_best_parameters();
+        if (parameters.size() <= 0) {
+            Log::error("Genome %d best parameter size is %d\n", genomes[i]->get_generation_id(), parameters.size());
+        }
+
+        predictions.push_back(genomes[i]->get_predictions(parameters, test_input, test_output));
     }
-    ofstream outfile(filename + ".csv");
+    ofstream outfile(filename + "_island_" + std::to_string(island_id) + ".csv");
     outfile << "#";
 
     // ofstream outfile_original(filename + "_original.csv");

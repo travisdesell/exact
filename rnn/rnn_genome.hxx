@@ -31,6 +31,8 @@ using std::vector;
 
 //mysql can't handle the max float value for some reason
 #define EXAMM_MAX_DOUBLE 10000000
+#define GENERATED 10
+#define ELITE 11
 
 string parse_fitness(double fitness);
 
@@ -38,6 +40,7 @@ class RNN_Genome {
     private:
         int32_t generation_id;
         int32_t group_id;
+        int32_t genome_type;
 
         int32_t bp_iterations;
         double learning_rate;
@@ -151,6 +154,8 @@ class RNN_Genome {
 
         int32_t get_group_id() const;
         void set_group_id(int32_t _group_id);
+        void set_genome_type(int32_t type);
+        int32_t get_genome_type();
 
 
         void set_bp_iterations(int32_t _bp_iterations, int32_t epochs_acc_freq);
@@ -314,6 +319,7 @@ class RNN_Genome {
         friend class NeatSpeciationStrategy;
         friend class OneNetSpeciationStrategy;
         friend class RecDepthFrequencyTable;
+        friend class OneNetIslandSpeciationStrategy;
 };
 
 struct sort_genomes_by_fitness {

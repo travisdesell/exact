@@ -1,5 +1,5 @@
-#ifndef EXAMM_ONENET_STRATEGY_HXX
-#define EXAMM_ONENET_STRATEGY_HXX
+#ifndef EXAMM_ONENET_POPULATION_STRATEGY_HXX
+#define EXAMM_ONENET_POPULATION_STRATEGY_HXX
 
 #include <algorithm>
 using std::sort;
@@ -23,6 +23,7 @@ class Population {
     private:
         int32_t id;
         int32_t max_size; /**< The maximum number of genomes in the population. */
+        int32_t island_id;
         /**
          * The genomes on this population, stored in sorted order best (front) to worst (back).
          */
@@ -40,7 +41,7 @@ class Population {
          *
          *  \param max_size is the maximum number of genomes in the population.
          */
-        Population(int32_t id, int32_t max_size);
+        Population(int32_t _id, int32_t _max_size, int32_t _island_id);
 
         /**
          * Returns the fitness of the best genome in the population
@@ -142,7 +143,7 @@ class Population {
 
         void sort_population(string sort_by);
 
-        void write_prediction(string filename, const vector< vector< vector<double> > > &test_input, const vector< vector< vector<double> > > &test_output, TimeSeriesSets *time_series_sets);
+        void write_prediction(string filename, const vector< vector< vector<double> > > &test_input, const vector< vector< vector<double> > > &test_output);
 
 };
 

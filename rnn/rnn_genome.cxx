@@ -64,6 +64,9 @@ using std::vector;
 #include "mgu_node.hxx"
 #include "rnn_genome.hxx"
 
+
+
+
 string parse_fitness(double fitness) {
     if (fitness == EXAMM_MAX_DOUBLE) {
         return "UNEVAL";
@@ -200,6 +203,7 @@ RNN_Genome* RNN_Genome::copy() {
     other->input_parameter_names = input_parameter_names;
     other->output_parameter_names = output_parameter_names;
 
+    other->genome_type = genome_type;
     other->normalize_type = normalize_type;
     other->normalize_mins = normalize_mins;
     other->normalize_maxs = normalize_maxs;
@@ -1448,7 +1452,8 @@ double RNN_Genome::get_mae(const vector<double> &parameters, const vector< vecto
 
 vector< vector< vector<double> > > RNN_Genome::get_predictions(const vector<double> &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs) {
     RNN *rnn = get_rnn();
-    rnn->set_weights(parameters);
+    if (parameters.size() == 0) rnn->set_weights(initial_parameters);
+    else rnn->set_weights(parameters);
 
     vector< vector< vector<double> > > all_results;
 
@@ -1462,7 +1467,14 @@ vector< vector< vector<double> > > RNN_Genome::get_predictions(const vector<doub
 }
 
 void RNN_Genome::evaluate_online(const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &output) {
-    online_validation_mse = get_mse(best_parameters, inputs, output);
+
+    if (best_parameters.size() > 0) {
+        online_validation_mse = get_mse(best_parameters, inputs, output);
+    } else {
+        // Log::error("initial parameter size %d\n", initial_parameters.size());
+        online_validation_mse = get_mse(initial_parameters, inputs, output);
+    }   
+
 }
 
 double RNN_Genome::get_online_validation_mse() {
@@ -3225,6 +3237,7 @@ void RNN_Genome::read_from_stream(istream &bin_istream) {
     bin_istream.read((char*)&adapt_learning_rate, sizeof(bool));
     bin_istream.read((char*)&use_nesterov_momentum, sizeof(bool));
     bin_istream.read((char*)&use_reset_weights, sizeof(bool));
+    bin_istream.read((char*)&genome_type, sizeof(int32_t));
 
     bin_istream.read((char*)&use_high_norm, sizeof(bool));
     bin_istream.read((char*)&high_threshold, sizeof(double));
@@ -3483,6 +3496,7 @@ void RNN_Genome::write_to_stream(ostream &bin_ostream) {
     bin_ostream.write((char*)&adapt_learning_rate, sizeof(bool));
     bin_ostream.write((char*)&use_nesterov_momentum, sizeof(bool));
     bin_ostream.write((char*)&use_reset_weights, sizeof(bool));
+    bin_ostream.write((char*)&genome_type, sizeof(int32_t));
 
     bin_ostream.write((char*)&use_high_norm, sizeof(bool));
     bin_ostream.write((char*)&high_threshold, sizeof(double));
@@ -4098,4 +4112,12 @@ void RNN_Genome::get_mean_std(vector< vector< double > > &input_data, vector< do
         mean.push_back(mean_temp);
         std.push_back(std_temp);
     }
+}
+
+void RNN_Genome::set_genome_type(int32_t type) {
+    genome_type = type;
+}
+
+int32_t RNN_Genome::get_genome_type() {
+    return genome_type;
 }

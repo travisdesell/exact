@@ -44,9 +44,9 @@ OneNetSpeciationStrategy::OneNetSpeciationStrategy(
 
     crossover_rate += mutation_rate;
 
-    Elite_population = new Population(ELITE, elite_population_size);
-    Trained_population = new Population(TRAINED, generation_size);
-    Generated_population = new Population(GENERATED ,generation_size);
+    Elite_population = new Population(ELITE, elite_population_size,0);
+    // Trained_population = new Population(TRAINED, generation_size);
+    Generated_population = new Population(GENERATED ,generation_size,0);
     Log::error("ONENET: generation size is %d\n", generation_size);
 
     //set the generation id for the initial minimal genome
@@ -119,8 +119,8 @@ int32_t OneNetSpeciationStrategy::insert_genome(RNN_Genome* genome) {
 
     if (population == GENERATED) {
         insert_position = Generated_population->insert_genome(genome);
-    } else if (population == TRAINED) {
-        insert_position = Trained_population->insert_genome(genome);
+    // } else if (population == TRAINED) {
+        // insert_position = Trained_population->insert_genome(genome);
     } else if (population == ELITE) {
         insert_position = Elite_population->insert_genome(genome);
     } else {
@@ -339,7 +339,7 @@ void OneNetSpeciationStrategy::finalize_generation(string filename, const vector
     evaluate_elite_population(validation_input, validation_output);
     select_elite_population();
     global_best_genome = Elite_population->get_best_genome();
-    Elite_population->write_prediction(filename, test_input, test_output, time_series_sets);
+    Elite_population->write_prediction(filename, test_input, test_output);
     // make_online_predictions(test_input, test_output);
     generation ++;
     // return global_best_genome;

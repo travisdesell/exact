@@ -45,9 +45,7 @@ class OneNetSpeciationStrategy : public SpeciationStrategy {
     public:
         //static void register_command_line_arguments();
         //static OneNetSpeciationStrategy* generate_from_command_line();
-        const static int32_t GENERATED = 0;
-        const static int32_t TRAINED = 1;
-        const static int32_t ELITE = 2;
+
         /**
          * Creates a new OneNetSpeciationStrategy.
          *

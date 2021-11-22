@@ -34,6 +34,7 @@ using std::to_string;
 #include "island_speciation_strategy.hxx"
 #include "neat_speciation_strategy.hxx"
 #include "onenet_speciation_strategy.hxx"
+#include "onenet_island_speciation_strategy.hxx"
 
 //INFO: ADDED BY ABDELRAHMAN TO USE FOR TRANSFER LEARNING
 #include "rnn.hxx"
@@ -271,11 +272,14 @@ EXAMM::EXAMM(
         // no transfer learning for NEAT
         speciation_strategy = new NeatSpeciationStrategy(mutation_rate, intra_island_co_rate, inter_island_co_rate, seed_genome, species_threshold, fitness_threshold, neat_c1, neat_c2, neat_c3, generator);
     } else if (speciation_method.compare("onenet") == 0) {
-        // no transfer learning for NEAT
         Log::error("Speciation strategy: onenet \n");
         speciation_strategy = new OneNetSpeciationStrategy(elite_population_size, max_genomes, 0.5, 0.5,
         seed_genome, seed_genome_was_minimal);
-    } 
+    } else if (speciation_method.compare("onenetIsland") == 0) {
+        Log::error("Speciation strategy: onenet island \n");
+        speciation_strategy = new OneNetIslandSpeciationStrategy(number_islands, population_size,elite_population_size, mutation_rate, intra_island_co_rate, inter_island_co_rate,
+                    seed_genome, island_ranking_method, repopulation_method, extinction_event_generation_number, repopulation_mutations, islands_to_exterminate, max_genomes, repeat_extinction, seed_genome_was_minimal);
+    }
 
     if (output_directory != "") {
         mkpath(output_directory.c_str(), 0777);
@@ -343,11 +347,11 @@ EXAMM::EXAMM(
     startClock = std::chrono::system_clock::now();
 }
 
-void EXAMM::print() {
-    if (Log::at_level(Log::INFO)) {
-        speciation_strategy->print();
-    }
-}
+// void EXAMM::print() {
+//     if (Log::at_level(Log::INFO)) {
+//         speciation_strategy->print();
+//     }
+// }
 
 long EXAMM::update_log() {
     if (log_file != NULL) {
@@ -522,8 +526,10 @@ bool EXAMM::insert_genome(RNN_Genome* genome) {
 }
 
 RNN_Genome* EXAMM::generate_genome(int32_t seed_genome_stirs) {
-    if (speciation_method.compare("onenet") != 0 && speciation_strategy->get_evaluated_genomes() > max_genomes) return NULL; // never return NULL genome to OneNet speciation Strategy
-    
+    if (speciation_method.compare("onenet") != 0 && speciation_method.compare("onenetIsland") != 0) {
+        if (speciation_strategy->get_evaluated_genomes() > max_genomes) return NULL; // never return NULL genome to OneNet speciation Strategy
+    }
+
     function<void (int32_t, RNN_Genome*)> mutate_function =
         [=](int32_t max_mutations, RNN_Genome *genome) {
             this->mutate(max_mutations, genome);
