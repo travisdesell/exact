@@ -26,6 +26,8 @@ class OneNetIslandSpeciationStrategy : public SpeciationStrategy {
 
         int32_t elite_genome_size;
 
+        int32_t current_generation;
+
         double mutation_rate; /**< How frequently to do mutations. Note that mutation_rate + intra_island_crossover_rate + inter_island_crossover_rate should equal 1, if not they will be scaled down such that they do. */
         double intra_island_crossover_rate; /**< How frequently to do intra-island crossovers. Note that mutation_rate + intra_island_crossover_rate + inter_island_crossover_rate should equal 1, if not they will be scaled down such that they do. */
         double inter_island_crossover_rate; /**< How frequently to do inter-island crossovers. Note that mutation_rate + intra_island_crossover_rate + inter_island_crossover_rate should equal 1, if not they will be scaled down such that they do. */

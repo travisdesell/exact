@@ -69,6 +69,7 @@ OneNetIslandSpeciationStrategy::OneNetIslandSpeciationStrategy(
     seed_genome->set_generation_id(generated_genomes);
     generated_genomes++;
     global_best_genome = NULL;
+    current_generation = 1;
 }
 
 /**
@@ -190,28 +191,6 @@ bool OneNetIslandSpeciationStrategy::islands_full() const {
 //this will insert a COPY, original needs to be deleted
 //returns 0 if a new global best, < 0 if not inserted, > 0 otherwise
 int32_t OneNetIslandSpeciationStrategy::insert_genome(RNN_Genome* genome) {
-    Log::debug("inserting genome!\n");
-    if (extinction_event_generation_number != 0){
-        if(evaluated_genomes > 1 && evaluated_genomes % extinction_event_generation_number == 0 && max_genomes - evaluated_genomes >= extinction_event_generation_number) {
-            if (island_ranking_method.compare("EraseWorst") == 0 || island_ranking_method.compare("") == 0){
-                global_best_genome = get_best_genome()->copy();
-                vector<int32_t> rank = rank_islands();
-                for (int32_t i = 0; i < islands_to_exterminate; i++){
-                    if (rank[i] >= 0){
-                        Log::info("found island: %d is the worst island \n",rank[0]);
-                        islands[rank[i]]->erase_island();
-                        // islands[rank[i]]->erase_structure_map();
-                        islands[rank[i]]->set_status(OneNetIsland::REPOPULATING);
-                    }
-                    else Log::error("Didn't find the worst island!");
-                    // set this so the island would not be re-killed in 5 rounds
-                    if (!repeat_extinction) {
-                        set_erased_islands_status();
-                    }
-                }
-            }
-        }
-    }
 
     bool new_global_best = false;
     if (global_best_genome == NULL) {
@@ -666,16 +645,40 @@ void OneNetIslandSpeciationStrategy::set_erased_islands_status() {
 void OneNetIslandSpeciationStrategy::finalize_generation(string filename, const vector< vector< vector<double> > > &validation_input, const vector< vector< vector<double> > > &validation_output, const vector< vector< vector<double> > > &test_input, const vector< vector< vector<double> > > &test_output, TimeSeriesSets *time_series_sets, string result_dir) {
     // Log::error("finalizing the generation\n");
     // Log::error("Generated population size %d, trained population size %d\n", Generated_population->get_genomes().size(), Trained_population->get_genomes().size());
+
     evaluate_elite_population(validation_input, validation_output);
     select_elite_population();
     global_best_genome = get_best_genome();
     for (int i = 0; i < number_of_islands; i++) {
         islands[i]->write_prediction(filename, test_input, test_output);
     }
+
+    if (extinction_event_generation_number != 0){
+        if(current_generation % extinction_event_generation_number == 0 ) {
+            if (island_ranking_method.compare("EraseWorst") == 0 || island_ranking_method.compare("") == 0){
+                // global_best_genome = get_best_genome()->copy();
+                vector<int32_t> rank = rank_islands();
+                for (int32_t i = 0; i < islands_to_exterminate; i++){
+                    if (rank[i] >= 0){
+                        Log::error("found island: %d is the worst island \n",rank[0]);
+                        islands[rank[i]]->erase_island();
+                        // islands[rank[i]]->erase_structure_map();
+                        islands[rank[i]]->set_status(OneNetIsland::REPOPULATING);
+                    }
+                    else Log::error("Didn't find the worst island!");
+                    // set this so the island would not be re-killed in 5 rounds
+                    if (!repeat_extinction) {
+                        set_erased_islands_status();
+                    }
+                }
+            }
+        }
+    }
     // Elite_population->write_prediction(filename, test_input, test_output, time_series_sets);
     // make_online_predictions(test_input, test_output);
     // generation ++;
     // return global_best_genome;
+    current_generation ++;
 }
 
 void OneNetIslandSpeciationStrategy::evaluate_elite_population(const vector< vector< vector<double> > > &validation_input, const vector< vector< vector<double> > > &validation_output) {
