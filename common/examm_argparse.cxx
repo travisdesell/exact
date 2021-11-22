@@ -3,7 +3,7 @@
 #endif
 
 #ifndef EXAMM_NLP
-    
+
     TimeSeriesSets *time_series_sets = TimeSeriesSets::generate_from_arguments(arguments);
     int32_t time_offset = time_offset;
     get_argument(arguments, "--time_offset", true, time_offset);
@@ -36,7 +36,7 @@
     // This is actually n workers + 1, since master is counted.
     // This function gets the n of processes in total
     MPI_Comm_size(MPI_COMM_WORLD, &number_workers);
-    //number_workers -= 1;
+    // number_workers -= 1;
 
 #endif
 
@@ -62,7 +62,7 @@
 
     int32_t extinction_event_generation_number = max_genomes + 1;
     get_argument(arguments, "--extinction_event_generation_number", false, extinction_event_generation_number);
-  
+
     int32_t islands_to_exterminate = 0;
     get_argument(arguments, "--islands_to_exterminate", false, islands_to_exterminate);
 
@@ -77,7 +77,7 @@
 
     double species_threshold = 0.0;
     get_argument(arguments, "--species_threshold", false, species_threshold);
-    
+
     double fitness_threshold = 100;
     get_argument(arguments, "--fitness_threshold", false, fitness_threshold);
 
@@ -108,7 +108,6 @@
     double high_threshold = 1.0;
     bool use_high_threshold = !argument_exists(arguments, "--no_high_threshold");
     get_argument(arguments, "--high_threshold", false, high_threshold);
-    
 
     double low_threshold = 0.05;
     bool use_low_threshold = !argument_exists(arguments, "--no_high_threshold");
@@ -174,10 +173,33 @@
     random_sequence_length = argument_exists(arguments, "--random_sequence_length");
     get_argument(arguments, "--sequence_length_lower_bound", false, sequence_length_lower_bound);
     get_argument(arguments, "--sequence_length_upper_bound", false, sequence_length_upper_bound);
-    
+
     double mu = 0.9;
     get_argument(arguments, "--mu", false, mu);
     bool use_nesterov_momentum = !argument_exists(arguments, "--no_nesterov_momentum");
+
+    int32_t n_parents_intra = 2;
+    int32_t n_parents_inter = 2;
+    get_argument(arguments, "--number_intra_crossover_parents", false, n_parents_intra);
+    get_argument(arguments, "--number_inter_crossover_parents", false, n_parents_inter);
+    if (n_parents_intra > population_size) {
+        Log::fatal("Population size must >= n_parents_intra\n");
+        exit(1);
+    }
+    if (n_parents_inter > population_size + 1) {
+        Log::fatal("n_parents_inter must be at most equal to population_size + 1\n");
+        exit(1);
+    }
+
+    if (n_parents_inter < 2) {
+        Log::fatal("n_parents_inter must be at least 2\n");
+        exit(1);
+    }
+
+    if (n_parents_intra < 2) {
+        Log::fatal("n_parents_intra must be at least 2\n");
+        exit(1);
+    }
 
 #ifdef EXAMM_MULTI
     uint32_t repeats;
@@ -207,6 +229,8 @@
             0,
             number_inputs,
             number_outputs,
+            n_parents_intra,
+            n_parents_inter,
             0, 0,
             min_recurrent_depth,
             max_recurrent_depth,
@@ -221,7 +245,7 @@
                     population_size,
                     number_islands,
                     max_genomes,
-                    extinction_event_generation_number, 
+                    extinction_event_generation_number,
                     islands_to_exterminate, 
                     island_ranking_method,
                     repopulation_method, 
@@ -259,6 +283,8 @@
                 worker_id,
                 number_inputs,
                 number_outputs,
+                n_parents_intra,
+                n_parents_inter,
                 edge_innovation_count, node_innovation_count,
                 min_recurrent_depth,
                 max_recurrent_depth,
@@ -270,4 +296,3 @@
                 possible_node_types);
             return go;
         };
-    Log::info("woah\n");

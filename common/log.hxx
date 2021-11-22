@@ -21,6 +21,9 @@ using std::string;
 #include <thread>
 using std::thread;
 
+#include <vector>
+using std::vector;
+
 class LogFile {
     private:
         FILE* file;
