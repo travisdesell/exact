@@ -4,13 +4,12 @@
 
 class CrossoverWork : public Work {
     private: 
-        RNN_Genome *more_fit;
-        RNN_Genome *less_fit;
+        vector<RNN_Genome *> parents;
     
     public:
         static constexpr int32_t class_id = 1;
-        
-        CrossoverWork(RNN_Genome *more_fit, RNN_Genome *less_fit, int32_t generation_id=-1, int32_t generation_island=-1);
+       
+        CrossoverWork(vector<RNN_Genome *> &parents, int32_t generation_id=-1, int32_t generation_island=-1);
         CrossoverWork(istream &bin_istream);
         ~CrossoverWork();
 

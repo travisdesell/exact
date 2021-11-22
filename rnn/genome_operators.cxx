@@ -1,17 +1,21 @@
 #include "genome_operators.hxx"
 
-#include <unordered_map>
 #include <algorithm>
+#include <unordered_map>
 #include <utility>
 
 GenomeOperators::GenomeOperators(int32_t _number_workers, int32_t _worker_id, int32_t _number_inputs,
-                                 int32_t _number_outputs, int32_t _edge_innovation_count,
-                                 int32_t _node_innovation_count, int32_t _min_recurrent_depth,
-                                 int32_t _max_recurrent_depth, WeightType _weight_initialize,
-                                 WeightType _weight_inheritance, WeightType _mutated_component_weight,
-                                 DatasetMeta _dataset_meta, TrainingParameters _training_parameters,
-                                 vector<string> _possible_node_type_strings)
-    : dataset_meta(_dataset_meta),
+                                 int32_t _number_outputs, int32_t n_parents_intra, int32_t n_parents_inter,
+                                 int32_t _edge_innovation_count, int32_t _node_innovation_count,
+                                 int32_t _min_recurrent_depth, int32_t _max_recurrent_depth,
+                                 WeightType _weight_initialize, WeightType _weight_inheritance,
+                                 WeightType _mutated_component_weight, DatasetMeta _dataset_meta,
+                                 TrainingParameters _training_parameters, vector<string> _possible_node_type_strings)
+    : number_inputs(_number_inputs),
+      number_outputs(_number_outputs),
+      n_parents_intra(n_parents_intra),
+      n_parents_inter(n_parents_inter),
+      dataset_meta(_dataset_meta),
       weight_initialize(_weight_initialize),
       weight_inheritance(_weight_inheritance),
       mutated_component_weight(_mutated_component_weight),
@@ -57,9 +61,6 @@ GenomeOperators::GenomeOperators(int32_t _number_workers, int32_t _worker_id, in
 
     recurrent_depth_dist = uniform_int_distribution(_min_recurrent_depth, _max_recurrent_depth);
     node_index_dist = uniform_int_distribution(0, (int)possible_node_types.size() - 1);
-
-    this->number_inputs = _number_inputs;
-    this->number_outputs = _number_outputs;
 }
 
 int32_t GenomeOperators::get_next_node_innovation_number() { return node_innovation_count += number_workers; }
@@ -99,6 +100,14 @@ void GenomeOperators::set_possible_node_types(vector<string> &possible_node_type
             "node type specified");
         exit(1);
     }
+}
+
+int32_t GenomeOperators::get_n_parents_inter() {
+    return n_parents_inter;
+}
+
+int32_t GenomeOperators::get_n_parents_intra() {
+    return n_parents_intra;
 }
 
 int GenomeOperators::get_random_node_type() { return GenomeOperators::possible_node_types[node_index_dist(generator)]; }
@@ -589,7 +598,6 @@ RNN_Genome *GenomeOperators::ncrossover(vector<RNN_Genome *> &parents) {
     unordered_map<int32_t, vector<pair<int32_t, double> > > edge_weights(max(max_rec_edge_in, max_edge_in) + 1);
     unordered_map<int32_t, vector<pair<int32_t, vector<double> > > > node_weights(max_node_in + 1);
 
-
     // Maps innovation number to edge. This will be populated with every edge that appears in the parents,
     // we need a reference to it so we can insert them after we figure out which edges should be enabled.
     unordered_map<int32_t, RNN_Edge *> edge_map(max_edge_in + 1);
@@ -603,19 +611,18 @@ RNN_Genome *GenomeOperators::ncrossover(vector<RNN_Genome *> &parents) {
     for (auto i = 0; i < parents.size(); i++) {
         RNN_Genome *p = parents[i];
 
-        double probability = 1.0 / ((double) (1 << i));
+        double probability = 1.0 / ((double)(1 << i));
 
         for (auto j = 0; j < p->nodes.size(); j++) {
             auto node = p->nodes[j];
             // Copy of the best node
-            if (node_map.count(node->innovation_number) == 0)
-                node_map[node->innovation_number] = node;
+            if (node_map.count(node->innovation_number) == 0) node_map[node->innovation_number] = node;
 
             if (node->enabled) {
                 // Only consider weights from enabled nodes.
                 vector<double> weights(node->get_number_weights());
                 node->get_weights(weights);
-                node_weights[node->innovation_number].push_back({ (int32_t) i, move(weights) });
+                node_weights[node->innovation_number].push_back({(int32_t)i, move(weights)});
                 if (!node_enabled[node->innovation_number] && rng_0_1(generator) < probability)
                     node_enabled[node->innovation_number] = true;
             }
@@ -624,12 +631,11 @@ RNN_Genome *GenomeOperators::ncrossover(vector<RNN_Genome *> &parents) {
         for (auto j = 0; j < p->edges.size(); j++) {
             auto e = p->edges[j];
 
-            if (edge_map.count(e->innovation_number) == 0)
-                edge_map[e->innovation_number] = e;
+            if (edge_map.count(e->innovation_number) == 0) edge_map[e->innovation_number] = e;
 
             if (e->enabled) {
                 if (e->input_node->enabled && e->output_node->enabled)
-                    edge_weights[e->innovation_number].push_back({ (int32_t) i, e->weight });
+                    edge_weights[e->innovation_number].push_back({(int32_t)i, e->weight});
 
                 if (!edge_enabled[e->innovation_number] && rng_0_1(generator) < probability)
                     edge_enabled[e->innovation_number] = true;
@@ -639,12 +645,11 @@ RNN_Genome *GenomeOperators::ncrossover(vector<RNN_Genome *> &parents) {
         for (auto j = 0; j < p->recurrent_edges.size(); j++) {
             auto e = p->recurrent_edges[j];
 
-            if (rec_edge_map.count(e->innovation_number) == 0)
-                rec_edge_map[e->innovation_number] = e;
+            if (rec_edge_map.count(e->innovation_number) == 0) rec_edge_map[e->innovation_number] = e;
 
             if (e->enabled) {
                 if (e->input_node->enabled && e->output_node->enabled)
-                    edge_weights[e->innovation_number].push_back({ (int32_t) i, e->weight });
+                    edge_weights[e->innovation_number].push_back({(int32_t)i, e->weight});
 
                 if (!edge_enabled[e->innovation_number] && rng_0_1(generator) < probability)
                     edge_enabled[e->innovation_number] = true;
@@ -652,16 +657,14 @@ RNN_Genome *GenomeOperators::ncrossover(vector<RNN_Genome *> &parents) {
         }
     }
 
-
     auto n_parents = parents.size();
     // Get appropriate mass (weight in weighted sum) for the given position.
     // The position corresponds to the index of the parent a particular weight comes from
-    auto get_centroid_mass = [n_parents](int32_t position) {
-        return 1.0;
-    };
+    auto get_centroid_mass = [n_parents](int32_t position) { return 1.0; };
 
     // Define crossover function for weights. Based on simplex method with configurable get_centroid_mass function.
-    // These functions are basically taking a weighted sum to calculate the centroid. The weight comes from get_centroid_mass
+    // These functions are basically taking a weighted sum to calculate the centroid. The weight comes from
+    // get_centroid_mass
     auto weight_crossover_1d = [this, get_centroid_mass](vector<pair<int32_t, double> > &weights) {
         // Sum of first n - 1 elements (weights length == n)
         double centroid_sum = 0.0;
@@ -676,11 +679,12 @@ RNN_Genome *GenomeOperators::ncrossover(vector<RNN_Genome *> &parents) {
         double centroid = centroid_sum / centroid_mass_sum;
         double crossover_weight = rng_crossover_weight(generator);
 
-        double weight =  crossover_weight * (centroid - weights.back().second) + centroid;
+        double weight = crossover_weight * (centroid - weights.back().second) + centroid;
         return weight;
     };
 
-    auto weight_crossover_2d = [this, get_centroid_mass](vector<pair<int32_t, vector<double> > > &weights, vector<double>& new_weights) {
+    auto weight_crossover_2d = [this, get_centroid_mass](vector<pair<int32_t, vector<double> > > &weights,
+                                                         vector<double> &new_weights) {
         new_weights.clear();
 
         auto n_weights = weights[0].second.size();

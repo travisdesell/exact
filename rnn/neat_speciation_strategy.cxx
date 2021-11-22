@@ -290,9 +290,9 @@ Work *NeatSpeciationStrategy::generate_work_for_species(
     RNN_Genome *parent1, *parent2;
     currentSpecies->copy_two_random_genomes(rng_0_1, generator, &parent1,
                                             &parent2);
-
+    vector<RNN_Genome *> parents = {parent1, parent2};
     // CrossoverWork will delete parent1 and parent2 when the time comes.
-    return new CrossoverWork(parent1, parent2);
+    return new CrossoverWork(parents);
   } else {
     // inter-island crossover
     Log::info("performing inter-species crossover\n");
@@ -318,7 +318,8 @@ Work *NeatSpeciationStrategy::generate_work_for_species(
     }
 
     // CrossoverWork will delete parent1 and parent2 when the time comes.
-    return new CrossoverWork(parent1, parent2);
+    vector<RNN_Genome *> parents = {parent1, parent2};
+    return new CrossoverWork(parents);
   }
 }
 

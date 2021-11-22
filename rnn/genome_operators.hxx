@@ -2,8 +2,8 @@
 #define GENOME_OPERATORS_HXX
 
 #include <random>
-#include <vector>
 #include <utility>
+#include <vector>
 using std::pair;
 
 #include "common/dataset_meta.hxx"
@@ -63,6 +63,13 @@ class GenomeOperators {
     int32_t number_inputs;
     int32_t number_outputs;
 
+    // Number of genomes used for crossover within an island. Max value is the population size of an island
+    int32_t n_parents_intra;
+
+    // Number of genomes used for crossover between different islands. Max value is 1 + population size of an island, 1
+    // from local island and population size genomes from foreign island.
+    int32_t n_parents_inter;
+
     WeightType weight_initialize;
     WeightType weight_inheritance;
     WeightType mutated_component_weight;
@@ -99,10 +106,11 @@ class GenomeOperators {
     function<int32_t()> next_node_innovation_number;
 
     GenomeOperators(int32_t _number_workers, int32_t _worker_id, int32_t _number_inputs, int32_t _number_outputs,
-                    int32_t _edge_innovation_count, int32_t _node_innovation_count, int32_t _min_recurrent_depth,
-                    int32_t _max_recurrent_depth, WeightType _weight_initialize, WeightType _weight_inheritance,
-                    WeightType _mutated_component_weight, DatasetMeta _dataset_meta,
-                    TrainingParameters _training_parameters, vector<string> possible_node_types);
+                    int32_t n_parents_inra, int32_t n_parents_inter, int32_t _edge_innovation_count,
+                    int32_t _node_innovation_count, int32_t _min_recurrent_depth, int32_t _max_recurrent_depth,
+                    WeightType _weight_initialize, WeightType _weight_inheritance, WeightType _mutated_component_weight,
+                    DatasetMeta _dataset_meta, TrainingParameters _training_parameters,
+                    vector<string> possible_node_types);
 
     RNN_Genome *mutate(RNN_Genome *g, int32_t n_mutations);
     RNN_Genome *crossover(RNN_Genome *more_fit, RNN_Genome *less_fit);
@@ -112,6 +120,9 @@ class GenomeOperators {
     void set_edge_innovation_count(int32_t);
     void set_node_innovation_count(int32_t);
     const vector<int> &get_possible_node_types();
+
+    int32_t get_n_parents_intra();
+    int32_t get_n_parents_inter();
 
     int get_number_inputs();
     int get_number_outputs();
