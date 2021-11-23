@@ -4,6 +4,8 @@ using std::string;
 #include <vector>
 using std::vector;
 
+#include <cstring>
+
 #include "generate_nn.hxx"
 #include "rnn/delta_node.hxx"
 #include "rnn/enarc_node.hxx"

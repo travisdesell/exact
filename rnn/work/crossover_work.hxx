@@ -9,7 +9,7 @@ class CrossoverWork : public Work {
     public:
         static constexpr int32_t class_id = 1;
        
-        CrossoverWork(vector<RNN_Genome *> &parents, int32_t generation_id=-1, int32_t generation_island=-1);
+        CrossoverWork(vector<RNN_Genome *> parents, int32_t generation_id=-1, int32_t generation_island=-1);
         CrossoverWork(istream &bin_istream);
         ~CrossoverWork();
 

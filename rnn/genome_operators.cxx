@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <unordered_map>
 #include <utility>
+#include <cstring>
 
 GenomeOperators::GenomeOperators(int32_t _number_workers, int32_t _worker_id, int32_t _number_inputs,
                                  int32_t _number_outputs, int32_t n_parents_intra, int32_t n_parents_inter,
@@ -152,7 +153,6 @@ RNN_Genome *GenomeOperators::mutate(RNN_Genome *g, int32_t n_mutations) {
 
         g->assign_reachability();
         double rng = rng_0_1(generator) * mutation_rates_total;
-        Log::info("rng %f %f\n", rng, clone_rate);
         int new_node_type = get_random_node_type();
         string node_type_str = NODE_TYPES[new_node_type];
 
@@ -704,7 +704,6 @@ RNN_Genome *GenomeOperators::ncrossover(vector<RNN_Genome *> &parents) {
 
         for (auto i = 0; i < n_weights; i++) {
             centroid_sum[i] /= centroid_mass_sum;
-            Log::info("weight = %f \n", centroid_sum[i]);
         }
 
         const double *const centroid = centroid_sum;
@@ -825,7 +824,6 @@ RNN_Genome *GenomeOperators::ncrossover(vector<RNN_Genome *> &parents) {
     // get the new set of parameters (as new paramters may have been
     // added duriung mutatino) and set them to the initial parameters
     // for epigenetic_initialization
-    child->get_weights(new_parameters);
     child->initial_parameters = new_parameters;
 
     Log::debug("checking parameters after crossover\n");

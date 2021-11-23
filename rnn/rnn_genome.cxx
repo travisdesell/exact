@@ -93,6 +93,9 @@ RNN_Genome::RNN_Genome(vector<RNN_Node_Interface *> &_nodes,
 
   best_validation_mse = EXAMM_MAX_DOUBLE;
   best_validation_mae = EXAMM_MAX_DOUBLE;
+  training_mse = EXAMM_MAX_DOUBLE;
+  training_mae = EXAMM_MAX_DOUBLE;
+
 
   nodes = _nodes;
   edges = _edges;
@@ -166,6 +169,8 @@ RNN_Genome *RNN_Genome::copy() {
 
   other->best_validation_mse = best_validation_mse;
   other->best_validation_mae = best_validation_mae;
+  other->training_mse = training_mse;
+  other->training_mae = training_mae;
   other->best_parameters = best_parameters;
 
   other->input_parameter_names = input_parameter_names;
@@ -427,25 +432,19 @@ void RNN_Genome::get_weights(vector<double> &parameters) {
   uint32_t current = 0;
 
   for (uint32_t i = 0; i < nodes.size(); i++) {
-    Log::info("Node = %d\n", nodes[i]->innovation_number);
-    uint32_t current0 = current;
     nodes[i]->get_weights(current, parameters);
-    for (int i = current0; i < current; i++)
-        Log::info("GW node %d %f\n", i, parameters[i]);
     // if (nodes[i]->is_reachable()) nodes[i]->get_weights(current,
     // parameters);
   }
 
   for (uint32_t i = 0; i < edges.size(); i++) {
     parameters[current++] = edges[i]->weight;
-    Log::info("GW edge %d %f\n", current - 1, parameters[current - 1]);
     // if (edges[i]->is_reachable()) parameters[current++] =
     // edges[i]->weight;
   }
 
   for (uint32_t i = 0; i < recurrent_edges.size(); i++) {
     parameters[current++] = recurrent_edges[i]->weight;
-    Log::info("GW recedge %d %f\n", current - 1, parameters[current - 1]);
     // if (recurrent_edges[i]->is_reachable()) parameters[current++] =
     // recurrent_edges[i]->weight;
   }
@@ -791,11 +790,16 @@ void RNN_Genome::set_generation_id(int32_t _generation_id) {
 }
 
 double RNN_Genome::get_fitness() const {
-  return best_validation_mse;
+    if (training_parameters.bp_iterations)
+        return best_validation_mse;
+    else
+        return training_mse;
   // return best_validation_mae;
 }
 
-double RNN_Genome::calculate_fitness(
+void RNN_Genome::calculate_fitness(
+    const vector<vector<vector<double>>> &testing_inputs,
+    const vector<vector<vector<double>>> &testing_outputs,
     const vector<vector<vector<double>>> &validation_inputs,
     const vector<vector<vector<double>>> &validation_outputs) {
   vector<double> &params = best_parameters;
@@ -803,7 +807,7 @@ double RNN_Genome::calculate_fitness(
     params = initial_parameters;
   }
   best_validation_mse = get_mse(params, validation_inputs, validation_outputs);
-  return best_validation_mse;
+  training_mse = get_mse(params, testing_inputs, testing_outputs);
 }
 
 double RNN_Genome::get_best_validation_mse() const {
@@ -3393,6 +3397,9 @@ void RNN_Genome::read_from_stream(istream &bin_istream) {
 
   bin_istream.read((char *)&best_validation_mse, sizeof(double));
   bin_istream.read((char *)&best_validation_mae, sizeof(double));
+  bin_istream.read((char *)&training_mse, sizeof(double));
+  bin_istream.read((char *)&training_mae, sizeof(double));
+
 
   uint32_t magic_count = 0;
   uint32_t magic;
@@ -3668,6 +3675,8 @@ void RNN_Genome::write_to_stream(ostream &bin_ostream) {
 
   bin_ostream.write((char *)&best_validation_mse, sizeof(double));
   bin_ostream.write((char *)&best_validation_mae, sizeof(double));
+  bin_ostream.write((char *)&training_mse, sizeof(double));
+  bin_ostream.write((char *)&training_mae, sizeof(double));
   
   uint32_t magic = 0xDEADBEEF;
 #ifdef SERIALIZATION_CHECK
@@ -4296,6 +4305,8 @@ void RNN_Genome::transfer_to(const vector<string> &new_input_parameter_names,
 
   best_validation_mse = EXAMM_MAX_DOUBLE;
   best_validation_mae = EXAMM_MAX_DOUBLE;
+  training_mse = EXAMM_MAX_DOUBLE;
+  training_mae = EXAMM_MAX_DOUBLE;
 
   get_mu_sigma(best_parameters, mu, sigma);
   Log::info("after transfer, mu: %lf, sigma: %lf\n", mu, sigma);

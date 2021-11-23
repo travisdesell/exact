@@ -44,7 +44,7 @@ SET (CMAKE_CXX_FLAGS_MINSIZEREL     "-Os -DNDEBUG")
 # Release build, optimized for current CPU architecutre (i.e. the binaries are not going to be portable).
 # run CMAKE CMAKE_BUILD_TYPE=Release ..
 # Fastest possible code + no debugging
-SET (CMAKE_CXX_FLAGS_RELEASE        "-O3 -funroll-loops -DNDEBUG -flto -march=native")
+SET (CMAKE_CXX_FLAGS_RELEASE        "-O3 -funroll-loops -DNDEBUG -flto -march=native -DMINIMAL_LOGGING")
 
 set(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH} /opt/local/lib)
 

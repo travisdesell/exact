@@ -1,4 +1,4 @@
-CrossoverWork::CrossoverWork(vector<RNN_Genome *> &parents, int32_t _generation_id, int32_t _group_id)
+CrossoverWork::CrossoverWork(vector<RNN_Genome *> parents, int32_t _generation_id, int32_t _group_id)
     : Work(_generation_id, _group_id), parents(move(parents)) { }
 
 CrossoverWork::CrossoverWork(istream &bin_istream) {
@@ -15,7 +15,7 @@ CrossoverWork::CrossoverWork(istream &bin_istream) {
     int32_t n = -1;
     bin_istream.read((char *) &n, sizeof(int32_t));
 
-    vector<RNN_Genome *> parents(n);
+    parents.clear(); 
     for (int i = 0; i < n; i++) {
         RNN_Genome *p = new RNN_Genome(bin_istream);
         parents.push_back(p);

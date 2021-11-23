@@ -37,18 +37,14 @@ void receive_work_request(int source) {
 
 #define send_result_to(rank, work) send_work_to(rank, work, RESULT_TAG)
 void send_work_to(int target, Work *work, int tag=WORK_TAG) {
-    Log::info("C0\n");
     ostringstream oss;
-    Log::info("C1\n");
     
     work->write_to_stream(oss);
-    Log::info("C2\n");
 
     string value = oss.str();
     int32_t length = value.size();
     const char *buf = value.c_str();
 
-    Log::info("C3\n");
     MPI_Send(buf, length, MPI_CHAR, target, tag, MPI_COMM_WORLD);
 }
 
@@ -298,7 +294,7 @@ void worker(int rank, GenomeOperators genome_operators, string id="") {
         if (genome_operators.training_parameters.bp_iterations > 0)
             genome->backpropagate_stochastic(training_inputs, training_outputs, validation_inputs, validation_outputs);
         else
-            genome->calculate_fitness(validation_inputs, validation_outputs);
+            genome->calculate_fitness(training_inputs, training_outputs, validation_inputs, validation_outputs);
 
         Log::release_id(log_id);
         Log::set_id("worker_" + to_string(rank) + "_" + id);
