@@ -49,7 +49,7 @@ using std::to_string;
 EXAMM::~EXAMM() {}
 
 EXAMM::EXAMM(int32_t population_size, int32_t number_islands,
-             int32_t max_genomes, int32_t extinction_event_generation_number,
+             int32_t max_genomes, int32_t _max_time_minutes, int32_t extinction_event_generation_number,
              int32_t islands_to_exterminate, string island_ranking_method,
              string repopulation_method, int32_t repopulation_mutations,
              bool repeat_extinction, int32_t epochs_acc_freq,
@@ -62,6 +62,7 @@ EXAMM::EXAMM(int32_t population_size, int32_t number_islands,
              RNN_Genome *_seed_genome, bool start_filled)
     : population_size(population_size), number_islands(number_islands),
       max_genomes(max_genomes), dataset_meta(dataset_meta),
+      max_time_minutes(_max_time_minutes),
       training_parameters(training_parameters),
       genome_operators(_genome_operators),
       extinction_event_generation_number(extinction_event_generation_number),
@@ -411,10 +412,17 @@ Work *EXAMM::get_initialize_work() {
                             max_edge_innovation_number + 1);
 }
 
-Work *EXAMM::generate_work() {
-  if (speciation_strategy->get_inserted_genomes() > max_genomes)
-    return new TerminateWork();
+bool EXAMM::time_limit_reached() {
+    if (max_time_minutes < 0)
+        return false;
+    std::chrono::time_point<std::chrono::system_clock> now = chrono::system_clock::now();
+    long minutes_elapsed = std::chrono::duration_cast<std::chrono::minutes>(now - start_clock).count();
+    return minutes_elapsed >= max_time_minutes;
+}
 
+Work *EXAMM::generate_work() {
+  if (speciation_strategy->get_inserted_genomes() > max_genomes || time_limit_reached())
+    return new TerminateWork();
   return speciation_strategy->generate_work(rng_0_1, generator);
 }
 

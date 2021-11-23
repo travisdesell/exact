@@ -34,6 +34,7 @@ private:
   int32_t number_islands;
 
   int32_t max_genomes;
+  int32_t max_time_minutes;
   int32_t total_bp_epochs;
 
   int32_t genome_id = 0;
@@ -82,8 +83,10 @@ private:
 
   string genome_file_name;
 
+  bool time_limit_reached();
+
 public:
-  EXAMM(int32_t _population_size, int32_t _number_islands, int32_t _max_genomes,
+  EXAMM(int32_t _population_size, int32_t _number_islands, int32_t _max_genomes, int32_t _max_time_minutes,
         int32_t _extinction_event_generation_number,
         int32_t _islands_to_exterminate, string _island_ranking_method,
         string repopulation_method, int32_t _repopulation_mutations,

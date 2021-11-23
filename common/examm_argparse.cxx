@@ -102,6 +102,9 @@
     int32_t bp_iterations = 0;
 #endif
 
+    int32_t max_time_minutes = -1;
+    get_argument(arguments, "--max_time_minutes", false, max_time_minutes);
+
     double learning_rate = 0.001;
     get_argument(arguments, "--learning_rate", false, learning_rate);
 
@@ -245,6 +248,7 @@
                     population_size,
                     number_islands,
                     max_genomes,
+                    max_time_minutes,
                     extinction_event_generation_number,
                     islands_to_exterminate, 
                     island_ranking_method,
