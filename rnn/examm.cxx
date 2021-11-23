@@ -179,7 +179,7 @@ EXAMM::EXAMM(int32_t population_size, int32_t number_islands,
     log_file = new ofstream(output_directory + "/" + "fitness_log.csv");
     (*log_file)
         << "Inserted Genomes, Total BP Epochs, Time, Best Val. MAE, Best Val. "
-           "MSE, Enabled Nodes, Enabled Edges, Enabled Rec. Edges";
+           "MSE, Enabled Nodes, Enabled Edges, Enabled Rec. Edges, Fitness";
     // memory_log << "Inserted Genomes, Total BP Epochs, Time, Best Val. MAE,
     // Best Val. MSE, Enabled Nodes, Enabled Edges, Enabled Rec. Edges";
 
@@ -292,6 +292,7 @@ void EXAMM::update_log() {
                 << best_genome->get_enabled_edge_count() << ","
                 << best_genome->get_enabled_recurrent_edge_count()
                 << speciation_strategy->get_strategy_information_values()
+                << best_genome->get_fitness() << ","
                 << endl;
 
     /*
