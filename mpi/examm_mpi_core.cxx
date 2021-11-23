@@ -217,7 +217,7 @@ void master(int max_rank, GenomeOperators genome_operators) {
             
             // RNN_Genome *genome = work->get_genome(genome_operators);
             RNN_Genome *genome = Work::get_genome(work, genome_operators);
-           
+
             int class_id = work->get_class_id();
             assert(class_id == WorkResult::class_id);
             

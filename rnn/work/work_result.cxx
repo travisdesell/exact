@@ -9,8 +9,8 @@ WorkResult::WorkResult(istream &bin_istream) {
         exit(0);
     }
 
-    bin_istream.read((char *) &generation_id, sizeof(int32_t));
-    bin_istream.read((char *) &group_id, sizeof(int32_t));
+    bin_istream.read((char *) &this->generation_id, sizeof(int32_t));
+    bin_istream.read((char *) &this->group_id, sizeof(int32_t));
 
     genome = new RNN_Genome(bin_istream);
 }

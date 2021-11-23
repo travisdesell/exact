@@ -159,6 +159,7 @@ RNN_Genome *RNN_Genome::copy() {
       node_copies, edge_copies, recurrent_edge_copies, training_parameters,
       weight_initialize, weight_inheritance, mutated_component_weight);
 
+  other->generation_id = generation_id;
   other->group_id = group_id;
 
   other->log_filename = log_filename;
