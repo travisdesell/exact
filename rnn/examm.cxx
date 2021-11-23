@@ -291,7 +291,7 @@ void EXAMM::update_log() {
                 << best_genome->get_enabled_node_count() << ","
                 << best_genome->get_enabled_edge_count() << ","
                 << best_genome->get_enabled_recurrent_edge_count()
-                << speciation_strategy->get_strategy_information_values()
+                << speciation_strategy->get_strategy_information_values() << ","
                 << best_genome->get_fitness() << ","
                 << endl;
 
