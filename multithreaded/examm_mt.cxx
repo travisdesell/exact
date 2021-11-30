@@ -30,6 +30,8 @@ int main(int argc, char** argv) {
 
 #define EXAMM_MT
 #include "common/examm_argparse.cxx"
+    examm = make_examm();
+    set_innovation_counts(examm);
 
     vector<thread> threads;
     for (int32_t i = 0; i < number_threads; i++) {

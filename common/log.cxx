@@ -34,12 +34,26 @@ int32_t Log::restricted_rank = -1;
 string Log::output_directory = "./logs";
 
 map<thread::id, string> Log::log_ids;
-map<string, LogFile*> Log::output_files;
+map<string, shared_ptr<LogFile>> Log::output_files;
+
+// inline thread_local thread::id Log::thread_id = std::this_thread::get_id();
+// inline thread_local shared_ptr<LogFile> Log::current_log_file(nullptr);
+// inline thread_local string human_readable_id("DEFAULT");
 
 shared_mutex Log::log_ids_mutex;
+shared_mutex Log::output_files_mutex;
 
 LogFile::LogFile(FILE* _file) {
     file = _file;
+}
+
+LogFile::~LogFile() {
+    // locking is not necessary, since this deconstructor is only called by shared_ptr when the last reference
+    // is dropped.
+    // log_file->file_mutex.lock();
+    fflush(this->file);
+    fclose(this->file);
+    // log_file->file_mutex.unlock();
 }
 
 void Log::register_command_line_arguments() {
@@ -113,101 +127,65 @@ void Log::clear_rank_restriction() {
 }
 
 void Log::set_id(string human_readable_id) {
-    thread::id id = std::this_thread::get_id();
-
+    Log::human_readable_id = move(human_readable_id);
     //cerr << "setting thread id " << id << " to human readable id: '" << human_readable_id << "'" << endl;
+    output_files_mutex.lock();
+    std::map<string, shared_ptr<LogFile> >::iterator it = output_files.find(Log::human_readable_id);
 
-    log_ids_mutex.lock();
+    if (it == output_files.end()) {
+        string output_filename = output_directory + "/" + Log::human_readable_id;
+        FILE *outfile = fopen(output_filename.c_str(), "w");
+        Log::current_log_file = make_shared<LogFile>(outfile);
+        output_files[Log::human_readable_id] = Log::current_log_file;
+    } else {
+        Log::current_log_file = output_files[Log::human_readable_id];
+    }
 
-    log_ids[id] = human_readable_id;
-
-    log_ids_mutex.unlock();
+    output_files_mutex.unlock();
 }
 
 void Log::release_id(string human_readable_id) {
-
-    //cerr << "locking thread from human readable id: '" << human_readable_id << "'" << endl;
-    log_ids_mutex.lock();
-    //cerr << "releasing thread from human readable id: '" << human_readable_id << "'" << endl;
-    
-    if (output_files.count(human_readable_id) == 0) {
-        //this file was never created and written to
-
-        //cerr << "ERROR: log id '" << human_readable_id << "' was either already released or not previously set!" << endl;
-        //exit(1);
-    } else {
-
-        LogFile *log_file = output_files[human_readable_id];
-        fflush(log_file->file);
-        fclose(log_file->file);
-
-        delete log_file;
-        output_files.erase(human_readable_id);
-    }
-
-    log_ids_mutex.unlock();
+    output_files_mutex.lock();
+    output_files.erase(human_readable_id);
+    output_files_mutex.unlock();
 }
 
-
 void Log::write_message(bool print_header, int8_t message_level, const char *message_type, const char *format, va_list arguments) {
-
-    thread::id id = std::this_thread::get_id();
-
-    if (log_ids.count(id) == 0) {
-        cerr << "ERROR: could not write message from thread '" << id << "' because it did not have a human readable id assigned (please use the Log::set_id(string) function before writing to the Log on any thread)." << endl;
+    if (!Log::current_log_file) {
+        cerr << "ERROR: could not write message from thread '" << Log::thread_id << "' because it did not have a human readable id assigned (please use the Log::set_id(string) function before writing to the Log on any thread)." << endl;
         cerr << "message:" << endl;
         vprintf(format, arguments);
         cerr << endl;
         exit(1);
     }
 
-    string human_readable_id = log_ids[id];
-
     //print the message header into a string
     char header_buffer[max_header_length];
+    header_buffer[0] = 0;
     //we only need to print the header for some messages
     if (print_header) {
         //snprintf(header_buffer, max_header_length, "[%-8s %-20s]", message_type, human_readable_id.c_str());
-        snprintf(header_buffer, max_header_length, "[%-7s %-21s]", message_type, human_readable_id.c_str());
+        snprintf(header_buffer, max_header_length, "[%-7s %-21s] ", message_type, human_readable_id.c_str());
     }
 
     //print the actual message contents into a string
     char message_buffer[max_message_length];
     vsnprintf(message_buffer, max_message_length, format, arguments);
-
     if (std_message_level >= message_level) {
-        if (print_header) {
-            printf("%s %s", header_buffer, message_buffer);
-        } else {
-            printf("%s", message_buffer);
-        }
+        printf("%s%s", header_buffer, message_buffer);
     }
 
     if (file_message_level >= message_level) {
-
-        //check and see if we've already opened a file for this human readable id, if we haven't
-        //open a new one for it
-
-        LogFile* log_file = NULL;
-        if (output_files.count(human_readable_id) == 0) {
-            string output_filename = output_directory + "/" + human_readable_id;
-            FILE *outfile = fopen(output_filename.c_str(), "w");
-            log_file = new LogFile(outfile);
-            output_files[human_readable_id] = log_file;
-        } else {
-            log_file = output_files[human_readable_id];
-        }
-
         //lock this log_file in case multiple threads are trying to write
         //to the same file
-        log_file->file_mutex.lock();
+        Log::current_log_file->file_mutex.lock();
         if (print_header) {
-            fprintf(log_file->file, "%s %s", header_buffer, message_buffer);
+            fprintf(Log::current_log_file->file, "%s%s", header_buffer, message_buffer);
         } else {
-            fprintf(log_file->file, "%s", message_buffer);
+            fprintf(Log::current_log_file->file, "%s", message_buffer);
         }
-        fflush(log_file->file);
-        log_file->file_mutex.unlock();
+        fflush(Log::current_log_file->file);
+        Log::current_log_file->file_mutex.unlock();
     }
 }
 

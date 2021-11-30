@@ -30,9 +30,13 @@ vector< vector< vector<double> > > validation_outputs;
 
 void examm_thread(int id, GenomeOperators genome_operators, bool random_sequence_length, int lower_length_bound, int upper_length_bound) {
 
+    std::random_device dev;
+    std::mt19937 rng(dev());
+    std::uniform_real_distribution<double> d01(0.0, 1.0);
     while (true) {
         examm_mutex.lock();
         Log::set_id("main");
+        fflush(0);
         Work *work = examm->generate_work();
         examm_mutex.unlock();
 
@@ -43,8 +47,20 @@ void examm_thread(int id, GenomeOperators genome_operators, bool random_sequence
 
         string log_id = "genome_" + to_string(genome->get_generation_id()) + "_thread_" + to_string(id);
         Log::set_id(log_id);
-        //genome->backpropagate(training_inputs, training_outputs, validation_inputs, validation_outputs);
-        genome->backpropagate_stochastic(training_inputs, training_outputs, validation_inputs, validation_outputs);
+        if (d01(rng) < 0.5) {
+            for (int i = 0; i < 100; i++) {
+                Log::set_id(log_id + to_string(i));
+
+                for (int j = 0; j < 100; j++)
+                    Log::info("CONTENTION\n");
+
+                Log::release_id(log_id + to_string(i));
+            }
+        } else {
+            for (int i = 0; i < 10000; i++) {
+                Log::info("CONTENTION\n");
+            }
+        }
         Log::release_id(log_id);
 
         examm_mutex.lock();

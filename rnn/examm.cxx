@@ -421,6 +421,9 @@ bool EXAMM::time_limit_reached() {
 }
 
 Work *EXAMM::generate_work() {
+  auto a = speciation_strategy->get_inserted_genomes() > max_genomes;
+  auto b = time_limit_reached();
+  fflush(0);
   if (speciation_strategy->get_inserted_genomes() > max_genomes || time_limit_reached())
     return new TerminateWork();
   return speciation_strategy->generate_work(rng_0_1, generator);

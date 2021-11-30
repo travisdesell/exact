@@ -33,7 +33,7 @@ int main(int argc, char  **argv) {
 #define EXAMM_MT 1
 #include "common/examm_argparse.cxx"
 
-    EXAMM *examm = make_examm();
+    examm = make_examm();
     set_innovation_counts(examm);
 
     vector<thread> threads;

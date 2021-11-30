@@ -24,6 +24,9 @@ using std::thread;
 #include <vector>
 using std::vector;
 
+#include <memory>
+using std::shared_ptr;
+
 class LogFile {
     private:
         FILE* file;
@@ -31,6 +34,7 @@ class LogFile {
 
     public:
         LogFile(FILE* file);
+        ~LogFile();
 
     friend class Log;
 };
@@ -71,6 +75,10 @@ class Log {
          */
         static string output_directory;
 
+        inline static thread_local thread::id thread_id;
+        inline static thread_local string human_readable_id;
+        inline static thread_local shared_ptr<LogFile> current_log_file;
+
         /**
          * A map of C++ thread ids (which are not human readable) to human
          * readable integer ids.
@@ -93,13 +101,14 @@ class Log {
          * A map of human readable ids to output files which the log messages
          * will be written to.
          */
-        static map<string, LogFile*> output_files;
+        static map<string, shared_ptr<LogFile>> output_files;
 
         /**
          * A std::shared_mutex protecting the Log::thread_ids map.
          * The Log::set_thread_id(int32_t) mehod needs write access so it will use the std::shared_mutex::lock()x and std::shared_mutex()::unlock() mechanism, while the Log::get_thread_id() only needs read access and can used the std::shared_mutex::lock_shared() and std::shared_mutex::unlock_shared() methods.
          */
         static shared_mutex log_ids_mutex;
+        static shared_mutex output_files_mutex;
 
 
         /**
