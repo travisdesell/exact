@@ -33,26 +33,29 @@ int32_t Log::restricted_rank = -1;
 
 string Log::output_directory = "./logs";
 
-map<thread::id, string> Log::log_ids;
-map<string, shared_ptr<LogFile>> Log::output_files;
+unordered_map<string, shared_ptr<LogFile>, Log::LogHasher> Log::output_files;
+// unordered_map<string, shared_ptr<LogFile>> Log::output_files;
+// map<string, shared_ptr<LogFile>, LogComparator> Log::output_files;
+// map<string, shared_ptr<LogFile>> Log::output_files;
 
+// inline thread_local unordered_map<string, shared_ptr<LogFile>> output_files_local(32);
 // inline thread_local thread::id Log::thread_id = std::this_thread::get_id();
 // inline thread_local shared_ptr<LogFile> Log::current_log_file(nullptr);
 // inline thread_local string human_readable_id("DEFAULT");
 
-shared_mutex Log::log_ids_mutex;
 shared_mutex Log::output_files_mutex;
 
-LogFile::LogFile(FILE* _file) {
-    file = _file;
+LogFile::LogFile(string const& path) {
+    file = std::ofstream(path);
+    file.rdbuf()->pubsetbuf(this->buffer, LogFile::BUFFER_LENGTH);
 }
 
 LogFile::~LogFile() {
     // locking is not necessary, since this deconstructor is only called by shared_ptr when the last reference
     // is dropped.
     // log_file->file_mutex.lock();
-    fflush(this->file);
-    fclose(this->file);
+    file.flush();
+    file.close();
     // log_file->file_mutex.unlock();
 }
 
@@ -110,6 +113,8 @@ void Log::initialize(const vector<string> &arguments) {
     get_argument(arguments, "--max_header_length", false, max_header_length);
     get_argument(arguments, "--max_message_length", false, max_message_length);
 
+    // This might mess up printf
+    // std::ios::sync_with_stdio(false);
 
     mkpath(output_directory.c_str(), 0777);
 }
@@ -129,25 +134,36 @@ void Log::clear_rank_restriction() {
 void Log::set_id(string human_readable_id) {
     Log::human_readable_id = move(human_readable_id);
     //cerr << "setting thread id " << id << " to human readable id: '" << human_readable_id << "'" << endl;
-    output_files_mutex.lock();
-    std::map<string, shared_ptr<LogFile> >::iterator it = output_files.find(Log::human_readable_id);
+    string output_filename = output_directory + "/" + Log::human_readable_id;
+    
+    // See if we have it in our local cache.
+    auto it_local = output_files_local.find(Log::human_readable_id);
+    if (it_local == output_files_local.end()) {
+        // we don't have it
 
-    if (it == output_files.end()) {
-        string output_filename = output_directory + "/" + Log::human_readable_id;
-        FILE *outfile = fopen(output_filename.c_str(), "w");
-        Log::current_log_file = make_shared<LogFile>(outfile);
-        output_files[Log::human_readable_id] = Log::current_log_file;
+        output_files_mutex.lock();
+        auto it = output_files.find(Log::human_readable_id);
+    
+        if (it == output_files.end()) {
+            Log::current_log_file = make_shared<LogFile>(output_filename);
+            output_files[Log::human_readable_id] = Log::current_log_file;
+        } else {
+            Log::current_log_file = output_files[Log::human_readable_id];
+        } 
+
+        output_files_mutex.unlock();
+        
+        output_files_local[Log::human_readable_id] = Log::current_log_file;
     } else {
-        Log::current_log_file = output_files[Log::human_readable_id];
+        Log::current_log_file = output_files_local[Log::human_readable_id];
     }
-
-    output_files_mutex.unlock();
 }
 
-void Log::release_id(string human_readable_id) {
+void Log::release_id(string const& human_readable_id) {
     output_files_mutex.lock();
     output_files.erase(human_readable_id);
     output_files_mutex.unlock();
+    output_files_local.erase(human_readable_id);
 }
 
 void Log::write_message(bool print_header, int8_t message_level, const char *message_type, const char *format, va_list arguments) {
@@ -172,6 +188,9 @@ void Log::write_message(bool print_header, int8_t message_level, const char *mes
     char message_buffer[max_message_length];
     vsnprintf(message_buffer, max_message_length, format, arguments);
     if (std_message_level >= message_level) {
+        // printf is faster.
+        // std::cout << header_buffer;
+        // std::cout << message_buffer;
         printf("%s%s", header_buffer, message_buffer);
     }
 
@@ -179,12 +198,8 @@ void Log::write_message(bool print_header, int8_t message_level, const char *mes
         //lock this log_file in case multiple threads are trying to write
         //to the same file
         Log::current_log_file->file_mutex.lock();
-        if (print_header) {
-            fprintf(Log::current_log_file->file, "%s%s", header_buffer, message_buffer);
-        } else {
-            fprintf(Log::current_log_file->file, "%s", message_buffer);
-        }
-        fflush(Log::current_log_file->file);
+        Log::current_log_file->file << header_buffer << message_buffer;
+        Log::current_log_file->file.flush(); // Must flush ASAP so the logs contain as much data as possible before a crash.
         Log::current_log_file->file_mutex.unlock();
     }
 }
