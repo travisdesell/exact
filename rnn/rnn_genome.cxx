@@ -44,6 +44,9 @@ using std::to_string;
 #include <vector>
 using std::vector;
 
+// For RESN -- Truncated normal distribution
+#include "common/truncated_normal.hpp"
+
 #include "common/random.hxx"
 #include "common/color_table.hxx"
 #include "common/log.hxx"
@@ -1459,21 +1462,32 @@ void RNN_Genome::resn_fitness(const vector< vector< vector<double> > > &inputs, 
     // long milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(currentClock - startClock).count();
 
     //find min and max values in error array
+
     double sum = 0;
 
     for (int i = 0; i < errors.size(); i++) {
         sum += errors[i];
     }
+    double mu = sum/errors.size();
 
-    double p = sum/errors.size();
+    double diff_sum = 0;
+    for (int i = 0; i < errors.size(); i++) {
+        double diff = (errors[i] - mu);
+        diff_sum += (diff * diff);
+    }
 
-    double p_value = 1.0 - p;
+    int N = errors.size();
+    double sigma = sqrt(diff_sum / N);
+    double lower_bound = 0;
+    double threshold = 0.01;
 
-    best_validation_mae = p_value;
-    best_validation_mse = p_value;
+    double p = truncated_normal_a_cdf(threshold, mu, sigma, lower_bound);
+
+    best_validation_mae = 1 - p;
+    best_validation_mse = 1 - p;
 
     //For debugging
-    Log::info("RESN Fitness: %lf, use regression: %d\n", p_value, use_regression);
+    Log::info("RESN Fitness: %lf, use regression: %d\n", p, use_regression);
 }
 
 vector< vector<double> > RNN_Genome::slice_time_series(int start_index, int sequence_length, int num_parameter, const vector< vector<double> > &time_series) {
