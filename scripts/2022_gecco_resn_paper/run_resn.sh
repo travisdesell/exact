@@ -1,21 +1,13 @@
 #!/bin/bash
 
 exp_root=$1
-exp_out="./${exp_root}/
+exp_out="./${exp_root}/"
 
-if $1 -eq "--help"
-then
-    echo "Usage: run_resn.sh root_directory number_samples sample_length number_of_threads [--dry-run]"
-fi
-
-echo "Running base EXAMM code with coal dataset, results will be saved to: "${exp_root}
+echo "Running base EXAMM code with coal dataset, results will be saved to: ${exp_root}"
 echo "###-------------------###"
 
-n_threads=$4
-n_genomes=20000
-
-n_samples=$2
-sample_length$3
+n_threads=8
+n_genomes=200000000
 
 run_examm_mt() {
     dir="${exp_root}/resn_${n_samples}s_${sample_length}l"
@@ -23,7 +15,7 @@ run_examm_mt() {
     mkdir $dir
 
     echo "Running EXAMM_MT-RESN with ${n_threads} threads, ${n_genomes} genomes and ${n_samples} samples of length ${sample_length}"
-    ./multithreaded/examm_mt --number_threads $n_threads \
+    timeout 60m ./multithreaded/examm_mt --number_threads $n_threads \
     --training_filenames ../datasets/2018_coal/burner_[0-9].csv --test_filenames \
     ../datasets/2018_coal/burner_1[0-1].csv \
     --time_offset 1 \
@@ -41,7 +33,6 @@ run_examm_mt() {
     --resn_n_samples ${n_samples} \
     --resn_sample_length ${sample_length} \
     --output_genome_name resn_genome_n_${n_samples}_l_${sample_length}
-        > $dir_out
 }
 
 
@@ -50,17 +41,17 @@ sample_length=800
 
 run_examm_mt
 
-#n_samples=200
-#sample_length=400
+n_samples=200
+sample_length=400
 
-#run_examm_mt
+run_examm_mt
 
-#n_samples=400
-#sample_length=200
+n_samples=400
+sample_length=200
 
-#run_examm_mt
+run_examm_mt
 
-#n_samples=800
-#sample_length=100
+n_samples=800
+sample_length=100
 
-#run_examm_mt
+run_examm_mt
