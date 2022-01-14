@@ -1408,6 +1408,8 @@ void RNN_Genome::resn_fitness(const vector< vector< vector<double> > > &inputs, 
         //Log::info("getting subsequences, random_time_series: %d, sequence_start: %d, sequence_length: %d, sample_length: %d, random_sequence[0].size(): %d, random_output_sequence[0].size(): %d\n", random_time_series, sequence_start, sequence_length, sample_length, random_sequence[0].size(), random_output_sequence[0].size());
         //fflush(0);
 
+        //TODO: change order of iteration
+        //time step second
         for (int time_step = 0; time_step < sample_length; time_step++) {
             for (int column = 0; column < random_sequence.size(); column++) {
                 //Log::info("s: %d %d %d\n", column, sequence_start, time_step);
@@ -1419,6 +1421,7 @@ void RNN_Genome::resn_fitness(const vector< vector< vector<double> > > &inputs, 
                 sample_output[column][time_step] = random_output_sequence[column][sequence_start + time_step];
             }
         }
+
         //Log::info("got subsequences\n");
         //fflush(0);
 
