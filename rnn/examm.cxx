@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <cstdio>
 using std::sort;
 
 #include <chrono>
@@ -405,11 +406,19 @@ void EXAMM::update_log() {
         std::chrono::time_point<std::chrono::system_clock> currentClock = std::chrono::system_clock::now();
         long milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(currentClock - startClock).count();
 
+        // We need to ensure these get rounded to 16 dec. places
+        // Changes to the genome using RESN may have small impacts on MAE or MSE 
+        // that would be rounded up or down
+        char mae[32], mse[32];
+
+        (void) sprintf(mae, "%.16f", best_genome->best_validation_mae); 
+        (void) sprintf(mse, "%.16f", best_genome->best_validation_mse); 
+
         (*log_file) << speciation_strategy->get_evaluated_genomes()
             << "," << total_bp_epochs
             << "," << milliseconds
-            << "," << best_genome->best_validation_mae
-            << "," << best_genome->best_validation_mse
+            << "," << mae
+            << "," << mse
             << "," << best_genome->get_enabled_node_count()
             << "," << best_genome->get_enabled_edge_count()
             << "," << best_genome->get_enabled_recurrent_edge_count()
