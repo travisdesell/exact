@@ -10,12 +10,12 @@ n_threads=8
 n_genomes=200000000
 
 run_examm_mt() {
-    dir="${exp_root}/resn_${n_samples}s_${sample_length}l"
+    dir="${exp_root}/examm_${n_samples}s_${sample_length}l"
     dir_out="${dir}/std.out"
     mkdir $dir
 
     echo "Running EXAMM_MT-RESN with ${n_threads} threads, ${n_genomes} genomes and ${n_samples} samples of length ${sample_length}"
-    timeout 60m ./multithreaded/examm_mt --number_threads $n_threads \
+    timeout 1h ./multithreaded/examm_mt --number_threads $n_threads \
     --training_filenames ../datasets/2018_coal/burner_[0-9].csv --test_filenames \
     ../datasets/2018_coal/burner_1[0-1].csv \
     --time_offset 1 \
@@ -29,10 +29,10 @@ run_examm_mt() {
     --possible_node_types simple UGRNN MGU GRU delta LSTM \
     --std_message_level INFO \
     --file_message_level NONE \
-    --use_resn \
-    --resn_n_samples ${n_samples} \
-    --resn_sample_length ${sample_length} \
-    --output_genome_name resn_genome_n_${n_samples}_l_${sample_length}
+    #--use_resn \
+    #--resn_n_samples ${n_samples} \
+    #--resn_sample_length ${sample_length} \
+    --output_genome_name examm_genome_n_${n_samples}_l_${sample_length} > $dir_out
 }
 
 
