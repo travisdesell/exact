@@ -1410,15 +1410,28 @@ void RNN_Genome::resn_fitness(const vector< vector< vector<double> > > &inputs, 
 
         //TODO: change order of iteration
         //time step second
-        for (int time_step = 0; time_step < sample_length; time_step++) {
-            for (int column = 0; column < random_sequence.size(); column++) {
-                //Log::info("s: %d %d %d\n", column, sequence_start, time_step);
-                sample[column][time_step] = random_sequence[column][sequence_start + time_step];
-            }
+        //for (int time_step = 0; time_step < sample_length; time_step++) {
+            //for (int column = 0; column < random_sequence.size(); column++) {
+                ////Log::info("s: %d %d %d\n", column, sequence_start, time_step);
+            //}
 
-            for (int column = 0; column < random_output_sequence.size(); column++) {
-                //Log::info("so: %d %d %d\n", column, sequence_start, time_step);
-                sample_output[column][time_step] = random_output_sequence[column][sequence_start + time_step];
+            //for (int column = 0; column < random_output_sequence.size(); column++) {
+                ////Log::info("so: %d %d %d\n", column, sequence_start, time_step);
+                //sample_output[column][time_step] = random_output_sequence[column][sequence_start + time_step];
+            //}
+        //}
+
+        int column = 0;
+        while (column < random_sequence.size()) {
+            for (int time_step = 0; time_step < sample_length; time_step++) {
+                sample[column][time_step] = random_sequence[column++][sequence_start + time_step];
+            }
+        }
+
+        column = 0;
+        while (column < random_output_sequence.size()) {
+            for (int time_step = 0; time_step < sample_length; time_step++) {
+                sample[column][time_step] = random_sequence[column++][sequence_start + time_step];
             }
         }
 
