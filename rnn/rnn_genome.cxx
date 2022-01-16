@@ -3204,8 +3204,9 @@ RNN_Genome::RNN_Genome(string binary_filename, bool _tl_with_epigenetic):
         Log::fatal("ERROR: could not open RNN genome file '%s' for reading.\n", binary_filename.c_str());
         exit(1);
     }
-
-    read_from_stream(bin_infile);
+    Log::error("here before reaf infile\n");
+    read_from_stream_seed(bin_infile);
+    Log::error("here after read infile\n");
     bin_infile.close();
 }
 
@@ -3225,6 +3226,247 @@ void RNN_Genome::read_from_array(char *array, int32_t length) {
 
     istringstream iss(array_str);
     read_from_stream(iss);
+}
+
+void RNN_Genome::read_from_stream_seed(istream &bin_istream) {
+    Log::debug("READING GENOME FROM STREAM\n");
+
+    bin_istream.read((char*)&generation_id, sizeof(int32_t));
+    bin_istream.read((char*)&group_id, sizeof(int32_t));
+    bin_istream.read((char*)&bp_iterations, sizeof(int32_t));
+    bin_istream.read((char*)&learning_rate, sizeof(double));
+    bin_istream.read((char*)&adapt_learning_rate, sizeof(bool));
+    bin_istream.read((char*)&use_nesterov_momentum, sizeof(bool));
+    bin_istream.read((char*)&use_reset_weights, sizeof(bool));
+    genome_type = GENERATED;
+
+    bin_istream.read((char*)&use_high_norm, sizeof(bool));
+    bin_istream.read((char*)&high_threshold, sizeof(double));
+    bin_istream.read((char*)&use_low_norm, sizeof(bool));
+    bin_istream.read((char*)&low_threshold, sizeof(double));
+
+    bin_istream.read((char*)&use_regression, sizeof(bool));
+    bin_istream.read((char*)&use_dropout, sizeof(bool));
+    bin_istream.read((char*)&dropout_probability, sizeof(double));
+
+    bin_istream.read((char*)&weight_initialize, sizeof(int32_t));
+    bin_istream.read((char*)&weight_inheritance, sizeof(int32_t));
+    bin_istream.read((char*)&mutated_component_weight, sizeof(int32_t));
+
+    Log::debug("generation_id: %d\n", generation_id);
+    Log::debug("bp_iterations: %d\n", bp_iterations);
+    Log::debug("learning_rate: %lf\n", learning_rate);
+    Log::debug("adapt_learning_rate: %d\n", adapt_learning_rate);
+    Log::debug("use_nesterov_momentum: %d\n", use_nesterov_momentum);
+    Log::debug("use_reset_weights: %d\n", use_reset_weights);
+
+    Log::debug("use_high_norm: %d\n", use_high_norm);
+    Log::debug("high_threshold: %lf\n", high_threshold);
+    Log::debug("use_low_norm: %d\n", use_low_norm);
+    Log::debug("low_threshold: %lf\n", low_threshold);
+
+    Log::debug("use_dropout: %d\n", use_regression);
+    Log::debug("use_dropout: %d\n", use_dropout);
+    Log::debug("dropout_probability: %lf\n", dropout_probability);
+
+    Log::debug("weight initialize: %s\n", WEIGHT_TYPES_STRING[weight_initialize].c_str());
+    Log::debug("weight inheritance: %s\n", WEIGHT_TYPES_STRING[weight_inheritance].c_str());
+    Log::debug("new component weight: %s\n", WEIGHT_TYPES_STRING[mutated_component_weight].c_str());
+
+    read_binary_string(bin_istream, log_filename, "log_filename");
+    string generator_str;
+    read_binary_string(bin_istream, generator_str, "generator");
+    istringstream generator_iss(generator_str);
+    generator_iss >> generator;
+
+    string rng_0_1_str;
+    read_binary_string(bin_istream, rng_0_1_str, "rng_0_1");
+    // So for some reason this was serialized incorrectly for some genomes,
+    // but the value should always be the same so we really don't need to de-serialize it anways and can just
+    // assign it a constant value
+    rng_0_1 = uniform_real_distribution<double>(0.0, 1.0);
+    // Formerly:
+    // istringstream rng_0_1_iss(rng_0_1_str);
+    //rng_0_1_iss >> rng_0_1;
+
+
+    string generated_by_map_str;
+    read_binary_string(bin_istream, generated_by_map_str, "generated_by_map");
+    istringstream generated_by_map_iss(generated_by_map_str);
+    read_map(generated_by_map_iss, generated_by_map);
+
+    bin_istream.read((char*)&best_validation_mse, sizeof(double));
+    bin_istream.read((char*)&best_validation_mae, sizeof(double));
+
+    int32_t n_initial_parameters;
+    bin_istream.read((char*)&n_initial_parameters, sizeof(int32_t));
+    Log::debug("reading %d initial parameters.\n", n_initial_parameters);
+    double* initial_parameters_v = new double[n_initial_parameters];
+    bin_istream.read((char*)initial_parameters_v, sizeof(double) * n_initial_parameters);
+    initial_parameters.assign(initial_parameters_v, initial_parameters_v + n_initial_parameters);
+    delete [] initial_parameters_v;
+
+    int32_t n_best_parameters;
+    bin_istream.read((char*)&n_best_parameters, sizeof(int32_t));
+    Log::debug("reading %d best parameters.\n", n_best_parameters);
+    double* best_parameters_v = new double[n_best_parameters];
+    bin_istream.read((char*)best_parameters_v, sizeof(double) * n_best_parameters);
+    best_parameters.assign(best_parameters_v, best_parameters_v + n_best_parameters);
+    delete [] best_parameters_v;
+
+
+    input_parameter_names.clear();
+    int32_t n_input_parameter_names;
+    bin_istream.read((char*)&n_input_parameter_names, sizeof(int32_t));
+    Log::debug("reading %d input parameter names.\n", n_input_parameter_names);
+    for (int32_t i = 0; i < n_input_parameter_names; i++) {
+        string input_parameter_name;
+        read_binary_string(bin_istream, input_parameter_name, "input_parameter_names[" + std::to_string(i) + "]");
+        input_parameter_names.push_back(input_parameter_name);
+    }
+
+    output_parameter_names.clear();
+    int32_t n_output_parameter_names;
+    bin_istream.read((char*)&n_output_parameter_names, sizeof(int32_t));
+    Log::debug("reading %d output parameter names.\n", n_output_parameter_names);
+    for (int32_t i = 0; i < n_output_parameter_names; i++) {
+        string output_parameter_name;
+        read_binary_string(bin_istream, output_parameter_name, "output_parameter_names[" + std::to_string(i) + "]");
+        output_parameter_names.push_back(output_parameter_name);
+    }
+
+
+
+    int32_t n_nodes;
+    bin_istream.read((char*)&n_nodes, sizeof(int32_t));
+    Log::debug("reading %d nodes.\n", n_nodes);
+
+    nodes.clear();
+    for (int32_t i = 0; i < n_nodes; i++) {
+        int32_t innovation_number;
+        int32_t layer_type;
+        int32_t node_type;
+        double depth;
+        bool enabled;
+
+        bin_istream.read((char*)&innovation_number, sizeof(int32_t));
+        bin_istream.read((char*)&layer_type, sizeof(int32_t));
+        bin_istream.read((char*)&node_type, sizeof(int32_t));
+        bin_istream.read((char*)&depth, sizeof(double));
+        bin_istream.read((char*)&enabled, sizeof(bool));
+
+        string parameter_name;
+        read_binary_string(bin_istream, parameter_name, "parameter_name");
+
+        Log::debug("NODE: %d %d %d %lf %d '%s'\n", innovation_number, layer_type, node_type, depth, enabled, parameter_name.c_str());
+
+        RNN_Node_Interface *node;
+        if (node_type == LSTM_NODE) {
+            node = new LSTM_Node(innovation_number, layer_type, depth);
+        } else if (node_type == DELTA_NODE) {
+            node = new Delta_Node(innovation_number, layer_type, depth);
+        } else if (node_type == GRU_NODE) {
+            node = new GRU_Node(innovation_number, layer_type, depth);
+        } else if (node_type == ENARC_NODE) {
+            node = new ENARC_Node(innovation_number, layer_type, depth);
+        } else if (node_type == ENAS_DAG_NODE) {
+            node = new ENAS_DAG_Node(innovation_number, layer_type, depth);
+        } else if (node_type == RANDOM_DAG_NODE) {
+            node = new RANDOM_DAG_Node(innovation_number, layer_type, depth);
+        } else if (node_type == MGU_NODE) {
+            node = new MGU_Node(innovation_number, layer_type, depth);
+        } else if (node_type == UGRNN_NODE) {
+            node = new UGRNN_Node(innovation_number, layer_type, depth);
+        } else if (node_type == SIMPLE_NODE || node_type == JORDAN_NODE || node_type == ELMAN_NODE) {
+            if (layer_type == HIDDEN_LAYER) {
+                node = new RNN_Node(innovation_number, layer_type, depth, node_type);
+            } else {
+                node = new RNN_Node(innovation_number, layer_type, depth, node_type, parameter_name);
+            }
+        } else {
+            Log::fatal("Error reading node from stream, unknown node_type: %d\n", node_type);
+            exit(1);
+        }
+
+        node->enabled = enabled;
+        nodes.push_back(node);
+    }
+
+
+    int32_t n_edges;
+    bin_istream.read((char*)&n_edges, sizeof(int32_t));
+    Log::debug("reading %d edges.\n", n_edges);
+
+    edges.clear();
+    for (int32_t i = 0; i < n_edges; i++) {
+        int32_t innovation_number;
+        int32_t input_innovation_number;
+        int32_t output_innovation_number;
+        bool enabled;
+
+        bin_istream.read((char*)&innovation_number, sizeof(int32_t));
+        bin_istream.read((char*)&input_innovation_number, sizeof(int32_t));
+        bin_istream.read((char*)&output_innovation_number, sizeof(int32_t));
+        bin_istream.read((char*)&enabled, sizeof(bool));
+
+        Log::debug("EDGE: %d %d %d %d\n", innovation_number, input_innovation_number, output_innovation_number, enabled);
+
+        RNN_Edge *edge = new RNN_Edge(innovation_number, input_innovation_number, output_innovation_number, nodes);
+        // innovation_list.push_back(innovation_number);
+        edge->enabled = enabled;
+        edges.push_back(edge);
+    }
+
+
+    int32_t n_recurrent_edges;
+    bin_istream.read((char*)&n_recurrent_edges, sizeof(int32_t));
+    Log::debug("reading %d recurrent_edges.\n", n_recurrent_edges);
+
+    recurrent_edges.clear();
+    for (int32_t i = 0; i < n_recurrent_edges; i++) {
+        int32_t innovation_number;
+        int32_t recurrent_depth;
+        int32_t input_innovation_number;
+        int32_t output_innovation_number;
+        bool enabled;
+
+        bin_istream.read((char*)&innovation_number, sizeof(int32_t));
+        bin_istream.read((char*)&recurrent_depth, sizeof(int32_t));
+        bin_istream.read((char*)&input_innovation_number, sizeof(int32_t));
+        bin_istream.read((char*)&output_innovation_number, sizeof(int32_t));
+        bin_istream.read((char*)&enabled, sizeof(bool));
+
+        Log::debug("RECURRENT EDGE: %d %d %d %d %d\n", innovation_number, recurrent_depth, input_innovation_number, output_innovation_number, enabled);
+
+        RNN_Recurrent_Edge *recurrent_edge = new RNN_Recurrent_Edge(innovation_number, recurrent_depth, input_innovation_number, output_innovation_number, nodes);
+        // innovation_list.push_back(innovation_number);
+        recurrent_edge->enabled = enabled;
+        recurrent_edges.push_back(recurrent_edge);
+    }
+
+    read_binary_string(bin_istream, normalize_type, "normalize_type");
+
+    string normalize_mins_str;
+    read_binary_string(bin_istream, normalize_mins_str, "normalize_mins");
+    istringstream normalize_mins_iss(normalize_mins_str);
+    read_map(normalize_mins_iss, normalize_mins);
+
+    string normalize_maxs_str;
+    read_binary_string(bin_istream, normalize_maxs_str, "normalize_maxs");
+    istringstream normalize_maxs_iss(normalize_maxs_str);
+    read_map(normalize_maxs_iss, normalize_maxs);
+
+    string normalize_avgs_str;
+    read_binary_string(bin_istream, normalize_avgs_str, "normalize_avgs");
+    istringstream normalize_avgs_iss(normalize_avgs_str);
+    read_map(normalize_avgs_iss, normalize_avgs);
+
+    string normalize_std_devs_str;
+    read_binary_string(bin_istream, normalize_std_devs_str, "normalize_std_devs");
+    istringstream normalize_std_devs_iss(normalize_std_devs_str);
+    read_map(normalize_std_devs_iss, normalize_std_devs);
+
+    assign_reachability();
 }
 
 void RNN_Genome::read_from_stream(istream &bin_istream) {

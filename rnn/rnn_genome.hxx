@@ -278,6 +278,7 @@ class RNN_Genome {
 
         void read_from_array(char *array, int32_t length);
         void read_from_stream(istream &bin_istream);
+        void read_from_stream_seed(istream &bin_istream);
 
         void write_to_array(char **array, int32_t &length);
         void write_to_file(string bin_filename);
