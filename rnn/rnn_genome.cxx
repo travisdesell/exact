@@ -1424,15 +1424,17 @@ void RNN_Genome::resn_fitness(const vector< vector< vector<double> > > &inputs, 
         int column = 0;
         while (column < random_sequence.size()) {
             for (int time_step = 0; time_step < sample_length; time_step++) {
-                sample[column][time_step] = random_sequence[column++][sequence_start + time_step];
+                sample[column][time_step] = random_sequence[column][sequence_start + time_step];
             }
+            column += 1;
         }
 
         column = 0;
         while (column < random_output_sequence.size()) {
             for (int time_step = 0; time_step < sample_length; time_step++) {
-                sample[column][time_step] = random_sequence[column++][sequence_start + time_step];
+                sample[column][time_step] = random_sequence[column][sequence_start + time_step];
             }
+            column += 1;
         }
 
         //Log::info("got subsequences\n");
