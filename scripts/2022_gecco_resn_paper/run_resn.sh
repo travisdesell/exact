@@ -10,7 +10,7 @@ n_threads=8
 n_genomes=200000000
 
 run_examm_mt() {
-    dir="${exp_root}/examm_${n_samples}s_${sample_length}l"
+    dir="./${exp_root}/examm_${n_samples}s_${sample_length}l"
     dir_out="${dir}/std.out"
     mkdir $dir
 
@@ -29,9 +29,9 @@ run_examm_mt() {
     --possible_node_types simple UGRNN MGU GRU delta LSTM \
     --std_message_level INFO \
     --file_message_level NONE \
-    #--use_resn \
-    #--resn_n_samples ${n_samples} \
-    #--resn_sample_length ${sample_length} \
+    --use_resn \
+    --resn_n_samples ${n_samples} \
+    --resn_sample_length ${sample_length} \
     --output_genome_name examm_genome_n_${n_samples}_l_${sample_length} > $dir_out
 }
 
