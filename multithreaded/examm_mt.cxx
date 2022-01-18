@@ -202,7 +202,7 @@ int main(int argc, char** argv) {
     string output_genome_name = "output_genome";
     if (using_resn) {
         get_argument(arguments, "--resn_n_samples", true, resn_n_samples);
-        get_argument(arguments, "--resn_sample_length", true, resn_n_samples);
+        get_argument(arguments, "--resn_sample_length", true, resn_sample_length);
         get_argument(arguments, "--output_genome_name", true, output_genome_name);
     }
 

@@ -10,7 +10,7 @@ n_threads=8
 n_genomes=200000000
 
 run_examm_mt() {
-    dir="./${exp_root}/examm_${n_samples}s_${sample_length}l"
+    dir="./${exp_root}/resn_${n_samples}s_${sample_length}l"
     dir_out="${dir}/std.out"
     mkdir $dir
 

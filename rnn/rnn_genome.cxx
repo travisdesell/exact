@@ -1378,7 +1378,7 @@ void RNN_Genome::resn_fitness(const vector< vector< vector<double> > > &inputs, 
     vector<double> parameters = initial_parameters;
     RNN* rnn = this->get_rnn();
 
-    //Log::info("getting resn fitness with %d samples of length %d\n", n_samples, sample_length);
+    Log::info("getting resn fitness with %d samples of length %d\n", n_samples, sample_length);
     //Log::info("inputs.size(): %d, outputs.size(): %d, validation_inputs.size(): %d, validation_outputs.size(): %d\n", inputs.size(), outputs.size(), validation_inputs.size(), validation_outputs.size());
 
     for (int i = 0; i < n_samples; i++) {
