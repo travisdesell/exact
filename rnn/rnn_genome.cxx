@@ -44,6 +44,9 @@ using std::to_string;
 #include <vector>
 using std::vector;
 
+// For RESN -- Truncated normal distribution
+#include "common/truncated_normal.hpp"
+
 #include "common/random.hxx"
 #include "common/color_table.hxx"
 #include "common/log.hxx"
@@ -1383,7 +1386,7 @@ void RNN_Genome::resn_fitness(const vector< vector< vector<double> > > &inputs, 
     vector<double> parameters = initial_parameters;
     RNN* rnn = this->get_rnn();
 
-    //Log::info("getting resn fitness with %d samples of length %d\n", n_samples, sample_length);
+    Log::info("getting resn fitness with %d samples of length %d\n", n_samples, sample_length);
     //Log::info("inputs.size(): %d, outputs.size(): %d, validation_inputs.size(): %d, validation_outputs.size(): %d\n", inputs.size(), outputs.size(), validation_inputs.size(), validation_outputs.size());
 
     for (int i = 0; i < n_samples; i++) {
@@ -1413,17 +1416,35 @@ void RNN_Genome::resn_fitness(const vector< vector< vector<double> > > &inputs, 
         //Log::info("getting subsequences, random_time_series: %d, sequence_start: %d, sequence_length: %d, sample_length: %d, random_sequence[0].size(): %d, random_output_sequence[0].size(): %d\n", random_time_series, sequence_start, sequence_length, sample_length, random_sequence[0].size(), random_output_sequence[0].size());
         //fflush(0);
 
-        for (int time_step = 0; time_step < sample_length; time_step++) {
-            for (int column = 0; column < random_sequence.size(); column++) {
-                //Log::info("s: %d %d %d\n", column, sequence_start, time_step);
+        //TODO: change order of iteration
+        //time step second
+        //for (int time_step = 0; time_step < sample_length; time_step++) {
+            //for (int column = 0; column < random_sequence.size(); column++) {
+                ////Log::info("s: %d %d %d\n", column, sequence_start, time_step);
+            //}
+
+            //for (int column = 0; column < random_output_sequence.size(); column++) {
+                ////Log::info("so: %d %d %d\n", column, sequence_start, time_step);
+                //sample_output[column][time_step] = random_output_sequence[column][sequence_start + time_step];
+            //}
+        //}
+
+        int column = 0;
+        while (column < random_sequence.size()) {
+            for (int time_step = 0; time_step < sample_length; time_step++) {
                 sample[column][time_step] = random_sequence[column][sequence_start + time_step];
             }
+            column += 1;
+        }
 
-            for (int column = 0; column < random_output_sequence.size(); column++) {
-                //Log::info("so: %d %d %d\n", column, sequence_start, time_step);
+        column = 0;
+        while (column < random_output_sequence.size()) {
+            for (int time_step = 0; time_step < sample_length; time_step++) {
                 sample_output[column][time_step] = random_output_sequence[column][sequence_start + time_step];
             }
+            column += 1;
         }
+
         //Log::info("got subsequences\n");
         //fflush(0);
 
@@ -1467,21 +1488,32 @@ void RNN_Genome::resn_fitness(const vector< vector< vector<double> > > &inputs, 
     // long milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(currentClock - startClock).count();
 
     //find min and max values in error array
+
     double sum = 0;
 
     for (int i = 0; i < errors.size(); i++) {
         sum += errors[i];
     }
+    double mu = sum/errors.size();
 
-    double p = sum/errors.size();
+    double diff_sum = 0;
+    for (int i = 0; i < errors.size(); i++) {
+        double diff = (errors[i] - mu);
+        diff_sum += (diff * diff);
+    }
 
-    double p_value = 1.0 - p;
+    int N = errors.size();
+    double sigma = sqrt(diff_sum / N);
+    double lower_bound = 0;
+    double threshold = 0.01;
 
-    best_validation_mae = p_value;
-    best_validation_mse = p_value;
+    double p = truncated_normal_a_cdf(threshold, mu, sigma, lower_bound);
+
+    best_validation_mae = 1 - p;
+    best_validation_mse = 1 - p;
 
     //For debugging
-    Log::info("RESN Fitness: %lf, use regression: %d\n", p_value, use_regression);
+    Log::info("RESN Fitness: %lf, use regression: %d\n", p, use_regression);
 }
 
 vector< vector<double> > RNN_Genome::slice_time_series(int start_index, int sequence_length, int num_parameter, const vector< vector<double> > &time_series) {
