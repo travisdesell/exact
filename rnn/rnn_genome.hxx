@@ -170,6 +170,9 @@ class RNN_Genome {
         void get_weights(vector<double> &parameters);
         void set_weights(const vector<double> &parameters);
 
+        WeightType get_weight_initialize();
+        void set_weight_initialize(string weight_initialize_string);
+ 
         uint32_t get_number_weights();
         uint32_t get_number_inputs();
         uint32_t get_number_outputs();

@@ -15,7 +15,7 @@ exp_root=$1
 echo "Running base EXAMM code with coal dataset, results will be saved to: "${exp_root}
 echo "###-------------------###"
 
-n_threads=2
+n_threads=10
 n_genomes=20000
 
 n_samples=0
@@ -39,7 +39,7 @@ run_examm_mt() {
     --bp_iterations 5 \
     --output_directory $dir \
     --possible_node_types simple UGRNN MGU GRU delta LSTM \
-    --std_message_level INFO \
+    --std_message_level NONE \
     --file_message_level NONE \
     --use_resn \
     --resn_n_samples ${n_samples} \

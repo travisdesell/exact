@@ -153,7 +153,13 @@ int main(int argc, char **argv) {
 
     using_dropout = false;
 
-    genome->initialize_randomly();
+    if (weight_initialize_string.compare("lamarckian") == 0) {
+        best_parameters = genome->get_best_parameters();
+        genome->set_weights(best_parameters);
+    } else {
+        genome->set_weight_initialize(weight_initialize_string);
+        genome->initialize_randomly();
+    }
 
     double learning_rate = 0.001;
     get_argument(arguments, "--learning_rate", false, learning_rate);
