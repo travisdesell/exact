@@ -529,7 +529,7 @@ WeightType RNN_Genome::get_weight_initialize() {
     return weight_initialize;
 }
 
-void RNN_Genome::set_weight_iniitalize(string weight_initialize_string) {
+void RNN_Genome::set_weight_initialize(string weight_initialize_string) {
     weight_initialize = get_enum_from_string(weight_initialize_string);
 }
 
