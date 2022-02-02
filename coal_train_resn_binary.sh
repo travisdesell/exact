@@ -11,9 +11,10 @@
 
 exp_name=$1
 bp_iter=$2
+weight_init_method=$3
 out_dir=$(basename "$PWD")
 #mkdir -p $exp_name
-echo "Running base EXAMM code with coal dataset, results will be saved to: "$2
+echo "Running base EXAMM code with coal dataset, results will be saved to: "$1
 echo "###-------------------###"
 
 train_rnn() {
@@ -27,6 +28,7 @@ train_rnn() {
     --output_directory $output \
     --std_message_level INFO \
     --file_message_level NONE \
+    --weight_initialize $weight_init_method \
     --rnn_type "binary" \
     --binary_filename $bin_file > $outfile
 }
@@ -38,6 +40,6 @@ do
 
     outfile=$output/$bin_file.out
 
-    echo "Training $bin_file for $bp_iter epoch(s) logging at $outfile to directory $output"
+    echo "Training $bin_file for $bp_iter epoch(s) logging at $outfile to directory $output with $weight_init_method"
     train_rnn
 done
