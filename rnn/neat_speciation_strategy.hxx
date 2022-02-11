@@ -14,9 +14,7 @@ using std::uniform_real_distribution;
 #include "rnn_genome.hxx"
 #include "speciation_strategy.hxx"
 #include "species.hxx"
-#include "work/crossover_work.hxx"
-#include "work/mutation_work.hxx"
-#include "work/work.hxx"
+#include "msg.hxx"
 
 class NeatSpeciationStrategy : public SpeciationStrategy {
 private:
@@ -127,14 +125,14 @@ public:
    *
    * \return the newly generated genome.
    */
-  Work *generate_work(uniform_real_distribution<double> &rng_0_1,
+  WorkMsg *generate_work(uniform_real_distribution<double> &rng_0_1,
                       minstd_rand0 &generator);
   // RNN_Genome* generate_genome(uniform_real_distribution<double> &rng_0_1,
   // minstd_rand0 &generator, function<void (int32_t, RNN_Genome*)> &mutate,
   // function<RNN_Genome* (RNN_Genome*, RNN_Genome *)> &crossover, int32_t
   // number_stir_mutations);
 
-  Work *generate_work_for_species(uniform_real_distribution<double> &rng_0_1,
+  WorkMsg *generate_work_for_species(uniform_real_distribution<double> &rng_0_1,
                                   minstd_rand0 &generator);
 
   /**

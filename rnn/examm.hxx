@@ -23,8 +23,7 @@ using std::vector;
 #include "speciation_strategy.hxx"
 #include "training_parameters.hxx"
 
-#include "work/terminate_work.hxx"
-#include "work/work.hxx"
+#include "msg.hxx"
 
 #include "common/dataset_meta.hxx"
 
@@ -119,8 +118,8 @@ public:
 
   uniform_int_distribution<int32_t> get_recurrent_depth_dist();
 
-  Work *get_initialize_work();
-  Work *generate_work();
+  Msg *get_initialize_work();
+  Msg *generate_work();
 
   int get_random_node_type();
 

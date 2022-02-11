@@ -299,9 +299,9 @@ vector<int32_t> IslandSpeciationStrategy::rank_islands() {
     return island_rank;
 }
 
-Work *IslandSpeciationStrategy::generate_work(uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator) {
+WorkMsg *IslandSpeciationStrategy::generate_work(uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator) {
     // generate the genome from the next island in a round robin fashion.
-    Work *work = NULL;
+    WorkMsg *work = NULL;
 
     Log::info("getting island: %d\n", generation_island);
     Island *island = islands[generation_island];
@@ -330,7 +330,7 @@ Work *IslandSpeciationStrategy::generate_work(uniform_real_distribution<double> 
         Log::fatal("This should never happen!\n");
     }
 
-    work->set_generation_id(++generated_genomes);
+    work->set_genome_number(++generated_genomes);
     work->set_group_id(generation_island++);
 
     if (generation_island >= number_of_islands) generation_island = 0;
@@ -344,7 +344,7 @@ Work *IslandSpeciationStrategy::generate_work(uniform_real_distribution<double> 
     return work;
 }
 
-Work *IslandSpeciationStrategy::generate_work_for_initializing_island(uniform_real_distribution<double> &rng_0_1,
+WorkMsg *IslandSpeciationStrategy::generate_work_for_initializing_island(uniform_real_distribution<double> &rng_0_1,
                                                                       minstd_rand0 &generator, Island *island) {
     Log::info("island is initializing!\n");
     RNN_Genome *genome = NULL;
@@ -368,7 +368,7 @@ Work *IslandSpeciationStrategy::generate_work_for_initializing_island(uniform_re
         genome->initialize_randomly();
     }
 
-    Work *work = new MutationWork(genome, n_mutations);
+    WorkMsg *work = new WorkMsg(genome, n_mutations);
 
     // if (island->size() == 0) {
     //   insert_genome(genome);
@@ -379,7 +379,7 @@ Work *IslandSpeciationStrategy::generate_work_for_initializing_island(uniform_re
     return work;
 }
 
-Work *IslandSpeciationStrategy::generate_work_for_reinitializing_island(uniform_real_distribution<double> &rng_0_1,
+WorkMsg *IslandSpeciationStrategy::generate_work_for_reinitializing_island(uniform_real_distribution<double> &rng_0_1,
                                                                         minstd_rand0 &generator, Island *island) {
     Log::info("island is repopulating through %s method!\n", repopulation_method_str.c_str());
 
@@ -389,7 +389,7 @@ Work *IslandSpeciationStrategy::generate_work_for_reinitializing_island(uniform_
         case RepopulationMethod::BEST_PARENTS:
             return parents_repopulation(RepopulationMethod::BEST_PARENTS, rng_0_1, generator);
         case RepopulationMethod::BEST_GENOME:
-            return new MutationWork(get_global_best_genome()->copy(), repopulation_mutations);
+            return new WorkMsg(get_global_best_genome()->copy(), repopulation_mutations);
         case RepopulationMethod::BEST_ISLAND: {
             // copy the best island to the worst at once
             // after the worst island is filled, set the island status to filled
@@ -421,18 +421,18 @@ Work *IslandSpeciationStrategy::generate_work_for_reinitializing_island(uniform_
     return NULL;
 }
 
-Work *IslandSpeciationStrategy::generate_work_for_filled_island(uniform_real_distribution<double> &rng_0_1,
+WorkMsg *IslandSpeciationStrategy::generate_work_for_filled_island(uniform_real_distribution<double> &rng_0_1,
                                                                 minstd_rand0 &generator, Island *island) {
     // if we haven't filled ALL of the island populations yet, only use mutation
     // otherwise do mutation at %, crossover at %, and island crossover at %
     double r = rng_0_1(generator);
-    Work *work = NULL;
+    WorkMsg *work = NULL;
 
     if (!islands_full() || r < mutation_rate) {
         Log::info("performing mutation\n");
         RNN_Genome *genome;
         island->copy_random_genome(rng_0_1, generator, &genome);
-        work = new MutationWork(genome, 1);
+        work = new WorkMsg(genome, 1);
     } else {
         vector<RNN_Genome *> parents;
 
@@ -447,7 +447,7 @@ Work *IslandSpeciationStrategy::generate_work_for_filled_island(uniform_real_dis
             islands[other_island]->copy_n_random_genomes(rng_0_1, generator, genome_operators.get_n_parents_inter() - 1, parents);
         }
 
-        work = new CrossoverWork(parents);
+        work = new WorkMsg(parents);
     }
 
     // This check is to be done in the worker
@@ -502,7 +502,7 @@ string IslandSpeciationStrategy::get_strategy_information_values() const {
     return info_value;
 }
 
-Work *IslandSpeciationStrategy::parents_repopulation(RepopulationMethod method,
+WorkMsg *IslandSpeciationStrategy::parents_repopulation(RepopulationMethod method,
                                                      uniform_real_distribution<double> &rng_0_1,
                                                      minstd_rand0 &generator) {
     Log::info("generation island: %d \n", generation_island);
@@ -547,7 +547,7 @@ Work *IslandSpeciationStrategy::parents_repopulation(RepopulationMethod method,
     vector<RNN_Genome *> parents;
     parents.push_back(parent1); parents.push_back(parent2);
 
-    return new CrossoverWork(parents);
+    return new WorkMsg(parents);
 }
 
 void IslandSpeciationStrategy::copy_island(uint32_t src_island, uint32_t dst_island) {

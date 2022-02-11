@@ -14,9 +14,7 @@ using std::string;
 #include "island.hxx"
 #include "rnn_genome.hxx"
 #include "speciation_strategy.hxx"
-#include "work/crossover_work.hxx"
-#include "work/mutation_work.hxx"
-#include "work/work.hxx"
+#include "msg.hxx"
 
 // Used in IslandSpeciationStrategy::parents_repopulation
 
@@ -84,11 +82,11 @@ class IslandSpeciationStrategy : public SpeciationStrategy {
 
     GenomeOperators &genome_operators;
 
-    Work *generate_work_for_filled_island(uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator,
+    WorkMsg *generate_work_for_filled_island(uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator,
                                           Island *island);
-    Work *generate_work_for_initializing_island(uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator,
+    WorkMsg *generate_work_for_initializing_island(uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator,
                                                 Island *island);
-    Work *generate_work_for_reinitializing_island(uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator,
+    WorkMsg *generate_work_for_reinitializing_island(uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator,
                                                   Island *island);
 
    public:
@@ -198,7 +196,7 @@ class IslandSpeciationStrategy : public SpeciationStrategy {
      *
      * \return the newly generated genome.
      */
-    Work *generate_work(uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator);
+    WorkMsg *generate_work(uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator);
 
     /**
      * Prints out all the island's populations
@@ -221,7 +219,7 @@ class IslandSpeciationStrategy : public SpeciationStrategy {
      * Island repopulation through two random parents from two seperate islands,
      * parents can be random genomes or best genome from the island
      */
-    Work *parents_repopulation(RepopulationMethod method, uniform_real_distribution<double> &rng_0_1,
+    WorkMsg *parents_repopulation(RepopulationMethod method, uniform_real_distribution<double> &rng_0_1,
                                minstd_rand0 &generator);
 
     /**

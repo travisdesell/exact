@@ -9,7 +9,7 @@ using std::string;
 using std::minstd_rand0;
 using std::uniform_real_distribution;
 
-#include "work/work.hxx"
+#include "msg.hxx"
 
 class SpeciationStrategy {
 protected:
@@ -64,10 +64,9 @@ public:
   virtual int32_t insert_genome(RNN_Genome *genome) = 0;
 
   /**
-   * Generates a unit of work. It will either be a MutationWork object
-   * or a CrossoverWork object. The work unit is to be sent to a worker.
+   * Generates a unit of work. The work unit is to be sent to a worker.
    */
-  virtual Work *generate_work(uniform_real_distribution<double> &rng_0_1,
+  virtual WorkMsg *generate_work(uniform_real_distribution<double> &rng_0_1,
                               minstd_rand0 &generator) = 0;
 
   /**

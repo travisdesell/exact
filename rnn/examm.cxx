@@ -402,16 +402,6 @@ bool EXAMM::insert_genome(RNN_Genome *genome) {
   return insert_position >= 0;
 }
 
-Work *EXAMM::get_initialize_work() {
-  Log::info("seed_genome %p\n", seed_genome);
-  int max_node_innovation_number =
-      seed_genome->get_max_node_innovation_number();
-  int max_edge_innovation_number =
-      seed_genome->get_max_edge_innovation_number();
-  return new InitializeWork(max_node_innovation_number + 1,
-                            max_edge_innovation_number + 1);
-}
-
 bool EXAMM::time_limit_reached() {
     if (max_time_minutes < 0)
         return false;
@@ -420,12 +410,14 @@ bool EXAMM::time_limit_reached() {
     return minutes_elapsed >= max_time_minutes;
 }
 
-Work *EXAMM::generate_work() {
+Msg *EXAMM::generate_work() {
   auto a = speciation_strategy->get_inserted_genomes() > max_genomes;
   auto b = time_limit_reached();
-  fflush(0);
+  
+  // For the MT version only.
   if (speciation_strategy->get_inserted_genomes() > max_genomes || time_limit_reached())
-    return new TerminateWork();
+    return new TerminateMsg();
+  
   return speciation_strategy->generate_work(rng_0_1, generator);
 }
 

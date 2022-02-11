@@ -213,11 +213,11 @@ int32_t NeatSpeciationStrategy::insert_genome(RNN_Genome *genome) {
   }
 }
 
-Work *NeatSpeciationStrategy::generate_work(
+WorkMsg *NeatSpeciationStrategy::generate_work(
     uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator) {
   // generate the genome from the next island in a round
   // robin fashion.
-  Work *work = NULL;
+  WorkMsg *work = NULL;
   // generate the genome from the next island in a round
   // robin fashion.
   if (generation_species >= neat_species.size())
@@ -243,7 +243,7 @@ Work *NeatSpeciationStrategy::generate_work(
     RNN_Genome *genome;
     currentSpecies->copy_random_genome(rng_0_1, generator, &genome);
 
-    work = new MutationWork(genome, 1);
+    work = new WorkMsg(genome, 1);
   } else {
     // first eliminate genomes who have low fitness sharing in this species
     if (currentSpecies->size() > 10)
@@ -267,7 +267,7 @@ Work *NeatSpeciationStrategy::generate_work(
   return work;
 }
 
-Work *NeatSpeciationStrategy::generate_work_for_species(
+WorkMsg *NeatSpeciationStrategy::generate_work_for_species(
     uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator) {
   // if we haven't filled ALL of the island populations yet, only use mutation
   // otherwise do mutation at %, crossover at %, and island crossover at %
@@ -281,7 +281,7 @@ Work *NeatSpeciationStrategy::generate_work_for_species(
     RNN_Genome *genome;
     currentSpecies->copy_random_genome(rng_0_1, generator, &genome);
 
-    return new MutationWork(genome, 1);
+    return new WorkMsg(genome, 1);
   } else if (r < intra_island_crossover_rate || neat_species.size() == 1) {
     // intra-island crossover
     Log::info("performing intra-species crossover\n");
@@ -292,7 +292,7 @@ Work *NeatSpeciationStrategy::generate_work_for_species(
                                             &parent2);
     vector<RNN_Genome *> parents = {parent1, parent2};
     // CrossoverWork will delete parent1 and parent2 when the time comes.
-    return new CrossoverWork(parents);
+    return new WorkMsg(parents);
   } else {
     // inter-island crossover
     Log::info("performing inter-species crossover\n");
@@ -319,7 +319,7 @@ Work *NeatSpeciationStrategy::generate_work_for_species(
 
     // CrossoverWork will delete parent1 and parent2 when the time comes.
     vector<RNN_Genome *> parents = {parent1, parent2};
-    return new CrossoverWork(parents);
+    return new WorkMsg(parents);
   }
 }
 
