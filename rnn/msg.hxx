@@ -10,11 +10,18 @@
 class Msg {
    public:
     enum msg_ty : uint8_t {
+        // Unit of work to be sent to a worker
         WORK,
+        // Result after a genome has been trained
+        RESULT,
+        // Worker sends this to request a genome
+        REQUEST,
+        // Sent after the proper # of genomes have been generated
         TERMINATE,
+        // Sharing a genome to other regions
         GENOME_SHARE,
-        GENOME_RESULT,
-        GENOME_REQUEST,
+        // Used to send information about the number of genomes generated to the master.
+        // Should be propagated upwards to the master.
         EVAL_ACCOUNTING,
     };
 
@@ -65,19 +72,19 @@ class TerminateMsg : public Msg {
     TerminateMsg(istream &bin_istream);
 
     virtual void write_to_stream(ostream &bin_ostream);
-    virtual int32_t get_msg_ty();
+    virtual int32_t get_msg_ty() const;
 };
 
 class EvalAccountingMsg : public Msg {
-   private:
+   protected:
     uint32_t n_evals;
 
    public:
-    EvalAccountingMsg();
+    EvalAccountingMsg(uint32_t n_evals);
     EvalAccountingMsg(istream &bin_istream);
 
     virtual void write_to_stream(ostream &bin_ostream);
-    virtual int32_t get_msg_ty();
+    virtual int32_t get_msg_ty() const;
 };
 
 class GenomeShareMsg : public EvalAccountingMsg {
@@ -86,32 +93,32 @@ class GenomeShareMsg : public EvalAccountingMsg {
     bool propagate;
 
    public:
-    GenomeShareMsg();
+    GenomeShareMsg(RNN_Genome *g, bool propagate, uint32_t n_evals = 0);
     GenomeShareMsg(istream &bin_istream);
 
     virtual void write_to_stream(ostream &bin_ostream);
-    virtual int32_t get_msg_ty();
+    virtual int32_t get_msg_ty() const;
 };
 
-class GenomeResultMsg : public Msg {
+class ResultMsg : public Msg {
    private:
     RNN_Genome *genome;
 
    public:
-    GenomeResultMsg();
-    GenomeResultMsg(istream &bin_istream);
+    ResultMsg(RNN_Genome *g);
+    ResultMsg(istream &bin_istream);
 
     virtual void write_to_stream(ostream &bin_ostream);
-    virtual int32_t get_msg_ty();
+    virtual int32_t get_msg_ty() const;
 };
 
-class GenomeRequestMsg : public Msg {
+class RequestMsg : public Msg {
    public:
-    GenomeRequestMsg();
-    GenomeRequestMsg(istream &bin_istream);
+    RequestMsg();
+    RequestMsg(istream &bin_istream);
 
     virtual void write_to_stream(ostream &bin_ostream);
-    virtual int32_t get_msg_ty();
+    virtual int32_t get_msg_ty() const;
 };
 
 #endif

@@ -45,7 +45,8 @@ class LogFile {
     friend class Log;
 };
 
-struct Log {
+class Log {
+   public:
     /**
      * Specifies which messages to log.
      * Messages will be written to the standard output log if their type is <= message_level.
