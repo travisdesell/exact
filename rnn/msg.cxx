@@ -32,11 +32,11 @@ Msg *Msg::read_from_stream(istream &bin_istream) {
         case msg_ty::GENOME_SHARE:
             return (Msg *)new GenomeShareMsg(bin_istream);
             break;
-        case msg_ty::GENOME_RESULT:
-            return (Msg *)new GenomeResultMsg(bin_istream);
+        case msg_ty::RESULT:
+            return (Msg *)new ResultMsg(bin_istream);
             break;
-        case msg_ty::GENOME_REQUEST:
-            return (Msg *)new GenomeRequestMsg(bin_istream);
+        case msg_ty::REQUEST:
+            return (Msg *)new RequestMsg(bin_istream);
             break;
         case msg_ty::EVAL_ACCOUNTING:
             return (Msg *)new EvalAccountingMsg(bin_istream);
@@ -62,8 +62,8 @@ WorkMsg::WorkMsg(istream &bin_istream) {
         exit(1);
     }
 
-    bin_istream.read((char *) &group_id, sizeof(uint32_t));
-    bin_istream.read((char *) &genome_number, sizeof(int32_t));
+    bin_istream.read((char *)&group_id, sizeof(uint32_t));
+    bin_istream.read((char *)&genome_number, sizeof(int32_t));
 
     work_type = bin_istream.get() ? mutation : crossover;
 
@@ -73,7 +73,6 @@ WorkMsg::WorkMsg(istream &bin_istream) {
 
         vector<shared_ptr<const RNN_Genome>> parents(n);
         for (uint32_t i = 0; i < n; i++) parents.push_back(make_unique<const RNN_Genome>(bin_istream));
-        
         args = co_args{.parents = move(parents)};
     } else {
         uint32_t n_mutations;
@@ -88,8 +87,8 @@ WorkMsg::WorkMsg(istream &bin_istream) {
 void WorkMsg::write_to_stream(ostream &bin_ostream) {
     bin_ostream.put(get_msg_ty());
 
-    bin_ostream.write((char *) &group_id, sizeof(int32_t));
-    bin_ostream.write((char *) &genome_number, sizeof(int32_t));
+    bin_ostream.write((char *)&group_id, sizeof(int32_t));
+    bin_ostream.write((char *)&genome_number, sizeof(int32_t));
 
     bin_ostream.put(work_type);
 
@@ -107,15 +106,12 @@ void WorkMsg::write_to_stream(ostream &bin_ostream) {
     }
 }
 
-int32_t WorkMsg::get_msg_ty() const {
-    return Msg::WORK;
-}
+int32_t WorkMsg::get_msg_ty() const { return Msg::WORK; }
 
 void WorkMsg::set_group_id(int32_t gid) { this->group_id = gid; }
 void WorkMsg::set_genome_number(int32_t gn) { this->genome_number = gn; }
 
 unique_ptr<RNN_Genome> WorkMsg::get_genome(GenomeOperators &operators) {
-    hild;
     // Generates new genome and deletes parent genome(s)
     if (work_type == crossover) {
         co_args &cargs = get<crossover>(args);
@@ -138,8 +134,92 @@ TerminateMsg::TerminateMsg(istream &bin_istream) {
     }
 }
 
-void TerminateMsg::write_to_stream(ostream &bin_ostream) {
+void TerminateMsg::write_to_stream(ostream &bin_ostream) { bin_ostream.put(get_msg_ty()); }
+
+int32_t TerminateMsg::Msg::get_msg_ty() const { return Msg::TERMINATE; }
+
+EvalAccountingMsg::EvalAccountingMsg(uint32_t n) : n_evals(n) {}
+EvalAccountingMsg::EvalAccountingMsg(istream &bin_istream) {
+    int msg_ty = bin_istream.get();
+
+    if (msg_ty != get_msg_ty()) {
+        Log::fatal("Read wrong message type for EvalAccountingMsg\n");
+        exit(1);
+    }
+
+    bin_istream.read((char *)&n_evals, sizeof(uint32_t));
+}
+
+void EvalAccountingMsg::write_to_stream(ostream &bin_ostream) {
     bin_ostream.put(get_msg_ty());
+    bin_ostream.write((char *)&n_evals, sizeof(uint32_t));
+}
+
+int32_t EvalAccountingMsg::get_msg_ty() const { return Msg::EVAL_ACCOUNTING; }
+
+GenomeShareMsg::GenomeShareMsg(RNN_Genome *g, bool propagate, uint32_t n_evals)
+    : EvalAccountingMsg(n_evals), genome(g), propagate(propagate) {}
+GenomeShareMsg::GenomeShareMsg(istream &bin_istream) : EvalAccountingMsg(0) {
+    int msg_ty = bin_istream.get();
+
+    if (msg_ty != get_msg_ty()) {
+        Log::fatal("Read wrong message type for GenomeShareMsg\n");
+        exit(1);
+    }
+
+    bin_istream.read((char *) &propagate, sizeof(bool));
+    bin_istream.read((char *) &n_evals, sizeof(uint32_t));
+    genome = new RNN_Genome(bin_istream);
+}
+
+void GenomeShareMsg::write_to_stream(ostream &bin_ostream) {
+    bin_ostream.put(get_msg_ty());
+    bin_ostream.write((char *) &propagate, sizeof(bool));
+    bin_ostream.write((char *) &n_evals, sizeof(uint32_t));
+    genome->write_to_stream(bin_ostream);
+}
+
+int32_t GenomeShareMsg::get_msg_ty() const {
+    return Msg::GENOME_SHARE;
+}
+
+ResultMsg::ResultMsg(RNN_Genome *g) : genome(g) {}
+ResultMsg::ResultMsg(istream &bin_istream) {
+    int msg_ty = bin_istream.get();
+
+    if (msg_ty != get_msg_ty()) {
+        Log::fatal("Read wrong message type for ResultMsg\n");
+        exit(1);
+    }
+
+    genome = new RNN_Genome(bin_istream);
+}
+
+void ResultMsg::write_to_stream(ostream &bin_ostream) {
+    bin_ostream.put(get_msg_ty());
+    genome->write_to_stream(bin_ostream);
+}
+
+int32_t ResultMsg::get_msg_ty() const {
+    return Msg::RESULT;
+}
+
+RequestMsg::RequestMsg() {}
+RequestMsg::RequestMsg(istream &bin_istream) {
+    int msg_ty = bin_istream.get();
+
+    if (msg_ty != get_msg_ty()) {
+        Log::fatal("Read wrong message type for RequestMsg\n");
+        exit(1);
+    }
+}
+
+void RequestMsg::write_to_stream(ostream &bin_ostream) {
+    bin_ostream.put(get_msg_ty());
+}
+
+int32_t RequestMsg::get_msg_ty() const {
+    return Msg::REQUEST;
 }
 
 int32_t TerminateMsg::get_msg_ty() const {
