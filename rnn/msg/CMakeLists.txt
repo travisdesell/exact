@@ -1,1 +1,1 @@
-add_library(work work.cxx)
+add_library(msg msg.cxx)

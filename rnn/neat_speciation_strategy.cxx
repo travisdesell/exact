@@ -257,7 +257,7 @@ WorkMsg *NeatSpeciationStrategy::generate_work(
     work = generate_work_for_species(rng_0_1, generator);
   }
 
-  work->set_generation_id(generated_genomes++);
+  work->set_genome_number(generated_genomes++);
   work->set_group_id(generation_species++);
 
   // Round robin reset / loop back to zero

@@ -96,18 +96,6 @@ public:
         WeightType _weight_inheritance, WeightType _mutated_component_weight,
         string _output_directory, GenomeOperators _genome_operators,
         DatasetMeta _dataset_meta, TrainingParameters _training_parameters,
-        // int32_t _bp_iterations,
-        // double _learning_rate,
-        // bool _use_high_threshold,
-        // double _high_threshold,
-        // bool _use_low_threshold,
-        // double _low_threshold,
-        // bool _use_dropout,
-        // double _dropout_probability,
-        // int32_t _min_recurrent_depth,
-        // int32_t _max_recurrent_depth,
-        // bool _use_regression,
-        // string _output_directory,
         RNN_Genome *seed_genome, bool _start_filled);
 
   ~EXAMM();
@@ -123,13 +111,13 @@ public:
 
   int get_random_node_type();
 
-  bool insert_genome(RNN_Genome *genome);
+  bool insert_genome(shared_ptr<const RNN_Genome> genome);
 
   double get_best_fitness();
   double get_worst_fitness();
-  RNN_Genome *get_best_genome();
-  RNN_Genome *get_worst_genome();
-  RNN_Genome *get_seed_genome();
+  shared_ptr<RNN_Genome> get_best_genome();
+  shared_ptr<RNN_Genome> get_worst_genome();
+  shared_ptr<RNN_Genome> get_seed_genome();
 
   string get_output_directory() const;
   RNN_Genome *generate_for_transfer_learning(string file_name, int extra_inputs,

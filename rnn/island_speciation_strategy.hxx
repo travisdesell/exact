@@ -1,4 +1,3 @@
-#ifndef EXAMM_ISLAND_SPECIATION_STRATEGY_HXX
 #define EXAMM_ISLAND_SPECIATION_STRATEGY_HXX
 
 #include <functional>
@@ -46,7 +45,7 @@ class IslandSpeciationStrategy : public SpeciationStrategy {
                                            equal 1, if not they will be scaled
                                            down such that they do. */
 
-    RNN_Genome *seed_genome; /**< keep a reference to the seed genome so we can re-use it
+    shared_ptr<const RNN_Genome> seed_genome; /**< keep a reference to the seed genome so we can re-use it
                                 across islands and not duplicate innovation numbers. */
 
     string island_ranking_method; /**< The method used to find the worst island in
@@ -78,7 +77,7 @@ class IslandSpeciationStrategy : public SpeciationStrategy {
      * All the islands which contain the genomes for this speciation strategy.
      */
     vector<Island *> islands;
-    RNN_Genome *global_best_genome;
+    shared_ptr<const RNN_Genome> global_best_genome;
 
     GenomeOperators &genome_operators;
 
@@ -101,7 +100,7 @@ class IslandSpeciationStrategy : public SpeciationStrategy {
      */
     IslandSpeciationStrategy(uint32_t _number_of_islands, uint32_t _max_island_size, double _mutation_rate,
                              double _intra_island_crossover_rate, double _inter_island_crossover_rate,
-                             RNN_Genome *_seed_genome, string _island_ranking_method, string _repopulation_method,
+                             shared_ptr<const RNN_Genome> _seed_genome, string _island_ranking_method, string _repopulation_method,
                              uint32_t _extinction_event_generation_number, uint32_t _repopulation_mutations,
                              uint32_t _islands_to_exterminate, uint32_t _max_genomes, bool _repeat_extinction,
                              bool _seed_genome_was_minimal, GenomeOperators &genome_operators);
@@ -112,7 +111,7 @@ class IslandSpeciationStrategy : public SpeciationStrategy {
      */
     IslandSpeciationStrategy(uint32_t _number_of_islands, uint32_t _max_island_size, double _mutation_rate,
                              double _intra_island_crossover_rate, double _inter_island_crossover_rate,
-                             RNN_Genome *_seed_genome, string _island_ranking_method, string _repopulation_method,
+                             shared_ptr<const RNN_Genome> _seed_genome, string _island_ranking_method, string _repopulation_method,
                              uint32_t _extinction_event_generation_number, uint32_t _repopulation_mutations,
                              uint32_t _islands_to_exterminate, bool seed_genome_was_minimal,
                              function<void(RNN_Genome *)> &modify, GenomeOperators &genome_operators);
@@ -144,14 +143,14 @@ class IslandSpeciationStrategy : public SpeciationStrategy {
      * \return the best genome of all islands or NULL if no genomes have yet been
      * inserted
      */
-    RNN_Genome *get_best_genome();
+    const RNN_Genome *get_best_genome();
 
     /**
      * Gets the the worst genome of all the islands
      * \return the worst genome of all islands or NULL if no genomes have yet been
      * inserted
      */
-    RNN_Genome *get_worst_genome();
+    const RNN_Genome *get_worst_genome();
 
     /**
      *  \return true if all the islands are full
@@ -169,7 +168,7 @@ class IslandSpeciationStrategy : public SpeciationStrategy {
      * \return a value < 0 if the genome was not inserted, 0 if it was a new best
      * genome for all the islands, or > 0 otherwise.
      */
-    int32_t insert_genome(RNN_Genome *genome);
+    int32_t insert_genome(unique_ptr<RNN_Genome> genome);
 
     /**
      * find the worst island in the population, the worst island's best genome is
@@ -228,7 +227,7 @@ class IslandSpeciationStrategy : public SpeciationStrategy {
      */
     void copy_island(uint32_t src_island, uint32_t dst_island);
 
-    RNN_Genome *get_global_best_genome();
+    shared_ptr<const RNN_Genome>& get_global_best_genome();
 
     void set_erased_islands_status();
 

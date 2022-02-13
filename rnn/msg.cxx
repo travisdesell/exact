@@ -52,9 +52,9 @@ Msg *Msg::read_from_stream(istream &bin_istream) {
     return NULL;
 }
 
-WorkMsg::WorkMsg(RNN_Genome *g, uint32_t n_mutations)
+WorkMsg::WorkMsg(shared_ptr<const RNN_Genome> g, uint32_t n_mutations)
     : args(mu_args{.g = g, .n_mutations = n_mutations}), work_type(mutation) {}
-WorkMsg::WorkMsg(vector<RNN_Genome *> parents) : work_type(crossover), args(co_args{.parents = parents}) {}
+WorkMsg::WorkMsg(vector<shared_ptr<const RNN_Genome>> parents) : work_type(crossover), args(co_args{.parents = parents}) {}
 WorkMsg::WorkMsg(istream &bin_istream) {
     int class_id = bin_istream.get();
     if (class_id != get_msg_ty()) {
@@ -71,17 +71,17 @@ WorkMsg::WorkMsg(istream &bin_istream) {
         uint32_t n;
         bin_istream.read((char *)&n, sizeof(uint32_t));
 
-        vector<RNN_Genome *> parents(n);
-        for (uint32_t i = 0; i < n; i++) parents.push_back(new RNN_Genome(bin_istream));
+        vector<shared_ptr<const RNN_Genome>> parents(n);
+        for (uint32_t i = 0; i < n; i++) parents.push_back(make_unique<const RNN_Genome>(bin_istream));
         
-        args = variant<co_args>(co_args{.parents = move(parents)});
+        args = co_args{.parents = move(parents)};
     } else {
         uint32_t n_mutations;
 
         bin_istream.read((char *)&n_mutations, sizeof(uint32_t));
-        RNN_Genome *genome = new RNN_Genome(bin_istream);
+        unique_ptr<const RNN_Genome> genome = make_unique<const RNN_Genome>(bin_istream);
 
-        args = variant<mu_args>(mu_args{.g = genome, .n_mutations = n_mutations});
+        args = mu_args{.g = genome, .n_mutations = n_mutations};
     }
 }
 
@@ -94,7 +94,7 @@ void WorkMsg::write_to_stream(ostream &bin_ostream) {
     bin_ostream.put(work_type);
 
     if (work_type == crossover) {
-        vector<RNN_Genome *> &parents = get<crossover>(args).parents.size();
+        auto &parents = get<crossover>(args).parents;
         uint32_t n = parents.size();
 
         bin_ostream.write((char *)&n, sizeof(uint32_t));
@@ -115,16 +115,16 @@ void WorkMsg::set_group_id(int32_t gid) { this->group_id = gid; }
 void WorkMsg::set_genome_number(int32_t gn) { this->genome_number = gn; }
 
 unique_ptr<RNN_Genome> WorkMsg::get_genome(GenomeOperators &operators) {
-    unique_ptr<RNN_Genome> child;
+    hild;
     // Generates new genome and deletes parent genome(s)
     if (work_type == crossover) {
         co_args &cargs = get<crossover>(args);
-        child.reset(operators.ncrossover(cargs.parents));
-        for (auto i = 0; i < cargs.parents.size(); i++) delete cargs.parents[i];
+        unique_ptr<RNN_Genome> c = operators.ncrossover(cargs.parents);
+        return c;
     } else {
         mu_args &margs = get<mutation>(args);
-        child.reset(operators.mutate(margs.g, margs.n_mutations));
-        delete margs.g;
+        unique_ptr<RNN_Genome> c = operators.mutate(margs.g, margs.n_mutations);
+        return c;
     }
 }
 
@@ -140,4 +140,8 @@ TerminateMsg::TerminateMsg(istream &bin_istream) {
 
 void TerminateMsg::write_to_stream(ostream &bin_ostream) {
     bin_ostream.put(get_msg_ty());
+}
+
+int32_t TerminateMsg::get_msg_ty() const {
+    return Msg::TERMINATE;
 }

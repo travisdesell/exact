@@ -275,9 +275,6 @@ void EXAMM::update_log() {
     }
 
     RNN_Genome *best_genome = get_best_genome();
-    if (best_genome == NULL) {
-      best_genome = speciation_strategy->get_global_best_genome();
-    }
 
     std::chrono::time_point<std::chrono::system_clock> currentClock =
         std::chrono::system_clock::now();
@@ -335,16 +332,15 @@ double EXAMM::get_worst_fitness() {
   return speciation_strategy->get_worst_fitness();
 }
 
-RNN_Genome *EXAMM::get_best_genome() {
+const RNN_Genome *EXAMM::get_best_genome() {
   return speciation_strategy->get_best_genome();
 }
 
-RNN_Genome *EXAMM::get_worst_genome() {
+const RNN_Genome *EXAMM::get_worst_genome() {
   return speciation_strategy->get_worst_genome();
 }
 
-// this will insert a COPY, original needs to be deleted
-bool EXAMM::insert_genome(RNN_Genome *genome) {
+bool EXAMM::insert_genome(shared_ptr<const RNN_Genome> genome) {
   total_bp_epochs += genome->get_bp_iterations();
 
   // Log::info("genomes evaluated: %10d , attempting to insert: %s\n",
@@ -360,14 +356,6 @@ bool EXAMM::insert_genome(RNN_Genome *genome) {
   genome->update_generation_map(generated_from_map);
 
   int32_t insert_position = speciation_strategy->insert_genome(genome);
-  // write this genome to disk if it was a new best found genome
-  if (insert_position == 0) {
-    genome->normalize_type = dataset_meta.normalize_type;
-    genome->write_graphviz(output_directory + "/rnn_genome_" +
-                           to_string(genome->get_generation_id()) + ".gv");
-    genome->write_to_file(output_directory + "/rnn_genome_" +
-                          to_string(genome->get_generation_id()) + ".bin");
-  }
 
   // Name of the operator
   const map<string, int> *generated_by_map = genome->get_generated_by_map();
@@ -395,8 +383,18 @@ bool EXAMM::insert_genome(RNN_Genome *genome) {
     }
   }
 
-  // This is the culprit right here...
-  // speciation_strategy->print();
+  // write this genome to disk if it is the new global best genome,
+  // also save a pointer to it.
+  if (insert_position == 0) {
+    global_best_genome = genome;
+
+    genome->normalize_type = dataset_meta.normalize_type;
+    genome->write_graphviz(output_directory + "/rnn_genome_" +
+                           to_string(genome->get_generation_id()) + ".gv");
+    genome->write_to_file(output_directory + "/rnn_genome_" +
+                          to_string(genome->get_generation_id()) + ".bin");
+  }
+  
   update_log();
 
   return insert_position >= 0;
@@ -411,9 +409,6 @@ bool EXAMM::time_limit_reached() {
 }
 
 Msg *EXAMM::generate_work() {
-  auto a = speciation_strategy->get_inserted_genomes() > max_genomes;
-  auto b = time_limit_reached();
-  
   // For the MT version only.
   if (speciation_strategy->get_inserted_genomes() > max_genomes || time_limit_reached())
     return new TerminateMsg();

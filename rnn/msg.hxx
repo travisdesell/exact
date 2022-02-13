@@ -23,7 +23,7 @@ class Msg {
 
     Msg();
     Msg(istream &bin_istream);
-    virtual ~Msg() = default;
+    virtual ~Msg() = 0;
 
     virtual void write_to_stream(ostream &bin_ostream) = 0;
     virtual int32_t get_msg_ty() const = 0;
@@ -32,11 +32,11 @@ class Msg {
 class WorkMsg : public Msg {
    private:
     struct mu_args {
-        RNN_Genome *g;
+        shared_ptr<const RNN_Genome> g;
         uint32_t n_mutations;
     };
     struct co_args {
-        vector<RNN_Genome *> parents;
+        vector<shared_ptr<const RNN_Genome>> parents;
     };
 
     std::variant<co_args, mu_args> args;
@@ -47,7 +47,7 @@ class WorkMsg : public Msg {
     enum : uint8_t { crossover = 0, mutation = 1 } work_type;
    
     WorkMsg(RNN_Genome *g, uint32_t n_mutations); // Mutation constructor
-    WorkMsg(vector<RNN_Genome *> parents); // Crossover constructor
+    WorkMsg(vector<shared_ptr<const RNN_Genome>> parents); // Crossover constructor
     WorkMsg(istream &bin_istream);
     virtual ~WorkMsg() = default;
 
@@ -65,7 +65,7 @@ class TerminateMsg : public Msg {
     TerminateMsg(istream &bin_istream);
 
     virtual void write_to_stream(ostream &bin_ostream);
-    virtual int32_t get_msg_ty();
+    virtual int32_t get_msg_ty() const;
 };
 
 class EvalAccountingMsg : public Msg {
@@ -77,12 +77,12 @@ class EvalAccountingMsg : public Msg {
     EvalAccountingMsg(istream &bin_istream);
 
     virtual void write_to_stream(ostream &bin_ostream);
-    virtual int32_t get_msg_ty();
+    virtual int32_t get_msg_ty() const;
 };
 
 class GenomeShareMsg : public EvalAccountingMsg {
    private:
-    RNN_Genome *genome;
+    shared_ptr<const RNN_Genome> genome;
     bool propagate;
 
    public:
@@ -90,19 +90,19 @@ class GenomeShareMsg : public EvalAccountingMsg {
     GenomeShareMsg(istream &bin_istream);
 
     virtual void write_to_stream(ostream &bin_ostream);
-    virtual int32_t get_msg_ty();
+    virtual int32_t get_msg_ty() const;
 };
 
 class GenomeResultMsg : public Msg {
    private:
-    RNN_Genome *genome;
+    unique_ptr<RNN_Genome> genome;
 
    public:
     GenomeResultMsg();
     GenomeResultMsg(istream &bin_istream);
 
     virtual void write_to_stream(ostream &bin_ostream);
-    virtual int32_t get_msg_ty();
+    virtual int32_t get_msg_ty() const;
 };
 
 class GenomeRequestMsg : public Msg {
@@ -111,7 +111,7 @@ class GenomeRequestMsg : public Msg {
     GenomeRequestMsg(istream &bin_istream);
 
     virtual void write_to_stream(ostream &bin_ostream);
-    virtual int32_t get_msg_ty();
+    virtual int32_t get_msg_ty() const;
 };
 
 #endif
