@@ -149,9 +149,10 @@ void ENARC_Node::input_fired(int time, double incoming_output) {
   if (inputs_fired[time] < total_inputs)
     return;
   else if (inputs_fired[time] > total_inputs) {
-    Log::fatal("ERROR: inputs_fired on ENARC_Node %d at time %d is %d and "
-               "total_inputs is %d\n",
-               innovation_number, time, inputs_fired[time], total_inputs);
+    Log::fatal(
+        "ERROR: inputs_fired on ENARC_Node %d at time %d is %d and "
+        "total_inputs is %d\n",
+        innovation_number, time, inputs_fired[time], total_inputs);
     exit(1);
   }
 
@@ -161,8 +162,7 @@ void ENARC_Node::input_fired(int time, double incoming_output) {
   double x = input_values[time];
 
   double h_prev = 0.0;
-  if (time > 0)
-    h_prev = output_values[time - 1];
+  if (time > 0) h_prev = output_values[time - 1];
 
   double xzw = x * zw;
   double hrw = h_prev * rw;
@@ -219,9 +219,10 @@ void ENARC_Node::try_update_deltas(int time) {
   if (outputs_fired[time] < total_outputs)
     return;
   else if (outputs_fired[time] > total_outputs) {
-    Log::fatal("ERROR: outputs_fired on ENARC_Node %d at time %d is %d and "
-               "total_outputs is %d\n",
-               innovation_number, time, outputs_fired[time], total_outputs);
+    Log::fatal(
+        "ERROR: outputs_fired on ENARC_Node %d at time %d is %d and "
+        "total_outputs is %d\n",
+        innovation_number, time, outputs_fired[time], total_outputs);
     exit(1);
   }
 
@@ -229,12 +230,10 @@ void ENARC_Node::try_update_deltas(int time) {
   double x = input_values[time];
 
   double h_prev = 0.0;
-  if (time > 0)
-    h_prev = output_values[time - 1];
+  if (time > 0) h_prev = output_values[time - 1];
 
   double d_h = error;
-  if (time < (((signed) series_length) - 1))
-    d_h += d_h_prev[time + 1];
+  if (time < (((signed)series_length) - 1)) d_h += d_h_prev[time + 1];
 
   // d_h *= 0.2;
 

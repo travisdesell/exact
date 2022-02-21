@@ -12,11 +12,10 @@ using std::uniform_real_distribution;
 using std::vector;
 
 #include "common/random.hxx"
-
 #include "rnn_node_interface.hxx"
 
 class LSTM_Node : public RNN_Node_Interface {
-private:
+ private:
   double output_gate_update_weight;
   double output_gate_weight;
   double output_gate_bias;
@@ -63,7 +62,7 @@ private:
   vector<double> d_cell_weight;
   vector<double> d_cell_bias;
 
-public:
+ public:
   LSTM_Node(int _innovation_number, int _type, double _depth);
   ~LSTM_Node();
 

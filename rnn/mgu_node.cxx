@@ -1,5 +1,4 @@
 #include <cmath>
-
 #include <fstream>
 using std::ostream;
 
@@ -18,7 +17,6 @@ using std::vector;
 
 #include "common/log.hxx"
 #include "common/random.hxx"
-
 #include "mgu_node.hxx"
 #include "mse.hxx"
 #include "rnn_node_interface.hxx"
@@ -35,7 +33,6 @@ MGU_Node::~MGU_Node() {}
 void MGU_Node::initialize_lamarckian(minstd_rand0 &generator,
                                      NormalDistribution &normal_distribution,
                                      double mu, double sigma) {
-
   fw = bound(normal_distribution.random(generator, mu, sigma));
   fu = bound(normal_distribution.random(generator, mu, sigma));
   f_bias = bound(normal_distribution.random(generator, mu, sigma));
@@ -48,7 +45,6 @@ void MGU_Node::initialize_lamarckian(minstd_rand0 &generator,
 void MGU_Node::initialize_xavier(minstd_rand0 &generator,
                                  uniform_real_distribution<double> &rng_1_1,
                                  double range) {
-
   fw = range * (rng_1_1(generator));
   fu = range * (rng_1_1(generator));
   f_bias = range * (rng_1_1(generator));
@@ -120,9 +116,10 @@ void MGU_Node::input_fired(int time, double incoming_output) {
   if (inputs_fired[time] < total_inputs)
     return;
   else if (inputs_fired[time] > total_inputs) {
-    Log::fatal("ERROR: inputs_fired on MGU_Node %d at time %d is %d and "
-               "total_inputs is %d\n",
-               innovation_number, time, inputs_fired[time], total_inputs);
+    Log::fatal(
+        "ERROR: inputs_fired on MGU_Node %d at time %d is %d and "
+        "total_inputs is %d\n",
+        innovation_number, time, inputs_fired[time], total_inputs);
     exit(1);
   }
 
@@ -132,8 +129,7 @@ void MGU_Node::input_fired(int time, double incoming_output) {
   double x = input_values[time];
 
   double h_prev = 0.0;
-  if (time > 0)
-    h_prev = output_values[time - 1];
+  if (time > 0) h_prev = output_values[time - 1];
 
   double hfu = h_prev * fu;
   double xfw = x * fw;
@@ -155,9 +151,10 @@ void MGU_Node::try_update_deltas(int time) {
   if (outputs_fired[time] < total_outputs)
     return;
   else if (outputs_fired[time] > total_outputs) {
-    Log::fatal("ERROR: outputs_fired on MGU_Node %d at time %d is %d and "
-               "total_outputs is %d\n:",
-               innovation_number, time, outputs_fired[time], total_outputs);
+    Log::fatal(
+        "ERROR: outputs_fired on MGU_Node %d at time %d is %d and "
+        "total_outputs is %d\n:",
+        innovation_number, time, outputs_fired[time], total_outputs);
     exit(1);
   }
 
@@ -166,13 +163,11 @@ void MGU_Node::try_update_deltas(int time) {
   double x = input_values[time];
 
   double h_prev = 0.0;
-  if (time > 0)
-    h_prev = output_values[time - 1];
+  if (time > 0) h_prev = output_values[time - 1];
 
   // backprop output gate
   double d_out = error;
-  if (time < (((signed) series_length) - 1))
-    d_out += d_h_prev[time + 1];
+  if (time < (((signed)series_length) - 1)) d_out += d_h_prev[time + 1];
 
   d_h_prev[time] = d_out * (1 - f[time]);
 

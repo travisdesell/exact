@@ -6,21 +6,36 @@ TrainingParameters::TrainingParameters(
     double learning_rate, double dropout_probability, double mu,
     bool use_nesterov_momentum, bool use_regression, bool use_dropout,
     bool use_low_norm, bool use_high_norm, bool use_random_sequence_length)
-    : bp_iterations(bp_iterations), sequence_lower_bound(sequence_lower_bound),
-      sequence_upper_bound(sequence_upper_bound), low_threshold(low_threshold),
-      high_threshold(high_threshold), learning_rate(learning_rate),
-      dropout_probability(dropout_probability), mu(mu),
+    : bp_iterations(bp_iterations),
+      sequence_lower_bound(sequence_lower_bound),
+      sequence_upper_bound(sequence_upper_bound),
+      low_threshold(low_threshold),
+      high_threshold(high_threshold),
+      learning_rate(learning_rate),
+      dropout_probability(dropout_probability),
+      mu(mu),
       use_nesterov_momentum(use_nesterov_momentum),
-      use_regression(use_regression), use_dropout(use_dropout),
-      use_low_norm(use_low_norm), use_high_norm(use_high_norm),
+      use_regression(use_regression),
+      use_dropout(use_dropout),
+      use_low_norm(use_low_norm),
+      use_high_norm(use_high_norm),
       use_random_sequence_length(use_random_sequence_length) {}
 
 TrainingParameters::TrainingParameters()
-    : bp_iterations(10), sequence_lower_bound(10), sequence_upper_bound(100),
-      low_threshold(0.05), high_threshold(1.0), learning_rate(0.001),
-      dropout_probability(0.5), mu(0.9), use_nesterov_momentum(true),
-      use_regression(false), use_dropout(false), use_low_norm(true),
-      use_high_norm(true), use_random_sequence_length(false) {}
+    : bp_iterations(10),
+      sequence_lower_bound(10),
+      sequence_upper_bound(100),
+      low_threshold(0.05),
+      high_threshold(1.0),
+      learning_rate(0.001),
+      dropout_probability(0.5),
+      mu(0.9),
+      use_nesterov_momentum(true),
+      use_regression(false),
+      use_dropout(false),
+      use_low_norm(true),
+      use_high_norm(true),
+      use_random_sequence_length(false) {}
 
 TrainingParameters::TrainingParameters(istream &bin_istream) {
   bin_istream.read((char *)&bp_iterations, sizeof(int32_t));

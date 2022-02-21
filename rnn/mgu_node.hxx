@@ -12,11 +12,10 @@ using std::uniform_real_distribution;
 using std::vector;
 
 #include "common/random.hxx"
-
 #include "rnn_node_interface.hxx"
 
 class MGU_Node : public RNN_Node_Interface {
-private:
+ private:
   double fw;
   double fu;
   double f_bias;
@@ -39,7 +38,7 @@ private:
   vector<double> h_tanh;
   vector<double> ld_h_tanh;
 
-public:
+ public:
   MGU_Node(int _innovation_number, int _layer_type, double _depth);
   ~MGU_Node();
 

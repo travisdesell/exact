@@ -1,16 +1,13 @@
 #include <cmath>
-
 #include <vector>
 using std::vector;
 
-#include "rnn_node.hxx"
-
 #include "common/log.hxx"
+#include "rnn_node.hxx"
 
 RNN_Node::RNN_Node(int _innovation_number, int _layer_type, double _depth,
                    int _node_type)
     : RNN_Node_Interface(_innovation_number, _layer_type, _depth), bias(0) {
-
   // node type will be simple, jordan or elman
   node_type = _node_type;
   Log::trace("created node: %d, layer type: %d, node type: %d\n",
@@ -22,7 +19,6 @@ RNN_Node::RNN_Node(int _innovation_number, int _layer_type, double _depth,
     : RNN_Node_Interface(_innovation_number, _layer_type, _depth,
                          _parameter_name),
       bias(0) {
-
   // node type will be simple, jordan or elman
   node_type = _node_type;
   Log::trace("created node: %d, layer type: %d, node type: %d\n",
@@ -40,14 +36,12 @@ void RNN_Node::initialize_lamarckian(minstd_rand0 &generator,
 void RNN_Node::initialize_xavier(minstd_rand0 &generator,
                                  uniform_real_distribution<double> &rng_1_1,
                                  double range) {
-
   bias = range * (rng_1_1(generator));
 }
 
 void RNN_Node::initialize_kaiming(minstd_rand0 &generator,
                                   NormalDistribution &normal_distribution,
                                   double range) {
-
   bias = range * normal_distribution.random(generator, 0, 1);
 }
 
@@ -64,9 +58,10 @@ void RNN_Node::input_fired(int time, double incoming_output) {
   if (inputs_fired[time] < total_inputs)
     return;
   else if (inputs_fired[time] > total_inputs) {
-    Log::fatal("ERROR: inputs_fired on RNN_Node %d at time %d is %d and "
-               "total_inputs is %d\n",
-               innovation_number, time, inputs_fired[time], total_inputs);
+    Log::fatal(
+        "ERROR: inputs_fired on RNN_Node %d at time %d is %d and "
+        "total_inputs is %d\n",
+        innovation_number, time, inputs_fired[time], total_inputs);
     exit(1);
   }
 
@@ -94,9 +89,10 @@ void RNN_Node::try_update_deltas(int time) {
   if (outputs_fired[time] < total_outputs) {
     return;
   } else if (outputs_fired[time] > total_outputs) {
-    Log::fatal("ERROR: outputs_fired on RNN_Node %d at time %d is %d and "
-               "total_outputs is %d\n",
-               innovation_number, time, outputs_fired[time], total_outputs);
+    Log::fatal(
+        "ERROR: outputs_fired on RNN_Node %d at time %d is %d and "
+        "total_outputs is %d\n",
+        innovation_number, time, outputs_fired[time], total_outputs);
     exit(1);
   }
 

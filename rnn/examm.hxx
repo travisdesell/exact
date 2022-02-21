@@ -19,18 +19,16 @@ using std::vector;
 
 #include <optional>
 
+#include "common/dataset_meta.hxx"
 #include "common/weight_initialize.hxx"
 #include "genome_operators.hxx"
+#include "msg.hxx"
 #include "rnn_genome.hxx"
 #include "speciation_strategy.hxx"
 #include "training_parameters.hxx"
 
-#include "msg.hxx"
-
-#include "common/dataset_meta.hxx"
-
 class EXAMM {
-private:
+ private:
   int32_t population_size;
   int32_t number_islands;
 
@@ -87,9 +85,9 @@ private:
 
   bool time_limit_reached();
 
-public:
-  EXAMM(int32_t _population_size, int32_t _number_islands, int32_t _max_genomes, int32_t _max_time_minutes,
-        int32_t _extinction_event_generation_number,
+ public:
+  EXAMM(int32_t _population_size, int32_t _number_islands, int32_t _max_genomes,
+        int32_t _max_time_minutes, int32_t _extinction_event_generation_number,
         int32_t _islands_to_exterminate, string _island_ranking_method,
         string repopulation_method, int32_t _repopulation_mutations,
         bool _repeat_extinction, int32_t _epochs_acc_freq,

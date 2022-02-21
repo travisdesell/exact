@@ -15,7 +15,7 @@ using std::vector;
 #include "rnn_node_interface.hxx"
 
 class ENARC_Node : public RNN_Node_Interface {
-private:
+ private:
   double rw;
   double zw;
 
@@ -71,7 +71,7 @@ private:
   vector<double> w8_w3;
   vector<double> l_w8_w3;
 
-public:
+ public:
   ENARC_Node(int _innovation_number, int _type, double _depth);
   ~ENARC_Node();
 

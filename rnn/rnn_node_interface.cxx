@@ -1,5 +1,4 @@
 #include <cmath>
-
 #include <fstream>
 using std::ostream;
 
@@ -9,10 +8,9 @@ using std::string;
 #include <cmath>
 using std::max;
 
+#include "common/log.hxx"
 #include "rnn_genome.hxx"
 #include "rnn_node_interface.hxx"
-
-#include "common/log.hxx"
 
 extern const int32_t NUMBER_NODE_TYPES = 9;
 extern const string NODE_TYPES[] = {"simple", "jordan",  "elman", "UGRNN",
@@ -60,14 +58,14 @@ double leakyReLU(double value) {
 
 double leakyReLU_derivative(double input) {
   double alpha = 0.01;
-  if (input > 0)
-    return 1;
+  if (input > 0) return 1;
   return alpha;
 }
 
 RNN_Node_Interface::RNN_Node_Interface(int32_t _innovation_number,
                                        int32_t _layer_type, double _depth)
-    : innovation_number(_innovation_number), layer_type(_layer_type),
+    : innovation_number(_innovation_number),
+      layer_type(_layer_type),
       depth(_depth) {
   total_inputs = 0;
 
@@ -78,9 +76,10 @@ RNN_Node_Interface::RNN_Node_Interface(int32_t _innovation_number,
   // outputs don't have an official output node but
   // deltas are passed in via the output_fired method
   if (layer_type != HIDDEN_LAYER) {
-    Log::fatal("ERROR: Attempted to create a new RNN_Node that was an input or "
-               "output node without using the constructor which specifies it's "
-               "parameter name");
+    Log::fatal(
+        "ERROR: Attempted to create a new RNN_Node that was an input or "
+        "output node without using the constructor which specifies it's "
+        "parameter name");
     exit(1);
   }
 }
@@ -88,8 +87,10 @@ RNN_Node_Interface::RNN_Node_Interface(int32_t _innovation_number,
 RNN_Node_Interface::RNN_Node_Interface(int32_t _innovation_number,
                                        int32_t _layer_type, double _depth,
                                        string _parameter_name)
-    : innovation_number(_innovation_number), layer_type(_layer_type),
-      depth(_depth), parameter_name(_parameter_name) {
+    : innovation_number(_innovation_number),
+      layer_type(_layer_type),
+      depth(_depth),
+      parameter_name(_parameter_name) {
   total_inputs = 0;
 
   enabled = true;
@@ -97,9 +98,10 @@ RNN_Node_Interface::RNN_Node_Interface(int32_t _innovation_number,
   backward_reachable = false;
 
   if (layer_type == HIDDEN_LAYER) {
-    Log::fatal("ERROR: assigned a parameter name '%s' to a hidden node! This "
-               "should never happen.",
-               parameter_name.c_str());
+    Log::fatal(
+        "ERROR: assigned a parameter name '%s' to a hidden node! This "
+        "should never happen.",
+        parameter_name.c_str());
     exit(1);
   }
 

@@ -3,12 +3,13 @@
 
 class RNN;
 
-#include "rnn_node_interface.hxx"
 #include <unordered_map>
+
+#include "rnn_node_interface.hxx"
 using std::unordered_map;
 
 class RNN_Recurrent_Edge {
-private:
+ private:
   int32_t innovation_number;
   uint32_t series_length;
 
@@ -31,12 +32,15 @@ private:
   RNN_Node_Interface *input_node;
   RNN_Node_Interface *output_node;
 
-public:
-  RNN_Recurrent_Edge(int32_t _innovation_number, int32_t _recurrent_depth, RNN_Node_Interface *_input_node,
+ public:
+  RNN_Recurrent_Edge(int32_t _innovation_number, int32_t _recurrent_depth,
+                     RNN_Node_Interface *_input_node,
                      RNN_Node_Interface *_output_node);
 
-  RNN_Recurrent_Edge(int32_t _innovation_number, int32_t _recurrent_depth, int32_t _input_innovation_number,
-                     int32_t _output_innovation_number, const vector<RNN_Node_Interface *> &nodes);
+  RNN_Recurrent_Edge(int32_t _innovation_number, int32_t _recurrent_depth,
+                     int32_t _input_innovation_number,
+                     int32_t _output_innovation_number,
+                     const vector<RNN_Node_Interface *> &nodes);
 
   void reset(uint32_t _series_length);
 
@@ -50,7 +54,8 @@ public:
   bool is_enabled() const;
   bool is_reachable() const;
 
-  RNN_Recurrent_Edge *copy(unordered_map<int32_t, RNN_Node_Interface *> new_nodes) const;
+  RNN_Recurrent_Edge *copy(
+      unordered_map<int32_t, RNN_Node_Interface *> new_nodes) const;
   RNN_Recurrent_Edge *copy(const vector<RNN_Node_Interface *> new_nodes) const;
 
   int32_t get_innovation_number() const;
@@ -76,7 +81,8 @@ struct sort_RNN_Recurrent_Edges_by_depth {
     if (n1->get_input_node()->get_depth() < n2->get_input_node()->get_depth()) {
       return true;
 
-    } else if (n1->get_input_node()->get_depth() == n2->get_input_node()->get_depth()) {
+    } else if (n1->get_input_node()->get_depth() ==
+               n2->get_input_node()->get_depth()) {
       // make sure the order of the edges is *always* the same
       // going through the edges in different orders may effect the output
       // of backpropagation
@@ -94,10 +100,12 @@ struct sort_RNN_Recurrent_Edges_by_depth {
 
 struct sort_RNN_Recurrent_Edges_by_output_depth {
   bool operator()(RNN_Recurrent_Edge *n1, RNN_Recurrent_Edge *n2) {
-    if (n1->get_output_node()->get_depth() < n2->get_output_node()->get_depth()) {
+    if (n1->get_output_node()->get_depth() <
+        n2->get_output_node()->get_depth()) {
       return true;
 
-    } else if (n1->get_output_node()->get_depth() == n2->get_output_node()->get_depth()) {
+    } else if (n1->get_output_node()->get_depth() ==
+               n2->get_output_node()->get_depth()) {
       // make sure the order of the edges is *always* the same
       // going through the edges in different orders may effect the output
       // of backpropagation

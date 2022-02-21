@@ -6,8 +6,7 @@ inline uint32_t log2(uint32_t x) {
   asm("\tbsr %1, %0\n" : "=r"(y) : "r"(x));
   return y;
 #else
-  if (x == 1)
-    return 0;
+  if (x == 1) return 0;
   uint32_t ret = 0;
   while (x > 1) {
     x >>= 1;
@@ -27,8 +26,8 @@ inline uint32_t log2(uint32_t x) {
  * The first layer (e.g. the layer which only contains the root node) contains
  *the maximum element.
  **/
-template <class T> class min_max_heap {
-
+template <class T>
+class min_max_heap {
   typedef typename std::vector<T>::const_iterator const_iterator;
 
   vector<T> heap;
@@ -48,13 +47,12 @@ template <class T> class min_max_heap {
     return log2(z + 1) % 2 == 0;
   }
 
-  template <bool max_level> void trickle_up_inner(uint32_t z) {
-    if (z == 0)
-      return;
+  template <bool max_level>
+  void trickle_up_inner(uint32_t z) {
+    if (z == 0) return;
 
     uint32_t z_grandparent = parent(z);
-    if (z_grandparent == 0)
-      return;
+    if (z_grandparent == 0) return;
 
     z_grandparent = parent(z_grandparent);
 
@@ -65,8 +63,7 @@ template <class T> class min_max_heap {
   }
 
   void trickle_up(uint32_t z) {
-    if (z == 0)
-      return;
+    if (z == 0) return;
 
     uint32_t z_parent = parent(z);
 
@@ -87,7 +84,8 @@ template <class T> class min_max_heap {
     }
   }
 
-  template <bool max_level> void trickle_down_inner(const uint32_t z) {
+  template <bool max_level>
+  void trickle_down_inner(const uint32_t z) {
     if (z >= heap.size())
       throw std::invalid_argument("Element specified by z does not exist");
 
@@ -107,11 +105,10 @@ template <class T> class min_max_heap {
       if (less_than(heap[left_grandchild + i], heap[smallest_node]) ^ max_level)
         smallest_node = left_grandchild + i;
 
-    if (z == smallest_node)
-      return;
+    if (z == smallest_node) return;
 
     std::swap(heap[z], heap[smallest_node]);
-    if (smallest_node - left > 1) { // smallest node was a grandchild
+    if (smallest_node - left > 1) {  // smallest node was a grandchild
       if (less_than(heap[parent(smallest_node)], heap[smallest_node]) ^
           max_level)
         std::swap(heap[parent(smallest_node)], heap[smallest_node]);
@@ -129,15 +126,15 @@ template <class T> class min_max_heap {
 
   uint32_t find_min_index() const {
     switch (heap.size()) {
-    case 0:
-      throw std::underflow_error(
-          "There is no minimum element because the heap is empty");
-    case 1:
-      return 0;
-    case 2:
-      return 1;
-    default:
-      return less_than(heap[1], heap[2]) ? 1 : 2;
+      case 0:
+        throw std::underflow_error(
+            "There is no minimum element because the heap is empty");
+      case 1:
+        return 0;
+      case 2:
+        return 1;
+      default:
+        return less_than(heap[1], heap[2]) ? 1 : 2;
     }
   }
 
@@ -162,7 +159,7 @@ template <class T> class min_max_heap {
     return e;
   }
 
-public:
+ public:
   /**
    * Creates a new min_max_heap. The only parameter is a function that will
    *compare two elements, and determine if the first is less than the second.
@@ -172,8 +169,7 @@ public:
   min_max_heap(std::function<bool(const T &, const T &)> _less_than,
                uint32_t size_hint = -1)
       : less_than(_less_than) {
-    if (size_hint >= 0)
-      heap.reserve(size_hint);
+    if (size_hint >= 0) heap.reserve(size_hint);
   }
   ~min_max_heap() {}
 

@@ -1,5 +1,4 @@
 #include <cmath>
-
 #include <vector>
 using std::vector;
 

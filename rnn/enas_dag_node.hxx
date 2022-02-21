@@ -16,11 +16,10 @@ using std::make_pair;
 using std::pair;
 
 #include "common/random.hxx"
-
 #include "rnn_node_interface.hxx"
 
 class ENAS_DAG_Node : public RNN_Node_Interface {
-private:
+ private:
   // starting node 0
   double rw;
   double zw;
@@ -43,7 +42,7 @@ private:
   // derivative of edge between node with weight wj from node with weight wi
   vector<vector<double>> l_Nodes;
 
-public:
+ public:
   ENAS_DAG_Node(int _innovation_number, int _type, double _depth);
   ~ENAS_DAG_Node();
 

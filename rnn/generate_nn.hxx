@@ -45,12 +45,12 @@ RNN_Genome *create_memory_cell_nn(const vector<string> &input_parameter_names,
                                   TrainingParameters tp,
                                   WeightType weight_initialize);
 
-#define inst_create_memory_cell(ty)                                            \
-  template RNN_Genome *create_memory_cell_nn<ty>(                              \
-      const vector<string> &input_parameter_names,                             \
-      uint32_t number_hidden_layers, uint32_t number_hidden_nodes,             \
-      const vector<string> &output_parameter_names,                            \
-      uint32_t max_recurrent_depth, TrainingParameters tp,                     \
+#define inst_create_memory_cell(ty)                                \
+  template RNN_Genome *create_memory_cell_nn<ty>(                  \
+      const vector<string> &input_parameter_names,                 \
+      uint32_t number_hidden_layers, uint32_t number_hidden_nodes, \
+      const vector<string> &output_parameter_names,                \
+      uint32_t max_recurrent_depth, TrainingParameters tp,         \
       WeightType weight_initialize)
 
 #include "lstm_node.hxx"

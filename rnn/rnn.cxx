@@ -3,7 +3,6 @@ using std::sort;
 using std::upper_bound;
 
 #include <chrono>
-
 #include <limits>
 using std::numeric_limits;
 
@@ -25,6 +24,7 @@ using std::uniform_real_distribution;
 #include <vector>
 using std::vector;
 
+#include "common/log.hxx"
 #include "enarc_node.hxx"
 #include "enas_dag_node.hxx"
 #include "gru_node.hxx"
@@ -37,17 +37,15 @@ using std::vector;
 #include "rnn_node.hxx"
 #include "rnn_node_interface.hxx"
 #include "rnn_recurrent_edge.hxx"
-
-#include "common/log.hxx"
-
 #include "time_series/time_series.hxx"
 #include "word_series/word_series.hxx"
 
 void RNN::validate_parameters(const vector<string> &input_parameter_names,
                               const vector<string> &output_parameter_names) {
-  Log::debug("validating parameters -- input_parameter_names.size(): %d, "
-             "output_parameter_names.size(): %d\n",
-             input_parameter_names.size(), output_parameter_names.size());
+  Log::debug(
+      "validating parameters -- input_parameter_names.size(): %d, "
+      "output_parameter_names.size(): %d\n",
+      input_parameter_names.size(), output_parameter_names.size());
   if (Log::at_level(Log::DEBUG)) {
     Log::debug("\tinput_parameter_names:");
     for (uint32_t i = 0; i < input_parameter_names.size(); i++) {
@@ -71,19 +69,21 @@ void RNN::validate_parameters(const vector<string> &input_parameter_names,
   }
 
   if (input_nodes.size() != input_parameter_names.size()) {
-    Log::fatal("ERROR: number of input nodes (%d) != number of input "
-               "parameters (%d)\n",
-               input_nodes.size(), input_parameter_names.size());
+    Log::fatal(
+        "ERROR: number of input nodes (%d) != number of input "
+        "parameters (%d)\n",
+        input_nodes.size(), input_parameter_names.size());
     exit(1);
   }
 
   bool parameter_mismatch = false;
   for (uint32_t i = 0; i < input_nodes.size(); i++) {
     if (input_nodes[i]->parameter_name.compare(input_parameter_names[i]) != 0) {
-      Log::fatal("ERROR: input_nodes[%d]->parameter_name '%s' != "
-                 "input_parmater_names[%d] '%s'\n",
-                 i, input_nodes[i]->parameter_name.c_str(), i,
-                 input_parameter_names[i].c_str());
+      Log::fatal(
+          "ERROR: input_nodes[%d]->parameter_name '%s' != "
+          "input_parmater_names[%d] '%s'\n",
+          i, input_nodes[i]->parameter_name.c_str(), i,
+          input_parameter_names[i].c_str());
       parameter_mismatch = true;
     }
   }
@@ -92,9 +92,10 @@ void RNN::validate_parameters(const vector<string> &input_parameter_names,
   }
 
   if (output_nodes.size() != output_parameter_names.size()) {
-    Log::fatal("ERROR: number of output nodes (%d) != number of output "
-               "parameters (%d)\n",
-               output_nodes.size(), output_parameter_names.size());
+    Log::fatal(
+        "ERROR: number of output nodes (%d) != number of output "
+        "parameters (%d)\n",
+        output_nodes.size(), output_parameter_names.size());
     exit(1);
   }
 
@@ -102,10 +103,11 @@ void RNN::validate_parameters(const vector<string> &input_parameter_names,
   for (uint32_t i = 0; i < output_nodes.size(); i++) {
     if (output_nodes[i]->parameter_name.compare(output_parameter_names[i]) !=
         0) {
-      Log::fatal("ERROR: output_nodes[%d]->parameter_name '%s' != "
-                 "output_parmater_names[%d] '%s'\n",
-                 i, output_nodes[i]->parameter_name.c_str(), i,
-                 output_parameter_names[i].c_str());
+      Log::fatal(
+          "ERROR: output_nodes[%d]->parameter_name '%s' != "
+          "output_parmater_names[%d] '%s'\n",
+          i, output_nodes[i]->parameter_name.c_str(), i,
+          output_parameter_names[i].c_str());
       parameter_mismatch = true;
     }
   }
@@ -118,9 +120,10 @@ void RNN::fix_parameter_orders(const vector<string> &input_parameter_names,
                                const vector<string> &output_parameter_names) {
   vector<RNN_Node_Interface *> ordered_input_nodes;
 
-  Log::debug("fixing parameter orders -- input_parameter_names.size(): %d, "
-             "output_parameter_names.size(): %d\n",
-             input_parameter_names.size(), output_parameter_names.size());
+  Log::debug(
+      "fixing parameter orders -- input_parameter_names.size(): %d, "
+      "output_parameter_names.size(): %d\n",
+      input_parameter_names.size(), output_parameter_names.size());
   if (Log::at_level(Log::DEBUG)) {
     Log::debug("\tinput_parameter_names:");
     for (uint32_t i = 0; i < input_parameter_names.size(); i++) {
@@ -253,10 +256,8 @@ RNN::~RNN() {
     delete recurrent_edge;
   }
 
-  while (input_nodes.size() > 0)
-    input_nodes.pop_back();
-  while (output_nodes.size() > 0)
-    output_nodes.pop_back();
+  while (input_nodes.size() > 0) input_nodes.pop_back();
+  while (output_nodes.size() > 0) output_nodes.pop_back();
 }
 
 uint32_t RNN::get_number_nodes() { return nodes.size(); }
@@ -291,9 +292,10 @@ void RNN::get_weights(vector<double> &parameters) {
 
 void RNN::set_weights(const vector<double> &parameters) {
   if (parameters.size() != get_number_weights()) {
-    Log::fatal("ERROR! Trying to set weights where the RNN has %d weights, and "
-               "the parameters vector has %d weights!\n",
-               get_number_weights(), parameters.size());
+    Log::fatal(
+        "ERROR! Trying to set weights where the RNN has %d weights, and "
+        "the parameters vector has %d weights!\n",
+        get_number_weights(), parameters.size());
     exit(1);
   }
 
@@ -348,9 +350,10 @@ void RNN::forward_pass(const vector<vector<double>> &series_data,
   series_length = series_data[0].size();
 
   if (input_nodes.size() != series_data.size()) {
-    Log::fatal("ERROR: number of input nodes (%d) != number of time series "
-               "data input fields (%d)\n",
-               input_nodes.size(), series_data.size());
+    Log::fatal(
+        "ERROR: number of input nodes (%d) != number of time series "
+        "data input fields (%d)\n",
+        input_nodes.size(), series_data.size());
     for (uint32_t i = 0; i < nodes.size(); i++) {
       Log::fatal(
           "node[%d], in: %d, depth: %lf, layer_type: %d, node_type: %d\n", i,
@@ -396,8 +399,7 @@ void RNN::forward_pass(const vector<vector<double>> &series_data,
       }
     } else {
       for (uint32_t i = 0; i < edges.size(); i++) {
-        if (edges[i]->is_reachable())
-          edges[i]->propagate_forward(time);
+        if (edges[i]->is_reachable()) edges[i]->propagate_forward(time);
       }
     }
 
@@ -419,7 +421,6 @@ void RNN::backward_pass(double error, bool using_dropout, bool training,
   }
 
   for (int32_t time = series_length - 1; time >= 0; time--) {
-
     for (uint32_t i = 0; i < output_nodes.size(); i++) {
       output_nodes[i]->error_fired(time, error);
     }
@@ -431,8 +432,7 @@ void RNN::backward_pass(double error, bool using_dropout, bool training,
       }
     } else {
       for (int32_t i = (int32_t)edges.size() - 1; i >= 0; i--) {
-        if (edges[i]->is_reachable())
-          edges[i]->propagate_backward(time);
+        if (edges[i]->is_reachable()) edges[i]->propagate_backward(time);
       }
     }
 
@@ -443,9 +443,8 @@ void RNN::backward_pass(double error, bool using_dropout, bool training,
   }
 }
 
-double
-RNN::calculate_error_softmax(const vector<vector<double>> &expected_outputs) {
-
+double RNN::calculate_error_softmax(
+    const vector<vector<double>> &expected_outputs) {
   double cross_entropy_sum = 0.0;
   double error;
   double softmax = 0.0;
@@ -484,8 +483,8 @@ RNN::calculate_error_softmax(const vector<vector<double>> &expected_outputs) {
   return cross_entropy_sum;
 }
 
-double
-RNN::calculate_error_mse(const vector<vector<double>> &expected_outputs) {
+double RNN::calculate_error_mse(
+    const vector<vector<double>> &expected_outputs) {
   double mse_sum = 0.0;
   double mse;
   double error;
@@ -510,8 +509,8 @@ RNN::calculate_error_mse(const vector<vector<double>> &expected_outputs) {
   return mse_sum;
 }
 
-double
-RNN::calculate_error_mae(const vector<vector<double>> &expected_outputs) {
+double RNN::calculate_error_mae(
+    const vector<vector<double>> &expected_outputs) {
   double mae_sum = 0.0;
   double mae;
   double error;
@@ -563,10 +562,10 @@ double RNN::prediction_mae(const vector<vector<double>> &series_data,
   return calculate_error_mae(expected_outputs);
 }
 
-vector<double>
-RNN::get_predictions(const vector<vector<double>> &series_data,
-                     const vector<vector<double>> &expected_outputs,
-                     bool using_dropout, double dropout_probability) {
+vector<double> RNN::get_predictions(
+    const vector<vector<double>> &series_data,
+    const vector<vector<double>> &expected_outputs, bool using_dropout,
+    double dropout_probability) {
   forward_pass(series_data, using_dropout, false, dropout_probability);
 
   vector<double> result;
@@ -602,8 +601,7 @@ void RNN::write_predictions(string output_filename,
   outfile << "#";
 
   for (uint32_t i = 0; i < input_nodes.size(); i++) {
-    if (i > 0)
-      outfile << ",";
+    if (i > 0) outfile << ",";
     outfile << input_parameter_names[i];
 
     Log::debug("input_parameter_names[%d]: '%s'\n", i,
@@ -629,8 +627,7 @@ void RNN::write_predictions(string output_filename,
 
   for (uint32_t j = 0; j < series_length; j++) {
     for (uint32_t i = 0; i < input_nodes.size(); i++) {
-      if (i > 0)
-        outfile << ",";
+      if (i > 0) outfile << ",";
       // outfile << series_data[i][j];
       outfile << time_series_sets->denormalize(input_parameter_names[i],
                                                series_data[i][j]);
@@ -673,8 +670,7 @@ void RNN::write_predictions(string output_filename,
   outfile << "#";
 
   for (uint32_t i = 0; i < input_nodes.size(); i++) {
-    if (i > 0)
-      outfile << ",";
+    if (i > 0) outfile << ",";
     outfile << input_parameter_names[i];
 
     Log::debug("input_parameter_names[%d]: '%s'\n", i,
@@ -700,8 +696,7 @@ void RNN::write_predictions(string output_filename,
 
   for (uint32_t j = 0; j < series_length; j++) {
     for (uint32_t i = 0; i < input_nodes.size(); i++) {
-      if (i > 0)
-        outfile << ",";
+      if (i > 0) outfile << ",";
       // outfile << series_data[i][j];
       outfile << word_series_sets->denormalize(input_parameter_names[i],
                                                series_data[i][j]);

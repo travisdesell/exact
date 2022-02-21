@@ -10,12 +10,11 @@ using std::vector;
 #include "rnn_edge.hxx"
 #include "rnn_node_interface.hxx"
 #include "rnn_recurrent_edge.hxx"
-
 #include "time_series/time_series.hxx"
 #include "word_series/word_series.hxx"
 
 class RNN {
-private:
+ private:
   uint32_t series_length;
   bool use_regression;
 
@@ -26,7 +25,7 @@ private:
   vector<RNN_Edge *> edges;
   vector<RNN_Recurrent_Edge *> recurrent_edges;
 
-public:
+ public:
   RNN(vector<RNN_Node_Interface *> &_nodes, vector<RNN_Edge *> &_edges,
       const vector<string> &input_parameter_names,
       const vector<string> &output_parameter_names);
@@ -53,8 +52,8 @@ public:
   void backward_pass(double error, bool using_dropout, bool training,
                      double dropout_probability);
 
-  double
-  calculate_error_softmax(const vector<vector<double>> &expected_outputs);
+  double calculate_error_softmax(
+      const vector<vector<double>> &expected_outputs);
   double calculate_error_mse(const vector<vector<double>> &expected_outputs);
   double calculate_error_mae(const vector<vector<double>> &expected_outputs);
 

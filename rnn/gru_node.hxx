@@ -12,11 +12,10 @@ using std::uniform_real_distribution;
 using std::vector;
 
 #include "common/random.hxx"
-
 #include "rnn_node_interface.hxx"
 
 class GRU_Node : public RNN_Node_Interface {
-private:
+ private:
   double zw;
   double zu;
   double z_bias;
@@ -48,7 +47,7 @@ private:
   vector<double> h_tanh;
   vector<double> ld_h_tanh;
 
-public:
+ public:
   GRU_Node(int _innovation_number, int _type, double _depth);
   ~GRU_Node();
 

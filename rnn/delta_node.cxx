@@ -112,9 +112,10 @@ void Delta_Node::input_fired(int time, double incoming_output) {
   if (inputs_fired[time] < total_inputs)
     return;
   else if (inputs_fired[time] > total_inputs) {
-    Log::fatal("ERROR: inputs_fired on Delta_Node %d at time %d is %d and "
-               "total_inputs is %d\n",
-               innovation_number, time, inputs_fired[time], total_inputs);
+    Log::fatal(
+        "ERROR: inputs_fired on Delta_Node %d at time %d is %d and "
+        "total_inputs is %d\n",
+        innovation_number, time, inputs_fired[time], total_inputs);
     exit(1);
   }
 
@@ -126,8 +127,7 @@ void Delta_Node::input_fired(int time, double incoming_output) {
   double d2 = input_values[time];
 
   double z_prev = 0.0;
-  if (time > 0)
-    z_prev = output_values[time - 1];
+  if (time > 0) z_prev = output_values[time - 1];
 
   double d1 = v * z_prev;
 
@@ -163,9 +163,10 @@ void Delta_Node::try_update_deltas(int time) {
   if (outputs_fired[time] < total_outputs)
     return;
   else if (outputs_fired[time] > total_outputs) {
-    Log::fatal("ERROR: outputs_fired on Delta_Node %d at time %d is %d and "
-               "total_outputs is %d\n",
-               innovation_number, time, outputs_fired[time], total_outputs);
+    Log::fatal(
+        "ERROR: outputs_fired on Delta_Node %d at time %d is %d and "
+        "total_outputs is %d\n",
+        innovation_number, time, outputs_fired[time], total_outputs);
     exit(1);
   }
 
@@ -178,13 +179,11 @@ void Delta_Node::try_update_deltas(int time) {
   double d2 = input_values[time];
 
   double z_prev = 0.0;
-  if (time > 0)
-    z_prev = output_values[time - 1];
+  if (time > 0) z_prev = output_values[time - 1];
 
   // backprop output gate
   double d_z = error;
-  if (time < (((signed) series_length) - 1))
-    d_z += d_z_prev[time + 1];
+  if (time < (((signed)series_length) - 1)) d_z += d_z_prev[time + 1];
   // get the error into the output (z), it's the error from ahead in the
   // network as well as from the previous output of the cell
 

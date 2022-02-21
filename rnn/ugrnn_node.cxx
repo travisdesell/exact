@@ -1,5 +1,4 @@
 #include <cmath>
-
 #include <fstream>
 using std::ostream;
 
@@ -18,7 +17,6 @@ using std::vector;
 
 #include "common/log.hxx"
 #include "common/random.hxx"
-
 #include "mse.hxx"
 #include "rnn_node_interface.hxx"
 #include "ugrnn_node.hxx"
@@ -35,7 +33,6 @@ UGRNN_Node::~UGRNN_Node() {}
 void UGRNN_Node::initialize_lamarckian(minstd_rand0 &generator,
                                        NormalDistribution &normal_distribution,
                                        double mu, double sigma) {
-
   cw = bound(normal_distribution.random(generator, mu, sigma));
   ch = bound(normal_distribution.random(generator, mu, sigma));
   c_bias = bound(normal_distribution.random(generator, mu, sigma));
@@ -48,7 +45,6 @@ void UGRNN_Node::initialize_lamarckian(minstd_rand0 &generator,
 void UGRNN_Node::initialize_xavier(minstd_rand0 &generator,
                                    uniform_real_distribution<double> &rng_1_1,
                                    double range) {
-
   cw = range * (rng_1_1(generator));
   ch = range * (rng_1_1(generator));
   c_bias = range * (rng_1_1(generator));
@@ -120,9 +116,10 @@ void UGRNN_Node::input_fired(int time, double incoming_output) {
   if (inputs_fired[time] < total_inputs)
     return;
   else if (inputs_fired[time] > total_inputs) {
-    Log::fatal("ERROR: inputs_fired on UGRNN_Node %d at time %d is %d and "
-               "total_inputs is %d\n",
-               innovation_number, time, inputs_fired[time], total_inputs);
+    Log::fatal(
+        "ERROR: inputs_fired on UGRNN_Node %d at time %d is %d and "
+        "total_inputs is %d\n",
+        innovation_number, time, inputs_fired[time], total_inputs);
     exit(1);
   }
 
@@ -132,8 +129,7 @@ void UGRNN_Node::input_fired(int time, double incoming_output) {
   double x = input_values[time];
 
   double h_prev = 0.0;
-  if (time > 0)
-    h_prev = output_values[time - 1];
+  if (time > 0) h_prev = output_values[time - 1];
 
   double xcw = x * cw;
   double hch = h_prev * ch;
@@ -158,9 +154,10 @@ void UGRNN_Node::try_update_deltas(int time) {
   if (outputs_fired[time] < total_outputs)
     return;
   else if (outputs_fired[time] > total_outputs) {
-    Log::fatal("ERROR: outputs_fired on UGRNN_Node %d at time %d is %d and "
-               "total_outputs is %d\n",
-               innovation_number, time, outputs_fired[time], total_outputs);
+    Log::fatal(
+        "ERROR: outputs_fired on UGRNN_Node %d at time %d is %d and "
+        "total_outputs is %d\n",
+        innovation_number, time, outputs_fired[time], total_outputs);
     exit(1);
   }
 
@@ -171,13 +168,11 @@ void UGRNN_Node::try_update_deltas(int time) {
   double x = input_values[time];
 
   double h_prev = 0.0;
-  if (time > 0)
-    h_prev = output_values[time - 1];
+  if (time > 0) h_prev = output_values[time - 1];
 
   // backprop output gate
   double d_h = error;
-  if (time < (((signed) series_length) - 1))
-    d_h += d_h_prev[time + 1];
+  if (time < (((signed)series_length) - 1)) d_h += d_h_prev[time + 1];
   // get the error into the output (z), it's the error from ahead in the network
   // as well as from the previous output of the cell
 

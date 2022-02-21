@@ -13,7 +13,7 @@ using std::ostream;
  * Parameters regarding the training of genomes
  **/
 class TrainingParameters {
-public:
+ public:
   /**
    * Static training parameters
    **/

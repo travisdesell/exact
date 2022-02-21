@@ -15,7 +15,7 @@ using std::vector;
 #include "rnn_node_interface.hxx"
 
 class Delta_Node : public RNN_Node_Interface {
-private:
+ private:
   double alpha;
   double beta1;
   double beta2;
@@ -38,7 +38,7 @@ private:
   vector<double> ld_z_cap;
   vector<double> ld_z;
 
-public:
+ public:
   Delta_Node(int _innovation_number, int _type, double _depth);
   ~Delta_Node();
 

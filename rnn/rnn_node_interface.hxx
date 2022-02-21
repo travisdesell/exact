@@ -2,7 +2,6 @@
 #define EXAMM_RNN_NODE_INTERFACE_HXX
 
 #include <cstdint>
-
 #include <fstream>
 using std::ostream;
 
@@ -52,7 +51,7 @@ double identity_derivative();
 double bound(double value);
 
 class RNN_Node_Interface {
-protected:
+ protected:
   int32_t innovation_number;
   int32_t layer_type;
   int32_t node_type;
@@ -79,7 +78,7 @@ protected:
   int32_t total_inputs;
   int32_t total_outputs;
 
-public:
+ public:
   // this constructor is for hidden nodes
   RNN_Node_Interface(int32_t _innovation_number, int32_t _layer_type,
                      double _depth);
@@ -99,9 +98,8 @@ public:
   virtual void initialize_kaiming(minstd_rand0 &generator,
                                   NormalDistribution &normal_distribution,
                                   double range) = 0;
-  virtual void
-  initialize_uniform_random(minstd_rand0 &generator,
-                            uniform_real_distribution<double> &rng) = 0;
+  virtual void initialize_uniform_random(
+      minstd_rand0 &generator, uniform_real_distribution<double> &rng) = 0;
 
   virtual void input_fired(int32_t time, double incoming_output) = 0;
   virtual void output_fired(int32_t time, double delta) = 0;

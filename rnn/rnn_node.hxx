@@ -7,13 +7,13 @@ using std::vector;
 #include "rnn_node_interface.hxx"
 
 class RNN_Node : public RNN_Node_Interface {
-private:
+ private:
   double bias;
   double d_bias;
 
   vector<double> ld_output;
 
-public:
+ public:
   // constructor for hidden nodes
   RNN_Node(int _innovation_number, int _layer_type, double _depth,
            int _node_type);

@@ -7,25 +7,25 @@ using std::vector;
 #include "stdint.h"
 
 class Tracker {
-    private:
-        int32_t count;
-        double _min;
-        double sum;
-        double _max;
+ private:
+  int32_t count;
+  double _min;
+  double sum;
+  double _max;
 
-        vector<double> values;
+  vector<double> values;
 
-    public:
-        Tracker();
+ public:
+  Tracker();
 
-        void track(double value);
+  void track(double value);
 
-        double min() const;
-        double max() const;
-        double avg() const;
-        double stddev();
+  double min() const;
+  double max() const;
+  double avg() const;
+  double stddev();
 
-        double correlate(Tracker &other);
+  double correlate(Tracker &other);
 };
 
 #endif

@@ -6,6 +6,7 @@ using std::vector;
 
 #include <cstring>
 
+#include "common/log.hxx"
 #include "generate_nn.hxx"
 #include "rnn/delta_node.hxx"
 #include "rnn/enarc_node.hxx"
@@ -20,8 +21,6 @@ using std::vector;
 #include "rnn/rnn_node_interface.hxx"
 #include "rnn/ugrnn_node.hxx"
 
-#include "common/log.hxx"
-
 RNN_Genome *create_ff(const vector<string> &input_parameter_names,
                       uint32_t number_hidden_layers,
                       uint32_t number_hidden_nodes,
@@ -30,11 +29,11 @@ RNN_Genome *create_ff(const vector<string> &input_parameter_names,
                       WeightType weight_initialize,
                       WeightType weight_inheritance,
                       WeightType mutated_component_weight) {
-  Log::debug("creating feed forward network with inputs: %d, hidden: %dx%d, "
-             "outputs: %d, max recurrent depth: %d\n",
-             input_parameter_names.size(), number_hidden_layers,
-             number_hidden_nodes, output_parameter_names.size(),
-             max_recurrent_depth);
+  Log::debug(
+      "creating feed forward network with inputs: %d, hidden: %dx%d, "
+      "outputs: %d, max recurrent depth: %d\n",
+      input_parameter_names.size(), number_hidden_layers, number_hidden_nodes,
+      output_parameter_names.size(), max_recurrent_depth);
   vector<RNN_Node_Interface *> rnn_nodes;
   vector<vector<RNN_Node_Interface *>> layer_nodes(2 + number_hidden_layers);
   vector<RNN_Edge *> rnn_edges;
@@ -106,11 +105,11 @@ RNN_Genome *create_jordan(const vector<string> &input_parameter_names,
                           const vector<string> &output_parameter_names,
                           uint32_t max_recurrent_depth, TrainingParameters tp,
                           WeightType weight_initialize) {
-  Log::debug("creating jordan neural network with inputs: %d, hidden: %dx%d, "
-             "outputs: %d, max recurrent depth: %d\n",
-             input_parameter_names.size(), number_hidden_layers,
-             number_hidden_nodes, output_parameter_names.size(),
-             max_recurrent_depth);
+  Log::debug(
+      "creating jordan neural network with inputs: %d, hidden: %dx%d, "
+      "outputs: %d, max recurrent depth: %d\n",
+      input_parameter_names.size(), number_hidden_layers, number_hidden_nodes,
+      output_parameter_names.size(), max_recurrent_depth);
   vector<RNN_Node_Interface *> rnn_nodes;
   vector<RNN_Node_Interface *> output_layer;
   vector<vector<RNN_Node_Interface *>> layer_nodes(2 + number_hidden_layers);
@@ -186,11 +185,11 @@ RNN_Genome *create_elman(const vector<string> &input_parameter_names,
                          const vector<string> &output_parameter_names,
                          uint32_t max_recurrent_depth, TrainingParameters tp,
                          WeightType weight_initialize) {
-  Log::debug("creating elman network with inputs: %d, hidden: %dx%d, outputs: "
-             "%d, max recurrent depth: %d\n",
-             input_parameter_names.size(), number_hidden_layers,
-             number_hidden_nodes, output_parameter_names.size(),
-             max_recurrent_depth);
+  Log::debug(
+      "creating elman network with inputs: %d, hidden: %dx%d, outputs: "
+      "%d, max recurrent depth: %d\n",
+      input_parameter_names.size(), number_hidden_layers, number_hidden_nodes,
+      output_parameter_names.size(), max_recurrent_depth);
   vector<RNN_Node_Interface *> rnn_nodes;
   vector<RNN_Node_Interface *> output_layer;
   vector<vector<RNN_Node_Interface *>> layer_nodes(2 + number_hidden_layers);
@@ -243,10 +242,8 @@ RNN_Genome *create_elman(const vector<string> &input_parameter_names,
   // recurrently connect every hidden node to every other hidden node
   for (uint32_t i = 0; i < number_hidden_layers; i++) {
     for (uint32_t j = 0; j < number_hidden_nodes; j++) {
-
       for (uint32_t k = 0; k < number_hidden_layers; k++) {
         for (uint32_t l = 0; l < number_hidden_nodes; l++) {
-
           for (uint32_t d = 1; d <= max_recurrent_depth; d++) {
             recurrent_edges.push_back(new RNN_Recurrent_Edge(
                 ++edge_innovation_count, d, layer_nodes[i + 1][j],
@@ -274,11 +271,11 @@ RNN_Genome *create_memory_cell_nn(const vector<string> &input_parameter_names,
                                   WeightType weight_initialize) {
   static_assert(std::is_base_of<RNN_Node_Interface, MemoryCell>::value,
                 "Supplied node type is not derived from RNN_Node_Interface");
-  Log::debug("creating LSTM network with inputs: %d, hidden: %dx%d, outputs: "
-             "%d, max recurrent depth: %d\n",
-             input_parameter_names.size(), number_hidden_layers,
-             number_hidden_nodes, output_parameter_names.size(),
-             max_recurrent_depth);
+  Log::debug(
+      "creating LSTM network with inputs: %d, hidden: %dx%d, outputs: "
+      "%d, max recurrent depth: %d\n",
+      input_parameter_names.size(), number_hidden_layers, number_hidden_nodes,
+      output_parameter_names.size(), max_recurrent_depth);
   vector<RNN_Node_Interface *> rnn_nodes;
   vector<vector<RNN_Node_Interface *>> layer_nodes(2 + number_hidden_layers);
   vector<RNN_Edge *> rnn_edges;

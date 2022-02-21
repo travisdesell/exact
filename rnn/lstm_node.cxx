@@ -1,5 +1,4 @@
 #include <cmath>
-
 #include <fstream>
 using std::ostream;
 
@@ -18,7 +17,6 @@ using std::vector;
 
 #include "common/log.hxx"
 #include "common/random.hxx"
-
 #include "lstm_node.hxx"
 #include "mse.hxx"
 #include "rnn_node_interface.hxx"
@@ -33,7 +31,6 @@ LSTM_Node::~LSTM_Node() {}
 void LSTM_Node::initialize_lamarckian(minstd_rand0 &generator,
                                       NormalDistribution &normal_distribution,
                                       double mu, double sigma) {
-
   output_gate_update_weight =
       bound(normal_distribution.random(generator, mu, sigma));
   output_gate_weight = bound(normal_distribution.random(generator, mu, sigma));
@@ -61,7 +58,6 @@ void LSTM_Node::initialize_lamarckian(minstd_rand0 &generator,
 void LSTM_Node::initialize_xavier(minstd_rand0 &generator,
                                   uniform_real_distribution<double> &rng_1_1,
                                   double range) {
-
   output_gate_update_weight = range * (rng_1_1(generator));
   output_gate_weight = range * (rng_1_1(generator));
   output_gate_bias = range * (rng_1_1(generator));
@@ -179,17 +175,17 @@ void LSTM_Node::input_fired(int time, double incoming_output) {
   if (inputs_fired[time] < total_inputs)
     return;
   else if (inputs_fired[time] > total_inputs) {
-    Log::fatal("ERROR: inputs_fired on LSTM_Node %d at time %d is %d and "
-               "total_inputs is %d\n",
-               innovation_number, time, inputs_fired[time], total_inputs);
+    Log::fatal(
+        "ERROR: inputs_fired on LSTM_Node %d at time %d is %d and "
+        "total_inputs is %d\n",
+        innovation_number, time, inputs_fired[time], total_inputs);
     exit(1);
   }
 
   double input_value = input_values[time];
 
   double previous_cell_value = 0.0;
-  if (time > 0)
-    previous_cell_value = cell_values[time - 1];
+  if (time > 0) previous_cell_value = cell_values[time - 1];
 
   // forget gate bias should be around 1.0 intead of 0, but we do it here to not
   // throw off the mu/sigma of the parameters
@@ -245,9 +241,10 @@ void LSTM_Node::try_update_deltas(int time) {
   if (outputs_fired[time] < total_outputs)
     return;
   else if (outputs_fired[time] > total_outputs) {
-    Log::fatal("ERROR: outputs_fired on LSTM_Node %d at time %d is %d and "
-               "total_outputs is %d\n",
-               innovation_number, time, outputs_fired[time], total_outputs);
+    Log::fatal(
+        "ERROR: outputs_fired on LSTM_Node %d at time %d is %d and "
+        "total_outputs is %d\n",
+        innovation_number, time, outputs_fired[time], total_outputs);
     exit(1);
   }
 
@@ -255,8 +252,7 @@ void LSTM_Node::try_update_deltas(int time) {
   double input_value = input_values[time];
 
   double previous_cell_value = 0.00;
-  if (time > 0)
-    previous_cell_value = cell_values[time - 1];
+  if (time > 0) previous_cell_value = cell_values[time - 1];
 
   // backprop output gate
   double d_output_gate = error * cell_out_tanh[time] * ld_output_gate[time];
@@ -270,8 +266,7 @@ void LSTM_Node::try_update_deltas(int time) {
 
   double d_cell_out = error * output_gate_values[time] * ld_cell_out[time];
   // propagate error back from the next cell value if there is one
-  if (time < (((signed) series_length) - 1))
-    d_cell_out += d_prev_cell[time + 1];
+  if (time < (((signed)series_length) - 1)) d_cell_out += d_prev_cell[time + 1];
 
   // backprop forget gate
   d_prev_cell[time] += d_cell_out * forget_gate_values[time];
