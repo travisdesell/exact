@@ -50,8 +50,8 @@ public:
   bool is_enabled() const;
   bool is_reachable() const;
 
-  RNN_Recurrent_Edge *copy(unordered_map<int32_t, RNN_Node_Interface *> new_nodes);
-  RNN_Recurrent_Edge *copy(const vector<RNN_Node_Interface *> new_nodes);
+  RNN_Recurrent_Edge *copy(unordered_map<int32_t, RNN_Node_Interface *> new_nodes) const;
+  RNN_Recurrent_Edge *copy(const vector<RNN_Node_Interface *> new_nodes) const;
 
   int32_t get_innovation_number() const;
   int32_t get_input_innovation_number() const;

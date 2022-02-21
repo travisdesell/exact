@@ -10,13 +10,16 @@ cd $1
 make -j32
 cd ..
 
-exp_name="./test_output/$2"
+exp_name="/home/josh/Temp/$2"
 rm -rf $exp_name
 mkdir -p $exp_name
 echo "Running base EXAMM code with coal dataset, results will be saved to: "$exp_name
 echo "###-------------------###"
 
 
+valgrind --leak-check=full \
+         --track-origins=yes \
+         --log-file=valgrind-out.txt \
 $1/multithreaded/examm_mt --number_threads $6 \
 --training_filenames ./datasets/2018_coal/burner_[0-9].csv --test_filenames \
 ./datasets/2018_coal/burner_1[0-1].csv \
@@ -25,12 +28,14 @@ $1/multithreaded/examm_mt --number_threads $6 \
 --output_parameter_names Main_Flm_Int \
 --number_islands 4 \
 --population_size 8 \
---number_intra_crossover_parents 4 \
---number_inter_crossover_parents 4 \
+--min_intra_crossover_parents 2 \
+--max_intra_crossover_parents 8 \
+--min_inter_crossover_parents 2 \
+--max_inter_crossover_parents 8 \
 --max_time_minutes $3 \
 --max_genomes $4 \
 --bp_iterations $5 \
 --output_directory $exp_name \
 --possible_node_types simple UGRNN MGU GRU delta LSTM \
 --std_message_level INFO \
---file_message_level INFO | pv -a > /dev/null
+--file_message_level INFO # | pv -a > /dev/null

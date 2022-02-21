@@ -34,9 +34,9 @@ class Island {
      * The genomes on this island, stored in sorted order best (front) to worst
      * (back).
      */
-    vector<RNN_Genome *> genomes;
+    vector<shared_ptr<const RNN_Genome>> genomes;
 
-    unordered_map<string, vector<RNN_Genome *>> structure_map;
+    unordered_map<string, vector<shared_ptr<const RNN_Genome>>> structure_map;
     IslandStatus status; /**> The status of this island (either Island:INITIALIZING,
                             Island::FILLED or  Island::REPOPULATING */
 
@@ -56,7 +56,7 @@ class Island {
      * will be the size of the supplied genome vector. The island status is set to
      * filled.
      */
-    Island(int32_t id, vector<RNN_Genome *> genomes);
+    Island(int32_t id, vector<shared_ptr<const RNN_Genome>> &genomes);
 
     /**
      * Returns the fitness of the best genome in the island
@@ -77,14 +77,14 @@ class Island {
      *
      * \return the best genome in the island
      */
-    RNN_Genome *get_best_genome();
+    shared_ptr<const RNN_Genome> &get_best_genome();
 
     /**
      * Returns the worst genomme in the island.
      *
      * \return the worst genome in the island
      */
-    RNN_Genome *get_worst_genome();
+    shared_ptr<const RNN_Genome> &get_worst_genome();
 
     /**
      * Returns the maximum number of genomes the island can hold
@@ -138,7 +138,7 @@ class Island {
      * the random number generator \param genome will be the copied genome, an
      * addresss to a pointer needs to be passed.
      */
-    void copy_random_genome(uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator, RNN_Genome **genome);
+    shared_ptr<const RNN_Genome> get_random_genome(uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator);
 
     /**
      * Selects two different genomes from the island at random and returns copies
@@ -150,15 +150,15 @@ class Island {
      * an addresss to a pointer needs to be passed. \param genome2 will be the
      * second copied genome, an addresss to a pointer needs to be passed.
      */
-    void copy_two_random_genomes(uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator,
-                                 RNN_Genome **genome1, RNN_Genome **genome2);
+    void get_two_random_genomes(uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator,
+                                     shared_ptr<const RNN_Genome> &g1, shared_ptr<const RNN_Genome> &g2);
     /**
      * Selects n different genomes from the island at random and returns copies of them.
      *
      * If there are fewer than n genomes in the island, a crash will occur.
      */
-    void copy_n_random_genomes(uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator, int32_t n,
-                               vector<RNN_Genome *> &genomes);
+    void get_n_random_genomes(uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator, int32_t n,
+                               vector<shared_ptr<const RNN_Genome>> &genomes);
 
     void do_population_check(int line, int initial_size);
 
@@ -171,7 +171,7 @@ class Island {
      * \param genome is the genome to be inserted.
      * \return -1 if not inserted, otherwise the index it was inserted at
      */
-    int32_t insert_genome(RNN_Genome *genome);
+    pair<int32_t, const RNN_Genome *> insert_genome(shared_ptr<const RNN_Genome> genome);
 
     /**
      * Prints out the state of this island.
@@ -207,7 +207,7 @@ class Island {
      */
     bool been_erased();
 
-    vector<RNN_Genome *> &get_genomes();
+    vector<shared_ptr<const RNN_Genome>> &get_genomes();
 
     void set_latest_generation_id(int32_t _latest_generation_id);
 

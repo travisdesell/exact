@@ -6,6 +6,8 @@ using std::upper_bound;
 #include <iomanip>
 using std::setw;
 
+#include <numeric>
+
 #include <random>
 using std::minstd_rand0;
 using std::uniform_real_distribution;
@@ -30,42 +32,34 @@ using std::vector;
 Island::Island(int32_t _id, int32_t _max_size)
     : id(_id), max_size(_max_size), status(IslandStatus::INITIALIZING), erase_again(0), erased(false) {}
 
-Island::Island(int32_t _id, vector<RNN_Genome *> _genomes)
+Island::Island(int32_t _id, vector<shared_ptr<const RNN_Genome>> &_genomes)
     : id(_id),
       max_size(_genomes.size()),
-      genomes(_genomes),
+      genomes(move(_genomes)),
       status(IslandStatus::FILLED),
       erase_again(0),
       erased(false) {}
 
-RNN_Genome *Island::get_best_genome() {
-    if (genomes.size() == 0)
-        return NULL;
-    else
-        return genomes[0];
+shared_ptr<const RNN_Genome> &Island::get_best_genome() {
+    return genomes[0];
 }
 
-RNN_Genome *Island::get_worst_genome() {
-    if (genomes.size() == 0)
-        return NULL;
-    else
-        return genomes.back();
+shared_ptr<const RNN_Genome> &Island::get_worst_genome() {
+    return genomes.back();
 }
 
 double Island::get_best_fitness() {
-    RNN_Genome *best_genome = get_best_genome();
-    if (best_genome == NULL)
-        return EXAMM_MAX_DOUBLE;
+    if (genomes.size() != 0)
+        return get_best_genome()->get_fitness();
     else
-        return best_genome->get_fitness();
+        return EXAMM_MAX_DOUBLE;
 }
 
 double Island::get_worst_fitness() {
-    RNN_Genome *worst_genome = get_worst_genome();
-    if (worst_genome == NULL)
-        return EXAMM_MAX_DOUBLE;
+    if (genomes.size() != 0)
+        return get_worst_genome()->get_fitness();
     else
-        return worst_genome->get_fitness();
+        return EXAMM_MAX_DOUBLE;
 }
 
 int32_t Island::get_max_size() { return max_size; }
@@ -78,14 +72,13 @@ bool Island::is_initializing() { return status == IslandStatus::INITIALIZING; }
 
 bool Island::is_repopulating() { return status == IslandStatus::REPOPULATING; }
 
-void Island::copy_random_genome(uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator,
-                                RNN_Genome **genome) {
+shared_ptr<const RNN_Genome> Island::get_random_genome(uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator) {
     int32_t genome_position = size() * rng_0_1(generator);
-    *genome = genomes[genome_position]->copy();
+    return genomes[genome_position];
 }
 
-void Island::copy_two_random_genomes(uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator,
-                                     RNN_Genome **genome1, RNN_Genome **genome2) {
+void Island::get_two_random_genomes(uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator,
+                                     shared_ptr<const RNN_Genome> &g1, shared_ptr<const RNN_Genome> &g2) {
     int32_t p1 = size() * rng_0_1(generator);
     int32_t p2 = (size() - 1) * rng_0_1(generator);
     if (p2 >= p1) p2++;
@@ -97,28 +90,29 @@ void Island::copy_two_random_genomes(uniform_real_distribution<double> &rng_0_1,
         p2 = tmp;
     }
 
-    *genome1 = genomes[p1]->copy();
-    *genome2 = genomes[p2]->copy();
+    g1 = genomes[p1];
+    g2 = genomes[p2];
 }
 
-void Island::copy_n_random_genomes(uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator, int32_t n,
-                                   vector<RNN_Genome *> &parents) {
-    vector<RNN_Genome *> island_copy = this->genomes;
+void Island::get_n_random_genomes(uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator, int32_t n,
+                                   vector<shared_ptr<const RNN_Genome>> &parents) {
+    if (n > genomes.size()) {
+        Log::warning("Cannot give n parents with island size of %d\n", size());
+        n = genomes.size();
+    }
+
+    vector<int> indices(genomes.size());
+    std::iota(indices.begin(), indices.end(), 0);
 
     // Fischer-yates shuffle
-    for (int i = island_copy.size() - 1; i > 0; i--) {
-        int j = rng_0_1(generator) * island_copy.size();
-        swap(island_copy[i], island_copy[j]);
+    for (int i = indices.size() - 1; i > 0; i--) {
+        int j = rng_0_1(generator) * indices.size();
+        swap(indices[i], indices[j]);
     }
 
-    if (n > island_copy.size()) {
-        Log::fatal("Cannot give n parents with island size of %d\n", size());
-        exit(1);
-    }
-
-    island_copy.resize(n);
-    for (int i = 0; i < island_copy.size(); i++)
-        parents.push_back(island_copy[i]->copy());
+    indices.resize(n);
+    for (int i = 0; i < indices.size(); i++)
+        parents.push_back(genomes[i]);
 }
 
 void Island::do_population_check(int line, int initial_size) {
@@ -135,13 +129,13 @@ void Island::do_population_check(int line, int initial_size) {
 // returns -1 for not inserted, otherwise the index it was inserted at
 // inserts a copy of the genome, caller of the function will need to delete
 // their pointer
-int32_t Island::insert_genome(RNN_Genome *genome) {
+pair<int32_t, const RNN_Genome *> Island::insert_genome(shared_ptr<const RNN_Genome> genome) {
     int initial_size = genomes.size();
 
     if (erased_generation_id >= 0 && genome->get_generation_id() <= erased_generation_id) {
         Log::info("genome already erased, not inserting");
         do_population_check(__LINE__, initial_size);
-        return -1;
+        return pair(-1, nullptr);
     }
 
     Log::debug("getting fitness of genome copy\n");
@@ -156,7 +150,7 @@ int32_t Island::insert_genome(RNN_Genome *genome) {
         Log::info("ignoring genome, fitness: %lf > worst for island[%d] fitness: %lf\n", new_fitness, id,
                   genomes.back()->get_fitness());
         do_population_check(__LINE__, initial_size);
-        return false;
+        return pair(-1, nullptr);
     }
 
     // check and see if the structural hash of the genome is in the
@@ -164,17 +158,17 @@ int32_t Island::insert_genome(RNN_Genome *genome) {
     string structural_hash = genome->get_structural_hash();
 
     if (structure_map.count(structural_hash) > 0) {
-        vector<RNN_Genome *> &potential_matches = structure_map.find(structural_hash)->second;
+        vector<shared_ptr<const RNN_Genome>> &potential_matches = structure_map.find(structural_hash)->second;
 
         Log::info("potential duplicate for hash '%s', had %d potential matches.\n", structural_hash.c_str(),
                   potential_matches.size());
 
         for (auto potential_match = potential_matches.begin(); potential_match != potential_matches.end();) {
-            Log::info("on potential match %d of %d\n", potential_match - potential_matches.begin(),
+            Log::debug("on potential match %d of %d\n", potential_match - potential_matches.begin(),
                       potential_matches.size());
-            if ((*potential_match)->equals(genome)) {
+            if ((*potential_match)->equals(genome.get())) {
                 if ((*potential_match)->get_fitness() > new_fitness) {
-                    Log::info(
+                    Log::debug(
                         "REPLACING DUPLICATE GENOME, fitness of genome in search: "
                         "%s, new fitness: %s\n",
                         parse_fitness((*potential_match)->get_fitness()).c_str(),
@@ -188,8 +182,8 @@ int32_t Island::insert_genome(RNN_Genome *genome) {
                         lower_bound(genomes.begin(), genomes.end(), *potential_match, sort_genomes_by_fitness());
                     bool found = false;
                     for (; duplicate_genome_iterator != genomes.end(); duplicate_genome_iterator++) {
-                        Log::info("duplicate_genome_iterator: %p, (*potential_match): %p\n",
-                                  (*duplicate_genome_iterator), (*potential_match));
+                        Log::debug("duplicate_genome_iterator: %p, (*potential_match): %p\n",
+                                  duplicate_genome_iterator->get(), potential_match->get());
 
                         if ((*duplicate_genome_iterator) == (*potential_match)) {
                             found = true;
@@ -205,39 +199,35 @@ int32_t Island::insert_genome(RNN_Genome *genome) {
                         exit(1);
                     }
 
-                    Log::info(
+                    Log::debug(
                         "potential_match->get_fitness(): %lf, "
                         "duplicate_genome_iterator->get_fitness(): %lf, "
                         "new_fitness: %lf\n",
                         (*potential_match)->get_fitness(), (*duplicate_genome_iterator)->get_fitness(), new_fitness);
 
                     int32_t duplicate_genome_index = duplicate_genome_iterator - genomes.begin();
-                    Log::info("duplicate_genome_index: %d\n", duplicate_genome_index);
+                    Log::debug("duplicate_genome_index: %d\n", duplicate_genome_index);
                     // int32_t test_index = contains(genome);
                     // Log::info("test_index: %d\n", test_index);
-
-                    RNN_Genome *duplicate = genomes[duplicate_genome_index];
 
                     // Log::info("duplicate.equals(potential_match)? %d\n",
                     // duplicate->equals(*potential_match));
 
                     genomes.erase(genomes.begin() + duplicate_genome_index);
 
-                    Log::info("potential_matches.size() before erase: %d\n", potential_matches.size());
+                    Log::debug("potential_matches.size() before erase: %d\n", potential_matches.size());
 
                     // erase the potential match from the structure map as well
                     // returns an iterator to next element after the deleted one so
                     // we don't need to increment it
                     potential_match = potential_matches.erase(potential_match);
 
-                    delete duplicate;
-
-                    Log::info("potential_matches.size() after erase: %d\n", potential_matches.size());
-                    Log::info("structure_map[%s].size() after erase: %d\n", structural_hash.c_str(),
+                    Log::debug("potential_matches.size() after erase: %d\n", potential_matches.size());
+                    Log::debug("structure_map[%s].size() after erase: %d\n", structural_hash.c_str(),
                               structure_map[structural_hash].size());
 
                     if (potential_matches.size() == 0) {
-                        Log::info(
+                        Log::debug(
                             "deleting the potential_matches vector for hash '%s' "
                             "because it was empty.\n",
                             structural_hash.c_str());
@@ -250,7 +240,7 @@ int32_t Island::insert_genome(RNN_Genome *genome) {
                         "island already contains a duplicate genome with a better "
                         "fitness! not inserting.\n");
                     do_population_check(__LINE__, initial_size);
-                    return -1;
+                    return pair(-1, nullptr);
                 }
             } else {
                 // increment potential match because we didn't delete an entry (or
@@ -261,14 +251,7 @@ int32_t Island::insert_genome(RNN_Genome *genome) {
     }
 
     // inorder insert the new individual
-    RNN_Genome *copy = genome->copy();
-    vector<double> best = copy->get_best_parameters();
-    if (best.size() != 0) {
-        copy->set_weights(best);
-    }
-    copy->set_generation_id(genome->get_generation_id());
-    Log::info("created copy to insert to island: %d\n", copy->get_group_id());
-    auto index_iterator = upper_bound(genomes.begin(), genomes.end(), copy, sort_genomes_by_fitness());
+    auto index_iterator = upper_bound(genomes.begin(), genomes.end(), genome, sort_genomes_by_fitness());
     uint32_t insert_index = index_iterator - genomes.begin();
     Log::info("inserting genome at index: %d\n", insert_index);
 
@@ -277,72 +260,57 @@ int32_t Island::insert_genome(RNN_Genome *genome) {
         // its just going to get removed anyways, so we can delete
         // it and report it was not inserted.
         Log::info("not inserting genome because it is worse than the worst fitness\n");
-        delete copy;
         do_population_check(__LINE__, initial_size);
-        return -1;
+        return pair(-1, nullptr);
     }
 
-    genomes.insert(index_iterator, copy);
-    // calculate the index the genome was inseretd at from the iterator
+    genomes.insert(index_iterator, genome);
 
-    structural_hash = copy->get_structural_hash();
+    structural_hash = genome->get_structural_hash();
     // add the genome to the vector for this structural hash
-    structure_map[structural_hash].push_back(copy);
-    Log::info("adding to structure_map[%s] : %p\n", structural_hash.c_str(), &copy);
-
-    if (insert_index == 0) {
-        // this was a new best genome for this island
-
-        Log::info("new best fitness for island: %d!\n", id);
-
-        if (genome->get_fitness() != EXAMM_MAX_DOUBLE) {
-            // need to set the weights for non-initial genomes so we
-            // can generate a proper graphviz file
-            vector<double> best_parameters = genome->get_best_parameters();
-            genome->set_weights(best_parameters);
-        }
-    }
+    Log::debug("adding to structure_map[%s] : %p\n", structural_hash.c_str(), genome.get());
+    structure_map[structural_hash].push_back(move(genome));
 
     if (genomes.size() >= max_size) {
         // the island is filled
         status = IslandStatus::FILLED;
     }
 
-    Log::info("genomes.size(): %d, max_size: %d, status: %d\n", genomes.size(), max_size, status);
+    Log::debug("genomes.size(): %d, max_size: %d, status: %d\n", genomes.size(), max_size, status);
 
     if (genomes.size() > max_size) {
         // island was full before insert so now we need to
         // delete the worst genome in the island.
 
         Log::debug("deleting worst genome\n");
-        RNN_Genome *worst = genomes.back();
+        shared_ptr<const RNN_Genome> worst = move(genomes.back());
         genomes.pop_back();
         structural_hash = worst->get_structural_hash();
 
-        vector<RNN_Genome *> &potential_matches = structure_map.find(structural_hash)->second;
+        vector<shared_ptr<const RNN_Genome>> &potential_matches = structure_map.find(structural_hash)->second;
 
         bool found = false;
         for (auto potential_match = potential_matches.begin(); potential_match != potential_matches.end();) {
             // make sure the addresses of the pointers are the same
-            Log::info(
+            Log::debug(
                 "checking to remove worst from structure_map - &worst: %p, "
                 "&(*potential_match): %p\n",
                 worst, (*potential_match));
-            if ((*potential_match) == worst) {
+            if (potential_match->get() == worst.get()) {
                 found = true;
-                Log::info("potential_matches.size() before erase: %d\n", potential_matches.size());
+                Log::debug("potential_matches.size() before erase: %d\n", potential_matches.size());
 
                 // erase the potential match from the structure map as well
                 potential_match = potential_matches.erase(potential_match);
 
-                Log::info("potential_matches.size() after erase: %d\n", potential_matches.size());
-                Log::info("structure_map[%s].size() after erase: %d\n", structural_hash.c_str(),
+                Log::debug("potential_matches.size() after erase: %d\n", potential_matches.size());
+                Log::debug("structure_map[%s].size() after erase: %d\n", structural_hash.c_str(),
                           structure_map[structural_hash].size());
 
                 // clean up the structure_map if no genomes in the population have this
                 // hash
                 if (potential_matches.size() == 0) {
-                    Log::info(
+                    Log::debug(
                         "deleting the potential_matches vector for hash '%s' "
                         "because it was empty.\n",
                         structural_hash.c_str());
@@ -355,14 +323,12 @@ int32_t Island::insert_genome(RNN_Genome *genome) {
         }
 
         if (!found) {
-            Log::info(
+            Log::fatal(
                 "could not erase from structure_map[%s], genome not found! "
                 "This should never happen.\n",
                 structural_hash.c_str());
             exit(1);
         }
-
-        delete worst;
     }
 
     if (insert_index >= max_size) {
@@ -371,10 +337,10 @@ int32_t Island::insert_genome(RNN_Genome *genome) {
         // island. So in this case it was not inserted to the
         // island and return -1
         do_population_check(__LINE__, initial_size);
-        return -1;
+        return pair(-1, nullptr);
     } else {
         do_population_check(__LINE__, initial_size);
-        return insert_index;
+        return pair(insert_index, genomes[insert_index].get());
     }
 }
 
@@ -390,9 +356,6 @@ void Island::print(string indent) {
 
 void Island::erase_island() {
     erased_generation_id = latest_generation_id;
-    for (uint32_t i = 0; i < genomes.size(); i++) {
-        delete genomes[i];
-    }
     genomes.clear();
     erased = true;
     erase_again = 5;
@@ -419,7 +382,7 @@ void Island::set_status(IslandStatus status_to_set) { status = status_to_set; }
 
 bool Island::been_erased() { return erased; }
 
-vector<RNN_Genome *> &Island::get_genomes() { return genomes; }
+vector<shared_ptr<const RNN_Genome>> &Island::get_genomes() { return genomes; }
 
 void Island::set_latest_generation_id(int32_t _latest_generation_id) { latest_generation_id = _latest_generation_id; }
 

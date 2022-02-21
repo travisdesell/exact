@@ -17,6 +17,8 @@ using std::to_string;
 #include <vector>
 using std::vector;
 
+#include <optional>
+
 #include "common/weight_initialize.hxx"
 #include "genome_operators.hxx"
 #include "rnn_genome.hxx"
@@ -35,6 +37,7 @@ private:
   int32_t max_genomes;
   int32_t max_time_minutes;
   int32_t total_bp_epochs;
+  int32_t evaluated_genomes = 0;
 
   int32_t genome_id = 0;
 
@@ -46,7 +49,7 @@ private:
 
   bool start_filled;
 
-  RNN_Genome *seed_genome;
+  shared_ptr<const RNN_Genome> seed_genome;
 
   string island_ranking_method;
   // string speciation_method;
@@ -96,7 +99,7 @@ public:
         WeightType _weight_inheritance, WeightType _mutated_component_weight,
         string _output_directory, GenomeOperators _genome_operators,
         DatasetMeta _dataset_meta, TrainingParameters _training_parameters,
-        RNN_Genome *seed_genome, bool _start_filled);
+        shared_ptr<const RNN_Genome> &seed_genome, bool _start_filled);
 
   ~EXAMM();
 
@@ -106,18 +109,18 @@ public:
 
   uniform_int_distribution<int32_t> get_recurrent_depth_dist();
 
-  Msg *get_initialize_work();
-  Msg *generate_work();
+  unique_ptr<Msg> get_initialize_work();
+  unique_ptr<Msg> generate_work();
 
   int get_random_node_type();
 
-  bool insert_genome(shared_ptr<const RNN_Genome> genome);
+  bool insert_genome(unique_ptr<RNN_Genome> genome);
 
   double get_best_fitness();
   double get_worst_fitness();
-  shared_ptr<RNN_Genome> get_best_genome();
-  shared_ptr<RNN_Genome> get_worst_genome();
-  shared_ptr<RNN_Genome> get_seed_genome();
+  shared_ptr<const RNN_Genome> &get_best_genome();
+  shared_ptr<const RNN_Genome> &get_worst_genome();
+  shared_ptr<const RNN_Genome> &get_seed_genome();
 
   string get_output_directory() const;
   RNN_Genome *generate_for_transfer_learning(string file_name, int extra_inputs,

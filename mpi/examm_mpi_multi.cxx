@@ -103,7 +103,7 @@ int main(int argc, char** argv) {
 
                 slice_times_file << milliseconds << endl;
 
-                RNN_Genome *best_genome = examm->get_best_genome();
+                auto best_genome = examm->get_best_genome()->copy();
 
                 string binary_file = slice_output_directory + "/repeat_best_" + to_string(k) + ".bin";
                 string graphviz_file = slice_output_directory + "/repeat_best_" + to_string(k) + ".gv";
@@ -112,6 +112,7 @@ int main(int argc, char** argv) {
                 best_genome->write_to_file(binary_file);
                 best_genome->write_graphviz(graphviz_file);
 
+                delete best_genome;
                 delete examm;
                 Log::release_id(examm_log_id);
             } else {

@@ -94,7 +94,7 @@ RNN_Recurrent_Edge::RNN_Recurrent_Edge(int32_t _innovation_number, int32_t _recu
     }
 }
 
-RNN_Recurrent_Edge *RNN_Recurrent_Edge::copy(unordered_map<int32_t, RNN_Node_Interface *> new_nodes) {
+RNN_Recurrent_Edge *RNN_Recurrent_Edge::copy(unordered_map<int32_t, RNN_Node_Interface *> new_nodes) const {
     auto input_node = new_nodes[input_innovation_number];
     auto output_node = new_nodes[output_innovation_number];
 
@@ -113,7 +113,7 @@ RNN_Recurrent_Edge *RNN_Recurrent_Edge::copy(unordered_map<int32_t, RNN_Node_Int
     return e;
 }
 
-RNN_Recurrent_Edge *RNN_Recurrent_Edge::copy(const vector<RNN_Node_Interface *> new_nodes) {
+RNN_Recurrent_Edge *RNN_Recurrent_Edge::copy(const vector<RNN_Node_Interface *> new_nodes) const {
     RNN_Recurrent_Edge *e = new RNN_Recurrent_Edge(innovation_number, recurrent_depth, input_innovation_number,
                                                    output_innovation_number, new_nodes);
 

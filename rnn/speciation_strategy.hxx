@@ -43,13 +43,13 @@ public:
    * Gets the best genome of all the islands
    * \return the best genome of all islands
    */
-  virtual RNN_Genome *get_best_genome() = 0;
+  virtual shared_ptr<const RNN_Genome> &get_best_genome() = 0;
 
   /**
    * Gets the the worst genome of all the islands
    * \return the worst genome of all islands
    */
-  virtual RNN_Genome *get_worst_genome() = 0;
+  virtual shared_ptr<const RNN_Genome> &get_worst_genome() = 0;
 
   /**
    * Inserts a <b>copy</b> of the genome into this speciation strategy.
@@ -61,12 +61,12 @@ public:
    * \return a value < 0 if the genome was not inserted, 0 if it was a new best
    * genome or > 0 otherwise.
    */
-  virtual int32_t insert_genome(RNN_Genome *genome) = 0;
+  virtual pair<int32_t, const RNN_Genome *> insert_genome(unique_ptr<RNN_Genome> genome) = 0;
 
   /**
    * Generates a unit of work. The work unit is to be sent to a worker.
    */
-  virtual WorkMsg *generate_work(uniform_real_distribution<double> &rng_0_1,
+  virtual unique_ptr<WorkMsg> generate_work(uniform_real_distribution<double> &rng_0_1,
                               minstd_rand0 &generator) = 0;
 
   /**
@@ -86,7 +86,7 @@ public:
    */
   virtual string get_strategy_information_values() const = 0;
 
-  virtual RNN_Genome *get_global_best_genome() = 0;
+  virtual shared_ptr<const RNN_Genome> &get_global_best_genome() = 0;
 };
 
 #endif

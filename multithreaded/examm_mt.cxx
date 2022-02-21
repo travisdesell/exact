@@ -14,7 +14,6 @@ using std::vector;
 #include "common/log.hxx"
 
 #include "rnn/examm.hxx"
-#include "rnn/work/work.hxx"
 #include "rnn/training_parameters.hxx"
 #include "rnn/genome_operators.hxx"
 
@@ -26,7 +25,7 @@ int main(int argc, char** argv) {
     arguments = vector<string>(argv, argv + argc);
 
     Log::initialize(arguments);
-    Log::set_id("main");
+    Log::set_id("init");
 
 #define EXAMM_MT
 #include "common/examm_argparse.cxx"
@@ -45,7 +44,7 @@ int main(int argc, char** argv) {
     finished = true;
 
     Log::info("completed!\n");
-    Log::release_id("main");
+    Log::release_id("init");
 
     return 0;
 }

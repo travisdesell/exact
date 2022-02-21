@@ -27,8 +27,6 @@ SET (PLATFORM 64)
 # but will probably give some significant performance gains
 # add_compile_definitions(MINIMAL_LOGGING)
 
-
-
 # 1 This line for local - THIS CODE IS SLOW BUT WILL COMPILE FASTER! Use a Release build for fast code!
 SET (CMAKE_CXX_FLAGS                "-Wall -Wextra -std=gnu++17 -funroll-loops -march=native")
 
@@ -36,7 +34,7 @@ SET (CMAKE_CXX_FLAGS                "-Wall -Wextra -std=gnu++17 -funroll-loops -
 # Address sanitizer enabled
 # Better stacktraces with -fnoemitframepointer
 # This is the default build type
-SET (CMAKE_CXX_FLAGS_DEBUG          "-g -fsanitize=address -D_GLIBCXX_DEBUG -fno-omit-frame-pointer")
+SET (CMAKE_CXX_FLAGS_DEBUG          "-g -fsanitize=address -D_GLIBCXX_DEBUG -fno-omit-frame-pointer -DDEBUG -ggdb -O0")
 
 # Smaller binary
 SET (CMAKE_CXX_FLAGS_MINSIZEREL     "-Os -DNDEBUG")
@@ -44,7 +42,7 @@ SET (CMAKE_CXX_FLAGS_MINSIZEREL     "-Os -DNDEBUG")
 # Release build, optimized for current CPU architecutre (i.e. the binaries are not going to be portable).
 # run CMAKE CMAKE_BUILD_TYPE=Release ..
 # Fastest possible code + no debugging
-SET (CMAKE_CXX_FLAGS_RELEASE        "-O3 -funroll-loops -DNDEBUG -flto -march=native -DMINIMAL_LOGGING")
+SET (CMAKE_CXX_FLAGS_RELEASE        "-O4 -funroll-loops -DNDEBUG -flto -march=native -DMINIMAL_LOGGING")
 
 set(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH} /opt/local/lib)
 

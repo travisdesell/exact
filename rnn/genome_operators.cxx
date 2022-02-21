@@ -1,12 +1,13 @@
 #include "genome_operators.hxx"
 
 #include <algorithm>
+#include <cstring>
 #include <unordered_map>
 #include <utility>
-#include <cstring>
 
 GenomeOperators::GenomeOperators(int32_t _number_workers, int32_t _worker_id, int32_t _number_inputs,
-                                 int32_t _number_outputs, int32_t n_parents_intra, int32_t n_parents_inter,
+                                 int32_t _number_outputs, pair<int32_t, int32_t> n_parents_intra_range,
+                                 pair<int32_t, int32_t> n_parents_inter_range, pair<int32_t, int32_t> n_mutations_range,
                                  int32_t _edge_innovation_count, int32_t _node_innovation_count,
                                  int32_t _min_recurrent_depth, int32_t _max_recurrent_depth,
                                  WeightType _weight_initialize, WeightType _weight_inheritance,
@@ -14,8 +15,9 @@ GenomeOperators::GenomeOperators(int32_t _number_workers, int32_t _worker_id, in
                                  TrainingParameters _training_parameters, vector<string> _possible_node_type_strings)
     : number_inputs(_number_inputs),
       number_outputs(_number_outputs),
-      n_parents_intra(n_parents_intra),
-      n_parents_inter(n_parents_inter),
+      n_parents_intra_range(n_parents_intra_range),
+      n_parents_inter_range(n_parents_inter_range),
+      n_mutations_range(n_mutations_range),
       dataset_meta(_dataset_meta),
       weight_initialize(_weight_initialize),
       weight_inheritance(_weight_inheritance),
@@ -103,14 +105,6 @@ void GenomeOperators::set_possible_node_types(vector<string> &possible_node_type
     }
 }
 
-int32_t GenomeOperators::get_n_parents_inter() {
-    return n_parents_inter;
-}
-
-int32_t GenomeOperators::get_n_parents_intra() {
-    return n_parents_intra;
-}
-
 int GenomeOperators::get_random_node_type() { return GenomeOperators::possible_node_types[node_index_dist(generator)]; }
 
 void GenomeOperators::finalize_genome(RNN_Genome *genome) {
@@ -121,13 +115,18 @@ void GenomeOperators::finalize_genome(RNN_Genome *genome) {
     if (!TrainingParameters::use_epigenetic_weights) genome->initialize_randomly();
 }
 
+int32_t GenomeOperators::get_random_n_mutations() {
+    int32_t dif = n_mutations_range.second - n_mutations_range.first;
+    return n_mutations_range.first + rng_0_1(generator) * dif;
+}
+
 RNN_Genome *GenomeOperators::mutate(RNN_Genome *g, int32_t n_mutations) {
     double mu, sigma;
 
     // g->write_graphviz("rnn_genome_premutate_" +
     // to_string(g->get_generation_id()) + ".gv");
-    Log::info("generating new genome by mutation(%d).\n", n_mutations);
-
+    Log::info("mutating genome with %d mutations\n", n_mutations);
+    
     g->get_mu_sigma(g->best_parameters, mu, sigma);
     g->clear_generated_by();
 
@@ -541,7 +540,17 @@ RNN_Genome *GenomeOperators::crossover(RNN_Genome *more_fit, RNN_Genome *less_fi
     return child;
 }
 
-RNN_Genome *GenomeOperators::ncrossover(vector<RNN_Genome *> &parents) {
+int32_t GenomeOperators::get_random_n_parents_inter() {
+    int32_t dif = n_parents_inter_range.second - n_parents_inter_range.first;
+    return n_parents_inter_range.first + rng_0_1(generator) * dif;
+}
+
+int32_t GenomeOperators::get_random_n_parents_intra() {
+    int32_t dif = n_parents_intra_range.second - n_parents_intra_range.first;
+    return n_parents_intra_range.first + rng_0_1(generator) * dif;
+}
+
+RNN_Genome *GenomeOperators::ncrossover(vector<const RNN_Genome *> &parents) {
     Log::debug("performing ncrossover with %d parents\n", parents.size());
 
     if (parents.size() == 0) {
@@ -552,41 +561,14 @@ RNN_Genome *GenomeOperators::ncrossover(vector<RNN_Genome *> &parents) {
     }
 
     std::sort(parents.begin(), parents.end(),
-              [](RNN_Genome *a, RNN_Genome *b) { return a->get_fitness() < b->get_fitness(); });
-
-    int32_t max_edge_in = 0;
-    int32_t min_edge_in = 0;
-
-    int32_t max_rec_edge_in = 0;
-    int32_t min_rec_edge_in = 0;
-
-    int32_t max_node_in = 0;
-    int32_t min_node_in = 0;
-
-    for (auto gi = parents.begin(); gi != parents.end(); gi++) {
-        RNN_Genome *g = *gi;
-        Log::debug("Parent %d: id = %d, fitness = %f\n", gi - parents.begin(), g->generation_id, g->get_fitness());
-
-        // Make sure everything is sorted. This may be redundant?
-        sort(g->edges.begin(), g->edges.end(), sort_RNN_Edges_by_innovation());
-        if (g->edges.size() != 0) max_edge_in = max(max_edge_in, g->edges.back()->innovation_number);
-
-        sort(g->recurrent_edges.begin(), g->recurrent_edges.end(), sort_RNN_Recurrent_Edges_by_innovation());
-        if (g->recurrent_edges.size() != 0)
-            max_rec_edge_in = max(max_rec_edge_in, g->recurrent_edges.back()->innovation_number);
-
-        sort(g->nodes.begin(), g->nodes.end(), sort_RNN_Nodes_by_innovation());
-        if (g->nodes.size() != 0) max_node_in = max(max_node_in, g->nodes.back()->innovation_number);
-    }
+              [](const RNN_Genome *a, const RNN_Genome *b) { return a->get_fitness() < b->get_fitness(); });
 
     // nodes are copied in the attempt_node_insert_function
     // maps innovation number to a bool representing whether it should be enabled in the child
     // shared with rec edges too since there should be no overlap.
-    bool edge_enabled[max(max_rec_edge_in, max_edge_in) + 1];
-    memset(edge_enabled, 0, sizeof(edge_enabled));
+    unordered_map<int32_t, bool> edge_enabled;
 
-    bool node_enabled[max_node_in + 1];
-    memset(node_enabled, 0, sizeof(node_enabled));
+    unordered_map<int32_t, bool> node_enabled;
 
     // Maps edge innovation numbers to a vector of weights for that edge.
     // Each element in the weight vector is from a different genome.
@@ -595,27 +577,29 @@ RNN_Genome *GenomeOperators::ncrossover(vector<RNN_Genome *> &parents) {
     //
     // The order the vectors are populated ensures that the first element always corresponds to the best weight.
     // The parent rank is also stored witht he weight, as it may be used to modify the crossover.
-    unordered_map<int32_t, vector<pair<int32_t, double> > > edge_weights(max(max_rec_edge_in, max_edge_in) + 1);
-    unordered_map<int32_t, vector<pair<int32_t, vector<double> > > > node_weights(max_node_in + 1);
+    unordered_map<int32_t, vector<pair<int32_t, double> > > edge_weights;
+    unordered_map<int32_t, vector<pair<int32_t, vector<double> > > > node_weights;
 
     // Maps innovation number to edge. This will be populated with every edge that appears in the parents,
     // we need a reference to it so we can insert them after we figure out which edges should be enabled.
-    unordered_map<int32_t, RNN_Edge *> edge_map(max_edge_in + 1);
-    unordered_map<int32_t, RNN_Recurrent_Edge *> rec_edge_map(max_rec_edge_in + 1);
-    unordered_map<int32_t, RNN_Node_Interface *> node_map(max_node_in + 1);
+    unordered_map<int32_t, RNN_Edge *> edge_map;
+    unordered_map<int32_t, RNN_Recurrent_Edge *> rec_edge_map;
+    unordered_map<int32_t, RNN_Node_Interface *> node_map;
 
     vector<RNN_Node_Interface *> child_nodes;
     vector<RNN_Edge *> child_edges;
     vector<RNN_Recurrent_Edge *> child_recurrent_edges;
 
     for (auto i = 0; i < parents.size(); i++) {
-        RNN_Genome *p = parents[i];
+        const RNN_Genome *p = parents[i];
 
         double probability = 1.0 / ((double)(1 << i));
 
+        Log::debug("Copying nodes from parent %d\n", i);
         for (auto j = 0; j < p->nodes.size(); j++) {
             auto node = p->nodes[j];
             // Copy of the best node
+            node_map.insert({node->innovation_number, node});
             if (node_map.count(node->innovation_number) == 0) node_map[node->innovation_number] = node;
 
             if (node->enabled) {
@@ -627,12 +611,14 @@ RNN_Genome *GenomeOperators::ncrossover(vector<RNN_Genome *> &parents) {
                     node_enabled[node->innovation_number] = true;
             }
         }
+        Log::debug("Done copying nodes from parent %d\n", i);
 
+        Log::debug("Copying edges from parent %d\n", i);
         for (auto j = 0; j < p->edges.size(); j++) {
             auto e = p->edges[j];
+            edge_map.insert({e->innovation_number, e});
 
-            if (edge_map.count(e->innovation_number) == 0) edge_map[e->innovation_number] = e;
-
+            Log::debug("edge_enabled %d\n", e->innovation_number);
             if (e->enabled) {
                 if (e->input_node->enabled && e->output_node->enabled)
                     edge_weights[e->innovation_number].push_back({(int32_t)i, e->weight});
@@ -641,12 +627,17 @@ RNN_Genome *GenomeOperators::ncrossover(vector<RNN_Genome *> &parents) {
                     edge_enabled[e->innovation_number] = true;
             }
         }
+        Log::debug("Done copying edges from parent %d\n", i);
 
+        Log::debug("hmmm \n");
+        Log::debug(" o %d\n", p->recurrent_edges.size());
+        Log::debug("hmmm \n");
+        Log::debug("Copying edges from parent %d\n", i);
         for (auto j = 0; j < p->recurrent_edges.size(); j++) {
             auto e = p->recurrent_edges[j];
-
-            if (rec_edge_map.count(e->innovation_number) == 0) rec_edge_map[e->innovation_number] = e;
-
+            rec_edge_map.insert({e->innovation_number, e});
+            
+            Log::debug("edge_enabled %d\n", e->innovation_number);
             if (e->enabled) {
                 if (e->input_node->enabled && e->output_node->enabled)
                     edge_weights[e->innovation_number].push_back({(int32_t)i, e->weight});
@@ -655,7 +646,10 @@ RNN_Genome *GenomeOperators::ncrossover(vector<RNN_Genome *> &parents) {
                     edge_enabled[e->innovation_number] = true;
             }
         }
+        Log::debug("Done copying rec dges from parent %d\n", i);
     }
+
+    Log::debug("Done selecting components\n");
 
     auto n_parents = parents.size();
     // Get appropriate mass (weight in weighted sum) for the given position.
@@ -747,6 +741,7 @@ RNN_Genome *GenomeOperators::ncrossover(vector<RNN_Genome *> &parents) {
     for (auto it = edge_map.begin(); it != edge_map.end(); it++) {
         auto copy = it->second->copy(node_map);
 
+        Log::debug("edge_enabled %d\n", it->first);
         copy->enabled = edge_enabled[it->first];
 
         vector<pair<int32_t, double> > &weights = edge_weights[it->first];
@@ -765,6 +760,7 @@ RNN_Genome *GenomeOperators::ncrossover(vector<RNN_Genome *> &parents) {
     for (auto it = rec_edge_map.begin(); it != rec_edge_map.end(); it++) {
         auto copy = it->second->copy(node_map);
 
+        Log::debug("edge_enabled %d\n", it->first);
         copy->enabled = edge_enabled[it->first];
 
         vector<pair<int32_t, double> > &weights = edge_weights[it->first];
@@ -780,17 +776,22 @@ RNN_Genome *GenomeOperators::ncrossover(vector<RNN_Genome *> &parents) {
         child_recurrent_edges.push_back(copy);
     }
 
+    Log::debug("OKAY\n");
     RNN_Genome *child = new RNN_Genome(child_nodes, child_edges, child_recurrent_edges, training_parameters,
                                        weight_initialize, weight_inheritance, mutated_component_weight);
+    Log::debug("OKAY\n");
     child->set_parameter_names(dataset_meta.input_parameter_names, dataset_meta.output_parameter_names);
+    Log::debug("OKAY\n");
     child->set_normalize_bounds(dataset_meta.normalize_type, dataset_meta.normalize_mins, dataset_meta.normalize_maxs,
                                 dataset_meta.normalize_avgs, dataset_meta.normalize_std_devs);
+    Log::debug("OKAY\n");
 
     bool intra_island_crossover = true;
     for (int i = 0; i < parents.size() - 1 && intra_island_crossover; i++) {
         intra_island_crossover = parents[i]->group_id == parents[i + 1]->group_id;
     }
 
+    child->clear_generated_by();
     if (intra_island_crossover) {
         child->set_generated_by("crossover");
     } else {
@@ -830,6 +831,8 @@ RNN_Genome *GenomeOperators::ncrossover(vector<RNN_Genome *> &parents) {
     child->get_mu_sigma(child->initial_parameters, mu, sigma);
 
     child->best_parameters.clear();
+
+    Log::info("Child with %d nodes, %d edges, %d redges\n", child->nodes.size(), child->edges.size(), child->recurrent_edges.size());
 
     return child;
 }

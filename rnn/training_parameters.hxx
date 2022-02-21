@@ -56,7 +56,7 @@ public:
   // used otherwise!
   TrainingParameters();
 
-  void write_to_stream(ostream &bin_ostream);
+  void write_to_stream(ostream &bin_ostream) const;
 };
 
 #endif

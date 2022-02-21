@@ -41,7 +41,7 @@ TrainingParameters::TrainingParameters(istream &bin_istream) {
   bin_istream.read((char *)&use_random_sequence_length, sizeof(bool));
 }
 
-void TrainingParameters::write_to_stream(ostream &bin_ostream) {
+void TrainingParameters::write_to_stream(ostream &bin_ostream) const {
   bin_ostream.write((char *)&bp_iterations, sizeof(int32_t));
   bin_ostream.write((char *)&sequence_lower_bound, sizeof(int32_t));
   bin_ostream.write((char *)&sequence_upper_bound, sizeof(int32_t));

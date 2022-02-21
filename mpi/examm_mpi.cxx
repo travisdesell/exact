@@ -24,7 +24,6 @@ using std::vector;
 #include "common/weight_initialize.hxx"
 
 #include "rnn/examm.hxx"
-#include "rnn/work/work.hxx"
 
 #include "time_series/time_series.hxx"
 

@@ -1,3 +1,4 @@
+#ifndef EXAMM_ISLAND_SPECIATION_STRATEGY_HXX
 #define EXAMM_ISLAND_SPECIATION_STRATEGY_HXX
 
 #include <functional>
@@ -81,11 +82,11 @@ class IslandSpeciationStrategy : public SpeciationStrategy {
 
     GenomeOperators &genome_operators;
 
-    WorkMsg *generate_work_for_filled_island(uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator,
+    unique_ptr<WorkMsg> generate_work_for_filled_island(uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator,
                                           Island *island);
-    WorkMsg *generate_work_for_initializing_island(uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator,
+    unique_ptr<WorkMsg> generate_work_for_initializing_island(uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator,
                                                 Island *island);
-    WorkMsg *generate_work_for_reinitializing_island(uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator,
+    unique_ptr<WorkMsg> generate_work_for_reinitializing_island(uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator,
                                                   Island *island);
 
    public:
@@ -93,28 +94,14 @@ class IslandSpeciationStrategy : public SpeciationStrategy {
     // static IslandSpeciationStrategy* generate_from_command_line();
 
     /**
-     * Creates a new IslandSpeciationStrategy.
-     *
-     * \param number_of_islands specifies how many islands it will us e
-     * \param max_island_size specifies the maximum number of gneomes in an island
-     */
-    IslandSpeciationStrategy(uint32_t _number_of_islands, uint32_t _max_island_size, double _mutation_rate,
-                             double _intra_island_crossover_rate, double _inter_island_crossover_rate,
-                             shared_ptr<const RNN_Genome> _seed_genome, string _island_ranking_method, string _repopulation_method,
-                             uint32_t _extinction_event_generation_number, uint32_t _repopulation_mutations,
-                             uint32_t _islands_to_exterminate, uint32_t _max_genomes, bool _repeat_extinction,
-                             bool _seed_genome_was_minimal, GenomeOperators &genome_operators);
-
-    /**
      * Transfer learning constructor.
      * \param Modification function to be applied to every copy of the seed_genome
      */
-    IslandSpeciationStrategy(uint32_t _number_of_islands, uint32_t _max_island_size, double _mutation_rate,
-                             double _intra_island_crossover_rate, double _inter_island_crossover_rate,
+    IslandSpeciationStrategy(uint32_t _number_of_islands, uint32_t _max_island_size, 
                              shared_ptr<const RNN_Genome> _seed_genome, string _island_ranking_method, string _repopulation_method,
                              uint32_t _extinction_event_generation_number, uint32_t _repopulation_mutations,
                              uint32_t _islands_to_exterminate, bool seed_genome_was_minimal,
-                             function<void(RNN_Genome *)> &modify, GenomeOperators &genome_operators);
+                             optional<function<void(RNN_Genome *)>> modify, GenomeOperators &genome_operators);
 
     /**
      * \return the number of generated genomes.
@@ -143,14 +130,14 @@ class IslandSpeciationStrategy : public SpeciationStrategy {
      * \return the best genome of all islands or NULL if no genomes have yet been
      * inserted
      */
-    const RNN_Genome *get_best_genome();
+    shared_ptr<const RNN_Genome> &get_best_genome();
 
     /**
      * Gets the the worst genome of all the islands
      * \return the worst genome of all islands or NULL if no genomes have yet been
      * inserted
      */
-    const RNN_Genome *get_worst_genome();
+    shared_ptr<const RNN_Genome> &get_worst_genome();
 
     /**
      *  \return true if all the islands are full
@@ -168,7 +155,7 @@ class IslandSpeciationStrategy : public SpeciationStrategy {
      * \return a value < 0 if the genome was not inserted, 0 if it was a new best
      * genome for all the islands, or > 0 otherwise.
      */
-    int32_t insert_genome(unique_ptr<RNN_Genome> genome);
+    pair<int32_t, const RNN_Genome *> insert_genome(unique_ptr<RNN_Genome> genome);
 
     /**
      * find the worst island in the population, the worst island's best genome is
@@ -195,7 +182,7 @@ class IslandSpeciationStrategy : public SpeciationStrategy {
      *
      * \return the newly generated genome.
      */
-    WorkMsg *generate_work(uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator);
+    unique_ptr<WorkMsg> generate_work(uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator);
 
     /**
      * Prints out all the island's populations
@@ -218,7 +205,7 @@ class IslandSpeciationStrategy : public SpeciationStrategy {
      * Island repopulation through two random parents from two seperate islands,
      * parents can be random genomes or best genome from the island
      */
-    WorkMsg *parents_repopulation(RepopulationMethod method, uniform_real_distribution<double> &rng_0_1,
+    unique_ptr<WorkMsg> parents_repopulation(RepopulationMethod method, uniform_real_distribution<double> &rng_0_1,
                                minstd_rand0 &generator);
 
     /**

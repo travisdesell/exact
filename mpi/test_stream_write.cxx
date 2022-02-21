@@ -23,7 +23,6 @@ using std::vector;
 #include "common/log.hxx"
 
 #include "rnn/examm.hxx"
-#include "rnn/work/work.hxx"
 
 #include "time_series/time_series.hxx"
 
@@ -57,8 +56,11 @@ int main(int argc, char** argv) {
 #include "common/examm_argparse.cxx"
 
     examm = make_examm();
+    
+    unique_ptr<Msg> m = examm->generate_work();
+    WorkMsg *wm = dynamic_cast<WorkMsg*>(m.get());
 
-    RNN_Genome *genome = examm->generate_work()->get_genome(genome_operators);
+    unique_ptr<RNN_Genome> genome = wm->get_genome(genome_operators);
 
     char *byte_array;
     uint32_t length;

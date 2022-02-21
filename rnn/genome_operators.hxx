@@ -15,7 +15,7 @@ using std::pair;
 using namespace std;
 
 class GenomeOperators {
-   private:
+   public:
     // Genome rank is how well it is doing, relative to some group of genomes.
     // 0 is the best, 1 second best, etc.
     // It usually corresponds to the index of the genome, as long as the genomes are sorted.
@@ -53,6 +53,15 @@ class GenomeOperators {
         clone_rate + add_edge_rate + add_recurrent_edge_rate + enable_edge_rate + disable_edge_rate + split_edge_rate +
         add_node_rate + enable_node_rate + disable_node_rate + split_node_rate + merge_node_rate;
 
+    static constexpr double mutation_p = 0.70;
+    static constexpr double co_p = 0.30;
+
+    // If we're doing crossover, what is the probaility of inter / intra
+    static constexpr double intra_co_p = 0.66;
+    static constexpr double inter_co_p = 0.34;
+
+   private:
+
     // Instance variables
     const DatasetMeta dataset_meta;
     vector<int> possible_node_types;
@@ -64,11 +73,13 @@ class GenomeOperators {
     int32_t number_outputs;
 
     // Number of genomes used for crossover within an island. Max value is the population size of an island
-    int32_t n_parents_intra;
+    pair<int32_t, int32_t> n_parents_intra_range;
 
     // Number of genomes used for crossover between different islands. Max value is 1 + population size of an island, 1
     // from local island and population size genomes from foreign island.
-    int32_t n_parents_inter;
+    pair<int32_t, int32_t> n_parents_inter_range;
+
+    pair<int32_t, int32_t> n_mutations_range;
 
     WeightType weight_initialize;
     WeightType weight_inheritance;
@@ -106,23 +117,25 @@ class GenomeOperators {
     function<int32_t()> next_node_innovation_number;
 
     GenomeOperators(int32_t _number_workers, int32_t _worker_id, int32_t _number_inputs, int32_t _number_outputs,
-                    int32_t n_parents_inra, int32_t n_parents_inter, int32_t _edge_innovation_count,
+                    pair<int32_t, int32_t> n_parents_inra_range, pair<int32_t, int32_t> n_parents_inter_range,
+                    pair<int32_t, int32_t> n_mutations_range, int32_t _edge_innovation_count,
                     int32_t _node_innovation_count, int32_t _min_recurrent_depth, int32_t _max_recurrent_depth,
                     WeightType _weight_initialize, WeightType _weight_inheritance, WeightType _mutated_component_weight,
                     DatasetMeta _dataset_meta, TrainingParameters _training_parameters,
                     vector<string> possible_node_types);
 
+    int32_t get_random_n_mutations();
     RNN_Genome *mutate(RNN_Genome *g, int32_t n_mutations);
+    
+    int32_t get_random_n_parents_intra();
+    int32_t get_random_n_parents_inter();
+    RNN_Genome *ncrossover(vector<const RNN_Genome *> &parents);
     RNN_Genome *crossover(RNN_Genome *more_fit, RNN_Genome *less_fit);
-    RNN_Genome *ncrossover(vector<RNN_Genome *> &parents);
 
     void finalize_genome(RNN_Genome *g);
     void set_edge_innovation_count(int32_t);
     void set_node_innovation_count(int32_t);
     const vector<int> &get_possible_node_types();
-
-    int32_t get_n_parents_intra();
-    int32_t get_n_parents_inter();
 
     int get_number_inputs();
     int get_number_outputs();

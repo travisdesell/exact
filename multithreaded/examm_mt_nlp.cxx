@@ -15,7 +15,6 @@ using std::vector;
 #include "common/log.hxx"
 
 #include "rnn/examm.hxx"
-#include "rnn/work/work.hxx"
 #include "rnn/training_parameters.hxx"
 #include "rnn/genome_operators.hxx"
 

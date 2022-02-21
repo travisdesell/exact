@@ -94,7 +94,7 @@ int main(int argc, char** argv) {
 
             Log::info("completed!\n");
 
-            RNN_Genome *best_genome = examm->get_best_genome();
+            RNN_Genome *best_genome = examm->get_best_genome()->copy();
 
             vector<double> best_parameters = best_genome->get_best_parameters();
             Log::info("training MSE: %lf\n", best_genome->get_mse(best_parameters, training_inputs, training_outputs));
