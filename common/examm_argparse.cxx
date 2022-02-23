@@ -4,8 +4,7 @@
 
 #ifndef EXAMM_NLP
 
-TimeSeriesSets *time_series_sets =
-    TimeSeriesSets::generate_from_arguments(arguments);
+TimeSeriesSets *time_series_sets = TimeSeriesSets::generate_from_arguments(arguments);
 int32_t time_offset = time_offset;
 get_argument(arguments, "--time_offset", true, time_offset);
 
@@ -38,7 +37,6 @@ MPI_Comm_rank(MPI_COMM_WORLD, &worker_id);
 // This function gets the n of processes in total
 MPI_Comm_size(MPI_COMM_WORLD, &number_workers);
 // number_workers -= 1;
-
 #endif
 
 int number_inputs = dataset->get_number_inputs();
@@ -47,8 +45,7 @@ int number_outputs = dataset->get_number_outputs();
 dataset->export_training_series(time_offset, training_inputs, training_outputs);
 dataset->export_test_series(time_offset, validation_inputs, validation_outputs);
 
-Log::debug("number_inputs: %d, number_outputs: %d\n", number_inputs,
-           number_outputs);
+Log::debug("number_inputs: %d, number_outputs: %d\n", number_inputs, number_outputs);
 
 int32_t population_size;
 get_argument(arguments, "--population_size", true, population_size);
@@ -63,23 +60,19 @@ string speciation_method = "";
 get_argument(arguments, "--speciation_method", false, speciation_method);
 
 int32_t extinction_event_generation_number = max_genomes + 1;
-get_argument(arguments, "--extinction_event_generation_number", false,
-             extinction_event_generation_number);
+get_argument(arguments, "--extinction_event_generation_number", false, extinction_event_generation_number);
 
 int32_t islands_to_exterminate = 0;
-get_argument(arguments, "--islands_to_exterminate", false,
-             islands_to_exterminate);
+get_argument(arguments, "--islands_to_exterminate", false, islands_to_exterminate);
 
 string island_ranking_method = "";
-get_argument(arguments, "--island_ranking_method", false,
-             island_ranking_method);
+get_argument(arguments, "--island_ranking_method", false, island_ranking_method);
 
 string repopulation_method = "";
 get_argument(arguments, "--repopulation_method", false, repopulation_method);
 
 int32_t repopulation_mutations = 0;
-get_argument(arguments, "--repopulation_mutations", false,
-             repopulation_mutations);
+get_argument(arguments, "--repopulation_mutations", false, repopulation_mutations);
 
 double species_threshold = 0.0;
 get_argument(arguments, "--species_threshold", false, species_threshold);
@@ -123,15 +116,13 @@ bool use_low_threshold = !argument_exists(arguments, "--no_high_threshold");
 get_argument(arguments, "--low_threshold", false, low_threshold);
 
 double dropout_probability = 0.0;
-bool use_dropout = get_argument(arguments, "--dropout_probability", false,
-                                dropout_probability);
+bool use_dropout = get_argument(arguments, "--dropout_probability", false, dropout_probability);
 
 string output_directory = "";
 get_argument(arguments, "--output_directory", false, output_directory);
 
 vector<string> possible_node_types;
-get_argument_vector(arguments, "--possible_node_types", false,
-                    possible_node_types);
+get_argument_vector(arguments, "--possible_node_types", false, possible_node_types);
 
 int32_t min_recurrent_depth = 1;
 get_argument(arguments, "--min_recurrent_depth", false, min_recurrent_depth);
@@ -149,17 +140,14 @@ weight_initialize = get_enum_from_string(weight_initialize_string);
 Log::info("WI=%d\n", weight_initialize);
 
 string weight_inheritance_string = "lamarckian";
-get_argument(arguments, "--weight_inheritance", false,
-             weight_inheritance_string);
+get_argument(arguments, "--weight_inheritance", false, weight_inheritance_string);
 WeightType weight_inheritance;
 weight_inheritance = get_enum_from_string(weight_inheritance_string);
 
 string mutated_component_weight_string = "lamarckian";
-get_argument(arguments, "--mutated_component_weight", false,
-             mutated_component_weight_string);
+get_argument(arguments, "--mutated_component_weight", false, mutated_component_weight_string);
 WeightType mutated_component_weight;
-mutated_component_weight =
-    get_enum_from_string(mutated_component_weight_string);
+mutated_component_weight = get_enum_from_string(mutated_component_weight_string);
 
 shared_ptr<const RNN_Genome> seed_genome;
 string genome_file_name = "";
@@ -167,15 +155,12 @@ if (get_argument(arguments, "--genome_bin", false, genome_file_name)) {
   auto u = make_unique<RNN_Genome>(genome_file_name);
 
   string transfer_learning_version;
-  get_argument(arguments, "--transfer_learning_version", true,
-               transfer_learning_version);
+  get_argument(arguments, "--transfer_learning_version", true, transfer_learning_version);
 
   bool epigenetic_weights = argument_exists(arguments, "--epigenetic_weights");
 
-  u->transfer_to(dataset->get_input_parameter_names(),
-                 dataset->get_output_parameter_names(),
-                 transfer_learning_version, epigenetic_weights,
-                 min_recurrent_depth, max_recurrent_depth);
+  u->transfer_to(dataset->get_input_parameter_names(), dataset->get_output_parameter_names(), transfer_learning_version,
+                 epigenetic_weights, min_recurrent_depth, max_recurrent_depth);
   seed_genome = move(u);
 }
 
@@ -189,49 +174,38 @@ bool random_sequence_length = false;
 int sequence_length_lower_bound = 30;
 int sequence_length_upper_bound = 100;
 random_sequence_length = argument_exists(arguments, "--random_sequence_length");
-get_argument(arguments, "--sequence_length_lower_bound", false,
-             sequence_length_lower_bound);
-get_argument(arguments, "--sequence_length_upper_bound", false,
-             sequence_length_upper_bound);
+get_argument(arguments, "--sequence_length_lower_bound", false, sequence_length_lower_bound);
+get_argument(arguments, "--sequence_length_upper_bound", false, sequence_length_upper_bound);
 
 double mu = 0.9;
 get_argument(arguments, "--mu", false, mu);
-bool use_nesterov_momentum =
-    !argument_exists(arguments, "--no_nesterov_momentum");
+bool use_nesterov_momentum = !argument_exists(arguments, "--no_nesterov_momentum");
 
 int32_t max_parents_intra = min(2, population_size);
 int32_t min_parents_intra = min(2, population_size);
-get_argument(arguments, "--max_intra_crossover_parents", false,
-             max_parents_intra);
-get_argument(arguments, "--min_intra_crossover_parents", false,
-             min_parents_intra);
+get_argument(arguments, "--max_intra_crossover_parents", false, max_parents_intra);
+get_argument(arguments, "--min_intra_crossover_parents", false, min_parents_intra);
 
 min_parents_intra = max(2, min_parents_intra);
 
-if (max_parents_intra < min_parents_intra)
-  swap(max_parents_intra, min_parents_intra);
+if (max_parents_intra < min_parents_intra) swap(max_parents_intra, min_parents_intra);
 
 if (max_parents_intra > population_size) {
-  Log::fatal("Population size (%d) must be >= max_parents_intra (%d)\n",
-             population_size, max_parents_intra);
+  Log::fatal("Population size (%d) must be >= max_parents_intra (%d)\n", population_size, max_parents_intra);
   exit(1);
 }
 
 int32_t max_parents_inter = min(2, population_size);
 int32_t min_parents_inter = min(2, population_size);
-get_argument(arguments, "--max_inter_crossover_parents", false,
-             max_parents_inter);
-get_argument(arguments, "--min_inter_crossover_parents", false,
-             min_parents_inter);
+get_argument(arguments, "--max_inter_crossover_parents", false, max_parents_inter);
+get_argument(arguments, "--min_inter_crossover_parents", false, min_parents_inter);
 
 min_parents_inter = max(2, min_parents_inter);
 
-if (max_parents_inter < min_parents_inter)
-  swap(max_parents_inter, min_parents_inter);
+if (max_parents_inter < min_parents_inter) swap(max_parents_inter, min_parents_inter);
 
 if (max_parents_inter > population_size) {
-  Log::fatal("Population size (%d) must be >= max_parents_inter (%d)\n",
-             population_size, max_parents_inter);
+  Log::fatal("Population size (%d) must be >= max_parents_inter (%d)\n", population_size, max_parents_inter);
   exit(1);
 }
 
@@ -253,53 +227,40 @@ get_argument(arguments, "--fold_size", true, fold_size);
 #endif
 
 DatasetMeta dataset_meta = dataset->get_dataset_meta();
-TrainingParameters training_parameters(
-    bp_iterations, sequence_length_lower_bound, sequence_length_upper_bound,
-    low_threshold, high_threshold, learning_rate, dropout_probability, mu,
-    use_nesterov_momentum, use_regression, use_dropout,
-    use_low_threshold,   // aka use_low_norm
-    use_high_threshold,  // aka use_high_norm
-    random_sequence_length);
-GenomeOperators genome_operators(number_workers, 0, number_inputs,
-                                 number_outputs,
-                                 pair(min_parents_intra, max_parents_intra),
-                                 pair(min_parents_inter, max_parents_inter),
-                                 pair(min_mutations, max_mutations), 0, 0,
-                                 min_recurrent_depth, max_recurrent_depth,
-                                 weight_initialize, weight_inheritance,
-                                 mutated_component_weight, dataset_meta,
-                                 training_parameters, possible_node_types);
+TrainingParameters training_parameters(bp_iterations, sequence_length_lower_bound, sequence_length_upper_bound,
+                                       low_threshold, high_threshold, learning_rate, dropout_probability, mu,
+                                       use_nesterov_momentum, use_regression, use_dropout,
+                                       use_low_threshold,   // aka use_low_norm
+                                       use_high_threshold,  // aka use_high_norm
+                                       random_sequence_length);
+GenomeOperators genome_operators(number_inputs, number_outputs, pair(min_parents_intra, max_parents_intra),
+                                 pair(min_parents_inter, max_parents_inter), pair(min_mutations, max_mutations),
+                                 min_recurrent_depth, max_recurrent_depth, weight_initialize, weight_inheritance,
+                                 mutated_component_weight, dataset_meta, training_parameters, possible_node_types);
 function<EXAMM *()> make_examm = [&]() {
-  EXAMM *examm = new EXAMM(
-      population_size, number_islands, max_genomes, max_time_minutes,
-      extinction_event_generation_number, islands_to_exterminate,
-      island_ranking_method, repopulation_method, repopulation_mutations,
-      repeat_extinction, epochs_acc_freq, speciation_method, species_threshold,
-      fitness_threshold, neat_c1, neat_c2, neat_c3, weight_initialize,
-      weight_inheritance, mutated_component_weight, output_directory,
-      genome_operators, dataset_meta, training_parameters, seed_genome,
-      start_filled);
+  EXAMM *examm =
+      new EXAMM(population_size, number_islands, max_genomes, max_time_minutes, extinction_event_generation_number,
+                islands_to_exterminate, island_ranking_method, repopulation_method, repopulation_mutations,
+                repeat_extinction, epochs_acc_freq, speciation_method, species_threshold, fitness_threshold, neat_c1,
+                neat_c2, neat_c3, weight_initialize, weight_inheritance, mutated_component_weight, output_directory,
+                genome_operators, dataset_meta, training_parameters, seed_genome, start_filled);
+
   return examm;
 };
 
-int32_t edge_innovation_count;
-int32_t node_innovation_count;
+edge_inon edge_innovation_count;
+node_inon node_innovation_count;
 
 function<void(EXAMM *)> set_innovation_counts = [&](EXAMM *examm) {
   const RNN_Genome *genome = examm->get_seed_genome().get();
-  edge_innovation_count = genome->get_max_edge_innovation_number() + 1;
-  node_innovation_count = genome->get_max_node_innovation_number() + 1;
+  edge_innovation_count = edge_inon(genome->get_max_edge_inon().inon + 1);
+  node_innovation_count = node_inon(genome->get_max_node_inon().inon + 1);
 };
 
-function<GenomeOperators(int32_t)> make_genome_operators =
-    [&](int32_t worker_id) {
-      GenomeOperators go(
-          number_workers + 1, worker_id, number_inputs, number_outputs,
-          pair(min_parents_intra, max_parents_intra),
-          pair(min_parents_inter, max_parents_inter),
-          pair(min_mutations, max_mutations), edge_innovation_count,
-          node_innovation_count, min_recurrent_depth, max_recurrent_depth,
-          weight_initialize, weight_inheritance, mutated_component_weight,
-          dataset_meta, training_parameters, possible_node_types);
-      return go;
-    };
+function<GenomeOperators(int32_t)> make_genome_operators = [&](int32_t worker_id) {
+  GenomeOperators go(number_inputs, number_outputs, pair(min_parents_intra, max_parents_intra),
+                     pair(min_parents_inter, max_parents_inter), pair(min_mutations, max_mutations),
+                     min_recurrent_depth, max_recurrent_depth, weight_initialize, weight_inheritance,
+                     mutated_component_weight, dataset_meta, training_parameters, possible_node_types);
+  return go;
+};

@@ -21,15 +21,14 @@ enum IslandStatus { INITIALIZING = 0, FILLED = 1, REPOPULATING = 2 };
 
 class Island {
  private:
-  uint32_t id;       /**< An integer ID for this island. */
-  uint32_t max_size; /**< The maximum number of genomes in the island. */
-  int32_t erased_generation_id =
-      -1; /**< The latest generation id of an erased island,
-             erased_generation_id = largest_generation_id when this island is
-             erased, to prevent deleted genomes get inserted back */
-  int32_t latest_generation_id; /**< The latest generation id of genome being
-                                   generated, including the ones doing backprop
-                                   by workers */
+  uint32_t id;                       /**< An integer ID for this island. */
+  uint32_t max_size;                 /**< The maximum number of genomes in the island. */
+  int32_t erased_generation_id = -1; /**< The latest generation id of an erased island,
+                                        erased_generation_id = largest_generation_id when this island is
+                                        erased, to prevent deleted genomes get inserted back */
+  int32_t latest_generation_id;      /**< The latest generation id of genome being
+                                        generated, including the ones doing backprop
+                                        by workers */
 
   /**
    * The genomes on this island, stored in sorted order best (front) to worst
@@ -38,9 +37,8 @@ class Island {
   vector<shared_ptr<const RNN_Genome>> genomes;
 
   unordered_map<string, vector<shared_ptr<const RNN_Genome>>> structure_map;
-  IslandStatus
-      status; /**> The status of this island (either Island:INITIALIZING,
-                 Island::FILLED or  Island::REPOPULATING */
+  IslandStatus status; /**> The status of this island (either Island:INITIALIZING,
+                          Island::FILLED or  Island::REPOPULATING */
 
   int32_t erase_again; /**< a flag to track if this islands has been erased */
   bool erased;         /**< a flag to track if this islands has been erased */
@@ -140,8 +138,7 @@ class Island {
    * the random number generator \param genome will be the copied genome, an
    * addresss to a pointer needs to be passed.
    */
-  shared_ptr<const RNN_Genome> get_random_genome(
-      uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator);
+  shared_ptr<const RNN_Genome> get_random_genome(uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator);
 
   /**
    * Selects two different genomes from the island at random and returns copies
@@ -153,18 +150,15 @@ class Island {
    * an addresss to a pointer needs to be passed. \param genome2 will be the
    * second copied genome, an addresss to a pointer needs to be passed.
    */
-  void get_two_random_genomes(uniform_real_distribution<double> &rng_0_1,
-                              minstd_rand0 &generator,
-                              shared_ptr<const RNN_Genome> &g1,
-                              shared_ptr<const RNN_Genome> &g2);
+  void get_two_random_genomes(uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator,
+                              shared_ptr<const RNN_Genome> &g1, shared_ptr<const RNN_Genome> &g2);
   /**
    * Selects n different genomes from the island at random and returns copies of
    * them.
    *
    * If there are fewer than n genomes in the island, a crash will occur.
    */
-  void get_n_random_genomes(uniform_real_distribution<double> &rng_0_1,
-                            minstd_rand0 &generator, int32_t n,
+  void get_n_random_genomes(uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator, int32_t n,
                             vector<shared_ptr<const RNN_Genome>> &genomes);
 
   void do_population_check(int line, int initial_size);
@@ -178,8 +172,7 @@ class Island {
    * \param genome is the genome to be inserted.
    * \return -1 if not inserted, otherwise the index it was inserted at
    */
-  pair<int32_t, const RNN_Genome *> insert_genome(
-      shared_ptr<const RNN_Genome> genome);
+  pair<int32_t, const RNN_Genome *> insert_genome(shared_ptr<const RNN_Genome> genome);
 
   /**
    * Prints out the state of this island.

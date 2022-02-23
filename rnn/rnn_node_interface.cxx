@@ -13,9 +13,8 @@ using std::max;
 #include "rnn_node_interface.hxx"
 
 extern const int32_t NUMBER_NODE_TYPES = 9;
-extern const string NODE_TYPES[] = {"simple", "jordan",  "elman", "UGRNN",
-                                    "MGU",    "GRU",     "delta", "LSTM",
-                                    "ENARC",  "ENAS_DAG"};
+extern const string NODE_TYPES[] = {"simple", "jordan", "elman", "UGRNN", "MGU",
+                                    "GRU",    "delta",  "LSTM",  "ENARC", "ENAS_DAG"};
 
 double bound(double value) {
   if (value < -10.0)
@@ -62,11 +61,8 @@ double leakyReLU_derivative(double input) {
   return alpha;
 }
 
-RNN_Node_Interface::RNN_Node_Interface(int32_t _innovation_number,
-                                       int32_t _layer_type, double _depth)
-    : innovation_number(_innovation_number),
-      layer_type(_layer_type),
-      depth(_depth) {
+RNN_Node_Interface::RNN_Node_Interface(node_inon _inon, int32_t _layer_type, double _depth)
+    : inon(_inon), layer_type(_layer_type), depth(_depth) {
   total_inputs = 0;
 
   enabled = true;
@@ -84,13 +80,8 @@ RNN_Node_Interface::RNN_Node_Interface(int32_t _innovation_number,
   }
 }
 
-RNN_Node_Interface::RNN_Node_Interface(int32_t _innovation_number,
-                                       int32_t _layer_type, double _depth,
-                                       string _parameter_name)
-    : innovation_number(_innovation_number),
-      layer_type(_layer_type),
-      depth(_depth),
-      parameter_name(_parameter_name) {
+RNN_Node_Interface::RNN_Node_Interface(node_inon _inon, int32_t _layer_type, double _depth, string _parameter_name)
+    : inon(_inon), layer_type(_layer_type), depth(_depth), parameter_name(_parameter_name) {
   total_inputs = 0;
 
   enabled = true;
@@ -122,9 +113,7 @@ int32_t RNN_Node_Interface::get_node_type() const { return node_type; }
 
 int32_t RNN_Node_Interface::get_layer_type() const { return layer_type; }
 
-int32_t RNN_Node_Interface::get_innovation_number() const {
-  return innovation_number;
-}
+node_inon RNN_Node_Interface::get_inon() const { return inon; }
 
 int32_t RNN_Node_Interface::get_total_inputs() const { return total_inputs; }
 
@@ -132,25 +121,29 @@ int32_t RNN_Node_Interface::get_total_outputs() const { return total_outputs; }
 
 double RNN_Node_Interface::get_depth() const { return depth; }
 
-bool RNN_Node_Interface::is_reachable() const {
-  return forward_reachable && backward_reachable;
-}
+bool RNN_Node_Interface::is_reachable() const { return forward_reachable && backward_reachable; }
 
 bool RNN_Node_Interface::is_enabled() const { return enabled; }
 
 bool RNN_Node_Interface::equals(RNN_Node_Interface *other) const {
-  if (innovation_number == other->innovation_number &&
-      enabled == other->enabled)
-    return true;
+  if (inon == other->inon && enabled == other->enabled) return true;
   return false;
 }
 
 void RNN_Node_Interface::write_to_stream(ostream &out) {
-  out.write((char *)&innovation_number, sizeof(int32_t));
-  out.write((char *)&layer_type, sizeof(int32_t));
-  out.write((char *)&node_type, sizeof(int32_t));
-  out.write((char *)&depth, sizeof(double));
-  out.write((char *)&enabled, sizeof(bool));
+  out.write((char *) &inon, sizeof(node_inon));
+  out.write((char *) &layer_type, sizeof(int32_t));
+  out.write((char *) &node_type, sizeof(int32_t));
+  out.write((char *) &depth, sizeof(double));
+  out.write((char *) &enabled, sizeof(bool));
 
   write_binary_string(out, parameter_name, "parameter_name");
+}
+
+void insert_node_by_depth(vector<RNN_Node_Interface *> &nodes, RNN_Node_Interface *node) {
+  nodes.insert(upper_bound(nodes.begin(), nodes.end(), node, sort_RNN_Nodes_by_depth()), node);
+}
+
+void insert_node_by_inon(vector<RNN_Node_Interface *> &nodes, RNN_Node_Interface *node) {
+  nodes.insert(upper_bound(nodes.begin(), nodes.end(), node, sort_RNN_Nodes_by_inon()), node);
 }

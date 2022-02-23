@@ -2,6 +2,7 @@
 #include <mpi.h>
 
 #include <chrono>
+#include <thread>
 
 #include "../common/log.hxx"
 #include "../rnn/examm.hxx"
@@ -29,15 +30,13 @@ vector<vector<vector<double> > > validation_outputs;
 void send_work_request(int target) {
   int work_request_message[1];
   work_request_message[0] = 0;
-  MPI_Send(work_request_message, 1, MPI_INT, target, WORK_REQUEST_TAG,
-           MPI_COMM_WORLD);
+  MPI_Send(work_request_message, 1, MPI_INT, target, WORK_REQUEST_TAG, MPI_COMM_WORLD);
 }
 
 void receive_work_request(int source) {
   MPI_Status status;
   int work_request_message[1];
-  MPI_Recv(work_request_message, 1, MPI_INT, source, WORK_REQUEST_TAG,
-           MPI_COMM_WORLD, &status);
+  MPI_Recv(work_request_message, 1, MPI_INT, source, WORK_REQUEST_TAG, MPI_COMM_WORLD, &status);
 }
 
 #define send_result_to(rank, work) send_msg_to(rank, work, RESULT_TAG)
@@ -51,6 +50,11 @@ void send_msg_to(int target, unique_ptr<Msg> msg, int tag = WORK_TAG) {
   const char *buf = value.c_str();
 
   MPI_Send(buf, length, MPI_CHAR, target, tag, MPI_COMM_WORLD);
+}
+
+void send_msg_to_async(int target, unique_ptr<Msg> msg, int tag = WORK_TAG) {
+  auto thread = std::thread(send_msg_to, target, move(msg), tag);
+  thread.detach();
 }
 
 #define receive_result_from(source) receive_msg_from(source, RESULT_TAG)
@@ -74,8 +78,7 @@ unique_ptr<Msg> receive_msg_from(int source, int tag = WORK_TAG) {
 }
 
 #ifdef MASTER_PERFORMS_OPERATORS
-void generate_and_send_work(GenomeOperators &go, int32_t dst,
-                            int32_t max_rank) {
+void generate_and_send_work(GenomeOperators &go, int32_t dst, int32_t max_rank) {
 #else
 void generate_and_send_work(int32_t dst, int32_t max_rank) {
 #endif
@@ -94,9 +97,7 @@ void generate_and_send_work(int32_t dst, int32_t max_rank) {
 #ifdef MASTER_PERFORMS_OPERATORS
       unique_ptr<Msg> before_operator = move(work);
 
-      unique_ptr<RNN_Genome> genome =
-          dynamic_cast<WorkMsg *>(before_operator.get())
-              ->get_genome(genome_operators);
+      unique_ptr<RNN_Genome> genome = dynamic_cast<WorkMsg *>(before_operator.get())->get_genome(genome_operators);
       if (genome == nullptr) {
         Log::fatal(
             "This should never happen - "
@@ -113,14 +114,12 @@ void generate_and_send_work(int32_t dst, int32_t max_rank) {
       // send terminate message
       Log::info("terminating worker: %d\n", dst);
       terminates_sent++;
-      Log::debug("sent: %d terminates of %d\n", terminates_sent,
-                 (max_rank - 1));
+      Log::debug("sent: %d terminates of %d\n", terminates_sent, (max_rank - 1));
       break;
 
     // Unreachable
     default:
-      Log::fatal("Received unexpected work type from examm (class_id = %d",
-                 msg->get_msg_ty());
+      Log::fatal("Received unexpected work type from examm (class_id = %d", msg->get_msg_ty());
       exit(1);
   }
 
@@ -130,9 +129,7 @@ void generate_and_send_work(int32_t dst, int32_t max_rank) {
 void write_time_log(string path, vector<long> ls) {
   auto log_file = new ofstream(path, std::ios_base::app);
 
-  for (size_t i = 0; i < ls.size(); i++) {
-    (*log_file) << ls[i] << endl;
-  }
+  for (size_t i = 0; i < ls.size(); i++) { (*log_file) << ls[i] << endl; }
 
   log_file->close();
 }
@@ -148,8 +145,12 @@ void master(int max_rank, GenomeOperators genome_operators) {
   // vector<long> recv_result_times;
   // vector<long> probe_times;
 
-#define diff_as_nanos(start, end) \
-  std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count()
+  for (int worker_rank = 1; worker_rank < max_rank; worker_rank++) {
+    unique_ptr<Msg> init_work = examm->get_initialize_msg();
+    send_msg_to(worker_rank, move(init_work), INITIALIZE_TAG);
+  }
+
+#define diff_as_nanos(start, end) std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count()
 
   while (terminates_sent < max_rank - 1) {
     // wait for a incoming message
@@ -213,8 +214,7 @@ void master(int max_rank, GenomeOperators genome_operators) {
       // insert_genome_times.push_back(insert_nanos);
 
     } else {
-      Log::fatal("ERROR: received message from %d with unknown tag: %d\n",
-                 source, tag);
+      Log::fatal("ERROR: received message from %d with unknown tag: %d\n", source, tag);
       MPI_Abort(MPI_COMM_WORLD, 1);
     }
   }
@@ -233,9 +233,14 @@ void master(int max_rank, GenomeOperators genome_operators) {
   cout << "MASTER FINISHED >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n";
 }
 
-void worker(int rank, GenomeOperators genome_operators, string id = "") {
+void worker(int n_workers, int rank, GenomeOperators genome_operators, string id = "") {
   Log::set_id("worker_" + to_string(rank) + "_" + id);
   Log::info("worker %d initialized\n", rank);
+
+  unique_ptr<Msg> init_msg = receive_initialize();
+
+  MPIInitMsg *init = static_cast<MPIInitMsg *>(init_msg.get());
+  init->run(n_workers, rank);
 
   while (true) {
     Log::debug("sending work request!\n");
@@ -265,16 +270,13 @@ void worker(int rank, GenomeOperators genome_operators, string id = "") {
     Log::debug("gid = %d\n", genome->get_generation_id());
 
     // have each worker write to a separate log file
-    string log_id = "genome_" + to_string(genome->get_generation_id()) +
-                    "_worker_" + to_string(rank);
+    string log_id = "genome_" + to_string(genome->get_generation_id()) + "_worker_" + to_string(rank);
     Log::set_id(log_id);
 
     if (genome_operators.training_parameters.bp_iterations > 0)
-      genome->backpropagate_stochastic(training_inputs, training_outputs,
-                                       validation_inputs, validation_outputs);
+      genome->backpropagate_stochastic(training_inputs, training_outputs, validation_inputs, validation_outputs);
     else
-      genome->calculate_fitness(training_inputs, training_outputs,
-                                validation_inputs, validation_outputs);
+      genome->calculate_fitness(training_inputs, training_outputs, validation_inputs, validation_outputs);
 
     Log::release_id(log_id);
     Log::set_id("worker_" + to_string(rank) + "_" + id);
@@ -283,8 +285,7 @@ void worker(int rank, GenomeOperators genome_operators, string id = "") {
     // Ownership of genome has been transfered to result (when result is deleted
     // so will the genome
     Log::info("Creating result\n");
-    unique_ptr<Msg> result =
-        unique_ptr<Msg>(static_cast<Msg *>(new ResultMsg(genome)));
+    unique_ptr<Msg> result = unique_ptr<Msg>(static_cast<Msg *>(new ResultMsg(genome)));
     Log::info("Sending result\n");
     send_result_to(0, move(result));
     Log::info("Sent result\n");

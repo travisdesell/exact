@@ -1,11 +1,10 @@
 #include "training_parameters.hxx"
 
-TrainingParameters::TrainingParameters(
-    uint32_t bp_iterations, uint32_t sequence_lower_bound,
-    uint32_t sequence_upper_bound, double low_threshold, double high_threshold,
-    double learning_rate, double dropout_probability, double mu,
-    bool use_nesterov_momentum, bool use_regression, bool use_dropout,
-    bool use_low_norm, bool use_high_norm, bool use_random_sequence_length)
+TrainingParameters::TrainingParameters(uint32_t bp_iterations, uint32_t sequence_lower_bound,
+                                       uint32_t sequence_upper_bound, double low_threshold, double high_threshold,
+                                       double learning_rate, double dropout_probability, double mu,
+                                       bool use_nesterov_momentum, bool use_regression, bool use_dropout,
+                                       bool use_low_norm, bool use_high_norm, bool use_random_sequence_length)
     : bp_iterations(bp_iterations),
       sequence_lower_bound(sequence_lower_bound),
       sequence_upper_bound(sequence_upper_bound),
@@ -38,39 +37,39 @@ TrainingParameters::TrainingParameters()
       use_random_sequence_length(false) {}
 
 TrainingParameters::TrainingParameters(istream &bin_istream) {
-  bin_istream.read((char *)&bp_iterations, sizeof(int32_t));
-  bin_istream.read((char *)&sequence_lower_bound, sizeof(int32_t));
-  bin_istream.read((char *)&sequence_upper_bound, sizeof(int32_t));
+  bin_istream.read((char *) &bp_iterations, sizeof(int32_t));
+  bin_istream.read((char *) &sequence_lower_bound, sizeof(int32_t));
+  bin_istream.read((char *) &sequence_upper_bound, sizeof(int32_t));
 
-  bin_istream.read((char *)&low_threshold, sizeof(double));
-  bin_istream.read((char *)&high_threshold, sizeof(double));
-  bin_istream.read((char *)&learning_rate, sizeof(double));
-  bin_istream.read((char *)&dropout_probability, sizeof(double));
-  bin_istream.read((char *)&mu, sizeof(double));
+  bin_istream.read((char *) &low_threshold, sizeof(double));
+  bin_istream.read((char *) &high_threshold, sizeof(double));
+  bin_istream.read((char *) &learning_rate, sizeof(double));
+  bin_istream.read((char *) &dropout_probability, sizeof(double));
+  bin_istream.read((char *) &mu, sizeof(double));
 
-  bin_istream.read((char *)&use_nesterov_momentum, sizeof(bool));
-  bin_istream.read((char *)&use_regression, sizeof(bool));
-  bin_istream.read((char *)&use_dropout, sizeof(bool));
-  bin_istream.read((char *)&use_low_norm, sizeof(bool));
-  bin_istream.read((char *)&use_high_norm, sizeof(bool));
-  bin_istream.read((char *)&use_random_sequence_length, sizeof(bool));
+  bin_istream.read((char *) &use_nesterov_momentum, sizeof(bool));
+  bin_istream.read((char *) &use_regression, sizeof(bool));
+  bin_istream.read((char *) &use_dropout, sizeof(bool));
+  bin_istream.read((char *) &use_low_norm, sizeof(bool));
+  bin_istream.read((char *) &use_high_norm, sizeof(bool));
+  bin_istream.read((char *) &use_random_sequence_length, sizeof(bool));
 }
 
 void TrainingParameters::write_to_stream(ostream &bin_ostream) const {
-  bin_ostream.write((char *)&bp_iterations, sizeof(int32_t));
-  bin_ostream.write((char *)&sequence_lower_bound, sizeof(int32_t));
-  bin_ostream.write((char *)&sequence_upper_bound, sizeof(int32_t));
+  bin_ostream.write((char *) &bp_iterations, sizeof(int32_t));
+  bin_ostream.write((char *) &sequence_lower_bound, sizeof(int32_t));
+  bin_ostream.write((char *) &sequence_upper_bound, sizeof(int32_t));
 
-  bin_ostream.write((char *)&low_threshold, sizeof(double));
-  bin_ostream.write((char *)&high_threshold, sizeof(double));
-  bin_ostream.write((char *)&learning_rate, sizeof(double));
-  bin_ostream.write((char *)&dropout_probability, sizeof(double));
-  bin_ostream.write((char *)&mu, sizeof(double));
+  bin_ostream.write((char *) &low_threshold, sizeof(double));
+  bin_ostream.write((char *) &high_threshold, sizeof(double));
+  bin_ostream.write((char *) &learning_rate, sizeof(double));
+  bin_ostream.write((char *) &dropout_probability, sizeof(double));
+  bin_ostream.write((char *) &mu, sizeof(double));
 
-  bin_ostream.write((char *)&use_nesterov_momentum, sizeof(bool));
-  bin_ostream.write((char *)&use_regression, sizeof(bool));
-  bin_ostream.write((char *)&use_dropout, sizeof(bool));
-  bin_ostream.write((char *)&use_low_norm, sizeof(bool));
-  bin_ostream.write((char *)&use_high_norm, sizeof(bool));
-  bin_ostream.write((char *)&use_random_sequence_length, sizeof(bool));
+  bin_ostream.write((char *) &use_nesterov_momentum, sizeof(bool));
+  bin_ostream.write((char *) &use_regression, sizeof(bool));
+  bin_ostream.write((char *) &use_dropout, sizeof(bool));
+  bin_ostream.write((char *) &use_low_norm, sizeof(bool));
+  bin_ostream.write((char *) &use_high_norm, sizeof(bool));
+  bin_ostream.write((char *) &use_random_sequence_length, sizeof(bool));
 }

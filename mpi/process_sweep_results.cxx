@@ -68,16 +68,13 @@ void process_dir(string dir_name, int depth) {
         cout << "set current run type to '" << current_run_type << "'" << endl;
       }
 
-      if (depth == 2 && extension_is(ent->d_name, ".csv")) {
-        continue;
-      }
+      if (depth == 2 && extension_is(ent->d_name, ".csv")) { continue; }
 
       string sub_dir_name = dir_name + "/" + ent->d_name;
       // cout << sub_dir_name << ", depth: " << depth << endl;
 
       if (depth == 3 && extension_is(sub_dir_name, ".bin")) {
-        cout << "\tprocessing genome binary '" << sub_dir_name << "' for '"
-             << current_output << "'"
+        cout << "\tprocessing genome binary '" << sub_dir_name << "' for '" << current_output << "'"
              << " and " << current_run_type;
         RNN_Genome *genome = new RNN_Genome(sub_dir_name);
         cout << ", fitness: " << genome->get_fitness() << endl;
@@ -126,18 +123,12 @@ int main(int argc, char **argv) {
       for (auto k = j->second.begin(); k != j->second.end(); k++) {
         RNN_Genome *genome = *k;
 
-        cout << i->first << "," << j->first << ","
-             << genome->get_best_validation_mse() << ","
-             << genome->get_best_validation_mae() << ","
-             << genome->get_enabled_edge_count() << ","
-             << genome->get_enabled_recurrent_edge_count() << ","
-             << genome->get_enabled_node_count() << ","
-             << genome->get_enabled_node_count(SIMPLE_NODE) << ","
-             << genome->get_enabled_node_count(LSTM_NODE) << ","
-             << genome->get_enabled_node_count(UGRNN_NODE) << ","
-             << genome->get_enabled_node_count(DELTA_NODE) << ","
-             << genome->get_enabled_node_count(MGU_NODE) << ","
-             << genome->get_enabled_node_count(GRU_NODE) << endl;
+        cout << i->first << "," << j->first << "," << genome->get_best_validation_mse() << ","
+             << genome->get_best_validation_mae() << "," << genome->get_enabled_edge_count() << ","
+             << genome->get_enabled_recurrent_edge_count() << "," << genome->get_enabled_node_count() << ","
+             << genome->get_enabled_node_count(SIMPLE_NODE) << "," << genome->get_enabled_node_count(LSTM_NODE) << ","
+             << genome->get_enabled_node_count(UGRNN_NODE) << "," << genome->get_enabled_node_count(DELTA_NODE) << ","
+             << genome->get_enabled_node_count(MGU_NODE) << "," << genome->get_enabled_node_count(GRU_NODE) << endl;
 
         rs->mse.track(genome->get_best_validation_mse());
         rs->mae.track(genome->get_best_validation_mae());
@@ -216,8 +207,7 @@ int main(int argc, char **argv) {
             Tracker mse;
             Tracker mae;
 
-            cout << "processing '" << (sub_dir_name + "/" + ent->d_name) << "'"
-                 << endl;
+            cout << "processing '" << (sub_dir_name + "/" + ent->d_name) << "'" << endl;
             ifstream infile(sub_dir_name + "/" + ent->d_name);
 
             string line;
@@ -269,14 +259,10 @@ int main(int argc, char **argv) {
             string search_type(ent->d_name);
             search_type = search_type.substr(9, length - 13);
 
-            cout << search_type << ",min," << mse.min() << "," << mae.min()
-                 << endl;
-            cout << search_type << ",avg," << mse.avg() << "," << mae.avg()
-                 << endl;
-            cout << search_type << ",max," << mse.max() << "," << mae.max()
-                 << endl;
-            cout << search_type << ",stddev," << mse.stddev() << ","
-                 << mae.stddev() << endl;
+            cout << search_type << ",min," << mse.min() << "," << mae.min() << endl;
+            cout << search_type << ",avg," << mse.avg() << "," << mae.avg() << endl;
+            cout << search_type << ",max," << mse.max() << "," << mae.max() << endl;
+            cout << search_type << ",stddev," << mse.stddev() << "," << mae.stddev() << endl;
 
             cout << endl;
             cout << endl;
@@ -310,8 +296,7 @@ int main(int argc, char **argv) {
     for (int j = 0; j < run_statistics.size(); j++) {
       if (run_statistics[j]->output_name.compare(output_types[i]) == 0) {
         string run_type = run_statistics[j]->run_type;
-        if (run_type.find("simple") == string::npos ||
-            run_type.find("all") != string::npos) {
+        if (run_type.find("simple") == string::npos || run_type.find("all") != string::npos) {
           cout << run_statistics[j]->to_overview_string() << endl;
         }
       }
@@ -330,8 +315,7 @@ int main(int argc, char **argv) {
     for (int j = 0; j < run_statistics.size(); j++) {
       if (run_statistics[j]->output_name.compare(output_types[i]) == 0) {
         string run_type = run_statistics[j]->run_type;
-        if (run_type.find("simple") != string::npos &&
-            run_type.find("all") == string::npos) {
+        if (run_type.find("simple") != string::npos && run_type.find("all") == string::npos) {
           cout << run_statistics[j]->to_overview_ff_string() << endl;
         }
       }
@@ -353,9 +337,7 @@ int main(int argc, char **argv) {
 
   for (int i = 0; i < run_statistics.size(); i++) {
     if (run_statistics[i]->run_type.find("all") != string::npos) {
-      cout << run_statistics[i]->to_string_correlate("mse",
-                                                     run_statistics[i]->mse)
-           << "\\\\" << endl;
+      cout << run_statistics[i]->to_string_correlate("mse", run_statistics[i]->mse) << "\\\\" << endl;
     }
   }
 
@@ -397,32 +379,21 @@ int main(int argc, char **argv) {
 
   for (int i = 0; i < run_statistics.size(); i++) {
     if (run_statistics[i]->run_type.find("all") != string::npos) {
-      cout << run_statistics[i]->output_name << " & "
-           << run_statistics[i]->ff.min() << " & " << setprecision(1)
-           << run_statistics[i]->ff.avg() << " & "
-           << run_statistics[i]->ff.max() << "&" << setprecision(2)
-           << run_statistics[i]->ff.correlate(run_statistics[i]->mse) << " & "
-           << run_statistics[i]->lstm.min() << " & " << setprecision(1)
-           << run_statistics[i]->lstm.avg() << " & "
-           << run_statistics[i]->lstm.max() << "&" << setprecision(2)
-           << run_statistics[i]->lstm.correlate(run_statistics[i]->mse) << " & "
-           << run_statistics[i]->ugrnn.min() << " & " << setprecision(1)
-           << run_statistics[i]->ugrnn.avg() << " & "
+      cout << run_statistics[i]->output_name << " & " << run_statistics[i]->ff.min() << " & " << setprecision(1)
+           << run_statistics[i]->ff.avg() << " & " << run_statistics[i]->ff.max() << "&" << setprecision(2)
+           << run_statistics[i]->ff.correlate(run_statistics[i]->mse) << " & " << run_statistics[i]->lstm.min() << " & "
+           << setprecision(1) << run_statistics[i]->lstm.avg() << " & " << run_statistics[i]->lstm.max() << "&"
+           << setprecision(2) << run_statistics[i]->lstm.correlate(run_statistics[i]->mse) << " & "
+           << run_statistics[i]->ugrnn.min() << " & " << setprecision(1) << run_statistics[i]->ugrnn.avg() << " & "
            << run_statistics[i]->ugrnn.max() << "&" << setprecision(2)
-           << run_statistics[i]->ugrnn.correlate(run_statistics[i]->mse)
-           << " & " << run_statistics[i]->delta.min() << " & "
-           << setprecision(1) << run_statistics[i]->delta.avg() << " & "
-           << run_statistics[i]->delta.max() << "&" << setprecision(2)
-           << run_statistics[i]->delta.correlate(run_statistics[i]->mse)
-           << " & " << run_statistics[i]->mgu.min() << " & " << setprecision(1)
-           << run_statistics[i]->mgu.avg() << " & "
+           << run_statistics[i]->ugrnn.correlate(run_statistics[i]->mse) << " & " << run_statistics[i]->delta.min()
+           << " & " << setprecision(1) << run_statistics[i]->delta.avg() << " & " << run_statistics[i]->delta.max()
+           << "&" << setprecision(2) << run_statistics[i]->delta.correlate(run_statistics[i]->mse) << " & "
+           << run_statistics[i]->mgu.min() << " & " << setprecision(1) << run_statistics[i]->mgu.avg() << " & "
            << run_statistics[i]->mgu.max() << "&" << setprecision(2)
-           << run_statistics[i]->mgu.correlate(run_statistics[i]->mse) << " & "
-           << run_statistics[i]->gru.min() << " & " << setprecision(1)
-           << run_statistics[i]->gru.avg() << " & "
-           << run_statistics[i]->gru.max() << "&" << setprecision(2)
-           << run_statistics[i]->gru.correlate(run_statistics[i]->mse) << "\\\\"
-           << endl;
+           << run_statistics[i]->mgu.correlate(run_statistics[i]->mse) << " & " << run_statistics[i]->gru.min() << " & "
+           << setprecision(1) << run_statistics[i]->gru.avg() << " & " << run_statistics[i]->gru.max() << "&"
+           << setprecision(2) << run_statistics[i]->gru.correlate(run_statistics[i]->mse) << "\\\\" << endl;
     }
   }
 
@@ -478,8 +449,7 @@ int main(int argc, char **argv) {
   map<string, ConsolidatedStatistics *> consolidated_statistics;
 
   for (int i = 0; i < run_types.size(); i++) {
-    consolidated_statistics[run_types[i]] =
-        new ConsolidatedStatistics(run_types[i]);
+    consolidated_statistics[run_types[i]] = new ConsolidatedStatistics(run_types[i]);
   }
 
   for (int i = 0; i < output_types.size(); i++) {
@@ -510,12 +480,9 @@ int main(int argc, char **argv) {
     double stddev_max = 0.0;
 
     for (int j = 0; j < current.size(); j++) {
-      stddev_min +=
-          (current[j]->mse.min() - avg_min) * (current[j]->mse.min() - avg_min);
-      stddev_avg +=
-          (current[j]->mse.avg() - avg_avg) * (current[j]->mse.avg() - avg_avg);
-      stddev_max +=
-          (current[j]->mse.max() - avg_max) * (current[j]->mse.max() - avg_max);
+      stddev_min += (current[j]->mse.min() - avg_min) * (current[j]->mse.min() - avg_min);
+      stddev_avg += (current[j]->mse.avg() - avg_avg) * (current[j]->mse.avg() - avg_avg);
+      stddev_max += (current[j]->mse.max() - avg_max) * (current[j]->mse.max() - avg_max);
     }
 
     stddev_min = sqrt(stddev_min / (current.size() - 1));
@@ -525,22 +492,15 @@ int main(int argc, char **argv) {
     cout << "calculated stddevs!" << endl;
 
     for (int j = 0; j < current.size(); j++) {
-      cout << "current[" << j << "]->run_type: " << current[j]->run_type
-           << endl;
+      cout << "current[" << j << "]->run_type: " << current[j]->run_type << endl;
 
-      current[j]->set_deviation_from_mean_min(
-          (current[j]->mse.min() - avg_min) / stddev_min);
-      current[j]->set_deviation_from_mean_avg(
-          (current[j]->mse.avg() - avg_avg) / stddev_avg);
-      current[j]->set_deviation_from_mean_max(
-          (current[j]->mse.max() - avg_max) / stddev_max);
+      current[j]->set_deviation_from_mean_min((current[j]->mse.min() - avg_min) / stddev_min);
+      current[j]->set_deviation_from_mean_avg((current[j]->mse.avg() - avg_avg) / stddev_avg);
+      current[j]->set_deviation_from_mean_max((current[j]->mse.max() - avg_max) / stddev_max);
 
-      consolidated_statistics[current[j]->run_type]->dfm_min +=
-          current[j]->dfm_min / output_types.size();
-      consolidated_statistics[current[j]->run_type]->dfm_avg +=
-          current[j]->dfm_avg / output_types.size();
-      consolidated_statistics[current[j]->run_type]->dfm_max +=
-          current[j]->dfm_max / output_types.size();
+      consolidated_statistics[current[j]->run_type]->dfm_min += current[j]->dfm_min / output_types.size();
+      consolidated_statistics[current[j]->run_type]->dfm_avg += current[j]->dfm_avg / output_types.size();
+      consolidated_statistics[current[j]->run_type]->dfm_max += current[j]->dfm_max / output_types.size();
     }
 
     cout << "updated consolidated statistics!" << endl;
@@ -570,13 +530,12 @@ int main(int argc, char **argv) {
     cout << "\\hline" << endl;
 
     for (int j = 0; j < current.size(); j++) {
-      cout << setw(15) << fix_run_type(sorted_by_min[j]->run_type) << " & "
-           << setw(15) << setprecision(5) << sorted_by_min[j]->dfm_min << " & ";
-      cout << setw(15) << fix_run_type(sorted_by_avg[j]->run_type) << " & "
-           << setw(15) << setprecision(5) << sorted_by_avg[j]->dfm_avg << " & ";
-      cout << setw(15) << fix_run_type(sorted_by_max[j]->run_type) << " & "
-           << setw(15) << setprecision(5) << sorted_by_max[j]->dfm_max << "\\\\"
-           << endl;
+      cout << setw(15) << fix_run_type(sorted_by_min[j]->run_type) << " & " << setw(15) << setprecision(5)
+           << sorted_by_min[j]->dfm_min << " & ";
+      cout << setw(15) << fix_run_type(sorted_by_avg[j]->run_type) << " & " << setw(15) << setprecision(5)
+           << sorted_by_avg[j]->dfm_avg << " & ";
+      cout << setw(15) << fix_run_type(sorted_by_max[j]->run_type) << " & " << setw(15) << setprecision(5)
+           << sorted_by_max[j]->dfm_max << "\\\\" << endl;
     }
 
     cout << "\\hline" << endl;
@@ -592,8 +551,7 @@ int main(int argc, char **argv) {
   vector<ConsolidatedStatistics *> avg_stats_vector;
   vector<ConsolidatedStatistics *> max_stats_vector;
 
-  for (auto i = consolidated_statistics.begin();
-       i != consolidated_statistics.end(); i++) {
+  for (auto i = consolidated_statistics.begin(); i != consolidated_statistics.end(); i++) {
     min_stats_vector.push_back(i->second);
     avg_stats_vector.push_back(i->second);
     max_stats_vector.push_back(i->second);
@@ -616,15 +574,12 @@ int main(int argc, char **argv) {
   cout << "\\hline" << endl;
 
   for (int i = 0; i < min_stats_vector.size(); i++) {
-    cout << setw(15) << fix_run_type(min_stats_vector[i]->run_type) << " & "
-         << setw(15) << setprecision(5) << min_stats_vector[i]->dfm_min
-         << " & ";
-    cout << setw(15) << fix_run_type(avg_stats_vector[i]->run_type) << " & "
-         << setw(15) << setprecision(5) << avg_stats_vector[i]->dfm_avg
-         << " & ";
-    cout << setw(15) << fix_run_type(max_stats_vector[i]->run_type) << " & "
-         << setw(15) << setprecision(5) << max_stats_vector[i]->dfm_max
-         << "\\\\" << endl;
+    cout << setw(15) << fix_run_type(min_stats_vector[i]->run_type) << " & " << setw(15) << setprecision(5)
+         << min_stats_vector[i]->dfm_min << " & ";
+    cout << setw(15) << fix_run_type(avg_stats_vector[i]->run_type) << " & " << setw(15) << setprecision(5)
+         << avg_stats_vector[i]->dfm_avg << " & ";
+    cout << setw(15) << fix_run_type(max_stats_vector[i]->run_type) << " & " << setw(15) << setprecision(5)
+         << max_stats_vector[i]->dfm_max << "\\\\" << endl;
   }
 
   cout << "\\hline" << endl;

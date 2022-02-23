@@ -5,48 +5,36 @@ using std::vector;
 #include "common/log.hxx"
 #include "rnn_node.hxx"
 
-RNN_Node::RNN_Node(int _innovation_number, int _layer_type, double _depth,
-                   int _node_type)
-    : RNN_Node_Interface(_innovation_number, _layer_type, _depth), bias(0) {
+RNN_Node::RNN_Node(node_inon _inon, int _layer_type, double _depth, int _node_type)
+    : RNN_Node_Interface(_inon, _layer_type, _depth), bias(0) {
   // node type will be simple, jordan or elman
   node_type = _node_type;
-  Log::trace("created node: %d, layer type: %d, node type: %d\n",
-             innovation_number, layer_type, node_type);
+  Log::trace("created node: %lld, layer type: %d, node type: %d\n", inon, layer_type, node_type);
 }
 
-RNN_Node::RNN_Node(int _innovation_number, int _layer_type, double _depth,
-                   int _node_type, string _parameter_name)
-    : RNN_Node_Interface(_innovation_number, _layer_type, _depth,
-                         _parameter_name),
-      bias(0) {
+RNN_Node::RNN_Node(node_inon _inon, int _layer_type, double _depth, int _node_type, string _parameter_name)
+    : RNN_Node_Interface(_inon, _layer_type, _depth, _parameter_name), bias(0) {
   // node type will be simple, jordan or elman
   node_type = _node_type;
-  Log::trace("created node: %d, layer type: %d, node type: %d\n",
-             innovation_number, layer_type, node_type);
+  Log::trace("created node: %lld, layer type: %d, node type: %d\n", inon, layer_type, node_type);
 }
 
 RNN_Node::~RNN_Node() {}
 
-void RNN_Node::initialize_lamarckian(minstd_rand0 &generator,
-                                     NormalDistribution &normal_distribution,
-                                     double mu, double sigma) {
+void RNN_Node::initialize_lamarckian(minstd_rand0 &generator, NormalDistribution &normal_distribution, double mu,
+                                     double sigma) {
   bias = bound(normal_distribution.random(generator, mu, sigma));
 }
 
-void RNN_Node::initialize_xavier(minstd_rand0 &generator,
-                                 uniform_real_distribution<double> &rng_1_1,
-                                 double range) {
+void RNN_Node::initialize_xavier(minstd_rand0 &generator, uniform_real_distribution<double> &rng_1_1, double range) {
   bias = range * (rng_1_1(generator));
 }
 
-void RNN_Node::initialize_kaiming(minstd_rand0 &generator,
-                                  NormalDistribution &normal_distribution,
-                                  double range) {
+void RNN_Node::initialize_kaiming(minstd_rand0 &generator, NormalDistribution &normal_distribution, double range) {
   bias = range * normal_distribution.random(generator, 0, 1);
 }
 
-void RNN_Node::initialize_uniform_random(
-    minstd_rand0 &generator, uniform_real_distribution<double> &rng) {
+void RNN_Node::initialize_uniform_random(minstd_rand0 &generator, uniform_real_distribution<double> &rng) {
   bias = rng(generator);
 }
 
@@ -59,9 +47,9 @@ void RNN_Node::input_fired(int time, double incoming_output) {
     return;
   else if (inputs_fired[time] > total_inputs) {
     Log::fatal(
-        "ERROR: inputs_fired on RNN_Node %d at time %d is %d and "
+        "ERROR: inputs_fired on RNN_Node %lld at time %d is %d and "
         "total_inputs is %d\n",
-        innovation_number, time, inputs_fired[time], total_inputs);
+        inon, time, inputs_fired[time], total_inputs);
     exit(1);
   }
 
@@ -76,8 +64,7 @@ void RNN_Node::input_fired(int time, double incoming_output) {
 
 #ifdef NAN_CHECKS
   if (isnan(output_values[time]) || isinf(output_values[time])) {
-    Log::fatal("ERROR: output_value[%d] becaome %lf on RNN node: %d\n", time,
-               output_values[time], innovation_number);
+    Log::fatal("ERROR: output_value[%d] becaome %lf on RNN node: %d\n", time, output_values[time], innovation_number);
     Log::fatal("\tinput_value[%dd]: %lf\n", time, input_values[time]);
     Log::Fatal("\tnode bias: %lf", bias);
     exit(1);
@@ -90,9 +77,9 @@ void RNN_Node::try_update_deltas(int time) {
     return;
   } else if (outputs_fired[time] > total_outputs) {
     Log::fatal(
-        "ERROR: outputs_fired on RNN_Node %d at time %d is %d and "
+        "ERROR: outputs_fired on RNN_Node %lld at time %d is %d and "
         "total_outputs is %d\n",
-        innovation_number, time, outputs_fired[time], total_outputs);
+        inon, time, outputs_fired[time], total_outputs);
     exit(1);
   }
 
@@ -136,9 +123,7 @@ void RNN_Node::reset(uint32_t _series_length) {
   d_bias = 0.0;
 }
 
-void RNN_Node::get_gradients(vector<double> &gradients) {
-  gradients.assign(1, d_bias);
-}
+void RNN_Node::get_gradients(vector<double> &gradients) { gradients.assign(1, d_bias); }
 
 uint32_t RNN_Node::get_number_weights() const { return 1; }
 
@@ -168,10 +153,9 @@ void RNN_Node::set_weights(uint32_t &offset, const vector<double> &parameters) {
 RNN_Node_Interface *RNN_Node::copy() const {
   RNN_Node *n = NULL;
   if (layer_type == HIDDEN_LAYER) {
-    n = new RNN_Node(innovation_number, layer_type, depth, node_type);
+    n = new RNN_Node(inon, layer_type, depth, node_type);
   } else {
-    n = new RNN_Node(innovation_number, layer_type, depth, node_type,
-                     parameter_name);
+    n = new RNN_Node(inon, layer_type, depth, node_type, parameter_name);
   }
 
   // copy RNN_Node values
@@ -197,6 +181,4 @@ RNN_Node_Interface *RNN_Node::copy() const {
   return n;
 }
 
-void RNN_Node::write_to_stream(ostream &out) {
-  RNN_Node_Interface::write_to_stream(out);
-}
+void RNN_Node::write_to_stream(ostream &out) { RNN_Node_Interface::write_to_stream(out); }

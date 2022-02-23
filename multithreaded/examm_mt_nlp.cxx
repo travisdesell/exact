@@ -34,14 +34,11 @@ int main(int argc, char **argv) {
 
   vector<thread> threads;
   for (int32_t i = 0; i < number_threads; i++) {
-    threads.push_back(thread(
-        examm_thread, i, make_genome_operators(i), random_sequence_length,
-        sequence_length_lower_bound, sequence_length_upper_bound));
+    threads.push_back(thread(examm_thread, number_threads, i, make_genome_operators(i), random_sequence_length,
+                             sequence_length_lower_bound, sequence_length_upper_bound));
   }
 
-  for (int32_t i = 0; i < number_threads; i++) {
-    threads[i].join();
-  }
+  for (int32_t i = 0; i < number_threads; i++) { threads[i].join(); }
 
   finished = true;
 

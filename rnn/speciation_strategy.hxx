@@ -61,14 +61,12 @@ class SpeciationStrategy {
    * \return a value < 0 if the genome was not inserted, 0 if it was a new best
    * genome or > 0 otherwise.
    */
-  virtual pair<int32_t, const RNN_Genome *> insert_genome(
-      unique_ptr<RNN_Genome> genome) = 0;
+  virtual pair<int32_t, const RNN_Genome *> insert_genome(unique_ptr<RNN_Genome> genome) = 0;
 
   /**
    * Generates a unit of work. The work unit is to be sent to a worker.
    */
-  virtual unique_ptr<WorkMsg> generate_work(
-      uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator) = 0;
+  virtual unique_ptr<WorkMsg> generate_work(uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator) = 0;
 
   /**
    * Prints out all the island's populations

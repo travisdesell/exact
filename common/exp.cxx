@@ -66,8 +66,7 @@ int main(int argc, char **argv) {
     float exact_result = exact_sqrt(value);
     float default_result = sqrt(value);
 
-    cout << "value: " << value << ", exact_sqrt: " << exact_result
-         << ", sqrt: " << default_result << endl;
+    cout << "value: " << value << ", exact_sqrt: " << exact_result << ", sqrt: " << default_result << endl;
     value += drand48();
   }
 }

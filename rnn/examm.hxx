@@ -86,18 +86,14 @@ class EXAMM {
   bool time_limit_reached();
 
  public:
-  EXAMM(int32_t _population_size, int32_t _number_islands, int32_t _max_genomes,
-        int32_t _max_time_minutes, int32_t _extinction_event_generation_number,
-        int32_t _islands_to_exterminate, string _island_ranking_method,
-        string repopulation_method, int32_t _repopulation_mutations,
-        bool _repeat_extinction, int32_t _epochs_acc_freq,
-        string speciation_method, double _species_threshold,
-        double _fitness_threshold, double _neat_c1, double _neat_c2,
-        double _neat_c3, WeightType _weight_initialize,
-        WeightType _weight_inheritance, WeightType _mutated_component_weight,
-        string _output_directory, GenomeOperators _genome_operators,
-        DatasetMeta _dataset_meta, TrainingParameters _training_parameters,
-        shared_ptr<const RNN_Genome> &seed_genome, bool _start_filled);
+  EXAMM(int32_t _population_size, int32_t _number_islands, int32_t _max_genomes, int32_t _max_time_minutes,
+        int32_t _extinction_event_generation_number, int32_t _islands_to_exterminate, string _island_ranking_method,
+        string repopulation_method, int32_t _repopulation_mutations, bool _repeat_extinction, int32_t _epochs_acc_freq,
+        string speciation_method, double _species_threshold, double _fitness_threshold, double _neat_c1,
+        double _neat_c2, double _neat_c3, WeightType _weight_initialize, WeightType _weight_inheritance,
+        WeightType _mutated_component_weight, string _output_directory, GenomeOperators _genome_operators,
+        DatasetMeta _dataset_meta, TrainingParameters _training_parameters, shared_ptr<const RNN_Genome> &seed_genome,
+        bool _start_filled);
 
   ~EXAMM();
 
@@ -107,7 +103,7 @@ class EXAMM {
 
   uniform_int_distribution<int32_t> get_recurrent_depth_dist();
 
-  unique_ptr<Msg> get_initialize_work();
+  unique_ptr<Msg> get_initialize_msg();
   unique_ptr<Msg> generate_work();
 
   int get_random_node_type();
@@ -121,8 +117,7 @@ class EXAMM {
   shared_ptr<const RNN_Genome> &get_seed_genome();
 
   string get_output_directory() const;
-  RNN_Genome *generate_for_transfer_learning(string file_name, int extra_inputs,
-                                             int extra_outputs);
+  RNN_Genome *generate_for_transfer_learning(string file_name, int extra_inputs, int extra_outputs);
 
   void check_weight_initialize_validity();
 };

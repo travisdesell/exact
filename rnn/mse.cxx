@@ -4,9 +4,7 @@ using std::vector;
 
 #include "rnn.hxx"
 
-void get_mse(const vector<double> &output_values,
-             const vector<double> &expected, double &mse,
-             vector<double> &deltas) {
+void get_mse(const vector<double> &output_values, const vector<double> &expected, double &mse, vector<double> &deltas) {
   deltas.assign(expected.size(), 0.0);
 
   mse = 0.0;
@@ -22,15 +20,11 @@ void get_mse(const vector<double> &output_values,
   mse /= expected.size();
 
   double d_mse = mse * (1.0 / expected.size()) * 2.0;
-  for (uint32_t j = 0; j < expected.size(); j++) {
-    deltas[j] *= d_mse;
-  }
+  for (uint32_t j = 0; j < expected.size(); j++) { deltas[j] *= d_mse; }
 }
 
-void get_mse(RNN *genome, const vector<vector<double>> &expected,
-             double &mse_sum, vector<vector<double>> &deltas) {
-  deltas.assign(genome->output_nodes.size(),
-                vector<double>(expected[0].size(), 0.0));
+void get_mse(RNN *genome, const vector<vector<double>> &expected, double &mse_sum, vector<vector<double>> &deltas) {
+  deltas.assign(genome->output_nodes.size(), vector<double>(expected[0].size(), 0.0));
 
   mse_sum = 0.0;
   double mse;
@@ -51,15 +45,11 @@ void get_mse(RNN *genome, const vector<vector<double>> &expected,
 
   double d_mse = mse_sum * (1.0 / expected[0].size()) * 2.0;
   for (uint32_t i = 0; i < genome->output_nodes.size(); i++) {
-    for (uint32_t j = 0; j < expected[i].size(); j++) {
-      deltas[i][j] *= d_mse;
-    }
+    for (uint32_t j = 0; j < expected[i].size(); j++) { deltas[i][j] *= d_mse; }
   }
 }
 
-void get_mae(const vector<double> &output_values,
-             const vector<double> &expected, double &mae,
-             vector<double> &deltas) {
+void get_mae(const vector<double> &output_values, const vector<double> &expected, double &mae, vector<double> &deltas) {
   deltas.assign(expected.size(), 0.0);
 
   mae = 0.0;
@@ -79,15 +69,11 @@ void get_mae(const vector<double> &output_values,
   mae /= expected.size();
 
   double d_mae = mae * (1.0 / expected.size());
-  for (uint32_t j = 0; j < expected.size(); j++) {
-    deltas[j] *= d_mae;
-  }
+  for (uint32_t j = 0; j < expected.size(); j++) { deltas[j] *= d_mae; }
 }
 
-void get_mae(RNN *genome, const vector<vector<double>> &expected,
-             double &mae_sum, vector<vector<double>> &deltas) {
-  deltas.assign(genome->output_nodes.size(),
-                vector<double>(expected[0].size(), 0.0));
+void get_mae(RNN *genome, const vector<vector<double>> &expected, double &mae_sum, vector<vector<double>> &deltas) {
+  deltas.assign(genome->output_nodes.size(), vector<double>(expected[0].size(), 0.0));
 
   mae_sum = 0.0;
   double mae;
@@ -100,9 +86,7 @@ void get_mae(RNN *genome, const vector<vector<double>> &expected,
       if (error == 0) {
         deltas[i][j] = 0;
       } else {
-        deltas[i][j] =
-            (genome->output_nodes[i]->output_values[j] - expected[i][j]) /
-            error;
+        deltas[i][j] = (genome->output_nodes[i]->output_values[j] - expected[i][j]) / error;
       }
 
       mae += error;
@@ -114,8 +98,6 @@ void get_mae(RNN *genome, const vector<vector<double>> &expected,
 
   double d_mae = mae_sum * (1.0 / expected[0].size());
   for (uint32_t i = 0; i < genome->output_nodes.size(); i++) {
-    for (uint32_t j = 0; j < expected[i].size(); j++) {
-      deltas[i][j] *= d_mae;
-    }
+    for (uint32_t j = 0; j < expected[i].size(); j++) { deltas[i][j] *= d_mae; }
   }
 }

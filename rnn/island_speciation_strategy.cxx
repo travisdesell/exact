@@ -19,13 +19,10 @@ using std::string;
 #include "rnn_genome.hxx"
 
 IslandSpeciationStrategy::IslandSpeciationStrategy(
-    uint32_t _number_of_islands, uint32_t _max_island_size,
-    shared_ptr<const RNN_Genome> _seed_genome, string _island_ranking_method,
-    string _repopulation_method, uint32_t _extinction_event_generation_number,
-    uint32_t _repopulation_mutations, uint32_t _islands_to_exterminate,
-    bool _seed_genome_was_minimal,
-    optional<function<void(RNN_Genome *)>> modify,
-    GenomeOperators &genome_operators)
+    uint32_t _number_of_islands, uint32_t _max_island_size, shared_ptr<const RNN_Genome> _seed_genome,
+    string _island_ranking_method, string _repopulation_method, uint32_t _extinction_event_generation_number,
+    uint32_t _repopulation_mutations, uint32_t _islands_to_exterminate, bool _seed_genome_was_minimal,
+    optional<function<void(RNN_Genome *)>> modify, GenomeOperators &genome_operators)
     : generation_island(0),
       number_of_islands(_number_of_islands),
       max_island_size(_max_island_size),
@@ -37,15 +34,11 @@ IslandSpeciationStrategy::IslandSpeciationStrategy(
       seed_genome_was_minimal(_seed_genome_was_minimal),
       genome_operators(genome_operators) {
   double rate_sum =
-      GenomeOperators::mutation_p +
-      (GenomeOperators::intra_co_p + GenomeOperators::inter_co_p) *
-          GenomeOperators::co_p;
+      GenomeOperators::mutation_p + (GenomeOperators::intra_co_p + GenomeOperators::inter_co_p) * GenomeOperators::co_p;
 
   mutation_rate = GenomeOperators::mutation_p / rate_sum;
-  intra_island_crossover_rate =
-      GenomeOperators::intra_co_p * GenomeOperators::co_p / rate_sum;
-  inter_island_crossover_rate =
-      GenomeOperators::inter_co_p * GenomeOperators::co_p / rate_sum;
+  intra_island_crossover_rate = GenomeOperators::intra_co_p * GenomeOperators::co_p / rate_sum;
+  inter_island_crossover_rate = GenomeOperators::inter_co_p * GenomeOperators::co_p / rate_sum;
 
   if (number_of_islands == 1 && max_island_size == 1) {
     mutation_rate = 1.0;
@@ -66,23 +59,21 @@ IslandSpeciationStrategy::IslandSpeciationStrategy(
       Log::info("Islands [%d] = %p\n", i, islands[i]);
     }
   } else {
-    auto make_filled_island =
-        [](int32_t id, shared_ptr<const RNN_Genome> seed_genome, int32_t size,
-           function<void(RNN_Genome *)> &modify) {
-          vector<shared_ptr<const RNN_Genome>> genomes;
-          genomes.reserve(size);
-          for (int i = 0; i < size; i += 1) {
-            RNN_Genome *clone = seed_genome->copy();
-            modify(clone);
-            clone->set_generation_id(0);
-            genomes.push_back(shared_ptr<RNN_Genome>(clone));
-          }
+    auto make_filled_island = [](int32_t id, shared_ptr<const RNN_Genome> seed_genome, int32_t size,
+                                 function<void(RNN_Genome *)> &modify) {
+      vector<shared_ptr<const RNN_Genome>> genomes;
+      genomes.reserve(size);
+      for (int i = 0; i < size; i += 1) {
+        RNN_Genome *clone = seed_genome->copy();
+        modify(clone);
+        clone->set_generation_id(0);
+        genomes.push_back(shared_ptr<RNN_Genome>(clone));
+      }
 
-          return new Island(id, genomes);
-        };
+      return new Island(id, genomes);
+    };
     for (uint32_t i = 0; i < number_of_islands; i += 1)
-      islands.push_back(
-          make_filled_island(i, _seed_genome, max_island_size, *modify));
+      islands.push_back(make_filled_island(i, _seed_genome, max_island_size, *modify));
   }
   set_repopulation_method(_repopulation_method);
 
@@ -99,7 +90,7 @@ shared_ptr<const RNN_Genome> &IslandSpeciationStrategy::get_worst_genome() {
   int32_t worst_genome_island = -1;
   double worst_fitness = -EXAMM_MAX_DOUBLE;
 
-  for (int32_t i = 0; i < (int32_t)islands.size(); i++) {
+  for (int32_t i = 0; i < (int32_t) islands.size(); i++) {
     if (islands[i]->size() > 0) {
       double island_worst_fitness = islands[i]->get_worst_fitness();
       if (island_worst_fitness > worst_fitness) {
@@ -116,25 +107,21 @@ shared_ptr<const RNN_Genome> &IslandSpeciationStrategy::get_worst_genome() {
   }
 }
 
-double IslandSpeciationStrategy::get_best_fitness() {
-  return global_best_genome->get_fitness();
-}
+double IslandSpeciationStrategy::get_best_fitness() { return global_best_genome->get_fitness(); }
 
-double IslandSpeciationStrategy::get_worst_fitness() {
-  return get_worst_genome()->get_fitness();
-}
+double IslandSpeciationStrategy::get_worst_fitness() { return get_worst_genome()->get_fitness(); }
 
-void IslandSpeciationStrategy::set_repopulation_method(
-    string repopulation_method_str) {
-  std::transform(repopulation_method_str.begin(), repopulation_method_str.end(),
-                 repopulation_method_str.begin(), ::tolower);
+void IslandSpeciationStrategy::set_repopulation_method(string repopulation_method_str) {
+  std::transform(repopulation_method_str.begin(), repopulation_method_str.end(), repopulation_method_str.begin(),
+                 ::tolower);
 
   static const map<string, RepopulationMethod> str2repop{
-      {"bestparents", RepopulationMethod::BEST_PARENTS},
+      {"bestparents",   RepopulationMethod::BEST_PARENTS  },
       {"randomparents", RepopulationMethod::RANDOM_PARENTS},
-      {"bestgenome", RepopulationMethod::BEST_GENOME},
-      {"bestisland", RepopulationMethod::BEST_ISLAND},
-      {"", RepopulationMethod::NONE}};
+      {"bestgenome",    RepopulationMethod::BEST_GENOME   },
+      {"bestisland",    RepopulationMethod::BEST_ISLAND   },
+      {"",              RepopulationMethod::NONE          }
+  };
 
   auto it = str2repop.find(repopulation_method_str);
   if (it != str2repop.end())
@@ -145,20 +132,15 @@ void IslandSpeciationStrategy::set_repopulation_method(
   }
 }
 
-bool IslandSpeciationStrategy::islands_full() const {
-  return generated_genomes > islands.size() * max_island_size * 2;
-}
+bool IslandSpeciationStrategy::islands_full() const { return generated_genomes > islands.size() * max_island_size * 2; }
 
 // returns 0 if a new global best, < 0 if not inserted, > 0 otherwise
-pair<int32_t, const RNN_Genome *> IslandSpeciationStrategy::insert_genome(
-    unique_ptr<RNN_Genome> genome_unique) {
+pair<int32_t, const RNN_Genome *> IslandSpeciationStrategy::insert_genome(unique_ptr<RNN_Genome> genome_unique) {
   Log::debug("inserting genome!\n");
   if (extinction_event_generation_number != 0) {
-    if (generated_genomes > 1 &&
-        generated_genomes % extinction_event_generation_number == 0 &&
+    if (generated_genomes > 1 && generated_genomes % extinction_event_generation_number == 0 &&
         max_genomes - inserted_genomes >= extinction_event_generation_number) {
-      if (island_ranking_method.compare("EraseWorst") == 0 ||
-          island_ranking_method.compare("") == 0) {
+      if (island_ranking_method.compare("EraseWorst") == 0 || island_ranking_method.compare("") == 0) {
         vector<int32_t> rank = rank_islands();
         for (uint32_t i = 0; i < islands_to_exterminate; i++) {
           if (rank[i] >= 0) {
@@ -169,9 +151,7 @@ pair<int32_t, const RNN_Genome *> IslandSpeciationStrategy::insert_genome(
           } else
             Log::error("Didn't find the worst island!");
           // set this so the island would not be re-killed in 5 rounds
-          if (!repeat_extinction) {
-            set_erased_islands_status();
-          }
+          if (!repeat_extinction) { set_erased_islands_status(); }
         }
       }
     }
@@ -187,19 +167,16 @@ pair<int32_t, const RNN_Genome *> IslandSpeciationStrategy::insert_genome(
     new_global_best = true;
   }
 
-  auto [insert_position, g] =
-      islands[island]->insert_genome(move(genome_shared));
+  auto [insert_position, g] = islands[island]->insert_genome(move(genome_shared));
 
-  if (insert_position >= 0) {
-    inserted_genomes++;
-  }
+  if (insert_position >= 0) { inserted_genomes++; }
   return pair(insert_position, g);
 }
 
 int32_t IslandSpeciationStrategy::get_worst_island_by_best_genome() {
   int32_t worst_island = -1;
   double worst_best_fitness = 0;
-  for (int32_t i = 0; i < (int32_t)islands.size(); i++) {
+  for (int32_t i = 0; i < (int32_t) islands.size(); i++) {
     if (islands[i]->size() > 0) {
       if (islands[i]->get_erase_again_num() > 0) continue;
       double island_best_fitness = islands[i]->get_best_fitness();
@@ -222,9 +199,7 @@ vector<int32_t> IslandSpeciationStrategy::rank_islands() {
     if (repeat_extinction) {
       island_rank.push_back(i);
     } else {
-      if (islands[i]->get_erase_again_num() == 0) {
-        island_rank.push_back(i);
-      }
+      if (islands[i]->get_erase_again_num() == 0) { island_rank.push_back(i); }
     }
   }
 
@@ -241,22 +216,20 @@ vector<int32_t> IslandSpeciationStrategy::rank_islands() {
   }
   Log::info("island rank: \n");
   for (uint32_t i = 0; i < island_rank.size(); i++) {
-    Log::info("island: %d fitness %f \n", island_rank[i],
-              islands[island_rank[i]]->get_best_fitness());
+    Log::info("island: %d fitness %f \n", island_rank[i], islands[island_rank[i]]->get_best_fitness());
   }
   return island_rank;
 }
 
-unique_ptr<WorkMsg> IslandSpeciationStrategy::generate_work(
-    uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator) {
+unique_ptr<WorkMsg> IslandSpeciationStrategy::generate_work(uniform_real_distribution<double> &rng_0_1,
+                                                            minstd_rand0 &generator) {
   // generate the genome from the next island in a round robin fashion.
   unique_ptr<WorkMsg> work;
 
   Log::info("getting island: %d\n", generation_island);
   Island *island = islands[generation_island];
 
-  Log::debug("islands.size(): %d, selected island is null? %d\n",
-             islands.size(), (island == NULL));
+  Log::debug("islands.size(): %d, selected island is null? %d\n", islands.size(), (island == NULL));
 
   if (island->is_initializing()) {
     // Generate via mutation only + use the seed genome for empty islands
@@ -269,8 +242,7 @@ unique_ptr<WorkMsg> IslandSpeciationStrategy::generate_work(
     // from within those islands and generate a child via crossover
     work = generate_work_for_reinitializing_island(rng_0_1, generator, island);
   } else {
-    Log::fatal(
-        "ERROR: island was neither initializing, repopulating or full.\n");
+    Log::fatal("ERROR: island was neither initializing, repopulating or full.\n");
     Log::fatal("This should never happen!\n");
     exit(1);
   }
@@ -289,10 +261,8 @@ unique_ptr<WorkMsg> IslandSpeciationStrategy::generate_work(
   return work;
 }
 
-unique_ptr<WorkMsg>
-IslandSpeciationStrategy::generate_work_for_initializing_island(
-    uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator,
-    Island *island) {
+unique_ptr<WorkMsg> IslandSpeciationStrategy::generate_work_for_initializing_island(
+    uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator, Island *island) {
   Log::info("island is initializing!\n");
   shared_ptr<const RNN_Genome> genome;
   int32_t n_mutations;
@@ -307,26 +277,20 @@ IslandSpeciationStrategy::generate_work_for_initializing_island(
     n_mutations = genome_operators.get_random_n_mutations();
   }
 
-  return make_unique<WorkMsg>(genome, n_mutations);
+  return make_unique<WorkMsg>(move(genome), n_mutations);
 }
 
-unique_ptr<WorkMsg>
-IslandSpeciationStrategy::generate_work_for_reinitializing_island(
-    uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator,
-    Island *island) {
-  Log::info("island is repopulating through %s method!\n",
-            repopulation_method_str.c_str());
+unique_ptr<WorkMsg> IslandSpeciationStrategy::generate_work_for_reinitializing_island(
+    uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator, Island *island) {
+  Log::info("island is repopulating through %s method!\n", repopulation_method_str.c_str());
 
   switch (repopulation_method) {
     case RepopulationMethod::RANDOM_PARENTS:
-      return parents_repopulation(RepopulationMethod::RANDOM_PARENTS, rng_0_1,
-                                  generator);
+      return parents_repopulation(RepopulationMethod::RANDOM_PARENTS, rng_0_1, generator);
     case RepopulationMethod::BEST_PARENTS:
-      return parents_repopulation(RepopulationMethod::BEST_PARENTS, rng_0_1,
-                                  generator);
+      return parents_repopulation(RepopulationMethod::BEST_PARENTS, rng_0_1, generator);
     case RepopulationMethod::BEST_GENOME:
-      return make_unique<WorkMsg>(get_global_best_genome(),
-                                  repopulation_mutations);
+      return make_unique<WorkMsg>(get_global_best_genome(), repopulation_mutations);
     case RepopulationMethod::BEST_ISLAND: {
       // copy the best island to the worst at once
       // after the worst island is filled, set the island status to filled
@@ -342,8 +306,7 @@ IslandSpeciationStrategy::generate_work_for_reinitializing_island(
       } else {
         Log::error("Island is not full after coping the best island over!\n");
         island->set_status(IslandStatus::INITIALIZING);
-        return generate_work_for_initializing_island(rng_0_1, generator,
-                                                     island);
+        return generate_work_for_initializing_island(rng_0_1, generator, island);
       }
     }
     case RepopulationMethod::NONE:
@@ -358,33 +321,27 @@ IslandSpeciationStrategy::generate_work_for_reinitializing_island(
 }
 
 unique_ptr<WorkMsg> IslandSpeciationStrategy::generate_work_for_filled_island(
-    uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator,
-    Island *island) {
+    uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator, Island *island) {
   // if we haven't filled ALL of the island populations yet, only use mutation
   // otherwise do mutation at %, crossover at %, and island crossover at %
   double r = rng_0_1(generator);
   if (!islands_full() || r < mutation_rate) {
     Log::info("performing mutation\n");
-    shared_ptr<const RNN_Genome> genome =
-        island->get_random_genome(rng_0_1, generator);
-    return make_unique<WorkMsg>(move(genome),
-                                genome_operators.get_random_n_mutations());
+    shared_ptr<const RNN_Genome> genome = island->get_random_genome(rng_0_1, generator);
+    return make_unique<WorkMsg>(move(genome), genome_operators.get_random_n_mutations());
   } else {
     vector<shared_ptr<const RNN_Genome>> parents;
 
     if (r < intra_island_crossover_rate || number_of_islands == 1) {
       Log::info("performing intra-island crossover\n");
-      island->get_n_random_genomes(
-          rng_0_1, generator, genome_operators.get_random_n_parents_intra(),
-          parents);
+      island->get_n_random_genomes(rng_0_1, generator, genome_operators.get_random_n_parents_intra(), parents);
     } else {
       Log::info("performing inter-island crossover\n");
       int32_t n = genome_operators.get_random_n_parents_inter();
       island->get_n_random_genomes(rng_0_1, generator, 1, parents);
       int32_t other_island = rng_0_1(generator) * (number_of_islands - 1);
       if (other_island >= generation_island) other_island += 1;
-      islands[other_island]->get_n_random_genomes(rng_0_1, generator, n - 1,
-                                                  parents);
+      islands[other_island]->get_n_random_genomes(rng_0_1, generator, n - 1, parents);
     }
     return make_unique<WorkMsg>(parents);
   }
@@ -392,7 +349,7 @@ unique_ptr<WorkMsg> IslandSpeciationStrategy::generate_work_for_filled_island(
 
 void IslandSpeciationStrategy::print(string indent) const {
   Log::info("%sIslands: \n", indent.c_str());
-  for (int32_t i = 0; i < (int32_t)islands.size(); i++) {
+  for (int32_t i = 0; i < (int32_t) islands.size(); i++) {
     Log::info("%sIsland %d:\n", indent.c_str(), i);
     islands[i]->print(indent + "\t");
   }
@@ -403,7 +360,7 @@ void IslandSpeciationStrategy::print(string indent) const {
  */
 string IslandSpeciationStrategy::get_strategy_information_headers() const {
   string info_header = "";
-  for (int32_t i = 0; i < (int32_t)islands.size(); i++) {
+  for (int32_t i = 0; i < (int32_t) islands.size(); i++) {
     info_header.append(",");
     info_header.append("Island_");
     info_header.append(to_string(i));
@@ -421,7 +378,7 @@ string IslandSpeciationStrategy::get_strategy_information_headers() const {
  */
 string IslandSpeciationStrategy::get_strategy_information_values() const {
   string info_value = "";
-  for (int32_t i = 0; i < (int32_t)islands.size(); i++) {
+  for (int32_t i = 0; i < (int32_t) islands.size(); i++) {
     double best_fitness = islands[i]->get_best_fitness();
     double worst_fitness = islands[i]->get_worst_fitness();
     info_value.append(",");
@@ -432,9 +389,9 @@ string IslandSpeciationStrategy::get_strategy_information_values() const {
   return info_value;
 }
 
-unique_ptr<WorkMsg> IslandSpeciationStrategy::parents_repopulation(
-    RepopulationMethod method, uniform_real_distribution<double> &rng_0_1,
-    minstd_rand0 &generator) {
+unique_ptr<WorkMsg> IslandSpeciationStrategy::parents_repopulation(RepopulationMethod method,
+                                                                   uniform_real_distribution<double> &rng_0_1,
+                                                                   minstd_rand0 &generator) {
   Log::info("generation island: %d \n", generation_island);
   int32_t parent_island1 = (number_of_islands - 1) * rng_0_1(generator);
   if (parent_island1 >= generation_island) parent_island1 += 1;
@@ -444,8 +401,7 @@ unique_ptr<WorkMsg> IslandSpeciationStrategy::parents_repopulation(
   int32_t parent_island2;
   do {
     parent_island2 = (number_of_islands - 1) * rng_0_1(generator);
-  } while (parent_island2 == generation_island ||
-           parent_island2 == parent_island1);
+  } while (parent_island2 == generation_island || parent_island2 == parent_island1);
 
   Log::info("parent island 2: %d \n", parent_island2);
 
@@ -453,10 +409,8 @@ unique_ptr<WorkMsg> IslandSpeciationStrategy::parents_repopulation(
 
   switch (method) {
     case RepopulationMethod::RANDOM_PARENTS:
-      islands[parent_island1]->get_n_random_genomes(rng_0_1, generator, 1,
-                                                    parents);
-      islands[parent_island2]->get_n_random_genomes(rng_0_1, generator, 1,
-                                                    parents);
+      islands[parent_island1]->get_n_random_genomes(rng_0_1, generator, 1, parents);
+      islands[parent_island2]->get_n_random_genomes(rng_0_1, generator, 1, parents);
       break;
 
     case RepopulationMethod::BEST_PARENTS:
@@ -469,21 +423,17 @@ unique_ptr<WorkMsg> IslandSpeciationStrategy::parents_repopulation(
       exit(0);
   }
 
-  Log::info(
-      "current island is %d, the parent1 island is %d, parent 2 island is %d\n",
-      generation_island, parent_island1, parent_island2);
+  Log::info("current island is %d, the parent1 island is %d, parent 2 island is %d\n", generation_island,
+            parent_island1, parent_island2);
 
   // swap so the first parent is the more fit parent
-  if (parents[0]->get_fitness() > parents[1]->get_fitness())
-    std::swap(parents[0], parents[1]);
+  if (parents[0]->get_fitness() > parents[1]->get_fitness()) std::swap(parents[0], parents[1]);
 
   return make_unique<WorkMsg>(parents);
 }
 
-void IslandSpeciationStrategy::copy_island(uint32_t src_island,
-                                           uint32_t dst_island) {
-  vector<shared_ptr<const RNN_Genome>> &src_genomes =
-      islands[src_island]->get_genomes();
+void IslandSpeciationStrategy::copy_island(uint32_t src_island, uint32_t dst_island) {
+  vector<shared_ptr<const RNN_Genome>> &src_genomes = islands[src_island]->get_genomes();
   for (uint32_t i = 0; i < src_genomes.size(); i++) {
     RNN_Genome *copy = src_genomes[i]->copy();
     generated_genomes++;
@@ -501,17 +451,13 @@ void IslandSpeciationStrategy::copy_island(uint32_t src_island,
   }
 }
 
-shared_ptr<const RNN_Genome>
-    &IslandSpeciationStrategy::get_global_best_genome() {
-  return global_best_genome;
-}
+shared_ptr<const RNN_Genome> &IslandSpeciationStrategy::get_global_best_genome() { return global_best_genome; }
 
 void IslandSpeciationStrategy::set_erased_islands_status() {
   for (uint32_t i = 0; i < islands.size(); i++) {
     if (islands[i]->get_erase_again_num() > 0) {
       islands[i]->set_erase_again_num();
-      Log::info("Island %d can be removed in %d rounds.\n", i,
-                islands[i]->get_erase_again_num());
+      Log::info("Island %d can be removed in %d rounds.\n", i, islands[i]->get_erase_again_num());
     }
   }
 }

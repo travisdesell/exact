@@ -39,13 +39,9 @@ class min_max_heap {
 
   static inline uint32_t right_child(uint32_t z) { return z + z + 2; }
 
-  static inline bool is_on_min_level(uint32_t z) {
-    return log2(z + 1) % 2 == 1;
-  }
+  static inline bool is_on_min_level(uint32_t z) { return log2(z + 1) % 2 == 1; }
 
-  static inline bool is_on_max_level(uint32_t z) {
-    return log2(z + 1) % 2 == 0;
-  }
+  static inline bool is_on_max_level(uint32_t z) { return log2(z + 1) % 2 == 0; }
 
   template <bool max_level>
   void trickle_up_inner(uint32_t z) {
@@ -86,31 +82,24 @@ class min_max_heap {
 
   template <bool max_level>
   void trickle_down_inner(const uint32_t z) {
-    if (z >= heap.size())
-      throw std::invalid_argument("Element specified by z does not exist");
+    if (z >= heap.size()) throw std::invalid_argument("Element specified by z does not exist");
 
     uint32_t smallest_node = z;
     uint32_t left = left_child(z);
     uint32_t right = left + 1;
 
-    if (left < heap.size() &&
-        (less_than(heap[left], heap[smallest_node]) ^ max_level))
-      smallest_node = left;
-    if (right < heap.size() &&
-        (less_than(heap[right], heap[smallest_node]) ^ max_level))
-      smallest_node = right;
+    if (left < heap.size() && (less_than(heap[left], heap[smallest_node]) ^ max_level)) smallest_node = left;
+    if (right < heap.size() && (less_than(heap[right], heap[smallest_node]) ^ max_level)) smallest_node = right;
 
     uint32_t left_grandchild = left_child(left);
     for (uint32_t i = 0; i < 4 && left_grandchild + i < heap.size(); i++)
-      if (less_than(heap[left_grandchild + i], heap[smallest_node]) ^ max_level)
-        smallest_node = left_grandchild + i;
+      if (less_than(heap[left_grandchild + i], heap[smallest_node]) ^ max_level) smallest_node = left_grandchild + i;
 
     if (z == smallest_node) return;
 
     std::swap(heap[z], heap[smallest_node]);
     if (smallest_node - left > 1) {  // smallest node was a grandchild
-      if (less_than(heap[parent(smallest_node)], heap[smallest_node]) ^
-          max_level)
+      if (less_than(heap[parent(smallest_node)], heap[smallest_node]) ^ max_level)
         std::swap(heap[parent(smallest_node)], heap[smallest_node]);
 
       trickle_down_inner<max_level>(smallest_node);
@@ -127,8 +116,7 @@ class min_max_heap {
   uint32_t find_min_index() const {
     switch (heap.size()) {
       case 0:
-        throw std::underflow_error(
-            "There is no minimum element because the heap is empty");
+        throw std::underflow_error("There is no minimum element because the heap is empty");
       case 1:
         return 0;
       case 2:
@@ -139,9 +127,8 @@ class min_max_heap {
   }
 
   T delete_element(uint32_t z) {
-    if (z >= (uint32_t)heap.size())
-      throw std::underflow_error(
-          "Cannot delete element from the heap because it does not exist");
+    if (z >= (uint32_t) heap.size())
+      throw std::underflow_error("Cannot delete element from the heap because it does not exist");
 
     if (z == heap.size() - 1) {
       T e = heap.back();
@@ -166,16 +153,14 @@ class min_max_heap {
    *This could probably be done in a better way with generics but I'm not
    *confident in doing so.
    **/
-  min_max_heap(std::function<bool(const T &, const T &)> _less_than,
-               uint32_t size_hint = -1)
-      : less_than(_less_than) {
+  min_max_heap(std::function<bool(const T &, const T &)> _less_than, uint32_t size_hint = -1) : less_than(_less_than) {
     if (size_hint >= 0) heap.reserve(size_hint);
   }
   ~min_max_heap() {}
 
   bool empty() const { return heap.size() == 0; }
 
-  uint32_t size() const { return (uint32_t)heap.size(); }
+  uint32_t size() const { return (uint32_t) heap.size(); }
 
   /**
    * Adds the element e to the heap (in the correct order of course).
@@ -186,9 +171,7 @@ class min_max_heap {
   }
 
   const T &find_max() const {
-    if (empty())
-      throw std::underflow_error(
-          "There is no max element because the heap is empty");
+    if (empty()) throw std::underflow_error("There is no max element because the heap is empty");
 
     return heap[0];
   }
@@ -200,9 +183,7 @@ class min_max_heap {
    *emoty it will throw an underflow_error
    **/
   T pop_max() {
-    if (heap.size() == 0)
-      throw std::underflow_error(
-          "No max element exists because the heap is empty");
+    if (heap.size() == 0) throw std::underflow_error("No max element exists because the heap is empty");
 
     return delete_element(0);
   }
@@ -214,9 +195,7 @@ class min_max_heap {
    *empty, it will throw an underflow_error
    **/
   T pop_min() {
-    if (heap.size() == 0)
-      throw std::underflow_error(
-          "No minimum element exists because the heap is empty");
+    if (heap.size() == 0) throw std::underflow_error("No minimum element exists because the heap is empty");
 
     return delete_element(find_min_index());
   }
@@ -243,7 +222,7 @@ class min_max_heap {
   /**
    * Allows for deletion of an element at a specified index in O(log(n)) time.
    **/
-  T erase(size_t index) { return delete_element((uint32_t)index); }
+  T erase(size_t index) { return delete_element((uint32_t) index); }
 
   /**
    * Ensures that the underlying vector can hold at least n elements.

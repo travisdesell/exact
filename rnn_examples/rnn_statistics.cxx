@@ -27,7 +27,7 @@ vector<string> arguments;
 vector<vector<vector<double> > > testing_inputs;
 vector<vector<vector<double> > > testing_outputs;
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   arguments = vector<string>(argv, argv + argc);
 
   Log::initialize(arguments);
@@ -41,17 +41,17 @@ int main(int argc, char** argv) {
   double avg_rec_edges = 0.0;
   double avg_weights = 0.0;
 
-  for (int32_t i = 0; i < (int32_t)rnn_filenames.size(); i++) {
+  for (int32_t i = 0; i < (int32_t) rnn_filenames.size(); i++) {
     Log::info("reading file: %s\n", rnn_filenames[i].c_str());
-    RNN_Genome* genome = new RNN_Genome(rnn_filenames[i]);
+    RNN_Genome *genome = new RNN_Genome(rnn_filenames[i]);
 
     int32_t nodes = genome->get_enabled_node_count();
     int32_t edges = genome->get_enabled_edge_count();
     int32_t rec_edges = genome->get_enabled_recurrent_edge_count();
     int32_t weights = genome->get_number_weights();
 
-    Log::info("RNN INFO FOR '%s', nodes: %d, edges: %d, rec: %d, weights: %d\n",
-              rnn_filenames[i].c_str(), nodes, edges, rec_edges, weights);
+    Log::info("RNN INFO FOR '%s', nodes: %d, edges: %d, rec: %d, weights: %d\n", rnn_filenames[i].c_str(), nodes, edges,
+              rec_edges, weights);
     Log::info("\t%s\n", genome->print_statistics_header().c_str());
     Log::info("\t%s\n", genome->print_statistics().c_str());
 
@@ -66,8 +66,7 @@ int main(int argc, char** argv) {
   avg_rec_edges /= rnn_filenames.size();
   avg_weights /= rnn_filenames.size();
 
-  Log::info("AVG INFO, nodes: %d, edges: %d, rec: %d, weights: %d\n", avg_nodes,
-            avg_edges, avg_rec_edges, avg_weights);
+  Log::info("AVG INFO, nodes: %d, edges: %d, rec: %d, weights: %d\n", avg_nodes, avg_edges, avg_rec_edges, avg_weights);
 
   Log::release_id("main");
 

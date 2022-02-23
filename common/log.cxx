@@ -46,7 +46,7 @@ unordered_map<string, shared_ptr<LogFile>, Log::LogHasher> Log::output_files;
 
 shared_mutex Log::output_files_mutex;
 
-LogFile::LogFile(string const& path) {
+LogFile::LogFile(string const &path) {
   file = std::ofstream(path);
   file.rdbuf()->pubsetbuf(this->buffer, LogFile::BUFFER_LENGTH);
 }
@@ -65,33 +65,24 @@ void Log::register_command_line_arguments() {
 }
 
 int8_t Log::parse_level_from_string(string level) {
-  if (level.compare("0") == 0 || level.compare("NONE") == 0 ||
-      level.compare("none") == 0) {
+  if (level.compare("0") == 0 || level.compare("NONE") == 0 || level.compare("none") == 0) {
     return Log::NONE;
-  } else if (level.compare("1") == 0 || level.compare("FATAL") == 0 ||
-             level.compare("fatal") == 0) {
+  } else if (level.compare("1") == 0 || level.compare("FATAL") == 0 || level.compare("fatal") == 0) {
     return Log::FATAL;
-  } else if (level.compare("2") == 0 || level.compare("ERROR") == 0 ||
-             level.compare("error") == 0) {
+  } else if (level.compare("2") == 0 || level.compare("ERROR") == 0 || level.compare("error") == 0) {
     return Log::ERROR;
-  } else if (level.compare("3") == 0 || level.compare("WARNING") == 0 ||
-             level.compare("warning") == 0) {
+  } else if (level.compare("3") == 0 || level.compare("WARNING") == 0 || level.compare("warning") == 0) {
     return Log::WARNING;
-  } else if (level.compare("4") == 0 || level.compare("INFO") == 0 ||
-             level.compare("info") == 0) {
+  } else if (level.compare("4") == 0 || level.compare("INFO") == 0 || level.compare("info") == 0) {
     return Log::INFO;
-  } else if (level.compare("5") == 0 || level.compare("DEBUG") == 0 ||
-             level.compare("debug") == 0) {
+  } else if (level.compare("5") == 0 || level.compare("DEBUG") == 0 || level.compare("debug") == 0) {
     return Log::DEBUG;
-  } else if (level.compare("6") == 0 || level.compare("TRACE") == 0 ||
-             level.compare("trace") == 0) {
+  } else if (level.compare("6") == 0 || level.compare("TRACE") == 0 || level.compare("trace") == 0) {
     return Log::TRACE;
-  } else if (level.compare("7") == 0 || level.compare("ALL") == 0 ||
-             level.compare("all") == 0) {
+  } else if (level.compare("7") == 0 || level.compare("ALL") == 0 || level.compare("all") == 0) {
     return Log::ALL;
   } else {
-    cerr << "ERROR: specified an incorrect message level for the Log: '"
-         << level << "'" << endl;
+    cerr << "ERROR: specified an incorrect message level for the Log: '" << level << "'" << endl;
     cerr << "Options are:" << endl;
     cerr << "\t0 or NONE or none" << endl;
     cerr << "\t1 or FATAL or fatal" << endl;
@@ -105,7 +96,7 @@ int8_t Log::parse_level_from_string(string level) {
   }
 }
 
-void Log::initialize(const vector<string>& arguments) {
+void Log::initialize(const vector<string> &arguments) {
   // TODO: should read these from the CommandLine (to be created)
 
   string std_message_level_str, file_message_level_str;
@@ -131,9 +122,7 @@ void Log::initialize(const vector<string>& arguments) {
 
 void Log::set_rank(int32_t _process_rank) { process_rank = _process_rank; }
 
-void Log::restrict_to_rank(int32_t _restricted_rank) {
-  restricted_rank = _restricted_rank;
-}
+void Log::restrict_to_rank(int32_t _restricted_rank) { restricted_rank = _restricted_rank; }
 
 void Log::clear_rank_restriction() { restricted_rank = -1; }
 
@@ -166,15 +155,14 @@ void Log::set_id(string human_readable_id) {
   }
 }
 
-void Log::release_id(string const& human_readable_id) {
+void Log::release_id(string const &human_readable_id) {
   output_files_mutex.lock();
   output_files.erase(human_readable_id);
   output_files_mutex.unlock();
   output_files_local.erase(human_readable_id);
 }
 
-void Log::write_message(bool print_header, int8_t message_level,
-                        const char* message_type, const char* format,
+void Log::write_message(bool print_header, int8_t message_level, const char *message_type, const char *format,
                         va_list arguments) {
   if (!Log::current_log_file) {
     cerr << "ERROR: could not write message from thread '" << Log::thread_id
@@ -195,8 +183,7 @@ void Log::write_message(bool print_header, int8_t message_level,
   if (print_header) {
     // snprintf(header_buffer, max_header_length, "[%-8s %-20s]", message_type,
     // human_readable_id.c_str());
-    snprintf(header_buffer, max_header_length, "[%-7s %-21s] ", message_type,
-             human_readable_id.c_str());
+    snprintf(header_buffer, max_header_length, "[%-7s %-21s] ", message_type, human_readable_id.c_str());
   }
 
   // print the actual message contents into a string
@@ -215,18 +202,15 @@ void Log::write_message(bool print_header, int8_t message_level,
     // to the same file
     Log::current_log_file->file_mutex.lock();
     Log::current_log_file->file << header_buffer << message_buffer;
-    Log::current_log_file->file
-        .flush();  // Must flush ASAP so the logs contain as much data as
-                   // possible before a crash.
+    Log::current_log_file->file.flush();  // Must flush ASAP so the logs contain as much data as
+                                          // possible before a crash.
     Log::current_log_file->file_mutex.unlock();
   }
 }
 
-bool Log::at_level(int8_t level) {
-  return level >= std_message_level || level >= file_message_level;
-}
+bool Log::at_level(int8_t level) { return level >= std_message_level || level >= file_message_level; }
 
-void Log::fatal(const char* format, ...) {
+void Log::fatal(const char *format, ...) {
   // don't write if this is the wrong process rank
   if (restricted_rank >= 0 && restricted_rank != process_rank) return;
 
@@ -238,7 +222,7 @@ void Log::fatal(const char* format, ...) {
   write_message(true, FATAL, "FATAL", format, arguments);
 }
 
-void Log::error(const char* format, ...) {
+void Log::error(const char *format, ...) {
   // don't write if this is the wrong process rank
   if (restricted_rank >= 0 && restricted_rank != process_rank) return;
 
@@ -250,7 +234,7 @@ void Log::error(const char* format, ...) {
   write_message(true, ERROR, "ERROR", format, arguments);
 }
 
-void Log::warning(const char* format, ...) {
+void Log::warning(const char *format, ...) {
   // don't write if this is the wrong process rank
   if (restricted_rank >= 0 && restricted_rank != process_rank) return;
 
@@ -262,7 +246,7 @@ void Log::warning(const char* format, ...) {
   write_message(true, WARNING, "WARNING", format, arguments);
 }
 
-void Log::info(const char* format, ...) {
+void Log::info(const char *format, ...) {
 #ifndef MINIMAL_LOGGING
   // don't write if this is the wrong process rank
   if (restricted_rank >= 0 && restricted_rank != process_rank) return;
@@ -276,7 +260,7 @@ void Log::info(const char* format, ...) {
 #endif
 }
 
-void Log::debug(const char* format, ...) {
+void Log::debug(const char *format, ...) {
 #ifndef MINIMAL_LOGGING
   // don't write if this is the wrong process rank
   if (restricted_rank >= 0 && restricted_rank != process_rank) return;
@@ -290,7 +274,7 @@ void Log::debug(const char* format, ...) {
 #endif
 }
 
-void Log::trace(const char* format, ...) {
+void Log::trace(const char *format, ...) {
 #ifndef MINIMAL_LOGGING
   // don't write if this is the wrong process rank
   if (restricted_rank >= 0 && restricted_rank != process_rank) return;
@@ -304,7 +288,7 @@ void Log::trace(const char* format, ...) {
 #endif
 }
 
-void Log::fatal_no_header(const char* format, ...) {
+void Log::fatal_no_header(const char *format, ...) {
   // don't write if this is the wrong process rank
   if (restricted_rank >= 0 && restricted_rank != process_rank) return;
 
@@ -316,7 +300,7 @@ void Log::fatal_no_header(const char* format, ...) {
   write_message(false, FATAL, "FATAL", format, arguments);
 }
 
-void Log::error_no_header(const char* format, ...) {
+void Log::error_no_header(const char *format, ...) {
   // don't write if this is the wrong process rank
   if (restricted_rank >= 0 && restricted_rank != process_rank) return;
 
@@ -328,7 +312,7 @@ void Log::error_no_header(const char* format, ...) {
   write_message(false, ERROR, "ERROR", format, arguments);
 }
 
-void Log::warning_no_header(const char* format, ...) {
+void Log::warning_no_header(const char *format, ...) {
   // don't write if this is the wrong process rank
   if (restricted_rank >= 0 && restricted_rank != process_rank) return;
 
@@ -340,7 +324,7 @@ void Log::warning_no_header(const char* format, ...) {
   write_message(false, WARNING, "WARNING", format, arguments);
 }
 
-void Log::info_no_header(const char* format, ...) {
+void Log::info_no_header(const char *format, ...) {
 #ifndef MINIMAL_LOGGING
   // don't write if this is the wrong process rank
   if (restricted_rank >= 0 && restricted_rank != process_rank) return;
@@ -354,7 +338,7 @@ void Log::info_no_header(const char* format, ...) {
 #endif
 }
 
-void Log::debug_no_header(const char* format, ...) {
+void Log::debug_no_header(const char *format, ...) {
 #ifndef MINIMAL_LOGGING
   // don't write if this is the wrong process rank
   if (restricted_rank >= 0 && restricted_rank != process_rank) return;
@@ -368,7 +352,7 @@ void Log::debug_no_header(const char* format, ...) {
 #endif
 }
 
-void Log::trace_no_header(const char* format, ...) {
+void Log::trace_no_header(const char *format, ...) {
 #ifndef MINIMAL_LOGGING
   // don't write if this is the wrong process rank
   if (restricted_rank >= 0 && restricted_rank != process_rank) return;

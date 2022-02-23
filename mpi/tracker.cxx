@@ -51,9 +51,7 @@ double Tracker::correlate(Tracker &other) {
 
   double correlation = 0.0;
 
-  for (int i = 0; i < values.size(); i++) {
-    correlation += (values[i] - avg1) * (other.values[i] - avg2);
-  }
+  for (int i = 0; i < values.size(); i++) { correlation += (values[i] - avg1) * (other.values[i] - avg2); }
 
   correlation /= (count - 1) * stddev1 * stddev2;
 

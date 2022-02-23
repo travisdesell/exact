@@ -27,10 +27,8 @@ class NormalDistribution {
 
   float random(minstd_rand0 &generator, float mu, float sigma);
 
-  friend ostream &operator<<(ostream &os,
-                             const NormalDistribution &normal_distribution);
-  friend istream &operator>>(istream &is,
-                             NormalDistribution &normal_distribution);
+  friend ostream &operator<<(ostream &os, const NormalDistribution &normal_distribution);
+  friend istream &operator>>(istream &is, NormalDistribution &normal_distribution);
 
   bool operator==(const NormalDistribution &other) const;
   bool operator!=(const NormalDistribution &other) const;

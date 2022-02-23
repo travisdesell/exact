@@ -38,13 +38,10 @@ void initialize_generator() {
 void generate_random_vector(int number_parameters, vector<double> &v) {
   v.resize(number_parameters);
 
-  for (int32_t i = 0; i < number_parameters; i++) {
-    v[i] = rng(generator);
-  }
+  for (int32_t i = 0; i < number_parameters; i++) { v[i] = rng(generator); }
 }
 
-void gradient_test(string name, RNN_Genome *genome,
-                   const vector<vector<double> > &inputs,
+void gradient_test(string name, RNN_Genome *genome, const vector<vector<double> > &inputs,
                    const vector<vector<double> > &outputs) {
   double analytic_mse, empirical_mse;
   vector<double> parameters;
@@ -65,10 +62,8 @@ void gradient_test(string name, RNN_Genome *genome,
     generate_random_vector(rnn->get_number_weights(), parameters);
     Log::debug("DEBUG: firing weights are %d \n", rnn->get_number_weights());
 
-    rnn->get_analytic_gradient(parameters, inputs, outputs, analytic_mse,
-                               analytic_gradient, false, true, 0.0);
-    rnn->get_empirical_gradient(parameters, inputs, outputs, empirical_mse,
-                                empirical_gradient, false, true, 0.0);
+    rnn->get_analytic_gradient(parameters, inputs, outputs, analytic_mse, analytic_gradient, false, true, 0.0);
+    rnn->get_empirical_gradient(parameters, inputs, outputs, empirical_mse, empirical_gradient, false, true, 0.0);
 
     bool iteration_failed = false;
 
@@ -107,10 +102,8 @@ void gradient_test(string name, RNN_Genome *genome,
     generate_random_vector(rnn->get_number_weights(), parameters);
     Log::debug("DEBUG: firing weights are %d \n", rnn->get_number_weights());
 
-    rnn->get_analytic_gradient(parameters, inputs, outputs, analytic_mse,
-                               analytic_gradient, false, true, 0.0);
-    rnn->get_empirical_gradient(parameters, inputs, outputs, empirical_mse,
-                                empirical_gradient, false, true, 0.0);
+    rnn->get_analytic_gradient(parameters, inputs, outputs, analytic_mse, analytic_gradient, false, true, 0.0);
+    rnn->get_empirical_gradient(parameters, inputs, outputs, empirical_mse, empirical_gradient, false, true, 0.0);
 
     bool iteration_failed = false;
 

@@ -21,12 +21,9 @@ class DatasetMeta {
   const map<string, double> normalize_avgs;
   const map<string, double> normalize_std_devs;
 
-  DatasetMeta(const vector<string> &_input_parameter_names,
-              const vector<string> &_output_parameter_names,
-              const string _normalize_type,
-              const map<string, double> &_normalize_mins,
-              const map<string, double> &_normalize_maxs,
-              const map<string, double> &_normalize_avgs,
+  DatasetMeta(const vector<string> &_input_parameter_names, const vector<string> &_output_parameter_names,
+              const string _normalize_type, const map<string, double> &_normalize_mins,
+              const map<string, double> &_normalize_maxs, const map<string, double> &_normalize_avgs,
               const map<string, double> &_normalize_std_devs);
 };
 

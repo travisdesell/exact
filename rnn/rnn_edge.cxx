@@ -2,38 +2,29 @@
 
 #include "common/log.hxx"
 
-RNN_Edge::RNN_Edge(int _innovation_number, RNN_Node_Interface *_input_node,
-                   RNN_Node_Interface *_output_node) {
-  innovation_number = _innovation_number;
-  input_node = _input_node;
-  output_node = _output_node;
-
+RNN_Edge::RNN_Edge(edge_inon _inon, RNN_Node_Interface *_input_node, RNN_Node_Interface *_output_node)
+    : inon(_inon),
+      input_node(_input_node),
+      output_node(_output_node),
+      input_inon(_input_node->inon),
+      output_inon(_output_node->inon) {
   enabled = true;
   forward_reachable = false;
   backward_reachable = false;
 
-  input_innovation_number = input_node->get_innovation_number();
-  output_innovation_number = output_node->get_innovation_number();
-
   input_node->total_outputs++;
   output_node->total_inputs++;
 
-  Log::debug("\t\tcreated edge %d from %d to %d\n", innovation_number,
-             input_innovation_number, output_innovation_number);
+  Log::debug("\t\tcreated edge %d from %d to %d\n", inon, input_inon, output_inon);
 }
 
-RNN_Edge::RNN_Edge(int _innovation_number, int _input_innovation_number,
-                   int _output_innovation_number,
-                   const vector<RNN_Node_Interface *> &nodes) {
-  innovation_number = _innovation_number;
-
-  input_innovation_number = _input_innovation_number;
-  output_innovation_number = _output_innovation_number;
-
+RNN_Edge::RNN_Edge(edge_inon _inon, node_inon _input_inon, node_inon _output_inon,
+                   const vector<RNN_Node_Interface *> &nodes)
+    : inon(_inon), input_inon(_input_inon), output_inon(_output_inon) {
   input_node = NULL;
   output_node = NULL;
   for (int i = 0; i < nodes.size(); i++) {
-    if (nodes[i]->innovation_number == _input_innovation_number) {
+    if (nodes[i]->inon == input_inon) {
       if (input_node != NULL) {
         Log::fatal(
             "ERROR in copying RNN_Edge, list of nodes has multiple nodes with "
@@ -44,7 +35,7 @@ RNN_Edge::RNN_Edge(int _innovation_number, int _input_innovation_number,
       input_node = nodes[i];
     }
 
-    if (nodes[i]->innovation_number == _output_innovation_number) {
+    if (nodes[i]->inon == _output_inon) {
       if (output_node != NULL) {
         Log::fatal(
             "ERROR in copying RNN_Edge, list of nodes has multiple nodes with "
@@ -60,7 +51,7 @@ RNN_Edge::RNN_Edge(int _innovation_number, int _input_innovation_number,
     Log::fatal(
         "ERROR initializing RNN_Edge, input node with innovation "
         "number; %d was not found!\n",
-        input_innovation_number);
+        input_inon);
     throw 1;
     exit(1);
   }
@@ -69,17 +60,16 @@ RNN_Edge::RNN_Edge(int _innovation_number, int _input_innovation_number,
     Log::fatal(
         "ERROR initializing RNN_Edge, output node with innovation "
         "number; %d was not found!\n",
-        output_innovation_number);
+        output_inon);
     exit(1);
   }
 }
 
-RNN_Edge *RNN_Edge::copy(
-    unordered_map<int32_t, RNN_Node_Interface *> new_nodes) {
-  auto input_node = new_nodes[input_innovation_number];
-  auto output_node = new_nodes[output_innovation_number];
+RNN_Edge *RNN_Edge::copy(unordered_map<node_inon, RNN_Node_Interface *> new_nodes) {
+  auto input_node = new_nodes[input_inon];
+  auto output_node = new_nodes[output_inon];
 
-  RNN_Edge *e = new RNN_Edge(innovation_number, input_node, output_node);
+  RNN_Edge *e = new RNN_Edge(inon, input_node, output_node);
   e->weight = weight;
   e->d_weight = d_weight;
 
@@ -93,8 +83,7 @@ RNN_Edge *RNN_Edge::copy(
 }
 
 RNN_Edge *RNN_Edge::copy(const vector<RNN_Node_Interface *> new_nodes) {
-  RNN_Edge *e = new RNN_Edge(innovation_number, input_innovation_number,
-                             output_innovation_number, new_nodes);
+  RNN_Edge *e = new RNN_Edge(inon, input_inon, output_inon, new_nodes);
 
   e->weight = weight;
   e->d_weight = d_weight;
@@ -111,12 +100,10 @@ RNN_Edge *RNN_Edge::copy(const vector<RNN_Node_Interface *> new_nodes) {
 void RNN_Edge::propagate_forward(int time) {
   if (input_node->inputs_fired[time] != input_node->total_inputs) {
     Log::fatal(
-        "ERROR! propagate forward called on edge %d where "
+        "ERROR! propagate forward called on edge %lld where "
         "input_node->inputs_fired[%d] (%d) != total_inputs (%d)\n",
-        innovation_number, time, input_node->inputs_fired[time],
-        input_node->total_inputs);
-    Log::fatal("input innovation number: %d, output innovation number: %d\n",
-               input_node->innovation_number, output_node->innovation_number);
+        inon, time, input_node->inputs_fired[time], input_node->total_inputs);
+    Log::fatal("input innovation number: %lld, output innovation number: %lld\n", input_node->inon, output_node->inon);
     exit(1);
   }
 
@@ -131,14 +118,12 @@ void RNN_Edge::propagate_forward(int time) {
   output_node->input_fired(time, output);
 }
 
-void RNN_Edge::propagate_forward(int time, bool training,
-                                 double dropout_probability) {
+void RNN_Edge::propagate_forward(int time, bool training, double dropout_probability) {
   if (input_node->inputs_fired[time] != input_node->total_inputs) {
     Log::fatal(
-        "ERROR! propagate forward called on edge %d where "
+        "llERROR! propagate forward called on edge %lld where "
         "input_node->inputs_fired[%d] (%d) != total_inputs (%d)\n",
-        innovation_number, time, input_node->inputs_fired[time],
-        input_node->total_inputs);
+        inon, time, input_node->inputs_fired[time], input_node->total_inputs);
     exit(1);
   }
 
@@ -167,12 +152,10 @@ void RNN_Edge::propagate_forward(int time, bool training,
 void RNN_Edge::propagate_backward(int time) {
   if (output_node->outputs_fired[time] != output_node->total_outputs) {
     Log::fatal(
-        "ERROR! propagate backward called on edge %d where "
+        "ERROR! propagate backward called on edge %lld where "
         "output_node->outputs_fired[%d] (%d) != total_outputs (%d)\n",
-        innovation_number, time, output_node->outputs_fired[time],
-        output_node->total_outputs);
-    Log::fatal("input innovation number: %d, output innovation number: %d\n",
-               input_node->innovation_number, output_node->innovation_number);
+        inon, time, output_node->outputs_fired[time], output_node->total_outputs);
+    Log::fatal("input innovation number: %lld, output innovation number: %lld\n", input_node->inon, output_node->inon);
     Log::fatal("series_length: %d\n", input_node->series_length);
     exit(1);
   }
@@ -188,16 +171,13 @@ void RNN_Edge::propagate_backward(int time) {
   input_node->output_fired(time, deltas[time]);
 }
 
-void RNN_Edge::propagate_backward(int time, bool training,
-                                  double dropout_probability) {
+void RNN_Edge::propagate_backward(int time, bool training, double dropout_probability) {
   if (output_node->outputs_fired[time] != output_node->total_outputs) {
     Log::fatal(
-        "ERROR! propagate backward called on edge %d where "
+        "ERROR! propagate backward called on edge %lld where "
         "output_node->outputs_fired[%d] (%d) != total_outputs (%d)\n",
-        innovation_number, time, output_node->outputs_fired[time],
-        output_node->total_outputs);
-    Log::fatal("input innovation number: %d, output innovation number: %d\n",
-               input_node->innovation_number, output_node->innovation_number);
+        inon, time, output_node->outputs_fired[time], output_node->total_outputs);
+    Log::fatal("input innovation number: %lld, output innovation number: %lld\n", input_node->inon, output_node->inon);
     Log::fatal("series_length: %d\n", input_node->series_length);
     exit(1);
   }
@@ -226,40 +206,36 @@ void RNN_Edge::reset(uint32_t series_length) {
 
 double RNN_Edge::get_gradient() const { return d_weight; }
 
-int32_t RNN_Edge::get_innovation_number() const { return innovation_number; }
+edge_inon RNN_Edge::get_inon() const { return inon; }
 
-int32_t RNN_Edge::get_input_innovation_number() const {
-  return input_innovation_number;
-}
+node_inon RNN_Edge::get_input_inon() const { return input_inon; }
 
-int32_t RNN_Edge::get_output_innovation_number() const {
-  return output_innovation_number;
-}
+node_inon RNN_Edge::get_output_inon() const { return output_inon; }
 
-const RNN_Node_Interface *RNN_Edge::get_input_node() const {
-  return input_node;
-}
+const RNN_Node_Interface *RNN_Edge::get_input_node() const { return input_node; }
 
-const RNN_Node_Interface *RNN_Edge::get_output_node() const {
-  return output_node;
-}
+const RNN_Node_Interface *RNN_Edge::get_output_node() const { return output_node; }
 
 bool RNN_Edge::is_enabled() const { return enabled; }
 
-bool RNN_Edge::is_reachable() const {
-  return forward_reachable && backward_reachable;
-}
+bool RNN_Edge::is_reachable() const { return forward_reachable && backward_reachable; }
 
 bool RNN_Edge::equals(RNN_Edge *other) const {
-  if (innovation_number == other->innovation_number &&
-      enabled == other->enabled)
-    return true;
+  if (inon == other->inon && enabled == other->enabled) return true;
   return false;
 }
 
 void RNN_Edge::write_to_stream(ostream &out) {
-  out.write((char *)&innovation_number, sizeof(int32_t));
-  out.write((char *)&input_innovation_number, sizeof(int32_t));
-  out.write((char *)&output_innovation_number, sizeof(int32_t));
-  out.write((char *)&enabled, sizeof(bool));
+  out.write((char *) &inon, sizeof(edge_inon));
+  out.write((char *) &input_inon, sizeof(node_inon));
+  out.write((char *) &output_inon, sizeof(node_inon));
+  out.write((char *) &enabled, sizeof(bool));
+}
+
+void insert_edge_by_depth(vector<RNN_Edge *> &edges, RNN_Edge *edge) {
+  edges.insert(upper_bound(edges.begin(), edges.end(), edge, sort_RNN_Edges_by_depth()), edge);
+}
+
+void insert_edge_by_inon(vector<RNN_Edge *> &edges, RNN_Edge *edge) {
+  edges.insert(upper_bound(edges.begin(), edges.end(), edge, sort_RNN_Edges_by_inon()), edge);
 }

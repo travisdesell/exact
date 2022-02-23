@@ -24,7 +24,7 @@ using std::vector;
 #include "rnn/examm.hxx"
 #include "time_series/time_series.hxx"
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   std::cout << "starting up!" << std::endl;
   MPI_Init(&argc, &argv);
   std::cout << "did mpi init!" << std::endl;
@@ -63,7 +63,7 @@ int main(int argc, char** argv) {
     master(max_rank, make_genome_operators(rank));
   } else {
     Log::info("starting worker %d\n", rank);
-    worker(rank, make_genome_operators(rank));
+    worker(number_workers, rank, make_genome_operators(rank));
   }
 
   Log::set_id("main_" + to_string(rank));

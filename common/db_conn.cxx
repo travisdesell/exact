@@ -24,10 +24,8 @@ void __mysql_check(string query, const char *file, const int line) {
 
   if (mysql_errno(exact_db_conn) != 0) {
     ostringstream ex_msg;
-    ex_msg << "ERROR in MySQL query: '" << query.c_str()
-           << "'. Error: " << mysql_errno(exact_db_conn) << " -- '"
-           << mysql_error(exact_db_conn) << "'. Thrown on " << file << ":"
-           << line;
+    ex_msg << "ERROR in MySQL query: '" << query.c_str() << "'. Error: " << mysql_errno(exact_db_conn) << " -- '"
+           << mysql_error(exact_db_conn) << "'. Thrown on " << file << ":" << line;
     fprintf(stderr, "%s\n", ex_msg.str().c_str());
     exit(1);
   }
@@ -53,14 +51,11 @@ void initialize_exact_database() {
   fprintf(stderr,
           "parsed db info, host: '%s', name: '%s', user: '%s', pass: '%s', "
           "port: '%d'\n",
-          db_host.c_str(), db_name.c_str(), db_user.c_str(),
-          db_password.c_str(), db_port);
+          db_host.c_str(), db_name.c_str(), db_user.c_str(), db_password.c_str(), db_port);
 
-  if (mysql_real_connect(exact_db_conn, db_host.c_str(), db_user.c_str(),
-                         db_password.c_str(), db_name.c_str(), db_port, NULL,
-                         0) == NULL) {
-    fprintf(stderr, "Error connecting to database: %d, '%s'\n",
-            mysql_errno(exact_db_conn), mysql_error(exact_db_conn));
+  if (mysql_real_connect(exact_db_conn, db_host.c_str(), db_user.c_str(), db_password.c_str(), db_name.c_str(), db_port,
+                         NULL, 0) == NULL) {
+    fprintf(stderr, "Error connecting to database: %d, '%s'\n", mysql_errno(exact_db_conn), mysql_error(exact_db_conn));
     exit(1);
   }
 }

@@ -34,9 +34,7 @@
 #include <cmath>
 #include <cstdlib>
 #include <cstring>
-
 #include <fstream>
-
 #include <string>
 using std::string;
 using std::to_string;
@@ -50,123 +48,119 @@ using std::ostringstream;
 #include <vector>
 using std::vector;
 
-//for boinc
+// for boinc
+#include "backend_lib.h"
 #include "boinc_db.h"
 #include "diagnostics.h"
 #include "error_numbers.h"
-#include "backend_lib.h"
 #include "parse.h"
-#include "util.h"
-#include "svn_version.h"
-
 #include "sched_config.h"
-#include "sched_util.h"
 #include "sched_msgs.h"
+#include "sched_util.h"
 #include "str_util.h"
+#include "svn_version.h"
+#include "util.h"
 
-//for mysql
-#include "mysql.h"
-
+// for mysql
+#include "cnn/exact.hxx"
 #include "common/arguments.hxx"
 #include "common/db_conn.hxx"
 #include "image_tools/image_set.hxx"
-#include "cnn/exact.hxx"
+#include "mysql.h"
 #include "server/make_jobs.hxx"
 
-int main(int argc, char** argv) {
-    vector<string> arguments = vector<string>(argv, argv + argc);
+int main(int argc, char **argv) {
+  vector<string> arguments = vector<string>(argv, argv + argc);
 
-    string db_file;
-    get_argument(arguments, "--db_file", true, db_file);
-    set_db_info_filename(db_file);                                                                                   
+  string db_file;
+  get_argument(arguments, "--db_file", true, db_file);
+  set_db_info_filename(db_file);
 
-    string app_name;
-    get_argument(arguments, "--app", true, app_name);
+  string app_name;
+  get_argument(arguments, "--app", true, app_name);
 
-    int debug_level;
-    get_argument(arguments, "--debug_level", true, debug_level);
+  int debug_level;
+  get_argument(arguments, "--debug_level", true, debug_level);
 
-    string search_name;
-    get_argument(arguments, "--search_name", true, search_name);
+  string search_name;
+  get_argument(arguments, "--search_name", true, search_name);
 
-    log_messages.set_debug_level(debug_level);
-    if (debug_level == 4) g_print_queries = true;
+  log_messages.set_debug_level(debug_level);
+  if (debug_level == 4) g_print_queries = true;
 
-    //if at any time the retval value is greater than 0, then the program
-    //has failed in some manner, and the program then exits.
+  // if at any time the retval value is greater than 0, then the program
+  // has failed in some manner, and the program then exits.
 
-    //processing project's config file.
-    int retval = config.parse_file();
-    if (retval) {
-        log_messages.printf(MSG_CRITICAL, "Can't parse config.xml: %s\n", boincerror(retval));
-        exit(1);
-    }
+  // processing project's config file.
+  int retval = config.parse_file();
+  if (retval) {
+    log_messages.printf(MSG_CRITICAL, "Can't parse config.xml: %s\n", boincerror(retval));
+    exit(1);
+  }
 
-    //opening connection to database.
-    retval = boinc_db.open(config.db_name, config.db_host, config.db_user, config.db_passwd);
-    if (retval) {
-        log_messages.printf(MSG_CRITICAL, "can't open db\n");
-        exit(1);
-    }
+  // opening connection to database.
+  retval = boinc_db.open(config.db_name, config.db_host, config.db_user, config.db_passwd);
+  if (retval) {
+    log_messages.printf(MSG_CRITICAL, "can't open db\n");
+    exit(1);
+  }
 
-    init_work_generation(app_name);
+  init_work_generation(app_name);
 
-    //initialize the EXACT algorithm
-    int population_size = 100;
-    get_argument(arguments, "--population_size", true, population_size);
+  // initialize the EXACT algorithm
+  int population_size = 100;
+  get_argument(arguments, "--population_size", true, population_size);
 
-    int max_epochs = 50;
-    get_argument(arguments, "--max_epochs", true, max_epochs);
+  int max_epochs = 50;
+  get_argument(arguments, "--max_epochs", true, max_epochs);
 
-    bool use_sfmp = true;
-    get_argument(arguments, "--use_sfmp", true, use_sfmp);
+  bool use_sfmp = true;
+  get_argument(arguments, "--use_sfmp", true, use_sfmp);
 
-    bool use_node_operations = true;
-    get_argument(arguments, "--use_node_operations", true, use_node_operations);
+  bool use_node_operations = true;
+  get_argument(arguments, "--use_node_operations", true, use_node_operations);
 
+  int max_genomes = 1000000;
+  get_argument(arguments, "--max_genomes", true, max_genomes);
 
-    int max_genomes = 1000000;
-    get_argument(arguments, "--max_genomes", true, max_genomes);
+  bool reset_edges = false;
+  get_argument(arguments, "--reset_edges", true, reset_edges);
 
-    bool reset_edges = false;
-    get_argument(arguments, "--reset_edges", true, reset_edges);
+  string output_directory = "/projects/csg/exact_data/" + search_name;
 
+  mkdir(output_directory.c_str(), 0777);
 
-    string output_directory = "/projects/csg/exact_data/" + search_name;
+  string training_file;
+  get_argument(arguments, "--training_file", true, training_file);
 
-    mkdir(output_directory.c_str(), 0777);
+  string validation_file;
+  get_argument(arguments, "--validation_file", true, validation_file);
 
-    string training_file;
-    get_argument(arguments, "--training_file", true, training_file);
+  string testing_file;
+  get_argument(arguments, "--testing_file", true, testing_file);
 
-    string validation_file;
-    get_argument(arguments, "--validation_file", true, validation_file);
+  int padding = 0;
+  get_argument(arguments, "--padding", true, padding);
 
-    string testing_file;
-    get_argument(arguments, "--testing_file", true, testing_file);
+  Images training_images(training_file, padding);
+  Images validation_images(validation_file, padding, training_images.get_average(), training_images.get_std_dev());
+  Images testing_images(testing_file, padding, training_images.get_average(), training_images.get_std_dev());
 
-    int padding = 0;
-    get_argument(arguments, "--padding", true, padding);
+  EXACT *exact = new EXACT(training_images, validation_images, testing_images, padding, population_size, max_epochs,
+                           use_sfmp, use_node_operations, max_genomes, output_directory, search_name, reset_edges);
 
-    Images training_images(training_file, padding);
-    Images validation_images(validation_file, padding, training_images.get_average(), training_images.get_std_dev());
-    Images testing_images(testing_file, padding, training_images.get_average(), training_images.get_std_dev());
+  exact->export_to_database();
 
-    EXACT *exact = new EXACT(training_images, validation_images, testing_images, padding, population_size, max_epochs, use_sfmp, use_node_operations, max_genomes, output_directory, search_name, reset_edges);
+  log_messages.printf(MSG_NORMAL, "inserted exact search into database with id: %d\n", exact->get_id());
 
-    exact->export_to_database();
+  int start_time = time(0);
 
-    log_messages.printf(MSG_NORMAL, "inserted exact search into database with id: %d\n", exact->get_id());
+  log_messages.printf(MSG_NORMAL, "starting at %d...\n", start_time);
 
-    int start_time = time(0);
+  make_jobs(exact, WORKUNITS_TO_GENERATE);
 
-    log_messages.printf(MSG_NORMAL, "starting at %d...\n", start_time);
+  // export the search and all generated genomes to the database
+  exact->export_to_database();
 
-    make_jobs(exact, WORKUNITS_TO_GENERATE);
-
-    //export the search and all generated genomes to the database
-    exact->export_to_database();
-
-    return 0;
+  return 0;
 }
-

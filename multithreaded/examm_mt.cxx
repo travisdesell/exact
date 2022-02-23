@@ -18,7 +18,7 @@ using std::vector;
 #include "rnn/genome_operators.hxx"
 #include "rnn/training_parameters.hxx"
 #include "time_series/time_series.hxx"
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   arguments = vector<string>(argv, argv + argc);
 
   Log::initialize(arguments);
@@ -31,19 +31,18 @@ int main(int argc, char** argv) {
 
   vector<thread> threads;
   for (int32_t i = 0; i < number_threads; i++) {
-    threads.push_back(thread(
-        examm_thread, i, make_genome_operators(i), random_sequence_length,
-        sequence_length_lower_bound, sequence_length_upper_bound));
+    threads.push_back(thread(examm_thread, number_threads, i, make_genome_operators(i), random_sequence_length,
+                             sequence_length_lower_bound, sequence_length_upper_bound));
   }
 
-  for (int32_t i = 0; i < number_threads; i++) {
-    threads[i].join();
-  }
+  for (int32_t i = 0; i < number_threads; i++) { threads[i].join(); }
 
   finished = true;
 
   Log::info("completed!\n");
   Log::release_id("init");
+
+  delete dataset;
 
   return 0;
 }

@@ -5,6 +5,7 @@
 #include <fstream>
 using std::ostream;
 
+#include <algorithm>
 #include <random>
 using std::minstd_rand0;
 using std::uniform_real_distribution;
@@ -16,6 +17,7 @@ using std::string;
 using std::vector;
 
 #include "common/random.hxx"
+#include "inon.hxx"
 
 class RNN;
 
@@ -50,9 +52,12 @@ double identity_derivative();
 
 double bound(double value);
 
+// Need forward declaration for node_inon to compile
+class RNN_Node_Interface;
+typedef inon_type<RNN_Node_Interface> node_inon;
+
 class RNN_Node_Interface {
  protected:
-  int32_t innovation_number;
   int32_t layer_type;
   int32_t node_type;
 
@@ -79,27 +84,20 @@ class RNN_Node_Interface {
   int32_t total_outputs;
 
  public:
+  const node_inon inon;
   // this constructor is for hidden nodes
-  RNN_Node_Interface(int32_t _innovation_number, int32_t _layer_type,
-                     double _depth);
+  RNN_Node_Interface(node_inon _inon, int32_t _layer_type, double _depth);
 
   // this constructor is for input and output nodes (as they have an associated
   // parameter name
-  RNN_Node_Interface(int32_t _innovation_number, int32_t _layer_type,
-                     double _depth, string _parameter_name);
+  RNN_Node_Interface(node_inon _inon, int32_t _layer_type, double _depth, string _parameter_name);
   virtual ~RNN_Node_Interface();
 
-  virtual void initialize_lamarckian(minstd_rand0 &generator,
-                                     NormalDistribution &normal_distribution,
-                                     double mu, double sigma) = 0;
-  virtual void initialize_xavier(minstd_rand0 &generator,
-                                 uniform_real_distribution<double> &rng_1_1,
-                                 double range) = 0;
-  virtual void initialize_kaiming(minstd_rand0 &generator,
-                                  NormalDistribution &normal_distribution,
-                                  double range) = 0;
-  virtual void initialize_uniform_random(
-      minstd_rand0 &generator, uniform_real_distribution<double> &rng) = 0;
+  virtual void initialize_lamarckian(minstd_rand0 &generator, NormalDistribution &normal_distribution, double mu,
+                                     double sigma) = 0;
+  virtual void initialize_xavier(minstd_rand0 &generator, uniform_real_distribution<double> &rng_1_1, double range) = 0;
+  virtual void initialize_kaiming(minstd_rand0 &generator, NormalDistribution &normal_distribution, double range) = 0;
+  virtual void initialize_uniform_random(minstd_rand0 &generator, uniform_real_distribution<double> &rng) = 0;
 
   virtual void input_fired(int32_t time, double incoming_output) = 0;
   virtual void output_fired(int32_t time, double delta) = 0;
@@ -109,10 +107,8 @@ class RNN_Node_Interface {
 
   virtual void get_weights(vector<double> &parameters) const = 0;
   virtual void set_weights(const vector<double> &parameters) = 0;
-  virtual void get_weights(uint32_t &offset,
-                           vector<double> &parameters) const = 0;
-  virtual void set_weights(uint32_t &offset,
-                           const vector<double> &parameters) = 0;
+  virtual void get_weights(uint32_t &offset, vector<double> &parameters) const = 0;
+  virtual void set_weights(uint32_t &offset, const vector<double> &parameters) = 0;
   virtual void reset(uint32_t _series_length) = 0;
 
   virtual void get_gradients(vector<double> &gradients) = 0;
@@ -123,7 +119,7 @@ class RNN_Node_Interface {
 
   int32_t get_node_type() const;
   int32_t get_layer_type() const;
-  int32_t get_innovation_number() const;
+  node_inon get_inon() const;
   int32_t get_total_inputs() const;
   int32_t get_total_outputs() const;
 
@@ -139,22 +135,19 @@ class RNN_Node_Interface {
   friend class RNN_Genome;
   friend class GenomeOperators;
 
-  friend void get_mse(RNN *genome, const vector<vector<double>> &expected,
-                      double &mse, vector<vector<double>> &deltas);
-  friend void get_mae(RNN *genome, const vector<vector<double>> &expected,
-                      double &mae, vector<vector<double>> &deltas);
+  friend void get_mse(RNN *genome, const vector<vector<double>> &expected, double &mse, vector<vector<double>> &deltas);
+  friend void get_mae(RNN *genome, const vector<vector<double>> &expected, double &mae, vector<vector<double>> &deltas);
 };
 
-struct sort_RNN_Nodes_by_innovation {
-  bool operator()(RNN_Node_Interface *n1, RNN_Node_Interface *n2) {
-    return n1->get_innovation_number() < n2->get_innovation_number();
-  }
+struct sort_RNN_Nodes_by_inon {
+  bool operator()(RNN_Node_Interface *n1, RNN_Node_Interface *n2) { return n1->inon < n2->inon; }
 };
 
 struct sort_RNN_Nodes_by_depth {
-  bool operator()(RNN_Node_Interface *n1, RNN_Node_Interface *n2) {
-    return n1->get_depth() < n2->get_depth();
-  }
+  bool operator()(RNN_Node_Interface *n1, RNN_Node_Interface *n2) { return n1->get_depth() < n2->get_depth(); }
 };
+
+void insert_node_by_depth(vector<RNN_Node_Interface *> &nodes, RNN_Node_Interface *node);
+void insert_node_by_inon(vector<RNN_Node_Interface *> &nodes, RNN_Node_Interface *node);
 
 #endif

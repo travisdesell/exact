@@ -23,16 +23,15 @@ using std::vector;
 
 #define NUMBER_DELTA_WEIGHTS 6
 
-Delta_Node::Delta_Node(int _innovation_number, int _type, double _depth)
-    : RNN_Node_Interface(_innovation_number, _type, _depth) {
+Delta_Node::Delta_Node(inon_type<RNN_Node_Interface> _inon, int _type, double _depth)
+    : RNN_Node_Interface(_inon, _type, _depth) {
   node_type = DELTA_NODE;
 }
 
 Delta_Node::~Delta_Node() {}
 
-void Delta_Node::initialize_lamarckian(minstd_rand0 &generator,
-                                       NormalDistribution &normal_distribution,
-                                       double mu, double sigma) {
+void Delta_Node::initialize_lamarckian(minstd_rand0 &generator, NormalDistribution &normal_distribution, double mu,
+                                       double sigma) {
   alpha = bound(normal_distribution.random(generator, mu, sigma));
   beta1 = bound(normal_distribution.random(generator, mu, sigma));
   beta2 = bound(normal_distribution.random(generator, mu, sigma));
@@ -41,9 +40,7 @@ void Delta_Node::initialize_lamarckian(minstd_rand0 &generator,
   z_hat_bias = bound(normal_distribution.random(generator, mu, sigma));
 }
 
-void Delta_Node::initialize_xavier(minstd_rand0 &generator,
-                                   uniform_real_distribution<double> &rng_1_1,
-                                   double range) {
+void Delta_Node::initialize_xavier(minstd_rand0 &generator, uniform_real_distribution<double> &rng_1_1, double range) {
   alpha = range * (rng_1_1(generator));
   beta1 = range * (rng_1_1(generator));
   beta2 = range * (rng_1_1(generator));
@@ -52,9 +49,7 @@ void Delta_Node::initialize_xavier(minstd_rand0 &generator,
   z_hat_bias = range * (rng_1_1(generator));
 }
 
-void Delta_Node::initialize_kaiming(minstd_rand0 &generator,
-                                    NormalDistribution &normal_distribution,
-                                    double range) {
+void Delta_Node::initialize_kaiming(minstd_rand0 &generator, NormalDistribution &normal_distribution, double range) {
   alpha = range * normal_distribution.random(generator, 0, 1);
   beta1 = range * normal_distribution.random(generator, 0, 1);
   beta2 = range * normal_distribution.random(generator, 0, 1);
@@ -63,8 +58,7 @@ void Delta_Node::initialize_kaiming(minstd_rand0 &generator,
   z_hat_bias = range * normal_distribution.random(generator, 0, 1);
 }
 
-void Delta_Node::initialize_uniform_random(
-    minstd_rand0 &generator, uniform_real_distribution<double> &rng) {
+void Delta_Node::initialize_uniform_random(minstd_rand0 &generator, uniform_real_distribution<double> &rng) {
   alpha = rng(generator);
   beta1 = rng(generator);
   beta2 = rng(generator);
@@ -90,8 +84,7 @@ double Delta_Node::get_gradient(string gradient_name) {
     } else if (gradient_name == "z_hat_bias") {
       gradient_sum += d_z_hat_bias[i];
     } else {
-      Log::fatal("ERROR: tried to get unknown gradient: '%s'\n",
-                 gradient_name.c_str());
+      Log::fatal("ERROR: tried to get unknown gradient: '%s'\n", gradient_name.c_str());
       exit(1);
     }
   }
@@ -100,8 +93,7 @@ double Delta_Node::get_gradient(string gradient_name) {
 }
 
 void Delta_Node::print_gradient(string gradient_name) {
-  Log::info("\tgradient['%s']: %lf\n", gradient_name.c_str(),
-            get_gradient(gradient_name));
+  Log::info("\tgradient['%s']: %lf\n", gradient_name.c_str(), get_gradient(gradient_name));
 }
 
 void Delta_Node::input_fired(int time, double incoming_output) {
@@ -113,9 +105,9 @@ void Delta_Node::input_fired(int time, double incoming_output) {
     return;
   else if (inputs_fired[time] > total_inputs) {
     Log::fatal(
-        "ERROR: inputs_fired on Delta_Node %d at time %d is %d and "
+        "ERROR: inputs_fired on Delta_Node %lld at time %d is %d and "
         "total_inputs is %d\n",
-        innovation_number, time, inputs_fired[time], total_inputs);
+        inon, time, inputs_fired[time], total_inputs);
     exit(1);
   }
 
@@ -164,9 +156,9 @@ void Delta_Node::try_update_deltas(int time) {
     return;
   else if (outputs_fired[time] > total_outputs) {
     Log::fatal(
-        "ERROR: outputs_fired on Delta_Node %d at time %d is %d and "
+        "ERROR: outputs_fired on Delta_Node %lld at time %d is %d and "
         "total_outputs is %d\n",
-        innovation_number, time, outputs_fired[time], total_outputs);
+        inon, time, outputs_fired[time], total_outputs);
     exit(1);
   }
 
@@ -183,7 +175,7 @@ void Delta_Node::try_update_deltas(int time) {
 
   // backprop output gate
   double d_z = error;
-  if (time < (((signed)series_length) - 1)) d_z += d_z_prev[time + 1];
+  if (time < (((signed) series_length) - 1)) d_z += d_z_prev[time + 1];
   // get the error into the output (z), it's the error from ahead in the
   // network as well as from the previous output of the cell
 
@@ -249,10 +241,7 @@ void Delta_Node::set_weights(const vector<double> &parameters) {
   set_weights(offset, parameters);
 }
 
-void Delta_Node::set_weights(uint32_t &offset,
-                             const vector<double> &parameters) {
-  // uint32_t start_offset = offset;
-
+void Delta_Node::set_weights(uint32_t &offset, const vector<double> &parameters) {
   alpha = bound(parameters[offset++]);
   beta1 = bound(parameters[offset++]);
   beta2 = bound(parameters[offset++]);
@@ -260,16 +249,9 @@ void Delta_Node::set_weights(uint32_t &offset,
 
   r_bias = bound(parameters[offset++]);
   z_hat_bias = bound(parameters[offset++]);
-
-  // uint32_t end_offset = offset;
-  // Log::trace("set weights from offset %d to %d on Delta_node %d\n",
-  // start_offset, end_offset, innovation_number);
 }
 
-void Delta_Node::get_weights(uint32_t &offset,
-                             vector<double> &parameters) const {
-  // uint32_t start_offset = offset;
-
+void Delta_Node::get_weights(uint32_t &offset, vector<double> &parameters) const {
   parameters[offset++] = alpha;
   parameters[offset++] = beta1;
   parameters[offset++] = beta2;
@@ -277,18 +259,12 @@ void Delta_Node::get_weights(uint32_t &offset,
 
   parameters[offset++] = r_bias;
   parameters[offset++] = z_hat_bias;
-
-  // uint32_t end_offset = offset;
-  // Log::trace("got weights from offset %d to %d on Delta_node %d\n",
-  // start_offset, end_offset, innovation_number);
 }
 
 void Delta_Node::get_gradients(vector<double> &gradients) {
   gradients.assign(NUMBER_DELTA_WEIGHTS, 0.0);
 
-  for (uint32_t i = 0; i < NUMBER_DELTA_WEIGHTS; i++) {
-    gradients[i] = 0.0;
-  }
+  for (uint32_t i = 0; i < NUMBER_DELTA_WEIGHTS; i++) { gradients[i] = 0.0; }
 
   for (uint32_t i = 0; i < series_length; i++) {
     gradients[0] += d_alpha[i];
@@ -329,7 +305,7 @@ void Delta_Node::reset(uint32_t _series_length) {
 }
 
 RNN_Node_Interface *Delta_Node::copy() const {
-  Delta_Node *n = new Delta_Node(innovation_number, layer_type, depth);
+  Delta_Node *n = new Delta_Node(inon, layer_type, depth);
 
   // copy Delta_Node weights
   n->alpha = alpha;
@@ -372,6 +348,4 @@ RNN_Node_Interface *Delta_Node::copy() const {
   return n;
 }
 
-void Delta_Node::write_to_stream(ostream &out) {
-  RNN_Node_Interface::write_to_stream(out);
-}
+void Delta_Node::write_to_stream(ostream &out) { RNN_Node_Interface::write_to_stream(out); }

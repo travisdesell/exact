@@ -28,19 +28,16 @@ int main(int argc, char **argv) {
   string output_directory;
   get_argument(arguments, "--output_directory", true, output_directory);
 
-  TimeSeriesSets *time_series_sets =
-      TimeSeriesSets::generate_from_arguments(arguments);
+  TimeSeriesSets *time_series_sets = TimeSeriesSets::generate_from_arguments(arguments);
   Log::debug("got time series sets.\n");
 
   int32_t max_lag = 0;
   get_argument(arguments, "--max_lag", true, max_lag);
 
   string target_parameter_name;
-  get_argument(arguments, "--target_parameter_name", true,
-               target_parameter_name);
+  get_argument(arguments, "--target_parameter_name", true, target_parameter_name);
 
-  vector<string> parameter_names =
-      time_series_sets->get_input_parameter_names();
+  vector<string> parameter_names = time_series_sets->get_input_parameter_names();
 
   for (uint32_t i = 0; i < time_series_sets->get_number_series(); i++) {
     TimeSeriesSet *tss = time_series_sets->get_set(i);
@@ -56,13 +53,10 @@ int main(int argc, char **argv) {
     cout << "prefix: '" << prefix << "'" << endl;
     cout << "suffix: '" << suffix << "'" << endl;
 
-    string correlations_csv_filename =
-        output_directory + "/" + prefix + "_correlations.csv";
-    string headers_txt_filename =
-        output_directory + "/" + prefix + "_headers.txt";
+    string correlations_csv_filename = output_directory + "/" + prefix + "_correlations.csv";
+    string headers_txt_filename = output_directory + "/" + prefix + "_headers.txt";
 
-    cout << "correlations_csv_filename: '" << correlations_csv_filename << "'"
-         << endl;
+    cout << "correlations_csv_filename: '" << correlations_csv_filename << "'" << endl;
     cout << "headers_txt_filename: '" << headers_txt_filename << "'" << endl;
 
     ofstream correlations_csv(correlations_csv_filename);
@@ -72,8 +66,7 @@ int main(int argc, char **argv) {
       if (parameter_names[j].compare(target_parameter_name) == 0) continue;
 
       for (uint32_t k = 1; k < max_lag; k++) {
-        double correlation =
-            tss->get_correlation(target_parameter_name, parameter_names[j], k);
+        double correlation = tss->get_correlation(target_parameter_name, parameter_names[j], k);
 
         if (k > 1) correlations_csv << ",";
         correlations_csv << correlation;

@@ -30,74 +30,58 @@ using std::vector;
 
 #define NUMBER_RANDOM_DAG_WEIGHTS 10
 
-RANDOM_DAG_Node::RANDOM_DAG_Node(int _innovation_number, int _type,
-                                 double _depth)
-    : RNN_Node_Interface(_innovation_number, _type, _depth) {
+RANDOM_DAG_Node::RANDOM_DAG_Node(node_inon _inon, int _type, double _depth) : RNN_Node_Interface(_inon, _type, _depth) {
   node_type = RANDOM_DAG_NODE;
 }
 
 RANDOM_DAG_Node::~RANDOM_DAG_Node() {}
 
-void RANDOM_DAG_Node::initialize_lamarckian(
-    minstd_rand0 &generator, NormalDistribution &normal_distribution, double mu,
-    double sigma) {
+void RANDOM_DAG_Node::initialize_lamarckian(minstd_rand0 &generator, NormalDistribution &normal_distribution, double mu,
+                                            double sigma) {
   zw = bound(normal_distribution.random(generator, mu, sigma));
   rw = bound(normal_distribution.random(generator, mu, sigma));
 
-  int assigned_node_weights =
-      2;  // 2 weights for the starting node assigned above
+  int assigned_node_weights = 2;  // 2 weights for the starting node assigned above
 
-  for (int new_node_weight = 0;
-       new_node_weight < NUMBER_RANDOM_DAG_WEIGHTS - assigned_node_weights;
+  for (int new_node_weight = 0; new_node_weight < NUMBER_RANDOM_DAG_WEIGHTS - assigned_node_weights;
        ++new_node_weight) {
-    weights.at(new_node_weight) =
-        bound(normal_distribution.random(generator, mu, sigma));
+    weights.at(new_node_weight) = bound(normal_distribution.random(generator, mu, sigma));
   }
 }
 
-void RANDOM_DAG_Node::initialize_xavier(
-    minstd_rand0 &generator, uniform_real_distribution<double> &rng_1_1,
-    double range) {
+void RANDOM_DAG_Node::initialize_xavier(minstd_rand0 &generator, uniform_real_distribution<double> &rng_1_1,
+                                        double range) {
   zw = range * (rng_1_1(generator));
   rw = range * (rng_1_1(generator));
 
-  int assigned_node_weights =
-      2;  // 2 weights for the starting node assigned above
+  int assigned_node_weights = 2;  // 2 weights for the starting node assigned above
 
-  for (int new_node_weight = 0;
-       new_node_weight < NUMBER_RANDOM_DAG_WEIGHTS - assigned_node_weights;
+  for (int new_node_weight = 0; new_node_weight < NUMBER_RANDOM_DAG_WEIGHTS - assigned_node_weights;
        ++new_node_weight) {
     weights.at(new_node_weight) = range * (rng_1_1(generator));
   }
 }
 
-void RANDOM_DAG_Node::initialize_kaiming(
-    minstd_rand0 &generator, NormalDistribution &normal_distribution,
-    double range) {
+void RANDOM_DAG_Node::initialize_kaiming(minstd_rand0 &generator, NormalDistribution &normal_distribution,
+                                         double range) {
   zw = range * normal_distribution.random(generator, 0, 1);
   rw = range * normal_distribution.random(generator, 0, 1);
 
-  int assigned_node_weights =
-      2;  // 2 weights for the starting node assigned above
+  int assigned_node_weights = 2;  // 2 weights for the starting node assigned above
 
-  for (int new_node_weight = 0;
-       new_node_weight < NUMBER_RANDOM_DAG_WEIGHTS - assigned_node_weights;
+  for (int new_node_weight = 0; new_node_weight < NUMBER_RANDOM_DAG_WEIGHTS - assigned_node_weights;
        ++new_node_weight) {
-    weights.at(new_node_weight) =
-        range * normal_distribution.random(generator, 0, 1);
+    weights.at(new_node_weight) = range * normal_distribution.random(generator, 0, 1);
   }
 }
 
-void RANDOM_DAG_Node::initialize_uniform_random(
-    minstd_rand0 &generator, uniform_real_distribution<double> &rng) {
+void RANDOM_DAG_Node::initialize_uniform_random(minstd_rand0 &generator, uniform_real_distribution<double> &rng) {
   zw = rng(generator);
   rw = rng(generator);
 
-  int assigned_node_weights =
-      2;  // 2 weights for the starting node assigned above
+  int assigned_node_weights = 2;  // 2 weights for the starting node assigned above
 
-  for (int new_node_weight = 0;
-       new_node_weight < NUMBER_RANDOM_DAG_WEIGHTS - assigned_node_weights;
+  for (int new_node_weight = 0; new_node_weight < NUMBER_RANDOM_DAG_WEIGHTS - assigned_node_weights;
        ++new_node_weight) {
     weights.at(new_node_weight) = rng(generator);
   }
@@ -128,8 +112,7 @@ double RANDOM_DAG_Node::get_gradient(string gradient_name) {
     } else if (gradient_name == "w8") {
       gradient_sum += d_weights[7][i];
     } else {
-      Log::fatal("ERROR: tried to get unknown gradient: '%s'\n",
-                 gradient_name.c_str());
+      Log::fatal("ERROR: tried to get unknown gradient: '%s'\n", gradient_name.c_str());
       exit(1);
     }
   }
@@ -137,8 +120,7 @@ double RANDOM_DAG_Node::get_gradient(string gradient_name) {
 }
 
 void RANDOM_DAG_Node::print_gradient(string gradient_name) {
-  Log::info("\tgradient['%s']: %lf\n", gradient_name.c_str(),
-            get_gradient(gradient_name));
+  Log::info("\tgradient['%s']: %lf\n", gradient_name.c_str(), get_gradient(gradient_name));
 }
 
 double RANDOM_DAG_Node::activation(double value, int act_operator) {
@@ -152,8 +134,7 @@ double RANDOM_DAG_Node::activation(double value, int act_operator) {
   exit(1);
 }
 
-double RANDOM_DAG_Node::activation_derivative(double value, double input,
-                                              int act_operator) {
+double RANDOM_DAG_Node::activation_derivative(double value, double input, int act_operator) {
   if (act_operator == 0) return sigmoid_derivative(input);
   if (act_operator == 1) return tanh_derivative(input);
   if (act_operator == 2) return swish_derivative(value, input);
@@ -166,10 +147,15 @@ double RANDOM_DAG_Node::activation_derivative(double value, double input,
 
 void RANDOM_DAG_Node::input_fired(int time, double incoming_output) {
   vector<vector<int>> connections{
-      {0, 0, 0, 0, 0, 1, 1, 1}, {0, 0, 0, 0, 0, 0, 0, 0},
-      {0, 0, 0, 0, 0, 0, 0, 0}, {0, 0, 0, 0, 0, 0, 0, 0},
-      {0, 0, 0, 0, 0, 0, 0, 0}, {0, 0, 0, 0, 0, 0, 1, 1},
-      {0, 0, 0, 0, 0, 0, 0, 1}, {0, 0, 0, 0, 0, 0, 0, 0}};
+      {0, 0, 0, 0, 0, 1, 1, 1},
+      {0, 0, 0, 0, 0, 0, 0, 0},
+      {0, 0, 0, 0, 0, 0, 0, 0},
+      {0, 0, 0, 0, 0, 0, 0, 0},
+      {0, 0, 0, 0, 0, 0, 0, 0},
+      {0, 0, 0, 0, 0, 0, 1, 1},
+      {0, 0, 0, 0, 0, 0, 0, 1},
+      {0, 0, 0, 0, 0, 0, 0, 0}
+  };
   vector<int> operations{1, 1, 1, 3, 3, 0, 2, 1, 2};
   int no_of_nodes = connections.size();
   for (int i = 0; i < no_of_nodes; i++) {
@@ -187,9 +173,9 @@ void RANDOM_DAG_Node::input_fired(int time, double incoming_output) {
     return;
   else if (inputs_fired[time] > total_inputs) {
     Log::fatal(
-        "ERROR: inputs_fired on RANDOM_DAG_Node %d at time %d is %d and "
+        "ERROR: inputs_fired on RANDOM_DAG_Node %lld at time %d is %d and "
         "total_inputs is %d\n",
-        innovation_number, time, inputs_fired[time], total_inputs);
+        inon, time, inputs_fired[time], total_inputs);
     exit(1);
   }
 
@@ -197,9 +183,9 @@ void RANDOM_DAG_Node::input_fired(int time, double incoming_output) {
   // r_bias += 1;
 
   Log::debug(
-      "ERROR: inputs_fired on RANDOM_DAG_Node %d at time %d is %d and "
+      "ERROR: inputs_fired on RANDOM_DAG_Node %lld at time %d is %d and "
       "no_of_nodes is %d\n",
-      innovation_number, time, inputs_fired[time], no_of_nodes);
+      inon, time, inputs_fired[time], no_of_nodes);
 
   double x = input_values[time];
 
@@ -211,8 +197,7 @@ void RANDOM_DAG_Node::input_fired(int time, double incoming_output) {
   double node0_sum = hrw + xzw;
 
   Nodes[0][time] = activation(node0_sum, operations[0]);
-  l_Nodes[0][time] =
-      activation_derivative(node0_sum, Nodes[0][time], operations[0]);
+  l_Nodes[0][time] = activation_derivative(node0_sum, Nodes[0][time], operations[0]);
   node_output[0] = 0;
   for (int i = 1; i < no_of_nodes; i++) {
     double node_mul = 0;
@@ -227,8 +212,7 @@ void RANDOM_DAG_Node::input_fired(int time, double incoming_output) {
     }
     node_mul *= weights[i - 1];
     Nodes[i][time] = activation(node_mul, operations[i]);
-    l_Nodes[i][time] =
-        activation_derivative(node_mul, Nodes[i][time], operations[i]);
+    l_Nodes[i][time] = activation_derivative(node_mul, Nodes[i][time], operations[i]);
   }
 
   // int fan_out = 0;
@@ -245,9 +229,9 @@ void RANDOM_DAG_Node::input_fired(int time, double incoming_output) {
   // output_values[time] /= fan_out;
 
   Log::debug(
-      "DEBUG: input_fired on RANDOM_DAG_Node %d at time %d is %d and "
+      "DEBUG: input_fired on RANDOM_DAG_Node %lld at time %d is %d and "
       "total_outputs is %d\n",
-      innovation_number, time, outputs_fired[time], total_outputs);
+      inon, time, outputs_fired[time], total_outputs);
 }
 
 void RANDOM_DAG_Node::try_update_deltas(int time) {
@@ -255,9 +239,9 @@ void RANDOM_DAG_Node::try_update_deltas(int time) {
     return;
   else if (outputs_fired[time] > total_outputs) {
     Log::fatal(
-        "ERROR: outputs_fired on RANDOM_DAG_Node %d at time %d is %d "
+        "ERROR: outputs_fired on RANDOM_DAG_Node %lld at time %d is %d "
         "and total_outputs is %d\n",
-        innovation_number, time, outputs_fired[time], total_outputs);
+        inon, time, outputs_fired[time], total_outputs);
     exit(1);
   }
 
@@ -270,15 +254,20 @@ void RANDOM_DAG_Node::try_update_deltas(int time) {
   if (time > 0) h_prev = output_values[time - 1];
 
   double d_h = error;
-  if (time < (((signed)series_length) - 1)) d_h += d_h_prev[time + 1];
+  if (time < (((signed) series_length) - 1)) d_h += d_h_prev[time + 1];
 
   // d_h *= fan_out;
 
   vector<vector<int>> connections{
-      {0, 0, 0, 0, 0, 1, 1, 1}, {0, 0, 0, 0, 0, 0, 0, 0},
-      {0, 0, 0, 0, 0, 0, 0, 0}, {0, 0, 0, 0, 0, 0, 0, 0},
-      {0, 0, 0, 0, 0, 0, 0, 0}, {0, 0, 0, 0, 0, 0, 1, 1},
-      {0, 0, 0, 0, 0, 0, 0, 1}, {0, 0, 0, 0, 0, 0, 0, 0}};
+      {0, 0, 0, 0, 0, 1, 1, 1},
+      {0, 0, 0, 0, 0, 0, 0, 0},
+      {0, 0, 0, 0, 0, 0, 0, 0},
+      {0, 0, 0, 0, 0, 0, 0, 0},
+      {0, 0, 0, 0, 0, 0, 0, 0},
+      {0, 0, 0, 0, 0, 0, 1, 1},
+      {0, 0, 0, 0, 0, 0, 0, 1},
+      {0, 0, 0, 0, 0, 0, 0, 0}
+  };
   int no_of_nodes = connections.size();
   vector<double> d_node_h(no_of_nodes, 0.0);
 
@@ -286,10 +275,8 @@ void RANDOM_DAG_Node::try_update_deltas(int time) {
     for (int j = 0; j < no_of_nodes; j++) {
       if (connections[i][j]) {
         int incoming_node = connections[i][j];
-        d_weights[i - 1][time] +=
-            d_node_h[i] * l_Nodes[i][time] * Nodes[incoming_node][time];
-        d_node_h[incoming_node] +=
-            d_node_h[i] * l_Nodes[i][time] * weights[i - 1];
+        d_weights[i - 1][time] += d_node_h[i] * l_Nodes[i][time] * Nodes[incoming_node][time];
+        d_node_h[incoming_node] += d_node_h[i] * l_Nodes[i][time] * weights[i - 1];
       }
     }
   }
@@ -307,9 +294,9 @@ void RANDOM_DAG_Node::try_update_deltas(int time) {
   // d_zw[time] = d_h*l_Nodes[0][time]*x;
 
   Log::debug(
-      "DEBUG: output_fired on RANDOM_DAG_Node %d at time %d is %d and "
+      "DEBUG: output_fired on RANDOM_DAG_Node %lld at time %d is %d and "
       "total_outputs is %d\n",
-      innovation_number, time, outputs_fired[time], total_outputs);
+      inon, time, outputs_fired[time], total_outputs);
 }
 
 void RANDOM_DAG_Node::error_fired(int time, double error) {
@@ -328,9 +315,7 @@ void RANDOM_DAG_Node::output_fired(int time, double delta) {
   try_update_deltas(time);
 }
 
-uint32_t RANDOM_DAG_Node::get_number_weights() const {
-  return NUMBER_RANDOM_DAG_WEIGHTS;
-}
+uint32_t RANDOM_DAG_Node::get_number_weights() const { return NUMBER_RANDOM_DAG_WEIGHTS; }
 
 void RANDOM_DAG_Node::get_weights(vector<double> &parameters) const {
   parameters.resize(get_number_weights());
@@ -343,50 +328,40 @@ void RANDOM_DAG_Node::set_weights(const vector<double> &parameters) {
   set_weights(offset, parameters);
 }
 
-void RANDOM_DAG_Node::set_weights(uint32_t &offset,
-                                  const vector<double> &parameters) {
+void RANDOM_DAG_Node::set_weights(uint32_t &offset, const vector<double> &parameters) {
   // uint32_t start_offset = offset;
 
-  int assigned_node_weights =
-      2;  // 2 weights for the starting node assigned above
+  int assigned_node_weights = 2;  // 2 weights for the starting node assigned above
 
   zw = bound(parameters[offset++]);
   rw = bound(parameters[offset++]);
 
-  for (int new_node_weight = 0;
-       new_node_weight < NUMBER_RANDOM_DAG_WEIGHTS - assigned_node_weights;
+  for (int new_node_weight = 0; new_node_weight < NUMBER_RANDOM_DAG_WEIGHTS - assigned_node_weights;
        ++new_node_weight) {
     if (weights.size() < NUMBER_RANDOM_DAG_WEIGHTS - assigned_node_weights) {
       weights.push_back(bound(parameters[offset++]));
     } else
       weights.at(new_node_weight) = bound(parameters[offset++]);
   }
-  Log::debug("DEBUG: no of  weights  on RANDOM_DAG_Node %d at time %d is %d \n",
-             innovation_number, time, weights.size());
+  Log::debug("DEBUG: no of  weights  on RANDOM_DAG_Node %lld at time %d is %d \n", inon, time, weights.size());
 }
 
-void RANDOM_DAG_Node::get_weights(uint32_t &offset,
-                                  vector<double> &parameters) const {
+void RANDOM_DAG_Node::get_weights(uint32_t &offset, vector<double> &parameters) const {
   // uint32_t start_offset = offset;
 
-  int assigned_node_weights =
-      2;  // 2 weights for the starting node assigned above
+  int assigned_node_weights = 2;  // 2 weights for the starting node assigned above
 
   parameters[offset++] = zw;
   parameters[offset++] = rw;
 
-  for (int new_node_weight = 0;
-       new_node_weight < NUMBER_RANDOM_DAG_WEIGHTS - assigned_node_weights;
-       ++new_node_weight)
+  for (int new_node_weight = 0; new_node_weight < NUMBER_RANDOM_DAG_WEIGHTS - assigned_node_weights; ++new_node_weight)
     parameters[offset++] = weights.at(new_node_weight);
 }
 
 void RANDOM_DAG_Node::get_gradients(vector<double> &gradients) {
   gradients.assign(NUMBER_RANDOM_DAG_WEIGHTS, 0.0);
 
-  for (uint32_t i = 0; i < NUMBER_RANDOM_DAG_WEIGHTS; i++) {
-    gradients[i] = 0.0;
-  }
+  for (uint32_t i = 0; i < NUMBER_RANDOM_DAG_WEIGHTS; i++) { gradients[i] = 0.0; }
 
   for (uint32_t i = 0; i < series_length; i++) {
     gradients[0] += d_zw[i];
@@ -411,8 +386,7 @@ void RANDOM_DAG_Node::reset(uint32_t _series_length) {
   d_zw.assign(series_length, 0.0);
   d_rw.assign(series_length, 0.0);
 
-  d_weights.assign(NUMBER_RANDOM_DAG_WEIGHTS,
-                   vector<double>(series_length, 0.0));
+  d_weights.assign(NUMBER_RANDOM_DAG_WEIGHTS, vector<double>(series_length, 0.0));
   d_h_prev.assign(series_length, 0.0);
   Nodes.assign(NUMBER_RANDOM_DAG_WEIGHTS, vector<double>(series_length, 0.0));
   l_Nodes.assign(NUMBER_RANDOM_DAG_WEIGHTS, vector<double>(series_length, 0.0));
@@ -429,8 +403,7 @@ void RANDOM_DAG_Node::reset(uint32_t _series_length) {
 }
 
 RNN_Node_Interface *RANDOM_DAG_Node::copy() const {
-  RANDOM_DAG_Node *n =
-      new RANDOM_DAG_Node(innovation_number, layer_type, depth);
+  RANDOM_DAG_Node *n = new RANDOM_DAG_Node(inon, layer_type, depth);
 
   // copy RANDOM_DAG_Node values
   n->rw = rw;
@@ -469,6 +442,4 @@ RNN_Node_Interface *RANDOM_DAG_Node::copy() const {
   return n;
 }
 
-void RANDOM_DAG_Node::write_to_stream(ostream &out) {
-  RNN_Node_Interface::write_to_stream(out);
-}
+void RANDOM_DAG_Node::write_to_stream(ostream &out) { RNN_Node_Interface::write_to_stream(out); }

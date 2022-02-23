@@ -30,7 +30,7 @@ using std::vector;
 #include "rnn/examm.hxx"
 #include "time_series/time_series.hxx"
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   arguments = vector<string>(argv, argv + argc);
 
   Log::initialize(arguments);
@@ -49,18 +49,14 @@ int main(int argc, char** argv) {
 
   uint32_t repeats = 5;
 
-  if (output_directory != "") {
-    mkdir(output_directory.c_str(), 0777);
-  }
+  if (output_directory != "") { mkdir(output_directory.c_str(), 0777); }
   ofstream overall_results(output_directory + "/overall_results.txt");
 
-  for (uint32_t i = 0; i < (uint32_t)time_series_sets->get_number_series();
-       i++) {
+  for (uint32_t i = 0; i < (uint32_t) time_series_sets->get_number_series(); i++) {
     vector<int> training_indexes;
     vector<int> test_indexes;
 
-    for (uint32_t j = 0; j < (uint32_t)time_series_sets->get_number_series();
-         j++) {
+    for (uint32_t j = 0; j < (uint32_t) time_series_sets->get_number_series(); j++) {
       if (j == i) {
         test_indexes.push_back(j);
       } else {
@@ -70,13 +66,10 @@ int main(int argc, char** argv) {
     time_series_sets->set_training_indexes(training_indexes);
     time_series_sets->set_test_indexes(training_indexes);
 
-    time_series_sets->export_training_series(time_offset, training_inputs,
-                                             training_outputs);
-    time_series_sets->export_test_series(time_offset, validation_inputs,
-                                         validation_outputs);
+    time_series_sets->export_training_series(time_offset, training_inputs, training_outputs);
+    time_series_sets->export_test_series(time_offset, validation_inputs, validation_outputs);
 
-    overall_results << "results for slice " << i << " of "
-                    << time_series_sets->get_number_series() << " as test data."
+    overall_results << "results for slice " << i << " of " << time_series_sets->get_number_series() << " as test data."
                     << endl;
 
     for (uint32_t k = 0; k < repeats; k++) {
@@ -84,56 +77,34 @@ int main(int argc, char** argv) {
       set_innovation_counts(examm);
       vector<thread> threads;
       for (int32_t i = 0; i < number_threads; i++) {
-        threads.push_back(thread(
-            examm_thread, i, make_genome_operators(i), random_sequence_length,
-            sequence_length_lower_bound, sequence_length_upper_bound));
+        threads.push_back(thread(examm_thread, number_workers, i, make_genome_operators(i), random_sequence_length,
+                                 sequence_length_lower_bound, sequence_length_upper_bound));
       }
 
-      for (int32_t i = 0; i < number_threads; i++) {
-        threads[i].join();
-      }
+      for (int32_t i = 0; i < number_threads; i++) { threads[i].join(); }
 
       finished = true;
 
       Log::info("completed!\n");
 
-      RNN_Genome* best_genome = examm->get_best_genome()->copy();
+      RNN_Genome *best_genome = examm->get_best_genome()->copy();
 
       vector<double> best_parameters = best_genome->get_best_parameters();
-      Log::info("training MSE: %lf\n",
-                best_genome->get_mse(best_parameters, training_inputs,
-                                     training_outputs));
-      Log::info("training MSE: %lf\n",
-                best_genome->get_mae(best_parameters, training_inputs,
-                                     training_outputs));
-      Log::info("validation MSE: %lf\n",
-                best_genome->get_mse(best_parameters, validation_inputs,
-                                     validation_outputs));
-      Log::info("validation MSE: %lf\n",
-                best_genome->get_mae(best_parameters, validation_inputs,
-                                     validation_outputs));
+      Log::info("training MSE: %lf\n", best_genome->get_mse(best_parameters, training_inputs, training_outputs));
+      Log::info("training MSE: %lf\n", best_genome->get_mae(best_parameters, training_inputs, training_outputs));
+      Log::info("validation MSE: %lf\n", best_genome->get_mse(best_parameters, validation_inputs, validation_outputs));
+      Log::info("validation MSE: %lf\n", best_genome->get_mae(best_parameters, validation_inputs, validation_outputs));
 
-      overall_results << setw(15) << fixed
-                      << best_genome->get_mse(best_parameters, training_inputs,
-                                              training_outputs)
+      overall_results << setw(15) << fixed << best_genome->get_mse(best_parameters, training_inputs, training_outputs)
                       << ", " << setw(15) << fixed
-                      << best_genome->get_mae(best_parameters, training_inputs,
-                                              training_outputs)
-                      << ", " << setw(15) << fixed
-                      << best_genome->get_mse(best_parameters,
-                                              validation_inputs,
-                                              validation_outputs)
-                      << ", " << setw(15) << fixed
-                      << best_genome->get_mae(best_parameters,
-                                              validation_inputs,
-                                              validation_outputs)
-                      << endl;
+                      << best_genome->get_mae(best_parameters, training_inputs, training_outputs) << ", " << setw(15)
+                      << fixed << best_genome->get_mse(best_parameters, validation_inputs, validation_outputs) << ", "
+                      << setw(15) << fixed
+                      << best_genome->get_mae(best_parameters, validation_inputs, validation_outputs) << endl;
 
-      best_genome->write_to_file(output_directory + "/" + output_filename +
-                                 "_slice_" + to_string(i) + "_repeat_" +
+      best_genome->write_to_file(output_directory + "/" + output_filename + "_slice_" + to_string(i) + "_repeat_" +
                                  to_string(k) + ".bin");
-      best_genome->write_graphviz(output_directory + "/" + output_filename +
-                                  "_slice_" + to_string(i) + "_repeat_" +
+      best_genome->write_graphviz(output_directory + "/" + output_filename + "_slice_" + to_string(i) + "_repeat_" +
                                   to_string(k) + ".gv");
 
       Log::debug("deleting genome\n");

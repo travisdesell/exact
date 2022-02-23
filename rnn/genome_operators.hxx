@@ -51,9 +51,8 @@ class GenomeOperators {
 #endif
 
   static constexpr double mutation_rates_total =
-      clone_rate + add_edge_rate + add_recurrent_edge_rate + enable_edge_rate +
-      disable_edge_rate + split_edge_rate + add_node_rate + enable_node_rate +
-      disable_node_rate + split_node_rate + merge_node_rate;
+      clone_rate + add_edge_rate + add_recurrent_edge_rate + enable_edge_rate + disable_edge_rate + split_edge_rate +
+      add_node_rate + enable_node_rate + disable_node_rate + split_node_rate + merge_node_rate;
 
   static constexpr double mutation_p = 0.70;
   static constexpr double co_p = 0.30;
@@ -94,48 +93,30 @@ class GenomeOperators {
   uniform_real_distribution<double> rng_crossover_weight{-0.5, 1.5};
   uniform_int_distribution<int32_t> recurrent_depth_dist;
 
-  int32_t get_next_node_innovation_number();
-  int32_t get_next_edge_innovation_number();
   void set_possible_node_types(vector<string> &node_types);
   int get_random_node_type();
 
-  void attempt_node_insert(vector<RNN_Node_Interface *> &child_nodes,
-                           const RNN_Node_Interface *node,
+  void attempt_node_insert(vector<RNN_Node_Interface *> &child_nodes, const RNN_Node_Interface *node,
                            const vector<double> &new_weights);
-  void attempt_edge_insert(vector<RNN_Edge *> &child_edges,
-                           vector<RNN_Node_Interface *> &child_nodes,
-                           RNN_Edge *edge, RNN_Edge *second_edge,
-                           bool set_enabled);
-  void attempt_recurrent_edge_insert(
-      vector<RNN_Recurrent_Edge *> &child_recurrent_edges,
-      vector<RNN_Node_Interface *> &child_nodes,
-      RNN_Recurrent_Edge *recurrent_edge, RNN_Recurrent_Edge *second_edge,
-      bool set_enabled);
+  void attempt_edge_insert(vector<RNN_Edge *> &child_edges, vector<RNN_Node_Interface *> &child_nodes, RNN_Edge *edge,
+                           RNN_Edge *second_edge, bool set_enabled);
+  void attempt_recurrent_edge_insert(vector<RNN_Recurrent_Edge *> &child_recurrent_edges,
+                                     vector<RNN_Node_Interface *> &child_nodes, RNN_Recurrent_Edge *recurrent_edge,
+                                     RNN_Recurrent_Edge *second_edge, bool set_enabled);
 
   // Perform the "reflect" step of simplex to obtain a new weight
-  double simplex_weight_crossover_1d(
-      vector<pair<GenomeRank, double> > &weights);
+  double simplex_weight_crossover_1d(vector<pair<GenomeRank, double> > &weights);
   // Similar, but works on x in R^N instead of just R
-  double simplex_weight_crossover_2d(
-      vector<pair<GenomeRank, vector<double> > > &weights);
+  double simplex_weight_crossover_2d(vector<pair<GenomeRank, vector<double> > > &weights);
 
  public:
   const TrainingParameters training_parameters;
-  int32_t edge_innovation_count;
-  int32_t node_innovation_count;
-  function<int32_t()> next_edge_innovation_number;
-  function<int32_t()> next_node_innovation_number;
 
-  GenomeOperators(
-      int32_t _number_workers, int32_t _worker_id, int32_t _number_inputs,
-      int32_t _number_outputs, pair<int32_t, int32_t> n_parents_inra_range,
-      pair<int32_t, int32_t> n_parents_inter_range,
-      pair<int32_t, int32_t> n_mutations_range, int32_t _edge_innovation_count,
-      int32_t _node_innovation_count, int32_t _min_recurrent_depth,
-      int32_t _max_recurrent_depth, WeightType _weight_initialize,
-      WeightType _weight_inheritance, WeightType _mutated_component_weight,
-      DatasetMeta _dataset_meta, TrainingParameters _training_parameters,
-      vector<string> possible_node_types);
+  GenomeOperators(int32_t _number_inputs, int32_t _number_outputs, pair<int32_t, int32_t> n_parents_inra_range,
+                  pair<int32_t, int32_t> n_parents_inter_range, pair<int32_t, int32_t> n_mutations_range,
+                  int32_t _min_recurrent_depth, int32_t _max_recurrent_depth, WeightType _weight_initialize,
+                  WeightType _weight_inheritance, WeightType _mutated_component_weight, DatasetMeta _dataset_meta,
+                  TrainingParameters _training_parameters, vector<string> possible_node_types);
 
   int32_t get_random_n_mutations();
   RNN_Genome *mutate(RNN_Genome *g, int32_t n_mutations);
@@ -146,8 +127,6 @@ class GenomeOperators {
   RNN_Genome *crossover(RNN_Genome *more_fit, RNN_Genome *less_fit);
 
   void finalize_genome(RNN_Genome *g);
-  void set_edge_innovation_count(int32_t);
-  void set_node_innovation_count(int32_t);
   const vector<int> &get_possible_node_types();
 
   int get_number_inputs();

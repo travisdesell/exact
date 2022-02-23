@@ -28,10 +28,10 @@ class NeatSpeciationStrategy : public SpeciationStrategy {
   double neat_c1;
   double neat_c2;
   double neat_c3;
-  double mutation_rate; /**< How frequently to do mutations. Note that
-                           mutation_rate + intra_island_crossover_rate +
-                           inter_island_crossover_rate should equal 1, if not
-                           they will be scaled down such that they do. */
+  double mutation_rate;               /**< How frequently to do mutations. Note that
+                                         mutation_rate + intra_island_crossover_rate +
+                                         inter_island_crossover_rate should equal 1, if not
+                                         they will be scaled down such that they do. */
   double intra_island_crossover_rate; /**< How frequently to do intra-island
                                          crossovers. Note that mutation_rate +
                                          intra_island_crossover_rate +
@@ -51,10 +51,9 @@ class NeatSpeciationStrategy : public SpeciationStrategy {
   int32_t inserted_genomes;  /**< How many genomes have been inserted into this
                                 speciatoin strategy. */
 
-  shared_ptr<const RNN_Genome>
-      minimal_genome; /**< keep a reference to a minimal genome so we
-        can re-use it across islands and not duplicate
-        innovation numbers. */
+  shared_ptr<const RNN_Genome> minimal_genome; /**< keep a reference to a minimal genome so we
+                                 can re-use it across islands and not duplicate
+                                 innovation numbers. */
 
   minstd_rand0 generator;
 
@@ -63,11 +62,9 @@ class NeatSpeciationStrategy : public SpeciationStrategy {
   GenomeOperators genome_operators;
 
  public:
-  NeatSpeciationStrategy(shared_ptr<const RNN_Genome> _seed_genome,
-                         double _species_threshold, double _fitness_threshold,
-                         double _neat_c1, double _neat_c2, double _neat_c3,
-                         minstd_rand0 &_generator,
-                         GenomeOperators genome_operators);
+  NeatSpeciationStrategy(shared_ptr<const RNN_Genome> _seed_genome, double _species_threshold,
+                         double _fitness_threshold, double _neat_c1, double _neat_c2, double _neat_c3,
+                         minstd_rand0 &_generator, GenomeOperators genome_operators);
   /**
    * \return the number of generated genomes.
    */
@@ -112,8 +109,7 @@ class NeatSpeciationStrategy : public SpeciationStrategy {
    * \return a value < 0 if the genome was not inserted, 0 if it was a new best
    * genome or > 0 otherwise.
    */
-  pair<int32_t, const RNN_Genome *> insert_genome(
-      unique_ptr<RNN_Genome> genome);
+  pair<int32_t, const RNN_Genome *> insert_genome(unique_ptr<RNN_Genome> genome);
 
   /**
    * Generates a new genome.
@@ -126,16 +122,14 @@ class NeatSpeciationStrategy : public SpeciationStrategy {
    *
    * \return the newly generated genome.
    */
-  unique_ptr<WorkMsg> generate_work(uniform_real_distribution<double> &rng_0_1,
-                                    minstd_rand0 &generator);
+  unique_ptr<WorkMsg> generate_work(uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator);
   // RNN_Genome* generate_genome(uniform_real_distribution<double> &rng_0_1,
   // minstd_rand0 &generator, function<void (int32_t, RNN_Genome*)> &mutate,
   // function<RNN_Genome* (RNN_Genome*, RNN_Genome *)> &crossover, int32_t
   // number_stir_mutations);
 
-  unique_ptr<WorkMsg> generate_work_for_species(
-      Species &species, uniform_real_distribution<double> &rng_0_1,
-      minstd_rand0 &generator);
+  unique_ptr<WorkMsg> generate_work_for_species(Species &species, uniform_real_distribution<double> &rng_0_1,
+                                                minstd_rand0 &generator);
 
   /**
    * Prints out all the island's populations
@@ -160,7 +154,7 @@ class NeatSpeciationStrategy : public SpeciationStrategy {
 
   double get_distance(const RNN_Genome *g1, const RNN_Genome *g2);
 
-  int get_exceed_number(vector<int32_t> v1, vector<int32_t> v2);
+  int get_exceed_number(vector<edge_inon> v1, vector<edge_inon> v2);
 
   void rank_species();
 

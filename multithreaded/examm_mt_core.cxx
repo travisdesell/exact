@@ -27,9 +27,19 @@ vector<vector<vector<double> > > training_outputs;
 vector<vector<vector<double> > > validation_inputs;
 vector<vector<vector<double> > > validation_outputs;
 
-void examm_thread(int id, GenomeOperators genome_operators,
-                  bool random_sequence_length, int lower_length_bound,
-                  int upper_length_bound) {
+void examm_thread(int number_workers, int id, GenomeOperators genome_operators, bool random_sequence_length,
+                  int lower_length_bound, int upper_length_bound) {
+  examm_mutex.lock();
+
+  auto seed = examm->get_seed_genome();
+  node_inon nin = node_inon(seed->get_max_node_inon().inon + id + 1);
+  edge_inon ein = edge_inon(seed->get_max_edge_inon().inon + id + 1);
+
+  node_inon::init(nin.inon, number_workers);
+  edge_inon::init(ein.inon, number_workers);
+
+  examm_mutex.unlock();
+
   unique_ptr<RNN_Genome> g;
   string main_id = "examm_thread_" + to_string(id);
   while (true) {
@@ -52,21 +62,17 @@ void examm_thread(int id, GenomeOperators genome_operators,
         break;
       }
       default:
-        Log::fatal("Should never recieve a message of type %d in examm_mt\n",
-                   work->get_msg_ty());
+        Log::fatal("Should never recieve a message of type %d in examm_mt\n", work->get_msg_ty());
         exit(1);
         break;
     }
 
-    string log_id = "genome_" + to_string(g->get_generation_id()) + "_thread_" +
-                    to_string(id);
+    string log_id = "genome_" + to_string(g->get_generation_id()) + "_thread_" + to_string(id);
     Log::set_id(log_id);
     if (genome_operators.training_parameters.bp_iterations > 0)
-      g->backpropagate_stochastic(training_inputs, training_outputs,
-                                  validation_inputs, validation_outputs);
+      g->backpropagate_stochastic(training_inputs, training_outputs, validation_inputs, validation_outputs);
     else
-      g->calculate_fitness(training_inputs, training_outputs, validation_inputs,
-                           validation_outputs);
+      g->calculate_fitness(training_inputs, training_outputs, validation_inputs, validation_outputs);
     Log::release_id(log_id);
   }
 

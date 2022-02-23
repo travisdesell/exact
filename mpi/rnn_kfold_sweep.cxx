@@ -60,11 +60,9 @@ WeightType weight_initialize = get_enum_from_string(weight_initialize_string);
 
 string process_name;
 
-vector<string> rnn_types({"one_layer_ff", "two_layer_ff", "jordan", "elman",
-                          "one_layer_mgu", "two_layer_mgu", "one_layer_gru",
-                          "two_layer_gru", "one_layer_ugrnn", "two_layer_ugrnn",
-                          "one_layer_delta", "two_layer_delta",
-                          "one_layer_lstm", "two_layer_lstm"});
+vector<string> rnn_types({"one_layer_ff", "two_layer_ff", "jordan", "elman", "one_layer_mgu", "two_layer_mgu",
+                          "one_layer_gru", "two_layer_gru", "one_layer_ugrnn", "two_layer_ugrnn", "one_layer_delta",
+                          "two_layer_delta", "one_layer_lstm", "two_layer_lstm"});
 
 TimeSeriesSets *time_series_sets = NULL;
 
@@ -82,23 +80,20 @@ vector<ResultSet> results;
 void send_work_request_to(int target) {
   int work_request_message[1];
   work_request_message[0] = 0;
-  MPI_Send(work_request_message, 1, MPI_INT, target, WORK_REQUEST_TAG,
-           MPI_COMM_WORLD);
+  MPI_Send(work_request_message, 1, MPI_INT, target, WORK_REQUEST_TAG, MPI_COMM_WORLD);
 }
 
 void receive_work_request_from(int source) {
   MPI_Status status;
   int work_request_message[1];
-  MPI_Recv(work_request_message, 1, MPI_INT, source, WORK_REQUEST_TAG,
-           MPI_COMM_WORLD, &status);
+  MPI_Recv(work_request_message, 1, MPI_INT, source, WORK_REQUEST_TAG, MPI_COMM_WORLD, &status);
 }
 
 void send_job_to(int target, int current_job) {
   int job_message[1];
   job_message[0] = current_job;
 
-  Log::debug("sending job %d of %d to %d\n", current_job, results.size(),
-             target);
+  Log::debug("sending job %d of %d to %d\n", current_job, results.size(), target);
   MPI_Send(job_message, 1, MPI_INT, target, JOB_TAG, MPI_COMM_WORLD);
 }
 
@@ -115,12 +110,9 @@ int receive_job_from(int source) {
 }
 
 string result_to_string(ResultSet result) {
-  return "[result, job: " + to_string(result.job) +
-         ", training mae: " + to_string(result.training_mae) +
-         ", training mse: " + to_string(result.training_mse) +
-         ", test mae: " + to_string(result.test_mae) +
-         ", test mse: " + to_string(result.test_mae) +
-         ", millis: " + to_string(result.milliseconds) + "]";
+  return "[result, job: " + to_string(result.job) + ", training mae: " + to_string(result.training_mae) +
+         ", training mse: " + to_string(result.training_mse) + ", test mae: " + to_string(result.test_mae) +
+         ", test mse: " + to_string(result.test_mae) + ", millis: " + to_string(result.milliseconds) + "]";
 }
 
 void send_result_to(int target, ResultSet result) {
@@ -138,8 +130,7 @@ ResultSet receive_result_from(int source) {
   size_t result_size = sizeof(result);
   char bytes[result_size];
 
-  MPI_Recv(bytes, result_size, MPI_CHAR, source, RESULT_TAG, MPI_COMM_WORLD,
-           &status);
+  MPI_Recv(bytes, result_size, MPI_CHAR, source, RESULT_TAG, MPI_COMM_WORLD, &status);
 
   memcpy(&result, bytes, result_size);
 
@@ -149,15 +140,13 @@ ResultSet receive_result_from(int source) {
 void send_terminate_to(int target) {
   int terminate_message[1];
   terminate_message[0] = 0;
-  MPI_Send(terminate_message, 1, MPI_INT, target, TERMINATE_TAG,
-           MPI_COMM_WORLD);
+  MPI_Send(terminate_message, 1, MPI_INT, target, TERMINATE_TAG, MPI_COMM_WORLD);
 }
 
 void receive_terminate_from(int source) {
   MPI_Status status;
   int terminate_message[1];
-  MPI_Recv(terminate_message, 1, MPI_INT, source, TERMINATE_TAG, MPI_COMM_WORLD,
-           &status);
+  MPI_Recv(terminate_message, 1, MPI_INT, source, TERMINATE_TAG, MPI_COMM_WORLD, &status);
 }
 
 // tweaked from:
@@ -168,9 +157,7 @@ static int do_mkdir(const char *path, mode_t mode) {
 
   if (stat(path, &st) != 0) {
     /* Directory does not exist. EEXIST for race condition */
-    if (mkdir(path, mode) != 0 && errno != EEXIST) {
-      status = -1;
-    }
+    if (mkdir(path, mode) != 0 && errno != EEXIST) { status = -1; }
 
   } else if (!S_ISDIR(st.st_mode)) {
     errno = ENOTDIR;
@@ -205,9 +192,7 @@ int mkpath(const char *path, mode_t mode) {
     pp = sp + 1;
   }
 
-  if (status == 0) {
-    status = do_mkdir(path, mode);
-  }
+  if (status == 0) { status = do_mkdir(path, mode); }
 
   free(copypath);
   return (status);
@@ -223,14 +208,12 @@ void master(int max_rank) {
 
   // initialize the results with -1 as the job so we can determine if a
   // particular rnn type has completed
-  results = vector<ResultSet>(
-      rnn_types.size() * time_series_sets->get_number_series() * repeats,
-      {-1, 0.0, 0.0, 0.0, 0.0, 0});
+  results = vector<ResultSet>(rnn_types.size() * time_series_sets->get_number_series() * repeats,
+                              {-1, 0.0, 0.0, 0.0, 0.0, 0});
 
   int terminates_sent = 0;
   int current_job = 0;
-  int last_job = rnn_types.size() *
-                 (time_series_sets->get_number_series() / fold_size) * repeats;
+  int last_job = rnn_types.size() * (time_series_sets->get_number_series() / fold_size) * repeats;
 
   while (true) {
     // wait for a incoming message
@@ -239,8 +222,7 @@ void master(int max_rank) {
 
     int message_source = status.MPI_SOURCE;
     int tag = status.MPI_TAG;
-    Log::debug("probe returned message from: %d with tag: %d\n", message_source,
-               tag);
+    Log::debug("probe returned message from: %d with tag: %d\n", message_source, tag);
 
     // if the message is a work request, send a genome
 
@@ -254,8 +236,7 @@ void master(int max_rank) {
         send_terminate_to(message_source);
         terminates_sent++;
 
-        Log::debug("sent: %d terminates of: %d\n", terminates_sent,
-                   (max_rank - 1));
+        Log::debug("sent: %d terminates of: %d\n", terminates_sent, (max_rank - 1));
         if (terminates_sent >= max_rank - 1) return;
 
       } else {
@@ -274,8 +255,7 @@ void master(int max_rank) {
       // TODO:
       // check and see if this particular set of jobs for rnn_type has
       // completed, then write the file for that type if it has
-      int32_t jobs_per_rnn =
-          (time_series_sets->get_number_series() / fold_size) * repeats;
+      int32_t jobs_per_rnn = (time_series_sets->get_number_series() / fold_size) * repeats;
 
       // get the particular rnn type this job was for, and which results should
       // be there
@@ -299,25 +279,19 @@ void master(int max_rank) {
       }
       Log::debug_no_header("\n");
 
-      Log::debug("rnn '%s' finished? %d\n", rnn_types[rnn].c_str(),
-                 rnn_finished);
+      Log::debug("rnn '%s' finished? %d\n", rnn_types[rnn].c_str(), rnn_finished);
 
       if (rnn_finished) {
-        ofstream outfile(output_directory + "/combined_" + rnn_types[rnn] +
-                         ".csv");
+        ofstream outfile(output_directory + "/combined_" + rnn_types[rnn] + ".csv");
 
         int32_t current = rnn_job_start;
-        for (int32_t j = 0;
-             j < (time_series_sets->get_number_series() / fold_size); j++) {
+        for (int32_t j = 0; j < (time_series_sets->get_number_series() / fold_size); j++) {
           for (int32_t k = 0; k < repeats; k++) {
-            outfile << j << "," << k << "," << results[current].milliseconds
-                    << "," << results[current].training_mse << ","
-                    << results[current].training_mae << ","
-                    << results[current].test_mse << ","
+            outfile << j << "," << k << "," << results[current].milliseconds << "," << results[current].training_mse
+                    << "," << results[current].training_mae << "," << results[current].test_mse << ","
                     << results[current].test_mae << endl;
 
-            Log::debug("%s, tested on series[%d], repeat: %d, result: %s\n",
-                       rnn_types[rnn].c_str(), j, k,
+            Log::debug("%s, tested on series[%d], repeat: %d, result: %s\n", rnn_types[rnn].c_str(), j, k,
                        result_to_string(results[current]).c_str());
             current++;
           }
@@ -326,16 +300,14 @@ void master(int max_rank) {
       }
 
     } else {
-      Log::fatal("ERROR: received message from %d with unknown tag: %d\n",
-                 message_source, tag);
+      Log::fatal("ERROR: received message from %d with unknown tag: %d\n", message_source, tag);
       MPI_Abort(MPI_COMM_WORLD, 1);
     }
   }
 }
 
 ResultSet handle_job(int rank, int current_job) {
-  int32_t jobs_per_rnn =
-      (time_series_sets->get_number_series() / fold_size) * repeats;
+  int32_t jobs_per_rnn = (time_series_sets->get_number_series() / fold_size) * repeats;
 
   // get rnn_type
   string rnn_type = rnn_types[current_job / jobs_per_rnn];
@@ -346,27 +318,20 @@ ResultSet handle_job(int rank, int current_job) {
   // get repeat
   int32_t repeat = current_job % jobs_per_j;
 
-  Log::debug("evaluating rnn type '%s' with j: %d, repeat: %d\n",
-             rnn_type.c_str(), j, repeat);
+  Log::debug("evaluating rnn type '%s' with j: %d, repeat: %d\n", rnn_type.c_str(), j, repeat);
 
   vector<int> training_indexes;
   vector<int> test_indexes;
 
-  for (uint32_t k = 0; k < time_series_sets->get_number_series();
-       k += fold_size) {
+  for (uint32_t k = 0; k < time_series_sets->get_number_series(); k += fold_size) {
     if (j == (k / fold_size)) {
-      for (int l = 0; l < fold_size; l++) {
-        test_indexes.push_back(k + l);
-      }
+      for (int l = 0; l < fold_size; l++) { test_indexes.push_back(k + l); }
     } else {
-      for (int l = 0; l < fold_size; l++) {
-        training_indexes.push_back(k + l);
-      }
+      for (int l = 0; l < fold_size; l++) { training_indexes.push_back(k + l); }
     }
   }
 
-  Log::debug("test_indexes.size(): %d, training_indexes.size(): %d\n",
-             test_indexes.size(), training_indexes.size());
+  Log::debug("test_indexes.size(): %d, training_indexes.size(): %d\n", test_indexes.size(), training_indexes.size());
 
   time_series_sets->set_training_indexes(training_indexes);
   time_series_sets->set_test_indexes(test_indexes);
@@ -376,107 +341,86 @@ ResultSet handle_job(int rank, int current_job) {
   vector<vector<vector<double> > > validation_inputs;
   vector<vector<vector<double> > > validation_outputs;
 
-  time_series_sets->export_training_series(time_offset, training_inputs,
-                                           training_outputs);
-  time_series_sets->export_test_series(time_offset, validation_inputs,
-                                       validation_outputs);
+  time_series_sets->export_training_series(time_offset, training_inputs, training_outputs);
+  time_series_sets->export_test_series(time_offset, validation_inputs, validation_outputs);
 
-  vector<string> input_parameter_names =
-      time_series_sets->get_input_parameter_names();
-  vector<string> output_parameter_names =
-      time_series_sets->get_output_parameter_names();
+  vector<string> input_parameter_names = time_series_sets->get_input_parameter_names();
+  vector<string> output_parameter_names = time_series_sets->get_output_parameter_names();
 
   int number_inputs = time_series_sets->get_number_inputs();
   // int number_outputs = time_series_sets->get_number_outputs();
 
   RNN_Genome *genome = NULL;
   if (rnn_type == "one_layer_lstm") {
-    genome = create_lstm(input_parameter_names, 1, number_inputs,
-                         output_parameter_names, 1, TrainingParameters(),
+    genome = create_lstm(input_parameter_names, 1, number_inputs, output_parameter_names, 1, TrainingParameters(),
                          weight_initialize);
 
   } else if (rnn_type == "two_layer_lstm") {
-    genome = create_lstm(input_parameter_names, 2, number_inputs,
-                         output_parameter_names, 1, TrainingParameters(),
+    genome = create_lstm(input_parameter_names, 2, number_inputs, output_parameter_names, 1, TrainingParameters(),
                          weight_initialize);
 
   } else if (rnn_type == "one_layer_delta") {
-    genome = create_delta(input_parameter_names, 1, number_inputs,
-                          output_parameter_names, 1, TrainingParameters(),
+    genome = create_delta(input_parameter_names, 1, number_inputs, output_parameter_names, 1, TrainingParameters(),
                           weight_initialize);
 
   } else if (rnn_type == "two_layer_delta") {
-    genome = create_delta(input_parameter_names, 2, number_inputs,
-                          output_parameter_names, 1, TrainingParameters(),
+    genome = create_delta(input_parameter_names, 2, number_inputs, output_parameter_names, 1, TrainingParameters(),
                           weight_initialize);
 
   } else if (rnn_type == "one_layer_gru") {
-    genome = create_gru(input_parameter_names, 1, number_inputs,
-                        output_parameter_names, 1, TrainingParameters(),
+    genome = create_gru(input_parameter_names, 1, number_inputs, output_parameter_names, 1, TrainingParameters(),
                         weight_initialize);
 
   } else if (rnn_type == "two_layer_gru") {
-    genome = create_gru(input_parameter_names, 2, number_inputs,
-                        output_parameter_names, 1, TrainingParameters(),
+    genome = create_gru(input_parameter_names, 2, number_inputs, output_parameter_names, 1, TrainingParameters(),
                         weight_initialize);
 
   } else if (rnn_type == "one_layer_mgu") {
-    genome = create_mgu(input_parameter_names, 1, number_inputs,
-                        output_parameter_names, 1, TrainingParameters(),
+    genome = create_mgu(input_parameter_names, 1, number_inputs, output_parameter_names, 1, TrainingParameters(),
                         weight_initialize);
 
   } else if (rnn_type == "two_layer_mgu") {
-    genome = create_mgu(input_parameter_names, 2, number_inputs,
-                        output_parameter_names, 1, TrainingParameters(),
+    genome = create_mgu(input_parameter_names, 2, number_inputs, output_parameter_names, 1, TrainingParameters(),
                         weight_initialize);
 
   } else if (rnn_type == "one_layer_delta") {
-    genome = create_delta(input_parameter_names, 1, number_inputs,
-                          output_parameter_names, 1, TrainingParameters(),
+    genome = create_delta(input_parameter_names, 1, number_inputs, output_parameter_names, 1, TrainingParameters(),
                           weight_initialize);
 
   } else if (rnn_type == "two_layer_delta") {
-    genome = create_delta(input_parameter_names, 2, number_inputs,
-                          output_parameter_names, 1, TrainingParameters(),
+    genome = create_delta(input_parameter_names, 2, number_inputs, output_parameter_names, 1, TrainingParameters(),
                           weight_initialize);
 
   } else if (rnn_type == "one_layer_ugrnn") {
-    genome = create_ugrnn(input_parameter_names, 1, number_inputs,
-                          output_parameter_names, 1, TrainingParameters(),
+    genome = create_ugrnn(input_parameter_names, 1, number_inputs, output_parameter_names, 1, TrainingParameters(),
                           weight_initialize);
 
   } else if (rnn_type == "two_layer_ugrnn") {
-    genome = create_ugrnn(input_parameter_names, 2, number_inputs,
-                          output_parameter_names, 1, TrainingParameters(),
+    genome = create_ugrnn(input_parameter_names, 2, number_inputs, output_parameter_names, 1, TrainingParameters(),
                           weight_initialize);
 
   } else if (rnn_type == "one_layer_ff") {
-    genome = create_ff(input_parameter_names, 1, number_inputs,
-                       output_parameter_names, 0, TrainingParameters(),
+    genome = create_ff(input_parameter_names, 1, number_inputs, output_parameter_names, 0, TrainingParameters(),
                        weight_initialize, WeightType::NONE, WeightType::NONE);
 
   } else if (rnn_type == "two_layer_ff") {
-    genome = create_ff(input_parameter_names, 2, number_inputs,
-                       output_parameter_names, 0, TrainingParameters(),
+    genome = create_ff(input_parameter_names, 2, number_inputs, output_parameter_names, 0, TrainingParameters(),
                        weight_initialize, WeightType::NONE, WeightType::NONE);
 
   } else if (rnn_type == "jordan") {
-    genome = create_jordan(input_parameter_names, 1, number_inputs,
-                           output_parameter_names, 1, TrainingParameters(),
+    genome = create_jordan(input_parameter_names, 1, number_inputs, output_parameter_names, 1, TrainingParameters(),
                            weight_initialize);
 
   } else if (rnn_type == "elman") {
-    genome = create_elman(input_parameter_names, 1, number_inputs,
-                          output_parameter_names, 1, TrainingParameters(),
+    genome = create_elman(input_parameter_names, 1, number_inputs, output_parameter_names, 1, TrainingParameters(),
                           weight_initialize);
   }
 
   RNN *rnn = genome->get_rnn();
 
   uint32_t number_of_weights = genome->get_number_weights();
-  Log::debug("RNN INFO FOR '%s', nodes: %d, edges: %d, rec: %d, weights: %d\n",
-             rnn_type.c_str(), genome->get_enabled_node_count(),
-             genome->get_enabled_edge_count(),
+  Log::debug("RNN INFO FOR '%s', nodes: %d, edges: %d, rec: %d, weights: %d\n", rnn_type.c_str(),
+             genome->get_enabled_node_count(), genome->get_enabled_edge_count(),
              genome->get_enabled_recurrent_edge_count(), number_of_weights);
 
   vector<double> min_bound(number_of_weights, -1.0);
@@ -492,37 +436,26 @@ ResultSet handle_job(int rank, int current_job) {
   string second_directory = first_directory + "/slice_" + to_string(j);
   mkdir(second_directory.c_str(), 0777);
 
-  string log_filename =
-      second_directory + "/repeat_" + to_string(repeat) + ".txt";
+  string log_filename = second_directory + "/repeat_" + to_string(repeat) + ".txt";
   genome->set_log_filename(log_filename);
 
-  string backprop_log_id =
-      rnn_type + "_slice_" + to_string(j) + "_repeat_" + to_string(repeat);
+  string backprop_log_id = rnn_type + "_slice_" + to_string(j) + "_repeat_" + to_string(repeat);
   Log::set_id(backprop_log_id);
 
-  std::chrono::time_point<std::chrono::system_clock> start =
-      std::chrono::system_clock::now();
-  genome->backpropagate_stochastic(training_inputs, training_outputs,
-                                   validation_inputs, validation_outputs);
-  std::chrono::time_point<std::chrono::system_clock> end =
-      std::chrono::system_clock::now();
+  std::chrono::time_point<std::chrono::system_clock> start = std::chrono::system_clock::now();
+  genome->backpropagate_stochastic(training_inputs, training_outputs, validation_inputs, validation_outputs);
+  std::chrono::time_point<std::chrono::system_clock> end = std::chrono::system_clock::now();
 
-  long milliseconds =
-      std::chrono::duration_cast<std::chrono::milliseconds>(end - start)
-          .count();
+  long milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
 
   genome->get_weights(best_parameters);
   rnn->set_weights(best_parameters);
 
-  double training_mse =
-      genome->get_mse(best_parameters, training_inputs, training_outputs);
-  double training_mae =
-      genome->get_mae(best_parameters, training_inputs, training_outputs);
+  double training_mse = genome->get_mse(best_parameters, training_inputs, training_outputs);
+  double training_mae = genome->get_mae(best_parameters, training_inputs, training_outputs);
 
-  double test_mse =
-      genome->get_mse(best_parameters, validation_inputs, validation_outputs);
-  double test_mae =
-      genome->get_mae(best_parameters, validation_inputs, validation_outputs);
+  double test_mse = genome->get_mse(best_parameters, validation_inputs, validation_outputs);
+  double test_mae = genome->get_mae(best_parameters, validation_inputs, validation_outputs);
 
   Log::release_id(backprop_log_id);
   Log::set_id("worker_" + to_string(rank));
@@ -611,14 +544,12 @@ int main(int argc, char **argv) {
 
   get_argument(arguments, "--fold_size", true, fold_size);
 
-  get_argument(arguments, "--weight_initialize", false,
-               weight_initialize_string);
+  get_argument(arguments, "--weight_initialize", false, weight_initialize_string);
 
   weight_initialize = get_enum_from_string(weight_initialize_string);
 
   if (weight_initialize < 0 || weight_initialize >= NUM_WEIGHT_TYPES - 1) {
-    Log::fatal("weight initialization method %s is set wrong \n",
-               weight_initialize_string.c_str());
+    Log::fatal("weight initialization method %s is set wrong \n", weight_initialize_string.c_str());
   }
 
   if (rank == 0) {

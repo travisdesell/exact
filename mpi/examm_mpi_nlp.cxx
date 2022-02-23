@@ -23,7 +23,7 @@ using std::vector;
 #include "rnn/examm.hxx"
 #include "word_series/word_series.hxx"
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   MPI_Init(&argc, &argv);
 
   int rank, max_rank;
@@ -55,7 +55,7 @@ int main(int argc, char** argv) {
     examm = make_examm();
     master(max_rank, make_genome_operators(rank));
   } else {
-    worker(rank, make_genome_operators(rank));
+    worker(number_workers, rank, make_genome_operators(rank));
   }
   Log::set_id("main_" + to_string(rank));
 

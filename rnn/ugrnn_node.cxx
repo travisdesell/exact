@@ -23,16 +23,14 @@ using std::vector;
 
 #define NUMBER_UGRNN_WEIGHTS 6
 
-UGRNN_Node::UGRNN_Node(int _innovation_number, int _type, double _depth)
-    : RNN_Node_Interface(_innovation_number, _type, _depth) {
+UGRNN_Node::UGRNN_Node(node_inon _inon, int _type, double _depth) : RNN_Node_Interface(_inon, _type, _depth) {
   node_type = UGRNN_NODE;
 }
 
 UGRNN_Node::~UGRNN_Node() {}
 
-void UGRNN_Node::initialize_lamarckian(minstd_rand0 &generator,
-                                       NormalDistribution &normal_distribution,
-                                       double mu, double sigma) {
+void UGRNN_Node::initialize_lamarckian(minstd_rand0 &generator, NormalDistribution &normal_distribution, double mu,
+                                       double sigma) {
   cw = bound(normal_distribution.random(generator, mu, sigma));
   ch = bound(normal_distribution.random(generator, mu, sigma));
   c_bias = bound(normal_distribution.random(generator, mu, sigma));
@@ -42,9 +40,7 @@ void UGRNN_Node::initialize_lamarckian(minstd_rand0 &generator,
   g_bias = bound(normal_distribution.random(generator, mu, sigma));
 }
 
-void UGRNN_Node::initialize_xavier(minstd_rand0 &generator,
-                                   uniform_real_distribution<double> &rng_1_1,
-                                   double range) {
+void UGRNN_Node::initialize_xavier(minstd_rand0 &generator, uniform_real_distribution<double> &rng_1_1, double range) {
   cw = range * (rng_1_1(generator));
   ch = range * (rng_1_1(generator));
   c_bias = range * (rng_1_1(generator));
@@ -54,9 +50,7 @@ void UGRNN_Node::initialize_xavier(minstd_rand0 &generator,
   g_bias = range * (rng_1_1(generator));
 }
 
-void UGRNN_Node::initialize_kaiming(minstd_rand0 &generator,
-                                    NormalDistribution &normal_distribution,
-                                    double range) {
+void UGRNN_Node::initialize_kaiming(minstd_rand0 &generator, NormalDistribution &normal_distribution, double range) {
   cw = range * normal_distribution.random(generator, 0, 1);
   ch = range * normal_distribution.random(generator, 0, 1);
   c_bias = range * normal_distribution.random(generator, 0, 1);
@@ -66,8 +60,7 @@ void UGRNN_Node::initialize_kaiming(minstd_rand0 &generator,
   g_bias = range * normal_distribution.random(generator, 0, 1);
 }
 
-void UGRNN_Node::initialize_uniform_random(
-    minstd_rand0 &generator, uniform_real_distribution<double> &rng) {
+void UGRNN_Node::initialize_uniform_random(minstd_rand0 &generator, uniform_real_distribution<double> &rng) {
   cw = rng(generator);
   ch = rng(generator);
   c_bias = rng(generator);
@@ -94,8 +87,7 @@ double UGRNN_Node::get_gradient(string gradient_name) {
     } else if (gradient_name == "g_bias") {
       gradient_sum += d_g_bias[i];
     } else {
-      Log::fatal("ERROR: tried to get unknown gradient: '%s'\n",
-                 gradient_name.c_str());
+      Log::fatal("ERROR: tried to get unknown gradient: '%s'\n", gradient_name.c_str());
       exit(1);
     }
   }
@@ -104,8 +96,7 @@ double UGRNN_Node::get_gradient(string gradient_name) {
 }
 
 void UGRNN_Node::print_gradient(string gradient_name) {
-  Log::info("\tgradient['%s']: %lf\n", gradient_name.c_str(),
-            get_gradient(gradient_name));
+  Log::info("\tgradient['%s']: %lf\n", gradient_name.c_str(), get_gradient(gradient_name));
 }
 
 void UGRNN_Node::input_fired(int time, double incoming_output) {
@@ -117,9 +108,9 @@ void UGRNN_Node::input_fired(int time, double incoming_output) {
     return;
   else if (inputs_fired[time] > total_inputs) {
     Log::fatal(
-        "ERROR: inputs_fired on UGRNN_Node %d at time %d is %d and "
+        "ERROR: inputs_fired on UGRNN_Node %lld at time %d is %d and "
         "total_inputs is %d\n",
-        innovation_number, time, inputs_fired[time], total_inputs);
+        inon, time, inputs_fired[time], total_inputs);
     exit(1);
   }
 
@@ -155,9 +146,9 @@ void UGRNN_Node::try_update_deltas(int time) {
     return;
   else if (outputs_fired[time] > total_outputs) {
     Log::fatal(
-        "ERROR: outputs_fired on UGRNN_Node %d at time %d is %d and "
+        "ERROR: outputs_fired on UGRNN_Node %lld at time %d is %d and "
         "total_outputs is %d\n",
-        innovation_number, time, outputs_fired[time], total_outputs);
+        inon, time, outputs_fired[time], total_outputs);
     exit(1);
   }
 
@@ -172,7 +163,7 @@ void UGRNN_Node::try_update_deltas(int time) {
 
   // backprop output gate
   double d_h = error;
-  if (time < (((signed)series_length) - 1)) d_h += d_h_prev[time + 1];
+  if (time < (((signed) series_length) - 1)) d_h += d_h_prev[time + 1];
   // get the error into the output (z), it's the error from ahead in the network
   // as well as from the previous output of the cell
 
@@ -228,8 +219,7 @@ void UGRNN_Node::set_weights(const vector<double> &parameters) {
   set_weights(offset, parameters);
 }
 
-void UGRNN_Node::set_weights(uint32_t &offset,
-                             const vector<double> &parameters) {
+void UGRNN_Node::set_weights(uint32_t &offset, const vector<double> &parameters) {
   // uint32_t start_offset = offset;
 
   cw = bound(parameters[offset++]);
@@ -245,8 +235,7 @@ void UGRNN_Node::set_weights(uint32_t &offset,
   // start_offset, end_offset, innovation_number);
 }
 
-void UGRNN_Node::get_weights(uint32_t &offset,
-                             vector<double> &parameters) const {
+void UGRNN_Node::get_weights(uint32_t &offset, vector<double> &parameters) const {
   // uint32_t start_offset = offset;
 
   parameters[offset++] = cw;
@@ -265,9 +254,7 @@ void UGRNN_Node::get_weights(uint32_t &offset,
 void UGRNN_Node::get_gradients(vector<double> &gradients) {
   gradients.assign(NUMBER_UGRNN_WEIGHTS, 0.0);
 
-  for (uint32_t i = 0; i < NUMBER_UGRNN_WEIGHTS; i++) {
-    gradients[i] = 0.0;
-  }
+  for (uint32_t i = 0; i < NUMBER_UGRNN_WEIGHTS; i++) { gradients[i] = 0.0; }
 
   for (uint32_t i = 0; i < series_length; i++) {
     gradients[0] += d_cw[i];
@@ -310,7 +297,7 @@ void UGRNN_Node::reset(uint32_t _series_length) {
 }
 
 RNN_Node_Interface *UGRNN_Node::copy() const {
-  UGRNN_Node *n = new UGRNN_Node(innovation_number, layer_type, depth);
+  UGRNN_Node *n = new UGRNN_Node(inon, layer_type, depth);
 
   // copy UGRNN_Node values
   n->cw = cw;
@@ -352,6 +339,4 @@ RNN_Node_Interface *UGRNN_Node::copy() const {
   return n;
 }
 
-void UGRNN_Node::write_to_stream(ostream &out) {
-  RNN_Node_Interface::write_to_stream(out);
-}
+void UGRNN_Node::write_to_stream(ostream &out) { RNN_Node_Interface::write_to_stream(out); }

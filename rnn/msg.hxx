@@ -17,14 +17,17 @@ class Msg {
     RESULT = 2,
     // Worker sends this to request a genome
     REQUEST = 3,
+    // Used to properly initialize the innovation number counts, and can be used for
+    // other things in the future.
+    MPI_INIT = 4,
     // Sent after the proper # of genomes have been generated
-    TERMINATE = 4,
+    TERMINATE = 5,
     // Sharing a genome to other regions
-    GENOME_SHARE = 5,
+    GENOME_SHARE = 6,
     // Used to send information about the number of genomes generated to the
     // master.
     // Should be propagated upwards to the master.
-    EVAL_ACCOUNTING = 6,
+    EVAL_ACCOUNTING = 7,
   };
 
   static unique_ptr<Msg> read_from_stream(istream &bin_istream);
@@ -65,11 +68,9 @@ class WorkMsg : public Msg {
   enum : uint8_t { crossover = 0, mutation = 1 } work_type;
 
   WorkMsg(shared_ptr<const RNN_Genome> g,
-          uint32_t n_mutations);  // Mutation constructor
-  WorkMsg(
-      vector<shared_ptr<const RNN_Genome>> &parents);  // Crossover constructor
-  WorkMsg(shared_ptr<const RNN_Genome>
-              g);  // Train constructor; represented as mu_args w/ 0 mutations.
+          uint32_t n_mutations);                           // Mutation constructor
+  WorkMsg(vector<shared_ptr<const RNN_Genome>> &parents);  // Crossover constructor
+  WorkMsg(shared_ptr<const RNN_Genome> g);                 // Train constructor; represented as mu_args w/ 0 mutations.
   WorkMsg(istream &bin_istream);
   virtual ~WorkMsg() = default;
 
@@ -137,6 +138,20 @@ class RequestMsg : public Msg {
 
   virtual void write_to_stream(ostream &bin_ostream);
   virtual int32_t get_msg_ty() const;
+};
+
+class MPIInitMsg : public Msg {
+ private:
+  node_inon nin;
+  edge_inon ein;
+
+ public:
+  MPIInitMsg(node_inon _nin, edge_inon _ein);
+  MPIInitMsg(istream &bin_istream);
+
+  virtual void write_to_stream(ostream &bin_ostream);
+  virtual int32_t get_msg_ty() const;
+  void run(size_t n_workers, size_t worker_id);
 };
 
 #endif

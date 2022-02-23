@@ -23,16 +23,15 @@ using std::vector;
 
 #define NUMBER_MGU_WEIGHTS 6
 
-MGU_Node::MGU_Node(int _innovation_number, int _layer_type, double _depth)
-    : RNN_Node_Interface(_innovation_number, _layer_type, _depth) {
+MGU_Node::MGU_Node(inon_type<RNN_Node_Interface> _inon, int _layer_type, double _depth)
+    : RNN_Node_Interface(_inon, _layer_type, _depth) {
   node_type = MGU_NODE;
 }
 
 MGU_Node::~MGU_Node() {}
 
-void MGU_Node::initialize_lamarckian(minstd_rand0 &generator,
-                                     NormalDistribution &normal_distribution,
-                                     double mu, double sigma) {
+void MGU_Node::initialize_lamarckian(minstd_rand0 &generator, NormalDistribution &normal_distribution, double mu,
+                                     double sigma) {
   fw = bound(normal_distribution.random(generator, mu, sigma));
   fu = bound(normal_distribution.random(generator, mu, sigma));
   f_bias = bound(normal_distribution.random(generator, mu, sigma));
@@ -42,9 +41,7 @@ void MGU_Node::initialize_lamarckian(minstd_rand0 &generator,
   h_bias = bound(normal_distribution.random(generator, mu, sigma));
 }
 
-void MGU_Node::initialize_xavier(minstd_rand0 &generator,
-                                 uniform_real_distribution<double> &rng_1_1,
-                                 double range) {
+void MGU_Node::initialize_xavier(minstd_rand0 &generator, uniform_real_distribution<double> &rng_1_1, double range) {
   fw = range * (rng_1_1(generator));
   fu = range * (rng_1_1(generator));
   f_bias = range * (rng_1_1(generator));
@@ -54,9 +51,7 @@ void MGU_Node::initialize_xavier(minstd_rand0 &generator,
   h_bias = range * (rng_1_1(generator));
 }
 
-void MGU_Node::initialize_kaiming(minstd_rand0 &generator,
-                                  NormalDistribution &normal_distribution,
-                                  double range) {
+void MGU_Node::initialize_kaiming(minstd_rand0 &generator, NormalDistribution &normal_distribution, double range) {
   fw = range * normal_distribution.random(generator, 0, 1);
   fu = range * normal_distribution.random(generator, 0, 1);
   f_bias = range * normal_distribution.random(generator, 0, 1);
@@ -66,8 +61,7 @@ void MGU_Node::initialize_kaiming(minstd_rand0 &generator,
   h_bias = range * normal_distribution.random(generator, 0, 1);
 }
 
-void MGU_Node::initialize_uniform_random(
-    minstd_rand0 &generator, uniform_real_distribution<double> &rng) {
+void MGU_Node::initialize_uniform_random(minstd_rand0 &generator, uniform_real_distribution<double> &rng) {
   fw = rng(generator);
   fu = rng(generator);
   f_bias = rng(generator);
@@ -94,8 +88,7 @@ double MGU_Node::get_gradient(string gradient_name) {
     } else if (gradient_name == "h_bias") {
       gradient_sum += d_h_bias[i];
     } else {
-      Log::fatal("ERROR: tried to get unknown gradient: '%s'\n",
-                 gradient_name.c_str());
+      Log::fatal("ERROR: tried to get unknown gradient: '%s'\n", gradient_name.c_str());
       exit(1);
     }
   }
@@ -104,8 +97,7 @@ double MGU_Node::get_gradient(string gradient_name) {
 }
 
 void MGU_Node::print_gradient(string gradient_name) {
-  Log::info("\tgradient['%s']: %lf\n", gradient_name.c_str(),
-            get_gradient(gradient_name));
+  Log::info("\tgradient['%s']: %lf\n", gradient_name.c_str(), get_gradient(gradient_name));
 }
 
 void MGU_Node::input_fired(int time, double incoming_output) {
@@ -117,9 +109,9 @@ void MGU_Node::input_fired(int time, double incoming_output) {
     return;
   else if (inputs_fired[time] > total_inputs) {
     Log::fatal(
-        "ERROR: inputs_fired on MGU_Node %d at time %d is %d and "
-        "total_inputs is %d\n",
-        innovation_number, time, inputs_fired[time], total_inputs);
+        "ERROR: inputs_fired on MGU_Node %lld at time %d is %d and "
+        "total_inputs is %lld\n",
+        inon, time, inputs_fired[time], total_inputs);
     exit(1);
   }
 
@@ -152,9 +144,9 @@ void MGU_Node::try_update_deltas(int time) {
     return;
   else if (outputs_fired[time] > total_outputs) {
     Log::fatal(
-        "ERROR: outputs_fired on MGU_Node %d at time %d is %d and "
+        "ERROR: outputs_fired on MGU_Node %lld at time %d is %d and "
         "total_outputs is %d\n:",
-        innovation_number, time, outputs_fired[time], total_outputs);
+        inon, time, outputs_fired[time], total_outputs);
     exit(1);
   }
 
@@ -167,7 +159,7 @@ void MGU_Node::try_update_deltas(int time) {
 
   // backprop output gate
   double d_out = error;
-  if (time < (((signed)series_length) - 1)) d_out += d_h_prev[time + 1];
+  if (time < (((signed) series_length) - 1)) d_out += d_h_prev[time + 1];
 
   d_h_prev[time] = d_out * (1 - f[time]);
 
@@ -220,8 +212,6 @@ void MGU_Node::set_weights(const vector<double> &parameters) {
 }
 
 void MGU_Node::set_weights(uint32_t &offset, const vector<double> &parameters) {
-  // uint32_t start_offset = offset;
-
   fw = bound(parameters[offset++]);
   fu = bound(parameters[offset++]);
   f_bias = bound(parameters[offset++]);
@@ -229,15 +219,9 @@ void MGU_Node::set_weights(uint32_t &offset, const vector<double> &parameters) {
   hw = bound(parameters[offset++]);
   hu = bound(parameters[offset++]);
   h_bias = bound(parameters[offset++]);
-
-  // uint32_t end_offset = offset;
-  // Log::trace("set weights from offset %d to %d on MGU_Node %d\n",
-  // start_offset, end_offset, innovation_number);
 }
 
 void MGU_Node::get_weights(uint32_t &offset, vector<double> &parameters) const {
-  // uint32_t start_offset = offset;
-
   parameters[offset++] = fw;
   parameters[offset++] = fu;
   parameters[offset++] = f_bias;
@@ -245,18 +229,12 @@ void MGU_Node::get_weights(uint32_t &offset, vector<double> &parameters) const {
   parameters[offset++] = hw;
   parameters[offset++] = hu;
   parameters[offset++] = h_bias;
-
-  // uint32_t end_offset = offset;
-  // Log::trace("got weights from offset %d to %d on MGU_Node %d\n",
-  // start_offset, end_offset, innovation_number);
 }
 
 void MGU_Node::get_gradients(vector<double> &gradients) {
   gradients.assign(NUMBER_MGU_WEIGHTS, 0.0);
 
-  for (uint32_t i = 0; i < NUMBER_MGU_WEIGHTS; i++) {
-    gradients[i] = 0.0;
-  }
+  for (uint32_t i = 0; i < NUMBER_MGU_WEIGHTS; i++) { gradients[i] = 0.0; }
 
   for (uint32_t i = 0; i < series_length; i++) {
     gradients[0] += d_fw[i];
@@ -298,7 +276,7 @@ void MGU_Node::reset(uint32_t _series_length) {
 }
 
 RNN_Node_Interface *MGU_Node::copy() const {
-  MGU_Node *n = new MGU_Node(innovation_number, layer_type, depth);
+  MGU_Node *n = new MGU_Node(inon, layer_type, depth);
 
   // copy MGU_Node values
   n->fw = fw;
@@ -340,6 +318,4 @@ RNN_Node_Interface *MGU_Node::copy() const {
   return n;
 }
 
-void MGU_Node::write_to_stream(ostream &out) {
-  RNN_Node_Interface::write_to_stream(out);
-}
+void MGU_Node::write_to_stream(ostream &out) { RNN_Node_Interface::write_to_stream(out); }

@@ -96,8 +96,7 @@ class Species {
    * the random number generator \param genome will be the copied genome, an
    * addresss to a pointer needs to be passed.
    */
-  shared_ptr<const RNN_Genome> get_random_genome(
-      uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator);
+  shared_ptr<const RNN_Genome> get_random_genome(uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator);
 
   /**
    * Selects two different genomes from the island at random and returns copies
@@ -109,13 +108,10 @@ class Species {
    * an addresss to a pointer needs to be passed. \param genome2 will be the
    * second copied genome, an addresss to a pointer needs to be passed.
    */
-  void get_two_random_genomes(uniform_real_distribution<double> &rng_0_1,
-                              minstd_rand0 &generator,
-                              shared_ptr<const RNN_Genome> &g1,
-                              shared_ptr<const RNN_Genome> &g2);
+  void get_two_random_genomes(uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator,
+                              shared_ptr<const RNN_Genome> &g1, shared_ptr<const RNN_Genome> &g2);
 
-  void get_n_random_genomes(uniform_real_distribution<double> &rng_0_1,
-                            minstd_rand0 &generator, int32_t n,
+  void get_n_random_genomes(uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator, int32_t n,
                             vector<shared_ptr<const RNN_Genome>> &parents);
 
   /**
@@ -127,8 +123,7 @@ class Species {
    * \param genome is the genome to be inserted.
    * \return -1 if not inserted, otherwise the index it was inserted at
    */
-  pair<int32_t, const RNN_Genome *> insert_genome(
-      shared_ptr<const RNN_Genome> genome);
+  pair<int32_t, const RNN_Genome *> insert_genome(shared_ptr<const RNN_Genome> genome);
 
   /**
    * Prints out the state of this island.
@@ -141,9 +136,8 @@ class Species {
 
   const RNN_Genome *get_representative_genome();
 
-  void fitness_sharing_remove(
-      double fitness_threshold,
-      function<double(const RNN_Genome *, const RNN_Genome *)> &get_distance);
+  void fitness_sharing_remove(double fitness_threshold,
+                              function<double(const RNN_Genome *, const RNN_Genome *)> &get_distance);
 
   void erase_species();
 

@@ -24,7 +24,7 @@ using std::vector;
 #include "rnn/examm.hxx"
 #include "time_series/time_series.hxx"
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   MPI_Init(&argc, &argv);
 
   int rank, max_rank;
@@ -49,21 +49,15 @@ int main(int argc, char** argv) {
   }
   Log::clear_rank_restriction();
 
-  for (int32_t i = 0; i < time_series_sets->get_number_series();
-       i += fold_size) {
+  for (int32_t i = 0; i < time_series_sets->get_number_series(); i += fold_size) {
     vector<int> training_indexes;
     vector<int> test_indexes;
 
-    for (uint32_t j = 0; j < time_series_sets->get_number_series();
-         j += fold_size) {
+    for (uint32_t j = 0; j < time_series_sets->get_number_series(); j += fold_size) {
       if (j == i) {
-        for (int k = 0; k < fold_size; k++) {
-          test_indexes.push_back(j + k);
-        }
+        for (int k = 0; k < fold_size; k++) { test_indexes.push_back(j + k); }
       } else {
-        for (int k = 0; k < fold_size; k++) {
-          training_indexes.push_back(j + k);
-        }
+        for (int k = 0; k < fold_size; k++) { training_indexes.push_back(j + k); }
       }
     }
 
@@ -76,12 +70,10 @@ int main(int argc, char** argv) {
 
     string slice_output_directory = output_directory + "/slice_" + to_string(i);
     mkpath(slice_output_directory.c_str(), 0777);
-    ofstream slice_times_file(output_directory + "/slice_" + to_string(i) +
-                              "_runtimes.csv");
+    ofstream slice_times_file(output_directory + "/slice_" + to_string(i) + "_runtimes.csv");
 
     for (int k = 0; k < repeats; k++) {
-      string current_output_directory =
-          slice_output_directory + "/repeat_" + to_string(k);
+      string current_output_directory = slice_output_directory + "/repeat_" + to_string(k);
       mkpath(current_output_directory.c_str(), 0777);
 
       // set to the master/workers can specify the right log id
@@ -89,20 +81,15 @@ int main(int argc, char** argv) {
       int global_repeat = k;
 
       if (rank == 0) {
-        string examm_log_id = "examm_slice_" + to_string(global_slice) +
-                              "_repeat_" + to_string(global_repeat);
+        string examm_log_id = "examm_slice_" + to_string(global_slice) + "_repeat_" + to_string(global_repeat);
         Log::set_id(examm_log_id);
 
         examm = make_examm();
 
-        std::chrono::time_point<std::chrono::system_clock> start =
-            std::chrono::system_clock::now();
+        std::chrono::time_point<std::chrono::system_clock> start = std::chrono::system_clock::now();
         master(max_rank, make_genome_operators(0));
-        std::chrono::time_point<std::chrono::system_clock> end =
-            std::chrono::system_clock::now();
-        long milliseconds =
-            std::chrono::duration_cast<std::chrono::milliseconds>(end - start)
-                .count();
+        std::chrono::time_point<std::chrono::system_clock> end = std::chrono::system_clock::now();
+        long milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
 
         // examm->write_memory_log(current_output_directory +
         // "/memory_fitness_log.csv");
@@ -111,13 +98,10 @@ int main(int argc, char** argv) {
 
         auto best_genome = examm->get_best_genome()->copy();
 
-        string binary_file =
-            slice_output_directory + "/repeat_best_" + to_string(k) + ".bin";
-        string graphviz_file =
-            slice_output_directory + "/repeat_best_" + to_string(k) + ".gv";
+        string binary_file = slice_output_directory + "/repeat_best_" + to_string(k) + ".bin";
+        string graphviz_file = slice_output_directory + "/repeat_best_" + to_string(k) + ".gv";
 
-        Log::debug("writing best genome to '%s' and '%s'\n",
-                   binary_file.c_str(), graphviz_file.c_str());
+        Log::debug("writing best genome to '%s' and '%s'\n", binary_file.c_str(), graphviz_file.c_str());
         best_genome->write_to_file(binary_file);
         best_genome->write_graphviz(graphviz_file);
 
@@ -125,15 +109,14 @@ int main(int argc, char** argv) {
         delete examm;
         Log::release_id(examm_log_id);
       } else {
-        worker(rank, make_genome_operators(rank),
-               "slice_" + to_string(global_slice) + "_repeat_" +
-                   to_string(global_repeat));
+        worker(number_workers, rank, make_genome_operators(rank),
+               "slice_" + to_string(global_slice) + "_repeat_" + to_string(global_repeat));
       }
       Log::set_id("main_" + to_string(rank));
 
       MPI_Barrier(MPI_COMM_WORLD);
-      Log::debug("rank %d completed slice %d of %d repeat %d of %d\n", rank, i,
-                 time_series_sets->get_number_series(), k, repeats);
+      Log::debug("rank %d completed slice %d of %d repeat %d of %d\n", rank, i, time_series_sets->get_number_series(),
+                 k, repeats);
     }
 
     slice_times_file.close();

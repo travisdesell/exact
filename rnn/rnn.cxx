@@ -82,14 +82,11 @@ void RNN::validate_parameters(const vector<string> &input_parameter_names,
       Log::fatal(
           "ERROR: input_nodes[%d]->parameter_name '%s' != "
           "input_parmater_names[%d] '%s'\n",
-          i, input_nodes[i]->parameter_name.c_str(), i,
-          input_parameter_names[i].c_str());
+          i, input_nodes[i]->parameter_name.c_str(), i, input_parameter_names[i].c_str());
       parameter_mismatch = true;
     }
   }
-  if (parameter_mismatch) {
-    exit(1);
-  }
+  if (parameter_mismatch) { exit(1); }
 
   if (output_nodes.size() != output_parameter_names.size()) {
     Log::fatal(
@@ -101,19 +98,15 @@ void RNN::validate_parameters(const vector<string> &input_parameter_names,
 
   parameter_mismatch = false;
   for (uint32_t i = 0; i < output_nodes.size(); i++) {
-    if (output_nodes[i]->parameter_name.compare(output_parameter_names[i]) !=
-        0) {
+    if (output_nodes[i]->parameter_name.compare(output_parameter_names[i]) != 0) {
       Log::fatal(
           "ERROR: output_nodes[%d]->parameter_name '%s' != "
           "output_parmater_names[%d] '%s'\n",
-          i, output_nodes[i]->parameter_name.c_str(), i,
-          output_parameter_names[i].c_str());
+          i, output_nodes[i]->parameter_name.c_str(), i, output_parameter_names[i].c_str());
       parameter_mismatch = true;
     }
   }
-  if (parameter_mismatch) {
-    exit(1);
-  }
+  if (parameter_mismatch) { exit(1); }
 }
 
 void RNN::fix_parameter_orders(const vector<string> &input_parameter_names,
@@ -148,12 +141,10 @@ void RNN::fix_parameter_orders(const vector<string> &input_parameter_names,
 
   for (uint32_t i = 0; i < input_parameter_names.size(); i++) {
     for (int j = input_nodes.size() - 1; j >= 0; j--) {
-      Log::debug("checking input node name '%s' vs parameter name '%s'\n",
-                 input_nodes[j]->parameter_name.c_str(),
+      Log::debug("checking input node name '%s' vs parameter name '%s'\n", input_nodes[j]->parameter_name.c_str(),
                  input_parameter_names[i].c_str());
 
-      if (input_nodes[j]->parameter_name.compare(input_parameter_names[i]) ==
-          0) {
+      if (input_nodes[j]->parameter_name.compare(input_parameter_names[i]) == 0) {
         Log::debug("erasing node!\n");
         ordered_input_nodes.push_back(input_nodes[j]);
         input_nodes.erase(input_nodes.begin() + j);
@@ -167,8 +158,7 @@ void RNN::fix_parameter_orders(const vector<string> &input_parameter_names,
 
   for (uint32_t i = 0; i < output_parameter_names.size(); i++) {
     for (int j = output_nodes.size() - 1; j >= 0; j--) {
-      if (output_nodes[j]->parameter_name.compare(output_parameter_names[i]) ==
-          0) {
+      if (output_nodes[j]->parameter_name.compare(output_parameter_names[i]) == 0) {
         ordered_output_nodes.push_back(output_nodes[j]);
         output_nodes.erase(output_nodes.begin() + j);
       }
@@ -178,8 +168,7 @@ void RNN::fix_parameter_orders(const vector<string> &input_parameter_names,
   output_nodes = ordered_output_nodes;
 }
 
-RNN::RNN(vector<RNN_Node_Interface *> &_nodes, vector<RNN_Edge *> &_edges,
-         const vector<string> &input_parameter_names,
+RNN::RNN(vector<RNN_Node_Interface *> &_nodes, vector<RNN_Edge *> &_edges, const vector<string> &input_parameter_names,
          const vector<string> &output_parameter_names) {
   nodes = _nodes;
   edges = _edges;
@@ -200,8 +189,7 @@ RNN::RNN(vector<RNN_Node_Interface *> &_nodes, vector<RNN_Edge *> &_edges,
 }
 
 RNN::RNN(vector<RNN_Node_Interface *> &_nodes, vector<RNN_Edge *> &_edges,
-         vector<RNN_Recurrent_Edge *> &_recurrent_edges,
-         const vector<string> &input_parameter_names,
+         vector<RNN_Recurrent_Edge *> &_recurrent_edges, const vector<string> &input_parameter_names,
          const vector<string> &output_parameter_names) {
   nodes = _nodes;
   edges = _edges;
@@ -220,15 +208,13 @@ RNN::RNN(vector<RNN_Node_Interface *> &_nodes, vector<RNN_Edge *> &_edges,
     }
   }
 
-  Log::debug("fixing parameter orders, input_node.size: %d\n",
-             input_nodes.size());
+  Log::debug("fixing parameter orders, input_node.size: %d\n", input_nodes.size());
   fix_parameter_orders(input_parameter_names, output_parameter_names);
-  Log::debug("validating parameters, input_node.size: %d\n",
-             input_nodes.size());
+  Log::debug("validating parameters, input_node.size: %d\n", input_nodes.size());
   validate_parameters(input_parameter_names, output_parameter_names);
 
-  Log::trace("got RNN with %d nodes, %d edges, %d recurrent edges\n",
-             nodes.size(), edges.size(), recurrent_edges.size());
+  Log::trace("got RNN with %d nodes, %d edges, %d recurrent edges\n", nodes.size(), edges.size(),
+             recurrent_edges.size());
 }
 
 RNN::~RNN() {
@@ -318,9 +304,7 @@ void RNN::set_weights(const vector<double> &parameters) {
   }
 }
 
-void RNN::enable_use_regression(bool _use_regression) {
-  use_regression = _use_regression;
-}
+void RNN::enable_use_regression(bool _use_regression) { use_regression = _use_regression; }
 
 uint32_t RNN::get_number_weights() {
   uint32_t number_weights = 0;
@@ -344,8 +328,7 @@ uint32_t RNN::get_number_weights() {
   return number_weights;
 }
 
-void RNN::forward_pass(const vector<vector<double>> &series_data,
-                       bool using_dropout, bool training,
+void RNN::forward_pass(const vector<vector<double>> &series_data, bool using_dropout, bool training,
                        double dropout_probability) {
   series_length = series_data[0].size();
 
@@ -355,47 +338,36 @@ void RNN::forward_pass(const vector<vector<double>> &series_data,
         "data input fields (%d)\n",
         input_nodes.size(), series_data.size());
     for (uint32_t i = 0; i < nodes.size(); i++) {
-      Log::fatal(
-          "node[%d], in: %d, depth: %lf, layer_type: %d, node_type: %d\n", i,
-          nodes[i]->get_innovation_number(), nodes[i]->get_depth(),
-          nodes[i]->get_layer_type(), nodes[i]->get_node_type());
+      Log::fatal("node[%d], inon: %lld, depth: %lf, layer_type: %d, node_type: %d\n", i, nodes[i]->inon,
+                 nodes[i]->get_depth(), nodes[i]->get_layer_type(), nodes[i]->get_node_type());
     }
     exit(1);
   }
 
   // TODO: want to check that all vectors in series_data are of same length
 
-  for (uint32_t i = 0; i < nodes.size(); i++) {
-    nodes[i]->reset(series_length);
-  }
+  for (uint32_t i = 0; i < nodes.size(); i++) { nodes[i]->reset(series_length); }
 
-  for (uint32_t i = 0; i < edges.size(); i++) {
-    edges[i]->reset(series_length);
-  }
+  for (uint32_t i = 0; i < edges.size(); i++) { edges[i]->reset(series_length); }
 
-  for (uint32_t i = 0; i < recurrent_edges.size(); i++) {
-    recurrent_edges[i]->reset(series_length);
-  }
+  for (uint32_t i = 0; i < recurrent_edges.size(); i++) { recurrent_edges[i]->reset(series_length); }
 
   // do a propagate forward for time == -1 so that the the input
   // fired count on each node will be correct for the first pass
   // through the RNN
   for (uint32_t i = 0; i < recurrent_edges.size(); i++) {
-    if (recurrent_edges[i]->is_reachable())
-      recurrent_edges[i]->first_propagate_forward();
+    if (recurrent_edges[i]->is_reachable()) recurrent_edges[i]->first_propagate_forward();
   }
 
   for (uint32_t time = 0; time < series_length; time++) {
     for (uint32_t i = 0; i < input_nodes.size(); i++) {
-      if (input_nodes[i]->is_reachable())
-        input_nodes[i]->input_fired(time, series_data[i][time]);
+      if (input_nodes[i]->is_reachable()) input_nodes[i]->input_fired(time, series_data[i][time]);
     }
 
     // feed forward
     if (using_dropout) {
       for (uint32_t i = 0; i < edges.size(); i++) {
-        if (edges[i]->is_reachable())
-          edges[i]->propagate_forward(time, training, dropout_probability);
+        if (edges[i]->is_reachable()) edges[i]->propagate_forward(time, training, dropout_probability);
       }
     } else {
       for (uint32_t i = 0; i < edges.size(); i++) {
@@ -404,47 +376,39 @@ void RNN::forward_pass(const vector<vector<double>> &series_data,
     }
 
     for (uint32_t i = 0; i < recurrent_edges.size(); i++) {
-      if (recurrent_edges[i]->is_reachable())
-        recurrent_edges[i]->propagate_forward(time);
+      if (recurrent_edges[i]->is_reachable()) recurrent_edges[i]->propagate_forward(time);
     }
   }
 }
 
-void RNN::backward_pass(double error, bool using_dropout, bool training,
-                        double dropout_probability) {
+void RNN::backward_pass(double error, bool using_dropout, bool training, double dropout_probability) {
   // do a propagate forward for time == (series_length - 1) so that the
   // output fired count on each node will be correct for the first pass
   // through the RNN
   for (uint32_t i = 0; i < recurrent_edges.size(); i++) {
-    if (recurrent_edges[i]->is_reachable())
-      recurrent_edges[i]->first_propagate_backward();
+    if (recurrent_edges[i]->is_reachable()) recurrent_edges[i]->first_propagate_backward();
   }
 
   for (int32_t time = series_length - 1; time >= 0; time--) {
-    for (uint32_t i = 0; i < output_nodes.size(); i++) {
-      output_nodes[i]->error_fired(time, error);
-    }
+    for (uint32_t i = 0; i < output_nodes.size(); i++) { output_nodes[i]->error_fired(time, error); }
 
     if (using_dropout) {
-      for (int32_t i = (int32_t)edges.size() - 1; i >= 0; i--) {
-        if (edges[i]->is_reachable())
-          edges[i]->propagate_backward(time, training, dropout_probability);
+      for (int32_t i = (int32_t) edges.size() - 1; i >= 0; i--) {
+        if (edges[i]->is_reachable()) edges[i]->propagate_backward(time, training, dropout_probability);
       }
     } else {
-      for (int32_t i = (int32_t)edges.size() - 1; i >= 0; i--) {
+      for (int32_t i = (int32_t) edges.size() - 1; i >= 0; i--) {
         if (edges[i]->is_reachable()) edges[i]->propagate_backward(time);
       }
     }
 
-    for (int32_t i = (int32_t)recurrent_edges.size() - 1; i >= 0; i--) {
-      if (recurrent_edges[i]->is_reachable())
-        recurrent_edges[i]->propagate_backward(time);
+    for (int32_t i = (int32_t) recurrent_edges.size() - 1; i >= 0; i--) {
+      if (recurrent_edges[i]->is_reachable()) recurrent_edges[i]->propagate_backward(time);
     }
   }
 }
 
-double RNN::calculate_error_softmax(
-    const vector<vector<double>> &expected_outputs) {
+double RNN::calculate_error_softmax(const vector<vector<double>> &expected_outputs) {
   double cross_entropy_sum = 0.0;
   double error;
   double softmax = 0.0;
@@ -458,9 +422,7 @@ double RNN::calculate_error_softmax(
     double softmax_sum = 0.0;
     double cross_entropy = 0.0;
     // get sum of all the outputs of the timestep j from all output node i
-    for (uint32_t i = 0; i < output_nodes.size(); i++) {
-      softmax_sum += exp(output_nodes[i]->output_values[j]);
-    }
+    for (uint32_t i = 0; i < output_nodes.size(); i++) { softmax_sum += exp(output_nodes[i]->output_values[j]); }
 
     // for each
 
@@ -483,8 +445,7 @@ double RNN::calculate_error_softmax(
   return cross_entropy_sum;
 }
 
-double RNN::calculate_error_mse(
-    const vector<vector<double>> &expected_outputs) {
+double RNN::calculate_error_mse(const vector<vector<double>> &expected_outputs) {
   double mse_sum = 0.0;
   double mse;
   double error;
@@ -509,8 +470,7 @@ double RNN::calculate_error_mse(
   return mse_sum;
 }
 
-double RNN::calculate_error_mae(
-    const vector<vector<double>> &expected_outputs) {
+double RNN::calculate_error_mae(const vector<vector<double>> &expected_outputs) {
   double mae_sum = 0.0;
   double mae;
   double error;
@@ -527,8 +487,7 @@ double RNN::calculate_error_mae(
       if (error == 0) {
         error = 0;
       } else {
-        error = (output_nodes[i]->output_values[j] - expected_outputs[i][j]) /
-                error;
+        error = (output_nodes[i]->output_values[j] - expected_outputs[i][j]) / error;
       }
       output_nodes[i]->error_values[j] = error;
     }
@@ -539,41 +498,33 @@ double RNN::calculate_error_mae(
 }
 
 double RNN::prediction_softmax(const vector<vector<double>> &series_data,
-                               const vector<vector<double>> &expected_outputs,
-                               bool using_dropout, bool training,
+                               const vector<vector<double>> &expected_outputs, bool using_dropout, bool training,
                                double dropout_probability) {
   forward_pass(series_data, using_dropout, training, dropout_probability);
   return calculate_error_softmax(expected_outputs);
 }
 
-double RNN::prediction_mse(const vector<vector<double>> &series_data,
-                           const vector<vector<double>> &expected_outputs,
-                           bool using_dropout, bool training,
-                           double dropout_probability) {
+double RNN::prediction_mse(const vector<vector<double>> &series_data, const vector<vector<double>> &expected_outputs,
+                           bool using_dropout, bool training, double dropout_probability) {
   forward_pass(series_data, using_dropout, training, dropout_probability);
   return calculate_error_mse(expected_outputs);
 }
 
-double RNN::prediction_mae(const vector<vector<double>> &series_data,
-                           const vector<vector<double>> &expected_outputs,
-                           bool using_dropout, bool training,
-                           double dropout_probability) {
+double RNN::prediction_mae(const vector<vector<double>> &series_data, const vector<vector<double>> &expected_outputs,
+                           bool using_dropout, bool training, double dropout_probability) {
   forward_pass(series_data, using_dropout, training, dropout_probability);
   return calculate_error_mae(expected_outputs);
 }
 
-vector<double> RNN::get_predictions(
-    const vector<vector<double>> &series_data,
-    const vector<vector<double>> &expected_outputs, bool using_dropout,
-    double dropout_probability) {
+vector<double> RNN::get_predictions(const vector<vector<double>> &series_data,
+                                    const vector<vector<double>> &expected_outputs, bool using_dropout,
+                                    double dropout_probability) {
   forward_pass(series_data, using_dropout, false, dropout_probability);
 
   vector<double> result;
 
   for (uint32_t j = 0; j < series_length; j++) {
-    for (uint32_t i = 0; i < output_nodes.size(); i++) {
-      result.push_back(output_nodes[i]->output_values[j]);
-    }
+    for (uint32_t i = 0; i < output_nodes.size(); i++) { result.push_back(output_nodes[i]->output_values[j]); }
   }
 
   // TODO: returning a vector isn't the most efficient, but i don't think we'll
@@ -582,20 +533,15 @@ vector<double> RNN::get_predictions(
   return result;
 }
 
-void RNN::write_predictions(string output_filename,
-                            const vector<string> &input_parameter_names,
-                            const vector<string> &output_parameter_names,
-                            const vector<vector<double>> &series_data,
-                            const vector<vector<double>> &expected_outputs,
-                            TimeSeriesSets *time_series_sets,
+void RNN::write_predictions(string output_filename, const vector<string> &input_parameter_names,
+                            const vector<string> &output_parameter_names, const vector<vector<double>> &series_data,
+                            const vector<vector<double>> &expected_outputs, TimeSeriesSets *time_series_sets,
                             bool using_dropout, double dropout_probability) {
   forward_pass(series_data, using_dropout, false, dropout_probability);
 
-  Log::debug(
-      "series_length: %d, series_data.size(): %d, series_data[0].size(): %d\n",
-      series_length, series_data.size(), series_data[0].size());
-  Log::debug("input_nodes.size(): %d, output_nodes.size(): %d\n",
-             input_nodes.size(), output_nodes.size());
+  Log::debug("series_length: %d, series_data.size(): %d, series_data[0].size(): %d\n", series_length,
+             series_data.size(), series_data[0].size());
+  Log::debug("input_nodes.size(): %d, output_nodes.size(): %d\n", input_nodes.size(), output_nodes.size());
   ofstream outfile(output_filename);
 
   outfile << "#";
@@ -604,24 +550,21 @@ void RNN::write_predictions(string output_filename,
     if (i > 0) outfile << ",";
     outfile << input_parameter_names[i];
 
-    Log::debug("input_parameter_names[%d]: '%s'\n", i,
-               input_parameter_names[i].c_str());
+    Log::debug("input_parameter_names[%d]: '%s'\n", i, input_parameter_names[i].c_str());
   }
 
   for (uint32_t i = 0; i < output_nodes.size(); i++) {
     outfile << ",";
     outfile << "expected_" << output_parameter_names[i];
 
-    Log::debug("output_parameter_names[%d]: '%s'\n", i,
-               output_parameter_names[i].c_str());
+    Log::debug("output_parameter_names[%d]: '%s'\n", i, output_parameter_names[i].c_str());
   }
 
   for (uint32_t i = 0; i < output_nodes.size(); i++) {
     outfile << ",";
     outfile << "predicted_" << output_parameter_names[i];
 
-    Log::debug("output_parameter_names[%d]: '%s'\n", i,
-               output_parameter_names[i].c_str());
+    Log::debug("output_parameter_names[%d]: '%s'\n", i, output_parameter_names[i].c_str());
   }
   outfile << endl;
 
@@ -629,42 +572,34 @@ void RNN::write_predictions(string output_filename,
     for (uint32_t i = 0; i < input_nodes.size(); i++) {
       if (i > 0) outfile << ",";
       // outfile << series_data[i][j];
-      outfile << time_series_sets->denormalize(input_parameter_names[i],
-                                               series_data[i][j]);
+      outfile << time_series_sets->denormalize(input_parameter_names[i], series_data[i][j]);
     }
 
     for (uint32_t i = 0; i < output_nodes.size(); i++) {
       outfile << ",";
       // outfile << expected_outputs[i][j];
-      outfile << time_series_sets->denormalize(output_parameter_names[i],
-                                               expected_outputs[i][j]);
+      outfile << time_series_sets->denormalize(output_parameter_names[i], expected_outputs[i][j]);
     }
 
     for (uint32_t i = 0; i < output_nodes.size(); i++) {
       outfile << ",";
       // outfile << output_nodes[i]->output_values[j];
-      outfile << time_series_sets->denormalize(
-          output_parameter_names[i], output_nodes[i]->output_values[j]);
+      outfile << time_series_sets->denormalize(output_parameter_names[i], output_nodes[i]->output_values[j]);
     }
     outfile << endl;
   }
   outfile.close();
 }
 
-void RNN::write_predictions(string output_filename,
-                            const vector<string> &input_parameter_names,
-                            const vector<string> &output_parameter_names,
-                            const vector<vector<double>> &series_data,
-                            const vector<vector<double>> &expected_outputs,
-                            Corpus *word_series_sets, bool using_dropout,
-                            double dropout_probability) {
+void RNN::write_predictions(string output_filename, const vector<string> &input_parameter_names,
+                            const vector<string> &output_parameter_names, const vector<vector<double>> &series_data,
+                            const vector<vector<double>> &expected_outputs, Corpus *word_series_sets,
+                            bool using_dropout, double dropout_probability) {
   forward_pass(series_data, using_dropout, false, dropout_probability);
 
-  Log::debug(
-      "series_length: %d, series_data.size(): %d, series_data[0].size(): %d\n",
-      series_length, series_data.size(), series_data[0].size());
-  Log::debug("input_nodes.size(): %d, output_nodes.size(): %d\n",
-             input_nodes.size(), output_nodes.size());
+  Log::debug("series_length: %d, series_data.size(): %d, series_data[0].size(): %d\n", series_length,
+             series_data.size(), series_data[0].size());
+  Log::debug("input_nodes.size(): %d, output_nodes.size(): %d\n", input_nodes.size(), output_nodes.size());
   ofstream outfile(output_filename);
 
   outfile << "#";
@@ -673,24 +608,21 @@ void RNN::write_predictions(string output_filename,
     if (i > 0) outfile << ",";
     outfile << input_parameter_names[i];
 
-    Log::debug("input_parameter_names[%d]: '%s'\n", i,
-               input_parameter_names[i].c_str());
+    Log::debug("input_parameter_names[%d]: '%s'\n", i, input_parameter_names[i].c_str());
   }
 
   for (uint32_t i = 0; i < output_nodes.size(); i++) {
     outfile << ",";
     outfile << "expected_" << output_parameter_names[i];
 
-    Log::debug("output_parameter_names[%d]: '%s'\n", i,
-               output_parameter_names[i].c_str());
+    Log::debug("output_parameter_names[%d]: '%s'\n", i, output_parameter_names[i].c_str());
   }
 
   for (uint32_t i = 0; i < output_nodes.size(); i++) {
     outfile << ",";
     outfile << "predicted_" << output_parameter_names[i];
 
-    Log::debug("output_parameter_names[%d]: '%s'\n", i,
-               output_parameter_names[i].c_str());
+    Log::debug("output_parameter_names[%d]: '%s'\n", i, output_parameter_names[i].c_str());
   }
   outfile << endl;
 
@@ -698,34 +630,28 @@ void RNN::write_predictions(string output_filename,
     for (uint32_t i = 0; i < input_nodes.size(); i++) {
       if (i > 0) outfile << ",";
       // outfile << series_data[i][j];
-      outfile << word_series_sets->denormalize(input_parameter_names[i],
-                                               series_data[i][j]);
+      outfile << word_series_sets->denormalize(input_parameter_names[i], series_data[i][j]);
     }
 
     for (uint32_t i = 0; i < output_nodes.size(); i++) {
       outfile << ",";
       // outfile << expected_outputs[i][j];
-      outfile << word_series_sets->denormalize(output_parameter_names[i],
-                                               expected_outputs[i][j]);
+      outfile << word_series_sets->denormalize(output_parameter_names[i], expected_outputs[i][j]);
     }
 
     for (uint32_t i = 0; i < output_nodes.size(); i++) {
       outfile << ",";
       // outfile << output_nodes[i]->output_values[j];
-      outfile << word_series_sets->denormalize(
-          output_parameter_names[i], output_nodes[i]->output_values[j]);
+      outfile << word_series_sets->denormalize(output_parameter_names[i], output_nodes[i]->output_values[j]);
     }
     outfile << endl;
   }
   outfile.close();
 }
 
-void RNN::get_analytic_gradient(const vector<double> &test_parameters,
-                                const vector<vector<double>> &inputs,
-                                const vector<vector<double>> &outputs,
-                                double &mse, vector<double> &analytic_gradient,
-                                bool using_dropout, bool training,
-                                double dropout_probability) {
+void RNN::get_analytic_gradient(const vector<double> &test_parameters, const vector<vector<double>> &inputs,
+                                const vector<vector<double>> &outputs, double &mse, vector<double> &analytic_gradient,
+                                bool using_dropout, bool training, double dropout_probability) {
   analytic_gradient.assign(test_parameters.size(), 0.0);
 
   set_weights(test_parameters);
@@ -733,13 +659,11 @@ void RNN::get_analytic_gradient(const vector<double> &test_parameters,
 
   if (use_regression) {
     mse = calculate_error_mse(outputs);
-    backward_pass(mse * (1.0 / outputs[0].size()) * 2.0, using_dropout,
-                  training, dropout_probability);
+    backward_pass(mse * (1.0 / outputs[0].size()) * 2.0, using_dropout, training, dropout_probability);
 
   } else {
     mse = calculate_error_softmax(outputs);
-    backward_pass(mse * (1.0 / outputs[0].size()), using_dropout, training,
-                  dropout_probability);
+    backward_pass(mse * (1.0 / outputs[0].size()), using_dropout, training, dropout_probability);
   }
 
   vector<double> current_gradients;
@@ -771,13 +695,9 @@ void RNN::get_analytic_gradient(const vector<double> &test_parameters,
   }
 }
 
-void RNN::get_empirical_gradient(const vector<double> &test_parameters,
-                                 const vector<vector<double>> &inputs,
-                                 const vector<vector<double>> &outputs,
-                                 double &mse,
-                                 vector<double> &empirical_gradient,
-                                 bool using_dropout, bool training,
-                                 double dropout_probability) {
+void RNN::get_empirical_gradient(const vector<double> &test_parameters, const vector<vector<double>> &inputs,
+                                 const vector<vector<double>> &outputs, double &mse, vector<double> &empirical_gradient,
+                                 bool using_dropout, bool training, double dropout_probability) {
   empirical_gradient.assign(test_parameters.size(), 0.0);
 
   vector<vector<double>> deltas;
@@ -820,9 +740,7 @@ void RNN::initialize_randomly() {
   unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
   minstd_rand0 generator(seed);
   uniform_real_distribution<double> rng(-0.5, 0.5);
-  for (uint32_t i = 0; i < parameters.size(); i++) {
-    parameters[i] = rng(generator);
-  }
+  for (uint32_t i = 0; i < parameters.size(); i++) { parameters[i] = rng(generator); }
   set_weights(parameters);
 }
 
