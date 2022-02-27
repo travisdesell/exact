@@ -17,21 +17,19 @@ echo "Running base EXAMM code with coal dataset, results will be saved to: "$exp
 echo "###-------------------###"
 
 
-# valgrind --leak-check=full \
-#          --track-origins=yes \
-#          --log-file=valgrind-out.txt \
-$1/multithreaded/examm_mt --number_threads $6 \
+mpirun --use-hwthread-cpus -np $6 \
+$1/mpi/examm_mpi --number_threads $6 \
 --training_filenames ./datasets/2018_coal/burner_[0-9].csv --test_filenames \
 ./datasets/2018_coal/burner_1[0-1].csv \
 --time_offset 1 \
 --input_parameter_names Conditioner_Inlet_Temp Conditioner_Outlet_Temp Coal_Feeder_Rate Primary_Air_Flow Primary_Air_Split System_Secondary_Air_Flow_Total Secondary_Air_Flow Secondary_Air_Split Tertiary_Air_Split Total_Comb_Air_Flow Supp_Fuel_Flow Main_Flm_Int \
 --output_parameter_names Main_Flm_Int \
---number_islands 4 \
---population_size 8 \
+--number_islands 1 \
+--population_size 2 \
 --min_intra_crossover_parents 2 \
---max_intra_crossover_parents 8 \
+--max_intra_crossover_parents 2 \
 --min_inter_crossover_parents 2 \
---max_inter_crossover_parents 8 \
+--max_inter_crossover_parents 2 \
 --max_time_minutes $3 \
 --max_genomes $4 \
 --bp_iterations $5 \

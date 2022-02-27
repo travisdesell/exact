@@ -1,0 +1,13 @@
+# Valid IDs are 0 up until but not including n_nodes
+master: 0
+
+# Not sure how but master should technically be able to also be an island.
+islands: 1
+
+workers: 2 until (n_nodes)
+
+topology ring: workers
+
+workers -> islands
+
+islands -> master
