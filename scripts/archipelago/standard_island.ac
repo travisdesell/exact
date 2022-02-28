@@ -1,13 +1,18 @@
-# Valid IDs are 0 up until but not including n_nodes
+## Valid IDs are 0 up until but not including n_nodes
 master: 0
 
-# Not sure how but master should technically be able to also be an island.
-islands: 1
+## Not sure how but master should technically be able to also be an island.
+islands: 1 through n_islands
 
-workers: 2 until (n_nodes)
+## id of the first worker is the number of islands 1 for the master
+first_worker = n_islands + 1
+workers: first_worker until (n_nodes)
+for i in 0 until n_islands {
+  start = partition i     of first_worker until n_nodes by n_islands
+  end   = partition i + 1 of first_worker until n_nodes by n_islands
+  (i + 1) -> start until end
+}
 
-topology ring: workers
-
-workers -> islands
-
+topology ring: islands
 islands -> master
+master -> islands

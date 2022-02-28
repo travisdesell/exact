@@ -1,3 +1,4 @@
+#include <iostream>
 #include <fstream>
 #include <sstream>
 #include "archipelago_config.hxx"
@@ -14,12 +15,17 @@ int main(int argc, char **argv) {
 
   string s = buffer.str();
 
-  Tokenizer tokenizer(s);
+  int nn = 32;
+  map<string, node_index_type> m;
+  m["n_islands"] = 15;
+  ArchipelagoConfig config = ArchipelagoConfig::from_string(s, nn, m);
 
-  optional<Token> token;
-
-  while ((token = tokenizer.next_token()) != std::nullopt) {
-    std::cout << token->debug() << "\n";
+  for (int i = 0; i < nn; i++) {
+    Log::info("");
+    for (int j = 0; j < nn; j++) {
+      Log::info_no_header("%s ", config.connections[i][j] ? "X" : "~");
+    }
+    Log::info_no_header("\n");
   }
 
   return 0;
