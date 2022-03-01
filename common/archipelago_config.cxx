@@ -1190,7 +1190,13 @@ map<string, node_index_type> ArchipelagoConfig::empty_map = {};
 ArchipelagoConfig ArchipelagoConfig::from_string(string str, int32_t n_nodes, map<string, node_index_type> &define_map) {
 
   string tmp_file = std::tmpnam(nullptr);
+  // The pre processor provided by clang nas no space between the -o and
+  // the tmp_file path. There is one with gcc cpp.
+#if defined(__clang__)
+  string command = "cpp -P -o" + tmp_file;
+#else
   string command = "cpp -P -o " + tmp_file;
+#endif
   for (auto it = define_map.begin(); it != define_map.end(); it++)
     command = command + " -D" + it->first + "=" + std::to_string(it->second);
   Log::info("cpp command: %s\n", command.c_str());
@@ -1199,7 +1205,7 @@ ArchipelagoConfig ArchipelagoConfig::from_string(string str, int32_t n_nodes, ma
   if (!pre_processor) {
     Log::info("Null pre_process\n");
   }
-  
+
   size_t total_wrote = 0;
   while (1) {
     int n = fprintf(pre_processor, "%s", str.c_str() + total_wrote);

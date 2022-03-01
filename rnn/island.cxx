@@ -289,7 +289,7 @@ pair<int32_t, const RNN_Genome *> Island::insert_genome(shared_ptr<const RNN_Gen
       Log::debug(
           "checking to remove worst from structure_map - &worst: %p, "
           "&(*potential_match): %p\n",
-          worst, (*potential_match));
+          worst.get(), potential_match->get());
       if (potential_match->get() == worst.get()) {
         found = true;
         Log::debug("potential_matches.size() before erase: %d\n", potential_matches.size());
