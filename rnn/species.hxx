@@ -9,11 +9,14 @@ using std::sort;
 using std::upper_bound;
 
 #include <random>
-using std::minstd_rand0;
+using std::mt19937_64;
 using std::uniform_real_distribution;
 
 #include <string>
 using std::string;
+
+#include <utility>
+using std::pair;
 
 #include <optional>
 #include <vector>
@@ -35,6 +38,8 @@ class Species {
   vector<shared_ptr<const RNN_Genome>> genomes;
 
   int32_t species_not_improving_count;
+
+  static inline uniform_real_distribution<double> rng_0_1{0.0, 1.0};
 
  public:
   /**
@@ -96,7 +101,7 @@ class Species {
    * the random number generator \param genome will be the copied genome, an
    * addresss to a pointer needs to be passed.
    */
-  shared_ptr<const RNN_Genome> get_random_genome(uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator);
+  shared_ptr<const RNN_Genome> get_random_genome(mt19937_64 &generator);
 
   /**
    * Selects two different genomes from the island at random and returns copies
@@ -108,10 +113,10 @@ class Species {
    * an addresss to a pointer needs to be passed. \param genome2 will be the
    * second copied genome, an addresss to a pointer needs to be passed.
    */
-  void get_two_random_genomes(uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator,
+  void get_two_random_genomes(mt19937_64 &generator,
                               shared_ptr<const RNN_Genome> &g1, shared_ptr<const RNN_Genome> &g2);
 
-  void get_n_random_genomes(uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator, int32_t n,
+  void get_n_random_genomes(mt19937_64 &generator, int32_t n,
                             vector<shared_ptr<const RNN_Genome>> &parents);
 
   /**

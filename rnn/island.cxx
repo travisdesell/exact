@@ -8,7 +8,7 @@ using std::setw;
 
 #include <numeric>
 #include <random>
-using std::minstd_rand0;
+using std::mt19937_64;
 using std::uniform_real_distribution;
 
 #include <string>
@@ -24,9 +24,10 @@ using std::swap;
 #include <vector>
 using std::vector;
 
-#include "common/log.hxx"
 #include "island.hxx"
 #include "rnn_genome.hxx"
+#include "common/log.hxx"
+#include "common/random.hxx"
 
 Island::Island(int32_t _id, int32_t _max_size)
     : id(_id), max_size(_max_size), status(IslandStatus::INITIALIZING), erase_again(0), erased(false) {}
@@ -43,16 +44,16 @@ shared_ptr<const RNN_Genome> &Island::get_best_genome() { return genomes[0]; }
 
 shared_ptr<const RNN_Genome> &Island::get_worst_genome() { return genomes.back(); }
 
-double Island::get_best_fitness() {
+double Island::get_best_fitness() const {
   if (genomes.size() != 0)
-    return get_best_genome()->get_fitness();
+    return genomes[0]->get_fitness();
   else
     return EXAMM_MAX_DOUBLE;
 }
 
-double Island::get_worst_fitness() {
+double Island::get_worst_fitness() const {
   if (genomes.size() != 0)
-    return get_worst_genome()->get_fitness();
+    return genomes.back()->get_fitness();
   else
     return EXAMM_MAX_DOUBLE;
 }
@@ -67,13 +68,13 @@ bool Island::is_initializing() { return status == IslandStatus::INITIALIZING; }
 
 bool Island::is_repopulating() { return status == IslandStatus::REPOPULATING; }
 
-shared_ptr<const RNN_Genome> Island::get_random_genome(uniform_real_distribution<double> &rng_0_1,
-                                                       minstd_rand0 &generator) {
+shared_ptr<const RNN_Genome> Island::get_random_genome(
+                                                       mt19937_64 &generator) {
   int32_t genome_position = size() * rng_0_1(generator);
   return genomes[genome_position];
 }
 
-void Island::get_two_random_genomes(uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator,
+void Island::get_two_random_genomes(mt19937_64 &generator,
                                     shared_ptr<const RNN_Genome> &g1, shared_ptr<const RNN_Genome> &g2) {
   int32_t p1 = size() * rng_0_1(generator);
   int32_t p2 = (size() - 1) * rng_0_1(generator);
@@ -90,7 +91,7 @@ void Island::get_two_random_genomes(uniform_real_distribution<double> &rng_0_1, 
   g2 = genomes[p2];
 }
 
-void Island::get_n_random_genomes(uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator, int32_t n,
+void Island::get_n_random_genomes(mt19937_64 &generator, int32_t n,
                                   vector<shared_ptr<const RNN_Genome>> &parents) {
   if (n > genomes.size()) {
     Log::warning("Cannot give n parents with island size of %d\n", size());
@@ -100,14 +101,10 @@ void Island::get_n_random_genomes(uniform_real_distribution<double> &rng_0_1, mi
   vector<int> indices(genomes.size());
   std::iota(indices.begin(), indices.end(), 0);
 
-  // Fischer-yates shuffle
-  for (int i = indices.size() - 1; i > 0; i--) {
-    int j = rng_0_1(generator) * indices.size();
-    swap(indices[i], indices[j]);
-  }
+  fisher_yates_shuffle(generator, indices);
 
   indices.resize(n);
-  for (int i = 0; i < indices.size(); i++) parents.push_back(genomes[i]);
+  for (int i = 0; i < (int) indices.size(); i++) parents.push_back(genomes[i]);
 }
 
 void Island::do_population_check(int line, int initial_size) {
@@ -338,7 +335,7 @@ pair<int32_t, const RNN_Genome *> Island::insert_genome(shared_ptr<const RNN_Gen
   }
 }
 
-void Island::print(string indent) {
+void Island::print(string indent) const {
   if (Log::at_level(Log::INFO)) {
     Log::info("%s\t%s\n", indent.c_str(), RNN_Genome::print_statistics_header().c_str());
 

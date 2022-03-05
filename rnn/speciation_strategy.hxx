@@ -3,11 +3,13 @@
 
 #include <functional>
 using std::function;
+
 #include <string>
 using std::string;
+
 #include <random>
-using std::minstd_rand0;
 using std::uniform_real_distribution;
+using std::mt19937_64;
 
 #include "msg.hxx"
 
@@ -15,6 +17,11 @@ class SpeciationStrategy {
  protected:
   int32_t generated_genomes = 0;
   int32_t inserted_genomes = 0;
+
+  static inline uniform_real_distribution<double> rng_0_1{0.0, 1.0};
+  mt19937_64 generator;
+
+  SpeciationStrategy();
 
  public:
   /**
@@ -66,7 +73,7 @@ class SpeciationStrategy {
   /**
    * Generates a unit of work. The work unit is to be sent to a worker.
    */
-  virtual unique_ptr<WorkMsg> generate_work(uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator) = 0;
+  virtual unique_ptr<WorkMsg> generate_work() = 0;
 
   /**
    * Prints out all the island's populations

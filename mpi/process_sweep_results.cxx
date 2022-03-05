@@ -10,6 +10,7 @@ using std::setw;
 using std::cerr;
 using std::cout;
 using std::endl;
+using std::setprecision;
 
 #include <mutex>
 using std::mutex;

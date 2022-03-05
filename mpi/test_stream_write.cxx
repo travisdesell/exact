@@ -4,6 +4,13 @@ using std::fixed;
 using std::setprecision;
 using std::setw;
 
+#include <algorithm>
+using std::min;
+using std::max;
+
+#include <utility>
+using std::swap;
+
 #include <mutex>
 using std::mutex;
 

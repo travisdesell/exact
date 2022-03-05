@@ -1,6 +1,9 @@
 #ifndef WEIGHT_INITIALIZE_HXX
 #define WEIGHT_INITIALIZE_HXX
 
+#include <string>
+using std::string;
+
 enum WeightType { RANDOM = 0, XAVIER = 1, KAIMING = 2, LAMARCKIAN = 3, NONE = -1 };
 
 static string WEIGHT_TYPES_STRING[] = {"random", "xavier", "kaiming", "lamarckian"};

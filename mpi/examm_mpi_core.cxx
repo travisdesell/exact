@@ -1,8 +1,18 @@
 #include <assert.h>
 #include <mpi.h>
 
+#include <iostream>
+using std::cout;
+
 #include <chrono>
 #include <thread>
+#include <limits>
+using std::numeric_limits;
+
+#include <algorithm>
+using std::max;
+using std::min;
+using std::swap;
 
 #include "../common/log.hxx"
 #include "../rnn/examm.hxx"

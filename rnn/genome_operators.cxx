@@ -12,12 +12,12 @@ GenomeOperators::GenomeOperators(int32_t _number_inputs, int32_t _number_outputs
                                  WeightType _weight_initialize, WeightType _weight_inheritance,
                                  WeightType _mutated_component_weight, DatasetMeta _dataset_meta,
                                  TrainingParameters _training_parameters, vector<string> _possible_node_type_strings)
-    : number_inputs(_number_inputs),
+    : dataset_meta(_dataset_meta),
+      number_inputs(_number_inputs),
       number_outputs(_number_outputs),
       n_parents_intra_range(n_parents_intra_range),
       n_parents_inter_range(n_parents_inter_range),
       n_mutations_range(n_mutations_range),
-      dataset_meta(_dataset_meta),
       weight_initialize(_weight_initialize),
       weight_inheritance(_weight_inheritance),
       mutated_component_weight(_mutated_component_weight),
@@ -75,7 +75,7 @@ void GenomeOperators::finalize_genome(RNN_Genome *genome) {
 }
 
 int32_t GenomeOperators::get_random_n_mutations() {
-  int32_t dif = n_mutations_range.second - n_mutations_range.first;
+  int32_t dif = n_mutations_range.second - n_mutations_range.first + 1;
   return n_mutations_range.first + rng_0_1(generator) * dif;
 }
 
@@ -486,12 +486,12 @@ RNN_Genome *GenomeOperators::crossover(RNN_Genome *more_fit, RNN_Genome *less_fi
 }
 
 int32_t GenomeOperators::get_random_n_parents_inter() {
-  int32_t dif = n_parents_inter_range.second - n_parents_inter_range.first;
+  int32_t dif = n_parents_inter_range.second - n_parents_inter_range.first + 1;
   return n_parents_inter_range.first + rng_0_1(generator) * dif;
 }
 
 int32_t GenomeOperators::get_random_n_parents_intra() {
-  int32_t dif = n_parents_intra_range.second - n_parents_intra_range.first;
+  int32_t dif = n_parents_intra_range.second - n_parents_intra_range.first + 1;
   return n_parents_intra_range.first + rng_0_1(generator) * dif;
 }
 

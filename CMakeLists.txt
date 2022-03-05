@@ -28,7 +28,7 @@ SET (PLATFORM 64)
 # add_compile_definitions(MINIMAL_LOGGING)
 
 # 1 This line for local - THIS CODE IS SLOW BUT WILL COMPILE FASTER! Use a Release build for fast code!
-SET (CMAKE_CXX_FLAGS                "-Wall -Wextra -std=gnu++17 -funroll-loops -march=native -ftls-model=initial-exec")
+SET (CMAKE_CXX_FLAGS                "-Wall -Wextra -std=gnu++20 -funroll-loops -march=native -ftls-model=initial-exec")
 
 # DEBUG BUILD
 # Address sanitizer enabled

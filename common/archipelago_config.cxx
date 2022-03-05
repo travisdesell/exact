@@ -1186,7 +1186,6 @@ void Env::connect(node_index_type from, node_index_type to) {
 ArchipelagoConfig::ArchipelagoConfig(node_index_type master_id, vector<vector<bool>> connections, vector<node_role> node_roles) :
   master_id(master_id),  connections(move(connections)), node_roles(node_roles) {}
 
-map<string, node_index_type> ArchipelagoConfig::empty_map = {};
 ArchipelagoConfig ArchipelagoConfig::from_string(string str, int32_t n_nodes, map<string, node_index_type> &define_map) {
 
   string tmp_file = std::tmpnam(nullptr);

@@ -138,7 +138,7 @@ class Tokenizer {
  *
  **/
 
-enum node_role { MASTER, MANAGERS, ISLANDS, WORKERS };
+enum node_role { MASTER = 0, MANAGERS = 1, ISLANDS = 2, WORKERS = 3 };
 
 struct Env {
   static const unordered_map<Token::token_type, node_role> node_role_map;
@@ -419,7 +419,7 @@ class ArchipelagoConfig {
  private:
   ArchipelagoConfig(node_index_type master_id, vector<vector<bool>> connections, vector<node_role> node_roles);
 
-  static map<string, node_index_type> empty_map;
+  static inline map<string, node_index_type> empty_map = {};
   // Check to see if a config is good:
   // - All islands have an manager
   // - All managers are connected to the master

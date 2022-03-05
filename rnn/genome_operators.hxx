@@ -12,7 +12,6 @@ using std::pair;
 #include "rnn_genome.hxx"
 #include "rnn_node_interface.hxx"
 #include "training_parameters.hxx"
-using namespace std;
 
 class GenomeOperators {
  public:

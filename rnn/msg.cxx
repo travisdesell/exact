@@ -155,7 +155,7 @@ unique_ptr<RNN_Genome> WorkMsg::get_genome(GenomeOperators &operators) {
     operators.mutate(parent, margs.n_mutations);
     g = parent;
   } else {
-    // Unreachable
+    // Unreachable (or at least it should be)
     exit(1);
   }
 
@@ -198,7 +198,9 @@ void EvalAccountingMsg::write_to_stream(ostream &bin_ostream) {
 
 int32_t EvalAccountingMsg::get_msg_ty() const { return Msg::EVAL_ACCOUNTING; }
 
-GenomeShareMsg::GenomeShareMsg(RNN_Genome *g, bool propagate, uint32_t n_evals)
+GenomeShareMsg::GenomeShareMsg(unique_ptr<RNN_Genome> g, bool propagate, uint32_t n_evals)
+    : EvalAccountingMsg(n_evals), genome(move(g)), propagate(propagate) {}
+GenomeShareMsg::GenomeShareMsg(shared_ptr<const RNN_Genome> g, bool propagate, uint32_t n_evals)
     : EvalAccountingMsg(n_evals), genome(g), propagate(propagate) {}
 GenomeShareMsg::GenomeShareMsg(istream &bin_istream) : EvalAccountingMsg(0) {
   int msg_ty = bin_istream.get();
@@ -210,14 +212,39 @@ GenomeShareMsg::GenomeShareMsg(istream &bin_istream) : EvalAccountingMsg(0) {
 
   bin_istream.read((char *) &propagate, sizeof(bool));
   bin_istream.read((char *) &n_evals, sizeof(uint32_t));
-  genome = make_shared<RNN_Genome>(bin_istream);
+  genome = make_unique<RNN_Genome>(bin_istream);
 }
 
 void GenomeShareMsg::write_to_stream(ostream &bin_ostream) {
   bin_ostream.put(get_msg_ty());
   bin_ostream.write((char *) &propagate, sizeof(bool));
   bin_ostream.write((char *) &n_evals, sizeof(uint32_t));
-  genome->write_to_stream(bin_ostream);
+  const RNN_Genome *g;
+  if (genome.index() == genome_storage::unique) {
+    g = get<unique>(genome).get();
+  } else {
+    g = get<shared>(genome).get();
+  }
+  g->write_to_stream(bin_ostream);
+}
+
+unique_ptr<RNN_Genome> GenomeShareMsg::get_genome() {
+  if (genome.index() == genome_storage::unique) {
+    return move(get<unique>(genome));
+  } else {
+    Log::warning(
+        "Genome share message contained a shared ptr at destination. This will cause an extra genome copy but "
+        "otherwise is harmless\n");
+    return unique_ptr<RNN_Genome>(get<shared>(genome)->copy());
+  }
+}
+
+void GenomeShareMsg::set_propagate(bool prop) {
+  propagate = prop;
+}
+
+bool GenomeShareMsg::should_propagate() {
+  return propagate;
 }
 
 int32_t GenomeShareMsg::get_msg_ty() const { return Msg::GENOME_SHARE; }

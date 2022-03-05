@@ -1,12 +1,19 @@
 #ifndef GIBBS_ARGUMENTS_H
 #define GIBBS_ARGUMENTS_H
 
+#include <string>
+using std::string;
+
 #include <cstdlib>
 #include <iostream>
-#include <sstream>
-#include <vector>
+using std::cerr;
+using std::endl;
 
-using namespace std;
+#include <sstream>
+using std::stringstream;
+
+#include <vector>
+using std::vector;
 
 bool argument_exists(vector<string> arguments, string argument);
 

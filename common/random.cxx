@@ -17,40 +17,6 @@ using std::vector;
 
 #include "random.hxx"
 
-float random_0_1(minstd_rand0 &generator) {
-  return ((float) generator() - (float) generator.min()) / ((float) generator.max() - (float) generator.min());
-}
-
-void fisher_yates_shuffle(minstd_rand0 &generator, vector<int> &v) {
-  for (int32_t i = v.size() - 1; i > 0; i--) {
-    float t = ((float) generator() - (float) generator.min()) / ((float) generator.max() - (float) generator.min());
-    t *= (float) i - 1.0;
-
-    int32_t target = (int32_t) t;
-
-    // cerr << "target: " << target << endl;
-
-    int temp = v[target];
-    v[target] = v[i];
-    v[i] = temp;
-  }
-}
-
-void fisher_yates_shuffle(minstd_rand0 &generator, vector<long> &v) {
-  for (int32_t i = v.size() - 1; i > 0; i--) {
-    float t = ((float) generator() - (float) generator.min()) / ((float) generator.max() - (float) generator.min());
-    t *= (float) i - 1.0;
-
-    int32_t target = (int32_t) t;
-
-    // cerr << "target: " << target << endl;
-
-    long temp = v[target];
-    v[target] = v[i];
-    v[i] = temp;
-  }
-}
-
 NormalDistribution::NormalDistribution() {
   generate = true;
   z0 = 0;

@@ -2,6 +2,8 @@
 using std::sort;
 
 #include <chrono>
+using namespace std::chrono;
+
 #include <cstring>
 #include <functional>
 using std::bind;
@@ -18,13 +20,21 @@ using std::setw;
 using std::endl;
 
 #include <random>
-using std::minstd_rand0;
+using std::mt19937_64;
 using std::uniform_int_distribution;
 using std::uniform_real_distribution;
 
 #include <string>
 using std::string;
 using std::to_string;
+
+#include <optional>
+using std::optional;
+using std::nullopt;
+
+#include <memory>
+using std::unique_ptr;
+using std::make_unique;
 
 #include "examm.hxx"
 #include "generate_nn.hxx"
@@ -57,8 +67,8 @@ EXAMM::EXAMM(int32_t population_size, int32_t number_islands, int32_t max_genome
     : population_size(population_size),
       number_islands(number_islands),
       max_genomes(max_genomes),
-      dataset_meta(dataset_meta),
       max_time_minutes(_max_time_minutes),
+      dataset_meta(dataset_meta),
       training_parameters(training_parameters),
       genome_operators(_genome_operators),
       extinction_event_generation_number(extinction_event_generation_number),
@@ -75,7 +85,7 @@ EXAMM::EXAMM(int32_t population_size, int32_t number_islands, int32_t max_genome
   total_bp_epochs = 0;
 
   uint16_t rng_seed = std::chrono::system_clock::now().time_since_epoch().count();
-  generator = minstd_rand0(rng_seed);
+  generator = mt19937_64(rng_seed);
   rng_0_1 = uniform_real_distribution<double>(0.0, 1.0);
 
   // rng_crossover_weight = uniform_real_distribution<double>(0.0, 0.0);
@@ -135,7 +145,7 @@ EXAMM::EXAMM(int32_t population_size, int32_t number_islands, int32_t max_genome
 
   } else if (speciation_method.compare("neat") == 0) {
     speciation_strategy = new NeatSpeciationStrategy(seed_genome, species_threshold, fitness_threshold, neat_c1,
-                                                     neat_c2, neat_c3, generator, genome_operators);
+                                                     neat_c2, neat_c3, genome_operators);
   }
 
   if (output_directory != "") {
@@ -338,7 +348,7 @@ bool EXAMM::insert_genome(unique_ptr<RNN_Genome> unique_genome) {
 
 bool EXAMM::time_limit_reached() {
   if (max_time_minutes < 0) return false;
-  std::chrono::time_point<std::chrono::system_clock> now = chrono::system_clock::now();
+  std::chrono::time_point<std::chrono::system_clock> now = std::chrono::system_clock::now();
   long minutes_elapsed = std::chrono::duration_cast<std::chrono::minutes>(now - start_clock).count();
   return minutes_elapsed >= max_time_minutes;
 }
@@ -348,7 +358,7 @@ unique_ptr<Msg> EXAMM::generate_work() {
   if (speciation_strategy->get_inserted_genomes() > max_genomes || time_limit_reached())
     return make_unique<TerminateMsg>();
 
-  return speciation_strategy->generate_work(rng_0_1, generator);
+  return speciation_strategy->generate_work();
 }
 
 shared_ptr<const RNN_Genome> &EXAMM::get_seed_genome() { return seed_genome; }

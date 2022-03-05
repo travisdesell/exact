@@ -11,6 +11,9 @@ using std::uniform_real_distribution;
 #include <string>
 using std::string;
 
+#include <optional>
+using std::optional;
+
 #include "island.hxx"
 #include "msg.hxx"
 #include "rnn_genome.hxx"
@@ -19,7 +22,7 @@ using std::string;
 // Used in IslandSpeciationStrategy::parents_repopulation
 
 class IslandSpeciationStrategy : public SpeciationStrategy {
- private:
+ protected:
   typedef enum { BEST_PARENTS, RANDOM_PARENTS, BEST_GENOME, BEST_ISLAND, NONE } RepopulationMethod;
 
   int32_t generation_island; /**< Used to track which island to generate the
@@ -77,17 +80,14 @@ class IslandSpeciationStrategy : public SpeciationStrategy {
   /**
    * All the islands which contain the genomes for this speciation strategy.
    */
-  vector<Island *> islands;
+  vector<Island> islands;
   shared_ptr<const RNN_Genome> global_best_genome;
 
   GenomeOperators &genome_operators;
 
-  unique_ptr<WorkMsg> generate_work_for_filled_island(uniform_real_distribution<double> &rng_0_1,
-                                                      minstd_rand0 &generator, Island *island);
-  unique_ptr<WorkMsg> generate_work_for_initializing_island(uniform_real_distribution<double> &rng_0_1,
-                                                            minstd_rand0 &generator, Island *island);
-  unique_ptr<WorkMsg> generate_work_for_reinitializing_island(uniform_real_distribution<double> &rng_0_1,
-                                                              minstd_rand0 &generator, Island *island);
+  virtual unique_ptr<WorkMsg> generate_work_for_filled_island(Island &island);
+  unique_ptr<WorkMsg> generate_work_for_initializing_island(Island &island);
+  unique_ptr<WorkMsg> generate_work_for_reinitializing_island(Island &island);
 
  public:
   // static void register_command_line_arguments();
@@ -177,13 +177,9 @@ class IslandSpeciationStrategy : public SpeciationStrategy {
   /**
    * See speciation_strategy.hxx
    *
-   * \param rng_0_1 is the random number distribution that generates random
-   * numbers between 0 (inclusive) and 1 (non=inclusive). \param generator is
-   * the random number generator
-   *
    * \return the newly generated genome.
    */
-  unique_ptr<WorkMsg> generate_work(uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator);
+  virtual unique_ptr<WorkMsg> generate_work();
 
   /**
    * Prints out all the island's populations
@@ -206,8 +202,7 @@ class IslandSpeciationStrategy : public SpeciationStrategy {
    * Island repopulation through two random parents from two seperate islands,
    * parents can be random genomes or best genome from the island
    */
-  unique_ptr<WorkMsg> parents_repopulation(RepopulationMethod method, uniform_real_distribution<double> &rng_0_1,
-                                           minstd_rand0 &generator);
+  unique_ptr<WorkMsg> parents_repopulation(RepopulationMethod method);
 
   /**
    * copy src island to dsc island

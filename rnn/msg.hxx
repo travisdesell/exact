@@ -41,9 +41,9 @@ class Msg {
   virtual int32_t get_msg_ty() const = 0;
 };
 
+enum genome_storage { unique = 0, shared = 1 };
 class WorkMsg : public Msg {
  private:
-  enum { unique = 0, shared = 1 };
 
   struct mu_args {
     typedef unique_ptr<RNN_Genome> unique;
@@ -105,12 +105,19 @@ class EvalAccountingMsg : public Msg {
 
 class GenomeShareMsg : public EvalAccountingMsg {
  private:
-  shared_ptr<const RNN_Genome> genome;
+  typedef shared_ptr<const RNN_Genome> shared;
+  typedef unique_ptr<RNN_Genome> unique;
+  std::variant<unique, shared> genome;
   bool propagate;
 
  public:
-  GenomeShareMsg(RNN_Genome *g, bool propagate, uint32_t n_evals = 0);
+  GenomeShareMsg(unique g, bool propagate, uint32_t n_evals = 0);
+  GenomeShareMsg(shared g, bool propagate, uint32_t n_evals = 0);
   GenomeShareMsg(istream &bin_istream);
+
+  unique_ptr<RNN_Genome> get_genome();
+  void set_propagate(bool);
+  bool should_propagate();
 
   virtual void write_to_stream(ostream &bin_ostream);
   virtual int32_t get_msg_ty() const;

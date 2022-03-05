@@ -6,6 +6,7 @@ using std::ostream;
 
 #include <string>
 using std::string;
+using std::to_string;
 
 #include <map>
 using std::map;

@@ -8,7 +8,7 @@ using std::function;
 using std::string;
 
 #include <random>
-using std::minstd_rand0;
+using std::mt19937_64;
 using std::uniform_real_distribution;
 
 #include "msg.hxx"
@@ -55,8 +55,6 @@ class NeatSpeciationStrategy : public SpeciationStrategy {
                                  can re-use it across islands and not duplicate
                                  innovation numbers. */
 
-  minstd_rand0 generator;
-
   vector<Species> neat_species;
   shared_ptr<const RNN_Genome> global_best_genome;
   GenomeOperators genome_operators;
@@ -64,7 +62,7 @@ class NeatSpeciationStrategy : public SpeciationStrategy {
  public:
   NeatSpeciationStrategy(shared_ptr<const RNN_Genome> _seed_genome, double _species_threshold,
                          double _fitness_threshold, double _neat_c1, double _neat_c2, double _neat_c3,
-                         minstd_rand0 &_generator, GenomeOperators genome_operators);
+                         GenomeOperators genome_operators);
   /**
    * \return the number of generated genomes.
    */
@@ -122,14 +120,9 @@ class NeatSpeciationStrategy : public SpeciationStrategy {
    *
    * \return the newly generated genome.
    */
-  unique_ptr<WorkMsg> generate_work(uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator);
-  // RNN_Genome* generate_genome(uniform_real_distribution<double> &rng_0_1,
-  // minstd_rand0 &generator, function<void (int32_t, RNN_Genome*)> &mutate,
-  // function<RNN_Genome* (RNN_Genome*, RNN_Genome *)> &crossover, int32_t
-  // number_stir_mutations);
+  virtual unique_ptr<WorkMsg> generate_work();
 
-  unique_ptr<WorkMsg> generate_work_for_species(Species &species, uniform_real_distribution<double> &rng_0_1,
-                                                minstd_rand0 &generator);
+  unique_ptr<WorkMsg> generate_work_for_species(Species &species);
 
   /**
    * Prints out all the island's populations

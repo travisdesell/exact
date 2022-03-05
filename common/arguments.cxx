@@ -1,9 +1,4 @@
-#include <cstdlib>
-#include <iostream>
-#include <sstream>
-#include <vector>
-
-using namespace std;
+#include "arguments.hxx"
 
 bool argument_exists(vector<string> arguments, string argument) {
   for (unsigned int i = 0; i < arguments.size(); i++) {

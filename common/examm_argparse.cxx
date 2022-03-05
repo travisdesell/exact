@@ -219,6 +219,11 @@ if (max_mutations < min_mutations) swap(max_mutations, max_mutations);
 max_mutations = max(1, max_mutations);
 min_mutations = min(1, min_mutations);
 
+#ifdef EXAMM_ARCHIPELAGO
+string archipelago_config_path;
+get_argument(arguments, "--archipelago_config", true, archipelago_config_path);
+#endif
+
 #ifdef EXAMM_MULTI
 uint32_t repeats;
 get_argument(arguments, "--repeats", true, repeats);

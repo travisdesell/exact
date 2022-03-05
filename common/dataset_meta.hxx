@@ -2,10 +2,11 @@
 #define DATASET_META_HXX 1
 
 #include <map>
+using std::map;
 #include <string>
+using std::string;
 #include <vector>
-
-using namespace std;
+using std::vector;
 
 /**
  * Meta information about the dataset that is needed to train a genome

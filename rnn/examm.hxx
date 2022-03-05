@@ -61,7 +61,7 @@ class EXAMM {
   map<string, int32_t> inserted_from_map;
   map<string, int32_t> generated_from_map;
 
-  minstd_rand0 generator;
+  mt19937_64 generator;
   uniform_real_distribution<double> rng_0_1{0.0, 1.0};
   uniform_real_distribution<double> rng_crossover_weight;
 

@@ -6,8 +6,10 @@ using std::function;
 //#include <iostream>
 
 #include <algorithm>
-#include <random>
+#include <algorithm>
+using std::min;
 
+#include <random>
 using std::minstd_rand0;
 using std::uniform_real_distribution;
 
@@ -26,7 +28,7 @@ using std::string;
  */
 NeatSpeciationStrategy::NeatSpeciationStrategy(shared_ptr<const RNN_Genome> _seed_genome, double _species_threshold,
                                                double _fitness_threshold, double _neat_c1, double _neat_c2,
-                                               double _neat_c3, minstd_rand0 &_generator,
+                                               double _neat_c3,
                                                GenomeOperators genome_operators)
     : generation_species(0),
       species_count(0),
@@ -39,7 +41,6 @@ NeatSpeciationStrategy::NeatSpeciationStrategy(shared_ptr<const RNN_Genome> _see
       generated_genomes(0),
       inserted_genomes(0),
       minimal_genome(move(_seed_genome)),
-      generator(_generator),
       genome_operators(genome_operators) {
   Log::info("Neat speciation strategy, the species threshold is %f. \n", species_threshold);
 
@@ -176,8 +177,7 @@ pair<int32_t, const RNN_Genome *> NeatSpeciationStrategy::insert_genome(unique_p
   }
 }
 
-unique_ptr<WorkMsg> NeatSpeciationStrategy::generate_work(uniform_real_distribution<double> &rng_0_1,
-                                                          minstd_rand0 &generator) {
+unique_ptr<WorkMsg> NeatSpeciationStrategy::generate_work() {
   // generate the genome from the next island in a round
   // robin fashion.
   unique_ptr<WorkMsg> work;
@@ -201,7 +201,7 @@ unique_ptr<WorkMsg> NeatSpeciationStrategy::generate_work(uniform_real_distribut
   if (current_species.size() < 2) {
     Log::info("current species has less than 2 genomes, doing mutation!\n");
 
-    shared_ptr<const RNN_Genome> genome = current_species.get_random_genome(rng_0_1, generator);
+    shared_ptr<const RNN_Genome> genome = current_species.get_random_genome(generator);
 
     work = make_unique<WorkMsg>(move(genome), genome_operators.get_random_n_mutations());
   } else {
@@ -211,7 +211,7 @@ unique_ptr<WorkMsg> NeatSpeciationStrategy::generate_work(uniform_real_distribut
     // generate a genome via crossover or mutation
     Log::info("current species size %d, doing mutaion or crossover\n", current_species.size());
 
-    work = generate_work_for_species(current_species, rng_0_1, generator);
+    work = generate_work_for_species(current_species);
   }
 
   work->set_genome_number(generated_genomes++);
@@ -223,15 +223,13 @@ unique_ptr<WorkMsg> NeatSpeciationStrategy::generate_work(uniform_real_distribut
   return work;
 }
 
-unique_ptr<WorkMsg> NeatSpeciationStrategy::generate_work_for_species(Species &species,
-                                                                      uniform_real_distribution<double> &rng_0_1,
-                                                                      minstd_rand0 &generator) {
+unique_ptr<WorkMsg> NeatSpeciationStrategy::generate_work_for_species(Species &species) {
   double r = rng_0_1(generator);
 
   if (r < GenomeOperators::mutation_p) {
     Log::info("performing mutation\n");
 
-    shared_ptr<const RNN_Genome> genome = species.get_random_genome(rng_0_1, generator);
+    shared_ptr<const RNN_Genome> genome = species.get_random_genome(generator);
 
     return make_unique<WorkMsg>(move(genome), genome_operators.get_random_n_mutations());
   } else {
@@ -243,14 +241,14 @@ unique_ptr<WorkMsg> NeatSpeciationStrategy::generate_work_for_species(Species &s
       // select two distinct parent genomes in the same island
       int32_t n_parents = min(species.size(), genome_operators.get_random_n_parents_intra());
       vector<shared_ptr<const RNN_Genome>> parents(n_parents);
-      species.get_n_random_genomes(rng_0_1, generator, n_parents, parents);
+      species.get_n_random_genomes(generator, n_parents, parents);
       return make_unique<WorkMsg>(parents);
     } else {
       // inter-island crossover
       Log::info("performing inter-species crossover\n");
 
       // get a random genome from this island
-      shared_ptr<const RNN_Genome> parent = species.get_random_genome(rng_0_1, generator);
+      shared_ptr<const RNN_Genome> parent = species.get_random_genome(generator);
 
       vector<shared_ptr<const RNN_Genome>> parents;
       parents.push_back(move(parent));
@@ -262,7 +260,7 @@ unique_ptr<WorkMsg> NeatSpeciationStrategy::generate_work_for_species(Species &s
       Species &other = neat_species[other_island];
       int32_t n = min(other.size(), genome_operators.get_random_n_parents_inter() - 1);
 
-      other.get_n_random_genomes(rng_0_1, generator, n, parents);
+      other.get_n_random_genomes(generator, n, parents);
 
       return make_unique<WorkMsg>(parents);
     }

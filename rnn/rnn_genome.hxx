@@ -20,7 +20,6 @@ using std::uniform_real_distribution;
 #include <vector>
 using std::vector;
 #include <functional>
-using namespace std;
 
 #include "common/random.hxx"
 #include "common/weight_initialize.hxx"

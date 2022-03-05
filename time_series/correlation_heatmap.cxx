@@ -13,6 +13,7 @@ using std::vector;
 #include "common/arguments.hxx"
 #include "common/log.hxx"
 #include "time_series/time_series.hxx"
+using namespace std;
 
 vector<string> arguments;
 
