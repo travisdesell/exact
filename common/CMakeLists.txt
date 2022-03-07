@@ -1,7 +1,7 @@
 add_executable(math_test exp)
 target_compile_definitions(math_test PUBLIC -DEXACT_MATH_TEST)
 
-add_executable(ac_test archipelago_config_test.cxx archipelago_config.cxx log.cxx arguments.cxx files.cxx)
+add_executable(ac_test archipelago_config_test.cxx archipelago_config.cxx log.cxx arguments.cxx files.cxx args.cxx)
 
 if (MYSQL_FOUND)
     message(STATUS "mysql found, adding db_conn to exact_common library!")

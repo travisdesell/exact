@@ -25,20 +25,36 @@ class RNN;
 #define HIDDEN_LAYER 1
 #define OUTPUT_LAYER 2
 
-extern const int32_t NUMBER_NODE_TYPES;
-extern const string NODE_TYPES[];
+inline const int32_t NUMBER_NODE_TYPES = 9;
+inline const string NODE_TYPES[] = {"simple", "jordan", "elman", "UGRNN", "MGU",
+                                    "GRU",    "delta",  "LSTM",  "ENARC", "ENAS_DAG"};
 
-#define SIMPLE_NODE 0
-#define JORDAN_NODE 1
-#define ELMAN_NODE 2
-#define UGRNN_NODE 3
-#define MGU_NODE 4
-#define GRU_NODE 5
-#define DELTA_NODE 6
-#define LSTM_NODE 7
-#define ENARC_NODE 8
-#define ENAS_DAG_NODE 9
-#define RANDOM_DAG_NODE 10
+enum rnn_node_type {
+  SIMPLE_NODE = 0,
+  JORDAN_NODE = 1,
+  ELMAN_NODE = 2,
+  UGRNN_NODE = 3,
+  MGU_NODE = 4,
+  GRU_NODE = 5,
+  DELTA_NODE = 6,
+  LSTM_NODE = 7,
+  ENARC_NODE = 8,
+  ENAS_DAG_NODE = 9,
+  RANDOM_DAG_NODE = 10,
+};
+inline const map<string, int> NODE_TYPE_MAP = {
+  {"simple", SIMPLE_NODE},
+  {"jordan", JORDAN_NODE},
+  {"elman", ELMAN_NODE},
+  {"ugrnn", UGRNN_NODE},
+  {"mgu", MGU_NODE},
+  {"gru", GRU_NODE},
+  {"delta", DELTA_NODE},
+  {"lstm", LSTM_NODE},
+  {"enarc", ENARC_NODE},
+  {"enas_dag", ENAS_DAG_NODE},
+  {"random_dag", RANDOM_DAG_NODE},
+};
 
 double sigmoid(double value);
 double sigmoid_derivative(double value);

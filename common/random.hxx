@@ -11,11 +11,34 @@ using std::minstd_rand0;
 #include <vector>
 using std::vector;
 
+// clang on macOS is weird and doesnt fully support the C++20 concepts feature, so we have to manually defined these concepts
+// with GCC and non-apple clang they are defined as a part of the standard library.
+#ifdef __APPLE__
 #include <type_traits>
-using std::is_swappable;
+
+template<typename T>
+concept swappable = std::is_swappable<T>();
+
+template< class F, class... Args >
+
+concept invocable =
+  requires(F&& f, Args&&... args) {
+    std::invoke(std::forward<F>(f), std::forward<Args>(args)...);
+      /* not required to be equality preserving */
+  };
+template <class G>
+concept uniform_random_bit_generator = requires(G &g) {
+  std::generate_canonical(g);
+}; 
+
+#else
+#include <concepts>
+using std::swappable;
+using std::uniform_random_bit_generator;
+#endif
 
 // This must be defined in the header because c++
-template <std::swappable T, std::uniform_random_bit_generator R>
+template <swappable T, uniform_random_bit_generator R>
 void fisher_yates_shuffle(R &generator, vector<T> &v) {
   std::uniform_real_distribution<float> range{0.0, 1.0};
 
@@ -26,7 +49,7 @@ void fisher_yates_shuffle(R &generator, vector<T> &v) {
 }
 
 // Same here
-template <std::uniform_random_bit_generator R>
+template <uniform_random_bit_generator R>
 float random_0_1(R &generator) {
   return ((float) generator() - (float) generator.min()) / ((float) generator.max() - (float) generator.min());
 }

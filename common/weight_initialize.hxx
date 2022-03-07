@@ -4,10 +4,19 @@
 #include <string>
 using std::string;
 
+#include <map>
+using std::map;
+
 enum WeightType { RANDOM = 0, XAVIER = 1, KAIMING = 2, LAMARCKIAN = 3, NONE = -1 };
 
 static string WEIGHT_TYPES_STRING[] = {"random", "xavier", "kaiming", "lamarckian"};
 static int32_t NUM_WEIGHT_TYPES = 4;
+static inline const map<string, int> WEIGHT_INITIALIZE_MAP = {
+  {"random", RANDOM},
+  {"xavier", XAVIER},
+  {"kaiming", KAIMING},
+  {"lamarckian", LAMARCKIAN}
+};
 
 inline WeightType get_enum_from_string(string input_string) {
   WeightType weight_type;
