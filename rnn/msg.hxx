@@ -91,11 +91,9 @@ class TerminateMsg : public Msg {
   virtual int32_t get_msg_ty() const;
 };
 
-class EvalAccountingMsg : public Msg {
- protected:
+struct EvalAccountingMsg : public Msg {
   uint32_t n_evals;
-
- public:
+  
   EvalAccountingMsg(uint32_t n_evals);
   EvalAccountingMsg(istream &bin_istream);
 

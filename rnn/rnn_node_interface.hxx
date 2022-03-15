@@ -42,7 +42,7 @@ enum rnn_node_type {
   ENAS_DAG_NODE = 9,
   RANDOM_DAG_NODE = 10,
 };
-inline const map<string, int> NODE_TYPE_MAP = {
+inline const map<string, int> NODE_TYPE_MAP({
   {"simple", SIMPLE_NODE},
   {"jordan", JORDAN_NODE},
   {"elman", ELMAN_NODE},
@@ -54,7 +54,7 @@ inline const map<string, int> NODE_TYPE_MAP = {
   {"enarc", ENARC_NODE},
   {"enas_dag", ENAS_DAG_NODE},
   {"random_dag", RANDOM_DAG_NODE},
-};
+});
 
 double sigmoid(double value);
 double sigmoid_derivative(double value);

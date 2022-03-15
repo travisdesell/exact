@@ -6,7 +6,6 @@ using std::function;
 //#include <iostream>
 
 #include <algorithm>
-#include <algorithm>
 using std::min;
 
 #include <random>
@@ -23,13 +22,25 @@ using std::string;
 #include "neat_speciation_strategy.hxx"
 #include "rnn_genome.hxx"
 
+ArgumentSet NeatSpeciationStrategy::arguments = ArgumentSet(
+    "neat_args", {new ConstrainedArgument(
+                     "neat_params", "--neat-parameters", "c1, c2, and c3 values for the NEAT speciation strategy",
+                     [](Argument::data &data) {
+                       vector<double> &d = get<vector<double>>(data);
+                       if (d.size() != 3) {
+                         Log::fatal("You must supply exactly 3 arguments to --neat-parameters\n");
+                         return false;
+                       }
+                       return true;
+                     },
+                     true, Argument::DOUBLE_LIST)});
+
 /**
  *
  */
 NeatSpeciationStrategy::NeatSpeciationStrategy(shared_ptr<const RNN_Genome> _seed_genome, double _species_threshold,
                                                double _fitness_threshold, double _neat_c1, double _neat_c2,
-                                               double _neat_c3,
-                                               GenomeOperators genome_operators)
+                                               double _neat_c3, GenomeOperators genome_operators)
     : generation_species(0),
       species_count(0),
       population_not_improving_count(0),

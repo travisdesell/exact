@@ -29,12 +29,12 @@ using std::string;
 using std::to_string;
 
 #include <optional>
-using std::optional;
 using std::nullopt;
+using std::optional;
 
 #include <memory>
-using std::unique_ptr;
 using std::make_unique;
+using std::unique_ptr;
 
 #include "examm.hxx"
 #include "generate_nn.hxx"
@@ -54,6 +54,50 @@ using std::make_unique;
 #include "rnn_node.hxx"
 #include "ugrnn_node.hxx"
 
+ArgumentSet EXAMM::arguments(
+    "examm_base_args",
+    {
+        new Argument("time_offset", "--time_offset", "Number of timesteps in the future to predict", false,
+                     Argument::INT, 1),
+
+        new Argument("max_genomes", "--max-genomes",
+                     "number of genomes to be generated before termiinating the program.", true, Argument::INT, 01),
+
+        new EnumArgument("speciation_method", "--speciation-method", "What speciation strategy to use.", false,
+                         "island", SpeciationStrategy::SPECIATION_STRATEGY_MAP, false),
+
+        new Argument("max_time_minutes", "--max-time-minutes",
+                     "maximum amount of time the program can run. by default there is no time limit, indicated by a "
+                     "negative value.",
+                     false, Argument::INT, -1),
+
+        new ConstrainedArgument(
+            "dropout_probability", "--dropout-probability", "Dropout probability.",
+            [](Argument::data &data) { return 0.0 <= get<double>(data) && 1.0 >= get<double>(data); }, false,
+            Argument::DOUBLE, 0.0),
+
+        new Argument("output_directory", "--output-directory", "Directory to write results and logs to", false,
+                     Argument::STRING, ""),
+
+        new Argument("seed_genome_path", "--seed-genome-path",
+                     "Path to a binary RNN Genome that should be used as the first genome.", false, Argument::STRING,
+                     "INVALID_SEED"),
+    });
+ArgumentSet EXAMM::transfer_learning_arguments(
+    "transfer_learning_args",
+    {new EnumArgument("transfer_learning_version", "--transfer-learning-version",
+                      "Which version of transfer learning to use", true, vector<int>(), RNN_Genome::TRANSFER_LEARNING_MAP, false),
+
+     new Argument("epigenetic_weights", "--epigenetic-weights",
+                  "When this flag is present, epigenetic weight information will be used to create new weights.",
+                  true, Argument::BOOL, false)},
+    [](ArgumentSet &as) {
+      if (as.args["transfer_learning_version"]->get_bitflags() == 0) {
+        Log::fatal("Transfer learning version is invalid\n");
+        return false;
+      }
+      return true;
+    });
 EXAMM::~EXAMM() {}
 
 EXAMM::EXAMM(int32_t population_size, int32_t number_islands, int32_t max_genomes, int32_t _max_time_minutes,

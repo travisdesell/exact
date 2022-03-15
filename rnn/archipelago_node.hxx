@@ -1,3 +1,6 @@
+#ifndef ARCHIPELAGO_NODE_HXX
+#define ARCHIPELAGO_NODE_HXX
+
 #include <deque>
 using std::deque;
 
@@ -26,8 +29,15 @@ using std::vector;
 struct ArchipelagoIO {
   virtual ~ArchipelagoIO();
   virtual void send_msg_to(Msg *, node_index_type) = 0;
-  virtual void send_msg_all(Msg *, node_index_type) = 0;
-  virtual pair<unique_ptr<Msg>, node_index_type> recieve_msg() = 0;
+  virtual void send_msg_all(Msg *, vector<node_index_type> &) = 0;
+  virtual pair<unique_ptr<Msg>, node_index_type> receive_msg() = 0;
+};
+
+struct Dataset {
+  vector<vector<vector<double>>> &training_inputs;
+  vector<vector<vector<double>>> &training_outputs;
+  vector<vector<vector<double>>> &validation_inputs;
+  vector<vector<vector<double>>> &validation_outputs;
 };
 
 template <class Child, class Parent>
@@ -47,7 +57,7 @@ class ArchipelagoNode {
   int terminates_sent = 0;
   // The number of genomes that have been processed since the last EvalAccountingMsg or GenomeShareMsg was sent.
   int unrecorded_genome_count = 0;
-  int unrecorded_genome_threshold = 10;
+  int unrecorded_genome_threshold = 100;
 
  public:
   ArchipelagoNode(node_index_type node_id, ArchipelagoConfig &config, IO &io);
@@ -56,17 +66,17 @@ class ArchipelagoNode {
   enum node_relationship { PARENT, NEIGHBOR, CHILD, INVALID, NONE };
 
   // Relationship this node has to another node, based on their
-  virtual node_relationship relationship_with(node_index_type) {
-    Log::info("It shouldnt be possible to call this function, but you managed to do so! Well done\n");
-    exit(1);
-  }
+  virtual node_relationship relationship_with(node_index_type) = 0;
+
+  void populate_relationships();
 
   void run() {
     // Keep running if all parents havent sent a terminate,
     // or if there are no parents (this is a master node) and we havent terminated the children yet.
+    
     while (terminate_count < (int) parents.size() || (parents.size() == 0 && terminates_sent < children.size())) {
-      auto [msg, src] = io.recieve_msg();
-
+      auto [msg, src] = io.receive_msg();
+      Log::info("Received message of type %d\n", msg->get_msg_ty());
       if (TerminateMsg *tmsg = dynamic_cast<TerminateMsg *>(msg.get()); tmsg != nullptr) {
         terminate_count += 1;
         if (terminate_count == parents.size()) {
@@ -76,6 +86,8 @@ class ArchipelagoNode {
       } else {
         process_msg(move(msg), src);
       }
+
+      account_genome_evals(0);
     }
   }
 
@@ -87,6 +99,7 @@ class ArchipelagoNode {
   }
 
   void share_genome(shared_ptr<const RNN_Genome> shared) {
+    Log::info("Sharing genome\n");
     unique_ptr<GenomeShareMsg> ea_msg = make_unique<GenomeShareMsg>(move(shared), false, unrecorded_genome_count);
     unrecorded_genome_count = 0;
 
@@ -97,10 +110,11 @@ class ArchipelagoNode {
     }
 
     ea_msg->set_propagate(false);
-    io.send_message_to((Msg *) ea_msg.get(), neighbors);
+    io.send_msg_all((Msg *) ea_msg.get(), neighbors);
   }
 
   void send_eval_accounting() {
+    Log::info("Sending evaluation accounting message to a random parent\n");
     int index = uniform_int_distribution<int>(0, parents.size() - 1)(generator);
     unique_ptr<EvalAccountingMsg> ea_msg = make_unique<EvalAccountingMsg>(unrecorded_genome_count);
     io.send_msg_to((Msg *) ea_msg.get(), parents[index]);
@@ -121,9 +135,12 @@ class ArchipelagoWorker : public ArchipelagoNode<IO> {
   using ArchipelagoNode<IO>::unrecorded_genome_count;
 
   GenomeOperators &go;
+  Dataset dataset;
+  unique_ptr<Msg> request_msg;
 
  public:
-  ArchipelagoWorker(node_index_type node_id, ArchipelagoConfig &config, IO &io, GenomeOperators &go);
+  ArchipelagoWorker(node_index_type node_id, ArchipelagoConfig &config, IO &io, GenomeOperators &go, Dataset d);
+  virtual ~ArchipelagoWorker();
 
   virtual typename ArchipelagoNode<IO>::node_relationship relationship_with(node_index_type other);
   virtual void process_msg(unique_ptr<Msg> msg, node_index_type src);
@@ -192,6 +209,7 @@ class ArchipelagoManager : public ArchipelagoNode<IO> {
 
  public:
   ArchipelagoManager(node_index_type, ArchipelagoConfig &, IO &, uint32_t);
+  virtual ~ArchipelagoManager();
 
 };
 
@@ -221,4 +239,10 @@ class ArchipelagoMaster : public ArchipelagoNode<IO> {
 
  public:
   ArchipelagoMaster(node_index_type, ArchipelagoConfig &, IO &, string log_file_location, uint32_t max_genomes);
+  virtual ~ArchipelagoMaster();
+
 };
+
+#include "archipelago_node.cxx"
+
+#endif

@@ -19,6 +19,7 @@ using std::vector;
 
 #include <optional>
 
+#include "common/args.hxx"
 #include "common/dataset_meta.hxx"
 #include "common/weight_initialize.hxx"
 #include "genome_operators.hxx"
@@ -86,6 +87,9 @@ class EXAMM {
   bool time_limit_reached();
 
  public:
+  static ArgumentSet arguments;
+  static ArgumentSet transfer_learning_arguments;
+
   EXAMM(int32_t _population_size, int32_t _number_islands, int32_t _max_genomes, int32_t _max_time_minutes,
         int32_t _extinction_event_generation_number, int32_t _islands_to_exterminate, string _island_ranking_method,
         string repopulation_method, int32_t _repopulation_mutations, bool _repeat_extinction, int32_t _epochs_acc_freq,

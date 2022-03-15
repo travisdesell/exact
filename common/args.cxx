@@ -185,10 +185,11 @@ void Argument::accept(vector<string> values) {
 EnumArgument::EnumArgument(string name, string flag, string description, bool required, Argument::data default_value,
                map<string, int> data_map, bool case_sensitive)
   : Argument(name, flag, description, required, (arg_type) default_value.index(), default_value), case_sensitive(case_sensitive) {
-  if (ty != INT && ty != INT_LIST) {
+  if (ty != INT && ty != INT_LIST && ty != STRING && ty != STRING_LIST) {
     Log::fatal("EnumArgument %s must have a default value of int or int list. Aborting. \n", flag.c_str());
     exit(1);
   }
+
   if (case_sensitive)
     this->data_map = move(data_map);
   else {
@@ -198,12 +199,16 @@ EnumArgument::EnumArgument(string name, string flag, string description, bool re
   }
   switch (default_value.index()) {
     case STRING:
+      ty = INT;
       accept({get<string>(default_value)});
       break;
     case STRING_LIST:
+      ty = INT_LIST;
       accept(get<vector<string>>(default_value));
     default:;
   }
+
+  parsed = false;
 }
 
 EnumArgument::~EnumArgument() {}

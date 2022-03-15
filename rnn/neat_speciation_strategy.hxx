@@ -16,6 +16,8 @@ using std::uniform_real_distribution;
 #include "speciation_strategy.hxx"
 #include "species.hxx"
 
+#include "common/args.hxx"
+
 class NeatSpeciationStrategy : public SpeciationStrategy {
  private:
   uint32_t generation_species; /**< Used to track which island to generate the
@@ -60,6 +62,8 @@ class NeatSpeciationStrategy : public SpeciationStrategy {
   GenomeOperators genome_operators;
 
  public:
+  static ArgumentSet arguments;
+
   NeatSpeciationStrategy(shared_ptr<const RNN_Genome> _seed_genome, double _species_threshold,
                          double _fitness_threshold, double _neat_c1, double _neat_c2, double _neat_c3,
                          GenomeOperators genome_operators);

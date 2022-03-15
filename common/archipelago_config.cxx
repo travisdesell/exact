@@ -327,9 +327,7 @@ void Parser::expect(std::array<const Token *, N> &toks, std::array<Token::token_
 vector<unique_ptr<Statement>> Parser::parse() {
   vector<unique_ptr<Statement>> statements;
   unique_ptr<Statement> s;
-  Log::info("hmm\n");
   while (s = parse_statement()) {
-    Log::info("is null = %d\n", s.get() == nullptr);
     statements.push_back(move(s));
   }
 
@@ -343,7 +341,6 @@ unique_ptr<Statement> Parser::parse_statement() {
     return unique_ptr<Statement>();
   else if (!t[0])
     error("Dangling token " + t[0]->to_string(), __LINE__);
-  Log::info("Got %s\n", t[0]->to_string().c_str());
   switch (t[0]->ty) {
     case Token::ID:
       if (t[1]->ty == Token::EQ)
@@ -357,7 +354,6 @@ unique_ptr<Statement> Parser::parse_statement() {
     case Token::KW_MANAGERS:
     case Token::KW_ISLANDS:
     case Token::KW_WORKERS:
-      Log::info("Here 0\n");
       if (t[1]->ty == Token::COLON)
         return parse_role_assignment();
       else
@@ -440,7 +436,6 @@ unique_ptr<Statement> Parser::parse_var_assignment() {
 }
 
 unique_ptr<Statement> Parser::parse_role_assignment() {
-  Log::info("Here 1\n");
   auto t = peek<2>();
 
   if (t[0] == nullptr || t[1] == nullptr) error("Unexpected EOF", __LINE__);
@@ -456,9 +451,7 @@ unique_ptr<Statement> Parser::parse_role_assignment() {
           (Statement *) new RoleStatement(move(members), Env::node_role_map.at(t[0]->ty), t[0]->line, t[0]->column));
     } break;
     case Token::KW_MASTER: {
-      Log::info("Here 2\n");
       unique_ptr<Expr> exp = parse_expr();
-      Log::info("Here 3\n");
       return unique_ptr<Statement>((Statement *) new RoleStatement(move(exp), t[0]->line, t[0]->column));
     } break;
     default:
@@ -470,13 +463,11 @@ unique_ptr<Statement> Parser::parse_role_assignment() {
 }
 
 unique_ptr<Statement> Parser::parse_connection() {
-  Log::info("parse connection\n");
   auto start = peek();
   auto src = parse_abstract_node_ref_list();
 
   auto t = pop();
   if (t)
-    Log::info((t->to_string() + "\n").c_str());
   if (t == std::nullopt || t->ty != Token::CONNECTION) error("Expected connection symbol", __LINE__);
 
   auto dst = parse_abstract_node_ref_list();
@@ -582,7 +573,6 @@ unique_ptr<Expr> Parser::parse_product_expr() {
   auto lhs = parse_partition_expr();
   const Token *tok;
   while ((tok = peek()) != nullptr) {
-    Log::info("Stuck here ?\n");
     switch (tok->ty) {
       case Token::DIV:
       case Token::MUL: {
@@ -643,9 +633,7 @@ unique_ptr<Expr> Parser::parse_partition_expr() {
 
 unique_ptr<Expr> Parser::parse_expr_inner() {
   auto tok = peek();
-  Log::info("parse_expr_inner\n");
   if (tok == nullptr) error("Unexpected EOF", __LINE__);
-  Log::info("tok %s\n", tok->to_string().c_str());
   Expr *e;
   switch (tok->ty) {
     case Token::ID:
@@ -655,7 +643,6 @@ unique_ptr<Expr> Parser::parse_expr_inner() {
 
     case Token::INT:
       pop();
-      Log::info("int %s\n", tok->data.c_str());
       e = (Expr *) new ConstExpr(std::stoi(tok->data), tok->line, tok->column);
       break;
 
@@ -679,7 +666,6 @@ unique_ptr<Expr> Parser::parse_expr_inner() {
       e = nullptr;
       error("Unexpected token", __LINE__);
   }
-  Log::info("What\n");
   return unique_ptr<Expr>(e);
 }
 
@@ -1174,7 +1160,6 @@ Env::Env(node_index_type n_nodes)
     connections(vector<vector<bool>>(n_nodes, vector<bool>(n_nodes, false))), master(0), n_nodes(n_nodes) { }
 
 void Env::connect(node_index_type from, node_index_type to) {
-  Log::info("Connecting %d -> %d\n", (int)from, (int)to);
   connections[from][to] = true;
 }
 
@@ -1198,7 +1183,6 @@ ArchipelagoConfig ArchipelagoConfig::from_string(string str, int32_t n_nodes, ma
 #endif
   for (auto it = define_map.begin(); it != define_map.end(); it++)
     command = command + " -D" + it->first + "=" + std::to_string(it->second);
-  Log::info("cpp command: %s\n", command.c_str());
 
   FILE *pre_processor = popen(command.c_str(), "w");
   if (!pre_processor) {
@@ -1209,7 +1193,6 @@ ArchipelagoConfig ArchipelagoConfig::from_string(string str, int32_t n_nodes, ma
   while (1) {
     int n = fprintf(pre_processor, "%s", str.c_str() + total_wrote);
     if (n < 0) {
-      Log::info("Encountered error writing cpp\n");
       pclose(pre_processor);
       exit(1);
     }
@@ -1225,16 +1208,11 @@ ArchipelagoConfig ArchipelagoConfig::from_string(string str, int32_t n_nodes, ma
   buf << t.rdbuf();
 
   str = buf.str();
-  Log::info("\n%s\n", str.c_str());
   Tokenizer tokenizer(str);
 
   auto tokens = tokenizer.tokenize();
-  for (auto it = tokens.begin(); it != tokens.end(); it++)
-    Log::info("%s\n", it->debug().c_str());
   auto parser = Parser(tokens);
   auto statements = parser.parse();
-  for (auto st = statements.begin(); st != statements.end(); st++)
-    std::cout << (*st)->to_string() << "\n";
   Env env(n_nodes);
   for (auto st = statements.begin(); st != statements.end(); st++)
     (*st)->execute(env);

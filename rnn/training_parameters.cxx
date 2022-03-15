@@ -1,5 +1,43 @@
 #include "training_parameters.hxx"
 
+ArgumentSet TrainingParameters::arguments(
+    "training_parameter_args",
+    {
+        new Argument("use_random_sequence_length", "--use-random-sequence-length",
+                     "If true, rather than using whole files as training examples, random samples from the data will "
+                     "be used instead",
+                     false, Argument::BOOL, false),
+
+        new Argument("sequence_length_lower_bound", "--sequence-length-lower-bound",
+                     "Lower bound for the chunk size to train networks on (number of timesteps).", false, Argument::INT,
+                     30),
+
+        new Argument("sequence_length_upper_bound", "--sequence-length-upper-bound",
+                     "Upper, bound for the chunk size to train networks on (number of timesteps).", false,
+                     Argument::INT, 100),
+
+        new Argument("mu", "--mu", "Mu value used for nesterov momentum.", false, Argument::DOUBLE, 0.9),
+
+        new Argument("no_nesterov_momentum", "--no-nesterov-momentum",
+                     "Truns off nesterov momentum during backpropagation.", false, Argument::BOOL, false),
+
+        new Argument("bp_iterations", "--bp-iterations", "number of backpropagation iterations to train genomes for",
+                     true, Argument::INT, 1),
+
+        new Argument("learning_rate", "--learning-rate", "Learning rate used for backpropagation", false,
+                     Argument::DOUBLE, 0.001),
+
+        new Argument("high_threshold", "--high-threshold",
+                     "Maximum norm used for gradient descent. Gradients will be adjusted to norm to less than this "
+                     "value if they exceed it.",
+                     false, Argument::DOUBLE, 1.0),
+
+        new Argument("low_threshold", "--low-threshold",
+                     "Minimum norm used for gradient descent. Gradients will be adjusted to norm to this value if they "
+                     "norm to something less than it.",
+                     false, Argument::DOUBLE, 0.05),
+    });
+
 TrainingParameters::TrainingParameters(uint32_t bp_iterations, uint32_t sequence_lower_bound,
                                        uint32_t sequence_upper_bound, double low_threshold, double high_threshold,
                                        double learning_rate, double dropout_probability, double mu,
