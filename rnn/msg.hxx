@@ -44,7 +44,6 @@ class Msg {
 enum genome_storage { unique = 0, shared = 1 };
 class WorkMsg : public Msg {
  private:
-
   struct mu_args {
     typedef unique_ptr<RNN_Genome> unique;
     typedef shared_ptr<const RNN_Genome> shared;
@@ -93,7 +92,7 @@ class TerminateMsg : public Msg {
 
 struct EvalAccountingMsg : public Msg {
   uint32_t n_evals;
-  
+
   EvalAccountingMsg(uint32_t n_evals);
   EvalAccountingMsg(istream &bin_istream);
 

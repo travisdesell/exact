@@ -11,12 +11,11 @@ using std::string;
 using std::mt19937_64;
 using std::uniform_real_distribution;
 
+#include "common/args.hxx"
 #include "msg.hxx"
 #include "rnn_genome.hxx"
 #include "speciation_strategy.hxx"
 #include "species.hxx"
-
-#include "common/args.hxx"
 
 class NeatSpeciationStrategy : public SpeciationStrategy {
  private:

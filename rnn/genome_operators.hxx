@@ -17,7 +17,7 @@ using std::pair;
 class GenomeOperators {
  public:
   static ArgumentSet arguments;
-  
+
   // Genome rank is how well it is doing, relative to some group of genomes.
   // 0 is the best, 1 second best, etc.
   // It usually corresponds to the index of the genome, as long as the genomes
@@ -64,7 +64,6 @@ class GenomeOperators {
   static constexpr double inter_co_p = 0.34;
 
  private:
-
   // Instance variables
   const DatasetMeta dataset_meta;
   vector<rnn_node_type> possible_node_types;

@@ -8,8 +8,8 @@ using std::function;
 using std::string;
 
 #include <random>
-using std::uniform_real_distribution;
 using std::mt19937_64;
+using std::uniform_real_distribution;
 
 #include <map>
 using std::map;
@@ -27,7 +27,6 @@ class SpeciationStrategy {
   SpeciationStrategy();
 
  public:
-  
   enum speciation_method { ISLAND, NEAT };
   static const inline map<string, int> SPECIATION_STRATEGY_MAP = {
       {"island", ISLAND},

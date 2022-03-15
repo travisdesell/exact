@@ -86,11 +86,12 @@ ArgumentSet EXAMM::arguments(
 ArgumentSet EXAMM::transfer_learning_arguments(
     "transfer_learning_args",
     {new EnumArgument("transfer_learning_version", "--transfer-learning-version",
-                      "Which version of transfer learning to use", true, vector<int>(), RNN_Genome::TRANSFER_LEARNING_MAP, false),
+                      "Which version of transfer learning to use", true, vector<int>(),
+                      RNN_Genome::TRANSFER_LEARNING_MAP, false),
 
      new Argument("epigenetic_weights", "--epigenetic-weights",
-                  "When this flag is present, epigenetic weight information will be used to create new weights.",
-                  true, Argument::BOOL, false)},
+                  "When this flag is present, epigenetic weight information will be used to create new weights.", true,
+                  Argument::BOOL, false)},
     [](ArgumentSet &as) {
       if (as.args["transfer_learning_version"]->get_bitflags() == 0) {
         Log::fatal("Transfer learning version is invalid\n");

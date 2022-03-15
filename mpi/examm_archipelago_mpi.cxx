@@ -5,8 +5,8 @@
 using std::cout;
 
 #include <chrono>
-#include <thread>
 #include <limits>
+#include <thread>
 using std::numeric_limits;
 
 #include <algorithm>
@@ -14,14 +14,13 @@ using std::max;
 using std::min;
 using std::swap;
 
-#include "common/log.hxx"
-#include "common/archipelago_config.hxx"
-#include "rnn/archipelago_node.hxx"
-
-#include "rnn/generate_nn.hxx"
-
 #include <chrono>
 #include <iomanip>
+
+#include "common/archipelago_config.hxx"
+#include "common/log.hxx"
+#include "rnn/archipelago_node.hxx"
+#include "rnn/generate_nn.hxx"
 using std::fixed;
 using std::setprecision;
 using std::setw;
@@ -68,9 +67,8 @@ struct MPIArchipelagoIO : public ArchipelagoIO {
     auto view = oss.view();
     const char *data = view.data();
     const int32_t length = view.size();
- 
-    for (auto d : dst)
-      MPI_Send(data, length, MPI_CHAR, d, DEFAULT_TAG, MPI_COMM_WORLD);
+
+    for (auto d : dst) MPI_Send(data, length, MPI_CHAR, d, DEFAULT_TAG, MPI_COMM_WORLD);
   }
 
   virtual pair<unique_ptr<Msg>, node_index_type> receive_msg() {
@@ -114,11 +112,11 @@ int main(int argc, char **argv) {
   Log::set_rank(rank);
   Log::set_id("main_" + to_string(rank));
   Log::restrict_to_rank(rank);
-  
+
 #define EXAMM_ARCHIPELAGO
 #define EXAMM_MPI
 #include "common/examm_argparse.cxx"
-  
+
   ifstream f(archipelago_config_path);
   if (!f.good()) {
     Log::fatal("Failed to read archipelago configuration file %s\n", archipelago_config_path.c_str());
@@ -128,7 +126,7 @@ int main(int argc, char **argv) {
   buf << f.rdbuf();
   string config = buf.str();
   map<string, node_index_type> define_map = {
-    {"n_islands", number_islands}
+      {"n_islands", number_islands}
   };
   ArchipelagoConfig archipelago_config = ArchipelagoConfig::from_string(config, max_rank + 1, define_map);
   MPIArchipelagoIO io;
@@ -143,13 +141,17 @@ int main(int argc, char **argv) {
       string s;
       switch (archipelago_config.node_roles[i]) {
         case node_role::MASTER:
-          s = "M"; break;
+          s = "M";
+          break;
         case node_role::MANAGERS:
-          s = "m"; break;
+          s = "m";
+          break;
         case node_role::ISLANDS:
-          s = "L"; break;
+          s = "L";
+          break;
         case node_role::WORKERS:
-          s = "W"; break;
+          s = "W";
+          break;
       }
       Log::info_no_header("%s ", s.c_str());
     }
@@ -163,8 +165,8 @@ int main(int argc, char **argv) {
 
   if (seed_genome == nullptr) {
     auto seed = unique_ptr<RNN_Genome>(create_ff(dataset_meta.input_parameter_names, 0, 0,
-                                            dataset_meta.output_parameter_names, 0, training_parameters,
-                                            weight_initialize, weight_inheritance, mutated_component_weight));
+                                                 dataset_meta.output_parameter_names, 0, training_parameters,
+                                                 weight_initialize, weight_inheritance, mutated_component_weight));
     seed->initialize_randomly();
     seed->set_generated_by("initial");
     seed_genome = move(seed);
@@ -172,19 +174,22 @@ int main(int argc, char **argv) {
 
   Dataset d = {training_inputs, training_outputs, validation_inputs, validation_outputs};
 
-
   switch (role) {
     case node_role::MASTER:
-      node = unique_ptr<ArchipelagoNode<MPIArchipelagoIO>>(new ArchipelagoMaster<MPIArchipelagoIO>(rank, archipelago_config, io, output_directory + "/fitness_log.csv", max_genomes));
+      node = unique_ptr<ArchipelagoNode<MPIArchipelagoIO>>(new ArchipelagoMaster<MPIArchipelagoIO>(
+          rank, archipelago_config, io, output_directory + "/fitness_log.csv", max_genomes));
       break;
     case node_role::ISLANDS:
-      node = unique_ptr<ArchipelagoNode<MPIArchipelagoIO>>(new ArchipelagoIslandCluster<MPIArchipelagoIO>(rank, archipelago_config, io, 1, 10, move(seed_genome), pair(2, 2), genome_operators));
+      node = unique_ptr<ArchipelagoNode<MPIArchipelagoIO>>(new ArchipelagoIslandCluster<MPIArchipelagoIO>(
+          rank, archipelago_config, io, 1, 10, move(seed_genome), pair(2, 2), genome_operators));
       break;
     case node_role::MANAGERS:
-      node = unique_ptr<ArchipelagoNode<MPIArchipelagoIO>>(new ArchipelagoManager<MPIArchipelagoIO>(rank, archipelago_config, io, 10));
+      node = unique_ptr<ArchipelagoNode<MPIArchipelagoIO>>(
+          new ArchipelagoManager<MPIArchipelagoIO>(rank, archipelago_config, io, 10));
       break;
     case node_role::WORKERS:
-      node = unique_ptr<ArchipelagoNode<MPIArchipelagoIO>>(new ArchipelagoWorker<MPIArchipelagoIO>(rank, archipelago_config, io, genome_operators, d));
+      node = unique_ptr<ArchipelagoNode<MPIArchipelagoIO>>(
+          new ArchipelagoWorker<MPIArchipelagoIO>(rank, archipelago_config, io, genome_operators, d));
   }
 
   node->run();

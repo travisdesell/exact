@@ -239,13 +239,9 @@ unique_ptr<RNN_Genome> GenomeShareMsg::get_genome() {
   }
 }
 
-void GenomeShareMsg::set_propagate(bool prop) {
-  propagate = prop;
-}
+void GenomeShareMsg::set_propagate(bool prop) { propagate = prop; }
 
-bool GenomeShareMsg::should_propagate() {
-  return propagate;
-}
+bool GenomeShareMsg::should_propagate() { return propagate; }
 
 int32_t GenomeShareMsg::get_msg_ty() const { return Msg::GENOME_SHARE; }
 

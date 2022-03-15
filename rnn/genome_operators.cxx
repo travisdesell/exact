@@ -1,24 +1,28 @@
 #include "genome_operators.hxx"
 
-#include "common/weight_initialize.hxx"
-
 #include <algorithm>
 #include <cstring>
 #include <unordered_map>
 #include <utility>
 
+#include "common/weight_initialize.hxx"
+
 ArgumentSet GenomeOperators::arguments(
     "genome_operators_args",
     {
         new Argument("max_intra_crossover_parents", "--max-intra-crossover-parents",
-                     "Maximum n of parents used during intra group (island / species) crossover", false, Argument::INT, 2),
+                     "Maximum n of parents used during intra group (island / species) crossover", false, Argument::INT,
+                     2),
         new Argument("min_intra_crossover_parents", "--min-intra-crossover-parents",
-                     "Minimum n of parents used during intra group (island / species) crossover", false, Argument::INT, 2),
+                     "Minimum n of parents used during intra group (island / species) crossover", false, Argument::INT,
+                     2),
 
         new Argument("max_inter_crossover_parents", "--max-inter-crossover-parents",
-                     "Maximum n of parents used during inter group (island / species) crossover", false, Argument::INT, 2),
+                     "Maximum n of parents used during inter group (island / species) crossover", false, Argument::INT,
+                     2),
         new Argument("min_inter_crossover_parents", "--min-inter-crossover-parents",
-                     "Minimum n of parents used during inter group (island / species) crossover", false, Argument::INT, 2),
+                     "Minimum n of parents used during inter group (island / species) crossover", false, Argument::INT,
+                     2),
 
         new Argument("max_mutations", "--max-mutations", "Maximum number of mutations that will be applied", false,
                      Argument::INT, 1),
@@ -125,7 +129,7 @@ void GenomeOperators::set_possible_node_types(vector<string> &possible_node_type
   for (uint32_t i = 0; i < possible_node_type_strings.size(); i++) {
     string node_type_s = possible_node_type_strings[i];
     std::transform(node_type_s.begin(), node_type_s.end(), node_type_s.begin(),
-        [](unsigned char c) { return std::tolower(c); });
+                   [](unsigned char c) { return std::tolower(c); });
 
     auto it = NODE_TYPE_MAP.find(node_type_s);
     if (it == NODE_TYPE_MAP.end()) {

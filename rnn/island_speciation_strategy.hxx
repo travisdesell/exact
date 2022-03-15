@@ -15,7 +15,6 @@ using std::string;
 using std::optional;
 
 #include "common/args.hxx"
-
 #include "island.hxx"
 #include "msg.hxx"
 #include "rnn_genome.hxx"

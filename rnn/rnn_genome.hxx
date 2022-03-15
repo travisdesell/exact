@@ -317,7 +317,9 @@ class RNN_Genome {
 };
 
 struct sort_genomes_by_fitness {
-  bool operator()(const RNN_Genome * const g1, const RNN_Genome * const g2) { return g1->get_fitness() < g2->get_fitness(); }
+  bool operator()(const RNN_Genome *const g1, const RNN_Genome *const g2) {
+    return g1->get_fitness() < g2->get_fitness();
+  }
   bool operator()(const shared_ptr<const RNN_Genome> &a, const shared_ptr<const RNN_Genome> &b) {
     return a->get_fitness() < b->get_fitness();
   }

@@ -247,7 +247,7 @@ ArchipelagoWorker<IO>::ArchipelagoWorker(node_index_type node_id, ArchipelagoCon
   assert(parents.size() == 1);
   assert(children.size() == 0);
   assert(neighbors.size() == 0);
-  
+
   request_msg = unique_ptr<Msg>((Msg *) new RequestMsg());
   // Send an initial work request
   Log::info("Worker parent = %d, worker = %d\n", parents[0], node_id);
@@ -284,9 +284,11 @@ void ArchipelagoWorker<IO>::process_msg(unique_ptr<Msg> msg, node_index_type src
       unique_ptr<RNN_Genome> genome = work->get_genome(go);
 
       if (go.training_parameters.bp_iterations == 0) {
-        genome->calculate_fitness(dataset.training_inputs, dataset.training_outputs, dataset.validation_inputs, dataset.validation_outputs);
+        genome->calculate_fitness(dataset.training_inputs, dataset.training_outputs, dataset.validation_inputs,
+                                  dataset.validation_outputs);
       } else {
-        genome->backpropagate_stochastic(dataset.training_inputs, dataset.training_outputs, dataset.validation_inputs, dataset.validation_outputs);
+        genome->backpropagate_stochastic(dataset.training_inputs, dataset.training_outputs, dataset.validation_inputs,
+                                         dataset.validation_outputs);
       }
 
       // Send the result
@@ -443,12 +445,11 @@ void ArchipelagoMaster<IO>::process_msg(unique_ptr<Msg> msg, node_index_type) {
   }
 
   Log::info("Genome evals: %d, max: %d\n", genome_evals, max_genomes);
-  if (genome_evals > max_genomes)
-    terminate();
+  if (genome_evals > max_genomes) terminate();
 
-//   // If for some weird reason, terminates were already sent.
-//   if (genome_evals >= max_genomes && this->terminates_sent == 0) {
-//   }
+  //   // If for some weird reason, terminates were already sent.
+  //   if (genome_evals >= max_genomes && this->terminates_sent == 0) {
+  //   }
 }
 
 template <Derived<ArchipelagoIO> IO>
@@ -478,6 +479,5 @@ void ArchipelagoMaster<IO>::update_log() {
               << best->get_best_validation_mse() << ", " << best->get_enabled_node_count() << ","
               << best->get_enabled_edge_count() << "," << best->get_enabled_recurrent_edge_count() << std::endl;
 }
-
 
 #endif

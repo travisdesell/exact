@@ -24,10 +24,10 @@ using std::swap;
 #include <vector>
 using std::vector;
 
-#include "island.hxx"
-#include "rnn_genome.hxx"
 #include "common/log.hxx"
 #include "common/random.hxx"
+#include "island.hxx"
+#include "rnn_genome.hxx"
 
 Island::Island(int32_t _id, int32_t _max_size)
     : id(_id), max_size(_max_size), status(IslandStatus::INITIALIZING), erase_again(0), erased(false) {}
@@ -68,14 +68,13 @@ bool Island::is_initializing() { return status == IslandStatus::INITIALIZING; }
 
 bool Island::is_repopulating() { return status == IslandStatus::REPOPULATING; }
 
-shared_ptr<const RNN_Genome> Island::get_random_genome(
-                                                       mt19937_64 &generator) {
+shared_ptr<const RNN_Genome> Island::get_random_genome(mt19937_64 &generator) {
   int32_t genome_position = size() * rng_0_1(generator);
   return genomes[genome_position];
 }
 
-void Island::get_two_random_genomes(mt19937_64 &generator,
-                                    shared_ptr<const RNN_Genome> &g1, shared_ptr<const RNN_Genome> &g2) {
+void Island::get_two_random_genomes(mt19937_64 &generator, shared_ptr<const RNN_Genome> &g1,
+                                    shared_ptr<const RNN_Genome> &g2) {
   int32_t p1 = size() * rng_0_1(generator);
   int32_t p2 = (size() - 1) * rng_0_1(generator);
   if (p2 >= p1) p2++;
@@ -91,8 +90,7 @@ void Island::get_two_random_genomes(mt19937_64 &generator,
   g2 = genomes[p2];
 }
 
-void Island::get_n_random_genomes(mt19937_64 &generator, int32_t n,
-                                  vector<shared_ptr<const RNN_Genome>> &parents) {
+void Island::get_n_random_genomes(mt19937_64 &generator, int32_t n, vector<shared_ptr<const RNN_Genome>> &parents) {
   if (n > genomes.size()) {
     Log::warning("Cannot give n parents with island size of %d\n", size());
     n = genomes.size();

@@ -4,10 +4,9 @@
 using std::move;
 
 #include <cstring>
-
 #include <iostream>
-#include <sstream>
 #include <set>
+#include <sstream>
 using std::set;
 #include <math.h>
 
@@ -327,9 +326,7 @@ void Parser::expect(std::array<const Token *, N> &toks, std::array<Token::token_
 vector<unique_ptr<Statement>> Parser::parse() {
   vector<unique_ptr<Statement>> statements;
   unique_ptr<Statement> s;
-  while (s = parse_statement()) {
-    statements.push_back(move(s));
-  }
+  while (s = parse_statement()) { statements.push_back(move(s)); }
 
   return statements;
 }
@@ -383,7 +380,7 @@ unique_ptr<Statement> Parser::parse_for() {
   std::array<Token::token_type, 3> exp{Token::KW_FOR, Token::ID, Token::KW_IN};
   expect<3>(t, exp);
   pop<3>();
-  
+
   string id = t[1]->data;
   vector<unique_ptr<NodeRef>> refs = parse_abstract_node_ref_list();
   unique_ptr<Statement> st = parse_statement();
@@ -394,19 +391,14 @@ unique_ptr<Statement> Parser::parse_for() {
 
 unique_ptr<Statement> Parser::parse_compound_statement() {
   auto t = peek();
-  if (t == nullptr)
-    error("Unexpected eof\n", __LINE__);
-  if (t->ty != Token::CB_OPEN)
-    error("compound statement called without a leading curly brace\n", __LINE__);
-  pop(); 
+  if (t == nullptr) error("Unexpected eof\n", __LINE__);
+  if (t->ty != Token::CB_OPEN) error("compound statement called without a leading curly brace\n", __LINE__);
+  pop();
   vector<unique_ptr<Statement>> statements;
-  while ((t = peek()) && t->ty != Token::CB_CLOSE)
-    statements.push_back(parse_statement());
+  while ((t = peek()) && t->ty != Token::CB_CLOSE) statements.push_back(parse_statement());
 
-  if (t == nullptr)
-    error("Unexpected eof\n", __LINE__);
-  if (t->ty != Token::CB_CLOSE)
-    error("This should be unreachable - what did you do??\n", __LINE__);
+  if (t == nullptr) error("Unexpected eof\n", __LINE__);
+  if (t->ty != Token::CB_CLOSE) error("This should be unreachable - what did you do??\n", __LINE__);
   pop();
   Statement *statement = (Statement *) new CompoundStatement(move(statements), t->line, t->column);
   return unique_ptr<Statement>(statement);
@@ -468,7 +460,7 @@ unique_ptr<Statement> Parser::parse_connection() {
 
   auto t = pop();
   if (t)
-  if (t == std::nullopt || t->ty != Token::CONNECTION) error("Expected connection symbol", __LINE__);
+    if (t == std::nullopt || t->ty != Token::CONNECTION) error("Expected connection symbol", __LINE__);
 
   auto dst = parse_abstract_node_ref_list();
 
@@ -520,7 +512,8 @@ unique_ptr<NodeRef> Parser::parse_abstract_node_ref() {
     case Token::KW_ISLANDS:
     case Token::KW_WORKERS:
       pop();
-      return unique_ptr<NodeRef>((NodeRef *) new SpecialNodeRef(Env::node_role_map.at(tok->ty), tok->line, tok->column));
+      return unique_ptr<NodeRef>(
+          (NodeRef *) new SpecialNodeRef(Env::node_role_map.at(tok->ty), tok->line, tok->column));
     default:
       return parse_node_ref();
   }
@@ -669,7 +662,6 @@ unique_ptr<Expr> Parser::parse_expr_inner() {
   return unique_ptr<Expr>(e);
 }
 
-
 ///
 /// AST
 ///
@@ -677,14 +669,12 @@ unique_ptr<Expr> Parser::parse_expr_inner() {
 AST::AST(int32_t line, int32_t column) : line(line), column(column) {}
 AST::~AST() {}
 
-
 ///
 /// Expr
 ///
 
 Expr::Expr(int32_t line, int32_t column) : AST(line, column) {}
 Expr::~Expr() {}
-
 
 ///
 /// ArithExpr
@@ -715,16 +705,25 @@ string ArithExpr::to_string() {
   string lhs = l->to_string(), rhs = r->to_string();
   string op;
   switch (this->op) {
-    case MUL: op = "*"; break;
-    case DIV: op = "/"; break;
-    case MOD: op = "%"; break;
-    case ADD: op = "+"; break;
-    case SUB: op = "-"; break;
+    case MUL:
+      op = "*";
+      break;
+    case DIV:
+      op = "/";
+      break;
+    case MOD:
+      op = "%";
+      break;
+    case ADD:
+      op = "+";
+      break;
+    case SUB:
+      op = "-";
+      break;
   }
 
   return lhs + " " + op + " " + rhs;
 }
-
 
 ///
 /// IdExpr
@@ -744,7 +743,6 @@ node_index_type IdExpr::eval(Env &env) {
 }
 
 string IdExpr::to_string() { return id; }
-
 
 ///
 /// PartitionExpr
@@ -767,11 +765,9 @@ node_index_type PartitionExpr::eval(Env &env) {
   node_index_type hi = upper->eval(env);
   node_index_type div = divisor->eval(env);
 
-  if (lo > hi)
-    env.error("Lower bound of partition range should not be greater than the upper bound");
+  if (lo > hi) env.error("Lower bound of partition range should not be greater than the upper bound");
 
-  if (inclusive)
-    hi += 1;
+  if (inclusive) hi += 1;
 
   node_index_type dif = hi - lo;
   node_index_type psize = dif / div;
@@ -796,7 +792,6 @@ string PartitionExpr::to_string() {
   return "partition " + index + " of " + lo + " " + range_connector + " " + hi + " by " + div;
 }
 
-
 ///
 /// KWExpr
 ///
@@ -820,27 +815,20 @@ string KWExpr::to_string() {
       return "masteR";
     case KWExpr::N_NODES:
       return "n_nodes";
-  } 
+  }
 }
-
 
 ///
 /// ConstExpr
 ///
 
-ConstExpr::ConstExpr(node_index_type value, int32_t line, int32_t column) 
-  : Expr(line, column), value(value) {}
+ConstExpr::ConstExpr(node_index_type value, int32_t line, int32_t column) : Expr(line, column), value(value) {}
 
 ConstExpr::~ConstExpr() {}
 
-node_index_type ConstExpr::eval(Env &env) {
-  return value;
-}
+node_index_type ConstExpr::eval(Env &env) { return value; }
 
-string ConstExpr::to_string() {
-  return std::to_string(value);
-}
-
+string ConstExpr::to_string() { return std::to_string(value); }
 
 ///
 /// NodeRef
@@ -849,21 +837,19 @@ string ConstExpr::to_string() {
 NodeRef::NodeRef(int32_t line, int32_t column) : AST(line, column) {}
 NodeRef::~NodeRef() {}
 
-
 ///
 /// NodeRange
 ///
 
 NodeRange::NodeRange(unique_ptr<Expr> start, unique_ptr<Expr> end, bool inclusive, int32_t line, int32_t column)
-  : NodeRef(line, column), start(move(start)), end(move(end)), inclusive(inclusive) {}
+    : NodeRef(line, column), start(move(start)), end(move(end)), inclusive(inclusive) {}
 NodeRange::~NodeRange() {}
 
 void NodeRange::get(vector<node_index_type> &indices, Env &env) {
   node_index_type lo = start->eval(env);
   node_index_type hi = end->eval(env) + (inclusive ? 1 : 0);
 
-  for (; lo < hi; lo++)
-    indices.push_back(lo);
+  for (; lo < hi; lo++) indices.push_back(lo);
 }
 
 string NodeRange::to_string() {
@@ -874,31 +860,24 @@ string NodeRange::to_string() {
   return lo + " " + c + " " + hi;
 }
 
-
 ///
 /// SingletonNode
 ///
 
 SingletonNode::SingletonNode(unique_ptr<Expr> node, int32_t line, int32_t column)
-  : NodeRef(line, column), node(move(node)) {}
+    : NodeRef(line, column), node(move(node)) {}
 
 SingletonNode::~SingletonNode() {}
 
-void SingletonNode::get(vector<node_index_type> &indices, Env &env) {
-  indices.push_back(node->eval(env));
-}
+void SingletonNode::get(vector<node_index_type> &indices, Env &env) { indices.push_back(node->eval(env)); }
 
-string SingletonNode::to_string() {
-  return node->to_string();
-}
-
+string SingletonNode::to_string() { return node->to_string(); }
 
 ///
 /// SpecialNodeRef
 ///
 
-SpecialNodeRef::SpecialNodeRef(node_role group, int32_t line, int32_t column)
-  : NodeRef(line, column), group(group) {}
+SpecialNodeRef::SpecialNodeRef(node_role group, int32_t line, int32_t column) : NodeRef(line, column), group(group) {}
 
 SpecialNodeRef::~SpecialNodeRef() {}
 
@@ -909,14 +888,10 @@ void SpecialNodeRef::get(vector<node_index_type> &indices, Env &env) {
   }
 
   for (node_index_type i = 0; i < (node_index_type) env.node_roles.size(); i++)
-    if (group == env.node_roles[i])
-      indices.push_back(i);
+    if (group == env.node_roles[i]) indices.push_back(i);
 }
 
-string SpecialNodeRef::to_string() {
-  return Env::node_role_string_map.at(group);
-}
-
+string SpecialNodeRef::to_string() { return Env::node_role_string_map.at(group); }
 
 ///
 /// Statement
@@ -925,20 +900,19 @@ string SpecialNodeRef::to_string() {
 Statement::Statement(int32_t line, int32_t column) : AST(line, column) {}
 Statement::~Statement() {}
 
-
 ///
 /// ForStatement
 ///
 
-ForStatement::ForStatement(string id, vector<unique_ptr<NodeRef>> refs, unique_ptr<Statement> statement, int32_t line, int32_t column)
-  : Statement(line, column), id(move(id)), refs(move(refs)), statement(move(statement)) {}
+ForStatement::ForStatement(string id, vector<unique_ptr<NodeRef>> refs, unique_ptr<Statement> statement, int32_t line,
+                           int32_t column)
+    : Statement(line, column), id(move(id)), refs(move(refs)), statement(move(statement)) {}
 
 ForStatement::~ForStatement() {}
 
 void ForStatement::execute(Env &env) {
   vector<node_index_type> nodes;
-  for (uint32_t i = 0; i < refs.size(); i++)
-    refs[i]->get(nodes, env);
+  for (uint32_t i = 0; i < refs.size(); i++) refs[i]->get(nodes, env);
 
   for (auto it = nodes.begin(); it != nodes.end(); it++) {
     env.vars[id] = *it;
@@ -948,83 +922,71 @@ void ForStatement::execute(Env &env) {
 
 string ForStatement::to_string() {
   string s;
-  for (auto it = refs.begin(); it != refs.end(); it++)
-    s += (*it)->to_string() + ", ";
+  for (auto it = refs.begin(); it != refs.end(); it++) s += (*it)->to_string() + ", ";
   return "for " + id + " in " + s + statement->to_string();
 }
-
 
 ///
 /// CompoundStatement
 ///
 
 CompoundStatement::CompoundStatement(vector<unique_ptr<Statement>> statements, int32_t line, int32_t column)
-  : Statement(line, column), statements(move(statements)) {}
+    : Statement(line, column), statements(move(statements)) {}
 
 CompoundStatement::~CompoundStatement() {}
 
 void CompoundStatement::execute(Env &env) {
-  for (auto it = statements.begin(); it != statements.end(); it++)
-    (*it)->execute(env);
+  for (auto it = statements.begin(); it != statements.end(); it++) (*it)->execute(env);
 }
 
 string CompoundStatement::to_string() {
   string s = " {\n";
-  for (auto it = statements.begin(); it != statements.end(); it++)
-    s += (*it)->to_string() + "\n";
+  for (auto it = statements.begin(); it != statements.end(); it++) s += (*it)->to_string() + "\n";
   s += "}";
   return s;
 }
-
 
 ///
 /// ConnectionStatement
 ///
 
-ConnectionStatement::ConnectionStatement(vector<unique_ptr<NodeRef>> from, vector<unique_ptr<NodeRef>> to, int32_t line, int32_t column)
-  : Statement(line, column), from(move(from)), to(move(to)) {}
+ConnectionStatement::ConnectionStatement(vector<unique_ptr<NodeRef>> from, vector<unique_ptr<NodeRef>> to, int32_t line,
+                                         int32_t column)
+    : Statement(line, column), from(move(from)), to(move(to)) {}
 
 ConnectionStatement::~ConnectionStatement() {}
 
 void ConnectionStatement::execute(Env &env) {
   vector<node_index_type> from_nodes, to_nodes;
-  
-  for (uint32_t i = 0; i < from.size(); i++)
-    from[i]->get(from_nodes, env);
-  for (uint32_t i = 0; i < to.size(); i++)
-    to[i]->get(to_nodes, env);
+
+  for (uint32_t i = 0; i < from.size(); i++) from[i]->get(from_nodes, env);
+  for (uint32_t i = 0; i < to.size(); i++) to[i]->get(to_nodes, env);
 
   for (uint32_t fi = 0; fi < from_nodes.size(); fi++)
-    for (uint32_t ti = 0; ti < to_nodes.size(); ti++)
-      env.connect(from_nodes[fi], to_nodes[ti]);
+    for (uint32_t ti = 0; ti < to_nodes.size(); ti++) env.connect(from_nodes[fi], to_nodes[ti]);
 }
 
 string ConnectionStatement::to_string() {
   vector<string> fs, ts;
-  for (auto it = from.begin(); it != from.end(); it++)
-    fs.push_back((*it)->to_string());
-  for (auto it = to.begin(); it != to.end(); it++)
-    ts.push_back((*it)->to_string());
+  for (auto it = from.begin(); it != from.end(); it++) fs.push_back((*it)->to_string());
+  for (auto it = to.begin(); it != to.end(); it++) ts.push_back((*it)->to_string());
 
   string fr = fs[0];
-  for (auto it = ++fs.begin(); it != fs.end(); it++)
-    fr = fr + ", " + *it;
+  for (auto it = ++fs.begin(); it != fs.end(); it++) fr = fr + ", " + *it;
   string t = ts[0];
-  for (auto it = ++ts.begin(); it != ts.end(); it++)
-    t = t + ", " + *it;
+  for (auto it = ++ts.begin(); it != ts.end(); it++) t = t + ", " + *it;
 
   return fr + " -> " + t;
 }
-
 
 ///
 /// RoleStatement
 ///
 
 RoleStatement::RoleStatement(vector<unique_ptr<NodeRef>> members, node_role group, int32_t line, int32_t column)
-  : Statement(line, column), members(move(members)), group(group) {}
+    : Statement(line, column), members(move(members)), group(group) {}
 RoleStatement::RoleStatement(unique_ptr<Expr> member, int32_t line, int32_t column)
-  : Statement(line, column), group(node_role::MASTER) {
+    : Statement(line, column), group(node_role::MASTER) {
   NodeRef *ref = (NodeRef *) new SingletonNode(move(member), line, column);
   members.emplace_back(ref);
 }
@@ -1033,32 +995,28 @@ RoleStatement::~RoleStatement() {}
 
 void RoleStatement::execute(Env &env) {
   vector<node_index_type> member_nodes;
-  for (uint32_t i = 0; i < members.size(); i++)
-    members[i]->get(member_nodes, env);
+  for (uint32_t i = 0; i < members.size(); i++) members[i]->get(member_nodes, env);
 
-  for (uint32_t i = 0; i < member_nodes.size(); i++)
-    env.node_roles[member_nodes[i]] = group;
+  for (uint32_t i = 0; i < member_nodes.size(); i++) env.node_roles[member_nodes[i]] = group;
 }
 
 string RoleStatement::to_string() {
-   vector<string> fs;
-  for (auto it = members.begin(); it != members.end(); it++)
-    fs.push_back((*it)->to_string());
+  vector<string> fs;
+  for (auto it = members.begin(); it != members.end(); it++) fs.push_back((*it)->to_string());
 
   string fr = fs[0];
-  for (auto it = ++fs.begin(); it != fs.end(); it++)
-    fr = fr + ", " + *it;
+  for (auto it = ++fs.begin(); it != fs.end(); it++) fr = fr + ", " + *it;
 
   return Env::node_role_string_map.at(group) + ": " + fr;
 }
-
 
 ///
 /// TopologyStatement
 ///
 
-TopologyStatement::TopologyStatement(topology_type topology, vector<unique_ptr<NodeRef>> members, int32_t line, int32_t column) 
-  : Statement(line, column), topology(topology), members(move(members)) {}
+TopologyStatement::TopologyStatement(topology_type topology, vector<unique_ptr<NodeRef>> members, int32_t line,
+                                     int32_t column)
+    : Statement(line, column), topology(topology), members(move(members)) {}
 
 TopologyStatement::~TopologyStatement() {}
 
@@ -1073,15 +1031,13 @@ TopologyStatement::topology_type TopologyStatement::get_topology_type(string str
 
 void TopologyStatement::execute(Env &env) {
   vector<node_index_type> member_nodes;
-  for (uint32_t i = 0; i < members.size(); i++)
-    members[i]->get(member_nodes, env);
+  for (uint32_t i = 0; i < members.size(); i++) members[i]->get(member_nodes, env);
 
   set<node_index_type> node_set(member_nodes.begin(), member_nodes.end());
 
   switch (topology) {
     case RING: {
-      if (node_set.size() <= 1)
-        return;
+      if (node_set.size() <= 1) return;
       for (auto it = node_set.cbegin(); it != --node_set.cend();) {
         node_index_type a = *it;
         node_index_type b = *++it;
@@ -1100,13 +1056,11 @@ void TopologyStatement::execute(Env &env) {
 
 string TopologyStatement::to_string() {
   vector<string> fs;
-  for (auto it = members.begin(); it != members.end(); it++)
-    fs.push_back((*it)->to_string());
+  for (auto it = members.begin(); it != members.end(); it++) fs.push_back((*it)->to_string());
 
   string fr = fs[0];
-  for (auto it = ++fs.begin(); it != fs.end(); it++)
-    fr = fr + ", " + *it;
-  
+  for (auto it = ++fs.begin(); it != fs.end(); it++) fr = fr + ", " + *it;
+
   string top;
   switch (topology) {
     case RING:
@@ -1117,13 +1071,12 @@ string TopologyStatement::to_string() {
   return "topology " + top + ": " + fr;
 }
 
-
 ///
 /// AssignmentStatement
 ///
 
 AssignmentStatement::AssignmentStatement(string id, unique_ptr<Expr> value, int32_t line, int32_t column)
-  : Statement(line, column), id(id), value(move(value)) {}
+    : Statement(line, column), id(id), value(move(value)) {}
 
 AssignmentStatement::~AssignmentStatement() {}
 
@@ -1132,22 +1085,20 @@ void AssignmentStatement::execute(Env &env) {
   env.vars[id] = val;
 }
 
-string AssignmentStatement::to_string() {
-  return id + " = " + value->to_string();
-}
+string AssignmentStatement::to_string() { return id + " = " + value->to_string(); }
 
 const unordered_map<Token::token_type, node_role> Env::node_role_map = {
-  {Token::KW_MASTER, MASTER},
-  {Token::KW_ISLANDS, ISLANDS},
-  {Token::KW_MANAGERS, MANAGERS},
-  {Token::KW_WORKERS, WORKERS}
+    {Token::KW_MASTER,   MASTER  },
+    {Token::KW_ISLANDS,  ISLANDS },
+    {Token::KW_MANAGERS, MANAGERS},
+    {Token::KW_WORKERS,  WORKERS }
 };
 
 const unordered_map<node_role, string> Env::node_role_string_map = {
-  {node_role::MASTER, "master"},
-  {node_role::ISLANDS, "islands"},
-  {node_role::MANAGERS, "managers"},
-  {node_role::WORKERS, "workers"}
+    {node_role::MASTER,   "master"  },
+    {node_role::ISLANDS,  "islands" },
+    {node_role::MANAGERS, "managers"},
+    {node_role::WORKERS,  "workers" }
 };
 
 node_index_type Env::error(string message) {
@@ -1155,24 +1106,24 @@ node_index_type Env::error(string message) {
   exit(1);
 }
 
-Env::Env(node_index_type n_nodes) 
-  : node_roles(vector<node_role>(n_nodes, node_role::WORKERS)),
-    connections(vector<vector<bool>>(n_nodes, vector<bool>(n_nodes, false))), master(0), n_nodes(n_nodes) { }
+Env::Env(node_index_type n_nodes)
+    : node_roles(vector<node_role>(n_nodes, node_role::WORKERS)),
+      connections(vector<vector<bool>>(n_nodes, vector<bool>(n_nodes, false))),
+      master(0),
+      n_nodes(n_nodes) {}
 
-void Env::connect(node_index_type from, node_index_type to) {
-  connections[from][to] = true;
-}
-
+void Env::connect(node_index_type from, node_index_type to) { connections[from][to] = true; }
 
 ///
 /// ArchipelagoConfig
 ///
 
-ArchipelagoConfig::ArchipelagoConfig(node_index_type master_id, vector<vector<bool>> connections, vector<node_role> node_roles) :
-  master_id(master_id),  connections(move(connections)), node_roles(node_roles) {}
+ArchipelagoConfig::ArchipelagoConfig(node_index_type master_id, vector<vector<bool>> connections,
+                                     vector<node_role> node_roles)
+    : master_id(master_id), connections(move(connections)), node_roles(node_roles) {}
 
-ArchipelagoConfig ArchipelagoConfig::from_string(string str, int32_t n_nodes, map<string, node_index_type> &define_map) {
-
+ArchipelagoConfig ArchipelagoConfig::from_string(string str, int32_t n_nodes,
+                                                 map<string, node_index_type> &define_map) {
   string tmp_file = std::tmpnam(nullptr);
   // The pre processor provided by clang nas no space between the -o and
   // the tmp_file path. There is one with gcc cpp.
@@ -1185,9 +1136,7 @@ ArchipelagoConfig ArchipelagoConfig::from_string(string str, int32_t n_nodes, ma
     command = command + " -D" + it->first + "=" + std::to_string(it->second);
 
   FILE *pre_processor = popen(command.c_str(), "w");
-  if (!pre_processor) {
-    Log::info("Null pre_process\n");
-  }
+  if (!pre_processor) { Log::info("Null pre_process\n"); }
 
   size_t total_wrote = 0;
   while (1) {
@@ -1197,10 +1146,9 @@ ArchipelagoConfig ArchipelagoConfig::from_string(string str, int32_t n_nodes, ma
       exit(1);
     }
     total_wrote += n;
-    if (total_wrote >= str.size())
-      break;
+    if (total_wrote >= str.size()) break;
   }
-  
+
   pclose(pre_processor);
 
   std::ifstream t(tmp_file);
@@ -1214,8 +1162,7 @@ ArchipelagoConfig ArchipelagoConfig::from_string(string str, int32_t n_nodes, ma
   auto parser = Parser(tokens);
   auto statements = parser.parse();
   Env env(n_nodes);
-  for (auto st = statements.begin(); st != statements.end(); st++)
-    (*st)->execute(env);
+  for (auto st = statements.begin(); st != statements.end(); st++) (*st)->execute(env);
 
   return ArchipelagoConfig(env.master, env.connections, env.node_roles);
 }

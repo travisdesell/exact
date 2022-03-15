@@ -113,11 +113,10 @@ class Species {
    * an addresss to a pointer needs to be passed. \param genome2 will be the
    * second copied genome, an addresss to a pointer needs to be passed.
    */
-  void get_two_random_genomes(mt19937_64 &generator,
-                              shared_ptr<const RNN_Genome> &g1, shared_ptr<const RNN_Genome> &g2);
+  void get_two_random_genomes(mt19937_64 &generator, shared_ptr<const RNN_Genome> &g1,
+                              shared_ptr<const RNN_Genome> &g2);
 
-  void get_n_random_genomes(mt19937_64 &generator, int32_t n,
-                            vector<shared_ptr<const RNN_Genome>> &parents);
+  void get_n_random_genomes(mt19937_64 &generator, int32_t n, vector<shared_ptr<const RNN_Genome>> &parents);
 
   /**
    * Inserts a genome into the island.

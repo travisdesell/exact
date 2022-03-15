@@ -11,25 +11,24 @@ using std::minstd_rand0;
 #include <vector>
 using std::vector;
 
-// clang on macOS is weird and doesnt fully support the C++20 concepts feature, so we have to manually defined these concepts
-// with GCC and non-apple clang they are defined as a part of the standard library.
+// clang on macOS is weird and doesnt fully support the C++20 concepts feature, so we have to manually defined these
+// concepts with GCC and non-apple clang they are defined as a part of the standard library.
 #ifdef __APPLE__
 #include <type_traits>
 
-template<typename T>
+template <typename T>
 concept swappable = std::is_swappable<T>();
 
-template< class F, class... Args >
+template <class F, class... Args>
 
-concept invocable =
-  requires(F&& f, Args&&... args) {
-    std::invoke(std::forward<F>(f), std::forward<Args>(args)...);
-      /* not required to be equality preserving */
-  };
+concept invocable = requires(F &&f, Args &&...args) {
+  std::invoke(std::forward<F>(f), std::forward<Args>(args)...);
+  /* not required to be equality preserving */
+};
 template <class G>
 concept uniform_random_bit_generator = requires(G &g) {
   std::generate_canonical(g);
-}; 
+};
 
 #else
 #include <concepts>

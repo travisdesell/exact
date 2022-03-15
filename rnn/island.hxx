@@ -6,8 +6,8 @@ using std::sort;
 using std::upper_bound;
 
 #include <random>
-using std::uniform_real_distribution;
 using std::mt19937_64;
+using std::uniform_real_distribution;
 
 #include <string>
 using std::string;
@@ -148,15 +148,15 @@ class Island {
    * an addresss to a pointer needs to be passed. \param genome2 will be the
    * second copied genome, an addresss to a pointer needs to be passed.
    */
-  void get_two_random_genomes(mt19937_64 &generator, shared_ptr<const RNN_Genome> &g1, shared_ptr<const RNN_Genome> &g2);
+  void get_two_random_genomes(mt19937_64 &generator, shared_ptr<const RNN_Genome> &g1,
+                              shared_ptr<const RNN_Genome> &g2);
   /**
    * Selects n different genomes from the island at random and returns copies of
    * them.
    *
    * If there are fewer than n genomes in the island, a crash will occur.
    */
-  void get_n_random_genomes(mt19937_64 &generator, int32_t n,
-                            vector<shared_ptr<const RNN_Genome>> &genomes);
+  void get_n_random_genomes(mt19937_64 &generator, int32_t n, vector<shared_ptr<const RNN_Genome>> &genomes);
 
   void do_population_check(int line, int initial_size);
 

@@ -5,9 +5,9 @@
 using std::deque;
 
 #include <memory>
+using std::make_unique;
 using std::shared_ptr;
 using std::unique_ptr;
-using std::make_unique;
 
 #include <utility>
 using std::move;
@@ -73,7 +73,7 @@ class ArchipelagoNode {
   void run() {
     // Keep running if all parents havent sent a terminate,
     // or if there are no parents (this is a master node) and we havent terminated the children yet.
-    
+
     while (terminate_count < (int) parents.size() || (parents.size() == 0 && terminates_sent < children.size())) {
       auto [msg, src] = io.receive_msg();
       Log::info("Received message of type %d\n", msg->get_msg_ty());
@@ -91,11 +91,9 @@ class ArchipelagoNode {
     }
   }
 
-  void account_genome_evals(int n=0) {
+  void account_genome_evals(int n = 0) {
     unrecorded_genome_count += n;
-    if (unrecorded_genome_count >= unrecorded_genome_threshold) {
-      send_eval_accounting();
-    }
+    if (unrecorded_genome_count >= unrecorded_genome_threshold) { send_eval_accounting(); }
   }
 
   void share_genome(shared_ptr<const RNN_Genome> shared) {
@@ -176,7 +174,7 @@ class ArchipelagoIslandCluster : public ArchipelagoNode<IO>, public IslandSpecia
  protected:
   virtual unique_ptr<WorkMsg> generate_work_for_filled_island(Island &island);
   virtual typename ArchipelagoNode<IO>::node_relationship relationship_with(node_index_type other);
-  
+
   virtual void process_msg(unique_ptr<Msg> msg, node_index_type src);
   void process_request(RequestMsg *, node_index_type src);
   void process_result(ResultMsg *, node_index_type src);
@@ -187,7 +185,6 @@ class ArchipelagoIslandCluster : public ArchipelagoNode<IO>, public IslandSpecia
                            uint32_t max_island_size, shared_ptr<const RNN_Genome> seed_genome,
                            pair<uint32_t, uint32_t> n_parents_foreign_range, GenomeOperators &go);
   virtual ~ArchipelagoIslandCluster();
-
 };
 
 template <Derived<ArchipelagoIO> IO>
@@ -210,7 +207,6 @@ class ArchipelagoManager : public ArchipelagoNode<IO> {
  public:
   ArchipelagoManager(node_index_type, ArchipelagoConfig &, IO &, uint32_t);
   virtual ~ArchipelagoManager();
-
 };
 
 template <Derived<ArchipelagoIO> IO>
@@ -240,7 +236,6 @@ class ArchipelagoMaster : public ArchipelagoNode<IO> {
  public:
   ArchipelagoMaster(node_index_type, ArchipelagoConfig &, IO &, string log_file_location, uint32_t max_genomes);
   virtual ~ArchipelagoMaster();
-
 };
 
 #include "archipelago_node.cxx"
