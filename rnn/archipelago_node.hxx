@@ -75,9 +75,11 @@ class ArchipelagoNode {
     // or if there are no parents (this is a master node) and we havent terminated the children yet.
 
     while (terminate_count < (int) parents.size() || (parents.size() == 0 && terminates_sent < children.size())) {
+      Log::info("Waiting for message...\n");
       auto [msg, src] = io.receive_msg();
       Log::info("Received message of type %d\n", msg->get_msg_ty());
       if (TerminateMsg *tmsg = dynamic_cast<TerminateMsg *>(msg.get()); tmsg != nullptr) {
+        Log::info("Received terminate message\n");
         terminate_count += 1;
         if (terminate_count == parents.size()) {
           terminates_sent += children.size();

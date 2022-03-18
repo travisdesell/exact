@@ -217,13 +217,13 @@ template <Derived<ArchipelagoIO> IO>
 typename ArchipelagoNode<IO>::node_relationship ArchipelagoIslandCluster<IO>::relationship_with(node_index_type other) {
   switch (config.node_roles[other]) {
     case node_role::MANAGERS:
-      assert(config.connections[node_id][other]);
+      assert(config.connections[other][node_id]);
       return ArchipelagoNode<IO>::CHILD;
     case node_role::MASTER:
-      assert(config.connections[node_id][other]);
+      assert(config.connections[other][node_id]);
       return ArchipelagoNode<IO>::CHILD;
     case node_role::WORKERS:
-      assert(config.connections[other][node_id] || config.connections[node_id][other]);
+      assert(config.connections[node_id][other]);
       return ArchipelagoNode<IO>::PARENT;
     case node_role::ISLANDS:
       if (config.connections[node_id][other])
@@ -329,20 +329,21 @@ typename ArchipelagoNode<IO>::node_relationship ArchipelagoManager<IO>::relation
     case node_role::MANAGERS:
       if (config.connections[node_id][other] ^ config.connections[other][node_id]) {
         if (config.connections[node_id][other])
-          return ArchipelagoNode<IO>::CHILD;
-        else
           return ArchipelagoNode<IO>::PARENT;
+        else
+          return ArchipelagoNode<IO>::CHILD;
       } else {
         return ArchipelagoNode<IO>::NEIGHBOR;
       }
 
     case node_role::MASTER:
+      return ArchipelagoNode<IO>::CHILD;
     case node_role::WORKERS:
       return ArchipelagoNode<IO>::INVALID;
 
     case node_role::ISLANDS:
-      assert(config.connections[other][node_id]);
-      return ArchipelagoNode<IO>::CHILD;
+      assert(config.connections[node_id][other]);
+      return ArchipelagoNode<IO>::PARENT;
   }
 }
 
@@ -369,6 +370,7 @@ void ArchipelagoManager<IO>::process_msg(unique_ptr<Msg> msg, node_index_type) {
     case Msg::EVAL_ACCOUNTING: {
       auto ea_msg = (EvalAccountingMsg *) msg.get();
       this->account_genome_evals(ea_msg->n_evals);
+      break;
     }
     default:
       Log::fatal("ArchipelagoManager should not recieve message of type %d\n", msg->get_msg_ty());
@@ -393,7 +395,7 @@ ArchipelagoMaster<IO>::ArchipelagoMaster(node_index_type node_id, ArchipelagoCon
     terminate();
   }
 
-  (*log_file) << "Inserted Genomes, Time, Best Val. MAE, Best Val. MSE, Enabled Nodes, Enabled Edges, Enabled Rec. "
+  (*log_file) << "Evaluated Genomes, Time, Best Val. MAE, Best Val. MSE, Enabled Nodes, Enabled Edges, Enabled Rec. "
                  "Edges, Fitness";
 
   start = std::chrono::system_clock::now();
@@ -456,6 +458,7 @@ template <Derived<ArchipelagoIO> IO>
 void ArchipelagoMaster<IO>::terminate() {
   auto tmsg = make_unique<TerminateMsg>();
   io.send_msg_all((Msg *) tmsg.get(), children);
+  this->terminates_sent += children.size();
 }
 
 template <Derived<ArchipelagoIO> IO>

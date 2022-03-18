@@ -162,15 +162,7 @@ struct MPIArchipelagoIO : public ArchipelagoIO {
   }
 
   void clean_up() {
-    std::unique_lock<std::mutex> lk(mpi_lock);
-
-    while (pending.size() > 0) {
-      pair<vector<MPI_Request>, ostringstream> p = move(pending.front());
-      pending.pop_front();
-
-      MPI_Status status[p.first.size()];
-      MPI_Waitall(p.first.size(), &p.first[0], status);
-    }
+    pending.clear();
   }
 };
 
@@ -287,11 +279,12 @@ int main(int argc, char **argv) {
   io.done.store(true);
   io.outgoing_message_pending.notify_one();
   Log::fatal("Cleaning up rank %d\n", rank);
-  io.clean_up();
 
   delete time_series_sets;
 
   Log::fatal("REACHED END OF PROGRAM\n");
-
+  
+  MPI_Barrier(MPI_COMM_WORLD);
   MPI_Finalize();
+  io.clean_up();
 }
