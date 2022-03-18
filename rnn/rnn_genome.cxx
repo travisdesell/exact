@@ -2525,6 +2525,7 @@ bool RNN_Genome::merge_node(double mu, double sigma, int node_type, uniform_int_
 
   if (possible_nodes.size() < 2) return false;
 
+  fisher_yates_shuffle(generator, possible_nodes); 
   while (possible_nodes.size() > 2) {
     int32_t position = rng_0_1(generator) * possible_nodes.size();
     possible_nodes.erase(possible_nodes.begin() + position);

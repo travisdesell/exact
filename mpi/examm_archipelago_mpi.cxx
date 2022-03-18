@@ -9,6 +9,9 @@ using std::cout;
 #include <thread>
 using std::numeric_limits;
 
+#include <mutex>
+using std::mutex;
+
 #include <algorithm>
 using std::max;
 using std::min;
@@ -28,6 +31,12 @@ using std::setw;
 #include <mutex>
 using std::mutex;
 
+#include <condition_variable>
+using std::condition_variable;
+
+#include <atomic>
+using std::atomic_bool;
+
 #include <string>
 using std::string;
 
@@ -36,6 +45,9 @@ using std::thread;
 
 #include <vector>
 using std::vector;
+
+#include <deque>
+using std::deque;
 
 #include "common/arguments.hxx"
 #include "common/log.hxx"
@@ -49,29 +61,57 @@ using namespace std::literals;
 struct MPIArchipelagoIO : public ArchipelagoIO {
   static constexpr int32_t DEFAULT_TAG = 0;
 
+  atomic_bool done = atomic_bool(false);
+  mutex mpi_lock;
+  condition_variable outgoing_message_pending;
+
+  // Pairs of sent message requests and the associated data.
+  deque<pair<vector<MPI_Request>, ostringstream>> pending;
+
   virtual void send_msg_to(Msg *msg, node_index_type dst) {
     ostringstream oss;
     msg->write_to_stream(oss);
 
-    auto view = oss.view();
-    const char *data = view.data();
-    const int32_t length = view.size();
+    auto content = oss.view();
+    const char *data = content.data();
+    const int32_t length = content.size();
 
-    MPI_Send(data, length, MPI_CHAR, dst, DEFAULT_TAG, MPI_COMM_WORLD);
+    vector<MPI_Request> handles;
+
+    MPI_Request request;
+    mpi_lock.lock();
+    int r = MPI_Isend(data, length, MPI_CHAR, dst, DEFAULT_TAG, MPI_COMM_WORLD, &request);
+    handles.push_back(request);
+    pending.push_back(pair(move(handles), move(oss)));
+    mpi_lock.unlock();
+    outgoing_message_pending.notify_one();
   }
 
   virtual void send_msg_all(Msg *msg, vector<node_index_type> &dst) {
+    if (dst.size() == 0) return;
     ostringstream oss;
     msg->write_to_stream(oss);
 
-    auto view = oss.view();
-    const char *data = view.data();
-    const int32_t length = view.size();
+    auto content = oss.view();
+    const char *data = content.data();
+    const int32_t length = content.size();
 
-    for (auto d : dst) MPI_Send(data, length, MPI_CHAR, d, DEFAULT_TAG, MPI_COMM_WORLD);
+    vector<MPI_Request> handles;
+
+    mpi_lock.lock();
+    for (auto d : dst) {
+      MPI_Request request;
+      int r = MPI_Isend(data, length, MPI_CHAR, d, DEFAULT_TAG, MPI_COMM_WORLD, &request);
+      handles.push_back(request);
+    }
+    pending.push_back(pair(move(handles), move(oss)));
+    mpi_lock.unlock();
+    outgoing_message_pending.notify_one();
   }
 
   virtual pair<unique_ptr<Msg>, node_index_type> receive_msg() {
+    mpi_lock.lock();
+
     MPI_Status status;
     MPI_Probe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
 
@@ -85,22 +125,64 @@ struct MPIArchipelagoIO : public ArchipelagoIO {
     unique_ptr<char[]> buf(new char[message_length]);
     MPI_Recv(buf.get(), message_length, MPI_CHAR, source, tag, MPI_COMM_WORLD, &status);
 
+    mpi_lock.unlock();
+
     return pair(unique_ptr<Msg>(Msg::read_from_array(buf.get(), message_length)), source);
   }
 
   MPIArchipelagoIO() {}
   virtual ~MPIArchipelagoIO() {}
+
+  void start_monitor_thread(int rank) {
+    std::thread([this, rank]() {
+      Log::set_id("monitor_" + to_string(rank));
+      while (!done) {
+        std::unique_lock<std::mutex> lk(mpi_lock);
+        outgoing_message_pending.wait(lk);
+
+        for (;;) {
+          if (pending.size() == 0)
+            break;
+          
+          pair<vector<MPI_Request>, ostringstream> &p = this->pending[0];
+          assert(p.first.size() > 0);
+
+          int complete = 0;
+          MPI_Status status[p.first.size()];
+          int s = MPI_Testall(p.first.size(), &p.first[0], &complete, status);
+
+          if (!complete) {
+            break;
+          }
+
+          pending.pop_front();
+        }
+      }
+    }).detach();
+  }
+
+  void clean_up() {
+    std::unique_lock<std::mutex> lk(mpi_lock);
+
+    while (pending.size() > 0) {
+      pair<vector<MPI_Request>, ostringstream> p = move(pending.front());
+      pending.pop_front();
+
+      MPI_Status status[p.first.size()];
+      MPI_Waitall(p.first.size(), &p.first[0], status);
+    }
+  }
 };
 
 int main(int argc, char **argv) {
-  std::cout << "Initializing mpi....";
+  std::cout << "Initializing mpi...";
   MPI_Init(&argc, &argv);
   std::cout << " done." << std::endl;
 
-  int rank, max_rank;
+  int rank, max_rank, n_nodes;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-  MPI_Comm_size(MPI_COMM_WORLD, &max_rank);
-  max_rank -= 1;
+  MPI_Comm_size(MPI_COMM_WORLD, &n_nodes);
+  max_rank = n_nodes - 1;
 
   std::cout << "got rank " << rank << " and max rank " << max_rank << std::endl;
 
@@ -169,8 +251,15 @@ int main(int argc, char **argv) {
                                                  weight_initialize, weight_inheritance, mutated_component_weight));
     seed->initialize_randomly();
     seed->set_generated_by("initial");
+
     seed_genome = move(seed);
   }
+
+  edge_inon eic = edge_inon(seed_genome->get_max_edge_inon().inon + 1);
+  node_inon nic = node_inon(seed_genome->get_max_node_inon().inon + 1);
+
+  edge_inon::init(eic.inon + rank, n_nodes);
+  node_inon::init(nic.inon + rank, n_nodes);
 
   Dataset d = {training_inputs, training_outputs, validation_inputs, validation_outputs};
 
@@ -192,9 +281,17 @@ int main(int argc, char **argv) {
           new ArchipelagoWorker<MPIArchipelagoIO>(rank, archipelago_config, io, genome_operators, d));
   }
 
+  io.start_monitor_thread(rank);
   node->run();
+
+  io.done.store(true);
+  io.outgoing_message_pending.notify_one();
+  Log::fatal("Cleaning up rank %d\n", rank);
+  io.clean_up();
 
   delete time_series_sets;
 
   Log::fatal("REACHED END OF PROGRAM\n");
+
+  MPI_Finalize();
 }
