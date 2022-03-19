@@ -222,7 +222,7 @@ class ArchipelagoMaster : public ArchipelagoNode<IO> {
   using ArchipelagoNode<IO>::unrecorded_genome_count;
 
   uint32_t max_genomes;
-  uint32_t genome_evals;
+  uint32_t genome_evals = 0;
   shared_ptr<const RNN_Genome> best_genome;
   string log_file_path;
   unique_ptr<ofstream> log_file;

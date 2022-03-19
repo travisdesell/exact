@@ -66,13 +66,13 @@ struct MPIArchipelagoIO : public ArchipelagoIO {
   condition_variable outgoing_message_pending;
 
   // Pairs of sent message requests and the associated data.
-  deque<pair<vector<MPI_Request>, ostringstream>> pending;
+  deque<pair<vector<MPI_Request>, unique_ptr<ostringstream>>> pending;
 
   virtual void send_msg_to(Msg *msg, node_index_type dst) {
-    ostringstream oss;
-    msg->write_to_stream(oss);
+    unique_ptr<ostringstream> oss = make_unique<ostringstream>();
+    msg->write_to_stream(*oss);
 
-    auto content = oss.view();
+    auto content = oss->view();
     const char *data = content.data();
     const int32_t length = content.size();
 
@@ -89,10 +89,10 @@ struct MPIArchipelagoIO : public ArchipelagoIO {
 
   virtual void send_msg_all(Msg *msg, vector<node_index_type> &dst) {
     if (dst.size() == 0) return;
-    ostringstream oss;
-    msg->write_to_stream(oss);
+    unique_ptr<ostringstream> oss = make_unique<ostringstream>();
+    msg->write_to_stream(*oss);
 
-    auto content = oss.view();
+    auto content = oss->view();
     const char *data = content.data();
     const int32_t length = content.size();
 
@@ -106,6 +106,7 @@ struct MPIArchipelagoIO : public ArchipelagoIO {
     }
     pending.push_back(pair(move(handles), move(oss)));
     mpi_lock.unlock();
+
     outgoing_message_pending.notify_one();
   }
 
@@ -122,8 +123,10 @@ struct MPIArchipelagoIO : public ArchipelagoIO {
     int tag = status.MPI_TAG;
     assert(tag == DEFAULT_TAG);
 
+
     unique_ptr<char[]> buf(new char[message_length]);
     MPI_Recv(buf.get(), message_length, MPI_CHAR, source, tag, MPI_COMM_WORLD, &status);
+    Log::info("Received message from %d\n", source);
 
     mpi_lock.unlock();
 
@@ -144,7 +147,7 @@ struct MPIArchipelagoIO : public ArchipelagoIO {
           if (pending.size() == 0)
             break;
           
-          pair<vector<MPI_Request>, ostringstream> &p = this->pending[0];
+          auto &p = this->pending[0];
           assert(p.first.size() > 0);
 
           int complete = 0;
