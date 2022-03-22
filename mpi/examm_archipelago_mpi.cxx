@@ -174,10 +174,10 @@ int main(int argc, char **argv) {
   MPI_Init(&argc, &argv);
   std::cout << " done." << std::endl;
 
-  int rank, max_rank, n_nodes;
+  int rank, max_rank, n_mpi_nodes;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-  MPI_Comm_size(MPI_COMM_WORLD, &n_nodes);
-  max_rank = n_nodes - 1;
+  MPI_Comm_size(MPI_COMM_WORLD, &n_mpi_nodes);
+  max_rank = n_mpi_nodes - 1;
 
   std::cout << "got rank " << rank << " and max rank " << max_rank << std::endl;
 
@@ -193,6 +193,11 @@ int main(int argc, char **argv) {
 #define EXAMM_ARCHIPELAGO
 #define EXAMM_MPI
 #include "common/examm_argparse.cxx"
+  
+  int n_cluster_nodes = -1;
+  get_argument(arguments, "--n-nodes", false, n_cluster_nodes);
+  int node_size = -1;
+  get_argument(arguments, "--node-size", false, node_size);
 
   ifstream f(archipelago_config_path);
   if (!f.good()) {
@@ -203,7 +208,9 @@ int main(int argc, char **argv) {
   buf << f.rdbuf();
   string config = buf.str();
   map<string, node_index_type> define_map = {
-      {"n_islands", number_islands}
+      {"n_islands", number_islands},
+      {"n_nodes", n_cluster_nodes},
+      {"node_size", node_size}
   };
   ArchipelagoConfig archipelago_config = ArchipelagoConfig::from_string(config, max_rank + 1, define_map);
   MPIArchipelagoIO io;
@@ -212,7 +219,9 @@ int main(int argc, char **argv) {
 
   unique_ptr<ArchipelagoNode<MPIArchipelagoIO>> node;
   auto nn = archipelago_config.connections.size();
-  if (rank == 0) {
+  Log::info("MASTER IS %d\n", archipelago_config.master_id);
+  MPI_Barrier(MPI_COMM_WORLD);
+  if (rank == archipelago_config.master_id) {
     Log::info("");
     for (int i = 0; i < nn; i++) {
       string s;
@@ -229,6 +238,9 @@ int main(int argc, char **argv) {
         case node_role::WORKERS:
           s = "W";
           break;
+        case node_role::NOROLE:
+          s = " ";
+          break;
       }
       Log::info_no_header("%s ", s.c_str());
     }
@@ -239,6 +251,8 @@ int main(int argc, char **argv) {
       Log::info_no_header("\n");
     }
   }
+  
+  MPI_Barrier(MPI_COMM_WORLD);
 
   if (seed_genome == nullptr) {
     auto seed = unique_ptr<RNN_Genome>(create_ff(dataset_meta.input_parameter_names, 0, 0,
@@ -253,8 +267,8 @@ int main(int argc, char **argv) {
   edge_inon eic = edge_inon(seed_genome->get_max_edge_inon().inon + 1);
   node_inon nic = node_inon(seed_genome->get_max_node_inon().inon + 1);
 
-  edge_inon::init(eic.inon + rank, n_nodes);
-  node_inon::init(nic.inon + rank, n_nodes);
+  edge_inon::init(eic.inon + rank, n_mpi_nodes);
+  node_inon::init(nic.inon + rank, n_mpi_nodes);
 
   Dataset d = {training_inputs, training_outputs, validation_inputs, validation_outputs};
 
@@ -274,20 +288,27 @@ int main(int argc, char **argv) {
     case node_role::WORKERS:
       node = unique_ptr<ArchipelagoNode<MPIArchipelagoIO>>(
           new ArchipelagoWorker<MPIArchipelagoIO>(rank, archipelago_config, io, genome_operators, d));
+    case node_role::NOROLE:
+      {}
   }
 
-  io.start_monitor_thread(rank);
-  node->run();
+  MPI_Barrier(MPI_COMM_WORLD);
+
+  if (node != nullptr) {
+    io.start_monitor_thread(rank);
+    node->run();
+  } else {
+    delete time_series_sets;
+    MPI_Finalize();
+    return 0;
+  }
 
   io.done.store(true);
   io.outgoing_message_pending.notify_one();
   Log::fatal("Cleaning up rank %d\n", rank);
 
-  delete time_series_sets;
-
   Log::fatal("REACHED END OF PROGRAM\n");
-  
-  MPI_Barrier(MPI_COMM_WORLD);
+
   MPI_Finalize();
   io.clean_up();
 }

@@ -1,0 +1,19 @@
+## default is NOROLE
+master: 2
+
+for i in 0 until node_size * n_nodes {
+  workers: 1 + i * 2
+}
+
+for i in 0 until n_nodes {
+  islands: i * node_size
+  (i * node_size * 2) -> (2 * i * node_size + 1) until (2 * (i + 1) * node_size)
+}
+
+## One-way ring topology for islands
+for i in 0 until n_nodes - 1 {
+  2 * i * node_size -> 2 * (i + 1) * node_size
+}
+2 * (n_nodes - 1) * node_size -> 0
+
+master -> islands

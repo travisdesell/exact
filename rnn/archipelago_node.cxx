@@ -230,6 +230,8 @@ typename ArchipelagoNode<IO>::node_relationship ArchipelagoIslandCluster<IO>::re
         return ArchipelagoNode<IO>::NEIGHBOR;
       else
         return ArchipelagoNode<IO>::NONE;
+    case node_role::NOROLE:
+      return ArchipelagoNode<IO>::NONE;
   }
 }
 
@@ -268,6 +270,8 @@ typename ArchipelagoNode<IO>::node_relationship ArchipelagoWorker<IO>::relations
       assert(config.connections[other][node_id] || config.connections[node_id][other]);
       assert(other != node_id);
       return ArchipelagoNode<IO>::CHILD;
+    case node_role::NOROLE:
+      return ArchipelagoNode<IO>::NONE;
   }
 }
 
@@ -338,12 +342,17 @@ typename ArchipelagoNode<IO>::node_relationship ArchipelagoManager<IO>::relation
 
     case node_role::MASTER:
       return ArchipelagoNode<IO>::CHILD;
+    
     case node_role::WORKERS:
       return ArchipelagoNode<IO>::INVALID;
 
     case node_role::ISLANDS:
       assert(config.connections[node_id][other]);
       return ArchipelagoNode<IO>::PARENT;
+
+    case node_role::NOROLE:
+      return ArchipelagoNode<IO>::NONE;
+
   }
 }
 
@@ -422,8 +431,11 @@ typename ArchipelagoNode<IO>::node_relationship ArchipelagoMaster<IO>::relations
       return ArchipelagoNode<IO>::INVALID;
 
     case node_role::ISLANDS:
-      assert(config.connections[other][node_id]);
+      assert(config.connections[node_id][other]);
       return ArchipelagoNode<IO>::PARENT;
+
+    case node_role::NOROLE:
+      return ArchipelagoNode<IO>::NONE;
   }
 }
 

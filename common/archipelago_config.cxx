@@ -241,7 +241,13 @@ optional<Token> Tokenizer::next_token() {
       pop();
       auto c2 = peek();
       if (c2 == std::nullopt || *c2 != '>') {
-        return make_token(Token::SUB, "-");
+        if (c2 && isnum_lambda(*c2)) {
+            string val = "-";
+            take_while(isnum_lambda, val);
+            return make_token(Token::INT, val);
+        } else {
+          return make_token(Token::SUB, "-");
+        }
       } else {
         pop();
         return make_token(Token::CONNECTION, "->");
@@ -279,6 +285,9 @@ vector<Token> Tokenizer::tokenize() {
 Parser::Parser(vector<Token> tokens) : tokens(move(tokens)), index(0) {}
 
 void Parser::error(string msg, int line) {
+  // for (int i = 0; i <=index; i++) {
+  //   Log::info("%s %d\n", tokens[i].data.c_str(), tokens[i].ty);
+  // }
   Log::error(("Encountered error on line %d: " + msg + "\n").c_str(), line);
   exit(1);
 }
@@ -459,8 +468,7 @@ unique_ptr<Statement> Parser::parse_connection() {
   auto src = parse_abstract_node_ref_list();
 
   auto t = pop();
-  if (t)
-    if (t == std::nullopt || t->ty != Token::CONNECTION) error("Expected connection symbol", __LINE__);
+  if (t == std::nullopt || t->ty != Token::CONNECTION) error("Expected connection symbol", __LINE__);
 
   auto dst = parse_abstract_node_ref_list();
 
@@ -525,9 +533,8 @@ unique_ptr<NodeRef> Parser::parse_node_ref() {
   int32_t column = exp0->column;
 
   auto tok = peek();
-  if (tok == nullptr) error("Unexpected EOF.", __LINE__);
 
-  if (tok->ty == Token::KW_UNTIL || tok->ty == Token::KW_THROUGH) {
+  if (tok && (tok->ty == Token::KW_UNTIL || tok->ty == Token::KW_THROUGH)) {
     pop();
     auto exp1 = parse_expr();
     NodeRange *range = new NodeRange(move(exp0), move(exp1), tok->ty == Token::KW_THROUGH, line, column);
@@ -553,6 +560,7 @@ unique_ptr<Expr> Parser::parse_sum_expr() {
         int32_t line = lhs->line, column = lhs->column;
         auto exp = new ArithExpr(move(lhs), move(rhs), op, line, column);
         lhs = unique_ptr<Expr>((Expr *) exp);
+        break;
       }
       default:
         goto done;
@@ -567,6 +575,7 @@ unique_ptr<Expr> Parser::parse_product_expr() {
   const Token *tok;
   while ((tok = peek()) != nullptr) {
     switch (tok->ty) {
+      case Token::MOD:
       case Token::DIV:
       case Token::MUL: {
         pop();
@@ -575,6 +584,7 @@ unique_ptr<Expr> Parser::parse_product_expr() {
         int32_t line = lhs->line, column = lhs->column;
         auto exp = new ArithExpr(move(lhs), move(rhs), op, line, column);
         lhs = unique_ptr<Expr>((Expr *) exp);
+        break;
       }
       default:
         goto done;
@@ -998,6 +1008,9 @@ void RoleStatement::execute(Env &env) {
   for (uint32_t i = 0; i < members.size(); i++) members[i]->get(member_nodes, env);
 
   for (uint32_t i = 0; i < member_nodes.size(); i++) env.node_roles[member_nodes[i]] = group;
+  
+  if (group == node_role::MASTER)
+    env.master = member_nodes[0];
 }
 
 string RoleStatement::to_string() {
@@ -1107,7 +1120,7 @@ node_index_type Env::error(string message) {
 }
 
 Env::Env(node_index_type n_nodes)
-    : node_roles(vector<node_role>(n_nodes, node_role::WORKERS)),
+    : node_roles(vector<node_role>(n_nodes, node_role::NOROLE)),
       connections(vector<vector<bool>>(n_nodes, vector<bool>(n_nodes, false))),
       master(0),
       n_nodes(n_nodes) {}
