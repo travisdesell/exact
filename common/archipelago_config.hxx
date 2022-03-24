@@ -138,7 +138,7 @@ class Tokenizer {
  *
  **/
 
-enum node_role { MASTER = 0, MANAGERS = 1, ISLANDS = 2, WORKERS = 3 };
+enum node_role { MASTER = 0, MANAGERS = 1, ISLANDS = 2, WORKERS = 3, NOROLE = 4 };
 
 struct Env {
   static const unordered_map<Token::token_type, node_role> node_role_map;

@@ -1,0 +1,19 @@
+## default is worker
+workers: 0 until n_nodes
+master: 0
+islands: 1, 16, 32, 48, 64, 80, 96
+
+1 -> 2 until 16
+16 -> 17 until 32
+32 -> 33 until 48
+48 -> 49 until 64
+64 -> 65 until 80
+80 -> 81 until 96
+96 -> 97 until n_nodes
+
+1, 16, 32, 48 -> 1, 16, 32, 48
+64, 80 -> 64, 80
+1 -> 64
+64 -> 96
+96 -> 1
+master -> islands

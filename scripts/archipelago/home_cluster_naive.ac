@@ -1,0 +1,17 @@
+## default is worker
+workers: 0 until n_nodes
+master: 0
+islands: 1 through 7
+
+for i in 0 until 7 {
+  start = partition i     of 8 until n_nodes by 7
+  end   = partition i + 1 of 8 until n_nodes by 7
+  (1 + i) -> start until end
+}
+
+1, 2, 3, 4 -> 1, 2, 3, 4 
+5, 6 -> 5, 6
+1 -> 5
+5 -> 7
+7 -> 1
+master -> islands

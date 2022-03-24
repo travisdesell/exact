@@ -12,6 +12,9 @@ using std::string;
 #include <vector>
 using std::vector;
 
+#include <sstream>
+using std::ostringstream;
+
 #include "common/arguments.hxx"
 
 #ifdef _MYSQL_

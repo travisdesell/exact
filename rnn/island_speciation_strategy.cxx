@@ -20,6 +20,25 @@ using std::string;
 #include "island_speciation_strategy.hxx"
 #include "rnn_genome.hxx"
 
+ArgumentSet IslandSpeciationStrategy::arguments = ArgumentSet(
+    "island_args",
+    {
+        new Argument("n_islands", "--n_islands", "number of islands", false, Argument::INT, 8),
+
+        new Argument("island_size", "--island_size", "maximum number of genomes per island", false, Argument::INT, 8),
+
+        new Argument("start_filled", "--start-filled",
+                     "Whether to start the algorithm with islands full of random genomes.", false, Argument::BOOL,
+                     false),
+
+        new Argument("extinction_event_generation_number", "--extinction-event-generation-number",
+                     "When to perform an island extinction.", false, Argument::INT, INT_MAX),
+
+        new Argument("repeat_extinction", "--repeat-extinction",
+                     "Whether or not to repeat the extinction event every $extinction_event_generation_number genomes.",
+                     false, Argument::BOOL, false),
+    });
+
 IslandSpeciationStrategy::IslandSpeciationStrategy(
     uint32_t _number_of_islands, uint32_t _max_island_size, shared_ptr<const RNN_Genome> _seed_genome,
     string _island_ranking_method, string _repopulation_method, uint32_t _extinction_event_generation_number,
@@ -169,7 +188,7 @@ pair<int32_t, const RNN_Genome *> IslandSpeciationStrategy::insert_genome(unique
 
   if (insert_position >= 0) {
     inserted_genomes++;
-    return pair(1 + insert_position, g);
+    return pair(insert_position, g);
   } else {
     return pair(-1, nullptr);
   }

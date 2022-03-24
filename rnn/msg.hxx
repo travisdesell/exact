@@ -44,7 +44,6 @@ class Msg {
 enum genome_storage { unique = 0, shared = 1 };
 class WorkMsg : public Msg {
  private:
-
   struct mu_args {
     typedef unique_ptr<RNN_Genome> unique;
     typedef shared_ptr<const RNN_Genome> shared;
@@ -91,11 +90,9 @@ class TerminateMsg : public Msg {
   virtual int32_t get_msg_ty() const;
 };
 
-class EvalAccountingMsg : public Msg {
- protected:
+struct EvalAccountingMsg : public Msg {
   uint32_t n_evals;
 
- public:
   EvalAccountingMsg(uint32_t n_evals);
   EvalAccountingMsg(istream &bin_istream);
 

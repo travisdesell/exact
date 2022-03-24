@@ -23,6 +23,8 @@ unique_ptr<Msg> Msg::read_from_array(const char *array, int32_t length) {
 unique_ptr<Msg> Msg::read_from_stream(istream &bin_istream) {
   int msg_ty = bin_istream.peek();
 
+  Log::info("MSG TY: %d\n", msg_ty);
+
   Msg *m = NULL;
   switch (msg_ty) {
     case msg_ty::WORK:
@@ -239,13 +241,9 @@ unique_ptr<RNN_Genome> GenomeShareMsg::get_genome() {
   }
 }
 
-void GenomeShareMsg::set_propagate(bool prop) {
-  propagate = prop;
-}
+void GenomeShareMsg::set_propagate(bool prop) { propagate = prop; }
 
-bool GenomeShareMsg::should_propagate() {
-  return propagate;
-}
+bool GenomeShareMsg::should_propagate() { return propagate; }
 
 int32_t GenomeShareMsg::get_msg_ty() const { return Msg::GENOME_SHARE; }
 

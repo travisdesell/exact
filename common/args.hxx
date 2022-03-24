@@ -105,14 +105,16 @@ struct ConstrainedArgument : public Argument {
 
 class ArgumentSet {
   const string name;
-  function<bool (ArgumentSet &)> validate;
+  function<bool(ArgumentSet &)> validate;
 
   static inline vector<string> argv;
 
  public:
   map<string, unique_ptr<Argument>> args;
-  ArgumentSet(string name, initializer_list<Argument *>, function<bool (ArgumentSet &)> validate=[](ArgumentSet &){ return true; } );
-  ArgumentSet(string name, map<string, unique_ptr<Argument>> args, function<bool (ArgumentSet &)> validate);
+  ArgumentSet(
+      string name, initializer_list<Argument *>,
+      function<bool(ArgumentSet &)> validate = [](ArgumentSet &) { return true; });
+  ArgumentSet(string name, map<string, unique_ptr<Argument>> args, function<bool(ArgumentSet &)> validate);
   static void set_argv(vector<string> argv);
 
   // Make sure there is no overlap between the two.

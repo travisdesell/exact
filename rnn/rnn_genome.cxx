@@ -394,6 +394,7 @@ void RNN_Genome::get_weights(vector<double> &parameters) const {
 }
 
 void RNN_Genome::set_weights(const vector<double> &parameters) {
+  Log::info("%d\n", parameters.size());
   if (parameters.size() != get_number_weights()) {
     Log::fatal(
         "ERROR! Trying to set weights where the RNN has %d weights, and "
@@ -491,6 +492,7 @@ void RNN_Genome::initialize_randomly() {
   Log::trace("initializing genome %d of group %d randomly!\n", generation_id, group_id);
   int number_of_weights = get_number_weights();
   initial_parameters.assign(number_of_weights, 0.0);
+  Log::info("%d weights\n", number_of_weights);
 
   if (weight_initialize == WeightType::RANDOM) {
     for (uint32_t i = 0; i < initial_parameters.size(); i++) { initial_parameters[i] = rng(generator); }
@@ -509,7 +511,9 @@ void RNN_Genome::initialize_randomly() {
     exit(1);
   }
 
+  Log::info("%d weights\n", number_of_weights);
   this->set_best_parameters(initial_parameters);
+  Log::info("%d weights\n", number_of_weights);
   this->set_weights(initial_parameters);
 }
 
@@ -2521,6 +2525,7 @@ bool RNN_Genome::merge_node(double mu, double sigma, int node_type, uniform_int_
 
   if (possible_nodes.size() < 2) return false;
 
+  fisher_yates_shuffle(generator, possible_nodes); 
   while (possible_nodes.size() > 2) {
     int32_t position = rng_0_1(generator) * possible_nodes.size();
     possible_nodes.erase(possible_nodes.begin() + position);
@@ -3128,7 +3133,7 @@ void RNN_Genome::read_from_stream(istream &bin_istream) {
   read_magic();
 
   assign_reachability();
-  set_weights(best_parameters);
+  set_weights(initial_parameters);
 }
 
 void RNN_Genome::write_to_array(char **bytes, uint32_t &length) const {

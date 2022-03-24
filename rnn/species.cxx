@@ -16,9 +16,9 @@ using std::to_string;
 #include <utility>
 using std::swap;
 
+#include "common/log.hxx"
 #include "common/random.hxx"
 #include "rnn_genome.hxx"
-#include "common/log.hxx"
 #include "species.hxx"
 
 // Species(int32_t id, double fitness_th);
@@ -28,8 +28,7 @@ const shared_ptr<const RNN_Genome> &Species::get_best_genome() const { return ge
 
 shared_ptr<const RNN_Genome> &Species::get_worst_genome() { return genomes.back(); }
 
-shared_ptr<const RNN_Genome> Species::get_random_genome(
-                                                        mt19937_64 &generator) {
+shared_ptr<const RNN_Genome> Species::get_random_genome(mt19937_64 &generator) {
   int32_t genome_position = size() * rng_0_1(generator);
   return genomes[genome_position];
 }
@@ -60,8 +59,8 @@ int32_t Species::contains(const RNN_Genome *genome) {
   return -1;
 }
 
-void Species::get_two_random_genomes(mt19937_64 &generator,
-                                     shared_ptr<const RNN_Genome> &g1, shared_ptr<const RNN_Genome> &g2) {
+void Species::get_two_random_genomes(mt19937_64 &generator, shared_ptr<const RNN_Genome> &g1,
+                                     shared_ptr<const RNN_Genome> &g2) {
   int32_t p1 = size() * rng_0_1(generator);
   int32_t p2 = (size() - 1) * rng_0_1(generator);
   if (p2 >= p1) p2++;
@@ -73,8 +72,7 @@ void Species::get_two_random_genomes(mt19937_64 &generator,
   g2 = genomes[p2];
 }
 
-void Species::get_n_random_genomes(mt19937_64 &generator, int32_t n,
-                                   vector<shared_ptr<const RNN_Genome>> &parents) {
+void Species::get_n_random_genomes(mt19937_64 &generator, int32_t n, vector<shared_ptr<const RNN_Genome>> &parents) {
   if (n > genomes.size()) {
     Log::fatal("Cannot give n parents with species size of %d\n", size());
     exit(1);

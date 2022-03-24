@@ -5,8 +5,8 @@ using std::setprecision;
 using std::setw;
 
 #include <algorithm>
-using std::min;
 using std::max;
+using std::min;
 
 #include <utility>
 using std::swap;

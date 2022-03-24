@@ -5,17 +5,21 @@
 using std::cout;
 
 #include <chrono>
-#include <thread>
 #include <limits>
+#include <thread>
 using std::numeric_limits;
+
+#include <vector>
+using std::vector;
 
 #include <algorithm>
 using std::max;
 using std::min;
 using std::swap;
 
-#include "../common/log.hxx"
-#include "../rnn/examm.hxx"
+#include "common/args.hxx"
+#include "common/log.hxx"
+#include "rnn/examm.hxx"
 
 using namespace std::literals;
 
@@ -308,8 +312,4 @@ done:
   cout << "RANK " << rank << " FINISHED #######################\n";
 }
 
-// void stop(int rank) {
-//     std::cout<<"RANK: " << rank <<" -- AAAA:: XXXXXXXXXXXXXXXXXXXX\n";
-//     MPI_Barrier(MPI_COMM_WORLD);
-//     getchar();
-// }
+void examm_mpi_main(int argc, char **argv) { ArgumentSet::set_argv(vector<string>(argv, argv + argc)); }

@@ -9,11 +9,15 @@ using std::istream;
 using std::ofstream;
 using std::ostream;
 
+#include "common/args.hxx"
+
 /**
  * Parameters regarding the training of genomes
  **/
 class TrainingParameters {
  public:
+  static ArgumentSet arguments;
+
   /**
    * Static training parameters
    **/

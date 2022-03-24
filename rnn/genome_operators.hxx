@@ -6,6 +6,7 @@
 #include <vector>
 using std::pair;
 
+#include "common/args.hxx"
 #include "common/dataset_meta.hxx"
 #include "common/log.hxx"
 #include "common/weight_initialize.hxx"
@@ -15,6 +16,8 @@ using std::pair;
 
 class GenomeOperators {
  public:
+  static ArgumentSet arguments;
+
   // Genome rank is how well it is doing, relative to some group of genomes.
   // 0 is the best, 1 second best, etc.
   // It usually corresponds to the index of the genome, as long as the genomes
@@ -63,7 +66,7 @@ class GenomeOperators {
  private:
   // Instance variables
   const DatasetMeta dataset_meta;
-  vector<int> possible_node_types;
+  vector<rnn_node_type> possible_node_types;
 
   int32_t number_workers;
   int32_t worker_id;
@@ -126,7 +129,7 @@ class GenomeOperators {
   RNN_Genome *crossover(RNN_Genome *more_fit, RNN_Genome *less_fit);
 
   void finalize_genome(RNN_Genome *g);
-  const vector<int> &get_possible_node_types();
+  const vector<rnn_node_type> &get_possible_node_types();
 
   int get_number_inputs();
   int get_number_outputs();

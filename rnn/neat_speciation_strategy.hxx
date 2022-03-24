@@ -11,6 +11,7 @@ using std::string;
 using std::mt19937_64;
 using std::uniform_real_distribution;
 
+#include "common/args.hxx"
 #include "msg.hxx"
 #include "rnn_genome.hxx"
 #include "speciation_strategy.hxx"
@@ -60,6 +61,8 @@ class NeatSpeciationStrategy : public SpeciationStrategy {
   GenomeOperators genome_operators;
 
  public:
+  static ArgumentSet arguments;
+
   NeatSpeciationStrategy(shared_ptr<const RNN_Genome> _seed_genome, double _species_threshold,
                          double _fitness_threshold, double _neat_c1, double _neat_c2, double _neat_c3,
                          GenomeOperators genome_operators);

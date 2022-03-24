@@ -5,6 +5,94 @@
 #include <unordered_map>
 #include <utility>
 
+#include "common/weight_initialize.hxx"
+
+ArgumentSet GenomeOperators::arguments(
+    "genome_operators_args",
+    {
+        new Argument("max_intra_crossover_parents", "--max-intra-crossover-parents",
+                     "Maximum n of parents used during intra group (island / species) crossover", false, Argument::INT,
+                     2),
+        new Argument("min_intra_crossover_parents", "--min-intra-crossover-parents",
+                     "Minimum n of parents used during intra group (island / species) crossover", false, Argument::INT,
+                     2),
+
+        new Argument("max_inter_crossover_parents", "--max-inter-crossover-parents",
+                     "Maximum n of parents used during inter group (island / species) crossover", false, Argument::INT,
+                     2),
+        new Argument("min_inter_crossover_parents", "--min-inter-crossover-parents",
+                     "Minimum n of parents used during inter group (island / species) crossover", false, Argument::INT,
+                     2),
+
+        new Argument("max_mutations", "--max-mutations", "Maximum number of mutations that will be applied", false,
+                     Argument::INT, 1),
+        new Argument("min_mutations", "--min-mutations", "Minimum number of mutations that will be applied", false,
+                     Argument::INT, 1),
+
+        new Argument("min_recurrent_depth", "--min-recurrent-depth",
+                     "Minimum number of timesteps recurrent edge should go back.", false, Argument::INT, 1),
+
+        new Argument("max_recurrent_depth", "--max-recurrent-depth",
+                     "Maximum number of timesteps a recurrent edge can go back.", false, Argument::INT, 1),
+
+        new EnumArgument("possible_node_types", "--possible-node-types", "List of RNN node types", false,
+                         vector<string>({"simple"}), NODE_TYPE_MAP, false),
+
+        new EnumArgument("weight_initialize", "--weight-initialize", "method of generating new weights", false,
+                         "lamarckian", WEIGHT_INITIALIZE_MAP, false),
+
+        new EnumArgument("weight_inheritance", "--weight-inheritance", "method of inheriting weights", false,
+                         "lamarckian", WEIGHT_INITIALIZE_MAP, false),
+
+        new EnumArgument("weight_mutated_component", "--weight-mutated-component",
+                         "method of generating new weights when a new component is created through mutation", false,
+                         "lamarckian", WEIGHT_INITIALIZE_MAP, false),
+
+    },
+    [](ArgumentSet &as) {
+      if (as.args["min_mutations"]->get_int() > as.args["max_mutations"]->get_int()) {
+        Log::fatal("Minimum mutations is greater than the maximum number of mutations. Fix your configuration file.\n");
+        return false;
+      }
+
+      int max_inter = as.args["max_inter_crossover_parents"]->get_int();
+      int min_inter = as.args["min_inter_crossover_parents"]->get_int();
+
+      if (max_inter < min_inter) {
+        Log::fatal(
+            "Minimum number of parents for inter island crossover is greater than the maximum. Fix your "
+            "configuration.\n");
+        return false;
+      }
+
+      int max_intra = as.args["max_intra_crossover_parents"]->get_int();
+      int min_intra = as.args["min_intra_crossover_parents"]->get_int();
+
+      if (max_intra < min_intra) {
+        Log::fatal(
+            "Minimum number of parents for intra island crossover is greater than the maximum. Fix your "
+            "configuration.\n");
+        return false;
+      }
+
+      int island_size = as.args["island_size"]->get_int();
+      if (max_intra > island_size) {
+        Log::fatal(
+            "Maximum number of parents for intra island crossover is greater than the island size. Fix your "
+            "configuration.\n");
+        return false;
+      }
+
+      if (max_inter > island_size) {
+        Log::fatal(
+            "Maximum number of parents for inter island crossover is greater than the island size. Fix your "
+            "configuration.\n");
+        return false;
+      }
+
+      return true;
+    });
+
 GenomeOperators::GenomeOperators(int32_t _number_inputs, int32_t _number_outputs,
                                  pair<int32_t, int32_t> n_parents_intra_range,
                                  pair<int32_t, int32_t> n_parents_inter_range, pair<int32_t, int32_t> n_mutations_range,
@@ -40,20 +128,16 @@ void GenomeOperators::set_possible_node_types(vector<string> &possible_node_type
 
   for (uint32_t i = 0; i < possible_node_type_strings.size(); i++) {
     string node_type_s = possible_node_type_strings[i];
+    std::transform(node_type_s.begin(), node_type_s.end(), node_type_s.begin(),
+                   [](unsigned char c) { return std::tolower(c); });
 
-    bool found = false;
-
-    for (int32_t j = 0; j < NUMBER_NODE_TYPES; j++) {
-      if (NODE_TYPES[j].compare(node_type_s) == 0) {
-        found = true;
-        possible_node_types.push_back(j);
-      }
-    }
-
-    if (!found) {
+    auto it = NODE_TYPE_MAP.find(node_type_s);
+    if (it == NODE_TYPE_MAP.end()) {
       Log::error("unknown node type: '%s'\n", node_type_s.c_str());
       exit(1);
     }
+
+    possible_node_types.push_back((rnn_node_type) it->second);
   }
 
   if (possible_node_types.size() == 0) {
@@ -950,7 +1034,7 @@ void GenomeOperators::attempt_recurrent_edge_insert(vector<RNN_Recurrent_Edge *>
   insert_rec_edge_by_depth(child_recurrent_edges, recurrent_edge_copy);
 }
 
-const vector<int> &GenomeOperators::get_possible_node_types() { return possible_node_types; }
+const vector<rnn_node_type> &GenomeOperators::get_possible_node_types() { return possible_node_types; }
 
 int GenomeOperators::get_number_inputs() { return number_inputs; }
 int GenomeOperators::get_number_outputs() { return number_outputs; }

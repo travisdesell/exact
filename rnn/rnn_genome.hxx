@@ -55,8 +55,8 @@ class RNN_Genome {
 
   vector<double> initial_parameters;
 
-  double best_validation_mse;
-  double best_validation_mae;
+  double best_validation_mse = EXAMM_MAX_DOUBLE;
+  double best_validation_mae = EXAMM_MAX_DOUBLE;
   double training_mse;
   double training_mae;
   vector<double> best_parameters;
@@ -82,6 +82,14 @@ class RNN_Genome {
   map<string, double> normalize_std_devs;
 
  public:
+  // Bit flags.
+  enum transfer_learning_version { v1 = 1, v2 = 2, v3 = 4 };
+  static const inline map<string, int> TRANSFER_LEARNING_MAP = {
+      {"v1", v1},
+      {"v2", v2},
+      {"v3", v3}
+  };
+
   bool tl_with_epigenetic;
   void sort_nodes_by_depth();
   void sort_edges_by_depth();
@@ -309,7 +317,9 @@ class RNN_Genome {
 };
 
 struct sort_genomes_by_fitness {
-  bool operator()(RNN_Genome *g1, RNN_Genome *g2) { return g1->get_fitness() < g2->get_fitness(); }
+  bool operator()(const RNN_Genome *const g1, const RNN_Genome *const g2) {
+    return g1->get_fitness() < g2->get_fitness();
+  }
   bool operator()(const shared_ptr<const RNN_Genome> &a, const shared_ptr<const RNN_Genome> &b) {
     return a->get_fitness() < b->get_fitness();
   }

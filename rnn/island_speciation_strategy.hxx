@@ -14,6 +14,7 @@ using std::string;
 #include <optional>
 using std::optional;
 
+#include "common/args.hxx"
 #include "island.hxx"
 #include "msg.hxx"
 #include "rnn_genome.hxx"
@@ -90,6 +91,8 @@ class IslandSpeciationStrategy : public SpeciationStrategy {
   unique_ptr<WorkMsg> generate_work_for_reinitializing_island(Island &island);
 
  public:
+  static ArgumentSet arguments;
+
   // static void register_command_line_arguments();
   // static IslandSpeciationStrategy* generate_from_command_line();
 
