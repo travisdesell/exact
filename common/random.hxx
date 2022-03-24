@@ -29,7 +29,6 @@ template <class G>
 concept uniform_random_bit_generator = requires(G &g) {
   std::uniform_int_distribution(0, 10)(g);
 };
->>>>>>> ceb3fda518535501528c0177982183dcdc1b3983
 
 #else
 #include <concepts>
