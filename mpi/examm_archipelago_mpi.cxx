@@ -299,16 +299,17 @@ int main(int argc, char **argv) {
     node->run();
   } else {
     delete time_series_sets;
-    MPI_Finalize();
-    return 0;
+    goto done;
   }
 
+  delete time_series_sets;
   io.done.store(true);
   io.outgoing_message_pending.notify_one();
   Log::fatal("Cleaning up rank %d\n", rank);
 
-  Log::fatal("REACHED END OF PROGRAM\n");
-
-  MPI_Finalize();
   io.clean_up();
+done:
+  MPI_Barrier(MPI_COMM_WORLD);
+  MPI_Finalize();
+  Log::fatal("REACHED END OF PROGRAM\n");
 }
