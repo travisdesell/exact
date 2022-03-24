@@ -159,8 +159,7 @@ void GenomeOperators::finalize_genome(RNN_Genome *genome) {
 }
 
 int32_t GenomeOperators::get_random_n_mutations() {
-  int32_t dif = n_mutations_range.second - n_mutations_range.first + 1;
-  return n_mutations_range.first + rng_0_1(generator) * dif;
+  return uniform_int_distribution(n_mutations_range.first, n_mutations_range.second)(generator);
 }
 
 RNN_Genome *GenomeOperators::mutate(RNN_Genome *g, int32_t n_mutations) {
@@ -570,13 +569,11 @@ RNN_Genome *GenomeOperators::crossover(RNN_Genome *more_fit, RNN_Genome *less_fi
 }
 
 int32_t GenomeOperators::get_random_n_parents_inter() {
-  int32_t dif = n_parents_inter_range.second - n_parents_inter_range.first + 1;
-  return n_parents_inter_range.first + rng_0_1(generator) * dif;
+  return uniform_int_distribution(n_parents_inter_range.first, n_parents_inter_range.second)(generator);
 }
 
 int32_t GenomeOperators::get_random_n_parents_intra() {
-  int32_t dif = n_parents_intra_range.second - n_parents_intra_range.first + 1;
-  return n_parents_intra_range.first + rng_0_1(generator) * dif;
+  return uniform_int_distribution(n_parents_intra_range.first, n_parents_intra_range.second)(generator);
 }
 
 RNN_Genome *GenomeOperators::ncrossover(vector<const RNN_Genome *> &parents) {

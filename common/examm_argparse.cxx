@@ -216,8 +216,8 @@ get_argument(arguments, "--min_mutations", false, min_mutations);
 
 if (max_mutations < min_mutations) swap(max_mutations, max_mutations);
 
-max_mutations = max(1, max_mutations);
-min_mutations = min(1, min_mutations);
+max_mutations = max(0, max_mutations);
+min_mutations = max(0, min_mutations);
 
 #ifdef EXAMM_ARCHIPELAGO
 string archipelago_config_path;

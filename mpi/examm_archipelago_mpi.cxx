@@ -66,15 +66,15 @@ struct MPIArchipelagoIO : public ArchipelagoIO {
   condition_variable outgoing_message_pending;
 
   // Pairs of sent message requests and the associated data.
-  deque<pair<vector<MPI_Request>, unique_ptr<ostringstream>>> pending;
+  deque<pair<vector<MPI_Request>, unique_ptr<string>>> pending;
 
   virtual void send_msg_to(Msg *msg, node_index_type dst) {
-    unique_ptr<ostringstream> oss = make_unique<ostringstream>();
-    msg->write_to_stream(*oss);
+    ostringstream oss;
+    msg->write_to_stream(oss);
 
-    auto content = oss->view();
-    const char *data = content.data();
-    const int32_t length = content.size();
+    unique_ptr<string> content = unique_ptr<string>(new string(move(*oss.rdbuf()).str()));
+    const char *data = content->data();
+    const int32_t length = content->size();
 
     vector<MPI_Request> handles;
 
@@ -82,19 +82,19 @@ struct MPIArchipelagoIO : public ArchipelagoIO {
     mpi_lock.lock();
     int r = MPI_Isend(data, length, MPI_CHAR, dst, DEFAULT_TAG, MPI_COMM_WORLD, &request);
     handles.push_back(request);
-    pending.push_back(pair(move(handles), move(oss)));
+    pending.push_back(pair(move(handles), move(content)));
     mpi_lock.unlock();
     outgoing_message_pending.notify_one();
   }
 
   virtual void send_msg_all(Msg *msg, vector<node_index_type> &dst) {
     if (dst.size() == 0) return;
-    unique_ptr<ostringstream> oss = make_unique<ostringstream>();
-    msg->write_to_stream(*oss);
+    ostringstream oss;
+    msg->write_to_stream(oss);
 
-    auto content = oss->view();
-    const char *data = content.data();
-    const int32_t length = content.size();
+    unique_ptr<string> content = unique_ptr<string>(new string(move(*oss.rdbuf()).str()));
+    const char *data = content->data();
+    const int32_t length = content->size();
 
     vector<MPI_Request> handles;
 
@@ -104,7 +104,8 @@ struct MPIArchipelagoIO : public ArchipelagoIO {
       int r = MPI_Isend(data, length, MPI_CHAR, d, DEFAULT_TAG, MPI_COMM_WORLD, &request);
       handles.push_back(request);
     }
-    pending.push_back(pair(move(handles), move(oss)));
+
+    pending.push_back(pair(move(handles), move(content)));
     mpi_lock.unlock();
 
     outgoing_message_pending.notify_one();

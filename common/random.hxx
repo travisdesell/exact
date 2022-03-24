@@ -16,8 +16,8 @@ using std::vector;
 #ifdef __APPLE__
 #include <type_traits>
 
-template <typename T>
-concept swappable = std::is_swappable<T>();
+template<typename T>
+concept swappable = std::is_swappable<T>::value;
 
 template <class F, class... Args>
 
@@ -27,7 +27,7 @@ concept invocable = requires(F &&f, Args &&...args) {
 };
 template <class G>
 concept uniform_random_bit_generator = requires(G &g) {
-  std::generate_canonical(g);
+  std::uniform_int_distribution(0, 10)(g);
 };
 
 #else
