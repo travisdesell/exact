@@ -20,6 +20,7 @@ class SpeciationStrategy {
  protected:
   int32_t generated_genomes = 0;
   int32_t inserted_genomes = 0;
+  int32_t evaluated_genomes = 0;
 
   static inline uniform_real_distribution<double> rng_0_1{0.0, 1.0};
   mt19937_64 generator;
@@ -43,6 +44,8 @@ class SpeciationStrategy {
    * \return the number of inserted genomes.
    */
   int32_t get_inserted_genomes();
+  
+  int32_t get_evaluated_genomes();
 
   /**
    * Gets the fitness of the best genome of all the islands

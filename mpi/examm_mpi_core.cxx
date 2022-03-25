@@ -281,19 +281,11 @@ void worker(int n_workers, int rank, GenomeOperators genome_operators, string id
       break;
     }
 
-    Log::debug("gid = %d\n", genome->get_generation_id());
-
-    // have each worker write to a separate log file
-    string log_id = "genome_" + to_string(genome->get_generation_id()) + "_worker_" + to_string(rank);
-    Log::set_id(log_id);
-
     if (genome_operators.training_parameters.bp_iterations > 0)
       genome->backpropagate_stochastic(training_inputs, training_outputs, validation_inputs, validation_outputs);
     else
       genome->calculate_fitness(training_inputs, training_outputs, validation_inputs, validation_outputs);
 
-    Log::release_id(log_id);
-    Log::set_id("worker_" + to_string(rank) + "_" + id);
     Log::info("Done training\n");
 
     // Ownership of genome has been transfered to result (when result is deleted

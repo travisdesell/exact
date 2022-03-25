@@ -159,7 +159,7 @@ pair<int32_t, const RNN_Genome *> IslandSpeciationStrategy::insert_genome(unique
   Log::debug("inserting genome!\n");
   if (extinction_event_generation_number != 0) {
     if (generated_genomes > 1 && generated_genomes % extinction_event_generation_number == 0 &&
-        max_genomes - inserted_genomes >= extinction_event_generation_number) {
+        max_genomes - evaluated_genomes >= extinction_event_generation_number) {
       if (island_ranking_method.compare("EraseWorst") == 0 || island_ranking_method.compare("") == 0) {
         vector<int32_t> rank = rank_islands();
         for (uint32_t i = 0; i < islands_to_exterminate; i++) {
@@ -186,6 +186,8 @@ pair<int32_t, const RNN_Genome *> IslandSpeciationStrategy::insert_genome(unique
 
   auto [insert_position, g] = islands[island].insert_genome(move(genome_shared));
 
+  evaluated_genomes++;
+  
   if (insert_position >= 0) {
     inserted_genomes++;
     return pair(insert_position, g);

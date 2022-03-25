@@ -95,6 +95,10 @@ double NeatSpeciationStrategy::get_worst_fitness() { return get_worst_genome()->
 // this will insert a COPY, original needs to be deleted
 // returns 0 if a new global best, < 0 if not inserted, > 0 otherwise
 pair<int32_t, const RNN_Genome *> NeatSpeciationStrategy::insert_genome(unique_ptr<RNN_Genome> genome) {
+  // genomes are always inserted
+  inserted_genomes++;
+  evaluated_genomes++;
+
   bool inserted = false;
   bool erased_population = check_population();
   if (!erased_population) {
@@ -107,7 +111,7 @@ pair<int32_t, const RNN_Genome *> NeatSpeciationStrategy::insert_genome(unique_p
   if (best.size() != 0) { genome->set_weights(best); }
 
   Log::info("inserting genome id %d!\n", genome->get_generation_id());
-  inserted_genomes++;
+  evaluated_genomes++;
 
   int32_t insert_position;
   const RNN_Genome *g = nullptr;
@@ -169,7 +173,6 @@ pair<int32_t, const RNN_Genome *> NeatSpeciationStrategy::insert_genome(unique_p
 
     inserted = true;
   }
-
   if (insert_position == 0) {
     // check and see if the inserted genome has the same fitness as the best
     // fitness of all islands

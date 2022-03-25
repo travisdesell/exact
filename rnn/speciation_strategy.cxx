@@ -8,6 +8,8 @@ SpeciationStrategy::SpeciationStrategy() {
   for (int i = 0; i < 100; i++) generator();
 }
 
+int32_t SpeciationStrategy::get_evaluated_genomes() { return evaluated_genomes; }
+
 int32_t SpeciationStrategy::get_generated_genomes() { return generated_genomes; }
 
 int32_t SpeciationStrategy::get_inserted_genomes() { return inserted_genomes; }

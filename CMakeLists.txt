@@ -42,7 +42,7 @@ SET (CMAKE_CXX_FLAGS_MINSIZEREL     "-Os -DNDEBUG")
 # Release build, optimized for current CPU architecutre (i.e. the binaries are not going to be portable).
 # run CMAKE CMAKE_BUILD_TYPE=Release ..
 # Fastest possible code + no debugging
-SET (CMAKE_CXX_FLAGS_RELEASE        "-O4 -funroll-loops -DNDEBUG -flto -march=native -DMINIMAL_LOGGING")
+SET (CMAKE_CXX_FLAGS_RELEASE        "-O4 -funroll-loops -DNDEBUG -flto -ffat-lto-objects -march=native -DMINIMAL_LOGGING")
 
 set(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH} /opt/local/lib)
 
@@ -112,16 +112,16 @@ add_subdirectory(common)
 add_subdirectory(image_tools)
 add_subdirectory(time_series)
 add_subdirectory(word_series)
-add_subdirectory(cnn)
+# add_subdirectory(cnn)
 
 add_subdirectory(rnn)
  #add_subdirectory(rnn_tests)
-add_subdirectory(rnn_examples)
+# add_subdirectory(rnn_examples)
 
 add_subdirectory(opencl)
 
-add_subdirectory(cnn_tests)
-add_subdirectory(cnn_examples)
+# add_subdirectory(cnn_tests)
+# add_subdirectory(cnn_examples)
 add_subdirectory(multithreaded)
 add_subdirectory(mpi)
 

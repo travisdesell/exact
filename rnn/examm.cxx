@@ -400,7 +400,7 @@ bool EXAMM::time_limit_reached() {
 
 unique_ptr<Msg> EXAMM::generate_work() {
   // For the MT version only.
-  if (speciation_strategy->get_inserted_genomes() > max_genomes || time_limit_reached())
+  if (speciation_strategy->get_evaluated_genomes() > max_genomes || time_limit_reached())
     return make_unique<TerminateMsg>();
 
   return speciation_strategy->generate_work();
