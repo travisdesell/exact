@@ -19,6 +19,7 @@ using std::pair;
 using std::unordered_map;
 
 #include "rnn_genome.hxx"
+#include "genome_operators.hxx"
 
 enum IslandStatus { INITIALIZING = 0, FILLED = 1, REPOPULATING = 2 };
 
@@ -45,7 +46,8 @@ class Island {
 
   int32_t erase_again; /**< a flag to track if this islands has been erased */
   bool erased;         /**< a flag to track if this islands has been erased */
-
+  GenomeOperators &go;
+  
   static inline uniform_real_distribution<double> rng_0_1{0.0, 1.0};
 
  public:
@@ -54,14 +56,14 @@ class Island {
    *
    *  \param max_size is the maximum number of genomes in the island.
    */
-  Island(int32_t id, int32_t max_size);
+  Island(int32_t id, int32_t max_size, GenomeOperators &go);
 
   /**
    * Initializes an island filled the supplied genomes. The size of the island
    * will be the size of the supplied genome vector. The island status is set to
    * filled.
    */
-  Island(int32_t id, vector<shared_ptr<const RNN_Genome>> &genomes);
+  Island(int32_t id, vector<shared_ptr<const RNN_Genome>> &genomes, GenomeOperators &go);
 
   /**
    * Returns the fitness of the best genome in the island

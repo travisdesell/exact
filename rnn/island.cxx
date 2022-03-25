@@ -3,6 +3,8 @@ using std::lower_bound;
 using std::sort;
 using std::upper_bound;
 
+#include <cstring>
+
 #include <iomanip>
 using std::setw;
 
@@ -29,16 +31,17 @@ using std::vector;
 #include "island.hxx"
 #include "rnn_genome.hxx"
 
-Island::Island(int32_t _id, int32_t _max_size)
-    : id(_id), max_size(_max_size), status(IslandStatus::INITIALIZING), erase_again(0), erased(false) {}
+Island::Island(int32_t _id, int32_t _max_size, GenomeOperators &go)
+    : id(_id), max_size(_max_size), status(IslandStatus::INITIALIZING), erase_again(0), erased(false), go(go) {}
 
-Island::Island(int32_t _id, vector<shared_ptr<const RNN_Genome>> &_genomes)
+Island::Island(int32_t _id, vector<shared_ptr<const RNN_Genome>> &_genomes, GenomeOperators &go)
     : id(_id),
       max_size(_genomes.size()),
       genomes(move(_genomes)),
       status(IslandStatus::FILLED),
       erase_again(0),
-      erased(false) {}
+      erased(false),
+      go(go) {}
 
 shared_ptr<const RNN_Genome> &Island::get_best_genome() { return genomes[0]; }
 
@@ -157,6 +160,15 @@ pair<int32_t, const RNN_Genome *> Island::insert_genome(shared_ptr<const RNN_Gen
       Log::debug("on potential match %d of %d\n", potential_match - potential_matches.begin(),
                  potential_matches.size());
       if ((*potential_match)->equals(genome.get())) {
+        if (go.n_mutations_range.first == 0 && go.n_mutations_range.second == 0) {
+          const vector<double> &a = (*potential_match)->get_initial_parameters();
+          const vector<double> &b = genome->get_initial_parameters();
+          if (a.size() != b.size() || std::memcmp(a.data(), b.data(), a.size() * sizeof(double)) != 0) {
+            Log::info("Weights not equal; allowing duplicate\n");
+            potential_match++;
+            continue;
+          }
+        }
         if ((*potential_match)->get_fitness() > new_fitness) {
           Log::debug(
               "REPLACING DUPLICATE GENOME, fitness of genome in search: "

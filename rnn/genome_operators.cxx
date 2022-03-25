@@ -162,6 +162,18 @@ int32_t GenomeOperators::get_random_n_mutations() {
   return uniform_int_distribution(n_mutations_range.first, n_mutations_range.second)(generator);
 }
 
+
+RNN_Genome *GenomeOperators::mutate_weights(RNN_Genome *g, int32_t n) {
+  vector<int> indices(g->initial_parameters.size());
+  std::iota(indices.begin(), indices.end(), 0);
+  fisher_yates_shuffle(generator, indices);
+  for (int i = 0; i < n; i++) {
+    double scale = uniform_real_distribution<double>(0.5, 1.5)(generator);
+    g->initial_parameters[indices[i]] *= scale;
+  }
+  return g;
+}
+
 RNN_Genome *GenomeOperators::mutate(RNN_Genome *g, int32_t n_mutations) {
   double mu, sigma;
 

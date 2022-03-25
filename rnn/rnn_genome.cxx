@@ -369,6 +369,10 @@ int32_t RNN_Genome::get_bp_iterations() const { return training_parameters.bp_it
 
 void RNN_Genome::set_log_filename(string _log_filename) { log_filename = _log_filename; }
 
+const vector<double> &RNN_Genome::get_initial_parameters() const {
+  return initial_parameters;
+}
+
 void RNN_Genome::get_weights(vector<double> &parameters) const {
   parameters.resize(get_number_weights());
 
@@ -703,8 +707,7 @@ void RNN_Genome::calculate_fitness(const vector<vector<vector<double>>> &testing
                                    const vector<vector<vector<double>>> &testing_outputs,
                                    const vector<vector<vector<double>>> &validation_inputs,
                                    const vector<vector<vector<double>>> &validation_outputs) {
-  vector<double> &params = best_parameters;
-  if (best_parameters.size() == 0) { params = initial_parameters; }
+  vector<double> &params = initial_parameters;
   best_validation_mse = get_mse(params, validation_inputs, validation_outputs);
   training_mse = get_mse(params, testing_inputs, testing_outputs);
 }

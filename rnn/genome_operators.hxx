@@ -63,7 +63,6 @@ class GenomeOperators {
   static constexpr double intra_co_p = 0.66;
   static constexpr double inter_co_p = 0.34;
 
- private:
   // Instance variables
   const DatasetMeta dataset_meta;
   vector<rnn_node_type> possible_node_types;
@@ -122,6 +121,7 @@ class GenomeOperators {
 
   int32_t get_random_n_mutations();
   RNN_Genome *mutate(RNN_Genome *g, int32_t n_mutations);
+  RNN_Genome *mutate_weights(RNN_Genome *g, int32_t n = 1);
 
   int32_t get_random_n_parents_intra();
   int32_t get_random_n_parents_inter();

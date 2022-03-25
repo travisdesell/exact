@@ -75,9 +75,9 @@ IslandSpeciationStrategy::IslandSpeciationStrategy(
   inter_island_crossover_rate += intra_island_crossover_rate;
 
   if (modify == nullopt) {
-    for (int i = 0; i < (int) number_of_islands; i += 1) { islands.push_back(Island(i, max_island_size)); }
+    for (int i = 0; i < (int) number_of_islands; i += 1) { islands.push_back(Island(i, max_island_size, genome_operators)); }
   } else {
-    auto make_filled_island = [](int32_t id, shared_ptr<const RNN_Genome> seed_genome, int32_t size,
+    auto make_filled_island = [&genome_operators](int32_t id, shared_ptr<const RNN_Genome> seed_genome, int32_t size,
                                  function<void(RNN_Genome *)> &modify) {
       vector<shared_ptr<const RNN_Genome>> genomes;
       genomes.reserve(size);
@@ -88,7 +88,7 @@ IslandSpeciationStrategy::IslandSpeciationStrategy(
         genomes.push_back(shared_ptr<RNN_Genome>(clone));
       }
 
-      return Island(id, genomes);
+      return Island(id, genomes, genome_operators);
     };
     for (uint32_t i = 0; i < number_of_islands; i += 1)
       islands.push_back(make_filled_island(i, _seed_genome, max_island_size, *modify));

@@ -154,7 +154,10 @@ unique_ptr<RNN_Genome> WorkMsg::get_genome(GenomeOperators &operators) {
   } else if (work_type == mutation) {
     auto &margs = get<mutation>(args);
     RNN_Genome *parent = is_shared ? get<shared>(margs.g)->copy() : get<unique>(margs.g).release();
-    operators.mutate(parent, margs.n_mutations);
+    if (margs.n_mutations == 0)
+      operators.mutate_weights(parent);
+    else  
+      operators.mutate(parent, margs.n_mutations);
     g = parent;
   } else {
     // Unreachable (or at least it should be)
