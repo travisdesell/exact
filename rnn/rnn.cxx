@@ -406,6 +406,87 @@ void RNN::backward_pass(double error, bool using_dropout, bool training, double 
     }
 }
 
+void RNN::forward_pass_online(const vector< vector<double> > &series_data, bool using_dropout, bool training, double dropout_probability, int32_t timestep) {
+    series_length = series_data[0].size();
+
+    if (input_nodes.size() != series_data.size()) {
+        Log::fatal("ERROR: number of input nodes (%d) != number of time series data input fields (%d)\n", input_nodes.size(), series_data.size());
+        for (int i = 0; i < nodes.size(); i++) {
+            Log::fatal("node[%d], in: %d, depth: %lf, layer_type: %d, node_type: %d\n", i, nodes[i]->get_innovation_number(), nodes[i]->get_depth(), nodes[i]->get_layer_type(), nodes[i]->get_node_type());
+        }
+        exit(1);
+    }
+
+    //TODO: want to check that all vectors in series_data are of same length
+
+
+    for (uint32_t i = 0; i < nodes.size(); i++) {
+        nodes[i]->reset(series_length);
+    }
+
+    for (uint32_t i = 0; i < edges.size(); i++) {
+        edges[i]->reset(series_length);
+    }
+
+    for (uint32_t i = 0; i < recurrent_edges.size(); i++) {
+        recurrent_edges[i]->reset(series_length);
+    }
+
+    //do a propagate forward for time == -1 so that the the input
+    //fired count on each node will be correct for the first pass
+    //through the RNN
+    for (uint32_t i = 0; i < recurrent_edges.size(); i++) {
+        if (recurrent_edges[i]->is_reachable()) recurrent_edges[i]->first_propagate_forward();
+    }
+
+    for (uint32_t i = 0; i < input_nodes.size(); i++) {
+        if(input_nodes[i]->is_reachable()) input_nodes[i]->input_fired(timestep, series_data[i][timestep]);
+    }
+
+    //feed forward
+    if (using_dropout) {
+        for (uint32_t i = 0; i < edges.size(); i++) {
+            if (edges[i]->is_reachable()) edges[i]->propagate_forward(timestep, training, dropout_probability);
+        }
+    } else {
+        for (uint32_t i = 0; i < edges.size(); i++) {
+            if (edges[i]->is_reachable()) edges[i]->propagate_forward(timestep);
+        }
+    }
+
+    for (uint32_t i = 0; i < recurrent_edges.size(); i++) {
+        if (recurrent_edges[i]->is_reachable()) recurrent_edges[i]->propagate_forward(timestep);
+    }
+
+}
+
+void RNN::backward_pass_online(double error, bool using_dropout, bool training, double dropout_probability, int32_t timestep) {
+    //do a propagate forward for time == (series_length - 1) so that the
+    // output fired count on each node will be correct for the first pass
+    //through the RNN
+    for (uint32_t i = 0; i < recurrent_edges.size(); i++) {
+        if (recurrent_edges[i]->is_reachable()) recurrent_edges[i]->first_propagate_backward();
+    }
+
+    for (uint32_t i = 0; i < output_nodes.size(); i++) {
+        output_nodes[i]->error_fired(timestep, error);
+    }
+
+    if (using_dropout) {
+        for (int32_t i = (int32_t)edges.size() - 1; i >= 0; i--) {
+            if (edges[i]->is_reachable()) edges[i]->propagate_backward(timestep, training, dropout_probability);
+        }
+    } else {
+        for (int32_t i = (int32_t)edges.size() - 1; i >= 0; i--) {
+            if (edges[i]->is_reachable()) edges[i]->propagate_backward(timestep);
+        }
+    }
+
+    for (int32_t i = (int32_t)recurrent_edges.size() - 1; i >= 0; i--) {
+        if (recurrent_edges[i]->is_reachable()) recurrent_edges[i]->propagate_backward(timestep);
+    }
+}
+
 double RNN::calculate_error_softmax(const vector< vector<double> > &expected_outputs) {
     
     
@@ -463,6 +544,29 @@ double RNN::calculate_error_mse(const vector< vector<double> > &expected_outputs
             mse += error * error;
         }
         mse_sum += mse / expected_outputs[i].size();
+    }
+
+    return mse_sum;
+}
+
+double RNN::calculate_error_mse_online(const vector< vector<double> > &expected_outputs, int32_t timestep) {
+    double mse_sum = 0.0;
+    double mse;
+    double error;
+  
+    for (uint32_t i = 0; i < output_nodes.size(); i++) {
+        // output_nodes[i]->error_values.resize(expected_outputs[i].size());
+
+        mse = 0.0;
+        // for (uint32_t j = 0; j < expected_outputs[i].size(); j++) {
+            error = output_nodes[i]->output_values[timestep] - expected_outputs[i][timestep];
+
+          // std::cout<<"why this  ???? mse ::::: "<<error<<" "<<output_nodes[i]->output_values[j]<<" "<<expected_outputs[i][j]<<std::endl;
+
+            output_nodes[i]->error_values[timestep] = error;
+            mse += error * error;
+        // }
+        mse_sum += mse;
     }
 
     return mse_sum;
@@ -685,6 +789,51 @@ void RNN::get_analytic_gradient(const vector<double> &test_parameters, const vec
         mse = calculate_error_softmax(outputs);
         backward_pass(mse * (1.0 / outputs[0].size()), using_dropout, training, dropout_probability);
     
+    }
+    
+    vector<double> current_gradients;
+
+    uint32_t current = 0;
+    for (uint32_t i = 0; i < nodes.size(); i++) {
+        if (nodes[i]->is_reachable()) {
+            nodes[i]->get_gradients(current_gradients);
+
+            for (uint32_t j = 0; j < current_gradients.size(); j++) {
+                analytic_gradient[current] = current_gradients[j];
+                current++;
+            }
+        }
+    }
+
+    for (uint32_t i = 0; i < edges.size(); i++) {
+        if (edges[i]->is_reachable()) {
+            analytic_gradient[current] = edges[i]->get_gradient();
+            current++;
+        }
+    }
+
+    for (uint32_t i = 0; i < recurrent_edges.size(); i++) {
+        if (recurrent_edges[i]->is_reachable()) {
+            analytic_gradient[current] = recurrent_edges[i]->get_gradient();
+            current++;
+        }
+    }
+}
+
+void RNN::get_analytic_gradient_online(const vector<double> &test_parameters, const vector< vector<double> > &inputs, const vector< vector<double> > &outputs, double &mse, vector<double> &analytic_gradient, bool using_dropout, bool training, double dropout_probability, int32_t timestep) {
+    analytic_gradient.assign(test_parameters.size(), 0.0);
+
+    set_weights(test_parameters);
+
+    forward_pass_online(inputs, using_dropout, training, dropout_probability, timestep);
+
+    if (use_regression) {
+        mse = calculate_error_mse_online(outputs, timestep);
+            backward_pass_online(mse * (1.0 / outputs[0].size())*2.0, using_dropout, training, dropout_probability, timestep);
+
+    } else {
+        mse = calculate_error_softmax(outputs);
+        backward_pass_online(mse * (1.0 / outputs[0].size()), using_dropout, training, dropout_probability, timestep);
     }
     
     vector<double> current_gradients;

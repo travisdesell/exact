@@ -1371,6 +1371,190 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
     get_mu_sigma(best_parameters, _mu, _sigma);
 }
 
+void RNN_Genome::backpropagate_stochastic_online(const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, const vector< vector< vector<double> > > &validation_inputs, const vector< vector< vector<double> > > &validation_outputs, bool random_sequence_length, int sequence_length_lower_bound, int sequence_length_upper_bound) {
+    vector<double> parameters = initial_parameters;
+    Log::info("input size is %d %d %d", inputs.size(), inputs[0].size(), inputs[0][0].size());
+    int n_parameters = this->get_number_weights();
+    int n_series = inputs.size();
+
+    vector<double> prev_parameters(n_parameters, 0.0);
+    vector<double> prev_velocity(n_parameters, 0.0);
+    vector<double> prev_prev_velocity(n_parameters, 0.0);
+    vector<double> analytic_gradient;
+    vector<double> prev_gradient(n_parameters, 0.0);
+
+    double mu = 0.9;
+    double mse;
+    double norm = 0.0;
+    
+    std::chrono::time_point<std::chrono::system_clock> startClock = std::chrono::system_clock::now();
+
+    RNN* rnn = get_rnn();
+    rnn->enable_use_regression(use_regression);
+    rnn->set_weights(parameters);
+
+    //initialize the initial previous values
+    for (uint32_t i = 0; i < n_series; i++) {
+        Log::trace("getting analytic gradient for input/output: %d, n_series: %d, parameters.size: %d, inputs.size(): %d, outputs.size(): %d, log filename: '%s'\n", i, n_series, parameters.size(), inputs.size(), outputs.size(), log_filename.c_str());
+
+        rnn->get_analytic_gradient_online(parameters, inputs[i], outputs[i], mse, analytic_gradient, use_dropout, true, dropout_probability, 0);
+        Log::trace("got analytic gradient.\n");
+
+        norm = 0.0;
+        for (int32_t j = 0; j < parameters.size(); j++) {
+            norm += analytic_gradient[j] * analytic_gradient[j];
+        }
+        norm = sqrt(norm);
+    }
+    Log::trace("initialized previous values.\n");
+
+    double m = 0.0, s = 0.0;
+    get_mu_sigma(parameters, m, s);
+    for (int32_t i = 0; i < parameters.size(); i++) {
+        Log::trace("parameters[%d]: %lf\n", i, parameters[i]);
+    }
+
+    unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
+    minstd_rand0 generator(seed);
+    uniform_real_distribution<double> rng(0, 1);
+
+    ofstream *output_log = NULL;
+    // ostringstream memory_log;
+
+    if (log_filename != "") {
+        Log::trace("creating new log stream for '%s'\n", log_filename.c_str());
+        output_log = new ofstream(log_filename);
+        Log::trace("testing to see if log file is valid.\n");
+
+        if (!output_log->is_open()) {
+            Log::fatal("ERROR, could not open output log: '%s'\n", log_filename.c_str());
+            exit(1);
+        }
+
+        Log::trace("opened log file '%s'\n", log_filename.c_str());
+
+        (*output_log) << "TimeStep, TimeUsed, Online MSE, norm";
+        (*output_log) << endl;
+    }
+
+    vector< vector< vector<double> > > training_inputs;
+    vector< vector< vector<double> > > training_outputs;
+
+    training_inputs = inputs;
+    training_outputs = outputs;
+
+
+    vector<int32_t> shuffle_order;
+    for (int32_t i = 0; i < n_series; i++) {
+        shuffle_order.push_back(i);
+    }
+
+    fisher_yates_shuffle(generator, shuffle_order);
+
+    double avg_norm = 0.0;
+    for (uint32_t k = 0; k < shuffle_order.size(); k++) {
+        int random_selection = shuffle_order[k];
+
+        prev_gradient = analytic_gradient;
+
+        for (int32_t timestep = 0; timestep < training_inputs[random_selection][0].size(); timestep ++) {
+
+            // rnn->get_analytic_gradient(parameters, training_inputs[random_selection], training_outputs[random_selection], mse, analytic_gradient, use_dropout, true, dropout_probability);
+            rnn->get_analytic_gradient_online(parameters, training_inputs[random_selection], training_outputs[random_selection], mse, analytic_gradient, use_dropout, true, dropout_probability, timestep);
+            
+            norm = 0.0;
+            for (int32_t i = 0; i < parameters.size(); i++) {
+                norm += analytic_gradient[i] * analytic_gradient[i];
+            }
+            norm = sqrt(norm);
+            avg_norm += norm;
+
+            if (use_high_norm && norm > high_threshold) {
+                double high_threshold_norm = high_threshold / norm;
+                //Log::info_no_header(", OVER THRESHOLD, multiplier: %lf", high_threshold_norm);
+
+                for (int32_t i = 0; i < parameters.size(); i++) {
+                    analytic_gradient[i] = high_threshold_norm * analytic_gradient[i];
+                }
+
+            } else if (use_low_norm && norm < low_threshold) {
+                double low_threshold_norm = low_threshold / norm;
+                //Log::info_no_header(", UNDER THRESHOLD, multiplier: %lf", low_threshold_norm);
+
+                for (int32_t i = 0; i < parameters.size(); i++) {
+                    analytic_gradient[i] = low_threshold_norm * analytic_gradient[i];
+                }
+            }
+
+            //Log::info_no_header("\n");
+
+            if (use_nesterov_momentum) {
+                for (int32_t i = 0; i < parameters.size(); i++) {
+                    //Log::info("parameters[%d]: %lf\n", i, parameters[i]);
+
+                    prev_parameters[i] = parameters[i];
+                    prev_prev_velocity[i] = prev_velocity[i];
+
+                    double mu_v = prev_velocity[i] * mu;
+
+                    prev_velocity[i] = mu_v  - (learning_rate * prev_gradient[i]);
+                    parameters[i] += mu_v + ((mu + 1) * prev_velocity[i]);
+
+                    if (parameters[i] < -10.0) parameters[i] = -10.0;
+                    else if (parameters[i] > 10.0) parameters[i] = 10.0;
+                }
+            } else {
+                for (int32_t i = 0; i < parameters.size(); i++) {
+                    prev_parameters[i] = parameters[i];
+                    prev_gradient[i] = analytic_gradient[i];
+                    parameters[i] -= learning_rate * analytic_gradient[i];
+
+                    if (parameters[i] < -10.0) parameters[i] = -10.0;
+                    else if (parameters[i] > 10.0) parameters[i] = 10.0;
+                }
+            }
+
+            
+            if (output_log != NULL) {
+            std::chrono::time_point<std::chrono::system_clock> currentClock = std::chrono::system_clock::now();
+            long milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(currentClock - startClock).count();
+                                //make sure the output log is good
+            if ( !output_log->good() ) {
+                output_log->close();
+                delete output_log;
+
+                output_log = new ofstream(log_filename, std::ios_base::app);
+                Log::trace("testing to see if log file valid for '%s'\n", log_filename.c_str());
+
+                if (!output_log->is_open()) {
+                    Log::fatal("ERROR, could not open output log: '%s'\n", log_filename.c_str());
+                    exit(1);
+                }
+            }
+
+            rnn->set_weights(parameters);
+
+            rnn->forward_pass_online(training_inputs[random_selection], use_dropout, true, dropout_probability, timestep);
+            
+            double onlin_mse = rnn->calculate_error_mse_online(training_outputs[random_selection], timestep);
+
+            (*output_log) << timestep
+                << "," << milliseconds
+                << "," << onlin_mse
+                << "," << avg_norm << endl;
+            }
+        }
+    }
+
+    this->set_weights(parameters); 
+    delete rnn;
+
+    // this->set_weights(best_parameters);
+    Log::trace("backpropagation completed, getting mu/sigma\n");
+    double _mu, _sigma;
+    get_mu_sigma(best_parameters, _mu, _sigma);
+}
+
 vector< vector<double> > RNN_Genome::slice_time_series(int start_index, int sequence_length, int num_parameter, const vector< vector<double> > &time_series) {
     vector< vector <double> > current_time_series;
     for (int j = 0; j < num_parameter; j++) {

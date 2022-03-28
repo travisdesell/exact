@@ -16,3 +16,5 @@ target_link_libraries(evaluate_rnn examm_strategy exact_common exact_time_series
 add_executable(rnn_statistics rnn_statistics.cxx)
 target_link_libraries(rnn_statistics examm_strategy exact_common exact_time_series exact_word_series ${MPI_LIBRARIES} ${MPI_EXTRA} ${MYSQL_LIBRARIES} pthread)
 
+add_executable(online_rnn online_rnn.cxx)
+target_link_libraries(online_rnn examm_strategy exact_common exact_time_series exact_word_series ${MPI_LIBRARIES} ${MPI_EXTRA} ${MYSQL_LIBRARIES} ${TIFF_LIBRARIES} pthread)

@@ -38,6 +38,7 @@ extern const string NODE_TYPES[];
 #define ENARC_NODE 8
 #define ENAS_DAG_NODE 9
 #define RANDOM_DAG_NODE 10
+#define ONLINE_LSTM_NODE 11
 
 
 

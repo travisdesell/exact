@@ -20,8 +20,8 @@ using std::vector;
 #include "common/weight_initialize.hxx"
 #include "common/files.hxx"
 
-#include "rnn/lstm_node.hxx"
-#include "rnn/gru_node.hxx"
+#include "rnn/online_lstm_node.hxx"
+// #include "rnn/gru_node.hxx"
 #include "rnn/rnn_edge.hxx"
 #include "rnn/rnn_genome.hxx"
 #include "rnn/rnn_node.hxx"
@@ -89,7 +89,7 @@ int main(int argc, char **argv) {
     get_argument(arguments, "--time_offset", true, time_offset);
 
     time_series_sets->export_training_series(time_offset, training_inputs, training_outputs);
-    time_series_sets->export_test_series(time_offset, test_inputs, test_outputs);
+    // time_series_sets->export_test_series(time_offset, test_inputs, test_outputs);
 
     int number_inputs = time_series_sets->get_number_inputs();
     //int number_outputs = time_series_sets->get_number_outputs();
@@ -191,24 +191,25 @@ int main(int argc, char **argv) {
     get_argument(arguments, "--sequence_length_lower_bound", false, sequence_length_lower_bound);
     get_argument(arguments, "--sequence_length_upper_bound", false, sequence_length_upper_bound);
 
-    if (argument_exists(arguments, "--stochastic")) {
-        Log::info("running stochastic back prop \n");
-        genome->backpropagate_stochastic(training_inputs, training_outputs, test_inputs, test_outputs, random_sequence_length, sequence_length_lower_bound, sequence_length_upper_bound, 1);
-    } else {
-        genome->backpropagate(training_inputs, training_outputs, test_inputs, test_outputs);
-    }
+    // if (argument_exists(arguments, "--stochastic")) {
+    //     Log::info("running stochastic back prop \n");
+    //     genome->backpropagate_stochastic(training_inputs, training_outputs, test_inputs, test_outputs, random_sequence_length, sequence_length_lower_bound, sequence_length_upper_bound);
+    // } else {
+    //     genome->backpropagate(training_inputs, training_outputs, test_inputs, test_outputs);
+    // }
+    genome->backpropagate_stochastic_online(training_inputs, training_outputs, test_inputs, test_outputs, random_sequence_length, sequence_length_lower_bound, sequence_length_upper_bound);
 
     Log::info("Training finished\n");
-    genome->get_weights(best_parameters);
-    rnn->set_weights(best_parameters);
+    // genome->get_weights(best_parameters);
+    // rnn->set_weights(best_parameters);
 
-    Log::info("TRAINING ERRORS:\n");
-    Log::info("MSE: %lf\n", genome->get_mse(best_parameters, training_inputs, training_outputs));
-    Log::info("MAE: %lf\n", genome->get_mae(best_parameters, training_inputs, training_outputs));
+    // Log::info("TRAINING ERRORS:\n");
+    // Log::info("MSE: %lf\n", genome->get_mse(best_parameters, training_inputs, training_outputs));
+    // Log::info("MAE: %lf\n", genome->get_mae(best_parameters, training_inputs, training_outputs));
 
-    Log::info("TEST ERRORS:\n");
-    Log::info("MSE: %lf\n", genome->get_mse(best_parameters, test_inputs, test_outputs));
-    Log::info("MAE: %lf\n", genome->get_mae(best_parameters, test_inputs, test_outputs));
+    // Log::info("TEST ERRORS:\n");
+    // Log::info("MSE: %lf\n", genome->get_mse(best_parameters, test_inputs, test_outputs));
+    // Log::info("MAE: %lf\n", genome->get_mae(best_parameters, test_inputs, test_outputs));
 
     Log::release_id("main");
 }

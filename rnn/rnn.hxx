@@ -44,8 +44,12 @@ class RNN {
         void forward_pass(const vector< vector<double> > &series_data, bool using_dropout, bool training, double dropout_probability);
         void backward_pass(double error, bool using_dropout, bool training, double dropout_probability);
 
+        void forward_pass_online(const vector< vector<double> > &series_data, bool using_dropout, bool training, double dropout_probability, int32_t timestep);
+        void backward_pass_online(double error, bool using_dropout, bool training, double dropout_probability, int32_t timestep);
+
         double calculate_error_softmax(const vector< vector<double> > &expected_outputs);
         double calculate_error_mse(const vector< vector<double> > &expected_outputs);
+        double calculate_error_mse_online(const vector< vector<double> > &expected_outputs, int32_t timestep);
         double calculate_error_mae(const vector< vector<double> > &expected_outputs);
 
         double prediction_softmax(const vector< vector<double> > &series_data, const vector< vector<double> > &expected_outputs, bool using_dropout, bool training, double dropout_probability);
@@ -67,6 +71,7 @@ class RNN {
         uint32_t get_number_weights();
 
         void get_analytic_gradient(const vector<double> &test_parameters, const vector< vector<double> > &inputs, const vector< vector<double> > &outputs, double &mse, vector<double> &analytic_gradient, bool using_dropout, bool training, double dropout_probability);
+        void get_analytic_gradient_online(const vector<double> &test_parameters, const vector< vector<double> > &inputs, const vector< vector<double> > &outputs, double &mse, vector<double> &analytic_gradient, bool using_dropout, bool training, double dropout_probability, int32_t timestep);
         void get_empirical_gradient(const vector<double> &test_parameters, const vector< vector<double> > &inputs, const vector< vector<double> > &outputs, double &mae, vector<double> &empirical_gradient, bool using_dropout, bool training, double dropout_probability);
 
         //RNN* copy();
