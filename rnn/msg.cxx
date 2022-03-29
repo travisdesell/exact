@@ -153,11 +153,20 @@ unique_ptr<RNN_Genome> WorkMsg::get_genome(GenomeOperators &operators) {
     g = operators.ncrossover(_work_msg_get_genome_genomes);
   } else if (work_type == mutation) {
     auto &margs = get<mutation>(args);
-    RNN_Genome *parent = is_shared ? get<shared>(margs.g)->copy() : get<unique>(margs.g).release();
-    if (margs.n_mutations == 0)
-      operators.mutate_weights(parent);
-    else  
-      operators.mutate(parent, margs.n_mutations);
+
+    // Just in case we create an invalid genome, put the mutating in a loop. This should only very very rarely do more than one iteration.
+    while (1) {
+      RNN_Genome *parent = is_shared ? get<shared>(margs.g)->copy() : get<unique>(margs.g).release();
+      if (margs.n_mutations == 0)
+        operators.mutate_weights(parent);
+      else  
+        operators.mutate(parent, margs.n_mutations);
+
+      if (parent->outputs_unreachable())
+        break;
+
+      delete parent;
+    }
     g = parent;
   } else {
     // Unreachable (or at least it should be)
