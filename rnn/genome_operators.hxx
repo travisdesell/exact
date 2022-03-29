@@ -99,6 +99,8 @@ class GenomeOperators {
     double simplex_weight_crossover_2d(vector<pair<GenomeRank, vector<double> > > &weights);
 
    public:
+    static constexpr int32_t N_MUTATIONS = 0;
+
     const TrainingParameters training_parameters;
     int32_t edge_innovation_count;
     int32_t node_innovation_count;
@@ -113,6 +115,7 @@ class GenomeOperators {
                     vector<string> possible_node_types);
 
     RNN_Genome *mutate(RNN_Genome *g, int32_t n_mutations);
+    RNN_Genome *mutate_weights(RNN_Genome *g, int32_t n = 1);
     RNN_Genome *crossover(RNN_Genome *more_fit, RNN_Genome *less_fit);
     RNN_Genome *ncrossover(vector<RNN_Genome *> &parents);
 

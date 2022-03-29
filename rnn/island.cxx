@@ -3,6 +3,8 @@ using std::lower_bound;
 using std::sort;
 using std::upper_bound;
 
+#include <cstring>
+
 #include <iomanip>
 using std::setw;
 
@@ -173,6 +175,15 @@ int32_t Island::insert_genome(RNN_Genome *genome) {
             Log::info("on potential match %d of %d\n", potential_match - potential_matches.begin(),
                       potential_matches.size());
             if ((*potential_match)->equals(genome)) {
+                if (GenomeOperators::N_MUTATIONS == 0) {
+                  const vector<double> &a = (*potential_match)->get_initial_parameters();
+                  const vector<double> &b = genome->get_initial_parameters();
+                  if (a.size() != b.size() || std::memcmp(a.data(), b.data(), a.size() * sizeof(double)) != 0) {
+                    Log::info("Weights not equal; allowing duplicate\n");
+                    potential_match++;
+                    continue;
+                  }
+                }
                 if ((*potential_match)->get_fitness() > new_fitness) {
                     Log::info(
                         "REPLACING DUPLICATE GENOME, fitness of genome in search: "

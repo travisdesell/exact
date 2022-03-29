@@ -1,5 +1,5 @@
 MutationWork::MutationWork(RNN_Genome *_genome, int32_t _n_mutations, int32_t _generation_id, int32_t _group_id) 
-    : Work(_generation_id, _group_id), n_mutations(_n_mutations), genome(_genome) { }
+    : Work(_generation_id, _group_id), n_mutations(GenomeOperators::N_MUTATIONS), genome(_genome) { }
 
 MutationWork::MutationWork(istream &bin_istream) {
     int class_id = bin_istream.get();
@@ -33,20 +33,22 @@ void MutationWork::write_to_stream(ostream &bin_ostream) {
 }
 
 RNN_Genome *MutationWork::get_genome(GenomeOperators &operators) {
-    RNN_Genome *clone = NULL;   
-    
+    RNN_Genome *clone = NULL;
+
     while (clone == NULL) {
         clone = genome->copy();
 
-        if (n_mutations) 
+        if (n_mutations)
             operators.mutate(clone, n_mutations);
+        else
+            operators.mutate_weights(clone);
 
         if (clone->outputs_unreachable()) {
             delete clone;
             clone = NULL;
         }
     }
-    
+
     clone->set_group_id(group_id);
     clone->set_generation_id(generation_id);
 

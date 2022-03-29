@@ -16,6 +16,7 @@ using std::string;
 using std::unordered_map;
 
 #include "rnn_genome.hxx"
+#include "genome_operators.hxx"
 
 enum IslandStatus { INITIALIZING = 0, FILLED = 1, REPOPULATING = 2 };
 
