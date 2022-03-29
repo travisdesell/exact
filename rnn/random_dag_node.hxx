@@ -82,6 +82,14 @@ class RANDOM_DAG_Node : public RNN_Node_Interface{
 
         void get_gradients(vector<double> &gradients);
 
+        double get_input_value(int32_t time) const;
+        double get_output_value(int32_t time) const;
+        double get_error_value(int32_t time) const;
+        double get_d_input(int32_t time) const;
+
+        int32_t get_input_fired(int32_t time) const;
+        int32_t get_output_fired(int32_t time) const;
+
         void reset(int _series_length);
 
         void write_to_stream(ostream &out);

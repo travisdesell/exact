@@ -48,7 +48,7 @@ class Online_LSTM_Node : public RNN_Node_Interface {
         double ld_cell_out;
 
         double d_prev_cell;
-        double d_next_cell;
+        // double d_next_cell;
 
         double d_output_gate_update_weight;
         double d_output_gate_weight;
@@ -65,14 +65,7 @@ class Online_LSTM_Node : public RNN_Node_Interface {
         double d_cell_weight;
         double d_cell_bias;
 
-        int32_t layer_type;
-        int32_t node_type;
-
-        double depth;
-
-        //this is only used for input and output nodes to track
-        //which parameter they are assigned to
-
+        // those 6 parameters override node_interface
         double input_values;
         double output_values;
         double error_values;
@@ -80,8 +73,6 @@ class Online_LSTM_Node : public RNN_Node_Interface {
 
         int32_t inputs_fired;
         int32_t outputs_fired;
-        int32_t total_inputs;
-        int32_t total_outputs;
 
     public:
 
@@ -111,6 +102,14 @@ class Online_LSTM_Node : public RNN_Node_Interface {
         void set_weights(uint32_t &offset, const vector<double> &parameters);
 
         void get_gradients(vector<double> &gradients);
+
+        double get_input_value(int32_t time) const;
+        double get_output_value(int32_t time) const;
+        double get_error_value(int32_t time) const;
+        double get_d_input(int32_t time) const;
+
+        int32_t get_input_fired(int32_t time) const;
+        int32_t get_output_fired(int32_t time) const;
 
         void reset(int _series_length);
 

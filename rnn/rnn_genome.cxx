@@ -1394,19 +1394,18 @@ void RNN_Genome::backpropagate_stochastic_online(const vector< vector< vector<do
     rnn->set_weights(parameters);
 
     //initialize the initial previous values
-    for (uint32_t i = 0; i < n_series; i++) {
-        Log::trace("getting analytic gradient for input/output: %d, n_series: %d, parameters.size: %d, inputs.size(): %d, outputs.size(): %d, log filename: '%s'\n", i, n_series, parameters.size(), inputs.size(), outputs.size(), log_filename.c_str());
+    // for (uint32_t i = 0; i < n_series; i++) {
+    //     Log::trace("getting analytic gradient for input/output: %d, n_series: %d, parameters.size: %d, inputs.size(): %d, outputs.size(): %d, log filename: '%s'\n", i, n_series, parameters.size(), inputs.size(), outputs.size(), log_filename.c_str());
 
-        rnn->get_analytic_gradient_online(parameters, inputs[i], outputs[i], mse, analytic_gradient, use_dropout, true, dropout_probability, 0);
-        Log::trace("got analytic gradient.\n");
+    rnn->get_analytic_gradient_online(parameters, inputs[0], outputs[0], mse, analytic_gradient, use_dropout, true, dropout_probability, 0);
+    Log::info("got analytic gradient.\n");
 
         norm = 0.0;
         for (int32_t j = 0; j < parameters.size(); j++) {
             norm += analytic_gradient[j] * analytic_gradient[j];
         }
         norm = sqrt(norm);
-    }
-    Log::trace("initialized previous values.\n");
+    // }
 
     double m = 0.0, s = 0.0;
     get_mu_sigma(parameters, m, s);

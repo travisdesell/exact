@@ -98,6 +98,14 @@ class RNN_Node_Interface {
         virtual void input_fired(int32_t time, double incoming_output) = 0;
         virtual void output_fired(int32_t time, double delta) = 0;
         virtual void error_fired(int32_t time, double error) = 0;
+        
+        virtual double get_input_value(int32_t time) const = 0;
+        virtual double get_output_value(int32_t time) const = 0;
+        virtual double get_error_value(int32_t time) const = 0;
+        virtual double get_d_input(int32_t time) const = 0;
+
+        virtual int32_t get_input_fired(int32_t time) const = 0;
+        virtual int32_t get_output_fired(int32_t time) const = 0;
 
         virtual uint32_t get_number_weights() const = 0;
 

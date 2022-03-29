@@ -214,7 +214,7 @@ void Online_LSTM_Node::try_update_deltas(int time) {
     // if (time > 0) previous_cell_value = cell_values[time - 1];
 
     // need to save the error from the next cell if it exists (from time t+1 )
-    d_next_cell = d_prev_cell;
+    // d_next_cell = d_prev_cell;
 
     //backprop output gate
     double d_output_gate = error * cell_out_tanh * ld_output_gate;
@@ -228,7 +228,7 @@ void Online_LSTM_Node::try_update_deltas(int time) {
 
     double d_cell_out = error * output_gate_values * ld_cell_out;
     //propagate error back from the next cell value if there is one
-    if (time < (series_length - 1)) d_cell_out += d_next_cell;
+    // if (time < (series_length - 1)) d_cell_out += d_next_cell;
 
     //backprop forget gate
     d_prev_cell += d_cell_out * forget_gate_values;
@@ -279,6 +279,29 @@ void Online_LSTM_Node::get_weights(vector<double> &parameters) const {
     parameters.resize(get_number_weights());
     uint32_t offset = 0;
     get_weights(offset, parameters);
+}
+
+double Online_LSTM_Node::get_output_value(int32_t time) const {
+    return output_values;
+}
+
+double Online_LSTM_Node::get_input_value(int32_t time) const {
+    return input_values;
+}
+
+double Online_LSTM_Node::get_error_value(int32_t time) const {
+    return error_values;
+}
+
+double Online_LSTM_Node::get_d_input(int32_t time) const {
+    return d_input;
+}
+
+int32_t Online_LSTM_Node::get_input_fired(int32_t time) const {
+    return inputs_fired;
+}
+int32_t Online_LSTM_Node::get_output_fired(int32_t time) const{
+    return outputs_fired;
 }
 
 void Online_LSTM_Node::set_weights(const vector<double> &parameters) {
@@ -371,7 +394,6 @@ void Online_LSTM_Node::reset(int _series_length) {
 
     d_input = 0;
     d_prev_cell = 0;
-    d_next_cell = 0;
 
     d_output_gate_update_weight = 0;
     d_output_gate_weight = 0;
@@ -392,7 +414,6 @@ void Online_LSTM_Node::reset(int _series_length) {
     input_gate_values = 0;
     forget_gate_values = 0;
     cell_values = 0;
-    previous_cell_values = 0;
 
     error_values = 0;
 
@@ -438,7 +459,7 @@ RNN_Node_Interface* Online_LSTM_Node::copy() const {
     n->ld_cell_out = ld_cell_out;
 
     n->d_prev_cell = d_prev_cell;
-    n->d_next_cell = d_next_cell;
+    // n->d_next_cell = d_next_cell;
 
     n->d_output_gate_update_weight = d_output_gate_update_weight;
     n->d_output_gate_weight = d_output_gate_weight;

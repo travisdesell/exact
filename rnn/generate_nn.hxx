@@ -18,7 +18,7 @@ RNN_Genome* create_elman(const vector<string> &input_parameter_names, int number
 
 RNN_Genome* create_lstm(const vector<string> &input_parameter_names, int number_hidden_layers, int number_hidden_nodes, const vector<string> &output_parameter_names, int max_recurrent_depth, WeightType weight_initialize);
 
-RNN_Genome* create_onnline_lstm(const vector<string> &input_parameter_names, int number_hidden_layers, int number_hidden_nodes, const vector<string> &output_parameter_names, int max_recurrent_depth, WeightType weight_initialize);
+RNN_Genome* create_online_lstm(const vector<string> &input_parameter_names, int number_hidden_layers, int number_hidden_nodes, const vector<string> &output_parameter_names, int max_recurrent_depth, WeightType weight_initialize);
 
 RNN_Genome* create_delta(const vector<string> &input_parameter_names, int number_hidden_layers, int number_hidden_nodes, const vector<string> &output_parameter_names, int max_recurrent_depth, WeightType weight_initialize);
 

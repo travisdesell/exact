@@ -290,6 +290,28 @@ void LSTM_Node::set_weights(const vector<double> &parameters) {
     set_weights(offset, parameters);
 }
 
+double LSTM_Node::get_output_value(int32_t time) const {
+    return output_values[time];
+}
+
+double LSTM_Node::get_input_value(int32_t time) const {
+    return input_values[time];
+}
+
+double LSTM_Node::get_error_value(int32_t time) const {
+    return error_values[time];
+}
+
+double LSTM_Node::get_d_input(int32_t time) const {
+    return d_input[time];
+}
+
+int32_t LSTM_Node::get_input_fired(int32_t time) const {
+    return inputs_fired[time];
+}
+int32_t LSTM_Node::get_output_fired(int32_t time) const{
+    return outputs_fired[time];
+}
 
 void LSTM_Node::set_weights(uint32_t &offset, const vector<double> &parameters) {
     //uint32_t start_offset = offset;

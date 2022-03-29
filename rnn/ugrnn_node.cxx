@@ -215,6 +215,29 @@ void UGRNN_Node::get_weights(vector<double> &parameters) const {
     get_weights(offset, parameters);
 }
 
+double UGRNN_Node::get_output_value(int32_t time) const {
+    return output_values[time];
+}
+
+double UGRNN_Node::get_input_value(int32_t time) const {
+    return input_values[time];
+}
+
+double UGRNN_Node::get_error_value(int32_t time) const {
+    return error_values[time];
+}
+
+double UGRNN_Node::get_d_input(int32_t time) const {
+    return d_input[time];
+}
+
+int32_t UGRNN_Node::get_input_fired(int32_t time) const {
+    return inputs_fired[time];
+}
+int32_t UGRNN_Node::get_output_fired(int32_t time) const{
+    return outputs_fired[time];
+}
+
 void UGRNN_Node::set_weights(const vector<double> &parameters) {
     uint32_t offset = 0;
     set_weights(offset, parameters);

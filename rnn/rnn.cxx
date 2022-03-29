@@ -555,17 +555,10 @@ double RNN::calculate_error_mse_online(const vector< vector<double> > &expected_
     double error;
   
     for (uint32_t i = 0; i < output_nodes.size(); i++) {
-        // output_nodes[i]->error_values.resize(expected_outputs[i].size());
 
-        mse = 0.0;
-        // for (uint32_t j = 0; j < expected_outputs[i].size(); j++) {
-            error = output_nodes[i]->output_values[timestep] - expected_outputs[i][timestep];
-
-          // std::cout<<"why this  ???? mse ::::: "<<error<<" "<<output_nodes[i]->output_values[j]<<" "<<expected_outputs[i][j]<<std::endl;
-
-            output_nodes[i]->error_values[timestep] = error;
-            mse += error * error;
-        // }
+        error = output_nodes[i]->output_values[timestep] - expected_outputs[i][timestep];
+        output_nodes[i]->error_values[timestep] = error;
+        mse = error * error;
         mse_sum += mse;
     }
 
@@ -790,7 +783,7 @@ void RNN::get_analytic_gradient(const vector<double> &test_parameters, const vec
         backward_pass(mse * (1.0 / outputs[0].size()), using_dropout, training, dropout_probability);
     
     }
-    
+
     vector<double> current_gradients;
 
     uint32_t current = 0;
@@ -835,7 +828,7 @@ void RNN::get_analytic_gradient_online(const vector<double> &test_parameters, co
         mse = calculate_error_softmax(outputs);
         backward_pass_online(mse * (1.0 / outputs[0].size()), using_dropout, training, dropout_probability, timestep);
     }
-    
+
     vector<double> current_gradients;
 
     uint32_t current = 0;

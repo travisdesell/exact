@@ -113,29 +113,7 @@ int main(int argc, char **argv) {
 
     RNN_Genome *genome;
     if (rnn_type == "lstm") {
-        genome = create_lstm(input_parameter_names, num_hidden_layers, number_inputs, output_parameter_names, max_recurrent_depth, weight_initialize);
-
-    } else if (rnn_type == "gru") {
-        genome = create_gru(input_parameter_names, num_hidden_layers, number_inputs, output_parameter_names, max_recurrent_depth, weight_initialize);
-
-    } else if (rnn_type == "delta") {
-        genome = create_delta(input_parameter_names, num_hidden_layers, number_inputs, output_parameter_names, max_recurrent_depth, weight_initialize);
-
-    } else if (rnn_type == "mgu") {
-        genome = create_mgu(input_parameter_names, num_hidden_layers, number_inputs, output_parameter_names, max_recurrent_depth, weight_initialize);
-
-    } else if (rnn_type == "ugrnn") {
-        genome = create_ugrnn(input_parameter_names, num_hidden_layers, number_inputs, output_parameter_names, max_recurrent_depth, weight_initialize);
-
-    } else if (rnn_type == "ff") {
-        genome = create_ff(input_parameter_names, num_hidden_layers, number_inputs, output_parameter_names, max_recurrent_depth, weight_initialize, WeightType::NONE, WeightType::NONE);
-
-    } else if (rnn_type == "jordan") {
-        genome = create_jordan(input_parameter_names, num_hidden_layers, number_inputs, output_parameter_names, max_recurrent_depth, weight_initialize);
-
-    } else if (rnn_type == "elman") {
-        genome = create_elman(input_parameter_names, num_hidden_layers, number_inputs, output_parameter_names, max_recurrent_depth, weight_initialize);
-
+        genome = create_online_lstm(input_parameter_names, num_hidden_layers, number_inputs, output_parameter_names, max_recurrent_depth, weight_initialize);
     } else {
         Log::fatal("ERROR: incorrect rnn type\n");
         Log::fatal("Possibilities are:\n");

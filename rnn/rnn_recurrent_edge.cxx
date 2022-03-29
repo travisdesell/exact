@@ -134,8 +134,8 @@ void RNN_Recurrent_Edge::propagate_forward(int32_t time) {
         exit(1);
     }
 
-
-    double output = input_node->output_values[time] * weight;
+    double output = input_node->get_output_value(time) * weight;
+    // double output = input_node->output_values[time] * weight;
     if (time < series_length - recurrent_depth) {
         //Log::trace("propagating forward on recurrent edge %d from time %d to time %d from node %d to node %d\n", innovation_number, time, time + recurrent_depth, input_innovation_number, output_innovation_number);
 
@@ -154,7 +154,7 @@ void RNN_Recurrent_Edge::first_propagate_backward() {
 }
 
 void RNN_Recurrent_Edge::propagate_backward(int32_t time) {
-    if (output_node->outputs_fired[time] != output_node->total_outputs) {
+    if (output_node->get_output_fired(time) != output_node->total_outputs) {
         //if (output_node->innovation_number == input_node->innovation_number) {
             //circular recurrent edge
 
@@ -167,18 +167,18 @@ void RNN_Recurrent_Edge::propagate_backward(int32_t time) {
             */
 
         //} else {
-            Log::fatal("ERROR! propagate backward called on recurrent edge %d where output_node->outputs_fired[%d] (%d) != total_outputs (%d)\n", innovation_number, time, output_node->outputs_fired[time], output_node->total_outputs);
+            Log::fatal("ERROR! propagate backward called on recurrent edge %d where output_node->outputs_fired[%d] (%d) != total_outputs (%d)\n", innovation_number, time, output_node->get_output_fired(time), output_node->total_outputs);
             Log::fatal("input innovation number: %d, output innovation number: %d\n", input_node->innovation_number, output_node->innovation_number);
             exit(1);
         //}
     }
 
-    double delta = output_node->d_input[time];
+    double delta = output_node->get_d_input(time);
 
     if (time - recurrent_depth >= 0) {
         //Log::trace("propagating backward on recurrent edge %d from time %d to time %d from node %d to node %d\n", innovation_number, time, time - recurrent_depth, output_innovation_number, input_innovation_number);
 
-        d_weight += delta * input_node->output_values[time - recurrent_depth];
+        d_weight += delta * input_node->get_output_value(time - recurrent_depth);
         deltas[time] = delta * weight;
         input_node->output_fired(time - recurrent_depth, deltas[time]);
     }

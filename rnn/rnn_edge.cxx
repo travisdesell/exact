@@ -78,13 +78,14 @@ RNN_Edge* RNN_Edge::copy(const vector<RNN_Node_Interface*> new_nodes) {
 
 
 void RNN_Edge::propagate_forward(int time) {
-    if (input_node->inputs_fired[time] != input_node->total_inputs) {
-        Log::fatal("ERROR! propagate forward called on edge %d where input_node->inputs_fired[%d] (%d) != total_inputs (%d)\n", innovation_number, time, input_node->inputs_fired[time], input_node->total_inputs);
+    if (input_node->get_input_fired(time) != input_node->total_inputs) {
+        Log::fatal("ERROR! propagate forward called on edge %d where input_node->inputs_fired[%d] (%d) != total_inputs (%d)\n", innovation_number, time, input_node->get_input_fired(time), input_node->total_inputs);
         Log::fatal("input innovation number: %d, output innovation number: %d\n", input_node->innovation_number, output_node->innovation_number);
         exit(1);
     }
 
-    double output = input_node->output_values[time] * weight;
+    // double output = input_node->output_values[time] * weight;
+    double output = input_node->get_output_value(time) * weight;
 
     //Log::trace("propagating forward at time %d from %d to %d, value: %lf, input: %lf, weight: %lf\n", time, input_node->innovation_number, output_node->innovation_number, output, input_node->output_values[time], weight);
 
@@ -94,12 +95,12 @@ void RNN_Edge::propagate_forward(int time) {
 
 
 void RNN_Edge::propagate_forward(int time, bool training, double dropout_probability) {
-    if (input_node->inputs_fired[time] != input_node->total_inputs) {
-        Log::fatal("ERROR! propagate forward called on edge %d where input_node->inputs_fired[%d] (%d) != total_inputs (%d)\n", innovation_number, time, input_node->inputs_fired[time], input_node->total_inputs);
+    if (input_node->get_input_fired(time) != input_node->total_inputs) {
+        Log::fatal("ERROR! propagate forward called on edge %d where input_node->inputs_fired[%d] (%d) != total_inputs (%d)\n", innovation_number, time, input_node->get_input_fired(time), input_node->total_inputs);
         exit(1);
     }
 
-    double output = input_node->output_values[time] * weight;
+    double output = input_node->get_output_value(time) * weight;
 
     //Log::trace("propagating forward at time %d from %d to %d, value: %lf, input: %lf, weight: %lf\n", time, input_node->innovation_number, output_node->innovation_number, output, input_node->output_values[time], weight);
 
@@ -119,8 +120,8 @@ void RNN_Edge::propagate_forward(int time, bool training, double dropout_probabi
 }
 
 void RNN_Edge::propagate_backward(int time) {
-    if (output_node->outputs_fired[time] != output_node->total_outputs) {
-        Log::fatal("ERROR! propagate backward called on edge %d where output_node->outputs_fired[%d] (%d) != total_outputs (%d)\n", innovation_number, time, output_node->outputs_fired[time], output_node->total_outputs);
+    if (output_node->get_output_fired(time) != output_node->total_outputs) {
+        Log::fatal("ERROR! propagate backward called on edge %d where output_node->outputs_fired[%d] (%d) != total_outputs (%d)\n", innovation_number, time, output_node->get_output_fired(time), output_node->total_outputs);
         Log::fatal("input innovation number: %d, output innovation number: %d\n", input_node->innovation_number, output_node->innovation_number);
         Log::fatal("series_length: %d\n", input_node->series_length);
         exit(1);
@@ -128,16 +129,16 @@ void RNN_Edge::propagate_backward(int time) {
 
     //Log::trace("propgating backward on edge %d at time %d from node %d to node %d\n", innovation_number, time, output_innovation_number, input_innovation_number);
 
-    double delta = output_node->d_input[time];
+    double delta = output_node->get_d_input(time);
 
-    d_weight += delta * input_node->output_values[time];
+    d_weight += delta * input_node->get_output_value(time);
     deltas[time] = delta * weight;
     input_node->output_fired(time, deltas[time]);
 }
 
 void RNN_Edge::propagate_backward(int time, bool training, double dropout_probability) {
-    if (output_node->outputs_fired[time] != output_node->total_outputs) {
-        Log::fatal("ERROR! propagate backward called on edge %d where output_node->outputs_fired[%d] (%d) != total_outputs (%d)\n", innovation_number, time, output_node->outputs_fired[time], output_node->total_outputs);
+    if (output_node->get_output_fired(time) != output_node->total_outputs) {
+        Log::fatal("ERROR! propagate backward called on edge %d where output_node->outputs_fired[%d] (%d) != total_outputs (%d)\n", innovation_number, time, output_node->get_output_fired(time), output_node->total_outputs);
         Log::fatal("input innovation number: %d, output innovation number: %d\n", input_node->innovation_number, output_node->innovation_number);
         Log::fatal("series_length: %d\n", input_node->series_length);
         exit(1);
@@ -145,13 +146,13 @@ void RNN_Edge::propagate_backward(int time, bool training, double dropout_probab
 
     //Log::trace("propgating backward on edge %d at time %d from node %d to node %d\n", innovation_number, time, output_innovation_number, input_innovation_number);
 
-    double delta = output_node->d_input[time];
+    double delta = output_node->get_d_input(time);
 
     if (training) {
         if (dropped_out[time]) delta = 0.0;
     }
 
-    d_weight += delta * input_node->output_values[time];
+    d_weight += delta * input_node->get_output_value(time);
     deltas[time] = delta * weight;
     input_node->output_fired(time, deltas[time]);
 }

@@ -371,6 +371,29 @@ void RANDOM_DAG_Node::get_weights(uint32_t &offset, vector<double> &parameters) 
 
 }
 
+double RANDOM_DAG_Node::get_output_value(int32_t time) const {
+    return output_values[time];
+}
+
+double RANDOM_DAG_Node::get_input_value(int32_t time) const {
+    return input_values[time];
+}
+
+double RANDOM_DAG_Node::get_error_value(int32_t time) const {
+    return error_values[time];
+}
+
+double RANDOM_DAG_Node::get_d_input(int32_t time) const {
+    return d_input[time];
+}
+
+int32_t RANDOM_DAG_Node::get_input_fired(int32_t time) const {
+    return inputs_fired[time];
+}
+int32_t RANDOM_DAG_Node::get_output_fired(int32_t time) const{
+    return outputs_fired[time];
+}
+
 void RANDOM_DAG_Node::get_gradients(vector<double> &gradients) {
     gradients.assign(NUMBER_RANDOM_DAG_WEIGHTS, 0.0);
 
