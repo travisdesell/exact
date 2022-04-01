@@ -162,12 +162,13 @@ unique_ptr<RNN_Genome> WorkMsg::get_genome(GenomeOperators &operators) {
       else  
         operators.mutate(parent, margs.n_mutations);
 
-      if (parent->outputs_unreachable())
+      if (!parent->outputs_unreachable()) {
+        g = parent;
         break;
+      }
 
       delete parent;
     }
-    g = parent;
   } else {
     // Unreachable (or at least it should be)
     exit(1);
