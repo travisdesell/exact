@@ -196,6 +196,7 @@ bool IslandSpeciationStrategy::islands_full() const {
 // this will insert a COPY, original needs to be deleted
 // returns 0 if a new global best, < 0 if not inserted, > 0 otherwise
 int32_t IslandSpeciationStrategy::insert_genome(RNN_Genome *genome) {
+    inserted_genomes++;
     Log::debug("inserting genome!\n");
     if (extinction_event_generation_number != 0) {
         if (generated_genomes > 1 && generated_genomes % extinction_event_generation_number == 0 &&
@@ -241,7 +242,6 @@ int32_t IslandSpeciationStrategy::insert_genome(RNN_Genome *genome) {
     if (insert_position < 0) {
         return -1;
     } else {
-        inserted_genomes++;
         if (new_global_best)
             return 0;
         else
