@@ -156,7 +156,7 @@ unique_ptr<RNN_Genome> WorkMsg::get_genome(GenomeOperators &operators) {
 
     // Just in case we create an invalid genome, put the mutating in a loop. This should only very very rarely do more than one iteration.
     while (1) {
-      RNN_Genome *parent = is_shared ? get<shared>(margs.g)->copy() : get<unique>(margs.g).copy();
+      RNN_Genome *parent = is_shared ? get<shared>(margs.g)->copy() : get<unique>(margs.g)->copy();
       if (margs.n_mutations == 0)
         operators.mutate_weights(parent);
       else  
