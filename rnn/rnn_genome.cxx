@@ -266,6 +266,32 @@ string RNN_Genome::print_statistics_header() {
     return oss.str();
 }
 
+string RNN_Genome::print_statistics_header_csv_format() {
+    ostringstream oss;
+
+    oss << std::left
+        << "GenomeID" << "," // Genome ID is just the genome number examm generates
+        << "MSE" << ","
+        << "MAE" << ","
+        << "Edges" << ","
+        << "Rec Edges" << ","
+        << "Simple" << ","
+        << "Jordan" << ","
+        << "Elman" << ","
+        << "UGRNN" << ","
+        << "MGU" << ","
+        << "GRU" << ","
+        << "Delta" << ","
+        << "LSTM" << ","
+        << "ENARC" << ","
+        << "ENAS_DAG" << ","
+        << "RANDOM_DAG" << ","
+        << "Total" << ","
+        << "Generated";
+
+    return oss.str();
+}
+
 string RNN_Genome::print_statistics() {
     ostringstream oss;
     oss << std::left
@@ -285,6 +311,30 @@ string RNN_Genome::print_statistics() {
         << setw(12) << get_node_count_str(ENAS_DAG_NODE)
         << setw(12) << get_node_count_str(RANDOM_DAG_NODE)
         << setw(12) << get_node_count_str(-1)  //-1 does all nodes
+        << generated_by_string();
+    return oss.str();
+}
+
+string RNN_Genome::print_statistics_csv_format() {
+    ostringstream oss;
+    oss << std::left
+        << this->generation_id << "," 
+        << parse_fitness(best_validation_mse) << "," 
+        << parse_fitness(best_validation_mae) << "," 
+        << get_edge_count_str(false) << "," 
+        << get_edge_count_str(true) << "," 
+        << get_node_count_str(SIMPLE_NODE) << "," 
+        << get_node_count_str(JORDAN_NODE) << "," 
+        << get_node_count_str(ELMAN_NODE) << "," 
+        << get_node_count_str(UGRNN_NODE) << "," 
+        << get_node_count_str(MGU_NODE) << "," 
+        << get_node_count_str(GRU_NODE) << "," 
+        << get_node_count_str(DELTA_NODE) << "," 
+        << get_node_count_str(LSTM_NODE) << "," 
+        << get_node_count_str(ENARC_NODE) << "," 
+        << get_node_count_str(ENAS_DAG_NODE) << "," 
+        << get_node_count_str(RANDOM_DAG_NODE) << "," 
+        << get_node_count_str(-1) << ","  //-1 does all nodes
         << generated_by_string();
     return oss.str();
 }
@@ -3581,6 +3631,9 @@ void RNN_Genome::read_from_stream(istream &bin_istream) {
     read_binary_string(bin_istream, normalize_std_devs_str, "normalize_std_devs");
     istringstream normalize_std_devs_iss(normalize_std_devs_str);
     read_map(normalize_std_devs_iss, normalize_std_devs);
+
+    rng_0_1 = uniform_real_distribution<double>(0.0, 1.0);
+    rng_1_1 = uniform_real_distribution<double>(-1.0, 1.0);
 
     assign_reachability();
 }

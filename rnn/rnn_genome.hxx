@@ -110,7 +110,9 @@ class RNN_Genome {
         ~RNN_Genome();
 
         static string print_statistics_header();
+        static string print_statistics_header_csv_format();
         string print_statistics();
+        string print_statistics_csv_format();
 
         void set_parameter_names(const vector<string> &_input_parameter_names, const vector<string> &_output_parameter_names);
 

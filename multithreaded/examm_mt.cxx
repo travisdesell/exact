@@ -196,9 +196,7 @@ int main(int argc, char** argv) {
     int32_t max_recurrent_depth = 10;
     get_argument(arguments, "--max_recurrent_depth", false, max_recurrent_depth);
 
-    //RESN switch
     using_resn = argument_exists(arguments, "--use_resn");
-
     string output_genome_name = "output_genome";
     if (using_resn) {
         get_argument(arguments, "--resn_n_samples", true, resn_n_samples);

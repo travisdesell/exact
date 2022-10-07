@@ -18,6 +18,9 @@ using std::thread;
 #include <vector>
 using std::vector;
 
+#include <fstream>
+using std::ofstream;
+
 #include "common/arguments.hxx"
 #include "common/log.hxx"
 
@@ -40,13 +43,22 @@ int main(int argc, char** argv) {
     vector<string> rnn_filenames;
     get_argument_vector(arguments, "--rnn_filenames", true, rnn_filenames);
 
+    string csv_filename;
+    get_argument(arguments, "--csv_outfile", false, csv_filename);
+    bool write_to_csv = !csv_filename.empty();
+
+    ofstream csv_file;
+    if (write_to_csv) {
+        csv_file.open(csv_filename);
+    }
+
     double avg_nodes = 0.0;
     double avg_edges = 0.0;
     double avg_rec_edges = 0.0;
     double avg_weights = 0.0;
 
+
     for (int32_t i = 0; i < (int32_t)rnn_filenames.size(); i++) {
-        Log::info("reading file: %s\n", rnn_filenames[i].c_str());
         RNN_Genome *genome = new RNN_Genome(rnn_filenames[i]);
 
         int32_t nodes = genome->get_enabled_node_count();
@@ -54,6 +66,14 @@ int main(int argc, char** argv) {
         int32_t rec_edges = genome->get_enabled_recurrent_edge_count();
         int32_t weights = genome->get_number_weights();
 
+        if (write_to_csv) {
+            if (i <= 0) {
+                csv_file << genome->print_statistics_header_csv_format().c_str() << endl;
+            }
+            csv_file << genome->print_statistics_csv_format().c_str() << endl;
+        }
+
+        Log::info("reading file: %s\n", rnn_filenames[i].c_str());
         Log::info("RNN INFO FOR '%s', nodes: %d, edges: %d, rec: %d, weights: %d\n", rnn_filenames[i].c_str(), nodes, edges, rec_edges, weights);
         Log::info("\t%s\n", genome->print_statistics_header().c_str());
         Log::info("\t%s\n", genome->print_statistics().c_str());
