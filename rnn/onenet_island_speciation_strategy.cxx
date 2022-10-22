@@ -642,7 +642,7 @@ void OneNetIslandSpeciationStrategy::set_erased_islands_status() {
     }
 }
 
-void OneNetIslandSpeciationStrategy::finalize_generation(string filename, const vector< vector< vector<double> > > &validation_input, const vector< vector< vector<double> > > &validation_output, const vector< vector< vector<double> > > &test_input, const vector< vector< vector<double> > > &test_output, TimeSeriesSets *time_series_sets, string result_dir) {
+void OneNetIslandSpeciationStrategy::finalize_generation(string filename, const vector< vector< vector<double> > > &validation_input, const vector< vector< vector<double> > > &validation_output, const vector< vector< vector<double> > > &test_input, const vector< vector< vector<double> > > &test_output, string result_dir) {
     // Log::error("finalizing the generation\n");
     // Log::error("Generated population size %d, trained population size %d\n", Generated_population->get_genomes().size(), Trained_population->get_genomes().size());
 

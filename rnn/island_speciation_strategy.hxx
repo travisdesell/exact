@@ -195,7 +195,7 @@ class IslandSpeciationStrategy : public SpeciationStrategy {
 
         void set_erased_islands_status();
         
-        void finalize_generation(string filename, const vector< vector< vector<double> > > &validation_input, const vector< vector< vector<double> > > &validation_output, const vector< vector< vector<double> > > &test_input, const vector< vector< vector<double> > > &test_output, TimeSeriesSets* time_series_sets, string result_dir);
+        void finalize_generation(string filename, const vector< vector< vector<double> > > &validation_input, const vector< vector< vector<double> > > &validation_output, const vector< vector< vector<double> > > &test_input, const vector< vector< vector<double> > > &test_output, string result_dir);
 };
 
 
