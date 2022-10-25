@@ -164,7 +164,7 @@ class EXAMM {
                 double _dropout_probability,
                 int32_t _min_recurrent_depth,
                 int32_t _max_recurrent_depth,
-                bool _use_regression,
+                // bool _use_regression,
                 string _output_directory,
                 RNN_Genome *seed_genome,
                 bool _start_filled);

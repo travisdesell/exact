@@ -509,10 +509,6 @@ void RNN_Genome::enable_dropout(double _dropout_probability) {
     dropout_probability = _dropout_probability;
 }
 
-void RNN_Genome::enable_use_regression(bool _use_regression) {
-    use_regression = _use_regression;
-}
-
 void RNN_Genome::set_log_filename(string _log_filename) {
     log_filename = _log_filename;
 }
@@ -904,13 +900,7 @@ void RNN_Genome::get_analytic_gradient(vector<RNN*> &rnns, const vector<double> 
     double mse_sum = 0.0;
     vector<thread> threads;
     for (uint32_t i = 0; i < rnns.size(); i++) {
-        if (use_regression) {
-            threads.push_back( thread(forward_pass_thread_regression, rnns[i], parameters, inputs[i], outputs[i], i, mses, use_dropout, training, dropout_probability) );
-
-        } else {
-            threads.push_back( thread(forward_pass_thread_classification, rnns[i], parameters, inputs[i], outputs[i], i, mses, use_dropout, training, dropout_probability) );
-
-        }
+        threads.push_back( thread(forward_pass_thread_regression, rnns[i], parameters, inputs[i], outputs[i], i, mses, use_dropout, training, dropout_probability) );
     }
 
     for (uint32_t i = 0; i < rnns.size(); i++) {
@@ -921,16 +911,7 @@ void RNN_Genome::get_analytic_gradient(vector<RNN*> &rnns, const vector<double> 
 
     for (uint32_t i = 0; i < rnns.size(); i++) {
         double d_mse = 0.0;
-        if (use_regression) {
-            d_mse = mse_sum * (1.0 / outputs[i][0].size()) * 2.0;
-        } else {
-            d_mse = mse_sum * (1.0 / outputs[i][0].size());
-        }
-        rnns[i]->backward_pass(d_mse, use_dropout, training, dropout_probability);
-
-        //double d_mae = mse_sum * (1.0 / outputs[i][0].size());
-        //rnns[i]->backward_pass(d_mae);
-
+        d_mse = mse_sum * (1.0 / outputs[i][0].size()) * 2.0;
     }
 
     mse = mse_sum;
@@ -967,7 +948,6 @@ void RNN_Genome::backpropagate(const vector< vector< vector<double> > > &inputs,
     vector<RNN*> rnns;
     for (int32_t i = 0; i < n_series; i++) {
         RNN* r = this->get_rnn();
-        r->enable_use_regression(use_regression);
         rnns.push_back( this->get_rnn() );
     }
 
@@ -993,11 +973,9 @@ void RNN_Genome::backpropagate(const vector< vector< vector<double> > > &inputs,
     //initialize the initial previous values
     get_analytic_gradient(rnns, parameters, inputs, outputs, mse, analytic_gradient, true);
     double validation_mse = 0.0;
-    if (use_regression) {
-        validation_mse = get_mse(parameters, validation_inputs, validation_outputs);
-    } else {
-        validation_mse = get_softmax(parameters, validation_inputs, validation_outputs);
-    }
+
+    validation_mse = get_mse(parameters, validation_inputs, validation_outputs);
+
     best_validation_mse = validation_mse;
     best_validation_mae = get_mae(parameters, validation_inputs, validation_outputs);
     best_parameters = parameters;
@@ -1019,11 +997,9 @@ void RNN_Genome::backpropagate(const vector< vector< vector<double> > > &inputs,
         get_analytic_gradient(rnns, parameters, inputs, outputs, mse, analytic_gradient, true);
 
         this->set_weights(parameters);
-        if (use_regression) {
-            validation_mse = get_mse(parameters, validation_inputs, validation_outputs);
-        } else {
-            validation_mse = get_softmax(parameters, validation_inputs, validation_outputs);
-        }
+
+        validation_mse = get_mse(parameters, validation_inputs, validation_outputs);
+
         if (validation_mse < best_validation_mse) {
             best_validation_mse = validation_mse;
             best_validation_mae = get_mae(parameters, validation_inputs, validation_outputs);
@@ -1119,7 +1095,6 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
     std::chrono::time_point<std::chrono::system_clock> startClock = std::chrono::system_clock::now();
 
     RNN* rnn = get_rnn();
-    rnn->enable_use_regression(use_regression);
     rnn->set_weights(parameters);
 
     //initialize the initial previous values
@@ -1288,16 +1263,9 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
         this->set_weights(parameters);
 
         double training_mse = 0.0;
-        Log::trace("use regression is %s\n", use_regression ? "yes" : "no");
-        if (use_regression) {
-            training_mse = get_mse(parameters, training_inputs, training_outputs);
-            validation_mse = get_mse(parameters, validation_inputs, validation_outputs);
-        } else {
-            training_mse = get_softmax(parameters, training_inputs, training_outputs);
-            validation_mse = get_softmax(parameters, validation_inputs, validation_outputs);
-        }
 
-        //Log::info("iteration %7d, validation mse: %5.10lf\n", iteration, validation_mse);
+        training_mse = get_mse(parameters, training_inputs, training_outputs);
+        validation_mse = get_mse(parameters, validation_inputs, validation_outputs);
 
         if (validation_mse < best_validation_mse) {
             best_validation_mse = validation_mse;
@@ -1370,7 +1338,6 @@ vector< vector<double> > RNN_Genome::slice_time_series(int start_index, int sequ
 
 double RNN_Genome::get_softmax(const vector<double> &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs) {
     RNN *rnn = get_rnn();
-    rnn->enable_use_regression(use_regression);
     rnn->set_weights(parameters);
 
     double softmax = 0.0;
@@ -1393,7 +1360,6 @@ double RNN_Genome::get_softmax(const vector<double> &parameters, const vector< v
 
 double RNN_Genome::get_mse(const vector<double> &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs) {
     RNN *rnn = get_rnn();
-    rnn->enable_use_regression(use_regression);
     rnn->set_weights(parameters);
 
     double mse = 0.0;
@@ -1416,7 +1382,6 @@ double RNN_Genome::get_mse(const vector<double> &parameters, const vector< vecto
 
 double RNN_Genome::get_mae(const vector<double> &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs) {
     RNN *rnn = get_rnn();
-    rnn->enable_use_regression(use_regression);
     rnn->set_weights(parameters);
 
     double mae;
@@ -1479,32 +1444,32 @@ void RNN_Genome::write_predictions(string output_directory, const vector<string>
 }
 
 
-void RNN_Genome::write_predictions(string output_directory, const vector<string> &input_filenames, const vector<double> &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, Corpus *word_series_sets) {
-    RNN *rnn = get_rnn();
-    rnn->set_weights(parameters);
+// void RNN_Genome::write_predictions(string output_directory, const vector<string> &input_filenames, const vector<double> &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, Corpus *word_series_sets) {
+//     RNN *rnn = get_rnn();
+//     rnn->set_weights(parameters);
 
-    vector< vector<double> > all_results;
+//     vector< vector<double> > all_results;
 
-    //one input vector per testing file
-    for (uint32_t i = 0; i < inputs.size(); i++) {
-        string filename = input_filenames[i];
-        Log::info("input filename[%5d]: '%s'\n", i, filename.c_str());
+//     //one input vector per testing file
+//     for (uint32_t i = 0; i < inputs.size(); i++) {
+//         string filename = input_filenames[i];
+//         Log::info("input filename[%5d]: '%s'\n", i, filename.c_str());
 
-        int last_dot_pos = filename.find_last_of(".");
-        string extension = filename.substr(last_dot_pos);
-        string prefix = filename.substr(0, last_dot_pos);
+//         int last_dot_pos = filename.find_last_of(".");
+//         string extension = filename.substr(last_dot_pos);
+//         string prefix = filename.substr(0, last_dot_pos);
 
 
-        string output_filename = prefix + "_predictions" + extension;
-        output_filename = output_directory + "/" + output_filename.substr(output_filename.find_last_of("/") + 1);
+//         string output_filename = prefix + "_predictions" + extension;
+//         output_filename = output_directory + "/" + output_filename.substr(output_filename.find_last_of("/") + 1);
 
-        Log::info("output filename: '%s'\n", output_filename.c_str());
+//         Log::info("output filename: '%s'\n", output_filename.c_str());
 
-        rnn->write_predictions(output_filename, input_parameter_names, output_parameter_names, inputs[i], outputs[i], word_series_sets, use_dropout, dropout_probability);
-    }
+//         rnn->write_predictions(output_filename, input_parameter_names, output_parameter_names, inputs[i], outputs[i], word_series_sets, use_dropout, dropout_probability);
+//     }
 
-    delete rnn;
-}
+//     delete rnn;
+// }
 
 bool RNN_Genome::has_node_with_innovation(int32_t innovation_number) const {
     for (int32_t i = 0; i < (int32_t)nodes.size(); i++) {
@@ -3203,7 +3168,6 @@ void RNN_Genome::read_from_stream(istream &bin_istream) {
     bin_istream.read((char*)&use_low_norm, sizeof(bool));
     bin_istream.read((char*)&low_threshold, sizeof(double));
 
-    bin_istream.read((char*)&use_regression, sizeof(bool));
     bin_istream.read((char*)&use_dropout, sizeof(bool));
     bin_istream.read((char*)&dropout_probability, sizeof(double));
 
@@ -3223,7 +3187,6 @@ void RNN_Genome::read_from_stream(istream &bin_istream) {
     Log::debug("use_low_norm: %d\n", use_low_norm);
     Log::debug("low_threshold: %lf\n", low_threshold);
 
-    Log::debug("use_dropout: %d\n", use_regression);
     Log::debug("use_dropout: %d\n", use_dropout);
     Log::debug("dropout_probability: %lf\n", dropout_probability);
 
@@ -3461,7 +3424,6 @@ void RNN_Genome::write_to_stream(ostream &bin_ostream) {
     bin_ostream.write((char*)&use_low_norm, sizeof(bool));
     bin_ostream.write((char*)&low_threshold, sizeof(double));
 
-    bin_ostream.write((char*)&use_regression, sizeof(bool));
     bin_ostream.write((char*)&use_dropout, sizeof(bool));
     bin_ostream.write((char*)&dropout_probability, sizeof(double));
 
@@ -3481,7 +3443,6 @@ void RNN_Genome::write_to_stream(ostream &bin_ostream) {
     Log::debug("use_low_norm: %d\n", use_low_norm);
     Log::debug("low_threshold: %lf\n", low_threshold);
 
-    Log::debug("use_dropout: %d\n", use_regression);
     Log::debug("use_dropout: %d\n", use_dropout);
     Log::debug("dropout_probability: %lf\n", dropout_probability);
 

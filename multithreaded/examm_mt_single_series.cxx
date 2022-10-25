@@ -171,9 +171,6 @@ int main(int argc, char** argv) {
     int32_t max_recurrent_depth = 10;
     get_argument(arguments, "--max_recurrent_depth", false, max_recurrent_depth);
 
-    //bool use_regression = argument_exists(arguments, "--use_regression");
-    bool use_regression = true; //time series will always use regression
-
     bool start_filled = false;
     get_argument(arguments, "--start_filled", false, start_filled);
 
@@ -245,7 +242,6 @@ int main(int argc, char** argv) {
                     use_low_threshold, low_threshold,
                     use_dropout, dropout_probability,
                     min_recurrent_depth, max_recurrent_depth,
-                    use_regression,
                     output_directory,
                     NULL,
                     start_filled);

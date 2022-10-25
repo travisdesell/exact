@@ -60,7 +60,7 @@ void gradient_test(string name, RNN_Genome *genome, const vector< vector<double>
 	RNN* rnn = genome->get_rnn();
     Log::debug("got genome \n");
 
-    rnn->enable_use_regression(true);
+    // rnn->enable_use_regression(true);
 
 	for (int32_t i = 0; i < test_iterations; i++) {
         if (i == 0) Log::debug_no_header("\n");
@@ -94,7 +94,7 @@ void gradient_test(string name, RNN_Genome *genome, const vector< vector<double>
         }
 	}
 
-    rnn->enable_use_regression(false);
+    // rnn->enable_use_regression(false);
 
 	for (int32_t i = 0; i < test_iterations; i++) {
         if (i == 0) Log::debug_no_header("\n");

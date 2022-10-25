@@ -142,10 +142,6 @@ int main(int argc, char** argv) {
     
     // get_argument(arguments, "--repeat_extinction", false, repeat_extinction);
 
-    //bool use_regression = argument_exists(arguments, "--use_regression");
-    bool use_regression = true; //time series will always use regression
-
-
     string weight_initialize_string = "random";
     get_argument(arguments, "--weight_initialize", false, weight_initialize_string);
     WeightType weight_initialize;
@@ -226,7 +222,6 @@ int main(int argc, char** argv) {
             use_low_threshold, low_threshold,
             use_dropout, dropout_probability,
             min_recurrent_depth, max_recurrent_depth,
-            use_regression,
             output_directory,
             seed_genome,
             start_filled);

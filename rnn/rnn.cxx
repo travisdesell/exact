@@ -33,8 +33,8 @@ using std::vector;
 #include "rnn_node.hxx"
 #include "lstm_node.hxx"
 #include "gru_node.hxx"
-#include "enarc_node.hxx"
-#include "enas_dag_node.hxx"
+// #include "enarc_node.hxx"
+// #include "enas_dag_node.hxx"
 #include "random_dag_node.hxx"
 #include "mgu_node.hxx"
 #include "mse.hxx"
@@ -42,7 +42,7 @@ using std::vector;
 #include "common/log.hxx"
 
 #include "time_series/time_series.hxx"
-#include "word_series/word_series.hxx"
+// #include "word_series/word_series.hxx"
 
 void RNN::validate_parameters(const vector<string> &input_parameter_names, const vector<string> &output_parameter_names) {
     Log::debug("validating parameters -- input_parameter_names.size(): %d, output_parameter_names.size(): %d\n", input_parameter_names.size(), output_parameter_names.size());
@@ -294,10 +294,6 @@ void RNN::set_weights(const vector<double> &parameters) {
         //if (recurrent_edges[i]->is_reachable()) recurrent_edges[i]->weight = parameters[current++];
     }
 
-}
-
-void RNN::enable_use_regression(bool _use_regression) {
-    use_regression = _use_regression;
 }
 
 uint32_t RNN::get_number_weights() {
@@ -583,77 +579,14 @@ void RNN::write_predictions(string output_filename, const vector<string> &input_
     outfile.close();
 }
 
-void RNN::write_predictions(string output_filename, const vector<string> &input_parameter_names, const vector<string> &output_parameter_names, const vector< vector<double> > &series_data, const vector< vector<double> > &expected_outputs, Corpus *word_series_sets, bool using_dropout, double dropout_probability) {
-    forward_pass(series_data, using_dropout, false, dropout_probability);
-
-    Log::debug("series_length: %d, series_data.size(): %d, series_data[0].size(): %d\n", series_length, series_data.size(), series_data[0].size());
-    Log::debug("input_nodes.size(): %d, output_nodes.size(): %d\n", input_nodes.size(), output_nodes.size());
-    ofstream outfile(output_filename);
-
-    outfile << "#";
-
-    for (uint32_t i = 0; i < input_nodes.size(); i++) {
-        if (i > 0) outfile << ",";
-        outfile << input_parameter_names[i];
-
-        Log::debug("input_parameter_names[%d]: '%s'\n", i, input_parameter_names[i].c_str());
-    }
-
-    for (uint32_t i = 0; i < output_nodes.size(); i++) {
-        outfile << ",";
-        outfile << "expected_" << output_parameter_names[i];
-
-        Log::debug("output_parameter_names[%d]: '%s'\n", i, output_parameter_names[i].c_str());
-    }
-
-    for (uint32_t i = 0; i < output_nodes.size(); i++) {
-        outfile << ",";
-        outfile << "predicted_" << output_parameter_names[i];
-
-        Log::debug("output_parameter_names[%d]: '%s'\n", i, output_parameter_names[i].c_str());
-    }
-    outfile << endl;
-
-    for (uint32_t j = 0; j < series_length; j++) {
-        for (uint32_t i = 0; i < input_nodes.size(); i++) {
-            if (i > 0) outfile << ",";
-            //outfile << series_data[i][j];
-            outfile << word_series_sets->denormalize(input_parameter_names[i], series_data[i][j]);
-        }
-
-        for (uint32_t i = 0; i < output_nodes.size(); i++) {
-            outfile << ",";
-            //outfile << expected_outputs[i][j];
-            outfile << word_series_sets->denormalize(output_parameter_names[i], expected_outputs[i][j]);
-        }
-
-        for (uint32_t i = 0; i < output_nodes.size(); i++) {
-            outfile << ",";
-            //outfile << output_nodes[i]->output_values[j];
-            outfile << word_series_sets->denormalize(output_parameter_names[i], output_nodes[i]->output_values[j]);
-        }
-        outfile << endl;
-    }
-    outfile.close();
-}
-
-
-
 void RNN::get_analytic_gradient(const vector<double> &test_parameters, const vector< vector<double> > &inputs, const vector< vector<double> > &outputs, double &mse, vector<double> &analytic_gradient, bool using_dropout, bool training, double dropout_probability) {
     analytic_gradient.assign(test_parameters.size(), 0.0);
 
     set_weights(test_parameters);
     forward_pass(inputs, using_dropout, training, dropout_probability);
 
-    if (use_regression) {
-        mse = calculate_error_mse(outputs);
-        backward_pass(mse * (1.0 / outputs[0].size())*2.0, using_dropout, training, dropout_probability);
-
-    } else {
-        mse = calculate_error_softmax(outputs);
-        backward_pass(mse * (1.0 / outputs[0].size()), using_dropout, training, dropout_probability);
-    
-    }
+    mse = calculate_error_mse(outputs);
+    backward_pass(mse * (1.0 / outputs[0].size())*2.0, using_dropout, training, dropout_probability);
     
     vector<double> current_gradients;
 

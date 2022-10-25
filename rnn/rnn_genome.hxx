@@ -27,7 +27,7 @@ using std::vector;
 #include "common/random.hxx"
 #include "common/weight_initialize.hxx"
 #include "time_series/time_series.hxx"
-#include "word_series/word_series.hxx"
+// #include "word_series/word_series.hxx"
 
 //mysql can't handle the max float value for some reason
 #define EXAMM_MAX_DOUBLE 10000000
@@ -50,8 +50,6 @@ class RNN_Genome {
         double high_threshold;
         bool use_low_norm;
         double low_threshold;
-
-        bool use_regression;
     
         bool use_dropout;
         double dropout_probability;
@@ -162,7 +160,6 @@ class RNN_Genome {
         void enable_low_threshold(double _low_threshold);
         void disable_dropout();
         void enable_dropout(double _dropout_probability);
-        void enable_use_regression(bool _use_regression);
         void set_log_filename(string _log_filename);
 
         void get_weights(vector<double> &parameters);
@@ -216,7 +213,7 @@ class RNN_Genome {
 
         vector< vector<double> > get_predictions(const vector<double> &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs);
         void write_predictions(string output_directory, const vector<string> &input_filenames, const vector<double> &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, TimeSeriesSets *time_series_sets);
-        void write_predictions(string output_directory, const vector<string> &input_filenames, const vector<double> &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, Corpus * word_series_sets);
+        // void write_predictions(string output_directory, const vector<string> &input_filenames, const vector<double> &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, Corpus * word_series_sets);
 
         void get_mu_sigma(const vector<double> &p, double &mu, double &sigma);
 
