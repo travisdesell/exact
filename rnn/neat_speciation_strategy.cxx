@@ -164,7 +164,7 @@ int32_t NeatSpeciationStrategy::insert_genome(RNN_Genome* genome) {
 
     if (!inserted) {
         vector<int32_t> species_list = get_random_species_list();
-        for (int i = 0; i < species_list.size(); i++){
+        for (int32_t i = 0; i < (int32_t)species_list.size(); i++){
             Species* random_species = Neat_Species[species_list[i]];
             if (random_species == NULL || random_species->size() == 0) {
                 Log::error("random_species is empty\n");
@@ -197,7 +197,7 @@ int32_t NeatSpeciationStrategy::insert_genome(RNN_Genome* genome) {
         Species* new_species = new Species(species_count);
         species_count++;
         Neat_Species.push_back(new_species);
-        if (species_count != Neat_Species.size()){
+        if (species_count != (int32_t)Neat_Species.size()){
             Log::error("this should never happen, the species count is not the same as the number of species we have! \n");
             Log::error("num of species: %d, and species count is %d \n", Neat_Species.size(), species_count);
         }
@@ -228,7 +228,7 @@ RNN_Genome* NeatSpeciationStrategy::generate_genome(uniform_real_distribution<do
     //generate the genome from the next island in a round
     //robin fashion.
     RNN_Genome *genome = NULL;
-    if (generation_species >= (signed) Neat_Species.size()) generation_species = 0;
+    if (generation_species >= (int32_t)Neat_Species.size()) generation_species = 0;
     Log::debug("getting species: %d\n", generation_species);
 
     Species *currentSpecies = Neat_Species[generation_species];
@@ -403,7 +403,7 @@ RNN_Genome* NeatSpeciationStrategy::get_global_best_genome() {
 
 vector<int32_t> NeatSpeciationStrategy::get_random_species_list() {
     vector<int32_t> species_list;
-    for (int i = 0; i < Neat_Species.size(); i++) {
+    for (int32_t i = 0; i < (int32_t)Neat_Species.size(); i++) {
         species_list.push_back(i);
     }
 
@@ -418,8 +418,8 @@ vector<int32_t> NeatSpeciationStrategy::get_random_species_list() {
 double NeatSpeciationStrategy::get_distance(RNN_Genome* g1, RNN_Genome* g2) {
 
     double distance;
-    int E;
-    int D;
+    int32_t E;
+    int32_t D;
     int32_t N;
     // d = c1*E/N + c2*D/N + c3*w
     vector<int32_t> innovation1 = g1->get_innovation_list();
@@ -455,8 +455,8 @@ double NeatSpeciationStrategy::get_distance(RNN_Genome* g1, RNN_Genome* g2) {
 
 }
 //v1.max > v2.max
-int NeatSpeciationStrategy::get_exceed_number(vector<int32_t> v1, vector<int32_t> v2) {
-    int exceed = 0;
+int32_t NeatSpeciationStrategy::get_exceed_number(vector<int32_t> v1, vector<int32_t> v2) {
+    int32_t exceed = 0;
 
     for (auto it = v1.rbegin(); it != v1.rend(); ++it)  {
         if(*it > v2.back()){
@@ -473,8 +473,8 @@ void NeatSpeciationStrategy::rank_species() {
     Species* temp;
     double fitness_j1, fitness_j2;
 
-    for (int32_t i = 0; i < Neat_Species.size() - 1; i++)   {
-        for (int32_t j = 0; j < Neat_Species.size() - i - 1; j++)  {
+    for (int32_t i = 0; i < (int32_t)Neat_Species.size() - 1; i++)   {
+        for (int32_t j = 0; j < (int32_t)Neat_Species.size() - i - 1; j++)  {
             fitness_j1 = Neat_Species[j]->get_best_fitness();
             fitness_j2 = Neat_Species[j+1]->get_best_fitness();
             if (fitness_j1 < fitness_j2) {
@@ -484,7 +484,7 @@ void NeatSpeciationStrategy::rank_species() {
             }
         }
     }
-    for (int32_t i = 0; i < Neat_Species.size() -1; i++) {
+    for (int32_t i = 0; i < (int32_t)Neat_Species.size() -1; i++) {
         Log::error("Neat specis rank: %f \n", Neat_Species[i]->get_best_fitness());
     }
 }
@@ -502,7 +502,7 @@ bool NeatSpeciationStrategy::check_population() {
         if (Neat_Species.size() != 2) {
             Log::error("It should never happen, the population has %d number of species instead of 2! \n", Neat_Species.size());
         }
-        for (int i = 0; i < 2; i++){
+        for (int32_t i = 0; i < 2; i++){
             Log::error("species %d size %d\n",i, Neat_Species[i]->size() );
             Log::error("species %d fitness %f\n",i, Neat_Species[i]->get_best_fitness() );
             Neat_Species[i]->set_species_not_improving_count(0);

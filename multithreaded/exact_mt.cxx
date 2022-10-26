@@ -38,9 +38,9 @@ EXACT *exact;
 
 bool finished = false;
 
-int images_resize;
+int32_t images_resize;
 
-void exact_thread(const Images &training_images, const Images &validation_images, const Images &testing_images, int id) {
+void exact_thread(const Images &training_images, const Images &validation_images, const Images &testing_images, int32_t id) {
     while (true) {
         exact_mutex.lock();
         CNN_Genome *genome = exact->generate_individual();
@@ -65,10 +65,10 @@ void exact_thread(const Images &training_images, const Images &validation_images
 int main(int argc, char** argv) {
     arguments = vector<string>(argv, argv + argc);
 
-    int number_threads;
+    int32_t number_threads;
     get_argument(arguments, "--number_threads", true, number_threads);
 
-    int padding;
+    int32_t padding;
     get_argument(arguments, "--padding", true, padding);
 
 
@@ -81,10 +81,10 @@ int main(int argc, char** argv) {
     string testing_filename;
     get_argument(arguments, "--testing_file", true, testing_filename);
 
-    int population_size;
+    int32_t population_size;
     get_argument(arguments, "--population_size", true, population_size);
 
-    int max_epochs;
+    int32_t max_epochs;
     get_argument(arguments, "--max_epochs", true, max_epochs);
 
     bool use_sfmp;
@@ -93,7 +93,7 @@ int main(int argc, char** argv) {
     bool use_node_operations;
     get_argument(arguments, "--use_node_operations", true, use_node_operations);
 
-    int max_genomes;
+    int32_t max_genomes;
     get_argument(arguments, "--max_genomes", true, max_genomes);
 
     string output_directory;
@@ -115,7 +115,7 @@ int main(int argc, char** argv) {
 
 #ifdef _MYSQL_
     if (argument_exists(arguments, "--exact_id")) {
-        int exact_id;
+        int32_t exact_id;
         get_argument(arguments, "--exact_id", true, exact_id);
         exact = new EXACT(exact_id);
     } else {

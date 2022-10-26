@@ -49,7 +49,7 @@ int main(int argc, char** argv) {
     MPI_Init(&argc, &argv);
     std::cout << "did mpi init!" << std::endl;
 
-    int rank, max_rank;
+    int32_t rank, max_rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &max_rank);
 
@@ -89,8 +89,8 @@ int main(int argc, char** argv) {
     time_series_sets->export_training_series(time_offset, training_inputs, training_outputs);
     time_series_sets->export_test_series(time_offset, validation_inputs, validation_outputs);
 
-    int number_inputs = time_series_sets->get_number_inputs();
-    int number_outputs = time_series_sets->get_number_outputs();
+    int32_t number_inputs = time_series_sets->get_number_inputs();
+    int32_t number_outputs = time_series_sets->get_number_outputs();
 
     Log::debug("number_inputs: %d, number_outputs: %d\n", number_inputs, number_outputs);
 

@@ -47,7 +47,7 @@ RNN_Recurrent_Edge::RNN_Recurrent_Edge(int32_t _innovation_number, int32_t _recu
 
     input_node = NULL;
     output_node = NULL;
-    for (int32_t i = 0; i < nodes.size(); i++) {
+    for (int32_t i = 0; i < (int32_t)nodes.size(); i++) {
         if (nodes[i]->innovation_number == _input_innovation_number) {
             if (input_node != NULL) {
                 Log::fatal("ERROR in copying RNN_Recurrent_Edge, list of nodes has multiple nodes with same input_innovation_number -- this should never happen.\n");
@@ -123,7 +123,7 @@ const RNN_Node_Interface* RNN_Recurrent_Edge::get_output_node() const {
 //do a propagate to the network at time 0 so that the
 //input fireds are correct
 void RNN_Recurrent_Edge::first_propagate_forward() {
-    for (uint32_t i = 0; i < recurrent_depth; i++) {
+    for (int32_t i = 0; i < recurrent_depth; i++) {
         output_node->input_fired(i, 0.0);
     }
 }
@@ -147,7 +147,7 @@ void RNN_Recurrent_Edge::propagate_forward(int32_t time) {
 //do a propagate to the network at time (series_length - 1) so that the
 //output fireds are correct
 void RNN_Recurrent_Edge::first_propagate_backward() {
-    for (uint32_t i = 0; i < recurrent_depth; i++) {
+    for (int32_t i = 0; i < recurrent_depth; i++) {
         //Log::trace("FIRST propagating backward on recurrent edge %d to time %d from node %d to node %d\n", innovation_number, series_length - 1 - i, output_innovation_number, input_innovation_number);
         input_node->output_fired(series_length - 1 - i, 0.0);
     }

@@ -42,10 +42,10 @@ vector< vector< vector<double> > > validation_inputs;
 vector< vector< vector<double> > > validation_outputs;
 
 bool random_sequence_length;
-int sequence_length_lower_bound = 30;
-int sequence_length_upper_bound = 100;
+int32_t sequence_length_lower_bound = 30;
+int32_t sequence_length_upper_bound = 100;
 
-void examm_thread(int id) {
+void examm_thread(int32_t id) {
 
     while (true) {
         examm_mutex.lock();
@@ -89,7 +89,7 @@ int main(int argc, char** argv) {
     Log::initialize(arguments);
     Log::set_id("main");
 
-    int number_threads;
+    int32_t number_threads;
     get_argument(arguments, "--number_threads", true, number_threads);
 
     int32_t time_offset = 1;
@@ -104,8 +104,8 @@ int main(int argc, char** argv) {
 
     Log::info("exported time series.\n");
 
-    int number_inputs = time_series_sets->get_number_inputs();
-    int number_outputs = time_series_sets->get_number_outputs();
+    int32_t number_inputs = time_series_sets->get_number_inputs();
+    int32_t number_outputs = time_series_sets->get_number_outputs();
 
     Log::info("number_inputs: %d, number_outputs: %d\n", number_inputs, number_outputs);
 

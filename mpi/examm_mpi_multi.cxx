@@ -45,30 +45,30 @@ vector< vector< vector<double> > > validation_inputs;
 vector< vector< vector<double> > > validation_outputs;
 
 bool random_sequence_length;
-int sequence_length_lower_bound = 30;
-int sequence_length_upper_bound = 100;
+int32_t sequence_length_lower_bound = 30;
+int32_t sequence_length_upper_bound = 100;
 
 int32_t global_slice;
 int32_t global_repeat;
 
-void send_work_request(int target) {
-    int work_request_message[1];
+void send_work_request(int32_t target) {
+    int32_t work_request_message[1];
     work_request_message[0] = 0;
     MPI_Send(work_request_message, 1, MPI_INT, target, WORK_REQUEST_TAG, MPI_COMM_WORLD);
 }
 
-void receive_work_request(int source) {
+void receive_work_request(int32_t source) {
     MPI_Status status;
-    int work_request_message[1];
+    int32_t work_request_message[1];
     MPI_Recv(work_request_message, 1, MPI_INT, source, WORK_REQUEST_TAG, MPI_COMM_WORLD, &status);
 }
 
-RNN_Genome* receive_genome_from(int source) {
+RNN_Genome* receive_genome_from(int32_t source) {
     MPI_Status status;
-    int length_message[1];
+    int32_t length_message[1];
     MPI_Recv(length_message, 1, MPI_INT, source, GENOME_LENGTH_TAG, MPI_COMM_WORLD, &status);
 
-    int length = length_message[0];
+    int32_t length = length_message[0];
 
     Log::debug("receiving genome of length: %d from: %d\n", length, source);
 
@@ -87,7 +87,7 @@ RNN_Genome* receive_genome_from(int source) {
     return genome;
 }
 
-void send_genome_to(int target, RNN_Genome* genome) {
+void send_genome_to(int32_t target, RNN_Genome* genome) {
     char *byte_array;
     int32_t length;
 
@@ -95,7 +95,7 @@ void send_genome_to(int target, RNN_Genome* genome) {
 
     Log::debug("sending genome of length: %d to: %d\n", length, target);
 
-    int length_message[1];
+    int32_t length_message[1];
     length_message[0] = length;
     MPI_Send(length_message, 1, MPI_INT, target, GENOME_LENGTH_TAG, MPI_COMM_WORLD);
 
@@ -105,28 +105,28 @@ void send_genome_to(int target, RNN_Genome* genome) {
     free(byte_array);
 }
 
-void send_terminate_message(int target) {
-    int terminate_message[1];
+void send_terminate_message(int32_t target) {
+    int32_t terminate_message[1];
     terminate_message[0] = 0;
     MPI_Send(terminate_message, 1, MPI_INT, target, TERMINATE_TAG, MPI_COMM_WORLD);
 }
 
-void receive_terminate_message(int source) {
+void receive_terminate_message(int32_t source) {
     MPI_Status status;
-    int terminate_message[1];
+    int32_t terminate_message[1];
     MPI_Recv(terminate_message, 1, MPI_INT, source, TERMINATE_TAG, MPI_COMM_WORLD, &status);
 }
 
-void master(int max_rank) {
-    int terminates_sent = 0;
+void master(int32_t max_rank) {
+    int32_t terminates_sent = 0;
 
     while (true) {
         //wait for a incoming message
         MPI_Status status;
         MPI_Probe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
 
-        int source = status.MPI_SOURCE;
-        int tag = status.MPI_TAG;
+        int32_t source = status.MPI_SOURCE;
+        int32_t tag = status.MPI_TAG;
         Log::debug("probe returned message from: %d with tag: %d\n", source, tag);
 
         //if the message is a work request, send a genome
@@ -174,7 +174,7 @@ void master(int max_rank) {
     }
 }
 
-void worker(int rank) {
+void worker(int32_t rank) {
     string worker_id = "worker_slice_" + to_string(global_slice) + "_repeat_" + to_string(global_repeat) + "_" + to_string(rank);
     Log::set_id(worker_id);
 
@@ -185,7 +185,7 @@ void worker(int rank) {
 
         MPI_Status status;
         MPI_Probe(0, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
-        int tag = status.MPI_TAG;
+        int32_t tag = status.MPI_TAG;
 
         Log::debug("probe received message with tag: %d\n", tag);
 
@@ -222,7 +222,7 @@ void worker(int rank) {
 int main(int argc, char** argv) {
     MPI_Init(&argc, &argv);
 
-    int rank, max_rank;
+    int32_t rank, max_rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &max_rank);
 
@@ -318,7 +318,7 @@ int main(int argc, char** argv) {
     int32_t time_offset = 1;
     get_argument(arguments, "--time_offset", true, time_offset);
 
-    int fold_size = 2;
+    int32_t fold_size = 2;
     get_argument(arguments, "--fold_size", true, fold_size);
 
     vector<string> possible_node_types;
@@ -365,16 +365,16 @@ int main(int argc, char** argv) {
     Log::clear_rank_restriction();
 
     for (int32_t i = 0; i < time_series_sets->get_number_series(); i += fold_size) {
-        vector<int> training_indexes;
-        vector<int> test_indexes;
+        vector<int32_t> training_indexes;
+        vector<int32_t> test_indexes;
 
-        for (uint32_t j = 0; j < time_series_sets->get_number_series(); j += fold_size) {
+        for (int32_t j = 0; j < time_series_sets->get_number_series(); j += fold_size) {
             if (j == i) {
-                for (int k = 0; k < fold_size; k++) {
+                for (int32_t k = 0; k < fold_size; k++) {
                     test_indexes.push_back(j + k);
                 }
             } else {
-                for (int k = 0; k < fold_size; k++) {
+                for (int32_t k = 0; k < fold_size; k++) {
                     training_indexes.push_back(j + k);
                 }
             }
@@ -390,7 +390,7 @@ int main(int argc, char** argv) {
         mkpath(slice_output_directory.c_str(), 0777);
         ofstream slice_times_file(output_directory + "/slice_" + to_string(i) + "_runtimes.csv");
 
-        for (int k = 0; k < repeats; k++) {
+        for (int32_t k = 0; k < repeats; k++) {
             string current_output_directory = slice_output_directory + "/repeat_" + to_string(k);
             mkpath(current_output_directory.c_str(), 0777);
 

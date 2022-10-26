@@ -39,7 +39,7 @@ double Tracker::stddev() {
     double _avg = avg();
     double _stddev = 0;
 
-    for (int i = 0; i < values.size(); i++) {
+    for (int32_t i = 0; i < (int32_t)values.size(); i++) {
         double tmp = (values[i] - _avg);
         _stddev += tmp * tmp;
     }
@@ -58,7 +58,7 @@ double Tracker::correlate(Tracker &other) {
 
     double correlation = 0.0;
 
-    for (int i = 0; i < values.size(); i++) {
+    for (int32_t i = 0; i < (int32_t)values.size(); i++) {
         correlation += (values[i] - avg1) * (other.values[i] - avg2);
     }
 

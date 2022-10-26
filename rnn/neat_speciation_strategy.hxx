@@ -127,7 +127,7 @@ class NeatSpeciationStrategy : public SpeciationStrategy {
 
         double get_distance(RNN_Genome* g1, RNN_Genome* g2);
 
-        int get_exceed_number(vector<int32_t> v1, vector<int32_t> v2);
+        int32_t get_exceed_number(vector<int32_t> v1, vector<int32_t> v2);
 
         void rank_species();
 

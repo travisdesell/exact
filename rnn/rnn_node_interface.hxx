@@ -98,12 +98,12 @@ class RNN_Node_Interface {
         virtual void output_fired(int32_t time, double delta) = 0;
         virtual void error_fired(int32_t time, double error) = 0;
 
-        virtual uint32_t get_number_weights() const = 0;
+        virtual int32_t  get_number_weights() const = 0;
 
         virtual void get_weights(vector<double> &parameters) const = 0;
         virtual void set_weights(const vector<double> &parameters) = 0;
-        virtual void get_weights(uint32_t &offset, vector<double> &parameters) const = 0;
-        virtual void set_weights(uint32_t &offset, const vector<double> &parameters) = 0;
+        virtual void get_weights(int32_t  &offset, vector<double> &parameters) const = 0;
+        virtual void set_weights(int32_t  &offset, const vector<double> &parameters) = 0;
         virtual void reset(int32_t _series_length) = 0;
 
         virtual void get_gradients(vector<double> &gradients) = 0;

@@ -49,7 +49,7 @@ using std::to_string;
 
 EXAMM::~EXAMM() {
     RNN_Genome *genome;
-    for (uint32_t i = 0; i < genomes.size(); i++) {
+    for (int32_t i = 0; i < (int32_t)genomes.size(); i++) {
         while (genomes[i].size() > 0) {
             genome = genomes[i].back();
             genomes[i].pop_back();
@@ -113,8 +113,6 @@ EXAMM::EXAMM(
                         neat_c1(_neat_c1),
                         neat_c2(_neat_c2),
                         neat_c3(_neat_c3),
-                        number_inputs(_input_parameter_names.size()),
-                        number_outputs(_output_parameter_names.size()),
                         bp_iterations(_bp_iterations),
                         learning_rate(_learning_rate),
                         use_high_threshold(_use_high_threshold),
@@ -141,10 +139,13 @@ EXAMM::EXAMM(
     edge_innovation_count = 0;
     node_innovation_count = 0;
 
+    number_inputs = (int32_t)_input_parameter_names.size();
+    number_outputs = (int32_t)_output_parameter_names.size();
+
     //update to now have islands of genomes
     genomes = vector< vector<RNN_Genome*> >(number_islands);
 
-    uint16_t seed = std::chrono::system_clock::now().time_since_epoch().count();
+    int32_t seed = std::chrono::system_clock::now().time_since_epoch().count();
     generator = minstd_rand0(seed);
     rng_0_1 = uniform_real_distribution<double>(0.0, 1.0);
 
@@ -261,9 +262,7 @@ EXAMM::EXAMM(
         }
     } else if (speciation_method.compare("neat") == 0) {
 
-        bool seed_genome_was_minimal = false;
         if (seed_genome == NULL) {
-            seed_genome_was_minimal = true;
             seed_genome = create_ff(input_parameter_names, 0, 0, output_parameter_names, 0, weight_initialize, weight_inheritance, mutated_component_weight);
             seed_genome->initialize_randomly();
         } //otherwise the seed genome was passed into EXAMM
@@ -329,13 +328,13 @@ EXAMM::EXAMM(
             "split_edge"
         };
 
-        for (int i = 0; i < ops_with_node_type.size(); i++) {
+        for (int32_t i = 0; i < (int32_t)ops_with_node_type.size(); i++) {
             string op = ops_with_node_type[i];
-            for (int j = 0; j < possible_node_types.size(); j++)
+            for (int32_t j = 0; j < (int32_t)possible_node_types.size(); j++)
                 op_log_ordering.push_back(op + "(" + NODE_TYPES[possible_node_types[j]] + ")");
         }
 
-        for (int i = 0; i < op_log_ordering.size(); i++) {
+        for (int32_t i = 0; i < (int32_t)op_log_ordering.size(); i++) {
             string op = op_log_ordering[i];
             (*op_log_file) << op;
             (*op_log_file) << " Generated, ";
@@ -346,7 +345,7 @@ EXAMM::EXAMM(
             generated_counts[op] = 0;
         }
 
-        map<string, int>::iterator it;
+        map<string, int32_t>::iterator it;
 
         (*op_log_file) << endl;
 
@@ -426,7 +425,7 @@ void EXAMM::update_log() {
             << endl;
         */
 
-        for (int i = 0; i < op_log_ordering.size(); i++) {
+        for (int32_t i = 0; i < (int32_t)op_log_ordering.size(); i++) {
             string op = op_log_ordering[i];
             (*op_log_file) << generated_counts[op] << ", " << inserted_counts[op]  << ", ";
         }
@@ -445,7 +444,7 @@ void EXAMM::write_memory_log(string filename) {
 void EXAMM::set_possible_node_types(vector<string> possible_node_type_strings) {
     possible_node_types.clear();
 
-    for (uint32_t i = 0; i < possible_node_type_strings.size(); i++) {
+    for (int32_t i = 0; i < (int32_t)possible_node_type_strings.size(); i++) {
         string node_type_s = possible_node_type_strings[i];
 
         bool found = false;
@@ -507,7 +506,7 @@ bool EXAMM::insert_genome(RNN_Genome* genome) {
     }
 
     // Name of the operator
-    const map<string, int> *generated_by_map = genome->get_generated_by_map();
+    const map<string, int32_t> *generated_by_map = genome->get_generated_by_map();
 
     for (auto it = generated_by_map->begin(); it != generated_by_map->end(); it++) {
         string generated_by = it->first;
@@ -570,7 +569,7 @@ RNN_Genome* EXAMM::generate_genome(int32_t seed_genome_stirs) {
     return genome;
 }
 
-int EXAMM::get_random_node_type() {
+int32_t EXAMM::get_random_node_type() {
     return possible_node_types[rng_0_1(generator) * possible_node_types.size()];
 }
 
@@ -597,7 +596,7 @@ void EXAMM::mutate(int32_t max_mutations, RNN_Genome *g) {
         g->get_mu_sigma(g->best_parameters, mu, sigma);
     }
 
-    int number_mutations = 0;
+    int32_t number_mutations = 0;
 
     for (;;) {
         if (modified) {
@@ -608,7 +607,7 @@ void EXAMM::mutate(int32_t max_mutations, RNN_Genome *g) {
 
         g->assign_reachability();
         double rng = rng_0_1(generator) * total;
-        int new_node_type = get_random_node_type();
+        int32_t new_node_type = get_random_node_type();
         string node_type_str = NODE_TYPES[new_node_type];
         Log::debug( "rng: %lf, total: %lf, new node type: %d (%s)\n", rng, total, new_node_type, node_type_str.c_str());
 
@@ -890,11 +889,11 @@ RNN_Genome* EXAMM::crossover(RNN_Genome *p1, RNN_Genome *p2) {
     Log::debug("p1->island: %d, p2->island: %d\n", p1->get_group_id(), p2->get_group_id());
     Log::debug("p1->number_inputs: %d, p2->number_inputs: %d\n", p1->get_number_inputs(), p2->get_number_inputs());
 
-    for (uint32_t i = 0; i < p1->nodes.size(); i++) {
+    for (int32_t i = 0; i < (int32_t)p1->nodes.size(); i++) {
         Log::debug("p1 node[%d], in: %d, depth: %lf, layer_type: %d, node_type: %d, reachable: %d, enabled: %d\n", i, p1->nodes[i]->get_innovation_number(), p1->nodes[i]->get_depth(), p1->nodes[i]->get_layer_type(), p1->nodes[i]->get_node_type(), p1->nodes[i]->is_reachable(), p1->nodes[i]->is_enabled());
     }
 
-    for (uint32_t i = 0; i < p2->nodes.size(); i++) {
+    for (int32_t i = 0; i < (int32_t)p2->nodes.size(); i++) {
         Log::debug("p2 node[%d], in: %d, depth: %lf, layer_type: %d, node_type: %d, reachable: %d, enabled: %d\n", i, p2->nodes[i]->get_innovation_number(), p2->nodes[i]->get_depth(), p2->nodes[i]->get_layer_type(), p2->nodes[i]->get_node_type(), p2->nodes[i]->is_reachable(), p2->nodes[i]->is_enabled());
     }
 
@@ -951,8 +950,8 @@ RNN_Genome* EXAMM::crossover(RNN_Genome *p1, RNN_Genome *p2) {
         RNN_Edge* p1_edge = p1_edges[p1_position];
         RNN_Edge* p2_edge = p2_edges[p2_position];
 
-        int p1_innovation = p1_edge->innovation_number;
-        int p2_innovation = p2_edge->innovation_number;
+        int32_t p1_innovation = p1_edge->innovation_number;
+        int32_t p2_innovation = p2_edge->innovation_number;
 
         if (p1_innovation == p2_innovation) {
             attempt_edge_insert(child_edges, child_nodes, p1_edge, p2_edge, true);
@@ -1010,8 +1009,8 @@ RNN_Genome* EXAMM::crossover(RNN_Genome *p1, RNN_Genome *p2) {
         RNN_Recurrent_Edge* p1_recurrent_edge = p1_recurrent_edges[p1_position];
         RNN_Recurrent_Edge* p2_recurrent_edge = p2_recurrent_edges[p2_position];
 
-        int p1_innovation = p1_recurrent_edge->innovation_number;
-        int p2_innovation = p2_recurrent_edge->innovation_number;
+        int32_t p1_innovation = p1_recurrent_edge->innovation_number;
+        int32_t p2_innovation = p2_recurrent_edge->innovation_number;
 
         if (p1_innovation == p2_innovation) {
             //do weight crossover

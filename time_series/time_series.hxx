@@ -32,12 +32,12 @@ class TimeSeries {
         TimeSeries(string _name);
 
         void add_value(double value);
-        double get_value(int i);
+        double get_value(int32_t i);
 
         void calculate_statistics();
         void print_statistics();
 
-        int get_number_values() const;
+        int32_t get_number_values() const;
 
         double get_min() const;
         double get_average() const;
@@ -62,7 +62,7 @@ class TimeSeries {
 
 class TimeSeriesSet {
     private:
-        int number_rows;
+        int32_t number_rows;
         string filename;
 
         vector<string> fields;
@@ -77,8 +77,8 @@ class TimeSeriesSet {
         ~TimeSeriesSet();
         void add_time_series(string name);
 
-        int get_number_rows() const;
-        int get_number_columns() const;
+        int32_t get_number_rows() const;
+        int32_t get_number_columns() const;
         string get_filename() const;
 
         vector<string> get_fields() const;
@@ -105,7 +105,7 @@ class TimeSeriesSet {
         TimeSeriesSet* copy();
 
         void cut(int32_t start, int32_t stop);
-        void split(int slices, vector<TimeSeriesSet*> &sub_series);
+        void split(int32_t slices, vector<TimeSeriesSet*> &sub_series);
 
         void select_parameters(const vector<string> &parameter_names);
         void select_parameters(const vector<string> &input_parameter_names, const vector<string> &output_parameter_names);
@@ -150,16 +150,16 @@ class TimeSeriesSets {
         void normalize_avg_std_dev();
         void normalize_avg_std_dev(const map<string,double> &_normalize_avgs, const map<string,double> &_normalize_std_devs, const map<string,double> &_normalize_mins, const map<string,double> &_normalize_maxs);
 
-        void split_series(int series, int number_slices);
-        void split_all(int number_slices);
+        void split_series(int32_t series, int32_t number_slices);
+        void split_all(int32_t number_slices);
 
         void write_time_series_sets(string base_filename);
 
-        void export_time_series(const vector<int> &series_indexes, int time_offset, vector< vector< vector<double> > > &inputs, vector< vector< vector<double> > > &outputs);
+        void export_time_series(const vector<int> &series_indexes, int32_t time_offset, vector< vector< vector<double> > > &inputs, vector< vector< vector<double> > > &outputs);
 
-        void export_training_series(int time_offset, vector< vector< vector<double> > > &inputs, vector< vector< vector<double> > > &outputs);
+        void export_training_series(int32_t time_offset, vector< vector< vector<double> > > &inputs, vector< vector< vector<double> > > &outputs);
 
-        void export_test_series(int time_offset, vector< vector< vector<double> > > &inputs, vector< vector< vector<double> > > &outputs);
+        void export_test_series(int32_t time_offset, vector< vector< vector<double> > > &inputs, vector< vector< vector<double> > > &outputs);
 
         void export_series_by_name(string field_name, vector< vector<double> > &exported_series);
 
@@ -174,10 +174,10 @@ class TimeSeriesSets {
         vector<string> get_input_parameter_names() const;
         vector<string> get_output_parameter_names() const;
 
-        int get_number_series() const;
+        int32_t get_number_series() const;
 
-        int get_number_inputs() const;
-        int get_number_outputs() const;
+        int32_t get_number_inputs() const;
+        int32_t get_number_outputs() const;
 
         void set_training_indexes(const vector<int> &_training_indexes);
         void set_test_indexes(const vector<int> &_test_indexes);

@@ -52,7 +52,7 @@ double Species::get_worst_fitness() {
 }
 
 int32_t Species::size() {
-    return genomes.size();
+    return (int32_t)genomes.size();
 }
 
 int32_t Species::contains(RNN_Genome* genome) {
@@ -131,7 +131,7 @@ int32_t Species::insert_genome(RNN_Genome *genome) {
 
 void Species::print(string indent) {
     Log::info("%s\t%s\n", indent.c_str(), RNN_Genome::print_statistics_header().c_str());
-    for (int32_t i = 0; i < genomes.size(); i++) {
+    for (int32_t i = 0; i < (int32_t)genomes.size(); i++) {
         Log::info("%s\t%s\n", indent.c_str(), genomes[i]->print_statistics().c_str());
     }
 }
@@ -144,7 +144,7 @@ RNN_Genome* Species::get_latested_genome() {
     RNN_Genome* latest = NULL;
     for (auto it = inserted_genome_id.rbegin(); it != inserted_genome_id.rend(); ++it){
         int32_t latest_id = *it;
-        for (int i = 0; i < genomes.size(); i++) {
+        for (int32_t i = 0; i < (int32_t)genomes.size(); i++) {
             if (genomes[i]->get_generation_id() == latest_id) {
                 latest = genomes[i];
                 break;
@@ -158,15 +158,15 @@ RNN_Genome* Species::get_latested_genome() {
 }
 
 void Species::fitness_sharing_remove(double fitness_threshold, function<double (RNN_Genome*, RNN_Genome*)> &get_distance) {
-    int32_t N = genomes.size();
+    int32_t N = (int32_t)genomes.size();
     double distance_sum[N];
     double fitness_share[N];
     double fitness_share_total = 0;
     double sum_square = 0;
     double distance [N][N];
-    for (int i = 0; i < N; i++) {
+    for (int32_t i = 0; i < N; i++) {
         distance_sum[i] = 0;
-        for (int j = 0; j < N; j++) {
+        for (int32_t j = 0; j < N; j++) {
             if (i < j) {
                 distance[i][j] = get_distance(genomes[i], genomes[j]);
             }

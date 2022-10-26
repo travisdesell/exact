@@ -49,7 +49,7 @@ class ENAS_DAG_Node : public RNN_Node_Interface{
 		
 	public:
 
-		ENAS_DAG_Node(int _innovation_number, int _type, double _depth);
+		ENAS_DAG_Node(int32_t _innovation_number, int32_t _type, double _depth);
 		~ENAS_DAG_Node();
 
 
@@ -62,26 +62,26 @@ class ENAS_DAG_Node : public RNN_Node_Interface{
         double get_gradient(string gradient_name);
         void print_gradient(string gradient_name);
 
-        double activation(double value, int act_operator);
-        double activation_derivative(double value, double input, int act_operator);
+        double activation(double value, int32_t act_operator);
+        double activation_derivative(double value, double input, int32_t act_operator);
 
-        void input_fired(int time, double incoming_output);
+        void input_fired(int32_t time, double incoming_output);
 
-        void try_update_deltas(int time);
-        void error_fired(int time, double error);
-        void output_fired(int time, double delta);
+        void try_update_deltas(int32_t time);
+        void error_fired(int32_t time, double error);
+        void output_fired(int32_t time, double delta);
 
-        uint32_t get_number_weights() const;
+        int32_t get_number_weights() const;
 
         void get_weights(vector<double> &parameters) const;
         void set_weights(const vector<double> &parameters);
 
-        void get_weights(uint32_t &offset, vector<double> &parameters) const;
-        void set_weights(uint32_t &offset, const vector<double> &parameters);
+        void get_weights(int32_t &offset, vector<double> &parameters) const;
+        void set_weights(int32_t &offset, const vector<double> &parameters);
 
         void get_gradients(vector<double> &gradients);
 
-        void reset(int _series_length);
+        void reset(int32_t _series_length);
 
         void write_to_stream(ostream &out);
 
