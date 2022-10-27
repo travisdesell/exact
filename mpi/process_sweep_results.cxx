@@ -55,7 +55,7 @@ bool extension_is(string name, string extension) {
 string current_output;
 string current_run_type;
 
-void process_dir(string dir_name, int depth) {
+void process_dir(string dir_name, int32_t depth) {
     DIR *dir;
     struct dirent *ent;
     if ((dir = opendir(dir_name.c_str())) != NULL) {
@@ -214,13 +214,13 @@ int main(int argc, char** argv) {
                             string s;
 
                             getline(ss, s, ',');
-                            //int fold = stoi(s);
+                            //int32_t fold = stoi(s);
 
                             getline(ss, s, ',');
-                            //int repeat = stoi(s);
+                            //int32_t repeat = stoi(s);
 
                             getline(ss, s, ',');
-                            //int runtime = stoi(s);
+                            //int32_t runtime = stoi(s);
 
                             getline(ss, s, ',');
                             //double training_mse = stod(s);
@@ -250,7 +250,7 @@ int main(int argc, char** argv) {
 
                         infile.close();
 
-                        int length = strlen(ent->d_name);
+                        int32_t length = strlen(ent->d_name);
                         string search_type(ent->d_name);
                         search_type = search_type.substr(9, length - 13);
 
@@ -285,12 +285,12 @@ int main(int argc, char** argv) {
 
 
 
-    for (int i = 0; i < output_types.size(); i++) {
+    for (int32_t i = 0; i < (int32_t)output_types.size(); i++) {
         cout << endl << endl;
 
         cout << run_statistics[0]->overview_header();
 
-        for (int j = 0; j < run_statistics.size(); j++) {
+        for (int32_t j = 0; j < (int32_t)run_statistics.size(); j++) {
             if (run_statistics[j]->output_name.compare(output_types[i]) == 0) {
                 string run_type = run_statistics[j]->run_type;
                 if (run_type.find("simple") == string::npos || run_type.find("all") != string::npos) {
@@ -304,12 +304,12 @@ int main(int argc, char** argv) {
 
     cout << endl << endl << endl;
 
-    for (int i = 0; i < output_types.size(); i++) {
+    for (int32_t i = 0; i < (int32_t)output_types.size(); i++) {
         cout << endl << endl;
 
         cout << run_statistics[0]->overview_ff_header();
 
-        for (int j = 0; j < run_statistics.size(); j++) {
+        for (int32_t j = 0; j < (int32_t)run_statistics.size(); j++) {
             if (run_statistics[j]->output_name.compare(output_types[i]) == 0) {
                 string run_type = run_statistics[j]->run_type;
                 if (run_type.find("simple") != string::npos && run_type.find("all") == string::npos) {
@@ -334,7 +334,7 @@ int main(int argc, char** argv) {
     cout << run_statistics[0]->correlate_header() << endl;
     cout << "\\hline" << endl;
 
-    for (int i = 0; i < run_statistics.size(); i++) {
+    for (int32_t i = 0; i < (int32_t)run_statistics.size(); i++) {
         if (run_statistics[i]->run_type.find("all") != string::npos) {
             cout << run_statistics[i]->to_string_correlate("mse", run_statistics[i]->mse) << "\\\\" << endl;
         }
@@ -374,7 +374,7 @@ int main(int argc, char** argv) {
     cout << "\\hline" << endl;
     cout << "\\hline" << endl;
 
-    for (int i = 0; i < run_statistics.size(); i++) {
+    for (int32_t i = 0; i < (int32_t)run_statistics.size(); i++) {
         if (run_statistics[i]->run_type.find("all") != string::npos) {
             cout << run_statistics[i]->output_name
                 << " & " << run_statistics[i]->ff.min() << " & " << setprecision(1) << run_statistics[i]->ff.avg() << " & " << run_statistics[i]->ff.max() << "&" << setprecision(2) << run_statistics[i]->ff.correlate(run_statistics[i]->mse)
@@ -402,8 +402,8 @@ int main(int argc, char** argv) {
     map<string, vector<RunStatistics*>> output_sorted_statistics;
     cout << endl << endl;
 
-    for (int i = 0; i < output_types.size(); i++) {
-        for (int j = 0; j < run_statistics.size(); j++) {
+    for (int32_t i = 0; i < (int32_t)output_types.size(); i++) {
+        for (int32_t j = 0; j < (int32_t)run_statistics.size(); j++) {
             if (run_statistics[j]->output_name.compare(output_types[i]) == 0) {
                 output_sorted_statistics[output_types[i]].push_back(run_statistics[j]);
             }
@@ -442,11 +442,11 @@ int main(int argc, char** argv) {
 
     map<string, ConsolidatedStatistics*> consolidated_statistics;
 
-    for (int i = 0; i < run_types.size(); i++) {
+    for (int32_t i = 0; i < (int32_t)run_types.size(); i++) {
         consolidated_statistics[run_types[i]] = new ConsolidatedStatistics(run_types[i]);
     }
 
-    for (int i = 0; i < output_types.size(); i++) {
+    for (int32_t i = 0; i < (int32_t)output_types.size(); i++) {
         cout << "GENERATING sorted stats for: '" << output_types[i] << "'" << endl;
 
         vector<RunStatistics*> current = output_sorted_statistics[output_types[i]];
@@ -457,7 +457,7 @@ int main(int argc, char** argv) {
         double avg_avg = 0.0;
         double avg_max = 0.0;
 
-        for (int j = 0; j < current.size(); j++) {
+        for (int32_t j = 0; j < (int32_t)current.size(); j++) {
             avg_min += current[j]->mse.min();
             avg_avg += current[j]->mse.avg();
             avg_max += current[j]->mse.max();
@@ -473,7 +473,7 @@ int main(int argc, char** argv) {
         double stddev_avg = 0.0;
         double stddev_max = 0.0;
 
-        for (int j = 0; j < current.size(); j++) {
+        for (int32_t j = 0; j < (int32_t)current.size(); j++) {
             stddev_min += (current[j]->mse.min() - avg_min) * (current[j]->mse.min() - avg_min);
             stddev_avg += (current[j]->mse.avg() - avg_avg) * (current[j]->mse.avg() - avg_avg);
             stddev_max += (current[j]->mse.max() - avg_max) * (current[j]->mse.max() - avg_max);
@@ -485,7 +485,7 @@ int main(int argc, char** argv) {
 
         cout << "calculated stddevs!" << endl;
 
-        for (int j = 0; j < current.size(); j++) {
+        for (int32_t j = 0; j < (int32_t)current.size(); j++) {
             cout << "current[" << j << "]->run_type: " << current[j]->run_type << endl;
 
             current[j]->set_deviation_from_mean_min((current[j]->mse.min() - avg_min) / stddev_min);
@@ -520,7 +520,7 @@ int main(int argc, char** argv) {
         cout << "\\multicolumn{2}{|c||}{{\\bf Best Case}} & \\multicolumn{2}{|c||}{{\\bf Avg. Case}} & \\multicolumn{2}{|c|}{{\\bf Worst Case}} \\\\" << endl;
         cout << "\\hline" << endl;
 
-        for (int j = 0; j < current.size(); j++) {
+        for (int32_t j = 0; j < (int32_t)current.size(); j++) {
             cout << setw(15) << fix_run_type(sorted_by_min[j]->run_type) << " & " << setw(15) << setprecision(5) << sorted_by_min[j]->dfm_min << " & ";
             cout << setw(15) << fix_run_type(sorted_by_avg[j]->run_type) << " & " << setw(15) << setprecision(5) << sorted_by_avg[j]->dfm_avg << " & ";
             cout << setw(15) << fix_run_type(sorted_by_max[j]->run_type) << " & " << setw(15) << setprecision(5) << sorted_by_max[j]->dfm_max << "\\\\" << endl;
@@ -556,7 +556,7 @@ int main(int argc, char** argv) {
     cout << "\\multicolumn{2}{|c||}{{\\bf Best Case}} & \\multicolumn{2}{|c||}{{\\bf Avg. Case}} & \\multicolumn{2}{|c|}{{\\bf Worst Case}} \\\\" << endl;
     cout << "\\hline" << endl;
 
-    for (int i = 0; i < min_stats_vector.size(); i++) {
+    for (int32_t i = 0; i < (int32_t)min_stats_vector.size(); i++) {
         cout << setw(15) << fix_run_type(min_stats_vector[i]->run_type) << " & " << setw(15) << setprecision(5) << min_stats_vector[i]->dfm_min << " & ";
         cout << setw(15) << fix_run_type(avg_stats_vector[i]->run_type) << " & " << setw(15) << setprecision(5) << avg_stats_vector[i]->dfm_avg << " & ";
         cout << setw(15) << fix_run_type(max_stats_vector[i]->run_type) << " & " << setw(15) << setprecision(5) << max_stats_vector[i]->dfm_max << "\\\\" << endl;

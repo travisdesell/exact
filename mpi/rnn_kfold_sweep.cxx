@@ -56,13 +56,11 @@ typedef struct stat Stat;
 #define RESULT_TAG 4
 
 int32_t time_offset = 1;
-int bp_iterations;
+int32_t bp_iterations;
 string output_directory;
 int32_t repeats = 5;
-int fold_size = 2;
-
-string weight_initialize_string = "random";
-WeightType weight_initialize = get_enum_from_string(weight_initialize_string);
+int32_t fold_size = 2;
+string weight_initialize_string;
 
 string process_name;
 
@@ -81,7 +79,7 @@ TimeSeriesSets* time_series_sets = NULL;
 
 
 struct ResultSet {
-    int job;
+    int32_t job;
     double training_mae;
     double training_mse;
     double test_mae;
@@ -93,20 +91,20 @@ vector<ResultSet> results;
 
 
 
-void send_work_request_to(int target) {
-    int work_request_message[1];
+void send_work_request_to(int32_t target) {
+    int32_t work_request_message[1];
     work_request_message[0] = 0;
     MPI_Send(work_request_message, 1, MPI_INT, target, WORK_REQUEST_TAG, MPI_COMM_WORLD);
 }
 
-void receive_work_request_from(int source) {
+void receive_work_request_from(int32_t source) {
     MPI_Status status;
-    int work_request_message[1];
+    int32_t work_request_message[1];
     MPI_Recv(work_request_message, 1, MPI_INT, source, WORK_REQUEST_TAG, MPI_COMM_WORLD, &status);
 }
 
-void send_job_to(int target, int current_job) {
-    int job_message[1];
+void send_job_to(int32_t target, int32_t current_job) {
+    int32_t job_message[1];
     job_message[0] = current_job;
 
     Log::debug("sending job %d of %d to %d\n", current_job, results.size(), target);
@@ -114,12 +112,12 @@ void send_job_to(int target, int current_job) {
 }
 
 
-int receive_job_from(int source) {
+int32_t receive_job_from(int32_t source) {
     MPI_Status status;
-    int job_message[1];
+    int32_t job_message[1];
     MPI_Recv(job_message, 1, MPI_INT, source, JOB_TAG, MPI_COMM_WORLD, &status);
 
-    int current_job = job_message[0];
+    int32_t current_job = job_message[0];
 
     Log::debug("receiving current_job: %d from %d\n", current_job, source);
 
@@ -130,7 +128,7 @@ string result_to_string(ResultSet result) {
     return "[result, job: " + to_string(result.job) + ", training mae: " + to_string(result.training_mae) + ", training mse: " + to_string(result.training_mse) + ", test mae: " + to_string(result.test_mae) + ", test mse: " + to_string(result.test_mae) + ", millis: " + to_string(result.milliseconds) + "]";
 }
 
-void send_result_to(int target, ResultSet result) {
+void send_result_to(int32_t target, ResultSet result) {
     size_t result_size = sizeof(result);
     char bytes[result_size];
     memcpy(bytes, &result, result_size);
@@ -138,7 +136,7 @@ void send_result_to(int target, ResultSet result) {
     MPI_Send(bytes, result_size, MPI_CHAR, target, RESULT_TAG, MPI_COMM_WORLD);
 }
 
-ResultSet receive_result_from(int source) {
+ResultSet receive_result_from(int32_t source) {
     ResultSet result;
 
     MPI_Status status;
@@ -152,23 +150,23 @@ ResultSet receive_result_from(int source) {
     return result;
 }
 
-void send_terminate_to(int target) {
-    int terminate_message[1];
+void send_terminate_to(int32_t target) {
+    int32_t terminate_message[1];
     terminate_message[0] = 0;
     MPI_Send(terminate_message, 1, MPI_INT, target, TERMINATE_TAG, MPI_COMM_WORLD);
 }
 
-void receive_terminate_from(int source) {
+void receive_terminate_from(int32_t source) {
     MPI_Status status;
-    int terminate_message[1];
+    int32_t terminate_message[1];
     MPI_Recv(terminate_message, 1, MPI_INT, source, TERMINATE_TAG, MPI_COMM_WORLD, &status);
 }
 
 
 //tweaked from: https://stackoverflow.com/questions/675039/how-can-i-create-directory-tree-in-c-linux/29828907
-static int do_mkdir(const char *path, mode_t mode) {
+static int32_t do_mkdir(const char *path, mode_t mode) {
     Stat            st;
-    int             status = 0;
+    int32_t             status = 0;
 
     if (stat(path, &st) != 0) {
         /* Directory does not exist. EEXIST for race condition */
@@ -190,10 +188,10 @@ static int do_mkdir(const char *path, mode_t mode) {
  * ** each directory in path exists, rather than optimistically creating
  * ** the last element and working backwards.
  * */
-int mkpath(const char *path, mode_t mode) {
+int32_t mkpath(const char *path, mode_t mode) {
     char           *pp;
     char           *sp;
-    int             status;
+    int32_t             status;
     char           *copypath = strdup(path);
 
     status = 0;
@@ -220,7 +218,7 @@ int mkpath(const char *path, mode_t mode) {
 
 
 
-void master(int max_rank) {
+void master(int32_t max_rank) {
     if (output_directory != "") {
         Log::debug("creating directory: '%s'\n", output_directory.c_str());
         mkpath(output_directory.c_str(), 0777);
@@ -231,17 +229,17 @@ void master(int max_rank) {
     //initialize the results with -1 as the job so we can determine if a particular rnn type has completed
     results = vector<ResultSet>(rnn_types.size() * time_series_sets->get_number_series() * repeats, {-1, 0.0, 0.0, 0.0, 0.0, 0});
 
-    int terminates_sent = 0;
-    int current_job = 0;
-    int last_job = rnn_types.size() * (time_series_sets->get_number_series() / fold_size) * repeats;
+    int32_t terminates_sent = 0;
+    int32_t current_job = 0;
+    int32_t last_job = rnn_types.size() * (time_series_sets->get_number_series() / fold_size) * repeats;
 
     while (true) {
         //wait for a incoming message
         MPI_Status status;
         MPI_Probe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
 
-        int message_source = status.MPI_SOURCE;
-        int tag = status.MPI_TAG;
+        int32_t message_source = status.MPI_SOURCE;
+        int32_t tag = status.MPI_TAG;
         Log::debug("probe returned message from: %d with tag: %d\n", message_source, tag);
 
         //if the message is a work request, send a genome
@@ -284,7 +282,7 @@ void master(int max_rank) {
 
             bool rnn_finished = true;
             Log::debug("testing finished for rnn: '%s'\n", rnn_types[rnn].c_str());
-            for (int i = rnn_job_start; i < rnn_job_end; i++) {
+            for (int32_t i = rnn_job_start; i < rnn_job_end; i++) {
                 if (i == rnn_job_start) {
                     Log::debug(" %d", results[i].job);
                 } else {
@@ -324,7 +322,7 @@ void master(int max_rank) {
     }
 }
 
-ResultSet handle_job(int rank, int current_job) {
+ResultSet handle_job(int32_t rank, int32_t current_job, WeightType weight_initialize) {
     int32_t jobs_per_rnn = (time_series_sets->get_number_series() / fold_size) * repeats;
 
     //get rnn_type
@@ -338,16 +336,16 @@ ResultSet handle_job(int rank, int current_job) {
 
     Log::debug("evaluating rnn type '%s' with j: %d, repeat: %d\n", rnn_type.c_str(), j, repeat);
 
-    vector<int> training_indexes;
-    vector<int> test_indexes;
+    vector<int32_t> training_indexes;
+    vector<int32_t> test_indexes;
 
-    for (uint32_t k = 0; k < time_series_sets->get_number_series(); k += fold_size) {
+    for (int32_t k = 0; k < time_series_sets->get_number_series(); k += fold_size) {
         if (j == (k / fold_size)) {
-            for (int l = 0; l < fold_size; l++) {
+            for (int32_t l = 0; l < fold_size; l++) {
                 test_indexes.push_back(k + l);
             }
         } else {
-            for (int l = 0; l < fold_size; l++) {
+            for (int32_t l = 0; l < fold_size; l++) {
                 training_indexes.push_back(k + l);
             }
         }
@@ -369,8 +367,8 @@ ResultSet handle_job(int rank, int current_job) {
     vector<string> input_parameter_names = time_series_sets->get_input_parameter_names();
     vector<string> output_parameter_names = time_series_sets->get_output_parameter_names();
 
-    int number_inputs = time_series_sets->get_number_inputs();
-    //int number_outputs = time_series_sets->get_number_outputs();
+    int32_t number_inputs = time_series_sets->get_number_inputs();
+    //int32_t number_outputs = time_series_sets->get_number_outputs();
 
     RNN_Genome *genome = NULL;
     if (rnn_type == "one_layer_lstm") {
@@ -424,7 +422,7 @@ ResultSet handle_job(int rank, int current_job) {
 
     RNN* rnn = genome->get_rnn();
 
-    uint32_t number_of_weights = genome->get_number_weights();
+    int32_t number_of_weights = genome->get_number_weights();
     Log::debug("RNN INFO FOR '%s', nodes: %d, edges: %d, rec: %d, weights: %d\n", rnn_type.c_str(), genome->get_enabled_node_count(), genome->get_enabled_edge_count(), genome->get_enabled_recurrent_edge_count(), number_of_weights);
 
     vector<double> min_bound(number_of_weights, -1.0); 
@@ -483,8 +481,8 @@ ResultSet handle_job(int rank, int current_job) {
     return result;
 }
 
-void worker(int rank) {
-    int master_rank = 0;
+void worker(int32_t rank, WeightType weight_initialize) {
+    int32_t master_rank = 0;
     Log::set_id("worker_" + to_string(rank));
 
     while (true) {
@@ -494,7 +492,7 @@ void worker(int rank) {
 
         MPI_Status status;
         MPI_Probe(master_rank, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
-        int tag = status.MPI_TAG;
+        int32_t tag = status.MPI_TAG;
 
         Log::debug("probe received message with tag: %d\n", tag);
 
@@ -505,9 +503,9 @@ void worker(int rank) {
 
         } else if (tag == JOB_TAG) {
             Log::debug("received genome!\n");
-            int current_job = receive_job_from(master_rank);
+            int32_t current_job = receive_job_from(master_rank);
 
-            ResultSet result = handle_job(rank, current_job);
+            ResultSet result = handle_job(rank, current_job, weight_initialize);
 
             Log::debug("calculated_result: %s\n", result_to_string(result).c_str());
 
@@ -525,7 +523,7 @@ void worker(int rank) {
 
 
 int main(int argc, char **argv) {
-    int rank, max_rank;
+    int32_t rank, max_rank;
 
     MPI_Init(&argc, &argv);
 
@@ -554,7 +552,7 @@ int main(int argc, char **argv) {
 
     get_argument(arguments, "--weight_initialize", false, weight_initialize_string);
 
-    weight_initialize = get_enum_from_string(weight_initialize_string);
+    WeightType weight_initialize = get_enum_from_string(weight_initialize_string);
 
     if (weight_initialize < 0 || weight_initialize >= NUM_WEIGHT_TYPES - 1) {
         Log::fatal("weight initialization method %s is set wrong \n", weight_initialize_string.c_str());
@@ -575,7 +573,7 @@ int main(int argc, char **argv) {
     if (rank == 0) {
         master(max_rank);
     } else {
-        worker(rank);
+        worker(rank, weight_initialize);
     }
 
     Log::release_id("main_" + to_string(rank));

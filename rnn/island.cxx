@@ -25,7 +25,7 @@ using std::unordered_map;
 Island::Island(int32_t _id, int32_t _max_size) : id(_id), max_size(_max_size), status(Island::INITIALIZING), erase_again(0), erased(false) {
 }
 
-Island::Island(int32_t _id, vector<RNN_Genome*> _genomes) : id(_id), max_size(_genomes.size()), genomes(_genomes), status(Island::FILLED), erase_again(0), erased(false) {
+Island::Island(int32_t _id, vector<RNN_Genome*> _genomes) : id(_id), max_size((int32_t)_genomes.size()), genomes(_genomes), status(Island::FILLED), erase_again(0), erased(false) {
 }
 
 RNN_Genome* Island::get_best_genome() {
@@ -51,15 +51,15 @@ double Island::get_worst_fitness() {
 }
 
 int32_t Island::get_max_size() {
-    return max_size;
+    return (int32_t)max_size;
 }
 
 int32_t Island::size() {
-    return genomes.size();
+    return (int32_t)genomes.size();
 }
 
 bool Island::is_full() {
-    return genomes.size() >= max_size;
+    return (int32_t)genomes.size() >= max_size;
 }
 
 bool Island::is_initializing() {
@@ -93,8 +93,8 @@ void Island::copy_two_random_genomes(uniform_real_distribution<double> &rng_0_1,
     *genome2 = genomes[p2]->copy();
 }
 
-void Island::do_population_check(int line, int initial_size) {
-    if (status == Island::FILLED && genomes.size() < max_size) {
+void Island::do_population_check(int32_t line, int32_t initial_size) {
+    if (status == Island::FILLED && (int32_t)genomes.size() < max_size) {
         Log::error("ERROR: do_population_check had issue on island.cxx line %d, status was FILLED and genomes.size() was: %d, size at beginning of insert was: %d\n", line, genomes.size(), initial_size);
         status = Island::INITIALIZING;
     }
@@ -105,7 +105,7 @@ void Island::do_population_check(int line, int initial_size) {
 //inserts a copy of the genome, caller of the function will need to delete their
 //pointer
 int32_t Island::insert_genome(RNN_Genome *genome) {
-    int initial_size = genomes.size();
+    int32_t initial_size = (int32_t)genomes.size();
 
     if (genome->get_generation_id() <= erased_generation_id) {
         Log::info("genome already erased, not inserting");
@@ -247,14 +247,14 @@ int32_t Island::insert_genome(RNN_Genome *genome) {
     }
 
 
-    if (genomes.size() >= max_size) {
+    if ((int32_t)genomes.size() >= max_size) {
         //the island is filled
         status = Island::FILLED;
     }
 
     Log::info("genomes.size(): %d, max_size: %d, status: %d\n", genomes.size(), max_size, status);
 
-    if (genomes.size() > max_size) {
+    if ((int32_t)genomes.size() > max_size) {
         //island was full before insert so now we need to 
         //delete the worst genome in the island.
 
@@ -316,7 +316,7 @@ void Island::print(string indent) {
 
         Log::info("%s\t%s\n", indent.c_str(), RNN_Genome::print_statistics_header().c_str());
 
-        for (int32_t i = 0; i < genomes.size(); i++) {
+        for (int32_t i = 0; i < (int32_t)genomes.size(); i++) {
             Log::info("%s\t%s\n", indent.c_str(), genomes[i]->print_statistics().c_str());
         }
     }
@@ -324,7 +324,7 @@ void Island::print(string indent) {
 
 void Island::erase_island() {
     erased_generation_id = latest_generation_id;
-    for (int i = 0; i < genomes.size(); i++) {
+    for (int32_t i = 0; i < (int32_t)genomes.size(); i++) {
         delete genomes[i];
     }
     genomes.clear();

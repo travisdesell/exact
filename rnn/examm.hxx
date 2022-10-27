@@ -96,7 +96,7 @@ class EXAMM {
         double split_node_rate;
         double merge_node_rate;
 
-        vector<int> possible_node_types;
+        vector<int32_t> possible_node_types;
 
         vector<string> op_log_ordering;
         map<string, int32_t> inserted_counts;
@@ -180,7 +180,7 @@ class EXAMM {
 
         uniform_int_distribution<int32_t> get_recurrent_depth_dist();
 
-        int get_random_node_type();
+        int32_t get_random_node_type();
 
         RNN_Genome* generate_genome(int32_t seed_genome_stirs = 0);
         bool insert_genome(RNN_Genome* genome);
@@ -198,7 +198,7 @@ class EXAMM {
         RNN_Genome* get_worst_genome();
 
         string get_output_directory() const;
-        RNN_Genome* generate_for_transfer_learning(string file_name, int extra_inputs, int extra_outputs) ;
+        RNN_Genome* generate_for_transfer_learning(string file_name, int32_t extra_inputs, int32_t extra_outputs) ;
 
         void check_weight_initialize_validity();
 };

@@ -142,7 +142,7 @@ class Island {
          */
         void copy_two_random_genomes(uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator, RNN_Genome **genome1, RNN_Genome **genome2);
 
-        void do_population_check(int line, int initial_size);
+        void do_population_check(int32_t line, int32_t initial_size);
 
         /**
          * Inserts a genome into the island.

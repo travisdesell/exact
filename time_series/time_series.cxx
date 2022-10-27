@@ -41,7 +41,7 @@ void TimeSeries::add_value(double value) {
     values.push_back(value);
 }
 
-double TimeSeries::get_value(int i) {
+double TimeSeries::get_value(int32_t i) {
     return values[i];
 }
 
@@ -84,7 +84,7 @@ void TimeSeries::print_statistics() {
     Log::info("\t%25s stats, min: %lf, avg: %lf, max: %lf, min_change: %lf, max_change: %lf, std_dev: %lf, variance: %lf\n", name.c_str(), min, average, max, min_change, max_change, std_dev, variance);
 }
 
-int TimeSeries::get_number_values() const {
+int32_t TimeSeries::get_number_values() const {
     return values.size();
 }
 
@@ -119,7 +119,7 @@ double TimeSeries::get_max_change() const {
 void TimeSeries::normalize_min_max(double min, double max) {
     Log::debug("normalizing time series '%s' with min: %lf and max: %lf, series min: %lf, series max: %lf\n", name.c_str(), min, max, this->min, this->max);
 
-    for (int i = 0; i < values.size(); i++) {
+    for (int32_t i = 0; i < (int32_t)values.size(); i++) {
         if (values[i] < min) {
             Log::warning("normalizing series %s, value[%d] %lf was less than min for normalization: %lf\n", name.c_str(), i, values[i], min);
         }
@@ -136,7 +136,7 @@ void TimeSeries::normalize_min_max(double min, double max) {
 void TimeSeries::normalize_avg_std_dev(double avg, double std_dev, double norm_max) {
     Log::debug("normalizing time series '%s' with avg: %lf, std_dev: %lf and normalized max: %lf, series avg: %lf, series std_dev: %lf\n", name.c_str(), avg, std_dev, norm_max, this->average, this->std_dev);
 
-    for (int i = 0; i < values.size(); i++) {
+    for (int32_t i = 0; i < (int32_t)values.size(); i++) {
         values[i] = ((values[i] - avg) / std_dev) / norm_max;
     }
 }
@@ -229,7 +229,7 @@ TimeSeriesSet::TimeSeriesSet(string _filename, const vector<string> &_fields) {
     
     vector<string> file_fields;
     string_split(line, ',', file_fields);
-    for (int32_t i = 0; i < file_fields.size(); i++) {
+    for (int32_t i = 0; i < (int32_t)file_fields.size(); i++) {
         //get rid of carriage returns (sometimes windows messes this up)
         file_fields[i].erase( std::remove(file_fields[i].begin(), file_fields[i].end(), '\r'), file_fields[i].end() );
     }
@@ -268,13 +268,13 @@ TimeSeriesSet::TimeSeriesSet(string _filename, const vector<string> &_fields) {
 
     
     Log::debug("number fields: %d\n", fields.size());
-    for (uint32_t i = 0; i < fields.size(); i++) {
+    for (int32_t i = 0; i < (int32_t)fields.size(); i++) {
         Log::debug("\t%s used: %d\n", fields[i].c_str(), file_fields_used[i]);
 
         add_time_series(fields[i]);
     }
 
-    int row = 1;
+    int32_t row = 1;
     while (getline(ts_file, line)) {
         if (line.size() == 0 || line[0] == '#' || row < 0) {
             row++;
@@ -289,7 +289,7 @@ TimeSeriesSet::TimeSeriesSet(string _filename, const vector<string> &_fields) {
             exit(1);
         }
 
-        for (uint32_t i = 0; i < parts.size(); i++) {
+        for (int32_t i = 0; i < (int32_t)parts.size(); i++) {
             if (!file_fields_used[i]) continue;
 
             Log::trace("parts[%d]: %s being added to '%s'\n", i, parts[i].c_str(), file_fields[i].c_str());
@@ -321,7 +321,7 @@ TimeSeriesSet::TimeSeriesSet(string _filename, const vector<string> &_fields) {
             series->second->print_statistics();
         }
 
-        int series_rows = series->second->get_number_values();
+        int32_t series_rows = series->second->get_number_values();
 
         if (series_rows != number_rows) {
             Log::error("ERROR! number of rows for field '%s' (%d) doesn't equal number of rows in first field '%s' (%d)\n", series->first.c_str(), series->second->get_number_values(), time_series.begin()->first.c_str(), time_series.begin()->second->get_number_values());
@@ -340,12 +340,12 @@ TimeSeriesSet::~TimeSeriesSet(){
 	}
 }
 
-int TimeSeriesSet::get_number_rows() const {
+int32_t TimeSeriesSet::get_number_rows() const {
     return number_rows;
 }
 
-int TimeSeriesSet::get_number_columns() const {
-    return fields.size();
+int32_t TimeSeriesSet::get_number_columns() const {
+    return (int32_t)fields.size();
 }
 
 string TimeSeriesSet::get_filename() const {
@@ -414,7 +414,7 @@ void TimeSeriesSet::export_time_series(vector< vector<double> > &data, const vec
     data.clear();
 
     //for some reason fabs is not working right
-    int abs_time_offset = time_offset;
+    int32_t abs_time_offset = time_offset;
     if (abs_time_offset < 0) abs_time_offset *= -1;
 
     Log::debug("resizing '%s' (number rows: %d, time offset: %d)  to %d by %d\n", filename.c_str(), number_rows, time_offset, requested_fields.size(), number_rows - abs_time_offset);
@@ -426,34 +426,34 @@ void TimeSeriesSet::export_time_series(vector< vector<double> > &data, const vec
     Log::debug("resized! time_offset = %d\n", time_offset);
 
     if (time_offset == 0) {
-        for (int i = 0; i != requested_fields.size(); i++) {
-            for (int j = 0; j < number_rows; j++) {
+        for (int32_t i = 0; i < (int32_t)requested_fields.size(); i++) {
+            for (int32_t j = 0; j < number_rows; j++) {
                 data[i][j] = time_series[ requested_fields[i] ]->get_value(j);
             }
         }
 
     } else if (time_offset > 0) {
         //output data, ignore the first N values
-        for (int i = 0; i != requested_fields.size(); i++) {
-            for (int j = time_offset; j < number_rows; j++) {
+        for (int32_t i = 0; i < (int32_t)requested_fields.size(); i++) {
+            for (int32_t j = time_offset; j < number_rows; j++) {
                 data[i][j - time_offset] = time_series[ requested_fields[i] ]->get_value(j);
             }
         }
 
     } else if (time_offset < 0) {
         //input data, ignore the last N values
-        for (int i = 0; i != requested_fields.size(); i++) {
+        for (int32_t i = 0; i < (int32_t)requested_fields.size(); i++) {
             Log::debug("exporting for field: '%s'\n", requested_fields[i].c_str());
             if (find(shift_fields.begin(), shift_fields.end(), requested_fields[i]) != shift_fields.end()) {
                 Log::debug("doing shift for field: '%s'\n", requested_fields[i].c_str());
                 //shift the shifted fields to the same as the output, not the input
-                for (int j = -time_offset; j < number_rows; j++) {
+                for (int32_t j = -time_offset; j < number_rows; j++) {
                     data[i][j + time_offset] = time_series[ requested_fields[i] ]->get_value(j);
                     //Log::info("\tdata[%d][%d]: %lf\n", i, j + time_offset, data[i][j + time_offset]);
                 }
             } else {
                 Log::debug("not doing shift for field: '%s'\n", requested_fields[i].c_str());
-                for (int j = 0; j < number_rows + time_offset; j++) {
+                for (int32_t j = 0; j < number_rows + time_offset; j++) {
                     data[i][j] = time_series[ requested_fields[i] ]->get_value(j);
                 }
             }
@@ -496,7 +496,7 @@ void TimeSeriesSet::cut(int32_t start, int32_t stop) {
     number_rows = stop - start;
 }
 
-void TimeSeriesSet::split(int slices, vector<TimeSeriesSet*> &sub_series) {
+void TimeSeriesSet::split(int32_t slices, vector<TimeSeriesSet*> &sub_series) {
     sub_series.clear();
 
     double start = 0;
@@ -568,7 +568,7 @@ TimeSeriesSets::TimeSeriesSets() : normalize_type("none") {
 }
 
 TimeSeriesSets::~TimeSeriesSets(){
-    for (uint32_t i = 0; i < time_series.size(); i++) {
+    for (int32_t i = 0; i < (int32_t)time_series.size(); i++) {
         delete time_series[i];
     }
 }
@@ -650,13 +650,13 @@ void TimeSeriesSets::load_time_series() {
     if (Log::at_level(Log::DEBUG)) {
         Log::debug("loading time series with parameters:\n");
 
-        for (uint32_t i = 0; i < all_parameter_names.size(); i++) {
+        for (int32_t i = 0; i < (int32_t)all_parameter_names.size(); i++) {
             Log::debug("\t'%s'\n", all_parameter_names[i].c_str());
         }
         Log::debug("got time series filenames:\n");
     }
 
-    for (uint32_t i = 0; i < filenames.size(); i++) {
+    for (int32_t i = 0; i < (int32_t)filenames.size(); i++) {
         Log::debug("\t%s\n", filenames[i].c_str());
 
         TimeSeriesSet *ts = new TimeSeriesSet(filenames[i], all_parameter_names);
@@ -685,14 +685,14 @@ TimeSeriesSets* TimeSeriesSets::generate_from_arguments(const vector<string> &ar
         vector<string> test_filenames;
         get_argument_vector(arguments, "--test_filenames", true, test_filenames);
 
-        int current = 0;
-        for (int i = 0; i < training_filenames.size(); i++) {
+        int32_t current = 0;
+        for (int32_t i = 0; i < (int32_t)training_filenames.size(); i++) {
             tss->filenames.push_back(training_filenames[i]);
             tss->training_indexes.push_back(current);
             current++;
         }
 
-        for (int i = 0; i < test_filenames.size(); i++) {
+        for (int32_t i = 0; i < (int32_t)test_filenames.size(); i++) {
             tss->filenames.push_back(test_filenames[i]);
             tss->test_indexes.push_back(current);
             current++;
@@ -729,17 +729,17 @@ TimeSeriesSets* TimeSeriesSets::generate_from_arguments(const vector<string> &ar
 
         if (Log::at_level(Log::DEBUG)) {
             Log::debug("input parameter names:\n");
-            for (int i = 0; i < tss->input_parameter_names.size(); i++) {
+            for (int32_t i = 0; i < (int32_t)tss->input_parameter_names.size(); i++) {
                 Log::debug("\t%s\n", tss->input_parameter_names[i].c_str());
             }
 
             Log::debug("output parameter names:\n");
-            for (int i = 0; i < tss->output_parameter_names.size(); i++) {
+            for (int32_t i = 0; i < (int32_t)tss->output_parameter_names.size(); i++) {
                 Log::debug("\t%s\n", tss->output_parameter_names[i].c_str());
             }
 
             Log::debug("all parameter names:\n");
-            for (int i = 0; i < tss->all_parameter_names.size(); i++) {
+            for (int32_t i = 0; i < (int32_t)tss->all_parameter_names.size(); i++) {
                 Log::debug("\t%s\n", tss->all_parameter_names[i].c_str());
             }
         }
@@ -836,7 +836,7 @@ double TimeSeriesSets::denormalize(string field_name, double value) {
 void TimeSeriesSets::normalize_min_max() {
     Log::info("doing min/max normalization:\n");
 
-    for (int i = 0; i < all_parameter_names.size(); i++) {
+    for (int32_t i = 0; i < (int32_t)all_parameter_names.size(); i++) {
         string parameter_name = all_parameter_names[i];
 
         double min = numeric_limits<double>::max();
@@ -852,7 +852,7 @@ void TimeSeriesSets::normalize_min_max() {
             Log::info("user specified bounds for ");
 
         }  else {
-            for (int j = 0; j < time_series.size(); j++) {
+            for (int32_t j = 0; j < (int32_t)time_series.size(); j++) {
                 double current_min = time_series[j]->get_min(parameter_name);
                 double current_max = time_series[j]->get_max(parameter_name);
 
@@ -869,7 +869,7 @@ void TimeSeriesSets::normalize_min_max() {
         Log::info_no_header("%30s, min: %22.10lf, max: %22.10lf\n", parameter_name.c_str(), min, max);
 
         //for each series, subtract min, divide by (max - min)
-        for (int j = 0; j < time_series.size(); j++) {
+        for (int32_t j = 0; j < (int32_t)time_series.size(); j++) {
             time_series[j]->normalize_min_max(parameter_name, min, max);
         }
     }
@@ -905,7 +905,7 @@ void TimeSeriesSets::normalize_min_max(const map<string,double> &_normalize_mins
         }
 
         //for each series, subtract min, divide by (max - min)
-        for (int j = 0; j < time_series.size(); j++) {
+        for (int32_t j = 0; j < (int32_t)time_series.size(); j++) {
             time_series[j]->normalize_min_max(field, normalize_mins[field], normalize_maxs[field]);
         }
     }
@@ -916,7 +916,7 @@ void TimeSeriesSets::normalize_min_max(const map<string,double> &_normalize_mins
 void TimeSeriesSets::normalize_avg_std_dev() {
     Log::info("doing min/max normalization:\n");
 
-    for (int i = 0; i < all_parameter_names.size(); i++) {
+    for (int32_t i = 0; i < (int32_t)all_parameter_names.size(); i++) {
         string parameter_name = all_parameter_names[i];
 
         double min = numeric_limits<double>::max();
@@ -937,8 +937,8 @@ void TimeSeriesSets::normalize_avg_std_dev() {
             double numerator_average = 0.0;
             long total_values = 0;
 
-            for (int j = 0; j < time_series.size(); j++) {
-                int n_values = time_series[j]->get_number_rows();
+            for (int32_t j = 0; j < (int32_t)time_series.size(); j++) {
+                int32_t n_values = time_series[j]->get_number_rows();
                 numerator_average += time_series[j]->get_average(parameter_name) * n_values;
                 total_values += n_values;
 
@@ -956,8 +956,8 @@ void TimeSeriesSets::normalize_avg_std_dev() {
 
             double numerator_std_dev = 0.0;
             //get the Bessel-corrected (n-1 denominator) combined standard deviation
-            for (int j = 0; j < time_series.size(); j++) {
-                int n_values = time_series[j]->get_number_rows();
+            for (int32_t j = 0; j < (int32_t)time_series.size(); j++) {
+                int32_t n_values = time_series[j]->get_number_rows();
 
                 double avg_diff = time_series[j]->get_average(parameter_name) - avg;
                 numerator_std_dev += ((n_values - 1) * time_series[j]->get_variance(parameter_name)) + (n_values * avg_diff * avg_diff);
@@ -980,7 +980,7 @@ void TimeSeriesSets::normalize_avg_std_dev() {
         Log::info_no_header("%30s, min: %22.10lf, max: %22.10lf, norm_max; %22.10lf, combined average: %22.10lf, combined std_dev: %22.10lf\n", parameter_name.c_str(), min, max, avg, norm_max, std_dev);
 
         //for each series, subtract min, divide by (max - min)
-        for (int j = 0; j < time_series.size(); j++) {
+        for (int32_t j = 0; j < (int32_t)time_series.size(); j++) {
             time_series[j]->normalize_avg_std_dev(parameter_name, avg, std_dev, norm_max);
         }
     }
@@ -1049,7 +1049,7 @@ void TimeSeriesSets::normalize_avg_std_dev(const map<string,double> &_normalize_
 
 
         //for each series, subtract avg, divide by std_dev; then divide by normalized_max to make between -1 and 1
-        for (int j = 0; j < time_series.size(); j++) {
+        for (int32_t j = 0; j < (int32_t)time_series.size(); j++) {
             time_series[j]->normalize_avg_std_dev(field, avg, std_dev, norm_max);
         }
     }
@@ -1062,12 +1062,12 @@ void TimeSeriesSets::normalize_avg_std_dev(const map<string,double> &_normalize_
  * the series argument is a vector of indexes of the time series that was 
  * initially loaded that are to be exported
  */
-void TimeSeriesSets::export_time_series(const vector<int> &series_indexes, int time_offset, vector< vector< vector<double> > > &inputs, vector< vector< vector<double> > > &outputs) {
+void TimeSeriesSets::export_time_series(const vector<int> &series_indexes, int32_t time_offset, vector< vector< vector<double> > > &inputs, vector< vector< vector<double> > > &outputs) {
     inputs.resize(series_indexes.size());
     outputs.resize(series_indexes.size());
 
-    for (uint32_t i = 0; i < series_indexes.size(); i++) {
-        int series_index = series_indexes[i];
+    for (int32_t i = 0; i < (int32_t)series_indexes.size(); i++) {
+        int32_t series_index = series_indexes[i];
 
         time_series[series_index]->export_time_series(inputs[i], input_parameter_names, shift_parameter_names, -time_offset);
         time_series[series_index]->export_time_series(outputs[i], output_parameter_names, shift_parameter_names, time_offset);
@@ -1077,7 +1077,7 @@ void TimeSeriesSets::export_time_series(const vector<int> &series_indexes, int t
 /**
  * This exports the time series marked as training series by the training_indexes vector.
  */
-void TimeSeriesSets::export_training_series(int time_offset, vector< vector< vector<double> > > &inputs, vector< vector< vector<double> > > &outputs) {
+void TimeSeriesSets::export_training_series(int32_t time_offset, vector< vector< vector<double> > > &inputs, vector< vector< vector<double> > > &outputs) {
     if (training_indexes.size() == 0) {
         Log::fatal("ERROR: attempting to export training time series, however the training_indexes were not specified.\n");
         exit(1);
@@ -1089,7 +1089,7 @@ void TimeSeriesSets::export_training_series(int time_offset, vector< vector< vec
 /**
  * This exports the time series marked as test series by the test_indexes vector.
  */
-void TimeSeriesSets::export_test_series(int time_offset, vector< vector< vector<double> > > &inputs, vector< vector< vector<double> > > &outputs) {
+void TimeSeriesSets::export_test_series(int32_t time_offset, vector< vector< vector<double> > > &inputs, vector< vector< vector<double> > > &outputs) {
     if (test_indexes.size() == 0) {
         Log::fatal("ERROR: attempting to export test time series, however the test_indexes were not specified.\n");
         exit(1);
@@ -1105,7 +1105,7 @@ void TimeSeriesSets::export_test_series(int time_offset, vector< vector< vector<
 void TimeSeriesSets::export_series_by_name(string field_name, vector< vector<double> > &exported_series) {
     exported_series.clear();
 
-    for (int32_t i = 0; i < time_series.size(); i++) {
+    for (int32_t i = 0; i < (int32_t)time_series.size(); i++) {
         vector<double> current_series;
 
         time_series[i]->get_series(field_name, current_series);
@@ -1115,13 +1115,13 @@ void TimeSeriesSets::export_series_by_name(string field_name, vector< vector<dou
 
 
 void TimeSeriesSets::write_time_series_sets(string base_filename) {
-    for (uint32_t i = 0; i < time_series.size(); i++) {
+    for (int32_t i = 0; i < (int32_t)time_series.size(); i++) {
         ofstream outfile(base_filename + to_string(i) + ".csv");
 
         vector< vector<double> > data;
         time_series[i]->export_time_series(data);
 
-        for (int j = 0; j < all_parameter_names.size(); j++) {
+        for (int32_t j = 0; j < (int32_t)all_parameter_names.size(); j++) {
             if (j > 0) {
                 outfile << ",";
             }
@@ -1129,8 +1129,8 @@ void TimeSeriesSets::write_time_series_sets(string base_filename) {
         }
         outfile << endl;
 
-        for (int j = 0; j < data[0].size(); j++) {
-            for (int k = 0; k < data.size(); k++) {
+        for (int32_t j = 0; j < (int32_t)data[0].size(); j++) {
+            for (int32_t k = 0; k < (int32_t)data.size(); k++) {
                 if (k > 0) {
                     outfile << ",";
                 }
@@ -1142,7 +1142,7 @@ void TimeSeriesSets::write_time_series_sets(string base_filename) {
     }
 }
 
-void TimeSeriesSets::split_series(int series, int number_slices) {
+void TimeSeriesSets::split_series(int32_t series, int32_t number_slices) {
     TimeSeriesSet *ts = time_series[series];
 
     vector<TimeSeriesSet*> sub_series;
@@ -1152,8 +1152,8 @@ void TimeSeriesSets::split_series(int series, int number_slices) {
     time_series.insert(time_series.begin() + series, sub_series.begin(), sub_series.end());
 }
 
-void TimeSeriesSets::split_all(int number_slices) {
-    for (int i = time_series.size() - 1; i >= 0; i++) {
+void TimeSeriesSets::split_all(int32_t number_slices) {
+    for (int32_t i = (int32_t)time_series.size() - 1; i >= 0; i++) {
         split_series(i, number_slices);
     }
 }
@@ -1187,16 +1187,16 @@ vector<string> TimeSeriesSets::get_output_parameter_names() const {
     return output_parameter_names;
 }
 
-int TimeSeriesSets::get_number_series() const {
-    return time_series.size();
+int32_t TimeSeriesSets::get_number_series() const {
+    return (int32_t)time_series.size();
 }
 
-int TimeSeriesSets::get_number_inputs() const {
-    return input_parameter_names.size();
+int32_t TimeSeriesSets::get_number_inputs() const {
+    return (int32_t)input_parameter_names.size();
 }
 
-int TimeSeriesSets::get_number_outputs() const {
-    return output_parameter_names.size();
+int32_t TimeSeriesSets::get_number_outputs() const {
+    return (int32_t)output_parameter_names.size();
 }
 
 void TimeSeriesSets::set_training_indexes(const vector<int> &_training_indexes) {

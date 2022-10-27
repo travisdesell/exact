@@ -58,14 +58,14 @@ int main(int argc, char** argv) {
     string output_filename = output_directory + "heatmap_output.csv";
     ofstream output_file(output_filename);
 
-    for (int cyclone = 1; cyclone <= 12; cyclone++) {
+    for (int32_t cyclone = 1; cyclone <= 12; cyclone++) {
         string cyclone_directory = input_directory + "cyclone_" + to_string(cyclone);
         Log::info("analyzing cyclone %d with directory: '%s'\n", cyclone, cyclone_directory.c_str());
 
-        for (int target_cyclone = 1; target_cyclone <= 12; target_cyclone++) {
+        for (int32_t target_cyclone = 1; target_cyclone <= 12; target_cyclone++) {
             double average_mae = 0.0;
 
-            for (int repeat = 0; repeat < 20; repeat++) {
+            for (int32_t repeat = 0; repeat < 20; repeat++) {
                 string repeat_directory = cyclone_directory + "/" + to_string(repeat);
                 Log::trace("\tgetting genome file from repeat directory: '%s'\n", repeat_directory.c_str());
 

@@ -87,11 +87,11 @@ int main(int argc, char **argv) {
     vector<RNN_Edge*> rnn_edges;
     vector<RNN_Recurrent_Edge*> recurrent_edges;
 
-    int node_innovation_count = 0;
-    int edge_innovation_count = 0;
-    int current_layer = 0;
+    int32_t node_innovation_count = 0;
+    int32_t edge_innovation_count = 0;
+    int32_t current_layer = 0;
 
-    for (int32_t i = 0; i < input_parameter_names.size(); i++) {
+    for (int32_t i = 0; i < (int32_t)input_parameter_names.size(); i++) {
         RNN_Node *node = new RNN_Node(++node_innovation_count, INPUT_LAYER, current_layer, SIMPLE_NODE, input_parameter_names[i]);
         rnn_nodes.push_back(node);
         layer_nodes[current_layer].push_back(node);
@@ -104,9 +104,9 @@ int main(int argc, char **argv) {
             rnn_nodes.push_back(node);
             layer_nodes[current_layer].push_back(node);
 
-            for (uint32_t k = 0; k < layer_nodes[current_layer - 1].size(); k++) {
+            for (int32_t k = 0; k < (int32_t)layer_nodes[current_layer - 1].size(); k++) {
                 rnn_edges.push_back(new RNN_Edge(++edge_innovation_count, layer_nodes[current_layer - 1][k], node));
-                for (uint32_t d = 1; d <= max_input_lags; d++) {
+                for (int32_t d = 1; d <= max_input_lags; d++) {
                     recurrent_edges.push_back(new RNN_Recurrent_Edge(++edge_innovation_count, d, layer_nodes[current_layer - 1][k], node));
                  }
             }
@@ -114,19 +114,19 @@ int main(int argc, char **argv) {
         current_layer++;
     }
 
-    for (int32_t i = 0; i < output_parameter_names.size(); i++) {
+    for (int32_t i = 0; i < (int32_t)output_parameter_names.size(); i++) {
         RNN_Node *output_node = new RNN_Node(++node_innovation_count, OUTPUT_LAYER, current_layer, SIMPLE_NODE, output_parameter_names[i]);
         output_layer.push_back(output_node);
 
         rnn_nodes.push_back(output_node);
 
-        for (uint32_t k = 0; k < layer_nodes[current_layer - 1].size(); k++) {
+        for (int32_t k = 0; k < (int32_t)layer_nodes[current_layer - 1].size(); k++) {
             rnn_edges.push_back(new RNN_Edge(++edge_innovation_count, layer_nodes[current_layer - 1][k], output_node));
         }
     }
 
     //connect the output node with recurrent edges to each hidden node
-    for (uint32_t k = 0; k < output_layer.size(); k++) {
+    for (int32_t k = 0; k < (int32_t)output_layer.size(); k++) {
         for (int32_t i = 0; i < number_hidden_layers; i++) {
             for (int32_t j = 0; j < number_hidden_nodes; j++) {
                 for (int32_t d = 1; d <= max_recurrent_depth; d++) {
@@ -143,7 +143,7 @@ int main(int argc, char **argv) {
 
     rnn = genome->get_rnn();
 
-    uint32_t number_of_weights = genome->get_number_weights();
+    int32_t number_of_weights = genome->get_number_weights();
 
     Log::info("RNN has %d weights.\n", number_of_weights);
     vector<double> min_bound(number_of_weights, -1.0);
@@ -155,7 +155,7 @@ int main(int argc, char **argv) {
 
     genome->initialize_randomly();
 
-    int bp_iterations;
+    int32_t bp_iterations;
     get_argument(arguments, "--bp_iterations", true, bp_iterations);
     genome->set_bp_iterations(bp_iterations, 0);
 
