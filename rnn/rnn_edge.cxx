@@ -2,7 +2,7 @@
 
 #include "common/log.hxx"
 
-RNN_Edge::RNN_Edge(int _innovation_number, RNN_Node_Interface *_input_node, RNN_Node_Interface *_output_node) {
+RNN_Edge::RNN_Edge(int32_t _innovation_number, RNN_Node_Interface *_input_node, RNN_Node_Interface *_output_node) {
     innovation_number = _innovation_number;
     input_node = _input_node;
     output_node = _output_node;
@@ -20,7 +20,7 @@ RNN_Edge::RNN_Edge(int _innovation_number, RNN_Node_Interface *_input_node, RNN_
     Log::debug("\t\tcreated edge %d from %d to %d\n", innovation_number, input_innovation_number, output_innovation_number);
 }
 
-RNN_Edge::RNN_Edge(int _innovation_number, int _input_innovation_number, int _output_innovation_number, const vector<RNN_Node_Interface*> &nodes) {
+RNN_Edge::RNN_Edge(int32_t _innovation_number, int32_t _input_innovation_number, int32_t _output_innovation_number, const vector<RNN_Node_Interface*> &nodes) {
     innovation_number = _innovation_number;
 
     input_innovation_number = _input_innovation_number;
@@ -28,7 +28,7 @@ RNN_Edge::RNN_Edge(int _innovation_number, int _input_innovation_number, int _ou
 
     input_node = NULL;
     output_node = NULL;
-    for (int i = 0; i < nodes.size(); i++) {
+    for (int32_t i = 0; i < (int32_t)nodes.size(); i++) {
         if (nodes[i]->innovation_number == _input_innovation_number) {
             if (input_node != NULL) {
                 Log::fatal("ERROR in copying RNN_Edge, list of nodes has multiple nodes with same input_innovation_number -- this should never happen.\n");
@@ -157,7 +157,7 @@ void RNN_Edge::propagate_backward(int time, bool training, double dropout_probab
     input_node->output_fired(time, deltas[time]);
 }
 
-void RNN_Edge::reset(int series_length) {
+void RNN_Edge::reset(int32_t series_length) {
     d_weight = 0.0;
     outputs.resize(series_length);
     deltas.resize(series_length);

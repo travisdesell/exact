@@ -47,7 +47,7 @@ vector< vector< vector<double> > > training_outputs;
 vector< vector< vector<double> > > validation_inputs;
 vector< vector< vector<double> > > validation_outputs;
 
-void examm_thread(int id) {
+void examm_thread(int32_t id) {
 
     while (true) {
         examm_mutex.lock();
@@ -89,7 +89,7 @@ int main(int argc, char** argv) {
     Log::initialize(arguments);
     Log::set_id("main");
 
-    int number_threads;
+    int32_t number_threads;
     get_argument(arguments, "--number_threads", true, number_threads);
 
     int32_t time_offset = 1;
@@ -171,9 +171,6 @@ int main(int argc, char** argv) {
     int32_t max_recurrent_depth = 10;
     get_argument(arguments, "--max_recurrent_depth", false, max_recurrent_depth);
 
-    //bool use_regression = argument_exists(arguments, "--use_regression");
-    bool use_regression = true; //time series will always use regression
-
     bool start_filled = false;
     get_argument(arguments, "--start_filled", false, start_filled);
 
@@ -206,11 +203,11 @@ int main(int argc, char** argv) {
     }
     ofstream overall_results(output_directory + "/overall_results.txt");
 
-    for (uint32_t i = 0; i < time_series_sets->get_number_series(); i++) {
-        vector<int> training_indexes;
-        vector<int> test_indexes;
+    for (int32_t i = 0; i < time_series_sets->get_number_series(); i++) {
+        vector<int32_t> training_indexes;
+        vector<int32_t> test_indexes;
 
-        for (int j = 0; j < time_series_sets->get_number_series(); j++) {
+        for (int32_t j = 0; j < time_series_sets->get_number_series(); j++) {
             if (j == i) {
                 test_indexes.push_back(j);
             } else {
@@ -226,8 +223,13 @@ int main(int argc, char** argv) {
 
         overall_results << "results for slice " << i << " of " << time_series_sets->get_number_series() << " as test data." << endl;
 
+<<<<<<< HEAD
         for (uint32_t k = 0; k < repeats; k++) {
             examm = new EXAMM(population_size, number_islands, max_genomes, 0, extinction_event_generation_number, islands_to_exterminate, island_ranking_method,
+=======
+        for (int32_t k = 0; k < repeats; k++) {
+            examm = new EXAMM(population_size, number_islands, max_genomes, extinction_event_generation_number, islands_to_exterminate, island_ranking_method,
+>>>>>>> 2e4d67731c85009c616eb120f56b0a79337b0ed6
                     repopulation_method, repopulation_mutations, repeat_extinction, epochs_acc_freq,
                     speciation_method,
                     species_threshold, fitness_threshold,
@@ -245,7 +247,6 @@ int main(int argc, char** argv) {
                     use_low_threshold, low_threshold,
                     use_dropout, dropout_probability,
                     min_recurrent_depth, max_recurrent_depth,
-                    use_regression,
                     output_directory,
                     NULL,
                     start_filled);

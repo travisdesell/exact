@@ -37,12 +37,12 @@ vector< vector< vector<double> > > test_inputs;
 vector< vector< vector<double> > > test_outputs;
 
 bool random_sequence_length;
-int sequence_length_lower_bound = 30;
-int sequence_length_upper_bound = 100;
+int32_t sequence_length_lower_bound = 30;
+int32_t sequence_length_upper_bound = 100;
 
 RNN_Genome *genome;
 RNN* rnn;
-int bp_iterations;
+int32_t bp_iterations;
 bool using_dropout;
 double dropout_probability;
 
@@ -54,7 +54,7 @@ double objective_function(const vector<double> &parameters) {
 
     double error = 0.0;
 
-    for (uint32_t i = 0; i < training_inputs.size(); i++) {
+    for (int32_t i = 0; i < (int32_t)training_inputs.size(); i++) {
         error += rnn->prediction_mae(training_inputs[i], training_outputs[i], false, true, 0.0);
     }
 
@@ -66,7 +66,7 @@ double test_objective_function(const vector<double> &parameters) {
 
     double total_error = 0.0;
 
-    for (uint32_t i = 0; i < test_inputs.size(); i++) {
+    for (int32_t i = 0; i < (int32_t)test_inputs.size(); i++) {
         double error = rnn->prediction_mse(test_inputs[i], test_outputs[i], false, true, 0.0);
         total_error += error;
 
@@ -165,7 +165,7 @@ int main(int argc, char **argv) {
 
     rnn = genome->get_rnn();
 
-    uint32_t number_of_weights = genome->get_number_weights();
+    int32_t number_of_weights = genome->get_number_weights();
 
     Log::info("RNN has %d weights.\n", number_of_weights);
     vector<double> min_bound(number_of_weights, -1.0);
@@ -185,7 +185,7 @@ int main(int argc, char **argv) {
     genome->enable_high_threshold(1.0);
     genome->enable_low_threshold(0.05);
     genome->disable_dropout();
-    genome->enable_use_regression(true);
+    // genome->enable_use_regression(true);
 
     random_sequence_length = argument_exists(arguments, "--random_sequence_length");
     get_argument(arguments, "--sequence_length_lower_bound", false, sequence_length_lower_bound);
@@ -193,7 +193,7 @@ int main(int argc, char **argv) {
 
     if (argument_exists(arguments, "--stochastic")) {
         Log::info("running stochastic back prop \n");
-        genome->backpropagate_stochastic(training_inputs, training_outputs, test_inputs, test_outputs, random_sequence_length, sequence_length_lower_bound, sequence_length_upper_bound, 1);
+        genome->backpropagate_stochastic(training_inputs, training_outputs, test_inputs, test_outputs, random_sequence_length, sequence_length_lower_bound, sequence_length_upper_bound);
     } else {
         genome->backpropagate(training_inputs, training_outputs, test_inputs, test_outputs);
     }

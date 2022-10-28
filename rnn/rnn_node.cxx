@@ -8,7 +8,7 @@ using std::vector;
 #include "common/log.hxx"
 
 
-RNN_Node::RNN_Node(int _innovation_number, int _layer_type, double _depth, int _node_type) : RNN_Node_Interface(_innovation_number, _layer_type, _depth), bias(0) {
+RNN_Node::RNN_Node(int32_t _innovation_number, int32_t _layer_type, double _depth, int32_t _node_type) : RNN_Node_Interface(_innovation_number, _layer_type, _depth), bias(0) {
 
     //node type will be simple, jordan or elman
     node_type = _node_type;
@@ -16,7 +16,7 @@ RNN_Node::RNN_Node(int _innovation_number, int _layer_type, double _depth, int _
 }
 
 
-RNN_Node::RNN_Node(int _innovation_number, int _layer_type, double _depth, int _node_type, string _parameter_name) : RNN_Node_Interface(_innovation_number, _layer_type, _depth, _parameter_name), bias(0) {
+RNN_Node::RNN_Node(int32_t _innovation_number, int32_t _layer_type, double _depth, int32_t _node_type, string _parameter_name) : RNN_Node_Interface(_innovation_number, _layer_type, _depth, _parameter_name), bias(0) {
 
     //node type will be simple, jordan or elman
     node_type = _node_type;
@@ -45,7 +45,7 @@ void RNN_Node::initialize_uniform_random(minstd_rand0 &generator, uniform_real_d
     bias = rng(generator);
 }
 
-void RNN_Node::input_fired(int time, double incoming_output) {
+void RNN_Node::input_fired(int32_t time, double incoming_output) {
     inputs_fired[time]++;
 
     input_values[time] += incoming_output;
@@ -76,7 +76,7 @@ void RNN_Node::input_fired(int time, double incoming_output) {
 #endif
 }
 
-void RNN_Node::try_update_deltas(int time) {
+void RNN_Node::try_update_deltas(int32_t time) {
     if (outputs_fired[time] < total_outputs) return;
     else if (outputs_fired[time] > total_outputs) {
         Log::fatal("ERROR: outputs_fired on RNN_Node %d at time %d is %d and total_outputs is %d\n", innovation_number, time, outputs_fired[time], total_outputs);
@@ -88,7 +88,7 @@ void RNN_Node::try_update_deltas(int time) {
     d_bias += d_input[time];
 }
 
-void RNN_Node::error_fired(int time, double error) {
+void RNN_Node::error_fired(int32_t time, double error) {
     outputs_fired[time]++;
 
     //Log::trace("error fired at time: %d on node %d, d_input: %lf, ld_output %lf, error_values: %lf, output_values: %lf\n", time, innovation_number, d_input[time], ld_output[time], error_values[time], output_values[time]);
@@ -98,7 +98,7 @@ void RNN_Node::error_fired(int time, double error) {
     try_update_deltas(time);
 }
 
-void RNN_Node::output_fired(int time, double delta) {
+void RNN_Node::output_fired(int32_t time, double delta) {
     outputs_fired[time]++;
 
     d_input[time] += delta;
@@ -106,7 +106,7 @@ void RNN_Node::output_fired(int time, double delta) {
     try_update_deltas(time);
 }
 
-void RNN_Node::reset(int _series_length) {
+void RNN_Node::reset(int32_t _series_length) {
     series_length = _series_length;
 
     ld_output.assign(series_length, 0.0);
@@ -125,24 +125,24 @@ void RNN_Node::get_gradients(vector<double> &gradients) {
     gradients.assign(1, d_bias);
 }
 
-uint32_t RNN_Node::get_number_weights() const {
+int32_t RNN_Node::get_number_weights() const {
     return 1;
 }
 
 void RNN_Node::get_weights(vector<double> &parameters) const {
     parameters.resize(get_number_weights());
     //no weights to set in a basic RNN node, only a bias
-    uint32_t offset = 0;
+    int32_t offset = 0;
     get_weights(offset, parameters);
 }
 
 void RNN_Node::set_weights(const vector<double> &parameters) {
     //no weights to set in a basic RNN node, only a bias
-    uint32_t offset = 0;
+    int32_t offset = 0;
     set_weights(offset, parameters);
 }
 
-void RNN_Node::get_weights(uint32_t &offset, vector<double> &parameters) const {
+void RNN_Node::get_weights(int32_t &offset, vector<double> &parameters) const {
     //no weights to set in a basic RNN node, only a bias
     parameters[offset++] = bias;
 }
@@ -170,7 +170,7 @@ int32_t RNN_Node::get_output_fired(int32_t time) const{
     return outputs_fired[time];
 }
 
-void RNN_Node::set_weights(uint32_t &offset, const vector<double> &parameters) {
+void RNN_Node::set_weights(int32_t &offset, const vector<double> &parameters) {
     //no weights to set in a basic RNN node, only a bias
     bias = bound(parameters[offset++]);
 }

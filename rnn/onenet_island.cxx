@@ -66,11 +66,11 @@ double OneNetIsland::get_worst_fitness() {
 // }
 
 int32_t OneNetIsland::generated_size() {
-    return generated_population->size();
+    return (int32_t)generated_population->size();
 }
 
 int32_t OneNetIsland::elite_size() {
-    return elite_population->size();
+    return (int32_t)elite_population->size();
 }
 
 bool OneNetIsland::elite_is_full() {
@@ -213,7 +213,7 @@ void OneNetIsland::set_erase_again_num() {
 void OneNetIsland::evaluate_elite_population(const vector< vector< vector<double> > > &validation_input, const vector< vector< vector<double> > > &validation_output) {
         // if (elite_genomes.size() == 0) return;
     vector<RNN_Genome *> elite_genomes = elite_population->get_genomes();
-    for (int i = 0; i < elite_genomes.size(); i++) {
+    for (int i = 0; i < (int32_t)elite_genomes.size(); i++) {
         RNN_Genome* g = elite_genomes[i];
         g->evaluate_online(validation_input, validation_output);
     }
@@ -225,7 +225,7 @@ void OneNetIsland::select_elite_population() {
     // vector<RNN_Genome*> elite_genomes = Elite_population->get_genomes();
     vector<RNN_Genome*> trained_genomes = generated_population->get_genomes();
 
-    for (int i = 0; i < trained_genomes.size(); i++) {
+    for (int i = 0; i < (int32_t)trained_genomes.size(); i++) {
         RNN_Genome* genome_copy = trained_genomes[i]->copy();
         genome_copy->set_genome_type(ELITE);
         elite_population->insert_genome(genome_copy);

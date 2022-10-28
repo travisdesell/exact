@@ -11,7 +11,7 @@ void get_mse(const vector<double> &output_values, const vector<double> &expected
     mse = 0.0;
     double error;
 
-    for (uint32_t j = 0; j < expected.size(); j++) {
+    for (int32_t j = 0; j < (int32_t)expected.size(); j++) {
         error = output_values[j] - expected[j];
         deltas[j] = error;
 
@@ -21,7 +21,7 @@ void get_mse(const vector<double> &output_values, const vector<double> &expected
     mse /= expected.size();
 
     double d_mse = mse * (1.0 / expected.size()) * 2.0;
-    for (uint32_t j = 0; j < expected.size(); j++) {
+    for (int32_t j = 0; j < (int32_t)expected.size(); j++) {
         deltas[j] *= d_mse;
     }
 }
@@ -33,9 +33,9 @@ void get_mse(RNN *genome, const vector< vector<double> > &expected, double &mse_
     double mse;
     double error;
 
-    for (uint32_t i = 0; i < genome->output_nodes.size(); i++) {
+    for (int32_t i = 0; i < (int32_t)genome->output_nodes.size(); i++) {
         mse = 0.0;
-        for (uint32_t j = 0; j < expected[i].size(); j++) {
+        for (int32_t j = 0; j < (int32_t)expected[i].size(); j++) {
             error = genome->output_nodes[i]->output_values[j] - expected[i][j];
             deltas[i][j] = error;
 
@@ -47,8 +47,8 @@ void get_mse(RNN *genome, const vector< vector<double> > &expected, double &mse_
     }
 
     double d_mse = mse_sum * (1.0 / expected[0].size()) * 2.0;
-    for (uint32_t i = 0; i < genome->output_nodes.size(); i++) {
-        for (uint32_t j = 0; j < expected[i].size(); j++) {
+    for (int32_t i = 0; i < (int32_t)genome->output_nodes.size(); i++) {
+        for (int32_t j = 0; j < (int32_t)expected[i].size(); j++) {
             deltas[i][j] *= d_mse;
         }
     }
@@ -60,7 +60,7 @@ void get_mae(const vector<double> &output_values, const vector<double> &expected
     mae = 0.0;
     double error;
 
-    for (uint32_t j = 0; j < expected.size(); j++) {
+    for (int32_t j = 0; j < (int32_t)expected.size(); j++) {
         error = fabs(output_values[j] - expected[j]);
         if (error == 0) {
             deltas[j] = 0;
@@ -73,8 +73,8 @@ void get_mae(const vector<double> &output_values, const vector<double> &expected
 
     mae /= expected.size();
 
-    double d_mae = mae * (1.0 / expected.size());
-    for (uint32_t j = 0; j < expected.size(); j++) {
+    double d_mae = mae * (1.0 / (int32_t)expected.size());
+    for (int32_t j = 0; j < (int32_t)expected.size(); j++) {
         deltas[j] *= d_mae;
     }
 }
@@ -86,9 +86,9 @@ void get_mae(RNN *genome, const vector< vector<double> > &expected, double &mae_
     double mae;
     double error;
 
-    for (uint32_t i = 0; i < genome->output_nodes.size(); i++) {
+    for (int32_t i = 0; i < (int32_t)genome->output_nodes.size(); i++) {
         mae = 0.0;
-        for (uint32_t j = 0; j < expected[i].size(); j++) {
+        for (int32_t j = 0; j <(int32_t) expected[i].size(); j++) {
             error = fabs(genome->output_nodes[i]->output_values[j] - expected[i][j]);
             if (error == 0) {
                 deltas[i][j] = 0;
@@ -104,8 +104,8 @@ void get_mae(RNN *genome, const vector< vector<double> > &expected, double &mae_
     }
 
     double d_mae = mae_sum * (1.0 / expected[0].size());
-    for (uint32_t i = 0; i < genome->output_nodes.size(); i++) {
-        for (uint32_t j = 0; j < expected[i].size(); j++) {
+    for (int32_t i = 0; i < (int32_t)genome->output_nodes.size(); i++) {
+        for (int32_t j = 0; j < (int32_t)expected[i].size(); j++) {
             deltas[i][j] *= d_mae;
         }
     }

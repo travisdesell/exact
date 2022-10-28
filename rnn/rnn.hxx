@@ -13,12 +13,11 @@ using std::vector;
 #include "rnn_recurrent_edge.hxx"
 
 #include "time_series/time_series.hxx"
-#include "word_series/word_series.hxx"
+// #include "word_series/word_series.hxx"
 
 class RNN {
     private:
-        int series_length;
-        bool use_regression;
+        int32_t series_length;
 
         vector<RNN_Node_Interface*> input_nodes;
         vector<RNN_Node_Interface*> output_nodes;
@@ -35,11 +34,11 @@ class RNN {
         void fix_parameter_orders(const vector<string> &input_parameter_names, const vector<string> &output_parameter_names);
         void validate_parameters(const vector<string> &input_parameter_names, const vector<string> &output_parameter_names);
 
-        int get_number_nodes();
-        int get_number_edges();
+        int32_t get_number_nodes();
+        int32_t get_number_edges();
 
-        RNN_Node_Interface* get_node(int i);
-        RNN_Edge* get_edge(int i);
+        RNN_Node_Interface* get_node(int32_t i);
+        RNN_Edge* get_edge(int32_t i);
 
         void forward_pass(const vector< vector<double> > &series_data, bool using_dropout, bool training, double dropout_probability);
         void backward_pass(double error, bool using_dropout, bool training, double dropout_probability);
@@ -61,14 +60,12 @@ class RNN {
         vector<vector<double>> get_predictions(const vector< vector<double> > &series_data, const vector< vector<double> > &expected_outputs, bool using_dropout, double dropout_probability);
 
         void write_predictions(string output_filename, const vector<string> &input_parameter_names, const vector<string> &output_parameter_names, const vector< vector<double> > &series_data, const vector< vector<double> > &expected_outputs, TimeSeriesSets *time_series_sets, bool using_dropout, double dropout_probability);
-        void write_predictions(string output_filename, const vector<string> &input_parameter_names, const vector<string> &output_parameter_names, const vector< vector<double> > &series_data, const vector< vector<double> > &expected_outputs, Corpus *word_series_sets, bool using_dropout, double dropout_probability);
 
         void initialize_randomly();
         void get_weights(vector<double> &parameters);
         void set_weights(const vector<double> &parameters);
-        void enable_use_regression(bool _use_regression);
 
-        uint32_t get_number_weights();
+        int32_t get_number_weights();
 
         void get_analytic_gradient(const vector<double> &test_parameters, const vector< vector<double> > &inputs, const vector< vector<double> > &outputs, double &mse, vector<double> &analytic_gradient, bool using_dropout, bool training, double dropout_probability);
         void get_analytic_gradient_online(const vector<double> &test_parameters, const vector< vector<double> > &inputs, const vector< vector<double> > &outputs, double &mse, vector<double> &analytic_gradient, bool using_dropout, bool training, double dropout_probability, int32_t timestep);

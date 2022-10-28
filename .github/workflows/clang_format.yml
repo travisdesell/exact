@@ -1,0 +1,16 @@
+name: Clang Format
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: clang-format Check
+        uses: jidicula/clang-format-action@v4.6.2

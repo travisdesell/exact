@@ -26,7 +26,7 @@ using std::vector;
 
 #define NUMBER_DELTA_WEIGHTS 6
 
-Delta_Node::Delta_Node(int _innovation_number, int _type, double _depth) : RNN_Node_Interface(_innovation_number, _type, _depth) {
+Delta_Node::Delta_Node(int32_t _innovation_number, int32_t _type, double _depth) : RNN_Node_Interface(_innovation_number, _type, _depth) {
     node_type = DELTA_NODE;
 }
 
@@ -74,7 +74,7 @@ void Delta_Node::initialize_uniform_random(minstd_rand0 &generator, uniform_real
 double Delta_Node::get_gradient(string gradient_name) {
     double gradient_sum = 0.0;
 
-    for (uint32_t i = 0; i < series_length; i++ ) {
+    for (int32_t i = 0; i < series_length; i++ ) {
         if (gradient_name == "alpha") {
             gradient_sum += d_alpha[i];
         } else if (gradient_name == "beta1") {
@@ -123,7 +123,7 @@ void Delta_Node::print_gradient(string gradient_name) {
     Log::info("\tgradient['%s']: %lf\n", gradient_name.c_str(), get_gradient(gradient_name));
 }
 
-void Delta_Node::input_fired(int time, double incoming_output) {
+void Delta_Node::input_fired(int32_t time, double incoming_output) {
     inputs_fired[time]++;
 
     input_values[time] += incoming_output;
@@ -174,7 +174,7 @@ void Delta_Node::input_fired(int time, double incoming_output) {
     beta2 -= 1.0;
 }
 
-void Delta_Node::try_update_deltas(int time) {
+void Delta_Node::try_update_deltas(int32_t time) {
     if (outputs_fired[time] < total_outputs) return;
     else if (outputs_fired[time] > total_outputs) {
         Log::fatal("ERROR: outputs_fired on Delta_Node %d at time %d is %d and total_outputs is %d\n", innovation_number, time, outputs_fired[time], total_outputs);
@@ -232,7 +232,7 @@ void Delta_Node::try_update_deltas(int time) {
     beta2 -= 1.0;
 }
 
-void Delta_Node::error_fired(int time, double error) {
+void Delta_Node::error_fired(int32_t time, double error) {
     outputs_fired[time]++;
 
     error_values[time] *= error;
@@ -240,7 +240,7 @@ void Delta_Node::error_fired(int time, double error) {
     try_update_deltas(time);
 }
 
-void Delta_Node::output_fired(int time, double delta) {
+void Delta_Node::output_fired(int32_t time, double delta) {
     outputs_fired[time]++;
 
     error_values[time] += delta;
@@ -249,24 +249,24 @@ void Delta_Node::output_fired(int time, double delta) {
 }
 
 
-uint32_t Delta_Node::get_number_weights() const {
+int32_t Delta_Node::get_number_weights() const {
     return NUMBER_DELTA_WEIGHTS;
 }
 
 void Delta_Node::get_weights(vector<double> &parameters) const {
     parameters.resize(get_number_weights());
-    uint32_t offset = 0;
+    int32_t offset = 0;
     get_weights(offset, parameters);
 }
 
 void Delta_Node::set_weights(const vector<double> &parameters) {
-    uint32_t offset = 0;
+    int32_t offset = 0;
     set_weights(offset, parameters);
 }
 
 
-void Delta_Node::set_weights(uint32_t &offset, const vector<double> &parameters) {
-    //uint32_t start_offset = offset;
+void Delta_Node::set_weights(int32_t &offset, const vector<double> &parameters) {
+    //int32_t start_offset = offset;
 
     alpha = bound(parameters[offset++]);
     beta1 = bound(parameters[offset++]);
@@ -276,12 +276,12 @@ void Delta_Node::set_weights(uint32_t &offset, const vector<double> &parameters)
     r_bias = bound(parameters[offset++]);
     z_hat_bias = bound(parameters[offset++]);
 
-    //uint32_t end_offset = offset;
+    //int32_t end_offset = offset;
     //Log::trace("set weights from offset %d to %d on Delta_node %d\n", start_offset, end_offset, innovation_number);
 }
 
-void Delta_Node::get_weights(uint32_t &offset, vector<double> &parameters) const {
-    //uint32_t start_offset = offset;
+void Delta_Node::get_weights(int32_t &offset, vector<double> &parameters) const {
+    //int32_t start_offset = offset;
 
     parameters[offset++] = alpha;
     parameters[offset++] = beta1;
@@ -291,7 +291,7 @@ void Delta_Node::get_weights(uint32_t &offset, vector<double> &parameters) const
     parameters[offset++] = r_bias;
     parameters[offset++] = z_hat_bias;
 
-    //uint32_t end_offset = offset;
+    //int32_t end_offset = offset;
     //Log::trace("got weights from offset %d to %d on Delta_node %d\n", start_offset, end_offset, innovation_number);
 }
 
@@ -299,11 +299,11 @@ void Delta_Node::get_weights(uint32_t &offset, vector<double> &parameters) const
 void Delta_Node::get_gradients(vector<double> &gradients) {
     gradients.assign(NUMBER_DELTA_WEIGHTS, 0.0);
 
-    for (uint32_t i = 0; i < NUMBER_DELTA_WEIGHTS; i++) {
+    for (int32_t i = 0; i < NUMBER_DELTA_WEIGHTS; i++) {
         gradients[i] = 0.0;
     }
 
-    for (uint32_t i = 0; i < series_length; i++) {
+    for (int32_t i = 0; i < series_length; i++) {
         gradients[0] += d_alpha[i];
         gradients[1] += d_beta1[i];
         gradients[2] += d_beta2[i];
@@ -314,7 +314,7 @@ void Delta_Node::get_gradients(vector<double> &gradients) {
     }
 }
 
-void Delta_Node::reset(int _series_length) {
+void Delta_Node::reset(int32_t _series_length) {
     series_length = _series_length;
 
     d_alpha.assign(series_length, 0.0);

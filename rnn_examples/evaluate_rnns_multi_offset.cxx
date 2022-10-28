@@ -59,7 +59,7 @@ int main(int argc, char** argv) {
     get_argument_vector(arguments, "--genome_filenames", true, genome_filenames);
 
     vector<RNN_Genome*> genomes;
-    for (int32_t i = 0; i < genome_filenames.size(); i++) {
+    for (int32_t i = 0; i < (int32_t)genome_filenames.size(); i++) {
         Log::info("reading genome filename: %s\n", genome_filenames[i].c_str());
         genomes.push_back(new RNN_Genome(genome_filenames[i]));
     }
@@ -105,7 +105,7 @@ int main(int argc, char** argv) {
 
     delete time_series_sets;
 
-    for (int32_t i = 0; i < genomes.size(); i++) {
+    for (int32_t i = 0; i < (int32_t)genomes.size(); i++) {
         time_series_sets = TimeSeriesSets::generate_test(testing_filenames, genomes[i]->get_input_parameter_names(), genomes[i]->get_output_parameter_names());
         Log::debug("got time series sets.\n");
         string normalize_type = genomes[i]->get_normalize_type();
@@ -123,7 +123,7 @@ int main(int argc, char** argv) {
         Log::info("MSE: %lf\n", genomes[i]->get_mse(best_parameters, testing_inputs, testing_outputs));
         Log::info("MAE: %lf\n", genomes[i]->get_mae(best_parameters, testing_inputs, testing_outputs));
 
-        vector< vector<double> > predictions = genomes[i]->get_predictions(best_parameters, testing_inputs, testing_outputs);
+        vector< vector< vector<double> > > predictions = genomes[i]->get_predictions(best_parameters, testing_inputs, testing_outputs);
 
         Log::debug("predictions.size(): %d\n", predictions.size());
 
@@ -143,14 +143,14 @@ int main(int argc, char** argv) {
 
     //print the column headeers
     outfile << "#" << output_parameter_name;
-    for (int32_t i = 1; i < all_series.size(); i++) {
+    for (int32_t i = 1; i < (int32_t)all_series.size(); i++) {
         outfile << "," << output_parameter_name << "_offset" << time_offsets[i-1];
     }
     outfile << endl;
 
     Log::debug("all_series.size(): %d\n", all_series.size());
-    for (int32_t row = 0; row < all_series[0].size(); row++) {
-        for (int32_t i = 0; i < all_series.size(); i++) {
+    for (int32_t row = 0; row < (int32_t)all_series[0].size(); row++) {
+        for (int32_t i = 0; i < (int32_t)all_series.size(); i++) {
             Log::debug("all_series[%d].size(): %d\n", i, all_series[i].size());
 
             if (i == 0) outfile << all_series[0][row];

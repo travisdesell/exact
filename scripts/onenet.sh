@@ -20,47 +20,54 @@ DATA_DIR="/home/jefhai/Dropbox/D2S2Lab/Datasets/2020_wind_turbine"
     # --data_smooth_method "ma" \
     # --moving_average_smooth_window 3 \
 cd build
-for i in 0 1 2 3 4 
+for i in 0 
 do
-    NUM_GEN=500
-    ELITESIZE=10
-    GENERATESIZE=20
+    NUM_GEN=1000
+    ELITESIZE=5
+    GENERATESIZE=10
     BP=10
-    NUM_ISLANDS=5
+    NUM_ISLANDS=10
     CHUNK=25
-    VALIDATION_SIZE=100
-    NUM_TRAINING_SETS=600
-    EXTINCT=100
+    VALIDATION_SIZE=50
+    NUM_TRAINING_SETS=300
+    EXTINCT=200
 
-    exp_name="/home/jefhai/Dropbox/Research/experiment_results/onenet/onenet_mpi/wind_repopulation/chunk_$CHUNK/gen_$NUM_GEN/bp_$BP/generated_$GENERATESIZE/elite_$ELITESIZE/$i"
+    # exp_name="/home/jefhai/Dropbox/Research/experiment_results/onenet/onenet_mpi/wind_repopulation/chunk_$CHUNK/gen_$NUM_GEN/bp_$BP/generated_$GENERATESIZE/elite_$ELITESIZE/$i"
+    exp_name="../results/wind_debug/"
+
     mkdir -p $exp_name
     echo "Running base EXAMM code with wind dataset, results will be saved to: "$exp_name
     echo "###-------------------###"
 
-    mpirun -np 16 ./mpi/onenet_mpi \
-    --training_filenames $DATA_DIR/turbine_R80711_2017-2020_[1-9].csv $DATA_DIR/turbine_R80711_2017-2020_1[0-9].csv $DATA_DIR/turbine_R80711_2017-2020_2[0-9].csv $DATA_DIR/turbine_R80711_2017-2020_3[0-1].csv \
+    mpirun -np 4 ./mpi/examm_mpi \
+    --training_filenames $DATA_DIR/turbine_R80711_2017-2020_[1-9].csv $DATA_DIR/turbine_R80711_2017-2020_1[0-9].csv $DATA_DIR/turbine_R80711_2017-2020_2[0-9].csv \
+    --test_filenames $DATA_DIR/turbine_R80711_2017-2020_3[0-1].csv \
     --time_offset 1 \
-    --speciation_method "onenetIsland" \
+    --speciation_method "island" \
+    --genome_bin "/home/jefhai/Documents/git/cluster_results/onenet_mpi/wind_pre/chunk_25/max_genome_20000/bp_10/0/rnn_genome_18462.bin" \
+    --transfer_learning_version "v1" \
+    --epigenetic_weights \
     --input_parameter_names $INPUT_PARAMETERS \
     --output_parameter_names $OUTPUT_PARAMETERS \
     --number_islands $NUM_ISLANDS \
+    --population_size 10 \
+    --max_genomes 20000 \
     --elite_population_size $ELITESIZE \
     --num_generations $NUM_GEN \
     --generation_genomes $GENERATESIZE \
     --time_series_length $CHUNK \
-    --num_validataion_sets $VALIDATION_SIZE \
+    --validation_size $VALIDATION_SIZE \
     --num_training_sets $NUM_TRAINING_SETS \
     --extinction_event_generation_number $EXTINCT \
     --island_ranking_method "EraseWorst" \
     --repopulation_method "bestGenome" \
     --islands_to_exterminate 1 \
     --repopulation_mutations 2 \
-    --get_train_data_by "v1" \
     --bp_iterations $BP \
     --normalize min_max \
     --output_directory $exp_name \
     --possible_node_types simple UGRNN MGU GRU delta LSTM \
-    --std_message_level ERROR \
-    --file_message_level ERROR
+    --std_message_level INFO \
+    --file_message_level INFO
 
 done

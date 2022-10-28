@@ -36,7 +36,7 @@ using std::vector;
 #define NUMBER_ENAS_DAG_WEIGHTS 10
 
 
-ENAS_DAG_Node::ENAS_DAG_Node(int _innovation_number, int _type, double _depth) : RNN_Node_Interface(_innovation_number, _type, _depth) {
+ENAS_DAG_Node::ENAS_DAG_Node(int32_t _innovation_number, int32_t _type, double _depth) : RNN_Node_Interface(_innovation_number, _type, _depth) {
   node_type = ENAS_DAG_NODE;
 }
 
@@ -49,9 +49,9 @@ void ENAS_DAG_Node::initialize_lamarckian(minstd_rand0 &generator, NormalDistrib
     zw = bound(normal_distribution.random(generator, mu, sigma));
     rw = bound(normal_distribution.random(generator, mu, sigma));
 
-    int assigned_node_weights = 2; // 2 weights for the starting node assigned above
+    int32_t assigned_node_weights = 2; // 2 weights for the starting node assigned above
 
-    for (int new_node_weight = 0; new_node_weight < NUMBER_ENAS_DAG_WEIGHTS - assigned_node_weights; ++new_node_weight){
+    for (int32_t new_node_weight = 0; new_node_weight < NUMBER_ENAS_DAG_WEIGHTS - assigned_node_weights; ++new_node_weight){
         weights.at(new_node_weight)= bound(normal_distribution.random(generator, mu, sigma));
     }
 
@@ -61,9 +61,9 @@ void ENAS_DAG_Node::initialize_xavier(minstd_rand0 &generator, uniform_real_dist
     zw = range * (rng_1_1(generator));
     rw = range * (rng_1_1(generator));
 
-    int assigned_node_weights = 2; // 2 weights for the starting node assigned above
+    int32_t assigned_node_weights = 2; // 2 weights for the starting node assigned above
 
-    for (int new_node_weight = 0; new_node_weight < NUMBER_ENAS_DAG_WEIGHTS - assigned_node_weights; ++new_node_weight){
+    for (int32_t new_node_weight = 0; new_node_weight < NUMBER_ENAS_DAG_WEIGHTS - assigned_node_weights; ++new_node_weight){
         weights.at(new_node_weight) = range * (rng_1_1(generator));
     }
 
@@ -73,9 +73,9 @@ void ENAS_DAG_Node::initialize_kaiming(minstd_rand0 &generator, NormalDistributi
     zw = range * normal_distribution.random(generator, 0, 1);
     rw = range * normal_distribution.random(generator, 0, 1);
 
-    int assigned_node_weights = 2; // 2 weights for the starting node assigned above
+    int32_t assigned_node_weights = 2; // 2 weights for the starting node assigned above
 
-    for (int new_node_weight = 0; new_node_weight < NUMBER_ENAS_DAG_WEIGHTS - assigned_node_weights; ++new_node_weight){
+    for (int32_t new_node_weight = 0; new_node_weight < NUMBER_ENAS_DAG_WEIGHTS - assigned_node_weights; ++new_node_weight){
         weights.at(new_node_weight) = range * normal_distribution.random(generator, 0, 1);
     }
 
@@ -85,9 +85,9 @@ void ENAS_DAG_Node::initialize_uniform_random(minstd_rand0 &generator, uniform_r
     zw = rng(generator);
     rw = rng(generator);
 
-    int assigned_node_weights = 2; // 2 weights for the starting node assigned above
+    int32_t assigned_node_weights = 2; // 2 weights for the starting node assigned above
 
-    for (int new_node_weight = 0; new_node_weight < NUMBER_ENAS_DAG_WEIGHTS - assigned_node_weights; ++new_node_weight){
+    for (int32_t new_node_weight = 0; new_node_weight < NUMBER_ENAS_DAG_WEIGHTS - assigned_node_weights; ++new_node_weight){
         weights.at(new_node_weight) = rng(generator);
     }
 }
@@ -95,7 +95,7 @@ void ENAS_DAG_Node::initialize_uniform_random(minstd_rand0 &generator, uniform_r
 
 double ENAS_DAG_Node::get_gradient(string gradient_name) {
     double gradient_sum = 0.0;
-    for (uint32_t i = 0; i < series_length; i++ ) {
+    for (int32_t i = 0; i < series_length; i++ ) {
         if (gradient_name == "zw") {
             gradient_sum += d_zw[i];
         } else if (gradient_name == "rw") {
@@ -129,7 +129,7 @@ void ENAS_DAG_Node::print_gradient(string gradient_name) {
     Log::info("\tgradient['%s']: %lf\n", gradient_name.c_str(), get_gradient(gradient_name));
 }
 
-double ENAS_DAG_Node::activation(double value, int act_operator) {
+double ENAS_DAG_Node::activation(double value, int32_t act_operator) {
     if (act_operator == 0) return sigmoid(value);
     if (act_operator == 1) return tanh(value);
     if (act_operator == 2) return swish(value);
@@ -140,7 +140,7 @@ double ENAS_DAG_Node::activation(double value, int act_operator) {
     exit(1);
 }
 
-double ENAS_DAG_Node::activation_derivative(double value, double input, int act_operator) {
+double ENAS_DAG_Node::activation_derivative(double value, double input, int32_t act_operator) {
     if (act_operator == 0) return sigmoid_derivative(input);
     if (act_operator == 1) return tanh_derivative(input);
     if (act_operator == 2) return swish_derivative(value,input);
@@ -151,11 +151,11 @@ double ENAS_DAG_Node::activation_derivative(double value, double input, int act_
     exit(1);
 }
 
-void ENAS_DAG_Node::input_fired(int time, double incoming_output) {
+void ENAS_DAG_Node::input_fired(int32_t time, double incoming_output) {
 
-    vector<int> connections {0,1,1,1,2,5,3,5,4};
-    vector<int> operations {1,1,1,3,3,0,2,1,2};
-    vector<int> node_output(connections.size(),1);
+    vector<int32_t> connections {0,1,1,1,2,5,3,5,4};
+    vector<int32_t> operations {1,1,1,3,3,0,2,1,2};
+    vector<int32_t> node_output(connections.size(), 1);
     inputs_fired[time]++;
     input_values[time] += incoming_output;
 
@@ -167,7 +167,7 @@ void ENAS_DAG_Node::input_fired(int time, double incoming_output) {
 
     //update the reset gate bias so its centered around 1
     //r_bias += 1;
-    int no_of_nodes = connections.size();
+    int32_t no_of_nodes = (int32_t)connections.size();
     Log::debug("ERROR: inputs_fired on ENAS_DAG_Node %d at time %d is %d and no_of_nodes is %d\n", innovation_number, time, inputs_fired[time], no_of_nodes);
 
     double x = input_values[time];
@@ -182,16 +182,16 @@ void ENAS_DAG_Node::input_fired(int time, double incoming_output) {
     Nodes[0][time] = activation(node0_sum,operations[0]);
     l_Nodes[0][time] = activation_derivative(node0_sum,Nodes[0][time],operations[0]);
     node_output[0] = 0;
-    for(int i = 1;i < connections.size();i++){
-        int incoming_node = connections[i] - 1;
+    for(int32_t i = 1; i < (int32_t)connections.size(); i++){
+        int32_t incoming_node = connections[i] - 1;
         double node_mul = weights[i-1]*Nodes[incoming_node][time];
         Nodes[i][time] = activation(node_mul,operations[i]);
         l_Nodes[i][time] = activation_derivative(node_mul,Nodes[i][time],operations[i]);
         node_output[incoming_node] = 0;
     }
 
-    //int fan_out = 0; 
-    for (int i = 0; i < node_output.size(); ++i)
+    //int32_t fan_out = 0; 
+    for (int32_t i = 0; i < (int32_t)node_output.size(); ++i)
     {
         if(node_output[i]){
            // fan_out ++;
@@ -208,7 +208,7 @@ void ENAS_DAG_Node::input_fired(int time, double incoming_output) {
 
 }
 
-void ENAS_DAG_Node::try_update_deltas(int time){
+void ENAS_DAG_Node::try_update_deltas(int32_t time){
   if (outputs_fired[time] < total_outputs) return;
     else if (outputs_fired[time] > total_outputs) {
         Log::fatal("ERROR: outputs_fired on ENAS_DAG_Node %d at time %d is %d and total_outputs is %d\n", innovation_number, time, outputs_fired[time], total_outputs);
@@ -226,25 +226,25 @@ void ENAS_DAG_Node::try_update_deltas(int time){
 
     //d_h *= fan_out;
 
-    vector<int> connections {0,1,1,1,2,5,3,5,4};
-    int no_of_nodes = connections.size();
-    vector<int> node_output(no_of_nodes,1);
+    vector<int32_t> connections {0,1,1,1,2,5,3,5,4};
+    int32_t no_of_nodes = (int32_t)connections.size();
+    vector<int32_t> node_output(no_of_nodes,1);
     vector<double> d_node_h(no_of_nodes,0.0);
 
     node_output[0] = 0;
-    for(int i = 1;i < connections.size();i++){
-        int incoming_node = connections[i] - 1;
+    for(int32_t i = 1; i < (int32_t)connections.size();i++){
+        int32_t incoming_node = connections[i] - 1;
         node_output[incoming_node] = 0;
     }
 
-    for (int i = 0; i < no_of_nodes; ++i)
+    for (int32_t i = 0; i < no_of_nodes; ++i)
     {
         if(node_output[i]) d_node_h[i] = d_h;
     }
 
-    for (int i = no_of_nodes - 1; i >=  1; i--)
+    for (int32_t i = no_of_nodes - 1; i >=  1; i--)
     {
-        int incoming_node = connections[i] - 1;
+        int32_t incoming_node = connections[i] - 1;
         d_weights[i-1][time] = d_node_h[i]*l_Nodes[i][time]*Nodes[incoming_node][time];
         d_node_h[incoming_node] += d_node_h[i]*l_Nodes[i][time]*weights[i-1];
     }
@@ -267,7 +267,7 @@ void ENAS_DAG_Node::try_update_deltas(int time){
 
 }
 
-void ENAS_DAG_Node::error_fired(int time, double error) {
+void ENAS_DAG_Node::error_fired(int32_t time, double error) {
     outputs_fired[time]++;
 
     error_values[time] *= error;
@@ -275,7 +275,7 @@ void ENAS_DAG_Node::error_fired(int time, double error) {
     try_update_deltas(time);
 }
 
-void ENAS_DAG_Node::output_fired(int time, double delta) {
+void ENAS_DAG_Node::output_fired(int32_t time, double delta) {
     outputs_fired[time]++;
 
     error_values[time] += delta;
@@ -284,13 +284,13 @@ void ENAS_DAG_Node::output_fired(int time, double delta) {
 }
 
 
-uint32_t ENAS_DAG_Node::get_number_weights() const {
+int32_t ENAS_DAG_Node::get_number_weights() const {
     return NUMBER_ENAS_DAG_WEIGHTS;
 }
 
 void ENAS_DAG_Node::get_weights(vector<double> &parameters) const {
     parameters.resize(get_number_weights());
-    uint32_t offset = 0;
+    int32_t offset = 0;
     get_weights(offset, parameters);
 }
 
@@ -318,20 +318,20 @@ int32_t ENAS_DAG_Node::get_output_fired(int32_t time) const{
 }
 
 void ENAS_DAG_Node::set_weights(const vector<double> &parameters) {
-    uint32_t offset = 0;
+    int32_t offset = 0;
     set_weights(offset, parameters);
 }
 
-void ENAS_DAG_Node::set_weights(uint32_t &offset, const vector<double> &parameters) {
-    //uint32_t start_offset = offset;
+void ENAS_DAG_Node::set_weights(int32_t &offset, const vector<double> &parameters) {
+    //int32_t start_offset = offset;
 
-    int assigned_node_weights = 2; // 2 weights for the starting node assigned above
+    int32_t assigned_node_weights = 2; // 2 weights for the starting node assigned above
 
     zw = bound(parameters[offset++]);
     rw = bound(parameters[offset++]);
 
-    for (int new_node_weight = 0; new_node_weight < NUMBER_ENAS_DAG_WEIGHTS - assigned_node_weights; ++new_node_weight){
-        if(weights.size() < NUMBER_ENAS_DAG_WEIGHTS - assigned_node_weights){
+    for (int32_t new_node_weight = 0; new_node_weight < NUMBER_ENAS_DAG_WEIGHTS - assigned_node_weights; ++new_node_weight){
+        if((int32_t)weights.size() < NUMBER_ENAS_DAG_WEIGHTS - assigned_node_weights){
             weights.push_back(bound(parameters[offset++]));            
         }
         else
@@ -342,17 +342,17 @@ void ENAS_DAG_Node::set_weights(uint32_t &offset, const vector<double> &paramete
 
 }
 
-void ENAS_DAG_Node::get_weights(uint32_t &offset, vector<double> &parameters) const {
-    //uint32_t start_offset = offset;
+void ENAS_DAG_Node::get_weights(int32_t &offset, vector<double> &parameters) const {
+    //int32_t start_offset = offset;
 
 
 
-    int assigned_node_weights = 2; // 2 weights for the starting node assigned above
+    int32_t assigned_node_weights = 2; // 2 weights for the starting node assigned above
 
     parameters[offset++] = zw;
     parameters[offset++] = rw;
 
-    for (int new_node_weight = 0; new_node_weight < NUMBER_ENAS_DAG_WEIGHTS - assigned_node_weights; ++new_node_weight)
+    for (int32_t new_node_weight = 0; new_node_weight < NUMBER_ENAS_DAG_WEIGHTS - assigned_node_weights; ++new_node_weight)
       parameters[offset++] = weights.at(new_node_weight); 
 
 }
@@ -360,11 +360,11 @@ void ENAS_DAG_Node::get_weights(uint32_t &offset, vector<double> &parameters) co
 void ENAS_DAG_Node::get_gradients(vector<double> &gradients) {
     gradients.assign(NUMBER_ENAS_DAG_WEIGHTS, 0.0);
 
-    for (uint32_t i = 0; i < NUMBER_ENAS_DAG_WEIGHTS; i++) {
+    for (int32_t i = 0; i < NUMBER_ENAS_DAG_WEIGHTS; i++) {
         gradients[i] = 0.0;
     }
 
-    for (uint32_t i = 0; i < series_length; i++) {
+    for (int32_t i = 0; i < series_length; i++) {
         gradients[0] += d_zw[i];
         gradients[1] += d_rw[i];
 
@@ -382,7 +382,7 @@ void ENAS_DAG_Node::get_gradients(vector<double> &gradients) {
     }
 }
 
-void ENAS_DAG_Node::reset(int _series_length) {
+void ENAS_DAG_Node::reset(int32_t _series_length) {
     series_length = _series_length;
 
     d_zw.assign(series_length, 0.0);
@@ -417,7 +417,7 @@ RNN_Node_Interface* ENAS_DAG_Node::copy() const {
     n->d_rw = d_rw;
 
 
-     for (int i = 0; i < weights.size(); ++i)
+     for (int32_t i = 0; i < (int32_t)weights.size(); ++i)
     {
         n->weights[i] = weights[i];
         n->d_weights[i] = d_weights[i];
@@ -427,7 +427,7 @@ RNN_Node_Interface* ENAS_DAG_Node::copy() const {
    
     n->d_h_prev = d_h_prev;
 
-    for (int i = 0; i < Nodes.size(); ++i)
+    for (int32_t i = 0; i < (int32_t)Nodes.size(); ++i)
     {
         n->Nodes[i] = Nodes[i];
         n->l_Nodes[i] = l_Nodes[i];

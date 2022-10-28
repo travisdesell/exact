@@ -348,7 +348,7 @@ void OneNetSpeciationStrategy::finalize_generation(string filename, const vector
 void OneNetSpeciationStrategy::evaluate_elite_population(const vector< vector< vector<double> > > &validation_input, const vector< vector< vector<double> > > &validation_output) {
     vector<RNN_Genome*> elite_genomes = Elite_population->get_genomes();
     if (elite_genomes.size() == 0) return;
-    for (int i = 0; i < elite_genomes.size(); i++) {
+    for (int i = 0; i < (int32_t)elite_genomes.size(); i++) {
         RNN_Genome* g = elite_genomes[i];
         g->evaluate_online(validation_input, validation_output);
     }
@@ -360,7 +360,7 @@ void OneNetSpeciationStrategy::select_elite_population() {
     vector<RNN_Genome*> elite_genomes = Elite_population->get_genomes();
     vector<RNN_Genome*> trained_genomes = Trained_population->get_genomes();
 
-    for (int i = 0; i < trained_genomes.size(); i++) {
+    for (int i = 0; i < (int32_t)trained_genomes.size(); i++) {
         RNN_Genome* genome_copy = trained_genomes[i]->copy();
         genome_copy->set_group_id(ELITE);
         Elite_population->insert_genome(genome_copy);

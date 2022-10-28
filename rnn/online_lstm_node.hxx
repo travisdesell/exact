@@ -93,13 +93,13 @@ class Online_LSTM_Node : public RNN_Node_Interface {
         void error_fired(int time, double error);
         void output_fired(int time, double delta);
 
-        uint32_t get_number_weights() const;
+        int32_t get_number_weights() const;
 
         void get_weights(vector<double> &parameters) const;
         void set_weights(const vector<double> &parameters);
 
-        void get_weights(uint32_t &offset, vector<double> &parameters) const;
-        void set_weights(uint32_t &offset, const vector<double> &parameters);
+        void get_weights(int32_t &offset, vector<double> &parameters) const;
+        void set_weights(int32_t &offset, const vector<double> &parameters);
 
         void get_gradients(vector<double> &gradients);
 

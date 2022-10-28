@@ -251,8 +251,8 @@ vector<int32_t> OneNetIslandSpeciationStrategy::rank_islands() {
         }
     }
 
-    for (int32_t i = 0; i < island_rank.size() - 1; i++)   {
-        for (int32_t j = 0; j < island_rank.size() - i - 1; j++)  {
+    for (int32_t i = 0; i < (int32_t)island_rank.size() - 1; i++)   {
+        for (int32_t j = 0; j < (int32_t)island_rank.size() - i - 1; j++)  {
             fitness_j1 = islands[island_rank[j]]->get_best_fitness();
             fitness_j2 = islands[island_rank[j+1]]->get_best_fitness();
             if (fitness_j1 < fitness_j2) {
@@ -263,7 +263,7 @@ vector<int32_t> OneNetIslandSpeciationStrategy::rank_islands() {
         }
     }
     Log::info("island rank: \n");
-    for (int32_t i = 0; i< island_rank.size(); i++){
+    for (int32_t i = 0; i < (int32_t)island_rank.size(); i++){
         Log::info("island: %d fitness %f \n", island_rank[i], islands[island_rank[i]]->get_best_fitness());
     }
     return island_rank;
@@ -364,7 +364,7 @@ RNN_Genome* OneNetIslandSpeciationStrategy::generate_genome(uniform_real_distrib
             genome->set_genome_type(GENERATED);
             generated_genomes++;
             generation_island++;
-            if (generation_island >= (signed) islands.size()) generation_island = 0;
+            if (generation_island >= (int32_t)islands.size()) generation_island = 0;
             islands[generation_island] -> set_latest_generation_id(generated_genomes);
             return genome;
         }
@@ -439,7 +439,7 @@ RNN_Genome* OneNetIslandSpeciationStrategy::generate_genome(uniform_real_distrib
         genome->set_genome_type(GENERATED);
         //set the island for the genome and increment to the next island
         generation_island++;
-        if (generation_island >= (signed) islands.size()) generation_island = 0;
+        if (generation_island >= (int32_t)islands.size()) generation_island = 0;
         islands[generation_island] -> set_latest_generation_id(generated_genomes);
 
     } else {
@@ -613,7 +613,7 @@ RNN_Genome* OneNetIslandSpeciationStrategy::parents_repopulation(string method, 
 
 void OneNetIslandSpeciationStrategy::fill_island(int32_t best_island_id, function<void (int32_t, RNN_Genome*)> &mutate){
     vector<RNN_Genome*>best_island = islands[best_island_id]->get_genomes();
-    for (uint32_t i = 0; i < best_island.size(); i++){
+    for (int32_t i = 0; i < (int32_t)best_island.size(); i++){
         // copy the genome from the best island
         RNN_Genome *copy = best_island[i]->copy();
         generated_genomes++;
@@ -634,7 +634,7 @@ RNN_Genome* OneNetIslandSpeciationStrategy::get_global_best_genome(){
 }
 
 void OneNetIslandSpeciationStrategy::set_erased_islands_status() {
-    for (int i = 0; i < islands.size(); i++) {
+    for (int i = 0; i < (int32_t)islands.size(); i++) {
         if (islands[i] -> get_erase_again_num() > 0) {
             islands[i] -> set_erase_again_num();
             Log::info("Island %d can be removed in %d rounds.\n", i, islands[i] -> get_erase_again_num());

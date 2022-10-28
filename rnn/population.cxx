@@ -55,11 +55,11 @@ int32_t Population::get_max_size() {
 }
 
 int32_t Population::size() {
-    return genomes.size();
+    return (int32_t)genomes.size();
 }
 
 bool Population::is_full() {
-    return genomes.size() >= max_size;
+    return (int32_t)genomes.size() >= max_size;
 }
 
 bool Population::is_empty() {
@@ -92,7 +92,7 @@ void Population::copy_two_random_genomes(uniform_real_distribution<double> &rng_
 //inserts a copy of the genome, caller of the function will need to delete their
 //pointer
 int32_t Population::insert_genome(RNN_Genome *genome) {
-    int initial_size = genomes.size();
+    int32_t initial_size = (int32_t)genomes.size();
     Log::info("inserting genomes to population %d, genome size is %d\n", id, genomes.size());
     Log::debug("getting fitness of genome copy\n");
 
@@ -227,7 +227,7 @@ int32_t Population::insert_genome(RNN_Genome *genome) {
 
     // Log::info("genomes.size(): %d, max_size: %d, status: %d\n", genomes.size(), max_size, status);
 
-    if (genomes.size() > max_size) {
+    if ((int32_t)genomes.size() > max_size) {
         //island was full before insert so now we need to 
         //delete the worst genome in the island.
 
@@ -289,7 +289,7 @@ void Population::print(string indent) {
 
         Log::info("%s\t%s\n", indent.c_str(), RNN_Genome::print_statistics_header().c_str());
 
-        for (int32_t i = 0; i < genomes.size(); i++) {
+        for (int32_t i = 0; i < (int32_t)genomes.size(); i++) {
             Log::info("%s\t%s\n", indent.c_str(), genomes[i]->print_statistics().c_str());
         }
     }
@@ -322,7 +322,7 @@ void Population::sort_population(string sort_by) {
         sort (genomes.begin(), genomes.end(), sort_genomes_by_fitness());
     }
     Log::debug("sorted sequence: \n");
-    for (int i = 0; i < genomes.size(); i++) {
+    for (int32_t i = 0; i < (int32_t)genomes.size(); i++) {
         Log::debug("# %d genome fitness %f\n", i, genomes[i]->get_online_validation_mse());
     }
 
@@ -330,11 +330,11 @@ void Population::sort_population(string sort_by) {
 
 void Population::write_prediction(string filename, const vector< vector< vector<double> > > &test_input, const vector< vector< vector<double> > > &test_output) {
     vector <vector <vector <vector<double>>>> predictions; // <genome <input sets < output parameter <value>>>>
-    int32_t num_genomes = genomes.size();
+    int32_t num_genomes = (int32_t)genomes.size();
     int32_t num_outputs = genomes[0]->get_number_outputs();
     vector <string> input_parameter_names = genomes[0]->get_input_parameter_names();
     vector <string> output_parameter_names = genomes[0]->get_output_parameter_names();
-    for (int i = 0; i < num_genomes; i++) {
+    for (int32_t i = 0; i < num_genomes; i++) {
         vector<double> parameters = genomes[i]->get_best_parameters();
         if (parameters.size() <= 0) {
             Log::error("Genome %d best parameter size is %d\n", genomes[i]->get_generation_id(), parameters.size());
@@ -348,7 +348,7 @@ void Population::write_prediction(string filename, const vector< vector< vector<
     // ofstream outfile_original(filename + "_original.csv");
     // outfile_original << "#";
 
-    for (uint32_t i = 0; i < num_outputs; i++) {
+    for (int32_t i = 0; i < num_outputs; i++) {
         if (i > 0) outfile << ",";
         // if (i > 0) outfile_original << ",";
 
@@ -357,7 +357,7 @@ void Population::write_prediction(string filename, const vector< vector< vector<
         Log::debug("output_parameter_names[%d]: '%s'\n", i, output_parameter_names[i].c_str());
     }
     
-    for (uint32_t i = 0; i < num_outputs; i++) {
+    for (int32_t i = 0; i < num_outputs; i++) {
         outfile << ",";
         // outfile_original << ",";
 
@@ -366,8 +366,8 @@ void Population::write_prediction(string filename, const vector< vector< vector<
         Log::debug("output_parameter_names[%d]: '%s'\n", i, output_parameter_names[i].c_str());
     }
 
-    for (uint32_t g = 0; g < num_genomes; g++) {
-        for (uint32_t i = 0; i < num_outputs; i++) {
+    for (int32_t g = 0; g < num_genomes; g++) {
+        for (int32_t i = 0; i < num_outputs; i++) {
             outfile << ",";
             // outfile_original << ",";
 
@@ -380,10 +380,10 @@ void Population::write_prediction(string filename, const vector< vector< vector<
     outfile << endl;
     // outfile_original << endl;
 
-    int32_t time_length = test_input[0][0].size();
-    for (uint32_t j = 1; j < time_length; j++) {
+    int32_t time_length = (int32_t)test_input[0][0].size();
+    for (int32_t j = 1; j < time_length; j++) {
 
-        for (uint32_t i = 0; i < num_outputs; i++) {
+        for (int32_t i = 0; i < num_outputs; i++) {
             if (i > 0) outfile << ",";
             // if (i > 0) outfile_original << ",";
 
@@ -391,7 +391,7 @@ void Population::write_prediction(string filename, const vector< vector< vector<
             // outfile_original << time_series_sets->denormalize(output_parameter_names[i], test_output[0][i][j]);
         }
 
-        for (uint32_t i = 0; i < num_outputs; i++) {
+        for (int32_t i = 0; i < num_outputs; i++) {
             outfile << ",";
             // outfile_original << ",";
 
@@ -399,8 +399,8 @@ void Population::write_prediction(string filename, const vector< vector< vector<
             // outfile_original << time_series_sets->denormalize(output_parameter_names[i], test_output[0][i][j-1]);
         }
 
-        for (uint32_t g = 0; g < num_genomes; g++) {
-            for (uint32_t i = 0; i < num_outputs; i++) {
+        for (int32_t g = 0; g < num_genomes; g++) {
+            for (int32_t i = 0; i < num_outputs; i++) {
                 outfile << ",";
                 // outfile_original << ",";
 

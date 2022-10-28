@@ -42,7 +42,7 @@ int main(int argc, char** argv) {
 
     vector<string> parameter_names = time_series_sets->get_input_parameter_names();
 
-    for (uint32_t i = 0; i < time_series_sets->get_number_series(); i++) {
+    for (int32_t i = 0; i < time_series_sets->get_number_series(); i++) {
         TimeSeriesSet *tss = time_series_sets->get_set(i);
 
         string input_filename = tss->get_filename();
@@ -65,10 +65,10 @@ int main(int argc, char** argv) {
         ofstream correlations_csv(correlations_csv_filename);
         ofstream headers_txt(headers_txt_filename);
 
-        for (uint32_t j = 0; j < parameter_names.size(); j++) {
+        for (int32_t j = 0; j < (int32_t)parameter_names.size(); j++) {
             if (parameter_names[j].compare(target_parameter_name) == 0) continue;
 
-            for (uint32_t k = 1; k < max_lag; k++) {
+            for (int32_t k = 1; k < max_lag; k++) {
                 double correlation = tss->get_correlation(target_parameter_name, parameter_names[j], k);
 
                 if (k > 1) correlations_csv << ",";

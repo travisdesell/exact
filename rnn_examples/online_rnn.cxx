@@ -163,7 +163,7 @@ int main(int argc, char **argv) {
     genome->enable_high_threshold(1.0);
     genome->enable_low_threshold(0.05);
     genome->disable_dropout();
-    genome->enable_use_regression(true);
+    // genome->enable_use_regression(true);
 
     random_sequence_length = argument_exists(arguments, "--random_sequence_length");
     get_argument(arguments, "--sequence_length_lower_bound", false, sequence_length_lower_bound);

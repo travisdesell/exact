@@ -93,7 +93,7 @@ int main(int argc, char **argv) {
         vector<string> outputs2{"output 1", "output 2"};
 
 
-        //Test 2 inputs, 2 outputs, no hidden
+        // //Test 2 inputs, 2 outputs, no hidden
         genome = create_lstm(inputs2, 0, 0, outputs2, max_recurrent_depth, weight_initialize);
 
         inputs.resize(2);

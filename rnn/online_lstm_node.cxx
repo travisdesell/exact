@@ -117,7 +117,7 @@ void Online_LSTM_Node::initialize_uniform_random(minstd_rand0 &generator, unifor
 double Online_LSTM_Node::get_gradient(string gradient_name) {
     double gradient_sum = 0.0;
 
-    // for (uint32_t i = 0; i < series_length; i++ ) {
+    // for (int32_t i = 0; i < series_length; i++ ) {
         if (gradient_name == "output_gate_update_weight") {
             gradient_sum += d_output_gate_update_weight;
         } else if (gradient_name == "output_gate_weight") {
@@ -271,13 +271,13 @@ void Online_LSTM_Node::output_fired(int time, double delta) {
     try_update_deltas(time);
 }
 
-uint32_t Online_LSTM_Node::get_number_weights() const {
+int32_t Online_LSTM_Node::get_number_weights() const {
     return 11;
 }
 
 void Online_LSTM_Node::get_weights(vector<double> &parameters) const {
     parameters.resize(get_number_weights());
-    uint32_t offset = 0;
+    int32_t offset = 0;
     get_weights(offset, parameters);
 }
 
@@ -305,13 +305,13 @@ int32_t Online_LSTM_Node::get_output_fired(int32_t time) const{
 }
 
 void Online_LSTM_Node::set_weights(const vector<double> &parameters) {
-    uint32_t offset = 0;
+    int32_t offset = 0;
     set_weights(offset, parameters);
 }
 
 
-void Online_LSTM_Node::set_weights(uint32_t &offset, const vector<double> &parameters) {
-    //uint32_t start_offset = offset;
+void Online_LSTM_Node::set_weights(int32_t &offset, const vector<double> &parameters) {
+    //int32_t start_offset = offset;
 
     output_gate_update_weight = bound(parameters[offset++]);
     output_gate_weight = bound(parameters[offset++]);
@@ -328,12 +328,12 @@ void Online_LSTM_Node::set_weights(uint32_t &offset, const vector<double> &param
     cell_weight = bound(parameters[offset++]);
     cell_bias = bound(parameters[offset++]);
 
-    //uint32_t end_offset = offset;
+    //int32_t end_offset = offset;
     //Log::trace("set weights from offset %d to %d on LSTM_Node %d\n", start_offset, end_offset, innovation_number);
 }
 
-void Online_LSTM_Node::get_weights(uint32_t &offset, vector<double> &parameters) const {
-    //uint32_t start_offset = offset;
+void Online_LSTM_Node::get_weights(int32_t &offset, vector<double> &parameters) const {
+    //int32_t start_offset = offset;
 
     parameters[offset++] = output_gate_update_weight;
     parameters[offset++] = output_gate_weight;
@@ -350,7 +350,7 @@ void Online_LSTM_Node::get_weights(uint32_t &offset, vector<double> &parameters)
     parameters[offset++] = cell_weight;
     parameters[offset++] = cell_bias;
 
-    //uint32_t end_offset = offset;
+    //int32_t end_offset = offset;
     //Log::trace("got weights from offset %d to %d on LSTM_Node %d\n", start_offset, end_offset, innovation_number);
 }
 
@@ -358,11 +358,11 @@ void Online_LSTM_Node::get_weights(uint32_t &offset, vector<double> &parameters)
 void Online_LSTM_Node::get_gradients(vector<double> &gradients) {
     gradients.assign(11, 0.0);
 
-    for (uint32_t i = 0; i < 11; i++) {
+    for (int32_t i = 0; i < 11; i++) {
         gradients[i] = 0.0;
     }
 
-    // for (uint32_t i = 0; i < series_length; i++) {
+    // for (int32_t i = 0; i < series_length; i++) {
         gradients[0] += d_output_gate_update_weight;
         gradients[1] += d_output_gate_weight;
         gradients[2] += d_output_gate_bias;

@@ -38,11 +38,11 @@ void OnlineSeries::set_current_index(int32_t _current_gen) {
 void OnlineSeries::shuffle_data(int32_t num_recent_sets) {
     avalibale_training_index.clear();
     if (num_recent_sets <= 0) {
-        for (int i = 0; i < current_index; i++) {
+        for (int32_t i = 0; i < current_index; i++) {
             avalibale_training_index.push_back(i);
         }
     } else {
-        for (int i = 0; i < current_index - num_recent_sets; i++) {
+        for (int32_t i = 0; i < current_index - num_recent_sets; i++) {
             avalibale_training_index.push_back(i);
         }
     }
@@ -54,10 +54,10 @@ void OnlineSeries::shuffle_data(int32_t num_recent_sets) {
 void OnlineSeries::fill_training_index(int32_t num_random_sets, int32_t num_recent_sets) {
     shuffle_data(num_recent_sets);
     training_index.clear();
-    for (int i = 0; i < num_random_sets; i++) {
+    for (int32_t i = 0; i < num_random_sets; i++) {
         training_index.push_back(avalibale_training_index[i]);
     }
-    for (int i = 0; i < num_recent_sets; i++) {
+    for (int32_t i = 0; i < num_recent_sets; i++) {
         training_index.push_back(current_index - i -1);
     }
 }
@@ -67,19 +67,19 @@ vector<int32_t> OnlineSeries::get_training_index() {
     if (get_training_data_method.compare("v1") == 0) {
         Log::debug("getting historical data with V1\n");
         // V1 means all the generated genome has different random historical data
-        int num_random_sets = min(num_training_sets, current_index);
+        int32_t num_random_sets = min(num_training_sets, current_index);
         fill_training_index(num_random_sets, 0);
     } else if (get_training_data_method.compare("v2") == 0) {
         // V2 means all the genomes in the same generation share the same training data
         Log::debug("getting historical data with V2\n");
-        if (avalibale_training_index.size() != current_index) {
-            int num_random_sets = min(num_training_sets, current_index);
+        if ((int32_t)avalibale_training_index.size() != current_index) {
+            int32_t num_random_sets = min(num_training_sets, current_index);
             fill_training_index(num_random_sets, 0);
         }  else Log::error("training set generated\n");
     } else if (get_training_data_method.compare("v3") == 0) {
         // V3 means trained with half most recent data and half random historical data
         Log::debug("getting historical data with V3\n");
-        int num_random_sets = min(num_training_sets, current_index) / 2;
+        int32_t num_random_sets = min(num_training_sets, current_index) / 2;
         fill_training_index(num_random_sets, num_training_sets - num_random_sets);
     }
 
@@ -89,7 +89,7 @@ vector<int32_t> OnlineSeries::get_training_index() {
 
 vector< int32_t > OnlineSeries::get_validation_index() {
     validation_index.clear();
-    for (int i = 0; i < num_validataion_sets; i++) {
+    for (int32_t i = 0; i < num_validataion_sets; i++) {
         validation_index.push_back(current_index + i);
     }
     return validation_index;

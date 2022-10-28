@@ -50,7 +50,7 @@ class GRU_Node : public RNN_Node_Interface {
 
     public:
 
-        GRU_Node(int _innovation_number, int _type, double _depth);
+        GRU_Node(int32_t _innovation_number, int32_t _type, double _depth);
         ~GRU_Node();
 
         void initialize_lamarckian(minstd_rand0 &generator, NormalDistribution &normal_distribution, double mu, double sigma);
@@ -61,19 +61,19 @@ class GRU_Node : public RNN_Node_Interface {
         double get_gradient(string gradient_name);
         void print_gradient(string gradient_name);
 
-        void input_fired(int time, double incoming_output);
+        void input_fired(int32_t time, double incoming_output);
 
-        void try_update_deltas(int time);
-        void error_fired(int time, double error);
-        void output_fired(int time, double delta);
+        void try_update_deltas(int32_t time);
+        void error_fired(int32_t time, double error);
+        void output_fired(int32_t time, double delta);
 
-        uint32_t get_number_weights() const;
+        int32_t get_number_weights() const;
 
         void get_weights(vector<double> &parameters) const;
         void set_weights(const vector<double> &parameters);
 
-        void get_weights(uint32_t &offset, vector<double> &parameters) const;
-        void set_weights(uint32_t &offset, const vector<double> &parameters);
+        void get_weights(int32_t &offset, vector<double> &parameters) const;
+        void set_weights(int32_t &offset, const vector<double> &parameters);
 
         void get_gradients(vector<double> &gradients);
 
@@ -85,7 +85,7 @@ class GRU_Node : public RNN_Node_Interface {
         int32_t get_input_fired(int32_t time) const;
         int32_t get_output_fired(int32_t time) const;
 
-        void reset(int _series_length);
+        void reset(int32_t _series_length);
 
         void write_to_stream(ostream &out);
 
