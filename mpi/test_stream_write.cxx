@@ -142,7 +142,7 @@ int main(int argc, char** argv) {
     
     // get_argument(arguments, "--repeat_extinction", false, repeat_extinction);
 
-    string weight_initialize_string = "random";
+    string weight_initialize_string = "xavier";
     get_argument(arguments, "--weight_initialize", false, weight_initialize_string);
     WeightType weight_initialize;
     weight_initialize = get_enum_from_string(weight_initialize_string);

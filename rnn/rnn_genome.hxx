@@ -26,6 +26,7 @@ using std::vector;
 
 #include "common/random.hxx"
 #include "common/weight_initialize.hxx"
+#include "common/weight_update.hxx"
 #include "time_series/time_series.hxx"
 // #include "word_series/word_series.hxx"
 
@@ -42,7 +43,6 @@ class RNN_Genome {
         int32_t bp_iterations;
         double learning_rate;
         bool adapt_learning_rate; //TODO: deprecated and needs to be removed but don't want to change the genome binary file yet
-        bool use_nesterov_momentum;
         bool use_reset_weights; //TODO: deprecated and needs to be removed but don't want to change the genome binary file yet
 
 
@@ -153,7 +153,6 @@ class RNN_Genome {
         int32_t get_bp_iterations();
 
         void set_learning_rate(double _learning_rate);
-        void set_nesterov_momentum(bool _use_nesterov_momentum);
         void disable_high_threshold();
         void enable_high_threshold(double _high_threshold);
         void disable_low_threshold();
@@ -200,9 +199,9 @@ class RNN_Genome {
 
         void get_analytic_gradient(vector<RNN*> &rnns, const vector<double> &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, double &mse, vector<double> &analytic_gradient, bool training);
 
-        void backpropagate(const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, const vector< vector< vector<double> > > &validation_inputs, const vector< vector< vector<double> > > &validation_outputs);
+        void backpropagate(const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, const vector< vector< vector<double> > > &validation_inputs, const vector< vector< vector<double> > > &validation_outputs, WeightUpdate *weight_update_method);
 
-        void backpropagate_stochastic(const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, const vector< vector< vector<double> > > &validation_inputs, const vector< vector< vector<double> > > &validation_outputs, bool random_sequence_length, int32_t sequence_length_lower_bound, int32_t sequence_length_upper_bound);
+        void backpropagate_stochastic(const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, const vector< vector< vector<double> > > &validation_inputs, const vector< vector< vector<double> > > &validation_outputs, bool random_sequence_length, int32_t sequence_length_lower_bound, int32_t sequence_length_upper_bound, WeightUpdate *weight_update_method);
 
         vector< vector<double> > slice_time_series(int32_t start_index, int32_t sequence_length, int32_t num_parameter, const vector< vector<double> > &inputs);
         

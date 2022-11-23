@@ -27,6 +27,7 @@ using std::vector;
 
 #include "common/arguments.hxx"
 #include "common/log.hxx"
+#include "common/weight_update.hxx"
 
 #include "rnn/examm.hxx"
 
@@ -37,6 +38,8 @@ mutex examm_mutex;
 vector<string> arguments;
 
 EXAMM *examm;
+
+WeightUpdate *weight_update_method;
 
 bool finished = false;
 
@@ -59,7 +62,7 @@ void examm_thread(int32_t id) {
 
         string log_id = "genome_" + to_string(genome->get_generation_id()) + "_thread_" + to_string(id);
         Log::set_id(log_id);
-        genome->backpropagate_stochastic(training_inputs, training_outputs, validation_inputs, validation_outputs, false, 30, 100);
+        genome->backpropagate_stochastic(training_inputs, training_outputs, validation_inputs, validation_outputs, false, 30, 100, weight_update_method);
         Log::release_id(log_id);
 
         examm_mutex.lock();
@@ -179,7 +182,7 @@ int main(int argc, char** argv) {
     int32_t number_slices;
     get_argument(arguments, "--number_slices", true, number_slices);
 
-    string weight_initialize_string = "random";
+    string weight_initialize_string = "xavier";
     get_argument(arguments, "--weight_initialize", false, weight_initialize_string);
     WeightType weight_initialize;
     weight_initialize = get_enum_from_string(weight_initialize_string);
@@ -193,6 +196,9 @@ int main(int argc, char** argv) {
     get_argument(arguments, "--mutated_component_weight", false, mutated_component_weight_string);
     WeightType mutated_component_weight;
     mutated_component_weight = get_enum_from_string(mutated_component_weight_string);
+
+    weight_update_method = new WeightUpdate();
+    weight_update_method->generate_from_arguments(arguments);
 
     time_series_sets->split_all(number_slices);
 

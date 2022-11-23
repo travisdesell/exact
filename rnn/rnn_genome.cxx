@@ -110,7 +110,6 @@ RNN_Genome::RNN_Genome(vector<RNN_Node_Interface*> &_nodes,
     bp_iterations = 20000;
     learning_rate = 0.001;
     //adapt_learning_rate = false;
-    use_nesterov_momentum = true;
     //use_nesterov_momentum = false;
     //use_reset_weights = false;
 
@@ -174,7 +173,6 @@ RNN_Genome* RNN_Genome::copy() {
     other->bp_iterations = bp_iterations;
     other->learning_rate = learning_rate;
     //other->adapt_learning_rate = adapt_learning_rate;
-    other->use_nesterov_momentum = use_nesterov_momentum;
     //other->use_reset_weights = use_reset_weights;
 
     other->use_high_norm = use_high_norm;
@@ -475,12 +473,6 @@ int32_t RNN_Genome::get_bp_iterations() {
 void RNN_Genome::set_learning_rate(double _learning_rate) {
     learning_rate = _learning_rate;
 }
-
-
-void RNN_Genome::set_nesterov_momentum(bool _use_nesterov_momentum) {
-    use_nesterov_momentum = _use_nesterov_momentum;
-}
-
 
 void RNN_Genome::disable_high_threshold() {
     use_high_norm = false;
@@ -939,7 +931,7 @@ void RNN_Genome::get_analytic_gradient(vector<RNN*> &rnns, const vector<double> 
 }
 
 
-void RNN_Genome::backpropagate(const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, const vector< vector< vector<double> > > &validation_inputs, const vector< vector< vector<double> > > &validation_outputs) {
+void RNN_Genome::backpropagate(const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, const vector< vector< vector<double> > > &validation_inputs, const vector< vector< vector<double> > > &validation_outputs, WeightUpdate *weight_update_method) {
 
     double learning_rate = this->learning_rate / inputs.size();
     double low_threshold = sqrt(this->low_threshold * inputs.size());
@@ -954,15 +946,13 @@ void RNN_Genome::backpropagate(const vector< vector< vector<double> > > &inputs,
     vector<double> parameters = initial_parameters;
 
     int32_t n_parameters = this->get_number_weights();
-    vector<double> prev_parameters(n_parameters, 0.0);
+    // vector<double> prev_parameters(n_parameters, 0.0);
 
+    vector<double> velocity(n_parameters, 0.0);
     vector<double> prev_velocity(n_parameters, 0.0);
-    vector<double> prev_prev_velocity(n_parameters, 0.0);
 
     vector<double> analytic_gradient;
-    vector<double> prev_gradient(n_parameters, 0.0);
-
-    double mu = 0.9;
+    vector<double> gradient(n_parameters, 0.0);
 
     double mse;
 
@@ -992,7 +982,7 @@ void RNN_Genome::backpropagate(const vector< vector< vector<double> > > &inputs,
     }
 
     for (int32_t iteration = 0; iteration < bp_iterations; iteration++) {
-        prev_gradient = analytic_gradient;
+        gradient = analytic_gradient;
 
         get_analytic_gradient(rnns, parameters, inputs, outputs, mse, analytic_gradient, true);
 
@@ -1046,23 +1036,7 @@ void RNN_Genome::backpropagate(const vector< vector< vector<double> > > &inputs,
 
         Log::info_no_header("\n");
 
-        if (use_nesterov_momentum) {
-            for (int32_t i = 0; i < (int32_t)parameters.size(); i++) {
-                prev_parameters[i] = parameters[i];
-                prev_prev_velocity[i] = prev_velocity[i];
-
-                double mu_v = prev_velocity[i] * mu;
-
-                prev_velocity[i] = mu_v  - (learning_rate * prev_gradient[i]);
-                parameters[i] += mu_v + ((mu + 1) * prev_velocity[i]);
-            }
-        } else {
-            for (int32_t i = 0; i < (int32_t)parameters.size(); i++) {
-                prev_parameters[i] = parameters[i];
-                prev_gradient[i] = analytic_gradient[i];
-                parameters[i] -= learning_rate * analytic_gradient[i];
-            }
-        }
+        weight_update_method->update_weights(parameters, velocity, prev_velocity, gradient, learning_rate, iteration);
     }
 
     RNN *g;
@@ -1076,19 +1050,18 @@ void RNN_Genome::backpropagate(const vector< vector< vector<double> > > &inputs,
     this->set_weights(best_parameters);
 }
 
-void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, const vector< vector< vector<double> > > &validation_inputs, const vector< vector< vector<double> > > &validation_outputs, bool random_sequence_length, int32_t sequence_length_lower_bound, int32_t sequence_length_upper_bound) {
+void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, const vector< vector< vector<double> > > &validation_inputs, const vector< vector< vector<double> > > &validation_outputs, bool random_sequence_length, int32_t sequence_length_lower_bound, int32_t sequence_length_upper_bound, WeightUpdate *weight_update_method) {
     vector<double> parameters = initial_parameters;
 
     int32_t n_parameters = this->get_number_weights();
     int32_t n_series = (int32_t)inputs.size();
 
-    vector<double> prev_parameters(n_parameters, 0.0);
+    // vector<double> prev_parameters(n_parameters, 0.0);
+    vector<double> velocity(n_parameters, 0.0);
     vector<double> prev_velocity(n_parameters, 0.0);
-    vector<double> prev_prev_velocity(n_parameters, 0.0);
     vector<double> analytic_gradient;
-    vector<double> prev_gradient(n_parameters, 0.0);
+    vector<double> gradient(n_parameters, 0.0);
 
-    double mu = 0.9;
     double mse;
     double norm = 0.0;
     
@@ -1201,7 +1174,7 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
         for (int32_t k = 0; k < (int32_t)shuffle_order.size(); k++) {
             int32_t random_selection = shuffle_order[k];
 
-            prev_gradient = analytic_gradient;
+            gradient = analytic_gradient;
 
             rnn->get_analytic_gradient(parameters, training_inputs[random_selection], training_outputs[random_selection], mse, analytic_gradient, use_dropout, true, dropout_probability);
 
@@ -1233,31 +1206,8 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
 
             //Log::info_no_header("\n");
 
-            if (use_nesterov_momentum) {
-                for (int32_t i = 0; i < (int32_t)parameters.size(); i++) {
-                    //Log::info("parameters[%d]: %lf\n", i, parameters[i]);
+            weight_update_method->update_weights(parameters, velocity, prev_velocity, gradient, learning_rate, iteration);
 
-                    prev_parameters[i] = parameters[i];
-                    prev_prev_velocity[i] = prev_velocity[i];
-
-                    double mu_v = prev_velocity[i] * mu;
-
-                    prev_velocity[i] = mu_v  - (learning_rate * prev_gradient[i]);
-                    parameters[i] += mu_v + ((mu + 1) * prev_velocity[i]);
-
-                    if (parameters[i] < -10.0) parameters[i] = -10.0;
-                    else if (parameters[i] > 10.0) parameters[i] = 10.0;
-                }
-            } else {
-                for (int32_t i = 0; i < (int32_t)parameters.size(); i++) {
-                    prev_parameters[i] = parameters[i];
-                    prev_gradient[i] = analytic_gradient[i];
-                    parameters[i] -= learning_rate * analytic_gradient[i];
-
-                    if (parameters[i] < -10.0) parameters[i] = -10.0;
-                    else if (parameters[i] > 10.0) parameters[i] = 10.0;
-                }
-            }
         }
 
         this->set_weights(parameters);
@@ -3160,7 +3110,6 @@ void RNN_Genome::read_from_stream(istream &bin_istream) {
     bin_istream.read((char*)&bp_iterations, sizeof(int32_t));
     bin_istream.read((char*)&learning_rate, sizeof(double));
     bin_istream.read((char*)&adapt_learning_rate, sizeof(bool));
-    bin_istream.read((char*)&use_nesterov_momentum, sizeof(bool));
     bin_istream.read((char*)&use_reset_weights, sizeof(bool));
 
     bin_istream.read((char*)&use_high_norm, sizeof(bool));
@@ -3179,7 +3128,6 @@ void RNN_Genome::read_from_stream(istream &bin_istream) {
     Log::debug("bp_iterations: %d\n", bp_iterations);
     Log::debug("learning_rate: %lf\n", learning_rate);
     Log::debug("adapt_learning_rate: %d\n", adapt_learning_rate);
-    Log::debug("use_nesterov_momentum: %d\n", use_nesterov_momentum);
     Log::debug("use_reset_weights: %d\n", use_reset_weights);
 
     Log::debug("use_high_norm: %d\n", use_high_norm);
@@ -3190,7 +3138,7 @@ void RNN_Genome::read_from_stream(istream &bin_istream) {
     Log::debug("use_dropout: %d\n", use_dropout);
     Log::debug("dropout_probability: %lf\n", dropout_probability);
 
-    Log::debug("weight initialize: %s\n", WEIGHT_TYPES_STRING[weight_initialize].c_str());
+    Log::debug(": %s\n", WEIGHT_TYPES_STRING[weight_initialize].c_str());
     Log::debug("weight inheritance: %s\n", WEIGHT_TYPES_STRING[weight_inheritance].c_str());
     Log::debug("new component weight: %s\n", WEIGHT_TYPES_STRING[mutated_component_weight].c_str());
 
@@ -3416,7 +3364,6 @@ void RNN_Genome::write_to_stream(ostream &bin_ostream) {
     bin_ostream.write((char*)&bp_iterations, sizeof(int32_t));
     bin_ostream.write((char*)&learning_rate, sizeof(double));
     bin_ostream.write((char*)&adapt_learning_rate, sizeof(bool));
-    bin_ostream.write((char*)&use_nesterov_momentum, sizeof(bool));
     bin_ostream.write((char*)&use_reset_weights, sizeof(bool));
 
     bin_ostream.write((char*)&use_high_norm, sizeof(bool));
@@ -3435,7 +3382,6 @@ void RNN_Genome::write_to_stream(ostream &bin_ostream) {
     Log::debug("bp_iterations: %d\n", bp_iterations);
     Log::debug("learning_rate: %lf\n", learning_rate);
     Log::debug("adapt_learning_rate: %d\n", adapt_learning_rate);
-    Log::debug("use_nesterov_momentum: %d\n", use_nesterov_momentum);
     Log::debug("use_reset_weights: %d\n", use_reset_weights);
 
     Log::debug("use_high_norm: %d\n", use_high_norm);
