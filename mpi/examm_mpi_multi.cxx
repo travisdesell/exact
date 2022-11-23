@@ -260,8 +260,8 @@ int main(int argc, char** argv) {
     string repopulation_method = "";
     get_argument(arguments, "--repopulation_method", false, repopulation_method);
 
-    int32_t repopulation_mutations = 0;
-    get_argument(arguments, "--repopulation_mutations", false, repopulation_mutations);
+    int32_t num_mutations = 1;
+    get_argument(arguments, "--num_mutations", false, num_mutations);
 
     double species_threshold = 0.0;
     get_argument(arguments, "--species_threshold", false, species_threshold);
@@ -409,7 +409,7 @@ int main(int argc, char** argv) {
                 Log::set_id(examm_log_id);
 
                 examm = new EXAMM(population_size, number_islands, max_genomes, extinction_event_generation_number, islands_to_exterminate, island_ranking_method,
-                    repopulation_method, repopulation_mutations, repeat_extinction, epochs_acc_freq,
+                    repopulation_method, num_mutations, repeat_extinction, epochs_acc_freq,
                     speciation_method,
                     species_threshold, fitness_threshold,
                     neat_c1, neat_c2, neat_c3,

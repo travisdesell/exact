@@ -27,6 +27,10 @@ mpirun -np 4 ./mpi/examm_mpi \
 --max_genomes 2000 \
 --bp_iterations 5 \
 --output_directory $exp_name \
+--num_mutations 2 \
+--weight_update adagrad \
+--eps 0.000001 \
+--beta1 0.99 \
 --possible_node_types simple UGRNN MGU GRU delta LSTM \
 --std_message_level INFO \
 --file_message_level INFO

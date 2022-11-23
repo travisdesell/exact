@@ -36,7 +36,7 @@ class EXAMM {
 
         string speciation_method;
         string repopulation_method;
-        int32_t repopulation_mutations;
+        int32_t num_mutations;
         bool repeat_extinction;
         int32_t epochs_acc_freq;
 
@@ -135,7 +135,7 @@ class EXAMM {
                 int32_t _islands_to_exterminate,
                 string _island_ranking_method,
                 string _repopulation_method,
-                int32_t _repopulation_mutations,
+                int32_t _num_mutations,
                 bool _repeat_extinction,
                 int32_t _epochs_acc_freq,
                 string _speciation_method,

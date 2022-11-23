@@ -66,7 +66,7 @@ EXAMM::EXAMM(
         int32_t islands_to_exterminate,
         string _island_ranking_method,
         string _repopulation_method,
-        int32_t _repopulation_mutations,
+        int32_t _num_mutations,
         bool _repeat_extinction,
         int32_t _epochs_acc_freq,
         string _speciation_method,
@@ -105,7 +105,7 @@ EXAMM::EXAMM(
                         island_ranking_method(_island_ranking_method),
                         speciation_method(_speciation_method),
                         repopulation_method(_repopulation_method),
-                        repopulation_mutations(_repopulation_mutations),
+                        num_mutations(_num_mutations),
                         repeat_extinction(_repeat_extinction),
                         epochs_acc_freq(_epochs_acc_freq),
                         species_threshold(_species_threshold),
@@ -210,6 +210,7 @@ EXAMM::EXAMM(
     Log::info("mutated component weight: %s\n", WEIGHT_TYPES_STRING[mutated_component_weight].c_str());
 
     Log::info("Speciation method is: \"%s\" (Default is the island-based speciation strategy).\n", speciation_method.c_str());
+    Log::info("Number of mutations is set to %d\n", num_mutations);
     Log::info("Repeat extinction is set to %s\n", repeat_extinction? "true":"false");
     if (speciation_method.compare("island") == 0 || speciation_method.compare("") == 0) {
         //generate a minimal feed foward network as the seed genome
@@ -248,17 +249,17 @@ EXAMM::EXAMM(
             // Only used if start_filled is enabled
             function<void (RNN_Genome *)> apply_stir_mutations = [this](RNN_Genome *genome) {
                 RNN_Genome *copy = genome->copy();
-                this->mutate(repopulation_mutations, copy);
+                this->mutate(num_mutations, copy);
                 return copy;
             };
 
             speciation_strategy = new IslandSpeciationStrategy(
                     number_islands, population_size, mutation_rate, intra_island_co_rate, inter_island_co_rate,
-                    seed_genome, island_ranking_method, repopulation_method, extinction_event_generation_number, repopulation_mutations, islands_to_exterminate, seed_genome_was_minimal, apply_stir_mutations);
+                    seed_genome, island_ranking_method, repopulation_method, extinction_event_generation_number, num_mutations, islands_to_exterminate, seed_genome_was_minimal, apply_stir_mutations);
         } else {
             speciation_strategy = new IslandSpeciationStrategy(
                     number_islands, population_size, mutation_rate, intra_island_co_rate, inter_island_co_rate,
-                    seed_genome, island_ranking_method, repopulation_method, extinction_event_generation_number, repopulation_mutations, islands_to_exterminate, max_genomes, repeat_extinction, seed_genome_was_minimal);
+                    seed_genome, island_ranking_method, repopulation_method, extinction_event_generation_number, num_mutations, islands_to_exterminate, max_genomes, repeat_extinction, seed_genome_was_minimal);
         }
     } else if (speciation_method.compare("neat") == 0) {
 
