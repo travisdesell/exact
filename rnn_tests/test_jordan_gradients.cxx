@@ -50,7 +50,7 @@ int main(int argc, char **argv) {
     int input_length = 10;
     get_argument(arguments, "--input_length", true, input_length);
 
-    string weight_initialize_string = "random";
+    string weight_initialize_string = "xavier";
     get_argument(arguments, "--weight_initialize", false, weight_initialize_string);
 
     WeightType weight_initialize;

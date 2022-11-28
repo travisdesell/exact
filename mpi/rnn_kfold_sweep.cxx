@@ -39,6 +39,7 @@ typedef struct stat Stat;
 #include "common/arguments.hxx"
 #include "common/log.hxx"
 #include "common/weight_initialize.hxx"
+#include "common/weight_update.hxx"
 
 #include "rnn/lstm_node.hxx"
 #include "rnn/rnn_edge.hxx"
@@ -60,9 +61,11 @@ int32_t bp_iterations;
 string output_directory;
 int32_t repeats = 5;
 int32_t fold_size = 2;
-string weight_initialize_string;
+string weight_initialize_string = "xavier";
 
 string process_name;
+
+WeightUpdate *weight_update_method;
 
 vector<string> rnn_types({
         "one_layer_ff", "two_layer_ff",
@@ -446,7 +449,7 @@ ResultSet handle_job(int32_t rank, int32_t current_job, WeightType weight_initia
     Log::set_id(backprop_log_id);
 
     std::chrono::time_point<std::chrono::system_clock> start = std::chrono::system_clock::now();
-    genome->backpropagate_stochastic(training_inputs, training_outputs, validation_inputs, validation_outputs, false, 30, 100);
+    genome->backpropagate_stochastic(training_inputs, training_outputs, validation_inputs, validation_outputs, false, 30, 100, weight_update_method);
     std::chrono::time_point<std::chrono::system_clock> end = std::chrono::system_clock::now();
 
     long milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
@@ -557,6 +560,9 @@ int main(int argc, char **argv) {
     if (weight_initialize < 0 || weight_initialize >= NUM_WEIGHT_TYPES - 1) {
         Log::fatal("weight initialization method %s is set wrong \n", weight_initialize_string.c_str());
     }
+
+    weight_update_method = new WeightUpdate();
+    weight_update_method->generate_from_arguments(arguments);
 
 
     if (rank == 0) {

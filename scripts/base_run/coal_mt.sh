@@ -27,6 +27,7 @@ echo "###-------------------###"
 --population_size 10 \
 --max_genomes 2000 \
 --bp_iterations 5 \
+--num_mutations 2 \
 --output_directory $exp_name \
 --possible_node_types simple UGRNN MGU GRU delta LSTM \
 --std_message_level INFO \

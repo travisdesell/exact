@@ -18,6 +18,7 @@ using std::vector;
 #include "common/arguments.hxx"
 #include "common/log.hxx"
 #include "common/weight_initialize.hxx"
+#include "common/weight_update.hxx"
 #include "common/files.hxx"
 
 #include "rnn/lstm_node.hxx"
@@ -42,6 +43,7 @@ int32_t sequence_length_upper_bound = 100;
 
 RNN_Genome *genome;
 RNN* rnn;
+WeightUpdate *weight_update_method;
 int32_t bp_iterations;
 bool using_dropout;
 double dropout_probability;
@@ -103,10 +105,13 @@ int main(int argc, char **argv) {
     int32_t max_recurrent_depth;
     get_argument(arguments, "--max_recurrent_depth", true, max_recurrent_depth);
 
-    string weight_initialize_string = "random";
+    string weight_initialize_string = "xavier";
     get_argument(arguments, "--weight_initialize", false, weight_initialize_string);
     WeightType weight_initialize;
     weight_initialize = get_enum_from_string(weight_initialize_string);
+
+    weight_update_method = new WeightUpdate();
+    weight_update_method->generate_from_arguments(arguments);
 
     vector<string> input_parameter_names = time_series_sets->get_input_parameter_names();
     vector<string> output_parameter_names = time_series_sets->get_output_parameter_names();
@@ -181,7 +186,7 @@ int main(int argc, char **argv) {
     get_argument(arguments, "--learning_rate", false, learning_rate);
 
     genome->set_learning_rate(learning_rate);
-    genome->set_nesterov_momentum(true);
+    // genome->set_nesterov_momentum(true);
     genome->enable_high_threshold(1.0);
     genome->enable_low_threshold(0.05);
     genome->disable_dropout();
@@ -193,9 +198,9 @@ int main(int argc, char **argv) {
 
     if (argument_exists(arguments, "--stochastic")) {
         Log::info("running stochastic back prop \n");
-        genome->backpropagate_stochastic(training_inputs, training_outputs, test_inputs, test_outputs, random_sequence_length, sequence_length_lower_bound, sequence_length_upper_bound);
+        genome->backpropagate_stochastic(training_inputs, training_outputs, test_inputs, test_outputs, random_sequence_length, sequence_length_lower_bound, sequence_length_upper_bound, weight_update_method);
     } else {
-        genome->backpropagate(training_inputs, training_outputs, test_inputs, test_outputs);
+        genome->backpropagate(training_inputs, training_outputs, test_inputs, test_outputs, weight_update_method);
     }
 
     Log::info("Training finished\n");

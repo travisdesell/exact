@@ -17,6 +17,7 @@ using std::vector;
 #include "common/arguments.hxx"
 #include "common/log.hxx"
 #include "common/weight_initialize.hxx"
+#include "common/weight_update.hxx"
 
 #include "rnn/lstm_node.hxx"
 #include "rnn/gru_node.hxx"
@@ -36,6 +37,8 @@ vector< vector< vector<double> > > test_outputs;
 
 RNN_Genome *genome;
 RNN* rnn;
+WeightUpdate *weight_update_method;
+
 bool using_dropout;
 double dropout_probability;
 
@@ -74,6 +77,9 @@ int main(int argc, char **argv) {
     WeightType weight_initialize;
     weight_initialize = get_enum_from_string(weight_initialize_string);
 
+    weight_update_method = new WeightUpdate();
+    weight_update_method->generate_from_arguments(arguments);
+    
     string output_filename;
     get_argument(arguments, "--output_filename", true, output_filename);
 
@@ -163,7 +169,7 @@ int main(int argc, char **argv) {
     get_argument(arguments, "--learning_rate", false, learning_rate);
 
     genome->set_learning_rate(learning_rate);
-    genome->set_nesterov_momentum(true);
+    // genome->set_nesterov_momentum(true);
     genome->enable_high_threshold(1.0);
     genome->enable_low_threshold(0.05);
     genome->disable_dropout();
@@ -175,9 +181,9 @@ int main(int argc, char **argv) {
     }
 
     if (argument_exists(arguments, "--stochastic")) {
-        genome->backpropagate_stochastic(training_inputs, training_outputs, test_inputs, test_outputs, false, 30, 100);
+        genome->backpropagate_stochastic(training_inputs, training_outputs, test_inputs, test_outputs, false, 30, 100, weight_update_method);
     } else {
-        genome->backpropagate(training_inputs, training_outputs, test_inputs, test_outputs);
+        genome->backpropagate(training_inputs, training_outputs, test_inputs, test_outputs, weight_update_method);
     }
 
     genome->write_to_file(output_filename);

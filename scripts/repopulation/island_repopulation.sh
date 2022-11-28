@@ -38,7 +38,7 @@ mpirun -np 8 ./mpi/examm_mpi \
 --island_ranking_method "EraseWorst" \
 --repopulation_method "bestGenome" \
 --islands_to_exterminate 1 \
---repopulation_mutations 2 \
+--num_mutations 2 \
 --bp_iterations 1 \
 --output_directory $exp_name \
 --possible_node_types simple UGRNN MGU GRU delta LSTM \

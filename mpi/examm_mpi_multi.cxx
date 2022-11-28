@@ -23,6 +23,7 @@ using std::vector;
 #include "common/arguments.hxx"
 #include "common/files.hxx"
 #include "common/log.hxx"
+#include "common/weight_update.hxx"
 
 #include "rnn/examm.hxx"
 
@@ -38,6 +39,8 @@ mutex examm_mutex;
 vector<string> arguments;
 
 EXAMM *examm;
+
+WeightUpdate *weight_update_method;
 
 vector< vector< vector<double> > > training_inputs;
 vector< vector< vector<double> > > training_outputs;
@@ -200,7 +203,7 @@ void worker(int32_t rank) {
 
             string log_id = "slice_" + to_string(global_slice) + "_repeat_" + to_string(global_repeat) + "_genome_" + to_string(genome->get_generation_id()) + "_worker_" + to_string(rank);
             Log::set_id(log_id);
-            genome->backpropagate_stochastic(training_inputs, training_outputs, validation_inputs, validation_outputs, random_sequence_length, sequence_length_lower_bound, sequence_length_upper_bound);
+            genome->backpropagate_stochastic(training_inputs, training_outputs, validation_inputs, validation_outputs, random_sequence_length, sequence_length_lower_bound, sequence_length_upper_bound, weight_update_method);
             Log::release_id(log_id);
 
             //go back to the worker's log for MPI communication
@@ -257,8 +260,8 @@ int main(int argc, char** argv) {
     string repopulation_method = "";
     get_argument(arguments, "--repopulation_method", false, repopulation_method);
 
-    int32_t repopulation_mutations = 0;
-    get_argument(arguments, "--repopulation_mutations", false, repopulation_mutations);
+    int32_t num_mutations = 1;
+    get_argument(arguments, "--num_mutations", false, num_mutations);
 
     double species_threshold = 0.0;
     get_argument(arguments, "--species_threshold", false, species_threshold);
@@ -330,7 +333,7 @@ int main(int argc, char** argv) {
     int32_t max_recurrent_depth = 10;
     get_argument(arguments, "--max_recurrent_depth", false, max_recurrent_depth);
 
-    string weight_initialize_string = "random";
+    string weight_initialize_string = "xavier";
     get_argument(arguments, "--weight_initialize", false, weight_initialize_string);
     WeightType weight_initialize;
     weight_initialize = get_enum_from_string(weight_initialize_string);
@@ -344,6 +347,9 @@ int main(int argc, char** argv) {
     get_argument(arguments, "--mutated_component_weight", false, mutated_component_weight_string);
     WeightType mutated_component_weight;
     mutated_component_weight = get_enum_from_string(mutated_component_weight_string);
+
+    weight_update_method = new WeightUpdate();
+    weight_update_method->generate_from_arguments(arguments);
 
     RNN_Genome *seed_genome = NULL;
     string genome_file_name = "";
@@ -403,7 +409,7 @@ int main(int argc, char** argv) {
                 Log::set_id(examm_log_id);
 
                 examm = new EXAMM(population_size, number_islands, max_genomes, extinction_event_generation_number, islands_to_exterminate, island_ranking_method,
-                    repopulation_method, repopulation_mutations, repeat_extinction, epochs_acc_freq,
+                    repopulation_method, num_mutations, repeat_extinction, epochs_acc_freq,
                     speciation_method,
                     species_threshold, fitness_threshold,
                     neat_c1, neat_c2, neat_c3,

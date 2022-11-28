@@ -26,6 +26,7 @@ mpirun -np 4 ./mpi/examm_mpi \
 --population_size 10 \
 --max_genomes 2000 \
 --bp_iterations 5 \
+--num_mutations 2 \
 --normalize min_max \
 --output_directory $exp_name \
 --possible_node_types simple UGRNN MGU GRU delta LSTM \
