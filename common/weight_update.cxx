@@ -8,7 +8,7 @@
 WeightUpdate::WeightUpdate() {
     // By default use RMSProp weight update
     momentum = 0.9;
-    weight_update_method = RMSPROP;
+    weight_update_method = ADAM;
     epsilon = 1e-8;
     decay_rate = 0.9;
     beta1 = 0.9;
