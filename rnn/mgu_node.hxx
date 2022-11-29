@@ -17,6 +17,8 @@ using std::vector;
 
 class MGU_Node : public RNN_Node_Interface {
     private:
+        int time_skip;
+
         double fw;
         double fu;
         double f_bias;

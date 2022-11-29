@@ -13,6 +13,8 @@ using std::string;
 using std::minstd_rand0;
 using std::uniform_real_distribution;
 
+#include <cstdlib>
+
 #include <vector>
 using std::vector;
 
@@ -28,6 +30,11 @@ using std::vector;
 
 GRU_Node::GRU_Node(int32_t _innovation_number, int32_t _type, double _depth) : RNN_Node_Interface(_innovation_number, _type, _depth) {
     node_type = GRU_NODE;
+
+    // Random timeskip generated at Node level from range 1-10
+    time_skip = (std::rand()) % 10 + 1;
+
+    //Log::debug("Time skip generated for current GRU Node : %d\n", time_skip);
 }
 
 GRU_Node::~GRU_Node() {
@@ -145,7 +152,9 @@ void GRU_Node::input_fired(int32_t time, double incoming_output) {
     double x = input_values[time];
 
     double h_prev = 0.0;
-    if (time > 0) h_prev = output_values[time - 1];
+
+    // Moving behind through time steps with a randomly generated time skip 
+    if (time >= time_skip) h_prev = output_values[time - time_skip];
 
     double hzu = h_prev * zu;
     double xzw = x * zw;
@@ -193,11 +202,14 @@ void GRU_Node::try_update_deltas(int32_t time) {
     double x = input_values[time];
 
     double h_prev = 0.0;
-    if (time > 0) h_prev = output_values[time - 1];
+
+    // Moving behind through time steps with a randomly generated time skip   
+    if (time >= time_skip) h_prev = output_values[time - time_skip];
 
     //backprop output gate
     double d_h = error;
-    if (time < (series_length - 1)) d_h += d_h_prev[time + 1];
+    // Moving ahead through time steps with a randomly generated time skip
+    if (time < (series_length - time_skip)) d_h += d_h_prev[time + time_skip];
     //get the error into the output (z), it's the error from ahead in the network
     //as well as from the previous output of the cell
 

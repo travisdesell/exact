@@ -17,6 +17,8 @@ using std::vector;
 
 class Delta_Node : public RNN_Node_Interface {
     private:
+        int time_skip;
+
         double alpha;
         double beta1;
         double beta2;

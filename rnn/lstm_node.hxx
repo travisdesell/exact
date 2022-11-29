@@ -17,6 +17,8 @@ using std::vector;
 
 class LSTM_Node : public RNN_Node_Interface {
     private:
+        int time_skip;
+
         double output_gate_update_weight;
         double output_gate_weight;
         double output_gate_bias;
