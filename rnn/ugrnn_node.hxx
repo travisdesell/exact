@@ -17,6 +17,8 @@ using std::vector;
 
 class UGRNN_Node : public RNN_Node_Interface {
     private:
+        int time_skip;
+
         double cw;
         double ch;
         double c_bias;

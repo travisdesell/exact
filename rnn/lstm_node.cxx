@@ -13,6 +13,8 @@ using std::string;
 using std::minstd_rand0;
 using std::uniform_real_distribution;
 
+#include <cstdlib>
+
 #include <vector>
 using std::vector;
 
@@ -26,6 +28,11 @@ using std::vector;
 
 LSTM_Node::LSTM_Node(int32_t _innovation_number, int32_t _type, double _depth) : RNN_Node_Interface(_innovation_number, _type, _depth) {
     node_type = LSTM_NODE;
+
+    // Random timeskip generated at Node level from range 1-10
+    time_skip = (std::rand()) % 10 + 1;
+
+    //Log::debug("Time skip generated for current LSTM Node : %d\n", time_skip);
 }
 
 LSTM_Node::~LSTM_Node() {
@@ -167,7 +174,9 @@ void LSTM_Node::input_fired(int32_t time, double incoming_output) {
     double input_value = input_values[time];
 
     double previous_cell_value = 0.0;
-    if (time > 0) previous_cell_value = cell_values[time - 1];
+
+     // Moving behind through time steps with a randomly generated time skip    
+    if (time >= time_skip) previous_cell_value = cell_values[time - time_skip];
 
     //forget gate bias should be around 1.0 intead of 0, but we do it here to not throw
     //off the mu/sigma of the parameters
@@ -218,7 +227,9 @@ void LSTM_Node::try_update_deltas(int32_t time) {
     double input_value = input_values[time];
 
     double previous_cell_value = 0.00;
-    if (time > 0) previous_cell_value = cell_values[time - 1];
+
+    // Moving behind through time steps with a randomly generated time skip     
+    if (time >= time_skip) previous_cell_value = cell_values[time - time_skip];
 
     //backprop output gate
     double d_output_gate = error * cell_out_tanh[time] * ld_output_gate[time];
@@ -232,7 +243,8 @@ void LSTM_Node::try_update_deltas(int32_t time) {
 
     double d_cell_out = error * output_gate_values[time] * ld_cell_out[time];
     //propagate error back from the next cell value if there is one
-    if (time < (series_length - 1)) d_cell_out += d_prev_cell[time + 1];
+    // Moving ahead through time steps with a randomly generated time skip
+    if (time < (series_length - time_skip)) d_cell_out += d_prev_cell[time + time_skip];
 
     //backprop forget gate
     d_prev_cell[time] += d_cell_out * forget_gate_values[time];

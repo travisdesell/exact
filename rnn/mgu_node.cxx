@@ -13,6 +13,8 @@ using std::string;
 using std::minstd_rand0;
 using std::uniform_real_distribution;
 
+#include <cstdlib>
+
 #include <vector>
 using std::vector;
 
@@ -28,6 +30,11 @@ using std::vector;
 
 MGU_Node::MGU_Node(int32_t _innovation_number, int32_t _layer_type, double _depth) : RNN_Node_Interface(_innovation_number, _layer_type, _depth) {
     node_type = MGU_NODE;
+
+    // Random timeskip generated at Node level from range 1-10
+    time_skip = (std::rand()) % 10 + 1;
+
+    //Log::debug("Time skip generated for current MGU Node : %d\n", time_skip);
 }
 
 MGU_Node::~MGU_Node() {
@@ -122,7 +129,9 @@ void MGU_Node::input_fired(int32_t time, double incoming_output) {
     double x = input_values[time];
 
     double h_prev = 0.0;
-    if (time > 0) h_prev = output_values[time - 1];
+
+     // Moving behind through time steps with a randomly generated time skip
+    if (time >= time_skip) h_prev = output_values[time - time_skip];
 
     double hfu = h_prev * fu;
     double xfw = x * fw;
@@ -152,11 +161,14 @@ void MGU_Node::try_update_deltas(int32_t time) {
     double x = input_values[time];
 
     double h_prev = 0.0;
-    if (time > 0) h_prev = output_values[time - 1];
+
+    // Moving behind through time steps with a randomly generated time skip   
+    if (time >= time_skip) h_prev = output_values[time - time_skip];
 
     //backprop output gate
     double d_out = error;
-    if (time < (series_length - 1)) d_out += d_h_prev[time + 1];
+    // Moving ahead through time steps with a randomly generated time skip
+    if (time < (series_length - time_skip)) d_out += d_h_prev[time + time_skip];
 
 
     d_h_prev[time] = d_out * (1-f[time]);

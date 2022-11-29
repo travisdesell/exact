@@ -17,6 +17,8 @@ using std::vector;
 
 class GRU_Node : public RNN_Node_Interface {
     private:
+        int time_skip;
+
         double zw;
         double zu;
         double z_bias;
