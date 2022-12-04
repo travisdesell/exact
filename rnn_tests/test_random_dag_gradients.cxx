@@ -16,7 +16,7 @@ using std::vector;
 
 #include "common/arguments.hxx"
 #include "common/log.hxx"
-#include "common/weight_initialize.hxx"
+#include "weights/weight_initialize.hxx"
 
 #include "rnn/random_dag_node.hxx"
 #include "rnn/rnn_edge.hxx"

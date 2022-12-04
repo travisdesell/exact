@@ -16,8 +16,8 @@ using std::vector;
 
 #include "common/arguments.hxx"
 #include "common/log.hxx"
-#include "common/weight_initialize.hxx"
-#include "common/weight_update.hxx"
+#include "weights/weight_initialize.hxx"
+#include "weights/weight_update.hxx"
 
 #include "rnn/lstm_node.hxx"
 #include "rnn/gru_node.hxx"

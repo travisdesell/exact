@@ -104,6 +104,9 @@ add_subdirectory(rnn_examples)
 
 add_subdirectory(opencl)
 
+add_subdirectory(weights)
+add_subdirectory(examm)
+
 # add_subdirectory(cnn_tests)
 # add_subdirectory(cnn_examples)
 add_subdirectory(multithreaded)

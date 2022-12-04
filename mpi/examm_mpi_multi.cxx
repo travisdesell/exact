@@ -23,9 +23,9 @@ using std::vector;
 #include "common/arguments.hxx"
 #include "common/files.hxx"
 #include "common/log.hxx"
-#include "common/weight_update.hxx"
+#include "weights/weight_update.hxx"
 
-#include "rnn/examm.hxx"
+#include "examm/examm.hxx"
 
 #include "time_series/time_series.hxx"
 

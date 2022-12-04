@@ -8,7 +8,7 @@ using std::string;
 using std::vector;
 
 #include "rnn/rnn_genome.hxx"
-#include "common/weight_initialize.hxx"
+#include "weights/weight_initialize.hxx"
 
 RNN_Genome* create_ff(const vector<string> &input_parameter_names, int32_t number_hidden_layers, int32_t number_hidden_nodes, const vector<string> &output_parameter_names, int32_t max_recurrent_depth, WeightType weight_initialize, WeightType weight_inheritance, WeightType mutated_component_weight);
 

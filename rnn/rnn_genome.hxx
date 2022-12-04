@@ -25,8 +25,8 @@ using std::vector;
 #include "rnn_recurrent_edge.hxx"
 
 #include "common/random.hxx"
-#include "common/weight_initialize.hxx"
-#include "common/weight_update.hxx"
+#include "weights/weight_initialize.hxx"
+#include "weights/weight_update.hxx"
 #include "time_series/time_series.hxx"
 // #include "word_series/word_series.hxx"
 
