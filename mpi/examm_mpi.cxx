@@ -399,20 +399,14 @@ int main(int argc, char** argv) {
 
     Log::clear_rank_restriction();
 
-
+    Log::error("herer1\n");
     if (rank == 0) {
         examm = new EXAMM(population_size, number_islands, max_genomes, extinction_event_generation_number, islands_to_exterminate, island_ranking_method,
             repopulation_method, num_mutations, repeat_extinction, epochs_acc_freq,
             speciation_method,
             species_threshold, fitness_threshold,
             neat_c1, neat_c2, neat_c3,
-            time_series_sets->get_input_parameter_names(),
-            time_series_sets->get_output_parameter_names(),
-            time_series_sets->get_normalize_type(),
-            time_series_sets->get_normalize_mins(),
-            time_series_sets->get_normalize_maxs(),
-            time_series_sets->get_normalize_avgs(),
-            time_series_sets->get_normalize_std_devs(),
+            time_series_sets,
             weight_initialize, weight_inheritance, mutated_component_weight,
             bp_iterations, learning_rate,
             use_high_threshold, high_threshold,
@@ -422,7 +416,7 @@ int main(int argc, char** argv) {
             output_directory,
             seed_genome,
             start_filled);
-
+        Log::error("herer2\n");
         if (possible_node_types.size() > 0)  {
             examm->set_possible_node_types(possible_node_types);
         }

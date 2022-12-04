@@ -20,6 +20,7 @@ using std::vector;
 #include "rnn/rnn_genome.hxx"
 #include "speciation_strategy.hxx"
 #include "weights/weight_initialize.hxx"
+#include "time_series/time_series.hxx"
 
 class EXAMM {
     private:
@@ -53,6 +54,8 @@ class EXAMM {
 
         map<string, int32_t> inserted_from_map;
         map<string, int32_t> generated_from_map;
+
+        TimeSeriesSets *time_series_sets;
 
         int32_t number_inputs;
         int32_t number_outputs;
@@ -144,13 +147,14 @@ class EXAMM {
                 double _neat_c1,
                 double _neat_c2,
                 double _neat_c3,
-                const vector<string> &_input_parameter_names,
-                const vector<string> &_output_parameter_names,
-                string _normalize_type,
-                const map<string,double> &_normalize_mins,
-                const map<string,double> &_normalize_maxs,
-                const map<string,double> &_normalize_avgs,
-                const map<string,double> &_normalize_std_devs,
+                TimeSeriesSets *_time_series_sets,
+                // const vector<string> &_input_parameter_names,
+                // const vector<string> &_output_parameter_names,
+                // string _normalize_type,
+                // const map<string,double> &_normalize_mins,
+                // const map<string,double> &_normalize_maxs,
+                // const map<string,double> &_normalize_avgs,
+                // const map<string,double> &_normalize_std_devs,
                 WeightType _weight_initialize,
                 WeightType _weight_inheritance,
                 WeightType _mutated_component_weight,
@@ -201,6 +205,8 @@ class EXAMM {
         RNN_Genome* generate_for_transfer_learning(string file_name, int32_t extra_inputs, int32_t extra_outputs) ;
 
         void check_weight_initialize_validity();
+
+        void get_time_series_parameters();
 };
 
 #endif

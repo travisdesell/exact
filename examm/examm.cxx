@@ -75,13 +75,14 @@ EXAMM::EXAMM(
         double _neat_c1,
         double _neat_c2,
         double _neat_c3,
-        const vector<string> &_input_parameter_names,
-        const vector<string> &_output_parameter_names,
-        string _normalize_type,
-        const map<string,double> &_normalize_mins,
-        const map<string,double> &_normalize_maxs,
-        const map<string,double> &_normalize_avgs,
-        const map<string,double> &_normalize_std_devs,
+        // const vector<string> &_input_parameter_names,
+        // const vector<string> &_output_parameter_names,
+        // string _normalize_type,
+        // const map<string,double> &_normalize_mins,
+        // const map<string,double> &_normalize_maxs,
+        // const map<string,double> &_normalize_avgs,
+        // const map<string,double> &_normalize_std_devs,
+        TimeSeriesSets *_time_series_sets,
         WeightType _weight_initialize,
         WeightType _weight_inheritance,
         WeightType _mutated_component_weight,
@@ -113,6 +114,7 @@ EXAMM::EXAMM(
                         neat_c1(_neat_c1),
                         neat_c2(_neat_c2),
                         neat_c3(_neat_c3),
+                        time_series_sets(_time_series_sets),
                         bp_iterations(_bp_iterations),
                         learning_rate(_learning_rate),
                         use_high_threshold(_use_high_threshold),
@@ -122,25 +124,18 @@ EXAMM::EXAMM(
                         use_dropout(_use_dropout),
                         dropout_probability(_dropout_probability),
                         output_directory(_output_directory),
-                        normalize_type(_normalize_type),
+                        // normalize_type(_normalize_type),
                         weight_initialize(_weight_initialize),
                         weight_inheritance(_weight_inheritance),
                         mutated_component_weight(_mutated_component_weight),
                         start_filled(_start_filled) {
-    input_parameter_names = _input_parameter_names;
-    output_parameter_names = _output_parameter_names;
-    normalize_mins = _normalize_mins;
-    normalize_maxs = _normalize_maxs;
-    normalize_avgs = _normalize_avgs;
-    normalize_std_devs = _normalize_std_devs;
+    Log::error("examm here \n");
+    get_time_series_parameters();
 
     total_bp_epochs = 0;
 
     edge_innovation_count = 0;
     node_innovation_count = 0;
-
-    number_inputs = (int32_t)_input_parameter_names.size();
-    number_outputs = (int32_t)_output_parameter_names.size();
 
     //update to now have islands of genomes
     genomes = vector< vector<RNN_Genome*> >(number_islands);
@@ -356,6 +351,21 @@ EXAMM::EXAMM(
     }
 
     startClock = std::chrono::system_clock::now();
+}
+
+void EXAMM::get_time_series_parameters() {
+    Log::error("examm here2 \n");
+    input_parameter_names = time_series_sets->get_input_parameter_names();
+    output_parameter_names = time_series_sets->get_output_parameter_names();
+    Log::error("examm here 3\n");
+    normalize_type = time_series_sets->get_normalize_type();
+    normalize_mins = time_series_sets->get_normalize_mins();
+    normalize_maxs = time_series_sets->get_normalize_maxs();
+    normalize_avgs = time_series_sets->get_normalize_avgs();
+    normalize_std_devs = time_series_sets->get_normalize_std_devs();
+    Log::error("examm here 4\n");
+    number_inputs = time_series_sets->get_number_inputs();
+    number_outputs = time_series_sets->get_number_outputs();
 }
 
 void EXAMM::print() {
