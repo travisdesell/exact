@@ -12,7 +12,7 @@ using std::vector;
 
 #include "common/arguments.hxx"
 #include "common/log.hxx"
-// #include "weights/weight_initialize.hxx"
+// #include "weights/weight_rules.hxx"
 // #include "weights/weight_update.hxx"
 #include "examm/island_speciation_strategy.hxx"
 #include "examm/neat_speciation_strategy.hxx"

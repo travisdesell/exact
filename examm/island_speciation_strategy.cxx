@@ -67,6 +67,10 @@ IslandSpeciationStrategy::IslandSpeciationStrategy(
     seed_genome->set_generation_id(generated_genomes);
     generated_genomes++;
     global_best_genome = NULL;
+
+    Log::info("Speciation method is: island (Default is the island-based speciation strategy).\n");
+    Log::info("Number of mutations is set to %d\n", num_mutations);
+    Log::info("Repeat extinction is set to %s\n", repeat_extinction? "true":"false");
 }
 
 /**
@@ -227,6 +231,9 @@ int32_t IslandSpeciationStrategy::insert_genome(RNN_Genome* genome) {
     int32_t island = genome->get_group_id();
 
     Log::info("inserting genome to island: %d\n", island);
+    Log::info("genome weight init type: %s\n", genome->weight_rules->get_weight_initialize_method_name().c_str());
+    Log::info("genome weight inherit type: %s\n", genome->weight_rules->get_weight_inheritance_method_name().c_str());
+    Log::info("genome mutated component type: %s\n", genome->weight_rules->get_mutated_components_weight_method_name().c_str());
 
     int32_t insert_position = islands[island]->insert_genome(genome);
 

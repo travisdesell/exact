@@ -22,7 +22,7 @@ using std::vector;
 #include "common/arguments.hxx"
 #include "common/log.hxx"
 #include "common/process_arguments.hxx"
-#include "weights/weight_initialize.hxx"
+#include "weights/weight_rules.hxx"
 #include "weights/weight_update.hxx"
 #include "rnn/generate_nn.hxx"
 #include "examm/examm.hxx"
@@ -320,39 +320,16 @@ int main(int argc, char** argv) {
     get_argument(arguments, "--sequence_length_lower_bound", false, sequence_length_lower_bound);
     get_argument(arguments, "--sequence_length_upper_bound", false, sequence_length_upper_bound);
 
-    string weight_initialize_string = "xavier";
-    get_argument(arguments, "--weight_initialize", false, weight_initialize_string);
-    WeightType weight_initialize;
-    weight_initialize = get_enum_from_string(weight_initialize_string);
-
-    string weight_inheritance_string = "lamarckian";
-    get_argument(arguments, "--weight_inheritance", false, weight_inheritance_string);
-    WeightType weight_inheritance;
-    weight_inheritance = get_enum_from_string(weight_inheritance_string);
-
-    string mutated_component_weight_string = "lamarckian";
-    get_argument(arguments, "--mutated_component_weight", false, mutated_component_weight_string);
-    WeightType mutated_component_weight;
-    mutated_component_weight = get_enum_from_string(mutated_component_weight_string);
+    WeightRules *weight_rules = new WeightRules();
+    weight_rules->generate_weight_initialize_from_arguments(arguments);
 
     weight_update_method = new WeightUpdate();
     weight_update_method->generate_from_arguments(arguments);
 
-    // RNN_Genome *seed_genome = NULL;
-    // string genome_file_name = "";
     string transfer_learning_version = "";
-    // if (get_argument(arguments, "--genome_bin", false, genome_file_name)) {
-    //     seed_genome = new RNN_Genome(genome_file_name);
-    //     seed_genome->set_normalize_bounds(time_series_sets->get_normalize_type(), time_series_sets->get_normalize_mins(), time_series_sets->get_normalize_maxs(), time_series_sets->get_normalize_avgs(), time_series_sets->get_normalize_std_devs());
+    get_argument(arguments, "--transfer_learning_version", false, transfer_learning_version);
 
-    // get_argument(arguments, "--transfer_learning_version", true, transfer_learning_version);
-
-    //     bool epigenetic_weights = argument_exists(arguments, "--epigenetic_weights");
-
-    //     seed_genome->transfer_to(time_series_sets->get_input_parameter_names(), time_series_sets->get_output_parameter_names(), transfer_learning_version, epigenetic_weights, min_recurrent_depth, max_recurrent_depth);
-    //     seed_genome->tl_with_epigenetic = epigenetic_weights ;
-    // }
-    RNN_Genome *seed_genome = get_seed_genome(arguments, time_series_sets, weight_initialize, weight_inheritance, mutated_component_weight);
+    RNN_Genome *seed_genome = get_seed_genome(arguments, time_series_sets, weight_rules);
     SpeciationStrategy *speciation_strategy = generate_speciation_strategy_from_arguments(arguments, seed_genome);
 
     int32_t seed_stirs = 0;
@@ -362,8 +339,7 @@ int main(int argc, char** argv) {
 
     if (rank == 0) {
         examm = new EXAMM(population_size, number_islands, max_genomes, 
-            speciation_strategy, time_series_sets,
-            weight_initialize, weight_inheritance, mutated_component_weight,
+            speciation_strategy, time_series_sets, weight_rules,
             bp_iterations, learning_rate,
             use_high_threshold, high_threshold,
             use_low_threshold, low_threshold,

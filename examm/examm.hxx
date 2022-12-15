@@ -19,7 +19,7 @@ using std::vector;
 
 #include "rnn/rnn_genome.hxx"
 #include "speciation_strategy.hxx"
-#include "weights/weight_initialize.hxx"
+#include "weights/weight_rules.hxx"
 #include "time_series/time_series.hxx"
 
 class EXAMM {
@@ -31,23 +31,7 @@ class EXAMM {
 
         int32_t max_genomes;
         int32_t total_bp_epochs;
-
-        // int32_t extinction_event_generation_number;
-        // string island_ranking_method;
-
-        // string speciation_method;
-        // string repopulation_method;
-        // int32_t num_mutations;
-        // bool repeat_extinction;
-        // int32_t epochs_acc_freq;
-
         SpeciationStrategy *speciation_strategy;
-
-        // double species_threshold;
-        // double fitness_threshold;
-        // double neat_c1;
-        // double neat_c2;
-        // double neat_c3;
 
         int32_t edge_innovation_count;
         int32_t node_innovation_count;
@@ -118,9 +102,7 @@ class EXAMM {
         map<string,double> normalize_avgs;
         map<string,double> normalize_std_devs;
 
-        WeightType weight_initialize;
-        WeightType weight_inheritance;
-        WeightType mutated_component_weight;
+        WeightRules *weight_rules;
 
         ostringstream memory_log;
 
@@ -136,9 +118,7 @@ class EXAMM {
                 int32_t _max_genomes,
                 SpeciationStrategy *_speciation_strategy,
                 TimeSeriesSets *_time_series_sets,
-                WeightType _weight_initialize,
-                WeightType _weight_inheritance,
-                WeightType _mutated_component_weight,
+                WeightRules *_weight_rules,
                 int32_t _bp_iterations,
                 double _learning_rate,
                 bool _use_high_threshold,

@@ -25,7 +25,7 @@ using std::vector;
 #include "rnn_recurrent_edge.hxx"
 
 #include "common/random.hxx"
-#include "weights/weight_initialize.hxx"
+#include "weights/weight_rules.hxx"
 #include "weights/weight_update.hxx"
 #include "time_series/time_series.hxx"
 // #include "word_series/word_series.hxx"
@@ -58,9 +58,10 @@ class RNN_Genome {
 
         string log_filename;
 
-        WeightType weight_initialize;
-        WeightType weight_inheritance;
-        WeightType mutated_component_weight;
+        WeightRules *weight_rules;
+        // WeightType weight_initialize;
+        // WeightType weight_inheritance;
+        // WeightType mutated_component_weight;
 
         map<string, int32_t> generated_by_map;
 
@@ -100,8 +101,8 @@ class RNN_Genome {
         void sort_edges_by_depth();
         void sort_recurrent_edges_by_depth();
 
-        RNN_Genome(vector<RNN_Node_Interface*> &_nodes, vector<RNN_Edge*> &_edges, vector<RNN_Recurrent_Edge*> &_recurrent_edges, WeightType _weight_initialize, WeightType _weight_inheritance, WeightType _mutated_component_weight);
-        RNN_Genome(vector<RNN_Node_Interface*> &_nodes, vector<RNN_Edge*> &_edges, vector<RNN_Recurrent_Edge*> &_recurrent_edges, int16_t seed, WeightType _weight_initialize, WeightType _weight_inheritance, WeightType _mutated_component_weight);
+        RNN_Genome(vector<RNN_Node_Interface*> &_nodes, vector<RNN_Edge*> &_edges, vector<RNN_Recurrent_Edge*> &_recurrent_edges, WeightRules *weight_rules);
+        RNN_Genome(vector<RNN_Node_Interface*> &_nodes, vector<RNN_Edge*> &_edges, vector<RNN_Recurrent_Edge*> &_recurrent_edges, int16_t seed, WeightRules *weight_rules);
 
         RNN_Genome* copy();
 

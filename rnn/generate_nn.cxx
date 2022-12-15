@@ -20,7 +20,7 @@ using std::vector;
 
 #include "common/log.hxx"
 
-RNN_Genome* create_ff(const vector<string> &input_parameter_names, int32_t number_hidden_layers, int32_t number_hidden_nodes, const vector<string> &output_parameter_names, int32_t max_recurrent_depth, WeightType weight_initialize, WeightType weight_inheritance, WeightType mutated_component_weight) {
+RNN_Genome* create_ff(const vector<string> &input_parameter_names, int32_t number_hidden_layers, int32_t number_hidden_nodes, const vector<string> &output_parameter_names, int32_t max_recurrent_depth, WeightRules *weight_rules) {
     Log::debug("creating feed forward network with inputs: %d, hidden: %dx%d, outputs: %d, max recurrent depth: %d\n", input_parameter_names.size(), number_hidden_layers, number_hidden_nodes, output_parameter_names.size(), max_recurrent_depth);
     vector<RNN_Node_Interface*> rnn_nodes;
     vector< vector<RNN_Node_Interface*> > layer_nodes(2 + number_hidden_layers);
@@ -69,13 +69,13 @@ RNN_Genome* create_ff(const vector<string> &input_parameter_names, int32_t numbe
         }
     }
 
-    RNN_Genome *genome = new RNN_Genome(rnn_nodes, rnn_edges, recurrent_edges, weight_initialize, weight_inheritance, mutated_component_weight);
+    RNN_Genome *genome = new RNN_Genome(rnn_nodes, rnn_edges, recurrent_edges, weight_rules);
     genome->set_parameter_names(input_parameter_names, output_parameter_names);
     return genome;
 }
 
 
-RNN_Genome* create_jordan(const vector<string> &input_parameter_names, int32_t number_hidden_layers, int32_t number_hidden_nodes, const vector<string> &output_parameter_names, int32_t max_recurrent_depth, WeightType weight_initialize) {
+RNN_Genome* create_jordan(const vector<string> &input_parameter_names, int32_t number_hidden_layers, int32_t number_hidden_nodes, const vector<string> &output_parameter_names, int32_t max_recurrent_depth, WeightRules *weight_rules) {
     Log::debug("creating jordan neural network with inputs: %d, hidden: %dx%d, outputs: %d, max recurrent depth: %d\n", input_parameter_names.size(), number_hidden_layers, number_hidden_nodes, output_parameter_names.size(), max_recurrent_depth);
     vector<RNN_Node_Interface*> rnn_nodes;
     vector<RNN_Node_Interface*> output_layer;
@@ -129,12 +129,12 @@ RNN_Genome* create_jordan(const vector<string> &input_parameter_names, int32_t n
         }
     }
 
-    RNN_Genome *genome = new RNN_Genome(rnn_nodes, rnn_edges, recurrent_edges, weight_initialize, WeightType::NONE, WeightType::NONE);
+    RNN_Genome *genome = new RNN_Genome(rnn_nodes, rnn_edges, recurrent_edges, weight_rules);
     genome->set_parameter_names(input_parameter_names, output_parameter_names);
     return genome;
 }
 
-RNN_Genome* create_elman(const vector<string> &input_parameter_names, int32_t number_hidden_layers, int32_t number_hidden_nodes, const vector<string> &output_parameter_names, int32_t max_recurrent_depth, WeightType weight_initialize) {
+RNN_Genome* create_elman(const vector<string> &input_parameter_names, int32_t number_hidden_layers, int32_t number_hidden_nodes, const vector<string> &output_parameter_names, int32_t max_recurrent_depth, WeightRules *weight_rules) {
     Log::debug("creating elman network with inputs: %d, hidden: %dx%d, outputs: %d, max recurrent depth: %d\n", input_parameter_names.size(), number_hidden_layers, number_hidden_nodes, output_parameter_names.size(), max_recurrent_depth);
     vector<RNN_Node_Interface*> rnn_nodes;
     vector<RNN_Node_Interface*> output_layer;
@@ -193,12 +193,12 @@ RNN_Genome* create_elman(const vector<string> &input_parameter_names, int32_t nu
         }
     }
 
-    RNN_Genome *genome = new RNN_Genome(rnn_nodes, rnn_edges, recurrent_edges, weight_initialize, WeightType::NONE, WeightType::NONE);
+    RNN_Genome *genome = new RNN_Genome(rnn_nodes, rnn_edges, recurrent_edges, weight_rules);
     genome->set_parameter_names(input_parameter_names, output_parameter_names);
     return genome;
 }
 
-RNN_Genome* create_lstm(const vector<string> &input_parameter_names, int32_t number_hidden_layers, int32_t number_hidden_nodes, const vector<string> &output_parameter_names, int32_t max_recurrent_depth, WeightType weight_initialize) {
+RNN_Genome* create_lstm(const vector<string> &input_parameter_names, int32_t number_hidden_layers, int32_t number_hidden_nodes, const vector<string> &output_parameter_names, int32_t max_recurrent_depth, WeightRules *weight_rules) {
     Log::debug("creating LSTM network with inputs: %d, hidden: %dx%d, outputs: %d, max recurrent depth: %d\n", input_parameter_names.size(), number_hidden_layers, number_hidden_nodes, output_parameter_names.size(), max_recurrent_depth);
     vector<RNN_Node_Interface*> rnn_nodes;
     vector< vector<RNN_Node_Interface*> > layer_nodes(2 + number_hidden_layers);
@@ -238,13 +238,13 @@ RNN_Genome* create_lstm(const vector<string> &input_parameter_names, int32_t num
         }
     }
 
-    RNN_Genome *genome = new RNN_Genome(rnn_nodes, rnn_edges, recurrent_edges, weight_initialize, WeightType::NONE, WeightType::NONE);
+    RNN_Genome *genome = new RNN_Genome(rnn_nodes, rnn_edges, recurrent_edges, weight_rules);
     genome->set_parameter_names(input_parameter_names, output_parameter_names);
     return genome;
 }
 
 
-RNN_Genome* create_ugrnn(const vector<string> &input_parameter_names, int32_t number_hidden_layers, int32_t number_hidden_nodes, const vector<string> &output_parameter_names, int32_t max_recurrent_depth, WeightType weight_initialize) {
+RNN_Genome* create_ugrnn(const vector<string> &input_parameter_names, int32_t number_hidden_layers, int32_t number_hidden_nodes, const vector<string> &output_parameter_names, int32_t max_recurrent_depth, WeightRules *weight_rules) {
     Log::debug("creating UGRNN network with inputs: %d, hidden: %dx%d, outputs: %d, max recurrent depth: %d\n", input_parameter_names.size(), number_hidden_layers, number_hidden_nodes, output_parameter_names.size(), max_recurrent_depth);
     vector<RNN_Node_Interface*> rnn_nodes;
     vector< vector<RNN_Node_Interface*> > layer_nodes(2 + number_hidden_layers);
@@ -284,14 +284,14 @@ RNN_Genome* create_ugrnn(const vector<string> &input_parameter_names, int32_t nu
         }
     }
 
-    RNN_Genome *genome = new RNN_Genome(rnn_nodes, rnn_edges, recurrent_edges, weight_initialize, WeightType::NONE, WeightType::NONE);
+    RNN_Genome *genome = new RNN_Genome(rnn_nodes, rnn_edges, recurrent_edges, weight_rules);
     genome->set_parameter_names(input_parameter_names, output_parameter_names);
     return genome;
 }
 
 
 
-RNN_Genome* create_gru(const vector<string> &input_parameter_names, int32_t number_hidden_layers, int32_t number_hidden_nodes, const vector<string> &output_parameter_names, int32_t max_recurrent_depth, WeightType weight_initialize) {
+RNN_Genome* create_gru(const vector<string> &input_parameter_names, int32_t number_hidden_layers, int32_t number_hidden_nodes, const vector<string> &output_parameter_names, int32_t max_recurrent_depth, WeightRules *weight_rules) {
     Log::debug("creating GRU network with inputs: %d, hidden: %dx%d, outputs: %d, max recurrent depth: %d\n", input_parameter_names.size(), number_hidden_layers, number_hidden_nodes, output_parameter_names.size(), max_recurrent_depth);
     vector<RNN_Node_Interface*> rnn_nodes;
     vector< vector<RNN_Node_Interface*> > layer_nodes(2 + number_hidden_layers);
@@ -331,12 +331,12 @@ RNN_Genome* create_gru(const vector<string> &input_parameter_names, int32_t numb
         }
     }
 
-    RNN_Genome *genome = new RNN_Genome(rnn_nodes, rnn_edges, recurrent_edges, weight_initialize, WeightType::NONE, WeightType::NONE);
+    RNN_Genome *genome = new RNN_Genome(rnn_nodes, rnn_edges, recurrent_edges, weight_rules);
     genome->set_parameter_names(input_parameter_names, output_parameter_names);
     return genome;
 }
 
-RNN_Genome* create_enarc(const vector<string> &input_parameter_names, int32_t number_hidden_layers, int32_t number_hidden_nodes, const vector<string> &output_parameter_names, int32_t max_recurrent_depth, WeightType weight_initialize) {
+RNN_Genome* create_enarc(const vector<string> &input_parameter_names, int32_t number_hidden_layers, int32_t number_hidden_nodes, const vector<string> &output_parameter_names, int32_t max_recurrent_depth, WeightRules *weight_rules) {
     Log::debug("creating ENARC network with inputs: %d, hidden: %dx%d, outputs: %d, max recurrent depth: %d\n", input_parameter_names.size(), number_hidden_layers, number_hidden_nodes, output_parameter_names.size(), max_recurrent_depth);
     vector<RNN_Node_Interface*> rnn_nodes;
     vector< vector<RNN_Node_Interface*> > layer_nodes(2 + number_hidden_layers);
@@ -376,12 +376,12 @@ RNN_Genome* create_enarc(const vector<string> &input_parameter_names, int32_t nu
         }
     }
 
-    RNN_Genome *genome = new RNN_Genome(rnn_nodes, rnn_edges, recurrent_edges, weight_initialize, WeightType::NONE, WeightType::NONE);
+    RNN_Genome *genome = new RNN_Genome(rnn_nodes, rnn_edges, recurrent_edges, weight_rules);
     genome->set_parameter_names(input_parameter_names, output_parameter_names);
     return genome;
 }
 
-RNN_Genome* create_enas_dag(const vector<string> &input_parameter_names, int32_t number_hidden_layers, int32_t number_hidden_nodes, const vector<string> &output_parameter_names, int32_t max_recurrent_depth, WeightType weight_initialize) {
+RNN_Genome* create_enas_dag(const vector<string> &input_parameter_names, int32_t number_hidden_layers, int32_t number_hidden_nodes, const vector<string> &output_parameter_names, int32_t max_recurrent_depth, WeightRules *weight_rules) {
     Log::debug("creating ENAS_DAG network with inputs: %d, hidden: %dx%d, outputs: %d, max recurrent depth: %d\n", input_parameter_names.size(), number_hidden_layers, number_hidden_nodes, output_parameter_names.size(), max_recurrent_depth);
     vector<RNN_Node_Interface*> rnn_nodes;
     vector< vector<RNN_Node_Interface*> > layer_nodes(2 + number_hidden_layers);
@@ -421,13 +421,13 @@ RNN_Genome* create_enas_dag(const vector<string> &input_parameter_names, int32_t
         }
     }
 
-    RNN_Genome *genome = new RNN_Genome(rnn_nodes, rnn_edges, recurrent_edges, weight_initialize, WeightType::NONE, WeightType::NONE);
+    RNN_Genome *genome = new RNN_Genome(rnn_nodes, rnn_edges, recurrent_edges, weight_rules);
     genome->set_parameter_names(input_parameter_names, output_parameter_names);
     return genome;
 }
 
 
-RNN_Genome* create_random_dag(const vector<string> &input_parameter_names, int32_t number_hidden_layers, int32_t number_hidden_nodes, const vector<string> &output_parameter_names, int32_t max_recurrent_depth, WeightType weight_initialize) {
+RNN_Genome* create_random_dag(const vector<string> &input_parameter_names, int32_t number_hidden_layers, int32_t number_hidden_nodes, const vector<string> &output_parameter_names, int32_t max_recurrent_depth, WeightRules *weight_rules) {
     Log::debug("creating RANDOM_DAG network with inputs: %d, hidden: %dx%d, outputs: %d, max recurrent depth: %d\n", input_parameter_names.size(), number_hidden_layers, number_hidden_nodes, output_parameter_names.size(), max_recurrent_depth);
     vector<RNN_Node_Interface*> rnn_nodes;
     vector< vector<RNN_Node_Interface*> > layer_nodes(2 + number_hidden_layers);
@@ -467,13 +467,13 @@ RNN_Genome* create_random_dag(const vector<string> &input_parameter_names, int32
         }
     }
 
-    RNN_Genome *genome = new RNN_Genome(rnn_nodes, rnn_edges, recurrent_edges, weight_initialize, WeightType::NONE, WeightType::NONE);
+    RNN_Genome *genome = new RNN_Genome(rnn_nodes, rnn_edges, recurrent_edges, weight_rules);
     genome->set_parameter_names(input_parameter_names, output_parameter_names);
     return genome;
 }
 
 
-RNN_Genome* create_mgu(const vector<string> &input_parameter_names, int32_t number_hidden_layers, int32_t number_hidden_nodes, const vector<string> &output_parameter_names, int32_t max_recurrent_depth, WeightType weight_initialize) {
+RNN_Genome* create_mgu(const vector<string> &input_parameter_names, int32_t number_hidden_layers, int32_t number_hidden_nodes, const vector<string> &output_parameter_names, int32_t max_recurrent_depth, WeightRules *weight_rules) {
     Log::debug("creating MGU network with inputs: %d, hidden: %dx%d, outputs: %d, max recurrent depth: %d\n", input_parameter_names.size(), number_hidden_layers, number_hidden_nodes, output_parameter_names.size(), max_recurrent_depth);
     vector<RNN_Node_Interface*> rnn_nodes;
     vector< vector<RNN_Node_Interface*> > layer_nodes(2 + number_hidden_layers);
@@ -513,13 +513,13 @@ RNN_Genome* create_mgu(const vector<string> &input_parameter_names, int32_t numb
         }
     }
 
-    RNN_Genome *genome = new RNN_Genome(rnn_nodes, rnn_edges, recurrent_edges, weight_initialize, WeightType::NONE, WeightType::NONE);
+    RNN_Genome *genome = new RNN_Genome(rnn_nodes, rnn_edges, recurrent_edges, weight_rules);
     genome->set_parameter_names(input_parameter_names, output_parameter_names);
     return genome;
 }
 
 
-RNN_Genome* create_delta(const vector<string> &input_parameter_names, int32_t number_hidden_layers, int32_t number_hidden_nodes, const vector<string> &output_parameter_names, int32_t max_recurrent_depth, WeightType weight_initialize) {
+RNN_Genome* create_delta(const vector<string> &input_parameter_names, int32_t number_hidden_layers, int32_t number_hidden_nodes, const vector<string> &output_parameter_names, int32_t max_recurrent_depth, WeightRules *weight_rules) {
     Log::debug("creating delta network with inputs: %d, hidden: %dx%d, outputs: %d, max recurrent depth: %d\n", input_parameter_names.size(), number_hidden_layers, number_hidden_nodes, output_parameter_names.size(), max_recurrent_depth);
     vector<RNN_Node_Interface*> rnn_nodes;
     vector< vector<RNN_Node_Interface*> > layer_nodes(2 + number_hidden_layers);
@@ -559,12 +559,12 @@ RNN_Genome* create_delta(const vector<string> &input_parameter_names, int32_t nu
         }
     }
 
-    RNN_Genome *genome = new RNN_Genome(rnn_nodes, rnn_edges, recurrent_edges, weight_initialize, WeightType::NONE, WeightType::NONE);
+    RNN_Genome *genome = new RNN_Genome(rnn_nodes, rnn_edges, recurrent_edges, weight_rules);
     genome->set_parameter_names(input_parameter_names, output_parameter_names);
     return genome;
 }
 
-RNN_Genome* get_seed_genome(const vector<string> &arguments, TimeSeriesSets *time_series_sets, WeightType weight_initialize, WeightType weight_inheritance, WeightType mutated_component_weight) {
+RNN_Genome* get_seed_genome(const vector<string> &arguments, TimeSeriesSets *time_series_sets, WeightRules *weight_rules) {
     int32_t min_recurrent_depth = 1;
     get_argument(arguments, "--min_recurrent_depth", false, min_recurrent_depth);
 
@@ -589,23 +589,9 @@ RNN_Genome* get_seed_genome(const vector<string> &arguments, TimeSeriesSets *tim
         // bool seed_genome_was_minimal = false;
         if (seed_genome == NULL) {
             // seed_genome_was_minimal = true;
-            seed_genome = create_ff(time_series_sets->get_input_parameter_names(), 0, 0, time_series_sets->get_output_parameter_names(), 0, weight_initialize, weight_inheritance, mutated_component_weight);
+            seed_genome = create_ff(time_series_sets->get_input_parameter_names(), 0, 0, time_series_sets->get_output_parameter_names(), 0, weight_rules);
             seed_genome->initialize_randomly();
-        } //otherwise the seed genome was passed into EXAMM
-
-        //make sure we don't duplicate node or edge innovation numbers
-        // edge_innovation_count = seed_genome->get_max_edge_innovation_count() + 1;
-        // node_innovation_count = seed_genome->get_max_node_innovation_count() + 1;
-
-        // seed_genome->set_generated_by("initial");
-
-        // //insert a copy of it into the population so
-        // //additional requests can mutate it
-
-        // seed_genome->best_validation_mse = EXAMM_MAX_DOUBLE;
-
-        // seed_genome->best_validation_mse = EXAMM_MAX_DOUBLE;
-        // seed_genome->best_validation_mae = EXAMM_MAX_DOUBLE;
+        } 
     }
 
     return seed_genome;

@@ -11,7 +11,7 @@ SpeciationStrategy* generate_speciation_strategy_from_arguments(const vector<str
     SpeciationStrategy *speciation_strategy = NULL;
     string speciation_method = "";
     get_argument(arguments, "--speciation_method", false, speciation_method);
-    Log::error("speciation method is %s\n", speciation_method.c_str());
+
     if (is_island_strategy(speciation_method)) {
         Log::info("Using Island speciation strategy\n");
         speciation_strategy= generate_island_speciation_strategy_from_arguments(arguments, seed_genome);

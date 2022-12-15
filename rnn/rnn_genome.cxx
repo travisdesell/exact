@@ -87,9 +87,7 @@ void RNN_Genome::sort_recurrent_edges_by_depth() {
 RNN_Genome::RNN_Genome(vector<RNN_Node_Interface*> &_nodes,
                         vector<RNN_Edge*> &_edges,
                         vector<RNN_Recurrent_Edge*> &_recurrent_edges,
-                        WeightType _weight_initialize,
-                        WeightType _weight_inheritance,
-                        WeightType _mutated_component_weight) {
+                        WeightRules *_weight_rules) {
     generation_id = -1;
     group_id = -1;
 
@@ -99,9 +97,10 @@ RNN_Genome::RNN_Genome(vector<RNN_Node_Interface*> &_nodes,
     nodes = _nodes;
     edges = _edges;
     recurrent_edges = _recurrent_edges;
-    weight_initialize = _weight_initialize;
-    weight_inheritance = _weight_inheritance;
-    mutated_component_weight = _mutated_component_weight;
+    weight_rules = _weight_rules->copy();
+
+    // weight_inheritance = _weight_inheritance;
+    // mutated_component_weight = _mutated_component_weight;
 
     sort_nodes_by_depth();
     sort_edges_by_depth();
@@ -136,10 +135,8 @@ RNN_Genome::RNN_Genome(vector<RNN_Node_Interface*> &_nodes,
                         vector<RNN_Edge*> &_edges,
                         vector<RNN_Recurrent_Edge*> &_recurrent_edges,
                         int16_t seed,
-                        WeightType _weight_initialize,
-                        WeightType _weight_inheritance,
-                        WeightType _mutated_component_weight) :
-                                RNN_Genome(_nodes, _edges, _recurrent_edges, _weight_initialize, _weight_inheritance, _mutated_component_weight) {
+                        WeightRules *_weight_rules) :
+                                RNN_Genome(_nodes, _edges, _recurrent_edges, _weight_rules) {
 
     generator = minstd_rand0(seed);
 }
@@ -167,7 +164,7 @@ RNN_Genome* RNN_Genome::copy() {
         recurrent_edge_copies.push_back( recurrent_edges[i]->copy(node_copies) );
     }
 
-    RNN_Genome *other = new RNN_Genome(node_copies, edge_copies, recurrent_edge_copies, weight_initialize, weight_inheritance, mutated_component_weight);
+    RNN_Genome *other = new RNN_Genome(node_copies, edge_copies, recurrent_edge_copies, weight_rules);
 
     other->group_id = group_id;
     other->bp_iterations = bp_iterations;
@@ -627,6 +624,7 @@ void RNN_Genome::initialize_randomly() {
     Log::trace("initializing genome %d of group %d randomly!\n", generation_id, group_id);
     int32_t number_of_weights = get_number_weights();
     initial_parameters.assign(number_of_weights, 0.0);
+    WeightType weight_initialize = weight_rules->get_weight_initialize_method();
 
     if (weight_initialize == WeightType::RANDOM) {
         for (int32_t i = 0; i < (int32_t)initial_parameters.size(); i++) {
@@ -715,6 +713,8 @@ double RNN_Genome::get_random_weight() {
 }
 
 void RNN_Genome::initialize_node_randomly(RNN_Node_Interface* n) {
+    WeightType mutated_component_weight = weight_rules->get_mutated_components_weight_method();
+    WeightType weight_initialize = weight_rules->get_weight_initialize_method();
     if (mutated_component_weight == weight_initialize) {
         if (weight_initialize == WeightType::XAVIER) {
             int32_t sum = get_fan_in(n->innovation_number) + get_fan_out(n->innovation_number);
@@ -1717,6 +1717,8 @@ void RNN_Genome::get_mu_sigma(const vector<double> &p, double &mu, double &sigma
 
 RNN_Node_Interface* RNN_Genome::create_node(double mu, double sigma, int32_t node_type, int32_t &node_innovation_count, double depth) {
     RNN_Node_Interface *n = NULL;
+    WeightType mutated_component_weight = weight_rules->get_mutated_components_weight_method();
+    WeightType weight_initialize = weight_rules->get_weight_initialize_method();
 
     Log::info("CREATING NODE, type: '%s'\n", NODE_TYPES[node_type].c_str());
     if (node_type == LSTM_NODE) {
@@ -1759,6 +1761,8 @@ RNN_Node_Interface* RNN_Genome::create_node(double mu, double sigma, int32_t nod
 
 bool RNN_Genome::attempt_edge_insert(RNN_Node_Interface *n1, RNN_Node_Interface *n2, double mu, double sigma, int32_t &edge_innovation_count) {
     Log::info("\tadding edge between nodes %d and %d\n", n1->innovation_number, n2->innovation_number);
+    WeightType mutated_component_weight = weight_rules->get_mutated_components_weight_method();
+    WeightType weight_initialize = weight_rules->get_weight_initialize_method();
 
     if (n1->depth == n2->depth) {
         Log::info("\tcannot add edge between nodes as their depths are the same: %lf and %lf\n", n1->depth, n2->depth);
@@ -1823,7 +1827,8 @@ bool RNN_Genome::attempt_edge_insert(RNN_Node_Interface *n1, RNN_Node_Interface 
 
 bool RNN_Genome::attempt_recurrent_edge_insert(RNN_Node_Interface *n1, RNN_Node_Interface *n2, double mu, double sigma, uniform_int_distribution<int32_t> dist, int32_t &edge_innovation_count) {
     Log::info("\tadding recurrent edge between nodes %d and %d\n", n1->innovation_number, n2->innovation_number);
-
+    WeightType mutated_component_weight = weight_rules->get_mutated_components_weight_method();
+    WeightType weight_initialize = weight_rules->get_weight_initialize_method();
     //int32_t recurrent_depth = 1 + (rng_0_1(generator) * (max_recurrent_depth - 1));
     int32_t recurrent_depth = dist(generator);
 
@@ -3120,9 +3125,18 @@ void RNN_Genome::read_from_stream(istream &bin_istream) {
     bin_istream.read((char*)&use_dropout, sizeof(bool));
     bin_istream.read((char*)&dropout_probability, sizeof(double));
 
+    WeightType weight_initialize = WeightType::NONE;
+    WeightType weight_inheritance = WeightType::NONE;
+    WeightType mutated_component_weight = WeightType::NONE;
+
     bin_istream.read((char*)&weight_initialize, sizeof(int32_t));
     bin_istream.read((char*)&weight_inheritance, sizeof(int32_t));
     bin_istream.read((char*)&mutated_component_weight, sizeof(int32_t));
+
+    weight_rules = new WeightRules();
+    weight_rules->set_weight_initialize_method(weight_initialize);
+    weight_rules->set_weight_inheritance_method(weight_inheritance);
+    weight_rules->set_mutated_components_weight_method(mutated_component_weight);
 
     Log::debug("generation_id: %d\n", generation_id);
     Log::debug("bp_iterations: %d\n", bp_iterations);
@@ -3374,6 +3388,9 @@ void RNN_Genome::write_to_stream(ostream &bin_ostream) {
     bin_ostream.write((char*)&use_dropout, sizeof(bool));
     bin_ostream.write((char*)&dropout_probability, sizeof(double));
 
+    WeightType weight_initialize = weight_rules->get_weight_initialize_method();
+    WeightType weight_inheritance = weight_rules->get_weight_inheritance_method();
+    WeightType mutated_component_weight = weight_rules->get_mutated_components_weight_method();
     bin_ostream.write((char*)&weight_initialize, sizeof(int32_t));
     bin_ostream.write((char*)&weight_inheritance, sizeof(int32_t));
     bin_ostream.write((char*)&mutated_component_weight, sizeof(int32_t));

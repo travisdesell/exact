@@ -64,9 +64,7 @@ EXAMM::EXAMM(
         int32_t _max_genomes,
         SpeciationStrategy *_speciation_strategy,
         TimeSeriesSets *_time_series_sets,
-        WeightType _weight_initialize,
-        WeightType _weight_inheritance,
-        WeightType _mutated_component_weight,
+        WeightRules *_weight_rules,
         int32_t _bp_iterations,
         double _learning_rate,
         bool _use_high_threshold,
@@ -93,9 +91,7 @@ EXAMM::EXAMM(
                         use_dropout(_use_dropout),
                         dropout_probability(_dropout_probability),
                         output_directory(_output_directory),
-                        weight_initialize(_weight_initialize),
-                        weight_inheritance(_weight_inheritance),
-                        mutated_component_weight(_mutated_component_weight) {
+                        weight_rules(_weight_rules) {
 
     get_time_series_parameters();
 
@@ -167,13 +163,7 @@ EXAMM::EXAMM(
 
     check_weight_initialize_validity();
 
-    Log::info("weight initialize: %s\n", WEIGHT_TYPES_STRING[weight_initialize].c_str());
-    Log::info("weight inheritance: %s \n", WEIGHT_TYPES_STRING[weight_inheritance].c_str());
-    Log::info("mutated component weight: %s\n", WEIGHT_TYPES_STRING[mutated_component_weight].c_str());
 
-    // Log::info("Speciation method is: \"%s\" (Default is the island-based speciation strategy).\n", speciation_method.c_str());
-    // Log::info("Number of mutations is set to %d\n", num_mutations);
-    // Log::info("Repeat extinction is set to %s\n", repeat_extinction? "true":"false");
     // if (speciation_method.compare("island") == 0 || speciation_method.compare("") == 0) {
         //generate a minimal feed foward network as the seed genome
 
@@ -287,16 +277,14 @@ EXAMM::EXAMM(
 }
 
 void EXAMM::get_time_series_parameters() {
-    Log::error("examm here2 \n");
+
     input_parameter_names = time_series_sets->get_input_parameter_names();
     output_parameter_names = time_series_sets->get_output_parameter_names();
-    Log::error("examm here 3\n");
     normalize_type = time_series_sets->get_normalize_type();
     normalize_mins = time_series_sets->get_normalize_mins();
     normalize_maxs = time_series_sets->get_normalize_maxs();
     normalize_avgs = time_series_sets->get_normalize_avgs();
     normalize_std_devs = time_series_sets->get_normalize_std_devs();
-    Log::error("examm here 4\n");
     number_inputs = time_series_sets->get_number_inputs();
     number_outputs = time_series_sets->get_number_outputs();
 }
@@ -1009,7 +997,7 @@ RNN_Genome* EXAMM::crossover(RNN_Genome *p1, RNN_Genome *p2) {
     sort(child_edges.begin(), child_edges.end(), sort_RNN_Edges_by_depth());
     sort(child_recurrent_edges.begin(), child_recurrent_edges.end(), sort_RNN_Recurrent_Edges_by_depth());
 
-    RNN_Genome *child = new RNN_Genome(child_nodes, child_edges, child_recurrent_edges, weight_initialize, weight_inheritance, mutated_component_weight);
+    RNN_Genome *child = new RNN_Genome(child_nodes, child_edges, child_recurrent_edges, weight_rules);
     child->set_parameter_names(input_parameter_names, output_parameter_names);
     child->set_normalize_bounds(normalize_type, normalize_mins, normalize_maxs, normalize_avgs, normalize_std_devs);
 
@@ -1025,6 +1013,8 @@ RNN_Genome* EXAMM::crossover(RNN_Genome *p1, RNN_Genome *p2) {
     vector<double> new_parameters;
 
     // if weight_inheritance is same, all the weights of the child genome would be initialized as weight_initialize method
+    WeightType weight_initialize = weight_rules->get_weight_initialize_method();
+    WeightType weight_inheritance = weight_rules->get_weight_inheritance_method();
     if (weight_inheritance == weight_initialize) {
         Log::debug("weight inheritance at crossover method is %s, setting weights to %s randomly \n", WEIGHT_TYPES_STRING[weight_inheritance].c_str(), WEIGHT_TYPES_STRING[weight_inheritance].c_str());
         child->initialize_randomly();
@@ -1060,6 +1050,10 @@ uniform_int_distribution<int32_t> EXAMM::get_recurrent_depth_dist() {
 }
 
 void EXAMM::check_weight_initialize_validity() {
+    WeightType weight_initialize = weight_rules->get_weight_initialize_method();
+    WeightType weight_inheritance = weight_rules->get_weight_inheritance_method();
+    WeightType mutated_component_weight = weight_rules->get_mutated_components_weight_method();
+
     if (weight_initialize < 0) {
         Log::fatal("Weight initalization is set to NONE, this should not happen! \n");
         exit(1);

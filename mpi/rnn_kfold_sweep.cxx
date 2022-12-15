@@ -38,7 +38,7 @@ typedef struct stat Stat;
 
 #include "common/arguments.hxx"
 #include "common/log.hxx"
-#include "weights/weight_initialize.hxx"
+#include "weights/weight_rules.hxx"
 #include "weights/weight_update.hxx"
 
 #include "rnn/lstm_node.hxx"
