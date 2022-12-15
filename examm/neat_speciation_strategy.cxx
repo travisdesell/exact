@@ -28,7 +28,7 @@ NeatSpeciationStrategy::NeatSpeciationStrategy(
                 double _mutation_rate, double _intra_island_crossover_rate,
                 double _inter_island_crossover_rate, RNN_Genome *_seed_genome,
                 double _species_threshold, double _fitness_threshold,
-                double _neat_c1, double _neat_c2, double _neat_c3, minstd_rand0 &_generator) :
+                double _neat_c1, double _neat_c2, double _neat_c3) :
                         generation_species(0),
                         species_count(0),
                         population_not_improving_count(0),
@@ -42,8 +42,7 @@ NeatSpeciationStrategy::NeatSpeciationStrategy(
                         inter_island_crossover_rate(_inter_island_crossover_rate),
                         generated_genomes(0),
                         evaluated_genomes(0),
-                        minimal_genome(_seed_genome),
-                        generator(_generator) {
+                        seed_genome(_seed_genome) {
 
     double rate_sum = mutation_rate + intra_island_crossover_rate + inter_island_crossover_rate;
     if (rate_sum != 1.0) {
@@ -59,12 +58,12 @@ NeatSpeciationStrategy::NeatSpeciationStrategy(
 
     //set the generation id for the initial minimal genome
     generated_genomes++;
-    minimal_genome->set_generation_id(generated_genomes);
+    seed_genome->set_generation_id(generated_genomes);
     // set the fitst species with minimal genome
     Neat_Species.push_back(new Species(species_count));
     Log::info("initialized the first species, current neat species size: %d \n", Neat_Species.size() );
     species_count++;
-    insert_genome(minimal_genome);
+    insert_genome(seed_genome);
 
     global_best_genome = NULL;
 
@@ -407,7 +406,7 @@ vector<int32_t> NeatSpeciationStrategy::get_random_species_list() {
         species_list.push_back(i);
     }
 
-    shuffle(species_list.begin(), species_list.end(), generator);
+    shuffle(species_list.begin(), species_list.end(), std::default_random_engine());
     // Log::error("species shuffle list: \n");
     // for (std::vector<int32_t>::iterator it=species_list.begin(); it!=species_list.end(); ++it)
     //     std::cout << ' ' << *it;

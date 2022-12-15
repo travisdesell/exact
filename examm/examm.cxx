@@ -62,26 +62,7 @@ EXAMM::EXAMM(
         int32_t _population_size,
         int32_t _number_islands,
         int32_t _max_genomes,
-        int32_t _extinction_event_generation_number,
-        int32_t islands_to_exterminate,
-        string _island_ranking_method,
-        string _repopulation_method,
-        int32_t _num_mutations,
-        bool _repeat_extinction,
-        int32_t _epochs_acc_freq,
-        string _speciation_method,
-        double _species_threshold,
-        double _fitness_threshold,
-        double _neat_c1,
-        double _neat_c2,
-        double _neat_c3,
-        // const vector<string> &_input_parameter_names,
-        // const vector<string> &_output_parameter_names,
-        // string _normalize_type,
-        // const map<string,double> &_normalize_mins,
-        // const map<string,double> &_normalize_maxs,
-        // const map<string,double> &_normalize_avgs,
-        // const map<string,double> &_normalize_std_devs,
+        SpeciationStrategy *_speciation_strategy,
         TimeSeriesSets *_time_series_sets,
         WeightType _weight_initialize,
         WeightType _weight_inheritance,
@@ -97,23 +78,11 @@ EXAMM::EXAMM(
         int32_t _min_recurrent_depth,
         int32_t _max_recurrent_depth,
         string _output_directory,
-        RNN_Genome *seed_genome,
-        bool _start_filled) :
+        RNN_Genome *seed_genome) :
                         population_size(_population_size),
                         number_islands(_number_islands),
                         max_genomes(_max_genomes),
-                        extinction_event_generation_number(_extinction_event_generation_number),
-                        island_ranking_method(_island_ranking_method),
-                        speciation_method(_speciation_method),
-                        repopulation_method(_repopulation_method),
-                        num_mutations(_num_mutations),
-                        repeat_extinction(_repeat_extinction),
-                        epochs_acc_freq(_epochs_acc_freq),
-                        species_threshold(_species_threshold),
-                        fitness_threshold(_fitness_threshold),
-                        neat_c1(_neat_c1),
-                        neat_c2(_neat_c2),
-                        neat_c3(_neat_c3),
+                        speciation_strategy(_speciation_strategy),
                         time_series_sets(_time_series_sets),
                         bp_iterations(_bp_iterations),
                         learning_rate(_learning_rate),
@@ -124,12 +93,10 @@ EXAMM::EXAMM(
                         use_dropout(_use_dropout),
                         dropout_probability(_dropout_probability),
                         output_directory(_output_directory),
-                        // normalize_type(_normalize_type),
                         weight_initialize(_weight_initialize),
                         weight_inheritance(_weight_inheritance),
-                        mutated_component_weight(_mutated_component_weight),
-                        start_filled(_start_filled) {
-    Log::error("examm here \n");
+                        mutated_component_weight(_mutated_component_weight) {
+
     get_time_series_parameters();
 
     total_bp_epochs = 0;
@@ -204,18 +171,18 @@ EXAMM::EXAMM(
     Log::info("weight inheritance: %s \n", WEIGHT_TYPES_STRING[weight_inheritance].c_str());
     Log::info("mutated component weight: %s\n", WEIGHT_TYPES_STRING[mutated_component_weight].c_str());
 
-    Log::info("Speciation method is: \"%s\" (Default is the island-based speciation strategy).\n", speciation_method.c_str());
-    Log::info("Number of mutations is set to %d\n", num_mutations);
-    Log::info("Repeat extinction is set to %s\n", repeat_extinction? "true":"false");
-    if (speciation_method.compare("island") == 0 || speciation_method.compare("") == 0) {
+    // Log::info("Speciation method is: \"%s\" (Default is the island-based speciation strategy).\n", speciation_method.c_str());
+    // Log::info("Number of mutations is set to %d\n", num_mutations);
+    // Log::info("Repeat extinction is set to %s\n", repeat_extinction? "true":"false");
+    // if (speciation_method.compare("island") == 0 || speciation_method.compare("") == 0) {
         //generate a minimal feed foward network as the seed genome
 
-        bool seed_genome_was_minimal = false;
-        if (seed_genome == NULL) {
-            seed_genome_was_minimal = true;
-            seed_genome = create_ff(input_parameter_names, 0, 0, output_parameter_names, 0, weight_initialize, weight_inheritance, mutated_component_weight);
-            seed_genome->initialize_randomly();
-        } //otherwise the seed genome was passed into EXAMM
+        // bool seed_genome_was_minimal = true;
+        // if (seed_genome == NULL) {
+        //     seed_genome_was_minimal = true;
+        //     seed_genome = create_ff(input_parameter_names, 0, 0, output_parameter_names, 0, weight_initialize, weight_inheritance, mutated_component_weight);
+        //     seed_genome->initialize_randomly();
+        // } //otherwise the seed genome was passed into EXAMM
 
         //make sure we don't duplicate node or edge innovation numbers
         edge_innovation_count = seed_genome->get_max_edge_innovation_count() + 1;
@@ -232,60 +199,26 @@ EXAMM::EXAMM(
         seed_genome->best_validation_mae = EXAMM_MAX_DOUBLE;
         //seed_genome->best_parameters.clear();
 
-        double mutation_rate = 0.70, intra_island_co_rate = 0.20, inter_island_co_rate = 0.10;
+    //     double mutation_rate = 0.70, intra_island_co_rate = 0.20, inter_island_co_rate = 0.10;
 
-        if (number_islands == 1) {
-            inter_island_co_rate = 0.0;
-            intra_island_co_rate = 0.30;
-        }
+    //     if (number_islands == 1) {
+    //         inter_island_co_rate = 0.0;
+    //         intra_island_co_rate = 0.30;
+    //     }
 
-        // Only difference here is that the apply_stir_mutations lambda is passed if the island is supposed to start filled.
-        if (start_filled) {
-            // Only used if start_filled is enabled
-            function<void (RNN_Genome *)> apply_stir_mutations = [this](RNN_Genome *genome) {
-                RNN_Genome *copy = genome->copy();
-                this->mutate(num_mutations, copy);
-                return copy;
-            };
+    //     // Only difference here is that the apply_stir_mutations lambda is passed if the island is supposed to start filled.
+    //     if (start_filled) {
+    //         // Only used if start_filled is enabled
+            // function<void (RNN_Genome *)> apply_stir_mutations = [this](RNN_Genome *genome) {
+            //     RNN_Genome *copy = genome->copy();
+            //     this->mutate(num_mutations, copy);
+            //     return copy;
+            // };
 
-            speciation_strategy = new IslandSpeciationStrategy(
-                    number_islands, population_size, mutation_rate, intra_island_co_rate, inter_island_co_rate,
-                    seed_genome, island_ranking_method, repopulation_method, extinction_event_generation_number, num_mutations, islands_to_exterminate, seed_genome_was_minimal, apply_stir_mutations);
-        } else {
-            speciation_strategy = new IslandSpeciationStrategy(
-                    number_islands, population_size, mutation_rate, intra_island_co_rate, inter_island_co_rate,
-                    seed_genome, island_ranking_method, repopulation_method, extinction_event_generation_number, num_mutations, islands_to_exterminate, max_genomes, repeat_extinction, seed_genome_was_minimal);
-        }
-    } else if (speciation_method.compare("neat") == 0) {
+    //         speciation_strategy = new IslandSpeciationStrategy(
+    //                 number_islands, population_size, mutation_rate, intra_island_co_rate, inter_island_co_rate,
+    //                 seed_genome, island_ranking_method, repopulation_method, extinction_event_generation_number, num_mutations, islands_to_exterminate, seed_genome_was_minimal, apply_stir_mutations);
 
-        if (seed_genome == NULL) {
-            seed_genome = create_ff(input_parameter_names, 0, 0, output_parameter_names, 0, weight_initialize, weight_inheritance, mutated_component_weight);
-            seed_genome->initialize_randomly();
-        } //otherwise the seed genome was passed into EXAMM
-
-        //make sure we don't duplicate node or edge innovation numbers
-        edge_innovation_count = seed_genome->get_max_edge_innovation_count() + 1;
-        node_innovation_count = seed_genome->get_max_node_innovation_count() + 1;
-
-        seed_genome->set_generated_by("initial");
-
-        //insert a copy of it into the population so
-        //additional requests can mutate it
-
-        seed_genome->best_validation_mse = EXAMM_MAX_DOUBLE;
-        seed_genome->best_validation_mae = EXAMM_MAX_DOUBLE;
-        //seed_genome->best_parameters.clear();
-
-        double mutation_rate = 0.70, intra_island_co_rate = 0.20, inter_island_co_rate = 0.10;
-
-        if (number_islands == 1) {
-            inter_island_co_rate = 0.0;
-            intra_island_co_rate = 0.30;
-        }
-        // no transfer learning for NEAT
-        speciation_strategy = new NeatSpeciationStrategy(mutation_rate, intra_island_co_rate, inter_island_co_rate, seed_genome, species_threshold, fitness_threshold, neat_c1, neat_c2, neat_c3, generator);
-
-    }
 
     if (output_directory != "") {
         mkpath(output_directory.c_str(), 0777);
@@ -562,7 +495,7 @@ RNN_Genome* EXAMM::generate_genome(int32_t seed_genome_stirs) {
 
     genome->set_parameter_names(input_parameter_names, output_parameter_names);
     genome->set_normalize_bounds(normalize_type, normalize_mins, normalize_maxs, normalize_avgs, normalize_std_devs);
-    genome->set_bp_iterations(bp_iterations, epochs_acc_freq);
+    genome->set_bp_iterations(bp_iterations);
     genome->set_learning_rate(learning_rate);
 
     if (use_high_threshold) genome->enable_high_threshold(high_threshold);

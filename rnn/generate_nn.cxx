@@ -563,3 +563,50 @@ RNN_Genome* create_delta(const vector<string> &input_parameter_names, int32_t nu
     genome->set_parameter_names(input_parameter_names, output_parameter_names);
     return genome;
 }
+
+RNN_Genome* get_seed_genome(const vector<string> &arguments, TimeSeriesSets *time_series_sets, WeightType weight_initialize, WeightType weight_inheritance, WeightType mutated_component_weight) {
+    int32_t min_recurrent_depth = 1;
+    get_argument(arguments, "--min_recurrent_depth", false, min_recurrent_depth);
+
+    int32_t max_recurrent_depth = 10;
+    get_argument(arguments, "--max_recurrent_depth", false, max_recurrent_depth);
+    
+    RNN_Genome *seed_genome = NULL;
+    string genome_file_name = "";
+    string transfer_learning_version = "";
+    if (get_argument(arguments, "--genome_bin", false, genome_file_name)) {
+        seed_genome = new RNN_Genome(genome_file_name);
+        seed_genome->set_normalize_bounds(time_series_sets->get_normalize_type(), time_series_sets->get_normalize_mins(), time_series_sets->get_normalize_maxs(), time_series_sets->get_normalize_avgs(), time_series_sets->get_normalize_std_devs());
+
+        get_argument(arguments, "--transfer_learning_version", true, transfer_learning_version);
+
+        bool epigenetic_weights = argument_exists(arguments, "--epigenetic_weights");
+
+        seed_genome->transfer_to(time_series_sets->get_input_parameter_names(), time_series_sets->get_output_parameter_names(), transfer_learning_version, epigenetic_weights, min_recurrent_depth, max_recurrent_depth);
+        seed_genome->tl_with_epigenetic = epigenetic_weights ;
+    } else {
+        
+        // bool seed_genome_was_minimal = false;
+        if (seed_genome == NULL) {
+            // seed_genome_was_minimal = true;
+            seed_genome = create_ff(time_series_sets->get_input_parameter_names(), 0, 0, time_series_sets->get_output_parameter_names(), 0, weight_initialize, weight_inheritance, mutated_component_weight);
+            seed_genome->initialize_randomly();
+        } //otherwise the seed genome was passed into EXAMM
+
+        //make sure we don't duplicate node or edge innovation numbers
+        // edge_innovation_count = seed_genome->get_max_edge_innovation_count() + 1;
+        // node_innovation_count = seed_genome->get_max_node_innovation_count() + 1;
+
+        // seed_genome->set_generated_by("initial");
+
+        // //insert a copy of it into the population so
+        // //additional requests can mutate it
+
+        // seed_genome->best_validation_mse = EXAMM_MAX_DOUBLE;
+
+        // seed_genome->best_validation_mse = EXAMM_MAX_DOUBLE;
+        // seed_genome->best_validation_mae = EXAMM_MAX_DOUBLE;
+    }
+
+    return seed_genome;
+}

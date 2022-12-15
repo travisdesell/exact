@@ -149,7 +149,7 @@ class RNN_Genome {
         void set_group_id(int32_t _group_id);
 
 
-        void set_bp_iterations(int32_t _bp_iterations, int32_t epochs_acc_freq);
+        void set_bp_iterations(int32_t _bp_iterations);
         int32_t get_bp_iterations();
 
         void set_learning_rate(double _learning_rate);
@@ -290,6 +290,8 @@ class RNN_Genome {
          * \return the max innovation number of any edge or recurrent edge in the genome.
          */
         int32_t get_max_edge_innovation_count();
+
+
 
         void transfer_to(const vector<string> &new_input_parameter_names, const vector<string> &new_output_parameter_names, string transfer_learning_version, bool epigenetic_weights, int32_t min_recurrent_depth, int32_t max_recurrent_depth);
 
