@@ -41,15 +41,6 @@ class RNN_Genome {
         int32_t group_id;
 
         int32_t bp_iterations;
-        double learning_rate;
-        bool adapt_learning_rate; //TODO: deprecated and needs to be removed but don't want to change the genome binary file yet
-        bool use_reset_weights; //TODO: deprecated and needs to be removed but don't want to change the genome binary file yet
-
-
-        bool use_high_norm;
-        double high_threshold;
-        bool use_low_norm;
-        double low_threshold;
     
         bool use_dropout;
         double dropout_probability;
@@ -59,9 +50,6 @@ class RNN_Genome {
         string log_filename;
 
         WeightRules *weight_rules;
-        // WeightType weight_initialize;
-        // WeightType weight_inheritance;
-        // WeightType mutated_component_weight;
 
         map<string, int32_t> generated_by_map;
 
@@ -153,11 +141,6 @@ class RNN_Genome {
         void set_bp_iterations(int32_t _bp_iterations);
         int32_t get_bp_iterations();
 
-        void set_learning_rate(double _learning_rate);
-        void disable_high_threshold();
-        void enable_high_threshold(double _high_threshold);
-        void disable_low_threshold();
-        void enable_low_threshold(double _low_threshold);
         void disable_dropout();
         void enable_dropout(double _dropout_probability);
         void set_log_filename(string _log_filename);

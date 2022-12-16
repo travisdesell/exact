@@ -44,15 +44,7 @@ class EXAMM {
         int32_t number_inputs;
         int32_t number_outputs;
         int32_t bp_iterations;
-        double learning_rate;
 
-        bool use_high_threshold;
-        double high_threshold;
-
-        bool use_low_threshold;
-        double low_threshold;
-
-        bool use_regression;
         bool use_dropout;
         double dropout_probability;
 
@@ -120,11 +112,7 @@ class EXAMM {
                 TimeSeriesSets *_time_series_sets,
                 WeightRules *_weight_rules,
                 int32_t _bp_iterations,
-                double _learning_rate,
-                bool _use_high_threshold,
-                double _high_threshold,
-                bool _use_low_threshold,
-                double _low_threshold,
+
                 bool _use_dropout,
                 double _dropout_probability,
                 int32_t _min_recurrent_depth,

@@ -66,11 +66,6 @@ EXAMM::EXAMM(
         TimeSeriesSets *_time_series_sets,
         WeightRules *_weight_rules,
         int32_t _bp_iterations,
-        double _learning_rate,
-        bool _use_high_threshold,
-        double _high_threshold,
-        bool _use_low_threshold,
-        double _low_threshold,
         bool _use_dropout,
         double _dropout_probability,
         int32_t _min_recurrent_depth,
@@ -83,11 +78,6 @@ EXAMM::EXAMM(
                         speciation_strategy(_speciation_strategy),
                         time_series_sets(_time_series_sets),
                         bp_iterations(_bp_iterations),
-                        learning_rate(_learning_rate),
-                        use_high_threshold(_use_high_threshold),
-                        high_threshold(_high_threshold),
-                        use_low_threshold(_use_low_threshold),
-                        low_threshold(_low_threshold),
                         use_dropout(_use_dropout),
                         dropout_probability(_dropout_probability),
                         output_directory(_output_directory),
@@ -133,16 +123,16 @@ EXAMM::EXAMM(
     //split_edge_rate = 1.0;
     split_edge_rate = 0.0;
 
-    possible_node_types.clear();
-    possible_node_types.push_back(SIMPLE_NODE);
-    possible_node_types.push_back(JORDAN_NODE);
-    possible_node_types.push_back(ELMAN_NODE);
-    possible_node_types.push_back(UGRNN_NODE);
-    possible_node_types.push_back(MGU_NODE);
-    possible_node_types.push_back(GRU_NODE);
-    possible_node_types.push_back(LSTM_NODE);
-    possible_node_types.push_back(ENARC_NODE);
-    possible_node_types.push_back(DELTA_NODE);
+    // possible_node_types.clear();
+    // possible_node_types.push_back(SIMPLE_NODE);
+    // possible_node_types.push_back(JORDAN_NODE);
+    // possible_node_types.push_back(ELMAN_NODE);
+    // possible_node_types.push_back(UGRNN_NODE);
+    // possible_node_types.push_back(MGU_NODE);
+    // possible_node_types.push_back(GRU_NODE);
+    // possible_node_types.push_back(LSTM_NODE);
+    // possible_node_types.push_back(ENARC_NODE);
+    // possible_node_types.push_back(DELTA_NODE);
 
     bool node_ops = true;
     if (node_ops) {
@@ -188,13 +178,6 @@ EXAMM::EXAMM(
         seed_genome->best_validation_mse = EXAMM_MAX_DOUBLE;
         seed_genome->best_validation_mae = EXAMM_MAX_DOUBLE;
         //seed_genome->best_parameters.clear();
-
-    //     double mutation_rate = 0.70, intra_island_co_rate = 0.20, inter_island_co_rate = 0.10;
-
-    //     if (number_islands == 1) {
-    //         inter_island_co_rate = 0.0;
-    //         intra_island_co_rate = 0.30;
-    //     }
 
     //     // Only difference here is that the apply_stir_mutations lambda is passed if the island is supposed to start filled.
     //     if (start_filled) {
@@ -484,10 +467,10 @@ RNN_Genome* EXAMM::generate_genome(int32_t seed_genome_stirs) {
     genome->set_parameter_names(input_parameter_names, output_parameter_names);
     genome->set_normalize_bounds(normalize_type, normalize_mins, normalize_maxs, normalize_avgs, normalize_std_devs);
     genome->set_bp_iterations(bp_iterations);
-    genome->set_learning_rate(learning_rate);
+    // genome->set_learning_rate(learning_rate);
 
-    if (use_high_threshold) genome->enable_high_threshold(high_threshold);
-    if (use_low_threshold) genome->enable_low_threshold(low_threshold);
+    // if (use_high_threshold) genome->enable_high_threshold(high_threshold);
+    // if (use_low_threshold) genome->enable_low_threshold(low_threshold);
     if (use_dropout) genome->enable_dropout(dropout_probability);
 
     if (!epigenetic_weights) genome->initialize_randomly();

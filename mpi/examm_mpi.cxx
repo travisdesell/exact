@@ -292,15 +292,6 @@ int main(int argc, char** argv) {
     int32_t bp_iterations;
     get_argument(arguments, "--bp_iterations", true, bp_iterations);
 
-    double learning_rate = 0.001;
-    get_argument(arguments, "--learning_rate", false, learning_rate);
-
-    double high_threshold = 1.0;
-    bool use_high_threshold = get_argument(arguments, "--high_threshold", false, high_threshold);
-
-    double low_threshold = 0.05;
-    bool use_low_threshold = get_argument(arguments, "--low_threshold", false, low_threshold);
-
     double dropout_probability = 0.0;
     bool use_dropout = get_argument(arguments, "--dropout_probability", false, dropout_probability);
 
@@ -340,13 +331,9 @@ int main(int argc, char** argv) {
     if (rank == 0) {
         examm = new EXAMM(population_size, number_islands, max_genomes, 
             speciation_strategy, time_series_sets, weight_rules,
-            bp_iterations, learning_rate,
-            use_high_threshold, high_threshold,
-            use_low_threshold, low_threshold,
-            use_dropout, dropout_probability,
+            bp_iterations, use_dropout, dropout_probability,
             min_recurrent_depth, max_recurrent_depth,
-            output_directory,
-            seed_genome);
+            output_directory, seed_genome);
         if (possible_node_types.size() > 0)  {
             examm->set_possible_node_types(possible_node_types);
         }

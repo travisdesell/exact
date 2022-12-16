@@ -107,15 +107,15 @@ RNN_Genome::RNN_Genome(vector<RNN_Node_Interface*> &_nodes,
 
     //set default values
     bp_iterations = 20000;
-    learning_rate = 0.001;
+    // learning_rate = 0.001;
     //adapt_learning_rate = false;
     //use_nesterov_momentum = false;
     //use_reset_weights = false;
 
-    use_high_norm = true;
-    high_threshold = 1.0;
-    use_low_norm = true;
-    low_threshold = 0.05;
+    // use_high_norm = true;
+    // high_threshold = 1.0;
+    // use_low_norm = true;
+    // low_threshold = 0.05;
 
     use_dropout = false;
     dropout_probability = 0.5;
@@ -168,14 +168,14 @@ RNN_Genome* RNN_Genome::copy() {
 
     other->group_id = group_id;
     other->bp_iterations = bp_iterations;
-    other->learning_rate = learning_rate;
+    // other->learning_rate = learning_rate;
     //other->adapt_learning_rate = adapt_learning_rate;
     //other->use_reset_weights = use_reset_weights;
 
-    other->use_high_norm = use_high_norm;
-    other->high_threshold = high_threshold;
-    other->use_low_norm = use_low_norm;
-    other->low_threshold = low_threshold;
+    // other->use_high_norm = use_high_norm;
+    // other->high_threshold = high_threshold;
+    // other->use_low_norm = use_low_norm;
+    // other->low_threshold = low_threshold;
 
     other->use_dropout = use_dropout;
     other->dropout_probability = dropout_probability;
@@ -467,27 +467,27 @@ int32_t RNN_Genome::get_bp_iterations() {
     return bp_iterations;
 }
 
-void RNN_Genome::set_learning_rate(double _learning_rate) {
-    learning_rate = _learning_rate;
-}
+// void RNN_Genome::set_learning_rate(double _learning_rate) {
+//     learning_rate = _learning_rate;
+// }
 
-void RNN_Genome::disable_high_threshold() {
-    use_high_norm = false;
-}
+// void RNN_Genome::disable_high_threshold() {
+//     use_high_norm = false;
+// }
 
-void RNN_Genome::enable_high_threshold(double _high_threshold) {
-    use_high_norm = true;
-    high_threshold = _high_threshold;
-}
+// void RNN_Genome::enable_high_threshold(double _high_threshold) {
+//     use_high_norm = true;
+//     high_threshold = _high_threshold;
+// }
 
-void RNN_Genome::disable_low_threshold() {
-    use_low_norm = false;
-}
+// void RNN_Genome::disable_low_threshold() {
+//     use_low_norm = false;
+// }
 
-void RNN_Genome::enable_low_threshold(double _low_threshold) {
-    use_low_norm = true;
-    low_threshold = _low_threshold;
-}
+// void RNN_Genome::enable_low_threshold(double _low_threshold) {
+//     use_low_norm = true;
+//     low_threshold = _low_threshold;
+// }
 
 void RNN_Genome::disable_dropout() {
     use_dropout = false;
@@ -933,9 +933,10 @@ void RNN_Genome::get_analytic_gradient(vector<RNN*> &rnns, const vector<double> 
 
 void RNN_Genome::backpropagate(const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, const vector< vector< vector<double> > > &validation_inputs, const vector< vector< vector<double> > > &validation_outputs, WeightUpdate *weight_update_method) {
 
-    double learning_rate = this->learning_rate / inputs.size();
-    double low_threshold = sqrt(this->low_threshold * inputs.size());
-    double high_threshold = sqrt(this->high_threshold * inputs.size());
+    // double learning_rate = weight_update_method->get_learning_rate() / inputs.size();
+    // double low_threshold = sqrt(weight_update_method->get_low_threshold() * inputs.size());
+    // double high_threshold = sqrt(weight_update_method->get_high_threshold() * inputs.size());
+
 
     int32_t n_series = (int32_t)inputs.size();
     vector<RNN*> rnns;
@@ -952,12 +953,12 @@ void RNN_Genome::backpropagate(const vector< vector< vector<double> > > &inputs,
     vector<double> prev_velocity(n_parameters, 0.0);
 
     vector<double> analytic_gradient;
-    vector<double> gradient(n_parameters, 0.0);
+    vector<double> prev_gradient(n_parameters, 0.0);
 
     double mse;
 
-    double parameter_norm = 0.0;
-    double velocity_norm = 0.0;
+    // double parameter_norm = 0.0;
+    // double velocity_norm = 0.0;
     double norm = 0.0;
 
     //initialize the initial previous values
@@ -982,7 +983,7 @@ void RNN_Genome::backpropagate(const vector< vector< vector<double> > > &inputs,
     }
 
     for (int32_t iteration = 0; iteration < bp_iterations; iteration++) {
-        gradient = analytic_gradient;
+        prev_gradient = analytic_gradient;
 
         get_analytic_gradient(rnns, parameters, inputs, outputs, mse, analytic_gradient, true);
 
@@ -996,16 +997,7 @@ void RNN_Genome::backpropagate(const vector< vector< vector<double> > > &inputs,
             best_parameters = parameters;
         }
 
-        norm = 0.0;
-        velocity_norm = 0.0;
-        parameter_norm = 0.0;
-        for (int32_t i = 0; i < (int32_t)parameters.size(); i++) {
-            norm += analytic_gradient[i] * analytic_gradient[i];
-            velocity_norm += prev_velocity[i] * prev_velocity[i];
-            parameter_norm += parameters[i] * parameters[i];
-        }
-        norm = sqrt(norm);
-        velocity_norm = sqrt(velocity_norm);
+        norm = weight_update_method->get_norm(analytic_gradient);
 
         if (output_log != NULL) {
             (*output_log) << iteration
@@ -1014,29 +1006,13 @@ void RNN_Genome::backpropagate(const vector< vector< vector<double> > > &inputs,
                 << " " << best_validation_mse << endl;
         }
 
-        Log::info("iteration %10d, mse: %10lf, v_mse: %10lf, bv_mse: %10lf, lr: %lf, norm: %lf, p_norm: %lf, v_norm: %lf", iteration, mse, validation_mse, best_validation_mse, learning_rate, norm, parameter_norm, velocity_norm);
+        Log::info("iteration %10d, mse: %10lf, v_mse: %10lf, bv_mse: %10lf, norm: %lf", iteration, mse, validation_mse, best_validation_mse, norm);
 
-        if (use_high_norm && norm > high_threshold) {
-            double high_threshold_norm = high_threshold / norm;
-            Log::info_no_header(", OVER THRESHOLD, multiplier: %lf", high_threshold_norm);
-
-            for (int32_t i = 0; i < (int32_t)parameters.size(); i++) {
-                analytic_gradient[i] = high_threshold_norm * analytic_gradient[i];
-            }
-
-        } else if (use_low_norm && norm < low_threshold) {
-            double low_threshold_norm = low_threshold / norm;
-            Log::info_no_header(", UNDER THRESHOLD, multiplier: %lf", low_threshold_norm);
-
-            for (int32_t i = 0; i < (int32_t)parameters.size(); i++) {
-                analytic_gradient[i] = low_threshold_norm * analytic_gradient[i];
-            }
-
-        }
+        weight_update_method->norm_gradients(analytic_gradient, norm);
 
         Log::info_no_header("\n");
 
-        weight_update_method->update_weights(parameters, velocity, prev_velocity, gradient, learning_rate, iteration);
+        weight_update_method->update_weights(parameters, velocity, prev_velocity, analytic_gradient, iteration);
     }
 
     RNN *g;
@@ -1060,7 +1036,7 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
     vector<double> velocity(n_parameters, 0.0);
     vector<double> prev_velocity(n_parameters, 0.0);
     vector<double> analytic_gradient;
-    vector<double> gradient(n_parameters, 0.0);
+    vector<double> prev_gradient(n_parameters, 0.0);
 
     double mse;
     double norm = 0.0;
@@ -1174,39 +1150,19 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
         for (int32_t k = 0; k < (int32_t)shuffle_order.size(); k++) {
             int32_t random_selection = shuffle_order[k];
 
-            gradient = analytic_gradient;
+            prev_gradient = analytic_gradient;
 
             rnn->get_analytic_gradient(parameters, training_inputs[random_selection], training_outputs[random_selection], mse, analytic_gradient, use_dropout, true, dropout_probability);
 
-            norm = 0.0;
-            for (int32_t i = 0; i < (int32_t)parameters.size(); i++) {
-                norm += analytic_gradient[i] * analytic_gradient[i];
-            }
-            norm = sqrt(norm);
+            norm = weight_update_method->get_norm(analytic_gradient);
             avg_norm += norm;
 
             //Log::info("iteration %7d, series: %4d, mse: %5.10lf, lr: %lf, norm: %lf", iteration, random_selection, mse, learning_rate, norm);
-
-            if (use_high_norm && norm > high_threshold) {
-                double high_threshold_norm = high_threshold / norm;
-                //Log::info_no_header(", OVER THRESHOLD, multiplier: %lf", high_threshold_norm);
-
-                for (int32_t i = 0; i < (int32_t)parameters.size(); i++) {
-                    analytic_gradient[i] = high_threshold_norm * analytic_gradient[i];
-                }
-
-            } else if (use_low_norm && norm < low_threshold) {
-                double low_threshold_norm = low_threshold / norm;
-                //Log::info_no_header(", UNDER THRESHOLD, multiplier: %lf", low_threshold_norm);
-
-                for (int32_t i = 0; i < (int32_t)parameters.size(); i++) {
-                    analytic_gradient[i] = low_threshold_norm * analytic_gradient[i];
-                }
-            }
+            weight_update_method->norm_gradients(analytic_gradient, norm);
 
             //Log::info_no_header("\n");
 
-            weight_update_method->update_weights(parameters, velocity, prev_velocity, gradient, learning_rate, iteration);
+            weight_update_method->update_weights(parameters, velocity, prev_velocity, analytic_gradient, iteration);
 
         }
 
@@ -3113,14 +3069,6 @@ void RNN_Genome::read_from_stream(istream &bin_istream) {
     bin_istream.read((char*)&generation_id, sizeof(int32_t));
     bin_istream.read((char*)&group_id, sizeof(int32_t));
     bin_istream.read((char*)&bp_iterations, sizeof(int32_t));
-    bin_istream.read((char*)&learning_rate, sizeof(double));
-    bin_istream.read((char*)&adapt_learning_rate, sizeof(bool));
-    bin_istream.read((char*)&use_reset_weights, sizeof(bool));
-
-    bin_istream.read((char*)&use_high_norm, sizeof(bool));
-    bin_istream.read((char*)&high_threshold, sizeof(double));
-    bin_istream.read((char*)&use_low_norm, sizeof(bool));
-    bin_istream.read((char*)&low_threshold, sizeof(double));
 
     bin_istream.read((char*)&use_dropout, sizeof(bool));
     bin_istream.read((char*)&dropout_probability, sizeof(double));
@@ -3140,14 +3088,6 @@ void RNN_Genome::read_from_stream(istream &bin_istream) {
 
     Log::debug("generation_id: %d\n", generation_id);
     Log::debug("bp_iterations: %d\n", bp_iterations);
-    Log::debug("learning_rate: %lf\n", learning_rate);
-    Log::debug("adapt_learning_rate: %d\n", adapt_learning_rate);
-    Log::debug("use_reset_weights: %d\n", use_reset_weights);
-
-    Log::debug("use_high_norm: %d\n", use_high_norm);
-    Log::debug("high_threshold: %lf\n", high_threshold);
-    Log::debug("use_low_norm: %d\n", use_low_norm);
-    Log::debug("low_threshold: %lf\n", low_threshold);
 
     Log::debug("use_dropout: %d\n", use_dropout);
     Log::debug("dropout_probability: %lf\n", dropout_probability);
@@ -3376,14 +3316,6 @@ void RNN_Genome::write_to_stream(ostream &bin_ostream) {
     bin_ostream.write((char*)&generation_id, sizeof(int32_t));
     bin_ostream.write((char*)&group_id, sizeof(int32_t));
     bin_ostream.write((char*)&bp_iterations, sizeof(int32_t));
-    bin_ostream.write((char*)&learning_rate, sizeof(double));
-    bin_ostream.write((char*)&adapt_learning_rate, sizeof(bool));
-    bin_ostream.write((char*)&use_reset_weights, sizeof(bool));
-
-    bin_ostream.write((char*)&use_high_norm, sizeof(bool));
-    bin_ostream.write((char*)&high_threshold, sizeof(double));
-    bin_ostream.write((char*)&use_low_norm, sizeof(bool));
-    bin_ostream.write((char*)&low_threshold, sizeof(double));
 
     bin_ostream.write((char*)&use_dropout, sizeof(bool));
     bin_ostream.write((char*)&dropout_probability, sizeof(double));
@@ -3397,14 +3329,6 @@ void RNN_Genome::write_to_stream(ostream &bin_ostream) {
 
     Log::debug("generation_id: %d\n", generation_id);
     Log::debug("bp_iterations: %d\n", bp_iterations);
-    Log::debug("learning_rate: %lf\n", learning_rate);
-    Log::debug("adapt_learning_rate: %d\n", adapt_learning_rate);
-    Log::debug("use_reset_weights: %d\n", use_reset_weights);
-
-    Log::debug("use_high_norm: %d\n", use_high_norm);
-    Log::debug("high_threshold: %lf\n", high_threshold);
-    Log::debug("use_low_norm: %d\n", use_low_norm);
-    Log::debug("low_threshold: %lf\n", low_threshold);
 
     Log::debug("use_dropout: %d\n", use_dropout);
     Log::debug("dropout_probability: %lf\n", dropout_probability);
