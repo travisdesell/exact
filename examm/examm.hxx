@@ -21,6 +21,7 @@ using std::vector;
 #include "speciation_strategy.hxx"
 #include "weights/weight_rules.hxx"
 #include "time_series/time_series.hxx"
+#include "rnn/genome_property.hxx"
 
 class EXAMM {
     private:
@@ -32,6 +33,10 @@ class EXAMM {
         int32_t max_genomes;
         int32_t total_bp_epochs;
         SpeciationStrategy *speciation_strategy;
+        TimeSeriesSets *time_series_sets;
+        WeightRules *weight_rules;
+        GenomeProperty *genome_property;
+
 
         int32_t edge_innovation_count;
         int32_t node_innovation_count;
@@ -39,22 +44,12 @@ class EXAMM {
         map<string, int32_t> inserted_from_map;
         map<string, int32_t> generated_from_map;
 
-        TimeSeriesSets *time_series_sets;
-
-        int32_t number_inputs;
-        int32_t number_outputs;
-        int32_t bp_iterations;
-
-        bool use_dropout;
-        double dropout_probability;
+        // int32_t number_inputs;
+        // int32_t number_outputs;
 
         minstd_rand0 generator;
         uniform_real_distribution<double> rng_0_1;
         uniform_real_distribution<double> rng_crossover_weight;
-
-        int32_t min_recurrent_depth;
-        int32_t max_recurrent_depth;
-
 
         bool epigenetic_weights;
 
@@ -85,16 +80,16 @@ class EXAMM {
         ofstream *log_file;
         ofstream *op_log_file;
 
-        vector<string> input_parameter_names;
-        vector<string> output_parameter_names;
+        // vector<string> input_parameter_names;
+        // vector<string> output_parameter_names;
 
-        string normalize_type;
-        map<string,double> normalize_mins;
-        map<string,double> normalize_maxs;
-        map<string,double> normalize_avgs;
-        map<string,double> normalize_std_devs;
+        // string normalize_type;
+        // map<string,double> normalize_mins;
+        // map<string,double> normalize_maxs;
+        // map<string,double> normalize_avgs;
+        // map<string,double> normalize_std_devs;
 
-        WeightRules *weight_rules;
+
 
         ostringstream memory_log;
 
@@ -111,12 +106,7 @@ class EXAMM {
                 SpeciationStrategy *_speciation_strategy,
                 TimeSeriesSets *_time_series_sets,
                 WeightRules *_weight_rules,
-                int32_t _bp_iterations,
-
-                bool _use_dropout,
-                double _dropout_probability,
-                int32_t _min_recurrent_depth,
-                int32_t _max_recurrent_depth,
+                GenomeProperty *_genome_property,
                 string _output_directory,
                 RNN_Genome *seed_genome);
 
@@ -149,11 +139,11 @@ class EXAMM {
         RNN_Genome* get_worst_genome();
 
         string get_output_directory() const;
-        RNN_Genome* generate_for_transfer_learning(string file_name, int32_t extra_inputs, int32_t extra_outputs) ;
+        // RNN_Genome* generate_for_transfer_learning(string file_name, int32_t extra_inputs, int32_t extra_outputs) ;
 
         void check_weight_initialize_validity();
 
-        void get_time_series_parameters();
+        // void get_time_series_parameters();
 };
 
 #endif

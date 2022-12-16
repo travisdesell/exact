@@ -25,6 +25,7 @@ using std::vector;
 #include "weights/weight_rules.hxx"
 #include "weights/weight_update.hxx"
 #include "rnn/generate_nn.hxx"
+#include "rnn/genome_property.hxx"
 #include "examm/examm.hxx"
 
 #include "time_series/time_series.hxx"
@@ -289,27 +290,19 @@ int main(int argc, char** argv) {
     int32_t max_genomes;
     get_argument(arguments, "--max_genomes", true, max_genomes);
 
-    int32_t bp_iterations;
-    get_argument(arguments, "--bp_iterations", true, bp_iterations);
-
-    double dropout_probability = 0.0;
-    bool use_dropout = get_argument(arguments, "--dropout_probability", false, dropout_probability);
-
     string output_directory = "";
     get_argument(arguments, "--output_directory", false, output_directory);
 
     vector<string> possible_node_types;
     get_argument_vector(arguments, "--possible_node_types", false, possible_node_types);
 
-    int32_t min_recurrent_depth = 1;
-    get_argument(arguments, "--min_recurrent_depth", false, min_recurrent_depth);
-
-    int32_t max_recurrent_depth = 10;
-    get_argument(arguments, "--max_recurrent_depth", false, max_recurrent_depth);
-
     random_sequence_length = argument_exists(arguments, "--random_sequence_length");
     get_argument(arguments, "--sequence_length_lower_bound", false, sequence_length_lower_bound);
     get_argument(arguments, "--sequence_length_upper_bound", false, sequence_length_upper_bound);
+
+    GenomeProperty *genome_property = new GenomeProperty();
+    genome_property->generate_genome_property_from_arguments(arguments);
+    genome_property->get_time_series_parameters(time_series_sets);
 
     WeightRules *weight_rules = new WeightRules();
     weight_rules->generate_weight_initialize_from_arguments(arguments);
@@ -331,8 +324,7 @@ int main(int argc, char** argv) {
     if (rank == 0) {
         examm = new EXAMM(population_size, number_islands, max_genomes, 
             speciation_strategy, time_series_sets, weight_rules,
-            bp_iterations, use_dropout, dropout_probability,
-            min_recurrent_depth, max_recurrent_depth,
+            genome_property,
             output_directory, seed_genome);
         if (possible_node_types.size() > 0)  {
             examm->set_possible_node_types(possible_node_types);

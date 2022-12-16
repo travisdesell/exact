@@ -65,11 +65,7 @@ EXAMM::EXAMM(
         SpeciationStrategy *_speciation_strategy,
         TimeSeriesSets *_time_series_sets,
         WeightRules *_weight_rules,
-        int32_t _bp_iterations,
-        bool _use_dropout,
-        double _dropout_probability,
-        int32_t _min_recurrent_depth,
-        int32_t _max_recurrent_depth,
+        GenomeProperty *_genome_property,
         string _output_directory,
         RNN_Genome *seed_genome) :
                         population_size(_population_size),
@@ -77,13 +73,11 @@ EXAMM::EXAMM(
                         max_genomes(_max_genomes),
                         speciation_strategy(_speciation_strategy),
                         time_series_sets(_time_series_sets),
-                        bp_iterations(_bp_iterations),
-                        use_dropout(_use_dropout),
-                        dropout_probability(_dropout_probability),
-                        output_directory(_output_directory),
-                        weight_rules(_weight_rules) {
+                        weight_rules(_weight_rules),
+                        genome_property(_genome_property),
+                        output_directory(_output_directory) {
 
-    get_time_series_parameters();
+    // get_time_series_parameters();
 
     total_bp_epochs = 0;
 
@@ -97,42 +91,20 @@ EXAMM::EXAMM(
     generator = minstd_rand0(seed);
     rng_0_1 = uniform_real_distribution<double>(0.0, 1.0);
 
-    //rng_crossover_weight = uniform_real_distribution<double>(0.0, 0.0);
-    //rng_crossover_weight = uniform_real_distribution<double>(-0.10, 0.1);
-    rng_crossover_weight = uniform_real_distribution<double>(-0.5, 1.5);
-    //rng_crossover_weight = uniform_real_distribution<double>(0.45, 0.55);
 
-    min_recurrent_depth = _min_recurrent_depth;
-    max_recurrent_depth = _max_recurrent_depth;
+    rng_crossover_weight = uniform_real_distribution<double>(-0.5, 1.5);
 
     epigenetic_weights = true;
 
     more_fit_crossover_rate = 1.00;
     less_fit_crossover_rate = 0.50;
-    //more_fit_crossover_rate = 0.75;
-    //less_fit_crossover_rate = 0.25;
 
     clone_rate = 1.0;
-
     add_edge_rate = 1.0;
-    //add_recurrent_edge_rate = 3.0;
     add_recurrent_edge_rate = 1.0;
     enable_edge_rate = 1.0;
-    //disable_edge_rate = 3.0;
     disable_edge_rate = 1.0;
-    //split_edge_rate = 1.0;
     split_edge_rate = 0.0;
-
-    // possible_node_types.clear();
-    // possible_node_types.push_back(SIMPLE_NODE);
-    // possible_node_types.push_back(JORDAN_NODE);
-    // possible_node_types.push_back(ELMAN_NODE);
-    // possible_node_types.push_back(UGRNN_NODE);
-    // possible_node_types.push_back(MGU_NODE);
-    // possible_node_types.push_back(GRU_NODE);
-    // possible_node_types.push_back(LSTM_NODE);
-    // possible_node_types.push_back(ENARC_NODE);
-    // possible_node_types.push_back(DELTA_NODE);
 
     bool node_ops = true;
     if (node_ops) {
@@ -259,18 +231,18 @@ EXAMM::EXAMM(
     startClock = std::chrono::system_clock::now();
 }
 
-void EXAMM::get_time_series_parameters() {
+// void EXAMM::get_time_series_parameters() {
 
-    input_parameter_names = time_series_sets->get_input_parameter_names();
-    output_parameter_names = time_series_sets->get_output_parameter_names();
-    normalize_type = time_series_sets->get_normalize_type();
-    normalize_mins = time_series_sets->get_normalize_mins();
-    normalize_maxs = time_series_sets->get_normalize_maxs();
-    normalize_avgs = time_series_sets->get_normalize_avgs();
-    normalize_std_devs = time_series_sets->get_normalize_std_devs();
-    number_inputs = time_series_sets->get_number_inputs();
-    number_outputs = time_series_sets->get_number_outputs();
-}
+//     input_parameter_names = time_series_sets->get_input_parameter_names();
+//     output_parameter_names = time_series_sets->get_output_parameter_names();
+//     normalize_type = time_series_sets->get_normalize_type();
+//     normalize_mins = time_series_sets->get_normalize_mins();
+//     normalize_maxs = time_series_sets->get_normalize_maxs();
+//     normalize_avgs = time_series_sets->get_normalize_avgs();
+//     normalize_std_devs = time_series_sets->get_normalize_std_devs();
+//     number_inputs = time_series_sets->get_number_inputs();
+//     number_outputs = time_series_sets->get_number_outputs();
+// }
 
 void EXAMM::print() {
     if (Log::at_level(Log::INFO)) {
@@ -415,7 +387,7 @@ bool EXAMM::insert_genome(RNN_Genome* genome) {
     int32_t insert_position = speciation_strategy->insert_genome(genome);
     //write this genome to disk if it was a new best found genome
     if (insert_position == 0) {
-        genome->normalize_type = normalize_type;
+        // genome->normalize_type = normalize_type;
         genome->write_graphviz(output_directory + "/rnn_genome_" + to_string(genome->get_generation_id()) + ".gv");
         genome->write_to_file(output_directory + "/rnn_genome_" + to_string(genome->get_generation_id()) + ".bin");
     }
@@ -464,15 +436,15 @@ RNN_Genome* EXAMM::generate_genome(int32_t seed_genome_stirs) {
 
     RNN_Genome *genome = speciation_strategy->generate_genome(rng_0_1, generator, mutate_function, crossover_function, seed_genome_stirs);
 
-    genome->set_parameter_names(input_parameter_names, output_parameter_names);
-    genome->set_normalize_bounds(normalize_type, normalize_mins, normalize_maxs, normalize_avgs, normalize_std_devs);
-    genome->set_bp_iterations(bp_iterations);
+    // genome->set_parameter_names(input_parameter_names, output_parameter_names);
+    // genome->set_normalize_bounds(normalize_type, normalize_mins, normalize_maxs, normalize_avgs, normalize_std_devs);
+    // genome->set_bp_iterations(bp_iterations);
     // genome->set_learning_rate(learning_rate);
 
     // if (use_high_threshold) genome->enable_high_threshold(high_threshold);
     // if (use_low_threshold) genome->enable_low_threshold(low_threshold);
-    if (use_dropout) genome->enable_dropout(dropout_probability);
-
+    // if (use_dropout) genome->enable_dropout(dropout_probability);
+    genome_property->set_genome_properties(genome);
     if (!epigenetic_weights) genome->initialize_randomly();
 
     //this is just a sanity check, can most likely comment out (checking to see
@@ -542,7 +514,7 @@ void EXAMM::mutate(int32_t max_mutations, RNN_Genome *g) {
         rng -= add_edge_rate;
 
         if (rng < add_recurrent_edge_rate) {
-            uniform_int_distribution<int32_t> dist = get_recurrent_depth_dist();
+            uniform_int_distribution<int32_t> dist = genome_property->get_recurrent_depth_dist();
             modified = g->add_recurrent_edge(mu, sigma, dist, edge_innovation_count);
             Log::debug("\tadding recurrent edge, modified: %d\n", modified);
             if (modified) g->set_generated_by("add_recurrent_edge");
@@ -567,7 +539,7 @@ void EXAMM::mutate(int32_t max_mutations, RNN_Genome *g) {
         rng -= disable_edge_rate;
 
         if (rng < split_edge_rate) {
-            uniform_int_distribution<int32_t> dist = get_recurrent_depth_dist();
+            uniform_int_distribution<int32_t> dist = genome_property->get_recurrent_depth_dist();
             modified = g->split_edge(mu, sigma, new_node_type, dist, edge_innovation_count, node_innovation_count);
             Log::debug("\tsplitting edge, modified: %d\n", modified);
             if (modified) g->set_generated_by("split_edge(" + node_type_str + ")");
@@ -576,7 +548,7 @@ void EXAMM::mutate(int32_t max_mutations, RNN_Genome *g) {
         rng -= split_edge_rate;
 
         if (rng < add_node_rate) {
-            uniform_int_distribution<int32_t> dist = get_recurrent_depth_dist();
+            uniform_int_distribution<int32_t> dist = genome_property->get_recurrent_depth_dist();
             modified = g->add_node(mu, sigma, new_node_type, dist, edge_innovation_count, node_innovation_count);
             Log::debug("\tadding node, modified: %d\n", modified);
             if (modified) g->set_generated_by("add_node(" + node_type_str + ")");
@@ -601,7 +573,7 @@ void EXAMM::mutate(int32_t max_mutations, RNN_Genome *g) {
         rng -= disable_node_rate;
 
         if (rng < split_node_rate) {
-            uniform_int_distribution<int32_t> dist = get_recurrent_depth_dist();
+            uniform_int_distribution<int32_t> dist = genome_property->get_recurrent_depth_dist();
             modified = g->split_node(mu, sigma, new_node_type, dist, edge_innovation_count, node_innovation_count);
             Log::debug("\tsplitting node, modified: %d\n", modified);
             if (modified) g->set_generated_by("split_node(" + node_type_str + ")");
@@ -610,7 +582,7 @@ void EXAMM::mutate(int32_t max_mutations, RNN_Genome *g) {
         rng -= split_node_rate;
 
         if (rng < merge_node_rate) {
-            uniform_int_distribution<int32_t> dist = get_recurrent_depth_dist();
+            uniform_int_distribution<int32_t> dist = genome_property->get_recurrent_depth_dist();
             modified = g->merge_node(mu, sigma, new_node_type, dist, edge_innovation_count, node_innovation_count);
             Log::debug("\tmerging node, modified: %d\n", modified);
             if (modified) g->set_generated_by("merge_node(" + node_type_str + ")");
@@ -981,8 +953,9 @@ RNN_Genome* EXAMM::crossover(RNN_Genome *p1, RNN_Genome *p2) {
     sort(child_recurrent_edges.begin(), child_recurrent_edges.end(), sort_RNN_Recurrent_Edges_by_depth());
 
     RNN_Genome *child = new RNN_Genome(child_nodes, child_edges, child_recurrent_edges, weight_rules);
-    child->set_parameter_names(input_parameter_names, output_parameter_names);
-    child->set_normalize_bounds(normalize_type, normalize_mins, normalize_maxs, normalize_avgs, normalize_std_devs);
+    genome_property->set_genome_properties(child);
+    // child->set_parameter_names(input_parameter_names, output_parameter_names);
+    // child->set_normalize_bounds(normalize_type, normalize_mins, normalize_maxs, normalize_avgs, normalize_std_devs);
 
 
     if (p1->get_group_id() == p2->get_group_id()) {
@@ -1028,9 +1001,9 @@ RNN_Genome* EXAMM::crossover(RNN_Genome *p1, RNN_Genome *p2) {
 }
 
 
-uniform_int_distribution<int32_t> EXAMM::get_recurrent_depth_dist() {
-    return uniform_int_distribution<int32_t>(this->min_recurrent_depth, this->max_recurrent_depth);
-}
+// uniform_int_distribution<int32_t> EXAMM::get_recurrent_depth_dist() {
+//     return uniform_int_distribution<int32_t>(this->min_recurrent_depth, this->max_recurrent_depth);
+// }
 
 void EXAMM::check_weight_initialize_validity() {
     WeightType weight_initialize = weight_rules->get_weight_initialize_method();

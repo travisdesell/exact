@@ -283,6 +283,7 @@ class RNN_Genome {
         friend class IslandSpeciationStrategy;
         friend class NeatSpeciationStrategy;
         friend class RecDepthFrequencyTable;
+        friend class GenomeProperty;
 };
 
 struct sort_genomes_by_fitness {
