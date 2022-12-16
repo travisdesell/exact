@@ -99,8 +99,8 @@ add_subdirectory(time_series)
 # add_subdirectory(cnn)
 
 add_subdirectory(rnn)
-# add_subdirectory(rnn_tests)
-# add_subdirectory(rnn_examples)
+add_subdirectory(rnn_tests)
+add_subdirectory(rnn_examples)
 
 # add_subdirectory(opencl)
 
