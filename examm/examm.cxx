@@ -63,7 +63,6 @@ EXAMM::EXAMM(
         int32_t _number_islands,
         int32_t _max_genomes,
         SpeciationStrategy *_speciation_strategy,
-        TimeSeriesSets *_time_series_sets,
         WeightRules *_weight_rules,
         GenomeProperty *_genome_property,
         string _output_directory,
@@ -72,7 +71,6 @@ EXAMM::EXAMM(
                         number_islands(_number_islands),
                         max_genomes(_max_genomes),
                         speciation_strategy(_speciation_strategy),
-                        time_series_sets(_time_series_sets),
                         weight_rules(_weight_rules),
                         genome_property(_genome_property),
                         output_directory(_output_directory) {
@@ -124,32 +122,24 @@ EXAMM::EXAMM(
     }
 
     check_weight_initialize_validity();
+    generate_op_log = false;
 
+    //make sure we don't duplicate node or edge innovation numbers
+    edge_innovation_count = seed_genome->get_max_edge_innovation_count() + 1;
+    node_innovation_count = seed_genome->get_max_node_innovation_count() + 1;
 
-    // if (speciation_method.compare("island") == 0 || speciation_method.compare("") == 0) {
-        //generate a minimal feed foward network as the seed genome
+    seed_genome->set_generated_by("initial");
 
-        // bool seed_genome_was_minimal = true;
-        // if (seed_genome == NULL) {
-        //     seed_genome_was_minimal = true;
-        //     seed_genome = create_ff(input_parameter_names, 0, 0, output_parameter_names, 0, weight_initialize, weight_inheritance, mutated_component_weight);
-        //     seed_genome->initialize_randomly();
-        // } //otherwise the seed genome was passed into EXAMM
+    //insert a copy of it into the population so
+    //additional requests can mutate it
 
-        //make sure we don't duplicate node or edge innovation numbers
-        edge_innovation_count = seed_genome->get_max_edge_innovation_count() + 1;
-        node_innovation_count = seed_genome->get_max_node_innovation_count() + 1;
+    seed_genome->best_validation_mse = EXAMM_MAX_DOUBLE;
 
-        seed_genome->set_generated_by("initial");
-
-        //insert a copy of it into the population so
-        //additional requests can mutate it
-
-        seed_genome->best_validation_mse = EXAMM_MAX_DOUBLE;
-
-        seed_genome->best_validation_mse = EXAMM_MAX_DOUBLE;
-        seed_genome->best_validation_mae = EXAMM_MAX_DOUBLE;
-        //seed_genome->best_parameters.clear();
+    seed_genome->best_validation_mse = EXAMM_MAX_DOUBLE;
+    seed_genome->best_validation_mae = EXAMM_MAX_DOUBLE;
+    seed_genome->best_parameters.clear();
+    generate_log();
+    
 
     //     // Only difference here is that the apply_stir_mutations lambda is passed if the island is supposed to start filled.
     //     if (start_filled) {
@@ -163,8 +153,16 @@ EXAMM::EXAMM(
     //         speciation_strategy = new IslandSpeciationStrategy(
     //                 number_islands, population_size, mutation_rate, intra_island_co_rate, inter_island_co_rate,
     //                 seed_genome, island_ranking_method, repopulation_method, extinction_event_generation_number, num_mutations, islands_to_exterminate, seed_genome_was_minimal, apply_stir_mutations);
+    startClock = std::chrono::system_clock::now();
+}
 
+void EXAMM::print() {
+    if (Log::at_level(Log::INFO)) {
+        speciation_strategy->print();
+    }
+}
 
+void EXAMM::generate_log() {
     if (output_directory != "") {
         mkpath(output_directory.c_str(), 0777);
         log_file = new ofstream(output_directory + "/" + "fitness_log.csv");
@@ -177,76 +175,56 @@ EXAMM::EXAMM(
         (*log_file) << endl;
         //memory_log << endl;
 
-        op_log_file = new ofstream(output_directory + "/op_log.csv");
+        if (generate_op_log) {
+            op_log_file = new ofstream(output_directory + "/op_log.csv");
 
-        op_log_ordering = {
-            "genomes",
-            "crossover",
-            "island_crossover",
-            "clone",
-            "add_edge",
-            "add_recurrent_edge",
-            "enable_edge",
-            "disable_edge",
-            "enable_node",
-            "disable_node",
-        };
+            op_log_ordering = {
+                "genomes",
+                "crossover",
+                "island_crossover",
+                "clone",
+                "add_edge",
+                "add_recurrent_edge",
+                "enable_edge",
+                "disable_edge",
+                "enable_node",
+                "disable_node",
+            };
 
-        // To get data about these ops without respect to node type,
-        // you'll have to calculate the sum, e.g. sum split_node(x) for all node types x
-        // to get information about split_node as a whole.
-        vector<string> ops_with_node_type = {
-            "add_node",
-            "split_node",
-            "merge_node",
-            "split_edge"
-        };
+            // To get data about these ops without respect to node type,
+            // you'll have to calculate the sum, e.g. sum split_node(x) for all node types x
+            // to get information about split_node as a whole.
+            vector<string> ops_with_node_type = {
+                "add_node",
+                "split_node",
+                "merge_node",
+                "split_edge"
+            };
 
-        for (int32_t i = 0; i < (int32_t)ops_with_node_type.size(); i++) {
-            string op = ops_with_node_type[i];
-            for (int32_t j = 0; j < (int32_t)possible_node_types.size(); j++)
-                op_log_ordering.push_back(op + "(" + NODE_TYPES[possible_node_types[j]] + ")");
-        }
+            for (int32_t i = 0; i < (int32_t)ops_with_node_type.size(); i++) {
+                string op = ops_with_node_type[i];
+                for (int32_t j = 0; j < (int32_t)possible_node_types.size(); j++)
+                    op_log_ordering.push_back(op + "(" + NODE_TYPES[possible_node_types[j]] + ")");
+            }
 
-        for (int32_t i = 0; i < (int32_t)op_log_ordering.size(); i++) {
-            string op = op_log_ordering[i];
-            (*op_log_file) << op;
-            (*op_log_file) << " Generated, ";
-            (*op_log_file) << op;
-            (*op_log_file) << " Inserted, ";
+            for (int32_t i = 0; i < (int32_t)op_log_ordering.size(); i++) {
+                string op = op_log_ordering[i];
+                (*op_log_file) << op;
+                (*op_log_file) << " Generated, ";
+                (*op_log_file) << op;
+                (*op_log_file) << " Inserted, ";
 
-            inserted_counts[op] = 0;
-            generated_counts[op] = 0;
-        }
+                inserted_counts[op] = 0;
+                generated_counts[op] = 0;
+            }
 
-        map<string, int32_t>::iterator it;
+            // map<string, int32_t>::iterator it;
 
         (*op_log_file) << endl;
-
+        }
     } else {
         log_file = NULL;
         op_log_file = NULL;
-    }
-
-    startClock = std::chrono::system_clock::now();
-}
-
-// void EXAMM::get_time_series_parameters() {
-
-//     input_parameter_names = time_series_sets->get_input_parameter_names();
-//     output_parameter_names = time_series_sets->get_output_parameter_names();
-//     normalize_type = time_series_sets->get_normalize_type();
-//     normalize_mins = time_series_sets->get_normalize_mins();
-//     normalize_maxs = time_series_sets->get_normalize_maxs();
-//     normalize_avgs = time_series_sets->get_normalize_avgs();
-//     normalize_std_devs = time_series_sets->get_normalize_std_devs();
-//     number_inputs = time_series_sets->get_number_inputs();
-//     number_outputs = time_series_sets->get_number_outputs();
-// }
-
-void EXAMM::print() {
-    if (Log::at_level(Log::INFO)) {
-        speciation_strategy->print();
     }
 }
 
@@ -267,17 +245,24 @@ void EXAMM::update_log() {
             }
         }
 
-        if (!op_log_file->good()) {
-            op_log_file->close();
-            delete op_log_file;
+        if (generate_op_log) {
+            if (!op_log_file->good()) {
+                op_log_file->close();
+                delete op_log_file;
 
-            string output_file = output_directory + "/op_log.csv";
-            op_log_file = new ofstream(output_file, std::ios_base::app);
+                string output_file = output_directory + "/op_log.csv";
+                op_log_file = new ofstream(output_file, std::ios_base::app);
 
-            if (!op_log_file->is_open()) {
-                Log::error("could not open EXAMM output log: '%s'\n", output_file.c_str());
-                exit(1);
+                if (!op_log_file->is_open()) {
+                    Log::error("could not open EXAMM output log: '%s'\n", output_file.c_str());
+                    exit(1);
+                }
             }
+            for (int32_t i = 0; i < (int32_t)op_log_ordering.size(); i++) {
+                string op = op_log_ordering[i];
+                (*op_log_file) << generated_counts[op] << ", " << inserted_counts[op]  << ", ";
+            }
+            (*op_log_file) << endl;
         }
 
         RNN_Genome *best_genome = get_best_genome();
@@ -298,27 +283,6 @@ void EXAMM::update_log() {
             << "," << best_genome->get_enabled_recurrent_edge_count()
             << speciation_strategy->get_strategy_information_values()
             << endl;
-
-        /*
-        memory_log << speciation_strategy->get_evaluated_genomes()
-            << "," << total_bp_epochs
-            << "," << milliseconds
-            << "," << best_genome->best_validation_mae
-            << "," << best_genome->best_validation_mse
-            << "," << best_genome->get_enabled_node_count()
-            << "," << best_genome->get_enabled_edge_count()
-            << "," << best_genome->get_enabled_recurrent_edge_count()
-            << speciation_strategy->get_strategy_information_values()
-            << endl;
-        */
-
-        for (int32_t i = 0; i < (int32_t)op_log_ordering.size(); i++) {
-            string op = op_log_ordering[i];
-            (*op_log_file) << generated_counts[op] << ", " << inserted_counts[op]  << ", ";
-        }
-
-        (*op_log_file) << endl;
-
     }
 }
 
@@ -436,14 +400,6 @@ RNN_Genome* EXAMM::generate_genome(int32_t seed_genome_stirs) {
 
     RNN_Genome *genome = speciation_strategy->generate_genome(rng_0_1, generator, mutate_function, crossover_function, seed_genome_stirs);
 
-    // genome->set_parameter_names(input_parameter_names, output_parameter_names);
-    // genome->set_normalize_bounds(normalize_type, normalize_mins, normalize_maxs, normalize_avgs, normalize_std_devs);
-    // genome->set_bp_iterations(bp_iterations);
-    // genome->set_learning_rate(learning_rate);
-
-    // if (use_high_threshold) genome->enable_high_threshold(high_threshold);
-    // if (use_low_threshold) genome->enable_low_threshold(low_threshold);
-    // if (use_dropout) genome->enable_dropout(dropout_probability);
     genome_property->set_genome_properties(genome);
     if (!epigenetic_weights) genome->initialize_randomly();
 

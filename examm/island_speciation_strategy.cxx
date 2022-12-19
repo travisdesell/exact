@@ -305,7 +305,6 @@ RNN_Genome* IslandSpeciationStrategy::generate_genome(uniform_real_distribution<
     Island *island = islands[generation_island];
 
     Log::info("generating new genome for island[%d], island_size: %d, max_island_size: %d, mutation_rate: %lf, intra_island_crossover_rate: %lf, inter_island_crossover_rate: %lf\n", generation_island, island->size(), max_island_size, mutation_rate, intra_island_crossover_rate, inter_island_crossover_rate);
-
     Log::debug("islands.size(): %d, selected island is null? %d\n", islands.size(), (island == NULL));
 
     if (island->is_initializing()) {

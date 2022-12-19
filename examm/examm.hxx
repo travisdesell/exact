@@ -33,7 +33,7 @@ class EXAMM {
         int32_t max_genomes;
         int32_t total_bp_epochs;
         SpeciationStrategy *speciation_strategy;
-        TimeSeriesSets *time_series_sets;
+        // TimeSeriesSets *time_series_sets;
         WeightRules *weight_rules;
         GenomeProperty *genome_property;
 
@@ -46,6 +46,7 @@ class EXAMM {
 
         // int32_t number_inputs;
         // int32_t number_outputs;
+        bool generate_op_log;
 
         minstd_rand0 generator;
         uniform_real_distribution<double> rng_0_1;
@@ -104,7 +105,7 @@ class EXAMM {
                 int32_t _number_islands,
                 int32_t _max_genomes,
                 SpeciationStrategy *_speciation_strategy,
-                TimeSeriesSets *_time_series_sets,
+                // TimeSeriesSets *_time_series_sets,
                 WeightRules *_weight_rules,
                 GenomeProperty *_genome_property,
                 string _output_directory,
@@ -142,8 +143,8 @@ class EXAMM {
         // RNN_Genome* generate_for_transfer_learning(string file_name, int32_t extra_inputs, int32_t extra_outputs) ;
 
         void check_weight_initialize_validity();
+        void generate_log();
 
-        // void get_time_series_parameters();
 };
 
 #endif
