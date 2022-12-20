@@ -5,7 +5,47 @@ using std::string;
 using std::vector;
 
 #include "process_arguments.hxx"
+#include "rnn/generate_nn.hxx"
 
+EXAMM* generate_examm_from_arguments(const vector<string> &arguments, TimeSeriesSets *time_series_sets) {
+
+    int32_t population_size;
+    get_argument(arguments, "--population_size", true, population_size);
+
+    int32_t number_islands;
+    get_argument(arguments, "--number_islands", true, number_islands);
+
+    int32_t max_genomes;
+    get_argument(arguments, "--max_genomes", true, max_genomes);
+
+    string output_directory = "";
+    get_argument(arguments, "--output_directory", false, output_directory);
+
+    vector<string> possible_node_types;
+    get_argument_vector(arguments, "--possible_node_types", false, possible_node_types);
+
+    // random_sequence_length = argument_exists(arguments, "--random_sequence_length");
+    // get_argument(arguments, "--sequence_length_lower_bound", false, sequence_length_lower_bound);
+    // get_argument(arguments, "--sequence_length_upper_bound", false, sequence_length_upper_bound);
+
+    GenomeProperty *genome_property = new GenomeProperty();
+    genome_property->generate_genome_property_from_arguments(arguments);
+    genome_property->get_time_series_parameters(time_series_sets);
+
+    WeightRules *weight_rules = new WeightRules();
+    weight_rules->generate_weight_initialize_from_arguments(arguments);
+
+    // string transfer_learning_version = "";
+    // get_argument(arguments, "--transfer_learning_version", false, transfer_learning_version);
+
+    RNN_Genome *seed_genome = get_seed_genome(arguments, time_series_sets, weight_rules);
+    SpeciationStrategy *speciation_strategy = generate_speciation_strategy_from_arguments(arguments, seed_genome);
+    EXAMM* examm = new EXAMM(population_size, number_islands, max_genomes, 
+        speciation_strategy, weight_rules, genome_property, output_directory, seed_genome);
+    if (possible_node_types.size() > 0)  examm->set_possible_node_types(possible_node_types);
+
+    return examm;
+}
 
 SpeciationStrategy* generate_speciation_strategy_from_arguments(const vector<string> &arguments, RNN_Genome *seed_genome) {
     SpeciationStrategy *speciation_strategy = NULL;
@@ -113,6 +153,10 @@ NeatSpeciationStrategy* generate_neat_speciation_strategy_from_arguments(const v
     return neat_strategy;
 }
 
+// TimeSeriesSets *generate_time_series_sets_from_arguments(const vector<string> &arguments) {
+
+// }
+
 bool is_island_strategy (string strategy_name) {
     if (strategy_name.compare("") == 0 || strategy_name.compare("island") == 0) return true;
     else return false;
@@ -121,4 +165,20 @@ bool is_island_strategy (string strategy_name) {
 bool is_neat_strategy (string strategy_name) {
     if (strategy_name.compare("neat") == 0) return true;
     else return false;
+}
+
+void write_time_series_to_file(const vector<string> &arguments, TimeSeriesSets *time_series_sets) {
+    if (argument_exists(arguments, "--write_time_series")) {
+        string base_filename;
+        get_argument(arguments, "--write_time_series", true, base_filename);
+        time_series_sets->write_time_series_sets(base_filename);
+    }
+}
+
+void get_train_validation_data(const vector<string> &arguments, TimeSeriesSets *time_series_sets, vector< vector< vector<double> > > &train_inputs, vector< vector< vector<double> > > &train_outputs, vector< vector< vector<double> > > &validation_inputs, vector< vector< vector<double> > > &validation_outputs) {
+    int32_t time_offset = 1;
+    get_argument(arguments, "--time_offset", true, time_offset);
+
+    time_series_sets->export_training_series(time_offset, train_inputs, train_outputs);
+    time_series_sets->export_test_series(time_offset, validation_inputs, validation_outputs);
 }

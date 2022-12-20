@@ -255,57 +255,8 @@ int main(int argc, char** argv) {
 
 
     TimeSeriesSets *time_series_sets = NULL;
-
-    if (rank == 0) {
-        //only have the master process print TSS info
-        time_series_sets = TimeSeriesSets::generate_from_arguments(arguments);
-        if (argument_exists(arguments, "--write_time_series")) {
-            string base_filename;
-            get_argument(arguments, "--write_time_series", true, base_filename);
-            time_series_sets->write_time_series_sets(base_filename);
-        }
-    } else {
-        time_series_sets = TimeSeriesSets::generate_from_arguments(arguments);
-    }
-
-
-
-    int32_t time_offset = 1;
-    get_argument(arguments, "--time_offset", true, time_offset);
-
-    time_series_sets->export_training_series(time_offset, training_inputs, training_outputs);
-    time_series_sets->export_test_series(time_offset, validation_inputs, validation_outputs);
-
-    int32_t number_inputs = time_series_sets->get_number_inputs();
-    int32_t number_outputs = time_series_sets->get_number_outputs();
-
-    Log::debug("number_inputs: %d, number_outputs: %d\n", number_inputs, number_outputs);
-
-    int32_t population_size;
-    get_argument(arguments, "--population_size", true, population_size);
-
-    int32_t number_islands;
-    get_argument(arguments, "--number_islands", true, number_islands);
-
-    int32_t max_genomes;
-    get_argument(arguments, "--max_genomes", true, max_genomes);
-
-    string output_directory = "";
-    get_argument(arguments, "--output_directory", false, output_directory);
-
-    vector<string> possible_node_types;
-    get_argument_vector(arguments, "--possible_node_types", false, possible_node_types);
-
-    random_sequence_length = argument_exists(arguments, "--random_sequence_length");
-    get_argument(arguments, "--sequence_length_lower_bound", false, sequence_length_lower_bound);
-    get_argument(arguments, "--sequence_length_upper_bound", false, sequence_length_upper_bound);
-
-    GenomeProperty *genome_property = new GenomeProperty();
-    genome_property->generate_genome_property_from_arguments(arguments);
-    genome_property->get_time_series_parameters(time_series_sets);
-
-    WeightRules *weight_rules = new WeightRules();
-    weight_rules->generate_weight_initialize_from_arguments(arguments);
+    time_series_sets = TimeSeriesSets::generate_from_arguments(arguments);
+    get_train_validation_data(arguments, time_series_sets, training_inputs, training_outputs, validation_inputs, validation_outputs);
 
     weight_update_method = new WeightUpdate();
     weight_update_method->generate_from_arguments(arguments);
@@ -313,23 +264,14 @@ int main(int argc, char** argv) {
     string transfer_learning_version = "";
     get_argument(arguments, "--transfer_learning_version", false, transfer_learning_version);
 
-    RNN_Genome *seed_genome = get_seed_genome(arguments, time_series_sets, weight_rules);
-    SpeciationStrategy *speciation_strategy = generate_speciation_strategy_from_arguments(arguments, seed_genome);
-
     int32_t seed_stirs = 0;
     get_argument(arguments, "--seed_stirs", false, seed_stirs);
 
     Log::clear_rank_restriction();
 
     if (rank == 0) {
-        examm = new EXAMM(population_size, number_islands, max_genomes, 
-            speciation_strategy, time_series_sets, weight_rules,
-            genome_property,
-            output_directory, seed_genome);
-        if (possible_node_types.size() > 0)  {
-            examm->set_possible_node_types(possible_node_types);
-        }
-
+        write_time_series_to_file(arguments, time_series_sets);
+        examm = generate_examm_from_arguments(arguments, time_series_sets);
         master(max_rank, transfer_learning_version, seed_stirs);
     } else {
         worker(rank);
