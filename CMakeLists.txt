@@ -109,7 +109,7 @@ add_subdirectory(examm)
 
 # add_subdirectory(cnn_tests)
 # add_subdirectory(cnn_examples)
-# add_subdirectory(multithreaded)
+add_subdirectory(multithreaded)
 add_subdirectory(mpi)
 
 # add_subdirectory(exona)
