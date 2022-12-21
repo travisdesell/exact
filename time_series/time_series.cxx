@@ -81,7 +81,7 @@ void TimeSeries::calculate_statistics() {
 }
 
 void TimeSeries::print_statistics() {
-    Log::info("\t%25s stats, min: %lf, avg: %lf, max: %lf, min_change: %lf, max_change: %lf, std_dev: %lf, variance: %lf\n", name.c_str(), min, average, max, min_change, max_change, std_dev, variance);
+    Log::trace("\t%25s stats, min: %lf, avg: %lf, max: %lf, min_change: %lf, max_change: %lf, std_dev: %lf, variance: %lf\n", name.c_str(), min, average, max, min_change, max_change, std_dev, variance);
 }
 
 int32_t TimeSeries::get_number_values() const {

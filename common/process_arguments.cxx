@@ -29,8 +29,7 @@ EXAMM* generate_examm_from_arguments(const vector<string> &arguments, TimeSeries
 
     SpeciationStrategy *speciation_strategy = generate_speciation_strategy_from_arguments(arguments, seed_genome);
 
-    EXAMM* examm = new EXAMM(population_size, number_islands, max_genomes, 
-        speciation_strategy, weight_rules, genome_property, output_directory, seed_genome);
+    EXAMM* examm = new EXAMM(population_size, number_islands, max_genomes, speciation_strategy, weight_rules, genome_property, output_directory);
     if (possible_node_types.size() > 0)  examm->set_possible_node_types(possible_node_types);
 
     return examm;
@@ -83,13 +82,10 @@ IslandSpeciationStrategy* generate_island_speciation_strategy_from_arguments(con
     }
 
     bool repeat_extinction = argument_exists(arguments, "--repeat_extinction");
-
     string transfer_learning_version = "";
     bool transfer_learning = get_argument(arguments, "--transfer_learning_version", false, transfer_learning_version);
-
     int32_t seed_stirs = 0;
     get_argument(arguments, "--seed_stirs", false, seed_stirs);
-    
     bool start_filled = argument_exists(arguments, "--start_filled");
     bool tl_epigenetic_weights = argument_exists(arguments, "--tl_epigenetic_weights");
 

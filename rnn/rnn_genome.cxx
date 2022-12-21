@@ -1561,7 +1561,7 @@ RNN_Node_Interface* RNN_Genome::create_node(double mu, double sigma, int32_t nod
     WeightType mutated_component_weight = weight_rules->get_mutated_components_weight_method();
     WeightType weight_initialize = weight_rules->get_weight_initialize_method();
 
-    Log::info("CREATING NODE, type: '%s'\n", NODE_TYPES[node_type].c_str());
+    Log::trace("CREATING NODE, type: '%s'\n", NODE_TYPES[node_type].c_str());
     if (node_type == LSTM_NODE) {
         n = new LSTM_Node(++node_innovation_count, HIDDEN_LAYER, depth);
     } else if (node_type == DELTA_NODE) {
@@ -1601,12 +1601,12 @@ RNN_Node_Interface* RNN_Genome::create_node(double mu, double sigma, int32_t nod
 }
 
 bool RNN_Genome::attempt_edge_insert(RNN_Node_Interface *n1, RNN_Node_Interface *n2, double mu, double sigma, int32_t &edge_innovation_count) {
-    Log::info("\tadding edge between nodes %d and %d\n", n1->innovation_number, n2->innovation_number);
+    Log::trace("\tadding edge between nodes %d and %d\n", n1->innovation_number, n2->innovation_number);
     WeightType mutated_component_weight = weight_rules->get_mutated_components_weight_method();
     WeightType weight_initialize = weight_rules->get_weight_initialize_method();
 
     if (n1->depth == n2->depth) {
-        Log::info("\tcannot add edge between nodes as their depths are the same: %lf and %lf\n", n1->depth, n2->depth);
+        Log::trace("\tcannot add edge between nodes as their depths are the same: %lf and %lf\n", n1->depth, n2->depth);
         return false;
     }
 
@@ -1615,7 +1615,7 @@ bool RNN_Genome::attempt_edge_insert(RNN_Node_Interface *n1, RNN_Node_Interface 
         RNN_Node_Interface *temp = n2;
         n2 = n1;
         n1 = temp;
-        Log::info("\tswaping nodes, because n2->depth < n1->depth\n");
+        Log::trace("\tswaping nodes, because n2->depth < n1->depth\n");
     }
 
 
@@ -1625,13 +1625,13 @@ bool RNN_Genome::attempt_edge_insert(RNN_Node_Interface *n1, RNN_Node_Interface 
                 edges[i]->output_innovation_number == n2->innovation_number) {
             if (!edges[i]->enabled) {
                 //edge was disabled so we can enable it
-                Log::info("\tedge already exists but was disabled, enabling it.\n");
+                Log::trace("\tedge already exists but was disabled, enabling it.\n");
                 edges[i]->enabled = true;
                 // edges[i]->input_node->fan_out++;
                 // edges[i]->output_node->fan_in++;
                 return true;
             } else {
-                Log::info("\tedge already exists, not adding.\n");
+                Log::trace("\tedge already exists, not adding.\n");
                 //edge was already enabled, so there will not be a change
                 return false;
             }
@@ -1660,14 +1660,14 @@ bool RNN_Genome::attempt_edge_insert(RNN_Node_Interface *n1, RNN_Node_Interface 
         Log::fatal("new component weight method is not set correctly, weight initialize: %s, new component weight: %s\n", WEIGHT_TYPES_STRING[weight_initialize].c_str(), WEIGHT_TYPES_STRING[mutated_component_weight].c_str());
     }
 
-    Log::info("\tadding edge between nodes %d and %d, new edge weight: %lf\n", e->input_innovation_number, e->output_innovation_number, e->weight);
+    Log::trace("\tadding edge between nodes %d and %d, new edge weight: %lf\n", e->input_innovation_number, e->output_innovation_number, e->weight);
     edges.insert( upper_bound(edges.begin(), edges.end(), e, sort_RNN_Edges_by_depth()), e);
 
     return true;
 }
 
 bool RNN_Genome::attempt_recurrent_edge_insert(RNN_Node_Interface *n1, RNN_Node_Interface *n2, double mu, double sigma, uniform_int_distribution<int32_t> dist, int32_t &edge_innovation_count) {
-    Log::info("\tadding recurrent edge between nodes %d and %d\n", n1->innovation_number, n2->innovation_number);
+    Log::trace("\tadding recurrent edge between nodes %d and %d\n", n1->innovation_number, n2->innovation_number);
     WeightType mutated_component_weight = weight_rules->get_mutated_components_weight_method();
     WeightType weight_initialize = weight_rules->get_weight_initialize_method();
     //int32_t recurrent_depth = 1 + (rng_0_1(generator) * (max_recurrent_depth - 1));
@@ -1681,13 +1681,13 @@ bool RNN_Genome::attempt_recurrent_edge_insert(RNN_Node_Interface *n1, RNN_Node_
 
             if (!recurrent_edges[i]->enabled) {
                 //edge was disabled so we can enable it
-                Log::info("\trecurrent edge already exists but was disabled, enabling it.\n");
+                Log::trace("\trecurrent edge already exists but was disabled, enabling it.\n");
                 recurrent_edges[i]->enabled = true;
                 // recurrent_edges[i]->input_node->fan_out++;
                 // recurrent_edges[i]->output_node->fan_in++;
                 return true;
             } else {
-                Log::info("\tenabled recurrent edge already existed between selected nodes %d and %d at recurrent depth: %d\n", n1->innovation_number, n2->innovation_number, recurrent_depth);
+                Log::trace("\tenabled recurrent edge already existed between selected nodes %d and %d at recurrent depth: %d\n", n1->innovation_number, n2->innovation_number, recurrent_depth);
                 //edge was already enabled, so there will not be a change
                 return false;
             }
@@ -1716,7 +1716,7 @@ bool RNN_Genome::attempt_recurrent_edge_insert(RNN_Node_Interface *n1, RNN_Node_
         Log::fatal("new component weight method is not set correctly, weight initialize: %s, new component weight: %s\n", WEIGHT_TYPES_STRING[weight_initialize].c_str(), WEIGHT_TYPES_STRING[mutated_component_weight].c_str());
     }
 
-    Log::info("\tadding recurrent edge with innovation number %d between nodes %d and %d, new edge weight: %d\n", e->innovation_number, e->input_innovation_number, e->output_innovation_number, e->weight);
+    Log::trace("\tadding recurrent edge with innovation number %d between nodes %d and %d, new edge weight: %d\n", e->innovation_number, e->input_innovation_number, e->output_innovation_number, e->weight);
 
     recurrent_edges.insert( upper_bound(recurrent_edges.begin(), recurrent_edges.end(), e, sort_RNN_Recurrent_Edges_by_depth()), e);
     return true;
@@ -1737,17 +1737,17 @@ void RNN_Genome::generate_recurrent_edges(RNN_Node_Interface *node, double mu, d
 }
 
 bool RNN_Genome::add_edge(double mu, double sigma, int32_t &edge_innovation_count) {
-    Log::info("\tattempting to add edge!\n");
+    Log::trace("\tattempting to add edge!\n");
     vector<RNN_Node_Interface*> reachable_nodes;
     for (int32_t i = 0; i < (int32_t)nodes.size(); i++) {
         if (nodes[i]->is_reachable()) reachable_nodes.push_back(nodes[i]);
     }
-    Log::info("\treachable_nodes.size(): %d\n", reachable_nodes.size());
+    Log::trace("\treachable_nodes.size(): %d\n", reachable_nodes.size());
 
     int32_t position = rng_0_1(generator) * reachable_nodes.size();
 
     RNN_Node_Interface *n1 = reachable_nodes[position];
-    Log::info("\tselected first node %d with depth %d\n", n1->innovation_number, n1->depth);
+    Log::trace("\tselected first node %d with depth %d\n", n1->innovation_number, n1->depth);
     //printf("pos: %d, size: %d\n", position, reachable_nodes.size());
 
     for (int32_t i = 0; i < (int32_t)reachable_nodes.size();) {
@@ -1769,18 +1769,18 @@ bool RNN_Genome::add_edge(double mu, double sigma, int32_t &edge_innovation_coun
     //     }
     // }
 
-    Log::info("\treachable_nodes.size(): %d\n", reachable_nodes.size());
+    Log::trace("\treachable_nodes.size(): %d\n", reachable_nodes.size());
 
 
     position = rng_0_1(generator) * reachable_nodes.size();
     RNN_Node_Interface *n2 = reachable_nodes[position];
-    Log::info("\tselected second node %d with depth %d\n", n2->innovation_number, n2->depth);
+    Log::trace("\tselected second node %d with depth %d\n", n2->innovation_number, n2->depth);
 
     return attempt_edge_insert(n1, n2, mu, sigma, edge_innovation_count);
 }
 
 bool RNN_Genome::add_recurrent_edge(double mu, double sigma, uniform_int_distribution<int32_t> dist, int32_t &edge_innovation_count) {
-    Log::info("\tattempting to add recurrent edge!\n");
+    Log::trace("\tattempting to add recurrent edge!\n");
 
     vector<RNN_Node_Interface*> possible_input_nodes;
     vector<RNN_Node_Interface*> possible_output_nodes;
@@ -1794,8 +1794,8 @@ bool RNN_Genome::add_recurrent_edge(double mu, double sigma, uniform_int_distrib
         }
     }
 
-    Log::info("\tpossible_input_nodes.size(): %d\n", possible_input_nodes.size());
-    Log::info("\tpossible_output_nodes.size(): %d\n", possible_output_nodes.size());
+    Log::trace("\tpossible_input_nodes.size(): %d\n", possible_input_nodes.size());
+    Log::trace("\tpossible_output_nodes.size(): %d\n", possible_output_nodes.size());
 
     if (possible_input_nodes.size() == 0) return false;
     if (possible_output_nodes.size() == 0) return false;
@@ -1805,10 +1805,10 @@ bool RNN_Genome::add_recurrent_edge(double mu, double sigma, uniform_int_distrib
     //no need to swap the nodes as recurrent connections can go backwards
 
     RNN_Node_Interface *n1 = possible_input_nodes[p1];
-    Log::info("\tselected first node %d with depth %d\n", n1->innovation_number, n1->depth);
+    Log::trace("\tselected first node %d with depth %d\n", n1->innovation_number, n1->depth);
 
     RNN_Node_Interface *n2 = possible_output_nodes[p2];
-    Log::info("\tselected second node %d with depth %d\n", n2->innovation_number, n2->depth);
+    Log::trace("\tselected second node %d with depth %d\n", n2->innovation_number, n2->depth);
 
     return attempt_recurrent_edge_insert(n1, n2, mu, sigma, dist, edge_innovation_count);
 }
@@ -1878,7 +1878,7 @@ bool RNN_Genome::enable_edge() {
 
 
 bool RNN_Genome::split_edge(double mu, double sigma, int32_t node_type, uniform_int_distribution<int32_t> dist, int32_t &edge_innovation_count, int32_t &node_innovation_count) {
-    Log::info("\tattempting to split an edge!\n");
+    Log::trace("\tattempting to split an edge!\n");
     vector<RNN_Edge*> enabled_edges;
     for (int32_t i = 0; i < (int32_t)edges.size(); i++) {
         if (edges[i]->enabled) enabled_edges.push_back(edges[i]);
@@ -1929,7 +1929,7 @@ bool RNN_Genome::split_edge(double mu, double sigma, int32_t node_type, uniform_
 }
 
 bool RNN_Genome::connect_new_input_node(double mu, double sigma, RNN_Node_Interface *new_node, uniform_int_distribution<int32_t> dist, int32_t &edge_innovation_count, bool not_all_hidden) {
-    Log::info("\tattempting to connect a new input node (%d) for transfer learning!\n", new_node->innovation_number);
+    Log::trace("\tattempting to connect a new input node (%d) for transfer learning!\n", new_node->innovation_number);
 
     vector<RNN_Node_Interface*> possible_outputs;
 
@@ -1982,7 +1982,7 @@ bool RNN_Genome::connect_new_input_node(double mu, double sigma, RNN_Node_Interf
     double recurrent_probability = (double)enabled_recurrent_edges / (double)(enabled_recurrent_edges + enabled_edges);
     //recurrent_probability = fmax(0.2, recurrent_probability);
 
-    Log::info("\tadd new node for transfer recurrent probability: %lf\n", recurrent_probability);
+    Log::trace("\tadd new node for transfer recurrent probability: %lf\n", recurrent_probability);
 
 
 
@@ -2011,7 +2011,7 @@ vector<RNN_Node_Interface*> RNN_Genome::pick_possible_nodes(int32_t layer_type, 
         //can connect to node or hidden nodes
         if (nodes[i]->get_layer_type() == layer_type || (nodes[i]->get_layer_type() == HIDDEN_LAYER && nodes[i]->is_reachable())) {
             possible_nodes.push_back(nodes[i]);
-            Log::info("\tpotential connection node[%d], depth: %lf, total_inputs: %d, total_outputs: %d\n", nodes[i]->get_innovation_number(), nodes[i]->get_depth(), nodes[i]->get_total_inputs(), nodes[i]->get_total_outputs());
+            Log::trace("\tpotential connection node[%d], depth: %lf, total_inputs: %d, total_outputs: %d\n", nodes[i]->get_innovation_number(), nodes[i]->get_depth(), nodes[i]->get_total_inputs(), nodes[i]->get_total_outputs());
         }
 
         if (nodes[i]->enabled) {
@@ -2042,7 +2042,7 @@ vector<RNN_Node_Interface*> RNN_Genome::pick_possible_nodes(int32_t layer_type, 
             int32_t position = rng_0_1(generator) * possible_nodes.size();
             possible_nodes.erase(possible_nodes.begin() + position);
         }
-        Log::info("\tadd new %s node, max_inputs: %d\n", node_type.c_str(), max_nodes);
+        Log::trace("\tadd new %s node, max_inputs: %d\n", node_type.c_str(), max_nodes);
     }
 
     return possible_nodes;
@@ -2051,7 +2051,7 @@ vector<RNN_Node_Interface*> RNN_Genome::pick_possible_nodes(int32_t layer_type, 
 //------------------------------------------------
 
 bool RNN_Genome::connect_new_output_node(double mu, double sigma, RNN_Node_Interface *new_node, uniform_int_distribution<int32_t> dist, int32_t &edge_innovation_count, bool not_all_hidden) {
-    Log::info("\tattempting to connect a new output node for transfer learning!\n");
+    Log::trace("\tattempting to connect a new output node for transfer learning!\n");
 
     vector<RNN_Node_Interface*> possible_inputs;
 
@@ -2103,7 +2103,7 @@ bool RNN_Genome::connect_new_output_node(double mu, double sigma, RNN_Node_Inter
     double recurrent_probability = (double)enabled_recurrent_edges / (double)(enabled_recurrent_edges + enabled_edges);
     //recurrent_probability = fmax(0.2, recurrent_probability);
 
-    Log::info("\tadd new node for transfer recurrent probability: %lf\n", recurrent_probability);
+    Log::trace("\tadd new node for transfer recurrent probability: %lf\n", recurrent_probability);
 
 
 
@@ -2212,7 +2212,7 @@ bool RNN_Genome::connect_node_to_hid_nodes( double mu, double sig, RNN_Node_Inte
                 // innovation_list.push_back(edge_innovation_count);
             }
             e->weight = bound(normal_distribution.random(generator, mu, sigma));
-            Log::info("\tadding edge between nodes %d and %d, new edge weight: %lf\n", e->input_innovation_number, e->output_innovation_number, e->weight);
+            Log::trace("\tadding edge between nodes %d and %d, new edge weight: %lf\n", e->input_innovation_number, e->output_innovation_number, e->weight);
             edges.insert( upper_bound(edges.begin(), edges.end(), e, sort_RNN_Edges_by_depth()), e);
 
             initial_parameters.push_back(e->weight);
@@ -2227,7 +2227,7 @@ bool RNN_Genome::connect_node_to_hid_nodes( double mu, double sig, RNN_Node_Inte
 /*   ################# ################# ################# */
 
 bool RNN_Genome::add_node(double mu, double sigma, int32_t node_type, uniform_int_distribution<int32_t> dist, int32_t &edge_innovation_count, int32_t &node_innovation_count) {
-    Log::info("\tattempting to add a node!\n");
+    Log::trace("\tattempting to add a node!\n");
     double split_depth = rng_0_1(generator);
 
     vector<RNN_Node_Interface*> possible_inputs;
@@ -2274,7 +2274,7 @@ bool RNN_Genome::add_node(double mu, double sigma, int32_t node_type, uniform_in
 
     int32_t max_inputs = fmax(1, 2.0 + normal_distribution.random(generator, avg_inputs, input_sigma));
     int32_t max_outputs = fmax(1, 2.0 + normal_distribution.random(generator, avg_outputs, output_sigma));
-    Log::info("\tadd node, split depth: %lf, max_inputs: %d, max_outputs: %d\n", split_depth, max_inputs, max_outputs);
+    Log::trace("\tadd node, split depth: %lf, max_inputs: %d, max_outputs: %d\n", split_depth, max_inputs, max_outputs);
 
     int32_t enabled_edges = get_enabled_edge_count();
     int32_t enabled_recurrent_edges = get_enabled_recurrent_edge_count();
@@ -2282,7 +2282,7 @@ bool RNN_Genome::add_node(double mu, double sigma, int32_t node_type, uniform_in
     double recurrent_probability = (double)enabled_recurrent_edges / (double)(enabled_recurrent_edges + enabled_edges);
     //recurrent_probability = fmax(0.2, recurrent_probability);
 
-    Log::info("\tadd node recurrent probability: %lf\n", recurrent_probability);
+    Log::trace("\tadd node recurrent probability: %lf\n", recurrent_probability);
 
     while ((int32_t)possible_inputs.size() > max_inputs) {
         int32_t position = rng_0_1(generator) * possible_inputs.size();
@@ -2327,7 +2327,7 @@ bool RNN_Genome::add_node(double mu, double sigma, int32_t node_type, uniform_in
 }
 
 bool RNN_Genome::enable_node() {
-    Log::info("\tattempting to enable a node!\n");
+    Log::trace("\tattempting to enable a node!\n");
     vector<RNN_Node_Interface*> possible_nodes;
     for (int32_t i = 0; i < (int32_t)nodes.size(); i++) {
         if (!nodes[i]->enabled) possible_nodes.push_back(nodes[i]);
@@ -2337,13 +2337,13 @@ bool RNN_Genome::enable_node() {
 
     int32_t position = rng_0_1(generator) * possible_nodes.size();
     possible_nodes[position]->enabled = true;
-    Log::info("\tenabling node %d at depth %lf\n", possible_nodes[position]->innovation_number, possible_nodes[position]->depth);
+    Log::trace("\tenabling node %d at depth %lf\n", possible_nodes[position]->innovation_number, possible_nodes[position]->depth);
 
     return true;
 }
 
 bool RNN_Genome::disable_node() {
-    Log::info("\tattempting to disable a node!\n");
+    Log::trace("\tattempting to disable a node!\n");
     vector<RNN_Node_Interface*> possible_nodes;
     for (int32_t i = 0; i < (int32_t)nodes.size(); i++) {
         if (nodes[i]->layer_type != OUTPUT_LAYER && nodes[i]->enabled) possible_nodes.push_back(nodes[i]);
@@ -2353,13 +2353,13 @@ bool RNN_Genome::disable_node() {
 
     int32_t position = rng_0_1(generator) * possible_nodes.size();
     possible_nodes[position]->enabled = false;
-    Log::info("\tdisabling node %d at depth %lf\n", possible_nodes[position]->innovation_number, possible_nodes[position]->depth);
+    Log::trace("\tdisabling node %d at depth %lf\n", possible_nodes[position]->innovation_number, possible_nodes[position]->depth);
 
     return true;
 }
 
 bool RNN_Genome::split_node(double mu, double sigma, int32_t node_type, uniform_int_distribution<int32_t> dist, int32_t &edge_innovation_count, int32_t &node_innovation_count) {
-    Log::info("\tattempting to split a node!\n");
+    Log::trace("\tattempting to split a node!\n");
     vector<RNN_Node_Interface*> possible_nodes;
     for (int32_t i = 0; i < (int32_t)nodes.size(); i++) {
         if (nodes[i]->layer_type != INPUT_LAYER && nodes[i]->layer_type != OUTPUT_LAYER &&
@@ -2372,7 +2372,7 @@ bool RNN_Genome::split_node(double mu, double sigma, int32_t node_type, uniform_
 
     int32_t position = rng_0_1(generator) * possible_nodes.size();
     RNN_Node_Interface *selected_node = possible_nodes[position];
-    Log::info("\tselected node: %d at depth %lf\n", selected_node->innovation_number, selected_node->depth);
+    Log::trace("\tselected node: %d at depth %lf\n", selected_node->innovation_number, selected_node->depth);
 
     vector<RNN_Edge*> input_edges;
     vector<RNN_Edge*> output_edges;
@@ -2397,7 +2397,7 @@ bool RNN_Genome::split_node(double mu, double sigma, int32_t node_type, uniform_
             if (rng_0_1(generator) < 0.5) recurrent_edges_2.push_back(recurrent_edges[i]);
         }
     }
-    Log::info("\t\trecurrent_edges_1.size(): %d, recurrent_edges_2.size(): %d, input_edges.size(): %d, output_edges.size(): %d\n", recurrent_edges_1.size(), recurrent_edges_2.size(), input_edges.size(), output_edges.size());
+    Log::trace("\t\trecurrent_edges_1.size(): %d, recurrent_edges_2.size(): %d, input_edges.size(): %d, output_edges.size(): %d\n", recurrent_edges_1.size(), recurrent_edges_2.size(), input_edges.size(), output_edges.size());
 
     if (input_edges.size() == 0 || output_edges.size() == 0) {
         Log::warning("\tthe input or output edges size was 0 for the selected node, we cannot split it\n");
@@ -2544,7 +2544,7 @@ bool RNN_Genome::split_node(double mu, double sigma, int32_t node_type, uniform_
 }
 
 bool RNN_Genome::merge_node(double mu, double sigma, int32_t node_type, uniform_int_distribution<int32_t> dist, int32_t &edge_innovation_count, int32_t &node_innovation_count) {
-    Log::info("\tattempting to merge a node!\n");
+    Log::trace("\tattempting to merge a node!\n");
     vector<RNN_Node_Interface*> possible_nodes;
     for (int32_t i = 0; i < (int32_t)nodes.size(); i++) {
         if (nodes[i]->layer_type != INPUT_LAYER && nodes[i]->layer_type != OUTPUT_LAYER) possible_nodes.push_back(nodes[i]);
@@ -2613,7 +2613,7 @@ bool RNN_Genome::merge_node(double mu, double sigma, int32_t node_type, uniform_
         }
 
         if (input_node->depth == output_node->depth) {
-            Log::info("\tskipping merged edge because the input and output nodes are the same depth\n");
+            Log::trace("\tskipping merged edge because the input and output nodes are the same depth\n");
             continue;
         }
 

@@ -203,9 +203,11 @@ class IslandSpeciationStrategy : public SpeciationStrategy {
         void repopulate_by_copy_island(int32_t best_island, function<void (int32_t, RNN_Genome*)> &mutate);
 
         RNN_Genome* get_global_best_genome();
+        RNN_Genome* get_seed_genome();
 
         void set_erased_islands_status();
         void initialize_population(function<void (int32_t, RNN_Genome*)> &mutate);
+        void repopulate();
 };
 
 

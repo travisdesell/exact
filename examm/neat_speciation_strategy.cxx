@@ -532,6 +532,10 @@ void NeatSpeciationStrategy::check_species() {
     Log::info("finished checking species, current number of species: %d \n", Neat_Species.size());
 }
 
+RNN_Genome* NeatSpeciationStrategy::get_seed_genome() {
+    return seed_genome;
+}
+
 void NeatSpeciationStrategy::initialize_population(function<void (int32_t, RNN_Genome*)> &mutate) {
     
 }

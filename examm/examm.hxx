@@ -78,25 +78,19 @@ class EXAMM {
 
         string  genome_file_name;
 
-        // bool start_filled;
-
     public:
         EXAMM(  int32_t _population_size,
                 int32_t _number_islands,
                 int32_t _max_genomes,
                 SpeciationStrategy *_speciation_strategy,
-                // TimeSeriesSets *_time_series_sets,
                 WeightRules *_weight_rules,
                 GenomeProperty *_genome_property,
-                string _output_directory,
-                RNN_Genome *seed_genome);
-
+                string _output_directory);
 
         ~EXAMM();
 
         void print();
         void update_log();
-        // void write_memory_log(string filename);
 
         void set_possible_node_types(vector<string> possible_node_type_strings);
 
@@ -120,10 +114,12 @@ class EXAMM {
         RNN_Genome* get_worst_genome();
 
         string get_output_directory() const;
-        // RNN_Genome* generate_for_transfer_learning(string file_name, int32_t extra_inputs, int32_t extra_outputs) ;
 
         void check_weight_initialize_validity();
         void generate_log();
+        void set_evolution_hyper_parameters();
+        void initialize_seed_genome();
+        void update_op_log_statistics(RNN_Genome *genome, int32_t insert_position);
 
 };
 
