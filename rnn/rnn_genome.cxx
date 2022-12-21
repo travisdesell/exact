@@ -938,82 +938,53 @@ void RNN_Genome::backpropagate(const vector< vector< vector<double> > > &inputs,
     // double low_threshold = sqrt(weight_update_method->get_low_threshold() * inputs.size());
     // double high_threshold = sqrt(weight_update_method->get_high_threshold() * inputs.size());
 
-
     int32_t n_series = (int32_t)inputs.size();
     vector<RNN*> rnns;
     for (int32_t i = 0; i < n_series; i++) {
         rnns.push_back( this->get_rnn() );
     }
-
-    vector<double> parameters = initial_parameters;
-
     int32_t n_parameters = this->get_number_weights();
-    // vector<double> prev_parameters(n_parameters, 0.0);
-
+    vector<double> parameters = initial_parameters;
     vector<double> velocity(n_parameters, 0.0);
     vector<double> prev_velocity(n_parameters, 0.0);
-
     vector<double> analytic_gradient;
     vector<double> prev_gradient(n_parameters, 0.0);
 
     double mse;
-
-    // double parameter_norm = 0.0;
-    // double velocity_norm = 0.0;
     double norm = 0.0;
 
     //initialize the initial previous values
     get_analytic_gradient(rnns, parameters, inputs, outputs, mse, analytic_gradient, true);
-    double validation_mse = 0.0;
-
-    validation_mse = get_mse(parameters, validation_inputs, validation_outputs);
-
+    double validation_mse = get_mse(parameters, validation_inputs, validation_outputs);
     best_validation_mse = validation_mse;
     best_validation_mae = get_mae(parameters, validation_inputs, validation_outputs);
     best_parameters = parameters;
 
-    norm = 0.0;
-    for (int32_t i = 0; i < (int32_t)parameters.size(); i++) {
-        norm += analytic_gradient[i] * analytic_gradient[i];
-    }
-    norm = sqrt(norm);
+    norm = weight_update_method->get_norm(analytic_gradient);
 
-    ofstream *output_log = NULL;
-    if (log_filename != "") {
-        output_log = new ofstream(log_filename);
-    }
+    ofstream *output_log = create_log_file();
 
     for (int32_t iteration = 0; iteration < bp_iterations; iteration++) {
         prev_gradient = analytic_gradient;
-
         get_analytic_gradient(rnns, parameters, inputs, outputs, mse, analytic_gradient, true);
-
         this->set_weights(parameters);
-
         validation_mse = get_mse(parameters, validation_inputs, validation_outputs);
-
         if (validation_mse < best_validation_mse) {
             best_validation_mse = validation_mse;
             best_validation_mae = get_mae(parameters, validation_inputs, validation_outputs);
             best_parameters = parameters;
         }
-
         norm = weight_update_method->get_norm(analytic_gradient);
-
         if (output_log != NULL) {
             (*output_log) << iteration
                 << " " << mse
                 << " " << validation_mse
                 << " " << best_validation_mse << endl;
         }
-
-        Log::info("iteration %10d, mse: %10lf, v_mse: %10lf, bv_mse: %10lf, norm: %lf", iteration, mse, validation_mse, best_validation_mse, norm);
-
         weight_update_method->norm_gradients(analytic_gradient, norm);
-
-        Log::info_no_header("\n");
-
         weight_update_method->update_weights(parameters, velocity, prev_velocity, analytic_gradient, iteration);
+        Log::info("iteration %10d, mse: %10lf, v_mse: %10lf, bv_mse: %10lf, norm: %lf", iteration, mse, validation_mse, best_validation_mse, norm);
+        Log::info_no_header("\n");
     }
 
     RNN *g;
@@ -1021,19 +992,15 @@ void RNN_Genome::backpropagate(const vector< vector< vector<double> > > &inputs,
         g = rnns.back();
         rnns.pop_back();
         delete g;
-
     }
-
     this->set_weights(best_parameters);
 }
 
-void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, const vector< vector< vector<double> > > &validation_inputs, const vector< vector< vector<double> > > &validation_outputs, bool random_sequence_length, int32_t sequence_length_lower_bound, int32_t sequence_length_upper_bound, WeightUpdate *weight_update_method) {
-    vector<double> parameters = initial_parameters;
-
+void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, const vector< vector< vector<double> > > &validation_inputs, const vector< vector< vector<double> > > &validation_outputs, WeightUpdate *weight_update_method) {
     int32_t n_parameters = this->get_number_weights();
     int32_t n_series = (int32_t)inputs.size();
 
-    // vector<double> prev_parameters(n_parameters, 0.0);
+    vector<double> parameters = initial_parameters;
     vector<double> velocity(n_parameters, 0.0);
     vector<double> prev_velocity(n_parameters, 0.0);
     vector<double> analytic_gradient;
@@ -1041,24 +1008,17 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
 
     double mse;
     double norm = 0.0;
-    
-    std::chrono::time_point<std::chrono::system_clock> startClock = std::chrono::system_clock::now();
-
     RNN* rnn = get_rnn();
     rnn->set_weights(parameters);
+    
+    std::chrono::time_point<std::chrono::system_clock> startClock = std::chrono::system_clock::now();
 
     //initialize the initial previous values
     for (int32_t i = 0; i < n_series; i++) {
         Log::trace("getting analytic gradient for input/output: %d, n_series: %d, parameters.size: %d, inputs.size(): %d, outputs.size(): %d, log filename: '%s'\n", i, n_series, parameters.size(), inputs.size(), outputs.size(), log_filename.c_str());
-
         rnn->get_analytic_gradient(parameters, inputs[i], outputs[i], mse, analytic_gradient, use_dropout, true, dropout_probability);
         Log::trace("got analytic gradient.\n");
-
-        norm = 0.0;
-        for (int32_t j = 0; j < (int32_t)parameters.size(); j++) {
-            norm += analytic_gradient[j] * analytic_gradient[j];
-        }
-        norm = sqrt(norm);
+        norm = weight_update_method->get_norm(analytic_gradient);
     }
     Log::trace("initialized previous values.\n");
 
@@ -1069,22 +1029,55 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
     best_parameters = parameters;
 
     Log::trace("got initial mses.\n");
-
     Log::info("initial validation_mse: %lf, best validation mse: %lf\n", validation_mse, best_validation_mse);
 
-    double m = 0.0, s = 0.0;
-    get_mu_sigma(parameters, m, s);
     for (int32_t i = 0; i < (int32_t)parameters.size(); i++) {
         Log::trace("parameters[%d]: %lf\n", i, parameters[i]);
     }
 
-    unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
-    minstd_rand0 generator(seed);
-    uniform_real_distribution<double> rng(0, 1);
+    ofstream *output_log = create_log_file();
 
+    for (int32_t iteration = 0; iteration < bp_iterations; iteration++) {
+        vector<int32_t> shuffle_order;
+        for (int32_t i = 0; i < n_series; i++) {
+            shuffle_order.push_back(i);
+        }
+        fisher_yates_shuffle(generator, shuffle_order);
+        double avg_norm = 0.0;
+        for (int32_t k = 0; k < (int32_t)shuffle_order.size(); k++) {
+            int32_t random_selection = shuffle_order[k];
+            prev_gradient = analytic_gradient;
+            rnn->get_analytic_gradient(parameters, inputs[random_selection], outputs[random_selection], mse, analytic_gradient, use_dropout, true, dropout_probability);
+            norm = weight_update_method->get_norm(analytic_gradient);
+            avg_norm += norm;
+            weight_update_method->norm_gradients(analytic_gradient, norm);
+            weight_update_method->update_weights(parameters, velocity, prev_velocity, analytic_gradient, iteration);
+        }
+        this->set_weights(parameters);
+        double training_mse = get_mse(parameters, inputs, outputs);
+        validation_mse = get_mse(parameters, validation_inputs, validation_outputs);
+
+        if (validation_mse < best_validation_mse) {
+            best_validation_mse = validation_mse;
+            best_validation_mae = get_mae(parameters, validation_inputs, validation_outputs);
+            best_parameters = parameters;
+        }
+        if (output_log != NULL) {
+            std::chrono::time_point<std::chrono::system_clock> currentClock = std::chrono::system_clock::now();
+            long milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(currentClock - startClock).count();
+            update_log_file(output_log, iteration, milliseconds, training_mse, validation_mse, avg_norm);
+        }
+        Log::trace("iteration %4d, mse: %5.10lf, v_mse: %5.10lf, bv_mse: %5.10lf, avg_norm: %5.10lf\n", iteration, training_mse, validation_mse, best_validation_mse, avg_norm);
+    }
+    delete rnn;
+    this->set_weights(best_parameters);
+    Log::trace("backpropagation completed, getting mu/sigma\n");
+    double _mu, _sigma;
+    get_mu_sigma(best_parameters, _mu, _sigma);
+}
+
+ofstream* RNN_Genome::create_log_file() {
     ofstream *output_log = NULL;
-    ostringstream memory_log;
-
     if (log_filename != "") {
         Log::trace("creating new log stream for '%s'\n", log_filename.c_str());
         output_log = new ofstream(log_filename);
@@ -1094,144 +1087,35 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
             Log::fatal("ERROR, could not open output log: '%s'\n", log_filename.c_str());
             exit(1);
         }
-
         Log::trace("opened log file '%s'\n", log_filename.c_str());
 
         (*output_log) << "Total BP Epochs, Time, Train MSE, Val. MSE, BEST Val. MSE, BEST Val. MAE, norm";
         (*output_log) << endl;
     }
-
-    for (int32_t iteration = 0; iteration < bp_iterations; iteration++) {
-        Log::info("iteration %d \n", iteration);
-
-        vector< vector< vector<double> > > training_inputs;
-        vector< vector< vector<double> > > training_outputs;
-
-        if (random_sequence_length) {
-            rng_int = uniform_int_distribution<int32_t>(sequence_length_lower_bound, sequence_length_upper_bound);
-            
-            Log::trace("using uniform random sequence length for training\n");
-            Log::trace("Time series length lower bound is %d, upper bound is %d\n", sequence_length_lower_bound, sequence_length_upper_bound);
-
-            // put the original sliced time series as a new sets of timeseries data
-            for (int32_t n = 0; n < (int32_t)inputs.size(); n++) {
-                int32_t num_row = (int32_t)inputs[n][0].size();
-                int32_t num_inputs = (int32_t)inputs[n].size();
-                int32_t num_outputs = (int32_t)outputs[n].size();
-                int32_t i = 0;
-                int32_t sequence_length = rng_int(generator);
-                Log::trace("random sequence length is %d\n", sequence_length);
-                while (i + sequence_length <= num_row) {
-                    vector< vector<double> > current_time_series_input; // <each parameter <time series values>>
-                    vector< vector<double> > current_time_series_output; // <each parameter <time series values>>
-                    current_time_series_input = slice_time_series(i, sequence_length, num_inputs, inputs[n]);
-                    current_time_series_output = slice_time_series(i, sequence_length, num_outputs, outputs[n]);
-                    training_inputs.push_back(current_time_series_input);
-                    training_outputs.push_back(current_time_series_output);
-
-                    i = i + sequence_length;
-                }
-                Log::debug("original time series %d has %d parameters, and %d length\n", n, num_inputs, num_row);
-            }
-            Log::debug("new time series has %d sets, and %d inputs and %d length\n", training_inputs.size(), training_inputs[0].size(), training_inputs[0][0].size());
-            n_series = (int32_t)training_inputs.size();
-        } else {
-            training_inputs = inputs;
-            training_outputs = outputs;
-        }
-
-        vector<int32_t> shuffle_order;
-        for (int32_t i = 0; i < n_series; i++) {
-            shuffle_order.push_back(i);
-        }
-
-        fisher_yates_shuffle(generator, shuffle_order);
-
-        double avg_norm = 0.0;
-        for (int32_t k = 0; k < (int32_t)shuffle_order.size(); k++) {
-            int32_t random_selection = shuffle_order[k];
-
-            prev_gradient = analytic_gradient;
-
-            rnn->get_analytic_gradient(parameters, training_inputs[random_selection], training_outputs[random_selection], mse, analytic_gradient, use_dropout, true, dropout_probability);
-
-            norm = weight_update_method->get_norm(analytic_gradient);
-            avg_norm += norm;
-
-            //Log::info("iteration %7d, series: %4d, mse: %5.10lf, lr: %lf, norm: %lf", iteration, random_selection, mse, learning_rate, norm);
-            weight_update_method->norm_gradients(analytic_gradient, norm);
-
-            //Log::info_no_header("\n");
-
-            weight_update_method->update_weights(parameters, velocity, prev_velocity, analytic_gradient, iteration);
-
-        }
-
-        this->set_weights(parameters);
-
-        double training_mse = 0.0;
-
-        training_mse = get_mse(parameters, training_inputs, training_outputs);
-        validation_mse = get_mse(parameters, validation_inputs, validation_outputs);
-
-        if (validation_mse < best_validation_mse) {
-            best_validation_mse = validation_mse;
-            best_validation_mae = get_mae(parameters, validation_inputs, validation_outputs);
-
-            best_parameters = parameters;
-        }
-
-        if (output_log != NULL) {
-            std::chrono::time_point<std::chrono::system_clock> currentClock = std::chrono::system_clock::now();
-            long milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(currentClock - startClock).count();
-
-            //make sure the output log is good
-            if ( !output_log->good() ) {
-                output_log->close();
-                delete output_log;
-
-                output_log = new ofstream(log_filename, std::ios_base::app);
-                Log::trace("testing to see if log file valid for '%s'\n", log_filename.c_str());
-
-                if (!output_log->is_open()) {
-                    Log::fatal("ERROR, could not open output log: '%s'\n", log_filename.c_str());
-                    exit(1);
-                }
-            }
-
-            (*output_log) << iteration
-                << "," << milliseconds
-                << "," << training_mse
-                << "," << validation_mse
-                << "," << best_validation_mse
-                << "," << best_validation_mae
-                << "," << avg_norm << endl;
-
-            memory_log << iteration
-                << "," << milliseconds
-                << "," << training_mse
-                << "," << validation_mse
-                << "," << best_validation_mse
-                << "," << best_validation_mae
-                << "," << avg_norm << endl;
-        }
-
-        Log::info("iteration %4d, mse: %5.10lf, v_mse: %5.10lf, bv_mse: %5.10lf, avg_norm: %5.10lf\n", iteration, training_mse, validation_mse, best_validation_mse, avg_norm);
-    }
-
-    if (log_filename != "") {
-        ofstream memory_log_file(log_filename + "_mem");
-        memory_log_file << memory_log.str();
-        memory_log_file.close();
-    }
-
-    delete rnn;
-
-    this->set_weights(best_parameters);
-    Log::trace("backpropagation completed, getting mu/sigma\n");
-    double _mu, _sigma;
-    get_mu_sigma(best_parameters, _mu, _sigma);
+    return output_log;
 }
+
+void RNN_Genome::update_log_file(ofstream *output_log, int32_t iteration, long milliseconds, double training_mse, double validation_mse, double avg_norm) {
+    //make sure the output log is good
+    if ( !output_log->good() ) {
+        output_log->close();
+        delete output_log;
+        output_log = new ofstream(log_filename, std::ios_base::app);
+        Log::trace("testing to see if log file valid for '%s'\n", log_filename.c_str());
+        if (!output_log->is_open()) {
+            Log::fatal("ERROR, could not open output log: '%s'\n", log_filename.c_str());
+            exit(1);
+        }
+    }
+    (*output_log) << iteration
+        << "," << milliseconds
+        << "," << training_mse
+        << "," << validation_mse
+        << "," << best_validation_mse
+        << "," << best_validation_mae
+        << "," << avg_norm << endl;
+}
+
 
 vector< vector<double> > RNN_Genome::slice_time_series(int32_t start_index, int32_t sequence_length, int32_t num_parameter, const vector< vector<double> > &time_series) {
     vector< vector <double> > current_time_series;

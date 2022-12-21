@@ -82,10 +82,7 @@ EXAMM::EXAMM(
     generator = minstd_rand0(seed);
     rng_0_1 = uniform_real_distribution<double>(0.0, 1.0);
 
-
     rng_crossover_weight = uniform_real_distribution<double>(-0.5, 1.5);
-
-    epigenetic_weights = true;
 
     more_fit_crossover_rate = 1.00;
     less_fit_crossover_rate = 0.50;
@@ -378,7 +375,7 @@ RNN_Genome* EXAMM::generate_genome() {
     RNN_Genome *genome = speciation_strategy->generate_genome(rng_0_1, generator, mutate_function, crossover_function);
 
     genome_property->set_genome_properties(genome);
-    if (!epigenetic_weights) genome->initialize_randomly();
+    // if (!epigenetic_weights) genome->initialize_randomly();
 
     //this is just a sanity check, can most likely comment out (checking to see
     //if all the paramemters are sane)

@@ -184,7 +184,7 @@ class RNN_Genome {
 
         void backpropagate(const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, const vector< vector< vector<double> > > &validation_inputs, const vector< vector< vector<double> > > &validation_outputs, WeightUpdate *weight_update_method);
 
-        void backpropagate_stochastic(const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, const vector< vector< vector<double> > > &validation_inputs, const vector< vector< vector<double> > > &validation_outputs, bool random_sequence_length, int32_t sequence_length_lower_bound, int32_t sequence_length_upper_bound, WeightUpdate *weight_update_method);
+        void backpropagate_stochastic(const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, const vector< vector< vector<double> > > &validation_inputs, const vector< vector< vector<double> > > &validation_outputs, WeightUpdate *weight_update_method);
 
         vector< vector<double> > slice_time_series(int32_t start_index, int32_t sequence_length, int32_t num_parameter, const vector< vector<double> > &inputs);
         
@@ -274,7 +274,8 @@ class RNN_Genome {
          */
         int32_t get_max_edge_innovation_count();
 
-
+        ofstream* create_log_file();
+        void update_log_file(ofstream *output_log, int32_t iteration, long milliseconds, double training_mse, double validation_mse, double avg_norm);
 
         void transfer_to(const vector<string> &new_input_parameter_names, const vector<string> &new_output_parameter_names, string transfer_learning_version, bool epigenetic_weights, int32_t min_recurrent_depth, int32_t max_recurrent_depth);
 

@@ -65,13 +65,11 @@ IslandSpeciationStrategy::IslandSpeciationStrategy(
 
     //set the generation id for the initial minimal genome
     seed_genome->set_generation_id(generated_genomes);
-    generated_genomes++;
     global_best_genome = NULL;
 
     Log::info("Speciation method is: island (Default is the island-based speciation strategy).\n");
     Log::info("Number of mutations is set to %d\n", num_mutations);
     Log::info("Repeat extinction is set to %s\n", repeat_extinction? "true":"false");
-
     Log::info("Doing transfer learning: %s\n", transfer_learning? "true":"false");
 
     if (transfer_learning) {

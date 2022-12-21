@@ -47,8 +47,6 @@ class EXAMM {
         uniform_real_distribution<double> rng_0_1;
         uniform_real_distribution<double> rng_crossover_weight;
 
-        bool epigenetic_weights;
-
         double more_fit_crossover_rate;
         double less_fit_crossover_rate;
 

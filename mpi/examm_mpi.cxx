@@ -38,7 +38,6 @@ mutex examm_mutex;
 vector<string> arguments;
 
 EXAMM *examm;
-
 WeightUpdate *weight_update_method;
 
 bool finished = false;
@@ -48,9 +47,9 @@ vector< vector< vector<double> > > training_outputs;
 vector< vector< vector<double> > > validation_inputs;
 vector< vector< vector<double> > > validation_outputs;
 
-bool random_sequence_length;
-int32_t sequence_length_lower_bound = 30;
-int32_t sequence_length_upper_bound = 100;
+// bool random_sequence_length;
+// int32_t sequence_length_lower_bound = 30;
+// int32_t sequence_length_upper_bound = 100;
 
 void send_work_request(int32_t target) {
     int32_t work_request_message[1];
@@ -210,7 +209,7 @@ void worker(int32_t rank) {
             //have each worker write the backproagation to a separate log file
             string log_id = "genome_" + to_string(genome->get_generation_id()) + "_worker_" + to_string(rank);
             Log::set_id(log_id);
-            genome->backpropagate_stochastic(training_inputs, training_outputs, validation_inputs, validation_outputs, random_sequence_length, sequence_length_lower_bound, sequence_length_upper_bound, weight_update_method);
+            genome->backpropagate_stochastic(training_inputs, training_outputs, validation_inputs, validation_outputs, weight_update_method);
             Log::release_id(log_id);
 
             //go back to the worker's log for MPI communication

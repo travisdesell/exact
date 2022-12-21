@@ -179,7 +179,7 @@ int main(int argc, char **argv) {
     }
 
     if (argument_exists(arguments, "--stochastic")) {
-        genome->backpropagate_stochastic(training_inputs, training_outputs, test_inputs, test_outputs, false, 30, 100, weight_update_method);
+        genome->backpropagate_stochastic(training_inputs, training_outputs, test_inputs, test_outputs, weight_update_method);
     } else {
         genome->backpropagate(training_inputs, training_outputs, test_inputs, test_outputs, weight_update_method);
     }
