@@ -197,6 +197,8 @@ class Island {
         int32_t get_erase_again_num();
 
         void set_erase_again_num();
+
+        void fill_with_mutated_genomes(RNN_Genome *seed_genome, int32_t num_mutations, bool tl_epigenetic_weights, function<void (int32_t, RNN_Genome*)> &mutate);
 };
 
 #endif

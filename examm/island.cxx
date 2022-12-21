@@ -59,7 +59,9 @@ int32_t Island::size() {
 }
 
 bool Island::is_full() {
-    return (int32_t)genomes.size() >= max_size;
+    bool filled = (int32_t)genomes.size() >= max_size;
+    if (filled) status = Island::FILLED;
+    return filled;
 }
 
 bool Island::is_initializing() {
@@ -378,4 +380,21 @@ int32_t Island::get_erase_again_num() {
 
 void Island::set_erase_again_num() {
     erase_again--;
+}
+
+void Island::fill_with_mutated_genomes(RNN_Genome *seed_genome, int32_t num_mutations, bool tl_epigenetic_weights, function<void (int32_t, RNN_Genome*)> &mutate) {
+    Log::info("Filling island %d with mutated seed genomes\n", id);
+    for (int32_t i = 0; i < max_size; i++) {
+        RNN_Genome *new_genome = seed_genome->copy();
+        mutate(num_mutations, seed_genome);
+        new_genome->set_generation_id(0);
+        if (tl_epigenetic_weights) new_genome->initialize_randomly();
+        genomes.push_back(new_genome);
+    }
+    if (is_full()) {
+        Log::info("island %d is filled with mutated genome\n", id);
+    } else {
+        Log::fatal("island (max capacity %d) is still not full after filled with mutated genomes, current island size is %d\n", max_size, genomes.size());
+        exit(1);
+    }
 }

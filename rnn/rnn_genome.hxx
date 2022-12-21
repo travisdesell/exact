@@ -84,7 +84,6 @@ class RNN_Genome {
         // vector<int32_t> innovation_list;
 
     public:
-        bool tl_with_epigenetic;
         void sort_nodes_by_depth();
         void sort_edges_by_depth();
         void sort_recurrent_edges_by_depth();
@@ -241,7 +240,7 @@ class RNN_Genome {
         string get_color(double weight, bool is_recurrent);
         void write_graphviz(string filename);
 
-        RNN_Genome(string binary_filename, bool _tl_with_epigenetic=false);
+        RNN_Genome(string binary_filename);
         RNN_Genome(char* array, int32_t length);
         RNN_Genome(istream &bin_infile);
 

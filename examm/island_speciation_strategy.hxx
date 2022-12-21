@@ -19,9 +19,7 @@ using std::string;
 class IslandSpeciationStrategy : public SpeciationStrategy {
     private:
         int32_t generation_island; /**< Used to track which island to generate the next genome from. */
-
         int32_t number_of_islands; /**< the number of islands to have. */
-
         int32_t max_island_size; /**< the maximum number of genomes in an island. */
 
         double mutation_rate; /**< How frequently to do mutations. Note that mutation_rate + intra_island_crossover_rate + inter_island_crossover_rate should equal 1, if not they will be scaled down such that they do. */
@@ -43,8 +41,9 @@ class IslandSpeciationStrategy : public SpeciationStrategy {
         int32_t max_genomes;
 
         bool repeat_extinction;
+        bool start_filled;
 
-        bool seed_genome_was_minimal; /**< is true if we passed in a minimal genome (i.e., are not using transfer learning) */
+        // bool seed_genome_was_minimal; /**< is true if we passed in a minimal genome (i.e., are not using transfer learning) */
 
         // int32_t worst_island;
         /**
@@ -52,6 +51,14 @@ class IslandSpeciationStrategy : public SpeciationStrategy {
          */
         vector<Island*> islands;
         RNN_Genome* global_best_genome;
+
+        // Transfer learning class properties:
+
+        bool transfer_learning;
+        string transfer_learning_version;
+        int32_t seed_stirs;
+        bool tl_epigenetic_weights;
+
 
     public:
         //static void register_command_line_arguments();
@@ -69,18 +76,20 @@ class IslandSpeciationStrategy : public SpeciationStrategy {
                                 string _island_ranking_method, string _repopulation_method,
                                 int32_t _extinction_event_generation_number, int32_t _num_mutations,
                                 int32_t _islands_to_exterminate, int32_t _max_genomes,
-                                bool _repeat_extinction, bool _seed_genome_was_minimal);
+                                bool _repeat_extinction, bool _start_filled,
+                                bool _transfer_learning, string _transfer_learning_version, int32_t _seed_stirs,
+                                bool _tl_epigenetic_weights);
 
-        /**
-         * Transfer learning constructor.
-         * \param Modification function to be applied to every copy of the seed_genome
-         */
-        IslandSpeciationStrategy(int32_t _number_of_islands, int32_t _max_island_size,
-                                double _mutation_rate, double _intra_island_crossover_rate,
-                                double _inter_island_crossover_rate, RNN_Genome *_seed_genome,
-                                string _island_ranking_method, string _repopulation_method,
-                                int32_t _extinction_event_generation_number, int32_t _num_mutations,
-                                int32_t _islands_to_exterminate, bool seed_genome_was_minimal, function<void (RNN_Genome*)> &modify);
+        // /**
+        //  * Transfer learning constructor.
+        //  * \param Modification function to be applied to every copy of the seed_genome
+        //  */
+        // IslandSpeciationStrategy(int32_t _number_of_islands, int32_t _max_island_size,
+        //                         double _mutation_rate, double _intra_island_crossover_rate,
+        //                         double _inter_island_crossover_rate, RNN_Genome *_seed_genome,
+        //                         string _island_ranking_method, string _repopulation_method,
+        //                         int32_t _extinction_event_generation_number, int32_t _num_mutations,
+        //                         int32_t _islands_to_exterminate, bool seed_genome_was_minimal, function<void (RNN_Genome*)> &modify);
 
         /**
          * \return the number of generated genomes.
@@ -158,9 +167,11 @@ class IslandSpeciationStrategy : public SpeciationStrategy {
          *
          * \return the newly generated genome.
          */
-        RNN_Genome* generate_genome(uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator, function<void (int32_t, RNN_Genome*)> &mutate,function<RNN_Genome* (RNN_Genome*, RNN_Genome *)> &crossover, int32_t number_stir_mutations);
+        RNN_Genome* generate_genome(uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator, function<void (int32_t, RNN_Genome*)> &mutate, function<RNN_Genome* (RNN_Genome*, RNN_Genome *)> &crossover);
 
         RNN_Genome* generate_for_filled_island(uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator, function<void (int32_t, RNN_Genome*)> &mutate, function<RNN_Genome* (RNN_Genome*, RNN_Genome *)> &crossover);
+        RNN_Genome* generate_for_initializing_island(uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator, function<void (int32_t, RNN_Genome*)> &mutate);
+        RNN_Genome* generate_for_repopulating_island(uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator, function<void (int32_t, RNN_Genome*)> &mutate, function<RNN_Genome* (RNN_Genome*, RNN_Genome *)> &crossover);
         /**
          * Prints out all the island's populations
          *
@@ -189,12 +200,12 @@ class IslandSpeciationStrategy : public SpeciationStrategy {
          *  \param best_island is the island id of the best island
          *  \param fill_island is the island is of the island to be filled
          */
-        void fill_island(int32_t best_island, function<void (int32_t, RNN_Genome*)> &mutate);
+        void repopulate_by_copy_island(int32_t best_island, function<void (int32_t, RNN_Genome*)> &mutate);
 
         RNN_Genome* get_global_best_genome();
 
         void set_erased_islands_status();
-
+        void initialize_population(function<void (int32_t, RNN_Genome*)> &mutate);
 };
 
 

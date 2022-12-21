@@ -7,20 +7,15 @@ using std::vector;
 #include "process_arguments.hxx"
 #include "rnn/generate_nn.hxx"
 
-EXAMM* generate_examm_from_arguments(const vector<string> &arguments, TimeSeriesSets *time_series_sets) {
-
+EXAMM* generate_examm_from_arguments(const vector<string> &arguments, TimeSeriesSets *time_series_sets, WeightRules *weight_rules, RNN_Genome *seed_genome) {
     int32_t population_size;
     get_argument(arguments, "--population_size", true, population_size);
-
     int32_t number_islands;
     get_argument(arguments, "--number_islands", true, number_islands);
-
     int32_t max_genomes;
     get_argument(arguments, "--max_genomes", true, max_genomes);
-
     string output_directory = "";
     get_argument(arguments, "--output_directory", false, output_directory);
-
     vector<string> possible_node_types;
     get_argument_vector(arguments, "--possible_node_types", false, possible_node_types);
 
@@ -32,14 +27,8 @@ EXAMM* generate_examm_from_arguments(const vector<string> &arguments, TimeSeries
     genome_property->generate_genome_property_from_arguments(arguments);
     genome_property->get_time_series_parameters(time_series_sets);
 
-    WeightRules *weight_rules = new WeightRules();
-    weight_rules->generate_weight_initialize_from_arguments(arguments);
-
-    // string transfer_learning_version = "";
-    // get_argument(arguments, "--transfer_learning_version", false, transfer_learning_version);
-
-    RNN_Genome *seed_genome = get_seed_genome(arguments, time_series_sets, weight_rules);
     SpeciationStrategy *speciation_strategy = generate_speciation_strategy_from_arguments(arguments, seed_genome);
+
     EXAMM* examm = new EXAMM(population_size, number_islands, max_genomes, 
         speciation_strategy, weight_rules, genome_property, output_directory, seed_genome);
     if (possible_node_types.size() > 0)  examm->set_possible_node_types(possible_node_types);
@@ -71,25 +60,18 @@ IslandSpeciationStrategy* generate_island_speciation_strategy_from_arguments(con
 
     int32_t island_size;
     get_argument(arguments, "--population_size", true, island_size);
-
     int32_t number_islands;
     get_argument(arguments, "--number_islands", true, number_islands);
-
     int32_t max_genomes;
     get_argument(arguments, "--max_genomes", true, max_genomes);
-
     int32_t extinction_event_generation_number = 0;
     get_argument(arguments, "--extinction_event_generation_number", false, extinction_event_generation_number);
-
     int32_t islands_to_exterminate = 0;
     get_argument(arguments, "--islands_to_exterminate", false, islands_to_exterminate);
-
     string island_ranking_method = "";
     get_argument(arguments, "--island_ranking_method", false, island_ranking_method);
-
     string repopulation_method = "";
     get_argument(arguments, "--repopulation_method", false, repopulation_method);
-
     int32_t num_mutations = 1;
     get_argument(arguments, "--num_mutations", false, num_mutations);
 
@@ -102,60 +84,42 @@ IslandSpeciationStrategy* generate_island_speciation_strategy_from_arguments(con
 
     bool repeat_extinction = argument_exists(arguments, "--repeat_extinction");
 
-    // RNN_Genome *seed_genome = NULL;
-    bool seed_genome_was_minimal = true;
+    string transfer_learning_version = "";
+    bool transfer_learning = get_argument(arguments, "--transfer_learning_version", false, transfer_learning_version);
+
+    int32_t seed_stirs = 0;
+    get_argument(arguments, "--seed_stirs", false, seed_stirs);
     
-    bool start_filled = false;
-    get_argument(arguments, "--start_filled", false, start_filled);
+    bool start_filled = argument_exists(arguments, "--start_filled");
+    bool tl_epigenetic_weights = argument_exists(arguments, "--tl_epigenetic_weights");
 
-    // if (start_filled) {
-    //     // Only used if start_filled is enabled
-    //     function<void (RNN_Genome *)> apply_stir_mutations = [this](RNN_Genome *genome) {
-    //         RNN_Genome *copy = genome->copy();
-    //         this->mutate(num_mutations, copy);
-    //         return copy;
-    //     };
-
-    //     speciation_strategy = new IslandSpeciationStrategy(
-    //             number_islands, island_size, mutation_rate, intra_island_co_rate, inter_island_co_rate,
-    //             seed_genome, island_ranking_method, repopulation_method, extinction_event_generation_number, num_mutations, islands_to_exterminate, seed_genome_was_minimal, apply_stir_mutations);
-    // }
     IslandSpeciationStrategy *island_strategy = new IslandSpeciationStrategy(
         number_islands, island_size, mutation_rate, intra_island_co_rate, inter_island_co_rate,
         seed_genome, island_ranking_method, repopulation_method, extinction_event_generation_number, 
-        num_mutations, islands_to_exterminate, max_genomes, repeat_extinction, seed_genome_was_minimal);
-    
+        num_mutations, islands_to_exterminate, max_genomes, repeat_extinction, start_filled, 
+        transfer_learning, transfer_learning_version, seed_stirs, tl_epigenetic_weights);
     
     return island_strategy;
 }
 
 NeatSpeciationStrategy* generate_neat_speciation_strategy_from_arguments(const vector<string> &arguments, RNN_Genome *seed_genome) {
 
-    bool seed_genome_was_minimal = true;
+    // bool seed_genome_was_minimal = true;
     double species_threshold = 0.0;
     get_argument(arguments, "--species_threshold", false, species_threshold);
-
     double fitness_threshold = 100;
     get_argument(arguments, "--fitness_threshold", false, fitness_threshold);
-
     double neat_c1 = 1;
     get_argument(arguments, "--neat_c1", false, neat_c1);
-
     double neat_c2 = 1;
     get_argument(arguments, "--neat_c2", false, neat_c2);
-
     double neat_c3 = 1;
     get_argument(arguments, "--neat_c3", false, neat_c3);
-
     double mutation_rate = 0.70, intra_island_co_rate = 0.20, inter_island_co_rate = 0.10;
 
     NeatSpeciationStrategy *neat_strategy = new NeatSpeciationStrategy(mutation_rate, intra_island_co_rate, inter_island_co_rate, seed_genome, species_threshold, fitness_threshold, neat_c1, neat_c2, neat_c3);
     return neat_strategy;
 }
-
-// TimeSeriesSets *generate_time_series_sets_from_arguments(const vector<string> &arguments) {
-
-// }
 
 bool is_island_strategy (string strategy_name) {
     if (strategy_name.compare("") == 0 || strategy_name.compare("island") == 0) return true;

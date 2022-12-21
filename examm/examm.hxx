@@ -28,12 +28,9 @@ class EXAMM {
         int32_t population_size;
         int32_t number_islands;
 
-        vector< vector<RNN_Genome*> > genomes;
-
         int32_t max_genomes;
         int32_t total_bp_epochs;
         SpeciationStrategy *speciation_strategy;
-        // TimeSeriesSets *time_series_sets;
         WeightRules *weight_rules;
         GenomeProperty *genome_property;
 
@@ -44,8 +41,6 @@ class EXAMM {
         map<string, int32_t> inserted_from_map;
         map<string, int32_t> generated_from_map;
 
-        // int32_t number_inputs;
-        // int32_t number_outputs;
         bool generate_op_log;
 
         minstd_rand0 generator;
@@ -81,19 +76,6 @@ class EXAMM {
         ofstream *log_file;
         ofstream *op_log_file;
 
-        // vector<string> input_parameter_names;
-        // vector<string> output_parameter_names;
-
-        // string normalize_type;
-        // map<string,double> normalize_mins;
-        // map<string,double> normalize_maxs;
-        // map<string,double> normalize_avgs;
-        // map<string,double> normalize_std_devs;
-
-
-
-        ostringstream memory_log;
-
         std::chrono::time_point<std::chrono::system_clock> startClock;
 
         string  genome_file_name;
@@ -116,7 +98,7 @@ class EXAMM {
 
         void print();
         void update_log();
-        void write_memory_log(string filename);
+        // void write_memory_log(string filename);
 
         void set_possible_node_types(vector<string> possible_node_type_strings);
 
@@ -124,7 +106,7 @@ class EXAMM {
 
         int32_t get_random_node_type();
 
-        RNN_Genome* generate_genome(int32_t seed_genome_stirs = 0);
+        RNN_Genome* generate_genome();
         bool insert_genome(RNN_Genome* genome);
 
         void mutate(int32_t max_mutations, RNN_Genome *p1);

@@ -565,27 +565,27 @@ RNN_Genome* create_delta(const vector<string> &input_parameter_names, int32_t nu
 }
 
 RNN_Genome* get_seed_genome(const vector<string> &arguments, TimeSeriesSets *time_series_sets, WeightRules *weight_rules) {
-    int32_t min_recurrent_depth = 1;
-    get_argument(arguments, "--min_recurrent_depth", false, min_recurrent_depth);
-
-    int32_t max_recurrent_depth = 10;
-    get_argument(arguments, "--max_recurrent_depth", false, max_recurrent_depth);
     
     RNN_Genome *seed_genome = NULL;
     string genome_file_name = "";
     string transfer_learning_version = "";
     if (get_argument(arguments, "--genome_bin", false, genome_file_name)) {
+        //TODO: update this part and hopefully related arguments could be processed more organized 
+        int32_t min_recurrent_depth = 1;
+        get_argument(arguments, "--min_recurrent_depth", false, min_recurrent_depth);
+        int32_t max_recurrent_depth = 10;
+        get_argument(arguments, "--max_recurrent_depth", false, max_recurrent_depth);
+        
+        Log::info("genome path is %s\n", genome_file_name.c_str());
+        bool epigenetic_weights = argument_exists(arguments, "--epigenetic_weights");
         seed_genome = new RNN_Genome(genome_file_name);
         seed_genome->set_normalize_bounds(time_series_sets->get_normalize_type(), time_series_sets->get_normalize_mins(), time_series_sets->get_normalize_maxs(), time_series_sets->get_normalize_avgs(), time_series_sets->get_normalize_std_devs());
 
         get_argument(arguments, "--transfer_learning_version", true, transfer_learning_version);
-
-        bool epigenetic_weights = argument_exists(arguments, "--epigenetic_weights");
-
+        // TODO: rewrite the transfer_to() function, could take advantage of the GenomeProperty class and TimeSeriesSets class
         seed_genome->transfer_to(time_series_sets->get_input_parameter_names(), time_series_sets->get_output_parameter_names(), transfer_learning_version, epigenetic_weights, min_recurrent_depth, max_recurrent_depth);
-        seed_genome->tl_with_epigenetic = epigenetic_weights ;
+
     } else {
-        
         // bool seed_genome_was_minimal = false;
         if (seed_genome == NULL) {
             // seed_genome_was_minimal = true;

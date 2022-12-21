@@ -223,7 +223,7 @@ int32_t NeatSpeciationStrategy::insert_genome(RNN_Genome* genome) {
 }
 
 
-RNN_Genome* NeatSpeciationStrategy::generate_genome(uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator, function<void (int32_t, RNN_Genome*)> &mutate, function<RNN_Genome* (RNN_Genome*, RNN_Genome *)> &crossover, int32_t number_stir_mutations) {
+RNN_Genome* NeatSpeciationStrategy::generate_genome(uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator, function<void (int32_t, RNN_Genome*)> &mutate, function<RNN_Genome* (RNN_Genome*, RNN_Genome *)> &crossover) {
     //generate the genome from the next island in a round
     //robin fashion.
     RNN_Genome *genome = NULL;
@@ -530,4 +530,8 @@ void NeatSpeciationStrategy::check_species() {
         }
     }
     Log::info("finished checking species, current number of species: %d \n", Neat_Species.size());
+}
+
+void NeatSpeciationStrategy::initialize_population(function<void (int32_t, RNN_Genome*)> &mutate) {
+    
 }

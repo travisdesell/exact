@@ -98,7 +98,7 @@ class NeatSpeciationStrategy : public SpeciationStrategy {
          *
          * \return the newly generated genome.
          */
-        RNN_Genome* generate_genome(uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator, function<void (int32_t, RNN_Genome*)> &mutate, function<RNN_Genome* (RNN_Genome*, RNN_Genome *)> &crossover, int32_t number_stir_mutations);
+        RNN_Genome* generate_genome(uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator, function<void (int32_t, RNN_Genome*)> &mutate, function<RNN_Genome* (RNN_Genome*, RNN_Genome *)> &crossover);
 
         RNN_Genome* generate_for_species(uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator, function<void (int32_t, RNN_Genome*)> &mutate, function<RNN_Genome* (RNN_Genome*, RNN_Genome *)> &crossover);
 
@@ -132,6 +132,7 @@ class NeatSpeciationStrategy : public SpeciationStrategy {
         bool check_population();
 
         void check_species();
+        void initialize_population(function<void (int32_t, RNN_Genome*)> &mutate);
 
 };
 

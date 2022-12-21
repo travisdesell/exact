@@ -19,13 +19,11 @@ using std::vector;
 
 #include "mpi.h"
 
-#include "common/arguments.hxx"
 #include "common/log.hxx"
 #include "common/process_arguments.hxx"
 #include "weights/weight_rules.hxx"
 #include "weights/weight_update.hxx"
 #include "rnn/generate_nn.hxx"
-#include "rnn/genome_property.hxx"
 #include "examm/examm.hxx"
 
 #include "time_series/time_series.hxx"
@@ -120,7 +118,7 @@ void receive_terminate_message(int32_t source) {
     MPI_Recv(terminate_message, 1, MPI_INT, source, TERMINATE_TAG, MPI_COMM_WORLD, &status);
 }
 
-void master(int32_t max_rank, string transfer_learning_version, int32_t seed_stirs) {
+void master(int32_t max_rank) {
     //the "main" id will have already been set by the main function so we do not need to re-set it here
     Log::debug("MAX int32_t: %d\n", numeric_limits<int32_t>::max());
 
@@ -142,11 +140,11 @@ void master(int32_t max_rank, string transfer_learning_version, int32_t seed_sti
             receive_work_request(source);
 
 
-            if (transfer_learning_version.compare("v3") == 0 || transfer_learning_version.compare("v1+v3") == 0) {
-                seed_stirs = 3;
-            }
+            // if (transfer_learning_version.compare("v3") == 0 || transfer_learning_version.compare("v1+v3") == 0) {
+            //     seed_stirs = 3;
+            // }
             examm_mutex.lock();
-            RNN_Genome *genome = examm->generate_genome(seed_stirs);
+            RNN_Genome *genome = examm->generate_genome();
             examm_mutex.unlock();
 
             if (genome == NULL) { //search was completed if it returns NULL for an individual
@@ -235,24 +233,18 @@ int main(int argc, char** argv) {
     std::cout << "starting up!" << std::endl;
     MPI_Init(&argc, &argv);
     std::cout << "did mpi init!" << std::endl;
-
     int32_t rank, max_rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &max_rank);
-
     std::cout << "got rank " << rank << " and max rank " << max_rank << std::endl;
-
     arguments = vector<string>(argv, argv + argc);
-
     std::cout << "got arguments!" << std::endl;
 
     Log::initialize(arguments);
     Log::set_rank(rank);
     Log::set_id("main_" + to_string(rank));
     Log::restrict_to_rank(0);
-
     std::cout << "initailized log!" << std::endl;
-
 
     TimeSeriesSets *time_series_sets = NULL;
     time_series_sets = TimeSeriesSets::generate_from_arguments(arguments);
@@ -261,30 +253,26 @@ int main(int argc, char** argv) {
     weight_update_method = new WeightUpdate();
     weight_update_method->generate_from_arguments(arguments);
 
-    string transfer_learning_version = "";
-    get_argument(arguments, "--transfer_learning_version", false, transfer_learning_version);
+    WeightRules *weight_rules = new WeightRules();
+    weight_rules->generate_weight_initialize_from_arguments(arguments);
 
-    int32_t seed_stirs = 0;
-    get_argument(arguments, "--seed_stirs", false, seed_stirs);
+    RNN_Genome *seed_genome = get_seed_genome(arguments, time_series_sets, weight_rules);
 
     Log::clear_rank_restriction();
 
     if (rank == 0) {
         write_time_series_to_file(arguments, time_series_sets);
-        examm = generate_examm_from_arguments(arguments, time_series_sets);
-        master(max_rank, transfer_learning_version, seed_stirs);
+        examm = generate_examm_from_arguments(arguments, time_series_sets, weight_rules, seed_genome);
+        master(max_rank);
     } else {
         worker(rank);
     }
     Log::set_id("main_" + to_string(rank));
-
     finished = true;
-
     Log::debug("rank %d completed!\n");
     Log::release_id("main_" + to_string(rank));
-
     MPI_Finalize();
-    delete time_series_sets;
 
+    delete time_series_sets;
     return 0;
 }

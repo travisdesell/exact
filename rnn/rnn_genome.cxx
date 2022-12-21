@@ -168,6 +168,7 @@ RNN_Genome* RNN_Genome::copy() {
 
     other->group_id = group_id;
     other->bp_iterations = bp_iterations;
+    other->generation_id = generation_id;
     // other->learning_rate = learning_rate;
     //other->adapt_learning_rate = adapt_learning_rate;
     //other->use_reset_weights = use_reset_weights;
@@ -3030,11 +3031,8 @@ void read_binary_string(istream &in, string &s, string name) {
 }
 
 
-RNN_Genome::RNN_Genome(string binary_filename, bool _tl_with_epigenetic):
-                                    tl_with_epigenetic(_tl_with_epigenetic)  {
+RNN_Genome::RNN_Genome(string binary_filename) {
     ifstream bin_infile(binary_filename, ios::in | ios::binary);
-
-
 
     if (!bin_infile.good()) {
         Log::fatal("ERROR: could not open RNN genome file '%s' for reading.\n", binary_filename.c_str());
