@@ -12,12 +12,10 @@ using std::vector;
 
 #include "common/arguments.hxx"
 #include "common/log.hxx"
-// #include "weights/weight_rules.hxx"
-// #include "weights/weight_update.hxx"
 #include "examm/island_speciation_strategy.hxx"
 #include "examm/neat_speciation_strategy.hxx"
 #include "examm/examm.hxx"
-// #include "time_series/time_series.hxx"
+#include "time_series/time_series.hxx"
 #include "rnn/rnn_genome.hxx"
 
 EXAMM* generate_examm_from_arguments(const vector<string> &arguments, TimeSeriesSets *time_series_sets, WeightRules *weight_rules, RNN_Genome *seed_genome);

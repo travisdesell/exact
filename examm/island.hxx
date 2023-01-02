@@ -5,6 +5,9 @@
 using std::sort;
 using std::upper_bound;
 
+#include <functional>
+using std::function;
+
 #include <random>
 using std::minstd_rand0;
 using std::uniform_real_distribution;
