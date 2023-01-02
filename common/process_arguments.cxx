@@ -8,8 +8,9 @@ using std::vector;
 #include "rnn/generate_nn.hxx"
 
 EXAMM* generate_examm_from_arguments(const vector<string> &arguments, TimeSeriesSets *time_series_sets, WeightRules *weight_rules, RNN_Genome *seed_genome) {
-    int32_t population_size;
-    get_argument(arguments, "--population_size", true, population_size);
+    Log::info("Getting arguments for EXAMM\n");
+    int32_t island_size;
+    get_argument(arguments, "--island_size", true, island_size);
     int32_t number_islands;
     get_argument(arguments, "--number_islands", true, number_islands);
     int32_t max_genomes;
@@ -18,6 +19,8 @@ EXAMM* generate_examm_from_arguments(const vector<string> &arguments, TimeSeries
     get_argument(arguments, "--output_directory", false, output_directory);
     vector<string> possible_node_types;
     get_argument_vector(arguments, "--possible_node_types", false, possible_node_types);
+
+    Log::info("Setting up examm with %d islands, island size %d, and max_genome %d\n", number_islands, island_size, max_genomes);
 
     // random_sequence_length = argument_exists(arguments, "--random_sequence_length");
     // get_argument(arguments, "--sequence_length_lower_bound", false, sequence_length_lower_bound);
@@ -29,7 +32,7 @@ EXAMM* generate_examm_from_arguments(const vector<string> &arguments, TimeSeries
 
     SpeciationStrategy *speciation_strategy = generate_speciation_strategy_from_arguments(arguments, seed_genome);
 
-    EXAMM* examm = new EXAMM(population_size, number_islands, max_genomes, speciation_strategy, weight_rules, genome_property, output_directory);
+    EXAMM* examm = new EXAMM(island_size, number_islands, max_genomes, speciation_strategy, weight_rules, genome_property, output_directory);
     if (possible_node_types.size() > 0)  examm->set_possible_node_types(possible_node_types);
 
     return examm;
@@ -58,7 +61,7 @@ SpeciationStrategy* generate_speciation_strategy_from_arguments(const vector<str
 IslandSpeciationStrategy* generate_island_speciation_strategy_from_arguments(const vector<string> &arguments, RNN_Genome *seed_genome) {
 
     int32_t island_size;
-    get_argument(arguments, "--population_size", true, island_size);
+    get_argument(arguments, "--island_size", true, island_size);
     int32_t number_islands;
     get_argument(arguments, "--number_islands", true, number_islands);
     int32_t max_genomes;
@@ -87,7 +90,7 @@ IslandSpeciationStrategy* generate_island_speciation_strategy_from_arguments(con
     int32_t seed_stirs = 0;
     get_argument(arguments, "--seed_stirs", false, seed_stirs);
     bool start_filled = argument_exists(arguments, "--start_filled");
-    bool tl_epigenetic_weights = argument_exists(arguments, "--tl_epigenetic_weights");
+    bool tl_epigenetic_weights = argument_exists(arguments, "--tl_epigenetic_weights");    
 
     IslandSpeciationStrategy *island_strategy = new IslandSpeciationStrategy(
         number_islands, island_size, mutation_rate, intra_island_co_rate, inter_island_co_rate,
@@ -147,6 +150,7 @@ void get_train_validation_data(const vector<string> &arguments, TimeSeriesSets *
         Log::info("Slicing input training data with time sequence length: %d\n", sequence_length);
         slice_input_data(train_inputs, train_outputs, sequence_length); 
     }
+    Log::info("Generating time series data finished! \n");
 }
 
 void slice_input_data(vector< vector< vector<double> > > &inputs, vector< vector< vector<double> > > &outputs, int32_t sequence_length) {

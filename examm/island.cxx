@@ -176,7 +176,7 @@ int32_t Island::insert_genome(RNN_Genome *genome) {
                         break; //break because this vector is now empty and deleted
                     }
                 } else {
-                    Log::info("island already contains a duplicate genome with a better fitness! not inserting.\n");
+                    Log::info("Island %d: island already contains a duplicate genome with a better fitness! not inserting.\n", id);
                     do_population_check(__LINE__, initial_size);
                     return -1;
                 }
@@ -220,7 +220,7 @@ int32_t Island::insert_genome(RNN_Genome *genome) {
     if (insert_index == 0) {
         //this was a new best genome for this island
 
-        Log::info("new best fitness for island: %d!\n", id);
+        Log::info("Island %d: new best fitness found!\n", id);
 
         if (genome->get_fitness() != EXAMM_MAX_DOUBLE) {
             //need to set the weights for non-initial genomes so we
@@ -236,7 +236,7 @@ int32_t Island::insert_genome(RNN_Genome *genome) {
         status = Island::FILLED;
     }
 
-    Log::info("genomes.size(): %d, max_size: %d, status: %d\n", genomes.size(), max_size, status);
+    Log::info("Island %d: genomes.size(): %d, max_size: %d, status: %d\n", id, genomes.size(), max_size, status);
 
     if ((int32_t)genomes.size() > max_size) {
         //island was full before insert so now we need to 
@@ -365,7 +365,7 @@ void Island::set_erase_again_num() {
 }
 
 void Island::fill_with_mutated_genomes(RNN_Genome *seed_genome, int32_t num_mutations, bool tl_epigenetic_weights, function<void (int32_t, RNN_Genome*)> &mutate) {
-    Log::info("Filling island %d with mutated seed genomes\n", id);
+    Log::info("Island %d: Filling island with mutated seed genomes\n", id);
     for (int32_t i = 0; i < max_size; i++) {
         RNN_Genome *new_genome = seed_genome->copy();
         mutate(num_mutations, seed_genome);
@@ -374,7 +374,7 @@ void Island::fill_with_mutated_genomes(RNN_Genome *seed_genome, int32_t num_muta
         genomes.push_back(new_genome);
     }
     if (is_full()) {
-        Log::info("island %d is filled with mutated genome\n", id);
+        Log::info("island %d: is filled with mutated genome\n", id);
     } else {
         Log::fatal("island (max capacity %d) is still not full after filled with mutated genomes, current island size is %d\n", max_size, genomes.size());
         exit(1);

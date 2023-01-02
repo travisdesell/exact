@@ -9,17 +9,21 @@ WeightRules::WeightRules() {
 }
 
 void WeightRules::generate_weight_initialize_from_arguments(const vector<string> &arguments) {
+    Log::info("Getting arguments for weight initialize and weight inheritance methods\n");
     string weight_initialize_string = "xavier";
     get_argument(arguments, "--weight_initialize", false, weight_initialize_string);
     weight_initialize = get_enum_from_string(weight_initialize_string);
+    Log::info("Weight initialize method is set to %s\n", weight_initialize_string.c_str());
 
     string weight_inheritance_string = "lamarckian";
     get_argument(arguments, "--weight_inheritance", false, weight_inheritance_string);
     weight_inheritance = get_enum_from_string(weight_inheritance_string);
+    Log::info("Weight inheritance method is set to %s\n", weight_inheritance_string.c_str());
 
     string mutated_component_weight_string = "lamarckian";
     get_argument(arguments, "--mutated_component_weight", false, mutated_component_weight_string);
     mutated_components_weight = get_enum_from_string(mutated_component_weight_string);
+    Log::info("Mutated component weight update method is set to %s\n", mutated_component_weight_string.c_str());
 }
 
 WeightType WeightRules::get_weight_initialize_method() {

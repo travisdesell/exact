@@ -52,14 +52,14 @@ EXAMM::~EXAMM() {
 }
 
 EXAMM::EXAMM(
-        int32_t _population_size,
+        int32_t _island_size,
         int32_t _number_islands,
         int32_t _max_genomes,
         SpeciationStrategy *_speciation_strategy,
         WeightRules *_weight_rules,
         GenomeProperty *_genome_property,
         string _output_directory) :
-                        population_size(_population_size),
+                        island_size(_island_size),
                         number_islands(_number_islands),
                         max_genomes(_max_genomes),
                         speciation_strategy(_speciation_strategy),
@@ -86,6 +86,9 @@ EXAMM::EXAMM(
     [=](int32_t max_mutations, RNN_Genome *genome) {
         this->mutate(max_mutations, genome);
     };
+
+    Log::info("Finished initializing, now start EXAMM evolution\n");
+
     speciation_strategy->initialize_population(mutate_function);
     generate_log();
     startClock = std::chrono::system_clock::now();
@@ -330,7 +333,6 @@ void EXAMM::mutate(int32_t max_mutations, RNN_Genome *g) {
     double mu, sigma;
 
     //g->write_graphviz("rnn_genome_premutate_" + to_string(g->get_generation_id()) + ".gv");
-    Log::info("generating new genome by mutation.\n");
 
     g->get_mu_sigma(g->best_parameters, mu, sigma);
     g->clear_generated_by();

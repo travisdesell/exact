@@ -1,5 +1,6 @@
 #include "rnn/genome_property.hxx"
 #include "common/arguments.hxx"
+#include "common/log.hxx"
 
 GenomeProperty::GenomeProperty() {
     bp_iterations = 10;
@@ -15,6 +16,10 @@ void GenomeProperty::generate_genome_property_from_arguments(const vector<string
 
     get_argument(arguments, "--min_recurrent_depth", false, min_recurrent_depth);
     get_argument(arguments, "--max_recurrent_depth", false, max_recurrent_depth);
+
+    Log::info("Each generated genome is trained for %d epochs\n", bp_iterations);
+    Log::info("Use dropout is set to %s, dropout probability is %f\n", use_dropout ? "True" : "False", dropout_probability);
+    Log::info("Min recurrent depth is %d, max recurrent depth is %d\n", min_recurrent_depth, max_recurrent_depth);
 }
 
 void GenomeProperty::set_genome_properties(RNN_Genome *genome) {

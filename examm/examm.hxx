@@ -25,7 +25,7 @@ using std::vector;
 
 class EXAMM {
     private:
-        int32_t population_size;
+        int32_t island_size;
         int32_t number_islands;
 
         int32_t max_genomes;
@@ -79,7 +79,7 @@ class EXAMM {
         string  genome_file_name;
 
     public:
-        EXAMM(  int32_t _population_size,
+        EXAMM(  int32_t _island_size,
                 int32_t _number_islands,
                 int32_t _max_genomes,
                 SpeciationStrategy *_speciation_strategy,

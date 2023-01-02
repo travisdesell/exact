@@ -23,7 +23,7 @@ mpirun -np 4 ./mpi/examm_mpi \
 --input_parameter_names $INPUT_PARAMETERS \
 --output_parameter_names $OUTPUT_PARAMETERS \
 --number_islands 10 \
---population_size 10 \
+--island_size 10 \
 --max_genomes 2000 \
 --bp_iterations 5 \
 --output_directory $exp_name \
@@ -31,6 +31,7 @@ mpirun -np 4 ./mpi/examm_mpi \
 --weight_update adagrad \
 --eps 0.000001 \
 --beta1 0.99 \
+--sequence_length 50 \
 --possible_node_types simple UGRNN MGU GRU delta LSTM \
 --std_message_level INFO \
 --file_message_level INFO

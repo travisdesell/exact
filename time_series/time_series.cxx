@@ -669,6 +669,7 @@ void TimeSeriesSets::load_time_series() {
 
 
 TimeSeriesSets* TimeSeriesSets::generate_from_arguments(const vector<string> &arguments) {
+    Log::info("Generating time series data for EXAMM\n");
     TimeSeriesSets *tss = new TimeSeriesSets();
 
     tss->filenames.clear();

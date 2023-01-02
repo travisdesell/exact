@@ -30,7 +30,7 @@ mpirun -np 8 ./mpi/examm_mpi \
 --input_parameter_names Conditioner_Inlet_Temp Conditioner_Outlet_Temp Coal_Feeder_Rate Primary_Air_Flow Primary_Air_Split System_Secondary_Air_Flow_Total Secondary_Air_Flow Secondary_Air_Split Tertiary_Air_Split Total_Comb_Air_Flow Supp_Fuel_Flow Main_Flm_Int \
 --output_parameter_names Main_Flm_Int \
 --number_islands 5 \
---population_size 10 \
+--island_size 10 \
 --max_genomes 4000 \
 --speciation_method "island" \
 --extinction_event_generation_number 150 \

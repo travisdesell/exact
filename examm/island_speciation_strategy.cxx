@@ -68,9 +68,17 @@ IslandSpeciationStrategy::IslandSpeciationStrategy(
     global_best_genome = NULL;
 
     Log::info("Speciation method is: island (Default is the island-based speciation strategy).\n");
-    Log::info("Number of mutations is set to %d\n", num_mutations);
-    Log::info("Repeat extinction is set to %s\n", repeat_extinction? "true":"false");
-    Log::info("Doing transfer learning: %s\n", transfer_learning? "true":"false");
+    Log::info("Island Strategy: Number of mutations is set to %d\n", num_mutations);
+    if (extinction_event_generation_number > 0) {
+        Log::info("Island Strategy: Doing island repopulation\n");
+        Log::info("Island Strategy: Extinction event generation number is %d\n", extinction_event_generation_number);
+        Log::info("Island Strategy: Repopulation method is %s\n", repopulation_method.c_str());
+        Log::info("Island Strategy: Island ranking method is %s\n", island_ranking_method.c_str());
+        Log::info("Island Strategy: Repeat extinction is set to %s\n", repeat_extinction? "true":"false");
+        Log::info("Island Strategy: islands_to_exterminate is set to %d\n", islands_to_exterminate);
+    }
+
+    Log::info("Island Strategy: Doing transfer learning: %s\n", transfer_learning? "true":"false");
 
     if (transfer_learning) {
         Log::info("Transfer learning version is %s\n", transfer_learning_version.c_str());
@@ -162,7 +170,7 @@ int32_t IslandSpeciationStrategy::insert_genome(RNN_Genome* genome) {
     evaluated_genomes++;
     int32_t island = genome->get_group_id();
 
-    Log::info("inserting genome to island: %d\n", island);
+    Log::info("Island %d: inserting genome\n", island);
     Log::debug("genome weight init type: %s\n", genome->weight_rules->get_weight_initialize_method_name().c_str());
     Log::debug("genome weight inherit type: %s\n", genome->weight_rules->get_weight_inheritance_method_name().c_str());
     Log::debug("genome mutated component type: %s\n", genome->weight_rules->get_mutated_components_weight_method_name().c_str());
@@ -254,7 +262,7 @@ RNN_Genome* IslandSpeciationStrategy::generate_for_initializing_island(uniform_r
     Island *current_island = islands[generation_island];
     RNN_Genome *new_genome = NULL; 
     if (current_island->size() == 0) {
-        Log::debug("starting with minimal genome\n");
+        Log::info("Island %d: starting island with minimal genome\n", generation_island);
         new_genome = seed_genome->copy();
         new_genome->initialize_randomly();
 
@@ -265,7 +273,7 @@ RNN_Genome* IslandSpeciationStrategy::generate_for_initializing_island(uniform_r
             if (!tl_epigenetic_weights) new_genome->initialize_randomly();
         }
     } else {
-        Log::info("island is initializing but not empty, mutating a random genome\n");
+        Log::info("Island %d: island is initializing but not empty, mutating a random genome\n", generation_island);
         while (new_genome == NULL) {
             current_island->copy_random_genome(rng_0_1, generator, &new_genome);
             mutate(num_mutations, new_genome);
@@ -283,16 +291,16 @@ RNN_Genome* IslandSpeciationStrategy::generate_for_initializing_island(uniform_r
 }
 
 RNN_Genome* IslandSpeciationStrategy::generate_for_repopulating_island(uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator, function<void (int32_t, RNN_Genome*)> &mutate, function<RNN_Genome* (RNN_Genome*, RNN_Genome *)> &crossover) {
-    Log::info("island is repopulating \n");
+    Log::info("Island %d: island is repopulating \n", generation_island);
     // Island *current_island = islands[generation_island];
     RNN_Genome *new_genome = NULL; 
 
     if (repopulation_method.compare("randomParents") == 0 || repopulation_method.compare("randomparents") == 0){
-        Log::info("island is repopulating through random parents method!\n");
+        Log::info("Island %d: island is repopulating through random parents method!\n", generation_island);
         new_genome = parents_repopulation("randomParents", rng_0_1, generator, mutate, crossover);
 
     } else if (repopulation_method.compare("bestParents") == 0 || repopulation_method.compare("bestparents") == 0){
-        Log::info("island is repopulating through best parents method!\n");
+        Log::info("Island %d: island is repopulating through best parents method!\n", generation_island);
         new_genome = parents_repopulation("bestParents", rng_0_1, generator, mutate, crossover);
 
     } else if (repopulation_method.compare("bestGenome") == 0 || repopulation_method.compare("bestgenome") == 0){
@@ -301,8 +309,8 @@ RNN_Genome* IslandSpeciationStrategy::generate_for_repopulating_island(uniform_r
 
     } else if (repopulation_method.compare("bestIsland") == 0 || repopulation_method.compare("bestisland") == 0){
         //copy the best island to the worst at once
-        Log::info("island is repopulating through bestIsland method! Coping the best island to the population island\n");
-        Log::info("island current size is: %d \n", islands[generation_island]->get_genomes().size());
+        Log::info("Island %d: island is repopulating through bestIsland method! Coping the best island to the population island\n", generation_island);
+        Log::info("Island %d: island current size is: %d \n", generation_island, islands[generation_island]->get_genomes().size());
         int32_t best_island_id = get_best_genome()->get_group_id();
         repopulate_by_copy_island(best_island_id, mutate);
         if (new_genome == NULL) new_genome = generate_for_filled_island(rng_0_1, generator, mutate, crossover);
@@ -320,7 +328,6 @@ RNN_Genome* IslandSpeciationStrategy::generate_genome(uniform_real_distribution<
     RNN_Genome *new_genome = NULL;
 
     if (current_island->is_initializing()) {
-        Log::info("island is initializing!\n");
         //islands could start with full of mutated seed genomes, it can be used with or without transfer learning
         new_genome = generate_for_initializing_island(rng_0_1, generator, mutate);
     } else if (current_island->is_full()) {
@@ -329,7 +336,7 @@ RNN_Genome* IslandSpeciationStrategy::generate_genome(uniform_real_distribution<
         new_genome = generate_for_repopulating_island(rng_0_1, generator, mutate, crossover);
     }
     if (new_genome == NULL) {
-        Log::info("new genome is still null, regenerating\n");
+        Log::info("Island %d: new genome is still null, regenerating\n", generation_island);
         new_genome = generate_genome(rng_0_1, generator, mutate, crossover);
     }
     generated_genomes++;
