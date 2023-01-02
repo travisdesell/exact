@@ -29,4 +29,7 @@ void set_island_transfer_learning_parameters(const vector<string> &arguments, Is
 
 void write_time_series_to_file(const vector<string> &arguments, TimeSeriesSets *time_series_sets);
 void get_train_validation_data(const vector<string> &arguments, TimeSeriesSets *time_series_sets, vector< vector< vector<double> > > &traing_inputs, vector< vector< vector<double> > > &train_outputs, vector< vector< vector<double> > > &test_inputs, vector< vector< vector<double> > > &test_outputs);
+void slice_input_data(vector< vector< vector<double> > > &traing_inputs, vector< vector< vector<double> > > &train_outputs, int32_t sequence_length);
+vector< vector<double> > slice_time_series(int32_t start_index, int32_t sequence_length, int32_t num_parameter, const vector< vector<double> > &time_series);
+
 #endif

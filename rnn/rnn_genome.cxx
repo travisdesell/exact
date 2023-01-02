@@ -1116,17 +1116,6 @@ void RNN_Genome::update_log_file(ofstream *output_log, int32_t iteration, long m
         << "," << avg_norm << endl;
 }
 
-
-vector< vector<double> > RNN_Genome::slice_time_series(int32_t start_index, int32_t sequence_length, int32_t num_parameter, const vector< vector<double> > &time_series) {
-    vector< vector <double> > current_time_series;
-    for (int32_t j = 0; j < num_parameter; j++) {
-        vector<double> current_parameter_slice;
-        current_parameter_slice.assign(time_series[j].begin() + start_index, time_series[j].begin()+ start_index + sequence_length);
-        current_time_series.push_back(current_parameter_slice);
-    }
-    return current_time_series;
-}
-
 double RNN_Genome::get_softmax(const vector<double> &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs) {
     RNN *rnn = get_rnn();
     rnn->set_weights(parameters);

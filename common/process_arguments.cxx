@@ -141,4 +141,50 @@ void get_train_validation_data(const vector<string> &arguments, TimeSeriesSets *
 
     time_series_sets->export_training_series(time_offset, train_inputs, train_outputs);
     time_series_sets->export_test_series(time_offset, validation_inputs, validation_outputs);
+
+    int32_t sequence_length = 0;
+    if (get_argument(arguments, "--sequence_length", false, sequence_length)) {
+        Log::info("Slicing input training data with time sequence length: %d\n", sequence_length);
+        slice_input_data(train_inputs, train_outputs, sequence_length); 
+    }
 }
+
+void slice_input_data(vector< vector< vector<double> > > &inputs, vector< vector< vector<double> > > &outputs, int32_t sequence_length) {
+    vector< vector< vector<double> > > sliced_inputs;
+    vector< vector< vector<double> > > sliced_outputs;
+    for (int32_t n = 0; n < (int32_t)inputs.size(); n++) {
+        int32_t num_row = (int32_t)inputs[n][0].size();
+        int32_t num_inputs = (int32_t)inputs[n].size();
+        int32_t num_outputs = (int32_t)outputs[n].size();
+        int32_t current_row = 0;
+        while (current_row + sequence_length <= num_row) {
+            vector< vector<double> > current_time_series_input; // <each parameter <time series values>>
+            vector< vector<double> > current_time_series_output; // <each parameter <time series values>>
+            current_time_series_input = slice_time_series(current_row, sequence_length, num_inputs, inputs[n]);
+            current_time_series_output = slice_time_series(current_row, sequence_length, num_outputs, outputs[n]);
+            sliced_inputs.push_back(current_time_series_input);
+            sliced_outputs.push_back(current_time_series_output);
+            current_row = current_row + sequence_length;
+        }
+        Log::info("Before slicing, original time series %d has %d parameters, and %d length\n", n, num_inputs, num_row);
+    }
+
+    inputs.clear();
+    outputs.clear();
+    
+    inputs.assign(sliced_inputs.begin(), sliced_inputs.end()); 
+    outputs.assign(sliced_outputs.begin(), sliced_outputs.end());
+    Log::info("After slicing, sliced training input data has %d sets, and %d parameters and length %d \n", inputs.size(), inputs[0].size(), inputs[0][0].size());
+    Log::info("After slicing, sliced training output data has %d sets, and %d parameters and length %d \n", outputs.size(), outputs[0].size(), outputs[0][0].size());
+}
+
+vector< vector<double> > slice_time_series(int32_t start_index, int32_t sequence_length, int32_t num_parameter, const vector< vector<double> > &time_series) {
+    vector< vector <double> > current_time_series;
+    for (int32_t j = 0; j < num_parameter; j++) {
+        vector<double> current_parameter_slice;
+        current_parameter_slice.assign(time_series[j].begin() + start_index, time_series[j].begin()+ start_index + sequence_length);
+        current_time_series.push_back(current_parameter_slice);
+    }
+    return current_time_series;
+}
+
