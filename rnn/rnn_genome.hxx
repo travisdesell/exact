@@ -110,6 +110,8 @@ class RNN_Genome {
         static string print_statistics_header();
         string print_statistics();
 
+        static RNN_Node_Interface *read_node_from_stream(istream &bin_istream);
+
         void set_parameter_names(const vector<string> &_input_parameter_names, const vector<string> &_output_parameter_names);
 
         string generated_by_string();

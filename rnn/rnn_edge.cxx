@@ -163,6 +163,10 @@ void RNN_Edge::reset(int32_t series_length) {
     dropped_out.resize(series_length);
 }
 
+void RNN_Edge::set_weight(double weight) {
+  this->weight = weight;
+}
+
 double RNN_Edge::get_gradient() const {
     return d_weight;
 }

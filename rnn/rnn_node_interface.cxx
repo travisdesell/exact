@@ -161,3 +161,4 @@ void RNN_Node_Interface::write_to_stream(ostream &out) {
 
     write_binary_string(out, parameter_name, "parameter_name");
 }
+

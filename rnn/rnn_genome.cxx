@@ -60,6 +60,7 @@ using std::vector;
 #include "delta_node.hxx"
 #include "ugrnn_node.hxx"
 #include "mgu_node.hxx"
+#include "dnas_node.hxx"
 #include "rnn_genome.hxx"
 
 string parse_fitness(double fitness) {
@@ -3102,6 +3103,66 @@ void RNN_Genome::read_from_array(char *array, int32_t length) {
     read_from_stream(iss);
 }
 
+RNN_Node_Interface *RNN_Genome::read_node_from_stream(istream &bin_istream) {
+    int32_t innovation_number, layer_type, node_type;
+    double depth;
+    bool enabled;
+
+    bin_istream.read((char*)&innovation_number, sizeof(int32_t));
+    bin_istream.read((char*)&layer_type, sizeof(int32_t));
+    bin_istream.read((char*)&node_type, sizeof(int32_t));
+    bin_istream.read((char*)&depth, sizeof(double));
+    bin_istream.read((char*)&enabled, sizeof(bool));
+
+    string parameter_name;
+    read_binary_string(bin_istream, parameter_name, "parameter_name");
+    Log::debug("NODE: %d %d %d %lf %d '%s'\n", innovation_number, layer_type, node_type, depth, enabled, parameter_name.c_str());
+
+    RNN_Node_Interface *node = nullptr;
+    if (node_type == LSTM_NODE) {
+        node = new LSTM_Node(innovation_number, layer_type, depth);
+    } else if (node_type == DELTA_NODE) {
+        node = new Delta_Node(innovation_number, layer_type, depth);
+    } else if (node_type == GRU_NODE) {
+        node = new GRU_Node(innovation_number, layer_type, depth);
+    } else if (node_type == ENARC_NODE) {
+        node = new ENARC_Node(innovation_number, layer_type, depth);
+    } else if (node_type == ENAS_DAG_NODE) {
+        node = new ENAS_DAG_Node(innovation_number, layer_type, depth);
+    } else if (node_type == RANDOM_DAG_NODE) {
+        node = new RANDOM_DAG_Node(innovation_number, layer_type, depth);
+    } else if (node_type == MGU_NODE) {
+        node = new MGU_Node(innovation_number, layer_type, depth);
+    } else if (node_type == UGRNN_NODE) {
+        node = new UGRNN_Node(innovation_number, layer_type, depth);
+    } else if (node_type == SIMPLE_NODE || node_type == JORDAN_NODE || node_type == ELMAN_NODE) {
+        if (layer_type == HIDDEN_LAYER) {
+            node = new RNN_Node(innovation_number, layer_type, depth, node_type);
+        } else {
+            node = new RNN_Node(innovation_number, layer_type, depth, node_type, parameter_name);
+        }
+    } else if (node_type == DNAS_NODE) {
+        int32_t n_nodes = 0;
+        bin_istream.read((char*)&n_nodes, sizeof(int32_t));
+
+        vector<double> pi(n_nodes, 0.0);
+        bin_istream.read((char*)&pi[0], sizeof(double) * n_nodes);
+
+        vector<RNN_Node_Interface *> nodes(n_nodes, nullptr);
+        for (int i = 0; i < n_nodes; i++)
+          nodes[i] = RNN_Genome::read_node_from_stream(bin_istream);
+
+        DNASNode *dnas_node = new DNASNode(move(nodes), innovation_number, node_type, depth);
+        dnas_node->set_pi(pi);
+        node = (RNN_Node_Interface *) dnas_node;
+    } else {
+        Log::fatal("Error reading node from stream, unknown node_type: %d\n", node_type);
+        exit(1);
+    }
+ 
+    node->enabled = enabled;
+    return node;
+}
 void RNN_Genome::read_from_stream(istream &bin_istream) {
     Log::debug("READING GENOME FROM STREAM\n");
 
@@ -3211,56 +3272,8 @@ void RNN_Genome::read_from_stream(istream &bin_istream) {
     Log::debug("reading %d nodes.\n", n_nodes);
 
     nodes.clear();
-    for (int32_t i = 0; i < n_nodes; i++) {
-        int32_t innovation_number;
-        int32_t layer_type;
-        int32_t node_type;
-        double depth;
-        bool enabled;
-
-        bin_istream.read((char*)&innovation_number, sizeof(int32_t));
-        bin_istream.read((char*)&layer_type, sizeof(int32_t));
-        bin_istream.read((char*)&node_type, sizeof(int32_t));
-        bin_istream.read((char*)&depth, sizeof(double));
-        bin_istream.read((char*)&enabled, sizeof(bool));
-
-        string parameter_name;
-        read_binary_string(bin_istream, parameter_name, "parameter_name");
-
-        Log::debug("NODE: %d %d %d %lf %d '%s'\n", innovation_number, layer_type, node_type, depth, enabled, parameter_name.c_str());
-
-        RNN_Node_Interface *node;
-        if (node_type == LSTM_NODE) {
-            node = new LSTM_Node(innovation_number, layer_type, depth);
-        } else if (node_type == DELTA_NODE) {
-            node = new Delta_Node(innovation_number, layer_type, depth);
-        } else if (node_type == GRU_NODE) {
-            node = new GRU_Node(innovation_number, layer_type, depth);
-        } else if (node_type == ENARC_NODE) {
-            node = new ENARC_Node(innovation_number, layer_type, depth);
-        } else if (node_type == ENAS_DAG_NODE) {
-            node = new ENAS_DAG_Node(innovation_number, layer_type, depth);
-        } else if (node_type == RANDOM_DAG_NODE) {
-            node = new RANDOM_DAG_Node(innovation_number, layer_type, depth);
-        } else if (node_type == MGU_NODE) {
-            node = new MGU_Node(innovation_number, layer_type, depth);
-        } else if (node_type == UGRNN_NODE) {
-            node = new UGRNN_Node(innovation_number, layer_type, depth);
-        } else if (node_type == SIMPLE_NODE || node_type == JORDAN_NODE || node_type == ELMAN_NODE) {
-            if (layer_type == HIDDEN_LAYER) {
-                node = new RNN_Node(innovation_number, layer_type, depth, node_type);
-            } else {
-                node = new RNN_Node(innovation_number, layer_type, depth, node_type, parameter_name);
-            }
-        } else {
-            Log::fatal("Error reading node from stream, unknown node_type: %d\n", node_type);
-            exit(1);
-        }
-
-        node->enabled = enabled;
-        nodes.push_back(node);
-    }
-
+    for (int32_t i = 0; i < n_nodes; i++)
+        nodes.push_back(RNN_Genome::read_node_from_stream(bin_istream));
 
     int32_t n_edges;
     bin_istream.read((char*)&n_edges, sizeof(int32_t));

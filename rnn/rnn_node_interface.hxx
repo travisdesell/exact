@@ -38,6 +38,7 @@ extern const string NODE_TYPES[];
 #define ENARC_NODE 8
 #define ENAS_DAG_NODE 9
 #define RANDOM_DAG_NODE 10
+#define DNAS_NODE 11
 
 
 
@@ -126,6 +127,7 @@ class RNN_Node_Interface {
 
         friend class RNN_Edge;
         friend class RNN_Recurrent_Edge;
+        friend class DNASNode;
         friend class RNN;
         friend class RNN_Genome;
 

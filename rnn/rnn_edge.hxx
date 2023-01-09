@@ -39,6 +39,8 @@ class RNN_Edge {
         void propagate_forward(int32_t time, bool training, double dropout_probability);
         void propagate_backward(int32_t time, bool training, double dropout_probability);
 
+        void set_weight(double weight);
+
         double get_gradient() const;
         int32_t get_innovation_number() const;
         int32_t get_input_innovation_number() const;
