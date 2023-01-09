@@ -16,7 +16,7 @@ for folder in 0 1 2 3 4 ; do
     --test_filenames ../datasets/pennchar/valid.txt \
     --word_offset 1 \
     --number_islands 10 \
-    --population_size 10 \
+    --island_size 10 \
     --max_genomes 2000 \
     --bp_iterations 10 \
     --output_directory $exp_name \

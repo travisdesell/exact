@@ -16,8 +16,8 @@ using std::vector;
 
 #include "common/arguments.hxx"
 #include "common/log.hxx"
-#include "common/weight_initialize.hxx"
-#include "common/weight_update.hxx"
+#include "weights/weight_rules.hxx"
+#include "weights/weight_update.hxx"
 
 #include "rnn/lstm_node.hxx"
 #include "rnn/gru_node.hxx"
@@ -72,10 +72,8 @@ int main(int argc, char **argv) {
     int32_t max_recurrent_depth;
     get_argument(arguments, "--max_recurrent_depth", true, max_recurrent_depth);
 
-    string weight_initialize_string = "xavier";
-    get_argument(arguments, "--weight_initialize", false, weight_initialize_string);
-    WeightType weight_initialize;
-    weight_initialize = get_enum_from_string(weight_initialize_string);
+    WeightRules *weight_rules = new WeightRules();
+    weight_rules->generate_weight_initialize_from_arguments(arguments);
 
     weight_update_method = new WeightUpdate();
     weight_update_method->generate_from_arguments(arguments);
@@ -142,7 +140,7 @@ int main(int argc, char **argv) {
         }
     }
 
-    RNN_Genome *genome = new RNN_Genome(rnn_nodes, rnn_edges, recurrent_edges, weight_initialize, WeightType::NONE, WeightType::NONE);
+    RNN_Genome *genome = new RNN_Genome(rnn_nodes, rnn_edges, recurrent_edges, weight_rules);
 
     genome->set_parameter_names(time_series_sets->get_input_parameter_names(), time_series_sets->get_output_parameter_names());
     genome->set_normalize_bounds(time_series_sets->get_normalize_type(), time_series_sets->get_normalize_mins(), time_series_sets->get_normalize_maxs(), time_series_sets->get_normalize_avgs(), time_series_sets->get_normalize_std_devs());
@@ -163,15 +161,15 @@ int main(int argc, char **argv) {
 
     int32_t bp_iterations;
     get_argument(arguments, "--bp_iterations", true, bp_iterations);
-    genome->set_bp_iterations(bp_iterations, 0);
+    genome->set_bp_iterations(bp_iterations);
 
     double learning_rate = 0.0001;
     get_argument(arguments, "--learning_rate", false, learning_rate);
 
-    genome->set_learning_rate(learning_rate);
-    // genome->set_nesterov_momentum(true);
-    genome->enable_high_threshold(1.0);
-    genome->enable_low_threshold(0.05);
+    // genome->set_learning_rate(learning_rate);
+    // // genome->set_nesterov_momentum(true);
+    // genome->enable_high_threshold(1.0);
+    // genome->enable_low_threshold(0.05);
     genome->disable_dropout();
 
     if (argument_exists(arguments, "--log_filename")) {
@@ -181,7 +179,7 @@ int main(int argc, char **argv) {
     }
 
     if (argument_exists(arguments, "--stochastic")) {
-        genome->backpropagate_stochastic(training_inputs, training_outputs, test_inputs, test_outputs, false, 30, 100, weight_update_method);
+        genome->backpropagate_stochastic(training_inputs, training_outputs, test_inputs, test_outputs, weight_update_method);
     } else {
         genome->backpropagate(training_inputs, training_outputs, test_inputs, test_outputs, weight_update_method);
     }

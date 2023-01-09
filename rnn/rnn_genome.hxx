@@ -25,8 +25,8 @@ using std::vector;
 #include "rnn_recurrent_edge.hxx"
 
 #include "common/random.hxx"
-#include "common/weight_initialize.hxx"
-#include "common/weight_update.hxx"
+#include "weights/weight_rules.hxx"
+#include "weights/weight_update.hxx"
 #include "time_series/time_series.hxx"
 // #include "word_series/word_series.hxx"
 
@@ -41,15 +41,6 @@ class RNN_Genome {
         int32_t group_id;
 
         int32_t bp_iterations;
-        double learning_rate;
-        bool adapt_learning_rate; //TODO: deprecated and needs to be removed but don't want to change the genome binary file yet
-        bool use_reset_weights; //TODO: deprecated and needs to be removed but don't want to change the genome binary file yet
-
-
-        bool use_high_norm;
-        double high_threshold;
-        bool use_low_norm;
-        double low_threshold;
     
         bool use_dropout;
         double dropout_probability;
@@ -58,9 +49,7 @@ class RNN_Genome {
 
         string log_filename;
 
-        WeightType weight_initialize;
-        WeightType weight_inheritance;
-        WeightType mutated_component_weight;
+        WeightRules *weight_rules;
 
         map<string, int32_t> generated_by_map;
 
@@ -95,13 +84,12 @@ class RNN_Genome {
         // vector<int32_t> innovation_list;
 
     public:
-        bool tl_with_epigenetic;
         void sort_nodes_by_depth();
         void sort_edges_by_depth();
         void sort_recurrent_edges_by_depth();
 
-        RNN_Genome(vector<RNN_Node_Interface*> &_nodes, vector<RNN_Edge*> &_edges, vector<RNN_Recurrent_Edge*> &_recurrent_edges, WeightType _weight_initialize, WeightType _weight_inheritance, WeightType _mutated_component_weight);
-        RNN_Genome(vector<RNN_Node_Interface*> &_nodes, vector<RNN_Edge*> &_edges, vector<RNN_Recurrent_Edge*> &_recurrent_edges, int16_t seed, WeightType _weight_initialize, WeightType _weight_inheritance, WeightType _mutated_component_weight);
+        RNN_Genome(vector<RNN_Node_Interface*> &_nodes, vector<RNN_Edge*> &_edges, vector<RNN_Recurrent_Edge*> &_recurrent_edges, WeightRules *weight_rules);
+        RNN_Genome(vector<RNN_Node_Interface*> &_nodes, vector<RNN_Edge*> &_edges, vector<RNN_Recurrent_Edge*> &_recurrent_edges, int16_t seed, WeightRules *weight_rules);
 
         RNN_Genome* copy();
 
@@ -149,14 +137,9 @@ class RNN_Genome {
         void set_group_id(int32_t _group_id);
 
 
-        void set_bp_iterations(int32_t _bp_iterations, int32_t epochs_acc_freq);
+        void set_bp_iterations(int32_t _bp_iterations);
         int32_t get_bp_iterations();
 
-        void set_learning_rate(double _learning_rate);
-        void disable_high_threshold();
-        void enable_high_threshold(double _high_threshold);
-        void disable_low_threshold();
-        void enable_low_threshold(double _low_threshold);
         void disable_dropout();
         void enable_dropout(double _dropout_probability);
         void set_log_filename(string _log_filename);
@@ -201,9 +184,7 @@ class RNN_Genome {
 
         void backpropagate(const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, const vector< vector< vector<double> > > &validation_inputs, const vector< vector< vector<double> > > &validation_outputs, WeightUpdate *weight_update_method);
 
-        void backpropagate_stochastic(const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, const vector< vector< vector<double> > > &validation_inputs, const vector< vector< vector<double> > > &validation_outputs, bool random_sequence_length, int32_t sequence_length_lower_bound, int32_t sequence_length_upper_bound, WeightUpdate *weight_update_method);
-
-        vector< vector<double> > slice_time_series(int32_t start_index, int32_t sequence_length, int32_t num_parameter, const vector< vector<double> > &inputs);
+        void backpropagate_stochastic(const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs, const vector< vector< vector<double> > > &validation_inputs, const vector< vector< vector<double> > > &validation_outputs, WeightUpdate *weight_update_method);        
         
         double get_softmax(const vector<double> &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs);
         double get_mse(const vector<double> &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs);
@@ -257,7 +238,7 @@ class RNN_Genome {
         string get_color(double weight, bool is_recurrent);
         void write_graphviz(string filename);
 
-        RNN_Genome(string binary_filename, bool _tl_with_epigenetic=false);
+        RNN_Genome(string binary_filename);
         RNN_Genome(char* array, int32_t length);
         RNN_Genome(istream &bin_infile);
 
@@ -291,12 +272,16 @@ class RNN_Genome {
          */
         int32_t get_max_edge_innovation_count();
 
+        ofstream* create_log_file();
+        void update_log_file(ofstream *output_log, int32_t iteration, long milliseconds, double training_mse, double validation_mse, double avg_norm);
+
         void transfer_to(const vector<string> &new_input_parameter_names, const vector<string> &new_output_parameter_names, string transfer_learning_version, bool epigenetic_weights, int32_t min_recurrent_depth, int32_t max_recurrent_depth);
 
         friend class EXAMM;
         friend class IslandSpeciationStrategy;
         friend class NeatSpeciationStrategy;
         friend class RecDepthFrequencyTable;
+        friend class GenomeProperty;
 };
 
 struct sort_genomes_by_fitness {

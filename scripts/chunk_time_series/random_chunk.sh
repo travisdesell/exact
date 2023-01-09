@@ -28,7 +28,7 @@ mpirun -np 8 ./mpi/examm_mpi \
 --input_parameter_names $INPUT_PARAMETERS \
 --output_parameter_names $OUTPUT_PARAMETERS \
 --number_islands 10 \
---population_size 10 \
+--island_size 10 \
 --max_genomes $MAX_GENOME \
 --speciation_method "island" \
 --random_sequence_length \
