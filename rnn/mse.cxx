@@ -3,6 +3,7 @@
 #include <vector>
 using std::vector;
 
+#include "common/log.hxx"
 #include "rnn.hxx"
 
 void get_mse(const vector<double> &output_values, const vector<double> &expected, double &mse, vector<double> &deltas) {

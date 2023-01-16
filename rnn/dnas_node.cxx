@@ -8,20 +8,30 @@ using std::max;
 #include "dnas_node.hxx"
 #include "common/log.hxx"
 
-DNASNode::DNASNode(vector<RNN_Node_Interface *> &&nodes, int32_t _innovation_number, int32_t _type, double _depth) : RNN_Node_Interface(_innovation_number, _type, _depth), nodes(nodes) {
+DNASNode::DNASNode(vector<RNN_Node_Interface *> &&_nodes, int32_t _innovation_number, int32_t _type, double _depth)
+  : RNN_Node_Interface(_innovation_number, _type, _depth), 
+    nodes(_nodes),
+    pi(vector<double>(nodes.size(), 1.0)),
+    z(vector<double>(nodes.size())),
+    x(vector<double>(nodes.size())),
+    d_pi(vector<double>(nodes.size())),
+    noise(vector<double>(nodes.size())) {
+  node_type = DNAS_NODE;
   generator.seed(std::random_device()());
-
   for (auto node : nodes) {
     node->total_inputs = 1;
     node->total_outputs = 1;
   }
+  sample_gumbel_softmax(generator);
 }
 
-DNASNode::DNASNode(const DNASNode &src) : RNN_Node_Interface(src.innovation_number, src.node_type, src.depth) {
+DNASNode::DNASNode(const DNASNode &src) : RNN_Node_Interface(src.innovation_number, src.layer_type, src.depth) {
   generator.seed(std::random_device()());
 
   for (auto node : src.nodes)
     nodes.push_back(node->copy());
+
+  node_type = DNAS_NODE;
 
   pi = src.pi;
   d_pi = src.d_pi;
@@ -52,10 +62,10 @@ DNASNode::~DNASNode() {
 
 template <uniform_random_bit_generator Rng>
 void DNASNode::gumbel_noise(Rng &rng, vector<double> &output) {
-  Log::info("Drawing %d samples of noise from the gumbel distribution\n", output.size());
 
   for (int i = 0; i < output.size(); i++)
     output[i] = -log(-log(generate_canonical<double, 64>(rng)));
+
 }
 
 template <uniform_random_bit_generator Rng>
@@ -78,20 +88,25 @@ void DNASNode::sample_gumbel_softmax(Rng &rng) {
     xtotal += x[i];
   }
 
-  for (int i = 0; i < z.size(); i++)
+  for (int i = 0; i < z.size(); i++) {
     z[i] = x[i] / xtotal;
+  }
+
 }
 
 void DNASNode::reset(int32_t series_length) {
   d_pi = vector<double>(pi.size(), 0.0);
+  d_input = vector<double>(series_length, 0.0);
   node_outputs = vector<vector<double>>(series_length, vector<double>(pi.size(), 0.0));
+  output_values = vector<double>(series_length, 0.0);
+  error_values = vector<double>(series_length, 0.0);
+  inputs_fired = vector<int>(series_length, 0);
+  outputs_fired = vector<int>(series_length, 0);
+  input_values = vector<double>(series_length, 0.0);
   xtotal = 0;
   x.assign(pi.size(), 0.0);
-  for (int i = 0; i < output_values.size(); i++) output_values[i] = 0.0;
 
   for (auto node : nodes) node->reset(series_length);
-
-  sample_gumbel_softmax(generator);
 }
 
 void DNASNode::input_fired(int32_t time, double incoming_output) {
@@ -102,7 +117,7 @@ void DNASNode::input_fired(int32_t time, double incoming_output) {
   if (inputs_fired[time] < total_inputs) {
     return;
   } else if (inputs_fired[time] > total_inputs) {
-      Log::fatal("ERROR: inputs_fired on Delta_Node %d at time %d is %d and total_inputs is %d\n", innovation_number, time, inputs_fired[time], total_inputs);
+      Log::fatal("ERROR: inputs_fired on DNASNode %d at time %d is %d and total_inputs is %d\n", innovation_number, time, inputs_fired[time], total_inputs);
       exit(1);
   }
 
@@ -131,7 +146,7 @@ void DNASNode::try_update_deltas(int32_t time) {
   if (outputs_fired[time] < total_outputs) {
     return;
   } else if (outputs_fired[time] > total_outputs) {
-      Log::fatal("ERROR: outputs_fired on Delta_Node %d at time %d is %d and total_outputs is %d\n", innovation_number, time, outputs_fired[time], total_outputs);
+      Log::fatal("ERROR: outputs_fired on DNMASNode %d at time %d is %d and total_outputs is %d\n", innovation_number, time, outputs_fired[time], total_outputs);
       exit(1);
   }
 
@@ -145,6 +160,7 @@ void DNASNode::try_update_deltas(int32_t time) {
     d_input[time] += node->d_input[time];
   }
 }
+
 void DNASNode::initialize_lamarckian(minstd_rand0 &generator, NormalDistribution &normal_distribution, double mu, double sigma) {
   for (auto node : nodes)
     node->initialize_lamarckian(generator, normal_distribution, mu, sigma);
@@ -166,7 +182,7 @@ void DNASNode::initialize_uniform_random(minstd_rand0 &generator, uniform_real_d
 }
 
 int32_t DNASNode::get_number_weights() const {
-  int n_weights = pi.size();
+  int n_weights = 0;
 
   for (auto node : nodes)
     n_weights += node->get_number_weights();
@@ -186,12 +202,12 @@ void DNASNode::set_weights(const vector<double> &parameters) {
 }
 
 void DNASNode::get_weights(int32_t &offset, vector<double> &parameters) const {
-  for (int i = 0; i < pi.size(); i++) parameters[offset++] = pi[i];
+  // for (int i = 0; i < pi.size(); i++) parameters[offset++] = pi[i];
   for (auto node : nodes) node->get_weights(offset, parameters);
 }
 
 void DNASNode::set_weights(int32_t &offset, const vector<double> &parameters) {
-  for (int i = 0; i < pi.size(); i++) pi[i] = parameters[offset++];
+  // for (int i = 0; i < pi.size(); i++) pi[i] = parameters[offset++];
   for (auto node : nodes) node->set_weights(offset, parameters);
 }
 
@@ -203,8 +219,8 @@ void DNASNode::set_pi(const vector<double> &new_pi) {
 void DNASNode::get_gradients(vector<double> &gradients) {
   gradients.assign(get_number_weights(), 0.0);
   int offset = 0;
-  for (int i = 0; i < pi.size(); i++)
-    gradients[offset++] = d_pi[i];
+  // for (int i = 0; i < pi.size(); i++)
+  //  gradients[offset++] = d_pi[i];
 
   vector<double> temp;
   for (auto node : nodes) {
@@ -226,4 +242,8 @@ void DNASNode::write_to_stream(ostream &out) {
 
 RNN_Node_Interface *DNASNode::copy() const {
   return new DNASNode(*this);
+}
+
+void DNASNode::set_stochastic(bool stochastic) {
+  this->stochastic = stochastic;
 }

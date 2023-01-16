@@ -3929,3 +3929,9 @@ void RNN_Genome::transfer_to(const vector<string> &new_input_parameter_names, co
 
     Log::info("FINISHING PREPARING INITIAL GENOME\n");
 }
+
+void RNN_Genome::set_stochastic(bool stochastic) {
+    for (auto node : nodes)
+        if (DNASNode *node = dynamic_cast<DNASNode *>(node); node != nullptr)
+            node->set_stochastic(stochastic);
+}

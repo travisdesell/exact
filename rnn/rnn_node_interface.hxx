@@ -56,7 +56,7 @@ double identity_derivative();
 double bound(double value);
 
 class RNN_Node_Interface {
-    protected:
+    public:
         int32_t innovation_number;
         int32_t layer_type;
         int32_t node_type;

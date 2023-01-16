@@ -46,22 +46,26 @@ class DNASNode : public RNN_Node_Interface {
   // e^{(ln(pi_i)+g_i)/t} for each pi_i in pi
   vector<double> x;
   // Sum of x values, saved for use in backprop.
-  double xtotal;
+  double xtotal = 0.0;
 
   // A vector to put gumbel noise into; just to avoid re-allocation
   vector<double> noise;
 
   // Temperature used when drawing samples from Gumbel-Softmax(pi)
-  double tao;
+  double tao = 1.0;
 
   // if > 0, then the samples will be forced to be K-hot (K non-zero values that sum to one)
   int32_t k = -1;
 
+  // Whether to re-sample the gumbel softmax distribution when resetting the node.
+  // Can be set externally using DNASNode::set_stochastic
+  bool stochastic = true;
+
   vector<double> d_pi;
   vector<vector<double>> node_outputs;
-  vector<double> output_values;
 
  public:
+
   DNASNode(vector<RNN_Node_Interface *> &&nodes, int32_t _innovation_number, int32_t _type, double _depth);
   DNASNode(const DNASNode &node);
   ~DNASNode();
@@ -94,6 +98,8 @@ class DNASNode : public RNN_Node_Interface {
   virtual void write_to_stream(ostream &out);
 
   virtual RNN_Node_Interface *copy() const;
+
+  void set_stochastic(bool stochastic);
 
   friend class RNN_Edge;
 };

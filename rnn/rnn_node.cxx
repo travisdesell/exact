@@ -50,13 +50,14 @@ void RNN_Node::input_fired(int32_t time, double incoming_output) {
 
     input_values[time] += incoming_output;
 
-    if (inputs_fired[time] < total_inputs) return;
-    else if (inputs_fired[time] > total_inputs) {
+    if (inputs_fired[time] < total_inputs) {
+      return;
+    } else if (inputs_fired[time] > total_inputs) {
         Log::fatal("ERROR: inputs_fired on RNN_Node %d at time %d is %d and total_inputs is %d\n", innovation_number, time, inputs_fired[time], total_inputs);
         exit(1);
     }
 
-    //Log::trace("node %d - input value[%d]: %lf\n", innovation_number, time, input_values[time]);
+    Log::debug("node %d - input value[%d]: %lf\n", innovation_number, time, input_values[time]);
 
     output_values[time] = tanh(input_values[time] + bias);
     ld_output[time] = tanh_derivative(output_values[time]);
@@ -82,7 +83,6 @@ void RNN_Node::try_update_deltas(int32_t time) {
     }
 
     d_input[time] *= ld_output[time];
-
     d_bias += d_input[time];
 }
 

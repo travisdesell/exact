@@ -50,6 +50,7 @@ void generate_random_vector(int number_parameters, vector<double> &v) {
 }
 
 void gradient_test(string name, RNN_Genome *genome, const vector< vector<double> > &inputs, const vector< vector<double> > &outputs) {
+  genome->set_stochastic(false);
 	double analytic_mse, empirical_mse;
 	vector<double> parameters;
 	vector<double> analytic_gradient, empirical_gradient;

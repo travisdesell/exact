@@ -30,3 +30,6 @@ target_link_libraries(test_random_dag_gradients examm_strategy exact_common exac
 
 add_executable(test_enas_dag_gradients test_enas_dag_gradients.cxx gradient_test.cxx)
 target_link_libraries(test_enas_dag_gradients examm_strategy exact_common exact_time_series  ${MYSQL_LIBRARIES} pthread)
+
+add_executable(test_dnas_gradients test_dnas_gradients.cxx gradient_test.cxx)
+target_link_libraries(test_dnas_gradients examm_strategy exact_common exact_time_series  ${MYSQL_LIBRARIES} pthread)

@@ -186,7 +186,7 @@ void RANDOM_DAG_Node::input_fired(int32_t time, double incoming_output) {
     //update the reset gate bias so its centered around 1
     //r_bias += 1;
     
-    Log::debug("ERROR: inputs_fired on RANDOM_DAG_Node %d at time %d is %d and no_of_nodes is %d\n", innovation_number, time, inputs_fired[time], no_of_nodes);
+    Log::debug("inputs_fired on RANDOM_DAG_Node %d at time %d is %d and no_of_nodes is %d\n", innovation_number, time, inputs_fired[time], no_of_nodes);
 
 
     double x = input_values[time];
@@ -234,10 +234,7 @@ void RANDOM_DAG_Node::input_fired(int32_t time, double incoming_output) {
    // output_values[time] += Nodes[0][time];
 
     // output_values[time] /= fan_out;
-
-    Log::debug("DEBUG: input_fired on RANDOM_DAG_Node %d at time %d is %d and total_outputs is %d\n", innovation_number, time, outputs_fired[time], total_outputs);
-
-
+    Log::debug("input_fired on RANDOM_DAG_Node %d at time %d is %d and total_outputs is %d\n", innovation_number, time, outputs_fired[time], total_outputs);
 }
 
 void RANDOM_DAG_Node::try_update_deltas(int32_t time){

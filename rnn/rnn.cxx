@@ -350,6 +350,7 @@ void RNN::forward_pass(const vector< vector<double> > &series_data, bool using_d
         if (recurrent_edges[i]->is_reachable()) recurrent_edges[i]->first_propagate_forward();
     }
 
+
     for (int32_t time = 0; time < series_length; time++) {
         for (int32_t i = 0; i < (int32_t)input_nodes.size(); i++) {
             if(input_nodes[i]->is_reachable()) input_nodes[i]->input_fired(time, series_data[i][time]);
@@ -369,7 +370,9 @@ void RNN::forward_pass(const vector< vector<double> > &series_data, bool using_d
         for (int32_t i = 0; i < (int32_t)recurrent_edges.size(); i++) {
             if (recurrent_edges[i]->is_reachable()) recurrent_edges[i]->propagate_forward(time);
         }
+
     }
+
 }
 
 void RNN::backward_pass(double error, bool using_dropout, bool training, double dropout_probability) {
@@ -385,6 +388,7 @@ void RNN::backward_pass(double error, bool using_dropout, bool training, double 
         for (int32_t i = 0; i < (int32_t)output_nodes.size(); i++) {
             output_nodes[i]->error_fired(time, error);
         }
+
 
         if (using_dropout) {
             for (int32_t i = (int32_t)edges.size() - 1; i >= 0; i--) {
@@ -403,8 +407,6 @@ void RNN::backward_pass(double error, bool using_dropout, bool training, double 
 }
 
 double RNN::calculate_error_softmax(const vector< vector<double> > &expected_outputs) {
-    
-    
     double cross_entropy_sum = 0.0;
     double error;
     double softmax = 0.0;
@@ -413,7 +415,7 @@ double RNN::calculate_error_softmax(const vector< vector<double> > &expected_out
         output_nodes[i]->error_values.resize(expected_outputs[i].size());
     }
 
-    // for each time step j 
+    // for each time step j
     for (int32_t j = 0; j < (int32_t)expected_outputs[0].size(); j++) {
         double softmax_sum = 0.0;
         double cross_entropy = 0.0;
@@ -528,8 +530,6 @@ vector<double> RNN::get_predictions(const vector< vector<double> > &series_data,
 void RNN::write_predictions(string output_filename, const vector<string> &input_parameter_names, const vector<string> &output_parameter_names, const vector< vector<double> > &series_data, const vector< vector<double> > &expected_outputs, TimeSeriesSets *time_series_sets, bool using_dropout, double dropout_probability) {
     forward_pass(series_data, using_dropout, false, dropout_probability);
 
-    Log::debug("series_length: %d, series_data.size(): %d, series_data[0].size(): %d\n", series_length, series_data.size(), series_data[0].size());
-    Log::debug("input_nodes.size(): %d, output_nodes.size(): %d\n", input_nodes.size(), output_nodes.size());
     ofstream outfile(output_filename);
 
     outfile << "#";

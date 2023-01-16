@@ -154,6 +154,9 @@ class RNN_Genome {
         void set_bp_iterations(int32_t _bp_iterations, int32_t epochs_acc_freq);
         int32_t get_bp_iterations();
 
+        // Turns on / off stochastic operations
+        void set_stochastic(bool stochastic);
+
         void set_learning_rate(double _learning_rate);
         void disable_high_threshold();
         void enable_high_threshold(double _high_threshold);
