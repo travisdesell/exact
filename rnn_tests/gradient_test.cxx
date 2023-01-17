@@ -37,7 +37,7 @@ int test_iterations = 10;
 
 void initialize_generator() {
 	unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
-	//seed = 1337;
+	// seed = 1337;
 	generator = minstd_rand0(seed);
 }
 
@@ -58,17 +58,19 @@ void gradient_test(string name, RNN_Genome *genome, const vector< vector<double>
     Log::info("\ttesting gradient on '%s'...\n", name.c_str());
 	bool failed = false;
 
+  genome->initialize_randomly();
 	RNN* rnn = genome->get_rnn();
     Log::debug("got genome \n");
 
     // rnn->enable_use_regression(true);
 
+  genome->get_weights(parameters);
 	for (int32_t i = 0; i < test_iterations; i++) {
         if (i == 0) Log::debug_no_header("\n");
         Log::debug("\tAttempt %d USING REGRESSION\n", i);
 
-		generate_random_vector(rnn->get_number_weights(), parameters);
-		Log::debug("DEBUG: firing weights are %d \n", rnn->get_number_weights());    
+		// generate_random_vector(rnn->get_number_weights(), parameters);
+    Log::debug("DEBUG: firing weights are %d \n", rnn->get_number_weights());    
 
 		rnn->get_analytic_gradient(parameters, inputs, outputs, analytic_mse, analytic_gradient, false, true, 0.0);
 		rnn->get_empirical_gradient(parameters, inputs, outputs, empirical_mse, empirical_gradient, false, true, 0.0);

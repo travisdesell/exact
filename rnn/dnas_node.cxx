@@ -182,7 +182,7 @@ void DNASNode::initialize_uniform_random(minstd_rand0 &generator, uniform_real_d
 }
 
 int32_t DNASNode::get_number_weights() const {
-  int n_weights = 0;
+  int n_weights = pi.size();
 
   for (auto node : nodes)
     n_weights += node->get_number_weights();
@@ -202,12 +202,12 @@ void DNASNode::set_weights(const vector<double> &parameters) {
 }
 
 void DNASNode::get_weights(int32_t &offset, vector<double> &parameters) const {
-  // for (int i = 0; i < pi.size(); i++) parameters[offset++] = pi[i];
+  for (int i = 0; i < pi.size(); i++) parameters[offset++] = pi[i];
   for (auto node : nodes) node->get_weights(offset, parameters);
 }
 
 void DNASNode::set_weights(int32_t &offset, const vector<double> &parameters) {
-  // for (int i = 0; i < pi.size(); i++) pi[i] = parameters[offset++];
+  for (int i = 0; i < pi.size(); i++) pi[i] = parameters[offset++];
   for (auto node : nodes) node->set_weights(offset, parameters);
 }
 
@@ -219,8 +219,8 @@ void DNASNode::set_pi(const vector<double> &new_pi) {
 void DNASNode::get_gradients(vector<double> &gradients) {
   gradients.assign(get_number_weights(), 0.0);
   int offset = 0;
-  // for (int i = 0; i < pi.size(); i++)
-  //  gradients[offset++] = d_pi[i];
+  for (int i = 0; i < pi.size(); i++)
+    gradients[offset++] = d_pi[i];
 
   vector<double> temp;
   for (auto node : nodes) {
