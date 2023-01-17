@@ -17,8 +17,8 @@ using std::vector;
 
 #include "common/arguments.hxx"
 #include "common/log.hxx"
-#include "common/weight_initialize.hxx"
-#include "common/weight_update.hxx"
+#include "weights/weight_rules.hxx"
+#include "weights/weight_update.hxx"
 #include "common/files.hxx"
 
 #include "rnn/lstm_node.hxx"

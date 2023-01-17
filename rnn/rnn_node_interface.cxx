@@ -10,7 +10,7 @@ using std::string;
 using std::max;
 
 #include "rnn_node_interface.hxx"
-#include "rnn_genome.hxx"
+#include "rnn/rnn_genome.hxx"
 
 #include "common/log.hxx"
 

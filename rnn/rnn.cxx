@@ -28,7 +28,7 @@ using std::vector;
 
 #include "rnn_edge.hxx"
 #include "rnn_recurrent_edge.hxx"
-#include "rnn_genome.hxx"
+#include "rnn/rnn_genome.hxx"
 #include "rnn_node_interface.hxx"
 #include "rnn_node.hxx"
 #include "lstm_node.hxx"

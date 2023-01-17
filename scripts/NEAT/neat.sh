@@ -29,7 +29,7 @@ mpirun -np 8 ./mpi/examm_mpi \
 --input_parameter_names Conditioner_Inlet_Temp Conditioner_Outlet_Temp Coal_Feeder_Rate Primary_Air_Flow Primary_Air_Split System_Secondary_Air_Flow_Total Secondary_Air_Flow Secondary_Air_Split Tertiary_Air_Split Total_Comb_Air_Flow Supp_Fuel_Flow Main_Flm_Int \
 --output_parameter_names Main_Flm_Int \
 --number_islands 6 \
---population_size 5 \
+--island_size 5 \
 --max_genomes 500 \
 --speciation_method "neat" \
 --species_threshold 3 \
