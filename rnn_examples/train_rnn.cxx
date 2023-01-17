@@ -117,6 +117,7 @@ int main(int argc, char **argv) {
     vector<string> output_parameter_names = time_series_sets->get_output_parameter_names();
 
     RNN_Genome *genome;
+    Log::info("RNN TYPE = %s\n", rnn_type.c_str());
     if (rnn_type == "lstm") {
         genome = create_lstm(input_parameter_names, num_hidden_layers, number_inputs, output_parameter_names, max_recurrent_depth, weight_initialize);
 
@@ -140,7 +141,9 @@ int main(int argc, char **argv) {
 
     } else if (rnn_type == "elman") {
         genome = create_elman(input_parameter_names, num_hidden_layers, number_inputs, output_parameter_names, max_recurrent_depth, weight_initialize);
-
+    } else if (rnn_type == "dnas") {
+        vector<int> node_types = { SIMPLE_NODE, SIMPLE_NODE };
+        genome = create_dnas_nn(input_parameter_names, 4, 12, output_parameter_names, max_recurrent_depth, node_types, weight_initialize);
     } else {
         Log::fatal("ERROR: incorrect rnn type\n");
         Log::fatal("Possibilities are:\n");
