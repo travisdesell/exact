@@ -1,6 +1,6 @@
 #include <cmath>
 
-#include "weights/weight_update.hxx"
+#include "weight_update.hxx"
 
 #include "common/arguments.hxx"
 #include "common/log.hxx"
@@ -19,6 +19,10 @@ WeightUpdate::WeightUpdate() {
     low_threshold = 0.05;
     use_high_norm = true;
     use_low_norm = true;
+}
+
+WeightUpdate::WeightUpdate(const vector<string> &arguments) : WeightUpdate() {
+  generate_from_arguments(arguments);
 }
 
 void WeightUpdate::generate_from_arguments(const vector<string> &arguments) {

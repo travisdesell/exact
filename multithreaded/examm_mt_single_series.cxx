@@ -113,7 +113,7 @@ int main(int argc, char** argv) {
     weight_update_method->generate_from_arguments(arguments);
 
     WeightRules *weight_rules = new WeightRules();
-    weight_rules->generate_weight_initialize_from_arguments(arguments);
+    weight_rules->initialize_from_args(arguments);
 
     RNN_Genome *seed_genome = get_seed_genome(arguments, time_series_sets, weight_rules);
 

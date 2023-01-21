@@ -50,7 +50,7 @@ int main(int argc, char **argv) {
     get_argument(arguments, "--input_length", true, input_length);
 
     WeightRules *weight_rules = new WeightRules();
-    weight_rules->generate_weight_initialize_from_arguments(arguments);
+    weight_rules->initialize_from_args(arguments);
 
 
     for (int32_t max_recurrent_depth = 1; max_recurrent_depth <= 5; max_recurrent_depth++) {

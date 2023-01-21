@@ -555,7 +555,7 @@ int main(int argc, char **argv) {
     get_argument(arguments, "--fold_size", true, fold_size);
 
     weight_rules = new WeightRules();
-    weight_rules->generate_weight_initialize_from_arguments(arguments);
+    weight_rules->initialize_from_args(arguments);
 
     weight_update_method = new WeightUpdate();
     weight_update_method->generate_from_arguments(arguments);

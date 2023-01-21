@@ -52,7 +52,7 @@ int main(int argc, char **argv) {
     get_argument(arguments, "--weight_rules", false, weight_rules_string);
 
     WeightRules *weight_rules = new WeightRules();
-    weight_rules->generate_weight_initialize_from_arguments(arguments);
+    weight_rules->initialize_from_args(arguments);
     
     vector<int32_t> node_types = { SIMPLE_NODE, LSTM_NODE, GRU_NODE, MGU_NODE, JORDAN_NODE, ELMAN_NODE, DELTA_NODE };
 

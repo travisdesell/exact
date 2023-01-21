@@ -73,7 +73,7 @@ int main(int argc, char **argv) {
     get_argument(arguments, "--max_recurrent_depth", true, max_recurrent_depth);
 
     WeightRules *weight_rules = new WeightRules();
-    weight_rules->generate_weight_initialize_from_arguments(arguments);
+    weight_rules->initialize_from_args(arguments);
 
     weight_update_method = new WeightUpdate();
     weight_update_method->generate_from_arguments(arguments);

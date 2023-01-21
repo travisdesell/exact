@@ -76,12 +76,10 @@ class RNN_Genome {
         vector<string> output_parameter_names;
 
         string normalize_type;
-        map<string,double> normalize_mins;
-        map<string,double> normalize_maxs;
-        map<string,double> normalize_avgs;
-        map<string,double> normalize_std_devs;
-
-        // vector<int32_t> innovation_list;
+        map<string, double> normalize_mins;
+        map<string, double> normalize_maxs;
+        map<string, double> normalize_avgs;
+        map<string, double> normalize_std_devs;
 
     public:
         void sort_nodes_by_depth();

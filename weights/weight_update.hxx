@@ -4,6 +4,9 @@
 #include <string>
 using std::string;
 
+#include <vector>
+using std::vector;
+
 #include "common/arguments.hxx"
 
 enum WeightUpdateMethod {
@@ -52,6 +55,7 @@ class WeightUpdate {
 
     public:
         WeightUpdate();
+        explicit WeightUpdate(const vector<string> &arguments);
         void generate_from_arguments(const vector<string> &arguments);
 
         void update_weights(vector<double> &parameters, vector<double> &velocity, vector<double> &prev_velocity, vector<double> &gradient, int32_t epoch);

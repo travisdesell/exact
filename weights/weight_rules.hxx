@@ -46,7 +46,9 @@ class WeightRules {
 
     public:
         WeightRules();
-        void generate_weight_initialize_from_arguments(const vector<string> &arguments);
+        explicit WeightRules(const vector<string> &arguments);
+
+        void initialize_from_args(const vector<string> &arguments);
         WeightType get_weight_initialize_method();
         WeightType get_weight_inheritance_method();
         WeightType get_mutated_components_weight_method();

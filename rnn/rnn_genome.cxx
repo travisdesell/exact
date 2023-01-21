@@ -1068,7 +1068,7 @@ void RNN_Genome::backpropagate_stochastic(const vector< vector< vector<double> >
             long milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(currentClock - startClock).count();
             update_log_file(output_log, iteration, milliseconds, training_mse, validation_mse, avg_norm);
         }
-        Log::trace("iteration %4d, mse: %5.10lf, v_mse: %5.10lf, bv_mse: %5.10lf, avg_norm: %5.10lf\n", iteration, training_mse, validation_mse, best_validation_mse, avg_norm);
+        Log::info("iteration %4d, mse: %5.10lf, v_mse: %5.10lf, bv_mse: %5.10lf, avg_norm: %5.10lf\n", iteration, training_mse, validation_mse, best_validation_mse, avg_norm);
     }
     delete rnn;
     this->set_weights(best_parameters);
@@ -2974,9 +2974,11 @@ RNN_Node_Interface *RNN_Genome::read_node_from_stream(istream &bin_istream) {
             node = new RNN_Node(innovation_number, layer_type, depth, node_type, parameter_name);
         }
     } else if (node_type == DNAS_NODE) {
-        int32_t n_nodes = 0;
-        bin_istream.read((char*)&n_nodes, sizeof(int32_t));
+        int32_t n_nodes;
+        bin_istream.read((char *) &n_nodes, sizeof(int32_t));
 
+        int32_t counter;
+        bin_istream.read((char *) &counter, sizeof(int32_t));
         vector<double> pi(n_nodes, 0.0);
         bin_istream.read((char*)&pi[0], sizeof(double) * n_nodes);
 
@@ -2984,7 +2986,7 @@ RNN_Node_Interface *RNN_Genome::read_node_from_stream(istream &bin_istream) {
         for (int i = 0; i < n_nodes; i++)
           nodes[i] = RNN_Genome::read_node_from_stream(bin_istream);
 
-        DNASNode *dnas_node = new DNASNode(move(nodes), innovation_number, node_type, depth);
+        DNASNode *dnas_node = new DNASNode(move(nodes), innovation_number, node_type, depth, counter);
         dnas_node->set_pi(pi);
         node = (RNN_Node_Interface *) dnas_node;
     } else {
@@ -3743,7 +3745,7 @@ void RNN_Genome::transfer_to(const vector<string> &new_input_parameter_names, co
 }
 
 void RNN_Genome::set_stochastic(bool stochastic) {
-    for (auto node : nodes)
-        if (DNASNode *node = dynamic_cast<DNASNode *>(node); node != nullptr)
+    for (RNN_Node_Interface *n : nodes)
+        if (DNASNode *node = dynamic_cast<DNASNode *>(n); node != nullptr)
             node->set_stochastic(stochastic);
 }
