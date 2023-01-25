@@ -1,29 +1,27 @@
 #include <cmath>
-//using std::isnan;
-//using std::isinf;
+// using std::isnan;
+// using std::isinf;
 
 #include <chrono>
-
 #include <cstdio>
-
 #include <fstream>
-using std::ofstream;
 using std::ifstream;
 using std::ios;
 using std::ios_base;
+using std::ofstream;
 
 #include <iomanip>
 using std::defaultfloat;
 using std::hexfloat;
-using std::setw;
 using std::setprecision;
+using std::setw;
 
 #include <iostream>
-using std::cout;
 using std::cerr;
+using std::cout;
 using std::endl;
-using std::ostream;
 using std::istream;
+using std::ostream;
 
 #include <limits>
 using std::numeric_limits;
@@ -36,8 +34,8 @@ using std::uniform_real_distribution;
 using std::runtime_error;
 
 #include <sstream>
-using std::ostringstream;
 using std::istringstream;
+using std::ostringstream;
 
 #include <string>
 using std::string;
@@ -45,26 +43,25 @@ using std::string;
 #include <vector>
 using std::vector;
 
-#include "image_tools/image_set.hxx"
-#include "common/random.hxx"
-#include "common/exp.hxx"
-#include "comparison.hxx"
-#include "cnn_genome.hxx"
 #include "cnn_edge.hxx"
+#include "cnn_genome.hxx"
 #include "cnn_node.hxx"
-
+#include "common/exp.hxx"
+#include "common/random.hxx"
+#include "comparison.hxx"
+#include "image_tools/image_set.hxx"
 #include "stdint.h"
 
 float read_hexfloat(istream &infile) {
 #ifdef _WIN32
-	float result;
-	infile >> std::hexfloat >> result >> std::defaultfloat;
-	return result;
+    float result;
+    infile >> std::hexfloat >> result >> std::defaultfloat;
+    return result;
 #else
     string s;
     infile >> s;
 
-    //cout << "read hexfloat: '" << s << "'" << endl;
+    // cout << "read hexfloat: '" << s << "'" << endl;
 
     if (s.compare("-nan(ind)") == 0 || s.compare("-nan") == 0 || s.compare("nan(ind)") == 0 || s.compare("nan") == 0) {
         return EXACT_MAX_FLOAT;
@@ -197,7 +194,7 @@ CNN_Node::CNN_Node(int _node_id) {
 
         type = atoi(row[++column]);
 
-        //need to reset these because it will be modified when edges are set
+        // need to reset these because it will be modified when edges are set
         total_inputs = 0;
         inputs_fired = 0;
 
@@ -235,7 +232,7 @@ CNN_Node::CNN_Node(int _node_id) {
 
     weight_count = 0;
 
-    //initialize arrays not stored to database
+    // initialize arrays not stored to database
     values_in = new float[total_size]();
     errors_in = new float[total_size]();
 
@@ -244,8 +241,8 @@ CNN_Node::CNN_Node(int _node_id) {
     relu_gradients = new float[total_size]();
     pool_gradients = new float[total_size]();
 
-    //cout << "read node!" << endl;
-    //cout << this << endl;
+    // cout << "read node!" << endl;
+    // cout << this << endl;
 }
 
 void CNN_Node::export_to_database(int _exact_id, int _genome_id) {
@@ -254,7 +251,7 @@ void CNN_Node::export_to_database(int _exact_id, int _genome_id) {
     exact_id = _exact_id;
     genome_id = _genome_id;
 
-    //cout << "inserting node with exact_id: " << exact_id << " and genome id: " << genome_id << endl;
+    // cout << "inserting node with exact_id: " << exact_id << " and genome id: " << genome_id << endl;
 
     if (node_id >= 0) {
         query << "REPLACE INTO cnn_node SET id = " << node_id << ",";
@@ -262,20 +259,12 @@ void CNN_Node::export_to_database(int _exact_id, int _genome_id) {
         query << "INSERT INTO cnn_node SET";
     }
 
-    query << " exact_id = " << exact_id
-        << ", genome_id = " << genome_id
-        << ", innovation_number = " << innovation_number
-        << ", depth = " << depth
-        << ", batch_size = " << batch_size
-        << ", size_x = " << size_x
-        << ", size_y = " << size_y
-        << ", type = " << type
-        << ", forward_visited = " << forward_visited
-        << ", reverse_visited = " << reverse_visited
-        << ", weight_count = " << weight_count
-        << ", needs_initialization = " << needs_initialization
-        << ", disabled = " << disabled
-        << ", batch_norm_parameters = '";
+    query << " exact_id = " << exact_id << ", genome_id = " << genome_id
+          << ", innovation_number = " << innovation_number << ", depth = " << depth << ", batch_size = " << batch_size
+          << ", size_x = " << size_x << ", size_y = " << size_y << ", type = " << type
+          << ", forward_visited = " << forward_visited << ", reverse_visited = " << reverse_visited
+          << ", weight_count = " << weight_count << ", needs_initialization = " << needs_initialization
+          << ", disabled = " << disabled << ", batch_norm_parameters = '";
 
     write_hexfloat(query, gamma);
     query << " ";
@@ -302,26 +291,24 @@ void CNN_Node::export_to_database(int _exact_id, int _genome_id) {
 
     if (node_id < 0) {
         node_id = mysql_exact_last_insert_id();
-        //cout << "set node id to: " << node_id << endl;
+        // cout << "set node id to: " << node_id << endl;
     }
 }
 
-int CNN_Node::get_node_id() const {
-    return node_id;
-}
+int CNN_Node::get_node_id() const { return node_id; }
 #endif
 
 CNN_Node::~CNN_Node() {
-    delete [] values_out;
-    delete [] errors_out;
-    delete [] relu_gradients;
-    delete [] pool_gradients;
+    delete[] values_out;
+    delete[] errors_out;
+    delete[] relu_gradients;
+    delete[] pool_gradients;
 
-    delete [] values_in;
-    delete [] errors_in;
+    delete[] values_in;
+    delete[] errors_in;
 }
 
-CNN_Node* CNN_Node::copy() const {
+CNN_Node *CNN_Node::copy() const {
     CNN_Node *copy = new CNN_Node();
 
     copy->node_id = -1;
@@ -336,10 +323,10 @@ CNN_Node* CNN_Node::copy() const {
 
     copy->type = type;
 
-    copy->total_inputs = 0; //this will be updated when edges are set
+    copy->total_inputs = 0;  // this will be updated when edges are set
     copy->inputs_fired = inputs_fired;
 
-    copy->total_outputs = 0; //this will be updated when edges are set
+    copy->total_outputs = 0;  // this will be updated when edges are set
     copy->outputs_fired = outputs_fired;
 
     copy->forward_visited = forward_visited;
@@ -382,26 +369,22 @@ CNN_Node* CNN_Node::copy() const {
     return copy;
 }
 
-bool CNN_Node::needs_init() const {
-    return needs_initialization;
-}
+bool CNN_Node::needs_init() const { return needs_initialization; }
 
-void CNN_Node::reset_weight_count() {
-    weight_count = 0;
-}
+void CNN_Node::reset_weight_count() { weight_count = 0; }
 
 void CNN_Node::initialize() {
     gamma = 1.0;
     beta = 0.0;
     needs_initialization = false;
 
-    delete [] values_in;
-    delete [] errors_in;
+    delete[] values_in;
+    delete[] errors_in;
 
-    delete [] values_out;
-    delete [] errors_out;
-    delete [] relu_gradients;
-    delete [] pool_gradients;
+    delete[] values_out;
+    delete[] errors_out;
+    delete[] relu_gradients;
+    delete[] pool_gradients;
 
     values_in = new float[total_size]();
     errors_in = new float[total_size]();
@@ -419,73 +402,39 @@ void CNN_Node::reset_velocities() {
 
 void CNN_Node::add_weight_count(int _weight_count) {
     weight_count += _weight_count;
-    
-    //cerr << "node " << innovation_number << " setting weight count to: " << weight_count << endl;
+
+    // cerr << "node " << innovation_number << " setting weight count to: " << weight_count << endl;
 }
 
-int CNN_Node::get_weight_count() const {
-    return weight_count;
-}
+int CNN_Node::get_weight_count() const { return weight_count; }
 
-bool CNN_Node::is_fixed() const {
-    return type != INPUT_NODE && type != OUTPUT_NODE && type != SOFTMAX_NODE;
-}
+bool CNN_Node::is_fixed() const { return type != INPUT_NODE && type != OUTPUT_NODE && type != SOFTMAX_NODE; }
 
-bool CNN_Node::is_hidden() const {
-    return type == HIDDEN_NODE;
-}
+bool CNN_Node::is_hidden() const { return type == HIDDEN_NODE; }
 
+bool CNN_Node::is_input() const { return type == INPUT_NODE; }
 
-bool CNN_Node::is_input() const {
-    return type == INPUT_NODE;
-}
+bool CNN_Node::is_output() const { return type == OUTPUT_NODE; }
 
+bool CNN_Node::is_enabled() const { return disabled == false; }
 
-bool CNN_Node::is_output() const {
-    return type == OUTPUT_NODE;
-}
+bool CNN_Node::is_disabled() const { return disabled == true; }
 
+void CNN_Node::disable() { disabled = true; }
 
-bool CNN_Node::is_enabled() const {
-    return disabled == false;
-}
+void CNN_Node::enable() { disabled = false; }
 
-bool CNN_Node::is_disabled() const {
-    return disabled == true;
-}
+bool CNN_Node::is_softmax() const { return type == SOFTMAX_NODE; }
 
-void CNN_Node::disable() {
-    disabled = true;
-}
+bool CNN_Node::is_reachable() const { return !disabled && forward_visited && reverse_visited; }
 
-void CNN_Node::enable() {
-    disabled = false;
-}
+bool CNN_Node::is_forward_visited() const { return forward_visited; }
 
-bool CNN_Node::is_softmax() const {
-    return type == SOFTMAX_NODE;
-}
+bool CNN_Node::is_reverse_visited() const { return reverse_visited; }
 
+void CNN_Node::forward_visit() { forward_visited = true; }
 
-bool CNN_Node::is_reachable() const {
-    return !disabled && forward_visited && reverse_visited;
-}
-
-bool CNN_Node::is_forward_visited() const {
-    return forward_visited;
-}
-
-bool CNN_Node::is_reverse_visited() const {
-    return reverse_visited;
-}
-
-void CNN_Node::forward_visit() {
-    forward_visited = true;
-}
-
-void CNN_Node::reverse_visit() {
-    reverse_visited = true;
-}
+void CNN_Node::reverse_visit() { reverse_visited = true; }
 
 void CNN_Node::set_unvisited() {
     total_inputs = 0;
@@ -494,44 +443,35 @@ void CNN_Node::set_unvisited() {
     reverse_visited = false;
 }
 
-int CNN_Node::get_batch_size() const {
-    return batch_size;
-}
+int CNN_Node::get_batch_size() const { return batch_size; }
 
 bool CNN_Node::vectors_correct() const {
     if (total_size != batch_size * size_y * size_x) {
         cerr << "ERROR! vectors incorrect on node " << innovation_number << endl;
-        cerr << "total_size: " << total_size << " and batch size: " << batch_size << ", size_y: " << size_y << ", size_x: " << size_x << endl;
+        cerr << "total_size: " << total_size << " and batch size: " << batch_size << ", size_y: " << size_y
+             << ", size_x: " << size_x << endl;
         return false;
     }
 
     return true;
 }
 
-int CNN_Node::get_size_x() const {
-    return size_x;
-}
+int CNN_Node::get_size_x() const { return size_x; }
 
-int CNN_Node::get_size_y() const {
-    return size_y;
-}
+int CNN_Node::get_size_y() const { return size_y; }
 
-int CNN_Node::get_innovation_number() const {
-    return innovation_number;
-}
+int CNN_Node::get_innovation_number() const { return innovation_number; }
 
-float CNN_Node::get_depth() const {
-    return depth;
-}
+float CNN_Node::get_depth() const { return depth; }
 
 void CNN_Node::resize_arrays() {
-    delete [] values_in;
-    delete [] errors_in;
+    delete[] values_in;
+    delete[] errors_in;
 
-    delete [] values_out;
-    delete [] errors_out;
-    delete [] relu_gradients;
-    delete [] pool_gradients;
+    delete[] values_out;
+    delete[] errors_out;
+    delete[] relu_gradients;
+    delete[] pool_gradients;
 
     values_in = new float[total_size]();
     errors_in = new float[total_size]();
@@ -544,65 +484,51 @@ void CNN_Node::resize_arrays() {
     needs_initialization = true;
 }
 
-
 float CNN_Node::get_value_in(int batch_number, int y, int x) {
     return values_in[(batch_number * size_y * size_x) + (size_x * y) + x];
-    //return values_in[batch_number][y][x];
+    // return values_in[batch_number][y][x];
 }
 
 void CNN_Node::set_value_in(int batch_number, int y, int x, float value) {
     values_in[(batch_number * size_y * size_x) + (size_x * y) + x] = value;
-    //values_in[batch_number][y][x] = value;
+    // values_in[batch_number][y][x] = value;
 }
 
-float* CNN_Node::get_values_in() {
-    return values_in;
-}
+float *CNN_Node::get_values_in() { return values_in; }
 
 float CNN_Node::get_value_out(int batch_number, int y, int x) {
     return values_out[(batch_number * size_y * size_x) + (size_x * y) + x];
-    //return values_out[batch_number][y][x];
+    // return values_out[batch_number][y][x];
 }
 
 void CNN_Node::set_value_out(int batch_number, int y, int x, float value) {
     values_out[(batch_number * size_y * size_x) + (size_x * y) + x] = value;
-    //values_out[batch_number][y][x] = value;
+    // values_out[batch_number][y][x] = value;
 }
 
-float* CNN_Node::get_values_out() {
-    return values_out;
-}
-
+float *CNN_Node::get_values_out() { return values_out; }
 
 void CNN_Node::set_error_in(int batch_number, int y, int x, float error) {
     errors_in[(batch_number * size_y * size_x) + (size_x * y) + x] = error;
-    //errors_in[batch_number][y][x] = error;
+    // errors_in[batch_number][y][x] = error;
 }
 
-float* CNN_Node::get_errors_in() {
-    return errors_in;
-}
+float *CNN_Node::get_errors_in() { return errors_in; }
 
 void CNN_Node::set_error_out(int batch_number, int y, int x, float error) {
     errors_out[(batch_number * size_y * size_x) + (size_x * y) + x] = error;
-    //errors_out[batch_number][y][x] = error;
+    // errors_out[batch_number][y][x] = error;
 }
 
-float* CNN_Node::get_errors_out() {
-    return errors_out;
-}
+float *CNN_Node::get_errors_out() { return errors_out; }
 
-float* CNN_Node::get_relu_gradients() {
-    return relu_gradients;
-}
+float *CNN_Node::get_relu_gradients() { return relu_gradients; }
 
-float* CNN_Node::get_pool_gradients() {
-    return pool_gradients;
-}
-
+float *CNN_Node::get_pool_gradients() { return pool_gradients; }
 
 void CNN_Node::print(ostream &out) {
-    out << "CNN_Node " << innovation_number << ", at depth: " << depth << " of input size x: " << size_x << ", y: " << size_y << endl;
+    out << "CNN_Node " << innovation_number << ", at depth: " << depth << " of input size x: " << size_x
+        << ", y: " << size_y << endl;
 
     for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
         out << "    batch_number: " << batch_number << endl;
@@ -701,7 +627,6 @@ void CNN_Node::reset() {
     }
 }
 
-
 void CNN_Node::save_best_weights() {
     best_gamma = gamma;
     best_beta = beta;
@@ -729,7 +654,7 @@ bool CNN_Node::modify_size_x(int change) {
 
     size_x += change;
 
-    //make sure the size doesn't drop below 1
+    // make sure the size doesn't drop below 1
     if (size_x <= 0) size_x = 1;
     if (size_x == previous_size_x) return false;
 
@@ -744,7 +669,7 @@ bool CNN_Node::modify_size_y(int change) {
 
     size_y += change;
 
-    //make sure the size doesn't drop below 1
+    // make sure the size doesn't drop below 1
     if (size_y <= 0) size_y = 1;
     if (size_y == previous_size_y) return false;
 
@@ -756,39 +681,31 @@ bool CNN_Node::modify_size_y(int change) {
 
 void CNN_Node::add_input() {
     total_inputs++;
-    //cout << "\t\tadding input on node: " << innovation_number << ", total inputs: " << total_inputs << endl;
+    // cout << "\t\tadding input on node: " << innovation_number << ", total inputs: " << total_inputs << endl;
 }
 
 void CNN_Node::disable_input() {
     total_inputs--;
-    //cout << "\t\tdisabling input on node: " << innovation_number << ", total inputs: " << total_inputs << endl;
+    // cout << "\t\tdisabling input on node: " << innovation_number << ", total inputs: " << total_inputs << endl;
 }
 
-int CNN_Node::get_number_inputs() const {
-    return total_inputs;
-}
+int CNN_Node::get_number_inputs() const { return total_inputs; }
 
-int CNN_Node::get_inputs_fired() const {
-    return inputs_fired;
-}
+int CNN_Node::get_inputs_fired() const { return inputs_fired; }
 
 void CNN_Node::add_output() {
     total_outputs++;
-    //cout << "\t\tadding output on node: " << innovation_number << ", total outputs: " << total_outputs << endl;
+    // cout << "\t\tadding output on node: " << innovation_number << ", total outputs: " << total_outputs << endl;
 }
 
 void CNN_Node::disable_output() {
     total_outputs--;
-    //cout << "\t\tdisabling output on node: " << innovation_number << ", total outputs: " << total_outputs << endl;
+    // cout << "\t\tdisabling output on node: " << innovation_number << ", total outputs: " << total_outputs << endl;
 }
 
-int CNN_Node::get_number_outputs() const {
-    return total_outputs;
-}
+int CNN_Node::get_number_outputs() const { return total_outputs; }
 
-int CNN_Node::get_outputs_fired() const {
-    return outputs_fired;
-}
+int CNN_Node::get_outputs_fired() const { return outputs_fired; }
 
 void CNN_Node::zero_test_statistics() {
     if (type == INPUT_NODE || type == SOFTMAX_NODE) return;
@@ -798,30 +715,30 @@ void CNN_Node::zero_test_statistics() {
 }
 
 void CNN_Node::divide_test_statistics(int number_batches) {
-    if ( !(type == INPUT_NODE || type == SOFTMAX_NODE)) {
+    if (!(type == INPUT_NODE || type == SOFTMAX_NODE)) {
         running_mean /= number_batches;
         running_variance /= number_batches;
     }
 
-    cout << "node " << innovation_number << ", final test statistics, running_mean: " << running_mean << ", best_running_mean: " << best_running_mean << ", running_variance: " << running_variance << ", best_running_variance: " << best_running_variance << endl;
+    cout << "node " << innovation_number << ", final test statistics, running_mean: " << running_mean
+         << ", best_running_mean: " << best_running_mean << ", running_variance: " << running_variance
+         << ", best_running_variance: " << best_running_variance << endl;
 }
 
 void CNN_Node::print_batch_statistics() {
-    cerr << "batch_mean: " << batch_mean << ", running_mean: " << running_mean << ", batch_variance: " << batch_variance << ", running_variance: " << running_variance << ", gamma: " << gamma << ", beta: " << beta << endl;
+    cerr << "batch_mean: " << batch_mean << ", running_mean: " << running_mean << ", batch_variance: " << batch_variance
+         << ", running_variance: " << running_variance << ", gamma: " << gamma << ", beta: " << beta << endl;
 }
 
-
 void CNN_Node::batch_normalize(bool training, bool accumulating_test_statistics, float epsilon, float alpha) {
-    //normalize the batch
+    // normalize the batch
     if (training || accumulating_test_statistics) {
         batch_mean = 0.0;
 
-        //cout << "pre-batch normalization on node: " << innovation_number << endl;
+        // cout << "pre-batch normalization on node: " << innovation_number << endl;
 
-        for (int32_t current = 0; current < total_size; current++) {
-            batch_mean += values_in[current];
-        }
-        batch_mean /= (uint64_t)batch_size * (uint64_t)size_y * (uint64_t)size_x;
+        for (int32_t current = 0; current < total_size; current++) { batch_mean += values_in[current]; }
+        batch_mean /= (uint64_t) batch_size * (uint64_t) size_y * (uint64_t) size_x;
 
         batch_variance = 0.0;
         float diff;
@@ -829,23 +746,24 @@ void CNN_Node::batch_normalize(bool training, bool accumulating_test_statistics,
             diff = values_in[current] - batch_mean;
             batch_variance += diff * diff;
         }
-        batch_variance /= (uint64_t)batch_size * (uint64_t)size_y * (uint64_t)size_x;
+        batch_variance /= (uint64_t) batch_size * (uint64_t) size_y * (uint64_t) size_x;
 
         batch_std_dev = exact_sqrt(batch_variance + epsilon);
 
         inverse_variance = 1.0 / batch_std_dev;
 
-        //cout << endl;
-        //cout << "post-batch normalization on node: " << innovation_number << endl;
+        // cout << endl;
+        // cout << "post-batch normalization on node: " << innovation_number << endl;
         float temp;
         for (int32_t current = 0; current < total_size; current++) {
             temp = (values_in[current] - batch_mean) * inverse_variance;
-            values_in[current] = temp;   //values in becomes x_hat
+            values_in[current] = temp;  // values in becomes x_hat
             values_out[current] = (gamma * temp) + beta;
         }
 
 #ifdef NAN_CHECKS
-        if (std::isnan(batch_mean) || std::isinf(batch_mean) || std::isnan(batch_variance) || std::isinf(batch_variance)) {
+        if (std::isnan(batch_mean) || std::isinf(batch_mean) || std::isnan(batch_variance) ||
+            std::isinf(batch_variance)) {
             cerr << "ERROR! NAN or INF batch_mean or batch_variance on node " << innovation_number << "!" << endl;
             cerr << "gamma: " << gamma << ", beta: " << beta << endl;
 
@@ -870,19 +788,22 @@ void CNN_Node::batch_normalize(bool training, bool accumulating_test_statistics,
         if (accumulating_test_statistics) {
             running_mean += batch_mean;
             running_variance += batch_variance;
-            //running_mean = (batch_mean * alpha) + ((1.0 - alpha) * running_mean);
-            //running_variance = (batch_variance * alpha) + ((1.0 - alpha) * running_variance);
- 
-            //cout << "node " << innovation_number << " accumulating test statistics, batch_mean: " << batch_mean << ", batch_variance: " << batch_variance << endl;
+            // running_mean = (batch_mean * alpha) + ((1.0 - alpha) * running_mean);
+            // running_variance = (batch_variance * alpha) + ((1.0 - alpha) * running_variance);
+
+            // cout << "node " << innovation_number << " accumulating test statistics, batch_mean: " << batch_mean << ",
+            // batch_variance: " << batch_variance << endl;
         } else {
             running_mean = (batch_mean * alpha) + ((1.0 - alpha) * running_mean);
             running_variance = (batch_variance * alpha) + ((1.0 - alpha) * running_variance);
         }
 
-        //cout << "\tnode " << innovation_number << ", batch_mean: " << batch_mean << ", batch_variance: " << batch_variance << ", batch_std_dev: " << batch_std_dev << ", running_mean: " << running_mean << ", running_variance: " << running_variance << endl;
+        // cout << "\tnode " << innovation_number << ", batch_mean: " << batch_mean << ", batch_variance: " <<
+        // batch_variance << ", batch_std_dev: " << batch_std_dev << ", running_mean: " << running_mean << ",
+        // running_variance: " << running_variance << endl;
 
-    } else { //testing
-        float term1 =  gamma / exact_sqrt(running_variance + epsilon);
+    } else {  // testing
+        float term1 = gamma / exact_sqrt(running_variance + epsilon);
         float term2 = beta - ((gamma * running_mean) / exact_sqrt(running_variance + epsilon));
 
         for (int32_t current = 0; current < total_size; current++) {
@@ -891,7 +812,8 @@ void CNN_Node::batch_normalize(bool training, bool accumulating_test_statistics,
 #ifdef NAN_CHECKS
             if (std::isnan(values_out[current]) || std::isinf(values_out[current])) {
                 cerr << "ERROR! NAN or INF batch_mean or batch_variance on node " << innovation_number << "!" << endl;
-                cerr << "values_out[" << current << "]: " << values_out[current] << ", values_in[" << current << "]: " << values_in[current] << endl;
+                cerr << "values_out[" << current << "]: " << values_out[current] << ", values_in[" << current
+                     << "]: " << values_in[current] << endl;
                 cerr << "gamma: " << gamma << ", beta: " << beta << endl;
                 cerr << "term1: " << term1 << ", term2: " << term2 << endl;
 
@@ -910,32 +832,34 @@ void CNN_Node::batch_normalize(bool training, bool accumulating_test_statistics,
                 throw runtime_error("batch_normalize resulted in NAN or INF when calculating values_out");
             }
 #endif
-
         }
     }
 }
 
-void CNN_Node::apply_relu(float* values, float* gradients) {
+void CNN_Node::apply_relu(float *values, float *gradients) {
     for (int32_t current = 0; current < total_size; current++) {
-        //cout << "values_out for node " << innovation_number << " now " << values_out[batch_number][y][x] << " after adding bias: " << bias[batch_number][y][x] << endl;
+        // cout << "values_out for node " << innovation_number << " now " << values_out[batch_number][y][x] << " after
+        // adding bias: " << bias[batch_number][y][x] << endl;
 
-        //apply activation function
+        // apply activation function
         if (values[current] <= RELU_MIN) {
             values[current] = values[current] * RELU_MIN_LEAK;
-            gradients[current] = RELU_MIN_LEAK; 
+            gradients[current] = RELU_MIN_LEAK;
         } else if (values[current] > RELU_MAX) {
             values[current] = RELU_MAX;
-            gradients[current] = RELU_MAX_LEAK; 
+            gradients[current] = RELU_MAX_LEAK;
         } else {
             gradients[current] = 1.0;
         }
     }
 }
 
-void CNN_Node::apply_dropout(float* values, float* gradients, bool perform_dropout, bool accumulate_test_statistics, float dropout_probability, minstd_rand0 &generator) {
+void CNN_Node::apply_dropout(float *values, float *gradients, bool perform_dropout, bool accumulate_test_statistics,
+                             float dropout_probability, minstd_rand0 &generator) {
     if (perform_dropout && !accumulate_test_statistics) {
         for (int32_t current = 0; current < total_size; current++) {
-            //cout << "values for node " << innovation_number << " now " << values[batch_number][y][x] << " after adding bias: " << bias[batch_number][y][x] << endl;
+            // cout << "values for node " << innovation_number << " now " << values[batch_number][y][x] << " after
+            // adding bias: " << bias[batch_number][y][x] << endl;
 
             if (random_0_1(generator) < dropout_probability) {
                 values[current] = 0.0;
@@ -945,31 +869,26 @@ void CNN_Node::apply_dropout(float* values, float* gradients, bool perform_dropo
 
     } else {
         float dropout_scale = 1.0 - dropout_probability;
-        for (int32_t current = 0; current < total_size; current++) {
-            values[current] *= dropout_scale;
-        }
+        for (int32_t current = 0; current < total_size; current++) { values[current] *= dropout_scale; }
     }
 }
 
-void CNN_Node::backpropagate_relu(float* errors, float* gradients) {
-    for (int32_t current = 0; current < total_size; current++) {
-        errors[current] *= gradients[current];
-    }
+void CNN_Node::backpropagate_relu(float *errors, float *gradients) {
+    for (int32_t current = 0; current < total_size; current++) { errors[current] *= gradients[current]; }
 }
-
 
 void CNN_Node::backpropagate_batch_normalization(bool training, float mu, float learning_rate, float epsilon) {
-    //backprop  batch normalization here
+    // backprop  batch normalization here
     float delta_beta = 0.0;
     float delta_gamma = 0.0;
 
     float value_in;
     float value_hat;
-    //float value_out;
+    // float value_out;
     float delta_out;
-    //float delta_values_hat;
-    //float delta_values_hat_sum = 0.0;
-    //float delta_values_hat_x_values_sum = 0.0;
+    // float delta_values_hat;
+    // float delta_values_hat_sum = 0.0;
+    // float delta_values_hat_x_values_sum = 0.0;
 
     float derr_dvariance = 0.0;
     float derr_dmean = 0.0;
@@ -977,7 +896,7 @@ void CNN_Node::backpropagate_batch_normalization(bool training, float mu, float 
     float derr_dmean_term1 = 0.0;
     float derr_dmean_term2 = 0.0;
 
-    float m = (uint64_t)batch_size * (uint64_t)size_y * (uint64_t)size_x;
+    float m = (uint64_t) batch_size * (uint64_t) size_y * (uint64_t) size_x;
     float diff;
 
     for (int32_t current = 0; current < total_size; current++) {
@@ -1001,7 +920,7 @@ void CNN_Node::backpropagate_batch_normalization(bool training, float mu, float 
 
     float bv_pow_32 = -0.5 / (batch_std_dev * batch_std_dev * batch_std_dev);
 
-    //derr_dvariance *= -0.5 * pow(batch_variance + epsilon, -1.5);
+    // derr_dvariance *= -0.5 * pow(batch_variance + epsilon, -1.5);
     derr_dvariance *= bv_pow_32;
 
     derr_dmean_term1 *= -inverse_variance;
@@ -1013,8 +932,8 @@ void CNN_Node::backpropagate_batch_normalization(bool training, float mu, float 
         value_hat = values_in[current];
         value_in = (value_hat + batch_mean) * batch_std_dev;
 
-        errors_in[current] = (delta_out * inverse_variance) + (derr_dvariance * inv_m_x_2 * (value_in - batch_mean)) + (derr_dmean * inv_m);
-
+        errors_in[current] = (delta_out * inverse_variance) + (derr_dvariance * inv_m_x_2 * (value_in - batch_mean)) +
+                             (derr_dmean * inv_m);
 
 #ifdef NAN_CHECKS
         if (std::isnan(errors_in[current]) || std::isinf(errors_in[current])) {
@@ -1032,7 +951,8 @@ void CNN_Node::backpropagate_batch_normalization(bool training, float mu, float 
             cerr << "values_in[" << current << "]: " << values_in[current] << endl;
 
             for (int32_t current = 0; current < total_size; current++) {
-                cout << "errors_out[" << current << "]: " << errors_out[current] << ", values_in[" << current << "]: " << values_in[current] << endl;
+                cout << "errors_out[" << current << "]: " << errors_out[current] << ", values_in[" << current
+                     << "]: " << values_in[current] << endl;
             }
 
             throw runtime_error("backpropagate_batch_normalization resulted in NAN or INF");
@@ -1041,15 +961,15 @@ void CNN_Node::backpropagate_batch_normalization(bool training, float mu, float 
     }
 
     if (training) {
-        //backpropagate beta
+        // backpropagate beta
         float pv_beta = previous_velocity_beta;
 
         float velocity_beta = (mu * pv_beta) - (learning_rate / batch_size) * delta_beta;
         beta += velocity_beta + mu * (velocity_beta - pv_beta);
-        //beta += velocity_beta;
+        // beta += velocity_beta;
 
-        //beta += (-mu * pv_beta + (1 + mu) * velocity_beta);
-        //beta -= (beta * weight_decay);
+        // beta += (-mu * pv_beta + (1 + mu) * velocity_beta);
+        // beta -= (beta * weight_decay);
 
         previous_velocity_beta = velocity_beta;
 
@@ -1063,14 +983,14 @@ void CNN_Node::backpropagate_batch_normalization(bool training, float mu, float 
             previous_velocity_beta = 0.0;
         }
 
-        //backpropagate gamma
+        // backpropagate gamma
         float pv_gamma = previous_velocity_gamma;
 
         float velocity_gamma = (mu * pv_gamma) - (learning_rate / batch_size) * delta_gamma;
-        //gamma += velocity_gamma;
+        // gamma += velocity_gamma;
         gamma += velocity_gamma + mu * (velocity_gamma - pv_gamma);
-        //gamma += (-mu * pv_gamma + (1 + mu) * velocity_gamma);
-        //gamma -= (gamma * weight_decay);
+        // gamma += (-mu * pv_gamma + (1 + mu) * velocity_gamma);
+        // gamma -= (gamma * weight_decay);
 
         previous_velocity_gamma = velocity_gamma;
 
@@ -1085,31 +1005,37 @@ void CNN_Node::backpropagate_batch_normalization(bool training, float mu, float 
         }
     }
 
-    //cout << "\tnode " << innovation_number << ", delta_gamma: " << delta_gamma << ", delta_beta: " << delta_beta << ", gamma now: " << gamma << ", beta now: " << beta << endl;
+    // cout << "\tnode " << innovation_number << ", delta_gamma: " << delta_gamma << ", delta_beta: " << delta_beta <<
+    // ", gamma now: " << gamma << ", beta now: " << beta << endl;
 }
 
-
-void CNN_Node::set_values(const ImagesInterface &images, const vector<int> &batch, int channel, bool perform_dropout, bool accumulate_test_statistics, float input_dropout_probability, minstd_rand0 &generator) {
-    //images.size() may be less than batch size, in the case when the total number of images is not divisible by the batch_size
+void CNN_Node::set_values(const ImagesInterface &images, const vector<int> &batch, int channel, bool perform_dropout,
+                          bool accumulate_test_statistics, float input_dropout_probability, minstd_rand0 &generator) {
+    // images.size() may be less than batch size, in the case when the total number of images is not divisible by the
+    // batch_size
     if (batch.size() > batch_size) {
         ostringstream error_message;
-        error_message << "ERROR: number of batch images: " << batch.size() << " > batch_size of input node: " << batch_size << endl;
+        error_message << "ERROR: number of batch images: " << batch.size()
+                      << " > batch_size of input node: " << batch_size << endl;
         throw runtime_error(error_message.str());
     }
 
     if (images.get_image_height() != size_y) {
         ostringstream error_message;
-        error_message << "ERROR: height of input image: " << images.get_image_height() << " != size_y of input node: " << size_y << endl;
+        error_message << "ERROR: height of input image: " << images.get_image_height()
+                      << " != size_y of input node: " << size_y << endl;
         throw runtime_error(error_message.str());
     }
 
     if (images.get_image_width() != size_x) {
         ostringstream error_message;
-        error_message << "ERROR: width of input image: " << images.get_image_width() << " != size_x of input node: " << size_x << endl;
+        error_message << "ERROR: width of input image: " << images.get_image_width()
+                      << " != size_x of input node: " << size_x << endl;
         throw runtime_error(error_message.str());
     }
 
-    //images.size() may be less than batch size, in the case when the total number of images is not divisible by the batch_size
+    // images.size() may be less than batch size, in the case when the total number of images is not divisible by the
+    // batch_size
     int current = 0;
     for (int32_t batch_number = 0; batch_number < batch.size(); batch_number++) {
         for (int32_t y = 0; y < size_y; y++) {
@@ -1120,24 +1046,28 @@ void CNN_Node::set_values(const ImagesInterface &images, const vector<int> &batc
         }
     }
 
-    if (input_dropout_probability > 0) apply_dropout(values_out, relu_gradients, perform_dropout, accumulate_test_statistics, input_dropout_probability, generator);
+    if (input_dropout_probability > 0)
+        apply_dropout(values_out, relu_gradients, perform_dropout, accumulate_test_statistics,
+                      input_dropout_probability, generator);
 }
 
-
-void CNN_Node::input_fired(bool training, bool accumulate_test_statistics, float epsilon, float alpha, bool perform_dropout, float hidden_dropout_probability, minstd_rand0 &generator) {
-
+void CNN_Node::input_fired(bool training, bool accumulate_test_statistics, float epsilon, float alpha,
+                           bool perform_dropout, float hidden_dropout_probability, minstd_rand0 &generator) {
     using namespace std::chrono;
     high_resolution_clock::time_point input_fired_start_time = high_resolution_clock::now();
 
     inputs_fired++;
 
-    //cout << "input fired on node: " << innovation_number << ", inputs fired: " << inputs_fired << ", total_inputs: " << total_inputs << endl;
+    // cout << "input fired on node: " << innovation_number << ", inputs fired: " << inputs_fired << ", total_inputs: "
+    // << total_inputs << endl;
 
     if (inputs_fired == total_inputs) {
         if (type != SOFTMAX_NODE) {
             apply_relu(values_in, relu_gradients);
 
-            if (hidden_dropout_probability > 0) apply_dropout(values_in, relu_gradients, perform_dropout, accumulate_test_statistics, hidden_dropout_probability, generator);
+            if (hidden_dropout_probability > 0)
+                apply_dropout(values_in, relu_gradients, perform_dropout, accumulate_test_statistics,
+                              hidden_dropout_probability, generator);
 
             batch_normalize(training, accumulate_test_statistics, epsilon, alpha);
         }
@@ -1164,10 +1094,10 @@ void CNN_Node::output_fired(bool training, float mu, float learning_rate, float 
     using namespace std::chrono;
     high_resolution_clock::time_point output_fired_start_time = high_resolution_clock::now();
 
-
     outputs_fired++;
 
-    //cout << "output fired on node: " << innovation_number << ", outputs fired: " << outputs_fired << ", total_outputs: " << total_outputs << endl;
+    // cout << "output fired on node: " << innovation_number << ", outputs fired: " << outputs_fired << ",
+    // total_outputs: " << total_outputs << endl;
 
     if (outputs_fired == total_outputs) {
         if (type != SOFTMAX_NODE && type != INPUT_NODE) {
@@ -1187,13 +1117,11 @@ void CNN_Node::output_fired(bool training, float mu, float learning_rate, float 
         throw runtime_error("Error in output fired, outputs_fired > total_outputs");
     }
 
-
     high_resolution_clock::time_point output_fired_end_time = high_resolution_clock::now();
     duration<float, std::milli> time_span = output_fired_end_time - output_fired_start_time;
 
     output_fired_time += time_span.count() / 1000.0;
 }
-
 
 bool CNN_Node::has_nan() const {
     for (int32_t current = 0; current < total_size; current++) {
@@ -1218,10 +1146,13 @@ void CNN_Node::print_statistics() {
     print_statistics(values_out, errors_out, relu_gradients);
 }
 
-void CNN_Node::print_statistics(const float* values, const float* errors, const float* gradients) {
-    float value_min = std::numeric_limits<float>::max(), value_max = -std::numeric_limits<float>::max(), value_avg = 0.0;
-    float error_min = std::numeric_limits<float>::max(), error_max = -std::numeric_limits<float>::max(), error_avg = 0.0;
-    float gradient_min = std::numeric_limits<float>::max(), gradient_max = -std::numeric_limits<float>::max(), gradient_avg = 0.0;
+void CNN_Node::print_statistics(const float *values, const float *errors, const float *gradients) {
+    float value_min = std::numeric_limits<float>::max(), value_max = -std::numeric_limits<float>::max(),
+          value_avg = 0.0;
+    float error_min = std::numeric_limits<float>::max(), error_max = -std::numeric_limits<float>::max(),
+          error_avg = 0.0;
+    float gradient_min = std::numeric_limits<float>::max(), gradient_max = -std::numeric_limits<float>::max(),
+          gradient_avg = 0.0;
 
     for (int32_t current = 0; current < total_size; current++) {
         if (values[current] < value_min) value_min = values[current];
@@ -1242,11 +1173,12 @@ void CNN_Node::print_statistics(const float* values, const float* errors, const 
     value_avg /= batch_size * size_y * size_x;
 
     cerr << "v_min: " << value_min << ", v_avg: " << value_avg << ", v_max: " << value_max;
-    cerr << ", gradient_min: " << gradient_min << ", gradient_avg: " << gradient_avg << ", gradient_max: " << gradient_max << endl;
+    cerr << ", gradient_min: " << gradient_min << ", gradient_avg: " << gradient_avg
+         << ", gradient_max: " << gradient_max << endl;
     cerr << ", error_min: " << error_min << ", error_avg: " << error_avg << ", error_max: " << error_max << endl;
 }
 
-ostream &operator<<(ostream &os, const CNN_Node* node) {
+ostream &operator<<(ostream &os, const CNN_Node *node) {
     os << node->node_id << " ";
     os << node->exact_id << " ";
     os << node->genome_id << " ";
@@ -1292,7 +1224,7 @@ ostream &operator<<(ostream &os, const CNN_Node* node) {
     return os;
 }
 
-std::istream &operator>>(std::istream &is, CNN_Node* node) {
+std::istream &operator>>(std::istream &is, CNN_Node *node) {
     is >> node->node_id;
     is >> node->exact_id;
     is >> node->genome_id;
@@ -1353,7 +1285,6 @@ std::istream &operator>>(std::istream &is, CNN_Node* node) {
     return is;
 }
 
-
 bool CNN_Node::is_identical(const CNN_Node *other, bool testing_checkpoint) {
     if (are_different("node_id", node_id, other->node_id)) return false;
     if (are_different("exact_id", exact_id, other->exact_id)) return false;
@@ -1372,7 +1303,7 @@ bool CNN_Node::is_identical(const CNN_Node *other, bool testing_checkpoint) {
     if (are_different("type", type, other->type)) return false;
 
     if (are_different("total_inputs", total_inputs, other->total_inputs)) return false;
-    //if (are_different("inputs_fired", inputs_fired, other->inputs_fired)) return false;
+    // if (are_different("inputs_fired", inputs_fired, other->inputs_fired)) return false;
 
     if (are_different("total_outputs", total_outputs, other->total_outputs)) return false;
     if (are_different("outputs_fired", outputs_fired, other->outputs_fired)) return false;
@@ -1391,11 +1322,11 @@ bool CNN_Node::is_identical(const CNN_Node *other, bool testing_checkpoint) {
     if (are_different("best_beta", best_beta, other->best_beta)) return false;
     if (are_different("previous_velocity_beta", previous_velocity_beta, other->previous_velocity_beta)) return false;
 
-    //these are all reset and recalculated on each batch
-    //if (are_different("batch_mean", batch_mean, other->batch_mean)) return false;
-    //if (are_different("batch_variance", batch_variance, other->batch_variance)) return false;
-    //if (are_different("batch_std_dev", batch_std_dev, other->batch_std_dev)) return false;
-    //if (are_different("inverse_variance", inverse_variance, other->inverse_variance)) return false;
+    // these are all reset and recalculated on each batch
+    // if (are_different("batch_mean", batch_mean, other->batch_mean)) return false;
+    // if (are_different("batch_variance", batch_variance, other->batch_variance)) return false;
+    // if (are_different("batch_std_dev", batch_std_dev, other->batch_std_dev)) return false;
+    // if (are_different("inverse_variance", inverse_variance, other->inverse_variance)) return false;
 
     if (are_different("running_mean", running_mean, other->running_mean)) return false;
     if (are_different("best_running_mean", best_running_mean, other->best_running_mean)) return false;
@@ -1403,9 +1334,8 @@ bool CNN_Node::is_identical(const CNN_Node *other, bool testing_checkpoint) {
     if (are_different("running_variance", running_variance, other->running_variance)) return false;
     if (are_different("best_running_variance", best_running_variance, other->best_running_variance)) return false;
 
-    //values, errors_out, relu_gradients, pool_gradients, values_in, errors_in, input_fired_time and output_fired time
-    //are all reset to 0 before every pass so don't need to be compared
+    // values, errors_out, relu_gradients, pool_gradients, values_in, errors_in, input_fired_time and output_fired time
+    // are all reset to 0 before every pass so don't need to be compared
 
     return true;
 }
-

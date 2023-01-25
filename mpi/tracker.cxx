@@ -1,5 +1,4 @@
 #include <cmath>
-
 #include <vector>
 using std::vector;
 
@@ -23,23 +22,17 @@ void Tracker::track(double value) {
     values.push_back(value);
 }
 
-double Tracker::min() const {
-    return _min;
-}
+double Tracker::min() const { return _min; }
 
-double Tracker::max() const {
-    return _max;
-}
+double Tracker::max() const { return _max; }
 
-double Tracker::avg() const {
-    return sum / count;
-}
+double Tracker::avg() const { return sum / count; }
 
 double Tracker::stddev() {
     double _avg = avg();
     double _stddev = 0;
 
-    for (int32_t i = 0; i < (int32_t)values.size(); i++) {
+    for (int32_t i = 0; i < (int32_t) values.size(); i++) {
         double tmp = (values[i] - _avg);
         _stddev += tmp * tmp;
     }
@@ -58,7 +51,7 @@ double Tracker::correlate(Tracker &other) {
 
     double correlation = 0.0;
 
-    for (int32_t i = 0; i < (int32_t)values.size(); i++) {
+    for (int32_t i = 0; i < (int32_t) values.size(); i++) {
         correlation += (values[i] - avg1) * (other.values[i] - avg2);
     }
 
@@ -66,4 +59,3 @@ double Tracker::correlate(Tracker &other) {
 
     return correlation;
 }
-

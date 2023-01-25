@@ -28,5 +28,8 @@ target_link_libraries(test_enarc_gradients examm_strategy exact_common exact_tim
 add_executable(test_random_dag_gradients test_random_dag_gradients.cxx gradient_test.cxx)
 target_link_libraries(test_random_dag_gradients examm_strategy exact_common exact_time_series exact_weights examm_nn  ${MYSQL_LIBRARIES} pthread)
 
+add_executable(test_dnas_gradients test_dnas_gradients.cxx gradient_test.cxx)
+target_link_libraries(test_dnas_gradients examm_strategy exact_common exact_time_series exact_weights examm_nn ${MYSQL_LIBRARIES} pthread)
+
 add_executable(test_enas_dag_gradients test_enas_dag_gradients.cxx gradient_test.cxx)
 target_link_libraries(test_enas_dag_gradients examm_strategy exact_common exact_time_series exact_weights examm_nn  ${MYSQL_LIBRARIES} pthread)

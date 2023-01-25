@@ -34,9 +34,7 @@
 #include <cmath>
 #include <cstdlib>
 #include <cstring>
-
 #include <fstream>
-
 #include <string>
 using std::string;
 using std::to_string;
@@ -50,35 +48,33 @@ using std::ostringstream;
 #include <vector>
 using std::vector;
 
-//for boinc
+// for boinc
+#include "backend_lib.h"
 #include "boinc_db.h"
 #include "diagnostics.h"
 #include "error_numbers.h"
-#include "backend_lib.h"
 #include "parse.h"
-#include "util.h"
-#include "svn_version.h"
-
 #include "sched_config.h"
-#include "sched_util.h"
 #include "sched_msgs.h"
+#include "sched_util.h"
 #include "str_util.h"
+#include "svn_version.h"
+#include "util.h"
 
-//for mysql
-#include "mysql.h"
-
+// for mysql
+#include "cnn/exact.hxx"
 #include "common/arguments.hxx"
 #include "common/db_conn.hxx"
 #include "image_tools/image_set.hxx"
-#include "cnn/exact.hxx"
+#include "mysql.h"
 #include "server/make_jobs.hxx"
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
     vector<string> arguments = vector<string>(argv, argv + argc);
 
     string db_file;
     get_argument(arguments, "--db_file", true, db_file);
-    set_db_info_filename(db_file);                                                                                   
+    set_db_info_filename(db_file);
 
     string app_name;
     get_argument(arguments, "--app", true, app_name);
@@ -92,17 +88,17 @@ int main(int argc, char** argv) {
     log_messages.set_debug_level(debug_level);
     if (debug_level == 4) g_print_queries = true;
 
-    //if at any time the retval value is greater than 0, then the program
-    //has failed in some manner, and the program then exits.
+    // if at any time the retval value is greater than 0, then the program
+    // has failed in some manner, and the program then exits.
 
-    //processing project's config file.
+    // processing project's config file.
     int retval = config.parse_file();
     if (retval) {
         log_messages.printf(MSG_CRITICAL, "Can't parse config.xml: %s\n", boincerror(retval));
         exit(1);
     }
 
-    //opening connection to database.
+    // opening connection to database.
     retval = boinc_db.open(config.db_name, config.db_host, config.db_user, config.db_passwd);
     if (retval) {
         log_messages.printf(MSG_CRITICAL, "can't open db\n");
@@ -111,7 +107,7 @@ int main(int argc, char** argv) {
 
     init_work_generation(app_name);
 
-    //initialize the EXACT algorithm
+    // initialize the EXACT algorithm
     int population_size = 100;
     get_argument(arguments, "--population_size", true, population_size);
 
@@ -124,13 +120,11 @@ int main(int argc, char** argv) {
     bool use_node_operations = true;
     get_argument(arguments, "--use_node_operations", true, use_node_operations);
 
-
     int max_genomes = 1000000;
     get_argument(arguments, "--max_genomes", true, max_genomes);
 
     bool reset_edges = false;
     get_argument(arguments, "--reset_edges", true, reset_edges);
-
 
     string output_directory = "/projects/csg/exact_data/" + search_name;
 
@@ -152,7 +146,8 @@ int main(int argc, char** argv) {
     Images validation_images(validation_file, padding, training_images.get_average(), training_images.get_std_dev());
     Images testing_images(testing_file, padding, training_images.get_average(), training_images.get_std_dev());
 
-    EXACT *exact = new EXACT(training_images, validation_images, testing_images, padding, population_size, max_epochs, use_sfmp, use_node_operations, max_genomes, output_directory, search_name, reset_edges);
+    EXACT *exact = new EXACT(training_images, validation_images, testing_images, padding, population_size, max_epochs,
+                             use_sfmp, use_node_operations, max_genomes, output_directory, search_name, reset_edges);
 
     exact->export_to_database();
 
@@ -164,9 +159,8 @@ int main(int argc, char** argv) {
 
     make_jobs(exact, WORKUNITS_TO_GENERATE);
 
-    //export the search and all generated genomes to the database
+    // export the search and all generated genomes to the database
     exact->export_to_database();
 
     return 0;
 }
-

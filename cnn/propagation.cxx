@@ -1,7 +1,7 @@
-#include "stdint.h"
 #include <cmath>
-
 #include <iostream>
+
+#include "stdint.h"
 using std::cerr;
 using std::endl;
 
@@ -10,7 +10,9 @@ using std::vector;
 
 #include "propagation.hxx"
 
-void prop_forward(const float* input, const float* weights, float* output, int32_t batch_size, int32_t input_size_y, int32_t input_size_x, int32_t filter_y, int32_t filter_x, int32_t output_size_y, int32_t output_size_x) {
+void prop_forward(const float *input, const float *weights, float *output, int32_t batch_size, int32_t input_size_y,
+                  int32_t input_size_x, int32_t filter_y, int32_t filter_x, int32_t output_size_y,
+                  int32_t output_size_x) {
     int current_weight, current_output, current_input;
 
     int output_image_size = output_size_y * output_size_x;
@@ -42,7 +44,8 @@ void prop_forward(const float* input, const float* weights, float* output, int32
 #ifdef NAN_CHECKS
                         if (isnan(output[current_output - 1]) || isinf(output[current_output - 1])) {
                             cerr << "ERROR! NAN or INF in propagate forward" << endl;
-                            cerr << "previous_output: " << previous_output << ", output: " << output[current_output - 1] << endl;
+                            cerr << "previous_output: " << previous_output << ", output: " << output[current_output - 1]
+                                 << endl;
                             cerr << "weight: " << weight << ", input: " << input[current_input - 1] << endl;
                             exit(1);
                         }
@@ -55,13 +58,14 @@ void prop_forward(const float* input, const float* weights, float* output, int32
     }
 }
 
-
-void prop_forward_ry(const float* input, const float* weights, float* output, int32_t batch_size, int32_t input_size_y, int32_t input_size_x, int32_t filter_y, int32_t filter_x, int32_t output_size_y, int32_t output_size_x) {
+void prop_forward_ry(const float *input, const float *weights, float *output, int32_t batch_size, int32_t input_size_y,
+                     int32_t input_size_x, int32_t filter_y, int32_t filter_x, int32_t output_size_y,
+                     int32_t output_size_x) {
     int current_weight, current_output, current_input;
 
     int output_image_size = output_size_y * output_size_x;
     int input_image_size = input_size_y * input_size_x;
-    //int width_difference = input_size_x - output_size_x;
+    // int width_difference = input_size_x - output_size_x;
 
     for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
         current_weight = 0;
@@ -83,12 +87,14 @@ void prop_forward_ry(const float* input, const float* weights, float* output, in
     }
 }
 
-void prop_forward_rx(const float* input, const float* weights, float* output, int32_t batch_size, int32_t input_size_y, int32_t input_size_x, int32_t filter_y, int32_t filter_x, int32_t output_size_y, int32_t output_size_x) {
+void prop_forward_rx(const float *input, const float *weights, float *output, int32_t batch_size, int32_t input_size_y,
+                     int32_t input_size_x, int32_t filter_y, int32_t filter_x, int32_t output_size_y,
+                     int32_t output_size_x) {
     int current_weight, current_output, current_input;
 
     int output_image_size = output_size_y * output_size_x;
     int input_image_size = input_size_y * input_size_x;
-    //int width_difference = input_size_x - output_size_x;
+    // int width_difference = input_size_x - output_size_x;
 
     for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
         current_weight = 0;
@@ -111,13 +117,14 @@ void prop_forward_rx(const float* input, const float* weights, float* output, in
     }
 }
 
-
-void prop_forward_ry_rx(const float* input, const float* weights, float* output, int32_t batch_size, int32_t input_size_y, int32_t input_size_x, int32_t filter_y, int32_t filter_x, int32_t output_size_y, int32_t output_size_x) {
+void prop_forward_ry_rx(const float *input, const float *weights, float *output, int32_t batch_size,
+                        int32_t input_size_y, int32_t input_size_x, int32_t filter_y, int32_t filter_x,
+                        int32_t output_size_y, int32_t output_size_x) {
     int current_weight, current_output, current_input;
 
     int output_image_size = output_size_y * output_size_x;
     int input_image_size = input_size_y * input_size_x;
-    //int width_difference = input_size_x - output_size_x;
+    // int width_difference = input_size_x - output_size_x;
 
     for (int32_t batch_number = 0; batch_number < batch_size; batch_number++) {
         current_weight = 0;
@@ -139,8 +146,9 @@ void prop_forward_ry_rx(const float* input, const float* weights, float* output,
     }
 }
 
-
-void prop_backward(float* output_errors, float* input, float* input_errors, float* weight_updates, float* weights, int32_t batch_size, int32_t input_size_y, int32_t input_size_x, int32_t filter_y, int32_t filter_x, int32_t output_size_y, int32_t output_size_x) {
+void prop_backward(float *output_errors, float *input, float *input_errors, float *weight_updates, float *weights,
+                   int32_t batch_size, int32_t input_size_y, int32_t input_size_x, int32_t filter_y, int32_t filter_x,
+                   int32_t output_size_y, int32_t output_size_x) {
     int current_weight, current_output, current_input;
 
     int output_image_size = output_size_y * output_size_x;
@@ -177,7 +185,9 @@ void prop_backward(float* output_errors, float* input, float* input_errors, floa
     }
 }
 
-void prop_backward_ry(float* output_errors, float* input, float* input_errors, float* weight_updates, float* weights, int32_t batch_size, int32_t input_size_y, int32_t input_size_x, int32_t filter_y, int32_t filter_x, int32_t output_size_y, int32_t output_size_x) {
+void prop_backward_ry(float *output_errors, float *input, float *input_errors, float *weight_updates, float *weights,
+                      int32_t batch_size, int32_t input_size_y, int32_t input_size_x, int32_t filter_y,
+                      int32_t filter_x, int32_t output_size_y, int32_t output_size_x) {
     int current_weight, current_output, current_input;
 
     int output_image_size = output_size_y * output_size_x;
@@ -210,7 +220,9 @@ void prop_backward_ry(float* output_errors, float* input, float* input_errors, f
     }
 }
 
-void prop_backward_rx(float* output_errors, float* input, float* input_errors, float* weight_updates, float* weights, int32_t batch_size, int32_t input_size_y, int32_t input_size_x, int32_t filter_y, int32_t filter_x, int32_t output_size_y, int32_t output_size_x) {
+void prop_backward_rx(float *output_errors, float *input, float *input_errors, float *weight_updates, float *weights,
+                      int32_t batch_size, int32_t input_size_y, int32_t input_size_x, int32_t filter_y,
+                      int32_t filter_x, int32_t output_size_y, int32_t output_size_x) {
     int current_weight, current_output, current_input;
 
     int output_image_size = output_size_y * output_size_x;
@@ -243,7 +255,9 @@ void prop_backward_rx(float* output_errors, float* input, float* input_errors, f
     }
 }
 
-void prop_backward_ry_rx(float* output_errors, float* input, float* input_errors, float* weight_updates, float* weights, int32_t batch_size, int32_t input_size_y, int32_t input_size_x, int32_t filter_y, int32_t filter_x, int32_t output_size_y, int32_t output_size_x) {
+void prop_backward_ry_rx(float *output_errors, float *input, float *input_errors, float *weight_updates, float *weights,
+                         int32_t batch_size, int32_t input_size_y, int32_t input_size_x, int32_t filter_y,
+                         int32_t filter_x, int32_t output_size_y, int32_t output_size_x) {
     int current_weight, current_output, current_input;
 
     int output_image_size = output_size_y * output_size_x;
@@ -278,7 +292,6 @@ void prop_backward_ry_rx(float* output_errors, float* input, float* input_errors
 
 #ifdef PROPAGATE_TEST
 int main(int argc, char **argv) {
-    //make tests for the 8 convolve operations
-
+    // make tests for the 8 convolve operations
 }
 #endif
