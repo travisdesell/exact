@@ -18,11 +18,10 @@ using std::vector;
 #include "common/db_conn.hxx"
 #endif
 
-#include "cnn/exact.hxx"
-#include "cnn/cnn_genome.hxx"
 #include "cnn/cnn_edge.hxx"
+#include "cnn/cnn_genome.hxx"
 #include "cnn/cnn_node.hxx"
-
+#include "cnn/exact.hxx"
 #include "image_tools/image_set.hxx"
 
 int main(int argc, char **argv) {
@@ -45,11 +44,12 @@ int main(int argc, char **argv) {
     CNN_Genome *genome_from_checkpoint = new CNN_Genome("temp_genome.txt", true);
 
     Images training_images(training_data, genome_from_file->get_padding());
-    Images testing_images(testing_data, genome_from_file->get_padding(), training_images.get_average(), training_images.get_std_dev());
+    Images testing_images(testing_data, genome_from_file->get_padding(), training_images.get_average(),
+                          training_images.get_std_dev());
 
     float error;
     int predictions;
-    //genome->evaluate(training_images, error, predictions);
+    // genome->evaluate(training_images, error, predictions);
 
     if (!genome_from_file->is_identical(genome_from_checkpoint, true)) {
         cerr << "ERROR! genome from file and genome from database were not identical!" << endl;
@@ -73,5 +73,4 @@ int main(int argc, char **argv) {
     query << "DELETE FROM cnn_edge WHERE genome_id = " << genome_id << endl;
     mysql_exact_query(query.str());
     */
-
 }

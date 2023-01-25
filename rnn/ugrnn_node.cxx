@@ -1,5 +1,4 @@
 #include <cmath>
-
 #include <fstream>
 using std::ostream;
 
@@ -16,25 +15,23 @@ using std::uniform_real_distribution;
 #include <vector>
 using std::vector;
 
-#include "common/random.hxx"
 #include "common/log.hxx"
-
-#include "rnn_node_interface.hxx"
+#include "common/random.hxx"
 #include "mse.hxx"
+#include "rnn_node_interface.hxx"
 #include "ugrnn_node.hxx"
-
 
 #define NUMBER_UGRNN_WEIGHTS 6
 
-UGRNN_Node::UGRNN_Node(int32_t _innovation_number, int32_t _type, double _depth) : RNN_Node_Interface(_innovation_number, _type, _depth) {
+UGRNN_Node::UGRNN_Node(int32_t _innovation_number, int32_t _type, double _depth)
+    : RNN_Node_Interface(_innovation_number, _type, _depth) {
     node_type = UGRNN_NODE;
 }
 
-UGRNN_Node::~UGRNN_Node() {
-}
+UGRNN_Node::~UGRNN_Node() {}
 
-void UGRNN_Node::initialize_lamarckian(minstd_rand0 &generator, NormalDistribution &normal_distribution, double mu, double sigma) {
-
+void UGRNN_Node::initialize_lamarckian(minstd_rand0 &generator, NormalDistribution &normal_distribution, double mu,
+                                       double sigma) {
     cw = bound(normal_distribution.random(generator, mu, sigma));
     ch = bound(normal_distribution.random(generator, mu, sigma));
     c_bias = bound(normal_distribution.random(generator, mu, sigma));
@@ -45,7 +42,6 @@ void UGRNN_Node::initialize_lamarckian(minstd_rand0 &generator, NormalDistributi
 }
 
 void UGRNN_Node::initialize_xavier(minstd_rand0 &generator, uniform_real_distribution<double> &rng_1_1, double range) {
-
     cw = range * (rng_1_1(generator));
     ch = range * (rng_1_1(generator));
     c_bias = range * (rng_1_1(generator));
@@ -55,7 +51,7 @@ void UGRNN_Node::initialize_xavier(minstd_rand0 &generator, uniform_real_distrib
     g_bias = range * (rng_1_1(generator));
 }
 
-void UGRNN_Node::initialize_kaiming(minstd_rand0 &generator, NormalDistribution &normal_distribution, double range){
+void UGRNN_Node::initialize_kaiming(minstd_rand0 &generator, NormalDistribution &normal_distribution, double range) {
     cw = range * normal_distribution.random(generator, 0, 1);
     ch = range * normal_distribution.random(generator, 0, 1);
     c_bias = range * normal_distribution.random(generator, 0, 1);
@@ -78,7 +74,7 @@ void UGRNN_Node::initialize_uniform_random(minstd_rand0 &generator, uniform_real
 double UGRNN_Node::get_gradient(string gradient_name) {
     double gradient_sum = 0.0;
 
-    for (int32_t i = 0; i < series_length; i++ ) {
+    for (int32_t i = 0; i < series_length; i++) {
         if (gradient_name == "cw") {
             gradient_sum += d_cw[i];
         } else if (gradient_name == "ch") {
@@ -109,14 +105,16 @@ void UGRNN_Node::input_fired(int32_t time, double incoming_output) {
 
     input_values[time] += incoming_output;
 
-    if (inputs_fired[time] < total_inputs) return;
+    if (inputs_fired[time] < total_inputs)
+        return;
     else if (inputs_fired[time] > total_inputs) {
-        Log::fatal("ERROR: inputs_fired on UGRNN_Node %d at time %d is %d and total_inputs is %d\n", innovation_number, time, inputs_fired[time], total_inputs);
+        Log::fatal("ERROR: inputs_fired on UGRNN_Node %d at time %d is %d and total_inputs is %d\n", innovation_number,
+                   time, inputs_fired[time], total_inputs);
         exit(1);
     }
 
-    //update the reset gate bias so its centered around 1
-    //g_bias += 1;
+    // update the reset gate bias so its centered around 1
+    // g_bias += 1;
 
     double x = input_values[time];
 
@@ -138,20 +136,22 @@ void UGRNN_Node::input_fired(int32_t time, double incoming_output) {
 
     output_values[time] = (g[time] * h_prev) + ((1 - g[time]) * c[time]);
 
-    //reset alpha, beta1, beta2 so they don't mess with mean/stddev calculations for
-    //parameter generation
-    //g_bias -= 1.0;
+    // reset alpha, beta1, beta2 so they don't mess with mean/stddev calculations for
+    // parameter generation
+    // g_bias -= 1.0;
 }
 
 void UGRNN_Node::try_update_deltas(int32_t time) {
-    if (outputs_fired[time] < total_outputs) return;
+    if (outputs_fired[time] < total_outputs)
+        return;
     else if (outputs_fired[time] > total_outputs) {
-        Log::fatal("ERROR: outputs_fired on UGRNN_Node %d at time %d is %d and total_outputs is %d\n", innovation_number, time, outputs_fired[time], total_outputs);
+        Log::fatal("ERROR: outputs_fired on UGRNN_Node %d at time %d is %d and total_outputs is %d\n",
+                   innovation_number, time, outputs_fired[time], total_outputs);
         exit(1);
     }
 
-    //update the reset gate bias so its centered around 1   
-    //g_bias += 1.0;
+    // update the reset gate bias so its centered around 1
+    // g_bias += 1.0;
 
     double error = error_values[time];
     double x = input_values[time];
@@ -159,11 +159,11 @@ void UGRNN_Node::try_update_deltas(int32_t time) {
     double h_prev = 0.0;
     if (time > 0) h_prev = output_values[time - 1];
 
-    //backprop output gate
+    // backprop output gate
     double d_h = error;
     if (time < (series_length - 1)) d_h += d_h_prev[time + 1];
-    //get the error into the output (z), it's the error from ahead in the network
-    //as well as from the previous output of the cell
+    // get the error into the output (z), it's the error from ahead in the network
+    // as well as from the previous output of the cell
 
     d_h_prev[time] = d_h * g[time];
 
@@ -184,8 +184,8 @@ void UGRNN_Node::try_update_deltas(int32_t time) {
     d_ch[time] = d_c * h_prev;
     d_h_prev[time] += d_c * ch;
 
-    //reset the reset gate bias to be around 0
-    //g_bias -= 1.0;
+    // reset the reset gate bias to be around 0
+    // g_bias -= 1.0;
 }
 
 void UGRNN_Node::error_fired(int32_t time, double error) {
@@ -204,10 +204,7 @@ void UGRNN_Node::output_fired(int32_t time, double delta) {
     try_update_deltas(time);
 }
 
-
-int32_t UGRNN_Node::get_number_weights() const {
-    return NUMBER_UGRNN_WEIGHTS;
-}
+int32_t UGRNN_Node::get_number_weights() const { return NUMBER_UGRNN_WEIGHTS; }
 
 void UGRNN_Node::get_weights(vector<double> &parameters) const {
     parameters.resize(get_number_weights());
@@ -220,9 +217,8 @@ void UGRNN_Node::set_weights(const vector<double> &parameters) {
     set_weights(offset, parameters);
 }
 
-
 void UGRNN_Node::set_weights(int32_t &offset, const vector<double> &parameters) {
-    //int32_t start_offset = offset;
+    // int32_t start_offset = offset;
 
     cw = bound(parameters[offset++]);
     ch = bound(parameters[offset++]);
@@ -232,12 +228,12 @@ void UGRNN_Node::set_weights(int32_t &offset, const vector<double> &parameters) 
     gh = bound(parameters[offset++]);
     g_bias = bound(parameters[offset++]);
 
-    //int32_t end_offset = offset;
-    //Log::debug("set weights from offset %d to %d on UGRNN_Node %d\n", start_offset, end_offset, innovation_number);
+    // int32_t end_offset = offset;
+    // Log::debug("set weights from offset %d to %d on UGRNN_Node %d\n", start_offset, end_offset, innovation_number);
 }
 
 void UGRNN_Node::get_weights(int32_t &offset, vector<double> &parameters) const {
-    //int32_t start_offset = offset;
+    // int32_t start_offset = offset;
 
     parameters[offset++] = cw;
     parameters[offset++] = ch;
@@ -247,17 +243,14 @@ void UGRNN_Node::get_weights(int32_t &offset, vector<double> &parameters) const 
     parameters[offset++] = gh;
     parameters[offset++] = g_bias;
 
-    //int32_t end_offset = offset;
-    //Log::debug("got weights from offset %d to %d on UGRNN_Node %d\n", start_offset, end_offset, innovation_number);
+    // int32_t end_offset = offset;
+    // Log::debug("got weights from offset %d to %d on UGRNN_Node %d\n", start_offset, end_offset, innovation_number);
 }
-
 
 void UGRNN_Node::get_gradients(vector<double> &gradients) {
     gradients.assign(NUMBER_UGRNN_WEIGHTS, 0.0);
 
-    for (int32_t i = 0; i < NUMBER_UGRNN_WEIGHTS; i++) {
-        gradients[i] = 0.0;
-    }
+    for (int32_t i = 0; i < NUMBER_UGRNN_WEIGHTS; i++) { gradients[i] = 0.0; }
 
     for (int32_t i = 0; i < series_length; i++) {
         gradients[0] += d_cw[i];
@@ -288,7 +281,7 @@ void UGRNN_Node::reset(int32_t _series_length) {
     g.assign(series_length, 0.0);
     ld_g.assign(series_length, 0.0);
 
-    //reset values from rnn_node_interface
+    // reset values from rnn_node_interface
     d_input.assign(series_length, 0.0);
     error_values.assign(series_length, 0.0);
 
@@ -299,10 +292,10 @@ void UGRNN_Node::reset(int32_t _series_length) {
     outputs_fired.assign(series_length, 0);
 }
 
-RNN_Node_Interface* UGRNN_Node::copy() const {
-    UGRNN_Node* n = new UGRNN_Node(innovation_number, layer_type, depth);
+RNN_Node_Interface *UGRNN_Node::copy() const {
+    UGRNN_Node *n = new UGRNN_Node(innovation_number, layer_type, depth);
 
-    //copy UGRNN_Node values
+    // copy UGRNN_Node values
     n->cw = cw;
     n->ch = ch;
     n->c_bias = c_bias;
@@ -324,7 +317,7 @@ RNN_Node_Interface* UGRNN_Node::copy() const {
     n->g = g;
     n->ld_g = ld_g;
 
-    //copy RNN_Node_Interface values
+    // copy RNN_Node_Interface values
     n->series_length = series_length;
     n->input_values = input_values;
     n->output_values = output_values;
@@ -342,7 +335,4 @@ RNN_Node_Interface* UGRNN_Node::copy() const {
     return n;
 }
 
-void UGRNN_Node::write_to_stream(ostream &out) {
-    RNN_Node_Interface::write_to_stream(out);
-}
-
+void UGRNN_Node::write_to_stream(ostream &out) { RNN_Node_Interface::write_to_stream(out); }

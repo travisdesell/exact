@@ -18,10 +18,10 @@ using std::vector;
 #include "common/db_conn.hxx"
 #endif
 
-#include "cnn/exact.hxx"
-#include "cnn/cnn_genome.hxx"
 #include "cnn/cnn_edge.hxx"
+#include "cnn/cnn_genome.hxx"
 #include "cnn/cnn_node.hxx"
+#include "cnn/exact.hxx"
 
 int main(int argc, char **argv) {
     vector<string> arguments = vector<string>(argv, argv + argc);
@@ -31,7 +31,6 @@ int main(int argc, char **argv) {
 
     string testing_data;
     get_argument(arguments, "--testing_data", true, testing_data);
-
 
 #ifdef _MYSQL_
     int genome_id = -1;
@@ -62,18 +61,18 @@ int main(int argc, char **argv) {
     }
 
     Images training_images(training_data, genome->get_padding());
-    Images testing_images(testing_data, genome->get_padding(), training_images.get_average(), training_images.get_std_dev());
+    Images testing_images(testing_data, genome->get_padding(), training_images.get_average(),
+                          training_images.get_std_dev());
 
     float error;
     int predictions;
-    //genome->evaluate(training_images, error, predictions);
+    // genome->evaluate(training_images, error, predictions);
 
     if (!genome->sanity_check(SANITY_CHECK_AFTER_GENERATION)) {
         cerr << "ERROR! genome failed sanity check! This should never happen!" << endl;
 
         exit(1);
-    }   
-
+    }
 
     genome->initialize();
     genome->set_to_best();
@@ -87,9 +86,9 @@ int main(int argc, char **argv) {
 #ifdef _MYSQL_
     if (genome_id >= 0 && argument_exists(arguments, "--update_database")) {
         ostringstream query;
-        query << "UPDATE cnn_genome SET test_error = " << error << ", test_predictions = " << predictions << " WHERE id = " << genome_id;
+        query << "UPDATE cnn_genome SET test_error = " << error << ", test_predictions = " << predictions
+              << " WHERE id = " << genome_id;
         mysql_exact_query(query.str());
     }
 #endif
-
 }

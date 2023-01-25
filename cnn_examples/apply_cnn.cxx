@@ -18,10 +18,10 @@ using std::vector;
 #include "common/db_conn.hxx"
 #endif
 
-#include "cnn/exact.hxx"
-#include "cnn/cnn_genome.hxx"
 #include "cnn/cnn_edge.hxx"
+#include "cnn/cnn_genome.hxx"
 #include "cnn/cnn_node.hxx"
+#include "cnn/exact.hxx"
 
 int main(int argc, char **argv) {
     vector<string> arguments = vector<string>(argv, argv + argc);
@@ -62,10 +62,10 @@ int main(int argc, char **argv) {
 
     LargeImages test_images(images_directory, genome->get_padding(), 32, 32);
 
-    //genome->initialize();
+    // genome->initialize();
     genome->set_to_best();
 
     cout << endl << "drawing image predictions." << endl;
-    //TODO: update to use prediction matrix
-    //genome->draw_predictions(test_images, output_directory);
+    // TODO: update to use prediction matrix
+    // genome->draw_predictions(test_images, output_directory);
 }

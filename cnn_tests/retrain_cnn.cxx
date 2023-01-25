@@ -18,10 +18,10 @@ using std::vector;
 #include "common/db_conn.hxx"
 #endif
 
-#include "cnn/exact.hxx"
-#include "cnn/cnn_genome.hxx"
 #include "cnn/cnn_edge.hxx"
+#include "cnn/cnn_genome.hxx"
 #include "cnn/cnn_node.hxx"
+#include "cnn/exact.hxx"
 
 int main(int argc, char **argv) {
     vector<string> arguments = vector<string>(argv, argv + argc);
@@ -34,7 +34,6 @@ int main(int argc, char **argv) {
 
     string testing_data;
     get_argument(arguments, "--testing_data", true, testing_data);
-
 
 #ifdef _MYSQL_
     int genome_id = -1;
@@ -65,13 +64,14 @@ int main(int argc, char **argv) {
     }
 
     Images training_images(training_data, genome->get_padding());
-    Images validation_images(validation_data, genome->get_padding(), training_images.get_average(), training_images.get_std_dev());
-    Images testing_images(testing_data, genome->get_padding(), training_images.get_average(), training_images.get_std_dev());
+    Images validation_images(validation_data, genome->get_padding(), training_images.get_average(),
+                             training_images.get_std_dev());
+    Images testing_images(testing_data, genome->get_padding(), training_images.get_average(),
+                          training_images.get_std_dev());
 
-    //cout << "number enabled edges: " << genome->get_number_enabled_edges();
-    //cout << "number enabled nodes: " << genome->get_number_enabled_edges();
+    // cout << "number enabled edges: " << genome->get_number_enabled_edges();
+    // cout << "number enabled nodes: " << genome->get_number_enabled_edges();
     cout << "number enabled weights: " << genome->get_number_weights() << endl;
-
 
     bool reset_weights = false;
     get_argument(arguments, "--reset_weights", true, reset_weights);
@@ -82,9 +82,9 @@ int main(int argc, char **argv) {
     genome->stochastic_backpropagation(training_images, validation_images);
     genome->evaluate_test(testing_images);
 
-    //genome->set_to_best();
-    //genome->evaluate(testing_images, error, predictions);
+    // genome->set_to_best();
+    // genome->evaluate(testing_images, error, predictions);
 
-    //cout << "test error: " << error << endl;
-    //cout << "test predictions " << predictions << endl;
+    // cout << "test error: " << error << endl;
+    // cout << "test predictions " << predictions << endl;
 }

@@ -12,16 +12,14 @@ using std::vector;
 
 #include "common/arguments.hxx"
 #include "common/log.hxx"
-
 #include "time_series/time_series.hxx"
-
 
 vector<string> arguments;
 
-vector< vector< vector<double> > > testing_inputs;
-vector< vector< vector<double> > > testing_outputs;
+vector<vector<vector<double> > > testing_inputs;
+vector<vector<vector<double> > > testing_outputs;
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
     arguments = vector<string>(argv, argv + argc);
 
     Log::initialize(arguments);
@@ -38,7 +36,6 @@ int main(int argc, char** argv) {
 
     string target_parameter_name;
     get_argument(arguments, "--target_parameter_name", true, target_parameter_name);
-
 
     vector<string> parameter_names = time_series_sets->get_input_parameter_names();
 
@@ -65,7 +62,7 @@ int main(int argc, char** argv) {
         ofstream correlations_csv(correlations_csv_filename);
         ofstream headers_txt(headers_txt_filename);
 
-        for (int32_t j = 0; j < (int32_t)parameter_names.size(); j++) {
+        for (int32_t j = 0; j < (int32_t) parameter_names.size(); j++) {
             if (parameter_names[j].compare(target_parameter_name) == 0) continue;
 
             for (int32_t k = 1; k < max_lag; k++) {

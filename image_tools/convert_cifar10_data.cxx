@@ -1,6 +1,5 @@
 #include <cstdio>
 #include <cstdlib>
-
 #include <iostream>
 using std::cout;
 using std::endl;
@@ -14,11 +13,12 @@ using std::vector;
 
 using namespace std;
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
     if (argc < 4) {
         cerr << "error: incorrect arguments." << endl;
         cerr << "usage: " << endl;
-        cerr << "    " << argv[0] << " <cifar 10 image files> <output file> <expected number of images per file>" << endl;
+        cerr << "    " << argv[0] << " <cifar 10 image files> <output file> <expected number of images per file>"
+             << endl;
         exit(1);
     }
 
@@ -27,7 +27,7 @@ int main(int argc, char** argv) {
         image_filenames.push_back(argv[i]);
         cout << "input files: " << image_filenames.back() << endl;
     }
-    
+
     string output_filename(argv[argc - 2]);
     int expected_images = stoi(argv[argc - 1]);
 
@@ -36,7 +36,7 @@ int main(int argc, char** argv) {
     int number_rows = 32;
     int number_cols = 32;
 
-    vector< vector < vector< vector< vector<char> > > > > images(number_labels);
+    vector<vector<vector<vector<vector<char> > > > > images(number_labels);
 
     unsigned char pixel;
     unsigned char label;
@@ -49,30 +49,29 @@ int main(int argc, char** argv) {
         }
 
         for (uint32_t i = 0; i < expected_images; i++) {
-            image_file.read( (char*)&label, sizeof(char) );
-            //cout << "label: " << (int)label << endl;
+            image_file.read((char *) &label, sizeof(char));
+            // cout << "label: " << (int)label << endl;
 
-            vector< vector < vector<char> > > image(3, vector< vector<char> >(32, vector<char> (32) ) );
+            vector<vector<vector<char> > > image(3, vector<vector<char> >(32, vector<char>(32)));
 
-            for (uint32_t z = 0; z < number_channels; z++) { 
+            for (uint32_t z = 0; z < number_channels; z++) {
                 for (uint32_t y = 0; y < number_cols; y++) {
                     for (uint32_t x = 0; x < number_rows; x++) {
-                        image_file.read( (char*)&pixel, sizeof(char) );
+                        image_file.read((char *) &pixel, sizeof(char));
 
                         image[z][y][x] = pixel;
                     }
                 }
             }
 
-            images[ (int)label ].push_back(image);
+            images[(int) label].push_back(image);
 
-            //char keystroke;
-            //cin >> keystroke;
+            // char keystroke;
+            // cin >> keystroke;
         }
 
         image_file.close();
     }
-
 
     ofstream outfile;
     outfile.open(output_filename.c_str(), ios::out | ios::binary);
@@ -91,7 +90,7 @@ int main(int argc, char** argv) {
     }
     cout << "read " << sum << " images in total" << endl;
 
-    outfile.write( (char*)&initial_vals[0], initial_vals.size() * sizeof(int) );
+    outfile.write((char *) &initial_vals[0], initial_vals.size() * sizeof(int));
 
     for (int i = 0; i < images.size(); i++) {
         for (int j = 0; j < images[i].size(); j++) {
@@ -102,13 +101,13 @@ int main(int argc, char** argv) {
                     for (int x = 0; x < number_rows; x++) {
                         pixel = images[i][j][z][y][x];
 
-                        outfile.write( (char*)&pixel, sizeof(char));
+                        outfile.write((char *) &pixel, sizeof(char));
 
-                        //cout << " " << (uint32_t)pixel;
+                        // cout << " " << (uint32_t)pixel;
                     }
-                    //cout << endl;
+                    // cout << endl;
                 }
-                //cout << endl;
+                // cout << endl;
             }
         }
         cout << "wrote " << images[i].size() << " images." << endl;
@@ -118,4 +117,3 @@ int main(int argc, char** argv) {
 
     return 0;
 }
-

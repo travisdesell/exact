@@ -1,6 +1,5 @@
 #include <cstdio>
 #include <cstdlib>
-
 #include <iostream>
 using std::cout;
 using std::endl;
@@ -25,23 +24,25 @@ void flip_bytes(char *bytes, size_t size) {
 
 uint32_t fread_uint32_t(ifstream &file, string filename, const char *name, uint32_t expected_value) {
     uint32_t value;
-    file.read( (char*)&value, sizeof(uint32_t) );
-    flip_bytes( (char*)&value, sizeof(uint32_t) );
+    file.read((char *) &value, sizeof(uint32_t));
+    flip_bytes((char *) &value, sizeof(uint32_t));
 
     cout << name << " is: " << value << endl;
     if (value != expected_value) {
-        cerr << "Error reading from image file '" << filename << "'. Invalid format, " << name << " != " << expected_value << endl;
+        cerr << "Error reading from image file '" << filename << "'. Invalid format, " << name
+             << " != " << expected_value << endl;
         exit(1);
     }
 
     return value;
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
     if (argc != 5) {
         cerr << "error: incorrect arguments." << endl;
         cerr << "usage: " << endl;
-        cerr << "    " << argv[0] << " <mnist image file> <mnist label file> <output file> <expected number of images>" << endl;
+        cerr << "    " << argv[0] << " <mnist image file> <mnist label file> <output file> <expected number of images>"
+             << endl;
         exit(1);
     }
 
@@ -53,13 +54,9 @@ int main(int argc, char** argv) {
     ifstream image_file(image_filename.c_str(), ios::in | ios::binary);
     ifstream label_file(label_filename.c_str(), ios::in | ios::binary);
 
-    if (!image_file.is_open()) {
-        cerr << "Could not open '" << image_filename << "' for reading." << endl;
-    }
+    if (!image_file.is_open()) { cerr << "Could not open '" << image_filename << "' for reading." << endl; }
 
-    if (!label_file.is_open()) {
-        cerr << "Could not open '" << label_filename << "' for reading." << endl;
-    }
+    if (!label_file.is_open()) { cerr << "Could not open '" << label_filename << "' for reading." << endl; }
 
     fread_uint32_t(image_file, image_filename, "image file magic number", 2051);
 
@@ -71,9 +68,9 @@ int main(int argc, char** argv) {
 
     uint32_t total_number_labels = fread_uint32_t(label_file, label_filename, "number labels", expected_images);
 
-
     if (number_images != total_number_labels) {
-        cerr << "ERROR! Number images (" << number_images << ") != number labels (" << total_number_labels << ")" << endl;
+        cerr << "ERROR! Number images (" << number_images << ") != number labels (" << total_number_labels << ")"
+             << endl;
         cerr << "make sure image and label files match!" << endl;
         exit(1);
     }
@@ -81,31 +78,32 @@ int main(int argc, char** argv) {
     uint32_t number_labels = 10;
     uint32_t number_channels = 1;
 
-    vector< vector< vector< vector< vector<char> > > > > images(number_labels);
+    vector<vector<vector<vector<vector<char> > > > > images(number_labels);
 
     unsigned char pixel;
     unsigned char label;
     for (uint32_t i = 0; i < number_images; i++) {
-        vector< vector< vector<char> > > image(number_channels, vector< vector<char> >(number_cols, vector<char>(number_rows, 0)));
+        vector<vector<vector<char> > > image(number_channels,
+                                             vector<vector<char> >(number_cols, vector<char>(number_rows, 0)));
 
         for (uint32_t z = 0; z < number_channels; z++) {
             for (uint32_t y = 0; y < number_cols; y++) {
                 for (uint32_t x = 0; x < number_rows; x++) {
-                    image_file.read( (char*)&pixel, sizeof(char) );
+                    image_file.read((char *) &pixel, sizeof(char));
 
-                    //pixel = 255 - pixel;
+                    // pixel = 255 - pixel;
                     image[z][y][x] = pixel;
                 }
             }
         }
 
-        label_file.read( (char*)&label, sizeof(char) );
-        cout << "label: " << (int)label << endl;
+        label_file.read((char *) &label, sizeof(char));
+        cout << "label: " << (int) label << endl;
 
-        images[ (int)label ].push_back(image);
+        images[(int) label].push_back(image);
 
-        //char keystroke;
-        //cin >> keystroke;
+        // char keystroke;
+        // cin >> keystroke;
     }
 
     image_file.close();
@@ -128,7 +126,7 @@ int main(int argc, char** argv) {
     }
     cout << "read " << sum << " images in total" << endl;
 
-    outfile.write( (char*)&initial_vals[0], initial_vals.size() * sizeof(int) );
+    outfile.write((char *) &initial_vals[0], initial_vals.size() * sizeof(int));
 
     for (int i = 0; i < images.size(); i++) {
         for (int j = 0; j < images[i].size(); j++) {
@@ -139,7 +137,7 @@ int main(int argc, char** argv) {
                     for (int x = 0; x < number_rows; x++) {
                         pixel = images[i][j][z][y][x];
 
-                        outfile.write( (char*)&pixel, sizeof(char));
+                        outfile.write((char *) &pixel, sizeof(char));
 
                         //                cout << " " << (uint32_t)pixel;
                     }
@@ -156,4 +154,3 @@ int main(int argc, char** argv) {
 
     return 0;
 }
-

@@ -1,9 +1,8 @@
 #include <chrono>
-
 #include <iomanip>
-using std::setw;
 using std::fixed;
 using std::setprecision;
+using std::setw;
 
 #include <mutex>
 using std::mutex;
@@ -17,17 +16,13 @@ using std::thread;
 #include <vector>
 using std::vector;
 
-#include "mpi.h"
-
 #include "common/process_arguments.hxx"
+#include "examm/examm.hxx"
+#include "mpi.h"
+#include "rnn/generate_nn.hxx"
+#include "time_series/time_series.hxx"
 #include "weights/weight_rules.hxx"
 #include "weights/weight_update.hxx"
-#include "rnn/generate_nn.hxx"
-#include "examm/examm.hxx"
-
-#include "examm/examm.hxx"
-
-#include "time_series/time_series.hxx"
 
 #define WORK_REQUEST_TAG 1
 #define GENOME_LENGTH_TAG 2
@@ -42,12 +37,12 @@ EXAMM *examm;
 
 bool finished = false;
 
-vector< vector< vector<double> > > training_inputs;
-vector< vector< vector<double> > > training_outputs;
-vector< vector< vector<double> > > validation_inputs;
-vector< vector< vector<double> > > validation_outputs;
+vector<vector<vector<double> > > training_inputs;
+vector<vector<vector<double> > > training_outputs;
+vector<vector<vector<double> > > validation_inputs;
+vector<vector<vector<double> > > validation_outputs;
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
     std::cout << "starting up!" << std::endl;
     MPI_Init(&argc, &argv);
     std::cout << "did mpi init!" << std::endl;
@@ -71,7 +66,8 @@ int main(int argc, char** argv) {
 
     TimeSeriesSets *time_series_sets = NULL;
     time_series_sets = TimeSeriesSets::generate_from_arguments(arguments);
-    get_train_validation_data(arguments, time_series_sets, training_inputs, training_outputs, validation_inputs, validation_outputs);
+    get_train_validation_data(arguments, time_series_sets, training_inputs, training_outputs, validation_inputs,
+                              validation_outputs);
 
     WeightUpdate *weight_update_method = new WeightUpdate();
     weight_update_method->generate_from_arguments(arguments);
@@ -82,9 +78,9 @@ int main(int argc, char** argv) {
     RNN_Genome *seed_genome = get_seed_genome(arguments, time_series_sets, weight_rules);
 
     if (rank == 0) {
-        //only have the master process print TSS info
+        // only have the master process print TSS info
         write_time_series_to_file(arguments, time_series_sets);
-    } 
+    }
     Log::clear_rank_restriction();
 
     examm = generate_examm_from_arguments(arguments, time_series_sets, weight_rules, seed_genome);
@@ -94,7 +90,6 @@ int main(int argc, char** argv) {
     int32_t length;
 
     genome->write_to_array(&byte_array, length);
-
 
     Log::debug("write to array successful!\n");
 

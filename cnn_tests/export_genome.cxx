@@ -12,14 +12,12 @@ using std::string;
 #include <vector>
 using std::vector;
 
+#include "cnn/cnn_edge.hxx"
+#include "cnn/cnn_genome.hxx"
+#include "cnn/cnn_node.hxx"
+#include "cnn/exact.hxx"
 #include "common/arguments.hxx"
 #include "common/db_conn.hxx"
-
-
-#include "cnn/exact.hxx"
-#include "cnn/cnn_genome.hxx"
-#include "cnn/cnn_edge.hxx"
-#include "cnn/cnn_node.hxx"
 
 int main(int argc, char **argv) {
     vector<string> arguments = vector<string>(argv, argv + argc);

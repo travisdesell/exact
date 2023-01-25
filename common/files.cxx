@@ -1,14 +1,11 @@
 #include <cstring>
-
 #include <stdexcept>
 using std::runtime_error;
 
-
-
 #include <fstream>
 using std::ifstream;
-using std::istreambuf_iterator;
 using std::ios;
+using std::istreambuf_iterator;
 
 #include <iostream>
 using std::cerr;
@@ -21,29 +18,26 @@ using std::ostringstream;
 #include <string>
 using std::string;
 
-//for mkdir
-#include <sys/stat.h>
+// for mkdir
 #include <errno.h>
+#include <sys/stat.h>
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif /* HAVE_UNISTD_H */
 
 typedef struct stat Stat;
 
-
 #include "files.hxx"
 
 string get_file_as_string(string file_path) noexcept(false) {
-    //read the entire contents of the file into a string
+    // read the entire contents of the file into a string
     ifstream sites_file(file_path.c_str());
 
-    if (!sites_file.is_open()) {
-        throw runtime_error("Could not open input file '" + file_path + "'");
-    }
+    if (!sites_file.is_open()) { throw runtime_error("Could not open input file '" + file_path + "'"); }
 
     string fc;
 
-    sites_file.seekg(0, ios::end);   
+    sites_file.seekg(0, ios::end);
     fc.reserve(sites_file.tellg());
     sites_file.seekg(0, ios::beg);
 
@@ -57,24 +51,21 @@ string get_file_as_string(string file_path) noexcept(false) {
     return oss.str();
 }
 
-
-//tweaked from: https://stackoverflow.com/questions/675039/how-can-i-create-directory-tree-in-c-linux/29828907
+// tweaked from: https://stackoverflow.com/questions/675039/how-can-i-create-directory-tree-in-c-linux/29828907
 static int do_mkdir(const char *path, mode_t mode) {
-    Stat            st;
-    int             status = 0;
+    Stat st;
+    int status = 0;
 
     if (stat(path, &st) != 0) {
         /* Directory does not exist. EEXIST for race condition */
-        if (mkdir(path, mode) != 0 && errno != EEXIST) {
-            status = -1;
-        }
+        if (mkdir(path, mode) != 0 && errno != EEXIST) { status = -1; }
 
     } else if (!S_ISDIR(st.st_mode)) {
         errno = ENOTDIR;
         status = -1;
     }
 
-    return(status);
+    return (status);
 }
 
 /**
@@ -84,15 +75,15 @@ static int do_mkdir(const char *path, mode_t mode) {
  * ** the last element and working backwards.
  * */
 int mkpath(const char *path, mode_t mode) {
-    char           *pp;
-    char           *sp;
-    int             status;
-    char           *copypath = strdup(path);
+    char *pp;
+    char *sp;
+    int status;
+    char *copypath = strdup(path);
 
     status = 0;
     pp = copypath;
     while (status == 0 && (sp = strchr(pp, '/')) != 0) {
-        //cerr << "trying to create directory: " << copypath << endl;
+        // cerr << "trying to create directory: " << copypath << endl;
         if (sp != pp) {
             /* Neither root nor double slash in path */
             *sp = '\0';
@@ -102,12 +93,8 @@ int mkpath(const char *path, mode_t mode) {
         pp = sp + 1;
     }
 
-    if (status == 0) {
-        status = do_mkdir(path, mode);
-    }
+    if (status == 0) { status = do_mkdir(path, mode); }
 
     free(copypath);
     return (status);
 }
-
-

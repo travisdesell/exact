@@ -1,4 +1,5 @@
 #include "weights/weight_rules.hxx"
+
 #include "common/arguments.hxx"
 #include "common/log.hxx"
 
@@ -8,9 +9,7 @@ WeightRules::WeightRules() {
     mutated_components_weight = LAMARCKIAN;
 }
 
-WeightRules::WeightRules(const vector<string> &arguments) {
-  initialize_from_args(arguments);
-}
+WeightRules::WeightRules(const vector<string> &arguments) { initialize_from_args(arguments); }
 
 void WeightRules::initialize_from_args(const vector<string> &arguments) {
     Log::info("Getting arguments for weight initialize and weight inheritance methods\n");
@@ -30,17 +29,11 @@ void WeightRules::initialize_from_args(const vector<string> &arguments) {
     Log::info("Mutated component weight update method is set to %s\n", mutated_component_weight_string.c_str());
 }
 
-WeightType WeightRules::get_weight_initialize_method() {
-    return weight_initialize;
-}
+WeightType WeightRules::get_weight_initialize_method() { return weight_initialize; }
 
-WeightType WeightRules::get_weight_inheritance_method() {
-    return weight_inheritance;
-}
+WeightType WeightRules::get_weight_inheritance_method() { return weight_inheritance; }
 
-WeightType WeightRules::get_mutated_components_weight_method() {
-    return mutated_components_weight;
-}
+WeightType WeightRules::get_mutated_components_weight_method() { return mutated_components_weight; }
 
 void WeightRules::set_weight_initialize_method(WeightType _weight_initialize) {
     weight_initialize = _weight_initialize;
@@ -54,21 +47,17 @@ void WeightRules::set_mutated_components_weight_method(WeightType _mutated_compo
     mutated_components_weight = _mutated_components_weight;
 }
 
-string WeightRules::get_weight_initialize_method_name() {
-    return WEIGHT_TYPES_STRING[weight_initialize];
-}
-string WeightRules::get_weight_inheritance_method_name() {
-    return WEIGHT_TYPES_STRING[weight_inheritance];
-}
+string WeightRules::get_weight_initialize_method_name() { return WEIGHT_TYPES_STRING[weight_initialize]; }
+string WeightRules::get_weight_inheritance_method_name() { return WEIGHT_TYPES_STRING[weight_inheritance]; }
 string WeightRules::get_mutated_components_weight_method_name() {
     return WEIGHT_TYPES_STRING[mutated_components_weight];
 }
 
-WeightRules* WeightRules::copy() {
+WeightRules *WeightRules::copy() {
     WeightRules *weight_rule_copy = new WeightRules();
     weight_rule_copy->set_weight_initialize_method(weight_initialize);
     weight_rule_copy->set_weight_inheritance_method(weight_inheritance);
     weight_rule_copy->set_mutated_components_weight_method(mutated_components_weight);
-    
+
     return weight_rule_copy;
 }
