@@ -4,7 +4,6 @@ jobs:
   formatting-check:
     name: Formatting Check
     runs-on: ubuntu-latest
-    timeout-minutes: 30
     strategy:
       matrix:
         path:
@@ -48,6 +47,7 @@ jobs:
     - uses: actions/checkout@v3
     - name: Run clang-format style check for C/C++/Protobuf programs.
       uses: jidicula/clang-format-action@v4.10.1
+      timeout-minutes: 30
       with:
         clang-format-version: '13'
         check-path: ${{ matrix.path['check'] }}
