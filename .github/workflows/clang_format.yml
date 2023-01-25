@@ -4,6 +4,7 @@ jobs:
   formatting-check:
     name: Formatting Check
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     strategy:
       matrix:
         path:
