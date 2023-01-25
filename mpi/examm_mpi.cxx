@@ -30,6 +30,15 @@ using std::vector;
 #define GENOME_TAG 3
 #define TERMINATE_TAG 4
 
+class myClass_test_Test {
+public:
+ int x;
+  string y; vector<int> z;
+  myClass_test_Test(int super_long_parameter_1, int super_long_parameter_2, int super_long_parameter_3, int super_long_parameter_4);
+
+
+  };
+
 mutex examm_mutex;
 
 vector<string> arguments;
