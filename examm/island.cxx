@@ -17,6 +17,9 @@ using std::to_string;
 #include <unordered_map>
 using std::unordered_map;
 
+#include <vector>
+using std::vector;
+
 #include "common/log.hxx"
 #include "island.hxx"
 #include "rnn/rnn_genome.hxx"
