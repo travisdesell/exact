@@ -18,10 +18,10 @@ using std::vector;
 #include "common/db_conn.hxx"
 #endif
 
-#include "cnn/exact.hxx"
-#include "cnn/cnn_genome.hxx"
 #include "cnn/cnn_edge.hxx"
+#include "cnn/cnn_genome.hxx"
 #include "cnn/cnn_node.hxx"
+#include "cnn/exact.hxx"
 
 int main(int argc, char **argv) {
     vector<string> arguments = vector<string>(argv, argv + argc);
@@ -50,11 +50,12 @@ int main(int argc, char **argv) {
     CNN_Genome *genome_from_database = new CNN_Genome(genome_id);
 
     Images training_images(training_data, genome_from_file->get_padding());
-    Images testing_images(testing_data, genome_from_file->get_padding(), training_images.get_average(), training_images.get_std_dev());
+    Images testing_images(testing_data, genome_from_file->get_padding(), training_images.get_average(),
+                          training_images.get_std_dev());
 
     float error;
     int predictions;
-    //genome->evaluate(training_images, error, predictions);
+    // genome->evaluate(training_images, error, predictions);
 
     genome_from_file->set_to_best();
     genome_from_file->evaluate("testing", testing_images, error, predictions);
@@ -75,11 +76,9 @@ int main(int argc, char **argv) {
         exit(1);
     }
 
-
     /*
     ostringstream query;
     query << "DELETE FROM cnn_edge WHERE genome_id = " << genome_id << endl;
     mysql_exact_query(query.str());
     */
-
 }

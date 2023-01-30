@@ -22,11 +22,10 @@ using std::vector;
 #include <sys/types.h>
 #include <unistd.h>
 
-#include "cnn/exact.hxx"
-#include "cnn/cnn_genome.hxx"
 #include "cnn/cnn_edge.hxx"
+#include "cnn/cnn_genome.hxx"
 #include "cnn/cnn_node.hxx"
-
+#include "cnn/exact.hxx"
 #include "image_tools/large_image_set.hxx"
 
 int main(int argc, char **argv) {
@@ -47,7 +46,8 @@ int main(int argc, char **argv) {
     string mosaic_filename;
     get_argument(arguments, "--mosaic_filename", true, mosaic_filename);
 
-    cout << "applying CNN '" << genome_filename << "' to mosaic '" << mosaic_filename << " using label '" << label_name << "' with type '" << label_type << "'" << endl;
+    cout << "applying CNN '" << genome_filename << "' to mosaic '" << mosaic_filename << " using label '" << label_name
+         << "' with type '" << label_type << "'" << endl;
 
     string output_directory;
     get_argument(arguments, "--output_directory", true, output_directory);
@@ -68,7 +68,7 @@ int main(int argc, char **argv) {
         image->draw_png(output_filename.str() + "_test.png");
 
         int stride = 1;
-        vector< vector<float> > expanded_prediction_matrix;
+        vector<vector<float> > expanded_prediction_matrix;
         genome->get_expanded_prediction_matrix(mosaic_image, 0, stride, 0, expanded_prediction_matrix);
         cout << "got expandded prediction matrix" << endl;
 
@@ -96,6 +96,5 @@ int main(int argc, char **argv) {
         image->draw_png_4channel(output_filename.str() + "_merged.png");
 
         delete image;
-    } 
-
+    }
 }

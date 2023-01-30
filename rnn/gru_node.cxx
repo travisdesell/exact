@@ -1,5 +1,4 @@
 #include <cmath>
-
 #include <fstream>
 using std::ostream;
 
@@ -16,25 +15,23 @@ using std::uniform_real_distribution;
 #include <vector>
 using std::vector;
 
-#include "common/random.hxx"
 #include "common/log.hxx"
-
-#include "rnn_node_interface.hxx"
-#include "mse.hxx"
+#include "common/random.hxx"
 #include "gru_node.hxx"
-
+#include "mse.hxx"
+#include "rnn_node_interface.hxx"
 
 #define NUMBER_GRU_WEIGHTS 9
 
-GRU_Node::GRU_Node(int32_t _innovation_number, int32_t _type, double _depth) : RNN_Node_Interface(_innovation_number, _type, _depth) {
+GRU_Node::GRU_Node(int32_t _innovation_number, int32_t _type, double _depth)
+    : RNN_Node_Interface(_innovation_number, _type, _depth) {
     node_type = GRU_NODE;
 }
 
-GRU_Node::~GRU_Node() {
-}
+GRU_Node::~GRU_Node() {}
 
-void GRU_Node::initialize_lamarckian(minstd_rand0 &generator, NormalDistribution &normal_distribution, double mu, double sigma) {
-
+void GRU_Node::initialize_lamarckian(minstd_rand0 &generator, NormalDistribution &normal_distribution, double mu,
+                                     double sigma) {
     zw = bound(normal_distribution.random(generator, mu, sigma));
     zu = bound(normal_distribution.random(generator, mu, sigma));
     z_bias = bound(normal_distribution.random(generator, mu, sigma));
@@ -49,7 +46,6 @@ void GRU_Node::initialize_lamarckian(minstd_rand0 &generator, NormalDistribution
 }
 
 void GRU_Node::initialize_xavier(minstd_rand0 &generator, uniform_real_distribution<double> &rng_1_1, double range) {
-    
     zw = range * (rng_1_1(generator));
     zu = range * (rng_1_1(generator));
     z_bias = range * (rng_1_1(generator));
@@ -61,10 +57,9 @@ void GRU_Node::initialize_xavier(minstd_rand0 &generator, uniform_real_distribut
     hw = range * (rng_1_1(generator));
     hu = range * (rng_1_1(generator));
     h_bias = range * (rng_1_1(generator));
-
 }
 
-void GRU_Node::initialize_kaiming(minstd_rand0 &generator, NormalDistribution &normal_distribution, double range){
+void GRU_Node::initialize_kaiming(minstd_rand0 &generator, NormalDistribution &normal_distribution, double range) {
     zw = range * normal_distribution.random(generator, 0, 1);
     zu = range * normal_distribution.random(generator, 0, 1);
     z_bias = range * normal_distribution.random(generator, 0, 1);
@@ -90,13 +85,12 @@ void GRU_Node::initialize_uniform_random(minstd_rand0 &generator, uniform_real_d
     hw = rng(generator);
     hu = rng(generator);
     h_bias = rng(generator);
-    
 }
 
 double GRU_Node::get_gradient(string gradient_name) {
     double gradient_sum = 0.0;
 
-    for (int32_t i = 0; i < series_length; i++ ) {
+    for (int32_t i = 0; i < series_length; i++) {
         if (gradient_name == "zw") {
             gradient_sum += d_zw[i];
         } else if (gradient_name == "zu") {
@@ -116,7 +110,7 @@ double GRU_Node::get_gradient(string gradient_name) {
         } else if (gradient_name == "h_bias") {
             gradient_sum += d_h_bias[i];
         } else {
-            Log::fatal("ERROR: tried to get unknown gradient: '%s'\n", gradient_name.c_str()); 
+            Log::fatal("ERROR: tried to get unknown gradient: '%s'\n", gradient_name.c_str());
             exit(1);
         }
     }
@@ -133,14 +127,16 @@ void GRU_Node::input_fired(int32_t time, double incoming_output) {
 
     input_values[time] += incoming_output;
 
-    if (inputs_fired[time] < total_inputs) return;
+    if (inputs_fired[time] < total_inputs)
+        return;
     else if (inputs_fired[time] > total_inputs) {
-        Log::fatal("ERROR: inputs_fired on GRU_Node %d at time %d is %d and total_inputs is %d\n", innovation_number, time, inputs_fired[time], total_inputs);
+        Log::fatal("ERROR: inputs_fired on GRU_Node %d at time %d is %d and total_inputs is %d\n", innovation_number,
+                   time, inputs_fired[time], total_inputs);
         exit(1);
     }
 
-    //update the reset gate bias so its centered around 1
-    //r_bias += 1;
+    // update the reset gate bias so its centered around 1
+    // r_bias += 1;
 
     double x = input_values[time];
 
@@ -174,20 +170,22 @@ void GRU_Node::input_fired(int32_t time, double incoming_output) {
 
     output_values[time] = z_h_prev + (1 - z[time]) * h_tanh[time];
 
-    //r_bias so it doesn't mess with mean/stddev calculations for
-    //parameter generation
-    //r_bias -= 1.0;
+    // r_bias so it doesn't mess with mean/stddev calculations for
+    // parameter generation
+    // r_bias -= 1.0;
 }
 
 void GRU_Node::try_update_deltas(int32_t time) {
-    if (outputs_fired[time] < total_outputs) return;
+    if (outputs_fired[time] < total_outputs)
+        return;
     else if (outputs_fired[time] > total_outputs) {
-        Log::fatal("ERROR: outputs_fired on GRU_Node %d at time %d is %d and total_outputs is %d\n", innovation_number, time, outputs_fired[time], total_outputs);
+        Log::fatal("ERROR: outputs_fired on GRU_Node %d at time %d is %d and total_outputs is %d\n", innovation_number,
+                   time, outputs_fired[time], total_outputs);
         exit(1);
     }
 
-    //update the reset gate bias so its centered around 1   
-    //r_bias += 1.0;
+    // update the reset gate bias so its centered around 1
+    // r_bias += 1.0;
 
     double error = error_values[time];
     double x = input_values[time];
@@ -195,11 +193,11 @@ void GRU_Node::try_update_deltas(int32_t time) {
     double h_prev = 0.0;
     if (time > 0) h_prev = output_values[time - 1];
 
-    //backprop output gate
+    // backprop output gate
     double d_h = error;
     if (time < (series_length - 1)) d_h += d_h_prev[time + 1];
-    //get the error into the output (z), it's the error from ahead in the network
-    //as well as from the previous output of the cell
+    // get the error into the output (z), it's the error from ahead in the network
+    // as well as from the previous output of the cell
 
     d_h_prev[time] = d_h * z[time];
 
@@ -229,8 +227,8 @@ void GRU_Node::try_update_deltas(int32_t time) {
     d_rw[time] = d_r * x;
     d_input[time] += d_r * rw;
 
-    //reset the reset gate bias to be around 0
-    //r_bias -= 1.0;
+    // reset the reset gate bias to be around 0
+    // r_bias -= 1.0;
 }
 
 void GRU_Node::error_fired(int32_t time, double error) {
@@ -249,10 +247,7 @@ void GRU_Node::output_fired(int32_t time, double delta) {
     try_update_deltas(time);
 }
 
-
-int32_t GRU_Node::get_number_weights() const {
-    return NUMBER_GRU_WEIGHTS;
-}
+int32_t GRU_Node::get_number_weights() const { return NUMBER_GRU_WEIGHTS; }
 
 void GRU_Node::get_weights(vector<double> &parameters) const {
     parameters.resize(get_number_weights());
@@ -265,9 +260,8 @@ void GRU_Node::set_weights(const vector<double> &parameters) {
     set_weights(offset, parameters);
 }
 
-
 void GRU_Node::set_weights(int32_t &offset, const vector<double> &parameters) {
-    //int32_t start_offset = offset;
+    // int32_t start_offset = offset;
 
     zw = bound(parameters[offset++]);
     zu = bound(parameters[offset++]);
@@ -281,13 +275,12 @@ void GRU_Node::set_weights(int32_t &offset, const vector<double> &parameters) {
     hu = bound(parameters[offset++]);
     h_bias = bound(parameters[offset++]);
 
-
-    //int32_t end_offset = offset;
-    //Log::trace("set weights from offset %d to %d on GRU_Node %d\n", start_offset, end_offset, innovation_number);
+    // int32_t end_offset = offset;
+    // Log::trace("set weights from offset %d to %d on GRU_Node %d\n", start_offset, end_offset, innovation_number);
 }
 
 void GRU_Node::get_weights(int32_t &offset, vector<double> &parameters) const {
-    //int32_t start_offset = offset;
+    // int32_t start_offset = offset;
 
     parameters[offset++] = zw;
     parameters[offset++] = zu;
@@ -301,17 +294,14 @@ void GRU_Node::get_weights(int32_t &offset, vector<double> &parameters) const {
     parameters[offset++] = hu;
     parameters[offset++] = h_bias;
 
-    //int32_t end_offset = offset;
-    //Log::trace("got weights from offset %d to %d on GRU_Node %d\n", start_offset, end_offset, innovation_number);
+    // int32_t end_offset = offset;
+    // Log::trace("got weights from offset %d to %d on GRU_Node %d\n", start_offset, end_offset, innovation_number);
 }
-
 
 void GRU_Node::get_gradients(vector<double> &gradients) {
     gradients.assign(NUMBER_GRU_WEIGHTS, 0.0);
 
-    for (int32_t i = 0; i < NUMBER_GRU_WEIGHTS; i++) {
-        gradients[i] = 0.0;
-    }
+    for (int32_t i = 0; i < NUMBER_GRU_WEIGHTS; i++) { gradients[i] = 0.0; }
 
     for (int32_t i = 0; i < series_length; i++) {
         gradients[0] += d_zw[i];
@@ -352,7 +342,7 @@ void GRU_Node::reset(int32_t _series_length) {
     h_tanh.assign(series_length, 0.0);
     ld_h_tanh.assign(series_length, 0.0);
 
-    //reset values from rnn_node_interface
+    // reset values from rnn_node_interface
     d_input.assign(series_length, 0.0);
     error_values.assign(series_length, 0.0);
 
@@ -363,10 +353,10 @@ void GRU_Node::reset(int32_t _series_length) {
     outputs_fired.assign(series_length, 0);
 }
 
-RNN_Node_Interface* GRU_Node::copy() const {
-    GRU_Node* n = new GRU_Node(innovation_number, layer_type, depth);
+RNN_Node_Interface *GRU_Node::copy() const {
+    GRU_Node *n = new GRU_Node(innovation_number, layer_type, depth);
 
-    //copy GRU_Node values
+    // copy GRU_Node values
     n->zw = zw;
     n->zu = zu;
     n->z_bias = z_bias;
@@ -396,7 +386,7 @@ RNN_Node_Interface* GRU_Node::copy() const {
     n->h_tanh = h_tanh;
     n->ld_h_tanh = ld_h_tanh;
 
-    //copy RNN_Node_Interface values
+    // copy RNN_Node_Interface values
     n->series_length = series_length;
     n->input_values = input_values;
     n->output_values = output_values;
@@ -414,7 +404,4 @@ RNN_Node_Interface* GRU_Node::copy() const {
     return n;
 }
 
-void GRU_Node::write_to_stream(ostream &out) {
-    RNN_Node_Interface::write_to_stream(out);
-}
-
+void GRU_Node::write_to_stream(ostream &out) { RNN_Node_Interface::write_to_stream(out); }

@@ -1,9 +1,8 @@
 #include <chrono>
-
 #include <iomanip>
-using std::setw;
 using std::fixed;
 using std::setprecision;
+using std::setw;
 
 #include <mutex>
 using std::mutex;
@@ -17,18 +16,15 @@ using std::thread;
 #include <vector>
 using std::vector;
 
-
-#include "mpi.h"
-
 #include "common/arguments.hxx"
 #include "common/files.hxx"
 #include "common/log.hxx"
 #include "common/process_arguments.hxx"
-#include "weights/weight_update.hxx"
-
 #include "examm/examm.hxx"
+#include "mpi.h"
 #include "rnn/generate_nn.hxx"
 #include "time_series/time_series.hxx"
+#include "weights/weight_update.hxx"
 
 #define WORK_REQUEST_TAG 1
 #define GENOME_LENGTH_TAG 2
@@ -43,10 +39,10 @@ EXAMM *examm;
 
 WeightUpdate *weight_update_method;
 
-vector< vector< vector<double> > > training_inputs;
-vector< vector< vector<double> > > training_outputs;
-vector< vector< vector<double> > > validation_inputs;
-vector< vector< vector<double> > > validation_outputs;
+vector<vector<vector<double> > > training_inputs;
+vector<vector<vector<double> > > training_outputs;
+vector<vector<vector<double> > > validation_inputs;
+vector<vector<vector<double> > > validation_outputs;
 
 int32_t global_slice;
 int32_t global_repeat;
@@ -63,7 +59,7 @@ void receive_work_request(int32_t source) {
     MPI_Recv(work_request_message, 1, MPI_INT, source, WORK_REQUEST_TAG, MPI_COMM_WORLD, &status);
 }
 
-RNN_Genome* receive_genome_from(int32_t source) {
+RNN_Genome *receive_genome_from(int32_t source) {
     MPI_Status status;
     int32_t length_message[1];
     MPI_Recv(length_message, 1, MPI_INT, source, GENOME_LENGTH_TAG, MPI_COMM_WORLD, &status);
@@ -72,7 +68,7 @@ RNN_Genome* receive_genome_from(int32_t source) {
 
     Log::debug("receiving genome of length: %d from: %d\n", length, source);
 
-    char* genome_str = new char[length + 1];
+    char *genome_str = new char[length + 1];
 
     Log::debug("receiving genome from: %d\n", source);
     MPI_Recv(genome_str, length, MPI_CHAR, source, GENOME_TAG, MPI_COMM_WORLD, &status);
@@ -81,13 +77,13 @@ RNN_Genome* receive_genome_from(int32_t source) {
 
     Log::trace("genome_str:\n%s\n", genome_str);
 
-    RNN_Genome* genome = new RNN_Genome(genome_str, length);
+    RNN_Genome *genome = new RNN_Genome(genome_str, length);
 
-    delete [] genome_str;
+    delete[] genome_str;
     return genome;
 }
 
-void send_genome_to(int32_t target, RNN_Genome* genome) {
+void send_genome_to(int32_t target, RNN_Genome *genome) {
     char *byte_array;
     int32_t length;
 
@@ -121,7 +117,7 @@ void master(int32_t max_rank) {
     int32_t terminates_sent = 0;
 
     while (true) {
-        //wait for a incoming message
+        // wait for a incoming message
         MPI_Status status;
         MPI_Probe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
 
@@ -129,7 +125,7 @@ void master(int32_t max_rank) {
         int32_t tag = status.MPI_TAG;
         Log::debug("probe returned message from: %d with tag: %d\n", source, tag);
 
-        //if the message is a work request, send a genome
+        // if the message is a work request, send a genome
 
         if (tag == WORK_REQUEST_TAG) {
             receive_work_request(source);
@@ -138,8 +134,8 @@ void master(int32_t max_rank) {
             RNN_Genome *genome = examm->generate_genome();
             examm_mutex.unlock();
 
-            if (genome == NULL) { //search was completed if it returns NULL for an individual
-                //send terminate message
+            if (genome == NULL) {  // search was completed if it returns NULL for an individual
+                // send terminate message
                 Log::debug("terminating worker: %d\n", source);
                 send_terminate_message(source);
                 terminates_sent++;
@@ -148,13 +144,14 @@ void master(int32_t max_rank) {
                 if (terminates_sent >= max_rank - 1) return;
 
             } else {
-                //genome->write_to_file( examm->get_output_directory() + "/before_send_gen_" + to_string(genome->get_generation_id()) );
+                // genome->write_to_file( examm->get_output_directory() + "/before_send_gen_" +
+                // to_string(genome->get_generation_id()) );
 
-                //send genome
+                // send genome
                 Log::debug("sending genome to: %d\n", source);
                 send_genome_to(source, genome);
 
-                //delete this genome as it will not be used again
+                // delete this genome as it will not be used again
                 delete genome;
             }
         } else if (tag == GENOME_LENGTH_TAG) {
@@ -166,7 +163,7 @@ void master(int32_t max_rank) {
             examm_mutex.unlock();
 
             delete genome;
-            //this genome will be deleted if/when removed from population
+            // this genome will be deleted if/when removed from population
         } else {
             Log::fatal("ERROR: received message from %d with unknown tag: %d\n", source, tag);
             MPI_Abort(MPI_COMM_WORLD, 1);
@@ -175,7 +172,8 @@ void master(int32_t max_rank) {
 }
 
 void worker(int32_t rank) {
-    string worker_id = "worker_slice_" + to_string(global_slice) + "_repeat_" + to_string(global_repeat) + "_" + to_string(rank);
+    string worker_id =
+        "worker_slice_" + to_string(global_slice) + "_repeat_" + to_string(global_repeat) + "_" + to_string(rank);
     Log::set_id(worker_id);
 
     while (true) {
@@ -196,14 +194,16 @@ void worker(int32_t rank) {
 
         } else if (tag == GENOME_LENGTH_TAG) {
             Log::debug("received genome!\n");
-            RNN_Genome* genome = receive_genome_from(0);
+            RNN_Genome *genome = receive_genome_from(0);
 
-            string log_id = "slice_" + to_string(global_slice) + "_repeat_" + to_string(global_repeat) + "_genome_" + to_string(genome->get_generation_id()) + "_worker_" + to_string(rank);
+            string log_id = "slice_" + to_string(global_slice) + "_repeat_" + to_string(global_repeat) + "_genome_" +
+                            to_string(genome->get_generation_id()) + "_worker_" + to_string(rank);
             Log::set_id(log_id);
-            genome->backpropagate_stochastic(training_inputs, training_outputs, validation_inputs, validation_outputs, weight_update_method);
+            genome->backpropagate_stochastic(training_inputs, training_outputs, validation_inputs, validation_outputs,
+                                             weight_update_method);
             Log::release_id(log_id);
 
-            //go back to the worker's log for MPI communication
+            // go back to the worker's log for MPI communication
             Log::set_id(worker_id);
 
             send_genome_to(0, genome);
@@ -215,11 +215,11 @@ void worker(int32_t rank) {
         }
     }
 
-    //release the log file for the worker communication
+    // release the log file for the worker communication
     Log::release_id(worker_id);
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
     MPI_Init(&argc, &argv);
 
     int32_t rank, max_rank;
@@ -235,7 +235,7 @@ int main(int argc, char** argv) {
 
     int32_t fold_size = 2;
     get_argument(arguments, "--fold_size", true, fold_size);
-    
+
     string output_directory = "";
     get_argument(arguments, "--output_directory", false, output_directory);
 
@@ -244,7 +244,8 @@ int main(int argc, char** argv) {
 
     TimeSeriesSets *time_series_sets = NULL;
     time_series_sets = TimeSeriesSets::generate_from_arguments(arguments);
-    get_train_validation_data(arguments, time_series_sets, training_inputs, training_outputs, validation_inputs, validation_outputs);
+    get_train_validation_data(arguments, time_series_sets, training_inputs, training_outputs, validation_inputs,
+                              validation_outputs);
 
     weight_update_method = new WeightUpdate();
     weight_update_method->generate_from_arguments(arguments);
@@ -262,21 +263,17 @@ int main(int argc, char** argv) {
 
         for (int32_t j = 0; j < time_series_sets->get_number_series(); j += fold_size) {
             if (j == i) {
-                for (int32_t k = 0; k < fold_size; k++) {
-                    test_indexes.push_back(j + k);
-                }
+                for (int32_t k = 0; k < fold_size; k++) { test_indexes.push_back(j + k); }
             } else {
-                for (int32_t k = 0; k < fold_size; k++) {
-                    training_indexes.push_back(j + k);
-                }
+                for (int32_t k = 0; k < fold_size; k++) { training_indexes.push_back(j + k); }
             }
         }
 
         time_series_sets->set_training_indexes(training_indexes);
         time_series_sets->set_test_indexes(test_indexes);
 
-        //time_series_sets->export_training_series(time_offset, training_inputs, training_outputs);
-        //time_series_sets->export_test_series(time_offset, validation_inputs, validation_outputs);
+        // time_series_sets->export_training_series(time_offset, training_inputs, training_outputs);
+        // time_series_sets->export_test_series(time_offset, validation_inputs, validation_outputs);
 
         string slice_output_directory = output_directory + "/slice_" + to_string(i);
         mkpath(slice_output_directory.c_str(), 0777);
@@ -286,7 +283,7 @@ int main(int argc, char** argv) {
             string current_output_directory = slice_output_directory + "/repeat_" + to_string(k);
             mkpath(current_output_directory.c_str(), 0777);
 
-            //set to the master/workers can specify the right log id
+            // set to the master/workers can specify the right log id
             global_slice = i;
             global_repeat = k;
 
@@ -301,7 +298,7 @@ int main(int argc, char** argv) {
                 std::chrono::time_point<std::chrono::system_clock> end = std::chrono::system_clock::now();
                 long milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
 
-                //examm->write_memory_log(current_output_directory + "/memory_fitness_log.csv");
+                // examm->write_memory_log(current_output_directory + "/memory_fitness_log.csv");
 
                 slice_times_file << milliseconds << endl;
 
@@ -322,7 +319,8 @@ int main(int argc, char** argv) {
             Log::set_id("main_" + to_string(rank));
 
             MPI_Barrier(MPI_COMM_WORLD);
-            Log::debug("rank %d completed slice %d of %d repeat %d of %d\n", rank, i, time_series_sets->get_number_series(), k, repeats);
+            Log::debug("rank %d completed slice %d of %d repeat %d of %d\n", rank, i,
+                       time_series_sets->get_number_series(), k, repeats);
         }
 
         slice_times_file.close();

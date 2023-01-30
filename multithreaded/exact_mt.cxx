@@ -1,5 +1,4 @@
 #include <chrono>
-
 #include <condition_variable>
 using std::condition_variable;
 
@@ -23,11 +22,9 @@ using std::thread;
 #include <vector>
 using std::vector;
 
-#include "common/arguments.hxx"
-
-#include "image_tools/image_set.hxx"
-
 #include "cnn/exact.hxx"
+#include "common/arguments.hxx"
+#include "image_tools/image_set.hxx"
 
 mutex exact_mutex;
 
@@ -35,18 +32,18 @@ vector<string> arguments;
 
 EXACT *exact;
 
-
 bool finished = false;
 
 int32_t images_resize;
 
-void exact_thread(const Images &training_images, const Images &validation_images, const Images &testing_images, int32_t id) {
+void exact_thread(const Images &training_images, const Images &validation_images, const Images &testing_images,
+                  int32_t id) {
     while (true) {
         exact_mutex.lock();
         CNN_Genome *genome = exact->generate_individual();
         exact_mutex.unlock();
 
-        if (genome == NULL) break;  //generate_individual returns NULL when the search is done
+        if (genome == NULL) break;  // generate_individual returns NULL when the search is done
 
         genome->set_name("thread_" + to_string(id));
         genome->initialize();
@@ -62,7 +59,7 @@ void exact_thread(const Images &training_images, const Images &validation_images
     }
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
     arguments = vector<string>(argv, argv + argc);
 
     int32_t number_threads;
@@ -70,7 +67,6 @@ int main(int argc, char** argv) {
 
     int32_t padding;
     get_argument(arguments, "--padding", true, padding);
-
 
     string training_filename;
     get_argument(arguments, "--training_file", true, training_filename);
@@ -107,10 +103,9 @@ int main(int argc, char** argv) {
 
     get_argument(arguments, "--images_resize", true, images_resize);
 
-
-
     Images training_images(training_filename, padding);
-    Images validation_images(validation_filename, padding, training_images.get_average(), training_images.get_std_dev());
+    Images validation_images(validation_filename, padding, training_images.get_average(),
+                             training_images.get_std_dev());
     Images testing_images(testing_filename, padding, training_images.get_average(), training_images.get_std_dev());
 
 #ifdef _MYSQL_
@@ -120,20 +115,18 @@ int main(int argc, char** argv) {
         exact = new EXACT(exact_id);
     } else {
 #endif
-        exact = new EXACT(training_images, validation_images, testing_images, padding, population_size, max_epochs, use_sfmp, use_node_operations, max_genomes, output_directory, search_name, reset_edges);
+        exact = new EXACT(training_images, validation_images, testing_images, padding, population_size, max_epochs,
+                          use_sfmp, use_node_operations, max_genomes, output_directory, search_name, reset_edges);
 #ifdef _MYSQL_
     }
 #endif
 
-
     vector<thread> threads;
     for (int32_t i = 0; i < number_threads; i++) {
-        threads.push_back( thread(exact_thread, training_images, validation_images, testing_images, i) );
+        threads.push_back(thread(exact_thread, training_images, validation_images, testing_images, i));
     }
 
-    for (int32_t i = 0; i < number_threads; i++) {
-        threads[i].join();
-    }
+    for (int32_t i = 0; i < number_threads; i++) { threads[i].join(); }
 
     finished = true;
 

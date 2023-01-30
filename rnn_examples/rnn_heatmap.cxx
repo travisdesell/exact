@@ -1,7 +1,8 @@
-//example usage:
-//  ./rnn_examples/rnn_heatmap --std_message_level info --file_message_level none --output_directory ./ --input_directory ~/Dropbox/microbeam_cbm/Cyclone_binaries/120_min/ --testing_directory ~/Dropbox/microbeam_cbm/2019_08-09_data/ --time_offset 120
+// example usage:
+//   ./rnn_examples/rnn_heatmap --std_message_level info --file_message_level none --output_directory ./
+//   --input_directory ~/Dropbox/microbeam_cbm/Cyclone_binaries/120_min/ --testing_directory
+//   ~/Dropbox/microbeam_cbm/2019_08-09_data/ --time_offset 120
 #include <chrono>
-
 #include <condition_variable>
 using std::condition_variable;
 
@@ -22,18 +23,15 @@ using std::vector;
 
 #include "common/arguments.hxx"
 #include "common/log.hxx"
-
 #include "rnn/rnn_genome.hxx"
-
 #include "time_series/time_series.hxx"
-
 
 vector<string> arguments;
 
-vector< vector< vector<double> > > testing_inputs;
-vector< vector< vector<double> > > testing_outputs;
+vector<vector<vector<double> > > testing_inputs;
+vector<vector<vector<double> > > testing_outputs;
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
     arguments = vector<string>(argv, argv + argc);
 
     Log::initialize(arguments);
@@ -84,20 +82,22 @@ int main(int argc, char** argv) {
                 Log::info("\tgenome filename: '%s'\n", genome_filename.c_str());
                 RNN_Genome *genome = new RNN_Genome(genome_filename);
 
-
                 string testing_filename = testing_directory + "/cyclone_" + to_string(target_cyclone) + "_test.csv";
 
                 vector<string> testing_filenames;
                 testing_filenames.push_back(testing_filename);
 
-                TimeSeriesSets *time_series_sets = TimeSeriesSets::generate_test(testing_filenames, genome->get_input_parameter_names(), genome->get_output_parameter_names());
+                TimeSeriesSets *time_series_sets = TimeSeriesSets::generate_test(
+                    testing_filenames, genome->get_input_parameter_names(), genome->get_output_parameter_names());
                 Log::debug("got time series sets.\n");
 
                 string normalize_type = genome->get_normalize_type();
                 if (normalize_type.compare("min_max") == 0) {
                     time_series_sets->normalize_min_max(genome->get_normalize_mins(), genome->get_normalize_maxs());
                 } else if (normalize_type.compare("avg_std_dev") == 0) {
-                    time_series_sets->normalize_avg_std_dev(genome->get_normalize_avgs(), genome->get_normalize_std_devs(), genome->get_normalize_mins(), genome->get_normalize_maxs());
+                    time_series_sets->normalize_avg_std_dev(genome->get_normalize_avgs(),
+                                                            genome->get_normalize_std_devs(),
+                                                            genome->get_normalize_mins(), genome->get_normalize_maxs());
                 }
 
                 Log::info("normalized type: %s \n", normalize_type.c_str());
@@ -106,8 +106,8 @@ int main(int argc, char** argv) {
 
                 vector<double> best_parameters = genome->get_best_parameters();
 
-                //Log::info("MSE: %lf\n", genome->get_mse(best_parameters, testing_inputs, testing_outputs));
-                //Log::info("MAE: %lf\n", genome->get_mae(best_parameters, testing_inputs, testing_outputs));
+                // Log::info("MSE: %lf\n", genome->get_mse(best_parameters, testing_inputs, testing_outputs));
+                // Log::info("MAE: %lf\n", genome->get_mae(best_parameters, testing_inputs, testing_outputs));
                 double mae = genome->get_mae(best_parameters, testing_inputs, testing_outputs);
 
                 cout << "MAE: " << mae << endl;
@@ -127,7 +127,6 @@ int main(int argc, char** argv) {
         output_file << endl;
     }
 
-
     /*
     string genome_filename;
     get_argument(arguments, "--genome_file", true, genome_filename);
@@ -136,16 +135,17 @@ int main(int argc, char** argv) {
     vector<string> testing_filenames;
     get_argument_vector(arguments, "--testing_filenames", true, testing_filenames);
 
-    TimeSeriesSets *time_series_sets = TimeSeriesSets::generate_test(testing_filenames, genome->get_input_parameter_names(), genome->get_output_parameter_names());
-    Log::debug("got time series sets.\n");
+    TimeSeriesSets *time_series_sets = TimeSeriesSets::generate_test(testing_filenames,
+    genome->get_input_parameter_names(), genome->get_output_parameter_names()); Log::debug("got time series sets.\n");
 
     string normalize_type = genome->get_normalize_type();
     if (normalize_type.compare("min_max") == 0) {
         time_series_sets->normalize_min_max(genome->get_normalize_mins(), genome->get_normalize_maxs());
     } else if (normalize_type.compare("avg_std_dev") == 0) {
-        time_series_sets->normalize_avg_std_dev(genome->get_normalize_avgs(), genome->get_normalize_std_devs(), genome->get_normalize_mins(), genome->get_normalize_maxs());
+        time_series_sets->normalize_avg_std_dev(genome->get_normalize_avgs(), genome->get_normalize_std_devs(),
+    genome->get_normalize_mins(), genome->get_normalize_maxs());
     }
-    
+
     Log::info("normalized type: %s \n", normalize_type.c_str());
 
     int32_t time_offset = 1;
@@ -156,7 +156,8 @@ int main(int argc, char** argv) {
     vector<double> best_parameters = genome->get_best_parameters();
     Log::info("MSE: %lf\n", genome->get_mse(best_parameters, testing_inputs, testing_outputs));
     Log::info("MAE: %lf\n", genome->get_mae(best_parameters, testing_inputs, testing_outputs));
-    genome->write_predictions(output_directory, testing_filenames, best_parameters, testing_inputs, testing_outputs, time_series_sets);
+    genome->write_predictions(output_directory, testing_filenames, best_parameters, testing_inputs, testing_outputs,
+    time_series_sets);
     */
 
     Log::release_id("main");

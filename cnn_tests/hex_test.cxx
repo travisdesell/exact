@@ -1,23 +1,21 @@
 #include <cstdio>
-
-#include<iostream>
+#include <iostream>
 using std::cout;
+using std::defaultfloat;
 using std::endl;
 using std::hexfloat;
-using std::defaultfloat;
 
 #include <iomanip>
 using std::setprecision;
 
 #include <sstream>
-using std::ostringstream;
 using std::istringstream;
+using std::ostringstream;
 
 #include <string>
 using std::string;
 
-int main(int argc, char** argv) {
-    
+int main(int argc, char **argv) {
     double value = 2342.092834927394e-100;
 
     cout << setprecision(20) << value << endl;

@@ -21,20 +21,19 @@
 // 1) your application does no floating-point math, or
 // 2) you use homogeneous redundancy
 
-#include "config.h"
-#include "util.h"
-#include "sched_util.h"
-#include "sched_msgs.h"
-#include "validate_util.h"
-#include "md5_file.h"
-#include "error_numbers.h"
-#include "stdint.h"
-
 #include <algorithm>
-
 #include <cmath>
-using std::isnan;
+
+#include "config.h"
+#include "error_numbers.h"
+#include "md5_file.h"
+#include "sched_msgs.h"
+#include "sched_util.h"
+#include "stdint.h"
+#include "util.h"
+#include "validate_util.h"
 using std::isinf;
+using std::isnan;
 
 #include <iomanip>
 using std::setw;
@@ -65,10 +64,10 @@ struct EXACT_RESULT {
     string file_contents;
 };
 
-vector<char*> stderr_strings;
+vector<char *> stderr_strings;
 bool reject_if_present = false;
 
-int validate_handler_init(int argc, char** argv) {
+int validate_handler_init(int argc, char **argv) {
     // handle project specific arguments here
     return 0;
 }
@@ -86,30 +85,32 @@ void validate_handler_usage() {
     */
 }
 
-
-int init_result(RESULT& result, void*& data) {
+int init_result(RESULT &result, void *&data) {
     int retval;
     vector<OUTPUT_FILE_INFO> files;
 
     retval = get_output_file_infos(result, files);
     if (retval) {
-        log_messages.printf(MSG_CRITICAL, "[RESULT#%ld %s] check_set: can't get output filenames\n", result.id, result.name);
+        log_messages.printf(MSG_CRITICAL, "[RESULT#%ld %s] check_set: can't get output filenames\n", result.id,
+                            result.name);
         return retval;
     }
 
     if (files.size() > 1) {
-        log_messages.printf(MSG_CRITICAL, "[RESULT#%ld %s] had more than one output file: %zu\n", result.id, result.name, files.size());
+        log_messages.printf(MSG_CRITICAL, "[RESULT#%ld %s] had more than one output file: %zu\n", result.id,
+                            result.name, files.size());
         for (uint32_t i = 0; i < files.size(); i++) {
             log_messages.printf(MSG_CRITICAL, "    %s\n", files[i].path.c_str());
         }
         exit(1);
     }
 
-    OUTPUT_FILE_INFO& fi = files[0];
+    OUTPUT_FILE_INFO &fi = files[0];
     if (fi.no_validate) {
-        log_messages.printf(MSG_CRITICAL, "[RESULT#%ld %s] had file set to no validate: %s\n", result.id, result.name, fi.path.c_str());
+        log_messages.printf(MSG_CRITICAL, "[RESULT#%ld %s] had file set to no validate: %s\n", result.id, result.name,
+                            fi.path.c_str());
         exit(1);
-        //continue;
+        // continue;
     }
 
     string file_contents;
@@ -122,8 +123,10 @@ int init_result(RESULT& result, void*& data) {
         getline(iss, line);
 
         if (line.compare(EXACT_VERSION_STR) != 0) {
-            log_messages.printf(MSG_CRITICAL, "[RESULT#%ld %s] get_data_from_result: invalid version\n", result.id, result.name);
-            log_messages.printf(MSG_CRITICAL, "     file version was: '%s', requires '%s'\n", line.c_str(), EXACT_VERSION_STR);
+            log_messages.printf(MSG_CRITICAL, "[RESULT#%ld %s] get_data_from_result: invalid version\n", result.id,
+                                result.name);
+            log_messages.printf(MSG_CRITICAL, "     file version was: '%s', requires '%s'\n", line.c_str(),
+                                EXACT_VERSION_STR);
             return 1;
         }
 
@@ -153,7 +156,6 @@ int init_result(RESULT& result, void*& data) {
             cout << setw(5) << i << setw(30) << ("'" + line + "'") << endl;
         }
 
-
         double best_error = stod(best_error_line);
         double generalizability_error = stod(generalizability_line);
         double test_error = stod(test_line);
@@ -163,71 +165,76 @@ int init_result(RESULT& result, void*& data) {
         cout << "test error: " << test_error << endl;
 
         if (best_error <= 0 || isnan(best_error) || isinf(best_error)) {
-            log_messages.printf(MSG_CRITICAL, "[RESULT#%ld %s] get_data_from_result: invalid best_error\n", result.id, result.name);
+            log_messages.printf(MSG_CRITICAL, "[RESULT#%ld %s] get_data_from_result: invalid best_error\n", result.id,
+                                result.name);
             log_messages.printf(MSG_CRITICAL, "     best_error was: '%lf'\n", best_error);
-            //exit(1);
+            // exit(1);
             return 1;
         }
 
         if (generalizability_error <= 0 || isnan(generalizability_error) || isinf(generalizability_error)) {
-            log_messages.printf(MSG_CRITICAL, "[RESULT#%ld %s] get_data_from_result: invalid generalizability error\n", result.id, result.name);
+            log_messages.printf(MSG_CRITICAL, "[RESULT#%ld %s] get_data_from_result: invalid generalizability error\n",
+                                result.id, result.name);
             log_messages.printf(MSG_CRITICAL, "     generalizability_error was: '%lf'\n", generalizability_error);
-            //exit(1);
+            // exit(1);
             return 1;
         }
 
         if (test_error <= 0 || isnan(test_error) || isinf(test_error)) {
-            log_messages.printf(MSG_CRITICAL, "[RESULT#%ld %s] get_data_from_result: invalid test error\n", result.id, result.name);
+            log_messages.printf(MSG_CRITICAL, "[RESULT#%ld %s] get_data_from_result: invalid test error\n", result.id,
+                                result.name);
             log_messages.printf(MSG_CRITICAL, "     test_error was: '%lf'\n", test_error);
-            //exit(1);
+            // exit(1);
             return 1;
         }
 
-
-
     } catch (int err) {
-        log_messages.printf(MSG_CRITICAL, "[RESULT#%ld %s] get_data_from_result: could not open file for result\n", result.id, result.name);
+        log_messages.printf(MSG_CRITICAL, "[RESULT#%ld %s] get_data_from_result: could not open file for result\n",
+                            result.id, result.name);
         log_messages.printf(MSG_CRITICAL, "     file path: %s\n", fi.path.c_str());
         return ERR_FOPEN;
     } catch (std::runtime_error exception) {
-        log_messages.printf(MSG_CRITICAL, "[RESULT#%ld %s] get_data_from_result: could not open file for result\n", result.id, result.name);
+        log_messages.printf(MSG_CRITICAL, "[RESULT#%ld %s] get_data_from_result: could not open file for result\n",
+                            result.id, result.name);
         log_messages.printf(MSG_CRITICAL, "     file path: %s\n", fi.path.c_str());
         log_messages.printf(MSG_CRITICAL, "     exception: %s\n", exception.what());
         return ERR_FOPEN;
     }
 
-//    cout << "Parsing: " << endl << file_contents << endl;
+    //    cout << "Parsing: " << endl << file_contents << endl;
 
-    EXACT_RESULT* exact_result = new EXACT_RESULT;
+    EXACT_RESULT *exact_result = new EXACT_RESULT;
     file_contents.erase(std::remove(file_contents.begin(), file_contents.end(), '\r'), file_contents.end());
 
     if (file_contents.size() < 100 || file_contents[0] != 'v') {
-        log_messages.printf(MSG_CRITICAL, "exact_validation_policy get_data_from_result([RESULT#%ld %s]) failed because contents were invalid\n", result.id, result.name);
+        log_messages.printf(
+            MSG_CRITICAL,
+            "exact_validation_policy get_data_from_result([RESULT#%ld %s]) failed because contents were invalid\n",
+            result.id, result.name);
         log_messages.printf(MSG_CRITICAL, "contents:\n%s\n", file_contents.c_str());
         return 1;
     }
 
     exact_result->file_contents = file_contents;
 
-    //        log_messages.printf(MSG_CRITICAL, "[RESULT#%ld %s] result file contents:\n%s\n", result.id, result.name, exact_result->file_contents.c_str());
+    //        log_messages.printf(MSG_CRITICAL, "[RESULT#%ld %s] result file contents:\n%s\n", result.id, result.name,
+    //        exact_result->file_contents.c_str());
 
-    data = (void*) exact_result;
+    data = (void *) exact_result;
     return 0;
 }
 
-int compare_results(
-    RESULT & r1, void* data1,
-    RESULT const& r2, void* data2,
-    bool& match
-) {
-    EXACT_RESULT* f1 = (EXACT_RESULT*) data1;
-    EXACT_RESULT* f2 = (EXACT_RESULT*) data2;
+int compare_results(RESULT &r1, void *data1, RESULT const &r2, void *data2, bool &match) {
+    EXACT_RESULT *f1 = (EXACT_RESULT *) data1;
+    EXACT_RESULT *f2 = (EXACT_RESULT *) data2;
 
     if (f1->file_contents.compare(f2->file_contents) == 0) {
         match = true;
     } else {
         match = false;
-        log_messages.printf(MSG_CRITICAL, "[RESULT#%ld %s] and [RESULT#%ld %s] failed sets had different file contents.\n", r1.id, r1.name, r2.id, r2.name);
+        log_messages.printf(MSG_CRITICAL,
+                            "[RESULT#%ld %s] and [RESULT#%ld %s] failed sets had different file contents.\n", r1.id,
+                            r1.name, r2.id, r2.name);
 
         vector<OUTPUT_FILE_INFO> files;
 
@@ -249,7 +256,8 @@ int compare_results(
         string version_line1, version_line2;
         getline(iss1, version_line1);
         getline(iss2, version_line2);
-        cout << setw(5) << 0 << setw(30) << ("'" + version_line1 + "'") << setw(30) << ("'" + version_line2 + "'") << endl;
+        cout << setw(5) << 0 << setw(30) << ("'" + version_line1 + "'") << setw(30) << ("'" + version_line2 + "'")
+             << endl;
 
         if (version_line1.compare(version_line2) != 0) {
             cout << "versions are different: '" << version_line1 << "' vs. '" << version_line2 << "'" << endl;
@@ -281,10 +289,18 @@ int compare_results(
         double min_best_error_difference = 100.0;
 
         if (fabs(best_error1 - best_error2) < min_best_error_difference) {
-            log_messages.printf(MSG_CRITICAL, "[RESULT#%ld %s] and [RESULT#%ld %s] match because best_error difference is close enough (less than %lf): %lf - %lf = %lf.\n", r1.id, r1.name, r2.id, r2.name, min_best_error_difference, best_error1, best_error2, fabs(best_error1 - best_error2));
+            log_messages.printf(MSG_CRITICAL,
+                                "[RESULT#%ld %s] and [RESULT#%ld %s] match because best_error difference is close "
+                                "enough (less than %lf): %lf - %lf = %lf.\n",
+                                r1.id, r1.name, r2.id, r2.name, min_best_error_difference, best_error1, best_error2,
+                                fabs(best_error1 - best_error2));
             match = true;
         } else {
-            log_messages.printf(MSG_CRITICAL, "[RESULT#%ld %s] and [RESULT#%ld %s] DO NOT MATCH because best_error difference is close enough (greater than %lf): %lf - %lf = %lf.\n", r1.id, r1.name, r2.id, r2.name, min_best_error_difference, best_error1, best_error2, fabs(best_error1 - best_error2));
+            log_messages.printf(MSG_CRITICAL,
+                                "[RESULT#%ld %s] and [RESULT#%ld %s] DO NOT MATCH because best_error difference is "
+                                "close enough (greater than %lf): %lf - %lf = %lf.\n",
+                                r1.id, r1.name, r2.id, r2.name, min_best_error_difference, best_error1, best_error2,
+                                fabs(best_error1 - best_error2));
             match = false;
         }
     }
@@ -292,8 +308,8 @@ int compare_results(
     return 0;
 }
 
-int cleanup_result(RESULT const& /*result*/, void* data) {
-    EXACT_RESULT *exact_result = (EXACT_RESULT*)data;
+int cleanup_result(RESULT const & /*result*/, void *data) {
+    EXACT_RESULT *exact_result = (EXACT_RESULT *) data;
     delete exact_result;
     return 0;
 }

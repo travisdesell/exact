@@ -1,5 +1,4 @@
 #include <chrono>
-
 #include <fstream>
 using std::getline;
 using std::ifstream;
@@ -16,19 +15,15 @@ using std::vector;
 
 #include "common/arguments.hxx"
 #include "common/log.hxx"
-#include "weights/weight_rules.hxx"
-
-#include "rnn/ugrnn_node.hxx"
+#include "gradient_test.hxx"
+#include "rnn/generate_nn.hxx"
 #include "rnn/rnn_edge.hxx"
 #include "rnn/rnn_genome.hxx"
 #include "rnn/rnn_node.hxx"
 #include "rnn/rnn_node_interface.hxx"
-
-#include "rnn/generate_nn.hxx"
-
+#include "rnn/ugrnn_node.hxx"
 #include "time_series/time_series.hxx"
-
-#include "gradient_test.hxx"
+#include "weights/weight_rules.hxx"
 
 int main(int argc, char **argv) {
     vector<string> arguments = vector<string>(argv, argv + argc);
@@ -42,15 +37,15 @@ int main(int argc, char **argv) {
 
     Log::info("TESTING UGRNN\n");
 
-    vector< vector<double> > inputs;
-    vector< vector<double> > outputs;
+    vector<vector<double> > inputs;
+    vector<vector<double> > outputs;
 
     int input_length = 10;
     get_argument(arguments, "--input_length", true, input_length);
 
     WeightRules *weight_rules = new WeightRules();
     weight_rules->initialize_from_args(arguments);
-    
+
     for (int32_t max_recurrent_depth = 1; max_recurrent_depth <= 5; max_recurrent_depth++) {
         Log::info("testing with max recurrent depth: %d\n", max_recurrent_depth);
 
@@ -63,7 +58,7 @@ int main(int argc, char **argv) {
         vector<string> inputs1{"input 1"};
         vector<string> outputs1{"output 1"};
 
-        //Test 1 input, 1 output, no hidden
+        // Test 1 input, 1 output, no hidden
         genome = create_ugrnn(inputs1, 0, 0, outputs1, max_recurrent_depth, weight_rules);
         gradient_test("UGRNN: 1 Input, 1 Output", genome, inputs, outputs);
         delete genome;
@@ -80,12 +75,10 @@ int main(int argc, char **argv) {
         gradient_test("UGRNN: 1 Input, 2x2 Hidden, 1 Output", genome, inputs, outputs);
         delete genome;
 
-
         vector<string> inputs2{"input 1", "input 2"};
         vector<string> outputs2{"output 1", "output 2"};
 
-
-        //Test 2 inputs, 2 outputs, no hidden
+        // Test 2 inputs, 2 outputs, no hidden
         genome = create_ugrnn(inputs2, 0, 0, outputs2, max_recurrent_depth, weight_rules);
 
         inputs.resize(2);
@@ -110,12 +103,10 @@ int main(int argc, char **argv) {
         gradient_test("UGRNN: 2 Input, 3x3 Hidden, 2 Output", genome, inputs, outputs);
         delete genome;
 
-
         vector<string> inputs3{"input 1", "input 2", "input 3"};
         vector<string> outputs3{"output 1", "output 2", "input 3"};
 
-
-        //Test 3 inputs, 3 outputs, no hidden
+        // Test 3 inputs, 3 outputs, no hidden
         genome = create_ugrnn(inputs3, 0, 0, outputs3, max_recurrent_depth, weight_rules);
 
         inputs.resize(3);

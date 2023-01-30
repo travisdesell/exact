@@ -1,27 +1,28 @@
-#include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
-#include <fstream>
 
 #include <boost/filesystem.hpp>
+#include <fstream>
+#include <iostream>
 using boost::filesystem::create_directories;
 using boost::filesystem::directory_iterator;
 using boost::filesystem::is_directory;
 
+#include "opencv2/core/core.hpp"
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
-#include "opencv2/core/core.hpp"
 
 using namespace std;
 using namespace cv;
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
     Mat image;
 
     if (argc != 6) {
         cerr << "error: incorrect arguments." << endl;
         cerr << "usage: " << endl;
-        cerr << "    ./" << argv[0] << " <input directory> <output directory> <img size> <rotate?> <convert to HSV?>" << endl;
+        cerr << "    ./" << argv[0] << " <input directory> <output directory> <img size> <rotate?> <convert to HSV?>"
+             << endl;
         exit(1);
     }
 
@@ -51,7 +52,7 @@ int main(int argc, char** argv) {
             cout << "writing to:    '" << output_filename.str() << "'" << endl;
 
             Size size(img_size, img_size);
-            Mat src = imread( itr->path().c_str() );
+            Mat src = imread(itr->path().c_str());
             Mat dst;
             if (img_size != 0) {
                 resize(src, dst, size);
@@ -59,9 +60,7 @@ int main(int argc, char** argv) {
                 dst = src;
             }
 
-            if (hsv) {
-                cvtColor(dst, dst, CV_BGR2HSV);
-            }
+            if (hsv) { cvtColor(dst, dst, CV_BGR2HSV); }
 
             imwrite(output_filename.str().c_str(), dst);
 
@@ -70,8 +69,8 @@ int main(int argc, char** argv) {
                 string filebase = output_filename.str().substr(0, file_pos);
                 string filetype = output_filename.str().substr(file_pos, output_filename.str().size() - file_pos);
 
-                //cout << "base: '" << filebase << "'" << endl;
-                //cout << "type: '" << filetype << "'" << endl;
+                // cout << "base: '" << filebase << "'" << endl;
+                // cout << "type: '" << filetype << "'" << endl;
 
                 Mat rot(dst);
                 for (int i = 1; i < 4; i++) {
@@ -82,9 +81,8 @@ int main(int argc, char** argv) {
                     of << filebase << "_" << i << filetype;
 
                     cout << "writing to:    '" << of.str() << "'" << endl;
-                    imwrite( of.str().c_str(), rot );
+                    imwrite(of.str().c_str(), rot);
                 }
-
             }
 
             count++;
@@ -96,4 +94,3 @@ int main(int argc, char** argv) {
     cout << "resized " << count << " files." << endl;
     return 0;
 }
-

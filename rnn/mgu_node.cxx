@@ -1,5 +1,4 @@
 #include <cmath>
-
 #include <fstream>
 using std::ostream;
 
@@ -16,25 +15,23 @@ using std::uniform_real_distribution;
 #include <vector>
 using std::vector;
 
-#include "common/random.hxx"
 #include "common/log.hxx"
-
-#include "rnn_node_interface.hxx"
-#include "mse.hxx"
+#include "common/random.hxx"
 #include "mgu_node.hxx"
-
+#include "mse.hxx"
+#include "rnn_node_interface.hxx"
 
 #define NUMBER_MGU_WEIGHTS 6
 
-MGU_Node::MGU_Node(int32_t _innovation_number, int32_t _layer_type, double _depth) : RNN_Node_Interface(_innovation_number, _layer_type, _depth) {
+MGU_Node::MGU_Node(int32_t _innovation_number, int32_t _layer_type, double _depth)
+    : RNN_Node_Interface(_innovation_number, _layer_type, _depth) {
     node_type = MGU_NODE;
 }
 
-MGU_Node::~MGU_Node() {
-}
+MGU_Node::~MGU_Node() {}
 
-void MGU_Node::initialize_lamarckian(minstd_rand0 &generator, NormalDistribution &normal_distribution, double mu, double sigma) {
-
+void MGU_Node::initialize_lamarckian(minstd_rand0 &generator, NormalDistribution &normal_distribution, double mu,
+                                     double sigma) {
     fw = bound(normal_distribution.random(generator, mu, sigma));
     fu = bound(normal_distribution.random(generator, mu, sigma));
     f_bias = bound(normal_distribution.random(generator, mu, sigma));
@@ -45,7 +42,6 @@ void MGU_Node::initialize_lamarckian(minstd_rand0 &generator, NormalDistribution
 }
 
 void MGU_Node::initialize_xavier(minstd_rand0 &generator, uniform_real_distribution<double> &rng_1_1, double range) {
-
     fw = range * (rng_1_1(generator));
     fu = range * (rng_1_1(generator));
     f_bias = range * (rng_1_1(generator));
@@ -53,10 +49,9 @@ void MGU_Node::initialize_xavier(minstd_rand0 &generator, uniform_real_distribut
     hw = range * (rng_1_1(generator));
     hu = range * (rng_1_1(generator));
     h_bias = range * (rng_1_1(generator));
-    
 }
 
-void MGU_Node::initialize_kaiming(minstd_rand0 &generator, NormalDistribution &normal_distribution, double range){
+void MGU_Node::initialize_kaiming(minstd_rand0 &generator, NormalDistribution &normal_distribution, double range) {
     fw = range * normal_distribution.random(generator, 0, 1);
     fu = range * normal_distribution.random(generator, 0, 1);
     f_bias = range * normal_distribution.random(generator, 0, 1);
@@ -79,7 +74,7 @@ void MGU_Node::initialize_uniform_random(minstd_rand0 &generator, uniform_real_d
 double MGU_Node::get_gradient(string gradient_name) {
     double gradient_sum = 0.0;
 
-    for (int32_t i = 0; i < series_length; i++ ) {
+    for (int32_t i = 0; i < series_length; i++) {
         if (gradient_name == "fw") {
             gradient_sum += d_fw[i];
         } else if (gradient_name == "fu") {
@@ -110,14 +105,16 @@ void MGU_Node::input_fired(int32_t time, double incoming_output) {
 
     input_values[time] += incoming_output;
 
-    if (inputs_fired[time] < total_inputs) return;
+    if (inputs_fired[time] < total_inputs)
+        return;
     else if (inputs_fired[time] > total_inputs) {
-        Log::fatal("ERROR: inputs_fired on MGU_Node %d at time %d is %d and total_inputs is %d\n", innovation_number, time, inputs_fired[time], total_inputs);
+        Log::fatal("ERROR: inputs_fired on MGU_Node %d at time %d is %d and total_inputs is %d\n", innovation_number,
+                   time, inputs_fired[time], total_inputs);
         exit(1);
     }
 
-    //update the reset gate bias so its centered around 1
-    //r_bias += 1;
+    // update the reset gate bias so its centered around 1
+    // r_bias += 1;
 
     double x = input_values[time];
 
@@ -137,13 +134,15 @@ void MGU_Node::input_fired(int32_t time, double incoming_output) {
     h_tanh[time] = tanh(h_sum);
     ld_h_tanh[time] = tanh_derivative(h_tanh[time]);
 
-    output_values[time] = (1 - f[time]) * h_prev   +   f[time] * h_tanh[time];
+    output_values[time] = (1 - f[time]) * h_prev + f[time] * h_tanh[time];
 }
 
 void MGU_Node::try_update_deltas(int32_t time) {
-    if (outputs_fired[time] < total_outputs) return;
+    if (outputs_fired[time] < total_outputs)
+        return;
     else if (outputs_fired[time] > total_outputs) {
-        Log::fatal("ERROR: outputs_fired on MGU_Node %d at time %d is %d and total_outputs is %d\n:", innovation_number, time, outputs_fired[time], total_outputs);
+        Log::fatal("ERROR: outputs_fired on MGU_Node %d at time %d is %d and total_outputs is %d\n:", innovation_number,
+                   time, outputs_fired[time], total_outputs);
         exit(1);
     }
 
@@ -154,31 +153,29 @@ void MGU_Node::try_update_deltas(int32_t time) {
     double h_prev = 0.0;
     if (time > 0) h_prev = output_values[time - 1];
 
-    //backprop output gate
+    // backprop output gate
     double d_out = error;
     if (time < (series_length - 1)) d_out += d_h_prev[time + 1];
 
+    d_h_prev[time] = d_out * (1 - f[time]);
 
-    d_h_prev[time] = d_out * (1-f[time]);
+    double d_h_tanh = d_out * f[time] * ld_h_tanh[time];
+    d_h_bias[time] = d_h_tanh;
+    d_hw[time] = d_h_tanh * x;
+    d_hu[time] = d_h_tanh * f[time] * h_prev;
+    d_input[time] += d_h_tanh * hw;
+    d_h_prev[time] += d_h_tanh * hu * f[time];
 
-    double d_h_tanh  = d_out * f[time] * ld_h_tanh[time];
-    d_h_bias[time]   = d_h_tanh;
-    d_hw[time]       = d_h_tanh * x;
-    d_hu[time]       = d_h_tanh * f[time] * h_prev;
-    d_input[time]    += d_h_tanh * hw;
-    d_h_prev[time]   += d_h_tanh * hu * f[time];
-
-    double d_f_sigmoid  = ((d_out * h_tanh[time]) - (d_out * h_prev));
-    d_f_sigmoid         += d_h_tanh * hu * h_prev;
+    double d_f_sigmoid = ((d_out * h_tanh[time]) - (d_out * h_prev));
+    d_f_sigmoid += d_h_tanh * hu * h_prev;
 
     double d_f = d_f_sigmoid * ld_f[time];
 
-    d_f_bias[time]  = d_f;
-    d_fu[time]      = d_f * h_prev;
-    d_fw[time]      = d_f * x;
-    d_input[time]   += d_f * fw;
-    d_h_prev[time]  += d_f * fu;
-
+    d_f_bias[time] = d_f;
+    d_fu[time] = d_f * h_prev;
+    d_fw[time] = d_f * x;
+    d_input[time] += d_f * fw;
+    d_h_prev[time] += d_f * fu;
 }
 
 void MGU_Node::error_fired(int32_t time, double error) {
@@ -197,10 +194,7 @@ void MGU_Node::output_fired(int32_t time, double delta) {
     try_update_deltas(time);
 }
 
-
-int32_t MGU_Node::get_number_weights() const {
-    return NUMBER_MGU_WEIGHTS;
-}
+int32_t MGU_Node::get_number_weights() const { return NUMBER_MGU_WEIGHTS; }
 
 void MGU_Node::get_weights(vector<double> &parameters) const {
     parameters.resize(get_number_weights());
@@ -213,9 +207,8 @@ void MGU_Node::set_weights(const vector<double> &parameters) {
     set_weights(offset, parameters);
 }
 
-
 void MGU_Node::set_weights(int32_t &offset, const vector<double> &parameters) {
-    //int32_t start_offset = offset;
+    // int32_t start_offset = offset;
 
     fw = bound(parameters[offset++]);
     fu = bound(parameters[offset++]);
@@ -225,13 +218,12 @@ void MGU_Node::set_weights(int32_t &offset, const vector<double> &parameters) {
     hu = bound(parameters[offset++]);
     h_bias = bound(parameters[offset++]);
 
-
-    //int32_t end_offset = offset;
-    //Log::trace("set weights from offset %d to %d on MGU_Node %d\n", start_offset, end_offset, innovation_number);
+    // int32_t end_offset = offset;
+    // Log::trace("set weights from offset %d to %d on MGU_Node %d\n", start_offset, end_offset, innovation_number);
 }
 
 void MGU_Node::get_weights(int32_t &offset, vector<double> &parameters) const {
-    //int32_t start_offset = offset;
+    // int32_t start_offset = offset;
 
     parameters[offset++] = fw;
     parameters[offset++] = fu;
@@ -241,17 +233,14 @@ void MGU_Node::get_weights(int32_t &offset, vector<double> &parameters) const {
     parameters[offset++] = hu;
     parameters[offset++] = h_bias;
 
-    //int32_t end_offset = offset;
-    //Log::trace("got weights from offset %d to %d on MGU_Node %d\n", start_offset, end_offset, innovation_number);
+    // int32_t end_offset = offset;
+    // Log::trace("got weights from offset %d to %d on MGU_Node %d\n", start_offset, end_offset, innovation_number);
 }
-
 
 void MGU_Node::get_gradients(vector<double> &gradients) {
     gradients.assign(NUMBER_MGU_WEIGHTS, 0.0);
 
-    for (int32_t i = 0; i < NUMBER_MGU_WEIGHTS; i++) {
-        gradients[i] = 0.0;
-    }
+    for (int32_t i = 0; i < NUMBER_MGU_WEIGHTS; i++) { gradients[i] = 0.0; }
 
     for (int32_t i = 0; i < series_length; i++) {
         gradients[0] += d_fw[i];
@@ -281,7 +270,7 @@ void MGU_Node::reset(int32_t _series_length) {
     h_tanh.assign(series_length, 0.0);
     ld_h_tanh.assign(series_length, 0.0);
 
-    //reset values from rnn_node_interface
+    // reset values from rnn_node_interface
     d_input.assign(series_length, 0.0);
     error_values.assign(series_length, 0.0);
 
@@ -292,10 +281,10 @@ void MGU_Node::reset(int32_t _series_length) {
     outputs_fired.assign(series_length, 0);
 }
 
-RNN_Node_Interface* MGU_Node::copy() const {
-    MGU_Node* n = new MGU_Node(innovation_number, layer_type, depth);
+RNN_Node_Interface *MGU_Node::copy() const {
+    MGU_Node *n = new MGU_Node(innovation_number, layer_type, depth);
 
-    //copy MGU_Node values
+    // copy MGU_Node values
     n->fw = fw;
     n->fu = fu;
     n->f_bias = f_bias;
@@ -317,7 +306,7 @@ RNN_Node_Interface* MGU_Node::copy() const {
     n->h_tanh = h_tanh;
     n->ld_h_tanh = ld_h_tanh;
 
-    //copy RNN_Node_Interface values
+    // copy RNN_Node_Interface values
     n->series_length = series_length;
     n->input_values = input_values;
     n->output_values = output_values;
@@ -335,6 +324,4 @@ RNN_Node_Interface* MGU_Node::copy() const {
     return n;
 }
 
-void MGU_Node::write_to_stream(ostream &out) {
-    RNN_Node_Interface::write_to_stream(out);
-}
+void MGU_Node::write_to_stream(ostream &out) { RNN_Node_Interface::write_to_stream(out); }

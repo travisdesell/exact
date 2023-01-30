@@ -1,7 +1,6 @@
-#include <iostream>
-#include <iomanip>
-
 #include <cmath>
+#include <iomanip>
+#include <iostream>
 
 #define iterations 500
 
@@ -33,7 +32,6 @@ double exact_exp(double z) {
         return result;
     }
 }
-
 
 int main(int argc, char **argv) {
     double value;
@@ -95,5 +93,4 @@ int main(int argc, char **argv) {
     }
     std::cout << std::endl;
     */
-
 }

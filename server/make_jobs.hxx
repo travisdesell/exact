@@ -5,7 +5,7 @@
 
 #define CUSHION 100
 #define WORKUNITS_TO_GENERATE 100
-#define REPLICATION_FACTOR  1
+#define REPLICATION_FACTOR 1
 #define SLEEP_TIME 10
 
 bool low_on_workunits();

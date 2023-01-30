@@ -1,10 +1,10 @@
 #ifndef GIBBS_ARGUMENTS_H
 #define GIBBS_ARGUMENTS_H
 
-#include <iostream>
-#include <vector>
-#include <sstream>
 #include <cstdlib>
+#include <iostream>
+#include <sstream>
+#include <vector>
 
 using namespace std;
 
@@ -16,9 +16,9 @@ bool get_argument_vector(vector<string> arguments, string argument, bool require
     for (unsigned int i = 0; i < arguments.size(); i++) {
         if (argument.compare(arguments.at(i)) == 0) {
             i++;
-            while (i < arguments.size() && arguments.at(i).substr(0,2).compare("--") != 0) {
+            while (i < arguments.size() && arguments.at(i).substr(0, 2).compare("--") != 0) {
                 T result;
-                if ( !(stringstream(arguments.at(i++)) >> result) ) {
+                if (!(stringstream(arguments.at(i++)) >> result)) {
                     cerr << "ERROR: invalid argument '" << argument << "': " << arguments.at(i) << endl;
                     exit(1);
                 }
@@ -55,7 +55,7 @@ bool get_argument(vector<string> arguments, string argument, bool required, T &r
     bool found = false;
     for (unsigned int i = 0; i < arguments.size(); i++) {
         if (argument.compare(arguments.at(i)) == 0) {
-            if ( !(stringstream(arguments.at(++i)) >> result) ) {
+            if (!(stringstream(arguments.at(++i)) >> result)) {
                 cerr << "ERROR: invalid argument '" << argument << "': " << arguments.at(i) << endl;
                 exit(1);
             }
@@ -70,22 +70,21 @@ bool get_argument(vector<string> arguments, string argument, bool required, T &r
     }
 
     if (found) {
-//        cerr << "parsed argument '" << argument << "' successfully: " << result << endl;
+        //        cerr << "parsed argument '" << argument << "' successfully: " << result << endl;
     }
     return found;
 }
-
 
 template <typename T1, typename T2>
 bool get_arguments(vector<string> arguments, string argument, bool required, T1 &result1, T2 &result2) {
     bool found = false;
     for (unsigned int i = 0; i < arguments.size(); i++) {
         if (argument.compare(arguments.at(i)) == 0) {
-            if ( !(stringstream(arguments.at(++i)) >> result1) ) {
+            if (!(stringstream(arguments.at(++i)) >> result1)) {
                 cerr << "ERROR: invalid argument '" << argument << "': " << arguments.at(i) << endl;
                 exit(1);
             }
-            if ( !(stringstream(arguments.at(++i)) >> result2) ) {
+            if (!(stringstream(arguments.at(++i)) >> result2)) {
                 cerr << "ERROR: invalid argument '" << argument << "': " << arguments.at(i) << endl;
                 exit(1);
             }
@@ -100,7 +99,7 @@ bool get_arguments(vector<string> arguments, string argument, bool required, T1 
     }
 
     if (found) {
-//        cerr << "parsed argument '" << argument << "' successfully: " << result1 << " " << result2 << endl;
+        //        cerr << "parsed argument '" << argument << "' successfully: " << result1 << " " << result2 << endl;
     }
     return found;
 }

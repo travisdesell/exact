@@ -2,7 +2,6 @@
 #define EXAMM_GRADIENT_TEST
 
 #include <chrono>
-
 #include <fstream>
 using std::getline;
 using std::ifstream;
@@ -18,20 +17,18 @@ using std::string;
 using std::vector;
 
 #include "common/arguments.hxx"
-
+#include "rnn/generate_nn.hxx"
 #include "rnn/lstm_node.hxx"
 #include "rnn/rnn_edge.hxx"
 #include "rnn/rnn_genome.hxx"
 #include "rnn/rnn_node.hxx"
 #include "rnn/rnn_node_interface.hxx"
-
-#include "rnn/generate_nn.hxx"
-
 #include "time_series/time_series.hxx"
 
 void initialize_generator();
 void generate_random_vector(int number_parameters, vector<double> &v);
 
-void gradient_test(string name, RNN_Genome *genome, const vector< vector<double> > &inputs, const vector< vector<double> > &outputs);
+void gradient_test(string name, RNN_Genome *genome, const vector<vector<double> > &inputs,
+                   const vector<vector<double> > &outputs);
 
 #endif

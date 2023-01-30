@@ -1,17 +1,15 @@
-#include <iostream>
-#include <iomanip>
 #include <stdio.h>
 #include <stdlib.h>
+
 #include <fstream>
+#include <iomanip>
+#include <iostream>
 #include <vector>
 
+#include "cnn/cnn_genome.hxx"
 #include "common/arguments.hxx"
 #include "common/version.hxx"
-
 #include "image_tools/image_set.hxx"
-
-#include "cnn/cnn_genome.hxx"
-
 #include "stdint.h"
 
 /**
@@ -19,21 +17,19 @@
  *   */
 
 #ifdef _WIN32
-    #include "boinc_win.h"
-    #include "str_util.h"
+#include "boinc_win.h"
+#include "str_util.h"
 #endif
 
-#include "util.h"
-#include "filesys.h"
 #include "boinc_api.h"
-#include "mfile.h"
-
 #include "diagnostics.h"
+#include "filesys.h"
+#include "mfile.h"
+#include "util.h"
 
 using namespace std;
 
 vector<string> arguments;
-
 
 int progress_function(float progress) {
     boinc_checkpoint_completed();
@@ -48,28 +44,26 @@ string get_boinc_filename(string filename) {
         cerr << "APP: error reading input file (resolving checkpoint file name)" << endl;
         boinc_finish(1);
         exit(1);
-    }   
+    }
 
     return input_path;
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
     int retval = 0;
-    #ifdef BOINC_APP_GRAPHICS
-        #if defined(_WIN32) || defined(__APPLE)
-            retval = boinc_init_graphics(worker);
-        #else
-            retval = boinc_init_graphics(worker, argv[0]);
-        #endif
-    #else
-        retval = boinc_init();
-    #endif
+#ifdef BOINC_APP_GRAPHICS
+#if defined(_WIN32) || defined(__APPLE)
+    retval = boinc_init_graphics(worker);
+#else
+    retval = boinc_init_graphics(worker, argv[0]);
+#endif
+#else
+    retval = boinc_init();
+#endif
     if (retval) exit(retval);
 
-	cerr << "arguments:" << endl;
-	for (int32_t i = 0; i < argc; i++) {
-		cerr << "\t'" << argv[i] << "'" << endl;
-	}
+    cerr << "arguments:" << endl;
+    for (int32_t i = 0; i < argc; i++) { cerr << "\t'" << argv[i] << "'" << endl; }
 
     cerr << "converting arguments to vector" << endl;
     arguments = vector<string>(argv, argv + argc);
@@ -108,15 +102,15 @@ int main(int argc, char** argv) {
 
     ifstream infile(checkpoint_filename);
     if (infile) {
-        //start from the checkpoint if it exists
+        // start from the checkpoint if it exists
         cerr << "starting from checkpoint file: '" << checkpoint_filename << "'" << endl;
 
         genome = new CNN_Genome(checkpoint_filename, true);
     } else {
-        //start from the input genome file otherwise
+        // start from the input genome file otherwise
         cerr << "starting from input file: '" << genome_filename << "'" << endl;
         genome = new CNN_Genome(genome_filename, false);
-        //genome->set_to_best();
+        // genome->set_to_best();
     }
     cerr << "parsed input file" << endl;
 
@@ -128,7 +122,9 @@ int main(int argc, char** argv) {
     }
 
     if (genome->get_version_str().compare(EXACT_VERSION_STR) != 0) {
-        cerr << "ERROR: exact application with version '" << EXACT_VERSION_STR << "' trying to process workunit with incompatible input version: '" << genome->get_version_str() << "'" << endl;
+        cerr << "ERROR: exact application with version '" << EXACT_VERSION_STR
+             << "' trying to process workunit with incompatible input version: '" << genome->get_version_str() << "'"
+             << endl;
         boinc_finish(1);
         exit(1);
     }
@@ -138,8 +134,10 @@ int main(int argc, char** argv) {
     cerr << "loading images" << endl;
 
     Images training_images(training_filename, genome->get_padding());
-    Images validation_images(validation_filename, genome->get_padding(), training_images.get_average(), training_images.get_std_dev());
-    Images testing_images(testing_filename, genome->get_padding(), training_images.get_average(), training_images.get_std_dev());
+    Images validation_images(validation_filename, genome->get_padding(), training_images.get_average(),
+                             training_images.get_std_dev());
+    Images testing_images(testing_filename, genome->get_padding(), training_images.get_average(),
+                          training_images.get_std_dev());
 
     if (!training_images.loaded_correctly()) {
         cerr << "ERROR: had error loading training images" << endl;
@@ -157,8 +155,7 @@ int main(int argc, char** argv) {
 
     cerr << "loaded images" << endl;
 
-
-    //genome->print_graphviz(cout);
+    // genome->print_graphviz(cout);
 
     genome->set_progress_function(progress_function);
 
@@ -180,24 +177,23 @@ int main(int argc, char** argv) {
 #ifdef _WIN32
 
 #if defined(_MSC_VER) && (_MSC_VER >= 1400)
-void AppInvalidParameterHandler(const wchar_t* expression, const wchar_t* function, const wchar_t* file, unsigned int line, uintptr_t pReserved) {
-	DebugBreak();
+void AppInvalidParameterHandler(const wchar_t *expression, const wchar_t *function, const wchar_t *file,
+                                unsigned int line, uintptr_t pReserved) {
+    DebugBreak();
 }
 #endif
 
-
-int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR Args, int WinMode){
+int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR Args, int WinMode) {
     LPSTR command_line;
-    char* argv[100];
+    char *argv[100];
     int argc;
 
 #if defined(_MSC_VER) && (_MSC_VER >= 1400)
-	_set_invalid_parameter_handler(AppInvalidParameterHandler);
+    _set_invalid_parameter_handler(AppInvalidParameterHandler);
 #endif
 
     command_line = GetCommandLine();
-    argc = parse_command_line( command_line, argv );
+    argc = parse_command_line(command_line, argv);
     return main(argc, argv);
 }
 #endif
-

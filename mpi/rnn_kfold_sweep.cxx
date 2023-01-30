@@ -1,5 +1,4 @@
 #include <chrono>
-
 #include <fstream>
 using std::getline;
 using std::ifstream;
@@ -24,32 +23,27 @@ using std::strchr;
 #include <vector>
 using std::vector;
 
-//for mkdir
-#include <sys/stat.h>
+// for mkdir
 #include <errno.h>
+#include <sys/stat.h>
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif /* HAVE_UNISTD_H */
 
 typedef struct stat Stat;
 
-#include "mpi.h"
-
-
 #include "common/arguments.hxx"
 #include "common/log.hxx"
-#include "weights/weight_rules.hxx"
-#include "weights/weight_update.hxx"
-
+#include "mpi.h"
+#include "rnn/generate_nn.hxx"
 #include "rnn/lstm_node.hxx"
 #include "rnn/rnn_edge.hxx"
 #include "rnn/rnn_genome.hxx"
 #include "rnn/rnn_node.hxx"
 #include "rnn/rnn_node_interface.hxx"
-
-#include "rnn/generate_nn.hxx"
-
 #include "time_series/time_series.hxx"
+#include "weights/weight_rules.hxx"
+#include "weights/weight_update.hxx"
 
 #define WORK_REQUEST_TAG 1
 #define JOB_TAG 2
@@ -68,19 +62,11 @@ string process_name;
 WeightUpdate *weight_update_method;
 WeightRules *weight_rules;
 
-vector<string> rnn_types({
-        "one_layer_ff", "two_layer_ff",
-        "jordan",
-        "elman",
-        "one_layer_mgu", "two_layer_mgu",
-        "one_layer_gru", "two_layer_gru",
-        "one_layer_ugrnn", "two_layer_ugrnn",
-        "one_layer_delta", "two_layer_delta",
-        "one_layer_lstm", "two_layer_lstm"
-    });
+vector<string> rnn_types({"one_layer_ff", "two_layer_ff", "jordan", "elman", "one_layer_mgu", "two_layer_mgu",
+                          "one_layer_gru", "two_layer_gru", "one_layer_ugrnn", "two_layer_ugrnn", "one_layer_delta",
+                          "two_layer_delta", "one_layer_lstm", "two_layer_lstm"});
 
-TimeSeriesSets* time_series_sets = NULL;
-
+TimeSeriesSets *time_series_sets = NULL;
 
 struct ResultSet {
     int32_t job;
@@ -92,8 +78,6 @@ struct ResultSet {
 };
 
 vector<ResultSet> results;
-
-
 
 void send_work_request_to(int32_t target) {
     int32_t work_request_message[1];
@@ -115,7 +99,6 @@ void send_job_to(int32_t target, int32_t current_job) {
     MPI_Send(job_message, 1, MPI_INT, target, JOB_TAG, MPI_COMM_WORLD);
 }
 
-
 int32_t receive_job_from(int32_t source) {
     MPI_Status status;
     int32_t job_message[1];
@@ -129,7 +112,9 @@ int32_t receive_job_from(int32_t source) {
 }
 
 string result_to_string(ResultSet result) {
-    return "[result, job: " + to_string(result.job) + ", training mae: " + to_string(result.training_mae) + ", training mse: " + to_string(result.training_mse) + ", test mae: " + to_string(result.test_mae) + ", test mse: " + to_string(result.test_mae) + ", millis: " + to_string(result.milliseconds) + "]";
+    return "[result, job: " + to_string(result.job) + ", training mae: " + to_string(result.training_mae) +
+           ", training mse: " + to_string(result.training_mse) + ", test mae: " + to_string(result.test_mae) +
+           ", test mse: " + to_string(result.test_mae) + ", millis: " + to_string(result.milliseconds) + "]";
 }
 
 void send_result_to(int32_t target, ResultSet result) {
@@ -166,24 +151,21 @@ void receive_terminate_from(int32_t source) {
     MPI_Recv(terminate_message, 1, MPI_INT, source, TERMINATE_TAG, MPI_COMM_WORLD, &status);
 }
 
-
-//tweaked from: https://stackoverflow.com/questions/675039/how-can-i-create-directory-tree-in-c-linux/29828907
+// tweaked from: https://stackoverflow.com/questions/675039/how-can-i-create-directory-tree-in-c-linux/29828907
 static int32_t do_mkdir(const char *path, mode_t mode) {
-    Stat            st;
-    int32_t             status = 0;
+    Stat st;
+    int32_t status = 0;
 
     if (stat(path, &st) != 0) {
         /* Directory does not exist. EEXIST for race condition */
-        if (mkdir(path, mode) != 0 && errno != EEXIST) {
-            status = -1;
-        }
+        if (mkdir(path, mode) != 0 && errno != EEXIST) { status = -1; }
 
     } else if (!S_ISDIR(st.st_mode)) {
         errno = ENOTDIR;
         status = -1;
     }
 
-    return(status);
+    return (status);
 }
 
 /**
@@ -193,10 +175,10 @@ static int32_t do_mkdir(const char *path, mode_t mode) {
  * ** the last element and working backwards.
  * */
 int32_t mkpath(const char *path, mode_t mode) {
-    char           *pp;
-    char           *sp;
-    int32_t             status;
-    char           *copypath = strdup(path);
+    char *pp;
+    char *sp;
+    int32_t status;
+    char *copypath = strdup(path);
 
     status = 0;
     pp = copypath;
@@ -211,16 +193,11 @@ int32_t mkpath(const char *path, mode_t mode) {
         pp = sp + 1;
     }
 
-    if (status == 0) {
-        status = do_mkdir(path, mode);
-    }
+    if (status == 0) { status = do_mkdir(path, mode); }
 
     free(copypath);
     return (status);
 }
-
-
-
 
 void master(int32_t max_rank) {
     if (output_directory != "") {
@@ -230,15 +207,16 @@ void master(int32_t max_rank) {
         mkdir(output_directory.c_str(), 0777);
     }
 
-    //initialize the results with -1 as the job so we can determine if a particular rnn type has completed
-    results = vector<ResultSet>(rnn_types.size() * time_series_sets->get_number_series() * repeats, {-1, 0.0, 0.0, 0.0, 0.0, 0});
+    // initialize the results with -1 as the job so we can determine if a particular rnn type has completed
+    results = vector<ResultSet>(rnn_types.size() * time_series_sets->get_number_series() * repeats,
+                                {-1, 0.0, 0.0, 0.0, 0.0, 0});
 
     int32_t terminates_sent = 0;
     int32_t current_job = 0;
     int32_t last_job = rnn_types.size() * (time_series_sets->get_number_series() / fold_size) * repeats;
 
     while (true) {
-        //wait for a incoming message
+        // wait for a incoming message
         MPI_Status status;
         MPI_Probe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
 
@@ -246,14 +224,14 @@ void master(int32_t max_rank) {
         int32_t tag = status.MPI_TAG;
         Log::debug("probe returned message from: %d with tag: %d\n", message_source, tag);
 
-        //if the message is a work request, send a genome
+        // if the message is a work request, send a genome
 
         if (tag == WORK_REQUEST_TAG) {
             receive_work_request_from(message_source);
 
             if (current_job >= last_job) {
-                //no more jobs to process if the current job is >= the result vector
-                //send terminate message
+                // no more jobs to process if the current job is >= the result vector
+                // send terminate message
                 Log::debug("terminating worker: %d\n", message_source);
                 send_terminate_to(message_source);
                 terminates_sent++;
@@ -262,11 +240,11 @@ void master(int32_t max_rank) {
                 if (terminates_sent >= max_rank - 1) return;
 
             } else {
-                //send job
+                // send job
                 Log::debug("sending job to: %d\n", message_source);
                 send_job_to(message_source, current_job);
 
-                //increment the current job for the next worker
+                // increment the current job for the next worker
                 current_job++;
             }
         } else if (tag == RESULT_TAG) {
@@ -274,12 +252,12 @@ void master(int32_t max_rank) {
             ResultSet result = receive_result_from(message_source);
             results[result.job] = result;
 
-            //TODO:
-            //check and see if this particular set of jobs for rnn_type has completed,
-            //then write the file for that type if it has
+            // TODO:
+            // check and see if this particular set of jobs for rnn_type has completed,
+            // then write the file for that type if it has
             int32_t jobs_per_rnn = (time_series_sets->get_number_series() / fold_size) * repeats;
 
-            //get the particular rnn type this job was for, and which results should be there
+            // get the particular rnn type this job was for, and which results should be there
             int32_t rnn = result.job / jobs_per_rnn;
             int32_t rnn_job_start = rnn * jobs_per_rnn;
             int32_t rnn_job_end = (rnn + 1) * jobs_per_rnn;
@@ -308,16 +286,17 @@ void master(int32_t max_rank) {
                 int32_t current = rnn_job_start;
                 for (int32_t j = 0; j < (time_series_sets->get_number_series() / fold_size); j++) {
                     for (int32_t k = 0; k < repeats; k++) {
+                        outfile << j << "," << k << "," << results[current].milliseconds << ","
+                                << results[current].training_mse << "," << results[current].training_mae << ","
+                                << results[current].test_mse << "," << results[current].test_mae << endl;
 
-                        outfile << j << "," << k << "," << results[current].milliseconds << "," << results[current].training_mse << "," << results[current].training_mae << "," << results[current].test_mse << "," << results[current].test_mae << endl;
-
-                        Log::debug("%s, tested on series[%d], repeat: %d, result: %s\n", rnn_types[rnn].c_str(), j, k, result_to_string(results[current]).c_str());
+                        Log::debug("%s, tested on series[%d], repeat: %d, result: %s\n", rnn_types[rnn].c_str(), j, k,
+                                   result_to_string(results[current]).c_str());
                         current++;
                     }
                 }
                 outfile.close();
             }
-
 
         } else {
             Log::fatal("ERROR: received message from %d with unknown tag: %d\n", message_source, tag);
@@ -329,13 +308,13 @@ void master(int32_t max_rank) {
 ResultSet handle_job(int32_t rank, int32_t current_job) {
     int32_t jobs_per_rnn = (time_series_sets->get_number_series() / fold_size) * repeats;
 
-    //get rnn_type
-    string rnn_type = rnn_types[ current_job / jobs_per_rnn ] ;
-    //get j, k
+    // get rnn_type
+    string rnn_type = rnn_types[current_job / jobs_per_rnn];
+    // get j, k
     int32_t jobs_per_j = repeats;
     int32_t j = (current_job % jobs_per_rnn) / jobs_per_j;
 
-    //get repeat
+    // get repeat
     int32_t repeat = current_job % jobs_per_j;
 
     Log::debug("evaluating rnn type '%s' with j: %d, repeat: %d\n", rnn_type.c_str(), j, repeat);
@@ -345,13 +324,9 @@ ResultSet handle_job(int32_t rank, int32_t current_job) {
 
     for (int32_t k = 0; k < time_series_sets->get_number_series(); k += fold_size) {
         if (j == (k / fold_size)) {
-            for (int32_t l = 0; l < fold_size; l++) {
-                test_indexes.push_back(k + l);
-            }
+            for (int32_t l = 0; l < fold_size; l++) { test_indexes.push_back(k + l); }
         } else {
-            for (int32_t l = 0; l < fold_size; l++) {
-                training_indexes.push_back(k + l);
-            }
+            for (int32_t l = 0; l < fold_size; l++) { training_indexes.push_back(k + l); }
         }
     }
 
@@ -360,10 +335,10 @@ ResultSet handle_job(int32_t rank, int32_t current_job) {
     time_series_sets->set_training_indexes(training_indexes);
     time_series_sets->set_test_indexes(test_indexes);
 
-    vector< vector< vector<double> > > training_inputs;
-    vector< vector< vector<double> > > training_outputs;
-    vector< vector< vector<double> > > validation_inputs;
-    vector< vector< vector<double> > > validation_outputs;
+    vector<vector<vector<double> > > training_inputs;
+    vector<vector<vector<double> > > training_outputs;
+    vector<vector<vector<double> > > validation_inputs;
+    vector<vector<vector<double> > > validation_outputs;
 
     time_series_sets->export_training_series(time_offset, training_inputs, training_outputs);
     time_series_sets->export_test_series(time_offset, validation_inputs, validation_outputs);
@@ -372,7 +347,7 @@ ResultSet handle_job(int32_t rank, int32_t current_job) {
     vector<string> output_parameter_names = time_series_sets->get_output_parameter_names();
 
     int32_t number_inputs = time_series_sets->get_number_inputs();
-    //int32_t number_outputs = time_series_sets->get_number_outputs();
+    // int32_t number_outputs = time_series_sets->get_number_outputs();
 
     RNN_Genome *genome = NULL;
     if (rnn_type == "one_layer_lstm") {
@@ -424,13 +399,15 @@ ResultSet handle_job(int32_t rank, int32_t current_job) {
         genome = create_elman(input_parameter_names, 1, number_inputs, output_parameter_names, 1, weight_rules);
     }
 
-    RNN* rnn = genome->get_rnn();
+    RNN *rnn = genome->get_rnn();
 
     int32_t number_of_weights = genome->get_number_weights();
-    Log::debug("RNN INFO FOR '%s', nodes: %d, edges: %d, rec: %d, weights: %d\n", rnn_type.c_str(), genome->get_enabled_node_count(), genome->get_enabled_edge_count(), genome->get_enabled_recurrent_edge_count(), number_of_weights);
+    Log::debug("RNN INFO FOR '%s', nodes: %d, edges: %d, rec: %d, weights: %d\n", rnn_type.c_str(),
+               genome->get_enabled_node_count(), genome->get_enabled_edge_count(),
+               genome->get_enabled_recurrent_edge_count(), number_of_weights);
 
-    vector<double> min_bound(number_of_weights, -1.0); 
-    vector<double> max_bound(number_of_weights, 1.0); 
+    vector<double> min_bound(number_of_weights, -1.0);
+    vector<double> max_bound(number_of_weights, 1.0);
 
     vector<double> best_parameters;
 
@@ -450,7 +427,8 @@ ResultSet handle_job(int32_t rank, int32_t current_job) {
     Log::set_id(backprop_log_id);
 
     std::chrono::time_point<std::chrono::system_clock> start = std::chrono::system_clock::now();
-    genome->backpropagate_stochastic(training_inputs, training_outputs, validation_inputs, validation_outputs, weight_update_method);
+    genome->backpropagate_stochastic(training_inputs, training_outputs, validation_inputs, validation_outputs,
+                                     weight_update_method);
     std::chrono::time_point<std::chrono::system_clock> end = std::chrono::system_clock::now();
 
     long milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
@@ -524,8 +502,6 @@ void worker(int32_t rank) {
     Log::release_id("worker_" + to_string(rank));
 }
 
-
-
 int main(int argc, char **argv) {
     int32_t rank, max_rank;
 
@@ -543,7 +519,6 @@ int main(int argc, char **argv) {
     Log::debug("process %d of %d\n", rank, max_rank);
     Log::restrict_to_rank(0);
 
-
     get_argument(arguments, "--time_offset", true, time_offset);
 
     get_argument(arguments, "--bp_iterations", true, bp_iterations);
@@ -560,15 +535,14 @@ int main(int argc, char **argv) {
     weight_update_method = new WeightUpdate();
     weight_update_method->generate_from_arguments(arguments);
 
-
     if (rank == 0) {
-        //only print verbose info from the master process
+        // only print verbose info from the master process
         time_series_sets = TimeSeriesSets::generate_from_arguments(arguments);
     } else {
         time_series_sets = TimeSeriesSets::generate_from_arguments(arguments);
     }
 
-    //MPI_Barrier(MPI_COMM_WORLD);
+    // MPI_Barrier(MPI_COMM_WORLD);
 
     Log::clear_rank_restriction();
 

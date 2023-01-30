@@ -1,7 +1,6 @@
 #ifdef EXACT_MATH_TEST
 #include <cmath>
 #include <cstdlib>
-
 #include <iostream>
 using std::cout;
 using std::endl;
@@ -13,8 +12,8 @@ using std::endl;
 
 #define iterations 50
 
-//calculate exp slowly using a taylor series to prevent
-//os/compiler inconsistencies
+// calculate exp slowly using a taylor series to prevent
+// os/compiler inconsistencies
 
 float exact_exp(float z) {
     bool is_negative = z < 0;
@@ -35,7 +34,6 @@ float exact_exp(float z) {
         return result;
     }
 }
-
 
 float exact_sqrt(float s) {
     if (s == 0) return 0.0;
@@ -62,7 +60,6 @@ float exact_sqrt(float s) {
 #ifdef EXACT_MATH_TEST
 
 int main(int argc, char **argv) {
-    
     float value = 0.932;
 
     for (int i = 0; i < 100; i++) {
