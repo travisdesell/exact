@@ -26,16 +26,16 @@ using std::vector;
 #include "image_tools/image_set.hxx"
 #include "mpi.h"
 
-#define WORK_REQUEST_TAG 1
+#define WORK_REQUEST_TAG  1
 #define GENOME_LENGTH_TAG 2
-#define GENOME_TAG 3
-#define TERMINATE_TAG 4
+#define GENOME_TAG        3
+#define TERMINATE_TAG     4
 
 mutex exact_mutex;
 
 vector<string> arguments;
 
-EXACT *exact;
+EXACT* exact;
 
 bool finished = false;
 
@@ -53,7 +53,7 @@ void receive_work_request(int source) {
     MPI_Recv(work_request_message, 1, MPI_INT, source, WORK_REQUEST_TAG, MPI_COMM_WORLD, &status);
 }
 
-CNN_Genome *receive_genome_from(string name, int source) {
+CNN_Genome* receive_genome_from(string name, int source) {
     MPI_Status status;
     int length_message[1];
     MPI_Recv(length_message, 1, MPI_INT, source, GENOME_LENGTH_TAG, MPI_COMM_WORLD, &status);
@@ -62,7 +62,7 @@ CNN_Genome *receive_genome_from(string name, int source) {
 
     cout << "[" << setw(10) << name << "] receiving genome of length: " << length << " from: " << source << endl;
 
-    char *genome_str = new char[length + 1];
+    char* genome_str = new char[length + 1];
 
     cout << "[" << setw(10) << name << "] receiving genome from: " << source << endl;
     MPI_Recv(genome_str, length, MPI_CHAR, source, GENOME_TAG, MPI_COMM_WORLD, &status);
@@ -73,13 +73,13 @@ CNN_Genome *receive_genome_from(string name, int source) {
 
     istringstream iss(genome_str);
 
-    CNN_Genome *genome = new CNN_Genome(iss, false);
+    CNN_Genome* genome = new CNN_Genome(iss, false);
 
     delete[] genome_str;
     return genome;
 }
 
-void send_genome_to(string name, int target, CNN_Genome *genome) {
+void send_genome_to(string name, int target, CNN_Genome* genome) {
     ostringstream oss;
 
     genome->write(oss);
@@ -109,8 +109,9 @@ void receive_terminate_message(int source) {
     MPI_Recv(terminate_message, 1, MPI_INT, source, TERMINATE_TAG, MPI_COMM_WORLD, &status);
 }
 
-void master(const Images &training_images, const Images &validation_images, const Images &testing_images,
-            int max_rank) {
+void master(
+    const Images& training_images, const Images& validation_images, const Images& testing_images, int max_rank
+) {
     string name = "master";
 
     cout << "MAX INT: " << numeric_limits<int>::max() << endl;
@@ -132,7 +133,7 @@ void master(const Images &training_images, const Images &validation_images, cons
             receive_work_request(source);
 
             exact_mutex.lock();
-            CNN_Genome *genome = exact->generate_individual();
+            CNN_Genome* genome = exact->generate_individual();
             exact_mutex.unlock();
 
             if (genome == NULL) {  // search was completed if it returns NULL for an individual
@@ -143,7 +144,9 @@ void master(const Images &training_images, const Images &validation_images, cons
 
                 cout << "[" << setw(10) << name << "] sent: " << terminates_sent << " terminates of: " << (max_rank - 1)
                      << endl;
-                if (terminates_sent >= max_rank - 1) return;
+                if (terminates_sent >= max_rank - 1) {
+                    return;
+                }
 
             } else {
                 ofstream outfile(exact->get_output_directory() + "/gen_" + to_string(genome->get_generation_id()));
@@ -159,7 +162,7 @@ void master(const Images &training_images, const Images &validation_images, cons
             }
         } else if (tag == GENOME_LENGTH_TAG) {
             cout << "[" << setw(10) << name << "] received genome from: " << source << endl;
-            CNN_Genome *genome = receive_genome_from(name, source);
+            CNN_Genome* genome = receive_genome_from(name, source);
 
             exact_mutex.lock();
             exact->insert_genome(genome);
@@ -173,7 +176,7 @@ void master(const Images &training_images, const Images &validation_images, cons
     }
 }
 
-void worker(const Images &training_images, const Images &validation_images, const Images &testing_images, int rank) {
+void worker(const Images& training_images, const Images& validation_images, const Images& testing_images, int rank) {
     string name = "worker_" + to_string(rank);
     while (true) {
         cout << "[" << setw(10) << name << "] sending work request!" << endl;
@@ -193,7 +196,7 @@ void worker(const Images &training_images, const Images &validation_images, cons
 
         } else if (tag == GENOME_LENGTH_TAG) {
             cout << "[" << setw(10) << name << "] received genome!" << endl;
-            CNN_Genome *genome = receive_genome_from(name, 0);
+            CNN_Genome* genome = receive_genome_from(name, 0);
 
             genome->set_name(name);
             genome->initialize();
@@ -210,7 +213,7 @@ void worker(const Images &training_images, const Images &validation_images, cons
     }
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
     MPI_Init(&argc, &argv);
 
     int rank, max_rank;
@@ -258,13 +261,16 @@ int main(int argc, char **argv) {
     get_argument(arguments, "--images_resize", true, images_resize);
 
     Images training_images(training_filename, padding);
-    Images validation_images(validation_filename, padding, training_images.get_average(),
-                             training_images.get_std_dev());
+    Images validation_images(
+        validation_filename, padding, training_images.get_average(), training_images.get_std_dev()
+    );
     Images testing_images(testing_filename, padding, training_images.get_average(), training_images.get_std_dev());
 
     if (rank == 0) {
-        exact = new EXACT(training_images, validation_images, testing_images, padding, population_size, max_epochs,
-                          use_sfmp, use_node_operations, max_genomes, output_directory, search_name, reset_edges);
+        exact = new EXACT(
+            training_images, validation_images, testing_images, padding, population_size, max_epochs, use_sfmp,
+            use_node_operations, max_genomes, output_directory, search_name, reset_edges
+        );
 
         master(training_images, validation_images, testing_images, max_rank);
     } else {

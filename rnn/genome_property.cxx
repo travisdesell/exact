@@ -10,7 +10,7 @@ GenomeProperty::GenomeProperty() {
     max_recurrent_depth = 10;
 }
 
-void GenomeProperty::generate_genome_property_from_arguments(const vector<string> &arguments) {
+void GenomeProperty::generate_genome_property_from_arguments(const vector<string>& arguments) {
     get_argument(arguments, "--bp_iterations", true, bp_iterations);
     use_dropout = get_argument(arguments, "--dropout_probability", false, dropout_probability);
 
@@ -18,20 +18,23 @@ void GenomeProperty::generate_genome_property_from_arguments(const vector<string
     get_argument(arguments, "--max_recurrent_depth", false, max_recurrent_depth);
 
     Log::info("Each generated genome is trained for %d epochs\n", bp_iterations);
-    Log::info("Use dropout is set to %s, dropout probability is %f\n", use_dropout ? "True" : "False",
-              dropout_probability);
+    Log::info(
+        "Use dropout is set to %s, dropout probability is %f\n", use_dropout ? "True" : "False", dropout_probability
+    );
     Log::info("Min recurrent depth is %d, max recurrent depth is %d\n", min_recurrent_depth, max_recurrent_depth);
 }
 
-void GenomeProperty::set_genome_properties(RNN_Genome *genome) {
+void GenomeProperty::set_genome_properties(RNN_Genome* genome) {
     genome->set_bp_iterations(bp_iterations);
-    if (use_dropout) genome->enable_dropout(dropout_probability);
+    if (use_dropout) {
+        genome->enable_dropout(dropout_probability);
+    }
     genome->normalize_type = normalize_type;
     genome->set_parameter_names(input_parameter_names, output_parameter_names);
     genome->set_normalize_bounds(normalize_type, normalize_mins, normalize_maxs, normalize_avgs, normalize_std_devs);
 }
 
-void GenomeProperty::get_time_series_parameters(TimeSeriesSets *time_series_sets) {
+void GenomeProperty::get_time_series_parameters(TimeSeriesSets* time_series_sets) {
     input_parameter_names = time_series_sets->get_input_parameter_names();
     output_parameter_names = time_series_sets->get_output_parameter_names();
     normalize_type = time_series_sets->get_normalize_type();

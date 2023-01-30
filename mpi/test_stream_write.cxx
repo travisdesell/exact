@@ -24,16 +24,16 @@ using std::vector;
 #include "weights/weight_rules.hxx"
 #include "weights/weight_update.hxx"
 
-#define WORK_REQUEST_TAG 1
+#define WORK_REQUEST_TAG  1
 #define GENOME_LENGTH_TAG 2
-#define GENOME_TAG 3
-#define TERMINATE_TAG 4
+#define GENOME_TAG        3
+#define TERMINATE_TAG     4
 
 mutex examm_mutex;
 
 vector<string> arguments;
 
-EXAMM *examm;
+EXAMM* examm;
 
 bool finished = false;
 
@@ -42,7 +42,7 @@ vector<vector<vector<double> > > training_outputs;
 vector<vector<vector<double> > > validation_inputs;
 vector<vector<vector<double> > > validation_outputs;
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
     std::cout << "starting up!" << std::endl;
     MPI_Init(&argc, &argv);
     std::cout << "did mpi init!" << std::endl;
@@ -64,18 +64,19 @@ int main(int argc, char **argv) {
 
     std::cout << "initailized log!" << std::endl;
 
-    TimeSeriesSets *time_series_sets = NULL;
+    TimeSeriesSets* time_series_sets = NULL;
     time_series_sets = TimeSeriesSets::generate_from_arguments(arguments);
-    get_train_validation_data(arguments, time_series_sets, training_inputs, training_outputs, validation_inputs,
-                              validation_outputs);
+    get_train_validation_data(
+        arguments, time_series_sets, training_inputs, training_outputs, validation_inputs, validation_outputs
+    );
 
-    WeightUpdate *weight_update_method = new WeightUpdate();
+    WeightUpdate* weight_update_method = new WeightUpdate();
     weight_update_method->generate_from_arguments(arguments);
 
-    WeightRules *weight_rules = new WeightRules();
+    WeightRules* weight_rules = new WeightRules();
     weight_rules->initialize_from_args(arguments);
 
-    RNN_Genome *seed_genome = get_seed_genome(arguments, time_series_sets, weight_rules);
+    RNN_Genome* seed_genome = get_seed_genome(arguments, time_series_sets, weight_rules);
 
     if (rank == 0) {
         // only have the master process print TSS info
@@ -84,9 +85,9 @@ int main(int argc, char **argv) {
     Log::clear_rank_restriction();
 
     examm = generate_examm_from_arguments(arguments, time_series_sets, weight_rules, seed_genome);
-    RNN_Genome *genome = examm->generate_genome();
+    RNN_Genome* genome = examm->generate_genome();
 
-    char *byte_array;
+    char* byte_array;
     int32_t length;
 
     genome->write_to_array(&byte_array, length);

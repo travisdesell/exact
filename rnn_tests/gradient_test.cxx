@@ -35,14 +35,17 @@ void initialize_generator() {
     generator = minstd_rand0(seed);
 }
 
-void generate_random_vector(int number_parameters, vector<double> &v) {
+void generate_random_vector(int number_parameters, vector<double>& v) {
     v.resize(number_parameters);
 
-    for (int32_t i = 0; i < number_parameters; i++) { v[i] = rng(generator); }
+    for (int32_t i = 0; i < number_parameters; i++) {
+        v[i] = rng(generator);
+    }
 }
 
-void gradient_test(string name, RNN_Genome *genome, const vector<vector<double> > &inputs,
-                   const vector<vector<double> > &outputs) {
+void gradient_test(
+    string name, RNN_Genome* genome, const vector<vector<double> >& inputs, const vector<vector<double> >& outputs
+) {
     genome->set_stochastic(false);
     double analytic_mse, empirical_mse;
     vector<double> parameters;
@@ -52,14 +55,16 @@ void gradient_test(string name, RNN_Genome *genome, const vector<vector<double> 
     bool failed = false;
 
     genome->initialize_randomly();
-    RNN *rnn = genome->get_rnn();
+    RNN* rnn = genome->get_rnn();
     Log::debug("got genome \n");
 
     // rnn->enable_use_regression(true);
 
     genome->get_weights(parameters);
     for (int32_t i = 0; i < test_iterations; i++) {
-        if (i == 0) Log::debug_no_header("\n");
+        if (i == 0) {
+            Log::debug_no_header("\n");
+        }
         Log::debug("\tAttempt %d USING REGRESSION\n", i);
 
         // generate_random_vector(rnn->get_number_weights(), parameters);
@@ -78,12 +83,14 @@ void gradient_test(string name, RNN_Genome *genome, const vector<vector<double> 
                 iteration_failed = true;
                 Log::info(
                     "\t\tFAILED analytic gradient[%d]: %lf, empirical gradient[%d]: %lf, difference: %lf, REGRESSION\n",
-                    j, analytic_gradient[j], j, empirical_gradient[j], difference);
+                    j, analytic_gradient[j], j, empirical_gradient[j], difference
+                );
                 // exit(1);
             } else {
                 Log::debug(
                     "\t\tPASSED analytic gradient[%d]: %lf, empirical gradient[%d]: %lf, difference: %lf, REGRESSION\n",
-                    j, analytic_gradient[j], j, empirical_gradient[j], difference);
+                    j, analytic_gradient[j], j, empirical_gradient[j], difference
+                );
             }
         }
 
@@ -97,7 +104,9 @@ void gradient_test(string name, RNN_Genome *genome, const vector<vector<double> 
     // rnn->enable_use_regression(false);
 
     for (int32_t i = 0; i < test_iterations; i++) {
-        if (i == 0) Log::debug_no_header("\n");
+        if (i == 0) {
+            Log::debug_no_header("\n");
+        }
         Log::debug("\tAttempt %d USING SOFTMAX\n", i);
 
         generate_random_vector(rnn->get_number_weights(), parameters);
@@ -116,12 +125,14 @@ void gradient_test(string name, RNN_Genome *genome, const vector<vector<double> 
                 iteration_failed = true;
                 Log::info(
                     "\t\tFAILED analytic gradient[%d]: %lf, empirical gradient[%d]: %lf, difference: %lf, SOFTMAX\n", j,
-                    analytic_gradient[j], j, empirical_gradient[j], difference);
+                    analytic_gradient[j], j, empirical_gradient[j], difference
+                );
                 // exit(1);
             } else {
                 Log::debug(
                     "\t\tPASSED analytic gradient[%d]: %lf, empirical gradient[%d]: %lf, difference: %lf, SOFTMAX\n", j,
-                    analytic_gradient[j], j, empirical_gradient[j], difference);
+                    analytic_gradient[j], j, empirical_gradient[j], difference
+                );
             }
         }
 

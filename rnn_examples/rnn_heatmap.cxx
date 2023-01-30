@@ -31,7 +31,7 @@ vector<string> arguments;
 vector<vector<vector<double> > > testing_inputs;
 vector<vector<vector<double> > > testing_outputs;
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
     arguments = vector<string>(argv, argv + argc);
 
     Log::initialize(arguments);
@@ -68,7 +68,7 @@ int main(int argc, char **argv) {
                 Log::trace("\tgetting genome file from repeat directory: '%s'\n", repeat_directory.c_str());
 
                 string genome_filename = "";
-                for (const auto &entry : fs::directory_iterator(repeat_directory)) {
+                for (const auto& entry : fs::directory_iterator(repeat_directory)) {
                     Log::trace("\t\trepeat directory entry: '%s'\n", entry.path().c_str());
 
                     string path = entry.path();
@@ -80,24 +80,26 @@ int main(int argc, char **argv) {
                 }
 
                 Log::info("\tgenome filename: '%s'\n", genome_filename.c_str());
-                RNN_Genome *genome = new RNN_Genome(genome_filename);
+                RNN_Genome* genome = new RNN_Genome(genome_filename);
 
                 string testing_filename = testing_directory + "/cyclone_" + to_string(target_cyclone) + "_test.csv";
 
                 vector<string> testing_filenames;
                 testing_filenames.push_back(testing_filename);
 
-                TimeSeriesSets *time_series_sets = TimeSeriesSets::generate_test(
-                    testing_filenames, genome->get_input_parameter_names(), genome->get_output_parameter_names());
+                TimeSeriesSets* time_series_sets = TimeSeriesSets::generate_test(
+                    testing_filenames, genome->get_input_parameter_names(), genome->get_output_parameter_names()
+                );
                 Log::debug("got time series sets.\n");
 
                 string normalize_type = genome->get_normalize_type();
                 if (normalize_type.compare("min_max") == 0) {
                     time_series_sets->normalize_min_max(genome->get_normalize_mins(), genome->get_normalize_maxs());
                 } else if (normalize_type.compare("avg_std_dev") == 0) {
-                    time_series_sets->normalize_avg_std_dev(genome->get_normalize_avgs(),
-                                                            genome->get_normalize_std_devs(),
-                                                            genome->get_normalize_mins(), genome->get_normalize_maxs());
+                    time_series_sets->normalize_avg_std_dev(
+                        genome->get_normalize_avgs(), genome->get_normalize_std_devs(), genome->get_normalize_mins(),
+                        genome->get_normalize_maxs()
+                    );
                 }
 
                 Log::info("normalized type: %s \n", normalize_type.c_str());
@@ -118,7 +120,9 @@ int main(int argc, char **argv) {
                 delete genome;
             }
 
-            if (target_cyclone > 1) output_file << ",";
+            if (target_cyclone > 1) {
+                output_file << ",";
+            }
             average_mae /= 20.0;
             output_file << average_mae;
 

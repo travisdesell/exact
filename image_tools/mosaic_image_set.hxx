@@ -65,27 +65,36 @@ class MosaicImages : public MultiImagesInterface {
     vector<float> channel_std_dev;
 
    public:
-    void get_mosaic_pixels(string filename, vector<vector<vector<uint8_t> > > &pixels, uint32_t &height,
-                           uint32_t &width);
+    void get_mosaic_pixels(
+        string filename, vector<vector<vector<uint8_t> > >& pixels, uint32_t& height, uint32_t& width
+    );
 
-    void read_mosaic(string filename, const vector<Point> &box_centers, int box_radius, const vector<int> &box_classes);
-    void read_mosaic(string filename, const vector<Line> &lines, int line_height, const vector<int> &line_classes);
+    void read_mosaic(string filename, const vector<Point>& box_centers, int box_radius, const vector<int>& box_classes);
+    void read_mosaic(string filename, const vector<Line>& lines, int line_height, const vector<int>& line_classes);
 
-    void initialize_counts(const vector<vector<int> > &classes);
+    void initialize_counts(const vector<vector<int> >& classes);
 
-    MosaicImages(vector<string> _filenames, const vector<vector<Point> > &_box_centers, int _box_radius,
-                 const vector<vector<int> > &_box_classes, int _padding, int _subimage_height, int _subimage_width);
+    MosaicImages(
+        vector<string> _filenames, const vector<vector<Point> >& _box_centers, int _box_radius,
+        const vector<vector<int> >& _box_classes, int _padding, int _subimage_height, int _subimage_width
+    );
 
-    MosaicImages(vector<string> _filenames, const vector<vector<Point> > &_box_centers, int _box_radius,
-                 const vector<vector<int> > &_box_classes, int _padding, int _subimage_height, int _subimage_width,
-                 const vector<float> &_channel_avg, const vector<float> &_channel_std_dev);
+    MosaicImages(
+        vector<string> _filenames, const vector<vector<Point> >& _box_centers, int _box_radius,
+        const vector<vector<int> >& _box_classes, int _padding, int _subimage_height, int _subimage_width,
+        const vector<float>& _channel_avg, const vector<float>& _channel_std_dev
+    );
 
-    MosaicImages(vector<string> _filenames, const vector<vector<Line> > &_lines, int _line_height,
-                 const vector<vector<int> > &_line_classes, int _padding, int _subimage_height, int _subimage_width);
+    MosaicImages(
+        vector<string> _filenames, const vector<vector<Line> >& _lines, int _line_height,
+        const vector<vector<int> >& _line_classes, int _padding, int _subimage_height, int _subimage_width
+    );
 
-    MosaicImages(vector<string> _filenames, const vector<vector<Line> > &_lines, int _line_height,
-                 const vector<vector<int> > &_line_classes, int _padding, int _subimage_height, int _subimage_width,
-                 const vector<float> &_channel_avg, const vector<float> &_channel_std_dev);
+    MosaicImages(
+        vector<string> _filenames, const vector<vector<Line> >& _lines, int _line_height,
+        const vector<vector<int> >& _line_classes, int _padding, int _subimage_height, int _subimage_width,
+        const vector<float>& _channel_avg, const vector<float>& _channel_std_dev
+    );
 
     string get_filename() const;
 
@@ -118,15 +127,15 @@ class MosaicImages : public MultiImagesInterface {
 
     float get_channel_std_dev(int channel) const;
 
-    const vector<float> &get_average() const;
-    const vector<float> &get_std_dev() const;
+    const vector<float>& get_average() const;
+    const vector<float>& get_std_dev() const;
 
     void normalize();
 
-    LargeImage *copy_image(int i) const;
+    LargeImage* copy_image(int i) const;
 
-    void set_alpha(int i, const vector<vector<float> > &_alpha);
-    void set_alpha(int i, const vector<vector<uint8_t> > &_alpha);
+    void set_alpha(int i, const vector<vector<float> >& _alpha);
+    void set_alpha(int i, const vector<vector<uint8_t> >& _alpha);
 };
 
 #endif

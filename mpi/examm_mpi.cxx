@@ -25,17 +25,17 @@ using std::vector;
 #include "weights/weight_rules.hxx"
 #include "weights/weight_update.hxx"
 
-#define WORK_REQUEST_TAG 1
+#define WORK_REQUEST_TAG  1
 #define GENOME_LENGTH_TAG 2
-#define GENOME_TAG 3
-#define TERMINATE_TAG 4
+#define GENOME_TAG        3
+#define TERMINATE_TAG     4
 
 mutex examm_mutex;
 
 vector<string> arguments;
 
-EXAMM *examm;
-WeightUpdate *weight_update_method;
+EXAMM* examm;
+WeightUpdate* weight_update_method;
 
 bool finished = false;
 
@@ -60,7 +60,7 @@ void receive_work_request(int32_t source) {
     MPI_Recv(work_request_message, 1, MPI_INT, source, WORK_REQUEST_TAG, MPI_COMM_WORLD, &status);
 }
 
-RNN_Genome *receive_genome_from(int32_t source) {
+RNN_Genome* receive_genome_from(int32_t source) {
     MPI_Status status;
     int32_t length_message[1];
     MPI_Recv(length_message, 1, MPI_INT, source, GENOME_LENGTH_TAG, MPI_COMM_WORLD, &status);
@@ -69,7 +69,7 @@ RNN_Genome *receive_genome_from(int32_t source) {
 
     Log::debug("receiving genome of length: %d from: %d\n", length, source);
 
-    char *genome_str = new char[length + 1];
+    char* genome_str = new char[length + 1];
 
     Log::debug("receiving genome from: %d\n", source);
     MPI_Recv(genome_str, length, MPI_CHAR, source, GENOME_TAG, MPI_COMM_WORLD, &status);
@@ -78,14 +78,14 @@ RNN_Genome *receive_genome_from(int32_t source) {
 
     Log::trace("genome_str:\n%s\n", genome_str);
 
-    RNN_Genome *genome = new RNN_Genome(genome_str, length);
+    RNN_Genome* genome = new RNN_Genome(genome_str, length);
 
     delete[] genome_str;
     return genome;
 }
 
-void send_genome_to(int32_t target, RNN_Genome *genome) {
-    char *byte_array;
+void send_genome_to(int32_t target, RNN_Genome* genome) {
+    char* byte_array;
     int32_t length;
 
     genome->write_to_array(&byte_array, length);
@@ -138,7 +138,7 @@ void master(int32_t max_rank) {
             //     seed_stirs = 3;
             // }
             examm_mutex.lock();
-            RNN_Genome *genome = examm->generate_genome();
+            RNN_Genome* genome = examm->generate_genome();
             examm_mutex.unlock();
 
             if (genome == NULL) {  // search was completed if it returns NULL for an individual
@@ -148,7 +148,9 @@ void master(int32_t max_rank) {
                 terminates_sent++;
 
                 Log::debug("sent: %d terminates of %d\n", terminates_sent, (max_rank - 1));
-                if (terminates_sent >= max_rank - 1) return;
+                if (terminates_sent >= max_rank - 1) {
+                    return;
+                }
 
             } else {
                 // genome->write_to_file( examm->get_output_directory() + "/before_send_gen_" +
@@ -163,7 +165,7 @@ void master(int32_t max_rank) {
             }
         } else if (tag == GENOME_LENGTH_TAG) {
             Log::debug("received genome from: %d\n", source);
-            RNN_Genome *genome = receive_genome_from(source);
+            RNN_Genome* genome = receive_genome_from(source);
 
             examm_mutex.lock();
             examm->insert_genome(genome);
@@ -200,13 +202,14 @@ void worker(int32_t rank) {
 
         } else if (tag == GENOME_LENGTH_TAG) {
             Log::debug("received genome!\n");
-            RNN_Genome *genome = receive_genome_from(0);
+            RNN_Genome* genome = receive_genome_from(0);
 
             // have each worker write the backproagation to a separate log file
             string log_id = "genome_" + to_string(genome->get_generation_id()) + "_worker_" + to_string(rank);
             Log::set_id(log_id);
-            genome->backpropagate_stochastic(training_inputs, training_outputs, validation_inputs, validation_outputs,
-                                             weight_update_method);
+            genome->backpropagate_stochastic(
+                training_inputs, training_outputs, validation_inputs, validation_outputs, weight_update_method
+            );
             Log::release_id(log_id);
 
             // go back to the worker's log for MPI communication
@@ -225,7 +228,7 @@ void worker(int32_t rank) {
     Log::release_id("worker_" + to_string(rank));
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
     std::cout << "starting up!" << std::endl;
     MPI_Init(&argc, &argv);
     std::cout << "did mpi init!" << std::endl;
@@ -242,18 +245,19 @@ int main(int argc, char **argv) {
     Log::restrict_to_rank(0);
     std::cout << "initailized log!" << std::endl;
 
-    TimeSeriesSets *time_series_sets = NULL;
+    TimeSeriesSets* time_series_sets = NULL;
     time_series_sets = TimeSeriesSets::generate_from_arguments(arguments);
-    get_train_validation_data(arguments, time_series_sets, training_inputs, training_outputs, validation_inputs,
-                              validation_outputs);
+    get_train_validation_data(
+        arguments, time_series_sets, training_inputs, training_outputs, validation_inputs, validation_outputs
+    );
 
     weight_update_method = new WeightUpdate();
     weight_update_method->generate_from_arguments(arguments);
 
-    WeightRules *weight_rules = new WeightRules();
+    WeightRules* weight_rules = new WeightRules();
     weight_rules->initialize_from_args(arguments);
 
-    RNN_Genome *seed_genome = get_seed_genome(arguments, time_series_sets, weight_rules);
+    RNN_Genome* seed_genome = get_seed_genome(arguments, time_series_sets, weight_rules);
 
     Log::clear_rank_restriction();
 

@@ -30,9 +30,9 @@ class EXAMM {
 
     int32_t max_genomes;
     int32_t total_bp_epochs;
-    SpeciationStrategy *speciation_strategy;
-    WeightRules *weight_rules;
-    GenomeProperty *genome_property;
+    SpeciationStrategy* speciation_strategy;
+    WeightRules* weight_rules;
+    GenomeProperty* genome_property;
 
     int32_t edge_innovation_count;
     int32_t node_innovation_count;
@@ -70,16 +70,18 @@ class EXAMM {
     map<string, int32_t> generated_counts;
 
     string output_directory;
-    ofstream *log_file;
-    ofstream *op_log_file;
+    ofstream* log_file;
+    ofstream* op_log_file;
 
     std::chrono::time_point<std::chrono::system_clock> startClock;
 
     string genome_file_name;
 
    public:
-    EXAMM(int32_t _island_size, int32_t _number_islands, int32_t _max_genomes, SpeciationStrategy *_speciation_strategy,
-          WeightRules *_weight_rules, GenomeProperty *_genome_property, string _output_directory);
+    EXAMM(
+        int32_t _island_size, int32_t _number_islands, int32_t _max_genomes, SpeciationStrategy* _speciation_strategy,
+        WeightRules* _weight_rules, GenomeProperty* _genome_property, string _output_directory
+    );
 
     ~EXAMM();
 
@@ -92,24 +94,28 @@ class EXAMM {
 
     int32_t get_random_node_type();
 
-    RNN_Genome *generate_genome();
-    bool insert_genome(RNN_Genome *genome);
+    RNN_Genome* generate_genome();
+    bool insert_genome(RNN_Genome* genome);
 
-    void mutate(int32_t max_mutations, RNN_Genome *p1);
+    void mutate(int32_t max_mutations, RNN_Genome* p1);
 
-    void attempt_node_insert(vector<RNN_Node_Interface *> &child_nodes, const RNN_Node_Interface *node,
-                             const vector<double> &new_weights);
-    void attempt_edge_insert(vector<RNN_Edge *> &child_edges, vector<RNN_Node_Interface *> &child_nodes, RNN_Edge *edge,
-                             RNN_Edge *second_edge, bool set_enabled);
-    void attempt_recurrent_edge_insert(vector<RNN_Recurrent_Edge *> &child_recurrent_edges,
-                                       vector<RNN_Node_Interface *> &child_nodes, RNN_Recurrent_Edge *recurrent_edge,
-                                       RNN_Recurrent_Edge *second_edge, bool set_enabled);
-    RNN_Genome *crossover(RNN_Genome *p1, RNN_Genome *p2);
+    void attempt_node_insert(
+        vector<RNN_Node_Interface*>& child_nodes, const RNN_Node_Interface* node, const vector<double>& new_weights
+    );
+    void attempt_edge_insert(
+        vector<RNN_Edge*>& child_edges, vector<RNN_Node_Interface*>& child_nodes, RNN_Edge* edge, RNN_Edge* second_edge,
+        bool set_enabled
+    );
+    void attempt_recurrent_edge_insert(
+        vector<RNN_Recurrent_Edge*>& child_recurrent_edges, vector<RNN_Node_Interface*>& child_nodes,
+        RNN_Recurrent_Edge* recurrent_edge, RNN_Recurrent_Edge* second_edge, bool set_enabled
+    );
+    RNN_Genome* crossover(RNN_Genome* p1, RNN_Genome* p2);
 
     double get_best_fitness();
     double get_worst_fitness();
-    RNN_Genome *get_best_genome();
-    RNN_Genome *get_worst_genome();
+    RNN_Genome* get_best_genome();
+    RNN_Genome* get_worst_genome();
 
     string get_output_directory() const;
 
@@ -117,7 +123,7 @@ class EXAMM {
     void generate_log();
     void set_evolution_hyper_parameters();
     void initialize_seed_genome();
-    void update_op_log_statistics(RNN_Genome *genome, int32_t insert_position);
+    void update_op_log_statistics(RNN_Genome* genome, int32_t insert_position);
 };
 
 #endif

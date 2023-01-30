@@ -69,7 +69,7 @@ using std::vector;
 #include "mysql.h"
 #include "server/make_jobs.hxx"
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
     vector<string> arguments = vector<string>(argv, argv + argc);
 
     string db_file;
@@ -86,7 +86,9 @@ int main(int argc, char **argv) {
     get_argument(arguments, "--search_name", true, search_name);
 
     log_messages.set_debug_level(debug_level);
-    if (debug_level == 4) g_print_queries = true;
+    if (debug_level == 4) {
+        g_print_queries = true;
+    }
 
     // if at any time the retval value is greater than 0, then the program
     // has failed in some manner, and the program then exits.
@@ -146,8 +148,10 @@ int main(int argc, char **argv) {
     Images validation_images(validation_file, padding, training_images.get_average(), training_images.get_std_dev());
     Images testing_images(testing_file, padding, training_images.get_average(), training_images.get_std_dev());
 
-    EXACT *exact = new EXACT(training_images, validation_images, testing_images, padding, population_size, max_epochs,
-                             use_sfmp, use_node_operations, max_genomes, output_directory, search_name, reset_edges);
+    EXACT* exact = new EXACT(
+        training_images, validation_images, testing_images, padding, population_size, max_epochs, use_sfmp,
+        use_node_operations, max_genomes, output_directory, search_name, reset_edges
+    );
 
     exact->export_to_database();
 

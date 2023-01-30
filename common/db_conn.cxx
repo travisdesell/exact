@@ -13,12 +13,16 @@ using std::string;
 
 string db_info_filename = "../exact_mnist_batch2_db_info";
 
-MYSQL *exact_db_conn = NULL;
+MYSQL* exact_db_conn = NULL;
 
-void set_db_info_filename(string _filename) { db_info_filename = _filename; }
+void set_db_info_filename(string _filename) {
+    db_info_filename = _filename;
+}
 
-void __mysql_check(string query, const char *file, const int line) {
-    if (exact_db_conn == NULL) initialize_exact_database();
+void __mysql_check(string query, const char* file, const int line) {
+    if (exact_db_conn == NULL) {
+        initialize_exact_database();
+    }
 
     mysql_query(exact_db_conn, query.c_str());
 
@@ -48,15 +52,22 @@ void initialize_exact_database() {
 
     db_info_file.close();
 
-    fprintf(stderr, "parsed db info, host: '%s', name: '%s', user: '%s', pass: '%s', port: '%d'\n", db_host.c_str(),
-            db_name.c_str(), db_user.c_str(), db_password.c_str(), db_port);
+    fprintf(
+        stderr, "parsed db info, host: '%s', name: '%s', user: '%s', pass: '%s', port: '%d'\n", db_host.c_str(),
+        db_name.c_str(), db_user.c_str(), db_password.c_str(), db_port
+    );
 
-    if (mysql_real_connect(exact_db_conn, db_host.c_str(), db_user.c_str(), db_password.c_str(), db_name.c_str(),
-                           db_port, NULL, 0) == NULL) {
-        fprintf(stderr, "Error connecting to database: %d, '%s'\n", mysql_errno(exact_db_conn),
-                mysql_error(exact_db_conn));
+    if (mysql_real_connect(
+            exact_db_conn, db_host.c_str(), db_user.c_str(), db_password.c_str(), db_name.c_str(), db_port, NULL, 0
+        )
+        == NULL) {
+        fprintf(
+            stderr, "Error connecting to database: %d, '%s'\n", mysql_errno(exact_db_conn), mysql_error(exact_db_conn)
+        );
         exit(1);
     }
 }
 
-int mysql_exact_last_insert_id() { return mysql_insert_id(exact_db_conn); }
+int mysql_exact_last_insert_id() {
+    return mysql_insert_id(exact_db_conn);
+}
