@@ -67,13 +67,13 @@ DNASNode::~DNASNode() {
     delete node;
 }
 
-template <uniform_random_bit_generator Rng>
+template <typename Rng>
 void DNASNode::gumbel_noise(Rng &rng, vector<double> &output) {
   for (int i = 0; i < output.size(); i++)
     output[i] = -log(-log(uniform_real_distribution<double>(0.0, 1.0)(rng)));
 }
 
-template <uniform_random_bit_generator Rng>
+template <typename Rng>
 void DNASNode::sample_gumbel_softmax(Rng &rng) {
   z.assign(pi.size(), 0.0);
   x.assign(pi.size(), 0.0);

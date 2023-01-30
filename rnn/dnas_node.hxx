@@ -7,7 +7,6 @@ using std::string;
 #include <random>
 using std::minstd_rand0;
 using std::uniform_real_distribution;
-using std::uniform_random_bit_generator;
 using std::generate_canonical;
 
 #include <vector>
@@ -27,9 +26,8 @@ using std::unique_ptr;
 #define CRYSTALLIZATION_THRESHOLD 50000
 
 class DNASNode : public RNN_Node_Interface {
-
  private:
-  template <uniform_random_bit_generator R>
+  template <typename R>
   static void gumbel_noise(R &rng, vector<double> &output);
   void calculate_maxi();
 
@@ -75,12 +73,11 @@ class DNASNode : public RNN_Node_Interface {
   vector<vector<double>> node_outputs;
 
  public:
-
   DNASNode(vector<RNN_Node_Interface *> &&nodes, int32_t _innovation_number, int32_t _type, double _depth, int32_t counter = -1);
   DNASNode(const DNASNode &node);
   ~DNASNode();
 
-  template <uniform_random_bit_generator Rng>
+  template <typename Rng>
   void sample_gumbel_softmax(Rng &rng);
   void calculate_z();
 
