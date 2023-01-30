@@ -23,14 +23,14 @@ using std::vector;
 #include "cnn/cnn_node.hxx"
 #include "cnn/exact.hxx"
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
     vector<string> arguments = vector<string>(argv, argv + argc);
 
 #ifdef _MYSQL_
     int genome_id = -1;
 #endif
 
-    CNN_Genome *genome = NULL;
+    CNN_Genome* genome = NULL;
 
     if (argument_exists(arguments, "--genome_file")) {
         string genome_filename;

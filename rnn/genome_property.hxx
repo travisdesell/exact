@@ -32,9 +32,9 @@ class GenomeProperty {
 
    public:
     GenomeProperty();
-    void generate_genome_property_from_arguments(const vector<string> &arguments);
-    void set_genome_properties(RNN_Genome *genome);
-    void get_time_series_parameters(TimeSeriesSets *time_series_sets);
+    void generate_genome_property_from_arguments(const vector<string>& arguments);
+    void set_genome_properties(RNN_Genome* genome);
+    void get_time_series_parameters(TimeSeriesSets* time_series_sets);
     uniform_int_distribution<int32_t> get_recurrent_depth_dist();
 };
 

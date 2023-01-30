@@ -17,7 +17,9 @@ using std::endl;
 
 float exact_exp(float z) {
     bool is_negative = z < 0;
-    if (is_negative) z = -z;
+    if (is_negative) {
+        z = -z;
+    }
 
     // exp(x) = sum (k = 0 to inf) z^k/k!
     float result = 1.0 + z;
@@ -36,7 +38,9 @@ float exact_exp(float z) {
 }
 
 float exact_sqrt(float s) {
-    if (s == 0) return 0.0;
+    if (s == 0) {
+        return 0.0;
+    }
 
     float s_prev = s;
 
@@ -59,7 +63,7 @@ float exact_sqrt(float s) {
 
 #ifdef EXACT_MATH_TEST
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
     float value = 0.932;
 
     for (int i = 0; i < 100; i++) {

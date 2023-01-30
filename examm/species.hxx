@@ -30,7 +30,7 @@ class Species {
     /**
      * The genomes on this species, stored in sorted order best (front) to worst (back).
      */
-    vector<RNN_Genome *> genomes;
+    vector<RNN_Genome*> genomes;
 
     int32_t species_not_improving_count;
 
@@ -59,21 +59,21 @@ class Species {
      *
      * \return the best genome in the island
      */
-    RNN_Genome *get_best_genome();
+    RNN_Genome* get_best_genome();
 
     /**
      * Returns the worst genomme in the island.
      *
      * \return the worst genome in the island
      */
-    RNN_Genome *get_worst_genome();
+    RNN_Genome* get_worst_genome();
 
     /**
      * Returns the best genomme in the island.
      *
      * \return the best genome in the island
      */
-    RNN_Genome *get_random_genome(uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator);
+    RNN_Genome* get_random_genome(uniform_real_distribution<double>& rng_0_1, minstd_rand0& generator);
 
     /**
      * Returns the size of the island
@@ -89,7 +89,7 @@ class Species {
      *
      * \return the index in the island of the duplicate genome, -1 otherwise.
      */
-    int32_t contains(RNN_Genome *genome);
+    int32_t contains(RNN_Genome* genome);
 
     /**
      * Selects a genome from the island at random and returns a copy of it.
@@ -98,7 +98,7 @@ class Species {
      * (non=inclusive). \param generator is the random number generator \param genome will be the copied genome, an
      * addresss to a pointer needs to be passed.
      */
-    void copy_random_genome(uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator, RNN_Genome **genome);
+    void copy_random_genome(uniform_real_distribution<double>& rng_0_1, minstd_rand0& generator, RNN_Genome** genome);
 
     /**
      * Selects two different genomes from the island at random and returns copies of them.
@@ -108,8 +108,9 @@ class Species {
      * an addresss to a pointer needs to be passed. \param genome2 will be the second copied genome, an addresss to a
      * pointer needs to be passed.
      */
-    void copy_two_random_genomes(uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator,
-                                 RNN_Genome **genome1, RNN_Genome **genome2);
+    void copy_two_random_genomes(
+        uniform_real_distribution<double>& rng_0_1, minstd_rand0& generator, RNN_Genome** genome1, RNN_Genome** genome2
+    );
 
     /**
      * Inserts a genome into the island.
@@ -120,7 +121,7 @@ class Species {
      * \param genome is the genome to be inserted.
      * \return -1 if not inserted, otherwise the index it was inserted at
      */
-    int32_t insert_genome(RNN_Genome *genome);
+    int32_t insert_genome(RNN_Genome* genome);
 
     /**
      * Prints out the state of this island.
@@ -129,11 +130,11 @@ class Species {
      */
     void print(string indent = "");
 
-    vector<RNN_Genome *> get_genomes();
+    vector<RNN_Genome*> get_genomes();
 
-    RNN_Genome *get_latested_genome();
+    RNN_Genome* get_latested_genome();
 
-    void fitness_sharing_remove(double fitness_threshold, function<double(RNN_Genome *, RNN_Genome *)> &get_distance);
+    void fitness_sharing_remove(double fitness_threshold, function<double(RNN_Genome*, RNN_Genome*)>& get_distance);
 
     void erase_species();
 

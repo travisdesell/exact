@@ -46,9 +46,9 @@ typedef struct stat Stat;
 #include "weights/weight_update.hxx"
 
 #define WORK_REQUEST_TAG 1
-#define JOB_TAG 2
-#define TERMINATE_TAG 3
-#define RESULT_TAG 4
+#define JOB_TAG          2
+#define TERMINATE_TAG    3
+#define RESULT_TAG       4
 
 int32_t time_offset = 1;
 int32_t bp_iterations;
@@ -59,14 +59,16 @@ string weight_initialize_string = "xavier";
 
 string process_name;
 
-WeightUpdate *weight_update_method;
-WeightRules *weight_rules;
+WeightUpdate* weight_update_method;
+WeightRules* weight_rules;
 
-vector<string> rnn_types({"one_layer_ff", "two_layer_ff", "jordan", "elman", "one_layer_mgu", "two_layer_mgu",
-                          "one_layer_gru", "two_layer_gru", "one_layer_ugrnn", "two_layer_ugrnn", "one_layer_delta",
-                          "two_layer_delta", "one_layer_lstm", "two_layer_lstm"});
+vector<string> rnn_types(
+    {"one_layer_ff", "two_layer_ff", "jordan", "elman", "one_layer_mgu", "two_layer_mgu", "one_layer_gru",
+     "two_layer_gru", "one_layer_ugrnn", "two_layer_ugrnn", "one_layer_delta", "two_layer_delta", "one_layer_lstm",
+     "two_layer_lstm"}
+);
 
-TimeSeriesSets *time_series_sets = NULL;
+TimeSeriesSets* time_series_sets = NULL;
 
 struct ResultSet {
     int32_t job;
@@ -112,9 +114,9 @@ int32_t receive_job_from(int32_t source) {
 }
 
 string result_to_string(ResultSet result) {
-    return "[result, job: " + to_string(result.job) + ", training mae: " + to_string(result.training_mae) +
-           ", training mse: " + to_string(result.training_mse) + ", test mae: " + to_string(result.test_mae) +
-           ", test mse: " + to_string(result.test_mae) + ", millis: " + to_string(result.milliseconds) + "]";
+    return "[result, job: " + to_string(result.job) + ", training mae: " + to_string(result.training_mae)
+           + ", training mse: " + to_string(result.training_mse) + ", test mae: " + to_string(result.test_mae)
+           + ", test mse: " + to_string(result.test_mae) + ", millis: " + to_string(result.milliseconds) + "]";
 }
 
 void send_result_to(int32_t target, ResultSet result) {
@@ -152,13 +154,15 @@ void receive_terminate_from(int32_t source) {
 }
 
 // tweaked from: https://stackoverflow.com/questions/675039/how-can-i-create-directory-tree-in-c-linux/29828907
-static int32_t do_mkdir(const char *path, mode_t mode) {
+static int32_t do_mkdir(const char* path, mode_t mode) {
     Stat st;
     int32_t status = 0;
 
     if (stat(path, &st) != 0) {
         /* Directory does not exist. EEXIST for race condition */
-        if (mkdir(path, mode) != 0 && errno != EEXIST) { status = -1; }
+        if (mkdir(path, mode) != 0 && errno != EEXIST) {
+            status = -1;
+        }
 
     } else if (!S_ISDIR(st.st_mode)) {
         errno = ENOTDIR;
@@ -174,11 +178,11 @@ static int32_t do_mkdir(const char *path, mode_t mode) {
  * ** each directory in path exists, rather than optimistically creating
  * ** the last element and working backwards.
  * */
-int32_t mkpath(const char *path, mode_t mode) {
-    char *pp;
-    char *sp;
+int32_t mkpath(const char* path, mode_t mode) {
+    char* pp;
+    char* sp;
     int32_t status;
-    char *copypath = strdup(path);
+    char* copypath = strdup(path);
 
     status = 0;
     pp = copypath;
@@ -193,7 +197,9 @@ int32_t mkpath(const char *path, mode_t mode) {
         pp = sp + 1;
     }
 
-    if (status == 0) { status = do_mkdir(path, mode); }
+    if (status == 0) {
+        status = do_mkdir(path, mode);
+    }
 
     free(copypath);
     return (status);
@@ -208,8 +214,9 @@ void master(int32_t max_rank) {
     }
 
     // initialize the results with -1 as the job so we can determine if a particular rnn type has completed
-    results = vector<ResultSet>(rnn_types.size() * time_series_sets->get_number_series() * repeats,
-                                {-1, 0.0, 0.0, 0.0, 0.0, 0});
+    results = vector<ResultSet>(
+        rnn_types.size() * time_series_sets->get_number_series() * repeats, {-1, 0.0, 0.0, 0.0, 0.0, 0}
+    );
 
     int32_t terminates_sent = 0;
     int32_t current_job = 0;
@@ -237,7 +244,9 @@ void master(int32_t max_rank) {
                 terminates_sent++;
 
                 Log::debug("sent: %d terminates of: %d\n", terminates_sent, (max_rank - 1));
-                if (terminates_sent >= max_rank - 1) return;
+                if (terminates_sent >= max_rank - 1) {
+                    return;
+                }
 
             } else {
                 // send job
@@ -290,8 +299,10 @@ void master(int32_t max_rank) {
                                 << results[current].training_mse << "," << results[current].training_mae << ","
                                 << results[current].test_mse << "," << results[current].test_mae << endl;
 
-                        Log::debug("%s, tested on series[%d], repeat: %d, result: %s\n", rnn_types[rnn].c_str(), j, k,
-                                   result_to_string(results[current]).c_str());
+                        Log::debug(
+                            "%s, tested on series[%d], repeat: %d, result: %s\n", rnn_types[rnn].c_str(), j, k,
+                            result_to_string(results[current]).c_str()
+                        );
                         current++;
                     }
                 }
@@ -324,9 +335,13 @@ ResultSet handle_job(int32_t rank, int32_t current_job) {
 
     for (int32_t k = 0; k < time_series_sets->get_number_series(); k += fold_size) {
         if (j == (k / fold_size)) {
-            for (int32_t l = 0; l < fold_size; l++) { test_indexes.push_back(k + l); }
+            for (int32_t l = 0; l < fold_size; l++) {
+                test_indexes.push_back(k + l);
+            }
         } else {
-            for (int32_t l = 0; l < fold_size; l++) { training_indexes.push_back(k + l); }
+            for (int32_t l = 0; l < fold_size; l++) {
+                training_indexes.push_back(k + l);
+            }
         }
     }
 
@@ -349,7 +364,7 @@ ResultSet handle_job(int32_t rank, int32_t current_job) {
     int32_t number_inputs = time_series_sets->get_number_inputs();
     // int32_t number_outputs = time_series_sets->get_number_outputs();
 
-    RNN_Genome *genome = NULL;
+    RNN_Genome* genome = NULL;
     if (rnn_type == "one_layer_lstm") {
         genome = create_lstm(input_parameter_names, 1, number_inputs, output_parameter_names, 1, weight_rules);
 
@@ -399,12 +414,14 @@ ResultSet handle_job(int32_t rank, int32_t current_job) {
         genome = create_elman(input_parameter_names, 1, number_inputs, output_parameter_names, 1, weight_rules);
     }
 
-    RNN *rnn = genome->get_rnn();
+    RNN* rnn = genome->get_rnn();
 
     int32_t number_of_weights = genome->get_number_weights();
-    Log::debug("RNN INFO FOR '%s', nodes: %d, edges: %d, rec: %d, weights: %d\n", rnn_type.c_str(),
-               genome->get_enabled_node_count(), genome->get_enabled_edge_count(),
-               genome->get_enabled_recurrent_edge_count(), number_of_weights);
+    Log::debug(
+        "RNN INFO FOR '%s', nodes: %d, edges: %d, rec: %d, weights: %d\n", rnn_type.c_str(),
+        genome->get_enabled_node_count(), genome->get_enabled_edge_count(), genome->get_enabled_recurrent_edge_count(),
+        number_of_weights
+    );
 
     vector<double> min_bound(number_of_weights, -1.0);
     vector<double> max_bound(number_of_weights, 1.0);
@@ -427,8 +444,9 @@ ResultSet handle_job(int32_t rank, int32_t current_job) {
     Log::set_id(backprop_log_id);
 
     std::chrono::time_point<std::chrono::system_clock> start = std::chrono::system_clock::now();
-    genome->backpropagate_stochastic(training_inputs, training_outputs, validation_inputs, validation_outputs,
-                                     weight_update_method);
+    genome->backpropagate_stochastic(
+        training_inputs, training_outputs, validation_inputs, validation_outputs, weight_update_method
+    );
     std::chrono::time_point<std::chrono::system_clock> end = std::chrono::system_clock::now();
 
     long milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
@@ -502,7 +520,7 @@ void worker(int32_t rank) {
     Log::release_id("worker_" + to_string(rank));
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
     int32_t rank, max_rank;
 
     MPI_Init(&argc, &argv);

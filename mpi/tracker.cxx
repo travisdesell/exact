@@ -13,8 +13,12 @@ Tracker::Tracker() {
 }
 
 void Tracker::track(double value) {
-    if (value < _min) _min = value;
-    if (value > _max) _max = value;
+    if (value < _min) {
+        _min = value;
+    }
+    if (value > _max) {
+        _max = value;
+    }
 
     count++;
     sum += value;
@@ -22,11 +26,17 @@ void Tracker::track(double value) {
     values.push_back(value);
 }
 
-double Tracker::min() const { return _min; }
+double Tracker::min() const {
+    return _min;
+}
 
-double Tracker::max() const { return _max; }
+double Tracker::max() const {
+    return _max;
+}
 
-double Tracker::avg() const { return sum / count; }
+double Tracker::avg() const {
+    return sum / count;
+}
 
 double Tracker::stddev() {
     double _avg = avg();
@@ -42,7 +52,7 @@ double Tracker::stddev() {
     return _stddev;
 }
 
-double Tracker::correlate(Tracker &other) {
+double Tracker::correlate(Tracker& other) {
     double avg1 = avg();
     double avg2 = other.avg();
 

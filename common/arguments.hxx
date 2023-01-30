@@ -11,7 +11,7 @@ using namespace std;
 bool argument_exists(vector<string> arguments, string argument);
 
 template <typename T>
-bool get_argument_vector(vector<string> arguments, string argument, bool required, vector<T> &results) {
+bool get_argument_vector(vector<string> arguments, string argument, bool required, vector<T>& results) {
     bool found = false;
     for (unsigned int i = 0; i < arguments.size(); i++) {
         if (argument.compare(arguments.at(i)) == 0) {
@@ -46,12 +46,12 @@ bool get_argument_vector(vector<string> arguments, string argument, bool require
     return found;
 }
 
-bool get_argument_vector(vector<string> arguments, string argument, bool required, vector<string> &results);
+bool get_argument_vector(vector<string> arguments, string argument, bool required, vector<string>& results);
 
-bool get_argument(vector<string> arguments, string argument, bool required, string &result);
+bool get_argument(vector<string> arguments, string argument, bool required, string& result);
 
 template <typename T>
-bool get_argument(vector<string> arguments, string argument, bool required, T &result) {
+bool get_argument(vector<string> arguments, string argument, bool required, T& result) {
     bool found = false;
     for (unsigned int i = 0; i < arguments.size(); i++) {
         if (argument.compare(arguments.at(i)) == 0) {
@@ -76,7 +76,7 @@ bool get_argument(vector<string> arguments, string argument, bool required, T &r
 }
 
 template <typename T1, typename T2>
-bool get_arguments(vector<string> arguments, string argument, bool required, T1 &result1, T2 &result2) {
+bool get_arguments(vector<string> arguments, string argument, bool required, T1& result1, T2& result2) {
     bool found = false;
     for (unsigned int i = 0; i < arguments.size(); i++) {
         if (argument.compare(arguments.at(i)) == 0) {

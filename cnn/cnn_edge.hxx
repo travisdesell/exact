@@ -27,7 +27,7 @@ using std::vector;
 #include "image_tools/image_set.hxx"
 
 #define CONVOLUTIONAL 0
-#define POOLING 1
+#define POOLING       1
 
 class CNN_Edge {
    private:
@@ -41,18 +41,18 @@ class CNN_Edge {
     int input_node_innovation_number;
     int output_node_innovation_number;
 
-    CNN_Node *input_node;
-    CNN_Node *output_node;
+    CNN_Node* input_node;
+    CNN_Node* output_node;
 
     int batch_size;
     int filter_x, filter_y;
     int filter_size;
-    float *weights;
-    float *weight_updates;
-    float *best_weights;
+    float* weights;
+    float* weight_updates;
+    float* best_weights;
 
-    float *previous_velocity;
-    float *best_velocity;
+    float* previous_velocity;
+    float* best_velocity;
 
     float scale;
     float best_scale;
@@ -80,7 +80,7 @@ class CNN_Edge {
    public:
     CNN_Edge();
 
-    CNN_Edge(CNN_Node *_input_node, CNN_Node *_output_node, bool _fixed, int _innovation_number, int _type);
+    CNN_Edge(CNN_Node* _input_node, CNN_Node* _output_node, bool _fixed, int _innovation_number, int _type);
 
 #ifdef _MYSQL_
     CNN_Edge(int edge_id);
@@ -89,18 +89,18 @@ class CNN_Edge {
     int get_edge_id() const;
 #endif
 
-    CNN_Edge *copy() const;
+    CNN_Edge* copy() const;
 
     ~CNN_Edge();
 
-    bool equals(CNN_Edge *other) const;
+    bool equals(CNN_Edge* other) const;
 
     int get_type() const;
 
     bool has_nan() const;
 
     void reset_times();
-    void accumulate_times(float &total_forward_time, float &total_backward_time, float &total_weight_update_time);
+    void accumulate_times(float& total_forward_time, float& total_backward_time, float& total_weight_update_time);
 
     void set_needs_init();
     bool needs_init() const;
@@ -122,10 +122,10 @@ class CNN_Edge {
     void save_best_weights();
     void set_weights_to_best();
 
-    bool set_nodes(const vector<CNN_Node *> nodes);
+    bool set_nodes(const vector<CNN_Node*> nodes);
     void set_pools();
 
-    void initialize_weights(minstd_rand0 &generator, NormalDistribution &normal_distribution);
+    void initialize_weights(minstd_rand0& generator, NormalDistribution& normal_distribution);
     void reset_velocities();
     void resize();
 
@@ -157,42 +157,46 @@ class CNN_Edge {
     bool has_zero_weight() const;
     bool has_zero_best_weight() const;
 
-    CNN_Node *get_input_node();
+    CNN_Node* get_input_node();
 
-    CNN_Node *get_output_node();
+    CNN_Node* get_output_node();
 
-    void print(ostream &out);
+    void print(ostream& out);
 
-    void check_output_update(const vector<vector<vector<float>>> &output, const vector<vector<vector<float>>> &input,
-                             float value, float weight, float previous_output, int batch_number, int in_y, int in_x,
-                             int out_y, int out_x);
+    void check_output_update(
+        const vector<vector<vector<float>>>& output, const vector<vector<vector<float>>>& input, float value,
+        float weight, float previous_output, int batch_number, int in_y, int in_x, int out_y, int out_x
+    );
 
-    void check_weight_update(const vector<vector<vector<float>>> &input,
-                             const vector<vector<vector<float>>> &input_deltas, float delta, float previous_delta,
-                             float weight_update, float previous_weight_update, int batch_number, int out_y, int out_x,
-                             int in_y, int in_x);
+    void check_weight_update(
+        const vector<vector<vector<float>>>& input, const vector<vector<vector<float>>>& input_deltas, float delta,
+        float previous_delta, float weight_update, float previous_weight_update, int batch_number, int out_y, int out_x,
+        int in_y, int in_x
+    );
 
-    void propagate_forward(bool training, bool accumulate_test_statistics, float epsilon, float alpha,
-                           bool perform_dropout, float hidden_dropout_probability, minstd_rand0 &generator);
+    void propagate_forward(
+        bool training, bool accumulate_test_statistics, float epsilon, float alpha, bool perform_dropout,
+        float hidden_dropout_probability, minstd_rand0& generator
+    );
 
     void propagate_backward(bool training, float mu, float learning_rate, float epsilon);
     void update_weights(float mu, float learning_rate, float weight_decay);
 
     void print_statistics();
 
-    bool is_identical(const CNN_Edge *other, bool testing_checkpoint);
+    bool is_identical(const CNN_Edge* other, bool testing_checkpoint);
 
-    friend ostream &operator<<(ostream &os, const CNN_Edge *flight);
-    friend istream &operator>>(istream &is, CNN_Edge *flight);
+    friend ostream& operator<<(ostream& os, const CNN_Edge* flight);
+    friend istream& operator>>(istream& is, CNN_Edge* flight);
 };
 
 int random_edge_type(float random_value);
 
-void parse_float_2d(float **output, istringstream &iss, int size_x, int size_y);
-void parse_vector_2d(vector<vector<float>> &output, istringstream &iss, int size_x, int size_y);
+void parse_float_2d(float** output, istringstream& iss, int size_x, int size_y);
+void parse_vector_2d(vector<vector<float>>& output, istringstream& iss, int size_x, int size_y);
 
 struct sort_CNN_Edges_by_depth {
-    bool operator()(CNN_Edge *n1, CNN_Edge *n2) {
+    bool operator()(CNN_Edge* n1, CNN_Edge* n2) {
         if (n1->get_input_node()->get_depth() < n2->get_input_node()->get_depth()) {
             return true;
 
@@ -213,7 +217,7 @@ struct sort_CNN_Edges_by_depth {
 };
 
 struct sort_CNN_Edges_by_output_depth {
-    bool operator()(CNN_Edge *n1, CNN_Edge *n2) {
+    bool operator()(CNN_Edge* n1, CNN_Edge* n2) {
         if (n1->get_output_node()->get_depth() < n2->get_output_node()->get_depth()) {
             return true;
 
@@ -234,7 +238,9 @@ struct sort_CNN_Edges_by_output_depth {
 };
 
 struct sort_CNN_Edges_by_innovation {
-    bool operator()(CNN_Edge *n1, CNN_Edge *n2) { return n1->get_innovation_number() < n2->get_innovation_number(); }
+    bool operator()(CNN_Edge* n1, CNN_Edge* n2) {
+        return n1->get_innovation_number() < n2->get_innovation_number();
+    }
 };
 
 #endif

@@ -49,7 +49,7 @@ string get_boinc_filename(string filename) {
     return input_path;
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
     int retval = 0;
 #ifdef BOINC_APP_GRAPHICS
 #if defined(_WIN32) || defined(__APPLE)
@@ -60,10 +60,14 @@ int main(int argc, char **argv) {
 #else
     retval = boinc_init();
 #endif
-    if (retval) exit(retval);
+    if (retval) {
+        exit(retval);
+    }
 
     cerr << "arguments:" << endl;
-    for (int32_t i = 0; i < argc; i++) { cerr << "\t'" << argv[i] << "'" << endl; }
+    for (int32_t i = 0; i < argc; i++) {
+        cerr << "\t'" << argv[i] << "'" << endl;
+    }
 
     cerr << "converting arguments to vector" << endl;
     arguments = vector<string>(argv, argv + argc);
@@ -98,7 +102,7 @@ int main(int argc, char **argv) {
 
     cerr << "loading genome" << endl;
 
-    CNN_Genome *genome = NULL;
+    CNN_Genome* genome = NULL;
 
     ifstream infile(checkpoint_filename);
     if (infile) {
@@ -134,10 +138,12 @@ int main(int argc, char **argv) {
     cerr << "loading images" << endl;
 
     Images training_images(training_filename, genome->get_padding());
-    Images validation_images(validation_filename, genome->get_padding(), training_images.get_average(),
-                             training_images.get_std_dev());
-    Images testing_images(testing_filename, genome->get_padding(), training_images.get_average(),
-                          training_images.get_std_dev());
+    Images validation_images(
+        validation_filename, genome->get_padding(), training_images.get_average(), training_images.get_std_dev()
+    );
+    Images testing_images(
+        testing_filename, genome->get_padding(), training_images.get_average(), training_images.get_std_dev()
+    );
 
     if (!training_images.loaded_correctly()) {
         cerr << "ERROR: had error loading training images" << endl;
@@ -177,15 +183,16 @@ int main(int argc, char **argv) {
 #ifdef _WIN32
 
 #if defined(_MSC_VER) && (_MSC_VER >= 1400)
-void AppInvalidParameterHandler(const wchar_t *expression, const wchar_t *function, const wchar_t *file,
-                                unsigned int line, uintptr_t pReserved) {
+void AppInvalidParameterHandler(
+    const wchar_t* expression, const wchar_t* function, const wchar_t* file, unsigned int line, uintptr_t pReserved
+) {
     DebugBreak();
 }
 #endif
 
 int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR Args, int WinMode) {
     LPSTR command_line;
-    char *argv[100];
+    char* argv[100];
     int argc;
 
 #if defined(_MSC_VER) && (_MSC_VER >= 1400)

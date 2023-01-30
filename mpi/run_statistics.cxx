@@ -55,13 +55,20 @@ string ConsolidatedStatistics::to_string_max() {
     return oss.str();
 }
 
-RunStatistics::RunStatistics(string _output_name, string _run_type) : output_name(_output_name), run_type(_run_type) {}
+RunStatistics::RunStatistics(string _output_name, string _run_type) : output_name(_output_name), run_type(_run_type) {
+}
 
-void RunStatistics::set_deviation_from_mean_min(double _dfm_min) { dfm_min = _dfm_min; }
+void RunStatistics::set_deviation_from_mean_min(double _dfm_min) {
+    dfm_min = _dfm_min;
+}
 
-void RunStatistics::set_deviation_from_mean_avg(double _dfm_avg) { dfm_avg = _dfm_avg; }
+void RunStatistics::set_deviation_from_mean_avg(double _dfm_avg) {
+    dfm_avg = _dfm_avg;
+}
 
-void RunStatistics::set_deviation_from_mean_max(double _dfm_max) { dfm_max = _dfm_max; }
+void RunStatistics::set_deviation_from_mean_max(double _dfm_max) {
+    dfm_max = _dfm_max;
+}
 
 string RunStatistics::to_string_min() {
     ostringstream oss;
@@ -110,7 +117,7 @@ string RunStatistics::correlate_header() {
     return oss.str();
 }
 
-string RunStatistics::to_string_correlate(string target_name, Tracker &target) {
+string RunStatistics::to_string_correlate(string target_name, Tracker& target) {
     ostringstream oss;
 
     oss << output_name << " & " << edge.correlate(target) << " & " << rec_edge.correlate(target) << " & "

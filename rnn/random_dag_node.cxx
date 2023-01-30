@@ -35,10 +35,12 @@ RANDOM_DAG_Node::RANDOM_DAG_Node(int32_t _innovation_number, int32_t _type, doub
     node_type = RANDOM_DAG_NODE;
 }
 
-RANDOM_DAG_Node::~RANDOM_DAG_Node() {}
+RANDOM_DAG_Node::~RANDOM_DAG_Node() {
+}
 
-void RANDOM_DAG_Node::initialize_lamarckian(minstd_rand0 &generator, NormalDistribution &normal_distribution, double mu,
-                                            double sigma) {
+void RANDOM_DAG_Node::initialize_lamarckian(
+    minstd_rand0& generator, NormalDistribution& normal_distribution, double mu, double sigma
+) {
     zw = bound(normal_distribution.random(generator, mu, sigma));
     rw = bound(normal_distribution.random(generator, mu, sigma));
 
@@ -50,8 +52,9 @@ void RANDOM_DAG_Node::initialize_lamarckian(minstd_rand0 &generator, NormalDistr
     }
 }
 
-void RANDOM_DAG_Node::initialize_xavier(minstd_rand0 &generator, uniform_real_distribution<double> &rng_1_1,
-                                        double range) {
+void RANDOM_DAG_Node::initialize_xavier(
+    minstd_rand0& generator, uniform_real_distribution<double>& rng_1_1, double range
+) {
     zw = range * (rng_1_1(generator));
     rw = range * (rng_1_1(generator));
 
@@ -63,8 +66,9 @@ void RANDOM_DAG_Node::initialize_xavier(minstd_rand0 &generator, uniform_real_di
     }
 }
 
-void RANDOM_DAG_Node::initialize_kaiming(minstd_rand0 &generator, NormalDistribution &normal_distribution,
-                                         double range) {
+void RANDOM_DAG_Node::initialize_kaiming(
+    minstd_rand0& generator, NormalDistribution& normal_distribution, double range
+) {
     zw = range * normal_distribution.random(generator, 0, 1);
     rw = range * normal_distribution.random(generator, 0, 1);
 
@@ -76,7 +80,7 @@ void RANDOM_DAG_Node::initialize_kaiming(minstd_rand0 &generator, NormalDistribu
     }
 }
 
-void RANDOM_DAG_Node::initialize_uniform_random(minstd_rand0 &generator, uniform_real_distribution<double> &rng) {
+void RANDOM_DAG_Node::initialize_uniform_random(minstd_rand0& generator, uniform_real_distribution<double>& rng) {
     zw = rng(generator);
     rw = rng(generator);
 
@@ -125,22 +129,42 @@ void RANDOM_DAG_Node::print_gradient(string gradient_name) {
 }
 
 double RANDOM_DAG_Node::activation(double value, int32_t act_operator) {
-    if (act_operator == 0) return sigmoid(value);
-    if (act_operator == 1) return tanh(value);
-    if (act_operator == 2) return swish(value);
-    if (act_operator == 3) return leakyReLU(value);
-    if (act_operator == 4) return identity(value);
+    if (act_operator == 0) {
+        return sigmoid(value);
+    }
+    if (act_operator == 1) {
+        return tanh(value);
+    }
+    if (act_operator == 2) {
+        return swish(value);
+    }
+    if (act_operator == 3) {
+        return leakyReLU(value);
+    }
+    if (act_operator == 4) {
+        return identity(value);
+    }
 
     Log::fatal("ERROR: invalid act_operator: %d\n", act_operator);
     exit(1);
 }
 
 double RANDOM_DAG_Node::activation_derivative(double value, double input, int32_t act_operator) {
-    if (act_operator == 0) return sigmoid_derivative(input);
-    if (act_operator == 1) return tanh_derivative(input);
-    if (act_operator == 2) return swish_derivative(value, input);
-    if (act_operator == 3) return leakyReLU_derivative(input);
-    if (act_operator == 4) return identity_derivative();
+    if (act_operator == 0) {
+        return sigmoid_derivative(input);
+    }
+    if (act_operator == 1) {
+        return tanh_derivative(input);
+    }
+    if (act_operator == 2) {
+        return swish_derivative(value, input);
+    }
+    if (act_operator == 3) {
+        return leakyReLU_derivative(input);
+    }
+    if (act_operator == 4) {
+        return identity_derivative();
+    }
 
     Log::fatal("ERROR: invalid act_operator: %d\n", act_operator);
     exit(1);
@@ -170,24 +194,30 @@ void RANDOM_DAG_Node::input_fired(int32_t time, double incoming_output) {
     inputs_fired[time]++;
     input_values[time] += incoming_output;
 
-    if (inputs_fired[time] < total_inputs)
+    if (inputs_fired[time] < total_inputs) {
         return;
-    else if (inputs_fired[time] > total_inputs) {
-        Log::fatal("ERROR: inputs_fired on RANDOM_DAG_Node %d at time %d is %d and total_inputs is %d\n",
-                   innovation_number, time, inputs_fired[time], total_inputs);
+    } else if (inputs_fired[time] > total_inputs) {
+        Log::fatal(
+            "ERROR: inputs_fired on RANDOM_DAG_Node %d at time %d is %d and total_inputs is %d\n", innovation_number,
+            time, inputs_fired[time], total_inputs
+        );
         exit(1);
     }
 
     // update the reset gate bias so its centered around 1
     // r_bias += 1;
 
-    Log::debug("inputs_fired on RANDOM_DAG_Node %d at time %d is %d and no_of_nodes is %d\n", innovation_number, time,
-               inputs_fired[time], no_of_nodes);
+    Log::debug(
+        "inputs_fired on RANDOM_DAG_Node %d at time %d is %d and no_of_nodes is %d\n", innovation_number, time,
+        inputs_fired[time], no_of_nodes
+    );
 
     double x = input_values[time];
 
     double h_prev = 0.0;
-    if (time > 0) h_prev = output_values[time - 1];
+    if (time > 0) {
+        h_prev = output_values[time - 1];
+    }
 
     double xzw = x * zw;
     double hrw = h_prev * rw;
@@ -224,16 +254,20 @@ void RANDOM_DAG_Node::input_fired(int32_t time, double incoming_output) {
     // output_values[time] += Nodes[0][time];
 
     // output_values[time] /= fan_out;
-    Log::debug("input_fired on RANDOM_DAG_Node %d at time %d is %d and total_outputs is %d\n", innovation_number, time,
-               outputs_fired[time], total_outputs);
+    Log::debug(
+        "input_fired on RANDOM_DAG_Node %d at time %d is %d and total_outputs is %d\n", innovation_number, time,
+        outputs_fired[time], total_outputs
+    );
 }
 
 void RANDOM_DAG_Node::try_update_deltas(int32_t time) {
-    if (outputs_fired[time] < total_outputs)
+    if (outputs_fired[time] < total_outputs) {
         return;
-    else if (outputs_fired[time] > total_outputs) {
-        Log::fatal("ERROR: outputs_fired on RANDOM_DAG_Node %d at time %d is %d and total_outputs is %d\n",
-                   innovation_number, time, outputs_fired[time], total_outputs);
+    } else if (outputs_fired[time] > total_outputs) {
+        Log::fatal(
+            "ERROR: outputs_fired on RANDOM_DAG_Node %d at time %d is %d and total_outputs is %d\n", innovation_number,
+            time, outputs_fired[time], total_outputs
+        );
         exit(1);
     }
 
@@ -243,10 +277,14 @@ void RANDOM_DAG_Node::try_update_deltas(int32_t time) {
     double x = input_values[time];
 
     double h_prev = 0.0;
-    if (time > 0) h_prev = output_values[time - 1];
+    if (time > 0) {
+        h_prev = output_values[time - 1];
+    }
 
     double d_h = error;
-    if (time < (series_length - 1)) d_h += d_h_prev[time + 1];
+    if (time < (series_length - 1)) {
+        d_h += d_h_prev[time + 1];
+    }
 
     // d_h *= fan_out;
 
@@ -285,8 +323,10 @@ void RANDOM_DAG_Node::try_update_deltas(int32_t time) {
     // d_input[time] +=  d_h*l_Nodes[0][time]*zw;
     // d_zw[time] = d_h*l_Nodes[0][time]*x;
 
-    Log::debug("DEBUG: output_fired on RANDOM_DAG_Node %d at time %d is %d and total_outputs is %d\n",
-               innovation_number, time, outputs_fired[time], total_outputs);
+    Log::debug(
+        "DEBUG: output_fired on RANDOM_DAG_Node %d at time %d is %d and total_outputs is %d\n", innovation_number, time,
+        outputs_fired[time], total_outputs
+    );
 }
 
 void RANDOM_DAG_Node::error_fired(int32_t time, double error) {
@@ -305,20 +345,22 @@ void RANDOM_DAG_Node::output_fired(int32_t time, double delta) {
     try_update_deltas(time);
 }
 
-int32_t RANDOM_DAG_Node::get_number_weights() const { return NUMBER_RANDOM_DAG_WEIGHTS; }
+int32_t RANDOM_DAG_Node::get_number_weights() const {
+    return NUMBER_RANDOM_DAG_WEIGHTS;
+}
 
-void RANDOM_DAG_Node::get_weights(vector<double> &parameters) const {
+void RANDOM_DAG_Node::get_weights(vector<double>& parameters) const {
     parameters.resize(get_number_weights());
     int32_t offset = 0;
     get_weights(offset, parameters);
 }
 
-void RANDOM_DAG_Node::set_weights(const vector<double> &parameters) {
+void RANDOM_DAG_Node::set_weights(const vector<double>& parameters) {
     int32_t offset = 0;
     set_weights(offset, parameters);
 }
 
-void RANDOM_DAG_Node::set_weights(int32_t &offset, const vector<double> &parameters) {
+void RANDOM_DAG_Node::set_weights(int32_t& offset, const vector<double>& parameters) {
     // int32_t start_offset = offset;
 
     int32_t assigned_node_weights = 2;  // 2 weights for the starting node assigned above
@@ -330,14 +372,16 @@ void RANDOM_DAG_Node::set_weights(int32_t &offset, const vector<double> &paramet
          ++new_node_weight) {
         if ((int32_t) weights.size() < NUMBER_RANDOM_DAG_WEIGHTS - assigned_node_weights) {
             weights.push_back(bound(parameters[offset++]));
-        } else
+        } else {
             weights.at(new_node_weight) = bound(parameters[offset++]);
+        }
     }
-    Log::debug("DEBUG: no of  weights  on RANDOM_DAG_Node %d at time %d is %d \n", innovation_number, time,
-               weights.size());
+    Log::debug(
+        "DEBUG: no of  weights  on RANDOM_DAG_Node %d at time %d is %d \n", innovation_number, time, weights.size()
+    );
 }
 
-void RANDOM_DAG_Node::get_weights(int32_t &offset, vector<double> &parameters) const {
+void RANDOM_DAG_Node::get_weights(int32_t& offset, vector<double>& parameters) const {
     // int32_t start_offset = offset;
 
     int32_t assigned_node_weights = 2;  // 2 weights for the starting node assigned above
@@ -346,14 +390,17 @@ void RANDOM_DAG_Node::get_weights(int32_t &offset, vector<double> &parameters) c
     parameters[offset++] = rw;
 
     for (int32_t new_node_weight = 0; new_node_weight < NUMBER_RANDOM_DAG_WEIGHTS - assigned_node_weights;
-         ++new_node_weight)
+         ++new_node_weight) {
         parameters[offset++] = weights.at(new_node_weight);
+    }
 }
 
-void RANDOM_DAG_Node::get_gradients(vector<double> &gradients) {
+void RANDOM_DAG_Node::get_gradients(vector<double>& gradients) {
     gradients.assign(NUMBER_RANDOM_DAG_WEIGHTS, 0.0);
 
-    for (int32_t i = 0; i < NUMBER_RANDOM_DAG_WEIGHTS; i++) { gradients[i] = 0.0; }
+    for (int32_t i = 0; i < NUMBER_RANDOM_DAG_WEIGHTS; i++) {
+        gradients[i] = 0.0;
+    }
 
     for (int32_t i = 0; i < series_length; i++) {
         gradients[0] += d_zw[i];
@@ -394,8 +441,8 @@ void RANDOM_DAG_Node::reset(int32_t _series_length) {
     outputs_fired.assign(series_length, 0);
 }
 
-RNN_Node_Interface *RANDOM_DAG_Node::copy() const {
-    RANDOM_DAG_Node *n = new RANDOM_DAG_Node(innovation_number, layer_type, depth);
+RNN_Node_Interface* RANDOM_DAG_Node::copy() const {
+    RANDOM_DAG_Node* n = new RANDOM_DAG_Node(innovation_number, layer_type, depth);
 
     // copy RANDOM_DAG_Node values
     n->rw = rw;
@@ -434,4 +481,6 @@ RNN_Node_Interface *RANDOM_DAG_Node::copy() const {
     return n;
 }
 
-void RANDOM_DAG_Node::write_to_stream(ostream &out) { RNN_Node_Interface::write_to_stream(out); }
+void RANDOM_DAG_Node::write_to_stream(ostream& out) {
+    RNN_Node_Interface::write_to_stream(out);
+}
