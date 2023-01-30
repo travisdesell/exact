@@ -27,7 +27,7 @@ using std::unique_ptr;
 
 class DNASNode : public RNN_Node_Interface {
    private:
-    template <uniform_random_bit_generator R>
+    template <typename R>
     static void gumbel_noise(R &rng, vector<double> &output);
     void calculate_maxi();
 
@@ -77,7 +77,7 @@ class DNASNode : public RNN_Node_Interface {
     DNASNode(const DNASNode &node);
     ~DNASNode();
 
-    template <uniform_random_bit_generator Rng>
+    template <typename Rng>
     void sample_gumbel_softmax(Rng &rng);
     void calculate_z();
 
