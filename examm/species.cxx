@@ -17,68 +17,81 @@ using std::to_string;
 #include "rnn/rnn_genome.hxx"
 #include "species.hxx"
 // Species(int32_t id, double fitness_th);
-Species::Species(int32_t _id) : id(_id), species_not_improving_count(0) {}
+Species::Species(int32_t _id) : id(_id), species_not_improving_count(0) {
+}
 
-RNN_Genome *Species::get_best_genome() {
-    if (genomes.size() == 0)
+RNN_Genome* Species::get_best_genome() {
+    if (genomes.size() == 0) {
         return NULL;
-    else
+    } else {
         return genomes[0];
+    }
 }
 
-RNN_Genome *Species::get_worst_genome() {
-    if (genomes.size() == 0)
+RNN_Genome* Species::get_worst_genome() {
+    if (genomes.size() == 0) {
         return NULL;
-    else
+    } else {
         return genomes.back();
+    }
 }
 
-RNN_Genome *Species::get_random_genome(uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator) {
-    if (genomes.size() == 0)
+RNN_Genome* Species::get_random_genome(uniform_real_distribution<double>& rng_0_1, minstd_rand0& generator) {
+    if (genomes.size() == 0) {
         return NULL;
-    else {
+    } else {
         int32_t genome_position = size() * rng_0_1(generator);
         return genomes[genome_position];
     }
 }
 
 double Species::get_best_fitness() {
-    RNN_Genome *best_genome = get_best_genome();
-    if (best_genome == NULL)
+    RNN_Genome* best_genome = get_best_genome();
+    if (best_genome == NULL) {
         return EXAMM_MAX_DOUBLE;
-    else
+    } else {
         return best_genome->get_fitness();
+    }
 }
 
 double Species::get_worst_fitness() {
-    RNN_Genome *worst_genome = get_worst_genome();
-    if (worst_genome == NULL)
+    RNN_Genome* worst_genome = get_worst_genome();
+    if (worst_genome == NULL) {
         return EXAMM_MAX_DOUBLE;
-    else
+    } else {
         return worst_genome->get_fitness();
+    }
 }
 
-int32_t Species::size() { return (int32_t) genomes.size(); }
+int32_t Species::size() {
+    return (int32_t) genomes.size();
+}
 
-int32_t Species::contains(RNN_Genome *genome) {
+int32_t Species::contains(RNN_Genome* genome) {
     for (int32_t j = 0; j < (int32_t) genomes.size(); j++) {
-        if (genomes[j]->equals(genome)) { return j; }
+        if (genomes[j]->equals(genome)) {
+            return j;
+        }
     }
 
     return -1;
 }
 
-void Species::copy_random_genome(uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator,
-                                 RNN_Genome **genome) {
+void Species::copy_random_genome(
+    uniform_real_distribution<double>& rng_0_1, minstd_rand0& generator, RNN_Genome** genome
+) {
     int32_t genome_position = size() * rng_0_1(generator);
     *genome = genomes[genome_position]->copy();
 }
 
-void Species::copy_two_random_genomes(uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator,
-                                      RNN_Genome **genome1, RNN_Genome **genome2) {
+void Species::copy_two_random_genomes(
+    uniform_real_distribution<double>& rng_0_1, minstd_rand0& generator, RNN_Genome** genome1, RNN_Genome** genome2
+) {
     int32_t p1 = size() * rng_0_1(generator);
     int32_t p2 = (size() - 1) * rng_0_1(generator);
-    if (p2 >= p1) p2++;
+    if (p2 >= p1) {
+        p2++;
+    }
 
     // swap the gnomes so that the first parent is the more fit parent
     if (p1 > p2) {
@@ -94,16 +107,18 @@ void Species::copy_two_random_genomes(uniform_real_distribution<double> &rng_0_1
 // returns -1 for not inserted, otherwise the index it was inserted at
 // inserts a copy of the genome, caller of the function will need to delete their
 // pointer
-int32_t Species::insert_genome(RNN_Genome *genome) {
+int32_t Species::insert_genome(RNN_Genome* genome) {
     Log::info("inserting genome with fitness: %s to species %d\n", parse_fitness(genome->get_fitness()).c_str(), id);
 
     // inorder insert the new individual
-    RNN_Genome *copy = genome->copy();
+    RNN_Genome* copy = genome->copy();
     copy->set_generation_id(genome->get_generation_id());
     copy->set_group_id(id);
     vector<double> best = copy->get_best_parameters();
 
-    if (best.size() != 0) { copy->set_weights(copy->get_best_parameters()); }
+    if (best.size() != 0) {
+        copy->set_weights(copy->get_best_parameters());
+    }
     vector<double> copy_weights;
     copy->get_weights(copy_weights);
     auto index_iterator =
@@ -139,10 +154,12 @@ void Species::print(string indent) {
     }
 }
 
-vector<RNN_Genome *> Species::get_genomes() { return genomes; }
+vector<RNN_Genome*> Species::get_genomes() {
+    return genomes;
+}
 
-RNN_Genome *Species::get_latested_genome() {
-    RNN_Genome *latest = NULL;
+RNN_Genome* Species::get_latested_genome() {
+    RNN_Genome* latest = NULL;
     for (auto it = inserted_genome_id.rbegin(); it != inserted_genome_id.rend(); ++it) {
         int32_t latest_id = *it;
         for (int32_t i = 0; i < (int32_t) genomes.size(); i++) {
@@ -151,13 +168,16 @@ RNN_Genome *Species::get_latested_genome() {
                 break;
             }
         }
-        if (latest) { break; }
+        if (latest) {
+            break;
+        }
     }
     return latest;
 }
 
-void Species::fitness_sharing_remove(double fitness_threshold,
-                                     function<double(RNN_Genome *, RNN_Genome *)> &get_distance) {
+void Species::fitness_sharing_remove(
+    double fitness_threshold, function<double(RNN_Genome*, RNN_Genome*)>& get_distance
+) {
     int32_t N = (int32_t) genomes.size();
     double distance_sum[N];
     double fitness_share[N];
@@ -202,9 +222,15 @@ void Species::fitness_sharing_remove(double fitness_threshold,
 
 void Species::erase_species() {
     genomes.clear();
-    if (genomes.size() != 0) { Log::error("The worst island is not fully erased!\n"); }
+    if (genomes.size() != 0) {
+        Log::error("The worst island is not fully erased!\n");
+    }
 }
 
-int32_t Species::get_species_not_improving_count() { return species_not_improving_count; }
+int32_t Species::get_species_not_improving_count() {
+    return species_not_improving_count;
+}
 
-void Species::set_species_not_improving_count(int32_t count) { species_not_improving_count = count; }
+void Species::set_species_not_improving_count(int32_t count) {
+    species_not_improving_count = count;
+}

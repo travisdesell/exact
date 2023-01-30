@@ -19,7 +19,7 @@ class ImageInterface {
    public:
     virtual int get_classification() const = 0;
 
-    virtual void print(ostream &out) = 0;
+    virtual void print(ostream& out) = 0;
 
     virtual ~ImageInterface() = 0;
 };
@@ -44,8 +44,8 @@ class ImagesInterface {
     virtual float get_channel_avg(int channel) const = 0;
     virtual float get_channel_std_dev(int channel) const = 0;
 
-    virtual const vector<float> &get_average() const = 0;
-    virtual const vector<float> &get_std_dev() const = 0;
+    virtual const vector<float>& get_average() const = 0;
+    virtual const vector<float>& get_std_dev() const = 0;
 };
 
 class MultiImagesInterface : public ImagesInterface {

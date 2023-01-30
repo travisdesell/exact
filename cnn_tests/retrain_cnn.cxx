@@ -23,7 +23,7 @@ using std::vector;
 #include "cnn/cnn_node.hxx"
 #include "cnn/exact.hxx"
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
     vector<string> arguments = vector<string>(argv, argv + argc);
 
     string training_data;
@@ -39,7 +39,7 @@ int main(int argc, char **argv) {
     int genome_id = -1;
 #endif
 
-    CNN_Genome *genome = NULL;
+    CNN_Genome* genome = NULL;
 
     if (argument_exists(arguments, "--genome_file")) {
         string genome_filename;
@@ -64,10 +64,12 @@ int main(int argc, char **argv) {
     }
 
     Images training_images(training_data, genome->get_padding());
-    Images validation_images(validation_data, genome->get_padding(), training_images.get_average(),
-                             training_images.get_std_dev());
-    Images testing_images(testing_data, genome->get_padding(), training_images.get_average(),
-                          training_images.get_std_dev());
+    Images validation_images(
+        validation_data, genome->get_padding(), training_images.get_average(), training_images.get_std_dev()
+    );
+    Images testing_images(
+        testing_data, genome->get_padding(), training_images.get_average(), training_images.get_std_dev()
+    );
 
     // cout << "number enabled edges: " << genome->get_number_enabled_edges();
     // cout << "number enabled nodes: " << genome->get_number_enabled_edges();

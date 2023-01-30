@@ -58,10 +58,10 @@ class EXACT {
     uniform_int_distribution<long> rng_long;
     uniform_real_distribution<float> rng_float;
 
-    vector<CNN_Genome *> genomes;
+    vector<CNN_Genome*> genomes;
 
     int best_predictions_genome_id;
-    CNN_Genome *best_predictions_genome;
+    CNN_Genome* best_predictions_genome;
 
     int genomes_generated;
     int inserted_genomes;
@@ -163,39 +163,42 @@ class EXACT {
     void update_database();
 #endif
 
-    EXACT(const ImagesInterface &training_images, const ImagesInterface &validation_images,
-          const ImagesInterface &test_images, int _padding, int _population_size, int _max_epochs, bool _use_sfmp,
-          bool _use_node_operations, int _max_genomes, string _output_directory, string _search_name,
-          bool _reset_weights);
+    EXACT(
+        const ImagesInterface& training_images, const ImagesInterface& validation_images,
+        const ImagesInterface& test_images, int _padding, int _population_size, int _max_epochs, bool _use_sfmp,
+        bool _use_node_operations, int _max_genomes, string _output_directory, string _search_name, bool _reset_weights
+    );
 
-    int32_t population_contains(CNN_Genome *genome) const;
-    CNN_Genome *get_best_genome();
+    int32_t population_contains(CNN_Genome* genome) const;
+    CNN_Genome* get_best_genome();
 
     int get_number_genomes() const;
-    CNN_Genome *get_genome(int i);
+    CNN_Genome* get_genome(int i);
 
-    void generate_initial_hyperparameters(float &mu, float &mu_delta, float &learning_rate, float &learning_rate_delta,
-                                          float &weight_decay, float &weight_decay_delta, float &alpha,
-                                          int &velocity_reset, float &input_dropout_probability,
-                                          float &hidden_dropout_probability, int &batch_size);
+    void generate_initial_hyperparameters(
+        float& mu, float& mu_delta, float& learning_rate, float& learning_rate_delta, float& weight_decay,
+        float& weight_decay_delta, float& alpha, int& velocity_reset, float& input_dropout_probability,
+        float& hidden_dropout_probability, int& batch_size
+    );
 
-    void generate_simplex_hyperparameters(float &mu, float &mu_delta, float &learning_rate, float &learning_rate_delta,
-                                          float &weight_decay, float &weight_decay_delta, float &alpha,
-                                          int &velocity_reset, float &input_dropout_probability,
-                                          float &hidden_dropout_probability, int &batch_size);
+    void generate_simplex_hyperparameters(
+        float& mu, float& mu_delta, float& learning_rate, float& learning_rate_delta, float& weight_decay,
+        float& weight_decay_delta, float& alpha, int& velocity_reset, float& input_dropout_probability,
+        float& hidden_dropout_probability, int& batch_size
+    );
 
-    bool add_edge(CNN_Genome *child, CNN_Node *node1, CNN_Node *node2, int edge_type);
+    bool add_edge(CNN_Genome* child, CNN_Node* node1, CNN_Node* node2, int edge_type);
 
-    CNN_Genome *generate_individual();
-    CNN_Genome *create_mutation();
-    CNN_Genome *create_child();
+    CNN_Genome* generate_individual();
+    CNN_Genome* create_mutation();
+    CNN_Genome* create_child();
 
-    bool insert_genome(CNN_Genome *genome);
+    bool insert_genome(CNN_Genome* genome);
 
     int get_inserted_genomes() const;
     int get_max_genomes() const;
 
-    void write_individual_hyperparameters(CNN_Genome *individual);
+    void write_individual_hyperparameters(CNN_Genome* individual);
     void write_statistics(int new_generation_id, float new_fitness);
     void write_statistics_header();
     void write_hyperparameters_header();
@@ -208,7 +211,7 @@ class EXACT {
     string get_test_filename() const;
     int get_number_training_images() const;
 
-    bool is_identical(EXACT *other, bool testing_checkpoint);
+    bool is_identical(EXACT* other, bool testing_checkpoint);
 };
 
 #endif

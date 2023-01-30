@@ -28,14 +28,14 @@ using std::vector;
 #include "cnn/exact.hxx"
 #include "image_tools/large_image_set.hxx"
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
     vector<string> arguments = vector<string>(argv, argv + argc);
 
     string genome_filename;
     get_argument(arguments, "--genome_file", true, genome_filename);
 
     bool is_checkpoint = false;
-    CNN_Genome *genome = new CNN_Genome(genome_filename, is_checkpoint);
+    CNN_Genome* genome = new CNN_Genome(genome_filename, is_checkpoint);
 
     string label_name;
     get_argument(arguments, "--label_name", true, label_name);
@@ -64,7 +64,7 @@ int main(int argc, char **argv) {
         ostringstream output_filename;
         output_filename << output_directory << "/test_output";
 
-        LargeImage *image = mosaic_image.copy_image(0);
+        LargeImage* image = mosaic_image.copy_image(0);
         image->draw_png(output_filename.str() + "_test.png");
 
         int stride = 1;

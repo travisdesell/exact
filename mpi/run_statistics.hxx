@@ -24,19 +24,19 @@ class ConsolidatedStatistics {
 };
 
 struct cs_less_than_min {
-    inline bool operator()(const ConsolidatedStatistics *s1, const ConsolidatedStatistics *s2) {
+    inline bool operator()(const ConsolidatedStatistics* s1, const ConsolidatedStatistics* s2) {
         return (s1->dfm_min < s2->dfm_min);
     }
 };
 
 struct cs_less_than_avg {
-    inline bool operator()(const ConsolidatedStatistics *s1, const ConsolidatedStatistics *s2) {
+    inline bool operator()(const ConsolidatedStatistics* s1, const ConsolidatedStatistics* s2) {
         return (s1->dfm_avg < s2->dfm_avg);
     }
 };
 
 struct cs_less_than_max {
-    inline bool operator()(const ConsolidatedStatistics *s1, const ConsolidatedStatistics *s2) {
+    inline bool operator()(const ConsolidatedStatistics* s1, const ConsolidatedStatistics* s2) {
         return (s1->dfm_max < s2->dfm_max);
     }
 };
@@ -74,7 +74,7 @@ class RunStatistics {
     string to_string_avg();
     string to_string_max();
     string to_string_stddev();
-    string to_string_correlate(string target_name, Tracker &target);
+    string to_string_correlate(string target_name, Tracker& target);
 
     string overview_header();
     string overview_footer(string type);
@@ -86,27 +86,39 @@ class RunStatistics {
 };
 
 struct less_than_min {
-    inline bool operator()(const RunStatistics *s1, const RunStatistics *s2) { return (s1->mae.min() < s2->mae.min()); }
+    inline bool operator()(const RunStatistics* s1, const RunStatistics* s2) {
+        return (s1->mae.min() < s2->mae.min());
+    }
 };
 
 struct less_than_avg {
-    inline bool operator()(const RunStatistics *s1, const RunStatistics *s2) { return (s1->mae.avg() < s2->mae.avg()); }
+    inline bool operator()(const RunStatistics* s1, const RunStatistics* s2) {
+        return (s1->mae.avg() < s2->mae.avg());
+    }
 };
 
 struct less_than_max {
-    inline bool operator()(const RunStatistics *s1, const RunStatistics *s2) { return (s1->mae.max() < s2->mae.max()); }
+    inline bool operator()(const RunStatistics* s1, const RunStatistics* s2) {
+        return (s1->mae.max() < s2->mae.max());
+    }
 };
 
 struct less_than_dfm_min {
-    inline bool operator()(const RunStatistics *s1, const RunStatistics *s2) { return (s1->dfm_min < s2->dfm_min); }
+    inline bool operator()(const RunStatistics* s1, const RunStatistics* s2) {
+        return (s1->dfm_min < s2->dfm_min);
+    }
 };
 
 struct less_than_dfm_avg {
-    inline bool operator()(const RunStatistics *s1, const RunStatistics *s2) { return (s1->dfm_avg < s2->dfm_avg); }
+    inline bool operator()(const RunStatistics* s1, const RunStatistics* s2) {
+        return (s1->dfm_avg < s2->dfm_avg);
+    }
 };
 
 struct less_than_dfm_max {
-    inline bool operator()(const RunStatistics *s1, const RunStatistics *s2) { return (s1->dfm_max < s2->dfm_max); }
+    inline bool operator()(const RunStatistics* s1, const RunStatistics* s2) {
+        return (s1->dfm_max < s2->dfm_max);
+    }
 };
 
 #endif

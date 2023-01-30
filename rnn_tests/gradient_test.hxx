@@ -26,9 +26,10 @@ using std::vector;
 #include "time_series/time_series.hxx"
 
 void initialize_generator();
-void generate_random_vector(int number_parameters, vector<double> &v);
+void generate_random_vector(int number_parameters, vector<double>& v);
 
-void gradient_test(string name, RNN_Genome *genome, const vector<vector<double> > &inputs,
-                   const vector<vector<double> > &outputs);
+void gradient_test(
+    string name, RNN_Genome* genome, const vector<vector<double> >& inputs, const vector<vector<double> >& outputs
+);
 
 #endif

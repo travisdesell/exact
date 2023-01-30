@@ -6,7 +6,9 @@
 
 double exact_exp(double z) {
     bool is_negative = z < 0;
-    if (is_negative) z = -z;
+    if (is_negative) {
+        z = -z;
+    }
 
     // exp(x) = sum (k = 0 to inf) z^k/k!
     double result = 1.0 + z;
@@ -33,7 +35,7 @@ double exact_exp(double z) {
     }
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
     double value;
     double modifier;
 

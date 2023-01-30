@@ -28,10 +28,12 @@ ENARC_Node::ENARC_Node(int32_t _innovation_number, int32_t _type, double _depth)
     node_type = ENARC_NODE;
 }
 
-ENARC_Node::~ENARC_Node() {}
+ENARC_Node::~ENARC_Node() {
+}
 
-void ENARC_Node::initialize_lamarckian(minstd_rand0 &generator, NormalDistribution &normal_distribution, double mu,
-                                       double sigma) {
+void ENARC_Node::initialize_lamarckian(
+    minstd_rand0& generator, NormalDistribution& normal_distribution, double mu, double sigma
+) {
     zw = bound(normal_distribution.random(generator, mu, sigma));
     rw = bound(normal_distribution.random(generator, mu, sigma));
 
@@ -47,7 +49,7 @@ void ENARC_Node::initialize_lamarckian(minstd_rand0 &generator, NormalDistributi
     w8 = bound(normal_distribution.random(generator, mu, sigma));
 }
 
-void ENARC_Node::initialize_xavier(minstd_rand0 &generator, uniform_real_distribution<double> &rng_1_1, double range) {
+void ENARC_Node::initialize_xavier(minstd_rand0& generator, uniform_real_distribution<double>& rng_1_1, double range) {
     zw = range * (rng_1_1(generator));
     rw = range * (rng_1_1(generator));
 
@@ -63,7 +65,7 @@ void ENARC_Node::initialize_xavier(minstd_rand0 &generator, uniform_real_distrib
     w8 = range * (rng_1_1(generator));
 }
 
-void ENARC_Node::initialize_kaiming(minstd_rand0 &generator, NormalDistribution &normal_distribution, double range) {
+void ENARC_Node::initialize_kaiming(minstd_rand0& generator, NormalDistribution& normal_distribution, double range) {
     zw = range * normal_distribution.random(generator, 0, 1);
     rw = range * normal_distribution.random(generator, 0, 1);
 
@@ -79,7 +81,7 @@ void ENARC_Node::initialize_kaiming(minstd_rand0 &generator, NormalDistribution 
     w8 = range * normal_distribution.random(generator, 0, 1);
 }
 
-void ENARC_Node::initialize_uniform_random(minstd_rand0 &generator, uniform_real_distribution<double> &rng) {
+void ENARC_Node::initialize_uniform_random(minstd_rand0& generator, uniform_real_distribution<double>& rng) {
     zw = rng(generator);
     rw = rng(generator);
 
@@ -138,11 +140,13 @@ void ENARC_Node::input_fired(int32_t time, double incoming_output) {
 
     input_values[time] += incoming_output;
 
-    if (inputs_fired[time] < total_inputs)
+    if (inputs_fired[time] < total_inputs) {
         return;
-    else if (inputs_fired[time] > total_inputs) {
-        Log::fatal("ERROR: inputs_fired on ENARC_Node %d at time %d is %d and total_inputs is %d\n", innovation_number,
-                   time, inputs_fired[time], total_inputs);
+    } else if (inputs_fired[time] > total_inputs) {
+        Log::fatal(
+            "ERROR: inputs_fired on ENARC_Node %d at time %d is %d and total_inputs is %d\n", innovation_number, time,
+            inputs_fired[time], total_inputs
+        );
         exit(1);
     }
 
@@ -152,7 +156,9 @@ void ENARC_Node::input_fired(int32_t time, double incoming_output) {
     double x = input_values[time];
 
     double h_prev = 0.0;
-    if (time > 0) h_prev = output_values[time - 1];
+    if (time > 0) {
+        h_prev = output_values[time - 1];
+    }
 
     double xzw = x * zw;
     double hrw = h_prev * rw;
@@ -205,11 +211,13 @@ void ENARC_Node::input_fired(int32_t time, double incoming_output) {
 }
 
 void ENARC_Node::try_update_deltas(int32_t time) {
-    if (outputs_fired[time] < total_outputs)
+    if (outputs_fired[time] < total_outputs) {
         return;
-    else if (outputs_fired[time] > total_outputs) {
-        Log::fatal("ERROR: outputs_fired on ENARC_Node %d at time %d is %d and total_outputs is %d\n",
-                   innovation_number, time, outputs_fired[time], total_outputs);
+    } else if (outputs_fired[time] > total_outputs) {
+        Log::fatal(
+            "ERROR: outputs_fired on ENARC_Node %d at time %d is %d and total_outputs is %d\n", innovation_number, time,
+            outputs_fired[time], total_outputs
+        );
         exit(1);
     }
 
@@ -217,10 +225,14 @@ void ENARC_Node::try_update_deltas(int32_t time) {
     double x = input_values[time];
 
     double h_prev = 0.0;
-    if (time > 0) h_prev = output_values[time - 1];
+    if (time > 0) {
+        h_prev = output_values[time - 1];
+    }
 
     double d_h = error;
-    if (time < (series_length - 1)) d_h += d_h_prev[time + 1];
+    if (time < (series_length - 1)) {
+        d_h += d_h_prev[time + 1];
+    }
 
     // d_h *= 0.2;
 
@@ -267,20 +279,22 @@ void ENARC_Node::output_fired(int32_t time, double delta) {
     try_update_deltas(time);
 }
 
-int32_t ENARC_Node::get_number_weights() const { return NUMBER_ENARC_WEIGHTS; }
+int32_t ENARC_Node::get_number_weights() const {
+    return NUMBER_ENARC_WEIGHTS;
+}
 
-void ENARC_Node::get_weights(vector<double> &parameters) const {
+void ENARC_Node::get_weights(vector<double>& parameters) const {
     parameters.resize(get_number_weights());
     int32_t offset = 0;
     get_weights(offset, parameters);
 }
 
-void ENARC_Node::set_weights(const vector<double> &parameters) {
+void ENARC_Node::set_weights(const vector<double>& parameters) {
     int32_t offset = 0;
     set_weights(offset, parameters);
 }
 
-void ENARC_Node::set_weights(int32_t &offset, const vector<double> &parameters) {
+void ENARC_Node::set_weights(int32_t& offset, const vector<double>& parameters) {
     // int32_t start_offset = offset;
 
     zw = bound(parameters[offset++]);
@@ -301,7 +315,7 @@ void ENARC_Node::set_weights(int32_t &offset, const vector<double> &parameters) 
     // Log::trace("set weights from offset %d to %d on ENARC_Node %d\n", start_offset, end_offset, innovation_number);
 }
 
-void ENARC_Node::get_weights(int32_t &offset, vector<double> &parameters) const {
+void ENARC_Node::get_weights(int32_t& offset, vector<double>& parameters) const {
     // int32_t start_offset = offset;
 
     parameters[offset++] = zw;
@@ -322,10 +336,12 @@ void ENARC_Node::get_weights(int32_t &offset, vector<double> &parameters) const 
     // Log::trace("got weights from offset %d to %d on ENARC_Node %d\n", start_offset, end_offset, innovation_number);
 }
 
-void ENARC_Node::get_gradients(vector<double> &gradients) {
+void ENARC_Node::get_gradients(vector<double>& gradients) {
     gradients.assign(NUMBER_ENARC_WEIGHTS, 0.0);
 
-    for (int32_t i = 0; i < NUMBER_ENARC_WEIGHTS; i++) { gradients[i] = 0.0; }
+    for (int32_t i = 0; i < NUMBER_ENARC_WEIGHTS; i++) {
+        gradients[i] = 0.0;
+    }
 
     for (int32_t i = 0; i < series_length; i++) {
         gradients[0] += d_zw[i];
@@ -401,8 +417,8 @@ void ENARC_Node::reset(int32_t _series_length) {
     outputs_fired.assign(series_length, 0);
 }
 
-RNN_Node_Interface *ENARC_Node::copy() const {
-    ENARC_Node *n = new ENARC_Node(innovation_number, layer_type, depth);
+RNN_Node_Interface* ENARC_Node::copy() const {
+    ENARC_Node* n = new ENARC_Node(innovation_number, layer_type, depth);
 
     // copy ENARC_Node values
     n->rw = rw;
@@ -479,4 +495,6 @@ RNN_Node_Interface *ENARC_Node::copy() const {
     return n;
 }
 
-void ENARC_Node::write_to_stream(ostream &out) { RNN_Node_Interface::write_to_stream(out); }
+void ENARC_Node::write_to_stream(ostream& out) {
+    RNN_Node_Interface::write_to_stream(out);
+}

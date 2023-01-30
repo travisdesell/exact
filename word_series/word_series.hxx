@@ -53,11 +53,11 @@ class WordSeries {
 
     void cut(int32_t start, int32_t stop);
 
-    double get_correlation(const WordSeries *other, int32_t lag) const;
+    double get_correlation(const WordSeries* other, int32_t lag) const;
 
-    WordSeries *copy();
+    WordSeries* copy();
 
-    void copy_values(vector<double> &series);
+    void copy_values(vector<double>& series);
 };
 
 class SentenceSeries {
@@ -66,12 +66,12 @@ class SentenceSeries {
     string filename;
     map<string, int> vocab;
     vector<string> word_index;
-    map<string, WordSeries *> word_series;
+    map<string, WordSeries*> word_series;
 
     SentenceSeries();
 
    public:
-    SentenceSeries(const string _filename, const vector<string> &_word_index, const map<string, int> &_vocab);
+    SentenceSeries(const string _filename, const vector<string>& _word_index, const map<string, int>& _vocab);
     ~SentenceSeries();
     void add_word_series(string name);
 
@@ -82,7 +82,7 @@ class SentenceSeries {
 
     vector<string> get_word_index() const;
 
-    void get_series(string word_name, vector<double> &series);
+    void get_series(string word_name, vector<double>& series);
 
     double get_min(string word);
     double get_average(string word);
@@ -97,13 +97,13 @@ class SentenceSeries {
     void normalize_min_max(string word, double min, double max);
     void normalize_avg_std_dev(string word, double avg, double std_dev, double norm_max);
 
-    void export_word_series(vector<vector<double> > &data, int word_offset);
-    void export_word_series(vector<vector<double> > &data);
+    void export_word_series(vector<vector<double> >& data, int word_offset);
+    void export_word_series(vector<vector<double> >& data);
 
-    SentenceSeries *copy();
+    SentenceSeries* copy();
 
-    void select_parameters(const vector<string> &input_parameter_names, const vector<string> &output_parameter_names);
-    void select_parameters(const vector<string> &parameter_names);
+    void select_parameters(const vector<string>& input_parameter_names, const vector<string>& output_parameter_names);
+    void select_parameters(const vector<string>& parameter_names);
 };
 
 class Corpus {
@@ -119,7 +119,7 @@ class Corpus {
     vector<string> output_parameter_names;
     vector<string> all_parameter_names;
 
-    vector<SentenceSeries *> sent_series;
+    vector<SentenceSeries*> sent_series;
 
     map<string, double> normalize_mins;
     map<string, double> normalize_maxs;
@@ -136,30 +136,37 @@ class Corpus {
     Corpus();
     ~Corpus();
 
-    static Corpus *generate_from_arguments(const vector<string> &arguments);
-    static Corpus *generate_test(const vector<string> &_test_filenames, const vector<string> &_input_parameter_names,
-                                 const vector<string> &_output_parameter_names);
+    static Corpus* generate_from_arguments(const vector<string>& arguments);
+    static Corpus* generate_test(
+        const vector<string>& _test_filenames, const vector<string>& _input_parameter_names,
+        const vector<string>& _output_parameter_names
+    );
 
     void normalize_min_max();
-    void normalize_min_max(const map<string, double> &_normalize_mins, const map<string, double> &_normalize_maxs);
+    void normalize_min_max(const map<string, double>& _normalize_mins, const map<string, double>& _normalize_maxs);
 
     void normalize_avg_std_dev();
-    void normalize_avg_std_dev(const map<string, double> &_normalize_avgs,
-                               const map<string, double> &_normalize_std_devs,
-                               const map<string, double> &_normalize_mins, const map<string, double> &_normalize_maxs);
+    void normalize_avg_std_dev(
+        const map<string, double>& _normalize_avgs, const map<string, double>& _normalize_std_devs,
+        const map<string, double>& _normalize_mins, const map<string, double>& _normalize_maxs
+    );
 
     void write_sentence_series_sets(string base_filename);
 
-    void export_sent_series(const vector<int> &series_indexes, int word_offset,
-                            vector<vector<vector<double> > > &inputs, vector<vector<vector<double> > > &outputs);
+    void export_sent_series(
+        const vector<int>& series_indexes, int word_offset, vector<vector<vector<double> > >& inputs,
+        vector<vector<vector<double> > >& outputs
+    );
 
-    void export_training_series(int word_offset, vector<vector<vector<double> > > &inputs,
-                                vector<vector<vector<double> > > &outputs);
+    void export_training_series(
+        int word_offset, vector<vector<vector<double> > >& inputs, vector<vector<vector<double> > >& outputs
+    );
 
-    void export_test_series(int word_offset, vector<vector<vector<double> > > &inputs,
-                            vector<vector<vector<double> > > &outputs);
+    void export_test_series(
+        int word_offset, vector<vector<vector<double> > >& inputs, vector<vector<vector<double> > >& outputs
+    );
 
-    void export_series_by_name(string field_name, vector<vector<double> > &exported_series);
+    void export_series_by_name(string field_name, vector<vector<double> >& exported_series);
 
     double denormalize(string field_name, double value);
 
@@ -177,10 +184,10 @@ class Corpus {
     int get_number_inputs() const;
     int get_number_outputs() const;
 
-    void set_training_indexes(const vector<int> &_training_indexes);
-    void set_test_indexes(const vector<int> &_test_indexes);
+    void set_training_indexes(const vector<int>& _training_indexes);
+    void set_test_indexes(const vector<int>& _test_indexes);
 
-    SentenceSeries *get_set(int32_t i);
+    SentenceSeries* get_set(int32_t i);
 };
 
 #endif

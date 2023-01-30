@@ -38,8 +38,8 @@ int opencl_input_size;
 int opencl_weights_size;
 int opencl_output_size;
 
-size_t *global_size;
-size_t *local_size;
+size_t* global_size;
+size_t* local_size;
 
 cl_mem sizes_opencl;
 cl_mem input_opencl;
@@ -48,8 +48,9 @@ cl_mem output_opencl;
 
 #define PROPAGATE_FORWARD_KERNEL_FILE "../opencl/propagate_forward_kernel.cl"
 
-string generate_program(int batch_size, int input_y, int input_x, int weights_y, int weights_x, int output_y,
-                        int output_x) {
+string generate_program(
+    int batch_size, int input_y, int input_x, int weights_y, int weights_x, int output_y, int output_x
+) {
     string program;
 
     program.append("#pragma unroll\n");
@@ -65,7 +66,8 @@ string generate_program(int batch_size, int input_y, int input_x, int weights_y,
 
     program.append(
         "__kernel void propagate_forward(const __global float *inputs, __constant float *weights, __global float "
-        "*outputs, __local float *inputs_local) {\n");
+        "*outputs, __local float *inputs_local) {\n"
+    );
     program.append("    int batch_number = get_group_id(0);\n");
     program.append("    int y = get_global_id(0);\n");
     program.append("    int x = get_global_id(1);\n");
@@ -84,18 +86,23 @@ string generate_program(int batch_size, int input_y, int input_x, int weights_y,
     // inputs_local_offset, input_offset, inputs_local[inputs_local_offset]);\n");
     for (uint32_t i = 1; i < n_local_copies; i++) {
         if (i == n_local_copies - 1 && (input_y * input_x) % (output_y * output_x) != 0) {
-            program.append("    if (inputs_local_offset + " + to_string(i * output_y * output_x) +
-                           " < input_image_size) {\n");
-            program.append("        inputs_local[inputs_local_offset + " + to_string(i * output_y * output_x) +
-                           "]   = inputs[input_offset + " + to_string(i * output_y * output_x) + "];\n");
+            program.append(
+                "    if (inputs_local_offset + " + to_string(i * output_y * output_x) + " < input_image_size) {\n"
+            );
+            program.append(
+                "        inputs_local[inputs_local_offset + " + to_string(i * output_y * output_x)
+                + "]   = inputs[input_offset + " + to_string(i * output_y * output_x) + "];\n"
+            );
             // program.append("        printf(\"thread[%d,%d,%d] inputs_local[%d] = inputs[%d]: %f -- IN IF
             // STATEMENT\\n\", batch_number, y, x, inputs_local_offset + " + to_string(i * output_y * output_x) + ",
             // input_offset + " + to_string(i * output_y * output_x) + ", inputs_local[inputs_local_offset + " +
             // to_string(i * output_y * output_x) + "]);\n");
             program.append("    }\n");
         } else {
-            program.append("    inputs_local[inputs_local_offset + " + to_string(i * output_y * output_x) +
-                           "]   = inputs[input_offset + " + to_string(i * output_y * output_x) + "];\n");
+            program.append(
+                "    inputs_local[inputs_local_offset + " + to_string(i * output_y * output_x)
+                + "]   = inputs[input_offset + " + to_string(i * output_y * output_x) + "];\n"
+            );
             // program.append("    printf(\"thread[%d,%d,%d] inputs_local[%d] = inputs[%d]: %f\\n\", batch_number, y, x,
             // inputs_local_offset + " + to_string(i * output_y * output_x) + ", input_offset + " + to_string(i *
             // output_y * output_x) + ", inputs_local[inputs_local_offset + " + to_string(i * output_y * output_x) +
@@ -113,8 +120,10 @@ string generate_program(int batch_size, int input_y, int input_x, int weights_y,
     int current_input = 0;
     for (uint32_t wy = 0; wy < weights_y; wy++) {
         for (uint32_t wx = 0; wx < weights_x; wx++) {
-            program.append("    output += weights[" + to_string(current_weight++) +
-                           "] * inputs_local[local_input_offset + " + to_string(current_input++) + "];\n");
+            program.append(
+                "    output += weights[" + to_string(current_weight++) + "] * inputs_local[local_input_offset + "
+                + to_string(current_input++) + "];\n"
+            );
         }
         current_input += input_x - weights_x;
     }
@@ -126,8 +135,9 @@ string generate_program(int batch_size, int input_y, int input_x, int weights_y,
     return program;
 }
 
-void initialize_opencl(int batch_size, int input_y, int input_x, int weights_y, int weights_x, int output_y,
-                       int output_x) {
+void initialize_opencl(
+    int batch_size, int input_y, int input_x, int weights_y, int weights_x, int output_y, int output_x
+) {
     // OpenCL structures
     cl_int err;
 
@@ -149,8 +159,8 @@ void initialize_opencl(int batch_size, int input_y, int input_x, int weights_y, 
     cout << program;
     cout << endl << endl;
 
-    const char *program_c_str = program.c_str();
-    propagate_forward_kernel = clCreateProgramWithSource(context, 1, (const char **) &program_c_str, NULL, &err);
+    const char* program_c_str = program.c_str();
+    propagate_forward_kernel = clCreateProgramWithSource(context, 1, (const char**) &program_c_str, NULL, &err);
     check_error(err, "could not create program: %d", err);
     if (!propagate_forward_kernel) {
         cerr << "ERROR couldn't craete propagate_forward kernel!" << endl;
@@ -195,126 +205,153 @@ void initialize_opencl(int batch_size, int input_y, int input_x, int weights_y, 
 
     err = clSetKernelArg(kernel, 3, sizeof(cl_float) * input_y * input_x, NULL);
 
-    global_size = (size_t *) malloc(sizeof(size_t) * 2);
+    global_size = (size_t*) malloc(sizeof(size_t) * 2);
     global_size[0] = batch_size * output_y;
     global_size[1] = output_x;
 
-    local_size = (size_t *) malloc(sizeof(size_t) * 2);
+    local_size = (size_t*) malloc(sizeof(size_t) * 2);
     local_size[0] = output_y;
     local_size[1] = output_x;
 }
 
-void initialize_3d(float ****v, uint32_t v_z, uint32_t v_y, uint32_t v_x) {
-    (*v) = (float ***) malloc(sizeof(float **) * v_z);
+void initialize_3d(float**** v, uint32_t v_z, uint32_t v_y, uint32_t v_x) {
+    (*v) = (float***) malloc(sizeof(float**) * v_z);
     for (uint32_t z = 0; z < v_z; z++) {
-        (*v)[z] = (float **) malloc(sizeof(float *) * v_y);
-        for (uint32_t y = 0; y < v_y; y++) { (*v)[z][y] = (float *) malloc(sizeof(float) * v_x); }
-    }
-}
-
-void initialize_2d(float ***v, uint32_t v_y, uint32_t v_x) {
-    *v = (float **) malloc(sizeof(float *) * v_y);
-    for (uint32_t y = 0; y < v_y; y++) { (*v)[y] = (float *) malloc(sizeof(float) * v_x); }
-}
-
-void set_to_random_3d(float ***v, uint32_t v_z, uint32_t v_y, uint32_t v_x) {
-    for (uint32_t z = 0; z < v_z; z++) {
+        (*v)[z] = (float**) malloc(sizeof(float*) * v_y);
         for (uint32_t y = 0; y < v_y; y++) {
-            for (uint32_t x = 0; x < v_x; x++) { v[z][y][x] = drand48(); }
+            (*v)[z][y] = (float*) malloc(sizeof(float) * v_x);
         }
     }
 }
 
-void set_to_random_2d(float **v, uint32_t v_y, uint32_t v_x) {
+void initialize_2d(float*** v, uint32_t v_y, uint32_t v_x) {
+    *v = (float**) malloc(sizeof(float*) * v_y);
     for (uint32_t y = 0; y < v_y; y++) {
-        for (uint32_t x = 0; x < v_x; x++) { v[y][x] = drand48(); }
+        (*v)[y] = (float*) malloc(sizeof(float) * v_x);
     }
 }
 
-void set_to_zero_3d(float ***v, uint32_t v_z, uint32_t v_y, uint32_t v_x) {
+void set_to_random_3d(float*** v, uint32_t v_z, uint32_t v_y, uint32_t v_x) {
     for (uint32_t z = 0; z < v_z; z++) {
         for (uint32_t y = 0; y < v_y; y++) {
-            for (uint32_t x = 0; x < v_x; x++) { v[z][y][x] = 0.0; }
+            for (uint32_t x = 0; x < v_x; x++) {
+                v[z][y][x] = drand48();
+            }
         }
     }
 }
 
-void copy_3d_to_1d(float ***input, uint32_t input_z, uint32_t input_y, uint32_t input_x, float *output) {
+void set_to_random_2d(float** v, uint32_t v_y, uint32_t v_x) {
+    for (uint32_t y = 0; y < v_y; y++) {
+        for (uint32_t x = 0; x < v_x; x++) {
+            v[y][x] = drand48();
+        }
+    }
+}
+
+void set_to_zero_3d(float*** v, uint32_t v_z, uint32_t v_y, uint32_t v_x) {
+    for (uint32_t z = 0; z < v_z; z++) {
+        for (uint32_t y = 0; y < v_y; y++) {
+            for (uint32_t x = 0; x < v_x; x++) {
+                v[z][y][x] = 0.0;
+            }
+        }
+    }
+}
+
+void copy_3d_to_1d(float*** input, uint32_t input_z, uint32_t input_y, uint32_t input_x, float* output) {
     uint32_t current_output = 0;
     for (uint32_t z = 0; z < input_z; z++) {
         for (uint32_t y = 0; y < input_y; y++) {
-            for (uint32_t x = 0; x < input_x; x++) { output[current_output++] = input[z][y][x]; }
+            for (uint32_t x = 0; x < input_x; x++) {
+                output[current_output++] = input[z][y][x];
+            }
         }
     }
 }
 
-void copy_2d_to_1d(float **input, uint32_t input_y, uint32_t input_x, float *output) {
+void copy_2d_to_1d(float** input, uint32_t input_y, uint32_t input_x, float* output) {
     uint32_t current_output = 0;
     for (uint32_t y = 0; y < input_y; y++) {
-        for (uint32_t x = 0; x < input_x; x++) { output[current_output++] = input[y][x]; }
+        for (uint32_t x = 0; x < input_x; x++) {
+            output[current_output++] = input[y][x];
+        }
     }
 }
 
-void copy_1d_to_3d(float *input, float ***output, uint32_t output_z, uint32_t output_y, uint32_t output_x) {
+void copy_1d_to_3d(float* input, float*** output, uint32_t output_z, uint32_t output_y, uint32_t output_x) {
     uint32_t current_output = 0;
     for (uint32_t z = 0; z < output_z; z++) {
         for (uint32_t y = 0; y < output_y; y++) {
-            for (uint32_t x = 0; x < output_x; x++) { output[z][y][x] = input[current_output++]; }
+            for (uint32_t x = 0; x < output_x; x++) {
+                output[z][y][x] = input[current_output++];
+            }
         }
     }
 }
 
-bool check_equal(uint32_t batch_size, float ***v1, uint32_t v_y, uint32_t v_x, float *v2) {
+bool check_equal(uint32_t batch_size, float*** v1, uint32_t v_y, uint32_t v_x, float* v2) {
     uint32_t current_v2 = 0;
     for (uint32_t z = 0; z < batch_size; z++) {
         for (uint32_t y = 0; y < v_y; y++) {
             for (uint32_t x = 0; x < v_x; x++) {
-                if (v1[z][y][x] != v2[current_v2++]) return false;
+                if (v1[z][y][x] != v2[current_v2++]) {
+                    return false;
+                }
             }
         }
     }
     return true;
 }
 
-void copy_1d_to_2d(float *input, float **output, uint32_t output_y, uint32_t output_x) {
+void copy_1d_to_2d(float* input, float** output, uint32_t output_y, uint32_t output_x) {
     uint32_t current_output = 0;
     for (uint32_t y = 0; y < output_y; y++) {
-        for (uint32_t x = 0; x < output_x; x++) { output[y][x] = input[current_output++]; }
+        for (uint32_t x = 0; x < output_x; x++) {
+            output[y][x] = input[current_output++];
+        }
     }
 }
 
-void print_3d(float ***input, uint32_t input_z, uint32_t input_y, uint32_t input_x) {
+void print_3d(float*** input, uint32_t input_z, uint32_t input_y, uint32_t input_x) {
     for (uint32_t z = 0; z < input_z; z++) {
         for (uint32_t y = 0; y < input_y; y++) {
-            for (uint32_t x = 0; x < input_x; x++) { cout << " " << input[z][y][x]; }
+            for (uint32_t x = 0; x < input_x; x++) {
+                cout << " " << input[z][y][x];
+            }
             cout << endl;
         }
         cout << endl;
     }
 }
 
-void print_2d(float **input, uint32_t input_y, uint32_t input_x) {
+void print_2d(float** input, uint32_t input_y, uint32_t input_x) {
     for (uint32_t y = 0; y < input_y; y++) {
-        for (uint32_t x = 0; x < input_x; x++) { cout << " " << input[y][x]; }
+        for (uint32_t x = 0; x < input_x; x++) {
+            cout << " " << input[y][x];
+        }
         cout << endl;
     }
 }
 
-void print_1d(float *input, uint32_t input_z, uint32_t input_y, uint32_t input_x) {
+void print_1d(float* input, uint32_t input_z, uint32_t input_y, uint32_t input_x) {
     uint32_t current_input = 0;
 
     for (uint32_t z = 0; z < input_z; z++) {
         for (uint32_t y = 0; y < input_y; y++) {
-            for (uint32_t x = 0; x < input_x; x++) { cout << " " << input[current_input++]; }
+            for (uint32_t x = 0; x < input_x; x++) {
+                cout << " " << input[current_input++];
+            }
             cout << endl;
         }
         cout << endl;
     }
 }
 
-void propagate_forward_3d(uint32_t batch_size, float ***input, uint32_t input_y, uint32_t input_x, float **weights,
-                          uint32_t weights_y, uint32_t weights_x, float ***output, uint32_t output_y,
-                          uint32_t output_x) {
+void propagate_forward_3d(
+    uint32_t batch_size, float*** input, uint32_t input_y, uint32_t input_x, float** weights, uint32_t weights_y,
+    uint32_t weights_x, float*** output, uint32_t output_y, uint32_t output_x
+) {
     float weight;
 
     for (uint32_t batch_number = 0; batch_number < batch_size; batch_number++) {
@@ -332,8 +369,10 @@ void propagate_forward_3d(uint32_t batch_size, float ***input, uint32_t input_y,
     }
 }
 
-void propagate_forward_1d(uint32_t batch_size, float *input, uint32_t input_y, uint32_t input_x, float *weights,
-                          uint32_t weights_y, uint32_t weights_x, float *output, uint32_t output_y, uint32_t output_x) {
+void propagate_forward_1d(
+    uint32_t batch_size, float* input, uint32_t input_y, uint32_t input_x, float* weights, uint32_t weights_y,
+    uint32_t weights_x, float* output, uint32_t output_y, uint32_t output_x
+) {
     int current_weight = 0;
     int current_output = 0;
     int current_input = 0;
@@ -365,7 +404,7 @@ void propagate_forward_1d(uint32_t batch_size, float *input, uint32_t input_y, u
     }
 }
 
-void propagate_forward_opencl(float *input, float *weights, float *output) {
+void propagate_forward_opencl(float* input, float* weights, float* output) {
     cl_int err;
 
     // err = clEnqueueWriteBuffer(queue, input_opencl, CL_TRUE, 0, opencl_input_size, input, 0, NULL, NULL);
@@ -392,7 +431,7 @@ void propagate_forward_opencl(float *input, float *weights, float *output) {
     */
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
     vector<string> arguments = vector<string>(argv, argv + argc);
 
     uint32_t batch_size = 1000;
@@ -406,17 +445,17 @@ int main(int argc, char **argv) {
     uint32_t weights_y = (input_y - output_y) + 1;
     uint32_t weights_x = (input_x - output_x) + 1;
 
-    float ***input;
-    float ***output;
-    float **weights;
+    float*** input;
+    float*** output;
+    float** weights;
 
-    float *input_flat = (float *) malloc(sizeof(float) * batch_size * input_y * input_x);
-    float *output_flat = (float *) malloc(sizeof(float) * batch_size * output_y * output_x);
-    float *weights_flat = (float *) malloc(sizeof(float) * weights_y * weights_x);
+    float* input_flat = (float*) malloc(sizeof(float) * batch_size * input_y * input_x);
+    float* output_flat = (float*) malloc(sizeof(float) * batch_size * output_y * output_x);
+    float* weights_flat = (float*) malloc(sizeof(float) * weights_y * weights_x);
 
-    float *input_cpu = (float *) malloc(sizeof(float) * batch_size * input_y * input_x);
-    float *output_cpu = (float *) malloc(sizeof(float) * batch_size * output_y * output_x);
-    float *weights_cpu = (float *) malloc(sizeof(float) * weights_y * weights_x);
+    float* input_cpu = (float*) malloc(sizeof(float) * batch_size * input_y * input_x);
+    float* output_cpu = (float*) malloc(sizeof(float) * batch_size * output_y * output_x);
+    float* weights_cpu = (float*) malloc(sizeof(float) * weights_y * weights_x);
 
     cout << "input batch size: " << batch_size << ", input_y: " << input_y << ", input_x: " << input_x << endl;
     cout << "output batch size: " << batch_size << ", output_y: " << output_y << ", output_x: " << output_x << endl;
@@ -448,14 +487,16 @@ int main(int argc, char **argv) {
     cout << endl << endl << "Correctness check." << endl;
 
     cout << "3d: " << endl;
-    propagate_forward_3d(batch_size, input, input_y, input_x, weights, weights_y, weights_x, output, output_y,
-                         output_x);
+    propagate_forward_3d(
+        batch_size, input, input_y, input_x, weights, weights_y, weights_x, output, output_y, output_x
+    );
     print_3d(output, batch_size, output_y, output_x);
 
     // cout << "1d: " << endl;
 
-    propagate_forward_1d(batch_size, input_flat, input_y, input_x, weights_flat, weights_y, weights_x, output_flat,
-                         output_y, output_x);
+    propagate_forward_1d(
+        batch_size, input_flat, input_y, input_x, weights_flat, weights_y, weights_x, output_flat, output_y, output_x
+    );
     // print_1d(output_flat, batch_size, output_y, output_x);
 
     /*
@@ -497,8 +538,9 @@ int main(int argc, char **argv) {
     high_resolution_clock::time_point t1 = high_resolution_clock::now();
 
     for (uint32_t i = 0; i < count; i++) {
-        propagate_forward_3d(batch_size, input, input_y, input_x, weights, weights_y, weights_x, output, output_y,
-                             output_x);
+        propagate_forward_3d(
+            batch_size, input, input_y, input_x, weights, weights_y, weights_x, output, output_y, output_x
+        );
     }
 
     high_resolution_clock::time_point t2 = high_resolution_clock::now();
@@ -514,8 +556,10 @@ int main(int argc, char **argv) {
     t1 = high_resolution_clock::now();
 
     for (uint32_t i = 0; i < count; i++) {
-        propagate_forward_1d(batch_size, input_flat, input_y, input_x, weights_flat, weights_y, weights_x, output_flat,
-                             output_y, output_x);
+        propagate_forward_1d(
+            batch_size, input_flat, input_y, input_x, weights_flat, weights_y, weights_x, output_flat, output_y,
+            output_x
+        );
     }
 
     t2 = high_resolution_clock::now();
@@ -530,7 +574,9 @@ int main(int argc, char **argv) {
 
     t1 = high_resolution_clock::now();
 
-    for (uint32_t i = 0; i < count; i++) { propagate_forward_opencl(input_cpu, weights_cpu, output_cpu); }
+    for (uint32_t i = 0; i < count; i++) {
+        propagate_forward_opencl(input_cpu, weights_cpu, output_cpu);
+    }
 
     t2 = high_resolution_clock::now();
 

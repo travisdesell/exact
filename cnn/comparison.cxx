@@ -19,7 +19,7 @@ using std::vector;
 #include "common/random.hxx"
 #include "comparison.hxx"
 
-bool are_different(string variable_name, const int &v1, const int &v2) {
+bool are_different(string variable_name, const int& v1, const int& v2) {
     if (v1 != v2) {
         cerr << "IDENTICAL ERROR: " << variable_name << " different" << endl;
         cerr << "self: '" << v1 << "' vs. other: '" << v2 << "'" << endl;
@@ -28,7 +28,7 @@ bool are_different(string variable_name, const int &v1, const int &v2) {
     return false;
 }
 
-bool are_different(string variable_name, const float &v1, const float &v2) {
+bool are_different(string variable_name, const float& v1, const float& v2) {
     if (v1 != v2) {
         cerr << "IDENTICAL ERROR: " << variable_name << " different" << endl;
         cerr << "self: '" << v1 << "' vs. other: '" << v2 << "'" << endl;
@@ -37,7 +37,7 @@ bool are_different(string variable_name, const float &v1, const float &v2) {
     return false;
 }
 
-bool are_different(string variable_name, const NormalDistribution &v1, const NormalDistribution &v2) {
+bool are_different(string variable_name, const NormalDistribution& v1, const NormalDistribution& v2) {
     if (v1 != v2) {
         cerr << "IDENTICAL ERROR: " << variable_name << " different" << endl;
         cerr << "self: '" << v1 << "' vs. other: '" << v2 << "'" << endl;
@@ -46,7 +46,7 @@ bool are_different(string variable_name, const NormalDistribution &v1, const Nor
     return false;
 }
 
-bool are_different(string variable_name, const minstd_rand0 &v1, const minstd_rand0 &v2) {
+bool are_different(string variable_name, const minstd_rand0& v1, const minstd_rand0& v2) {
     if (v1 != v2) {
         cerr << "IDENTICAL ERROR: " << variable_name << " different" << endl;
         cerr << "self: '" << v1 << "' vs. other: '" << v2 << "'" << endl;
@@ -55,8 +55,9 @@ bool are_different(string variable_name, const minstd_rand0 &v1, const minstd_ra
     return false;
 }
 
-bool are_different(string variable_name, const uniform_int_distribution<long> &v1,
-                   const uniform_int_distribution<long> &v2) {
+bool are_different(
+    string variable_name, const uniform_int_distribution<long>& v1, const uniform_int_distribution<long>& v2
+) {
     if (v1 != v2) {
         cerr << "IDENTICAL ERROR: " << variable_name << " different" << endl;
         cerr << "self: '" << v1 << "' vs. other: '" << v2 << "'" << endl;
@@ -65,8 +66,9 @@ bool are_different(string variable_name, const uniform_int_distribution<long> &v
     return false;
 }
 
-bool are_different(string variable_name, const uniform_real_distribution<float> &v1,
-                   const uniform_real_distribution<float> &v2) {
+bool are_different(
+    string variable_name, const uniform_real_distribution<float>& v1, const uniform_real_distribution<float>& v2
+) {
     if (v1 != v2) {
         cerr << "IDENTICAL ERROR: " << variable_name << " different" << endl;
         cerr << "self: '" << v1 << "' vs. other: '" << v2 << "'" << endl;
@@ -75,7 +77,7 @@ bool are_different(string variable_name, const uniform_real_distribution<float> 
     return false;
 }
 
-bool are_different(string variable_name, const string &v1, const string &v2) {
+bool are_different(string variable_name, const string& v1, const string& v2) {
     if (v1.compare(v2) != 0) {
         cerr << "IDENTICAL ERROR: " << variable_name << " different" << endl;
         cerr << "self: '" << v1 << "' vs. other: '" << v2 << "'" << endl;
@@ -84,7 +86,7 @@ bool are_different(string variable_name, const string &v1, const string &v2) {
     return false;
 }
 
-bool are_different(string variable_name, const vector<int> &v1, const vector<int> &v2) {
+bool are_different(string variable_name, const vector<int>& v1, const vector<int>& v2) {
     if (v1.size() != v2.size()) {
         cerr << "IDENTICAL ERROR: vector " << variable_name << " different" << endl;
         cerr << "self." << variable_name << ".size(): " << v1.size() << " != other." << variable_name
@@ -104,7 +106,7 @@ bool are_different(string variable_name, const vector<int> &v1, const vector<int
     return false;
 }
 
-bool are_different(string variable_name, const vector<long> &v1, const vector<long> &v2) {
+bool are_different(string variable_name, const vector<long>& v1, const vector<long>& v2) {
     if (v1.size() != v2.size()) {
         cerr << "IDENTICAL ERROR: vector " << variable_name << " different" << endl;
         cerr << "self." << variable_name << ".size(): " << v1.size() << " != other." << variable_name
@@ -124,8 +126,10 @@ bool are_different(string variable_name, const vector<long> &v1, const vector<lo
     return false;
 }
 
-bool are_different(string variable_name, const map<string, int> &v1, const map<string, int> &v2) {
-    if (v1.size() != v2.size()) return true;
+bool are_different(string variable_name, const map<string, int>& v1, const map<string, int>& v2) {
+    if (v1.size() != v2.size()) {
+        return true;
+    }
 
     auto i1 = v1.begin();
     auto i2 = v2.begin();
@@ -149,7 +153,7 @@ bool are_different(string variable_name, const map<string, int> &v1, const map<s
     return false;
 }
 
-bool are_different(string variable_name, int size, const float *v1, const float *v2) {
+bool are_different(string variable_name, int size, const float* v1, const float* v2) {
     for (uint32_t i = 0; i < size; i++) {
         if (v1[i] != v2[i]) {
             cerr << "IDENTICAL ERROR: array " << variable_name << " different" << endl;

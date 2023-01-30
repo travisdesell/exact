@@ -31,20 +31,20 @@ vector<vector<vector<double> > > training_outputs;
 vector<vector<vector<double> > > test_inputs;
 vector<vector<vector<double> > > test_outputs;
 
-RNN_Genome *genome;
-RNN *rnn;
-WeightUpdate *weight_update_method;
+RNN_Genome* genome;
+RNN* rnn;
+WeightUpdate* weight_update_method;
 
 bool using_dropout;
 double dropout_probability;
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
     vector<string> arguments = vector<string>(argv, argv + argc);
 
     Log::initialize(arguments);
     Log::set_id("main");
 
-    TimeSeriesSets *time_series_sets = TimeSeriesSets::generate_from_arguments(arguments);
+    TimeSeriesSets* time_series_sets = TimeSeriesSets::generate_from_arguments(arguments);
 
     int32_t time_offset = 1;
     get_argument(arguments, "--time_offset", true, time_offset);
@@ -67,7 +67,7 @@ int main(int argc, char **argv) {
     int32_t max_recurrent_depth;
     get_argument(arguments, "--max_recurrent_depth", true, max_recurrent_depth);
 
-    WeightRules *weight_rules = new WeightRules();
+    WeightRules* weight_rules = new WeightRules();
     weight_rules->initialize_from_args(arguments);
 
     weight_update_method = new WeightUpdate();
@@ -83,19 +83,20 @@ int main(int argc, char **argv) {
         "creating jordan neural network with inputs: %d, hidden: %dx%d, outputs: %d, max input lags: %d, max recurrent "
         "depth: %d\n",
         input_parameter_names.size(), number_hidden_layers, number_hidden_nodes, output_parameter_names.size(),
-        max_input_lags, max_recurrent_depth);
-    vector<RNN_Node_Interface *> rnn_nodes;
-    vector<RNN_Node_Interface *> output_layer;
-    vector<vector<RNN_Node_Interface *> > layer_nodes(2 + number_hidden_layers);
-    vector<RNN_Edge *> rnn_edges;
-    vector<RNN_Recurrent_Edge *> recurrent_edges;
+        max_input_lags, max_recurrent_depth
+    );
+    vector<RNN_Node_Interface*> rnn_nodes;
+    vector<RNN_Node_Interface*> output_layer;
+    vector<vector<RNN_Node_Interface*> > layer_nodes(2 + number_hidden_layers);
+    vector<RNN_Edge*> rnn_edges;
+    vector<RNN_Recurrent_Edge*> recurrent_edges;
 
     int32_t node_innovation_count = 0;
     int32_t edge_innovation_count = 0;
     int32_t current_layer = 0;
 
     for (int32_t i = 0; i < (int32_t) input_parameter_names.size(); i++) {
-        RNN_Node *node =
+        RNN_Node* node =
             new RNN_Node(++node_innovation_count, INPUT_LAYER, current_layer, SIMPLE_NODE, input_parameter_names[i]);
         rnn_nodes.push_back(node);
         layer_nodes[current_layer].push_back(node);
@@ -104,7 +105,7 @@ int main(int argc, char **argv) {
 
     for (int32_t i = 0; i < number_hidden_layers; i++) {
         for (int32_t j = 0; j < number_hidden_nodes; j++) {
-            RNN_Node *node = new RNN_Node(++node_innovation_count, HIDDEN_LAYER, current_layer, JORDAN_NODE);
+            RNN_Node* node = new RNN_Node(++node_innovation_count, HIDDEN_LAYER, current_layer, JORDAN_NODE);
             rnn_nodes.push_back(node);
             layer_nodes[current_layer].push_back(node);
 
@@ -112,7 +113,8 @@ int main(int argc, char **argv) {
                 rnn_edges.push_back(new RNN_Edge(++edge_innovation_count, layer_nodes[current_layer - 1][k], node));
                 for (int32_t d = 1; d <= max_input_lags; d++) {
                     recurrent_edges.push_back(
-                        new RNN_Recurrent_Edge(++edge_innovation_count, d, layer_nodes[current_layer - 1][k], node));
+                        new RNN_Recurrent_Edge(++edge_innovation_count, d, layer_nodes[current_layer - 1][k], node)
+                    );
                 }
             }
         }
@@ -120,7 +122,7 @@ int main(int argc, char **argv) {
     }
 
     for (int32_t i = 0; i < (int32_t) output_parameter_names.size(); i++) {
-        RNN_Node *output_node =
+        RNN_Node* output_node =
             new RNN_Node(++node_innovation_count, OUTPUT_LAYER, current_layer, SIMPLE_NODE, output_parameter_names[i]);
         output_layer.push_back(output_node);
 
@@ -137,19 +139,23 @@ int main(int argc, char **argv) {
             for (int32_t j = 0; j < number_hidden_nodes; j++) {
                 for (int32_t d = 1; d <= max_recurrent_depth; d++) {
                     recurrent_edges.push_back(
-                        new RNN_Recurrent_Edge(++edge_innovation_count, d, output_layer[k], layer_nodes[i + 1][j]));
+                        new RNN_Recurrent_Edge(++edge_innovation_count, d, output_layer[k], layer_nodes[i + 1][j])
+                    );
                 }
             }
         }
     }
 
-    RNN_Genome *genome = new RNN_Genome(rnn_nodes, rnn_edges, recurrent_edges, weight_rules);
+    RNN_Genome* genome = new RNN_Genome(rnn_nodes, rnn_edges, recurrent_edges, weight_rules);
 
-    genome->set_parameter_names(time_series_sets->get_input_parameter_names(),
-                                time_series_sets->get_output_parameter_names());
-    genome->set_normalize_bounds(time_series_sets->get_normalize_type(), time_series_sets->get_normalize_mins(),
-                                 time_series_sets->get_normalize_maxs(), time_series_sets->get_normalize_avgs(),
-                                 time_series_sets->get_normalize_std_devs());
+    genome->set_parameter_names(
+        time_series_sets->get_input_parameter_names(), time_series_sets->get_output_parameter_names()
+    );
+    genome->set_normalize_bounds(
+        time_series_sets->get_normalize_type(), time_series_sets->get_normalize_mins(),
+        time_series_sets->get_normalize_maxs(), time_series_sets->get_normalize_avgs(),
+        time_series_sets->get_normalize_std_devs()
+    );
 
     rnn = genome->get_rnn();
 
@@ -185,8 +191,9 @@ int main(int argc, char **argv) {
     }
 
     if (argument_exists(arguments, "--stochastic")) {
-        genome->backpropagate_stochastic(training_inputs, training_outputs, test_inputs, test_outputs,
-                                         weight_update_method);
+        genome->backpropagate_stochastic(
+            training_inputs, training_outputs, test_inputs, test_outputs, weight_update_method
+        );
     } else {
         genome->backpropagate(training_inputs, training_outputs, test_inputs, test_outputs, weight_update_method);
     }

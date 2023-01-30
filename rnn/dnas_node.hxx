@@ -28,14 +28,14 @@ using std::unique_ptr;
 class DNASNode : public RNN_Node_Interface {
    private:
     template <uniform_random_bit_generator R>
-    static void gumbel_noise(R &rng, vector<double> &output);
+    static void gumbel_noise(R& rng, vector<double>& output);
     void calculate_maxi();
 
     std::mt19937_64 generator;
 
     // These components are used to create a sub-network within this node, basically
     // to reduce the hackiness of things.
-    vector<RNN_Node_Interface *> nodes;
+    vector<RNN_Node_Interface*> nodes;
 
     // Describes the probability distribution we are learning
     vector<double> pi;
@@ -72,20 +72,23 @@ class DNASNode : public RNN_Node_Interface {
     vector<vector<double>> node_outputs;
 
    public:
-    DNASNode(vector<RNN_Node_Interface *> &&nodes, int32_t _innovation_number, int32_t _type, double _depth,
-             int32_t counter = -1);
-    DNASNode(const DNASNode &node);
+    DNASNode(
+        vector<RNN_Node_Interface*>&& nodes, int32_t _innovation_number, int32_t _type, double _depth,
+        int32_t counter = -1
+    );
+    DNASNode(const DNASNode& node);
     ~DNASNode();
 
     template <uniform_random_bit_generator Rng>
-    void sample_gumbel_softmax(Rng &rng);
+    void sample_gumbel_softmax(Rng& rng);
     void calculate_z();
 
-    virtual void initialize_lamarckian(minstd_rand0 &generator, NormalDistribution &normal_distribution, double mu,
-                                       double sigma);
-    virtual void initialize_xavier(minstd_rand0 &generator, uniform_real_distribution<double> &rng_1_1, double range);
-    virtual void initialize_kaiming(minstd_rand0 &generator, NormalDistribution &normal_distribution, double range);
-    virtual void initialize_uniform_random(minstd_rand0 &generator, uniform_real_distribution<double> &rng);
+    virtual void initialize_lamarckian(
+        minstd_rand0& generator, NormalDistribution& normal_distribution, double mu, double sigma
+    );
+    virtual void initialize_xavier(minstd_rand0& generator, uniform_real_distribution<double>& rng_1_1, double range);
+    virtual void initialize_kaiming(minstd_rand0& generator, NormalDistribution& normal_distribution, double range);
+    virtual void initialize_uniform_random(minstd_rand0& generator, uniform_real_distribution<double>& rng);
 
     virtual void input_fired(int32_t time, double incoming_output);
     virtual void output_fired(int32_t time, double delta);
@@ -94,19 +97,19 @@ class DNASNode : public RNN_Node_Interface {
 
     virtual int32_t get_number_weights() const;
 
-    virtual void get_weights(vector<double> &parameters) const;
-    virtual void set_weights(const vector<double> &parameters);
+    virtual void get_weights(vector<double>& parameters) const;
+    virtual void set_weights(const vector<double>& parameters);
 
-    virtual void get_weights(int32_t &offset, vector<double> &parameters) const;
-    virtual void set_weights(int32_t &offset, const vector<double> &parameters);
+    virtual void get_weights(int32_t& offset, vector<double>& parameters) const;
+    virtual void set_weights(int32_t& offset, const vector<double>& parameters);
 
-    void set_pi(const vector<double> &new_pi);
+    void set_pi(const vector<double>& new_pi);
 
-    virtual void get_gradients(vector<double> &gradients);
+    virtual void get_gradients(vector<double>& gradients);
     virtual void reset(int32_t _series_length);
-    virtual void write_to_stream(ostream &out);
+    virtual void write_to_stream(ostream& out);
 
-    virtual RNN_Node_Interface *copy() const;
+    virtual RNN_Node_Interface* copy() const;
 
     void set_stochastic(bool stochastic);
 

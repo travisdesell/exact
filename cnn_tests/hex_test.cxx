@@ -15,7 +15,7 @@ using std::ostringstream;
 #include <string>
 using std::string;
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
     double value = 2342.092834927394e-100;
 
     cout << setprecision(20) << value << endl;

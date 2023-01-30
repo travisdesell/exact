@@ -28,14 +28,14 @@ using std::vector;
 #include "cnn/exact.hxx"
 #include "image_tools/mosaic_image_set.hxx"
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
     vector<string> arguments = vector<string>(argv, argv + argc);
 
     string genome_filename;
     get_argument(arguments, "--genome_file", true, genome_filename);
 
     bool is_checkpoint = false;
-    CNN_Genome *genome = new CNN_Genome(genome_filename, is_checkpoint);
+    CNN_Genome* genome = new CNN_Genome(genome_filename, is_checkpoint);
 
     string db_file;
     get_argument(arguments, "--db_file", true, db_file);
@@ -52,7 +52,7 @@ int main(int argc, char **argv) {
     mosaic_query << "SELECT filename, height, width FROM mosaics WHERE id = " << mosaic_id;
     mysql_exact_query(mosaic_query.str());
 
-    MYSQL_RES *mosaic_result = mysql_store_result(exact_db_conn);
+    MYSQL_RES* mosaic_result = mysql_store_result(exact_db_conn);
 
     if (mosaic_result == NULL) {
         cerr << "ERROR: no label in database with id " << label_id << endl;
@@ -70,7 +70,7 @@ int main(int argc, char **argv) {
     label_query << "SELECT label_name, label_type FROM labels WHERE label_id = " << label_id;
     mysql_exact_query(label_query.str());
 
-    MYSQL_RES *label_result = mysql_store_result(exact_db_conn);
+    MYSQL_RES* label_result = mysql_store_result(exact_db_conn);
 
     if (label_result == NULL) {
         cerr << "ERROR: no label in database with id " << label_id << endl;
@@ -112,7 +112,7 @@ int main(int argc, char **argv) {
                     << " AND label_id = " << label_id << endl;
         mysql_exact_query(point_query.str());
 
-        MYSQL_RES *point_result = mysql_store_result(exact_db_conn);
+        MYSQL_RES* point_result = mysql_store_result(exact_db_conn);
 
         if (point_result == NULL) {
             cerr << "ERROR: no points in database with mosaic_id " << mosaic_id << " and label_id " << label_id << endl;
@@ -138,7 +138,9 @@ int main(int argc, char **argv) {
 
         vector<vector<int> > point_classes;
         vector<int> mosaic_point_classes;
-        for (uint32_t i = 0; i < mosaic_points.size(); i++) { mosaic_point_classes.push_back(1); }
+        for (uint32_t i = 0; i < mosaic_points.size(); i++) {
+            mosaic_point_classes.push_back(1);
+        }
         point_classes.push_back(mosaic_point_classes);
 
         int point_radius = 64;
@@ -146,8 +148,9 @@ int main(int argc, char **argv) {
         int32_t subimage_y = 32;
         int32_t subimage_x = 32;
 
-        MosaicImages point_mosaic_images(filenames, points, point_radius, point_classes, padding, subimage_y,
-                                         subimage_x);
+        MosaicImages point_mosaic_images(
+            filenames, points, point_radius, point_classes, padding, subimage_y, subimage_x
+        );
 
         cout << endl << "drawing image predictions." << endl;
         // genome->draw_predictions(line_mosaic_images, output_directory);
@@ -187,17 +190,21 @@ int main(int argc, char **argv) {
                              << ", mark_id = " << point_ids[i] << ", prediction = " << max_prediction;
             mysql_exact_query(prediction_query.str());
 
-            LargeImage *image = point_mosaic_images.copy_image(i);
+            LargeImage* image = point_mosaic_images.copy_image(i);
 
             for (int32_t y = max_y - 5; y <= max_y + 5; y++) {
-                if (y < 0 || y >= 2 * point_radius) continue;
+                if (y < 0 || y >= 2 * point_radius) {
+                    continue;
+                }
                 image->set_pixel(0, y, max_x, (uint8_t) 255);
                 image->set_pixel(1, y, max_x, (uint8_t) 0);
                 image->set_pixel(2, y, max_x, (uint8_t) 0);
             }
 
             for (int32_t x = max_x - 5; x <= max_x + 5; x++) {
-                if (x < 0 || x >= 2 * point_radius) continue;
+                if (x < 0 || x >= 2 * point_radius) {
+                    continue;
+                }
                 image->set_pixel(0, max_y, x, (uint8_t) 255);
                 image->set_pixel(1, max_y, x, (uint8_t) 0);
                 image->set_pixel(2, max_y, x, (uint8_t) 0);
@@ -229,7 +236,7 @@ int main(int argc, char **argv) {
                    << " AND label_id = " << label_id << endl;
         mysql_exact_query(line_query.str());
 
-        MYSQL_RES *line_result = mysql_store_result(exact_db_conn);
+        MYSQL_RES* line_result = mysql_store_result(exact_db_conn);
 
         if (line_result == NULL) {
             cerr << "ERROR: no lines in database with mosaic_id " << mosaic_id << " and label_id " << label_id << endl;
@@ -259,7 +266,9 @@ int main(int argc, char **argv) {
 
         vector<vector<int> > line_classes;
         vector<int> mosaic_line_classes;
-        for (uint32_t i = 0; i < mosaic_lines.size(); i++) { mosaic_line_classes.push_back(1); }
+        for (uint32_t i = 0; i < mosaic_lines.size(); i++) {
+            mosaic_line_classes.push_back(1);
+        }
         line_classes.push_back(mosaic_line_classes);
 
         int32_t padding = 2;
@@ -311,7 +320,7 @@ int main(int argc, char **argv) {
                              << ", mark_id = " << line_ids[i] << ", prediction = " << prediction;
             mysql_exact_query(prediction_query.str());
 
-            LargeImage *image = line_mosaic_images.copy_image(i);
+            LargeImage* image = line_mosaic_images.copy_image(i);
 
             for (uint32_t j = 0; j < prediction_matrix[0].size(); j++) {
                 int x = j + (image->get_height() / 2) + padding;
