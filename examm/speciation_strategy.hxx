@@ -37,13 +37,13 @@ class SpeciationStrategy {
      * Gets the best genome of all the islands
      * \return the best genome of all islands
      */
-    virtual RNN_Genome *get_best_genome() = 0;
+    virtual RNN_Genome* get_best_genome() = 0;
 
     /**
      * Gets the the worst genome of all the islands
      * \return the worst genome of all islands
      */
-    virtual RNN_Genome *get_worst_genome() = 0;
+    virtual RNN_Genome* get_worst_genome() = 0;
 
     /**
      * Inserts a <b>copy</b> of the genome into this speciation strategy.
@@ -55,7 +55,7 @@ class SpeciationStrategy {
      * \return a value < 0 if the genome was not inserted, 0 if it was a new best genome
      * or > 0 otherwise.
      */
-    virtual int32_t insert_genome(RNN_Genome *genome) = 0;
+    virtual int32_t insert_genome(RNN_Genome* genome) = 0;
 
     /**
      * Generates a new genome.
@@ -66,9 +66,10 @@ class SpeciationStrategy {
      *
      * \return the newly generated genome.
      */
-    virtual RNN_Genome *generate_genome(uniform_real_distribution<double> &rng_0_1, minstd_rand0 &generator,
-                                        function<void(int32_t, RNN_Genome *)> &mutate,
-                                        function<RNN_Genome *(RNN_Genome *, RNN_Genome *)> &crossover) = 0;
+    virtual RNN_Genome* generate_genome(
+        uniform_real_distribution<double>& rng_0_1, minstd_rand0& generator,
+        function<void(int32_t, RNN_Genome*)>& mutate, function<RNN_Genome*(RNN_Genome*, RNN_Genome*)>& crossover
+    ) = 0;
 
     /**
      * Prints out all the island's populations
@@ -87,9 +88,9 @@ class SpeciationStrategy {
      */
     virtual string get_strategy_information_values() const = 0;
 
-    virtual RNN_Genome *get_global_best_genome() = 0;
-    virtual void initialize_population(function<void(int32_t, RNN_Genome *)> &mutate) = 0;
-    virtual RNN_Genome *get_seed_genome() = 0;
+    virtual RNN_Genome* get_global_best_genome() = 0;
+    virtual void initialize_population(function<void(int32_t, RNN_Genome*)>& mutate) = 0;
+    virtual RNN_Genome* get_seed_genome() = 0;
 };
 
 #endif

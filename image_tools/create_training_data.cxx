@@ -14,18 +14,20 @@ using boost::filesystem::directory_iterator;
 using namespace std;
 using namespace cv;
 
-void read_images(string directory, std::vector<Mat> &images) {
+void read_images(string directory, std::vector<Mat>& images) {
     directory_iterator end_itr;
     for (directory_iterator itr(directory); itr != end_itr; itr++) {
         if (!is_directory(itr->status())) {
-            if (itr->path().leaf().c_str()[0] == '.') continue;
+            if (itr->path().leaf().c_str()[0] == '.') {
+                continue;
+            }
 
             images.push_back(imread(itr->path().c_str(), CV_LOAD_IMAGE_COLOR));
         }
     }
 }
 
-void write_images(ofstream &outfile, std::vector<Mat> images) {
+void write_images(ofstream& outfile, std::vector<Mat> images) {
     for (int i = 0; i < images.size(); i++) {
         Vec3b pixel;
 
@@ -33,7 +35,7 @@ void write_images(ofstream &outfile, std::vector<Mat> images) {
             for (int k = 0; k < images[i].cols; k++) {
                 pixel = images[i].at<Vec3b>(j, k);
 
-                outfile.write((char *) &pixel.val, sizeof(char) * 3);
+                outfile.write((char*) &pixel.val, sizeof(char) * 3);
 
                 // cout << " " << pixel.val[0] << " " << pixel.val[1] << " " << pixel.val[2];
             }
@@ -42,7 +44,7 @@ void write_images(ofstream &outfile, std::vector<Mat> images) {
     }
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
     if (argc < 4) {
         cerr << "error: incorrect arguments." << endl;
         cerr << "usage: " << endl;
@@ -53,7 +55,9 @@ int main(int argc, char **argv) {
 
     string binary_output_file = argv[1];
     vector<string> classes_files;
-    for (int i = 2; i < argc; i++) { classes_files.push_back(argv[i]); }
+    for (int i = 2; i < argc; i++) {
+        classes_files.push_back(argv[i]);
+    }
 
     std::vector<std::vector<Mat> > images;
     for (int i = 0; i < classes_files.size(); i++) {
@@ -75,9 +79,11 @@ int main(int argc, char **argv) {
     initial_vals.push_back(images.size());
     initial_vals.push_back(img_size);
     initial_vals.push_back(vals_per_pixel);
-    for (int i = 0; i < images.size(); i++) { initial_vals.push_back(images[i].size()); }
+    for (int i = 0; i < images.size(); i++) {
+        initial_vals.push_back(images[i].size());
+    }
 
-    outfile.write((char *) &initial_vals[0], initial_vals.size() * sizeof(int));
+    outfile.write((char*) &initial_vals[0], initial_vals.size() * sizeof(int));
 
     for (int i = 0; i < images.size(); i++) {
         write_images(outfile, images[i]);

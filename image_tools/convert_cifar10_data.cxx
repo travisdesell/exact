@@ -13,7 +13,7 @@ using std::vector;
 
 using namespace std;
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
     if (argc < 4) {
         cerr << "error: incorrect arguments." << endl;
         cerr << "usage: " << endl;
@@ -49,7 +49,7 @@ int main(int argc, char **argv) {
         }
 
         for (uint32_t i = 0; i < expected_images; i++) {
-            image_file.read((char *) &label, sizeof(char));
+            image_file.read((char*) &label, sizeof(char));
             // cout << "label: " << (int)label << endl;
 
             vector<vector<vector<char> > > image(3, vector<vector<char> >(32, vector<char>(32)));
@@ -57,7 +57,7 @@ int main(int argc, char **argv) {
             for (uint32_t z = 0; z < number_channels; z++) {
                 for (uint32_t y = 0; y < number_cols; y++) {
                     for (uint32_t x = 0; x < number_rows; x++) {
-                        image_file.read((char *) &pixel, sizeof(char));
+                        image_file.read((char*) &pixel, sizeof(char));
 
                         image[z][y][x] = pixel;
                     }
@@ -90,7 +90,7 @@ int main(int argc, char **argv) {
     }
     cout << "read " << sum << " images in total" << endl;
 
-    outfile.write((char *) &initial_vals[0], initial_vals.size() * sizeof(int));
+    outfile.write((char*) &initial_vals[0], initial_vals.size() * sizeof(int));
 
     for (int i = 0; i < images.size(); i++) {
         for (int j = 0; j < images[i].size(); j++) {
@@ -101,7 +101,7 @@ int main(int argc, char **argv) {
                     for (int x = 0; x < number_rows; x++) {
                         pixel = images[i][j][z][y][x];
 
-                        outfile.write((char *) &pixel, sizeof(char));
+                        outfile.write((char*) &pixel, sizeof(char));
 
                         // cout << " " << (uint32_t)pixel;
                     }

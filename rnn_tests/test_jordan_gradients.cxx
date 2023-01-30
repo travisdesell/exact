@@ -27,7 +27,7 @@ using std::vector;
 
 int input_length = 10;
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
     vector<string> arguments = vector<string>(argv, argv + argc);
 
     Log::initialize(arguments);
@@ -35,7 +35,7 @@ int main(int argc, char **argv) {
 
     initialize_generator();
 
-    RNN_Genome *genome;
+    RNN_Genome* genome;
 
     Log::info("TESTING JORDAN\n");
 
@@ -45,7 +45,7 @@ int main(int argc, char **argv) {
     int input_length = 10;
     get_argument(arguments, "--input_length", true, input_length);
 
-    WeightRules *weight_rules = new WeightRules();
+    WeightRules* weight_rules = new WeightRules();
     weight_rules->initialize_from_args(arguments);
 
     for (int32_t max_recurrent_depth = 1; max_recurrent_depth <= 5; max_recurrent_depth++) {

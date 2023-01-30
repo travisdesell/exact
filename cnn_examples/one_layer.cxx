@@ -22,7 +22,7 @@ using std::vector;
 #include "common/arguments.hxx"
 #include "image_tools/image_set.hxx"
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
     vector<string> arguments = vector<string>(argv, argv + argc);
 
     string training_filename;
@@ -76,27 +76,30 @@ int main(int argc, char **argv) {
     double epsilon = 1.0e-7;
 
     Images training_images(training_filename, padding);
-    Images validation_images(validation_filename, padding, training_images.get_average(),
-                             training_images.get_std_dev());
+    Images validation_images(
+        validation_filename, padding, training_images.get_average(), training_images.get_std_dev()
+    );
     Images testing_images(testing_filename, padding, training_images.get_average(), training_images.get_std_dev());
 
     int node_innovation_count = 0;
     int edge_innovation_count = 0;
-    vector<CNN_Node *> nodes;
-    vector<CNN_Node *> layer1_nodes;
-    vector<CNN_Node *> softmax_nodes;
+    vector<CNN_Node*> nodes;
+    vector<CNN_Node*> layer1_nodes;
+    vector<CNN_Node*> softmax_nodes;
 
-    vector<CNN_Edge *> edges;
+    vector<CNN_Edge*> edges;
 
     minstd_rand0 generator(time(NULL));
     NormalDistribution normal_distribution;
 
-    CNN_Node *input_node = new CNN_Node(++node_innovation_count, 0, batch_size, training_images.get_image_height(),
-                                        training_images.get_image_width(), INPUT_NODE);
+    CNN_Node* input_node = new CNN_Node(
+        ++node_innovation_count, 0, batch_size, training_images.get_image_height(), training_images.get_image_width(),
+        INPUT_NODE
+    );
     nodes.push_back(input_node);
 
     for (int32_t i = 0; i < training_images.get_number_classes(); i++) {
-        CNN_Node *softmax_node = new CNN_Node(++node_innovation_count, 2, batch_size, 1, 1, SOFTMAX_NODE);
+        CNN_Node* softmax_node = new CNN_Node(++node_innovation_count, 2, batch_size, 1, 1, SOFTMAX_NODE);
         nodes.push_back(softmax_node);
         softmax_nodes.push_back(softmax_node);
 
@@ -106,11 +109,12 @@ int main(int argc, char **argv) {
     long genome_seed = generator();
     cout << "seeding genome with: " << genome_seed << endl;
 
-    CNN_Genome *genome =
-        new CNN_Genome(1, padding, training_images.get_number_images(), validation_images.get_number_images(),
-                       testing_images.get_number_images(), genome_seed, max_epochs, true, velocity_reset, mu, mu_delta,
-                       learning_rate, learning_rate_delta, weight_decay, weight_decay_delta, batch_size, epsilon, alpha,
-                       input_dropout_probability, hidden_dropout_probability, nodes, edges);
+    CNN_Genome* genome = new CNN_Genome(
+        1, padding, training_images.get_number_images(), validation_images.get_number_images(),
+        testing_images.get_number_images(), genome_seed, max_epochs, true, velocity_reset, mu, mu_delta, learning_rate,
+        learning_rate_delta, weight_decay, weight_decay_delta, batch_size, epsilon, alpha, input_dropout_probability,
+        hidden_dropout_probability, nodes, edges
+    );
     // save the weights and bias of the initially generated genome for reuse
     genome->initialize();
 

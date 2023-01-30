@@ -55,7 +55,7 @@ bool EXACT::exists_in_database(int exact_id) {
 
     mysql_exact_query(query.str());
 
-    MYSQL_RES *result = mysql_store_result(exact_db_conn);
+    MYSQL_RES* result = mysql_store_result(exact_db_conn);
     bool found;
     if (result != NULL) {
         if (mysql_num_rows(result) > 0) {
@@ -80,7 +80,7 @@ EXACT::EXACT(int exact_id) {
 
     mysql_exact_query(query.str());
 
-    MYSQL_RES *result = mysql_store_result(exact_db_conn);
+    MYSQL_RES* result = mysql_store_result(exact_db_conn);
     if (result != NULL) {
         MYSQL_ROW row = mysql_fetch_row(result);
 
@@ -228,7 +228,7 @@ EXACT::EXACT(int exact_id) {
 
         mysql_exact_query(genome_query.str());
 
-        MYSQL_RES *genome_result = mysql_store_result(exact_db_conn);
+        MYSQL_RES* genome_result = mysql_store_result(exact_db_conn);
 
         // cout << "got genome result" << endl;
 
@@ -237,9 +237,10 @@ EXACT::EXACT(int exact_id) {
             int genome_id = atoi(genome_row[0]);
             // cout << "got genome with id: " << genome_id << endl;
 
-            CNN_Genome *genome = new CNN_Genome(genome_id);
-            genomes.insert(upper_bound(genomes.begin(), genomes.end(), genome, sort_genomes_by_validation_error()),
-                           genome);
+            CNN_Genome* genome = new CNN_Genome(genome_id);
+            genomes.insert(
+                upper_bound(genomes.begin(), genomes.end(), genome, sort_genomes_by_validation_error()), genome
+            );
         }
 
         cout << "got " << genomes.size() << " genomes." << endl;
@@ -378,7 +379,9 @@ void EXACT::export_to_database() {
     }
 
     // need to insert genomes
-    for (uint32_t i = 0; i < genomes.size(); i++) { genomes[i]->export_to_database(id); }
+    for (uint32_t i = 0; i < genomes.size(); i++) {
+        genomes[i]->export_to_database(id);
+    }
 
     if ((int32_t) genomes.size() == population_size) {
         ostringstream delete_query;
@@ -388,10 +391,14 @@ void EXACT::export_to_database() {
         for (uint32_t i = 0; i < genomes.size(); i++) {
             delete_query << "id != " << genomes[i]->get_genome_id();
 
-            if (i < (genomes.size() - 1)) delete_query << " AND ";
+            if (i < (genomes.size() - 1)) {
+                delete_query << " AND ";
+            }
         }
 
-        if (best_predictions_genome_id > 0) { delete_query << " AND id != " << best_predictions_genome_id; }
+        if (best_predictions_genome_id > 0) {
+            delete_query << " AND id != " << best_predictions_genome_id;
+        }
 
         delete_query << ")";
 
@@ -456,10 +463,14 @@ void EXACT::update_database() {
         for (uint32_t i = 0; i < genomes.size(); i++) {
             delete_query << "id != " << genomes[i]->get_genome_id();
 
-            if (i < (genomes.size() - 1)) delete_query << " AND ";
+            if (i < (genomes.size() - 1)) {
+                delete_query << " AND ";
+            }
         }
 
-        if (best_predictions_genome_id > 0) { delete_query << " AND id != " << best_predictions_genome_id; }
+        if (best_predictions_genome_id > 0) {
+            delete_query << " AND id != " << best_predictions_genome_id;
+        }
 
         delete_query << ")";
 
@@ -484,10 +495,11 @@ void EXACT::update_database() {
 
 #endif
 
-EXACT::EXACT(const ImagesInterface &training_images, const ImagesInterface &validation_images,
-             const ImagesInterface &test_images, int _padding, int _population_size, int _max_epochs, bool _use_sfmp,
-             bool _use_node_operations, int _max_genomes, string _output_directory, string _search_name,
-             bool _reset_weights) {
+EXACT::EXACT(
+    const ImagesInterface& training_images, const ImagesInterface& validation_images,
+    const ImagesInterface& test_images, int _padding, int _population_size, int _max_epochs, bool _use_sfmp,
+    bool _use_node_operations, int _max_genomes, string _output_directory, string _search_name, bool _reset_weights
+) {
     id = -1;
 
     search_name = _search_name;
@@ -849,9 +861,9 @@ EXACT::EXACT(const ImagesInterface &training_images, const ImagesInterface &vali
     cout << "\t\tnode_enable: " << node_enable << endl;
     cout << "\t\tnode_disable: " << node_disable << endl;
 
-    float total = edge_disable + edge_enable + edge_split + edge_add + edge_alter_type + node_change_size +
-                  node_change_size_x + node_change_size_y + node_add + node_split + node_merge + node_enable +
-                  node_disable;
+    float total = edge_disable + edge_enable + edge_split + edge_add + edge_alter_type + node_change_size
+                  + node_change_size_x + node_change_size_y + node_add + node_split + node_merge + node_enable
+                  + node_disable;
 
     edge_alter_type /= total;
     edge_disable /= total;
@@ -887,46 +899,71 @@ EXACT::EXACT(const ImagesInterface &training_images, const ImagesInterface &vali
     }
 }
 
-int EXACT::get_id() const { return id; }
+int EXACT::get_id() const {
+    return id;
+}
 
-int EXACT::get_inserted_genomes() const { return inserted_genomes; }
+int EXACT::get_inserted_genomes() const {
+    return inserted_genomes;
+}
 
-int EXACT::get_max_genomes() const { return max_genomes; }
+int EXACT::get_max_genomes() const {
+    return max_genomes;
+}
 
-string EXACT::get_search_name() const { return search_name; }
+string EXACT::get_search_name() const {
+    return search_name;
+}
 
-string EXACT::get_output_directory() const { return output_directory; }
+string EXACT::get_output_directory() const {
+    return output_directory;
+}
 
-string EXACT::get_training_filename() const { return training_filename; }
+string EXACT::get_training_filename() const {
+    return training_filename;
+}
 
-string EXACT::get_validation_filename() const { return validation_filename; }
+string EXACT::get_validation_filename() const {
+    return validation_filename;
+}
 
-string EXACT::get_test_filename() const { return test_filename; }
+string EXACT::get_test_filename() const {
+    return test_filename;
+}
 
-int EXACT::get_number_training_images() const { return number_training_images; }
+int EXACT::get_number_training_images() const {
+    return number_training_images;
+}
 
-CNN_Genome *EXACT::get_best_genome() { return genomes[0]; }
+CNN_Genome* EXACT::get_best_genome() {
+    return genomes[0];
+}
 
-int EXACT::get_number_genomes() const { return genomes.size(); }
+int EXACT::get_number_genomes() const {
+    return genomes.size();
+}
 
-CNN_Genome *EXACT::get_genome(int i) { return genomes[i]; }
+CNN_Genome* EXACT::get_genome(int i) {
+    return genomes[i];
+}
 
-void EXACT::generate_initial_hyperparameters(float &mu, float &mu_delta, float &learning_rate,
-                                             float &learning_rate_delta, float &weight_decay, float &weight_decay_delta,
-                                             float &alpha, int &velocity_reset, float &input_dropout_probability,
-                                             float &hidden_dropout_probability, int &batch_size) {
+void EXACT::generate_initial_hyperparameters(
+    float& mu, float& mu_delta, float& learning_rate, float& learning_rate_delta, float& weight_decay,
+    float& weight_decay_delta, float& alpha, int& velocity_reset, float& input_dropout_probability,
+    float& hidden_dropout_probability, int& batch_size
+) {
     mu = (rng_float(generator) * (initial_mu_max - initial_mu_min)) + initial_mu_min;
     mu_delta = (rng_float(generator) * (initial_mu_delta_max - initial_mu_delta_min)) + initial_mu_delta_min;
 
     learning_rate =
         (rng_float(generator) * (initial_learning_rate_max - initial_learning_rate_min)) + initial_learning_rate_min;
-    learning_rate_delta = (rng_float(generator) * (initial_learning_rate_delta_max - initial_learning_rate_delta_min)) +
-                          initial_learning_rate_delta_min;
+    learning_rate_delta = (rng_float(generator) * (initial_learning_rate_delta_max - initial_learning_rate_delta_min))
+                          + initial_learning_rate_delta_min;
 
     weight_decay =
         (rng_float(generator) * (initial_weight_decay_max - initial_weight_decay_min)) + initial_weight_decay_min;
-    weight_decay_delta = (rng_float(generator) * (initial_weight_decay_delta_max - initial_weight_decay_delta_min)) +
-                         initial_weight_decay_delta_min;
+    weight_decay_delta = (rng_float(generator) * (initial_weight_decay_delta_max - initial_weight_decay_delta_min))
+                         + initial_weight_decay_delta_min;
 
     alpha = (rng_float(generator) * (initial_alpha_max - initial_alpha_min)) + initial_alpha_min;
 
@@ -934,11 +971,11 @@ void EXACT::generate_initial_hyperparameters(float &mu, float &mu_delta, float &
         (rng_float(generator) * (initial_velocity_reset_max - initial_velocity_reset_min)) + initial_velocity_reset_min;
 
     input_dropout_probability =
-        (rng_float(generator) * (initial_input_dropout_probability_max - initial_input_dropout_probability_min)) +
-        initial_input_dropout_probability_min;
+        (rng_float(generator) * (initial_input_dropout_probability_max - initial_input_dropout_probability_min))
+        + initial_input_dropout_probability_min;
     hidden_dropout_probability =
-        (rng_float(generator) * (initial_hidden_dropout_probability_max - initial_hidden_dropout_probability_min)) +
-        initial_hidden_dropout_probability_min;
+        (rng_float(generator) * (initial_hidden_dropout_probability_max - initial_hidden_dropout_probability_min))
+        + initial_hidden_dropout_probability_min;
 
     batch_size = (rng_float(generator) * (initial_batch_size_max - initial_batch_size_min)) + initial_batch_size_min;
 
@@ -956,10 +993,11 @@ void EXACT::generate_initial_hyperparameters(float &mu, float &mu_delta, float &
     cout << "\t\tbatch_size: " << batch_size << endl;
 }
 
-void EXACT::generate_simplex_hyperparameters(float &mu, float &mu_delta, float &learning_rate,
-                                             float &learning_rate_delta, float &weight_decay, float &weight_decay_delta,
-                                             float &alpha, int &velocity_reset, float &input_dropout_probability,
-                                             float &hidden_dropout_probability, int &batch_size) {
+void EXACT::generate_simplex_hyperparameters(
+    float& mu, float& mu_delta, float& learning_rate, float& learning_rate_delta, float& weight_decay,
+    float& weight_decay_delta, float& alpha, int& velocity_reset, float& input_dropout_probability,
+    float& hidden_dropout_probability, int& batch_size
+) {
     float best_mu, best_mu_delta, best_learning_rate, best_learning_rate_delta, best_weight_decay,
         best_weight_decay_delta, best_alpha, best_velocity_reset, best_input_dropout_probability,
         best_hidden_dropout_probability, best_batch_size;
@@ -1001,7 +1039,7 @@ void EXACT::generate_simplex_hyperparameters(float &mu, float &mu_delta, float &
     float best_fitness = EXACT_MAX_FLOAT;
     int simplex_count = 5;
     for (uint32_t i = 0; i < simplex_count; i++) {
-        CNN_Genome *current_genome = genomes[rng_float(generator) * genomes.size()];
+        CNN_Genome* current_genome = genomes[rng_float(generator) * genomes.size()];
 
         // getting best parameters from group instead of best of population
         if (i == 0 || current_genome->get_best_validation_error() < best_fitness) {
@@ -1061,38 +1099,78 @@ void EXACT::generate_simplex_hyperparameters(float &mu, float &mu_delta, float &
         avg_hidden_dropout_probability + ((best_hidden_dropout_probability - avg_hidden_dropout_probability) * scale);
     batch_size = avg_batch_size + ((best_batch_size - avg_batch_size) * scale);
 
-    if (mu < mu_min) mu = mu_min;
-    if (mu > mu_max) mu = mu_max;
-    if (mu_delta < mu_delta_min) mu_delta = mu_delta_min;
-    if (mu_delta > mu_delta_max) mu_delta = mu_delta_max;
+    if (mu < mu_min) {
+        mu = mu_min;
+    }
+    if (mu > mu_max) {
+        mu = mu_max;
+    }
+    if (mu_delta < mu_delta_min) {
+        mu_delta = mu_delta_min;
+    }
+    if (mu_delta > mu_delta_max) {
+        mu_delta = mu_delta_max;
+    }
 
-    if (learning_rate < learning_rate_min) learning_rate = learning_rate_min;
-    if (learning_rate > learning_rate_max) learning_rate = learning_rate_max;
-    if (learning_rate_delta < learning_rate_delta_min) learning_rate_delta = learning_rate_delta_min;
-    if (learning_rate_delta > learning_rate_delta_max) learning_rate_delta = learning_rate_delta_max;
+    if (learning_rate < learning_rate_min) {
+        learning_rate = learning_rate_min;
+    }
+    if (learning_rate > learning_rate_max) {
+        learning_rate = learning_rate_max;
+    }
+    if (learning_rate_delta < learning_rate_delta_min) {
+        learning_rate_delta = learning_rate_delta_min;
+    }
+    if (learning_rate_delta > learning_rate_delta_max) {
+        learning_rate_delta = learning_rate_delta_max;
+    }
 
-    if (weight_decay < weight_decay_min) weight_decay = weight_decay_min;
-    if (weight_decay > weight_decay_max) weight_decay = weight_decay_max;
-    if (weight_decay_delta < weight_decay_delta_min) weight_decay_delta = weight_decay_delta_min;
-    if (weight_decay_delta > weight_decay_delta_max) weight_decay_delta = weight_decay_delta_max;
+    if (weight_decay < weight_decay_min) {
+        weight_decay = weight_decay_min;
+    }
+    if (weight_decay > weight_decay_max) {
+        weight_decay = weight_decay_max;
+    }
+    if (weight_decay_delta < weight_decay_delta_min) {
+        weight_decay_delta = weight_decay_delta_min;
+    }
+    if (weight_decay_delta > weight_decay_delta_max) {
+        weight_decay_delta = weight_decay_delta_max;
+    }
 
-    if (alpha < alpha_min) alpha = alpha_min;
-    if (alpha > alpha_max) alpha = alpha_max;
+    if (alpha < alpha_min) {
+        alpha = alpha_min;
+    }
+    if (alpha > alpha_max) {
+        alpha = alpha_max;
+    }
 
-    if (velocity_reset < velocity_reset_min) velocity_reset = velocity_reset_min;
-    if (velocity_reset > velocity_reset_max) velocity_reset = velocity_reset_max;
+    if (velocity_reset < velocity_reset_min) {
+        velocity_reset = velocity_reset_min;
+    }
+    if (velocity_reset > velocity_reset_max) {
+        velocity_reset = velocity_reset_max;
+    }
 
-    if (input_dropout_probability < input_dropout_probability_min)
+    if (input_dropout_probability < input_dropout_probability_min) {
         input_dropout_probability = input_dropout_probability_min;
-    if (input_dropout_probability > input_dropout_probability_max)
+    }
+    if (input_dropout_probability > input_dropout_probability_max) {
         input_dropout_probability = input_dropout_probability_max;
-    if (hidden_dropout_probability < hidden_dropout_probability_min)
+    }
+    if (hidden_dropout_probability < hidden_dropout_probability_min) {
         hidden_dropout_probability = hidden_dropout_probability_min;
-    if (hidden_dropout_probability > hidden_dropout_probability_max)
+    }
+    if (hidden_dropout_probability > hidden_dropout_probability_max) {
         hidden_dropout_probability = hidden_dropout_probability_max;
+    }
 
-    if (batch_size < batch_size_min) batch_size = batch_size_min;
-    if (batch_size > batch_size_max) batch_size = batch_size_max;
+    if (batch_size < batch_size_min) {
+        batch_size = batch_size_min;
+    }
+    if (batch_size > batch_size_max) {
+        batch_size = batch_size_max;
+    }
 
     cout << "\tGenerated SIMPLEX hyperparameters:" << endl;
     cout << "\t\tscale: " << scale << endl;
@@ -1109,26 +1187,29 @@ void EXACT::generate_simplex_hyperparameters(float &mu, float &mu_delta, float &
     cout << "\t\tbatch_size: " << batch_size << endl;
 }
 
-CNN_Genome *EXACT::generate_individual() {
-    if (inserted_genomes >= max_genomes) return NULL;
+CNN_Genome* EXACT::generate_individual() {
+    if (inserted_genomes >= max_genomes) {
+        return NULL;
+    }
 
-    CNN_Genome *genome = NULL;
+    CNN_Genome* genome = NULL;
     if (genomes.size() == 0) {
         // generate initial random hyperparameters
         float mu, mu_delta, learning_rate, learning_rate_delta, weight_decay, weight_decay_delta, alpha,
             input_dropout_probability, hidden_dropout_probability;
         int velocity_reset, batch_size;
 
-        generate_initial_hyperparameters(mu, mu_delta, learning_rate, learning_rate_delta, weight_decay,
-                                         weight_decay_delta, alpha, velocity_reset, input_dropout_probability,
-                                         hidden_dropout_probability, batch_size);
+        generate_initial_hyperparameters(
+            mu, mu_delta, learning_rate, learning_rate_delta, weight_decay, weight_decay_delta, alpha, velocity_reset,
+            input_dropout_probability, hidden_dropout_probability, batch_size
+        );
 
         // generate the initial minimal CNN
-        vector<CNN_Node *> genome_nodes;
+        vector<CNN_Node*> genome_nodes;
 
-        vector<CNN_Node *> input_nodes;
+        vector<CNN_Node*> input_nodes;
         for (int32_t i = 0; i < image_channels; i++) {
-            CNN_Node *input_node =
+            CNN_Node* input_node =
                 new CNN_Node(node_innovation_count, 0, batch_size, image_rows, image_cols, INPUT_NODE);
             node_innovation_count++;
             genome_nodes.push_back(input_node);
@@ -1136,16 +1217,18 @@ CNN_Genome *EXACT::generate_individual() {
         }
 
         for (int32_t i = 0; i < number_classes; i++) {
-            CNN_Node *softmax_node = new CNN_Node(node_innovation_count, 1, batch_size, 1, 1, SOFTMAX_NODE);
+            CNN_Node* softmax_node = new CNN_Node(node_innovation_count, 1, batch_size, 1, 1, SOFTMAX_NODE);
             node_innovation_count++;
             genome_nodes.push_back(softmax_node);
         }
 
-        vector<CNN_Edge *> genome_edges;
+        vector<CNN_Edge*> genome_edges;
         for (int32_t i = 0; i < number_classes; i++) {
             for (int32_t j = 0; j < image_channels; j++) {
-                CNN_Edge *edge = new CNN_Edge(input_nodes[j], genome_nodes[i + image_channels] /*ith softmax node*/,
-                                              true, edge_innovation_count, CONVOLUTIONAL);
+                CNN_Edge* edge = new CNN_Edge(
+                    input_nodes[j], genome_nodes[i + image_channels] /*ith softmax node*/, true, edge_innovation_count,
+                    CONVOLUTIONAL
+                );
 
                 genome_edges.push_back(edge);
 
@@ -1156,11 +1239,12 @@ CNN_Genome *EXACT::generate_individual() {
         long genome_seed = rng_long(generator);
         // cout << "seeding genome with: " << genome_seed << endl;
 
-        genome =
-            new CNN_Genome(genomes_generated++, padding, number_training_images, number_validation_images,
-                           number_test_images, genome_seed, max_epochs, reset_weights, velocity_reset, mu, mu_delta,
-                           learning_rate, learning_rate_delta, weight_decay, weight_decay_delta, batch_size, epsilon,
-                           alpha, input_dropout_probability, hidden_dropout_probability, genome_nodes, genome_edges);
+        genome = new CNN_Genome(
+            genomes_generated++, padding, number_training_images, number_validation_images, number_test_images,
+            genome_seed, max_epochs, reset_weights, velocity_reset, mu, mu_delta, learning_rate, learning_rate_delta,
+            weight_decay, weight_decay_delta, batch_size, epsilon, alpha, input_dropout_probability,
+            hidden_dropout_probability, genome_nodes, genome_edges
+        );
 
     } else if ((int32_t) genomes.size() < population_size) {
         // generate random mutatinos until genomes.size() < population_size
@@ -1210,19 +1294,20 @@ CNN_Genome *EXACT::generate_individual() {
 
     if ((int32_t) genomes.size() < population_size) {
         // insert a copy with a bad fitness so we have more things to generate new genomes with
-        vector<CNN_Node *> node_copies;
-        vector<CNN_Edge *> edge_copies;
+        vector<CNN_Node*> node_copies;
+        vector<CNN_Edge*> edge_copies;
         genome->get_node_copies(node_copies);
         genome->get_edge_copies(edge_copies);
 
         cout << "creating genome_copy to insert into population because genomes.size() < population_size" << endl;
-        CNN_Genome *genome_copy = new CNN_Genome(
+        CNN_Genome* genome_copy = new CNN_Genome(
             genomes_generated++, padding, number_training_images, number_validation_images, number_test_images,
             /*new random seed*/ rng_long(generator), max_epochs, reset_weights, genome->get_velocity_reset(),
             genome->get_initial_mu(), genome->get_mu_delta(), genome->get_initial_learning_rate(),
             genome->get_learning_rate_delta(), genome->get_initial_weight_decay(), genome->get_weight_decay_delta(),
             genome->get_batch_size(), epsilon, genome->get_alpha(), genome->get_input_dropout_probability(),
-            genome->get_hidden_dropout_probability(), node_copies, edge_copies);
+            genome->get_hidden_dropout_probability(), node_copies, edge_copies
+        );
         genome_copy->initialize();
 
         // for more variability in the initial population, re-initialize weights and bias for these unevaluated copies
@@ -1233,7 +1318,7 @@ CNN_Genome *EXACT::generate_individual() {
     return genome;
 }
 
-int32_t EXACT::population_contains(CNN_Genome *genome) const {
+int32_t EXACT::population_contains(CNN_Genome* genome) const {
     for (int32_t i = 0; i < (int32_t) genomes.size(); i++) {
         // we can overwrite genomes that were inserted in the initialization phase
         // and not evaluated
@@ -1256,7 +1341,7 @@ string parse_fitness(float fitness) {
     }
 }
 
-bool EXACT::insert_genome(CNN_Genome *genome) {
+bool EXACT::insert_genome(CNN_Genome* genome) {
     float new_fitness = genome->get_best_validation_error();
     int new_generation_id = genome->get_generation_id();
 
@@ -1276,7 +1361,7 @@ bool EXACT::insert_genome(CNN_Genome *genome) {
         }
 
         if (genome_test_predictions > best_genome_test_predictions) {
-            CNN_Genome *previous_best = best_predictions_genome;
+            CNN_Genome* previous_best = best_predictions_genome;
 
             best_predictions_genome = genome;
 
@@ -1288,10 +1373,10 @@ bool EXACT::insert_genome(CNN_Genome *genome) {
 
             if (genomes.size() > 0) {
                 // delete best_predictions_genome if it is not in the population
-                CNN_Genome *worst = genomes.back();
+                CNN_Genome* worst = genomes.back();
                 cout << "got worst" << endl;
-                if (previous_best != NULL &&
-                    worst->get_best_validation_error() < previous_best->get_best_validation_error()) {
+                if (previous_best != NULL
+                    && worst->get_best_validation_error() < previous_best->get_best_validation_error()) {
                     cout << "deleting previous best" << endl;
                     delete previous_best;
                     cout << "deleted previous best" << endl;
@@ -1316,7 +1401,7 @@ bool EXACT::insert_genome(CNN_Genome *genome) {
         // if fitness is better, replace this genome with new one
         cout << "found duplicate at position: " << duplicate_genome << endl;
 
-        CNN_Genome *duplicate = genomes[duplicate_genome];
+        CNN_Genome* duplicate = genomes[duplicate_genome];
         if (duplicate->get_best_validation_error() > genome->get_best_validation_error()) {
             // erase the genome with loewr fitness from the vector;
             cout << "REPLACING DUPLICATE GENOME, fitness of genome in search: "
@@ -1327,9 +1412,13 @@ bool EXACT::insert_genome(CNN_Genome *genome) {
 
         } else {
             cerr << "\tpopulation already contains genome! not inserting." << endl;
-            if (!was_best_predictions_genome) delete genome;
+            if (!was_best_predictions_genome) {
+                delete genome;
+            }
 
-            if (output_directory.compare("") != 0) write_statistics(new_generation_id, new_fitness);
+            if (output_directory.compare("") != 0) {
+                write_statistics(new_generation_id, new_fitness);
+            }
             return false;
         }
     }
@@ -1458,13 +1547,15 @@ bool EXACT::insert_genome(CNN_Genome *genome) {
              << endl;
     }
 
-    if ((int32_t) genomes.size() >= population_size &&
-        genome->get_best_validation_error() >= genomes.back()->get_best_validation_error()) {
+    if ((int32_t) genomes.size() >= population_size
+        && genome->get_best_validation_error() >= genomes.back()->get_best_validation_error()) {
         // this will not be inserted into the population
         cout << "not inserting genome due to poor fitness" << endl;
         was_inserted = false;
 
-        if (!was_best_predictions_genome) delete genome;
+        if (!was_best_predictions_genome) {
+            delete genome;
+        }
     } else {
         cout << "updating search statistics" << endl;
 
@@ -1481,10 +1572,12 @@ bool EXACT::insert_genome(CNN_Genome *genome) {
         // delete the worst individual if we've reached the population size
         if ((int32_t) genomes.size() > population_size) {
             cout << "deleting worst genome" << endl;
-            CNN_Genome *worst = genomes.back();
+            CNN_Genome* worst = genomes.back();
             genomes.pop_back();
 
-            if (worst->get_genome_id() != best_predictions_genome_id) { delete worst; }
+            if (worst->get_genome_id() != best_predictions_genome_id) {
+                delete worst;
+            }
         }
     }
 
@@ -1539,22 +1632,26 @@ bool EXACT::insert_genome(CNN_Genome *genome) {
 
     cout << endl;
 
-    if (output_directory.compare("") != 0) write_statistics(new_generation_id, new_fitness);
+    if (output_directory.compare("") != 0) {
+        write_statistics(new_generation_id, new_fitness);
+    }
     return was_inserted;
 }
 
-bool EXACT::add_edge(CNN_Genome *child, CNN_Node *node1, CNN_Node *node2, int edge_type) {
+bool EXACT::add_edge(CNN_Genome* child, CNN_Node* node1, CNN_Node* node2, int edge_type) {
     int node1_innovation_number = node1->get_innovation_number();
     int node2_innovation_number = node2->get_innovation_number();
 
     // check to see if the edge already exists
     for (int32_t i = 0; i < child->get_number_edges(); i++) {
-        CNN_Edge *edge = child->get_edge(i);
+        CNN_Edge* edge = child->get_edge(i);
         if (edge->connects(node1_innovation_number, node2_innovation_number)) {
             if (edge->is_disabled()) {
                 edge->enable();
                 edge->set_needs_init();
-                if (!edge->set_nodes(child->get_nodes())) { edge->resize(); }
+                if (!edge->set_nodes(child->get_nodes())) {
+                    edge->resize();
+                }
 
                 return true;
             } else {
@@ -1567,7 +1664,7 @@ bool EXACT::add_edge(CNN_Genome *child, CNN_Node *node1, CNN_Node *node2, int ed
     cout << "\t\tadding edge between node innovation numbers " << node1_innovation_number << " and "
          << node2_innovation_number << endl;
 
-    CNN_Edge *edge = NULL;
+    CNN_Edge* edge = NULL;
 
     if (use_sfmp) {
         edge = new CNN_Edge(node1, node2, false, edge_innovation_count, edge_type);
@@ -1582,7 +1679,7 @@ bool EXACT::add_edge(CNN_Genome *child, CNN_Node *node1, CNN_Node *node2, int ed
     return true;
 }
 
-CNN_Genome *EXACT::create_mutation() {
+CNN_Genome* EXACT::create_mutation() {
     // mutation options:
     // edges:
     //   1. disable edge (but make sure output node is still reachable)
@@ -1596,7 +1693,7 @@ CNN_Genome *EXACT::create_mutation() {
 
     long child_seed = rng_long(generator);
 
-    CNN_Genome *parent = genomes[rng_float(generator) * genomes.size()];
+    CNN_Genome* parent = genomes[rng_float(generator) * genomes.size()];
 
     cout << "\tgenerating child " << genomes_generated << " from parent genome: " << parent->get_generation_id()
          << endl;
@@ -1607,26 +1704,29 @@ CNN_Genome *EXACT::create_mutation() {
 
     if (inserted_genomes < (population_size * 10)) {
         cout << "\tGenerating hyperparameters randomly." << endl;
-        generate_initial_hyperparameters(mu, mu_delta, learning_rate, learning_rate_delta, weight_decay,
-                                         weight_decay_delta, alpha, velocity_reset, input_dropout_probability,
-                                         hidden_dropout_probability, batch_size);
+        generate_initial_hyperparameters(
+            mu, mu_delta, learning_rate, learning_rate_delta, weight_decay, weight_decay_delta, alpha, velocity_reset,
+            input_dropout_probability, hidden_dropout_probability, batch_size
+        );
     } else {
         cout << "\tGenerating hyperparameters with simplex." << endl;
-        generate_simplex_hyperparameters(mu, mu_delta, learning_rate, learning_rate_delta, weight_decay,
-                                         weight_decay_delta, alpha, velocity_reset, input_dropout_probability,
-                                         hidden_dropout_probability, batch_size);
+        generate_simplex_hyperparameters(
+            mu, mu_delta, learning_rate, learning_rate_delta, weight_decay, weight_decay_delta, alpha, velocity_reset,
+            input_dropout_probability, hidden_dropout_probability, batch_size
+        );
     }
 
-    vector<CNN_Node *> node_copies;
-    vector<CNN_Edge *> edge_copies;
+    vector<CNN_Node*> node_copies;
+    vector<CNN_Edge*> edge_copies;
     parent->get_node_copies(node_copies);
     parent->get_edge_copies(edge_copies);
 
-    CNN_Genome *child =
-        new CNN_Genome(genomes_generated++, padding, number_training_images, number_validation_images,
-                       number_test_images, child_seed, max_epochs, reset_weights, velocity_reset, mu, mu_delta,
-                       learning_rate, learning_rate_delta, weight_decay, weight_decay_delta, batch_size, epsilon, alpha,
-                       input_dropout_probability, hidden_dropout_probability, node_copies, edge_copies);
+    CNN_Genome* child = new CNN_Genome(
+        genomes_generated++, padding, number_training_images, number_validation_images, number_test_images, child_seed,
+        max_epochs, reset_weights, velocity_reset, mu, mu_delta, learning_rate, learning_rate_delta, weight_decay,
+        weight_decay_delta, batch_size, epsilon, alpha, input_dropout_probability, hidden_dropout_probability,
+        node_copies, edge_copies
+    );
 
     /*
     cout << "\tchild nodes:" << endl;
@@ -1666,7 +1766,7 @@ CNN_Genome *EXACT::create_mutation() {
 
         if (r < edge_alter_type) {
             cout << "\tALTERING EDGE TYPE!" << endl;
-            vector<CNN_Edge *> reachable_edges = child->get_reachable_edges();
+            vector<CNN_Edge*> reachable_edges = child->get_reachable_edges();
 
             if (reachable_edges.size() == 0) {
                 cout << "\t\tcould not alter edge type as there were no enabled edges!" << endl;
@@ -1675,7 +1775,7 @@ CNN_Genome *EXACT::create_mutation() {
             }
 
             int edge_position = rng_float(generator) * reachable_edges.size();
-            CNN_Edge *reachable_edge = reachable_edges[edge_position];
+            CNN_Edge* reachable_edge = reachable_edges[edge_position];
 
             cout << "\t\taltering edge type on edge: " << reachable_edge->get_innovation_number()
                  << " between input node innovation number "
@@ -1695,7 +1795,7 @@ CNN_Genome *EXACT::create_mutation() {
         if (r < edge_disable) {
             cout << "\tDISABLING EDGE!" << endl;
 
-            vector<CNN_Edge *> reachable_edges = child->get_reachable_edges();
+            vector<CNN_Edge*> reachable_edges = child->get_reachable_edges();
 
             if (reachable_edges.size() == 0) {
                 cout << "\t\tno reachable edges! this should never happen!" << endl;
@@ -1716,7 +1816,7 @@ CNN_Genome *EXACT::create_mutation() {
         if (r < edge_enable) {
             cout << "\tENABLING EDGE!" << endl;
 
-            vector<CNN_Edge *> disabled_edges = child->get_disabled_edges();
+            vector<CNN_Edge*> disabled_edges = child->get_disabled_edges();
 
             if (disabled_edges.size() == 0) {
                 cout << "\t\tcould not enable an edge as there were no disabled edges!" << endl;
@@ -1725,7 +1825,7 @@ CNN_Genome *EXACT::create_mutation() {
 
             int edge_position = rng_float(generator) * disabled_edges.size();
 
-            CNN_Edge *disabled_edge = disabled_edges[edge_position];
+            CNN_Edge* disabled_edge = disabled_edges[edge_position];
 
             cout << "\t\tenabling edge: " << disabled_edge->get_innovation_number()
                  << " between input node innovation number " << disabled_edge->get_input_node()->get_innovation_number()
@@ -1743,7 +1843,7 @@ CNN_Genome *EXACT::create_mutation() {
         r -= edge_enable;
 
         if (r < edge_split) {
-            vector<CNN_Edge *> reachable_edges = child->get_reachable_edges();
+            vector<CNN_Edge*> reachable_edges = child->get_reachable_edges();
 
             if (reachable_edges.size() == 0) {
                 cout << "\t\tno reachable edges! this should never happen!" << endl;
@@ -1752,34 +1852,36 @@ CNN_Genome *EXACT::create_mutation() {
 
             int edge_position = rng_float(generator) * reachable_edges.size();
 
-            CNN_Edge *edge = reachable_edges[edge_position];
+            CNN_Edge* edge = reachable_edges[edge_position];
 
-            CNN_Node *input_node = edge->get_input_node();
-            CNN_Node *output_node = edge->get_output_node();
+            CNN_Node* input_node = edge->get_input_node();
+            CNN_Node* output_node = edge->get_output_node();
 
             float depth = (input_node->get_depth() + output_node->get_depth()) / 2.0;
             int size_x = (input_node->get_size_x() + output_node->get_size_x()) / 2.0;
             int size_y = (input_node->get_size_y() + output_node->get_size_y()) / 2.0;
 
-            CNN_Node *child_node = new CNN_Node(node_innovation_count, depth, batch_size, size_x, size_y, HIDDEN_NODE);
+            CNN_Node* child_node = new CNN_Node(node_innovation_count, depth, batch_size, size_x, size_y, HIDDEN_NODE);
             node_innovation_count++;
 
             // add two new edges, disable the split edge
-            CNN_Edge *edge1 = NULL;
+            CNN_Edge* edge1 = NULL;
             cout << "\t\tcreating edge " << edge_innovation_count << endl;
             if (use_sfmp) {
-                edge1 = new CNN_Edge(input_node, child_node, false, edge_innovation_count,
-                                     random_edge_type(rng_float(generator)));
+                edge1 = new CNN_Edge(
+                    input_node, child_node, false, edge_innovation_count, random_edge_type(rng_float(generator))
+                );
             } else {
                 edge1 = new CNN_Edge(input_node, child_node, false, edge_innovation_count, CONVOLUTIONAL);
             }
             edge_innovation_count++;
 
-            CNN_Edge *edge2 = NULL;
+            CNN_Edge* edge2 = NULL;
             cout << "\t\tcreating edge " << edge_innovation_count << endl;
             if (use_sfmp) {
-                edge2 = new CNN_Edge(child_node, output_node, false, edge_innovation_count,
-                                     random_edge_type(rng_float(generator)));
+                edge2 = new CNN_Edge(
+                    child_node, output_node, false, edge_innovation_count, random_edge_type(rng_float(generator))
+                );
             } else {
                 edge2 = new CNN_Edge(child_node, output_node, false, edge_innovation_count, CONVOLUTIONAL);
             }
@@ -1802,7 +1904,7 @@ CNN_Genome *EXACT::create_mutation() {
         if (r < edge_add) {
             cout << "\tADDING EDGE!" << endl;
 
-            vector<CNN_Node *> reachable_nodes = child->get_reachable_nodes();
+            vector<CNN_Node*> reachable_nodes = child->get_reachable_nodes();
 
             if (reachable_nodes.size() < 2) {
                 cout << "\t\tless than 2 reachable nodes! this should never happen!" << endl;
@@ -1810,14 +1912,16 @@ CNN_Genome *EXACT::create_mutation() {
                 continue;
             }
 
-            CNN_Node *node1;
-            CNN_Node *node2;
+            CNN_Node* node1;
+            CNN_Node* node2;
 
             do {
                 int r1 = rng_float(generator) * reachable_nodes.size();
                 int r2 = rng_float(generator) * reachable_nodes.size() - 1;
 
-                if (r1 == r2) r2++;
+                if (r1 == r2) {
+                    r2++;
+                }
 
                 if (r1 > r2) {  // swap r1 and r2 so node2 is always deeper than node1
                     int temp = r1;
@@ -1865,14 +1969,16 @@ CNN_Genome *EXACT::create_mutation() {
 
             // should have a value between -2 and 2 (inclusive)
             int change = (2 * rng_float(generator)) + 1;
-            if (rng_float(generator) < 0.5) change *= -1;
+            if (rng_float(generator) < 0.5) {
+                change *= -1;
+            }
 
             // make sure we don't change the size of the input node
             cout << "\t\tnumber nodes: " << child->get_number_nodes() << endl;
             cout << "\t\tnumber input nodes: " << child->get_number_input_nodes() << endl;
             cout << "\t\tnumber softmax nodes: " << child->get_number_softmax_nodes() << endl;
 
-            vector<CNN_Node *> reachable_nodes = child->get_reachable_hidden_nodes();
+            vector<CNN_Node*> reachable_nodes = child->get_reachable_hidden_nodes();
 
             if (reachable_nodes.size() == 0) {
                 cout << "\tthere were no reachable non-hidden nodes, cannot change a node size." << endl;
@@ -1884,7 +1990,7 @@ CNN_Genome *EXACT::create_mutation() {
             int r = rng_float(generator) * reachable_nodes.size();
             cout << "\t\tr: " << r << endl;
 
-            CNN_Node *modified_node = reachable_nodes[r];
+            CNN_Node* modified_node = reachable_nodes[r];
             cout << "\t\tselected node: " << r << " with innovation number: " << modified_node->get_innovation_number()
                  << endl;
 
@@ -1936,14 +2042,16 @@ CNN_Genome *EXACT::create_mutation() {
 
             // should have a value between -2 and 2 (inclusive)
             int change = (2 * rng_float(generator)) + 1;
-            if (rng_float(generator) < 0.5) change *= -1;
+            if (rng_float(generator) < 0.5) {
+                change *= -1;
+            }
 
             // make sure we don't change the size of the input node
             cout << "\t\tnumber nodes: " << child->get_number_nodes() << endl;
             cout << "\t\tnumber input nodes: " << child->get_number_input_nodes() << endl;
             cout << "\t\tnumber softmax nodes: " << child->get_number_softmax_nodes() << endl;
 
-            vector<CNN_Node *> reachable_nodes = child->get_reachable_hidden_nodes();
+            vector<CNN_Node*> reachable_nodes = child->get_reachable_hidden_nodes();
 
             if (reachable_nodes.size() == 0) {
                 cout << "\tthere were no reachable non-hidden nodes, cannot change a node size." << endl;
@@ -1955,7 +2063,7 @@ CNN_Genome *EXACT::create_mutation() {
             int r = rng_float(generator) * reachable_nodes.size();
             cout << "\t\tr: " << r << endl;
 
-            CNN_Node *modified_node = reachable_nodes[r];
+            CNN_Node* modified_node = reachable_nodes[r];
             cout << "\t\tselected node: " << r << " with innovation number: " << modified_node->get_innovation_number()
                  << endl;
 
@@ -2000,14 +2108,16 @@ CNN_Genome *EXACT::create_mutation() {
 
             // should have a value between -2 and 2 (inclusive)
             int change = (2 * rng_float(generator)) + 1;
-            if (rng_float(generator) < 0.5) change *= -1;
+            if (rng_float(generator) < 0.5) {
+                change *= -1;
+            }
 
             // make sure we don't change the size of the input node
             cout << "\t\tnumber nodes: " << child->get_number_nodes() << endl;
             cout << "\t\tnumber input nodes: " << child->get_number_input_nodes() << endl;
             cout << "\t\tnumber softmax nodes: " << child->get_number_softmax_nodes() << endl;
 
-            vector<CNN_Node *> reachable_nodes = child->get_reachable_hidden_nodes();
+            vector<CNN_Node*> reachable_nodes = child->get_reachable_hidden_nodes();
 
             if (reachable_nodes.size() == 0) {
                 cout << "\tthere were no reachable non-hidden nodes, cannot change a node size." << endl;
@@ -2019,7 +2129,7 @@ CNN_Genome *EXACT::create_mutation() {
             int r = rng_float(generator) * reachable_nodes.size();
             cout << "\t\tr: " << r << endl;
 
-            CNN_Node *modified_node = reachable_nodes[r];
+            CNN_Node* modified_node = reachable_nodes[r];
             cout << "\t\tselected node: " << r << " with innovation number: " << modified_node->get_innovation_number()
                  << endl;
 
@@ -2063,8 +2173,8 @@ CNN_Genome *EXACT::create_mutation() {
             float random_depth = rng_float(generator);
             cout << "\t\trandom depth: " << random_depth << endl;
 
-            vector<CNN_Node *> potential_inputs;
-            vector<CNN_Node *> potential_outputs;
+            vector<CNN_Node*> potential_inputs;
+            vector<CNN_Node*> potential_outputs;
 
             for (uint32_t i = 0; i < child->get_number_nodes(); i++) {
                 if (child->get_node(i)->get_depth() < random_depth) {
@@ -2106,19 +2216,23 @@ CNN_Genome *EXACT::create_mutation() {
             int32_t min_input_size_x = 1000, min_input_size_y = 1000, max_output_size_x = 0, max_output_size_y = 0;
 
             for (uint32_t i = 0; i < potential_inputs.size(); i++) {
-                if (potential_inputs[i]->get_size_x() < min_input_size_x)
+                if (potential_inputs[i]->get_size_x() < min_input_size_x) {
                     min_input_size_x = potential_inputs[i]->get_size_x();
-                if (potential_inputs[i]->get_size_y() < min_input_size_y)
+                }
+                if (potential_inputs[i]->get_size_y() < min_input_size_y) {
                     min_input_size_y = potential_inputs[i]->get_size_y();
+                }
 
                 cout << "\t\tinput node: " << potential_inputs[i]->get_innovation_number() << endl;
             }
 
             for (uint32_t i = 0; i < potential_outputs.size(); i++) {
-                if (potential_outputs[i]->get_size_x() > max_output_size_x)
+                if (potential_outputs[i]->get_size_x() > max_output_size_x) {
                     max_output_size_x = potential_outputs[i]->get_size_x();
-                if (potential_outputs[i]->get_size_y() > max_output_size_y)
+                }
+                if (potential_outputs[i]->get_size_y() > max_output_size_y) {
                     max_output_size_y = potential_outputs[i]->get_size_y();
+                }
                 cout << "\t\toutput node: " << potential_outputs[i]->get_innovation_number() << endl;
             }
 
@@ -2129,7 +2243,7 @@ CNN_Genome *EXACT::create_mutation() {
             cout << "\t\tMax output size_x: " << max_output_size_x << ", size_y: " << max_output_size_y << endl;
             cout << "\t\tNew node will have size_x: " << size_x << ", size_y: " << size_y << endl;
 
-            CNN_Node *child_node =
+            CNN_Node* child_node =
                 new CNN_Node(node_innovation_count, random_depth, batch_size, size_x, size_y, HIDDEN_NODE);
             node_innovation_count++;
 
@@ -2164,7 +2278,7 @@ CNN_Genome *EXACT::create_mutation() {
         if (r < node_split) {
             cout << "\tSPLITTING A NODE!" << endl;
 
-            vector<CNN_Node *> reachable_nodes = child->get_reachable_hidden_nodes();
+            vector<CNN_Node*> reachable_nodes = child->get_reachable_hidden_nodes();
 
             if (reachable_nodes.size() == 0) {
                 cout << "\t\tno reachable hidden nodes so cannot split node" << endl;
@@ -2173,7 +2287,7 @@ CNN_Genome *EXACT::create_mutation() {
 
             int r = (rng_float(generator) * reachable_nodes.size());
 
-            CNN_Node *child_node = reachable_nodes[r];
+            CNN_Node* child_node = reachable_nodes[r];
             cout << "\t\tselected node: " << r
                  << " to split with innovation number: " << child_node->get_innovation_number() << endl;
 
@@ -2191,25 +2305,25 @@ CNN_Genome *EXACT::create_mutation() {
             int size_x = child_node->get_size_x();
             int size_y = child_node->get_size_y();
 
-            CNN_Node *split1 = new CNN_Node(node_innovation_count, depth, batch_size, size_x, size_y, HIDDEN_NODE);
+            CNN_Node* split1 = new CNN_Node(node_innovation_count, depth, batch_size, size_x, size_y, HIDDEN_NODE);
             node_innovation_count++;
 
-            CNN_Node *split2 = new CNN_Node(node_innovation_count, depth, batch_size, size_x, size_y, HIDDEN_NODE);
+            CNN_Node* split2 = new CNN_Node(node_innovation_count, depth, batch_size, size_x, size_y, HIDDEN_NODE);
             node_innovation_count++;
 
             child->add_node(split1);
             child->add_node(split2);
 
-            vector<CNN_Node *> input_nodes;
-            vector<CNN_Node *> output_nodes;
+            vector<CNN_Node*> input_nodes;
+            vector<CNN_Node*> output_nodes;
 
             for (uint32_t i = 0; i < child->get_number_edges(); i++) {
-                CNN_Edge *edge = child->get_edge(i);
+                CNN_Edge* edge = child->get_edge(i);
 
                 if (edge->get_input_innovation_number() == child_node->get_innovation_number()) {
-                    CNN_Node *output_node = NULL;
+                    CNN_Node* output_node = NULL;
                     for (uint32_t j = 0; j < child->get_number_nodes(); j++) {
-                        CNN_Node *node = child->get_node(j);
+                        CNN_Node* node = child->get_node(j);
 
                         if (node->get_innovation_number() == edge->get_output_innovation_number()) {
                             cout << "\t\tselected output node with innovation number: " << node->get_innovation_number()
@@ -2221,9 +2335,9 @@ CNN_Genome *EXACT::create_mutation() {
 
                     output_nodes.push_back(output_node);
                 } else if (edge->get_output_innovation_number() == child_node->get_innovation_number()) {
-                    CNN_Node *input_node = NULL;
+                    CNN_Node* input_node = NULL;
                     for (uint32_t j = 0; j < child->get_number_nodes(); j++) {
-                        CNN_Node *node = child->get_node(j);
+                        CNN_Node* node = child->get_node(j);
 
                         if (node->get_innovation_number() == edge->get_input_innovation_number()) {
                             cout << "\t\tselected input node with innovation number: " << node->get_innovation_number()
@@ -2304,7 +2418,7 @@ CNN_Genome *EXACT::create_mutation() {
             //   create new node with depth the average of those two
             //   create edges between new node and all inputs/outputs of merged nodes
 
-            vector<CNN_Node *> reachable_nodes = child->get_reachable_hidden_nodes();
+            vector<CNN_Node*> reachable_nodes = child->get_reachable_hidden_nodes();
 
             if (reachable_nodes.size() < 2) {
                 cout << "\t\tneed at least two reachable hidden nodes so cannot merge a node" << endl;
@@ -2318,15 +2432,17 @@ CNN_Genome *EXACT::create_mutation() {
             int r2 = rng_float(generator) * (reachable_nodes.size() - 1);
 
             // will select two distinct nodes
-            if (r1 == r2) r2++;
+            if (r1 == r2) {
+                r2++;
+            }
 
             cout << "\t\tr1: " << r1 << ", r2: " << r2 << endl;
 
-            CNN_Node *node1 = reachable_nodes[r1];
+            CNN_Node* node1 = reachable_nodes[r1];
             cout << "\t\tselected node: " << r1 << " with innovation number: " << node1->get_innovation_number()
                  << endl;
 
-            CNN_Node *node2 = reachable_nodes[r2];
+            CNN_Node* node2 = reachable_nodes[r2];
             cout << "\t\tselected node: " << r2 << " with innovation number: " << node2->get_innovation_number()
                  << endl;
 
@@ -2354,21 +2470,21 @@ CNN_Genome *EXACT::create_mutation() {
             int size_x = (node1->get_size_x() + node2->get_size_x()) / 2.0;
             int size_y = (node1->get_size_y() + node2->get_size_y()) / 2.0;
 
-            CNN_Node *merged_node = new CNN_Node(node_innovation_count, depth, batch_size, size_x, size_y, HIDDEN_NODE);
+            CNN_Node* merged_node = new CNN_Node(node_innovation_count, depth, batch_size, size_x, size_y, HIDDEN_NODE);
             node_innovation_count++;
 
             child->add_node(merged_node);
 
-            vector<CNN_Node *> connected_nodes;
+            vector<CNN_Node*> connected_nodes;
             for (uint32_t i = 0; i < child->get_number_edges(); i++) {
-                CNN_Edge *edge = child->get_edge(i);
+                CNN_Edge* edge = child->get_edge(i);
 
-                if (edge->get_input_innovation_number() == node1->get_innovation_number() ||
-                    edge->get_input_innovation_number() == node2->get_innovation_number()) {
+                if (edge->get_input_innovation_number() == node1->get_innovation_number()
+                    || edge->get_input_innovation_number() == node2->get_innovation_number()) {
                     edge->disable();
 
                     for (uint32_t j = 0; j < child->get_number_nodes(); j++) {
-                        CNN_Node *node = child->get_node(j);
+                        CNN_Node* node = child->get_node(j);
 
                         if (node->get_innovation_number() == edge->get_output_innovation_number()) {
                             connected_nodes.push_back(node);
@@ -2377,12 +2493,12 @@ CNN_Genome *EXACT::create_mutation() {
                     }
                 }
 
-                if (edge->get_output_innovation_number() == node1->get_innovation_number() ||
-                    edge->get_output_innovation_number() == node2->get_innovation_number()) {
+                if (edge->get_output_innovation_number() == node1->get_innovation_number()
+                    || edge->get_output_innovation_number() == node2->get_innovation_number()) {
                     edge->disable();
 
                     for (uint32_t j = 0; j < child->get_number_nodes(); j++) {
-                        CNN_Node *node = child->get_node(j);
+                        CNN_Node* node = child->get_node(j);
 
                         if (node->get_innovation_number() == edge->get_input_innovation_number()) {
                             connected_nodes.push_back(node);
@@ -2425,7 +2541,7 @@ CNN_Genome *EXACT::create_mutation() {
         if (r < node_enable) {
             cout << "\tENABLING NODE!" << endl;
 
-            vector<CNN_Node *> disabled_nodes = child->get_disabled_nodes();
+            vector<CNN_Node*> disabled_nodes = child->get_disabled_nodes();
 
             if (disabled_nodes.size() == 0) {
                 cout << "\t\tThere were no disabled hidden nodes, skipping!" << endl;
@@ -2434,14 +2550,14 @@ CNN_Genome *EXACT::create_mutation() {
 
             int r = rng_float(generator) * disabled_nodes.size();
 
-            CNN_Node *node = disabled_nodes[r];
+            CNN_Node* node = disabled_nodes[r];
             node->enable();
 
             for (uint32_t i = 0; i < child->get_number_edges(); i++) {
-                CNN_Edge *edge = child->get_edge(i);
+                CNN_Edge* edge = child->get_edge(i);
 
-                if (edge->get_output_innovation_number() == node->get_innovation_number() ||
-                    edge->get_input_innovation_number() == node->get_innovation_number()) {
+                if (edge->get_output_innovation_number() == node->get_innovation_number()
+                    || edge->get_input_innovation_number() == node->get_innovation_number()) {
                     edge->enable();
                     // reinitialize weights for re-enabled edge
                     edge->set_needs_init();
@@ -2458,7 +2574,7 @@ CNN_Genome *EXACT::create_mutation() {
         if (r < node_disable) {
             cout << "\tDISABLING NODE!" << endl;
 
-            vector<CNN_Node *> enabled_nodes = child->get_reachable_hidden_nodes();
+            vector<CNN_Node*> enabled_nodes = child->get_reachable_hidden_nodes();
 
             if (enabled_nodes.size() == 0) {
                 cout << "\t\tThere were no enabled hidden nodes, skipping!" << endl;
@@ -2467,14 +2583,14 @@ CNN_Genome *EXACT::create_mutation() {
 
             int r = rng_float(generator) * enabled_nodes.size();
 
-            CNN_Node *node = enabled_nodes[r];
+            CNN_Node* node = enabled_nodes[r];
             node->disable();
 
             for (uint32_t i = 0; i < child->get_number_edges(); i++) {
-                CNN_Edge *edge = child->get_edge(i);
+                CNN_Edge* edge = child->get_edge(i);
 
-                if (edge->get_output_innovation_number() == node->get_innovation_number() ||
-                    edge->get_input_innovation_number() == node->get_innovation_number()) {
+                if (edge->get_output_innovation_number() == node->get_innovation_number()
+                    || edge->get_input_innovation_number() == node->get_innovation_number()) {
                     edge->disable();
                 }
             }
@@ -2494,14 +2610,16 @@ CNN_Genome *EXACT::create_mutation() {
     return child;
 }
 
-bool edges_contains(vector<CNN_Edge *> &edges, CNN_Edge *edge) {
+bool edges_contains(vector<CNN_Edge*>& edges, CNN_Edge* edge) {
     for (int32_t i = 0; i < (int32_t) edges.size(); i++) {
-        if (edges[i]->get_innovation_number() == edge->get_innovation_number()) return true;
+        if (edges[i]->get_innovation_number() == edge->get_innovation_number()) {
+            return true;
+        }
     }
     return false;
 }
 
-CNN_Edge *attempt_edge_insert(vector<CNN_Edge *> &child_edges, CNN_Edge *edge) {
+CNN_Edge* attempt_edge_insert(vector<CNN_Edge*>& child_edges, CNN_Edge* edge) {
     for (int32_t i = 0; i < (int32_t) child_edges.size(); i++) {
         if (child_edges[i]->get_innovation_number() == edge->get_innovation_number()) {
             cerr << "ERROR in crossover! trying to push an edge with innovation_number: "
@@ -2534,21 +2652,26 @@ CNN_Edge *attempt_edge_insert(vector<CNN_Edge *> &child_edges, CNN_Edge *edge) {
     return edge;
 }
 
-void attempt_node_insert(vector<CNN_Node *> &child_nodes, CNN_Node *node) {
+void attempt_node_insert(vector<CNN_Node*>& child_nodes, CNN_Node* node) {
     for (int32_t i = 0; i < (int32_t) child_nodes.size(); i++) {
-        if (child_nodes[i]->get_innovation_number() == node->get_innovation_number()) return;
+        if (child_nodes[i]->get_innovation_number() == node->get_innovation_number()) {
+            return;
+        }
     }
 
-    CNN_Node *node_copy = node->copy();
-    child_nodes.insert(upper_bound(child_nodes.begin(), child_nodes.end(), node_copy, sort_CNN_Nodes_by_depth()),
-                       node_copy);
+    CNN_Node* node_copy = node->copy();
+    child_nodes.insert(
+        upper_bound(child_nodes.begin(), child_nodes.end(), node_copy, sort_CNN_Nodes_by_depth()), node_copy
+    );
 }
 
-CNN_Genome *EXACT::create_child() {
+CNN_Genome* EXACT::create_child() {
     cout << "\tCREATING CHILD THROUGH CROSSOVER!" << endl;
     int r1 = rng_float(generator) * genomes.size();
     int r2 = rng_float(generator) * (genomes.size() - 1);
-    if (r1 >= r2) r2++;
+    if (r1 >= r2) {
+        r2++;
+    }
 
     // parent should have higher fitness
     if (r2 < r1) {
@@ -2558,22 +2681,22 @@ CNN_Genome *EXACT::create_child() {
     }
     cout << "\t\tparent positions: " << r1 << " and " << r2 << endl;
 
-    CNN_Genome *parent1 = genomes[r1];
-    CNN_Genome *parent2 = genomes[r2];
+    CNN_Genome* parent1 = genomes[r1];
+    CNN_Genome* parent2 = genomes[r2];
 
     cout << "\t\tgenerating child " << genomes_generated << " from parents: " << parent1->get_generation_id() << " and "
          << parent2->get_generation_id() << endl;
 
     // nodes are copied in the attempt_node_insert_function
-    vector<CNN_Node *> child_nodes;
-    vector<CNN_Edge *> child_edges;
+    vector<CNN_Node*> child_nodes;
+    vector<CNN_Edge*> child_edges;
 
     int p1_position = 0;
     int p2_position = 0;
 
     // edges are not sorted in order of innovation number, they need to be
-    vector<CNN_Edge *> p1_edges;
-    vector<CNN_Edge *> p2_edges;
+    vector<CNN_Edge*> p1_edges;
+    vector<CNN_Edge*> p2_edges;
     parent1->get_edge_copies(p1_edges);
     parent2->get_edge_copies(p2_edges);
 
@@ -2592,14 +2715,14 @@ CNN_Genome *EXACT::create_child() {
     */
 
     while (p1_position < (int32_t) p1_edges.size() && p2_position < (int32_t) p2_edges.size()) {
-        CNN_Edge *p1_edge = p1_edges[p1_position];
-        CNN_Edge *p2_edge = p2_edges[p2_position];
+        CNN_Edge* p1_edge = p1_edges[p1_position];
+        CNN_Edge* p2_edge = p2_edges[p2_position];
 
         int p1_innovation = p1_edge->get_innovation_number();
         int p2_innovation = p2_edge->get_innovation_number();
 
         if (p1_innovation == p2_innovation) {
-            CNN_Edge *inserted_edge = NULL;
+            CNN_Edge* inserted_edge = NULL;
             if ((inserted_edge = attempt_edge_insert(child_edges, p1_edge)) != NULL) {
                 // push back surrounding nodes
                 attempt_node_insert(child_nodes, p1_edge->get_input_node());
@@ -2609,7 +2732,7 @@ CNN_Genome *EXACT::create_child() {
             p1_position++;
             p2_position++;
         } else if (p1_innovation < p2_innovation) {
-            CNN_Edge *inserted_edge = NULL;
+            CNN_Edge* inserted_edge = NULL;
             if ((inserted_edge = attempt_edge_insert(child_edges, p1_edge)) != NULL) {
                 if (rng_float(generator) <= more_fit_parent_crossover) {
                     inserted_edge->disable();
@@ -2624,7 +2747,7 @@ CNN_Genome *EXACT::create_child() {
 
             p1_position++;
         } else {
-            CNN_Edge *inserted_edge = NULL;
+            CNN_Edge* inserted_edge = NULL;
             if ((inserted_edge = attempt_edge_insert(child_edges, p2_edge)) != NULL) {
                 if (rng_float(generator) >= less_fit_parent_crossover) {
                     inserted_edge->disable();
@@ -2642,11 +2765,13 @@ CNN_Genome *EXACT::create_child() {
     }
 
     while (p1_position < (int32_t) p1_edges.size()) {
-        CNN_Edge *p1_edge = p1_edges[p1_position];
+        CNN_Edge* p1_edge = p1_edges[p1_position];
 
-        CNN_Edge *inserted_edge = NULL;
+        CNN_Edge* inserted_edge = NULL;
         if ((inserted_edge = attempt_edge_insert(child_edges, p1_edge)) != NULL) {
-            if (rng_float(generator) >= more_fit_parent_crossover) { inserted_edge->disable(); }
+            if (rng_float(generator) >= more_fit_parent_crossover) {
+                inserted_edge->disable();
+            }
 
             // push back surrounding nodes
             attempt_node_insert(child_nodes, p1_edge->get_input_node());
@@ -2657,11 +2782,13 @@ CNN_Genome *EXACT::create_child() {
     }
 
     while (p2_position < (int32_t) p2_edges.size()) {
-        CNN_Edge *p2_edge = p2_edges[p2_position];
+        CNN_Edge* p2_edge = p2_edges[p2_position];
 
-        CNN_Edge *inserted_edge = NULL;
+        CNN_Edge* inserted_edge = NULL;
         if ((inserted_edge = attempt_edge_insert(child_edges, p2_edge)) != NULL) {
-            if (rng_float(generator) >= less_fit_parent_crossover) { inserted_edge->disable(); }
+            if (rng_float(generator) >= less_fit_parent_crossover) {
+                inserted_edge->disable();
+            }
 
             // push back surrounding nodes
             attempt_node_insert(child_nodes, p2_edge->get_input_node());
@@ -2689,28 +2816,31 @@ CNN_Genome *EXACT::create_child() {
 
     if (inserted_genomes < (population_size * 10)) {
         cout << "\tGenerating hyperparameters randomly." << endl;
-        generate_initial_hyperparameters(mu, mu_delta, learning_rate, learning_rate_delta, weight_decay,
-                                         weight_decay_delta, alpha, velocity_reset, input_dropout_probability,
-                                         hidden_dropout_probability, batch_size);
+        generate_initial_hyperparameters(
+            mu, mu_delta, learning_rate, learning_rate_delta, weight_decay, weight_decay_delta, alpha, velocity_reset,
+            input_dropout_probability, hidden_dropout_probability, batch_size
+        );
     } else {
         cout << "\tGenerating hyperparameters with simplex." << endl;
-        generate_simplex_hyperparameters(mu, mu_delta, learning_rate, learning_rate_delta, weight_decay,
-                                         weight_decay_delta, alpha, velocity_reset, input_dropout_probability,
-                                         hidden_dropout_probability, batch_size);
+        generate_simplex_hyperparameters(
+            mu, mu_delta, learning_rate, learning_rate_delta, weight_decay, weight_decay_delta, alpha, velocity_reset,
+            input_dropout_probability, hidden_dropout_probability, batch_size
+        );
     }
 
-    CNN_Genome *child =
-        new CNN_Genome(genomes_generated++, padding, number_training_images, number_validation_images,
-                       number_test_images, genome_seed, max_epochs, reset_weights, velocity_reset, mu, mu_delta,
-                       learning_rate, learning_rate_delta, weight_decay, weight_decay_delta, batch_size, epsilon, alpha,
-                       input_dropout_probability, hidden_dropout_probability, child_nodes, child_edges);
+    CNN_Genome* child = new CNN_Genome(
+        genomes_generated++, padding, number_training_images, number_validation_images, number_test_images, genome_seed,
+        max_epochs, reset_weights, velocity_reset, mu, mu_delta, learning_rate, learning_rate_delta, weight_decay,
+        weight_decay_delta, batch_size, epsilon, alpha, input_dropout_probability, hidden_dropout_probability,
+        child_nodes, child_edges
+    );
 
     child->set_generated_by("crossover");
 
     return child;
 }
 
-void EXACT::write_individual_hyperparameters(CNN_Genome *individual) {
+void EXACT::write_individual_hyperparameters(CNN_Genome* individual) {
     fstream out(output_directory + "/individual_hyperparameters.txt", fstream::out | fstream::app);
 
     out << individual->get_best_validation_error() << "," << individual->get_best_validation_error() << ","
@@ -2769,8 +2899,12 @@ void EXACT::write_statistics(int new_generation_id, float new_fitness) {
             fitness_count++;
         }
 
-        if (fitness < min_fitness) min_fitness = fitness;
-        if (fitness > max_fitness) max_fitness = fitness;
+        if (fitness < min_fitness) {
+            min_fitness = fitness;
+        }
+        if (fitness > max_fitness) {
+            max_fitness = fitness;
+        }
 
         float epochs = genomes[i]->get_best_epoch();
 
@@ -2779,8 +2913,12 @@ void EXACT::write_statistics(int new_generation_id, float new_fitness) {
             epochs_count++;
         }
 
-        if (epochs < min_epochs) min_epochs = epochs;
-        if (epochs > max_epochs) max_epochs = epochs;
+        if (epochs < min_epochs) {
+            min_epochs = epochs;
+        }
+        if (epochs > max_epochs) {
+            max_epochs = epochs;
+        }
 
         float nodes = genomes[i]->get_number_enabled_nodes();
 
@@ -2789,8 +2927,12 @@ void EXACT::write_statistics(int new_generation_id, float new_fitness) {
             nodes_count++;
         }
 
-        if (nodes < min_nodes) min_nodes = nodes;
-        if (nodes > max_nodes) max_nodes = nodes;
+        if (nodes < min_nodes) {
+            min_nodes = nodes;
+        }
+        if (nodes > max_nodes) {
+            max_nodes = nodes;
+        }
 
         float pooling_edges = genomes[i]->get_number_enabled_pooling_edges();
 
@@ -2799,8 +2941,12 @@ void EXACT::write_statistics(int new_generation_id, float new_fitness) {
             pooling_edges_count++;
         }
 
-        if (pooling_edges < min_pooling_edges) min_pooling_edges = pooling_edges;
-        if (pooling_edges > max_pooling_edges) max_pooling_edges = pooling_edges;
+        if (pooling_edges < min_pooling_edges) {
+            min_pooling_edges = pooling_edges;
+        }
+        if (pooling_edges > max_pooling_edges) {
+            max_pooling_edges = pooling_edges;
+        }
 
         float convolutional_edges = genomes[i]->get_number_enabled_convolutional_edges();
 
@@ -2809,8 +2955,12 @@ void EXACT::write_statistics(int new_generation_id, float new_fitness) {
             convolutional_edges_count++;
         }
 
-        if (convolutional_edges < min_convolutional_edges) min_convolutional_edges = convolutional_edges;
-        if (convolutional_edges > max_convolutional_edges) max_convolutional_edges = convolutional_edges;
+        if (convolutional_edges < min_convolutional_edges) {
+            min_convolutional_edges = convolutional_edges;
+        }
+        if (convolutional_edges > max_convolutional_edges) {
+            max_convolutional_edges = convolutional_edges;
+        }
 
         float weights = genomes[i]->get_number_weights();
 
@@ -2819,8 +2969,12 @@ void EXACT::write_statistics(int new_generation_id, float new_fitness) {
             weights_count++;
         }
 
-        if (weights < min_weights) min_weights = weights;
-        if (weights > max_weights) max_weights = weights;
+        if (weights < min_weights) {
+            min_weights = weights;
+        }
+        if (weights > max_weights) {
+            max_weights = weights;
+        }
     }
     avg_fitness /= fitness_count;
     avg_epochs /= epochs_count;
@@ -2829,35 +2983,83 @@ void EXACT::write_statistics(int new_generation_id, float new_fitness) {
     avg_convolutional_edges /= convolutional_edges_count;
     avg_weights /= weights_count;
 
-    if (fitness_count == 0) avg_fitness = 0.0;
-    if (min_fitness == EXACT_MAX_FLOAT) min_fitness = 0;
-    if (max_fitness == EXACT_MAX_FLOAT) max_fitness = 0;
-    if (max_fitness == -EXACT_MAX_FLOAT) max_fitness = 0;
+    if (fitness_count == 0) {
+        avg_fitness = 0.0;
+    }
+    if (min_fitness == EXACT_MAX_FLOAT) {
+        min_fitness = 0;
+    }
+    if (max_fitness == EXACT_MAX_FLOAT) {
+        max_fitness = 0;
+    }
+    if (max_fitness == -EXACT_MAX_FLOAT) {
+        max_fitness = 0;
+    }
 
-    if (epochs_count == 0) avg_epochs = 0.0;
-    if (min_epochs == EXACT_MAX_FLOAT) min_epochs = 0;
-    if (max_epochs == EXACT_MAX_FLOAT) max_epochs = 0;
-    if (max_epochs == -EXACT_MAX_FLOAT) max_epochs = 0;
+    if (epochs_count == 0) {
+        avg_epochs = 0.0;
+    }
+    if (min_epochs == EXACT_MAX_FLOAT) {
+        min_epochs = 0;
+    }
+    if (max_epochs == EXACT_MAX_FLOAT) {
+        max_epochs = 0;
+    }
+    if (max_epochs == -EXACT_MAX_FLOAT) {
+        max_epochs = 0;
+    }
 
-    if (nodes_count == 0) avg_nodes = 0.0;
-    if (min_nodes == EXACT_MAX_FLOAT) min_nodes = 0;
-    if (max_nodes == EXACT_MAX_FLOAT) max_nodes = 0;
-    if (max_nodes == -EXACT_MAX_FLOAT) max_nodes = 0;
+    if (nodes_count == 0) {
+        avg_nodes = 0.0;
+    }
+    if (min_nodes == EXACT_MAX_FLOAT) {
+        min_nodes = 0;
+    }
+    if (max_nodes == EXACT_MAX_FLOAT) {
+        max_nodes = 0;
+    }
+    if (max_nodes == -EXACT_MAX_FLOAT) {
+        max_nodes = 0;
+    }
 
-    if (pooling_edges_count == 0) avg_pooling_edges = 0.0;
-    if (min_pooling_edges == EXACT_MAX_FLOAT) min_pooling_edges = 0;
-    if (max_pooling_edges == EXACT_MAX_FLOAT) max_pooling_edges = 0;
-    if (max_pooling_edges == -EXACT_MAX_FLOAT) max_pooling_edges = 0;
+    if (pooling_edges_count == 0) {
+        avg_pooling_edges = 0.0;
+    }
+    if (min_pooling_edges == EXACT_MAX_FLOAT) {
+        min_pooling_edges = 0;
+    }
+    if (max_pooling_edges == EXACT_MAX_FLOAT) {
+        max_pooling_edges = 0;
+    }
+    if (max_pooling_edges == -EXACT_MAX_FLOAT) {
+        max_pooling_edges = 0;
+    }
 
-    if (convolutional_edges_count == 0) avg_convolutional_edges = 0.0;
-    if (min_convolutional_edges == EXACT_MAX_FLOAT) min_convolutional_edges = 0;
-    if (max_convolutional_edges == EXACT_MAX_FLOAT) max_convolutional_edges = 0;
-    if (max_convolutional_edges == -EXACT_MAX_FLOAT) max_convolutional_edges = 0;
+    if (convolutional_edges_count == 0) {
+        avg_convolutional_edges = 0.0;
+    }
+    if (min_convolutional_edges == EXACT_MAX_FLOAT) {
+        min_convolutional_edges = 0;
+    }
+    if (max_convolutional_edges == EXACT_MAX_FLOAT) {
+        max_convolutional_edges = 0;
+    }
+    if (max_convolutional_edges == -EXACT_MAX_FLOAT) {
+        max_convolutional_edges = 0;
+    }
 
-    if (weights_count == 0) avg_weights = 0.0;
-    if (min_weights == EXACT_MAX_FLOAT) min_weights = 0;
-    if (max_weights == EXACT_MAX_FLOAT) max_weights = 0;
-    if (max_weights == -EXACT_MAX_FLOAT) max_weights = 0;
+    if (weights_count == 0) {
+        avg_weights = 0.0;
+    }
+    if (min_weights == EXACT_MAX_FLOAT) {
+        min_weights = 0;
+    }
+    if (max_weights == EXACT_MAX_FLOAT) {
+        max_weights = 0;
+    }
+    if (max_weights == -EXACT_MAX_FLOAT) {
+        max_weights = 0;
+    }
 
     fstream out(output_directory + "/progress.txt", fstream::out | fstream::app);
 
@@ -2926,14 +3128,22 @@ void EXACT::write_statistics(int new_generation_id, float new_fitness) {
     float best_batch_size = genomes[0]->get_batch_size();
 
     for (uint32_t i = 0; i < genomes.size(); i++) {
-        if (genomes[i]->get_initial_mu() < min_initial_mu) { min_initial_mu = genomes[i]->get_initial_mu(); }
+        if (genomes[i]->get_initial_mu() < min_initial_mu) {
+            min_initial_mu = genomes[i]->get_initial_mu();
+        }
 
-        if (genomes[i]->get_initial_mu() > max_initial_mu) { max_initial_mu = genomes[i]->get_initial_mu(); }
+        if (genomes[i]->get_initial_mu() > max_initial_mu) {
+            max_initial_mu = genomes[i]->get_initial_mu();
+        }
         avg_initial_mu += genomes[i]->get_initial_mu();
 
-        if (genomes[i]->get_mu_delta() < min_mu_delta) { min_mu_delta = genomes[i]->get_mu_delta(); }
+        if (genomes[i]->get_mu_delta() < min_mu_delta) {
+            min_mu_delta = genomes[i]->get_mu_delta();
+        }
 
-        if (genomes[i]->get_mu_delta() > max_mu_delta) { max_mu_delta = genomes[i]->get_mu_delta(); }
+        if (genomes[i]->get_mu_delta() > max_mu_delta) {
+            max_mu_delta = genomes[i]->get_mu_delta();
+        }
         avg_mu_delta += genomes[i]->get_mu_delta();
 
         if (genomes[i]->get_initial_learning_rate() < min_initial_learning_rate) {
@@ -2972,9 +3182,13 @@ void EXACT::write_statistics(int new_generation_id, float new_fitness) {
         }
         avg_weight_decay_delta += genomes[i]->get_weight_decay_delta();
 
-        if (genomes[i]->get_alpha() < min_alpha) { min_alpha = genomes[i]->get_alpha(); }
+        if (genomes[i]->get_alpha() < min_alpha) {
+            min_alpha = genomes[i]->get_alpha();
+        }
 
-        if (genomes[i]->get_alpha() > max_alpha) { max_alpha = genomes[i]->get_alpha(); }
+        if (genomes[i]->get_alpha() > max_alpha) {
+            max_alpha = genomes[i]->get_alpha();
+        }
         avg_alpha += genomes[i]->get_alpha();
 
         if (genomes[i]->get_velocity_reset() < min_velocity_reset) {
@@ -3004,9 +3218,13 @@ void EXACT::write_statistics(int new_generation_id, float new_fitness) {
         }
         avg_hidden_dropout_probability += genomes[i]->get_hidden_dropout_probability();
 
-        if (genomes[i]->get_batch_size() < min_batch_size) { min_batch_size = genomes[i]->get_batch_size(); }
+        if (genomes[i]->get_batch_size() < min_batch_size) {
+            min_batch_size = genomes[i]->get_batch_size();
+        }
 
-        if (genomes[i]->get_batch_size() > max_batch_size) { max_batch_size = genomes[i]->get_batch_size(); }
+        if (genomes[i]->get_batch_size() > max_batch_size) {
+            max_batch_size = genomes[i]->get_batch_size();
+        }
         avg_batch_size += genomes[i]->get_batch_size();
     }
 
@@ -3068,7 +3286,9 @@ void EXACT::write_statistics(int new_generation_id, float new_fitness) {
 
 void EXACT::write_hyperparameters_header() {
     ifstream f(output_directory + "/hyperparameters.txt");
-    if (f.good()) return;  // return if file already exists, don't need to rewrite header
+    if (f.good()) {
+        return;  // return if file already exists, don't need to rewrite header
+    }
 
     fstream out(output_directory + "/hyperparameters.txt", fstream::out | fstream::app);
     out << "# min initial mu"
@@ -3129,7 +3349,9 @@ void EXACT::write_hyperparameters_header() {
 
 void EXACT::write_statistics_header() {
     ifstream f(output_directory + "/progress.txt");
-    if (f.good()) return;  // return if file already exists, don't need to rewrite header
+    if (f.good()) {
+        return;  // return if file already exists, don't need to rewrite header
+    }
 
     fstream out(output_directory + "/progress.txt", fstream::out | fstream::app);
     out << "# " << setw(14) << "time"
@@ -3163,160 +3385,342 @@ void EXACT::write_statistics_header() {
     out.close();
 }
 
-bool EXACT::is_identical(EXACT *other, bool testing_checkpoint) {
-    if (are_different("id", id, other->id)) return false;
-
-    if (are_different("search_name", search_name, other->search_name)) return false;
-    if (are_different("output_directory", output_directory, other->output_directory)) return false;
-    if (are_different("training_filename", training_filename, other->training_filename)) return false;
-    if (are_different("validation_filename", validation_filename, other->validation_filename)) return false;
-    if (are_different("test_filename", test_filename, other->test_filename)) return false;
-
-    if (are_different("number_training_images", number_training_images, other->number_training_images)) return false;
-    if (are_different("number_validation_images", number_validation_images, other->number_validation_images))
+bool EXACT::is_identical(EXACT* other, bool testing_checkpoint) {
+    if (are_different("id", id, other->id)) {
         return false;
-    if (are_different("number_test_images", number_test_images, other->number_test_images)) return false;
+    }
 
-    if (are_different("padding", padding, other->padding)) return false;
-
-    if (are_different("image_channels", image_channels, other->image_channels)) return false;
-    if (are_different("image_rows", image_rows, other->image_rows)) return false;
-    if (are_different("image_cols", image_cols, other->image_cols)) return false;
-    if (are_different("number_classes", number_classes, other->number_classes)) return false;
-
-    if (are_different("population_size", population_size, other->population_size)) return false;
-    if (are_different("node_innovation_count", node_innovation_count, other->node_innovation_count)) return false;
-    if (are_different("edge_innovation_count", edge_innovation_count, other->edge_innovation_count)) return false;
-
-    if (are_different("generator", generator, other->generator)) return false;
-    if (are_different("normal_distribution", normal_distribution, other->normal_distribution)) return false;
-    if (are_different("rng_long", rng_long, other->rng_long)) return false;
-    if (are_different("rng_float", rng_float, other->rng_float)) return false;
-
-    if (are_different("genomes_generated", genomes_generated, other->genomes_generated)) return false;
-    if (are_different("inserted_genomes", inserted_genomes, other->inserted_genomes)) return false;
-    if (are_different("max_genomes", max_genomes, other->max_genomes)) return false;
-
-    if (are_different("reset_weights", reset_weights, other->reset_weights)) return false;
-    if (are_different("max_epochs", max_epochs, other->max_epochs)) return false;
-    if (are_different("use_sfmp", use_sfmp, other->use_sfmp)) return false;
-    if (are_different("use_node_operations", use_node_operations, other->use_node_operations)) return false;
-
-    if (are_different("initial_batch_size_min", initial_batch_size_min, other->initial_batch_size_min)) return false;
-    if (are_different("initial_batch_size_max", initial_batch_size_max, other->initial_batch_size_max)) return false;
-    if (are_different("batch_size_min", batch_size_min, other->batch_size_min)) return false;
-    if (are_different("batch_size_max", batch_size_max, other->batch_size_max)) return false;
-
-    if (are_different("initial_mu_min", initial_mu_min, other->initial_mu_min)) return false;
-    if (are_different("initial_mu_max", initial_mu_max, other->initial_mu_max)) return false;
-    if (are_different("mu_min", mu_min, other->mu_min)) return false;
-    if (are_different("mu_max", mu_max, other->mu_max)) return false;
-
-    if (are_different("initial_mu_delta_min", initial_mu_delta_min, other->initial_mu_delta_min)) return false;
-    if (are_different("initial_mu_delta_max", initial_mu_delta_max, other->initial_mu_delta_max)) return false;
-    if (are_different("mu_delta_min", mu_delta_min, other->mu_delta_min)) return false;
-    if (are_different("mu_delta_max", mu_delta_max, other->mu_delta_max)) return false;
-
-    if (are_different("initial_learning_rate_min", initial_learning_rate_min, other->initial_learning_rate_min))
+    if (are_different("search_name", search_name, other->search_name)) {
         return false;
-    if (are_different("initial_learning_rate_max", initial_learning_rate_max, other->initial_learning_rate_max))
+    }
+    if (are_different("output_directory", output_directory, other->output_directory)) {
         return false;
-    if (are_different("learning_rate_min", learning_rate_min, other->learning_rate_min)) return false;
-    if (are_different("learning_rate_max", learning_rate_max, other->learning_rate_max)) return false;
+    }
+    if (are_different("training_filename", training_filename, other->training_filename)) {
+        return false;
+    }
+    if (are_different("validation_filename", validation_filename, other->validation_filename)) {
+        return false;
+    }
+    if (are_different("test_filename", test_filename, other->test_filename)) {
+        return false;
+    }
 
-    if (are_different("initial_learning_rate_delta_min", initial_learning_rate_delta_min,
-                      other->initial_learning_rate_delta_min))
+    if (are_different("number_training_images", number_training_images, other->number_training_images)) {
         return false;
-    if (are_different("initial_learning_rate_delta_max", initial_learning_rate_delta_max,
-                      other->initial_learning_rate_delta_max))
+    }
+    if (are_different("number_validation_images", number_validation_images, other->number_validation_images)) {
         return false;
-    if (are_different("learning_rate_delta_min", learning_rate_delta_min, other->learning_rate_delta_min)) return false;
-    if (are_different("learning_rate_delta_max", learning_rate_delta_max, other->learning_rate_delta_max)) return false;
+    }
+    if (are_different("number_test_images", number_test_images, other->number_test_images)) {
+        return false;
+    }
 
-    if (are_different("initial_weight_decay_min", initial_weight_decay_min, other->initial_weight_decay_min))
+    if (are_different("padding", padding, other->padding)) {
         return false;
-    if (are_different("initial_weight_decay_max", initial_weight_decay_max, other->initial_weight_decay_max))
-        return false;
-    if (are_different("weight_decay_min", weight_decay_min, other->weight_decay_min)) return false;
-    if (are_different("weight_decay_max", weight_decay_max, other->weight_decay_max)) return false;
+    }
 
-    if (are_different("initial_weight_decay_delta_min", initial_weight_decay_delta_min,
-                      other->initial_weight_decay_delta_min))
+    if (are_different("image_channels", image_channels, other->image_channels)) {
         return false;
-    if (are_different("initial_weight_decay_delta_max", initial_weight_decay_delta_max,
-                      other->initial_weight_decay_delta_max))
+    }
+    if (are_different("image_rows", image_rows, other->image_rows)) {
         return false;
-    if (are_different("weight_decay_delta_min", weight_decay_delta_min, other->weight_decay_delta_min)) return false;
-    if (are_different("weight_decay_delta_max", weight_decay_delta_max, other->weight_decay_delta_max)) return false;
+    }
+    if (are_different("image_cols", image_cols, other->image_cols)) {
+        return false;
+    }
+    if (are_different("number_classes", number_classes, other->number_classes)) {
+        return false;
+    }
 
-    if (are_different("epsilon", epsilon, other->epsilon)) return false;
+    if (are_different("population_size", population_size, other->population_size)) {
+        return false;
+    }
+    if (are_different("node_innovation_count", node_innovation_count, other->node_innovation_count)) {
+        return false;
+    }
+    if (are_different("edge_innovation_count", edge_innovation_count, other->edge_innovation_count)) {
+        return false;
+    }
 
-    if (are_different("initial_alpha_min", initial_alpha_min, other->initial_alpha_min)) return false;
-    if (are_different("initial_alpha_max", initial_alpha_max, other->initial_alpha_max)) return false;
-    if (are_different("alpha_min", alpha_min, other->alpha_min)) return false;
-    if (are_different("alpha_max", alpha_max, other->alpha_max)) return false;
+    if (are_different("generator", generator, other->generator)) {
+        return false;
+    }
+    if (are_different("normal_distribution", normal_distribution, other->normal_distribution)) {
+        return false;
+    }
+    if (are_different("rng_long", rng_long, other->rng_long)) {
+        return false;
+    }
+    if (are_different("rng_float", rng_float, other->rng_float)) {
+        return false;
+    }
 
-    if (are_different("initial_velocity_reset_min", initial_velocity_reset_min, other->initial_velocity_reset_min))
+    if (are_different("genomes_generated", genomes_generated, other->genomes_generated)) {
         return false;
-    if (are_different("initial_velocity_reset_max", initial_velocity_reset_max, other->initial_velocity_reset_max))
+    }
+    if (are_different("inserted_genomes", inserted_genomes, other->inserted_genomes)) {
         return false;
-    if (are_different("velocity_reset_min", velocity_reset_min, other->velocity_reset_min)) return false;
-    if (are_different("velocity_reset_max", velocity_reset_max, other->velocity_reset_max)) return false;
+    }
+    if (are_different("max_genomes", max_genomes, other->max_genomes)) {
+        return false;
+    }
 
-    if (are_different("initial_input_dropout_probability_min", initial_input_dropout_probability_min,
-                      other->initial_input_dropout_probability_min))
+    if (are_different("reset_weights", reset_weights, other->reset_weights)) {
         return false;
-    if (are_different("initial_input_dropout_probability_max", initial_input_dropout_probability_max,
-                      other->initial_input_dropout_probability_max))
+    }
+    if (are_different("max_epochs", max_epochs, other->max_epochs)) {
         return false;
-    if (are_different("input_dropout_probability_min", input_dropout_probability_min,
-                      other->input_dropout_probability_min))
+    }
+    if (are_different("use_sfmp", use_sfmp, other->use_sfmp)) {
         return false;
-    if (are_different("input_dropout_probability_max", input_dropout_probability_max,
-                      other->input_dropout_probability_max))
+    }
+    if (are_different("use_node_operations", use_node_operations, other->use_node_operations)) {
         return false;
+    }
 
-    if (are_different("initial_hidden_dropout_probability_min", initial_hidden_dropout_probability_min,
-                      other->initial_hidden_dropout_probability_min))
+    if (are_different("initial_batch_size_min", initial_batch_size_min, other->initial_batch_size_min)) {
         return false;
-    if (are_different("initial_hidden_dropout_probability_max", initial_hidden_dropout_probability_max,
-                      other->initial_hidden_dropout_probability_max))
+    }
+    if (are_different("initial_batch_size_max", initial_batch_size_max, other->initial_batch_size_max)) {
         return false;
-    if (are_different("hidden_dropout_probability_min", hidden_dropout_probability_min,
-                      other->hidden_dropout_probability_min))
+    }
+    if (are_different("batch_size_min", batch_size_min, other->batch_size_min)) {
         return false;
-    if (are_different("hidden_dropout_probability_max", hidden_dropout_probability_max,
-                      other->hidden_dropout_probability_max))
+    }
+    if (are_different("batch_size_max", batch_size_max, other->batch_size_max)) {
         return false;
+    }
 
-    if (are_different("reset_weights_chance", reset_weights_chance, other->reset_weights_chance)) return false;
-
-    if (are_different("crossover_rate", crossover_rate, other->crossover_rate)) return false;
-    if (are_different("more_fit_parent_crossover", more_fit_parent_crossover, other->more_fit_parent_crossover))
+    if (are_different("initial_mu_min", initial_mu_min, other->initial_mu_min)) {
         return false;
-    if (are_different("less_fit_parent_crossover", less_fit_parent_crossover, other->less_fit_parent_crossover))
+    }
+    if (are_different("initial_mu_max", initial_mu_max, other->initial_mu_max)) {
         return false;
-    if (are_different("crossover_alter_edge_type", crossover_alter_edge_type, other->crossover_alter_edge_type))
+    }
+    if (are_different("mu_min", mu_min, other->mu_min)) {
         return false;
+    }
+    if (are_different("mu_max", mu_max, other->mu_max)) {
+        return false;
+    }
 
-    if (are_different("number_mutations", number_mutations, other->number_mutations)) return false;
+    if (are_different("initial_mu_delta_min", initial_mu_delta_min, other->initial_mu_delta_min)) {
+        return false;
+    }
+    if (are_different("initial_mu_delta_max", initial_mu_delta_max, other->initial_mu_delta_max)) {
+        return false;
+    }
+    if (are_different("mu_delta_min", mu_delta_min, other->mu_delta_min)) {
+        return false;
+    }
+    if (are_different("mu_delta_max", mu_delta_max, other->mu_delta_max)) {
+        return false;
+    }
 
-    if (are_different("edge_alter_type", edge_alter_type, other->edge_alter_type)) return false;
-    if (are_different("edge_disable", edge_disable, other->edge_disable)) return false;
-    if (are_different("edge_enable", edge_enable, other->edge_enable)) return false;
-    if (are_different("edge_split", edge_split, other->edge_split)) return false;
-    if (are_different("edge_add", edge_add, other->edge_add)) return false;
-    if (are_different("node_change_size", node_change_size, other->node_change_size)) return false;
-    if (are_different("node_change_size_x", node_change_size_x, other->node_change_size_x)) return false;
-    if (are_different("node_change_size_y", node_change_size_y, other->node_change_size_y)) return false;
-    if (are_different("node_add", node_add, other->node_add)) return false;
-    if (are_different("node_split", node_split, other->node_split)) return false;
-    if (are_different("node_merge", node_merge, other->node_merge)) return false;
-    if (are_different("node_enable", node_enable, other->node_enable)) return false;
-    if (are_different("node_disable", node_disable, other->node_disable)) return false;
+    if (are_different("initial_learning_rate_min", initial_learning_rate_min, other->initial_learning_rate_min)) {
+        return false;
+    }
+    if (are_different("initial_learning_rate_max", initial_learning_rate_max, other->initial_learning_rate_max)) {
+        return false;
+    }
+    if (are_different("learning_rate_min", learning_rate_min, other->learning_rate_min)) {
+        return false;
+    }
+    if (are_different("learning_rate_max", learning_rate_max, other->learning_rate_max)) {
+        return false;
+    }
 
-    if (are_different("inserted_from_map", inserted_from_map, other->inserted_from_map)) return false;
-    if (are_different("generated_from_map", generated_from_map, other->generated_from_map)) return false;
+    if (are_different(
+            "initial_learning_rate_delta_min", initial_learning_rate_delta_min, other->initial_learning_rate_delta_min
+        )) {
+        return false;
+    }
+    if (are_different(
+            "initial_learning_rate_delta_max", initial_learning_rate_delta_max, other->initial_learning_rate_delta_max
+        )) {
+        return false;
+    }
+    if (are_different("learning_rate_delta_min", learning_rate_delta_min, other->learning_rate_delta_min)) {
+        return false;
+    }
+    if (are_different("learning_rate_delta_max", learning_rate_delta_max, other->learning_rate_delta_max)) {
+        return false;
+    }
+
+    if (are_different("initial_weight_decay_min", initial_weight_decay_min, other->initial_weight_decay_min)) {
+        return false;
+    }
+    if (are_different("initial_weight_decay_max", initial_weight_decay_max, other->initial_weight_decay_max)) {
+        return false;
+    }
+    if (are_different("weight_decay_min", weight_decay_min, other->weight_decay_min)) {
+        return false;
+    }
+    if (are_different("weight_decay_max", weight_decay_max, other->weight_decay_max)) {
+        return false;
+    }
+
+    if (are_different(
+            "initial_weight_decay_delta_min", initial_weight_decay_delta_min, other->initial_weight_decay_delta_min
+        )) {
+        return false;
+    }
+    if (are_different(
+            "initial_weight_decay_delta_max", initial_weight_decay_delta_max, other->initial_weight_decay_delta_max
+        )) {
+        return false;
+    }
+    if (are_different("weight_decay_delta_min", weight_decay_delta_min, other->weight_decay_delta_min)) {
+        return false;
+    }
+    if (are_different("weight_decay_delta_max", weight_decay_delta_max, other->weight_decay_delta_max)) {
+        return false;
+    }
+
+    if (are_different("epsilon", epsilon, other->epsilon)) {
+        return false;
+    }
+
+    if (are_different("initial_alpha_min", initial_alpha_min, other->initial_alpha_min)) {
+        return false;
+    }
+    if (are_different("initial_alpha_max", initial_alpha_max, other->initial_alpha_max)) {
+        return false;
+    }
+    if (are_different("alpha_min", alpha_min, other->alpha_min)) {
+        return false;
+    }
+    if (are_different("alpha_max", alpha_max, other->alpha_max)) {
+        return false;
+    }
+
+    if (are_different("initial_velocity_reset_min", initial_velocity_reset_min, other->initial_velocity_reset_min)) {
+        return false;
+    }
+    if (are_different("initial_velocity_reset_max", initial_velocity_reset_max, other->initial_velocity_reset_max)) {
+        return false;
+    }
+    if (are_different("velocity_reset_min", velocity_reset_min, other->velocity_reset_min)) {
+        return false;
+    }
+    if (are_different("velocity_reset_max", velocity_reset_max, other->velocity_reset_max)) {
+        return false;
+    }
+
+    if (are_different(
+            "initial_input_dropout_probability_min", initial_input_dropout_probability_min,
+            other->initial_input_dropout_probability_min
+        )) {
+        return false;
+    }
+    if (are_different(
+            "initial_input_dropout_probability_max", initial_input_dropout_probability_max,
+            other->initial_input_dropout_probability_max
+        )) {
+        return false;
+    }
+    if (are_different(
+            "input_dropout_probability_min", input_dropout_probability_min, other->input_dropout_probability_min
+        )) {
+        return false;
+    }
+    if (are_different(
+            "input_dropout_probability_max", input_dropout_probability_max, other->input_dropout_probability_max
+        )) {
+        return false;
+    }
+
+    if (are_different(
+            "initial_hidden_dropout_probability_min", initial_hidden_dropout_probability_min,
+            other->initial_hidden_dropout_probability_min
+        )) {
+        return false;
+    }
+    if (are_different(
+            "initial_hidden_dropout_probability_max", initial_hidden_dropout_probability_max,
+            other->initial_hidden_dropout_probability_max
+        )) {
+        return false;
+    }
+    if (are_different(
+            "hidden_dropout_probability_min", hidden_dropout_probability_min, other->hidden_dropout_probability_min
+        )) {
+        return false;
+    }
+    if (are_different(
+            "hidden_dropout_probability_max", hidden_dropout_probability_max, other->hidden_dropout_probability_max
+        )) {
+        return false;
+    }
+
+    if (are_different("reset_weights_chance", reset_weights_chance, other->reset_weights_chance)) {
+        return false;
+    }
+
+    if (are_different("crossover_rate", crossover_rate, other->crossover_rate)) {
+        return false;
+    }
+    if (are_different("more_fit_parent_crossover", more_fit_parent_crossover, other->more_fit_parent_crossover)) {
+        return false;
+    }
+    if (are_different("less_fit_parent_crossover", less_fit_parent_crossover, other->less_fit_parent_crossover)) {
+        return false;
+    }
+    if (are_different("crossover_alter_edge_type", crossover_alter_edge_type, other->crossover_alter_edge_type)) {
+        return false;
+    }
+
+    if (are_different("number_mutations", number_mutations, other->number_mutations)) {
+        return false;
+    }
+
+    if (are_different("edge_alter_type", edge_alter_type, other->edge_alter_type)) {
+        return false;
+    }
+    if (are_different("edge_disable", edge_disable, other->edge_disable)) {
+        return false;
+    }
+    if (are_different("edge_enable", edge_enable, other->edge_enable)) {
+        return false;
+    }
+    if (are_different("edge_split", edge_split, other->edge_split)) {
+        return false;
+    }
+    if (are_different("edge_add", edge_add, other->edge_add)) {
+        return false;
+    }
+    if (are_different("node_change_size", node_change_size, other->node_change_size)) {
+        return false;
+    }
+    if (are_different("node_change_size_x", node_change_size_x, other->node_change_size_x)) {
+        return false;
+    }
+    if (are_different("node_change_size_y", node_change_size_y, other->node_change_size_y)) {
+        return false;
+    }
+    if (are_different("node_add", node_add, other->node_add)) {
+        return false;
+    }
+    if (are_different("node_split", node_split, other->node_split)) {
+        return false;
+    }
+    if (are_different("node_merge", node_merge, other->node_merge)) {
+        return false;
+    }
+    if (are_different("node_enable", node_enable, other->node_enable)) {
+        return false;
+    }
+    if (are_different("node_disable", node_disable, other->node_disable)) {
+        return false;
+    }
+
+    if (are_different("inserted_from_map", inserted_from_map, other->inserted_from_map)) {
+        return false;
+    }
+    if (are_different("generated_from_map", generated_from_map, other->generated_from_map)) {
+        return false;
+    }
 
     // genomes
     for (uint32_t i = 0; i < genomes.size(); i++) {

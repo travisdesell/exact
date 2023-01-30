@@ -25,11 +25,11 @@ using std::vector;
 
 class LogFile {
    private:
-    FILE *file;
+    FILE* file;
     mutex file_mutex;
 
    public:
-    LogFile(FILE *file);
+    LogFile(FILE* file);
 
     friend class Log;
 };
@@ -93,7 +93,7 @@ class Log {
      * A map of human readable ids to output files which the log messages
      * will be written to.
      */
-    static map<string, LogFile *> output_files;
+    static map<string, LogFile*> output_files;
 
     /**
      * A std::shared_mutex protecting the Log::thread_ids map.
@@ -112,8 +112,9 @@ class Log {
      * \param message_type the format string for this message (as in printf)
      * \param arguments the arguments for the print statement
      */
-    static void write_message(bool print_header, int8_t message_level, const char *message_type, const char *format,
-                              va_list arguments);
+    static void write_message(
+        bool print_header, int8_t message_level, const char* message_type, const char* format, va_list arguments
+    );
 
    public:
     static const int8_t NONE = 0;    /**< Specifies no messages will be logged. */
@@ -146,7 +147,7 @@ class Log {
      *  \param arguments the command line arguments
      *  Log::register_command_line_arguments() must be called before Log::initialize()
      */
-    static void initialize(const vector<string> &arguments);
+    static void initialize(const vector<string>& arguments);
 
     /**
      * Sets the MPI process rank for this Log.
@@ -203,31 +204,37 @@ class Log {
      */
     static bool at_level(int8_t level);
 
-    static void fatal(const char *format, ...);   /**< Logs a fatal message. varargs are the same as in printf. */
-    static void error(const char *format, ...);   /**< Logs an error message. varargs are the same as in printf. */
-    static void warning(const char *format, ...); /**< Logs a warning message. varargs are the same as in printf. */
-    static void info(const char *format, ...);    /**< Logs an info message. varargs are the same as in printf. */
-    static void debug(const char *format, ...);   /**< Logs a debug message. varargs are the same as in printf. */
-    static void trace(const char *format, ...);   /**< Logs a trace message. varargs are the same as in printf. */
+    static void fatal(const char* format, ...);   /**< Logs a fatal message. varargs are the same as in printf. */
+    static void error(const char* format, ...);   /**< Logs an error message. varargs are the same as in printf. */
+    static void warning(const char* format, ...); /**< Logs a warning message. varargs are the same as in printf. */
+    static void info(const char* format, ...);    /**< Logs an info message. varargs are the same as in printf. */
+    static void debug(const char* format, ...);   /**< Logs a debug message. varargs are the same as in printf. */
+    static void trace(const char* format, ...);   /**< Logs a trace message. varargs are the same as in printf. */
 
-    static void fatal_no_header(const char *format,
-                                ...); /**< Logs a fatal message. Does not print the message header (useful if doing
-                                         multiple log prints to the same line). varargs are the same as in printf. */
-    static void error_no_header(const char *format,
-                                ...); /**< Logs an error message. Does not print the message header (useful if doing
-                                         multiple log prints to the same line).  varargs are the same as in printf. */
-    static void warning_no_header(const char *format,
-                                  ...); /**< Logs a warning message. Does not print the message header (useful if doing
-                                           multiple log prints to the same line).  varargs are the same as in printf. */
-    static void info_no_header(const char *format,
-                               ...); /**< Logs an info message. Does not print the message header (useful if doing
-                                        multiple log prints to the same line).  varargs are the same as in printf. */
-    static void debug_no_header(const char *format,
-                                ...); /**< Logs a debug message. Does not print the message header (useful if doing
-                                         multiple log prints to the same line).  varargs are the same as in printf. */
-    static void trace_no_header(const char *format,
-                                ...); /**< Logs a trace message. Does not print the message header (useful if doing
-                                         multiple log prints to the same line).  varargs are the same as in printf. */
+    static void fatal_no_header(
+        const char* format, ...
+    ); /**< Logs a fatal message. Does not print the message header (useful if doing
+          multiple log prints to the same line). varargs are the same as in printf. */
+    static void error_no_header(
+        const char* format, ...
+    ); /**< Logs an error message. Does not print the message header (useful if doing
+          multiple log prints to the same line).  varargs are the same as in printf. */
+    static void warning_no_header(
+        const char* format, ...
+    ); /**< Logs a warning message. Does not print the message header (useful if doing
+          multiple log prints to the same line).  varargs are the same as in printf. */
+    static void info_no_header(
+        const char* format, ...
+    ); /**< Logs an info message. Does not print the message header (useful if doing
+          multiple log prints to the same line).  varargs are the same as in printf. */
+    static void debug_no_header(
+        const char* format, ...
+    ); /**< Logs a debug message. Does not print the message header (useful if doing
+          multiple log prints to the same line).  varargs are the same as in printf. */
+    static void trace_no_header(
+        const char* format, ...
+    ); /**< Logs a trace message. Does not print the message header (useful if doing
+          multiple log prints to the same line).  varargs are the same as in printf. */
 };
 
 #endif

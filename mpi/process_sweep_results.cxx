@@ -32,12 +32,14 @@ using std::vector;
 #include "run_statistics.hxx"
 #include "tracker.hxx"
 
-map<string, map<string, vector<RNN_Genome *>>> genome_map;
+map<string, map<string, vector<RNN_Genome*>>> genome_map;
 
-vector<RunStatistics *> run_statistics;
+vector<RunStatistics*> run_statistics;
 
 bool extension_is(string name, string extension) {
-    if (name.size() < 4) return false;
+    if (name.size() < 4) {
+        return false;
+    }
 
     string ext = name.substr(name.length() - 4, 4);
 
@@ -50,13 +52,17 @@ string current_output;
 string current_run_type;
 
 void process_dir(string dir_name, int32_t depth) {
-    DIR *dir;
-    struct dirent *ent;
+    DIR* dir;
+    struct dirent* ent;
     if ((dir = opendir(dir_name.c_str())) != NULL) {
         /* print all the files and directories within directory */
         while ((ent = readdir(dir)) != NULL) {
-            if (ent->d_name[0] == '.') continue;
-            if (strcmp(ent->d_name, "logs") == 0 && depth == 0) continue;
+            if (ent->d_name[0] == '.') {
+                continue;
+            }
+            if (strcmp(ent->d_name, "logs") == 0 && depth == 0) {
+                continue;
+            }
 
             if (depth == 0) {
                 current_output = ent->d_name;
@@ -68,7 +74,9 @@ void process_dir(string dir_name, int32_t depth) {
                 cout << "set current run type to '" << current_run_type << "'" << endl;
             }
 
-            if (depth == 2 && extension_is(ent->d_name, ".csv")) { continue; }
+            if (depth == 2 && extension_is(ent->d_name, ".csv")) {
+                continue;
+            }
 
             string sub_dir_name = dir_name + "/" + ent->d_name;
             // cout << sub_dir_name << ", depth: " << depth << endl;
@@ -76,7 +84,7 @@ void process_dir(string dir_name, int32_t depth) {
             if (depth == 3 && extension_is(sub_dir_name, ".bin")) {
                 cout << "\tprocessing genome binary '" << sub_dir_name << "' for '" << current_output << "'"
                      << " and " << current_run_type;
-                RNN_Genome *genome = new RNN_Genome(sub_dir_name);
+                RNN_Genome* genome = new RNN_Genome(sub_dir_name);
                 cout << ", fitness: " << genome->get_fitness() << endl;
 
                 genome_map[current_output][current_run_type].push_back(genome);
@@ -92,7 +100,7 @@ void process_dir(string dir_name, int32_t depth) {
     }
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
     vector<string> arguments = vector<string>(argv, argv + argc);
 
     string path = arguments[1];
@@ -116,11 +124,11 @@ int main(int argc, char **argv) {
         for (auto j = i->second.begin(); j != i->second.end(); j++) {
             string run_type = j->first;
 
-            RunStatistics *rs = new RunStatistics(output_name, run_type);
+            RunStatistics* rs = new RunStatistics(output_name, run_type);
 
             // iterate over the vector of genomes
             for (auto k = j->second.begin(); k != j->second.end(); k++) {
-                RNN_Genome *genome = *k;
+                RNN_Genome* genome = *k;
 
                 cout << i->first << "," << j->first << "," << genome->get_best_validation_mse() << ","
                      << genome->get_best_validation_mae() << "," << genome->get_enabled_edge_count() << ","
@@ -183,11 +191,13 @@ int main(int argc, char **argv) {
 
     // process the kfold sweep directories, these should start with "sweep"
     DIR *dir, *subdir;
-    struct dirent *ent;
+    struct dirent* ent;
     if ((dir = opendir(path.c_str())) != NULL) {
         /* print all the files and directories within directory */
         while ((ent = readdir(dir)) != NULL) {
-            if (ent->d_name[0] != 's') continue;
+            if (ent->d_name[0] != 's') {
+                continue;
+            }
 
             string sweep_directory = ent->d_name;
             cout << "processing sweep directory: " << ent->d_name << endl;
@@ -394,7 +404,7 @@ int main(int argc, char **argv) {
     cout << "\\end{scriptsize}" << endl;
     cout << "\\end{table}" << endl;
 
-    map<string, vector<RunStatistics *>> output_sorted_statistics;
+    map<string, vector<RunStatistics*>> output_sorted_statistics;
     cout << endl << endl;
 
     for (int32_t i = 0; i < (int32_t) output_types.size(); i++) {
@@ -435,7 +445,7 @@ int main(int argc, char **argv) {
     run_types.push_back("gru_simple_rec");
     run_types.push_back("ugrnn_simple_rec");
 
-    map<string, ConsolidatedStatistics *> consolidated_statistics;
+    map<string, ConsolidatedStatistics*> consolidated_statistics;
 
     for (int32_t i = 0; i < (int32_t) run_types.size(); i++) {
         consolidated_statistics[run_types[i]] = new ConsolidatedStatistics(run_types[i]);
@@ -444,7 +454,7 @@ int main(int argc, char **argv) {
     for (int32_t i = 0; i < (int32_t) output_types.size(); i++) {
         cout << "GENERATING sorted stats for: '" << output_types[i] << "'" << endl;
 
-        vector<RunStatistics *> current = output_sorted_statistics[output_types[i]];
+        vector<RunStatistics*> current = output_sorted_statistics[output_types[i]];
 
         cout << "got current!" << endl;
 
@@ -494,9 +504,9 @@ int main(int argc, char **argv) {
 
         cout << "updated consolidated statistics!" << endl;
 
-        vector<RunStatistics *> sorted_by_min = current;
-        vector<RunStatistics *> sorted_by_avg = current;
-        vector<RunStatistics *> sorted_by_max = current;
+        vector<RunStatistics*> sorted_by_min = current;
+        vector<RunStatistics*> sorted_by_avg = current;
+        vector<RunStatistics*> sorted_by_max = current;
 
         cout << "sorting!" << endl;
 
@@ -534,9 +544,9 @@ int main(int argc, char **argv) {
         cout << "\\end{table}" << endl;
     }
 
-    vector<ConsolidatedStatistics *> min_stats_vector;
-    vector<ConsolidatedStatistics *> avg_stats_vector;
-    vector<ConsolidatedStatistics *> max_stats_vector;
+    vector<ConsolidatedStatistics*> min_stats_vector;
+    vector<ConsolidatedStatistics*> avg_stats_vector;
+    vector<ConsolidatedStatistics*> max_stats_vector;
 
     for (auto i = consolidated_statistics.begin(); i != consolidated_statistics.end(); i++) {
         min_stats_vector.push_back(i->second);

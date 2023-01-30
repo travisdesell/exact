@@ -23,7 +23,7 @@ using std::vector;
 #include "cnn/cnn_node.hxx"
 #include "cnn/exact.hxx"
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
     vector<string> arguments = vector<string>(argv, argv + argc);
 
     string training_data;
@@ -36,7 +36,7 @@ int main(int argc, char **argv) {
     int exact_id = -1;
 #endif
 
-    vector<CNN_Genome *> genomes;
+    vector<CNN_Genome*> genomes;
 
     if (argument_exists(arguments, "--genome_files")) {
         vector<string> genome_filenames;
@@ -55,9 +55,11 @@ int main(int argc, char **argv) {
 
         get_argument(arguments, "--exact_id", true, exact_id);
 
-        EXACT *exact = new EXACT(exact_id);
+        EXACT* exact = new EXACT(exact_id);
 
-        for (int32_t i = 0; i < exact->get_number_genomes(); i++) { genomes.push_back(exact->get_genome(i)); }
+        for (int32_t i = 0; i < exact->get_number_genomes(); i++) {
+            genomes.push_back(exact->get_genome(i));
+        }
 #endif
     } else {
         cerr << "ERROR: need either --genome_files or --exact_id argument to initialize genomes." << endl;
@@ -72,8 +74,9 @@ int main(int argc, char **argv) {
         expected_classes[i] = testing_images.get_classification(i);
     }
 
-    vector<vector<float>> predictions(testing_images.get_number_images(),
-                                      vector<float>(testing_images.get_number_classes(), 0));
+    vector<vector<float>> predictions(
+        testing_images.get_number_images(), vector<float>(testing_images.get_number_classes(), 0)
+    );
 
     for (uint32_t i = 0; i < genomes.size(); i++) {
         cout << "evaluating predictions for genome " << i << " of " << genomes.size()

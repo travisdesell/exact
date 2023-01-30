@@ -62,7 +62,7 @@ vector<string> arguments;
 vector<vector<vector<double> > > testing_inputs;
 vector<vector<vector<double> > > testing_outputs;
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
     arguments = vector<string>(argv, argv + argc);
 
     Log::initialize(arguments);
@@ -71,7 +71,7 @@ int main(int argc, char **argv) {
     vector<string> genome_filenames;
     get_argument_vector(arguments, "--genome_filenames", true, genome_filenames);
 
-    vector<RNN_Genome *> genomes;
+    vector<RNN_Genome*> genomes;
     for (int32_t i = 0; i < (int32_t) genome_filenames.size(); i++) {
         Log::info("reading genome filename: %s\n", genome_filenames[i].c_str());
         genomes.push_back(new RNN_Genome(genome_filenames[i]));
@@ -81,8 +81,10 @@ int main(int argc, char **argv) {
     get_argument_vector(arguments, "--time_offsets", true, time_offsets);
 
     if (time_offsets.size() != genome_filenames.size()) {
-        Log::fatal("ERROR: number of time_offsets (%d) != number of genome_files: (%d)\n", time_offsets.size(),
-                   genome_filenames.size());
+        Log::fatal(
+            "ERROR: number of time_offsets (%d) != number of genome_files: (%d)\n", time_offsets.size(),
+            genome_filenames.size()
+        );
         exit(1);
     }
 
@@ -96,15 +98,18 @@ int main(int argc, char **argv) {
 
     // TODO: should check that all genomes have the same output parameter name(s)
 
-    TimeSeriesSets *time_series_sets = TimeSeriesSets::generate_test(
-        testing_filenames, genomes[0]->get_input_parameter_names(), genomes[0]->get_output_parameter_names());
+    TimeSeriesSets* time_series_sets = TimeSeriesSets::generate_test(
+        testing_filenames, genomes[0]->get_input_parameter_names(), genomes[0]->get_output_parameter_names()
+    );
 
     string normalize_type = genomes[0]->get_normalize_type();
     if (normalize_type.compare("min_max") == 0) {
         time_series_sets->normalize_min_max(genomes[0]->get_normalize_mins(), genomes[0]->get_normalize_maxs());
     } else if (normalize_type.compare("avg_std_dev") == 0) {
-        time_series_sets->normalize_avg_std_dev(genomes[0]->get_normalize_avgs(), genomes[0]->get_normalize_std_devs(),
-                                                genomes[0]->get_normalize_mins(), genomes[0]->get_normalize_maxs());
+        time_series_sets->normalize_avg_std_dev(
+            genomes[0]->get_normalize_avgs(), genomes[0]->get_normalize_std_devs(), genomes[0]->get_normalize_mins(),
+            genomes[0]->get_normalize_maxs()
+        );
     }
 
     vector<vector<double> > full_series;
@@ -115,22 +120,26 @@ int main(int argc, char **argv) {
     time_series_sets->export_series_by_name(output_parameter_name, full_series);
 
     all_series.push_back(full_series[0]);
-    Log::debug("output_parameter_name: %s, full_series.size(): %d, full_series[0].size(): %d\n",
-               output_parameter_name.c_str(), full_series.size(), full_series[0].size());
+    Log::debug(
+        "output_parameter_name: %s, full_series.size(): %d, full_series[0].size(): %d\n", output_parameter_name.c_str(),
+        full_series.size(), full_series[0].size()
+    );
 
     delete time_series_sets;
 
     for (int32_t i = 0; i < (int32_t) genomes.size(); i++) {
-        time_series_sets = TimeSeriesSets::generate_test(testing_filenames, genomes[i]->get_input_parameter_names(),
-                                                         genomes[i]->get_output_parameter_names());
+        time_series_sets = TimeSeriesSets::generate_test(
+            testing_filenames, genomes[i]->get_input_parameter_names(), genomes[i]->get_output_parameter_names()
+        );
         Log::debug("got time series sets.\n");
         string normalize_type = genomes[i]->get_normalize_type();
         if (normalize_type.compare("min_max") == 0) {
             time_series_sets->normalize_min_max(genomes[i]->get_normalize_mins(), genomes[i]->get_normalize_maxs());
         } else if (normalize_type.compare("avg_std_dev") == 0) {
-            time_series_sets->normalize_avg_std_dev(genomes[i]->get_normalize_avgs(),
-                                                    genomes[i]->get_normalize_std_devs(),
-                                                    genomes[i]->get_normalize_mins(), genomes[i]->get_normalize_maxs());
+            time_series_sets->normalize_avg_std_dev(
+                genomes[i]->get_normalize_avgs(), genomes[i]->get_normalize_std_devs(),
+                genomes[i]->get_normalize_mins(), genomes[i]->get_normalize_maxs()
+            );
         }
 
         Log::debug("normalized time series.\n");
@@ -172,13 +181,14 @@ int main(int argc, char **argv) {
         for (int32_t i = 0; i < (int32_t) all_series.size(); i++) {
             Log::debug("all_series[%d].size(): %d\n", i, all_series[i].size());
 
-            if (i == 0)
+            if (i == 0) {
                 outfile << all_series[0][row];
-            else {
-                if (row < time_offsets[i - 1])
+            } else {
+                if (row < time_offsets[i - 1]) {
                     outfile << ",";
-                else
+                } else {
                     outfile << "," << all_series[i][row - time_offsets[i - 1]];
+                }
             }
         }
         outfile << endl;

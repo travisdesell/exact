@@ -23,7 +23,7 @@ using std::vector;
 #include "cnn/cnn_node.hxx"
 #include "cnn/exact.hxx"
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
     vector<string> arguments = vector<string>(argv, argv + argc);
 
     string db_file;
@@ -40,18 +40,19 @@ int main(int argc, char **argv) {
     get_argument(arguments, "--genome_file", true, genome_filename);
 
     bool is_checkpoint = false;
-    CNN_Genome *genome_from_file = new CNN_Genome(genome_filename, is_checkpoint);
+    CNN_Genome* genome_from_file = new CNN_Genome(genome_filename, is_checkpoint);
 
     genome_from_file->export_to_database(-1000);
 
     int genome_id = genome_from_file->get_genome_id();
     cout << "GENOME EXPORTED TO DATABASE WITH ID: " << genome_id << endl;
 
-    CNN_Genome *genome_from_database = new CNN_Genome(genome_id);
+    CNN_Genome* genome_from_database = new CNN_Genome(genome_id);
 
     Images training_images(training_data, genome_from_file->get_padding());
-    Images testing_images(testing_data, genome_from_file->get_padding(), training_images.get_average(),
-                          training_images.get_std_dev());
+    Images testing_images(
+        testing_data, genome_from_file->get_padding(), training_images.get_average(), training_images.get_std_dev()
+    );
 
     float error;
     int predictions;

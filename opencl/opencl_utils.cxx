@@ -11,7 +11,7 @@
 #include <string.h>
 #include <time.h>
 
-void check_error(cl_int err, const char *fmt, ...) {
+void check_error(cl_int err, const char* fmt, ...) {
     va_list argp;
     va_start(argp, fmt);
 
@@ -34,7 +34,9 @@ cl_device_id create_device() {
 
     /* Access a device */
     err = clGetDeviceIDs(platform, CL_DEVICE_TYPE_GPU, 1, &dev, NULL);
-    if (err == CL_DEVICE_NOT_FOUND) { err = clGetDeviceIDs(platform, CL_DEVICE_TYPE_CPU, 1, &dev, NULL); }
+    if (err == CL_DEVICE_NOT_FOUND) {
+        err = clGetDeviceIDs(platform, CL_DEVICE_TYPE_CPU, 1, &dev, NULL);
+    }
 
     check_error(err, "Couldn't access any devices");
 
@@ -64,8 +66,9 @@ cl_device_id create_device() {
 
     clGetDeviceInfo(dev, CL_DEVICE_MAX_CONSTANT_BUFFER_SIZE, sizeof(constantBufferSize), &constantBufferSize, NULL);
     clGetDeviceInfo(dev, CL_DEVICE_MAX_WORK_GROUP_SIZE, sizeof(maxWorkGroupSize), &maxWorkGroupSize, NULL);
-    clGetDeviceInfo(dev, CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS, sizeof(maxWorkItemDimensions), &maxWorkItemDimensions,
-                    NULL);
+    clGetDeviceInfo(
+        dev, CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS, sizeof(maxWorkItemDimensions), &maxWorkItemDimensions, NULL
+    );
 
     clGetDeviceInfo(dev, CL_DEVICE_MAX_WORK_ITEM_SIZES, sizeof(maxWorkItemSizes), &maxWorkItemSizes, NULL);
 
@@ -88,9 +91,9 @@ cl_device_id create_device() {
 }
 
 /* Create program from a file and compile it */
-cl_program build_program(cl_context ctx, cl_device_id dev, const char *filename) {
+cl_program build_program(cl_context ctx, cl_device_id dev, const char* filename) {
     cl_program program;
-    FILE *program_handle;
+    FILE* program_handle;
     char *program_buffer, *program_log;
     size_t program_size, log_size;
     int err;
@@ -105,13 +108,13 @@ cl_program build_program(cl_context ctx, cl_device_id dev, const char *filename)
     fseek(program_handle, 0, SEEK_END);
     program_size = ftell(program_handle);
     rewind(program_handle);
-    program_buffer = (char *) malloc(program_size + 1);
+    program_buffer = (char*) malloc(program_size + 1);
     program_buffer[program_size] = '\0';
     fread(program_buffer, sizeof(char), program_size, program_handle);
     fclose(program_handle);
 
     /* Create program from file */
-    program = clCreateProgramWithSource(ctx, 1, (const char **) &program_buffer, &program_size, &err);
+    program = clCreateProgramWithSource(ctx, 1, (const char**) &program_buffer, &program_size, &err);
     check_error(err, "Couldn't create the program: '%s'", filename);
     free(program_buffer);
 
@@ -120,7 +123,7 @@ cl_program build_program(cl_context ctx, cl_device_id dev, const char *filename)
     if (err < 0) {
         /* Find size of log and print to std output */
         clGetProgramBuildInfo(program, dev, CL_PROGRAM_BUILD_LOG, 0, NULL, &log_size);
-        program_log = (char *) malloc(log_size + 1);
+        program_log = (char*) malloc(log_size + 1);
         program_log[log_size] = '\0';
         clGetProgramBuildInfo(program, dev, CL_PROGRAM_BUILD_LOG, log_size + 1, program_log, NULL);
         printf("%s\n", program_log);

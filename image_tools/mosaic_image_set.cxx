@@ -30,22 +30,26 @@ using std::ostringstream;
 #include "tiff.h"
 #include "tiffio.h"
 
-Point::Point(int _y, int _x) : y(_y), x(_x) {}
+Point::Point(int _y, int _x) : y(_y), x(_x) {
+}
 
-Line::Line(int _y1, int _x1, int _y2, int _x2) : y1(_y1), x1(_x1), y2(_y2), x2(_x2) {}
+Line::Line(int _y1, int _x1, int _y2, int _x2) : y1(_y1), x1(_x1), y2(_y2), x2(_x2) {
+}
 
-Rectangle::Rectangle(int _y1, int _x1, int _y2, int _x2) : y1(_y1), x1(_x1), y2(_y2), x2(_x2) {}
+Rectangle::Rectangle(int _y1, int _x1, int _y2, int _x2) : y1(_y1), x1(_x1), y2(_y2), x2(_x2) {
+}
 
-void MosaicImages::get_mosaic_pixels(string filename, vector<vector<vector<uint8_t> > > &pixels, uint32_t &height,
-                                     uint32_t &width) {
-    TIFF *tif = TIFFOpen(filename.c_str(), "r");
+void MosaicImages::get_mosaic_pixels(
+    string filename, vector<vector<vector<uint8_t> > >& pixels, uint32_t& height, uint32_t& width
+) {
+    TIFF* tif = TIFFOpen(filename.c_str(), "r");
     TIFFGetField(tif, TIFFTAG_IMAGELENGTH, &height);  // uint32 height;
     TIFFGetField(tif, TIFFTAG_IMAGEWIDTH, &width);    // uint32 width;
     TIFFGetField(tif, TIFFTAG_SAMPLESPERPIXEL, &channels);
 
     cout << filename << ", height: " << height << ", width: " << width << ", channels: " << channels << endl;
 
-    uint32_t *raster = (uint32_t *) _TIFFmalloc(height * width * sizeof(uint32_t));
+    uint32_t* raster = (uint32_t*) _TIFFmalloc(height * width * sizeof(uint32_t));
     TIFFReadRGBAImage(tif, width, height, raster, 0);
 
     pixels.resize(channels, vector<vector<uint8_t> >(height, vector<uint8_t>(width, 0)));
@@ -55,9 +59,15 @@ void MosaicImages::get_mosaic_pixels(string filename, vector<vector<vector<uint8
     int current_x = 0;
     for (uint32_t i = 0; i < height * width; i++) {
         pixels[0][height - 1 - current_y][current_x] = TIFFGetR(raster[i]);
-        if (channels > 1) pixels[1][height - 1 - current_y][current_x] = TIFFGetG(raster[i]);
-        if (channels > 2) pixels[2][height - 1 - current_y][current_x] = TIFFGetB(raster[i]);
-        if (channels > 3) pixels[3][height - 1 - current_y][current_x] = TIFFGetA(raster[i]);
+        if (channels > 1) {
+            pixels[1][height - 1 - current_y][current_x] = TIFFGetG(raster[i]);
+        }
+        if (channels > 2) {
+            pixels[2][height - 1 - current_y][current_x] = TIFFGetB(raster[i]);
+        }
+        if (channels > 3) {
+            pixels[3][height - 1 - current_y][current_x] = TIFFGetA(raster[i]);
+        }
 
         current_x++;
         if (current_x == width) {
@@ -69,8 +79,9 @@ void MosaicImages::get_mosaic_pixels(string filename, vector<vector<vector<uint8
     TIFFClose(tif);
 }
 
-void MosaicImages::read_mosaic(string filename, const vector<Point> &box_centers, int box_radius,
-                               const vector<int> &box_classes) {
+void MosaicImages::read_mosaic(
+    string filename, const vector<Point>& box_centers, int box_radius, const vector<int>& box_classes
+) {
     uint32_t height;
     uint32_t width;
     vector<vector<vector<uint8_t> > > pixels;
@@ -83,10 +94,18 @@ void MosaicImages::read_mosaic(string filename, const vector<Point> &box_centers
         int32_t end_y = box_centers[i].y + box_radius;
 
         // need to be careful if the box is near the edge of the mosaic
-        if (start_x < 0) start_x = 0;
-        if (start_y < 0) start_y = 0;
-        if (end_x >= width) end_x = width;
-        if (end_y >= height) end_y = height;
+        if (start_x < 0) {
+            start_x = 0;
+        }
+        if (start_y < 0) {
+            start_y = 0;
+        }
+        if (end_x >= width) {
+            end_x = width;
+        }
+        if (end_y >= height) {
+            end_y = height;
+        }
 
         int box_width = end_x - start_x;
         int box_height = end_y - start_y;
@@ -99,7 +118,8 @@ void MosaicImages::read_mosaic(string filename, const vector<Point> &box_centers
         int number_subimages = subimages_along_width * subimages_along_height;
 
         vector<vector<vector<uint8_t> > > box_pixels(
-            channels, vector<vector<uint8_t> >(box_height, vector<uint8_t>(box_width, 0)));
+            channels, vector<vector<uint8_t> >(box_height, vector<uint8_t>(box_width, 0))
+        );
         for (uint32_t bz = 0; bz < channels; bz++) {
             for (uint32_t by = 0; by < box_height; by++) {
                 for (uint32_t bx = 0; bx < box_width; bx++) {
@@ -119,8 +139,9 @@ void MosaicImages::read_mosaic(string filename, const vector<Point> &box_centers
     }
 }
 
-void MosaicImages::read_mosaic(string filename, const vector<Line> &lines, int line_height,
-                               const vector<int> &line_classes) {
+void MosaicImages::read_mosaic(
+    string filename, const vector<Line>& lines, int line_height, const vector<int>& line_classes
+) {
     uint32_t height;
     uint32_t width;
     vector<vector<vector<uint8_t> > > pixels;
@@ -163,7 +184,8 @@ void MosaicImages::read_mosaic(string filename, const vector<Line> &lines, int l
         //        vector< vector< vector<uint8_t> > > line_pixels(channels, vector< vector<uint8_t> >(line_height,
         //        vector<uint8_t>(line_width, 0)));
         vector<vector<vector<uint8_t> > > line_pixels(
-            channels, vector<vector<uint8_t> >(line_height, vector<uint8_t>(line_width, 0)));
+            channels, vector<vector<uint8_t> >(line_height, vector<uint8_t>(line_width, 0))
+        );
 
         double cos_angle = cos(rotation_angle);
         double sin_angle = sin(rotation_angle);
@@ -187,13 +209,15 @@ void MosaicImages::read_mosaic(string filename, const vector<Line> &lines, int l
                     // N == 1
                     //[(N - x)(N - y)fi,j + x(N - y)fi,j+1 + y(N - x)fi+1,j + xyfi+1,j+1]
 
-                    if (tmx < 0 || tmy < 0 || (int32_t) tmx + 1 >= width || (int32_t) tmy + 1 >= height) continue;
+                    if (tmx < 0 || tmy < 0 || (int32_t) tmx + 1 >= width || (int32_t) tmy + 1 >= height) {
+                        continue;
+                    }
 
                     double fy = tmy - (int32_t) tmy;
                     double fx = tmx - (int32_t) tmx;
                     line_pixels[bz][tly][tlx] =
-                        ((1 - fx) * (1 - fy) * pixels[bz][tmy][tmx]) + (fx * (1 - fy) * pixels[bz][tmy][tmx + 1]) +
-                        ((1 - fx) * fy * pixels[bz][tmy + 1][tmx]) + (fx * fy * pixels[bz][tmy + 1][tmx + 1]);
+                        ((1 - fx) * (1 - fy) * pixels[bz][tmy][tmx]) + (fx * (1 - fy) * pixels[bz][tmy][tmx + 1])
+                        + ((1 - fx) * fy * pixels[bz][tmy + 1][tmx]) + (fx * fy * pixels[bz][tmy + 1][tmx + 1]);
                 }
             }
         }
@@ -206,8 +230,9 @@ void MosaicImages::read_mosaic(string filename, const vector<Line> &lines, int l
 
         cout << "creating a mosaic image with " << number_subimages << " subimages" << endl;
 
-        LargeImage mosaic_image(number_subimages, channels, line_width, line_height, padding, line_classes[i],
-                                line_pixels);
+        LargeImage mosaic_image(
+            number_subimages, channels, line_width, line_height, padding, line_classes[i], line_pixels
+        );
         images.push_back(mosaic_image);
 
         /*
@@ -218,12 +243,14 @@ void MosaicImages::read_mosaic(string filename, const vector<Line> &lines, int l
     }
 }
 
-void MosaicImages::initialize_counts(const vector<vector<int> > &classes) {
+void MosaicImages::initialize_counts(const vector<vector<int> >& classes) {
     // find the max class value and add one to it for the number of classes
     number_classes = 0;
     for (uint32_t i = 0; i < classes.size(); i++) {
         for (uint32_t j = 0; j < classes[i].size(); j++) {
-            if (classes[i][j] > number_classes) number_classes = classes[i][j];
+            if (classes[i][j] > number_classes) {
+                number_classes = classes[i][j];
+            }
         }
     }
     number_classes++;
@@ -238,9 +265,10 @@ void MosaicImages::initialize_counts(const vector<vector<int> > &classes) {
     }
 }
 
-MosaicImages::MosaicImages(vector<string> _filenames, const vector<vector<Point> > &_box_centers, int _box_radius,
-                           const vector<vector<int> > &_box_classes, int _padding, int _subimage_height,
-                           int _subimage_width) {
+MosaicImages::MosaicImages(
+    vector<string> _filenames, const vector<vector<Point> >& _box_centers, int _box_radius,
+    const vector<vector<int> >& _box_classes, int _padding, int _subimage_height, int _subimage_width
+) {
     padding = _padding;
     subimage_height = _subimage_height;
     subimage_width = _subimage_width;
@@ -257,10 +285,11 @@ MosaicImages::MosaicImages(vector<string> _filenames, const vector<vector<Point>
     calculate_avg_std_dev();
 }
 
-MosaicImages::MosaicImages(vector<string> _filenames, const vector<vector<Point> > &_box_centers, int _box_radius,
-                           const vector<vector<int> > &_box_classes, int _padding, int _subimage_height,
-                           int _subimage_width, const vector<float> &_channel_avg,
-                           const vector<float> &_channel_std_dev) {
+MosaicImages::MosaicImages(
+    vector<string> _filenames, const vector<vector<Point> >& _box_centers, int _box_radius,
+    const vector<vector<int> >& _box_classes, int _padding, int _subimage_height, int _subimage_width,
+    const vector<float>& _channel_avg, const vector<float>& _channel_std_dev
+) {
     padding = _padding;
     subimage_height = _subimage_height;
     subimage_width = _subimage_width;
@@ -282,9 +311,10 @@ MosaicImages::MosaicImages(vector<string> _filenames, const vector<vector<Point>
     }
 }
 
-MosaicImages::MosaicImages(vector<string> _filenames, const vector<vector<Line> > &_lines, int _line_height,
-                           const vector<vector<int> > &_line_classes, int _padding, int _subimage_height,
-                           int _subimage_width) {
+MosaicImages::MosaicImages(
+    vector<string> _filenames, const vector<vector<Line> >& _lines, int _line_height,
+    const vector<vector<int> >& _line_classes, int _padding, int _subimage_height, int _subimage_width
+) {
     padding = _padding;
     subimage_height = _subimage_height;
     subimage_width = _subimage_width;
@@ -300,10 +330,11 @@ MosaicImages::MosaicImages(vector<string> _filenames, const vector<vector<Line> 
     calculate_avg_std_dev();
 }
 
-MosaicImages::MosaicImages(vector<string> _filenames, const vector<vector<Line> > &_lines, int _line_height,
-                           const vector<vector<int> > &_line_classes, int _padding, int _subimage_height,
-                           int _subimage_width, const vector<float> &_channel_avg,
-                           const vector<float> &_channel_std_dev) {
+MosaicImages::MosaicImages(
+    vector<string> _filenames, const vector<vector<Line> >& _lines, int _line_height,
+    const vector<vector<int> >& _line_classes, int _padding, int _subimage_height, int _subimage_width,
+    const vector<float>& _channel_avg, const vector<float>& _channel_std_dev
+) {
     padding = _padding;
     subimage_height = _subimage_height;
     subimage_width = _subimage_width;
@@ -329,31 +360,57 @@ MosaicImages::MosaicImages(vector<string> _filenames, const vector<vector<Line> 
     }
 }
 
-int MosaicImages::get_class_size(int i) const { return class_sizes[i]; }
+int MosaicImages::get_class_size(int i) const {
+    return class_sizes[i];
+}
 
-int MosaicImages::get_number_classes() const { return number_classes; }
+int MosaicImages::get_number_classes() const {
+    return number_classes;
+}
 
-int MosaicImages::get_number_images() const { return number_images; }
+int MosaicImages::get_number_images() const {
+    return number_images;
+}
 
-int MosaicImages::get_number_large_images() const { return images.size(); }
+int MosaicImages::get_number_large_images() const {
+    return images.size();
+}
 
-int MosaicImages::get_number_subimages(int i) const { return images[i].get_number_subimages(); }
+int MosaicImages::get_number_subimages(int i) const {
+    return images[i].get_number_subimages();
+}
 
-int MosaicImages::get_padding() const { return padding; }
+int MosaicImages::get_padding() const {
+    return padding;
+}
 
-int MosaicImages::get_image_channels() const { return channels; }
+int MosaicImages::get_image_channels() const {
+    return channels;
+}
 
-int MosaicImages::get_image_width() const { return subimage_width + (2 * padding); }
+int MosaicImages::get_image_width() const {
+    return subimage_width + (2 * padding);
+}
 
-int MosaicImages::get_image_height() const { return subimage_height + (2 * padding); }
+int MosaicImages::get_image_height() const {
+    return subimage_height + (2 * padding);
+}
 
-int MosaicImages::get_large_image_height(int image) const { return images[image].get_height(); }
+int MosaicImages::get_large_image_height(int image) const {
+    return images[image].get_height();
+}
 
-int MosaicImages::get_large_image_width(int image) const { return images[image].get_width(); }
+int MosaicImages::get_large_image_width(int image) const {
+    return images[image].get_width();
+}
 
-int MosaicImages::get_large_image_channels(int image) const { return images[image].get_channels(); }
+int MosaicImages::get_large_image_channels(int image) const {
+    return images[image].get_channels();
+}
 
-int MosaicImages::get_image_classification(int image) const { return images[image].get_classification(); }
+int MosaicImages::get_image_classification(int image) const {
+    return images[image].get_classification();
+}
 
 int MosaicImages::get_classification(int subimage) const {
     for (int32_t i = 0; i < images.size(); i++) {
@@ -362,7 +419,9 @@ int MosaicImages::get_classification(int subimage) const {
         } else {
             subimage -= images[i].get_number_subimages();
 
-            if (i == images.size() - 1) return images[i].get_classification();
+            if (i == images.size() - 1) {
+                return images[i].get_classification();
+            }
         }
     }
 
@@ -378,20 +437,20 @@ float MosaicImages::get_pixel(int subimage, int z, int y, int x) const {
     int32_t i;
     for (i = 0; i < images.size(); i++) {
         if (subimage < images[i].get_number_subimages()) {
-            const LargeImage &image = images[i];
+            const LargeImage& image = images[i];
 
-            if (y < padding || x < padding)
+            if (y < padding || x < padding) {
                 return 0;
-            else if (y >= subimage_height + padding || x >= subimage_width + padding)
+            } else if (y >= subimage_height + padding || x >= subimage_width + padding) {
                 return 0;
-            else {
+            } else {
                 int subimages_along_width = image.get_width() - subimage_width + 1;
 
                 int subimage_y_offset = subimage / subimages_along_width;
                 int subimage_x_offset = subimage % subimages_along_width;
 
-                return ((image.get_pixel(z, subimage_y_offset + y, subimage_x_offset + x) / 255.0) - channel_avg[z]) /
-                       channel_std_dev[z];
+                return ((image.get_pixel(z, subimage_y_offset + y, subimage_x_offset + x) / 255.0) - channel_avg[z])
+                       / channel_std_dev[z];
             }
         } else {
             subimage -= images[i].get_number_subimages();
@@ -407,13 +466,21 @@ float MosaicImages::get_pixel(int subimage, int z, int y, int x) const {
     return 0;
 }
 
-const vector<float> &MosaicImages::get_average() const { return channel_avg; }
+const vector<float>& MosaicImages::get_average() const {
+    return channel_avg;
+}
 
-const vector<float> &MosaicImages::get_std_dev() const { return channel_std_dev; }
+const vector<float>& MosaicImages::get_std_dev() const {
+    return channel_std_dev;
+}
 
-float MosaicImages::get_channel_avg(int channel) const { return channel_avg[channel]; }
+float MosaicImages::get_channel_avg(int channel) const {
+    return channel_avg[channel];
+}
 
-float MosaicImages::get_channel_std_dev(int channel) const { return channel_std_dev[channel]; }
+float MosaicImages::get_channel_std_dev(int channel) const {
+    return channel_std_dev[channel];
+}
 
 void MosaicImages::calculate_avg_std_dev() {
     // cerr << "calculating averages and standard deviations for images" << endl;
@@ -465,7 +532,9 @@ void MosaicImages::calculate_avg_std_dev() {
     }
 }
 
-LargeImage *MosaicImages::copy_image(int i) const { return images[i].copy(); }
+LargeImage* MosaicImages::copy_image(int i) const {
+    return images[i].copy();
+}
 
 float MosaicImages::get_raw_pixel(int subimage, int z, int y, int x) const {
     return images[subimage].get_pixel(z, y + padding, x + padding);
@@ -475,19 +544,25 @@ string MosaicImages::get_filename() const {
     string merged_filename;
 
     for (uint32_t i = 0; i < filenames.size(); i++) {
-        if (i != 0) merged_filename += " ";
+        if (i != 0) {
+            merged_filename += " ";
+        }
         merged_filename += filenames[i];
     }
 
     return merged_filename;
 }
 
-void MosaicImages::set_alpha(int i, const vector<vector<float> > &_alpha) { images[i].set_alpha(_alpha); }
+void MosaicImages::set_alpha(int i, const vector<vector<float> >& _alpha) {
+    images[i].set_alpha(_alpha);
+}
 
-void MosaicImages::set_alpha(int i, const vector<vector<uint8_t> > &_alpha) { images[i].set_alpha(_alpha); }
+void MosaicImages::set_alpha(int i, const vector<vector<uint8_t> >& _alpha) {
+    images[i].set_alpha(_alpha);
+}
 
 #ifdef MOSAIC_IMAGES_TEST
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
     int subimage_y = 32;
     int subimage_x = 32;
     int padding = 3;
@@ -495,7 +570,9 @@ int main(int argc, char **argv) {
     int box_radius = 32;
 
     vector<string> filenames;
-    for (uint32_t i = 1; i < argc; i++) { filenames.push_back(argv[i]); }
+    for (uint32_t i = 1; i < argc; i++) {
+        filenames.push_back(argv[i]);
+    }
 
     vector<vector<Point> > box_centers;
     vector<Point> mosaic_box_centers;

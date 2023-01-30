@@ -22,7 +22,7 @@ using std::vector;
 #include "common/arguments.hxx"
 #include "image_tools/large_image_set.hxx"
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
     vector<string> arguments = vector<string>(argv, argv + argc);
 
     string training_filename;
@@ -73,30 +73,33 @@ int main(int argc, char **argv) {
     double epsilon = 1.0e-7;
 
     LargeImages training_images(training_filename, padding, 64, 64);
-    LargeImages testing_images(testing_filename, padding, 64, 64, training_images.get_average(),
-                               training_images.get_std_dev());
+    LargeImages testing_images(
+        testing_filename, padding, 64, 64, training_images.get_average(), training_images.get_std_dev()
+    );
 
     int node_innovation_count = 0;
     int edge_innovation_count = 0;
-    vector<CNN_Node *> nodes;
-    vector<CNN_Node *> input_nodes;
-    vector<CNN_Node *> layer1_nodes;
-    vector<CNN_Node *> layer2_nodes;
-    vector<CNN_Node *> layer3_nodes;
-    vector<CNN_Node *> layer4_nodes;
-    vector<CNN_Node *> layer5_nodes;
-    vector<CNN_Node *> layer6_nodes;
-    vector<CNN_Node *> layer7_nodes;
-    vector<CNN_Node *> softmax_nodes;
+    vector<CNN_Node*> nodes;
+    vector<CNN_Node*> input_nodes;
+    vector<CNN_Node*> layer1_nodes;
+    vector<CNN_Node*> layer2_nodes;
+    vector<CNN_Node*> layer3_nodes;
+    vector<CNN_Node*> layer4_nodes;
+    vector<CNN_Node*> layer5_nodes;
+    vector<CNN_Node*> layer6_nodes;
+    vector<CNN_Node*> layer7_nodes;
+    vector<CNN_Node*> softmax_nodes;
 
-    vector<CNN_Edge *> edges;
+    vector<CNN_Edge*> edges;
 
     minstd_rand0 generator(time(NULL));
     NormalDistribution normal_distribution;
 
     for (int32_t i = 0; i < training_images.get_image_channels(); i++) {
-        CNN_Node *input_node = new CNN_Node(++node_innovation_count, 0, batch_size, training_images.get_image_height(),
-                                            training_images.get_image_width(), INPUT_NODE);
+        CNN_Node* input_node = new CNN_Node(
+            ++node_innovation_count, 0, batch_size, training_images.get_image_height(),
+            training_images.get_image_width(), INPUT_NODE
+        );
         nodes.push_back(input_node);
         input_nodes.push_back(input_node);
     }
@@ -104,7 +107,7 @@ int main(int argc, char **argv) {
     // Note: added new layers
 
     for (int32_t i = 0; i < 6; i++) {
-        CNN_Node *layer1_node = new CNN_Node(++node_innovation_count, 1, batch_size, 64, 64, HIDDEN_NODE);
+        CNN_Node* layer1_node = new CNN_Node(++node_innovation_count, 1, batch_size, 64, 64, HIDDEN_NODE);
         nodes.push_back(layer1_node);
         layer1_nodes.push_back(layer1_node);
 
@@ -114,7 +117,7 @@ int main(int argc, char **argv) {
     }
 
     for (int32_t i = 0; i < 6; i++) {
-        CNN_Node *layer2_node = new CNN_Node(++node_innovation_count, 2, batch_size, 32, 32, HIDDEN_NODE);
+        CNN_Node* layer2_node = new CNN_Node(++node_innovation_count, 2, batch_size, 32, 32, HIDDEN_NODE);
         nodes.push_back(layer2_node);
         layer2_nodes.push_back(layer2_node);
 
@@ -122,7 +125,7 @@ int main(int argc, char **argv) {
     }
 
     for (int32_t i = 0; i < 6; i++) {
-        CNN_Node *layer3_node = new CNN_Node(++node_innovation_count, 3, batch_size, 28, 28, HIDDEN_NODE);
+        CNN_Node* layer3_node = new CNN_Node(++node_innovation_count, 3, batch_size, 28, 28, HIDDEN_NODE);
         nodes.push_back(layer3_node);
         layer3_nodes.push_back(layer3_node);
 
@@ -130,7 +133,7 @@ int main(int argc, char **argv) {
     }
 
     for (int32_t i = 0; i < 6; i++) {
-        CNN_Node *layer4_node = new CNN_Node(++node_innovation_count, 4, batch_size, 14, 14, HIDDEN_NODE);
+        CNN_Node* layer4_node = new CNN_Node(++node_innovation_count, 4, batch_size, 14, 14, HIDDEN_NODE);
         nodes.push_back(layer4_node);
         layer4_nodes.push_back(layer4_node);
 
@@ -161,7 +164,7 @@ int main(int argc, char **argv) {
 
     // I used i < 30 instead of i < 16
     for (int32_t i = 0; i < 30; i++) {
-        CNN_Node *layer5_node = new CNN_Node(++node_innovation_count, 5, batch_size, 10, 10, HIDDEN_NODE);
+        CNN_Node* layer5_node = new CNN_Node(++node_innovation_count, 5, batch_size, 10, 10, HIDDEN_NODE);
         nodes.push_back(layer5_node);
         layer5_nodes.push_back(layer5_node);
     }
@@ -282,7 +285,7 @@ int main(int argc, char **argv) {
     edges.push_back(new CNN_Edge(layer4_nodes[4], layer5_nodes[29], false, ++edge_innovation_count, CONVOLUTIONAL));
 
     for (int32_t i = 0; i < 30; i++) {
-        CNN_Node *layer6_node = new CNN_Node(++node_innovation_count, 6, batch_size, 5, 5, HIDDEN_NODE);
+        CNN_Node* layer6_node = new CNN_Node(++node_innovation_count, 6, batch_size, 5, 5, HIDDEN_NODE);
         nodes.push_back(layer6_node);
         layer6_nodes.push_back(layer6_node);
 
@@ -291,7 +294,7 @@ int main(int argc, char **argv) {
 
     // fully connected to 100 layer
     for (int32_t i = 0; i < 100; i++) {
-        CNN_Node *layer7_node = new CNN_Node(++node_innovation_count, 7, batch_size, 1, 1, HIDDEN_NODE);
+        CNN_Node* layer7_node = new CNN_Node(++node_innovation_count, 7, batch_size, 1, 1, HIDDEN_NODE);
         nodes.push_back(layer7_node);
         layer7_nodes.push_back(layer7_node);
 
@@ -301,7 +304,7 @@ int main(int argc, char **argv) {
     }
 
     for (int32_t i = 0; i < training_images.get_number_classes(); i++) {
-        CNN_Node *softmax_node = new CNN_Node(++node_innovation_count, 8, batch_size, 1, 1, SOFTMAX_NODE);
+        CNN_Node* softmax_node = new CNN_Node(++node_innovation_count, 8, batch_size, 1, 1, SOFTMAX_NODE);
         nodes.push_back(softmax_node);
         softmax_nodes.push_back(softmax_node);
 
@@ -313,10 +316,11 @@ int main(int argc, char **argv) {
     long genome_seed = generator();
     cout << "seeding genome with: " << genome_seed << endl;
 
-    CNN_Genome *genome = new CNN_Genome(
+    CNN_Genome* genome = new CNN_Genome(
         1, padding, training_images.get_number_images(), 0, testing_images.get_number_images(), genome_seed, max_epochs,
         true, velocity_reset, mu, mu_delta, learning_rate, learning_rate_delta, weight_decay, weight_decay_delta,
-        batch_size, epsilon, alpha, input_dropout_probability, hidden_dropout_probability, nodes, edges);
+        batch_size, epsilon, alpha, input_dropout_probability, hidden_dropout_probability, nodes, edges
+    );
     // save the weights and bias of the initially generated genome for reuse
     genome->initialize();
 

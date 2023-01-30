@@ -52,7 +52,7 @@ using std::vector;
 #include "image_tools/image_set.hxx"
 #include "stdint.h"
 
-float read_hexfloat(istream &infile) {
+float read_hexfloat(istream& infile) {
 #ifdef _WIN32
     float result;
     infile >> std::hexfloat >> result >> std::defaultfloat;
@@ -71,7 +71,7 @@ float read_hexfloat(istream &infile) {
 #endif
 }
 
-void write_hexfloat(ostream &outfile, float value) {
+void write_hexfloat(ostream& outfile, float value) {
 #ifdef _WIN32
     char hf[32];
     sprintf(hf, "%a", value);
@@ -174,7 +174,7 @@ CNN_Node::CNN_Node(int _node_id) {
 
     mysql_exact_query(query.str());
 
-    MYSQL_RES *result = mysql_store_result(exact_db_conn);
+    MYSQL_RES* result = mysql_store_result(exact_db_conn);
 
     if (result != NULL) {
         MYSQL_ROW row = mysql_fetch_row(result);
@@ -295,7 +295,9 @@ void CNN_Node::export_to_database(int _exact_id, int _genome_id) {
     }
 }
 
-int CNN_Node::get_node_id() const { return node_id; }
+int CNN_Node::get_node_id() const {
+    return node_id;
+}
 #endif
 
 CNN_Node::~CNN_Node() {
@@ -308,8 +310,8 @@ CNN_Node::~CNN_Node() {
     delete[] errors_in;
 }
 
-CNN_Node *CNN_Node::copy() const {
-    CNN_Node *copy = new CNN_Node();
+CNN_Node* CNN_Node::copy() const {
+    CNN_Node* copy = new CNN_Node();
 
     copy->node_id = -1;
     copy->genome_id = genome_id;
@@ -369,9 +371,13 @@ CNN_Node *CNN_Node::copy() const {
     return copy;
 }
 
-bool CNN_Node::needs_init() const { return needs_initialization; }
+bool CNN_Node::needs_init() const {
+    return needs_initialization;
+}
 
-void CNN_Node::reset_weight_count() { weight_count = 0; }
+void CNN_Node::reset_weight_count() {
+    weight_count = 0;
+}
 
 void CNN_Node::initialize() {
     gamma = 1.0;
@@ -406,35 +412,65 @@ void CNN_Node::add_weight_count(int _weight_count) {
     // cerr << "node " << innovation_number << " setting weight count to: " << weight_count << endl;
 }
 
-int CNN_Node::get_weight_count() const { return weight_count; }
+int CNN_Node::get_weight_count() const {
+    return weight_count;
+}
 
-bool CNN_Node::is_fixed() const { return type != INPUT_NODE && type != OUTPUT_NODE && type != SOFTMAX_NODE; }
+bool CNN_Node::is_fixed() const {
+    return type != INPUT_NODE && type != OUTPUT_NODE && type != SOFTMAX_NODE;
+}
 
-bool CNN_Node::is_hidden() const { return type == HIDDEN_NODE; }
+bool CNN_Node::is_hidden() const {
+    return type == HIDDEN_NODE;
+}
 
-bool CNN_Node::is_input() const { return type == INPUT_NODE; }
+bool CNN_Node::is_input() const {
+    return type == INPUT_NODE;
+}
 
-bool CNN_Node::is_output() const { return type == OUTPUT_NODE; }
+bool CNN_Node::is_output() const {
+    return type == OUTPUT_NODE;
+}
 
-bool CNN_Node::is_enabled() const { return disabled == false; }
+bool CNN_Node::is_enabled() const {
+    return disabled == false;
+}
 
-bool CNN_Node::is_disabled() const { return disabled == true; }
+bool CNN_Node::is_disabled() const {
+    return disabled == true;
+}
 
-void CNN_Node::disable() { disabled = true; }
+void CNN_Node::disable() {
+    disabled = true;
+}
 
-void CNN_Node::enable() { disabled = false; }
+void CNN_Node::enable() {
+    disabled = false;
+}
 
-bool CNN_Node::is_softmax() const { return type == SOFTMAX_NODE; }
+bool CNN_Node::is_softmax() const {
+    return type == SOFTMAX_NODE;
+}
 
-bool CNN_Node::is_reachable() const { return !disabled && forward_visited && reverse_visited; }
+bool CNN_Node::is_reachable() const {
+    return !disabled && forward_visited && reverse_visited;
+}
 
-bool CNN_Node::is_forward_visited() const { return forward_visited; }
+bool CNN_Node::is_forward_visited() const {
+    return forward_visited;
+}
 
-bool CNN_Node::is_reverse_visited() const { return reverse_visited; }
+bool CNN_Node::is_reverse_visited() const {
+    return reverse_visited;
+}
 
-void CNN_Node::forward_visit() { forward_visited = true; }
+void CNN_Node::forward_visit() {
+    forward_visited = true;
+}
 
-void CNN_Node::reverse_visit() { reverse_visited = true; }
+void CNN_Node::reverse_visit() {
+    reverse_visited = true;
+}
 
 void CNN_Node::set_unvisited() {
     total_inputs = 0;
@@ -443,7 +479,9 @@ void CNN_Node::set_unvisited() {
     reverse_visited = false;
 }
 
-int CNN_Node::get_batch_size() const { return batch_size; }
+int CNN_Node::get_batch_size() const {
+    return batch_size;
+}
 
 bool CNN_Node::vectors_correct() const {
     if (total_size != batch_size * size_y * size_x) {
@@ -456,13 +494,21 @@ bool CNN_Node::vectors_correct() const {
     return true;
 }
 
-int CNN_Node::get_size_x() const { return size_x; }
+int CNN_Node::get_size_x() const {
+    return size_x;
+}
 
-int CNN_Node::get_size_y() const { return size_y; }
+int CNN_Node::get_size_y() const {
+    return size_y;
+}
 
-int CNN_Node::get_innovation_number() const { return innovation_number; }
+int CNN_Node::get_innovation_number() const {
+    return innovation_number;
+}
 
-float CNN_Node::get_depth() const { return depth; }
+float CNN_Node::get_depth() const {
+    return depth;
+}
 
 void CNN_Node::resize_arrays() {
     delete[] values_in;
@@ -494,7 +540,9 @@ void CNN_Node::set_value_in(int batch_number, int y, int x, float value) {
     // values_in[batch_number][y][x] = value;
 }
 
-float *CNN_Node::get_values_in() { return values_in; }
+float* CNN_Node::get_values_in() {
+    return values_in;
+}
 
 float CNN_Node::get_value_out(int batch_number, int y, int x) {
     return values_out[(batch_number * size_y * size_x) + (size_x * y) + x];
@@ -506,27 +554,37 @@ void CNN_Node::set_value_out(int batch_number, int y, int x, float value) {
     // values_out[batch_number][y][x] = value;
 }
 
-float *CNN_Node::get_values_out() { return values_out; }
+float* CNN_Node::get_values_out() {
+    return values_out;
+}
 
 void CNN_Node::set_error_in(int batch_number, int y, int x, float error) {
     errors_in[(batch_number * size_y * size_x) + (size_x * y) + x] = error;
     // errors_in[batch_number][y][x] = error;
 }
 
-float *CNN_Node::get_errors_in() { return errors_in; }
+float* CNN_Node::get_errors_in() {
+    return errors_in;
+}
 
 void CNN_Node::set_error_out(int batch_number, int y, int x, float error) {
     errors_out[(batch_number * size_y * size_x) + (size_x * y) + x] = error;
     // errors_out[batch_number][y][x] = error;
 }
 
-float *CNN_Node::get_errors_out() { return errors_out; }
+float* CNN_Node::get_errors_out() {
+    return errors_out;
+}
 
-float *CNN_Node::get_relu_gradients() { return relu_gradients; }
+float* CNN_Node::get_relu_gradients() {
+    return relu_gradients;
+}
 
-float *CNN_Node::get_pool_gradients() { return pool_gradients; }
+float* CNN_Node::get_pool_gradients() {
+    return pool_gradients;
+}
 
-void CNN_Node::print(ostream &out) {
+void CNN_Node::print(ostream& out) {
     out << "CNN_Node " << innovation_number << ", at depth: " << depth << " of input size x: " << size_x
         << ", y: " << size_y << endl;
 
@@ -605,7 +663,7 @@ void CNN_Node::reset_times() {
     output_fired_time = 0.0;
 }
 
-void CNN_Node::accumulate_times(float &total_input_time, float &total_output_time) {
+void CNN_Node::accumulate_times(float& total_input_time, float& total_output_time) {
     total_input_time += input_fired_time;
     total_output_time += output_fired_time;
 }
@@ -655,8 +713,12 @@ bool CNN_Node::modify_size_x(int change) {
     size_x += change;
 
     // make sure the size doesn't drop below 1
-    if (size_x <= 0) size_x = 1;
-    if (size_x == previous_size_x) return false;
+    if (size_x <= 0) {
+        size_x = 1;
+    }
+    if (size_x == previous_size_x) {
+        return false;
+    }
 
     total_size = batch_size * size_y * size_x;
     resize_arrays();
@@ -670,8 +732,12 @@ bool CNN_Node::modify_size_y(int change) {
     size_y += change;
 
     // make sure the size doesn't drop below 1
-    if (size_y <= 0) size_y = 1;
-    if (size_y == previous_size_y) return false;
+    if (size_y <= 0) {
+        size_y = 1;
+    }
+    if (size_y == previous_size_y) {
+        return false;
+    }
 
     total_size = batch_size * size_y * size_x;
     resize_arrays();
@@ -689,9 +755,13 @@ void CNN_Node::disable_input() {
     // cout << "\t\tdisabling input on node: " << innovation_number << ", total inputs: " << total_inputs << endl;
 }
 
-int CNN_Node::get_number_inputs() const { return total_inputs; }
+int CNN_Node::get_number_inputs() const {
+    return total_inputs;
+}
 
-int CNN_Node::get_inputs_fired() const { return inputs_fired; }
+int CNN_Node::get_inputs_fired() const {
+    return inputs_fired;
+}
 
 void CNN_Node::add_output() {
     total_outputs++;
@@ -703,12 +773,18 @@ void CNN_Node::disable_output() {
     // cout << "\t\tdisabling output on node: " << innovation_number << ", total outputs: " << total_outputs << endl;
 }
 
-int CNN_Node::get_number_outputs() const { return total_outputs; }
+int CNN_Node::get_number_outputs() const {
+    return total_outputs;
+}
 
-int CNN_Node::get_outputs_fired() const { return outputs_fired; }
+int CNN_Node::get_outputs_fired() const {
+    return outputs_fired;
+}
 
 void CNN_Node::zero_test_statistics() {
-    if (type == INPUT_NODE || type == SOFTMAX_NODE) return;
+    if (type == INPUT_NODE || type == SOFTMAX_NODE) {
+        return;
+    }
 
     running_mean = 0;
     running_variance = 0;
@@ -737,7 +813,9 @@ void CNN_Node::batch_normalize(bool training, bool accumulating_test_statistics,
 
         // cout << "pre-batch normalization on node: " << innovation_number << endl;
 
-        for (int32_t current = 0; current < total_size; current++) { batch_mean += values_in[current]; }
+        for (int32_t current = 0; current < total_size; current++) {
+            batch_mean += values_in[current];
+        }
         batch_mean /= (uint64_t) batch_size * (uint64_t) size_y * (uint64_t) size_x;
 
         batch_variance = 0.0;
@@ -762,8 +840,8 @@ void CNN_Node::batch_normalize(bool training, bool accumulating_test_statistics,
         }
 
 #ifdef NAN_CHECKS
-        if (std::isnan(batch_mean) || std::isinf(batch_mean) || std::isnan(batch_variance) ||
-            std::isinf(batch_variance)) {
+        if (std::isnan(batch_mean) || std::isinf(batch_mean) || std::isnan(batch_variance)
+            || std::isinf(batch_variance)) {
             cerr << "ERROR! NAN or INF batch_mean or batch_variance on node " << innovation_number << "!" << endl;
             cerr << "gamma: " << gamma << ", beta: " << beta << endl;
 
@@ -836,7 +914,7 @@ void CNN_Node::batch_normalize(bool training, bool accumulating_test_statistics,
     }
 }
 
-void CNN_Node::apply_relu(float *values, float *gradients) {
+void CNN_Node::apply_relu(float* values, float* gradients) {
     for (int32_t current = 0; current < total_size; current++) {
         // cout << "values_out for node " << innovation_number << " now " << values_out[batch_number][y][x] << " after
         // adding bias: " << bias[batch_number][y][x] << endl;
@@ -854,8 +932,10 @@ void CNN_Node::apply_relu(float *values, float *gradients) {
     }
 }
 
-void CNN_Node::apply_dropout(float *values, float *gradients, bool perform_dropout, bool accumulate_test_statistics,
-                             float dropout_probability, minstd_rand0 &generator) {
+void CNN_Node::apply_dropout(
+    float* values, float* gradients, bool perform_dropout, bool accumulate_test_statistics, float dropout_probability,
+    minstd_rand0& generator
+) {
     if (perform_dropout && !accumulate_test_statistics) {
         for (int32_t current = 0; current < total_size; current++) {
             // cout << "values for node " << innovation_number << " now " << values[batch_number][y][x] << " after
@@ -869,12 +949,16 @@ void CNN_Node::apply_dropout(float *values, float *gradients, bool perform_dropo
 
     } else {
         float dropout_scale = 1.0 - dropout_probability;
-        for (int32_t current = 0; current < total_size; current++) { values[current] *= dropout_scale; }
+        for (int32_t current = 0; current < total_size; current++) {
+            values[current] *= dropout_scale;
+        }
     }
 }
 
-void CNN_Node::backpropagate_relu(float *errors, float *gradients) {
-    for (int32_t current = 0; current < total_size; current++) { errors[current] *= gradients[current]; }
+void CNN_Node::backpropagate_relu(float* errors, float* gradients) {
+    for (int32_t current = 0; current < total_size; current++) {
+        errors[current] *= gradients[current];
+    }
 }
 
 void CNN_Node::backpropagate_batch_normalization(bool training, float mu, float learning_rate, float epsilon) {
@@ -932,8 +1016,8 @@ void CNN_Node::backpropagate_batch_normalization(bool training, float mu, float 
         value_hat = values_in[current];
         value_in = (value_hat + batch_mean) * batch_std_dev;
 
-        errors_in[current] = (delta_out * inverse_variance) + (derr_dvariance * inv_m_x_2 * (value_in - batch_mean)) +
-                             (derr_dmean * inv_m);
+        errors_in[current] = (delta_out * inverse_variance) + (derr_dvariance * inv_m_x_2 * (value_in - batch_mean))
+                             + (derr_dmean * inv_m);
 
 #ifdef NAN_CHECKS
         if (std::isnan(errors_in[current]) || std::isinf(errors_in[current])) {
@@ -1009,8 +1093,10 @@ void CNN_Node::backpropagate_batch_normalization(bool training, float mu, float 
     // ", gamma now: " << gamma << ", beta now: " << beta << endl;
 }
 
-void CNN_Node::set_values(const ImagesInterface &images, const vector<int> &batch, int channel, bool perform_dropout,
-                          bool accumulate_test_statistics, float input_dropout_probability, minstd_rand0 &generator) {
+void CNN_Node::set_values(
+    const ImagesInterface& images, const vector<int>& batch, int channel, bool perform_dropout,
+    bool accumulate_test_statistics, float input_dropout_probability, minstd_rand0& generator
+) {
     // images.size() may be less than batch size, in the case when the total number of images is not divisible by the
     // batch_size
     if (batch.size() > batch_size) {
@@ -1046,13 +1132,18 @@ void CNN_Node::set_values(const ImagesInterface &images, const vector<int> &batc
         }
     }
 
-    if (input_dropout_probability > 0)
-        apply_dropout(values_out, relu_gradients, perform_dropout, accumulate_test_statistics,
-                      input_dropout_probability, generator);
+    if (input_dropout_probability > 0) {
+        apply_dropout(
+            values_out, relu_gradients, perform_dropout, accumulate_test_statistics, input_dropout_probability,
+            generator
+        );
+    }
 }
 
-void CNN_Node::input_fired(bool training, bool accumulate_test_statistics, float epsilon, float alpha,
-                           bool perform_dropout, float hidden_dropout_probability, minstd_rand0 &generator) {
+void CNN_Node::input_fired(
+    bool training, bool accumulate_test_statistics, float epsilon, float alpha, bool perform_dropout,
+    float hidden_dropout_probability, minstd_rand0& generator
+) {
     using namespace std::chrono;
     high_resolution_clock::time_point input_fired_start_time = high_resolution_clock::now();
 
@@ -1065,9 +1156,12 @@ void CNN_Node::input_fired(bool training, bool accumulate_test_statistics, float
         if (type != SOFTMAX_NODE) {
             apply_relu(values_in, relu_gradients);
 
-            if (hidden_dropout_probability > 0)
-                apply_dropout(values_in, relu_gradients, perform_dropout, accumulate_test_statistics,
-                              hidden_dropout_probability, generator);
+            if (hidden_dropout_probability > 0) {
+                apply_dropout(
+                    values_in, relu_gradients, perform_dropout, accumulate_test_statistics, hidden_dropout_probability,
+                    generator
+                );
+            }
 
             batch_normalize(training, accumulate_test_statistics, epsilon, alpha);
         }
@@ -1125,13 +1219,25 @@ void CNN_Node::output_fired(bool training, float mu, float learning_rate, float 
 
 bool CNN_Node::has_nan() const {
     for (int32_t current = 0; current < total_size; current++) {
-        if (std::isnan(values_in[current]) || std::isinf(values_in[current])) return true;
-        if (std::isnan(errors_in[current]) || std::isinf(errors_in[current])) return true;
+        if (std::isnan(values_in[current]) || std::isinf(values_in[current])) {
+            return true;
+        }
+        if (std::isnan(errors_in[current]) || std::isinf(errors_in[current])) {
+            return true;
+        }
 
-        if (std::isnan(values_out[current]) || std::isinf(values_out[current])) return true;
-        if (std::isnan(errors_out[current]) || std::isinf(errors_out[current])) return true;
-        if (std::isnan(relu_gradients[current]) || std::isinf(relu_gradients[current])) return true;
-        if (std::isnan(pool_gradients[current]) || std::isinf(pool_gradients[current])) return true;
+        if (std::isnan(values_out[current]) || std::isinf(values_out[current])) {
+            return true;
+        }
+        if (std::isnan(errors_out[current]) || std::isinf(errors_out[current])) {
+            return true;
+        }
+        if (std::isnan(relu_gradients[current]) || std::isinf(relu_gradients[current])) {
+            return true;
+        }
+        if (std::isnan(pool_gradients[current]) || std::isinf(pool_gradients[current])) {
+            return true;
+        }
     }
 
     return false;
@@ -1146,7 +1252,7 @@ void CNN_Node::print_statistics() {
     print_statistics(values_out, errors_out, relu_gradients);
 }
 
-void CNN_Node::print_statistics(const float *values, const float *errors, const float *gradients) {
+void CNN_Node::print_statistics(const float* values, const float* errors, const float* gradients) {
     float value_min = std::numeric_limits<float>::max(), value_max = -std::numeric_limits<float>::max(),
           value_avg = 0.0;
     float error_min = std::numeric_limits<float>::max(), error_max = -std::numeric_limits<float>::max(),
@@ -1155,16 +1261,28 @@ void CNN_Node::print_statistics(const float *values, const float *errors, const 
           gradient_avg = 0.0;
 
     for (int32_t current = 0; current < total_size; current++) {
-        if (values[current] < value_min) value_min = values[current];
-        if (values[current] > value_max) value_max = values[current];
+        if (values[current] < value_min) {
+            value_min = values[current];
+        }
+        if (values[current] > value_max) {
+            value_max = values[current];
+        }
         value_avg += values[current];
 
-        if (gradients[current] < gradient_min) gradient_min = gradients[current];
-        if (gradients[current] > gradient_max) gradient_max = gradients[current];
+        if (gradients[current] < gradient_min) {
+            gradient_min = gradients[current];
+        }
+        if (gradients[current] > gradient_max) {
+            gradient_max = gradients[current];
+        }
         gradient_avg += gradients[current];
 
-        if (errors[current] < error_min) error_min = errors[current];
-        if (errors[current] > error_max) error_max = errors[current];
+        if (errors[current] < error_min) {
+            error_min = errors[current];
+        }
+        if (errors[current] > error_max) {
+            error_max = errors[current];
+        }
         error_avg += errors[current];
     }
 
@@ -1178,7 +1296,7 @@ void CNN_Node::print_statistics(const float *values, const float *errors, const 
     cerr << ", error_min: " << error_min << ", error_avg: " << error_avg << ", error_max: " << error_max << endl;
 }
 
-ostream &operator<<(ostream &os, const CNN_Node *node) {
+ostream& operator<<(ostream& os, const CNN_Node* node) {
     os << node->node_id << " ";
     os << node->exact_id << " ";
     os << node->genome_id << " ";
@@ -1224,7 +1342,7 @@ ostream &operator<<(ostream &os, const CNN_Node *node) {
     return os;
 }
 
-std::istream &operator>>(std::istream &is, CNN_Node *node) {
+std::istream& operator>>(std::istream& is, CNN_Node* node) {
     is >> node->node_id;
     is >> node->exact_id;
     is >> node->genome_id;
@@ -1285,42 +1403,90 @@ std::istream &operator>>(std::istream &is, CNN_Node *node) {
     return is;
 }
 
-bool CNN_Node::is_identical(const CNN_Node *other, bool testing_checkpoint) {
-    if (are_different("node_id", node_id, other->node_id)) return false;
-    if (are_different("exact_id", exact_id, other->exact_id)) return false;
-    if (are_different("genome_id", genome_id, other->genome_id)) return false;
+bool CNN_Node::is_identical(const CNN_Node* other, bool testing_checkpoint) {
+    if (are_different("node_id", node_id, other->node_id)) {
+        return false;
+    }
+    if (are_different("exact_id", exact_id, other->exact_id)) {
+        return false;
+    }
+    if (are_different("genome_id", genome_id, other->genome_id)) {
+        return false;
+    }
 
-    if (are_different("innovation_number", innovation_number, other->innovation_number)) return false;
-    if (are_different("depth", depth, other->depth)) return false;
+    if (are_different("innovation_number", innovation_number, other->innovation_number)) {
+        return false;
+    }
+    if (are_different("depth", depth, other->depth)) {
+        return false;
+    }
 
-    if (are_different("batch_size", batch_size, other->batch_size)) return false;
-    if (are_different("size_y", size_y, other->size_y)) return false;
-    if (are_different("size_x", size_x, other->size_x)) return false;
-    if (are_different("total_size", total_size, other->total_size)) return false;
+    if (are_different("batch_size", batch_size, other->batch_size)) {
+        return false;
+    }
+    if (are_different("size_y", size_y, other->size_y)) {
+        return false;
+    }
+    if (are_different("size_x", size_x, other->size_x)) {
+        return false;
+    }
+    if (are_different("total_size", total_size, other->total_size)) {
+        return false;
+    }
 
-    if (are_different("weight_count", weight_count, other->weight_count)) return false;
+    if (are_different("weight_count", weight_count, other->weight_count)) {
+        return false;
+    }
 
-    if (are_different("type", type, other->type)) return false;
+    if (are_different("type", type, other->type)) {
+        return false;
+    }
 
-    if (are_different("total_inputs", total_inputs, other->total_inputs)) return false;
+    if (are_different("total_inputs", total_inputs, other->total_inputs)) {
+        return false;
+    }
     // if (are_different("inputs_fired", inputs_fired, other->inputs_fired)) return false;
 
-    if (are_different("total_outputs", total_outputs, other->total_outputs)) return false;
-    if (are_different("outputs_fired", outputs_fired, other->outputs_fired)) return false;
+    if (are_different("total_outputs", total_outputs, other->total_outputs)) {
+        return false;
+    }
+    if (are_different("outputs_fired", outputs_fired, other->outputs_fired)) {
+        return false;
+    }
 
-    if (are_different("forward_visited", forward_visited, other->forward_visited)) return false;
-    if (are_different("reverse_visited", reverse_visited, other->reverse_visited)) return false;
-    if (are_different("needs_initialization", needs_initialization, other->needs_initialization)) return false;
+    if (are_different("forward_visited", forward_visited, other->forward_visited)) {
+        return false;
+    }
+    if (are_different("reverse_visited", reverse_visited, other->reverse_visited)) {
+        return false;
+    }
+    if (are_different("needs_initialization", needs_initialization, other->needs_initialization)) {
+        return false;
+    }
 
-    if (are_different("disabled", disabled, other->disabled)) return false;
+    if (are_different("disabled", disabled, other->disabled)) {
+        return false;
+    }
 
-    if (are_different("gamma", gamma, other->gamma)) return false;
-    if (are_different("best_gamma", best_gamma, other->best_gamma)) return false;
-    if (are_different("previous_velocity_gamma", previous_velocity_gamma, other->previous_velocity_gamma)) return false;
+    if (are_different("gamma", gamma, other->gamma)) {
+        return false;
+    }
+    if (are_different("best_gamma", best_gamma, other->best_gamma)) {
+        return false;
+    }
+    if (are_different("previous_velocity_gamma", previous_velocity_gamma, other->previous_velocity_gamma)) {
+        return false;
+    }
 
-    if (are_different("beta", beta, other->beta)) return false;
-    if (are_different("best_beta", best_beta, other->best_beta)) return false;
-    if (are_different("previous_velocity_beta", previous_velocity_beta, other->previous_velocity_beta)) return false;
+    if (are_different("beta", beta, other->beta)) {
+        return false;
+    }
+    if (are_different("best_beta", best_beta, other->best_beta)) {
+        return false;
+    }
+    if (are_different("previous_velocity_beta", previous_velocity_beta, other->previous_velocity_beta)) {
+        return false;
+    }
 
     // these are all reset and recalculated on each batch
     // if (are_different("batch_mean", batch_mean, other->batch_mean)) return false;
@@ -1328,11 +1494,19 @@ bool CNN_Node::is_identical(const CNN_Node *other, bool testing_checkpoint) {
     // if (are_different("batch_std_dev", batch_std_dev, other->batch_std_dev)) return false;
     // if (are_different("inverse_variance", inverse_variance, other->inverse_variance)) return false;
 
-    if (are_different("running_mean", running_mean, other->running_mean)) return false;
-    if (are_different("best_running_mean", best_running_mean, other->best_running_mean)) return false;
+    if (are_different("running_mean", running_mean, other->running_mean)) {
+        return false;
+    }
+    if (are_different("best_running_mean", best_running_mean, other->best_running_mean)) {
+        return false;
+    }
 
-    if (are_different("running_variance", running_variance, other->running_variance)) return false;
-    if (are_different("best_running_variance", best_running_variance, other->best_running_variance)) return false;
+    if (are_different("running_variance", running_variance, other->running_variance)) {
+        return false;
+    }
+    if (are_different("best_running_variance", best_running_variance, other->best_running_variance)) {
+        return false;
+    }
 
     // values, errors_out, relu_gradients, pool_gradients, values_in, errors_in, input_fired_time and output_fired time
     // are all reset to 0 before every pass so don't need to be compared

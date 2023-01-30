@@ -15,7 +15,7 @@ using boost::filesystem::is_directory;
 using namespace std;
 using namespace cv;
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
     Mat image;
 
     if (argc != 6) {
@@ -60,7 +60,9 @@ int main(int argc, char **argv) {
                 dst = src;
             }
 
-            if (hsv) { cvtColor(dst, dst, CV_BGR2HSV); }
+            if (hsv) {
+                cvtColor(dst, dst, CV_BGR2HSV);
+            }
 
             imwrite(output_filename.str().c_str(), dst);
 

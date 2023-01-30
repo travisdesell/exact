@@ -24,7 +24,7 @@ using std::vector;
 #include "cnn/exact.hxx"
 #include "image_tools/image_set.hxx"
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
     vector<string> arguments = vector<string>(argv, argv + argc);
 
     string training_data;
@@ -37,15 +37,16 @@ int main(int argc, char **argv) {
     get_argument(arguments, "--genome_file", true, genome_filename);
 
     bool is_checkpoint = false;
-    CNN_Genome *genome_from_file = new CNN_Genome(genome_filename, is_checkpoint);
+    CNN_Genome* genome_from_file = new CNN_Genome(genome_filename, is_checkpoint);
 
     genome_from_file->write_to_file("temp_genome.txt");
 
-    CNN_Genome *genome_from_checkpoint = new CNN_Genome("temp_genome.txt", true);
+    CNN_Genome* genome_from_checkpoint = new CNN_Genome("temp_genome.txt", true);
 
     Images training_images(training_data, genome_from_file->get_padding());
-    Images testing_images(testing_data, genome_from_file->get_padding(), training_images.get_average(),
-                          training_images.get_std_dev());
+    Images testing_images(
+        testing_data, genome_from_file->get_padding(), training_images.get_average(), training_images.get_std_dev()
+    );
 
     float error;
     int predictions;

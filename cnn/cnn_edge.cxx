@@ -85,7 +85,7 @@ CNN_Edge::CNN_Edge() {
     best_velocity_scale = 0.0;
 }
 
-CNN_Edge::CNN_Edge(CNN_Node *_input_node, CNN_Node *_output_node, bool _fixed, int _innovation_number, int _type) {
+CNN_Edge::CNN_Edge(CNN_Node* _input_node, CNN_Node* _output_node, bool _fixed, int _innovation_number, int _type) {
     edge_id = -1;
     exact_id = -1;
     genome_id = -1;
@@ -161,7 +161,7 @@ CNN_Edge::~CNN_Edge() {
     output_node = NULL;
 }
 
-void parse_float_2d(float **output, istringstream &iss, int filter_x, int filter_y) {
+void parse_float_2d(float** output, istringstream& iss, int filter_x, int filter_y) {
     // if (*output != NULL) delete [] (*output);
     (*output) = new float[filter_y * filter_x];
 
@@ -183,7 +183,7 @@ void parse_float_2d(float **output, istringstream &iss, int filter_x, int filter
     }
 }
 
-void parse_vector_2d(vector<vector<float> > &output, istringstream &iss, int filter_x, int filter_y) {
+void parse_vector_2d(vector<vector<float> >& output, istringstream& iss, int filter_x, int filter_y) {
     output.clear();
     output = vector<vector<float> >(filter_y, vector<float>(filter_x));
 
@@ -219,7 +219,7 @@ CNN_Edge::CNN_Edge(int _edge_id) {
 
     mysql_exact_query(query.str());
 
-    MYSQL_RES *result = mysql_store_result(exact_db_conn);
+    MYSQL_RES* result = mysql_store_result(exact_db_conn);
 
     if (result != NULL) {
         MYSQL_ROW row = mysql_fetch_row(result);
@@ -244,14 +244,18 @@ CNN_Edge::CNN_Edge(int _edge_id) {
         istringstream weights_iss(row[++column]);
         // parse_float_2d(&weights, weights_iss, filter_x, filter_y);
         weights = new float[filter_y * filter_x];
-        for (int32_t i = 0; i < filter_y * filter_x; i++) { weights[i] = read_hexfloat(weights_iss); }
+        for (int32_t i = 0; i < filter_y * filter_x; i++) {
+            weights[i] = read_hexfloat(weights_iss);
+        }
 
         // cout << "reading best weights for exact edge" << endl;
 
         istringstream best_weights_iss(row[++column]);
         // parse_float_2d(&best_weights, best_weights_iss, filter_x, filter_y);
         best_weights = new float[filter_y * filter_x];
-        for (int32_t i = 0; i < filter_y * filter_x; i++) { best_weights[i] = read_hexfloat(best_weights_iss); }
+        for (int32_t i = 0; i < filter_y * filter_x; i++) {
+            best_weights[i] = read_hexfloat(best_weights_iss);
+        }
         // cout << "success!" << endl;
 
         fixed = atoi(row[++column]);
@@ -313,24 +317,32 @@ void CNN_Edge::export_to_database(int _exact_id, int _genome_id) {
     int current = 0;
     for (int32_t y = 0; y < filter_y; y++) {
         for (int32_t x = 0; x < filter_x; x++) {
-            if (x != 0) query << " ";
+            if (x != 0) {
+                query << " ";
+            }
             write_hexfloat(query, weights[current]);
             // query << setprecision(15) << weights[current];
             current++;
         }
-        if (y != filter_y - 1) query << "\n";
+        if (y != filter_y - 1) {
+            query << "\n";
+        }
     }
 
     query << "', best_weights = '";
     current = 0;
     for (int32_t y = 0; y < filter_y; y++) {
         for (int32_t x = 0; x < filter_x; x++) {
-            if (x != 0) query << " ";
+            if (x != 0) {
+                query << " ";
+            }
             write_hexfloat(query, best_weights[current]);
             // query << setprecision(15) << best_weights[current];
             current++;
         }
-        if (y != filter_y - 1) query << "\n";
+        if (y != filter_y - 1) {
+            query << "\n";
+        }
     }
     query << "', scale_values = '";
     write_hexfloat(query, scale);
@@ -372,18 +384,24 @@ void CNN_Edge::export_to_database(int _exact_id, int _genome_id) {
     }
 }
 
-int CNN_Edge::get_edge_id() const { return edge_id; }
+int CNN_Edge::get_edge_id() const {
+    return edge_id;
+}
 #endif
 
-bool CNN_Edge::equals(CNN_Edge *other) const {
-    return filter_x == other->filter_x && filter_y == other->filter_y && disabled == other->disabled &&
-           reverse_filter_x == other->reverse_filter_x && reverse_filter_y == other->reverse_filter_y &&
-           type == other->type;
+bool CNN_Edge::equals(CNN_Edge* other) const {
+    return filter_x == other->filter_x && filter_y == other->filter_y && disabled == other->disabled
+           && reverse_filter_x == other->reverse_filter_x && reverse_filter_y == other->reverse_filter_y
+           && type == other->type;
 }
 
-bool CNN_Edge::needs_init() const { return needs_initialization; }
+bool CNN_Edge::needs_init() const {
+    return needs_initialization;
+}
 
-void CNN_Edge::set_needs_init() { needs_initialization = true; }
+void CNN_Edge::set_needs_init() {
+    needs_initialization = true;
+}
 
 void CNN_Edge::reset_times() {
     propagate_forward_time = 0.0;
@@ -391,38 +409,61 @@ void CNN_Edge::reset_times() {
     weight_update_time = 0.0;
 }
 
-void CNN_Edge::accumulate_times(float &total_forward_time, float &total_backward_time,
-                                float &total_weight_update_time) {
+void CNN_Edge::accumulate_times(
+    float& total_forward_time, float& total_backward_time, float& total_weight_update_time
+) {
     total_forward_time += propagate_forward_time;
     total_backward_time += propagate_backward_time;
     total_weight_update_time += weight_update_time;
 }
 
-int CNN_Edge::get_type() const { return type; }
-
-int CNN_Edge::get_filter_size() const { return filter_x * filter_y; }
-
-int CNN_Edge::get_filter_x() const { return filter_x; }
-
-int CNN_Edge::get_filter_y() const { return filter_y; }
-
-bool CNN_Edge::is_reverse_filter_x() const { return reverse_filter_x; }
-
-bool CNN_Edge::is_reverse_filter_y() const { return reverse_filter_y; }
-
-float CNN_Edge::get_weight(int i) const { return weights[i]; }
-
-float CNN_Edge::get_weight_update(int i) const { return weight_updates[i]; }
-
-void CNN_Edge::update_weight(int i, float diff) { weights[i] += diff; }
-
-float CNN_Edge::get_scale() const { return scale; }
-
-void CNN_Edge::propagate_weight_count() {
-    if (type == CONVOLUTIONAL) { output_node->add_weight_count(filter_x * filter_y); }
+int CNN_Edge::get_type() const {
+    return type;
 }
 
-void CNN_Edge::initialize_weights(minstd_rand0 &generator, NormalDistribution &normal_distribution) {
+int CNN_Edge::get_filter_size() const {
+    return filter_x * filter_y;
+}
+
+int CNN_Edge::get_filter_x() const {
+    return filter_x;
+}
+
+int CNN_Edge::get_filter_y() const {
+    return filter_y;
+}
+
+bool CNN_Edge::is_reverse_filter_x() const {
+    return reverse_filter_x;
+}
+
+bool CNN_Edge::is_reverse_filter_y() const {
+    return reverse_filter_y;
+}
+
+float CNN_Edge::get_weight(int i) const {
+    return weights[i];
+}
+
+float CNN_Edge::get_weight_update(int i) const {
+    return weight_updates[i];
+}
+
+void CNN_Edge::update_weight(int i, float diff) {
+    weights[i] += diff;
+}
+
+float CNN_Edge::get_scale() const {
+    return scale;
+}
+
+void CNN_Edge::propagate_weight_count() {
+    if (type == CONVOLUTIONAL) {
+        output_node->add_weight_count(filter_x * filter_y);
+    }
+}
+
+void CNN_Edge::initialize_weights(minstd_rand0& generator, NormalDistribution& normal_distribution) {
     if (type == POOLING) {
         needs_initialization = false;
         return;
@@ -491,11 +532,21 @@ void CNN_Edge::resize() {
     }
     filter_size = filter_y * filter_x;
 
-    if (weights != NULL) delete[] weights;
-    if (weight_updates != NULL) delete[] weight_updates;
-    if (best_weights != NULL) delete[] best_weights;
-    if (previous_velocity != NULL) delete[] previous_velocity;
-    if (best_velocity != NULL) delete[] best_velocity;
+    if (weights != NULL) {
+        delete[] weights;
+    }
+    if (weight_updates != NULL) {
+        delete[] weight_updates;
+    }
+    if (best_weights != NULL) {
+        delete[] best_weights;
+    }
+    if (previous_velocity != NULL) {
+        delete[] previous_velocity;
+    }
+    if (best_velocity != NULL) {
+        delete[] best_velocity;
+    }
 
     weights = new float[filter_size]();
     weight_updates = new float[filter_size]();
@@ -539,8 +590,8 @@ void CNN_Edge::set_weights_to_best() {
     previous_velocity_scale = best_velocity_scale;
 }
 
-CNN_Edge *CNN_Edge::copy() const {
-    CNN_Edge *copy = new CNN_Edge();
+CNN_Edge* CNN_Edge::copy() const {
+    CNN_Edge* copy = new CNN_Edge();
 
     copy->edge_id = -1;
     copy->genome_id = genome_id;
@@ -576,11 +627,21 @@ CNN_Edge *CNN_Edge::copy() const {
     copy->previous_velocity_scale = previous_velocity_scale;
     copy->best_velocity_scale = best_velocity_scale;
 
-    if (weights == NULL) throw runtime_error("ERROR! copying CNN_Edge where weights == NULL");
-    if (weight_updates == NULL) throw runtime_error("ERROR! copying CNN_Edge where weight_updates == NULL");
-    if (best_weights == NULL) throw runtime_error("ERROR! copying CNN_Edge where best_weights == NULL");
-    if (previous_velocity == NULL) throw runtime_error("ERROR! copying CNN_Edge where previous_velocity == NULL");
-    if (best_velocity == NULL) throw runtime_error("ERROR! copying CNN_Edge where best_velocity == NULL");
+    if (weights == NULL) {
+        throw runtime_error("ERROR! copying CNN_Edge where weights == NULL");
+    }
+    if (weight_updates == NULL) {
+        throw runtime_error("ERROR! copying CNN_Edge where weight_updates == NULL");
+    }
+    if (best_weights == NULL) {
+        throw runtime_error("ERROR! copying CNN_Edge where best_weights == NULL");
+    }
+    if (previous_velocity == NULL) {
+        throw runtime_error("ERROR! copying CNN_Edge where previous_velocity == NULL");
+    }
+    if (best_velocity == NULL) {
+        throw runtime_error("ERROR! copying CNN_Edge where best_velocity == NULL");
+    }
 
     copy->weights = new float[copy->filter_size]();
     copy->weight_updates = new float[copy->filter_size]();
@@ -603,7 +664,7 @@ CNN_Edge *CNN_Edge::copy() const {
     return copy;
 }
 
-bool CNN_Edge::set_nodes(const vector<CNN_Node *> nodes) {
+bool CNN_Edge::set_nodes(const vector<CNN_Node*> nodes) {
     // cout << "nodes.size(): " << nodes.size() << endl;
     // cout << "setting input node: " << input_node_innovation_number << endl;
     // cout << "setting output node: " << output_node_innovation_number << endl;
@@ -612,15 +673,21 @@ bool CNN_Edge::set_nodes(const vector<CNN_Node *> nodes) {
     output_node = NULL;
 
     for (uint32_t i = 0; i < nodes.size(); i++) {
-        if (nodes[i]->get_innovation_number() == input_node_innovation_number) { input_node = nodes[i]; }
+        if (nodes[i]->get_innovation_number() == input_node_innovation_number) {
+            input_node = nodes[i];
+        }
 
-        if (nodes[i]->get_innovation_number() == output_node_innovation_number) { output_node = nodes[i]; }
+        if (nodes[i]->get_innovation_number() == output_node_innovation_number) {
+            output_node = nodes[i];
+        }
     }
 
     if (input_node == NULL) {
         cerr << "ERROR: Could not find node with input innovation number: " << input_node_innovation_number << endl;
         cerr << " nodes innovation numbers:" << endl;
-        for (uint32_t i = 0; i < nodes.size(); i++) { cerr << "\t" << nodes[i]->get_innovation_number() << endl; }
+        for (uint32_t i = 0; i < nodes.size(); i++) {
+            cerr << "\t" << nodes[i]->get_innovation_number() << endl;
+        }
 
         ostringstream error_message;
         error_message << "Could not find node with input node innovation number " << input_node_innovation_number
@@ -631,7 +698,9 @@ bool CNN_Edge::set_nodes(const vector<CNN_Node *> nodes) {
     if (output_node == NULL) {
         cerr << "ERROR: Could not find node with output innovation number: " << output_node_innovation_number << endl;
         cerr << " nodes innovation numbers:" << endl;
-        for (uint32_t i = 0; i < nodes.size(); i++) { cerr << "\t" << nodes[i]->get_innovation_number() << endl; }
+        for (uint32_t i = 0; i < nodes.size(); i++) {
+            cerr << "\t" << nodes[i]->get_innovation_number() << endl;
+        }
 
         ostringstream error_message;
         error_message << "Could not find node with output node innovation number " << output_node_innovation_number
@@ -646,7 +715,9 @@ bool CNN_Edge::set_nodes(const vector<CNN_Node *> nodes) {
         throw runtime_error(error_message.str());
     }
 
-    if (!is_filter_correct()) return false;
+    if (!is_filter_correct()) {
+        return false;
+    }
 
     return true;
 }
@@ -716,7 +787,9 @@ bool CNN_Edge::is_filter_correct() const {
     return is_correct;
 }
 
-void CNN_Edge::update_batch_size(int new_batch_size) { batch_size = new_batch_size; }
+void CNN_Edge::update_batch_size(int new_batch_size) {
+    batch_size = new_batch_size;
+}
 
 void CNN_Edge::alter_edge_type() {
     if (type == CONVOLUTIONAL) {
@@ -727,52 +800,86 @@ void CNN_Edge::alter_edge_type() {
 }
 
 void CNN_Edge::enable() {
-    if (is_reachable()) { disabled = false; }
+    if (is_reachable()) {
+        disabled = false;
+    }
 }
 
 void CNN_Edge::disable() {
-    if (!is_reachable()) { disabled = true; }
+    if (!is_reachable()) {
+        disabled = true;
+    }
 }
 
-bool CNN_Edge::is_enabled() const { return !disabled; }
+bool CNN_Edge::is_enabled() const {
+    return !disabled;
+}
 
-bool CNN_Edge::is_disabled() const { return disabled; }
+bool CNN_Edge::is_disabled() const {
+    return disabled;
+}
 
-bool CNN_Edge::is_reachable() const { return !disabled && forward_visited && reverse_visited; }
+bool CNN_Edge::is_reachable() const {
+    return !disabled && forward_visited && reverse_visited;
+}
 
-bool CNN_Edge::is_forward_visited() const { return forward_visited; }
+bool CNN_Edge::is_forward_visited() const {
+    return forward_visited;
+}
 
-bool CNN_Edge::is_reverse_visited() const { return reverse_visited; }
+bool CNN_Edge::is_reverse_visited() const {
+    return reverse_visited;
+}
 
-void CNN_Edge::forward_visit() { forward_visited = true; }
+void CNN_Edge::forward_visit() {
+    forward_visited = true;
+}
 
-void CNN_Edge::reverse_visit() { reverse_visited = true; }
+void CNN_Edge::reverse_visit() {
+    reverse_visited = true;
+}
 
 void CNN_Edge::set_unvisited() {
     forward_visited = false;
     reverse_visited = false;
 }
 
-int CNN_Edge::get_number_weights() const { return filter_x * filter_y; }
+int CNN_Edge::get_number_weights() const {
+    return filter_x * filter_y;
+}
 
-int CNN_Edge::get_batch_size() const { return batch_size; }
+int CNN_Edge::get_batch_size() const {
+    return batch_size;
+}
 
-int CNN_Edge::get_innovation_number() const { return innovation_number; }
+int CNN_Edge::get_innovation_number() const {
+    return innovation_number;
+}
 
-int CNN_Edge::get_input_innovation_number() const { return input_node_innovation_number; }
+int CNN_Edge::get_input_innovation_number() const {
+    return input_node_innovation_number;
+}
 
-int CNN_Edge::get_output_innovation_number() const { return output_node_innovation_number; }
+int CNN_Edge::get_output_innovation_number() const {
+    return output_node_innovation_number;
+}
 
-CNN_Node *CNN_Edge::get_input_node() { return input_node; }
+CNN_Node* CNN_Edge::get_input_node() {
+    return input_node;
+}
 
-CNN_Node *CNN_Edge::get_output_node() { return output_node; }
+CNN_Node* CNN_Edge::get_output_node() {
+    return output_node;
+}
 
 bool CNN_Edge::connects(int n1, int n2) const {
     return (input_node_innovation_number == n1) && (output_node_innovation_number == n2);
 }
 
 bool CNN_Edge::has_zero_weight() const {
-    if (is_reachable()) return false;
+    if (is_reachable()) {
+        return false;
+    }
 
     float filter_sum = 0.0;
     int current = 0;
@@ -787,7 +894,9 @@ bool CNN_Edge::has_zero_weight() const {
 }
 
 bool CNN_Edge::has_zero_best_weight() const {
-    if (is_reachable()) return false;
+    if (is_reachable()) {
+        return false;
+    }
 
     float filter_sum = 0.0;
     int current = 0;
@@ -801,7 +910,7 @@ bool CNN_Edge::has_zero_best_weight() const {
     return filter_sum == 0;
 }
 
-void CNN_Edge::print(ostream &out) {
+void CNN_Edge::print(ostream& out) {
     out << "CNN_Edge " << innovation_number << " from node " << input_node->get_innovation_number() << " to node "
         << output_node->get_innovation_number() << " with filter x: " << filter_x << ", y: " << filter_y << endl;
 
@@ -840,9 +949,10 @@ void CNN_Edge::print(ostream &out) {
     }
 }
 
-void CNN_Edge::check_output_update(const vector<vector<vector<float> > > &output,
-                                   const vector<vector<vector<float> > > &input, float value, float weight,
-                                   float previous_output, int batch_number, int in_y, int in_x, int out_y, int out_x) {
+void CNN_Edge::check_output_update(
+    const vector<vector<vector<float> > >& output, const vector<vector<vector<float> > >& input, float value,
+    float weight, float previous_output, int batch_number, int in_y, int in_x, int out_y, int out_x
+) {
     if (isnan(output[batch_number][out_y][out_x]) || isinf(output[batch_number][out_y][out_x])) {
         cerr << "ERROR in edge " << innovation_number << " propagate forward!" << endl;
         cerr << "input node innovation number: " << input_node->get_innovation_number()
@@ -867,16 +977,20 @@ void CNN_Edge::check_output_update(const vector<vector<vector<float> > > &output
     }
 }
 
-void CNN_Edge::propagate_forward(bool training, bool accumulate_test_statistics, float epsilon, float alpha,
-                                 bool perform_dropout, float hidden_dropout_probability, minstd_rand0 &generator) {
-    if (!is_reachable()) return;
+void CNN_Edge::propagate_forward(
+    bool training, bool accumulate_test_statistics, float epsilon, float alpha, bool perform_dropout,
+    float hidden_dropout_probability, minstd_rand0& generator
+) {
+    if (!is_reachable()) {
+        return;
+    }
 
     using namespace std::chrono;
     high_resolution_clock::time_point propagate_forward_start_time = high_resolution_clock::now();
 
-    float *input = input_node->get_values_out();
-    float *pool_gradients = input_node->get_pool_gradients();
-    float *output = output_node->get_values_in();
+    float* input = input_node->get_values_out();
+    float* pool_gradients = input_node->get_pool_gradients();
+    float* output = output_node->get_values_in();
 
 #ifdef NAN_CHECKS
     if (!is_filter_correct()) {
@@ -896,17 +1010,25 @@ void CNN_Edge::propagate_forward(bool training, bool accumulate_test_statistics,
 
     if (type == CONVOLUTIONAL) {
         if (reverse_filter_y && reverse_filter_x) {
-            prop_forward_ry_rx(input, weights, output, batch_size, input_size_y, input_size_x, filter_y, filter_x,
-                               output_size_y, output_size_x);
+            prop_forward_ry_rx(
+                input, weights, output, batch_size, input_size_y, input_size_x, filter_y, filter_x, output_size_y,
+                output_size_x
+            );
         } else if (reverse_filter_y) {
-            prop_forward_ry(input, weights, output, batch_size, input_size_y, input_size_x, filter_y, filter_x,
-                            output_size_y, output_size_x);
+            prop_forward_ry(
+                input, weights, output, batch_size, input_size_y, input_size_x, filter_y, filter_x, output_size_y,
+                output_size_x
+            );
         } else if (reverse_filter_x) {
-            prop_forward_rx(input, weights, output, batch_size, input_size_y, input_size_x, filter_y, filter_x,
-                            output_size_y, output_size_x);
+            prop_forward_rx(
+                input, weights, output, batch_size, input_size_y, input_size_x, filter_y, filter_x, output_size_y,
+                output_size_x
+            );
         } else {
-            prop_forward(input, weights, output, batch_size, input_size_y, input_size_x, filter_y, filter_x,
-                         output_size_y, output_size_x);
+            prop_forward(
+                input, weights, output, batch_size, input_size_y, input_size_x, filter_y, filter_x, output_size_y,
+                output_size_x
+            );
         }
 
     } else if (type == POOLING) {
@@ -948,9 +1070,10 @@ void CNN_Edge::propagate_forward(bool training, bool accumulate_test_statistics,
                 max_pooling = false;
             }
 
-            pool_forward_ry_rx(input, scale, pool_gradients, output, batch_size, input_size_y, input_size_x,
-                               output_size_y, output_size_x, y_pools, x_pools, y_pool_offset, x_pool_offset, generator,
-                               training, max_pooling);
+            pool_forward_ry_rx(
+                input, scale, pool_gradients, output, batch_size, input_size_y, input_size_x, output_size_y,
+                output_size_x, y_pools, x_pools, y_pool_offset, x_pool_offset, generator, training, max_pooling
+            );
 
         } else if (reverse_filter_y) {
             if (output_size_y % input_size_y == 0) {
@@ -965,9 +1088,10 @@ void CNN_Edge::propagate_forward(bool training, bool accumulate_test_statistics,
                 max_pooling = false;
             }
 
-            pool_forward_ry(input, scale, pool_gradients, output, batch_size, input_size_y, input_size_x, output_size_y,
-                            output_size_x, y_pools, x_pools, y_pool_offset, x_pool_offset, generator, training,
-                            max_pooling);
+            pool_forward_ry(
+                input, scale, pool_gradients, output, batch_size, input_size_y, input_size_x, output_size_y,
+                output_size_x, y_pools, x_pools, y_pool_offset, x_pool_offset, generator, training, max_pooling
+            );
 
         } else if (reverse_filter_x) {
             if (input_size_y % output_size_y == 0) {
@@ -982,9 +1106,10 @@ void CNN_Edge::propagate_forward(bool training, bool accumulate_test_statistics,
                 max_pooling = false;
             }
 
-            pool_forward_rx(input, scale, pool_gradients, output, batch_size, input_size_y, input_size_x, output_size_y,
-                            output_size_x, y_pools, x_pools, y_pool_offset, x_pool_offset, generator, training,
-                            max_pooling);
+            pool_forward_rx(
+                input, scale, pool_gradients, output, batch_size, input_size_y, input_size_x, output_size_y,
+                output_size_x, y_pools, x_pools, y_pool_offset, x_pool_offset, generator, training, max_pooling
+            );
 
         } else {
             if (output_size_y % input_size_y == 0) {
@@ -999,9 +1124,10 @@ void CNN_Edge::propagate_forward(bool training, bool accumulate_test_statistics,
                 max_pooling = false;
             }
 
-            pool_forward(input, scale, pool_gradients, output, batch_size, input_size_y, input_size_x, output_size_y,
-                         output_size_x, y_pools, x_pools, y_pool_offset, x_pool_offset, generator, training,
-                         max_pooling);
+            pool_forward(
+                input, scale, pool_gradients, output, batch_size, input_size_y, input_size_x, output_size_y,
+                output_size_x, y_pools, x_pools, y_pool_offset, x_pool_offset, generator, training, max_pooling
+            );
         }
 
     } else {
@@ -1014,13 +1140,18 @@ void CNN_Edge::propagate_forward(bool training, bool accumulate_test_statistics,
 
     propagate_forward_time += time_span.count() / 1000.0;
 
-    output_node->input_fired(training, accumulate_test_statistics, epsilon, alpha, perform_dropout,
-                             hidden_dropout_probability, generator);
+    output_node->input_fired(
+        training, accumulate_test_statistics, epsilon, alpha, perform_dropout, hidden_dropout_probability, generator
+    );
 }
 
 void CNN_Edge::update_weights(float mu, float learning_rate, float weight_decay) {
-    if (!is_reachable()) return;
-    if (type == POOLING) return;
+    if (!is_reachable()) {
+        return;
+    }
+    if (type == POOLING) {
+        return;
+    }
 
     using namespace std::chrono;
     high_resolution_clock::time_point weight_update_start_time = high_resolution_clock::now();
@@ -1113,14 +1244,16 @@ void CNN_Edge::update_weights(float mu, float learning_rate, float weight_decay)
 }
 
 void CNN_Edge::propagate_backward(bool training, float mu, float learning_rate, float epsilon) {
-    if (!is_reachable()) return;
+    if (!is_reachable()) {
+        return;
+    }
 
     using namespace std::chrono;
     high_resolution_clock::time_point propagate_backward_start_time = high_resolution_clock::now();
 
-    float *output_errors = output_node->get_errors_in();
-    float *input = input_node->get_values_out();
-    float *input_errors = input_node->get_errors_out();
+    float* output_errors = output_node->get_errors_in();
+    float* input = input_node->get_values_out();
+    float* input_errors = input_node->get_errors_out();
 
     int input_size_x = input_node->get_size_x();
     int input_size_y = input_node->get_size_y();
@@ -1128,42 +1261,57 @@ void CNN_Edge::propagate_backward(bool training, float mu, float learning_rate, 
     int output_size_x = output_node->get_size_x();
     int output_size_y = output_node->get_size_y();
 
-    for (int32_t current = 0; current < filter_size; current++) { weight_updates[current] = 0; }
+    for (int32_t current = 0; current < filter_size; current++) {
+        weight_updates[current] = 0;
+    }
 
     if (type == CONVOLUTIONAL) {
         if (reverse_filter_x && reverse_filter_y) {
-            prop_backward_ry_rx(output_errors, input, input_errors, weight_updates, weights, batch_size, input_size_y,
-                                input_size_x, filter_y, filter_x, output_size_y, output_size_x);
+            prop_backward_ry_rx(
+                output_errors, input, input_errors, weight_updates, weights, batch_size, input_size_y, input_size_x,
+                filter_y, filter_x, output_size_y, output_size_x
+            );
         } else if (reverse_filter_y) {
-            prop_backward_ry(output_errors, input, input_errors, weight_updates, weights, batch_size, input_size_y,
-                             input_size_x, filter_y, filter_x, output_size_y, output_size_x);
+            prop_backward_ry(
+                output_errors, input, input_errors, weight_updates, weights, batch_size, input_size_y, input_size_x,
+                filter_y, filter_x, output_size_y, output_size_x
+            );
         } else if (reverse_filter_x) {
-            prop_backward_rx(output_errors, input, input_errors, weight_updates, weights, batch_size, input_size_y,
-                             input_size_x, filter_y, filter_x, output_size_y, output_size_x);
+            prop_backward_rx(
+                output_errors, input, input_errors, weight_updates, weights, batch_size, input_size_y, input_size_x,
+                filter_y, filter_x, output_size_y, output_size_x
+            );
         } else {
-            prop_backward(output_errors, input, input_errors, weight_updates, weights, batch_size, input_size_y,
-                          input_size_x, filter_y, filter_x, output_size_y, output_size_x);
+            prop_backward(
+                output_errors, input, input_errors, weight_updates, weights, batch_size, input_size_y, input_size_x,
+                filter_y, filter_x, output_size_y, output_size_x
+            );
         }
 
     } else if (type == POOLING) {
-        float *pool_gradients = input_node->get_pool_gradients();
+        float* pool_gradients = input_node->get_pool_gradients();
 
         float scale_update = 0.0;
         if (reverse_filter_y && reverse_filter_x) {
-            pool_backward_ry_rx(input_errors, scale_update, input, pool_gradients, output_errors, batch_size,
-                                input_size_y, input_size_x, output_size_y, output_size_x, y_pools, x_pools,
-                                y_pool_offset, x_pool_offset);
+            pool_backward_ry_rx(
+                input_errors, scale_update, input, pool_gradients, output_errors, batch_size, input_size_y,
+                input_size_x, output_size_y, output_size_x, y_pools, x_pools, y_pool_offset, x_pool_offset
+            );
         } else if (reverse_filter_y) {
-            pool_backward_ry(input_errors, scale_update, input, pool_gradients, output_errors, batch_size, input_size_y,
-                             input_size_x, output_size_y, output_size_x, y_pools, x_pools, y_pool_offset,
-                             x_pool_offset);
+            pool_backward_ry(
+                input_errors, scale_update, input, pool_gradients, output_errors, batch_size, input_size_y,
+                input_size_x, output_size_y, output_size_x, y_pools, x_pools, y_pool_offset, x_pool_offset
+            );
         } else if (reverse_filter_x) {
-            pool_backward_rx(input_errors, scale_update, input, pool_gradients, output_errors, batch_size, input_size_y,
-                             input_size_x, output_size_y, output_size_x, y_pools, x_pools, y_pool_offset,
-                             x_pool_offset);
+            pool_backward_rx(
+                input_errors, scale_update, input, pool_gradients, output_errors, batch_size, input_size_y,
+                input_size_x, output_size_y, output_size_x, y_pools, x_pools, y_pool_offset, x_pool_offset
+            );
         } else {
-            pool_backward(input_errors, scale_update, input, pool_gradients, output_errors, batch_size, input_size_y,
-                          input_size_x, output_size_y, output_size_x, y_pools, x_pools, y_pool_offset, x_pool_offset);
+            pool_backward(
+                input_errors, scale_update, input, pool_gradients, output_errors, batch_size, input_size_y,
+                input_size_x, output_size_y, output_size_x, y_pools, x_pools, y_pool_offset, x_pool_offset
+            );
         }
 
         float pv_scale = previous_velocity_scale;
@@ -1197,12 +1345,20 @@ bool CNN_Edge::has_nan() const {
     // cout << "checking to see if edge " << innovation_number << " has nan or inf, filter_size: " << filter_size <<
     // endl;
     for (int32_t current = 0; current < filter_size; current++) {
-        if (isnan(weights[current]) || isinf(weights[current])) return true;
-        if (isnan(weight_updates[current]) || isinf(weight_updates[current])) return true;
-        if (isnan(previous_velocity[current]) || isinf(previous_velocity[current])) return true;
+        if (isnan(weights[current]) || isinf(weights[current])) {
+            return true;
+        }
+        if (isnan(weight_updates[current]) || isinf(weight_updates[current])) {
+            return true;
+        }
+        if (isnan(previous_velocity[current]) || isinf(previous_velocity[current])) {
+            return true;
+        }
     }
 
-    if (isnan(scale) || isnan(best_scale) || isnan(previous_velocity_scale) || isnan(best_velocity_scale)) return true;
+    if (isnan(scale) || isnan(best_scale) || isnan(previous_velocity_scale) || isnan(best_velocity_scale)) {
+        return true;
+    }
     return false;
 }
 
@@ -1215,16 +1371,28 @@ void CNN_Edge::print_statistics() {
           velocity_avg = 0.0;
 
     for (int32_t current = 0; current < filter_size; current++) {
-        if (weights[current] < weight_min) weight_min = weights[current];
-        if (weights[current] > weight_max) weight_max = weights[current];
+        if (weights[current] < weight_min) {
+            weight_min = weights[current];
+        }
+        if (weights[current] > weight_max) {
+            weight_max = weights[current];
+        }
         weight_avg += weights[current];
 
-        if (weight_updates[current] < weight_update_min) weight_update_min = weight_updates[current];
-        if (weight_updates[current] > weight_update_max) weight_update_max = weight_updates[current];
+        if (weight_updates[current] < weight_update_min) {
+            weight_update_min = weight_updates[current];
+        }
+        if (weight_updates[current] > weight_update_max) {
+            weight_update_max = weight_updates[current];
+        }
         weight_update_avg += weight_updates[current];
 
-        if (previous_velocity[current] < velocity_min) velocity_min = previous_velocity[current];
-        if (previous_velocity[current] > velocity_max) velocity_max = previous_velocity[current];
+        if (previous_velocity[current] < velocity_min) {
+            velocity_min = previous_velocity[current];
+        }
+        if (previous_velocity[current] > velocity_max) {
+            velocity_max = previous_velocity[current];
+        }
         velocity_avg += previous_velocity[current];
     }
 
@@ -1238,7 +1406,7 @@ void CNN_Edge::print_statistics() {
          << ", v_avg: " << velocity_avg << ", v_max: " << velocity_max << endl;
 }
 
-ostream &operator<<(ostream &os, const CNN_Edge *edge) {
+ostream& operator<<(ostream& os, const CNN_Edge* edge) {
     os << edge->edge_id << " ";
     os << edge->exact_id << " ";
     os << edge->genome_id << " ";
@@ -1268,18 +1436,24 @@ ostream &operator<<(ostream &os, const CNN_Edge *edge) {
 
     os << "POOLS" << endl;
     os << edge->y_pools.size();
-    for (int32_t i = 0; i < edge->y_pools.size(); i++) { os << " " << edge->y_pools[i]; }
+    for (int32_t i = 0; i < edge->y_pools.size(); i++) {
+        os << " " << edge->y_pools[i];
+    }
     os << endl;
 
     os << edge->x_pools.size();
-    for (int32_t i = 0; i < edge->x_pools.size(); i++) { os << " " << edge->x_pools[i]; }
+    for (int32_t i = 0; i < edge->x_pools.size(); i++) {
+        os << " " << edge->x_pools[i];
+    }
     os << endl;
 
     os << "WEIGHTS" << endl;
     int current = 0;
     for (int32_t y = 0; y < edge->filter_y; y++) {
         for (int32_t x = 0; x < edge->filter_x; x++) {
-            if (y > 0 || x > 0) os << " ";
+            if (y > 0 || x > 0) {
+                os << " ";
+            }
             write_hexfloat(os, edge->weights[current]);
             current++;
         }
@@ -1290,7 +1464,9 @@ ostream &operator<<(ostream &os, const CNN_Edge *edge) {
     current = 0;
     for (int32_t y = 0; y < edge->filter_y; y++) {
         for (int32_t x = 0; x < edge->filter_x; x++) {
-            if (y > 0 || x > 0) os << " ";
+            if (y > 0 || x > 0) {
+                os << " ";
+            }
             write_hexfloat(os, edge->best_weights[current]);
             current++;
         }
@@ -1301,7 +1477,9 @@ ostream &operator<<(ostream &os, const CNN_Edge *edge) {
     current = 0;
     for (int32_t y = 0; y < edge->filter_y; y++) {
         for (int32_t x = 0; x < edge->filter_x; x++) {
-            if (y > 0 || x > 0) os << " ";
+            if (y > 0 || x > 0) {
+                os << " ";
+            }
             write_hexfloat(os, edge->previous_velocity[current]);
             current++;
         }
@@ -1312,7 +1490,9 @@ ostream &operator<<(ostream &os, const CNN_Edge *edge) {
     current = 0;
     for (int32_t y = 0; y < edge->filter_y; y++) {
         for (int32_t x = 0; x < edge->filter_x; x++) {
-            if (y > 0 || x > 0) os << " ";
+            if (y > 0 || x > 0) {
+                os << " ";
+            }
             write_hexfloat(os, edge->best_velocity[current]);
             current++;
         }
@@ -1321,7 +1501,7 @@ ostream &operator<<(ostream &os, const CNN_Edge *edge) {
     return os;
 }
 
-istream &operator>>(istream &is, CNN_Edge *edge) {
+istream& operator>>(istream& is, CNN_Edge* edge) {
     is >> edge->edge_id;
     is >> edge->exact_id;
     is >> edge->genome_id;
@@ -1461,53 +1641,110 @@ istream &operator>>(istream &is, CNN_Edge *edge) {
     return is;
 }
 
-bool CNN_Edge::is_identical(const CNN_Edge *other, bool testing_checkpoint) {
-    if (are_different("edge_id", edge_id, other->edge_id)) return false;
-    if (are_different("exact_id", exact_id, other->exact_id)) return false;
-    if (are_different("genome_id", genome_id, other->genome_id)) return false;
-
-    if (are_different("type", type, other->type)) return false;
-    if (are_different("innovation_number", innovation_number, other->innovation_number)) return false;
-
-    if (are_different("input_node_innovation_number", input_node_innovation_number,
-                      other->input_node_innovation_number))
+bool CNN_Edge::is_identical(const CNN_Edge* other, bool testing_checkpoint) {
+    if (are_different("edge_id", edge_id, other->edge_id)) {
         return false;
-    if (are_different("output_node_innovation_number", output_node_innovation_number,
-                      other->output_node_innovation_number))
+    }
+    if (are_different("exact_id", exact_id, other->exact_id)) {
         return false;
+    }
+    if (are_different("genome_id", genome_id, other->genome_id)) {
+        return false;
+    }
 
-    if (are_different("batch_size", batch_size, other->batch_size)) return false;
-    if (are_different("filter_x", filter_x, other->filter_x)) return false;
-    if (are_different("filter_y", filter_y, other->filter_y)) return false;
+    if (are_different("type", type, other->type)) {
+        return false;
+    }
+    if (are_different("innovation_number", innovation_number, other->innovation_number)) {
+        return false;
+    }
 
-    if (are_different("weights", filter_x * filter_y, weights, other->weights)) return false;
+    if (are_different(
+            "input_node_innovation_number", input_node_innovation_number, other->input_node_innovation_number
+        )) {
+        return false;
+    }
+    if (are_different(
+            "output_node_innovation_number", output_node_innovation_number, other->output_node_innovation_number
+        )) {
+        return false;
+    }
+
+    if (are_different("batch_size", batch_size, other->batch_size)) {
+        return false;
+    }
+    if (are_different("filter_x", filter_x, other->filter_x)) {
+        return false;
+    }
+    if (are_different("filter_y", filter_y, other->filter_y)) {
+        return false;
+    }
+
+    if (are_different("weights", filter_x * filter_y, weights, other->weights)) {
+        return false;
+    }
 
     // weight updates are zeroed at the beginning of each epoch
     // if (are_different("weight_updates", weight_updates, other->weight_updates)) return false;
-    if (are_different("best_weights", filter_x * filter_y, best_weights, other->best_weights)) return false;
-
-    if (are_different("previous_velocity", filter_x * filter_y, previous_velocity, other->previous_velocity))
+    if (are_different("best_weights", filter_x * filter_y, best_weights, other->best_weights)) {
         return false;
-    if (are_different("best_velocity", filter_x * filter_y, best_velocity, other->best_velocity)) return false;
+    }
 
-    if (are_different("y_pools", y_pools, other->y_pools)) return false;
-    if (are_different("y_pool_offset", y_pool_offset, other->y_pool_offset)) return false;
-    if (are_different("x_pools", x_pools, other->x_pools)) return false;
-    if (are_different("x_pool_offset", x_pool_offset, other->x_pool_offset)) return false;
+    if (are_different("previous_velocity", filter_x * filter_y, previous_velocity, other->previous_velocity)) {
+        return false;
+    }
+    if (are_different("best_velocity", filter_x * filter_y, best_velocity, other->best_velocity)) {
+        return false;
+    }
 
-    if (are_different("fixed", fixed, other->fixed)) return false;
-    if (are_different("disabled", disabled, other->disabled)) return false;
-    if (are_different("forward_visited", forward_visited, other->forward_visited)) return false;
-    if (are_different("reverse_visited", reverse_visited, other->reverse_visited)) return false;
+    if (are_different("y_pools", y_pools, other->y_pools)) {
+        return false;
+    }
+    if (are_different("y_pool_offset", y_pool_offset, other->y_pool_offset)) {
+        return false;
+    }
+    if (are_different("x_pools", x_pools, other->x_pools)) {
+        return false;
+    }
+    if (are_different("x_pool_offset", x_pool_offset, other->x_pool_offset)) {
+        return false;
+    }
 
-    if (are_different("reverse_filter_x", reverse_filter_x, other->reverse_filter_x)) return false;
-    if (are_different("reverse_filter_y", reverse_filter_y, other->reverse_filter_y)) return false;
-    if (are_different("needs_initialization", needs_initialization, other->needs_initialization)) return false;
+    if (are_different("fixed", fixed, other->fixed)) {
+        return false;
+    }
+    if (are_different("disabled", disabled, other->disabled)) {
+        return false;
+    }
+    if (are_different("forward_visited", forward_visited, other->forward_visited)) {
+        return false;
+    }
+    if (are_different("reverse_visited", reverse_visited, other->reverse_visited)) {
+        return false;
+    }
 
-    if (are_different("scale", scale, other->scale)) return false;
-    if (are_different("best_scale", best_scale, other->best_scale)) return false;
-    if (are_different("previous_velocity_scale", previous_velocity_scale, other->previous_velocity_scale)) return false;
-    if (are_different("best_velocity_scale", best_velocity_scale, other->best_velocity_scale)) return false;
+    if (are_different("reverse_filter_x", reverse_filter_x, other->reverse_filter_x)) {
+        return false;
+    }
+    if (are_different("reverse_filter_y", reverse_filter_y, other->reverse_filter_y)) {
+        return false;
+    }
+    if (are_different("needs_initialization", needs_initialization, other->needs_initialization)) {
+        return false;
+    }
+
+    if (are_different("scale", scale, other->scale)) {
+        return false;
+    }
+    if (are_different("best_scale", best_scale, other->best_scale)) {
+        return false;
+    }
+    if (are_different("previous_velocity_scale", previous_velocity_scale, other->previous_velocity_scale)) {
+        return false;
+    }
+    if (are_different("best_velocity_scale", best_velocity_scale, other->best_velocity_scale)) {
+        return false;
+    }
 
     // these are zeroed at the beginning of each batch so don't need to be similar
     // if (are_different("propagate_backward_time", propagate_backward_time, other->propagate_backward_time)) return

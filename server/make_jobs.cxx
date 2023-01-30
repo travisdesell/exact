@@ -42,13 +42,13 @@ using std::vector;
 
 // the following are the templates for the workunits (exact_in.xml) and results (exact_out.xml)
 // and they can be found in /projects/csg/templates
-const char *in_template_file = "exact_bn_fmp_in.xml";
-const char *out_template_file = "exact_out.xml";
+const char* in_template_file = "exact_bn_fmp_in.xml";
+const char* out_template_file = "exact_out.xml";
 
 DB_APP app;
 
-char *in_template;
-char *out_template;
+char* in_template;
+char* out_template;
 int daemon_start_time;
 
 void copy_file_to_download_dir(string filename) {
@@ -57,15 +57,17 @@ void copy_file_to_download_dir(string filename) {
     string short_name = filename.substr(filename.find_last_of('/') + 1);
 
     if (!std::ifstream(filename)) {
-        log_messages.printf(MSG_CRITICAL, "input filename '%s' does not exist, cannot copy to download directory.\n",
-                            filename.c_str());
+        log_messages.printf(
+            MSG_CRITICAL, "input filename '%s' does not exist, cannot copy to download directory.\n", filename.c_str()
+        );
         exit(1);
     }
 
     int retval = config.download_path(short_name.c_str(), path);
     if (retval) {
-        log_messages.printf(MSG_CRITICAL, "can't get download path for file '%s', error: %s\n", short_name.c_str(),
-                            boincerror(retval));
+        log_messages.printf(
+            MSG_CRITICAL, "can't get download path for file '%s', error: %s\n", short_name.c_str(), boincerror(retval)
+        );
         exit(1);
     }
 
@@ -73,24 +75,28 @@ void copy_file_to_download_dir(string filename) {
         log_messages.printf(
             MSG_CRITICAL,
             "\033[1minput file '%s' already exists in download directory hierarchy as '%s', not copying.\033[0m\n",
-            short_name.c_str(), path);
+            short_name.c_str(), path
+        );
     } else {
-        log_messages.printf(MSG_CRITICAL,
-                            "input file '%s' does not exist in downlaod directory hierarchy, copying to '%s'\n",
-                            short_name.c_str(), path);
+        log_messages.printf(
+            MSG_CRITICAL, "input file '%s' does not exist in downlaod directory hierarchy, copying to '%s'\n",
+            short_name.c_str(), path
+        );
 
         // open the first filename and copy it to the target here
         std::ifstream src(filename.c_str());
         if (!src.is_open()) {
-            log_messages.printf(MSG_CRITICAL, "could not open file for reading '%s', error: %s\n", path,
-                                boincerror(ERR_FOPEN));
+            log_messages.printf(
+                MSG_CRITICAL, "could not open file for reading '%s', error: %s\n", path, boincerror(ERR_FOPEN)
+            );
             exit(1);
         }
 
         std::ofstream dst(path);
         if (!dst.is_open()) {
-            log_messages.printf(MSG_CRITICAL, "could not open file for writing '%s', error: %s\n", path,
-                                boincerror(ERR_FOPEN));
+            log_messages.printf(
+                MSG_CRITICAL, "could not open file for writing '%s', error: %s\n", path, boincerror(ERR_FOPEN)
+            );
             exit(1);
         }
 
@@ -102,13 +108,13 @@ void copy_file_to_download_dir(string filename) {
 }
 
 // create one new job
-int make_job(EXACT *exact, CNN_Genome *genome, string search_name) {
+int make_job(EXACT* exact, CNN_Genome* genome, string search_name) {
     DB_WORKUNIT wu;
 
     char name[256], path[256];
     char command_line[512];
     char additional_xml[512];
-    const char *infiles[4];
+    const char* infiles[4];
 
     // make a unique name (for the job and its input file)
     sprintf(name, "exact_genome_%d_%u_%u", daemon_start_time, exact->get_id(), genome->get_generation_id());
@@ -137,23 +143,27 @@ int make_job(EXACT *exact, CNN_Genome *genome, string search_name) {
     */
 
     // Make sure the dataset and genome files are in the download directory
-    log_messages.printf(MSG_DEBUG, "copying training filename to download directory: '%s'\n",
-                        training_filename.c_str());
+    log_messages.printf(
+        MSG_DEBUG, "copying training filename to download directory: '%s'\n", training_filename.c_str()
+    );
     copy_file_to_download_dir(training_filename);
 
     string stripped_training_filename = training_filename.substr(training_filename.find_last_of("/\\") + 1);
-    log_messages.printf(MSG_DEBUG, "stripped training filename for infiles[0]: '%s'\n",
-                        stripped_training_filename.c_str());
+    log_messages.printf(
+        MSG_DEBUG, "stripped training filename for infiles[0]: '%s'\n", stripped_training_filename.c_str()
+    );
     infiles[0] = stripped_training_filename.c_str();
     log_messages.printf(MSG_DEBUG, "infile[0]: '%s'\n", infiles[0]);
 
-    log_messages.printf(MSG_DEBUG, "copying validation filename to download directory: '%s'\n",
-                        validation_filename.c_str());
+    log_messages.printf(
+        MSG_DEBUG, "copying validation filename to download directory: '%s'\n", validation_filename.c_str()
+    );
     copy_file_to_download_dir(validation_filename);
 
     string stripped_validation_filename = validation_filename.substr(validation_filename.find_last_of("/\\") + 1);
-    log_messages.printf(MSG_DEBUG, "stripped validation filename for infiles[1]: '%s'\n",
-                        stripped_validation_filename.c_str());
+    log_messages.printf(
+        MSG_DEBUG, "stripped validation filename for infiles[1]: '%s'\n", stripped_validation_filename.c_str()
+    );
     infiles[1] = stripped_validation_filename.c_str();
     log_messages.printf(MSG_DEBUG, "infile[1]: '%s'\n", infiles[1]);
 
@@ -173,8 +183,10 @@ int make_job(EXACT *exact, CNN_Genome *genome, string search_name) {
     log_messages.printf(MSG_DEBUG, "writing genome filename to download directory: '%s'\n", genome_filename.c_str());
     int retval = config.download_path(stripped_genome_filename.c_str(), path);
     if (retval) {
-        log_messages.printf(MSG_CRITICAL, "can't get download path for file '%s', error: %s\n",
-                            stripped_genome_filename.c_str(), boincerror(retval));
+        log_messages.printf(
+            MSG_CRITICAL, "can't get download path for file '%s', error: %s\n", stripped_genome_filename.c_str(),
+            boincerror(retval)
+        );
         exit(1);
     }
 
@@ -182,7 +194,8 @@ int make_job(EXACT *exact, CNN_Genome *genome, string search_name) {
         log_messages.printf(
             MSG_CRITICAL,
             "\033[1minput file '%s' already exists in download directory hierarchy as '%s', not copying.\033[0m\n",
-            stripped_genome_filename.c_str(), path);
+            stripped_genome_filename.c_str(), path
+        );
         exit(1);
     }
 
@@ -219,10 +232,12 @@ int make_job(EXACT *exact, CNN_Genome *genome, string search_name) {
     // Register the job with BOINC
     sprintf(path, "templates/%s", out_template_file);
 
-    sprintf(command_line,
-            " --training_file training_samples.bin --validation_file validation_samples.bin --testing_file "
-            "testing_samples.bin --genome_file input_genome.txt --output_file output_genome.txt --checkpoint_file "
-            "checkpoint.txt");
+    sprintf(
+        command_line,
+        " --training_file training_samples.bin --validation_file validation_samples.bin --testing_file "
+        "testing_samples.bin --genome_file input_genome.txt --output_file output_genome.txt --checkpoint_file "
+        "checkpoint.txt"
+    );
 
     //%u %u %lu %lu", max_set_value, set_size, starting_set, sets_to_evaluate);
     log_messages.printf(MSG_DEBUG, "command line: '%s'\n", command_line);
@@ -235,8 +250,9 @@ int make_job(EXACT *exact, CNN_Genome *genome, string search_name) {
     log_messages.printf(MSG_DEBUG, "infiles[2]: '%s'\n", infiles[2]);
     log_messages.printf(MSG_DEBUG, "infiles[3]: '%s'\n", infiles[3]);
 
-    return create_work(wu, in_template, path, config.project_path(path), infiles, 4, config, command_line,
-                       additional_xml);
+    return create_work(
+        wu, in_template, path, config.project_path(path), infiles, 4, config, command_line, additional_xml
+    );
 }
 
 bool low_on_workunits() {
@@ -257,15 +273,17 @@ bool low_on_workunits() {
     }
 }
 
-void make_jobs(EXACT *exact, int workunits_to_generate) {
-    log_messages.printf(MSG_DEBUG, "generating %d workunits for exact search '%s' with id: %d\n", workunits_to_generate,
-                        exact->get_search_name().c_str(), exact->get_id());
+void make_jobs(EXACT* exact, int workunits_to_generate) {
+    log_messages.printf(
+        MSG_DEBUG, "generating %d workunits for exact search '%s' with id: %d\n", workunits_to_generate,
+        exact->get_search_name().c_str(), exact->get_id()
+    );
 
     int64_t total_generated = 0;
 
     // this assumes only one EXACT search is going on.
     while (total_generated < workunits_to_generate) {
-        CNN_Genome *genome = exact->generate_individual();
+        CNN_Genome* genome = exact->generate_individual();
 
         make_job(exact, genome, exact->get_search_name());
 

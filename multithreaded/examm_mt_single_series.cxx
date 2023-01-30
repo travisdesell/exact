@@ -36,9 +36,9 @@ mutex examm_mutex;
 
 vector<string> arguments;
 
-EXAMM *examm;
+EXAMM* examm;
 
-WeightUpdate *weight_update_method;
+WeightUpdate* weight_update_method;
 
 bool finished = false;
 
@@ -53,15 +53,18 @@ void examm_thread(int32_t id) {
     while (true) {
         examm_mutex.lock();
         Log::set_id("main");
-        RNN_Genome *genome = examm->generate_genome();
+        RNN_Genome* genome = examm->generate_genome();
         examm_mutex.unlock();
 
-        if (genome == NULL) break;  // generate_individual returns NULL when the search is done
+        if (genome == NULL) {
+            break;  // generate_individual returns NULL when the search is done
+        }
 
         string log_id = "genome_" + to_string(genome->get_generation_id()) + "_thread_" + to_string(id);
         Log::set_id(log_id);
-        genome->backpropagate_stochastic(training_inputs, training_outputs, validation_inputs, validation_outputs,
-                                         weight_update_method);
+        genome->backpropagate_stochastic(
+            training_inputs, training_outputs, validation_inputs, validation_outputs, weight_update_method
+        );
         Log::release_id(log_id);
 
         examm_mutex.lock();
@@ -73,19 +76,20 @@ void examm_thread(int32_t id) {
     }
 }
 
-void get_individual_inputs(string str, vector<string> &tokens) {
+void get_individual_inputs(string str, vector<string>& tokens) {
     string word = "";
     for (auto x : str) {
         if (x == ',') {
             tokens.push_back(word);
             word = "";
-        } else
+        } else {
             word = word + x;
+        }
     }
     tokens.push_back(word);
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
     arguments = vector<string>(argv, argv + argc);
 
     Log::initialize(arguments);
@@ -99,21 +103,24 @@ int main(int argc, char **argv) {
     int32_t number_slices;
     get_argument(arguments, "--number_slices", true, number_slices);
 
-    if (output_directory != "") { mkdir(output_directory.c_str(), 0777); }
+    if (output_directory != "") {
+        mkdir(output_directory.c_str(), 0777);
+    }
 
-    TimeSeriesSets *time_series_sets = NULL;
+    TimeSeriesSets* time_series_sets = NULL;
     time_series_sets = TimeSeriesSets::generate_from_arguments(arguments);
     time_series_sets->split_all(number_slices);
-    get_train_validation_data(arguments, time_series_sets, training_inputs, training_outputs, validation_inputs,
-                              validation_outputs);
+    get_train_validation_data(
+        arguments, time_series_sets, training_inputs, training_outputs, validation_inputs, validation_outputs
+    );
 
     weight_update_method = new WeightUpdate();
     weight_update_method->generate_from_arguments(arguments);
 
-    WeightRules *weight_rules = new WeightRules();
+    WeightRules* weight_rules = new WeightRules();
     weight_rules->initialize_from_args(arguments);
 
-    RNN_Genome *seed_genome = get_seed_genome(arguments, time_series_sets, weight_rules);
+    RNN_Genome* seed_genome = get_seed_genome(arguments, time_series_sets, weight_rules);
 
     weight_update_method = new WeightUpdate();
     weight_update_method->generate_from_arguments(arguments);
@@ -135,8 +142,9 @@ int main(int argc, char **argv) {
         time_series_sets->set_training_indexes(training_indexes);
         time_series_sets->set_test_indexes(training_indexes);
 
-        get_train_validation_data(arguments, time_series_sets, training_inputs, training_outputs, validation_inputs,
-                                  validation_outputs);
+        get_train_validation_data(
+            arguments, time_series_sets, training_inputs, training_outputs, validation_inputs, validation_outputs
+        );
 
         overall_results << "results for slice " << i << " of " << time_series_sets->get_number_series()
                         << " as test data." << endl;
@@ -145,23 +153,29 @@ int main(int argc, char **argv) {
             examm = generate_examm_from_arguments(arguments, time_series_sets, weight_rules, seed_genome);
 
             vector<thread> threads;
-            for (int32_t i = 0; i < number_threads; i++) { threads.push_back(thread(examm_thread, i)); }
+            for (int32_t i = 0; i < number_threads; i++) {
+                threads.push_back(thread(examm_thread, i));
+            }
 
-            for (int32_t i = 0; i < number_threads; i++) { threads[i].join(); }
+            for (int32_t i = 0; i < number_threads; i++) {
+                threads[i].join();
+            }
 
             finished = true;
 
             Log::info("completed!\n");
 
-            RNN_Genome *best_genome = examm->get_best_genome();
+            RNN_Genome* best_genome = examm->get_best_genome();
 
             vector<double> best_parameters = best_genome->get_best_parameters();
             Log::info("training MSE: %lf\n", best_genome->get_mse(best_parameters, training_inputs, training_outputs));
             Log::info("training MSE: %lf\n", best_genome->get_mae(best_parameters, training_inputs, training_outputs));
-            Log::info("validation MSE: %lf\n",
-                      best_genome->get_mse(best_parameters, validation_inputs, validation_outputs));
-            Log::info("validation MSE: %lf\n",
-                      best_genome->get_mae(best_parameters, validation_inputs, validation_outputs));
+            Log::info(
+                "validation MSE: %lf\n", best_genome->get_mse(best_parameters, validation_inputs, validation_outputs)
+            );
+            Log::info(
+                "validation MSE: %lf\n", best_genome->get_mae(best_parameters, validation_inputs, validation_outputs)
+            );
 
             overall_results << setw(15) << fixed
                             << best_genome->get_mse(best_parameters, training_inputs, training_outputs) << ", "
@@ -172,10 +186,12 @@ int main(int argc, char **argv) {
                             << setw(15) << fixed
                             << best_genome->get_mae(best_parameters, validation_inputs, validation_outputs) << endl;
 
-            best_genome->write_to_file(output_directory + "/" + output_filename + "_slice_" + to_string(i) +
-                                       "_repeat_" + to_string(k) + ".bin");
-            best_genome->write_graphviz(output_directory + "/" + output_filename + "_slice_" + to_string(i) +
-                                        "_repeat_" + to_string(k) + ".gv");
+            best_genome->write_to_file(
+                output_directory + "/" + output_filename + "_slice_" + to_string(i) + "_repeat_" + to_string(k) + ".bin"
+            );
+            best_genome->write_graphviz(
+                output_directory + "/" + output_filename + "_slice_" + to_string(i) + "_repeat_" + to_string(k) + ".gv"
+            );
 
             Log::debug("deleting genome\n");
             delete best_genome;

@@ -17,7 +17,7 @@ bool argument_exists(vector<string> arguments, string argument) {
 
 // template <>
 // bool get_argument<string>(vector<string> arguments, string argument, bool required, string &result) {
-bool get_argument(vector<string> arguments, string argument, bool required, string &result) {
+bool get_argument(vector<string> arguments, string argument, bool required, string& result) {
     bool found = false;
     for (unsigned int i = 0; i < arguments.size(); i++) {
         if (argument.compare(arguments.at(i)) == 0) {
@@ -40,7 +40,7 @@ bool get_argument(vector<string> arguments, string argument, bool required, stri
 
 // template <>
 // bool get_argument_vector<string>(vector<string> arguments, string argument, bool required, vector<string> &results) {
-bool get_argument_vector(vector<string> arguments, string argument, bool required, vector<string> &results) {
+bool get_argument_vector(vector<string> arguments, string argument, bool required, vector<string>& results) {
     bool found = false;
     for (unsigned int i = 0; i < arguments.size(); i++) {
         if (argument.compare(arguments.at(i)) == 0) {

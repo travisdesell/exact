@@ -25,7 +25,7 @@ using std::vector;
 #include "time_series/time_series.hxx"
 #include "weights/weight_rules.hxx"
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
     vector<string> arguments = vector<string>(argv, argv + argc);
 
     Log::initialize(arguments);
@@ -33,7 +33,7 @@ int main(int argc, char **argv) {
 
     initialize_generator();
 
-    RNN_Genome *genome;
+    RNN_Genome* genome;
 
     Log::info("TESTING DNAS\n");
 
@@ -46,7 +46,7 @@ int main(int argc, char **argv) {
     string weight_rules_string = "xavier";
     get_argument(arguments, "--weight_rules", false, weight_rules_string);
 
-    WeightRules *weight_rules = new WeightRules();
+    WeightRules* weight_rules = new WeightRules();
     weight_rules->initialize_from_args(arguments);
 
     vector<int32_t> node_types = {SIMPLE_NODE, LSTM_NODE, GRU_NODE, MGU_NODE, JORDAN_NODE, ELMAN_NODE, DELTA_NODE};

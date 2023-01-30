@@ -25,7 +25,7 @@ class Tracker {
     double avg() const;
     double stddev();
 
-    double correlate(Tracker &other);
+    double correlate(Tracker& other);
 };
 
 #endif
