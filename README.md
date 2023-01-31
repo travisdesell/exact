@@ -2,7 +2,7 @@
 # Getting Started and Prerequisites
 
 EXONA has been developed to compile using CMake, which should be installed before attempting to compile. To use the MPI version, a version of MPI (such as OpenMPI) should be installed. EXACT currently requires libtiff and libpng
-The EXACT algorithm can also checkpoint to a database, however this is not required.  To enable this I recommend installing libmysql-dev via apt-get on Linux systems, or mysql via [homebrew](https://brew.sh) on OSX.  Other than that, EXACT/EXALT/EXAMM has no prerequesites other than c++11 compatible compiler.
+The EXACT algorithm can also checkpoint to a database, however this is not required.  To enable this I recommend installing libmysql-dev via apt-get on Linux systems, or mysql via [homebrew](https://brew.sh) on OSX.  Other than that, EXACT/EXALT/EXAMM has no prerequesites other than c++20 compatible compiler.
 
 If you are using OSX, to set up the environment:
 
@@ -15,6 +15,18 @@ brew install libpng
 xcode-select --install
 ```
 
+On the RIT Cluster Computer, load the following packages using spack:
+```
+# CMake
+spack load /ux27hbj
+
+# GCC
+spack load gcc@11.2.0 
+
+# libtiff
+spack load /ycf67m3
+```
+
 To build:
 
 ```
@@ -23,6 +35,8 @@ To build:
 ~/exact/build $ cmake ..
 ~/exact/build $ make
 ```
+
+You can add `-DCMAKE_BUILD_TYPE=Release` to the invocation of `cmake` for a release build (slower compile times, faster execution).
 
 You may also want to have graphviz installed so you can generate images of the evolved neural networks.  EXACT/EXALT/EXAMM will write out evolved genomes in a .gv (graphviz) format for this. For example, can generate a pdf from a gv file (assuming graphviz is installed with):
 
