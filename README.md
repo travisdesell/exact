@@ -23,6 +23,9 @@ spack load /ux27hbj
 # GCC
 spack load gcc@11.2.0 
 
+# OpenMPI
+spack load openmpi@4.1.2
+
 # libtiff
 spack load /ycf67m3
 ```
