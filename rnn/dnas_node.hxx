@@ -8,7 +8,6 @@ using std::string;
 using std::generate_canonical;
 using std::minstd_rand0;
 using std::uniform_real_distribution;
-using std::generate_canonical;
 
 #include <vector>
 using std::vector;
@@ -28,7 +27,7 @@ using std::unique_ptr;
 class DNASNode : public RNN_Node_Interface {
    private:
     template <typename R>
-    static void gumbel_noise(R &rng, vector<double> &output);
+    static void gumbel_noise(R& rng, vector<double>& output);
 
     void calculate_maxi();
 
@@ -81,7 +80,7 @@ class DNASNode : public RNN_Node_Interface {
     ~DNASNode();
 
     template <typename Rng>
-    void sample_gumbel_softmax(Rng &rng);
+    void sample_gumbel_softmax(Rng& rng);
     void calculate_z();
 
     virtual void initialize_lamarckian(
