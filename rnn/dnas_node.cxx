@@ -1,4 +1,9 @@
 #include <algorithm>
+using std::sort;
+
+#include <utility>
+using std::pair;
+
 #include <cassert>
 #include <cmath>
 using std::max;
@@ -72,7 +77,7 @@ DNASNode::~DNASNode() {
 
 template <typename Rng>
 void DNASNode::gumbel_noise(Rng& rng, vector<double>& output) {
-    for (int i = 0; i < output.size(); i++) {
+    for (auto i = 0; i < output.size(); i++) {
         output[i] = -log(-log(uniform_real_distribution<double>(0.0, 1.0)(rng)));
     }
 }
@@ -92,17 +97,44 @@ void DNASNode::calculate_z() {
 
     xtotal = 0.0;
     double emax = -10000000;
-    for (int i = 0; i < z.size(); i++) {
+    for (auto i = 0; i < z.size(); i++) {
         x[i] = g[i] + log(pi[i]);
         x[i] /= tao;
         emax = max(emax, x[i]);
     }
-    for (int i = 0; i < z.size(); i++) {
+    for (auto i = 0; i < z.size(); i++) {
         x[i] = exp(emax - x[i]);
         xtotal += x[i];
     }
-    for (int i = 0; i < z.size(); i++) {
+    for (auto i = 0; i < z.size(); i++) {
         z[i] = x[i] / xtotal;
+    }
+
+    if (k > 0) {
+        pair<int32_t, double> ps_with_indices[z.size()];
+        for (int32_t i = 0; i < (int32_t) z.size(); i++) {
+            ps_with_indices[i] = pair(i, z[i]);
+        }
+
+        std::sort(ps_with_indices, ps_with_indices + z.size(),
+            [](const pair<int32_t, double>& a, const pair<int32_t, double>& b) {
+                // Descending order
+                return a.second > b.second;
+            }
+        );
+
+        double total = 0.0;
+        for (int i = 0; i < k; i++) {
+            total += ps_with_indices[i].second;
+        }
+
+        for (int i = 0; i < z.size(); i++) {
+            z[i] = 0.0;
+        }
+
+        for (int i = 0; i < k; i++) {
+            z[ps_with_indices[i].first] = ps_with_indices[i].second / total;
+        }
     }
 }
 
@@ -151,7 +183,7 @@ void DNASNode::input_fired(int32_t time, double incoming_output) {
         node_outputs[time][maxi] = nodes[maxi]->output_values[time];
         output_values[time] = nodes[maxi]->output_values[time];
     } else {
-        for (int i = 0; i < nodes.size(); i++) {
+        for (auto i = 0; i < nodes.size(); i++) {
             auto node = nodes[i];
             node->input_fired(time, input_values[time]);
             node_outputs[time][i] = node->output_values[time];
@@ -190,7 +222,7 @@ void DNASNode::try_update_deltas(int32_t time) {
         d_input[time] += nodes[maxi]->d_input[time];
 
     } else {
-        for (int i = 0; i < z.size(); i++) {
+        for (auto i = 0; i < z.size(); i++) {
             nodes[i]->output_fired(time, delta * z[i]);
             double p = (x[i] / pi[i]);
             p *= ((delta * node_outputs[time][i]) / xtotal);
@@ -254,7 +286,7 @@ void DNASNode::set_weights(const vector<double>& parameters) {
 
 void DNASNode::get_weights(int32_t& offset, vector<double>& parameters) const {
     // Log::info("pi start %d; ", offset);
-    for (int i = 0; i < pi.size(); i++) {
+    for (auto i = 0; i < pi.size(); i++) {
         parameters[offset++] = pi[i];
     }
     // Log::info_no_header("pi end %d \n", offset);
@@ -265,24 +297,23 @@ void DNASNode::get_weights(int32_t& offset, vector<double>& parameters) const {
 
 void DNASNode::set_weights(int32_t& offset, const vector<double>& parameters) {
     // int start = offset;
-    for (int i = 0; i < pi.size(); i++) {
+    for (auto i = 0; i < pi.size(); i++) {
         pi[i] = parameters[offset++];
     }
     // Log::info("Pi indices: %d-%d\n", start, offset);
     for (auto node : nodes) {
         node->set_weights(offset, parameters);
     }
-    Log::info("Just set weights\n");
     calculate_z();
-    string s = "Pi = { ";
-    for (auto p : pi) {
-        s += std::to_string(p) + ", ";
-    }
-    Log::info("%s }\n", s.c_str());
+    // string s = "Pi = { ";
+    // for (auto p : pi) {
+    //     s += std::to_string(p) + ", ";
+    // }
+    // Log::info("%s }\n", s.c_str());
 }
 
 void DNASNode::set_pi(const vector<double>& new_pi) {
-    for (int i = 0; i < pi.size(); i++) {
+    for (auto i = 0; i < pi.size(); i++) {
         pi[i] = new_pi[i];
     }
     calculate_maxi();
@@ -293,7 +324,7 @@ void DNASNode::calculate_maxi() {
         maxi = 0;
         double max_pi = pi[0];
 
-        for (int i = 1; i < nodes.size(); i++) {
+        for (auto i = 1; i < nodes.size(); i++) {
             if (pi[i] > max_pi) {
                 max_pi = pi[i];
                 maxi = i;
@@ -314,11 +345,11 @@ void DNASNode::get_gradients(vector<double>& gradients) {
 
     if (counter >= CRYSTALLIZATION_THRESHOLD) {
         offset += pi.size();
-        for (int i = 0; i < nodes.size(); i++) {
+        for (auto i = 0; i < nodes.size(); i++) {
             RNN_Node_Interface* node = nodes[i];
             if (i == maxi) {
                 node->get_gradients(temp);
-                for (int j = 0; j < temp.size(); j++) {
+                for (auto j = 0; j < temp.size(); j++) {
                     gradients[offset++] = temp[j];
                 }
             } else {
@@ -328,13 +359,13 @@ void DNASNode::get_gradients(vector<double>& gradients) {
     } else {
         gradients.assign(get_number_weights(), 0.0);
         int offset = 0;
-        for (int i = 0; i < pi.size(); i++) {
-            gradients[offset++] = d_pi[i];
+        for (auto i = 0; i < pi.size(); i++) {
+            gradients[offset++] = d_pi[i] * 0.1;
         }
 
         for (auto node : nodes) {
             node->get_gradients(temp);
-            for (int i = 0; i < temp.size(); i++) {
+            for (auto i = 0; i < temp.size(); i++) {
                 gradients[offset++] = temp[i];
             }
         }

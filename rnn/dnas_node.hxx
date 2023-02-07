@@ -22,7 +22,7 @@ using std::unique_ptr;
 #include "rnn_node.hxx"
 #include "rnn_node_interface.hxx"
 
-#define CRYSTALLIZATION_THRESHOLD 50000
+#define CRYSTALLIZATION_THRESHOLD 1000
 
 class DNASNode : public RNN_Node_Interface {
    private:

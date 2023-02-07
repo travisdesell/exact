@@ -205,22 +205,8 @@ void EXAMM::update_log() {
 void EXAMM::set_possible_node_types(vector<string> possible_node_type_strings) {
     possible_node_types.clear();
 
-    for (int32_t i = 0; i < (int32_t) possible_node_type_strings.size(); i++) {
-        string node_type_s = possible_node_type_strings[i];
-
-        bool found = false;
-
-        for (int32_t j = 0; j < NUMBER_NODE_TYPES; j++) {
-            if (NODE_TYPES[j].compare(node_type_s) == 0) {
-                found = true;
-                possible_node_types.push_back(j);
-            }
-        }
-
-        if (!found) {
-            Log::error("unknown node type: '%s'\n", node_type_s.c_str());
-            exit(1);
-        }
+    for (auto node_type : possible_node_type_strings) {
+        possible_node_types.push_back(node_type_from_string(node_type));
     }
 }
 

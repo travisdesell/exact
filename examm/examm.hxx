@@ -63,7 +63,7 @@ class EXAMM {
     double split_node_rate;
     double merge_node_rate;
 
-    vector<int32_t> possible_node_types;
+    vector<int32_t> possible_node_types = { SIMPLE_NODE, JORDAN_NODE, ELMAN_NODE, UGRNN_NODE, MGU_NODE, GRU_NODE, DELTA_NODE, LSTM_NODE };
 
     vector<string> op_log_ordering;
     map<string, int32_t> inserted_counts;

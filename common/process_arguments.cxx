@@ -32,6 +32,15 @@ EXAMM* generate_examm_from_arguments(
     // get_argument(arguments, "--sequence_length_lower_bound", false, sequence_length_lower_bound);
     // get_argument(arguments, "--sequence_length_upper_bound", false, sequence_length_upper_bound);
 
+    vector<string> dnas_node_type_strings;
+    get_argument_vector(arguments, "--dnas_node_types", false, dnas_node_type_strings);
+    if (dnas_node_type_strings.size() != 0) {
+        dnas_node_types.clear();
+        for (auto node_type : dnas_node_type_strings) {
+            dnas_node_types.push_back(node_type_from_string(node_type));
+        }
+    }
+
     GenomeProperty* genome_property = new GenomeProperty();
     genome_property->generate_genome_property_from_arguments(arguments);
     genome_property->get_time_series_parameters(time_series_sets);

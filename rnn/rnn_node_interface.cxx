@@ -1,20 +1,45 @@
 #include <cmath>
+using std::max;
+
+#include <algorithm>
+
 #include <fstream>
 using std::ostream;
 
 #include <string>
 using std::string;
 
-#include <cmath>
-using std::max;
-
 #include "common/log.hxx"
 #include "rnn/rnn_genome.hxx"
 #include "rnn_node_interface.hxx"
 
-extern const int32_t NUMBER_NODE_TYPES = 9;
+extern const int32_t NUMBER_NODE_TYPES = 11;
 extern const string NODE_TYPES[] = {"simple", "jordan", "elman", "UGRNN", "MGU",
-                                    "GRU",    "delta",  "LSTM",  "ENARC", "ENAS_DAG"};
+                                    "GRU",    "delta",  "LSTM",  "ENARC", "ENAS_DAG", "dnas"};
+extern const unordered_map<string, int32_t> string_to_node_type = {
+  { "simple", SIMPLE_NODE     },
+  { "jordan", JORDAN_NODE     },
+  { "elman", ELMAN_NODE      },
+  { "ugrnn", UGRNN_NODE      },
+  { "mgu", MGU_NODE        },
+  { "gru", GRU_NODE        },
+  { "delta", DELTA_NODE   },
+  { "lstm", LSTM_NODE },
+  { "enarc", ENARC_NODE      },
+  { "enas", ENAS_DAG_NODE   },
+  { "dnas", DNAS_NODE       }
+};
+
+int32_t node_type_from_string(string& node_type) {
+    std::transform(node_type.begin(), node_type.end(), node_type.begin(), [](unsigned char c){ return std::tolower(c); });
+
+    if (auto it = string_to_node_type.find(node_type); it != string_to_node_type.end()) {
+        return it->second;
+    } else {
+        Log::fatal("Invalid node type '%s'\n", node_type.c_str());
+        exit(1);
+    }
+}
 
 double bound(double value) {
     if (value < -10.0) {
