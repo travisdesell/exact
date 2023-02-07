@@ -17,113 +17,127 @@ using std::to_string;
 #include <vector>
 using std::vector;
 
-#include "rnn/genome_property.hxx"
 #include "rnn/rnn_genome.hxx"
 #include "speciation_strategy.hxx"
-#include "time_series/time_series.hxx"
 #include "weights/weight_rules.hxx"
+#include "time_series/time_series.hxx"
+#include "rnn/genome_property.hxx"
 
 class EXAMM {
-   private:
-    int32_t island_size;
-    int32_t number_islands;
+    private:
+        int32_t island_size;
+        int32_t number_islands;
 
-    int32_t max_genomes;
-    int32_t total_bp_epochs;
-    SpeciationStrategy* speciation_strategy;
-    WeightRules* weight_rules;
-    GenomeProperty* genome_property;
+        int32_t max_genomes;
+        int32_t total_bp_epochs;
+        SpeciationStrategy *speciation_strategy;
+        WeightRules *weight_rules;
+        GenomeProperty *genome_property;
 
-    int32_t edge_innovation_count;
-    int32_t node_innovation_count;
 
-    map<string, int32_t> inserted_from_map;
-    map<string, int32_t> generated_from_map;
+        int32_t edge_innovation_count;
+        int32_t node_innovation_count;
 
-    bool generate_op_log;
+        map<string, int32_t> inserted_from_map;
+        map<string, int32_t> generated_from_map;
 
-    minstd_rand0 generator;
-    uniform_real_distribution<double> rng_0_1;
-    uniform_real_distribution<double> rng_crossover_weight;
+        //SHO SY
+        double learning_rate;
+        double initial_learning_rate;
+        double initial_learning_rate_min;
+        double initial_learning_rate_max;
+        double learning_rate_min;
+        double learning_rate_max;
+        vector< vector<RNN_Genome*> > genomes;
+        uniform_real_distribution<double> rng_lr;
+        uniform_real_distribution<double> rng_ilr;
 
-    double more_fit_crossover_rate;
-    double less_fit_crossover_rate;
+        bool generate_op_log;
 
-    double clone_rate;
+        minstd_rand0 generator;
+        uniform_real_distribution<double> rng_0_1;
+        uniform_real_distribution<double> rng_crossover_weight;
 
-    double add_edge_rate;
-    double add_recurrent_edge_rate;
-    double enable_edge_rate;
-    double disable_edge_rate;
-    double split_edge_rate;
+        double more_fit_crossover_rate;
+        double less_fit_crossover_rate;
 
-    double add_node_rate;
-    double enable_node_rate;
-    double disable_node_rate;
-    double split_node_rate;
-    double merge_node_rate;
+        double clone_rate;
 
-    vector<int32_t> possible_node_types;
+        double add_edge_rate;
+        double add_recurrent_edge_rate;
+        double enable_edge_rate;
+        double disable_edge_rate;
+        double split_edge_rate;
 
-    vector<string> op_log_ordering;
-    map<string, int32_t> inserted_counts;
-    map<string, int32_t> generated_counts;
+        double add_node_rate;
+        double enable_node_rate;
+        double disable_node_rate;
+        double split_node_rate;
+        double merge_node_rate;
 
-    string output_directory;
-    ofstream* log_file;
-    ofstream* op_log_file;
+        vector<int32_t> possible_node_types;
 
-    std::chrono::time_point<std::chrono::system_clock> startClock;
+        vector<string> op_log_ordering;
+        map<string, int32_t> inserted_counts;
+        map<string, int32_t> generated_counts;
 
-    string genome_file_name;
+        string output_directory;
+        ofstream *log_file;
+        ofstream *op_log_file;
 
-   public:
-    EXAMM(
-        int32_t _island_size, int32_t _number_islands, int32_t _max_genomes, SpeciationStrategy* _speciation_strategy,
-        WeightRules* _weight_rules, GenomeProperty* _genome_property, string _output_directory
-    );
+        std::chrono::time_point<std::chrono::system_clock> startClock;
 
-    ~EXAMM();
+        string  genome_file_name;
 
-    void print();
-    void update_log();
+    public:
+        EXAMM(  int32_t _island_size,
+                int32_t _number_islands,
+                int32_t _max_genomes,
+                double _learning_rate,
+                SpeciationStrategy *_speciation_strategy,
+                WeightRules *_weight_rules,
+                GenomeProperty *_genome_property,
+                string _output_directory);
 
-    void set_possible_node_types(vector<string> possible_node_type_strings);
+        ~EXAMM();
 
-    uniform_int_distribution<int32_t> get_recurrent_depth_dist();
+        void print();
+        void update_log();
 
-    int32_t get_random_node_type();
+        void set_possible_node_types(vector<string> possible_node_type_strings);
 
-    RNN_Genome* generate_genome();
-    bool insert_genome(RNN_Genome* genome);
+        uniform_int_distribution<int32_t> get_recurrent_depth_dist();
 
-    void mutate(int32_t max_mutations, RNN_Genome* p1);
+        int32_t get_random_node_type();
 
-    void attempt_node_insert(
-        vector<RNN_Node_Interface*>& child_nodes, const RNN_Node_Interface* node, const vector<double>& new_weights
-    );
-    void attempt_edge_insert(
-        vector<RNN_Edge*>& child_edges, vector<RNN_Node_Interface*>& child_nodes, RNN_Edge* edge, RNN_Edge* second_edge,
-        bool set_enabled
-    );
-    void attempt_recurrent_edge_insert(
-        vector<RNN_Recurrent_Edge*>& child_recurrent_edges, vector<RNN_Node_Interface*>& child_nodes,
-        RNN_Recurrent_Edge* recurrent_edge, RNN_Recurrent_Edge* second_edge, bool set_enabled
-    );
-    RNN_Genome* crossover(RNN_Genome* p1, RNN_Genome* p2);
+        RNN_Genome* generate_genome();
+        bool insert_genome(RNN_Genome* genome);
 
-    double get_best_fitness();
-    double get_worst_fitness();
-    RNN_Genome* get_best_genome();
-    RNN_Genome* get_worst_genome();
+        void mutate(int32_t max_mutations, RNN_Genome *p1);
 
-    string get_output_directory() const;
+        void attempt_node_insert(vector<RNN_Node_Interface*> &child_nodes, const RNN_Node_Interface *node, const vector<double> &new_weights);
+        void attempt_edge_insert(vector<RNN_Edge*> &child_edges, vector<RNN_Node_Interface*> &child_nodes, RNN_Edge *edge, RNN_Edge *second_edge, bool set_enabled);
+        void attempt_recurrent_edge_insert(vector<RNN_Recurrent_Edge*> &child_recurrent_edges, vector<RNN_Node_Interface*> &child_nodes, RNN_Recurrent_Edge *recurrent_edge, RNN_Recurrent_Edge *second_edge, bool set_enabled);
+        RNN_Genome* crossover(RNN_Genome *p1, RNN_Genome *p2);
 
-    void check_weight_initialize_validity();
-    void generate_log();
-    void set_evolution_hyper_parameters();
-    void initialize_seed_genome();
-    void update_op_log_statistics(RNN_Genome* genome, int32_t insert_position);
+        double get_best_fitness();
+        double get_worst_fitness();
+        RNN_Genome* get_best_genome();
+        RNN_Genome* get_worst_genome();
+
+        //SHO SY
+        void generate_initial_hyperparameters(double &learning_rate);
+
+        void generate_simplex_hyperparameters(double &learning_rate);
+
+        string get_output_directory() const;
+
+        void check_weight_initialize_validity();
+        void generate_log();
+        void set_evolution_hyper_parameters();
+        void initialize_seed_genome();
+        void update_op_log_statistics(RNN_Genome *genome, int32_t insert_position);
+
 };
 
 #endif

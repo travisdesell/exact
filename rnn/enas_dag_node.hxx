@@ -12,76 +12,85 @@ using std::uniform_real_distribution;
 using std::vector;
 
 #include <utility>
-using std::make_pair;
 using std::pair;
+using std::make_pair;
+
 
 #include "common/random.hxx"
+
 #include "rnn_node_interface.hxx"
 
-class ENAS_DAG_Node : public RNN_Node_Interface {
-   private:
-    // starting node 0
-    double rw;
-    double zw;
+class ENAS_DAG_Node : public RNN_Node_Interface{
+	private:
+		
+		// starting node 0
+		double rw;
+		double zw;
+		
+		// weights for other nodes
+		vector<double> weights;
 
-    // weights for other nodes
-    vector<double> weights;
 
-    // gradients of starting node 0
-    vector<double> d_zw;
-    vector<double> d_rw;
+		// gradients of starting node 0
+		vector<double> d_zw;
+		vector<double> d_rw;
 
-    // gradients of other nodes
-    vector<vector<double>> d_weights;
+		// gradients of other nodes 
+		vector<vector<double>> d_weights;
+		
+		// gradient of prev output
+		vector<double> d_h_prev;
 
-    // gradient of prev output
-    vector<double> d_h_prev;
+		// output of edge between node with weight wj from node with weight wi 	
+		vector<vector<double>> Nodes;
+		// derivative of edge between node with weight wj from node with weight wi 	
+		vector<vector<double>> l_Nodes;
 
-    // output of edge between node with weight wj from node with weight wi
-    vector<vector<double>> Nodes;
-    // derivative of edge between node with weight wj from node with weight wi
-    vector<vector<double>> l_Nodes;
+		
+	public:
 
-   public:
-    ENAS_DAG_Node(int32_t _innovation_number, int32_t _type, double _depth);
-    ~ENAS_DAG_Node();
+		ENAS_DAG_Node(int32_t _innovation_number, int32_t _type, double _depth);
+		~ENAS_DAG_Node();
 
-    void initialize_lamarckian(
-        minstd_rand0& generator, NormalDistribution& normal_distribution, double mu, double sigma
-    );
-    void initialize_xavier(minstd_rand0& generator, uniform_real_distribution<double>& rng1_1, double range);
-    void initialize_kaiming(minstd_rand0& generator, NormalDistribution& normal_distribution, double range);
-    void initialize_uniform_random(minstd_rand0& generator, uniform_real_distribution<double>& rng);
 
-    double get_gradient(string gradient_name);
-    void print_gradient(string gradient_name);
+        void initialize_lamarckian(minstd_rand0 &generator, NormalDistribution &normal_distribution, double mu, double sigma);
+        void initialize_xavier(minstd_rand0 &generator, uniform_real_distribution<double> &rng1_1, double range);
+        void initialize_kaiming(minstd_rand0 &generator, NormalDistribution &normal_distribution, double range);
+        void initialize_uniform_random(minstd_rand0 &generator, uniform_real_distribution<double> &rng);
 
-    double activation(double value, int32_t act_operator);
-    double activation_derivative(double value, double input, int32_t act_operator);
 
-    void input_fired(int32_t time, double incoming_output);
+        double get_gradient(string gradient_name);
+        void print_gradient(string gradient_name);
 
-    void try_update_deltas(int32_t time);
-    void error_fired(int32_t time, double error);
-    void output_fired(int32_t time, double delta);
+        double activation(double value, int32_t act_operator);
+        double activation_derivative(double value, double input, int32_t act_operator);
 
-    int32_t get_number_weights() const;
+        void input_fired(int32_t time, double incoming_output);
 
-    void get_weights(vector<double>& parameters) const;
-    void set_weights(const vector<double>& parameters);
+        void try_update_deltas(int32_t time);
+        void error_fired(int32_t time, double error);
+        void output_fired(int32_t time, double delta);
 
-    void get_weights(int32_t& offset, vector<double>& parameters) const;
-    void set_weights(int32_t& offset, const vector<double>& parameters);
+        int32_t get_number_weights() const;
 
-    void get_gradients(vector<double>& gradients);
+        void get_weights(vector<double> &parameters) const;
+        void set_weights(const vector<double> &parameters);
 
-    void reset(int32_t _series_length);
+        void get_weights(int32_t &offset, vector<double> &parameters) const;
+        void set_weights(int32_t &offset, const vector<double> &parameters);
 
-    void write_to_stream(ostream& out);
+        void get_gradients(vector<double> &gradients);
 
-    RNN_Node_Interface* copy() const;
+        void reset(int32_t _series_length);
 
-    friend class RNN_Edge;
+        void write_to_stream(ostream &out);
+
+        RNN_Node_Interface* copy() const;
+
+        friend class RNN_Edge;
+	
 };
+
+
 
 #endif
