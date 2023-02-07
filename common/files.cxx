@@ -1,11 +1,14 @@
 #include <cstring>
+
 #include <stdexcept>
 using std::runtime_error;
 
+
+
 #include <fstream>
 using std::ifstream;
-using std::ios;
 using std::istreambuf_iterator;
+using std::ios;
 
 #include <iostream>
 using std::cerr;
@@ -18,19 +21,20 @@ using std::ostringstream;
 #include <string>
 using std::string;
 
-// for mkdir
-#include <errno.h>
+//for mkdir
 #include <sys/stat.h>
+#include <errno.h>
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif /* HAVE_UNISTD_H */
 
 typedef struct stat Stat;
 
+
 #include "files.hxx"
 
 string get_file_as_string(string file_path) noexcept(false) {
-    // read the entire contents of the file into a string
+    //read the entire contents of the file into a string
     ifstream sites_file(file_path.c_str());
 
     if (!sites_file.is_open()) {
@@ -39,7 +43,7 @@ string get_file_as_string(string file_path) noexcept(false) {
 
     string fc;
 
-    sites_file.seekg(0, ios::end);
+    sites_file.seekg(0, ios::end);   
     fc.reserve(sites_file.tellg());
     sites_file.seekg(0, ios::beg);
 
@@ -47,18 +51,17 @@ string get_file_as_string(string file_path) noexcept(false) {
 
     ostringstream oss;
     for (uint32_t i = 0; i < fc.size(); i++) {
-        if (fc[i] != '\r') {
-            oss << fc[i];
-        }
+        if (fc[i] != '\r') oss << fc[i];
     }
 
     return oss.str();
 }
 
-// tweaked from: https://stackoverflow.com/questions/675039/how-can-i-create-directory-tree-in-c-linux/29828907
-static int do_mkdir(const char* path, mode_t mode) {
-    Stat st;
-    int status = 0;
+
+//tweaked from: https://stackoverflow.com/questions/675039/how-can-i-create-directory-tree-in-c-linux/29828907
+static int do_mkdir(const char *path, mode_t mode) {
+    Stat            st;
+    int             status = 0;
 
     if (stat(path, &st) != 0) {
         /* Directory does not exist. EEXIST for race condition */
@@ -71,7 +74,7 @@ static int do_mkdir(const char* path, mode_t mode) {
         status = -1;
     }
 
-    return (status);
+    return(status);
 }
 
 /**
@@ -80,16 +83,16 @@ static int do_mkdir(const char* path, mode_t mode) {
  * ** each directory in path exists, rather than optimistically creating
  * ** the last element and working backwards.
  * */
-int mkpath(const char* path, mode_t mode) {
-    char* pp;
-    char* sp;
-    int status;
-    char* copypath = strdup(path);
+int mkpath(const char *path, mode_t mode) {
+    char           *pp;
+    char           *sp;
+    int             status;
+    char           *copypath = strdup(path);
 
     status = 0;
     pp = copypath;
     while (status == 0 && (sp = strchr(pp, '/')) != 0) {
-        // cerr << "trying to create directory: " << copypath << endl;
+        //cerr << "trying to create directory: " << copypath << endl;
         if (sp != pp) {
             /* Neither root nor double slash in path */
             *sp = '\0';
@@ -106,3 +109,5 @@ int mkpath(const char* path, mode_t mode) {
     free(copypath);
     return (status);
 }
+
+

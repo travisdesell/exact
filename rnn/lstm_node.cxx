@@ -1,4 +1,5 @@
 #include <cmath>
+
 #include <fstream>
 using std::ostream;
 
@@ -15,98 +16,99 @@ using std::uniform_real_distribution;
 #include <vector>
 using std::vector;
 
-#include "common/log.hxx"
 #include "common/random.hxx"
-#include "lstm_node.hxx"
-#include "mse.hxx"
-#include "rnn_node_interface.hxx"
+#include "common/log.hxx"
 
-LSTM_Node::LSTM_Node(int32_t _innovation_number, int32_t _type, double _depth)
-    : RNN_Node_Interface(_innovation_number, _type, _depth) {
+#include "rnn_node_interface.hxx"
+#include "mse.hxx"
+#include "lstm_node.hxx"
+
+
+LSTM_Node::LSTM_Node(int32_t _innovation_number, int32_t _type, double _depth) : RNN_Node_Interface(_innovation_number, _type, _depth) {
     node_type = LSTM_NODE;
 }
 
 LSTM_Node::~LSTM_Node() {
 }
 
-void LSTM_Node::initialize_lamarckian(
-    minstd_rand0& generator, NormalDistribution& normal_distribution, double mu, double sigma
-) {
+void LSTM_Node::initialize_lamarckian(minstd_rand0 &generator, NormalDistribution &normal_distribution, double mu, double sigma) {
+
     output_gate_update_weight = bound(normal_distribution.random(generator, mu, sigma));
     output_gate_weight = bound(normal_distribution.random(generator, mu, sigma));
     output_gate_bias = bound(normal_distribution.random(generator, mu, sigma));
-    // output_gate_bias = 0.0;
+    //output_gate_bias = 0.0;
 
     input_gate_update_weight = bound(normal_distribution.random(generator, mu, sigma));
     input_gate_weight = bound(normal_distribution.random(generator, mu, sigma));
     input_gate_bias = bound(normal_distribution.random(generator, mu, sigma));
-    // input_gate_bias = 0.0;
+    //input_gate_bias = 0.0;
 
     forget_gate_update_weight = bound(normal_distribution.random(generator, mu, sigma));
     forget_gate_weight = bound(normal_distribution.random(generator, mu, sigma));
     forget_gate_bias = bound(normal_distribution.random(generator, mu, sigma));
-    // forget_gate_bias = 1.0 + bound(normal_distribution.random(generator, mu, sigma));
+    //forget_gate_bias = 1.0 + bound(normal_distribution.random(generator, mu, sigma));
 
     cell_weight = bound(normal_distribution.random(generator, mu, sigma));
     cell_bias = bound(normal_distribution.random(generator, mu, sigma));
-    // cell_bias = 0.0;
+    //cell_bias = 0.0;
 }
 
-void LSTM_Node::initialize_xavier(minstd_rand0& generator, uniform_real_distribution<double>& rng_1_1, double range) {
+void LSTM_Node::initialize_xavier(minstd_rand0 &generator, uniform_real_distribution<double> &rng_1_1, double range) {
+
     output_gate_update_weight = range * (rng_1_1(generator));
     output_gate_weight = range * (rng_1_1(generator));
     output_gate_bias = range * (rng_1_1(generator));
-    // output_gate_bias = 0.0;
+    //output_gate_bias = 0.0;
 
     input_gate_update_weight = range * (rng_1_1(generator));
     input_gate_weight = range * (rng_1_1(generator));
     input_gate_bias = range * (rng_1_1(generator));
-    // input_gate_bias = 0.0;
+    //input_gate_bias = 0.0;
 
     forget_gate_update_weight = range * (rng_1_1(generator));
     forget_gate_weight = range * (rng_1_1(generator));
     forget_gate_bias = range * (rng_1_1(generator));
-    // forget_gate_bias = 1.0 + bound(normal_distribution.random(generator, mu, sigma));
+    //forget_gate_bias = 1.0 + bound(normal_distribution.random(generator, mu, sigma));
 
     cell_weight = range * (rng_1_1(generator));
     cell_bias = range * (rng_1_1(generator));
 }
 
-void LSTM_Node::initialize_kaiming(minstd_rand0& generator, NormalDistribution& normal_distribution, double range) {
+void LSTM_Node::initialize_kaiming(minstd_rand0 &generator, NormalDistribution &normal_distribution, double range) {
     output_gate_update_weight = range * normal_distribution.random(generator, 0, 1);
     output_gate_weight = range * normal_distribution.random(generator, 0, 1);
     output_gate_bias = range * normal_distribution.random(generator, 0, 1);
-    // output_gate_bias = 0.0;
+    //output_gate_bias = 0.0;
 
     input_gate_update_weight = range * normal_distribution.random(generator, 0, 1);
     input_gate_weight = range * normal_distribution.random(generator, 0, 1);
     input_gate_bias = range * normal_distribution.random(generator, 0, 1);
-    // input_gate_bias = 0.0;
+    //input_gate_bias = 0.0;
 
     forget_gate_update_weight = range * normal_distribution.random(generator, 0, 1);
     forget_gate_weight = range * normal_distribution.random(generator, 0, 1);
     forget_gate_bias = range * normal_distribution.random(generator, 0, 1);
-    // forget_gate_bias = 1.0 + bound(normal_distribution.random(generator, mu, sigma));
+    //forget_gate_bias = 1.0 + bound(normal_distribution.random(generator, mu, sigma));
 
     cell_weight = range * normal_distribution.random(generator, 0, 1);
     cell_bias = range * normal_distribution.random(generator, 0, 1);
 }
 
-void LSTM_Node::initialize_uniform_random(minstd_rand0& generator, uniform_real_distribution<double>& rng) {
+void LSTM_Node::initialize_uniform_random(minstd_rand0 &generator, uniform_real_distribution<double> &rng) {
     output_gate_update_weight = rng(generator);
     output_gate_weight = rng(generator);
     output_gate_bias = rng(generator);
-    // output_gate_bias = 0.0;
+    //output_gate_bias = 0.0;
 
     input_gate_update_weight = rng(generator);
     input_gate_weight = rng(generator);
     input_gate_bias = rng(generator);
-    // input_gate_bias = 0.0;
+    //input_gate_bias = 0.0;
 
     forget_gate_update_weight = rng(generator);
     forget_gate_weight = rng(generator);
     forget_gate_bias = rng(generator);
-    // forget_gate_bias = 1.0 + bound(normal_distribution.random(generator, mu, sigma));
+    //forget_gate_bias = 1.0 + bound(normal_distribution.random(generator, mu, sigma));
 
     cell_weight = rng(generator);
     cell_bias = rng(generator);
@@ -115,7 +117,7 @@ void LSTM_Node::initialize_uniform_random(minstd_rand0& generator, uniform_real_
 double LSTM_Node::get_gradient(string gradient_name) {
     double gradient_sum = 0.0;
 
-    for (int32_t i = 0; i < series_length; i++) {
+    for (int32_t i = 0; i < series_length; i++ ) {
         if (gradient_name == "output_gate_update_weight") {
             gradient_sum += d_output_gate_update_weight[i];
         } else if (gradient_name == "output_gate_weight") {
@@ -156,43 +158,33 @@ void LSTM_Node::input_fired(int32_t time, double incoming_output) {
 
     input_values[time] += incoming_output;
 
-    if (inputs_fired[time] < total_inputs) {
-        return;
-    } else if (inputs_fired[time] > total_inputs) {
-        Log::fatal(
-            "ERROR: inputs_fired on LSTM_Node %d at time %d is %d and total_inputs is %d\n", innovation_number, time,
-            inputs_fired[time], total_inputs
-        );
+    if (inputs_fired[time] < total_inputs) return;
+    else if (inputs_fired[time] > total_inputs) {
+        Log::fatal("ERROR: inputs_fired on LSTM_Node %d at time %d is %d and total_inputs is %d\n", innovation_number, time, inputs_fired[time], total_inputs);
         exit(1);
     }
 
     double input_value = input_values[time];
 
     double previous_cell_value = 0.0;
-    if (time > 0) {
-        previous_cell_value = cell_values[time - 1];
-    }
+    if (time > 0) previous_cell_value = cell_values[time - 1];
 
-    // forget gate bias should be around 1.0 intead of 0, but we do it here to not throw
-    // off the mu/sigma of the parameters
+    //forget gate bias should be around 1.0 intead of 0, but we do it here to not throw
+    //off the mu/sigma of the parameters
     forget_gate_bias = forget_gate_bias + 1.0;
 
-    output_gate_values[time] =
-        sigmoid(output_gate_weight * input_value + output_gate_update_weight * previous_cell_value + output_gate_bias);
-    input_gate_values[time] =
-        sigmoid(input_gate_weight * input_value + input_gate_update_weight * previous_cell_value + input_gate_bias);
-    forget_gate_values[time] =
-        sigmoid(forget_gate_weight * input_value + forget_gate_update_weight * previous_cell_value + forget_gate_bias);
+    output_gate_values[time] = sigmoid(output_gate_weight * input_value + output_gate_update_weight * previous_cell_value + output_gate_bias);
+    input_gate_values[time] = sigmoid(input_gate_weight * input_value + input_gate_update_weight * previous_cell_value + input_gate_bias);
+    forget_gate_values[time] = sigmoid(forget_gate_weight * input_value + forget_gate_update_weight * previous_cell_value + forget_gate_bias);
 
     ld_output_gate[time] = sigmoid_derivative(output_gate_values[time]);
     ld_input_gate[time] = sigmoid_derivative(input_gate_values[time]);
     ld_forget_gate[time] = sigmoid_derivative(forget_gate_values[time]);
 
     /*
-       output_gate_values[time] = output_gate_weight * input_value + output_gate_update_weight * previous_cell_value +
-       output_gate_bias; input_gate_values[time] = input_gate_weight * input_value + input_gate_update_weight *
-       previous_cell_value + input_gate_bias; forget_gate_values[time] = forget_gate_weight * input_value +
-       forget_gate_update_weight * previous_cell_value + forget_gate_bias;
+       output_gate_values[time] = output_gate_weight * input_value + output_gate_update_weight * previous_cell_value + output_gate_bias;
+       input_gate_values[time] = input_gate_weight * input_value + input_gate_update_weight * previous_cell_value + input_gate_bias;
+       forget_gate_values[time] = forget_gate_weight * input_value + forget_gate_update_weight * previous_cell_value + forget_gate_bias;
 
        ld_output_gate[time] = 1.0;
        ld_input_gate[time] = 1.0;
@@ -202,15 +194,13 @@ void LSTM_Node::input_fired(int32_t time, double incoming_output) {
     cell_in_tanh[time] = tanh(cell_weight * input_value + cell_bias);
     ld_cell_in[time] = tanh_derivative(cell_in_tanh[time]);
 
-    cell_values[time] =
-        (forget_gate_values[time] * previous_cell_value) + (input_gate_values[time] * cell_in_tanh[time]);
+    cell_values[time] = (forget_gate_values[time] * previous_cell_value) + (input_gate_values[time] * cell_in_tanh[time]);
 
-    // The original is a hyperbolic tangent, but the peephole[clarification needed] LSTM paper suggests the activation
-    // function be linear -- activation(x) = x
+    //The original is a hyperbolic tangent, but the peephole[clarification needed] LSTM paper suggests the activation function be linear -- activation(x) = x
     cell_out_tanh[time] = cell_values[time];
     ld_cell_out[time] = 1.0;
-    // cell_out_tanh[time] = tanh(cell_values[time]);
-    // ld_cell_out[time] = tanh_derivative(cell_out_tanh[time]);
+    //cell_out_tanh[time] = tanh(cell_values[time]);
+    //ld_cell_out[time] = tanh_derivative(cell_out_tanh[time]);
 
     output_values[time] = output_gate_values[time] * cell_out_tanh[time];
 
@@ -218,13 +208,9 @@ void LSTM_Node::input_fired(int32_t time, double incoming_output) {
 }
 
 void LSTM_Node::try_update_deltas(int32_t time) {
-    if (outputs_fired[time] < total_outputs) {
-        return;
-    } else if (outputs_fired[time] > total_outputs) {
-        Log::fatal(
-            "ERROR: outputs_fired on LSTM_Node %d at time %d is %d and total_outputs is %d\n", innovation_number, time,
-            outputs_fired[time], total_outputs
-        );
+    if (outputs_fired[time] < total_outputs) return;
+    else if (outputs_fired[time] > total_outputs) {
+        Log::fatal("ERROR: outputs_fired on LSTM_Node %d at time %d is %d and total_outputs is %d\n", innovation_number, time, outputs_fired[time], total_outputs);
         exit(1);
     }
 
@@ -232,11 +218,9 @@ void LSTM_Node::try_update_deltas(int32_t time) {
     double input_value = input_values[time];
 
     double previous_cell_value = 0.00;
-    if (time > 0) {
-        previous_cell_value = cell_values[time - 1];
-    }
+    if (time > 0) previous_cell_value = cell_values[time - 1];
 
-    // backprop output gate
+    //backprop output gate
     double d_output_gate = error * cell_out_tanh[time] * ld_output_gate[time];
     d_output_gate_bias[time] = d_output_gate;
     d_output_gate_update_weight[time] = d_output_gate * previous_cell_value;
@@ -244,15 +228,13 @@ void LSTM_Node::try_update_deltas(int32_t time) {
     d_prev_cell[time] += d_output_gate * output_gate_update_weight;
     d_input[time] += d_output_gate * output_gate_weight;
 
-    // backprop the cell path
+    //backprop the cell path
 
     double d_cell_out = error * output_gate_values[time] * ld_cell_out[time];
-    // propagate error back from the next cell value if there is one
-    if (time < (series_length - 1)) {
-        d_cell_out += d_prev_cell[time + 1];
-    }
+    //propagate error back from the next cell value if there is one
+    if (time < (series_length - 1)) d_cell_out += d_prev_cell[time + 1];
 
-    // backprop forget gate
+    //backprop forget gate
     d_prev_cell[time] += d_cell_out * forget_gate_values[time];
 
     double d_forget_gate = d_cell_out * previous_cell_value * ld_forget_gate[time];
@@ -262,7 +244,7 @@ void LSTM_Node::try_update_deltas(int32_t time) {
     d_prev_cell[time] += d_forget_gate * forget_gate_update_weight;
     d_input[time] += d_forget_gate * forget_gate_weight;
 
-    // backprob input gate
+    //backprob input gate
     double d_input_gate = d_cell_out * cell_in_tanh[time] * ld_input_gate[time];
     d_input_gate_bias[time] = d_input_gate;
     d_input_gate_update_weight[time] = d_input_gate * previous_cell_value;
@@ -270,7 +252,7 @@ void LSTM_Node::try_update_deltas(int32_t time) {
     d_prev_cell[time] += d_input_gate * input_gate_update_weight;
     d_input[time] += d_input_gate * input_gate_weight;
 
-    // backprop cell input
+    //backprop cell input
     double d_cell_in = d_cell_out * input_gate_values[time] * ld_cell_in[time];
     d_cell_bias[time] = d_cell_in;
     d_cell_weight[time] = d_cell_in * input_value;
@@ -297,19 +279,20 @@ int32_t LSTM_Node::get_number_weights() const {
     return 11;
 }
 
-void LSTM_Node::get_weights(vector<double>& parameters) const {
+void LSTM_Node::get_weights(vector<double> &parameters) const {
     parameters.resize(get_number_weights());
     int32_t offset = 0;
     get_weights(offset, parameters);
 }
 
-void LSTM_Node::set_weights(const vector<double>& parameters) {
+void LSTM_Node::set_weights(const vector<double> &parameters) {
     int32_t offset = 0;
     set_weights(offset, parameters);
 }
 
-void LSTM_Node::set_weights(int32_t& offset, const vector<double>& parameters) {
-    // int32_t start_offset = offset;
+
+void LSTM_Node::set_weights(int32_t &offset, const vector<double> &parameters) {
+    //int32_t start_offset = offset;
 
     output_gate_update_weight = bound(parameters[offset++]);
     output_gate_weight = bound(parameters[offset++]);
@@ -326,12 +309,12 @@ void LSTM_Node::set_weights(int32_t& offset, const vector<double>& parameters) {
     cell_weight = bound(parameters[offset++]);
     cell_bias = bound(parameters[offset++]);
 
-    // int32_t end_offset = offset;
-    // Log::trace("set weights from offset %d to %d on LSTM_Node %d\n", start_offset, end_offset, innovation_number);
+    //int32_t end_offset = offset;
+    //Log::trace("set weights from offset %d to %d on LSTM_Node %d\n", start_offset, end_offset, innovation_number);
 }
 
-void LSTM_Node::get_weights(int32_t& offset, vector<double>& parameters) const {
-    // int32_t start_offset = offset;
+void LSTM_Node::get_weights(int32_t &offset, vector<double> &parameters) const {
+    //int32_t start_offset = offset;
 
     parameters[offset++] = output_gate_update_weight;
     parameters[offset++] = output_gate_weight;
@@ -348,11 +331,12 @@ void LSTM_Node::get_weights(int32_t& offset, vector<double>& parameters) const {
     parameters[offset++] = cell_weight;
     parameters[offset++] = cell_bias;
 
-    // int32_t end_offset = offset;
-    // Log::trace("got weights from offset %d to %d on LSTM_Node %d\n", start_offset, end_offset, innovation_number);
+    //int32_t end_offset = offset;
+    //Log::trace("got weights from offset %d to %d on LSTM_Node %d\n", start_offset, end_offset, innovation_number);
 }
 
-void LSTM_Node::get_gradients(vector<double>& gradients) {
+
+void LSTM_Node::get_gradients(vector<double> &gradients) {
     gradients.assign(11, 0.0);
 
     for (int32_t i = 0; i < 11; i++) {
@@ -424,7 +408,7 @@ void LSTM_Node::reset(int32_t _series_length) {
 RNN_Node_Interface* LSTM_Node::copy() const {
     LSTM_Node* n = new LSTM_Node(innovation_number, layer_type, depth);
 
-    // copy LSTM_Node values
+    //copy LSTM_Node values
     n->output_gate_update_weight = output_gate_update_weight;
     n->output_gate_weight = output_gate_weight;
     n->output_gate_bias = output_gate_bias;
@@ -471,7 +455,8 @@ RNN_Node_Interface* LSTM_Node::copy() const {
     n->d_cell_weight = d_cell_weight;
     n->d_cell_bias = d_cell_bias;
 
-    // copy RNN_Node_Interface values
+
+    //copy RNN_Node_Interface values
     n->series_length = series_length;
     n->input_values = input_values;
     n->output_values = output_values;
@@ -489,6 +474,6 @@ RNN_Node_Interface* LSTM_Node::copy() const {
     return n;
 }
 
-void LSTM_Node::write_to_stream(ostream& out) {
+void LSTM_Node::write_to_stream(ostream &out) {
     RNN_Node_Interface::write_to_stream(out);
 }

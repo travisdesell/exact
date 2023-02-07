@@ -1,5 +1,4 @@
 #include "weights/weight_rules.hxx"
-
 #include "common/arguments.hxx"
 #include "common/log.hxx"
 
@@ -9,11 +8,7 @@ WeightRules::WeightRules() {
     mutated_components_weight = LAMARCKIAN;
 }
 
-WeightRules::WeightRules(const vector<string>& arguments) {
-    initialize_from_args(arguments);
-}
-
-void WeightRules::initialize_from_args(const vector<string>& arguments) {
+void WeightRules::generate_weight_initialize_from_arguments(const vector<string> &arguments) {
     Log::info("Getting arguments for weight initialize and weight inheritance methods\n");
     string weight_initialize_string = "xavier";
     get_argument(arguments, "--weight_initialize", false, weight_initialize_string);
@@ -66,10 +61,10 @@ string WeightRules::get_mutated_components_weight_method_name() {
 }
 
 WeightRules* WeightRules::copy() {
-    WeightRules* weight_rule_copy = new WeightRules();
+    WeightRules *weight_rule_copy = new WeightRules();
     weight_rule_copy->set_weight_initialize_method(weight_initialize);
     weight_rule_copy->set_weight_inheritance_method(weight_inheritance);
     weight_rule_copy->set_mutated_components_weight_method(mutated_components_weight);
-
+    
     return weight_rule_copy;
 }

@@ -1,6 +1,6 @@
-#include "weight_update.hxx"
-
 #include <cmath>
+
+#include "weights/weight_update.hxx"
 
 #include "common/arguments.hxx"
 #include "common/log.hxx"
@@ -14,6 +14,7 @@ WeightUpdate::WeightUpdate() {
     beta1 = 0.9;
     beta2 = 0.99;
 
+    //SHO SY COMMENTED LINE BELOW
     learning_rate = 0.001;
     high_threshold = 1.0;
     low_threshold = 0.05;
@@ -21,19 +22,13 @@ WeightUpdate::WeightUpdate() {
     use_low_norm = true;
 }
 
-WeightUpdate::WeightUpdate(const vector<string>& arguments) : WeightUpdate() {
-    generate_from_arguments(arguments);
-}
-
-void WeightUpdate::generate_from_arguments(const vector<string>& arguments) {
+void WeightUpdate::generate_from_arguments(const vector<string> &arguments) {
     Log::info("Getting infomation on weight update methods for backprop\n");
     if (argument_exists(arguments, "--weight_update")) {
         string weight_update_method_string;
         get_argument(arguments, "--weight_update", true, weight_update_method_string);
         weight_update_method = get_enum_method_from_string(weight_update_method_string);
-        Log::info(
-            "Doing backprop with weight update method: %s\n", WEIGHT_UPDATE_METHOD_STRING[weight_update_method].c_str()
-        );
+        Log::info("Doing backprop with weight update method: %s\n", WEIGHT_UPDATE_METHOD_STRING[weight_update_method].c_str());
         if (weight_update_method == MOMENTUM) {
             get_argument(arguments, "--mu", false, momentum);
             Log::info("Momentum weight update mu=%f\n", momentum);
@@ -58,12 +53,7 @@ void WeightUpdate::generate_from_arguments(const vector<string>& arguments) {
             get_argument(arguments, "--beta2", false, beta2);
             Log::info("Adam-bias weight update eps=%f, beta1=%f, beta2=%f\n", epsilon, beta1, beta2);
         }
-    } else {
-        Log::info(
-            "Backprop weight update method not set, using default method %s and default parameters\n",
-            WEIGHT_UPDATE_METHOD_STRING[weight_update_method].c_str()
-        );
-    }
+    } else Log::info("Backprop weight update method not set, using default method %s and default parameters\n", WEIGHT_UPDATE_METHOD_STRING[weight_update_method].c_str());
 
     get_argument(arguments, "--learning_rate", false, learning_rate);
     get_argument(arguments, "--high_threshold", false, high_threshold);
@@ -73,10 +63,10 @@ void WeightUpdate::generate_from_arguments(const vector<string>& arguments) {
     Log::info("Use low norm is set to %s, low norm is %f\n", use_low_norm ? "True" : "False", low_threshold);
 }
 
-void WeightUpdate::update_weights(
-    vector<double>& parameters, vector<double>& velocity, vector<double>& prev_velocity, vector<double>& gradient,
-    int32_t epoch
-) {
+void WeightUpdate::update_weights(vector<double> &parameters, vector<double> &velocity, vector<double> &prev_velocity, vector<double> &gradient, int32_t epoch, double _learning_rate) {
+    //Log::error("Learning rate before update_weights: %lf",learning_rate);
+    learning_rate = _learning_rate;
+    //Log::error("Learning rate after update_weights: %lf",learning_rate);
     if (weight_update_method == VANILLA) {
         vanilla_weight_update(parameters, velocity, prev_velocity, gradient, epoch);
     } else if (weight_update_method == MOMENTUM) {
@@ -92,42 +82,32 @@ void WeightUpdate::update_weights(
     } else if (weight_update_method == ADAM_BIAS) {
         adam_bias_weight_update(parameters, velocity, prev_velocity, gradient, epoch);
     } else {
-        Log::fatal(
-            "Unrecognized weight update method's enom number: %d, this should never happen!\n", weight_update_method
-        );
+        Log::fatal("Unrecognized weight update method's enom number: %d, this should never happen!\n", weight_update_method);
         exit(1);
     }
+
 }
 
-void WeightUpdate::vanilla_weight_update(
-    vector<double>& parameters, vector<double>& velocity, vector<double>& prev_velocity, vector<double>& gradient,
-    int32_t epoch
-) {
+void WeightUpdate::vanilla_weight_update(vector<double> &parameters, vector<double> &velocity, vector<double> &prev_velocity, vector<double> &gradient, int32_t epoch) {
     Log::trace("Doing weight update with method: %s \n", WEIGHT_UPDATE_METHOD_STRING[weight_update_method].c_str());
-    for (int32_t i = 0; i < (int32_t) parameters.size(); i++) {
+    for (int32_t i = 0; i < (int32_t)parameters.size(); i++) {
         parameters[i] -= learning_rate * gradient[i];
         gradient_clip(parameters[i]);
     }
 }
 
-void WeightUpdate::momentum_weight_update(
-    vector<double>& parameters, vector<double>& velocity, vector<double>& prev_velocity, vector<double>& gradient,
-    int32_t epoch
-) {
+void WeightUpdate::momentum_weight_update(vector<double> &parameters, vector<double> &velocity, vector<double> &prev_velocity, vector<double> &gradient, int32_t epoch) {
     Log::trace("Doing weight update with method: %s \n", WEIGHT_UPDATE_METHOD_STRING[weight_update_method].c_str());
-    for (int32_t i = 0; i < (int32_t) parameters.size(); i++) {
+    for (int32_t i = 0; i < (int32_t)parameters.size(); i++) {
         velocity[i] = momentum * velocity[i] - learning_rate * gradient[i];
         parameters[i] += velocity[i];
         gradient_clip(parameters[i]);
     }
 }
 
-void WeightUpdate::nesterov_weight_update(
-    vector<double>& parameters, vector<double>& velocity, vector<double>& prev_velocity, vector<double>& gradient,
-    int32_t epoch
-) {
+void WeightUpdate::nesterov_weight_update(vector<double> &parameters, vector<double> &velocity, vector<double> &prev_velocity, vector<double> &gradient, int32_t epoch)  {
     Log::info("Doing weight update with method: %s \n", WEIGHT_UPDATE_METHOD_STRING[weight_update_method].c_str());
-    for (int32_t i = 0; i < (int32_t) parameters.size(); i++) {
+    for (int32_t i = 0; i < (int32_t)parameters.size(); i++) {
         prev_velocity[i] = velocity[i];
         velocity[i] = momentum * velocity[i] - learning_rate * gradient[i];
         parameters[i] += -momentum * prev_velocity[i] + (1 + momentum) * velocity[i];
@@ -135,12 +115,9 @@ void WeightUpdate::nesterov_weight_update(
     }
 }
 
-void WeightUpdate::adagrad_weight_update(
-    vector<double>& parameters, vector<double>& velocity, vector<double>& prev_velocity, vector<double>& gradient,
-    int32_t epoch
-) {
+void WeightUpdate::adagrad_weight_update(vector<double> &parameters, vector<double> &velocity, vector<double> &prev_velocity, vector<double> &gradient, int32_t epoch) {
     Log::trace("Doing weight update with method: %s \n", WEIGHT_UPDATE_METHOD_STRING[weight_update_method].c_str());
-    for (int32_t i = 0; i < (int32_t) parameters.size(); i++) {
+    for (int32_t i = 0; i < (int32_t)parameters.size(); i++) {
         // here the velocity is the "cache" in Adagrad
         velocity[i] += gradient[i] * gradient[i];
         parameters[i] += -learning_rate * gradient[i] / (sqrt(velocity[i]) + epsilon);
@@ -148,12 +125,9 @@ void WeightUpdate::adagrad_weight_update(
     }
 }
 
-void WeightUpdate::rmsprop_weight_update(
-    vector<double>& parameters, vector<double>& velocity, vector<double>& prev_velocity, vector<double>& gradient,
-    int32_t epoch
-) {
+void WeightUpdate::rmsprop_weight_update(vector<double> &parameters, vector<double> &velocity, vector<double> &prev_velocity, vector<double> &gradient, int32_t epoch) {
     Log::trace("Doing weight update with method: %s \n", WEIGHT_UPDATE_METHOD_STRING[weight_update_method].c_str());
-    for (int32_t i = 0; i < (int32_t) parameters.size(); i++) {
+    for (int32_t i = 0; i < (int32_t)parameters.size(); i++) {
         // here the velocity is the "cache" in RMSProp
         velocity[i] = decay_rate * velocity[i] + (1 - decay_rate) * gradient[i] * gradient[i];
         parameters[i] += -learning_rate * gradient[i] / (sqrt(velocity[i]) + epsilon);
@@ -161,12 +135,9 @@ void WeightUpdate::rmsprop_weight_update(
     }
 }
 
-void WeightUpdate::adam_weight_update(
-    vector<double>& parameters, vector<double>& velocity, vector<double>& prev_velocity, vector<double>& gradient,
-    int32_t epoch
-) {
+void WeightUpdate::adam_weight_update(vector<double> &parameters, vector<double> &velocity, vector<double> &prev_velocity, vector<double> &gradient, int32_t epoch) {
     Log::trace("Doing weight update with method: %s \n", WEIGHT_UPDATE_METHOD_STRING[weight_update_method].c_str());
-    for (int32_t i = 0; i < (int32_t) parameters.size(); i++) {
+    for (int32_t i = 0; i < (int32_t)parameters.size(); i++) {
         // here the velocity is the "v" in adam, the prev_velocity is "m" in adam
         prev_velocity[i] = beta1 * prev_velocity[i] + (1 - beta1) * gradient[i];
         velocity[i] = beta2 * velocity[i] + (1 - beta2) * (gradient[i] * gradient[i]);
@@ -175,12 +146,9 @@ void WeightUpdate::adam_weight_update(
     }
 }
 
-void WeightUpdate::adam_bias_weight_update(
-    vector<double>& parameters, vector<double>& velocity, vector<double>& prev_velocity, vector<double>& gradient,
-    int32_t epoch
-) {
+void WeightUpdate::adam_bias_weight_update(vector<double> &parameters, vector<double> &velocity, vector<double> &prev_velocity, vector<double> &gradient, int32_t epoch) {
     Log::trace("Doing weight update with method: %s \n", WEIGHT_UPDATE_METHOD_STRING[weight_update_method].c_str());
-    for (int32_t i = 0; i < (int32_t) parameters.size(); i++) {
+    for (int32_t i = 0; i < (int32_t)parameters.size(); i++) {
         // here the velocity is the "v" in adam, the prev_velocity is "m" in adam
         prev_velocity[i] = beta1 * prev_velocity[i] + (1 - beta1) * gradient[i];
         double mt = prev_velocity[i] / (1 - pow(beta1, epoch));
@@ -191,12 +159,9 @@ void WeightUpdate::adam_bias_weight_update(
     }
 }
 
-void WeightUpdate::gradient_clip(double& parameter) {
-    if (parameter < -10.0) {
-        parameter = -10.0;
-    } else if (parameter > 10.0) {
-        parameter = 10.0;
-    }
+void WeightUpdate::gradient_clip(double &parameter) {
+    if (parameter < -10.0) parameter = -10.0;
+    else if (parameter > 10.0) parameter = 10.0;
 }
 
 double WeightUpdate::get_learning_rate() {
@@ -233,29 +198,29 @@ void WeightUpdate::enable_low_threshold(double _low_threshold) {
     low_threshold = _low_threshold;
 }
 
-double WeightUpdate::get_norm(vector<double>& analytic_gradient) {
+double WeightUpdate::get_norm(vector<double> &analytic_gradient) {
     double norm = 0.0;
-    for (int32_t i = 0; i < (int32_t) analytic_gradient.size(); i++) {
+    for (int32_t i = 0; i < (int32_t)analytic_gradient.size(); i++) {
         norm += analytic_gradient[i] * analytic_gradient[i];
     }
     norm = sqrt(norm);
     return norm;
 }
 
-void WeightUpdate::norm_gradients(vector<double>& analytic_gradient, double norm) {
+void WeightUpdate::norm_gradients(vector<double> &analytic_gradient, double norm) {
     if (use_high_norm && norm > high_threshold) {
-        double high_threshold_norm = high_threshold / norm;
-        Log::debug_no_header(", OVER THRESHOLD, multiplier: %lf", high_threshold_norm);
+    double high_threshold_norm = high_threshold / norm;
+    Log::debug_no_header(", OVER THRESHOLD, multiplier: %lf", high_threshold_norm);
 
-        for (int32_t i = 0; i < (int32_t) analytic_gradient.size(); i++) {
-            analytic_gradient[i] = high_threshold_norm * analytic_gradient[i];
-        }
+    for (int32_t i = 0; i < (int32_t)analytic_gradient.size(); i++) {
+        analytic_gradient[i] = high_threshold_norm * analytic_gradient[i];
+    }
 
     } else if (use_low_norm && norm < low_threshold) {
         double low_threshold_norm = low_threshold / norm;
         Log::debug_no_header(", UNDER THRESHOLD, multiplier: %lf", low_threshold_norm);
 
-        for (int32_t i = 0; i < (int32_t) analytic_gradient.size(); i++) {
+        for (int32_t i = 0; i < (int32_t)analytic_gradient.size(); i++) {
             analytic_gradient[i] = low_threshold_norm * analytic_gradient[i];
         }
     }

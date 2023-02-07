@@ -1,8 +1,9 @@
 #include <chrono>
+
 #include <iomanip>
+using std::setw;
 using std::fixed;
 using std::setprecision;
-using std::setw;
 
 #include <iostream>
 using std::cerr;
@@ -21,21 +22,24 @@ using std::thread;
 #include <vector>
 using std::vector;
 
-#include "cnn/exact.hxx"
-#include "common/arguments.hxx"
-#include "image_tools/image_set.hxx"
 #include "mpi.h"
 
-#define WORK_REQUEST_TAG  1
+#include "common/arguments.hxx"
+
+#include "image_tools/image_set.hxx"
+
+#include "cnn/exact.hxx"
+
+#define WORK_REQUEST_TAG 1
 #define GENOME_LENGTH_TAG 2
-#define GENOME_TAG        3
-#define TERMINATE_TAG     4
+#define GENOME_TAG 3
+#define TERMINATE_TAG 4
 
 mutex exact_mutex;
 
 vector<string> arguments;
 
-EXACT* exact;
+EXACT *exact;
 
 bool finished = false;
 
@@ -69,13 +73,13 @@ CNN_Genome* receive_genome_from(string name, int source) {
 
     genome_str[length] = '\0';
 
-    // cout << "genome_str:" << endl << genome_str << endl;
+    //cout << "genome_str:" << endl << genome_str << endl;
 
     istringstream iss(genome_str);
 
     CNN_Genome* genome = new CNN_Genome(iss, false);
 
-    delete[] genome_str;
+    delete [] genome_str;
     return genome;
 }
 
@@ -109,9 +113,7 @@ void receive_terminate_message(int source) {
     MPI_Recv(terminate_message, 1, MPI_INT, source, TERMINATE_TAG, MPI_COMM_WORLD, &status);
 }
 
-void master(
-    const Images& training_images, const Images& validation_images, const Images& testing_images, int max_rank
-) {
+void master(const Images &training_images, const Images &validation_images, const Images &testing_images, int max_rank) {
     string name = "master";
 
     cout << "MAX INT: " << numeric_limits<int>::max() << endl;
@@ -119,7 +121,7 @@ void master(
     int terminates_sent = 0;
 
     while (true) {
-        // wait for a incoming message
+        //wait for a incoming message
         MPI_Status status;
         MPI_Probe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
 
@@ -127,48 +129,46 @@ void master(
         int tag = status.MPI_TAG;
         cout << "[" << setw(10) << name << "] probe returned message from: " << source << " with tag: " << tag << endl;
 
-        // if the message is a work request, send a genome
+
+        //if the message is a work request, send a genome
 
         if (tag == WORK_REQUEST_TAG) {
             receive_work_request(source);
 
             exact_mutex.lock();
-            CNN_Genome* genome = exact->generate_individual();
+            CNN_Genome *genome = exact->generate_individual();
             exact_mutex.unlock();
 
-            if (genome == NULL) {  // search was completed if it returns NULL for an individual
-                // send terminate message
+            if (genome == NULL) { //search was completed if it returns NULL for an individual
+                //send terminate message
                 cout << "[" << setw(10) << name << "] terminating worker: " << source << endl;
                 send_terminate_message(source);
                 terminates_sent++;
 
-                cout << "[" << setw(10) << name << "] sent: " << terminates_sent << " terminates of: " << (max_rank - 1)
-                     << endl;
-                if (terminates_sent >= max_rank - 1) {
-                    return;
-                }
+                cout << "[" << setw(10) << name << "] sent: " << terminates_sent << " terminates of: " << (max_rank - 1) << endl;
+                if (terminates_sent >= max_rank - 1) return;
 
             } else {
                 ofstream outfile(exact->get_output_directory() + "/gen_" + to_string(genome->get_generation_id()));
                 genome->write(outfile);
                 outfile.close();
 
-                // send genome
+                //send genome
                 cout << "[" << setw(10) << name << "] sending genome to: " << source << endl;
                 send_genome_to(name, source, genome);
 
-                // delete this genome as it will not be used again
+                //delete this genome as it will not be used again
                 delete genome;
             }
         } else if (tag == GENOME_LENGTH_TAG) {
             cout << "[" << setw(10) << name << "] received genome from: " << source << endl;
-            CNN_Genome* genome = receive_genome_from(name, source);
+            CNN_Genome *genome = receive_genome_from(name, source);
 
             exact_mutex.lock();
             exact->insert_genome(genome);
             exact_mutex.unlock();
 
-            // this genome will be deleted if/when removed from population
+            //this genome will be deleted if/when removed from population
         } else {
             cerr << "[" << setw(10) << name << "] ERROR: received message with unknown tag: " << tag << endl;
             MPI_Abort(MPI_COMM_WORLD, 1);
@@ -176,7 +176,7 @@ void master(
     }
 }
 
-void worker(const Images& training_images, const Images& validation_images, const Images& testing_images, int rank) {
+void worker(const Images &training_images, const Images &validation_images, const Images &testing_images, int rank) {
     string name = "worker_" + to_string(rank);
     while (true) {
         cout << "[" << setw(10) << name << "] sending work request!" << endl;
@@ -261,16 +261,11 @@ int main(int argc, char** argv) {
     get_argument(arguments, "--images_resize", true, images_resize);
 
     Images training_images(training_filename, padding);
-    Images validation_images(
-        validation_filename, padding, training_images.get_average(), training_images.get_std_dev()
-    );
+    Images validation_images(validation_filename, padding, training_images.get_average(), training_images.get_std_dev());
     Images testing_images(testing_filename, padding, training_images.get_average(), training_images.get_std_dev());
 
     if (rank == 0) {
-        exact = new EXACT(
-            training_images, validation_images, testing_images, padding, population_size, max_epochs, use_sfmp,
-            use_node_operations, max_genomes, output_directory, search_name, reset_edges
-        );
+        exact = new EXACT(training_images, validation_images, testing_images, padding, population_size, max_epochs, use_sfmp, use_node_operations, max_genomes, output_directory, search_name, reset_edges);
 
         master(training_images, validation_images, testing_images, max_rank);
     } else {

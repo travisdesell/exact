@@ -4,7 +4,7 @@ using std::printf;
 using std::snprintf;
 using std::vsnprintf;
 
-// for va_list, va_start
+//for va_list, va_start
 #include <stdarg.h>
 
 #include <iostream>
@@ -16,6 +16,7 @@ using std::thread;
 #include "arguments.hxx"
 #include "files.hxx"
 #include "log.hxx"
+
 
 using std::cerr;
 using std::endl;
@@ -40,12 +41,12 @@ LogFile::LogFile(FILE* _file) {
 }
 
 void Log::register_command_line_arguments() {
-    // CommandLine::create_group("Log", "");
-    // CommandLine::
+    //CommandLine::create_group("Log", "");
+    //CommandLine::
 }
 
 int8_t Log::parse_level_from_string(string level) {
-    if (level.compare("0") == 0 || level.compare("NONE") == 0 || level.compare("none") == 0) {
+    if (level.compare("0") == 0 || level.compare("NONE") == 0|| level.compare("none") == 0) {
         return Log::NONE;
     } else if (level.compare("1") == 0 || level.compare("FATAL") == 0 || level.compare("fatal") == 0) {
         return Log::FATAL;
@@ -76,8 +77,8 @@ int8_t Log::parse_level_from_string(string level) {
     }
 }
 
-void Log::initialize(const vector<string>& arguments) {
-    // TODO: should read these from the CommandLine (to be created)
+void Log::initialize(const vector<string> &arguments) {
+    //TODO: should read these from the CommandLine (to be created)
 
     string std_message_level_str, file_message_level_str;
 
@@ -88,10 +89,11 @@ void Log::initialize(const vector<string>& arguments) {
     std_message_level = parse_level_from_string(std_message_level_str);
     file_message_level = parse_level_from_string(file_message_level_str);
 
-    // cerr << "std_message_level: " << std_message_level << ", file_message_level: " << file_message_level << endl;
+    //cerr << "std_message_level: " << std_message_level << ", file_message_level: " << file_message_level << endl;
 
     get_argument(arguments, "--max_header_length", false, max_header_length);
     get_argument(arguments, "--max_message_length", false, max_message_length);
+
 
     mkpath(output_directory.c_str(), 0777);
 }
@@ -111,7 +113,7 @@ void Log::clear_rank_restriction() {
 void Log::set_id(string human_readable_id) {
     thread::id id = std::this_thread::get_id();
 
-    // cerr << "setting thread id " << id << " to human readable id: '" << human_readable_id << "'" << endl;
+    //cerr << "setting thread id " << id << " to human readable id: '" << human_readable_id << "'" << endl;
 
     log_ids_mutex.lock();
 
@@ -121,17 +123,19 @@ void Log::set_id(string human_readable_id) {
 }
 
 void Log::release_id(string human_readable_id) {
-    // cerr << "locking thread from human readable id: '" << human_readable_id << "'" << endl;
+
+    //cerr << "locking thread from human readable id: '" << human_readable_id << "'" << endl;
     log_ids_mutex.lock();
-    // cerr << "releasing thread from human readable id: '" << human_readable_id << "'" << endl;
+    //cerr << "releasing thread from human readable id: '" << human_readable_id << "'" << endl;
 
     if (output_files.count(human_readable_id) == 0) {
-        // this file was never created and written to
+        //this file was never created and written to
 
-        // cerr << "ERROR: log id '" << human_readable_id << "' was either already released or not previously set!" <<
-        // endl; exit(1);
+        //cerr << "ERROR: log id '" << human_readable_id << "' was either already released or not previously set!" << endl;
+        //exit(1);
     } else {
-        LogFile* log_file = output_files[human_readable_id];
+
+        LogFile *log_file = output_files[human_readable_id];
         fflush(log_file->file);
         fclose(log_file->file);
 
@@ -142,16 +146,13 @@ void Log::release_id(string human_readable_id) {
     log_ids_mutex.unlock();
 }
 
-void Log::write_message(
-    bool print_header, int8_t message_level, const char* message_type, const char* format, va_list arguments
-) {
+
+void Log::write_message(bool print_header, int8_t message_level, const char *message_type, const char *format, va_list arguments) {
+
     thread::id id = std::this_thread::get_id();
 
     if (log_ids.count(id) == 0) {
-        cerr << "ERROR: could not write message from thread '" << id
-             << "' because it did not have a human readable id assigned (please use the Log::set_id(string) function "
-                "before writing to the Log on any thread)."
-             << endl;
+        cerr << "ERROR: could not write message from thread '" << id << "' because it did not have a human readable id assigned (please use the Log::set_id(string) function before writing to the Log on any thread)." << endl;
         cerr << "message:" << endl;
         vprintf(format, arguments);
         cerr << endl;
@@ -160,15 +161,15 @@ void Log::write_message(
 
     string human_readable_id = log_ids[id];
 
-    // print the message header into a string
+    //print the message header into a string
     char header_buffer[max_header_length];
-    // we only need to print the header for some messages
+    //we only need to print the header for some messages
     if (print_header) {
-        // snprintf(header_buffer, max_header_length, "[%-8s %-20s]", message_type, human_readable_id.c_str());
+        //snprintf(header_buffer, max_header_length, "[%-8s %-20s]", message_type, human_readable_id.c_str());
         snprintf(header_buffer, max_header_length, "[%-7s %-21s]", message_type, human_readable_id.c_str());
     }
 
-    // print the actual message contents into a string
+    //print the actual message contents into a string
     char message_buffer[max_message_length];
     vsnprintf(message_buffer, max_message_length, format, arguments);
 
@@ -183,20 +184,20 @@ void Log::write_message(
     if (file_message_level >= message_level) {
         LogFile* log_file = NULL;
 
-        // check and see if we've already opened a file for this human readable id, if we haven't
-        // open a new one for it
+        //check and see if we've already opened a file for this human readable id, if we haven't
+        //open a new one for it
 
         if (output_files.count(human_readable_id) == 0) {
             string output_filename = output_directory + "/" + human_readable_id;
-            FILE* outfile = fopen(output_filename.c_str(), "w");
+            FILE *outfile = fopen(output_filename.c_str(), "w");
             log_file = new LogFile(outfile);
             output_files[human_readable_id] = log_file;
         } else {
             log_file = output_files[human_readable_id];
         }
 
-        // lock this log_file in case multiple threads are trying to write
-        // to the same file
+        //lock this log_file in case multiple threads are trying to write
+        //to the same file
         log_file->file_mutex.lock();
         if (print_header) {
             fprintf(log_file->file, "%s %s", header_buffer, message_buffer);
@@ -212,16 +213,12 @@ bool Log::at_level(int8_t level) {
     return level >= std_message_level || level >= file_message_level;
 }
 
-void Log::fatal(const char* format, ...) {
-    // don't write if this is the wrong process rank
-    if (restricted_rank >= 0 && restricted_rank != process_rank) {
-        return;
-    }
+void Log::fatal(const char *format, ...) {
+    //don't write if this is the wrong process rank
+    if (restricted_rank >= 0 && restricted_rank != process_rank) return;
 
-    // not writing this type of message to either std out or a file
-    if (std_message_level < FATAL && file_message_level < FATAL) {
-        return;
-    }
+    //not writing this type of message to either std out or a file
+    if (std_message_level < FATAL && file_message_level < FATAL) return;
 
     va_list arguments;
     va_start(arguments, format);
@@ -229,15 +226,11 @@ void Log::fatal(const char* format, ...) {
 }
 
 void Log::error(const char* format, ...) {
-    // don't write if this is the wrong process rank
-    if (restricted_rank >= 0 && restricted_rank != process_rank) {
-        return;
-    }
+    //don't write if this is the wrong process rank
+    if (restricted_rank >= 0 && restricted_rank != process_rank) return;
 
-    // not writing this type of message to either std out or a file
-    if (std_message_level < ERROR && file_message_level < ERROR) {
-        return;
-    }
+    //not writing this type of message to either std out or a file
+    if (std_message_level < ERROR && file_message_level < ERROR) return;
 
     va_list arguments;
     va_start(arguments, format);
@@ -245,15 +238,11 @@ void Log::error(const char* format, ...) {
 }
 
 void Log::warning(const char* format, ...) {
-    // don't write if this is the wrong process rank
-    if (restricted_rank >= 0 && restricted_rank != process_rank) {
-        return;
-    }
+    //don't write if this is the wrong process rank
+    if (restricted_rank >= 0 && restricted_rank != process_rank) return;
 
-    // not writing this type of message to either std out or a file
-    if (std_message_level < WARNING && file_message_level < WARNING) {
-        return;
-    }
+    //not writing this type of message to either std out or a file
+    if (std_message_level < WARNING && file_message_level < WARNING) return;
 
     va_list arguments;
     va_start(arguments, format);
@@ -261,15 +250,11 @@ void Log::warning(const char* format, ...) {
 }
 
 void Log::info(const char* format, ...) {
-    // don't write if this is the wrong process rank
-    if (restricted_rank >= 0 && restricted_rank != process_rank) {
-        return;
-    }
+    //don't write if this is the wrong process rank
+    if (restricted_rank >= 0 && restricted_rank != process_rank) return;
 
-    // not writing this type of message to either std out or a file
-    if (std_message_level < INFO && file_message_level < INFO) {
-        return;
-    }
+    //not writing this type of message to either std out or a file
+    if (std_message_level < INFO && file_message_level < INFO) return;
 
     va_list arguments;
     va_start(arguments, format);
@@ -277,15 +262,11 @@ void Log::info(const char* format, ...) {
 }
 
 void Log::debug(const char* format, ...) {
-    // don't write if this is the wrong process rank
-    if (restricted_rank >= 0 && restricted_rank != process_rank) {
-        return;
-    }
+    //don't write if this is the wrong process rank
+    if (restricted_rank >= 0 && restricted_rank != process_rank) return;
 
-    // not writing this type of message to either std out or a file
-    if (std_message_level < DEBUG && file_message_level < DEBUG) {
-        return;
-    }
+    //not writing this type of message to either std out or a file
+    if (std_message_level < DEBUG && file_message_level < DEBUG) return;
 
     va_list arguments;
     va_start(arguments, format);
@@ -293,31 +274,23 @@ void Log::debug(const char* format, ...) {
 }
 
 void Log::trace(const char* format, ...) {
-    // don't write if this is the wrong process rank
-    if (restricted_rank >= 0 && restricted_rank != process_rank) {
-        return;
-    }
+    //don't write if this is the wrong process rank
+    if (restricted_rank >= 0 && restricted_rank != process_rank) return;
 
-    // not writing this type of message to either std out or a file
-    if (std_message_level < TRACE && file_message_level < TRACE) {
-        return;
-    }
+    //not writing this type of message to either std out or a file
+    if (std_message_level < TRACE && file_message_level < TRACE) return;
 
     va_list arguments;
     va_start(arguments, format);
     write_message(true, TRACE, "TRACE", format, arguments);
 }
 
-void Log::fatal_no_header(const char* format, ...) {
-    // don't write if this is the wrong process rank
-    if (restricted_rank >= 0 && restricted_rank != process_rank) {
-        return;
-    }
+void Log::fatal_no_header(const char *format, ...) {
+    //don't write if this is the wrong process rank
+    if (restricted_rank >= 0 && restricted_rank != process_rank) return;
 
-    // not writing this type of message to either std out or a file
-    if (std_message_level < FATAL && file_message_level < FATAL) {
-        return;
-    }
+    //not writing this type of message to either std out or a file
+    if (std_message_level < FATAL && file_message_level < FATAL) return;
 
     va_list arguments;
     va_start(arguments, format);
@@ -325,15 +298,11 @@ void Log::fatal_no_header(const char* format, ...) {
 }
 
 void Log::error_no_header(const char* format, ...) {
-    // don't write if this is the wrong process rank
-    if (restricted_rank >= 0 && restricted_rank != process_rank) {
-        return;
-    }
+    //don't write if this is the wrong process rank
+    if (restricted_rank >= 0 && restricted_rank != process_rank) return;
 
-    // not writing this type of message to either std out or a file
-    if (std_message_level < ERROR && file_message_level < ERROR) {
-        return;
-    }
+    //not writing this type of message to either std out or a file
+    if (std_message_level < ERROR && file_message_level < ERROR) return;
 
     va_list arguments;
     va_start(arguments, format);
@@ -341,15 +310,11 @@ void Log::error_no_header(const char* format, ...) {
 }
 
 void Log::warning_no_header(const char* format, ...) {
-    // don't write if this is the wrong process rank
-    if (restricted_rank >= 0 && restricted_rank != process_rank) {
-        return;
-    }
+    //don't write if this is the wrong process rank
+    if (restricted_rank >= 0 && restricted_rank != process_rank) return;
 
-    // not writing this type of message to either std out or a file
-    if (std_message_level < WARNING && file_message_level < WARNING) {
-        return;
-    }
+    //not writing this type of message to either std out or a file
+    if (std_message_level < WARNING && file_message_level < WARNING) return;
 
     va_list arguments;
     va_start(arguments, format);
@@ -357,15 +322,11 @@ void Log::warning_no_header(const char* format, ...) {
 }
 
 void Log::info_no_header(const char* format, ...) {
-    // don't write if this is the wrong process rank
-    if (restricted_rank >= 0 && restricted_rank != process_rank) {
-        return;
-    }
+    //don't write if this is the wrong process rank
+    if (restricted_rank >= 0 && restricted_rank != process_rank) return;
 
-    // not writing this type of message to either std out or a file
-    if (std_message_level < INFO && file_message_level < INFO) {
-        return;
-    }
+    //not writing this type of message to either std out or a file
+    if (std_message_level < INFO && file_message_level < INFO) return;
 
     va_list arguments;
     va_start(arguments, format);
@@ -373,15 +334,11 @@ void Log::info_no_header(const char* format, ...) {
 }
 
 void Log::debug_no_header(const char* format, ...) {
-    // don't write if this is the wrong process rank
-    if (restricted_rank >= 0 && restricted_rank != process_rank) {
-        return;
-    }
+    //don't write if this is the wrong process rank
+    if (restricted_rank >= 0 && restricted_rank != process_rank) return;
 
-    // not writing this type of message to either std out or a file
-    if (std_message_level < DEBUG && file_message_level < DEBUG) {
-        return;
-    }
+    //not writing this type of message to either std out or a file
+    if (std_message_level < DEBUG && file_message_level < DEBUG) return;
 
     va_list arguments;
     va_start(arguments, format);
@@ -389,17 +346,14 @@ void Log::debug_no_header(const char* format, ...) {
 }
 
 void Log::trace_no_header(const char* format, ...) {
-    // don't write if this is the wrong process rank
-    if (restricted_rank >= 0 && restricted_rank != process_rank) {
-        return;
-    }
+    //don't write if this is the wrong process rank
+    if (restricted_rank >= 0 && restricted_rank != process_rank) return;
 
-    // not writing this type of message to either std out or a file
-    if (std_message_level < TRACE && file_message_level < TRACE) {
-        return;
-    }
+    //not writing this type of message to either std out or a file
+    if (std_message_level < TRACE && file_message_level < TRACE) return;
 
     va_list arguments;
     va_start(arguments, format);
     write_message(false, TRACE, "TRACE", format, arguments);
 }
+
