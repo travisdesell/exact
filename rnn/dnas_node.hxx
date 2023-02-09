@@ -62,7 +62,7 @@ class DNASNode : public RNN_Node_Interface {
     int32_t maxi = -1;
 
     // if > 0, then the samples will be forced to be K-hot (K non-zero values that sum to one)
-    int32_t k = -1;
+    int32_t k = 1;
 
     // Whether to re-sample the gumbel softmax distribution when resetting the node.
     // Can be set externally using DNASNode::set_stochastic

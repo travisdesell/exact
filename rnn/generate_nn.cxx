@@ -40,7 +40,9 @@ RNN_Node_Interface* create_hidden_node(int32_t node_kind, int32_t& innovation_co
             Log::fatal("You shouldn't be creating DNAS nodes using generate_nn::create_hidden_node.\n");
             exit(1);
         default:
-            Log::fatal("If you are seeing this, an invalid node_kind was used to create a node (node_kind = %d\n", node_kind);
+            Log::fatal(
+                "If you are seeing this, an invalid node_kind was used to create a node (node_kind = %d\n", node_kind
+            );
             exit(1);
     }
 

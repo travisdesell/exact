@@ -50,6 +50,7 @@ using std::vector;
 #include "dnas_node.hxx"
 #include "enarc_node.hxx"
 #include "enas_dag_node.hxx"
+#include "generate_nn.hxx"
 #include "gru_node.hxx"
 #include "lstm_node.hxx"
 #include "mgu_node.hxx"
@@ -59,9 +60,8 @@ using std::vector;
 #include "rnn_node.hxx"
 #include "time_series/time_series.hxx"
 #include "ugrnn_node.hxx"
-#include "generate_nn.hxx"
 
-extern vector<int32_t> dnas_node_types = { SIMPLE_NODE, UGRNN_NODE, MGU_NODE, GRU_NODE, DELTA_NODE, LSTM_NODE };
+extern vector<int32_t> dnas_node_types = {SIMPLE_NODE, UGRNN_NODE, MGU_NODE, GRU_NODE, DELTA_NODE, LSTM_NODE};
 
 string parse_fitness(double fitness) {
     if (fitness == EXAMM_MAX_DOUBLE) {
@@ -3199,7 +3199,7 @@ RNN_Node_Interface* RNN_Genome::read_node_from_stream(istream& bin_istream) {
     } else if (node_type == DNAS_NODE) {
         int32_t n_nodes;
         bin_istream.read((char*) &n_nodes, sizeof(int32_t));
-        
+
         int32_t counter;
         bin_istream.read((char*) &counter, sizeof(int32_t));
         vector<double> pi(n_nodes, 0.0);

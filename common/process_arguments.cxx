@@ -39,6 +39,12 @@ EXAMM* generate_examm_from_arguments(
         for (auto node_type : dnas_node_type_strings) {
             dnas_node_types.push_back(node_type_from_string(node_type));
         }
+
+        Log::info("Using following node types for dnas: ");
+        for (auto s : dnas_node_type_strings) {
+            Log::info_no_header("%s", s.c_str());
+        }
+        Log::info_no_header("\n");
     }
 
     GenomeProperty* genome_property = new GenomeProperty();

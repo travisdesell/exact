@@ -116,7 +116,8 @@ void DNASNode::calculate_z() {
             ps_with_indices[i] = pair(i, z[i]);
         }
 
-        std::sort(ps_with_indices, ps_with_indices + z.size(),
+        std::sort(
+            ps_with_indices, ps_with_indices + z.size(),
             [](const pair<int32_t, double>& a, const pair<int32_t, double>& b) {
                 // Descending order
                 return a.second > b.second;
