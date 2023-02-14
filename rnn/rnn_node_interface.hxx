@@ -12,6 +12,9 @@ using std::uniform_real_distribution;
 #include <string>
 using std::string;
 
+#include <unordered_map>
+using std::unordered_map;
+
 #include <vector>
 using std::vector;
 
@@ -25,6 +28,8 @@ class RNN;
 
 extern const int32_t NUMBER_NODE_TYPES;
 extern const string NODE_TYPES[];
+extern const unordered_map<string, int32_t> string_to_node_type;
+int32_t node_type_from_string(string& node_type);
 
 #define SIMPLE_NODE     0
 #define JORDAN_NODE     1
@@ -38,6 +43,8 @@ extern const string NODE_TYPES[];
 #define ENAS_DAG_NODE   9
 #define RANDOM_DAG_NODE 10
 #define DNAS_NODE       11
+
+int32_t node_type_from_string(string& node_type);
 
 double sigmoid(double value);
 double sigmoid_derivative(double value);
@@ -112,7 +119,7 @@ class RNN_Node_Interface {
 
     virtual RNN_Node_Interface* copy() const = 0;
 
-    void write_to_stream(ostream& out);
+    virtual void write_to_stream(ostream& out);
 
     int32_t get_node_type() const;
     int32_t get_layer_type() const;

@@ -50,6 +50,7 @@ using std::vector;
 #include "dnas_node.hxx"
 #include "enarc_node.hxx"
 #include "enas_dag_node.hxx"
+#include "generate_nn.hxx"
 #include "gru_node.hxx"
 #include "lstm_node.hxx"
 #include "mgu_node.hxx"
@@ -59,6 +60,8 @@ using std::vector;
 #include "rnn_node.hxx"
 #include "time_series/time_series.hxx"
 #include "ugrnn_node.hxx"
+
+extern vector<int32_t> dnas_node_types = {SIMPLE_NODE, UGRNN_NODE, MGU_NODE, GRU_NODE, DELTA_NODE, LSTM_NODE};
 
 string parse_fitness(double fitness) {
     if (fitness == EXAMM_MAX_DOUBLE) {
@@ -1628,27 +1631,10 @@ RNN_Node_Interface* RNN_Genome::create_node(
     WeightType weight_initialize = weight_rules->get_weight_initialize_method();
 
     Log::trace("CREATING NODE, type: '%s'\n", NODE_TYPES[node_type].c_str());
-    if (node_type == LSTM_NODE) {
-        n = new LSTM_Node(++node_innovation_count, HIDDEN_LAYER, depth);
-    } else if (node_type == DELTA_NODE) {
-        n = new Delta_Node(++node_innovation_count, HIDDEN_LAYER, depth);
-    } else if (node_type == GRU_NODE) {
-        n = new GRU_Node(++node_innovation_count, HIDDEN_LAYER, depth);
-    } else if (node_type == ENARC_NODE) {
-        n = new ENARC_Node(++node_innovation_count, HIDDEN_LAYER, depth);
-    } else if (node_type == ENAS_DAG_NODE) {
-        n = new ENAS_DAG_Node(++node_innovation_count, HIDDEN_LAYER, depth);
-    } else if (node_type == RANDOM_DAG_NODE) {
-        n = new RANDOM_DAG_Node(++node_innovation_count, HIDDEN_LAYER, depth);
-    } else if (node_type == MGU_NODE) {
-        n = new MGU_Node(++node_innovation_count, HIDDEN_LAYER, depth);
-    } else if (node_type == UGRNN_NODE) {
-        n = new UGRNN_Node(++node_innovation_count, HIDDEN_LAYER, depth);
-    } else if (node_type == SIMPLE_NODE || node_type == JORDAN_NODE || node_type == ELMAN_NODE) {
-        n = new RNN_Node(++node_innovation_count, HIDDEN_LAYER, depth, node_type);
+    if (node_type != DNAS_NODE) {
+        n = create_hidden_node(node_type, node_innovation_count, depth);
     } else {
-        Log::fatal("ERROR: attempted to create a node with an unknown node type: %d\n", node_type);
-        exit(1);
+        n = create_dnas_node(node_innovation_count, depth, dnas_node_types);
     }
 
     if (mutated_component_weight == WeightType::LAMARCKIAN) {
@@ -3224,7 +3210,7 @@ RNN_Node_Interface* RNN_Genome::read_node_from_stream(istream& bin_istream) {
             nodes[i] = RNN_Genome::read_node_from_stream(bin_istream);
         }
 
-        DNASNode* dnas_node = new DNASNode(move(nodes), innovation_number, node_type, depth, counter);
+        DNASNode* dnas_node = new DNASNode(move(nodes), innovation_number, layer_type, depth, counter);
         dnas_node->set_pi(pi);
         node = (RNN_Node_Interface*) dnas_node;
     } else {

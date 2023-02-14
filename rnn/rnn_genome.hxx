@@ -32,6 +32,8 @@ using std::vector;
 // mysql can't handle the max float value for some reason
 #define EXAMM_MAX_DOUBLE 10000000
 
+extern vector<int32_t> dnas_node_types;
+
 string parse_fitness(double fitness);
 
 class RNN_Genome {

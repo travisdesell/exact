@@ -39,11 +39,24 @@ RNN_Node_Interface* create_hidden_node(int32_t node_kind, int32_t& innovation_co
         case DNAS_NODE:
             Log::fatal("You shouldn't be creating DNAS nodes using generate_nn::create_hidden_node.\n");
             exit(1);
+        default:
+            Log::fatal(
+                "If you are seeing this, an invalid node_kind was used to create a node (node_kind = %d\n", node_kind
+            );
+            exit(1);
     }
+
+    // Unreachable
+    return nullptr;
 }
 
 DNASNode* create_dnas_node(int32_t& innovation_counter, double depth, const vector<int32_t>& node_types) {
     vector<RNN_Node_Interface*> nodes(node_types.size());
+
+    if (node_types.size() == 0) {
+        Log::fatal("Node types cannot be empty - failed to create DNAS node!\n");
+        exit(1);
+    }
 
     int i = 0;
     for (auto node_type : node_types) {
