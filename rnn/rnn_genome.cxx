@@ -61,7 +61,7 @@ using std::vector;
 #include "time_series/time_series.hxx"
 #include "ugrnn_node.hxx"
 
-extern vector<int32_t> dnas_node_types = {SIMPLE_NODE, UGRNN_NODE, MGU_NODE, GRU_NODE, DELTA_NODE, LSTM_NODE};
+vector<int32_t> dnas_node_types = {SIMPLE_NODE, UGRNN_NODE, MGU_NODE, GRU_NODE, DELTA_NODE, LSTM_NODE};
 
 string parse_fitness(double fitness) {
     if (fitness == EXAMM_MAX_DOUBLE) {

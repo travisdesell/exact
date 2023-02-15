@@ -281,10 +281,10 @@ void RANDOM_DAG_Node::try_update_deltas(int32_t time) {
         h_prev = output_values[time - 1];
     }
 
-    double d_h = error;
-    if (time < (series_length - 1)) {
-        d_h += d_h_prev[time + 1];
-    }
+    // double d_h = error;
+    // if (time < (series_length - 1)) {
+    //     d_h += d_h_prev[time + 1];
+    // }
 
     // d_h *= fan_out;
 
