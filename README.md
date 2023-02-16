@@ -12,6 +12,7 @@ brew install mysql
 brew install open-mpi
 brew install libtiff
 brew install libpng
+brew install clang-format
 xcode-select --install
 ```
 
@@ -40,6 +41,15 @@ To build:
 ```
 
 You can add `-DCMAKE_BUILD_TYPE=Release` to the invocation of `cmake` for a release build (slower compile times, faster execution).
+
+For contributers:
+
+Update the code format before start a pull request with:
+
+```
+~/exact $ sh scripts/util/format.sh
+```
+
 
 You may also want to have graphviz installed so you can generate images of the evolved neural networks.  EXACT/EXALT/EXAMM will write out evolved genomes in a .gv (graphviz) format for this. For example, can generate a pdf from a gv file (assuming graphviz is installed with):
 
