@@ -262,9 +262,8 @@ RNN_Genome* EXAMM::generate_genome() {
         this->mutate(max_mutations, genome);
     };
 
-    function<RNN_Genome*(RNN_Genome*, RNN_Genome*)> crossover_function = [=, this](RNN_Genome* parent1, RNN_Genome* parent2) {
-        return this->crossover(parent1, parent2);
-    };
+    function<RNN_Genome*(RNN_Genome*, RNN_Genome*)> crossover_function =
+        [=, this](RNN_Genome* parent1, RNN_Genome* parent2) { return this->crossover(parent1, parent2); };
 
     RNN_Genome* genome = speciation_strategy->generate_genome(rng_0_1, generator, mutate_function, crossover_function);
 
