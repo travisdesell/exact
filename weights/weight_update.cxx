@@ -21,7 +21,7 @@ WeightUpdate::WeightUpdate() {
     use_low_norm = true;
 }
 
-WeightUpdate::WeightUpdate(const vector<string>& arguments) : WeightUpdate() {
+WeightUpdate::WeightUpdate(const vector<string>& arguments) {
     generate_from_arguments(arguments);
 }
 

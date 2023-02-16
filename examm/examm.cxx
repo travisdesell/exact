@@ -73,7 +73,7 @@ EXAMM::EXAMM(
     initialize_seed_genome();
     // make sure we don't duplicate node or edge innovation numbers
 
-    function<void(int32_t, RNN_Genome*)> mutate_function = [=](int32_t max_mutations, RNN_Genome* genome) {
+    function<void(int32_t, RNN_Genome*)> mutate_function = [=, this](int32_t max_mutations, RNN_Genome* genome) {
         this->mutate(max_mutations, genome);
     };
 
@@ -258,11 +258,11 @@ RNN_Genome* EXAMM::generate_genome() {
         return NULL;
     }
 
-    function<void(int32_t, RNN_Genome*)> mutate_function = [=](int32_t max_mutations, RNN_Genome* genome) {
+    function<void(int32_t, RNN_Genome*)> mutate_function = [=, this](int32_t max_mutations, RNN_Genome* genome) {
         this->mutate(max_mutations, genome);
     };
 
-    function<RNN_Genome*(RNN_Genome*, RNN_Genome*)> crossover_function = [=](RNN_Genome* parent1, RNN_Genome* parent2) {
+    function<RNN_Genome*(RNN_Genome*, RNN_Genome*)> crossover_function = [=, this](RNN_Genome* parent1, RNN_Genome* parent2) {
         return this->crossover(parent1, parent2);
     };
 

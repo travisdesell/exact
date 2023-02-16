@@ -237,7 +237,7 @@ RNN_Genome* NeatSpeciationStrategy::generate_genome(
 
     Species* currentSpecies = Neat_Species[generation_species];
 
-    function<double(RNN_Genome*, RNN_Genome*)> distance_function = [=](RNN_Genome* g1, RNN_Genome* g2) {
+    function<double(RNN_Genome*, RNN_Genome*)> distance_function = [=, this](RNN_Genome* g1, RNN_Genome* g2) {
         return this->get_distance(g1, g2);
     };
 
