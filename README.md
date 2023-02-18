@@ -18,17 +18,17 @@ xcode-select --install
 
 On the RIT Cluster Computer, load the following packages using spack:
 ```
-# CMake
-spack load /ux27hbj
+# GCC (9.3, higher versions have issues on the cluster for some reason)
+spack load /6smaf7z
 
-# GCC
-spack load gcc@11.2.0 
+# CMake
+spack load cmake@3.21.4
 
 # OpenMPI
-spack load openmpi@4.1.2
+spack load /f77pdq5
 
 # libtiff
-spack load /ycf67m3
+spack load libtiff@4.3.0
 ```
 
 To build:
