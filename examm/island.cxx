@@ -461,3 +461,11 @@ void Island::fill_with_mutated_genomes(
         exit(1);
     }
 }
+
+void Island::save_population(string output_path) {
+    for (int32_t i = 0; i < (int32_t) genomes.size(); i++) {
+        RNN_Genome* genome = genomes[i];
+        genome->write_graphviz(output_path + "/island_" + to_string(id) + "_genome_" + to_string(i) + ".gv");
+        genome->write_to_file(output_path + "/island_" + to_string(id) + "_genome_" + to_string(i) + ".bin");
+    }
+}

@@ -578,3 +578,10 @@ void IslandSpeciationStrategy::set_erased_islands_status() {
 RNN_Genome* IslandSpeciationStrategy::get_seed_genome() {
     return seed_genome;
 }
+// write a save entire population function with an input saving function
+
+void IslandSpeciationStrategy::save_entire_population(string output_path) {
+    for (int32_t i = 0; i < (int32_t) islands.size(); i++) {
+        islands[i]->save_population(output_path);
+    }
+}

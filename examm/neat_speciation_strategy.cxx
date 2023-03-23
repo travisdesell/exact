@@ -560,3 +560,6 @@ RNN_Genome* NeatSpeciationStrategy::get_seed_genome() {
 
 void NeatSpeciationStrategy::initialize_population(function<void(int32_t, RNN_Genome*)>& mutate) {
 }
+
+void NeatSpeciationStrategy::save_entire_population(string output_path) {
+}

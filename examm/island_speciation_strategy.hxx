@@ -231,6 +231,8 @@ class IslandSpeciationStrategy : public SpeciationStrategy {
     void set_erased_islands_status();
     void initialize_population(function<void(int32_t, RNN_Genome*)>& mutate);
     void repopulate();
+
+    void save_entire_population(string output_path);
 };
 
 #endif
