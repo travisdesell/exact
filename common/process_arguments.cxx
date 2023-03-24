@@ -22,6 +22,8 @@ EXAMM* generate_examm_from_arguments(
     get_argument(arguments, "--output_directory", false, output_directory);
     vector<string> possible_node_types;
     get_argument_vector(arguments, "--possible_node_types", false, possible_node_types);
+    string save_genome_option = "all_best_genomes";
+    get_argument(arguments, "--save_genome_option", false, save_genome_option);
 
     Log::info(
         "Setting up examm with %d islands, island size %d, and max_genome %d\n", number_islands, island_size,
@@ -54,7 +56,8 @@ EXAMM* generate_examm_from_arguments(
     SpeciationStrategy* speciation_strategy = generate_speciation_strategy_from_arguments(arguments, seed_genome);
 
     EXAMM* examm = new EXAMM(
-        island_size, number_islands, max_genomes, speciation_strategy, weight_rules, genome_property, output_directory
+        island_size, number_islands, max_genomes, speciation_strategy, weight_rules, genome_property, output_directory,
+        save_genome_option
     );
     if (possible_node_types.size() > 0) {
         examm->set_possible_node_types(possible_node_types);

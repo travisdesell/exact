@@ -33,5 +33,6 @@ mpirun -np 4 ./mpi/examm_mpi \
 --beta1 0.99 \
 --sequence_length 50 \
 --possible_node_types simple UGRNN MGU GRU delta LSTM \
+--save_genome_option the_best \
 --std_message_level INFO \
 --file_message_level INFO
