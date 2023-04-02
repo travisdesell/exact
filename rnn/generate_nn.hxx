@@ -25,16 +25,34 @@ using std::vector;
 #include "rnn/ugrnn_node.hxx"
 #include "weights/weight_rules.hxx"
 
+extern int time_skip;
+
+extern bool use_variable_timeskip;
+extern int time_skip_min;
+extern int time_skip_max;
+
 template <class NodeT>
 NodeT* create_hidden_memory_cell(int32_t& innovation_counter, double depth) {
     return new NodeT(++innovation_counter, HIDDEN_LAYER, depth);
 }
+
+template <class NodeT>
+NodeT* create_hidden_memory_cell_timeskip(int32_t& innovation_counter, double depth, int time_skip) {
+    return new NodeT(++innovation_counter, HIDDEN_LAYER, depth, time_skip);
+}
+
 RNN_Node_Interface* create_hidden_node(int32_t node_kind, int32_t& innovation_counter, double depth);
 
 RNN_Genome* create_nn(
     const vector<string>& input_parameter_names, int32_t number_hidden_layers, int32_t number_hidden_nodes,
     const vector<string>& output_parameter_names, int32_t max_recurrent_depth,
     std::function<RNN_Node_Interface*(int32_t&, double)> make_node, WeightRules* weight_rules
+);
+
+RNN_Genome* create_nn_timeskip(
+    const vector<string>& input_parameter_names, int32_t number_hidden_layers, int32_t number_hidden_nodes,
+    const vector<string>& output_parameter_names, int32_t max_recurrent_depth,
+    std::function<RNN_Node_Interface*(int32_t&, double, int)> make_node, WeightRules* weight_rules
 );
 
 template <unsigned int Kind>
@@ -56,6 +74,27 @@ RNN_Genome* create_simple_nn(
 #define create_jordan(...) create_simple_nn<JORDAN_NODE>(__VA_ARGS__)
 
 template <typename NodeT>
+RNN_Genome* create_memory_cell_nn_timeskip(
+    const vector<string>& input_parameter_names, int32_t number_hidden_layers, int32_t number_hidden_nodes,
+    const vector<string>& output_parameter_names, int32_t max_recurrent_depth, WeightRules* weight_rules
+) {
+    auto f = [=](int32_t& innovation_counter, double depth, int time_skip) -> RNN_Node_Interface* {
+        return create_hidden_memory_cell_timeskip<NodeT>(innovation_counter, depth, time_skip);
+    };
+
+    return create_nn_timeskip(
+        input_parameter_names, number_hidden_layers, number_hidden_nodes, output_parameter_names, max_recurrent_depth,
+        f, weight_rules
+    );
+}
+
+#define create_mgu(...)        create_memory_cell_nn_timeskip<MGU_Node>(__VA_ARGS__)
+#define create_gru(...)        create_memory_cell_nn_timeskip<GRU_Node>(__VA_ARGS__)
+#define create_delta(...)      create_memory_cell_nn_timeskip<Delta_Node>(__VA_ARGS__)
+#define create_lstm(...)       create_memory_cell_nn_timeskip<LSTM_Node>(__VA_ARGS__)
+#define create_ugrnn(...)      create_memory_cell_nn_timeskip<UGRNN_Node>(__VA_ARGS__)
+
+template <typename NodeT>
 RNN_Genome* create_memory_cell_nn(
     const vector<string>& input_parameter_names, int32_t number_hidden_layers, int32_t number_hidden_nodes,
     const vector<string>& output_parameter_names, int32_t max_recurrent_depth, WeightRules* weight_rules
@@ -70,14 +109,9 @@ RNN_Genome* create_memory_cell_nn(
     );
 }
 
-#define create_mgu(...)        create_memory_cell_nn<MGU_Node>(__VA_ARGS__)
-#define create_gru(...)        create_memory_cell_nn<GRU_Node>(__VA_ARGS__)
-#define create_delta(...)      create_memory_cell_nn<Delta_Node>(__VA_ARGS__)
-#define create_lstm(...)       create_memory_cell_nn<LSTM_Node>(__VA_ARGS__)
 #define create_enarc(...)      create_memory_cell_nn<ENARC_Node>(__VA_ARGS__)
 #define create_enas_dag(...)   create_memory_cell_nn<ENAS_DAG_Node>(__VA_ARGS__)
 #define create_random_dag(...) create_memory_cell_nn<RANDOM_DAG_Node>(__VA_ARGS__)
-#define create_ugrnn(...)      create_memory_cell_nn<UGRNN_Node>(__VA_ARGS__)
 
 DNASNode* create_dnas_node(int32_t& innovation_counter, double depth, const vector<int32_t>& node_types);
 

@@ -24,6 +24,8 @@ class Delta_Node : public RNN_Node_Interface {
     double r_bias;
     double z_hat_bias;
 
+    int time_skip;
+
     vector<double> d_alpha;
     vector<double> d_beta1;
     vector<double> d_beta2;
@@ -39,7 +41,7 @@ class Delta_Node : public RNN_Node_Interface {
     vector<double> ld_z;
 
    public:
-    Delta_Node(int32_t _innovation_number, int32_t _type, double _depth);
+    Delta_Node(int32_t _innovation_number, int32_t _type, double _depth, int _time_skip);
     ~Delta_Node();
 
     void initialize_lamarckian(

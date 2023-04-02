@@ -24,6 +24,8 @@ class MGU_Node : public RNN_Node_Interface {
     double hu;
     double h_bias;
 
+    int time_skip;
+
     vector<double> d_fw;
     vector<double> d_fu;
     vector<double> d_f_bias;
@@ -39,7 +41,7 @@ class MGU_Node : public RNN_Node_Interface {
     vector<double> ld_h_tanh;
 
    public:
-    MGU_Node(int32_t _innovation_number, int32_t _layer_type, double _depth);
+    MGU_Node(int32_t _innovation_number, int32_t _layer_type, double _depth, int _time_skip);
     ~MGU_Node();
 
     void initialize_lamarckian(

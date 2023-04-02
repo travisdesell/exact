@@ -15,6 +15,8 @@ using std::uniform_real_distribution;
 #include <vector>
 using std::vector;
 
+#include <cstdlib>
+
 #include "common/log.hxx"
 #include "common/random.hxx"
 #include "gru_node.hxx"
@@ -23,9 +25,11 @@ using std::vector;
 
 #define NUMBER_GRU_WEIGHTS 9
 
-GRU_Node::GRU_Node(int32_t _innovation_number, int32_t _type, double _depth)
-    : RNN_Node_Interface(_innovation_number, _type, _depth) {
+GRU_Node::GRU_Node(int32_t _innovation_number, int32_t _type, double _depth, int _time_skip)
+    : RNN_Node_Interface(_innovation_number, _type, _depth, _time_skip) {
     node_type = GRU_NODE;
+    time_skip = _time_skip;
+    Log::debug("AT: Timeskip inside GRU Node = %d\n", time_skip);
 }
 
 GRU_Node::~GRU_Node() {
@@ -145,8 +149,8 @@ void GRU_Node::input_fired(int32_t time, double incoming_output) {
     double x = input_values[time];
 
     double h_prev = 0.0;
-    if (time > 0) {
-        h_prev = output_values[time - 1];
+    if (time >= time_skip) {
+        h_prev = output_values[time - time_skip];
     }
 
     double hzu = h_prev * zu;
@@ -199,14 +203,14 @@ void GRU_Node::try_update_deltas(int32_t time) {
     double x = input_values[time];
 
     double h_prev = 0.0;
-    if (time > 0) {
-        h_prev = output_values[time - 1];
+    if (time >= time_skip) {
+        h_prev = output_values[time - time_skip];
     }
 
     // backprop output gate
     double d_h = error;
-    if (time < (series_length - 1)) {
-        d_h += d_h_prev[time + 1];
+    if (time < (series_length - time_skip)) {
+        d_h += d_h_prev[time + time_skip];
     }
     // get the error into the output (z), it's the error from ahead in the network
     // as well as from the previous output of the cell
@@ -370,7 +374,8 @@ void GRU_Node::reset(int32_t _series_length) {
 }
 
 RNN_Node_Interface* GRU_Node::copy() const {
-    GRU_Node* n = new GRU_Node(innovation_number, layer_type, depth);
+    Log::debug("AT: Timeskip before GRU Cloned = %d\n", time_skip);
+    GRU_Node* n = new GRU_Node(innovation_number, layer_type, depth, time_skip);
 
     // copy GRU_Node values
     n->zw = zw;

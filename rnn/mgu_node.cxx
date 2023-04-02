@@ -15,6 +15,8 @@ using std::uniform_real_distribution;
 #include <vector>
 using std::vector;
 
+#include <cstdlib>
+
 #include "common/log.hxx"
 #include "common/random.hxx"
 #include "mgu_node.hxx"
@@ -23,9 +25,11 @@ using std::vector;
 
 #define NUMBER_MGU_WEIGHTS 6
 
-MGU_Node::MGU_Node(int32_t _innovation_number, int32_t _layer_type, double _depth)
-    : RNN_Node_Interface(_innovation_number, _layer_type, _depth) {
+MGU_Node::MGU_Node(int32_t _innovation_number, int32_t _layer_type, double _depth, int _time_skip)
+    : RNN_Node_Interface(_innovation_number, _layer_type, _depth, _time_skip) {
     node_type = MGU_NODE;
+    time_skip = _time_skip;
+    Log::debug("AT: Timeskip inside MGU Node = %d\n", time_skip);
 }
 
 MGU_Node::~MGU_Node() {
@@ -123,8 +127,8 @@ void MGU_Node::input_fired(int32_t time, double incoming_output) {
     double x = input_values[time];
 
     double h_prev = 0.0;
-    if (time > 0) {
-        h_prev = output_values[time - 1];
+    if (time >= time_skip) {
+        h_prev = output_values[time - time_skip];
     }
 
     double hfu = h_prev * fu;
@@ -159,14 +163,14 @@ void MGU_Node::try_update_deltas(int32_t time) {
     double x = input_values[time];
 
     double h_prev = 0.0;
-    if (time > 0) {
-        h_prev = output_values[time - 1];
+    if (time >= time_skip) {
+        h_prev = output_values[time - time_skip];
     }
 
     // backprop output gate
     double d_out = error;
-    if (time < (series_length - 1)) {
-        d_out += d_h_prev[time + 1];
+    if (time < (series_length - time_skip)) {
+        d_out += d_h_prev[time + time_skip];
     }
 
     d_h_prev[time] = d_out * (1 - f[time]);
@@ -298,7 +302,8 @@ void MGU_Node::reset(int32_t _series_length) {
 }
 
 RNN_Node_Interface* MGU_Node::copy() const {
-    MGU_Node* n = new MGU_Node(innovation_number, layer_type, depth);
+    Log::debug("AT: Timeskip before MGU Cloned = %d\n", time_skip);
+    MGU_Node* n = new MGU_Node(innovation_number, layer_type, depth, time_skip);
 
     // copy MGU_Node values
     n->fw = fw;

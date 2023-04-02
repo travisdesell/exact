@@ -66,6 +66,8 @@ class RNN_Node_Interface {
 
     double depth;
 
+    int time_skip;
+
     // this is only used for input and output nodes to track
     // which parameter they are assigned to
     string parameter_name;
@@ -89,6 +91,10 @@ class RNN_Node_Interface {
    public:
     // this constructor is for hidden nodes
     RNN_Node_Interface(int32_t _innovation_number, int32_t _layer_type, double _depth);
+
+    // this constructor is for hidden nodes with time skips
+    RNN_Node_Interface(int32_t _innovation_number, int32_t _layer_type, double _depth, int _time_skip);
+
 
     // this constructor is for input and output nodes (as they have an associated parameter name
     RNN_Node_Interface(int32_t _innovation_number, int32_t _layer_type, double _depth, string _parameter_name);
