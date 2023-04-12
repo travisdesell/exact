@@ -56,10 +56,9 @@ class DNASNode : public RNN_Node_Interface {
     // A vector to put gumbel noise into; just to avoid re-allocation
     vector<double> noise;
 
-    // Temperature used when drawing samples from Gumbel-Softmax(pi)
-    double tao = 1.0;
     int32_t counter = 0;
     int32_t maxi = -1;
+    double tao;
 
     // if > 0, then the samples will be forced to be K-hot (K non-zero values that sum to one)
     int32_t k = 1;
@@ -82,6 +81,8 @@ class DNASNode : public RNN_Node_Interface {
     template <typename Rng>
     void sample_gumbel_softmax(Rng& rng);
     void calculate_z();
+    double calculate_tao();
+    double calculate_pi_lr();
 
     virtual void initialize_lamarckian(
         minstd_rand0& generator, NormalDistribution& normal_distribution, double mu, double sigma

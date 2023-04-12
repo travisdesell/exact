@@ -100,6 +100,9 @@ int main(int argc, char** argv) {
     int32_t max_recurrent_depth;
     get_argument(arguments, "--max_recurrent_depth", true, max_recurrent_depth);
 
+    int32_t hidden_layer_size = number_inputs;
+    get_argument(arguments, "--hidden_layer_size", false, hidden_layer_size);
+
     WeightRules* weight_rules = new WeightRules(arguments);
 
     weight_update_method = new WeightUpdate();
@@ -112,59 +115,59 @@ int main(int argc, char** argv) {
     Log::info("RNN TYPE = %s\n", rnn_type.c_str());
     if (rnn_type == "lstm") {
         genome = create_lstm(
-            input_parameter_names, num_hidden_layers, number_inputs, output_parameter_names, max_recurrent_depth,
+            input_parameter_names, num_hidden_layers, hidden_layer_size, output_parameter_names, max_recurrent_depth,
             weight_rules
         );
 
     } else if (rnn_type == "gru") {
         genome = create_gru(
-            input_parameter_names, num_hidden_layers, number_inputs, output_parameter_names, max_recurrent_depth,
+            input_parameter_names, num_hidden_layers, hidden_layer_size, output_parameter_names, max_recurrent_depth,
             weight_rules
         );
 
     } else if (rnn_type == "delta") {
         genome = create_delta(
-            input_parameter_names, num_hidden_layers, number_inputs, output_parameter_names, max_recurrent_depth,
+            input_parameter_names, num_hidden_layers, hidden_layer_size, output_parameter_names, max_recurrent_depth,
             weight_rules
         );
 
     } else if (rnn_type == "mgu") {
         genome = create_mgu(
-            input_parameter_names, num_hidden_layers, number_inputs, output_parameter_names, max_recurrent_depth,
+            input_parameter_names, num_hidden_layers, hidden_layer_size, output_parameter_names, max_recurrent_depth,
             weight_rules
         );
 
     } else if (rnn_type == "ugrnn") {
         genome = create_ugrnn(
-            input_parameter_names, num_hidden_layers, number_inputs, output_parameter_names, max_recurrent_depth,
+            input_parameter_names, num_hidden_layers, hidden_layer_size, output_parameter_names, max_recurrent_depth,
             weight_rules
         );
 
     } else if (rnn_type == "ff") {
         genome = create_ff(
-            input_parameter_names, num_hidden_layers, number_inputs, output_parameter_names, max_recurrent_depth,
+            input_parameter_names, num_hidden_layers, hidden_layer_size, output_parameter_names, max_recurrent_depth,
             weight_rules
         );
 
     } else if (rnn_type == "jordan") {
         genome = create_jordan(
-            input_parameter_names, num_hidden_layers, number_inputs, output_parameter_names, max_recurrent_depth,
+            input_parameter_names, num_hidden_layers, hidden_layer_size, output_parameter_names, max_recurrent_depth,
             weight_rules
         );
 
     } else if (rnn_type == "elman") {
         genome = create_elman(
-            input_parameter_names, num_hidden_layers, number_inputs, output_parameter_names, max_recurrent_depth,
+            input_parameter_names, num_hidden_layers, hidden_layer_size, output_parameter_names, max_recurrent_depth,
             weight_rules
         );
     } else if (rnn_type == "dnas") {
-        vector<int> node_types = {SIMPLE_NODE, LSTM_NODE, GRU_NODE, MGU_NODE, DELTA_NODE};
+        vector<int> node_types = {SIMPLE_NODE, LSTM_NODE, GRU_NODE, MGU_NODE, DELTA_NODE, UGRNN_NODE};
         genome = create_dnas_nn(
             input_parameter_names, num_hidden_layers, 1, output_parameter_names, max_recurrent_depth, node_types,
             weight_rules
         );
     } else {
-        Log::fatal("ERROR: incorrect rnn type\n");
+        Log::fatal("ERROR: incorrect rnn type %s\n", rnn_type.c_str());
         Log::fatal("Possibilities are:\n");
         Log::fatal("    lstm\n");
         Log::fatal("    gru\n");
@@ -231,6 +234,8 @@ int main(int argc, char** argv) {
     Log::info("Training finished\n");
     genome->get_weights(best_parameters);
     rnn->set_weights(best_parameters);
+
+    genome->write_to_file(output_directory + "/output_genome.bin");
 
     Log::info("TRAINING ERRORS:\n");
     Log::info("MSE: %lf\n", genome->get_mse(best_parameters, training_inputs, training_outputs));

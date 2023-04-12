@@ -49,7 +49,6 @@ DNASNode::DNASNode(const DNASNode& src) : RNN_Node_Interface(src.innovation_numb
     g = src.g;
     x = src.x;
     xtotal = src.xtotal;
-    tao = src.tao;
     stochastic = src.stochastic;
     counter = src.counter;
     maxi = src.maxi;
@@ -92,8 +91,32 @@ void DNASNode::sample_gumbel_softmax(Rng& rng) {
     calculate_z();
 }
 
+double DNASNode::calculate_pi_lr() {
+    double percentage_done = (double) counter / (double) CRYSTALLIZATION_THRESHOLD;
+    if (percentage_done < 0.33) {
+        return 0.0;
+    } else if (percentage_done < 0.66) {
+        double percentage_done_with_phase = (0.66 - percentage_done) / 0.33;
+        return 0.5 + percentage_done_with_phase * .5;
+    } else {
+        return 0.1;
+    }
+}
+
+double DNASNode::calculate_tao() {
+    double percentage_done = (double) counter / (double) CRYSTALLIZATION_THRESHOLD;
+    if (percentage_done < 0.33) {
+        return 1.33;
+    } else if (percentage_done < 0.66) {
+        double percentage_done_with_phase = (0.66 - percentage_done) / 0.33;
+        return 1.33 - percentage_done_with_phase * 0.66;
+    } else {
+        return 0.33;
+    }
+}
+
 void DNASNode::calculate_z() {
-    tao = max(1.0 / 3.0, 1.0 / (1.0 + (double) counter * 0.05));
+    tao = calculate_tao();
 
     xtotal = 0.0;
     double emax = -10000000;
@@ -360,8 +383,9 @@ void DNASNode::get_gradients(vector<double>& gradients) {
     } else {
         gradients.assign(get_number_weights(), 0.0);
         int offset = 0;
+        double pi_lr = calculate_pi_lr();
         for (auto i = 0; i < pi.size(); i++) {
-            gradients[offset++] = d_pi[i] * 0.1;
+            gradients[offset++] = d_pi[i] * pi_lr;
         }
 
         for (auto node : nodes) {
