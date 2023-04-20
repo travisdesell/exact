@@ -25,11 +25,6 @@ using std::vector;
 #include "rnn/ugrnn_node.hxx"
 #include "weights/weight_rules.hxx"
 
-extern int time_skip;
-
-extern bool use_variable_timeskip;
-extern int time_skip_min;
-extern int time_skip_max;
 
 template <class NodeT>
 NodeT* create_hidden_memory_cell(int32_t& innovation_counter, double depth) {

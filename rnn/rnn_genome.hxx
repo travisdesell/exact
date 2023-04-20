@@ -272,7 +272,7 @@ class RNN_Genome {
 
     bool add_node(
         double mu, double sigma, int32_t node_type, uniform_int_distribution<int32_t> dist,
-        int32_t& edge_innovation_count, int32_t& node_innovation_count
+        int32_t& edge_innovation_count, int32_t& node_innovation_count, int time_skip
     );
 
     bool enable_node();
