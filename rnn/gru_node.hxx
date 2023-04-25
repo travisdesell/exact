@@ -28,7 +28,7 @@ class GRU_Node : public RNN_Node_Interface {
     double hu;
     double h_bias;
 
-    int time_skip;
+    int32_t cell_time_skip;
 
     vector<double> d_zw;
     vector<double> d_zu;
@@ -50,7 +50,7 @@ class GRU_Node : public RNN_Node_Interface {
     vector<double> ld_h_tanh;
 
    public:
-    GRU_Node(int32_t _innovation_number, int32_t _type, double _depth, int _time_skip);
+    GRU_Node(int32_t _innovation_number, int32_t _type, double _depth, int32_t _cell_time_skip);
     ~GRU_Node();
 
     void initialize_lamarckian(

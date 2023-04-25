@@ -8,7 +8,9 @@ GenomeProperty::GenomeProperty() {
     dropout_probability = 0.0;
     min_recurrent_depth = 1;
     max_recurrent_depth = 10;
-    use_variable_timeskip = false;
+    use_variable_cell_time_skip = false;
+    cell_time_skip_min = 1;
+    cell_time_skip_max = 10;
 }
 
 void GenomeProperty::generate_genome_property_from_arguments(const vector<string>& arguments) {
@@ -18,10 +20,16 @@ void GenomeProperty::generate_genome_property_from_arguments(const vector<string
     get_argument(arguments, "--min_recurrent_depth", false, min_recurrent_depth);
     get_argument(arguments, "--max_recurrent_depth", false, max_recurrent_depth);
 
-    if (argument_exists(arguments, "--time_skip_min") && argument_exists(arguments, "--time_skip_max")) {
-        use_variable_timeskip = true;
-        get_argument(arguments, "--time_skip_min", false, time_skip_min);
-        get_argument(arguments, "--time_skip_max", false, time_skip_max); 
+    if (argument_exists(arguments, "--cell_time_skip_min") || argument_exists(arguments, "--cell_time_skip_max")) {
+        use_variable_cell_time_skip = true;
+        get_argument(arguments, "--cell_time_skip_min", false, cell_time_skip_min);
+        get_argument(arguments, "--cell_time_skip_max", false, cell_time_skip_max);
+
+        if(cell_time_skip_min > cell_time_skip_max) {
+            Log::fatal("Using variable timeskip with invalid bounds [min, max] = [%d, %d]\n",cell_time_skip_min, cell_time_skip_max);
+            exit(1);
+        }
+
     }
 
     Log::info("Each generated genome is trained for %d epochs\n", bp_iterations);
@@ -57,14 +65,14 @@ uniform_int_distribution<int32_t> GenomeProperty::get_recurrent_depth_dist() {
     return uniform_int_distribution<int32_t>(this->min_recurrent_depth, this->max_recurrent_depth);
 }
 
-bool GenomeProperty::get_use_variable_timeskip() {
-    return use_variable_timeskip;
+bool GenomeProperty::get_use_variable_cell_time_skip() {
+    return use_variable_cell_time_skip;
 } 
 
-int GenomeProperty::get_time_skip_min() {
-    return time_skip_min;
+int32_t GenomeProperty::get_cell_time_skip_min() {
+    return cell_time_skip_min;
 } 
 
-int GenomeProperty::get_time_skip_max() {
-    return time_skip_max;
+int32_t GenomeProperty::get_cell_time_skip_max() {
+    return cell_time_skip_max;
 } 

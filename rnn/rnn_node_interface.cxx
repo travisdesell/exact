@@ -115,8 +115,8 @@ RNN_Node_Interface::RNN_Node_Interface(int32_t _innovation_number, int32_t _laye
     }
 }
 
-RNN_Node_Interface::RNN_Node_Interface(int32_t _innovation_number, int32_t _layer_type, double _depth, int _time_skip)
-    : innovation_number(_innovation_number), layer_type(_layer_type), depth(_depth), time_skip(_time_skip) {
+RNN_Node_Interface::RNN_Node_Interface(int32_t _innovation_number, int32_t _layer_type, double _depth, int32_t _cell_time_skip)
+    : innovation_number(_innovation_number), layer_type(_layer_type), depth(_depth), cell_time_skip(_cell_time_skip) {
     total_inputs = 0;
 
     enabled = true;

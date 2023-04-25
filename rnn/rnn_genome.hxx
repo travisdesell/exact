@@ -42,7 +42,7 @@ class RNN_Genome {
     int32_t group_id;
 
     int32_t bp_iterations;
-
+    
     bool use_dropout;
     double dropout_probability;
 
@@ -85,6 +85,8 @@ class RNN_Genome {
     void sort_nodes_by_depth();
     void sort_edges_by_depth();
     void sort_recurrent_edges_by_depth();
+
+    int32_t get_genome_cell_time_skip();
 
     RNN_Genome(
         vector<RNN_Node_Interface*>& _nodes, vector<RNN_Edge*>& _edges, vector<RNN_Recurrent_Edge*>& _recurrent_edges,
@@ -272,7 +274,7 @@ class RNN_Genome {
 
     bool add_node(
         double mu, double sigma, int32_t node_type, uniform_int_distribution<int32_t> dist,
-        int32_t& edge_innovation_count, int32_t& node_innovation_count, int time_skip
+        int32_t& edge_innovation_count, int32_t& node_innovation_count, int32_t cell_time_skip
     );
 
     bool enable_node();

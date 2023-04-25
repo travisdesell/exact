@@ -23,11 +23,11 @@ using std::vector;
 #include "mse.hxx"
 #include "rnn_node_interface.hxx"
 
-LSTM_Node::LSTM_Node(int32_t _innovation_number, int32_t _type, double _depth, int _time_skip)
-    : RNN_Node_Interface(_innovation_number, _type, _depth, _time_skip) {
+LSTM_Node::LSTM_Node(int32_t _innovation_number, int32_t _type, double _depth, int _cell_time_skip)
+    : RNN_Node_Interface(_innovation_number, _type, _depth, _cell_time_skip) {
     node_type = LSTM_NODE;
-    time_skip = _time_skip;
-    Log::debug("AT: Timeskip inside LSTM Node = %d\n", time_skip);
+    cell_time_skip = _cell_time_skip;
+    Log::debug("AT: Timeskip inside LSTM Node = %d\n", cell_time_skip);
 }
 
 LSTM_Node::~LSTM_Node() {
@@ -173,8 +173,8 @@ void LSTM_Node::input_fired(int32_t time, double incoming_output) {
     double input_value = input_values[time];
 
     double previous_cell_value = 0.0;
-    if (time >= time_skip) {
-        previous_cell_value = cell_values[time - time_skip];
+    if (time >= cell_time_skip) {
+        previous_cell_value = cell_values[time - cell_time_skip];
     }
 
     // forget gate bias should be around 1.0 intead of 0, but we do it here to not throw
@@ -236,8 +236,8 @@ void LSTM_Node::try_update_deltas(int32_t time) {
     double input_value = input_values[time];
 
     double previous_cell_value = 0.00;
-    if (time >= time_skip) {
-        previous_cell_value = cell_values[time - time_skip];
+    if (time >= cell_time_skip) {
+        previous_cell_value = cell_values[time - cell_time_skip];
     }
 
     // backprop output gate
@@ -252,8 +252,8 @@ void LSTM_Node::try_update_deltas(int32_t time) {
 
     double d_cell_out = error * output_gate_values[time] * ld_cell_out[time];
     // propagate error back from the next cell value if there is one
-    if (time < (series_length - time_skip)) {
-        d_cell_out += d_prev_cell[time + time_skip];
+    if (time < (series_length - cell_time_skip)) {
+        d_cell_out += d_prev_cell[time + cell_time_skip];
     }
 
     // backprop forget gate
@@ -426,8 +426,8 @@ void LSTM_Node::reset(int32_t _series_length) {
 }
 
 RNN_Node_Interface* LSTM_Node::copy() const {
-    Log::debug("AT: Timeskip before LSTM Cloned = %d\n", time_skip);
-    LSTM_Node* n = new LSTM_Node(innovation_number, layer_type, depth, time_skip);
+    Log::debug("AT: Timeskip before LSTM Cloned = %d\n", cell_time_skip);
+    LSTM_Node* n = new LSTM_Node(innovation_number, layer_type, depth, cell_time_skip);
 
     // copy LSTM_Node values
     n->output_gate_update_weight = output_gate_update_weight;

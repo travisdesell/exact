@@ -399,18 +399,18 @@ void EXAMM::mutate(int32_t max_mutations, RNN_Genome* g) {
 
         if (rng < add_node_rate) {
             
-            int time_skip = 1;
+            int32_t cell_time_skip = 1;
 
-            if(genome_property->get_use_variable_timeskip()) {
-                int time_skip_min = genome_property->get_time_skip_min();
-                int time_skip_max = genome_property->get_time_skip_max();
-                time_skip = ((std::rand()) % (time_skip_max - time_skip_min + 1) + time_skip_min);
+            if(genome_property->get_use_variable_cell_time_skip()) {
+                int32_t cell_time_skip_min = genome_property->get_cell_time_skip_min();
+                int32_t cell_time_skip_max = genome_property->get_cell_time_skip_max();
+                cell_time_skip = ((std::rand()) % (cell_time_skip_max - cell_time_skip_min + 1) + cell_time_skip_min);
             }
 
-            Log::debug("AT: Timeskip generated (examm.cxx) = %d\n", time_skip);
+            Log::debug("AT: Timeskip generated (examm.cxx) = %d\n", cell_time_skip);
 
             uniform_int_distribution<int32_t> dist = genome_property->get_recurrent_depth_dist();
-            modified = g->add_node(mu, sigma, new_node_type, dist, edge_innovation_count, node_innovation_count, time_skip);
+            modified = g->add_node(mu, sigma, new_node_type, dist, edge_innovation_count, node_innovation_count, cell_time_skip);
             Log::debug("\tadding node, modified: %d\n", modified);
             if (modified) {
                 g->set_generated_by("add_node(" + node_type_str + ")");

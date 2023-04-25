@@ -10,11 +10,11 @@ using std::vector;
 
 #include <cstdlib>
 
-int time_skip;
+int32_t cell_time_skip;
 
-bool use_variable_timeskip = false;
-int time_skip_min = 1;
-int time_skip_max = 10;
+bool use_variable_cell_time_skip = false;
+int32_t cell_time_skip_min = 1;
+int32_t cell_time_skip_max = 10;
 
 /*
  * node_kind is the type of memory cell (e.g. LSTM, UGRNN)
@@ -22,13 +22,13 @@ int time_skip_max = 10;
  */
 RNN_Node_Interface* create_hidden_node(int32_t node_kind, int32_t& innovation_counter, double depth) {
     
-    if (use_variable_timeskip) { 
-        time_skip = ((std::rand()) % (time_skip_max - time_skip_min + 1) + time_skip_min);
-        Log::debug("AT: Variable Time Skip Minimum (generate_nn) = %d\n", time_skip_min);
-        Log::debug("AT: Variable Time Skip Maximum (generate_nn) = %d\n", time_skip_max);
+    if (use_variable_cell_time_skip) { 
+        cell_time_skip = ((std::rand()) % (cell_time_skip_max - cell_time_skip_min + 1) + cell_time_skip_min);
+        Log::debug("AT: Variable Time Skip Minimum (generate_nn) = %d\n", cell_time_skip_min);
+        Log::debug("AT: Variable Time Skip Maximum (generate_nn) = %d\n", cell_time_skip_max);
     }
     else
-        time_skip = 1;
+        cell_time_skip = 1;
 
     switch (node_kind) {
         case SIMPLE_NODE:
@@ -38,20 +38,20 @@ RNN_Node_Interface* create_hidden_node(int32_t node_kind, int32_t& innovation_co
         case ELMAN_NODE:
             return new RNN_Node(++innovation_counter, HIDDEN_LAYER, depth, ELMAN_NODE);
         case UGRNN_NODE:
-            Log::debug("AT: Timeskip outside UGRNN Node (generate_nn) = %d\n", time_skip);
-            return new UGRNN_Node(++innovation_counter, HIDDEN_LAYER, depth, time_skip);
+            Log::debug("AT: Timeskip outside UGRNN Node (generate_nn) = %d\n", cell_time_skip);
+            return new UGRNN_Node(++innovation_counter, HIDDEN_LAYER, depth, cell_time_skip);
         case MGU_NODE:
-            Log::debug("AT: Timeskip outside MGU Node (generate_nn) = %d\n", time_skip);
-            return new MGU_Node(++innovation_counter, HIDDEN_LAYER, depth, time_skip);
+            Log::debug("AT: Timeskip outside MGU Node (generate_nn) = %d\n", cell_time_skip);
+            return new MGU_Node(++innovation_counter, HIDDEN_LAYER, depth, cell_time_skip);
         case GRU_NODE:
-            Log::debug("AT: Timeskip outside GRU Node (generate_nn) = %d\n", time_skip);
-            return new GRU_Node(++innovation_counter, HIDDEN_LAYER, depth, time_skip);
+            Log::debug("AT: Timeskip outside GRU Node (generate_nn) = %d\n", cell_time_skip);
+            return new GRU_Node(++innovation_counter, HIDDEN_LAYER, depth, cell_time_skip);
         case DELTA_NODE:
-            Log::debug("AT: Timeskip outside Delta Node (generate_nn) = %d\n", time_skip);
-            return new Delta_Node(++innovation_counter, HIDDEN_LAYER, depth, time_skip);
+            Log::debug("AT: Timeskip outside Delta Node (generate_nn) = %d\n", cell_time_skip);
+            return new Delta_Node(++innovation_counter, HIDDEN_LAYER, depth, cell_time_skip);
         case LSTM_NODE:
-            Log::debug("AT: Timeskip outside LSTM Node (generate_nn) = %d\n", time_skip);
-            return new LSTM_Node(++innovation_counter, HIDDEN_LAYER, depth,time_skip);
+            Log::debug("AT: Timeskip outside LSTM Node (generate_nn) = %d\n", cell_time_skip);
+            return new LSTM_Node(++innovation_counter, HIDDEN_LAYER, depth,cell_time_skip);
         case ENARC_NODE:
             return new ENARC_Node(++innovation_counter, HIDDEN_LAYER, depth);
         case ENAS_DAG_NODE:
@@ -89,10 +89,10 @@ DNASNode* create_dnas_node(int32_t& innovation_counter, double depth, const vect
     return n;
 }
 
-RNN_Genome* create_nn_timeskip(
+RNN_Genome* create_nn_time_skip(
     const vector<string>& input_parameter_names, int32_t number_hidden_layers, int32_t number_hidden_nodes,
     const vector<string>& output_parameter_names, int32_t max_recurrent_depth,
-    std::function<RNN_Node_Interface*(int32_t&, double, int)> make_node, WeightRules* weight_rules
+    std::function<RNN_Node_Interface*(int32_t&, double, int32_t)> make_node, WeightRules* weight_rules
 ) {
     Log::debug(
         "creating feed forward network with inputs: %d, hidden: %dx%d, outputs: %d, max recurrent depth: %d\n",
@@ -118,7 +118,7 @@ RNN_Genome* create_nn_timeskip(
 
     for (int32_t i = 0; i < (int32_t) number_hidden_layers; i++) {
         for (int32_t j = 0; j < (int32_t) number_hidden_nodes; j++) {
-            RNN_Node_Interface* node = make_node(node_innovation_count, current_layer, time_skip);
+            RNN_Node_Interface* node = make_node(node_innovation_count, current_layer, cell_time_skip);
             rnn_nodes.push_back(node);
             layer_nodes[current_layer].push_back(node);
 
@@ -247,10 +247,15 @@ RNN_Genome* get_seed_genome(
     string genome_file_name = "";
     string transfer_learning_version = "";
     
-    if (argument_exists(arguments, "--time_skip_min") && argument_exists(arguments, "--time_skip_max")) {
-        use_variable_timeskip = true;
-        get_argument(arguments, "--time_skip_min", false, time_skip_min);
-        get_argument(arguments, "--time_skip_max", false, time_skip_max); 
+    if (argument_exists(arguments, "--cell_time_skip_min") || argument_exists(arguments, "--cell_time_skip_max")) {
+        use_variable_cell_time_skip = true;
+        get_argument(arguments, "--cell_time_skip_min", false, cell_time_skip_min);
+        get_argument(arguments, "--cell_time_skip_max", false, cell_time_skip_max); 
+
+        if(cell_time_skip_min > cell_time_skip_max) {
+            Log::fatal("Using variable timeskip with invalid bounds [min, max] = [%d, %d]\n",cell_time_skip_min, cell_time_skip_max);
+            exit(1);
+        }
     }
 
     if (get_argument(arguments, "--genome_bin", false, genome_file_name)) {

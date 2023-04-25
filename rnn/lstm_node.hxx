@@ -31,7 +31,7 @@ class LSTM_Node : public RNN_Node_Interface {
     double cell_weight;
     double cell_bias;
 
-    int time_skip;
+    int32_t cell_time_skip;
 
     vector<double> output_gate_values;
     vector<double> input_gate_values;
@@ -65,7 +65,7 @@ class LSTM_Node : public RNN_Node_Interface {
     vector<double> d_cell_bias;
 
    public:
-    LSTM_Node(int32_t _innovation_number, int32_t _type, double _depth, int _time_skip);
+    LSTM_Node(int32_t _innovation_number, int32_t _type, double _depth, int32_t _cell_time_skip);
     ~LSTM_Node();
 
     void initialize_lamarckian(
