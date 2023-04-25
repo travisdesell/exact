@@ -13,8 +13,8 @@ using std::vector;
 int32_t cell_time_skip;
 
 bool use_variable_cell_time_skip = false;
-int32_t cell_time_skip_min = 1;
-int32_t cell_time_skip_max = 10;
+int32_t min_cell_time_skip = 1;
+int32_t max_cell_time_skip = 10;
 
 /*
  * node_kind is the type of memory cell (e.g. LSTM, UGRNN)
@@ -23,9 +23,9 @@ int32_t cell_time_skip_max = 10;
 RNN_Node_Interface* create_hidden_node(int32_t node_kind, int32_t& innovation_counter, double depth) {
     
     if (use_variable_cell_time_skip) { 
-        cell_time_skip = ((std::rand()) % (cell_time_skip_max - cell_time_skip_min + 1) + cell_time_skip_min);
-        Log::debug("AT: Variable Time Skip Minimum (generate_nn) = %d\n", cell_time_skip_min);
-        Log::debug("AT: Variable Time Skip Maximum (generate_nn) = %d\n", cell_time_skip_max);
+        cell_time_skip = ((std::rand()) % (max_cell_time_skip - min_cell_time_skip + 1) + min_cell_time_skip);
+        Log::debug("AT: Variable Time Skip Minimum (generate_nn) = %d\n", min_cell_time_skip);
+        Log::debug("AT: Variable Time Skip Maximum (generate_nn) = %d\n", max_cell_time_skip);
     }
     else
         cell_time_skip = 1;
@@ -247,13 +247,13 @@ RNN_Genome* get_seed_genome(
     string genome_file_name = "";
     string transfer_learning_version = "";
     
-    if (argument_exists(arguments, "--cell_time_skip_min") || argument_exists(arguments, "--cell_time_skip_max")) {
+    if (argument_exists(arguments, "--min_cell_time_skip") || argument_exists(arguments, "--max_cell_time_skip")) {
         use_variable_cell_time_skip = true;
-        get_argument(arguments, "--cell_time_skip_min", false, cell_time_skip_min);
-        get_argument(arguments, "--cell_time_skip_max", false, cell_time_skip_max); 
+        get_argument(arguments, "--min_cell_time_skip", false, min_cell_time_skip);
+        get_argument(arguments, "--max_cell_time_skip", false, max_cell_time_skip); 
 
-        if(cell_time_skip_min > cell_time_skip_max) {
-            Log::fatal("Using variable timeskip with invalid bounds [min, max] = [%d, %d]\n",cell_time_skip_min, cell_time_skip_max);
+        if(min_cell_time_skip > max_cell_time_skip) {
+            Log::fatal("Using variable timeskip with invalid bounds [min, max] = [%d, %d]\n",min_cell_time_skip, max_cell_time_skip);
             exit(1);
         }
     }

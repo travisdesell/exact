@@ -402,9 +402,9 @@ void EXAMM::mutate(int32_t max_mutations, RNN_Genome* g) {
             int32_t cell_time_skip = 1;
 
             if(genome_property->get_use_variable_cell_time_skip()) {
-                int32_t cell_time_skip_min = genome_property->get_cell_time_skip_min();
-                int32_t cell_time_skip_max = genome_property->get_cell_time_skip_max();
-                cell_time_skip = ((std::rand()) % (cell_time_skip_max - cell_time_skip_min + 1) + cell_time_skip_min);
+                int32_t min_cell_time_skip = genome_property->get_min_cell_time_skip();
+                int32_t max_cell_time_skip = genome_property->get_max_cell_time_skip();
+                cell_time_skip = ((std::rand()) % (max_cell_time_skip - min_cell_time_skip + 1) + min_cell_time_skip);
             }
 
             Log::debug("AT: Timeskip generated (examm.cxx) = %d\n", cell_time_skip);

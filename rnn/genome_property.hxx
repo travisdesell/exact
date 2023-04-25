@@ -17,8 +17,8 @@ class GenomeProperty {
     double dropout_probability;
     int32_t min_recurrent_depth;
     int32_t max_recurrent_depth;
-    int32_t cell_time_skip_min;
-    int32_t cell_time_skip_max;
+    int32_t min_cell_time_skip;
+    int32_t max_cell_time_skip;
     bool use_variable_cell_time_skip;
 
     // TimeSeriesSets *time_series_sets;
@@ -40,8 +40,8 @@ class GenomeProperty {
     void get_time_series_parameters(TimeSeriesSets* time_series_sets);
     uniform_int_distribution<int32_t> get_recurrent_depth_dist();
     bool get_use_variable_cell_time_skip();
-    int32_t get_cell_time_skip_min();
-    int32_t get_cell_time_skip_max();
+    int32_t get_min_cell_time_skip();
+    int32_t get_max_cell_time_skip();
 };
 
 #endif
