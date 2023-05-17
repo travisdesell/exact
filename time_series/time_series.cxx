@@ -27,6 +27,9 @@ using std::string;
 #include <vector>
 using std::vector;
 
+// For trimming input csv column names
+#include <boost/algorithm/string.hpp>
+
 #include "common/arguments.hxx"
 #include "common/log.hxx"
 #include "time_series.hxx"
@@ -255,7 +258,10 @@ TimeSeriesSet::TimeSeriesSet(string _filename, const vector<string>& _fields) {
     for (int32_t i = 0; i < (int32_t) file_fields.size(); i++) {
         // get rid of carriage returns (sometimes windows messes this up)
         file_fields[i].erase(std::remove(file_fields[i].begin(), file_fields[i].end(), '\r'), file_fields[i].end());
+        boost::trim(file_fields[i]);
     }
+
+    std::cout << endl;
 
     // check to see that all the specified fields are in the file
     for (int32_t i = 0; i < (int32_t) fields.size(); i++) {

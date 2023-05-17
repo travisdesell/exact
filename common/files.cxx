@@ -16,6 +16,7 @@ using std::endl;
 using std::ostringstream;
 
 #include <string>
+#include <cstdint>
 using std::string;
 
 // for mkdir
