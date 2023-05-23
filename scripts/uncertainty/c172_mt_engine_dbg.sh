@@ -9,23 +9,17 @@
 
 #cd build
 
-INPUT_PARAMETERS="E1_CHT1 E1_CHT2 E1_CHT3 E1_CHT4 E1_EGT1 E1_EGT2 E1_EGT3 E1_EGT4 E1_FFlow E1_OilP E1_OilT E1_RPM"  
-OUTPUT_PARAMETERS="E1_CHT1 E1_CHT2 E1_CHT3 E1_CHT4 E1_EGT1 E1_EGT2 E1_EGT3 E1_EGT4 E1_FFlow E1_OilP E1_OilT E1_RPM" 
+source env_eng.sh
 
-#
-echo $INPUT_PARAMETERS
-
-exp_name="../test_output/ngafid_c712_917"
-mkdir -p $exp_name
 echo "Running base EXAMM code with SEP2017-NGAFID dataset, results will be saved to: "$exp_name
 echo "###-------------------###"
 
 make
 ./multithreaded/examm_mt --number_threads 8 \
---training_filenames ../data/ngafid_sens_rnn/train/*.csv \
+--training_filenames $TRAIN_FILES \
 --test_filenames ../data/ngafid_sens_rnn/test/*.csv \
 --time_offset 1 \
---normalize min_max \
+--normalize $NORM_METHOD \
 --input_parameter_names $INPUT_PARAMETERS \
 --output_parameter_names $OUTPUT_PARAMETERS \
 --number_islands 10 \
