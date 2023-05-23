@@ -598,7 +598,7 @@ void RNN::write_predictions(
 
     ofstream outfile(output_filename);
 
-    outfile << "#";
+    //outfile << "#";
 
     for (int32_t i = 0; i < (int32_t) input_nodes.size(); i++) {
         if (i > 0) {
