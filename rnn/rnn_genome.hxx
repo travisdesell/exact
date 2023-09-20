@@ -325,6 +325,10 @@ class RNN_Genome {
     );
     vector<RNN_Node_Interface*> pick_possible_nodes(int32_t layer_type, bool not_all_hidden, string node_type);
 
+    const vector<RNN_Node_Interface *> &get_nodes() {
+        return this->nodes;
+    }
+
     void update_innovation_counts(int32_t& node_innovation_count, int32_t& edge_innovation_count);
 
     vector<int32_t> get_innovation_list();

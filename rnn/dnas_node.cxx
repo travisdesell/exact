@@ -1,6 +1,8 @@
 #include <algorithm>
 using std::sort;
 
+#include <iomanip>
+
 #include <utility>
 using std::pair;
 
@@ -13,13 +15,16 @@ using std::max;
 #include "common/log.hxx"
 #include "dnas_node.hxx"
 
+int32_t DNASNode::CRYSTALLIZATION_THRESHOLD = 1000;
+int32_t DNASNode::k = -1;
+
 DNASNode::DNASNode(
     vector<RNN_Node_Interface*>&& _nodes, int32_t _innovation_number, int32_t _type, double _depth, int32_t counter
 )
     : RNN_Node_Interface(_innovation_number, _type, _depth),
       nodes(_nodes),
       pi(vector<double>(nodes.size(), 1.0)),
-      z(vector<double>(nodes.size())),
+      z(vector<double>(nodes.size(), 0.0)),
       x(vector<double>(nodes.size())),
       g(vector<double>(nodes.size())),
       d_pi(vector<double>(nodes.size())),
@@ -87,20 +92,11 @@ void DNASNode::sample_gumbel_softmax(Rng& rng) {
     x.assign(pi.size(), 0.0);
 
     gumbel_noise(rng, g);
-
     calculate_z();
 }
 
 double DNASNode::calculate_pi_lr() {
-    double percentage_done = (double) counter / (double) CRYSTALLIZATION_THRESHOLD;
-    if (percentage_done < 0.33) {
-        return 0.0;
-    } else if (percentage_done < 0.66) {
-        double percentage_done_with_phase = (0.66 - percentage_done) / 0.33;
-        return 0.5 + percentage_done_with_phase * .5;
-    } else {
-        return 0.1;
-    }
+    return 0.1;
 }
 
 double DNASNode::calculate_tao() {
@@ -109,9 +105,9 @@ double DNASNode::calculate_tao() {
         return 1.33;
     } else if (percentage_done < 0.66) {
         double percentage_done_with_phase = (0.66 - percentage_done) / 0.33;
-        return 1.33 - percentage_done_with_phase * 0.66;
+        return 1.33 - percentage_done_with_phase * 1.15;
     } else {
-        return 0.33;
+        return 0.18;
     }
 }
 
@@ -160,6 +156,23 @@ void DNASNode::calculate_z() {
             z[ps_with_indices[i].first] = ps_with_indices[i].second / total;
         }
     }
+}
+
+void DNASNode::print_info() {
+    printf(" ");
+    int best_pi_idx = 0;
+    for (int i = 0; i < nodes.size(); i++) {
+       printf("%-10s & ", std::to_string(pi[i]).c_str());
+        if (pi[i] > pi[best_pi_idx])
+            best_pi_idx = i;
+    }
+    printf("\n");
+    Log::info("Node types: ");
+    for (auto node : nodes) {
+        Log::info_no_header("%d ", node->node_type);
+    }
+    Log::info_no_header("\n ");
+    Log::info("Best node: %i, node type: %d\n", best_pi_idx, nodes[best_pi_idx]->node_type);
 }
 
 void DNASNode::reset(int32_t series_length) {
@@ -309,6 +322,7 @@ void DNASNode::set_weights(const vector<double>& parameters) {
 }
 
 void DNASNode::get_weights(int32_t& offset, vector<double>& parameters) const {
+    int start = offset;
     // Log::info("pi start %d; ", offset);
     for (auto i = 0; i < pi.size(); i++) {
         parameters[offset++] = pi[i];
@@ -323,17 +337,14 @@ void DNASNode::set_weights(int32_t& offset, const vector<double>& parameters) {
     // int start = offset;
     for (auto i = 0; i < pi.size(); i++) {
         pi[i] = parameters[offset++];
+        if (pi[i] < 0.1)
+            pi[i] = 0.1;
     }
-    // Log::info("Pi indices: %d-%d\n", start, offset);
+
     for (auto node : nodes) {
         node->set_weights(offset, parameters);
     }
     calculate_z();
-    // string s = "Pi = { ";
-    // for (auto p : pi) {
-    //     s += std::to_string(p) + ", ";
-    // }
-    // Log::info("%s }\n", s.c_str());
 }
 
 void DNASNode::set_pi(const vector<double>& new_pi) {

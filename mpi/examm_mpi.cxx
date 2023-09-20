@@ -203,13 +203,18 @@ void worker(int32_t rank) {
         } else if (tag == GENOME_LENGTH_TAG) {
             Log::debug("received genome!\n");
             RNN_Genome* genome = receive_genome_from(0);
-
+            
             // have each worker write the backproagation to a separate log file
             string log_id = "genome_" + to_string(genome->get_generation_id()) + "_worker_" + to_string(rank);
             Log::set_id(log_id);
+
+            vector<double> params;
+            genome->get_weights(params);
+
             genome->backpropagate_stochastic(
                 training_inputs, training_outputs, validation_inputs, validation_outputs, weight_update_method
             );
+
             Log::release_id(log_id);
 
             // go back to the worker's log for MPI communication

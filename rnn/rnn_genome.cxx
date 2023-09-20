@@ -3221,16 +3221,35 @@ RNN_Node_Interface* RNN_Genome::read_node_from_stream(istream& bin_istream) {
     node->enabled = enabled;
     return node;
 }
+
+#define MAGIC 0xFA
+
+#define read_magic(place) \
+      { \
+      uint8_t boo = MAGIC;\
+      bin_istream.read((char *) &boo, sizeof(uint8_t)); \
+      if (boo != MAGIC) { Log::error("ERROR IN SERIALIZING - FAILED TO READ MAGIC at %d; %x != %x\n", place, boo, MAGIC); exit(-1); } \
+      }
+
+#define write_magic() \
+  {uint8_t xxmagic = MAGIC; bin_ostream.write((char *) &xxmagic, sizeof(uint8_t));}
+
 void RNN_Genome::read_from_stream(istream& bin_istream) {
     Log::debug("READING GENOME FROM STREAM\n");
+    
+    read_magic(__LINE__);
 
     bin_istream.read((char*) &generation_id, sizeof(int32_t));
     bin_istream.read((char*) &group_id, sizeof(int32_t));
     bin_istream.read((char*) &bp_iterations, sizeof(int32_t));
 
+    read_magic(__LINE__);
+    
     bin_istream.read((char*) &use_dropout, sizeof(bool));
     bin_istream.read((char*) &dropout_probability, sizeof(double));
 
+    read_magic(__LINE__);
+    
     WeightType weight_initialize = WeightType::NONE;
     WeightType weight_inheritance = WeightType::NONE;
     WeightType mutated_component_weight = WeightType::NONE;
@@ -3239,6 +3258,8 @@ void RNN_Genome::read_from_stream(istream& bin_istream) {
     bin_istream.read((char*) &weight_inheritance, sizeof(int32_t));
     bin_istream.read((char*) &mutated_component_weight, sizeof(int32_t));
 
+    read_magic(__LINE__);
+    
     weight_rules = new WeightRules();
     weight_rules->set_weight_initialize_method(weight_initialize);
     weight_rules->set_weight_inheritance_method(weight_inheritance);
@@ -3260,8 +3281,10 @@ void RNN_Genome::read_from_stream(istream& bin_istream) {
     istringstream generator_iss(generator_str);
     generator_iss >> generator;
 
-    string rng_0_1_str;
-    read_binary_string(bin_istream, rng_0_1_str, "rng_0_1");
+    read_magic(__LINE__);
+    
+    // string rng_0_1_str;
+    // read_binary_string(bin_istream, rng_0_1_str, "rng_0_1");
     // So for some reason this was serialized incorrectly for some genomes,
     // but the value should always be the same so we really don't need to de-serialize it anways and can just
     // assign it a constant value
@@ -3275,6 +3298,8 @@ void RNN_Genome::read_from_stream(istream& bin_istream) {
     istringstream generated_by_map_iss(generated_by_map_str);
     read_map(generated_by_map_iss, generated_by_map);
 
+    read_magic(__LINE__);
+    
     bin_istream.read((char*) &best_validation_mse, sizeof(double));
     bin_istream.read((char*) &best_validation_mae, sizeof(double));
 
@@ -3286,6 +3311,8 @@ void RNN_Genome::read_from_stream(istream& bin_istream) {
     initial_parameters.assign(initial_parameters_v, initial_parameters_v + n_initial_parameters);
     delete[] initial_parameters_v;
 
+    read_magic(__LINE__);
+    
     int32_t n_best_parameters;
     bin_istream.read((char*) &n_best_parameters, sizeof(int32_t));
     Log::debug("reading %d best parameters.\n", n_best_parameters);
@@ -3294,6 +3321,8 @@ void RNN_Genome::read_from_stream(istream& bin_istream) {
     best_parameters.assign(best_parameters_v, best_parameters_v + n_best_parameters);
     delete[] best_parameters_v;
 
+    read_magic(__LINE__);
+    
     input_parameter_names.clear();
     int32_t n_input_parameter_names;
     bin_istream.read((char*) &n_input_parameter_names, sizeof(int32_t));
@@ -3303,6 +3332,8 @@ void RNN_Genome::read_from_stream(istream& bin_istream) {
         read_binary_string(bin_istream, input_parameter_name, "input_parameter_names[" + std::to_string(i) + "]");
         input_parameter_names.push_back(input_parameter_name);
     }
+
+    read_magic(__LINE__);
 
     output_parameter_names.clear();
     int32_t n_output_parameter_names;
@@ -3314,6 +3345,8 @@ void RNN_Genome::read_from_stream(istream& bin_istream) {
         output_parameter_names.push_back(output_parameter_name);
     }
 
+    read_magic(__LINE__);
+    
     int32_t n_nodes;
     bin_istream.read((char*) &n_nodes, sizeof(int32_t));
     Log::debug("reading %d nodes.\n", n_nodes);
@@ -3321,6 +3354,7 @@ void RNN_Genome::read_from_stream(istream& bin_istream) {
     nodes.clear();
     for (int32_t i = 0; i < n_nodes; i++) {
         nodes.push_back(RNN_Genome::read_node_from_stream(bin_istream));
+        read_magic(__LINE__);
     }
 
     int32_t n_edges;
@@ -3347,6 +3381,7 @@ void RNN_Genome::read_from_stream(istream& bin_istream) {
         // innovation_list.push_back(innovation_number);
         edge->enabled = enabled;
         edges.push_back(edge);
+        read_magic(__LINE__);
     }
 
     int32_t n_recurrent_edges;
@@ -3378,6 +3413,7 @@ void RNN_Genome::read_from_stream(istream& bin_istream) {
         // innovation_list.push_back(innovation_number);
         recurrent_edge->enabled = enabled;
         recurrent_edges.push_back(recurrent_edge);
+        read_magic(__LINE__);
     }
 
     read_binary_string(bin_istream, normalize_type, "normalize_type");
@@ -3402,6 +3438,8 @@ void RNN_Genome::read_from_stream(istream& bin_istream) {
     istringstream normalize_std_devs_iss(normalize_std_devs_str);
     read_map(normalize_std_devs_iss, normalize_std_devs);
 
+    read_magic(__LINE__);
+    
     assign_reachability();
 }
 
@@ -3425,13 +3463,20 @@ void RNN_Genome::write_to_file(string bin_filename) {
 
 void RNN_Genome::write_to_stream(ostream& bin_ostream) {
     Log::debug("WRITING GENOME TO STREAM\n");
+
+    write_magic();
+
     bin_ostream.write((char*) &generation_id, sizeof(int32_t));
     bin_ostream.write((char*) &group_id, sizeof(int32_t));
     bin_ostream.write((char*) &bp_iterations, sizeof(int32_t));
 
+    write_magic();
+    
     bin_ostream.write((char*) &use_dropout, sizeof(bool));
     bin_ostream.write((char*) &dropout_probability, sizeof(double));
 
+    write_magic();
+    
     WeightType weight_initialize = weight_rules->get_weight_initialize_method();
     WeightType weight_inheritance = weight_rules->get_weight_inheritance_method();
     WeightType mutated_component_weight = weight_rules->get_mutated_components_weight_method();
@@ -3439,6 +3484,8 @@ void RNN_Genome::write_to_stream(ostream& bin_ostream) {
     bin_ostream.write((char*) &weight_inheritance, sizeof(int32_t));
     bin_ostream.write((char*) &mutated_component_weight, sizeof(int32_t));
 
+    write_magic();
+    
     Log::debug("generation_id: %d\n", generation_id);
     Log::debug("bp_iterations: %d\n", bp_iterations);
 
@@ -3456,16 +3503,20 @@ void RNN_Genome::write_to_stream(ostream& bin_ostream) {
     string generator_str = generator_oss.str();
     write_binary_string(bin_ostream, generator_str, "generator");
 
-    ostringstream rng_0_1_oss;
-    rng_0_1_oss << rng_0_1;
-    string rng_0_1_str = rng_0_1_oss.str();
-    write_binary_string(bin_ostream, rng_0_1_str, "rng_0_1");
+    write_magic();
+    
+    // ostringstream rng_0_1_oss;
+    // rng_0_1_oss << rng_0_1;
+    // string rng_0_1_str = rng_0_1_oss.str();
+    // write_binary_string(bin_ostream, rng_0_1_str, "rng_0_1");
 
     ostringstream generated_by_map_oss;
     write_map(generated_by_map_oss, generated_by_map);
     string generated_by_map_str = generated_by_map_oss.str();
     write_binary_string(bin_ostream, generated_by_map_str, "generated_by_map");
 
+    write_magic();
+    
     bin_ostream.write((char*) &best_validation_mse, sizeof(double));
     bin_ostream.write((char*) &best_validation_mae, sizeof(double));
 
@@ -3474,18 +3525,24 @@ void RNN_Genome::write_to_stream(ostream& bin_ostream) {
     bin_ostream.write((char*) &n_initial_parameters, sizeof(int32_t));
     bin_ostream.write((char*) &initial_parameters[0], sizeof(double) * initial_parameters.size());
 
+    write_magic();
+    
     int32_t n_best_parameters = (int32_t) best_parameters.size();
     bin_ostream.write((char*) &n_best_parameters, sizeof(int32_t));
     if (n_best_parameters) {
         bin_ostream.write((char*) &best_parameters[0], sizeof(double) * best_parameters.size());
     }
 
+    write_magic();
+    
     int32_t n_input_parameter_names = (int32_t) input_parameter_names.size();
     bin_ostream.write((char*) &n_input_parameter_names, sizeof(int32_t));
     for (int32_t i = 0; i < (int32_t) input_parameter_names.size(); i++) {
         write_binary_string(bin_ostream, input_parameter_names[i], "input_parameter_names[" + std::to_string(i) + "]");
     }
 
+    write_magic();
+    
     int32_t n_output_parameter_names = (int32_t) output_parameter_names.size();
     bin_ostream.write((char*) &n_output_parameter_names, sizeof(int32_t));
     for (int32_t i = 0; i < (int32_t) output_parameter_names.size(); i++) {
@@ -3494,6 +3551,8 @@ void RNN_Genome::write_to_stream(ostream& bin_ostream) {
         );
     }
 
+    write_magic();
+    
     int32_t n_nodes = (int32_t) nodes.size();
     bin_ostream.write((char*) &n_nodes, sizeof(int32_t));
     Log::debug("writing %d nodes.\n", n_nodes);
@@ -3504,6 +3563,7 @@ void RNN_Genome::write_to_stream(ostream& bin_ostream) {
             nodes[i]->depth, nodes[i]->parameter_name.c_str()
         );
         nodes[i]->write_to_stream(bin_ostream);
+        write_magic();
     }
 
     int32_t n_edges = (int32_t) edges.size();
@@ -3516,6 +3576,7 @@ void RNN_Genome::write_to_stream(ostream& bin_ostream) {
             edges[i]->output_innovation_number
         );
         edges[i]->write_to_stream(bin_ostream);
+        write_magic();
     }
 
     int32_t n_recurrent_edges = (int32_t) recurrent_edges.size();
@@ -3529,6 +3590,7 @@ void RNN_Genome::write_to_stream(ostream& bin_ostream) {
         );
 
         recurrent_edges[i]->write_to_stream(bin_ostream);
+        write_magic();
     }
 
     write_binary_string(bin_ostream, normalize_type, "normalize_type");
@@ -3552,6 +3614,8 @@ void RNN_Genome::write_to_stream(ostream& bin_ostream) {
     write_map(normalize_std_devs_oss, normalize_std_devs);
     string normalize_std_devs_str = normalize_std_devs_oss.str();
     write_binary_string(bin_ostream, normalize_std_devs_str, "normalize_std_devs");
+
+    write_magic();
 }
 
 void RNN_Genome::update_innovation_counts(int32_t& node_innovation_count, int32_t& edge_innovation_count) {

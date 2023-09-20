@@ -10,7 +10,7 @@ using std::vector;
 EXAMM* generate_examm_from_arguments(
     const vector<string>& arguments, TimeSeriesSets* time_series_sets, WeightRules* weight_rules,
     RNN_Genome* seed_genome
-) {
+) { 
     Log::info("Getting arguments for EXAMM\n");
     int32_t island_size;
     get_argument(arguments, "--island_size", true, island_size);
@@ -186,11 +186,18 @@ void get_train_validation_data(
     time_series_sets->export_training_series(time_offset, train_inputs, train_outputs);
     time_series_sets->export_test_series(time_offset, validation_inputs, validation_outputs);
 
-    int32_t sequence_length = 0;
-    if (get_argument(arguments, "--sequence_length", false, sequence_length)) {
-        Log::info("Slicing input training data with time sequence length: %d\n", sequence_length);
-        slice_input_data(train_inputs, train_outputs, sequence_length);
+    int32_t train_sequence_length = 0;
+    if (get_argument(arguments, "--train_sequence_length", false, train_sequence_length)) {
+        Log::info("Slicing input training data with time sequence length: %d\n", train_sequence_length);
+        slice_input_data(train_inputs, train_outputs, train_sequence_length);
     }
+
+    int32_t validation_sequence_length = 0;
+    if (get_argument(arguments, "--validation_sequence_length", false, validation_sequence_length)) {
+        Log::info("Slicing input validation data with time sequence length: %d\n", validation_sequence_length);
+        slice_input_data(validation_inputs, validation_outputs, validation_sequence_length);
+    }
+
     Log::info("Generating time series data finished! \n");
 }
 

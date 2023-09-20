@@ -85,23 +85,19 @@ int main(int argc, char** argv) {
     int32_t time_offset = 1;
     get_argument(arguments, "--time_offset", true, time_offset);
 
+    int32_t crystallization_threshold = 1000;
+    get_argument(arguments, "--crystalize_iters", false, crystallization_threshold);
+    DNASNode::CRYSTALLIZATION_THRESHOLD = crystallization_threshold;
+
+    int32_t k = -1;
+    get_argument(arguments, "--dnas_k", false, k);
+    DNASNode::k = k;
+
     time_series_sets->export_training_series(time_offset, training_inputs, training_outputs);
     time_series_sets->export_test_series(time_offset, test_inputs, test_outputs);
 
     int number_inputs = time_series_sets->get_number_inputs();
     // int number_outputs = time_series_sets->get_number_outputs();
-
-    string rnn_type;
-    get_argument(arguments, "--rnn_type", true, rnn_type);
-
-    int32_t num_hidden_layers;
-    get_argument(arguments, "--num_hidden_layers", true, num_hidden_layers);
-
-    int32_t max_recurrent_depth;
-    get_argument(arguments, "--max_recurrent_depth", true, max_recurrent_depth);
-
-    int32_t hidden_layer_size = number_inputs;
-    get_argument(arguments, "--hidden_layer_size", false, hidden_layer_size);
 
     WeightRules* weight_rules = new WeightRules(arguments);
 
@@ -111,74 +107,110 @@ int main(int argc, char** argv) {
     vector<string> input_parameter_names = time_series_sets->get_input_parameter_names();
     vector<string> output_parameter_names = time_series_sets->get_output_parameter_names();
 
+    string genome_file;
+    get_argument(arguments, "--genome_file", false, genome_file);
+    Log::info("RNN_GENOME = <%s> \n", genome_file.c_str());
+
     RNN_Genome* genome;
-    Log::info("RNN TYPE = %s\n", rnn_type.c_str());
-    if (rnn_type == "lstm") {
-        genome = create_lstm(
-            input_parameter_names, num_hidden_layers, hidden_layer_size, output_parameter_names, max_recurrent_depth,
-            weight_rules
-        );
 
-    } else if (rnn_type == "gru") {
-        genome = create_gru(
-            input_parameter_names, num_hidden_layers, hidden_layer_size, output_parameter_names, max_recurrent_depth,
-            weight_rules
-        );
+    if (genome_file.size() != 0) {
+        genome = new RNN_Genome(genome_file);
+        Log::info("best weights: { ");
+        for (double &d : genome->get_best_parameters()) {
+            Log::info_no_header("%f, ", d);
+        }
+        Log::info("}\n");
 
-    } else if (rnn_type == "delta") {
-        genome = create_delta(
-            input_parameter_names, num_hidden_layers, hidden_layer_size, output_parameter_names, max_recurrent_depth,
-            weight_rules
-        );
-
-    } else if (rnn_type == "mgu") {
-        genome = create_mgu(
-            input_parameter_names, num_hidden_layers, hidden_layer_size, output_parameter_names, max_recurrent_depth,
-            weight_rules
-        );
-
-    } else if (rnn_type == "ugrnn") {
-        genome = create_ugrnn(
-            input_parameter_names, num_hidden_layers, hidden_layer_size, output_parameter_names, max_recurrent_depth,
-            weight_rules
-        );
-
-    } else if (rnn_type == "ff") {
-        genome = create_ff(
-            input_parameter_names, num_hidden_layers, hidden_layer_size, output_parameter_names, max_recurrent_depth,
-            weight_rules
-        );
-
-    } else if (rnn_type == "jordan") {
-        genome = create_jordan(
-            input_parameter_names, num_hidden_layers, hidden_layer_size, output_parameter_names, max_recurrent_depth,
-            weight_rules
-        );
-
-    } else if (rnn_type == "elman") {
-        genome = create_elman(
-            input_parameter_names, num_hidden_layers, hidden_layer_size, output_parameter_names, max_recurrent_depth,
-            weight_rules
-        );
-    } else if (rnn_type == "dnas") {
-        vector<int> node_types = {SIMPLE_NODE, LSTM_NODE, GRU_NODE, MGU_NODE, DELTA_NODE, UGRNN_NODE};
-        genome = create_dnas_nn(
-            input_parameter_names, num_hidden_layers, 1, output_parameter_names, max_recurrent_depth, node_types,
-            weight_rules
-        );
+        vector<double> params;
+        genome->get_weights(params);
+        Log::info("current weights: { ");
+        for (double &d : params) {
+            Log::info_no_header("%f, ", d);
+        }
+        Log::info("}\n");
     } else {
-        Log::fatal("ERROR: incorrect rnn type %s\n", rnn_type.c_str());
-        Log::fatal("Possibilities are:\n");
-        Log::fatal("    lstm\n");
-        Log::fatal("    gru\n");
-        Log::fatal("    ff\n");
-        Log::fatal("    jordan\n");
-        Log::fatal("    elman\n");
-        exit(1);
+
+        string rnn_type;
+        get_argument(arguments, "--rnn_type", true, rnn_type);
+        
+        Log::info("RNN TYPE = %s\n", rnn_type.c_str());
+
+        int32_t num_hidden_layers;
+        get_argument(arguments, "--num_hidden_layers", true, num_hidden_layers);
+
+        int32_t max_recurrent_depth;
+        get_argument(arguments, "--max_recurrent_depth", true, max_recurrent_depth);
+
+        int32_t hidden_layer_size = number_inputs;
+        get_argument(arguments, "--hidden_layer_size", false, hidden_layer_size);
+
+        if (rnn_type == "lstm") {
+            genome = create_lstm(
+                input_parameter_names, num_hidden_layers, hidden_layer_size, output_parameter_names, max_recurrent_depth,
+                weight_rules
+            );
+
+        } else if (rnn_type == "gru") {
+            genome = create_gru(
+                input_parameter_names, num_hidden_layers, hidden_layer_size, output_parameter_names, max_recurrent_depth,
+                weight_rules
+            );
+
+        } else if (rnn_type == "delta") {
+            genome = create_delta(
+                input_parameter_names, num_hidden_layers, hidden_layer_size, output_parameter_names, max_recurrent_depth,
+                weight_rules
+            );
+
+        } else if (rnn_type == "mgu") {
+            genome = create_mgu(
+                input_parameter_names, num_hidden_layers, hidden_layer_size, output_parameter_names, max_recurrent_depth,
+                weight_rules
+            );
+
+        } else if (rnn_type == "ugrnn") {
+            genome = create_ugrnn(
+                input_parameter_names, num_hidden_layers, hidden_layer_size, output_parameter_names, max_recurrent_depth,
+                weight_rules
+            );
+
+        } else if (rnn_type == "ff") {
+            genome = create_ff(
+                input_parameter_names, num_hidden_layers, hidden_layer_size, output_parameter_names, max_recurrent_depth,
+                weight_rules
+            );
+
+        } else if (rnn_type == "jordan") {
+            genome = create_jordan(
+                input_parameter_names, num_hidden_layers, hidden_layer_size, output_parameter_names, max_recurrent_depth,
+                weight_rules
+            );
+
+        } else if (rnn_type == "elman") {
+            genome = create_elman(
+                input_parameter_names, num_hidden_layers, hidden_layer_size, output_parameter_names, max_recurrent_depth,
+                weight_rules
+            );
+        } else if (rnn_type == "dnas") {
+            vector<int> node_types = {SIMPLE_NODE, LSTM_NODE, GRU_NODE, MGU_NODE, DELTA_NODE, UGRNN_NODE};
+            genome = create_dnas_nn(
+                input_parameter_names, num_hidden_layers, 1, output_parameter_names, max_recurrent_depth, node_types,
+                weight_rules
+            );
+        } else {
+            Log::fatal("ERROR: incorrect rnn type %s\n", rnn_type.c_str());
+            Log::fatal("Possibilities are:\n");
+            Log::fatal("    lstm\n");
+            Log::fatal("    gru\n");
+            Log::fatal("    ff\n");
+            Log::fatal("    jordan\n");
+            Log::fatal("    elman\n");
+            exit(1);
+        }
     }
 
     get_argument(arguments, "--bp_iterations", true, bp_iterations);
-    genome->set_bp_iterations(bp_iterations);
+    genome->set_bp_iterations(bp_iterations + genome->get_bp_iterations());
 
     get_argument(arguments, "--output_directory", true, output_directory);
     if (output_directory != "") {
@@ -211,7 +243,7 @@ int main(int argc, char** argv) {
 
     using_dropout = false;
 
-    genome->initialize_randomly();
+    genome->set_weights(genome->get_best_parameters());
 
     double learning_rate = 0.001;
     get_argument(arguments, "--learning_rate", false, learning_rate);
