@@ -96,6 +96,11 @@ double leakyReLU_derivative(double input) {
     return alpha;
 }
 
+double sin_derivitive(double value) {
+    value = cos(value);
+    return value;
+}
+
 RNN_Node_Interface::RNN_Node_Interface(int32_t _innovation_number, int32_t _layer_type, double _depth)
     : innovation_number(_innovation_number), layer_type(_layer_type), depth(_depth) {
     total_inputs = 0;
