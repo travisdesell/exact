@@ -18,7 +18,7 @@ using std::vector;
 #include "gradient_test.hxx"
 #include "rnn/generate_nn.hxx"
 #include "rnn/sin_node.hxx"
-#inlcude "rnn/lstm_node.hxx"
+#include "rnn/lstm_node.hxx"
 #include "rnn/rnn_edge.hxx"
 #include "rnn/rnn_genome.hxx"
 #include "rnn/rnn_node.hxx"

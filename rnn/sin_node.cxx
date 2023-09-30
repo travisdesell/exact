@@ -57,9 +57,9 @@ void SIN_Node::input_fired(int32_t time, double incoming_output) {
     }
 
     Log::debug("node %d - input value[%d]: %lf\n", innovation_number, time, input_values[time]);
-    input_plus_bias = input_values[time] + bias
-    output_values[time] = sin(input_plus_bias);
-    ld_output[time] = sin_derivative(input_plus_bias);
+   
+    output_values[time] = sin(input_values[time] + bias);
+    ld_output[time] = sin_derivative(input_values[time] + bias);
 
     // output_values[time] = sigmoid(input_values[time] + bias);
     // ld_output[time] = sigmoid_derivative(output_values[time]);
