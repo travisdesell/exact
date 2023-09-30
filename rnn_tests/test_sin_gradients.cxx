@@ -17,12 +17,12 @@ using std::vector;
 #include "common/log.hxx"
 #include "gradient_test.hxx"
 #include "rnn/generate_nn.hxx"
-#include "rnn/sin_node.hxx"
 #include "rnn/lstm_node.hxx"
 #include "rnn/rnn_edge.hxx"
 #include "rnn/rnn_genome.hxx"
 #include "rnn/rnn_node.hxx"
 #include "rnn/rnn_node_interface.hxx"
+#include "rnn/sin_node.hxx"
 #include "time_series/time_series.hxx"
 #include "weights/weight_rules.hxx"
 
