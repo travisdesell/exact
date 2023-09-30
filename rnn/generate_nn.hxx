@@ -22,9 +22,9 @@ using std::vector;
 #include "rnn/rnn_genome.hxx"
 #include "rnn/rnn_node.hxx"
 #include "rnn/rnn_node_interface.hxx"
+#include "rnn/sin_node.hxx"
 #include "rnn/ugrnn_node.hxx"
 #include "weights/weight_rules.hxx"
-#include "rnn/sin_node.hxx"
 
 template <class NodeT>
 NodeT* create_hidden_memory_cell(int32_t& innovation_counter, double depth) {

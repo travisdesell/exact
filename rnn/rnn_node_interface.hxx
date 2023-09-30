@@ -31,19 +31,19 @@ extern const string NODE_TYPES[];
 extern const unordered_map<string, int32_t> string_to_node_type;
 int32_t node_type_from_string(string& node_type);
 
-#define SIMPLE_NODE      0
-#define JORDAN_NODE      1
-#define ELMAN_NODE       2
-#define UGRNN_NODE       3
-#define MGU_NODE         4
-#define GRU_NODE         5
-#define DELTA_NODE       6
-#define LSTM_NODE        7
-#define ENARC_NODE       8
-#define ENAS_DAG_NODE    9
+#define SIMPLE_NODE     0
+#define JORDAN_NODE     1
+#define ELMAN_NODE      2
+#define UGRNN_NODE      3
+#define MGU_NODE        4
+#define GRU_NODE        5
+#define DELTA_NODE      6
+#define LSTM_NODE       7
+#define ENARC_NODE      8
+#define ENAS_DAG_NODE   9
 #define RANDOM_DAG_NODE 10
 #define DNAS_NODE       11
-#define SIN_NODE        12 
+#define SIN_NODE        12
 
 int32_t node_type_from_string(string& node_type);
 
