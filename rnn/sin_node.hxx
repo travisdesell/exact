@@ -21,6 +21,7 @@ class SIN_Node : public RNN_Node_Interface {
     SIN_Node(
         int32_t _innovation_number, int32_t _layer_type, double _depth, int32_t _node_type, string _parameter_name
     );
+    SIN_Node(int32_t _innovation_number, int32_t _type, double _depth);
     ~SIN_Node();
 
     void initialize_lamarckian(
@@ -31,6 +32,7 @@ class SIN_Node : public RNN_Node_Interface {
     void initialize_uniform_random(minstd_rand0& generator, uniform_real_distribution<double>& rng);
 
     void input_fired(int32_t time, double incoming_output);
+    double sin_derivative(double value);
 
     void try_update_deltas(int32_t time);
     void output_fired(int32_t time, double delta);

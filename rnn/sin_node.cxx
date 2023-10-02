@@ -19,7 +19,10 @@ SIN_Node::SIN_Node(
     node_type = SIN_NODE;
     Log::trace("created node: %d, layer type: %d, node type: %d\n", innovation_number, layer_type, node_type);
 }
-
+SIN_Node::SIN_Node(int32_t _innovation_number, int32_t _type, double _depth)
+    : RNN_Node_Interface(_innovation_number, _type, _depth) {
+    node_type = SIN_NODE;
+}
 SIN_Node::~SIN_Node() {
 }
 
@@ -74,6 +77,11 @@ void SIN_Node::input_fired(int32_t time, double incoming_output) {
         exit(1);
     }
 #endif
+}
+
+double SIN_Node::sin_derivative(double value) {
+    double derivative = cos(value);
+    return derivative;
 }
 
 void SIN_Node::try_update_deltas(int32_t time) {

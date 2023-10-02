@@ -56,7 +56,6 @@ double leakyReLU(double value);
 double leakyReLU_derivative(double input);
 double identity(double value);
 double identity_derivative();
-double sin_derivative(double value);
 
 double bound(double value);
 

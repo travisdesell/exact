@@ -12,9 +12,9 @@ using std::string;
 #include "rnn/rnn_genome.hxx"
 #include "rnn_node_interface.hxx"
 
-extern const int32_t NUMBER_NODE_TYPES = 11;
-extern const string NODE_TYPES[] = {"simple", "jordan", "elman", "UGRNN",    "MGU", "GRU",
-                                    "delta",  "LSTM",   "ENARC", "ENAS_DAG", "dnas"};
+extern const int32_t NUMBER_NODE_TYPES = 12;
+extern const string NODE_TYPES[] = {"simple", "jordan", "elman", "UGRNN",    "MGU",  "GRU",
+                                    "delta",  "LSTM",   "ENARC", "ENAS_DAG", "dnas", "sin"};
 extern const unordered_map<string, int32_t> string_to_node_type = {
     {"simple",   SIMPLE_NODE},
     {"jordan",   JORDAN_NODE},
@@ -26,7 +26,8 @@ extern const unordered_map<string, int32_t> string_to_node_type = {
     {  "lstm",     LSTM_NODE},
     { "enarc",    ENARC_NODE},
     {  "enas", ENAS_DAG_NODE},
-    {  "dnas",     DNAS_NODE}
+    {  "dnas",     DNAS_NODE},
+    {   "sin",      SIN_NODE},
 };
 
 int32_t node_type_from_string(string& node_type) {
@@ -94,11 +95,6 @@ double leakyReLU_derivative(double input) {
         return 1;
     }
     return alpha;
-}
-
-double sin_derivitive(double value) {
-    value = cos(value);
-    return value;
 }
 
 RNN_Node_Interface::RNN_Node_Interface(int32_t _innovation_number, int32_t _layer_type, double _depth)
