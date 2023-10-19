@@ -22,7 +22,6 @@ using std::vector;
 #include "rnn/rnn_genome.hxx"
 #include "rnn/rnn_node.hxx"
 #include "rnn/rnn_node_interface.hxx"
-#include "rnn/sin_node.hxx"
 #include "rnn/ugrnn_node.hxx"
 #include "weights/weight_rules.hxx"
 
@@ -55,7 +54,6 @@ RNN_Genome* create_simple_nn(
 #define create_ff(...)     create_simple_nn<SIMPLE_NODE>(__VA_ARGS__)
 #define create_elman(...)  create_simple_nn<ELMAN_NODE>(__VA_ARGS__)
 #define create_jordan(...) create_simple_nn<JORDAN_NODE>(__VA_ARGS__)
-#define create_sin(...)    create_simple_nn<SIN_NODE>(__VA_ARGS__)
 
 template <typename NodeT>
 RNN_Genome* create_memory_cell_nn(
