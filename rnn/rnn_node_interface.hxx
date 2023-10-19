@@ -43,7 +43,6 @@ int32_t node_type_from_string(string& node_type);
 #define ENAS_DAG_NODE   9
 #define RANDOM_DAG_NODE 10
 #define DNAS_NODE       11
-#define SIN_NODE        12
 
 int32_t node_type_from_string(string& node_type);
 
