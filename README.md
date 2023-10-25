@@ -15,7 +15,7 @@ brew install clang-format
 xcode-select --install
 ```
 
-for Apple Silicon, after installing rosetta, do this:
+for Apple Silicon, after installing [rosetta](https://stackoverflow.com/questions/64963370/error-cannot-install-in-homebrew-on-arm-processor-in-intel-default-prefix-usr):
 ```
 arch -x86_64 brew install cmake
 arch -x86_64 brew install mysql
