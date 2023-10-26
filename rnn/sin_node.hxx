@@ -6,7 +6,7 @@ using std::vector;
 
 #include "rnn_node.hxx"
 
-class RNN_Node : public RNN_Node {
+class SIN_Node : public RNN_Node {
    public:
     // constructor for hidden nodes
     SIN_Node(int32_t _innovation_number, int32_t _layer_type, double _depth);
