@@ -7,7 +7,7 @@ using std::vector;
 #include "rnn_node_interface.hxx"
 
 class RNN_Node : public RNN_Node_Interface {
-   private:
+   protected:
     double bias;
     double d_bias;
 
