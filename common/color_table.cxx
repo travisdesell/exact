@@ -1026,7 +1026,8 @@ const static double bent_cool_warm[] = {
     1.0,
     177,
     1,
-    39};
+    39
+};
 
 Color get_colormap(double value) {
     Color c;

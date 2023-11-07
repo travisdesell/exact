@@ -6,24 +6,23 @@ using std::vector;
 #include "sin_node.hxx"
 
 SIN_Node::SIN_Node(int32_t _innovation_number, int32_t _layer_type, double _depth)
-    : RNN_Node(_innovation_number, _layer_type, _depth, SIN_NODE){
+    : RNN_Node(_innovation_number, _layer_type, _depth, SIN_NODE) {
     // node type will be simple, jordan or elman
-    Log::info("created node: %d, layer type: %d, node type: %d\n", innovation_number, layer_type, node_type);
+    Log::info("created node: %d, layer type: %d, node type: SIN_NODE\n", innovation_number, layer_type);
 }
 
 SIN_Node::~SIN_Node() {
 }
 
-double SIN_Node::activation_function(double input){
+double SIN_Node::activation_function(double input) {
     return sin(input);
 }
 
-double SIN_Node::derivative_function(double input){
+double SIN_Node::derivative_function(double input) {
     return cos(input);
 }
 
 RNN_Node_Interface* SIN_Node::copy() const {
-   
     SIN_Node* n = new SIN_Node(innovation_number, layer_type, depth);
     // copy RNN_Node values
     n->bias = bias;
@@ -47,5 +46,3 @@ RNN_Node_Interface* SIN_Node::copy() const {
 
     return n;
 }
-
-
