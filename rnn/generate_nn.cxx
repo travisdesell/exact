@@ -39,7 +39,7 @@ RNN_Node_Interface* create_hidden_node(int32_t node_kind, int32_t& innovation_co
         case DNAS_NODE:
             Log::fatal("You shouldn't be creating DNAS nodes using generate_nn::create_hidden_node.\n");
             exit(1);
-        case SIN_NODE: 
+        case SIN_NODE:
             return new SIN_Node(++innovation_counter, HIDDEN_LAYER, depth);
         default:
             Log::fatal(
