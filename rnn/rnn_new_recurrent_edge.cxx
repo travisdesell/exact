@@ -35,10 +35,10 @@ RNN_Recurrent_Edge::RNN_Recurrent_Edge(
         output_innovation_number
     );
 
-    int32_t psi = _recurrent_depth;
-    H_1_behind =  - floor(psi);
-    H_2_behind = - floor(psi) - 1;
-    alpha = psi - floor(psi);
+    // int32_t psi = _recurrent_depth;
+    H_1_behind =  - floor(_recurrent_depth);
+    H_2_behind = - floor(_recurrent_depth) - 1;
+    alpha = _recurrent_depth - floor(_recurrent_depth);
 
 }
 
@@ -110,10 +110,10 @@ RNN_Recurrent_Edge::RNN_Recurrent_Edge(
         exit(1);
     }
 
-    int32_t psi = _recurrent_depth;
-    H_1_behind =  - floor(psi);
-    H_2_behind = - floor(psi) - 1;
-    alpha = psi - floor(psi);
+    // int32_t psi = _recurrent_depth;
+    H_1_behind =  - floor(_recurrent_depth);
+    H_2_behind = - floor(_recurrent_depth) - 1;
+    alpha = _recurrent_depth - floor(_recurrent_depth);
 }
 
 RNN_Recurrent_Edge* RNN_Recurrent_Edge::copy(const vector<RNN_Node_Interface*> new_nodes) {
@@ -123,7 +123,7 @@ RNN_Recurrent_Edge* RNN_Recurrent_Edge::copy(const vector<RNN_Node_Interface*> n
 
     e->recurrent_depth = recurrent_depth;
 
-    e->weight = weight*(alpha*H_1_behind + (1-alpha)*H_2_behind);
+    e->weight = weight;
     e->d_weight = d_weight;
 
     e->outputs = outputs;
@@ -174,7 +174,9 @@ void RNN_Recurrent_Edge::propagate_forward(int32_t time) {
         exit(1);
     }
 
-    double output = input_node->output_values[time] * weight;
+    //double output = input_node->output_values[time] * weight;
+    double output = ((1 - alpha)*input_node->output_values[time + H_2_behind] + alpha*input_node->output_values[time + H_1_behind]) * weight;
+
     if (time < series_length - recurrent_depth) {
         // Log::trace("propagating forward on recurrent edge %d from time %d to time %d from node %d to node %d\n",
         // innovation_number, time, time + recurrent_depth, input_innovation_number, output_innovation_number);
