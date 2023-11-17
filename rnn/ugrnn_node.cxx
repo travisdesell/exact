@@ -15,6 +15,8 @@ using std::uniform_real_distribution;
 #include <vector>
 using std::vector;
 
+#include <cstdlib>
+
 #include "common/log.hxx"
 #include "common/random.hxx"
 #include "mse.hxx"
@@ -23,9 +25,11 @@ using std::vector;
 
 #define NUMBER_UGRNN_WEIGHTS 6
 
-UGRNN_Node::UGRNN_Node(int32_t _innovation_number, int32_t _type, double _depth)
-    : RNN_Node_Interface(_innovation_number, _type, _depth) {
+UGRNN_Node::UGRNN_Node(int32_t _innovation_number, int32_t _type, double _depth, int _cell_time_skip)
+    : RNN_Node_Interface(_innovation_number, _type, _depth, _cell_time_skip) {
     node_type = UGRNN_NODE;
+    cell_time_skip = _cell_time_skip;
+    Log::debug("AT: Timeskip inside UGRNN Node = %d\n", cell_time_skip);
 }
 
 UGRNN_Node::~UGRNN_Node() {
@@ -123,8 +127,8 @@ void UGRNN_Node::input_fired(int32_t time, double incoming_output) {
     double x = input_values[time];
 
     double h_prev = 0.0;
-    if (time > 0) {
-        h_prev = output_values[time - 1];
+    if (time >= cell_time_skip) {
+        h_prev = output_values[time - cell_time_skip];
     }
 
     double xcw = x * cw;
@@ -165,14 +169,14 @@ void UGRNN_Node::try_update_deltas(int32_t time) {
     double x = input_values[time];
 
     double h_prev = 0.0;
-    if (time > 0) {
-        h_prev = output_values[time - 1];
+    if (time >= cell_time_skip) {
+        h_prev = output_values[time - cell_time_skip];
     }
 
     // backprop output gate
     double d_h = error;
-    if (time < (series_length - 1)) {
-        d_h += d_h_prev[time + 1];
+    if (time < (series_length - cell_time_skip)) {
+        d_h += d_h_prev[time + cell_time_skip];
     }
     // get the error into the output (z), it's the error from ahead in the network
     // as well as from the previous output of the cell
@@ -309,7 +313,8 @@ void UGRNN_Node::reset(int32_t _series_length) {
 }
 
 RNN_Node_Interface* UGRNN_Node::copy() const {
-    UGRNN_Node* n = new UGRNN_Node(innovation_number, layer_type, depth);
+    Log::debug("AT: Timeskip before UGRNN Cloned = %d\n", cell_time_skip);
+    UGRNN_Node* n = new UGRNN_Node(innovation_number, layer_type, depth, cell_time_skip);
 
     // copy UGRNN_Node values
     n->cw = cw;

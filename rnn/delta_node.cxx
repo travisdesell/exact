@@ -15,6 +15,8 @@ using std::uniform_real_distribution;
 #include <vector>
 using std::vector;
 
+#include <cstdlib>
+
 #include "common/log.hxx"
 #include "common/random.hxx"
 #include "delta_node.hxx"
@@ -23,9 +25,12 @@ using std::vector;
 
 #define NUMBER_DELTA_WEIGHTS 6
 
-Delta_Node::Delta_Node(int32_t _innovation_number, int32_t _type, double _depth)
-    : RNN_Node_Interface(_innovation_number, _type, _depth) {
+Delta_Node::Delta_Node(int32_t _innovation_number, int32_t _type, double _depth, int _cell_time_skip)
+    : RNN_Node_Interface(_innovation_number, _type, _depth, _cell_time_skip) {
     node_type = DELTA_NODE;
+    cell_time_skip = _cell_time_skip;
+    Log::debug("AT: Timeskip inside Delta Node = %d\n", cell_time_skip);
+
 }
 
 Delta_Node::~Delta_Node() {
@@ -121,8 +126,8 @@ void Delta_Node::input_fired(int32_t time, double incoming_output) {
     double d2 = input_values[time];
 
     double z_prev = 0.0;
-    if (time > 0) {
-        z_prev = output_values[time - 1];
+    if (time >= cell_time_skip) {
+        z_prev = output_values[time - cell_time_skip];
     }
 
     double d1 = v * z_prev;
@@ -175,14 +180,14 @@ void Delta_Node::try_update_deltas(int32_t time) {
     double d2 = input_values[time];
 
     double z_prev = 0.0;
-    if (time > 0) {
-        z_prev = output_values[time - 1];
+    if (time >= cell_time_skip) {
+        z_prev = output_values[time - cell_time_skip];
     }
 
     // backprop output gate
     double d_z = error;
-    if (time < (series_length - 1)) {
-        d_z += d_z_prev[time + 1];
+    if (time < (series_length - cell_time_skip)) {
+        d_z += d_z_prev[time + cell_time_skip];
     }
     // get the error into the output (z), it's the error from ahead in the network
     // as well as from the previous output of the cell
@@ -327,7 +332,8 @@ void Delta_Node::reset(int32_t _series_length) {
 }
 
 RNN_Node_Interface* Delta_Node::copy() const {
-    Delta_Node* n = new Delta_Node(innovation_number, layer_type, depth);
+    Log::debug("AT: Timeskip before Delta Cloned = %d\n", cell_time_skip);
+    Delta_Node* n = new Delta_Node(innovation_number, layer_type, depth, cell_time_skip);
 
     // copy Delta_Node values
     n->d_alpha = d_alpha;
