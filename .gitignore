@@ -11,4 +11,7 @@ __pycache__/*
 visualization/plots/*
 test_output/*
 gp_*
-graph.ipynb
+.ipynb_checkpoints/*
+*/.ipynb_checkpoints/*
+.vscode/*
+*/.vscode/*
