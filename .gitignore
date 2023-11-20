@@ -10,3 +10,8 @@ __pycache__/*
 *.pyc
 visualization/plots/*
 test_output/*
+gp_*
+.ipynb_checkpoints/*
+*/.ipynb_checkpoints/*
+.vscode/*
+*/.vscode/*
