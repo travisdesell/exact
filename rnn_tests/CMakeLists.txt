@@ -36,3 +36,6 @@ target_link_libraries(test_enas_dag_gradients examm_strategy exact_common exact_
 
 add_executable(test_sin_gradients test_sin_gradients.cxx gradient_test.cxx)
 target_link_libraries(test_sin_gradients examm_strategy exact_common exact_time_series exact_weights examm_nn  ${MYSQL_LIBRARIES} pthread)
+
+add_executable(test_node_to_binary test_node_to_binary.cxx gradient_test.cxx)
+target_link_libraries(test_node_to_binary examm_strategy exact_common exact_time_series exact_weights examm_nn  ${MYSQL_LIBRARIES} pthread)
