@@ -1,5 +1,6 @@
 #!/bin/sh
-#This will do gradient testing on each node, write a genome to binary and then read it into examm_mpi
+#This will do a test that converts a genome to binary, imports the genome back from binary as a new object, 
+#and checks for forward pass output equivilence and backward pass gradient equivilence between the two  
 
 find ~/exact/scripts/node_tests -type f -name "*.bin" -exec rm {} +
 
