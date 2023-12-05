@@ -91,9 +91,20 @@ int main(int argc, char** argv) {
     RNN* rnn_original = genome_original->get_rnn();
     RNN* rnn_file = genome_file->get_rnn();
 
+    if (rnn_original->get_number_nodes() == rnn_file->get_number_nodes()) {
+        Log::info("PASS: RNN NODE COUNT EQUAL!!!\n");
+    } else {
+        Log::info("FAILURE: RNN NODE COUNT NOT EQUAL!!!\n");
+    }
+    if (rnn_original->get_number_edges() == rnn_file->get_number_edges()) {
+        Log::info("PASS: RNN EDGE COUNT EQUAL!!!\n");
+    } else {
+        Log::info("FAILURE: RNN EDGE COUNT NOT EQUAL!!!\n");
+    }
+
     double analytic_mse_original, analytic_mse_file;
     vector<double> analytic_gradient_original, analytic_gradient_file;
-
+    Log::info("getting analytic gradient\n");
     rnn_original->get_analytic_gradient(
         best_parameters_original, inputs, outputs, analytic_mse_original, analytic_gradient_original, false, true, 0.0
     );
@@ -101,34 +112,57 @@ int main(int argc, char** argv) {
         best_parameters_file, inputs, outputs, analytic_mse_file, analytic_gradient_file, false, true, 0.0
     );
 
-    if (rnn_original->get_number_nodes() == rnn_file->get_number_nodes()) {
-        Log::info("PASS: SAME NODE COUNT!!!\n");
+    vector<double> weights_original, weights_file;
+    rnn_original->get_weights(weights_original);
+    rnn_file->get_weights(weights_file);
+    if (weights_original == weights_file) {
+        Log::info("PASS: RNN WEIGHTS EQUAL!!!\n");
     } else {
-        Log::info("FAILURE: DIFFERENT NODE COUNT!!!\n");
+        Log::info("FAILURE: RNN WEIGHTS NOT EQUAL!!!\n");
     }
-    if (rnn_original->get_number_edges() == rnn_file->get_number_edges()) {
-        Log::info("PASS: SAME EDGE COUNT!!!\n");
-    } else {
-        Log::info("FAILURE: DIFFERENT EDGE COUNT!!!\n");
-    }
+       
     int output_node_count = 1;
     for (int i = 0; i < rnn_original->get_number_nodes(); i++) {
         RNN_Node_Interface* test_node_original = rnn_original->get_node(i);
         RNN_Node_Interface* test_node_file = rnn_file->get_node(i);
         if ((test_node_original->layer_type == OUTPUT_LAYER) && (test_node_file->layer_type == OUTPUT_LAYER)) {
             if (test_node_original->output_values == test_node_file->output_values) {
-                Log::info("PASS: FORWARD PASS OUTPUT NODE %d - OUTPUT IS THE SAME!!!\n", output_node_count);
+                Log::info("PASS: RNN FORWARD PASS OUTPUT NODE %d - OUTPUT EQUAL!!!\n", output_node_count);
             } else {
-                Log::info("FAILURE: FORWARD PASS OUTPUT NODE %d - OUTPUT IS NOT EQUAL!!!\n", output_node_count);
+                Log::info("FAILURE: RNN FORWARD PASS OUTPUT NODE %d - OUTPUT NOT EQUAL!!!\n", output_node_count);
             }
             ++output_node_count;
         }
     }
 
     if (analytic_gradient_original == analytic_gradient_file) {
-        Log::info("PASS: GRADIENTS ARE THE SAME!!!\n");
+        Log::info("PASS: RNN ANALYTIC GRADIENTS ARE EQUAL!!!\n");
     } else {
-        Log::info("FAILURE: GRADIENTS ARE NOT EQUAL!!!\n");
+        Log::info("FAILURE: RNN ANALYTIC GRADIENTS ARE NOT EQUAL!!!\n");
+    }
+     
+    generate_random_vector(input_length, inputs[0]);
+    generate_random_vector(input_length, outputs[0]);
+    generate_random_vector(input_length, inputs[1]);
+    generate_random_vector(input_length, outputs[1]);
+    generate_random_vector(input_length, inputs[2]);
+    generate_random_vector(input_length, outputs[2]);
+    Log::info("new inputs/outputs generated\n");   
+    
+    double empirical_mse_original, empirical_mse_file;
+    vector<double> empirical_gradient_original, empirical_gradient_file;
+    Log::info("getting empirical gradient\n");
+    rnn_original->get_empirical_gradient(
+        best_parameters_original, inputs, outputs, empirical_mse_original, empirical_gradient_original, false, true, 0.0
+    );
+    rnn_file->get_empirical_gradient(
+        best_parameters_file, inputs, outputs, empirical_mse_file, empirical_gradient_file, false, true, 0.0
+    );   
+
+    if (empirical_gradient_original == empirical_gradient_file) {
+        Log::info("PASS: RNN EMPIRICAL GRADIENTS ARE EQUAL!!!\n");
+    } else {
+        Log::info("FAILURE: RNN EMPIRICAL GRADIENTS ARE NOT EQUAL!!!\n");
     }
 
     delete genome_original;
