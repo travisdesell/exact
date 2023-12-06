@@ -833,6 +833,10 @@ void RNN_Genome::set_best_parameters(vector<double> parameters) {
     best_parameters = parameters;
 }
 
+vector<double> RNN_Genome::get_initial_parameters() const {
+    return initial_parameters;
+}
+
 // INFO: ADDED BY ABDELRAHMAN TO USE FOR TRANSFER LEARNING
 void RNN_Genome::set_initial_parameters(vector<double> parameters) {
     initial_parameters = parameters;

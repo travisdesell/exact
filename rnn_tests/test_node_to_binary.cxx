@@ -71,18 +71,30 @@ int main(int argc, char** argv) {
 
     int32_t num_weights = genome_original->get_number_weights();
     vector<double> best_parameters_original;
+    vector<double> initial_parameters_original;
     generate_random_vector(num_weights, best_parameters_original);
+    generate_random_vector(num_weights, initial_parameters_original);
     genome_original->set_best_parameters(best_parameters_original);
+    genome_original->set_initial_parameters(initial_parameters_original);
 
     string path = "./genome_original.bin";
     genome_original->write_to_file(path);
     RNN_Genome* genome_file = new RNN_Genome(path);
     vector<double> best_parameters_file = genome_file->get_best_parameters();
+    vector<double> initial_parameters_file = genome_file->get_initial_parameters();
 
     if (best_parameters_original == best_parameters_file) {
         Log::info("PASS: BEST PARAMETERS ARE EQUAL!!!\n");
     } else {
-        Log::info("FAILURE: BEST PARAMETERS ARE NOT EQUAL!!!\n");
+        Log::fatal("FAILURE: BEST PARAMETERS ARE NOT EQUAL!!!\n");
+        exit(1);
+    }
+
+    if (initial_parameters_original == initial_parameters_file) {
+        Log::info("PASS: INITIAL PARAMETERS ARE EQUAL!!!\n");
+    } else {
+        Log::fatal("FAILURE: INITIAL PARAMETERS ARE NOT EQUAL!!!\n");
+        exit(1);
     }
 
     RNN* rnn_original = genome_original->get_rnn();
@@ -91,12 +103,14 @@ int main(int argc, char** argv) {
     if (rnn_original->get_number_nodes() == rnn_file->get_number_nodes()) {
         Log::info("PASS: RNN NODE COUNT EQUAL!!!\n");
     } else {
-        Log::info("FAILURE: RNN NODE COUNT NOT EQUAL!!!\n");
+        Log::fatal("FAILURE: RNN NODE COUNT NOT EQUAL!!!\n");
+        exit(1);
     }
     if (rnn_original->get_number_edges() == rnn_file->get_number_edges()) {
         Log::info("PASS: RNN EDGE COUNT EQUAL!!!\n");
     } else {
-        Log::info("FAILURE: RNN EDGE COUNT NOT EQUAL!!!\n");
+        Log::fatal("FAILURE: RNN EDGE COUNT NOT EQUAL!!!\n");
+        exit(1);
     }
 
     double analytic_mse_original, analytic_mse_file;
@@ -115,7 +129,8 @@ int main(int argc, char** argv) {
     if (weights_original == weights_file) {
         Log::info("PASS: RNN WEIGHTS EQUAL!!!\n");
     } else {
-        Log::info("FAILURE: RNN WEIGHTS NOT EQUAL!!!\n");
+        Log::fatal("FAILURE: RNN WEIGHTS NOT EQUAL!!!\n");
+        exit(1);
     }
 
     int output_node_count = 1;
@@ -126,7 +141,8 @@ int main(int argc, char** argv) {
             if (test_node_original->output_values == test_node_file->output_values) {
                 Log::info("PASS: RNN FORWARD PASS OUTPUT NODE %d - OUTPUT EQUAL!!!\n", output_node_count);
             } else {
-                Log::info("FAILURE: RNN FORWARD PASS OUTPUT NODE %d - OUTPUT NOT EQUAL!!!\n", output_node_count);
+                Log::fatal("FAILURE: RNN FORWARD PASS OUTPUT NODE %d - OUTPUT NOT EQUAL!!!\n", output_node_count);
+                exit(1);
             }
             ++output_node_count;
         }
@@ -135,7 +151,8 @@ int main(int argc, char** argv) {
     if (analytic_gradient_original == analytic_gradient_file) {
         Log::info("PASS: RNN ANALYTIC GRADIENTS ARE EQUAL!!!\n");
     } else {
-        Log::info("FAILURE: RNN ANALYTIC GRADIENTS ARE NOT EQUAL!!!\n");
+        Log::fatal("FAILURE: RNN ANALYTIC GRADIENTS ARE NOT EQUAL!!!\n");
+        exit(1);
     }
 
     generate_random_vector(input_length, inputs[0]);
@@ -159,7 +176,8 @@ int main(int argc, char** argv) {
     if (empirical_gradient_original == empirical_gradient_file) {
         Log::info("PASS: RNN EMPIRICAL GRADIENTS ARE EQUAL!!!\n");
     } else {
-        Log::info("FAILURE: RNN EMPIRICAL GRADIENTS ARE NOT EQUAL!!!\n");
+        Log::fatal("FAILURE: RNN EMPIRICAL GRADIENTS ARE NOT EQUAL!!!\n");
+        exit(1);
     }
 
     delete genome_original;
