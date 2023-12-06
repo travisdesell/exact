@@ -63,31 +63,28 @@ int main(int argc, char** argv) {
     generate_random_vector(input_length, inputs[2]);
     generate_random_vector(input_length, outputs[2]);
 
-    
-
     if (hidden_node_type.compare("sin") == 0) {
         Log::info("TESTING SIN!!!\n");
         genome_original = create_sin(inputs3, 1, 5, outputs3, max_recurrent_depth, weight_rules);
         Log::info("testing with 1 hidden layer, 5 sin nodes\n");
     }
-    
+
     int32_t num_weights = genome_original->get_number_weights();
     vector<double> best_parameters_original;
     generate_random_vector(num_weights, best_parameters_original);
     genome_original->set_best_parameters(best_parameters_original);
-    
-    
+
     string path = "./genome_original.bin";
     genome_original->write_to_file(path);
     RNN_Genome* genome_file = new RNN_Genome(path);
     vector<double> best_parameters_file = genome_file->get_best_parameters();
 
-    if (best_parameters_original == best_parameters_file){
+    if (best_parameters_original == best_parameters_file) {
         Log::info("PASS: BEST PARAMETERS ARE EQUAL!!!\n");
     } else {
         Log::info("FAILURE: BEST PARAMETERS ARE NOT EQUAL!!!\n");
     }
-              
+
     RNN* rnn_original = genome_original->get_rnn();
     RNN* rnn_file = genome_file->get_rnn();
 
@@ -120,7 +117,7 @@ int main(int argc, char** argv) {
     } else {
         Log::info("FAILURE: RNN WEIGHTS NOT EQUAL!!!\n");
     }
-       
+
     int output_node_count = 1;
     for (int i = 0; i < rnn_original->get_number_nodes(); i++) {
         RNN_Node_Interface* test_node_original = rnn_original->get_node(i);
@@ -140,15 +137,15 @@ int main(int argc, char** argv) {
     } else {
         Log::info("FAILURE: RNN ANALYTIC GRADIENTS ARE NOT EQUAL!!!\n");
     }
-     
+
     generate_random_vector(input_length, inputs[0]);
     generate_random_vector(input_length, outputs[0]);
     generate_random_vector(input_length, inputs[1]);
     generate_random_vector(input_length, outputs[1]);
     generate_random_vector(input_length, inputs[2]);
     generate_random_vector(input_length, outputs[2]);
-    Log::info("new inputs/outputs generated\n");   
-    
+    Log::info("new inputs/outputs generated\n");
+
     double empirical_mse_original, empirical_mse_file;
     vector<double> empirical_gradient_original, empirical_gradient_file;
     Log::info("getting empirical gradient\n");
@@ -157,7 +154,7 @@ int main(int argc, char** argv) {
     );
     rnn_file->get_empirical_gradient(
         best_parameters_file, inputs, outputs, empirical_mse_file, empirical_gradient_file, false, true, 0.0
-    );   
+    );
 
     if (empirical_gradient_original == empirical_gradient_file) {
         Log::info("PASS: RNN EMPIRICAL GRADIENTS ARE EQUAL!!!\n");
