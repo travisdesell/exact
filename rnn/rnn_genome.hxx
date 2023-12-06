@@ -187,7 +187,7 @@ class RNN_Genome {
 
     RNN* get_rnn();
     vector<double> get_best_parameters() const;
-
+    vector<double> get_initial_parameters() const;
     void set_best_parameters(vector<double> parameters);     // INFO: ADDED BY ABDELRAHMAN TO USE FOR TRANSFER LEARNING
     void set_initial_parameters(vector<double> parameters);  // INFO: ADDED BY ABDELRAHMAN TO USE FOR TRANSFER LEARNING
 

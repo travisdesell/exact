@@ -833,6 +833,10 @@ void RNN_Genome::set_best_parameters(vector<double> parameters) {
     best_parameters = parameters;
 }
 
+vector<double> RNN_Genome::get_initial_parameters() const {
+    return initial_parameters;
+}
+
 // INFO: ADDED BY ABDELRAHMAN TO USE FOR TRANSFER LEARNING
 void RNN_Genome::set_initial_parameters(vector<double> parameters) {
     initial_parameters = parameters;
@@ -3213,6 +3217,8 @@ RNN_Node_Interface* RNN_Genome::read_node_from_stream(istream& bin_istream) {
         DNASNode* dnas_node = new DNASNode(move(nodes), innovation_number, layer_type, depth, counter);
         dnas_node->set_pi(pi);
         node = (RNN_Node_Interface*) dnas_node;
+    } else if (node_type == SIN_NODE) {
+        node = new SIN_Node(innovation_number, layer_type, depth);
     } else {
         Log::fatal("Error reading node from stream, unknown node_type: %d\n", node_type);
         exit(1);
