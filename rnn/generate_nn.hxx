@@ -23,6 +23,7 @@ using std::vector;
 #include "rnn/rnn_node.hxx"
 #include "rnn/rnn_node_interface.hxx"
 #include "rnn/sin_node.hxx"
+#include "rnn/sum_node.hxx"
 #include "rnn/ugrnn_node.hxx"
 #include "weights/weight_rules.hxx"
 
@@ -82,6 +83,9 @@ RNN_Genome* create_memory_cell_nn(
 
 // new simple nodes
 #define create_sin(...) create_memory_cell_nn<SIN_Node>(__VA_ARGS__)
+#define create_sum(...) create_memory_cell_nn<SUM_Node>(__VA_ARGS__)
+
+
 
 DNASNode* create_dnas_node(int32_t& innovation_counter, double depth, const vector<int32_t>& node_types);
 

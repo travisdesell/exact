@@ -44,6 +44,7 @@ int32_t node_type_from_string(string& node_type);
 #define RANDOM_DAG_NODE 10
 #define DNAS_NODE       11
 #define SIN_NODE        12
+#define SUM_NODE        13
 
 int32_t node_type_from_string(string& node_type);
 
