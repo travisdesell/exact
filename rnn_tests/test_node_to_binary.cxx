@@ -24,6 +24,7 @@ using std::vector;
 #include "rnn/rnn_node.hxx"
 #include "rnn/rnn_node_interface.hxx"
 #include "rnn/sin_node.hxx"
+#include "rnn/sum_node.hxx"
 #include "time_series/time_series.hxx"
 #include "weights/weight_rules.hxx"
 
@@ -67,6 +68,10 @@ int main(int argc, char** argv) {
         Log::info("TESTING SIN!!!\n");
         genome_original = create_sin(inputs3, 1, 5, outputs3, max_recurrent_depth, weight_rules);
         Log::info("testing with 1 hidden layer, 5 sin nodes\n");
+    } else if (hidden_node_type.compare("sum") == 0){
+        Log::info("TESTING SUM!!!\n");
+        genome_original = create_sum(inputs3, 1, 5, outputs3, max_recurrent_depth, weight_rules);
+        Log::info("testing with 1 hidden layer, 5 sum nodes\n");
     }
 
     int32_t num_weights = genome_original->get_number_weights();
