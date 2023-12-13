@@ -86,9 +86,9 @@ int main(int argc, char** argv) {
     RNN_Genome genome(filename);
 
     for (auto node : genome.get_nodes()) {
-        if (DNASNode *d = dynamic_cast<DNASNode*>(node)) {
-          std::cout << "'" << filename << "': ";
-          d->print_info();
+        if (DNASNode* d = dynamic_cast<DNASNode*>(node)) {
+            std::cout << "'" << filename << "': ";
+            d->print_info();
         }
     }
 

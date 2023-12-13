@@ -10,7 +10,7 @@ using std::vector;
 EXAMM* generate_examm_from_arguments(
     const vector<string>& arguments, TimeSeriesSets* time_series_sets, WeightRules* weight_rules,
     RNN_Genome* seed_genome
-) { 
+) {
     Log::info("Getting arguments for EXAMM\n");
     int32_t island_size;
     get_argument(arguments, "--island_size", true, island_size);

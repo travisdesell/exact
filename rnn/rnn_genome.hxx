@@ -325,7 +325,7 @@ class RNN_Genome {
     );
     vector<RNN_Node_Interface*> pick_possible_nodes(int32_t layer_type, bool not_all_hidden, string node_type);
 
-    const vector<RNN_Node_Interface *> &get_nodes() {
+    const vector<RNN_Node_Interface*>& get_nodes() {
         return this->nodes;
     }
 

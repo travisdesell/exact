@@ -2,7 +2,6 @@
 using std::sort;
 
 #include <iomanip>
-
 #include <utility>
 using std::pair;
 
@@ -162,9 +161,10 @@ void DNASNode::print_info() {
     printf(" ");
     int best_pi_idx = 0;
     for (int i = 0; i < nodes.size(); i++) {
-       printf("%-10s & ", std::to_string(pi[i]).c_str());
-        if (pi[i] > pi[best_pi_idx])
+        printf("%-10s & ", std::to_string(pi[i]).c_str());
+        if (pi[i] > pi[best_pi_idx]) {
             best_pi_idx = i;
+        }
     }
     printf("\n");
     Log::info("Node types: ");
@@ -337,8 +337,9 @@ void DNASNode::set_weights(int32_t& offset, const vector<double>& parameters) {
     // int start = offset;
     for (auto i = 0; i < pi.size(); i++) {
         pi[i] = parameters[offset++];
-        if (pi[i] < 0.1)
+        if (pi[i] < 0.1) {
             pi[i] = 0.1;
+        }
     }
 
     for (auto node : nodes) {

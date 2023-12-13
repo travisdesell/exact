@@ -1,12 +1,12 @@
 #!/usr/bin/zsh
 
 INPUT_PARAMETERS='AltAGL AltB AltGPS AltMSL BaroA E1_CHT1 E1_CHT2 E1_CHT3 E1_CHT4 E1_EGT1 E1_EGT2 E1_EGT3 E1_EGT4 E1_FFlow E1_OilP E1_OilT E1_RPM FQtyL FQtyR GndSpd IAS LatAc NormAc OAT Pitch Roll TAS VSpd VSpdG WndDr WndSpd'
-OUTPUT_PARAMETERS='E1_EGT1 E1_EGT2 E1_EGT3 E1_EGT4 E1_FFlow E1_OilP E1_OilT E1_RPM'
+OUTPUT_PARAMETERS='E1_EGT1'
 
 offset=1
 
 run_examm() {
-  output_dir=initial_integration_experiments/results/v1/$crystalize_iters/$bp_epoch/$k/$fold
+  output_dir=initial_integration_experiments/results/v2/$crystalize_iters/$bp_epoch/$k/$fold
   mkdir -p $output_dir
   mpirun -np 16 --bind-to socket Release/mpi/examm_mpi \
       --training_filenames datasets/2019_ngafid_transfer/c172_file_[1-9].csv \

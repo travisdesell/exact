@@ -116,7 +116,7 @@ int main(int argc, char** argv) {
     if (genome_file.size() != 0) {
         genome = new RNN_Genome(genome_file);
         Log::info("best weights: { ");
-        for (double &d : genome->get_best_parameters()) {
+        for (double& d : genome->get_best_parameters()) {
             Log::info_no_header("%f, ", d);
         }
         Log::info("}\n");
@@ -124,15 +124,14 @@ int main(int argc, char** argv) {
         vector<double> params;
         genome->get_weights(params);
         Log::info("current weights: { ");
-        for (double &d : params) {
+        for (double& d : params) {
             Log::info_no_header("%f, ", d);
         }
         Log::info("}\n");
     } else {
-
         string rnn_type;
         get_argument(arguments, "--rnn_type", true, rnn_type);
-        
+
         Log::info("RNN TYPE = %s\n", rnn_type.c_str());
 
         int32_t num_hidden_layers;
@@ -146,50 +145,50 @@ int main(int argc, char** argv) {
 
         if (rnn_type == "lstm") {
             genome = create_lstm(
-                input_parameter_names, num_hidden_layers, hidden_layer_size, output_parameter_names, max_recurrent_depth,
-                weight_rules
+                input_parameter_names, num_hidden_layers, hidden_layer_size, output_parameter_names,
+                max_recurrent_depth, weight_rules
             );
 
         } else if (rnn_type == "gru") {
             genome = create_gru(
-                input_parameter_names, num_hidden_layers, hidden_layer_size, output_parameter_names, max_recurrent_depth,
-                weight_rules
+                input_parameter_names, num_hidden_layers, hidden_layer_size, output_parameter_names,
+                max_recurrent_depth, weight_rules
             );
 
         } else if (rnn_type == "delta") {
             genome = create_delta(
-                input_parameter_names, num_hidden_layers, hidden_layer_size, output_parameter_names, max_recurrent_depth,
-                weight_rules
+                input_parameter_names, num_hidden_layers, hidden_layer_size, output_parameter_names,
+                max_recurrent_depth, weight_rules
             );
 
         } else if (rnn_type == "mgu") {
             genome = create_mgu(
-                input_parameter_names, num_hidden_layers, hidden_layer_size, output_parameter_names, max_recurrent_depth,
-                weight_rules
+                input_parameter_names, num_hidden_layers, hidden_layer_size, output_parameter_names,
+                max_recurrent_depth, weight_rules
             );
 
         } else if (rnn_type == "ugrnn") {
             genome = create_ugrnn(
-                input_parameter_names, num_hidden_layers, hidden_layer_size, output_parameter_names, max_recurrent_depth,
-                weight_rules
+                input_parameter_names, num_hidden_layers, hidden_layer_size, output_parameter_names,
+                max_recurrent_depth, weight_rules
             );
 
         } else if (rnn_type == "ff") {
             genome = create_ff(
-                input_parameter_names, num_hidden_layers, hidden_layer_size, output_parameter_names, max_recurrent_depth,
-                weight_rules
+                input_parameter_names, num_hidden_layers, hidden_layer_size, output_parameter_names,
+                max_recurrent_depth, weight_rules
             );
 
         } else if (rnn_type == "jordan") {
             genome = create_jordan(
-                input_parameter_names, num_hidden_layers, hidden_layer_size, output_parameter_names, max_recurrent_depth,
-                weight_rules
+                input_parameter_names, num_hidden_layers, hidden_layer_size, output_parameter_names,
+                max_recurrent_depth, weight_rules
             );
 
         } else if (rnn_type == "elman") {
             genome = create_elman(
-                input_parameter_names, num_hidden_layers, hidden_layer_size, output_parameter_names, max_recurrent_depth,
-                weight_rules
+                input_parameter_names, num_hidden_layers, hidden_layer_size, output_parameter_names,
+                max_recurrent_depth, weight_rules
             );
         } else if (rnn_type == "dnas") {
             vector<int> node_types = {SIMPLE_NODE, LSTM_NODE, GRU_NODE, MGU_NODE, DELTA_NODE, UGRNN_NODE};
