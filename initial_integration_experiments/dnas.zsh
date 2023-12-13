@@ -8,7 +8,7 @@ offset=1
 run_examm() {
   output_dir=initial_integration_experiments/results/v2/$crystalize_iters/$bp_epoch/$k/$fold
   mkdir -p $output_dir
-  mpirun -np 16 --bind-to socket Release/mpi/examm_mpi \
+  mpirun -np 8 --bind-to socket Release/mpi/examm_mpi \
       --training_filenames datasets/2019_ngafid_transfer/c172_file_[1-9].csv \
       --test_filenames datasets/2019_ngafid_transfer/c172_file_1[0-2].csv \
       --time_offset $offset \
@@ -29,7 +29,7 @@ run_examm() {
       --std_message_level INFO \
       --file_message_level INFO \
       --crystalize_iters $crystalize_iters \
-      --max_genomes 10000 \
+      --max_genomes 4000 \
       --island_size 8 \
       --number_islands 8 \
       --dnas_k $k
@@ -39,7 +39,7 @@ run_examm() {
 }
 
 CELL_TYPE='dnas'
-for crystalize_iters in 128 256 512 1024; do
+for crystalize_iters in 64 128 256 512; do
   for bp_epoch in 8 16 32 64 128; do
     for k in 1; do
       for fold in 0 1 2 3; do
@@ -47,7 +47,7 @@ for crystalize_iters in 128 256 512 1024; do
       done
       wait
       for fold in 4 5 6 7; do
-        run_examm
+        run_examm &
       done
       wait
     done

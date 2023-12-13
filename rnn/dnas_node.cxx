@@ -99,15 +99,7 @@ double DNASNode::calculate_pi_lr() {
 }
 
 double DNASNode::calculate_tao() {
-    double percentage_done = (double) counter / (double) CRYSTALLIZATION_THRESHOLD;
-    if (percentage_done < 0.33) {
-        return 1.33;
-    } else if (percentage_done < 0.66) {
-        double percentage_done_with_phase = (0.66 - percentage_done) / 0.33;
-        return 1.33 - percentage_done_with_phase * 1.15;
-    } else {
-        return 0.18;
-    }
+    return 6.0;
 }
 
 void DNASNode::calculate_z() {
@@ -337,8 +329,8 @@ void DNASNode::set_weights(int32_t& offset, const vector<double>& parameters) {
     // int start = offset;
     for (auto i = 0; i < pi.size(); i++) {
         pi[i] = parameters[offset++];
-        if (pi[i] < 0.1) {
-            pi[i] = 0.1;
+        if (pi[i] < 0.01) {
+            pi[i] = 0.01;
         }
     }
 
@@ -395,9 +387,8 @@ void DNASNode::get_gradients(vector<double>& gradients) {
     } else {
         gradients.assign(get_number_weights(), 0.0);
         int offset = 0;
-        double pi_lr = calculate_pi_lr();
         for (auto i = 0; i < pi.size(); i++) {
-            gradients[offset++] = d_pi[i] * pi_lr;
+            gradients[offset++] = d_pi[i];
         }
 
         for (auto node : nodes) {
