@@ -152,6 +152,7 @@ Where the usage is:
 So this will take 1000 images of each type from the training data and put them into the specified validation file (*mnist_validation_10k.bin*) and the rest of the images will be in the training set (*mnist_train_50k.bin*).
 
 ## Running EXACT
+### Training
 
 You can then run EXACT in a similar manner to EXAMM, either using threads or MPI. For the threaded version:
 
@@ -168,6 +169,18 @@ And for the MPI version:
 
 Which will run EXACT with 9 threads or processes, respectively. The *--use_sfmp* argument turns on or off scaled fractional max pooling (which allows for pooling operations between feature maps of any size), the *--use_node_operations* argument turns on or off node level mutations (see the EXACT and EXAMM papers), the *--reset_edges* parameter turns on or off Lamarckian weight evolution (turning it on will evolve and train networks faster) and the *--images_resize* parameter allows EXACT to train CNNs on a subset of the training data to speed the evolution process (e.g., --images_resize 5000 would train each CNN on a different subset of 5k images from the training data, as opposed to the full 50k).
 
+### Generating predictions
+In order to generate predictions, you need to find the best performing genome. You can use command line operations to achieve this like this:
+
+```
+~/exact/build/ $ find test_output/ -name 'global*.bin'    
+test_output//global_best_genome_1496.bin
+```
+
+Once you know the path of your best performing genome, generate predictions like this:
+```
+~/exact/build/ $ rnn_examples/evaluate_rnn --std_message_level INFO --file_message_level NONE --output_directory TA_tests/ --genome_file test_output/global_best_genome_1496.bin --testing_filenames ../datasets/stock/nyse/5_defensive_stocks_test_2.csv
+```
 ## Example Genomes from GECCO 2017
 
 Our submission to GECCO describes a set of best found genomes for the MNIST handwritten digits dataset.  These can be found in the genomes subdirectory of the project. Please checkout the tag for the GECCO paper to use the version of EXACT these CNN genome files were generated with:
