@@ -25,6 +25,9 @@ using std::vector;
 #include "rnn/rnn_node_interface.hxx"
 #include "rnn/sin_node.hxx"
 #include "rnn/sum_node.hxx"
+#include "rnn/cos_node.hxx"
+#include "rnn/tanh_node.hxx"
+#include "rnn/sigmoid_node.hxx"
 #include "time_series/time_series.hxx"
 #include "weights/weight_rules.hxx"
 
@@ -67,11 +70,30 @@ int main(int argc, char** argv) {
     if (hidden_node_type.compare("sin") == 0) {
         Log::info("TESTING SIN!!!\n");
         genome_original = create_sin(inputs3, 1, 5, outputs3, max_recurrent_depth, weight_rules);
-        Log::info("testing with 1 hidden layer, 5 sin nodes\n");
+        Log::info("testing with 1 hidden layer, 5 cos nodes\n");
     } else if (hidden_node_type.compare("sum") == 0){
         Log::info("TESTING SUM!!!\n");
         genome_original = create_sum(inputs3, 1, 5, outputs3, max_recurrent_depth, weight_rules);
         Log::info("testing with 1 hidden layer, 5 sum nodes\n");
+    } else if (hidden_node_type.compare("cos") == 0){
+        Log::info("TESTING COS!!!\n");
+        genome_original = create_cos(inputs3, 1, 5, outputs3, max_recurrent_depth, weight_rules);
+        Log::info("testing with 1 hidden layer, 5 cos nodes\n");
+    } else if (hidden_node_type.compare("tanh") == 0){
+        Log::info("TESTING TANH!!!\n");
+        genome_original = create_tanh(inputs3, 1, 5, outputs3, max_recurrent_depth, weight_rules);
+        Log::info("testing with 1 hidden layer, 5 tanh nodes\n");
+    } else if (hidden_node_type.compare("sigmoid") == 0){
+        Log::info("TESTING SIGMOID!!!\n");
+        genome_original = create_sigmoid(inputs3, 1, 5, outputs3, max_recurrent_depth, weight_rules);
+        Log::info("testing with 1 hidden layer, 5 sigmoid nodes\n");
+    } else if (hidden_node_type.compare("inverse") == 0){
+        Log::info("TESTING INVERSE!!!\n");
+        genome_original = create_inverse(inputs3, 1, 5, outputs3, max_recurrent_depth, weight_rules);
+        Log::info("testing with 1 hidden layer, 5 inverse nodes\n");
+    } else {
+        Log::fatal("NODE TYPE NOT LISTED!!!");
+        exit(1);
     }
 
     int32_t num_weights = genome_original->get_number_weights();

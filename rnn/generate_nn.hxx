@@ -22,9 +22,13 @@ using std::vector;
 #include "rnn/rnn_genome.hxx"
 #include "rnn/rnn_node.hxx"
 #include "rnn/rnn_node_interface.hxx"
+#include "rnn/ugrnn_node.hxx"
 #include "rnn/sin_node.hxx"
 #include "rnn/sum_node.hxx"
-#include "rnn/ugrnn_node.hxx"
+#include "rnn/cos_node.hxx"
+#include "rnn/tanh_node.hxx"
+#include "rnn/sigmoid_node.hxx"
+#include "rnn/inverse_node.hxx"
 #include "weights/weight_rules.hxx"
 
 template <class NodeT>
@@ -84,8 +88,10 @@ RNN_Genome* create_memory_cell_nn(
 // new simple nodes
 #define create_sin(...) create_memory_cell_nn<SIN_Node>(__VA_ARGS__)
 #define create_sum(...) create_memory_cell_nn<SUM_Node>(__VA_ARGS__)
-
-
+#define create_cos(...) create_memory_cell_nn<COS_Node>(__VA_ARGS__)
+#define create_tanh(...) create_memory_cell_nn<TANH_Node>(__VA_ARGS__)
+#define create_sigmoid(...) create_memory_cell_nn<SIGMOID_Node>(__VA_ARGS__)
+#define create_inverse(...) create_memory_cell_nn<INVERSE_Node>(__VA_ARGS__)
 
 DNASNode* create_dnas_node(int32_t& innovation_counter, double depth, const vector<int32_t>& node_types);
 

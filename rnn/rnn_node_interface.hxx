@@ -26,9 +26,9 @@ class RNN;
 #define HIDDEN_LAYER 1
 #define OUTPUT_LAYER 2
 
-extern const int32_t NUMBER_NODE_TYPES;
 extern const string NODE_TYPES[];
 extern const unordered_map<string, int32_t> string_to_node_type;
+extern const int32_t NUMBER_NODE_TYPES;
 int32_t node_type_from_string(string& node_type);
 
 #define SIMPLE_NODE     0
@@ -45,6 +45,10 @@ int32_t node_type_from_string(string& node_type);
 #define DNAS_NODE       11
 #define SIN_NODE        12
 #define SUM_NODE        13
+#define COS_NODE        14
+#define TANH_NODE       15
+#define SIGMOID_NODE    16
+#define INVERSE_NODE    17
 
 int32_t node_type_from_string(string& node_type);
 

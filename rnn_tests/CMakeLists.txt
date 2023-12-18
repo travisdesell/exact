@@ -40,5 +40,17 @@ target_link_libraries(test_sin_gradients examm_strategy exact_common exact_time_
 add_executable(test_sum_gradients test_sum_gradients.cxx gradient_test.cxx)
 target_link_libraries(test_sum_gradients examm_strategy exact_common exact_time_series exact_weights examm_nn  ${MYSQL_LIBRARIES} pthread)
 
+add_executable(test_cos_gradients test_cos_gradients.cxx gradient_test.cxx)
+target_link_libraries(test_cos_gradients examm_strategy exact_common exact_time_series exact_weights examm_nn  ${MYSQL_LIBRARIES} pthread)
+
+add_executable(test_tanh_gradients test_tanh_gradients.cxx gradient_test.cxx)
+target_link_libraries(test_tanh_gradients examm_strategy exact_common exact_time_series exact_weights examm_nn  ${MYSQL_LIBRARIES} pthread)
+
+add_executable(test_sigmoid_gradients test_sigmoid_gradients.cxx gradient_test.cxx)
+target_link_libraries(test_sigmoid_gradients examm_strategy exact_common exact_time_series exact_weights examm_nn  ${MYSQL_LIBRARIES} pthread)
+
+add_executable(test_inverse_gradients test_inverse_gradients.cxx gradient_test.cxx)
+target_link_libraries(test_inverse_gradients examm_strategy exact_common exact_time_series exact_weights examm_nn  ${MYSQL_LIBRARIES} pthread)
+
 add_executable(test_node_to_binary test_node_to_binary.cxx gradient_test.cxx)
 target_link_libraries(test_node_to_binary examm_strategy exact_common exact_time_series exact_weights examm_nn  ${MYSQL_LIBRARIES} pthread)

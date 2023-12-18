@@ -3221,6 +3221,14 @@ RNN_Node_Interface* RNN_Genome::read_node_from_stream(istream& bin_istream) {
         node = new SIN_Node(innovation_number, layer_type, depth);
     } else if (node_type == SUM_NODE) {
         node = new SUM_Node(innovation_number, layer_type, depth);
+    } else if (node_type == COS_NODE) {
+        node = new COS_Node(innovation_number, layer_type, depth);
+    } else if (node_type == TANH_NODE) {
+        node = new TANH_Node(innovation_number, layer_type, depth);
+    } else if (node_type == SIGMOID_NODE) {
+        node = new SIGMOID_Node(innovation_number, layer_type, depth);
+    } else if (node_type == INVERSE_NODE) {
+        node = new INVERSE_Node(innovation_number, layer_type, depth);
     } else {
         Log::fatal("Error reading node from stream, unknown node_type: %d\n", node_type);
         exit(1);
