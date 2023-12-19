@@ -82,6 +82,11 @@ class CSVFileSelector(tk.Tk):
 
         feature_selection_window = FeatureSelectionWindow(self, self.features)
         self.wait_window(feature_selection_window)
+        
+    def browse_output_directory(self):
+        directory_path = filedialog.askdirectory()
+        self.output_file_path = directory_path
+        self.output_entry_var.set(directory_path)
 
     def initiate_run(self):
         result_text = (
