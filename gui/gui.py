@@ -2,6 +2,8 @@ import tkinter as tk
 from tkinter import filedialog, messagebox
 import pandas as pd
 from tkinter import IntVar, Checkbutton
+import subprocess
+import os
 
 
 class CSVFileSelector(tk.Tk):
@@ -22,7 +24,7 @@ class CSVFileSelector(tk.Tk):
         self.train_entry = tk.Entry(
             self, textvariable=self.train_entry_var, state="disabled", width=50
         )
-        self.train_entry.grid(row=0, column=1, padx=10, pady=10)
+        self.train_entry.grid(row=0, column=1, padx=10, pady=10, columnspan=4)
 
         self.train_browse_button = tk.Button(
             self, text="Browse", command=self.browse_train_file
@@ -30,7 +32,7 @@ class CSVFileSelector(tk.Tk):
         self.train_browse_button.grid(row=0, column=5, padx=10, pady=10)
 
         self.test_label = tk.Label(self, text="Select Test CSV:")
-        self.test_label.grid(row=1, column=0, padx=10, pady=10)
+        self.test_label.grid(row=1, column=0, padx=10, pady=10, columnspan=4)
 
         self.test_entry_var = tk.StringVar()
         self.test_entry = tk.Entry(
@@ -48,7 +50,7 @@ class CSVFileSelector(tk.Tk):
         )
 
         self.output_label = tk.Label(self, text="Select Output Directory:")
-        self.output_label.grid(row=3, column=0, padx=10, pady=10)
+        self.output_label.grid(row=3, column=0, padx=10, pady=10, columnspan=4)
 
         self.output_entry_var = tk.StringVar()
         self.output_entry = tk.Entry(
@@ -70,10 +72,10 @@ class CSVFileSelector(tk.Tk):
         self.node_types_label = tk.Label(self, text="Possible Node Types:")
         self.node_types_label.grid(row=4, column=2, padx=10, pady=5)
         self.node_types_options = ["simple", "UGRNN", "MGU", "GRU", "delta", "LSTM"]
-        self.node_type_vars = [tk.IntVar(value=1) for _ in self.node_types_options]
+        self.node_type_vars = [IntVar(value=1) for _ in self.node_types_options]
 
         for i, node_type in enumerate(self.node_types_options):
-            checkbox = tk.Checkbutton(
+            checkbox = Checkbutton(
                 self,
                 text=node_type,
                 variable=self.node_type_vars[i],
@@ -191,24 +193,30 @@ class CSVFileSelector(tk.Tk):
         self.output_entry_var.set(directory_path)
 
     def initiate_run(self):
-        result_text = (
-            f"./multithreaded/examm_mt "
-            f"--number_threads {self.number_threads_var.get()} \n"
-            f'--training_filenames "{self.train_file_path}" \n'
-            f'--test_filenames "{self.test_file_path}" \n'
-            f"--time_offset {self.time_offset_var.get()} \n"
-            f'--input_parameter_names {" ".join(self.features)} \n'
-            f"--output_parameter_names {self.target_variable} \n"
-            f"--number_islands {self.number_islands_var.get()} \n"
-            f"--island_size {self.size_islands_var.get()} \n"
-            f"--max_genomes {self.max_genomes_var.get()} \n"
-            f"--bp_iterations {self.bp_iter_var.get()} \n"
-            f'--output_directory "{self.output_file_path}" \n'
-            f'--possible_node_types {" ".join([node_type for node_type, var in zip(self.node_types_options, self.node_type_vars) if var.get()])} \n'
-            f"--std_message_level {self.std_message_level_var.get()} \n"
-            f"--file_message_level {self.file_message_level_var.get()} \n"
+        command = (
+            f"build/multithreaded/examm_mt"
+            # f"--number_threads {self.number_threads_var.get()} "
+            # f'--training_filenames "{self.train_file_path}" '
+            # f'--test_filenames "{self.test_file_path}" '
+            # f"--time_offset {self.time_offset_var.get()} "
+            # f'--input_parameter_names {" ".join(self.features)} '
+            # f"--output_parameter_names {self.target_variable} "
+            # f"--number_islands {self.number_islands_var.get()} "
+            # f"--island_size {self.size_islands_var.get()} "
+            # f"--max_genomes {self.max_genomes_var.get()} "
+            # f"--bp_iterations {self.bp_iter_var.get()} "
+            # f'--output_directory "{self.output_file_path}" '
+            # f'--possible_node_types {" ".join([node_type for node_type, var in zip(self.node_types_options, self.node_type_vars) if var.get()])} '
+            # f"--std_message_level {self.std_message_level_var.get()} "
+            # f"--file_message_level {self.file_message_level_var.get()} "
         )
-        messagebox.showinfo("Run Information", result_text)
+        
+        try:
+            # Run the command
+            subprocess.run(command, check=True)
+            messagebox.showinfo("Run Information", "Command executed successfully!")
+        except subprocess.CalledProcessError as e:
+            messagebox.showerror("Error", f"Error executing command: {e}")
 
 
 class FeatureSelectionWindow(tk.Toplevel):
