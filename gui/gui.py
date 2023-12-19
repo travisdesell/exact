@@ -24,15 +24,15 @@ class CSVFileSelector(tk.Tk):
         self.train_entry = tk.Entry(
             self, textvariable=self.train_entry_var, state="disabled", width=50
         )
-        self.train_entry.grid(row=0, column=1, padx=10, pady=10, columnspan=4)
+        self.train_entry.grid(row=0, column=1, padx=10, pady=10)
 
         self.train_browse_button = tk.Button(
             self, text="Browse", command=self.browse_train_file
         )
-        self.train_browse_button.grid(row=0, column=5, padx=10, pady=10)
+        self.train_browse_button.grid(row=0, column=2, padx=10, pady=10)
 
         self.test_label = tk.Label(self, text="Select Test CSV:")
-        self.test_label.grid(row=1, column=0, padx=10, pady=10, columnspan=4)
+        self.test_label.grid(row=1, column=0, padx=10, pady=10)
 
         self.test_entry_var = tk.StringVar()
         self.test_entry = tk.Entry(
@@ -43,14 +43,14 @@ class CSVFileSelector(tk.Tk):
         self.test_browse_button = tk.Button(
             self, text="Browse", command=self.browse_test_file
         )
-        self.test_browse_button.grid(row=1, column=5, padx=10, pady=10)
+        self.test_browse_button.grid(row=1, column=2, padx=10, pady=10)
 
         self.column_listbox = tk.Listbox(
             self, selectmode=tk.MULTIPLE, exportselection=0, height=10
         )
 
         self.output_label = tk.Label(self, text="Select Output Directory:")
-        self.output_label.grid(row=3, column=0, padx=10, pady=10, columnspan=4)
+        self.output_label.grid(row=3, column=0, padx=10, pady=10)
 
         self.output_entry_var = tk.StringVar()
         self.output_entry = tk.Entry(
@@ -61,7 +61,7 @@ class CSVFileSelector(tk.Tk):
         self.output_browse_button = tk.Button(
             self, text="Browse", command=self.browse_output_directory
         )
-        self.output_browse_button.grid(row=3, column=5, padx=10, pady=10)
+        self.output_browse_button.grid(row=3, column=2, padx=10, pady=10)
 
         self.number_threads_label = tk.Label(self, text="Number of Threads:")
         self.number_threads_label.grid(row=4, column=0, padx=10, pady=5, sticky="e")
@@ -195,25 +195,25 @@ class CSVFileSelector(tk.Tk):
     def initiate_run(self):
         command = (
             f"build/multithreaded/examm_mt"
-            # f"--number_threads {self.number_threads_var.get()} "
-            # f'--training_filenames "{self.train_file_path}" '
-            # f'--test_filenames "{self.test_file_path}" '
-            # f"--time_offset {self.time_offset_var.get()} "
-            # f'--input_parameter_names {" ".join(self.features)} '
-            # f"--output_parameter_names {self.target_variable} "
-            # f"--number_islands {self.number_islands_var.get()} "
-            # f"--island_size {self.size_islands_var.get()} "
-            # f"--max_genomes {self.max_genomes_var.get()} "
-            # f"--bp_iterations {self.bp_iter_var.get()} "
-            # f'--output_directory "{self.output_file_path}" '
-            # f'--possible_node_types {" ".join([node_type for node_type, var in zip(self.node_types_options, self.node_type_vars) if var.get()])} '
-            # f"--std_message_level {self.std_message_level_var.get()} "
-            # f"--file_message_level {self.file_message_level_var.get()} "
+            f"--number_threads {self.number_threads_var.get()} "
+            f'--training_filenames "{self.train_file_path}" '
+            f'--test_filenames "{self.test_file_path}" '
+            f"--time_offset {self.time_offset_var.get()} "
+            f'--input_parameter_names {" ".join(self.features)} '
+            f"--output_parameter_names {self.target_variable} "
+            f"--number_islands {self.number_islands_var.get()} "
+            f"--island_size {self.size_islands_var.get()} "
+            f"--max_genomes {self.max_genomes_var.get()} "
+            f"--bp_iterations {self.bp_iter_var.get()} "
+            f'--output_directory "{self.output_file_path}" '
+            f'--possible_node_types {" ".join([node_type for node_type, var in zip(self.node_types_options, self.node_type_vars) if var.get()])} '
+            f"--std_message_level {self.std_message_level_var.get()} "
+            f"--file_message_level {self.file_message_level_var.get()} "
         )
         
         try:
             # Run the command
-            subprocess.run(command, check=True)
+            subprocess.run(command, shell=True)
             messagebox.showinfo("Run Information", "Command executed successfully!")
         except subprocess.CalledProcessError as e:
             messagebox.showerror("Error", f"Error executing command: {e}")
