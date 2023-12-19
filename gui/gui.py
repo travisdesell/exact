@@ -15,6 +15,7 @@ class CSVFileSelector(tk.Tk):
         self.features = []
         self.target_variable = None
         self.output_file_path = None
+        self.genome_file_path = ""
 
         # UI components
         self.train_label = tk.Label(self, text="Select Training CSV:")
@@ -149,10 +150,10 @@ class CSVFileSelector(tk.Tk):
         )
         self.select_features_button.grid(row=10, column=1, columnspan=3, pady=10)
 
-        self.initiate_run_button = tk.Button(
-            self, text="Initiate Run", command=self.initiate_run, state="disabled"
+        self.Initiate_training_button = tk.Button(
+            self, text="Train EXAMM", command=self.Initiate_training, state="disabled"
         )
-        self.initiate_run_button.grid(row=11, column=1, columnspan=3, pady=10)
+        self.Initiate_training_button.grid(row=11, column=1, columnspan=3, pady=10)
 
     def browse_train_file(self):
         file_path = filedialog.askopenfilename(filetypes=[("CSV files", "*.csv")])
@@ -192,10 +193,10 @@ class CSVFileSelector(tk.Tk):
         self.output_file_path = directory_path
         self.output_entry_var.set(directory_path)
 
-    def initiate_run(self):
+    def Initiate_training(self):
         command = (
             f"build/multithreaded/examm_mt"
-            f"--number_threads {self.number_threads_var.get()} "
+            f" --number_threads {self.number_threads_var.get()} "
             f'--training_filenames "{self.train_file_path}" '
             f'--test_filenames "{self.test_file_path}" '
             f"--time_offset {self.time_offset_var.get()} "
@@ -210,11 +211,29 @@ class CSVFileSelector(tk.Tk):
             f"--std_message_level {self.std_message_level_var.get()} "
             f"--file_message_level {self.file_message_level_var.get()} "
         )
-        
+
+        print(f'--output_directory "{self.output_file_path}" ')
         try:
             # Run the command
             subprocess.run(command, shell=True)
-            messagebox.showinfo("Run Information", "Command executed successfully!")
+            messagebox.showinfo("Run Information", "Training completed successfully!")
+
+            os.chdir(self.output_file_path)
+
+            for filename in os.listdir():
+                if filename.startswith("global"):
+                    if filename.endswith(".bin"):
+                        self.genome_file_path = os.path.abspath(filename)
+                        break
+
+            if self.genome_file_path == "":
+                messagebox.showwarning(
+                    "File Not Found",
+                    "No file matching 'global*.bin' found in the output directory.",
+                )
+            else:
+                messagebox.showinfo("Code Prediction Generations :)")
+
         except subprocess.CalledProcessError as e:
             messagebox.showerror("Error", f"Error executing command: {e}")
 
@@ -265,9 +284,9 @@ class FeatureSelectionWindow(tk.Toplevel):
         ]
         self.parent.target_variable = self.target_listbox.get(selected_target[0])
 
-        self.parent.initiate_run_button[
+        self.parent.Initiate_training_button[
             "state"
-        ] = "active"  # Enable Initiate Run button in the main window
+        ] = "active"  # Enable Train EXAMM button in the main window
         self.destroy()
 
 
