@@ -33,12 +33,10 @@ class CSVFileSelector(tk.Tk):
         self.test_browse_button = tk.Button(self, text="Browse", command=self.browse_test_file)
         self.test_browse_button.grid(row=1, column=2, padx=10, pady=10)
 
-        self.load_train_columns_button = tk.Button(self, text="Load Columns", command=self.load_train_columns)
-        self.load_train_columns_button.grid(row=2, column=0, columnspan=3, pady=10)
-
+        
         self.column_listbox = tk.Listbox(self, selectmode=tk.MULTIPLE, exportselection=0, height=10)
-        self.column_listbox.grid(row=3, column=0, columnspan=3, padx=10, pady=10)
-
+        self.column_listbox.grid(row=2, column=0, columnspan=3, padx=10, pady=10)
+        
         self.select_features_button = tk.Button(self, text="Select Features", command=self.select_features)
         self.select_features_button.grid(row=4, column=0, columnspan=3, pady=10)
 
@@ -49,6 +47,8 @@ class CSVFileSelector(tk.Tk):
         file_path = filedialog.askopenfilename(filetypes=[("CSV files", "*.csv")])
         self.train_file_path = file_path
         self.train_entry_var.set(file_path)
+        self.load_train_columns()
+        
 
     def browse_test_file(self):
         file_path = filedialog.askopenfilename(filetypes=[("CSV files", "*.csv")])
@@ -60,21 +60,17 @@ class CSVFileSelector(tk.Tk):
             try:
                 df = pd.read_csv(self.train_file_path)
                 columns = df.columns.tolist()
-                self.column_listbox.delete(0, tk.END)
+                # Add columns to the listbox without displaying it on the GUI
                 for column in columns:
                     self.column_listbox.insert(tk.END, column)
             except Exception as e:
-                messagebox.showerror("Error", f"Error loading columns: {e}")
+                    messagebox.showerror("Error", f"Error loading columns: {e}")
         else:
             messagebox.showwarning("Warning", "Please select a training CSV file.")
 
-    def select_features(self):
-        selected_columns = self.column_listbox.curselection()
-        if not selected_columns:
-            messagebox.showwarning("Warning", "Please select at least one feature.")
-            return
 
-        self.features = [self.column_listbox.get(index) for index in selected_columns]
+    def select_features(self):
+        self.features = [self.column_listbox.get(index) for index in range(self.column_listbox.size())]
 
         feature_selection_window = FeatureSelectionWindow(self, self.features)
         self.wait_window(feature_selection_window)
@@ -119,10 +115,6 @@ class FeatureSelectionWindow(tk.Toplevel):
 
     def confirm_selection(self):
         selected_features = self.feature_listbox.curselection()
-        if not selected_features:
-            messagebox.showwarning("Warning", "Please select at least one feature.")
-            return
-
         selected_target = self.target_listbox.curselection()
         if not selected_target:
             messagebox.showwarning("Warning", "Please select the target variable.")
