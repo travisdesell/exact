@@ -49,6 +49,7 @@ int32_t node_type_from_string(string& node_type);
 #define TANH_NODE       15
 #define SIGMOID_NODE    16
 #define INVERSE_NODE    17
+#define MULTIPLY_NODE   18
 
 int32_t node_type_from_string(string& node_type);
 
