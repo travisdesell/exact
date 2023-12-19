@@ -50,7 +50,7 @@ class CSVFileSelector(tk.Tk):
             self, selectmode=tk.MULTIPLE, exportselection=0, height=10
         )
 
-        self.output_label = tk.Label(self, text="Select Output Directory:")
+        self.output_label = tk.Label(self, text="Select Model Directory:")
         self.output_label.grid(row=3, column=0, padx=10, pady=10)
 
         self.output_entry_var = tk.StringVar()
@@ -155,6 +155,49 @@ class CSVFileSelector(tk.Tk):
         )
         self.Initiate_training_button.grid(row=11, column=1, columnspan=3, pady=10)
 
+        self.unseen_test_label = tk.Label(self, text="Select Unseen Testing CSV:")
+        self.unseen_test_label.grid(row=12, column=0, padx=10, pady=10)
+
+        self.unseen_test_entry_var = tk.StringVar()
+        self.unseen_test_entry = tk.Entry(
+            self, textvariable=self.unseen_test_entry_var, state="disabled", width=50
+        )
+        self.unseen_test_entry.grid(row=12, column=1, padx=10, pady=10)
+
+        self.unseen_test_browse_button = tk.Button(
+            self, text="Browse", command=self.browse_unseen_test_file
+        )
+        self.unseen_test_browse_button.grid(row=12, column=2, padx=10, pady=10)
+
+        self.predictions_directory_label = tk.Label(
+            self, text="Select Predictions Directory:"
+        )
+        self.predictions_directory_label.grid(row=13, column=0, padx=10, pady=10)
+
+        self.predictions_directory_var = tk.StringVar()
+        self.predictions_directory_entry = tk.Entry(
+            self,
+            textvariable=self.predictions_directory_var,
+            state="disabled",
+            width=50,
+        )
+        self.predictions_directory_entry.grid(row=13, column=1, padx=10, pady=10)
+
+        self.predictions_directory_browse_button = tk.Button(
+            self, text="Browse", command=self.browse_predictions_directory
+        )
+        self.predictions_directory_browse_button.grid(
+            row=13, column=2, padx=10, pady=10
+        )
+
+        self.Generate_predictions_button = tk.Button(
+            self,
+            text="Generate Predictions",
+            command=self.generate_predictions,
+            state="active",
+        )
+        self.Generate_predictions_button.grid(row=14, column=1, columnspan=3, pady=10)
+
     def browse_train_file(self):
         file_path = filedialog.askopenfilename(filetypes=[("CSV files", "*.csv")])
         self.train_file_path = file_path
@@ -165,6 +208,10 @@ class CSVFileSelector(tk.Tk):
         file_path = filedialog.askopenfilename(filetypes=[("CSV files", "*.csv")])
         self.test_file_path = file_path
         self.test_entry_var.set(file_path)
+
+    def browse_unseen_test_file(self):
+        file_path = filedialog.askopenfilename(filetypes=[("CSV files", "*.csv")])
+        self.unseen_test_entry_var.set(file_path)
 
     def load_train_columns(self):
         if self.train_file_path:
@@ -193,6 +240,11 @@ class CSVFileSelector(tk.Tk):
         self.output_file_path = directory_path
         self.output_entry_var.set(directory_path)
 
+    def browse_predictions_directory(self):
+        directory_path = filedialog.askdirectory()
+        self.predictions_directory_path = directory_path
+        self.predictions_directory_var.set(directory_path)
+
     def Initiate_training(self):
         command = (
             f"build/multithreaded/examm_mt"
@@ -212,27 +264,52 @@ class CSVFileSelector(tk.Tk):
             f"--file_message_level {self.file_message_level_var.get()} "
         )
 
-        print(f'--output_directory "{self.output_file_path}" ')
         try:
             # Run the command
             subprocess.run(command, shell=True)
             messagebox.showinfo("Run Information", "Training completed successfully!")
 
-            os.chdir(self.output_file_path)
+            self.Generate_predictions_button[
+                "state"
+            ] = "active"  # Enable Train EXAMM button in the main window
 
-            for filename in os.listdir():
+        except subprocess.CalledProcessError as e:
+            messagebox.showerror("Error", f"Error executing command: {e}")
+
+    def generate_predictions(self):
+        try:
+            
+            print("CWD when button clicked: ", os.getcwd())
+            # os.chdir(self.output_file_path)
+
+            for filename in os.listdir(self.output_file_path):
                 if filename.startswith("global"):
                     if filename.endswith(".bin"):
-                        self.genome_file_path = os.path.abspath(filename)
+                        self.genome_file_path = os.path.join(self.output_file_path, filename)
+                        print ("self.genome_file_path ---> ", self.genome_file_path)
                         break
 
-            if self.genome_file_path == "":
+            if not (self.genome_file_path.endswith(".bin")):
                 messagebox.showwarning(
                     "File Not Found",
                     "No file matching 'global*.bin' found in the output directory.",
                 )
             else:
-                messagebox.showinfo("Code Prediction Generations :)")
+                command = (
+                    f"build/rnn_examples/evaluate_rnn"
+                    f" --std_message_level {self.std_message_level_var.get()} "
+                    f"--file_message_level {self.file_message_level_var.get()} "
+                    f'--output_directory "{self.predictions_directory_var.get()}" '
+                    f'--genome_file "{self.genome_file_path}" '
+                    f'--testing_filenames "{self.unseen_test_entry_var.get()}" '
+                    f"--time_offset {self.time_offset_var.get()} "
+                )
+
+                # Run the command
+                subprocess.run(command, shell=True)
+                messagebox.showinfo(
+                    "Run Information", "Predictions generated successfully!"
+                )
 
         except subprocess.CalledProcessError as e:
             messagebox.showerror("Error", f"Error executing command: {e}")
@@ -286,10 +363,13 @@ class FeatureSelectionWindow(tk.Toplevel):
 
         self.parent.Initiate_training_button[
             "state"
-        ] = "active"  # Enable Train EXAMM button in the main window
+        ] = "active"  # Enable button in the main window
         self.destroy()
 
 
 if __name__ == "__main__":
     app = CSVFileSelector()
     app.mainloop()
+    # while(True) :
+    #     app = CSVFileSelector()
+    #     app.mainloop()
