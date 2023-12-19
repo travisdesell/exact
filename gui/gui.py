@@ -155,7 +155,7 @@ class CSVFileSelector(tk.Tk):
         )
         self.Initiate_training_button.grid(row=11, column=1, columnspan=3, pady=10)
 
-        self.unseen_test_label = tk.Label(self, text="Select Unseen Testing CSV:")
+        self.unseen_test_label = tk.Label(self, text="Select Unseen Evaluation Data:")
         self.unseen_test_label.grid(row=12, column=0, padx=10, pady=10)
 
         self.unseen_test_entry_var = tk.StringVar()
