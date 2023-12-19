@@ -32,10 +32,18 @@ class CSVFileSelector(tk.Tk):
 
         self.test_browse_button = tk.Button(self, text="Browse", command=self.browse_test_file)
         self.test_browse_button.grid(row=1, column=2, padx=10, pady=10)
-
         
         self.column_listbox = tk.Listbox(self, selectmode=tk.MULTIPLE, exportselection=0, height=10)
-        self.column_listbox.grid(row=2, column=0, columnspan=3, padx=10, pady=10)
+        
+        self.output_label = tk.Label(self, text="Select Output Directory:")
+        self.output_label.grid(row=3, column=0, padx=10, pady=10)
+
+        self.output_entry_var = tk.StringVar()
+        self.output_entry = tk.Entry(self, textvariable=self.output_entry_var, state="disabled", width=50)
+        self.output_entry.grid(row=3, column=1, padx=10, pady=10)
+
+        self.output_browse_button = tk.Button(self, text="Browse", command=self.browse_output_directory)
+        self.output_browse_button.grid(row=3, column=2, padx=10, pady=10)
         
         self.select_features_button = tk.Button(self, text="Select Features", command=self.select_features)
         self.select_features_button.grid(row=4, column=0, columnspan=3, pady=10)
