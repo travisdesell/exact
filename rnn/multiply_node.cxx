@@ -8,7 +8,7 @@ using std::vector;
 MULTIPLY_Node::MULTIPLY_Node(int32_t _innovation_number, int32_t _layer_type, double _depth)
     : RNN_Node_Interface(_innovation_number, _layer_type, _depth), bias(0) {
     node_type = MULTIPLY_NODE;
-    Log::trace("created node: %d, layer type: %d, node type: %d\n", innovation_number, layer_type, node_type);
+    Log::info("created node: %d, layer type: %d, node type: MULTIPLY_NODE\n", innovation_number, layer_type);
 }
 
 MULTIPLY_Node::~MULTIPLY_Node() {
@@ -35,10 +35,13 @@ void MULTIPLY_Node::initialize_uniform_random(minstd_rand0& generator, uniform_r
 void MULTIPLY_Node::input_fired(int32_t time, double incoming_output) {
     inputs_fired[time]++;
 
-    ordered_input.push_back(incoming_output);
-
-    input_values[time] *= incoming_output;
-
+    ordered_input[time].push_back(incoming_output);
+    
+    if (inputs_fired[time] == 1) {
+        input_values[time] = incoming_output;
+    } else {
+        input_values[time] *= incoming_output;
+    }
     if (inputs_fired[time] < total_inputs) {
         return;
     } else if (inputs_fired[time] > total_inputs) {
@@ -53,23 +56,23 @@ void MULTIPLY_Node::input_fired(int32_t time, double incoming_output) {
 
     output_values[time] = input_values[time] + bias;
 
-    if (ordered_input.size() != total_inputs) {
-        Log::fatal("ERROR: size of ordered_input is not the same as total_inputs");
+    if (ordered_input[time].size() !=  inputs_fired[time]) {
+        Log::fatal("ERROR: size of total_input is not the same as ordered_inputs\n");
+        Log::fatal("total: %d ordered: %d\n", total_inputs, ordered_input.size());
         exit(1);
     }
+
     double total;
     for (int i = 0; i < total_inputs; i++){
-        total = 1;
+        total = 1.0;
         for (int j = 0; j < total_inputs; j++){
             if (j != i){
-                total *= ordered_input[j];
+                total *= ordered_input[time][j];
             }
         }
         ordered_d_input[time].push_back(total);
     }
-    ordered_input.clear();
-        
-                
+                        
 #ifdef NAN_CHECKS
     if (isnan(output_values[time]) || isinf(output_values[time])) {
         Log::fatal(
@@ -122,6 +125,7 @@ void MULTIPLY_Node::reset(int32_t _series_length) {
     series_length = _series_length;
 
     ordered_d_input.assign(series_length, vector<double>());
+    ordered_input.assign(series_length, vector<double>());
     d_input.assign(series_length, 0.0);
     input_values.assign(series_length, 0.0);
     output_values.assign(series_length, 0.0);
@@ -172,6 +176,7 @@ RNN_Node_Interface* MULTIPLY_Node::copy() const {
     n->bias = bias;
     n->d_bias = d_bias;
     n->ordered_d_input = ordered_d_input;
+    n->ordered_input = ordered_input;
 
     // copy RNN_Node_Interface values
     n->series_length = series_length;

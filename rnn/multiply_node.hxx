@@ -11,8 +11,7 @@ class MULTIPLY_Node : public RNN_Node_Interface {
     double bias;
     double d_bias;
 
-    vector<double> ordered_input;
-    vector<vector<double>> ordered_d_input;
+    vector<vector<double>> ordered_input;
 
    public:
     // constructor for hidden nodes
@@ -47,6 +46,7 @@ class MULTIPLY_Node : public RNN_Node_Interface {
     void write_to_stream(ostream& out);
 
     friend class RNN_Edge;
+    friend class RNN_Recurrent_Edge;
 };
 
 #endif

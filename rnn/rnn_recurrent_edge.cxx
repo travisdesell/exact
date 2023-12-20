@@ -116,6 +116,8 @@ RNN_Recurrent_Edge* RNN_Recurrent_Edge::copy(const vector<RNN_Node_Interface*> n
     e->forward_reachable = forward_reachable;
     e->backward_reachable = backward_reachable;
 
+    e->input_number = input_number;
+
     return e;
 }
 
@@ -144,6 +146,7 @@ const RNN_Node_Interface* RNN_Recurrent_Edge::get_output_node() const {
 void RNN_Recurrent_Edge::first_propagate_forward() {
     for (int32_t i = 0; i < recurrent_depth; i++) {
         output_node->input_fired(i, 0.0);
+        input_number[i] = output_node->inputs_fired[i];
     }
 }
 
@@ -164,6 +167,7 @@ void RNN_Recurrent_Edge::propagate_forward(int32_t time) {
 
         outputs[time + recurrent_depth] = output;
         output_node->input_fired(time + recurrent_depth, output);
+        input_number[time + recurrent_depth] = output_node->inputs_fired[time + recurrent_depth];
     }
 }
 
@@ -182,7 +186,7 @@ void RNN_Recurrent_Edge::propagate_backward(int32_t time) {
         // if (output_node->innovation_number == input_node->innovation_number) {
         // circular recurrent edge
 
-        /*
+        /*j
         if (output_node->outputs_fired[time] != (output_node->total_outputs - 1)) {
             Log::fatal("ERROR! propagate backward called on recurrent edge %d where output_node->outputs_fired[%d] (%d)
         != total_outputs (%d)\n", innovation_number, time, output_node->outputs_fired[time],
@@ -204,9 +208,12 @@ void RNN_Recurrent_Edge::propagate_backward(int32_t time) {
         exit(1);
         //}
     }
-
-    double delta = output_node->d_input[time];
-
+    double delta;
+    if (output_node->node_type == MULTIPLY_NODE){
+        delta = output_node->ordered_d_input[time][input_number[time] - 1];
+    } else {    
+        delta = output_node->d_input[time];
+    }
     if (time - recurrent_depth >= 0) {
         // Log::trace("propagating backward on recurrent edge %d from time %d to time %d from node %d to node %d\n",
         // innovation_number, time, time - recurrent_depth, output_innovation_number, input_innovation_number);
@@ -222,6 +229,7 @@ void RNN_Recurrent_Edge::reset(int32_t _series_length) {
     d_weight = 0.0;
     outputs.resize(series_length);
     deltas.resize(series_length);
+    input_number.resize(series_length);
 }
 
 int32_t RNN_Recurrent_Edge::get_recurrent_depth() const {

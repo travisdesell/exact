@@ -28,6 +28,8 @@ using std::vector;
 #include "rnn/cos_node.hxx"
 #include "rnn/tanh_node.hxx"
 #include "rnn/sigmoid_node.hxx"
+#include "rnn/inverse_node.hxx"
+#include "rnn/multiply_node.hxx"
 #include "time_series/time_series.hxx"
 #include "weights/weight_rules.hxx"
 
@@ -90,6 +92,10 @@ int main(int argc, char** argv) {
     } else if (hidden_node_type.compare("inverse") == 0){
         Log::info("TESTING INVERSE!!!\n");
         genome_original = create_inverse(inputs3, 1, 5, outputs3, max_recurrent_depth, weight_rules);
+        Log::info("testing with 1 hidden layer, 5 inverse nodes\n");
+    } else if (hidden_node_type.compare("multiply") == 0){
+        Log::info("TESTING MULTIPLY!!!\n");
+        genome_original = create_multiply(inputs3, 1, 5, outputs3, max_recurrent_depth, weight_rules);
         Log::info("testing with 1 hidden layer, 5 inverse nodes\n");
     } else {
         Log::fatal("NODE TYPE NOT LISTED!!!");

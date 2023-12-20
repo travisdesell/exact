@@ -29,6 +29,7 @@ using std::vector;
 #include "rnn/tanh_node.hxx"
 #include "rnn/sigmoid_node.hxx"
 #include "rnn/inverse_node.hxx"
+#include "rnn/multiply_node.hxx"
 #include "weights/weight_rules.hxx"
 
 template <class NodeT>
@@ -92,6 +93,7 @@ RNN_Genome* create_memory_cell_nn(
 #define create_tanh(...) create_memory_cell_nn<TANH_Node>(__VA_ARGS__)
 #define create_sigmoid(...) create_memory_cell_nn<SIGMOID_Node>(__VA_ARGS__)
 #define create_inverse(...) create_memory_cell_nn<INVERSE_Node>(__VA_ARGS__)
+#define create_multiply(...) create_memory_cell_nn<MULTIPLY_Node>(__VA_ARGS__)
 
 DNASNode* create_dnas_node(int32_t& innovation_counter, double depth, const vector<int32_t>& node_types);
 

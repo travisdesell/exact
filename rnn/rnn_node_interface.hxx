@@ -87,6 +87,7 @@ class RNN_Node_Interface {
     vector<double> output_values;
     vector<double> error_values;
     vector<double> d_input;
+    vector<vector<double>> ordered_d_input;
 
     vector<int32_t> inputs_fired;
     vector<int32_t> outputs_fired;
