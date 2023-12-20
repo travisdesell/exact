@@ -16,8 +16,6 @@ class SUM_Node : public RNN_Node {
     virtual double activation_function(double input) override;
     virtual double derivative_function(double input) override;
     virtual RNN_Node_Interface* copy() const override;
-
-
 };
 
 #endif

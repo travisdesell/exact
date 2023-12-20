@@ -3230,7 +3230,7 @@ RNN_Node_Interface* RNN_Genome::read_node_from_stream(istream& bin_istream) {
     } else if (node_type == INVERSE_NODE) {
         node = new INVERSE_Node(innovation_number, layer_type, depth);
     } else if (node_type == MULTIPLY_NODE) {
-        node = new MULTIPLY_Node(innovation_number, layer_type, depth); 
+        node = new MULTIPLY_Node(innovation_number, layer_type, depth);
     } else {
         Log::fatal("Error reading node from stream, unknown node_type: %d\n", node_type);
         exit(1);

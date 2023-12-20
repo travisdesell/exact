@@ -16,7 +16,7 @@ class MULTIPLY_Node : public RNN_Node_Interface {
    public:
     // constructor for hidden nodes
     MULTIPLY_Node(int32_t _innovation_number, int32_t _layer_type, double _depth);
- 
+
     ~MULTIPLY_Node();
 
     void initialize_lamarckian(

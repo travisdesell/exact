@@ -20,7 +20,9 @@ void MULTIPLY_Node::initialize_lamarckian(
     bias = bound(normal_distribution.random(generator, mu, sigma));
 }
 
-void MULTIPLY_Node::initialize_xavier(minstd_rand0& generator, uniform_real_distribution<double>& rng_1_1, double range) {
+void MULTIPLY_Node::initialize_xavier(
+    minstd_rand0& generator, uniform_real_distribution<double>& rng_1_1, double range
+) {
     bias = range * (rng_1_1(generator));
 }
 
@@ -36,7 +38,7 @@ void MULTIPLY_Node::input_fired(int32_t time, double incoming_output) {
     inputs_fired[time]++;
 
     ordered_input[time].push_back(incoming_output);
-    
+
     if (inputs_fired[time] == 1) {
         input_values[time] = incoming_output;
     } else {
@@ -56,23 +58,23 @@ void MULTIPLY_Node::input_fired(int32_t time, double incoming_output) {
 
     output_values[time] = input_values[time] + bias;
 
-    if (ordered_input[time].size() !=  inputs_fired[time]) {
+    if (ordered_input[time].size() != inputs_fired[time]) {
         Log::fatal("ERROR: size of total_input is not the same as ordered_inputs\n");
         Log::fatal("total: %d ordered: %d\n", total_inputs, ordered_input.size());
         exit(1);
     }
 
     double total;
-    for (int i = 0; i < total_inputs; i++){
+    for (int i = 0; i < total_inputs; i++) {
         total = 1.0;
-        for (int j = 0; j < total_inputs; j++){
-            if (j != i){
+        for (int j = 0; j < total_inputs; j++) {
+            if (j != i) {
                 total *= ordered_input[time][j];
             }
         }
         ordered_d_input[time].push_back(total);
     }
-                        
+
 #ifdef NAN_CHECKS
     if (isnan(output_values[time]) || isinf(output_values[time])) {
         Log::fatal(
@@ -97,7 +99,7 @@ void MULTIPLY_Node::try_update_deltas(int32_t time) {
     }
 
     d_bias += d_input[time];
-    for (double& num : ordered_d_input[time]){
+    for (double& num : ordered_d_input[time]) {
         num *= d_input[time];
     }
 }

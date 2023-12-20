@@ -19,7 +19,7 @@ double SIGMOID_Node::activation_function(double input) {
 }
 
 double SIGMOID_Node::derivative_function(double input) {
-    return activation_function(input) * (1 - activation_function(input)) ;
+    return activation_function(input) * (1 - activation_function(input));
 }
 
 RNN_Node_Interface* SIGMOID_Node::copy() const {
