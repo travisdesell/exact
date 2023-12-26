@@ -190,6 +190,7 @@ RNN_Genome* get_seed_genome(
                 time_series_sets->get_input_parameter_names(), 0, 0, time_series_sets->get_output_parameter_names(), 0,
                 weight_rules
             );
+            // seed_genome = create_dnas_nn(time_series_sets->get_input_parameter_names(), 1, 2, time_series_sets->get_output_parameter_names(), 0, dnas_node_types, weight_rules);
             seed_genome->initialize_randomly();
             Log::info("Generated seed genome, seed genome is minimal\n");
         }

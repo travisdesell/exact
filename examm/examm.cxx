@@ -182,10 +182,12 @@ void EXAMM::update_log() {
             }
             (*op_log_file) << endl;
         }
+
         RNN_Genome* best_genome = get_best_genome();
         if (best_genome == NULL) {
             best_genome = speciation_strategy->get_global_best_genome();
         }
+
         std::chrono::time_point<std::chrono::system_clock> currentClock = std::chrono::system_clock::now();
         long milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(currentClock - startClock).count();
         (*log_file) << speciation_strategy->get_evaluated_genomes() << "," << total_bp_epochs << "," << milliseconds
@@ -193,6 +195,7 @@ void EXAMM::update_log() {
                     << best_genome->get_enabled_node_count() << "," << best_genome->get_enabled_edge_count() << ","
                     << best_genome->get_enabled_recurrent_edge_count()
                     << speciation_strategy->get_strategy_information_values() << endl;
+        Log::info("mse: %f node count: %d edge count: %d rec edges: %d\n", best_genome->best_validation_mse, best_genome->get_enabled_node_count(), best_genome->get_enabled_edge_count(), best_genome->get_enabled_recurrent_edge_count());
     }
 }
 

@@ -1,7 +1,6 @@
-#include <cmath>
+#include <algorithm>
 using std::max;
 
-#include <algorithm>
 #include <fstream>
 using std::ostream;
 
