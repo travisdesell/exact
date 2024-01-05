@@ -355,6 +355,8 @@ class RNN_Genome {
         int32_t max_recurrent_depth
     );
 
+    void get_equations();
+
     friend class EXAMM;
     friend class IslandSpeciationStrategy;
     friend class NeatSpeciationStrategy;

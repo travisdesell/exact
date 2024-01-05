@@ -48,7 +48,7 @@ RNN_Node_Interface* create_hidden_node(int32_t node_kind, int32_t& innovation_co
         case TANH_NODE:
             return new TANH_Node(++innovation_counter, HIDDEN_LAYER, depth);
         case SIGMOID_NODE:
-            return new TANH_Node(++innovation_counter, HIDDEN_LAYER, depth);
+            return new SIGMOID_Node(++innovation_counter, HIDDEN_LAYER, depth);
         case INVERSE_NODE:
             return new INVERSE_Node(++innovation_counter, HIDDEN_LAYER, depth);
         case MULTIPLY_NODE:
