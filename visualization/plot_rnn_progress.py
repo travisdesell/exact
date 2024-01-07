@@ -1,15 +1,28 @@
+import csv
 import matplotlib.pyplot as plt
+import numpy as np
 from numpy import genfromtxt
+#from pylab import polyfit
+from scipy.stats import linregress
+import pandas as pd
 import sys
+from cycler import cycler
 
 
 input_file = sys.argv[1]
 output_file = sys.argv[2]
 
 f = open(input_file, 'rb')
+#reader = csv.reader(f)
+#headers = next(reader)
+
+#print(headers)
 
 v1 = genfromtxt(input_file)
+#v2 = genfromtxt('migration_ring_salsa_10_320.txt', delimiter=' ')
+#print v1
 
+#print v1
 
 #print "first column of v1:\n"
 t = [row[0] for row in v1]
@@ -64,3 +77,4 @@ plt.savefig(output_file, dpi=100)
 plt.clf()
 plt.cla()
 plt.close()
+

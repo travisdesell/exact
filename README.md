@@ -92,7 +92,7 @@ Which will run EXAMM with 9 threads or 9 processes, respectively. Note that EXAM
 The aviation data can be run similarly, however it the data should be normalized first (which can be done with the *--normalize* command line parameter), e.g.:
 
 ```
-./multithreaded/examm_mt --number_threads 9 --training_filenames ../datasets/2018_ngafid/flight_[0-7].csv --test_filenames ../datasets/2018_ngafid/flight_[8-9].csv --time_offset 1 --input_parameter_names "AltAGL" "E1 CHT1" "E1 CHT2" "E1 CHT3" "E1 CHT4" "E1 EGT1" "E1 EGT2" "E1 EGT3" "E1 EGT4" "E1 OilP" "E1 OilT" "E1 RPM" "FQtyL" "FQtyR" "GndSpd" "IAS" "LatAc" "NormAc" "OAT" "Pitch" "Roll" "TAS" "volt1" "volt2" "VSpd" "VSpdG" --output_parameter_names Pitch --number_islands 10 --population_size 10 --max_genomes 2000 --bp_iterations 10 --output_directory "./test_output" --possible_node_types simple UGRNN MGU GRU delta LSTM --normalize --std_message_level INFO --file_message_level INFO --island_size 10
+./multithreaded/examm_mt --number_threads 9 --training_filenames ../datasets/2018_ngafid/flight_[0-7].csv --test_filenames ../datasets/2018_ngafid/flight_[8-9].csv --time_offset 1 --input_parameter_names "AltAGL" "E1 CHT1" "E1 CHT2" "E1 CHT3" "E1 CHT4" "E1 EGT1" "E1 EGT2" "E1 EGT3" "E1 EGT4" "E1 OilP" "E1 OilT" "E1 RPM" "FQtyL" "FQtyR" "GndSpd" "IAS" "LatAc" "NormAc" "OAT" "Pitch" "Roll" "TAS" "volt1" "volt2" "VSpd" "VSpdG" --output_parameter_names Pitch --number_islands 10 --population_size 10 --max_genomes 2000 --bp_iterations 10 --output_directory "./test_output" --possible_node_types simple UGRNN MGU GRU delta LSTM --normalize --std_message_level INFO --file_message_level INFO
 ```
 
 The *--time_offset* parameter specifies how many time steps in the future EXAMM should predict for the output parameter(s). The *--number_islands* is the number of islands of populations that EXAMM will use, and the *--population_size* parameter specifies how many individuals/genomes are in each island. The *--bp_iterations* specifies how many epochs/iterations backpropagation should be run for each generated RNN genome.
@@ -152,35 +152,22 @@ Where the usage is:
 So this will take 1000 images of each type from the training data and put them into the specified validation file (*mnist_validation_10k.bin*) and the rest of the images will be in the training set (*mnist_train_50k.bin*).
 
 ## Running EXACT
-### Training
 
 You can then run EXACT in a similar manner to EXAMM, either using threads or MPI. For the threaded version:
 
 ```
-./multithreaded/examm_mt --number_threads 9 --training_filenames ../datasets/2018_ngafid/flight_[0-7].csv --test_filenames ../datasets/2018_ngafid/flight_[8-9].csv --time_offset 1 --input_parameter_names "AltAGL" "E1 CHT1" "E1 CHT2" "E1 CHT3" "E1 CHT4" "E1 EGT1" "E1 EGT2" "E1 EGT3" "E1 EGT4" "E1 OilP" "E1 OilT" "E1 RPM" "FQtyL" "FQtyR" "GndSpd" "IAS" "LatAc" "NormAc" "OAT" "Pitch" "Roll" "TAS" "volt1" "volt2" "VSpd" "VSpdG" --output_parameter_names Pitch --number_islands 10 --population_size 10 --max_genomes 2000 --bp_iterations 10 --output_directory "./test_output" --possible_node_types simple UGRNN MGU GRU delta LSTM --normalize --std_message_level INFO --file_message_level INFO --island_size 10
+~/exact/build/ $ ./multithreaded/exact_mt --number_threads 9 --padding 2 --training_file ../datasets/mnist_train_50k.bin --validation_file ../datasets/mnist_validation_10k.bin  --testing_file ../datasets/mnist_testing_data.bin --population_size 30 --max_epochs 5 --use_sfmp 1 --use_node_operations 1 --max_genomes 1000 --output_directory ./test_exact --search_name "test" --reset_edges 0 --images_resize 50000
 
 ```
 
 And for the MPI version:
 
 ```
-~/exact/build/ $ mpirun -np 9 ./mpi/exact_mpi --padding 2 --training_file ../datasets/mnist_train_50k.bin --validation_file ../datasets/mnist_validation_10k.bin  --testing_file ../datasets/mnist_testing_data.bin --population_size 30 --max_epochs 5 --use_sfmp 1 --use_node_operations 1 --max_genomes 1000 --output_directory ./test_exact --search_name "test" --reset_edges 0 --images_resize 50000 
+~/exact/build/ $ mpirun -np 9 ./mpi/exact_mpi --padding 2 --training_file ../datasets/mnist_train_50k.bin --validation_file ../datasets/mnist_validation_10k.bin  --testing_file ../datasets/mnist_testing_data.bin --population_size 30 --max_epochs 5 --use_sfmp 1 --use_node_operations 1 --max_genomes 1000 --output_directory ./test_exact --search_name "test" --reset_edges 0 --images_resize 50000
 ```
 
 Which will run EXACT with 9 threads or processes, respectively. The *--use_sfmp* argument turns on or off scaled fractional max pooling (which allows for pooling operations between feature maps of any size), the *--use_node_operations* argument turns on or off node level mutations (see the EXACT and EXAMM papers), the *--reset_edges* parameter turns on or off Lamarckian weight evolution (turning it on will evolve and train networks faster) and the *--images_resize* parameter allows EXACT to train CNNs on a subset of the training data to speed the evolution process (e.g., --images_resize 5000 would train each CNN on a different subset of 5k images from the training data, as opposed to the full 50k).
 
-### Generating predictions
-In order to generate predictions, you need to find the best performing genome. You can use command line operations to achieve this like this:
-
-```
-~/exact/build/ $ find test_output/ -name 'global*.bin'    
-test_output//global_best_genome_1496.bin
-```
-
-Once you know the path of your best performing genome, generate predictions like this:
-```
-~/exact/build/ $ rnn_examples/evaluate_rnn --std_message_level INFO --file_message_level NONE --output_directory TA_tests/ --genome_file test_output/global_best_genome_1496.bin --testing_filenames ../datasets/stock/nyse/5_defensive_stocks_test_2.csv
-```
 ## Example Genomes from GECCO 2017
 
 Our submission to GECCO describes a set of best found genomes for the MNIST handwritten digits dataset.  These can be found in the genomes subdirectory of the project. Please checkout the tag for the GECCO paper to use the version of EXACT these CNN genome files were generated with:
