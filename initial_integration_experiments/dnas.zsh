@@ -6,7 +6,7 @@ OUTPUT_PARAMETERS='E1_CHT1 E1_CHT2 E1_CHT3 E1_CHT4'
 offset=1
 
 run_examm() {
-  output_dir=initial_integration_experiments/results/v2/$crystalize_iters/$bp_epoch/$k/$fold
+  output_dir=initial_integration_experiments/results/v3/$crystalize_iters/$bp_epoch/$k/$fold
   mkdir -p $output_dir
   mpirun -np 8 Release/mpi/examm_mpi \
       --training_filenames datasets/2019_ngafid_transfer/c172_file_[1-9].csv \
@@ -29,7 +29,7 @@ run_examm() {
       --crystalize_iters $crystalize_iters \
       --max_genomes 4000 \
       --island_size 32 \
-      --number_islands 8 \
+      --number_islands 4 \
       --dnas_k $k
 
   best_genome_file=( $output_dir/rnn_genome_*.bin([-1]) )
@@ -38,17 +38,15 @@ run_examm() {
 
 CELL_TYPE='dnas'
 for crystalize_iters in 64 128 256 512; do
-  for bp_epoch in 1 2 4 8 16 32 64 128; do
-    for k in 1; do
-        fold=1 run_examm
-#       for fold in 0 1 2 3; do
-#         run_examm &
-#       done
-#       wait
-#       for fold in 4 5 6 7; do
-#         run_examm &
-#       done
-#       wait
+  for bp_epoch in 1 2 4 8 16 32; do
+    for k in 1 2; do
+      for fold in 0 1 2 3; do
+        run_examm &
+      done
+      for fold in 4 5 6 7; do
+        run_examm &
+      done
+      wait
     done
   done
 done

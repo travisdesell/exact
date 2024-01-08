@@ -4,28 +4,31 @@ import numpy as np
 
 import matplotlib.pyplot as plt
 
-fig, [a8, a16, a32, a64, a128] = plt.subplots(5, 1)
+fig, subplts = plt.subplots(6, 1)
 
-plts = {8: a8, 16: a16, 32: a32, 64: a64, 128: a128}
+bprange = [1, 2, 4, 8, 16, 32]
+plts = {k:v for k, v in zip(bprange, subplts)}
+print(plts)
+base = plts[bprange[0]]
 
 for k, v in plts.items():
     v.set_title(f"{k} BPI")
-    if k == 8:
+    if k == bprange[0]:
         continue
-    v.sharey(a8)
-    v.sharex(a8)
+    v.sharey(base)
+    v.sharex(base)
 
 results = {}
 for ci in [64, 128, 256, 512]:
     results[ci] = {}
-    for bpe in [8, 16, 32, 64, 128]:
+    for bpe in bprange:
         results[ci][bpe] = {}
         for k in [1]:
             x = []
             results[ci][bpe][k] = x
 
             for fold in range(8):
-                f = pandas.read_csv(f"initial_integration_experiments/results/v2/{ci}/{bpe}/{k}/{fold}/fitness_log.csv")
+                f = pandas.read_csv(f"initial_integration_experiments/results/v3/{ci}/{bpe}/{k}/{fold}/fitness_log.csv")
                 results[ci][bpe][k].append(f)
 
 
