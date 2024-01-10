@@ -4110,6 +4110,24 @@ void RNN_Genome::get_equations(){
                     current_output_equation += input_equation; 
                 } else if (output_node->node_type == MULTIPLY_NODE){
                     current_output_equation += input_equation; 
+                } else if (output_node->node_type == UGRNN_NODE){
+                    current_output_equation += "ugrnn(" + input_equation;
+                } else if (output_node->node_type == MGU_NODE){
+                    current_output_equation += "mgu(" + input_equation;
+                } else if (output_node->node_type == GRU_NODE){
+                    current_output_equation += "gru(" + input_equation;
+                } else if (output_node->node_type == DELTA_NODE){
+                    current_output_equation += "delta(" + input_equation;
+                } else if (output_node->node_type == LSTM_NODE){
+                    current_output_equation += "lstm(" + input_equation;
+                } else if (output_node->node_type == ENARC_NODE){
+                    current_output_equation += "enarc(" + input_equation;
+                } else if (output_node->node_type == ENAS_DAG_NODE){
+                    current_output_equation += "enas(" + input_equation;
+                } else if (output_node->node_type == RANDOM_DAG_NODE){
+                    current_output_equation += "rdag(" + input_equation;
+                } else if (output_node->node_type == DNAS_NODE){
+                    current_output_equation += "dnas(" + input_equation; 
                 } else {
                     Log::fatal("ERROR: output_node not correct type");
                     exit(1);
@@ -4169,6 +4187,24 @@ void RNN_Genome::get_equations(){
                     current_output_equation += input_equation; 
                 } else if (output_node->node_type == MULTIPLY_NODE){
                     current_output_equation += input_equation; 
+                } else if (output_node->node_type == UGRNN_NODE){
+                    current_output_equation += "ugrnn(" + input_equation;
+                } else if (output_node->node_type == MGU_NODE){
+                    current_output_equation += "mgu(" + input_equation;
+                } else if (output_node->node_type == GRU_NODE){
+                    current_output_equation += "gru(" + input_equation;
+                } else if (output_node->node_type == DELTA_NODE){
+                    current_output_equation += "delta(" + input_equation;
+                } else if (output_node->node_type == LSTM_NODE){
+                    current_output_equation += "lstm(" + input_equation;
+                } else if (output_node->node_type == ENARC_NODE){
+                    current_output_equation += "enarc(" + input_equation;
+                } else if (output_node->node_type == ENAS_DAG_NODE){
+                    current_output_equation += "enas(" + input_equation;
+                } else if (output_node->node_type == RANDOM_DAG_NODE){
+                    current_output_equation += "rdag(" + input_equation;
+                } else if (output_node->node_type == DNAS_NODE){
+                    current_output_equation += "dnas(" + input_equation; 
                 } else {
                     Log::fatal("ERROR: output_node not correct type");
                     exit(1);
