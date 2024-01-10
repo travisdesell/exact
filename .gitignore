@@ -10,5 +10,3 @@ __pycache__/*
 *.pyc
 visualization/plots/*
 test_output/*
-Meeting Notes.md
-gui/*/*
