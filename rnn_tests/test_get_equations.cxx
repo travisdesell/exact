@@ -14,7 +14,7 @@ using std::to_string;
 #include <vector>
 using std::vector;
 
-#include<iostream>
+#include <iostream>
 using std::cout;
 using std::endl;
 
@@ -22,11 +22,11 @@ using std::endl;
 #include "common/log.hxx"
 #include "gradient_test.hxx"
 #include "rnn/generate_nn.hxx"
+#include "rnn/multiply_node.hxx"
 #include "rnn/rnn_edge.hxx"
 #include "rnn/rnn_genome.hxx"
 #include "rnn/rnn_node.hxx"
 #include "rnn/rnn_node_interface.hxx"
-#include "rnn/multiply_node.hxx"
 #include "time_series/time_series.hxx"
 #include "weights/weight_rules.hxx"
 
@@ -44,6 +44,6 @@ int main(int argc, char** argv) {
     genome->set_weights(genome->get_best_parameters());
     genome->get_equations();
     cout << "best_validation_mse: " << to_string(genome->get_best_validation_mse()) << endl;
-    
-    delete genome; 
+
+    delete genome;
 }
