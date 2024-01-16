@@ -4116,6 +4116,8 @@ void RNN_Genome::write_equations(ostream &outstream) {
                     current_output_equation += input_equation;
                 } else if (output_node->node_type == MULTIPLY_NODE) {
                     current_output_equation += input_equation;
+                } else if (output_node->node_type == INVERSE_NODE) {
+                    current_output_equation += "1/(" + input_equation;
                 } else if (output_node->node_type == UGRNN_NODE) {
                     current_output_equation += "ugrnn(" + input_equation;
                 } else if (output_node->node_type == MGU_NODE) {
@@ -4165,7 +4167,7 @@ void RNN_Genome::write_equations(ostream &outstream) {
                     "\ninputs_fired: %d \ntotal_inputs: %d\n",
                     innovation_to_inputs_fired[output_node->innovation_number], output_node->total_inputs
                 );
-                // exit(1);
+                exit(1);
             }
             innovation_to_equation[output_node->innovation_number] = current_output_equation;
         }
@@ -4201,6 +4203,8 @@ void RNN_Genome::write_equations(ostream &outstream) {
                     current_output_equation += input_equation;
                 } else if (output_node->node_type == MULTIPLY_NODE) {
                     current_output_equation += input_equation;
+                } else if (output_node->node_type == INVERSE_NODE) {
+                    current_output_equation += "1/(" + input_equation;
                 } else if (output_node->node_type == UGRNN_NODE) {
                     current_output_equation += "ugrnn(" + input_equation;
                 } else if (output_node->node_type == MGU_NODE) {
@@ -4251,7 +4255,7 @@ void RNN_Genome::write_equations(ostream &outstream) {
                     "\ninputs_fired: %d \ntotal_inputs: %d\n",
                     innovation_to_inputs_fired[output_node->innovation_number], output_node->total_inputs
                 );
-                // exit(1);
+                exit(1);
             }
             innovation_to_equation[output_node->innovation_number] = current_output_equation;
         }
