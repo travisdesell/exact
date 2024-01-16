@@ -299,6 +299,8 @@ class RNN_Genome {
 
     string get_color(double weight, bool is_recurrent);
     void write_graphviz(string filename);
+    void print_equations();
+    void write_equations(ostream& outstream);
 
     RNN_Genome(string binary_filename);
     RNN_Genome(char* array, int32_t length);
@@ -354,8 +356,6 @@ class RNN_Genome {
         string transfer_learning_version, bool epigenetic_weights, int32_t min_recurrent_depth,
         int32_t max_recurrent_depth
     );
-
-    void get_equations();
 
     friend class EXAMM;
     friend class IslandSpeciationStrategy;

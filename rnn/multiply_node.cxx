@@ -8,7 +8,7 @@ using std::vector;
 MULTIPLY_Node::MULTIPLY_Node(int32_t _innovation_number, int32_t _layer_type, double _depth)
     : RNN_Node_Interface(_innovation_number, _layer_type, _depth), bias(0) {
     node_type = MULTIPLY_NODE;
-    Log::info("created node: %d, layer type: %d, node type: MULTIPLY_NODE\n", innovation_number, layer_type);
+    Log::debug("created node: %d, layer type: %d, node type: MULTIPLY_NODE\n", innovation_number, layer_type);
 }
 
 MULTIPLY_Node::~MULTIPLY_Node() {

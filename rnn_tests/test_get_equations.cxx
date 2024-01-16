@@ -42,7 +42,7 @@ int main(int argc, char** argv) {
 
     genome = new RNN_Genome(genome_binary);
     genome->set_weights(genome->get_best_parameters());
-    genome->get_equations();
+    genome->print_equations();
     cout << "best_validation_mse: " << to_string(genome->get_best_validation_mse()) << endl;
 
     delete genome;

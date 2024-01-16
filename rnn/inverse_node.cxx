@@ -7,7 +7,7 @@ using std::vector;
 
 INVERSE_Node::INVERSE_Node(int32_t _innovation_number, int32_t _layer_type, double _depth)
     : RNN_Node(_innovation_number, _layer_type, _depth, INVERSE_NODE) {
-    Log::info("created node: %d, layer type: %d, node type: INVERSE_NODE\n", innovation_number, layer_type);
+    Log::debug("created node: %d, layer type: %d, node type: INVERSE_NODE\n", innovation_number, layer_type);
 }
 
 INVERSE_Node::~INVERSE_Node() {

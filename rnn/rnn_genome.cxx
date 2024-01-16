@@ -4064,7 +4064,11 @@ void RNN_Genome::set_stochastic(bool stochastic) {
     }
 }
 
-void RNN_Genome::get_equations() {
+void RNN_Genome::print_equations() {
+    write_equations(cout);
+}
+
+void RNN_Genome::write_equations(ostream &outstream) {
     sort_nodes_by_depth();
     unordered_map<int32_t, string> innovation_to_label;
     unordered_map<int32_t, string> innovation_to_equation;
@@ -4131,7 +4135,7 @@ void RNN_Genome::get_equations() {
                 } else if (output_node->node_type == DNAS_NODE) {
                     current_output_equation += "dnas(" + input_equation;
                 } else {
-                    Log::fatal("ERROR: output_node not correct type");
+                    Log::fatal("ERROR: output_node not correct type\n");
                     exit(1);
                 }
             } else if (innovation_to_inputs_fired[output_node->innovation_number] > 1 && innovation_to_inputs_fired[output_node->innovation_number] < output_node->total_inputs){
@@ -4255,16 +4259,16 @@ void RNN_Genome::get_equations() {
 
     for (int i = 0; i < nodes.size(); i++) {
         if (nodes[i]->layer_type == HIDDEN_LAYER && nodes[i]->is_reachable()) {
-            cout << innovation_to_label[nodes[i]->innovation_number] << " = "
+            outstream << innovation_to_label[nodes[i]->innovation_number] << " = "
                  << innovation_to_equation[nodes[i]->innovation_number] << endl;
-            //  cout << "total_connections: " << innovation_to_inputs_fired[nodes[i]->innovation_number] << endl;
-            //  cout << "total_inputs: " << nodes[i]->total_inputs << endl;
-            //  cout << "is_reachable: " << nodes[i]->is_reachable() << endl;
-            cout << endl;
+            //  outstream << "total_connections: " << innovation_to_inputs_fired[nodes[i]->innovation_number] << endl;
+            //  outstream << "total_inputs: " << nodes[i]->total_inputs << endl;
+            //  outstream << "is_reachable: " << nodes[i]->is_reachable() << endl;
+            outstream << endl;
         } else if (nodes[i]->layer_type == OUTPUT_LAYER && nodes[i]->is_reachable()) {
-            cout << innovation_to_label[nodes[i]->innovation_number] << "(t + 1)"
+            outstream << innovation_to_label[nodes[i]->innovation_number] << "(t + 1)"
                  << " = " << innovation_to_equation[nodes[i]->innovation_number] << endl;
-            cout << endl;
+            outstream << endl;
         }
     }
 }

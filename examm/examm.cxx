@@ -259,6 +259,8 @@ bool EXAMM::insert_genome(RNN_Genome* genome) {
 // write function to save genomes to file
 void EXAMM::save_genome(RNN_Genome* genome, string genome_name = "rnn_genome") {
     genome->write_graphviz(output_directory + "/" + genome_name + "_" + to_string(genome->get_generation_id()) + ".gv");
+    ofstream equations_filestream(output_directory + "/" + genome_name + "_" + to_string(genome->get_generation_id()) + ".txt");
+    genome->write_equations(equations_filestream);
     genome->write_to_file(output_directory + "/" + genome_name + "_" + to_string(genome->get_generation_id()) + ".bin");
 }
 
