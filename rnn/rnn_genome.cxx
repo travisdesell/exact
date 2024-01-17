@@ -4069,6 +4069,7 @@ void RNN_Genome::print_equations() {
 }
 
 void RNN_Genome::write_equations(ostream& outstream) {
+    this->set_weights(best_parameters);
     sort_nodes_by_depth();
     unordered_map<int32_t, string> innovation_to_label;
     unordered_map<int32_t, string> innovation_to_equation;
@@ -4275,4 +4276,6 @@ void RNN_Genome::write_equations(ostream& outstream) {
             outstream << endl;
         }
     }
+    // outstream << "best_validation_mse: " << to_string(this->get_best_validation_mse()) << endl;
+    // outstream << endl;
 }

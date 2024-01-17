@@ -41,9 +41,6 @@ int main(int argc, char** argv) {
     get_argument(arguments, "--genome_binary", true, genome_binary);
 
     genome = new RNN_Genome(genome_binary);
-    genome->set_weights(genome->get_best_parameters());
     genome->print_equations();
-    cout << "best_validation_mse: " << to_string(genome->get_best_validation_mse()) << endl;
-
     delete genome;
 }
