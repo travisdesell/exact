@@ -190,7 +190,7 @@ void get_train_validation_data(
     time_series_sets->export_test_series(time_offset, validation_inputs, validation_outputs);
 
     int32_t sequence_length = 0;
-    if (get_argument(arguments, "--sequence_length", false, sequence_length)) {
+    if (get_argument(arguments, "--test_sequence_length", false, sequence_length)) {
         Log::info("Slicing input training data with time sequence length: %d\n", sequence_length);
         slice_input_data(train_inputs, train_outputs, sequence_length);
     }
