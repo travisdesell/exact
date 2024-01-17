@@ -194,6 +194,13 @@ void get_train_validation_data(
         Log::info("Slicing input training data with time sequence length: %d\n", sequence_length);
         slice_input_data(train_inputs, train_outputs, sequence_length);
     }
+
+    int32_t validation_sequence_length = 0;
+    if (get_argument(arguments, "--validation_sequence_length", false, validation_sequence_length)) {
+        Log::info("Slicing input validation data with time sequence length: %d\n", validation_sequence_length);
+        slice_input_data(validation_inputs, validation_outputs, validation_sequence_length);
+    }
+
     Log::info("Generating time series data finished! \n");
 }
 
