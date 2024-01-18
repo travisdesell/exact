@@ -175,12 +175,18 @@ int32_t IslandSpeciationStrategy::insert_genome(RNN_Genome* genome) {
     int32_t island = genome->get_group_id();
 
     Log::info("Island %d: inserting genome\n", island);
-    Log::debug("genome weight init type: %s\n", genome->weight_rules->get_weight_initialize_method_name().c_str());
-    Log::debug("genome weight inherit type: %s\n", genome->weight_rules->get_weight_inheritance_method_name().c_str());
-    Log::debug(
+    /*
+    Log::info("genome weight init type: %s\n", genome->weight_rules->get_weight_initialize_method_name().c_str());
+    Log::info("genome weight inherit type: %s\n", genome->weight_rules->get_weight_inheritance_method_name().c_str());
+    Log::info(
         "genome mutated component type: %s\n", genome->weight_rules->get_mutated_components_weight_method_name().c_str()
     );
+    */
+    if (islands[island] == NULL) {
+        Log::fatal("ERROR: island[%d] is null!\n", island);
+    }
     int32_t insert_position = islands[island]->insert_genome(genome);
+    Log::info("Island %d: Insert position was: %d\n", insert_position);
 
     if (insert_position == 0) {
         if (new_global_best) {

@@ -18,7 +18,11 @@ double INVERSE_Node::activation_function(double input) {
 }
 
 double INVERSE_Node::derivative_function(double input) {
-    return -1.0 / ((input) * (input));
+    double gradient = -1.0 / ((input) * (input));
+    if (isnan(gradient) || isinf(gradient)) {
+        gradient = -1000.0;
+    }
+    return gradient;
 }
 
 RNN_Node_Interface* INVERSE_Node::copy() const {

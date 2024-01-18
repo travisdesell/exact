@@ -1088,7 +1088,21 @@ void RNN_Genome::backpropagate_stochastic(
                 parameters, inputs[random_selection], outputs[random_selection], mse, analytic_gradient, use_dropout,
                 true, dropout_probability
             );
+
             norm = weight_update_method->get_norm(analytic_gradient);
+
+            if (isnan(norm) || isinf(norm)){
+                //This genome is getting NANs for gradients so it is a
+                //genetic dead end, delete it.
+                //TODO: figure out why and maybe use clipping or another
+                //method to handle it.
+                delete rnn;
+                best_parameters = parameters;
+                this->best_validation_mse = NAN;
+                this->best_validation_mae = NAN;
+                return;
+            }
+
             avg_norm += norm;
             weight_update_method->norm_gradients(analytic_gradient, norm);
             weight_update_method->update_weights(parameters, velocity, prev_velocity, analytic_gradient, iteration);
@@ -1115,7 +1129,7 @@ void RNN_Genome::backpropagate_stochastic(
     }
     delete rnn;
     this->set_weights(best_parameters);
-    Log::trace("backpropagation completed, getting mu/sigma\n");
+    Log::info("backpropagation completed, getting mu/sigma\n");
     double _mu, _sigma;
     get_mu_sigma(best_parameters, _mu, _sigma);
 }
@@ -1622,6 +1636,12 @@ void RNN_Genome::get_mu_sigma(const vector<double>& p, double& mu, double& sigma
         for (int32_t i = 0; i < (int32_t) p.size(); i++) {
             Log::fatal("\t%lf\n", p[i]);
         }
+
+        Log::fatal("initial parameters:\n");
+        for (int32_t i = 0; i < (int32_t) initial_parameters.size(); i++) {
+            Log::fatal("\t%lf\n", initial_parameters[i]);
+        }
+
         exit(1);
     }
 
@@ -4116,6 +4136,8 @@ void RNN_Genome::write_equations(ostream &outstream) {
                     current_output_equation += input_equation;
                 } else if (output_node->node_type == MULTIPLY_NODE) {
                     current_output_equation += input_equation;
+                } else if (output_node->node_type == INVERSE_NODE) {
+                    current_output_equation += "1.0 /(" + input_equation;
                 } else if (output_node->node_type == UGRNN_NODE) {
                     current_output_equation += "ugrnn(" + input_equation;
                 } else if (output_node->node_type == MGU_NODE) {
@@ -4201,6 +4223,8 @@ void RNN_Genome::write_equations(ostream &outstream) {
                     current_output_equation += input_equation;
                 } else if (output_node->node_type == MULTIPLY_NODE) {
                     current_output_equation += input_equation;
+                } else if (output_node->node_type == INVERSE_NODE) {
+                    current_output_equation += "1.0 /(" + input_equation;
                 } else if (output_node->node_type == UGRNN_NODE) {
                     current_output_equation += "ugrnn(" + input_equation;
                 } else if (output_node->node_type == MGU_NODE) {
