@@ -4088,7 +4088,8 @@ void RNN_Genome::print_equations() {
     write_equations(cout);
 }
 
-void RNN_Genome::write_equations(ostream &outstream) {
+void RNN_Genome::write_equations(ostream& outstream) {
+    this->set_weights(best_parameters);
     sort_nodes_by_depth();
     unordered_map<int32_t, string> innovation_to_label;
     unordered_map<int32_t, string> innovation_to_equation;
@@ -4187,7 +4188,7 @@ void RNN_Genome::write_equations(ostream &outstream) {
                     "\ninputs_fired: %d \ntotal_inputs: %d\n",
                     innovation_to_inputs_fired[output_node->innovation_number], output_node->total_inputs
                 );
-                // exit(1);
+                exit(1);
             }
             innovation_to_equation[output_node->innovation_number] = current_output_equation;
         }
@@ -4275,7 +4276,7 @@ void RNN_Genome::write_equations(ostream &outstream) {
                     "\ninputs_fired: %d \ntotal_inputs: %d\n",
                     innovation_to_inputs_fired[output_node->innovation_number], output_node->total_inputs
                 );
-                // exit(1);
+                exit(1);
             }
             innovation_to_equation[output_node->innovation_number] = current_output_equation;
         }
@@ -4284,15 +4285,17 @@ void RNN_Genome::write_equations(ostream &outstream) {
     for (int i = 0; i < nodes.size(); i++) {
         if (nodes[i]->layer_type == HIDDEN_LAYER && nodes[i]->is_reachable()) {
             outstream << innovation_to_label[nodes[i]->innovation_number] << " = "
-                 << innovation_to_equation[nodes[i]->innovation_number] << endl;
+                      << innovation_to_equation[nodes[i]->innovation_number] << endl;
             //  outstream << "total_connections: " << innovation_to_inputs_fired[nodes[i]->innovation_number] << endl;
             //  outstream << "total_inputs: " << nodes[i]->total_inputs << endl;
             //  outstream << "is_reachable: " << nodes[i]->is_reachable() << endl;
             outstream << endl;
         } else if (nodes[i]->layer_type == OUTPUT_LAYER && nodes[i]->is_reachable()) {
             outstream << innovation_to_label[nodes[i]->innovation_number] << "(t + 1)"
-                 << " = " << innovation_to_equation[nodes[i]->innovation_number] << endl;
+                      << " = " << innovation_to_equation[nodes[i]->innovation_number] << endl;
             outstream << endl;
         }
     }
+    // outstream << "best_validation_mse: " << to_string(this->get_best_validation_mse()) << endl;
+    // outstream << endl;
 }
