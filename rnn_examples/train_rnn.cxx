@@ -15,6 +15,7 @@ using std::string;
 using std::vector;
 
 #include "common/arguments.hxx"
+#include "common/process_arguments.hxx"
 #include "common/files.hxx"
 #include "common/log.hxx"
 #include "rnn/generate_nn.hxx"
@@ -81,9 +82,9 @@ int main(int argc, char** argv) {
     Log::set_id("main");
 
     TimeSeriesSets* time_series_sets = TimeSeriesSets::generate_from_arguments(arguments);
-
-    int32_t time_offset = 1;
-    get_argument(arguments, "--time_offset", true, time_offset);
+    get_train_validation_data(
+        arguments, time_series_sets, training_inputs, training_outputs, test_inputs, test_outputs
+    );
 
     int32_t crystallization_threshold = 1000;
     get_argument(arguments, "--crystalize_iters", false, crystallization_threshold);
@@ -93,8 +94,8 @@ int main(int argc, char** argv) {
     get_argument(arguments, "--dnas_k", false, k);
     DNASNode::k = k;
 
-    time_series_sets->export_training_series(time_offset, training_inputs, training_outputs);
-    time_series_sets->export_test_series(time_offset, test_inputs, test_outputs);
+    // time_series_sets->export_training_series(time_offset, training_inputs, training_outputs);
+    // time_series_sets->export_test_series(time_offset, test_inputs, test_outputs);
 
     int number_inputs = time_series_sets->get_number_inputs();
     // int number_outputs = time_series_sets->get_number_outputs();

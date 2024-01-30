@@ -57,8 +57,6 @@ void RNN_Node::input_fired(int32_t time, double incoming_output) {
         exit(1);
     }
 
-    Log::debug("node %d - input value[%d]: %lf\n", innovation_number, time, input_values[time]);
-
     output_values[time] = tanh(input_values[time] + bias);
     ld_output[time] = tanh_derivative(output_values[time]);
 
@@ -86,6 +84,8 @@ void RNN_Node::try_update_deltas(int32_t time) {
             outputs_fired[time], total_outputs
         );
         exit(1);
+    } else if (time >= d_input.size() || time < 0) {
+        Log::fatal("invalid time %d\n", time);
     }
 
     d_input[time] *= ld_output[time];

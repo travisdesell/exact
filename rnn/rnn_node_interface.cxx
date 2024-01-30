@@ -7,13 +7,16 @@ using std::ostream;
 #include <string>
 using std::string;
 
+#include <vector>
+using std::vector;
+
 #include "common/log.hxx"
 #include "rnn/rnn_genome.hxx"
 #include "rnn_node_interface.hxx"
 
-extern const int32_t NUMBER_NODE_TYPES = 11;
-extern const string NODE_TYPES[] = {"simple", "jordan", "elman", "UGRNN",    "MGU", "GRU",
-                                    "delta",  "LSTM",   "ENARC", "ENAS_DAG", "dnas"};
+extern const vector<string> NODE_TYPES = {"simple", "jordan", "elman", "UGRNN", "MGU", "GRU",
+                                    "delta",  "LSTM",   "ENARC", "ENAS_DAG", "random_dag", "dnas"};
+
 extern const unordered_map<string, int32_t> string_to_node_type = {
     {"simple",   SIMPLE_NODE},
     {"jordan",   JORDAN_NODE},
@@ -25,7 +28,8 @@ extern const unordered_map<string, int32_t> string_to_node_type = {
     {  "lstm",     LSTM_NODE},
     { "enarc",    ENARC_NODE},
     {  "enas", ENAS_DAG_NODE},
-    {  "dnas",     DNAS_NODE}
+    {  "dnas",     DNAS_NODE},
+    {  "random_dag", RANDOM_DAG_NODE},
 };
 
 int32_t node_type_from_string(string& node_type) {

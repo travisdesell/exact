@@ -92,7 +92,7 @@ RNN_Edge* RNN_Edge::copy(const vector<RNN_Node_Interface*> new_nodes) {
 }
 
 void RNN_Edge::propagate_forward(int32_t time) {
-    if (input_node->inputs_fired[time] != input_node->total_inputs) {
+    if (input_node->inputs_fired[time] != input_node->total_inputs || time < 0 || time >= input_node->output_values.size()) {
         Log::fatal(
             "ERROR! propagate forward called on edge %d where input_node->inputs_fired[%d] (%d) != total_inputs (%d)\n",
             innovation_number, time, input_node->inputs_fired[time], input_node->total_inputs
@@ -104,7 +104,6 @@ void RNN_Edge::propagate_forward(int32_t time) {
         exit(1);
     }
 
-    // Log::debug("input_node %p %d\n", input_node, input_node->output_values.size());
     double output = input_node->output_values[time] * weight;
 
     // Log::debug("propagating forward at time %d from %d to %d, value: %lf, input: %lf, weight: %lf\n", time,

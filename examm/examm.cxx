@@ -324,6 +324,7 @@ void EXAMM::mutate(int32_t max_mutations, RNN_Genome* g) {
         g->assign_reachability();
         double rng = rng_0_1(generator) * total;
         int32_t new_node_type = get_random_node_type();
+        Log::info("%d %d\n", new_node_type, NODE_TYPES.size());
         string node_type_str = NODE_TYPES[new_node_type];
         Log::debug("rng: %lf, total: %lf, new node type: %d (%s)\n", rng, total, new_node_type, node_type_str.c_str());
 

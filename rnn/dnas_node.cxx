@@ -168,14 +168,15 @@ void DNASNode::print_info() {
 }
 
 void DNASNode::reset(int32_t series_length) {
-    d_pi = vector<double>(pi.size(), 0.0);
-    d_input = vector<double>(series_length, 0.0);
-    node_outputs = vector<vector<double>>(series_length, vector<double>(pi.size(), 0.0));
-    output_values = vector<double>(series_length, 0.0);
-    error_values = vector<double>(series_length, 0.0);
-    inputs_fired = vector<int>(series_length, 0);
-    outputs_fired = vector<int>(series_length, 0);
-    input_values = vector<double>(series_length, 0.0);
+    d_pi.assign(pi.size(), 0.0);
+    d_input.assign(series_length, 0.0);
+    node_outputs.clear();
+    for (int i = 0; i < series_length; i++) node_outputs.emplace_back(pi.size(), 0.0);
+    output_values.assign(series_length, 0.0);
+    error_values.assign(series_length, 0.0);
+    inputs_fired.assign(series_length, 0);
+    outputs_fired.assign(series_length, 0);
+    input_values.assign(series_length, 0.0);
 
     if (counter >= CRYSTALLIZATION_THRESHOLD) {
         nodes[maxi]->reset(series_length);
@@ -206,8 +207,10 @@ void DNASNode::input_fired(int32_t time, double incoming_output) {
     }
 
     if (counter >= CRYSTALLIZATION_THRESHOLD) {
+        Log::info("%d hmm\n", maxi >= 0);
         assert(maxi >= 0);
-
+        
+        Log::info("%d %d %p\n", maxi, time, nodes[maxi]);
         nodes[maxi]->input_fired(time, input_values[time]);
         node_outputs[time][maxi] = nodes[maxi]->output_values[time];
         output_values[time] = nodes[maxi]->output_values[time];

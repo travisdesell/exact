@@ -26,8 +26,9 @@ class RNN;
 #define HIDDEN_LAYER 1
 #define OUTPUT_LAYER 2
 
-extern const int32_t NUMBER_NODE_TYPES;
-extern const string NODE_TYPES[];
+extern const vector<string> NODE_TYPES;
+#define NUMBER_NODE_TYPES NODE_TYPES.size()
+
 extern const unordered_map<string, int32_t> string_to_node_type;
 int32_t node_type_from_string(string& node_type);
 

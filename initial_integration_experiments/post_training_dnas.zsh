@@ -1,7 +1,4 @@
 #!/bin/zsh
-INPUT_PARAMETERS='AltAGL AltB AltGPS AltMSL BaroA E1_CHT1 E1_CHT2 E1_CHT3 E1_CHT4 E1_EGT1 E1_EGT2 E1_EGT3 E1_EGT4 E1_FFlow E1_OilP E1_OilT E1_RPM FQtyL FQtyR GndSpd IAS LatAc NormAc OAT Pitch Roll TAS VSpd VSpdG WndDr WndSpd'
-OUTPUT_PARAMETERS='E1_EGT1'
-
 offset=1
 
 post_training() {
@@ -21,11 +18,12 @@ post_training() {
         --log_filename post_training.csv \
         --learning_rate 0.01 \
         --weight_update adagrad \
-        --train_sequence_length 100 \
+        --train_sequence_length 1000 \
         --validation_sequence_length 100 \
         --crystalize_iters $CRYSTALIZE_ITERS \
         --dnas_k $k
- 
+
+      tail -1 $OUTPUT_DIRECTORY/post_training.csv
 }
 
 post_training
