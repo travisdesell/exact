@@ -185,13 +185,27 @@ RNN_Genome* get_seed_genome(
         );
         Log::info("Finished transfering seed genome\n");
     } else {
-        if (seed_genome == NULL) {
+        bool use_dnas_seed = argument_exists(arguments, "--use_dnas_seed");
+
+        if (!use_dnas_seed) {
             seed_genome = create_ff(
                 time_series_sets->get_input_parameter_names(), 0, 0, time_series_sets->get_output_parameter_names(), 0,
                 weight_rules
             );
             seed_genome->initialize_randomly();
             Log::info("Generated seed genome, seed genome is minimal\n");
+        } else {
+            vector<int32_t> node_types = {
+                SIMPLE_NODE,
+                UGRNN_NODE,
+                MGU_NODE,
+                GRU_NODE,
+                DELTA_NODE,
+                LSTM_NODE
+            };
+            seed_genome = create_dnas_nn(
+                time_series_sets->get_input_parameter_names(), 0, 0, time_series_sets->get_output_parameter_names(), 0, node_types, weight_rules
+            );
         }
     }
 

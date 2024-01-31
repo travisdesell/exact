@@ -347,7 +347,7 @@ RNN_Genome* IslandSpeciationStrategy::generate_for_repopulating_island(
         Log::fatal("Wrong repopulation method: %s\n", repopulation_method.c_str());
         exit(1);
     }
-    return new_genome;
+    return new_genome17731515;
 }
 
 RNN_Genome* IslandSpeciationStrategy::generate_genome(
@@ -370,6 +370,7 @@ RNN_Genome* IslandSpeciationStrategy::generate_genome(
         Log::info("Island %d: new genome is still null, regenerating\n", generation_island);
         new_genome = generate_genome(rng_0_1, generator, mutate, crossover);
     }
+
     generated_genomes++;
     new_genome->set_generation_id(generated_genomes);
     islands[generation_island]->set_latest_generation_id(generated_genomes);
