@@ -17,7 +17,7 @@ OUTPUT_PARAMETERS='E1_CHT1 E1_CHT2 E1_CHT3 E1_CHT4'
 offset=1
 
 run_examm() {
-  output_dir=initial_integration_experiments/results/control_v16/$bp_epoch/$fold
+  output_dir=initial_integration_experiments/results/control_v13.1/$bp_epoch/$fold
   mkdir -p $output_dir
   srun -n 36 Release/mpi/examm_mpi \
       --training_filenames datasets/2019_ngafid_transfer/c172_file_[1-9].csv \
@@ -41,7 +41,7 @@ run_examm() {
       --max_genomes $max_genomes \
       --island_size 32 \
       --number_islands 8 \
-      --num_mutations 2 \
+      --num_mutations 4 \
       --burn_in_period 1024 \
       --use_burn_in_bp_epoch
 
