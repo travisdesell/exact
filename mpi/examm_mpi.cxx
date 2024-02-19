@@ -114,10 +114,62 @@ void receive_terminate_message(int32_t source) {
     MPI_Recv(terminate_message, 1, MPI_INT, source, TERMINATE_TAG, MPI_COMM_WORLD, &status);
 }
 
-void master(int32_t max_rank) {
-    // the "main" id will have already been set by the main function so we do not need to re-set it here
-    Log::debug("MAX int32_t: %d\n", numeric_limits<int32_t>::max());
+void master_sync(int32_t max_rank) {
+    max_rank -= 1;
+    int32_t generation = 0;
+    while (true) {
+    
+        // Wait for N work requests
+        int32_t nreqs = 0;
+        while (nreqs < max_rank) {
+            MPI_Status status;
+            MPI_Probe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
 
+            int32_t source = status.MPI_SOURCE;
+            int32_t tag = status.MPI_TAG;
+            // Log::info("probe returned message from: %d with tag: %d\n", source, tag);
+            
+            if (tag == WORK_REQUEST_TAG) {
+                receive_work_request(source);
+                nreqs++;
+            } else if (tag == GENOME_LENGTH_TAG) {
+                Log::debug("received genome from: %d\n", source);
+                RNN_Genome* genome = receive_genome_from(source);
+                
+                examm->insert_genome(genome);
+
+                // delete the genome as it won't be used again, a copy was inserted
+                delete genome;
+            } else {
+                Log::fatal("ERROR: received message from %d with unknown tag: %d", source, tag);
+                MPI_Abort(MPI_COMM_WORLD, 1);
+            }
+        }
+
+        vector<RNN_Genome *> genomes(max_rank);
+        for (int32_t i = 1; i <= max_rank; i++) {
+            RNN_Genome* genome = examm->generate_genome();
+            if (genome == NULL)
+                break;
+            genomes[i - 1] = genome;
+        }
+
+        if (genomes.size() != max_rank) {
+            break;
+        }
+
+        for (int i = 1; i <= max_rank; i++) {
+            send_genome_to(i, genomes[i - 1]);
+            delete genomes[i - 1];
+        }
+    }
+  
+    for (int i = 1; i <= max_rank; i++) {
+        send_terminate_message(i);
+    }
+}
+
+void master(int32_t max_rank) {
     int32_t terminates_sent = 0;
 
     while (true) {
@@ -134,12 +186,7 @@ void master(int32_t max_rank) {
         if (tag == WORK_REQUEST_TAG) {
             receive_work_request(source);
 
-            // if (transfer_learning_version.compare("v3") == 0 || transfer_learning_version.compare("v1+v3") == 0) {
-            //     seed_stirs = 3;
-            // }
-            examm_mutex.lock();
             RNN_Genome* genome = examm->generate_genome();
-            examm_mutex.unlock();
 
             if (genome == NULL) {  // search was completed if it returns NULL for an individual
                 // send terminate message
@@ -167,9 +214,7 @@ void master(int32_t max_rank) {
             Log::debug("received genome from: %d\n", source);
             RNN_Genome* genome = receive_genome_from(source);
 
-            examm_mutex.lock();
             examm->insert_genome(genome);
-            examm_mutex.unlock();
 
             // delete the genome as it won't be used again, a copy was inserted
             delete genome;
@@ -264,12 +309,20 @@ int main(int argc, char** argv) {
 
     RNN_Genome* seed_genome = get_seed_genome(arguments, time_series_sets, weight_rules);
 
+    bool synchronous = argument_exists(arguments, "--synchronous");
+    Log::warning("synchronous? %d\n", synchronous); 
+
     Log::clear_rank_restriction();
 
     if (rank == 0) {
         write_time_series_to_file(arguments, time_series_sets);
         examm = generate_examm_from_arguments(arguments, time_series_sets, weight_rules, seed_genome);
-        master(max_rank);
+        
+        if (synchronous) {
+            master_sync(max_rank);
+        } else {
+            master(max_rank);
+        }
     } else {
         worker(rank);
     }
