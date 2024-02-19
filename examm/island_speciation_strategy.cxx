@@ -347,7 +347,7 @@ RNN_Genome* IslandSpeciationStrategy::generate_for_repopulating_island(
         Log::fatal("Wrong repopulation method: %s\n", repopulation_method.c_str());
         exit(1);
     }
-    return new_genome17731515;
+    return new_genome;
 }
 
 RNN_Genome* IslandSpeciationStrategy::generate_genome(
