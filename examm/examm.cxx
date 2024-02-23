@@ -233,7 +233,7 @@ RNN_Genome* EXAMM::get_worst_genome() {
 
 // this will insert a COPY, original needs to be deleted
 bool EXAMM::insert_genome(RNN_Genome* genome) {
-    //discard genomes with NaN fitness
+    // discard genomes with NaN fitness
     if (std::isnan(genome->get_fitness()) || std::isinf(genome->get_fitness())) {
         return false;
     }

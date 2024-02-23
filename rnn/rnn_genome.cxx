@@ -1091,11 +1091,11 @@ void RNN_Genome::backpropagate_stochastic(
 
             norm = weight_update_method->get_norm(analytic_gradient);
 
-            if (isnan(norm) || isinf(norm)){
-                //This genome is getting NANs for gradients so it is a
-                //genetic dead end, delete it.
-                //TODO: figure out why and maybe use clipping or another
-                //method to handle it.
+            if (isnan(norm) || isinf(norm)) {
+                // This genome is getting NANs for gradients so it is a
+                // genetic dead end, delete it.
+                // TODO: figure out why and maybe use clipping or another
+                // method to handle it.
                 delete rnn;
                 best_parameters = parameters;
                 this->best_validation_mse = NAN;

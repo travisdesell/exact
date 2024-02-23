@@ -105,7 +105,7 @@ void MULTIPLY_Node::try_update_deltas(int32_t time) {
     for (double& num : ordered_d_input[time]) {
         num *= d_input[time];
 
-        //most likely gradient got huge, so clip it
+        // most likely gradient got huge, so clip it
         if (num == NAN || num == -numeric_limits<double>::infinity()) {
             num = -1000.0;
         } else if (num == NAN || num == numeric_limits<double>::infinity()) {
