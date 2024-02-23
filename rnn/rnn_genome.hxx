@@ -299,6 +299,8 @@ class RNN_Genome {
 
     string get_color(double weight, bool is_recurrent);
     void write_graphviz(string filename);
+    void print_equations();
+    void write_equations(ostream& outstream);
 
     RNN_Genome(string binary_filename);
     RNN_Genome(char* array, int32_t length);

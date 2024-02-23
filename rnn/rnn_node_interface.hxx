@@ -26,9 +26,9 @@ class RNN;
 #define HIDDEN_LAYER 1
 #define OUTPUT_LAYER 2
 
-extern const int32_t NUMBER_NODE_TYPES;
 extern const string NODE_TYPES[];
 extern const unordered_map<string, int32_t> string_to_node_type;
+extern const int32_t NUMBER_NODE_TYPES;
 int32_t node_type_from_string(string& node_type);
 
 #define SIMPLE_NODE     0
@@ -44,6 +44,12 @@ int32_t node_type_from_string(string& node_type);
 #define RANDOM_DAG_NODE 10
 #define DNAS_NODE       11
 #define SIN_NODE        12
+#define SUM_NODE        13
+#define COS_NODE        14
+#define TANH_NODE       15
+#define SIGMOID_NODE    16
+#define INVERSE_NODE    17
+#define MULTIPLY_NODE   18
 
 int32_t node_type_from_string(string& node_type);
 
@@ -81,6 +87,7 @@ class RNN_Node_Interface {
     vector<double> output_values;
     vector<double> error_values;
     vector<double> d_input;
+    vector<vector<double>> ordered_d_input;
 
     vector<int32_t> inputs_fired;
     vector<int32_t> outputs_fired;
@@ -141,10 +148,10 @@ class RNN_Node_Interface {
     friend class RNN_Genome;
 
     friend void get_mse(
-        RNN* genome, const vector<vector<double> >& expected, double& mse, vector<vector<double> >& deltas
+        RNN* genome, const vector<vector<double>>& expected, double& mse, vector<vector<double>>& deltas
     );
     friend void get_mae(
-        RNN* genome, const vector<vector<double> >& expected, double& mae, vector<vector<double> >& deltas
+        RNN* genome, const vector<vector<double>>& expected, double& mae, vector<vector<double>>& deltas
     );
 };
 

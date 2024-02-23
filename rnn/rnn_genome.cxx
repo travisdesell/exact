@@ -18,6 +18,7 @@ using std::hex;
 using std::ios;
 
 #include <iostream>
+using std::cout;
 using std::endl;
 
 #include <random>
@@ -42,6 +43,12 @@ using std::to_string;
 
 #include <vector>
 using std::vector;
+
+#include <unordered_map>
+using std::unordered_map;
+
+#include <map>
+using std::map;
 
 #include "common/color_table.hxx"
 #include "common/log.hxx"
@@ -1081,7 +1088,21 @@ void RNN_Genome::backpropagate_stochastic(
                 parameters, inputs[random_selection], outputs[random_selection], mse, analytic_gradient, use_dropout,
                 true, dropout_probability
             );
+
             norm = weight_update_method->get_norm(analytic_gradient);
+
+            if (isnan(norm) || isinf(norm)) {
+                // This genome is getting NANs for gradients so it is a
+                // genetic dead end, delete it.
+                // TODO: figure out why and maybe use clipping or another
+                // method to handle it.
+                delete rnn;
+                best_parameters = parameters;
+                this->best_validation_mse = NAN;
+                this->best_validation_mae = NAN;
+                return;
+            }
+
             avg_norm += norm;
             weight_update_method->norm_gradients(analytic_gradient, norm);
             weight_update_method->update_weights(parameters, velocity, prev_velocity, analytic_gradient, iteration);
@@ -1108,7 +1129,7 @@ void RNN_Genome::backpropagate_stochastic(
     }
     delete rnn;
     this->set_weights(best_parameters);
-    Log::trace("backpropagation completed, getting mu/sigma\n");
+    Log::info("backpropagation completed, getting mu/sigma\n");
     double _mu, _sigma;
     get_mu_sigma(best_parameters, _mu, _sigma);
 }
@@ -1615,6 +1636,12 @@ void RNN_Genome::get_mu_sigma(const vector<double>& p, double& mu, double& sigma
         for (int32_t i = 0; i < (int32_t) p.size(); i++) {
             Log::fatal("\t%lf\n", p[i]);
         }
+
+        Log::fatal("initial parameters:\n");
+        for (int32_t i = 0; i < (int32_t) initial_parameters.size(); i++) {
+            Log::fatal("\t%lf\n", initial_parameters[i]);
+        }
+
         exit(1);
     }
 
@@ -3219,6 +3246,18 @@ RNN_Node_Interface* RNN_Genome::read_node_from_stream(istream& bin_istream) {
         node = (RNN_Node_Interface*) dnas_node;
     } else if (node_type == SIN_NODE) {
         node = new SIN_Node(innovation_number, layer_type, depth);
+    } else if (node_type == SUM_NODE) {
+        node = new SUM_Node(innovation_number, layer_type, depth);
+    } else if (node_type == COS_NODE) {
+        node = new COS_Node(innovation_number, layer_type, depth);
+    } else if (node_type == TANH_NODE) {
+        node = new TANH_Node(innovation_number, layer_type, depth);
+    } else if (node_type == SIGMOID_NODE) {
+        node = new SIGMOID_Node(innovation_number, layer_type, depth);
+    } else if (node_type == INVERSE_NODE) {
+        node = new INVERSE_Node(innovation_number, layer_type, depth);
+    } else if (node_type == MULTIPLY_NODE) {
+        node = new MULTIPLY_Node(innovation_number, layer_type, depth);
     } else {
         Log::fatal("Error reading node from stream, unknown node_type: %d\n", node_type);
         exit(1);
@@ -4043,4 +4082,220 @@ void RNN_Genome::set_stochastic(bool stochastic) {
             node->set_stochastic(stochastic);
         }
     }
+}
+
+void RNN_Genome::print_equations() {
+    write_equations(cout);
+}
+
+void RNN_Genome::write_equations(ostream& outstream) {
+    this->set_weights(best_parameters);
+    sort_nodes_by_depth();
+    unordered_map<int32_t, string> innovation_to_label;
+    unordered_map<int32_t, string> innovation_to_equation;
+    unordered_map<int32_t, int32_t> innovation_to_inputs_fired;
+    int count = 0;
+    for (int i = 0; i < nodes.size(); i++) {
+        if (nodes[i]->layer_type == HIDDEN_LAYER && nodes[i]->is_reachable()) {
+            string label = "H" + to_string(count);
+            innovation_to_label.emplace(nodes[i]->innovation_number, label);
+            count++;
+        } else if (nodes[i]->is_reachable()) {
+            innovation_to_label.emplace(nodes[i]->innovation_number, nodes[i]->parameter_name);
+        }
+        innovation_to_equation.emplace(nodes[i]->innovation_number, "");
+        innovation_to_inputs_fired.emplace(nodes[i]->innovation_number, 0);
+    }
+
+    sort_edges_by_depth();
+    for (int i = 0; i < edges.size(); i++) {
+        if (edges[i]->is_reachable()) {
+            RNN_Node_Interface* input_node = edges[i]->input_node;
+            RNN_Node_Interface* output_node = edges[i]->output_node;
+            vector<double> output_bias_vector;
+            output_node->get_weights(output_bias_vector);
+            double output_bias = output_bias_vector[0];
+
+            string input_equation = "(" + innovation_to_label[input_node->innovation_number] + " * "
+                                    + to_string(round(edges[i]->weight * pow(10, 6)) / pow(10, 6)) + ")";
+
+            innovation_to_inputs_fired[output_node->innovation_number]++;
+            string current_output_equation = innovation_to_equation[output_node->innovation_number];
+            if (innovation_to_inputs_fired[output_node->innovation_number] == 1) {
+                if (output_node->node_type == SIMPLE_NODE || output_node->node_type == JORDAN_NODE
+                    || output_node->node_type == ELMAN_NODE) {
+                    current_output_equation += "tanh(" + input_equation;
+                } else if (output_node->node_type == SIN_NODE) {
+                    current_output_equation += "sin(" + input_equation;
+                } else if (output_node->node_type == COS_NODE) {
+                    current_output_equation += "cos(" + input_equation;
+                } else if (output_node->node_type == TANH_NODE) {
+                    current_output_equation += "tanh(" + input_equation;
+                } else if (output_node->node_type == SIGMOID_NODE) {
+                    current_output_equation += "sigmoid(" + input_equation;
+                } else if (output_node->node_type == SUM_NODE) {
+                    current_output_equation += input_equation;
+                } else if (output_node->node_type == MULTIPLY_NODE) {
+                    current_output_equation += input_equation;
+                } else if (output_node->node_type == INVERSE_NODE) {
+                    current_output_equation += "1.0 /(" + input_equation;
+                } else if (output_node->node_type == UGRNN_NODE) {
+                    current_output_equation += "ugrnn(" + input_equation;
+                } else if (output_node->node_type == MGU_NODE) {
+                    current_output_equation += "mgu(" + input_equation;
+                } else if (output_node->node_type == GRU_NODE) {
+                    current_output_equation += "gru(" + input_equation;
+                } else if (output_node->node_type == DELTA_NODE) {
+                    current_output_equation += "delta(" + input_equation;
+                } else if (output_node->node_type == LSTM_NODE) {
+                    current_output_equation += "lstm(" + input_equation;
+                } else if (output_node->node_type == ENARC_NODE) {
+                    current_output_equation += "enarc(" + input_equation;
+                } else if (output_node->node_type == ENAS_DAG_NODE) {
+                    current_output_equation += "enas(" + input_equation;
+                } else if (output_node->node_type == RANDOM_DAG_NODE) {
+                    current_output_equation += "rdag(" + input_equation;
+                } else if (output_node->node_type == DNAS_NODE) {
+                    current_output_equation += "dnas(" + input_equation;
+                } else {
+                    Log::fatal("ERROR: output_node not correct type\n");
+                    exit(1);
+                }
+            } else if (innovation_to_inputs_fired[output_node->innovation_number] > 1 && innovation_to_inputs_fired[output_node->innovation_number] < output_node->total_inputs){
+                if (output_node->node_type == MULTIPLY_NODE) {
+                    current_output_equation += " * " + input_equation;
+                } else {
+                    current_output_equation += " + " + input_equation;
+                }
+            } else if (innovation_to_inputs_fired[output_node->innovation_number] == output_node->total_inputs) {
+                if (output_node->node_type == MULTIPLY_NODE) {
+                    current_output_equation +=
+                        " * " + input_equation + " + " + to_string(round(output_bias * pow(10, 6)) / pow(10, 6));
+                } else if (output_node->node_type == SUM_NODE) {
+                    current_output_equation +=
+                        " + " + input_equation + " + " + to_string(round(output_bias * pow(10, 6)) / pow(10, 6));
+                } else {
+                    current_output_equation +=
+                        " + " + input_equation + " + " + to_string(round(output_bias * pow(10, 6)) / pow(10, 6)) + ")";
+                }
+            } else {
+                Log::fatal("ERROR: inputs_fired not within bounds of total inputs\n");
+                cout << "output: " << innovation_to_label[output_node->innovation_number] << endl;
+                cout << "input: " << innovation_to_label[input_node->innovation_number] << endl;
+                cout << "edge_weight: " << edges[i]->weight << endl;
+                cout << "forward_reachable: " << output_node->forward_reachable << endl;
+                Log::fatal(
+                    "\ninputs_fired: %d \ntotal_inputs: %d\n",
+                    innovation_to_inputs_fired[output_node->innovation_number], output_node->total_inputs
+                );
+                exit(1);
+            }
+            innovation_to_equation[output_node->innovation_number] = current_output_equation;
+        }
+    }
+
+    sort_recurrent_edges_by_depth();
+    for (int i = 0; i < recurrent_edges.size(); i++) {
+        if (recurrent_edges[i]->is_reachable()) {
+            RNN_Node_Interface* input_node = recurrent_edges[i]->input_node;
+            RNN_Node_Interface* output_node = recurrent_edges[i]->output_node;
+            vector<double> output_bias_vector;
+            output_node->get_weights(output_bias_vector);
+            double output_bias = output_bias_vector[0];
+            string input_equation = "(" + innovation_to_label[input_node->innovation_number] + "(t - "
+                                    + to_string(recurrent_edges[i]->recurrent_depth) + ")" + " * "
+                                    + to_string(round(recurrent_edges[i]->weight * pow(10, 6)) / pow(10, 6)) + ")";
+
+            innovation_to_inputs_fired[output_node->innovation_number]++;
+            string current_output_equation = innovation_to_equation[output_node->innovation_number];
+            if (innovation_to_inputs_fired[output_node->innovation_number] == 1) {
+                if (output_node->node_type == SIMPLE_NODE || output_node->node_type == JORDAN_NODE
+                    || output_node->node_type == ELMAN_NODE) {
+                    current_output_equation += "tanh(" + input_equation;
+                } else if (output_node->node_type == SIN_NODE) {
+                    current_output_equation += "sin(" + input_equation;
+                } else if (output_node->node_type == COS_NODE) {
+                    current_output_equation += "cos(" + input_equation;
+                } else if (output_node->node_type == TANH_NODE) {
+                    current_output_equation += "tanh(" + input_equation;
+                } else if (output_node->node_type == SIGMOID_NODE) {
+                    current_output_equation += "sigmoid(" + input_equation;
+                } else if (output_node->node_type == SUM_NODE) {
+                    current_output_equation += input_equation;
+                } else if (output_node->node_type == MULTIPLY_NODE) {
+                    current_output_equation += input_equation;
+                } else if (output_node->node_type == INVERSE_NODE) {
+                    current_output_equation += "1.0 /(" + input_equation;
+                } else if (output_node->node_type == UGRNN_NODE) {
+                    current_output_equation += "ugrnn(" + input_equation;
+                } else if (output_node->node_type == MGU_NODE) {
+                    current_output_equation += "mgu(" + input_equation;
+                } else if (output_node->node_type == GRU_NODE) {
+                    current_output_equation += "gru(" + input_equation;
+                } else if (output_node->node_type == DELTA_NODE) {
+                    current_output_equation += "delta(" + input_equation;
+                } else if (output_node->node_type == LSTM_NODE) {
+                    current_output_equation += "lstm(" + input_equation;
+                } else if (output_node->node_type == ENARC_NODE) {
+                    current_output_equation += "enarc(" + input_equation;
+                } else if (output_node->node_type == ENAS_DAG_NODE) {
+                    current_output_equation += "enas(" + input_equation;
+                } else if (output_node->node_type == RANDOM_DAG_NODE) {
+                    current_output_equation += "rdag(" + input_equation;
+                } else if (output_node->node_type == DNAS_NODE) {
+                    current_output_equation += "dnas(" + input_equation;
+                } else {
+                    Log::fatal("ERROR: output_node not correct type");
+                    exit(1);
+                }
+            } else if (innovation_to_inputs_fired[output_node->innovation_number] > 1 && innovation_to_inputs_fired[output_node->innovation_number] < output_node->total_inputs){
+                if (output_node->node_type == MULTIPLY_NODE) {
+                    current_output_equation += " * " + input_equation;
+                } else {
+                    current_output_equation += " + " + input_equation;
+                }
+            } else if (innovation_to_inputs_fired[output_node->innovation_number] == output_node->total_inputs) {
+                if (output_node->node_type == MULTIPLY_NODE) {
+                    current_output_equation +=
+                        " * " + input_equation + " + " + to_string(round(output_bias * pow(10, 6)) / pow(10, 6));
+                } else if (output_node->node_type == SUM_NODE) {
+                    current_output_equation +=
+                        " + " + input_equation + " + " + to_string(round(output_bias * pow(10, 6)) / pow(10, 6));
+                } else {
+                    current_output_equation +=
+                        " + " + input_equation + " + " + to_string(round(output_bias * pow(10, 6)) / pow(10, 6)) + ")";
+                }
+            } else {
+                Log::fatal("ERROR: inputs_fired not within bounds of total inputs \n");
+                cout << "output: " << innovation_to_label[output_node->innovation_number] << endl;
+                cout << "input: " << innovation_to_label[input_node->innovation_number] << endl;
+                cout << "recurrent_depth: " << recurrent_edges[i]->recurrent_depth << endl;
+                cout << "recurrent_edge_weight: " << recurrent_edges[i]->weight << endl;
+                cout << "forward_reachable: " << output_node->forward_reachable << endl;
+                Log::fatal(
+                    "\ninputs_fired: %d \ntotal_inputs: %d\n",
+                    innovation_to_inputs_fired[output_node->innovation_number], output_node->total_inputs
+                );
+                exit(1);
+            }
+            innovation_to_equation[output_node->innovation_number] = current_output_equation;
+        }
+    }
+
+    for (int i = 0; i < nodes.size(); i++) {
+        if (nodes[i]->layer_type == HIDDEN_LAYER && nodes[i]->is_reachable()) {
+            outstream << innovation_to_label[nodes[i]->innovation_number] << " = "
+                      << innovation_to_equation[nodes[i]->innovation_number] << endl;
+            //  outstream << "total_connections: " << innovation_to_inputs_fired[nodes[i]->innovation_number] << endl;
+            //  outstream << "total_inputs: " << nodes[i]->total_inputs << endl;
+            //  outstream << "is_reachable: " << nodes[i]->is_reachable() << endl;
+            outstream << endl;
+        } else if (nodes[i]->layer_type == OUTPUT_LAYER && nodes[i]->is_reachable()) {
+            outstream << innovation_to_label[nodes[i]->innovation_number] << "(t + 1)"
+                      << " = " << innovation_to_equation[nodes[i]->innovation_number] << endl;
+            outstream << endl;
+        }
+    }
+    // outstream << "best_validation_mse: " << to_string(this->get_best_validation_mse()) << endl;
+    // outstream << endl;
 }

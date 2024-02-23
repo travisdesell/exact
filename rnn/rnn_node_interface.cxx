@@ -12,23 +12,32 @@ using std::string;
 #include "rnn/rnn_genome.hxx"
 #include "rnn_node_interface.hxx"
 
-extern const int32_t NUMBER_NODE_TYPES = 12;
-extern const string NODE_TYPES[] = {"simple", "jordan", "elman", "UGRNN",    "MGU",  "GRU",
-                                    "delta",  "LSTM",   "ENARC", "ENAS_DAG", "dnas", "sin"};
+extern const string NODE_TYPES[] = {"simple", "jordan", "elman",    "UGRNN",   "MGU",     "GRU", "delta",
+                                    "LSTM",   "ENARC",  "ENAS_DAG", "rdag",    "dnas",    "sin", "sum",
+                                    "cos",    "tanh",   "sigmoid",  "inverse", "multiply"};
 extern const unordered_map<string, int32_t> string_to_node_type = {
-    {"simple",   SIMPLE_NODE},
-    {"jordan",   JORDAN_NODE},
-    { "elman",    ELMAN_NODE},
-    { "ugrnn",    UGRNN_NODE},
-    {   "mgu",      MGU_NODE},
-    {   "gru",      GRU_NODE},
-    { "delta",    DELTA_NODE},
-    {  "lstm",     LSTM_NODE},
-    { "enarc",    ENARC_NODE},
-    {  "enas", ENAS_DAG_NODE},
-    {  "dnas",     DNAS_NODE},
-    {   "sin",      SIN_NODE},
+    {  "simple",     SIMPLE_NODE},
+    {  "jordan",     JORDAN_NODE},
+    {   "elman",      ELMAN_NODE},
+    {   "ugrnn",      UGRNN_NODE},
+    {     "mgu",        MGU_NODE},
+    {     "gru",        GRU_NODE},
+    {   "delta",      DELTA_NODE},
+    {    "lstm",       LSTM_NODE},
+    {   "enarc",      ENARC_NODE},
+    {    "enas",   ENAS_DAG_NODE},
+    {    "rdag", RANDOM_DAG_NODE},
+    {    "dnas",       DNAS_NODE},
+    {     "sin",        SIN_NODE},
+    {     "sum",        SUM_NODE},
+    {     "cos",        COS_NODE},
+    {    "tanh",       TANH_NODE},
+    { "sigmoid",    SIGMOID_NODE},
+    { "inverse",    INVERSE_NODE},
+    {"multiply",   MULTIPLY_NODE},
 };
+
+extern const int32_t NUMBER_NODE_TYPES = string_to_node_type.size();
 
 int32_t node_type_from_string(string& node_type) {
     std::transform(node_type.begin(), node_type.end(), node_type.begin(), [](unsigned char c) {
