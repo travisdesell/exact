@@ -64,25 +64,25 @@ class NeatSpeciationStrategy : public SpeciationStrategy {
      * Gets the fitness of the best genome of all the islands
      * \return the best fitness over all islands
      */
-    double get_best_fitness();
+    double get_best_fitness() const;
 
     /**
      * Gets the fitness of the worst genome of all the islands
      * \return the worst fitness over all islands
      */
-    double get_worst_fitness();
+    double get_worst_fitness() const;
 
     /**
      * Gets the best genome of all the islands
      * \return the best genome of all islands
      */
-    RNN_Genome* get_best_genome();
+    RNN_Genome* get_best_genome() const;
 
     /**
      * Gets the the worst genome of all the islands
      * \return the worst genome of all islands
      */
-    RNN_Genome* get_worst_genome();
+    RNN_Genome* get_worst_genome() const;
 
     /**
      * Inserts a <b>copy</b> of the genome into this speciation strategy.
@@ -130,7 +130,7 @@ class NeatSpeciationStrategy : public SpeciationStrategy {
     /**
      * Gets speciation strategy information values for logs
      */
-    string get_strategy_information_values() const;
+    string get_strategy_information_values(RNN_Genome *genome) const;
 
     RNN_Genome* get_global_best_genome();
 

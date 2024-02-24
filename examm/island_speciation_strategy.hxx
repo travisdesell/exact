@@ -62,6 +62,12 @@ class IslandSpeciationStrategy : public SpeciationStrategy {
     vector<Island*> islands;
     RNN_Genome* global_best_genome;
 
+    ofstream *island_log_file;
+    
+    // Maps genome number to a pair representing (worst island mse, best island mse) at
+    // the time of genome generation.
+    unordered_map<int32_t, pair<double, double>> genome_performance;
+
     // Transfer learning class properties:
 
     bool transfer_learning;
@@ -114,25 +120,25 @@ class IslandSpeciationStrategy : public SpeciationStrategy {
      * Gets the fitness of the best genome of all the islands
      * \return the best fitness over all islands
      */
-    double get_best_fitness();
+    double get_best_fitness() const;
 
     /**
      * Gets the fitness of the worst genome of all the islands
      * \return the worst fitness over all islands
      */
-    double get_worst_fitness();
+    double get_worst_fitness() const;
 
     /**
      * Gets the best genome of all the islands
      * \return the best genome of all islands or NULL if no genomes have yet been inserted
      */
-    RNN_Genome* get_best_genome();
+    RNN_Genome* get_best_genome() const;
 
     /**
      * Gets the the worst genome of all the islands
      * \return the worst genome of all islands or NULL if no genomes have yet been inserted
      */
-    RNN_Genome* get_worst_genome();
+    RNN_Genome* get_worst_genome() const;
 
     /**
      *  \return true if all the islands are full
@@ -207,7 +213,7 @@ class IslandSpeciationStrategy : public SpeciationStrategy {
     /**
      * Gets speciation strategy information values for logs
      */
-    string get_strategy_information_values() const;
+    string get_strategy_information_values(RNN_Genome *genome) const;
 
     /**
      * Island repopulation through two random parents from two seperate islands,

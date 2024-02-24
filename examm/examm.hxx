@@ -73,6 +73,8 @@ class EXAMM {
     string output_directory;
     ofstream* log_file;
     ofstream* op_log_file;
+    double pre_insert_best_mse = 1000000;
+    bool last_genome_inserted = false;
 
     std::chrono::time_point<std::chrono::system_clock> startClock;
 
@@ -87,7 +89,7 @@ class EXAMM {
     ~EXAMM();
 
     void print();
-    void update_log();
+    void update_log(RNN_Genome *genome);
 
     void set_possible_node_types(vector<string> possible_node_type_strings);
 

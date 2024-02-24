@@ -6,9 +6,9 @@ OUTPUT_PARAMETERS='E1_CHT1 E1_CHT2 E1_CHT3 E1_CHT4'
 offset=1
 
 run_examm() {
-  output_dir=initial_integration_experiments/results/control_v8/$bp_epoch/$fold
+  output_dir=results/control_v8/$bp_epoch/$fold
   mkdir -p $output_dir
-  mpirun -np 8 Release/mpi/examm_mpi \
+  mpirun -np 14 build/mpi/examm_mpi \
       --training_filenames datasets/2019_ngafid_transfer/c172_file_[1-9].csv \
       --test_filenames datasets/2019_ngafid_transfer/c172_file_1[0-2].csv \
       --time_offset $offset \
@@ -25,26 +25,23 @@ run_examm() {
       --output_directory $output_dir \
       --log_filename fitness.csv \
       --learning_rate 0.01 \
-      --std_message_level WARNING \
+      --std_message_level INFO \
       --file_message_level WARNING \
       --crystalize_iters $crystalize_iters \
       --max_genomes $max_genomes \
       --island_size 32 \
-      --number_islands 4
+      --number_islands 4 \
+      --synchronous
 
   # best_genome_file=( $output_dir/rnn_genome_*.bin([-1]) )
   # BP_ITERS=$crystalize_iters CRYSTALIZE_ITERS=$crystalize_iters GENOME=$best_genome_file OUTPUT_DIRECTORY=$output_dir k=$k initial_integration_experiments/post_training_dnas.zsh
 }
 
-bp_ge=(8 8192 16 4096 32 2048)
+# bp_ge=(8 8192 16 4096 32 2048)
+bp_ge=(8 8192)
 
 for bp_epoch max_genomes in "${(@kv)bp_ge}"; do
-   for fold in 0 1 2 3; do
-     run_examm &
+  for fold in $(seq 0 1); do
+     run_examm
    done
-   wait
-   for fold in 4 5 6 7; do
-     run_examm &
-   done
-   wait
 done
