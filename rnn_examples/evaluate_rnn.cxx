@@ -46,12 +46,14 @@ int main(int argc, char** argv) {
     TimeSeriesSets* time_series_sets = TimeSeriesSets::generate_test(
         testing_filenames, genome->get_input_parameter_names(), genome->get_output_parameter_names()
     );
-    Log::debug("got time series sets.\n");
+    Log::info("got time series sets.\n");
 
     string normalize_type = genome->get_normalize_type();
     if (normalize_type.compare("min_max") == 0) {
+        Log::info("normalizing min max\n");
         time_series_sets->normalize_min_max(genome->get_normalize_mins(), genome->get_normalize_maxs());
     } else if (normalize_type.compare("avg_std_dev") == 0) {
+        Log::info("normalizing with z-score\n");
         time_series_sets->normalize_avg_std_dev(
             genome->get_normalize_avgs(), genome->get_normalize_std_devs(), genome->get_normalize_mins(),
             genome->get_normalize_maxs()

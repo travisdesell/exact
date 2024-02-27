@@ -132,20 +132,6 @@ void TimeSeries::normalize_min_max(double min, double max) {
     );
 
     for (int32_t i = 0; i < (int32_t) values.size(); i++) {
-        if (values[i] < min) {
-            Log::warning(
-                "normalizing series %s, value[%d] %lf was less than min for normalization: %lf\n", name.c_str(), i,
-                values[i], min
-            );
-        }
-
-        if (values[i] > max) {
-            Log::warning(
-                "normalizing series %s, value[%d] %lf was greater than max for normalization: %lf\n", name.c_str(), i,
-                values[i], max
-            );
-        }
-
         values[i] = (values[i] - min) / (max - min);
     }
 }
@@ -939,9 +925,10 @@ void TimeSeriesSets::normalize_min_max() {
             Log::info("user specified bounds for ");
 
         } else {
-            for (int32_t j = 0; j < (int32_t) time_series.size(); j++) {
-                double current_min = time_series[j]->get_min(parameter_name);
-                double current_max = time_series[j]->get_max(parameter_name);
+            for (int32_t j = 0; j < (int32_t) training_indexes.size(); j++) {
+                int32_t train_index = training_indexes[j];
+                double current_min = time_series[train_index]->get_min(parameter_name);
+                double current_max = time_series[train_index]->get_max(parameter_name);
 
                 if (current_min < min) {
                     min = current_min;
@@ -949,6 +936,7 @@ void TimeSeriesSets::normalize_min_max() {
                 if (current_max > max) {
                     max = current_max;
                 }
+                Log::debug("Training file: %d, min: %lf, max: %lf\n", train_index, current_min, current_max);
             }
 
             normalize_mins[parameter_name] = min;
@@ -1030,13 +1018,14 @@ void TimeSeriesSets::normalize_avg_std_dev() {
             double numerator_average = 0.0;
             long total_values = 0;
 
-            for (int32_t j = 0; j < (int32_t) time_series.size(); j++) {
-                int32_t n_values = time_series[j]->get_number_rows();
-                numerator_average += time_series[j]->get_average(parameter_name) * n_values;
+            for (int32_t j = 0; j < (int32_t) training_indexes.size(); j++) {
+                int32_t train_index = training_indexes[j];
+                int32_t n_values = time_series[train_index]->get_number_rows();
+                numerator_average += time_series[train_index]->get_average(parameter_name) * n_values;
                 total_values += n_values;
 
-                double current_min = time_series[j]->get_min(parameter_name);
-                double current_max = time_series[j]->get_max(parameter_name);
+                double current_min = time_series[train_index]->get_min(parameter_name);
+                double current_max = time_series[train_index]->get_max(parameter_name);
 
                 if (current_min < min) {
                     min = current_min;
@@ -1044,6 +1033,7 @@ void TimeSeriesSets::normalize_avg_std_dev() {
                 if (current_max > max) {
                     max = current_max;
                 }
+                Log::debug("Training file: %d, min: %lf, max: %lf\n", train_index, current_min, current_max);
             }
 
             normalize_mins[parameter_name] = min;
@@ -1053,12 +1043,13 @@ void TimeSeriesSets::normalize_avg_std_dev() {
 
             double numerator_std_dev = 0.0;
             // get the Bessel-corrected (n-1 denominator) combined standard deviation
-            for (int32_t j = 0; j < (int32_t) time_series.size(); j++) {
-                int32_t n_values = time_series[j]->get_number_rows();
+            for (int32_t j = 0; j < (int32_t) training_indexes.size(); j++) {
+                int32_t train_index = training_indexes[j];
+                int32_t n_values = time_series[train_index]->get_number_rows();
 
-                double avg_diff = time_series[j]->get_average(parameter_name) - avg;
-                numerator_std_dev +=
-                    ((n_values - 1) * time_series[j]->get_variance(parameter_name)) + (n_values * avg_diff * avg_diff);
+                double avg_diff = time_series[train_index]->get_average(parameter_name) - avg;
+                numerator_std_dev += ((n_values - 1) * time_series[train_index]->get_variance(parameter_name))
+                                     + (n_values * avg_diff * avg_diff);
             }
 
             std_dev = numerator_std_dev / (total_values - 1);
