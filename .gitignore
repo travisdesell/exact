@@ -10,3 +10,5 @@ __pycache__/*
 *.pyc
 visualization/plots/*
 test_output/*
+.env
+datasets/stock_higher_frequency/data/*
