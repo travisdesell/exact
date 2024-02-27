@@ -936,6 +936,7 @@ void TimeSeriesSets::normalize_min_max() {
                 if (current_max > max) {
                     max = current_max;
                 }
+                Log::debug("Training file: %d, min: %lf, max: %lf\n", train_index, current_min, current_max);
             }
 
             normalize_mins[parameter_name] = min;
@@ -1032,6 +1033,7 @@ void TimeSeriesSets::normalize_avg_std_dev() {
                 if (current_max > max) {
                     max = current_max;
                 }
+                Log::debug("Training file: %d, min: %lf, max: %lf\n", train_index, current_min, current_max);
             }
 
             normalize_mins[parameter_name] = min;
