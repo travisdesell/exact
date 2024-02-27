@@ -1048,8 +1048,8 @@ void TimeSeriesSets::normalize_avg_std_dev() {
                 int32_t n_values = time_series[train_index]->get_number_rows();
 
                 double avg_diff = time_series[train_index]->get_average(parameter_name) - avg;
-                numerator_std_dev +=
-                    ((n_values - 1) * time_series[train_index]->get_variance(parameter_name)) + (n_values * avg_diff * avg_diff);
+                numerator_std_dev += ((n_values - 1) * time_series[train_index]->get_variance(parameter_name))
+                                     + (n_values * avg_diff * avg_diff);
             }
 
             std_dev = numerator_std_dev / (total_values - 1);
