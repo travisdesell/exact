@@ -61,6 +61,13 @@ class SimpleStockStrategy : public Strategy {
          */
         void make_move(const map<string, double> &context, const map<string, double> &forecast);
 
+        /**
+         * Returns the state of the strategy, how much moeny is in the money pool and
+         * how many of each stock have been purchased.
+         *
+         * \return a Portfolio object representing the amount of stock and money available.
+         */
+        State* get_state();
 };
 
 

@@ -10,7 +10,7 @@ using std::string;
 #include <vector>
 using std::vector;
 
-//#include "state.hxx"
+#include "state.hxx"
 
 class Strategy {
     public:
@@ -23,6 +23,11 @@ class Strategy {
          * \return a pointer to a Strategy object
          */
         static Strategy* initialize_from_arguments(const vector<string> &arguments);
+
+        /**
+         * A default destructor for this abstract class.
+         */
+        virtual ~Strategy() = default;
 
         /**
          * Take an action or actions using this strategy given the current context and a forecast
@@ -41,7 +46,7 @@ class Strategy {
          * Returns the current state of the strategy so an Oracle object can calculate
          * a reward given the current state and the current context of the system.
          */
-        //virtual State* get_state() = 0;
+        virtual State* get_state() = 0;
 };
 
 

@@ -1,5 +1,5 @@
-#ifndef STRATEGY_ORACLE_HXX
-#define STRATEGY_ORACLE_HXX
+#ifndef STRATEGY_PORTFOLIO_ORACLE_HXX
+#define STRATEGY_PORTFOLIO_ORACLE_HXX
 
 #include <map>
 using std::map;
@@ -10,25 +10,25 @@ using std::string;
 #include <vector>
 using std::vector;
 
+#include "oracle.hxx"
 #include "state.hxx"
 
-class Oracle {
+
+class PortfolioOracle : public Oracle {
+    private:
+        double initial_money_pool;
+        double previous_total_money;
+
+        vector<string> stocks;
+
     public:
         /**
-         * Creates one of any of the potential sublcasses of the Oracle class given
-         * command line arguments.
+         * Initialize a PortfolioOracle from user provided arguments.
          *
-         * \param arguments is the vector of command line arguments
-         *
-         * \return a pointer to an Oracle object
+         * \param arguments are the command line arguments.
          */
-        static Oracle* initialize_from_arguments(const vector<string> &arguments);
+        PortfolioOracle(const vector<string> &arguments);
 
-
-        /**
-         * A default destructor for this virtual class.
-         */
-        virtual ~Oracle() = default;
 
         /**
          * Calculates the reward given the state of a strategy and the current state (context) of
@@ -42,7 +42,7 @@ class Oracle {
          * \return a reward value representing how good the strategy's current state is compared
          *      to its previous state.
          */
-        virtual double calculate_reward(State *state, const map<string, double> &context) = 0;
+        double calculate_reward(State *state, const map<string, double> &context);
 };
 
 #endif

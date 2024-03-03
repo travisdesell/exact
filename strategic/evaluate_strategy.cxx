@@ -13,7 +13,10 @@ using std::vector;
 #include "time_series/time_series_new.hxx"
 
 #include "forecaster.hxx"
+#include "oracle.hxx"
+#include "state.hxx"
 #include "strategy.hxx"
+
 
 vector<string> arguments;
 
@@ -40,6 +43,7 @@ int main(int argc, char** argv) {
 
     Forecaster* forecaster = Forecaster::initialize_from_arguments(arguments);
     Strategy* strategy = Strategy::initialize_from_arguments(arguments);
+    Oracle* oracle = Oracle::initialize_from_arguments(arguments);
 
     string time_series_filename;
     get_argument(arguments, "--time_series_filename", true, time_series_filename);
@@ -50,14 +54,15 @@ int main(int argc, char** argv) {
         //normalizer->normalize(time_series_new);
     }
 
+    double current_reward = 0.0;
     double reward = 0.0;
 
     map<string, double> inputs;
-    map<string, double> outputs;
+    map<string, double> next_inputs;
 
     for (int32_t i = 0; i < time_series->get_number_rows() - time_offset; i++) {
         time_series->get_inputs_at(i, inputs);
-        time_series->get_outputs_at(i + time_offset, outputs);
+        time_series->get_inputs_at(i + time_offset, next_inputs);
 
         if (Log::at_level(Log::DEBUG)) print_values("inputs", inputs);
 
@@ -66,16 +71,21 @@ int main(int argc, char** argv) {
 
         strategy->make_move(inputs, forecast);
 
-        //current_reward = oracle->calculate_reward(strategy->get_state(), outputs);
+        State *state = strategy->get_state();
+        current_reward = oracle->calculate_reward(state, next_inputs);
+        Log::info("reward for move is: %lf\n", current_reward);
 
         //strategy->report_reward(current_reward);
 
         //reward += current_reward;
+
+        delete state;
     }
 
     delete time_series;
     delete forecaster;
-    //delete strategy;
+    delete strategy;
+    delete oracle;
 
 
     Log::release_id("main");
