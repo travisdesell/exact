@@ -16,7 +16,7 @@ static string WEIGHT_UPDATE_METHOD_STRING[] = {"vanilla", "momentum", "nesterov"
 static int32_t NUM_WEIGHT_UPDATE_TYPES = 7;
 
 inline WeightUpdateMethod get_enum_method_from_string(string input_string) {
-    WeightUpdateMethod method;
+    WeightUpdateMethod method = ADAM;
     for (int i = 0; i < NUM_WEIGHT_UPDATE_TYPES; i++) {
         if (input_string.compare(WEIGHT_UPDATE_METHOD_STRING[i]) == 0) {
             method = static_cast<WeightUpdateMethod>(i);

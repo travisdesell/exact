@@ -80,7 +80,7 @@ DNASNode::~DNASNode() {
 
 template <typename Rng>
 void DNASNode::gumbel_noise(Rng& rng, vector<double>& output) {
-    for (auto i = 0; i < output.size(); i++) {
+    for (int32_t i = 0; i < (int32_t) output.size(); i++) {
         output[i] = -log(-log(uniform_real_distribution<double>(0.0, 1.0)(rng)));
     }
 }
@@ -107,16 +107,16 @@ void DNASNode::calculate_z() {
 
     xtotal = 0.0;
     double emax = -10000000;
-    for (auto i = 0; i < z.size(); i++) {
+    for (int32_t i = 0; i < (int32_t) z.size(); i++) {
         x[i] = g[i] + log(pi[i]);
         x[i] /= tao;
         emax = max(emax, x[i]);
     }
-    for (auto i = 0; i < z.size(); i++) {
+    for (int32_t i = 0; i < (int32_t) z.size(); i++) {
         x[i] = exp(emax - x[i]);
         xtotal += x[i];
     }
-    for (auto i = 0; i < z.size(); i++) {
+    for (int32_t i = 0; i < (int32_t) z.size(); i++) {
         z[i] = x[i] / xtotal;
     }
 
@@ -171,7 +171,9 @@ void DNASNode::reset(int32_t series_length) {
     d_pi.assign(pi.size(), 0.0);
     d_input.assign(series_length, 0.0);
     node_outputs.clear();
-    for (int i = 0; i < series_length; i++) node_outputs.emplace_back(pi.size(), 0.0);
+    for (int i = 0; i < series_length; i++) {
+        node_outputs.emplace_back(pi.size(), 0.0);
+    }
     output_values.assign(series_length, 0.0);
     error_values.assign(series_length, 0.0);
     inputs_fired.assign(series_length, 0);
@@ -209,13 +211,13 @@ void DNASNode::input_fired(int32_t time, double incoming_output) {
     if (counter >= CRYSTALLIZATION_THRESHOLD) {
         Log::info("%d hmm\n", maxi >= 0);
         assert(maxi >= 0);
-        
+
         Log::info("%d %d %p\n", maxi, time, nodes[maxi]);
         nodes[maxi]->input_fired(time, input_values[time]);
         node_outputs[time][maxi] = nodes[maxi]->output_values[time];
         output_values[time] = nodes[maxi]->output_values[time];
     } else {
-        for (auto i = 0; i < nodes.size(); i++) {
+        for (auto i = 0; i < (int32_t) nodes.size(); i++) {
             auto node = nodes[i];
             node->input_fired(time, input_values[time]);
             node_outputs[time][i] = node->output_values[time];
@@ -254,7 +256,7 @@ void DNASNode::try_update_deltas(int32_t time) {
         d_input[time] += nodes[maxi]->d_input[time];
 
     } else {
-        for (auto i = 0; i < z.size(); i++) {
+        for (int32_t i = 0; i < (int32_t) z.size(); i++) {
             nodes[i]->output_fired(time, delta * z[i]);
             double p = (x[i] / pi[i]);
             p *= ((delta * node_outputs[time][i]) / xtotal);
@@ -317,9 +319,9 @@ void DNASNode::set_weights(const vector<double>& parameters) {
 }
 
 void DNASNode::get_weights(int32_t& offset, vector<double>& parameters) const {
-    int start = offset;
+    // int start = offset;
     // Log::info("pi start %d; ", offset);
-    for (auto i = 0; i < pi.size(); i++) {
+    for (int32_t i = 0; i < (int32_t) pi.size(); i++) {
         parameters[offset++] = pi[i];
     }
     // Log::info_no_header("pi end %d \n", offset);
@@ -330,7 +332,7 @@ void DNASNode::get_weights(int32_t& offset, vector<double>& parameters) const {
 
 void DNASNode::set_weights(int32_t& offset, const vector<double>& parameters) {
     // int start = offset;
-    for (auto i = 0; i < pi.size(); i++) {
+    for (int32_t i = 0; i < (int32_t) pi.size(); i++) {
         pi[i] = parameters[offset++];
         if (pi[i] < 0.01) {
             pi[i] = 0.01;
@@ -344,7 +346,7 @@ void DNASNode::set_weights(int32_t& offset, const vector<double>& parameters) {
 }
 
 void DNASNode::set_pi(const vector<double>& new_pi) {
-    for (auto i = 0; i < pi.size(); i++) {
+    for (int32_t i = 0; i < (int32_t) pi.size(); i++) {
         pi[i] = new_pi[i];
     }
     calculate_maxi();
@@ -355,7 +357,7 @@ void DNASNode::calculate_maxi() {
         maxi = 0;
         double max_pi = pi[0];
 
-        for (auto i = 1; i < nodes.size(); i++) {
+        for (int32_t i = 0; i < (int32_t) nodes.size(); i++) {
             if (pi[i] > max_pi) {
                 max_pi = pi[i];
                 maxi = i;
@@ -376,11 +378,11 @@ void DNASNode::get_gradients(vector<double>& gradients) {
 
     if (counter >= CRYSTALLIZATION_THRESHOLD) {
         offset += pi.size();
-        for (auto i = 0; i < nodes.size(); i++) {
+        for (int32_t i = 0; i < (int32_t) nodes.size(); i++) {
             RNN_Node_Interface* node = nodes[i];
             if (i == maxi) {
                 node->get_gradients(temp);
-                for (auto j = 0; j < temp.size(); j++) {
+                for (int32_t j = 0; j < (int32_t) temp.size(); j++) {
                     gradients[offset++] = temp[j];
                 }
             } else {
@@ -390,13 +392,14 @@ void DNASNode::get_gradients(vector<double>& gradients) {
     } else {
         gradients.assign(get_number_weights(), 0.0);
         int offset = 0;
-        for (auto i = 0; i < pi.size(); i++) {
-            gradients[offset++] = d_pi[i];
+
+        for (int32_t i = 0; i < (int32_t) pi.size(); i++) {
+            gradients[offset++] = d_pi[i] * 0.1;
         }
 
         for (auto node : nodes) {
             node->get_gradients(temp);
-            for (auto i = 0; i < temp.size(); i++) {
+            for (int32_t i = 0; i < (int32_t) temp.size(); i++) {
                 gradients[offset++] = temp[i];
             }
         }

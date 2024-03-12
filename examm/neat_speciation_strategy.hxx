@@ -130,7 +130,7 @@ class NeatSpeciationStrategy : public SpeciationStrategy {
     /**
      * Gets speciation strategy information values for logs
      */
-    string get_strategy_information_values(RNN_Genome *genome) const;
+    string get_strategy_information_values(RNN_Genome* genome) const;
 
     RNN_Genome* get_global_best_genome();
 
@@ -147,6 +147,7 @@ class NeatSpeciationStrategy : public SpeciationStrategy {
     void check_species();
     void initialize_population(function<void(int32_t, RNN_Genome*)>& mutate);
     RNN_Genome* get_seed_genome();
+    void save_entire_population(string output_path);
 };
 
 #endif

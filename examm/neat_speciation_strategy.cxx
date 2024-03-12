@@ -237,7 +237,7 @@ RNN_Genome* NeatSpeciationStrategy::generate_genome(
 
     Species* currentSpecies = Neat_Species[generation_species];
 
-    function<double(RNN_Genome*, RNN_Genome*)> distance_function = [=](RNN_Genome* g1, RNN_Genome* g2) {
+    function<double(RNN_Genome*, RNN_Genome*)> distance_function = [=, this](RNN_Genome* g1, RNN_Genome* g2) {
         return this->get_distance(g1, g2);
     };
 
@@ -399,7 +399,7 @@ string NeatSpeciationStrategy::get_strategy_information_headers() const {
 /**
  * Gets speciation strategy information values for logs
  */
-string NeatSpeciationStrategy::get_strategy_information_values(RNN_Genome *genome) const {
+string NeatSpeciationStrategy::get_strategy_information_values(RNN_Genome* genome) const {
     string info_value = "";
     for (int32_t i = 0; i < (int32_t) Neat_Species.size(); i++) {
         double best_fitness = Neat_Species[i]->get_best_fitness();
@@ -559,4 +559,7 @@ RNN_Genome* NeatSpeciationStrategy::get_seed_genome() {
 }
 
 void NeatSpeciationStrategy::initialize_population(function<void(int32_t, RNN_Genome*)>& mutate) {
+}
+
+void NeatSpeciationStrategy::save_entire_population(string output_path) {
 }

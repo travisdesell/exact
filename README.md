@@ -12,22 +12,23 @@ brew install mysql
 brew install open-mpi
 brew install libtiff
 brew install libpng
+brew install clang-format
 xcode-select --install
 ```
 
 On the RIT Cluster Computer, load the following packages using spack:
 ```
-# CMake
-spack load /ux27hbj
+# GCC (9.3, higher versions have issues on the cluster for some reason)
+spack load /6smaf7z
 
-# GCC
-spack load gcc@11.2.0 
+# CMake
+spack load cmake@3.21.4
 
 # OpenMPI
-spack load openmpi@4.1.2
+spack load /f77pdq5
 
 # libtiff
-spack load /ycf67m3
+spack load libtiff@4.3.0
 ```
 
 To build:
@@ -40,6 +41,14 @@ To build:
 ```
 
 You can add `-DCMAKE_BUILD_TYPE=Release` to the invocation of `cmake` for a release build (slower compile times, faster execution).
+
+For contributers:
+
+Update the code format before start a pull request with:
+
+```
+~/exact $ sh scripts/util/format.sh
+```
 
 You may also want to have graphviz installed so you can generate images of the evolved neural networks.  EXACT/EXALT/EXAMM will write out evolved genomes in a .gv (graphviz) format for this. For example, can generate a pdf from a gv file (assuming graphviz is installed with):
 

@@ -7,7 +7,7 @@ using std::vector;
 #include "rnn_node_interface.hxx"
 
 class RNN_Node : public RNN_Node_Interface {
-   private:
+   protected:
     double bias;
     double d_bias;
 
@@ -15,12 +15,10 @@ class RNN_Node : public RNN_Node_Interface {
 
    public:
     // constructor for hidden nodes
-    RNN_Node(int32_t _innovation_number, int32_t _layer_type, double _depth, int32_t _node_type);
+    RNN_Node(int32_t _innovation_number, int32_t _layer_type, double _depth, node_t _node_type);
 
     // constructor for input and output nodes
-    RNN_Node(
-        int32_t _innovation_number, int32_t _layer_type, double _depth, int32_t _node_type, string _parameter_name
-    );
+    RNN_Node(int32_t _innovation_number, int32_t _layer_type, double _depth, node_t _node_type, string _parameter_name);
     ~RNN_Node();
 
     void initialize_lamarckian(
@@ -31,6 +29,8 @@ class RNN_Node : public RNN_Node_Interface {
     void initialize_uniform_random(minstd_rand0& generator, uniform_real_distribution<double>& rng);
 
     void input_fired(int32_t time, double incoming_output);
+    virtual double activation_function(double input);
+    virtual double derivative_function(double input);
 
     void try_update_deltas(int32_t time);
     void output_fired(int32_t time, double delta);

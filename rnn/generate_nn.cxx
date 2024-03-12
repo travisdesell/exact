@@ -9,11 +9,10 @@ using std::string;
 using std::vector;
 
 /*
- * node_kind is the type of memory cell (e.g. LSTM, UGRNN)
  * innovation_counter - reference to an integer used to keep track if innovation numbers. it will be incremented once.
  */
-RNN_Node_Interface* create_hidden_node(int32_t node_kind, int32_t& innovation_counter, double depth) {
-    switch (node_kind) {
+RNN_Node_Interface* create_hidden_node(node_t node_type, int32_t& innovation_counter, double depth) {
+    switch (node_type) {
         case SIMPLE_NODE:
             return new RNN_Node(++innovation_counter, HIDDEN_LAYER, depth, SIMPLE_NODE);
         case JORDAN_NODE:
@@ -39,9 +38,11 @@ RNN_Node_Interface* create_hidden_node(int32_t node_kind, int32_t& innovation_co
         case DNAS_NODE:
             Log::fatal("You shouldn't be creating DNAS nodes using generate_nn::create_hidden_node.\n");
             exit(1);
+        case SIN_NODE:
+            return new SIN_Node(++innovation_counter, HIDDEN_LAYER, depth);
         default:
             Log::fatal(
-                "If you are seeing this, an invalid node_kind was used to create a node (node_kind = %d\n", node_kind
+                "If you are seeing this, an invalid node_type was used to create a node (node_type = %d\n", node_type
             );
             exit(1);
     }
@@ -50,7 +51,7 @@ RNN_Node_Interface* create_hidden_node(int32_t node_kind, int32_t& innovation_co
     return nullptr;
 }
 
-DNASNode* create_dnas_node(int32_t& innovation_counter, double depth, const vector<int32_t>& node_types) {
+DNASNode* create_dnas_node(int32_t& innovation_counter, double depth, const vector<node_t>& node_types) {
     vector<RNN_Node_Interface*> nodes(node_types.size());
 
     if (node_types.size() == 0) {
@@ -136,7 +137,7 @@ RNN_Genome* create_nn(
 
 RNN_Genome* create_dnas_nn(
     const vector<string>& input_parameter_names, int32_t number_hidden_layers, int32_t number_hidden_nodes,
-    const vector<string>& output_parameter_names, int32_t max_recurrent_depth, vector<int32_t>& node_types,
+    const vector<string>& output_parameter_names, int32_t max_recurrent_depth, vector<node_t>& node_types,
     WeightRules* weight_rules
 ) {
     auto f = [&](int32_t& innovation_counter, double depth) -> RNN_Node_Interface* {
@@ -195,16 +196,10 @@ RNN_Genome* get_seed_genome(
             seed_genome->initialize_randomly();
             Log::info("Generated seed genome, seed genome is minimal\n");
         } else {
-            vector<int32_t> node_types = {
-                SIMPLE_NODE,
-                UGRNN_NODE,
-                MGU_NODE,
-                GRU_NODE,
-                DELTA_NODE,
-                LSTM_NODE
-            };
+            vector<node_t> node_types = {SIMPLE_NODE, UGRNN_NODE, MGU_NODE, GRU_NODE, DELTA_NODE, LSTM_NODE};
             seed_genome = create_dnas_nn(
-                time_series_sets->get_input_parameter_names(), 0, 0, time_series_sets->get_output_parameter_names(), 0, node_types, weight_rules
+                time_series_sets->get_input_parameter_names(), 0, 0, time_series_sets->get_output_parameter_names(), 0,
+                node_types, weight_rules
             );
         }
     }

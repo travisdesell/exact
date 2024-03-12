@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <cmath>
 using std::max;
 
 #include <fstream>
@@ -14,25 +15,25 @@ using std::vector;
 #include "rnn/rnn_genome.hxx"
 #include "rnn_node_interface.hxx"
 
-extern const vector<string> NODE_TYPES = {"simple", "jordan", "elman", "UGRNN", "MGU", "GRU",
-                                    "delta",  "LSTM",   "ENARC", "ENAS_DAG", "random_dag", "dnas"};
-
-extern const unordered_map<string, int32_t> string_to_node_type = {
-    {"simple",   SIMPLE_NODE},
-    {"jordan",   JORDAN_NODE},
-    { "elman",    ELMAN_NODE},
-    { "ugrnn",    UGRNN_NODE},
-    {   "mgu",      MGU_NODE},
-    {   "gru",      GRU_NODE},
-    { "delta",    DELTA_NODE},
-    {  "lstm",     LSTM_NODE},
-    { "enarc",    ENARC_NODE},
-    {  "enas", ENAS_DAG_NODE},
-    {  "dnas",     DNAS_NODE},
-    {  "random_dag", RANDOM_DAG_NODE},
+extern const vector<string> NODE_TYPES = {"simple", "jordan", "elman",    "UGRNN",      "MGU",  "GRU", "delta",
+                                          "LSTM",   "ENARC",  "ENAS_DAG", "random_dag", "dnas", "sin"};
+extern const unordered_map<string, node_t> string_to_node_type = {
+    {    "simple",     SIMPLE_NODE},
+    {    "jordan",     JORDAN_NODE},
+    {     "elman",      ELMAN_NODE},
+    {     "ugrnn",      UGRNN_NODE},
+    {       "mgu",        MGU_NODE},
+    {       "gru",        GRU_NODE},
+    {     "delta",      DELTA_NODE},
+    {      "lstm",       LSTM_NODE},
+    {     "enarc",      ENARC_NODE},
+    {      "enas",   ENAS_DAG_NODE},
+    {      "dnas",       DNAS_NODE},
+    {"random_dag", RANDOM_DAG_NODE},
+    {       "sin",        SIN_NODE},
 };
 
-int32_t node_type_from_string(string& node_type) {
+node_t node_type_from_string(string& node_type) {
     std::transform(node_type.begin(), node_type.end(), node_type.begin(), [](unsigned char c) {
         return std::tolower(c);
     });

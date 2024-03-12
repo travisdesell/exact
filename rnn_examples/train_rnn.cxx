@@ -15,9 +15,9 @@ using std::string;
 using std::vector;
 
 #include "common/arguments.hxx"
-#include "common/process_arguments.hxx"
 #include "common/files.hxx"
 #include "common/log.hxx"
+#include "common/process_arguments.hxx"
 #include "rnn/generate_nn.hxx"
 #include "rnn/gru_node.hxx"
 #include "rnn/lstm_node.hxx"
@@ -192,7 +192,7 @@ int main(int argc, char** argv) {
                 max_recurrent_depth, weight_rules
             );
         } else if (rnn_type == "dnas") {
-            vector<int> node_types = {SIMPLE_NODE, LSTM_NODE, GRU_NODE, MGU_NODE, DELTA_NODE, UGRNN_NODE};
+            vector<node_t> node_types = {SIMPLE_NODE, LSTM_NODE, GRU_NODE, MGU_NODE, DELTA_NODE, UGRNN_NODE};
             genome = create_dnas_nn(
                 input_parameter_names, num_hidden_layers, 1, output_parameter_names, max_recurrent_depth, node_types,
                 weight_rules

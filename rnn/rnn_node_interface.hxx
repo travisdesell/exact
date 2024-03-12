@@ -29,23 +29,25 @@ class RNN;
 extern const vector<string> NODE_TYPES;
 #define NUMBER_NODE_TYPES NODE_TYPES.size()
 
-extern const unordered_map<string, int32_t> string_to_node_type;
-int32_t node_type_from_string(string& node_type);
+enum node_t : int32_t {
+    SIMPLE_NODE = 0,
+    JORDAN_NODE = 1,
+    ELMAN_NODE = 2,
+    UGRNN_NODE = 3,
+    MGU_NODE = 4,
+    GRU_NODE = 5,
+    DELTA_NODE = 6,
+    LSTM_NODE = 7,
+    ENARC_NODE = 8,
+    ENAS_DAG_NODE = 9,
+    RANDOM_DAG_NODE = 10,
+    DNAS_NODE = 11,
+    SIN_NODE = 12,
+};
 
-#define SIMPLE_NODE     0
-#define JORDAN_NODE     1
-#define ELMAN_NODE      2
-#define UGRNN_NODE      3
-#define MGU_NODE        4
-#define GRU_NODE        5
-#define DELTA_NODE      6
-#define LSTM_NODE       7
-#define ENARC_NODE      8
-#define ENAS_DAG_NODE   9
-#define RANDOM_DAG_NODE 10
-#define DNAS_NODE       11
+node_t node_type_from_string(string& node_type);
 
-int32_t node_type_from_string(string& node_type);
+extern const unordered_map<string, node_t> string_to_node_type;
 
 double sigmoid(double value);
 double sigmoid_derivative(double value);
@@ -63,7 +65,7 @@ class RNN_Node_Interface {
    public:
     int32_t innovation_number;
     int32_t layer_type;
-    int32_t node_type;
+    node_t node_type;
 
     double depth;
 

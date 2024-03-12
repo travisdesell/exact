@@ -5,7 +5,7 @@ using std::vector;
 #include "common/log.hxx"
 #include "rnn_node.hxx"
 
-RNN_Node::RNN_Node(int32_t _innovation_number, int32_t _layer_type, double _depth, int32_t _node_type)
+RNN_Node::RNN_Node(int32_t _innovation_number, int32_t _layer_type, double _depth, node_t _node_type)
     : RNN_Node_Interface(_innovation_number, _layer_type, _depth), bias(0) {
     // node type will be simple, jordan or elman
     node_type = _node_type;
@@ -13,7 +13,7 @@ RNN_Node::RNN_Node(int32_t _innovation_number, int32_t _layer_type, double _dept
 }
 
 RNN_Node::RNN_Node(
-    int32_t _innovation_number, int32_t _layer_type, double _depth, int32_t _node_type, string _parameter_name
+    int32_t _innovation_number, int32_t _layer_type, double _depth, node_t _node_type, string _parameter_name
 )
     : RNN_Node_Interface(_innovation_number, _layer_type, _depth, _parameter_name), bias(0) {
     // node type will be simple, jordan or elman
@@ -57,11 +57,11 @@ void RNN_Node::input_fired(int32_t time, double incoming_output) {
         exit(1);
     }
 
-    output_values[time] = tanh(input_values[time] + bias);
-    ld_output[time] = tanh_derivative(output_values[time]);
+    Log::debug("node %d - input value[%d]: %lf\n", innovation_number, time, input_values[time]);
 
-    // output_values[time] = sigmoid(input_values[time] + bias);
-    // ld_output[time] = sigmoid_derivative(output_values[time]);
+    double input_plus_bias = input_values[time] + bias;
+    output_values[time] = activation_function(input_plus_bias);
+    ld_output[time] = derivative_function(input_plus_bias);
 
 #ifdef NAN_CHECKS
     if (isnan(output_values[time]) || isinf(output_values[time])) {
@@ -75,6 +75,13 @@ void RNN_Node::input_fired(int32_t time, double incoming_output) {
 #endif
 }
 
+double RNN_Node::activation_function(double input) {
+    return tanh(input);
+}
+
+double RNN_Node::derivative_function(double input) {
+    return 1 - (tanh(input) * tanh(input));
+}
 void RNN_Node::try_update_deltas(int32_t time) {
     if (outputs_fired[time] < total_outputs) {
         return;

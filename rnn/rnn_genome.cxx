@@ -43,6 +43,9 @@ using std::to_string;
 #include <vector>
 using std::vector;
 
+#include <utility>
+using std::move;
+
 #include "common/color_table.hxx"
 #include "common/log.hxx"
 #include "common/random.hxx"
@@ -61,7 +64,7 @@ using std::vector;
 #include "time_series/time_series.hxx"
 #include "ugrnn_node.hxx"
 
-extern vector<int32_t> dnas_node_types = {SIMPLE_NODE, UGRNN_NODE, MGU_NODE, GRU_NODE, DELTA_NODE, LSTM_NODE};
+vector<node_t> dnas_node_types = {SIMPLE_NODE, UGRNN_NODE, MGU_NODE, GRU_NODE, DELTA_NODE, LSTM_NODE};
 
 string parse_fitness(double fitness) {
     if (fitness == EXAMM_MAX_DOUBLE) {
@@ -236,8 +239,7 @@ string RNN_Genome::print_statistics_header() {
     oss << std::left << setw(12) << "MSE" << setw(12) << "MAE" << setw(12) << "Edges" << setw(12) << "Rec Edges"
         << setw(12) << "Simple" << setw(12) << "Jordan" << setw(12) << "Elman" << setw(12) << "UGRNN" << setw(12)
         << "MGU" << setw(12) << "GRU" << setw(12) << "Delta" << setw(12) << "LSTM" << setw(12) << "ENARC" << setw(12)
-        << "ENAS_DAG" << setw(12) << "RANDOM_DAG" << setw(12) << "Total"
-        << "Generated";
+        << "ENAS_DAG" << setw(12) << "RANDOM_DAG" << setw(12) << "Total" << "Generated";
 
     return oss.str();
 }
@@ -251,8 +253,8 @@ string RNN_Genome::print_statistics() {
         << get_node_count_str(MGU_NODE) << setw(12) << get_node_count_str(GRU_NODE) << setw(12)
         << get_node_count_str(DELTA_NODE) << setw(12) << get_node_count_str(LSTM_NODE) << setw(12)
         << get_node_count_str(ENARC_NODE) << setw(12) << get_node_count_str(ENAS_DAG_NODE) << setw(12)
-        << get_node_count_str(RANDOM_DAG_NODE) << setw(12) << get_node_count_str(-1)  //-1 does all nodes
-        << generated_by_string();
+        << get_node_count_str(RANDOM_DAG_NODE) << setw(12) << get_enabled_node_count() << " (" << get_node_count()
+        << ")" << generated_by_string();
     return oss.str();
 }
 
@@ -284,7 +286,7 @@ string RNN_Genome::get_edge_count_str(bool recurrent) {
     return oss.str();
 }
 
-string RNN_Genome::get_node_count_str(int32_t node_type) {
+string RNN_Genome::get_node_count_str(node_t node_type) {
     ostringstream oss;
     if (node_type < 0) {
         oss << get_enabled_node_count() << " (" << get_node_count() << ")";
@@ -311,7 +313,7 @@ int32_t RNN_Genome::get_enabled_node_count() {
     return count;
 }
 
-int32_t RNN_Genome::get_enabled_node_count(int32_t node_type) {
+int32_t RNN_Genome::get_enabled_node_count(node_t node_type) {
     int32_t count = 0;
 
     for (int32_t i = 0; i < (int32_t) nodes.size(); i++) {
@@ -327,7 +329,7 @@ int32_t RNN_Genome::get_node_count() {
     return (int32_t) nodes.size();
 }
 
-int32_t RNN_Genome::get_node_count(int32_t node_type) {
+int32_t RNN_Genome::get_node_count(node_t node_type) {
     int32_t count = 0;
 
     for (int32_t i = 0; i < (int32_t) nodes.size(); i++) {
@@ -831,6 +833,10 @@ vector<double> RNN_Genome::get_best_parameters() const {
 // INFO: ADDED BY ABDELRAHMAN TO USE FOR TRANSFER LEARNING
 void RNN_Genome::set_best_parameters(vector<double> parameters) {
     best_parameters = parameters;
+}
+
+vector<double> RNN_Genome::get_initial_parameters() const {
+    return initial_parameters;
 }
 
 // INFO: ADDED BY ABDELRAHMAN TO USE FOR TRANSFER LEARNING
@@ -1624,7 +1630,7 @@ void RNN_Genome::get_mu_sigma(const vector<double>& p, double& mu, double& sigma
 }
 
 RNN_Node_Interface* RNN_Genome::create_node(
-    double mu, double sigma, int32_t node_type, int32_t& node_innovation_count, double depth
+    double mu, double sigma, node_t node_type, int32_t& node_innovation_count, double depth
 ) {
     RNN_Node_Interface* n = NULL;
     WeightType mutated_component_weight = weight_rules->get_mutated_components_weight_method();
@@ -1974,7 +1980,7 @@ bool RNN_Genome::enable_edge() {
 }
 
 bool RNN_Genome::split_edge(
-    double mu, double sigma, int32_t node_type, uniform_int_distribution<int32_t> dist, int32_t& edge_innovation_count,
+    double mu, double sigma, node_t node_type, uniform_int_distribution<int32_t> dist, int32_t& edge_innovation_count,
     int32_t& node_innovation_count
 ) {
     Log::trace("\tattempting to split an edge!\n");
@@ -2352,7 +2358,7 @@ bool RNN_Genome::connect_node_to_hid_nodes(
 /*   ################# ################# ################# */
 
 bool RNN_Genome::add_node(
-    double mu, double sigma, int32_t node_type, uniform_int_distribution<int32_t> dist, int32_t& edge_innovation_count,
+    double mu, double sigma, node_t node_type, uniform_int_distribution<int32_t> dist, int32_t& edge_innovation_count,
     int32_t& node_innovation_count
 ) {
     Log::trace("\tattempting to add a node!\n");
@@ -2507,7 +2513,7 @@ bool RNN_Genome::disable_node() {
 }
 
 bool RNN_Genome::split_node(
-    double mu, double sigma, int32_t node_type, uniform_int_distribution<int32_t> dist, int32_t& edge_innovation_count,
+    double mu, double sigma, node_t node_type, uniform_int_distribution<int32_t> dist, int32_t& edge_innovation_count,
     int32_t& node_innovation_count
 ) {
     Log::trace("\tattempting to split a node!\n");
@@ -2729,7 +2735,7 @@ bool RNN_Genome::split_node(
 }
 
 bool RNN_Genome::merge_node(
-    double mu, double sigma, int32_t node_type, uniform_int_distribution<int32_t> dist, int32_t& edge_innovation_count,
+    double mu, double sigma, node_t node_type, uniform_int_distribution<int32_t> dist, int32_t& edge_innovation_count,
     int32_t& node_innovation_count
 ) {
     Log::trace("\tattempting to merge a node!\n");
@@ -3157,15 +3163,17 @@ void RNN_Genome::read_from_array(char* array, int32_t length) {
 }
 
 RNN_Node_Interface* RNN_Genome::read_node_from_stream(istream& bin_istream) {
-    int32_t innovation_number, layer_type, node_type;
+    int32_t innovation_number, layer_type, inode_type;
     double depth;
     bool enabled;
 
     bin_istream.read((char*) &innovation_number, sizeof(int32_t));
     bin_istream.read((char*) &layer_type, sizeof(int32_t));
-    bin_istream.read((char*) &node_type, sizeof(int32_t));
+    bin_istream.read((char*) &inode_type, sizeof(int32_t));
     bin_istream.read((char*) &depth, sizeof(double));
     bin_istream.read((char*) &enabled, sizeof(bool));
+
+    node_t node_type = (node_t) inode_type;
 
     string parameter_name;
     read_binary_string(bin_istream, parameter_name, "parameter_name");
@@ -3174,23 +3182,7 @@ RNN_Node_Interface* RNN_Genome::read_node_from_stream(istream& bin_istream) {
     );
 
     RNN_Node_Interface* node = nullptr;
-    if (node_type == LSTM_NODE) {
-        node = new LSTM_Node(innovation_number, layer_type, depth);
-    } else if (node_type == DELTA_NODE) {
-        node = new Delta_Node(innovation_number, layer_type, depth);
-    } else if (node_type == GRU_NODE) {
-        node = new GRU_Node(innovation_number, layer_type, depth);
-    } else if (node_type == ENARC_NODE) {
-        node = new ENARC_Node(innovation_number, layer_type, depth);
-    } else if (node_type == ENAS_DAG_NODE) {
-        node = new ENAS_DAG_Node(innovation_number, layer_type, depth);
-    } else if (node_type == RANDOM_DAG_NODE) {
-        node = new RANDOM_DAG_Node(innovation_number, layer_type, depth);
-    } else if (node_type == MGU_NODE) {
-        node = new MGU_Node(innovation_number, layer_type, depth);
-    } else if (node_type == UGRNN_NODE) {
-        node = new UGRNN_Node(innovation_number, layer_type, depth);
-    } else if (node_type == SIMPLE_NODE || node_type == JORDAN_NODE || node_type == ELMAN_NODE) {
+    if (node_type == SIMPLE_NODE || node_type == JORDAN_NODE || node_type == ELMAN_NODE) {
         if (layer_type == HIDDEN_LAYER) {
             node = new RNN_Node(innovation_number, layer_type, depth, node_type);
         } else {
@@ -3214,8 +3206,9 @@ RNN_Node_Interface* RNN_Genome::read_node_from_stream(istream& bin_istream) {
         dnas_node->set_pi(pi);
         node = (RNN_Node_Interface*) dnas_node;
     } else {
-        Log::fatal("Error reading node from stream, unknown node_type: %d\n", node_type);
-        exit(1);
+        int32_t dummy_counter = 0;
+        node = create_hidden_node(node_type, dummy_counter, depth);
+        node->innovation_number = innovation_number;
     }
 
     node->enabled = enabled;

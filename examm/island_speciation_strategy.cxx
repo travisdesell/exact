@@ -378,7 +378,7 @@ RNN_Genome* IslandSpeciationStrategy::generate_genome(
 
     pair<double, double> perf = {this->get_best_fitness(), this->get_worst_fitness()};
     genome_performance.emplace(new_genome->generation_id, perf);
-    
+
     if (current_island->is_initializing()) {
         RNN_Genome* genome_copy = new_genome->copy();
         Log::debug("inserting genome copy!\n");
@@ -388,7 +388,6 @@ RNN_Genome* IslandSpeciationStrategy::generate_genome(
     if (generation_island >= (int32_t) islands.size()) {
         generation_island = 0;
     }
-
 
     return new_genome;
 }
@@ -477,15 +476,15 @@ string IslandSpeciationStrategy::get_strategy_information_headers() const {
 /**
  * Gets speciation strategy information values for logs
  */
-string IslandSpeciationStrategy::get_strategy_information_values(RNN_Genome *genome) const {
+string IslandSpeciationStrategy::get_strategy_information_values(RNN_Genome* genome) const {
     string info_value = "";
-    
-    auto &[min_mse_pre, max_mse_pre] = genome_performance.at(genome->generation_id);
+
+    auto& [min_mse_pre, max_mse_pre] = genome_performance.at(genome->generation_id);
     info_value.append(",");
     info_value.append(to_string(min_mse_pre));
     info_value.append(",");
     info_value.append(to_string(max_mse_pre));
-    
+
     float min_mse_post = this->get_best_fitness();
     float max_mse_post = this->get_worst_fitness();
     info_value.append(",");
@@ -597,4 +596,11 @@ void IslandSpeciationStrategy::set_erased_islands_status() {
 
 RNN_Genome* IslandSpeciationStrategy::get_seed_genome() {
     return seed_genome;
+}
+
+// write a save entire population function with an input saving function
+void IslandSpeciationStrategy::save_entire_population(string output_path) {
+    for (int32_t i = 0; i < (int32_t) islands.size(); i++) {
+        islands[i]->save_population(output_path);
+    }
 }
