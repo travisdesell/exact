@@ -243,6 +243,11 @@ RNN_Genome* EXAMM::get_worst_genome() {
 
 // this will insert a COPY, original needs to be deleted
 bool EXAMM::insert_genome(RNN_Genome* genome) {
+    // discard genomes with NaN fitness
+    if (std::isnan(genome->get_fitness()) || std::isinf(genome->get_fitness())) {
+        return false;
+    }
+
     total_bp_epochs += genome->get_bp_iterations();
     if (!genome->sanity_check()) {
         Log::error("genome failed sanity check on insert!\n");
@@ -254,12 +259,22 @@ bool EXAMM::insert_genome(RNN_Genome* genome) {
     pre_insert_best_mse = this->get_best_fitness();
 
     int32_t insert_position = speciation_strategy->insert_genome(genome);
+    Log::info("insert to speciation strategy complete, at position: %d\n", insert_position);
+
     // write this genome to disk if it was a new best found genome
     if (save_genome_option.compare("all_best_genomes") == 0) {
+        Log::info("save genome option compared, save genome option size: %d!\n", save_genome_option.size());
+        for (int i = 0; i < 20 && i < save_genome_option.size(); i++) {
+            cout << "save_genome_option[" << i << "]: " << save_genome_option[i] << endl;
+        }
+
         if (insert_position == 0) {
+            Log::info("saving genome!");
             save_genome(genome, "rnn_genome");
+            Log::info("saved genome!");
         }
     }
+    Log::info("save genome complete\n");
 
     last_genome_inserted = insert_position >= 0;
 
@@ -274,6 +289,10 @@ bool EXAMM::insert_genome(RNN_Genome* genome) {
 // write function to save genomes to file
 void EXAMM::save_genome(RNN_Genome* genome, string genome_name = "rnn_genome") {
     genome->write_graphviz(output_directory + "/" + genome_name + "_" + to_string(genome->get_generation_id()) + ".gv");
+    ofstream equations_filestream(
+        output_directory + "/" + genome_name + "_" + to_string(genome->get_generation_id()) + ".txt"
+    );
+    genome->write_equations(equations_filestream);
     genome->write_to_file(output_directory + "/" + genome_name + "_" + to_string(genome->get_generation_id()) + ".bin");
 }
 

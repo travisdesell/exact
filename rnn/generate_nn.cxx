@@ -35,11 +35,20 @@ RNN_Node_Interface* create_hidden_node(node_t node_type, int32_t& innovation_cou
             return new ENAS_DAG_Node(++innovation_counter, HIDDEN_LAYER, depth);
         case RANDOM_DAG_NODE:
             return new RANDOM_DAG_Node(++innovation_counter, HIDDEN_LAYER, depth);
-        case DNAS_NODE:
-            Log::fatal("You shouldn't be creating DNAS nodes using generate_nn::create_hidden_node.\n");
-            exit(1);
         case SIN_NODE:
             return new SIN_Node(++innovation_counter, HIDDEN_LAYER, depth);
+        case SUM_NODE:
+            return new SUM_Node(++innovation_counter, HIDDEN_LAYER, depth);
+        case COS_NODE:
+            return new COS_Node(++innovation_counter, HIDDEN_LAYER, depth);
+        case TANH_NODE:
+            return new TANH_Node(++innovation_counter, HIDDEN_LAYER, depth);
+        case SIGMOID_NODE:
+            return new SIGMOID_Node(++innovation_counter, HIDDEN_LAYER, depth);
+        case INVERSE_NODE:
+            return new INVERSE_Node(++innovation_counter, HIDDEN_LAYER, depth);
+        case MULTIPLY_NODE:
+            return new MULTIPLY_Node(++innovation_counter, HIDDEN_LAYER, depth);
         default:
             Log::fatal(
                 "If you are seeing this, an invalid node_type was used to create a node (node_type = %d\n", node_type

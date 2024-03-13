@@ -7,7 +7,6 @@ using std::vector;
 
 SIN_Node::SIN_Node(int32_t _innovation_number, int32_t _layer_type, double _depth)
     : RNN_Node(_innovation_number, _layer_type, _depth, SIN_NODE) {
-    // node type will be simple, jordan or elman
     Log::debug("created node: %d, layer type: %d, node type: SIN_NODE\n", innovation_number, layer_type);
 }
 

@@ -131,10 +131,6 @@ int main(int argc, char** argv) {
 
         genome = create_sin(inputs3, 4, 4, outputs3, max_recurrent_depth, weight_rules);
         gradient_test("SIN: 3 Input, 4x4 Hidden, 3 Output", genome, inputs, outputs);
-
-        // write final genome to file to upload as seed genome in examm_mpi test
-        genome->write_to_file("/Users/jaredmurphy/exact/scripts/simple_node_tests/test_genome.bin");
-
         delete genome;
     }
 }

@@ -29,6 +29,8 @@ class RNN_Recurrent_Edge {
     RNN_Node_Interface* input_node;
     RNN_Node_Interface* output_node;
 
+    vector<int32_t> input_number;
+
    public:
     RNN_Recurrent_Edge(
         int32_t _innovation_number, int32_t _recurrent_depth, RNN_Node_Interface* _input_node,

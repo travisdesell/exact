@@ -24,6 +24,8 @@ class RNN_Edge {
     RNN_Node_Interface* input_node;
     RNN_Node_Interface* output_node;
 
+    vector<int32_t> input_number;
+
    public:
     RNN_Edge(int32_t _innovation_number, RNN_Node_Interface* _input_node, RNN_Node_Interface* _output_node);
 

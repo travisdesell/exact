@@ -27,7 +27,6 @@ class RNN;
 #define OUTPUT_LAYER 2
 
 extern const vector<string> NODE_TYPES;
-#define NUMBER_NODE_TYPES NODE_TYPES.size()
 
 enum node_t : int32_t {
     SIMPLE_NODE = 0,
@@ -43,6 +42,12 @@ enum node_t : int32_t {
     RANDOM_DAG_NODE = 10,
     DNAS_NODE = 11,
     SIN_NODE = 12,
+    SUM_NODE = 13,
+    COS_NODE = 14,
+    TANH_NODE = 15,
+    SIGMOID_NODE = 16,
+    INVERSE_NODE = 17,
+    MULTIPLY_NODE = 18,
 };
 
 node_t node_type_from_string(string& node_type);
@@ -83,6 +88,7 @@ class RNN_Node_Interface {
     vector<double> output_values;
     vector<double> error_values;
     vector<double> d_input;
+    vector<vector<double>> ordered_d_input;
 
     vector<int32_t> inputs_fired;
     vector<int32_t> outputs_fired;
@@ -143,10 +149,10 @@ class RNN_Node_Interface {
     friend class RNN_Genome;
 
     friend void get_mse(
-        RNN* genome, const vector<vector<double> >& expected, double& mse, vector<vector<double> >& deltas
+        RNN* genome, const vector<vector<double>>& expected, double& mse, vector<vector<double>>& deltas
     );
     friend void get_mae(
-        RNN* genome, const vector<vector<double> >& expected, double& mae, vector<vector<double> >& deltas
+        RNN* genome, const vector<vector<double>>& expected, double& mae, vector<vector<double>>& deltas
     );
 };
 

@@ -732,7 +732,7 @@ void TimeSeriesSets::load_time_series() {
     }
 
     for (int32_t i = 0; i < (int32_t) filenames.size(); i++) {
-        Log::debug("\t%s\n", filenames[i].c_str());
+        Log::info("\t%s\n", filenames[i].c_str());
 
         TimeSeriesSet* ts = new TimeSeriesSet(filenames[i], all_parameter_names);
         time_series.push_back(ts);
@@ -1229,7 +1229,10 @@ void TimeSeriesSets::export_series_by_name(string field_name, vector<vector<doub
 
 void TimeSeriesSets::write_time_series_sets(string base_filename) {
     for (int32_t i = 0; i < (int32_t) time_series.size(); i++) {
-        ofstream outfile(base_filename + to_string(i) + ".csv");
+        string filepath = time_series[i]->get_filename();
+        string outfilename = base_filename + filepath.substr(filepath.find_last_of('/'));
+        Log::info("writing time series file to: '%s'\n", outfilename.c_str());
+        ofstream outfile(outfilename);
 
         vector<vector<double> > data;
         time_series[i]->export_time_series(data);
