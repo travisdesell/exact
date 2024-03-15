@@ -243,8 +243,7 @@ string RNN_Genome::print_statistics_header() {
     oss << std::left << setw(12) << "MSE" << setw(12) << "MAE" << setw(12) << "Edges" << setw(12) << "Rec Edges"
         << setw(12) << "Simple" << setw(12) << "Jordan" << setw(12) << "Elman" << setw(12) << "UGRNN" << setw(12)
         << "MGU" << setw(12) << "GRU" << setw(12) << "Delta" << setw(12) << "LSTM" << setw(12) << "ENARC" << setw(12)
-        << "ENAS_DAG" << setw(12) << "RANDOM_DAG" << setw(12) << "Total"
-        << "Generated";
+        << "ENAS_DAG" << setw(12) << "RANDOM_DAG" << setw(12) << "Total" << "Generated";
 
     return oss.str();
 }
@@ -4161,7 +4160,8 @@ void RNN_Genome::write_equations(ostream& outstream) {
                     Log::fatal("ERROR: output_node not correct type\n");
                     exit(1);
                 }
-            } else if (innovation_to_inputs_fired[output_node->innovation_number] > 1 && innovation_to_inputs_fired[output_node->innovation_number] < output_node->total_inputs){
+            } else if (innovation_to_inputs_fired[output_node->innovation_number] > 1
+                       && innovation_to_inputs_fired[output_node->innovation_number] < output_node->total_inputs) {
                 if (output_node->node_type == MULTIPLY_NODE) {
                     current_output_equation += " * " + input_equation;
                 } else {
@@ -4248,7 +4248,8 @@ void RNN_Genome::write_equations(ostream& outstream) {
                     Log::fatal("ERROR: output_node not correct type");
                     exit(1);
                 }
-            } else if (innovation_to_inputs_fired[output_node->innovation_number] > 1 && innovation_to_inputs_fired[output_node->innovation_number] < output_node->total_inputs){
+            } else if (innovation_to_inputs_fired[output_node->innovation_number] > 1
+                       && innovation_to_inputs_fired[output_node->innovation_number] < output_node->total_inputs) {
                 if (output_node->node_type == MULTIPLY_NODE) {
                     current_output_equation += " * " + input_equation;
                 } else {
@@ -4291,8 +4292,8 @@ void RNN_Genome::write_equations(ostream& outstream) {
             //  outstream << "is_reachable: " << nodes[i]->is_reachable() << endl;
             outstream << endl;
         } else if (nodes[i]->layer_type == OUTPUT_LAYER && nodes[i]->is_reachable()) {
-            outstream << innovation_to_label[nodes[i]->innovation_number] << "(t + 1)"
-                      << " = " << innovation_to_equation[nodes[i]->innovation_number] << endl;
+            outstream << innovation_to_label[nodes[i]->innovation_number] << "(t + 1)" << " = "
+                      << innovation_to_equation[nodes[i]->innovation_number] << endl;
             outstream << endl;
         }
     }

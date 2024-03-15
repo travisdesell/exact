@@ -536,8 +536,8 @@ void EXAMM::attempt_edge_insert(
             exit(1);
 
             return;
-        } else if (child_edges[i]->get_input_innovation_number() == edge->get_input_innovation_number() &&
-                   child_edges[i]->get_output_innovation_number() == edge->get_output_innovation_number()) {
+        } else if (child_edges[i]->get_input_innovation_number() == edge->get_input_innovation_number()
+                   && child_edges[i]->get_output_innovation_number() == edge->get_output_innovation_number()) {
             Log::debug(
                 "Not inserting edge in crossover operation as there was already an edge with the same input and output "
                 "innovation numbers!\n"
@@ -620,10 +620,10 @@ void EXAMM::attempt_recurrent_edge_insert(
             exit(1);
 
             return;
-        } else if (child_recurrent_edges[i]->get_input_innovation_number() ==
-                       recurrent_edge->get_input_innovation_number() &&
-                   child_recurrent_edges[i]->get_output_innovation_number() ==
-                       recurrent_edge->get_output_innovation_number()) {
+        } else if (child_recurrent_edges[i]->get_input_innovation_number()
+                       == recurrent_edge->get_input_innovation_number()
+                   && child_recurrent_edges[i]->get_output_innovation_number()
+                          == recurrent_edge->get_output_innovation_number()) {
             Log::debug(
                 "Not inserting recurrent_edge in crossover operation as there was already an recurrent_edge with the "
                 "same input and output innovation numbers!\n"
