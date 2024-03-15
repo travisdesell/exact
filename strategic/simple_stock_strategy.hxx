@@ -68,6 +68,8 @@ class SimpleStockStrategy : public Strategy {
          * \return a Portfolio object representing the amount of stock and money available.
          */
         State* get_state();
+
+        void report_reward(double reward);
 };
 
 

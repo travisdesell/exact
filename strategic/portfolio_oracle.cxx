@@ -17,7 +17,6 @@ PortfolioOracle::PortfolioOracle(const vector<string> &arguments) {
 
 }
 
-
 double PortfolioOracle::calculate_reward(State *state, const map<string, double> &context) {
     Portfolio* portfolio = dynamic_cast<Portfolio*>(state);
     if (portfolio == NULL) {
@@ -26,6 +25,10 @@ double PortfolioOracle::calculate_reward(State *state, const map<string, double>
     }
 
     double current_total_money = portfolio->calculate_value(context);
+
+    Log::info("Previous money: %2.5f\n", previous_total_money);
+    Log::info("Current money: %2.5f\n", current_total_money);
+
 
     double reward = current_total_money - previous_total_money;
 

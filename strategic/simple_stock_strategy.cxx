@@ -39,16 +39,20 @@ void SimpleStockStrategy::make_move(const map<string, double> &context, const ma
     //ensure that <STOCK>_PRC is in the context and <STOCK>_RET is in the forecast
     bool missing_stock = false;
     for (string stock : stocks) {
-        if (!context.contains(stock + price_suffix)) {
+
+        if (context.find(stock + price_suffix) == context.end()) {
+        //if (!context.contains(stock + price_suffix)) {
             Log::fatal("ERROR, user specified stock '%s' was being traded but '%s_PRC' was not found in context parameters.\n", stock.c_str(), stock.c_str());
             missing_stock = true;
         }
 
-        if (!forecast.contains(stock + return_suffix)) {
+        if (context.find(stock + return_suffix) == context.end()) {
+        //if (!forecast.contains(stock + return_suffix)) {
             Log::fatal("ERROR, user specified stock '%s' was being traded but '%s_RET' was not found in forecast parameters.\n", stock.c_str(), stock.c_str());
             missing_stock = true;
         }
     }
+
     if (missing_stock) exit(1);
 
     //determine which stocks we will sell, and which stocks we will buy
@@ -117,4 +121,8 @@ State* SimpleStockStrategy::get_state() {
     }
 
     return portfolio;
+}
+
+void SimpleStockStrategy::report_reward(double reward){
+    return;
 }

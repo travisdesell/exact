@@ -47,6 +47,8 @@ class Strategy {
          * a reward given the current state and the current context of the system.
          */
         virtual State* get_state() = 0;
+
+        virtual void report_reward(double reward) = 0;
 };
 
 

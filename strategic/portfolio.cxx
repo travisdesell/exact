@@ -17,6 +17,7 @@ double Portfolio::calculate_value(const map<string, double> &context) {
         Log::info("getting price for %s with %lf purchased shares.\n", stock.c_str(), purchased_shares);
 
         double price = context.at(stock + "_PRC");
+        Log::info("price: %5.5f\n", price);
 
         value += price * purchased_shares;
     }

@@ -1,2 +1,5 @@
-add_executable(evaluate_strategy evaluate_strategy.cxx forecaster.cxx trivial_forecaster.cxx strategy.cxx simple_stock_strategy.cxx state.cxx portfolio.cxx oracle.cxx portfolio_oracle.cxx)
+add_executable(evaluate_strategy evaluate_strategy.cxx forecaster.cxx trivial_forecaster.cxx strategy.cxx linucb.cxx bandit_strategy.cxx simple_stock_strategy.cxx state.cxx portfolio.cxx oracle.cxx portfolio_oracle.cxx)
 target_link_libraries(evaluate_strategy examm_strategy exact_common exact_time_series exact_weights examm_nn pthread)
+
+add_executable(evaluate_bandit_strategy evaluate_bandit_strategy.cxx forecaster.cxx trivial_forecaster.cxx strategy.cxx linucb.cxx bandit_strategy.cxx simple_stock_strategy.cxx state.cxx portfolio.cxx oracle.cxx portfolio_oracle.cxx)
+target_link_libraries(evaluate_bandit_strategy examm_strategy exact_common exact_time_series exact_weights examm_nn pthread)
