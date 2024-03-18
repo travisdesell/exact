@@ -36,6 +36,8 @@ class Island {
     vector<RNN_Genome*> genomes;
     unordered_set<RNN_Genome*, RNN_Genome::StructuralHash> structure_set;
 
+    minstd_rand0 generator;
+
     AnnealingPolicy& annealing_policy;
 
     int32_t

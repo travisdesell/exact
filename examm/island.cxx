@@ -21,20 +21,26 @@ using std::vector;
 Island::Island(int32_t _id, int32_t _max_size, AnnealingPolicy& annealing_policy)
     : id(_id),
       max_size(_max_size),
+      annealing_policy(annealing_policy),
       status(Island::INITIALIZING),
       erase_again(0),
-      erased(false),
-      annealing_policy(annealing_policy) {
+      erased(false) {
+    using namespace std::chrono;
+    long long t = time_point_cast<nanoseconds>(system_clock::now()).time_since_epoch().count();
+    generator = minstd_rand0(t);
 }
 
 Island::Island(int32_t _id, vector<RNN_Genome*> _genomes, AnnealingPolicy& annealing_policy)
     : id(_id),
       max_size((int32_t) _genomes.size()),
       genomes(_genomes),
+      annealing_policy(annealing_policy),
       status(Island::FILLED),
       erase_again(0),
-      erased(false),
-      annealing_policy(annealing_policy) {
+      erased(false) {
+    using namespace std::chrono;
+    long long t = time_point_cast<nanoseconds>(system_clock::now()).time_since_epoch().count();
+    generator = minstd_rand0(t);
 }
 
 RNN_Genome* Island::get_best_genome() {
@@ -162,7 +168,8 @@ int32_t Island::insert_genome(RNN_Genome* genome) {
     Log::info("getting structural hash\n");
     auto duplicate_it = structure_set.find(genome);
 
-    if (duplicate_it != structure_set.end()) {
+    bool duplicate_exists = duplicate_it != structure_set.end();
+    if (duplicate_exists) {
         RNN_Genome* duplicate = *duplicate_it;
         // TODO: Add annealment here
         if (duplicate->get_fitness() > genome->get_fitness()) {
@@ -179,13 +186,24 @@ int32_t Island::insert_genome(RNN_Genome* genome) {
         copy->set_weights(best);
     }
 
-    Log::debug("created copy to insert to island: %d\n", copy->get_group_id());
+    // Only do simulated annealing if the island is full
+    // This will with a probability prescribed by the annealing policy (a function of genome number) randomly accept
+    // genomes by deleting a random member of the population./
+    if (genomes.size() == max_size && uniform_real_distribution<>(0.0, 1.0)(generator) < annealing_policy(copy->get_generation_id())) {
+        int32_t index = uniform_real_distribution<>(0., 1.)(generator) * genomes.size();
+        
+        RNN_Genome *victim = genomes[index];
+        genomes.erase(genomes.begin() + index);
+        structure_set.erase(victim);
+    }
+
     auto index_iterator = upper_bound(genomes.begin(), genomes.end(), copy, sort_genomes_by_fitness());
     int32_t insert_index = index_iterator - genomes.begin();
     Log::debug("inserting genome at index: %d\n", insert_index);
 
     if (insert_index >= max_size) {
-        // if we're going to insert this at the back of the population
+        // For simulated annealing: if this is true, then we should remove a random member of the population to insert.
+            // if we're going to insert this at the back of the population
         // its just going to get removed anyways, so we can delete
         // it and report it was not inserted.
         Log::debug("not inserting genome because it is worse than the worst fitness\n");
@@ -199,7 +217,6 @@ int32_t Island::insert_genome(RNN_Genome* genome) {
 
     if (insert_index == 0) {
         // this was a new best genome for this island
-
         Log::info("Island %d: new best fitness found!\n", id);
 
         if (genome->get_fitness() != EXAMM_MAX_DOUBLE) {
