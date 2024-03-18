@@ -18,6 +18,9 @@ using std::string;
 #include <unordered_map>
 using std::unordered_map;
 
+#include <unordered_set>
+using std::unordered_set;
+
 #include "rnn/rnn_genome.hxx"
 
 class Island {
@@ -34,8 +37,8 @@ class Island {
      * The genomes on this island, stored in sorted order best (front) to worst (back).
      */
     vector<RNN_Genome*> genomes;
+    unordered_set<RNN_Genome *, RNN_Genome::StructuralHash> structure_set;
 
-    unordered_map<string, vector<RNN_Genome*>> structure_map;
     int32_t
         status; /**> The status of this island (either Island:INITIALIZING, Island::FILLED or  Island::REPOPULATING */
 
@@ -171,8 +174,6 @@ class Island {
      * erases the entire island and set the erased_generation_id.
      */
     void erase_island();
-
-    void erase_structure_map();
 
     /**
      * returns the get_erased_generation_id.

@@ -228,7 +228,6 @@ void IslandSpeciationStrategy::repopulate() {
                     if (rank[i] >= 0) {
                         Log::info("found island: %d is the worst island \n", rank[0]);
                         islands[rank[i]]->erase_island();
-                        islands[rank[i]]->erase_structure_map();
                         islands[rank[i]]->set_status(Island::REPOPULATING);
                     } else {
                         Log::error("Didn't find the worst island!");

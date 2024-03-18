@@ -1337,7 +1337,7 @@ bool RNN_Genome::has_node_with_innovation(int32_t innovation_number) const {
     return false;
 }
 
-bool RNN_Genome::equals(RNN_Genome* other) {
+bool RNN_Genome::equals(const RNN_Genome* other) const {
     if (nodes.size() != other->nodes.size()) {
         return false;
     }
@@ -1367,6 +1367,19 @@ bool RNN_Genome::equals(RNN_Genome* other) {
     }
 
     return true;
+}
+
+bool RNN_Genome::operator==(const RNN_Genome& other) const {
+    return other.equals(this);
+}
+
+size_t RNN_Genome::StructuralHash::operator()(const RNN_Genome* genome) const {
+    return this->operator()(*genome);
+}
+
+size_t RNN_Genome::StructuralHash::operator()(const RNN_Genome& genome) const {
+    std::hash<string> hasher;
+    return hasher(genome.get_structural_hash());
 }
 
 void RNN_Genome::assign_reachability() {
