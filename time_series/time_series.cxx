@@ -796,8 +796,8 @@ TimeSeriesSets* TimeSeriesSets::generate_from_arguments(const vector<string>& ar
         get_argument_vector(arguments, "--parameters", true, p);
         tss->parse_parameters_string(p);
 
-    } else if (argument_exists(arguments, "--input_parameter_names") &&
-               argument_exists(arguments, "--output_parameter_names")) {
+    } else if (argument_exists(arguments, "--input_parameter_names")
+               && argument_exists(arguments, "--output_parameter_names")) {
         get_argument_vector(arguments, "--input_parameter_names", true, tss->input_parameter_names);
 
         get_argument_vector(arguments, "--output_parameter_names", true, tss->output_parameter_names);

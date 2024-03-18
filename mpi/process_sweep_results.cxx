@@ -82,8 +82,8 @@ void process_dir(string dir_name, int32_t depth) {
             // cout << sub_dir_name << ", depth: " << depth << endl;
 
             if (depth == 3 && extension_is(sub_dir_name, ".bin")) {
-                cout << "\tprocessing genome binary '" << sub_dir_name << "' for '" << current_output << "'"
-                     << " and " << current_run_type;
+                cout << "\tprocessing genome binary '" << sub_dir_name << "' for '" << current_output << "'" << " and "
+                     << current_run_type;
                 RNN_Genome* genome = new RNN_Genome(sub_dir_name);
                 cout << ", fitness: " << genome->get_fitness() << endl;
 
@@ -353,24 +353,13 @@ int main(int argc, char** argv) {
     cout << "\\begin{tabular}{|l|r|r|r|r|r|r|r|r|r|r|r|r|r|r|}" << endl;
 
     cout << "\\hline" << endl;
-    cout << " "
-         << "& \\multicolumn{4}{|c|}{FF}"
-         << "& \\multicolumn{4}{|c|}{LSTM}"
-         << "& \\multicolumn{4}{|c|}{UGRNN}"
-         << "& \\multicolumn{4}{|c|}{Delta}"
-         << "& \\multicolumn{4}{|c|}{MGU}"
-         << "& \\multicolumn{4}{|c|}{GRU}"
+    cout << " " << "& \\multicolumn{4}{|c|}{FF}" << "& \\multicolumn{4}{|c|}{LSTM}" << "& \\multicolumn{4}{|c|}{UGRNN}"
+         << "& \\multicolumn{4}{|c|}{Delta}" << "& \\multicolumn{4}{|c|}{MGU}" << "& \\multicolumn{4}{|c|}{GRU}"
          << "\\\\" << endl;
 
     cout << "\\hline" << endl;
-    cout << "Run Type"
-         << " & Min & Avg & Max & Corr"
-         << " & Min & Avg & Max & Corr"
-         << " & Min & Avg & Max & Corr"
-         << " & Min & Avg & Max & Corr"
-         << " & Min & Avg & Max & Corr"
-         << " & Min & Avg & Max & Corr"
-         << "\\\\" << endl;
+    cout << "Run Type" << " & Min & Avg & Max & Corr" << " & Min & Avg & Max & Corr" << " & Min & Avg & Max & Corr"
+         << " & Min & Avg & Max & Corr" << " & Min & Avg & Max & Corr" << " & Min & Avg & Max & Corr" << "\\\\" << endl;
 
     cout << "\\hline" << endl;
     cout << "\\hline" << endl;
