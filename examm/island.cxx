@@ -189,10 +189,11 @@ int32_t Island::insert_genome(RNN_Genome* genome) {
     // Only do simulated annealing if the island is full
     // This will with a probability prescribed by the annealing policy (a function of genome number) randomly accept
     // genomes by deleting a random member of the population./
-    if (genomes.size() == max_size && uniform_real_distribution<>(0.0, 1.0)(generator) < annealing_policy(copy->get_generation_id())) {
+    if (genomes.size() == max_size
+        && uniform_real_distribution<>(0.0, 1.0)(generator) < annealing_policy(copy->get_generation_id())) {
         int32_t index = uniform_real_distribution<>(0., 1.)(generator) * genomes.size();
-        
-        RNN_Genome *victim = genomes[index];
+
+        RNN_Genome* victim = genomes[index];
         genomes.erase(genomes.begin() + index);
         structure_set.erase(victim);
     }
@@ -203,7 +204,7 @@ int32_t Island::insert_genome(RNN_Genome* genome) {
 
     if (insert_index >= max_size) {
         // For simulated annealing: if this is true, then we should remove a random member of the population to insert.
-            // if we're going to insert this at the back of the population
+        // if we're going to insert this at the back of the population
         // its just going to get removed anyways, so we can delete
         // it and report it was not inserted.
         Log::debug("not inserting genome because it is worse than the worst fitness\n");
