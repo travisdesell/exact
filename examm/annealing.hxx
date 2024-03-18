@@ -1,4 +1,5 @@
 #include <stdint.h>
+
 #include <memory>
 using std::unique_ptr;
 
@@ -9,8 +10,7 @@ using std::string;
 using std::vector;
 
 struct AnnealingPolicy {
-
-    static unique_ptr<AnnealingPolicy> from_arguments(const vector<string> &arguments);
+    static unique_ptr<AnnealingPolicy> from_arguments(const vector<string>& arguments);
 
     /**
      * Compute the probability to be used during genome insertion.
@@ -30,9 +30,9 @@ class LinearAnnealingPolicy : public AnnealingPolicy {
     double start_value, end_value;
     int32_t start_genomes, interp_genomes;
 
-  public:
+   public:
     LinearAnnealingPolicy(double start_value, double end_value, int32_t start_genomes, int32_t interp_genomes);
-    LinearAnnealingPolicy(const vector<string> &arguments);
+    LinearAnnealingPolicy(const vector<string>& arguments);
 
     double operator()(int32_t genome_number);
 };
@@ -42,10 +42,10 @@ class LinearAnnealingPolicy : public AnnealingPolicy {
  **/
 class InvExpAnnealingPolicy : public AnnealingPolicy {
     double decay_factor;
-  
-  public:
+
+   public:
     InvExpAnnealingPolicy(double decay_factor);
-    InvExpAnnealingPolicy(const vector<string> &arguments);
+    InvExpAnnealingPolicy(const vector<string>& arguments);
 
     double operator()(int32_t genome_number);
 };
@@ -57,9 +57,9 @@ class InvExpAnnealingPolicy : public AnnealingPolicy {
 class SinAnnealingPolicy : public AnnealingPolicy {
     double period, min_p, max_p;
 
-  public:
+   public:
     SinAnnealingPolicy(double period, double min_p, double max_p);
-    SinAnnealingPolicy(const vector<string> &arguments);
+    SinAnnealingPolicy(const vector<string>& arguments);
 
     double operator()(int32_t genome_number);
 };

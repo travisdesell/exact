@@ -2,7 +2,6 @@
 #define EXAMM_ISLAND_STRATEGY_HXX
 
 #include <algorithm>
-
 #include <functional>
 #include <memory>
 using std::function;
@@ -15,12 +14,11 @@ using std::uniform_real_distribution;
 using std::string;
 
 #include <unordered_map>
-
 #include <unordered_set>
 using std::unordered_set;
 
-#include "rnn/rnn_genome.hxx"
 #include "annealing.hxx"
+#include "rnn/rnn_genome.hxx"
 
 class Island {
    private:
@@ -36,7 +34,7 @@ class Island {
      * The genomes on this island, stored in sorted order best (front) to worst (back).
      */
     vector<RNN_Genome*> genomes;
-    unordered_set<RNN_Genome *, RNN_Genome::StructuralHash> structure_set;
+    unordered_set<RNN_Genome*, RNN_Genome::StructuralHash> structure_set;
 
     AnnealingPolicy& annealing_policy;
 

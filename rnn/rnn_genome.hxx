@@ -307,7 +307,6 @@ class RNN_Genome {
         size_t operator()(const RNN_Genome* other) const;
     };
 
-
     string get_color(double weight, bool is_recurrent);
     void write_graphviz(string filename);
     void print_equations();

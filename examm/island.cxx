@@ -3,7 +3,6 @@
 using std::upper_bound;
 
 #include <iomanip>
-
 #include <random>
 using std::minstd_rand0;
 using std::uniform_real_distribution;
@@ -20,7 +19,12 @@ using std::vector;
 #include "rnn/rnn_genome.hxx"
 
 Island::Island(int32_t _id, int32_t _max_size, AnnealingPolicy& annealing_policy)
-    : id(_id), max_size(_max_size), status(Island::INITIALIZING), erase_again(0), erased(false), annealing_policy(annealing_policy) {
+    : id(_id),
+      max_size(_max_size),
+      status(Island::INITIALIZING),
+      erase_again(0),
+      erased(false),
+      annealing_policy(annealing_policy) {
 }
 
 Island::Island(int32_t _id, vector<RNN_Genome*> _genomes, AnnealingPolicy& annealing_policy)
@@ -166,11 +170,10 @@ int32_t Island::insert_genome(RNN_Genome* genome) {
         }
     }
 
-
     // inorder insert the new individual
     RNN_Genome* copy = genome->copy();
     copy->set_generation_id(genome->get_generation_id());
-    
+
     vector<double> best = copy->get_best_parameters();
     if (best.size() != 0) {
         copy->set_weights(best);
@@ -252,16 +255,17 @@ void Island::print(string indent) {
 
 void Island::erase_island() {
     structure_set.clear();
-    
-    for (int32_t i = 0; i < (int32_t) genomes.size(); i++)
+
+    for (int32_t i = 0; i < (int32_t) genomes.size(); i++) {
         delete genomes[i];
+    }
 
     genomes.clear();
-    
+
     erased = true;
     erase_again = 5;
     erased_generation_id = latest_generation_id;
-    
+
     Log::debug("Worst island size after erased: %d\n", genomes.size());
 }
 
