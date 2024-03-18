@@ -72,8 +72,9 @@ class IslandSpeciationStrategy : public SpeciationStrategy {
 
     bool transfer_learning;
     string transfer_learning_version;
-    int32_t seed_stirs;
     bool tl_epigenetic_weights;
+
+    unique_ptr<AnnealingPolicy> annealing_policy;
 
    public:
     // static void register_command_line_arguments();
@@ -90,8 +91,8 @@ class IslandSpeciationStrategy : public SpeciationStrategy {
         double _intra_island_crossover_rate, double _inter_island_crossover_rate, RNN_Genome* _seed_genome,
         string _island_ranking_method, string _repopulation_method, int32_t _extinction_event_generation_number,
         int32_t _num_mutations, int32_t _islands_to_exterminate, int32_t _max_genomes, bool _repeat_extinction,
-        bool _start_filled, bool _transfer_learning, string _transfer_learning_version, int32_t _seed_stirs,
-        bool _tl_epigenetic_weights
+        bool _start_filled, bool _transfer_learning, string _transfer_learning_version, bool _tl_epigenetic_weights,
+        unique_ptr<AnnealingPolicy>& annealing_policy
     );
 
     // /**

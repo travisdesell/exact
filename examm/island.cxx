@@ -1,10 +1,8 @@
 #include <algorithm>
-using std::lower_bound;
-using std::sort;
+#include <memory>
 using std::upper_bound;
 
 #include <iomanip>
-using std::setw;
 
 #include <random>
 using std::minstd_rand0;
@@ -14,9 +12,6 @@ using std::uniform_real_distribution;
 using std::string;
 using std::to_string;
 
-#include <unordered_map>
-using std::unordered_map;
-
 #include <vector>
 using std::vector;
 
@@ -24,17 +19,18 @@ using std::vector;
 #include "island.hxx"
 #include "rnn/rnn_genome.hxx"
 
-Island::Island(int32_t _id, int32_t _max_size)
-    : id(_id), max_size(_max_size), status(Island::INITIALIZING), erase_again(0), erased(false) {
+Island::Island(int32_t _id, int32_t _max_size, AnnealingPolicy& annealing_policy)
+    : id(_id), max_size(_max_size), status(Island::INITIALIZING), erase_again(0), erased(false), annealing_policy(annealing_policy) {
 }
 
-Island::Island(int32_t _id, vector<RNN_Genome*> _genomes)
+Island::Island(int32_t _id, vector<RNN_Genome*> _genomes, AnnealingPolicy& annealing_policy)
     : id(_id),
       max_size((int32_t) _genomes.size()),
       genomes(_genomes),
       status(Island::FILLED),
       erase_again(0),
-      erased(false) {
+      erased(false),
+      annealing_policy(annealing_policy) {
 }
 
 RNN_Genome* Island::get_best_genome() {

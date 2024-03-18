@@ -2,10 +2,9 @@
 #define EXAMM_ISLAND_STRATEGY_HXX
 
 #include <algorithm>
-using std::sort;
-using std::upper_bound;
 
 #include <functional>
+#include <memory>
 using std::function;
 
 #include <random>
@@ -16,12 +15,12 @@ using std::uniform_real_distribution;
 using std::string;
 
 #include <unordered_map>
-using std::unordered_map;
 
 #include <unordered_set>
 using std::unordered_set;
 
 #include "rnn/rnn_genome.hxx"
+#include "annealing.hxx"
 
 class Island {
    private:
@@ -39,6 +38,8 @@ class Island {
     vector<RNN_Genome*> genomes;
     unordered_set<RNN_Genome *, RNN_Genome::StructuralHash> structure_set;
 
+    AnnealingPolicy& annealing_policy;
+
     int32_t
         status; /**> The status of this island (either Island:INITIALIZING, Island::FILLED or  Island::REPOPULATING */
 
@@ -55,13 +56,13 @@ class Island {
      *
      *  \param max_size is the maximum number of genomes in the island.
      */
-    Island(int32_t id, int32_t max_size);
+    Island(int32_t id, int32_t max_size, AnnealingPolicy& annealing_policy);
 
     /**
      * Initializes an island filled the supplied genomes. The size of the island will be the size
      * of the supplied genome vector. The island status is set to filled.
      */
-    Island(int32_t id, vector<RNN_Genome*> genomes);
+    Island(int32_t id, vector<RNN_Genome*> genomes, AnnealingPolicy& annealing_policy);
 
     /**
      * Returns the fitness of the best genome in the island

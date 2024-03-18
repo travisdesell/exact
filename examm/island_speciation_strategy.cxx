@@ -26,7 +26,8 @@ IslandSpeciationStrategy::IslandSpeciationStrategy(
     double _inter_island_crossover_rate, RNN_Genome* _seed_genome, string _island_ranking_method,
     string _repopulation_method, int32_t _extinction_event_generation_number, int32_t _num_mutations,
     int32_t _islands_to_exterminate, int32_t _max_genomes, bool _repeat_extinction, bool _start_filled,
-    bool _transfer_learning, string _transfer_learning_version, int32_t _seed_stirs, bool _tl_epigenetic_weights
+    bool _transfer_learning, string _transfer_learning_version, bool _tl_epigenetic_weights,
+    unique_ptr<AnnealingPolicy>& annealing_policy
 )
     : generation_island(0),
       number_of_islands(_number_of_islands),
@@ -47,8 +48,8 @@ IslandSpeciationStrategy::IslandSpeciationStrategy(
       start_filled(_start_filled),
       transfer_learning(_transfer_learning),
       transfer_learning_version(_transfer_learning_version),
-      seed_stirs(_seed_stirs),
-      tl_epigenetic_weights(_tl_epigenetic_weights) {
+      tl_epigenetic_weights(_tl_epigenetic_weights),
+      annealing_policy(std::move(annealing_policy)) {
     double rate_sum = mutation_rate + intra_island_crossover_rate + inter_island_crossover_rate;
     if (rate_sum != 1.0) {
         mutation_rate = mutation_rate / rate_sum;
@@ -78,15 +79,14 @@ IslandSpeciationStrategy::IslandSpeciationStrategy(
 
     if (transfer_learning) {
         Log::info("Transfer learning version is %s\n", transfer_learning_version.c_str());
-        Log::info("Apply seed stirs: %d\n", seed_stirs);
     }
 }
 
 void IslandSpeciationStrategy::initialize_population(function<void(int32_t, RNN_Genome*)>& mutate) {
     for (int32_t i = 0; i < number_of_islands; i++) {
-        Island* new_island = new Island(i, max_island_size);
+        Island* new_island = new Island(i, max_island_size, *annealing_policy);
         if (start_filled) {
-            new_island->fill_with_mutated_genomes(seed_genome, seed_stirs, tl_epigenetic_weights, mutate);
+            new_island->fill_with_mutated_genomes(seed_genome, num_mutations, tl_epigenetic_weights, mutate);
         }
         islands.push_back(new_island);
     }
@@ -286,14 +286,6 @@ RNN_Genome* IslandSpeciationStrategy::generate_for_initializing_island(
         new_genome = seed_genome->copy();
         new_genome->initialize_randomly();
 
-        bool stir_seed_genome = false;
-        if (stir_seed_genome) {
-            Log::info("Stir the seed genome with %d mutations\n", seed_stirs);
-            mutate(seed_stirs, new_genome);
-            if (!tl_epigenetic_weights) {
-                new_genome->initialize_randomly();
-            }
-        }
     } else {
         Log::info("Island %d: island is initializing but not empty, mutating a random genome\n", generation_island);
         while (new_genome == NULL) {
