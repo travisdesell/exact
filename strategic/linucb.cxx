@@ -8,6 +8,9 @@
 #include "common/log.hxx"
 using namespace std;
 
+/**
+ * Arm of Bandit storing state variable A, b
+*/
 class Arm {
     private:
         int d;
@@ -209,6 +212,9 @@ class Arm {
 
 };
 
+/**
+ * Linear UCB Bandit Algorithm
+*/
 class LinUCB: public Bandit {
     private:
      int n_arms;

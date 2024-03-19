@@ -7,6 +7,11 @@
 #include "strategy.hxx"
 #include "bandit.hxx"
 
+/**
+ * Bandit Stratefy to handle stock buy/sell
+ * for single company
+ * TODO: update for handlin multiple companies
+*/
 class BanditStrategy: public Strategy {
 
     private:

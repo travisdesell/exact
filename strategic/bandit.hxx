@@ -6,6 +6,9 @@
 #include <vector>
 using namespace std;
 
+/**
+ * Class for any bandit
+*/
 class Bandit{
     public:
         virtual int select_arm(double* context) = 0;

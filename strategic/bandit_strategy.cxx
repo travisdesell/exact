@@ -77,6 +77,7 @@ void BanditStrategy::make_move(const map<string, double> &context, const map<str
 
             if (missing_stock) exit(1);
 
+            // Getting context values
             int n = context.size();
             double contextValues[n];
             int i = 0;
@@ -85,8 +86,13 @@ void BanditStrategy::make_move(const map<string, double> &context, const map<str
                 ++i;
             }
 
-            int choice;
+            /**
+             * If arm = 0 BUY, arm = 1 SELL, arm = 2 HOLDOFF
+            */
 
+           int choice;
+
+            //Buy first, then sell
             if (buy_flag) {
                 choice = ((LinUCB*)bandit)->select_arm(contextValues, buy_step);
                 buy_flag = false;
@@ -98,11 +104,6 @@ void BanditStrategy::make_move(const map<string, double> &context, const map<str
             //int arm = bandit->select_arm(contextValues);
             Log::info("Selected Arm is: %d ", choice);
 
-
-            /**
-             * If arm = 0 BUY, arm = 1 SELL, arm = 2 HOLDOFF
-            */
-
             if (choice == 0) {
                 std::cout<<"Hence BUY"<<std::endl;
             } else if (choice == 1) {
@@ -112,6 +113,8 @@ void BanditStrategy::make_move(const map<string, double> &context, const map<str
             }
             this->last_choice = choice;
 
+
+            // Populate respective buy/sell vectors
            for (string stock : stocks) {
             double forecasted_return = forecast.at(stock + rt_suffix);
             
@@ -131,7 +134,7 @@ void BanditStrategy::make_move(const map<string, double> &context, const map<str
            }
 
             /**
-             * Update stock states based on decision
+             * Update stock states based on decision (Single company)
             */
            if (choice == 1) {
 

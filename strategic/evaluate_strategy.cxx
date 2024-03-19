@@ -77,10 +77,12 @@ int main(int argc, char** argv) {
 
         //strategy->report_reward(current_reward);
 
-        //reward += current_reward;
+        reward += current_reward;
 
         delete state;
     }
+
+    std::cout<<"Total reward: "<<reward<<std::endl;
 
     delete time_series;
     delete forecaster;
