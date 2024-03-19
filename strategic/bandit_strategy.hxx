@@ -22,6 +22,7 @@ class BanditStrategy: public Strategy {
         Bandit *bandit;
         int last_choice;
 
+        //flag to check buy or sell cycle
         bool buy_flag = true;
         //bool holdoff_flag = false;
 
