@@ -118,7 +118,6 @@ void master_sync(int32_t max_rank) {
     max_rank -= 1;
     int32_t generation = 0;
     while (true) {
-    
         // Wait for N work requests
         int32_t nreqs = 0;
         while (nreqs < max_rank) {
@@ -128,14 +127,14 @@ void master_sync(int32_t max_rank) {
             int32_t source = status.MPI_SOURCE;
             int32_t tag = status.MPI_TAG;
             // Log::info("probe returned message from: %d with tag: %d\n", source, tag);
-            
+
             if (tag == WORK_REQUEST_TAG) {
                 receive_work_request(source);
                 nreqs++;
             } else if (tag == GENOME_LENGTH_TAG) {
                 Log::debug("received genome from: %d\n", source);
                 RNN_Genome* genome = receive_genome_from(source);
-                
+
                 examm->insert_genome(genome);
 
                 // delete the genome as it won't be used again, a copy was inserted
@@ -146,11 +145,12 @@ void master_sync(int32_t max_rank) {
             }
         }
 
-        vector<RNN_Genome *> genomes(max_rank);
+        vector<RNN_Genome*> genomes(max_rank);
         for (int32_t i = 1; i <= max_rank; i++) {
             RNN_Genome* genome = examm->generate_genome();
-            if (genome == NULL)
+            if (genome == NULL) {
                 break;
+            }
             genomes[i - 1] = genome;
         }
 
@@ -163,7 +163,7 @@ void master_sync(int32_t max_rank) {
             delete genomes[i - 1];
         }
     }
-  
+
     for (int i = 1; i <= max_rank; i++) {
         send_terminate_message(i);
     }
@@ -310,14 +310,14 @@ int main(int argc, char** argv) {
     RNN_Genome* seed_genome = get_seed_genome(arguments, time_series_sets, weight_rules);
 
     bool synchronous = argument_exists(arguments, "--synchronous");
-    Log::warning("synchronous? %d\n", synchronous); 
+    Log::warning("synchronous? %d\n", synchronous);
 
     Log::clear_rank_restriction();
 
     if (rank == 0) {
         write_time_series_to_file(arguments, time_series_sets);
         examm = generate_examm_from_arguments(arguments, time_series_sets, weight_rules, seed_genome);
-        
+
         if (synchronous) {
             master_sync(max_rank);
         } else {

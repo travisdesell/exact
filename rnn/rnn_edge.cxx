@@ -87,12 +87,14 @@ RNN_Edge* RNN_Edge::copy(const vector<RNN_Node_Interface*> new_nodes) {
     e->enabled = enabled;
     e->forward_reachable = forward_reachable;
     e->backward_reachable = backward_reachable;
+    e->input_number = input_number;
 
     return e;
 }
 
 void RNN_Edge::propagate_forward(int32_t time) {
-    if (input_node->inputs_fired[time] != input_node->total_inputs || time < 0 || time >= input_node->output_values.size()) {
+    if (input_node->inputs_fired[time] != input_node->total_inputs || time < 0
+        || time >= input_node->output_values.size()) {
         Log::fatal(
             "ERROR! propagate forward called on edge %d where input_node->inputs_fired[%d] (%d) != total_inputs (%d)\n",
             innovation_number, time, input_node->inputs_fired[time], input_node->total_inputs
@@ -111,6 +113,7 @@ void RNN_Edge::propagate_forward(int32_t time) {
 
     outputs[time] = output;
     output_node->input_fired(time, output);
+    input_number[time] = output_node->inputs_fired[time];
 }
 
 void RNN_Edge::propagate_forward(int32_t time, bool training, double dropout_probability) {
@@ -140,6 +143,7 @@ void RNN_Edge::propagate_forward(int32_t time, bool training, double dropout_pro
 
     outputs[time] = output;
     output_node->input_fired(time, output);
+    input_number[time] = output_node->inputs_fired[time];
 }
 
 void RNN_Edge::propagate_backward(int32_t time) {
@@ -159,9 +163,12 @@ void RNN_Edge::propagate_backward(int32_t time) {
 
     // Log::trace("propgating backward on edge %d at time %d from node %d to node %d\n", innovation_number, time,
     // output_innovation_number, input_innovation_number);
-
-    double delta = output_node->d_input[time];
-
+    double delta;
+    if (output_node->node_type == MULTIPLY_NODE) {
+        delta = output_node->ordered_d_input[time][input_number[time] - 1];
+    } else {
+        delta = output_node->d_input[time];
+    }
     d_weight += delta * input_node->output_values[time];
     deltas[time] = delta * weight;
     input_node->output_fired(time, deltas[time]);
@@ -184,8 +191,12 @@ void RNN_Edge::propagate_backward(int32_t time, bool training, double dropout_pr
 
     // Log::trace("propgating backward on edge %d at time %d from node %d to node %d\n", innovation_number, time,
     // output_innovation_number, input_innovation_number);
-
-    double delta = output_node->d_input[time];
+    double delta;
+    if (output_node->node_type == MULTIPLY_NODE) {
+        delta = output_node->ordered_d_input[time][input_number[time] - 1];
+    } else {
+        delta = output_node->d_input[time];
+    }
 
     if (training) {
         if (dropped_out[time]) {
@@ -203,6 +214,7 @@ void RNN_Edge::reset(int32_t series_length) {
     outputs.resize(series_length);
     deltas.resize(series_length);
     dropped_out.resize(series_length);
+    input_number.resize(series_length);
 }
 
 void RNN_Edge::set_weight(double weight) {

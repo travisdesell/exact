@@ -16,8 +16,10 @@ int32_t GenomeProperty::compute_bp_iterations(RNN_Genome* genome) {
         n = n > max_burn_in_cycles ? max_burn_in_cycles : n;
 
         float epochs = bp_epochs_start;
-        for (int i = 0; i < n; i++) epochs *= burn_in_ratio;
-        
+        for (int i = 0; i < n; i++) {
+            epochs *= burn_in_ratio;
+        }
+
         return (int32_t) epochs;
     } else {
         return bp_iterations;
@@ -39,7 +41,6 @@ void GenomeProperty::generate_genome_property_from_arguments(const vector<string
     get_argument(arguments, "--burn_in_cycles", false, max_burn_in_cycles);
     get_argument(arguments, "--bp_epochs_start", false, bp_epochs_start);
     get_argument(arguments, "--burn_in_ratio", false, burn_in_ratio);
-
 
     Log::info("Each generated genome is trained for %d epochs\n", bp_iterations);
     Log::info(

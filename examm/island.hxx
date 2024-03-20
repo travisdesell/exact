@@ -206,6 +206,8 @@ class Island {
         RNN_Genome* seed_genome, int32_t num_mutations, bool tl_epigenetic_weights,
         function<void(int32_t, RNN_Genome*)>& mutate
     );
+
+    void save_population(string output_path);
 };
 
 #endif

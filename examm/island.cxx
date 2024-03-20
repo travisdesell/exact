@@ -145,7 +145,7 @@ int32_t Island::insert_genome(RNN_Genome* genome) {
     }
     Log::debug("getting fitness of genome copy\n");
     double new_fitness = genome->get_fitness();
-    Log::debug("inserting genome with fitness: %s to island %d\n", parse_fitness(genome->get_fitness()).c_str(), id);
+    Log::info("inserting genome with fitness: %s to island %d\n", parse_fitness(genome->get_fitness()).c_str(), id);
 
     // discard the genome if the island is full and it's fitness is worse than the worst in thte population
     if (is_full() && new_fitness > get_worst_fitness()) {
@@ -156,8 +156,10 @@ int32_t Island::insert_genome(RNN_Genome* genome) {
         do_population_check(__LINE__, initial_size);
         return false;
     }
+
     // check and see if the structural hash of the genome is in the
     // set of hashes for this population
+    Log::info("getting structural hash\n");
     string structural_hash = genome->get_structural_hash();
     if (structure_map.count(structural_hash) > 0) {
         vector<RNN_Genome*>& potential_matches = structure_map.find(structural_hash)->second;
@@ -289,6 +291,7 @@ int32_t Island::insert_genome(RNN_Genome* genome) {
             // can generate a proper graphviz file
             vector<double> best_parameters = genome->get_best_parameters();
             genome->set_weights(best_parameters);
+            Log::info("set genome parameters to best\n");
         }
     }
 
@@ -459,5 +462,13 @@ void Island::fill_with_mutated_genomes(
             max_size, genomes.size()
         );
         exit(1);
+    }
+}
+
+void Island::save_population(string output_path) {
+    for (int32_t i = 0; i < (int32_t) genomes.size(); i++) {
+        RNN_Genome* genome = genomes[i];
+        genome->write_graphviz(output_path + "/island_" + to_string(id) + "_genome_" + to_string(i) + ".gv");
+        genome->write_to_file(output_path + "/island_" + to_string(id) + "_genome_" + to_string(i) + ".bin");
     }
 }

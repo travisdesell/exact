@@ -1,7 +1,0 @@
-v11 -> burn in schedule with 0.001 lr 4 mut
-v12 -> burn in schedule with 0.01 lr 4 mut
-v13 -> burn in schedule with 0.01 lr and period of 1024 and total genoms 8k 4 mut
-v14 -> burn in schedule with 0.001 lr and period of 1024 and total genomes 8k 4 mut
-v15 -> burn in schedule with 0.001 lr and period of 1024 max genome 8k 2mut
-v16 -> burn in schedule with 0.01 lr and period of 1024 max genome 8k 2mut
-

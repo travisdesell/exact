@@ -62,8 +62,8 @@ class IslandSpeciationStrategy : public SpeciationStrategy {
     vector<Island*> islands;
     RNN_Genome* global_best_genome;
 
-    ofstream *island_log_file;
-    
+    ofstream* island_log_file;
+
     // Maps genome number to a pair representing (worst island mse, best island mse) at
     // the time of genome generation.
     unordered_map<int32_t, pair<double, double>> genome_performance;
@@ -213,7 +213,7 @@ class IslandSpeciationStrategy : public SpeciationStrategy {
     /**
      * Gets speciation strategy information values for logs
      */
-    string get_strategy_information_values(RNN_Genome *genome) const;
+    string get_strategy_information_values(RNN_Genome* genome) const;
 
     /**
      * Island repopulation through two random parents from two seperate islands,
@@ -237,6 +237,8 @@ class IslandSpeciationStrategy : public SpeciationStrategy {
     void set_erased_islands_status();
     void initialize_population(function<void(int32_t, RNN_Genome*)>& mutate);
     void repopulate();
+
+    void save_entire_population(string output_path);
 };
 
 #endif

@@ -51,6 +51,8 @@ class DNASNode : public RNN_Node_Interface {
     // Sum of x values, saved for use in backprop.
     double xtotal = 0.0;
 
+    vector<double> d_pi;
+
     // A vector to put gumbel noise into; just to avoid re-allocation
     vector<double> noise;
 
@@ -62,13 +64,10 @@ class DNASNode : public RNN_Node_Interface {
     // Can be set externally using DNASNode::set_stochastic
     bool stochastic = true;
 
-    vector<double> d_pi;
     vector<vector<double>> node_outputs;
 
    public:
     static int32_t CRYSTALLIZATION_THRESHOLD;
-
-    // if > 0, then the samples will be forced to be K-hot (K non-zero values that sum to one)
     static int32_t k;
 
     DNASNode(

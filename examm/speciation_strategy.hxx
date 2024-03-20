@@ -88,11 +88,12 @@ class SpeciationStrategy {
     /**
      * Gets speciation strategy information values for logs
      */
-    virtual string get_strategy_information_values(RNN_Genome *genome) const = 0;
+    virtual string get_strategy_information_values(RNN_Genome* genome) const = 0;
 
     virtual RNN_Genome* get_global_best_genome() = 0;
     virtual void initialize_population(function<void(int32_t, RNN_Genome*)>& mutate) = 0;
     virtual RNN_Genome* get_seed_genome() = 0;
+    virtual void save_entire_population(string output_path) = 0;
 };
 
 #endif
