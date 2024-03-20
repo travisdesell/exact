@@ -31,6 +31,9 @@ void GenomeProperty::generate_genome_property_from_arguments(const vector<string
     get_argument(arguments, "--min_recurrent_depth", false, min_recurrent_depth);
     get_argument(arguments, "--max_recurrent_depth", false, max_recurrent_depth);
 
+    bool no_epi = argument_exists(arguments, "--no_epigenetic_weights");
+    use_epigenetic_weights = !no_epi;
+
     use_burn_in_bp_epoch = argument_exists(arguments, "--use_burn_in_bp_epoch");
     get_argument(arguments, "--burn_in_period", false, burn_in_period);
     get_argument(arguments, "--burn_in_cycles", false, max_burn_in_cycles);
@@ -49,6 +52,7 @@ void GenomeProperty::set_genome_properties(RNN_Genome* genome) {
     genome->set_bp_iterations(compute_bp_iterations(genome));
     
     if (use_dropout) genome->enable_dropout(dropout_probability);
+    if (!use_epigenetic_weights) genome->initialize_randomly();
     
     genome->normalize_type = normalize_type;
     genome->set_parameter_names(input_parameter_names, output_parameter_names);

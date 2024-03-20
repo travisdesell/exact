@@ -285,7 +285,6 @@ RNN_Genome* EXAMM::generate_genome() {
     RNN_Genome* genome = speciation_strategy->generate_genome(rng_0_1, generator, mutate_function, crossover_function);
 
     genome_property->set_genome_properties(genome);
-    // if (!epigenetic_weights) genome->initialize_randomly();
 
     // this is just a sanity check, can most likely comment out (checking to see
     // if all the paramemters are sane)

@@ -17,6 +17,7 @@ class GenomeProperty {
     double dropout_probability;
     int32_t min_recurrent_depth;
     int32_t max_recurrent_depth;
+    bool use_epigenetic_weights = true;
 
     bool use_burn_in_bp_epoch;
     int32_t burn_in_period = 2048;
