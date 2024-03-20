@@ -1,4 +1,5 @@
 #include <functional>
+#include <sstream>
 using std::function;
 
 #include <chrono>
@@ -186,7 +187,7 @@ int32_t IslandSpeciationStrategy::insert_genome(RNN_Genome* genome) {
         Log::fatal("ERROR: island[%d] is null!\n", island);
     }
     int32_t insert_position = islands[island]->insert_genome(genome);
-    Log::info("Island %d: Insert position was: %d\n", insert_position);
+    Log::info("Island %d: Insert position was: %d\n", island, insert_position);
 
     if (insert_position == 0) {
         if (new_global_best) {
@@ -455,49 +456,40 @@ void IslandSpeciationStrategy::print(string indent) const {
  * Gets speciation strategy information headers for logs
  */
 string IslandSpeciationStrategy::get_strategy_information_headers() const {
+    stringstream oss;
+
     string info_header = "";
-    info_header.append(",mse_min_pre,mse_max_pre,mse_min_post,mse_max_post");
+    oss << ",mse_min_pre,mse_max_pre,mse_min_post,mse_max_post";
     for (int32_t i = 0; i < (int32_t) islands.size(); i++) {
-        info_header.append(",");
-        info_header.append("Island_");
-        info_header.append(to_string(i));
-        info_header.append("_best_fitness");
-        info_header.append(",");
-        info_header.append("Island_");
-        info_header.append(to_string(i));
-        info_header.append("_worst_fitness");
+        oss << ",Island_" << i << "_best_fitness" 
+            << ",Island_" << i << "_wort_fitness"
+            << ",Island_" << i << "_all_time_best";
     }
-    return info_header;
+
+    return oss.str();
 }
 
 /**
  * Gets speciation strategy information values for logs
  */
 string IslandSpeciationStrategy::get_strategy_information_values(RNN_Genome* genome) const {
-    string info_value = "";
 
+    stringstream oss;
     auto& [min_mse_pre, max_mse_pre] = genome_performance.at(genome->generation_id);
-    info_value.append(",");
-    info_value.append(to_string(min_mse_pre));
-    info_value.append(",");
-    info_value.append(to_string(max_mse_pre));
+    oss << "," << min_mse_pre << "," << max_mse_pre;
 
     float min_mse_post = this->get_best_fitness();
     float max_mse_post = this->get_worst_fitness();
-    info_value.append(",");
-    info_value.append(to_string(min_mse_post));
-    info_value.append(",");
-    info_value.append(to_string(max_mse_post));
+    oss << "," << min_mse_post << "," << max_mse_post;
 
     for (int32_t i = 0; i < (int32_t) islands.size(); i++) {
         double best_fitness = islands[i]->get_best_fitness();
         double worst_fitness = islands[i]->get_worst_fitness();
-        info_value.append(",");
-        info_value.append(to_string(best_fitness));
-        info_value.append(",");
-        info_value.append(to_string(worst_fitness));
+        double all_time_best = islands[i]->get_best_all_time_fitness();
+        oss << "," << best_fitness << "," << worst_fitness << "," << all_time_best;
     }
-    return info_value;
+    
+    return oss.str();
 }
 
 RNN_Genome* IslandSpeciationStrategy::parents_repopulation(

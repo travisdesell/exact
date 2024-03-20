@@ -9,7 +9,7 @@
 unique_ptr<AnnealingPolicy> AnnealingPolicy::from_arguments(const vector<string>& arguments) {
     string type;
     get_argument(arguments, "--annealing_policy", false, type);
-
+    Log::info("Annealing policy = %s\n", type.c_str());
     if (type == "linear") {
         return unique_ptr<AnnealingPolicy>(new LinearAnnealingPolicy(arguments));
     } else if (type == "inv_exp") {
@@ -57,7 +57,7 @@ InvExpAnnealingPolicy::InvExpAnnealingPolicy(const vector<string>& arguments) {
 }
 
 double InvExpAnnealingPolicy::operator()(int32_t genome_number) {
-    return std::pow(1. + genome_number, decay_factor);
+    return std::pow(1. + genome_number, -decay_factor);
 }
 
 SinAnnealingPolicy::SinAnnealingPolicy(double period, double min_p, double max_p)
@@ -82,5 +82,5 @@ SinAnnealingPolicy::SinAnnealingPolicy(const vector<string>& arguments) {
 double SinAnnealingPolicy::operator()(int32_t genome_number) {
     double range = max_p - min_p;
 
-    return (max_p + min_p) / 2. + range / 2. + std::sin(2. * M_PI * genome_number / period);
+    return (max_p + min_p) / 2. + range / 2. * std::sin(2. * M_PI * genome_number / period);
 }
