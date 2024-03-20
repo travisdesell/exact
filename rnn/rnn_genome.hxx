@@ -295,7 +295,17 @@ class RNN_Genome {
      */
     bool has_node_with_innovation(int32_t innovation_number) const;
 
-    bool equals(RNN_Genome* other);
+    bool equals(const RNN_Genome* other) const;
+    bool operator==(const RNN_Genome& other) const;
+
+    /**
+     * Hash function implementation.
+     * Based on the hash code of the structural hash.
+     * */
+    struct StructuralHash {
+        size_t operator()(const RNN_Genome& other) const;
+        size_t operator()(const RNN_Genome* other) const;
+    };
 
     string get_color(double weight, bool is_recurrent);
     void write_graphviz(string filename);

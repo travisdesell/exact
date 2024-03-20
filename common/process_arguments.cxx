@@ -1,3 +1,4 @@
+#include <memory>
 #include <string>
 using std::string;
 
@@ -120,12 +121,13 @@ IslandSpeciationStrategy* generate_island_speciation_strategy_from_arguments(
     get_argument(arguments, "--seed_stirs", false, seed_stirs);
     bool start_filled = argument_exists(arguments, "--start_filled");
     bool tl_epigenetic_weights = argument_exists(arguments, "--tl_epigenetic_weights");
+    unique_ptr<AnnealingPolicy> annealing_policy = AnnealingPolicy::from_arguments(arguments);
 
     IslandSpeciationStrategy* island_strategy = new IslandSpeciationStrategy(
         number_islands, island_size, mutation_rate, intra_island_co_rate, inter_island_co_rate, seed_genome,
         island_ranking_method, repopulation_method, extinction_event_generation_number, num_mutations,
         islands_to_exterminate, max_genomes, repeat_extinction, start_filled, transfer_learning,
-        transfer_learning_version, seed_stirs, tl_epigenetic_weights
+        transfer_learning_version, tl_epigenetic_weights, annealing_policy
     );
 
     return island_strategy;

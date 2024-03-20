@@ -2,22 +2,23 @@
 #define EXAMM_ISLAND_STRATEGY_HXX
 
 #include <algorithm>
-using std::sort;
-using std::upper_bound;
-
 #include <functional>
+#include <memory>
 using std::function;
 
 #include <random>
 using std::minstd_rand0;
+using std::mt19937_64;
 using std::uniform_real_distribution;
 
 #include <string>
 using std::string;
 
 #include <unordered_map>
-using std::unordered_map;
+#include <unordered_set>
+using std::unordered_set;
 
+#include "annealing.hxx"
 #include "rnn/rnn_genome.hxx"
 
 class Island {
@@ -35,30 +36,49 @@ class Island {
      */
     vector<RNN_Genome*> genomes;
 
-    unordered_map<string, vector<RNN_Genome*>> structure_map;
+    /**
+     * If we are using simulated annealing, then the genomes vector may not contain the best genome we have discovered.
+     * Keep an additional clone of the best genome here for logging.
+     **/
+    unique_ptr<RNN_Genome> all_time_local_best;
+
+    /**
+     * A set of the genomes this island contains (one entry per genome in Island::genomes.
+     * These are hashed by their structure: the nodes, edges, and their innovation numbers. Weights are not considered.
+     **/
+    unordered_set<RNN_Genome*, RNN_Genome::StructuralHash> structure_set;
+
+    mt19937_64 generator;
+
+    AnnealingPolicy& annealing_policy;
+
     int32_t
         status; /**> The status of this island (either Island:INITIALIZING, Island::FILLED or  Island::REPOPULATING */
 
-    int32_t erase_again; /**< a flag to track if this islands has been erased */
-    bool erased;         /**< a flag to track if this islands has been erased */
+    int32_t erase_again = 0; /**< a flag to track if this islands has been erased */
+    bool erased = false;     /**< a flag to track if this islands has been erased */
 
    public:
     const static int32_t INITIALIZING = 0; /**< status flag for if the island is initializing. */
     const static int32_t FILLED = 1;       /**< status flag for if the island is filled. */
     const static int32_t REPOPULATING = 2; /**< status flag for if the island is repopulating. */
 
+    Island(
+        int32_t id, int32_t max_size, vector<RNN_Genome*> genomes, int32_t status, AnnealingPolicy& annealing_policy
+    );
+
     /**
      *  Initializes an island with a given max size.
      *
      *  \param max_size is the maximum number of genomes in the island.
      */
-    Island(int32_t id, int32_t max_size);
+    Island(int32_t id, int32_t max_size, AnnealingPolicy& annealing_policy);
 
     /**
      * Initializes an island filled the supplied genomes. The size of the island will be the size
      * of the supplied genome vector. The island status is set to filled.
      */
-    Island(int32_t id, vector<RNN_Genome*> genomes);
+    Island(int32_t id, vector<RNN_Genome*> genomes, AnnealingPolicy& annealing_policy);
 
     /**
      * Returns the fitness of the best genome in the island
@@ -66,6 +86,11 @@ class Island {
      * \return the best fitness of the island
      */
     double get_best_fitness();
+
+    /**
+     * Returns the best fitness ever obtains by any genome in this island - even if that genome has been removed.
+     **/
+    double get_best_all_time_fitness();
 
     /**
      * Returns the fitness of the worst genome in the island
@@ -171,8 +196,6 @@ class Island {
      * erases the entire island and set the erased_generation_id.
      */
     void erase_island();
-
-    void erase_structure_map();
 
     /**
      * returns the get_erased_generation_id.
