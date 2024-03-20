@@ -49,7 +49,7 @@ int main(int argc, char** argv) {
     WeightRules* weight_rules = new WeightRules();
     weight_rules->initialize_from_args(arguments);
 
-    vector<int32_t> node_types = {SIMPLE_NODE, LSTM_NODE, GRU_NODE, MGU_NODE, JORDAN_NODE, ELMAN_NODE, DELTA_NODE};
+    vector<node_t> node_types = {SIMPLE_NODE, LSTM_NODE, GRU_NODE, MGU_NODE, JORDAN_NODE, ELMAN_NODE, DELTA_NODE};
 
     for (int32_t max_recurrent_depth = 1; max_recurrent_depth <= 5; max_recurrent_depth++) {
         Log::info("testing with max recurrent depth: %d\n", max_recurrent_depth);

@@ -32,7 +32,7 @@ using std::vector;
 // mysql can't handle the max float value for some reason
 #define EXAMM_MAX_DOUBLE 10000000
 
-extern vector<int32_t> dnas_node_types;
+extern vector<node_t> dnas_node_types;
 
 string parse_fitness(double fitness);
 
@@ -111,7 +111,7 @@ class RNN_Genome {
     string generated_by_string();
 
     string get_edge_count_str(bool recurrent);
-    string get_node_count_str(int32_t node_type);
+    string get_node_count_str(node_t node_type);
 
     const map<string, int32_t>* get_generated_by_map();
 
@@ -119,8 +119,8 @@ class RNN_Genome {
 
     int32_t get_enabled_edge_count();
     int32_t get_enabled_recurrent_edge_count();
-    int32_t get_enabled_node_count(int32_t node_type);
-    int32_t get_node_count(int32_t node_type);
+    int32_t get_enabled_node_count(node_t node_type);
+    int32_t get_node_count(node_t node_type);
     int32_t get_enabled_node_count();
     int32_t get_node_count();
 
@@ -241,7 +241,7 @@ class RNN_Genome {
     bool outputs_unreachable();
 
     RNN_Node_Interface* create_node(
-        double mu, double sigma, int32_t node_type, int32_t& node_innovation_count, double depth
+        double mu, double sigma, node_t node_type, int32_t& node_innovation_count, double depth
     );
 
     bool attempt_edge_insert(
@@ -266,23 +266,23 @@ class RNN_Genome {
     bool disable_edge();
     bool enable_edge();
     bool split_edge(
-        double mu, double sigma, int32_t node_type, uniform_int_distribution<int32_t> rec_depth_dist,
+        double mu, double sigma, node_t node_type, uniform_int_distribution<int32_t> rec_depth_dist,
         int32_t& edge_innovation_count, int32_t& node_innovation_count
     );
 
     bool add_node(
-        double mu, double sigma, int32_t node_type, uniform_int_distribution<int32_t> dist,
+        double mu, double sigma, node_t node_type, uniform_int_distribution<int32_t> dist,
         int32_t& edge_innovation_count, int32_t& node_innovation_count
     );
 
     bool enable_node();
     bool disable_node();
     bool split_node(
-        double mu, double sigma, int32_t node_type, uniform_int_distribution<int32_t> dist,
+        double mu, double sigma, node_t node_type, uniform_int_distribution<int32_t> dist,
         int32_t& edge_innovation_count, int32_t& node_innovation_count
     );
     bool merge_node(
-        double mu, double sigma, int32_t node_type, uniform_int_distribution<int32_t> dist,
+        double mu, double sigma, node_t node_type, uniform_int_distribution<int32_t> dist,
         int32_t& edge_innovation_count, int32_t& node_innovation_count
     );
 
@@ -326,6 +326,10 @@ class RNN_Genome {
         int32_t& edge_innovation_count, bool from_input
     );
     vector<RNN_Node_Interface*> pick_possible_nodes(int32_t layer_type, bool not_all_hidden, string node_type);
+
+    const vector<RNN_Node_Interface*>& get_nodes() {
+        return this->nodes;
+    }
 
     void update_innovation_counts(int32_t& node_innovation_count, int32_t& edge_innovation_count);
 

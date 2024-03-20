@@ -5,6 +5,9 @@
 #include <string>
 using std::string;
 
+#include <unordered_map>
+using std::unordered_map;
+
 #include <vector>
 using std::vector;
 
@@ -36,7 +39,8 @@ template <class NodeT>
 NodeT* create_hidden_memory_cell(int32_t& innovation_counter, double depth) {
     return new NodeT(++innovation_counter, HIDDEN_LAYER, depth);
 }
-RNN_Node_Interface* create_hidden_node(int32_t node_kind, int32_t& innovation_counter, double depth);
+
+RNN_Node_Interface* create_hidden_node(node_t node_type, int32_t& innovation_counter, double depth);
 
 RNN_Genome* create_nn(
     const vector<string>& input_parameter_names, int32_t number_hidden_layers, int32_t number_hidden_nodes,
@@ -44,7 +48,7 @@ RNN_Genome* create_nn(
     std::function<RNN_Node_Interface*(int32_t&, double)> make_node, WeightRules* weight_rules
 );
 
-template <unsigned int Kind>
+template <node_t Kind>
 RNN_Genome* create_simple_nn(
     const vector<string>& input_parameter_names, int32_t number_hidden_layers, int32_t number_hidden_nodes,
     const vector<string>& output_parameter_names, int32_t max_recurrent_depth, WeightRules* weight_rules
@@ -95,11 +99,11 @@ RNN_Genome* create_memory_cell_nn(
 #define create_inverse(...)  create_memory_cell_nn<INVERSE_Node>(__VA_ARGS__)
 #define create_multiply(...) create_memory_cell_nn<MULTIPLY_Node>(__VA_ARGS__)
 
-DNASNode* create_dnas_node(int32_t& innovation_counter, double depth, const vector<int32_t>& node_types);
+DNASNode* create_dnas_node(int32_t& innovation_counter, double depth, const vector<node_t>& node_types);
 
 RNN_Genome* create_dnas_nn(
     const vector<string>& input_parameter_names, int32_t number_hidden_layers, int32_t number_hidden_nodes,
-    const vector<string>& output_parameter_names, int32_t max_recurrent_depth, vector<int32_t>& node_types,
+    const vector<string>& output_parameter_names, int32_t max_recurrent_depth, vector<node_t>& node_types,
     WeightRules* weight_rules
 );
 

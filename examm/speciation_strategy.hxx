@@ -9,6 +9,8 @@ using std::string;
 using std::minstd_rand0;
 using std::uniform_real_distribution;
 
+#include "rnn/rnn_genome.hxx"
+
 class SpeciationStrategy {
    public:
     /**
@@ -25,25 +27,25 @@ class SpeciationStrategy {
      * Gets the fitness of the best genome of all the islands
      * \return the best fitness over all islands
      */
-    virtual double get_best_fitness() = 0;
+    virtual double get_best_fitness() const = 0;
 
     /**
      * Gets the fitness of the worst genome of all the islands
      * \return the worst fitness over all islands
      */
-    virtual double get_worst_fitness() = 0;
+    virtual double get_worst_fitness() const = 0;
 
     /**
      * Gets the best genome of all the islands
      * \return the best genome of all islands
      */
-    virtual RNN_Genome* get_best_genome() = 0;
+    virtual RNN_Genome* get_best_genome() const = 0;
 
     /**
      * Gets the the worst genome of all the islands
      * \return the worst genome of all islands
      */
-    virtual RNN_Genome* get_worst_genome() = 0;
+    virtual RNN_Genome* get_worst_genome() const = 0;
 
     /**
      * Inserts a <b>copy</b> of the genome into this speciation strategy.
@@ -86,7 +88,7 @@ class SpeciationStrategy {
     /**
      * Gets speciation strategy information values for logs
      */
-    virtual string get_strategy_information_values() const = 0;
+    virtual string get_strategy_information_values(RNN_Genome* genome) const = 0;
 
     virtual RNN_Genome* get_global_best_genome() = 0;
     virtual void initialize_population(function<void(int32_t, RNN_Genome*)>& mutate) = 0;

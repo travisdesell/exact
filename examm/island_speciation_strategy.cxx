@@ -100,12 +100,12 @@ int32_t IslandSpeciationStrategy::get_evaluated_genomes() const {
     return evaluated_genomes;
 }
 
-RNN_Genome* IslandSpeciationStrategy::get_best_genome() {
+RNN_Genome* IslandSpeciationStrategy::get_best_genome() const {
     // the global_best_genome is updated every time a genome is inserted
     return global_best_genome;
 }
 
-RNN_Genome* IslandSpeciationStrategy::get_worst_genome() {
+RNN_Genome* IslandSpeciationStrategy::get_worst_genome() const {
     int32_t worst_genome_island = -1;
     double worst_fitness = -EXAMM_MAX_DOUBLE;
 
@@ -126,7 +126,7 @@ RNN_Genome* IslandSpeciationStrategy::get_worst_genome() {
     }
 }
 
-double IslandSpeciationStrategy::get_best_fitness() {
+double IslandSpeciationStrategy::get_best_fitness() const {
     RNN_Genome* best_genome = get_best_genome();
     if (best_genome == NULL) {
         return EXAMM_MAX_DOUBLE;
@@ -135,7 +135,7 @@ double IslandSpeciationStrategy::get_best_fitness() {
     }
 }
 
-double IslandSpeciationStrategy::get_worst_fitness() {
+double IslandSpeciationStrategy::get_worst_fitness() const {
     RNN_Genome* worst_genome = get_worst_genome();
     if (worst_genome == NULL) {
         return EXAMM_MAX_DOUBLE;
@@ -376,10 +376,14 @@ RNN_Genome* IslandSpeciationStrategy::generate_genome(
         Log::info("Island %d: new genome is still null, regenerating\n", generation_island);
         new_genome = generate_genome(rng_0_1, generator, mutate, crossover);
     }
+
     generated_genomes++;
     new_genome->set_generation_id(generated_genomes);
     islands[generation_island]->set_latest_generation_id(generated_genomes);
     new_genome->set_group_id(generation_island);
+
+    pair<double, double> perf = {this->get_best_fitness(), this->get_worst_fitness()};
+    genome_performance.emplace(new_genome->generation_id, perf);
 
     if (current_island->is_initializing()) {
         RNN_Genome* genome_copy = new_genome->copy();
@@ -461,6 +465,7 @@ void IslandSpeciationStrategy::print(string indent) const {
  */
 string IslandSpeciationStrategy::get_strategy_information_headers() const {
     string info_header = "";
+    info_header.append(",mse_min_pre,mse_max_pre,mse_min_post,mse_max_post");
     for (int32_t i = 0; i < (int32_t) islands.size(); i++) {
         info_header.append(",");
         info_header.append("Island_");
@@ -477,8 +482,22 @@ string IslandSpeciationStrategy::get_strategy_information_headers() const {
 /**
  * Gets speciation strategy information values for logs
  */
-string IslandSpeciationStrategy::get_strategy_information_values() const {
+string IslandSpeciationStrategy::get_strategy_information_values(RNN_Genome* genome) const {
     string info_value = "";
+
+    auto& [min_mse_pre, max_mse_pre] = genome_performance.at(genome->generation_id);
+    info_value.append(",");
+    info_value.append(to_string(min_mse_pre));
+    info_value.append(",");
+    info_value.append(to_string(max_mse_pre));
+
+    float min_mse_post = this->get_best_fitness();
+    float max_mse_post = this->get_worst_fitness();
+    info_value.append(",");
+    info_value.append(to_string(min_mse_post));
+    info_value.append(",");
+    info_value.append(to_string(max_mse_post));
+
     for (int32_t i = 0; i < (int32_t) islands.size(); i++) {
         double best_fitness = islands[i]->get_best_fitness();
         double worst_fitness = islands[i]->get_worst_fitness();
@@ -584,8 +603,8 @@ void IslandSpeciationStrategy::set_erased_islands_status() {
 RNN_Genome* IslandSpeciationStrategy::get_seed_genome() {
     return seed_genome;
 }
-// write a save entire population function with an input saving function
 
+// write a save entire population function with an input saving function
 void IslandSpeciationStrategy::save_entire_population(string output_path) {
     for (int32_t i = 0; i < (int32_t) islands.size(); i++) {
         islands[i]->save_population(output_path);

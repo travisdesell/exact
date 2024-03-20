@@ -5,7 +5,7 @@ using std::vector;
 #include "common/log.hxx"
 #include "rnn_node.hxx"
 
-RNN_Node::RNN_Node(int32_t _innovation_number, int32_t _layer_type, double _depth, int32_t _node_type)
+RNN_Node::RNN_Node(int32_t _innovation_number, int32_t _layer_type, double _depth, node_t _node_type)
     : RNN_Node_Interface(_innovation_number, _layer_type, _depth), bias(0) {
     // node type will be simple, jordan or elman
     node_type = _node_type;
@@ -13,7 +13,7 @@ RNN_Node::RNN_Node(int32_t _innovation_number, int32_t _layer_type, double _dept
 }
 
 RNN_Node::RNN_Node(
-    int32_t _innovation_number, int32_t _layer_type, double _depth, int32_t _node_type, string _parameter_name
+    int32_t _innovation_number, int32_t _layer_type, double _depth, node_t _node_type, string _parameter_name
 )
     : RNN_Node_Interface(_innovation_number, _layer_type, _depth, _parameter_name), bias(0) {
     // node type will be simple, jordan or elman
@@ -91,6 +91,8 @@ void RNN_Node::try_update_deltas(int32_t time) {
             outputs_fired[time], total_outputs
         );
         exit(1);
+    } else if (time >= d_input.size() || time < 0) {
+        Log::fatal("invalid time %d\n", time);
     }
 
     d_input[time] *= ld_output[time];

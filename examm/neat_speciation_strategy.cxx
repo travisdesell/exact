@@ -74,7 +74,7 @@ int32_t NeatSpeciationStrategy::get_evaluated_genomes() const {
     return evaluated_genomes;
 }
 
-RNN_Genome* NeatSpeciationStrategy::get_best_genome() {
+RNN_Genome* NeatSpeciationStrategy::get_best_genome() const {
     int32_t best_genome_species = -1;
     double best_fitness = EXAMM_MAX_DOUBLE;
 
@@ -95,7 +95,7 @@ RNN_Genome* NeatSpeciationStrategy::get_best_genome() {
     }
 }
 
-RNN_Genome* NeatSpeciationStrategy::get_worst_genome() {
+RNN_Genome* NeatSpeciationStrategy::get_worst_genome() const {
     int32_t worst_genome_species = -1;
     double worst_fitness = -EXAMM_MAX_DOUBLE;
 
@@ -116,7 +116,7 @@ RNN_Genome* NeatSpeciationStrategy::get_worst_genome() {
     }
 }
 
-double NeatSpeciationStrategy::get_best_fitness() {
+double NeatSpeciationStrategy::get_best_fitness() const {
     RNN_Genome* best_genome = get_best_genome();
     if (best_genome == NULL) {
         return EXAMM_MAX_DOUBLE;
@@ -125,7 +125,7 @@ double NeatSpeciationStrategy::get_best_fitness() {
     }
 }
 
-double NeatSpeciationStrategy::get_worst_fitness() {
+double NeatSpeciationStrategy::get_worst_fitness() const {
     RNN_Genome* worst_genome = get_worst_genome();
     if (worst_genome == NULL) {
         return EXAMM_MAX_DOUBLE;
@@ -399,7 +399,7 @@ string NeatSpeciationStrategy::get_strategy_information_headers() const {
 /**
  * Gets speciation strategy information values for logs
  */
-string NeatSpeciationStrategy::get_strategy_information_values() const {
+string NeatSpeciationStrategy::get_strategy_information_values(RNN_Genome* genome) const {
     string info_value = "";
     for (int32_t i = 0; i < (int32_t) Neat_Species.size(); i++) {
         double best_fitness = Neat_Species[i]->get_best_fitness();
