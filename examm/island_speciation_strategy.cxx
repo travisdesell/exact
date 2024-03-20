@@ -461,9 +461,8 @@ string IslandSpeciationStrategy::get_strategy_information_headers() const {
     string info_header = "";
     oss << ",mse_min_pre,mse_max_pre,mse_min_post,mse_max_post";
     for (int32_t i = 0; i < (int32_t) islands.size(); i++) {
-        oss << ",Island_" << i << "_best_fitness" 
-            << ",Island_" << i << "_wort_fitness"
-            << ",Island_" << i << "_all_time_best";
+        oss << ",Island_" << i << "_best_fitness" << ",Island_" << i << "_wort_fitness" << ",Island_" << i
+            << "_all_time_best";
     }
 
     return oss.str();
@@ -473,7 +472,6 @@ string IslandSpeciationStrategy::get_strategy_information_headers() const {
  * Gets speciation strategy information values for logs
  */
 string IslandSpeciationStrategy::get_strategy_information_values(RNN_Genome* genome) const {
-
     stringstream oss;
     auto& [min_mse_pre, max_mse_pre] = genome_performance.at(genome->generation_id);
     oss << "," << min_mse_pre << "," << max_mse_pre;
@@ -488,7 +486,7 @@ string IslandSpeciationStrategy::get_strategy_information_values(RNN_Genome* gen
         double all_time_best = islands[i]->get_best_all_time_fitness();
         oss << "," << best_fitness << "," << worst_fitness << "," << all_time_best;
     }
-    
+
     return oss.str();
 }
 

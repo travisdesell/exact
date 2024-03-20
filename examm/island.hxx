@@ -7,8 +7,8 @@
 using std::function;
 
 #include <random>
-using std::mt19937_64;
 using std::minstd_rand0;
+using std::mt19937_64;
 using std::uniform_real_distribution;
 
 #include <string>
@@ -35,7 +35,7 @@ class Island {
      * The genomes on this island, stored in sorted order best (front) to worst (back).
      */
     vector<RNN_Genome*> genomes;
-    
+
     /**
      * If we are using simulated annealing, then the genomes vector may not contain the best genome we have discovered.
      * Keep an additional clone of the best genome here for logging.
@@ -63,7 +63,9 @@ class Island {
     const static int32_t FILLED = 1;       /**< status flag for if the island is filled. */
     const static int32_t REPOPULATING = 2; /**< status flag for if the island is repopulating. */
 
-    Island(int32_t id, int32_t max_size, vector<RNN_Genome *> genomes, int32_t status, AnnealingPolicy& annealing_policy);
+    Island(
+        int32_t id, int32_t max_size, vector<RNN_Genome*> genomes, int32_t status, AnnealingPolicy& annealing_policy
+    );
 
     /**
      *  Initializes an island with a given max size.

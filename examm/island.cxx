@@ -3,7 +3,6 @@
 using std::upper_bound;
 
 #include <iomanip>
-
 #include <string>
 using std::string;
 using std::to_string;
@@ -15,22 +14,26 @@ using std::vector;
 #include "island.hxx"
 #include "rnn/rnn_genome.hxx"
 
-Island::Island(int32_t id, int32_t max_size, vector<RNN_Genome *> genomes, int32_t status, AnnealingPolicy& annealing_policy) :
-  id(id), max_size(max_size), genomes(genomes), annealing_policy(annealing_policy), status(status) {
+Island::Island(
+    int32_t id, int32_t max_size, vector<RNN_Genome*> genomes, int32_t status, AnnealingPolicy& annealing_policy
+)
+    : id(id), max_size(max_size), genomes(genomes), annealing_policy(annealing_policy), status(status) {
     using namespace std::chrono;
     long long t = time_point_cast<nanoseconds>(system_clock::now()).time_since_epoch().count();
     generator = mt19937_64(t + 1123 * id + 12334 * max_size);
 
-    for (int i = 0; i < 100; i++)
+    for (int i = 0; i < 100; i++) {
         generate_canonical<double, 10>(generator);
-
+    }
 }
 
 Island::Island(int32_t id, int32_t max_size, AnnealingPolicy& annealing_policy)
-    : Island(id, max_size, vector<RNN_Genome *>(), Island::INITIALIZING, annealing_policy) {}
+    : Island(id, max_size, vector<RNN_Genome*>(), Island::INITIALIZING, annealing_policy) {
+}
 
 Island::Island(int32_t id, vector<RNN_Genome*> genomes, AnnealingPolicy& annealing_policy)
-    : Island(id, genomes.size(), genomes, Island::FILLED, annealing_policy) {}
+    : Island(id, genomes.size(), genomes, Island::FILLED, annealing_policy) {
+}
 
 RNN_Genome* Island::get_best_genome() {
     if (genomes.size() == 0) {
@@ -58,10 +61,11 @@ double Island::get_best_fitness() {
 }
 
 double Island::get_best_all_time_fitness() {
-    if (all_time_local_best)
+    if (all_time_local_best) {
         return all_time_local_best->get_fitness();
-    else
+    } else {
         return EXAMM_MAX_DOUBLE;
+    }
 }
 
 double Island::get_worst_fitness() {
@@ -220,8 +224,9 @@ int32_t Island::insert_genome(RNN_Genome* genome) {
         // this was a new best genome for this island
         Log::info("Island %d: new best fitness found!\n", id);
 
-        if (!all_time_local_best || all_time_local_best->get_fitness() > genome->get_fitness())
+        if (!all_time_local_best || all_time_local_best->get_fitness() > genome->get_fitness()) {
             all_time_local_best = unique_ptr<RNN_Genome>(genome->copy());
+        }
     }
 
     if ((int32_t) genomes.size() >= max_size) {

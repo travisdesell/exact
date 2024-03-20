@@ -97,7 +97,8 @@ void EXAMM::generate_log() {
         mkpath(output_directory.c_str(), 0777);
         log_file = new ofstream(output_directory + "/" + "fitness_log.csv");
         (*log_file
-        ) << "Inserted Genomes,Total BP Epochs,Time,Best Val. MAE,Best Val. MSE,Trainable Parameters,Enabled Nodes,Enabled"
+        ) << "Inserted Genomes,Total BP Epochs,Time,Best Val. MAE,Best Val. MSE,Trainable Parameters,Enabled "
+             "Nodes,Enabled"
              "Edges,Enabled Rec. Edges,Val. MSE,Pre-Insert MSE,Genome Inserted,Genome Trainable Parameters,Island Id";
         (*log_file) << speciation_strategy->get_strategy_information_headers();
         (*log_file) << endl;
@@ -194,12 +195,12 @@ void EXAMM::update_log(RNN_Genome* genome) {
         long milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(currentClock - startClock).count();
         (*log_file) << speciation_strategy->get_evaluated_genomes() << "," << total_bp_epochs << "," << milliseconds
                     << "," << best_genome->best_validation_mae << "," << best_genome->best_validation_mse << ","
-                    << best_genome->get_number_weights() << ","
-                    << best_genome->get_enabled_node_count() << "," << best_genome->get_enabled_edge_count() << ","
-                    << best_genome->get_enabled_recurrent_edge_count() << "," << genome->best_validation_mse << ","
-                    << pre_insert_best_mse << "," << (int32_t) (last_genome_inserted ? 1 : 0) << ","
-                    << genome->get_number_weights() << "," << genome->get_generation_id()
-                    << speciation_strategy->get_strategy_information_values(genome) << endl;
+                    << best_genome->get_number_weights() << "," << best_genome->get_enabled_node_count() << ","
+                    << best_genome->get_enabled_edge_count() << "," << best_genome->get_enabled_recurrent_edge_count()
+                    << "," << genome->best_validation_mse << "," << pre_insert_best_mse << ","
+                    << (int32_t) (last_genome_inserted ? 1 : 0) << "," << genome->get_number_weights() << ","
+                    << genome->get_generation_id() << speciation_strategy->get_strategy_information_values(genome)
+                    << endl;
         Log::info(
             "mse: %f node count: %d edge count: %d rec edges: %d\n", best_genome->best_validation_mse,
             best_genome->get_enabled_node_count(), best_genome->get_enabled_edge_count(),
