@@ -1,0 +1,2 @@
+add_executable(evaluate_strategy evaluate_strategy.cxx forecaster.cxx trivial_forecaster.cxx strategy.cxx simple_stock_strategy.cxx state.cxx portfolio.cxx oracle.cxx portfolio_oracle.cxx)
+target_link_libraries(evaluate_strategy examm_strategy exact_common exact_time_series exact_weights examm_nn pthread)
