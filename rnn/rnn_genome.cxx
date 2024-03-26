@@ -692,6 +692,26 @@ void RNN_Genome::initialize_kaiming(RNN_Node_Interface* n) {
     n->initialize_kaiming(generator, normal_distribution, range);
 }
 
+void RNN_Genome::initialize_gp(RNN_Node_Interface* n){
+    vector<RNN_Edge*> input_edges;
+    vector<RNN_Recurrent_Edge*> input_recurrent_edges;
+    get_input_edges(n->innovation_number, input_edges, input_recurrent_edges);
+    int32_t fan_in = (int32_t) (input_edges.size() + input_recurrent_edges.size());
+    int32_t fan_out = get_fan_out(n->innovation_number);
+    int32_t sum = fan_in + fan_out;
+    if (sum <= 0) {
+        sum = 1;
+    }
+    double range = sqrt(6) / sqrt(sum);
+    for (int32_t j = 0; j < (int32_t) input_edges.size(); j++) {
+        input_edges[j]->weight = 1;
+    }
+    for (int32_t j = 0; j < (int32_t) input_recurrent_edges.size(); j++) {
+        input_recurrent_edges[j]->weight = 1;
+    }
+    n->initialize_xavier(generateor, rng_1_1, range);
+}    
+
 double RNN_Genome::get_xavier_weight(RNN_Node_Interface* output_node) {
     int32_t sum = get_fan_in(output_node->innovation_number) + get_fan_out(output_node->innovation_number);
     if (sum <= 0) {

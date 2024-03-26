@@ -104,8 +104,10 @@ void RNN_Edge::propagate_forward(int32_t time) {
         );
         exit(1);
     }
-
+    
     // Log::debug("input_node %p %d\n", input_node, input_node->output_values.size());
+    
+    this->weight = 1.0;
     double output = input_node->output_values[time] * weight;
 
     // Log::debug("propagating forward at time %d from %d to %d, value: %lf, input: %lf, weight: %lf\n", time,
