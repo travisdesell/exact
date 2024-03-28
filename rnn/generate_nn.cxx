@@ -53,6 +53,18 @@ RNN_Node_Interface* create_hidden_node(int32_t node_kind, int32_t& innovation_co
             return new INVERSE_Node(++innovation_counter, HIDDEN_LAYER, depth);
         case MULTIPLY_NODE:
             return new MULTIPLY_Node(++innovation_counter, HIDDEN_LAYER, depth);
+        case SIN_NODE_GP:
+            return new SIN_Node_GP(++innovation_counter, HIDDEN_LAYER, depth);
+        case COS_NODE_GP:
+            return new COS_Node_GP(++innovation_counter, HIDDEN_LAYER, depth);
+        case TANH_NODE_GP:
+            return new TANH_Node_GP(++innovation_counter, HIDDEN_LAYER, depth);
+        case SIGMOID_NODE_GP:
+            return new SIGMOID_Node_GP(++innovation_counter, HIDDEN_LAYER, depth);
+        case INVERSE_NODE_GP:
+            return new INVERSE_Node_GP(++innovation_counter, HIDDEN_LAYER, depth);
+        case MULTIPLY_NODE_GP:
+            return new MULTIPLY_Node_GP(++innovation_counter, HIDDEN_LAYER, depth);
         default:
             Log::fatal(
                 "If you are seeing this, an invalid node_kind was used to create a node (node_kind = %d\n", node_kind

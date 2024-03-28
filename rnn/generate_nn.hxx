@@ -30,6 +30,12 @@ using std::vector;
 #include "rnn/sum_node.hxx"
 #include "rnn/tanh_node.hxx"
 #include "rnn/ugrnn_node.hxx"
+#include "rnn/sin_node_gp.hxx"
+#include "rnn/cos_node_gp.hxx"
+#include "rnn/tanh_node_gp.hxx"
+#include "rnn/sigmoid_node_gp.hxx"
+#include "rnn/multiply_node_gp.hxx"
+#include "rnn/inverse_node_gp.hxx"
 #include "weights/weight_rules.hxx"
 
 template <class NodeT>
@@ -94,6 +100,12 @@ RNN_Genome* create_memory_cell_nn(
 #define create_sigmoid(...)  create_memory_cell_nn<SIGMOID_Node>(__VA_ARGS__)
 #define create_inverse(...)  create_memory_cell_nn<INVERSE_Node>(__VA_ARGS__)
 #define create_multiply(...) create_memory_cell_nn<MULTIPLY_Node>(__VA_ARGS__)
+#define create_sin_gp(...)      create_memory_cell_nn<SIN_Node_GP>(__VA_ARGS__)
+#define create_cos_gp(...)      create_memory_cell_nn<COS_Node_GP>(__VA_ARGS__)
+#define create_tanh_gp(...)     create_memory_cell_nn<TANH_Node_GP>(__VA_ARGS__)
+#define create_sigmoid_gp(...)  create_memory_cell_nn<SIGMOID_Node_GP>(__VA_ARGS__)
+#define create_inverse_gp(...)  create_memory_cell_nn<INVERSE_Node_GP>(__VA_ARGS__)
+#define create_multiply_gp(...) create_memory_cell_nn<MULTIPLY_Node_GP>(__VA_ARGS__)
 
 DNASNode* create_dnas_node(int32_t& innovation_counter, double depth, const vector<int32_t>& node_types);
 

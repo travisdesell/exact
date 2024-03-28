@@ -709,7 +709,9 @@ void RNN_Genome::initialize_gp(RNN_Node_Interface* n){
     for (int32_t j = 0; j < (int32_t) input_recurrent_edges.size(); j++) {
         input_recurrent_edges[j]->weight = 1;
     }
-    n->initialize_xavier(generateor, rng_1_1, range);
+    if (n->node_type == MULTIPLY_NODE_GP || n->node_type == SUM_NODE){
+        n->initialize_xavier(generator, rng_1_1, range);
+    }
 }    
 
 double RNN_Genome::get_xavier_weight(RNN_Node_Interface* output_node) {
@@ -3277,6 +3279,18 @@ RNN_Node_Interface* RNN_Genome::read_node_from_stream(istream& bin_istream) {
         node = new INVERSE_Node(innovation_number, layer_type, depth);
     } else if (node_type == MULTIPLY_NODE) {
         node = new MULTIPLY_Node(innovation_number, layer_type, depth);
+    } else if (node_type == SIN_NODE_GP) {
+        node = new SIN_Node_GP(innovation_number, layer_type, depth);
+    } else if (node_type == COS_NODE_GP) {
+        node = new COS_Node_GP(innovation_number, layer_type, depth);
+    } else if (node_type == TANH_NODE_GP) {
+        node = new TANH_Node_GP(innovation_number, layer_type, depth);
+    } else if (node_type == SIGMOID_NODE_GP) {
+        node = new SIGMOID_Node_GP(innovation_number, layer_type, depth);
+    } else if (node_type == INVERSE_NODE_GP) {
+        node = new INVERSE_Node_GP(innovation_number, layer_type, depth);
+    } else if (node_type == MULTIPLY_NODE_GP) {
+        node = new MULTIPLY_Node_GP(innovation_number, layer_type, depth);
     } else {
         Log::fatal("Error reading node from stream, unknown node_type: %d\n", node_type);
         exit(1);
@@ -4144,19 +4158,19 @@ void RNN_Genome::write_equations(ostream& outstream) {
                 if (output_node->node_type == SIMPLE_NODE || output_node->node_type == JORDAN_NODE
                     || output_node->node_type == ELMAN_NODE) {
                     current_output_equation += "tanh(" + input_equation;
-                } else if (output_node->node_type == SIN_NODE) {
+                } else if (output_node->node_type == SIN_NODE || output_node->node_type == SIN_NODE_GP) {
                     current_output_equation += "sin(" + input_equation;
-                } else if (output_node->node_type == COS_NODE) {
+                } else if (output_node->node_type == COS_NODE || output_node->node_type == COS_NODE_GP) {
                     current_output_equation += "cos(" + input_equation;
-                } else if (output_node->node_type == TANH_NODE) {
+                } else if (output_node->node_type == TANH_NODE || output_node->node_type == TANH_NODE_GP) {
                     current_output_equation += "tanh(" + input_equation;
-                } else if (output_node->node_type == SIGMOID_NODE) {
+                } else if (output_node->node_type == SIGMOID_NODE || output_node->node_type == SIGMOID_NODE_GP) {
                     current_output_equation += "sigmoid(" + input_equation;
                 } else if (output_node->node_type == SUM_NODE) {
                     current_output_equation += input_equation;
-                } else if (output_node->node_type == MULTIPLY_NODE) {
+                } else if (output_node->node_type == MULTIPLY_NODE || output_node->node_type == MULTIPLY_NODE_GP) {
                     current_output_equation += input_equation;
-                } else if (output_node->node_type == INVERSE_NODE) {
+                } else if (output_node->node_type == INVERSE_NODE || output_node->node_type == INVERSE_NODE_GP) {
                     current_output_equation += "1.0 /(" + input_equation;
                 } else if (output_node->node_type == UGRNN_NODE) {
                     current_output_equation += "ugrnn(" + input_equation;

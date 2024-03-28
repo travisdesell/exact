@@ -14,7 +14,8 @@ using std::string;
 
 extern const string NODE_TYPES[] = {"simple", "jordan", "elman",    "UGRNN",   "MGU",     "GRU", "delta",
                                     "LSTM",   "ENARC",  "ENAS_DAG", "rdag",    "dnas",    "sin", "sum",
-                                    "cos",    "tanh",   "sigmoid",  "inverse", "multiply"};
+                                    "cos",    "tanh",   "sigmoid",  "inverse", "multiply", "sin_gp", "cos_gp",
+                                    "tanh_gp", "sigmoid_gp", "inverse_gp", "multiply_gp"};
 extern const unordered_map<string, int32_t> string_to_node_type = {
     {  "simple",     SIMPLE_NODE},
     {  "jordan",     JORDAN_NODE},
@@ -35,6 +36,12 @@ extern const unordered_map<string, int32_t> string_to_node_type = {
     { "sigmoid",    SIGMOID_NODE},
     { "inverse",    INVERSE_NODE},
     {"multiply",   MULTIPLY_NODE},
+    {  "sin_gp",     SIN_NODE_GP},
+    {  "cos_gp",     COS_NODE_GP},
+    {"tanh_gp",     TANH_NODE_GP},
+    {"sigmoid_gp", SIGMOID_NODE_GP},
+    {"inverse_gp", INVERSE_NODE_GP},
+    {"multiply_gp", MULTIPLY_NODE_GP},    
 };
 
 extern const int32_t NUMBER_NODE_TYPES = string_to_node_type.size();

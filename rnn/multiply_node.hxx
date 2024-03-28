@@ -27,7 +27,7 @@ class MULTIPLY_Node : public RNN_Node_Interface {
     void initialize_uniform_random(minstd_rand0& generator, uniform_real_distribution<double>& rng);
 
     void input_fired(int32_t time, double incoming_output);
-    void try_update_deltas(int32_t time);
+    virtual void try_update_deltas(int32_t time);
     void output_fired(int32_t time, double delta);
     void error_fired(int32_t time, double error);
 

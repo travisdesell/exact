@@ -72,7 +72,7 @@ int main(int argc, char** argv) {
     if (hidden_node_type.compare("sin") == 0) {
         Log::info("TESTING SIN!!!\n");
         genome_original = create_sin(inputs3, 1, 5, outputs3, max_recurrent_depth, weight_rules);
-        Log::info("testing with 1 hidden layer, 5 cos nodes\n");
+        Log::info("testing with 1 hidden layer, 5 sin nodes\n");
     } else if (hidden_node_type.compare("sum") == 0) {
         Log::info("TESTING SUM!!!\n");
         genome_original = create_sum(inputs3, 1, 5, outputs3, max_recurrent_depth, weight_rules);
@@ -96,7 +96,31 @@ int main(int argc, char** argv) {
     } else if (hidden_node_type.compare("multiply") == 0) {
         Log::info("TESTING MULTIPLY!!!\n");
         genome_original = create_multiply(inputs3, 1, 5, outputs3, max_recurrent_depth, weight_rules);
-        Log::info("testing with 1 hidden layer, 5 inverse nodes\n");
+        Log::info("testing with 1 hidden layer, 5 multiply nodes\n");
+    } else if (hidden_node_type.compare("sin_gp") == 0) {
+        Log::info("TESTING SIN GP!!!\n");
+        genome_original = create_sin_gp(inputs3, 1, 5, outputs3, max_recurrent_depth, weight_rules);
+        Log::info("testing with 1 hidden layer, 5 sin_gp nodes\n");
+    } else if (hidden_node_type.compare("cos_gp") == 0) {
+        Log::info("TESTING COS GP!!!\n");
+        genome_original = create_cos_gp(inputs3, 1, 5, outputs3, max_recurrent_depth, weight_rules);
+        Log::info("testing with 1 hidden layer, 5 cos_gp nodes\n");
+    } else if (hidden_node_type.compare("tanh_gp") == 0) {
+        Log::info("TESTING TANH GP!!!\n");
+        genome_original = create_tanh_gp(inputs3, 1, 5, outputs3, max_recurrent_depth, weight_rules);
+        Log::info("testing with 1 hidden layer, 5 tanh_gp nodes\n");
+    } else if (hidden_node_type.compare("sigmoid_gp") == 0) {
+        Log::info("TESTING SIGMOID GP!!!\n");
+        genome_original = create_sigmoid_gp(inputs3, 1, 5, outputs3, max_recurrent_depth, weight_rules);
+        Log::info("testing with 1 hidden layer, 5 sigmoid_gp nodes\n");
+    } else if (hidden_node_type.compare("inverse_gp") == 0) {
+        Log::info("TESTING INVERSE GP!!!\n");
+        genome_original = create_inverse_gp(inputs3, 1, 5, outputs3, max_recurrent_depth, weight_rules);
+        Log::info("testing with 1 hidden layer, 5 inverse_gp nodes\n");
+    } else if (hidden_node_type.compare("multiply_gp") == 0) {
+        Log::info("TESTING MULTIPLY GP!!!\n");
+        genome_original = create_multiply_gp(inputs3, 1, 5, outputs3, max_recurrent_depth, weight_rules);
+        Log::info("testing with 1 hidden layer, 5 multiply_gp nodes\n");
     } else {
         Log::fatal("NODE TYPE NOT LISTED!!!");
         exit(1);

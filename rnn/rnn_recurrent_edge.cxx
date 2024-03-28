@@ -209,7 +209,7 @@ void RNN_Recurrent_Edge::propagate_backward(int32_t time) {
         //}
     }
     double delta;
-    if (output_node->node_type == MULTIPLY_NODE) {
+    if (output_node->node_type == MULTIPLY_NODE || output_node->node_type == MULTIPLY_NODE_GP) {
         delta = output_node->ordered_d_input[time][input_number[time] - 1];
     } else {
         delta = output_node->d_input[time];

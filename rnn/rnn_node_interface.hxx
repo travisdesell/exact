@@ -50,6 +50,12 @@ int32_t node_type_from_string(string& node_type);
 #define SIGMOID_NODE    16
 #define INVERSE_NODE    17
 #define MULTIPLY_NODE   18
+#define SIN_NODE_GP     19
+#define COS_NODE_GP     20
+#define TANH_NODE_GP    21
+#define SIGMOID_NODE_GP 22 
+#define INVERSE_NODE_GP 23
+#define MULTIPLY_NODE_GP 24
 
 int32_t node_type_from_string(string& node_type);
 
