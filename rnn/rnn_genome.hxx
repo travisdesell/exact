@@ -171,6 +171,7 @@ class RNN_Genome {
     double get_xavier_weight(RNN_Node_Interface* output_node);
     double get_kaiming_weight(RNN_Node_Interface* output_node);
     double get_random_weight();
+    double get_gp_weight();
 
     void get_input_edges(
         int32_t node_innovation, vector<RNN_Edge*>& input_edges, vector<RNN_Recurrent_Edge*>& input_recurrent_edges

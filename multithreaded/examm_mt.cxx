@@ -101,9 +101,17 @@ int main(int argc, char** argv) {
 
     WeightRules* weight_rules = new WeightRules();
     weight_rules->initialize_from_args(arguments);
+        
+    RNN_Genome* seed_genome;
 
-    RNN_Genome* seed_genome = get_seed_genome(arguments, time_series_sets, weight_rules);
-
+    WeightType weight_initialize = weight_rules->get_weight_initialize_method();
+    if (weight_initialize == WeightType::GP){
+        Log::info("GET SEED GENOME GP WAS REACHED!!!\n");
+        Log::info("HELLLLLOOOOOOOOOOOOOOO\n");
+        seed_genome = get_seed_genome_gp(arguments, time_series_sets, weight_rules);
+    } else {
+        seed_genome = get_seed_genome(arguments, time_series_sets, weight_rules);
+    }
     examm = generate_examm_from_arguments(arguments, time_series_sets, weight_rules, seed_genome);
 
     vector<thread> threads;
