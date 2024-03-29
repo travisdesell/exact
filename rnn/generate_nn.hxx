@@ -91,6 +91,7 @@ RNN_Genome* create_memory_cell_nn(
 #define create_enas_dag(...)   create_memory_cell_nn<ENAS_DAG_Node>(__VA_ARGS__)
 #define create_random_dag(...) create_memory_cell_nn<RANDOM_DAG_Node>(__VA_ARGS__)
 #define create_ugrnn(...)      create_memory_cell_nn<UGRNN_Node>(__VA_ARGS__)
+
 // new simple nodes
 #define create_sin(...)      create_memory_cell_nn<SIN_Node>(__VA_ARGS__)
 #define create_sum(...)      create_memory_cell_nn<SUM_Node>(__VA_ARGS__)
@@ -99,7 +100,6 @@ RNN_Genome* create_memory_cell_nn(
 #define create_sigmoid(...)  create_memory_cell_nn<SIGMOID_Node>(__VA_ARGS__)
 #define create_inverse(...)  create_memory_cell_nn<INVERSE_Node>(__VA_ARGS__)
 #define create_multiply(...) create_memory_cell_nn<MULTIPLY_Node>(__VA_ARGS__)
-//new gp nodes
 #define create_sin_gp(...)      create_memory_cell_nn<SIN_Node_GP>(__VA_ARGS__)
 #define create_cos_gp(...)      create_memory_cell_nn<COS_Node_GP>(__VA_ARGS__)
 #define create_tanh_gp(...)     create_memory_cell_nn<TANH_Node_GP>(__VA_ARGS__)
@@ -119,17 +119,7 @@ RNN_Genome* create_nn(
     const vector<string>& input_parameter_names, int32_t number_hidden_layers, int32_t number_hidden_nodes,
     const vector<string>& output_parameter_names, int32_t max_recurrent_depth, WeightRules* weight_rules
 );
-
-RNN_Genome* create_nn_gp(
-    const vector<string>& input_parameter_names, int32_t number_hidden_layers, int32_t number_hidden_nodes,
-    const vector<string>& output_parameter_names, int32_t max_recurrent_depth, WeightRules* weight_rules
-);
-
 RNN_Genome* get_seed_genome(
-    const vector<string>& arguments, TimeSeriesSets* time_series_sets, WeightRules* weight_rules
-);
-
-RNN_Genome* get_seed_genome_gp(
     const vector<string>& arguments, TimeSeriesSets* time_series_sets, WeightRules* weight_rules
 );
 

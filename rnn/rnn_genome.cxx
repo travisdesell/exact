@@ -637,12 +637,6 @@ void RNN_Genome::initialize_randomly() {
             initialize_kaiming(nodes[i]);
         }
         get_weights(initial_parameters);
-    } else if (weight_initialize == WeightType::GP) {
-        for (int32_t i = 0; i < (int32_t) nodes.size(); i++) {
-            Log::info("INITIALIZE RANDOMLY CALLED for GP WEIGHT TYPE!!!\n"); 
-            initialize_gp(nodes[i]);
-        }
-        get_weights(initial_parameters); 
     } else {
         Log::fatal(
             "ERROR: trying to initialize a genome randomly with unknown weight initalization strategy: '%d'\n",
@@ -699,7 +693,6 @@ void RNN_Genome::initialize_kaiming(RNN_Node_Interface* n) {
 }
 
 void RNN_Genome::initialize_gp(RNN_Node_Interface* n){
-    Log::info("INITIALIZE GP CALLED\n");
     vector<RNN_Edge*> input_edges;
     vector<RNN_Recurrent_Edge*> input_recurrent_edges;
     get_input_edges(n->innovation_number, input_edges, input_recurrent_edges);
@@ -711,10 +704,10 @@ void RNN_Genome::initialize_gp(RNN_Node_Interface* n){
     }
     double range = sqrt(6) / sqrt(sum);
     for (int32_t j = 0; j < (int32_t) input_edges.size(); j++) {
-        input_edges[j]->weight = 1.0;
+        input_edges[j]->weight = 1;
     }
     for (int32_t j = 0; j < (int32_t) input_recurrent_edges.size(); j++) {
-        input_recurrent_edges[j]->weight = 1.0;
+        input_recurrent_edges[j]->weight = 1;
     }
     if (n->node_type == MULTIPLY_NODE_GP || n->node_type == SUM_NODE){
         n->initialize_xavier(generator, rng_1_1, range);
@@ -745,11 +738,6 @@ double RNN_Genome::get_random_weight() {
     return rng(generator);
 }
 
-double RNN_Genome::get_gp_weight(){
-    Log::info("get_gp_weight CALLED!!!\n");
-    return 1.0;
-}
-
 void RNN_Genome::initialize_node_randomly(RNN_Node_Interface* n) {
     WeightType mutated_component_weight = weight_rules->get_mutated_components_weight_method();
     WeightType weight_initialize = weight_rules->get_weight_initialize_method();
@@ -772,17 +760,6 @@ void RNN_Genome::initialize_node_randomly(RNN_Node_Interface* n) {
         } else if (weight_initialize == WeightType::RANDOM) {
             // random weight
             n->initialize_uniform_random(generator, rng);
-        } else if (weight_initialize == WeightType::GP && (n->node_type == SUM_NODE || n->node_type == MULTIPLY_NODE_GP)){
-            Log::info("INITIALIZE NODE RANDOMLY CALLED XAVIOR BIAS INITIALIZED");
-            int32_t sum = get_fan_in(n->innovation_number) + get_fan_out(n->innovation_number);
-            if (sum <= 0) {
-                sum = 1;
-            }
-            double range = sqrt(6) / sqrt(sum);
-            n->initialize_xavier(generator,rng_1_1, range);
-        } else if (weight_initialize == WeightType::GP && n->node_type != SUM_NODE && n->node_type != MULTIPLY_NODE_GP){
-            Log::info("INITIALIZE NODE RANDOMLY CALLED BIAS INITIALIZED TO ZERO"); 
-            return; 
         } else {
             Log::fatal("weight initialize method %d is not set correctly \n", weight_initialize);
             exit(1);
@@ -1783,9 +1760,6 @@ bool RNN_Genome::attempt_edge_insert(
         } else if (weight_initialize == WeightType::RANDOM) {
             Log::debug("setting new edge weight to Random \n");
             e->weight = get_random_weight();
-        } else if (weight_initialize == WeightType::GP){
-            Log::info("get_gp_weight CALLED IN attempt_edge_insert!!!!\n");
-            e->weight = get_gp_weight();
         } else {
             Log::fatal("weight initialization method %d is not set correctly \n", weight_initialize);
         }
@@ -1856,10 +1830,6 @@ bool RNN_Genome::attempt_recurrent_edge_insert(
         } else if (weight_initialize == WeightType::RANDOM) {
             Log::debug("setting new recurrent edge weight to Random \n");
             e->weight = get_random_weight();
-        } else if (weight_initialize == WeightType::GP) {
-            Log::debug("setting new recurrent edge weight to GP \n");
-            Log::info("get_gp_weight CALLED IN attempt_edge_insert!!!!\n");
-            e->weight = get_gp_weight();
         } else {
             Log::fatal("Weight initialization method %d is not set correctly \n", weight_initialize);
         }

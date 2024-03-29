@@ -6,13 +6,8 @@ using std::vector;
 #include "tanh_node_gp.hxx"
 
 TANH_Node_GP::TANH_Node_GP(int32_t _innovation_number, int32_t _layer_type, double _depth)
-    : RNN_Node(_innovation_number, _layer_type, _depth, TANH_NODE_GP) {
+    : RNN_Node(_innovation_number, _layer_type, _depth, SIN_NODE_GP) {
     Log::debug("created node: %d, layer type: %d, node type: SIN_NODE_GP\n", innovation_number, layer_type);
-}
-
-TANH_Node_GP::TANH_Node_GP(int32_t _innovation_number, int32_t _layer_type, double _depth, string _parameter_name)
-    : RNN_Node(_innovation_number, _layer_type, _depth, TANH_NODE_GP, _parameter_name) {
-    Log::debug("created node: %d, layer type: %d, node type: TANH_NODE_GP\n", innovation_number, layer_type);
 }
 
 TANH_Node_GP::~TANH_Node_GP() {
