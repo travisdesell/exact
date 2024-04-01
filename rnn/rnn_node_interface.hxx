@@ -56,6 +56,7 @@ int32_t node_type_from_string(string& node_type);
 #define SIGMOID_NODE_GP 22 
 #define INVERSE_NODE_GP 23
 #define MULTIPLY_NODE_GP 24
+#define OUTPUT_NODE_GP 25
 
 int32_t node_type_from_string(string& node_type);
 
