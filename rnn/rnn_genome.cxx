@@ -637,11 +637,6 @@ void RNN_Genome::initialize_randomly() {
             initialize_kaiming(nodes[i]);
         }
         get_weights(initial_parameters);
-    } else if (weight_initialize == WeightType::GP){
-        for (int32_t i = 0; i < (int32_t) nodes.size(); i++) {
-            initialize_gp(nodes[i]);
-        }
-        get_weights(initial_parameters);       
     } else {
         Log::fatal(
             "ERROR: trying to initialize a genome randomly with unknown weight initalization strategy: '%d'\n",
@@ -4201,7 +4196,7 @@ void RNN_Genome::write_equations(ostream& outstream) {
                 }
             } else if (innovation_to_inputs_fired[output_node->innovation_number] > 1
                        && innovation_to_inputs_fired[output_node->innovation_number] < output_node->total_inputs) {
-                if (output_node->node_type == MULTIPLY_NODE || output_node->node_type == MULTIPLY_NODE_GP) {
+                if (output_node->node_type == MULTIPLY_NODE) {
                     current_output_equation += " * " + input_equation;
                 } else {
                     current_output_equation += " + " + input_equation;
@@ -4210,9 +4205,6 @@ void RNN_Genome::write_equations(ostream& outstream) {
                 if (output_node->node_type == MULTIPLY_NODE) {
                     current_output_equation +=
                         " * " + input_equation + " + " + to_string(round(output_bias * pow(10, 6)) / pow(10, 6));
-                } else if (output_node->node_type == MULTIPLY_NODE_GP) {
-                    current_output_equation +=
-                        " * " + input_equation + " * " + to_string(round(output_bias * pow(10, 6)) / pow(10, 6));
                 } else if (output_node->node_type == SUM_NODE) {
                     current_output_equation +=
                         " + " + input_equation + " + " + to_string(round(output_bias * pow(10, 6)) / pow(10, 6));
@@ -4264,7 +4256,7 @@ void RNN_Genome::write_equations(ostream& outstream) {
                     current_output_equation += "sigmoid(" + input_equation;
                 } else if (output_node->node_type == SUM_NODE) {
                     current_output_equation += input_equation;
-                } else if (output_node->node_type == MULTIPLY_NODE || output_node->node_type == MULTIPLY_NODE_GP) {
+                } else if (output_node->node_type == MULTIPLY_NODE) {
                     current_output_equation += input_equation;
                 } else if (output_node->node_type == INVERSE_NODE) {
                     current_output_equation += "1.0 /(" + input_equation;
@@ -4292,7 +4284,7 @@ void RNN_Genome::write_equations(ostream& outstream) {
                 }
             } else if (innovation_to_inputs_fired[output_node->innovation_number] > 1
                        && innovation_to_inputs_fired[output_node->innovation_number] < output_node->total_inputs) {
-                if (output_node->node_type == MULTIPLY_NODE || output_node->node_type == MULTIPLY_NODE_GP) {
+                if (output_node->node_type == MULTIPLY_NODE) {
                     current_output_equation += " * " + input_equation;
                 } else {
                     current_output_equation += " + " + input_equation;
@@ -4301,9 +4293,6 @@ void RNN_Genome::write_equations(ostream& outstream) {
                 if (output_node->node_type == MULTIPLY_NODE) {
                     current_output_equation +=
                         " * " + input_equation + " + " + to_string(round(output_bias * pow(10, 6)) / pow(10, 6));
-                } else if (output_node->node_type == MULTIPLY_NODE_GP) {
-                    current_output_equation +=
-                        " * " + input_equation + " * " + to_string(round(output_bias * pow(10, 6)) / pow(10, 6));
                 } else if (output_node->node_type == SUM_NODE) {
                     current_output_equation +=
                         " + " + input_equation + " + " + to_string(round(output_bias * pow(10, 6)) / pow(10, 6));

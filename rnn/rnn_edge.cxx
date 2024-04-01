@@ -106,7 +106,7 @@ void RNN_Edge::propagate_forward(int32_t time) {
     }
     
     // Log::debug("input_node %p %d\n", input_node, input_node->output_values.size());
-    this->weight = 1.0;
+    
     double output = input_node->output_values[time] * weight;
 
     // Log::debug("propagating forward at time %d from %d to %d, value: %lf, input: %lf, weight: %lf\n", time,
@@ -125,7 +125,7 @@ void RNN_Edge::propagate_forward(int32_t time, bool training, double dropout_pro
         );
         exit(1);
     }
-    this->weight = 1.0;
+
     double output = input_node->output_values[time] * weight;
 
     // Log::trace("propagating forward at time %d from %d to %d, value: %lf, input: %lf, weight: %lf\n", time,
@@ -141,7 +141,7 @@ void RNN_Edge::propagate_forward(int32_t time, bool training, double dropout_pro
     } else {
         output *= (1.0 - dropout_probability);
     }
-    
+
     outputs[time] = output;
     output_node->input_fired(time, output);
     input_number[time] = output_node->inputs_fired[time];
@@ -170,8 +170,7 @@ void RNN_Edge::propagate_backward(int32_t time) {
     } else {
         delta = output_node->d_input[time];
     }
-    this->weight = 1;
-    d_weight = 0;
+    d_weight += delta * input_node->output_values[time];
     deltas[time] = delta * weight;
     input_node->output_fired(time, deltas[time]);
 }
@@ -205,8 +204,8 @@ void RNN_Edge::propagate_backward(int32_t time, bool training, double dropout_pr
             delta = 0.0;
         }
     }
-    this->weight = 1;
-    d_weight = 0;
+
+    d_weight += delta * input_node->output_values[time];
     deltas[time] = delta * weight;
     input_node->output_fired(time, deltas[time]);
 }

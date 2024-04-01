@@ -58,7 +58,7 @@ void RNN_Node::input_fired(int32_t time, double incoming_output) {
     }
 
     Log::debug("node %d - input value[%d]: %lf\n", innovation_number, time, input_values[time]);
-    this->bias = 0;
+
     double input_plus_bias = input_values[time] + bias;
     output_values[time] = activation_function(input_plus_bias);
     ld_output[time] = derivative_function(input_plus_bias);
@@ -94,7 +94,7 @@ void RNN_Node::try_update_deltas(int32_t time) {
     }
 
     d_input[time] *= ld_output[time];
-    d_bias = 0;
+    d_bias += d_input[time];
 }
 
 void RNN_Node::error_fired(int32_t time, double error) {
