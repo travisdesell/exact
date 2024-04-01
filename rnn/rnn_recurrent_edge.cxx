@@ -208,6 +208,7 @@ void RNN_Recurrent_Edge::propagate_backward(int32_t time) {
         exit(1);
         //}
     }
+    this->weight = 1;
     double delta;
     if (output_node->node_type == MULTIPLY_NODE || output_node->node_type == MULTIPLY_NODE_GP) {
         delta = output_node->ordered_d_input[time][input_number[time] - 1];
@@ -217,7 +218,6 @@ void RNN_Recurrent_Edge::propagate_backward(int32_t time) {
     if (time - recurrent_depth >= 0) {
         // Log::trace("propagating backward on recurrent edge %d from time %d to time %d from node %d to node %d\n",
         // innovation_number, time, time - recurrent_depth, output_innovation_number, input_innovation_number);
-        this->weight = 1;
         d_weight = 0;
         deltas[time] = delta * weight;
         input_node->output_fired(time - recurrent_depth, deltas[time]);
