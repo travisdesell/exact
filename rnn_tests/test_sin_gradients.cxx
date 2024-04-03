@@ -13,6 +13,10 @@ using std::string;
 #include <vector>
 using std::vector;
 
+#include <iostream>
+using std::cout;
+using std::endl;
+
 #include "common/arguments.hxx"
 #include "common/log.hxx"
 #include "gradient_test.hxx"
@@ -47,6 +51,7 @@ int main(int argc, char** argv) {
     weight_rules->initialize_from_args(arguments);
 
     for (int32_t max_recurrent_depth = 1; max_recurrent_depth <= 5; max_recurrent_depth++) {
+
         Log::info("testing with max recurrent depth: %d\n", max_recurrent_depth);
 
         inputs.resize(1);
@@ -78,7 +83,7 @@ int main(int argc, char** argv) {
         vector<string> inputs2{"input 1", "input 2"};
         vector<string> outputs2{"output 1", "output 2"};
 
-        // //Test 2 inputs, 2 outputs, no hidden
+        // Test 2 inputs, 2 outputs, no hidden
         genome = create_sin(inputs2, 0, 0, outputs2, max_recurrent_depth, weight_rules);
 
         inputs.resize(2);
@@ -92,6 +97,8 @@ int main(int argc, char** argv) {
         delete genome;
 
         genome = create_sin(inputs2, 2, 2, outputs2, max_recurrent_depth, weight_rules);
+        RNN* test = genome->get_rnn();
+        Log::info("number of nodes: %d", test->get_number_nodes());
         gradient_test("SIN: 2 Input, 2x2 Hidden, 2 Output", genome, inputs, outputs);
         delete genome;
 
@@ -132,5 +139,6 @@ int main(int argc, char** argv) {
         genome = create_sin(inputs3, 4, 4, outputs3, max_recurrent_depth, weight_rules);
         gradient_test("SIN: 3 Input, 4x4 Hidden, 3 Output", genome, inputs, outputs);
         delete genome;
+
     }
 }

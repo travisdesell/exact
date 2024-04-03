@@ -160,6 +160,10 @@ void RNN_Recurrent_Edge::propagate_forward(int32_t time) {
         exit(1);
     }
 
+    if (output_node->node_type == OUTPUT_NODE_GP || output_node->node_type == SIN_NODE_GP || output_node->node_type == COS_NODE_GP || output_node->node_type == TANH_NODE_GP || output_node->node_type == SIGMOID_NODE_GP || output_node->node_type == SUM_NODE_GP || output_node->node_type == MULTIPLY_NODE_GP || output_node->node_type == INVERSE_NODE_GP) {
+        weight = 1.0;
+    }
+
     double output = input_node->output_values[time] * weight;
     if (time < series_length - recurrent_depth) {
         // Log::trace("propagating forward on recurrent edge %d from time %d to time %d from node %d to node %d\n",
@@ -217,8 +221,11 @@ void RNN_Recurrent_Edge::propagate_backward(int32_t time) {
     if (time - recurrent_depth >= 0) {
         // Log::trace("propagating backward on recurrent edge %d from time %d to time %d from node %d to node %d\n",
         // innovation_number, time, time - recurrent_depth, output_innovation_number, input_innovation_number);
-
-        d_weight += delta * input_node->output_values[time - recurrent_depth];
+        if (output_node->node_type == OUTPUT_NODE_GP || output_node->node_type == SIN_NODE_GP || output_node->node_type == COS_NODE_GP || output_node->node_type == TANH_NODE_GP || output_node->node_type == SIGMOID_NODE_GP || output_node->node_type == SUM_NODE_GP || output_node->node_type == MULTIPLY_NODE_GP || output_node->node_type == INVERSE_NODE_GP) {
+            d_weight = 0.0;
+        } else {
+            d_weight += delta * input_node->output_values[time - recurrent_depth];
+        }
         deltas[time] = delta * weight;
         input_node->output_fired(time - recurrent_depth, deltas[time]);
     }

@@ -36,6 +36,7 @@ using std::vector;
 #include "rnn/sigmoid_node_gp.hxx"
 #include "rnn/multiply_node_gp.hxx"
 #include "rnn/inverse_node_gp.hxx"
+#include "rnn/sum_node_gp.hxx"
 #include "weights/weight_rules.hxx"
 
 template <class NodeT>
@@ -45,6 +46,12 @@ NodeT* create_hidden_memory_cell(int32_t& innovation_counter, double depth) {
 RNN_Node_Interface* create_hidden_node(int32_t node_kind, int32_t& innovation_counter, double depth);
 
 RNN_Genome* create_nn(
+    const vector<string>& input_parameter_names, int32_t number_hidden_layers, int32_t number_hidden_nodes,
+    const vector<string>& output_parameter_names, int32_t max_recurrent_depth,
+    std::function<RNN_Node_Interface*(int32_t&, double)> make_node, WeightRules* weight_rules
+);
+
+RNN_Genome* create_nn_gp(
     const vector<string>& input_parameter_names, int32_t number_hidden_layers, int32_t number_hidden_nodes,
     const vector<string>& output_parameter_names, int32_t max_recurrent_depth,
     std::function<RNN_Node_Interface*(int32_t&, double)> make_node, WeightRules* weight_rules
@@ -83,6 +90,21 @@ RNN_Genome* create_memory_cell_nn(
     );
 }
 
+template <typename NodeT>
+RNN_Genome* create_memory_cell_nn_gp(
+    const vector<string>& input_parameter_names, int32_t number_hidden_layers, int32_t number_hidden_nodes,
+    const vector<string>& output_parameter_names, int32_t max_recurrent_depth, WeightRules* weight_rules
+) {
+    auto f = [=](int32_t& innovation_counter, double depth) -> RNN_Node_Interface* {
+        return create_hidden_memory_cell<NodeT>(innovation_counter, depth);
+    };
+
+    return create_nn_gp(
+        input_parameter_names, number_hidden_layers, number_hidden_nodes, output_parameter_names, max_recurrent_depth,
+        f, weight_rules
+    );
+}
+
 #define create_mgu(...)        create_memory_cell_nn<MGU_Node>(__VA_ARGS__)
 #define create_gru(...)        create_memory_cell_nn<GRU_Node>(__VA_ARGS__)
 #define create_delta(...)      create_memory_cell_nn<Delta_Node>(__VA_ARGS__)
@@ -100,12 +122,15 @@ RNN_Genome* create_memory_cell_nn(
 #define create_sigmoid(...)  create_memory_cell_nn<SIGMOID_Node>(__VA_ARGS__)
 #define create_inverse(...)  create_memory_cell_nn<INVERSE_Node>(__VA_ARGS__)
 #define create_multiply(...) create_memory_cell_nn<MULTIPLY_Node>(__VA_ARGS__)
-#define create_sin_gp(...)      create_memory_cell_nn<SIN_Node_GP>(__VA_ARGS__)
-#define create_cos_gp(...)      create_memory_cell_nn<COS_Node_GP>(__VA_ARGS__)
-#define create_tanh_gp(...)     create_memory_cell_nn<TANH_Node_GP>(__VA_ARGS__)
-#define create_sigmoid_gp(...)  create_memory_cell_nn<SIGMOID_Node_GP>(__VA_ARGS__)
-#define create_inverse_gp(...)  create_memory_cell_nn<INVERSE_Node_GP>(__VA_ARGS__)
-#define create_multiply_gp(...) create_memory_cell_nn<MULTIPLY_Node_GP>(__VA_ARGS__)
+
+//gp nodes
+#define create_sin_gp(...)      create_memory_cell_nn_gp<SIN_Node_GP>(__VA_ARGS__)
+#define create_cos_gp(...)      create_memory_cell_nn_gp<COS_Node_GP>(__VA_ARGS__)
+#define create_tanh_gp(...)     create_memory_cell_nn_gp<TANH_Node_GP>(__VA_ARGS__)
+#define create_sigmoid_gp(...)  create_memory_cell_nn_gp<SIGMOID_Node_GP>(__VA_ARGS__)
+#define create_inverse_gp(...)  create_memory_cell_nn_gp<INVERSE_Node_GP>(__VA_ARGS__)
+#define create_multiply_gp(...) create_memory_cell_nn_gp<MULTIPLY_Node_GP>(__VA_ARGS__)
+#define create_sum_gp(...)      create_memory_cell_nn_gp<SUM_Node_GP>(__VA_ARGS__)
 
 DNASNode* create_dnas_node(int32_t& innovation_counter, double depth, const vector<int32_t>& node_types);
 
@@ -123,4 +148,7 @@ RNN_Genome* get_seed_genome(
     const vector<string>& arguments, TimeSeriesSets* time_series_sets, WeightRules* weight_rules
 );
 
+RNN_Genome* get_seed_genome_gp(
+    const vector<string>& arguments, TimeSeriesSets* time_series_sets, WeightRules* weight_rules
+);
 #endif
