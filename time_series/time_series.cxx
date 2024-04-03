@@ -238,7 +238,7 @@ void TimeSeriesSet::add_time_series(string name) {
     }
 }
 
-TimeSeriesSet::TimeSeriesSet(string _filename, const vector<string>& _fields) {
+TimeSeriesSet::TimeSeriesSet(string _filename, const vector<string>& _fields, char delim) {
     filename = _filename;
     fields = _fields;
 
@@ -251,7 +251,7 @@ TimeSeriesSet::TimeSeriesSet(string _filename, const vector<string>& _fields) {
     }
 
     vector<string> file_fields;
-    string_split(line, ',', file_fields);
+    string_split(line, delim, file_fields);
     for (int32_t i = 0; i < (int32_t) file_fields.size(); i++) {
         // get rid of carriage returns (sometimes windows messes this up)
         file_fields[i].erase(std::remove(file_fields[i].begin(), file_fields[i].end(), '\r'), file_fields[i].end());
@@ -308,7 +308,7 @@ TimeSeriesSet::TimeSeriesSet(string _filename, const vector<string>& _fields) {
         }
 
         vector<string> parts;
-        string_split(line, ',', parts);
+        string_split(line, delim, parts);
 
         if (parts.size() != file_fields.size()) {
             Log::fatal(
@@ -734,7 +734,7 @@ void TimeSeriesSets::load_time_series() {
     for (int32_t i = 0; i < (int32_t) filenames.size(); i++) {
         Log::info("\t%s\n", filenames[i].c_str());
 
-        TimeSeriesSet* ts = new TimeSeriesSet(filenames[i], all_parameter_names);
+        TimeSeriesSet* ts = new TimeSeriesSet(filenames[i], all_parameter_names, this->csv_delimiter);
         time_series.push_back(ts);
 
         rows += ts->get_number_rows();
@@ -829,6 +829,25 @@ TimeSeriesSets* TimeSeriesSets::generate_from_arguments(const vector<string>& ar
         );
         help_message();
         exit(1);
+    }
+
+    if (argument_exists(arguments, "--csv_delimiter")) {
+        vector<string> delim_vec;
+        get_argument_vector(arguments, "--csv_delimiter", false, delim_vec);
+
+        string delim_str = delim_vec.front();
+
+        if (delim_vec.size() != 1 || delim_str.size() != 1) {
+            // Exit if the user specifies more than one delimiter character
+            Log::fatal(
+                "The delimeter for CSV files should be a single character."
+            );
+
+            help_message();
+            exit(1);
+        }
+
+        tss->csv_delimiter = delim_str.at(0);
     }
 
     tss->load_time_series();
