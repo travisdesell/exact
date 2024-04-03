@@ -16,7 +16,7 @@ using std::vector;
 class RNN {
    private:
     int32_t series_length;
-
+    bool classification;
     vector<RNN_Node_Interface*> input_nodes;
     vector<RNN_Node_Interface*> output_nodes;
 
@@ -28,7 +28,7 @@ class RNN {
     RNN(vector<RNN_Node_Interface*>& _nodes, vector<RNN_Edge*>& _edges, const vector<string>& input_parameter_names,
         const vector<string>& output_parameter_names);
     RNN(vector<RNN_Node_Interface*>& _nodes, vector<RNN_Edge*>& _edges, vector<RNN_Recurrent_Edge*>& _recurrent_edges,
-        const vector<string>& input_parameter_names, const vector<string>& output_parameter_names);
+        const vector<string>& input_parameter_names, const vector<string>& output_parameter_names, bool _classification);
     ~RNN();
 
     void fix_parameter_orders(
@@ -47,9 +47,14 @@ class RNN {
     );
     void backward_pass(double error, bool using_dropout, bool training, double dropout_probability);
 
+    // double sigmoid_derivative(double x);
+    // double loss_derivative(double output, double target);
+
     double calculate_error_softmax(const vector<vector<double> >& expected_outputs);
     double calculate_error_mse(const vector<vector<double> >& expected_outputs);
     double calculate_error_mae(const vector<vector<double> >& expected_outputs);
+    double calculate_error_binary_cross_entropy(const vector<vector<double> >& expected_outputs, double &sigmoid_derivative, double &error_sum);
+    void calculate_sigmoid_derivative(const vector<vector<double> >& expected_outputs, double &sigmoid_derivative, double error_sum);
 
     double prediction_softmax(
         const vector<vector<double> >& series_data, const vector<vector<double> >& expected_outputs, bool using_dropout,
@@ -60,6 +65,10 @@ class RNN {
         bool training, double dropout_probability
     );
     double prediction_mae(
+        const vector<vector<double> >& series_data, const vector<vector<double> >& expected_outputs, bool using_dropout,
+        bool training, double dropout_probability
+    );
+    double prediction_binary_cross_entropy(
         const vector<vector<double> >& series_data, const vector<vector<double> >& expected_outputs, bool using_dropout,
         bool training, double dropout_probability
     );

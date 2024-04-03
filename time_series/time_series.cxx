@@ -43,6 +43,10 @@ double TimeSeries::get_value(int32_t i) {
     return values[i];
 }
 
+void TimeSeries::set_value(int32_t i, double value) {
+    values[i] = value;
+}
+
 void TimeSeries::calculate_statistics() {
     min = numeric_limits<double>::max();
     min_change = numeric_limits<double>::max();
@@ -93,6 +97,21 @@ void TimeSeries::print_statistics() {
     );
 }
 
+void TimeSeries::update_value_for_classification(double threshold) {
+    for (int32_t i = 0; i < values.size(); i++) {
+        // Log::info("threshold: %lf, value: %lf\n", threshold, values[i]);
+        if (values[i] > threshold) {
+            values[i] = 1.0;
+        } else {
+            values[i] = 0.0;
+        }
+        min = 0.0;
+        average = 0.5;
+        max = 1.0;
+        // Log::info("classification value: %lf\n", values[i]);
+    }
+}
+
 int32_t TimeSeries::get_number_values() const {
     return values.size();
 }
@@ -132,20 +151,6 @@ void TimeSeries::normalize_min_max(double min, double max) {
     );
 
     for (int32_t i = 0; i < (int32_t) values.size(); i++) {
-        if (values[i] < min) {
-            Log::warning(
-                "normalizing series %s, value[%d] %lf was less than min for normalization: %lf\n", name.c_str(), i,
-                values[i], min
-            );
-        }
-
-        if (values[i] > max) {
-            Log::warning(
-                "normalizing series %s, value[%d] %lf was greater than max for normalization: %lf\n", name.c_str(), i,
-                values[i], max
-            );
-        }
-
         values[i] = (values[i] - min) / (max - min);
     }
 }
@@ -515,6 +520,15 @@ void TimeSeriesSet::export_time_series(vector<vector<double> >& data) {
     export_time_series(data, fields, shift_fields, 0);
 }
 
+void TimeSeriesSet::update_output_parameter_for_classification(vector<string>& output_parameter_names) {
+    for (int32_t i = 0; i < (int32_t) output_parameter_names.size(); i++) {
+        Log::info("updating output parameter for classification: '%s'\n", output_parameter_names[i].c_str());
+        string output_parameter = output_parameter_names[i];
+        TimeSeries* series = time_series.find(output_parameter)->second;
+        series->update_value_for_classification(0);
+    }
+}
+
 TimeSeriesSet::TimeSeriesSet() {
 }
 
@@ -621,6 +635,7 @@ void TimeSeriesSets::help_message() {
 }
 
 TimeSeriesSets::TimeSeriesSets() : normalize_type("none") {
+    classification = false;
 }
 
 TimeSeriesSets::~TimeSeriesSets() {
@@ -742,6 +757,15 @@ void TimeSeriesSets::load_time_series() {
     Log::debug("number of time series files: %d, total rows: %d\n", filenames.size(), rows);
 }
 
+void TimeSeriesSets::update_output_parameter_for_classification() {
+    for (int32_t i = 0; i < time_series.size(); i++) {
+        TimeSeriesSet* ts = time_series[i];
+        Log::info("updating output parameter for classification\n");
+        Log::info("filename is %s\n", filenames[i].c_str());
+        ts->update_output_parameter_for_classification(output_parameter_names);
+    }
+}
+
 TimeSeriesSets* TimeSeriesSets::generate_from_arguments(const vector<string>& arguments) {
     Log::info("Generating time series data for EXAMM\n");
     TimeSeriesSets* tss = new TimeSeriesSets();
@@ -832,6 +856,13 @@ TimeSeriesSets* TimeSeriesSets::generate_from_arguments(const vector<string>& ar
     }
 
     tss->load_time_series();
+    tss->classification = argument_exists(arguments, "--classification");
+    if (tss->classification) {
+        Log::info("Doing classification!!!\n");
+        tss->update_output_parameter_for_classification();
+    } else {
+        Log::info("regression problem\n");
+    }
 
     tss->normalize_type = "";
     if (get_argument(arguments, "--normalize", false, tss->normalize_type)) {
@@ -881,6 +912,14 @@ TimeSeriesSets* TimeSeriesSets::generate_test(
     tss->normalize_std_devs.clear();
 
     tss->load_time_series();
+    
+    tss->classification = true;
+    if (tss->classification) {
+        Log::info("Doing classification!!!\n");
+        tss->update_output_parameter_for_classification();
+    } else {
+        Log::info("regression problem\n");
+    }
 
     return tss;
 }
@@ -939,9 +978,10 @@ void TimeSeriesSets::normalize_min_max() {
             Log::info("user specified bounds for ");
 
         } else {
-            for (int32_t j = 0; j < (int32_t) time_series.size(); j++) {
-                double current_min = time_series[j]->get_min(parameter_name);
-                double current_max = time_series[j]->get_max(parameter_name);
+            for (int32_t j = 0; j < (int32_t) training_indexes.size(); j++) {
+                int32_t train_index = training_indexes[j];
+                double current_min = time_series[train_index]->get_min(parameter_name);
+                double current_max = time_series[train_index]->get_max(parameter_name);
 
                 if (current_min < min) {
                     min = current_min;
@@ -1030,13 +1070,14 @@ void TimeSeriesSets::normalize_avg_std_dev() {
             double numerator_average = 0.0;
             long total_values = 0;
 
-            for (int32_t j = 0; j < (int32_t) time_series.size(); j++) {
-                int32_t n_values = time_series[j]->get_number_rows();
-                numerator_average += time_series[j]->get_average(parameter_name) * n_values;
+            for (int32_t j = 0; j < (int32_t) training_indexes.size(); j++) {
+                int32_t train_index = training_indexes[j];
+                int32_t n_values = time_series[train_index]->get_number_rows();
+                numerator_average += time_series[train_index]->get_average(parameter_name) * n_values;
                 total_values += n_values;
 
-                double current_min = time_series[j]->get_min(parameter_name);
-                double current_max = time_series[j]->get_max(parameter_name);
+                double current_min = time_series[train_index]->get_min(parameter_name);
+                double current_max = time_series[train_index]->get_max(parameter_name);
 
                 if (current_min < min) {
                     min = current_min;
@@ -1053,12 +1094,13 @@ void TimeSeriesSets::normalize_avg_std_dev() {
 
             double numerator_std_dev = 0.0;
             // get the Bessel-corrected (n-1 denominator) combined standard deviation
-            for (int32_t j = 0; j < (int32_t) time_series.size(); j++) {
-                int32_t n_values = time_series[j]->get_number_rows();
+            for (int32_t j = 0; j < (int32_t) training_indexes.size(); j++) {
+                int32_t train_index = training_indexes[j];
+                int32_t n_values = time_series[train_index]->get_number_rows();
 
-                double avg_diff = time_series[j]->get_average(parameter_name) - avg;
+                double avg_diff = time_series[train_index]->get_average(parameter_name) - avg;
                 numerator_std_dev +=
-                    ((n_values - 1) * time_series[j]->get_variance(parameter_name)) + (n_values * avg_diff * avg_diff);
+                    ((n_values - 1) * time_series[train_index]->get_variance(parameter_name)) + (n_values * avg_diff * avg_diff);
             }
 
             std_dev = numerator_std_dev / (total_values - 1);

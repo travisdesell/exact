@@ -45,7 +45,7 @@ class RNN_Genome {
 
     bool use_dropout;
     double dropout_probability;
-
+    bool classification;
     string structural_hash;
 
     string log_filename;
@@ -184,6 +184,8 @@ class RNN_Genome {
     void update_generation_map(map<string, int32_t>& generation_map);
     void set_generated_by(string type);
     int32_t get_generated_by(string type);
+    void set_do_classification(bool _classification);
+    bool get_do_classification();
 
     RNN* get_rnn();
     vector<double> get_best_parameters() const;
@@ -208,11 +210,21 @@ class RNN_Genome {
         const vector<vector<vector<double> > >& validation_outputs, WeightUpdate* weight_update_method
     );
 
+    void backpropagate_stochastic_classification(
+        const vector<vector<vector<double> > >& inputs, const vector<vector<vector<double> > >& outputs,
+        const vector<vector<vector<double> > >& validation_inputs,
+        const vector<vector<vector<double> > >& validation_outputs, WeightUpdate* weight_update_method
+    );
+
     double get_softmax(
         const vector<double>& parameters, const vector<vector<vector<double> > >& inputs,
         const vector<vector<vector<double> > >& outputs
     );
     double get_mse(
+        const vector<double>& parameters, const vector<vector<vector<double> > >& inputs,
+        const vector<vector<vector<double> > >& outputs
+    );
+    double get_binary_cross_entropy(
         const vector<double>& parameters, const vector<vector<vector<double> > >& inputs,
         const vector<vector<vector<double> > >& outputs
     );

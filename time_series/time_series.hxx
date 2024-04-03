@@ -34,6 +34,7 @@ class TimeSeries {
 
     void add_value(double value);
     double get_value(int32_t i);
+    void set_value(int32_t i, double value);
 
     void calculate_statistics();
     void print_statistics();
@@ -50,6 +51,7 @@ class TimeSeries {
 
     void normalize_min_max(double min, double max);
     void normalize_avg_std_dev(double avg, double std_dev, double norm_max);
+    void update_value_for_classification(double threshold);
 
     void cut(int32_t start, int32_t stop);
 
@@ -96,6 +98,7 @@ class TimeSeriesSet {
 
     void normalize_min_max(string field, double min, double max);
     void normalize_avg_std_dev(string field, double avg, double std_dev, double norm_max);
+    void update_output_parameter_for_classification(vector<string>& output_parameter_names);
 
     void export_time_series(vector<vector<double> >& data);
     void export_time_series(vector<vector<double> >& data, const vector<string>& requested_fields);
@@ -137,6 +140,7 @@ class TimeSeriesSets {
 
     void parse_parameters_string(const vector<string>& p);
     void load_time_series();
+    bool classification;
 
    public:
     static void help_message();
@@ -175,6 +179,8 @@ class TimeSeriesSets {
     void export_test_series(
         int32_t time_offset, vector<vector<vector<double> > >& inputs, vector<vector<vector<double> > >& outputs
     );
+
+    void update_output_parameter_for_classification();
 
     void export_series_by_name(string field_name, vector<vector<double> >& exported_series);
 

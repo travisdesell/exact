@@ -17,7 +17,8 @@ class GenomeProperty {
     double dropout_probability;
     int32_t min_recurrent_depth;
     int32_t max_recurrent_depth;
-
+    bool classification;
+    
     // TimeSeriesSets *time_series_sets;
     int32_t number_inputs;
     int32_t number_outputs;

@@ -207,7 +207,7 @@ void worker(int32_t rank) {
             // have each worker write the backproagation to a separate log file
             string log_id = "genome_" + to_string(genome->get_generation_id()) + "_worker_" + to_string(rank);
             Log::set_id(log_id);
-            genome->backpropagate_stochastic(
+            genome->backpropagate_stochastic_classification(
                 training_inputs, training_outputs, validation_inputs, validation_outputs, weight_update_method
             );
             Log::release_id(log_id);

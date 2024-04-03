@@ -200,12 +200,12 @@ RNN::RNN(
 
 RNN::RNN(
     vector<RNN_Node_Interface*>& _nodes, vector<RNN_Edge*>& _edges, vector<RNN_Recurrent_Edge*>& _recurrent_edges,
-    const vector<string>& input_parameter_names, const vector<string>& output_parameter_names
+    const vector<string>& input_parameter_names, const vector<string>& output_parameter_names, bool _classification
 ) {
     nodes = _nodes;
     edges = _edges;
     recurrent_edges = _recurrent_edges;
-
+    classification = _classification;
     // sort nodes by depth
     // sort edges by depth
     Log::debug("creating rnn with %d nodes, %d edges\n", nodes.size(), edges.size());
@@ -494,6 +494,43 @@ double RNN::calculate_error_softmax(const vector<vector<double> >& expected_outp
     return cross_entropy_sum;
 }
 
+
+double RNN::calculate_error_binary_cross_entropy(const vector<vector<double> >& expected_outputs, double &sigmoid_derivative, double &error_sum) {
+    double cross_entropy_sum = 0.0;
+    double error;
+    double sigmoid;
+    error_sum = 0.0;
+    sigmoid_derivative = 0.0;
+
+    for (int32_t i = 0; i < (int32_t) output_nodes.size(); i++) {
+        output_nodes[i]->error_values.resize(expected_outputs[i].size());
+
+        double cross_entropy = 0.0;
+        for (int32_t j = 0; j < (int32_t) expected_outputs[i].size(); j++) {
+            // error = output_nodes[i]->output_values[j] - expected_outputs[i][j];
+
+            double output_value = output_nodes[i]->output_values[j];
+            // Log::info("output_value: %lf\n", output_value);
+            sigmoid = 1.0 / (1.0 + exp(-output_value));
+            // Log::info("sigmoid: %lf\n", sigmoid);
+            error = sigmoid - expected_outputs[i][j];
+            // Log::info("error: %lf\n", error);
+            
+            cross_entropy += -expected_outputs[i][j] * log(sigmoid) - (1.0 - expected_outputs[i][j]) * log(1.0 - sigmoid);
+
+            double derivative = output_value * (1.0 - output_value);
+            // Log::info("fabs(error): %lf\n", fabs(error));
+            error_sum += fabs(error);
+            sigmoid_derivative += derivative;
+            output_nodes[i]->error_values[j] = error * derivative;
+            // output_nodes[i]->error_values[j] = error;
+            // mse += error * error;
+        }
+        cross_entropy_sum += cross_entropy/expected_outputs[i].size();
+    }
+    return cross_entropy_sum;
+}
+
 double RNN::calculate_error_mse(const vector<vector<double> >& expected_outputs) {
     double mse_sum = 0.0;
     double mse;
@@ -559,6 +596,15 @@ double RNN::prediction_mse(
 ) {
     forward_pass(series_data, using_dropout, training, dropout_probability);
     return calculate_error_mse(expected_outputs);
+}
+
+double RNN::prediction_binary_cross_entropy(
+    const vector<vector<double> >& series_data, const vector<vector<double> >& expected_outputs, bool using_dropout,
+    bool training, double dropout_probability
+) {
+    double error_sum, sigmoid_derivative;
+    forward_pass(series_data, using_dropout, training, dropout_probability);
+    return calculate_error_binary_cross_entropy(expected_outputs, sigmoid_derivative, error_sum);
 }
 
 double RNN::prediction_mae(
@@ -659,8 +705,18 @@ void RNN::get_analytic_gradient(
     set_weights(test_parameters);
     forward_pass(inputs, using_dropout, training, dropout_probability);
 
-    mse = calculate_error_mse(outputs);
-    backward_pass(mse * (1.0 / outputs[0].size()) * 2.0, using_dropout, training, dropout_probability);
+    // mse = calculate_error_mse(outputs);
+    // backward_pass(mse * (1.0 / outputs[0].size()) * 2.0, using_dropout, training, dropout_probability);
+    double error_sum = 0;
+    double sigmoid_derivative = 0;
+    mse = calculate_error_binary_cross_entropy(outputs, sigmoid_derivative, error_sum);
+    // Log::info("mse: %lf\n", mse);
+    // // calculate_sigmoid_derivative(outputs, sigmoid_derivative, error_sum);
+    // Log::info("error_sum: %lf\n", error_sum);
+    // Log::info("sigmoid_derivative: %lf\n", sigmoid_derivative);
+    // Log::info("error_sum * sigmoid_derivative: %lf\n", error_sum * sigmoid_derivative);
+    Log::info("error propogated in backward pass: %lf\n",  mse * (1.0 / outputs[0].size()));
+    backward_pass( mse * (1.0 / outputs[0].size()), using_dropout, training, dropout_probability);
 
     vector<double> current_gradients;
 

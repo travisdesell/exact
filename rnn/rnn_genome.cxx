@@ -152,6 +152,15 @@ void RNN_Genome::set_parameter_names(
     output_parameter_names = _output_parameter_names;
 }
 
+void RNN_Genome::set_do_classification(bool _classification) {
+    classification = _classification;
+}
+
+bool RNN_Genome::get_do_classification() {
+    return classification;
+}
+
+
 RNN_Genome* RNN_Genome::copy() {
     vector<RNN_Node_Interface*> node_copies;
     vector<RNN_Edge*> edge_copies;
@@ -174,6 +183,7 @@ RNN_Genome* RNN_Genome::copy() {
     other->group_id = group_id;
     other->bp_iterations = bp_iterations;
     other->generation_id = generation_id;
+    other->classification = classification;
     // other->learning_rate = learning_rate;
     // other->adapt_learning_rate = adapt_learning_rate;
     // other->use_reset_weights = use_reset_weights;
@@ -827,7 +837,7 @@ RNN* RNN_Genome::get_rnn() {
         // recurrent_edges[i]->copy(node_copies) );
     }
 
-    return new RNN(node_copies, edge_copies, recurrent_edge_copies, input_parameter_names, output_parameter_names);
+    return new RNN(node_copies, edge_copies, recurrent_edge_copies, input_parameter_names, output_parameter_names, classification);
 }
 
 vector<double> RNN_Genome::get_best_parameters() const {
@@ -1133,6 +1143,121 @@ void RNN_Genome::backpropagate_stochastic(
     get_mu_sigma(best_parameters, _mu, _sigma);
 }
 
+void RNN_Genome::backpropagate_stochastic_classification(
+    const vector<vector<vector<double> > >& inputs, const vector<vector<vector<double> > >& outputs,
+    const vector<vector<vector<double> > >& validation_inputs,
+    const vector<vector<vector<double> > >& validation_outputs, WeightUpdate* weight_update_method
+) {
+    int32_t n_parameters = this->get_number_weights();
+    int32_t n_series = (int32_t) inputs.size();
+
+    vector<double> parameters = initial_parameters;
+    vector<double> velocity(n_parameters, 0.0);
+    vector<double> prev_velocity(n_parameters, 0.0);
+    vector<double> analytic_gradient;
+    vector<double> prev_gradient(n_parameters, 0.0);
+
+    double binary_cross_entropy;
+    double norm = 0.0;
+    RNN* rnn = get_rnn();
+    rnn->set_weights(parameters);
+
+    std::chrono::time_point<std::chrono::system_clock> startClock = std::chrono::system_clock::now();
+
+    // initialize the initial previous values
+    for (int32_t i = 0; i < n_series; i++) {
+        Log::trace(
+            "getting analytic gradient for input/output: %d, n_series: %d, parameters.size: %d, inputs.size(): %d, "
+            "outputs.size(): %d, log filename: '%s'\n",
+            i, n_series, parameters.size(), inputs.size(), outputs.size(), log_filename.c_str()
+        );
+        rnn->get_analytic_gradient(
+            parameters, inputs[i], outputs[i], binary_cross_entropy, analytic_gradient, use_dropout, true, dropout_probability
+        );
+        Log::trace("got analytic gradient.\n");
+        norm = weight_update_method->get_norm(analytic_gradient);
+    }
+    Log::trace("initialized previous values.\n");
+
+    // TODO: need to get validation mse on the RNN not the genome
+    // double validation_mse = get_mse(parameters, validation_inputs, validation_outputs);
+    // best_validation_mse = validation_mse;
+    double validation_entropy = get_binary_cross_entropy(parameters, validation_inputs, validation_outputs);
+    best_validation_mse = validation_entropy;
+    Log::info("initial validation_entropy: %lf\n", validation_entropy);
+    best_validation_mae = get_mae(parameters, validation_inputs, validation_outputs);
+    best_parameters = parameters;
+
+    Log::trace("got initial mses.\n");
+    Log::info("initial validation_entropy: %lf, best validation entropy: %lf\n", validation_entropy, best_validation_mse);
+
+    for (int32_t i = 0; i < (int32_t) parameters.size(); i++) {
+        Log::trace("parameters[%d]: %lf\n", i, parameters[i]);
+    }
+
+    ofstream* output_log = create_log_file();
+
+    for (int32_t iteration = 0; iteration < bp_iterations; iteration++) {
+        vector<int32_t> shuffle_order;
+        for (int32_t i = 0; i < n_series; i++) {
+            shuffle_order.push_back(i);
+        }
+        fisher_yates_shuffle(generator, shuffle_order);
+        double avg_norm = 0.0;
+        for (int32_t k = 0; k < (int32_t) shuffle_order.size(); k++) {
+            int32_t random_selection = shuffle_order[k];
+            prev_gradient = analytic_gradient;
+            rnn->get_analytic_gradient(
+                parameters, inputs[random_selection], outputs[random_selection], binary_cross_entropy, analytic_gradient, use_dropout,
+                true, dropout_probability
+            );
+
+            norm = weight_update_method->get_norm(analytic_gradient);
+
+            if (isnan(norm) || isinf(norm)) {
+                // This genome is getting NANs for gradients so it is a
+                // genetic dead end, delete it.
+                // TODO: figure out why and maybe use clipping or another
+                // method to handle it.
+                Log::error("norm of weights is NAN or INF\n");
+                delete rnn;
+                best_parameters = parameters;
+                this->best_validation_mse = NAN;
+                this->best_validation_mae = NAN;
+                return;
+            }
+
+            avg_norm += norm;
+            weight_update_method->norm_gradients(analytic_gradient, norm);
+            weight_update_method->update_weights(parameters, velocity, prev_velocity, analytic_gradient, iteration);
+        }
+        this->set_weights(parameters);
+        double training_entropy = get_binary_cross_entropy(parameters, inputs, outputs);
+        validation_entropy = get_binary_cross_entropy(parameters, validation_inputs, validation_outputs);
+
+        if (validation_entropy < best_validation_mse) {
+            best_validation_mse = validation_entropy;
+            best_validation_mae = get_mae(parameters, validation_inputs, validation_outputs);
+            best_parameters = parameters;
+        }
+        if (output_log != NULL) {
+            std::chrono::time_point<std::chrono::system_clock> currentClock = std::chrono::system_clock::now();
+            long milliseconds =
+                std::chrono::duration_cast<std::chrono::milliseconds>(currentClock - startClock).count();
+            update_log_file(output_log, iteration, milliseconds, training_entropy, validation_entropy, avg_norm);
+        }
+        Log::info(
+            "iteration %4d, mse: %5.10lf, v_mse: %5.10lf, bv_mse: %5.10lf, avg_norm: %5.10lf\n", iteration,
+            training_entropy, validation_entropy, best_validation_mse, avg_norm
+        );
+    }
+    delete rnn;
+    this->set_weights(best_parameters);
+    Log::info("backpropagation completed, getting mu/sigma\n");
+    double _mu, _sigma;
+    get_mu_sigma(best_parameters, _mu, _sigma);
+}
+
 ofstream* RNN_Genome::create_log_file() {
     ofstream* output_log = NULL;
     if (log_filename != "") {
@@ -1219,6 +1344,31 @@ double RNN_Genome::get_mse(
     avg_mse /= inputs.size();
     Log::trace("average MSE: %5.10lf\n", avg_mse);
     return avg_mse;
+}
+
+double RNN_Genome::get_binary_cross_entropy(
+    const vector<double>& parameters, const vector<vector<vector<double> > >& inputs,
+    const vector<vector<vector<double> > >& outputs
+) {
+    RNN* rnn = get_rnn();
+    rnn->set_weights(parameters);
+
+    double entropy_sum = 0.0;
+    double avg_entropy = 0.0;
+
+    for (int32_t i = 0; i < (int32_t) inputs.size(); i++) {
+        entropy_sum = rnn->prediction_binary_cross_entropy(inputs[i], outputs[i], use_dropout, false, dropout_probability);
+
+        avg_entropy += entropy_sum;
+
+        Log::trace("series[%5d]: Entropy: %5.10lf\n", i, entropy_sum);
+    }
+
+    delete rnn;
+
+    avg_entropy /= inputs.size();
+    Log::trace("average Entropy: %5.10lf\n", avg_entropy);
+    return avg_entropy;
 }
 
 double RNN_Genome::get_mae(
@@ -3273,6 +3423,7 @@ void RNN_Genome::read_from_stream(istream& bin_istream) {
     bin_istream.read((char*) &bp_iterations, sizeof(int32_t));
 
     bin_istream.read((char*) &use_dropout, sizeof(bool));
+    bin_istream.read((char*) &classification, sizeof(bool));
     bin_istream.read((char*) &dropout_probability, sizeof(double));
 
     WeightType weight_initialize = WeightType::NONE;
@@ -3474,6 +3625,7 @@ void RNN_Genome::write_to_stream(ostream& bin_ostream) {
     bin_ostream.write((char*) &bp_iterations, sizeof(int32_t));
 
     bin_ostream.write((char*) &use_dropout, sizeof(bool));
+    bin_ostream.write((char*) &classification, sizeof(bool));
     bin_ostream.write((char*) &dropout_probability, sizeof(double));
 
     WeightType weight_initialize = weight_rules->get_weight_initialize_method();
