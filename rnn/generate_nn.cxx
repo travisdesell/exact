@@ -183,7 +183,7 @@ RNN_Genome* create_nn_gp(
 
     for (int32_t i = 0; i < (int32_t) input_parameter_names.size(); i++) {
         RNN_Node* node =
-            new RNN_Node(++node_innovation_count, INPUT_LAYER, current_layer, SIMPLE_NODE, input_parameter_names[i]);
+            new RNN_Node(++node_innovation_count, INPUT_LAYER, current_layer, INPUT_NODE_GP, input_parameter_names[i]);
         rnn_nodes.push_back(node);
         layer_nodes[current_layer].push_back(node);
     }
@@ -330,7 +330,7 @@ RNN_Genome* get_seed_genome_gp(
         Log::info("Finished transfering seed genome\n");
     } else {
         if (seed_genome == NULL) {
-            seed_genome = create_tanh_gp(
+            seed_genome = create_sum_gp(
                 time_series_sets->get_input_parameter_names(), 0, 0, time_series_sets->get_output_parameter_names(), 0,
                 weight_rules
             );

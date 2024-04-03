@@ -58,6 +58,7 @@ int32_t node_type_from_string(string& node_type);
 #define MULTIPLY_NODE_GP 24
 #define OUTPUT_NODE_GP 25
 #define SUM_NODE_GP 26
+#define INPUT_NODE_GP 27
 
 int32_t node_type_from_string(string& node_type);
 
