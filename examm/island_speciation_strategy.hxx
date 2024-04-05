@@ -37,6 +37,7 @@ class IslandSpeciationStrategy : public SpeciationStrategy {
     RNN_Genome* seed_genome; /**< keep a reference to the seed genome so we can re-use it across islands and not
                                 duplicate innovation numbers. */
 
+    string output_directory;
     string island_ranking_method; /**< The method used to find the worst island in population */
 
     string repopulation_method; /**< The method used to repopulate the island after being erased */
@@ -88,7 +89,7 @@ class IslandSpeciationStrategy : public SpeciationStrategy {
      */
     IslandSpeciationStrategy(
         int32_t _number_of_islands, int32_t _max_island_size, double _mutation_rate,
-        double _intra_island_crossover_rate, double _inter_island_crossover_rate, RNN_Genome* _seed_genome,
+        double _intra_island_crossover_rate, double _inter_island_crossover_rate, string output_directory, RNN_Genome* _seed_genome,
         string _island_ranking_method, string _repopulation_method, int32_t _extinction_event_generation_number,
         int32_t _num_mutations, int32_t _islands_to_exterminate, int32_t _max_genomes, bool _repeat_extinction,
         bool _start_filled, bool _transfer_learning, string _transfer_learning_version, bool _tl_epigenetic_weights,

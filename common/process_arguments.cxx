@@ -122,9 +122,11 @@ IslandSpeciationStrategy* generate_island_speciation_strategy_from_arguments(
     bool start_filled = argument_exists(arguments, "--start_filled");
     bool tl_epigenetic_weights = argument_exists(arguments, "--tl_epigenetic_weights");
     unique_ptr<AnnealingPolicy> annealing_policy = AnnealingPolicy::from_arguments(arguments);
+    string output_directory = "";
+    get_argument(arguments, "--output_directory", false, output_directory);
 
     IslandSpeciationStrategy* island_strategy = new IslandSpeciationStrategy(
-        number_islands, island_size, mutation_rate, intra_island_co_rate, inter_island_co_rate, seed_genome,
+        number_islands, island_size, mutation_rate, intra_island_co_rate, inter_island_co_rate, output_directory, seed_genome,
         island_ranking_method, repopulation_method, extinction_event_generation_number, num_mutations,
         islands_to_exterminate, max_genomes, repeat_extinction, start_filled, transfer_learning,
         transfer_learning_version, tl_epigenetic_weights, annealing_policy

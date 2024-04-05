@@ -5,6 +5,8 @@ using std::function;
 #include <chrono>
 
 // #include <iostream>
+#include <sstream>
+using std::stringstream;
 
 #include <random>
 
@@ -24,7 +26,7 @@ using std::string;
  */
 IslandSpeciationStrategy::IslandSpeciationStrategy(
     int32_t _number_of_islands, int32_t _max_island_size, double _mutation_rate, double _intra_island_crossover_rate,
-    double _inter_island_crossover_rate, RNN_Genome* _seed_genome, string _island_ranking_method,
+    double _inter_island_crossover_rate, string output_directory, RNN_Genome* _seed_genome, string _island_ranking_method,
     string _repopulation_method, int32_t _extinction_event_generation_number, int32_t _num_mutations,
     int32_t _islands_to_exterminate, int32_t _max_genomes, bool _repeat_extinction, bool _start_filled,
     bool _transfer_learning, string _transfer_learning_version, bool _tl_epigenetic_weights,
@@ -36,6 +38,7 @@ IslandSpeciationStrategy::IslandSpeciationStrategy(
       mutation_rate(_mutation_rate),
       intra_island_crossover_rate(_intra_island_crossover_rate),
       inter_island_crossover_rate(_inter_island_crossover_rate),
+      output_directory(output_directory),
       generated_genomes(0),
       evaluated_genomes(0),
       seed_genome(_seed_genome),
@@ -190,11 +193,11 @@ int32_t IslandSpeciationStrategy::insert_genome(RNN_Genome* genome) {
     Log::info("Island %d: Insert position was: %d\n", island, insert_position);
 
     if (insert_position == 0) {
-        if (new_global_best) {
-            return 0;
-        } else {
-            return 1;
-        }
+        stringstream ss;
+        ss << output_directory << "/island_" << island << "_best.bin";
+        genome->write_to_file(ss.str());
+
+        return insert_position != 0;
     } else {
         return insert_position;  // will be -1 if not inserted, or > 0 if not the global best
     }
