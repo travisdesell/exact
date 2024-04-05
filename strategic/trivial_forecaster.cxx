@@ -30,6 +30,8 @@ TrivialForecaster::TrivialForecaster(const vector<string> &arguments, const vect
 
 
 map<string, double> TrivialForecaster::forecast(const map<string, double> &context) {
+    Log::info("forecasting!\n");
+
     if (forecaster_lag == 0) {
         // predictions for the next value(s) are just the current values
         map<string, double> result;

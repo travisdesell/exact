@@ -7,6 +7,10 @@ using std::find;
 #include <fstream>
 using std::ifstream;
 
+#include <regex>
+using std::regex;
+using std::regex_match;
+
 #include <sstream>
 using std::stringstream;
 
@@ -49,10 +53,32 @@ TimeSeriesNew::TimeSeriesNew(string _filename, const vector<string> &_input_para
     input_parameter_names = _input_parameter_names;
     output_parameter_names = _output_parameter_names;
 
+    vector<string> regex_input_parameter_names;
+    vector<string> regex_output_parameter_names;
+
     // check to see that all the specified input and output parameter names are in the file
     for (int32_t i = 0; i < (int32_t) input_parameter_names.size(); i++) {
-        if (find(parameter_names.begin(), parameter_names.end(), input_parameter_names[i]) == parameter_names.end()) {
-            // one of the given parameter_names didn't exist in the time series file
+        regex e(input_parameter_names[i]);
+
+        bool found = false;
+        for (string parameter_name : parameter_names) {
+            Log::trace("checking if '%s' matches regex '%s'\n", parameter_name.c_str(), input_parameter_names[i].c_str());
+
+            if (regex_match(parameter_name, e)) {
+                found = true;
+
+                Log::trace("'%s' matched regex '%s'\n", parameter_name.c_str(), input_parameter_names[i].c_str());
+
+                //add this parameter name to the input parameter names if we haven't already
+                if (find(input_parameter_names.begin(), input_parameter_names.end(), parameter_name) == input_parameter_names.end()) {
+                    Log::info("\tadded '%s' to input parameter names\n", parameter_name.c_str());
+                    regex_input_parameter_names.push_back(parameter_name);
+                }
+            }
+        }
+
+        if (!found) {
+            // one of the given parameter_names didn't match to any column header in the time series file
             Log::fatal("ERROR: could not find specified input parameter name '%s' in time series file: '%s'\n", input_parameter_names[i].c_str(), filename.c_str() );
 
             Log::fatal("file's parameter_names:\n");
@@ -64,7 +90,26 @@ TimeSeriesNew::TimeSeriesNew(string _filename, const vector<string> &_input_para
     }
 
     for (int32_t i = 0; i < (int32_t) output_parameter_names.size(); i++) {
-        if (find(parameter_names.begin(), parameter_names.end(), output_parameter_names[i]) == parameter_names.end()) {
+        regex e(output_parameter_names[i]);
+
+        bool found = false;
+        for (string parameter_name : parameter_names) {
+            Log::trace("checking if '%s' matches regex '%s'\n", parameter_name.c_str(), output_parameter_names[i].c_str());
+
+            if (regex_match(parameter_name, e)) {
+                found = true;
+
+                Log::trace("'%s' matched regex '%s'\n", parameter_name.c_str(), output_parameter_names[i].c_str());
+
+                //add this parameter name to the output parameter names if we haven't already
+                if (find(output_parameter_names.begin(), output_parameter_names.end(), parameter_name) == output_parameter_names.end()) {
+                    Log::info("\tadded '%s' to output parameter names\n", parameter_name.c_str());
+                    regex_output_parameter_names.push_back(parameter_name);
+                }
+            }
+        }
+
+        if (!found) {
             // one of the given parameter_names didn't exist in the time series file
             Log::fatal("ERROR: could not find specified output parameter name '%s' in time series file: '%s'\n", output_parameter_names[i].c_str(), filename.c_str() );
 
@@ -75,6 +120,9 @@ TimeSeriesNew::TimeSeriesNew(string _filename, const vector<string> &_input_para
             exit(1);
         }
     }
+
+    input_parameter_names = regex_input_parameter_names;
+    output_parameter_names = regex_output_parameter_names;
 }
 
 TimeSeriesNew::TimeSeriesNew(string _filename) {
@@ -196,12 +244,14 @@ void TimeSeriesNew::export_vectors(vector<vector<double> > &inputs, vector<vecto
 }
 
 void TimeSeriesNew::get_inputs_at(int32_t time_step, map<string, double> &values) {
+    values.clear();
     for (string input_parameter_name : input_parameter_names) {
         values[input_parameter_name] = time_series[input_parameter_name]->at(time_step);
     }
 }
 
 void TimeSeriesNew::get_outputs_at(int32_t time_step, map<string, double> &values) {
+    values.clear();
     for (string output_parameter_name : output_parameter_names) {
         values[output_parameter_name] = time_series[output_parameter_name]->at(time_step);
     }

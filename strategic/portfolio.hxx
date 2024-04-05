@@ -12,14 +12,23 @@ using std::string;
 
 class Portfolio : public State {
     private:
+        //The strategy's current money pool
         double current_money_pool;
+
+        //The suffix for price column names determined by the stock strategy.
+        string price_suffix;
+
+        //A map of stock names to how many shares are owned.
         map<string, double> shares;
 
     public:
         /**
          * Initialize the portfolio with how much money is available.
+         *
+         * \param _current_money_pool is how much unspent money the portfolio has.
+         * \param price_suffix is the suffix for column names for stock prices.
          */
-        Portfolio(double _current_money_pool);
+        Portfolio(double _current_money_pool, string price_suffix);
 
         /**
          * Used to specify how much of each stock has been purchased (if any).

@@ -4,8 +4,6 @@
 #include "simple_stock_strategy.hxx"
 #include "portfolio.hxx"
 
-string price_suffix = "_PRC";
-string return_suffix = "_predicted_RET";
 
 SimpleStockStrategy::SimpleStockStrategy(const vector<string> &arguments) {
     buy_threshold = 0;
@@ -16,6 +14,12 @@ SimpleStockStrategy::SimpleStockStrategy(const vector<string> &arguments) {
 
     money_pool = 100.0;
     get_argument(arguments, "--money_pool", false, money_pool);
+
+    price_suffix = "_price";
+    get_argument(arguments, "--price_suffix", false, price_suffix);
+
+    return_suffix = "_predicted_RET";
+    get_argument(arguments, "--return_suffix", false, return_suffix);
 
     get_argument_vector(arguments, "--stocks", true, stocks);
 
@@ -29,6 +33,8 @@ SimpleStockStrategy::SimpleStockStrategy(const vector<string> &arguments) {
 void SimpleStockStrategy::make_move(const map<string, double> &context, const map<string, double> &forecast) {
     double current_money = money_pool;
     for (string stock : stocks) {
+        Log::info("adding money for stock '%s'\n", stock.c_str());
+
         current_money += purchased_shares[stock] * context.at(stock + price_suffix);
     }
     Log::info("current money: %lf\n", current_money);
@@ -110,7 +116,7 @@ void SimpleStockStrategy::make_move(const map<string, double> &context, const ma
 
 
 State* SimpleStockStrategy::get_state() {
-    Portfolio *portfolio = new Portfolio(money_pool);
+    Portfolio *portfolio = new Portfolio(money_pool, price_suffix);
 
     for (string stock : stocks) {
         portfolio->add_stock(stock, purchased_shares[stock]);

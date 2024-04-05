@@ -41,13 +41,17 @@ int main(int argc, char** argv) {
     int32_t time_offset = 1;
     get_argument(arguments, "--time_offset", false, time_offset);
 
-    Forecaster* forecaster = Forecaster::initialize_from_arguments(arguments);
-    Strategy* strategy = Strategy::initialize_from_arguments(arguments);
-    Oracle* oracle = Oracle::initialize_from_arguments(arguments);
+    vector<string> input_parameter_names, output_parameter_names;
+    get_argument_vector(arguments, "--input_parameter_names", true, input_parameter_names);
+    get_argument_vector(arguments, "--output_parameter_names", true, output_parameter_names);
 
     string time_series_filename;
     get_argument(arguments, "--time_series_filename", true, time_series_filename);
-    TimeSeriesNew *time_series = new TimeSeriesNew(time_series_filename, forecaster->get_input_parameter_names(), forecaster->get_output_parameter_names());
+    TimeSeriesNew *time_series = new TimeSeriesNew(time_series_filename, input_parameter_names, output_parameter_names);
+
+    Forecaster* forecaster = Forecaster::initialize_from_arguments(arguments, time_series->get_input_parameter_names(), time_series->get_output_parameter_names());
+    Strategy* strategy = Strategy::initialize_from_arguments(arguments);
+    Oracle* oracle = Oracle::initialize_from_arguments(arguments);
 
     if (argument_exists(arguments, "--normalize")) {
         //Normalizer *normalizer = Normalizer::initialize_from_arguments(arguments);
@@ -65,6 +69,8 @@ int main(int argc, char** argv) {
         time_series->get_inputs_at(i + time_offset, next_inputs);
 
         if (Log::at_level(Log::DEBUG)) print_values("inputs", inputs);
+
+        Log::info("getting forecast!\n");
 
         map<string, double> forecast = forecaster->forecast(inputs);
         if (Log::at_level(Log::DEBUG)) print_values("forecast", forecast);

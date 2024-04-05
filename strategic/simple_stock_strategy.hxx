@@ -25,6 +25,13 @@ class SimpleStockStrategy : public Strategy {
         //how much money we have to buy stocks with initially.
         double money_pool;
 
+        //the suffix for the column name of a stock price, e.g. _price for AAPL_price
+        string price_suffix;
+
+        //the suffix for the column name of a stock return, e.g. _return for AAPL_predicted_RET 
+        //or AAPL_expected_RET
+        string return_suffix;
+
         //This is used to determine which parameters need to be pulled from the
         //context and forecast. For example, if a stock name is AAPL then the
         //strategy will look for APPL_PRC (for price) from the context and 

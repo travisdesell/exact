@@ -45,10 +45,14 @@ class Forecaster {
          * command line arguments.
          *
          * \param arguments is the vector of command line arguments
+         * \param input_parameter_names are the input parameter names to be used (the ones in the arguments
+         *      may be regular expressions so we use the ones from the time series object).
+         * \param output_parameter_names are the output parameter names to be used (the ones in the arguments
+         *      may be regular expressions so we use the ones from the time series object).
          *
          * \return a pointer to a Forecaster object
          */
-        static Forecaster* initialize_from_arguments(const vector<string> &arguments);
+        static Forecaster* initialize_from_arguments(const vector<string> &arguments, const vector<string> &input_parameter_names, const vector<string> &output_parameter_names);
 
         /**
          * Given the current context of the system, provide a forecast of what the next

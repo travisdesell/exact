@@ -15,16 +15,12 @@ vector<string> Forecaster::get_input_parameter_names() const {
     return input_parameter_names;
 }
 
-Forecaster* Forecaster::initialize_from_arguments(const vector<string> &arguments) {
+Forecaster* Forecaster::initialize_from_arguments(const vector<string> &arguments, const vector<string> &input_parameter_names, const vector<string> &output_parameter_names) {
 
     string forecaster_type;
     get_argument(arguments, "--forecaster_type", true, forecaster_type);
 
     if (forecaster_type == "trivial") {
-        vector<string> input_parameter_names, output_parameter_names;
-        get_argument_vector(arguments, "--input_parameter_names", true, input_parameter_names);
-        get_argument_vector(arguments, "--output_parameter_names", true, output_parameter_names);
-
         return new TrivialForecaster(arguments, input_parameter_names, output_parameter_names);
 
     } else {
