@@ -9,7 +9,7 @@ using std::vector;
 #include "multiply_node_gp.hxx"
 
 MULTIPLY_Node_GP::MULTIPLY_Node_GP(int32_t _innovation_number, int32_t _layer_type, double _depth)
-    : MULTIPLY_Node(_innovation_number, _layer_type, _depth){
+    : MULTIPLY_Node(_innovation_number, _layer_type, _depth) {
     node_type = MULTIPLY_NODE_GP;
     Log::debug("created node: %d, layer type: %d, node type: MULTIPLY_NODE_GP\n", innovation_number, layer_type);
 }
@@ -121,5 +121,3 @@ RNN_Node_Interface* MULTIPLY_Node_GP::copy() const {
 
     return n;
 }
-
-

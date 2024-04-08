@@ -7,7 +7,7 @@ using std::vector;
 #include "multiply_node.hxx"
 
 class MULTIPLY_Node_GP : public MULTIPLY_Node {
-    public:
+   public:
     // constructor for hidden nodes
     MULTIPLY_Node_GP(int32_t _innovation_number, int32_t _layer_type, double _depth);
 

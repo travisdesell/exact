@@ -105,10 +105,10 @@ int main(int argc, char** argv) {
     string seed_genome_type;
     RNN_Genome* seed_genome;
     get_argument(arguments, "--seed_genome_type", false, seed_genome_type);
-    if (seed_genome_type.compare("gp") == 0){
+    if (seed_genome_type.compare("gp") == 0) {
         Log::info("CALLING GET SEED GENOME GP\n");
-        seed_genome = get_seed_genome_gp(arguments, time_series_sets, weight_rules);    
-    } else {    
+        seed_genome = get_seed_genome_gp(arguments, time_series_sets, weight_rules);
+    } else {
         seed_genome = get_seed_genome(arguments, time_series_sets, weight_rules);
     }
 

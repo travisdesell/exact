@@ -51,7 +51,6 @@ int main(int argc, char** argv) {
     weight_rules->initialize_from_args(arguments);
 
     for (int32_t max_recurrent_depth = 1; max_recurrent_depth <= 5; max_recurrent_depth++) {
-
         Log::info("testing with max recurrent depth: %d\n", max_recurrent_depth);
 
         inputs.resize(1);
@@ -139,6 +138,5 @@ int main(int argc, char** argv) {
         genome = create_sin(inputs3, 4, 4, outputs3, max_recurrent_depth, weight_rules);
         gradient_test("SIN: 3 Input, 4x4 Hidden, 3 Output", genome, inputs, outputs);
         delete genome;
-
     }
 }

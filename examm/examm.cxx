@@ -351,7 +351,7 @@ void EXAMM::mutate(int32_t max_mutations, RNN_Genome* g) {
         if (number_mutations >= max_mutations) {
             break;
         }
-        
+
         g->assign_reachability();
         double rng = rng_0_1(generator) * total;
         int32_t new_node_type = get_random_node_type();
@@ -920,26 +920,26 @@ RNN_Genome* EXAMM::crossover(RNN_Genome* p1, RNN_Genome* p2) {
         p2_position++;
     }
 
-/*
-    for (int32_t i = 0; i < p1->nodes.size(); i++){
-        bool present = false;
-        RNN_Node_Interface* p1_node = p1->nodes[i];
-        if (p1_node->get_layer_type() == INPUT_LAYER){
-            for (int32_t j = 0; j < child_nodes.size(); j++){
-                RNN_Node_Interface* child_node = child_nodes[j];
-                if ((child_node->get_layer_type() == INPUT_LAYER) && child_node->equals(p1_node)){
-                    present = true;
-                    break;
-                }    
-            }    
-        }    
-     
-        if (!present) {
-            RNN_Node_Interface* p1_node_copy = p1_node->copy();
-            child_nodes.push_back(p1_node_copy);
-        }     
-    } 
-*/
+    /*
+        for (int32_t i = 0; i < p1->nodes.size(); i++){
+            bool present = false;
+            RNN_Node_Interface* p1_node = p1->nodes[i];
+            if (p1_node->get_layer_type() == INPUT_LAYER){
+                for (int32_t j = 0; j < child_nodes.size(); j++){
+                    RNN_Node_Interface* child_node = child_nodes[j];
+                    if ((child_node->get_layer_type() == INPUT_LAYER) && child_node->equals(p1_node)){
+                        present = true;
+                        break;
+                    }
+                }
+            }
+
+            if (!present) {
+                RNN_Node_Interface* p1_node_copy = p1_node->copy();
+                child_nodes.push_back(p1_node_copy);
+            }
+        }
+    */
     sort(child_nodes.begin(), child_nodes.end(), sort_RNN_Nodes_by_depth());
     sort(child_edges.begin(), child_edges.end(), sort_RNN_Edges_by_depth());
     sort(child_recurrent_edges.begin(), child_recurrent_edges.end(), sort_RNN_Recurrent_Edges_by_depth());

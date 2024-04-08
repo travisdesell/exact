@@ -11,32 +11,32 @@ using std::vector;
 #include "common/arguments.hxx"
 #include "common/log.hxx"
 #include "rnn/cos_node.hxx"
+#include "rnn/cos_node_gp.hxx"
 #include "rnn/delta_node.hxx"
 #include "rnn/dnas_node.hxx"
 #include "rnn/enarc_node.hxx"
 #include "rnn/enas_dag_node.hxx"
 #include "rnn/gru_node.hxx"
 #include "rnn/inverse_node.hxx"
+#include "rnn/inverse_node_gp.hxx"
 #include "rnn/lstm_node.hxx"
 #include "rnn/mgu_node.hxx"
 #include "rnn/multiply_node.hxx"
+#include "rnn/multiply_node_gp.hxx"
 #include "rnn/random_dag_node.hxx"
 #include "rnn/rnn_edge.hxx"
 #include "rnn/rnn_genome.hxx"
 #include "rnn/rnn_node.hxx"
 #include "rnn/rnn_node_interface.hxx"
 #include "rnn/sigmoid_node.hxx"
-#include "rnn/sin_node.hxx"
-#include "rnn/sum_node.hxx"
-#include "rnn/tanh_node.hxx"
-#include "rnn/ugrnn_node.hxx"
-#include "rnn/sin_node_gp.hxx"
-#include "rnn/cos_node_gp.hxx"
-#include "rnn/tanh_node_gp.hxx"
 #include "rnn/sigmoid_node_gp.hxx"
-#include "rnn/multiply_node_gp.hxx"
-#include "rnn/inverse_node_gp.hxx"
+#include "rnn/sin_node.hxx"
+#include "rnn/sin_node_gp.hxx"
+#include "rnn/sum_node.hxx"
 #include "rnn/sum_node_gp.hxx"
+#include "rnn/tanh_node.hxx"
+#include "rnn/tanh_node_gp.hxx"
+#include "rnn/ugrnn_node.hxx"
 #include "weights/weight_rules.hxx"
 
 template <class NodeT>
@@ -123,7 +123,7 @@ RNN_Genome* create_memory_cell_nn_gp(
 #define create_inverse(...)  create_memory_cell_nn<INVERSE_Node>(__VA_ARGS__)
 #define create_multiply(...) create_memory_cell_nn<MULTIPLY_Node>(__VA_ARGS__)
 
-//gp nodes
+// gp nodes
 #define create_sin_gp(...)      create_memory_cell_nn_gp<SIN_Node_GP>(__VA_ARGS__)
 #define create_cos_gp(...)      create_memory_cell_nn_gp<COS_Node_GP>(__VA_ARGS__)
 #define create_tanh_gp(...)     create_memory_cell_nn_gp<TANH_Node_GP>(__VA_ARGS__)

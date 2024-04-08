@@ -138,13 +138,21 @@ string RunStatistics::overview_header() {
     oss << "\\begin{tabular}{|l|r|r|r|r|r|r|r|r|r|r|r|r|r|r|r|}" << endl;
     oss << "\\hline" << endl;
 
-    oss << " " << " & \\multicolumn{3}{|c|}{MSE}" << " & \\multicolumn{4}{|c|}{Edges}"
-        << " & \\multicolumn{4}{|c|}{Rec. Edges}" << " & \\multicolumn{4}{|c|}{Hidden Nodes}" << "\\\\" << endl;
+    oss << " "
+        << " & \\multicolumn{3}{|c|}{MSE}"
+        << " & \\multicolumn{4}{|c|}{Edges}"
+        << " & \\multicolumn{4}{|c|}{Rec. Edges}"
+        << " & \\multicolumn{4}{|c|}{Hidden Nodes}"
+        << "\\\\" << endl;
 
     oss << "\\hline" << endl;
 
-    oss << "Run Type" << " & Min & Avg & Max " << " & Min & Avg & Max & Corr." << " & Min & Avg & Max & Corr."
-        << " & Min & Avg & Max & Corr." << "\\\\" << endl;
+    oss << "Run Type"
+        << " & Min & Avg & Max "
+        << " & Min & Avg & Max & Corr."
+        << " & Min & Avg & Max & Corr."
+        << " & Min & Avg & Max & Corr."
+        << "\\\\" << endl;
 
     oss << "\\hline" << endl;
     oss << "\\hline" << endl;
@@ -186,14 +194,23 @@ string RunStatistics::overview_ff_header() {
     oss << "\\begin{tabular}{|l|r|r|r|r|r|r|r|r|r|r|r|r|r|r|r|r|r|r|r|}" << endl;
     oss << "\\hline" << endl;
 
-    oss << " " << " & \\multicolumn{3}{|c|}{MSE}" << " & \\multicolumn{4}{|c|}{Edges}"
-        << " & \\multicolumn{4}{|c|}{Rec. Edges}" << " & \\multicolumn{4}{|c|}{Memory Nodes}"
-        << " & \\multicolumn{4}{|c|}{FF Nodes}" << "\\\\" << endl;
+    oss << " "
+        << " & \\multicolumn{3}{|c|}{MSE}"
+        << " & \\multicolumn{4}{|c|}{Edges}"
+        << " & \\multicolumn{4}{|c|}{Rec. Edges}"
+        << " & \\multicolumn{4}{|c|}{Memory Nodes}"
+        << " & \\multicolumn{4}{|c|}{FF Nodes}"
+        << "\\\\" << endl;
 
     oss << "\\hline" << endl;
 
-    oss << "Run Type" << " & Min & Avg & Max " << " & Min & Avg & Max & Corr." << " & Min & Avg & Max & Corr."
-        << " & Min & Avg & Max & Corr." << " & Min & Avg & Max & Corr." << "\\\\" << endl;
+    oss << "Run Type"
+        << " & Min & Avg & Max "
+        << " & Min & Avg & Max & Corr."
+        << " & Min & Avg & Max & Corr."
+        << " & Min & Avg & Max & Corr."
+        << " & Min & Avg & Max & Corr."
+        << "\\\\" << endl;
 
     oss << "\\hline" << endl;
     oss << "\\hline" << endl;
