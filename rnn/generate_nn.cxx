@@ -172,6 +172,8 @@ RNN_Genome* create_nn_gp(
         input_parameter_names.size(), number_hidden_layers, number_hidden_nodes, output_parameter_names.size(),
         max_recurrent_depth
     );
+
+/*
     vector<RNN_Node_Interface*> rnn_nodes;
     vector<vector<RNN_Node_Interface*> > layer_nodes(2 + number_hidden_layers);
     vector<RNN_Edge*> rnn_edges;
@@ -189,44 +191,63 @@ RNN_Genome* create_nn_gp(
     }
     current_layer++;
 
-    for (int32_t i = 0; i < (int32_t) number_hidden_layers; i++) {
-        for (int32_t j = 0; j < (int32_t) number_hidden_nodes; j++) {
-            RNN_Node_Interface* node = make_node(node_innovation_count, current_layer);
-            rnn_nodes.push_back(node);
-            layer_nodes[current_layer].push_back(node);
-
-            for (int32_t k = 0; k < (int32_t) layer_nodes[current_layer - 1].size(); k++) {
-                rnn_edges.push_back(new RNN_Edge(++edge_innovation_count, layer_nodes[current_layer - 1][k], node));
-
-                for (int32_t d = 1; d <= max_recurrent_depth; d++) {
-                    recurrent_edges.push_back(
-                        new RNN_Recurrent_Edge(++edge_innovation_count, d, layer_nodes[current_layer - 1][k], node)
-                    );
-                }
-            }
-        }
-        current_layer++;
-    }
-
-    for (int32_t i = 0; i < (int32_t) output_parameter_names.size(); i++) {
-        RNN_Node* output_node =
-            new RNN_Node(++node_innovation_count, OUTPUT_LAYER, current_layer, OUTPUT_NODE_GP, output_parameter_names[i]);
-        rnn_nodes.push_back(output_node);
-
-        for (int32_t k = 0; k < (int32_t) layer_nodes[current_layer - 1].size(); k++) {
-            rnn_edges.push_back(new RNN_Edge(++edge_innovation_count, layer_nodes[current_layer - 1][k], output_node));
-
-            for (int32_t d = 1; d <= max_recurrent_depth; d++) {
-                recurrent_edges.push_back(
-                    new RNN_Recurrent_Edge(++edge_innovation_count, d, layer_nodes[current_layer - 1][k], output_node)
-                );
-            }
-        }
-    }
+    
+    RNN_Node* output_node =
+        new RNN_Node(++node_innovation_count, OUTPUT_LAYER, current_layer, OUTPUT_NODE_GP, output_parameter_names[0]);
+    rnn_nodes.push_back(output_node);
+        
+    rnn_edges.push_back(new RNN_Edge(++edge_innovation_count, layer_nodes[0][layer_nodes[0].size() - 1], output_node)); 
 
     RNN_Genome* genome = new RNN_Genome(rnn_nodes, rnn_edges, recurrent_edges, weight_rules);
     genome->set_parameter_names(input_parameter_names, output_parameter_names);
     return genome;
+*/
+
+    vector<RNN_Node_Interface*> rnn_nodes;
+    vector<vector<RNN_Node_Interface*> > layer_nodes(2 + number_hidden_layers);
+    vector<RNN_Edge*> rnn_edges;
+    vector<RNN_Recurrent_Edge*> recurrent_edges;
+
+    int32_t node_innovation_count = 0;
+    int32_t edge_innovation_count = 0;
+
+    for (int32_t i = 0; i < (int32_t) input_parameter_names.size(); i++) {
+        RNN_Node* node =
+            new RNN_Node(++node_innovation_count, INPUT_LAYER, 0, INPUT_NODE_GP, input_parameter_names[i]);
+        rnn_nodes.push_back(node);
+        layer_nodes[0].push_back(node);
+    }
+
+    RNN_Node* output_node =
+        new RNN_Node(++node_innovation_count, OUTPUT_LAYER, 1, OUTPUT_NODE_GP, output_parameter_names[0]);
+    rnn_nodes.push_back(output_node);
+
+    for (int32_t k = 0; k < ((int32_t) layer_nodes[0].size() - 1); k++) {
+        RNN_Edge* e = new RNN_Edge(++edge_innovation_count, layer_nodes[0][k], output_node);
+        e->set_weight(0.0);   
+        rnn_edges.push_back(e);
+        for (int32_t d = 1; d <= max_recurrent_depth; d++) {
+            RNN_Recurrent_Edge* re = new RNN_Recurrent_Edge(++edge_innovation_count, d, layer_nodes[0][k], output_node);
+            re->set_weight(0.0);
+            recurrent_edges.push_back(re);
+        }
+    }
+    
+    int32_t last_input_location = layer_nodes[0].size() - 1;
+    RNN_Edge* e = new RNN_Edge(++edge_innovation_count, layer_nodes[0][last_input_location], output_node);
+    e->set_weight(1.0);   
+    rnn_edges.push_back(e);    
+   
+    for (int32_t d = 1; d <= max_recurrent_depth; d++) {
+        RNN_Recurrent_Edge* re = new RNN_Recurrent_Edge(++edge_innovation_count, d, layer_nodes[0][last_input_location], output_node);
+        re->set_weight(0.0);
+        recurrent_edges.push_back(re);
+    }
+ 
+    RNN_Genome* genome = new RNN_Genome(rnn_nodes, rnn_edges, recurrent_edges, weight_rules);
+    genome->set_parameter_names(input_parameter_names, output_parameter_names);
+    return genome;
+
 }
 
 RNN_Genome* create_dnas_nn(

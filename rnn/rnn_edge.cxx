@@ -106,10 +106,12 @@ void RNN_Edge::propagate_forward(int32_t time) {
     }
     
     // Log::debug("input_node %p %d\n", input_node, input_node->output_values.size());
-    
+
+/*    
     if (output_node->node_type == OUTPUT_NODE_GP || output_node->node_type == SIN_NODE_GP || output_node->node_type == COS_NODE_GP || output_node->node_type == TANH_NODE_GP || output_node->node_type == SIGMOID_NODE_GP || output_node->node_type == SUM_NODE_GP || output_node->node_type == MULTIPLY_NODE_GP || output_node->node_type == INVERSE_NODE_GP) {
         weight = 1.0; 
     }
+*/
     
     double output = input_node->output_values[time] * weight;
 
@@ -129,10 +131,12 @@ void RNN_Edge::propagate_forward(int32_t time, bool training, double dropout_pro
         );
         exit(1);
     }
-    
+
+/*    
     if (output_node->node_type == OUTPUT_NODE_GP || output_node->node_type == SIN_NODE_GP || output_node->node_type == COS_NODE_GP || output_node->node_type == TANH_NODE_GP || output_node->node_type == SIGMOID_NODE_GP || output_node->node_type == SUM_NODE_GP || output_node->node_type == MULTIPLY_NODE_GP || output_node->node_type == INVERSE_NODE_GP) {
         weight = 1.0; 
     }
+*/
     
     double output = input_node->output_values[time] * weight;
 

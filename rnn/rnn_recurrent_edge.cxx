@@ -133,6 +133,10 @@ int32_t RNN_Recurrent_Edge::get_output_innovation_number() const {
     return output_innovation_number;
 }
 
+void RNN_Recurrent_Edge::set_weight(double weight) {
+    this->weight = weight;
+}
+
 const RNN_Node_Interface* RNN_Recurrent_Edge::get_input_node() const {
     return input_node;
 }
@@ -160,9 +164,12 @@ void RNN_Recurrent_Edge::propagate_forward(int32_t time) {
         exit(1);
     }
 
+/*
+
     if (output_node->node_type == OUTPUT_NODE_GP || output_node->node_type == SIN_NODE_GP || output_node->node_type == COS_NODE_GP || output_node->node_type == TANH_NODE_GP || output_node->node_type == SIGMOID_NODE_GP || output_node->node_type == SUM_NODE_GP || output_node->node_type == MULTIPLY_NODE_GP || output_node->node_type == INVERSE_NODE_GP) {
         weight = 1.0;
     }
+*/
 
     double output = input_node->output_values[time] * weight;
     if (time < series_length - recurrent_depth) {
