@@ -27,11 +27,11 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 #SET (CMAKE_CXX_FLAGS                "-std=gnu++17 -Wall -O3 -funroll-loops  -msse3 -fno-omit-frame-pointer -D_GLIBCXX_DEBUG")
 
 # SET (CMAKE_CXX_FLAGS                " -Wall -O3 -funroll-loops -msse3 -fsanitize=address")
-SET (CMAKE_CXX_FLAGS                " -Wall -O3 -funroll-loops -msse3")
+SET (CMAKE_CXX_FLAGS                " -Wall -march=native -O3")
 #SET (CMAKE_CXX_FLAGS                " -Wall -O1 -funroll-loops -msse3 -g -fsanitize=address -fno-omit-frame-pointer -shared-libasan -DGLIBCXX_DEBUG")
 #SET (CMAKE_CXX_FLAGS_DEBUG          "${CMAKE_CXX_FLAGS} -g")
 #SET (CMAKE_CXX_FLAGS_MINSIZEREL     "${CMAKE_CXX_FLAGS} -Os -DNDEBUG")
-SET (CMAKE_CXX_FLAGS_RELEASE        "${CMAKE_CXX_FLAGS} -O4 -funroll-loops -DNDEBUG")
+SET (CMAKE_CXX_FLAGS_RELEASE        "${CMAKE_CXX_FLAGS} -DNDEBUG")
 
 #SET (CMAKE_SHARED_LINKER_FLAGS      " -Wall -O1 -funroll-loops -msse3 -g -fsanitize=address -fno-omit-frame-pointer -shared-libasan -DGLIBCXX_DEBUG")
 
