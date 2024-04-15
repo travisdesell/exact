@@ -42,5 +42,6 @@ int main(int argc, char** argv) {
 
     genome = new RNN_Genome(genome_binary);
     genome->print_equations();
+    Log::info("BEST VALIDATION MSE: %f\n", genome->get_best_validation_mse());
     delete genome;
 }

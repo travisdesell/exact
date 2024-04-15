@@ -17,6 +17,12 @@ using std::thread;
 #include <vector>
 using std::vector;
 
+#include <map>
+using std::map;
+
+#include <cmath>
+using std::isnan;
+
 #include "common/log.hxx"
 #include "common/process_arguments.hxx"
 #include "examm/examm.hxx"
@@ -54,11 +60,45 @@ void examm_thread(int32_t id) {
         string log_id = "genome_" + to_string(genome->get_generation_id()) + "_thread_" + to_string(id);
         Log::set_id(log_id);
         // genome->backpropagate(training_inputs, training_outputs, validation_inputs, validation_outputs);
-        genome->backpropagate_stochastic(
-            training_inputs, training_outputs, validation_inputs, validation_outputs, weight_update_method
-        );
-        Log::release_id(log_id);
+        
+        if (examm->get_mutate_rl()){
+            double validation_mse_before = genome->get_mse(genome->get_best_parameters(), validation_inputs, validation_outputs);
+            genome->backpropagate_stochastic(
+                training_inputs, training_outputs, validation_inputs, validation_outputs, weight_update_method
+            );
+            double validation_mse_after = genome->get_mse(genome->get_best_parameters(), validation_inputs, validation_outputs);
+            double reward = validation_mse_before - validation_mse_after; 
+            for (const auto& pair : *genome->get_generated_by_map()){
+                if (pair.first.compare("initial") == 0 || pair.first.compare("crossover") == 0 || pair.first.compare("island_crossover") == 0 ){
+                    continue;
+                } else if (((pair.first.compare("add_node") == 0) || (pair.first.compare("merge_node") == 0) || (pair.first.compare("split_node") == 0) || (pair.first.compare("disable_node") == 0) || (pair.first.compare("enable_node") == 0)) && !isnan(reward)){
+                    reward *= .05;
+                }
+                
+                if (!isnan(reward)) {
+                    examm->update_mutation_to_rewards(pair.first, reward); 
+                }
+                
+            }
+            double new_epsilon = examm->get_epsilon() + (1.0 / examm->get_max_genomes());
+            Log::info("add_node_discount_rate: %f\n", (examm->get_epsilon()));
+            examm->set_epsilon(new_epsilon);
+            Log::info("New Epsilon: %f\n", examm->get_epsilon());
+            Log::info("Mutation Counts:\n");
+            for (const auto& pair : examm->get_mutation_to_count()) {
+                Log::info("%s: %0.f\n", pair.first.c_str(), round(pair.second));
+            }
+            Log::info("Mutation Rewards:\n");
+            for (const auto& pair : examm->get_mutation_to_rewards()) {
+                Log::info("%s: %f\n", pair.first.c_str(), pair.second);
+            }            
+        } else {
+            genome->backpropagate_stochastic(
+                training_inputs, training_outputs, validation_inputs, validation_outputs, weight_update_method
+            );    
+        }
 
+        Log::release_id(log_id);
         examm_mutex.lock();
         Log::set_id("main");
         examm->insert_genome(genome);
@@ -105,6 +145,16 @@ int main(int argc, char** argv) {
     RNN_Genome* seed_genome = get_seed_genome(arguments, time_series_sets, weight_rules);
 
     examm = generate_examm_from_arguments(arguments, time_series_sets, weight_rules, seed_genome);
+
+    string mutate_function_type = ""; 
+    get_argument(arguments, "--mutate_function_type", false, mutate_function_type);
+    double epsilon = 0;
+    get_argument(arguments, "--epsilon", false, epsilon);
+    if (mutate_function_type.compare("") != 0){
+        examm->set_mutate_function_type(mutate_function_type);
+        examm->set_epsilon(epsilon);
+        examm->initialize_mutation_to_rewards(mutate_function_type);
+    } 
 
     vector<thread> threads;
     for (int32_t i = 0; i < number_threads; i++) {

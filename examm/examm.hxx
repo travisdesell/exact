@@ -79,6 +79,12 @@ class EXAMM {
     string genome_file_name;
     string save_genome_option;
 
+    bool mutate_rl;
+    map<string, double> mutation_to_rewards;
+    map<string, double> mutation_to_count;
+    double epsilon;
+    string mutate_function_type;    
+
    public:
     EXAMM(
         int32_t _island_size, int32_t _number_islands, int32_t _max_genomes, SpeciationStrategy* _speciation_strategy,
@@ -129,6 +135,17 @@ class EXAMM {
     void set_evolution_hyper_parameters();
     void initialize_seed_genome();
     void update_op_log_statistics(RNN_Genome* genome, int32_t insert_position);
+
+    void initialize_mutation_to_rewards(string _mutate_function_type);
+    void update_mutation_to_rewards(string mutation_type, double reward);
+    bool get_mutate_rl();
+    void set_epsilon(double _epsilon);
+    double get_epsilon();
+    void set_mutate_function_type(string _mutate_function_type);
+    void mutate_simple_epsilon_greedy(int32_t max_mutations, RNN_Genome* g);
+    int32_t get_max_genomes();
+    map<string, double> get_mutation_to_count();
+    map<string, double> get_mutation_to_rewards();
 };
 
 #endif
