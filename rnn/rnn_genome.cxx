@@ -134,6 +134,8 @@ RNN_Genome::RNN_Genome(
     rng_0_1 = uniform_real_distribution<double>(0.0, 1.0);
     rng_1_1 = uniform_real_distribution<double>(-1.0, 1.0);
 
+    is_initializing = false;
+
     assign_reachability();
 }
 
@@ -207,6 +209,9 @@ RNN_Genome* RNN_Genome::copy() {
 
     // reachability is assigned in the constructor
     // other->assign_reachability();
+
+    other->best_parent_mse = best_parent_mse;
+    other->is_initializing = is_initializing;
 
     return other;
 }
@@ -4297,6 +4302,23 @@ void RNN_Genome::write_equations(ostream& outstream) {
             outstream << endl;
         }
     }
-    // outstream << "best_validation_mse: " << to_string(this->get_best_validation_mse()) << endl;
-    // outstream << endl;
+    outstream << "best_validation_mse: " << to_string(this->get_best_validation_mse()) << endl;
+    outstream << endl;
 }
+
+void RNN_Genome::set_best_parent_mse(double best_parent_mse){
+    this->best_parent_mse = best_parent_mse;
+}
+
+double RNN_Genome::get_best_parent_mse(){
+    return this->best_parent_mse;
+}
+
+void RNN_Genome::set_is_initializing(bool is_initializing){
+    this->is_initializing = is_initializing;
+}
+
+bool RNN_Genome::get_is_initializing(){
+    return this->is_initializing;
+}
+

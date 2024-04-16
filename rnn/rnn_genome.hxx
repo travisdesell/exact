@@ -81,6 +81,9 @@ class RNN_Genome {
     map<string, double> normalize_avgs;
     map<string, double> normalize_std_devs;
 
+    double best_parent_mse;
+    bool is_initializing;
+
    public:
     void sort_nodes_by_depth();
     void sort_edges_by_depth();
@@ -356,6 +359,11 @@ class RNN_Genome {
         string transfer_learning_version, bool epigenetic_weights, int32_t min_recurrent_depth,
         int32_t max_recurrent_depth
     );
+
+    void set_best_parent_mse(double best_parent_mse);
+    double get_best_parent_mse();
+    void set_is_initializing(bool is_initializing);
+    bool get_is_initializing();
 
     friend class EXAMM;
     friend class IslandSpeciationStrategy;

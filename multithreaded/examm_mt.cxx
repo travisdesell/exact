@@ -61,27 +61,24 @@ void examm_thread(int32_t id) {
         Log::set_id(log_id);
         // genome->backpropagate(training_inputs, training_outputs, validation_inputs, validation_outputs);
         
-        if (examm->get_mutate_rl()){
-            double validation_mse_before = genome->get_mse(genome->get_best_parameters(), validation_inputs, validation_outputs);
+        if (examm->get_mutate_rl() && !genome->get_is_initializing()){
+          //double validation_mse_before = genome->get_mse(genome->get_best_parameters(), validation_inputs, validation_outputs);
             genome->backpropagate_stochastic(
                 training_inputs, training_outputs, validation_inputs, validation_outputs, weight_update_method
             );
             double validation_mse_after = genome->get_mse(genome->get_best_parameters(), validation_inputs, validation_outputs);
-            double reward = validation_mse_before - validation_mse_after; 
+            double reward = genome->get_best_parent_mse() - validation_mse_after; 
             for (const auto& pair : *genome->get_generated_by_map()){
                 if (pair.first.compare("initial") == 0 || pair.first.compare("crossover") == 0 || pair.first.compare("island_crossover") == 0 ){
                     continue;
-                } else if (((pair.first.compare("add_node") == 0) || (pair.first.compare("merge_node") == 0) || (pair.first.compare("split_node") == 0) || (pair.first.compare("disable_node") == 0) || (pair.first.compare("enable_node") == 0)) && !isnan(reward)){
-                    reward *= .05;
-                }
+                } 
                 
                 if (!isnan(reward)) {
                     examm->update_mutation_to_rewards(pair.first, reward); 
                 }
                 
             }
-            double new_epsilon = examm->get_epsilon() + (1.0 / examm->get_max_genomes());
-            Log::info("add_node_discount_rate: %f\n", (examm->get_epsilon()));
+            double new_epsilon = examm->get_epsilon() + (1.0 / examm->get_max_genomes());;
             examm->set_epsilon(new_epsilon);
             Log::info("New Epsilon: %f\n", examm->get_epsilon());
             Log::info("Mutation Counts:\n");
@@ -93,6 +90,7 @@ void examm_thread(int32_t id) {
                 Log::info("%s: %f\n", pair.first.c_str(), pair.second);
             }            
         } else {
+            Log::info("DID NOT MAKE IT!\n");
             genome->backpropagate_stochastic(
                 training_inputs, training_outputs, validation_inputs, validation_outputs, weight_update_method
             );    
