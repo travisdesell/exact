@@ -10,12 +10,34 @@ GenomeProperty::GenomeProperty() {
     max_recurrent_depth = 10;
 }
 
+int32_t GenomeProperty::compute_bp_iterations(RNN_Genome* genome) {
+    if (use_burn_in_bp_epoch) {
+        int32_t n = genome->generation_id / burn_in_period;
+        n = n > max_burn_in_cycles ? max_burn_in_cycles : n;
+
+        float epochs = bp_epochs_start;
+        for (int i = 0; i < n; i++) {
+            epochs *= burn_in_ratio;
+        }
+
+        return (int32_t) epochs;
+    } else {
+        return bp_iterations;
+    }
+}
+
 void GenomeProperty::generate_genome_property_from_arguments(const vector<string>& arguments) {
     get_argument(arguments, "--bp_iterations", true, bp_iterations);
     use_dropout = get_argument(arguments, "--dropout_probability", false, dropout_probability);
 
     get_argument(arguments, "--min_recurrent_depth", false, min_recurrent_depth);
     get_argument(arguments, "--max_recurrent_depth", false, max_recurrent_depth);
+
+    use_burn_in_bp_epoch = argument_exists(arguments, "--use_burn_in_bp_epoch");
+    get_argument(arguments, "--burn_in_period", false, burn_in_period);
+    get_argument(arguments, "--burn_in_cycles", false, max_burn_in_cycles);
+    get_argument(arguments, "--bp_epochs_start", false, bp_epochs_start);
+    get_argument(arguments, "--burn_in_ratio", false, burn_in_ratio);
 
     Log::info("Each generated genome is trained for %d epochs\n", bp_iterations);
     Log::info(
@@ -25,10 +47,12 @@ void GenomeProperty::generate_genome_property_from_arguments(const vector<string
 }
 
 void GenomeProperty::set_genome_properties(RNN_Genome* genome) {
-    genome->set_bp_iterations(bp_iterations);
+    genome->set_bp_iterations(compute_bp_iterations(genome));
+
     if (use_dropout) {
         genome->enable_dropout(dropout_probability);
     }
+
     genome->normalize_type = normalize_type;
     genome->set_parameter_names(input_parameter_names, output_parameter_names);
     genome->set_normalize_bounds(normalize_type, normalize_mins, normalize_maxs, normalize_avgs, normalize_std_devs);

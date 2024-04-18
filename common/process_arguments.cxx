@@ -1,3 +1,4 @@
+#include <memory>
 #include <string>
 using std::string;
 
@@ -120,12 +121,15 @@ IslandSpeciationStrategy* generate_island_speciation_strategy_from_arguments(
     get_argument(arguments, "--seed_stirs", false, seed_stirs);
     bool start_filled = argument_exists(arguments, "--start_filled");
     bool tl_epigenetic_weights = argument_exists(arguments, "--tl_epigenetic_weights");
+    unique_ptr<AnnealingPolicy> annealing_policy = AnnealingPolicy::from_arguments(arguments);
+    string output_directory = "";
+    get_argument(arguments, "--output_directory", false, output_directory);
 
     IslandSpeciationStrategy* island_strategy = new IslandSpeciationStrategy(
-        number_islands, island_size, mutation_rate, intra_island_co_rate, inter_island_co_rate, seed_genome,
+        number_islands, island_size, mutation_rate, intra_island_co_rate, inter_island_co_rate, output_directory, seed_genome,
         island_ranking_method, repopulation_method, extinction_event_generation_number, num_mutations,
         islands_to_exterminate, max_genomes, repeat_extinction, start_filled, transfer_learning,
-        transfer_learning_version, seed_stirs, tl_epigenetic_weights
+        transfer_learning_version, tl_epigenetic_weights, annealing_policy
     );
 
     return island_strategy;
@@ -189,10 +193,10 @@ void get_train_validation_data(
     time_series_sets->export_training_series(time_offset, train_inputs, train_outputs);
     time_series_sets->export_test_series(time_offset, validation_inputs, validation_outputs);
 
-    int32_t sequence_length = 0;
-    if (get_argument(arguments, "--train_sequence_length", false, sequence_length)) {
-        Log::info("Slicing input training data with time sequence length: %d\n", sequence_length);
-        slice_input_data(train_inputs, train_outputs, sequence_length);
+    int32_t train_sequence_length = 0;
+    if (get_argument(arguments, "--train_sequence_length", false, train_sequence_length)) {
+        Log::info("Slicing input training data with time sequence length: %d\n", train_sequence_length);
+        slice_input_data(train_inputs, train_outputs, train_sequence_length);
     }
 
     int32_t validation_sequence_length = 0;

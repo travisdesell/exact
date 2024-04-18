@@ -472,7 +472,7 @@ void TimeSeriesSet::export_time_series(
     if (time_offset == 0) {
         for (int32_t i = 0; i < (int32_t) requested_fields.size(); i++) {
             for (int32_t j = 0; j < number_rows; j++) {
-                data[i][j] = time_series[requested_fields[i]]->get_value(j);
+                data[i][j] = time_series.at(requested_fields[i])->get_value(j);
             }
         }
 
@@ -480,7 +480,7 @@ void TimeSeriesSet::export_time_series(
         // output data, ignore the first N values
         for (int32_t i = 0; i < (int32_t) requested_fields.size(); i++) {
             for (int32_t j = time_offset; j < number_rows; j++) {
-                data[i][j - time_offset] = time_series[requested_fields[i]]->get_value(j);
+                data[i][j - time_offset] = time_series.at(requested_fields[i])->get_value(j);
             }
         }
 
@@ -492,13 +492,13 @@ void TimeSeriesSet::export_time_series(
                 Log::debug("doing shift for field: '%s'\n", requested_fields[i].c_str());
                 // shift the shifted fields to the same as the output, not the input
                 for (int32_t j = -time_offset; j < number_rows; j++) {
-                    data[i][j + time_offset] = time_series[requested_fields[i]]->get_value(j);
+                    data[i][j + time_offset] = time_series.at(requested_fields[i])->get_value(j);
                     // Log::info("\tdata[%d][%d]: %lf\n", i, j + time_offset, data[i][j + time_offset]);
                 }
             } else {
                 Log::debug("not doing shift for field: '%s'\n", requested_fields[i].c_str());
                 for (int32_t j = 0; j < number_rows + time_offset; j++) {
-                    data[i][j] = time_series[requested_fields[i]]->get_value(j);
+                    data[i][j] = time_series.at(requested_fields[i])->get_value(j);
                 }
             }
         }
