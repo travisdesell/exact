@@ -1356,3 +1356,13 @@ map<string, double> EXAMM::get_mutation_to_count(){
 map<string, double> EXAMM::get_mutation_to_rewards(){
     return this->mutation_to_rewards;
 }
+
+int32_t EXAMM::get_island_size(){
+    return this->island_size;
+}
+
+int32_t EXAMM::get_number_islands(){
+    return this->number_islands;
+}
+
+

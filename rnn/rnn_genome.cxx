@@ -211,7 +211,6 @@ RNN_Genome* RNN_Genome::copy() {
     // other->assign_reachability();
 
     other->best_parent_mse = best_parent_mse;
-    other->is_initializing = is_initializing;
 
     return other;
 }

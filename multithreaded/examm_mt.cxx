@@ -56,11 +56,11 @@ void examm_thread(int32_t id) {
         if (genome == NULL) {
             break;  // generate_individual returns NULL when the search is done
         }
-
+        
         string log_id = "genome_" + to_string(genome->get_generation_id()) + "_thread_" + to_string(id);
         Log::set_id(log_id);
         // genome->backpropagate(training_inputs, training_outputs, validation_inputs, validation_outputs);
-        
+        int32_t initial_genome_size = examm->get_island_size() * examm->get_number_islands();
         if (examm->get_mutate_rl() && !genome->get_is_initializing()){
           //double validation_mse_before = genome->get_mse(genome->get_best_parameters(), validation_inputs, validation_outputs);
             genome->backpropagate_stochastic(
@@ -70,27 +70,29 @@ void examm_thread(int32_t id) {
             double reward = genome->get_best_parent_mse() - validation_mse_after; 
             for (const auto& pair : *genome->get_generated_by_map()){
                 if (pair.first.compare("initial") == 0 || pair.first.compare("crossover") == 0 || pair.first.compare("island_crossover") == 0 ){
-                    continue;
+                    break;
                 } 
                 
-                if (!isnan(reward)) {
+                if (!isnan(reward) && (genome->get_best_parent_mse() < EXAMM_MAX_DOUBLE)) {
                     examm->update_mutation_to_rewards(pair.first, reward); 
                 }
                 
             }
-            double new_epsilon = examm->get_epsilon() + (1.0 / examm->get_max_genomes());;
-            examm->set_epsilon(new_epsilon);
-            Log::info("New Epsilon: %f\n", examm->get_epsilon());
-            Log::info("Mutation Counts:\n");
-            for (const auto& pair : examm->get_mutation_to_count()) {
-                Log::info("%s: %0.f\n", pair.first.c_str(), round(pair.second));
-            }
-            Log::info("Mutation Rewards:\n");
-            for (const auto& pair : examm->get_mutation_to_rewards()) {
-                Log::info("%s: %f\n", pair.first.c_str(), pair.second);
+            if (genome->get_generation_id() > initial_genome_size){
+                double new_epsilon = examm->get_epsilon() + (1.0 / (examm->get_max_genomes() - initial_genome_size));
+                examm->set_epsilon(new_epsilon);
+                Log::info("New Epsilon: %f\n", examm->get_epsilon());
+                Log::info("Mutation Counts:\n");
+                for (const auto& pair : examm->get_mutation_to_count()) {
+                    Log::info("%s: %0.f\n", pair.first.c_str(), round(pair.second));
+                }
+                Log::info("Mutation Rewards:\n");
+                for (const auto& pair : examm->get_mutation_to_rewards()) {
+                    Log::info("%s: %f\n", pair.first.c_str(), pair.second);
+                }
             }            
         } else {
-            Log::info("DID NOT MAKE IT!\n");
+            Log::info("DID NOT UPDATE REWARDS!\n");
             genome->backpropagate_stochastic(
                 training_inputs, training_outputs, validation_inputs, validation_outputs, weight_update_method
             );    

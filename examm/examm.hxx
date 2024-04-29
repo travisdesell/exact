@@ -146,6 +146,8 @@ class EXAMM {
     int32_t get_max_genomes();
     map<string, double> get_mutation_to_count();
     map<string, double> get_mutation_to_rewards();
+    int32_t get_island_size();
+    int32_t get_number_islands();
 };
 
 #endif

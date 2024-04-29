@@ -317,6 +317,7 @@ RNN_Genome* IslandSpeciationStrategy::generate_for_repopulating_island(
     uniform_real_distribution<double>& rng_0_1, minstd_rand0& generator, function<void(int32_t, RNN_Genome*)>& mutate,
     function<RNN_Genome*(RNN_Genome*, RNN_Genome*)>& crossover
 ) {
+    Log::info("generate_for_repopulating_island CALLED!!!!!\n");
     Log::info("Island %d: island is repopulating \n", generation_island);
     // Island *current_island = islands[generation_island];
     RNN_Genome* new_genome = NULL;
@@ -407,6 +408,7 @@ RNN_Genome* IslandSpeciationStrategy::generate_for_filled_island(
     if (!islands_full() || r < mutation_rate) {
         Log::debug("performing mutation\n");
         island->copy_random_genome(rng_0_1, generator, &genome);
+        genome->set_best_parent_mse(genome->get_fitness());
         mutate(num_mutations, genome);
 
     } else if (r < intra_island_crossover_rate || number_of_islands == 1) {
@@ -435,13 +437,7 @@ RNN_Genome* IslandSpeciationStrategy::generate_for_filled_island(
         }
         // get the best genome from the other island
         RNN_Genome* parent2 = islands[other_island]->get_best_genome()->copy();  // new RNN GENOME
-        
-        if (parent1->get_fitness() > parent2->get_fitness()){
-            genome->set_best_parent_mse(parent2->get_fitness());
-        } else {
-            genome->set_best_parent_mse(parent1->get_fitness());
-        }
-        
+                
         // swap so the first parent is the more fit parent
         if (parent1->get_fitness() > parent2->get_fitness()) {
             RNN_Genome* tmp = parent1;
@@ -449,6 +445,11 @@ RNN_Genome* IslandSpeciationStrategy::generate_for_filled_island(
             parent2 = tmp;
         }
         genome = crossover(parent1, parent2);  // new RNN GENOME
+        if (parent1->get_fitness() > parent2->get_fitness()){
+            genome->set_best_parent_mse(parent2->get_fitness());
+        } else {
+            genome->set_best_parent_mse(parent1->get_fitness());
+        }
         delete parent1;
         delete parent2;
     }
