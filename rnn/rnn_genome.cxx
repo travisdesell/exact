@@ -247,7 +247,8 @@ string RNN_Genome::print_statistics_header() {
     oss << std::left << setw(12) << "MSE" << setw(12) << "MAE" << setw(12) << "Edges" << setw(12) << "Rec Edges"
         << setw(12) << "Simple" << setw(12) << "Jordan" << setw(12) << "Elman" << setw(12) << "UGRNN" << setw(12)
         << "MGU" << setw(12) << "GRU" << setw(12) << "Delta" << setw(12) << "LSTM" << setw(12) << "ENARC" << setw(12)
-        << "ENAS_DAG" << setw(12) << "RANDOM_DAG" << setw(12) << "Total" << "Generated";
+        << "ENAS_DAG" << setw(12) << "RANDOM_DAG" << setw(12) << "Total"
+        << "Generated";
 
     return oss.str();
 }
@@ -4296,8 +4297,8 @@ void RNN_Genome::write_equations(ostream& outstream) {
             //  outstream << "is_reachable: " << nodes[i]->is_reachable() << endl;
             outstream << endl;
         } else if (nodes[i]->layer_type == OUTPUT_LAYER && nodes[i]->is_reachable()) {
-            outstream << innovation_to_label[nodes[i]->innovation_number] << "(t + 1)" << " = "
-                      << innovation_to_equation[nodes[i]->innovation_number] << endl;
+            outstream << innovation_to_label[nodes[i]->innovation_number] << "(t + 1)"
+                      << " = " << innovation_to_equation[nodes[i]->innovation_number] << endl;
             outstream << endl;
         }
     }
@@ -4305,19 +4306,18 @@ void RNN_Genome::write_equations(ostream& outstream) {
     outstream << endl;
 }
 
-void RNN_Genome::set_best_parent_mse(double best_parent_mse){
+void RNN_Genome::set_best_parent_mse(double best_parent_mse) {
     this->best_parent_mse = best_parent_mse;
 }
 
-double RNN_Genome::get_best_parent_mse(){
+double RNN_Genome::get_best_parent_mse() {
     return this->best_parent_mse;
 }
 
-void RNN_Genome::set_is_initializing(bool is_initializing){
+void RNN_Genome::set_is_initializing(bool is_initializing) {
     this->is_initializing = is_initializing;
 }
 
-bool RNN_Genome::get_is_initializing(){
+bool RNN_Genome::get_is_initializing() {
     return this->is_initializing;
 }
-

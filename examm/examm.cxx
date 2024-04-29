@@ -58,7 +58,7 @@ EXAMM::EXAMM(
       weight_rules(_weight_rules),
       genome_property(_genome_property),
       output_directory(_output_directory),
-      save_genome_option(_save_genome_option), 
+      save_genome_option(_save_genome_option),
       mutate_rl(false) {
     total_bp_epochs = 0;
     edge_innovation_count = 0;
@@ -295,9 +295,9 @@ RNN_Genome* EXAMM::generate_genome() {
     }
 
     function<void(int32_t, RNN_Genome*)> mutate_function = [=, this](int32_t max_mutations, RNN_Genome* genome) {
-        if (this->mutate_function_type.compare("simple_epsilon_greedy") == 0){
+        if (this->mutate_function_type.compare("simple_epsilon_greedy") == 0) {
             this->mutate_simple_epsilon_greedy(max_mutations, genome);
-        } else {            
+        } else {
             this->mutate(max_mutations, genome);
         }
     };
@@ -472,7 +472,7 @@ void EXAMM::mutate(int32_t max_mutations, RNN_Genome* g) {
             modified = g->merge_node(mu, sigma, new_node_type, dist, edge_innovation_count, node_innovation_count);
             Log::debug("\tmerging node, modified: %d\n", modified);
             if (modified) {
-                //g->set_generated_by("merge_node(" + node_type_str + ")");
+                // g->set_generated_by("merge_node(" + node_type_str + ")");
                 g->set_generated_by("merge_node");
             }
             continue;
@@ -1044,71 +1044,72 @@ void EXAMM::set_evolution_hyper_parameters() {
     }
 }
 
-void EXAMM::initialize_mutation_to_rewards(string _mutation_function_type){
+void EXAMM::initialize_mutation_to_rewards(string _mutation_function_type) {
     this->mutate_rl = true;
-    if (_mutation_function_type.compare("simple_epsilon_greedy") == 0){
+    if (_mutation_function_type.compare("simple_epsilon_greedy") == 0) {
         this->mutation_to_rewards = {
-            {"clone", 0.0},
-            {"add_edge", 0.0},
+            {             "clone", 0.0},
+            {          "add_edge", 0.0},
             {"add_recurrent_edge", 0.0},
-            {"enable_edge", 0.0},
-            {"disable_edge", 0.0},
-            {"split_edge", 0.0},
-            {"add_node", 0.0},
-            {"enable_node", 0.0},
-            {"disable_node", 0.0},
-            {"split_node", 0.0},
-            {"merge_node",0.0},
+            {       "enable_edge", 0.0},
+            {      "disable_edge", 0.0},
+            {        "split_edge", 0.0},
+            {          "add_node", 0.0},
+            {       "enable_node", 0.0},
+            {      "disable_node", 0.0},
+            {        "split_node", 0.0},
+            {        "merge_node", 0.0},
         };
         this->mutation_to_count = {
-            {"clone", 0.0},
-            {"add_edge", 0.0},
+            {             "clone", 0.0},
+            {          "add_edge", 0.0},
             {"add_recurrent_edge", 0.0},
-            {"enable_edge", 0.0},
-            {"disable_edge", 0.0},
-            {"split_edge", 0.0},
-            {"add_node", 0.0},
-            {"enable_node", 0.0},
-            {"disable_node", 0.0},
-            {"split_node", 0.0},
-            {"merge_node", 0.0},
-        };        
+            {       "enable_edge", 0.0},
+            {      "disable_edge", 0.0},
+            {        "split_edge", 0.0},
+            {          "add_node", 0.0},
+            {       "enable_node", 0.0},
+            {      "disable_node", 0.0},
+            {        "split_node", 0.0},
+            {        "merge_node", 0.0},
+        };
     }
     Log::info("Initialized mutation_to_rewards: %s\n", _mutation_function_type.c_str());
     Log::info("Initialized mutation_to_count: %s\n", _mutation_function_type.c_str());
 }
 
-void EXAMM::update_mutation_to_rewards(string mutation_type, double reward){
-/*
-    this->mutation_to_rewards[mutation_type] += reward;
-    this->mutation_to_count[mutation_type]++;
-*/    
-    if (this->mutation_to_count[mutation_type] == 0){
+void EXAMM::update_mutation_to_rewards(string mutation_type, double reward) {
+    /*
+        this->mutation_to_rewards[mutation_type] += reward;
+        this->mutation_to_count[mutation_type]++;
+    */
+    if (this->mutation_to_count[mutation_type] == 0) {
         this->mutation_to_rewards[mutation_type] = reward;
         this->mutation_to_count[mutation_type]++;
     } else {
         double mutation_count = this->mutation_to_count[mutation_type];
-        this->mutation_to_rewards[mutation_type] = (this->mutation_to_rewards[mutation_type] * mutation_count + reward)/(mutation_count + 1.0);
+        this->mutation_to_rewards[mutation_type] =
+            (this->mutation_to_rewards[mutation_type] * mutation_count + reward) / (mutation_count + 1.0);
         this->mutation_to_count[mutation_type]++;
-    } 
+    }
 
-    Log::info("Mutate Type: %s, Reward: %f\n", mutation_type.c_str(), reward); 
+    Log::info("Mutate Type: %s, Reward: %f\n", mutation_type.c_str(), reward);
 }
 
-bool EXAMM::get_mutate_rl(){
+bool EXAMM::get_mutate_rl() {
     return this->mutate_rl;
 }
 
-void EXAMM::set_epsilon(double _epsilon){
+void EXAMM::set_epsilon(double _epsilon) {
     this->epsilon = _epsilon;
 }
 
-double EXAMM::get_epsilon(){
+double EXAMM::get_epsilon() {
     return this->epsilon;
 }
 
-void EXAMM::set_mutate_function_type(string _mutate_function_type){
-    if (_mutate_function_type.compare("simple_epsilon_greedy") == 0){
+void EXAMM::set_mutate_function_type(string _mutate_function_type) {
+    if (_mutate_function_type.compare("simple_epsilon_greedy") == 0) {
         this->mutate_function_type = _mutate_function_type;
         Log::info("Mutate Function: simple_epsilon_greedy\n");
     } else {
@@ -1117,11 +1118,11 @@ void EXAMM::set_mutate_function_type(string _mutate_function_type){
         exit(1);
     }
 }
-                
-void EXAMM::mutate_simple_epsilon_greedy(int32_t max_mutations, RNN_Genome* g){ 
+
+void EXAMM::mutate_simple_epsilon_greedy(int32_t max_mutations, RNN_Genome* g) {
     double explore_or_exploit = rng_0_1(generator);
-    if (explore_or_exploit < this->epsilon){
-        this->mutate(max_mutations, g); 
+    if (explore_or_exploit < this->epsilon) {
+        this->mutate(max_mutations, g);
     } else {
         bool modified = false;
 
@@ -1140,10 +1141,10 @@ void EXAMM::mutate_simple_epsilon_greedy(int32_t max_mutations, RNN_Genome* g){
         }
         int32_t number_mutations = 0;
         vector<pair<string, double>> vec(this->mutation_to_rewards.begin(), this->mutation_to_rewards.end());
-        sort(vec.begin(), vec.end(), [](const pair<string,double>& a, const pair<string,double>& b) {
+        sort(vec.begin(), vec.end(), [](const pair<string, double>& a, const pair<string, double>& b) {
             return a.second > b.second;
         });
-        int32_t counter = 0; 
+        int32_t counter = 0;
         for (;;) {
             if (modified) {
                 modified = false;
@@ -1156,14 +1157,14 @@ void EXAMM::mutate_simple_epsilon_greedy(int32_t max_mutations, RNN_Genome* g){
             g->assign_reachability();
             int32_t new_node_type = get_random_node_type();
             string node_type_str = NODE_TYPES[new_node_type];
-            
+
             if (vec[counter].first.compare("clone") == 0) {
                 Log::debug("\tcloned\n");
                 g->set_generated_by("clone");
                 modified = true;
                 Log::info("MADE IT TO CLONE\n");
                 continue;
-            } 
+            }
             if (vec[counter].first.compare("add_edge") == 0) {
                 modified = g->add_edge(mu, sigma, edge_innovation_count);
                 Log::debug("\tadding edge, modified: %d\n", modified);
@@ -1173,12 +1174,12 @@ void EXAMM::mutate_simple_epsilon_greedy(int32_t max_mutations, RNN_Genome* g){
                     continue;
                 } else {
                     counter++;
-                    if (counter == vec.size()){
+                    if (counter == vec.size()) {
                         counter = 0;
-                    }   
+                    }
                     continue;
-                }  
-            } 
+                }
+            }
             if (vec[counter].first.compare("add_recurrent_edge") == 0) {
                 uniform_int_distribution<int32_t> dist = genome_property->get_recurrent_depth_dist();
                 modified = g->add_recurrent_edge(mu, sigma, dist, edge_innovation_count);
@@ -1189,11 +1190,11 @@ void EXAMM::mutate_simple_epsilon_greedy(int32_t max_mutations, RNN_Genome* g){
                     continue;
                 } else {
                     counter++;
-                    if (counter == vec.size()){
+                    if (counter == vec.size()) {
                         counter = 0;
                     }
                     continue;
-                }                  
+                }
             }
             if (vec[counter].first.compare("enable_edge") == 0) {
                 modified = g->enable_edge();
@@ -1204,10 +1205,10 @@ void EXAMM::mutate_simple_epsilon_greedy(int32_t max_mutations, RNN_Genome* g){
                     continue;
                 } else {
                     counter++;
-                    if (counter == vec.size()){
+                    if (counter == vec.size()) {
                         counter = 0;
                     }
-                    continue; 
+                    continue;
                 }
             }
             if (vec[counter].first.compare("disable_edge") == 0) {
@@ -1219,11 +1220,11 @@ void EXAMM::mutate_simple_epsilon_greedy(int32_t max_mutations, RNN_Genome* g){
                     continue;
                 } else {
                     counter++;
-                    if (counter == vec.size()){
+                    if (counter == vec.size()) {
                         counter = 0;
                     }
                     continue;
-                } 
+                }
             }
             if (vec[counter].first.compare("split_edge") == 0) {
                 uniform_int_distribution<int32_t> dist = genome_property->get_recurrent_depth_dist();
@@ -1235,10 +1236,10 @@ void EXAMM::mutate_simple_epsilon_greedy(int32_t max_mutations, RNN_Genome* g){
                     continue;
                 } else {
                     counter++;
-                    if (counter == vec.size()){
+                    if (counter == vec.size()) {
                         counter = 0;
                     }
-                    continue;  
+                    continue;
                 }
             }
             if (vec[counter].first.compare("add_node") == 0) {
@@ -1251,12 +1252,12 @@ void EXAMM::mutate_simple_epsilon_greedy(int32_t max_mutations, RNN_Genome* g){
                     continue;
                 } else {
                     counter++;
-                    if (counter == vec.size()){
+                    if (counter == vec.size()) {
                         counter = 0;
                     }
                     continue;
                 }
-            } 
+            }
             if (vec[counter].first.compare("enable_node") == 0) {
                 modified = g->enable_node();
                 Log::debug("\tenabling node, modified: %d\n", modified);
@@ -1266,12 +1267,12 @@ void EXAMM::mutate_simple_epsilon_greedy(int32_t max_mutations, RNN_Genome* g){
                     continue;
                 } else {
                     counter++;
-                    if (counter == vec.size()){
+                    if (counter == vec.size()) {
                         counter = 0;
                     }
                     continue;
-                } 
-            } 
+                }
+            }
             if (vec[counter].first.compare("disable_node") == 0) {
                 modified = g->disable_node();
                 Log::debug("\tdisabling node, modified: %d\n", modified);
@@ -1281,12 +1282,12 @@ void EXAMM::mutate_simple_epsilon_greedy(int32_t max_mutations, RNN_Genome* g){
                     continue;
                 } else {
                     counter++;
-                    if (counter == vec.size()){
+                    if (counter == vec.size()) {
                         counter = 0;
                     }
                     continue;
-                } 
-            } 
+                }
+            }
             if (vec[counter].first.compare("split_node") == 0) {
                 uniform_int_distribution<int32_t> dist = genome_property->get_recurrent_depth_dist();
                 modified = g->split_node(mu, sigma, new_node_type, dist, edge_innovation_count, node_innovation_count);
@@ -1297,12 +1298,12 @@ void EXAMM::mutate_simple_epsilon_greedy(int32_t max_mutations, RNN_Genome* g){
                     continue;
                 } else {
                     counter++;
-                    if (counter == vec.size()){
+                    if (counter == vec.size()) {
                         counter = 0;
                     }
-                    continue;      
+                    continue;
                 }
-            } 
+            }
             if (vec[counter].first.compare("merge_node") == 0) {
                 uniform_int_distribution<int32_t> dist = genome_property->get_recurrent_depth_dist();
                 modified = g->merge_node(mu, sigma, new_node_type, dist, edge_innovation_count, node_innovation_count);
@@ -1313,12 +1314,12 @@ void EXAMM::mutate_simple_epsilon_greedy(int32_t max_mutations, RNN_Genome* g){
                     continue;
                 } else {
                     counter++;
-                    if (counter == vec.size()){
+                    if (counter == vec.size()) {
                         counter = 0;
                     }
-                    continue; 
+                    continue;
                 }
-            } 
+            }
         }
         vector<double> new_parameters;
 
@@ -1340,29 +1341,26 @@ void EXAMM::mutate_simple_epsilon_greedy(int32_t max_mutations, RNN_Genome* g){
             g->get_mu_sigma(g->initial_parameters, mu, sigma);
         }
 
-        g->best_parameters.clear();      
-        
+        g->best_parameters.clear();
     }
-}    
-                
-int32_t EXAMM::get_max_genomes(){
-    return this->max_genomes;
-}                     
+}
 
-map<string, double> EXAMM::get_mutation_to_count(){
+int32_t EXAMM::get_max_genomes() {
+    return this->max_genomes;
+}
+
+map<string, double> EXAMM::get_mutation_to_count() {
     return this->mutation_to_count;
 }
 
-map<string, double> EXAMM::get_mutation_to_rewards(){
+map<string, double> EXAMM::get_mutation_to_rewards() {
     return this->mutation_to_rewards;
 }
 
-int32_t EXAMM::get_island_size(){
+int32_t EXAMM::get_island_size() {
     return this->island_size;
 }
 
-int32_t EXAMM::get_number_islands(){
+int32_t EXAMM::get_number_islands() {
     return this->number_islands;
 }
-
-

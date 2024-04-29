@@ -83,7 +83,7 @@ class EXAMM {
     map<string, double> mutation_to_rewards;
     map<string, double> mutation_to_count;
     double epsilon;
-    string mutate_function_type;    
+    string mutate_function_type;
 
    public:
     EXAMM(

@@ -332,7 +332,7 @@ RNN_Genome* IslandSpeciationStrategy::generate_for_repopulating_island(
 
     } else if (repopulation_method.compare("bestGenome") == 0 || repopulation_method.compare("bestgenome") == 0) {
         new_genome = get_global_best_genome()->copy();
-        new_genome->set_best_parent_mse(new_genome->get_fitness()); 
+        new_genome->set_best_parent_mse(new_genome->get_fitness());
         mutate(num_mutations, new_genome);
 
     } else if (repopulation_method.compare("bestIsland") == 0 || repopulation_method.compare("bestisland") == 0) {
@@ -418,7 +418,7 @@ RNN_Genome* IslandSpeciationStrategy::generate_for_filled_island(
         RNN_Genome *parent1 = NULL, *parent2 = NULL;
         island->copy_two_random_genomes(rng_0_1, generator, &parent1, &parent2);
         genome = crossover(parent1, parent2);
-        if (parent1->get_fitness() > parent2->get_fitness()){
+        if (parent1->get_fitness() > parent2->get_fitness()) {
             genome->set_best_parent_mse(parent2->get_fitness());
         } else {
             genome->set_best_parent_mse(parent1->get_fitness());
@@ -437,7 +437,7 @@ RNN_Genome* IslandSpeciationStrategy::generate_for_filled_island(
         }
         // get the best genome from the other island
         RNN_Genome* parent2 = islands[other_island]->get_best_genome()->copy();  // new RNN GENOME
-                
+
         // swap so the first parent is the more fit parent
         if (parent1->get_fitness() > parent2->get_fitness()) {
             RNN_Genome* tmp = parent1;
@@ -445,7 +445,7 @@ RNN_Genome* IslandSpeciationStrategy::generate_for_filled_island(
             parent2 = tmp;
         }
         genome = crossover(parent1, parent2);  // new RNN GENOME
-        if (parent1->get_fitness() > parent2->get_fitness()){
+        if (parent1->get_fitness() > parent2->get_fitness()) {
             genome->set_best_parent_mse(parent2->get_fitness());
         } else {
             genome->set_best_parent_mse(parent1->get_fitness());
@@ -546,14 +546,13 @@ RNN_Genome* IslandSpeciationStrategy::parents_repopulation(
         "current island is %d, the parent1 island is %d, parent 2 island is %d\n", generation_island, parent_island1,
         parent_island2
     );
-    
-    //attach fitness of more fit parent to genome
-    if (parent1->get_fitness() > parent2->get_fitness()){
+
+    // attach fitness of more fit parent to genome
+    if (parent1->get_fitness() > parent2->get_fitness()) {
         genome->set_best_parent_mse(parent2->get_fitness());
     } else {
         genome->set_best_parent_mse(parent1->get_fitness());
     }
- 
 
     // swap so the first parent is the more fit parent
     if (parent1->get_fitness() > parent2->get_fitness()) {
