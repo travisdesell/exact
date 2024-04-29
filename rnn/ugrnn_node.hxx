@@ -24,6 +24,8 @@ class UGRNN_Node : public RNN_Node_Interface {
     double gh;
     double g_bias;
 
+    int32_t cell_time_skip;
+
     vector<double> d_cw;
     vector<double> d_ch;
     vector<double> d_c_bias;
@@ -39,7 +41,7 @@ class UGRNN_Node : public RNN_Node_Interface {
     vector<double> ld_g;
 
    public:
-    UGRNN_Node(int32_t _innovation_number, int32_t _type, double _depth);
+    UGRNN_Node(int32_t _innovation_number, int32_t _type, double _depth, int32_t _cell_time_skip);
     ~UGRNN_Node();
 
     void initialize_lamarckian(

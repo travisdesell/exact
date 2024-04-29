@@ -68,6 +68,8 @@ using std::map;
 #include "time_series/time_series.hxx"
 #include "ugrnn_node.hxx"
 
+int32_t genome_cell_time_skip = 1;
+
 vector<int32_t> dnas_node_types = {SIMPLE_NODE, UGRNN_NODE, MGU_NODE, GRU_NODE, DELTA_NODE, LSTM_NODE};
 
 string parse_fitness(double fitness) {
@@ -2383,10 +2385,12 @@ bool RNN_Genome::connect_node_to_hid_nodes(
 
 bool RNN_Genome::add_node(
     double mu, double sigma, int32_t node_type, uniform_int_distribution<int32_t> dist, int32_t& edge_innovation_count,
-    int32_t& node_innovation_count
+    int32_t& node_innovation_count, int32_t cell_time_skip
 ) {
     Log::trace("\tattempting to add a node!\n");
     double split_depth = rng_0_1(generator);
+
+    genome_cell_time_skip = cell_time_skip;
 
     vector<RNN_Node_Interface*> possible_inputs;
     vector<RNN_Node_Interface*> possible_outputs;
@@ -3205,11 +3209,14 @@ RNN_Node_Interface* RNN_Genome::read_node_from_stream(istream& bin_istream) {
 
     RNN_Node_Interface* node = nullptr;
     if (node_type == LSTM_NODE) {
-        node = new LSTM_Node(innovation_number, layer_type, depth);
+        Log::debug("AT: Timeskip outside LSTM Node (rnn_genome) = %d\n", genome_cell_time_skip);
+        node = new LSTM_Node(innovation_number, layer_type, depth, genome_cell_time_skip);
     } else if (node_type == DELTA_NODE) {
-        node = new Delta_Node(innovation_number, layer_type, depth);
+        Log::debug("AT: Timeskip outside Delta Node (rnn_genome) = %d\n", genome_cell_time_skip);
+        node = new Delta_Node(innovation_number, layer_type, depth, genome_cell_time_skip);
     } else if (node_type == GRU_NODE) {
-        node = new GRU_Node(innovation_number, layer_type, depth);
+        Log::debug("AT: Timeskip outside GRU Node (rnn_genome) = %d\n", genome_cell_time_skip);
+        node = new GRU_Node(innovation_number, layer_type, depth, genome_cell_time_skip);
     } else if (node_type == ENARC_NODE) {
         node = new ENARC_Node(innovation_number, layer_type, depth);
     } else if (node_type == ENAS_DAG_NODE) {
@@ -3217,9 +3224,11 @@ RNN_Node_Interface* RNN_Genome::read_node_from_stream(istream& bin_istream) {
     } else if (node_type == RANDOM_DAG_NODE) {
         node = new RANDOM_DAG_Node(innovation_number, layer_type, depth);
     } else if (node_type == MGU_NODE) {
-        node = new MGU_Node(innovation_number, layer_type, depth);
+        Log::debug("AT: Timeskip outside MGU Node (rnn_genome) = %d\n", genome_cell_time_skip);
+        node = new MGU_Node(innovation_number, layer_type, depth, genome_cell_time_skip);
     } else if (node_type == UGRNN_NODE) {
-        node = new UGRNN_Node(innovation_number, layer_type, depth);
+        Log::debug("AT: Timeskip outside UGRNN Node (rnn_genome) = %d\n", genome_cell_time_skip);
+        node = new UGRNN_Node(innovation_number, layer_type, depth, genome_cell_time_skip);
     } else if (node_type == SIMPLE_NODE || node_type == JORDAN_NODE || node_type == ELMAN_NODE) {
         if (layer_type == HIDDEN_LAYER) {
             node = new RNN_Node(innovation_number, layer_type, depth, node_type);

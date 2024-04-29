@@ -8,6 +8,9 @@ GenomeProperty::GenomeProperty() {
     dropout_probability = 0.0;
     min_recurrent_depth = 1;
     max_recurrent_depth = 10;
+    use_variable_cell_time_skip = false;
+    min_cell_time_skip = 1;
+    max_cell_time_skip = 10;
 }
 
 void GenomeProperty::generate_genome_property_from_arguments(const vector<string>& arguments) {
@@ -16,6 +19,18 @@ void GenomeProperty::generate_genome_property_from_arguments(const vector<string
 
     get_argument(arguments, "--min_recurrent_depth", false, min_recurrent_depth);
     get_argument(arguments, "--max_recurrent_depth", false, max_recurrent_depth);
+
+    if (argument_exists(arguments, "--min_cell_time_skip") || argument_exists(arguments, "--max_cell_time_skip")) {
+        use_variable_cell_time_skip = true;
+        get_argument(arguments, "--min_cell_time_skip", false, min_cell_time_skip);
+        get_argument(arguments, "--max_cell_time_skip", false, max_cell_time_skip);
+
+        if(min_cell_time_skip > max_cell_time_skip) {
+            Log::fatal("Using variable timeskip with invalid bounds [min, max] = [%d, %d]\n",min_cell_time_skip, max_cell_time_skip);
+            exit(1);
+        }
+
+    }
 
     Log::info("Each generated genome is trained for %d epochs\n", bp_iterations);
     Log::info(
@@ -49,3 +64,15 @@ void GenomeProperty::get_time_series_parameters(TimeSeriesSets* time_series_sets
 uniform_int_distribution<int32_t> GenomeProperty::get_recurrent_depth_dist() {
     return uniform_int_distribution<int32_t>(this->min_recurrent_depth, this->max_recurrent_depth);
 }
+
+bool GenomeProperty::get_use_variable_cell_time_skip() {
+    return use_variable_cell_time_skip;
+} 
+
+int32_t GenomeProperty::get_min_cell_time_skip() {
+    return min_cell_time_skip;
+} 
+
+int32_t GenomeProperty::get_max_cell_time_skip() {
+    return max_cell_time_skip;
+} 

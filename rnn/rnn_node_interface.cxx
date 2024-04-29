@@ -125,6 +125,25 @@ RNN_Node_Interface::RNN_Node_Interface(int32_t _innovation_number, int32_t _laye
     }
 }
 
+RNN_Node_Interface::RNN_Node_Interface(int32_t _innovation_number, int32_t _layer_type, double _depth, int32_t _cell_time_skip)
+    : innovation_number(_innovation_number), layer_type(_layer_type), depth(_depth), cell_time_skip(_cell_time_skip) {
+    total_inputs = 0;
+
+    enabled = true;
+    forward_reachable = false;
+    backward_reachable = false;
+
+    // outputs don't have an official output node but
+    // deltas are passed in via the output_fired method
+    if (layer_type != HIDDEN_LAYER) {
+        Log::fatal(
+            "ERROR: Attempted to create a new RNN_Node that was an input or output node without using the constructor "
+            "which specifies it's parameter name"
+        );
+        exit(1);
+    }
+}
+
 RNN_Node_Interface::RNN_Node_Interface(
     int32_t _innovation_number, int32_t _layer_type, double _depth, string _parameter_name
 )
