@@ -63,21 +63,22 @@ class EXAMM {
     double split_node_rate;
     double merge_node_rate;
 
-    vector<int32_t> possible_node_types = {SIMPLE_NODE, JORDAN_NODE, ELMAN_NODE, UGRNN_NODE,
-                                           MGU_NODE,    GRU_NODE,    DELTA_NODE, LSTM_NODE};
+    vector<node_t> possible_node_types = {SIMPLE_NODE, JORDAN_NODE, ELMAN_NODE, UGRNN_NODE,
+                                          MGU_NODE,    GRU_NODE,    DELTA_NODE, LSTM_NODE};
 
     vector<string> op_log_ordering;
     map<string, int32_t> inserted_counts;
     map<string, int32_t> generated_counts;
 
-    string output_directory;
+    const string output_directory;
     ofstream* log_file;
     ofstream* op_log_file;
+    double pre_insert_best_mse = 1000000;
+    bool last_genome_inserted = false;
 
     std::chrono::time_point<std::chrono::system_clock> startClock;
 
-    string genome_file_name;
-    string save_genome_option;
+    const string save_genome_option;
 
    public:
     EXAMM(
@@ -89,13 +90,13 @@ class EXAMM {
     ~EXAMM();
 
     void print();
-    void update_log();
+    void update_log(RNN_Genome* genome);
 
     void set_possible_node_types(vector<string> possible_node_type_strings);
 
     uniform_int_distribution<int32_t> get_recurrent_depth_dist();
 
-    int32_t get_random_node_type();
+    node_t get_random_node_type();
 
     RNN_Genome* generate_genome();
     bool insert_genome(RNN_Genome* genome);

@@ -22,8 +22,6 @@ using std::unique_ptr;
 #include "rnn_node.hxx"
 #include "rnn_node_interface.hxx"
 
-#define CRYSTALLIZATION_THRESHOLD 1000
-
 class DNASNode : public RNN_Node_Interface {
    private:
     template <typename R>
@@ -58,13 +56,9 @@ class DNASNode : public RNN_Node_Interface {
     // A vector to put gumbel noise into; just to avoid re-allocation
     vector<double> noise;
 
-    // Temperature used when drawing samples from Gumbel-Softmax(pi)
-    double tao = 1.0;
     int32_t counter = 0;
     int32_t maxi = -1;
-
-    // if > 0, then the samples will be forced to be K-hot (K non-zero values that sum to one)
-    int32_t k = 1;
+    double tao;
 
     // Whether to re-sample the gumbel softmax distribution when resetting the node.
     // Can be set externally using DNASNode::set_stochastic
@@ -73,6 +67,9 @@ class DNASNode : public RNN_Node_Interface {
     vector<vector<double>> node_outputs;
 
    public:
+    static int32_t CRYSTALLIZATION_THRESHOLD;
+    static int32_t k;
+
     DNASNode(
         vector<RNN_Node_Interface*>&& nodes, int32_t _innovation_number, int32_t _type, double _depth,
         int32_t counter = -1
@@ -83,6 +80,8 @@ class DNASNode : public RNN_Node_Interface {
     template <typename Rng>
     void sample_gumbel_softmax(Rng& rng);
     void calculate_z();
+    double calculate_tao();
+    double calculate_pi_lr();
 
     virtual void initialize_lamarckian(
         minstd_rand0& generator, NormalDistribution& normal_distribution, double mu, double sigma
@@ -109,6 +108,8 @@ class DNASNode : public RNN_Node_Interface {
     virtual void get_gradients(vector<double>& gradients);
     virtual void reset(int32_t _series_length);
     virtual void write_to_stream(ostream& out);
+
+    void print_info();
 
     virtual RNN_Node_Interface* copy() const;
 

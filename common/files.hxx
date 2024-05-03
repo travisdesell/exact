@@ -1,6 +1,8 @@
 #ifndef EXACT_BOINC_COMMON_HXX
 #define EXACT_BOINC_COMMON_HXX
 
+#include <stdint.h>
+
 #include <stdexcept>
 using std::runtime_error;
 

@@ -79,11 +79,11 @@ int8_t Log::parse_level_from_string(string level) {
 void Log::initialize(const vector<string>& arguments) {
     // TODO: should read these from the CommandLine (to be created)
 
-    string std_message_level_str, file_message_level_str;
+    string std_message_level_str = "INFO", file_message_level_str = "NONE";
 
-    get_argument(arguments, "--std_message_level", true, std_message_level_str);
-    get_argument(arguments, "--file_message_level", true, file_message_level_str);
-    get_argument(arguments, "--output_directory", true, output_directory);
+    get_argument(arguments, "--std_message_level", false, std_message_level_str);
+    get_argument(arguments, "--file_message_level", false, file_message_level_str);
+    get_argument(arguments, "--output_directory", false, output_directory);
 
     std_message_level = parse_level_from_string(std_message_level_str);
     file_message_level = parse_level_from_string(file_message_level_str);

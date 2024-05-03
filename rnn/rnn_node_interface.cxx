@@ -8,14 +8,18 @@ using std::ostream;
 #include <string>
 using std::string;
 
+#include <vector>
+using std::vector;
+
 #include "common/log.hxx"
 #include "rnn/rnn_genome.hxx"
 #include "rnn_node_interface.hxx"
 
-extern const string NODE_TYPES[] = {"simple", "jordan", "elman",    "UGRNN",   "MGU",     "GRU", "delta",
-                                    "LSTM",   "ENARC",  "ENAS_DAG", "rdag",    "dnas",    "sin", "sum",
-                                    "cos",    "tanh",   "sigmoid",  "inverse", "multiply"};
-extern const unordered_map<string, int32_t> string_to_node_type = {
+const vector<string> NODE_TYPES = {"simple", "jordan", "elman",    "UGRNN",   "MGU",     "GRU", "delta",
+                                   "LSTM",   "ENARC",  "ENAS_DAG", "rdag",    "dnas",    "sin", "sum",
+                                   "cos",    "tanh",   "sigmoid",  "inverse", "multiply"};
+
+extern const unordered_map<string, node_t> string_to_node_type = {
     {  "simple",     SIMPLE_NODE},
     {  "jordan",     JORDAN_NODE},
     {   "elman",      ELMAN_NODE},
@@ -37,9 +41,9 @@ extern const unordered_map<string, int32_t> string_to_node_type = {
     {"multiply",   MULTIPLY_NODE},
 };
 
-extern const int32_t NUMBER_NODE_TYPES = string_to_node_type.size();
+extern const int32_t NUMBER_NODE_TYPES = NODE_TYPES.size();
 
-int32_t node_type_from_string(string& node_type) {
+node_t node_type_from_string(string& node_type) {
     std::transform(node_type.begin(), node_type.end(), node_type.begin(), [](unsigned char c) {
         return std::tolower(c);
     });

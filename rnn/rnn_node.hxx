@@ -15,12 +15,10 @@ class RNN_Node : public RNN_Node_Interface {
 
    public:
     // constructor for hidden nodes
-    RNN_Node(int32_t _innovation_number, int32_t _layer_type, double _depth, int32_t _node_type);
+    RNN_Node(int32_t _innovation_number, int32_t _layer_type, double _depth, node_t _node_type);
 
     // constructor for input and output nodes
-    RNN_Node(
-        int32_t _innovation_number, int32_t _layer_type, double _depth, int32_t _node_type, string _parameter_name
-    );
+    RNN_Node(int32_t _innovation_number, int32_t _layer_type, double _depth, node_t _node_type, string _parameter_name);
     ~RNN_Node();
 
     void initialize_lamarckian(

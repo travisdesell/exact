@@ -72,7 +72,7 @@ class TimeSeriesSet {
     TimeSeriesSet();
 
    public:
-    TimeSeriesSet(string _filename, const vector<string>& _fields);
+    TimeSeriesSet(string _filename, const vector<string>& _fields, char delim);
     ~TimeSeriesSet();
     void add_time_series(string name);
 
@@ -115,6 +115,8 @@ class TimeSeriesSet {
 
 class TimeSeriesSets {
    private:
+    char csv_delimiter = ',';
+
     string normalize_type;
 
     vector<string> filenames;

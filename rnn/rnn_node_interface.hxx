@@ -26,32 +26,33 @@ class RNN;
 #define HIDDEN_LAYER 1
 #define OUTPUT_LAYER 2
 
-extern const string NODE_TYPES[];
-extern const unordered_map<string, int32_t> string_to_node_type;
-extern const int32_t NUMBER_NODE_TYPES;
-int32_t node_type_from_string(string& node_type);
+extern const vector<string> NODE_TYPES;
 
-#define SIMPLE_NODE     0
-#define JORDAN_NODE     1
-#define ELMAN_NODE      2
-#define UGRNN_NODE      3
-#define MGU_NODE        4
-#define GRU_NODE        5
-#define DELTA_NODE      6
-#define LSTM_NODE       7
-#define ENARC_NODE      8
-#define ENAS_DAG_NODE   9
-#define RANDOM_DAG_NODE 10
-#define DNAS_NODE       11
-#define SIN_NODE        12
-#define SUM_NODE        13
-#define COS_NODE        14
-#define TANH_NODE       15
-#define SIGMOID_NODE    16
-#define INVERSE_NODE    17
-#define MULTIPLY_NODE   18
+enum node_t : int32_t {
+    SIMPLE_NODE = 0,
+    JORDAN_NODE = 1,
+    ELMAN_NODE = 2,
+    UGRNN_NODE = 3,
+    MGU_NODE = 4,
+    GRU_NODE = 5,
+    DELTA_NODE = 6,
+    LSTM_NODE = 7,
+    ENARC_NODE = 8,
+    ENAS_DAG_NODE = 9,
+    RANDOM_DAG_NODE = 10,
+    DNAS_NODE = 11,
+    SIN_NODE = 12,
+    SUM_NODE = 13,
+    COS_NODE = 14,
+    TANH_NODE = 15,
+    SIGMOID_NODE = 16,
+    INVERSE_NODE = 17,
+    MULTIPLY_NODE = 18,
+};
 
-int32_t node_type_from_string(string& node_type);
+node_t node_type_from_string(string& node_type);
+
+extern const unordered_map<string, node_t> string_to_node_type;
 
 double sigmoid(double value);
 double sigmoid_derivative(double value);
@@ -69,7 +70,7 @@ class RNN_Node_Interface {
    public:
     int32_t innovation_number;
     int32_t layer_type;
-    int32_t node_type;
+    node_t node_type;
 
     double depth;
 

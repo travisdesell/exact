@@ -37,6 +37,7 @@ class IslandSpeciationStrategy : public SpeciationStrategy {
     RNN_Genome* seed_genome; /**< keep a reference to the seed genome so we can re-use it across islands and not
                                 duplicate innovation numbers. */
 
+    string output_directory;
     string island_ranking_method; /**< The method used to find the worst island in population */
 
     string repopulation_method; /**< The method used to repopulate the island after being erased */
@@ -62,12 +63,19 @@ class IslandSpeciationStrategy : public SpeciationStrategy {
     vector<Island*> islands;
     RNN_Genome* global_best_genome;
 
+    ofstream* island_log_file;
+
+    // Maps genome number to a pair representing (worst island mse, best island mse) at
+    // the time of genome generation.
+    unordered_map<int32_t, pair<double, double>> genome_performance;
+
     // Transfer learning class properties:
 
     bool transfer_learning;
     string transfer_learning_version;
-    int32_t seed_stirs;
     bool tl_epigenetic_weights;
+
+    unique_ptr<AnnealingPolicy> annealing_policy;
 
    public:
     // static void register_command_line_arguments();
@@ -81,11 +89,11 @@ class IslandSpeciationStrategy : public SpeciationStrategy {
      */
     IslandSpeciationStrategy(
         int32_t _number_of_islands, int32_t _max_island_size, double _mutation_rate,
-        double _intra_island_crossover_rate, double _inter_island_crossover_rate, RNN_Genome* _seed_genome,
+        double _intra_island_crossover_rate, double _inter_island_crossover_rate, string output_directory, RNN_Genome* _seed_genome,
         string _island_ranking_method, string _repopulation_method, int32_t _extinction_event_generation_number,
         int32_t _num_mutations, int32_t _islands_to_exterminate, int32_t _max_genomes, bool _repeat_extinction,
-        bool _start_filled, bool _transfer_learning, string _transfer_learning_version, int32_t _seed_stirs,
-        bool _tl_epigenetic_weights
+        bool _start_filled, bool _transfer_learning, string _transfer_learning_version, bool _tl_epigenetic_weights,
+        unique_ptr<AnnealingPolicy>& annealing_policy
     );
 
     // /**
@@ -114,25 +122,25 @@ class IslandSpeciationStrategy : public SpeciationStrategy {
      * Gets the fitness of the best genome of all the islands
      * \return the best fitness over all islands
      */
-    double get_best_fitness();
+    double get_best_fitness() const;
 
     /**
      * Gets the fitness of the worst genome of all the islands
      * \return the worst fitness over all islands
      */
-    double get_worst_fitness();
+    double get_worst_fitness() const;
 
     /**
      * Gets the best genome of all the islands
      * \return the best genome of all islands or NULL if no genomes have yet been inserted
      */
-    RNN_Genome* get_best_genome();
+    RNN_Genome* get_best_genome() const;
 
     /**
      * Gets the the worst genome of all the islands
      * \return the worst genome of all islands or NULL if no genomes have yet been inserted
      */
-    RNN_Genome* get_worst_genome();
+    RNN_Genome* get_worst_genome() const;
 
     /**
      *  \return true if all the islands are full
@@ -207,7 +215,7 @@ class IslandSpeciationStrategy : public SpeciationStrategy {
     /**
      * Gets speciation strategy information values for logs
      */
-    string get_strategy_information_values() const;
+    string get_strategy_information_values(RNN_Genome* genome) const;
 
     /**
      * Island repopulation through two random parents from two seperate islands,
