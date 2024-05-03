@@ -125,10 +125,10 @@ int main(int argc, char** argv) {
         Log::info("RNN TYPE = %s\n", rnn_type.c_str());
 
         int32_t num_hidden_layers;
-        get_argument(arguments, "--num_hidden_layers", true, num_hidden_layers);
+        get_argument(arguments, "--num_hidden_layers", false, num_hidden_layers);
 
         int32_t max_recurrent_depth;
-        get_argument(arguments, "--max_recurrent_depth", true, max_recurrent_depth);
+        get_argument(arguments, "--max_recurrent_depth", false, max_recurrent_depth);
 
         int32_t hidden_layer_size = number_inputs;
         get_argument(arguments, "--hidden_layer_size", false, hidden_layer_size);
