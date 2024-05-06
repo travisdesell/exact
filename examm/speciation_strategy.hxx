@@ -9,6 +9,8 @@ using std::string;
 using std::minstd_rand0;
 using std::uniform_real_distribution;
 
+#include "island.hxx"
+
 class SpeciationStrategy {
    public:
     /**
@@ -44,6 +46,18 @@ class SpeciationStrategy {
      * \return the worst genome of all islands
      */
     virtual RNN_Genome* get_worst_genome() = 0;
+
+    /**
+     * Gets the the minimum learning rate of all the islands
+     * \return the minimum learning rate of all islands or NULL if no genomes have yet been inserted
+     */
+    virtual double get_min_learning_rate() = 0;
+
+    /**
+     * Gets the the maximum learning rate of all the islands
+     * \return the maximum learning rate of all islands or NULL if no genomes have yet been inserted
+     */
+    virtual double get_max_learning_rate() = 0;
 
     /**
      * Inserts a <b>copy</b> of the genome into this speciation strategy.
@@ -92,6 +106,32 @@ class SpeciationStrategy {
     virtual void initialize_population(function<void(int32_t, RNN_Genome*)>& mutate) = 0;
     virtual RNN_Genome* get_seed_genome() = 0;
     virtual void save_entire_population(string output_path) = 0;
+
+    /**
+    *  \return true if all the islands are full
+    */
+    virtual bool islands_full() const = 0;
+    
+    /**
+    * Get the number of islands
+    *
+    *  \return the number of island
+    */
+    virtual int32_t get_islands_size() const = 0;
+    
+    /**
+    * Get the island at a given index
+    *  \param index index of required island
+    *  \return the island at given index
+    */
+    virtual Island* get_island_at_index(int32_t index) const = 0;
+
+    /**
+    * Get the current island index
+    *
+    *  \return the index of current island
+    */
+    virtual int32_t get_generation_island() const = 0;
 };
 
 #endif

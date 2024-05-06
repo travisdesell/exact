@@ -85,6 +85,18 @@ class NeatSpeciationStrategy : public SpeciationStrategy {
     RNN_Genome* get_worst_genome();
 
     /**
+     * Gets the the minimum learning rate of all the islands
+     * \return the minimum learning rate of all islands or NULL if no genomes have yet been inserted
+     */
+    double get_min_learning_rate();
+
+    /**
+     * Gets the the maximum learning rate of all the islands
+     * \return the maximum learning rate of all islands or NULL if no genomes have yet been inserted
+     */
+    double get_max_learning_rate();
+
+    /**
      * Inserts a <b>copy</b> of the genome into this speciation strategy.
      *
      * The caller of this method will need to free the memory of the genome passed
@@ -148,6 +160,32 @@ class NeatSpeciationStrategy : public SpeciationStrategy {
     void initialize_population(function<void(int32_t, RNN_Genome*)>& mutate);
     RNN_Genome* get_seed_genome();
     void save_entire_population(string output_path);
+
+    /**
+    *  \return true if all the islands are full
+    */
+    bool islands_full() const;
+
+    /**
+    * Get the number of islands
+    *
+    *  \return the number of island
+    */
+    int32_t get_islands_size() const;
+    
+    /**
+    * Get the island at a given index
+    *  \param index index of required island
+    *  \return the island at given index
+    */
+    Island* get_island_at_index(int32_t index) const;
+
+    /**
+    * Get the current island index
+    *
+    *  \return the index of current island
+    */
+    int32_t get_generation_island() const;
 };
 
 #endif
