@@ -116,6 +116,14 @@ RNN_Genome* NeatSpeciationStrategy::get_worst_genome() {
     }
 }
 
+double NeatSpeciationStrategy::get_min_learning_rate() {
+    return NULL;
+}
+
+double NeatSpeciationStrategy::get_max_learning_rate() {
+    return NULL;
+}
+
 double NeatSpeciationStrategy::get_best_fitness() {
     RNN_Genome* best_genome = get_best_genome();
     if (best_genome == NULL) {
@@ -562,4 +570,18 @@ void NeatSpeciationStrategy::initialize_population(function<void(int32_t, RNN_Ge
 }
 
 void NeatSpeciationStrategy::save_entire_population(string output_path) {
+}
+
+int32_t NeatSpeciationStrategy::get_islands_size() const {
+    return 0;
+}
+Island* NeatSpeciationStrategy::get_island_at_index(int32_t index) const {
+    return NULL;
+}
+bool NeatSpeciationStrategy::islands_full() const {
+    return true;
+}
+
+int32_t NeatSpeciationStrategy::get_generation_island() const {
+    return 0;
 }
