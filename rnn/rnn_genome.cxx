@@ -698,7 +698,40 @@ void RNN_Genome::initialize_kaiming(RNN_Node_Interface* n) {
     n->initialize_kaiming(generator, normal_distribution, range);
 }
 
-void RNN_Genome::initialize_gp(RNN_Node_Interface* n) {
+void RNN_Genome::initialize_gp(RNN_Node_Interface* n) { 
+    vector<RNN_Edge*> input_edges;
+    vector<RNN_Recurrent_Edge*> input_recurrent_edges;
+    get_input_edges(n->innovation_number, input_edges, input_recurrent_edges);
+
+    //this assumes a single output
+    if (n->get_layer_type() == OUTPUT_LAYER) {
+        for (int32_t j = 0; j < (int32_t) input_edges.size(); j++) {
+            if (input_edges[j]->input_node->get_layer_type() == INPUT_LAYER) {
+                string output_parameter_name = n->parameter_name;
+                string input_parameter_name = input_edges[j]->input_node->parameter_name;
+                if (output_parameter_name.compare(input_parameter_name) == 0) { 
+                    input_edges[j]->weight = 1.0; 
+                } else {
+                    input_edges[j]->weight = 0.0; 
+                }    
+            }    
+     
+        }    
+        for (int32_t j = 0; j < (int32_t) input_recurrent_edges.size(); j++) {
+            input_recurrent_edges[j]->weight = 0.0; 
+        }    
+    } else {
+        for (int32_t j = 0; j < (int32_t) input_edges.size(); j++) {
+            input_edges[j]->weight = 1.0; 
+        }    
+        for (int32_t j = 0; j < (int32_t) input_recurrent_edges.size(); j++) {
+            input_recurrent_edges[j]->weight = 1.0; 
+        }    
+    }    
+
+}
+
+void RNN_Genome::initialize_gp_in_crossover(RNN_Node_Interface* n) {
     vector<RNN_Edge*> input_edges;
     vector<RNN_Recurrent_Edge*> input_recurrent_edges;
     get_input_edges(n->innovation_number, input_edges, input_recurrent_edges);
