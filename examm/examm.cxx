@@ -359,8 +359,6 @@ void EXAMM::mutate(int32_t max_mutations, RNN_Genome* g) {
         Log::debug("rng: %lf, total: %lf, new node type: %d (%s)\n", rng, total, new_node_type, node_type_str.c_str());
 
         if (rng < clone_rate) {
-            Log::info("MADE IT TO CLONE\n");
-            Log::info("MUTATION %d\n", number_mutations + 1);
             Log::debug("\tcloned\n");
             g->set_generated_by("clone");
             modified = true;
@@ -368,8 +366,6 @@ void EXAMM::mutate(int32_t max_mutations, RNN_Genome* g) {
         }
         rng -= clone_rate;
         if (rng < add_edge_rate) {
-            Log::info("MADE IT TO ADD_EDGE\n");
-            Log::info("MUTATION %d\n", number_mutations + 1);
             modified = g->add_edge(mu, sigma, edge_innovation_count);
             Log::debug("\tadding edge, modified: %d\n", modified);
             if (modified) {
@@ -380,8 +376,6 @@ void EXAMM::mutate(int32_t max_mutations, RNN_Genome* g) {
         rng -= add_edge_rate;
 
         if (rng < add_recurrent_edge_rate) {
-            Log::info("MADE IT TO ADD RECURRENT EDGE\n");
-            Log::info("MUTATION %d\n", number_mutations + 1);
             uniform_int_distribution<int32_t> dist = genome_property->get_recurrent_depth_dist();
             modified = g->add_recurrent_edge(mu, sigma, dist, edge_innovation_count);
             Log::debug("\tadding recurrent edge, modified: %d\n", modified);
@@ -393,8 +387,6 @@ void EXAMM::mutate(int32_t max_mutations, RNN_Genome* g) {
         rng -= add_recurrent_edge_rate;
 
         if (rng < enable_edge_rate) {
-            Log::info("MADE IT TO ENABLE_EDGE\n");
-            Log::info("MUTATION %d\n", number_mutations + 1);
             modified = g->enable_edge();
             Log::debug("\tenabling edge, modified: %d\n", modified);
             if (modified) {
@@ -405,8 +397,6 @@ void EXAMM::mutate(int32_t max_mutations, RNN_Genome* g) {
         rng -= enable_edge_rate;
 
         if (rng < disable_edge_rate) {
-            Log::info("MADE IT TO DISABLE EDGE\n");
-            Log::info("MUTATION %d\n", number_mutations + 1);
             modified = g->disable_edge();
             Log::debug("\tdisabling edge, modified: %d\n", modified);
             if (modified) {
@@ -417,8 +407,6 @@ void EXAMM::mutate(int32_t max_mutations, RNN_Genome* g) {
         rng -= disable_edge_rate;
 
         if (rng < split_edge_rate) {
-            Log::info("MADE IT TO SPLIT EDGE\n");
-            Log::info("MUTATION %d\n", number_mutations + 1);
             uniform_int_distribution<int32_t> dist = genome_property->get_recurrent_depth_dist();
             modified = g->split_edge(mu, sigma, new_node_type, dist, edge_innovation_count, node_innovation_count);
             Log::debug("\tsplitting edge, modified: %d\n", modified);
@@ -430,8 +418,6 @@ void EXAMM::mutate(int32_t max_mutations, RNN_Genome* g) {
         rng -= split_edge_rate;
 
         if (rng < add_node_rate) {
-            Log::info("MADE IT TO ADD NODE\n");
-            Log::info("MUTATION %d\n", number_mutations + 1);
             uniform_int_distribution<int32_t> dist = genome_property->get_recurrent_depth_dist();
             modified = g->add_node(mu, sigma, new_node_type, dist, edge_innovation_count, node_innovation_count);
             Log::debug("\tadding node, modified: %d\n", modified);
@@ -443,8 +429,6 @@ void EXAMM::mutate(int32_t max_mutations, RNN_Genome* g) {
         rng -= add_node_rate;
 
         if (rng < enable_node_rate) {
-            Log::info("MADE IT TO ENABLE NODE\n");
-            Log::info("MUTATION %d\n", number_mutations + 1);
             modified = g->enable_node();
             Log::debug("\tenabling node, modified: %d\n", modified);
             if (modified) {
@@ -455,8 +439,6 @@ void EXAMM::mutate(int32_t max_mutations, RNN_Genome* g) {
         rng -= enable_node_rate;
 
         if (rng < disable_node_rate) {
-            Log::info("MADE IT TO DISABLE NODE\n");
-            Log::info("MUTATION %d\n", number_mutations + 1);
             modified = g->disable_node();
             Log::debug("\tdisabling node, modified: %d\n", modified);
             if (modified) {
@@ -467,8 +449,6 @@ void EXAMM::mutate(int32_t max_mutations, RNN_Genome* g) {
         rng -= disable_node_rate;
 
         if (rng < split_node_rate) {
-            Log::info("MADE IT TO SPLIT_NODE\n");
-            Log::info("MUTATION %d\n", number_mutations + 1);
             uniform_int_distribution<int32_t> dist = genome_property->get_recurrent_depth_dist();
             modified = g->split_node(mu, sigma, new_node_type, dist, edge_innovation_count, node_innovation_count);
             Log::debug("\tsplitting node, modified: %d\n", modified);
@@ -480,8 +460,6 @@ void EXAMM::mutate(int32_t max_mutations, RNN_Genome* g) {
         rng -= split_node_rate;
 
         if (rng < merge_node_rate) {
-            Log::info("MADE IT TO MERGE_NODE\n");
-            Log::info("MUTATION %d\n", number_mutations + 1);
             uniform_int_distribution<int32_t> dist = genome_property->get_recurrent_depth_dist();
             modified = g->merge_node(mu, sigma, new_node_type, dist, edge_innovation_count, node_innovation_count);
             Log::debug("\tmerging node, modified: %d\n", modified);
@@ -920,26 +898,6 @@ RNN_Genome* EXAMM::crossover(RNN_Genome* p1, RNN_Genome* p2) {
         p2_position++;
     }
 
-    /*
-        for (int32_t i = 0; i < p1->nodes.size(); i++){
-            bool present = false;
-            RNN_Node_Interface* p1_node = p1->nodes[i];
-            if (p1_node->get_layer_type() == INPUT_LAYER){
-                for (int32_t j = 0; j < child_nodes.size(); j++){
-                    RNN_Node_Interface* child_node = child_nodes[j];
-                    if ((child_node->get_layer_type() == INPUT_LAYER) && child_node->equals(p1_node)){
-                        present = true;
-                        break;
-                    }
-                }
-            }
-
-            if (!present) {
-                RNN_Node_Interface* p1_node_copy = p1_node->copy();
-                child_nodes.push_back(p1_node_copy);
-            }
-        }
-    */
     sort(child_nodes.begin(), child_nodes.end(), sort_RNN_Nodes_by_depth());
     sort(child_edges.begin(), child_edges.end(), sort_RNN_Edges_by_depth());
     sort(child_recurrent_edges.begin(), child_recurrent_edges.end(), sort_RNN_Recurrent_Edges_by_depth());
@@ -963,7 +921,9 @@ RNN_Genome* EXAMM::crossover(RNN_Genome* p1, RNN_Genome* p2) {
     // method
     WeightType weight_initialize = weight_rules->get_weight_initialize_method();
     WeightType weight_inheritance = weight_rules->get_weight_inheritance_method();
-    if (weight_inheritance == weight_initialize) {
+    if (weight_inheritance == WeightType::GP && weight_initialize == WeightType::GP) {
+        child->initialize_randomly_gp_crossover();
+    } else if (weight_inheritance == weight_initialize) {
         Log::debug(
             "weight inheritance at crossover method is %s, setting weights to %s randomly \n",
             WEIGHT_TYPES_STRING[weight_inheritance].c_str(), WEIGHT_TYPES_STRING[weight_inheritance].c_str()

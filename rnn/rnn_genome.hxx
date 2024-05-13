@@ -164,6 +164,7 @@ class RNN_Genome {
 
     double get_avg_edge_weight();
     void initialize_randomly();
+    void initialize_randomly_gp_crossover();
     void initialize_xavier(RNN_Node_Interface* n);
     void initialize_kaiming(RNN_Node_Interface* n);
     void initialize_gp(RNN_Node_Interface* n);

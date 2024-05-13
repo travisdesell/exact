@@ -655,6 +655,22 @@ void RNN_Genome::initialize_randomly() {
     this->set_weights(initial_parameters);
 }
 
+void RNN_Genome::initialize_randomly_gp_crossover() {
+    Log::trace("initializing genome %d of group %d randomly!\n", generation_id, group_id);
+    int32_t number_of_weights = get_number_weights();
+    initial_parameters.assign(number_of_weights, 0.0);
+    WeightType weight_initialize = weight_rules->get_weight_initialize_method();
+    if (weight_initialize == WeightType::GP) {
+        for (int32_t i = 0; i < (int32_t) nodes.size(); i++) {
+            initialize_gp_in_crossover(nodes[i]);
+        }
+        get_weights(initial_parameters);
+    }
+
+    this->set_best_parameters(initial_parameters);
+    this->set_weights(initial_parameters);
+}
+
 void RNN_Genome::initialize_xavier(RNN_Node_Interface* n) {
     vector<RNN_Edge*> input_edges;
     vector<RNN_Recurrent_Edge*> input_recurrent_edges;
@@ -698,37 +714,35 @@ void RNN_Genome::initialize_kaiming(RNN_Node_Interface* n) {
     n->initialize_kaiming(generator, normal_distribution, range);
 }
 
-void RNN_Genome::initialize_gp(RNN_Node_Interface* n) { 
+void RNN_Genome::initialize_gp(RNN_Node_Interface* n) {
     vector<RNN_Edge*> input_edges;
     vector<RNN_Recurrent_Edge*> input_recurrent_edges;
     get_input_edges(n->innovation_number, input_edges, input_recurrent_edges);
 
-    //this assumes a single output
+    // this assumes a single output
     if (n->get_layer_type() == OUTPUT_LAYER) {
         for (int32_t j = 0; j < (int32_t) input_edges.size(); j++) {
             if (input_edges[j]->input_node->get_layer_type() == INPUT_LAYER) {
                 string output_parameter_name = n->parameter_name;
                 string input_parameter_name = input_edges[j]->input_node->parameter_name;
-                if (output_parameter_name.compare(input_parameter_name) == 0) { 
-                    input_edges[j]->weight = 1.0; 
+                if (output_parameter_name.compare(input_parameter_name) == 0) {
+                    input_edges[j]->weight = 1.0;
                 } else {
-                    input_edges[j]->weight = 0.0; 
-                }    
-            }    
-     
-        }    
+                    input_edges[j]->weight = 0.0;
+                }
+            }
+        }
         for (int32_t j = 0; j < (int32_t) input_recurrent_edges.size(); j++) {
-            input_recurrent_edges[j]->weight = 0.0; 
-        }    
+            input_recurrent_edges[j]->weight = 0.0;
+        }
     } else {
         for (int32_t j = 0; j < (int32_t) input_edges.size(); j++) {
-            input_edges[j]->weight = 1.0; 
-        }    
+            input_edges[j]->weight = 1.0;
+        }
         for (int32_t j = 0; j < (int32_t) input_recurrent_edges.size(); j++) {
-            input_recurrent_edges[j]->weight = 1.0; 
-        }    
-    }    
-
+            input_recurrent_edges[j]->weight = 1.0;
+        }
+    }
 }
 
 void RNN_Genome::initialize_gp_in_crossover(RNN_Node_Interface* n) {
@@ -4289,7 +4303,9 @@ void RNN_Genome::write_equations(ostream& outstream) {
                     } else if (output_node->node_type == MULTIPLY_NODE_GP) {
                         current_output_equation = to_string(0.0);
                     } else if (output_node->node_type == SUM_NODE || output_node->node_type == SUM_NODE_GP || output_node->node_type == OUTPUT_NODE_GP) {
-                        current_output_equation += " + " + input_equation;
+                        if (input_equation.compare("") != 0) {
+                            current_output_equation += " + " + input_equation;
+                        }
                     } else {
                         current_output_equation += " + " + input_equation + ")";
                     }
