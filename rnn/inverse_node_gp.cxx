@@ -25,55 +25,6 @@ double INVERSE_Node_GP::derivative_function(double input) {
     return gradient;
 }
 
-void INVERSE_Node_GP::input_fired(int32_t time, double incoming_output) {
-    inputs_fired[time]++;
-
-    input_values[time] += incoming_output;
-
-    if (inputs_fired[time] < total_inputs) {
-        return;
-    } else if (inputs_fired[time] > total_inputs) {
-        Log::fatal(
-            "ERROR: inputs_fired on RNN_Node %d at time %d is %d and total_inputs is %d\n", innovation_number, time,
-            inputs_fired[time], total_inputs
-        );
-        exit(1);
-    }
-
-    Log::debug("node %d - input value[%d]: %lf\n", innovation_number, time, input_values[time]);
-    // for gp nodes bias is added and trained only on sum and multiply node
-    this->bias = 0;
-    output_values[time] = activation_function(input_values[time]);
-    ld_output[time] = derivative_function(input_values[time]);
-
-#ifdef NAN_CHECKS
-    if (isnan(output_values[time]) || isinf(output_values[time])) {
-        Log::fatal(
-            "ERROR: output_value[%d] becaome %lf on RNN node: %d\n", time, output_values[time], innovation_number
-        );
-        Log::fatal("\tinput_value[%dd]: %lf\n", time, input_values[time]);
-        Log::Fatal("\tnode bias: %lf", bias);
-        exit(1);
-    }
-#endif
-}
-
-void INVERSE_Node_GP::try_update_deltas(int32_t time) {
-    if (outputs_fired[time] < total_outputs) {
-        return;
-    } else if (outputs_fired[time] > total_outputs) {
-        Log::fatal(
-            "ERROR: outputs_fired on RNN_Node %d at time %d is %d and total_outputs is %d\n", innovation_number, time,
-            outputs_fired[time], total_outputs
-        );
-        exit(1);
-    }
-
-    d_input[time] *= ld_output[time];
-    // gp bias only trains for sum and multiply nodes
-    this->d_bias = 0;
-}
-
 RNN_Node_Interface* INVERSE_Node_GP::copy() const {
     INVERSE_Node_GP* n = new INVERSE_Node_GP(innovation_number, layer_type, depth);
     // copy RNN_Node values

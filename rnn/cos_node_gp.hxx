@@ -16,9 +16,6 @@ class COS_Node_GP : public RNN_Node {
     virtual double activation_function(double input) override;
     virtual double derivative_function(double input) override;
 
-    virtual void input_fired(int32_t time, double incoming_output) override;
-    virtual void try_update_deltas(int32_t time) override;
-
     virtual RNN_Node_Interface* copy() const override;
 };
 

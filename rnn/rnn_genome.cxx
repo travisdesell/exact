@@ -2047,14 +2047,20 @@ bool RNN_Genome::enable_edge() {
     }
 
     int32_t position = (disabled_edges.size() + disabled_recurrent_edges.size()) * rng_0_1(generator);
-
+    WeightType weight_initialize = weight_rules->get_weight_initialize_method();
     if (position < (int32_t) disabled_edges.size()) {
         disabled_edges[position]->enabled = true;
+        if (weight_initialize == WeightType::GP){
+            disabled_edges[position]->weight = 1.0;
+        }
         // innovation_list.push_back(disabled_edges[position]->get_innovation_number);
         return true;
     } else {
         position -= disabled_edges.size();
         disabled_recurrent_edges[position]->enabled = true;
+        if (weight_initialize == WeightType::GP){
+            disabled_recurrent_edges[position]->weight = 1.0;
+        } 
         // innovation_list.push_back(disabled_recurrent_edges[position]->get_innovation_number);
         return true;
     }
