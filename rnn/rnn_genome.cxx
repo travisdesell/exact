@@ -655,22 +655,6 @@ void RNN_Genome::initialize_randomly() {
     this->set_weights(initial_parameters);
 }
 
-void RNN_Genome::initialize_randomly_gp_crossover() {
-    Log::trace("initializing genome %d of group %d randomly!\n", generation_id, group_id);
-    int32_t number_of_weights = get_number_weights();
-    initial_parameters.assign(number_of_weights, 0.0);
-    WeightType weight_initialize = weight_rules->get_weight_initialize_method();
-    if (weight_initialize == WeightType::GP) {
-        for (int32_t i = 0; i < (int32_t) nodes.size(); i++) {
-            initialize_gp_in_crossover(nodes[i]);
-        }
-        get_weights(initial_parameters);
-    }
-
-    this->set_best_parameters(initial_parameters);
-    this->set_weights(initial_parameters);
-}
-
 void RNN_Genome::initialize_xavier(RNN_Node_Interface* n) {
     vector<RNN_Edge*> input_edges;
     vector<RNN_Recurrent_Edge*> input_recurrent_edges;
@@ -742,40 +726,6 @@ void RNN_Genome::initialize_gp(RNN_Node_Interface* n) {
         for (int32_t j = 0; j < (int32_t) input_recurrent_edges.size(); j++) {
             input_recurrent_edges[j]->weight = 1.0;
         }
-    }
-}
-
-void RNN_Genome::initialize_gp_in_crossover(RNN_Node_Interface* n) {
-    vector<RNN_Edge*> input_edges;
-    vector<RNN_Recurrent_Edge*> input_recurrent_edges;
-    get_input_edges(n->innovation_number, input_edges, input_recurrent_edges);
-    int32_t fan_in = (int32_t) (input_edges.size() + input_recurrent_edges.size());
-    int32_t fan_out = get_fan_out(n->innovation_number);
-    int32_t sum = fan_in + fan_out;
-    if (sum <= 0) {
-        sum = 1;
-    }
-    double range = sqrt(6) / sqrt(sum);
-
-    if (n->get_layer_type() == OUTPUT_LAYER) {
-        for (int32_t j = 0; j < ((int32_t) input_edges.size() - 1); j++) {
-            input_edges[j]->weight = 0.0;
-        }
-        input_edges[input_edges.size() - 1]->weight = 1.0;
-        for (int32_t j = 0; j < (int32_t) input_recurrent_edges.size(); j++) {
-            input_recurrent_edges[j]->weight = 0;
-        }
-    } else {
-        for (int32_t j = 0; j < (int32_t) input_edges.size(); j++) {
-            input_edges[j]->weight = 1.0;
-        }
-        for (int32_t j = 0; j < (int32_t) input_recurrent_edges.size(); j++) {
-            input_recurrent_edges[j]->weight = 1.0;
-        }
-    }
-
-    if (n->node_type == MULTIPLY_NODE_GP || n->node_type == SUM_NODE_GP) {
-        n->initialize_xavier(generator, rng_1_1, range);
     }
 }
 
