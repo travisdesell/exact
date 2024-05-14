@@ -4373,7 +4373,9 @@ void RNN_Genome::write_equations(ostream& outstream) {
                         current_output_equation = to_string(0.0);
                     } else if (output_node->node_type == SUM_NODE || output_node->node_type == SUM_NODE_GP
                                || output_node->node_type == OUTPUT_NODE_GP) {
-                        current_output_equation += " + " + input_equation;
+                        if (input_equation.compare("") != 0) {
+                            current_output_equation += " + " + input_equation;
+                        }
                     } else {
                         current_output_equation += " + " + input_equation + ")";
                     }
