@@ -86,10 +86,8 @@ void MULTIPLY_Node_GP::try_update_deltas(int32_t time) {
         num *= d_input[time];
 
         // most likely gradient got huge, so clip it
-        if (num == NAN || num == -numeric_limits<double>::infinity()) {
-            num = -1000.0;
-        } else if (num == NAN || num == numeric_limits<double>::infinity()) {
-            num = 1000.0;
+        if (!isfinite(num)) {
+            num = copysign(1, num) * 1000;
         }
     }
 }

@@ -61,3 +61,25 @@ target_link_libraries(test_get_equations examm_strategy exact_common exact_time_
 add_executable(test_node_to_binary test_node_to_binary.cxx gradient_test.cxx)
 target_link_libraries(test_node_to_binary examm_strategy exact_common exact_time_series exact_weights examm_nn  ${MYSQL_LIBRARIES} pthread)
 
+add_executable(test_sin_gp_gradients test_sin_gp_gradients.cxx gradient_test.cxx)
+target_link_libraries(test_sin_gp_gradients examm_strategy exact_common exact_time_series exact_weights examm_nn  ${MYSQL_LIBRARIES} pthread)
+
+add_executable(test_sum_gp_gradients test_sum_gp_gradients.cxx gradient_test.cxx)
+target_link_libraries(test_sum_gp_gradients examm_strategy exact_common exact_time_series exact_weights examm_nn  ${MYSQL_LIBRARIES} pthread)
+
+add_executable(test_cos_gp_gradients test_cos_gp_gradients.cxx gradient_test.cxx)
+target_link_libraries(test_cos_gp_gradients examm_strategy exact_common exact_time_series exact_weights examm_nn  ${MYSQL_LIBRARIES} pthread)
+
+add_executable(test_tanh_gp_gradients test_tanh_gp_gradients.cxx gradient_test.cxx)
+target_link_libraries(test_tanh_gp_gradients examm_strategy exact_common exact_time_series exact_weights examm_nn  ${MYSQL_LIBRARIES} pthread)
+
+add_executable(test_sigmoid_gp_gradients test_sigmoid_gp_gradients.cxx gradient_test.cxx)
+target_link_libraries(test_sigmoid_gp_gradients examm_strategy exact_common exact_time_series exact_weights examm_nn  ${MYSQL_LIBRARIES} pthread)
+
+add_executable(test_inverse_gp_gradients test_inverse_gp_gradients.cxx gradient_test.cxx)
+target_link_libraries(test_inverse_gp_gradients examm_strategy exact_common exact_time_series exact_weights examm_nn  ${MYSQL_LIBRARIES} pthread)
+
+add_executable(test_multiply_gp_gradients test_multiply_gp_gradients.cxx gradient_test.cxx)
+target_link_libraries(test_multiply_gp_gradients examm_strategy exact_common exact_time_series exact_weights examm_nn  ${MYSQL_LIBRARIES} pthread)
+
+

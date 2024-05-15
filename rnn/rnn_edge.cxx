@@ -171,6 +171,8 @@ void RNN_Edge::propagate_backward(int32_t time) {
         delta = output_node->d_input[time];
     }
 
+    // WARNING: With this feature all gradient tests for these node types naturally fail.
+    //          This condition must be eliminated for tests to pass.
     if (output_node->node_type == OUTPUT_NODE_GP || output_node->node_type == SIN_NODE_GP
         || output_node->node_type == COS_NODE_GP || output_node->node_type == TANH_NODE_GP
         || output_node->node_type == SIGMOID_NODE_GP || output_node->node_type == SUM_NODE_GP
@@ -214,6 +216,8 @@ void RNN_Edge::propagate_backward(int32_t time, bool training, double dropout_pr
         }
     }
 
+    // WARNING: With this feature all gradient tests for these node types naturally fail.
+    //          This condition must be eliminated for tests to pass.
     if (output_node->node_type == OUTPUT_NODE_GP || output_node->node_type == SIN_NODE_GP
         || output_node->node_type == COS_NODE_GP || output_node->node_type == TANH_NODE_GP
         || output_node->node_type == SIGMOID_NODE_GP || output_node->node_type == SUM_NODE_GP

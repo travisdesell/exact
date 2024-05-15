@@ -221,6 +221,9 @@ void RNN_Recurrent_Edge::propagate_backward(int32_t time) {
     if (time - recurrent_depth >= 0) {
         // Log::trace("propagating backward on recurrent edge %d from time %d to time %d from node %d to node %d\n",
         // innovation_number, time, time - recurrent_depth, output_innovation_number, input_innovation_number);
+
+        // WARNING: With this feature all gradient tests for these node types naturally fail.
+        //          This condition must be eliminated for tests to pass.
         if (output_node->node_type == OUTPUT_NODE_GP || output_node->node_type == SIN_NODE_GP
             || output_node->node_type == COS_NODE_GP || output_node->node_type == TANH_NODE_GP
             || output_node->node_type == SIGMOID_NODE_GP || output_node->node_type == SUM_NODE_GP
@@ -229,6 +232,7 @@ void RNN_Recurrent_Edge::propagate_backward(int32_t time) {
         } else {
             d_weight += delta * input_node->output_values[time - recurrent_depth];
         }
+
         deltas[time] = delta * weight;
         input_node->output_fired(time - recurrent_depth, deltas[time]);
     }

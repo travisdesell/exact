@@ -921,7 +921,7 @@ RNN_Genome* EXAMM::crossover(RNN_Genome* p1, RNN_Genome* p2) {
     // method
     WeightType weight_initialize = weight_rules->get_weight_initialize_method();
     WeightType weight_inheritance = weight_rules->get_weight_inheritance_method();
-    if ((weight_inheritance == weight_initialize) && (weight_inheritance != WeightType::GP)) {
+    if (weight_inheritance == weight_initialize && weight_inheritance != WeightType::GP) {
         Log::debug(
             "weight inheritance at crossover method is %s, setting weights to %s randomly \n",
             WEIGHT_TYPES_STRING[weight_inheritance].c_str(), WEIGHT_TYPES_STRING[weight_inheritance].c_str()
