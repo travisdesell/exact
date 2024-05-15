@@ -59,7 +59,7 @@ void MULTIPLY_Node_GP::input_fired(int32_t time, double incoming_output) {
     }
 
 #ifdef NAN_CHECKS
-    if (isnan(output_values[time]) || isinf(output_values[time])) {
+    if (!isfinite(output_values[time])) {
         Log::fatal(
             "ERROR: output_value[%d] becaome %lf on RNN node: %d\n", time, output_values[time], innovation_number
         );
