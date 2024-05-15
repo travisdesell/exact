@@ -60,6 +60,8 @@ class RNN_Recurrent_Edge {
     int32_t get_input_innovation_number() const;
     int32_t get_output_innovation_number() const;
 
+    void set_weight(double weight);
+
     const RNN_Node_Interface* get_input_node() const;
     const RNN_Node_Interface* get_output_node() const;
 

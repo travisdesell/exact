@@ -133,6 +133,10 @@ int32_t RNN_Recurrent_Edge::get_output_innovation_number() const {
     return output_innovation_number;
 }
 
+void RNN_Recurrent_Edge::set_weight(double weight) {
+    this->weight = weight;
+}
+
 const RNN_Node_Interface* RNN_Recurrent_Edge::get_input_node() const {
     return input_node;
 }
@@ -186,7 +190,7 @@ void RNN_Recurrent_Edge::propagate_backward(int32_t time) {
         // if (output_node->innovation_number == input_node->innovation_number) {
         // circular recurrent edge
 
-        /*j
+        /*
         if (output_node->outputs_fired[time] != (output_node->total_outputs - 1)) {
             Log::fatal("ERROR! propagate backward called on recurrent edge %d where output_node->outputs_fired[%d] (%d)
         != total_outputs (%d)\n", innovation_number, time, output_node->outputs_fired[time],
@@ -209,7 +213,7 @@ void RNN_Recurrent_Edge::propagate_backward(int32_t time) {
         //}
     }
     double delta;
-    if (output_node->node_type == MULTIPLY_NODE) {
+    if (output_node->node_type == MULTIPLY_NODE || output_node->node_type == MULTIPLY_NODE_GP) {
         delta = output_node->ordered_d_input[time][input_number[time] - 1];
     } else {
         delta = output_node->d_input[time];
@@ -218,7 +222,17 @@ void RNN_Recurrent_Edge::propagate_backward(int32_t time) {
         // Log::trace("propagating backward on recurrent edge %d from time %d to time %d from node %d to node %d\n",
         // innovation_number, time, time - recurrent_depth, output_innovation_number, input_innovation_number);
 
-        d_weight += delta * input_node->output_values[time - recurrent_depth];
+        // WARNING: With this feature all gradient tests for these node types naturally fail.
+        //          This condition must be eliminated for tests to pass.
+        if (output_node->node_type == OUTPUT_NODE_GP || output_node->node_type == SIN_NODE_GP
+            || output_node->node_type == COS_NODE_GP || output_node->node_type == TANH_NODE_GP
+            || output_node->node_type == SIGMOID_NODE_GP || output_node->node_type == SUM_NODE_GP
+            || output_node->node_type == MULTIPLY_NODE_GP || output_node->node_type == INVERSE_NODE_GP) {
+            d_weight = 0.0;
+        } else {
+            d_weight += delta * input_node->output_values[time - recurrent_depth];
+        }
+
         deltas[time] = delta * weight;
         input_node->output_fired(time - recurrent_depth, deltas[time]);
     }

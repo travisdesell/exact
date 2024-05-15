@@ -53,6 +53,20 @@ RNN_Node_Interface* create_hidden_node(int32_t node_kind, int32_t& innovation_co
             return new INVERSE_Node(++innovation_counter, HIDDEN_LAYER, depth);
         case MULTIPLY_NODE:
             return new MULTIPLY_Node(++innovation_counter, HIDDEN_LAYER, depth);
+        case SIN_NODE_GP:
+            return new SIN_Node_GP(++innovation_counter, HIDDEN_LAYER, depth);
+        case COS_NODE_GP:
+            return new COS_Node_GP(++innovation_counter, HIDDEN_LAYER, depth);
+        case TANH_NODE_GP:
+            return new TANH_Node_GP(++innovation_counter, HIDDEN_LAYER, depth);
+        case SIGMOID_NODE_GP:
+            return new SIGMOID_Node_GP(++innovation_counter, HIDDEN_LAYER, depth);
+        case INVERSE_NODE_GP:
+            return new INVERSE_Node_GP(++innovation_counter, HIDDEN_LAYER, depth);
+        case MULTIPLY_NODE_GP:
+            return new MULTIPLY_Node_GP(++innovation_counter, HIDDEN_LAYER, depth);
+        case SUM_NODE_GP:
+            return new SUM_Node_GP(++innovation_counter, HIDDEN_LAYER, depth);
         default:
             Log::fatal(
                 "If you are seeing this, an invalid node_kind was used to create a node (node_kind = %d\n", node_kind
@@ -101,8 +115,16 @@ RNN_Genome* create_nn(
     int32_t current_layer = 0;
 
     for (int32_t i = 0; i < (int32_t) input_parameter_names.size(); i++) {
-        RNN_Node* node =
-            new RNN_Node(++node_innovation_count, INPUT_LAYER, current_layer, SIMPLE_NODE, input_parameter_names[i]);
+        RNN_Node* node;
+        if (weight_rules->get_weight_initialize_method() == WeightType::GP) {
+            node = new RNN_Node(
+                ++node_innovation_count, INPUT_LAYER, current_layer, INPUT_NODE_GP, input_parameter_names[i]
+            );
+        } else {
+            node = new RNN_Node(
+                ++node_innovation_count, INPUT_LAYER, current_layer, SIMPLE_NODE, input_parameter_names[i]
+            );
+        }
         rnn_nodes.push_back(node);
         layer_nodes[current_layer].push_back(node);
     }
@@ -128,8 +150,16 @@ RNN_Genome* create_nn(
     }
 
     for (int32_t i = 0; i < (int32_t) output_parameter_names.size(); i++) {
-        RNN_Node* output_node =
-            new RNN_Node(++node_innovation_count, OUTPUT_LAYER, current_layer, SIMPLE_NODE, output_parameter_names[i]);
+        RNN_Node* output_node;
+        if (weight_rules->get_weight_initialize_method() == WeightType::GP) {
+            output_node = new RNN_Node(
+                ++node_innovation_count, OUTPUT_LAYER, current_layer, OUTPUT_NODE_GP, output_parameter_names[i]
+            );
+        } else {
+            output_node = new RNN_Node(
+                ++node_innovation_count, OUTPUT_LAYER, current_layer, SIMPLE_NODE, output_parameter_names[i]
+            );
+        }
         rnn_nodes.push_back(output_node);
 
         for (int32_t k = 0; k < (int32_t) layer_nodes[current_layer - 1].size(); k++) {
