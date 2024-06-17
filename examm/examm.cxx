@@ -275,6 +275,8 @@ bool EXAMM::insert_genome(RNN_Genome* genome) {
             save_genome(genome, "rnn_genome");
             Log::info("saved genome!");
         }
+    } else if (save_genome_option.compare("all") == 0) {
+        save_genome(genome, "rnn_genome");
     }
     Log::info("save genome complete\n");
 

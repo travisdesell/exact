@@ -22,8 +22,28 @@ unique_ptr<AnnealingPolicy> AnnealingPolicy::from_arguments(const vector<string>
     }
 }
 
-double AnnealingPolicy::operator()(int32_t genome_number) {
+double AnnealingPolicy::get_temperature(int32_t genome_number) {
     return 0.0;
+}
+
+double AnnealingPolicy::operator()(int32_t genome_number, double population_worst_cost, double candidate_cost) {
+    double temperature = get_temperature(genome_number);
+
+    if (fpclassify(temperature) == FP_ZERO || temperature < 0) {
+        return 0.0;
+    }
+
+    if (population_worst_cost > candidate_cost)
+        return 1.0;
+   
+    population_worst_cost = sqrt(population_worst_cost);
+    candidate_cost = sqrt(candidate_cost);
+
+    double denom = population_worst_cost + candidate_cost;
+    double relative_cost = population_worst_cost / denom - candidate_cost / denom;
+
+    // exp((eworst - ecandidate) / T)
+    double de = exp(-(candidate_cost / (population_worst_cost * temperature)));
 }
 
 LinearAnnealingPolicy::LinearAnnealingPolicy(
@@ -39,7 +59,7 @@ LinearAnnealingPolicy::LinearAnnealingPolicy(const vector<string>& arguments) {
     get_argument(arguments, "--linear_interp_genomes", true, interp_genomes);
 }
 
-double LinearAnnealingPolicy::operator()(int32_t genome_number) {
+double LinearAnnealingPolicy::get_temperature(int32_t genome_number) {
     if (genome_number <= start_genomes) {
         return start_value;
     } else if (genome_number <= interp_genomes + start_genomes) {
@@ -56,7 +76,7 @@ InvExpAnnealingPolicy::InvExpAnnealingPolicy(const vector<string>& arguments) {
     get_argument(arguments, "--exp_decay_factor", true, decay_factor);
 }
 
-double InvExpAnnealingPolicy::operator()(int32_t genome_number) {
+double InvExpAnnealingPolicy::get_temperature(int32_t genome_number) {
     return std::pow(1. + genome_number, -decay_factor);
 }
 
@@ -79,7 +99,7 @@ SinAnnealingPolicy::SinAnnealingPolicy(const vector<string>& arguments) {
     get_argument(arguments, "--sin_period", true, period);
 }
 
-double SinAnnealingPolicy::operator()(int32_t genome_number) {
+double SinAnnealingPolicy::get_temperature(int32_t genome_number) {
     double range = max_p - min_p;
 
     return (max_p + min_p) / 2. + range / 2. * std::sin(2. * M_PI * genome_number / period);

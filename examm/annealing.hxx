@@ -17,7 +17,9 @@ struct AnnealingPolicy {
      * This represents the probability of inserting the genome, even if it
      * has a fitness value that is worse than the worst member in the population.
      */
-    virtual double operator()(int32_t genome_number);
+    virtual double get_temperature(int32_t genome_number);
+
+    double operator()(int32_t genome_number, double population_worst_cost, double candidate_cost);
 };
 
 /**
@@ -34,7 +36,7 @@ class LinearAnnealingPolicy : public AnnealingPolicy {
     LinearAnnealingPolicy(double start_value, double end_value, int32_t start_genomes, int32_t interp_genomes);
     LinearAnnealingPolicy(const vector<string>& arguments);
 
-    virtual double operator()(int32_t genome_number);
+    double get_temperature(int32_t genome_number) override;
 };
 
 /**
@@ -47,7 +49,7 @@ class InvExpAnnealingPolicy : public AnnealingPolicy {
     InvExpAnnealingPolicy(double decay_factor);
     InvExpAnnealingPolicy(const vector<string>& arguments);
 
-    virtual double operator()(int32_t genome_number);
+    double get_temperature(int32_t genome_number) override;
 };
 
 /**
@@ -61,5 +63,5 @@ class SinAnnealingPolicy : public AnnealingPolicy {
     SinAnnealingPolicy(double period, double min_p, double max_p);
     SinAnnealingPolicy(const vector<string>& arguments);
 
-    virtual double operator()(int32_t genome_number);
+    double get_temperature(int32_t genome_number) override;
 };
