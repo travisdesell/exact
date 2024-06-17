@@ -116,19 +116,8 @@ int main(int argc, char** argv) {
 
     if (genome_file.size() != 0) {
         genome = new RNN_Genome(genome_file);
-        Log::info("best weights: { ");
-        for (double& d : genome->get_best_parameters()) {
-            Log::info_no_header("%f, ", d);
-        }
-        Log::info("}\n");
-
-        vector<double> params;
-        genome->get_weights(params);
-        Log::info("current weights: { ");
-        for (double& d : params) {
-            Log::info_no_header("%f, ", d);
-        }
-        Log::info("}\n");
+        genome->set_weights(genome->get_best_parameters());
+        Log::info("Number of weights = %d\n", genome->get_number_weights());
     } else {
         string rnn_type;
         get_argument(arguments, "--rnn_type", true, rnn_type);
@@ -221,6 +210,9 @@ int main(int argc, char** argv) {
         get_argument(arguments, "--log_filename", true, log_filename);
         genome->set_log_filename(output_directory + "/" + log_filename);
     }
+
+    string output_genome_name = "output_genome.bin";
+    get_argument(arguments, "--output_genome_name", false, output_genome_name);
 
     genome->set_parameter_names(
         time_series_sets->get_input_parameter_names(), time_series_sets->get_output_parameter_names()

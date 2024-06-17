@@ -97,8 +97,9 @@ void EXAMM::generate_log() {
         mkpath(output_directory.c_str(), 0777);
         log_file = new ofstream(output_directory + "/" + "fitness_log.csv");
         (*log_file
-        ) << "Inserted Genomes,Total BP Epochs,Time,Best Val. MAE,Best Val. MSE,Enabled Nodes,Enabled"
-             "Edges,Enabled Rec. Edges,Val. MSE,Pre-Insert MSE,Genome Inserted,Trainable Parameters,Island Id";
+        ) << "Inserted Genomes,Total BP Epochs,Time,Best Val. MAE,Best Val. MSE,Trainable Parameters,Enabled "
+             "Nodes,Enabled"
+             "Edges,Enabled Rec. Edges,Val. MSE,Pre-Insert MSE,Genome Inserted,Genome Trainable Parameters,Island Id";
         (*log_file) << speciation_strategy->get_strategy_information_headers();
         (*log_file) << endl;
 
@@ -194,11 +195,12 @@ void EXAMM::update_log(RNN_Genome* genome) {
         long milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(currentClock - startClock).count();
         (*log_file) << speciation_strategy->get_evaluated_genomes() << "," << total_bp_epochs << "," << milliseconds
                     << "," << best_genome->best_validation_mae << "," << best_genome->best_validation_mse << ","
-                    << best_genome->get_enabled_node_count() << "," << best_genome->get_enabled_edge_count() << ","
-                    << best_genome->get_enabled_recurrent_edge_count() << "," << genome->best_validation_mse << ","
-                    << pre_insert_best_mse << "," << (int32_t) (last_genome_inserted ? 1 : 0) << ","
-                    << genome->get_number_weights() << "," << genome->get_generation_id()
-                    << speciation_strategy->get_strategy_information_values(genome) << endl;
+                    << best_genome->get_number_weights() << "," << best_genome->get_enabled_node_count() << ","
+                    << best_genome->get_enabled_edge_count() << "," << best_genome->get_enabled_recurrent_edge_count()
+                    << "," << genome->best_validation_mse << "," << pre_insert_best_mse << ","
+                    << (int32_t) (last_genome_inserted ? 1 : 0) << "," << genome->get_number_weights() << ","
+                    << genome->get_generation_id() << speciation_strategy->get_strategy_information_values(genome)
+                    << endl;
         Log::info(
             "mse: %f node count: %d edge count: %d rec edges: %d\n", best_genome->best_validation_mse,
             best_genome->get_enabled_node_count(), best_genome->get_enabled_edge_count(),
@@ -263,16 +265,18 @@ bool EXAMM::insert_genome(RNN_Genome* genome) {
 
     // write this genome to disk if it was a new best found genome
     if (save_genome_option.compare("all_best_genomes") == 0) {
-        Log::info("save genome option compared, save genome option size: %d!\n", save_genome_option.size());
-        for (int i = 0; i < 20 && i < save_genome_option.size(); i++) {
-            cout << "save_genome_option[" << i << "]: " << save_genome_option[i] << endl;
-        }
+        // Log::info("save genome option compared, save genome option size: %d!\n", save_genome_option.size());
+        // for (int i = 0; i < 20 && i < save_genome_option.size(); i++) {
+        //     cout << "save_genome_option[" << i << "]: " << save_genome_option[i] << endl;
+        // }
 
         if (insert_position == 0) {
             Log::info("saving genome!");
             save_genome(genome, "rnn_genome");
             Log::info("saved genome!");
         }
+    } else if (save_genome_option.compare("all") == 0) {
+        save_genome(genome, "rnn_genome");
     }
     Log::info("save genome complete\n");
 
@@ -288,6 +292,14 @@ bool EXAMM::insert_genome(RNN_Genome* genome) {
 
 // write function to save genomes to file
 void EXAMM::save_genome(RNN_Genome* genome, string genome_name = "rnn_genome") {
+    if (genome->get_fitness() != EXAMM_MAX_DOUBLE) {
+        // need to set the weights for non-initial genomes so we
+        // can generate a proper graphviz file
+        vector<double> best_parameters = genome->get_best_parameters();
+        genome->set_weights(best_parameters);
+        Log::info("set genome parameters to best\n");
+    }
+
     genome->write_graphviz(output_directory + "/" + genome_name + "_" + to_string(genome->get_generation_id()) + ".gv");
     ofstream equations_filestream(
         output_directory + "/" + genome_name + "_" + to_string(genome->get_generation_id()) + ".txt"

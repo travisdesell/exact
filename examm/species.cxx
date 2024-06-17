@@ -130,12 +130,6 @@ int32_t Species::insert_genome(RNN_Genome* genome) {
     if (insert_index == 0) {
         // this was a new best genome for this island
         Log::info("new best fitness for island: %d!\n", id);
-        if (genome->get_fitness() != EXAMM_MAX_DOUBLE) {
-            // need to set the weights for non-initial genomes so we
-            // can generate a proper graphviz file
-            vector<double> best_parameters = genome->get_best_parameters();
-            genome->set_weights(best_parameters);
-        }
         species_not_improving_count = 0;
     } else {
         species_not_improving_count++;

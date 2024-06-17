@@ -70,7 +70,7 @@ class EXAMM {
     map<string, int32_t> inserted_counts;
     map<string, int32_t> generated_counts;
 
-    string output_directory;
+    const string output_directory;
     ofstream* log_file;
     ofstream* op_log_file;
     double pre_insert_best_mse = 1000000;
@@ -78,8 +78,7 @@ class EXAMM {
 
     std::chrono::time_point<std::chrono::system_clock> startClock;
 
-    string genome_file_name;
-    string save_genome_option;
+    const string save_genome_option;
 
    public:
     EXAMM(
