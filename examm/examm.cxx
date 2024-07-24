@@ -252,20 +252,12 @@ bool EXAMM::insert_genome(RNN_Genome* genome) {
     // write this genome to disk if it was a new best found genome
     if (save_genome_option.compare("all_best_genomes") == 0) {
         Log::info("save genome option compared, save genome option size: %d!\n", save_genome_option.size());
-        for (int i = 0; i < 20 && i < save_genome_option.size(); i++) {
-            cout << "save_genome_option[" << i << "]: " << save_genome_option[i] << endl;
-        }
 
         if (insert_position == 0) {
-            Log::info("saving genome!");
             save_genome(genome, "rnn_genome");
-            Log::info("saved genome!");
         }
     }
     Log::info("save genome complete\n");
-
-    speciation_strategy->print();
-    Log::info("printed speciation strategy!\n\n");
 
     update_op_log_statistics(genome, insert_position);
     update_log();

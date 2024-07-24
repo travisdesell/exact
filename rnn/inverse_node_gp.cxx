@@ -19,7 +19,7 @@ double INVERSE_Node_GP::activation_function(double input) {
 
 double INVERSE_Node_GP::derivative_function(double input) {
     double gradient = -1.0 / ((input) * (input));
-    if (isnan(gradient) || isinf(gradient)) {
+    if (std::isnan(gradient) || std::isinf(gradient)) {
         gradient = -1000.0;
     }
     return gradient;

@@ -59,7 +59,7 @@ void MULTIPLY_Node_GP::input_fired(int32_t time, double incoming_output) {
     }
 
 #ifdef NAN_CHECKS
-    if (!isfinite(output_values[time])) {
+    if (!std::isfinite(output_values[time])) {
         Log::fatal(
             "ERROR: output_value[%d] becaome %lf on RNN node: %d\n", time, output_values[time], innovation_number
         );
@@ -86,7 +86,7 @@ void MULTIPLY_Node_GP::try_update_deltas(int32_t time) {
         num *= d_input[time];
 
         // most likely gradient got huge, so clip it
-        if (!isfinite(num)) {
+        if (!std::isfinite(num)) {
             num = copysign(1, num) * 1000;
         }
     }
