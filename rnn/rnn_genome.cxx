@@ -3300,7 +3300,7 @@ RNN_Node_Interface* RNN_Genome::read_node_from_stream(istream& bin_istream) {
         bin_istream.read((char*) &pi[0], sizeof(double) * n_nodes);
 
         vector<RNN_Node_Interface*> nodes(n_nodes, nullptr);
-        for (int i = 0; i < n_nodes; i++) {
+        for (int32_t i = 0; i < n_nodes; i++) {
             nodes[i] = RNN_Genome::read_node_from_stream(bin_istream);
         }
 
@@ -4171,8 +4171,8 @@ void RNN_Genome::write_equations(ostream& outstream) {
     unordered_map<int32_t, string> innovation_to_label;
     unordered_map<int32_t, string> innovation_to_equation;
     unordered_map<int32_t, int32_t> innovation_to_inputs_fired;
-    int count = 0;
-    for (int i = 0; i < nodes.size(); i++) {
+    int32_t count = 0;
+    for (int32_t i = 0; i < (int32_t) nodes.size(); i++) {
         if (nodes[i]->layer_type == HIDDEN_LAYER && nodes[i]->is_reachable()) {
             string label = "H" + to_string(count);
             innovation_to_label.emplace(nodes[i]->innovation_number, label);
@@ -4185,7 +4185,7 @@ void RNN_Genome::write_equations(ostream& outstream) {
     }
 
     sort_edges_by_depth();
-    for (int i = 0; i < edges.size(); i++) {
+    for (int32_t i = 0; i < (int32_t) edges.size(); i++) {
         if (edges[i]->is_reachable()) {
             RNN_Node_Interface* input_node = edges[i]->input_node;
             RNN_Node_Interface* output_node = edges[i]->output_node;
@@ -4301,7 +4301,7 @@ void RNN_Genome::write_equations(ostream& outstream) {
     }
 
     sort_recurrent_edges_by_depth();
-    for (int i = 0; i < recurrent_edges.size(); i++) {
+    for (int32_t i = 0; i < (int32_t) recurrent_edges.size(); i++) {
         if (recurrent_edges[i]->is_reachable()) {
             RNN_Node_Interface* input_node = recurrent_edges[i]->input_node;
             RNN_Node_Interface* output_node = recurrent_edges[i]->output_node;
@@ -4418,7 +4418,7 @@ void RNN_Genome::write_equations(ostream& outstream) {
         }
     }
 
-    for (int i = 0; i < nodes.size(); i++) {
+    for (int32_t i = 0; i < (int32_t) nodes.size(); i++) {
         if (nodes[i]->layer_type == HIDDEN_LAYER && nodes[i]->is_reachable()) {
             string output = innovation_to_label[nodes[i]->innovation_number] + " = "
                             + innovation_to_equation[nodes[i]->innovation_number];
