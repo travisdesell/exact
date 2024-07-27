@@ -17,6 +17,7 @@ using std::string;
 #include "examm.hxx"
 #include "island_speciation_strategy.hxx"
 #include "rnn/rnn_genome.hxx"
+#include "weights/weight_update.hxx"
 
 /**
  *
@@ -124,6 +125,36 @@ RNN_Genome* IslandSpeciationStrategy::get_worst_genome() {
     } else {
         return islands[worst_genome_island]->get_worst_genome();
     }
+}
+
+double IslandSpeciationStrategy::get_min_learning_rate() {
+    double min_learning_rate = 1.0;
+
+    for (int32_t i = 0; i < (int32_t) islands.size(); i++) {
+        if (islands[i]->size() > 0) {
+            double island_min_learning_rate = islands[i]->get_min_learning_rate();
+            if (island_min_learning_rate < min_learning_rate) {
+                min_learning_rate = island_min_learning_rate;
+            }
+        }
+    }
+
+    return min_learning_rate;
+}
+
+double IslandSpeciationStrategy::get_max_learning_rate() {
+    double max_learning_rate = 0.0;
+
+    for (int32_t i = 0; i < (int32_t) islands.size(); i++) {
+        if (islands[i]->size() > 0) {
+            double island_max_learning_rate = islands[i]->get_max_learning_rate();
+            if (island_max_learning_rate > max_learning_rate) {
+                max_learning_rate = island_max_learning_rate;
+            }
+        }
+    }
+
+    return max_learning_rate;
 }
 
 double IslandSpeciationStrategy::get_best_fitness() {
@@ -363,18 +394,74 @@ RNN_Genome* IslandSpeciationStrategy::generate_genome(
     Log::debug("getting island: %d\n", generation_island);
     Island* current_island = islands[generation_island];
     RNN_Genome* new_genome = NULL;
+    double tuned_learning_rate;
+    double tuned_epsilon;
+    double tuned_beta1;
+    double tuned_beta2;
+
+    WeightUpdate* weight_update_method;
+    weight_update_method = new WeightUpdate();
 
     if (current_island->is_initializing()) {
         // islands could start with full of mutated seed genomes, it can be used with or without transfer learning
         new_genome = generate_for_initializing_island(rng_0_1, generator, mutate);
+        Log::debug("AT: SHO is used = %s\n",WeightUpdate::use_SHO?"true":"false");
+        if (WeightUpdate::use_SHO) {
+            tuned_learning_rate = weight_update_method->generate_initial_learning_rate();
+            tuned_epsilon = weight_update_method->generate_initial_epsilon();
+            tuned_beta1 = weight_update_method->generate_initial_beta1();
+            tuned_beta2 = weight_update_method->generate_initial_beta2();
+            new_genome->set_learning_rate(tuned_learning_rate);
+            new_genome->set_epsilon(tuned_epsilon);
+            new_genome->set_beta1(tuned_beta1);
+            new_genome->set_beta2(tuned_beta2);
+            Log::debug("AT: Speciation strategy genome Learning Rate after set = %lg\n",new_genome->get_learning_rate());
+            Log::debug("AT: Speciation strategy genome epsilon after set = %lg\n",new_genome->get_epsilon());
+            Log::debug("AT: Speciation strategy genome beta1 after set = %lg\n",new_genome->get_beta1());
+            Log::debug("AT: Speciation strategy genome beta2 after set = %lg\n",new_genome->get_beta2());
+        }
     } else if (current_island->is_full()) {
+        Log::debug("AT: Speciation strategy island full\n");
         new_genome = generate_for_filled_island(rng_0_1, generator, mutate, crossover);
     } else if (current_island->is_repopulating()) {
         new_genome = generate_for_repopulating_island(rng_0_1, generator, mutate, crossover);
+        Log::debug("AT: SHO is used = %s\n",WeightUpdate::use_SHO?"true":"false");
+        if (WeightUpdate::use_SHO) {
+            
+            tuned_learning_rate = weight_update_method->generate_initial_learning_rate();
+            tuned_epsilon = weight_update_method->generate_initial_epsilon();
+            tuned_beta1 = weight_update_method->generate_initial_beta1();
+            tuned_beta2 = weight_update_method->generate_initial_beta2();
+            new_genome->set_learning_rate(tuned_learning_rate);
+            new_genome->set_epsilon(tuned_epsilon);
+            new_genome->set_beta1(tuned_beta1);
+            new_genome->set_beta2(tuned_beta2);
+            Log::debug("AT: Speciation strategy is_repopulating Learning Rate after set = %lg\n",new_genome->get_learning_rate());
+            Log::debug("AT: Speciation strategy is_repopulating epsilon after set = %lg\n",new_genome->get_epsilon());
+            Log::debug("AT: Speciation strategy is_repopulating beta1 after set = %lg\n",new_genome->get_beta1());
+            Log::debug("AT: Speciation strategy is_repopulating beta2 after set = %lg\n",new_genome->get_beta2());
+        }
     }
     if (new_genome == NULL) {
         Log::info("Island %d: new genome is still null, regenerating\n", generation_island);
         new_genome = generate_genome(rng_0_1, generator, mutate, crossover);
+        Log::debug("AT: SHO is used = %s\n",WeightUpdate::use_SHO?"true":"false");
+        if (WeightUpdate::use_SHO) {
+            
+            tuned_learning_rate = weight_update_method->generate_initial_learning_rate();
+            tuned_epsilon = weight_update_method->generate_initial_epsilon();
+            tuned_beta1 = weight_update_method->generate_initial_beta1();
+            tuned_beta2 = weight_update_method->generate_initial_beta2();
+            new_genome->set_learning_rate(tuned_learning_rate);
+            new_genome->set_epsilon(tuned_epsilon);
+            new_genome->set_beta1(tuned_beta1);
+            new_genome->set_beta2(tuned_beta2);
+            Log::debug("AT: Speciation strategy null Learning Rate after set = %lg\n",new_genome->get_learning_rate());
+            Log::debug("AT: Speciation strategy null epsilon after set = %lg\n",new_genome->get_epsilon());
+            Log::debug("AT: Speciation strategy null beta1 after set = %lg\n",new_genome->get_beta1());
+            Log::debug("AT: Speciation strategy null beta2 after set = %lg\n",new_genome->get_beta2());
+
+        }
     }
     generated_genomes++;
     new_genome->set_generation_id(generated_genomes);
@@ -385,6 +472,11 @@ RNN_Genome* IslandSpeciationStrategy::generate_genome(
         RNN_Genome* genome_copy = new_genome->copy();
         Log::debug("inserting genome copy!\n");
         insert_genome(genome_copy);
+        Log::debug("AT: Speciation strategy genome_copy Learning Rate after insert_genome = %lg\n",genome_copy->get_learning_rate());
+        Log::debug("AT: Speciation strategy genome_copy epsilon after insert_genome = %lg\n",new_genome->get_epsilon());
+        Log::debug("AT: Speciation strategy genome_copy beta1 after insert_genome = %lg\n",new_genome->get_beta1());
+        Log::debug("AT: Speciation strategy genome_copy beta2 after insert_genome = %lg\n",new_genome->get_beta2());
+
     }
     generation_island++;
     if (generation_island >= (int32_t) islands.size()) {
@@ -590,4 +682,16 @@ void IslandSpeciationStrategy::save_entire_population(string output_path) {
     for (int32_t i = 0; i < (int32_t) islands.size(); i++) {
         islands[i]->save_population(output_path);
     }
+}
+
+int32_t IslandSpeciationStrategy::get_islands_size() const {
+    return islands.size();
+}
+
+Island* IslandSpeciationStrategy::get_island_at_index(int32_t index) const {
+    return islands[index];
+}
+
+int32_t IslandSpeciationStrategy::get_generation_island() const {
+    return generation_island;
 }

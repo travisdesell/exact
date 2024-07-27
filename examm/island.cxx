@@ -71,6 +71,32 @@ double Island::get_worst_fitness() {
     }
 }
 
+double Island::get_min_learning_rate() {
+    double min_learning_rate = 1.0;
+    if (genomes.size() > 0) {
+        for (int32_t i = 0; i < (int32_t) genomes.size(); i++) {
+            double genome_learning_rate = genomes[i]->get_learning_rate();
+            if (genome_learning_rate < min_learning_rate) {
+                min_learning_rate = genome_learning_rate;
+            }
+        }
+    }
+    return min_learning_rate;
+}
+
+double Island::get_max_learning_rate() {
+    double max_learning_rate = 0.0;
+    if (genomes.size() > 0) {
+        for (int32_t i = 0; i < (int32_t) genomes.size(); i++) {
+            double genome_learning_rate = genomes[i]->get_learning_rate();
+            if (genome_learning_rate > max_learning_rate) {
+                max_learning_rate = genome_learning_rate;
+            }
+        }
+    }
+    return max_learning_rate;
+}
+
 int32_t Island::get_max_size() {
     return (int32_t) max_size;
 }
@@ -471,4 +497,9 @@ void Island::save_population(string output_path) {
         genome->write_graphviz(output_path + "/island_" + to_string(id) + "_genome_" + to_string(i) + ".gv");
         genome->write_to_file(output_path + "/island_" + to_string(id) + "_genome_" + to_string(i) + ".bin");
     }
+}
+
+RNN_Genome* Island::get_genome_at(int32_t _index) {
+    if (genomes.size() == 0)  return NULL;
+    else return genomes[_index];
 }

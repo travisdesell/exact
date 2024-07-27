@@ -8,6 +8,7 @@ GenomeProperty::GenomeProperty() {
     dropout_probability = 0.0;
     min_recurrent_depth = 1;
     max_recurrent_depth = 10;
+    simplex_count = 6;
 }
 
 void GenomeProperty::generate_genome_property_from_arguments(const vector<string>& arguments) {
@@ -17,6 +18,9 @@ void GenomeProperty::generate_genome_property_from_arguments(const vector<string
     get_argument(arguments, "--min_recurrent_depth", false, min_recurrent_depth);
     get_argument(arguments, "--max_recurrent_depth", false, max_recurrent_depth);
 
+    get_argument(arguments, "--simplex_count", false, simplex_count);
+    Log::debug("AT: Read Simplex Count in Genome Property = %d\n",simplex_count);
+    
     Log::info("Each generated genome is trained for %d epochs\n", bp_iterations);
     Log::info(
         "Use dropout is set to %s, dropout probability is %f\n", use_dropout ? "True" : "False", dropout_probability
@@ -48,4 +52,8 @@ void GenomeProperty::get_time_series_parameters(TimeSeriesSets* time_series_sets
 
 uniform_int_distribution<int32_t> GenomeProperty::get_recurrent_depth_dist() {
     return uniform_int_distribution<int32_t>(this->min_recurrent_depth, this->max_recurrent_depth);
+}
+
+int32_t GenomeProperty::get_simplex_count() {
+    return simplex_count;
 }
