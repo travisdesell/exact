@@ -1908,11 +1908,10 @@ bool RNN_Genome::add_edge(double mu, double sigma, int32_t& edge_innovation_coun
         }
     }
 
-    /*
-        if (reachable_nodes.size() == 0) {
-            return false;
-        }
-    */
+    if (reachable_nodes.size() == 0) {
+        return false;
+    }
+
     Log::info("\treachable_nodes.size(): %d\n", reachable_nodes.size());
 
     int32_t position = rng_0_1(generator) * reachable_nodes.size();
@@ -2015,7 +2014,7 @@ bool RNN_Genome::disable_edge() {
     if (position < (int32_t) enabled_edges.size()) {
         enabled_edges[position]->enabled = false;
         // innovation_list.erase(std::remove(innovation_list.begin(), innovation_list.end(),
-        // enabled_edges[position]->get_innovation_number()), innovation_list.end());
+        // enabled_edges[position]->get_innovation_number()), innovation_list.end());move
         return true;
     } else {
         position -= enabled_edges.size();
@@ -3304,7 +3303,7 @@ RNN_Node_Interface* RNN_Genome::read_node_from_stream(istream& bin_istream) {
             nodes[i] = RNN_Genome::read_node_from_stream(bin_istream);
         }
 
-        DNASNode* dnas_node = new DNASNode(move(nodes), innovation_number, layer_type, depth, counter);
+        DNASNode* dnas_node = new DNASNode(std::move(nodes), innovation_number, layer_type, depth, counter);
         dnas_node->set_pi(pi);
         node = (RNN_Node_Interface*) dnas_node;
     } else if (node_type == SIN_NODE) {

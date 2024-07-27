@@ -921,7 +921,7 @@ double TimeSeriesSets::denormalize(string field_name, double value) {
 }
 
 void TimeSeriesSets::normalize_min_max() {
-    Log::info("doing min/max normalization:\n");
+    Log::info("Doing min/max normalization:\n");
 
     for (int32_t i = 0; i < (int32_t) all_parameter_names.size(); i++) {
         string parameter_name = all_parameter_names[i];
@@ -1007,7 +1007,7 @@ void TimeSeriesSets::normalize_min_max(
 }
 
 void TimeSeriesSets::normalize_avg_std_dev() {
-    Log::info("doing min/max normalization:\n");
+    Log::info("Doing avg_std_dev (standard) normalization:\n");
 
     for (int32_t i = 0; i < (int32_t) all_parameter_names.size(); i++) {
         string parameter_name = all_parameter_names[i];
