@@ -11,24 +11,31 @@ using std::vector;
 #include "common/arguments.hxx"
 #include "common/log.hxx"
 #include "rnn/cos_node.hxx"
+#include "rnn/cos_node_gp.hxx"
 #include "rnn/delta_node.hxx"
 #include "rnn/dnas_node.hxx"
 #include "rnn/enarc_node.hxx"
 #include "rnn/enas_dag_node.hxx"
 #include "rnn/gru_node.hxx"
 #include "rnn/inverse_node.hxx"
+#include "rnn/inverse_node_gp.hxx"
 #include "rnn/lstm_node.hxx"
 #include "rnn/mgu_node.hxx"
 #include "rnn/multiply_node.hxx"
+#include "rnn/multiply_node_gp.hxx"
 #include "rnn/random_dag_node.hxx"
 #include "rnn/rnn_edge.hxx"
 #include "rnn/rnn_genome.hxx"
 #include "rnn/rnn_node.hxx"
 #include "rnn/rnn_node_interface.hxx"
 #include "rnn/sigmoid_node.hxx"
+#include "rnn/sigmoid_node_gp.hxx"
 #include "rnn/sin_node.hxx"
+#include "rnn/sin_node_gp.hxx"
 #include "rnn/sum_node.hxx"
+#include "rnn/sum_node_gp.hxx"
 #include "rnn/tanh_node.hxx"
+#include "rnn/tanh_node_gp.hxx"
 #include "rnn/ugrnn_node.hxx"
 #include "weights/weight_rules.hxx"
 
@@ -94,6 +101,17 @@ RNN_Genome* create_memory_cell_nn(
 #define create_sigmoid(...)  create_memory_cell_nn<SIGMOID_Node>(__VA_ARGS__)
 #define create_inverse(...)  create_memory_cell_nn<INVERSE_Node>(__VA_ARGS__)
 #define create_multiply(...) create_memory_cell_nn<MULTIPLY_Node>(__VA_ARGS__)
+
+// GP nodes
+// WARNING: All gp node gradient tests will fail unless the conditions for d_weight
+//         to be set to zero in edge and recurrent edge backwards pass are turned off
+#define create_sin_gp(...)      create_memory_cell_nn<SIN_Node_GP>(__VA_ARGS__)
+#define create_sum_gp(...)      create_memory_cell_nn<SUM_Node_GP>(__VA_ARGS__)
+#define create_cos_gp(...)      create_memory_cell_nn<COS_Node_GP>(__VA_ARGS__)
+#define create_tanh_gp(...)     create_memory_cell_nn<TANH_Node_GP>(__VA_ARGS__)
+#define create_sigmoid_gp(...)  create_memory_cell_nn<SIGMOID_Node_GP>(__VA_ARGS__)
+#define create_inverse_gp(...)  create_memory_cell_nn<INVERSE_Node_GP>(__VA_ARGS__)
+#define create_multiply_gp(...) create_memory_cell_nn<MULTIPLY_Node_GP>(__VA_ARGS__)
 
 DNASNode* create_dnas_node(int32_t& innovation_counter, double depth, const vector<int32_t>& node_types);
 
