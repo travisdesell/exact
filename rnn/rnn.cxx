@@ -629,20 +629,20 @@ void RNN::write_predictions(
             if (i > 0) {
                 outfile << ",";
             }
-            // outfile << series_data[i][j];
-            outfile << time_series_sets->denormalize(input_parameter_names[i], series_data[i][j]);
+            outfile << series_data[i][j];
+            // outfile << time_series_sets->denormalize(input_parameter_names[i], series_data[i][j]);
         }
 
         for (int32_t i = 0; i < (int32_t) output_nodes.size(); i++) {
             outfile << ",";
-            // outfile << expected_outputs[i][j];
-            outfile << time_series_sets->denormalize(output_parameter_names[i], expected_outputs[i][j]);
+            outfile << expected_outputs[i][j];
+            // outfile << time_series_sets->denormalize(output_parameter_names[i], expected_outputs[i][j]);
         }
 
         for (int32_t i = 0; i < (int32_t) output_nodes.size(); i++) {
             outfile << ",";
-            // outfile << output_nodes[i]->output_values[j];
-            outfile << time_series_sets->denormalize(output_parameter_names[i], output_nodes[i]->output_values[j]);
+            outfile << output_nodes[i]->output_values[j];
+            // outfile << time_series_sets->denormalize(output_parameter_names[i], output_nodes[i]->output_values[j]);
         }
         outfile << endl;
     }
