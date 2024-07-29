@@ -64,7 +64,7 @@ int main(int argc, char** argv) {
     get_argument(arguments, "--time_offset", true, time_offset);
 
     bool normalize_predictions = false;
-    get_argument(arguments, "--normalize_predictions", true, normalize_predictions);
+    normalize_predictions = argument_exists(arguments, "--normalize_predictions");
 
     time_series_sets->export_test_series(time_offset, testing_inputs, testing_outputs);
 
@@ -72,7 +72,7 @@ int main(int argc, char** argv) {
     Log::info("MSE: %lf\n", genome->get_mse(best_parameters, testing_inputs, testing_outputs));
     Log::info("MAE: %lf\n", genome->get_mae(best_parameters, testing_inputs, testing_outputs));
     genome->write_predictions(
-        output_directory, testing_filenames, best_parameters, testing_inputs, testing_outputs, time_series_sets
+        output_directory, testing_filenames, best_parameters, testing_inputs, testing_outputs, time_series_sets, normalize_predictions
     );
 
     if (Log::at_level(Log::DEBUG)) {
@@ -93,7 +93,7 @@ int main(int argc, char** argv) {
             "duplicate MAE: %lf\n", duplicate_genome->get_mae(best_parameters_2, testing_inputs, testing_outputs)
         );
         duplicate_genome->write_predictions(
-            output_directory, testing_filenames, best_parameters_2, testing_inputs, testing_outputs, time_series_sets
+            output_directory, testing_filenames, best_parameters_2, testing_inputs, testing_outputs, time_series_sets, normalize_predictions
         );
     }
 
