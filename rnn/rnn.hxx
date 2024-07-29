@@ -73,7 +73,7 @@ class RNN {
         string output_filename, const vector<string>& input_parameter_names,
         const vector<string>& output_parameter_names, const vector<vector<double> >& series_data,
         const vector<vector<double> >& expected_outputs, TimeSeriesSets* time_series_sets, bool using_dropout,
-        double dropout_probability
+        double dropout_probability, bool normalize_predictions
     );
 
     void initialize_randomly();

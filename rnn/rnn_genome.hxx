@@ -229,7 +229,7 @@ class RNN_Genome {
     void write_predictions(
         string output_directory, const vector<string>& input_filenames, const vector<double>& parameters,
         const vector<vector<vector<double> > >& inputs, const vector<vector<vector<double> > >& outputs,
-        TimeSeriesSets* time_series_sets
+        TimeSeriesSets* time_series_sets, bool normalize_predictions
     );
     // void write_predictions(string output_directory, const vector<string> &input_filenames, const vector<double>
     // &parameters, const vector< vector< vector<double> > > &inputs, const vector< vector< vector<double> > > &outputs,

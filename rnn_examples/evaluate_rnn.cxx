@@ -63,6 +63,9 @@ int main(int argc, char** argv) {
     int32_t time_offset = 1;
     get_argument(arguments, "--time_offset", true, time_offset);
 
+    bool normalize_predictions = false;
+    get_argument(arguments, "--normalize_predictions", true, normalize_predictions);
+
     time_series_sets->export_test_series(time_offset, testing_inputs, testing_outputs);
 
     vector<double> best_parameters = genome->get_best_parameters();

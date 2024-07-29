@@ -592,7 +592,7 @@ vector<double> RNN::get_predictions(
 void RNN::write_predictions(
     string output_filename, const vector<string>& input_parameter_names, const vector<string>& output_parameter_names,
     const vector<vector<double> >& series_data, const vector<vector<double> >& expected_outputs,
-    TimeSeriesSets* time_series_sets, bool using_dropout, double dropout_probability
+    TimeSeriesSets* time_series_sets, bool using_dropout, double dropout_probability, bool normalize_predictions
 ) {
     forward_pass(series_data, using_dropout, false, dropout_probability);
 
@@ -629,20 +629,30 @@ void RNN::write_predictions(
             if (i > 0) {
                 outfile << ",";
             }
-            outfile << series_data[i][j];
-            // outfile << time_series_sets->denormalize(input_parameter_names[i], series_data[i][j]);
+            if (normalize_predictions) {
+                outfile << series_data[i][j];
+            } else {
+                outfile << time_series_sets->denormalize(input_parameter_names[i], series_data[i][j]);
+            }
         }
 
         for (int32_t i = 0; i < (int32_t) output_nodes.size(); i++) {
             outfile << ",";
-            outfile << expected_outputs[i][j];
-            // outfile << time_series_sets->denormalize(output_parameter_names[i], expected_outputs[i][j]);
+            if (normalize_predictions) {
+                outfile << expected_outputs[i][j];
+            } else {
+                outfile << time_series_sets->denormalize(output_parameter_names[i], expected_outputs[i][j]);
+            }
+
         }
 
         for (int32_t i = 0; i < (int32_t) output_nodes.size(); i++) {
             outfile << ",";
-            outfile << output_nodes[i]->output_values[j];
-            // outfile << time_series_sets->denormalize(output_parameter_names[i], output_nodes[i]->output_values[j]);
+            if (normalize_predictions) {
+                outfile << output_nodes[i]->output_values[j];
+            } else {
+                outfile << time_series_sets->denormalize(output_parameter_names[i], output_nodes[i]->output_values[j]);
+            }
         }
         outfile << endl;
     }

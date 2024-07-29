@@ -1315,7 +1315,7 @@ vector<vector<double> > RNN_Genome::get_predictions(
 void RNN_Genome::write_predictions(
     string output_directory, const vector<string>& input_filenames, const vector<double>& parameters,
     const vector<vector<vector<double> > >& inputs, const vector<vector<vector<double> > >& outputs,
-    TimeSeriesSets* time_series_sets
+    TimeSeriesSets* time_series_sets, bool normalize_predictions
 ) {
     RNN* rnn = get_rnn();
     rnn->set_weights(parameters);
@@ -1335,7 +1335,7 @@ void RNN_Genome::write_predictions(
 
         rnn->write_predictions(
             output_filename, input_parameter_names, output_parameter_names, inputs[i], outputs[i], time_series_sets,
-            use_dropout, dropout_probability
+            use_dropout, dropout_probability, normalize_predictions
         );
     }
 
