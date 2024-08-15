@@ -58,6 +58,13 @@ class RNN_Genome {
 
     double best_validation_mse;
     double best_validation_mae;
+
+    // Parameters to be tuned with SHO (Learning Rate and Weight Update)
+    double learning_rate;
+    double epsilon;
+    double beta1;
+    double beta2;
+
     vector<double> best_parameters;
 
     minstd_rand0 generator;
@@ -157,6 +164,19 @@ class RNN_Genome {
 
     void get_weights(vector<double>& parameters);
     void set_weights(const vector<double>& parameters);
+
+    // Declaration of Getters and Setters for SHO tuned hyperparameters
+    double get_learning_rate();
+    void set_learning_rate(double _learning_rate);
+
+    double get_epsilon();
+    void set_epsilon(double _epsilon);
+
+    double get_beta1();
+    void set_beta1(double _beta1);
+
+    double get_beta2();
+    void set_beta2(double _beta2);
 
     int32_t get_number_weights();
     int32_t get_number_inputs();

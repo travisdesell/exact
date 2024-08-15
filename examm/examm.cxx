@@ -1,5 +1,6 @@
 #include <algorithm>
 using std::sort;
+using std::random_shuffle;
 
 #include <chrono>
 #include <cstring>
@@ -41,6 +42,7 @@ using std::to_string;
 #include "rnn/rnn_node.hxx"
 #include "rnn/ugrnn_node.hxx"
 #include "speciation_strategy.hxx"
+#include "weights/weight_update.hxx"
 
 EXAMM::~EXAMM() {
     delete weight_rules;
@@ -99,6 +101,11 @@ void EXAMM::generate_log() {
         (*log_file) << "Inserted Genomes, Total BP Epochs, Time, Best Val. MAE, Best Val. MSE, Enabled Nodes, Enabled "
                        "Edges, Enabled Rec. Edges";
         (*log_file) << speciation_strategy->get_strategy_information_headers();
+        Log::debug("AT: SHO is used = %s\n",WeightUpdate::use_SHO?"true":"false");
+        if (WeightUpdate::use_SHO) {
+            (*log_file) << ", learning_rate, best_learning_rate, worst_learning_rate, global_min_learning_rate, global_max_learning_rate";
+            (*log_file) << ", epsilon, best_epsilon, worst_epsilon, beta1, best_beta1, worst_beta1, beta2, best_beta2, worst_beta2";
+        }
         (*log_file) << endl;
 
         if (generate_op_log) {
@@ -152,7 +159,7 @@ void EXAMM::update_op_log_statistics(RNN_Genome* genome, int32_t insert_position
     }
 }
 
-void EXAMM::update_log() {
+void EXAMM::update_log(double _learning_rate, double _epsilon, double _beta1, double _beta2) {
     if (log_file != NULL) {
         // make sure the log file is still good
         if (!log_file->good()) {
@@ -183,17 +190,42 @@ void EXAMM::update_log() {
             }
             (*op_log_file) << endl;
         }
+
         RNN_Genome* best_genome = get_best_genome();
         if (best_genome == NULL) {
             best_genome = speciation_strategy->get_global_best_genome();
         }
+
+        RNN_Genome* worst_genome = get_worst_genome();
+        if (worst_genome == NULL) {
+            worst_genome = speciation_strategy->get_worst_genome();
+        }
+
         std::chrono::time_point<std::chrono::system_clock> currentClock = std::chrono::system_clock::now();
         long milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(currentClock - startClock).count();
         (*log_file) << speciation_strategy->get_evaluated_genomes() << "," << total_bp_epochs << "," << milliseconds
                     << "," << best_genome->best_validation_mae << "," << best_genome->best_validation_mse << ","
                     << best_genome->get_enabled_node_count() << "," << best_genome->get_enabled_edge_count() << ","
                     << best_genome->get_enabled_recurrent_edge_count()
-                    << speciation_strategy->get_strategy_information_values() << endl;
+                    << speciation_strategy->get_strategy_information_values();
+        Log::debug("AT: SHO is used = %s\n",WeightUpdate::use_SHO?"true":"false");
+        if (WeightUpdate::use_SHO) {
+            (*log_file) << ',' << _learning_rate  << ","
+                        << best_genome->get_learning_rate()  << "," 
+                        << worst_genome->get_learning_rate() << "," 
+                        << speciation_strategy->get_min_learning_rate()  << "," 
+                        << speciation_strategy->get_max_learning_rate()  << ","
+                        << _epsilon  << ","
+                        << best_genome->get_epsilon()  << "," 
+                        << worst_genome->get_epsilon() << "," 
+                        << _beta1  << ","
+                        << best_genome->get_beta1()  << "," 
+                        << worst_genome->get_beta1() << "," 
+                        << _beta2  << ","
+                        << best_genome->get_beta2()  << "," 
+                        << worst_genome->get_beta2();
+        }  
+        (*log_file) << endl;
     }
 }
 
@@ -260,7 +292,16 @@ bool EXAMM::insert_genome(RNN_Genome* genome) {
     Log::info("save genome complete\n");
 
     update_op_log_statistics(genome, insert_position);
-    update_log();
+    Log::debug("AT: SHO is used = %s\n",WeightUpdate::use_SHO?"true":"false");
+    if (WeightUpdate::use_SHO) { 
+        double learning_rate = genome->get_learning_rate();
+        double epsilon = genome->get_epsilon();
+        double beta1 = genome->get_beta1();
+        double beta2 = genome->get_beta2();
+        update_log(learning_rate, epsilon, beta1, beta2);
+    } else {
+        update_log();
+    }
     return insert_position >= 0;
 }
 
@@ -274,7 +315,71 @@ void EXAMM::save_genome(RNN_Genome* genome, string genome_name = "rnn_genome") {
     genome->write_to_file(output_directory + "/" + genome_name + "_" + to_string(genome->get_generation_id()) + ".bin");
 }
 
+vector<vector<double> > EXAMM::get_genome_information(int simplex_count) {
+
+    vector<vector<double> > genome_information;
+
+    Log::debug("AT: Simplex count for genome information = %d\n",simplex_count);
+
+    Log::debug("AT: Number of islands = %d\n",speciation_strategy->get_islands_size());
+
+    int current_island_index = speciation_strategy->get_generation_island();
+
+    Log::debug("AT: Current Island Number = %d\n", current_island_index);
+
+    Island* current_island = speciation_strategy->get_island_at_index(current_island_index);
+
+    Log::debug("AT: Current Island size = %d\n",current_island->size());
+
+    int32_t* island_indices = new int32_t[speciation_strategy->get_islands_size()];
+    Log::debug("AT: Island Indices before shuffling: ");
+    for(int32_t i=0; i<speciation_strategy->get_islands_size(); i++) {
+        island_indices[i] = i;
+        Log::debug(" %d ",island_indices[i]);
+    }
+    Log::debug("\n");
+
+    std::random_shuffle(island_indices, island_indices+speciation_strategy->get_islands_size());
+
+    Log::debug("AT: Island Indices after shuffling: ");
+    for(int32_t i=0; i<speciation_strategy->get_islands_size(); i++) {
+        Log::debug(" %d ",island_indices[i]);
+    }
+    Log::debug("\n");
+
+    for(int32_t i=0; i<simplex_count;i++) {
+        Log::debug("AT: Picking Best Genome from Island %d\n", island_indices[i]);
+        Island* random_island = speciation_strategy->get_island_at_index(island_indices[i]);
+        RNN_Genome *current_genome = random_island->get_best_genome();
+        Log::debug("AT: get_learning_rate = %lg\n",current_genome->get_learning_rate());
+        Log::debug("AT: get_best_validation_mse = %lg\n",current_genome->get_best_validation_mse());
+        Log::debug("AT: get_epsilon = %lg\n",current_genome->get_epsilon());
+        Log::debug("AT: get_beta1 = %lg\n",current_genome->get_beta1());
+        Log::debug("AT: get_beta2 = %lg\n",current_genome->get_beta2());
+
+        vector<double> per_genome_information;
+        per_genome_information.push_back(current_genome->get_learning_rate());
+        per_genome_information.push_back(current_genome->get_best_validation_mse());
+        per_genome_information.push_back(current_genome->get_epsilon());
+        per_genome_information.push_back(current_genome->get_beta1());
+        per_genome_information.push_back(current_genome->get_beta2());
+        genome_information.push_back(per_genome_information);
+        }
+    
+    return genome_information;
+
+}
+
 RNN_Genome* EXAMM::generate_genome() {
+
+    vector<vector<double>> genome_information;
+    double tuned_learning_rate;
+    double tuned_epsilon;
+    double tuned_beta1;
+    double tuned_beta2;
+    WeightUpdate* weight_update_method;
+    weight_update_method = new WeightUpdate();
+
     if (speciation_strategy->get_evaluated_genomes() > max_genomes) {
         RNN_Genome* global_best_genome = speciation_strategy->get_global_best_genome();
         save_genome(global_best_genome, "global_best_genome");
@@ -295,6 +400,64 @@ RNN_Genome* EXAMM::generate_genome() {
     RNN_Genome* genome = speciation_strategy->generate_genome(rng_0_1, generator, mutate_function, crossover_function);
 
     genome_property->set_genome_properties(genome);
+    Log::debug("AT: SHO is used = %s\n",WeightUpdate::use_SHO?"true":"false");
+    if (WeightUpdate::use_SHO) {
+        if (speciation_strategy->islands_full() != true ) {
+            
+            tuned_learning_rate = weight_update_method->generate_initial_learning_rate();
+            tuned_epsilon = weight_update_method->generate_initial_epsilon();
+            tuned_beta1 = weight_update_method->generate_initial_beta1();
+            tuned_beta2 = weight_update_method->generate_initial_beta2();
+
+            // Convert the vector to a string
+            stringstream ss_island;
+            for (int i = 0; i < speciation_strategy->get_islands_size(); i++) {
+                for (int j = 0; j < speciation_strategy->get_island_at_index(i)->size(); j++) {
+                    RNN_Genome *current_genome = speciation_strategy->get_island_at_index(i)->get_genome_at(j);
+                    if (current_genome->get_learning_rate()>1) {
+                            ss_island << "i:" << i << " , j:" << j << " , lr: " << current_genome->get_learning_rate() << " , bvmse:" << current_genome->get_best_validation_mse() << " ~ ";
+                    }
+                }
+                ss_island << endl;
+            }
+            string island_informationString = ss_island.str();
+
+            Log::debug("AT: Island not full = %s\n",island_informationString.c_str());
+
+        } else {
+            // Convert the vector to a string
+            stringstream ss_island;
+            for (int i = 0; i < speciation_strategy->get_islands_size(); i++) {
+                for (int j = 0; j < speciation_strategy->get_island_at_index(i)->size(); j++) {
+                    RNN_Genome *current_genome = speciation_strategy->get_island_at_index(i)->get_genome_at(j);
+                    if (current_genome->get_learning_rate()>1) {
+                        ss_island << "i:" << i << " , j:" << j << " , lr: " << current_genome->get_learning_rate() << " , bvmse:" << current_genome->get_best_validation_mse() << " ~ ";
+                    }
+                }
+                ss_island << endl;
+            }
+            string island_informationString = ss_island.str();
+
+            Log::debug("AT: Island is full before get_genome_information = %s\n",island_informationString.c_str());    
+            int simplex_count = genome_property->get_simplex_count();
+            Log::debug("AT: Simplex Count inside of generate_genome = %d\n",simplex_count);
+            genome_information = get_genome_information(simplex_count);
+            tuned_learning_rate = weight_update_method->generate_simplex_learning_rate(genome_information, simplex_count);
+            tuned_epsilon = weight_update_method->generate_simplex_epsilon(genome_information, simplex_count);
+            tuned_beta1 = weight_update_method->generate_simplex_beta1(genome_information, simplex_count);
+            tuned_beta2 = weight_update_method->generate_simplex_beta2(genome_information, simplex_count);
+        }
+
+        genome->set_learning_rate(tuned_learning_rate);
+        genome->set_epsilon(tuned_epsilon);
+        genome->set_beta1(tuned_beta1);
+        genome->set_beta2(tuned_beta2);
+        Log::debug("AT: genome Learning Rate after set = %lg\n",genome->get_learning_rate());
+        Log::debug("AT: genome epsilon after set = %lg\n",genome->get_epsilon());
+        Log::debug("AT: genome beta1 after set = %lg\n",genome->get_beta1());
+        Log::debug("AT: genome beta2 after set = %lg\n",genome->get_beta2());
+    }
+
     // if (!epigenetic_weights) genome->initialize_randomly();
 
     // this is just a sanity check, can most likely comment out (checking to see

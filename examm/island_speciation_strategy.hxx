@@ -134,6 +134,18 @@ class IslandSpeciationStrategy : public SpeciationStrategy {
      */
     RNN_Genome* get_worst_genome();
 
+     /**
+     * Gets the the minimum learning rate of all the islands
+     * \return the minimum learning rate of all islands or NULL if no genomes have yet been inserted
+     */
+    double get_min_learning_rate();
+
+    /**
+     * Gets the the maximum learning rate of all the islands
+     * \return the maximum learning rate of all islands or NULL if no genomes have yet been inserted
+     */
+    double get_max_learning_rate();
+
     /**
      *  \return true if all the islands are full
      */
@@ -233,6 +245,27 @@ class IslandSpeciationStrategy : public SpeciationStrategy {
     void repopulate();
 
     void save_entire_population(string output_path);
+
+    /**
+    * Get the number of islands
+    *
+    *  \return the number of island
+    */
+    int32_t get_islands_size() const;
+    
+    /**
+    * Get the island at a given index
+    *  \param index index of required island
+    *  \return the island at given index
+    */
+    Island* get_island_at_index(int32_t index) const;
+
+    /**
+    * Get the current island index
+    *
+    *  \return the index of current island
+    */
+    int32_t get_generation_island() const;
 };
 
 #endif
