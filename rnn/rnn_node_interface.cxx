@@ -12,22 +12,43 @@ using std::string;
 #include "rnn/rnn_genome.hxx"
 #include "rnn_node_interface.hxx"
 
-extern const int32_t NUMBER_NODE_TYPES = 11;
-extern const string NODE_TYPES[] = {"simple", "jordan", "elman", "UGRNN",    "MGU", "GRU",
-                                    "delta",  "LSTM",   "ENARC", "ENAS_DAG", "dnas"};
+extern const string NODE_TYPES[] = {"simple",      "jordan",    "elman",  "UGRNN",    "MGU",        "GRU",
+                                    "delta",       "LSTM",      "ENARC",  "ENAS_DAG", "rdag",       "dnas",
+                                    "sin",         "sum",       "cos",    "tanh",     "sigmoid",    "inverse",
+                                    "multiply",    "sin_gp",    "cos_gp", "tanh_gp",  "sigmoid_gp", "inverse_gp",
+                                    "multiply_gp", "output_gp", "sum_gp", "input_gp"};
 extern const unordered_map<string, int32_t> string_to_node_type = {
-    {"simple",   SIMPLE_NODE},
-    {"jordan",   JORDAN_NODE},
-    { "elman",    ELMAN_NODE},
-    { "ugrnn",    UGRNN_NODE},
-    {   "mgu",      MGU_NODE},
-    {   "gru",      GRU_NODE},
-    { "delta",    DELTA_NODE},
-    {  "lstm",     LSTM_NODE},
-    { "enarc",    ENARC_NODE},
-    {  "enas", ENAS_DAG_NODE},
-    {  "dnas",     DNAS_NODE}
+    {     "simple",      SIMPLE_NODE},
+    {     "jordan",      JORDAN_NODE},
+    {      "elman",       ELMAN_NODE},
+    {      "ugrnn",       UGRNN_NODE},
+    {        "mgu",         MGU_NODE},
+    {        "gru",         GRU_NODE},
+    {      "delta",       DELTA_NODE},
+    {       "lstm",        LSTM_NODE},
+    {      "enarc",       ENARC_NODE},
+    {       "enas",    ENAS_DAG_NODE},
+    {       "rdag",  RANDOM_DAG_NODE},
+    {       "dnas",        DNAS_NODE},
+    {        "sin",         SIN_NODE},
+    {        "sum",         SUM_NODE},
+    {        "cos",         COS_NODE},
+    {       "tanh",        TANH_NODE},
+    {    "sigmoid",     SIGMOID_NODE},
+    {    "inverse",     INVERSE_NODE},
+    {   "multiply",    MULTIPLY_NODE},
+    {     "sin_gp",      SIN_NODE_GP},
+    {     "cos_gp",      COS_NODE_GP},
+    {    "tanh_gp",     TANH_NODE_GP},
+    { "sigmoid_gp",  SIGMOID_NODE_GP},
+    { "inverse_gp",  INVERSE_NODE_GP},
+    {"multiply_gp", MULTIPLY_NODE_GP},
+    {  "output_gp",   OUTPUT_NODE_GP},
+    {     "sum_gp",      SUM_NODE_GP},
+    {   "input_gp",    INPUT_NODE_GP},
 };
+
+extern const int32_t NUMBER_NODE_TYPES = string_to_node_type.size();
 
 int32_t node_type_from_string(string& node_type) {
     std::transform(node_type.begin(), node_type.end(), node_type.begin(), [](unsigned char c) {

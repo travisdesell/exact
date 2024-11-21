@@ -7,7 +7,7 @@ using std::vector;
 #include "rnn_node_interface.hxx"
 
 class RNN_Node : public RNN_Node_Interface {
-   private:
+   protected:
     double bias;
     double d_bias;
 
@@ -31,8 +31,10 @@ class RNN_Node : public RNN_Node_Interface {
     void initialize_uniform_random(minstd_rand0& generator, uniform_real_distribution<double>& rng);
 
     void input_fired(int32_t time, double incoming_output);
+    virtual double activation_function(double input);
+    virtual double derivative_function(double input);
 
-    void try_update_deltas(int32_t time);
+    virtual void try_update_deltas(int32_t time);
     void output_fired(int32_t time, double delta);
     void error_fired(int32_t time, double error);
 

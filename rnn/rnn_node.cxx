@@ -1,4 +1,6 @@
 #include <cmath>
+using std::isfinite;
+
 #include <vector>
 using std::vector;
 
@@ -58,15 +60,15 @@ void RNN_Node::input_fired(int32_t time, double incoming_output) {
     }
 
     Log::debug("node %d - input value[%d]: %lf\n", innovation_number, time, input_values[time]);
-
-    output_values[time] = tanh(input_values[time] + bias);
-    ld_output[time] = tanh_derivative(output_values[time]);
-
-    // output_values[time] = sigmoid(input_values[time] + bias);
-    // ld_output[time] = sigmoid_derivative(output_values[time]);
+    if (node_type == OUTPUT_NODE_GP || node_type == INPUT_NODE_GP) {
+        bias = 0.0;
+    }
+    double input_plus_bias = input_values[time] + bias;
+    output_values[time] = activation_function(input_plus_bias);
+    ld_output[time] = derivative_function(input_plus_bias);
 
 #ifdef NAN_CHECKS
-    if (isnan(output_values[time]) || isinf(output_values[time])) {
+    if (!isfinite(output_values[time])) {
         Log::fatal(
             "ERROR: output_value[%d] becaome %lf on RNN node: %d\n", time, output_values[time], innovation_number
         );
@@ -75,6 +77,22 @@ void RNN_Node::input_fired(int32_t time, double incoming_output) {
         exit(1);
     }
 #endif
+}
+
+double RNN_Node::activation_function(double input) {
+    if (node_type == OUTPUT_NODE_GP || node_type == INPUT_NODE_GP) {
+        return input;
+    } else {
+        return tanh(input);
+    }
+}
+
+double RNN_Node::derivative_function(double input) {
+    if (node_type == OUTPUT_NODE_GP || node_type == INPUT_NODE_GP) {
+        return 1;
+    } else {
+        return 1 - (tanh(input) * tanh(input));
+    }
 }
 
 void RNN_Node::try_update_deltas(int32_t time) {
@@ -89,7 +107,11 @@ void RNN_Node::try_update_deltas(int32_t time) {
     }
 
     d_input[time] *= ld_output[time];
-    d_bias += d_input[time];
+    if (node_type == OUTPUT_NODE_GP || node_type == INPUT_NODE_GP) {
+        d_bias = 0.0;
+    } else {
+        d_bias += d_input[time];
+    }
 }
 
 void RNN_Node::error_fired(int32_t time, double error) {

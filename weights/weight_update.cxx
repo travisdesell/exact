@@ -239,6 +239,7 @@ double WeightUpdate::get_norm(vector<double>& analytic_gradient) {
         norm += analytic_gradient[i] * analytic_gradient[i];
     }
     norm = sqrt(norm);
+
     return norm;
 }
 

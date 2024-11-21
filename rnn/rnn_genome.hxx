@@ -166,6 +166,7 @@ class RNN_Genome {
     void initialize_randomly();
     void initialize_xavier(RNN_Node_Interface* n);
     void initialize_kaiming(RNN_Node_Interface* n);
+    void initialize_gp(RNN_Node_Interface* n);
     void initialize_node_randomly(RNN_Node_Interface* n);
     double get_xavier_weight(RNN_Node_Interface* output_node);
     double get_kaiming_weight(RNN_Node_Interface* output_node);
@@ -187,7 +188,7 @@ class RNN_Genome {
 
     RNN* get_rnn();
     vector<double> get_best_parameters() const;
-
+    vector<double> get_initial_parameters() const;
     void set_best_parameters(vector<double> parameters);     // INFO: ADDED BY ABDELRAHMAN TO USE FOR TRANSFER LEARNING
     void set_initial_parameters(vector<double> parameters);  // INFO: ADDED BY ABDELRAHMAN TO USE FOR TRANSFER LEARNING
 
@@ -299,6 +300,8 @@ class RNN_Genome {
 
     string get_color(double weight, bool is_recurrent);
     void write_graphviz(string filename);
+    void print_equations();
+    void write_equations(ostream& outstream);
 
     RNN_Genome(string binary_filename);
     RNN_Genome(char* array, int32_t length);

@@ -19,6 +19,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 #SET (CMAKE_CXX_FLAGS                "-std=c++11 -Wall -O3 -funroll-loops -msse3 -DNAN_CHECKS")
 
 # 1 This line for local
+#SET (CMAKE_CXX_FLAGS                "-Wall -O3 -funroll-loops  -msse3 -fsanitize=address -fno-omit-frame-pointer -D_GLIBCXX_DEBUG")
 #SET (CMAKE_CXX_FLAGS                "-std=gnu++17 -Wall -O3 -funroll-loops  -msse3 -fsanitize=address -fno-omit-frame-pointer -D_GLIBCXX_DEBUG")
 #SET (CMAKE_CXX_FLAGS                "-std=c++20 -Wall -O3 -funroll-loops  -msse3 -fsanitize=address -fno-omit-frame-pointer -D_GLIBCXX_DEBUG")
 
@@ -26,9 +27,13 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 #SET (CMAKE_CXX_FLAGS                "-std=gnu++17 -Wall -O3 -funroll-loops  -msse3 -fno-omit-frame-pointer -D_GLIBCXX_DEBUG")
 
 SET (CMAKE_CXX_FLAGS                " -Wall -O3 -funroll-loops -msse3")
-SET (CMAKE_CXX_FLAGS_DEBUG          "${CMAKE_CXX_FLAGS} -g")
-SET (CMAKE_CXX_FLAGS_MINSIZEREL     "${CMAKE_CXX_FLAGS} -Os -DNDEBUG")
+#SET (CMAKE_CXX_FLAGS                " -Wall -O1 -funroll-loops -msse3 -g -fsanitize=address -fno-omit-frame-pointer -shared-libasan -DGLIBCXX_DEBUG")
+#SET (CMAKE_CXX_FLAGS_DEBUG          "${CMAKE_CXX_FLAGS} -g")
+#SET (CMAKE_CXX_FLAGS_MINSIZEREL     "${CMAKE_CXX_FLAGS} -Os -DNDEBUG")
 SET (CMAKE_CXX_FLAGS_RELEASE        "${CMAKE_CXX_FLAGS} -O4 -funroll-loops -DNDEBUG")
+
+#SET (CMAKE_SHARED_LINKER_FLAGS      " -Wall -O1 -funroll-loops -msse3 -g -fsanitize=address -fno-omit-frame-pointer -shared-libasan -DGLIBCXX_DEBUG")
+
 
 set(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH} /opt/local/lib)
 
@@ -42,10 +47,12 @@ message (STATUS "CMAKE_MODULE_PATH is ${CMAKE_MODULE_PATH}")
 find_package(MPI)
 #SET(MPI_INCLUDE_PATH /usr/local/Cellar/open-mpi/3.1.2/include)
 #SET(MPI_INCLUDE_PATH /usr/local/Cellar/open-mpi/4.0.0/include)
-SET(MPI_INCLUDE_PATH /usr/local/Cellar/open-mpi/4.0.1/include)
+#SET(MPI_INCLUDE_PATH /usr/local/Cellar/open-mpi/4.0.1/include)
+SET(MPI_INCLUDE_PATH /usr/local/Cellar/open-mpi/5.0.1/include)
 #SET(MPI_LIBRARY /usr/local/Cellar/open-mpi/3.1.2/lib/libmpi.dylib)
 #SET(MPI_LIBRARY /usr/local/Cellar/open-mpi/4.0.0/lib/libmpi.dylib)
-SET(MPI_LIBRARY /usr/local/Cellar/open-mpi/4.0.1/lib/libmpi.dylib)
+#SET(MPI_LIBRARY /usr/local/Cellar/open-mpi/4.0.1/lib/libmpi.dylib)
+SET(MPI_LIBRARY /usr/local/Cellar/open-mpi/5.0.1/lib/libmpi.dylib)
 MESSAGE(STATUS "MPI include directory: ${MPI_INCLUDE_PATH}")
 MESSAGE(STATUS "MPI library: ${MPI_LIBRARY}")
 MESSAGE(STATUS "MPI extra: ${MPI_EXTRA}")

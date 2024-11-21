@@ -116,6 +116,8 @@ RNN_Recurrent_Edge* RNN_Recurrent_Edge::copy(const vector<RNN_Node_Interface*> n
     e->forward_reachable = forward_reachable;
     e->backward_reachable = backward_reachable;
 
+    e->input_number = input_number;
+
     return e;
 }
 
@@ -131,6 +133,10 @@ int32_t RNN_Recurrent_Edge::get_output_innovation_number() const {
     return output_innovation_number;
 }
 
+void RNN_Recurrent_Edge::set_weight(double weight) {
+    this->weight = weight;
+}
+
 const RNN_Node_Interface* RNN_Recurrent_Edge::get_input_node() const {
     return input_node;
 }
@@ -144,6 +150,7 @@ const RNN_Node_Interface* RNN_Recurrent_Edge::get_output_node() const {
 void RNN_Recurrent_Edge::first_propagate_forward() {
     for (int32_t i = 0; i < recurrent_depth; i++) {
         output_node->input_fired(i, 0.0);
+        input_number[i] = output_node->inputs_fired[i];
     }
 }
 
@@ -164,6 +171,7 @@ void RNN_Recurrent_Edge::propagate_forward(int32_t time) {
 
         outputs[time + recurrent_depth] = output;
         output_node->input_fired(time + recurrent_depth, output);
+        input_number[time + recurrent_depth] = output_node->inputs_fired[time + recurrent_depth];
     }
 }
 
@@ -204,14 +212,27 @@ void RNN_Recurrent_Edge::propagate_backward(int32_t time) {
         exit(1);
         //}
     }
-
-    double delta = output_node->d_input[time];
-
+    double delta;
+    if (output_node->node_type == MULTIPLY_NODE || output_node->node_type == MULTIPLY_NODE_GP) {
+        delta = output_node->ordered_d_input[time][input_number[time] - 1];
+    } else {
+        delta = output_node->d_input[time];
+    }
     if (time - recurrent_depth >= 0) {
         // Log::trace("propagating backward on recurrent edge %d from time %d to time %d from node %d to node %d\n",
         // innovation_number, time, time - recurrent_depth, output_innovation_number, input_innovation_number);
 
-        d_weight += delta * input_node->output_values[time - recurrent_depth];
+        // WARNING: With this feature all gradient tests for these node types naturally fail.
+        //          This condition must be eliminated for tests to pass.
+        if (output_node->node_type == OUTPUT_NODE_GP || output_node->node_type == SIN_NODE_GP
+            || output_node->node_type == COS_NODE_GP || output_node->node_type == TANH_NODE_GP
+            || output_node->node_type == SIGMOID_NODE_GP || output_node->node_type == SUM_NODE_GP
+            || output_node->node_type == MULTIPLY_NODE_GP || output_node->node_type == INVERSE_NODE_GP) {
+            d_weight = 0.0;
+        } else {
+            d_weight += delta * input_node->output_values[time - recurrent_depth];
+        }
+
         deltas[time] = delta * weight;
         input_node->output_fired(time - recurrent_depth, deltas[time]);
     }
@@ -222,6 +243,7 @@ void RNN_Recurrent_Edge::reset(int32_t _series_length) {
     d_weight = 0.0;
     outputs.resize(series_length);
     deltas.resize(series_length);
+    input_number.resize(series_length);
 }
 
 int32_t RNN_Recurrent_Edge::get_recurrent_depth() const {
