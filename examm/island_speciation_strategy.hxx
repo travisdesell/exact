@@ -140,6 +140,18 @@ class IslandSpeciationStrategy : public SpeciationStrategy {
     bool islands_full() const;
 
     /**
+     * \return the number of full islands
+     */
+    int32_t number_filled_islands();
+
+    /**
+     * \return another full island that is not the first island. Need to have at least 2 full islands.
+     */
+    int32_t get_other_full_island(
+        uniform_real_distribution<double>& rng_0_1, minstd_rand0& generator, int32_t first_island
+    );
+
+    /**
      * Inserts a <b>copy</b> of the genome into one of the islands handled by this
      * strategy, determined by the RNN_Genome::get_group_id() method.
      *
