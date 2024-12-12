@@ -26,11 +26,11 @@ plt.rc('legend', fontsize=SMALL_SIZE)    # legend fontsize
 #plt.rc('figure', titlesize=BIGGER_SIZE)  # fontsize of the figure title
 
 if len(sys.argv) < 7:
-    print "Incorrect usage!"
-    print "Run with:"
-    print "python " + sys.argv[0] + "<min y value> <max y value> <x type> <chart title> <output filename> <directories to use>"
-    print "note that each directory listed should have 0, 1, 2, .. n as subdirectories each with a fitness_log.csv, which this script will use to generate the min/avg/max fitnesses"
-    print "x_type can be: 'inserted', 'epochs' or 'time'"
+    print("Incorrect usage!")
+    print("Run with:")
+    print("python " + sys.argv[0] + "<min y value> <max y value> <x type> <chart title> <output filename> <directories to use>")
+    print("note that each directory listed should have 0, 1, 2, .. n as subdirectories each with a fitness_log.csv, which this script will use to generate the min/avg/max fitnesses")
+    print("x_type can be: 'inserted', 'epochs' or 'time'")
     exit(1)
 
 
@@ -42,28 +42,28 @@ chart_title = sys.argv[4]
 figure_filename = sys.argv[5]
 
 if not (x_type == "time" or x_type == "inserted" or x_type == "epochs"):
-    print "Incorrect x_type: {}".format(x_type)
-    print "x_type can be: 'inserted', 'epochs' or 'time'"
+    print("Incorrect x_type: {}".format(x_type))
+    print("x_type can be: 'inserted', 'epochs' or 'time'")
     exit(1)
 
 
 base_directories = sys.argv[6:]
-print "base_directories:"
-print base_directories
+print("base_directories:")
+print(base_directories)
 
 base_directories = natsorted(base_directories, alg=ns.IGNORECASE)
 
-print "sorted base directories:"
-print base_directories
+print("sorted base directories:")
+print(base_directories)
 
 colors = ["red", "darkblue", "lightblue", "green", "purple", "plum", "orange", "grey", "darkgrey", "pink", "magenta", "cyan", "lightgreen", "tomato", "chocolate", "saddlebrown", "peachpuff", "yellowgreen", "orchid", "mediumpurple", "seagreen", "palevioletred"]
 current_fold = 0
 fig, ax = plt.subplots(1, figsize=(20,10))
 
 for run_directory in base_directories:
-    print "run directory: '" + run_directory + "'"
+    print("run directory: '" + run_directory + "'")
     run_name = run_directory.split("/")[-1]
-    print "run name is: '" + run_name + "'"
+    print("run name is: '" + run_name + "'")
 
     if ".csv" in run_directory:
         continue
@@ -76,7 +76,7 @@ for run_directory in base_directories:
     best_mse_list = []
 
     for input_file in sorted(glob.glob(run_directory + "/*/fitness_log.csv")):
-        print "log file: '" + input_file + "'"
+        print("log file: '" + input_file + "'")
 
         inserted_genomes = []
         backprop_epochs = []
@@ -84,7 +84,7 @@ for run_directory in base_directories:
         best_mse = []
         with open(input_file) as fp:
            line = fp.readline()
-           print "headers: {}".format(line)
+           print("headers: {}".format(line))
 
            line = fp.readline()
            while line:
@@ -113,7 +113,7 @@ for run_directory in base_directories:
     number_log_files = len(best_mse_list)
 
     #find the shortest and longest runs, as the fitness logs may not be all the same length
-    print "number of log files for this directory:", number_log_files
+    print("number of log files for this directory:", number_log_files)
     x_min = len(best_mse_list[0])
     x_max = len(best_mse_list[0])
     for j in range(0, number_log_files):
@@ -121,10 +121,10 @@ for run_directory in base_directories:
             x_min = len(best_mse_list[j])
         if len(best_mse_list[j]) > x_max:
             x_max = len(best_mse_list[j])
-        print "\trow:", len(best_mse_list[j])
-    
-    print "shortest length: ", x_min
-    print "longest length: ", x_max
+        print("\trow:", len(best_mse_list[j]))
+
+    print("shortest length: ", x_min)
+    print("longest length: ", x_max)
 
     time_skips = []
 
@@ -152,7 +152,7 @@ for run_directory in base_directories:
                 #runs which messes with wallclock time
                 time_skip = time_seconds_list[i][j] - time_seconds_list[i][j-1]
                 if math.isnan(time_skip):
-                    print "nan time skip, time_seconds_list[{}][{}]: {}, time_seconds_list[{}][{}]: {}".format(i, j, time_seconds_list[i][j], i, j-1, time_seconds_list[i][j-1])
+                    print("nan time skip, time_seconds_list[{}][{}]: {}, time_seconds_list[{}][{}]: {}".format(i, j, time_seconds_list[i][j], i, j-1, time_seconds_list[i][j-1]))
                 else:
                     time_skips.append(time_skip)
                 
@@ -186,8 +186,8 @@ for run_directory in base_directories:
     avg_time_skip = sum(time_skips)/len(time_skips)
     median_time_skip = statistics.median(time_skips)
 
-    print "time skip count: ", len(time_skips)
-    print "time skip min: ", min_time_skip, ", time skip avg: ", avg_time_skip, ", max_time_skip: ", max_time_skip, ", median_time_skip: ", median_time_skip
+    print("time skip count: ", len(time_skips))
+    print("time skip min: ", min_time_skip, ", time skip avg: ", avg_time_skip, ", max_time_skip: ", max_time_skip, ", median_time_skip: ", median_time_skip)
 
     clip_runs = 1
     if clip_runs:
@@ -198,16 +198,16 @@ for run_directory in base_directories:
         merged_backprop_epochs = merged_backprop_epochs[0:x_min]
         merged_time_seconds = merged_time_seconds[0:x_min]
 
-    print len(merged_min)
-    print len(merged_avg)
-    print len(merged_max)
-    print len(merged_inserted_genomes)
-    print len(merged_backprop_epochs)
-    print len(merged_time_seconds)
+    print(len(merged_min))
+    print(len(merged_avg))
+    print(len(merged_max))
+    print(len(merged_inserted_genomes))
+    print(len(merged_backprop_epochs))
+    print(len(merged_time_seconds))
 
-    print colors
-    print current_fold
-    print colors[current_fold]
+    print(colors)
+    print(current_fold)
+    print(colors[current_fold])
 
     linestyle = "solid" #default
     if "cpu_108" in run_name:
@@ -255,7 +255,7 @@ leg = plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
 
 ax.grid()
 
-print "saving figure as '" + figure_filename + "'"
+print("saving figure as '" + figure_filename + "'")
 
 
 plt.savefig(figure_filename, bbox_extra_artists=(leg,), bbox_inches='tight')
