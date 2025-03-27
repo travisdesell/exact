@@ -26,7 +26,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # 2 This line for cluster
 #SET (CMAKE_CXX_FLAGS                "-std=gnu++17 -Wall -O3 -funroll-loops  -msse3 -fno-omit-frame-pointer -D_GLIBCXX_DEBUG")
 
-SET (CMAKE_CXX_FLAGS                " -Wall -O3 -funroll-loops -msse3")
+SET (CMAKE_CXX_FLAGS                " -Wall -O3 -funroll-loops -msse3 -ggdb3 -fsanitize=address")
 #SET (CMAKE_CXX_FLAGS                " -Wall -O1 -funroll-loops -msse3 -g -fsanitize=address -fno-omit-frame-pointer -shared-libasan -DGLIBCXX_DEBUG")
 #SET (CMAKE_CXX_FLAGS_DEBUG          "${CMAKE_CXX_FLAGS} -g")
 #SET (CMAKE_CXX_FLAGS_MINSIZEREL     "${CMAKE_CXX_FLAGS} -Os -DNDEBUG")

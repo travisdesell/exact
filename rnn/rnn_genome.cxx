@@ -188,6 +188,7 @@ RNN_Genome* RNN_Genome::copy() {
 
     other->log_filename = log_filename;
 
+    other->parent_ids = parent_ids;
     other->generated_by_map = generated_by_map;
 
     other->initial_parameters = initial_parameters;
@@ -3283,8 +3284,7 @@ RNN_Node_Interface* RNN_Genome::read_node_from_stream(istream& bin_istream) {
         node = new MGU_Node(innovation_number, layer_type, depth);
     } else if (node_type == UGRNN_NODE) {
         node = new UGRNN_Node(innovation_number, layer_type, depth);
-    } else if (node_type == SIMPLE_NODE || node_type == JORDAN_NODE || node_type == ELMAN_NODE
-               || node_type == OUTPUT_NODE_GP || node_type == INPUT_NODE_GP) {
+    } else if (node_type == SIMPLE_NODE || node_type == JORDAN_NODE || node_type == ELMAN_NODE || node_type == OUTPUT_NODE_GP || node_type == INPUT_NODE_GP) {
         if (layer_type == HIDDEN_LAYER) {
             node = new RNN_Node(innovation_number, layer_type, depth, node_type);
         } else {
@@ -3391,6 +3391,14 @@ void RNN_Genome::read_from_stream(istream& bin_istream) {
     // Formerly:
     // istringstream rng_0_1_iss(rng_0_1_str);
     // rng_0_1_iss >> rng_0_1;
+
+    int32_t n_parent_ids;
+    bin_istream.read((char*) &n_parent_ids, sizeof(int32_t));
+    Log::debug("reading %d parent ids.\n", n_parent_ids);
+    int32_t* parent_ids_v = new int32_t[n_parent_ids];
+    bin_istream.read((char*) parent_ids_v, sizeof(int32_t) * n_parent_ids);
+    parent_ids.assign(parent_ids_v, parent_ids_v + n_parent_ids);
+    delete[] parent_ids_v;
 
     string generated_by_map_str;
     read_binary_string(bin_istream, generated_by_map_str, "generated_by_map");
@@ -3582,6 +3590,11 @@ void RNN_Genome::write_to_stream(ostream& bin_ostream) {
     rng_0_1_oss << rng_0_1;
     string rng_0_1_str = rng_0_1_oss.str();
     write_binary_string(bin_ostream, rng_0_1_str, "rng_0_1");
+
+    int32_t n_parent_ids = (int32_t) parent_ids.size();
+    Log::debug("writing %d parent ids.\n", n_parent_ids);
+    bin_ostream.write((char*) &n_parent_ids, sizeof(int32_t));
+    bin_ostream.write((char*) &parent_ids[0], sizeof(int32_t) * parent_ids.size());
 
     ostringstream generated_by_map_oss;
     write_map(generated_by_map_oss, generated_by_map);
@@ -4216,8 +4229,7 @@ void RNN_Genome::write_equations(ostream& outstream) {
                     current_output_equation += "tanh(" + input_equation;
                 } else if (output_node->node_type == SIGMOID_NODE || output_node->node_type == SIGMOID_NODE_GP) {
                     current_output_equation += "sigmoid(" + input_equation;
-                } else if (output_node->node_type == SUM_NODE || output_node->node_type == SUM_NODE_GP
-                           || output_node->node_type == OUTPUT_NODE_GP) {
+                } else if (output_node->node_type == SUM_NODE || output_node->node_type == SUM_NODE_GP || output_node->node_type == OUTPUT_NODE_GP) {
                     current_output_equation += input_equation;
                 } else if (output_node->node_type == MULTIPLY_NODE || output_node->node_type == MULTIPLY_NODE_GP) {
                     current_output_equation += input_equation;
@@ -4333,8 +4345,7 @@ void RNN_Genome::write_equations(ostream& outstream) {
                     current_output_equation += "tanh(" + input_equation;
                 } else if (output_node->node_type == SIGMOID_NODE || output_node->node_type == SIGMOID_NODE_GP) {
                     current_output_equation += "sigmoid(" + input_equation;
-                } else if (output_node->node_type == SUM_NODE || output_node->node_type == SUM_NODE_GP
-                           || output_node->node_type == OUTPUT_NODE_GP) {
+                } else if (output_node->node_type == SUM_NODE || output_node->node_type == SUM_NODE_GP || output_node->node_type == OUTPUT_NODE_GP) {
                     current_output_equation += input_equation;
                 } else if (output_node->node_type == MULTIPLY_NODE || output_node->node_type == MULTIPLY_NODE_GP) {
                     current_output_equation += input_equation;

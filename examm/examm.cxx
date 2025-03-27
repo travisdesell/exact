@@ -259,9 +259,98 @@ bool EXAMM::insert_genome(RNN_Genome* genome) {
     }
     Log::info("save genome complete\n");
 
+    bool generate_visualization_json = true;
+
+    if (generate_visualization_json) {
+        save_visualization_json(genome, "rnn_genome");
+    }
+
+    Log::info("save visualization json complete\n");
+
     update_op_log_statistics(genome, insert_position);
+    Log::info("update op log statistics complete\n");
     update_log();
+    Log::info("update log complete\n");
+
     return insert_position >= 0;
+}
+
+void EXAMM::save_visualization_json(RNN_Genome* genome, string genome_name) {
+    string output_filename =
+        output_directory + "/" + genome_name + "_" + to_string(genome->get_generation_id()) + ".json";
+    ofstream json_filestream(output_filename);
+
+    json_filestream << "{" << endl;
+    json_filestream << "\t\"generation_number\" : " << genome->generation_id << "," << endl;
+    json_filestream << "\t\"group\" : " << genome->group_id << "," << endl;
+    json_filestream << "\t\"fitness\" : " << genome->best_validation_mse << "," << endl;
+
+    json_filestream << "\t\"parents\" : [";
+    for (int32_t i = 0; i < genome->parent_ids.size(); i++) {
+        if (i != 0) {
+            json_filestream << ", ";
+        }
+
+        json_filestream << genome->parent_ids[i];
+    }
+    json_filestream << "]," << endl;
+
+    sort(genome->nodes.begin(), genome->nodes.end(), sort_RNN_Nodes_by_innovation());
+    sort(genome->edges.begin(), genome->edges.end(), sort_RNN_Edges_by_innovation());
+    sort(genome->recurrent_edges.begin(), genome->recurrent_edges.end(), sort_RNN_Recurrent_Edges_by_innovation());
+
+    json_filestream << "\t\"nodes\" : [\n";
+    for (int32_t i = 0; i < genome->nodes.size(); i++) {
+        RNN_Node_Interface* node = genome->nodes[i];
+        if (i != 0) {
+            json_filestream << ",\n";
+        }
+
+        vector<double> weights;
+        node->get_weights(weights);
+
+        json_filestream << "\t\t{ \"n\" : " << node->innovation_number << ", \"type\" : \"" << NODE_TYPES[node->node_type] << "\", \"weights\" : [";
+        for (int32_t j = 0; j < weights.size(); j++) {
+            if (j != 0) {
+                json_filestream << ", ";
+            }
+            json_filestream << weights[j];
+        }
+
+        json_filestream << "]}";
+    }
+    json_filestream << "\n";
+
+    json_filestream << "\t]," << endl;
+
+    json_filestream << "\t\"edges\" : [\n";
+
+    for (int32_t i = 0; i < genome->edges.size(); i++) {
+        RNN_Edge* edge = genome->edges[i];
+        if (i != 0) {
+            json_filestream << ",\n";
+        }
+
+        json_filestream << "\t\t{ \"n\" : " << edge->innovation_number << ", \"in\" : " << edge->input_node->innovation_number << ", \"on\" : " << edge->output_node->innovation_number << ", \"weight\" : " << edge->weight << " }";
+    }
+
+    json_filestream << "\n\t]," << endl;
+
+    json_filestream << "\t\"recurrent_edges\" : [\n";
+
+    for (int32_t i = 0; i < genome->recurrent_edges.size(); i++) {
+        RNN_Recurrent_Edge *recurrent_edge = genome->recurrent_edges[i];
+        if (i != 0) {
+            json_filestream << ",\n";
+        }
+
+        json_filestream << "\t\t{ \"n\" : " << recurrent_edge->innovation_number << ", \"in\" : " << recurrent_edge->input_node->innovation_number << ", \"on\" : " << recurrent_edge->output_node->innovation_number << ", \"rd\" : " << recurrent_edge->recurrent_depth << ", \"weight\" : " << recurrent_edge->weight << " }";
+    }
+
+    json_filestream << "\n\t]" << endl;
+
+    json_filestream << "}" << endl;
+    json_filestream.close();
 }
 
 // write function to save genomes to file
@@ -320,6 +409,11 @@ void EXAMM::mutate(int32_t max_mutations, RNN_Genome* g) {
     double mu, sigma;
 
     // g->write_graphviz("rnn_genome_premutate_" + to_string(g->get_generation_id()) + ".gv");
+
+    // this genome will have copied over the parent ids of its parent, we can clear that and
+    // set the generation id to the parent's generation id.
+    g->parent_ids.clear();
+    g->parent_ids.push_back(g->generation_id);
 
     g->get_mu_sigma(g->best_parameters, mu, sigma);
     g->clear_generated_by();
@@ -680,9 +774,9 @@ void EXAMM::attempt_recurrent_edge_insert(
 }
 
 RNN_Genome* EXAMM::crossover(RNN_Genome* p1, RNN_Genome* p2) {
-    Log::debug("generating new genome by crossover!\n");
-    Log::debug("p1->island: %d, p2->island: %d\n", p1->get_group_id(), p2->get_group_id());
-    Log::debug("p1->number_inputs: %d, p2->number_inputs: %d\n", p1->get_number_inputs(), p2->get_number_inputs());
+    Log::info("generating new genome by crossover!\n");
+    Log::info("p1->island: %d, p2->island: %d\n", p1->get_group_id(), p2->get_group_id());
+    Log::info("p1->number_inputs: %d, p2->number_inputs: %d\n", p1->get_number_inputs(), p2->get_number_inputs());
 
     for (int32_t i = 0; i < (int32_t) p1->nodes.size(); i++) {
         Log::debug(
@@ -898,6 +992,11 @@ RNN_Genome* EXAMM::crossover(RNN_Genome* p1, RNN_Genome* p2) {
     genome_property->set_genome_properties(child);
     // child->set_parameter_names(input_parameter_names, output_parameter_names);
     // child->set_normalize_bounds(normalize_type, normalize_mins, normalize_maxs, normalize_avgs, normalize_std_devs);
+
+    // set the genome's parent ids
+    child->parent_ids.clear();
+    child->parent_ids.push_back(p1->generation_id);
+    child->parent_ids.push_back(p2->generation_id);
 
     if (p1->get_group_id() == p2->get_group_id()) {
         child->set_generated_by("crossover");

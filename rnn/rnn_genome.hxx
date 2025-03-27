@@ -52,6 +52,7 @@ class RNN_Genome {
 
     WeightRules* weight_rules;
 
+    vector<int32_t> parent_ids;
     map<string, int32_t> generated_by_map;
 
     vector<double> initial_parameters;

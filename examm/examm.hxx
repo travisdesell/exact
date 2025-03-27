@@ -120,6 +120,7 @@ class EXAMM {
     RNN_Genome* get_best_genome();
     RNN_Genome* get_worst_genome();
 
+    void save_visualization_json(RNN_Genome* genome, string genome_name);
     void save_genome(RNN_Genome* genome, string genome_name);
 
     string get_output_directory() const;

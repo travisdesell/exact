@@ -145,7 +145,7 @@ int32_t Island::insert_genome(RNN_Genome* genome) {
     }
     Log::debug("getting fitness of genome copy\n");
     double new_fitness = genome->get_fitness();
-    Log::info("inserting genome with fitness: %s to island %d\n", parse_fitness(genome->get_fitness()).c_str(), id);
+    Log::debug("inserting genome with fitness: %s to island %d\n", parse_fitness(genome->get_fitness()).c_str(), id);
 
     // discard the genome if the island is full and it's fitness is worse than the worst in thte population
     if (is_full() && new_fitness > get_worst_fitness()) {
@@ -154,12 +154,12 @@ int32_t Island::insert_genome(RNN_Genome* genome) {
             genomes.back()->get_fitness()
         );
         do_population_check(__LINE__, initial_size);
-        return false;
+        return -1;
     }
 
     // check and see if the structural hash of the genome is in the
     // set of hashes for this population
-    Log::info("getting structural hash\n");
+    Log::debug("getting structural hash\n");
     string structural_hash = genome->get_structural_hash();
     if (structure_map.count(structural_hash) > 0) {
         vector<RNN_Genome*>& potential_matches = structure_map.find(structural_hash)->second;
@@ -211,9 +211,9 @@ int32_t Island::insert_genome(RNN_Genome* genome) {
                     int32_t duplicate_genome_index = duplicate_genome_iterator - genomes.begin();
                     Log::debug("duplicate_genome_index: %d\n", duplicate_genome_index);
                     // int32_t test_index = contains(genome);
-                    // Log::info("test_index: %d\n", test_index);
+                    // Log::debug("test_index: %d\n", test_index);
                     RNN_Genome* duplicate = genomes[duplicate_genome_index];
-                    // Log::info("duplicate.equals(potential_match)? %d\n", duplicate->equals(*potential_match));
+                    // Log::debug("duplicate.equals(potential_match)? %d\n", duplicate->equals(*potential_match));
                     genomes.erase(genomes.begin() + duplicate_genome_index);
                     Log::debug("potential_matches.size() before erase: %d\n", potential_matches.size());
 
@@ -237,7 +237,7 @@ int32_t Island::insert_genome(RNN_Genome* genome) {
                         break;  // break because this vector is now empty and deleted
                     }
                 } else {
-                    Log::info(
+                    Log::debug(
                         "Island %d: island already contains a duplicate genome with a better fitness! not inserting.\n",
                         id
                     );
@@ -284,14 +284,14 @@ int32_t Island::insert_genome(RNN_Genome* genome) {
     if (insert_index == 0) {
         // this was a new best genome for this island
 
-        Log::info("Island %d: new best fitness found!\n", id);
+        Log::debug("Island %d: new best fitness found!\n", id);
 
         if (genome->get_fitness() != EXAMM_MAX_DOUBLE) {
             // need to set the weights for non-initial genomes so we
             // can generate a proper graphviz file
             vector<double> best_parameters = genome->get_best_parameters();
             genome->set_weights(best_parameters);
-            Log::info("set genome parameters to best\n");
+            Log::debug("set genome parameters to best\n");
         }
     }
 
@@ -348,7 +348,7 @@ int32_t Island::insert_genome(RNN_Genome* genome) {
         }
 
         if (!found) {
-            Log::debug(
+            Log::fatal(
                 "could not erase from structure_map[%s], genome not found! This should never happen.\n",
                 structural_hash.c_str()
             );
