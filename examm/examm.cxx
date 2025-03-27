@@ -295,43 +295,59 @@ void EXAMM::save_visualization_json(RNN_Genome* genome, string genome_name) {
     }
     json_filestream << "]," << endl;
 
-    vector<int32_t> edge_innovations;
-    for (int32_t i = 0; i < genome->edges.size(); i++) {
-        edge_innovations.push_back(genome->edges[i]->innovation_number);
+    sort(genome->nodes.begin(), genome->nodes.end(), sort_RNN_Nodes_by_innovation());
+    sort(genome->edges.begin(), genome->edges.end(), sort_RNN_Edges_by_innovation());
+    sort(genome->recurrent_edges.begin(), genome->recurrent_edges.end(), sort_RNN_Recurrent_Edges_by_innovation());
+
+    json_filestream << "\t\"nodes\" : [\n";
+    for (int32_t i = 0; i < genome->nodes.size(); i++) {
+        RNN_Node_Interface* node = genome->nodes[i];
+        if (i != 0) {
+            json_filestream << ",\n";
+        }
+
+        vector<double> weights;
+        node->get_weights(weights);
+
+        json_filestream << "\t\t{ \"n\" : " << node->innovation_number << ", \"type\" : \"" << NODE_TYPES[node->node_type] << "\", \"weights\" : [";
+        for (int32_t j = 0; j < weights.size(); j++) {
+            if (j != 0) {
+                json_filestream << ", ";
+            }
+            json_filestream << weights[j];
+        }
+
+        json_filestream << "]}";
     }
+    json_filestream << "\n";
+
+    json_filestream << "\t]," << endl;
+
+    json_filestream << "\t\"edges\" : [\n";
+
+    for (int32_t i = 0; i < genome->edges.size(); i++) {
+        RNN_Edge* edge = genome->edges[i];
+        if (i != 0) {
+            json_filestream << ",\n";
+        }
+
+        json_filestream << "\t\t{ \"n\" : " << edge->innovation_number << ", \"in\" : " << edge->input_node->innovation_number << ", \"on\" : " << edge->output_node->innovation_number << ", \"weight\" : " << edge->weight << " }";
+    }
+
+    json_filestream << "\n\t]," << endl;
+
+    json_filestream << "\t\"recurrent_edges\" : [\n";
 
     for (int32_t i = 0; i < genome->recurrent_edges.size(); i++) {
-        edge_innovations.push_back(genome->recurrent_edges[i]->innovation_number);
-    }
-
-    sort(edge_innovations.begin(), edge_innovations.end());
-
-    vector<int32_t> node_innovations;
-    for (int32_t i = 0; i < genome->nodes.size(); i++) {
-        node_innovations.push_back(genome->nodes[i]->innovation_number);
-    }
-
-    sort(node_innovations.begin(), node_innovations.end());
-
-    json_filestream << "\t\"nodes\" : [";
-    for (int32_t i = 0; i < node_innovations.size(); i++) {
+        RNN_Recurrent_Edge *recurrent_edge = genome->recurrent_edges[i];
         if (i != 0) {
-            json_filestream << ", ";
+            json_filestream << ",\n";
         }
 
-        json_filestream << node_innovations[i];
+        json_filestream << "\t\t{ \"n\" : " << recurrent_edge->innovation_number << ", \"in\" : " << recurrent_edge->input_node->innovation_number << ", \"on\" : " << recurrent_edge->output_node->innovation_number << ", \"rd\" : " << recurrent_edge->recurrent_depth << ", \"weight\" : " << recurrent_edge->weight << " }";
     }
-    json_filestream << "]," << endl;
 
-    json_filestream << "\t\"edges\" : [";
-    for (int32_t i = 0; i < edge_innovations.size(); i++) {
-        if (i != 0) {
-            json_filestream << ", ";
-        }
-
-        json_filestream << edge_innovations[i];
-    }
-    json_filestream << "]" << endl;
+    json_filestream << "\n\t]" << endl;
 
     json_filestream << "}" << endl;
     json_filestream.close();

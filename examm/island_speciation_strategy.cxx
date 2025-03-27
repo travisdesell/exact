@@ -458,7 +458,7 @@ RNN_Genome* IslandSpeciationStrategy::generate_for_filled_island(
         int32_t other_island_index = get_other_full_island(rng_0_1, generator, generation_island);
 
         // get the best genome from the other island
-        RNN_Genome* parent2 = islands[other_island_index]->get_best_genome()->copy;  // new RNN GENOME
+        RNN_Genome* parent2 = islands[other_island_index]->get_best_genome()->copy();  // new RNN GENOME
 
         // swap so the first parent is the more fit parent
         if (parent1->get_fitness() > parent2->get_fitness()) {
