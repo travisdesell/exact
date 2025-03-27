@@ -1,6 +1,4 @@
-<div style="float: right">
-    <img src="images/lab_logo_2.png" alt="DS2L Logo" width="100px"/>
-</div>
+![DS2L Banner](images/lab_logo_banner.png)
 
 # EXAMM: Evolutionary eXploration of Augmenting Memory Models
 
