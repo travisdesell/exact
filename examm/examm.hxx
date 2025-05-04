@@ -89,7 +89,7 @@ class EXAMM {
     ~EXAMM();
 
     void print();
-    void update_log();
+    void update_log(double _learning_rate=NULL, double _epsilon=NULL, double _beta1=NULL, double _beta2=NULL);
 
     void set_possible_node_types(vector<string> possible_node_type_strings);
 
@@ -97,6 +97,8 @@ class EXAMM {
 
     int32_t get_random_node_type();
 
+    vector<vector<double>> get_genome_information(int simplex_count);
+    
     RNN_Genome* generate_genome();
     bool insert_genome(RNN_Genome* genome);
 

@@ -89,11 +89,31 @@ class Island {
     RNN_Genome* get_worst_genome();
 
     /**
+     * Gets the the minimum learning rate in the island
+     * \return the minimum learning rate in the island or NULL if no genomes have yet been inserted
+     */
+    double get_min_learning_rate();
+
+    /**
+     * Gets the the maximum learning rate in the island
+     * \return the maximum learning rate in the island or NULL if no genomes have yet been inserted
+     */
+    double get_max_learning_rate();
+
+    /**
      * Returns the maximum number of genomes the island can hold
      *
      * \return the maximum number of genomes this island can have
      */
     int32_t get_max_size();
+
+    /**
+    * Returns the genome at a given index in the island.
+    *
+    * \param _index is the index of required genome in the island
+    * \return genome at a given index in the island
+    */
+    RNN_Genome *get_genome_at(int32_t _index);
 
     /**
      * Returns the size of the island

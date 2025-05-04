@@ -67,6 +67,7 @@ using std::map;
 #include "rnn_node.hxx"
 #include "time_series/time_series.hxx"
 #include "ugrnn_node.hxx"
+#include "weights/weight_update.hxx"
 
 vector<int32_t> dnas_node_types = {SIMPLE_NODE, UGRNN_NODE, MGU_NODE, GRU_NODE, DELTA_NODE, LSTM_NODE};
 
@@ -174,6 +175,16 @@ RNN_Genome* RNN_Genome::copy() {
     other->group_id = group_id;
     other->bp_iterations = bp_iterations;
     other->generation_id = generation_id;
+
+    // SHO tuned hyperparameters of Genome Copy
+    Log::debug("AT: SHO is used = %s\n",WeightUpdate::use_SHO?"true":"false");
+    if (WeightUpdate::use_SHO) {
+        other->learning_rate = learning_rate;
+        other->epsilon = epsilon;
+        other->beta1 = beta1;
+        other->beta2 = beta2;
+    }
+
     // other->learning_rate = learning_rate;
     // other->adapt_learning_rate = adapt_learning_rate;
     // other->use_reset_weights = use_reset_weights;
@@ -546,6 +557,39 @@ void RNN_Genome::set_weights(const vector<double>& parameters) {
         recurrent_edges[i]->weight = bound(parameters[current++]);
         // if (recurrent_edges[i]->is_reachable()) recurrent_edges[i]->weight = parameters[current++];
     }
+}
+
+// Definition of Getters and Setters for SHO tuned hyperparameters
+double RNN_Genome::get_learning_rate() {
+    return learning_rate;
+}
+
+void RNN_Genome::set_learning_rate(double _learning_rate) {
+    learning_rate = _learning_rate;
+}
+
+double RNN_Genome::get_epsilon() {
+    return epsilon;
+}
+
+void RNN_Genome::set_epsilon(double _epsilon) {
+    epsilon = _epsilon;
+}
+
+double RNN_Genome::get_beta1() {
+    return beta1;
+}
+
+void RNN_Genome::set_beta1(double _beta1) {
+    beta1 = _beta1;
+}
+
+double RNN_Genome::get_beta2() {
+    return beta2;
+}
+
+void RNN_Genome::set_beta2(double _beta2) {
+    beta2 = _beta2;
 }
 
 int32_t RNN_Genome::get_number_inputs() {
@@ -1052,7 +1096,17 @@ void RNN_Genome::backpropagate(
             (*output_log) << iteration << " " << mse << " " << validation_mse << " " << best_validation_mse << endl;
         }
         weight_update_method->norm_gradients(analytic_gradient, norm);
-        weight_update_method->update_weights(parameters, velocity, prev_velocity, analytic_gradient, iteration);
+        Log::debug("AT: SHO is used = %s\n",WeightUpdate::use_SHO?"true":"false");
+        if (WeightUpdate::use_SHO) {
+            // Adding SHO tuned hyperparameters to the backpropagate weight update process.
+            Log::debug("AT: backpropagate LR = %lg\n",learning_rate);
+            Log::debug("AT: backpropagate epsilon = %lg\n",epsilon);
+            Log::debug("AT: backpropagate beta1 = %lg\n",beta1);
+            Log::debug("AT: backpropagate beta2 = %lg\n",beta2);
+            weight_update_method->update_weights(parameters, velocity, prev_velocity, analytic_gradient, iteration, learning_rate, epsilon, beta1, beta2);
+        } else {
+            weight_update_method->update_weights(parameters, velocity, prev_velocity, analytic_gradient, iteration);
+        }
         Log::info(
             "iteration %10d, mse: %10lf, v_mse: %10lf, bv_mse: %10lf, norm: %lf", iteration, mse, validation_mse,
             best_validation_mse, norm
@@ -1151,7 +1205,17 @@ void RNN_Genome::backpropagate_stochastic(
 
             avg_norm += norm;
             weight_update_method->norm_gradients(analytic_gradient, norm);
-            weight_update_method->update_weights(parameters, velocity, prev_velocity, analytic_gradient, iteration);
+            Log::debug("AT: SHO is used = %s\n",WeightUpdate::use_SHO?"true":"false");
+            if (WeightUpdate::use_SHO) {
+                // Adding SHO tuned hyperparameters to the stochastic backpropagate weight update process.
+                Log::debug("AT: backpropagate_stochastic LR = %lg\n",learning_rate);
+                Log::debug("AT: backpropagate_stochastic epsilon = %lg\n",epsilon);
+                Log::debug("AT: backpropagate_stochastic beta1 = %lg\n",beta1);
+                Log::debug("AT: backpropagate_stochastic beta2 = %lg\n",beta2);
+                weight_update_method->update_weights(parameters, velocity, prev_velocity, analytic_gradient, iteration, learning_rate, epsilon, beta1, beta2);
+            } else {
+                weight_update_method->update_weights(parameters, velocity, prev_velocity, analytic_gradient, iteration);
+            }
         }
         this->set_weights(parameters);
         double training_mse = get_mse(parameters, inputs, outputs);
@@ -3350,6 +3414,15 @@ void RNN_Genome::read_from_stream(istream& bin_istream) {
     bin_istream.read((char*) &group_id, sizeof(int32_t));
     bin_istream.read((char*) &bp_iterations, sizeof(int32_t));
 
+    Log::debug("AT: SHO is used = %s\n",WeightUpdate::use_SHO?"true":"false");
+    if (WeightUpdate::use_SHO) {    
+        // Reading the SHO tuned hyperparameters from input stream
+        bin_istream.read((char*) &learning_rate, sizeof(double));
+        bin_istream.read((char*) &epsilon, sizeof(double));
+        bin_istream.read((char*) &beta1, sizeof(double));
+        bin_istream.read((char*) &beta2, sizeof(double));
+    }
+
     bin_istream.read((char*) &use_dropout, sizeof(bool));
     bin_istream.read((char*) &dropout_probability, sizeof(double));
 
@@ -3551,6 +3624,15 @@ void RNN_Genome::write_to_stream(ostream& bin_ostream) {
     bin_ostream.write((char*) &group_id, sizeof(int32_t));
     bin_ostream.write((char*) &bp_iterations, sizeof(int32_t));
 
+    Log::debug("AT: SHO is used = %s\n",WeightUpdate::use_SHO?"true":"false");
+    if (WeightUpdate::use_SHO) {        
+        // Writing the SHO tuned hyperparameters to output stream
+        bin_ostream.write((char*) &learning_rate, sizeof(double));
+        bin_ostream.write((char*) &epsilon, sizeof(double));
+        bin_ostream.write((char*) &beta1, sizeof(double));
+        bin_ostream.write((char*) &beta2, sizeof(double));
+    }
+    
     bin_ostream.write((char*) &use_dropout, sizeof(bool));
     bin_ostream.write((char*) &dropout_probability, sizeof(double));
 
