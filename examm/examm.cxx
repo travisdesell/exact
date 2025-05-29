@@ -264,8 +264,12 @@ bool EXAMM::insert_genome(RNN_Genome* genome) {
         save_visualization_json(genome, "rnn_genome");
     }
 
+    Log::debug("save visualization json complete\n");
+
     update_op_log_statistics(genome, insert_position);
+    Log::debug("update op log statistics complete\n");
     update_log();
+    Log::debug("update log complete\n");
 
     return insert_position >= 0;
 }
