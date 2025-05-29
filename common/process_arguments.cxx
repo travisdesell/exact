@@ -25,6 +25,13 @@ EXAMM* generate_examm_from_arguments(
     string save_genome_option = "all_best_genomes";
     get_argument(arguments, "--save_genome_option", false, save_genome_option);
 
+    bool generate_op_log = false;
+    get_argument(arguments, "--generate_op_log", false, generate_op_log);
+
+    bool generate_visualization_json = false;
+    get_argument(arguments, "--generate_visualization_json", false, generate_visualization_json);
+
+
     Log::info(
         "Setting up examm with %d islands, island size %d, and max_genome %d\n", number_islands, island_size,
         max_genomes
@@ -57,7 +64,7 @@ EXAMM* generate_examm_from_arguments(
 
     EXAMM* examm = new EXAMM(
         island_size, number_islands, max_genomes, speciation_strategy, weight_rules, genome_property, output_directory,
-        save_genome_option
+        save_genome_option, generate_op_log, generate_visualization_json
     );
     if (possible_node_types.size() > 0) {
         examm->set_possible_node_types(possible_node_types);

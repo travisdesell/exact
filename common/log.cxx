@@ -186,6 +186,7 @@ void Log::write_message(
         // check and see if we've already opened a file for this human readable id, if we haven't
         // open a new one for it
 
+        log_ids_mutex.lock();
         if (output_files.count(human_readable_id) == 0) {
             string output_filename = output_directory + "/" + human_readable_id;
             FILE* outfile = fopen(output_filename.c_str(), "w");
@@ -194,6 +195,7 @@ void Log::write_message(
         } else {
             log_file = output_files[human_readable_id];
         }
+        log_ids_mutex.unlock();
 
         // lock this log_file in case multiple threads are trying to write
         // to the same file
