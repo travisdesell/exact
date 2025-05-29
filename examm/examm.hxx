@@ -40,8 +40,6 @@ class EXAMM {
     map<string, int32_t> inserted_from_map;
     map<string, int32_t> generated_from_map;
 
-    bool generate_op_log;
-
     minstd_rand0 generator;
     uniform_real_distribution<double> rng_0_1;
     uniform_real_distribution<double> rng_crossover_weight;
@@ -79,11 +77,14 @@ class EXAMM {
     string genome_file_name;
     string save_genome_option;
 
+    bool generate_op_log;
+    bool generate_visualization_json;
+
    public:
     EXAMM(
         int32_t _island_size, int32_t _number_islands, int32_t _max_genomes, SpeciationStrategy* _speciation_strategy,
         WeightRules* _weight_rules, GenomeProperty* _genome_property, string _output_directory,
-        string _save_genome_option
+        string _save_genome_option, bool _generate_op_log, bool _generate_visualization_json
     );
 
     ~EXAMM();
