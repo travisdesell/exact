@@ -79,13 +79,13 @@ make
 
 For quick start with example datasets using basic settings, the following scripts provide examples of running EXAMM on the coal benchmark datasets provided in this repository running either the multithreaded version or the MPI version.  For a deeper dive on EXAMM/EXA-GP's command line arguments please see the [Running EXAMM and EXA-GP](#running-examm-and-exa-gp) section.
 
-## Multithreaded Version
+## [Multithreaded Version](./scripts/base_run/coal_mt.sh)
 ```bash
 # In the root directory:
 sh scripts/base_run/coal_mt.sh
 ```
 
-## MPI Version
+## [MPI Version](./scripts/base_run/coal_mpi.sh)
 ```bash
 # In the root directory:
 sh scripts/base_run/coal_mpi.sh
@@ -136,15 +136,19 @@ $$x = \frac{x - training_{min}}{training_{max} - training_{min}}$$
 
 Or can be `avg_std_dev` which does computes average and standard deviation of the training data columns and normalizes the data (i.e., z-score normalization):
 
-$$x = \frac{x - training_{avg}}{training_{max}}$$
+$$x = \frac{x - training_{avg}}{training_{std}}$$
 
 Putting this all together, given the following command line options and the above example files, we can run the multithreaded version of EXAMM (with `...` being other options described in the upcoming section):
 
 ```
-./multithreaded/examm_mt --training_filenames file1.csv file2.csv --validation_filenames file3.csv --input_parameter_names a b d --output_parameter_names c d --time_offset 1 --train_sequence_length 50 ...
+./multithreaded/examm_mt --training_filenames file1.csv file2.csv --validation_filenames file3.csv --input_parameter_names a b d --output_parameter_names c d --time_offset 1 --train_sequence_length 50 --normalize avg_std_dev ...
 ```
 
-This will run examm with `file1.csv` and `file2.csv`, each split up into segments of at most 50 rows, to train the evolved networks and calculate the fitness of those networks using `file3.csv`. The values in columns `a`, `b` and `d` will be used to predict the values in columns `c` and `d` in the next row (a time offset of 1).
+Note that the min/max or avg/std dev values from the training data are used to normalize the validation data.
+
+This will run EXAMM with `file1.csv` and `file2.csv`, each split up into segments of at most 50 rows, to train the evolved networks and calculate the fitness of those networks using `file3.csv`. Each file will be z-score normalized based on the training files. The values in columns `a`, `b` and `d` will be used to predict the values in columns `c` and `d` in the next row (a time offset of 1).
+
+# Running EXAMM and EXA-GP
 
 
 
@@ -153,7 +157,6 @@ This will run examm with `file1.csv` and `file2.csv`, each split up into segment
 
 
 
-4. [Running EXAMM and EXA-GP](#running-examm-and-exa-gp)
 5. [Tracking and Managing Neural Networks](#tracking-and-managing-neural-networks)
 6. [Using Evolved Neural Networks for Inference](#using-evolved-neural-networks-for-inference)
 
