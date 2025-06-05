@@ -21,7 +21,7 @@ EXAMM (Evolutionary eXploration of Augmenting Memory Models) is a neuroevolution
 
 [^examm_lamarckian]: Zimeng Lyu, AbdElRahman ElSaid, Joshua Karns, Mohamed Mkaouer, Travis Desell. **[An Experimental Study of Weight Initialization and Lamarckian Inheritance on Neuroevolution](https://www.se.rit.edu/~travis/papers/2021_EvoStar_Weight_initialization.pdf).** *The 24th International Conference on the Applications of Evolutionary Computation (EvoStar: EvoApps 2021).*
 
-EXAMM has since been extended to the Evolutionary Exploration of Augmenting Genetic Programs (EXA-GP) algorithm, which replaces the memory cells of EXAMM with basic genetic programming operations (e.g., sum, product, sin, cos, tanh, sigmoid, inverse).  EXA-GP has been shown to generate compact genetic programs (multivariate functions) for time series forecasting which can outperform the RNNs evolved by EXAMM while at the same time being more interpretable[^exagp][^exagp_min].
+EXAMM has since been extended to the Evolutionary Exploration of Augmenting Genetic Programs (EXA-GP) algorithm, which replaces the memory cells of EXAMM with basic genetic programming (GP) operations (e.g., sum, product, sin, cos, tanh, sigmoid, inverse).  EXA-GP has been shown to generate compact genetic programs (multivariate functions) for time series forecasting which can outperform the RNNs evolved by EXAMM while at the same time being more interpretable[^exagp][^exagp_min].
 
 [^exagp]: Jared Murphy, Devroop Kar, Joshua Karns, and Travis Desell. **[EXA-GP: Unifying Graph-Based Genetic Programming and Neuroevolution for Explainable Time Series Forecasting](link).** *Proceedings of the Genetic and Evolutionary Computation Conference Companion.* Melbourne, Australia. July 14-18, 2024.
 
@@ -93,7 +93,7 @@ sh scripts/base_run/coal_mpi.sh
 
 # Managing Datasets
 
-EXAMM and EXA-GP are designed to use multivariate time series data as training and validation data. For this it utilizes simple comma-separated value (CSV) files to represent this data (examples can be found within the [datasets](./datasets) subdirectory of the project). The first row of the CSV file should contain the column headers (without a `#` character), for example:
+EXAMM and EXA-GP are designed to use multivariate time series data as training and validation data. When EXAMM or EXA-GP generate a new recurrent neural network (RNN) or genetic program (GP), the RNN or GP is trained for a specified number of backpropagation epochs on the training data, and then the fitness of the RNN or GP is calculated by evaluating it using the validation data. Simple comma-separated value (CSV) files are used to represent th the training and validation data (examples can be found within the [datasets](./datasets) subdirectory of the project). The first row of the CSV file should contain the column headers (without a `#` character), and all columns should have numerical values as data. For example:
 
 **file1.csv:**
 ```csv
@@ -104,7 +104,39 @@ a,b,c,d
 0.9,-0.2,0.2,0.6
 ```
 
-Would be a four column CSV file with the first column being named `a`, the second column being named `b` and so on. These column names 
+**file2.csv:**
+```csv
+a,b,c,d
+0.7,-0.2,0.7,0.3
+0.6,-0.1,0.5,0.4
+...
+0.4,0.3,-0.1,0.6
+```
+
+**file3.csv:**
+```csv
+a,b,c,d
+-0.5,0.6,0.5,0.9
+-0.8,0.7,-0.3,0.8
+...
+-0.9,-0.8,-0.3,0.3
+```
+
+Given three example files which can be used for training and evolving the networks (either RNNs or GPs) as well as validating their results to calculate the fitness.  These are a four column CSV files with the first column being named `a`, the second column being named `b` and so on. These column names can be used to specifiy which columns are used as inputs to the evolved networks.  The files used for training are specified with the `--training_filenames` command line option and the files used for validation are specified with the `--validation_filenames` command line option.  Similarly, the `--input_parameter_names` specify which columns are used as inputs to the networks and `--output_parameter_names` specify which columns are being predicted (i.e., the outputs of the networks). Note that the same columns can be used for both inputs and outputs.
+
+As the networks evolved are used for time series forecasting, the `--time_offset` command line option specifies how far in the future (how many rows) the network is predicting. So if `--time_offset 5 is specified` the values from row 1 would be used to predict the values in row 6, the values in row 2 would be used to predict the values in row 7, and so on.  `--time_offset` can also be set to `0` to predict the input data, which can be useful for evolving auto-encoder like networks.
+
+EXAAM and EXA-GP currently utilize unbatched stochastic gradient descent to train the evolved networks, so each training file specified is used as a sample which are randomly shuffled each epoch.  We have found however that while memory cell recurrent architectures are supposed to well handle long term time dependencies in practice this is not necessarily the case. It is possible to improve performance by dividing up input time series data into smaller sequences[^examm_coal]. The `--train_sequence_length` command line option can be used to specify how many rows to slice each training file into (if they are not evenly divisible by this number the last slice will be the remaining rows of the file).
+
+[^examm_coal]: Zimeng Lyu, Shuchita Patwardhan, David Stadem, James Langfeld, Steve Benson, and Travis Desell. **[Neuroevolution of Recurrent Neural Networks for Time Series Forecasting of Coal-Fired Power Plant Data](https://www.se.rit.edu/~travis/papers/2021_Gecco_NEWK_Work_Workshop_Zimeng.pdf)**. <em>ACM Workshop on NeuroEvolution@Work (NEWK@Work}, held in conjunction with ACM Genetic and Evolutionary Computation Conference (GECCO).</em> pp. 1735-1743. Lille, France. July 10-14, 2021.
+
+Putting this all together, given the following command line options and the above example files, we can run the multithreaded version of EXAMM with:
+
+```
+./multithreaded/examm_mt --training_filenames file1.csv file2.csv --validation_filenames file3.csv --input_parameter_names a b d --output_parameter_names c d --time_offset 1 --train_sequence_length 50 ...
+```
+
+
 
 
 
