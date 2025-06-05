@@ -18,7 +18,7 @@ echo "Running base EXAMM code with coal dataset, results will be saved to: "$exp
 echo "###-------------------###"
 
 ./multithreaded/examm_mt --number_threads 8 \
---training_filenames ../datasets/2018_coal/burner_[0-9].csv --test_filenames \
+--training_filenames ../datasets/2018_coal/burner_[0-9].csv --validation_filenames \
 ../datasets/2018_coal/burner_1[0-1].csv \
 --time_offset 1 \
 --input_parameter_names $INPUT_PARAMETERS \

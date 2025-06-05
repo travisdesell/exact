@@ -5,8 +5,6 @@
 1. [EXAMM and EXA-GP Overview](#examm-and-exa-gp)
 2. [Installation and Setup](#installation-and-setup)
 3. [Quickstart](#quickstart)
-    a. [Multithreaded Version](#multithreaded-version)
-    b. [MPI Version](#mpi-version)
 4. [Managing Datasets](#managing-datasets)
 5. [Running EXAMM and EXA-GP](#running-examm-and-exa-gp)
 6. [Tracking and Managing Neural Networks](#tracking-and-managing-neural-networks)
@@ -151,6 +149,12 @@ Note that the min/max or avg/std dev values from the training data are used to n
 This will run EXAMM with `file1.csv` and `file2.csv`, each split up into segments of at most 50 rows, to train the evolved networks and calculate the fitness of those networks using `file3.csv`. Each file will be z-score normalized based on the training files. The values in columns `a`, `b` and `d` will be used to predict the values in columns `c` and `d` in the next row (a time offset of 1).
 
 # Running EXAMM and EXA-GP
+
+Given the above options for loading and using training and validation data, we can explore the various options for running EXAMM and EXA-GP.
+
+## Evolution Strategy Hyperparameters
+
+## Training Hyperparameters
 
 
 

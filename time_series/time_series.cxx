@@ -591,7 +591,7 @@ void TimeSeriesSets::help_message() {
     Log::info("\t\t\t--test_indexes : array of ints (starting at 0) specifying which files are test files\n");
     Log::info("\tOR:\n");
     Log::info("\t\t\t--training_filenames : list of input CSV files for training time series\n");
-    Log::info("\t\t\t--test_filenames : list of input CSV files for test time series\n");
+    Log::info("\t\t\t--validation_filenames : list of input CSV files for test time series\n");
 
     Log::info("\tSpecifying parameters:\n");
     Log::info("\t\t\t--input_parameter_names <name>*: parameters to be used as inputs\n");
@@ -753,12 +753,12 @@ TimeSeriesSets* TimeSeriesSets::generate_from_arguments(const vector<string>& ar
         get_argument_vector(arguments, "--training_indexes", false, tss->training_indexes);
         get_argument_vector(arguments, "--test_indexes", false, tss->test_indexes);
 
-    } else if (argument_exists(arguments, "--training_filenames") && argument_exists(arguments, "--test_filenames")) {
+    } else if (argument_exists(arguments, "--training_filenames") && argument_exists(arguments, "--validation_filenames")) {
         vector<string> training_filenames;
         get_argument_vector(arguments, "--training_filenames", true, training_filenames);
 
-        vector<string> test_filenames;
-        get_argument_vector(arguments, "--test_filenames", true, test_filenames);
+        vector<string> validation_filenames;
+        get_argument_vector(arguments, "--validation_filenames", true, validation_filenames);
 
         int32_t current = 0;
         for (int32_t i = 0; i < (int32_t) training_filenames.size(); i++) {
@@ -767,15 +767,15 @@ TimeSeriesSets* TimeSeriesSets::generate_from_arguments(const vector<string>& ar
             current++;
         }
 
-        for (int32_t i = 0; i < (int32_t) test_filenames.size(); i++) {
-            tss->filenames.push_back(test_filenames[i]);
+        for (int32_t i = 0; i < (int32_t) validation_filenames.size(); i++) {
+            tss->filenames.push_back(validation_filenames[i]);
             tss->test_indexes.push_back(current);
             current++;
         }
 
     } else {
         Log::fatal(
-            "Could not find the '--filenames' or the '--training_filenames' and '--test_filenames' command line "
+            "Could not find the '--filenames' or the '--training_filenames' and '--validation_filenames' command line "
             "arguments.  Usage instructions:\n"
         );
         help_message();
@@ -857,12 +857,12 @@ TimeSeriesSets* TimeSeriesSets::generate_from_arguments(const vector<string>& ar
 }
 
 TimeSeriesSets* TimeSeriesSets::generate_test(
-    const vector<string>& _test_filenames, const vector<string>& _input_parameter_names,
+    const vector<string>& _validation_filenames, const vector<string>& _input_parameter_names,
     const vector<string>& _output_parameter_names
 ) {
     TimeSeriesSets* tss = new TimeSeriesSets();
 
-    tss->filenames = _test_filenames;
+    tss->filenames = _validation_filenames;
 
     tss->training_indexes.clear();
     tss->test_indexes.clear();

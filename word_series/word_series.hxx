@@ -138,7 +138,7 @@ class Corpus {
 
     static Corpus* generate_from_arguments(const vector<string>& arguments);
     static Corpus* generate_test(
-        const vector<string>& _test_filenames, const vector<string>& _input_parameter_names,
+        const vector<string>& _validation_filenames, const vector<string>& _input_parameter_names,
         const vector<string>& _output_parameter_names
     );
 

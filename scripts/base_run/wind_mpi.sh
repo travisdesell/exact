@@ -18,7 +18,7 @@ echo "###-------------------###"
 
 mpirun -np 4 ./mpi/examm_mpi \
 --training_filenames ../datasets/2020_wind_engine/turbine_R80711_2017-2020_[1-9].csv ../datasets/2020_wind_engine/turbine_R80711_2017-2020_1[0-9].csv ../datasets/2020_wind_engine/turbine_R80711_2017-2020_2[0-4].csv \
---test_filenames ../datasets/2020_wind_engine/turbine_R80711_2017-2020_2[5-9].csv ../datasets/2020_wind_engine/turbine_R80711_2017-2020_3[0-1].csv \
+--validation_filenames ../datasets/2020_wind_engine/turbine_R80711_2017-2020_2[5-9].csv ../datasets/2020_wind_engine/turbine_R80711_2017-2020_3[0-1].csv \
 --time_offset 1 \
 --input_parameter_names $INPUT_PARAMETERS \
 --output_parameter_names $OUTPUT_PARAMETERS \

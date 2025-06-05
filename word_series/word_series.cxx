@@ -514,12 +514,12 @@ Corpus* Corpus::generate_from_arguments(const vector<string>& arguments) {
     cs->word_index.clear();
     cs->vocab.clear();
 
-    if (argument_exists(arguments, "--training_filenames") && argument_exists(arguments, "--test_filenames")) {
+    if (argument_exists(arguments, "--training_filenames") && argument_exists(arguments, "--validation_filenames")) {
         vector<string> training_filenames;
         get_argument_vector(arguments, "--training_filenames", true, training_filenames);
 
-        vector<string> test_filenames;
-        get_argument_vector(arguments, "--test_filenames", true, test_filenames);
+        vector<string> validation_filenames;
+        get_argument_vector(arguments, "--validation_filenames", true, validation_filenames);
 
         int current = 0;
         for (int i = 0; i < training_filenames.size(); i++) {
@@ -528,15 +528,15 @@ Corpus* Corpus::generate_from_arguments(const vector<string>& arguments) {
             current++;
         }
 
-        for (int i = 0; i < test_filenames.size(); i++) {
-            cs->filenames.push_back(test_filenames[i]);
+        for (int i = 0; i < validation_filenames.size(); i++) {
+            cs->filenames.push_back(validation_filenames[i]);
             cs->test_indexes.push_back(current);
             current++;
         }
 
     } else {
         Log::fatal(
-            "Could not find the '--filenames' or the '--training_filenames' and '--test_filenames' command line "
+            "Could not find the '--filenames' or the '--training_filenames' and '--validation_filenames' command line "
             "arguments.  Usage instructions:\n"
         );
         // help_message();
@@ -553,12 +553,12 @@ Corpus* Corpus::generate_from_arguments(const vector<string>& arguments) {
 }
 
 Corpus* Corpus::generate_test(
-    const vector<string>& _test_filenames, const vector<string>& _input_parameter_names,
+    const vector<string>& _validation_filenames, const vector<string>& _input_parameter_names,
     const vector<string>& _output_parameter_names
 ) {
     Corpus* cs = new Corpus();
 
-    cs->filenames = _test_filenames;
+    cs->filenames = _validation_filenames;
 
     cs->training_indexes.clear();
     cs->test_indexes.clear();
