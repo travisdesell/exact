@@ -5,10 +5,12 @@
 1. [EXAMM and EXA-GP Overview](#examm-and-exa-gp)
 2. [Installation and Setup](#installation-and-setup)
 3. [Quickstart](#quickstart)
-3. [Managing Datasets](#managing-datasets)
-4. [Running EXAMM and EXA-GP](#running-examm-and-exa-gp)
-5. [Tracking and Managing Neural Networks](#tracking-and-managing-neural-networks)
-6. [Using Evolved Neural Networks for Inference](#using-evolved-neural-networks-for-inference)
+    A. [Multithreaded Version](#multithreaded-version)
+    B. [MPI Version](#mpi-version)
+4. [Managing Datasets](#managing-datasets)
+5. [Running EXAMM and EXA-GP](#running-examm-and-exa-gp)
+6. [Tracking and Managing Neural Networks](#tracking-and-managing-neural-networks)
+7. [Using Evolved Neural Networks for Inference](#using-evolved-neural-networks-for-inference)
 
 
 # EXAMM and EXA-GP Overview
