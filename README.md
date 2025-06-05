@@ -66,7 +66,7 @@ spack load libtiff/gnxev37
 ```
 
 ## Building
-After the above libraries have been installed and/or loaded, compiling EXAMM/EXA-GP should be as simple doing the following within your base EXAMM directory.
+After the above libraries have been installed and/or loaded, compiling EXAMM/EXA-GP should be as simple doing the following within your root EXAMM directory.
 
 ```bash
 mkdir build
@@ -92,6 +92,18 @@ sh scripts/base_run/coal_mpi.sh
 ```
 
 # Managing Datasets
+
+EXAMM and EXA-GP are designed to use multivariate time series data as training and validation data. For this it utilizes simple comma-separated value (CSV) files to represent this data (examples can be found within the [datasets](./datasets) subdirectory of the project). The first row of the CSV file should contain the column headers (without a `#` character), for example:
+
+`file1.csv`
+```
+a,b,c,d
+0.5,0.2,0.1,0.2
+0.8,0.1,0.3,0.5
+...
+0.9,-0.2,0.2,0.6
+```
+
 
 
 
