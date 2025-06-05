@@ -7,7 +7,7 @@
 3. [Quickstart](#quickstart)
 4. [Managing Datasets](#managing-datasets)
 5. [Running EXAMM and EXA-GP](#running-examm-and-exa-gp)
-6. [Tracking and Managing Neural Networks](#tracking-and-managing-neural-networks)
+6. [Tracking and Managing Evolved Networks](#tracking-and-managing-evolved-networks)
 7. [Using Evolved Neural Networks for Inference](#using-evolved-neural-networks-for-inference)
 
 
@@ -122,15 +122,15 @@ a,b,c,d
 -0.9,-0.8,-0.3,0.3
 ```
 
-Given three example files which can be used for training and evolving the networks (either RNNs or GPs) as well as validating their results to calculate the fitness.  These are a four column CSV files with the first column being named `a`, the second column being named `b` and so on. These column names can be used to specifiy which columns are used as inputs to the evolved networks.  The files used for training are specified with the `--training_filenames` command line option and the files used for validation are specified with the `--validation_filenames` command line option.  Similarly, the `--input_parameter_names` specify which columns are used as inputs to the networks and `--output_parameter_names` specify which columns are being predicted (i.e., the outputs of the networks). Note that the same columns can be used for both inputs and outputs.
+Given three example files which can be used for training and evolving the networks (either RNNs or GPs) as well as validating their results to calculate the fitness.  These are a four column CSV files with the first column being named `a`, the second column being named `b` and so on. These column names can be used to specifiy which columns are used as inputs to the evolved networks.  The files used for training are specified with the `--training_filenames <str>+` command line option and the files used for validation are specified with the `--validation_filenames <str>+` command line option.  Similarly, the `--input_parameter_names <str>+` specify which columns are used as inputs to the networks and `--output_parameter_names <str>+` specify which columns are being predicted (i.e., the outputs of the networks). Note that the same columns can be used for both inputs and outputs.
 
-As the networks evolved are used for time series forecasting, the `--time_offset` command line option specifies how far in the future (how many rows) the network is predicting. So if `--time_offset 5 is specified` the values from row 1 would be used to predict the values in row 6, the values in row 2 would be used to predict the values in row 7, and so on.  `--time_offset` can also be set to `0` to predict the input data, which can be useful for evolving auto-encoder like networks.
+As the networks evolved are used for time series forecasting, the `--time_offset <int>` command line option specifies how far in the future (how many rows) the network is predicting. So if `--time_offset 5` is specified the values from row 1 would be used to predict the values in row 6, the values in row 2 would be used to predict the values in row 7, and so on.  `--time_offset` can also be set to `0` to predict the input data, which can be useful for evolving auto-encoder like networks.
 
-EXAAM and EXA-GP currently utilize unbatched stochastic gradient descent to train the evolved networks, so each training file specified is used as a sample which are randomly shuffled each epoch.  We have found however that while memory cell recurrent architectures are supposed to well handle long term time dependencies in practice this is not necessarily the case. It is possible to improve performance by dividing up input time series data into smaller sequences[^examm_coal]. The `--train_sequence_length` command line option can be used to specify how many rows to slice each training file into (if they are not evenly divisible by this number the last slice will be the remaining rows of the file).
+EXAAM and EXA-GP currently utilize unbatched stochastic gradient descent to train the evolved networks, so each training file specified is used as a sample which are randomly shuffled each epoch.  We have found however that while memory cell recurrent architectures are supposed to well handle long term time dependencies in practice this is not necessarily the case. It is possible to improve performance by dividing up input time series data into smaller sequences[^examm_coal]. The `--train_sequence_length <int>` command line option can be used to specify how many rows to slice each training file into (if they are not evenly divisible by this number the last slice will be the remaining rows of the file).
 
 [^examm_coal]: Zimeng Lyu, Shuchita Patwardhan, David Stadem, James Langfeld, Steve Benson, and Travis Desell. **[Neuroevolution of Recurrent Neural Networks for Time Series Forecasting of Coal-Fired Power Plant Data](https://www.se.rit.edu/~travis/papers/2021_Gecco_NEWK_Work_Workshop_Zimeng.pdf)**. <em>ACM Workshop on NeuroEvolution@Work (NEWK@Work}, held in conjunction with ACM Genetic and Evolutionary Computation Conference (GECCO).</em> pp. 1735-1743. Lille, France. July 10-14, 2021.
 
-If the training and validation CSVs are not already normalized, they can be normalized with the optional `--normalize` argument which can either be `min_max` which will calculate the min and max value for each column in the training data, and use those values to normalize the data:
+If the training and validation CSVs are not already normalized, they can be normalized with the optional `--normalize <str>` argument which can either be `min_max` which will calculate the min and max value for each column in the training data, and use those values to normalize the data:
 
 $$x = \frac{x - training_{min}}{training_{max} - training_{min}}$$
 
@@ -154,10 +154,11 @@ Given the above options for loading and using training and validation data, we c
 
 ## Evolution Strategy Hyperparameters
 
-* `--max_genomes`
-* `--possible_node_types`
-* `--min_recurrent_depth`
-* `--max_recurrent_depth`
+The following command line options control the neuroevolution search process itself.
+
+* `--max_genomes <int>` specifies how many genomes (RNNs or GPs) to evaluate before terminating the run. Note that EXAMM/EXA-GP use an asynchronous strategy with steady state populations so there are no explicit generations.
+* `--min_recurrent_depth <int>` and `--max_recurrent_depth <int>` specify the possible range of time skip values for recurrent connections added to the evolved networks.  Default values are 1 and 10. Adding in deeper recurrent connections has been shown to improve forecasting performance, and in some cases even outperform memory cells[^examm_deep_recurrent].
+* `--possible_node_types` specifies the options for selecting which node types can be added to networks during the evolution process. Default possible node types are the default for EXAMM (`simple`, `jordan`, `elman`, `ugrnn`, `mgu`, `gru`, `delta`, and `lstm` (please see [^examm_memory_cells] for more details on these node types). EXA-GP can be enabled by instead using `sigmoid`, `tanh`, `sum`, `multiply`,`inverse`, `sin` and `cos` as possible node types; and the better peforming EXA-GP-MIN can be enabled with the `_gp` options: `sigmoid_gp`, `tanh_gp`, `sum_gp`, `multiply_gp`, `inverse_gp`, `sin_gp` and `cos_gp` for the possible node types (for more details on their implementation see [^exagp][^exagp_min]).
 
 * `--speciation_method`
 
@@ -209,7 +210,7 @@ Given the above options for loading and using training and validation data, we c
 
 
 
-5. [Tracking and Managing Neural Networks](#tracking-and-managing-neural-networks)
+5. [Tracking and Managing Evolved Networks](#tracking-and-managing-evolved-networks)
 
 * `--output_directory`
 
