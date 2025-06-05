@@ -150,13 +150,59 @@ This will run EXAMM with `file1.csv` and `file2.csv`, each split up into segment
 
 # Running EXAMM and EXA-GP
 
-Given the above options for loading and using training and validation data, we can explore the various options for running EXAMM and EXA-GP.
+Given the above options for loading and using training and validation data, we can explore the various options for running EXAMM and EXA-GP. The library also contains an implementation which utilizes NEAT speciation, for comparison purposes, which also serves as a memetic (backprop enabled) version of NEAT with the advanced node level mutation operations of EXAMM.
 
 ## Evolution Strategy Hyperparameters
 
+* `--max_genomes`
+* `--possible_node_types`
+* `--min_recurrent_depth`
+* `--max_recurrent_depth`
+
+* `--speciation_method`
+
+### Island Speciation
+
+* `--number_islands`
+* `--island_size`
+* `--extinction_event_generation_number`
+* `--islands_to_exterminate`
+* `--island_ranking_method`
+* `--repopulation_method`
+* `--num_mutations`
+* `--repeat_extenction`
+
+### NEAT Speciation
+
+* `--species_threshold`
+* `--fitness_threshold`
+* `--neat_c1`
+* `--neat_c2`
+* `--neat_c3`
+
+
+## Weight Initialization
+
+* `--weight_initialize`
+* `--weight_inheritance`
+* `--mutated_component_weight`
+
 ## Training Hyperparameters
 
+* `--bp_iterations`
 
+* `--learning_rate`
+* `--high_threshold`
+* `--low_threshold`
+
+* `--weight_update`
+    * `vanilla`
+    * `momentum` uses `--mu`
+    * `nesterov`  uses `--mu`
+    * `adagrad` uses `--eps`
+    * `rmsprop` uses `--eps` `--decay_rate`
+    * `adam` uses `--eps`, `--beta1`, `--beta2`
+    * `adam-bias` uses `--eps`, `--beta1`, `--beta2`
 
 
 
@@ -164,6 +210,9 @@ Given the above options for loading and using training and validation data, we c
 
 
 5. [Tracking and Managing Neural Networks](#tracking-and-managing-neural-networks)
+
+* `--output_directory`
+
 6. [Using Evolved Neural Networks for Inference](#using-evolved-neural-networks-for-inference)
 
 
