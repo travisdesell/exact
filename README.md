@@ -4,10 +4,11 @@
 
 1. [EXAMM and EXA-GP Overview](#examm-and-exa-gp)
 2. [Installation and Setup](#installation-and-setup)
-3. Managing Datasets
-4. Running EXAMM and EXA-GP
-5. Tracking and Managing Neural Networks
-6. Using Evolved Neural Networks for Inference
+3. [Quickstart](#quickstart)
+3. [Managing Datasets](#managing-datasets)
+4. [Running EXAMM and EXA-GP](#running-examm-and-exa-gp)
+5. [Tracking and Managing Neural Networks](#tracking-and-managing-neural-networks)
+6. [Using Evolved Neural Networks for Inference](#using-evolved-neural-networks-for-inference)
 
 
 # EXAMM and EXA-GP Overview
@@ -32,21 +33,24 @@ Implemented in C++, EXAMM and EXA-GP are designed for efficient CPU-based comput
 
 
 # Installation and Setup
+EXAMM and EXA-GP have been designed to have a fairly minimal set of requirements, and we recommend using either OSX or Linux.  For Windows users, we recommend using Windows Subsystem for Linux (WSL) to run EXAMM or EXA-GP in a linux VM. EXAMM/EXA-GP use CMake to create a makefile for building (this can potentially also be used to make a visual studio project, however we have not tested this).
 
-EXAMM has been developed to compile using CMake. To use the MPI version, a version of MPI (such as OpenMPI) should be installed.
+## OSX and Linux Setup
+For OSX we recommend using [Homebrew](https://brew.sh) to handle installing packages, for Linux please use your package manager of choice. Installing all required libraries below (or their linux versions) should be sufficient to compile EXAMM/EXA-GP:
 
-## OSX Setup
 ```bash
+xcode-select --install
 brew install cmake
 brew install mysql
 brew install open-mpi
 brew install libtiff
 brew install libpng
 brew install clang-format
-xcode-select --install
 ```
 
-## RIT Cluster Setup
+## Cluster Setup
+The following is for internal use on RIT's high performance computing cluster, however if your own computing cluster utilizes [Spack](https://spack.io) you may find this useful.
+
 ```bash
 # GCC (9.3)
 spack load gcc/lhqcen5
@@ -62,12 +66,45 @@ spack load libtiff/gnxev37
 ```
 
 ## Building
+After the above libraries have been installed and/or loaded, compiling EXAMM/EXA-GP should be as simple doing the following within your base EXAMM directory.
+
 ```bash
 mkdir build
 cd build
 cmake ..
 make
 ```
+
+# Quickstart
+
+For quick start with example datasets using basic settings, the following scripts provide examples of running EXAMM on the coal benchmark datasets provided in this repository running either the multithreaded version or the MPI version.  For a deeper dive on EXAMM/EXA-GP's command line arguments please see the [Running EXAMM and EXA-GP](#running-examm-and-exa-gp) section.
+
+## Multithreaded Version
+```bash
+# In the root directory:
+sh scripts/base_run/coal_mt.sh
+```
+
+## MPI Version
+```bash
+# In the root directory:
+sh scripts/base_run/coal_mpi.sh
+```
+
+# Managing Datasets
+
+
+
+
+
+4. [Running EXAMM and EXA-GP](#running-examm-and-exa-gp)
+5. [Tracking and Managing Neural Networks](#tracking-and-managing-neural-networks)
+6. [Using Evolved Neural Networks for Inference](#using-evolved-neural-networks-for-inference)
+
+
+
+
+
 
 
 # Selected Publications
@@ -112,22 +149,6 @@ EXAMM has been at the forefront of neuroevolution research, making significant c
 
 
 
-
-# Running EXAMM
-
-EXAMM can be run in two different modes - MPI (distributed) or multithreaded. For quick start with example datasets using default settings:
-
-## MPI Version
-```bash
-# In the root directory:
-sh scripts/base_run/coal_mpi.sh
-```
-
-## Multithreaded Version
-```bash
-# In the root directory:
-sh scripts/base_run/coal_mt.sh
-```
 
 # Archived: EXACT Project
 
