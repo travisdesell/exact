@@ -130,11 +130,21 @@ EXAAM and EXA-GP currently utilize unbatched stochastic gradient descent to trai
 
 [^examm_coal]: Zimeng Lyu, Shuchita Patwardhan, David Stadem, James Langfeld, Steve Benson, and Travis Desell. **[Neuroevolution of Recurrent Neural Networks for Time Series Forecasting of Coal-Fired Power Plant Data](https://www.se.rit.edu/~travis/papers/2021_Gecco_NEWK_Work_Workshop_Zimeng.pdf)**. <em>ACM Workshop on NeuroEvolution@Work (NEWK@Work}, held in conjunction with ACM Genetic and Evolutionary Computation Conference (GECCO).</em> pp. 1735-1743. Lille, France. July 10-14, 2021.
 
-Putting this all together, given the following command line options and the above example files, we can run the multithreaded version of EXAMM with:
+If the training and validation CSVs are not already normalized, they can be normalized with the optional `--normalize` argument which can either be `min_max` which will calculate the min and max value for each column in the training data, and use those values to normalize the data:
+
+$$x = \frac{x - training_{min}}{training_{max} - training_{min}}$$
+
+Or can be `avg_std_dev` which does computes average and standard deviation of the training data columns and normalizes the data (i.e., z-score normalization):
+
+$$x = \frac{x - training_{avg}}{training_{max}}$$
+
+Putting this all together, given the following command line options and the above example files, we can run the multithreaded version of EXAMM (with `...` being other options described in the upcoming section):
 
 ```
 ./multithreaded/examm_mt --training_filenames file1.csv file2.csv --validation_filenames file3.csv --input_parameter_names a b d --output_parameter_names c d --time_offset 1 --train_sequence_length 50 ...
 ```
+
+This will run examm with `file1.csv` and `file2.csv`, each split up into segments of at most 50 rows, to train the evolved networks and calculate the fitness of those networks using `file3.csv`. The values in columns `a`, `b` and `d` will be used to predict the values in columns `c` and `d` in the next row (a time offset of 1).
 
 
 
