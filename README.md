@@ -1,5 +1,4 @@
-![DS2L Banner](images/lab_logo_banner.png)
-
+![EXAMM Architecture](images/examm.png)
 
 # Table of Contents
 
@@ -27,11 +26,10 @@ EXAMM has since been extended to the Evolutionary Exploration of Augmenting Gene
 
 [^exagp_min] Jared Murphy, Travis Desell. **[Minimizing the EXA-GP Graph-Based Genetic Programming Algorithm for Interpretable Time Series Forecasting](link).** *Proceedings of the Genetic and Evolutionary Computation Conference Companion.* Melbourne, Australia. July 14-18, 2024.
 
-Implemented in C++, EXAMM and EXA-GP are designed for efficient CPU-based computation (which for time series forecasting RNNs are typically more performant than GPUs) and offers excellent scalability due to its asynchronous island based distributed strategy (see below) with repopulation events which prune evolutionary dead ends to improve perforance[^examm_islands]. They employ a distributed architecture where worker processes handle RNN training while a main process manages population evolution and orchestrates the overall evolutionary process.  This allows for better performance via either multithreaded execution or distributed execution on high performance computing clusters via the message passing interface (MPI).
+Implemented in C++, EXAMM and EXA-GP are designed for efficient CPU-based computation (which for time series forecasting RNNs are typically more performant than GPUs) and offers excellent scalability due to its asynchronous island based distributed strategy (see above) with repopulation events which prune evolutionary dead ends to improve perforance[^examm_islands]. They employ a distributed architecture where worker processes handle RNN training while a main process manages population evolution and orchestrates the overall evolutionary process.  This allows for better performance via either multithreaded execution or distributed execution on high performance computing clusters via the message passing interface (MPI).
 
 [^examm_islands]: Zimeng Lyu, Joshua Karns, AbdElRahman ElSaid, Mohamed Mkaouer, Travis Desell. **[Improving Distributed Neuroevolution Using Island Extinction and Repopulation](https://www.se.rit.edu/~travis/papers/2021_EvoStar_Repopulation.pdf).** *The 24th International Conference on the Applications of Evolutionary Computation (EvoStar: EvoApps 2021).*
 
-![EXAMM Architecture](images/examm.png)
 
 # Installation and Setup
 
