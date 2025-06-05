@@ -1,12 +1,69 @@
 ![DS2L Banner](images/lab_logo_banner.png)
 
-# EXAMM: Evolutionary eXploration of Augmenting Memory Models
 
-EXAMM (Evolutionary eXploration of Augmenting Memory Models) is a neuroevolution-based neural architecture search algorithm designed for time series forecasting. Through evolutionary processes including natural selection, mutations, and crossovers, EXAMM evolves both the structure and weights of Recurrent Neural Networks (RNNs). The algorithm is capable of incorporating various modern memory cells (LSTM, GRU, MGU, UGRNN, and Delta-RNN) and can establish recurrent connections with varying time skips through a high-performance island-based distributed evolutionary algorithm.
+# Table of Contents
+
+1. [EXAMM and EXA-GP Overview](#examm-and-exa-gp)
+2. [Installation and Setup](#installation-and-setup)
+3. Managing Datasets
+4. Running EXAMM and EXA-GP
+5. Tracking and Managing Neural Networks
+6. Using Evolved Neural Networks for Inference
+
+
+# EXAMM and EXA-GP
+
+EXAMM (Evolutionary eXploration of Augmenting Memory Models) is a neuroevolution (evolutionary neural architecture search) algorithm which automates the design and training of recurrent neural networks (RNNs) for time series forecasting. EXAMM uses a constructive evolutionary process which evolves progressively larger RNNs by a set of mutation and crossover operations. EXAMM is a fine-grained neuroevolution algorith, operating at the level of individual nodes and edges which allows for extremely efficient and minimal networks. It utilizes a library of various modern memory cells (LSTM, GRU, MGU, UGRNN, and Delta-RNN) [^1] and can establish recurrent connections with varying time skips for improved learning and forecasting [^2].  It also uses a Lamarckian weight inheritance strategy, allowing generated networks to re-use weights of their parents to reduce the amount of training by backpropagation required [^test].
+
+[^1]: Alex Ororbia, AbdElRahman ElSaid, and Travis Desell. **[Investigating Recurrent Neural Network Memory Structures using Neuro-Evolution](https://dl.acm.org/citation.cfm?id=3321795).** <em>The Genetic and Evolutionary Computation Conference (GECCO 2019).</em> Prague, Czech Republic. July 8-12, 2019.
+
+[^2]: Travis Desell, AbdElRahman ElSaid and Alexander G. Ororbia. **[An Empirical Exploration of Deep Recurrent Connections Using Neuro-Evolution](https://www.se.rit.edu/~travis/papers/2020_evostar_deep_recurrent.pdf)**. The 23nd International Conference on the Applications of Evolutionary Computation (EvoStar: EvoApps 2020). Seville, Spain. April 15-17, 2020. <em>Best paper nominee</em>.
+
+[^test]: Zimeng Lyu, AbdElRahman ElSaid, Joshua Karns, Mohamed Mkaouer, Travis Desell. **[An Experimental Study of Weight Initialization and Lamarckian Inheritance on Neuroevolution](https://www.se.rit.edu/~travis/papers/2021_EvoStar_Weight_initialization.pdf).** *The 24th International Conference on the Applications of Evolutionary Computation (EvoStar: EvoApps 2021).*
+
 
 Implemented in C++, EXAMM is designed for CPU-based computation and offers excellent scalability - from personal laptops to high-performance computing clusters. The system employs a distributed architecture where worker processes handle RNN training while a main process manages population evolution and orchestrates the overall evolutionary process.
 
 ![EXAMM Architecture](images/examm.png)
+
+# Installation and Setup
+
+EXAMM has been developed to compile using CMake. To use the MPI version, a version of MPI (such as OpenMPI) should be installed.
+
+## OSX Setup
+```bash
+brew install cmake
+brew install mysql
+brew install open-mpi
+brew install libtiff
+brew install libpng
+brew install clang-format
+xcode-select --install
+```
+
+## RIT Cluster Setup
+```bash
+# GCC (9.3)
+spack load gcc/lhqcen5
+
+# CMake
+spack load cmake/pbddesj
+
+# OpenMPI
+spack load openmpi/xcunp5q
+
+# libtiff
+spack load libtiff/gnxev37
+```
+
+## Building
+```bash
+mkdir build
+cd build
+cmake ..
+make
+```
+
 
 # Selected Publications
 
@@ -46,45 +103,10 @@ EXAMM has been at the forefront of neuroevolution research, making significant c
 
 17. AbdElRahman ElSaid, Steven Benson, Shuchita Patwardhan, David Stadem and Travis Desell. **[Evolving Recurrent Neural Networks for Time Series Data Prediction of Coal Plant Parameters](https://link.springer.com/chapter/10.1007/978-3-030-16692-2_33).** *The 22nd International Conference on the Applications of Evolutionary Computation (EvoStar: EvoApps 2019).* Leipzig, Germany. April 24-26, 2019.
 
+18. Travis Desell, AbdElRahman ElSaid and Alexander G. Ororbia. **[An Empirical Exploration of Deep Recurrent Connections Using Neuro-Evolution](https://www.se.rit.edu/~travis/papers/2020_evostar_deep_recurrent.pdf)**. The 23nd International Conference on the Applications of Evolutionary Computation (EvoStar: EvoApps 2020). Seville, Spain. April 15-17, 2020. <em>Best paper nominee</em>.
 
 
-# Getting Started and Prerequisites
 
-EXAMM has been developed to compile using CMake. To use the MPI version, a version of MPI (such as OpenMPI) should be installed.
-
-## OSX Setup
-```bash
-brew install cmake
-brew install mysql
-brew install open-mpi
-brew install libtiff
-brew install libpng
-brew install clang-format
-xcode-select --install
-```
-
-## RIT Cluster Setup
-```bash
-# GCC (9.3)
-spack load gcc/lhqcen5
-
-# CMake
-spack load cmake/pbddesj
-
-# OpenMPI
-spack load openmpi/xcunp5q
-
-# libtiff
-spack load libtiff/gnxev37
-```
-
-## Building
-```bash
-mkdir build
-cd build
-cmake ..
-make
-```
 
 # Running EXAMM
 
