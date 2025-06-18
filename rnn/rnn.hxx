@@ -24,11 +24,15 @@ class RNN {
     vector<RNN_Edge*> edges;
     vector<RNN_Recurrent_Edge*> recurrent_edges;
 
+    vector<string> arguments;
+
+    string loss;
+
    public:
     RNN(vector<RNN_Node_Interface*>& _nodes, vector<RNN_Edge*>& _edges, const vector<string>& input_parameter_names,
         const vector<string>& output_parameter_names);
     RNN(vector<RNN_Node_Interface*>& _nodes, vector<RNN_Edge*>& _edges, vector<RNN_Recurrent_Edge*>& _recurrent_edges,
-        const vector<string>& input_parameter_names, const vector<string>& output_parameter_names);
+        const vector<string>& input_parameter_names, const vector<string>& output_parameter_names, const vector<string>& arguments);
     ~RNN();
 
     void fix_parameter_orders(
@@ -51,6 +55,10 @@ class RNN {
     double calculate_error_mse(const vector<vector<double> >& expected_outputs);
     double calculate_error_mae(const vector<vector<double> >& expected_outputs);
 
+    // Stock Loss
+    double calculate_error_stock_loss(const vector<vector<double> >& return_at_t,
+        const vector<vector<double> >& return_at_t_plus_1);
+
     double prediction_softmax(
         const vector<vector<double> >& series_data, const vector<vector<double> >& expected_outputs, bool using_dropout,
         bool training, double dropout_probability
@@ -60,6 +68,10 @@ class RNN {
         bool training, double dropout_probability
     );
     double prediction_mae(
+        const vector<vector<double> >& series_data, const vector<vector<double> >& expected_outputs, bool using_dropout,
+        bool training, double dropout_probability
+    );
+    double prediction_stock_loss(
         const vector<vector<double> >& series_data, const vector<vector<double> >& expected_outputs, bool using_dropout,
         bool training, double dropout_probability
     );
@@ -82,7 +94,7 @@ class RNN {
 
     int32_t get_number_weights();
 
-    void get_analytic_gradient(
+    void get_analytic_gradient( /// gradients
         const vector<double>& test_parameters, const vector<vector<double> >& inputs,
         const vector<vector<double> >& outputs, double& mse, vector<double>& analytic_gradient, bool using_dropout,
         bool training, double dropout_probability
@@ -93,6 +105,8 @@ class RNN {
         bool training, double dropout_probability
     );
 
+    string get_loss();
+
     // RNN* copy();
 
     friend void get_mse(
@@ -101,6 +115,9 @@ class RNN {
     friend void get_mae(
         RNN* genome, const vector<vector<double> >& expected, double& mae, vector<vector<double> >& deltas
     );
+    // Stock Loss
+    friend void get_stock_loss(RNN* genome, const vector<vector<double> >& expected, double& loss, vector<vector<double> >& deltas, const vector<double> return_at_t,
+        const vector<double> return_at_t_plus_1);
 };
 
 #endif

@@ -874,7 +874,7 @@ RNN* RNN_Genome::get_rnn() {
         // recurrent_edges[i]->copy(node_copies) );
     }
 
-    return new RNN(node_copies, edge_copies, recurrent_edge_copies, input_parameter_names, output_parameter_names);
+    return new RNN(node_copies, edge_copies, recurrent_edge_copies, input_parameter_names, output_parameter_names, this->arguments);
 }
 
 vector<double> RNN_Genome::get_best_parameters() const {
@@ -933,9 +933,19 @@ void forward_pass_thread_regression(
     const vector<vector<double> >& outputs, int32_t i, double* mses, bool use_dropout, bool training,
     double dropout_probability
 ) {
+    string loss = rnn->get_loss();
+
     rnn->set_weights(parameters);
     rnn->forward_pass(inputs, use_dropout, training, dropout_probability);
-    mses[i] = rnn->calculate_error_mse(outputs);
+
+    if (loss == "mse") {
+        mses[i] = rnn->calculate_error_mse(outputs);
+    } else if (loss == "mae") {
+        mses[i] = rnn->calculate_error_mae(outputs);
+    } else if (loss == "stock") {
+        mses[i] = rnn->calculate_error_stock_loss(inputs, outputs);
+    }
+
     // mses[i] = rnn->calculate_error_mae(outputs);
 
     Log::trace("mse[%d]: %lf\n", i, mses[i]);
@@ -3219,8 +3229,10 @@ void read_binary_string(istream& in, string& s, string name) {
     Log::debug("read %d %s characters '%s'\n", n, name.c_str(), s.c_str());
 }
 
-RNN_Genome::RNN_Genome(string binary_filename) {
+RNN_Genome::RNN_Genome(string binary_filename, const vector<string>& arguments) {
     ifstream bin_infile(binary_filename, ios::in | ios::binary);
+
+    this->arguments = arguments;
 
     if (!bin_infile.good()) {
         Log::fatal("ERROR: could not open RNN genome file '%s' for reading.\n", binary_filename.c_str());
