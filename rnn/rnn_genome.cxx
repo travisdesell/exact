@@ -944,6 +944,9 @@ void forward_pass_thread_regression(
         mses[i] = rnn->calculate_error_mae(outputs);
     } else if (loss == "stock") {
         mses[i] = rnn->calculate_error_stock_loss(inputs, outputs);
+    } else{
+        Log::fatal("ERROR: incorrect loss function provided\n");
+        exit(1);
     }
 
     // mses[i] = rnn->calculate_error_mae(outputs);

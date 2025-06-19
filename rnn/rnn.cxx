@@ -41,6 +41,7 @@ using std::vector;
 #include "random_dag_node.hxx"
 #include "time_series/time_series.hxx"
 // #include "word_series/word_series.hxx"
+#include "stock_loss.hxx"
 
 void RNN::validate_parameters(
     const vector<string>& input_parameter_names, const vector<string>& output_parameter_names
@@ -682,9 +683,12 @@ void RNN::get_analytic_gradient(
     } else if (this->loss == "mae") {
         mse = calculate_error_mae(outputs);
         backward_pass(mse * (1.0 / outputs[0].size()) * 2.0, using_dropout, training, dropout_probability);
-    } else {
+    } else if (this->loss == "stock") {
         mse = calculate_error_stock_loss(inputs, outputs);
         backward_pass(mse, using_dropout, training, dropout_probability);
+    } else {
+        Log::fatal("ERROR: incorrect loss function provided\n");
+        exit(1);
     }
 
     vector<double> current_gradients;
@@ -718,7 +722,7 @@ void RNN::get_analytic_gradient(
 
 void RNN::get_empirical_gradient(
     const vector<double>& test_parameters, const vector<vector<double> >& inputs,
-    const vector<vector<double> >& outputs, double& mse, vector<double>& empirical_gradient, bool using_dropout,
+    const vector<vector<double> >& outputs, double& loss, vector<double>& empirical_gradient, bool using_dropout,
     bool training, double dropout_probability
 ) {
     empirical_gradient.assign(test_parameters.size(), 0.0);
@@ -727,11 +731,25 @@ void RNN::get_empirical_gradient(
 
     set_weights(test_parameters);
     forward_pass(inputs, using_dropout, training, dropout_probability);
-    double original_mse = calculate_error_mse(outputs);
+    double original_loss = 0.0;
+
+    if (this->loss == "mse"){
+        original_loss = calculate_error_mse(outputs);
+    
+    } else if (this->loss == "mae") {
+        original_loss = calculate_error_mae(outputs);
+    
+    } else if (this->loss == "stock") {
+        original_loss = calculate_error_stock_loss(inputs, outputs);
+    
+    } else {
+        Log::fatal("ERROR: incorrect loss function provided\n");
+        exit(1);
+    }
 
     double save;
     double diff = 0.00001;
-    double mse1, mse2;
+    double loss1, loss2;
 
     vector<double> parameters = test_parameters;
     for (int32_t i = 0; i < (int32_t) parameters.size(); i++) {
@@ -740,20 +758,48 @@ void RNN::get_empirical_gradient(
         parameters[i] = save - diff;
         set_weights(parameters);
         forward_pass(inputs, using_dropout, training, dropout_probability);
-        get_mse(this, outputs, mse1, deltas);
+        // get_mse(this, outputs, loss1, deltas);
+
+        if (this->loss == "mse"){
+            get_mse(this, outputs, loss1, deltas);
+    
+        } else if (this->loss == "mae") {
+            get_mae(this, outputs, loss1, deltas);
+        
+        } else if (this->loss == "stock") {
+            get_stock_loss(this, outputs, loss1, deltas, inputs, outputs);
+        
+        } else {
+            Log::fatal("ERROR: incorrect loss function provided\n");
+            exit(1);
+        }
 
         parameters[i] = save + diff;
         set_weights(parameters);
         forward_pass(inputs, using_dropout, training, dropout_probability);
-        get_mse(this, outputs, mse2, deltas);
+        // get_mse(this, outputs, loss2, deltas);
 
-        empirical_gradient[i] = (mse2 - mse1) / (2.0 * diff);
-        empirical_gradient[i] *= original_mse;
+        if (this->loss == "mse"){
+            get_mse(this, outputs, loss2, deltas);
+    
+        } else if (this->loss == "mae") {
+            get_mae(this, outputs, loss2, deltas);
+        
+        } else if (this->loss == "stock") {
+            get_stock_loss(this, outputs, loss2, deltas, inputs, outputs);
+        
+        } else {
+            Log::fatal("ERROR: incorrect loss function provided\n");
+            exit(1);
+        }
+
+        empirical_gradient[i] = (loss2 - loss1) / (2.0 * diff);
+        empirical_gradient[i] *= original_loss;
 
         parameters[i] = save;
     }
 
-    mse = original_mse;
+    loss = original_loss;
 }
 
 void RNN::initialize_randomly() {
