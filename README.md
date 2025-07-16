@@ -222,13 +222,17 @@ Alex Ororbia, AbdElRahman ElSaid, and Travis Desell. **[Investigating Recurrent 
 
 
 * `--learning_rate <float>` specifies the learning rate (which will be utilized by the varying `weight_update` options).
-* `--high_threshold <float>` specifies the threshold used for gradient scaling, as presented by Pascanu et al.[^pascanu_gradient_scaling], where the gradient calculated by backpropagation, $g$, are updated if the L2 norm of the gradient is above a threshold, $t$:
+* `--high_threshold <float>` specifies the threshold used for gradient scaling (to help prevent exploding gradients), as presented by Pascanu et al.[^pascanu_gradient_scaling], where the gradient calculated by backpropagation, $g$, is reduced if the L2 norm of the gradient is above a threshold, $t_{high}$:
 
 ```math
-g_i = g_i * \frac{t}{L2(g)} if L2(g) > t
+g_i = g_i * \frac{t}{L2(g)}\text{ if }L2(g) > t_{high}
 ```
 
-* `--low_threshold`
+* `--low_threshold <float>` performs gradient boosting (the opposite of gradient scaling), to help with vanishing gradients. This is unpublished work but we have found it improves training performance.  When the L2 norm of a gradient is below a threshold, $t$, the gradient is increased if the L2 norm of the gradient is below a threshold, $t_{low}$:
+
+```math
+g_i = g_i * \frac{t}{L2(g)}\text{ if }L2(g) > t_{low}
+```
 
 * `--weight_update`
     * `vanilla`
