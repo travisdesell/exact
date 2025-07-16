@@ -150,28 +150,36 @@ This will run EXAMM with `file1.csv` and `file2.csv`, each split up into segment
 
 # Running EXAMM and EXA-GP
 
-Given the above options for loading and using training and validation data, we can explore the various options for running EXAMM and EXA-GP. The library also contains an implementation which utilizes NEAT speciation, for comparison purposes, which also serves as a memetic (backprop enabled) version of NEAT with the advanced node level mutation operations of EXAMM.
+Given the above options for loading and using training and validation data, we can explore the various options for running EXAMM and EXA-GP. The library also contains an implementation which utilizes NEAT speciation, for comparison purposes, which also serves as a memetic (backprop enabled) version of NEAT[^neat] with the advanced node level mutation operations of EXAMM.
+
+[^neat]: Kenneth Stanley and Risto Miikkulainen. **[Evolving neural networks through augmenting topologies.](https://direct.mit.edu/evco/article-pdf/10/2/99/1493254/106365602320169811.pdf)** <em>Evolutionary Computation 10.2</em>(2002): 99-127.
 
 ## Evolution Strategy Hyperparameters
 
 The following command line options control the neuroevolution search process itself.
 
 * `--max_genomes <int>` specifies how many genomes (RNNs or GPs) to evaluate before terminating the run. Note that EXAMM/EXA-GP use an asynchronous strategy with steady state populations so there are no explicit generations.
-* `--min_recurrent_depth <int>` and `--max_recurrent_depth <int>` specify the possible range of time skip values for recurrent connections added to the evolved networks.  Default values are 1 and 10. Adding in deeper recurrent connections has been shown to improve forecasting performance, and in some cases even outperform memory cells[^examm_deep_recurrent].
-* `--possible_node_types` specifies the options for selecting which node types can be added to networks during the evolution process. Default possible node types are the default for EXAMM (`simple`, `jordan`, `elman`, `ugrnn`, `mgu`, `gru`, `delta`, and `lstm` (please see [^examm_memory_cells] for more details on these node types). EXA-GP can be enabled by instead using `sigmoid`, `tanh`, `sum`, `multiply`,`inverse`, `sin` and `cos` as possible node types; and the better peforming EXA-GP-MIN can be enabled with the `_gp` options: `sigmoid_gp`, `tanh_gp`, `sum_gp`, `multiply_gp`, `inverse_gp`, `sin_gp` and `cos_gp` for the possible node types (for more details on their implementation see [^exagp][^exagp_min]).
 
-* `--speciation_method`
+* `--min_recurrent_depth <int>` and `--max_recurrent_depth <int>` specify the possible range of time skip values for recurrent connections added to the evolved networks.  Default values are 1 and 10. Adding in deeper recurrent connections has been shown to improve forecasting performance, and in some cases even outperform memory cells[^examm_deep_recurrent].
+
+* `--possible_node_types <str>+` specifies the options for selecting which node types can be added to networks during the evolution process. Default possible node types are the default for EXAMM (`simple`, `jordan`, `elman`, `ugrnn`, `mgu`, `gru`, `delta`, and `lstm` (please see [^examm_memory_cells] for more details on these node types). EXA-GP can be enabled by instead using `sigmoid`, `tanh`, `sum`, `multiply`,`inverse`, `sin` and `cos` as possible node types; and the better peforming EXA-GP-MIN can be enabled with the `_gp` options: `sigmoid_gp`, `tanh_gp`, `sum_gp`, `multiply_gp`, `inverse_gp`, `sin_gp` and `cos_gp` for the possible node types (for more details on their implementation see [^exagp][^exagp_min]).
+
+* `--speciation_method <str>` specifies if genomes in the population should be speciated into islands (using `island`) or with NEAT's speciation strategy (using `neat`). Each of these come with their own set of parameters (see subsections below):
 
 ### Island Speciation
 
-* `--number_islands`
-* `--island_size`
-* `--extinction_event_generation_number`
-* `--islands_to_exterminate`
-* `--island_ranking_method`
-* `--repopulation_method`
-* `--num_mutations`
-* `--repeat_extenction`
+* `--number_islands <int>` specifies how many islands should be used to perform the search, with a minimum of 1. If only 1 island is specified this operates the same as a single population version.
+* `--island_size <int>` specifies the maximum number of genomes each island will hold for its population.
+* `--extinction_event_generation_number <int>` specifies how frequently to perform island extinction if the value (N) is greater than 0. After every N inserted genomes `islands_to_exterminate` islands selected by `island_ranking_method` will have their genomes removed and these will be repopulated as specfied by the `repopulation_method`. See [^examm_islands] for full details and an examination of this methodology.
+* `--islands_to_exterminate <int>` specifies how many islands to repopulate in an extinction event.
+* `--island_ranking_method <str>` currently only allows `EraseWorse` which will have extinction happen on the island(s) with the lowest fitness of the island's best individual.
+* `--repopulation_method <str>` allows for `bestparents`, `randomparents`, `bestgenome` and `bestisland`:
+    * `bestparents` selects 2 parents randomly from the best parents of other (non-repopulating) islands to perform crossover on to generate new genomes to repopulate islands.
+    * `randomparents` selects 2 parents randomly from the genomes of all other non-repopulating islands to perform crossover on to generate new genomes to repopulate islands.
+    * `bestgenome` selects the global best genome and performs mutations on it to repopulate islands.
+    * `bestisland` selects the best island and repopulates islands by performing a mutation on each genome in the best island.
+* `--num_mutations <int>` specifies how many mutation operations to perform when generating a child genome by mutation.
+* `--repeat_extenction` if specified, if an island is repopulated it will not be repopulated until 5 other extinction events have passed. This prevents the same island from being repopulated over and over.
 
 ### NEAT Speciation
 
