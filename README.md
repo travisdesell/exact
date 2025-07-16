@@ -183,16 +183,21 @@ The following command line options control the neuroevolution search process its
 
 ### NEAT Speciation
 
-If `neat` is selected as the speciation method, the following hyperparameters from the NEAT paper[^neat] can be specified. Given the following equation, where $E$ is the number of excess genes, $D$ is the number of disjoint genes, `neat_c1` is the $c1$ constant, `neat_c2` is the $c2$ constant and `neat_c3` is the $c3$ constant:
+* `--species_threshold <float>`
+* `--fitness_threshold <float>`
+* `--neat_c1 <float>`
+* `--neat_c2 <float>`
+* `--neat_c3 <float>`
 
-$$\delta = \frac{c_1E}{N} + \frac{c_2D}{N} + c_3 * \cap{W}$$
+If `neat` is selected as the speciation method, the following hyperparameters from the NEAT paper[^neat] can be specified. Given the following equation, where $E$ is the number of excess genes, $D$ is the number of disjoint genes, $N$ is the genome size factor (the number of genes in the larger genome), `neat_c1` is the $c1$ constant, `neat_c2` is the $c2$ constant and `neat_c3` is the $c3$ constant:
 
-* `--species_threshold`
-* `--fitness_threshold`
-* `--neat_c1`
-* `--neat_c2`
-* `--neat_c3`
+$$\delta = \frac{c_1E}{N} + \frac{c_2D}{N} + c_3 * \bar{W}$$
 
+If $\delta$ is less than the `species_threshold`, $\delta_t$ or the compatability threshold in the NEAT paper, two genomes will be considered in the same species. Species adjusted fitnesses, $f'_i$ are computed as follows:
+
+$$f'_i = \frac{f_i}{\Sum^n_{j=1}sh(\delta(i, j))}$$
+
+Where $sh$ is set to 0 when the distance $\delta(i,j)$ is above the `fitness_threshold`. Using the above hyperparameters genomes will be placed into species as done in the NEAT algorithm.
 
 ## Weight Initialization
 
