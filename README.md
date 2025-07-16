@@ -234,10 +234,10 @@ g_i = g_i * \frac{t}{L2(g)}\text{ if }L2(g) < t_{low}
 * `--weight_update <str>` specifies the optimizer used for performing weight updates, with $\alpha$ as the learning rate, $w_i$ as a weight, and $g_i$ as the weight's gradient, options are:
     * `vanilla` performs a vanilla weight update, $w_i = w_i - g_i * \alpha$
     * `momentum` performs a weight update with momentum, given $\mu$ as `--mu <float>`:
-    ```math
-    v_i = \mu * v_i - \alpha * g_i
-    w_i = w_i + v_i
-    ```
+```math
+v_i = \mu * v_i - \alpha * g_i
+w_i = w_i + v_i
+```
     * `nesterov`  uses `--mu <float>`
     * `adagrad` uses `--eps <float>`
     * `rmsprop` uses `--eps <float>` `--decay_rate <float>`
