@@ -196,6 +196,7 @@ $$\delta = \frac{c_1E}{N} + \frac{c_2D}{N} + c_3 * \overline{W}$$
 If $\delta$ is less than the `species_threshold`, $\delta_t$ or the compatability threshold in the NEAT paper, two genomes will be considered in the same species. Species adjusted fitnesses, $f'_i$ are computed as follows:
 
 $$f'_i = \frac{f_i}{\Sigma^n_{j=1}sh(\delta(i, j))}$$
+$$f'_i = \frac{f_i}{sh(\delta(i, j))}$$
 
 Where $sh$ is set to 0 when the distance $\delta(i,j)$ is above the `fitness_threshold`. Using the above hyperparameters genomes will be placed into species as done in the NEAT algorithm.
 
