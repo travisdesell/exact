@@ -183,6 +183,10 @@ The following command line options control the neuroevolution search process its
 
 ### NEAT Speciation
 
+If `neat` is selected as the speciation method, the following hyperparameters from the NEAT paper[^neat] can be specified. Given the following equation, where $E$ is the number of excess genes, $D$ is the number of disjoint genes, `neat_c1` is the $c1$ constant, `neat_c2` is the $c2$ constant and `neat_c3` is the $c3$ constant:
+
+$$\delta = \frac{c_1E}{N} + \frac{c_2D}{N} + c_3 * \cap{W}$$
+
 * `--species_threshold`
 * `--fitness_threshold`
 * `--neat_c1`
