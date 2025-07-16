@@ -218,9 +218,6 @@ The following allow control of the neural network training hyperparameters:
 
 [^pascanu_gradient_scaling]: Razvan Pascanu, Tomas Mikolov and Yoshio Bengio. **[On the Difficulty of Training Recurrent Neural Networks](http://proceedings.mlr.press/v28/pascanu13.pdf).** <em>The International Conference on Machine Learning (ICML 2013). 2013.
 
-Alex Ororbia, AbdElRahman ElSaid, and Travis Desell. **[Investigating Recurrent Neural Network Memory Structures using Neuro-Evolution](https://dl.acm.org/citation.cfm?id=3321795).** <em>The Genetic and Evolutionary Computation Conference (GECCO 2019).</em> Prague, Czech Republic. July 8-12, 2019.
-
-
 * `--learning_rate <float>` specifies the learning rate (which will be utilized by the varying `weight_update` options).
 * `--high_threshold <float>` specifies the threshold used for gradient scaling (to help prevent exploding gradients), as presented by Pascanu et al.[^pascanu_gradient_scaling], where the gradient calculated by backpropagation, $g$, is reduced if the L2 norm of the gradient is above a threshold, $t_{high}$:
 
@@ -231,17 +228,21 @@ g_i = g_i * \frac{t}{L2(g)}\text{ if }L2(g) > t_{high}
 * `--low_threshold <float>` performs gradient boosting (the opposite of gradient scaling), to help with vanishing gradients. This is unpublished work but we have found it improves training performance.  When the L2 norm of a gradient is below a threshold, $t$, the gradient is increased if the L2 norm of the gradient is below a threshold, $t_{low}$:
 
 ```math
-g_i = g_i * \frac{t}{L2(g)}\text{ if }L2(g) > t_{low}
+g_i = g_i * \frac{t}{L2(g)}\text{ if }L2(g) < t_{low}
 ```
 
-* `--weight_update`
-    * `vanilla`
-    * `momentum` uses `--mu`
-    * `nesterov`  uses `--mu`
-    * `adagrad` uses `--eps`
-    * `rmsprop` uses `--eps` `--decay_rate`
-    * `adam` uses `--eps`, `--beta1`, `--beta2`
-    * `adam-bias` uses `--eps`, `--beta1`, `--beta2`
+* `--weight_update <str>` specifies the optimizer used for performing weight updates, with $\alpha$ as the learning rate, $w_i$ as a weight, and $g_i$ as the weight's gradient, options are:
+    * `vanilla` performs a vanilla weight update, $w_i = w_i - g_i * \alpha$
+    * `momentum` performs a weight update with momentum, given $\mu$ as `--mu <float>`:
+    ```math
+    v_i = \mu * v_i - \alpha * g_i
+    w_i = w_i + v_i
+    ```
+    * `nesterov`  uses `--mu <float>`
+    * `adagrad` uses `--eps <float>`
+    * `rmsprop` uses `--eps <float>` `--decay_rate <float>`
+    * `adam` uses `--eps <float>`, `--beta1 <float>`, `--beta2 <float>`
+    * `adam-bias` uses `--eps <float>`, `--beta1 <float>`, `--beta2 <float>`
 
 
 
