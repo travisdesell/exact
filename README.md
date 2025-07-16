@@ -191,7 +191,7 @@ The following command line options control the neuroevolution search process its
 
 If `neat` is selected as the speciation method, the following hyperparameters from the NEAT paper[^neat] can be specified. Given the following equation, where $E$ is the number of excess genes, $D$ is the number of disjoint genes, $N$ is the genome size factor (the number of genes in the larger genome), `neat_c1` is the $c1$ constant, `neat_c2` is the $c2$ constant and `neat_c3` is the $c3$ constant:
 
-$$\delta = \frac{c_1E}{N} + \frac{c_2D}{N} + c_3 * \bar{W}$$
+$$\delta = \frac{c_1E}{N} + \frac{c_2D}{N} + c_3 * \overline{W}$$
 
 If $\delta$ is less than the `species_threshold`, $\delta_t$ or the compatability threshold in the NEAT paper, two genomes will be considered in the same species. Species adjusted fitnesses, $f'_i$ are computed as follows:
 
