@@ -243,16 +243,16 @@ g_i = g_i * \frac{t}{L2(g)}\text{ if }L2(g) < t_{low}
     \end{align}
     ```
 
-* `nesterov`  performs a weight update using Nesterov momentum, given $\mu$ as `--mu <float>` (default 0.9):
-```math
-pv_i = v_i
-```
-```math
-v_i = \mu * v_i - \alpha * g_i
-```
-```math
-w_i = w_i - \mu * pv_i + (1 + \mu) * v_i
-```
+    * `nesterov`  performs a weight update using Nesterov momentum, given $\mu$ as `--mu <float>` (default 0.9):
+    ```math
+    pv_i = v_i
+    ```
+    ```math
+    v_i = \mu * v_i - \alpha * g_i
+    ```
+    ```math
+    w_i = w_i - \mu * pv_i + (1 + \mu) * v_i
+    ```
 
     * `adagrad` performs Adagrad with, given $\epsilon$ as `--eps <float>` (default 1e-8):
 ```math
