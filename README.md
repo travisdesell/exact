@@ -179,7 +179,7 @@ The following command line options control the neuroevolution search process its
     * `bestgenome` selects the global best genome and performs mutations on it to repopulate islands.
     * `bestisland` selects the best island and repopulates islands by performing a mutation on each genome in the best island.
 * `--num_mutations <int>` specifies how many mutation operations to perform when generating a child genome by mutation.
-* `--repeat_extenction` if specified, if an island is repopulated it will not be repopulated until 5 other extinction events have passed. This prevents the same island from being repopulated over and over.
+* `--repeat_extinction` if **not** specified, if an island is repopulated it will not be repopulated until 5 other extinction events have passed. This prevents the same island from being repopulated over and over. Turning this flag on allows islands to be repeatedly repopulated.
 
 ### NEAT Speciation
 If `neat` is selected as the speciation method, the following hyperparameters from the NEAT paper[^neat] can be specified. 
@@ -314,7 +314,9 @@ The `.bin` file is a serialized binary of the network, the `.txt` file is a text
 
 ## [Using Evolved Neural Networks for Inference](#using-evolved-neural-networks-for-inference)
 
+As discussed in the previous section, EXAMM will save the best found generated networks for its neuroevolution runs in binary `.bin` files. These are serialized so that their results are reproducible from the neuroevolution run.  Please note that, networks generated from JSONs may not provide the exact same results due to conversion from double precision weights to text and back. There is one file in particular that is useful for utilizing these evolved neural networks and genetic programs:
 
+* [evaluate_rnn.cxx](./rnn_examples/evaluate_rnn.cxx) can take a target set of testing files (in the expected format from datasets above) which will evaluate the input RNN (specified by the `--genome_file <file.bin>` command line argument) on the testing files (specified by `--testing_filenames <str*>`). Note that the genome binary files save the normalization values and methodology used on the **training data** so that these same normalization values are used on the testing data (this methodology does not cheat by utilizing normalization statistics from potentially unknown test data).  This will write files with the predictions of the RNN or genetic program to the specified `--output_directory <str>` with the output predicition filenames as `<input_test_file>_predictions.csv`.
 
 
 
