@@ -23,7 +23,7 @@ echo "###-------------------###"
 
 mpirun -np 8 ./mpi/examm_mpi \
 --training_filenames ../datasets/2019_ngafid_transfer/c172_file_[1-10].csv \
---test_filenames ../datasets/2019_ngafid_transfer/c172_file_[11-12].csv \
+--validation_filenames ../datasets/2019_ngafid_transfer/c172_file_[11-12].csv \
 --time_offset 1 \
 --input_parameter_names $INPUT_PARAMETERS \
 --output_parameter_names $OUTPUT_PARAMETERS \

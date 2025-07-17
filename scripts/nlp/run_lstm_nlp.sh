@@ -13,7 +13,7 @@ for folder in 0 1 2 3 4 ; do
     echo "\t Iteration: $exp_name"
     $EXAMM/build/multithreaded/examm_nlp --number_threads 9 \
     --training_filenames ../datasets/pennchar/train.txt \
-    --test_filenames ../datasets/pennchar/valid.txt \
+    --validation_filenames ../datasets/pennchar/valid.txt \
     --word_offset 1 \
     --number_islands 10 \
     --island_size 10 \

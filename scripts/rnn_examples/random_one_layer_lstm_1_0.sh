@@ -36,7 +36,7 @@ do
 
                 ./rnn_examples/train_rnn \
                 --training_filenames ../datasets/2019_ngafid_transfer/c172_file_[1-9].csv \
-                --test_filenames ../datasets/2019_ngafid_transfer/c172_file_1[0-2].csv \
+                --validation_filenames ../datasets/2019_ngafid_transfer/c172_file_1[0-2].csv \
                 --time_offset $offset \
                 --input_parameter_names $INPUT_PARAMETERS \
                 --output_parameter_names $OUTPUT_PARAMETERS \

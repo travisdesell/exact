@@ -36,7 +36,7 @@ do
 
                 ./rnn_examples/train_rnn \
                 --training_filenames /home/jefhai/Downloads/djia.csv \
-                --test_filenames /home/jefhai/Downloads/djia.csv \
+                --validation_filenames /home/jefhai/Downloads/djia.csv \
                 --time_offset $offset \
                 --input_parameter_names $INPUT_PARAMETERS \
                 --output_parameter_names $OUTPUT_PARAMETERS \

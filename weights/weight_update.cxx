@@ -6,7 +6,7 @@
 #include "common/log.hxx"
 
 WeightUpdate::WeightUpdate() {
-    // By default use RMSProp weight update
+    // By default use Adam weight update
     momentum = 0.9;
     weight_update_method = ADAM;
     epsilon = 1e-8;
