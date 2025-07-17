@@ -216,7 +216,7 @@ The following allow control of the neural network training hyperparameters:
 
 * `--bp_iterations <int>` specifies how many backpropagation epochs should be done per genome.
 
-[^pascanu_gradient_scaling]: Razvan Pascanu, Tomas Mikolov and Yoshio Bengio. **[On the Difficulty of Training Recurrent Neural Networks](http://proceedings.mlr.press/v28/pascanu13.pdf).** <em>The International Conference on Machine Learning (ICML 2013). 2013.
+[^pascanu_gradient_scaling]: Razvan Pascanu, Tomas Mikolov and Yoshio Bengio. **[On the Difficulty of Training Recurrent Neural Networks](http://proceedings.mlr.press/v28/pascanu13.pdf).** <em>The International Conference on Machine Learning (ICML 2013)</em>. 2013.
 
 * `--learning_rate <float>` specifies the learning rate, $\alpha$, (which will be utilized by the varying `weight_update` optimizer options below).
 * `--high_threshold <float>` (default 1.0) specifies the threshold used for gradient scaling (to help prevent exploding gradients), as presented by Pascanu et al.[^pascanu_gradient_scaling], where the gradient calculated by backpropagation, $g$, is reduced if the L2 norm of the gradient is above a threshold, $t_{high}$:
@@ -294,14 +294,22 @@ w_i = w_i - \frac{\alpha*mt_i}{\sqrt{vt_i} + \epsilon}
 ```
 
 
-
-
-
-
-
 ## [Tracking and Managing Evolved Networks](#tracking-and-managing-evolved-networks)
 
-* `--output_directory`
+
+[^visualizing_examm]: Evan Patterson, Joshua Karns, Zimeng Lyu and Travis Desell. **[Visualizing the Dynamics of Neuroevolution with Genetic Distance Projections](https://dl.acm.org/doi/10.1145/3712256.3726457)**. <em>The Genetic and Evolutionary Computation Conference (GECCO 2025)</em>. Malaga, Spain. July 2025.
+
+EXAMM provides a number of options for tracking results of its neuroevolution runs. The following provide options for saving generated neural networks in a number of ways, as well as where to put various log files for analysis. Neural networks or genetic programs will be saved with three or four files (`.txt`, `.gv`, `.bin` and optionally `.json`, see below). The `.bin` file is a serialized binary of the network, the `.txt` file is a textual representation of the network or genetic program equations, and the `.gv` file is a graphviz file of the network so a visualization of the network can be created with graphviz (if graphviz is installed you can run `dot -T pdf <file>.gv -o <file>.pdf` to create a PDF representation of the network or genetic program. The `.json` file is a JSON representation of the network so it can be utilized in other applications, such as the [Genetic Distance Projection](https://github.com/TheDeepDaemon/genetic-distance-projection) visualization framework[^visualizing_examm].
+
+* `--output_directory <str>` specifies a directory where all output files (log files and neural network files) will be placed. This directory will be created it if it does not exist. This directory will contain a `fitness_log.csv` file which tracks inforomation for every genome inserted into the population, including time, fitness, per-island fitness and some network statistics. When the search completes it will also contain an empty `completed` file if the search completed without error. It will also contain `global_best_genome_<generation id>` files (bin, txt and gv) for the global best neural network (or genetic program) found.  
+
+
+* `--save_genome_option`
+
+* `--generate_visualization_json`
+
+
+* `--generate_op_log`
 
 ## [Using Evolved Neural Networks for Inference](#using-evolved-neural-networks-for-inference)
 
