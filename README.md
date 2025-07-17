@@ -260,7 +260,7 @@ w_i = w_i - \mu * pv_i + (1 + \mu) * v_i \\
 ```math
 \begin{align}
 c_i = c_i + g_i^2 \\
-w_i = w_i - \frac{\mu * g_i}{\sqrt(c_i) * \epsilon} \\
+w_i = w_i - \frac{\mu * g_i}{\sqrt(c_i) + \epsilon} \\
 \end{align}
 ```
 
@@ -268,13 +268,31 @@ w_i = w_i - \frac{\mu * g_i}{\sqrt(c_i) * \epsilon} \\
 ```math
 \begin{align}
 c_i = \gamma * c_i + (1 - \gamma) * g_i^2 \\
-w_i = w_i - \frac{\mu * g_i}{\sqrt(c_i) * \epsilon} \\
+w_i = w_i - \frac{\mu * g_i}{\sqrt(c_i) + \epsilon} \\
+\end{align}
+```
+
+* `adam` performs Adam (without bias correction) given $\epsilon$ as `--eps <float>` (default 1e-8), $\beta_1$ as`--beta1 <float>` (default 0.9), and $\beta_2$ as `--beta2 <float>` (default 0.99):
+```math
+\begin{align}
+m_i = \beta_1*m_u + (1-\beta_1)*g_i \\
+v_i = \beta_1*v_u + (1-\beta_1)*g_i^2 \\
+w_i = w_i - \frac{\alpha*m_i}{\sqrt(v_i) + \epsilon}
 \end{align}
 ```
 
 
-* `adam` uses `--eps <float>`, `--beta1 <float>`, `--beta2 <float>`
-* `adam-bias` uses `--eps <float>`, `--beta1 <float>`, `--beta2 <float>`
+* `adam-bias` performs full Adam with bias correction given $\epsilon$ as `--eps <float>` (default 1e-8), $\beta_1$ as`--beta1 <float>` (default 0.9), and $\beta_2$ as `--beta2 <float>` (default 0.99):
+```math
+\begin{align}
+m_i = \beta_1*m_u + (1-\beta_1)*g_i \\
+mt_i = \frac{m_i}{1 - \beta_1^t} \\
+v_i = \beta_1*v_u + (1-\beta_1)*g_i^2 \\
+vt_i = \frac{v_i}{1 - \beta_2^t} \\
+w_i = w_i - \frac{\alpha*mt_i}{\sqrt(vt_i) + \epsilon}
+\end{align}
+```
+
 
 
 
