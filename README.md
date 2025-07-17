@@ -218,7 +218,7 @@ The following allow control of the neural network training hyperparameters:
 
 [^pascanu_gradient_scaling]: Razvan Pascanu, Tomas Mikolov and Yoshio Bengio. **[On the Difficulty of Training Recurrent Neural Networks](http://proceedings.mlr.press/v28/pascanu13.pdf).** <em>The International Conference on Machine Learning (ICML 2013). 2013.
 
-* `--learning_rate <float>` specifies the learning rate (which will be utilized by the varying `weight_update` options).
+* `--learning_rate <float>` specifies the learning rate, $\alpha$, (which will be utilized by the varying `weight_update` optimizer options below).
 * `--high_threshold <float>` (default 1.0) specifies the threshold used for gradient scaling (to help prevent exploding gradients), as presented by Pascanu et al.[^pascanu_gradient_scaling], where the gradient calculated by backpropagation, $g$, is reduced if the L2 norm of the gradient is above a threshold, $t_{high}$:
 
 ```math
@@ -231,27 +231,28 @@ g_i = g_i * \frac{t}{L2(g)}\text{ if }L2(g) > t_{high}
 g_i = g_i * \frac{t}{L2(g)}\text{ if }L2(g) < t_{low}
 ```
 
-* `--weight_update <str>` specifies the optimizer used for performing weight updates, with $\alpha$ as the learning rate, $w_i$ as a weight, and $g_i$ as the weight's gradient, options are:
+### Training Optimizers
+Using `--weight_update <str>` specifies the optimizer used for performing weight updates, with $\alpha$ as the learning rate, $w_i$ as a weight, and $g_i$ as the weight's gradient, options are:
 
-    * `vanilla` performs a vanilla weight update, $w_i = w_i - g_i * \alpha$
+* `vanilla` performs a vanilla weight update, $w_i = w_i - g_i * \alpha$
 
-    * `momentum` performs a weight update with momentum, given $\mu$ as `--mu <float>` (default 0.9):
-    $$
-    \begin{align}
-    v_i = \mu * v_i - \alpha * g_i \\
-    w_i = w_i + v_i \\
-    \end{align}
-    $$
+* `momentum` performs a weight update with momentum, given $\mu$ as `--mu <float>` (default 0.9):
+$$
+\begin{align}
+v_i = \mu * v_i - \alpha * g_i \\
+w_i = w_i + v_i \\
+\end{align}
+$$
 
-    * `nesterov`  performs a weight update using Nesterov momentum, given $\mu$ as `--mu <float>` (default 0.9):
-    $$
-    \begin{align}
-    pv_i = v_i \\
-    v_i = \mu * v_i - \alpha * g_i \\
-    w_i = w_i - \mu * pv_i + (1 + \mu) * v_i \\
-    \end{align}
+* `nesterov`  performs a weight update using Nesterov momentum, given $\mu$ as `--mu <float>` (default 0.9):
+$$
+\begin{align}
+pv_i = v_i \\
+v_i = \mu * v_i - \alpha * g_i \\
+w_i = w_i - \mu * pv_i + (1 + \mu) * v_i \\
+\end{align}
 
-    * `adagrad` performs Adagrad with, given $\epsilon$ as `--eps <float>` (default 1e-8):
+* `adagrad` performs Adagrad with, given $\epsilon$ as `--eps <float>` (default 1e-8):
 ```math
 c_i = c_i + g_i^2
 ```
@@ -259,7 +260,7 @@ c_i = c_i + g_i^2
 w_i = w_i - \frac{\mu * g_i}{\sqrt(c_i) * \epsilon}
 ```
 
-    * `rmsprop` performs RMSProp using $\epsilon$ as `--eps <float>` (default 1e-8) and $\gamma$ as `--decay_rate <float>` (default 0.9):
+* `rmsprop` performs RMSProp using $\epsilon$ as `--eps <float>` (default 1e-8) and $\gamma$ as `--decay_rate <float>` (default 0.9):
 ```math
 c_i = \gamma * c_i + (1 - \gamma) * g_i^2
 ```
@@ -268,8 +269,8 @@ w_i = w_i - \frac{\mu * g_i}{\sqrt(c_i) * \epsilon}
 ```
 
 
-    * `adam` uses `--eps <float>`, `--beta1 <float>`, `--beta2 <float>`
-    * `adam-bias` uses `--eps <float>`, `--beta1 <float>`, `--beta2 <float>`
+* `adam` uses `--eps <float>`, `--beta1 <float>`, `--beta2 <float>`
+* `adam-bias` uses `--eps <float>`, `--beta1 <float>`, `--beta2 <float>`
 
 
 
