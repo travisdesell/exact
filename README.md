@@ -234,38 +234,42 @@ g_i = g_i * \frac{t}{L2(g)}\text{ if }L2(g) < t_{low}
 ### Training Optimizers
 Using `--weight_update <str>` specifies the optimizer used for performing weight updates, with $\alpha$ as the learning rate, $w_i$ as a weight, and $g_i$ as the weight's gradient, options are:
 
-* `vanilla` performs a vanilla weight update, $w_i = w_i - g_i * \alpha$
+* `vanilla` performs a vanilla weight update:
+```math
+w_i = w_i - g_i * \alpha
+```
 
 * `momentum` performs a weight update with momentum, given $\mu$ as `--mu <float>` (default 0.9):
-$$
+```math
 \begin{align}
 v_i = \mu * v_i - \alpha * g_i \\
 w_i = w_i + v_i \\
 \end{align}
-$$
+```
 
 * `nesterov`  performs a weight update using Nesterov momentum, given $\mu$ as `--mu <float>` (default 0.9):
-$$
+```math
 \begin{align}
 pv_i = v_i \\
 v_i = \mu * v_i - \alpha * g_i \\
 w_i = w_i - \mu * pv_i + (1 + \mu) * v_i \\
 \end{align}
+```
 
 * `adagrad` performs Adagrad with, given $\epsilon$ as `--eps <float>` (default 1e-8):
 ```math
-c_i = c_i + g_i^2
-```
-```math
-w_i = w_i - \frac{\mu * g_i}{\sqrt(c_i) * \epsilon}
+\begin{align}
+c_i = c_i + g_i^2 \\
+w_i = w_i - \frac{\mu * g_i}{\sqrt(c_i) * \epsilon} \\
+\end{align}
 ```
 
 * `rmsprop` performs RMSProp using $\epsilon$ as `--eps <float>` (default 1e-8) and $\gamma$ as `--decay_rate <float>` (default 0.9):
 ```math
-c_i = \gamma * c_i + (1 - \gamma) * g_i^2
-```
-```math
-w_i = w_i - \frac{\mu * g_i}{\sqrt(c_i) * \epsilon}
+\begin{align}
+c_i = \gamma * c_i + (1 - \gamma) * g_i^2 \\
+w_i = w_i - \frac{\mu * g_i}{\sqrt(c_i) * \epsilon} \\
+\end{align}
 ```
 
 
