@@ -237,10 +237,10 @@ g_i = g_i * \frac{t}{L2(g)}\text{ if }L2(g) < t_{low}
 
     * `momentum` performs a weight update with momentum, given $\mu$ as `--mu <float>` (default 0.9):
 ```math
-v_i = \mu * v_i - \alpha * g_i
-```
-```math
-w_i = w_i + v_i
+\begin{align}
+v_i = \mu * v_i - \alpha * g_i \\
+w_i = w_i + v_i \\
+\end{align
 ```
 
     * `nesterov`  performs a weight update using Nesterov momentum, given $\mu$ as `--mu <float>` (default 0.9):
