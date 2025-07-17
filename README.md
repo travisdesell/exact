@@ -243,7 +243,7 @@ w_i = w_i + v_i \\
 \end{align}
 ```
 
-    * `nesterov`  performs a weight update using Nesterov momentum, given $\mu$ as `--mu <float>` (default 0.9):
+* `nesterov`  performs a weight update using Nesterov momentum, given $\mu$ as `--mu <float>` (default 0.9):
 ```math
 pv_i = v_i
 ```
