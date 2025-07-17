@@ -236,9 +236,17 @@ g_i = g_i * \frac{t}{L2(g)}\text{ if }L2(g) < t_{low}
     * `momentum` performs a weight update with momentum, given $\mu$ as `--mu <float>`:
 ```math
 v_i = \mu * v_i - \alpha * g_i
+```
+```math
 w_i = w_i + v_i
 ```
-    * `nesterov`  uses `--mu <float>`
+    * `nesterov`  performs a weight update using Nesterov momentum, given $\mu$ as `--mu <float>`:
+```math
+pv_i = v_i \\
+v_i = \mu * v_i - \alpha * g_i \\
+w_i = w_i - \mu * pv_i + (1 + \mu) * v_i
+```
+
     * `adagrad` uses `--eps <float>`
     * `rmsprop` uses `--eps <float>` `--decay_rate <float>`
     * `adam` uses `--eps <float>`, `--beta1 <float>`, `--beta2 <float>`
