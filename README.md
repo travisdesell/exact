@@ -319,6 +319,7 @@ As discussed in the previous section, EXAMM will save the best found generated n
 * [evaluate_rnn.cxx](./rnn_examples/evaluate_rnn.cxx) can take a target set of testing files (in the expected format from datasets above) which will evaluate the input RNN (specified by the `--genome_file <file.bin>` command line argument) on the testing files (specified by `--testing_filenames <str>+`). Note that the genome binary files save the normalization values and methodology used on the **training data** so that these same normalization values are used on the testing data (this methodology does not cheat by utilizing normalization statistics from potentially unknown test data).  This will write files with the predictions of the RNN or genetic program to the specified `--output_directory <str>` with the output predicition filenames as `<input_test_file>_predictions.csv`.
 
 
+**I MADE THIS CHANGE**
 
 # Archived: EXACT Project
 
