@@ -25,7 +25,7 @@ mpirun -np 4 ./mpi/examm_mpi \
 --number_islands 10 \
 --island_size 10 \
 --max_genomes 2000 \
---bp_iterations 5 \
+--bp_iterations -5 \
 --output_directory $exp_name \
 --num_mutations 2 \
 --weight_update adagrad \

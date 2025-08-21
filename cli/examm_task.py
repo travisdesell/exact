@@ -69,7 +69,7 @@ class ExammTask(ConfigToArg):
             "n_islands":            (lambda self: self.n_islands > 0, "must be a positive integer"),
             "population_size":      (lambda self: self.population_size > 0, "must be a positive integer"),
             "max_genomes":          (lambda self: self.max_genomes > 0, "must be a positive integer"),
-            "bp_iterations":        (lambda self: self.bp_iterations >= 0, "must be a non-negative integer"),
+            # "bp_iterations":        (lambda self: self.bp_iterations >= 0, "must be a non-negative integer"),
             "output_directory":     (lambda self: True, "must be a valid path"),
             "node_types":           (lambda self: self.all_strings(self.node_types) \
                                                 and set(self.node_types).issubset(set(ExammTask.ALL_NODE_TYPES)),

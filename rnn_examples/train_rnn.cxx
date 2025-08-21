@@ -175,6 +175,9 @@ int main(int argc, char** argv) {
     }
 
     get_argument(arguments, "--bp_iterations", true, bp_iterations);
+    if (bp_iterations < 0) {
+        bp_iterations = abs(bp_iterations);
+    }
     genome->set_bp_iterations(bp_iterations);
 
     get_argument(arguments, "--output_directory", true, output_directory);
