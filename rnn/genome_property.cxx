@@ -4,7 +4,7 @@
 #include "common/log.hxx"
 
 GenomeProperty::GenomeProperty() {
-    bp_iterations = 10;
+    // bp_iterations = 10;
     dropout_probability = 0.0;
     min_recurrent_depth = 1;
     max_recurrent_depth = 10;

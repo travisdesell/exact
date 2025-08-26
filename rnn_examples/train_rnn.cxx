@@ -175,10 +175,13 @@ int main(int argc, char** argv) {
     }
 
     get_argument(arguments, "--bp_iterations", true, bp_iterations);
-    if (bp_iterations < 0) {
-        bp_iterations = abs(bp_iterations);
-    }
-    genome->set_bp_iterations(bp_iterations);
+    // if (bp_iterations < 0) {
+    //     bp_iterations = rand(abs(bp_iterations));
+    //     // bp_iterations = abs(bp_iterations);
+    //     Log::info("negative bp_iterations: %d\n", bp_iterations);
+    // }
+    // genome->set_bp_iterations(bp_iterations);
+    // Log::info("bp_iterations: %d\n", bp_iterations);
 
     get_argument(arguments, "--output_directory", true, output_directory);
     if (output_directory != "") {
