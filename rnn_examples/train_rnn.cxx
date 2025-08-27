@@ -182,6 +182,20 @@ int main(int argc, char** argv) {
     // }
     // genome->set_bp_iterations(bp_iterations);
     // Log::info("bp_iterations: %d\n", bp_iterations);
+    if (bp_iterations < 0) {
+        // Generate a random integer between 0 and abs(bp_iterations) - 1
+        uniform_int_distribution<int32_t> dist(0, abs(bp_iterations) - 1);
+        bp_iterations = dist(generator);
+        // bp_iterations = abs(bp_iterations);
+        Log::info("negative bp_iterations: %d\n", bp_iterations);
+    }
+    else if (bp_iterations == -1) {
+        bp_iterations = 0;
+        
+    }
+
+        
+    Log::info("bp_iterations: %d\n", bp_iterations);
 
     get_argument(arguments, "--output_directory", true, output_directory);
     if (output_directory != "") {

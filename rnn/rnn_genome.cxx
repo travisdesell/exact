@@ -460,14 +460,7 @@ void RNN_Genome::set_bp_iterations(int32_t _bp_iterations) {
     // } else {
     bp_iterations = _bp_iterations;
     // }
-    if (bp_iterations < 0) {
-        bp_iterations = rand(abs(bp_iterations));
-        // bp_iterations = abs(bp_iterations);
-        Log::info("negative bp_iterations: %d\n", bp_iterations);
-        }
-    genome->set_bp_iterations(bp_iterations);
-    Log::info("bp_iterations: %d\n", bp_iterations);
-
+    
 }
 
 int32_t RNN_Genome::get_bp_iterations() {
@@ -3312,7 +3305,7 @@ RNN_Node_Interface* RNN_Genome::read_node_from_stream(istream& bin_istream) {
             nodes[i] = RNN_Genome::read_node_from_stream(bin_istream);
         }
 
-        DNASNode* dnas_node = new DNASNode(move(nodes), innovation_number, layer_type, depth, counter);
+        DNASNode* dnas_node = new DNASNode(std::move(nodes), innovation_number, layer_type, depth, counter);
         dnas_node->set_pi(pi);
         node = (RNN_Node_Interface*) dnas_node;
     } else if (node_type == SIN_NODE) {
