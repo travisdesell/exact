@@ -42,6 +42,11 @@ class RNN_Genome {
     int32_t group_id;
 
     int32_t bp_iterations;
+    string backprop_iterations_type;
+    int32_t bp_min;
+    // int32_t bp_max;
+    int32_t bp_scale;
+    int32_t bp_increase_genomes;
 
     bool use_dropout;
     double dropout_probability;

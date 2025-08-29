@@ -23,7 +23,12 @@ class ExammTask(ConfigToArg):
             "n_islands":            lambda self, x: ['--number_islands', str(x)],
             "population_size":      lambda self, x: ['--population_size', str(x)],
             "max_genomes":          lambda self, x: ['--max_genomes', str(x)],
-            "bp_iterations":        lambda self, x: ['--bp_iterations', str(x)],
+            "bp_iterations":        lambda self, x: ['--bp_iterations'] + list(map(str, x)),
+            "backprop_iterations_type": lambda self, x: ['--backprop_iterations_type', str(x)],
+            "bp_min":               lambda self, x: ['--bp_min', str(x)],
+            # "bp_max":               lambda self, x: ['--bp_max', str(x)],
+            "bp_scale":             lambda self, x: ['--bp_scale', str(x)],
+            "bp_increase_genomes":  lambda self, x: ['--bp_increase_genomes', str(x)],
             "output_directory":     lambda self, x: ['--output_directory', str(x)],
             "node_types":           lambda self, x: ['--possible_node_types'] + list(map(str, x)),
             "rec":                  lambda self, x: RecArgs(x, self.filename).to_args(),
@@ -39,44 +44,54 @@ class ExammTask(ConfigToArg):
     }
 
     TYPES = {
-            "training_files":       {list},
-            "test_files":           {list},
-            "time_offset":          {int},
-            "input_parameters":     {list},
-            "output_parameters":    {list},
-            "n_islands":            {int},
-            "population_size":      {int},
-            "max_genomes":          {int},
-            "bp_iterations":        {int},
-            "output_directory":     {str},
-            "node_types":           {list},
+            "training_files":           {list},
+            "test_files":               {list},
+            "time_offset":              {int},
+            "input_parameters":         {list},
+            "output_parameters":        {list},
+            "n_islands":                {int},
+            "population_size":          {int},
+            "max_genomes":              {int},
+            "bp_iterations":            {int},
+            "backprop_iterations_type": {str},
+            "bp_min":                   {int},
+            # "bp_max":                   {int},
+            "bp_scale":                 {int},
+            "bp_increase_genomes":      {int},
+            "output_directory":         {str},
+            "node_types":               {list},
             # Subsections should be of type dict
-            "rec":                  {dict},
-            "island_purging":       {dict}
+            "rec":                      {dict},
+            "island_purging":           {dict}
  
     }
 
     CONSTRAINTS = {
-            "training_files":       (lambda self: self.all_strings(self.training_files),
-                                    "must be a list of strings"),
-            "test_files":           (lambda self: self.all_strings(self.test_files),
-                                    "must be a list of strings"),
-            "time_offset":          (lambda self: self.time_offset > 0, "must a positive integer"),
-            "input_parameters":     (lambda self: self.all_strings(self.input_parameters),
-                                    "must be a list of strings"),
-            "output_parameters":    (lambda self: self.all_strings(self.output_parameters),
-                                    "must be a list of strings"),
-            "n_islands":            (lambda self: self.n_islands > 0, "must be a positive integer"),
-            "population_size":      (lambda self: self.population_size > 0, "must be a positive integer"),
-            "max_genomes":          (lambda self: self.max_genomes > 0, "must be a positive integer"),
-            # "bp_iterations":        (lambda self: self.bp_iterations >= 0, "must be a non-negative integer"),
-            "output_directory":     (lambda self: True, "must be a valid path"),
-            "node_types":           (lambda self: self.all_strings(self.node_types) \
+            "training_files":           (lambda self: self.all_strings(self.training_files),
+                                        "must be a list of strings"),
+            "test_files":               (lambda self: self.all_strings(self.test_files),
+                                        "must be a list of strings"),
+            "time_offset":              (lambda self: self.time_offset > 0, "must a positive integer"),
+            "input_parameters":         (lambda self: self.all_strings(self.input_parameters),
+                                        "must be a list of strings"),
+            "output_parameters":        (lambda self: self.all_strings(self.output_parameters),
+                                        "must be a list of strings"),
+            "n_islands":                (lambda self: self.n_islands > 0, "must be a positive integer"),
+            "population_size":          (lambda self: self.population_size > 0, "must be a positive integer"),
+            "max_genomes":              (lambda self: self.max_genomes > 0, "must be a positive integer"),
+            "bp_iterations":            (lambda self: True, ""),
+            "backprop_iterations_type": (lambda self: self.backprop_iterations_type ),
+            "bp_min":                   (lambda self: self.bp_min >= 0, "must be a non-negative integer"),
+            # "bp_max":                   (lambda self: self.bp_max >= self.bp_min, "maximum value must be greater than or equal to minimum value"),
+            "bp_scale":                 (lambda self: True, ""),
+            "bp_increase_genomes":      (lambda self: self.bp_increase_genomes > 0, "must be a positive integer"),
+            "output_directory":         (lambda self: True, "must be a valid path"),
+            "node_types":               (lambda self: self.all_strings(self.node_types) \
                                                 and set(self.node_types).issubset(set(ExammTask.ALL_NODE_TYPES)),
-                                    "must be a subset of " + str(ALL_NODE_TYPES)),
+                                        "must be a subset of " + str(ALL_NODE_TYPES)),
             # Subsections should be of type dict
-            "rec":                  (lambda self: True, ""),
-            "island_purging":       (lambda self: True, "")
+            "rec":                      (lambda self: True, ""),
+            "island_purging":           (lambda self: True, "")
  
     }
 

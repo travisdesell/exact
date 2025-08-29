@@ -467,6 +467,38 @@ int32_t RNN_Genome::get_bp_iterations() {
     return bp_iterations;
 }
 
+void RNN_Genome::set_backprop_iterations_type(string _backprop_iterations_type) {
+    backprop_iterations_type = _backprop_iterations_type;
+}
+
+string RNN_Genome::get_backprop_iterations_type() const {
+    return backprop_iterations_type;
+}
+
+void RNN_Genome::set_bp_min(int32_t _bp_min) {
+    bp_min = _bp_min;
+}
+
+int32_t RNN_Genome::get_bp_min() const {
+    return bp_min;
+}
+
+void RNN_Genome::set_bp_scale(int32_t _bp_scale) {
+    bp_scale = _bp_scale;
+}
+
+int32_t RNN_Genome::get_bp_scale() const {
+    return bp_scale;
+}   
+
+void RNN_Genome::set_bp_increase_genomes(int32_t _bp_increase_genomes) {
+    bp_increase_genomes = _bp_increase_genomes;
+}
+
+int32_t RNN_Genome::get_bp_increase_genomes() const {
+    return bp_increase_genomes;
+}
+
 // void RNN_Genome::set_learning_rate(double _learning_rate) {
 //     learning_rate = _learning_rate;
 // }
