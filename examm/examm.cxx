@@ -240,7 +240,33 @@ bool EXAMM::insert_genome(RNN_Genome* genome) {
         return false;
     }
 
-    total_bp_epochs += genome->get_bp_iterations();
+    bp_iter = genome->get_bp_iterations()
+    total_bp_epochs += bp_iter;
+    increase_genomes = genome->get_bp_increase_genomes();
+
+    if (total_bp_epochs % increase_genomes == 0) {
+        scale = genome->get_bp_scale();
+        switch (genome->get_backprop_iterations_type()) {
+            case 'linear':
+                bp_iter = floor((total_bp_epochs / increase_genomes) * scale);
+                
+                break;
+            case 'exp':
+                bp_iter = floor((total_bp_epochs / increase_genomes)^ scale);
+                
+                break;
+            case 'rand':
+                // Generate a random integer between 0 and abs(bp_iterations) - 1
+                uniform_int_distribution<int32_t> dist(genome->get_bp_min(), genome->get_bp_max());
+                bp_iter = dist(generator);
+                
+            default:
+                bp_iter = genome->get_bp_iterations()
+        }
+        genome->set_bp_iterations(bp_iter);
+
+    }
+    
     if (!genome->sanity_check()) {
         Log::error("genome failed sanity check on insert!\n");
         exit(1);
