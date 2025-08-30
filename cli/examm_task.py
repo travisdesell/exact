@@ -56,7 +56,7 @@ class ExammTask(ConfigToArg):
             "backprop_iterations_type": {str},
             "bp_min":                   {int},
             # "bp_max":                   {int},
-            "bp_scale":                 {int},
+            "bp_scale":                 {float},
             "bp_increase_genomes":      {int},
             "output_directory":         {str},
             "node_types":               {list},

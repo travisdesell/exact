@@ -483,11 +483,11 @@ int32_t RNN_Genome::get_bp_min() const {
     return bp_min;
 }
 
-void RNN_Genome::set_bp_scale(int32_t _bp_scale) {
+void RNN_Genome::set_bp_scale(float _bp_scale) {
     bp_scale = _bp_scale;
 }
 
-int32_t RNN_Genome::get_bp_scale() const {
+float RNN_Genome::get_bp_scale() const {
     return bp_scale;
 }   
 

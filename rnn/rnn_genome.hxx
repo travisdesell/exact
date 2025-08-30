@@ -45,7 +45,7 @@ class RNN_Genome {
     string backprop_iterations_type;
     int32_t bp_min;
     // int32_t bp_max;
-    int32_t bp_scale;
+    float bp_scale;
     int32_t bp_increase_genomes;
 
     bool use_dropout;
@@ -154,6 +154,14 @@ class RNN_Genome {
 
     void set_bp_iterations(int32_t _bp_iterations);
     int32_t get_bp_iterations();
+    void set_backprop_iterations_type(string _backprop_iterations_type);
+    string get_backprop_iterations_type() const;
+    void set_bp_min(int32_t _bp_min);
+    int32_t get_bp_min() const;
+    void set_bp_increase_genomes(int32_t bp_increase_genomes);
+    int32_t get_bp_increase_genomes() const;
+    void set_bp_scale(float scale);
+    float get_bp_scale() const;
 
     // Turns on / off stochastic operations. If it is off, any stochastic values will be "frozen" in place.
     void set_stochastic(bool stochastic);
