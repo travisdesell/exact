@@ -12,7 +12,7 @@ class ExammTask(ConfigToArg):
         for path in paths:
             a = a + glob.glob(path)
         return list(set(a))
-
+    ALL_ITER_TYPES = ["linear", "exp", "rand", "const"]
     ALL_NODE_TYPES = [ 'simple', 'UGRNN', 'MGU', 'GRU', 'delta', 'LSTM' , 'ENARC' ]
     CONFIG_OPTIONS = {
             "training_files":       lambda self, x: ['--training_filenames'] + ExammTask.glob_to_all(x),
@@ -80,7 +80,7 @@ class ExammTask(ConfigToArg):
             "population_size":          (lambda self: self.population_size > 0, "must be a positive integer"),
             "max_genomes":              (lambda self: self.max_genomes > 0, "must be a positive integer"),
             "bp_iterations":            (lambda self: True, ""),
-            "backprop_iterations_type": (lambda self: self.backprop_iterations_type ),
+            "backprop_iterations_type": (lambda self: std::ranges::contains(ALL_ITER_TYPES, self.backprop_iterations_type), "must be linear, exp, rand, or const" ),
             "bp_min":                   (lambda self: self.bp_min >= 0, "must be a non-negative integer"),
             # "bp_max":                   (lambda self: self.bp_max >= self.bp_min, "maximum value must be greater than or equal to minimum value"),
             "bp_scale":                 (lambda self: True, ""),
