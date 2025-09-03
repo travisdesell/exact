@@ -7,14 +7,18 @@
 #    --normalize avg_std_dev for Z-score normalization
 
 
+# Number of runs can be provided as the first argument, defaults to 1
+RUNS=${1:-1}
+
 cd build
 
 INPUT_PARAMETERS="Conditioner_Inlet_Temp Conditioner_Outlet_Temp Coal_Feeder_Rate Primary_Air_Flow Primary_Air_Split System_Secondary_Air_Flow_Total Secondary_Air_Flow Secondary_Air_Split Tertiary_Air_Split Total_Comb_Air_Flow Supp_Fuel_Flow Main_Flm_Int" 
 OUTPUT_PARAMETERS="Main_Flm_Int" 
 
-exp_name="../test_output/coal_mpi"
-mkdir -p $exp_name
-echo "Running base EXAMM code with coal dataset, results will be saved to: "$exp_name
+for i in $(seq 1 $RUNS); do
+exp_name="../test_output/coal_mpi_rand/run_${i}"
+mkdir -p "$exp_name"
+echo "Run ${i}/${RUNS}: results will be saved to: $exp_name"
 echo "###-------------------###"
 
 mpirun -np 4 ./mpi/examm_mpi \
@@ -26,9 +30,9 @@ mpirun -np 4 ./mpi/examm_mpi \
 --island_size 10 \
 --max_genomes 2000 \
 --bp_iterations 5 \
---backprop_iterations_type "linear" \
---bp_min 2 \
---output_directory $exp_name \
+--backprop_iterations_type "rand" \
+--bp_min 0 \
+--output_directory "$exp_name" \
 --num_mutations 2 \
 --weight_update adagrad \
 --eps 0.000001 \
@@ -38,3 +42,4 @@ mpirun -np 4 ./mpi/examm_mpi \
 --save_genome_option the_best \
 --std_message_level INFO \
 --file_message_level INFO
+done
