@@ -243,26 +243,24 @@ bool EXAMM::insert_genome(RNN_Genome* genome) {
     int bp_iter = genome->get_bp_iterations();
     total_bp_epochs += bp_iter;
     int increase_genomes = genome->get_bp_increase_genomes();
-
-    if (total_bp_epochs % increase_genomes == 0) {
-        float scale = genome->get_bp_scale();
-
-        std::string type = genome->get_backprop_iterations_type();
-
-        if (type == "linear") {
-            bp_iter = floor((total_bp_epochs / increase_genomes) * scale);
-        }
-        else if (type == "exp") {
-            bp_iter = floor(pow((total_bp_epochs / increase_genomes), scale));
-        }
-        else if (type == "rand") {
-            std::uniform_int_distribution<int32_t> dist(genome->get_bp_min(), bp_iter);
-            bp_iter = dist(generator);
-        }
-        else {
-            bp_iter = genome->get_bp_iterations();
-        }
+    float scale = genome->get_bp_scale();
+    std::string type = genome->get_backprop_iterations_type();
+    Log::info("bp_iter: %d, increase_genomes: %d, scale: %f, type: %s\n", bp_iter, increase_genomes, scale, type.c_str());
+    if (type == "linear") {
+        bp_iter += floor((total_bp_epochs / increase_genomes) * scale);
     }
+    else if (type == "exp") {
+        bp_iter += floor(pow((total_bp_epochs / increase_genomes), scale));
+    }
+    else if (type == "rand") {
+        std::uniform_int_distribution<int32_t> dist(genome->get_bp_min(), bp_iter);
+        bp_iter = dist(generator);
+    }
+    // else {
+    //     bp_iter = genome->get_bp_iterations();
+    // }
+    
+    genome->set_bp_iterations(bp_iter);
     
     if (!genome->sanity_check()) {
         Log::error("genome failed sanity check on insert!\n");
