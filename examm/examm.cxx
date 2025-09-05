@@ -241,7 +241,7 @@ bool EXAMM::insert_genome(RNN_Genome* genome) {
     }
 
     int bp_iter = genome->get_bp_iterations();
-    total_bp_epochs += bp_iter;
+    
     int bp_min = genome->get_bp_min();
     int increase_genomes = genome->get_bp_increase_genomes();
     float scale = genome->get_bp_scale();
@@ -262,7 +262,7 @@ bool EXAMM::insert_genome(RNN_Genome* genome) {
     // }
     Log::info("bp_iter: %d\n", bp_iter);
     genome->set_bp_iterations(bp_iter);
-    
+    total_bp_epochs += bp_iter;
     if (!genome->sanity_check()) {
         Log::error("genome failed sanity check on insert!\n");
         exit(1);
