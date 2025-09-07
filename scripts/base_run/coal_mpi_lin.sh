@@ -29,9 +29,8 @@ mpirun -np 4 ./mpi/examm_mpi \
 --number_islands 10 \
 --island_size 10 \
 --max_genomes 2000 \
---bp_iterations 5 \
+--bp_iterations 25 \
 --backprop_iterations_type "linear" \
---bp_min 0 \
 --scale 2 \
 --increase_genomes 100 \
 --output_directory "$exp_name" \

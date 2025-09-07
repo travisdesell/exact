@@ -242,26 +242,6 @@ bool EXAMM::insert_genome(RNN_Genome* genome) {
 
     int bp_iter = genome->get_bp_iterations();
     
-    int bp_min = genome->get_bp_min();
-    int increase_genomes = genome->get_bp_increase_genomes();
-    float scale = genome->get_bp_scale();
-    std::string type = genome->get_backprop_iterations_type();
-    Log::info("bp_iter: %d, increase_genomes: %d, scale: %f, type: %s\n", bp_iter, increase_genomes, scale, type.c_str());
-    if (type == "linear") {
-        bp_iter = floor((total_bp_epochs / increase_genomes) * scale) + bp_min;
-    }
-    else if (type == "exp") {
-        bp_iter = floor(pow((total_bp_epochs / increase_genomes), scale)) + bp_min;
-    }
-    else if (type == "rand") {
-        std::uniform_int_distribution<int32_t> dist(bp_min, bp_iter);
-        bp_iter = dist(generator);
-    }
-    // else {
-    //     bp_iter = genome->get_bp_iterations();
-    // }
-    Log::info("bp_iter: %d\n", bp_iter);
-    genome->set_bp_iterations(bp_iter);
     total_bp_epochs += bp_iter;
     if (!genome->sanity_check()) {
         Log::error("genome failed sanity check on insert!\n");
@@ -424,7 +404,29 @@ RNN_Genome* EXAMM::generate_genome() {
         [=, this](RNN_Genome* parent1, RNN_Genome* parent2) { return this->crossover(parent1, parent2); };
 
     RNN_Genome* genome = speciation_strategy->generate_genome(rng_0_1, generator, mutate_function, crossover_function);
+    
+    // Changing the number of epochs
+    int bp_min = genome->get_bp_min();
+    int increase_genomes = genome->get_bp_increase_genomes();
+    float scale = genome->get_bp_scale();
+    std::string type = genome->get_backprop_iterations_type();
+    Log::info("bp_iter: %d, increase_genomes: %d, scale: %f, type: %s\n", bp_iter, increase_genomes, scale, type.c_str());
+    if (type == "linear") {
+        bp_iter = floor((total_bp_epochs / increase_genomes) * scale) + bp_min;
+    }
+    else if (type == "exp") {
+        bp_iter = floor(pow((total_bp_epochs / increase_genomes), scale)) + bp_min;
+    }
+    else if (type == "rand") {
+        std::uniform_int_distribution<int32_t> dist(bp_min, bp_iter);
+        bp_iter = dist(generator);
+    }
+    // else {
+    //     bp_iter = genome->get_bp_iterations();
+    // }
+    Log::info("bp_iter: %d\n", bp_iter);
 
+    genome->set_bp_iterations(bp_iter);
     genome_property->set_genome_properties(genome);
     // if (!epigenetic_weights) genome->initialize_randomly();
 
