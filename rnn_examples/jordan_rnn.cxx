@@ -174,7 +174,19 @@ int main(int argc, char** argv) {
     int32_t bp_iterations;
     get_argument(arguments, "--bp_iterations", true, bp_iterations);
     genome->set_bp_iterations(bp_iterations);
-
+    string backprop_iterations_type;
+    get_argument(arguments, "--backprop_iterations_type", true, backprop_iterations_type);
+    genome->set_backprop_iterations_type(backprop_iterations_type);
+    int32_t bp_min;
+    get_argument(arguments, "--bp_min", true, bp_min);
+    genome->set_bp_min(bp_min);
+    float bp_scale;
+    get_argument(arguments, "--bp_scale", true, bp_scale);
+    genome->set_bp_scale(bp_scale);
+    int32_t bp_increase_genomes;
+    get_argument(arguments, "--bp_increase_genomes", true, bp_increase_genomes);
+    genome->set_bp_increase_genomes(bp_increase_genomes);
+    Log::info("backprop_iterations_type: %s, bp_min: %d, bp_scale: %f, bp_increase_genomes: %d\n", backprop_iterations_type.c_str(), bp_min, bp_scale, bp_increase_genomes);
     double learning_rate = 0.0001;
     get_argument(arguments, "--learning_rate", false, learning_rate);
 
