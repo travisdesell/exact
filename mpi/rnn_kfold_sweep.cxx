@@ -52,6 +52,10 @@ typedef struct stat Stat;
 
 int32_t time_offset = 1;
 int32_t bp_iterations;
+string backprop_iterations_type;
+int32_t bp_min;
+float bp_scale;
+int32_t bp_increase_genomes;
 string output_directory;
 int32_t repeats = 5;
 int32_t fold_size = 2;
