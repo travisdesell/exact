@@ -30,6 +30,7 @@ mpirun -np 4 ./mpi/examm_mpi \
 --island_size 10 \
 --max_genomes 2000 \
 --bp_iterations 25 \
+--backprop_iterations_type "const" \
 --output_directory "$exp_name" \
 --num_mutations 2 \
 --weight_update adagrad \

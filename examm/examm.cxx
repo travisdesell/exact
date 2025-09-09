@@ -407,7 +407,7 @@ RNN_Genome* EXAMM::generate_genome() {
     
     // Changing the number of epochs
     int bp_iter = genome->get_bp_iterations();
-    string backprop_iterations_type = genome->get_backprop_iterations_type();
+    // string backprop_iterations_type = genome->get_backprop_iterations_type();
     int bp_min = genome->get_bp_min();
     int increase_genomes = genome->get_bp_increase_genomes();
     float scale = genome->get_bp_scale();
@@ -429,7 +429,7 @@ RNN_Genome* EXAMM::generate_genome() {
     Log::info("bp_iter: %d\n", bp_iter);
 
     genome->set_bp_iterations(bp_iter);
-    genome->set_backprop_iterations_type(backprop_iterations_type);
+    genome->set_backprop_iterations_type(type);
     genome->set_bp_min(bp_min);
     genome->set_bp_scale(scale);
     genome->set_bp_increase_genomes(increase_genomes);
