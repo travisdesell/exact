@@ -13,6 +13,10 @@ using std::string;
 class GenomeProperty {
    private:
     int32_t bp_iterations;
+    string backprop_iterations_type;
+    int32_t bp_min;
+    float bp_scale;
+    int32_t bp_increase_genomes;
     bool use_dropout;
     double dropout_probability;
     int32_t min_recurrent_depth;

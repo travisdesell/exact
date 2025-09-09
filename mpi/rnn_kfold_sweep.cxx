@@ -545,9 +545,9 @@ int main(int argc, char** argv) {
 
     get_argument(arguments, "--bp_iterations", true, bp_iterations);
     get_argument(arguments, "--backprop_iterations_type", true, backprop_iterations_type);
-    get_argument(arguments, "--bp_min", true, bp_min);
-    get_argument(arguments, "--bp_scale", true, bp_scale);
-    get_argument(arguments, "--bp_increase_genomes", true, bp_increase_genomes);
+    get_argument(arguments, "--bp_min", false, bp_min);
+    get_argument(arguments, "--bp_scale", false, bp_scale);
+    get_argument(arguments, "--bp_increase_genomes", false, bp_increase_genomes);
 
     get_argument(arguments, "--output_directory", true, output_directory);
 
