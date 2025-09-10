@@ -17,7 +17,7 @@ mkdir -p $exp_name
 echo "Running base EXAMM code with coal dataset, results will be saved to: "$exp_name
 echo "###-------------------###"
 
-mpirun -np 4 ./mpi/examm_mpi \
+mpirun -np 10 ./mpi/examm_mpi \
 --training_filenames ../datasets/2018_coal/burner_[0-9].csv --validation_filenames ../datasets/2018_coal/burner_1[0-1].csv \
 --time_offset 1 \
 --input_parameter_names $INPUT_PARAMETERS \
@@ -26,8 +26,7 @@ mpirun -np 4 ./mpi/examm_mpi \
 --island_size 10 \
 --max_genomes 2000 \
 --bp_iterations 5 \
---backprop_iterations_type "linear" \
---bp_min 2 \
+--backprop_iterations_type "const" \
 --output_directory $exp_name \
 --num_mutations 2 \
 --weight_update adagrad \
