@@ -33,7 +33,7 @@ bool get_argument(vector<string> arguments, string argument, bool required, stri
     }
 
     if (found) {
-        cerr << "parsed argument '" << argument << "' successfully: " << result << endl;
+        // cerr << "parsed argument '" << argument << "' successfully: " << result << endl;
     }
     return found;
 }

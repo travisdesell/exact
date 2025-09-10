@@ -70,7 +70,7 @@ bool get_argument(vector<string> arguments, string argument, bool required, T& r
     }
 
     if (found) {
-        cerr << "parsed argument '" << argument << "' successfully: " << result << endl;
+        // cerr << "parsed argument '" << argument << "' successfully: " << result << endl;
     }
     return found;
 }
@@ -99,7 +99,7 @@ bool get_arguments(vector<string> arguments, string argument, bool required, T1&
     }
 
     if (found) {
-        cerr << "parsed argument '" << argument << "' successfully: " << result1 << " " << result2 << endl;
+        // cerr << "parsed argument '" << argument << "' successfully: " << result1 << " " << result2 << endl;
     }
     return found;
 }
