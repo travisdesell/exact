@@ -240,9 +240,10 @@ bool EXAMM::insert_genome(RNN_Genome* genome) {
         return false;
     }
 
-    int bp_iter = genome->get_bp_iterations();
+    int backprop_iterations = genome->get_backprop_iterations();
+    Log::info("inserting genome which performed %d backprop iterations.\n", backprop_iterations);
     
-    total_bp_epochs += bp_iter;
+    total_bp_epochs += backprop_iterations;
     if (!genome->sanity_check()) {
         Log::error("genome failed sanity check on insert!\n");
         exit(1);
@@ -406,34 +407,28 @@ RNN_Genome* EXAMM::generate_genome() {
     RNN_Genome* genome = speciation_strategy->generate_genome(rng_0_1, generator, mutate_function, crossover_function);
     
     // Changing the number of epochs
-    int bp_iter = genome->get_bp_iterations();
-    // string backprop_iterations_type = genome->get_backprop_iterations_type();
-    int bp_min = genome->get_bp_min();
-    int increase_genomes = genome->get_bp_increase_genomes();
-    float scale = genome->get_bp_scale();
-    std::string type = genome->get_backprop_iterations_type();
-    Log::info("bp_iter: %d, increase_genomes: %d, scale: %f, type: %s\n", bp_iter, increase_genomes, scale, type.c_str());
+    int32_t bp_iter = genome_property->get_backprop_iterations();
+    int32_t bp_min = genome_property->get_backprop_min();
+    int32_t increase_genomes = genome_property->get_backprop_increase_genomes();
+    float scale = genome_property->get_backprop_scale();
+    string type = genome_property->get_backprop_iterations_type();
+
     if (type == "linear") {
         bp_iter = floor((total_bp_epochs / increase_genomes) * scale) + bp_min;
-    }
-    else if (type == "exp") {
+
+    } else if (type == "exp") {
         bp_iter = floor(pow((total_bp_epochs / increase_genomes), scale)) + bp_min;
-    }
-    else if (type == "rand") {
+
+    } else if (type == "rand") {
         std::uniform_int_distribution<int32_t> dist(bp_min, bp_iter);
         bp_iter = dist(generator);
     }
-    // else {
-    //     bp_iter = genome->get_bp_iterations();
-    // }
-    Log::info("bp_iter: %d\n", bp_iter);
 
-    genome->set_bp_iterations(bp_iter);
-    genome->set_backprop_iterations_type(type);
-    genome->set_bp_min(bp_min);
-    genome->set_bp_scale(scale);
-    genome->set_bp_increase_genomes(increase_genomes);
+    Log::info("calculating backprop iterations using %s: bp_min: %d, increase_genomes: %d scale: %f is iterations: %d\n", type.c_str(), bp_min, increase_genomes, scale, bp_iter);
+
+    genome_property->set_backprop_iterations(bp_iter);
     genome_property->set_genome_properties(genome);
+
     // if (!epigenetic_weights) genome->initialize_randomly();
 
     // this is just a sanity check, can most likely comment out (checking to see

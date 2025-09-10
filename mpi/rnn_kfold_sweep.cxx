@@ -51,11 +51,7 @@ typedef struct stat Stat;
 #define RESULT_TAG       4
 
 int32_t time_offset = 1;
-int32_t bp_iterations;
-string backprop_iterations_type;
-int32_t bp_min;
-float bp_scale;
-int32_t bp_increase_genomes;
+int32_t backprop_iterations;
 string output_directory;
 int32_t repeats = 5;
 int32_t fold_size = 2;
@@ -433,7 +429,7 @@ ResultSet handle_job(int32_t rank, int32_t current_job) {
     vector<double> best_parameters;
 
     genome->initialize_randomly();
-    genome->set_bp_iterations(bp_iterations);
+    genome->set_backprop_iterations(backprop_iterations);
 
     string first_directory = output_directory + "/" + rnn_type;
     mkdir(first_directory.c_str(), 0777);
@@ -543,11 +539,7 @@ int main(int argc, char** argv) {
 
     get_argument(arguments, "--time_offset", true, time_offset);
 
-    get_argument(arguments, "--bp_iterations", true, bp_iterations);
-    get_argument(arguments, "--backprop_iterations_type", true, backprop_iterations_type);
-    get_argument(arguments, "--bp_min", false, bp_min);
-    get_argument(arguments, "--bp_scale", false, bp_scale);
-    get_argument(arguments, "--bp_increase_genomes", false, bp_increase_genomes);
+    get_argument(arguments, "--bp_iterations", true, backprop_iterations);
 
     get_argument(arguments, "--output_directory", true, output_directory);
 

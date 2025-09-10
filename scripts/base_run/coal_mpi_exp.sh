@@ -21,7 +21,7 @@ mkdir -p "$exp_name"
 echo "Run ${i}/${RUNS}: results will be saved to: $exp_name"
 echo "###-------------------###"
 
-mpirun -np 4 ./mpi/examm_mpi \
+mpirun -np 2 ./mpi/examm_mpi \
 --training_filenames ../datasets/2018_coal/burner_[0-9].csv --validation_filenames ../datasets/2018_coal/burner_1[0-1].csv \
 --time_offset 1 \
 --input_parameter_names $INPUT_PARAMETERS \
@@ -30,6 +30,7 @@ mpirun -np 4 ./mpi/examm_mpi \
 --island_size 10 \
 --max_genomes 2000 \
 --bp_iterations 25 \
+--bp_min 1 \
 --backprop_iterations_type "exp" \
 --scale 2 \
 --increase_genomes 100 \

@@ -176,19 +176,8 @@ int main(int argc, char** argv) {
 
     get_argument(arguments, "--bp_iterations", true, bp_iterations);        
     Log::info("bp_iterations: %d\n", bp_iterations);
-    string backprop_iterations_type;
-    get_argument(arguments, "--backprop_iterations_type", true, backprop_iterations_type);
-    genome->set_backprop_iterations_type(backprop_iterations_type);
-    int32_t bp_min;
-    get_argument(arguments, "--bp_min", false, bp_min);
-    genome->set_bp_min(bp_min);
-    float bp_scale;
-    get_argument(arguments, "--bp_scale", false, bp_scale);
-    genome->set_bp_scale(bp_scale);
-    int32_t bp_increase_genomes;
-    get_argument(arguments, "--bp_increase_genomes", false, bp_increase_genomes);
-    genome->set_bp_increase_genomes(bp_increase_genomes);
-    Log::info("backprop_iterations_type: %s, bp_min: %d, bp_scale: %f, bp_increase_genomes: %d\n", backprop_iterations_type.c_str(), bp_min, bp_scale, bp_increase_genomes);
+    genome->set_backprop_iterations(bp_iterations);
+
     get_argument(arguments, "--output_directory", true, output_directory);
     if (output_directory != "") {
         mkpath(output_directory.c_str(), 0777);

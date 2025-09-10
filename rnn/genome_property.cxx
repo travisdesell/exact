@@ -4,29 +4,29 @@
 #include "common/log.hxx"
 
 GenomeProperty::GenomeProperty() {
-    bp_iterations = 10;
+    backprop_iterations = 10;
     backprop_iterations_type = "const";
-    bp_min = 0;
-    bp_scale = 1.0;
-    bp_increase_genomes = 10;
+    backprop_min = 0;
+    backprop_scale = 1.0;
+    backprop_increase_genomes = 10;
     dropout_probability = 0.0;
     min_recurrent_depth = 1;
     max_recurrent_depth = 10;
 }
 
 void GenomeProperty::generate_genome_property_from_arguments(const vector<string>& arguments) {
-    get_argument(arguments, "--bp_iterations", true, bp_iterations);
+    get_argument(arguments, "--bp_iterations", true, backprop_iterations);
     get_argument(arguments, "--backprop_iterations_type", true, backprop_iterations_type);
-    get_argument(arguments, "--bp_min", false, bp_min);
-    get_argument(arguments, "--bp_scale", false, bp_scale);
-    get_argument(arguments, "--bp_increase_genomes", false, bp_increase_genomes);
+    get_argument(arguments, "--bp_min", false, backprop_min);
+    get_argument(arguments, "--bp_scale", false, backprop_scale);
+    get_argument(arguments, "--bp_increase_genomes", false, backprop_increase_genomes);
     use_dropout = get_argument(arguments, "--dropout_probability", false, dropout_probability);
 
     get_argument(arguments, "--min_recurrent_depth", false, min_recurrent_depth);
     get_argument(arguments, "--max_recurrent_depth", false, max_recurrent_depth);
 
-    Log::info("Each generated genome is trained for %d epochs\n", bp_iterations);
-    Log::info("The parameters are following:\n increase_genomes: %d, scale: %f, type: %s\n", bp_increase_genomes, bp_scale, backprop_iterations_type.c_str());
+    Log::info("Each generated genome is trained for %d epochs\n", backprop_iterations);
+    Log::info("The parameters are following:\n increase_genomes: %d, scale: %f, type: %s\n", backprop_increase_genomes, backprop_scale, backprop_iterations_type.c_str());
 
     Log::info(
         "Use dropout is set to %s, dropout probability is %f\n", use_dropout ? "True" : "False", dropout_probability
@@ -35,11 +35,10 @@ void GenomeProperty::generate_genome_property_from_arguments(const vector<string
 }
 
 void GenomeProperty::set_genome_properties(RNN_Genome* genome) {
-    genome->set_bp_iterations(bp_iterations);
-    genome->set_backprop_iterations_type(backprop_iterations_type);
-    genome->set_bp_min(bp_min);
-    genome->set_bp_scale(bp_scale);
-    genome->set_bp_increase_genomes(bp_increase_genomes);
+    Log::info("genome property backprop iterations: %d\n", backprop_iterations);
+
+    genome->set_backprop_iterations(backprop_iterations);
+
     if (use_dropout) {
         genome->enable_dropout(dropout_probability);
     }
@@ -63,3 +62,28 @@ void GenomeProperty::get_time_series_parameters(TimeSeriesSets* time_series_sets
 uniform_int_distribution<int32_t> GenomeProperty::get_recurrent_depth_dist() {
     return uniform_int_distribution<int32_t>(this->min_recurrent_depth, this->max_recurrent_depth);
 }
+
+void GenomeProperty::set_backprop_iterations(int32_t _backprop_iterations) {
+    backprop_iterations = _backprop_iterations;
+}
+
+int32_t GenomeProperty::get_backprop_iterations() {
+    return backprop_iterations;
+}
+
+int32_t GenomeProperty::get_backprop_min() {
+    return backprop_min;
+}
+
+int32_t GenomeProperty::get_backprop_increase_genomes() {
+    return backprop_increase_genomes;
+}
+
+float GenomeProperty::get_backprop_scale() {
+    return backprop_scale;
+}
+
+string GenomeProperty::get_backprop_iterations_type() {
+    return backprop_iterations_type;
+}
+

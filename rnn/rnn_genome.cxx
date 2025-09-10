@@ -112,7 +112,7 @@ RNN_Genome::RNN_Genome(
     sort_edges_by_depth();
 
     // set default values
-    // bp_iterations = 20000;
+    // backprop_iterations = 20000;
     // learning_rate = 0.001;
     // adapt_learning_rate = false;
     // use_nesterov_momentum = false;
@@ -172,7 +172,7 @@ RNN_Genome* RNN_Genome::copy() {
     RNN_Genome* other = new RNN_Genome(node_copies, edge_copies, recurrent_edge_copies, weight_rules);
 
     other->group_id = group_id;
-    other->bp_iterations = bp_iterations;
+    other->backprop_iterations = backprop_iterations;
     other->generation_id = generation_id;
     // other->learning_rate = learning_rate;
     // other->adapt_learning_rate = adapt_learning_rate;
@@ -448,55 +448,13 @@ int32_t RNN_Genome::get_enabled_recurrent_edge_count() {
     return count;
 }
 
-void RNN_Genome::set_bp_iterations(int32_t _bp_iterations) {
-    // if (epochs_acc_freq > 0) {
-    //     if (generation_id < epochs_acc_freq) bp_iterations = 0;
-    //     else {
-    //         int32_t n = floor(generation_id/epochs_acc_freq) - 1;
-    //         bp_iterations = (int32_t)pow(2, n);
-    //     }
-
-    //     Log::info("Setting bp interation %d to genome %d \n", bp_iterations, generation_id);
-    // } else {
-    bp_iterations = _bp_iterations;
-    // }
-    
+void RNN_Genome::set_backprop_iterations(int32_t _backprop_iterations) {
+    backprop_iterations = _backprop_iterations;
+    Log::info("genome setting backprop iterations to: %d\n", backprop_iterations);
 }
 
-int32_t RNN_Genome::get_bp_iterations() {
-    return bp_iterations;
-}
-
-void RNN_Genome::set_backprop_iterations_type(string _backprop_iterations_type) {
-    backprop_iterations_type = _backprop_iterations_type;
-}
-
-string RNN_Genome::get_backprop_iterations_type() const {
-    return backprop_iterations_type;
-}
-
-void RNN_Genome::set_bp_min(int32_t _bp_min) {
-    bp_min = _bp_min;
-}
-
-int32_t RNN_Genome::get_bp_min() const {
-    return bp_min;
-}
-
-void RNN_Genome::set_bp_scale(float _bp_scale) {
-    bp_scale = _bp_scale;
-}
-
-float RNN_Genome::get_bp_scale() const {
-    return bp_scale;
-}   
-
-void RNN_Genome::set_bp_increase_genomes(int32_t _bp_increase_genomes) {
-    bp_increase_genomes = _bp_increase_genomes;
-}
-
-int32_t RNN_Genome::get_bp_increase_genomes() const {
-    return bp_increase_genomes;
+int32_t RNN_Genome::get_backprop_iterations() {
+    return backprop_iterations;
 }
 
 // void RNN_Genome::set_learning_rate(double _learning_rate) {
@@ -1071,7 +1029,7 @@ void RNN_Genome::backpropagate(
 
     ofstream* output_log = create_log_file();
 
-    for (int32_t iteration = 0; iteration < bp_iterations; iteration++) {
+    for (int32_t iteration = 0; iteration < backprop_iterations; iteration++) {
         prev_gradient = analytic_gradient;
         get_analytic_gradient(rnns, parameters, inputs, outputs, mse, analytic_gradient, true);
         this->set_weights(parameters);
@@ -1154,7 +1112,7 @@ void RNN_Genome::backpropagate_stochastic(
 
     ofstream* output_log = create_log_file();
 
-    for (int32_t iteration = 0; iteration < bp_iterations; iteration++) {
+    for (int32_t iteration = 0; iteration < backprop_iterations; iteration++) {
         vector<int32_t> shuffle_order;
         for (int32_t i = 0; i < n_series; i++) {
             shuffle_order.push_back(i);
@@ -3381,7 +3339,7 @@ void RNN_Genome::read_from_stream(istream& bin_istream) {
 
     bin_istream.read((char*) &generation_id, sizeof(int32_t));
     bin_istream.read((char*) &group_id, sizeof(int32_t));
-    bin_istream.read((char*) &bp_iterations, sizeof(int32_t));
+    bin_istream.read((char*) &backprop_iterations, sizeof(int32_t));
 
     bin_istream.read((char*) &use_dropout, sizeof(bool));
     bin_istream.read((char*) &dropout_probability, sizeof(double));
@@ -3400,7 +3358,7 @@ void RNN_Genome::read_from_stream(istream& bin_istream) {
     weight_rules->set_mutated_components_weight_method(mutated_component_weight);
 
     Log::debug("generation_id: %d\n", generation_id);
-    Log::debug("bp_iterations: %d\n", bp_iterations);
+    Log::debug("backprop_iterations: %d\n", backprop_iterations);
 
     Log::debug("use_dropout: %d\n", use_dropout);
     Log::debug("dropout_probability: %lf\n", dropout_probability);
@@ -3590,7 +3548,7 @@ void RNN_Genome::write_to_stream(ostream& bin_ostream) {
     Log::debug("WRITING GENOME TO STREAM\n");
     bin_ostream.write((char*) &generation_id, sizeof(int32_t));
     bin_ostream.write((char*) &group_id, sizeof(int32_t));
-    bin_ostream.write((char*) &bp_iterations, sizeof(int32_t));
+    bin_ostream.write((char*) &backprop_iterations, sizeof(int32_t));
 
     bin_ostream.write((char*) &use_dropout, sizeof(bool));
     bin_ostream.write((char*) &dropout_probability, sizeof(double));
@@ -3603,7 +3561,7 @@ void RNN_Genome::write_to_stream(ostream& bin_ostream) {
     bin_ostream.write((char*) &mutated_component_weight, sizeof(int32_t));
 
     Log::debug("generation_id: %d\n", generation_id);
-    Log::debug("bp_iterations: %d\n", bp_iterations);
+    Log::debug("backprop_iterations: %d\n", backprop_iterations);
 
     Log::debug("use_dropout: %d\n", use_dropout);
     Log::debug("dropout_probability: %lf\n", dropout_probability);
