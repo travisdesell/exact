@@ -21,12 +21,6 @@ void GenomeProperty::generate_genome_property_from_arguments(const vector<string
     bool bp_scale = get_argument(arguments, "--bp_scale", false, backprop_scale);
     get_argument(arguments, "--bp_increase_genomes", false, backprop_increase_genomes);
 
-    if (!bp_min_arg) {
-        backprop_min = 0;
-    }
-    if (!bp_scale) {
-        backprop_scale = 1;
-    }
     use_dropout = get_argument(arguments, "--dropout_probability", false, dropout_probability);
 
     get_argument(arguments, "--min_recurrent_depth", false, min_recurrent_depth);
