@@ -17,9 +17,16 @@ GenomeProperty::GenomeProperty() {
 void GenomeProperty::generate_genome_property_from_arguments(const vector<string>& arguments) {
     get_argument(arguments, "--bp_iterations", true, backprop_iterations);
     get_argument(arguments, "--backprop_iterations_type", true, backprop_iterations_type);
-    get_argument(arguments, "--bp_min", false, backprop_min);
-    get_argument(arguments, "--bp_scale", false, backprop_scale);
+    bool bp_min_arg = get_argument(arguments, "--bp_min", false, backprop_min);
+    bool bp_scale = get_argument(arguments, "--bp_scale", false, backprop_scale);
     get_argument(arguments, "--bp_increase_genomes", false, backprop_increase_genomes);
+
+    if (!bp_min_arg) {
+        backprop_min = 0;
+    }
+    if (!bp_scale) {
+        backprop_scale = 1;
+    }
     use_dropout = get_argument(arguments, "--dropout_probability", false, dropout_probability);
 
     get_argument(arguments, "--min_recurrent_depth", false, min_recurrent_depth);
