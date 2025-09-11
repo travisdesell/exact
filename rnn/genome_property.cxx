@@ -7,6 +7,7 @@ GenomeProperty::GenomeProperty() {
     backprop_iterations = 10;
     backprop_iterations_type = "const";
     backprop_min = 0;
+    backprop_max = 10;
     backprop_scale = 1.0;
     backprop_increase_genomes = 10;
     dropout_probability = 0.0;
@@ -18,9 +19,12 @@ void GenomeProperty::generate_genome_property_from_arguments(const vector<string
     get_argument(arguments, "--bp_iterations", true, backprop_iterations);
     get_argument(arguments, "--backprop_iterations_type", true, backprop_iterations_type);
     bool bp_min_arg = get_argument(arguments, "--bp_min", false, backprop_min);
+    bool bp_max_arg = get_argument(arguments, "--bp_max", false, backprop_max);
     bool bp_scale = get_argument(arguments, "--bp_scale", false, backprop_scale);
     get_argument(arguments, "--bp_increase_genomes", false, backprop_increase_genomes);
-
+    if (backprop_iterations_type == "rand" & !bp_max_arg) {
+        backprop_max = backprop_iterations;
+    }
     use_dropout = get_argument(arguments, "--dropout_probability", false, dropout_probability);
 
     get_argument(arguments, "--min_recurrent_depth", false, min_recurrent_depth);
@@ -74,6 +78,10 @@ int32_t GenomeProperty::get_backprop_iterations() {
 
 int32_t GenomeProperty::get_backprop_min() {
     return backprop_min;
+}
+
+int32_t GenomeProperty::get_backprop_max() {
+    return backprop_max;
 }
 
 int32_t GenomeProperty::get_backprop_increase_genomes() {

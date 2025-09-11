@@ -15,6 +15,7 @@ class GenomeProperty {
     int32_t backprop_iterations;
     string backprop_iterations_type;
     int32_t backprop_min;
+    int32_t backprop_max;
     float backprop_scale;
     int32_t backprop_increase_genomes;
 
@@ -45,6 +46,7 @@ class GenomeProperty {
     void set_backprop_iterations(int32_t _backprop_iterations);
     int32_t get_backprop_iterations();
     int32_t get_backprop_min();
+    int32_t get_backprop_max();
     int32_t get_backprop_increase_genomes();
     float get_backprop_scale();
     string get_backprop_iterations_type();

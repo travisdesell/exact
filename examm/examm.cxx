@@ -409,6 +409,7 @@ RNN_Genome* EXAMM::generate_genome() {
     // Changing the number of epochs
     int32_t bp_iter = genome_property->get_backprop_iterations();
     int32_t bp_min = genome_property->get_backprop_min();
+    int32_t bp_max = genome_property->get_backprop_max();
     int32_t increase_genomes = genome_property->get_backprop_increase_genomes();
     float scale = genome_property->get_backprop_scale();
     string type = genome_property->get_backprop_iterations_type();
@@ -420,8 +421,9 @@ RNN_Genome* EXAMM::generate_genome() {
         bp_iter = floor(pow((total_bp_epochs / increase_genomes), scale)) + bp_min;
 
     } else if (type == "rand") {
-        std::uniform_int_distribution<int32_t> dist(bp_min, bp_iter);
+        std::uniform_int_distribution<int32_t> dist(bp_min, bp_max);
         bp_iter = dist(generator);
+        Log::info("Random int generator generated this number: %d, from range between: %d and %d\n", bp_iter, bp_min, bp_max);
     }
 
     Log::info("calculating backprop iterations using %s: bp_min: %d, increase_genomes: %d scale: %f is iterations: %d\n", type.c_str(), bp_min, increase_genomes, scale, bp_iter);
