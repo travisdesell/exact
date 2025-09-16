@@ -425,6 +425,9 @@ RNN_Genome* EXAMM::generate_genome() {
         bp_iter = dist(generator);
         Log::info("Random int generator generated this number: %d, from range between: %d and %d\n", bp_iter, bp_min, bp_max);
     }
+    else if (type == "acc") {
+        bp_iter = floor((total_bp_epochs / increase_genomes) + scale) + bp_min;
+    }
 
     Log::info("calculating backprop iterations using %s: bp_min: %d, increase_genomes: %d scale: %f is iterations: %d\n", type.c_str(), bp_min, increase_genomes, scale, bp_iter);
 
