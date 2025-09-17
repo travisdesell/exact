@@ -18,6 +18,8 @@ EXAMM* generate_examm_from_arguments(
     get_argument(arguments, "--number_islands", true, number_islands);
     int32_t max_genomes;
     get_argument(arguments, "--max_genomes", true, max_genomes);
+    int64_t max_wallclock_seconds = 0;
+    get_argument(arguments, "--max_wallclock_seconds", false, max_wallclock_seconds);
     string output_directory = "";
     get_argument(arguments, "--output_directory", false, output_directory);
     vector<string> possible_node_types;
@@ -36,6 +38,9 @@ EXAMM* generate_examm_from_arguments(
         "Setting up examm with %d islands, island size %d, and max_genome %d\n", number_islands, island_size,
         max_genomes
     );
+    if (max_wallclock_seconds > 0) {
+        Log::info("Max wallclock seconds set to %lld seconds\n", (long long) max_wallclock_seconds);
+    }
 
     // random_sequence_length = argument_exists(arguments, "--random_sequence_length");
     // get_argument(arguments, "--sequence_length_lower_bound", false, sequence_length_lower_bound);
@@ -63,8 +68,8 @@ EXAMM* generate_examm_from_arguments(
     SpeciationStrategy* speciation_strategy = generate_speciation_strategy_from_arguments(arguments, seed_genome);
 
     EXAMM* examm = new EXAMM(
-        island_size, number_islands, max_genomes, speciation_strategy, weight_rules, genome_property, output_directory,
-        save_genome_option, generate_op_log, generate_visualization_json
+        island_size, number_islands, max_genomes, max_wallclock_seconds, speciation_strategy, weight_rules,
+        genome_property, output_directory, save_genome_option, generate_op_log, generate_visualization_json
     );
     if (possible_node_types.size() > 0) {
         examm->set_possible_node_types(possible_node_types);

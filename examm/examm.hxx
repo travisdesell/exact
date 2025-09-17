@@ -29,6 +29,7 @@ class EXAMM {
     int32_t number_islands;
 
     int32_t max_genomes;
+    int64_t max_wallclock_seconds;
     int32_t total_bp_epochs;
     SpeciationStrategy* speciation_strategy;
     WeightRules* weight_rules;
@@ -82,7 +83,8 @@ class EXAMM {
 
    public:
     EXAMM(
-        int32_t _island_size, int32_t _number_islands, int32_t _max_genomes, SpeciationStrategy* _speciation_strategy,
+        int32_t _island_size, int32_t _number_islands, int32_t _max_genomes, int64_t _max_wallclock_seconds,
+        SpeciationStrategy* _speciation_strategy,
         WeightRules* _weight_rules, GenomeProperty* _genome_property, string _output_directory,
         string _save_genome_option, bool _generate_op_log, bool _generate_visualization_json
     );

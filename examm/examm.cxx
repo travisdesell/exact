@@ -48,12 +48,14 @@ EXAMM::~EXAMM() {
 }
 
 EXAMM::EXAMM(
-    int32_t _island_size, int32_t _number_islands, int32_t _max_genomes, SpeciationStrategy* _speciation_strategy,
-    WeightRules* _weight_rules, GenomeProperty* _genome_property, string _output_directory, string _save_genome_option, bool _generate_op_log, bool _generate_visualization_json
+    int32_t _island_size, int32_t _number_islands, int32_t _max_genomes, int64_t _max_wallclock_seconds,
+    SpeciationStrategy* _speciation_strategy, WeightRules* _weight_rules, GenomeProperty* _genome_property,
+    string _output_directory, string _save_genome_option, bool _generate_op_log, bool _generate_visualization_json
 )
     : island_size(_island_size),
       number_islands(_number_islands),
       max_genomes(_max_genomes),
+      max_wallclock_seconds(_max_wallclock_seconds),
       speciation_strategy(_speciation_strategy),
       weight_rules(_weight_rules),
       genome_property(_genome_property),
@@ -387,6 +389,7 @@ void EXAMM::save_genome(RNN_Genome* genome, string genome_name = "rnn_genome") {
 }
 
 RNN_Genome* EXAMM::generate_genome() {
+    // Check genome count cap
     if (speciation_strategy->get_evaluated_genomes() > max_genomes) {
         RNN_Genome* global_best_genome = speciation_strategy->get_global_best_genome();
         save_genome(global_best_genome, "global_best_genome");
@@ -395,6 +398,20 @@ RNN_Genome* EXAMM::generate_genome() {
             speciation_strategy->save_entire_population(output_directory);
         }
         return NULL;
+    }
+
+    // Check wallclock time cap if enabled (>0)
+    if (max_wallclock_seconds > 0) {
+        std::chrono::time_point<std::chrono::system_clock> now = std::chrono::system_clock::now();
+        int64_t elapsed_seconds = std::chrono::duration_cast<std::chrono::seconds>(now - startClock).count();
+        if (elapsed_seconds >= max_wallclock_seconds) {
+            RNN_Genome* global_best_genome = speciation_strategy->get_global_best_genome();
+            save_genome(global_best_genome, "global_best_genome");
+            if (save_genome_option.compare("entire_population") == 0) {
+                speciation_strategy->save_entire_population(output_directory);
+            }
+            return NULL;
+        }
     }
 
     function<void(int32_t, RNN_Genome*)> mutate_function = [=, this](int32_t max_mutations, RNN_Genome* genome) {
