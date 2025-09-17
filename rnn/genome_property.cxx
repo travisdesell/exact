@@ -16,15 +16,37 @@ GenomeProperty::GenomeProperty() {
 }
 
 void GenomeProperty::generate_genome_property_from_arguments(const vector<string>& arguments) {
-    get_argument(arguments, "--bp_iterations", true, backprop_iterations);
-    get_argument(arguments, "--backprop_iterations_type", true, backprop_iterations_type);
-    bool bp_min_arg = get_argument(arguments, "--bp_min", false, backprop_min);
-    bool bp_max_arg = get_argument(arguments, "--bp_max", false, backprop_max);
-    bool bp_scale = get_argument(arguments, "--bp_scale", false, backprop_scale);
-    get_argument(arguments, "--bp_increase_genomes", false, backprop_increase_genomes);
-    if (backprop_iterations_type == "rand" & !bp_max_arg) {
-        backprop_max = backprop_iterations;
+    bool backprop_type = get_argument(arguments, "--backprop_iterations_type", false, backprop_iterations_type);
+    if (!backprop_type) {
+        backprop_iterations_type = "const";
     }
+    
+    if (backprop_iterations_type == "const") {
+        get_argument(arguments, "--bp_iterations", true, backprop_iterations);
+    }
+    else if (backprop_iterations_type == "rand") {
+        bool bp_min_arg = get_argument(arguments, "--bp_min", false, backprop_min);
+        if (!bp_min_arg) {
+            backprop_min = 0;
+        }
+        bool bp_max_arg = get_argument(arguments, "--bp_max", false, backprop_max);
+        bool bp_iter = get_argument(arguments, "--bp_iterations", false, backprop_iterations);
+        if (!bp_max_arg && !bp_iter) {
+            get_argument(arguments, "--bp_max", true, backprop_max);
+        }
+        else if (!bp_max_arg && bp_iter) {
+            backprop_max = backprop_iterations;
+        }
+    }
+    else {
+        bool bp_min_arg = get_argument(arguments, "--bp_min", false, backprop_min);
+        if (!bp_min_arg) {
+            backprop_min = 0;
+        }
+        get_argument(arguments, "--bp_scale", true, backprop_scale);
+        get_argument(arguments, "--bp_increase_genomes", true, backprop_increase_genomes);
+    }
+    
     use_dropout = get_argument(arguments, "--dropout_probability", false, dropout_probability);
 
     get_argument(arguments, "--min_recurrent_depth", false, min_recurrent_depth);

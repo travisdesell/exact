@@ -24,7 +24,7 @@ class ExammTask(ConfigToArg):
             "population_size":      lambda self, x: ['--population_size', str(x)],
             "max_genomes":          lambda self, x: ['--max_genomes', str(x)],
             "max_wallclock_seconds":lambda self, x: ['--max_wallclock_seconds', str(x)],
-            "bp_iterations":        lambda self, x: ['--bp_iterations'] + list(map(str, x)),
+            "bp_iterations":        lambda self, x: ['--bp_iterations', str(x)],
             "backprop_iterations_type": lambda self, x: ['--backprop_iterations_type', str(x)],
             "bp_min":               lambda self, x: ['--bp_min', str(x)],
             # "bp_max":               lambda self, x: ['--bp_max', str(x)],
