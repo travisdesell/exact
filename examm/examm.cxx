@@ -45,6 +45,8 @@ using std::to_string;
 EXAMM::~EXAMM() {
     delete weight_rules;
     delete genome_property;
+
+    //this is just an example
 }
 
 EXAMM::EXAMM(
