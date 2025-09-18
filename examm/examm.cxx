@@ -49,13 +49,14 @@ EXAMM::~EXAMM() {
 
 EXAMM::EXAMM(
     int32_t _island_size, int32_t _number_islands, int32_t _max_genomes, int64_t _max_wallclock_seconds,
-    SpeciationStrategy* _speciation_strategy, WeightRules* _weight_rules, GenomeProperty* _genome_property,
+    int32_t _max_bp_iterations, SpeciationStrategy* _speciation_strategy, WeightRules* _weight_rules, GenomeProperty* _genome_property,
     string _output_directory, string _save_genome_option, bool _generate_op_log, bool _generate_visualization_json
 )
     : island_size(_island_size),
       number_islands(_number_islands),
       max_genomes(_max_genomes),
       max_wallclock_seconds(_max_wallclock_seconds),
+      max_bp_iterations(_max_bp_iterations),
       speciation_strategy(_speciation_strategy),
       weight_rules(_weight_rules),
       genome_property(_genome_property),
@@ -432,18 +433,23 @@ RNN_Genome* EXAMM::generate_genome() {
     string type = genome_property->get_backprop_iterations_type();
 
     if (type == "linear") {
-        bp_iter = floor((total_bp_epochs / increase_genomes) * scale) + bp_min;
+        if (bp_iter < max_bp_iterations) {
+            bp_iter = floor((total_bp_epochs / increase_genomes) * scale) + bp_min;
+        }
 
     } else if (type == "exp") {
-        bp_iter = floor(pow((total_bp_epochs / increase_genomes), scale)) + bp_min;
-
+        if (bp_iter < max_bp_iterations) {
+            bp_iter = floor(pow((total_bp_epochs / increase_genomes), scale)) + bp_min;
+        }
     } else if (type == "rand") {
         std::uniform_int_distribution<int32_t> dist(bp_min, bp_max);
         bp_iter = dist(generator);
         Log::info("Random int generator generated this number: %d, from range between: %d and %d\n", bp_iter, bp_min, bp_max);
     }
     else if (type == "acc") {
-        bp_iter = floor((total_bp_epochs / increase_genomes) + scale) + bp_min;
+        if (bp_iter < max_bp_iterations) {
+            bp_iter = floor((total_bp_epochs / increase_genomes) + scale) + bp_min;
+        }
     }
 
     Log::info("calculating backprop iterations using %s: bp_min: %d, increase_genomes: %d scale: %f is iterations: %d\n", type.c_str(), bp_min, increase_genomes, scale, bp_iter);

@@ -43,10 +43,17 @@ void GenomeProperty::generate_genome_property_from_arguments(const vector<string
         if (!bp_min_arg) {
             backprop_min = 0;
         }
+        bool bp_max_arg = get_argument(arguments, "--bp_max", false, backprop_max);
+        if (!bp_max_arg) {
+            backprop_max = -1;
+        }
+        else if (bp_min_arg && bp_max_arg && backprop_min >= backprop_max) {
+            cerr << "ERROR: bp_max has to be bigger than bp_min" << endl;
+            exit(1);
+        }
         get_argument(arguments, "--bp_scale", true, backprop_scale);
         get_argument(arguments, "--bp_increase_genomes", true, backprop_increase_genomes);
     }
-    
     use_dropout = get_argument(arguments, "--dropout_probability", false, dropout_probability);
 
     get_argument(arguments, "--min_recurrent_depth", false, min_recurrent_depth);
