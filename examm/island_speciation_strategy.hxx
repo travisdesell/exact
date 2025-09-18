@@ -68,6 +68,9 @@ class IslandSpeciationStrategy : public SpeciationStrategy {
     string transfer_learning_version;
     int32_t seed_stirs;
     bool tl_epigenetic_weights;
+    
+    // possible node type values for NN size logs
+    std::vector<std::string> possible_node_types;
 
    public:
     // static void register_command_line_arguments();
@@ -85,7 +88,7 @@ class IslandSpeciationStrategy : public SpeciationStrategy {
         string _island_ranking_method, string _repopulation_method, int32_t _extinction_event_generation_number,
         int32_t _num_mutations, int32_t _islands_to_exterminate, int32_t _max_genomes, bool _repeat_extinction,
         bool _start_filled, bool _transfer_learning, string _transfer_learning_version, int32_t _seed_stirs,
-        bool _tl_epigenetic_weights
+        bool _tl_epigenetic_weights, std::vector<std::string> possible_node_types
     );
 
     // /**
@@ -220,6 +223,47 @@ class IslandSpeciationStrategy : public SpeciationStrategy {
      * Gets speciation strategy information values for logs
      */
     string get_strategy_information_values() const;
+
+
+    /**
+     *  Gets speciation strategy information headers for neural network size logs.
+    */
+    string get_size_information_headers();
+
+    /**
+     *  Gets speciation strategy information values for neural network size logs.
+    */
+    string get_size_information_values();
+
+    /**
+     * Gets speciation strategy information headers for best genome size logs.
+    */
+    string get_best_genome_size_information_headers();
+
+    /**
+     * Gets speciation strategy information headers for global best genome size logs.
+    */
+    string get_global_best_genome_size_information_headers();
+
+    /**
+     * Gets speciation strategy information values for best genome size logs.
+    */
+    string get_best_genome_size_information_values();
+
+    /**
+     * Gets speciation strategy information values for global best genome size logs.
+    */
+    string get_global_best_genome_size_information_values();
+
+    /**
+     * Get the complete generate genome headers
+     */
+    string generate_genome_size_headers();
+
+    /**
+     * Get the complete generate genome values
+     */
+    string generate_genome_size_values(RNN_Genome* new_genome, int32_t generated_genomes);
 
     /**
      * Island repopulation through two random parents from two seperate islands,

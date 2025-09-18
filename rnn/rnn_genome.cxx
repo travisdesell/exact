@@ -594,6 +594,90 @@ int32_t RNN_Genome::get_number_weights() {
     return number_weights;
 }
 
+// get enabled weight count
+int32_t RNN_Genome::get_enabled_number_weights() {
+    int32_t number_weights = 0;
+
+    for (int32_t i = 0; i < (int32_t) nodes.size(); i++) {
+        if (nodes[i]->enabled) {
+            number_weights += nodes[i]->get_number_weights();
+        }
+    }
+
+    for (int32_t i = 0; i < (int32_t) edges.size(); i++) {
+        if (edges[i]->enabled) {
+            number_weights++;
+        }
+    }
+
+    for (int32_t i = 0; i < (int32_t) recurrent_edges.size(); i++) {
+        if (recurrent_edges[i]->enabled) {
+            number_weights++;
+        }
+    }
+
+    return number_weights;
+}
+
+// Get the total number of nodes that are in hidden layer enabled
+int32_t RNN_Genome::get_enabled_node_count_hidden_layer() {
+    int32_t count = 0;
+
+    for (int32_t i = 0; i < (int32_t) nodes.size(); i++) {
+        if ((nodes[i]->is_enabled()) && (nodes[i]->layer_type == HIDDEN_LAYER)) {
+            count++;
+        }
+    }
+
+    return count;
+}
+
+// Get the total number of nodes that are in hidden layer but disabled
+int32_t RNN_Genome::get_disabled_node_count_hidden_layer() {
+    int32_t count = 0;
+
+    for (int32_t i = 0; i < (int32_t) nodes.size(); i++) {
+        if (!(nodes[i]->is_enabled()) && (nodes[i]->layer_type == HIDDEN_LAYER)) {
+            count++;
+        }
+    }
+
+    return count;
+}
+
+// Get the total number of parameters that are in hidden layer and enabled
+int32_t RNN_Genome::get_number_weights_enabled_hidden_layer_node() {
+    int32_t number_weights = 0;
+
+    for (int32_t i = 0; i < (int32_t) nodes.size(); i++) {
+        if ((nodes[i]->is_enabled()) && (nodes[i]->layer_type == HIDDEN_LAYER)) {
+            number_weights += nodes[i]->get_number_weights();
+        }
+    }
+
+    for (int32_t i = 0; i < (int32_t) edges.size(); i++) {
+        number_weights++;
+    }
+
+    for (int32_t i = 0; i < (int32_t) recurrent_edges.size(); i++) {
+        number_weights++;
+    }
+
+    return number_weights;
+}
+
+int32_t RNN_Genome::get_all_enabled_node_count(int32_t node_type) {
+    int32_t count = 0;
+
+    for (int32_t i = 0; i < (int32_t) nodes.size(); i++) {
+        if (nodes[i]->enabled && nodes[i]->node_type == node_type) {
+            count++;
+        }
+    }
+
+    return count;
+}
+
 double RNN_Genome::get_avg_edge_weight() {
     double avg_weight;
     double weights = 0;
@@ -4475,4 +4559,164 @@ void RNN_Genome::write_equations(ostream& outstream) {
     }
     outstream << "best_validation_mse: " << to_string(this->get_best_validation_mse()) << endl;
     outstream << endl;
+}
+
+void RNN_Genome::write_manual_txt(const std::string& filename) {
+    std::ofstream out_file(filename);
+    if (!out_file.is_open()) {
+        std::cerr << "Failed to open file for writing: " << filename << std::endl;
+        return;
+    }
+
+    out_file << "{" << std::endl;
+
+    // Metadata
+    out_file << "  \"generation_id\": " << generation_id << "," << std::endl;
+    out_file << "  \"group_id\": " << group_id << "," << std::endl;
+    out_file << "  \"bp_iterations\": " << bp_iterations << "," << std::endl;
+    out_file << "  \"structural_hash\": \"" << structural_hash << "\"," << std::endl;
+    out_file << "  \"normalize_type\": \"" << normalize_type << "\"," << std::endl;
+
+    // Input/Output parameters
+    out_file << "  \"input_parameter_names\": [";
+    for (size_t i = 0; i < input_parameter_names.size(); ++i) {
+        out_file << "\"" << input_parameter_names[i] << "\"";
+        if (i != input_parameter_names.size() - 1) out_file << ", ";
+    }
+    out_file << "]," << std::endl;
+
+    out_file << "  \"output_parameter_names\": [";
+    for (size_t i = 0; i < output_parameter_names.size(); ++i) {
+        out_file << "\"" << output_parameter_names[i] << "\"";
+        if (i != output_parameter_names.size() - 1) out_file << ", ";
+    }
+    out_file << "]," << std::endl;
+
+    out_file << "  \"initial_parameters\": [";
+    for (size_t i = 0; i < initial_parameters.size(); ++i) {
+        out_file << initial_parameters[i];
+        if (i != initial_parameters.size() - 1) out_file << ", ";
+    }
+    out_file << "]," << std::endl;
+
+    out_file << "  \"use_dropout\": " << (use_dropout ? "true" : "false") << "," << std::endl;
+    out_file << "  \"dropout_probability\": " << dropout_probability << "," << std::endl;
+
+    out_file << "  \"weight_initialize\": \"" << weight_rules->get_weight_initialize_method() << "\"," << std::endl;
+    out_file << "  \"weight_inheritance\": \"" << weight_rules->get_weight_inheritance_method() << "\"," << std::endl;
+    out_file << "  \"mutated_component_weight\": \"" << weight_rules->get_mutated_components_weight_method() << "\"," << std::endl;
+
+    // generated_by_map
+    out_file << "  \"generated_by_map\": {" << std::endl;
+    size_t count = 0;
+    for (const auto& kv : generated_by_map) {
+        out_file << "    \"" << kv.first << "\": \"" << kv.second << "\"";
+        if (++count < generated_by_map.size()) out_file << ",";
+        out_file << std::endl;
+    }
+    out_file << "  }," << std::endl;
+
+    out_file << "  \"best_validation_mse\": " << best_validation_mse << "," << std::endl;
+    out_file << "  \"best_validation_mae\": " << best_validation_mae << "," << std::endl;
+    out_file << "  \"log_filename\": \"" << log_filename << "\"," << std::endl;
+
+    // Nodes
+    out_file << "  \"nodes\": [" << std::endl;
+    for (size_t i = 0; i < nodes.size(); ++i) {
+        auto* node = nodes[i];
+        out_file << "    { \"innovation\": " << node->get_innovation_number()
+                 << ", \"layer_type\": " << node->get_layer_type()
+                 << ", \"type\": " << node->get_node_type()
+                 << ", \"depth\": " << node->get_depth()
+                 << ", \"enabled\": " << (node->is_enabled() ? "true" : "false") << " }";
+        if (i != nodes.size() - 1) out_file << ",";
+        out_file << std::endl;
+    }
+    out_file << "  ]," << std::endl;
+
+    // Edges
+    out_file << "  \"edges\": [" << std::endl;
+    for (size_t i = 0; i < edges.size(); ++i) {
+        auto* edge = edges[i];
+        out_file << "    { \"innovation\": " << edge->get_innovation_number()
+                 << ", \"input_node\": " << edge->get_input_innovation_number()
+                 << ", \"output_node\": " << edge->get_output_innovation_number()
+                 << ", \"enabled\": " << (edge->is_enabled() ? "true" : "false") << " }";
+        if (i != edges.size() - 1) out_file << ",";
+        out_file << std::endl;
+    }
+    out_file << "  ]," << std::endl;
+
+    // Recurrent edges
+    out_file << "  \"recurrent_edges\": [" << std::endl;
+    for (size_t i = 0; i < recurrent_edges.size(); ++i) {
+        auto* edge = recurrent_edges[i];
+        out_file << "    { \"innovation\": " << edge->get_innovation_number()
+                 << ", \"input_node\": " << edge->get_input_innovation_number()
+                 << ", \"output_node\": " << edge->get_output_innovation_number()
+                 << ", \"enabled\": " << (edge->is_enabled() ? "true" : "false") << " }";
+        if (i != recurrent_edges.size() - 1) out_file << ",";
+        out_file << std::endl;
+    }
+    out_file << "  ]," << std::endl;
+
+    // best_parameters
+    out_file << "  \"best_parameters\": [";
+    for (size_t i = 0; i < best_parameters.size(); ++i) {
+        out_file << best_parameters[i];
+        if (i != best_parameters.size() - 1) out_file << ", ";
+    }
+    out_file << "]," << std::endl;
+
+    // normalization arrays
+    auto write_map = [&out_file](const std::string& label, const std::map<std::string, double>& map_data) {
+        out_file << "  \"" << label << "\": {" << std::endl;
+        size_t count = 0;
+        for (const auto& [key, value] : map_data) {
+            out_file << "    \"" << key << "\": " << value;
+            if (++count < map_data.size()) {
+                out_file << ",";
+            }
+            out_file << std::endl;
+        }
+        out_file << "  }," << std::endl;
+    };
+
+    write_map("normalize_mins", normalize_mins);
+    write_map("normalize_maxs", normalize_maxs);
+    write_map("normalize_avgs", normalize_avgs);
+    write_map("normalize_std_devs", normalize_std_devs);
+
+    // Stats
+    out_file << "  \"stats\": {" << std::endl;
+    out_file << "    \"total_node_count\": " << get_node_count() << "," << std::endl;
+    out_file << "    \"enabled_node_count\": " << get_enabled_node_count() << "," << std::endl;
+    out_file << "    \"enabled_hidden_layer_node_count\": " << get_enabled_node_count_hidden_layer() << "," << std::endl;
+    out_file << "    \"disabled_hidden_layer_node_count\": " << get_disabled_node_count_hidden_layer() << "," << std::endl;
+    out_file << "    \"total_edge_count\": " << (int32_t) edges.size() << "," << std::endl;
+    out_file << "    \"enabled_edge_count\": " << get_enabled_edge_count() << "," << std::endl;
+    out_file << "    \"total_rec_edge_count\": " << (int32_t) recurrent_edges.size() << "," << std::endl;
+    out_file << "    \"enabled_rec_edge_count\": " << get_enabled_recurrent_edge_count() << "," << std::endl;
+    out_file << "    \"total_number_hidden_layer_weights\": " << get_number_weights_enabled_hidden_layer_node() << "," << std::endl;
+    out_file << "    \"best_validation_mse\": " << get_best_validation_mse() << "," << std::endl;
+    out_file << "    \"best_validation_mae\": " << get_best_validation_mae() << "," << std::endl;
+    out_file << "    \"total_number_outputs\": " << get_number_outputs() << "," << std::endl;
+    out_file << "    \"total_number_weights\": " << get_number_weights() << "," << std::endl;
+    out_file << "    \"total_number_enabled_weights\": " << get_enabled_number_weights() << "," << std::endl;
+    out_file << "    \"total_number_inputs\": " << get_number_inputs() << "," << std::endl;
+
+    out_file << "    \"node_type_counts\": {" << std::endl;
+    for (int32_t type = 0; type < NUMBER_NODE_TYPES; ++type) {
+        std::string label = NODE_TYPES[type];
+        out_file << "      \"" << label << "\": {"
+                 << "\"total\": " << get_node_count(type)
+                 << ", \"enabled\": " << get_all_enabled_node_count(type) << "}";
+        if (type < NUMBER_NODE_TYPES - 1) out_file << ",";
+        out_file << std::endl;
+    }
+    out_file << "    }" << std::endl;
+    out_file << "  }" << std::endl; // end of stats
+
+    out_file << "}" << std::endl;
+    out_file.close();
 }

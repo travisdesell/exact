@@ -88,6 +88,46 @@ class SpeciationStrategy {
      */
     virtual string get_strategy_information_values() const = 0;
 
+    /**
+     * Gets speciation strategy information headers for neural network size logs.
+    */
+    virtual string get_size_information_headers() = 0;
+
+    /**
+     * Gets speciation strategy information values for neural network size logs.
+     */
+    virtual string get_size_information_values() = 0;
+    
+    /**
+     * Gets speciation strategy information headers for best genome size logs.
+     */
+    virtual string get_best_genome_size_information_headers() = 0;
+
+    /**
+     * Gets speciation strategy information headers for global best genome size logs.
+     */
+    virtual string get_global_best_genome_size_information_headers() = 0;
+
+    /**
+     * Gets speciation strategy information values for best genome size logs.
+     */
+    virtual string get_best_genome_size_information_values() = 0;
+
+    /**
+     * Gets speciation strategy information values for global best genome size logs.
+     */
+    virtual string get_global_best_genome_size_information_values() = 0;
+
+    /**
+     * Get the complete generate genome headers
+     */
+    virtual string generate_genome_size_headers() = 0;
+
+    /**
+     * Get the complete generate genome values
+     */
+    virtual string generate_genome_size_values(RNN_Genome* new_genome, int32_t generated_genomes) = 0;
+
     virtual RNN_Genome* get_global_best_genome() = 0;
     virtual void initialize_population(function<void(int32_t, RNN_Genome*)>& mutate) = 0;
     virtual RNN_Genome* get_seed_genome() = 0;

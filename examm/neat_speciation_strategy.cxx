@@ -412,6 +412,56 @@ string NeatSpeciationStrategy::get_strategy_information_values() const {
     return info_value;
 }
 
+string NeatSpeciationStrategy::get_size_information_values() {
+    return "";
+}
+
+string NeatSpeciationStrategy::get_size_information_headers() {
+    return "";
+}
+
+/**
+ * Gets speciation strategy information headers for best genome size logs
+ */
+string NeatSpeciationStrategy::get_best_genome_size_information_headers() {
+    return "";
+}
+
+/**
+ * Gets speciation strategy information values for best genome size logs.
+ */
+string NeatSpeciationStrategy::get_best_genome_size_information_values() {
+    return "";
+}
+
+/**
+ * Gets speciation strategy information values for global best genome size logs.
+ */
+string NeatSpeciationStrategy::get_global_best_genome_size_information_values() {
+    return "";
+};
+
+/**
+ * Gets speciation strategy information headers for global best genome size logs.
+ */
+string NeatSpeciationStrategy::get_global_best_genome_size_information_headers() {
+    return "";
+};
+
+/**
+ * Get the complete generate genome headers
+ */
+string NeatSpeciationStrategy::generate_genome_size_headers() {
+    return "";
+};
+
+/**
+ * Get the complete generate genome values
+ */
+string NeatSpeciationStrategy::generate_genome_size_values(RNN_Genome* new_genome, int32_t generated_genomes) {
+    return "";
+};
+
 RNN_Genome* NeatSpeciationStrategy::get_global_best_genome() {
     return global_best_genome;
 }

@@ -160,8 +160,13 @@ class RNN_Genome {
     void set_weights(const vector<double>& parameters);
 
     int32_t get_number_weights();
+    int32_t get_enabled_number_weights();
     int32_t get_number_inputs();
     int32_t get_number_outputs();
+    int32_t get_enabled_node_count_hidden_layer();
+    int32_t get_disabled_node_count_hidden_layer();
+    int32_t get_number_weights_enabled_hidden_layer_node();
+    int32_t get_all_enabled_node_count(int32_t node_type);
 
     double get_avg_edge_weight();
     void initialize_randomly();
@@ -307,6 +312,7 @@ class RNN_Genome {
     RNN_Genome(string binary_filename);
     RNN_Genome(char* array, int32_t length);
     RNN_Genome(istream& bin_infile);
+    void write_manual_txt(const std::string& filename);
 
     void read_from_array(char* array, int32_t length);
     void read_from_stream(istream& bin_istream);
@@ -374,5 +380,4 @@ struct sort_genomes_by_fitness {
 
 void write_binary_string(ostream& out, string s, string name);
 void read_binary_string(istream& in, string& s, string name);
-
 #endif

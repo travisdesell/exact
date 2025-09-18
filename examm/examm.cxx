@@ -49,7 +49,8 @@ EXAMM::~EXAMM() {
 
 EXAMM::EXAMM(
     int32_t _island_size, int32_t _number_islands, int32_t _max_genomes, SpeciationStrategy* _speciation_strategy,
-    WeightRules* _weight_rules, GenomeProperty* _genome_property, string _output_directory, string _save_genome_option, bool _generate_op_log, bool _generate_visualization_json
+    WeightRules* _weight_rules, GenomeProperty* _genome_property, string _output_directory, string _save_genome_option, bool _generate_op_log, bool _generate_visualization_json,
+    int32_t _genome_size_log
 )
     : island_size(_island_size),
       number_islands(_number_islands),
@@ -60,7 +61,8 @@ EXAMM::EXAMM(
       output_directory(_output_directory),
       save_genome_option(_save_genome_option),
       generate_op_log(_generate_op_log),
-      generate_visualization_json(_generate_visualization_json)
+      generate_visualization_json(_generate_visualization_json),
+      genome_size_log(_genome_size_log)
 {
     total_bp_epochs = 0;
     edge_innovation_count = 0;
@@ -84,6 +86,7 @@ EXAMM::EXAMM(
 
     speciation_strategy->initialize_population(mutate_function);
     generate_log();
+    generate_size_count();
     startClock = std::chrono::system_clock::now();
 }
 
@@ -133,6 +136,36 @@ void EXAMM::generate_log() {
     } else {
         log_file = NULL;
         op_log_file = NULL;
+    }
+}
+
+// generate size count log
+
+
+void EXAMM::generate_size_count() {
+    if (genome_size_log) {
+        std::string size_dir = output_directory + "/" + "size_log";
+        mkpath(size_dir.c_str(), 0777);
+        Log::info("Generating neural network size log\n");
+        // Creating size csv files and headers
+        size_log_file = new ofstream(size_dir + "/" + "size_log.csv");
+        (*size_log_file) << speciation_strategy->get_size_information_headers() << endl;
+        (*size_log_file) << speciation_strategy->get_size_information_values() << endl;
+        // Creating island best genome size file and headers
+        best_genome_size_log = new ofstream(size_dir + "/" + "best_genome_size_log.csv");
+        (*best_genome_size_log) << speciation_strategy->get_best_genome_size_information_headers() << endl;
+        // Creating global best genome size file and headers
+        global_best_genome_size_log = new ofstream(size_dir + "/" + "global_best_genome_size_log.csv");
+        (*global_best_genome_size_log)
+            << speciation_strategy->get_global_best_genome_size_information_headers() << endl;
+        // Creating generated genome generation size file and headers
+        generate_geneome_size_log_file = new ofstream(size_dir + "/" + "generate_geneome_size_log.csv");
+        (*generate_geneome_size_log_file) << speciation_strategy->generate_genome_size_headers() << endl;
+    } else {
+        size_log_file = NULL;
+        best_genome_size_log = NULL;
+        global_best_genome_size_log = NULL;
+        generate_geneome_size_log_file = NULL;
     }
 }
 
@@ -204,6 +237,16 @@ void EXAMM::update_log() {
 //     log_file << memory_log.str();
 //     log_file.close();
 // }
+
+// update the size logs
+
+void EXAMM::update_size_log() {
+    if(genome_size_log){
+        (*size_log_file) << speciation_strategy->get_size_information_values() << endl;
+        (*best_genome_size_log) << speciation_strategy->get_best_genome_size_information_values() << endl;
+        (*global_best_genome_size_log) << speciation_strategy->get_global_best_genome_size_information_values() << endl;
+    }
+}
 
 void EXAMM::set_possible_node_types(vector<string> possible_node_type_strings) {
     possible_node_types.clear();
@@ -277,6 +320,10 @@ bool EXAMM::insert_genome(RNN_Genome* genome) {
     update_op_log_statistics(genome, insert_position);
     Log::debug("update op log statistics complete\n");
     update_log();
+
+    // update size log.
+    update_size_log();
+    Log::debug("update op size log statistics\n");
     Log::debug("update log complete\n");
 
     return insert_position >= 0;
@@ -411,6 +458,17 @@ RNN_Genome* EXAMM::generate_genome() {
     Log::debug("getting mu/sigma after random initialization of copy!\n");
     double _mu, _sigma;
     genome->get_mu_sigma(genome->best_parameters, _mu, _sigma);
+
+    // Generate Genome size log tracking
+    Log::info("Generated New Genome\n");
+    if(genome_size_log){
+        string genome_values =
+            speciation_strategy->generate_genome_size_values(genome, speciation_strategy->get_generated_genomes());
+        (*generate_geneome_size_log_file) << genome_values << endl;
+
+        // Saving the genome to txt file
+        genome->write_manual_txt(output_directory + "/" + "size_log"+ "/" + "generated_genome" + "_" + to_string(genome->get_generation_id()) + ".txt");
+    }
 
     return genome;
 }

@@ -132,6 +132,40 @@ class NeatSpeciationStrategy : public SpeciationStrategy {
      */
     string get_strategy_information_values() const;
 
+    string get_size_information_headers();
+
+    string get_size_information_values();
+
+    /**
+     * Gets speciation strategy information headers for best genome size logs.
+     */
+    string get_best_genome_size_information_headers();
+
+    /**
+     * Gets speciation strategy information values for best genome size logs.
+     */
+    string get_best_genome_size_information_values();
+
+    /**
+     * Gets speciation strategy information values for global best genome size logs.
+     */
+    string get_global_best_genome_size_information_values();
+
+    /**
+     * Gets speciation strategy information headers for global best genome size logs.
+     */
+    string get_global_best_genome_size_information_headers();
+
+    /**
+     * Get the complete generate genome headers
+     */
+    string generate_genome_size_headers();
+
+    /**
+     * Get the complete generate genome values
+     */
+    string generate_genome_size_values(RNN_Genome* new_genome, int32_t generated_genomes);
+
     RNN_Genome* get_global_best_genome();
 
     vector<int32_t> get_random_species_list();
