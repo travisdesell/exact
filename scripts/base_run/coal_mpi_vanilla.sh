@@ -33,7 +33,7 @@ for bp in $BPS; do
     --number_islands 10 \
     --island_size 10 \
     --max_genomes 2000 \
-    --max_wallclock_seconds 1200 \
+    --max_wallclock_seconds 1500 \
     --bp_iterations $bp \
     --backprop_iterations_type "const" \
     --output_directory "$exp_name" \
