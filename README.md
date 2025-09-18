@@ -311,6 +311,9 @@ The `.bin` file is a serialized binary of the network, the `.txt` file is a text
 
 * `--generate_op_log` if this flag is specified (default false), an additional operation log file will be generated which will track for every genome how it was generated (i.e., which mutation or crossover operation(s) were used) as well has how many nodes of what type (e.g., LSTM, GRU, MGU, etc) were generated and used. This is turned off by default as generating this log file is somewhat slow and can degrade performance.
 
+* `--genome_size_log` if this flag is specified (default 0), an additional operation
+log will be generated which will track enabled/disabled nodes, edges, rec edges, weights and type of nodes for generated, global best, island global best and island genomes.
+
 
 ## [Using Evolved Neural Networks for Inference](#using-evolved-neural-networks-for-inference)
 

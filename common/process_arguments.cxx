@@ -159,10 +159,12 @@ NeatSpeciationStrategy* generate_neat_speciation_strategy_from_arguments(
     double neat_c3 = 1;
     get_argument(arguments, "--neat_c3", false, neat_c3);
     double mutation_rate = 0.70, intra_island_co_rate = 0.20, inter_island_co_rate = 0.10;
+    vector<string> possible_node_types;
+    get_argument_vector(arguments, "--possible_node_types", false, possible_node_types);
 
     NeatSpeciationStrategy* neat_strategy = new NeatSpeciationStrategy(
         mutation_rate, intra_island_co_rate, inter_island_co_rate, seed_genome, species_threshold, fitness_threshold,
-        neat_c1, neat_c2, neat_c3
+        neat_c1, neat_c2, neat_c3, possible_node_types
     );
     return neat_strategy;
 }
