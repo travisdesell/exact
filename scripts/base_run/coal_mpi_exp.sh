@@ -11,7 +11,7 @@
 RUNS=${1:-1}
 
 # Grid search parameters
-BP_SCALES="0.3 0.5 0.7 1.5 2.0"
+BP_SCALES="0.05 0.1 0.25 0.3 0.5"
 BP_INCREASE_GENOMES="50 150 250 500 1000"
 
 cd build
