@@ -423,8 +423,8 @@ int32_t EXAMM::get_random_node_type() {
 }
 
 void EXAMM::mutate(int32_t max_mutations, RNN_Genome* g) {
-    if (((g->generation_id - 1) % (growth_phase_genomes + reduction_phase_genomes)) < growth_phase_genomes){
-        Log::info("\t Entering growth phase at Genome - %d\n",g->get_generation_id());
+    if (((speciation_strategy->get_generated_genomes()-1) % (growth_phase_genomes + reduction_phase_genomes)) < growth_phase_genomes){
+        Log::info("\t Entering growth phase at Generated Genome - %d\n", speciation_strategy->get_generated_genomes());
         add_node_rate = 1;
         add_edge_rate = 1;
         add_recurrent_edge_rate = 1;
@@ -436,9 +436,11 @@ void EXAMM::mutate(int32_t max_mutations, RNN_Genome* g) {
         disable_node_rate = 0;
         disable_edge_rate = 0;
         merge_node_rate = 0;
-        Log::info("\t setting add_node rate - %d\n",(int)add_node_rate);
+        Log::info("\t setting add_node rate - %d\n", (int)add_node_rate);
+        Log::info("\t setting disable_node rate - %d\n", (int)disable_node_rate);
+        Log::info("\t setting values for Genome - %d\n",g->get_generation_id());
     } else {
-        Log::info("\t Entering shrink phase at Genome - %d\n",g->get_generation_id());
+        Log::info("\t Entering shrink phase at Generated Genome - %d\n",speciation_strategy->get_generated_genomes());
         add_node_rate = 0;
         add_edge_rate = 0;
         add_recurrent_edge_rate = 0;
@@ -450,7 +452,9 @@ void EXAMM::mutate(int32_t max_mutations, RNN_Genome* g) {
         disable_node_rate = 1;
         disable_edge_rate = 1;
         merge_node_rate = 1;
-        Log::info("\t setting add_node rate - %d\n",(int)add_node_rate);
+        Log::info("\t setting add_node rate - %d\n", (int)add_node_rate);
+        Log::info("\t setting disable_node rate - %d\n", (int)disable_node_rate);
+        Log::info("\t setting values for Genome - %d\n",g->get_generation_id());
     }
 
     double total = clone_rate + add_edge_rate + add_recurrent_edge_rate + enable_edge_rate + disable_edge_rate
