@@ -24,6 +24,10 @@ EXAMM* generate_examm_from_arguments(
     get_argument_vector(arguments, "--possible_node_types", false, possible_node_types);
     string save_genome_option = "all_best_genomes";
     get_argument(arguments, "--save_genome_option", false, save_genome_option);
+    int32_t growth_phase_genomes = 0;
+    get_argument(arguments, "--growth_phase_genomes", false, growth_phase_genomes);
+    int32_t reduction_phase_genomes = 0;
+    get_argument(arguments, "--reduction_phase_genomes", false, reduction_phase_genomes);
 
     bool generate_op_log = false;
     get_argument(arguments, "--generate_op_log", false, generate_op_log);
@@ -64,7 +68,7 @@ EXAMM* generate_examm_from_arguments(
 
     EXAMM* examm = new EXAMM(
         island_size, number_islands, max_genomes, speciation_strategy, weight_rules, genome_property, output_directory,
-        save_genome_option, generate_op_log, generate_visualization_json
+        save_genome_option, generate_op_log, generate_visualization_json, growth_phase_genomes, reduction_phase_genomes
     );
     if (possible_node_types.size() > 0) {
         examm->set_possible_node_types(possible_node_types);

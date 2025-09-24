@@ -49,7 +49,8 @@ EXAMM::~EXAMM() {
 
 EXAMM::EXAMM(
     int32_t _island_size, int32_t _number_islands, int32_t _max_genomes, SpeciationStrategy* _speciation_strategy,
-    WeightRules* _weight_rules, GenomeProperty* _genome_property, string _output_directory, string _save_genome_option, bool _generate_op_log, bool _generate_visualization_json
+    WeightRules* _weight_rules, GenomeProperty* _genome_property, string _output_directory, string _save_genome_option, bool _generate_op_log, bool _generate_visualization_json,
+    int32_t _growth_phase_genomes, int32_t _reduction_phase_genomes
 )
     : island_size(_island_size),
       number_islands(_number_islands),
@@ -60,7 +61,9 @@ EXAMM::EXAMM(
       output_directory(_output_directory),
       save_genome_option(_save_genome_option),
       generate_op_log(_generate_op_log),
-      generate_visualization_json(_generate_visualization_json)
+      generate_visualization_json(_generate_visualization_json),
+      growth_phase_genomes(_growth_phase_genomes),
+      reduction_phase_genomes(_reduction_phase_genomes)
 {
     total_bp_epochs = 0;
     edge_innovation_count = 0;
@@ -420,6 +423,36 @@ int32_t EXAMM::get_random_node_type() {
 }
 
 void EXAMM::mutate(int32_t max_mutations, RNN_Genome* g) {
+    if (((g->generation_id - 1) % (growth_phase_genomes + reduction_phase_genomes)) < growth_phase_genomes){
+        Log::info("\t Entering growth phase at Genome - %d\n",g->get_generation_id());
+        add_node_rate = 1;
+        add_edge_rate = 1;
+        add_recurrent_edge_rate = 1;
+        enable_edge_rate = 1;
+        enable_node_rate = 1;
+        split_node_rate = 1;
+        split_edge_rate = 1;
+        clone_rate = 1;
+        disable_node_rate = 0;
+        disable_edge_rate = 0;
+        merge_node_rate = 0;
+        Log::info("\t setting add_node rate - %d\n",(int)add_node_rate);
+    } else {
+        Log::info("\t Entering shrink phase at Genome - %d\n",g->get_generation_id());
+        add_node_rate = 0;
+        add_edge_rate = 0;
+        add_recurrent_edge_rate = 0;
+        enable_edge_rate = 0;
+        enable_node_rate = 0;
+        split_node_rate = 0;
+        split_edge_rate = 0;
+        clone_rate = 1;
+        disable_node_rate = 1;
+        disable_edge_rate = 1;
+        merge_node_rate = 1;
+        Log::info("\t setting add_node rate - %d\n",(int)add_node_rate);
+    }
+
     double total = clone_rate + add_edge_rate + add_recurrent_edge_rate + enable_edge_rate + disable_edge_rate
                    + split_edge_rate + add_node_rate + enable_node_rate + disable_node_rate + split_node_rate
                    + merge_node_rate;
