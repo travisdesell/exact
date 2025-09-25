@@ -160,6 +160,8 @@ The following command line options control the neuroevolution search process its
 
 * `--max_genomes <int>` specifies how many genomes (RNNs or GPs) to evaluate before terminating the run. Note that EXAMM/EXA-GP use an asynchronous strategy with steady state populations so there are no explicit generations.
 
+  * `--max_wallclock_seconds <int>` specifies a hard wallclock time cap, in seconds, for the entire EXAMM/EXA-GP run. Before generating the next genome the algorithms verifies if the time passed is within the limit and if it exceeds the `max_wallclock_seconds` parameter, then the training stops. It is disabled by default.
+
 * `--min_recurrent_depth <int>` and `--max_recurrent_depth <int>` specify the possible range of time skip values for recurrent connections added to the evolved networks.  Default values are 1 and 10. Adding in deeper recurrent connections has been shown to improve forecasting performance, and in some cases even outperform memory cells[^examm_deep_recurrent].
 
 * `--possible_node_types <str>+` specifies the options for selecting which node types can be added to networks during the evolution process. Default possible node types are the default for EXAMM (`simple`, `jordan`, `elman`, `ugrnn`, `mgu`, `gru`, `delta`, and `lstm` (please see [^examm_memory_cells] for more details on these node types). EXA-GP can be enabled by instead using `sigmoid`, `tanh`, `sum`, `multiply`,`inverse`, `sin` and `cos` as possible node types; and the better peforming EXA-GP-MIN can be enabled with the `_gp` options: `sigmoid_gp`, `tanh_gp`, `sum_gp`, `multiply_gp`, `inverse_gp`, `sin_gp` and `cos_gp` for the possible node types (for more details on their implementation see [^exagp][^exagp_min]).
@@ -215,6 +217,45 @@ EXAMM allows for genomes to be initialized using uniform random, Xavier, Kaiming
 The following allow control of the neural network training hyperparameters:
 
 * `--bp_iterations <int>` specifies how many backpropagation epochs should be done per genome.
+
+* `--backprop_iterations_type <str>` specifies how the number of back propagation epoch per genome (`bp_iterations`) changes with the increase of the total number of epochs (`total_bp_epochs`). Available options include:
+	* Default value is `const` meaning that the number of epochs per genomes stays constant regardless of total epochs. 
+		* `--bp_iterations <int>` specifies how many backpropagation epochs are run per genome.
+	* `random` - for each genome, the number of backpropagation epochs is chosen uniformly at random within defined range (between `bp_min` and `bp_max`). Takes in two additional parameters:
+		* `--bp_min` minimum number of epochs per genome (defaults to `0`).
+		* `--bp_max` maximum number of epochs per genome (required, if `bp_iterations` is defined and `bp_max` is not, then it defaults to `bp_iterations`).
+	* `linear` for each genome, the number of backpropagation epochs is increased proportionally and is defined by the following function:
+$$
+bp_{\text{iterations}} = \left\lfloor 
+  \frac{\text{total\_bp\_epochs}}{\text{increase\_genomes}} 
+  \times \text{scale}
+\right\rfloor + bp_{\text{min}}
+$$
+where:
+		* `bp_iterations` is the number of backpropagation epochs for a specific genome.
+		* `total_bp_epochs` is the cumulative count of backpropagation epochs performed so far by all genomes.
+		* `--bp_increase_genomes` is a parameter that specifies the frequency of the change of the number of backpropagation epochs for a specific genome (after how many epochs `bp_iterations` should increase).
+		* `--bp_scale` is a linear scaling multiplier (a parameter that defines the proportion of the change of the number of backpropagation epochs for a specific genome).
+		* `--bp_min` is the minimum number of epochs per genome (defaults to `0`) added to ensure a baseline.
+		* `--bp_max` maximum number of epochs per genome that limits the increase of the number of epochs to a defined ceiling (defaults to `-1` and is ignored).
+	* `exp` for each genome, the number of backpropagation epochs is increased exponentially and is defined by the following function:
+
+$$
+bp_{\text{iterations}} =
+\left\lfloor
+\left(
+\frac{\text{total\_bp\_epochs}}{\text{increase\_genomes}}
+\right)^{\text{scale}}
+\right\rfloor + bp_{\text{min}}
+$$
+
+where:
+		* `bp_iterations` is the number of backpropagation epochs for a specific genome.
+		* `total_bp_epochs` is the cumulative count of backpropagation epochs performed so far by all genomes.
+		* `--bp_increase_genomes` is a parameter that specifies the frequency of the change of the number of backpropagation epochs for a specific genome (after how many epochs `bp_iterations` should increase).
+		* `--bp_scale` is an exponential scaling multiplier (a parameter that defines the proportion of the change of the number of backpropagation epochs for a specific genome); values >1 accelerate growth, <1 slow it.
+		* `--bp_min` is the minimum number of epochs per genome (defaults to `0`) added to ensure a baseline.
+		* `--bp_max` maximum number of epochs per genome that limits the increase of the number of epochs to a defined ceiling (defaults to `-1` and is ignored).
 
 [^pascanu_gradient_scaling]: Razvan Pascanu, Tomas Mikolov and Yoshio Bengio. **[On the Difficulty of Training Recurrent Neural Networks](http://proceedings.mlr.press/v28/pascanu13.pdf).** <em>The International Conference on Machine Learning (ICML 2013)</em>. 2013.
 
