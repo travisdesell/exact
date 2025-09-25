@@ -10,5 +10,4 @@ __pycache__/*
 *.pyc
 visualization/plots/*
 test_output/*
-*.png
 session.log
