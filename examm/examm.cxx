@@ -425,7 +425,6 @@ RNN_Genome* EXAMM::generate_genome() {
     RNN_Genome* genome = speciation_strategy->generate_genome(rng_0_1, generator, mutate_function, crossover_function);
     
     // Changing the number of epochs
-    int32_t bp_iter = genome_property->get_backprop_iterations();
     int32_t bp_min = genome_property->get_backprop_min();
     int32_t bp_max = genome_property->get_backprop_max();
     int32_t increase_genomes = genome_property->get_backprop_increase_genomes();
