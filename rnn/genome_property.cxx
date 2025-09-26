@@ -48,7 +48,7 @@ void GenomeProperty::generate_genome_property_from_arguments(const vector<string
             backprop_max = -1;
         }
         else if (bp_min_arg && bp_max_arg && backprop_min >= backprop_max) {
-            cerr << "ERROR: bp_max has to be bigger than bp_min" << endl;
+            Log::fatal("ERROR: bp_max (%d) has to be bigger than bp_min (%d)", backprop_max, backprop_min);
             exit(1);
         }
         get_argument(arguments, "--bp_scale", true, backprop_scale);

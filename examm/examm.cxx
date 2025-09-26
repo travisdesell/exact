@@ -49,14 +49,13 @@ EXAMM::~EXAMM() {
 
 EXAMM::EXAMM(
     int32_t _island_size, int32_t _number_islands, int32_t _max_genomes, int64_t _max_wallclock_seconds,
-    int32_t _max_bp_iterations, SpeciationStrategy* _speciation_strategy, WeightRules* _weight_rules, GenomeProperty* _genome_property,
+    SpeciationStrategy* _speciation_strategy, WeightRules* _weight_rules, GenomeProperty* _genome_property,
     string _output_directory, string _save_genome_option, bool _generate_op_log, bool _generate_visualization_json
 )
     : island_size(_island_size),
       number_islands(_number_islands),
       max_genomes(_max_genomes),
       max_wallclock_seconds(_max_wallclock_seconds),
-      max_bp_iterations(_max_bp_iterations),
       speciation_strategy(_speciation_strategy),
       weight_rules(_weight_rules),
       genome_property(_genome_property),
@@ -425,35 +424,40 @@ RNN_Genome* EXAMM::generate_genome() {
     RNN_Genome* genome = speciation_strategy->generate_genome(rng_0_1, generator, mutate_function, crossover_function);
     
     // Changing the number of epochs
+    int32_t backprop_iterations = genome_property->get_backprop_iterations();
     int32_t bp_min = genome_property->get_backprop_min();
     int32_t bp_max = genome_property->get_backprop_max();
     int32_t increase_genomes = genome_property->get_backprop_increase_genomes();
     float scale = genome_property->get_backprop_scale();
     string type = genome_property->get_backprop_iterations_type();
 
-    if (type == "linear") {
-        if (bp_iter < max_bp_iterations) {
-            bp_iter = floor((total_bp_epochs / increase_genomes) * scale) + bp_min;
-        }
+    int32_t generated_genomes = speciation_strategy->get_generated_genomes();
 
+    if (type == "linear") {
+        backprop_iterations = floor((generated_genomes / double(increase_genomes)) * scale) + bp_min;
     } else if (type == "exp") {
-        if (bp_iter < max_bp_iterations) {
-            bp_iter = floor(pow((total_bp_epochs / increase_genomes), scale)) + bp_min;
-        }
+        backprop_iterations = floor(pow((generated_genomes / double(increase_genomes)), scale)) + bp_min;
     } else if (type == "rand") {
         std::uniform_int_distribution<int32_t> dist(bp_min, bp_max);
-        bp_iter = dist(generator);
-        Log::info("Random int generator generated this number: %d, from range between: %d and %d\n", bp_iter, bp_min, bp_max);
-    }
-    else if (type == "acc") {
-        if (bp_iter < max_bp_iterations) {
-            bp_iter = floor((total_bp_epochs / increase_genomes) + scale) + bp_min;
-        }
+        backprop_iterations = dist(generator);
+        Log::info("Random int generator generated this number: %d, from range between: %d and %d\n", backprop_iterations, bp_min, bp_max);
+
+    } else if (type == "acc") {
+        backprop_iterations = floor((generated_genomes / double(increase_genomes)) + scale) + bp_min;
+    } else if (type != "const") {
+        Log::fatal("Unknown bp_iterations_type specified: %s\n", type.c_str());
+        exit(1);
     }
 
-    Log::info("calculating backprop iterations using %s: bp_min: %d, increase_genomes: %d scale: %f is iterations: %d\n", type.c_str(), bp_min, increase_genomes, scale, bp_iter);
+    if (bp_max >= 0 && backprop_iterations > bp_max) {
+        // if specified, make sure backprop iterations can't be higher than the
+        // specified maximum
+        backprop_iterations = bp_max;
+    }
 
-    genome_property->set_backprop_iterations(bp_iter);
+    Log::info("calculating backprop iterations using %s: bp_min: %d, bp_max: %d, generated_genomes: %d, increase_genomes: %d scale: %f is iterations: %d\n", type.c_str(), bp_min, bp_max, generated_genomes, increase_genomes, scale, backprop_iterations);
+
+    genome_property->set_backprop_iterations(backprop_iterations);
     genome_property->set_genome_properties(genome);
 
     // if (!epigenetic_weights) genome->initialize_randomly();

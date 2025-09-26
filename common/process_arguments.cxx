@@ -20,8 +20,6 @@ EXAMM* generate_examm_from_arguments(
     get_argument(arguments, "--max_genomes", true, max_genomes);
     int64_t max_wallclock_seconds = 0;
     get_argument(arguments, "--max_wallclock_seconds", false, max_wallclock_seconds);
-    int32_t max_bp_iterations = -1;
-    get_argument(arguments, "--bp_max", false, max_bp_iterations);
     string output_directory = "";
     get_argument(arguments, "--output_directory", false, output_directory);
     vector<string> possible_node_types;
@@ -42,9 +40,6 @@ EXAMM* generate_examm_from_arguments(
     );
     if (max_wallclock_seconds > 0) {
         Log::info("Max wallclock seconds set to %lld seconds\n", (long long) max_wallclock_seconds);
-    }
-    if (max_bp_iterations > 0) {
-        Log::info("Max backprop iterations set to %d\n", max_bp_iterations);
     }
 
     // random_sequence_length = argument_exists(arguments, "--random_sequence_length");
@@ -73,7 +68,7 @@ EXAMM* generate_examm_from_arguments(
     SpeciationStrategy* speciation_strategy = generate_speciation_strategy_from_arguments(arguments, seed_genome);
 
     EXAMM* examm = new EXAMM(
-        island_size, number_islands, max_genomes, max_wallclock_seconds, max_bp_iterations, speciation_strategy, weight_rules,
+        island_size, number_islands, max_genomes, max_wallclock_seconds, speciation_strategy, weight_rules,
         genome_property, output_directory, save_genome_option, generate_op_log, generate_visualization_json
     );
     if (possible_node_types.size() > 0) {

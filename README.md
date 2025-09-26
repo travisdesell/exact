@@ -81,14 +81,14 @@ For quick start with example datasets using basic settings, the following script
 
 ## [Multithreaded Version](./scripts/base_run/coal_mt.sh)
 ```bash
-# In the root directory:
-sh scripts/base_run/coal_mt.sh
+# In your build directory:
+sh ../scripts/base_run/coal_mt.sh
 ```
 
 ## [MPI Version](./scripts/base_run/coal_mpi.sh)
 ```bash
-# In the root directory:
-sh scripts/base_run/coal_mpi.sh
+# In your build directory:
+sh ../scripts/base_run/coal_mpi.sh
 ```
 
 # Managing Datasets
