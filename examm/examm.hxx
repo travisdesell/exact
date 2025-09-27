@@ -85,11 +85,15 @@ class EXAMM {
     // size log check
     int32_t genome_size_log;
 
+    int32_t growth_phase_genomes;
+    int32_t reduction_phase_genomes;
+
    public:
     EXAMM(
         int32_t _island_size, int32_t _number_islands, int32_t _max_genomes, SpeciationStrategy* _speciation_strategy,
         WeightRules* _weight_rules, GenomeProperty* _genome_property, string _output_directory,
-        string _save_genome_option, bool _generate_op_log, bool _generate_visualization_json, int32_t _genome_size_log
+        string _save_genome_option, bool _generate_op_log, bool _generate_visualization_json, int32_t _genome_size_log,
+        int32_t _growth_phase_genomes, int32_t _reduction_phase_genomes
     );
 
     ~EXAMM();

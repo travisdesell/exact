@@ -314,6 +314,10 @@ The `.bin` file is a serialized binary of the network, the `.txt` file is a text
 * `--genome_size_log` if this flag is specified (default 0), an additional operation
 log will be generated which will track enabled/disabled nodes, edges, rec edges, weights and type of nodes for generated, global best, island global best and island genomes.
 
+* `--growth_phase_genomes` if this flag is specificed, it enables a phased schedule based on the number of generated genomes (not generation ID). It sets how many consecutive genomes run in the growth phase, where structural add/enable ops are favored (e.g., add_*/enable_* rates = 1, disable_*/merge_* = 0). Default 0 disables phasing.
+
+* `--reduction_phase_genomes` if this integer flag is > 0 and --growth_phase_genomes > 0, adds a reduction (shrink) phase each cycle. It sets how many consecutive genomes run with pruning favored (add_*/enable_* = 0, disable_*/merge_* = 1). Default 0 means no shrink phase.
+
 
 ## [Using Evolved Neural Networks for Inference](#using-evolved-neural-networks-for-inference)
 
