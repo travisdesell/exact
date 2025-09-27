@@ -318,10 +318,6 @@ log will be generated which will track enabled/disabled nodes, edges, rec edges,
 
 * `--reduction_phase_genomes` if this integer flag is > 0 and --growth_phase_genomes > 0, adds a reduction (shrink) phase each cycle. It sets how many consecutive genomes run with pruning favored (add_*/enable_* = 0, disable_*/merge_* = 1). Default 0 means no shrink phase.
 
-* `--genome_size_log` if this flag is specified (default 0), an additional operation
-log will be generated which will track enabled/disabled nodes, edges, rec edges, weights and type of nodes for generated, global best, island global best and island genomes.
-
-
 ## [Using Evolved Neural Networks for Inference](#using-evolved-neural-networks-for-inference)
 
 As discussed in the previous section, EXAMM will save the best found generated networks for its neuroevolution runs in binary `.bin` files. These are serialized so that their results are reproducible from the neuroevolution run.  Please note that, networks generated from JSONs may not provide the exact same results due to conversion from double precision weights to text and back. There is one file in particular that is useful for utilizing these evolved neural networks and genetic programs:
