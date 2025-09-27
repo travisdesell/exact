@@ -71,7 +71,8 @@ EXAMM* generate_examm_from_arguments(
 
     EXAMM* examm = new EXAMM(
         island_size, number_islands, max_genomes, speciation_strategy, weight_rules, genome_property, output_directory,
-        save_genome_option, generate_op_log, generate_visualization_json, genome_size_log, growth_phase_genomes, reduction_phase_genomes
+        save_genome_option, generate_op_log, generate_visualization_json, growth_phase_genomes, reduction_phase_genomes,
+        genome_size_log
     );
     if (possible_node_types.size() > 0) {
         examm->set_possible_node_types(possible_node_types);

@@ -50,7 +50,7 @@ EXAMM::~EXAMM() {
 EXAMM::EXAMM(
     int32_t _island_size, int32_t _number_islands, int32_t _max_genomes, SpeciationStrategy* _speciation_strategy,
     WeightRules* _weight_rules, GenomeProperty* _genome_property, string _output_directory, string _save_genome_option, bool _generate_op_log, bool _generate_visualization_json,
-    int32_t _genome_size_log, int32_t _growth_phase_genomes, int32_t _reduction_phase_genomes
+    int32_t _growth_phase_genomes, int32_t _reduction_phase_genomes, int32_t _genome_size_log
 )
     : island_size(_island_size),
       number_islands(_number_islands),
@@ -62,9 +62,9 @@ EXAMM::EXAMM(
       save_genome_option(_save_genome_option),
       generate_op_log(_generate_op_log),
       generate_visualization_json(_generate_visualization_json),
-      genome_size_log(_genome_size_log),
       growth_phase_genomes(_growth_phase_genomes),
-      reduction_phase_genomes(_reduction_phase_genomes)
+      reduction_phase_genomes(_reduction_phase_genomes),
+      genome_size_log(_genome_size_log)
 {
     total_bp_epochs = 0;
     edge_innovation_count = 0;
@@ -481,8 +481,8 @@ int32_t EXAMM::get_random_node_type() {
 
 void EXAMM::mutate(int32_t max_mutations, RNN_Genome* g) {
     if (growth_phase_genomes > 0 && reduction_phase_genomes > 0) {
-        if (((speciation_strategy->get_generated_genomes()-1) % (growth_phase_genomes + reduction_phase_genomes))
-            <= growth_phase_genomes) {
+        if (((speciation_strategy->get_generated_genomes() - 1) % (growth_phase_genomes + reduction_phase_genomes))
+            < growth_phase_genomes) {
             Log::info(
                 "\t Entering growth phase at Generated Genome - %d\n", speciation_strategy->get_generated_genomes()
             );
