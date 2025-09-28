@@ -12,7 +12,7 @@ RUNS=${1:-1}
 
 # Grid search parameters
 BP_SCALES="0.3 0.5 0.7 1.5 2.0"
-BP_INCREASE_GENOMES="50 150 250 500 1000"
+BP_slope="50 150 250 500 1000"
 
 cd build
 
@@ -20,10 +20,10 @@ INPUT_PARAMETERS="Conditioner_Inlet_Temp Conditioner_Outlet_Temp Coal_Feeder_Rat
 OUTPUT_PARAMETERS="Main_Flm_Int" 
 
 for bp_scale in $BP_SCALES; do
-  for bp_inc in $BP_INCREASE_GENOMES; do
-    echo "=== Grid Search: bp_iterations=$bp_iter, bp_scale=$bp_scale, bp_increase_genomes=$bp_inc ==="
+  for bp_inc in $BP_slope; do
+    echo "=== Grid Search: bp_iterations=$bp_iter, bp_exponent=$bp_exponent, bp_slope=$bp_inc ==="
     for i in $(seq 1 $RUNS); do
-      exp_name="../test_output/line_grid_search/coal_mpi_lin/bp_iter_${bp_iter}_scale_${bp_scale}_inc_${bp_inc}/run_${i}"
+      exp_name="../test_output/line_grid_search/coal_mpi_lin/bp_iter_${bp_iter}_scale_${bp_exponent}_inc_${bp_inc}/run_${i}"
       mkdir -p "$exp_name"
       echo "Run ${i}/${RUNS}: results will be saved to: $exp_name"
       echo "###-------------------###"
@@ -38,8 +38,8 @@ for bp_scale in $BP_SCALES; do
       --max_genomes 2000 \
       --max_wallclock_seconds 1500 \
       --backprop_iterations_type "linear" \
-      --bp_scale $bp_scale \
-      --bp_increase_genomes $bp_inc \
+      --bp_exponent $bp_scale \
+      --bp_slope $bp_inc \
       --bp_max 50 \
       --output_directory "$exp_name" \
       --num_mutations 2 \

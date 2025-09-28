@@ -8,8 +8,8 @@ GenomeProperty::GenomeProperty() {
     backprop_iterations_type = "const";
     backprop_min = 0;
     backprop_max = 10;
-    backprop_scale = 1.0;
-    backprop_increase_genomes = 10;
+    backprop_exponent = 1.0;
+    backprop_slope = 10;
     dropout_probability = 0.0;
     min_recurrent_depth = 1;
     max_recurrent_depth = 10;
@@ -38,7 +38,7 @@ void GenomeProperty::generate_genome_property_from_arguments(const vector<string
             backprop_max = backprop_iterations;
         }
     }
-    else {
+    else if (backprop_iterations_type == "scaled") {
         bool bp_min_arg = get_argument(arguments, "--bp_min", false, backprop_min);
         if (!bp_min_arg) {
             backprop_min = 0;
@@ -51,8 +51,11 @@ void GenomeProperty::generate_genome_property_from_arguments(const vector<string
             Log::fatal("ERROR: bp_max (%d) has to be bigger than bp_min (%d)", backprop_max, backprop_min);
             exit(1);
         }
-        get_argument(arguments, "--bp_scale", true, backprop_scale);
-        get_argument(arguments, "--bp_increase_genomes", true, backprop_increase_genomes);
+        get_argument(arguments, "--bp_exponent", true, backprop_exponent);
+        get_argument(arguments, "--bp_slope", true, backprop_slope);
+    }
+    else {
+        Log::fatal("ERROR: backprop_iterations_type is incorrectly identified. Use \"const\", \"exponentd\", \"random\", or \"acc\".");
     }
     use_dropout = get_argument(arguments, "--dropout_probability", false, dropout_probability);
 
@@ -60,7 +63,7 @@ void GenomeProperty::generate_genome_property_from_arguments(const vector<string
     get_argument(arguments, "--max_recurrent_depth", false, max_recurrent_depth);
 
     Log::info("Each generated genome is trained for %d epochs\n", backprop_iterations);
-    Log::info("The parameters are following:\n increase_genomes: %d, scale: %f, type: %s\n", backprop_increase_genomes, backprop_scale, backprop_iterations_type.c_str());
+    Log::info("The parameters are following:\n slope: %d, exponent: %f, type: %s\n", backprop_slope, backprop_exponent, backprop_iterations_type.c_str());
 
     Log::info(
         "Use dropout is set to %s, dropout probability is %f\n", use_dropout ? "True" : "False", dropout_probability
@@ -113,12 +116,12 @@ int32_t GenomeProperty::get_backprop_max() {
     return backprop_max;
 }
 
-int32_t GenomeProperty::get_backprop_increase_genomes() {
-    return backprop_increase_genomes;
+int32_t GenomeProperty::get_backprop_slope() {
+    return backprop_slope;
 }
 
-float GenomeProperty::get_backprop_scale() {
-    return backprop_scale;
+float GenomeProperty::get_backprop_exponent() {
+    return backprop_exponent;
 }
 
 string GenomeProperty::get_backprop_iterations_type() {

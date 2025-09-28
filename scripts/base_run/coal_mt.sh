@@ -19,8 +19,8 @@ echo "###-------------------###"
 --training_filenames ../datasets/2018_coal/burner_[0-9].csv \
 --validation_filenames ../datasets/2018_coal/burner_1[0-1].csv \
 --backprop_iterations_type exp \
---bp_scale 1.1 \
---bp_increase_genomes 1 \
+--bp_exponent 1.1 \
+--bp_slope 1 \
 --time_offset 1 \
 --input_parameter_names $INPUT_PARAMETERS \
 --output_parameter_names $OUTPUT_PARAMETERS \

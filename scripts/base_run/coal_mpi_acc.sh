@@ -32,8 +32,8 @@ mpirun -np 10 ./mpi/examm_mpi \
 --bp_iterations 25 \
 --backprop_iterations_type "acc" \
 --bp_min 1 \
---bp_scale 0.0001 \
---bp_increase_genomes 100 \
+--bp_exponent 0.0001 \
+--bp_slope 100 \
 --output_directory "$exp_name" \
 --num_mutations 2 \
 --weight_update adagrad \
