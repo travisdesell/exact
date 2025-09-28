@@ -224,38 +224,23 @@ The following allow control of the neural network training hyperparameters:
 	* `random` - for each genome, the number of backpropagation epochs is chosen uniformly at random within defined range (between `bp_min` and `bp_max`). Takes in two additional parameters:
 		* `--bp_min` minimum number of epochs per genome (defaults to `0`).
 		* `--bp_max` maximum number of epochs per genome (required, if `bp_iterations` is defined and `bp_max` is not, then it defaults to `bp_iterations`).
-	* `linear` for each genome, the number of backpropagation epochs is increased proportionally and is defined by the following function:
-$$
-bp_{\text{iterations}} = \left\lfloor 
-  \frac{\text{total\_bp\_epochs}}{\text{increase\_genomes}} 
-  \times \text{scale}
-\right\rfloor + bp_{\text{min}}
-$$
-where:
-		* `bp_iterations` is the number of backpropagation epochs for a specific genome.
-		* `total_bp_epochs` is the cumulative count of backpropagation epochs performed so far by all genomes.
-		* `--bp_increase_genomes` is a parameter that specifies the frequency of the change of the number of backpropagation epochs for a specific genome (after how many epochs `bp_iterations` should increase).
-		* `--bp_scale` is a linear scaling multiplier (a parameter that defines the proportion of the change of the number of backpropagation epochs for a specific genome).
-		* `--bp_min` is the minimum number of epochs per genome (defaults to `0`) added to ensure a baseline.
-		* `--bp_max` maximum number of epochs per genome that limits the increase of the number of epochs to a defined ceiling (defaults to `-1` and is ignored).
-	* `exp` for each genome, the number of backpropagation epochs is increased exponentially and is defined by the following function:
-
+	* `scaled` for each genome, the number of backpropagation epochs is increased proportionately and is defined by the following expression:
 $$
 bp_{\text{iterations}} =
 \left\lfloor
 \left(
-\frac{\text{total\_bp\_epochs}}{\text{increase\_genomes}}
-\right)^{\text{scale}}
+\frac{\text{genomes\_number}}{\text{slope}}
+\right)^{\text{exponent}}
 \right\rfloor + bp_{\text{min}}
 $$
 
 where:
 		* `bp_iterations` is the number of backpropagation epochs for a specific genome.
-		* `total_bp_epochs` is the cumulative count of backpropagation epochs performed so far by all genomes.
-		* `--bp_increase_genomes` is a parameter that specifies the frequency of the change of the number of backpropagation epochs for a specific genome (after how many epochs `bp_iterations` should increase).
-		* `--bp_scale` is an exponential scaling multiplier (a parameter that defines the proportion of the change of the number of backpropagation epochs for a specific genome); values >1 accelerate growth, <1 slow it.
+		* `genomes_number` is the cumulative count of genomes propagated so far.
+		* `--bp_slope` is a parameter that specifies how steep is the change of the number of the backpropagation epochs for the next genome.
+		* `--bp_exponent` is a linear scaling multiplier (a parameter that defines the proportion of the change of the number of backpropagation epochs for a specific genome).
 		* `--bp_min` is the minimum number of epochs per genome (defaults to `0`) added to ensure a baseline.
-		* `--bp_max` maximum number of epochs per genome that limits the increase of the number of epochs to a defined ceiling (defaults to `-1` and is ignored).
+		* `--bp_max` maximum number of epochs per genome that caps the increase of the number of epochs to a defined limit (defaults to `-1`; if bp_max is smaller than zero, it is ignored).
 
 [^pascanu_gradient_scaling]: Razvan Pascanu, Tomas Mikolov and Yoshio Bengio. **[On the Difficulty of Training Recurrent Neural Networks](http://proceedings.mlr.press/v28/pascanu13.pdf).** <em>The International Conference on Machine Learning (ICML 2013)</em>. 2013.
 
