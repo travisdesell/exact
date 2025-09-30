@@ -7,7 +7,7 @@
 #SBATCH --output=%n_%x_%j.out
 #SBATCH --error=%x_%a_%j.err
 #SBATCH -A cps
-#SBATCH -p tier3
+#SBATCH --partition=tier3
 #SBATCH -n 18
 #SBATCH --mem=10GB
 #SBATCH --gres=gpu:a100:1
