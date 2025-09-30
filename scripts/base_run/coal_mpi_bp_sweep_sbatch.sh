@@ -8,8 +8,10 @@
 #SBATCH --error=%x_%a_%j.err
 #SBATCH -A cps
 #SBATCH --partition=tier3
-#SBATCH -n 36
-#SBATCH --mem=10GB
+#SBATCH --nodes=1			# How many nodes to run on
+#SBATCH --ntasks=36			# How many tasks per node
+#SBATCH --cpus-per-task=36		# Number of CPUs per task
+#SBATCH --mem-per-cpu=10g		# Memory per CPU
 #SBATCH --gres=gpu:a100:1
 
 hostname
