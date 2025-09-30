@@ -8,8 +8,8 @@
 #SBATCH --error=%x_%a_%j.err
 #SBATCH -A cps
 #SBATCH -p tier3
-#SBATCH -n 32
-#SBATCH --mem=128GB
+#SBATCH -n 18
+#SBATCH --mem=10GB
 #SBATCH --gres=gpu:a100:1
 
 hostname
