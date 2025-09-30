@@ -158,9 +158,10 @@ Given the above options for loading and using training and validation data, we c
 
 The following command line options control the neuroevolution search process itself.
 
-The training process is bounded by one or both of the following parameters:
-	* `--max_genomes <int>` specifies how many genomes (RNNs or GPs) to evaluate before terminating the run. Note that EXAMM/EXA-GP use an asynchronous strategy with steady state populations so there are no explicit generations.
+* The training process is bounded by one or both of the following parameters:
 
+	* `--max_genomes <int>` specifies how many genomes (RNNs or GPs) to evaluate before terminating the run. Note that EXAMM/EXA-GP use an asynchronous strategy with steady state populations so there are no explicit generations.
+	
 	* `--max_wallclock_seconds <int>` specifies a hard wallclock time cap, in seconds, for the entire EXAMM/EXA-GP run. Before generating the next genome the algorithms verifies if the time passed is within the limit and if it exceeds the `max_wallclock_seconds` parameter, then the training stops. It is disabled by default.
 
 * `--min_recurrent_depth <int>` and `--max_recurrent_depth <int>` specify the possible range of time skip values for recurrent connections added to the evolved networks.  Default values are 1 and 10. Adding in deeper recurrent connections has been shown to improve forecasting performance, and in some cases even outperform memory cells[^examm_deep_recurrent].
