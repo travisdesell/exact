@@ -1,5 +1,6 @@
 #!/bin/bash -l
 #SBATCH -J neuroevol_bp_iterations
+#SBATCH --account=dv6943
 #SBATCH --mail-user=slack:@dv6943
 #SBATCH --mail-type=ALL
 #SBATCH -t 4-23:00:00
