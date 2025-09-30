@@ -16,10 +16,15 @@ EXAMM* generate_examm_from_arguments(
     get_argument(arguments, "--island_size", true, island_size);
     int32_t number_islands;
     get_argument(arguments, "--number_islands", true, number_islands);
-    int32_t max_genomes;
-    get_argument(arguments, "--max_genomes", true, max_genomes);
+    int32_t max_genomes = 0;
+    get_argument(arguments, "--max_genomes", false, max_genomes);
     int64_t max_wallclock_seconds = 0;
     get_argument(arguments, "--max_wallclock_seconds", false, max_wallclock_seconds);
+
+    if (max_genomes <= 0 && max_wallclock_seconds <= 0) {
+        Log::fatal("Either --max_genomes or --max_wallclock_seconds must be provided and > 0.\n");
+        exit(1);
+    }
     string output_directory = "";
     get_argument(arguments, "--output_directory", false, output_directory);
     vector<string> possible_node_types;
@@ -34,10 +39,17 @@ EXAMM* generate_examm_from_arguments(
     get_argument(arguments, "--generate_visualization_json", false, generate_visualization_json);
 
 
-    Log::info(
-        "Setting up examm with %d islands, island size %d, and max_genome %d\n", number_islands, island_size,
-        max_genomes
-    );
+    if (max_genomes > 0) {
+        Log::info(
+            "Setting up examm with %d islands, island size %d, and max_genome %d\n", number_islands, island_size,
+            max_genomes
+        );
+    } else {
+        Log::info(
+            "Setting up examm with %d islands, island size %d, and unlimited genomes (no cap)\n", number_islands,
+            island_size
+        );
+    }
     if (max_wallclock_seconds > 0) {
         Log::info("Max wallclock seconds set to %lld seconds\n", (long long) max_wallclock_seconds);
     }
@@ -105,8 +117,8 @@ IslandSpeciationStrategy* generate_island_speciation_strategy_from_arguments(
     get_argument(arguments, "--island_size", true, island_size);
     int32_t number_islands;
     get_argument(arguments, "--number_islands", true, number_islands);
-    int32_t max_genomes;
-    get_argument(arguments, "--max_genomes", true, max_genomes);
+    int32_t max_genomes = 0;
+    get_argument(arguments, "--max_genomes", false, max_genomes);
     int32_t extinction_event_generation_number = 0;
     get_argument(arguments, "--extinction_event_generation_number", false, extinction_event_generation_number);
     int32_t islands_to_exterminate = 0;

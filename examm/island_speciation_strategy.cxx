@@ -219,8 +219,11 @@ int32_t IslandSpeciationStrategy::get_worst_island_by_best_genome() {
 
 void IslandSpeciationStrategy::repopulate() {
     if (extinction_event_generation_number != 0) {
+        // Trigger extinction events only if either unlimited genomes (max_genomes <= 0)
+        // or there is room for a full extinction cycle within the remaining genome budget
+        bool have_room_for_cycle = (max_genomes <= 0) || (max_genomes - evaluated_genomes >= extinction_event_generation_number);
         if (evaluated_genomes > 1 && evaluated_genomes % extinction_event_generation_number == 0
-            && max_genomes - evaluated_genomes >= extinction_event_generation_number) {
+            && have_room_for_cycle) {
             if (island_ranking_method.compare("EraseWorst") == 0 || island_ranking_method.compare("") == 0) {
                 global_best_genome = get_best_genome()->copy();
                 vector<int32_t> rank = rank_islands();

@@ -389,8 +389,7 @@ void EXAMM::save_genome(RNN_Genome* genome, string genome_name = "rnn_genome") {
 }
 
 RNN_Genome* EXAMM::generate_genome() {
-    // Check genome count cap
-    if (speciation_strategy->get_evaluated_genomes() > max_genomes) {
+    if (max_genomes > 0 && speciation_strategy->get_evaluated_genomes() > max_genomes) {
         RNN_Genome* global_best_genome = speciation_strategy->get_global_best_genome();
         save_genome(global_best_genome, "global_best_genome");
 
@@ -434,7 +433,7 @@ RNN_Genome* EXAMM::generate_genome() {
     int32_t generated_genomes = speciation_strategy->get_generated_genomes();
 
     if (type == "scaled") {
-        backprop_iterations = floor(pow((generated_genomes * double(slope)), exponent)) + bp_min;
+        backprop_iterations = floor(generated_genomes * pow(double(slope), exponent)) + bp_min;
     } else if (type == "rand") {
         std::uniform_int_distribution<int32_t> dist(bp_min, bp_max);
         backprop_iterations = dist(generator);
