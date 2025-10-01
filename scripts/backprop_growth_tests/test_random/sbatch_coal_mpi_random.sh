@@ -1,3 +1,4 @@
+#!/bin/bash -l
 #SBATCH -J neuroevol_random
 #SBATCH --account=neuroevolution
 #SBATCH --mail-user=slack:@dv6943
