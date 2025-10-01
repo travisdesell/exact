@@ -3,7 +3,7 @@
 #SBATCH --account=neuroevolution
 #SBATCH --mail-user=slack:@dv6943
 #SBATCH --mail-type=ALL
-#SBATCH -t 0-12:30:00
+#SBATCH -t 0-01:30:00
 #SBATCH --output=%n_%x_%j.out
 #SBATCH --error=%x_%a_%j.err
 #SBATCH --partition=tier3
@@ -19,4 +19,4 @@ spack load gcc/lhqcen5
 spack load libtiff/gnxev37
 spack load openmpi/xcunp5q
 
-sh scripts/backprop_growth_tests/test_random/coal_mpi_random.sh
+sh scripts/backprop_growth_tests/test_random/coal_mpi_random_0_16.sh

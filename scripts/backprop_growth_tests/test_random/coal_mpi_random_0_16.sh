@@ -1,6 +1,6 @@
 #!/bin/bash -l
 
-RUNS=10
+RUNS=1
 BP_MIN=0
 BP_MAX=16
 
@@ -15,7 +15,7 @@ for i in $(seq 1 $RUNS); do
     echo "Run ${i}/${RUNS} (bp_iterations=(${BP_MIN}, ${BP_MAX})): results will be saved to: $exp_name"
     echo "###-------------------###"
 
-    mpirun -np 10 ./mpi/examm_mpi \
+    srun mpi/examm_mpi \
     --training_filenames ../datasets/2018_coal/burner_[0-9].csv --validation_filenames ../datasets/2018_coal/burner_1[0-1].csv \
     --time_offset 1 \
     --input_parameter_names $INPUT_PARAMETERS \
