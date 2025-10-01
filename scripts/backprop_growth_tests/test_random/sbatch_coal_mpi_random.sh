@@ -17,7 +17,6 @@ cd /home/dv6943/exact
 source ~/new_env/bin/activate
 spack load gcc/lhqcen5
 spack load libtiff/gnxev37
-spack load cmake/pbddesj
 spack load openmpi/xcunp5q
 
 sh scripts/backprop_growth_tests/test_random/coal_mpi_random.sh
