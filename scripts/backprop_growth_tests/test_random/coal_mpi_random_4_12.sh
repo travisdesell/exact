@@ -25,7 +25,7 @@ for i in $(seq 1 $RUNS); do
     --max_wallclock_seconds 3600 \
     --backprop_iterations_type "rand" \
     --bp_min $BP_MIN \
-    --bp_max $BP_MAX
+    --bp_max $BP_MAX \
     --output_directory "$exp_name" \
     --num_mutations 2 \
     --weight_update adagrad \
