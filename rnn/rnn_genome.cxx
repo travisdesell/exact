@@ -656,11 +656,15 @@ int32_t RNN_Genome::get_number_weights_enabled_hidden_layer_node() {
     }
 
     for (int32_t i = 0; i < (int32_t) edges.size(); i++) {
-        number_weights++;
+        if (edges[i]->enabled) {
+            number_weights++;
+        }
     }
 
     for (int32_t i = 0; i < (int32_t) recurrent_edges.size(); i++) {
-        number_weights++;
+        if (recurrent_edges[i]->enabled) {
+            number_weights++;
+        }
     }
 
     return number_weights;

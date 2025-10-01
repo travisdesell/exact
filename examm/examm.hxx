@@ -82,14 +82,11 @@ class EXAMM {
 
     bool generate_op_log;
     bool generate_visualization_json;
+
+    int32_t growth_phase_genomes;
+    int32_t reduction_phase_genomes;
     // size log check
     int32_t genome_size_log;
-
-    int32_t growth_phase_genomes;
-    int32_t reduction_phase_genomes;
-
-    int32_t growth_phase_genomes;
-    int32_t reduction_phase_genomes;
 
    public:
     EXAMM(
