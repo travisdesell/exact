@@ -1,0 +1,4 @@
+sbatch scripts/backprop_growth_tests/test_random/sbatch_coal_mpi_random_8_24.sh
+sbatch scripts/backprop_growth_tests/test_random/sbatch_coal_mpi_random_12_20.sh
+sbatch scripts/backprop_growth_tests/test_random/sbatch_coal_mpi_random_24_40.sh
+sbatch scripts/backprop_growth_tests/test_random/sbatch_coal_mpi_random_28_36.sh
