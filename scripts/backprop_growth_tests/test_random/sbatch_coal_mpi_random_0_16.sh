@@ -14,7 +14,7 @@
 #SBATCH --gres=gpu:a100:1
 
 cd /home/dv6943/exact
-source ~/new_env/bin/activate
+source /home/dv6943/new_env/bin/activate
 spack load gcc/lhqcen5
 spack load libtiff/gnxev37
 spack load openmpi/xcunp5q
