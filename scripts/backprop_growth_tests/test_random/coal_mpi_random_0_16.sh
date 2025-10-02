@@ -1,6 +1,6 @@
 #!/bin/bash -l
 
-RUNS=1
+RUNS=10
 BP_MIN=0
 BP_MAX=16
 
