@@ -9,7 +9,7 @@
 #SBATCH --partition=tier3
 #SBATCH --nodes=1			# How many nodes to run on
 #SBATCH --ntasks=8			# How many tasks per node
-#SBATCH --cpus-per-task=10		# Number of CPUs per task
+#SBATCH --cpus-per-task=1		# Number of CPUs per task
 #SBATCH --mem-per-cpu=128g		# Memory per CPU
 #SBATCH --gres=gpu:a100:1
 
