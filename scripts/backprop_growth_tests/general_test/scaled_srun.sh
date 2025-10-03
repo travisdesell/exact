@@ -7,7 +7,7 @@ RUN_NUM=${1:-1}
 BP_INC=${2:-0.0025}
 BP_SCALE=${3:-1}
 
-exp_name="../test_output/new/coal_mpi_scaled_exp/bp_inc${BP_INC}_bp_scale${BP_SCALE}/run_${RUN_NUM}"
+exp_name="../test_output/new/coal_mpi_scaled/bp_inc${BP_INC}_bp_scale${BP_SCALE}/run_${RUN_NUM}"
 cd build
 
 INPUT_PARAMETERS="Conditioner_Inlet_Temp Conditioner_Outlet_Temp Coal_Feeder_Rate Primary_Air_Flow Primary_Air_Split System_Secondary_Air_Flow_Total Secondary_Air_Flow Secondary_Air_Split Tertiary_Air_Split Total_Comb_Air_Flow Supp_Fuel_Flow Main_Flm_Int" 
