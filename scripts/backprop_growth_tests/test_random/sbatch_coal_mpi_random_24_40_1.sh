@@ -9,7 +9,7 @@
 #SBATCH --partition=debug
 #SBATCH --nodes=1			# How many nodes to run on
 #SBATCH --ntasks=1			# How many tasks per node
-#SBATCH --cpus-per-task=1		# Number of CPUs per task
+#SBATCH --cpus-per-task=18		# Number of CPUs per task
 #SBATCH --mem-per-cpu=100g
 
 cd /home/dv6943/exact
