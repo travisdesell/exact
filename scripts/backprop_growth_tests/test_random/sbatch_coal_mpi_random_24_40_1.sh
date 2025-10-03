@@ -6,11 +6,9 @@
 #SBATCH -t 0-01:30:00
 #SBATCH --output=%n_%x_%j.out
 #SBATCH --error=%x_%a_%j.err
-#SBATCH --partition=debug
-#SBATCH --nodes=1			# How many nodes to run on
-#SBATCH --ntasks=1			# How many tasks per node
-#SBATCH --cpus-per-task=18		# Number of CPUs per task
-#SBATCH --mem-per-cpu=100g
+#SBATCH --partition=tier3
+#SBATCH -n 18
+#SBATCH --mem-per-cpu=10g
 
 cd /home/dv6943/exact
 source /home/dv6943/new_env/bin/activate
