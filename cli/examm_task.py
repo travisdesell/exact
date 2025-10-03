@@ -12,7 +12,7 @@ class ExammTask(ConfigToArg):
         for path in paths:
             a = a + glob.glob(path)
         return list(set(a))
-    ALL_ITER_TYPES = ["linear", "exp", "rand", "acc", "const"]
+    ALL_ITER_TYPES = ["scaled", "rand", "acc", "const"]
     ALL_NODE_TYPES = [ 'simple', 'UGRNN', 'MGU', 'GRU', 'delta', 'LSTM' , 'ENARC' ]
     CONFIG_OPTIONS = {
             "training_files":       lambda self, x: ['--training_filenames'] + ExammTask.glob_to_all(x),
@@ -59,8 +59,8 @@ class ExammTask(ConfigToArg):
             "backprop_iterations_type": {str},
             "bp_min":                   {int},
             "bp_max":                   {int},
-            "bp_exponent":                 {float},
-            "bp_slope":      {int},
+            "bp_exponent":              {float},
+            "bp_slope":                 {int},
             "output_directory":         {str},
             "node_types":               {list},
             # Subsections should be of type dict
@@ -85,12 +85,12 @@ class ExammTask(ConfigToArg):
             "max_wallclock_seconds":    (lambda self: self.max_wallclock_seconds > 0, "must be a positive integer (seconds)"),
             # "max_bp_iterations":        (lambda self: self.max_bp_iterations > 0, "must be a positive integer"),
             "bp_iterations":            (lambda self: True, ""),
-            "backprop_iterations_type": (lambda self: self.backprop_iterations_type in ExammTask.ALL_ITER_TYPES, "must be linear, exp, rand, or const" ),
+            "backprop_iterations_type": (lambda self: self.backprop_iterations_type in ExammTask.ALL_ITER_TYPES, "must be scaled, rand, or const" ),
             "bp_min":                   (lambda self: self.bp_min >= 0, "must be a non-negative integer"),
             "bp_max":                   (lambda self: self.bp_max >= 0, "must be a non-negative integer"),
             # "bp_max":                   (lambda self: self.bp_max >= self.bp_min, "maximum value must be greater than or equal to minimum value"),
-            "bp_exponent":                 (lambda self: True, ""),
-            "bp_slope":      (lambda self: self.bp_slope > 0, "must be a positive integer"),
+            "bp_exponent":              (lambda self: True, ""),
+            "bp_slope":                 (lambda self: self.bp_slope > 0, "must be a positive integer"),
             "output_directory":         (lambda self: True, "must be a valid path"),
             "node_types":               (lambda self: self.all_strings(self.node_types) \
                                                 and set(self.node_types).issubset(set(ExammTask.ALL_NODE_TYPES)),
