@@ -17,7 +17,7 @@ spack load openmpi/xcunp5q
 
 cd /home/dv6943/exact/build
 
-srun --std_message_level DEBUG --file_message_level DEBUG mpi/examm_mpi \
+srun mpi/examm_mpi \
     --training_filenames /home/dv6943/exact/datasets/2018_coal/burner_[0-9].csv --validation_filenames /home/dv6943/exact/datasets/2018_coal/burner_1[0-1].csv \
     --time_offset 1 \
     --input_parameter_names $INPUT_PARAMETERS \
@@ -39,4 +39,6 @@ srun --std_message_level DEBUG --file_message_level DEBUG mpi/examm_mpi \
     --possible_node_types simple UGRNN MGU GRU delta LSTM \
     --save_genome_option the_best \
     --std_message_level INFO \
-    --file_message_level INFO
+    --file_message_level INFO \
+    --std_message_level DEBUG \
+    --file_message_level DEBUG
