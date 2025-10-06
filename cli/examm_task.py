@@ -60,7 +60,7 @@ class ExammTask(ConfigToArg):
             "bp_min":                   {int},
             "bp_max":                   {int},
             "bp_exponent":              {float},
-            "bp_slope":                 {int},
+            "bp_slope":                 {float},
             "output_directory":         {str},
             "node_types":               {list},
             # Subsections should be of type dict
