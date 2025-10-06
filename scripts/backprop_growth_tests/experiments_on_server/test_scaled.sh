@@ -1,0 +1,43 @@
+#!/bin/bash -l
+#SBATCH --account=neuroevolution
+#SBATCH --mail-user=slack:@dv6943
+#SBATCH --mail-type=ALL
+#SBATCH -t 0-01:30:00
+#SBATCH --output=%n_%x_%j.out
+#SBATCH --error=%x_%a_%j.err
+#SBATCH --partition=tier3
+#SBATCH --ntasks=1			# How many nodes to run on
+#SBATCH --cpus-per-task=10		# Number of CPUs per task
+#SBATCH --mem-per-cpu=100g		# Memory per CPU
+#SBATCH --gres=gpu:a100:1
+
+source /home/dv6943/new_env/bin/activate
+spack load gcc/lhqcen5
+spack load libtiff/gnxev37
+spack load openmpi/xcunp5q
+
+cd /home/dv6943/exact/build
+
+srun mpi/examm_mpi \
+    --training_filenames ../datasets/2018_coal/burner_[0-9].csv --validation_filenames ../datasets/2018_coal/burner_1[0-1].csv \
+    --time_offset 1 \
+    --input_parameter_names $INPUT_PARAMETERS \
+    --output_parameter_names $OUTPUT_PARAMETERS \
+    --number_islands 10 \
+    --island_size 10 \
+    --max_wallclock_seconds 3600 \
+    --bp_min $BP_MIN \
+    --bp_max $BP_MAX \
+    --backprop_iterations_type "scaled" \
+    --bp_slope $a \
+    --bp_exponent $b \
+    --output_directory "$exp_name" \
+    --num_mutations 2 \
+    --weight_update adagrad \
+    --eps 0.000001 \
+    --beta1 0.99 \
+    --sequence_length 50 \
+    --possible_node_types simple UGRNN MGU GRU delta LSTM \
+    --save_genome_option the_best \
+    --std_message_level INFO \
+    --file_message_level INFO
