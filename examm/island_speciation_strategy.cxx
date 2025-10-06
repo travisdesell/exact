@@ -227,9 +227,24 @@ void IslandSpeciationStrategy::repopulate() {
             if (island_ranking_method.compare("EraseWorst") == 0 || island_ranking_method.compare("") == 0) {
                 global_best_genome = get_best_genome()->copy();
                 vector<int32_t> rank = rank_islands();
-                for (int32_t i = 0; i < islands_to_exterminate; i++) {
+
+                if (rank.empty()) {
+                    Log::info("No eligible islands to exterminate; skipping extinction cycle.\n");
+                    return;
+                }
+
+                int32_t to_exterminate = islands_to_exterminate;
+                if (to_exterminate > (int32_t)rank.size()) {
+                    Log::info(
+                        "Requested to exterminate %d islands, but only %d eligible; reducing count.\n",
+                        to_exterminate, (int32_t)rank.size()
+                    );
+                    to_exterminate = (int32_t)rank.size();
+                }
+
+                for (int32_t i = 0; i < to_exterminate; i++) {
                     if (rank[i] >= 0) {
-                        Log::info("found island: %d is the worst island \n", rank[0]);
+                        Log::info("found island: %d is the worst island \n", rank[i]);
                         islands[rank[i]]->erase_island();
                         islands[rank[i]]->erase_structure_map();
                         islands[rank[i]]->set_status(Island::REPOPULATING);

@@ -17,8 +17,8 @@ spack load openmpi/xcunp5q
 
 cd /home/dv6943/exact/build
 
-srun mpi/examm_mpi \
-    --training_filenames ../datasets/2018_coal/burner_[0-9].csv --validation_filenames ../datasets/2018_coal/burner_1[0-1].csv \
+srun --std_message_level DEBUG --file_message_level DEBUG mpi/examm_mpi \
+    --training_filenames /home/dv6943/exact/datasets/2018_coal/burner_[0-9].csv --validation_filenames /home/dv6943/exact/datasets/2018_coal/burner_1[0-1].csv \
     --time_offset 1 \
     --input_parameter_names $INPUT_PARAMETERS \
     --output_parameter_names $OUTPUT_PARAMETERS \
