@@ -3585,7 +3585,11 @@ void RNN_Genome::write_to_stream(ostream& bin_ostream) {
     int32_t n_parent_ids = (int32_t) parent_ids.size();
     Log::debug("writing %d parent ids.\n", n_parent_ids);
     bin_ostream.write((char*) &n_parent_ids, sizeof(int32_t));
-    bin_ostream.write((char*) &parent_ids[0], sizeof(int32_t) * parent_ids.size());
+    if (n_parent_ids > 0) {
+        bin_ostream.write((char*) parent_ids.data(), sizeof(int32_t) * parent_ids.size());
+    } else {
+        bin_ostream.write((char*) &parent_ids[0], sizeof(int32_t) * parent_ids.size());
+    }
 
     ostringstream generated_by_map_oss;
     write_map(generated_by_map_oss, generated_by_map);
@@ -3598,12 +3602,16 @@ void RNN_Genome::write_to_stream(ostream& bin_ostream) {
     int32_t n_initial_parameters = (int32_t) initial_parameters.size();
     Log::debug("writing %d initial parameters.\n", n_initial_parameters);
     bin_ostream.write((char*) &n_initial_parameters, sizeof(int32_t));
-    bin_ostream.write((char*) &initial_parameters[0], sizeof(double) * initial_parameters.size());
+    if (n_initial_parameters > 0) {
+        bin_ostream.write((char*) initial_parameters.data(), sizeof(double) * initial_parameters.size());
+    } else {
+        bin_ostream.write((char*) &initial_parameters[0], sizeof(double) * initial_parameters.size());
+    }
 
     int32_t n_best_parameters = (int32_t) best_parameters.size();
     bin_ostream.write((char*) &n_best_parameters, sizeof(int32_t));
     if (n_best_parameters) {
-        bin_ostream.write((char*) &best_parameters[0], sizeof(double) * best_parameters.size());
+        bin_ostream.write((char*) best_parameters.data(), sizeof(double) * best_parameters.size());
     }
 
     int32_t n_input_parameter_names = (int32_t) input_parameter_names.size();
