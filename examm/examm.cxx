@@ -426,14 +426,14 @@ RNN_Genome* EXAMM::generate_genome() {
     int32_t backprop_iterations = genome_property->get_backprop_iterations();
     int32_t bp_min = genome_property->get_backprop_min();
     int32_t bp_max = genome_property->get_backprop_max();
-    int32_t slope = genome_property->get_backprop_slope();
+    float slope = genome_property->get_backprop_slope();
     float exponent = genome_property->get_backprop_exponent();
     string type = genome_property->get_backprop_iterations_type();
 
     int32_t generated_genomes = speciation_strategy->get_generated_genomes();
 
     if (type == "scaled") {
-        backprop_iterations = floor(generated_genomes * pow(double(slope), exponent)) + bp_min;
+        backprop_iterations = floor(slope * pow(double(generated_genomes), exponent)) + bp_min;
     } else if (type == "rand") {
         std::uniform_int_distribution<int32_t> dist(bp_min, bp_max);
         backprop_iterations = dist(generator);
@@ -452,7 +452,7 @@ RNN_Genome* EXAMM::generate_genome() {
         backprop_iterations = bp_max;
     }
 
-    Log::info("calculating backprop iterations using %s: bp_min: %d, bp_max: %d, generated_genomes: %d, slope: %d exponent: %f is iterations: %d\n", type.c_str(), bp_min, bp_max, generated_genomes, slope, exponent, backprop_iterations);
+    Log::info("calculating backprop iterations using %s: bp_min: %d, bp_max: %d, generated_genomes: %d, slope: %f exponent: %f is iterations: %d\n", type.c_str(), bp_min, bp_max, generated_genomes, slope, exponent, backprop_iterations);
 
     genome_property->set_backprop_iterations(backprop_iterations);
     genome_property->set_genome_properties(genome);

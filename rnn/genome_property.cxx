@@ -9,7 +9,7 @@ GenomeProperty::GenomeProperty() {
     backprop_min = 0;
     backprop_max = 10;
     backprop_exponent = 1.0;
-    backprop_slope = 10;
+    backprop_slope = 0.0025;
     dropout_probability = 0.0;
     min_recurrent_depth = 1;
     max_recurrent_depth = 10;
@@ -63,7 +63,7 @@ void GenomeProperty::generate_genome_property_from_arguments(const vector<string
     get_argument(arguments, "--max_recurrent_depth", false, max_recurrent_depth);
 
     Log::info("Each generated genome is trained for %d epochs\n", backprop_iterations);
-    Log::info("The parameters are following:\n slope: %d, exponent: %f, type: %s\n", backprop_slope, backprop_exponent, backprop_iterations_type.c_str());
+    Log::info("The parameters are following:\n slope: %f, exponent: %f, type: %s\n", backprop_slope, backprop_exponent, backprop_iterations_type.c_str());
 
     Log::info(
         "Use dropout is set to %s, dropout probability is %f\n", use_dropout ? "True" : "False", dropout_probability
@@ -116,7 +116,7 @@ int32_t GenomeProperty::get_backprop_max() {
     return backprop_max;
 }
 
-int32_t GenomeProperty::get_backprop_slope() {
+float GenomeProperty::get_backprop_slope() {
     return backprop_slope;
 }
 

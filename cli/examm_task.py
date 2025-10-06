@@ -90,7 +90,7 @@ class ExammTask(ConfigToArg):
             "bp_max":                   (lambda self: self.bp_max >= 0, "must be a non-negative integer"),
             # "bp_max":                   (lambda self: self.bp_max >= self.bp_min, "maximum value must be greater than or equal to minimum value"),
             "bp_exponent":              (lambda self: True, ""),
-            "bp_slope":                 (lambda self: self.bp_slope > 0, "must be a positive integer"),
+            "bp_slope":                 (lambda self: self.bp_slope > 0.0, "must be a positive floating point number"),
             "output_directory":         (lambda self: True, "must be a valid path"),
             "node_types":               (lambda self: self.all_strings(self.node_types) \
                                                 and set(self.node_types).issubset(set(ExammTask.ALL_NODE_TYPES)),

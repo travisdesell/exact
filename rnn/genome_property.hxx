@@ -17,7 +17,7 @@ class GenomeProperty {
     int32_t backprop_min;
     int32_t backprop_max;
     float backprop_exponent;
-    int32_t backprop_slope;
+    float backprop_slope;
 
     bool use_dropout;
     double dropout_probability;
@@ -47,7 +47,7 @@ class GenomeProperty {
     int32_t get_backprop_iterations();
     int32_t get_backprop_min();
     int32_t get_backprop_max();
-    int32_t get_backprop_slope();
+    float get_backprop_slope();
     float get_backprop_exponent();
     string get_backprop_iterations_type();
 };
