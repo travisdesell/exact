@@ -12,8 +12,6 @@ OUTPUT_PARAMETERS="Main_Flm_Int"
 
 export BP_MIN
 export BP_MAX
-export INPUT_PARAMETERS
-export OUTPUT_PARAMETERS
 
 echo
 echo "Preparing to submit many jobs..."
