@@ -238,7 +238,9 @@ int main(int argc, char** argv) {
     std::cout << "got rank " << rank << " and max rank " << max_rank << std::endl;
     arguments = vector<string>(argv, argv + argc);
     std::cout << "got arguments!" << std::endl;
-
+    for (int32_t i = 0; i < arguments.size(); i++) {
+	std::cout << "arguments[" << i << "]: '" << arguments[i] << "'" << std::endl;
+    }
     Log::initialize(arguments);
     Log::set_rank(rank);
     Log::set_id("main_" + to_string(rank));
