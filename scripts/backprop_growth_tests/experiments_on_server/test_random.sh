@@ -40,6 +40,4 @@ srun mpi/examm_mpi \
       --possible_node_types simple UGRNN MGU GRU delta LSTM \
       --save_genome_option the_best \
       --std_message_level INFO \
-      --file_message_level INFO \
-      --std_message_level DEBUG \
-      --file_message_level DEBUG
+      --file_message_level NONE
