@@ -26,7 +26,7 @@ CONST_BP_ITERS="0 1 2 4 8 16 32"
 for bpiter in $CONST_BP_ITERS; do
   echo "=== const: bp_iterations=$bpiter ==="
   for i in $(seq 1 $RUNS); do
-    exp_name="../test_output/line_grid_search/coal_mpi_bp_sweep/const/bp_iter_${bpiter}/run_${i}"
+    exp_name="/home/dv6943/exact/test_output/line_grid_search/coal_mpi_bp_sweep/const/bp_iter_${bpiter}/run_${i}"
     mkdir -p "$exp_name"
     echo "Run ${i}/${RUNS}: $exp_name"
 
