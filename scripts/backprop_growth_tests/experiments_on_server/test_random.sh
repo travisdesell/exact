@@ -10,10 +10,13 @@
 #SBATCH --mem-per-cpu=10g		# Memory per CPU
 #SBATCH --gres=gpu:a100:1
 
-source /home/dv6943/new_env/bin/activate
-spack load gcc/lhqcen5
-spack load libtiff/gnxev37
-spack load openmpi/xcunp5q
+# source /home/dv6943/new_env/bin/activate
+#module load module_future
+#module load openmpi-1.10-x86_64
+# spack load gcc/lhqcen5
+# spack load cmake/pbddesj
+# spack load libtiff/gnxev37
+# spack load openmpi/xcunp5q
 
 cd /home/dv6943/exact/build
 

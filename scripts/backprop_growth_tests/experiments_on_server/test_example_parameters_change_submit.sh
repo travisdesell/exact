@@ -1,6 +1,4 @@
 #!/bin/sh
-
-# Number of runs can be provided as the first argument, defaults to 10
 RUNS=${1:-10}
 
 # Global BP bounds
