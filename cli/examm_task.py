@@ -12,7 +12,7 @@ class ExammTask(ConfigToArg):
         for path in paths:
             a = a + glob.glob(path)
         return list(set(a))
-
+    ALL_ITER_TYPES = ["scaled", "rand", "acc", "const"]
     ALL_NODE_TYPES = [ 'simple', 'UGRNN', 'MGU', 'GRU', 'delta', 'LSTM' , 'ENARC' ]
     CONFIG_OPTIONS = {
             "training_files":       lambda self, x: ['--training_filenames'] + ExammTask.glob_to_all(x),
@@ -23,7 +23,13 @@ class ExammTask(ConfigToArg):
             "n_islands":            lambda self, x: ['--number_islands', str(x)],
             "population_size":      lambda self, x: ['--population_size', str(x)],
             "max_genomes":          lambda self, x: ['--max_genomes', str(x)],
+            "max_wallclock_seconds":lambda self, x: ['--max_wallclock_seconds', str(x)],
             "bp_iterations":        lambda self, x: ['--bp_iterations', str(x)],
+            "backprop_iterations_type": lambda self, x: ['--backprop_iterations_type', str(x)],
+            "bp_min":               lambda self, x: ['--bp_min', str(x)],
+            "bp_max":               lambda self, x: ['--bp_max', str(x)],
+            "bp_exponent":          lambda self, x: ['--bp_exponent', str(x)],
+            "bp_slope":             lambda self, x: ['--bp_slope', str(x)],
             "output_directory":     lambda self, x: ['--output_directory', str(x)],
             "node_types":           lambda self, x: ['--possible_node_types'] + list(map(str, x)),
             "rec":                  lambda self, x: RecArgs(x, self.filename).to_args(),
@@ -47,7 +53,13 @@ class ExammTask(ConfigToArg):
             "n_islands":            {int},
             "population_size":      {int},
             "max_genomes":          {int},
+            "max_wallclock_seconds":{int},
             "bp_iterations":        {int},
+            "backprop_iterations_type": {str},
+            "bp_min":               {int},
+            "bp_max":               {int},
+            "bp_exponent":          {float},
+            "bp_slope":             {float},
             "output_directory":     {str},
             "node_types":           {list},
             # Subsections should be of type dict
@@ -69,7 +81,13 @@ class ExammTask(ConfigToArg):
             "n_islands":            (lambda self: self.n_islands > 0, "must be a positive integer"),
             "population_size":      (lambda self: self.population_size > 0, "must be a positive integer"),
             "max_genomes":          (lambda self: self.max_genomes > 0, "must be a positive integer"),
+            "max_wallclock_seconds": (lambda self: self.max_wallclock_seconds > 0, "must be a positive integer (seconds)"),
             "bp_iterations":        (lambda self: self.bp_iterations >= 0, "must be a non-negative integer"),
+            "backprop_iterations_type": (lambda self: self.backprop_iterations_type in ExammTask.ALL_ITER_TYPES, "must be scaled, rand, or const" ),
+            "bp_min":               (lambda self: self.bp_min >= 0, "must be a non-negative integer"),
+            "bp_max":               (lambda self: self.bp_max >= 0, "must be a non-negative integer"),
+            "bp_exponent":          (lambda self: True, ""),
+            "bp_slope":             (lambda self: self.bp_slope > 0.0, "must be a positive floating point number"),
             "output_directory":     (lambda self: True, "must be a valid path"),
             "node_types":           (lambda self: self.all_strings(self.node_types) \
                                                 and set(self.node_types).issubset(set(ExammTask.ALL_NODE_TYPES)),
