@@ -7,7 +7,7 @@
 #SBATCH --error=%x_%a_%j.err
 #SBATCH --partition=tier3
 #SBATCH -n 18
-#SBATCH --mem-per-cpu=10g		# Memory per CPU
+#SBATCH --mem-per-cpu=100g		# Memory per CPU
 #SBATCH --gres=gpu:a100:1
 
 #module load module_future
@@ -20,10 +20,11 @@
 # spack load openmpi/xcunp5q
 
 cd /home/dv6943/exact/build
-
-INPUT_PARAMETERS="Conditioner_Inlet_Temp Conditioner_Outlet_Temp Coal_Feeder_Rate Primary_Air_Flow Primary_Air_Split System_Secondary_Air_Flow_Total Secondary_Air_Flow Secondary_Air_Split Tertiary_Air_Split Total_Comb_Air_Flow Supp_Fuel_Flow Main_Flm_Int"
+INPUT_PARAMETERS="Conditioner_Inlet_Temp Conditioner_Outlet_Temp Coal_Feeder_Rate Primary_Air_Flow Primary_Air_Split System_Secondary_Air_Flow_Total Secondary_Air_Flow Secondary_Air_Split Tertiary_Air_Sxplit Total_Comb_Air_Flow Supp_Fuel_Flow Main_Flm_Int">
 OUTPUT_PARAMETERS="Main_Flm_Int"
-
+BP_MIN=0
+BP_MAX=50
+bpiter=5
 srun mpi/examm_mpi \
     --training_filenames /home/dv6943/exact/datasets/2018_coal/burner_[0-9].csv --validation_filenames /home/dv6943/exact/datasets/2018_coal/burner_1[0-1].csv \
     --time_offset 1 \
