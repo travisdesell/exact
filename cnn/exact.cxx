@@ -114,6 +114,7 @@ EXACT::EXACT(int exact_id) {
         genomes_generated = atoi(row[++column]);
         inserted_genomes = atoi(row[++column]);
         max_genomes = atoi(row[++column]);
+        max_wallclock_seconds = atoi(row[++column]);
 
         reset_weights = atoi(row[++column]);
         max_epochs = atoi(row[++column]);
