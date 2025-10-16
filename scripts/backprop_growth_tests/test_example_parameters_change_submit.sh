@@ -35,7 +35,7 @@ for bpiter in $CONST_BP_ITERS; do
 
     jobname=test_const_$bpiter_$i
     sbatch --job-name=$jobname $jobfile
-    
+
   done
 done
 
@@ -60,7 +60,7 @@ for pair in "4 12" "0 16" "12 20" "8 24" "28 36" "24 40"; do
 
     jobname=test_random_$bpmin_$bpmax
     sbatch --job-name=$jobname $jobfile
-    
+
   done
 done
 
@@ -83,7 +83,7 @@ for a in $SCALED_A_VALUES; do
 
         jobname=test_scaled_$a_$b
         sbatch --job-name=$jobname $jobfile
-      
+
     done
   done
 done
