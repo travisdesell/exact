@@ -20,7 +20,7 @@ echo
 # =============================
 # const: vary bp_iterations
 # =============================
-cd /home/dv6943/exact/scripts/backprop_growth_tests/experiments_on_server
+cd /home/dv6943/exact/scripts/backprop_growth_tests
 jobfile=test_const.sh
 CONST_BP_ITERS="0 1 2 4 8 16 32"
 for bpiter in $CONST_BP_ITERS; do

@@ -7,11 +7,7 @@
 #SBATCH --error=%x_%a_%j.err
 #SBATCH --partition=tier3
 #SBATCH -n 18
-#SBATCH --mem-per-cpu=10g		# Memory per CPU
-#SBATCH --gres=gpu:a100:1
-
-# source /home/dv6943/new_env/bin/activate
-#module load module_future
+#SBATCH --mem-per-cpu=100g
 #module load openmpi-1.10-x86_64
 # spack load gcc/lhqcen5
 # spack load cmake/pbddesj
