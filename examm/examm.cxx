@@ -427,11 +427,6 @@ void EXAMM::save_visualization_json(RNN_Genome* genome, string genome_name) {
 // write function to save genomes to file
 void EXAMM::save_genome(RNN_Genome* genome, string genome_name = "rnn_genome") {
     genome->write_graphviz(output_directory + "/" + genome_name + "_" + to_string(genome->get_generation_id()) + ".gv");
-    if (!output_directory.empty() && output_directory.front() == '/') {
-        std::cerr << "Warning: output_directory starts with '/', stripping it: " 
-                  << output_directory << "\n";
-        output_directory.erase(0, 1); // remove the leading '/'
-    }
     ofstream equations_filestream(
         output_directory + "/" + genome_name + "_" + to_string(genome->get_generation_id()) + ".txt"
     );

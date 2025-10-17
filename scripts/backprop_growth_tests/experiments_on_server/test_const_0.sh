@@ -6,13 +6,14 @@
 #SBATCH --output=%n_%x_%j.out
 #SBATCH --error=%x_%a_%j.err
 #SBATCH --partition=tier3
-#SBATCH -n 18
+#SBATCH -n 36
 #SBATCH --mem-per-cpu=10g
 
 # spack load cmake/pbddesj
 # spack load gcc/lhqcen5
 # spack load libtiff/gnxev37
 # spack load openmpi/xcunp5q
+export GLIBCXX_DEBUG_BACKTRACE=1
 BP_MIN=0
 BP_MAX=50
 INPUT_PARAMETERS="Conditioner_Inlet_Temp Conditioner_Outlet_Temp Coal_Feeder_Rate Primary_Air_Flow Primary_Air_Split System_Secondary_Air_Flow_Total Secondary_Air_Flow Secondary_Air_Split Tertiary_Air_Split Total_Comb_Air_Flow Supp_Fuel_Flow Main_Flm_Int"
