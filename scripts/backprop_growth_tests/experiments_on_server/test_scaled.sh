@@ -7,12 +7,7 @@
 #SBATCH --error=%x_%a_%j.err
 #SBATCH --partition=tier3
 #SBATCH -n 18
-#SBATCH --mem-per-cpu=100g		# Memory per CPU
-#SBATCH --gres=gpu:a100:1
-
-# source /home/dv6943/new_env/bin/activate
-#module load module_future
-#module load openmpi-1.10-x86_64
+#SBATCH --mem-per-cpu=1g
 # spack load gcc/lhqcen5
 # spack load cmake/pbddesj
 # spack load libtiff/gnxev37
@@ -20,7 +15,7 @@
 
 cd /home/dv6943/exact/build
 
-srun mpi/examm_mpi \
+time srun mpi/examm_mpi \
     --training_filenames /home/dv6943/exact/datasets/2018_coal/burner_[0-9].csv --validation_filenames /home/dv6943/exact/datasets/2018_coal/burner_1[0-1].csv \
     --time_offset 1 \
     --input_parameter_names $INPUT_PARAMETERS \
