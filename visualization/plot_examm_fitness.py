@@ -56,7 +56,14 @@ base_directories = natsorted(base_directories, alg=ns.IGNORECASE)
 print("sorted base directories:")
 print(base_directories)
 
-colors = ["red", "darkblue", "lightblue", "green", "purple", "plum", "orange", "grey", "darkgrey", "pink", "magenta", "cyan", "lightgreen", "tomato", "chocolate", "saddlebrown", "peachpuff", "yellowgreen", "orchid", "mediumpurple", "seagreen", "palevioletred"]
+#colors = ["red", "darkblue", "lightblue", "green", "purple", "plum", "orange", "grey", "darkgrey", "pink", "magenta", "cyan", "lightgreen", "tomato", "chocolate", "saddlebrown", "peachpuff", "yellowgreen", "orchid", "mediumpurple", "seagreen", "palevioletred"]
+colors = [
+    "red", "green", "blue", "yellow", "orange", "purple", "pink", "brown", "black", "white",
+    "gray", "cyan", "magenta", "lime", "maroon", "navy", "olive", "teal", "aqua", "silver",
+    "gold", "beige", "coral", "crimson", "indigo", "ivory", "khaki", "lavender", "mintcream", "orchid",
+    "plum", "salmon", "sienna", "tan", "thistle", "tomato", "turquoise", "violet", "wheat", "azure",
+    "chartreuse", "chocolate", "firebrick", "forestgreen", "fuchsia", "gainsboro", "honeydew", "hotpink", "lightblue", "rosybrown"
+]
 current_fold = 0
 fig, ax = plt.subplots(1, figsize=(20,10))
 
@@ -236,7 +243,7 @@ plt.ylim(ymax = y_max, ymin = y_min)
 
 
 ax.set_title(chart_title)
-ax.legend(loc = 'upper right')
+#ax.legend(loc = 'upper right')
 
 if x_type == "time":
     ax.set_xlabel('Wallclock Time (seconds)')
