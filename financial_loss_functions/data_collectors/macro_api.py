@@ -1,4 +1,5 @@
 import os
+import pandas as pd
 from typing import Dict
 from fredapi import Fred
 from dotenv import load_dotenv
@@ -18,17 +19,21 @@ class FredAPI:
             required_series (Dict[str, str]): A dictionary of required series data with their name and key
         """
         self.fred = Fred(api_key)
+        self.required_series = required_series
 
-    def get_historical_data(self, series_id, from_date):
+    def get_historical_data(self, series_id: str, from_date:str) -> pd.Series:
         data = self.fred.get_series(series_id, observation_start=from_date)
         print(f'Historical data for {series_id} pulled.')
         return data
     
     def pull_macro_data(self):
+        """
+        Loops to pull all required series data from Fred API and stores them into file(s)
+        """
 
         all_series_list = []
         
-        for name, id in self.series_ids.items():
+        for name, id in self.required_series.items():
             hist_data = self.get_historical_data(id, self.default_start_date)
 
             all_series_list.append(all_series_list)
