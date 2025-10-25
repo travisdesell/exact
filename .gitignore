@@ -10,3 +10,6 @@ __pycache__/*
 *.pyc
 visualization/plots/*
 test_output/*
+
+# Environment files
+.env
