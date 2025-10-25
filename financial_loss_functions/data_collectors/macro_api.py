@@ -4,7 +4,7 @@ from typing import Dict
 from fredapi import Fred
 from dotenv import load_dotenv
 
-load_dotenv("../../.env", override=True)
+load_dotenv("../../.env")
 
 
 class FredAPI:
@@ -27,13 +27,13 @@ class FredAPI:
         return data
     
     def set_default_start_date(self, date: str):
-            """
-            Setter function to set a default start date for pulling macro-economic data
-            
-            Parameters:
-                date (str): date string in ISO format. e.g., '2000-01-01'
-            """
-            self.default_start_date = date
+        """
+        Setter function to set a default start date for pulling macro-economic data
+        
+        Parameters:
+            date (str): date string in ISO format. e.g., '2000-01-01'
+        """
+        self.default_start_date = date
 
     def pull_macro_data(self):
         """
@@ -54,7 +54,9 @@ class FredAPI:
 
 if __name__ == '__main__':
     # TODO: Add other indicators and their series ids from fred api
-    series_ids = {'Consumer Price Index for All Urban Consumers': 'CPIAUCSL'}
+    series_ids = {
+        'Consumer Price Index for All Urban Consumers': 'CPIAUCSL'
+    }
     
     macro_api = FredAPI(os.getenv('FRED_KEY'), series_ids)
     macro_api.pull_macro_data()

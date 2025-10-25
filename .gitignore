@@ -13,3 +13,6 @@ test_output/*
 
 # Environment files
 .env
+
+# Dataset directories
+financial_loss_functions/data
