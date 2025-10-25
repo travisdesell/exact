@@ -3,25 +3,27 @@ import pandas as pd
 from typing import Dict
 from fredapi import Fred
 from dotenv import load_dotenv
+from const import BASE_SERIES_DICT
 
 load_dotenv("../../.env")
 
 
 class FredAPI:
-    default_start_date = '2000-01-01' # Match first available date from CRSP
+    default_start_date = '2007-01-01' # Match first available date from CRSP
     
-    def __init__(self, api_key: str, required_series: Dict[str, str]):
+    def __init__(self, api_key: str, category_name: str, required_series: Dict[str, str]):
         """
         Initialize object to pull macro-economic data from Fred API
 
         Parameters:
             api_key (str): API Key for the Fred API account
+            category_name (str): Name of the category of macro-economic data being requested
             required_series (Dict[str, str]): A dictionary of required series data with their name and key
         """
         self.fred = Fred(api_key)
         self.required_series = required_series
 
-    def get_historical_data(self, series_id: str, from_date:str) -> pd.Series:
+    def _get_historical_data(self, series_id: str, from_date:str) -> pd.Series:
         data = self.fred.get_series(series_id, observation_start=from_date)
         print(f'Historical data for {series_id} pulled.')
         return data
@@ -35,7 +37,7 @@ class FredAPI:
         """
         self.default_start_date = date
 
-    def pull_macro_data(self):
+    def pull_category_data(self):
         """
         Loops to pull all required series data from Fred API and stores them into file(s)
         """
@@ -43,9 +45,10 @@ class FredAPI:
         all_series_list = []
         
         for name, id in self.required_series.items():
-            hist_data = self.get_historical_data(id, self.default_start_date)
+            hist_data = self._get_historical_data(id, self.default_start_date)
 
             all_series_list.append(all_series_list)
+            print(name, "-" * 10)
             print(hist_data)
 
         # TODO:
@@ -57,6 +60,13 @@ if __name__ == '__main__':
     series_ids = {
         'Consumer Price Index for All Urban Consumers': 'CPIAUCSL'
     }
-    
-    macro_api = FredAPI(os.getenv('FRED_KEY'), series_ids)
-    macro_api.pull_macro_data()
+
+    macro_api = FredAPI(os.getenv('FRED_KEY'), None , series_ids) # None for test
+    macro_api.pull_category_data()
+
+
+
+    # For other indicators
+    # for category, series_ids in BASE_SERIES_DICT.items():
+    #     macro_api = FredAPI(os.getenv('FRED_KEY'), series_ids)
+    #     macro_api.pull_category_data()
