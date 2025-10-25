@@ -1,0 +1,4 @@
+dotenv>=0.9.9
+fredapi>=0.5.2
+numpy>=2.3.4
+pandas>=2.3.3

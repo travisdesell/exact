@@ -8,7 +8,7 @@ load_dotenv("../../.env", override=True)
 
 
 class FredAPI:
-    default_start_date = '2000-01-01'
+    default_start_date = '2000-01-01' # Match first available date from CRSP
     
     def __init__(self, api_key: str, required_series: Dict[str, str]):
         """
@@ -26,6 +26,15 @@ class FredAPI:
         print(f'Historical data for {series_id} pulled.')
         return data
     
+    def set_default_start_date(self, date: str):
+            """
+            Setter function to set a default start date for pulling macro-economic data
+            
+            Parameters:
+                date (str): date string in ISO format. e.g., '2000-01-01'
+            """
+            self.default_start_date = date
+
     def pull_macro_data(self):
         """
         Loops to pull all required series data from Fred API and stores them into file(s)
@@ -37,17 +46,14 @@ class FredAPI:
             hist_data = self.get_historical_data(id, self.default_start_date)
 
             all_series_list.append(all_series_list)
+            print(hist_data)
 
-    def set_default_start_date(self, date: str):
-        """
-        Setter function to set a default start date for pulling macro-economic data
-        
-        Parameters:
-            date (str): date string in ISO format. e.g., '2000-01-01'
-        """
-        self.default_start_date = date
+        # TODO:
+        # 1. Combine all pd.Series
+        # 2. Save the to file(s), save to data folder
 
 if __name__ == '__main__':
+    # TODO: Add other indicators and their series ids from fred api
     series_ids = {'Consumer Price Index for All Urban Consumers': 'CPIAUCSL'}
     
     macro_api = FredAPI(os.getenv('FRED_KEY'), series_ids)
