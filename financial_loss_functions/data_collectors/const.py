@@ -1,3 +1,4 @@
+# File to Store Series ids from Fred API
 BASE_SERIES_LIST = [
     # Group 1: Output & income (mostly Δlog):contentReference[oaicite:11]{index=11}
     ("Output & Income", "RPI", 5, "Real Personal Income"),
