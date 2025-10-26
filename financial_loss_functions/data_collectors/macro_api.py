@@ -13,6 +13,7 @@ load_dotenv("../../.env")
 class FredAPI:
     default_start_date = '2007-01-01' # Match first available date from CRSP
     requests_per_min = 120 # Rate limit
+    retry_wait = 30 # Retry wait time
     
     def __init__(
             self, api_key: str,
@@ -34,7 +35,6 @@ class FredAPI:
         self.data_dir = data_dir
 
         self.interval = 60 / self.requests_per_min
-        self.retry_wait = 30 # Retry wait time
 
     def set_default_start_date(self, date: str):
         """
