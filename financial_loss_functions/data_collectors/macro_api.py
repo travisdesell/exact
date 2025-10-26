@@ -1,4 +1,5 @@
 import os
+import time
 import pandas as pd
 from fredapi import Fred
 from typing import Dict, List
@@ -11,6 +12,7 @@ load_dotenv("../../.env")
 
 class FredAPI:
     default_start_date = '2007-01-01' # Match first available date from CRSP
+    requests_per_min = 120 # Rate limit
     
     def __init__(
             self, api_key: str,
@@ -31,11 +33,9 @@ class FredAPI:
         self.required_series = required_series
         self.data_dir = data_dir
 
-    def _get_historical_data(self, series_id: str, from_date:str) -> pd.Series:
-        data = self.fred.get_series(series_id, observation_start=from_date)
-        data = data.rename(series_id)
-        return data
-    
+        self.interval = 60 / self.requests_per_min
+        self.retry_wait = 30 # Retry wait time
+
     def set_default_start_date(self, date: str):
         """
         Setter function to set a default start date for pulling macro-economic data
@@ -44,6 +44,20 @@ class FredAPI:
             date (str): date string in ISO format. e.g., '2000-01-01'
         """
         self.default_start_date = date
+    
+    def set_rate_limit(self, requests_per_min: int):
+        """
+        Setter function to set number of requests per minute
+
+        Parameters:
+            requests_per_minute (int): number of requests per minute allowed
+        """
+        self.requests_per_min = requests_per_min
+
+    def _get_historical_data(self, series_id: str, from_date:str) -> pd.Series:
+        data = self.fred.get_series(series_id, observation_start=from_date)
+        data = data.rename(series_id)
+        return data
 
     def _combine_save_to_csv(self, series_list: List[pd.Series], output_path: str):
         category_df = pd.concat(series_list, axis=1, sort=True)
@@ -59,9 +73,22 @@ class FredAPI:
         
         for name, id in self.required_series.items():
             hist_data = self._get_historical_data(id, self.default_start_date)
-            print(f'Pulled data for {name}, {id}.')
 
-            all_series_list.append(hist_data)
+            # Retry if rate limit is hit
+            if hist_data.empty or hist_data is None:
+                print(
+                    f'Rate limit hit for {name}, {id}!! Waiting for {self.retry_wait} seconds...'
+                )
+                time.sleep(self.retry_wait)
+                hist_data = self._get_historical_data(id, self.default_start_date)
+
+            time.sleep(self.interval) # Regular interval time between requests
+            if not hist_data.empty:
+                print(f'Pulled data for {name}, {id}.')
+                all_series_list.append(hist_data)
+            else:
+                print(f'Data for {name}, {id}, not pulled. Skipping!!')
+                continue
         
         output_path = os.path.join(self.data_dir, self.category_name)
         self._combine_save_to_csv(all_series_list, output_path)
@@ -86,15 +113,15 @@ def data_dir_check(macro_path: str):
     return run_permission
 
 if __name__ == '__main__':
-    print('\n=' * 20, ' Fred API Macro-Economic Data Pipeline ', '=' * 20)
+    print('\n','=' * 20, ' Fred API Macro-Economic Data Pipeline ', '=' * 20)
     api_key = os.getenv('FRED_KEY')
     macro_data_dir = os.path.join(os.getenv('DATA_DIR'), 'macro')
 
     # To ask user permission before overwriting data
     if data_dir_check(macro_data_dir):
-        # series = {
+        # series_ids = {
         #     'category': {
-        #     'Consumer Price Index for All Urban Consumers': 'CPIAUCSL'
+        #     'Consumer Price Index for All Urban Consumers': 'CPIAUCSL' # Only for testing
         #     }
         # }
         for category, series_ids in BASE_SERIES_DICT.items():
