@@ -3,7 +3,7 @@
 # TODO: Verify Series ids, some are incorrect
 
 BASE_SERIES_DICT = {
-    'Output & Income': {
+    'Output_Income': {
         'Capacity Utilization: Manufacturing': 'CUMFNS',
         'IP: Business Equipment': 'IPBUSEQ',
         'IP: Consumer Goods': 'IPCONGD',
@@ -22,7 +22,7 @@ BASE_SERIES_DICT = {
         'Real Personal Income': 'RPI',
         'Real Personal Income Excluding Transfers': 'W875RX1'
     },
-    'Labor Market': {
+    'Labor_Market': {
         'All Employees: Construction': 'USCONS',
         'All Employees: Durable Goods': 'DMANEMP',
         'All Employees: Financial Activities': 'USFIRE',
@@ -60,7 +60,7 @@ BASE_SERIES_DICT = {
         'Permits: South': 'PERMITS',
         'Permits: West': 'PERMITW'
     },
-    'Consumption/Orders/Inventories': {
+    'Consumption_Orders_Inventories': {
         'Consumer Sentiment Index': 'UMCSENT',
         'ISM Inventories Index': 'NAPMII',
         'ISM New Orders Index': 'NAPMNOI',
@@ -76,7 +76,7 @@ BASE_SERIES_DICT = {
         'Total Business Inventories': 'BUSINV',
         'Unfilled Orders: Durable Goods': 'AMDMUO'
     },
-    'Money & Credit': {
+    'Money_Credit': {
         'Adjusted Monetary Base': 'AMBSL',
         'Commercial & Industrial Loans': 'BUSLOANS',
         'Consumer Motor Vehicle Loans': 'DTCOLNVHFNM',
@@ -91,7 +91,7 @@ BASE_SERIES_DICT = {
         'Total Nonrevolving Credit': 'NONREVSL',
         'Total Reserves': 'TOTRESNS'
     },
-    'Rates/FX': {
+    'Rates_FX': {
         '1-Year Treasury': 'GS1',
         '10-Year Treasury': 'GS10',
         '3-Month AA Financial Commercial Paper (post-1997)': 'CPF3M',
@@ -131,7 +131,7 @@ BASE_SERIES_DICT = {
         'PPI: Intermediate Materials': 'PPIITM',
         'PPI: Metals & Metal Products': 'PPICMM'
     },
-    'Stock Market': {
+    'Stock_Market': {
         'S&P 500 (daily -> monthly avg)': 'SP500',
         'S&P 500 Dividend Yield': 'SPDIVY',
         'Shiller CAPE P/E Ratio': 'CAPE'

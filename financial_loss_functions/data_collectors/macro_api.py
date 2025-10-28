@@ -72,17 +72,23 @@ class FredAPI:
         all_series_list = []
         
         for name, id in self.required_series.items():
-            hist_data = self._get_historical_data(id, self.default_start_date)
-
-            # Retry if rate limit is hit
-            if hist_data.empty or hist_data is None:
-                print(
-                    f'Rate limit hit for {name}, {id}!! Waiting for {self.retry_wait} seconds...'
-                )
-                time.sleep(self.retry_wait)
+            try:
                 hist_data = self._get_historical_data(id, self.default_start_date)
 
-            time.sleep(self.interval) # Regular interval time between requests
+                # Retry if rate limit is hit
+                if hist_data.empty or hist_data is None:
+                    print(
+                        f'Rate limit hit for {name}, {id}!! Waiting for {self.retry_wait} seconds...'
+                    )
+                    time.sleep(self.retry_wait)
+                    hist_data = self._get_historical_data(id, self.default_start_date)
+                
+                time.sleep(self.interval) # Regular interval time between requests
+            
+            except Exception as e:
+                print(f'Error while pulling data for: {name}, {id}. Exception:', e)
+                continue
+
             if not hist_data.empty:
                 print(f'Pulled data for {name}, {id}.')
                 all_series_list.append(hist_data)
@@ -119,11 +125,6 @@ if __name__ == '__main__':
 
     # To ask user permission before overwriting data
     if data_dir_check(macro_data_dir):
-        # series_ids = {
-        #     'category': {
-        #     'Consumer Price Index for All Urban Consumers': 'CPIAUCSL' # Only for testing
-        #     }
-        # }
         for category, series_ids in BASE_SERIES_DICT.items():
             macro_api = FredAPI(api_key, category, series_ids, macro_data_dir) 
             macro_api.pull_category_data()
