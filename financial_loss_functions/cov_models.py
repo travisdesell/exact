@@ -1,3 +1,5 @@
+#### -------------------- All Covariance based Models -------------------- ####
+
 import numpy as np
 import pandas as pd
 from typing import Optional, Tuple
@@ -16,6 +18,8 @@ except Exception:
 from scipy.optimize import minimize
 
 
+# ---------- Naive Minimum Variance Portfolio ---------- #
+# Uses vectors of zeros for q_vec (expected returns)
 def naive_mvp(cov: pd.DataFrame|np.ndarray) -> np.array:
     """
     Naive Implmentation of Minimum Variance Portfolio
@@ -214,7 +218,9 @@ class GlobalMinimumVariance(BaseQuadraticOptimizer):
         small ridge added to diagonal of covariance to stabilize inversion
     """
 
-    def __init__(self, allow_short: bool = False, solver: str = "auto", reg: float = 1e-8):
+    def __init__(
+            self, allow_short: bool = False, solver: str = "auto", reg: float = 1e-8
+        ):
         super().__init__(solver=solver)
         self.allow_short = bool(allow_short)
         self.reg = float(reg)

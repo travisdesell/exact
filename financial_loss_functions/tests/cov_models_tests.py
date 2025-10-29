@@ -5,7 +5,7 @@ import pandas as pd
 sys.path.append("..")
 import cov_models
 
-def GMVP(cov):
+def gvmp(cov):
     # Global Minimum Variance - long-only
     gm = cov_models.GlobalMinimumVariance(allow_short=False)
     gm_weights = gm.calculate_weights(cov)
@@ -20,12 +20,20 @@ def naive_MVP(cov):
     mvp_weights = cov_models.naive_mvp(cov)
     print('Naive MVP:', mvp_weights)
 
+def hrp(cov, corr):
+    hrp = cov_models.HierarchialRiskParity()
+    hrp_weights = hrp.calculate_weights(cov, corr)
+    print('HRP (single):\n', hrp_weights)
+
 
 if __name__ == '__main__':
     np.random.seed(42)
     returns = pd.DataFrame(np.random.randn(500, 4) * 0.01, columns=list("ABCD"))
     cov = returns.cov()
+    corr = returns.corr()
     
-    GMVP(cov)
+    gvmp(cov)
 
     naive_MVP(cov)
+
+    hrp(cov, corr)
