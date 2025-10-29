@@ -64,15 +64,17 @@ class BaseQuadraticOptimizer:
              bounds on x (optional)
     """
 
-    def __init__(self, solver: str = 'auto', reg: float = 1e-8):
+    def __init__(self, solver: str = 'auto', reg: float|str = 1e-8):
         """
         Parameters
         ----------
         solver: str
             'auto' | 'cvxopt' | 'scipy'
-        
-        reg: float
-            small ridge added to diagonal of covariance to stabilize inversion
+
+        reg: float | 'auto'
+            small ridge added to diagonal of covariance to stabilize inversion.
+            - If float >= 0: used as ridge added to diagonal of P.
+            - If 'auto': ridge = eps * trace(P)/n where eps = 1e-8 (safe default).
         """
         self.solver = solver
         self.reg = reg
@@ -95,6 +97,21 @@ class BaseQuadraticOptimizer:
             return np.linalg.inv(mat)
         except np.linalg.LinAlgError:
             return np.linalg.inv(mat + self.reg * np.eye(mat.shape[0]))
+
+    def _compute_ridge(self, P: np.ndarray) -> float:
+        """Return numeric ridge to add to P based on self.reg."""
+        if isinstance(self.reg, str) and self.reg == 'auto':
+            # scale by matrix size and trace so ridge is relative to magnitude of P
+            eps = 1e-8
+            tr = float(np.trace(P))
+            n = P.shape[0]
+            # if trace is zero (degenerate), fallback to eps
+            if tr == 0.0:
+                return eps
+            return eps * (tr / n)
+        else:
+            # ensure numeric
+            return float(self.reg)
 
     def _qp_solve(
             self,
@@ -132,9 +149,13 @@ class BaseQuadraticOptimizer:
             (n,), success (bool)
         """
         P = self._ensure_symmetry(P)
-        P = P + self.reg * np.eye(P.shape[0])
         q = np.asarray(q, dtype=float).flatten()
         n = P.shape[0]
+
+        # compute and apply ridge
+        ridge = self._compute_ridge(P)
+        if ridge != 0.0:
+            P = P + ridge * np.eye(n)
 
         # Check to use cvxopt or not
         use_cvx = (self.solver == 'cvxopt') or (
