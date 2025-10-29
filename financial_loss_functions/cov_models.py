@@ -109,26 +109,26 @@ class BaseQuadraticOptimizer:
         """
         Solve QP using CVXOPT if available (and requested) else SciPy SLSQP.
 
-        Paramaters
+        Parameters
         ----------
-        P : np.ndarray 
+        P: np.ndarray 
             (n,n) symmetric positive semidef
-        q : np.ndarray
+        q: np.ndarray
             (n,) vector
-        A : np.ndarray | None
+        A: np.ndarray | None
             (m_eq, n) equality matrix
-        b : np.ndarray | None
+        b: np.ndarray | None
             (m_eq,) equality RHS
-        G : np.ndarray | None
+        G: np.ndarray | None
             (m_ineq, n) inequality matrix (G x <= h)
-        h : np.ndarray | None
+        h: np.ndarray | None
             (m_ineq,) inequality RHS
-        bounds : Tuple[Tuple[float, float], ...] | None 
+        bounds: Tuple[Tuple[float, float], ...] | None 
             tuple of (low, high) per variable or None
 
         Returns
         -------
-        x : Tuple[np.ndarray, bool]
+        x: Tuple[np.ndarray, bool]
             (n,), success (bool)
         """
         P = self._ensure_symmetry(P)
@@ -208,6 +208,18 @@ class BaseQuadraticOptimizer:
         if not res.success:
             return (res.x if res.x is not None else x0), False
         return res.x, True
+
+    def set_ridge(self, reg: float):
+        """
+        Setter function to set a small ridge to diagonal of
+        covariance to stabilize inversion
+        
+        Parameters
+        ----------
+        reg: float
+            small ridge added to diagonal of covariance to stabilize inversion
+        """
+        self.reg = reg
 
 # ---------- Global Minimum Variance Portfolio ---------- #
 class GlobalMinimumVariance(BaseQuadraticOptimizer):
