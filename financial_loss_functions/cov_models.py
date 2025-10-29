@@ -64,11 +64,18 @@ class BaseQuadraticOptimizer:
              bounds on x (optional)
     """
 
-    def __init__(self, solver: str = 'auto'):
+    def __init__(self, solver: str = 'auto', reg: float = 1e-8):
         """
-        solver: 'auto' | 'cvxopt' | 'scipy'
+        Parameters
+        ----------
+        solver: str
+            'auto' | 'cvxopt' | 'scipy'
+        
+        reg: float
+            small ridge added to diagonal of covariance to stabilize inversion
         """
         self.solver = solver
+        self.reg = reg
         self._cvx_available = CVXOPT_AVAILABLE
 
     @staticmethod
@@ -82,13 +89,12 @@ class BaseQuadraticOptimizer:
             return mat.values
         return np.asarray(mat, dtype=float)
 
-    @staticmethod
-    def _safe_inv(mat: np.ndarray, ridge: float = 1e-8) -> np.ndarray:
+    def _safe_inv(self, mat: np.ndarray) -> np.ndarray:
         """Inverse with tiny ridge for numerical stability."""
         try:
             return np.linalg.inv(mat)
         except np.linalg.LinAlgError:
-            return np.linalg.inv(mat + ridge * np.eye(mat.shape[0]))
+            return np.linalg.inv(mat + self.reg * np.eye(mat.shape[0]))
 
     def _qp_solve(
             self,
@@ -126,6 +132,7 @@ class BaseQuadraticOptimizer:
             (n,), success (bool)
         """
         P = self._ensure_symmetry(P)
+        P = P + self.reg * np.eye(P.shape[0])
         q = np.asarray(q, dtype=float).flatten()
         n = P.shape[0]
 
@@ -219,11 +226,10 @@ class GlobalMinimumVariance(BaseQuadraticOptimizer):
     """
 
     def __init__(
-            self, allow_short: bool = False, solver: str = "auto", reg: float = 1e-8
+            self, allow_short: bool = False, solver: str = 'auto'
         ):
         super().__init__(solver=solver)
         self.allow_short = bool(allow_short)
-        self.reg = float(reg)
 
         # fitted attrs
         self.cov_ = None
@@ -235,9 +241,6 @@ class GlobalMinimumVariance(BaseQuadraticOptimizer):
         Fit GMVP. Provide one of cov
         """
         cov_mat = self._to_numpy(cov)
-
-        cov_mat = self._ensure_symmetry(cov_mat)
-        cov_mat = cov_mat + self.reg * np.eye(cov_mat.shape[0])
         self.cov_ = cov_mat
 
         n = cov_mat.shape[0]
@@ -280,6 +283,8 @@ class GlobalMinimumVariance(BaseQuadraticOptimizer):
         if self.weights is None:
             raise ValueError('Estimator not fit -  call `calculate_weights(...) first.`')
         return self.weights
+
+
 
 
 # ---------- Hierarchial Risk Parity Clustering ---------- #
