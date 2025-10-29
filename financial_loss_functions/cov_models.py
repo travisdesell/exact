@@ -1,27 +1,35 @@
-import os
-import sys
-import time
 import numpy as np
 import pandas as pd
-from typing import Dict, List
-from sklearn.cluster import KMeans
+from typing import Optional, Tuple
 from scipy.optimize import minimize
-from pandas.tseries.offsets import BDay
 from scipy.cluster.hierarchy import linkage
-from sklearn.neighbors import KernelDensity
 from scipy.spatial.distance import squareform
-from sklearn.metrics import silhouette_samples
+
+# Try cvxopt; fallback to scipy
+try:
+    import cvxopt as opt
+    from cvxopt import matrix, solvers
+    CVXOPT_AVAILABLE = True
+except Exception:
+    CVXOPT_AVAILABLE = False
+
+from scipy.optimize import minimize
 
 
-import numpy as np
-import cvxopt as opt
-from cvxopt import blas, solvers
+def naive_mvp(cov: pd.DataFrame|np.ndarray) -> np.array:
+    """
+    Naive Implmentation of Minimum Variance Portfolio
 
-import numpy as np
-import cvxopt as opt
-from cvxopt import blas, solvers
-
-def getMVP(cov):
+    Paramaters
+    ----------
+    cov : pd.DataFrame | np.array
+        Covariance matrix of the returns
+    
+    Returns
+    -------
+    w : np.array
+        Weights of the portfolio
+    """
     cov = np.array(cov)
     n = cov.shape[0]
 
@@ -40,7 +48,236 @@ def getMVP(cov):
     return np.array(sol['x']).flatten()
 
 
-class HRP:
+# ---------- Base Quadratic Optimizer ---------- #
+class BaseQuadraticOptimizer:
+    """
+    Shared quadratic-solver utilities.
+
+    Solves problems of the form:
+        minimize 0.5 x^T P x + q^T x
+        s.t. A x = b   (equality)
+             G x <= h   (inequality)
+             bounds on x (optional)
+    """
+
+    def __init__(self, solver: str = 'auto'):
+        """
+        solver: 'auto' | 'cvxopt' | 'scipy'
+        """
+        self.solver = solver
+        self._cvx_available = CVXOPT_AVAILABLE
+
+    @staticmethod
+    def _ensure_symmetry(mat: np.ndarray) -> np.ndarray:
+        mat = np.asarray(mat, dtype=float)
+        return 0.5 * (mat + mat.T)
+
+    @staticmethod
+    def _to_numpy(mat):
+        if isinstance(mat, pd.DataFrame):
+            return mat.values
+        return np.asarray(mat, dtype=float)
+
+    @staticmethod
+    def _safe_inv(mat: np.ndarray, ridge: float = 1e-8) -> np.ndarray:
+        """Inverse with tiny ridge for numerical stability."""
+        try:
+            return np.linalg.inv(mat)
+        except np.linalg.LinAlgError:
+            return np.linalg.inv(mat + ridge * np.eye(mat.shape[0]))
+
+    def _qp_solve(
+            self,
+            P: np.ndarray,
+            q: np.ndarray,
+            A: Optional[np.ndarray] = None,
+            b: Optional[np.ndarray] = None,
+            G: Optional[np.ndarray] = None,
+            h: Optional[np.ndarray] = None,
+            bounds: Optional[Tuple[Tuple[float, float], ...]] = None
+        ) -> Tuple[np.ndarray, bool]:
+        """
+        Solve QP using CVXOPT if available (and requested) else SciPy SLSQP.
+
+        Paramaters
+        ----------
+        P : np.ndarray 
+            (n,n) symmetric positive semidef
+        q : np.ndarray
+            (n,) vector
+        A : np.ndarray | None
+            (m_eq, n) equality matrix
+        b : np.ndarray | None
+            (m_eq,) equality RHS
+        G : np.ndarray | None
+            (m_ineq, n) inequality matrix (G x <= h)
+        h : np.ndarray | None
+            (m_ineq,) inequality RHS
+        bounds : Tuple[Tuple[float, float], ...] | None 
+            tuple of (low, high) per variable or None
+
+        Returns
+        -------
+        x : Tuple[np.ndarray, bool]
+            (n,), success (bool)
+        """
+        P = self._ensure_symmetry(P)
+        q = np.asarray(q, dtype=float).flatten()
+        n = P.shape[0]
+
+        # Check to use cvxopt or not
+        use_cvx = (self.solver == 'cvxopt') or (
+            self.solver == 'auto' and self._cvx_available
+        )
+
+        if use_cvx and self._cvx_available:
+            # Build CVXOPT matrices (must be double, cvxopt.matrix)
+            Pmat = matrix(P)
+            qmat = matrix(q)
+            Amat = matrix(A) if (A is not None) else None
+            bmat = matrix(b) if (b is not None) else None
+            Gmat = matrix(G) if (G is not None) else None
+            hmat = matrix(h) if (h is not None) else None
+
+            solvers.options["show_progress"] = False
+            try:
+                if Gmat is None:
+                    sol = solvers.qp(Pmat, qmat, None, None, Amat, bmat)
+                else:
+                    sol = solvers.qp(Pmat, qmat, Gmat, hmat, Amat, bmat)
+                x = np.array(sol["x"]).flatten()
+                success = (('status' not in sol) or sol['status'] == 'optimal')
+                return x, success
+            except Exception as e:
+                # fall back to scipy if cvxopt call fails
+                print('Error with cvxopt, falling back to scipy.', e)
+                pass
+
+        # SciPy SLSQP fallback formulation: minimize 0.5 x' P x + q' x
+        x0 = np.ones(n) / n
+
+        cons = []
+        if A is not None and b is not None:
+            # equality constraints
+            A = np.atleast_2d(A)
+            b = np.asarray(b).flatten()
+            # each row of A is equality: sum A_i * x = b_i
+            for row, val in zip(A, b):
+                cons.append(
+                    {
+                        'type': 'eq',
+                        'fun': lambda x,
+                        row=row,
+                        val=val: float(np.dot(row, x) - val)
+                    }
+                )
+
+        if G is not None and h is not None:
+            G = np.atleast_2d(G)
+            h = np.asarray(h).flatten()
+            for row, val in zip(G, h):
+                # inequality: row @ x <= val  =>  val - row @ x >= 0
+                cons.append(
+                    {
+                        'type': 'ineq',
+                        'fun': lambda x,
+                        row=row,
+                        val=val: float(val - np.dot(row, x))
+                    }
+                )
+
+        # bounds as provided or None
+        # objective
+        def obj(x):
+            return 0.5 * float(x @ P @ x) + float(np.dot(q, x))
+
+        # scipy minimize
+        res = minimize(obj, x0, method="SLSQP", bounds=bounds, constraints=cons,
+                       options={"ftol": 1e-12, "maxiter": 2000})
+        if not res.success:
+            return (res.x if res.x is not None else x0), False
+        return res.x, True
+
+# ---------- Global Minimum Variance Portfolio ---------- #
+class GlobalMinimumVariance(BaseQuadraticOptimizer):
+    """
+    Global Minimum-Variance Portfolio estimator.
+
+    Parameters
+    ----------
+    allow_short: bool
+        If True, allow negative weights and use analytic formula w ∝ Σ^{-1} 1.
+        If False (default), enforce long-only and solve a QP.
+    solver: str
+        'auto' | 'cvxopt' | 'scipy' (passed to BaseQuadraticOptimizer)
+    reg: float
+        small ridge added to diagonal of covariance to stabilize inversion
+    """
+
+    def __init__(self, allow_short: bool = False, solver: str = "auto", reg: float = 1e-8):
+        super().__init__(solver=solver)
+        self.allow_short = bool(allow_short)
+        self.reg = float(reg)
+
+        # fitted attrs
+        self.cov_ = None
+        self.weights = None
+        self.success_ = False
+
+    def calculate_weights(self, cov: np.ndarray) -> np.ndarray:
+        """
+        Fit GMVP. Provide one of cov
+        """
+        cov_mat = self._to_numpy(cov)
+
+        cov_mat = self._ensure_symmetry(cov_mat)
+        cov_mat = cov_mat + self.reg * np.eye(cov_mat.shape[0])
+        self.cov_ = cov_mat
+
+        n = cov_mat.shape[0]
+        ones = np.ones(n)
+
+        # analytic unconstrained solution
+        if self.allow_short:
+            inv = self._safe_inv(cov_mat)
+            raw = inv @ ones
+            w = raw / (ones @ raw)
+            self.weights = w
+            self.success_ = True
+            return self.weights
+
+        # long-only: QP solve: minimize 0.5 x' Σ x  s.t. 1^T x = 1, x >= 0
+        P = cov_mat
+        q = np.zeros(n)
+        A = ones.reshape(1, -1)
+        b = np.array([1.0])
+        G = -np.eye(n)  # -I x <= 0  =>  x >= 0
+        h = np.zeros(n)
+        bounds = tuple((0.0, 1.0) for _ in range(n))
+
+        x, success = self._qp_solve(P=P, q=q, A=A, b=b, G=G, h=h, bounds=bounds)
+        x = np.asarray(x, dtype=float)
+        if not np.isclose(x.sum(), 1.0):
+            if np.isclose(x.sum(), 0.0):
+                x = np.ones_like(x) / n
+            else:
+                x = x / x.sum()
+        self.weights = x
+        self.success_ = bool(success)
+        return self.weights
+
+    def get_weights(self) -> np.ndarray:
+        """
+        Getter function to get weights for a portfolio that have been 
+        estimated by running `calculate_weights(...)`
+        """
+        if self.weights is None:
+            raise ValueError('Estimator not fit -  call `calculate_weights(...) first.`')
+        return self.weights
+
+
+# ---------- Hierarchial Risk Parity Clustering ---------- #
+class HierarchialRiskParity:
     """
     Implementation of Hierarchial Risk Parity Clustering
     """
@@ -50,11 +287,13 @@ class HRP:
 
         Paramaters
         ----------
-        linkage : str
-            Linkage method to be used for hierarchial clustering. 'single', 'average', 'complete',
-            'ward', 'centroid','mean' or 'median'. 
+        linkage : (str)
+            Linkage method to be used for hierarchial clustering. 'single', 'average',
+            'complete', 'ward', 'centroid','mean' or 'median'. 
         """
         self.linkage = linkage
+
+        self.weights = None
     
     def _correlDist(self, corr):
         # A distance matrix based on correlation, where 0<=d[i,j]<=1
@@ -113,21 +352,9 @@ class HRP:
                 w[cItems1] *= 1 - alpha  # weight 2
         return w
 
-    def _get_hrp(self, cov, corr):
-        # Construct a hierarchical portfolio
-        if len(cov) > 1:
-            dist = self._correlDist(corr)
-            condensed_dist = squareform(dist)
-            link = linkage(condensed_dist, self.linkage)
-
-            sortIx = self._getQuasiDiag(link)
-            sortIx = corr.index[sortIx].tolist()
-            hrp = self._getRecBipart(cov, sortIx)
-        else:
-            hrp = pd.Series(1.0, index=cov.index)
-        return hrp.sort_index()
-    
-    def fit(self, cov: pd.DataFrame, corr: pd.DataFrame) -> pd.Series:
+    def calculate_weights(
+            self, cov: pd.DataFrame, corr: pd.DataFrame
+        ) -> pd.Series:
         """
         Hierachial Risk Parity Clustering for portfolio optimization.
         
@@ -142,4 +369,26 @@ class HRP:
             weights : pd.Series
                 optimized weights for the portfolio out of 1 (not 100)
         """
-        return self._get_hrp(cov, corr)
+        # Construct a hierarchical portfolio
+        if len(cov) > 1:
+            dist = self._correlDist(corr)
+            condensed_dist = squareform(dist)
+            link = linkage(condensed_dist, self.linkage)
+
+            sortIx = self._getQuasiDiag(link)
+            sortIx = corr.index[sortIx].tolist()
+            hrp = self._getRecBipart(cov, sortIx)
+        else:
+            hrp = pd.Series(1.0, index=cov.index)
+        
+        self.weights = hrp.sort_index()
+        return self.weights
+    
+    def get_weights(self):
+        """
+        Getter function to get weights for a portfolio that have been 
+        estimated by running `calculate_weights(...)`
+        """
+        if self.weights is None:
+            raise('Estimator not fit -  call `calculate_weights(...) first.`')
+        return self.weights
