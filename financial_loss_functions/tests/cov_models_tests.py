@@ -25,10 +25,25 @@ def hrp(cov, corr):
     hrp_weights = hrp.calculate_weights(cov, corr)
     print('HRP (single):\n', hrp_weights)
 
+def mean_var(cov, returns):
+    mean_var = cov_models.MeanVariancePortfolio(
+        expected_returns_method='arithmetic'
+    )
+
+    arth_weights = mean_var.calculate_weights(cov, returns)
+    print('Mean-Variance Using Arithmetic Mean Expected Eeturns:', arth_weights)
+
+    mean_var = cov_models.MeanVariancePortfolio(
+        expected_returns_method='geometric'
+    )
+
+    arth_weights = mean_var.calculate_weights(cov, returns)
+    print('Mean-Variance Using Geometric Mean Expected Eeturns:', arth_weights)
+
 
 if __name__ == '__main__':
     np.random.seed(42)
-    returns = pd.DataFrame(np.random.randn(500, 4) * 0.01, columns=list("ABCD"))
+    returns = pd.DataFrame(np.random.randn(500, 4) * 0.01, columns=['A', 'B', 'C', 'D'])
     cov = returns.cov()
     corr = returns.corr()
     
@@ -37,3 +52,5 @@ if __name__ == '__main__':
     naive_MVP(cov)
 
     hrp(cov, corr)
+
+    mean_var(cov, returns)

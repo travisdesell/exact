@@ -246,21 +246,21 @@ class BaseQuadraticOptimizer:
 class GlobalMinimumVariance(BaseQuadraticOptimizer):
     """
     Global Minimum-Variance Portfolio estimator.
-
-    Parameters
-    ----------
-    allow_short: bool
-        If True, allow negative weights and use analytic formula w ∝ Σ^{-1} 1.
-        If False (default), enforce long-only and solve a QP.
-    solver: str
-        'auto' | 'cvxopt' | 'scipy' (passed to BaseQuadraticOptimizer)
-    reg: float
-        small ridge added to diagonal of covariance to stabilize inversion
     """
 
     def __init__(
             self, allow_short: bool = False, solver: str = 'auto'
         ):
+        """
+        Parameters
+        ----------
+        allow_short: bool
+            If True, allow negative weights and use analytic formula w ∝ Σ^{-1} 1.
+            If False (default), enforce long-only and solve a QP.
+        solver: str ('auto'|'cvxopt'|'scipy') 
+            Solver library to use. Checks if cvxopt is available by default
+            (passed to BaseQuadraticOptimizer).
+        """
         super().__init__(solver=solver)
         self.allow_short = bool(allow_short)
 
@@ -318,6 +318,196 @@ class GlobalMinimumVariance(BaseQuadraticOptimizer):
         return self.weights
 
 
+# ---------- Mean-Variance Portfolio (with internal expected-returns calc) ---------- #
+class MeanVariancePortfolio(BaseQuadraticOptimizer):
+    """
+    Mean-Variance Portfolio (Markowitz) that optionally computes expected returns.
+
+    Solves:
+        minimize  0.5 w^T Σ w  -  risk_aversion * μ^T w
+        subject to: 1^T w = 1, w >= 0 (if allow_short=False)
+    """
+    def __init__(
+            self,
+            expected_returns_method: str|None = None,
+            risk_aversion: float = 1.0,
+            allow_short: bool = False,
+            solver: str = 'auto',
+        ):
+        """
+        Parameters
+        ---------
+        expected_returns_method: None | 'arithmetic' | 'geometric'
+            If None -> caller must pass expected_returns to calculate_weights().
+            If 'arithmetic' or 'geometric' -> caller must pass `returns` (obs x assets)
+               to calculate_weights() and μ will be computed from those returns.
+        risk_aversion: float
+        allow_short : bool
+        solver : str ('auto'|'cvxopt'|'scipy')
+        """
+        super().__init__(solver=solver)
+        if expected_returns_method is not None:
+            method = expected_returns_method.lower()
+            if method not in ('arithmetic', 'geometric'):
+                raise ValueError("expected_returns_method must be None, 'arithmetic' or 'geometric'")
+            self.expected_returns_method = method
+        else:
+            self.expected_returns_method = None
+
+        self.risk_aversion = risk_aversion
+        self.allow_short = allow_short
+
+        # fitted attributes
+        self.cov_ = None
+        self.expected_returns_ = None
+        self.weights = None
+        self.success_ = False
+
+    # -------------------------
+    # expected returns calculators
+    # -------------------------
+    def _arith_mean_from_returns(self, returns):
+        """Per-period arithmetic mean (returns: DataFrame or 2D ndarray)"""
+        if isinstance(returns, np.ndarray):
+            R = returns
+        else:
+            # assume pandas DataFrame-like
+            R = np.asarray(returns)
+        if R.ndim != 2:
+            raise ValueError("returns must be 2-D (obs x assets)")
+        return np.nanmean(R, axis=0)
+
+    def _geom_mean_from_returns(self, returns):
+        """Per-period geometric mean: (prod(1+r))^(1/n) - 1"""
+        if isinstance(returns, np.ndarray):
+            R = returns
+        else:
+            R = np.asarray(returns)
+        if R.ndim != 2:
+            raise ValueError("returns must be 2-D (obs x assets)")
+        # handle nan by using nanprod/nancount equivalent
+        one_plus = np.prod(1.0 + R, axis=0)
+        n_obs = R.shape[0]
+        # geometric mean per period
+        gm = one_plus ** (1.0 / n_obs) - 1.0
+        return gm
+
+    def calculate_weights(
+            self,
+            cov: np.ndarray,
+            returns: np.ndarray|None = None,
+            expected_returns: np.ndarray|None = None
+        ) -> np.ndarray:
+        """
+        Compute mean-variance weights. Either returns or expected_returns is required
+
+        Parameters
+        ----------
+        cov : (n,n) covariance matrix
+        returns : (obs, n) optional - used to compute expected_returns if the constructor
+                  set expected_returns_method to 'arithmetic' or 'geometric'
+        expected_returns : (n,) optional - if provided it will be used directly
+
+        Returns
+        -------
+        weights : np.ndarray shape (n,)
+        """
+        cov_mat = self._to_numpy(cov)
+        self.cov_ = cov_mat
+        
+        n = cov_mat.shape[0]
+        ones = np.ones(n)
+
+        # Determine expected returns vector mu
+        if expected_returns is not None:
+            mu = np.asarray(expected_returns, dtype=float).flatten()
+        else:
+            if self.expected_returns_method is None:
+                raise ValueError(
+                    'expected_returns not provided and expected_returns_method is None.'
+                    'Either pass expected_returns or set expected_returns_method in constructor.'
+                )
+            
+            # expected_returns_method is set -> returns must be provided
+            if returns is None:
+                raise ValueError(
+                    'returns must be provided to compute expected returns when expected_returns_method is set.'
+                )
+            # allow pandas DataFrame or ndarray
+            if not isinstance(returns, np.ndarray):
+                try:
+                    # If it's a DataFrame-like with .values
+                    returns_arr = np.asarray(returns)
+                except Exception:
+                    raise ValueError('returns must be array-like (obs x assets)')
+            else:
+                returns_arr = returns
+
+            if self.expected_returns_method == 'arithmetic':
+                mu = self._arith_mean_from_returns(returns_arr)
+            elif self.expected_returns_method == 'geometric':  # geometric
+                mu = self._geom_mean_from_returns(returns_arr)
+
+        mu = np.asarray(mu, dtype=float).flatten()
+        if mu.shape[0] != n:
+            raise ValueError('expected_returns length does not match covariance dimension')
+
+        self.expected_returns_ = mu
+
+        # build linear term q such that the QP is 0.5 w^T Σ w + q^T w
+        # we want min 0.5 w'Σw - gamma * mu' w  =>  q = - gamma * mu
+        q = - self.risk_aversion * mu
+
+        # If shorting allowed -> analytic closed-form (use Lagrange multiplier to enforce sum=1)
+        if self.allow_short:
+            Sigma_inv = self._safe_inv(self.cov_)
+            a = ones @ (Sigma_inv @ ones)
+            b = ones @ (Sigma_inv @ mu)
+            gamma = float(self.risk_aversion)
+            lam = (gamma * b - 1.0) / a
+            x = Sigma_inv @ (gamma * mu - lam * ones)
+            x = np.asarray(x, dtype=float)
+            # numerical normalization just in case
+            if not np.isclose(x.sum(), 1.0):
+                if np.isclose(x.sum(), 0.0):
+                    x = np.ones(n) / n
+                else:
+                    x = x / x.sum()
+            self.weights = x
+            self.success_ = True
+            return self.weights
+
+        # Otherwise enforce long-only by QP: 1^T x = 1, x >= 0
+        P = self.cov_
+        A = ones.reshape(1, -1)
+        b = np.array([1.0])
+        G = -np.eye(n)
+        h = np.zeros(n)
+        bounds = tuple((0.0, 1.0) for _ in range(n))
+
+        x, success = self._qp_solve(P=P, q=q, A=A, b=b, G=G, h=h, bounds=bounds)
+        x = np.asarray(x, dtype=float)
+
+        # numerical normalization
+        if not np.isclose(x.sum(), 1.0):
+            if np.isclose(x.sum(), 0.0):
+                x = np.ones_like(x) / n
+            else:
+                x = x / x.sum()
+
+        self.weights = x
+        self.success_ = bool(success)
+        return self.weights
+
+    def get_weights(self) -> np.ndarray:
+        if self.weights is None:
+            raise ValueError('Estimator not fit - call `calculate_weights(...)` first.')
+        return self.weights
+
+    def get_expected_returns(self) -> np.ndarray:
+        if self.expected_returns_ is None:
+            raise ValueError('Expected returns not computed/available.')
+        return self.expected_returns_.copy()
 
 
 # ---------- Hierarchial Risk Parity Clustering ---------- #
