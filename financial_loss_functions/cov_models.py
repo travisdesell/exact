@@ -92,15 +92,25 @@ class BaseQuadraticOptimizer:
         return np.asarray(mat, dtype=float)
 
     def _safe_inv(self, mat: np.ndarray) -> np.ndarray:
-        """Inverse with tiny ridge for numerical stability."""
-        try:
-            return np.linalg.inv(mat)
-        except np.linalg.LinAlgError:
-            return np.linalg.inv(mat + self.reg * np.eye(mat.shape[0]))
+        """
+        Numerically safe inverse that:
+        - ensures symmetry,
+        - computes numeric ridge via _compute_ridge,
+        - returns inverse of (mat + ridge * I).
+        """
+        mat = self._ensure_symmetry(mat)
+        ridge = self._compute_ridge(mat)
+        # Always add the ridge: it's tiny and makes inversion stable and consistent.
+        if ridge != 0.0:
+            mat_r = mat + ridge * np.eye(mat.shape[0])
+        else:
+            mat_r = mat
+        # Now inverting matrix
+        return np.linalg.inv(mat_r)
 
     def _compute_ridge(self, P: np.ndarray) -> float:
         """Return numeric ridge to add to P based on self.reg."""
-        if isinstance(self.reg, str) and self.reg == 'auto':
+        if isinstance(self.reg, str) and str(self.reg.lower()) == 'auto':
             # scale by matrix size and trace so ridge is relative to magnitude of P
             eps = 1e-8
             tr = float(np.trace(P))
@@ -363,34 +373,27 @@ class MeanVariancePortfolio(BaseQuadraticOptimizer):
         self.weights = None
         self.success_ = False
 
-    # -------------------------
     # expected returns calculators
-    # -------------------------
     def _arith_mean_from_returns(self, returns):
         """Per-period arithmetic mean (returns: DataFrame or 2D ndarray)"""
-        if isinstance(returns, np.ndarray):
-            R = returns
-        else:
-            # assume pandas DataFrame-like
-            R = np.asarray(returns)
-        if R.ndim != 2:
+        if returns.ndim != 2:
             raise ValueError("returns must be 2-D (obs x assets)")
-        return np.nanmean(R, axis=0)
+        return np.nanmean(returns, axis=0)
 
     def _geom_mean_from_returns(self, returns):
-        """Per-period geometric mean: (prod(1+r))^(1/n) - 1"""
-        if isinstance(returns, np.ndarray):
-            R = returns
-        else:
-            R = np.asarray(returns)
-        if R.ndim != 2:
-            raise ValueError("returns must be 2-D (obs x assets)")
-        # handle nan by using nanprod/nancount equivalent
-        one_plus = np.prod(1.0 + R, axis=0)
-        n_obs = R.shape[0]
-        # geometric mean per period
-        gm = one_plus ** (1.0 / n_obs) - 1.0
+        """
+        Geometric mean per-period using log1p to avoid overflow and handle NaNs:
+        gm = exp(mean(log1p(returns))) - 1
+        """
+        if returns.ndim != 2:
+            raise ValueError('returns must be 2-D (obs x assets)')
+        # compute mean of logs ignoring NaNs
+        with np.errstate(divide='ignore', invalid='ignore'):
+            log1p = np.log1p(returns)
+            mean_log = np.nanmean(log1p, axis=0)
+            gm = np.expm1(mean_log)  # exp(mean_log)-1
         return gm
+
 
     def calculate_weights(
             self,
