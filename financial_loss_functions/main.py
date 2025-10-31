@@ -1,53 +1,27 @@
 import os
-import pandas as pd
-from typing import Tuple
 from dotenv import load_dotenv
+from cov_models import HierarchialRiskParity
+from preprocess import load_crsp_datasets, clean_data_returns, preprocess_cov
 
-load_dotenv("../.env")
-
-
-def load_datasets(dir_path: str)-> Tuple[
-    pd.DataFrame, pd.DataFrame, pd.DataFrame
-]:
-    """
-    Load all datasets from a directory which are split into train, validation and test.
-
-    Parameters
-    ----------
-    dir_path : str
-        Path to directory where the data is stored.
-    
-    Returns
-    -------
-    train_data : pd.DataFrame
-        Train data
-    val_data : pd.DataFrame
-        Validation data
-    test_data : pd.DataFrame
-        Test data
-    """
-    train_path = os.path.join(dir_path, '2023_sp_500_select_50', 'combined_parameters_train.csv')
-    val_path = os.path.join(dir_path, '2023_sp_500_select_50', 'combined_parameters_validation.csv')
-    test_path = os.path.join(dir_path, '2023_sp_500_select_50', 'combined_parameters_test.csv')
-    
-    # Load split datasets
-    train_data = pd.read_csv(train_path)
-
-    val_data = pd.read_csv(val_path)
-
-    test_data = pd.read_csv(test_path)
-    return train_data, val_data, test_data
-
+load_dotenv()
 
 if __name__ == '__main__':
+    # -------------------- Data Loading -------------------- #
     data_dir = os.getenv('DATA_DIR')
-    train_data, val_data, test_data = load_datasets(data_dir)
 
-    print('Test Data:')
-    print(train_data)
+    crsp_path = os.path.join(data_dir, '2023_sp_500_select_50')
+    train_data, val_data, test_data = load_crsp_datasets(crsp_path)
 
-    print('Validation Data:')
-    print(val_data)
+    # -------------------- Cleaning & Processing -------------------- #
+    train_ret, val_ret, test_ret = clean_data_returns(
+        train_data,
+        val_data,
+        test_data
+    )
 
-    print('Test Data:')
-    print(test_data)
+    cov, corr = preprocess_cov(train_ret)
+
+    # -------------------- Modeling -------------------- #
+    hrp = HierarchialRiskParity()
+    weights = hrp.calculate_weights(cov, corr)
+    print(weights * 100)

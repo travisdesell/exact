@@ -522,9 +522,9 @@ class HierarchialRiskParity:
         """
         Initialize Hierarchial Risk Parity Clustering using given hyperparameters.
 
-        Paramaters
+        Parameters
         ----------
-        linkage : (str)
+        linkage : str
             Linkage method to be used for hierarchial clustering. 'single', 'average',
             'complete', 'ward', 'centroid','mean' or 'median'. 
         """
