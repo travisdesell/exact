@@ -1,10 +1,8 @@
 import os
 import pytest
 import pandas as pd
-from dotenv import load_dotenv
 from data_collectors.macro_api import FredAPI
 
-load_dotenv()
 
 @pytest.mark.integration
 def test_pull_category_data_integration(tmp_path):
