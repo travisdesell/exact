@@ -7,9 +7,13 @@ copy_binary_osx.sh
 run.sh
 */__pycache__/*
 __pycache__/*
+__pycache__
 *.pyc
 visualization/plots/*
 test_output/*
+
+# Cache
+*/.pytest_cache
 
 # Environment files
 .env
