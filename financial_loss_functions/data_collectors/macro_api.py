@@ -30,7 +30,7 @@ class FredAPI:
         self.required_series = required_series
         self.data_dir = data_dir
 
-        self.interval = 60 / self.requests_per_min
+        self.interval = int(60 / self.requests_per_min)
 
     def set_default_start_date(self, date: str):
         """
