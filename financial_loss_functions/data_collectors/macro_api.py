@@ -30,7 +30,7 @@ class FredAPI:
         self.required_series = required_series
         self.data_dir = data_dir
 
-        self.interval = int(60 / self.requests_per_min)
+        self.interval = float(60 / self.requests_per_min)
 
     def set_default_start_date(self, date: str):
         """
@@ -49,6 +49,7 @@ class FredAPI:
             requests_per_minute (int): number of requests per minute allowed
         """
         self.requests_per_min = requests_per_min
+        self.interval = float(60 / self.requests_per_min)
 
     def _get_historical_data(self, series_id: str, from_date:str) -> pd.Series:
         data = self.fred.get_series(series_id, observation_start=from_date)
