@@ -77,7 +77,7 @@ class BaseQuadraticOptimizer:
             - If 'auto': ridge = eps * trace(P)/n where eps = 1e-8 (safe default).
         """
         self.solver = solver
-        self.reg = reg
+        self.reg = float(reg)
         self._cvx_available = CVXOPT_AVAILABLE
 
     @staticmethod
@@ -250,7 +250,7 @@ class BaseQuadraticOptimizer:
         reg: float
             small ridge added to diagonal of covariance to stabilize inversion
         """
-        self.reg = reg
+        self.reg = float(reg)
 
 # ---------- Global Minimum Variance Portfolio ---------- #
 class GlobalMinimumVariance(BaseQuadraticOptimizer):

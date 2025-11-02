@@ -1,7 +1,11 @@
 import pytest
 import numpy as np
 import pandas as pd
-from cov_models import HierarchialRiskParity, naive_mvp
+from cov_models import (
+    HierarchialRiskParity,
+    naive_mvp,
+    BaseQuadraticOptimizer
+)
 
 # -------------------- Fixtures -------------------- #
 @pytest.fixture
@@ -171,3 +175,20 @@ def test_naive_mvp_diagonal_cov():
 
     # All weights should be equal for identical variances
     np.testing.assert_allclose(weights, np.array([1/3, 1/3, 1/3]))
+
+# -------------------- BaseQuadraticOptimizer Tests -------------------- #
+@pytest.fixture
+def basequad():
+    """Create Base Quadratic Optimizer Instance"""
+    return BaseQuadraticOptimizer(solver='auto')
+
+def test_set_ridge(basequad):
+    # Using string as input
+    basequad.set_ridge('1e-6')
+
+    assert basequad.reg == float('1e-6'), 'String input should convert to float'
+
+    # Using float as input
+    basequad.set_ridge(float('1e-9'))
+
+    assert basequad.reg == float('1e-9'), 'Float input should set the ridge value'
