@@ -275,8 +275,8 @@ class GlobalMinimumVariance(BaseQuadraticOptimizer):
         self.allow_short = bool(allow_short)
 
         # fitted attrs
-        self.cov_ = None
-        self.weights = None
+        self.cov = None
+        self.weights_ = None
         self.success_ = False
 
     def calculate_weights(self, cov: np.ndarray) -> np.ndarray:
@@ -284,7 +284,7 @@ class GlobalMinimumVariance(BaseQuadraticOptimizer):
         Fit GMVP. Provide one of cov
         """
         cov_mat = self._to_numpy(cov)
-        self.cov_ = cov_mat
+        self.cov = cov_mat
 
         n = cov_mat.shape[0]
         ones = np.ones(n)
@@ -294,9 +294,9 @@ class GlobalMinimumVariance(BaseQuadraticOptimizer):
             inv = self._safe_inv(cov_mat)
             raw = inv @ ones
             w = raw / (ones @ raw)
-            self.weights = w
+            self.weights_ = w
             self.success_ = True
-            return self.weights
+            return self.weights_
 
         # long-only: QP solve: minimize 0.5 x' Σ x  s.t. 1^T x = 1, x >= 0
         P = cov_mat
@@ -314,18 +314,18 @@ class GlobalMinimumVariance(BaseQuadraticOptimizer):
                 x = np.ones_like(x) / n
             else:
                 x = x / x.sum()
-        self.weights = x
+        self.weights_ = x
         self.success_ = bool(success)
-        return self.weights
+        return self.weights_.copy()
 
     def get_weights(self) -> np.ndarray:
         """
         Getter function to get weights for a portfolio that have been 
         estimated by running `calculate_weights(...)`
         """
-        if self.weights is None:
+        if self.weights_ is None:
             raise ValueError('Estimator not fit -  call `calculate_weights(...) first.`')
-        return self.weights
+        return self.weights_.copy()
 
 
 # ---------- Mean-Variance Portfolio (with internal expected-returns calc) ---------- #
@@ -368,9 +368,9 @@ class MeanVariancePortfolio(BaseQuadraticOptimizer):
         self.allow_short = allow_short
 
         # fitted attributes
-        self.cov_ = None
+        self.cov = None
         self.expected_returns_ = None
-        self.weights = None
+        self.weights_ = None
         self.success_ = False
 
     # expected returns calculators
@@ -416,7 +416,7 @@ class MeanVariancePortfolio(BaseQuadraticOptimizer):
         weights : np.ndarray shape (n,)
         """
         cov_mat = self._to_numpy(cov)
-        self.cov_ = cov_mat
+        self.cov = cov_mat
         
         n = cov_mat.shape[0]
         ones = np.ones(n)
@@ -463,7 +463,7 @@ class MeanVariancePortfolio(BaseQuadraticOptimizer):
 
         # If shorting allowed -> analytic closed-form (use Lagrange multiplier to enforce sum=1)
         if self.allow_short:
-            Sigma_inv = self._safe_inv(self.cov_)
+            Sigma_inv = self._safe_inv(self.cov)
             a = ones @ (Sigma_inv @ ones)
             b = ones @ (Sigma_inv @ mu)
             gamma = float(self.risk_aversion)
@@ -476,12 +476,12 @@ class MeanVariancePortfolio(BaseQuadraticOptimizer):
                     x = np.ones(n) / n
                 else:
                     x = x / x.sum()
-            self.weights = x
+            self.weights_ = x
             self.success_ = True
-            return self.weights
+            return self.weights_
 
         # Otherwise enforce long-only by QP: 1^T x = 1, x >= 0
-        P = self.cov_
+        P = self.cov
         A = ones.reshape(1, -1)
         b = np.array([1.0])
         G = -np.eye(n)
@@ -498,14 +498,14 @@ class MeanVariancePortfolio(BaseQuadraticOptimizer):
             else:
                 x = x / x.sum()
 
-        self.weights = x
+        self.weights_ = x
         self.success_ = bool(success)
-        return self.weights
+        return self.weights_.copy()
 
     def get_weights(self) -> np.ndarray:
-        if self.weights is None:
+        if self.weights_ is None:
             raise ValueError('Estimator not fit - call `calculate_weights(...)` first.')
-        return self.weights
+        return self.weights_.copy()
 
     def get_expected_returns(self) -> np.ndarray:
         if self.expected_returns_ is None:
@@ -619,7 +619,7 @@ class HierarchialRiskParity:
             hrp = pd.Series(1.0, index=cov.index)
         
         self.weights = hrp.sort_index()
-        return self.weights
+        return self.weights.copy()
     
     def get_weights(self):
         """
@@ -628,4 +628,4 @@ class HierarchialRiskParity:
         """
         if self.weights is None:
             raise ValueError('Estimator not fit -  call `calculate_weights(...) first.`')
-        return self.weights
+        return self.weights.copy()

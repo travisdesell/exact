@@ -5,7 +5,8 @@ from cov_models import (
     HierarchialRiskParity,
     naive_mvp,
     BaseQuadraticOptimizer,
-    GlobalMinimumVariance
+    GlobalMinimumVariance,
+    MeanVariancePortfolio
 )
 
 # -------------------- Common Fixtures -------------------- #
@@ -358,7 +359,7 @@ def test_input_not_modified(sample_data):
     _ = gmvp.calculate_weights(in_cov)
     assert np.allclose(in_cov, cov)
 
-    assert np.allclose(gmvp.cov_, cov)
+    assert np.allclose(gmvp.cov, cov)
 
 def test_repeatability_short(sample_data):
     """Deterministic output: calling twice gives same result."""
@@ -375,3 +376,147 @@ def test_repeatability_no_short(gmvp, sample_data):
     w2 = gmvp.calculate_weights(cov)
     
     assert np.allclose(w1, w2)
+
+# -------------------- Mean Variance Tests -------------------- #
+def test_arith_mean_from_returns():
+    mvp = MeanVariancePortfolio()
+    # 2D returns array
+    returns = np.array([[0.01, 0.02], [0.03, -0.01]])
+    mu = mvp._arith_mean_from_returns(returns)
+    expected = np.nanmean(returns, axis=0)
+    np.testing.assert_allclose(mu, expected)
+
+def test_arith_mean_raises_on_1d_input():
+    mvp = MeanVariancePortfolio()
+    bad = np.array([0.01, 0.02])  # 1-D
+    with pytest.raises(ValueError):
+        mvp._arith_mean_from_returns(bad)
+
+def test_geom_mean_from_returns():
+    mvp = MeanVariancePortfolio()
+    returns = np.array([[0.01, 0.02], [0.03, -0.01]])
+    gm = mvp._geom_mean_from_returns(returns)
+    # compute expected: exp(mean(log1p(returns))) - 1
+    with np.errstate(divide='ignore', invalid='ignore'):
+        mean_log = np.nanmean(np.log1p(returns), axis=0)
+        expected = np.expm1(mean_log)
+    np.testing.assert_allclose(gm, expected)
+
+def test_geom_mean_handles_nans():
+    mvp = MeanVariancePortfolio()
+    returns = np.array([[0.01, np.nan], [np.nan, 0.02], [0.03, 0.01]])
+    gm = mvp._geom_mean_from_returns(returns)
+    # compute expected robustly
+    with np.errstate(divide='ignore', invalid='ignore'):
+        mean_log = np.nanmean(np.log1p(returns), axis=0)
+        expected = np.expm1(mean_log)
+    np.testing.assert_allclose(gm, expected, atol=1e-12)
+
+def test_geom_mean_raises_on_1d_input():
+    mvp = MeanVariancePortfolio()
+    bad = np.array([0.01, 0.02])  # 1-D
+    with pytest.raises(ValueError):
+        mvp._geom_mean_from_returns(bad)
+
+def test_calculate_weights_uses_arithmetic_mean(sample_data):
+    returns, cov, _ = sample_data
+    # Use DataFrame input for returns (class should accept DataFrame-like)
+    mvp = MeanVariancePortfolio(expected_returns_method='arithmetic')
+
+    # Run calculation (long-only QP path)
+    w = mvp.calculate_weights(cov=cov.values, returns=returns)  # returns may be DataFrame or ndarray
+
+    # expected mu computed via helper (call on numpy array to mirror internal behavior)
+    expected_mu = np.nanmean(returns.values, axis=0)
+    # stored expected_returns_ should match
+    np.testing.assert_allclose(mvp.get_expected_returns(), expected_mu, atol=1e-12)
+
+    # weight invariants
+    assert isinstance(w, np.ndarray)
+    assert np.isclose(w.sum(), 1.0)
+    assert np.all(w >= -1e-12)  # long-only non-negativity
+    assert mvp.success_ is True
+
+def test_calculate_weights_uses_geometric_mean(sample_data):
+    returns, cov, _ = sample_data
+    mvp = MeanVariancePortfolio(expected_returns_method='geometric')
+
+    w = mvp.calculate_weights(cov=cov.values, returns=returns)
+
+    # compute geometric mean same way as class: exp(mean(log1p(returns))) - 1
+    with np.errstate(divide='ignore', invalid='ignore'):
+        mean_log = np.nanmean(np.log1p(returns.values), axis=0)
+        expected_gm = np.expm1(mean_log)
+    
+    np.testing.assert_allclose(mvp.get_expected_returns(), expected_gm, atol=1e-12)
+
+    # weight invariants
+    assert isinstance(w, np.ndarray)
+    assert np.isclose(w.sum(), 1.0)
+    assert np.all(w >= -1e-12)
+    assert mvp.success_ is True
+
+def test_calculate_weights_raises_if_returns_missing_when_method_set(
+        sample_data
+    ):
+    _, cov, _ = sample_data
+    mvp = MeanVariancePortfolio(expected_returns_method='arithmetic')
+    with pytest.raises(ValueError):
+        mvp.calculate_weights(cov=cov, returns=None)  # returns required for arithmetic/geometric
+
+def test_error_when_no_expected_returns_and_method_none(sample_data):
+    _, cov, _ = sample_data
+    mvp = MeanVariancePortfolio(expected_returns_method=None)
+
+    # calling without expected_returns or returns should raise
+    with pytest.raises(ValueError):
+        mvp.calculate_weights(cov=cov)
+
+def test_expected_returns_length_mismatch_raises(sample_data):
+    _, cov, _ = sample_data
+    mvp = MeanVariancePortfolio(expected_returns_method=None)
+    wrong_mu = np.array([0.1, 0.2])  # length 2 but cov is 3x3
+    with pytest.raises(ValueError):
+        mvp.calculate_weights(cov=cov, expected_returns=wrong_mu)
+
+def test_expected_returns_length_mismatch(sample_data):
+    _, cov, _ = sample_data
+    mvp = MeanVariancePortfolio(expected_returns_method=None)
+
+    # pass expected_returns with wrong length
+    wrong_mu = np.array([0.1, 0.2])  # length 2 but cov is 3x3
+    with pytest.raises(ValueError):
+        mvp.calculate_weights(cov=cov, expected_returns=wrong_mu)
+
+
+def test_allow_short_analytic_solution_matches_properties(sample_data):
+    returns, cov, _ = sample_data
+    # provide expected returns explicitly so method doesn't need to compute
+    mu = np.nanmean(returns.values, axis=0)
+
+    mvp = MeanVariancePortfolio(expected_returns_method=None)
+
+    w = mvp.calculate_weights(cov=cov.values, expected_returns=mu)
+
+    # analytic solution: weights sum to 1, can be negative (shorting allowed), success True
+    assert np.isclose(w.sum(), 1.0, atol=1e-12)
+    assert isinstance(w, np.ndarray)
+    assert mvp.success_ is True
+
+def test_get_weights_and_expected_returns_before_fit_raise():
+    mvp = MeanVariancePortfolio()
+    with pytest.raises(ValueError):
+        mvp.get_weights()
+    with pytest.raises(ValueError):
+        mvp.get_expected_returns()
+
+def test_get_expected_returns_returns_copy(sample_data):
+    returns, cov, _ = sample_data
+    mvp = MeanVariancePortfolio(expected_returns_method='arithmetic')
+    mvp.calculate_weights(cov=cov, returns=returns)
+
+    # get_expected_returns should return a copy, modifying it shouldn't change internal state
+    mu_copy = mvp.get_expected_returns()
+    mu_copy[0] = 999.0
+    # internal expected_returns_ should remain original
+    assert mvp.expected_returns_[0] != 999.0
