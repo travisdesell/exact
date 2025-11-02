@@ -77,7 +77,7 @@ class BaseQuadraticOptimizer:
             - If 'auto': ridge = eps * trace(P)/n where eps = 1e-8 (safe default).
         """
         self.solver = solver
-        self.reg = float(reg)
+        self.reg = reg
         self._cvx_available = CVXOPT_AVAILABLE
 
     @staticmethod
@@ -240,14 +240,14 @@ class BaseQuadraticOptimizer:
             return (res.x if res.x is not None else x0), False
         return res.x, True
 
-    def set_ridge(self, reg: float):
+    def set_ridge(self, reg: float|str):
         """
         Setter function to set a small ridge to diagonal of
         covariance to stabilize inversion
         
         Parameters
         ----------
-        reg: float
+        reg: float|str
             small ridge added to diagonal of covariance to stabilize inversion
         """
         self.reg = float(reg)

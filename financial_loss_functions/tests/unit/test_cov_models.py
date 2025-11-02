@@ -7,12 +7,7 @@ from cov_models import (
     BaseQuadraticOptimizer
 )
 
-# -------------------- Fixtures -------------------- #
-@pytest.fixture
-def hrp():
-    """Create HRP instance"""
-    return HierarchialRiskParity()
-
+# -------------------- Common Fixtures -------------------- #
 @pytest.fixture
 def sample_data():
     # Deterministic synthetic returns so covariance ordering is predictable:
@@ -33,6 +28,12 @@ def sample_data():
 
     return returns, cov, corr
 
+# -------------------- HRP Tests -------------------- #
+@pytest.fixture
+def hrp():
+    """Create HRP instance"""
+    return HierarchialRiskParity()
+
 @pytest.fixture
 def sample_linkage():
     link = np.array([
@@ -42,7 +43,6 @@ def sample_linkage():
         ], dtype=float)
     return link
 
-# -------------------- HRP Tests -------------------- #
 def test_correlDist(hrp, sample_data):
     _, _, corr = sample_data
 
@@ -178,17 +178,97 @@ def test_naive_mvp_diagonal_cov():
 
 # -------------------- BaseQuadraticOptimizer Tests -------------------- #
 @pytest.fixture
-def basequad():
+def base_quad():
     """Create Base Quadratic Optimizer Instance"""
-    return BaseQuadraticOptimizer(solver='auto')
+    return BaseQuadraticOptimizer(solver='auto', reg='auto')
 
-def test_set_ridge(basequad):
+@pytest.fixture
+def simple_cov():
+    # Positive definite covariance matrix
+    return np.array([
+        [0.1, 0.02],
+        [0.02, 0.1]
+    ])
+
+@pytest.fixture
+def simple_q():
+    return np.array([0.0, 0.0])
+
+def test_ensure_symmetry(base_quad):
+    mat = np.array([[1., 2.],
+                    [3., 4.]])
+    sym = base_quad._ensure_symmetry(mat)
+
+    assert np.allclose(sym, np.array([[1., 2.5],
+                                      [2.5, 4.]]))
+    # Should be symmetric
+    assert np.allclose(sym, sym.T), 'Matrix Should be symmetric'
+
+def test_compute_ridge_auto(base_quad, simple_cov):
+    ridge = base_quad._compute_ridge(simple_cov)
+
+    trace = np.trace(simple_cov)
+    expected = 1e-8 * (trace / simple_cov.shape[0])
+
+    assert np.isclose(ridge, expected)
+    assert ridge > 0
+
+def test_compute_ridge_numeric(simple_cov):
+    base_quad = BaseQuadraticOptimizer(reg='1e-9')
+    ridge = base_quad._compute_ridge(simple_cov)
+    assert np.isclose(ridge, 1e-9)
+
+def test_safe_inv(base_quad, simple_cov):
+
+    inv = base_quad._safe_inv(simple_cov)
+
+    # inverse should be symmetric
+    assert np.allclose(inv, inv.T), 'Inverse should be symetric'
+
+    # Validate inverse property approximately: A * A^-1 = I
+    approx_identity = simple_cov @ inv
+    assert np.allclose(approx_identity, np.eye(2), atol=1e-6)
+
+def test_qp_solve_sum_to_one(base_quad, simple_cov, simple_q):
+    n = simple_cov.shape[0]
+    A = np.ones((1, n))
+    b = np.array([1.0])
+
+    x, success = base_quad._qp_solve(
+        P=simple_cov, 
+        q=simple_q,
+        A=A, 
+        b=b
+    )
+
+    assert success
+    assert np.isclose(np.sum(x), 1.0, atol=1e-6)
+
+def test_qp_solve_nonnegative(base_quad, simple_cov, simple_q):
+    n = simple_cov.shape[0]
+    A = np.ones((1, n))
+    b = np.array([1.0])
+
+    # x >= 0  ->  -I x <= 0
+    G = -np.eye(n)
+    h = np.zeros(n)
+
+    x, success = base_quad._qp_solve(
+        P=simple_cov,
+        q=simple_q,
+        A=A, b=b,
+        G=G, h=h
+    )
+
+    assert success
+    assert np.all(x >= -1e-8)  # numerical tolerance
+    assert np.isclose(np.sum(x), 1.0, atol=1e-6)
+
+def test_set_ridge(base_quad):
     # Using string as input
-    basequad.set_ridge('1e-6')
-
-    assert basequad.reg == float('1e-6'), 'String input should convert to float'
+    base_quad.set_ridge('1e-6')
+    assert base_quad.reg == float('1e-6'), 'String input should convert to float'
 
     # Using float as input
-    basequad.set_ridge(float('1e-9'))
-
-    assert basequad.reg == float('1e-9'), 'Float input should set the ridge value'
+    base_quad.set_ridge(0.001)
+    assert base_quad.reg == 0.001, 'Float input should set the ridge value'
