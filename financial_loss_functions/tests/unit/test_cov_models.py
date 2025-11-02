@@ -10,18 +10,23 @@ def hrp():
 
 @pytest.fixture
 def sample_data():
-    # synthetic returns for 3 assets over 100 periods
-    np.random.seed(42)
-    returns = pd.DataFrame(
-        np.random.randn(100, 3) * [0.1, 0.2, 0.15],  # asset vol differences
-        columns=['A', 'B', 'C']
-    )
+    # Deterministic synthetic returns so covariance ordering is predictable:
+    # A = low variance, C = medium variance, B = high variance
+    returns = pd.DataFrame({
+        'A': [0.001, -0.001, 0.002, -0.0015, 0.001],   # tiny moves -> low var
+        'B': [0.05, -0.04, 0.06, -0.05, 0.045],       # large moves -> high var
+        'C': [0.02, -0.015, 0.025, -0.02, 0.03],      # medium moves -> middle var
+    })
 
     cov = returns.cov()
     corr = returns.corr()
 
-    return returns, cov, corr
+    # Sanity assert inside fixture to ensure ordering we expect
+    vars_ = cov.values.diagonal()
+    # should be A < C < B
+    assert vars_[0] < vars_[2] < vars_[1], f'Unexpected variances: {vars_}'
 
+    return returns, cov, corr
 @pytest.fixture
 def sample_linkage():
     link = np.array([
@@ -81,4 +86,56 @@ def test_getClusterVar(hrp, sample_data):
     assert var > 0  # variance must be positive
     assert isinstance(var, float)
 
-# TODO: Continue unit tests for hrp, from getRecBipart to complete HRP model
+def test_getRecBipart_unit(hrp, sample_data):
+    _, cov, _ = sample_data
+
+    # Provide a fixed, deterministic ordering of labels (do not call clustering)
+    sortIx = ['A', 'B', 'C']
+
+    weights = hrp._getRecBipart(cov, sortIx)
+
+    # Basic structural checks
+    assert isinstance(weights, pd.Series)
+    assert list(weights.index) == sortIx
+    assert len(weights) == 3
+
+    # Numeric checks: positive and normalized
+    assert (weights >= 0).all(), 'All weights must be non-negative'
+    assert np.isclose(weights.sum(), 1.0), f'Weights do not sum to 1: sum={weights.sum()}'
+
+    # asset with lowest variance should get the largest weight
+    variances = cov.values.diagonal()
+    idx_low_var = cov.index[np.argmin(variances)]   # expected 'A'
+    idx_high_var = cov.index[np.argmax(variances)]  # expected 'B'
+
+    assert weights[idx_low_var] > weights[idx_high_var], (
+        f'Expected low-variance asset {idx_low_var} to have higher weight than '
+        f'high-variance asset {idx_high_var}: {weights.to_dict()}'
+    )
+
+    # Middle variance asset should have weight between low and high
+    mid_idx = [i for i in cov.index if i not in {idx_low_var, idx_high_var}][0]
+    assert weights[idx_low_var] >= weights[mid_idx] >= weights[idx_high_var], (
+        f'Expected ordering low >= mid >= high but got {weights.to_dict()}'
+    )
+
+def test_calculate_weights(hrp, sample_data):
+    _, cov, corr = sample_data
+
+    weights = hrp.calculate_weights(cov, corr)
+
+    # Structural checks
+    assert isinstance(weights, pd.Series)
+    assert list(weights.index) == list(cov.index)
+    assert np.isclose(weights.sum(), 1.0)
+
+    # Behavioral checks
+    # Lowest variance asset should have largest weight
+    idx_low_var = cov.index[np.argmin(np.diag(cov.values))]
+    idx_high_var = cov.index[np.argmax(np.diag(cov.values))]
+
+    assert weights[idx_low_var] > weights[idx_high_var]
+
+    # Check getter
+    retrieved_weights = hrp.get_weights()
+    pd.testing.assert_series_equal(retrieved_weights, weights)
