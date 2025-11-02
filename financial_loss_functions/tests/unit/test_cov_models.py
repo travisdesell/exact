@@ -1,8 +1,9 @@
 import pytest
 import numpy as np
 import pandas as pd
-from cov_models import HierarchialRiskParity
+from cov_models import HierarchialRiskParity, naive_mvp
 
+# -------------------- Fixtures -------------------- #
 @pytest.fixture
 def hrp():
     """Create HRP instance"""
@@ -27,6 +28,7 @@ def sample_data():
     assert vars_[0] < vars_[2] < vars_[1], f'Unexpected variances: {vars_}'
 
     return returns, cov, corr
+
 @pytest.fixture
 def sample_linkage():
     link = np.array([
@@ -36,6 +38,7 @@ def sample_linkage():
         ], dtype=float)
     return link
 
+# -------------------- HRP Tests -------------------- #
 def test_correlDist(hrp, sample_data):
     _, _, corr = sample_data
 
@@ -139,3 +142,32 @@ def test_calculate_weights(hrp, sample_data):
     # Check getter
     retrieved_weights = hrp.get_weights()
     pd.testing.assert_series_equal(retrieved_weights, weights)
+
+# -------------------- Naive MVP Tests -------------------- #
+def test_naive_mvp_simple_case():
+    # Covariance matrix for 3 assets
+    cov = np.array([
+        [0.1, 0.02, 0.01],
+        [0.02, 0.2, 0.03],
+        [0.01, 0.03, 0.15]
+    ])
+
+    weights = naive_mvp(cov)
+
+    # Check type
+    assert isinstance(weights, np.ndarray)
+    assert weights.shape[0] == cov.shape[0]
+
+    # Sum of weights = 1
+    np.testing.assert_almost_equal(weights.sum(), 1.0)
+
+    # All weights >= 0
+    assert (weights >= 0).all()
+
+def test_naive_mvp_diagonal_cov():
+    # Diagonal covariance matrix: all variances equal
+    cov = np.diag([0.1, 0.1, 0.1])
+    weights = naive_mvp(cov)
+
+    # All weights should be equal for identical variances
+    np.testing.assert_allclose(weights, np.array([1/3, 1/3, 1/3]))
