@@ -89,7 +89,7 @@ def test_combine_save_to_csv(fred_api_fixture, tmp_path):
     expected_df = pd.DataFrame({'GDP': [1, 2, 3], 'CPI': [4, 5, 6]})
 
     # Output path inside tmp_path
-    output_path = tmp_path / "macro_output"
+    output_path = tmp_path / 'macro_output'
 
     # Call the real function
     fred_api_fixture._combine_save_to_csv([s1, s2], str(output_path))

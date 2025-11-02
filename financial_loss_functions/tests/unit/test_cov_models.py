@@ -4,12 +4,16 @@ import pandas as pd
 from cov_models import (
     HierarchialRiskParity,
     naive_mvp,
-    BaseQuadraticOptimizer
+    BaseQuadraticOptimizer,
+    GlobalMinimumVariance
 )
 
 # -------------------- Common Fixtures -------------------- #
 @pytest.fixture
 def sample_data():
+    # IMPORTANT: Do not modify values without updating expected HRP test behavior.
+    # This dataset enforces A < C < B variance for deterministic clustering.
+
     # Deterministic synthetic returns so covariance ordering is predictable:
     # A = low variance, C = medium variance, B = high variance
     returns = pd.DataFrame({
@@ -147,6 +151,10 @@ def test_calculate_weights(hrp, sample_data):
     retrieved_weights = hrp.get_weights()
     pd.testing.assert_series_equal(retrieved_weights, weights)
 
+def test_get_weights_raises_if_not_fit(hrp):
+    with pytest.raises(ValueError):
+        hrp.get_weights()
+
 # -------------------- Naive MVP Tests -------------------- #
 def test_naive_mvp_simple_case():
     # Covariance matrix for 3 assets
@@ -272,3 +280,98 @@ def test_set_ridge(base_quad):
     # Using float as input
     base_quad.set_ridge(0.001)
     assert base_quad.reg == 0.001, 'Float input should set the ridge value'
+
+def test_qp_solve_scipy(simple_cov, simple_q):
+    base_quad = BaseQuadraticOptimizer(solver='scipy')
+    n = simple_cov.shape[0]
+    A = np.ones((1, n))
+    b = np.array([1.0])
+
+    x, success = base_quad._qp_solve(
+        P=simple_cov, 
+        q=simple_q,
+        A=A, 
+        b=b
+    )
+
+    assert success
+    assert np.isclose(np.sum(x), 1.0, atol=1e-6)
+
+# -------------------- Global Minimum Variance Tests -------------------- #
+@pytest.fixture
+def gmvp():
+    """Create Gloab Minimum Variance Instance"""
+    return GlobalMinimumVariance()
+
+def test_calculate_weights_long_only(gmvp, sample_data):
+    """Long-only QP: weights must be >= 0 and sum to 1."""
+    _, cov, _ = sample_data
+    weights = gmvp.calculate_weights(cov)
+
+    assert (weights >= -1e-12).all()  # no negatives (allow small numerics)
+    assert np.isclose(weights.sum(), 1.0, atol=1e-6)
+    assert gmvp.success_ is True
+
+    # Check getter
+    retrieved_weights = gmvp.get_weights()
+    assert np.array_equal(retrieved_weights, weights)
+
+def analytic_gmvp_weights(cov):
+    ones = np.ones(cov.shape[0])
+    
+    # Ensuring symmetry
+    cov = 0.5 * (cov + cov.T)
+
+    # Adding ridge
+    cov_r = cov + 1e-8 * np.eye(cov.shape[0])
+    
+    # Safe Inversion
+    inv = np.linalg.inv(cov_r)
+    raw = inv @ ones
+    
+    return raw / (ones @ raw)
+
+def test_calculate_weights_allow_short(sample_data):
+    """When allow_short=True, closed form solution must match numpy inverse formula."""
+    _, cov, _ = sample_data
+    gmvp = GlobalMinimumVariance(allow_short=True)
+    weights = gmvp.calculate_weights(cov)
+    expected = analytic_gmvp_weights(cov)
+
+    assert np.allclose(weights, expected, atol=1e-6)
+    assert gmvp.success_ is True
+    assert np.isclose(weights.sum(), 1.0)
+
+    # Check getter
+    retrieved_weights = gmvp.get_weights()
+    assert np.array_equal(retrieved_weights, weights)
+
+def test_get_weights_raises_if_not_fit(gmvp):
+    with pytest.raises(ValueError):
+        gmvp.get_weights()
+
+def test_input_not_modified(sample_data):
+    """Ensure we don't mutate original covariance input."""
+    _, cov, _ = sample_data
+    in_cov = cov.copy()
+    gmvp = GlobalMinimumVariance(allow_short=True)
+    _ = gmvp.calculate_weights(in_cov)
+    assert np.allclose(in_cov, cov)
+
+    assert np.allclose(gmvp.cov_, cov)
+
+def test_repeatability_short(sample_data):
+    """Deterministic output: calling twice gives same result."""
+    _, cov, _ = sample_data
+    model = GlobalMinimumVariance(allow_short=True)
+    w1 = model.calculate_weights(cov)
+    w2 = model.calculate_weights(cov)
+    assert np.allclose(w1, w2)
+
+def test_repeatability_no_short(gmvp, sample_data):
+    """Deterministic output: calling twice gives same result."""
+    _, cov, _ = sample_data
+    w1 = gmvp.calculate_weights(cov)
+    w2 = gmvp.calculate_weights(cov)
+    
+    assert np.allclose(w1, w2)

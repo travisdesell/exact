@@ -509,7 +509,7 @@ class MeanVariancePortfolio(BaseQuadraticOptimizer):
 
     def get_expected_returns(self) -> np.ndarray:
         if self.expected_returns_ is None:
-            raise ValueError('Expected returns not computed/available.')
+            raise ValueError('Estimator not fit -  call `calculate_weights(...) first.`')
         return self.expected_returns_.copy()
 
 
@@ -627,5 +627,5 @@ class HierarchialRiskParity:
         estimated by running `calculate_weights(...)`
         """
         if self.weights is None:
-            raise('Estimator not fit -  call `calculate_weights(...) first.`')
+            raise ValueError('Estimator not fit -  call `calculate_weights(...) first.`')
         return self.weights
