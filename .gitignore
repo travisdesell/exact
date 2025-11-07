@@ -7,6 +7,17 @@ copy_binary_osx.sh
 run.sh
 */__pycache__/*
 __pycache__/*
+__pycache__
 *.pyc
 visualization/plots/*
 test_output/*
+
+# Cache
+*/.pytest_cache
+
+# Environment files
+.env
+financial_loss_functions/.ipynb_checkpoints
+
+# Dataset directories
+financial_loss_functions/data
