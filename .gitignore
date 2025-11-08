@@ -17,7 +17,7 @@ test_output/*
 
 # Environment files
 .env
-financial_loss_functions/.ipynb_checkpoints
+financial_loss_functions/exploration/.ipynb_checkpoints
 
 # Dataset directories
 financial_loss_functions/data
