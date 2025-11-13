@@ -13,9 +13,9 @@ from preprocess import (
 
 def test_load_crsp_datasets(tmp_path):
     # Create tiny CSV files for train, val, test
-    train_file = tmp_path / 'combined_parameters_train.csv'
-    val_file = tmp_path / 'combined_parameters_validation.csv'
-    test_file = tmp_path / 'combined_parameters_test.csv'
+    train_file = tmp_path / 'combined_predictors_train.csv'
+    val_file = tmp_path / 'combined_predictors_validation.csv'
+    test_file = tmp_path / 'combined_predictors_test.csv'
 
     train_file.write_text('COL1,COL2\n0.1,0.2')
     val_file.write_text('COL1,COL2\n0.3,0.4')

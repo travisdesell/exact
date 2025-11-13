@@ -1,7 +1,7 @@
 import os
 import numpy as np
 import pandas as pd
-from typing import Tuple
+from typing import Tuple, List
 from sklearn.preprocessing import PowerTransformer
 
 
@@ -26,9 +26,9 @@ def load_crsp_datasets(dir_path: str)-> Tuple[
     test_data : pd.DataFrame
         Test data
     """
-    train_path = os.path.join(dir_path, 'combined_parameters_train.csv')
-    val_path = os.path.join(dir_path, 'combined_parameters_validation.csv')
-    test_path = os.path.join(dir_path, 'combined_parameters_test.csv')
+    train_path = os.path.join(dir_path, 'combined_predictors_train.csv')
+    val_path = os.path.join(dir_path, 'combined_predictors_validation.csv')
+    test_path = os.path.join(dir_path, 'combined_predictors_test.csv')
     
     # Check if all files exist
     for path in [train_path, val_path, test_path]:
@@ -146,35 +146,45 @@ class Preprocessor:
         self.step = step
 
         self._yeo_john = PowerTransformer(method='yeo-johnson', standardize=False)
+        self._box_cox = PowerTransformer(method='box-cox', standardize=False)
 
     def normalize():
         """
         Scaling
         """
-        pass
-
-    def _yeo_johnson_transform(self, data: pd.DataFrame, suffix: str, mode: str):
-        required_cols = [col for col in data.columns if suffix in col]
-        if mode == 'fit':
-            data[required_cols] = self._yeo_john.fit_transform(data[required_cols])
-        elif mode == 'split':
-            data[required_cols] = self._yeo_john.transform(data[required_cols])
-        else: 
-            raise ValueError('ERROR: Incorrect mode. Must be `fit` or `split`')
-        
-        return data
+        pass 
+    
+    def _extract_req_cols(self, columns_list: List, suffix: str):
+        required_cols = [col for col in columns_list if suffix in col]
+        return required_cols
 
     def transform(self, data, mode):
         """
         Transformation of data
         """
-        data = self._yeo_johnson_transform(data, 'VOL_CHANGE', mode)
+
+        # For training split
+        if mode == 'fit':
+            # Yeo Johnson transformation for VOL_CHANGE
+            vol_change_cols = self._extract_req_cols(self.all_col_names, 'VOL_CHANGE')
+            data[vol_change_cols] = self._yeo_john.fit_transform(data[vol_change_cols])
+
+            # Box-Cox transoformation for TURNOVER
+            turnover_cols = self._extract_req_cols(self.all_col_names, 'TURNOVER')
+            data[turnover_cols] = self._box_cox.fit_transform(data[turnover_cols])
+
+        elif mode == 'split':
+            # TODO: Transformations on val or test
+            pass
+
         return data
         
     def process_train_data(self, train: pd.DataFrame)-> pd.DataFrame:
         """
         Preprocesses given training data
         """
+        self.all_col_names = list(train.columns)
+
         train = self.transform(train, 'fit')
         print(train)
 
