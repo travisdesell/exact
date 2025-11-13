@@ -1,7 +1,10 @@
 import pytest
 <<<<<<< HEAD
+<<<<<<< HEAD
 from src.data_processing.preprocess import load_crsp_datasets, clean_data_returns, preprocess_cov 
 =======
+=======
+>>>>>>> ad232f2 (cleaning function added)
 import pandas as pd
 from preprocess import (
     load_crsp_datasets,
@@ -9,6 +12,9 @@ from preprocess import (
     preprocess_cov,
     clean_inplace
 ) 
+<<<<<<< HEAD
+>>>>>>> ad232f2 (cleaning function added)
+=======
 >>>>>>> ad232f2 (cleaning function added)
 
 def test_load_crsp_datasets(tmp_path):
