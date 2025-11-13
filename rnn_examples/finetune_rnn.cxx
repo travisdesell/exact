@@ -84,6 +84,7 @@ int main(int argc, char** argv) {
     
     // Set the number of backpropagation iterations for fine-tuning
     genome->set_bp_iterations(finetune_iterations);
+    genome->set_weights(initial_parameters);
     
     // Perform fine-tuning
     if (use_stochastic) {
