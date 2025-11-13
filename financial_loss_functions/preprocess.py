@@ -2,6 +2,8 @@ import os
 import numpy as np
 import pandas as pd
 from typing import Tuple
+from sklearn.preprocessing import PowerTransformer
+
 
 def load_crsp_datasets(dir_path: str)-> Tuple[
     pd.DataFrame, pd.DataFrame, pd.DataFrame
@@ -137,4 +139,47 @@ def clean_inplace(
 
     # return train, val, test
 
-    
+class Preprocessor:
+    def __init__(self, window_in: int, window_out: int, step: int):
+        self.window_in = window_in
+        self.window_out = window_out
+        self.step = step
+
+        self._yeo_john = PowerTransformer(method='yeo-johnson', standardize=False)
+
+    def normalize():
+        """
+        Scaling
+        """
+        pass
+
+    def _yeo_johnson_transform(self, data: pd.DataFrame, suffix: str, mode: str):
+        required_cols = [col for col in data.columns if suffix in col]
+        if mode == 'fit':
+            data[required_cols] = self._yeo_john.fit_transform(data[required_cols])
+        elif mode == 'split':
+            data[required_cols] = self._yeo_john.transform(data[required_cols])
+        else: 
+            raise ValueError('ERROR: Incorrect mode. Must be `fit` or `split`')
+        
+        return data
+
+    def transform(self, data, mode):
+        """
+        Transformation of data
+        """
+        data = self._yeo_johnson_transform(data, 'VOL_CHANGE', mode)
+        return data
+        
+    def process_train_data(self, train: pd.DataFrame)-> pd.DataFrame:
+        """
+        Preprocesses given training data
+        """
+        train = self.transform(train, 'fit')
+        print(train)
+
+    def process_val_data(val: pd.DataFrame) -> pd.DataFrame:
+        pass
+
+    def process_test_data(test: pd.DataFrame) -> pd.DataFrame:
+        pass

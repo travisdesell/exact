@@ -1,7 +1,13 @@
 import os
 from dotenv import load_dotenv
 from cov_models import HierarchialRiskParity
-from preprocess import load_crsp_datasets, get_only_returns, preprocess_cov, clean_inplace
+from preprocess import (
+    load_crsp_datasets,
+    get_only_returns,
+    preprocess_cov,
+    clean_inplace,
+    Preprocessor
+)
 
 load_dotenv()
 
@@ -14,9 +20,11 @@ if __name__ == '__main__':
 
     # -------------------- Cleaning & Processing -------------------- #
     # Clean dataset inplace
-    print(train_data.shape)    
     clean_inplace(train_data, val_data, test_data)
-    print(train_data.shape)
+
+    nn_preprocessor = Preprocessor(252*3, 90, 90)
+    nn_preprocessor.process_train_data(train_data)
+
     
     
     # train_ret, val_ret, test_ret = get_only_returns(
