@@ -1,4 +1,5 @@
 import os
+import numpy as np
 import pandas as pd
 from typing import Tuple
 
@@ -6,7 +7,8 @@ def load_crsp_datasets(dir_path: str)-> Tuple[
     pd.DataFrame, pd.DataFrame, pd.DataFrame
 ]:
     """
-    Load all CRSP datasets files from a directory which are split into train, validation and test.
+    Load all CRSP datasets files from a directory which are split into train,
+    validation and test.
 
     Parameters
     ----------
@@ -38,7 +40,7 @@ def load_crsp_datasets(dir_path: str)-> Tuple[
     
     return train_data, val_data, test_data
 
-def clean_data_returns(
+def get_only_returns(
         train: pd.DataFrame, val: pd.DataFrame, test: pd.DataFrame
     ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """
@@ -90,3 +92,49 @@ def preprocess_cov(data: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
     corr = data.corr()
 
     return cov, corr
+
+def clean_inplace(
+        train: pd.DataFrame, val: pd.DataFrame, test: pd.DataFrame
+    ) -> pd.DataFrame:
+    """
+    Cleans dataset by removing dupilcate columns and duplicate rows.
+    This process is inplace, i.e., Refrence of dataset is used, not copy.
+    
+    Parameters
+    ---------
+    train: pd.DataFrame
+        train data
+    val: pd.DataFrame
+        validation data
+    test: pd.DataFrame
+        test data
+    """
+
+    features = train.columns
+    if not np.array_equal(train.columns, val.columns) \
+        or not np.array_equal(train.columns, test.columns):
+        raise ValueError('ERROR: Columns do not match!')
+    
+    # Remove duplicate s&p500 returns columns
+    dup_sp500 = []
+    for col in features:
+        if 'sprtrn' in col:
+            dup_sp500.append(col)
+    
+    if len(dup_sp500) > 1:
+        train.drop(columns=dup_sp500[1:], axis=1, inplace=True)
+        val.drop(columns=dup_sp500[1:], axis=1, inplace=True)
+        test.drop(columns=dup_sp500[1:], axis=1, inplace=True)
+
+        train.rename(columns={dup_sp500[0]: 'sprtrn'}, inplace=True)
+        val.rename(columns={dup_sp500[0]: 'sprtrn'}, inplace=True)
+        test.rename(columns={dup_sp500[0]: 'sprtrn'}, inplace=True)
+
+    # Remove duplicate date rows
+    train.drop_duplicates(subset=['date'], keep='first', inplace=True)
+    val.drop_duplicates(subset=['date'], keep='first', inplace=True)
+    test.drop_duplicates(subset=['date'], keep='first', inplace=True)
+
+    # return train, val, test
+
+    
