@@ -5,8 +5,18 @@ from src.models.cov_models import HierarchialRiskParity
 from src.data_processing.preprocess import load_crsp_datasets, clean_data_returns, preprocess_cov
 =======
 from cov_models import HierarchialRiskParity
+<<<<<<< HEAD:financial_loss_functions/src/main.py
 from preprocess import load_crsp_datasets, get_only_returns, preprocess_cov, clean_inplace
 >>>>>>> ad232f2 (cleaning function added):financial_loss_functions/main.py
+=======
+from preprocess import (
+    load_crsp_datasets,
+    get_only_returns,
+    preprocess_cov,
+    clean_inplace,
+    Preprocessor
+)
+>>>>>>> 8e18d58 (Yeo Johnson Transformation implemeted for vol_change):financial_loss_functions/main.py
 
 load_dotenv()
 
@@ -19,9 +29,11 @@ if __name__ == '__main__':
 
     # -------------------- Cleaning & Processing -------------------- #
     # Clean dataset inplace
-    print(train_data.shape)    
     clean_inplace(train_data, val_data, test_data)
-    print(train_data.shape)
+
+    nn_preprocessor = Preprocessor(252*3, 90, 90)
+    nn_preprocessor.process_train_data(train_data)
+
     
     
     # train_ret, val_ret, test_ret = get_only_returns(
