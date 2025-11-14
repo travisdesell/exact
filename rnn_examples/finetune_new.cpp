@@ -1,4 +1,5 @@
 #include <cmath>
+#include <cstdio>
 #include <dirent.h>
 #include <sys/stat.h>
 
@@ -222,6 +223,24 @@ int main(int argc, char** argv) {
     Log::info("Final Testing MAE: %.6f\n", final_testing_mae);
     Log::info("Training MSE Improvement: %.6f\n", initial_training_mse - final_training_mse);
     Log::info("Testing MSE Improvement: %.6f\n", initial_testing_mse - final_testing_mse);
+    
+    // Write metrics to CSV file if requested
+    string metrics_csv_file;
+    if (get_argument(arguments, "--metrics_csv_file", false, metrics_csv_file)) {
+        FILE* csv_file = fopen(metrics_csv_file.c_str(), "w");  // write mode (overwrite)
+        if (csv_file != nullptr) {
+            // Write CSV row: initial_mse,initial_mae,final_mse,final_mae,mse_difference,mae_difference
+            fprintf(csv_file, "%.6f,%.6f,%.6f,%.6f,%.6f,%.6f\n",
+                    initial_testing_mse, initial_testing_mae,
+                    final_testing_mse, final_testing_mae,
+                    initial_testing_mse - final_testing_mse,
+                    initial_testing_mae - final_testing_mae);
+            fclose(csv_file);
+            Log::info("Metrics written to CSV file: %s\n", metrics_csv_file.c_str());
+        } else {
+            Log::error("Could not write metrics to CSV file: %s\n", metrics_csv_file.c_str());
+        }
+    }
     
     // Save the fine-tuned genome
     string output_genome_filename = output_directory + "/finetuned_genome.bin";

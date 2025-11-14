@@ -66,7 +66,6 @@ echo ""
 "${EXECUTABLE}" \
     --genome_directory "${GENOME_DIR}" \
     --training_filenames ${TRAINING_FILES} \
-    --testing_filenames ${VALIDATION_FILES} \
     --validation_filenames ${VALIDATION_FILES} \
     --output_directory "${OUTPUT_DIR}" \
     --time_offset ${TIME_OFFSET} \
