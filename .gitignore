@@ -21,3 +21,6 @@ financial_loss_functions/exploration/.ipynb_checkpoints
 
 # Dataset directories
 financial_loss_functions/data
+
+# Local secrets
+financial_loss_functions/data_collectors/fred_config.py
