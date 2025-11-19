@@ -4,7 +4,7 @@ import pandas as pd
 from fredapi import Fred
 from typing import Dict, List
 from dotenv import load_dotenv
-from data_collectors.const import BASE_SERIES_DICT
+from src.data_collection.const import BASE_SERIES_DICT
 
 from utils import create_directory, delete_directory
 

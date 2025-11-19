@@ -2,6 +2,7 @@
 
 ## Prerequisites
 - Python 3.13.5
+- Free [Fred API Key](https://fred.stlouisfed.org) 
 
 ## Installation
 ### Clone Git Repository
@@ -25,11 +26,13 @@ pip install -r requirements.txt
 ```bash
 cp .env.example ../.env
 ```
-2. Update the .env file with your Fred API key and absolute location of data directory
+2. Update the .env file in parent directory (exact/) with your Fred API key and absolute location of data directory
 
 ## Usage
 
 ### To run macro-economic data collection
 ```bash
-python -m data_collectors.macro_api
+python -m src.data_collection.macro_api
 ```
+
+

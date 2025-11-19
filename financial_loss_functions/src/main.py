@@ -1,7 +1,7 @@
 import os
 from dotenv import load_dotenv
-from cov_models import HierarchialRiskParity
-from preprocess import load_crsp_datasets, clean_data_returns, preprocess_cov
+from src.models.cov_models import HierarchialRiskParity
+from src.data_processing.preprocess import load_crsp_datasets, clean_data_returns, preprocess_cov
 
 load_dotenv()
 

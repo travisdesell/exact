@@ -1,6 +1,6 @@
 import pandas as pd
 import pytest
-from preprocess import load_crsp_datasets, clean_data_returns, preprocess_cov 
+from src.data_processing.preprocess import load_crsp_datasets, clean_data_returns, preprocess_cov 
 
 def test_load_crsp_datasets(tmp_path):
     # Create tiny CSV files for train, val, test

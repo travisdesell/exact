@@ -1,7 +1,7 @@
 import pytest
 import numpy as np
 import pandas as pd
-from cov_models import (
+from src.models.cov_models import (
     HierarchialRiskParity,
     naive_mvp,
     BaseQuadraticOptimizer,

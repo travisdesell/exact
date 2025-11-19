@@ -1,7 +1,7 @@
 import os
 import pytest
 import pandas as pd
-from data_collectors.macro_api import data_dir_check, FredAPI
+from src.data_collection.macro_api import data_dir_check, FredAPI
 
 # ---------- Tests for data_dir_check ---------- #
 # Tests for data_dir_check

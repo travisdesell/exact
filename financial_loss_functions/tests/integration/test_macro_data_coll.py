@@ -1,7 +1,7 @@
 import os
 import pytest
 import pandas as pd
-from data_collectors.macro_api import FredAPI
+from src.data_collection.macro_api import FredAPI
 
 
 @pytest.mark.integration
