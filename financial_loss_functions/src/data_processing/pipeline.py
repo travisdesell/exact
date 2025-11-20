@@ -1,4 +1,3 @@
-import os
 import sys
 from src.utils import data_dir_check
 from src.data_processing.preprocess import (
@@ -9,25 +8,15 @@ from src.data_processing.preprocess import (
     Preprocessor
 )
 
-def run_processing_pipeline():
+def run_processing_pipeline(crsp_data_path: str, processed_data_path: str):
     print('\n','=' * 20, ' Data Processing Pipeline ', '=' * 20)
-    crsp_path = os.path.join(
-        os.getenv('DATA_DIR'),
-        os.getenv('RAW_DATA_DIR'),
-        '2023_sp_500_select_50'
-    )
-
-    processed_data_path = os.path.join(
-        os.getenv('DATA_DIR'),
-        os.getenv('PROCESSED_DATA_DIR')
-    )
-
+    
     if not data_dir_check(processed_data_path):
         sys.exit('Data Processing Pipeline Aborted!')
     
     # -------------------- Data Loading -------------------- #
     # Loading CRSP Dataset
-    train_data, val_data, test_data = load_crsp_datasets(crsp_path)
+    train_data, val_data, test_data = load_crsp_datasets(crsp_data_path)
 
     # -------------------- Cleaning & Processing -------------------- #
     # Clean dataset inplace

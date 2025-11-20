@@ -98,16 +98,17 @@ class FredAPI:
         self._combine_save_to_csv(all_series_list, output_path)
         print(f'Data for {self.category_name} pulled and saved as csv at {output_path}!')
 
-def run_marco_pipeline():
-    print('\n','=' * 20, ' Fred API Macro-Economic Data Pipeline ', '=' * 20)
-    api_key = os.getenv('FRED_KEY')
-    raw_data_path = os.path.join(os.getenv('DATA_DIR'), os.getenv('RAW_DATA_DIR'))
-    macro_data_dir = os.path.join(raw_data_path, 'macro')
+def run_macro_pipeline(api_key: str, macro_data_path: str):
+    """
+    Macro-economic Data Collection Pipeline Entry point
 
+    """
+    print('\n','=' * 20, ' Fred API Macro-Economic Data Pipeline ', '=' * 20)
+    
     # To ask user permission before overwriting data
-    if not data_dir_check(macro_data_dir):
+    if not data_dir_check(macro_data_path):
         sys.exit('Fred API Pipeline Aborted!')
  
     for category, series_ids in BASE_SERIES_DICT.items():
-        macro_api = FredAPI(api_key, category, series_ids, macro_data_dir) 
+        macro_api = FredAPI(api_key, category, series_ids, macro_data_path) 
         macro_api.pull_category_data()
