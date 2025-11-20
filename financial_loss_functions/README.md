@@ -32,7 +32,12 @@ cp .env.example ../.env
 
 ### To run macro-economic data collection
 ```bash
-python -m src.data_collection.macro_api
+python -m scripts.run_macro_collection
+```
+
+### To run data processing
+```bash
+python -m scripts.run_processing
 ```
 
 
