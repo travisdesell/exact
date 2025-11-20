@@ -3,13 +3,8 @@ import time
 import pandas as pd
 from fredapi import Fred
 from typing import Dict, List
-from dotenv import load_dotenv
 from src.data_collection.const import BASE_SERIES_DICT
-
-from utils import create_directory, delete_directory
-
-load_dotenv()
-
+from src.utils import create_directory, delete_directory
 
 class FredAPI:
     default_start_date = '2007-01-01' # Match first available date from CRSP
