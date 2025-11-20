@@ -1,8 +1,11 @@
 import os
+import sys
 import time
 import pandas as pd
 from fredapi import Fred
 from typing import Dict, List
+from src.utils import data_dir_check
+from src.data_collection.const import BASE_SERIES_DICT
 
 class FredAPI:
     default_start_date = '2007-01-01' # Match first available date from CRSP
@@ -94,3 +97,17 @@ class FredAPI:
         output_path = os.path.join(self.data_dir, self.category_name)
         self._combine_save_to_csv(all_series_list, output_path)
         print(f'Data for {self.category_name} pulled and saved as csv at {output_path}!')
+
+def run_marco_pipeline():
+    print('\n','=' * 20, ' Fred API Macro-Economic Data Pipeline ', '=' * 20)
+    api_key = os.getenv('FRED_KEY')
+    raw_data_path = os.path.join(os.getenv('DATA_DIR'), os.getenv('RAW_DATA_DIR'))
+    macro_data_dir = os.path.join(raw_data_path, 'macro')
+
+    # To ask user permission before overwriting data
+    if not data_dir_check(macro_data_dir):
+        sys.exit('Fred API Pipeline Aborted!')
+ 
+    for category, series_ids in BASE_SERIES_DICT.items():
+        macro_api = FredAPI(api_key, category, series_ids, macro_data_dir) 
+        macro_api.pull_category_data()
