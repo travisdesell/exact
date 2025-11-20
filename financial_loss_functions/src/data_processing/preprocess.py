@@ -146,6 +146,7 @@ class Preprocessor:
         self.step = step
 
         self._yeo_john = PowerTransformer(method='yeo-johnson', standardize=False)
+        self._box_cox = PowerTransformer(method='box-cox', standardize=False)
 
     def normalize():
         """
