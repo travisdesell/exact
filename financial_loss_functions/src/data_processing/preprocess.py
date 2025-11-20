@@ -141,6 +141,18 @@ def clean_inplace(
 
 class Preprocessor:
     def __init__(self, window_in: int, window_out: int, step: int):
+        """
+        Initialize Preprocessor which transorforms, normalizes and creates sliding windows.
+
+        Parameters
+        ----------
+        window_in: int
+            size of input window in days
+        window_out: int
+            size of output window in days
+        step: int
+            step size in days for rolling windows
+        """
         self.window_in = window_in
         self.window_out = window_out
         self.step = step
@@ -148,10 +160,13 @@ class Preprocessor:
         self._yeo_john = PowerTransformer(method='yeo-johnson', standardize=False)
         self._box_cox = PowerTransformer(method='box-cox', standardize=False)
 
+        # TODO: Initialize robuest scaler
+
     def normalize():
         """
         Scaling
         """
+        # TODO: Normalize using robust scaler
         pass 
     
     def _extract_req_cols(self, columns_list: List, suffix: str):
@@ -169,7 +184,7 @@ class Preprocessor:
         
         return data
 
-    def transform(self, data, mode):
+    def _transform(self, data, mode):
         """
         Transformation of data
         """
@@ -189,7 +204,15 @@ class Preprocessor:
 
         data = self._yeo_johnson_transform(data, 'VOL_CHANGE', mode)
         return data
+    
+    def _create_rolling_windows(self):
+        """
+        Function to create rolling windows based on the input, output and step sizes.
+        """
+        # TODO: Create rolling windows using initalized sizes
         
+        pass
+
     def process_train_data(self, train: pd.DataFrame)-> pd.DataFrame:
         """
         Preprocesses given training data
@@ -197,8 +220,14 @@ class Preprocessor:
 
         self.all_col_names = list(train.columns)
 
-        train = self.transform(train, 'fit')
+        train = self._transform(train, 'fit')
         print(train)
+
+        # TODO: 1. Call normalization
+
+        # TODO: 2. Call creation of rolling windows
+
+        return train
 
     def process_val_data(val: pd.DataFrame) -> pd.DataFrame:
         pass

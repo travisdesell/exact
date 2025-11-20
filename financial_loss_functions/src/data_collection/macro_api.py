@@ -15,8 +15,7 @@ class FredAPI:
     def __init__(
             self, api_key: str,
             category_name: str,
-            required_series: Dict[str, str],
-            data_dir: str
+            required_series: Dict[str, str]
         ):
         """
         Initialize object to pull macro-economic data for a specific category from Fred API
@@ -29,7 +28,7 @@ class FredAPI:
         self.fred = Fred(api_key)
         self.category_name = category_name
         self.required_series = required_series
-        self.data_dir = data_dir
+        # self.data_dir = data_dir
 
         self.interval = float(60 / self.requests_per_min)
 
@@ -57,10 +56,10 @@ class FredAPI:
         data = data.rename(series_id)
         return data
 
-    def _combine_save_to_csv(self, series_list: List[pd.Series], output_path: str):
-        category_df = pd.concat(series_list, axis=1, sort=True)
+    # def _combine_save_to_csv(self, series_list: List[pd.Series], output_path: str):
+    #     category_df = pd.concat(series_list, axis=1, sort=True)
 
-        category_df.to_csv(output_path + '.csv', index=True)
+    #     category_df.to_csv(output_path + '.csv', index=True)
 
     def pull_category_data(self):
         """
@@ -94,9 +93,17 @@ class FredAPI:
                 print(f'Data for {name}, {id}, not pulled. Skipping!!')
                 continue
         
-        output_path = os.path.join(self.data_dir, self.category_name)
-        self._combine_save_to_csv(all_series_list, output_path)
-        print(f'Data for {self.category_name} pulled and saved as csv at {output_path}!')
+        # output_path = os.path.join(self.data_dir, self.category_name)
+        # self._combine_save_to_csv(all_series_list, output_path)
+        category_df = pd.concat(all_series_list, axis=1, sort=True)
+        print(f'Data for {self.category_name} pulled!')
+
+        return category_df
+
+# -------------------- Pipeline -------------------- #
+def save_to_csv(category_data: pd.DataFrame, category: str, data_path: str):
+    output_path = os.path.join(data_path, category)
+    category_data.to_csv(output_path + '.csv', index=True)
 
 def run_macro_pipeline(api_key: str, macro_data_path: str):
     """
@@ -110,5 +117,9 @@ def run_macro_pipeline(api_key: str, macro_data_path: str):
         sys.exit('Fred API Pipeline Aborted!')
  
     for category, series_ids in BASE_SERIES_DICT.items():
-        macro_api = FredAPI(api_key, category, series_ids, macro_data_path) 
-        macro_api.pull_category_data()
+        macro_api = FredAPI(api_key, category, series_ids) 
+        category_data = macro_api.pull_category_data()
+
+        save_to_csv(category_data, category, macro_data_path)
+
+        

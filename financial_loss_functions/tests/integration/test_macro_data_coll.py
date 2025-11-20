@@ -2,7 +2,7 @@ import os
 import pytest
 import pandas as pd
 from dotenv import load_dotenv
-from src.data_collection.macro_api import FredAPI
+from src.data_collection.macro_api import FredAPI, save_to_csv
 
 load_dotenv()
 
@@ -22,12 +22,12 @@ def test_pull_category_data_integration(tmp_path):
     macro_api = FredAPI(
         api_key=api_key,
         category_name=category_name,
-        required_series=test_series,
-        data_dir=str(data_dir)
+        required_series=test_series
     )
 
     # Run real API call
-    macro_api.pull_category_data()
+    category_df = macro_api.pull_category_data()
+    save_to_csv(category_df, category_name, data_dir)
 
     # Verify file saved
     output_file = data_dir / f'{category_name}.csv'
