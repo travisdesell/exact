@@ -1,19 +1,7 @@
 import os
 import numpy as np
 import pandas as pd
-<<<<<<< HEAD
-<<<<<<< HEAD:financial_loss_functions/src/data_processing/preprocess.py
-<<<<<<< HEAD:financial_loss_functions/src/data_processing/preprocess.py
 from typing import Tuple, List
-=======
-from typing import Tuple
->>>>>>> 8e18d58 (Yeo Johnson Transformation implemeted for vol_change):financial_loss_functions/preprocess.py
-=======
-from typing import Tuple, List
->>>>>>> 9e8eb40 (tests updated, box-cox added):financial_loss_functions/preprocess.py
-=======
-from typing import Tuple, List
->>>>>>> 96d6df7ab41d311095dd73a19e348b3abf0102e1
 from sklearn.preprocessing import PowerTransformer
 
 
@@ -158,39 +146,16 @@ class Preprocessor:
         self.step = step
 
         self._yeo_john = PowerTransformer(method='yeo-johnson', standardize=False)
-<<<<<<< HEAD
-<<<<<<< HEAD:financial_loss_functions/src/data_processing/preprocess.py
-<<<<<<< HEAD:financial_loss_functions/src/data_processing/preprocess.py
-        self._box_cox = PowerTransformer(method='box-cox', standardize=False)
-=======
->>>>>>> 8e18d58 (Yeo Johnson Transformation implemeted for vol_change):financial_loss_functions/preprocess.py
-=======
-        self._box_cox = PowerTransformer(method='box-cox', standardize=False)
->>>>>>> 9e8eb40 (tests updated, box-cox added):financial_loss_functions/preprocess.py
-=======
-        self._box_cox = PowerTransformer(method='box-cox', standardize=False)
->>>>>>> 96d6df7ab41d311095dd73a19e348b3abf0102e1
 
     def normalize():
         """
         Scaling
         """
-<<<<<<< HEAD
-<<<<<<< HEAD:financial_loss_functions/src/data_processing/preprocess.py
-<<<<<<< HEAD:financial_loss_functions/src/data_processing/preprocess.py
-=======
->>>>>>> 9e8eb40 (tests updated, box-cox added):financial_loss_functions/preprocess.py
-=======
->>>>>>> 96d6df7ab41d311095dd73a19e348b3abf0102e1
         pass 
     
     def _extract_req_cols(self, columns_list: List, suffix: str):
         required_cols = [col for col in columns_list if suffix in col]
         return required_cols
-<<<<<<< HEAD
-<<<<<<< HEAD:financial_loss_functions/src/data_processing/preprocess.py
-=======
-        pass
 
     def _yeo_johnson_transform(self, data: pd.DataFrame, suffix: str, mode: str):
         required_cols = [col for col in data.columns if suffix in col]
@@ -202,24 +167,11 @@ class Preprocessor:
             raise ValueError('ERROR: Incorrect mode. Must be `fit` or `split`')
         
         return data
->>>>>>> 8e18d58 (Yeo Johnson Transformation implemeted for vol_change):financial_loss_functions/preprocess.py
-=======
->>>>>>> 9e8eb40 (tests updated, box-cox added):financial_loss_functions/preprocess.py
-=======
->>>>>>> 96d6df7ab41d311095dd73a19e348b3abf0102e1
 
     def transform(self, data, mode):
         """
         Transformation of data
         """
-<<<<<<< HEAD
-<<<<<<< HEAD:financial_loss_functions/src/data_processing/preprocess.py
-<<<<<<< HEAD:financial_loss_functions/src/data_processing/preprocess.py
-=======
->>>>>>> 9e8eb40 (tests updated, box-cox added):financial_loss_functions/preprocess.py
-=======
->>>>>>> 96d6df7ab41d311095dd73a19e348b3abf0102e1
-
         # For training split
         if mode == 'fit':
             # Yeo Johnson transformation for VOL_CHANGE
@@ -234,36 +186,16 @@ class Preprocessor:
             # TODO: Transformations on val or test
             pass
 
-<<<<<<< HEAD
-<<<<<<< HEAD:financial_loss_functions/src/data_processing/preprocess.py
-=======
         data = self._yeo_johnson_transform(data, 'VOL_CHANGE', mode)
->>>>>>> 8e18d58 (Yeo Johnson Transformation implemeted for vol_change):financial_loss_functions/preprocess.py
-=======
->>>>>>> 9e8eb40 (tests updated, box-cox added):financial_loss_functions/preprocess.py
-=======
->>>>>>> 96d6df7ab41d311095dd73a19e348b3abf0102e1
         return data
         
     def process_train_data(self, train: pd.DataFrame)-> pd.DataFrame:
         """
         Preprocesses given training data
         """
-<<<<<<< HEAD
-<<<<<<< HEAD:financial_loss_functions/src/data_processing/preprocess.py
-<<<<<<< HEAD:financial_loss_functions/src/data_processing/preprocess.py
+
         self.all_col_names = list(train.columns)
 
-=======
->>>>>>> 8e18d58 (Yeo Johnson Transformation implemeted for vol_change):financial_loss_functions/preprocess.py
-=======
-        self.all_col_names = list(train.columns)
-
->>>>>>> 9e8eb40 (tests updated, box-cox added):financial_loss_functions/preprocess.py
-=======
-        self.all_col_names = list(train.columns)
-
->>>>>>> 96d6df7ab41d311095dd73a19e348b3abf0102e1
         train = self.transform(train, 'fit')
         print(train)
 

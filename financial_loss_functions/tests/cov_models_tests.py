@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 
 sys.path.append("..")
-import cov_models
+from src.models import cov_models
 
 def gvmp(cov):
     # Global Minimum Variance - long-only

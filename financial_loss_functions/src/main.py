@@ -1,43 +1,13 @@
 import os
 from dotenv import load_dotenv
 from src.models.cov_models import HierarchialRiskParity
-<<<<<<< HEAD
-<<<<<<< HEAD
-from src.data_processing.preprocess import load_crsp_datasets, clean_data_returns, preprocess_cov
-=======
-from cov_models import HierarchialRiskParity
-<<<<<<< HEAD:financial_loss_functions/src/main.py
-<<<<<<< HEAD:financial_loss_functions/src/main.py
-from preprocess import load_crsp_datasets, get_only_returns, preprocess_cov, clean_inplace
->>>>>>> ad232f2 (cleaning function added):financial_loss_functions/main.py
-=======
-=======
->>>>>>> 8e18d58 (Yeo Johnson Transformation implemeted for vol_change):financial_loss_functions/main.py
-from preprocess import (
-=======
 from src.data_processing.preprocess import (
->>>>>>> 96d6df7 (rebase done)
-=======
-from src.data_processing.preprocess import (
->>>>>>> 96d6df7ab41d311095dd73a19e348b3abf0102e1
     load_crsp_datasets,
     get_only_returns,
     preprocess_cov,
     clean_inplace,
     Preprocessor
 )
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD:financial_loss_functions/src/main.py
->>>>>>> 8e18d58 (Yeo Johnson Transformation implemeted for vol_change):financial_loss_functions/main.py
-=======
->>>>>>> 8e18d58 (Yeo Johnson Transformation implemeted for vol_change):financial_loss_functions/main.py
-=======
-
->>>>>>> 96d6df7 (rebase done)
-=======
-
->>>>>>> 96d6df7ab41d311095dd73a19e348b3abf0102e1
 
 load_dotenv()
 
