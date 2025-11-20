@@ -1,7 +1,7 @@
 import os
 from dotenv import load_dotenv
-from src.data_collection.macro_api import FredAPI, data_dir_check
 from src.data_collection.const import BASE_SERIES_DICT
+from src.data_collection.macro_api import FredAPI, data_dir_check
 
 load_dotenv()
 

@@ -33,3 +33,21 @@ def delete_directory(dir_path: str) -> None:
         print(f"Folder '{dir_path}' does not exist.")
     except Exception as e:
         print(f'An error occurred: {e}')
+
+def data_dir_check(macro_path: str):
+    run_permission = False
+    if os.path.exists(macro_path):
+        print(macro_path, ', Directory Exists!!!!')
+        choice = input('Are you sure you want to overwrite it? (Y/N): ').strip()
+        if choice == 'Y':
+            delete_directory(macro_path)
+            create_directory(macro_path)
+            run_permission = True
+        else:
+            print('Aborted. Directory not modified.')
+            run_permission = False
+    else:
+        create_directory(macro_path)
+        run_permission = True
+    
+    return run_permission
