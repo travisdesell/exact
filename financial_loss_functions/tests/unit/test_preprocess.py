@@ -2,17 +2,21 @@ import pytest
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 from src.data_processing.preprocess import load_crsp_datasets, clean_data_returns, preprocess_cov 
 =======
 =======
 >>>>>>> ad232f2 (cleaning function added)
 =======
 >>>>>>> 96d6df7 (rebase done)
+=======
+>>>>>>> 96d6df7ab41d311095dd73a19e348b3abf0102e1
 import pandas as pd
 from src.data_processing.preprocess import (
     load_crsp_datasets,
     get_only_returns,
     preprocess_cov,
+<<<<<<< HEAD
 <<<<<<< HEAD
     clean_inplace
 ) 
@@ -23,6 +27,9 @@ from src.data_processing.preprocess import (
 =======
     clean_inplace)
 >>>>>>> 96d6df7 (rebase done)
+=======
+    clean_inplace)
+>>>>>>> 96d6df7ab41d311095dd73a19e348b3abf0102e1
 
 def test_load_crsp_datasets(tmp_path):
     # Create tiny CSV files for train, val, test
