@@ -1,5 +1,7 @@
 import os
 import shutil
+import pandas as pd
+from typing import List
 
 def create_directory(path: str) -> None:
     """
@@ -34,6 +36,13 @@ def delete_directory(dir_path: str) -> None:
     except Exception as e:
         print(f'An error occurred: {e}')
 
+def check_files(files_list: List[str]):
+    # Check if all files exist
+    for path in files_list:
+        if not os.path.exists(path):
+            raise FileNotFoundError(
+                f'Required file not found: {path}')
+
 def data_dir_check(macro_path: str):
     run_permission = False
     if os.path.exists(macro_path):
@@ -51,3 +60,6 @@ def data_dir_check(macro_path: str):
         run_permission = True
     
     return run_permission
+
+def save_to_csv(data: pd.DataFrame, output_dir: str, filename: str):
+    data.to_csv(os.path.join(output_dir, filename), sep=',')

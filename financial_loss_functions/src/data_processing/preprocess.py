@@ -1,49 +1,8 @@
-import os
 import numpy as np
 import pandas as pd
 from typing import Tuple, List
 from sklearn.preprocessing import PowerTransformer, RobustScaler
 
-
-def load_raw_crsp_datasets(dir_path: str)-> Tuple[
-    pd.DataFrame, pd.DataFrame, pd.DataFrame
-]:
-    """
-    Load all CRSP datasets files from a directory which are split into train,
-    validation and test.
-
-    Parameters
-    ----------
-    dir_path : str
-        Path to directory where the data is stored.
-    
-    Returns
-    -------
-    train_data : pd.DataFrame
-        Train data
-    val_data : pd.DataFrame
-        Validation data
-    test_data : pd.DataFrame
-        Test data
-    """
-    train_path = os.path.join(dir_path, 'combined_predictors_train.csv')
-    val_path = os.path.join(dir_path, 'combined_predictors_validation.csv')
-    test_path = os.path.join(dir_path, 'combined_predictors_test.csv')
-    
-    # Check if all files exist
-    for path in [train_path, val_path, test_path]:
-        if not os.path.exists(path):
-            raise FileNotFoundError(
-                f'Required file not found: {path}',
-                'File names should be: combined_predictors_<split>.csv. <split> = train, val or test'
-            )
-
-    # Load split datasets
-    train_data = pd.read_csv(train_path)
-    val_data = pd.read_csv(val_path)
-    test_data = pd.read_csv(test_path)
-    
-    return train_data, val_data, test_data
 
 def clean_inplace(
         train: pd.DataFrame, val: pd.DataFrame, test: pd.DataFrame
@@ -107,62 +66,58 @@ def clean_inplace(
 
     return train, val, test
 
-def save_to_csv(data: pd.DataFrame, output_dir: str, filename: str):
-    data.to_csv(os.path.join(output_dir, filename), sep=',')
+def get_only_returns(
+        train: pd.DataFrame, val: pd.DataFrame, test: pd.DataFrame
+    ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    """
+    Extract only return columns from each of the split datasets.
 
-class CovPreprocessor:
-    def _get_only_returns(self, data: pd.DataFrame) -> pd.DataFrame:
-        """
-        Extract only return columns from each of the split datasets.
-
-        Parameters
-        ----------
-        data : pd.DataFrame
-            Training data.
-        
-        Returns
-        -------
-        returns : pd.DataFrame
-            Train data with only returns.
-        """
-        return_cols = []
-        for col in data.columns:
-            if 'RET' in col:
-                return_cols.append(col)
-
-        return data[return_cols]
-        
-    def process_train_data(
-            self, train: pd.DataFrame, val: pd.DataFrame
-        ) -> Tuple[pd.DataFrame, pd.DataFrame]:
-        """
-        Combines train and Validation data, then calculates
-        covariance and correlation matrices
-
-        Parameters
-        ----------
-        train: pd.DataFrame
-            Training split data
-        val: pd.DataFrame
-            Validation split data
-        """
-        train = pd.concat([train, val], axis=0)
-
-        train = self._get_only_returns(train)
-
-        cov_train = train.cov()
-        corr_train = train.corr()
-
-        return cov_train, corr_train
+    Parameters
+    ----------
+    train : pd.DataFrame
+        Training data.
+    val: pd.DataFrame
+        Validation data.
+    test: pd.DataFrame
+        Test data.
     
-    def process_test_data(self, test: pd.DataFrame) -> pd.DataFrame:
-        """
-        Extracts only returns columns for testing unsupervised models
-        """
-        test = self._get_only_returns(test)
+    Returns
+    -------
+    train : pd.DataFrame
+        Train data with only returns.
+    val : pd.DataFrame
+        Validation data with only returns.
+    test : pd.DataFrame
+        Test data with only returns.
+    """
+    return_cols = []
+    for col in train.columns:
+        if 'RET' in col:
+            return_cols.append(col)
 
-        return test
+    return train[return_cols], val[return_cols], test[return_cols]
+        
+def cov_preprocessor(
+        train: pd.DataFrame, val: pd.DataFrame
+    ) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    """
+    Combines train and Validation returns data, then calculates
+    covariance and correlation matrices
 
+    Parameters
+    ----------
+    train: pd.DataFrame
+        Training split data, only returns
+    val: pd.DataFrame
+        Validation split data, only returns
+    """
+    train = pd.concat([train, val], axis=0)
+
+    cov_train = train.cov()
+    corr_train = train.corr()
+
+    return cov_train, corr_train
+    
 
 class Preprocessor:
     def __init__(self, window_in: int, window_out: int, step: int):
@@ -256,22 +211,45 @@ class Preprocessor:
     def process_train_data(self, train: pd.DataFrame)-> pd.DataFrame:
         """
         Preprocesses given training data
+
+        Parameters
+        ----------
+        train: pd.DataFrame
+            Training data
+        
+        Return
+        ------
+        processed_train: pd.DataFrame
+            Preprocessed training data
         """
 
         self.all_col_names = list(train.columns)
 
         train = self._transform(train, 'fit')
-        print(train)
 
         train = self._normalize(train, 'fit')
-        print(train)
 
         # TODO: 2. Call creation of rolling windows
 
         return train
 
-    def process_val_data(self, val: pd.DataFrame) -> pd.DataFrame:
-        pass
+    def process_split_data(self, split_data: pd.DataFrame) -> pd.DataFrame:
+        """
+        Preprocesses given validation or test data based on statistics 
+        from the training data.
 
-    def process_test_data(self, test: pd.DataFrame) -> pd.DataFrame:
-        pass
+        Parameters
+        ----------
+        split_data: pd.DataFrame
+            Validation or test data
+        
+        Return
+        ------
+        processed_split_data: pd.DataFrame
+            Preprocessed validation or test data
+        """
+        split_data = self._transform(split_data, 'split')
+
+        split_data = self._normalize(split_data, 'split')
+
+        return split_data
