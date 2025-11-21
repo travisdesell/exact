@@ -33,6 +33,19 @@ cp .env.example .env
 ```
 2. Update the .env file in root directory with your Fred API key and absolute location of data directory
 
+```bash
+# Enter your details heres
+FRED_KEY = "<API-KEY>" # API key from Fred API
+DATA_DIR = "<Absolute-Data-Directory-Path" # example: /Users/user_name/DSCI-601/exact/financial_loss_functions/data/
+
+# Names of sub directories
+RAW_DATA_DIR = "raw"
+PROCESSED_DATA_DIR = "processed"
+MACRO_DIR = "macro"
+CRSP_DIR = "sample" # Add directory name here if using CRSP like dataset
+```
+Here, a sample of the CRSP equivalent dataset is stored in `data/raw/sample/` for quick reproducibilty. If any other equivalent dataset is being used, place the directory in `data/raw/` and update the CRSP_DIR environment variable with the name of the equivalent data directory.
+
 ## Usage
 
 ### 1. Run macro-economic data collection

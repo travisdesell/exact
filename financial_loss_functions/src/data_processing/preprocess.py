@@ -2,7 +2,7 @@ import os
 import numpy as np
 import pandas as pd
 from typing import Tuple, List
-from sklearn.preprocessing import PowerTransformer
+from sklearn.preprocessing import PowerTransformer, RobustScaler
 
 
 def load_crsp_datasets(dir_path: str)-> Tuple[
@@ -33,7 +33,10 @@ def load_crsp_datasets(dir_path: str)-> Tuple[
     # Check if all files exist
     for path in [train_path, val_path, test_path]:
         if not os.path.exists(path):
-            raise FileNotFoundError(f'Required file not found: {path}')
+            raise FileNotFoundError(
+                f'Required file not found: {path}',
+                'File names should be: combined_predictors_<split>.csv. <split> = train, val or test'
+            )
 
     # Load split datasets
     train_data = pd.read_csv(train_path)
@@ -99,7 +102,7 @@ def clean_inplace(
         train: pd.DataFrame, val: pd.DataFrame, test: pd.DataFrame
     ) -> pd.DataFrame:
     """
-    Cleans dataset by removing dupilcate columns and duplicate rows.
+    Cleans dataset by removing dupilcate columns and duplicate rows. It makes date the index.
     This process is inplace, i.e., Refrence of dataset is used, not copy.
     
     Parameters
@@ -110,6 +113,15 @@ def clean_inplace(
         validation data
     test: pd.DataFrame
         test data
+    
+    Returns
+    -------
+    train: pd.DataFrame
+        Cleaned train data
+    val: pd.DataFrame
+        Cleaned validation data
+    test: pd.DataFrame
+        Cleaned test data
     """
 
     features = train.columns
@@ -136,8 +148,17 @@ def clean_inplace(
     train.drop_duplicates(subset=['date'], keep='first', inplace=True)
     val.drop_duplicates(subset=['date'], keep='first', inplace=True)
     test.drop_duplicates(subset=['date'], keep='first', inplace=True)
+    
+    train['date'] = pd.to_datetime(train['date'])
+    train = train.set_index('date')
 
-    # return train, val, test
+    val['date'] = pd.to_datetime(val['date'])
+    val = val.set_index('date')
+
+    test['date'] = pd.to_datetime(test['date'])
+    test = test.set_index('date')
+
+    return train, val, test
 
 class Preprocessor:
     def __init__(self, window_in: int, window_out: int, step: int):
@@ -159,52 +180,67 @@ class Preprocessor:
 
         self._yeo_john = PowerTransformer(method='yeo-johnson', standardize=False)
         self._box_cox = PowerTransformer(method='box-cox', standardize=False)
+        self._robust_scaler = RobustScaler()
 
-        # TODO: Initialize robuest scaler
+    def _extract_req_cols(self, columns_list: List, suffix: str) -> List:
+        """
+        Extract required columns based on the suffix in the column names. e.g., NSDN_RETURN
 
-    def normalize():
+        Parameters
+        ----------
+        columns_list: List
+            List of all column names.
+        suffix: str
+            Suffix str to extract its respective columns. e.g., VOL_CHANGE, RETURN
+        
+        Return
+        ------
+        required_cols: List
+            List of required column names for the given suffix
         """
-        Scaling
-        """
-        # TODO: Normalize using robust scaler
-        pass 
-    
-    def _extract_req_cols(self, columns_list: List, suffix: str):
         required_cols = [col for col in columns_list if suffix in col]
         return required_cols
-
-    def _yeo_johnson_transform(self, data: pd.DataFrame, suffix: str, mode: str):
-        required_cols = [col for col in data.columns if suffix in col]
-        if mode == 'fit':
-            data[required_cols] = self._yeo_john.fit_transform(data[required_cols])
-        elif mode == 'split':
-            data[required_cols] = self._yeo_john.transform(data[required_cols])
-        else: 
-            raise ValueError('ERROR: Incorrect mode. Must be `fit` or `split`')
-        
-        return data
 
     def _transform(self, data, mode):
         """
         Transformation of data
         """
+        vol_change_cols = self._extract_req_cols(self.all_col_names, 'VOL_CHANGE')
+        turnover_cols = self._extract_req_cols(self.all_col_names, 'TURNOVER')
+        
         # For training split
         if mode == 'fit':
             # Yeo Johnson transformation for VOL_CHANGE
-            vol_change_cols = self._extract_req_cols(self.all_col_names, 'VOL_CHANGE')
             data[vol_change_cols] = self._yeo_john.fit_transform(data[vol_change_cols])
-
             # Box-Cox transoformation for TURNOVER
-            turnover_cols = self._extract_req_cols(self.all_col_names, 'TURNOVER')
             data[turnover_cols] = self._box_cox.fit_transform(data[turnover_cols])
 
+        # For val or test split
         elif mode == 'split':
-            # TODO: Transformations on val or test
-            pass
+            data[vol_change_cols] = self._yeo_john.transform(data[vol_change_cols])
+            data[turnover_cols] = self._box_cox.transform(data[turnover_cols])
+        else:
+            raise ValueError('ERROR: Incorrect mode. Must be `fit` or `split`')
 
-        data = self._yeo_johnson_transform(data, 'VOL_CHANGE', mode)
         return data
     
+    def _normalize(self, data, mode):
+        """
+        Normalize data set to avoid
+        """
+        # For training split
+        if mode == 'fit':
+            data[data.columns]= self._robust_scaler.fit_transform(data)
+        
+        # For val or test split
+        elif mode == 'split':
+            data[data.columns] = self._robust_scaler.transform(data)
+        
+        else:
+            raise ValueError('ERROR: Incorrect mode. Must be `fit` or `split`')
+        
+        return data
+
     def _create_rolling_windows(self):
         """
         Function to create rolling windows based on the input, output and step sizes.
@@ -223,7 +259,8 @@ class Preprocessor:
         train = self._transform(train, 'fit')
         print(train)
 
-        # TODO: 1. Call normalization
+        train = self._normalize(train, 'fit')
+        print(train)
 
         # TODO: 2. Call creation of rolling windows
 

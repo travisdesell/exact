@@ -20,7 +20,7 @@ def run_processing_pipeline(crsp_data_path: str, processed_data_path: str):
 
     # -------------------- Cleaning & Processing -------------------- #
     # Clean dataset inplace
-    clean_inplace(train_data, val_data, test_data)
+    train_data, val_data, test_data = clean_inplace(train_data, val_data, test_data)
 
     nn_preprocessor = Preprocessor(252*3, 90, 90)
     nn_preprocessor.process_train_data(train_data)
