@@ -44,7 +44,7 @@ PROCESSED_DATA_DIR = "processed"
 MACRO_DIR = "macro"
 CRSP_DIR = "sample" # Add directory name here if using CRSP like dataset
 ```
-Here, a sample of the CRSP equivalent dataset is stored in `data/raw/sample/` for quick reproducibilty. If any other equivalent dataset is being used, place the directory in `data/raw/` and update the CRSP_DIR environment variable with the name of the equivalent data directory.
+Here, a sample equivalent of the CRSP dataset is stored in `data/raw/sample/` for quick reproducibilty.
 
 ## Usage
 
@@ -106,6 +106,20 @@ pytest tests
         - `requirements.txt`: Python dependecies
     - `.gitignore`
 
+## Using CRSP Equivalent Datasets
+If any other CRSP equivalent dataset is being used, place the directory in `data/raw/` and update the CRSP_DIR environment variable in the .env file with the name of the equivalent data directory.
+
+```bash
+CRSP_DIR = "<equivalent-data-directory>" # Add directory name here if using CRSP like dataset
+```
+
+Since we use pre-split data (train, val, test), the new files must have files names as: 
+
+- data/
+    - `<equivalent-data-directory>/`
+        - `combined_predictors_train.csv`
+        - `combined_predictors_validation.csv`
+        - `combined_predictors_test.csv`
 
 ## Contact
 **Rahul Keneth Fernandes**
