@@ -25,13 +25,13 @@ def run_processing_pipeline(crsp_data_path: str, processed_data_path: str):
     
     # -------------------- Processing for Cov Models -------------------- #
     ret_train, ret_val, ret_test = get_only_returns(train_data, val_data, test_data)
-    cov_train, corr_train = cov_preprocessor(train_data, val_data)
+    cov_train, corr_train = cov_preprocessor(ret_train, ret_val)
 
     # Saves covariance and correlation of the returns
     save_to_csv(cov_train, processed_data_path, 'cov_train.csv')
     save_to_csv(corr_train, processed_data_path, 'corr_train.csv')
 
-    save_to_csv(ret_train, processed_data_path, 'train_csv')
+    save_to_csv(ret_train, processed_data_path, 'ret_train.csv')
     save_to_csv(ret_val, processed_data_path, 'ret_val.csv')
     save_to_csv(ret_test, processed_data_path, 'ret_test.csv')
     

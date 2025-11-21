@@ -44,7 +44,7 @@ PROCESSED_DATA_DIR = "processed"
 MACRO_DIR = "macro"
 CRSP_DIR = "sample" # Add directory name here if using CRSP like dataset
 ```
-Here, a sample equivalent of the CRSP dataset is stored in `data/raw/sample/` for quick reproducibilty.
+Here, a sample synthetic dataset like the CRSP dataset is stored in `data/raw/sample/` for quick reproducibilty.
 
 ## Usage
 
@@ -56,6 +56,11 @@ python -m scripts.run_macro_collection
 ### 2. Run data processing
 ```bash
 python -m scripts.run_processing
+```
+
+### 3. Run prelimnary training
+```bash
+python -m scripts.run_training
 ```
 
 ### Run tests
