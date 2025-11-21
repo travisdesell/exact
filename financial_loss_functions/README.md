@@ -29,7 +29,7 @@ pip install -r requirements.txt
 ### Setting Up Environment Variables
 1. Create your local environment file:
 ```bash
-cp .env.example ../.env
+cp .env.example .env
 ```
 2. Update the .env file in root directory with your Fred API key and absolute location of data directory
 
@@ -58,7 +58,7 @@ pytest tests
             - `raw/`:
                 - `2023_sp_500_select_50/`: Contains CRSP dataset for 50 selected companies from S&P 500
                 - `macro/`: Contains CSV files of macro-economic economic data
-            - `sample/`: Contains sample data
+                - `sample/`: Contains sample data
         - `exploration/`
             - `crsp_exp.ipynb`: Exploration of the CRSP dataset
             - `fred_series_analysis.ipynb`: Exploration of the macro-economic data

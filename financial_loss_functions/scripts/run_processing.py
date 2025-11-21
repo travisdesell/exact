@@ -8,12 +8,13 @@ if __name__ == '__main__':
     crsp_data_path = os.path.join(
         os.getenv('DATA_DIR'),
         os.getenv('RAW_DATA_DIR'),
-        '2023_sp_500_select_50'
+        os.getenv('CRSP_DIR')
     )
 
     processed_data_path = os.path.join(
         os.getenv('DATA_DIR'),
-        os.getenv('PROCESSED_DATA_DIR')
+        os.getenv('PROCESSED_DATA_DIR'),
+        os.getenv('CRSP_DIR')
     )
 
     run_processing_pipeline(crsp_data_path, processed_data_path)
