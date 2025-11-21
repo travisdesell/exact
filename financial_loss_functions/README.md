@@ -1,6 +1,6 @@
 # Financially Guided Neural Networks for Robust Portfolio Optimization
 
-**Authors:** Rahul Kenneth fernandes (rf4074@rit.edu), Atharva Vaidya ()  
+**Authors:** Rahul Kenneth fernandes, Atharva Atul Vaidya
 **Advisors:** Dr. Travis Desell 
 **Institution:** Rochester Institute of Technology  
 
@@ -45,19 +45,24 @@ python -m scripts.run_macro_collection
 python -m scripts.run_processing
 ```
 
+### Run tests
+```bash
+pytest tests
+```
+
 ## Directory Structure
 - `exact/`
-    - `loss_functions`: Root directory for this project
+    - `loss_functions/`: Root directory for this project
         - `data/`
             - `processed/`:
             - `raw/`:
                 - `2023_sp_500_select_50/`: Contains CRSP dataset for 50 selected companies from S&P 500
                 - `macro/`: Contains CSV files of macro-economic economic data
-            - `sample`: Contains sample data
+            - `sample/`: Contains sample data
         - `exploration/`
             - `crsp_exp.ipynb`: Exploration of the CRSP dataset
             - `fred_series_analysis.ipynb`: Exploration of the macro-economic data
-        - `scripts/`:
+        - `scripts/`
             - `run_macro_collection.py`: Data collection
             - `run_processing.py`: Data cleaning and processing
         - `src/`
@@ -89,3 +94,11 @@ python -m scripts.run_processing
     - `.gitignore`
 
 
+## Contact
+**Rahul Keneth Fernandes**
+Email: rf4074@rit.edu
+Github: [@rahulkfernandes](https://github.com/rahulkfernandes)
+
+**Atharva Atul Vaidya**
+Email: aav6986@rit.edu
+Github: [@v-atharva](https://github.com/v-atharva)
