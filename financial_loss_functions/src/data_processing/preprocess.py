@@ -118,7 +118,6 @@ def cov_preprocessor(
 
     return cov_train, corr_train
     
-
 class Preprocessor:
     def __init__(self, window_in: int, window_out: int, step: int):
         """
@@ -200,13 +199,6 @@ class Preprocessor:
         
         return data
 
-    def _create_rolling_windows(self):
-        """
-        Function to create rolling windows based on the input, output and step sizes.
-        """
-        # TODO: Create rolling windows using initalized sizes
-        
-        pass
 
     def process_train_data(self, train: pd.DataFrame)-> pd.DataFrame:
         """
@@ -228,8 +220,6 @@ class Preprocessor:
         train = self._transform(train, 'fit')
 
         train = self._normalize(train, 'fit')
-
-        # TODO: 2. Call creation of rolling windows
 
         return train
 

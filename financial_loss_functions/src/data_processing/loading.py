@@ -32,7 +32,7 @@ def load_raw_crsp_datasets(dir_path: str)-> Tuple[
         if not os.path.exists(path):
             raise FileNotFoundError(
                 f'Required file not found: {path}',
-                'File names should be: combined_predictors_<split>.csv. <split> = train, val or test'
+                'File names should be: combined_predictors_<split>.csv. <split> = train, validation or test'
             )
 
     # Load split datasets
