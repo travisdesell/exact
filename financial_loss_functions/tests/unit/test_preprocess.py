@@ -1,10 +1,9 @@
 import pytest
 import pandas as pd
 from src.data_processing.preprocess import (
-    load_crsp_datasets,
-    get_only_returns,
-    preprocess_cov,
-    clean_inplace
+    load_raw_crsp_datasets,
+    clean_inplace,
+    CovPreprocessor
 )
 
 def test_load_crsp_datasets(tmp_path):
@@ -17,7 +16,7 @@ def test_load_crsp_datasets(tmp_path):
     val_file.write_text('COL1,COL2\n0.3,0.4')
     test_file.write_text('COL1,COL2\n0.5,0.6')
 
-    train, val, test = load_crsp_datasets(tmp_path)
+    train, val, test = load_raw_crsp_datasets(tmp_path)
 
     # Check returned types
     assert isinstance(train, pd.DataFrame)
@@ -36,16 +35,19 @@ def test_load_crsp_datasets(tmp_path):
 def test_load_crsp_datasets_file_not_found(tmp_path):
     # Not creating any files, passing the empty directory
     with pytest.raises(FileNotFoundError) as excinfo:
-        load_crsp_datasets(tmp_path)
+        load_raw_crsp_datasets(tmp_path)
     
     assert 'Required file not found' in str(excinfo.value)
 
-def test_clean_data_returns():
+def test_get_only_data_returns():
     train = pd.DataFrame({'ABCD_RET': [0.1, 0.2, 0.3], 'ABCD_VOL':[100, 200, 300]})
     val = pd.DataFrame({'ABCD_RET': [0.4, 0.5, 0.6], 'ABCD_VOL':[150, 250, 350]})
     test = pd.DataFrame({'ABCD_RET': [0.7, 0.8, 0.9], 'ABCD_VOL':[400, 500, 600]})
 
-    train_ret, val_ret, test_ret = get_only_returns(train, val, test)
+    cov_processor = CovPreprocessor()
+    train_ret = cov_processor._get_only_returns(train)
+    val_ret = cov_processor._get_only_returns(val)
+    test_ret = cov_processor._get_only_returns(test)
     
     # Should keep only columns containing 'RET'
     assert list(train_ret.columns) == ['ABCD_RET']
@@ -57,13 +59,21 @@ def test_clean_data_returns():
     assert val_ret.iloc[1,0] == 0.5
     assert test_ret.iloc[2,0] == 0.9
 
-def test_preprocess_cov():
-    data = pd.DataFrame({
+def test_CovPreprocessor():
+    train = pd.DataFrame({
         'RET1': [0.1, 0.2, 0.3],
         'RET2': [0.2, 0.1, 0.0]
     })
 
-    cov, corr = preprocess_cov(data)
+    val = pd.DataFrame({
+        'RET1': [0.4, 0.5, 0.3],
+        'RET2': [0.2, 0.1, 0.0]
+    })
+
+    data = pd.concat([train, val], axis=0)
+
+    cov_processor = CovPreprocessor()
+    cov, corr = cov_processor.process_train_data(train, val)
 
     # Check that returned objects are DataFrames
     assert isinstance(cov, pd.DataFrame)
@@ -88,7 +98,7 @@ def test_clean_inplace_uneq_cols():
     assert 'ERROR: Columns do not match!' in str(excinfo.value)
 
 def test_clean_inplace_dup_cols():
-    test_cols = ['ABCD_RET', 'ABCD_VOL', 'ABCD_sprtrn', 'EFG_sprtrn']
+    test_cols = ['date', 'ABCD_RET', 'ABCD_VOL', 'ABCD_sprtrn', 'EFG_sprtrn']
     train = pd.DataFrame(columns=test_cols)
     val = pd.DataFrame(columns=test_cols)
     test = pd.DataFrame(columns=test_cols)
@@ -118,12 +128,12 @@ def test_clean_inplace_dup_dates():
         'ABCD': [400, 500, 600]
     })
 
-    clean_inplace(train, val, test)
+    train, val, test = clean_inplace(train, val, test)
 
     assert train.shape[0] == 2
     assert val.shape[0] == 2
     assert test.shape[0] == 3
 
-    assert not train.duplicated(subset='date').any()
-    assert not val.duplicated(subset='date').any()
-    assert not test.duplicated(subset='date').any()
+    assert not train.index.duplicated().any(), 'Duplicate index date found in the training set.'
+    assert not val.index.duplicated().any(), 'Duplicate index date found in the validation set.'
+    assert not test.index.duplicated().any(), 'Duplicate index date found in the test set.'

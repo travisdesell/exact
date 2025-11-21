@@ -5,7 +5,7 @@ from typing import Tuple, List
 from sklearn.preprocessing import PowerTransformer, RobustScaler
 
 
-def load_crsp_datasets(dir_path: str)-> Tuple[
+def load_raw_crsp_datasets(dir_path: str)-> Tuple[
     pd.DataFrame, pd.DataFrame, pd.DataFrame
 ]:
     """
@@ -45,59 +45,6 @@ def load_crsp_datasets(dir_path: str)-> Tuple[
     
     return train_data, val_data, test_data
 
-def get_only_returns(
-        train: pd.DataFrame, val: pd.DataFrame, test: pd.DataFrame
-    ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
-    """
-    Extract only return columns from each of the split datasets.
-
-    Parameters
-    ----------
-    train : pd.DataFrame
-        Training data.
-    val: pd.DataFrame
-        Validation data.
-    test: pd.DataFrame
-        Test data.
-    
-    Returns
-    -------
-    train : pd.DataFrame
-        Train data with only returns.
-    val : pd.DataFrame
-        Validation data with only returns.
-    test : pd.DataFrame
-        Test data with only returns.
-    """
-    return_cols = []
-    for col in train.columns:
-        if 'RET' in col:
-            return_cols.append(col)
-
-    return train[return_cols], val[return_cols], test[return_cols]
-    
-def preprocess_cov(data: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
-    """
-    Calculation of covariance and correlation for unsupervised 
-    covariance based models.
-
-    Parameters
-    ---------
-    data: pd.DataFrame
-        Train dataset to be processed
-    
-    Returns
-    -------
-    cov: pd.DataFrame
-        Covariance matrix
-    corr: pd.DataFrame
-        Correlation matrix
-    """
-    cov = data.cov()
-    corr = data.corr()
-
-    return cov, corr
-
 def clean_inplace(
         train: pd.DataFrame, val: pd.DataFrame, test: pd.DataFrame
     ) -> pd.DataFrame:
@@ -128,7 +75,7 @@ def clean_inplace(
     if not np.array_equal(train.columns, val.columns) \
         or not np.array_equal(train.columns, test.columns):
         raise ValueError('ERROR: Columns do not match!')
-    
+
     # Remove duplicate s&p500 returns columns
     dup_sp500 = []
     for col in features:
@@ -150,15 +97,72 @@ def clean_inplace(
     test.drop_duplicates(subset=['date'], keep='first', inplace=True)
     
     train['date'] = pd.to_datetime(train['date'])
-    train = train.set_index('date')
+    train.set_index('date', inplace=True)
 
     val['date'] = pd.to_datetime(val['date'])
-    val = val.set_index('date')
+    val.set_index('date', inplace=True)
 
     test['date'] = pd.to_datetime(test['date'])
-    test = test.set_index('date')
+    test.set_index('date', inplace=True)
 
     return train, val, test
+
+def save_to_csv(data: pd.DataFrame, output_dir: str, filename: str):
+    data.to_csv(os.path.join(output_dir, filename), sep=',')
+
+class CovPreprocessor:
+    def _get_only_returns(self, data: pd.DataFrame) -> pd.DataFrame:
+        """
+        Extract only return columns from each of the split datasets.
+
+        Parameters
+        ----------
+        data : pd.DataFrame
+            Training data.
+        
+        Returns
+        -------
+        returns : pd.DataFrame
+            Train data with only returns.
+        """
+        return_cols = []
+        for col in data.columns:
+            if 'RET' in col:
+                return_cols.append(col)
+
+        return data[return_cols]
+        
+    def process_train_data(
+            self, train: pd.DataFrame, val: pd.DataFrame
+        ) -> Tuple[pd.DataFrame, pd.DataFrame]:
+        """
+        Combines train and Validation data, then calculates
+        covariance and correlation matrices
+
+        Parameters
+        ----------
+        train: pd.DataFrame
+            Training split data
+        val: pd.DataFrame
+            Validation split data
+        """
+        train = pd.concat([train, val], axis=0)
+
+        train = self._get_only_returns(train)
+
+        cov_train = train.cov()
+        corr_train = train.corr()
+
+        return cov_train, corr_train
+    
+    def process_test_data(self, test: pd.DataFrame) -> pd.DataFrame:
+        """
+        Extracts only returns columns for testing unsupervised models
+        """
+        test = self._get_only_returns(test)
+
+        return test
+
 
 class Preprocessor:
     def __init__(self, window_in: int, window_out: int, step: int):
@@ -201,7 +205,7 @@ class Preprocessor:
         required_cols = [col for col in columns_list if suffix in col]
         return required_cols
 
-    def _transform(self, data, mode):
+    def _transform(self, data: pd.DataFrame, mode: str):
         """
         Transformation of data
         """
@@ -224,9 +228,9 @@ class Preprocessor:
 
         return data
     
-    def _normalize(self, data, mode):
+    def _normalize(self, data: pd.DataFrame, mode: str):
         """
-        Normalize data set to avoid
+        Normalize data set
         """
         # For training split
         if mode == 'fit':
@@ -266,8 +270,8 @@ class Preprocessor:
 
         return train
 
-    def process_val_data(val: pd.DataFrame) -> pd.DataFrame:
+    def process_val_data(self, val: pd.DataFrame) -> pd.DataFrame:
         pass
 
-    def process_test_data(test: pd.DataFrame) -> pd.DataFrame:
+    def process_test_data(self, test: pd.DataFrame) -> pd.DataFrame:
         pass
