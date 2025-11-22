@@ -12,7 +12,7 @@ def test_load_crsp_datasets(tmp_path):
     val_file.write_text('COL1,COL2\n0.3,0.4')
     test_file.write_text('COL1,COL2\n0.5,0.6')
 
-    train, val, test = load_raw_crsp_datasets(tmp_path)
+    train, val, test = load_raw_crsp_datasets(train_file, val_file, test_file)
 
     # Check returned types
     assert isinstance(train, pd.DataFrame)
@@ -31,6 +31,6 @@ def test_load_crsp_datasets(tmp_path):
 def test_load_crsp_datasets_file_not_found(tmp_path):
     # Not creating any files, passing the empty directory
     with pytest.raises(FileNotFoundError) as excinfo:
-        load_raw_crsp_datasets(tmp_path)
+        load_raw_crsp_datasets('train.csv', 'val.csv', 'test.csv')
     
     assert 'Required file not found' in str(excinfo.value)

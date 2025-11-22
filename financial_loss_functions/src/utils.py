@@ -61,5 +61,5 @@ def data_dir_check(macro_path: str):
     
     return run_permission
 
-def save_to_csv(data: pd.DataFrame, output_dir: str, filename: str):
-    data.to_csv(os.path.join(output_dir, filename), sep=',')
+def save_to_csv(data: pd.DataFrame, output_path:str):
+    data.to_csv(output_path, sep=',')

@@ -2,10 +2,11 @@ import os
 import sys
 import time
 import pandas as pd
+from typing import Dict
 from fredapi import Fred
-from typing import Dict, List
+from pathlib import Path
 from src.utils import data_dir_check
-from src.data_collection.const import BASE_SERIES_DICT
+from src.data_collection.const import FRED_SERIES
 
 class FredAPI:
     default_start_date = '2007-01-01' # Match first available date from CRSP
@@ -105,18 +106,30 @@ def save_to_csv(category_data: pd.DataFrame, category: str, data_path: str):
     output_path = os.path.join(data_path, category)
     category_data.to_csv(output_path + '.csv', index=True)
 
-def run_macro_pipeline(api_key: str, macro_data_path: str):
+def run_macro_pipeline(
+        api_key: str, paths_config: Dict, fred_series: Dict = FRED_SERIES
+    ):
     """
     Macro-economic Data Collection Pipeline Entry point
 
+    Parameters
+    ----------
+    api_key: str
+        API key for FRED API
+    paths_config: Dict
+        Config dictionary containg paths to files and directories
+    fred_series: Dict
+        Dictionary containing required categories and their fred series ids
+        Default = src.data_collection.const.FRED_SERIES
     """
     print('\n','=' * 20, ' Fred API Macro-Economic Data Pipeline ', '=' * 20)
     
     # To ask user permission before overwriting data
-    if not data_dir_check(macro_data_path):
-        sys.exit('Fred API Pipeline Aborted!')
+    macro_data_path = Path(paths_config['data']['raw_macro_dir'])
+    # if not data_dir_check(macro_data_path):
+    #     sys.exit('Fred API Pipeline Aborted!')
  
-    for category, series_ids in BASE_SERIES_DICT.items():
+    for category, series_ids in fred_series.items():
         macro_api = FredAPI(api_key, category, series_ids) 
         category_data = macro_api.pull_category_data()
 

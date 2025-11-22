@@ -1,7 +1,7 @@
 # File to Store Series ids from Fred API
 # Populated from fetch_fred_data.py BASE_SERIES
 
-BASE_SERIES_DICT = {
+FRED_SERIES = {
     'Output_Income': {
         'Real Personal Income': 'RPI',
         'Real Personal Income Excluding Transfers': 'W875RX1',

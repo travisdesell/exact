@@ -1,0 +1,24 @@
+{
+    "data": {
+        "data_dir": "data/",
+        "raw_dir": "data/raw/",
+        "processed_dir": "data/processed/",
+        "raw_macro_dir": "data/raw/macro/",
+        "crsp_dir": ""
+    },
+    "raw_files": {
+        "train": "combined_predictors_train.csv",
+        "val": "combined_predictors_validation.csv",
+        "test": "combined_predictors_test.csv"
+    },
+    "processed_paths": {
+        "returns_train": "data/processed/ret_train.csv",
+        "returns_val": "data/processed/ret_val.csv",
+        "returns_test": "data/processed/ret_test.csv",
+        "cov_train": "data/processed/cov_train.csv",
+        "corr_train": "data/processed/corr_train.csv",
+        "processed_train": "data/processed/processed_train.csv",
+        "processed_val": "data/processed/processed_val.csv",
+        "processed_test": "data/processed/processed_test.csv"
+    }
+}
