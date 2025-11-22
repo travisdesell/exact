@@ -36,13 +36,14 @@ def delete_directory(dir_path: str) -> None:
     except Exception as e:
         print(f'An error occurred: {e}')
 
-def check_files(files_list: List[str]):
+def check_if_files_exist(paths_list: List[str]):
     # Check if all files exist
-    for path in files_list:
+    for path in paths_list:
         if not os.path.exists(path):
             raise FileNotFoundError(
-                f'Required file not found: {path}')
-
+                f'Required file not found: {path}'
+            )
+        
 def data_dir_check(macro_path: str):
     run_permission = False
     if os.path.exists(macro_path):

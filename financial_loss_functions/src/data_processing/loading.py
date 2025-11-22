@@ -1,6 +1,7 @@
 import os
 import pandas as pd
-from typing import Tuple
+from typing import Tuple, List, Dict
+from src.utils import check_if_files_exist
 
 def load_raw_crsp_datasets(
         train_path: str, val_path: str, test_path: str
@@ -27,12 +28,7 @@ def load_raw_crsp_datasets(
     test_data: pd.DataFrame
         Raw test data
     """
-    # Check if all files exist
-    for path in [train_path, val_path, test_path]:
-        if not os.path.exists(path):
-            raise FileNotFoundError(
-                f'Required file not found: {path}'
-            )
+    check_if_files_exist([train_path, val_path, test_path])
 
     # Load split datasets
     train_data = pd.read_csv(train_path)
@@ -41,11 +37,26 @@ def load_raw_crsp_datasets(
     
     return train_data, val_data, test_data
 
-def load_cov_processed(cov_train_path: str, corr_train_path: str):
+def load_processed_files(paths_dict: Dict[str, str]) -> Dict[str, pd.DataFrame]:
     """
-    Loads processed data files for cov-based training
+    Loads processed data files. Provide dictionary of 
+    name key and path strings value to be loaded.
+    
+    Parameters
+    ----------
+    paths_dict: Dict[str, str]
+        Dictionary of name key and path strings value to be loaded.
+    
+    Returns
+    -------
+    loaded_dfs: Dict[str, pd.DataFrame]
+        Dictionary of name key and loaded dataframe as value
     """
-    cov_train = pd.read_csv(cov_train_path, index_col=0)
-    corr_train = pd.read_csv(corr_train_path, index_col=0)
+    # Check if all files exist
+    check_if_files_exist(list(paths_dict.values()))
 
-    return cov_train, corr_train
+    loaded_dfs = {}
+    for name, f_path in paths_dict.items():
+        loaded_dfs[name] = pd.read_csv(f_path, index_col=0)
+
+    return loaded_dfs

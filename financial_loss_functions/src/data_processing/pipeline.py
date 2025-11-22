@@ -1,4 +1,3 @@
-import sys
 from typing import Dict
 from pathlib import Path
 from src.utils import data_dir_check, save_to_csv
@@ -39,9 +38,18 @@ def run_processing_pipeline(paths_config: Dict):
     # -------------------- Preporcessing -------------------- #
     # Common processing (realized returns)
     ret_train, ret_val, ret_test = get_only_returns(train_data, val_data, test_data)
-    save_to_csv(ret_train, paths_config['processed_paths']['returns_train'])
-    save_to_csv(ret_val, paths_config['processed_paths']['returns_val'])
-    save_to_csv(ret_test, paths_config['processed_paths']['returns_test'])
+    save_to_csv(
+        ret_train,
+        Path(paths_config['processed_paths']['returns_train'])
+    )
+    save_to_csv(
+        ret_val,
+        Path(paths_config['processed_paths']['returns_val'])
+    )
+    save_to_csv(
+        ret_test,
+        Path(paths_config['processed_paths']['returns_test'])
+    )
     
     print('Realized returns extracted and saved.')
     
@@ -49,8 +57,14 @@ def run_processing_pipeline(paths_config: Dict):
     cov_train, corr_train = cov_preprocessor(ret_train, ret_val)
 
     # Saves covariance and correlation of the returns
-    save_to_csv(cov_train, paths_config['processed_paths']['cov_train'])
-    save_to_csv(corr_train, paths_config['processed_paths']['corr_train'])
+    save_to_csv(
+        cov_train,
+        Path(paths_config['processed_paths']['cov_train'])
+    )
+    save_to_csv(
+        corr_train,
+        Path(paths_config['processed_paths']['corr_train'])
+    )
 
     print('Preprocessing for Cov models completed.')
 
@@ -60,9 +74,18 @@ def run_processing_pipeline(paths_config: Dict):
     processed_val = nn_preprocessor.process_split_data(val_data)
     processed_test = nn_preprocessor.process_split_data(test_data)
 
-    save_to_csv(processed_train, paths_config['processed_paths']['processed_train'])
-    save_to_csv(processed_val, paths_config['processed_paths']['processed_val'])
-    save_to_csv(processed_test, paths_config['processed_paths']['processed_test'])
+    save_to_csv(
+        processed_train,
+        Path(paths_config['processed_paths']['processed_train'])
+    )
+    save_to_csv(
+        processed_val,
+        Path(paths_config['processed_paths']['processed_val'])
+    )
+    save_to_csv(
+        processed_test,
+        Path(paths_config['processed_paths']['processed_test'])
+    )
 
     print('Preprocessing for Neural Networks completed.')
 
