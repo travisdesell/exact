@@ -44,23 +44,34 @@ def check_if_files_exist(paths_list: List[str]):
                 f'Required file not found: {path}'
             )
         
-def data_dir_check(macro_path: str):
+def data_dir_check(path: str):
     run_permission = False
-    if os.path.exists(macro_path):
-        print(macro_path, ', Directory Exists!!!!')
+    if os.path.exists(path):
+        print(path, ', Directory Exists!!!!')
         choice = input('Are you sure you want to overwrite it? (Y/N): ').strip()
         if choice == 'Y':
-            delete_directory(macro_path)
-            create_directory(macro_path)
+            delete_directory(path)
+            create_directory(path)
             run_permission = True
         else:
             print('Aborted. Directory not modified.')
             run_permission = False
     else:
-        create_directory(macro_path)
+        create_directory(path)
         run_permission = True
     
     return run_permission
 
 def save_to_csv(data: pd.DataFrame, output_path:str):
     data.to_csv(output_path, sep=',')
+
+def reset_data_stage(dir_path: str):
+    if os.path.exists(dir_path):
+        print(dir_path, ', Directory exists. Overwriting.')
+        delete_directory(dir_path)
+        create_directory(dir_path)
+
+    else:
+        create_directory(dir_path)
+        print(dir_path, ', Directory created.')
+    

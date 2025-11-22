@@ -2,7 +2,7 @@ import os
 import pytest
 import pandas as pd
 from dotenv import load_dotenv
-from src.data_collection.macro_api import FredAPI, save_to_csv, run_macro_pipeline
+from src.data_collection.pipeline import run_macro_pipeline
 
 load_dotenv()
 

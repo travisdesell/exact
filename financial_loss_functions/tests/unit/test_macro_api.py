@@ -1,5 +1,4 @@
 import pytest
-import pandas as pd
 from src.data_collection.macro_api import FredAPI
 
 

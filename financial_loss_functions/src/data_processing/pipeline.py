@@ -1,6 +1,6 @@
 from typing import Dict
 from pathlib import Path
-from src.utils import data_dir_check, save_to_csv
+from src.utils import reset_data_stage, save_to_csv
 from src.data_processing.loading import load_raw_crsp_datasets
 from src.data_processing.preprocess import (
     clean_inplace,
@@ -13,10 +13,8 @@ from src.data_processing.preprocess import (
 def run_processing_pipeline(paths_config: Dict):
     print('\n','=' * 20, ' Data Processing Pipeline ', '=' * 20)
     
-    # proc_data_path = Path(paths_config['data']['processed_dir'])
-
-    # if not data_dir_check(proc_data_path):
-    #     sys.exit('Data Processing Pipeline Aborted!')
+    # Reset directory
+    reset_data_stage(Path(paths_config['data']['processed_dir']))
     
     # -------------------- Data Loading -------------------- #
     # Extracting raw data paths for crsp
@@ -53,20 +51,20 @@ def run_processing_pipeline(paths_config: Dict):
     
     print('Realized returns extracted and saved.')
     
-    # Preprocessing for covariance based models
-    cov_train, corr_train = cov_preprocessor(ret_train, ret_val)
+    # # Preprocessing for covariance based models
+    # cov_train, corr_train = cov_preprocessor(ret_train, ret_val)
 
-    # Saves covariance and correlation of the returns
-    save_to_csv(
-        cov_train,
-        Path(paths_config['processed_paths']['cov_train'])
-    )
-    save_to_csv(
-        corr_train,
-        Path(paths_config['processed_paths']['corr_train'])
-    )
+    # # Saves covariance and correlation of the returns
+    # save_to_csv(
+    #     cov_train,
+    #     Path(paths_config['processed_paths']['cov_train'])
+    # )
+    # save_to_csv(
+    #     corr_train,
+    #     Path(paths_config['processed_paths']['corr_train'])
+    # )
 
-    print('Preprocessing for Cov models completed.')
+    # print('Preprocessing for Cov models completed.')
 
     # Preprocessing for NN
     nn_preprocessor = Preprocessor(252*3, 90, 90)

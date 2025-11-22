@@ -1,7 +1,7 @@
 import os
 from dotenv import load_dotenv
 from scripts.utils import load_path_config
-from src.data_collection.macro_api import run_macro_pipeline
+from src.data_collection.pipeline import run_macro_pipeline
 
 
 if __name__ == '__main__':
