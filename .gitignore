@@ -27,3 +27,4 @@ financial_loss_functions/scripts/generate_synthetic_data.py
 
 # Local secrets
 financial_loss_functions/data_collectors/fred_config.py
+financial_loss_functions/project_structure.txt
