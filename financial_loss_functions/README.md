@@ -1,8 +1,8 @@
 # Financially Guided Neural Networks for Robust Portfolio Optimization
 
-**Authors:** Rahul Kenneth fernandes, Atharva Atul Vaidya
-**Advisors:** Dr. Travis Desell 
-**Institution:** Rochester Institute of Technology  
+**Authors:** Rahul Kenneth fernandes, Atharva Atul Vaidya  
+**Advisors:** Dr. Travis Desell   
+**Institution:** Rochester Institute of Technology    
 
 ## Prerequisites
 - Python 3.13.5
@@ -146,10 +146,10 @@ Since we use pre-split data (train, val, test), the new files must follow the st
 
 ## Contact
 
-**Rahul Keneth Fernandes**
-Email: rf4074@rit.edu
-Github: [@rahulkfernandes](https://github.com/rahulkfernandes)
+**Rahul Keneth Fernandes**  
+Email: rf4074@rit.edu  
+Github: [@rahulkfernandes](https://github.com/rahulkfernandes)  
 
-**Atharva Atul Vaidya**
-Email: aav6986@rit.edu
-Github: [@v-atharva](https://github.com/v-atharva)
+**Atharva Atul Vaidya**  
+Email: aav6986@rit.edu  
+Github: [@v-atharva](https://github.com/v-atharva)  
