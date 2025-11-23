@@ -5,7 +5,6 @@ from src.data_processing.loading import load_raw_crsp_datasets
 from src.data_processing.preprocess import (
     clean_inplace,
     get_only_returns,
-    cov_preprocessor,
     Preprocessor
 )
 
@@ -67,7 +66,7 @@ def run_processing_pipeline(paths_config: Dict):
     # print('Preprocessing for Cov models completed.')
 
     # Preprocessing for NN
-    nn_preprocessor = Preprocessor(252*3, 90, 90)
+    nn_preprocessor = Preprocessor()
     processed_train = nn_preprocessor.process_train_data(train_data)
     processed_val = nn_preprocessor.process_split_data(val_data)
     processed_test = nn_preprocessor.process_split_data(test_data)

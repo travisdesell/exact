@@ -119,7 +119,7 @@ def cov_preprocessor(
     return cov_train, corr_train
     
 class Preprocessor:
-    def __init__(self, window_in: int, window_out: int, step: int):
+    def __init__(self):
         """
         Initialize Preprocessor which transorforms, normalizes and creates sliding windows.
 
@@ -132,9 +132,9 @@ class Preprocessor:
         step: int
             step size in days for rolling windows
         """
-        self.window_in = window_in
-        self.window_out = window_out
-        self.step = step
+        # self.window_in = window_in
+        # self.window_out = window_out
+        # self.step = step
 
         self._yeo_john = PowerTransformer(method='yeo-johnson', standardize=False)
         self._box_cox = PowerTransformer(method='box-cox', standardize=False)
