@@ -129,7 +129,9 @@ def cov_preprocessor(
     return cov_train, corr_train
     
 class Preprocessor:
-    def __init__(self, common_features: List[str], col_sep: str = '_'):
+    def __init__(
+            self, col_sep: str = '_', common_features: List[str] | None = None
+        ):
         """
         Initialize Preprocessor which transorforms, normalizes and creates sliding windows.
         
@@ -210,8 +212,12 @@ class Preprocessor:
             if col != 'date':
                 ticker = col.split(self.col_sep, 1)[0]
                 tickers.append(ticker)
-
-        return sorted(set(tickers))
+        
+        if self.common_features:
+            tickers = [x for x in sorted(set(tickers)) if x not in self.common_features]
+            return tickers
+        else:
+            return sorted(set(tickers))
 
     def _broadcast_common(self, data, features: List[str]) -> pd.DataFrame:
         """Broadcast common features to all tickers with names <ticker>_<common_feature>"""
@@ -246,13 +252,15 @@ class Preprocessor:
         self.all_col_names = list(train.columns)
         self.all_tickers = self._extract_tickers()
         
-        # TODO: Combine Macro data and common features here
+        # TODO: Combine split matched Macro data and common features here
 
         train = self._transform(train, 'fit')
 
         train = self._normalize(train, 'fit')
 
-        train = self._broadcast_common(train, self.common_features)
+        # Broadcast only if common features are present
+        if self.common_features:
+            train = self._broadcast_common(train, self.common_features)
 
         return train
 
@@ -275,7 +283,9 @@ class Preprocessor:
 
         split_data = self._normalize(split_data, 'split')
 
-        # TODO: Call broadcasting functions here
+         # Broadcast only if common features are present
+        if self.common_features:
+            split_data = self._broadcast_common(split_data, self.common_features)
 
         return split_data
 
@@ -299,6 +309,7 @@ class Reshaper:
             self,
             in_size: int,
             out_size: int,
+            stride: int,
             col_sep: str = '_',
             layout: ReshapeStyle = ReshapeStyle.T_N_F
         ):
@@ -311,11 +322,14 @@ class Reshaper:
             size of input window in terms of time steps
         out_size: int
             size output window in terms of time steps
+        stride: int
+            step size for the sliding window
         col_sep: str
             Special character that separates the ticker string from the feature string.
         """
         self.in_size = in_size
         self.out_size = out_size
+        self.stride = stride
         self.col_sep = col_sep
         self.layout = layout
         
@@ -371,4 +385,9 @@ class Reshaper:
         ) -> np.ndarray:
         
         self._extract_features(features_data)
+
+        starts = list(
+            range(0, len(features_data) - (self.in_size + self.out_size) + 1, self.stride)
+        )
+
 

@@ -18,7 +18,7 @@ def run_training_pipeline(paths_config: Dict):
     processed_dfs = load_processed_files(processed_files)
 
 
-    reshaper = Reshaper(252, 63)
-    train_data = processed_dfs['processed_train'].drop(['sprtrn'], axis=1)
+    reshaper = Reshaper(252, 63, 63)
+    train_data = processed_dfs['processed_train']
     returns_train = processed_dfs['returns_train']
     reshaper.reshape(train_data, returns_train)
