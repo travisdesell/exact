@@ -57,6 +57,8 @@ def load_processed_files(paths_dict: Dict[str, str]) -> Dict[str, pd.DataFrame]:
 
     loaded_dfs = {}
     for name, f_path in paths_dict.items():
-        loaded_dfs[name] = pd.read_csv(f_path, index_col=0)
+        temp_df = pd.read_csv(f_path, index_col=0)
+        temp_df.index = pd.to_datetime(temp_df.index)
+        loaded_dfs[name] = temp_df
 
     return loaded_dfs

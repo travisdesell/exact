@@ -14,10 +14,11 @@ def test_get_only_data_returns():
 
     train_ret, val_ret, test_ret = get_only_returns(train, val, test)
     
-    # Should keep only columns containing 'RET'
-    assert list(train_ret.columns) == ['ABCD_RET']
-    assert list(val_ret.columns) == ['ABCD_RET']
-    assert list(test_ret.columns) == ['ABCD_RET']
+    # Should keep only columns containing '_RET',
+    # but with suffix removed
+    assert list(train_ret.columns) == ['ABCD']
+    assert list(val_ret.columns) == ['ABCD']
+    assert list(test_ret.columns) == ['ABCD']
 
     # Check values remain the same
     assert train_ret.iloc[0,0] == 0.1

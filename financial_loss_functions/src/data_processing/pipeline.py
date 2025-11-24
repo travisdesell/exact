@@ -9,7 +9,7 @@ from src.data_processing.preprocess import (
 )
 
 
-def run_processing_pipeline(paths_config: Dict):
+def run_processing_pipeline(paths_config: Dict, features_config: Dict):
     print('\n','=' * 20, ' Data Processing Pipeline ', '=' * 20)
     
     # Reset directory
@@ -66,7 +66,9 @@ def run_processing_pipeline(paths_config: Dict):
     # print('Preprocessing for Cov models completed.')
 
     # Preprocessing for NN
-    nn_preprocessor = Preprocessor()
+    nn_preprocessor = Preprocessor(
+        common_features = features_config['common_features']
+    )
     processed_train = nn_preprocessor.process_train_data(train_data)
     processed_val = nn_preprocessor.process_split_data(val_data)
     processed_test = nn_preprocessor.process_split_data(test_data)

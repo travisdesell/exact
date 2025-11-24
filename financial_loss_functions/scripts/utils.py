@@ -24,3 +24,8 @@ def load_path_config(path: str, crsp_data_dir: str | None = None) -> Dict:
         config['data']['crsp_dir'] = config['data']['raw_dir'] + crsp_data_dir
     
     return config
+
+def load_config(path: str) -> Dict:
+    with open(path, 'r') as f:
+        config = json.load(f)
+    return config

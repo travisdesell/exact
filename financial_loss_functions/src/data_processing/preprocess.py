@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+from enum import StrEnum
 from typing import Tuple, List
 from sklearn.preprocessing import PowerTransformer, RobustScaler
 
@@ -91,11 +92,20 @@ def get_only_returns(
         Test data with only returns.
     """
     return_cols = []
+    return_suffix = '_RET'
     for col in train.columns:
-        if 'RET' in col:
+        if return_suffix in col:
             return_cols.append(col)
+    
+    ret_train = train[return_cols]
+    ret_val = val[return_cols]
+    ret_test = test[return_cols]
 
-    return train[return_cols], val[return_cols], test[return_cols]
+    ret_train.columns = [col.replace(return_suffix, '') for col in return_cols]
+    ret_val.columns = [col.replace(return_suffix, '') for col in return_cols]
+    ret_test.columns = [col.replace(return_suffix, '') for col in return_cols]
+
+    return ret_train, ret_val, ret_test
         
 def cov_preprocessor(
         train: pd.DataFrame, val: pd.DataFrame
@@ -119,23 +129,18 @@ def cov_preprocessor(
     return cov_train, corr_train
     
 class Preprocessor:
-    def __init__(self):
+    def __init__(self, common_features: List[str], col_sep: str = '_'):
         """
         Initialize Preprocessor which transorforms, normalizes and creates sliding windows.
-
+        
         Parameters
         ----------
-        window_in: int
-            size of input window in days
-        window_out: int
-            size of output window in days
-        step: int
-            step size in days for rolling windows
-        """
-        # self.window_in = window_in
-        # self.window_out = window_out
-        # self.step = step
+        col_sep: str
+            Special character that separates the ticker string from the feature string.
 
+        """
+        self.common_features = common_features
+        self.col_sep = col_sep
         self._yeo_john = PowerTransformer(method='yeo-johnson', standardize=False)
         self._box_cox = PowerTransformer(method='box-cox', standardize=False)
         self._robust_scaler = RobustScaler()
@@ -163,8 +168,8 @@ class Preprocessor:
         """
         Transformation of data
         """
-        vol_change_cols = self._extract_req_cols(self.all_col_names, 'VOL_CHANGE')
-        turnover_cols = self._extract_req_cols(self.all_col_names, 'TURNOVER')
+        vol_change_cols = self._extract_req_cols(self.all_col_names, '_VOL_CHANGE')
+        turnover_cols = self._extract_req_cols(self.all_col_names, '_TURNOVER')
         
         # For training split
         if mode == 'fit':
@@ -199,6 +204,29 @@ class Preprocessor:
         
         return data
 
+    def _extract_tickers(self):
+        tickers = []
+        for col in self.all_col_names :
+            if col != 'date':
+                ticker = col.split(self.col_sep, 1)[0]
+                tickers.append(ticker)
+
+        return sorted(set(tickers))
+
+    def _broadcast_common(self, data, features: List[str]) -> pd.DataFrame:
+        """Broadcast common features to all tickers with names <ticker>_<common_feature>"""
+
+        # Create a dict of new columns: {new_col_name: values} for all ticker-feature pairs
+        new_cols = {
+            f'{ticker}{self.col_sep}{feat}': data[feat] 
+            for feat in features for ticker in self.all_tickers
+        }
+
+        # Drop the original common columns after broadcasting
+        data = data.drop(columns=features).assign(**new_cols)
+        
+        return data
+
 
     def process_train_data(self, train: pd.DataFrame)-> pd.DataFrame:
         """
@@ -216,10 +244,15 @@ class Preprocessor:
         """
 
         self.all_col_names = list(train.columns)
+        self.all_tickers = self._extract_tickers()
+        
+        # TODO: Combine Macro data and common features here
 
         train = self._transform(train, 'fit')
 
         train = self._normalize(train, 'fit')
+
+        train = self._broadcast_common(train, self.common_features)
 
         return train
 
@@ -242,4 +275,100 @@ class Preprocessor:
 
         split_data = self._normalize(split_data, 'split')
 
+        # TODO: Call broadcasting functions here
+
         return split_data
+
+class ReshapeStyle(StrEnum):
+    """
+    For fixed reshaping styles to avoid reshape errors.
+    """
+    T_N_F = 'T_N_F' # (Time Steps, Tickers, Features)
+    T_F_N = 'T_F_N' # (Time Steps, Features, Tickers)   
+
+class Reshaper:
+    """
+    Reshapes a wide 2D DataFrame with columns like '<ticker>_<feature>',
+    into 3D tensors (T, N_stocks, F_features), and builds sliding windows.
+
+    Assumes all columns follow the pattern:
+        <ticker>_<feature>
+    """
+
+    def __init__(
+            self,
+            in_size: int,
+            out_size: int,
+            col_sep: str = '_',
+            layout: ReshapeStyle = ReshapeStyle.T_N_F
+        ):
+        """
+        Initialize Reshaper instance.
+
+        Parameters
+        ----------
+        in_size: int
+            size of input window in terms of time steps
+        out_size: int
+            size output window in terms of time steps
+        col_sep: str
+            Special character that separates the ticker string from the feature string.
+        """
+        self.in_size = in_size
+        self.out_size = out_size
+        self.col_sep = col_sep
+        self.layout = layout
+        
+        if not isinstance(layout, ReshapeStyle):
+            raise TypeError(
+                '`layout` must be of type ReshapeStyle to avoid errors.',
+                'Use ReshapeStyle from src.data_processing.preprocess.'
+            )
+
+        self.tickers = [] # All tickers
+        self.features = [] # All features
+        self.cols_per_ticker = [] # All features for all tickers
+    
+    def _split_col(self, col: str) -> Tuple[str, str]:
+        """Split column into (ticker, feature) using first underscore only."""
+        parts = col.split(self.col_sep, 1)
+        if len(parts) != 2:
+            raise ValueError(f"Column '{col}' does not match <ticker>_<feature> format")
+        return parts[0], parts[1]  # ticker, feature-with-underscores
+    
+    def _extract_features(self, df: pd.DataFrame):
+        """Extract tickers and features from full DataFrame column names."""
+        tickers = []
+        features = []
+
+        for col in df.columns:
+            t, f = self._split_col(col)
+            tickers.append(t)
+            features.append(f)
+
+        self.tickers = sorted(set(tickers)) # Important to sort
+
+        # Features must be identical for all tickers
+        features_by_ticker = {t: set() for t in self.tickers}
+        for col in df.columns:
+            t, f = self._split_col(col)
+            features_by_ticker[t].add(f)
+        
+        # Ensuring all tickers have the same feature list
+        all_feature_sets = list(features_by_ticker.values())
+        if not all(s == all_feature_sets[0] for s in all_feature_sets):
+            raise ValueError('Different tickers have different feature sets!')
+
+        self.features = sorted(list(all_feature_sets[0])) # Important to sort
+
+        # Deterministic order for reshaping
+        self.cols_per_ticker = [
+            f'{t}{self.col_sep}{f}' for t in self.tickers for f in self.features
+        ]
+    
+    def reshape(
+            self, features_data: pd.DataFrame, raw_returns: pd.DataFrame
+        ) -> np.ndarray:
+        
+        self._extract_features(features_data)
+

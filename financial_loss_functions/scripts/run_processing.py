@@ -1,6 +1,6 @@
 import os
 from dotenv import load_dotenv
-from scripts.utils import load_path_config
+from scripts.utils import load_path_config, load_config
 from src.data_processing.pipeline import run_processing_pipeline
 
 if __name__ == '__main__':
@@ -11,4 +11,6 @@ if __name__ == '__main__':
         os.getenv('CRSP_DIR')
     )
 
-    run_processing_pipeline(paths_config)
+    features_config = load_config(os.path.join('config', 'features.json'))
+
+    run_processing_pipeline(paths_config, features_config)
