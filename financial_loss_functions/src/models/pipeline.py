@@ -1,7 +1,7 @@
 from typing import Dict
 from pathlib import Path
-from src.data_processing.loading import load_processed_files
-from src.data_processing.preprocess import Reshaper
+from src.data_processing.loading import load_csv_files
+from src.data_processing.preprocess import Reshaper, ReshapeStyle
 
 def run_training_pipeline(paths_config: Dict):
     # -------------------- Loading Processed Data -------------------- #
@@ -15,7 +15,7 @@ def run_training_pipeline(paths_config: Dict):
     }
 
 
-    processed_dfs = load_processed_files(processed_files)
+    processed_dfs = load_csv_files(processed_files)
 
 
     reshaper = Reshaper(252, 63, 63)

@@ -1,7 +1,7 @@
 from typing import Dict
 from pathlib import Path
 from src.utils import reset_data_stage, save_to_csv
-from src.data_processing.loading import load_raw_crsp_datasets
+from src.data_processing.loading import load_raw_crsp_datasets, load_macro_data
 from src.data_processing.preprocess import (
     clean_inplace,
     get_only_returns,
@@ -29,8 +29,22 @@ def run_processing_pipeline(paths_config: Dict, features_config: Dict):
         test_path
     )
 
+    # Extracting macro-economic directory path
+    macro_dir_path = Path(paths_config['data']['raw_macro_dir'])
+
+    # Loading raw macro-economic data
+    raw_macro = load_macro_data(macro_dir_path)
+    
     # -------------------- Cleaning -------------------- #
     train_data, val_data, test_data = clean_inplace(train_data, val_data, test_data)
+
+    # I TODO: ##
+    # 1. Use loaded macro data from `raw_macro` (Dict[str, pd.DataFrame]).
+    # 2. Combine all macro data and split into train, val and test based on 
+    #   CRSP data. Find strategy to make macro data "daily". Sometimes averaging 
+    #   can work, sometimes you can repeat the same values for every day.
+    # 3. Clean data and place all functions/classes in preprocess.py and call it here.
+    # Use src.<directory_name>.<file_name> for imports
 
     # -------------------- Preporcessing -------------------- #
     # Common processing (realized returns)
@@ -50,20 +64,9 @@ def run_processing_pipeline(paths_config: Dict, features_config: Dict):
     
     print('Realized returns extracted and saved.')
     
-    # # Preprocessing for covariance based models
-    # cov_train, corr_train = cov_preprocessor(ret_train, ret_val)
-
-    # # Saves covariance and correlation of the returns
-    # save_to_csv(
-    #     cov_train,
-    #     Path(paths_config['processed_paths']['cov_train'])
-    # )
-    # save_to_csv(
-    #     corr_train,
-    #     Path(paths_config['processed_paths']['corr_train'])
-    # )
-
-    # print('Preprocessing for Cov models completed.')
+    # II TODO: ##
+    # 1. Add extra argument to Preprocessor.process_train_data() and Preprocessor.process_split_data() to take in macro data
+    # 2. Do Not Include underscore in col names in macro data if renaming
 
     # Preprocessing for NN
     nn_preprocessor = Preprocessor(

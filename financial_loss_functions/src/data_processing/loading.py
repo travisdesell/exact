@@ -37,9 +37,9 @@ def load_raw_crsp_datasets(
     
     return train_data, val_data, test_data
 
-def load_processed_files(paths_dict: Dict[str, str]) -> Dict[str, pd.DataFrame]:
+def load_csv_files(paths_dict: Dict[str, str]) -> Dict[str, pd.DataFrame]:
     """
-    Loads processed data files. Provide dictionary of 
+    Loads csv data files. Provide dictionary of 
     name key and path strings value to be loaded.
     
     Parameters
@@ -62,3 +62,26 @@ def load_processed_files(paths_dict: Dict[str, str]) -> Dict[str, pd.DataFrame]:
         loaded_dfs[name] = temp_df
 
     return loaded_dfs
+
+def load_macro_data(macro_dir_path: str) -> Dict[str, pd.DataFrame]:
+    """
+    Loads macro-economic data csv files from given directory path.
+
+    Parameters
+    ---------
+    macro_dir_path: str
+        Path to directory where macro-ecnomic data is store as separate csv files.
+    
+    Returns
+    -------
+    raw_macro_dict: Dict
+        Contains category name as key and dataframe as value.
+    """
+    
+    file_paths = list(macro_dir_path.glob('*.csv')) # since data is collected as csv files
+    macro_files = {}
+    for f_path in file_paths:
+        macro_files[f_path.stem] = f_path
+    
+    macro_data_dict = load_csv_files(macro_files)
+    return macro_data_dict

@@ -233,7 +233,6 @@ class Preprocessor:
         
         return data
 
-
     def process_train_data(self, train: pd.DataFrame)-> pd.DataFrame:
         """
         Preprocesses given training data
@@ -252,11 +251,16 @@ class Preprocessor:
         self.all_col_names = list(train.columns)
         self.all_tickers = self._extract_tickers()
         
-        # TODO: Combine split matched Macro data and common features here
+        # III TODO: ##
+        # 1. Combine date matched macro data (common features) with CRSP data (training data only)
+        # No underscore must be present in macro data column names.
 
         train = self._transform(train, 'fit')
 
         train = self._normalize(train, 'fit')
+
+        # IV TODO: ##
+        # Combine column names from macro data with list `self.common features` for broadcasting features
 
         # Broadcast only if common features are present
         if self.common_features:
@@ -279,11 +283,15 @@ class Preprocessor:
         processed_split_data: pd.DataFrame
             Preprocessed validation or test data
         """
+
+        # TODO: ##
+        # 1. Combine date matched macro data (common features) with CRSP data (val/test)
+
         split_data = self._transform(split_data, 'split')
 
         split_data = self._normalize(split_data, 'split')
 
-         # Broadcast only if common features are present
+        # Broadcast only if common features are present
         if self.common_features:
             split_data = self._broadcast_common(split_data, self.common_features)
 
