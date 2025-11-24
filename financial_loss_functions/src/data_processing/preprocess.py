@@ -293,8 +293,8 @@ class ReshapeStyle(StrEnum):
     """
     For fixed reshaping styles to avoid reshape errors.
     """
-    T_N_F = 'T_N_F' # (Time Steps, Tickers, Features)
-    T_F_N = 'T_F_N' # (Time Steps, Features, Tickers)   
+    time_tickers_features = 'T_N_F' # (Time Steps, Tickers, Features)
+    time_features_tickers = 'T_F_N' # (Time Steps, Features, Tickers)   
 
 class Reshaper:
     """
@@ -311,7 +311,7 @@ class Reshaper:
             out_size: int,
             stride: int,
             col_sep: str = '_',
-            layout: ReshapeStyle = ReshapeStyle.T_N_F
+            layout: ReshapeStyle = ReshapeStyle.time_tickers_features
         ):
         """
         Initialize Reshaper instance.
@@ -380,6 +380,35 @@ class Reshaper:
             f'{t}{self.col_sep}{f}' for t in self.tickers for f in self.features
         ]
     
+    def transform_one_window(self, df_window: pd.DataFrame) -> np.ndarray:
+        """
+        Convert a single (T_in x flat-columns) window into a tensor:
+            'T_N_F' -> (T, N_stocks, F_features)
+            'T_F_N' -> (T, F_features, N_stocks)
+        """
+        T = len(df_window)
+        N = len(self.tickers)
+        F = len(self.features)
+
+        if self.layout == ReshapeStyle.time_tickers_features:
+            out = np.zeros((T, N, F), dtype=float)
+            for j, t in enumerate(self.tickers):
+                for k, f in enumerate(self.features):
+                    col = f"{t}{self.col_sep}{f}"
+                    out[:, j, k] = df_window[col].values
+            return out
+
+        elif self.layout == ReshapeStyle.time_features_tickers:
+            out = np.zeros((T, F, N), dtype=float)
+            for j, t in enumerate(self.tickers):
+                for k, f in enumerate(self.features):
+                    col = f"{t}{self.col_sep}{f}"
+                    out[:, k, j] = df_window[col].values
+            return out
+
+        else:
+            raise ValueError("layout must be 'T_N_F' or 'T_F_N'")
+    
     def reshape(
             self, features_data: pd.DataFrame, raw_returns: pd.DataFrame
         ) -> np.ndarray:
@@ -390,4 +419,24 @@ class Reshaper:
             range(0, len(features_data) - (self.in_size + self.out_size) + 1, self.stride)
         )
 
+        X_list = []
+        y_list = []
+        good_starts = []
 
+        for s in starts:
+            X_df = features_data.iloc[s : s + self.in_size]
+            y_df = raw_returns.iloc[
+                s + self.in_size : s + self.in_size + self.out_size
+            ][self.tickers]
+
+            # skip invalid windows
+            if y_df.isna().any().any():
+                raise ValueError('Window has missing data. Fix before training.')
+        
+            X_list.append(self.transform_one_window(X_df))
+            y_list.append(y_df.values)
+            good_starts.append(s)
+        
+        X = np.stack(X_list)
+        y = np.stack(y_list)
+        return X, y, np.array(good_starts)
