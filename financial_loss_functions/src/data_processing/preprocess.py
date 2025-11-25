@@ -301,8 +301,9 @@ class ReshapeStyle(StrEnum):
     """
     For fixed reshaping styles to avoid reshape errors.
     """
-    time_tickers_features = 'T_N_F' # (Time Steps, Tickers, Features)
-    time_features_tickers = 'T_F_N' # (Time Steps, Features, Tickers)   
+    T_NxF = 'T_NxF' # (Time Steps, Ticker x Features) -> 2D for 3D after Batch
+    T_N_F = 'T_N_F' # (Time Steps, Tickers, Features) -> 3D for 4D after Batch
+    T_F_N = 'T_F_N' # (Time Steps, Features, Tickers) -> 3D for 4D after Batch  
 
 class Reshaper:
     """
@@ -319,7 +320,7 @@ class Reshaper:
             out_size: int,
             stride: int,
             col_sep: str = '_',
-            layout: ReshapeStyle = ReshapeStyle.time_tickers_features
+            layout: ReshapeStyle = ReshapeStyle.T_NxF
         ):
         """
         Initialize Reshaper instance.
@@ -358,12 +359,12 @@ class Reshaper:
             raise ValueError(f"Column '{col}' does not match <ticker>_<feature> format")
         return parts[0], parts[1]  # ticker, feature-with-underscores
     
-    def _extract_features(self, df: pd.DataFrame):
+    def extract_features(self, train_df: pd.DataFrame):
         """Extract tickers and features from full DataFrame column names."""
         tickers = []
         features = []
 
-        for col in df.columns:
+        for col in train_df.columns:
             t, f = self._split_col(col)
             tickers.append(t)
             features.append(f)
@@ -372,7 +373,7 @@ class Reshaper:
 
         # Features must be identical for all tickers
         features_by_ticker = {t: set() for t in self.tickers}
-        for col in df.columns:
+        for col in train_df.columns:
             t, f = self._split_col(col)
             features_by_ticker[t].add(f)
         
@@ -398,30 +399,44 @@ class Reshaper:
         N = len(self.tickers)
         F = len(self.features)
 
-        if self.layout == ReshapeStyle.time_tickers_features:
+        if self.layout == ReshapeStyle.T_NxF:
+            out = np.zeros((T, N*F), dtype=float)
+            for j, t in enumerate(self.tickers):
+                for k, f in enumerate(self.features):
+                    col = f'{t}{self.col_sep}{f}'
+                    out[:,j * F + k] = df_window[col].values # flat index = j * F + K
+            return out
+
+        elif self.layout == ReshapeStyle.T_N_F:
             out = np.zeros((T, N, F), dtype=float)
             for j, t in enumerate(self.tickers):
                 for k, f in enumerate(self.features):
-                    col = f"{t}{self.col_sep}{f}"
+                    col = f'{t}{self.col_sep}{f}'
                     out[:, j, k] = df_window[col].values
             return out
 
-        elif self.layout == ReshapeStyle.time_features_tickers:
+        elif self.layout == ReshapeStyle.T_F_N:
             out = np.zeros((T, F, N), dtype=float)
             for j, t in enumerate(self.tickers):
                 for k, f in enumerate(self.features):
-                    col = f"{t}{self.col_sep}{f}"
+                    col = f'{t}{self.col_sep}{f}'
                     out[:, k, j] = df_window[col].values
             return out
 
         else:
-            raise ValueError("layout must be 'T_N_F' or 'T_F_N'")
+            raise ValueError('layout must be of type `ReshapStyle`')
     
+    def _features_check(self):
+        if (len(self.tickers) == 0 or 
+            len(self.features) == 0 or 
+            len(self.cols_per_ticker) == 0):
+            raise ValueError('Run `extract_features` before reshaping!')
+
     def reshape(
             self, features_data: pd.DataFrame, raw_returns: pd.DataFrame
         ) -> np.ndarray:
         
-        self._extract_features(features_data)
+        self._features_check()
 
         starts = list(
             range(0, len(features_data) - (self.in_size + self.out_size) + 1, self.stride)
@@ -448,3 +463,9 @@ class Reshaper:
         X = np.stack(X_list)
         y = np.stack(y_list)
         return X, y, np.array(good_starts)
+
+    def get_tickers(self) -> List:
+        return self.tickers
+    
+    def get_features(self) -> List:
+        return self.features

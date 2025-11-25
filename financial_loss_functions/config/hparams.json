@@ -1,0 +1,7 @@
+{
+    "rolling_windows": {
+        "in_size": 190,
+        "out_size": 60,
+        "stride": 20
+    }
+}
