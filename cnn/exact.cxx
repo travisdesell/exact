@@ -1319,7 +1319,7 @@ CNN_Genome* EXACT::generate_individual() {
 
         insert_genome(genome_copy);
     }
-
+    cout << "genome generated: " << genome->get_generation_id() << endl;
     return genome;
 }
 
