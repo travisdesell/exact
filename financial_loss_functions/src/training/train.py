@@ -22,19 +22,19 @@ def train_lstm_base(X_train, y_train, X_val, y_val):
     train_ds = WindowDataset(X_train, y_train)
     val_ds   = WindowDataset(X_val, y_val)
 
-    train_loader = DataLoader(train_ds, batch_size=8, shuffle=False)
+    train_loader = DataLoader(train_ds, batch_size=64, shuffle=False)
     val_loader   = DataLoader(val_ds, batch_size=1, shuffle=False)
     
     model = FlattenedLSTM(
         input_size=nxf,       # 300
-        hidden_size=32,
+        hidden_size=16,
         num_layers=2,
         num_stocks=n        # 50
     ).to(device)
 
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
 
-    for epoch in range(100):
+    for epoch in range(64):
         model.train()
         total_loss = 0.0
         
@@ -45,9 +45,9 @@ def train_lstm_base(X_train, y_train, X_val, y_val):
             weights = model(xb)              # (B, N)
             loss = sharpe_loss(weights, yb)  # Sharpe-based loss
 
-            optimizer.zero_grad()
             loss.backward()
             optimizer.step()
+            optimizer.zero_grad()
 
             total_loss += loss.item()
         

@@ -1,7 +1,7 @@
 from typing import Dict
 from pathlib import Path
 from src.data_processing.loading import load_csv_files
-from src.data_processing.preprocess import Reshaper
+from src.data_processing.dataset import Reshaper
 from src.training.train import train_lstm_base
 
 def run_training_pipeline(paths_config: Dict, hparams_config: Dict):
