@@ -2,6 +2,7 @@ from typing import Dict
 from pathlib import Path
 from src.data_processing.loading import load_csv_files
 from src.data_processing.preprocess import Reshaper
+from src.training.train import train_lstm_base
 
 def run_training_pipeline(paths_config: Dict, hparams_config: Dict):
     # -------------------- Loading Processed Data -------------------- #
@@ -40,3 +41,5 @@ def run_training_pipeline(paths_config: Dict, hparams_config: Dict):
     print('-'*10, ' val shapes ', '-'*10)
     print('X_val shape', X_val.shape)
     print('y_val shape:', y_val.shape)
+
+    train_lstm_base(X_train, y_train, X_val, y_val)

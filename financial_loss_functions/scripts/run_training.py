@@ -1,7 +1,7 @@
 import os
 # from dotenv import load_dotenv
 from scripts.utils import load_path_config, load_config
-from src.models.pipeline import run_training_pipeline
+from src.training.pipeline import run_training_pipeline
 
 if __name__ == '__main__':
     # load_dotenv()
