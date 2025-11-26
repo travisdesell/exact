@@ -133,7 +133,7 @@ class Preprocessor:
             self, col_sep: str = '_', common_features: List[str] | None = None
         ):
         """
-        Initialize Preprocessor which transorforms, normalizes and creates sliding windows.
+        Initialize Preprocessor which transorforms and normalizes the given dataset
         
         Parameters
         ----------
@@ -146,6 +146,9 @@ class Preprocessor:
         self._yeo_john = PowerTransformer(method='yeo-johnson', standardize=False)
         self._box_cox = PowerTransformer(method='box-cox', standardize=False)
         self._robust_scaler = RobustScaler()
+
+        self.all_col_names = None
+        self.all_tickers = None
 
     def _extract_req_cols(self, columns_list: List, suffix: str) -> List:
         """
