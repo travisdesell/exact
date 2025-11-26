@@ -308,12 +308,11 @@ class ReshapeStyle(StrEnum):
 class Reshaper:
     """
     Reshapes a wide 2D DataFrame with columns like '<ticker>_<feature>',
-    into 3D tensors (T, N_stocks, F_features), and builds sliding windows.
+    into 2D or 3D arrays, and builds sliding windows.
 
     Assumes all columns follow the pattern:
         <ticker>_<feature>
     """
-
     def __init__(
             self,
             in_size: int,
@@ -324,6 +323,7 @@ class Reshaper:
         ):
         """
         Initialize Reshaper instance.
+        Run Reshaper.extract_features on training data after initializing and before reshaping.
 
         Parameters
         ----------
@@ -334,7 +334,10 @@ class Reshaper:
         stride: int
             step size for the sliding window
         col_sep: str
-            Special character that separates the ticker string from the feature string.
+            Special character that separates the ticker string from the feature string
+        layout: ReshapeStyle
+            Enum of rehsape style, see `src.data_processing.preprocess.ReshapeStyle`. 
+            Deafult = ReshapeStyle.T_NxF
         """
         self.in_size = in_size
         self.out_size = out_size
@@ -389,11 +392,9 @@ class Reshaper:
             f'{t}{self.col_sep}{f}' for t in self.tickers for f in self.features
         ]
     
-    def transform_one_window(self, df_window: pd.DataFrame) -> np.ndarray:
+    def _transform_one_window(self, df_window: pd.DataFrame) -> np.ndarray:
         """
-        Convert a single (T_in x flat-columns) window into a tensor:
-            'T_N_F' -> (T, N_stocks, F_features)
-            'T_F_N' -> (T, F_features, N_stocks)
+        Convert a single (T_in x flat-columns) window into an array of set layout.
         """
         T = len(df_window)
         N = len(self.tickers)
@@ -434,7 +435,26 @@ class Reshaper:
 
     def reshape(
             self, features_data: pd.DataFrame, raw_returns: pd.DataFrame
-        ) -> np.ndarray:
+        ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """
+        Reshapes 2D DataFrame into set `layout` at initialization.
+
+        Parameters
+        ----------
+        features_data: pd.DataFrame
+            Dataframe containg all processed features.
+        raw_returns: pd.DataFrame
+            Dataframe containing only raw returns.
+        
+        Returns
+        -------
+        X: np.ndarray
+            Reshaped independant varibles array
+        y: np.ndarray
+            Reshape dependant variables array
+        good_starts: np.array
+            Array of good starting points of each window. Helpful for debugging
+        """
         
         self._features_check()
 
@@ -456,7 +476,7 @@ class Reshaper:
             if y_df.isna().any().any():
                 raise ValueError('Window has missing data. Fix before training.')
         
-            X_list.append(self.transform_one_window(X_df))
+            X_list.append(self._transform_one_window(X_df))
             y_list.append(y_df.values)
             good_starts.append(s)
         
@@ -465,7 +485,15 @@ class Reshaper:
         return X, y, np.array(good_starts)
 
     def get_tickers(self) -> List:
-        return self.tickers
+        if len(self.tickers) == 0:
+            print('Run `extract_features` on training data first.')
+            return None
+        else:
+            return self.tickers
     
     def get_features(self) -> List:
-        return self.features
+        if len(self.features) == 0:
+            print('Run `extract_features` on training data first.')
+            return None
+        else:
+            return self.features
