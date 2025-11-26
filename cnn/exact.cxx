@@ -1190,6 +1190,10 @@ void EXACT::generate_simplex_hyperparameters(
 
 CNN_Genome* EXACT::generate_individual() {
     if (max_genomes > 0 && inserted_genomes >= max_genomes) {
+        // Log::info("max_genomes reached, terminating search", );
+        cout << "max_genomes reached, terminating search" << endl;
+        cout << "inserted_genomes: " << inserted_genomes << endl;
+        cout << "max_genomes: " << max_genomes << endl;
         return NULL;
     }
 
