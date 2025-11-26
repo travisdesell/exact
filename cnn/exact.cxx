@@ -1189,7 +1189,7 @@ void EXACT::generate_simplex_hyperparameters(
 }
 
 CNN_Genome* EXACT::generate_individual() {
-    if (inserted_genomes >= max_genomes) {
+    if (max_genomes > 0 && inserted_genomes >= max_genomes) {
         return NULL;
     }
 
