@@ -16,7 +16,7 @@ GenomeProperty::GenomeProperty() {
 }
 
 void GenomeProperty::generate_genome_property_from_arguments(const vector<string>& arguments) {
-    get_argument(arguments, "--bp_iterations", true, bp_iterations);
+    get_argument(arguments, "--bp_iterations", false, bp_iterations);
 
     bool backprop_type = get_argument(arguments, "--backprop_iterations_type", false, backprop_iterations_type);
     if (!backprop_type) {
