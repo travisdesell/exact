@@ -79,6 +79,10 @@ def load_macro_data(macro_dir_path: str) -> Dict[str, pd.DataFrame]:
     """
     
     file_paths = list(macro_dir_path.glob('*.csv')) # since data is collected as csv files
+
+    if len(file_paths) == 0:
+        raise FileNotFoundError(f'No CSVs not found in directory: {macro_dir_path}')
+
     macro_files = {}
     for f_path in file_paths:
         macro_files[f_path.stem] = f_path

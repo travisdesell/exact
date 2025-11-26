@@ -12,7 +12,6 @@ def run_training_pipeline(paths_config: Dict, hparams_config: Dict):
         'returns_val': Path(paths_config['processed_paths']['returns_val'])
     }
 
-
     processed_dfs = load_csv_files(processed_files)
     train_data = processed_dfs['processed_train']
     returns_train = processed_dfs['returns_train']
@@ -23,6 +22,7 @@ def run_training_pipeline(paths_config: Dict, hparams_config: Dict):
     print('Train shape:', train_data.shape)
     print('Val shape:', val_data.shape)
 
+    # -------------------- Preprocessing (Reshaping) -------------------- #
     reshaper = Reshaper(
         hparams_config['rolling_windows']['in_size'],
         hparams_config['rolling_windows']['out_size'],
@@ -32,11 +32,11 @@ def run_training_pipeline(paths_config: Dict, hparams_config: Dict):
     
     X_train, y_train, _ = reshaper.reshape(train_data, returns_train)
     print('-'*10, ' train shapes ', '-'*10)
-    print(X_train.shape)
-    # print(y_train.shape)
+    print('X_train shpe:', X_train.shape)
+    print('y_train shape:', y_train.shape)
 
 
     X_val, y_val, _ = reshaper.reshape(val_data, returns_val)
     print('-'*10, ' val shapes ', '-'*10)
-    print(X_val.shape)
-    # print(y_val.shape)
+    print('X_val shape', X_val.shape)
+    print('y_val shape:', y_val.shape)
