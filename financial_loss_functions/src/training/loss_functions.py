@@ -1,5 +1,5 @@
 import torch
-def sharpe_loss(weights, returns, eps=1e-8):
+def raw_sharpe_loss(weights, returns, eps=1e-8):
     """
     weights: (B, N)
     returns: (B, T_out, N) -- raw returns
@@ -12,6 +12,15 @@ def sharpe_loss(weights, returns, eps=1e-8):
     sharpe = mean / std              # (B,)
     # maximize Sharpe → minimize negative Sharpe
     return -sharpe.mean()
+
+def differentiable_sharpe_loss(weights, returns, eps=1e-6):
+    port_ret = (weights.unsqueeze(1) * returns).sum(-1)   # (B, T)
+    mean = port_ret.mean(dim=1)
+    var  = port_ret.var(dim=1)          # variance, not std
+    # Avoid the sqrt entirely
+    return -(mean / (var.sqrt() + eps)).mean()
+    # even more stable:
+    # return -(mean**2 / (var + eps)).mean()
 
 def sortino_loss(weights, returns, target=0.0, eps=1e-8):
     """

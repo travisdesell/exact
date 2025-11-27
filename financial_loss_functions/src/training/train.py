@@ -1,3 +1,4 @@
+import time
 import torch
 from torch.utils.data import DataLoader
 from src.data_processing.dataset import WindowDataset
@@ -24,7 +25,11 @@ class Trainer:
             dropout_rate = self.hparams['dropout']
         ).to(self.device)
         
-        self.optimizer = optimizer(self.model.parameters(), lr=self.hparams['lr'])
+        self.optimizer = optimizer(
+            self.model.parameters(),
+            lr=self.hparams['lr'],
+            weight_decay=self.hparams.get('weight_decay', 1e-5)
+        )
         self.loss = loss
 
         self.avg_train_loss = None
@@ -34,10 +39,11 @@ class Trainer:
         train_loader = DataLoader(
             train_ds,
             batch_size=self.hparams['train_batch_size'],
-            shuffle=True
+            shuffle=False
         )
 
         for epoch in range(self.hparams['epochs']):
+            start_time = time.time()
             self.model.train()
             total_loss = 0.0
             
@@ -53,8 +59,9 @@ class Trainer:
                 self.optimizer.step()
 
                 total_loss += loss.item()
-            
-            print(f'Epoch {epoch} | Train Loss: {loss:.4f}')
+            end_time = time.time()
+            time_taken = round(end_time-start_time, 3)
+            print(f'Epoch {epoch} | Train Loss: {loss:.4f} | Took: {time_taken}s')
 
             self.avg_train_loss = total_loss / len(train_loader)
 

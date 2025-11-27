@@ -4,13 +4,24 @@
         "out_size": 50,
         "stride": 5
     },
-    "lstm_base": {
+    "BaseLSTM": {
         "train_batch_size": 128,
         "val_batch_size": 1,
-        "hidden_size": 384,
-        "num_layers": 4,
-        "lr": 5e-4,
+        "hidden_size": 256,
+        "num_layers": 5,
+        "lr": 3e-4,
         "dropout": 0.3,
+        "weight_decay": 2e-5,
+        "epochs": 200
+    },
+    "AttentionLSTM": {
+        "train_batch_size": 128,
+        "val_batch_size": 1,
+        "hidden_size": 256,
+        "num_layers": 5,
+        "lr": 1e-4,
+        "dropout": 0.3,
+        "weight_decay": 1e-5,
         "epochs": 200
     }
 }
