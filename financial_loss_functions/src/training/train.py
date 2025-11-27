@@ -1,72 +1,92 @@
 import torch
 from torch.utils.data import DataLoader
-from src.models.lstm import FlattenedLSTM
-from src.training.loss_functions import sharpe_loss
 from src.data_processing.dataset import WindowDataset
 
-if torch.mps.is_available():
-    device = torch.device('mps')
-    print('Using mps for GPU acceleration.')
-elif torch.cuda.is_available():
-    device = torch.device('cuda')
-    print('Using cuda for GPU acceleration.')
-else:
-    print('No GPU acceleration. Using CPU.')
-    device = torch.device('cpu')
 
+class Trainer:
+    def __init__(self, model, optimizer, loss, hparams, in_size: int, out_size: int):
+        if torch.mps.is_available():
+            self.device = torch.device('mps')
+            print('Using mps for GPU acceleration.')
+        elif torch.cuda.is_available():
+            self.device = torch.device('cuda')
+            print('Using cuda for GPU acceleration.')
+        else:
+            print('No GPU acceleration. Using CPU.')
+            self.device = torch.device('cpu')
+        
+        self.hparams = hparams
+        self.model = model(
+            input_size=in_size,       # 300
+            hidden_size=self.hparams['hidden_size'],
+            num_layers=self.hparams['num_layers'],
+            num_stocks=out_size        # 50
+        ).to(self.device)
+        
+        self.optimizer = optimizer(self.model.parameters(), lr=self.hparams['lr'])
+        self.loss = loss
 
-def train_lstm_base(X_train, y_train, X_val, y_val):
-    b, t, nxf = X_train.shape
-    _, t_out, n = y_train.shape
-
-    train_ds = WindowDataset(X_train, y_train)
-    val_ds   = WindowDataset(X_val, y_val)
-
-    train_loader = DataLoader(train_ds, batch_size=64, shuffle=False)
-    val_loader   = DataLoader(val_ds, batch_size=1, shuffle=False)
+        self.avg_train_loss = None
+        self.avg_val_loss = None
     
-    model = FlattenedLSTM(
-        input_size=nxf,       # 300
-        hidden_size=16,
-        num_layers=2,
-        num_stocks=n        # 50
-    ).to(device)
+    def train(self, train_ds: WindowDataset):
+        train_loader = DataLoader(
+            train_ds,
+            batch_size=self.hparams['train_batch_size'],
+            shuffle=False
+        )
 
-    optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
+        for epoch in range(self.hparams['epochs']):
+            self.model.train()
+            total_loss = 0.0
+            
+            for xb, yb in train_loader:
+                xb = xb.to(self.device)
+                yb = yb.to(self.device)
 
-    for epoch in range(64):
-        model.train()
-        total_loss = 0.0
-        
-        for xb, yb in train_loader:
-            xb = xb.to(device)
-            yb = yb.to(device)
+                weights = self.model(xb)              # (B, N)
+                loss = self.loss(weights, yb)  # Finance-based loss
 
-            weights = model(xb)              # (B, N)
-            loss = sharpe_loss(weights, yb)  # Sharpe-based loss
+                loss.backward()
+                self.optimizer.step()
+                self.optimizer.zero_grad()
 
-            loss.backward()
-            optimizer.step()
-            optimizer.zero_grad()
+                total_loss += loss.item()
+            
+            print(f'Epoch {epoch} | Train Loss: {loss:.4f}')
 
-            total_loss += loss.item()
-        
-        print(f'Epoch {epoch} | Train Loss: {loss:.4f}')
-        
-        avg_train_loss = total_loss / len(train_loader)
+            self.avg_train_loss = total_loss / len(train_loader)
 
-    # --- validation ---
-    model.eval()
-    with torch.no_grad():
-        val_losses = []
-        for xb, yb in val_loader:
-            xb = xb.to(device)
-            yb = yb.to(device)
-            weights = model(xb)
-            val_loss = sharpe_loss(weights, yb)
-            val_losses.append(val_loss.item())
-        avg_val_loss = sum(val_losses) / len(val_losses)
+        print(f'Average Train Loss: {self.avg_train_loss:.4f}')
 
-        # print(weights)
+    def eval(self, val_ds: WindowDataset):
+        val_loader = DataLoader(
+            val_ds,
+            batch_size=self.hparams['val_batch_size'],
+            shuffle=False
+        )
 
-    print(f"Epoch {epoch+1:02d} | Train Loss: {avg_train_loss:.4f} | Val Loss: {avg_val_loss:.4f}")
+        # --- validation ---
+        self.model.eval()
+        with torch.no_grad():
+            val_losses = []
+            for xb, yb in val_loader:
+                xb = xb.to(self.device)
+                yb = yb.to(self.device)
+                weights = self.model(xb)
+                val_loss = self.loss(weights, yb)
+                val_losses.append(val_loss.item())
+            self.avg_val_loss = sum(val_losses) / len(val_losses)
+        print(f'Average Val Loss: {self.avg_val_loss:.4f}')
+    
+    def get_train_loss(self):
+        if self.avg_train_loss:
+            return self.avg_train_loss
+        else:
+            raise ValueError('Model not trained yet.')
+    
+    def get_train_loss(self):
+        if self.avg_val_loss:
+            return self.avg_val_loss
+        else:
+            raise ValueError('Model not evaluated yet.')
