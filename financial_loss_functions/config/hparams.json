@@ -7,10 +7,10 @@
     "lstm_base": {
         "train_batch_size": 128,
         "val_batch_size": 1,
-        "hidden_size": 128,
-        "num_layers": 3,
-        "lr": 1e-4,
-        "dropout": 0.2,
-        "epochs": 100
+        "hidden_size": 384,
+        "num_layers": 4,
+        "lr": 5e-4,
+        "dropout": 0.3,
+        "epochs": 200
     }
 }

@@ -10,7 +10,7 @@ from src.data_processing.preprocess import (
 
 
 def run_processing_pipeline(paths_config: Dict, features_config: Dict):
-    print('\n','=' * 20, ' Data Processing Pipeline ', '=' * 20)
+    print('=' * 20, ' Data Processing Pipeline ', '=' * 20)
     
     # Reset directory
     reset_data_stage(Path(paths_config['data']['processed_dir']))

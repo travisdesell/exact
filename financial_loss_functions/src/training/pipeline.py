@@ -3,13 +3,13 @@ from typing import Dict
 from pathlib import Path
 from src.data_processing.loading import load_csv_files
 from src.data_processing.dataset import Reshaper
-# from src.training.train import train_lstm_base
-from src.models.lstm import FlattenedLSTM
+from src.models.lstm import BaseLSTM, AttentionLSTM
 from src.training.loss_functions import sharpe_loss
 from src.training.train import Trainer
 from src.data_processing.dataset import WindowDataset
 
 def run_training_pipeline(paths_config: Dict, hparams_config: Dict):
+    print('=' * 20, ' Training Pipeline ', '=' * 20)
     # -------------------- Loading Processed Data -------------------- #
     processed_files = {
         'processed_train': Path(paths_config['processed_paths']['processed_train']),
@@ -50,8 +50,22 @@ def run_training_pipeline(paths_config: Dict, hparams_config: Dict):
     train_ds = WindowDataset(X_train, y_train)
     val_ds   = WindowDataset(X_val, y_val)
 
+    print('\nTraining BaseLSTM...')
     trainer = Trainer(
-        model=FlattenedLSTM,
+        model=BaseLSTM,
+        optimizer=optim.AdamW,
+        loss=sharpe_loss,
+        hparams=hparams_config['lstm_base'],
+        in_size=X_train.shape[2],
+        num_stocks=y_train.shape[2]
+    )
+
+    trainer.train(train_ds)
+    trainer.eval(val_ds)
+
+    print('\nTraining AttentionLSTM...')
+    trainer = Trainer(
+        model=AttentionLSTM,
         optimizer=optim.AdamW,
         loss=sharpe_loss,
         hparams=hparams_config['lstm_base'],

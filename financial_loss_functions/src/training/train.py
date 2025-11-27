@@ -34,7 +34,7 @@ class Trainer:
         train_loader = DataLoader(
             train_ds,
             batch_size=self.hparams['train_batch_size'],
-            shuffle=False
+            shuffle=True
         )
 
         for epoch in range(self.hparams['epochs']):
