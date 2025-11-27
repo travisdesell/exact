@@ -37,15 +37,15 @@ def run_training_pipeline(paths_config: Dict, hparams_config: Dict):
     reshaper.extract_features(train_data)
     
     X_train, y_train, _ = reshaper.reshape(train_data, returns_train)
-    # print('-'*10, ' train shapes ', '-'*10)
-    # print('X_train shpe:', X_train.shape)
-    # print('y_train shape:', y_train.shape)
+    print('-'*10, ' train shapes ', '-'*10)
+    print('X_train shpe:', X_train.shape)
+    print('y_train shape:', y_train.shape)
 
 
     X_val, y_val, _ = reshaper.reshape(val_data, returns_val)
-    # print('-'*10, ' val shapes ', '-'*10)
-    # print('X_val shape', X_val.shape)
-    # print('y_val shape:', y_val.shape)
+    print('-'*10, ' val shapes ', '-'*10)
+    print('X_val shape', X_val.shape)
+    print('y_val shape:', y_val.shape)
 
     train_ds = WindowDataset(X_train, y_train)
     val_ds   = WindowDataset(X_val, y_val)
@@ -56,7 +56,7 @@ def run_training_pipeline(paths_config: Dict, hparams_config: Dict):
         loss=sharpe_loss,
         hparams=hparams_config['lstm_base'],
         in_size=X_train.shape[2],
-        out_size=y_train.shape[2]
+        num_stocks=y_train.shape[2]
     )
 
     trainer.train(train_ds)

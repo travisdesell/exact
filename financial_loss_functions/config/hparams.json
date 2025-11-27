@@ -2,14 +2,15 @@
     "rolling_windows": {
         "in_size": 200,
         "out_size": 50,
-        "stride": 20
+        "stride": 5
     },
     "lstm_base": {
-        "train_batch_size": 64,
+        "train_batch_size": 128,
         "val_batch_size": 1,
-        "hidden_size": 8,
-        "num_layers": 2,
-        "lr": 1e-3,
-        "epochs": 64
+        "hidden_size": 128,
+        "num_layers": 3,
+        "lr": 1e-4,
+        "dropout": 0.2,
+        "epochs": 100
     }
 }

@@ -4,7 +4,7 @@ from src.data_processing.dataset import WindowDataset
 
 
 class Trainer:
-    def __init__(self, model, optimizer, loss, hparams, in_size: int, out_size: int):
+    def __init__(self, model, optimizer, loss, hparams, in_size: int, num_stocks: int):
         if torch.mps.is_available():
             self.device = torch.device('mps')
             print('Using mps for GPU acceleration.')
@@ -17,10 +17,11 @@ class Trainer:
         
         self.hparams = hparams
         self.model = model(
-            input_size=in_size,       # 300
-            hidden_size=self.hparams['hidden_size'],
-            num_layers=self.hparams['num_layers'],
-            num_stocks=out_size        # 50
+            input_size = in_size,       # 300
+            hidden_size = self.hparams['hidden_size'],
+            num_layers = self.hparams['num_layers'],
+            num_stocks = num_stocks,        # 50
+            dropout_rate = self.hparams['dropout']
         ).to(self.device)
         
         self.optimizer = optimizer(self.model.parameters(), lr=self.hparams['lr'])
@@ -47,9 +48,9 @@ class Trainer:
                 weights = self.model(xb)              # (B, N)
                 loss = self.loss(weights, yb)  # Finance-based loss
 
+                self.optimizer.zero_grad()
                 loss.backward()
                 self.optimizer.step()
-                self.optimizer.zero_grad()
 
                 total_loss += loss.item()
             
@@ -85,7 +86,7 @@ class Trainer:
         else:
             raise ValueError('Model not trained yet.')
     
-    def get_train_loss(self):
+    def get_val_loss(self):
         if self.avg_val_loss:
             return self.avg_val_loss
         else:

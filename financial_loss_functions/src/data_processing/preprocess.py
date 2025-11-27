@@ -257,7 +257,7 @@ class Preprocessor:
         # 1. Combine date matched macro data (common features) with CRSP data (training data only)
         # No underscore must be present in macro data column names.
 
-        train = self._transform(train, 'fit')
+        # train = self._transform(train, 'fit')
 
         train = self._normalize(train, 'fit')
 
@@ -289,7 +289,7 @@ class Preprocessor:
         # TODO: ##
         # 1. Combine date matched macro data (common features) with CRSP data (val/test)
 
-        split_data = self._transform(split_data, 'split')
+        # split_data = self._transform(split_data, 'split')
 
         split_data = self._normalize(split_data, 'split')
 
