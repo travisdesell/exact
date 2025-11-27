@@ -442,6 +442,7 @@ RNN_Genome* EXAMM::generate_genome() {
         if (save_genome_option.compare("entire_population") == 0) {
             speciation_strategy->save_entire_population(output_directory);
         }
+        Log::info("max_genomes: %d", max_genomes);
         Log::info("max_genomes reached, terminating search");
         return NULL;
     }
@@ -478,7 +479,8 @@ RNN_Genome* EXAMM::generate_genome() {
     int32_t generated_genomes = speciation_strategy->get_generated_genomes();
 
     if (type == "scaled") {
-        backprop_iterations = floor(slope * pow(double(generated_genomes), exponent)) + bp_min;
+        backprop_iterations = floor(pow(slope * generated_genomes, exponent)) + bp_min;
+        // backprop_iterations = floor(slope * pow(double(generated_genomes), exponent)) + bp_min;
     } else if (type == "rand") {
         std::uniform_int_distribution<int32_t> dist(bp_min, bp_max);
         backprop_iterations = dist(generator);
