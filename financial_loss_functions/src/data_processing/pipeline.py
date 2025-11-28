@@ -3,6 +3,7 @@ from pathlib import Path
 from src.utils import reset_data_stage, save_to_csv
 from src.data_processing.loading import load_raw_crsp_datasets, load_macro_data
 from src.data_processing.preprocess import (
+    MacroPreprocessor,
     clean_inplace,
     get_only_returns,
     Preprocessor
@@ -38,13 +39,17 @@ def run_processing_pipeline(paths_config: Dict, features_config: Dict):
     # -------------------- Cleaning -------------------- #
     train_data, val_data, test_data = clean_inplace(train_data, val_data, test_data)
 
-    # I TODO: ##
-    # 1. Use loaded macro data from `raw_macro` (Dict[str, pd.DataFrame]).
-    # 2. Combine all macro data and split into train, val and test based on 
-    #   CRSP data. Find strategy to make macro data "daily". Sometimes averaging 
-    #   can work, sometimes you can repeat the same values for every day.
-    # 3. Clean data and place all functions/classes in preprocess.py and call it here.
-    # Use src.<directory_name>.<file_name> for imports
+    # Process macro-economic data and align with CRSP dates
+    macro_preprocessor = MacroPreprocessor()
+    combined_macro = macro_preprocessor.combine_macro_data(raw_macro)
+    daily_macro = macro_preprocessor.to_daily(combined_macro)
+    macro_train, macro_val, macro_test = macro_preprocessor.split_by_crsp_dates(
+        daily_macro,
+        train_data.index,
+        val_data.index,
+        test_data.index
+    )
+    print('Macro data processed and aligned with CRSP splits.')
 
     # -------------------- Preporcessing -------------------- #
     # Common processing (realized returns)
