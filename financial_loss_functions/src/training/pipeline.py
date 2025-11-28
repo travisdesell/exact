@@ -53,7 +53,8 @@ def run_training_pipeline(paths_config: Dict, hparams_config: Dict):
     train_ds = WindowDataset(X_train, y_train)
     val_ds   = WindowDataset(X_val, y_val)
 
-    print('\nTraining BaseLSTM...')
+    print('\n')
+    print('-'*10, ' Training BaseLSTM ', '-'*10)
     trainer = Trainer(
         model=BaseLSTM,
         optimizer=optim.AdamW,
@@ -66,7 +67,8 @@ def run_training_pipeline(paths_config: Dict, hparams_config: Dict):
     trainer.train(train_ds)
     trainer.eval(val_ds)
 
-    print('\nTraining AttentionLSTM...')
+    print('\n')
+    print('-'*10, ' Training AttentionLSTM ', '-'*10)
     trainer = Trainer(
         model=SimpleAttentionLSTM,
         optimizer=optim.AdamW,

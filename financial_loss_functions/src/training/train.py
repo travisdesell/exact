@@ -2,6 +2,7 @@ import time
 import torch
 from torch.utils.data import DataLoader
 from src.data_processing.dataset import WindowDataset
+from torch.optim.lr_scheduler import ReduceLROnPlateau
 
 if torch.mps.is_available():
     DEVICE = torch.device('mps')
@@ -17,7 +18,7 @@ class Trainer:
     def __init__(self, model, optimizer, loss, hparams, in_size: int, num_stocks: int):
         self.device = DEVICE
         self.hparams = hparams
-        print('Training hyperparameters:', self.hparams)
+        print('Training hyperparameters:\n', self.hparams)
         
         self.model = model(
             input_size = in_size,       # 300
@@ -34,10 +35,19 @@ class Trainer:
         )
         self.loss = loss
 
+        # self.scheduler = ReduceLROnPlateau(
+        #     self.optimizer, 
+        #     mode='min',  # Minimize loss
+        #     factor=0.5,  # Halve lr
+        #     patience=10,  # Wait 10 epochs
+        #     verbose=True
+        # )
+
         self.avg_train_loss = None
         self.avg_val_loss = None
     
     def train(self, train_ds: WindowDataset):
+        start_time = time.time()
         train_loader = DataLoader(
             train_ds,
             batch_size=self.hparams['train_batch_size'],
@@ -45,7 +55,7 @@ class Trainer:
         )
 
         for epoch in range(self.hparams['epochs']):
-            start_time = time.time()
+            epoch_start = time.time()
             self.model.train()
             total_loss = 0.0
             
@@ -65,15 +75,17 @@ class Trainer:
                 self.optimizer.step()
 
                 total_loss += loss.item()
-            end_time = time.time()
-            time_taken = round(end_time-start_time, 3)
-            print(f'Epoch {epoch} | Train Loss: {loss:.4f} | Took: {time_taken}s')
+            epoch_end = time.time()
+            epoch_time = round(epoch_end-epoch_start, 3)
+            print(f'Epoch {epoch} | Train Loss: {loss:.4f} | Took: {epoch_time}s')
 
             self.avg_train_loss = total_loss / len(train_loader)
-
-        print(f'Average Train Loss: {self.avg_train_loss:.4f}')
+        end_time = time.time()
+        time_taken = round(end_time-start_time, 3)
+        print(f'Average Train Loss: {self.avg_train_loss:.4f}, Time Take: {time_taken}')
 
     def eval(self, val_ds: WindowDataset):
+        start_time = time.time()
         val_loader = DataLoader(
             val_ds,
             batch_size=self.hparams['val_batch_size'],
@@ -91,7 +103,10 @@ class Trainer:
                 val_loss = self.loss(weights, yb)
                 val_losses.append(val_loss.item())
             self.avg_val_loss = sum(val_losses) / len(val_losses)
-        print(f'Average Val Loss: {self.avg_val_loss:.4f}')
+        
+        end_time = time.time()
+        time_taken = round(end_time-start_time, 3)
+        print(f'Average Val Loss: {self.avg_val_loss:.4f}, Time Taken: {time_taken}')
     
     def get_train_loss(self):
         if self.avg_train_loss:
