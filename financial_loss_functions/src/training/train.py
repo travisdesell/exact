@@ -1,8 +1,10 @@
 import time
 import torch
+from typing import List
+import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader
 from src.data_processing.dataset import WindowDataset
-from torch.optim.lr_scheduler import ReduceLROnPlateau
+
 
 if torch.mps.is_available():
     DEVICE = torch.device('mps')
@@ -34,17 +36,13 @@ class Trainer:
             weight_decay=self.hparams.get('weight_decay', 1e-5)
         )
         self.loss = loss
-
-        # self.scheduler = ReduceLROnPlateau(
-        #     self.optimizer, 
-        #     mode='min',  # Minimize loss
-        #     factor=0.5,  # Halve lr
-        #     patience=10,  # Wait 10 epochs
-        #     verbose=True
-        # )
-
+        
+        self.train_losses = []
+        self.val_losses = []
         self.avg_train_loss = None
         self.avg_val_loss = None
+
+        self.val_alloc_weights = []
     
     def train(self, train_ds: WindowDataset):
         start_time = time.time()
@@ -57,32 +55,38 @@ class Trainer:
         for epoch in range(self.hparams['epochs']):
             epoch_start = time.time()
             self.model.train()
-            total_loss = 0.0
-            
+            total_loss_sum = 0.0
+            total_samples = 0
+
             for xb, yb in train_loader:
                 xb = xb.to(self.device)
                 yb = yb.to(self.device)
 
-                weights = self.model(xb)              # (B, N)
-                loss = self.loss(weights, yb)  # Finance-based loss
+                weights = self.model(xb)  # (B, N)
+                loss = self.loss(weights, yb)
 
                 self.optimizer.zero_grad()
                 loss.backward()
-                
-                # Gradient clipping (clips to max norm 1.0)
                 torch.nn.utils.clip_grad_norm_(self.model.parameters(), 1.0)
-                
                 self.optimizer.step()
 
-                total_loss += loss.item()
-            epoch_end = time.time()
-            epoch_time = round(epoch_end-epoch_start, 3)
-            print(f'Epoch {epoch} | Train Loss: {loss:.4f} | Took: {epoch_time}s')
+                batch_size = xb.size(0)
 
-            self.avg_train_loss = total_loss / len(train_loader)
+                total_loss_sum += loss.item() * batch_size
+                total_samples += batch_size
+
+            epoch_end = time.time()
+            epoch_time = round(epoch_end - epoch_start, 3)
+            
+            epoch_avg_loss = total_loss_sum / total_samples
+            self.train_losses.append(epoch_avg_loss)
+            print(f'Epoch {epoch} | Train Loss: {epoch_avg_loss:.4f} | Took: {epoch_time}s')
+
+            self.avg_train_loss = epoch_avg_loss
+
         end_time = time.time()
-        time_taken = round(end_time-start_time, 3)
-        print(f'Average Train Loss: {self.avg_train_loss:.4f}, Time Take: {time_taken}')
+        time_taken = round(end_time - start_time, 3)
+        print(f'Average Train Loss: {self.avg_train_loss:.4f}, Time Taken: {time_taken}s')
 
     def eval(self, val_ds: WindowDataset):
         start_time = time.time()
@@ -95,27 +99,86 @@ class Trainer:
         # --- validation ---
         self.model.eval()
         with torch.no_grad():
-            val_losses = []
+            self.val_losses = []
+            total_loss, total_samples = 0.0, 0
+
             for xb, yb in val_loader:
-                xb = xb.to(self.device)
-                yb = yb.to(self.device)
+                b = xb.size(0)
+                xb, yb = xb.to(self.device), yb.to(self.device)
                 weights = self.model(xb)
-                val_loss = self.loss(weights, yb)
-                val_losses.append(val_loss.item())
-            self.avg_val_loss = sum(val_losses) / len(val_losses)
+                loss = self.loss(weights, yb)
+
+                # --- store per-batch loss ---
+                self.val_losses.append(loss.item())
+
+                # --- accumulate weighted sum for overall avg ---
+                total_loss += loss.item() * b
+                total_samples += b
+
+            # --- weighted average over all samples ---
+            self.avg_val_loss = total_loss / total_samples
         
         end_time = time.time()
         time_taken = round(end_time-start_time, 3)
         print(f'Average Val Loss: {self.avg_val_loss:.4f}, Time Taken: {time_taken}')
     
-    def get_train_loss(self):
+    def get_train_loss(self) -> float:
         if self.avg_train_loss:
             return self.avg_train_loss
         else:
             raise ValueError('Model not trained yet.')
     
-    def get_val_loss(self):
+    def get_val_loss(self) -> float:
         if self.avg_val_loss:
             return self.avg_val_loss
         else:
             raise ValueError('Model not evaluated yet.')
+        
+    def get_train_losses(self) -> List[float]:
+        if len(self.train_losses) != 0:
+            return self.train_losses
+        else:
+            raise ValueError('Model not trained yet.')
+    
+    def get_val_losses(self) -> List[float]:
+        if len(self.val_losses) != 0:
+            return self.val_losses
+        else:
+            raise ValueError('Model not evaluated yet.')
+        
+def train_val_losses_plot(
+    train_losses: List[float],
+    val_losses: List[float],
+    title: str,
+    output_path: str,
+    plot: bool = False,
+    sharey: bool = False,          # set True to use same y-axis for easier comparison
+    figsize: tuple = (12, 4)
+):
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=figsize, sharey=sharey)
+
+    # Left: train loss
+    ax1.plot(train_losses, marker='o', linestyle='-')
+    ax1.set_xlabel('Epoch')
+    ax1.set_ylabel('Loss')
+    ax1.set_title('Train Loss')
+    ax1.grid(True)
+
+    # Right: validation loss
+    ax2.plot(val_losses, marker='o', linestyle='-')
+    ax2.set_xlabel('Epoch')
+    ax2.set_title('Validation Loss')
+    ax2.grid(True)
+
+    # Overall title centered above subplots
+    fig.suptitle(title)
+
+    # Tight layout so title and labels don't overlap
+    fig.tight_layout(rect=[0, 0.03, 1, 0.95])
+
+    # Save and optionally show
+    fig.savefig(output_path, dpi=300, bbox_inches='tight')
+    if plot:
+        plt.show()
+
+    plt.close(fig)
