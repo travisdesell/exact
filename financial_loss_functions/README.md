@@ -6,7 +6,11 @@
 
 ## Prerequisites
 - Python 3.13.5
-- Free [Fred API Key](https://fred.stlouisfed.org) 
+- Free [Fred API Key](https://fred.stlouisfed.org)
+
+## Hardware Recommendations
+- RAM: 16GB
+- GPU: CUDA compatible NVIDIA GPU or MPS MacOS GPU
 
 ## Installation
 

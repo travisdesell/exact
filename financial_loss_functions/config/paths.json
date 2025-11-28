@@ -20,5 +20,10 @@
         "processed_train": "data/processed/processed_train.csv",
         "processed_val": "data/processed/processed_val.csv",
         "processed_test": "data/processed/processed_test.csv"
+    },
+    "artifacts": {
+        "artifact_dir": "artifacts/",
+        "results": "artifacts/results/",
+        "plots": "artifacts/results/plots/"
     }
 }

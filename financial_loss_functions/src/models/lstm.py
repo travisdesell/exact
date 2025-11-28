@@ -23,6 +23,7 @@ class BaseLSTM(nn.Module):
         last = out[:, -1, :]      # (B, hidden)
         last = torch.relu(last)
         last = self.dropout(last)
+        
         logits = self.fc(last)     # (B, N)
         # Strong equal-weight prior that never goes away
         equal_prior = torch.full_like(
@@ -56,6 +57,7 @@ class SimpleAttentionLSTM(nn.Module):
         # x: (B, T, E)
         out, _ = self.lstm(x)  # (B, T, hidden)
         out = torch.relu(out)
+        out = self.dropout(out)
         
         attn_out, _ = self.attn(out, out, out)  # (B, T, H)
         context = attn_out.mean(dim=1)
