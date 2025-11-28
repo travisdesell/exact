@@ -22,7 +22,7 @@ EXAMM* generate_examm_from_arguments(
     int64_t max_wallclock_seconds = 0;
     get_argument(arguments, "--max_wallclock_seconds", false, max_wallclock_seconds);
     if (max_genomes <= 0 && max_wallclock_seconds <= 0) {
-        Log::fatal("Either --max_genomes or --max_wallclock_seconds must be provided and > 0.\n");
+        Log::fatal("Either --max_genomes or --max_wallclock_seconds must be provided and be > 0.\n");
         exit(1);
     }
 

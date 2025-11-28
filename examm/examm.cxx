@@ -435,7 +435,7 @@ void EXAMM::save_genome(RNN_Genome* genome, string genome_name = "rnn_genome") {
 }
 
 RNN_Genome* EXAMM::generate_genome() {
-    if (max_genomes > 0 && speciation_strategy->get_evaluated_genomes() > max_genomes) {
+    if ((max_genomes > 0 && speciation_strategy->get_evaluated_genomes() > max_genomes) || (max_wallclock_seconds > 0 && std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now() - startClock).count() >= max_wallclock_seconds)) {
         RNN_Genome* global_best_genome = speciation_strategy->get_global_best_genome();
         save_genome(global_best_genome, "global_best_genome");
 
@@ -443,7 +443,9 @@ RNN_Genome* EXAMM::generate_genome() {
             speciation_strategy->save_entire_population(output_directory);
         }
         Log::info("max_genomes: %d", max_genomes);
-        Log::info("max_genomes reached, terminating search");
+        Log::info("max_wallclock_seconds: %d", max_wallclock_seconds);
+        Log::info("elapsed_seconds: %d", std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now() - startClock).count());
+        // Log::info("max_genomes reached, terminating search");
         return NULL;
     }
 
