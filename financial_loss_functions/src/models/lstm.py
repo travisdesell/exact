@@ -14,17 +14,15 @@ class BaseLSTM(nn.Module):
             batch_first=True,
             dropout=dropout_rate,
         )
-        # self.dropout = nn.Dropout(dropout_rate)
+        self.dropout = nn.Dropout(dropout_rate)
         self.fc = nn.Linear(hidden_size, num_stocks)
-
-        # self.fc.weight.data.zero_() # Set logits to 0 to start with equal weights
-        # self.fc.bias.data.zero_()
 
     def forward(self, x):
         # x: (B, T, E)
         out, _ = self.lstm(x)      # (B, T, hidden)
         last = out[:, -1, :]      # (B, hidden)
         last = torch.relu(last)
+        last = self.dropout(last)
         logits = self.fc(last)     # (B, N)
         # Strong equal-weight prior that never goes away
         equal_prior = torch.full_like(
@@ -49,18 +47,19 @@ class SimpleAttentionLSTM(nn.Module):
             dropout=dropout_rate,
         )
         # Attention layer components
-        # self.attention = nn.Linear(hidden_size, 1)  # Simple attention to compute scores over time steps
         self.attn = nn.MultiheadAttention(hidden_size, num_heads=4, batch_first=True)
+    
+        self.dropout = nn.Dropout(dropout_rate)
         self.fc = nn.Linear(hidden_size, num_stocks)
-        # self.fc.weight.data.zero_() # Set logits to 0 to start with equal weights
-        # self.fc.bias.data.zero_()
 
     def forward(self, x):
         # x: (B, T, E)
         out, _ = self.lstm(x)  # (B, T, hidden)
+        out = torch.relu(out)
         
         attn_out, _ = self.attn(out, out, out)  # (B, T, H)
-        context = attn_out.mean(dim=1)  # or 
+        context = attn_out.mean(dim=1)
+        context = self.dropout(context)
         
         logits = self.fc(context)  # (B, N)
         # Strong equal-weight prior that never goes away
