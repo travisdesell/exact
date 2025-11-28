@@ -28,8 +28,8 @@ def run_training_pipeline(paths_config: Dict, hparams_config: Dict):
     val_data = processed_dfs['processed_val']
     returns_val = processed_dfs['returns_val']
 
-    # print('Train shape:', train_data.shape)
-    # print('Val shape:', val_data.shape)
+    print('Train shape:', train_data.shape)
+    print('Val shape:', val_data.shape)
 
     # -------------------- Preprocessing (Reshaping) -------------------- #
     reshaper = Reshaper(
@@ -53,18 +53,18 @@ def run_training_pipeline(paths_config: Dict, hparams_config: Dict):
     train_ds = WindowDataset(X_train, y_train)
     val_ds   = WindowDataset(X_val, y_val)
 
-    # print('\nTraining BaseLSTM...')
-    # trainer = Trainer(
-    #     model=BaseLSTM,
-    #     optimizer=optim.AdamW,
-    #     loss=differentiable_sharpe_loss,
-    #     hparams=hparams_config['BaseLSTM'],
-    #     in_size=X_train.shape[2],
-    #     num_stocks=y_train.shape[2]
-    # )
+    print('\nTraining BaseLSTM...')
+    trainer = Trainer(
+        model=BaseLSTM,
+        optimizer=optim.AdamW,
+        loss=differentiable_sharpe_loss,
+        hparams=hparams_config['BaseLSTM'],
+        in_size=X_train.shape[2],
+        num_stocks=y_train.shape[2]
+    )
 
-    # trainer.train(train_ds)
-    # trainer.eval(val_ds)
+    trainer.train(train_ds)
+    trainer.eval(val_ds)
 
     print('\nTraining AttentionLSTM...')
     trainer = Trainer(
