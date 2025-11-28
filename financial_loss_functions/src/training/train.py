@@ -3,20 +3,22 @@ import torch
 from torch.utils.data import DataLoader
 from src.data_processing.dataset import WindowDataset
 
+if torch.mps.is_available():
+    DEVICE = torch.device('mps')
+    print('Using mps for GPU acceleration.')
+elif torch.cuda.is_available():
+    DEVICE = torch.device('cuda')
+    print('Using cuda for GPU acceleration.')
+else:
+    DEVICE = torch.device('cpu')
+    print('No GPU acceleration. Using CPU.')
 
 class Trainer:
     def __init__(self, model, optimizer, loss, hparams, in_size: int, num_stocks: int):
-        if torch.mps.is_available():
-            self.device = torch.device('mps')
-            print('Using mps for GPU acceleration.')
-        elif torch.cuda.is_available():
-            self.device = torch.device('cuda')
-            print('Using cuda for GPU acceleration.')
-        else:
-            print('No GPU acceleration. Using CPU.')
-            self.device = torch.device('cpu')
-        
+        self.device = DEVICE
         self.hparams = hparams
+        print('Training hyperparameters:', self.hparams)
+        
         self.model = model(
             input_size = in_size,       # 300
             hidden_size = self.hparams['hidden_size'],
@@ -56,6 +58,10 @@ class Trainer:
 
                 self.optimizer.zero_grad()
                 loss.backward()
+                
+                # Gradient clipping (clips to max norm 1.0)
+                torch.nn.utils.clip_grad_norm_(self.model.parameters(), 1.0)
+                
                 self.optimizer.step()
 
                 total_loss += loss.item()

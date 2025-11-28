@@ -49,7 +49,8 @@ class SimpleAttentionLSTM(nn.Module):
             dropout=dropout_rate,
         )
         # Attention layer components
-        self.attention = nn.Linear(hidden_size, 1)  # Simple attention to compute scores over time steps
+        # self.attention = nn.Linear(hidden_size, 1)  # Simple attention to compute scores over time steps
+        self.attn = nn.MultiheadAttention(hidden_size, num_heads=4, batch_first=True)
         self.fc = nn.Linear(hidden_size, num_stocks)
         # self.fc.weight.data.zero_() # Set logits to 0 to start with equal weights
         # self.fc.bias.data.zero_()
@@ -58,15 +59,8 @@ class SimpleAttentionLSTM(nn.Module):
         # x: (B, T, E)
         out, _ = self.lstm(x)  # (B, T, hidden)
         
-        # Attention: Compute scores for each time step
-        attn_scores = self.attention(out).squeeze(-1)  # (B, T)
-        attn_weights = torch.softmax(attn_scores, dim=-1)  # (B, T)
-        
-        # Weighted sum of hidden states (context vector)
-        context = torch.sum(out * attn_weights.unsqueeze(-1), dim=1)  # (B, hidden)
-        
-        # Apply ReLU activation
-        context = torch.relu(context)
+        attn_out, _ = self.attn(out, out, out)  # (B, T, H)
+        context = attn_out.mean(dim=1)  # or 
         
         logits = self.fc(context)  # (B, N)
         # Strong equal-weight prior that never goes away
