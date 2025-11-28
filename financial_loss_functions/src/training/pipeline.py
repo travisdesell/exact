@@ -1,12 +1,15 @@
 from torch import optim
 from typing import Dict
 from pathlib import Path
-from src.data_processing.loading import load_csv_files
-from src.data_processing.dataset import Reshaper
-from src.models.lstm import BaseLSTM, SimpleAttentionLSTM
-from src.training.loss_functions import raw_sharpe_loss, differentiable_sharpe_loss
 from src.training.train import Trainer
+from src.data_processing.dataset import Reshaper
 from src.data_processing.dataset import WindowDataset
+from src.data_processing.loading import load_csv_files
+from src.models.lstm import BaseLSTM, SimpleAttentionLSTM
+from src.training.loss_functions import (
+    raw_sharpe_loss,
+    differentiable_sharpe_loss
+)
 
 def run_training_pipeline(paths_config: Dict, hparams_config: Dict):
     print('=' * 20, ' Training Pipeline ', '=' * 20)
@@ -50,18 +53,18 @@ def run_training_pipeline(paths_config: Dict, hparams_config: Dict):
     train_ds = WindowDataset(X_train, y_train)
     val_ds   = WindowDataset(X_val, y_val)
 
-    print('\nTraining BaseLSTM...')
-    trainer = Trainer(
-        model=BaseLSTM,
-        optimizer=optim.AdamW,
-        loss=differentiable_sharpe_loss,
-        hparams=hparams_config['BaseLSTM'],
-        in_size=X_train.shape[2],
-        num_stocks=y_train.shape[2]
-    )
+    # print('\nTraining BaseLSTM...')
+    # trainer = Trainer(
+    #     model=BaseLSTM,
+    #     optimizer=optim.AdamW,
+    #     loss=differentiable_sharpe_loss,
+    #     hparams=hparams_config['BaseLSTM'],
+    #     in_size=X_train.shape[2],
+    #     num_stocks=y_train.shape[2]
+    # )
 
-    trainer.train(train_ds)
-    trainer.eval(val_ds)
+    # trainer.train(train_ds)
+    # trainer.eval(val_ds)
 
     print('\nTraining AttentionLSTM...')
     trainer = Trainer(

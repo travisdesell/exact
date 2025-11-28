@@ -1,4 +1,5 @@
-import torch
+from torch import clamp
+
 def raw_sharpe_loss(weights, returns, eps=1e-8):
     """
     weights: (B, N)
@@ -17,7 +18,7 @@ def differentiable_sharpe_loss(weights, returns, eps=1e-6):
     port_ret = (weights.unsqueeze(1) * returns).sum(-1)   # (B, T)
     mean = port_ret.mean(dim=1)
     var  = port_ret.var(dim=1)          # variance, not std
-    # Avoid the sqrt entirely
+    # Avoiding the sqrt entirely
     return -(mean / (var.sqrt() + eps)).mean()
     # even more stable:
     # return -(mean**2 / (var + eps)).mean()
@@ -32,7 +33,7 @@ def sortino_loss(weights, returns, target=0.0, eps=1e-8):
     port = (weights.unsqueeze(1) * returns).sum(dim=-1)  # (B, T_out)
     
     # Downside deviation: std of negative deviations from target
-    downside = torch.clamp(target - port, min=0.0)  # (B, T_out), only positive for downside
+    downside = clamp(target - port, min=0.0)  # (B, T_out), only positive for downside
     downside_std = downside.std(dim=1) + eps  # (B,)
     
     mean = port.mean(dim=1)  # (B,)

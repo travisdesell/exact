@@ -11,7 +11,7 @@
         "num_layers": 5,
         "lr": 3e-4,
         "dropout": 0.3,
-        "weight_decay": 2e-5,
+        "weight_decay": 1e-4,
         "epochs": 200
     },
     "AttentionLSTM": {
@@ -19,9 +19,9 @@
         "val_batch_size": 1,
         "hidden_size": 256,
         "num_layers": 5,
-        "lr": 1e-4,
+        "lr": 3e-4,
         "dropout": 0.3,
-        "weight_decay": 1e-5,
+        "weight_decay": 1e-4,
         "epochs": 200
     }
 }

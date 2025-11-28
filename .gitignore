@@ -23,7 +23,7 @@ financial_loss_functions/exploration/.ipynb_checkpoints
 financial_loss_functions/data/raw/2023_sp_500_select_50/
 financial_loss_functions/data/raw/macro/
 financial_loss_functions/data/processed/
-financial_loss_functions/scripts/generate_synthetic_data.py
+# financial_loss_functions/scripts/generate_synthetic_data.py
 
 # Local secrets
 financial_loss_functions/data_collectors/fred_config.py
