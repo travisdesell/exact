@@ -5,7 +5,11 @@ from src.data_processing.dataset import Reshaper
 from src.data_processing.dataset import WindowDataset
 from src.data_processing.loading import load_csv_files
 from src.models.lstm import BaseLSTM, SimpleAttentionLSTM
-from src.training.train import Trainer, train_val_losses_plot
+from src.training.train import (
+    Trainer,
+    train_val_losses_plot, 
+    get_equal_weight_pf
+)
 from src.training.loss_functions import (
     raw_sharpe_loss,
     differentiable_sharpe_loss
@@ -66,7 +70,7 @@ def run_training_pipeline(paths_config: Dict, hparams_config: Dict):
     )
 
     trainer.train(train_ds)
-    trainer.eval(val_ds)
+    trainer.evaluate(val_ds)
 
     title = 'BaseLSTM Loss Curves'
     train_val_losses_plot(
@@ -75,6 +79,11 @@ def run_training_pipeline(paths_config: Dict, hparams_config: Dict):
         title,
         Path(paths_config['artifacts']['plots']) / (title + '.png')
     )
+
+    alloc_weights = trainer.get_val_alloc_weights()
+    equal_wt = get_equal_weight_pf(y_val.shape[2])
+    print(alloc_weights.shape)
+    # print(equal_wt)
 
     print('\n')
     print('-'*10, ' Training AttentionLSTM ', '-'*10)
@@ -88,7 +97,7 @@ def run_training_pipeline(paths_config: Dict, hparams_config: Dict):
     )
 
     trainer.train(train_ds)
-    trainer.eval(val_ds)
+    trainer.evaluate(val_ds)
 
     title = 'AttentionLSTM Loss Curves'
     train_val_losses_plot(
