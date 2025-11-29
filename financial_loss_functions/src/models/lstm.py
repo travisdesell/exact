@@ -48,7 +48,7 @@ class SimpleAttentionLSTM(nn.Module):
             dropout=dropout_rate,
         )
         # Attention layer components
-        self.attn = nn.MultiheadAttention(hidden_size, num_heads=4, batch_first=True)
+        self.attn = nn.MultiheadAttention(hidden_size, num_heads=2, batch_first=True)
     
         self.dropout = nn.Dropout(dropout_rate)
         self.fc = nn.Linear(hidden_size, num_stocks)
