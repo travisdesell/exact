@@ -132,10 +132,8 @@ class Trainer:
         "Getter for allocation weights as numpy array"
         wt_array = []
         for w in self.val_alloc_weights:
-            print(w.shape)
             wt_array.append(w.numpy())
         return np.vstack(wt_array)
-        # return np.array([w.numpy() for w in self.val_alloc_weights])
         
 def train_val_losses_plot(
     train_losses: List[float],
@@ -174,8 +172,90 @@ def train_val_losses_plot(
 
     plt.close()
 
-def get_equal_weight_pf(num_tickers) -> np.array:
-    return np.full((num_tickers), 1/num_tickers)
-
 # def calc_portfolio_returns(weights: np.array, daily_returns):
 #     pass
+
+class Evaluator:
+    def __init__(self, eval_returns: np.ndarray):
+        # Returns by window
+        self.eval_returns = eval_returns
+
+        # Different Weights
+        self.eval_weights = None
+        self.eq_weights = None
+        
+        # Returns for each window
+        self.all_daily_returns = {} # Add all returns for every window
+
+    def _equal_weight_pf(self, num_tickers) -> np.array:
+        return np.full((num_tickers), 1/num_tickers)
+
+    def calc_pf_daily_rets(self, eval_weights: np.ndarray, model_name: str):
+        self.eval_weights = eval_weights
+        
+        pf_daily_returns = []
+        
+        # Iterating over window samples
+        for i in range(self.eval_weights.shape[0]):
+            weights = self.eval_weights[i]  # Shape: (50,)
+            returns = self.eval_returns[i]  # Shape: (50, 50) - time steps × assets
+            
+            # Calculate daily portfolio returns (dot product at each time step)
+            pf_daily_returns.append(np.dot(returns, weights)) # Shape: (50,)
+        
+        self.all_daily_returns[model_name] = np.array(pf_daily_returns)
+    
+    def calc_eq_wt_daily_rets(self): 
+        # For equal weight portfolio
+        self.eq_weights = self._equal_weight_pf(self.eval_returns.shape[2])
+        
+        eq_wt_daily_returns = []
+        
+        for i in range(self.eval_returns.shape[0]):
+            returns = self.eval_returns[i]  # Shape: (50, 50)
+            eq_wt_daily_returns.append(np.dot(returns, self.eq_weights))  # Shape: (50,)
+
+        self.all_daily_returns['Equal Weight'] = np.array(eq_wt_daily_returns)
+
+    def plot_windowed_comparison(self, output_path: str, plot: bool=False):
+        # for pf_type, array in self.all_daily_returns.items():
+        if not self.all_daily_returns:
+            print("No daily returns calculated. Run calc_pf_daily_rets and calc_eq_wt_daily_rets first.")
+            return
+        
+        colors = ['blue', 'red', 'green', 'orange', 'purple']  # Add more colors if needed
+        
+        n_windows = next(iter(self.all_daily_returns.values())).shape[0]
+        n_cols = min(3, n_windows)
+        n_rows = (n_windows + n_cols - 1) // n_cols
+        
+        fig, axes = plt.subplots(n_rows, n_cols, figsize=(5*n_cols, 4*n_rows))
+        
+        # Handle single subplot case
+        if n_rows == 1 and n_cols == 1:
+            axes = np.array([axes])
+        axes = axes.flatten()
+        
+        # Plot each window
+        for window_idx in range(n_windows):
+            ax = axes[window_idx]
+            
+            for i, (pf_type, daily_returns) in enumerate(self.all_daily_returns.items()):
+                ax.plot(daily_returns[window_idx], label=pf_type, color=colors[i % len(colors)], alpha=0.8)
+            
+            ax.set_title(f'Window {window_idx + 1}')
+            ax.set_xlabel('Time Steps')
+            ax.set_ylabel('Daily Returns')
+            ax.legend()
+            ax.grid(True, alpha=0.3)
+        
+        # Hide empty subplots
+        for i in range(n_windows, len(axes)):
+            axes[i].set_visible(False)
+        
+        # Save and optionally show
+        fig.savefig(output_path, dpi=300, bbox_inches='tight')
+        
+        if plot:
+            plt.tight_layout()
+            plt.show()
