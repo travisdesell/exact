@@ -1,7 +1,7 @@
 {
     "rolling_windows": {
-        "in_size": 200,
-        "out_size": 50,
+        "in_size": 190,
+        "out_size": 60,
         "stride": 1
     },
     "BaseLSTM": {
@@ -10,7 +10,7 @@
         "hidden_size": 256,
         "num_layers": 2,
         "lr": 1e-4,
-        "dropout": 0.3,
+        "dropout": 0.4,
         "weight_decay": 3e-4,
         "epochs": 300
     },
@@ -20,7 +20,7 @@
         "hidden_size": 128,
         "num_layers": 2,
         "lr": 1e-4,
-        "dropout": 0.3,
+        "dropout": 0.4,
         "weight_decay": 3e-4,
         "epochs": 300
     }

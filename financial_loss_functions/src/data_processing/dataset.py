@@ -166,6 +166,11 @@ class Reshaper:
         
         self._features_check()
 
+        if self.in_size + self.out_size > features_data.shape[0]:
+            raise ValueError(
+                'Incorrect rolling window sizes. in_size + out_size <= Number os time steps'
+            )
+
         starts = list(
             range(0, len(features_data) - (self.in_size + self.out_size) + 1, self.stride)
         )
