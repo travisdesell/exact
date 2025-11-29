@@ -1,10 +1,10 @@
 import time
 import torch
+import numpy as np
 from typing import List
 import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader
 from src.data_processing.dataset import WindowDataset
-
 
 if torch.mps.is_available():
     DEVICE = torch.device('mps')
@@ -16,8 +16,11 @@ else:
     DEVICE = torch.device('cpu')
     print('No GPU acceleration. Using CPU.')
 
+
 class Trainer:
-    def __init__(self, model, optimizer, loss, hparams, in_size: int, num_stocks: int):
+    def __init__(
+            self, model, optimizer, loss, hparams, in_size: int, num_stocks: int
+        ):
         self.device = DEVICE
         self.hparams = hparams
         print('Training hyperparameters:\n', self.hparams)
@@ -67,7 +70,7 @@ class Trainer:
 
                 self.optimizer.zero_grad()
                 loss.backward()
-                torch.nn.utils.clip_grad_norm_(self.model.parameters(), 1.0)
+                torch.nn.utils.clip_grad_norm_(self.model.parameters(), 0.5)
                 self.optimizer.step()
 
                 batch_size = xb.size(0)
@@ -88,7 +91,7 @@ class Trainer:
         time_taken = round(end_time - start_time, 3)
         print(f'Average Train Loss: {self.avg_train_loss:.4f}, Time Taken: {time_taken}s')
 
-    def eval(self, val_ds: WindowDataset):
+    def evaluate(self, val_ds: WindowDataset):
         start_time = time.time()
         val_loader = DataLoader(
             val_ds,
@@ -108,6 +111,9 @@ class Trainer:
                 weights = self.model(xb)
                 loss = self.loss(weights, yb)
 
+                # detach & move to CPU BEFORE appending
+                self.val_alloc_weights.append(weights.detach().cpu()) 
+
                 # --- store per-batch loss ---
                 self.val_losses.append(loss.item())
 
@@ -121,30 +127,15 @@ class Trainer:
         end_time = time.time()
         time_taken = round(end_time-start_time, 3)
         print(f'Average Val Loss: {self.avg_val_loss:.4f}, Time Taken: {time_taken}')
-    
-    def get_train_loss(self) -> float:
-        if self.avg_train_loss:
-            return self.avg_train_loss
-        else:
-            raise ValueError('Model not trained yet.')
-    
-    def get_val_loss(self) -> float:
-        if self.avg_val_loss:
-            return self.avg_val_loss
-        else:
-            raise ValueError('Model not evaluated yet.')
-        
-    def get_train_losses(self) -> List[float]:
-        if len(self.train_losses) != 0:
-            return self.train_losses
-        else:
-            raise ValueError('Model not trained yet.')
-    
-    def get_val_losses(self) -> List[float]:
-        if len(self.val_losses) != 0:
-            return self.val_losses
-        else:
-            raise ValueError('Model not evaluated yet.')
+
+    def get_val_alloc_weights(self) -> np.ndarray:
+        "Getter for allocation weights as numpy array"
+        wt_array = []
+        for w in self.val_alloc_weights:
+            print(w.shape)
+            wt_array.append(w.numpy())
+        return np.vstack(wt_array)
+        # return np.array([w.numpy() for w in self.val_alloc_weights])
         
 def train_val_losses_plot(
     train_losses: List[float],
@@ -158,14 +149,14 @@ def train_val_losses_plot(
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=figsize, sharey=sharey)
 
     # Left: train loss
-    ax1.plot(train_losses, marker='o', linestyle='-')
+    ax1.plot(train_losses, linestyle='-')
     ax1.set_xlabel('Epoch')
     ax1.set_ylabel('Loss')
     ax1.set_title('Train Loss')
     ax1.grid(True)
 
     # Right: validation loss
-    ax2.plot(val_losses, marker='o', linestyle='-')
+    ax2.plot(val_losses, linestyle='-')
     ax2.set_xlabel('Epoch')
     ax2.set_title('Validation Loss')
     ax2.grid(True)
@@ -181,4 +172,10 @@ def train_val_losses_plot(
     if plot:
         plt.show()
 
-    plt.close(fig)
+    plt.close()
+
+def get_equal_weight_pf(num_tickers) -> np.array:
+    return np.full((num_tickers), 1/num_tickers)
+
+# def calc_portfolio_returns(weights: np.array, daily_returns):
+#     pass
