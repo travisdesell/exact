@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-from typing import Tuple, List, Dict
+from typing import Tuple, List, Dict, Optional
 from sklearn.preprocessing import PowerTransformer, RobustScaler
 
 
@@ -291,18 +291,28 @@ class Preprocessor:
     def _broadcast_common(self, data, features: List[str]) -> pd.DataFrame:
         """Broadcast common features to all tickers with names <ticker>_<common_feature>"""
 
-        # Create a dict of new columns: {new_col_name: values} for all ticker-feature pairs
+        # Build broadcasted columns in a single concatenation to avoid fragmentation
         new_cols = {
-            f'{ticker}{self.col_sep}{feat}': data[feat] 
-            for feat in features for ticker in self.all_tickers
+            f'{ticker}{self.col_sep}{feat}': data[feat].values
+            for feat in features
+            for ticker in self.all_tickers
         }
+        broadcast_df = pd.DataFrame(new_cols, index=data.index)
 
-        # Drop the original common columns after broadcasting
-        data = data.drop(columns=features).assign(**new_cols)
-        
-        return data
+        # Drop the original common columns and concatenate once
+        remaining = data.drop(columns=features)
+        combined = pd.concat([remaining, broadcast_df], axis=1)
 
-    def process_train_data(self, train: pd.DataFrame)-> pd.DataFrame:
+        # Copy to defragment the underlying blocks
+        return combined.copy()
+
+    def _update_common_features(self, macro_cols: List[str]):
+        """Merge macro columns with existing common features without duplicates."""
+        base_common = self.common_features or []
+        combined = list(dict.fromkeys(base_common + macro_cols))
+        self.common_features = combined if combined else None
+
+    def process_train_data(self, train: pd.DataFrame, macro_data: Optional[pd.DataFrame] = None)-> pd.DataFrame:
         """
         Preprocesses given training data
 
@@ -310,6 +320,8 @@ class Preprocessor:
         ----------
         train: pd.DataFrame
             Training data
+        macro_data: pd.DataFrame, optional
+            Macro data aligned to training dates
         
         Return
         ------
@@ -317,27 +329,30 @@ class Preprocessor:
             Preprocessed training data
         """
 
+        macro_cols: List[str] = []
+        if macro_data is not None:
+            macro_cols = list(macro_data.columns)
+            train = pd.concat([train, macro_data], axis=1)
+
+        # Update common features before extracting tickers so macro columns are excluded
+        self._update_common_features(macro_cols)
+
         self.all_col_names = list(train.columns)
         self.all_tickers = self._extract_tickers()
         
-        # III TODO: ##
-        # 1. Combine date matched macro data (common features) with CRSP data (training data only)
-        # No underscore must be present in macro data column names.
-
         # train = self._transform(train, 'fit')
 
         train = self._normalize(train, 'fit')
 
-        # IV TODO: ##
-        # Combine column names from macro data with list `self.common features` for broadcasting features
-
-        # Broadcast only if common features are present
+        # Broadcasting only if common features are present
         if self.common_features:
             train = self._broadcast_common(train, self.common_features)
 
         return train
 
-    def process_split_data(self, split_data: pd.DataFrame) -> pd.DataFrame:
+    def process_split_data(
+            self, split_data: pd.DataFrame, macro_data: Optional[pd.DataFrame] = None
+        ) -> pd.DataFrame:
         """
         Preprocesses given validation or test data based on statistics 
         from the training data.
@@ -346,6 +361,8 @@ class Preprocessor:
         ----------
         split_data: pd.DataFrame
             Validation or test data
+        macro_data: pd.DataFrame, optional
+            Macro data aligned to validation/test dates
         
         Return
         ------
@@ -353,8 +370,25 @@ class Preprocessor:
             Preprocessed validation or test data
         """
 
-        # TODO: ##
-        # 1. Combine date matched macro data (common features) with CRSP data (val/test)
+        macro_cols: List[str] = []
+        if macro_data is not None:
+            macro_cols = list(macro_data.columns)
+            split_data = pd.concat([split_data, macro_data], axis=1)
+
+        if macro_cols:
+            self._update_common_features(macro_cols)
+
+        # Ensure column alignment with training data before normalization
+        if self.all_col_names is not None:
+            missing = set(self.all_col_names) - set(split_data.columns)
+            extra = set(split_data.columns) - set(self.all_col_names)
+            if missing:
+                raise ValueError(f'Missing columns in split data: {missing}')
+            if extra:
+                # Drop any unexpected columns to match training schema
+                split_data = split_data[self.all_col_names]
+            else:
+                split_data = split_data[self.all_col_names]
 
         # split_data = self._transform(split_data, 'split')
 

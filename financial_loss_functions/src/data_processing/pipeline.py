@@ -68,18 +68,14 @@ def run_processing_pipeline(paths_config: Dict, features_config: Dict):
     )
     
     print('Realized returns extracted and saved.')
-    
-    # II TODO: ##
-    # 1. Add extra argument to Preprocessor.process_train_data() and Preprocessor.process_split_data() to take in macro data
-    # 2. Do Not Include underscore in col names in macro data if renaming
 
     # Preprocessing for NN
     nn_preprocessor = Preprocessor(
         common_features = features_config['common_features']
     )
-    processed_train = nn_preprocessor.process_train_data(train_data)
-    processed_val = nn_preprocessor.process_split_data(val_data)
-    processed_test = nn_preprocessor.process_split_data(test_data)
+    processed_train = nn_preprocessor.process_train_data(train_data, macro_train)
+    processed_val = nn_preprocessor.process_split_data(val_data, macro_val)
+    processed_test = nn_preprocessor.process_split_data(test_data, macro_test)
 
     save_to_csv(
         processed_train,
