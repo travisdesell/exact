@@ -1,6 +1,7 @@
 from torch import optim
 from typing import Dict
 from pathlib import Path
+from src.utils import create_directory
 from src.data_processing.dataset import Reshaper
 from src.data_processing.dataset import WindowDataset
 from src.data_processing.loading import load_csv_files
@@ -17,6 +18,10 @@ from src.training.loss_functions import (
 
 def run_training_pipeline(paths_config: Dict, hparams_config: Dict):
     print('=' * 20, ' Training Pipeline ', '=' * 20)
+    
+    # Create plots directory if it doesnt exist
+    create_directory(Path(paths_config['artifacts']['plots']))
+    
     # -------------------- Loading Processed Data -------------------- #
     processed_files = {
         'processed_train': Path(paths_config['processed_paths']['processed_train']),
@@ -128,3 +133,5 @@ def run_training_pipeline(paths_config: Dict, hparams_config: Dict):
         Path(paths_config['artifacts']['plots']) /
         (f'Daily Returns' + '.png')
     )
+
+    print('Compounded returns for each window:\n', evaluator.all_total_returns)

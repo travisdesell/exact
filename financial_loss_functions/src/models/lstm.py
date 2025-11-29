@@ -17,6 +17,9 @@ class BaseLSTM(nn.Module):
         self.dropout = nn.Dropout(dropout_rate)
         self.fc = nn.Linear(hidden_size, num_stocks)
 
+        # nn.init.uniform_(self.fc.weight, a=-1e-3, b=1e-3)
+        # nn.init.zeros_(self.fc.bias)
+
     def forward(self, x):
         # x: (B, T, E)
         out, _ = self.lstm(x)      # (B, T, hidden)
@@ -52,6 +55,9 @@ class SimpleAttentionLSTM(nn.Module):
     
         self.dropout = nn.Dropout(dropout_rate)
         self.fc = nn.Linear(hidden_size, num_stocks)
+
+        # nn.init.uniform_(self.fc.weight, a=-1e-3, b=1e-3)
+        # nn.init.zeros_(self.fc.bias)
 
     def forward(self, x):
         # x: (B, T, E)
