@@ -1,3 +1,4 @@
+import gc
 from torch import optim
 from typing import Dict
 from pathlib import Path
@@ -13,11 +14,12 @@ from src.training.train import (
 )
 from src.training.loss_functions import (
     raw_sharpe_loss,
+    raw_sortino_loss,
     differentiable_sharpe_loss
 )
 
 def run_training_pipeline(paths_config: Dict, hparams_config: Dict):
-    print('=' * 20, ' Training Pipeline ', '=' * 20)
+    print('\n', '=' * 20, ' Training Pipeline ', '=' * 20)
     
     # Create plots directory if it doesnt exist
     create_directory(Path(paths_config['artifacts']['plots']))
@@ -60,78 +62,95 @@ def run_training_pipeline(paths_config: Dict, hparams_config: Dict):
     print('y_val shape:', y_val.shape)
 
     # -------------------- Training Models -------------------- #
+    # Converting to pytorch tensors
     train_ds = WindowDataset(X_train, y_train)
     val_ds   = WindowDataset(X_val, y_val)
 
-    # BaseLSTM
-    model1_name = 'BaseLSTM'
-    print('\n')
-    print('-'*10, f' Training {model1_name} ', '-'*10)
-    trainer = Trainer(
-        model=BaseLSTM,
-        optimizer=optim.AdamW,
-        loss=differentiable_sharpe_loss,
-        hparams=hparams_config['BaseLSTM'],
-        in_size=X_train.shape[2],
-        num_stocks=y_train.shape[2]
-    )
-
-    trainer.train(train_ds)
-    trainer.evaluate(val_ds)
-
-    train_val_losses_plot(
-        trainer.train_losses,
-        trainer.val_losses,
-        model1_name + ' Loss Curves',
-        Path(paths_config['artifacts']['plots']) /
-        (model1_name + ' Loss Curves' + '.png')
-    )
-
-    alloc_weights = trainer.get_val_alloc_weights()
-    
-    # We can initialize once
+    # Initializing once to compare all models together
     evaluator = Evaluator(y_val)
-    evaluator.calc_eq_wt_daily_rets()
-    
-    # Call on every models output allocation weights
-    evaluator.calc_pf_daily_rets(alloc_weights, model1_name)
-    
-    # evaluator.plot_windowed_comparison(
-    #     Path(paths_config['artifacts']['plots']) /
-    #     (f'Daily Returns' + '.png')
-    # )
 
-    # Attention LSTM
+    #### BaseLSTM ####
+    model1_name = 'BaseLSTM'
+    print('\n', '-'*10, f' Training {model1_name} ', '-'*10)
+    try:
+        trainer = Trainer(
+            model=BaseLSTM,
+            optimizer=optim.AdamW,
+            loss=differentiable_sharpe_loss,
+            hparams=hparams_config[model1_name],
+            in_size=X_train.shape[2],
+            num_stocks=y_train.shape[2]
+        )
+
+        trainer.train(train_ds)
+        trainer.evaluate(val_ds)
+
+        # Plot loss curves
+        train_val_losses_plot(
+            trainer.train_losses,
+            trainer.val_losses,
+            model1_name + ' Loss Curves',
+            Path(paths_config['artifacts']['plots']) /
+            (model1_name + ' Loss Curves' + '.png')
+        )
+
+        alloc_weights = trainer.get_val_alloc_weights()
+
+        # Call on every models output allocation weights to caluclated weighted returns
+        # Add daily returns for BaseLSTM generated weights
+        evaluator.calc_pf_daily_rets(alloc_weights, model1_name)
+    
+    except Exception as error:
+        print(f'Error while training {model1_name}. Skipping.', error)
+        del trainer
+        gc.collect()
+    
+
+    #### Attention LSTM ####
     model2_name = 'AttentionLSTM'
-    print('\n')
-    print('-'*10, f' Training {model2_name} ', '-'*10)
-    trainer = Trainer(
-        model=SimpleAttentionLSTM,
-        optimizer=optim.AdamW,
-        loss=differentiable_sharpe_loss,
-        hparams=hparams_config['AttentionLSTM'],
-        in_size=X_train.shape[2],
-        num_stocks=y_train.shape[2]
-    )
+    print('\n', '-'*10, f' Training {model2_name} ', '-'*10)
+    try:
+        trainer = Trainer(
+            model=SimpleAttentionLSTM,
+            optimizer=optim.AdamW,
+            loss=differentiable_sharpe_loss,
+            hparams=hparams_config[model2_name],
+            in_size=X_train.shape[2],
+            num_stocks=y_train.shape[2]
+        )
 
-    trainer.train(train_ds)
-    trainer.evaluate(val_ds)
+        trainer.train(train_ds)
+        trainer.evaluate(val_ds)
 
-    train_val_losses_plot(
-        trainer.train_losses,
-        trainer.val_losses,
-        model2_name + ' Loss Curves',
-        Path(paths_config['artifacts']['plots']) /
-        (model2_name + ' Loss Curves' + '.png')
-    )
+        # Plot loss curves
+        train_val_losses_plot(
+            trainer.train_losses,
+            trainer.val_losses,
+            model2_name + ' Loss Curves',
+            Path(paths_config['artifacts']['plots']) /
+            (model2_name + ' Loss Curves' + '.png')
+        )
 
-    alloc_weights = trainer.get_val_alloc_weights()
+        alloc_weights = trainer.get_val_alloc_weights()
 
-    evaluator.calc_pf_daily_rets(alloc_weights, model2_name)
+        # Add daily returns for AttentionLSTM generated weights
+        evaluator.calc_pf_daily_rets(alloc_weights, model2_name)
+    except Exception as error:
+        print(f'Error while training {model2_name}. Skipping.', error)
+        del trainer
+        gc.collect()
+    
+    # Evaluation/Comparison starts here
+    evaluator.calc_eq_wt_daily_rets()
     
     evaluator.plot_windowed_comparison(
         Path(paths_config['artifacts']['plots']) /
         (f'Daily Returns' + '.png')
     )
 
-    print('Compounded returns for each window:\n', evaluator.all_total_returns)
+    total_returns = evaluator.calc_total_performance('returns')
+    total_sharpes = evaluator.calc_total_performance('sharpe')
+
+    print('\n', '-'*10, ' Portfolio Perfomance Metrics ', '-'*10)
+    print('\n', 'Compounded returns for each window:\n', total_returns)
+    print('\n', 'Basic sharpe ratios for each window:\n', total_sharpes)

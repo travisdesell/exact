@@ -49,6 +49,7 @@ def sample_linkage():
     return link
 
 def test_correlDist(hrp, sample_data):
+    # Testing correlation distance matrix for symmetry and digonal
     _, _, corr = sample_data
 
     dist = hrp._correlDist(corr)
@@ -59,7 +60,8 @@ def test_correlDist(hrp, sample_data):
     assert (dist >= 0).all().all()
     assert (dist <= 1).all().all()
 
-def test_getQuasiDiag_vaild_output(hrp, sample_linkage):    
+def test_getQuasiDiag_vaild_output(hrp, sample_linkage):
+    # Testing if function outputs correct indices representing assets    
     order = hrp._getQuasiDiag(sample_linkage)
 
     # Should produce ordering of all 4 original indices
@@ -204,6 +206,7 @@ def simple_q():
     return np.array([0.0, 0.0])
 
 def test_ensure_symmetry(base_quad):
+    # Testing function that ensures symmetry of matrix
     mat = np.array([[1., 2.],
                     [3., 4.]])
     sym = base_quad._ensure_symmetry(mat)
@@ -214,6 +217,8 @@ def test_ensure_symmetry(base_quad):
     assert np.allclose(sym, sym.T), 'Matrix Should be symmetric'
 
 def test_compute_ridge_auto(base_quad, simple_cov):
+    # Testing computation of ridge value. 
+    # A small value used to safely invert matrices to avoid numerical errors.
     ridge = base_quad._compute_ridge(simple_cov)
 
     trace = np.trace(simple_cov)
@@ -223,12 +228,13 @@ def test_compute_ridge_auto(base_quad, simple_cov):
     assert ridge > 0
 
 def test_compute_ridge_numeric(simple_cov):
+    # Testing ridge value is same as input ridge value
     base_quad = BaseQuadraticOptimizer(reg='1e-9')
     ridge = base_quad._compute_ridge(simple_cov)
     assert np.isclose(ridge, 1e-9)
 
 def test_safe_inv(base_quad, simple_cov):
-
+    # Testing function to safely invert matrices
     inv = base_quad._safe_inv(simple_cov)
 
     # inverse should be symmetric
@@ -239,6 +245,7 @@ def test_safe_inv(base_quad, simple_cov):
     assert np.allclose(approx_identity, np.eye(2), atol=1e-6)
 
 def test_qp_solve_sum_to_one(base_quad, simple_cov, simple_q):
+    # Testing solving of quadratic equation, should give weights that sum to 1
     n = simple_cov.shape[0]
     A = np.ones((1, n))
     b = np.array([1.0])
@@ -254,6 +261,7 @@ def test_qp_solve_sum_to_one(base_quad, simple_cov, simple_q):
     assert np.isclose(np.sum(x), 1.0, atol=1e-6)
 
 def test_qp_solve_nonnegative(base_quad, simple_cov, simple_q):
+    # Weights should be non-negative after solving quadrativ problem
     n = simple_cov.shape[0]
     A = np.ones((1, n))
     b = np.array([1.0])
@@ -274,6 +282,7 @@ def test_qp_solve_nonnegative(base_quad, simple_cov, simple_q):
     assert np.isclose(np.sum(x), 1.0, atol=1e-6)
 
 def test_set_ridge(base_quad):
+    # Testing Setter method
     # Using string as input
     base_quad.set_ridge('1e-6')
     assert base_quad.reg == float('1e-6'), 'String input should convert to float'
@@ -283,6 +292,8 @@ def test_set_ridge(base_quad):
     assert base_quad.reg == 0.001, 'Float input should set the ridge value'
 
 def test_qp_solve_scipy(simple_cov, simple_q):
+    # Testing if Scipy implementation of quadratic problem solving works
+    # Scipy is a backup for when cvxopt doesnt work
     base_quad = BaseQuadraticOptimizer(solver='scipy')
     n = simple_cov.shape[0]
     A = np.ones((1, n))
