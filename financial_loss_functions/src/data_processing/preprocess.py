@@ -47,6 +47,9 @@ class MacroPreprocessor:
         # In case the first few rows are missing (no previous value), backfill once
         daily_macro = daily_macro.bfill()
 
+        # Drop rows where all macro series are missing (e.g., trailing dates beyond coverage)
+        daily_macro = daily_macro.dropna(how='all')
+
         return daily_macro
 
     def split_by_crsp_dates(
