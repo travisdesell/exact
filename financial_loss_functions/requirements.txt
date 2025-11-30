@@ -12,3 +12,4 @@ seaborn==0.13.0
 statsmodels==0.14.5
 torch==2.9.1
 torchvision==0.24.1
+optuna==4.6.0

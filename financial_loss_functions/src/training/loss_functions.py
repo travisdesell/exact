@@ -23,7 +23,7 @@ def differentiable_sharpe_loss(weights, returns, eps=1e-6):
     # even more stable:
     # return -(mean**2 / (var + eps)).mean()
 
-def sortino_loss(weights, returns, target=0.0, eps=1e-8):
+def raw_sortino_loss(weights, returns, target=0.0, eps=1e-8):
     """
     weights: (B, N)
     returns: (B, T_out, N) -- raw returns
