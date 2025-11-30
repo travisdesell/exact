@@ -5,22 +5,22 @@
         "stride": 1
     },
     "BaseLSTM": {
-        "train_batch_size": 512,
+        "train_batch_size": 256,
         "val_batch_size": 1,
         "hidden_size": 256,
         "num_layers": 2,
-        "lr": 1e-4,
-        "dropout": 0.4,
+        "lr": 1e-3,
+        "dropout": 0.2,
         "weight_decay": 3e-4,
         "epochs": 200
     },
     "AttentionLSTM": {
-        "train_batch_size": 512,
+        "train_batch_size": 256,
         "val_batch_size": 1,
         "hidden_size": 256,
         "num_layers": 2,
-        "lr": 1e-4,
-        "dropout": 0.4,
+        "lr": 1e-3,
+        "dropout": 0.2,
         "weight_decay": 3e-4,
         "epochs": 200
     }
