@@ -33,23 +33,23 @@ def run_processing_pipeline(paths_config: Dict, features_config: Dict):
     # Extracting macro-economic directory path
     macro_dir_path = Path(paths_config['data']['raw_macro_dir'])
 
-    # Loading raw macro-economic data
-    raw_macro = load_macro_data(macro_dir_path)
+    # # Loading raw macro-economic data
+    # raw_macro = load_macro_data(macro_dir_path). #### MACRO REMOVED FOR TESTING
     
     # -------------------- Cleaning -------------------- #
     train_data, val_data, test_data = clean_inplace(train_data, val_data, test_data)
 
-    # Process macro-economic data and align with CRSP dates
-    macro_preprocessor = MacroPreprocessor()
-    combined_macro = macro_preprocessor.combine_macro_data(raw_macro)
-    daily_macro = macro_preprocessor.to_daily(combined_macro)
-    macro_train, macro_val, macro_test = macro_preprocessor.split_by_crsp_dates(
-        daily_macro,
-        train_data.index,
-        val_data.index,
-        test_data.index
-    )
-    print('Macro data processed and aligned with CRSP splits.')
+    # # Process macro-economic data and align with CRSP dates
+    # macro_preprocessor = MacroPreprocessor()
+    # combined_macro = macro_preprocessor.combine_macro_data(raw_macro)
+    # daily_macro = macro_preprocessor.to_daily(combined_macro)
+    # macro_train, macro_val, macro_test = macro_preprocessor.split_by_crsp_dates(
+    #     daily_macro,
+    #     train_data.index,
+    #     val_data.index,
+    #     test_data.index
+    # )
+    # print('Macro data processed and aligned with CRSP splits.')
 
     # -------------------- Preporcessing -------------------- #
     # Common processing (realized returns)
@@ -73,9 +73,9 @@ def run_processing_pipeline(paths_config: Dict, features_config: Dict):
     nn_preprocessor = Preprocessor(
         common_features = features_config['common_features']
     )
-    processed_train = nn_preprocessor.process_train_data(train_data, macro_train)
-    processed_val = nn_preprocessor.process_split_data(val_data, macro_val)
-    processed_test = nn_preprocessor.process_split_data(test_data, macro_test)
+    processed_train = nn_preprocessor.process_train_data(train_data)
+    processed_val = nn_preprocessor.process_split_data(val_data)
+    processed_test = nn_preprocessor.process_split_data(test_data)
 
     save_to_csv(
         processed_train,
