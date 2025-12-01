@@ -14,6 +14,9 @@ class BaseLSTM(nn.Module):
             batch_first=True,
             dropout=dropout_rate,
         )
+
+        # self.ln = nn.LayerNorm(hidden_size)
+
         self.dropout = nn.Dropout(dropout_rate)
         self.fc = nn.Linear(hidden_size, num_stocks)
 
@@ -24,6 +27,9 @@ class BaseLSTM(nn.Module):
         # x: (B, T, E)
         out, _ = self.lstm(x)      # (B, T, hidden)
         last = out[:, -1, :]      # (B, hidden)
+
+        # last = self.ln(last) # Layer Norm
+        
         last = torch.relu(last)
         last = self.dropout(last)
         
@@ -50,8 +56,13 @@ class SimpleAttentionLSTM(nn.Module):
             batch_first=True,
             dropout=dropout_rate,
         )
+
+        self.ln_lstm = nn.LayerNorm(hidden_size) # Normalizes LSTM output
+        
         # Attention layer components
         self.attn = nn.MultiheadAttention(hidden_size, num_heads=2, batch_first=True)
+        
+        self.ln_attn = nn.LayerNorm(hidden_size) # Normalizes Attention output
     
         self.dropout = nn.Dropout(dropout_rate)
         self.fc = nn.Linear(hidden_size, num_stocks)
@@ -62,10 +73,19 @@ class SimpleAttentionLSTM(nn.Module):
     def forward(self, x):
         # x: (B, T, E)
         out, _ = self.lstm(x)  # (B, T, hidden)
+        
+        out = self.ln_lstm(out)
         out = torch.relu(out)
         out = self.dropout(out)
         
         attn_out, _ = self.attn(out, out, out)  # (B, T, H)
+        
+        # Residual Connection + Norm (Standard Transformer Block trick)
+        # We add the input (out) to the output (attn_out) to help gradients flow
+        attn_out = out + attn_out 
+        attn_out = self.ln_attn(attn_out)
+        
+        # Pooling
         context = attn_out.mean(dim=1)
         context = self.dropout(context)
         

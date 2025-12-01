@@ -100,7 +100,10 @@ class Trainer:
 
                 self.optimizer.zero_grad()
                 loss.backward()
-                torch.nn.utils.clip_grad_norm_(self.model.parameters(), 0.5)
+                torch.nn.utils.clip_grad_norm_(
+                    self.model.parameters(),
+                    max_norm=self.hparams.get('clip_grad_norm', 0.5)
+                )
                 self.optimizer.step()
 
                 batch_size = xb.size(0)

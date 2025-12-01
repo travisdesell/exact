@@ -9,10 +9,11 @@
         "val_batch_size": 1,
         "hidden_size": 256,
         "num_layers": 2,
-        "lr": 1e-3,
+        "lr": 1e-4,
         "dropout": 0.2,
         "weight_decay": 3e-4,
-        "epochs": 200
+        "clip_grad_norm": 0.5,
+        "epochs": 100
     },
     "AttentionLSTM": {
         "train_batch_size": 256,
@@ -22,6 +23,7 @@
         "lr": 1e-3,
         "dropout": 0.2,
         "weight_decay": 3e-4,
-        "epochs": 200
+        "clip_grad_norm": 0.5,
+        "epochs": 100
     }
 }
