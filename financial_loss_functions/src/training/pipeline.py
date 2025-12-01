@@ -6,7 +6,7 @@ from src.utils import create_directory
 from src.data_processing.dataset import Reshaper
 from src.data_processing.dataset import WindowDataset
 from src.data_processing.loading import load_csv_files
-from src.models.lstm import BaseLSTM, SimpleAttentionLSTM
+from src.models.lstm import BaseLSTM, AttentionLSTM
 from src.training.train import (
     Trainer,
     train_val_losses_plot,
@@ -111,7 +111,7 @@ def run_training_pipeline(paths_config: Dict, hparams_config: Dict):
     print('\n', '-'*10, f' Training {model2_name} ', '-'*10)
     try:
         trainer = Trainer(
-            model=SimpleAttentionLSTM,
+            model=AttentionLSTM,
             optimizer=optim.AdamW,
             loss=differentiable_sharpe_loss,
             hparams=hparams_config[model2_name],

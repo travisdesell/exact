@@ -18,8 +18,8 @@
     "AttentionLSTM": {
         "train_batch_size": 256,
         "val_batch_size": 1,
-        "hidden_size": 256,
-        "num_layers": 2,
+        "hidden_size": 128,
+        "num_layers": 3,
         "lr": 1e-3,
         "dropout": 0.2,
         "weight_decay": 3e-4,

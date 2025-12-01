@@ -44,7 +44,7 @@ class BaseLSTM(nn.Module):
         weights = torch.softmax(logits, dim=-1)
         return weights
 
-class SimpleAttentionLSTM(nn.Module):
+class AttentionLSTM(nn.Module):
     def __init__(
         self, input_size, hidden_size, num_layers, num_stocks, dropout_rate=0.2
     ):
