@@ -2,7 +2,7 @@ import time
 import torch
 import numpy as np
 import pandas as pd
-from typing import List, Dict
+from typing import List, Dict, Callable
 import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader
 from src.data_processing.dataset import WindowDataset
@@ -23,20 +23,32 @@ class Trainer:
     Class to train provided models with provided hyperparameters.
     """
     def __init__(
-            self, model, optimizer, loss, hparams: Dict, in_size: int, num_stocks: int
-        ):
+        self, 
+        model,  # Model class, not instance
+        optimizer,
+        loss: Callable,
+        model_hparams: Dict,      # Specific to model architecture
+        optimizer_hparams: Dict,  # Specific to optimizer
+        train_hparams: Dict,      # Generic training params (epochs, batch_size, etc.)
+        in_size: int,
+        num_stocks: int
+    ):
         """
         Initialize Trainer instance to train given model.
 
         Parameters
         ----------
         model: torch.nn.Module
-            Pytorch neural network object to be trained and evaluated
+            Pytorch neural network class to be trained and evaluated
         optimizer: torch.optim
-            Pytorch optimization object to be used to loss optimization
-        loss
+            Pytorch optimization class to be used to loss optimization
+        loss: Callable
             Custom loss function
-        hparams: Dict
+        model_hparams: Dict
+            Dictionary containing hyperparameters required for model initialization
+        optimizer_hparams: Dict
+            Dictionary containing hyperparameters required for optimizer initialization
+        train_hparams: Dict
             Dictionary containing hyperparameters required for training
         in_size: int
             Size of input window
@@ -44,23 +56,25 @@ class Trainer:
             Number of stocks, i.e, number of output nodes 
         """
         self.device = DEVICE
-        self.hparams = hparams
-        print('Training hyperparameters:\n', self.hparams)
+        print('Model hyperparameters:\n', model_hparams)
+        print('Optimizer hyperparameters:\n', optimizer_hparams)
+        print('Training hyperparameters:\n', train_hparams)
         
+        # Initialize model with its specific hyperparameters
         self.model = model(
-            input_size = in_size,       # 300
-            hidden_size = self.hparams['hidden_size'],
-            num_layers = self.hparams['num_layers'],
-            num_stocks = num_stocks,        # 50
-            dropout_rate = self.hparams['dropout']
+            input_size=in_size,
+            num_stocks=num_stocks,
+            **model_hparams  # Unpack all model-specific hyperparams
         ).to(self.device)
         
+        # Initialize optimizer with its specific hyperparameters
         self.optimizer = optimizer(
             self.model.parameters(),
-            lr=self.hparams['lr'],
-            weight_decay=self.hparams.get('weight_decay', 1e-5)
+            **optimizer_hparams
         )
         self.loss = loss
+
+        self.train_hparams = train_hparams
         
         self.train_losses = []
         self.val_losses = []
@@ -81,11 +95,11 @@ class Trainer:
         start_time = time.time()
         train_loader = DataLoader(
             train_ds,
-            batch_size=self.hparams['train_batch_size'],
+            batch_size=self.train_hparams['train_batch_size'],
             shuffle=False
         )
 
-        for epoch in range(self.hparams['epochs']):
+        for epoch in range(self.train_hparams['epochs']):
             epoch_start = time.time()
             self.model.train()
             total_loss_sum = 0.0
@@ -102,7 +116,7 @@ class Trainer:
                 loss.backward()
                 torch.nn.utils.clip_grad_norm_(
                     self.model.parameters(),
-                    max_norm=self.hparams.get('clip_grad_norm', 0.5)
+                    max_norm=self.train_hparams.get('clip_grad_norm', 0.5)
                 )
                 self.optimizer.step()
 
@@ -136,7 +150,7 @@ class Trainer:
         start_time = time.time()
         val_loader = DataLoader(
             val_ds,
-            batch_size=self.hparams['val_batch_size'],
+            batch_size=self.train_hparams['val_batch_size'],
             shuffle=False
         )
 

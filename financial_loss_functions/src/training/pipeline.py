@@ -1,4 +1,3 @@
-import gc
 from torch import optim
 from typing import Dict
 from pathlib import Path
@@ -77,7 +76,9 @@ def run_training_pipeline(paths_config: Dict, hparams_config: Dict):
             model=BaseLSTM,
             optimizer=optim.AdamW,
             loss=differentiable_sharpe_loss,
-            hparams=hparams_config[model1_name],
+            model_hparams=hparams_config[model1_name]['model'],
+            optimizer_hparams=hparams_config[model1_name]['optimizer'],
+            train_hparams=hparams_config[model1_name]['train'],
             in_size=X_train.shape[2],
             num_stocks=y_train.shape[2]
         )
@@ -101,9 +102,7 @@ def run_training_pipeline(paths_config: Dict, hparams_config: Dict):
         evaluator.calc_pf_daily_rets(alloc_weights, model1_name)
     
     except Exception as error:
-        print(f'Error while training {model1_name}. Skipping.', error)
-        del trainer
-        gc.collect()
+        print(f'DEBUG: Error while training {model1_name}. Skipping.', error)
     
 
     #### Attention LSTM ####
@@ -114,7 +113,9 @@ def run_training_pipeline(paths_config: Dict, hparams_config: Dict):
             model=AttentionLSTM,
             optimizer=optim.AdamW,
             loss=differentiable_sharpe_loss,
-            hparams=hparams_config[model2_name],
+            model_hparams=hparams_config[model2_name]['model'],
+            optimizer_hparams=hparams_config[model2_name]['optimizer'],
+            train_hparams=hparams_config[model2_name]['train'],
             in_size=X_train.shape[2],
             num_stocks=y_train.shape[2]
         )
@@ -136,9 +137,7 @@ def run_training_pipeline(paths_config: Dict, hparams_config: Dict):
         # Add daily returns for AttentionLSTM generated weights
         evaluator.calc_pf_daily_rets(alloc_weights, model2_name)
     except Exception as error:
-        print(f'Error while training {model2_name}. Skipping.', error)
-        del trainer
-        gc.collect()
+        print(f'DEBUG: Error while training {model2_name}. Skipping.', error)
     
     # Evaluation/Comparison starts here
     evaluator.calc_eq_wt_daily_rets()

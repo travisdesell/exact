@@ -5,25 +5,37 @@
         "stride": 1
     },
     "BaseLSTM": {
-        "train_batch_size": 256,
-        "val_batch_size": 1,
-        "hidden_size": 256,
-        "num_layers": 2,
-        "lr": 1e-4,
-        "dropout": 0.2,
-        "weight_decay": 3e-4,
-        "clip_grad_norm": 0.5,
-        "epochs": 100
+        "model": {
+            "hidden_size": 256,
+            "num_layers": 2,
+            "dropout": 0.2
+        },
+        "optimizer": {
+            "lr": 1e-4,
+            "weight_decay": 3e-4
+        },
+        "train" : {
+            "train_batch_size": 256,
+            "val_batch_size": 1,
+            "clip_grad_norm": 0.5,
+            "epochs": 100
+        }
     },
     "AttentionLSTM": {
-        "train_batch_size": 256,
-        "val_batch_size": 1,
-        "hidden_size": 128,
-        "num_layers": 3,
-        "lr": 1e-3,
-        "dropout": 0.2,
-        "weight_decay": 3e-4,
-        "clip_grad_norm": 0.5,
-        "epochs": 100
+        "model": {
+            "hidden_size": 128,
+            "num_layers": 3,
+            "dropout": 0.2
+        },
+        "optimizer": {
+            "lr": 1e-3,
+            "weight_decay": 3e-4
+        },
+        "train": {
+            "train_batch_size": 256,
+            "val_batch_size": 1,
+            "clip_grad_norm": 0.5,
+            "epochs": 100
+        }
     }
 }

@@ -4,7 +4,7 @@ import torch.nn as nn
 
 class BaseLSTM(nn.Module):
     def __init__(
-            self, input_size, hidden_size, num_layers, num_stocks, dropout_rate=0.2
+            self, input_size, hidden_size, num_layers, num_stocks, dropout=0.2
         ):
         super().__init__()
         self.lstm = nn.LSTM(
@@ -12,12 +12,12 @@ class BaseLSTM(nn.Module):
             hidden_size=hidden_size,
             num_layers=num_layers,
             batch_first=True,
-            dropout=dropout_rate,
+            dropout=dropout,
         )
 
         # self.ln = nn.LayerNorm(hidden_size)
 
-        self.dropout = nn.Dropout(dropout_rate)
+        self.dropout = nn.Dropout(dropout)
         self.fc = nn.Linear(hidden_size, num_stocks)
 
         # nn.init.uniform_(self.fc.weight, a=-1e-3, b=1e-3)
@@ -46,7 +46,7 @@ class BaseLSTM(nn.Module):
 
 class AttentionLSTM(nn.Module):
     def __init__(
-        self, input_size, hidden_size, num_layers, num_stocks, dropout_rate=0.2
+        self, input_size, hidden_size, num_layers, num_stocks, dropout=0.2
     ):
         super().__init__()
         self.lstm = nn.LSTM(
@@ -54,7 +54,7 @@ class AttentionLSTM(nn.Module):
             hidden_size=hidden_size,
             num_layers=num_layers,
             batch_first=True,
-            dropout=dropout_rate,
+            dropout=dropout,
         )
 
         self.ln_lstm = nn.LayerNorm(hidden_size) # Normalizes LSTM output
@@ -64,7 +64,7 @@ class AttentionLSTM(nn.Module):
         
         self.ln_attn = nn.LayerNorm(hidden_size) # Normalizes Attention output
     
-        self.dropout = nn.Dropout(dropout_rate)
+        self.dropout = nn.Dropout(dropout)
         self.fc = nn.Linear(hidden_size, num_stocks)
 
         # nn.init.uniform_(self.fc.weight, a=-1e-3, b=1e-3)
