@@ -4,11 +4,55 @@ import pandas as pd
 from scipy.stats import skew
 from numpy.testing import assert_allclose
 from src.data_processing.preprocess import (
+    MacroCombiner,
     clean_inplace,
     cov_preprocessor,
     get_only_returns,
     Preprocessor
 )
+
+# --------- MacroCombiner tests ----------#
+@pytest.fixture
+def macro_combiner():
+    return MacroCombiner(resample_freq='B') # B for business days
+
+def test_combine_macro_data_parses_datetimes_and_sorts(macro_combiner):
+    """ Test for combining macro data csvs, and sorting by date"""
+    # df1 uses string dates (unsorted); df2 uses strings too but covers other dates
+    df1 = pd.DataFrame(
+        {'A': [1, 2, 3]}, index=['2020-01-03', '2020-01-01', '2020-01-02']
+    )
+    df2 = pd.DataFrame(
+        {'B': [10, 20, np.nan]}, index=['2020-01-01', '2020-01-02', '2020-01-04']
+    )
+
+    raw_macro = {'one': df1, 'two': df2}
+
+    combined = macro_combiner.combine_macro_data(raw_macro)
+
+    # Index must be datetime and sorted ascending
+    assert isinstance(combined.index, pd.DatetimeIndex)
+    assert list(combined.index) == sorted(list(combined.index))
+
+    # Both columns should be present and aligned by date
+    assert 'A' in combined.columns and 'B' in combined.columns
+    # Check that a known value is present (A at 2020-01-01)
+    assert combined.loc[pd.Timestamp('2020-01-01'), 'A'] == 2
+
+def test_combine_macro_data_drops_all_nan_columns(macro_combiner):
+    df1 = pd.DataFrame(
+        {'A': [1, 2]}, index=['2020-01-01', '2020-01-02']
+    )
+    df2 = pd.DataFrame(
+        {'ALLNAN': [np.nan, np.nan]}, index=['2020-01-01', '2020-01-02']
+    )
+    raw_macro = {'d1': df1, 'd2': df2}
+
+    combined = macro_combiner.combine_macro_data(raw_macro)
+
+    # Column that is entirely NaN should be dropped
+    assert 'ALLNAN' not in combined.columns
+    assert 'A' in combined.columns
 
 # ---------- Clean inplace tests ---------- #
 def test_clean_inplace_uneq_cols():

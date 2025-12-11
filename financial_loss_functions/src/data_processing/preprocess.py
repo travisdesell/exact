@@ -4,7 +4,7 @@ from typing import Tuple, List, Dict, Optional
 from sklearn.preprocessing import PowerTransformer, RobustScaler
 
 
-class MacroPreprocessor:
+class MacroCombiner:
     """
     Utility class to combine macro-economic datasets, upsample them to a daily
     frequency, and align them with CRSP train/val/test splits.
