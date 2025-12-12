@@ -36,23 +36,21 @@ class Trainer:
         """
         Initialize Trainer instance to train given model.
 
-        Parameters
-        ----------
-        model: torch.nn.Module
+        @param model torch.nn.Module
             Pytorch neural network class to be trained and evaluated
-        optimizer: torch.optim
+        @param optimizer torch.optim
             Pytorch optimization class to be used to loss optimization
-        loss: Callable
+        @param loss Callable
             Custom loss function
-        model_hparams: Dict
+        @param model_hparams Dict
             Dictionary containing hyperparameters required for model initialization
-        optimizer_hparams: Dict
+        @param optimizer_hparams Dict
             Dictionary containing hyperparameters required for optimizer initialization
-        train_hparams: Dict
+        @param train_hparams Dict
             Dictionary containing hyperparameters required for training
-        in_size: int
+        @param in_size int
             Size of input window
-        num_stocks: int
+        @param num_stocks int
             Number of stocks, i.e, number of output nodes 
         """
         self.device = DEVICE
@@ -87,9 +85,7 @@ class Trainer:
         """
         Train inistalized model using a train data split.
 
-        Parameters
-        ----------
-        train_ds: WindowDataset
+        @param train_ds WindowDataset
             Training data split converted to windowed dataset tensors
         """
         start_time = time.time()
@@ -142,9 +138,7 @@ class Trainer:
         """
         Evaluate the trained model using a validation data split.
         
-        Parameters
-        ----------
-        val_ds: WindowDataset
+        @param val_ds WindowDataset
             Validation data split converted to windowed dataset tensors
         """
         start_time = time.time()
@@ -184,7 +178,11 @@ class Trainer:
         print(f'Average Val Loss: {self.avg_val_loss:.4f}, Time Taken: {time_taken}')
 
     def get_val_alloc_weights(self) -> np.ndarray:
-        """Getter for allocation weights as numpy array"""
+        """
+        Getter for allocation weights as numpy array
+        
+        @return np.ndarray Portfolio allocation weights for each validation window
+        """
         if self.val_alloc_weights:
             wt_array = []
             for w in self.val_alloc_weights:
@@ -203,6 +201,7 @@ def train_val_losses_plot(
     sharey: bool = False,          # set True to use same y-axis for easier comparison
     figsize: tuple = (12, 4)
 ):
+    """Plot training and validation loss curves"""
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=figsize, sharey=sharey)
 
     # Left: train loss
@@ -241,9 +240,7 @@ class Evaluator:
         """
         Initialize Evaluator instance to evaulate and compare all generated weights.
 
-        Parameters
-        ----------
-        eval_returns: np.ndarray
+        @param eval_returns np.ndarray
             Daily returns which are used to evulate all methods/models
         """
         # Returns by window
@@ -257,8 +254,15 @@ class Evaluator:
         self.all_daily_returns = {} # Add all returns for every window
 
     @staticmethod
-    def _equal_weight_pf(num_tickers) -> np.array:
-        """Calculates simple equal weights for a portfolio"""
+    def _equal_weight_pf(num_tickers: int) -> np.array:
+        """
+        Calculates simple equal weights for a portfolio
+        weight for each stock = 1/num_tickers
+        
+        @param num_tickers int number of tickers in the dataset
+
+        @return np.array equal weight portfolio allocation weights
+        """
         return np.full((num_tickers), 1/num_tickers)
 
     @staticmethod
@@ -273,11 +277,9 @@ class Evaluator:
         """
         Calculates non-annualized sharpe for given window.
         
-        Parameters
-        ----------
-        returns_arr: np.array (n,)
+        @param returns_arr np.array (n,)
             array of discrete returns for each time step
-        risk_free_rate: float
+        @param risk_free_rate float
             Risk free rate for window used for returns. Default = 0.0
         """
         mean_ret = np.mean(returns_arr)
@@ -290,11 +292,9 @@ class Evaluator:
         Calculates daily returns for the given portfolio weights for each given window.
         Portfolio Weights (n,) x Returns (T, n) = weighted returns.
 
-        Parameters
-        ----------
-        eval_weights: np.ndarray
+        @param eval_weights np.ndarray
             Portfolio allocation weights for which weighted returns need to be calculated
-        model_name: str
+        @param model_name str
             Name of the model which generated the portfolio allocation weights
         """
         self.eval_weights = eval_weights
@@ -340,14 +340,10 @@ class Evaluator:
         Calculate per-window performance of all portfolios (incl. Equal Weight)
         based on given metric. 
 
-        Parameters
-        ----------
-        metric: str
+        @param metric str
             String name of the metric to be calculated. `returns` or `sharpe`
 
-        Returns
-        -------
-        all_returns: Dict[str, List]
+        @return Dict[str, List]
             Dictionary containing calculated performance metric for each validation window
         """
         self._daily_rets_calcd_check()
@@ -371,11 +367,9 @@ class Evaluator:
         """
         Plots and saves windowed comparisons of daily returns for every portfolio
 
-        Parameters
-        ----------
-        output_path: str
+        @param output_path str
             File path to save plot
-        plot: bool
+        @param plot bool
             Toggle to show image while running code. Default = False
         """
         # for pf_type, array in self.all_daily_returns.items():

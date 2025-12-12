@@ -17,10 +17,9 @@ class FredAPI:
         """
         Initialize object to pull macro-economic data for a specific category from Fred API
 
-        Parameters:
-            api_key (str): API Key for the Fred API account
-            category_name (str): Name of the category of macro-economic data being requested
-            required_series (Dict[str, str]): A dictionary of required series data with their name and key
+        @param api_key str API Key for the Fred API account
+        @param category_name str Name of the category of macro-economic data being requested
+        @param required_series Dict[str, str] A dictionary of required series data with their name and key
         """
         self.fred = Fred(api_key)
         self.category_name = category_name
@@ -33,8 +32,7 @@ class FredAPI:
         """
         Setter function to set a default start date for pulling macro-economic data
         
-        Parameters:
-            date (str): date string in ISO format. e.g., '2000-01-01'
+        @param date str date string in ISO format. e.g., '2000-01-01'
         """
         self.default_start_date = date
     
@@ -42,8 +40,7 @@ class FredAPI:
         """
         Setter function to set number of requests per minute
 
-        Parameters:
-            requests_per_minute (int): number of requests per minute allowed
+        @param requests_per_minute int number of requests per minute allowed
         """
         self.requests_per_min = requests_per_min
         self.interval = float(60 / self.requests_per_min)

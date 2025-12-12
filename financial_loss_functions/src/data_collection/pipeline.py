@@ -11,13 +11,9 @@ def run_macro_pipeline(
     """
     Macro-economic Data Collection Pipeline Entry point
 
-    Parameters
-    ----------
-    api_key: str
-        API key for FRED API
-    paths_config: Dict
-        Config dictionary containg paths to files and directories
-    fred_series: Dict
+    @param api_key str API key for FRED API
+    @param paths_config Dict Config dictionary containg paths to files and directories
+    @param fred_series Dict 
         Dictionary containing required categories and their fred series ids
         Default = src.data_collection.const.FRED_SERIES
     """

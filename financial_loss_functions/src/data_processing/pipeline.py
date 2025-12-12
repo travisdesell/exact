@@ -11,6 +11,12 @@ from src.data_processing.preprocess import (
 
 
 def run_processing_pipeline(paths_config: Dict, features_config: Dict):
+    """
+    Data Processing Pipeline entry point
+
+    @param paths_config Dict Dictionary containing paths
+    @param features_config Dictionary containing features information
+    """
     print('=' * 20, ' Data Processing Pipeline ', '=' * 20)
     
     # Reset directory

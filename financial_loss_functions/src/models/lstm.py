@@ -3,9 +3,20 @@ import numpy as np
 import torch.nn as nn
 
 class BaseLSTM(nn.Module):
+    """BaseLSTM Model"""
     def __init__(
             self, input_size, hidden_size, num_layers, num_stocks, dropout=0.2
         ):
+        """
+        Initialize BaseLSTM model which inherits from `torch.nn.Module`
+
+        @param input_size int Size of input window
+        @param hidden_size int Number of nodes in hidden layers
+        @param num_layers int Number of hidden layers
+        @param num_stocks int Number of stocks in dataset. 
+            It is the number of output nodes.
+        @param dropout float Dropout rate. Default = 0.2
+        """
         super().__init__()
         self.lstm = nn.LSTM(
             input_size=input_size,
@@ -24,7 +35,10 @@ class BaseLSTM(nn.Module):
         # nn.init.zeros_(self.fc.bias)
 
     def forward(self, x):
-        # x: (B, T, E)
+        """
+        Forward pass method
+        x: (B, T, E)
+        """
         out, _ = self.lstm(x)      # (B, T, hidden)
         last = out[:, -1, :]      # (B, hidden)
 
@@ -45,9 +59,20 @@ class BaseLSTM(nn.Module):
         return weights
 
 class AttentionLSTM(nn.Module):
+    """AttentionLSTM Model"""
     def __init__(
         self, input_size, hidden_size, num_layers, num_stocks, dropout=0.2
     ):
+        """
+        Initialize Attention LSTM object which inherits from torch.nn.Module
+
+        @param input_size int Size of input window
+        @param hidden_size int Number of nodes in hidden layers
+        @param num_layers int Number of hidden layers
+        @param num_stocks int Number of stocks in dataset. 
+            It is the number of output nodes.
+        @param dropout float Dropout rate. Default = 0.2
+        """
         super().__init__()
         self.lstm = nn.LSTM(
             input_size=input_size,
@@ -71,7 +96,10 @@ class AttentionLSTM(nn.Module):
         # nn.init.zeros_(self.fc.bias)
 
     def forward(self, x):
-        # x: (B, T, E)
+        """
+        Forward pass method
+        x: (B, T, E)
+        """
         out, _ = self.lstm(x)  # (B, T, hidden)
         
         out = self.ln_lstm(out)

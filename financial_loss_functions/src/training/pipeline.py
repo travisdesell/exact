@@ -18,6 +18,12 @@ from src.training.loss_functions import (
 )
 
 def run_training_pipeline(paths_config: Dict, hparams_config: Dict):
+    """
+    All models training pipeline entry point
+
+    @param paths_config Dict Dictionary containing paths
+    @param features_config Dictionary containing hyperparameter information
+    """
     print('\n', '=' * 20, ' Training Pipeline ', '=' * 20)
     
     # Create plots directory if it doesnt exist

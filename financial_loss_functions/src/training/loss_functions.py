@@ -2,8 +2,11 @@ from torch import clamp
 
 def raw_sharpe_loss(weights, returns, eps=1e-8):
     """
-    weights: (B, N)
-    returns: (B, T_out, N) -- raw returns
+    @param weights torch.tensor (B, N)
+    @param returns torch.tensor (B, T_out, N) -- raw returns
+
+    @return batch average Sharpe Ratio. 
+        Negative since NN has to maximize Sharpe Ratio but minimize loss
     """
     # portfolio returns per step
     port = (weights.unsqueeze(1) * returns).sum(dim=-1)  # (B, T_out)
@@ -25,9 +28,13 @@ def differentiable_sharpe_loss(weights, returns, eps=1e-6):
 
 def raw_sortino_loss(weights, returns, target=0.0, eps=1e-8):
     """
-    weights: (B, N)
-    returns: (B, T_out, N) -- raw returns
-    target: Minimum acceptable return (MAR), often 0 for risk-free rate adjusted.
+    @param weights torch.tensor (B, N)
+    @param returns torch.tensor (B, T_out, N) -- raw returns
+    @param target float Minimum acceptable return (MAR), often 0 for risk-free rate adjusted.
+    @param eps float Epsilon value to avoid divide by zero error
+
+    @return batch average Sortino Ratio. 
+        Negative since NN has to maximize Sortino but minimize loss
     """
     # Portfolio returns per step
     port = (weights.unsqueeze(1) * returns).sum(dim=-1)  # (B, T_out)

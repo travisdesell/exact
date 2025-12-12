@@ -9,18 +9,17 @@ def run_examm_mt(
     """
     Runs multithreaded version of examm as a seprate os process
     
-    Parameters:
-        train_file (str)
-        val_file (str)
-        num_threads (str)
-        offset (int)
-        in_params (str)
-        out_params (str)
-        num_islands (int)
-        island_size (int)
-        max_genomes (int)
-        bp_iter (int)
-        output_dir (str)
+    @param train_file str
+    @param val_file str
+    @param num_threads str
+    @param offset int
+    @param in_params str
+    @param out_params str
+    @param num_islands int
+    @param island_size int
+    @param max_genomes int
+    @param bp_iter int
+    @param output_dir str
     """
 
     cmd = [

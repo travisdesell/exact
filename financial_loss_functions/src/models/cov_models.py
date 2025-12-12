@@ -24,15 +24,9 @@ def naive_mvp(cov: pd.DataFrame|np.ndarray) -> np.array:
     """
     Naive Implmentation of Minimum Variance Portfolio
 
-    Paramaters
-    ----------
-    cov : pd.DataFrame | np.array
-        Covariance matrix of the returns
+    @param cov (pd.DataFrame | np.array) Covariance matrix of the returns
     
-    Returns
-    -------
-    w : np.array
-        Weights of the portfolio
+    @return np.array Weights of the portfolio
     """
     cov = np.array(cov)
     n = cov.shape[0]
@@ -66,12 +60,9 @@ class BaseQuadraticOptimizer:
 
     def __init__(self, solver: str = 'auto', reg: float|str = 1e-8):
         """
-        Parameters
-        ----------
-        solver: str
-            'auto' | 'cvxopt' | 'scipy'
+        @param solver str 'auto' | 'cvxopt' | 'scipy'
 
-        reg: float | 'auto'
+        @param reg float | 'auto'
             small ridge added to diagonal of covariance to stabilize inversion.
             - If float >= 0: used as ridge added to diagonal of P.
             - If 'auto': ridge = eps * trace(P)/n where eps = 1e-8 (safe default).
@@ -136,27 +127,15 @@ class BaseQuadraticOptimizer:
         """
         Solve QP using CVXOPT if available (and requested) else SciPy SLSQP.
 
-        Parameters
-        ----------
-        P: np.ndarray 
-            (n,n) symmetric positive semidef
-        q: np.ndarray
-            (n,) vector
-        A: np.ndarray | None
-            (m_eq, n) equality matrix
-        b: np.ndarray | None
-            (m_eq,) equality RHS
-        G: np.ndarray | None
-            (m_ineq, n) inequality matrix (G x <= h)
-        h: np.ndarray | None
-            (m_ineq,) inequality RHS
-        bounds: Tuple[Tuple[float, float], ...] | None 
-            tuple of (low, high) per variable or None
+        @param P np.ndarray (n,n) symmetric positive semidef
+        @param q np.ndarray (n,) vector
+        @param A (np.ndarray | None) (m_eq, n) equality matrix
+        @param b (np.ndarray | None) (m_eq,) equality RHS
+        @param G (np.ndarray | None) (m_ineq, n) inequality matrix (G x <= h)
+        @param h (np.ndarray | None) (m_ineq,) inequality RHS
+        @param bounds: (Tuple[Tuple[float, float], ...] | None) tuple of (low, high) per variable or None
 
-        Returns
-        -------
-        x: Tuple[np.ndarray, bool]
-            (n,), success (bool)
+        @return x Tuple[np.ndarray, bool] (n,), success (bool)
         """
         P = self._ensure_symmetry(P)
         q = np.asarray(q, dtype=float).flatten()
@@ -245,10 +224,7 @@ class BaseQuadraticOptimizer:
         Setter function to set a small ridge to diagonal of
         covariance to stabilize inversion
         
-        Parameters
-        ----------
-        reg: float|str
-            small ridge added to diagonal of covariance to stabilize inversion
+        @param reg: (float|str) small ridge added to diagonal of covariance to stabilize inversion
         """
         self.reg = float(reg)
 
@@ -262,12 +238,10 @@ class GlobalMinimumVariance(BaseQuadraticOptimizer):
             self, allow_short: bool = False, solver: str = 'auto'
         ):
         """
-        Parameters
-        ----------
-        allow_short: bool
+        @param allow_short bool
             If True, allow negative weights and use analytic formula w ∝ Σ^{-1} 1.
             If False (default), enforce long-only and solve a QP.
-        solver: str ('auto'|'cvxopt'|'scipy') 
+        @param solver str ('auto'|'cvxopt'|'scipy') 
             Solver library to use. Checks if cvxopt is available by default
             (passed to BaseQuadraticOptimizer).
         """
@@ -279,9 +253,11 @@ class GlobalMinimumVariance(BaseQuadraticOptimizer):
         self.weights_ = None
         self.success_ = False
 
-    def calculate_weights(self, cov: np.ndarray) -> np.ndarray:
+    def calculate_weights(self, cov: np.ndarray | pd.DataFrame) -> np.ndarray:
         """
         Fit GMVP. Provide one of cov
+
+        @param (cov pd.ndarray|pd.DataFrame) Covariance matrix
         """
         cov_mat = self._to_numpy(cov)
         self.cov = cov_mat
@@ -345,15 +321,13 @@ class MeanVariancePortfolio(BaseQuadraticOptimizer):
             solver: str = 'auto',
         ):
         """
-        Parameters
-        ---------
-        expected_returns_method: None | 'arithmetic' | 'geometric'
+        @param expected_returns_method (None | 'arithmetic' | 'geometric')
             If None -> caller must pass expected_returns to calculate_weights().
             If 'arithmetic' or 'geometric' -> caller must pass `returns` (obs x assets)
                to calculate_weights() and μ will be computed from those returns.
-        risk_aversion: float
-        allow_short : bool
-        solver : str ('auto'|'cvxopt'|'scipy')
+        @param risk_aversion float
+        @param allow_short bool
+        @param solver : str ('auto'|'cvxopt'|'scipy')
         """
         super().__init__(solver=solver)
         if expected_returns_method is not None:
@@ -404,12 +378,10 @@ class MeanVariancePortfolio(BaseQuadraticOptimizer):
         """
         Compute mean-variance weights. Either returns or expected_returns is required
 
-        Parameters
-        ----------
-        cov : (n,n) covariance matrix
-        returns : (obs, n) optional - used to compute expected_returns if the constructor
+        @param cov (n,n) covariance matrix
+        @param returns (obs, n) optional - used to compute expected_returns if the constructor
                   set expected_returns_method to 'arithmetic' or 'geometric'
-        expected_returns : (n,) optional - if provided it will be used directly
+        @param expected_returns (n,) optional - if provided it will be used directly
 
         Returns
         -------
@@ -522,9 +494,7 @@ class HierarchialRiskParity:
         """
         Initialize Hierarchial Risk Parity Clustering using given hyperparameters.
 
-        Parameters
-        ----------
-        linkage : str
+        @param linkage str
             Linkage method to be used for hierarchial clustering. 'single', 'average',
             'complete', 'ward', 'centroid','mean' or 'median'. 
         """
@@ -595,15 +565,12 @@ class HierarchialRiskParity:
         """
         Hierachial Risk Parity Clustering for portfolio optimization.
         
-        Parameters 
-        ----------
-            cov : pd.DataFrame
+        @param cov pd.DataFrame
                 covariance matrix of returns
-            corr : pd.DataFrame
+        @param corr pd.DataFrame
                 correlation matrix of returnsx
-        Returns
-        -------
-            weights : pd.Series
+        
+        @return weights pd.Series
                 optimized weights for the portfolio out of 1 (not 100)
         """
         # Construct a hierarchical portfolio

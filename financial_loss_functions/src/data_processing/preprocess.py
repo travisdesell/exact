@@ -17,6 +17,11 @@ class MacroCombiner:
         """
         Concatenate all macro dataframes column-wise after enforcing datetime
         indices and sorting by date.
+
+        @param raw_macro Dict[str, pd.DataFrame] 
+            Dictionary containing all amcro-econimic dataframes
+        
+        @return pd.Dataframe Combined dataframe for all macro-economic data
         """
         macro_frames = []
         for df in raw_macro.values():
@@ -37,6 +42,10 @@ class MacroCombiner:
         """
         Resample macro data to business-day frequency, forward filling the
         monthly/weekly series to create a daily view.
+
+        @param macro_df pd.DataFrame Dataframe with all macro-economic columns
+
+        @return pd.DataFrame Macro-economic data converted to set resample frequency 
         """
         if not isinstance(macro_df.index, pd.DatetimeIndex):
             macro_df.index = pd.to_datetime(macro_df.index)
@@ -61,6 +70,13 @@ class MacroCombiner:
         ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         """
         Align the daily macro dataframe to the CRSP train/val/test date indices.
+
+        @param daily_macro pd.DataFrame Macro dataframe with frequency converted
+        @param train_index pd.Index Date index from CRSP train data split
+        @param val_index pd.Index Date index from CRSP validation data split
+        @param train_index pd.DataFrame Date index from CRSP test data split
+
+        @return Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame] containing aligned split with CRSP data
         """
 
         def _align(index: pd.Index) -> pd.DataFrame:
@@ -76,28 +92,17 @@ class MacroCombiner:
 
 def clean_inplace(
         train: pd.DataFrame, val: pd.DataFrame, test: pd.DataFrame
-    ) -> pd.DataFrame:
+    ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """
     Cleans dataset by removing dupilcate columns and duplicate rows. It makes date the index.
     This process is inplace, i.e., Refrence of dataset is used, not copy.
     
-    Parameters
-    ---------
-    train: pd.DataFrame
-        train data
-    val: pd.DataFrame
-        validation data
-    test: pd.DataFrame
-        test data
+    @param train pd.DataFrame train data
+    @param val pd.DataFrame validation data
+    @param test pd.DataFrame test data
     
-    Returns
-    -------
-    train: pd.DataFrame
-        Cleaned train data
-    val: pd.DataFrame
-        Cleaned validation data
-    test: pd.DataFrame
-        Cleaned test data
+    @return Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame] 
+            Cleaned train data, validation data and test data
     """
 
     features = train.columns
@@ -142,23 +147,13 @@ def get_only_returns(
     """
     Extract only return columns from each of the split datasets.
 
-    Parameters
-    ----------
-    train : pd.DataFrame
-        Training data.
-    val: pd.DataFrame
-        Validation data.
-    test: pd.DataFrame
-        Test data.
+    @param train pd.DataFrame Training data.
+    @param val pd.DataFrame Validation data.
+    @param test pd.DataFrame Test data.
     
-    Returns
-    -------
-    train : pd.DataFrame
-        Train data with only returns.
-    val : pd.DataFrame
-        Validation data with only returns.
-    test : pd.DataFrame
-        Test data with only returns.
+    @return Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame] 
+            ret_train, ret_val, and ret_test
+
     """
     return_cols = []
     return_suffix = '_RET'
@@ -183,12 +178,10 @@ def cov_preprocessor(
     Combines train and Validation returns data, then calculates
     covariance and correlation matrices
 
-    Parameters
-    ----------
-    train: pd.DataFrame
-        Training split data, only returns
-    val: pd.DataFrame
-        Validation split data, only returns
+    @param train pd.DataFrame Training split data, only returns
+    @param val pd.DataFrame Validation split data, only returns
+
+    @return Tuple[pd.DataFrame, pd.DataFrame] covariance and correlation matrices
     """
     train = pd.concat([train, val], axis=0)
 
@@ -204,11 +197,9 @@ class Preprocessor:
         """
         Initialize Preprocessor which transorforms and normalizes the given dataset
         
-        Parameters
-        ----------
-        col_sep: str
+        @param col_sep str
             Special character that separates the ticker string from the feature string.
-
+        @param common_features List[str] List of common features in the dataset. Default = None
         """
         self.common_features = common_features
         self.col_sep = col_sep
@@ -223,17 +214,11 @@ class Preprocessor:
         """
         Extract required columns based on the suffix in the column names. e.g., NSDN_RETURN
 
-        Parameters
-        ----------
-        columns_list: List
-            List of all column names.
-        suffix: str
+        @param columns_list List List of all column names.
+        @param suffix str 
             Suffix str to extract its respective columns. e.g., VOL_CHANGE, RETURN
         
-        Return
-        ------
-        required_cols: List
-            List of required column names for the given suffix
+        @return required_cols List of required column names for the given suffix
         """
         required_cols = [col for col in columns_list if suffix in col]
         return required_cols
@@ -261,9 +246,16 @@ class Preprocessor:
 
         return data
     
-    def _normalize(self, data: pd.DataFrame, mode: str):
+    def _normalize(self, data: pd.DataFrame, mode: str) -> pd.DataFrame:
         """
-        Normalize data set
+        Normalize data set using robust scaling.
+        Mode to be used to determine if scaler needs to be fit or needs to transform only.
+
+        @param data pd.DataFrame Dataframe to be normalized
+        @param mode str `fit` or `split`. 
+            Determines if dataframe must be used to fit the scaler or the scaler should transform the dataframe.
+
+        @return data pd.DataFrame Normalized using scaler object
         """
         # For training split
         if mode == 'fit':
@@ -315,21 +307,16 @@ class Preprocessor:
         combined = list(dict.fromkeys(base_common + macro_cols))
         self.common_features = combined if combined else None
 
-    def process_train_data(self, train: pd.DataFrame, macro_data: Optional[pd.DataFrame] = None)-> pd.DataFrame:
+    def process_train_data(
+            self, train: pd.DataFrame, macro_data: Optional[pd.DataFrame] = None
+        )-> pd.DataFrame:
         """
         Preprocesses given training data
 
-        Parameters
-        ----------
-        train: pd.DataFrame
-            Training data
-        macro_data: pd.DataFrame, optional
-            Macro data aligned to training dates
+        @param train pd.DataFrame Training data
+        @param macro_data pd.DataFrame Macro data aligned to training dates. Default = None
         
-        Return
-        ------
-        processed_train: pd.DataFrame
-            Preprocessed training data
+        @return pd.DataFrame Preprocessed training data
         """
 
         macro_cols: List[str] = []
@@ -360,17 +347,10 @@ class Preprocessor:
         Preprocesses given validation or test data based on statistics 
         from the training data.
 
-        Parameters
-        ----------
-        split_data: pd.DataFrame
-            Validation or test data
-        macro_data: pd.DataFrame, optional
-            Macro data aligned to validation/test dates
+        @param split_data pd.DataFrame Validation or test data
+        @param macro_data: pd.DataFrame Macro data aligned to validation/test dates. Default = None
         
-        Return
-        ------
-        processed_split_data: pd.DataFrame
-            Preprocessed validation or test data
+        @return pd.DataFrame Preprocessed validation or test data
         """
 
         macro_cols: List[str] = []

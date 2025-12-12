@@ -10,24 +10,12 @@ def load_raw_crsp_datasets(
     Load all CRSP datasets files from a directory which are split into train,
     validation and test.
 
-    Parameters
-    ----------
-    train_path: str
-        Path to raw train data file
-    val_path: str
-        Path to raw validation data file
-    test_path: str
-        Path to raw test data file
+    @param train_path str Path to raw train data file
+    @param val_path str Path to raw validation data file
+    @param test_path str Path to raw test data file
     
-    Returns
-    -------
-    train_data: pd.DataFrame
-        Raw train data
-    val_data: pd.DataFrame
-        Raw validation data
-    test_data: pd.DataFrame
-        Raw test data
-    """
+    @return Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame] Raw train, val and test data
+    """ 
     check_if_files_exist([train_path, val_path, test_path])
 
     # Load split datasets
@@ -41,16 +29,10 @@ def load_csv_files(paths_dict: Dict[str, str]) -> Dict[str, pd.DataFrame]:
     """
     Loads csv data files. Provide dictionary of 
     name key and path strings value to be loaded.
+
+    @param paths_dict Dict[str, str] Dictionary of name key and path strings value to be loaded
     
-    Parameters
-    ----------
-    paths_dict: Dict[str, str]
-        Dictionary of name key and path strings value to be loaded.
-    
-    Returns
-    -------
-    loaded_dfs: Dict[str, pd.DataFrame]
-        Dictionary of name key and loaded dataframe as value
+    @return Dict[str, pd.DataFrame] Dictionary of name key and loaded dataframe as value
     """
     # Check if all files exist
     check_if_files_exist(list(paths_dict.values()))
@@ -67,15 +49,10 @@ def load_macro_data(macro_dir_path: str) -> Dict[str, pd.DataFrame]:
     """
     Loads macro-economic data csv files from given directory path.
 
-    Parameters
-    ---------
-    macro_dir_path: str
-        Path to directory where macro-ecnomic data is store as separate csv files.
-    
-    Returns
-    -------
-    raw_macro_dict: Dict
-        Contains category name as key and dataframe as value.
+    @param macro_dir_path str 
+        Path to directory where macro-ecnomic data is store as separate csv files
+
+    @return Dict Contains category name as key and dataframe as value
     """
     
     file_paths = list(macro_dir_path.glob('*.csv')) # since data is collected as csv files

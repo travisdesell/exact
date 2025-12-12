@@ -33,17 +33,11 @@ class Reshaper:
         Initialize Reshaper instance.
         Run Reshaper.extract_features on training data after initializing and before reshaping.
 
-        Parameters
-        ----------
-        in_size: int
-            size of input window in terms of time steps
-        out_size: int
-            size output window in terms of time steps
-        stride: int
-            step size for the sliding window
-        col_sep: str
-            Special character that separates the ticker string from the feature string
-        layout: ReshapeStyle
+        @param in_size int size of input window in terms of time steps
+        @param out_size int size output window in terms of time steps
+        @param stride int step size for the sliding window
+        @param col_sep str Special character that separates the ticker string from the feature string
+        @param layout: ReshapeStyle 
             Enum of rehsape style, see `src.data_processing.preprocess.ReshapeStyle`. 
             Deafult = ReshapeStyle.T_NxF
         """
@@ -103,6 +97,12 @@ class Reshaper:
     def _transform_one_window(self, df_window: pd.DataFrame) -> np.ndarray:
         """
         Convert a single (T_in x flat-columns) window into an array of set layout.
+        Uses alphabetical ordered for loops to maintain strict ordering to map input
+        stocks to ouput nodes neural networks.
+
+        @param df_window pd.DataFrame on window to be reshaped
+
+        @return np.ndarray multi-dimensional reshaped array
         """
         T = len(df_window)
         N = len(self.tickers)
@@ -147,21 +147,11 @@ class Reshaper:
         """
         Reshapes 2D DataFrame into set `layout` at initialization.
 
-        Parameters
-        ----------
-        features_data: pd.DataFrame
-            Dataframe containg all processed features.
-        raw_returns: pd.DataFrame
-            Dataframe containing only raw returns.
+        @param features_data pd.DataFrame Dataframe containg all processed features
+        @param raw_returns pd.DataFrame Dataframe containing only raw returns
         
-        Returns
-        -------
-        X: np.ndarray
-            Reshaped independant varibles array
-        y: np.ndarray
-            Reshape dependant variables array
-        good_starts: np.array
-            Array of good starting points of each window. Helpful for debugging
+        @return Tuple[np.ndarray, np.ndarray, np.ndarray] 
+            Reshaped X and y, Array of good starting points of each window. Helpful for debugging
         """
         
         self._features_check()
@@ -213,6 +203,12 @@ class Reshaper:
 
 class WindowDataset(Dataset):
     def __init__(self, X, y):
+        """
+        Convert given numpy arrays into pytorch windowed dataset.
+        
+        @param X np.ndarray X input windows
+        @param y np.ndarray y output windows
+        """
         self.X = torch.tensor(X, dtype=torch.float32)
         self.y = torch.tensor(y, dtype=torch.float32)
 
