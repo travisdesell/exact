@@ -54,6 +54,31 @@ def test_combine_macro_data_drops_all_nan_columns(macro_combiner):
     assert 'ALLNAN' not in combined.columns
     assert 'A' in combined.columns
 
+def test_to_daily_resample_ffill_then_bfill_and_drop_all_nan():
+    # Use daily resampling frequency in test to make expected indexes deterministic
+    mc = MacroCombiner(resample_freq='D')
+
+    # initial DF: first two days are NaN, the third day has 1.0
+    df = pd.DataFrame(
+        {'M': [np.nan, np.nan, 1.0]},
+        index=pd.to_datetime(['2020-01-03', '2020-01-04', '2020-01-05'])
+    )
+
+    daily = mc.to_daily(df)
+
+    expected_idx = pd.date_range('2020-01-03', '2020-01-05', freq='D')
+    assert list(daily.index) == list(expected_idx)
+
+    # bfill should have filled the leading NaNs with 1.0
+    assert daily.loc[pd.Timestamp('2020-01-03'), 'M'] == 1.0
+    assert daily.loc[pd.Timestamp('2020-01-04'), 'M'] == 1.0
+
+    # Append a trailing all-NaN date and make sure it is dropped after to_daily
+    trailing = pd.DataFrame({'M': [np.nan]}, index=[pd.Timestamp('2020-01-10')])
+    df2 = pd.concat([df, trailing])
+    daily2 = mc.to_daily(df2)
+    assert pd.Timestamp('2020-01-10') not in daily2.index
+
 # ---------- Clean inplace tests ---------- #
 def test_clean_inplace_uneq_cols():
     train = pd.DataFrame({'ABCD_RET': [0.1, 0.2, 0.3], 'ABCD_EFG':[100, 200, 300]})
@@ -334,3 +359,27 @@ def test_broadcast_common_features(preprocessor):
         processed['B_sp500r'].values,
         atol=1e-12
     )
+
+def test_update_common_features_merges_and_deduplicates_preserve_order():
+    # existing common features should stay in front, new ones appended,
+    # and duplicates removed preserving first-seen order
+    p = Preprocessor(common_features=['A', 'B'])
+    p._update_common_features(['B', 'C', 'D'])
+    assert p.common_features == ['A', 'B', 'C', 'D']
+
+def test_update_common_features_empty_result_sets_none():
+    """
+    Test for update common features list method when either on or
+    both lists are None or empty
+    """
+    p = Preprocessor(common_features=None)
+    p._update_common_features([])   # no macro columns and no base -> None
+    assert p.common_features is None
+
+    p2 = Preprocessor(common_features=[])
+    p2._update_common_features([])  # empty list treated same as None in constructor use
+    assert p2.common_features is None
+
+    p3 = Preprocessor(common_features=None)
+    p3._update_common_features(['GDP', 'CPI'])
+    assert p3.common_features == ['GDP', 'CPI']

@@ -483,13 +483,6 @@ def test_error_when_no_expected_returns_and_method_none(sample_data):
     with pytest.raises(ValueError):
         mvp.calculate_weights(cov=cov)
 
-def test_expected_returns_length_mismatch_raises(sample_data):
-    _, cov, _ = sample_data
-    mvp = MeanVariancePortfolio(expected_returns_method=None)
-    wrong_mu = np.array([0.1, 0.2])  # length 2 but cov is 3x3
-    with pytest.raises(ValueError):
-        mvp.calculate_weights(cov=cov, expected_returns=wrong_mu)
-
 def test_expected_returns_length_mismatch(sample_data):
     _, cov, _ = sample_data
     mvp = MeanVariancePortfolio(expected_returns_method=None)
@@ -498,7 +491,6 @@ def test_expected_returns_length_mismatch(sample_data):
     wrong_mu = np.array([0.1, 0.2])  # length 2 but cov is 3x3
     with pytest.raises(ValueError):
         mvp.calculate_weights(cov=cov, expected_returns=wrong_mu)
-
 
 def test_allow_short_analytic_solution_matches_properties(sample_data):
     returns, cov, _ = sample_data
