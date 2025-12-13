@@ -1,5 +1,8 @@
 # Financially Guided Neural Networks for Robust Portfolio Optimization
 
+## Description
+This repository contains the implementation for the capstone project "Financially Guided Neural Networks for Robust Portfolio Optimization," developed by Rahul Kenneth Fernandes and Atharva Atul Vaidya under the guidance of Dr. Travis Desell at Rochester Institute of Technology. The project introduces an end-to-end deep learning framework that embeds financial principles of portfolio construction theory directly into neural network training objectives to create stable, diversified portfolios. Our models output normalized allocation weights and optimize differentiable surrogates for key metrics like Sharpe/Sortino ratios, Conditional Value-at-Risk (CVaR), Maximum Drawdown (MDD), risk parity, and concentration penalties—enabling gradient-based optimization without intermediate forecasting. The goal is to develop a custom loss function to train neural networks to generate robust, diversified portfolios that generalize across market regimes.
+
 **Authors:** Rahul Kenneth fernandes, Atharva Atul Vaidya  
 **Advisors:** Dr. Travis Desell   
 **Institution:** Rochester Institute of Technology    
