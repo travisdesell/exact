@@ -37,9 +37,16 @@ void MULTIPLY_Node::initialize_uniform_random(minstd_rand0& generator, uniform_r
 }
 
 void MULTIPLY_Node::input_fired(int32_t time, double incoming_output) {
+    if (time < 0 || static_cast<size_t>(time) >= inputs_fired.size()) {
+        Log::fatal("MULTIPLY_Node::input_fired: time index %d out of range [0, %zu)\n",
+                   time, inputs_fired.size());
+        exit(1);
+    }
     inputs_fired[time]++;
 
     ordered_input[time].push_back(incoming_output);
+
+    Log::info("Debug Check:\n inputs_fired size:", inputs_fired.size(), "\ncurrent time index:", time);
 
     if (inputs_fired[time] == 1) {
         input_values[time] = incoming_output;
