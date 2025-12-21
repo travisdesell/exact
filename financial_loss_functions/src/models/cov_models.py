@@ -69,15 +69,32 @@ class BaseQuadraticOptimizer:
         """
         self.solver = solver
         self.reg = reg
-        self._cvx_available = CVXOPT_AVAILABLE
+        self._cvx_available = CVXOPT_AVAILABLE # Flag for availability of cvxopt
 
     @staticmethod
-    def _ensure_symmetry(mat: np.ndarray) -> np.ndarray:
+    def _ensure_symmetry(mat: np.ndarray, constant: float = 0.5) -> np.ndarray:
+        """
+        Ensures symmetry of matrix by multiplying the sum of the matrix 
+        and its transpose by a constant. constant * (mat + mat.T)
+
+        @param mat np.ndarray Matrix
+        @param constant float Constant value to be multiplied. Default = 0.5
+
+        @return np.ndarray Symmetric matrix
+        """
         mat = np.asarray(mat, dtype=float)
-        return 0.5 * (mat + mat.T)
+        return constant * (mat + mat.T)
 
     @staticmethod
-    def _to_numpy(mat):
+    def _to_numpy(mat: np.ndarray) -> np.ndarray:
+        """
+        Converts matrix from dataframe to numpy array or enforces float if 
+        already numpy array.
+
+        @param mat np.ndarray Matrix
+
+        @return np.ndarray
+        """
         if isinstance(mat, pd.DataFrame):
             return mat.values
         return np.asarray(mat, dtype=float)
@@ -85,9 +102,13 @@ class BaseQuadraticOptimizer:
     def _safe_inv(self, mat: np.ndarray) -> np.ndarray:
         """
         Numerically safe inverse that:
-        - ensures symmetry,
-        - computes numeric ridge via _compute_ridge,
-        - returns inverse of (mat + ridge * I).
+        - ensures symmetry
+        - computes numeric ridge via _compute_ridge
+        - returns inverse of (mat + ridge * I)
+
+        @param mat np.ndarray Matrix to be inverted safely
+
+        @retun np.ndarray Inverted matrix 
         """
         mat = self._ensure_symmetry(mat)
         ridge = self._compute_ridge(mat)
@@ -100,7 +121,12 @@ class BaseQuadraticOptimizer:
         return np.linalg.inv(mat_r)
 
     def _compute_ridge(self, P: np.ndarray) -> float:
-        """Return numeric ridge to add to P based on self.reg."""
+        """
+        Compute ridge value based on P, used to stabilize inversion of matrix.
+
+        @param P np.ndarray Matrix used to calculate the ridge value
+        @return float Ridge value
+        """
         if isinstance(self.reg, str) and str(self.reg.lower()) == 'auto':
             # scale by matrix size and trace so ridge is relative to magnitude of P
             eps = 1e-8
@@ -125,7 +151,7 @@ class BaseQuadraticOptimizer:
             bounds: Optional[Tuple[Tuple[float, float], ...]] = None
         ) -> Tuple[np.ndarray, bool]:
         """
-        Solve QP using CVXOPT if available (and requested) else SciPy SLSQP.
+        Solve Quadratic Problem using CVXOPT if available (and requested) else SciPy SLSQP.
 
         @param P np.ndarray (n,n) symmetric positive semidef
         @param q np.ndarray (n,) vector
@@ -255,9 +281,9 @@ class GlobalMinimumVariance(BaseQuadraticOptimizer):
 
     def calculate_weights(self, cov: np.ndarray | pd.DataFrame) -> np.ndarray:
         """
-        Fit GMVP. Provide one of cov
+        Fit Global Minimum Variance to calculate portfolio allocation weights.
 
-        @param (cov pd.ndarray|pd.DataFrame) Covariance matrix
+        @param cov (np.ndarray | pd.DataFrame) Covariance matrix
         """
         cov_mat = self._to_numpy(cov)
         self.cov = cov_mat
@@ -298,6 +324,8 @@ class GlobalMinimumVariance(BaseQuadraticOptimizer):
         """
         Getter function to get weights for a portfolio that have been 
         estimated by running `calculate_weights(...)`
+
+        @return np.ndarray Array of allocation weights
         """
         if self.weights_ is None:
             raise ValueError('Estimator not fit -  call `calculate_weights(...) first.`')

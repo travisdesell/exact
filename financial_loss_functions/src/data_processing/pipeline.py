@@ -15,7 +15,7 @@ def run_processing_pipeline(paths_config: Dict, features_config: Dict):
     Data Processing Pipeline entry point
 
     @param paths_config Dict Dictionary containing paths
-    @param features_config Dictionary containing features information
+    @param features_config Dict Dictionary containing features information
     """
     print('=' * 20, ' Data Processing Pipeline ', '=' * 20)
     
@@ -37,7 +37,9 @@ def run_processing_pipeline(paths_config: Dict, features_config: Dict):
     )
 
     # Extracting macro-economic directory path
-    macro_dir_path = Path(paths_config['data']['raw_macro_dir'])
+    # macro_dir_path = Path(paths_config['data']['raw_macro_dir']) 
+    
+    #### Uncomment All these lines to add macro-ecoomic data ####
 
     # # Loading raw macro-economic data
     # raw_macro = load_macro_data(macro_dir_path). #### MACRO REMOVED FOR TESTING

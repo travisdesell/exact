@@ -202,7 +202,7 @@ class Reshaper:
             return self.features
 
 class WindowDataset(Dataset):
-    def __init__(self, X, y):
+    def __init__(self, X: np.ndarray, y: np.ndarray):
         """
         Convert given numpy arrays into pytorch windowed dataset.
         
@@ -212,10 +212,20 @@ class WindowDataset(Dataset):
         self.X = torch.tensor(X, dtype=torch.float32)
         self.y = torch.tensor(y, dtype=torch.float32)
 
-    def __len__(self):
-        # Number of samples
+    def __len__(self) -> int:
+        """
+        Get length of windowed dataset.
+
+        @return int length of windowed dataset (Number of samples)
+        """
         return self.X.shape[0]
 
-    def __getitem__(self, idx):
+    def __getitem__(self, idx: int) -> Tuple[torch.tensor, torch.tensor]:
+        """
+        Get one window from the dataset.
+
+        @param idx int Index of require window in the windowed dataset
+        @return Tuple[torch.tensor, torch.tensor] X & y for the given index
+        """
         # Return one sample
         return self.X[idx], self.y[idx]

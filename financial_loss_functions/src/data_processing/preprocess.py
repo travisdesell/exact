@@ -223,9 +223,18 @@ class Preprocessor:
         required_cols = [col for col in columns_list if suffix in col]
         return required_cols
 
-    def _transform(self, data: pd.DataFrame, mode: str):
+    def _transform(self, data: pd.DataFrame, mode: str) -> pd.DataFrame:
         """
-        Transformation of data
+        Transforms Volume Change columns using Yeo Johnson Transformation and
+        Turnover columns using Box Cox Transformation. Yeo Johnson allows negative values,
+        whereas Box Cox doesn't. This method treats train and validation or test 
+        splits differently. Use mode `fit` to fit and transform, use mode `split`
+        to transform only and not refit.
+
+        @param data pd.DataFrame Dataset to be transformed
+        @param mode str `git` or `split`
+
+        @return pd.DataFrame Transformed dataset
         """
         vol_change_cols = self._extract_req_cols(self.all_col_names, '_VOL_CHANGE')
         turnover_cols = self._extract_req_cols(self.all_col_names, '_TURNOVER')
@@ -249,7 +258,9 @@ class Preprocessor:
     def _normalize(self, data: pd.DataFrame, mode: str) -> pd.DataFrame:
         """
         Normalize data set using robust scaling.
-        Mode to be used to determine if scaler needs to be fit or needs to transform only.
+        This method treats train and validation or test splits differently.
+        Use mode `fit` to fit and transform, use mode `split`
+        to transform only and not refit.
 
         @param data pd.DataFrame Dataframe to be normalized
         @param mode str `fit` or `split`. 
@@ -270,7 +281,12 @@ class Preprocessor:
         
         return data
 
-    def _extract_tickers(self):
+    def _extract_tickers(self) -> List[str]:
+        """
+        Extract ticker symbols from column names of the dataset.
+
+        @return List[str] List of the ticker symbols sorted alphabetically
+        """
         tickers = []
         for col in self.all_col_names :
             if col != 'date':
@@ -283,8 +299,17 @@ class Preprocessor:
         else:
             return sorted(set(tickers))
 
-    def _broadcast_common(self, data, features: List[str]) -> pd.DataFrame:
-        """Broadcast common features to all tickers with names <ticker>_<common_feature>"""
+    def _broadcast_common(
+            self, data: pd.DataFrame, features: List[str]
+        ) -> pd.DataFrame:
+        """
+        Broadcast common features to all tickers with names <ticker>_<common_feature>.
+        
+        @param data pd.DataFrame dataset which needs broadcasting of common features
+        @param features List[str] List of features which need to be broadcasted to every stock
+
+        @return pd.DataFrame dataframe with broadcasted common features
+        """
 
         # Build broadcasted columns in a single concatenation to avoid fragmentation
         new_cols = {
@@ -302,7 +327,12 @@ class Preprocessor:
         return combined.copy()
 
     def _update_common_features(self, macro_cols: List[str]):
-        """Merge macro columns with existing common features without duplicates."""
+        """
+        Merge macro columns with existing common features without duplicates.
+        
+        @param macro_cols List[str] List of column names in macro-economic dataset
+        """
+        # TODO: Use set instead of dict (more efficient)
         base_common = self.common_features or []
         combined = list(dict.fromkeys(base_common + macro_cols))
         self.common_features = combined if combined else None

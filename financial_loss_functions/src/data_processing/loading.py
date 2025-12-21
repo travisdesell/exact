@@ -1,6 +1,5 @@
-import os
 import pandas as pd
-from typing import Tuple, List, Dict
+from typing import Tuple, Dict
 from src.utils import check_if_files_exist
 
 def load_raw_crsp_datasets(
@@ -52,7 +51,7 @@ def load_macro_data(macro_dir_path: str) -> Dict[str, pd.DataFrame]:
     @param macro_dir_path str 
         Path to directory where macro-ecnomic data is store as separate csv files
 
-    @return Dict Contains category name as key and dataframe as value
+    @return Dict[str, pd.DataFrame] Contains category name as key and dataframe as value
     """
     
     file_paths = list(macro_dir_path.glob('*.csv')) # since data is collected as csv files
