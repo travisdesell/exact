@@ -3,7 +3,10 @@ import numpy as np
 import torch.nn as nn
 
 class BaseLSTM(nn.Module):
-    """BaseLSTM Model"""
+    """
+    Implementation BaseLSTM Model
+    Base line LSTM model
+    """
     def __init__(
             self, input_size, hidden_size, num_layers, num_stocks, dropout=0.2
         ):
@@ -34,10 +37,12 @@ class BaseLSTM(nn.Module):
         # nn.init.uniform_(self.fc.weight, a=-1e-3, b=1e-3)
         # nn.init.zeros_(self.fc.bias)
 
-    def forward(self, x):
+    def forward(self, x: torch.tensor) -> torch.tensor:
         """
         Forward pass method
-        x: (B, T, E)
+        @param x torch.tensor Input window for forward pass. Shape = (B, T, E)
+
+        @return torch.tensor Portfolio allocation weights calcuated from the forward pass
         """
         out, _ = self.lstm(x)      # (B, T, hidden)
         last = out[:, -1, :]      # (B, hidden)
@@ -95,10 +100,12 @@ class AttentionLSTM(nn.Module):
         # nn.init.uniform_(self.fc.weight, a=-1e-3, b=1e-3)
         # nn.init.zeros_(self.fc.bias)
 
-    def forward(self, x):
+    def forward(self, x: torch.tensor) -> torch.tensor:
         """
         Forward pass method
-        x: (B, T, E)
+        @param x torch.tensor Input window for forward pass. Shape = (B, T, E)
+
+        @return torch.tensor Portfolio allocation weights calcuated from the forward pass
         """
         out, _ = self.lstm(x)  # (B, T, hidden)
         

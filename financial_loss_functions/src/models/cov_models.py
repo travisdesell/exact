@@ -1,9 +1,9 @@
-#### -------------------- All Covariance based Models -------------------- ####
+#### -------------------- All Covariance based Models (Classical) -------------------- ####
 
 import numpy as np
 import pandas as pd
-from typing import Optional, Tuple
 from scipy.optimize import minimize
+from typing import Optional, Tuple, List
 from scipy.cluster.hierarchy import linkage
 from scipy.spatial.distance import squareform
 
@@ -284,6 +284,8 @@ class GlobalMinimumVariance(BaseQuadraticOptimizer):
         Fit Global Minimum Variance to calculate portfolio allocation weights.
 
         @param cov (np.ndarray | pd.DataFrame) Covariance matrix
+
+        @return np.ndarray Calculated allocation weights. Shape = (n,)
         """
         cov_mat = self._to_numpy(cov)
         self.cov = cov_mat
@@ -376,16 +378,26 @@ class MeanVariancePortfolio(BaseQuadraticOptimizer):
         self.success_ = False
 
     # expected returns calculators
-    def _arith_mean_from_returns(self, returns):
-        """Per-period arithmetic mean (returns: DataFrame or 2D ndarray)"""
+    def _arith_mean_from_returns(self, returns: pd.DataFrame) -> np.ndarray:
+        """
+        Per-period arithmetic mean (returns: DataFrame or 2D ndarray).
+        
+        @param returns pd.DataFrame Returns of all stocks
+
+        @return np.ndarray Array of arithmetic mean returns for all stocks
+        """
         if returns.ndim != 2:
             raise ValueError("returns must be 2-D (obs x assets)")
         return np.nanmean(returns, axis=0)
 
-    def _geom_mean_from_returns(self, returns):
+    def _geom_mean_from_returns(self, returns: pd.DataFrame) -> np.ndarray:
         """
         Geometric mean per-period using log1p to avoid overflow and handle NaNs:
         gm = exp(mean(log1p(returns))) - 1
+
+        @param returns pd.DataFrame Returns of all stocks
+
+        @return np.ndarray Array of geometric mean returns for all stocks
         """
         if returns.ndim != 2:
             raise ValueError('returns must be 2-D (obs x assets)')
@@ -395,7 +407,6 @@ class MeanVariancePortfolio(BaseQuadraticOptimizer):
             mean_log = np.nanmean(log1p, axis=0)
             gm = np.expm1(mean_log)  # exp(mean_log)-1
         return gm
-
 
     def calculate_weights(
             self,
@@ -411,9 +422,7 @@ class MeanVariancePortfolio(BaseQuadraticOptimizer):
                   set expected_returns_method to 'arithmetic' or 'geometric'
         @param expected_returns (n,) optional - if provided it will be used directly
 
-        Returns
-        -------
-        weights : np.ndarray shape (n,)
+        @return np.ndarray Calculated allocation weights. Shape = (n,)
         """
         cov_mat = self._to_numpy(cov)
         self.cov = cov_mat
@@ -503,11 +512,23 @@ class MeanVariancePortfolio(BaseQuadraticOptimizer):
         return self.weights_.copy()
 
     def get_weights(self) -> np.ndarray:
+        """
+        Getter function to get weights for a portfolio that have been 
+        estimated by running `calculate_weights(...)`
+
+        @return np.ndarray Array of allocation weights
+        """
         if self.weights_ is None:
             raise ValueError('Estimator not fit - call `calculate_weights(...)` first.')
         return self.weights_.copy()
 
     def get_expected_returns(self) -> np.ndarray:
+        """
+        Getter function to get expected returns for a portfolio that have been 
+        estimated during running of `calculate_weights(...)`
+
+        @return np.ndarray Array of expected returns
+        """
         if self.expected_returns_ is None:
             raise ValueError('Estimator not fit -  call `calculate_weights(...) first.`')
         return self.expected_returns_.copy()
@@ -530,7 +551,14 @@ class HierarchialRiskParity:
 
         self.weights = None
     
-    def _correlDist(self, corr):
+    def _correlDist(self, corr: pd.DataFrame) -> pd.DataFrame:
+        """
+        Compute correlation distance of correlation matrix.
+
+        @param corr pd.DataFrame Correlation matrix
+
+        @return pd.DataFrame Correlation distance matrix
+        """
         # A distance matrix based on correlation, where 0<=d[i,j]<=1
         # This is a proper distance metric
         dist = ((1 - corr) / 2.) ** .5
@@ -540,7 +568,14 @@ class HierarchialRiskParity:
         np.fill_diagonal(dist.values, 0)  # ensure diagonal is 0
         return dist
 
-    def _getQuasiDiag(self, link):
+    def _getQuasiDiag(self, link: np.ndarray) -> List:
+        """
+        Compute Quasi Diagonal from clustered items and sort them.
+
+        @param link np.ndarray cCustered link from a hierarchial custering method
+
+        @return List Sorted index of the clustered items
+        """
         # Sort clustered items by distance
         link = link.astype(int)
         sortIx = pd.Series([link[-1, 0], link[-1, 1]])
@@ -557,20 +592,43 @@ class HierarchialRiskParity:
             sortIx.index = range(sortIx.shape[0])  # re-index
         return sortIx.tolist()
 
-    def _getIVP(self, cov, **kargs):
-        # Compute the inverse-variance portfolio
+    def _getIVP(self, cov: pd.DataFrame, **kargs) -> np.ndarray:
+        """
+        Compute the inverse-variance portfolio
+        @param cov pd.DataFrame Covariance matrix
+        
+        @return np.ndarray Inverse variance portfolio
+        """
         ivp = 1. / np.diag(cov)
         ivp /= ivp.sum()
         return ivp
 
-    def _getClusterVar(self, cov, cItems):
+    def _getClusterVar(self, cov: pd.DataFrame, cItems: List) -> np.ndarray:
+        """
+        Compute intra cluster variance.
+        Cluster is idenfied from the entire cov matrix using the procided indexes.
+
+        @param cov pd.DataFrame Covariance matrix
+        @param cItems List Items belonging a particular cluster
+
+        @return np.ndarray variance of a particular cluster
+
+        """
         # Compute variance per cluster
         cov_=cov.loc[cItems,cItems]
         w_= self._getIVP(cov_).reshape(-1,1)
         cVar=np.dot(np.dot(w_.T,cov_),w_)[0,0]
         return cVar
 
-    def _getRecBipart(self, cov, sortIx):
+    def _getRecBipart(self, cov: pd.DataFrame, sortIx: List) -> pd.Series:
+        """
+        Compute HRP allocation using Risk Parity using intra cluster variance.
+
+        @param cov pd.DataFrame Covariance matrix
+        @param sortIx List Sorted indexes of clustered items
+
+        @return pd.Series Portfolio allocation weights based on Risk Parity
+        """
         # Compute HRP alloc
         w = pd.Series(1.0, index=sortIx)
         cItems = [sortIx]  # initialize all items in one cluster

@@ -1,6 +1,8 @@
-from torch import clamp
+from torch import clamp, tensor
 
-def raw_sharpe_loss(weights, returns, eps=1e-8):
+def raw_sharpe_loss(
+        weights: tensor, returns: tensor, eps: float = 1e-8
+    ):
     """
     @param weights torch.tensor (B, N)
     @param returns torch.tensor (B, T_out, N) -- raw returns
@@ -14,10 +16,12 @@ def raw_sharpe_loss(weights, returns, eps=1e-8):
     mean = port.mean(dim=1)          # (B,)
     std = port.std(dim=1) + eps      # (B,)
     sharpe = mean / std              # (B,)
-    # maximize Sharpe → minimize negative Sharpe
+    # maximize Sharpe -> minimize negative Sharpe
     return -sharpe.mean()
 
-def differentiable_sharpe_loss(weights, returns, eps=1e-6):
+def differentiable_sharpe_loss(
+        weights: tensor, returns: tensor, eps: float = 1e-6
+    ):
     port_ret = (weights.unsqueeze(1) * returns).sum(-1)   # (B, T)
     mean = port_ret.mean(dim=1)
     var  = port_ret.var(dim=1)          # variance, not std
@@ -26,7 +30,9 @@ def differentiable_sharpe_loss(weights, returns, eps=1e-6):
     # even more stable:
     # return -(mean**2 / (var + eps)).mean()
 
-def raw_sortino_loss(weights, returns, target=0.0, eps=1e-8):
+def raw_sortino_loss(
+        weights: tensor, returns: tensor, target: float = 0.0, eps: float = 1e-8
+    ):
     """
     @param weights torch.tensor (B, N)
     @param returns torch.tensor (B, T_out, N) -- raw returns

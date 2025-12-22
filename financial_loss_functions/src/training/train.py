@@ -2,9 +2,9 @@ import time
 import torch
 import numpy as np
 import pandas as pd
-from typing import List, Dict, Callable
 import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader
+from typing import List, Dict, Callable
 from src.data_processing.dataset import WindowDataset
 
 if torch.mps.is_available():

@@ -13,7 +13,7 @@ def create_directory(path: str) -> None:
         os.makedirs(path)
         print(f'{path} Directory Created!')
 
-def delete_file(file_path: str):
+def delete_file(file_path: str) -> None:
     """
     Delete file at given path
 
@@ -38,7 +38,7 @@ def delete_directory(dir_path: str) -> None:
     except Exception as e:
         print(f'An error occurred: {e}')
 
-def check_if_files_exist(paths_list: List[str]):
+def check_if_files_exist(paths_list: List[str]) -> None:
     """
     Check if all files exist
     
@@ -50,7 +50,7 @@ def check_if_files_exist(paths_list: List[str]):
                 f'Required file not found: {path}'
             )
         
-def data_dir_check(path: str):
+def data_dir_check(path: str) -> bool:
     run_permission = False
     if os.path.exists(path):
         print(path, ', Directory Exists!!!!')
@@ -68,10 +68,10 @@ def data_dir_check(path: str):
     
     return run_permission
 
-def save_to_csv(data: pd.DataFrame, output_path:str):
+def save_to_csv(data: pd.DataFrame, output_path:str) -> None:
     data.to_csv(output_path, sep=',')
 
-def reset_data_stage(dir_path: str):
+def reset_data_stage(dir_path: str) -> None:
     """
     Docstring for reset_data_stage
     
