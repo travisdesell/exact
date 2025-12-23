@@ -24,6 +24,3 @@ target_link_libraries(analyze_experimental_setups examm_strategy exact_common ex
 
 add_executable(finetune_rnn finetune_rnn.cxx)
 target_link_libraries(finetune_rnn examm_strategy exact_common exact_time_series exact_weights examm_nn  ${MPI_LIBRARIES} ${MPI_EXTRA} ${MYSQL_LIBRARIES} pthread)
-
-add_executable(finetune_new finetune_new.cpp)
-target_link_libraries(finetune_new examm_strategy exact_common exact_time_series exact_weights examm_nn  ${MPI_LIBRARIES} ${MPI_EXTRA} ${MYSQL_LIBRARIES} pthread)
