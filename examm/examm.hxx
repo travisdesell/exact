@@ -72,6 +72,7 @@ class EXAMM {
     string output_directory;
     ofstream* log_file;
     ofstream* op_log_file;
+    ofstream* genome_stats_log_file;
     ofstream* size_log_file;
     ofstream* generate_geneome_size_log_file;
     ofstream* best_genome_size_log;

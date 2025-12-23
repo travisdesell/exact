@@ -51,6 +51,7 @@ using std::unordered_map;
 using std::map;
 
 #include "common/color_table.hxx"
+#include "common/files.hxx"
 #include "common/log.hxx"
 #include "common/random.hxx"
 #include "delta_node.hxx"
@@ -127,6 +128,12 @@ RNN_Genome::RNN_Genome(
     dropout_probability = 0.5;
 
     log_filename = "";
+    stats_output_directory = "";
+    
+    // Initialize backprop stats
+    initial_fitness_before_bp = EXAMM_MAX_DOUBLE;
+    bp_time_milliseconds = 0;
+    bp_stats_valid = false;
 
     int16_t seed = std::chrono::system_clock::now().time_since_epoch().count();
     generator = minstd_rand0(seed);
@@ -187,6 +194,12 @@ RNN_Genome* RNN_Genome::copy() {
     other->dropout_probability = dropout_probability;
 
     other->log_filename = log_filename;
+    other->stats_output_directory = stats_output_directory;
+    
+    // Copy backprop stats
+    other->initial_fitness_before_bp = initial_fitness_before_bp;
+    other->bp_time_milliseconds = bp_time_milliseconds;
+    other->bp_stats_valid = bp_stats_valid;
 
     other->parent_ids = parent_ids;
     other->generated_by_map = generated_by_map;
@@ -499,6 +512,22 @@ void RNN_Genome::enable_dropout(double _dropout_probability) {
 
 void RNN_Genome::set_log_filename(string _log_filename) {
     log_filename = _log_filename;
+}
+
+void RNN_Genome::set_stats_output_directory(string _stats_output_directory) {
+    stats_output_directory = _stats_output_directory;
+}
+
+double RNN_Genome::get_initial_fitness_before_bp() const {
+    return initial_fitness_before_bp;
+}
+
+long RNN_Genome::get_bp_time_milliseconds() const {
+    return bp_time_milliseconds;
+}
+
+bool RNN_Genome::get_bp_stats_valid() const {
+    return bp_stats_valid;
 }
 
 void RNN_Genome::get_weights(vector<double>& parameters) {
@@ -1115,9 +1144,13 @@ void RNN_Genome::backpropagate(
     double mse;
     double norm = 0.0;
 
+    // Track initial fitness and start time for stats
+    std::chrono::time_point<std::chrono::system_clock> bp_start_time = std::chrono::system_clock::now();
+
     // initialize the initial previous values
     get_analytic_gradient(rnns, parameters, inputs, outputs, mse, analytic_gradient, true);
     double validation_mse = get_mse(parameters, validation_inputs, validation_outputs);
+    initial_fitness_before_bp = validation_mse;  // Store initial fitness before backprop
     best_validation_mse = validation_mse;
     best_validation_mae = get_mae(parameters, validation_inputs, validation_outputs);
     best_parameters = parameters;
@@ -1156,6 +1189,11 @@ void RNN_Genome::backpropagate(
         delete g;
     }
     this->set_weights(best_parameters);
+
+    // Store backprop stats for logging (not written to file here - done in insert_genome)
+    std::chrono::time_point<std::chrono::system_clock> bp_end_time = std::chrono::system_clock::now();
+    bp_time_milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(bp_end_time - bp_start_time).count();
+    bp_stats_valid = true;
 }
 
 void RNN_Genome::backpropagate_stochastic(
@@ -1177,6 +1215,7 @@ void RNN_Genome::backpropagate_stochastic(
     RNN* rnn = get_rnn();
     rnn->set_weights(parameters);
 
+    // Track initial fitness and start time for stats
     std::chrono::time_point<std::chrono::system_clock> startClock = std::chrono::system_clock::now();
 
     // initialize the initial previous values
@@ -1196,6 +1235,7 @@ void RNN_Genome::backpropagate_stochastic(
 
     // TODO: need to get validation mse on the RNN not the genome
     double validation_mse = get_mse(parameters, validation_inputs, validation_outputs);
+    initial_fitness_before_bp = validation_mse;  // Store initial fitness before backprop
     best_validation_mse = validation_mse;
     best_validation_mae = get_mae(parameters, validation_inputs, validation_outputs);
     best_parameters = parameters;
@@ -1235,6 +1275,11 @@ void RNN_Genome::backpropagate_stochastic(
                 best_parameters = parameters;
                 this->best_validation_mse = NAN;
                 this->best_validation_mae = NAN;
+                
+                // Store stats even for failed genomes (for logging)
+                std::chrono::time_point<std::chrono::system_clock> bp_end_time = std::chrono::system_clock::now();
+                bp_time_milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(bp_end_time - startClock).count();
+                bp_stats_valid = true;
                 return;
             }
 
@@ -1267,6 +1312,11 @@ void RNN_Genome::backpropagate_stochastic(
     Log::info("backpropagation completed, getting mu/sigma\n");
     double _mu, _sigma;
     get_mu_sigma(best_parameters, _mu, _sigma);
+
+    // Store backprop stats for logging (not written to file here - done in insert_genome)
+    std::chrono::time_point<std::chrono::system_clock> bp_end_time = std::chrono::system_clock::now();
+    bp_time_milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(bp_end_time - startClock).count();
+    bp_stats_valid = true;
 }
 
 ofstream* RNN_Genome::create_log_file() {

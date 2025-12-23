@@ -49,6 +49,12 @@ class RNN_Genome {
     string structural_hash;
 
     string log_filename;
+    string stats_output_directory;
+
+    // Temporary stats for logging (not serialized to bin files for backward compatibility)
+    double initial_fitness_before_bp;
+    long bp_time_milliseconds;
+    bool bp_stats_valid;  // Flag to indicate if stats were collected
 
     WeightRules* weight_rules;
 
@@ -155,6 +161,12 @@ class RNN_Genome {
     void disable_dropout();
     void enable_dropout(double _dropout_probability);
     void set_log_filename(string _log_filename);
+    void set_stats_output_directory(string _stats_output_directory);
+    
+    // Getters for backprop stats (for logging)
+    double get_initial_fitness_before_bp() const;
+    long get_bp_time_milliseconds() const;
+    bool get_bp_stats_valid() const;
 
     void get_weights(vector<double>& parameters);
     void set_weights(const vector<double>& parameters);

@@ -45,6 +45,10 @@ using std::to_string;
 EXAMM::~EXAMM() {
     delete weight_rules;
     delete genome_property;
+    if (genome_stats_log_file != NULL) {
+        genome_stats_log_file->close();
+        delete genome_stats_log_file;
+    }
 }
 
 EXAMM::EXAMM(
@@ -136,9 +140,15 @@ void EXAMM::generate_log() {
             }
             (*op_log_file) << endl;
         }
+        
+        // Create genome stats log file for per-genome backprop statistics
+        genome_stats_log_file = new ofstream(output_directory + "/" + "genome_stats_log.csv");
+        (*genome_stats_log_file) << "Genome Number, Initial Fitness, Final Fitness, BP Epochs, BP Time (ms)" << endl;
+        Log::info("Generating genome stats log\n");
     } else {
         log_file = NULL;
         op_log_file = NULL;
+        genome_stats_log_file = NULL;
     }
 }
 
@@ -323,6 +333,31 @@ bool EXAMM::insert_genome(RNN_Genome* genome) {
 
     update_op_log_statistics(genome, insert_position);
     Log::debug("update op log statistics complete\n");
+    
+    // Write per-genome backprop stats to log file
+    if (genome_stats_log_file != NULL) {
+        // Make sure the log file is still good (similar to update_log)
+        if (!genome_stats_log_file->good()) {
+            genome_stats_log_file->close();
+            delete genome_stats_log_file;
+            string output_file = output_directory + "/genome_stats_log.csv";
+            genome_stats_log_file = new ofstream(output_file, std::ios_base::app);
+            if (!genome_stats_log_file->is_open()) {
+                Log::error("could not open genome stats log: '%s'\n", output_file.c_str());
+                genome_stats_log_file = NULL;
+            }
+        }
+        
+        if (genome_stats_log_file != NULL && genome->get_bp_stats_valid()) {
+            (*genome_stats_log_file) << genome->get_generation_id() << ","
+                                     << genome->get_initial_fitness_before_bp() << ","
+                                     << genome->get_fitness() << ","
+                                     << genome->get_bp_iterations() << ","
+                                     << genome->get_bp_time_milliseconds() << endl;
+            genome_stats_log_file->flush();  // Ensure data is written immediately
+        }
+    }
+    
     update_log();
 
     // update size log.
@@ -523,6 +558,11 @@ RNN_Genome* EXAMM::generate_genome() {
 
         // Saving the genome to txt file
         genome->write_manual_txt(output_directory + "/" + "size_log"+ "/" + "generated_genome" + "_" + to_string(genome->get_generation_id()) + ".txt");
+    }
+
+    // Set stats output directory for genome stats files
+    if (output_directory != "") {
+        genome->set_stats_output_directory(output_directory);
     }
 
     return genome;
