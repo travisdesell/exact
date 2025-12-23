@@ -34,14 +34,45 @@ using std::vector;
 #include "common/log.hxx"
 #include "rnn/rnn_genome.hxx"
 
+struct GenomeStats {
+    int32_t genome_number;
+    double initial_fitness;
+    double final_fitness;
+    int32_t bp_epochs;
+    long bp_time_ms;
+    
+    GenomeStats() : genome_number(0), initial_fitness(0.0), final_fitness(0.0), bp_epochs(0), bp_time_ms(0) {}
+};
+
+struct InsertedGenomeInfo {
+    int32_t total_inserted_genomes;
+    int32_t num_insertion_events;
+    long total_time_ms;
+    double insertion_rate_per_second;  // genomes per second
+    
+    InsertedGenomeInfo() : total_inserted_genomes(0), num_insertion_events(0), 
+                          total_time_ms(0), insertion_rate_per_second(0.0) {}
+};
+
 struct RunStats {
     string run_name;
     string genome_filename;
     double best_validation_mse;
     int32_t enabled_weights;
+    vector<GenomeStats> genome_stats;
+    int32_t num_genomes_with_stats;
+    double avg_initial_fitness;
+    double avg_final_fitness;
+    double avg_fitness_improvement;
+    double avg_bp_epochs;
+    double avg_bp_time_ms;
+    long total_bp_time_ms;
+    InsertedGenomeInfo inserted_info;
     
     RunStats(string run, string fn, double mse, int32_t weights) 
-        : run_name(run), genome_filename(fn), best_validation_mse(mse), enabled_weights(weights) {}
+        : run_name(run), genome_filename(fn), best_validation_mse(mse), enabled_weights(weights),
+          num_genomes_with_stats(0), avg_initial_fitness(0.0), avg_final_fitness(0.0),
+          avg_fitness_improvement(0.0), avg_bp_epochs(0.0), avg_bp_time_ms(0.0), total_bp_time_ms(0) {}
 };
 
 struct ExperimentalSetupStats {
@@ -54,6 +85,19 @@ struct ExperimentalSetupStats {
     int32_t max_weights;
     double avg_weights;
     int32_t num_runs;
+    // Genome stats aggregates
+    double avg_initial_fitness;
+    double avg_final_fitness;
+    double avg_fitness_improvement;
+    double avg_bp_epochs;
+    double avg_bp_time_ms;
+    long total_bp_time_ms;
+    int32_t total_genomes_with_stats;
+    // Inserted genomes aggregates
+    int32_t total_inserted_genomes;
+    int32_t total_insertion_events;
+    double avg_inserted_genomes_per_run;
+    double avg_insertion_rate_per_second;
 };
 
 bool is_directory(const string& path) {
@@ -113,6 +157,144 @@ string get_latest_global_best_file(const string& directory) {
     return files.back();
 }
 
+vector<GenomeStats> read_genome_stats_log(const string& directory) {
+    vector<GenomeStats> stats;
+    string csv_file = directory + "/genome_stats_log.csv";
+    
+    ifstream file(csv_file);
+    if (!file.is_open()) {
+        // File doesn't exist, return empty vector
+        return stats;
+    }
+    
+    string line;
+    // Skip header
+    if (!getline(file, line)) {
+        file.close();
+        return stats;
+    }
+    
+    // Read data rows
+    while (getline(file, line)) {
+        if (line.empty()) {
+            continue;
+        }
+        
+        // Parse CSV line
+        vector<string> fields;
+        stringstream ss(line);
+        string field;
+        
+        while (getline(ss, field, ',')) {
+            fields.push_back(field);
+        }
+        
+        if (fields.size() >= 5) {
+            GenomeStats gs;
+            try {
+                gs.genome_number = stoi(fields[0]);
+                gs.initial_fitness = stod(fields[1]);
+                gs.final_fitness = stod(fields[2]);
+                gs.bp_epochs = stoi(fields[3]);
+                gs.bp_time_ms = stol(fields[4]);
+                stats.push_back(gs);
+            } catch (const std::exception& e) {
+                Log::warning("Failed to parse genome stats row: %s\n", line.c_str());
+            }
+        }
+    }
+    
+    file.close();
+    return stats;
+}
+
+InsertedGenomeInfo read_fitness_log(const string& directory) {
+    InsertedGenomeInfo info;
+    string csv_file = directory + "/fitness_log.csv";
+    
+    ifstream file(csv_file);
+    if (!file.is_open()) {
+        // File doesn't exist, return empty info
+        return info;
+    }
+    
+    string line;
+    // Read header to find column positions
+    if (!getline(file, line)) {
+        file.close();
+        return info;
+    }
+    
+    // Parse header to find "Inserted Genomes" and "Time" columns
+    vector<string> header_fields;
+    stringstream header_ss(line);
+    string header_field;
+    int inserted_genomes_col = -1;
+    int time_col = -1;
+    int col_index = 0;
+    
+    while (getline(header_ss, header_field, ',')) {
+        // Trim whitespace
+        header_field.erase(0, header_field.find_first_not_of(" \t"));
+        header_field.erase(header_field.find_last_not_of(" \t") + 1);
+        
+        if (header_field == "Inserted Genomes") {
+            inserted_genomes_col = col_index;
+        } else if (header_field == "Time") {
+            time_col = col_index;
+        }
+        col_index++;
+    }
+    
+    if (inserted_genomes_col == -1) {
+        Log::warning("Could not find 'Inserted Genomes' column in fitness_log.csv\n");
+        file.close();
+        return info;
+    }
+    
+    // Read data rows
+    long last_time_ms = 0;
+    while (getline(file, line)) {
+        if (line.empty()) {
+            continue;
+        }
+        
+        // Parse CSV line
+        vector<string> fields;
+        stringstream ss(line);
+        string field;
+        
+        while (getline(ss, field, ',')) {
+            fields.push_back(field);
+        }
+        
+        if (fields.size() > inserted_genomes_col) {
+            try {
+                int32_t inserted = stoi(fields[inserted_genomes_col]);
+                info.total_inserted_genomes = inserted;  // Last value is the total
+                info.num_insertion_events++;
+                
+                // Get time if available
+                if (time_col >= 0 && time_col < (int)fields.size()) {
+                    last_time_ms = stol(fields[time_col]);
+                }
+            } catch (const std::exception& e) {
+                Log::warning("Failed to parse fitness log row: %s\n", line.c_str());
+            }
+        }
+    }
+    
+    info.total_time_ms = last_time_ms;
+    
+    // Calculate insertion rate (genomes per second)
+    if (info.total_time_ms > 0) {
+        info.insertion_rate_per_second = (double)info.total_inserted_genomes / (info.total_time_ms / 1000.0);
+    }
+    
+    file.close();
+    return info;
+}
+
 RunStats analyze_run(const string& run_directory, const string& run_name) {
     string genome_file = get_latest_global_best_file(run_directory);
     
@@ -130,7 +312,39 @@ RunStats analyze_run(const string& run_directory, const string& run_name) {
         string basename = genome_file.substr(genome_file.find_last_of("/\\") + 1);
         RunStats stats(run_name, basename, mse, weights);
         
-        Log::info("Run %s: MSE: %.6f, Enabled weights: %d\n", run_name.c_str(), mse, weights);
+        // Read genome stats log
+        stats.genome_stats = read_genome_stats_log(run_directory);
+        stats.num_genomes_with_stats = stats.genome_stats.size();
+        
+        // Read fitness log for inserted genomes info
+        stats.inserted_info = read_fitness_log(run_directory);
+        
+        // Calculate averages
+        if (stats.num_genomes_with_stats > 0) {
+            double sum_initial = 0.0;
+            double sum_final = 0.0;
+            double sum_improvement = 0.0;
+            double sum_epochs = 0.0;
+            double sum_time = 0.0;
+            
+            for (const GenomeStats& gs : stats.genome_stats) {
+                sum_initial += gs.initial_fitness;
+                sum_final += gs.final_fitness;
+                sum_improvement += (gs.initial_fitness - gs.final_fitness);
+                sum_epochs += gs.bp_epochs;
+                sum_time += gs.bp_time_ms;
+                stats.total_bp_time_ms += gs.bp_time_ms;
+            }
+            
+            stats.avg_initial_fitness = sum_initial / stats.num_genomes_with_stats;
+            stats.avg_final_fitness = sum_final / stats.num_genomes_with_stats;
+            stats.avg_fitness_improvement = sum_improvement / stats.num_genomes_with_stats;
+            stats.avg_bp_epochs = sum_epochs / stats.num_genomes_with_stats;
+            stats.avg_bp_time_ms = sum_time / stats.num_genomes_with_stats;
+        }
+        
+        Log::info("Run %s: MSE: %.6f, Enabled weights: %d, Genomes with stats: %d, Inserted genomes: %d\n", 
+                  run_name.c_str(), mse, weights, stats.num_genomes_with_stats, stats.inserted_info.total_inserted_genomes);
         
         delete genome;
         return stats;
@@ -190,6 +404,68 @@ ExperimentalSetupStats analyze_experimental_setup(const string& setup_directory,
     stats.avg_weights /= weights.size();
     
     stats.num_runs = stats.runs.size();
+    
+    // Calculate genome stats aggregates
+    stats.total_genomes_with_stats = 0;
+    double sum_initial = 0.0;
+    double sum_final = 0.0;
+    double sum_improvement = 0.0;
+    double sum_epochs = 0.0;
+    double sum_time = 0.0;
+    stats.total_bp_time_ms = 0;
+    
+    for (const RunStats& run : stats.runs) {
+        if (run.num_genomes_with_stats > 0) {
+            stats.total_genomes_with_stats += run.num_genomes_with_stats;
+            sum_initial += run.avg_initial_fitness * run.num_genomes_with_stats;
+            sum_final += run.avg_final_fitness * run.num_genomes_with_stats;
+            sum_improvement += run.avg_fitness_improvement * run.num_genomes_with_stats;
+            sum_epochs += run.avg_bp_epochs * run.num_genomes_with_stats;
+            sum_time += run.avg_bp_time_ms * run.num_genomes_with_stats;
+            stats.total_bp_time_ms += run.total_bp_time_ms;
+        }
+    }
+    
+    if (stats.total_genomes_with_stats > 0) {
+        stats.avg_initial_fitness = sum_initial / stats.total_genomes_with_stats;
+        stats.avg_final_fitness = sum_final / stats.total_genomes_with_stats;
+        stats.avg_fitness_improvement = sum_improvement / stats.total_genomes_with_stats;
+        stats.avg_bp_epochs = sum_epochs / stats.total_genomes_with_stats;
+        stats.avg_bp_time_ms = sum_time / stats.total_genomes_with_stats;
+    } else {
+        stats.avg_initial_fitness = 0.0;
+        stats.avg_final_fitness = 0.0;
+        stats.avg_fitness_improvement = 0.0;
+        stats.avg_bp_epochs = 0.0;
+        stats.avg_bp_time_ms = 0.0;
+    }
+    
+    // Calculate inserted genomes aggregates
+    stats.total_inserted_genomes = 0;
+    stats.total_insertion_events = 0;
+    double sum_insertion_rate = 0.0;
+    int runs_with_insertion_data = 0;
+    
+    for (const RunStats& run : stats.runs) {
+        if (run.inserted_info.total_inserted_genomes > 0) {
+            stats.total_inserted_genomes += run.inserted_info.total_inserted_genomes;
+            stats.total_insertion_events += run.inserted_info.num_insertion_events;
+            sum_insertion_rate += run.inserted_info.insertion_rate_per_second;
+            runs_with_insertion_data++;
+        }
+    }
+    
+    if (stats.num_runs > 0) {
+        stats.avg_inserted_genomes_per_run = (double)stats.total_inserted_genomes / stats.num_runs;
+    } else {
+        stats.avg_inserted_genomes_per_run = 0.0;
+    }
+    
+    if (runs_with_insertion_data > 0) {
+        stats.avg_insertion_rate_per_second = sum_insertion_rate / runs_with_insertion_data;
+    } else {
+        stats.avg_insertion_rate_per_second = 0.0;
+    }
     
     return stats;
 }
@@ -266,7 +542,9 @@ int main(int argc, char** argv) {
     ofstream results_file(output_filename);
     
     // Write summary header
-    results_file << "Experimental Setup,Num Runs,Min Fitness,Avg Fitness,Max Fitness,Min Enabled Weights,Avg Enabled Weights,Max Enabled Weights" << endl;
+    results_file << "Experimental Setup,Num Runs,Min Fitness,Avg Fitness,Max Fitness,Min Enabled Weights,Avg Enabled Weights,Max Enabled Weights,"
+                 << "Total Genomes with Stats,Avg Initial Fitness,Avg Final Fitness,Avg Fitness Improvement,Avg BP Epochs,Avg BP Time (ms),Total BP Time (ms),"
+                 << "Total Inserted Genomes,Total Insertion Events,Avg Inserted Genomes per Run,Avg Insertion Rate (genomes/sec)" << endl;
     results_file << fixed << setprecision(6);
     
     for (const ExperimentalSetupStats& stats : all_setups) {
@@ -277,13 +555,27 @@ int main(int argc, char** argv) {
                      << stats.max_fitness << ","
                      << stats.min_weights << ","
                      << (int)stats.avg_weights << ","
-                     << stats.max_weights << endl;
+                     << stats.max_weights << ","
+                     << stats.total_genomes_with_stats << ","
+                     << stats.avg_initial_fitness << ","
+                     << stats.avg_final_fitness << ","
+                     << stats.avg_fitness_improvement << ","
+                     << setprecision(2) << stats.avg_bp_epochs << ","
+                     << setprecision(0) << stats.avg_bp_time_ms << ","
+                     << stats.total_bp_time_ms << ","
+                     << stats.total_inserted_genomes << ","
+                     << stats.total_insertion_events << ","
+                     << setprecision(2) << stats.avg_inserted_genomes_per_run << ","
+                     << setprecision(4) << stats.avg_insertion_rate_per_second << endl;
+        results_file << setprecision(6);
     }
     
     results_file << endl;
     
     // Write detailed per-run data
-    results_file << "Experimental Setup,Run,Fitness (Validation MSE),Enabled Weights" << endl;
+    results_file << "Experimental Setup,Run,Fitness (Validation MSE),Enabled Weights,"
+                 << "Genomes with Stats,Avg Initial Fitness,Avg Final Fitness,Avg Fitness Improvement,Avg BP Epochs,Avg BP Time (ms),Total BP Time (ms),"
+                 << "Inserted Genomes,Insertion Events,Total Time (ms),Insertion Rate (genomes/sec)" << endl;
     results_file << setprecision(6);
     
     for (const ExperimentalSetupStats& stats : all_setups) {
@@ -291,7 +583,39 @@ int main(int argc, char** argv) {
             results_file << stats.setup_name << ","
                          << run.run_name << ","
                          << run.best_validation_mse << ","
-                         << run.enabled_weights << endl;
+                         << run.enabled_weights << ","
+                         << run.num_genomes_with_stats << ","
+                         << run.avg_initial_fitness << ","
+                         << run.avg_final_fitness << ","
+                         << run.avg_fitness_improvement << ","
+                         << setprecision(2) << run.avg_bp_epochs << ","
+                         << setprecision(0) << run.avg_bp_time_ms << ","
+                         << run.total_bp_time_ms << ","
+                         << run.inserted_info.total_inserted_genomes << ","
+                         << run.inserted_info.num_insertion_events << ","
+                         << run.inserted_info.total_time_ms << ","
+                         << setprecision(4) << run.inserted_info.insertion_rate_per_second << endl;
+            results_file << setprecision(6);
+        }
+    }
+    
+    results_file << endl;
+    
+    // Write detailed per-genome data
+    results_file << "Experimental Setup,Run,Genome Number,Initial Fitness,Final Fitness,BP Epochs,BP Time (ms)" << endl;
+    results_file << setprecision(6);
+    
+    for (const ExperimentalSetupStats& stats : all_setups) {
+        for (const RunStats& run : stats.runs) {
+            for (const GenomeStats& gs : run.genome_stats) {
+                results_file << stats.setup_name << ","
+                             << run.run_name << ","
+                             << gs.genome_number << ","
+                             << gs.initial_fitness << ","
+                             << gs.final_fitness << ","
+                             << gs.bp_epochs << ","
+                             << gs.bp_time_ms << endl;
+            }
         }
     }
     
@@ -301,6 +625,9 @@ int main(int argc, char** argv) {
     cout << endl << "=== Experimental Setups Analysis ===" << endl;
     cout << "Number of experimental setups analyzed: " << all_setups.size() << endl;
     cout << endl;
+    
+    // Fitness and weights summary
+    cout << "--- Fitness and Network Size Summary ---" << endl;
     cout << setw(30) << "Setup" 
          << setw(10) << "Runs" 
          << setw(15) << "Min Fitness" 
@@ -320,6 +647,69 @@ int main(int argc, char** argv) {
              << setw(15) << stats.min_weights 
              << setw(15) << (int)stats.avg_weights 
              << setw(15) << stats.max_weights << endl;
+    }
+    
+    cout << endl;
+    
+    // Inserted genomes summary
+    cout << "--- Inserted Genomes Summary ---" << endl;
+    cout << setw(30) << "Setup"
+         << setw(15) << "Total Inserted"
+         << setw(15) << "Insert Events"
+         << setw(20) << "Avg per Run"
+         << setw(20) << "Insert Rate (gen/sec)" << endl;
+    cout << string(100, '-') << endl;
+    
+    for (const ExperimentalSetupStats& stats : all_setups) {
+        if (stats.total_inserted_genomes > 0) {
+            cout << setw(30) << stats.setup_name
+                 << setw(15) << stats.total_inserted_genomes
+                 << setw(15) << stats.total_insertion_events
+                 << setw(20) << setprecision(2) << stats.avg_inserted_genomes_per_run
+                 << setw(20) << setprecision(4) << stats.avg_insertion_rate_per_second << endl;
+        } else {
+            cout << setw(30) << stats.setup_name
+                 << setw(15) << "N/A"
+                 << setw(15) << "N/A"
+                 << setw(20) << "N/A"
+                 << setw(20) << "N/A" << endl;
+        }
+    }
+    
+    cout << endl;
+    
+    // Genome stats summary
+    cout << "--- Backpropagation Statistics Summary ---" << endl;
+    cout << setw(30) << "Setup"
+         << setw(12) << "Genomes"
+         << setw(18) << "Avg Init Fitness"
+         << setw(18) << "Avg Final Fitness"
+         << setw(18) << "Avg Improvement"
+         << setw(12) << "Avg Epochs"
+         << setw(15) << "Avg Time (ms)"
+         << setw(15) << "Total Time (ms)" << endl;
+    cout << string(140, '-') << endl;
+    
+    for (const ExperimentalSetupStats& stats : all_setups) {
+        if (stats.total_genomes_with_stats > 0) {
+            cout << setw(30) << stats.setup_name
+                 << setw(12) << stats.total_genomes_with_stats
+                 << setw(18) << setprecision(6) << stats.avg_initial_fitness
+                 << setw(18) << setprecision(6) << stats.avg_final_fitness
+                 << setw(18) << setprecision(6) << stats.avg_fitness_improvement
+                 << setw(12) << setprecision(1) << stats.avg_bp_epochs
+                 << setw(15) << setprecision(0) << stats.avg_bp_time_ms
+                 << setw(15) << stats.total_bp_time_ms << endl;
+        } else {
+            cout << setw(30) << stats.setup_name
+                 << setw(12) << "0"
+                 << setw(18) << "N/A"
+                 << setw(18) << "N/A"
+                 << setw(18) << "N/A"
+                 << setw(12) << "N/A"
+                 << setw(15) << "N/A"
+                 << setw(15) << "N/A" << endl;
+        }
     }
     
     cout << endl << "Detailed results saved to: " << output_filename << endl;
