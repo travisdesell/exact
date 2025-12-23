@@ -230,7 +230,7 @@ The following allow control of the neural network training hyperparameters:
 		For each genome, the number of backpropagation epochs is increased proportionately to the number of generated genomes and is defined by:
 
 ```math
-bp\_{\text{iter}} =
+bp_{\text{iter}} =
 \min\!\left(bp_{\max}, \left\lfloor (\text{bp_{slope}} \cdot generated_genomes)^{\text{bp_{exponent}}} \right\rfloor + bp_{\min}\right)
 ```
 
