@@ -236,12 +236,12 @@ bp_{\text{iter}} =
 
 where:
 
-* `bp_iter` is the number of backpropagation epochs assigned to the next genome,
-* `generated_genomes` is the cumulative number of generated genomes so far,
-* `--bp_slope` controls the growth rate of backpropagation epochs,
-* `--bp_exponent` controls the curvature of the growth,
-* `--bp_min` is the minimum number of epochs per genome (defaults to `0`),
-* `--bp_max` caps the maximum number of epochs per genome (defaults to `-1`; values smaller than zero disable the cap).
+	* `bp_iter` is the number of backpropagation epochs assigned to the next genome,
+	* `generated_genomes` is the cumulative number of generated genomes so far,
+	* `--bp_slope` controls the growth rate of backpropagation epochs,
+	* `--bp_exponent` controls the curvature of the growth,
+	* `--bp_min` is the minimum number of epochs per genome (defaults to `0`),
+	* `--bp_max` caps the maximum number of epochs per genome (defaults to `-1`; values smaller than zero disable the cap).
 
 [^pascanu_gradient_scaling]: Razvan Pascanu, Tomas Mikolov and Yoshio Bengio. **[On the Difficulty of Training Recurrent Neural Networks](http://proceedings.mlr.press/v28/pascanu13.pdf).** <em>The International Conference on Machine Learning (ICML 2013)</em>. 2013.
 
