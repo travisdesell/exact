@@ -323,11 +323,11 @@ bool EXAMM::insert_genome(RNN_Genome* genome) {
 
     Log::debug("save visualization json complete\n");
 
-    bool generate_visualization_json = true;
+    // bool generate_visualization_json = true;
 
-    if (generate_visualization_json) {
-        save_visualization_json(genome, "rnn_genome");
-    }
+    // if (generate_visualization_json) {
+    //     save_visualization_json(genome, "rnn_genome");
+    // }
 
     Log::info("save visualization json complete\n");
 
