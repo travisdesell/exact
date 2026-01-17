@@ -51,7 +51,7 @@ class RNN_Genome {
     string log_filename;
     string stats_output_directory;
 
-    // Temporary stats for logging (not serialized to bin files for backward compatibility)
+    // Backprop stats for logging (serialized to bin files for MPI support)
     double initial_fitness_before_bp;
     long bp_time_milliseconds;
     bool bp_stats_valid;  // Flag to indicate if stats were collected

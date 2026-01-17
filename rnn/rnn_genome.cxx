@@ -3515,6 +3515,10 @@ void RNN_Genome::read_from_stream(istream& bin_istream) {
     Log::debug("new component weight: %s\n", WEIGHT_TYPES_STRING[mutated_component_weight].c_str());
 
     read_binary_string(bin_istream, log_filename, "log_filename");
+    read_binary_string(bin_istream, stats_output_directory, "stats_output_directory");
+    bin_istream.read((char*) &initial_fitness_before_bp, sizeof(double));
+    bin_istream.read((char*) &bp_time_milliseconds, sizeof(long));
+    bin_istream.read((char*) &bp_stats_valid, sizeof(bool));
     string generator_str;
     read_binary_string(bin_istream, generator_str, "generator");
     istringstream generator_iss(generator_str);
@@ -3718,6 +3722,10 @@ void RNN_Genome::write_to_stream(ostream& bin_ostream) {
     Log::debug("new component weight: %s\n", WEIGHT_TYPES_STRING[mutated_component_weight].c_str());
 
     write_binary_string(bin_ostream, log_filename, "log_filename");
+    write_binary_string(bin_ostream, stats_output_directory, "stats_output_directory");
+    bin_ostream.write((char*) &initial_fitness_before_bp, sizeof(double));
+    bin_ostream.write((char*) &bp_time_milliseconds, sizeof(long));
+    bin_ostream.write((char*) &bp_stats_valid, sizeof(bool));
 
     ostringstream generator_oss;
     generator_oss << generator;
