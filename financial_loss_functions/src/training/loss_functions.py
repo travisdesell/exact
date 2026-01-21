@@ -1,6 +1,7 @@
 import math
 import torch
 from torch import Tensor
+from torch.nn.functional import softmax
 
 # -------------------- Sharpe -------------------- #
 def raw_sharpe_loss(
@@ -175,3 +176,76 @@ def smooth_mdd_regularizer(
         mdd = smooth_max_log  # (B,)
 
     return mdd.mean()
+
+# -------------------- CVaR -------------------- #
+def cvar_topk_regularizer(
+    weights: Tensor,
+    returns: Tensor,
+    alpha: float = 0.05
+) -> Tensor:
+    """
+    Empirical CVaR (expected shortfall) over the worst alpha fraction of losses.
+    Uses torch.topk to compute average of top-k losses.
+
+    @param weights Tensor[B, N] (already softmax-normalized)
+    @param returns Tensor[B, T, N] per-period simple returns.
+    @param alpha tail fraction (0 < alpha <= 1)
+
+    @return Tensor CVaR averaged across batch (minimize)
+    """
+    B, T, N = returns.shape
+    port = (weights.unsqueeze(1) * returns).sum(dim=-1)  # (B, T)
+    
+    # losses = -returns (higher = worse)
+    losses = -port  # (B, T)
+
+    # number of tail points to average (at least 1)
+    k = max(1, math.ceil(alpha * T))
+
+    # top-k largest losses per batch
+    topk_vals, _ = torch.topk(losses, k, dim=1, largest=True, sorted=False)  # (B, k)
+    cvar_per_batch = topk_vals.mean(dim=1)  # (B,)
+    return cvar_per_batch.mean()  # scalar
+
+def smooth_cvar_regularizer(
+    weights: Tensor,
+    returns: Tensor,
+    alpha: float = 0.05,
+    temp: float = 1e-2,
+    eps: float = 1e-8,
+    scale_by_std: bool = True
+) -> Tensor:
+    """
+    Smooth differentiable approximation to CVaR using soft-selection (softmax) over losses.
+
+    The idea: create scores = losses / (temp * std) (or / temp), take softmax across time,
+    and compute a weighted average. Tuning `temp` controls concentration on the tail.
+    The final value is scaled to approximate the expected loss in the worst alpha fraction.
+
+    @param weights Tensor[B, N], already normalized (softmax)
+    @param returns Tensor[B, T, N]
+    @param alpha float tail fraction, e.g., 0.05
+    @param temp float small positive temperature -> smaller temp => more concentrated on worst losses
+    @param scale_by_std float whether to standardize losses per batch for numeric stability
+
+    @return Tensor smooth CVaR approx (minimize)
+    """
+    port = (weights.unsqueeze(1) * returns).sum(dim=-1)  # (B, T)
+    losses = -port  # (B, T)
+
+    if scale_by_std:
+        std = losses.std(dim=1, keepdim=True) + eps
+        scores = losses / (std * (temp + eps))
+    else:
+        scores = losses / (temp + eps)
+
+    # soft selection: weights over time (sum to 1)
+    sel = softmax(scores, dim=1)  # (B, T)
+
+    # approximate CVaR: mean of worst-alpha fraction. If sel concentrates on worst alpha*T
+    # then weighted_mean ~ mean(worst). To expose the alpha scaling, we multiply by (1/alpha).
+    # This is an approximation - tune temp so selection mass ~ alpha.
+    weighted_mean = (sel * losses).sum(dim=1)  # (B,)
+    approx_cvar = weighted_mean / max(alpha, eps)  # scale up to match order-of-magnitude w/ CVaR
+
+    return approx_cvar.mean()
