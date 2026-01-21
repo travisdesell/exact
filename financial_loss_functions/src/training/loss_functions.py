@@ -1,6 +1,7 @@
 import math
 import torch
 from torch import Tensor
+from typing import Tuple
 from torch.nn.functional import softmax
 
 # -------------------- Sharpe -------------------- #
@@ -249,3 +250,90 @@ def smooth_cvar_regularizer(
     approx_cvar = weighted_mean / max(alpha, eps)  # scale up to match order-of-magnitude w/ CVaR
 
     return approx_cvar.mean()
+
+# -------------------- Risk Parity -------------------- #
+def sample_covariance(returns: Tensor, unbiased: bool = True):
+    """
+    @param returns Tensor (B, T, N)
+    @return sample covariance per batch -> (B, N, N)
+    """
+    B, T, N = returns.shape
+    mean = returns.mean(dim=1, keepdim=True)  # (B, 1, N)
+    X = returns - mean  # (B, T, N)
+    # cov = X^T X / (T-1) if unbiased else / T
+    denom = (T - 1) if unbiased and T > 1 else T
+    cov = X.transpose(1, 2).bmm(X) / float(max(denom, 1))
+    return cov
+
+def shrinkage_covariance_torch(cov: Tensor, shrink: float = 0.1):
+    """
+    Linear shrinkage toward scaled identity:
+      cov_shrunk = (1 - shrink) * cov + shrink * (trace(cov)/N) * I
+    @param Tensor cov (B, N, N)
+    """
+    B, N, _ = cov.shape
+    # trace per batch (B,1)
+    trace = cov.diagonal(dim1=1, dim2=2).sum(dim=1, keepdim=True)  # (B,1)
+    scale = trace / float(N)                                       # (B,1)
+    I = torch.eye(N, device=cov.device, dtype=cov.dtype).unsqueeze(0)  # (1,N,N)
+    # broadcast scale to (B,1,1)
+    scale = scale.view(B, 1, 1)
+    return (1.0 - shrink) * cov + shrink * scale * I
+
+def risk_parity_regularizer(
+    weights: Tensor,
+    returns: Tensor,
+    shrink: float = 0.1,
+    use_shrink: bool = True,
+    shrink_clip: Tuple = (0.0, 0.9),
+    eps: float = 1e-8,
+    scale_invariant: bool = True
+) -> Tensor:
+    """
+    Differentiable Risk-Parity regularizer with optional linear shrinkage.
+
+    @param weights Tensor (B, N)
+    @param returns Tensor (B, T, N)
+    @param shrink float in [0,1] shrinkage intensity
+    @param use_shrink bool whether to apply shrinkage
+    @param shrink_clip Tuple allowed range for shrink (safety)
+    @param eps float numerical eps
+    @param scale_invariant bool if True divide squared-deviation by 
+        sigma2^2 to be scale-invariant
+
+    @return Risk contribution Tensor (mean across batch)
+    """
+    B, T, N = returns.shape
+
+    cov = sample_covariance(returns, unbiased=True)  # (B, N, N)
+
+    # Optional linear shrinkage (applied per-batch)
+    if use_shrink:
+        # safety: clip shrink to reasonable range
+        shrink = float(shrink)
+        low, high = float(shrink_clip[0]), float(shrink_clip[1])
+        shrink = max(low, min(high, shrink))
+        cov = shrinkage_covariance_torch(cov, shrink=shrink)
+
+    # Portfolio variance and marginal contributions
+    w_col = weights.unsqueeze(2)  # (B, N, 1)
+    sigma2 = (w_col.transpose(1,2).bmm(cov).bmm(w_col)).squeeze(-1).squeeze(-1)  # (B,)
+    # guard against zero variance
+    sigma2 = sigma2.clamp(min=eps)
+
+    mcontrib = cov.bmm(w_col).squeeze(-1)  # (B, N)
+    rc = weights * mcontrib                # (B, N)
+
+    # target equal contribution
+    target = sigma2.unsqueeze(1) / float(N)  # (B, 1)
+
+    # squared deviations summed per batch
+    loss_per_batch = ((rc - target)**2).sum(dim=1)  # (B,)
+
+    # scale-invariant normalization
+    if scale_invariant:
+        scaled = loss_per_batch / (sigma2**2 + eps)
+    else:
+        scaled = loss_per_batch
+
+    return scaled.mean()
