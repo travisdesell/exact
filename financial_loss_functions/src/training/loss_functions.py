@@ -2,7 +2,7 @@ import math
 import torch
 from torch import Tensor
 from typing import Tuple
-from torch.nn.functional import softmax
+from torch.nn.functional import softmax, softplus
 
 # -------------------- Sharpe -------------------- #
 def raw_sharpe_loss(
@@ -337,3 +337,88 @@ def risk_parity_regularizer(
         scaled = loss_per_batch
 
     return scaled.mean()
+
+# -------------------- Omega Ratio -------------------- #
+def raw_omega_ratio(
+    weights: Tensor,
+    returns: Tensor,
+    theta: float = 0.0,
+    eps: float = 1e-8
+) -> Tensor:
+    """
+    Exact empirical Omega ratio (batch mean).
+    
+    @param weights Tensor(B, N)
+    @param returns Tensor (B, T, N) simple returns
+    @param theta float threshold (same units as returns)
+    
+    @return Tensor scalar (batch mean Omega to minimize)
+    """
+
+    port = (weights.unsqueeze(1) * returns).sum(dim=-1)   # (B, T)
+    # positives = (R - theta)_+, negatives = (theta - R)_+
+    pos = torch.clamp(port - theta, min=0.0)        # (B, T)
+    neg = torch.clamp(theta - port, min=0.0)        # (B, T)
+
+    # expectations are simple means over time
+    pos_mean = pos.mean(dim=1)   # (B,)
+    neg_mean = neg.mean(dim=1)   # (B,)
+
+    # avoid divide-by-zero
+    omega_per_batch = pos_mean / (neg_mean + eps)  # (B,)
+
+    return -omega_per_batch.mean()
+
+def smooth_omega_objective(
+    weights: Tensor,
+    returns: Tensor,
+    theta: float = 0.0,
+    beta: float = 10.0,
+    eps: float = 1e-8,
+    use_log_loss: bool = True,
+    cap_omega: float | None = None
+) -> Tensor:
+    """
+    Smooth Omega objective (LOSS TO MINIMIZE).
+    Minimizing this is equivalent to maximizing Omega.
+
+    Can be used as:
+      - primary objective: loss = smooth_omega_objective(...)
+      - regularizer: loss += lambda * smooth_omega_objective(...)
+
+    Args:
+    @param weights Tensor(B, N) allocation weights
+    @param returns Tensor(B, T, N)
+    @param theta float Omega threshold (per-period)
+    @param beta float softplus sharpness (>0)
+    @param eps float numerical stability
+    @param cap_omega bool optional cap to limit extreme ratios
+
+    @return Tensor scalar (batch mean Omega to minimize)
+    """
+
+    # portfolio returns per timestep
+    port = (weights.unsqueeze(1) * returns).sum(dim=-1)  # (B, T)
+
+    # smoothed positive / negative parts
+    pos = softplus(port - theta, beta=beta)      # (R - theta)_+
+    neg = softplus(theta - port, beta=beta)      # (theta - R)_+
+
+    # expectations over time
+    pos_mean = pos.mean(dim=1)
+    neg_mean = neg.mean(dim=1)
+
+    # omega per batch
+    omega = pos_mean / (neg_mean + eps)
+
+    if cap_omega is not None:
+        omega = torch.clamp(omega, max=float(cap_omega))
+
+    # loss per batch
+    if use_log_loss:
+        # canonical loss: -log(Omega)
+        loss_per_batch = torch.log(omega + eps)
+    else:
+        loss_per_batch = omega
+
+    return -loss_per_batch.mean()
