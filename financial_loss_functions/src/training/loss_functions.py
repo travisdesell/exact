@@ -422,3 +422,63 @@ def smooth_omega_objective(
         loss_per_batch = omega
 
     return -loss_per_batch.mean()
+
+# -------------------- Herfindahl–Hirschman Index (HHI) -------------------- #
+def hhi_regularizer(
+    weights: Tensor,
+    scale_to_unit: bool = True,
+    eps: float = 1e-12
+) -> Tensor:
+    """
+    HHI concentration penalty (batch-mean).
+    - weights: (B, N) model allocations (logits or already normalized).
+    - scale_to_unit: if True, scales HHI to [0,1] using (HHI - 1/N) / (1 - 1/N).
+                     This makes penalty interpretable and easier to combine with other losses.
+    - returns: scalar Tensor (mean over batch) representing HHI penalty to add to loss.
+
+    Example usage:
+      weights = torch.softmax(logits, dim=-1)  # or pass normalize_weights=True
+      loss = main_loss + lambda_hhi * hhi_penalty(weights)
+    """
+
+    # squared weights and HHI per sample
+    hhi = (weights * weights).sum(dim=1)  # (B,)
+
+    if scale_to_unit:
+        N = weights.shape[-1]
+        min_hhi = 1.0 / float(N)  # equal-weight HHI
+        max_hhi = 1.0
+        # scaled in [0,1]
+        hhi_scaled = (hhi - min_hhi) / (max_hhi - min_hhi + eps)
+        # numerical safety clamp
+        hhi_scaled = torch.clamp(hhi_scaled, min=0.0, max=1.0)
+        return hhi_scaled.mean()
+    else:
+        return hhi.mean()
+
+def hhi_signed_regularizer(
+    weights: Tensor,
+    *,
+    normalize_by_gross: bool = False,
+    scale_to_unit: bool = True,
+    eps: float = 1e-12
+) -> Tensor:
+    """
+    For signed weights. Measures concentration on absolute exposure.
+    weights: (B, N) can have negative entries (shorting).
+    """
+    w_abs = weights.abs()  # (B, N)
+    if normalize_by_gross:
+        gross = w_abs.sum(dim=1, keepdim=True) + eps  # (B,1)
+        w_norm = w_abs / gross  # treat relative exposures
+    else:
+        w_norm = w_abs
+
+    hhi = (w_norm * w_norm).sum(dim=1)  # (B,)
+    if scale_to_unit:
+        N = w_norm.shape[-1]
+        min_hhi = 1.0 / float(N)
+        hhi_scaled = (hhi - min_hhi) / (1.0 - min_hhi + eps)
+        return torch.clamp(hhi_scaled, 0.0, 1.0).mean()
+    else:
+        return hhi.mean()
