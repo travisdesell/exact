@@ -482,3 +482,53 @@ def hhi_signed_regularizer(
         return torch.clamp(hhi_scaled, 0.0, 1.0).mean()
     else:
         return hhi.mean()
+
+# -------------------- Portfolio entropy (Shannon entropy) -------------------- #
+def entropy_conc_regularizer(
+    weights: Tensor,
+    signed: bool = False,
+    mode: str = 'scaled',
+    eps: float = 1e-12,
+) -> Tensor:
+    """
+    Entropy concentration penalty (no clustering). Returns a scalar loss to MINIMIZE.
+
+    Args:
+      weights: Tensor[B, N] -- either normalized allocations (simplex) or logits if normalize_weights=True
+      normalize_weights: if True, apply softmax(weights) to get simplex weights inside the function
+      signed: if True, convert weights -> abs(weights) and renormalize to gross exposure = 1
+      mode: one of {"neg_entropy", "scaled", "kl"}:
+        - "neg_entropy": return -H(w)  (minimize -> maximize entropy)
+        - "scaled": return 1 - H(w)/log(N)  (in [0,1], 0 = uniform)
+        - "kl": return log(N) - H(w)  (KL(uniform || w), >=0)
+      eps: small constant to avoid log(0)
+
+    Returns:
+      scalar Tensor: batch-mean penalty (minimize).
+    """
+    if mode not in {"neg_entropy", "scaled", "kl"}:
+        raise ValueError("mode must be one of {'neg_entropy','scaled','kl'}")
+
+    if signed:
+        # Use absolute exposure and renormalize to simplex
+        weights = weights.abs()
+        denom = weights.sum(dim=1, keepdim=True) + eps
+        weights = weights / denom
+
+    B, N = weights.shape
+
+    # clamp for numeric stability then compute entropy H = -sum w log w
+    w_safe = weights.clamp(min=eps)
+    entropy = -(w_safe * torch.log(w_safe)).sum(dim=1)  # (B,)
+
+    if mode == "neg_entropy":
+        penalty = -entropy                              # minimize -> maximize entropy
+    elif mode == "scaled":
+        max_ent = float(torch.log(torch.tensor(float(N), device=weights.device)))
+        penalty = 1.0 - (entropy / (max_ent + eps))
+        penalty = penalty.clamp(min=0.0, max=1.0)
+    else:  # mode == "kl"
+        max_ent = float(torch.log(torch.tensor(float(N), device=weights.device)))
+        penalty = max_ent - entropy                     # KL(uniform || w)
+
+    return penalty.mean()
