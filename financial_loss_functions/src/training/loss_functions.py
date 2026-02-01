@@ -506,7 +506,7 @@ def entropy_conc_regularizer(
     Returns:
       scalar Tensor: batch-mean penalty (minimize).
     """
-    if mode not in {"neg_entropy", "scaled", "kl"}:
+    if mode not in {'neg_entropy', 'scaled', 'kl'}:
         raise ValueError("mode must be one of {'neg_entropy','scaled','kl'}")
 
     if signed:
@@ -521,9 +521,9 @@ def entropy_conc_regularizer(
     w_safe = weights.clamp(min=eps)
     entropy = -(w_safe * torch.log(w_safe)).sum(dim=1)  # (B,)
 
-    if mode == "neg_entropy":
+    if mode == 'neg_entropy':
         penalty = -entropy                              # minimize -> maximize entropy
-    elif mode == "scaled":
+    elif mode == 'scaled':
         max_ent = float(torch.log(torch.tensor(float(N), device=weights.device)))
         penalty = 1.0 - (entropy / (max_ent + eps))
         penalty = penalty.clamp(min=0.0, max=1.0)
@@ -532,3 +532,132 @@ def entropy_conc_regularizer(
         penalty = max_ent - entropy                     # KL(uniform || w)
 
     return penalty.mean()
+
+# -------------------- Portfolio entropy (Shannon entropy) -------------------- #
+def raw_calmar_objective(
+    weights: Tensor,
+    returns: Tensor,
+    theta: float = 0.0,
+    apply_theta_to_return: bool = False,
+    apply_theta_to_drawdown: bool = False,
+    min_return: float = -0.999,
+    eps: float = 1e-8
+) -> Tensor:
+    """
+    Raw Calmar ratio computed on the provided window (no annualization).
+    Returns the batch-mean Calmar (higher is better).
+
+    Args:
+      weights: (B, N) allocations (if logits, set normalize_weights=True)
+      returns: (B, T, N) simple per-period returns (e.g., daily)
+      theta: per-period MAR (optional); same units as returns
+      apply_theta_to_return: if True, numerator uses (port - theta)
+      apply_theta_to_drawdown: if True, drawdown path uses (port - theta) (uncommon)
+      normalize_weights: if True, apply softmax(weights) inside
+      min_return: lower clamp for each period (must be > -1)
+      eps: small constant to avoid division by zero
+
+    Returns:
+      scalar Tensor: mean(Calmar_i) across batch
+    """
+
+    # portfolio returns per period (B, T)
+    port = (weights.unsqueeze(1) * returns).sum(dim=-1)
+
+    # optionally apply theta to numerator and/or drawdown path
+    port_for_return = port - theta if apply_theta_to_return else port
+    port_for_dd     = port - theta if apply_theta_to_drawdown else port
+
+    # clamp for log1p safety (for cumulative wealth / drawdown)
+    port_for_return_clamped = torch.clamp(port_for_return, min=min_return)
+    port_for_dd_clamped     = torch.clamp(port_for_dd,     min=min_return)
+
+    # numerator = mean simple return over the window (B,)
+    numerator = port_for_return_clamped.mean(dim=1)
+
+    # compute empirical max drawdown (exact) from cumulative wealth path
+    #  cumulative log-wealth path -> cum_log -> running peak -> drawdown
+    log_ret_dd = torch.log1p(port_for_dd_clamped)   # (B, T)
+    cum_log = torch.cumsum(log_ret_dd, dim=1)      # (B, T)
+    running_peak = torch.cummax(cum_log, dim=1).values  # (B, T)
+    drawdown_log = running_peak - cum_log          # (B, T), >= 0
+    drawdown_frac = 1.0 - torch.exp(-drawdown_log) # (B, T), in [0,1)
+    max_dd, _ = drawdown_frac.max(dim=1)           # (B,)
+
+    # Calmar per-sample (guard denom)
+    calmar_per_sample = numerator / (max_dd + eps)  # (B,)
+
+    # return batch-mean Calmar (no sign flip; higher is better)
+    return calmar_per_sample.mean()
+
+def smooth_calmar_objective(
+    weights: Tensor,
+    returns: Tensor,
+    mdd_temp: float = 50.0,
+    theta: float = 0.0,
+    apply_theta_to_return: bool = False,
+    apply_theta_to_drawdown: bool = False,
+    eps: float = 1e-8,
+    use_log_loss: bool = True,
+    min_return: float = -0.999
+) -> Tensor:
+    """
+    Smooth Calmar computed directly on the model output horizon (no annualization).
+    Minimizing this loss -> maximizes Calmar on the window.
+
+    Args:
+      weights: (B, N) allocations (if logits, set normalize_weights=True)
+      returns: (B, T, N) simple per-period returns (e.g., daily returns)
+      mdd_temp: temperature for the smooth max-drawdown surrogate (higher -> closer to max)
+      theta: optional per-period threshold (MAR). If apply_theta_to_return=True, subtract theta from
+             portfolio returns before computing numerator (mean). If apply_theta_to_drawdown=True, subtract
+             theta from path used to compute drawdown (uncommon).
+      apply_theta_to_return: bool
+      apply_theta_to_drawdown: bool
+      eps: numeric epsilon for stability
+      normalize_weights: if True apply softmax(weights) inside
+      use_log_loss: if True return -log(clamped_calmar + eps), else return -calmar
+      min_return: lower clamp for per-step port returns to keep log1p safe
+
+    Returns:
+      scalar Tensor: batch-mean loss to MINIMIZE (so optimizer minimizing this increases Calmar)
+    """
+    B, T, N = returns.shape
+
+    # 2) portfolio per-step returns (B, T)
+    port = (weights.unsqueeze(1) * returns).sum(dim=-1)
+
+    # 3) apply theta where requested
+    port_for_return = port - theta if apply_theta_to_return else port
+    port_for_dd = port - theta if apply_theta_to_drawdown else port
+
+    # clamp for log1p safety (for drawdown path)
+    port_for_return_clamped = torch.clamp(port_for_return, min=min_return)
+    port_for_dd_clamped     = torch.clamp(port_for_dd,     min=min_return)
+
+    # 4) numerator: mean simple return over the window (per-batch)
+    mean_return = port_for_return_clamped.mean(dim=1)  # (B,)
+
+    # 5) smooth max drawdown on the same window (log-space path)
+    log_ret_dd = torch.log1p(port_for_dd_clamped)        # (B, T)
+    cum_log = torch.cumsum(log_ret_dd, dim=1)           # (B, T)
+    running_peak = torch.cummax(cum_log, dim=1).values  # (B, T)
+    drawdown_log = running_peak - cum_log               # (B, T) >= 0
+
+    # smooth max via log-sum-exp with bias correction subtract log(T)
+    s = mdd_temp * drawdown_log
+    lse = torch.logsumexp(s, dim=1)                     # (B,)
+    smooth_max_log = (lse - math.log(T)) / (mdd_temp + eps)
+    mdd = 1.0 - torch.exp(-smooth_max_log)              # (B,) in [0,1)
+
+    # 6) compute Calmar (per-batch) and loss
+    denom = mdd + eps
+    calmar = mean_return / denom   # note: mean_return can be negative -> calmar negative
+
+    # stable loss: -log(calmar) if calmar>0 else penalize strongly
+    if use_log_loss:
+        loss_per_batch = -torch.log(torch.clamp(calmar, min=eps) + eps)
+    else:
+        loss_per_batch = -calmar
+
+    return loss_per_batch.mean()
