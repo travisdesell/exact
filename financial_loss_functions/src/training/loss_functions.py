@@ -5,9 +5,9 @@ from typing import Tuple
 from torch.nn.functional import softmax, softplus
 
 # -------------------- Sharpe -------------------- #
-def raw_sharpe_loss(
+def raw_sharpe_objective(
         weights: Tensor, returns: Tensor, eps: float = 1e-8
-    ):
+    ) -> Tensor:
     """
     Raw Sharpe ratio using standard deviation directly.
 
@@ -18,11 +18,11 @@ def raw_sharpe_loss(
         Negative since NN has to maximize Sharpe Ratio but minimize loss
     """
     # portfolio returns per step
-    port_ret = (weights.unsqueeze(1) * returns).sum(dim=-1)  # (B, T_out)
-    
-    mean_ret = port_ret.mean(dim=1)          # (B,)
-    port_std = port_ret.std(dim=1) + eps      # (B,)
-    sharpe = mean_ret / port_std              # (B,)
+    port = (weights.unsqueeze(1) * returns).sum(dim=-1)  # (B, T_out)
+    mean_ret = port.mean(dim=1)                          # (B,)
+    # population std: set unbiased=False
+    port_std = port.std(dim=1, unbiased=False) + eps     # (B,)
+    sharpe = mean_ret / port_std                         # (B,)
     # maximize Sharpe -> minimize negative Sharpe
     return -sharpe.mean()
 
@@ -45,7 +45,7 @@ def differentiable_sharpe_loss(
     # Avoiding the std entirely
     return -(mean_ret / (var.sqrt() + eps)).mean()
 
-def rms_sharpe_loss(weights: Tensor, returns: Tensor, eps: float = 1e-6):
+def rms_sharpe_objective(weights: Tensor, returns: Tensor, eps: float = 1e-8) -> Tensor:
     """
     Sharpe ratio where we use RMS instead of standard deviation.
     RMS is the population standard deviation.
@@ -56,17 +56,37 @@ def rms_sharpe_loss(weights: Tensor, returns: Tensor, eps: float = 1e-6):
     @return batch average Sharpe Ratio. 
         Negative since NN has to maximize Sharpe Ratio but minimize loss
     """
-    port_ret = (weights.unsqeeze(1) * returns).sum(-1)
-    mean_ret = port_ret.mean(dim=1)
-
-    # RMS (population std)
-    rms = torch.sqrt(
-        torch.mean((port_ret - mean_ret.unsqueeze(1))**2, dim=1) + eps
-    )
-
-    sharpe = mean_ret / rms
-
+    port = (weights.unsqueeze(1) * returns).sum(dim=-1)  # (B, T)
+    mean_ret = port.mean(dim=1, keepdim=True)            # (B,1)
+    rms = torch.sqrt(torch.mean((port - mean_ret)**2, dim=1) + eps)  # (B,)
+    sharpe = mean_ret.squeeze(1) / rms
     return -sharpe.mean()
+
+def smooth_neglog_sharpe_loss(
+    weights: Tensor,
+    returns: Tensor,
+    eps: float = 1e-8,
+    unbiased: bool = False,
+    beta: float = 1.0,
+) -> Tensor:
+    """
+    Smooth, always-differentiable Sharpe loss.
+    Uses softplus to map Sharpe -> positive before log.
+
+    Minimizing this maximizes Sharpe.
+    """
+    port = (weights.unsqueeze(1) * returns).sum(dim=-1)  # (B, T)
+    mean_ret = port.mean(dim=1)
+
+    var = port.var(dim=1, unbiased=unbiased)
+    std = torch.sqrt(var + eps)
+    sharpe = mean_ret / (std + eps)
+
+    # smooth positive mapping (always > 0)
+    sharpe_pos = softplus(sharpe, beta=beta)
+
+    loss = torch.log(sharpe_pos + eps)
+    return -loss.mean()
 
 # -------------------- Sortino -------------------- #
 def raw_sortino_loss(
@@ -120,6 +140,41 @@ def rms_sortino_loss(
     
     # Maximize Sortino -> minimize negative Sortino
     return -sortino.mean()
+
+def smooth_neglog_sortino_objective(
+    weights: Tensor,
+    returns: Tensor,
+    target: float = 0.0,
+    use_soft_downside: bool = True,
+    beta: float = 10.0,                # sharpness for softplus; larger -> closer to clamp
+    eps: float = 1e-8
+) -> Tensor:
+    """
+    Returns a loss to MINIMIZE. Minimizing this increases Sortino.
+
+    transform:
+      - "neglog": loss = -log( softpos(sortino) + eps )  (recommended)
+      - "neg":    loss = -sortino
+      - "raw":    returns sortino.mean()  (rare; treat as reward)
+    """
+    # prepare weights and portfolio
+    port = (weights.unsqueeze(1) * returns).sum(dim=-1)  # (B,T)
+
+    # downside: smooth or hard
+    if use_soft_downside:
+        # softplus approximates clamp(target - port, min=0)
+        # we feed (target - port) so positive means downside
+        downside = softplus(target - port, beta=beta)
+    else:
+        downside = torch.clamp(target - port, min=0.0)
+
+    # RMS downside (population)
+    downside_rms = torch.sqrt(torch.mean(downside**2, dim=1) + eps)  # (B,)
+    mean_ret = port.mean(dim=1)  # (B,)
+    sortino = mean_ret / (downside_rms + eps)  # (B,)
+
+    s_pos = softplus(sortino)  # > 0
+    return -torch.log(s_pos + eps).mean()
 
 # -------------------- Max Drawdown -------------------- #
 def smooth_mdd_regularizer(
@@ -533,7 +588,7 @@ def entropy_conc_regularizer(
 
     return penalty.mean()
 
-# -------------------- Portfolio entropy (Shannon entropy) -------------------- #
+# -------------------- Calmar Ratio -------------------- #
 def raw_calmar_objective(
     weights: Tensor,
     returns: Tensor,
