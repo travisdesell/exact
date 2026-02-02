@@ -22,7 +22,7 @@
         "processed_test": "data/processed/processed_test.csv"
     },
     "artifacts": {
-        "artifact_dir": "artifacts/",
+        "artifacts_dir": "artifacts/",
         "results": "artifacts/results/",
         "plots": "artifacts/results/plots/"
     }

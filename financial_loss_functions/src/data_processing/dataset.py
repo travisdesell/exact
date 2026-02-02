@@ -212,6 +212,14 @@ class WindowDataset(Dataset):
         self.X = torch.tensor(X, dtype=torch.float32)
         self.y = torch.tensor(y, dtype=torch.float32)
 
+    def get_X_y_shapes(self) -> Tuple[torch.Size, torch.Size]:
+        """
+        returns X and y shapes
+
+        @return Tuple[torch.Size, torch.Size] Shape of X and shape of y
+        """
+        return self.X.shape, self.y.shape
+
     def __len__(self) -> int:
         """
         Get length of windowed dataset.

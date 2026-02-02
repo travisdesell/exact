@@ -1,9 +1,12 @@
 import time
 import torch
+from pathlib import Path
 import numpy as np
 import pandas as pd
+from torch import optim
 import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader
+# from src.data_processing.dataset import Reshaper
 from typing import List, Dict, Callable, Type, Any
 from src.data_processing.dataset import WindowDataset
 
@@ -424,6 +427,7 @@ class CandidatesGrid:
             model_lib: Dict[str, Dict[str, Type]],
             loss_lib: Dict[str, Dict[str, Dict[str, Callable]]],
             hparams_config: Dict[str, Dict[str, Any]],
+            results_dir: str | Path,
             model_name: str | None = None,
             loss_name: str | None = None
         ):
@@ -441,6 +445,7 @@ class CandidatesGrid:
         self.model_lib = model_lib
         self.loss_lib = loss_lib
         self.hparams_config = hparams_config
+        self.results_dir = results_dir
 
         if self.mode == 'one_model':
             if model_name:
@@ -458,14 +463,68 @@ class CandidatesGrid:
 
             if model_name:
                 raise UserWarning('Model name is not needed in `one_loss` mode. Will not use it.')
+        
+        self.all_alloc_weights: Dict[str, Dict[str, np.ndarray]] = {}
     
-    def train_grid(self):
+    def required_reshapes(self, train_data, returns_train, val_data, returns_val):
+        # Implement different reshaping for different models if needed.
+        # Move Reshaper instance from pipeline.py to here
+        pass
+
+    def train_eval_grid(self, train_ds: WindowDataset, val_ds: WindowDataset):
         # TODO: Implement training grid here
         if self.mode == 'all':
-            pass
+            X_train_shape, y_train_shape = train_ds.get_X_y_shapes()
 
+            # print('\nTraining all models with all custom loss functions...')
+            # TODO: Implement Training using custom combination losses here
+
+            print('\nTraining all models with all objectives (only) as loss functions...')
+            objectives = self.loss_lib['objectives']['__default__']
+            
+            for loss_name, loss_func in objectives.items():
+                self.all_alloc_weights.setdefault(loss_name, {})
+                
+                for category, model_dict in self.model_lib.items():
+                    for model_name, model_obj in model_dict.items():
+                        print('\n', '-'*10, f' Training {model_name} with {loss_name} ', '-'*10)
+                        try: 
+                            #### Hyperparamater searching can be done here ####
+                            trainer = Trainer(
+                                model=model_obj,
+                                optimizer=optim.AdamW,
+                                loss=loss_func,
+                                model_hparams=self.hparams_config[model_name]['model'],
+                                optimizer_hparams=self.hparams_config[model_name]['optimizer'],
+                                train_hparams=self.hparams_config[model_name]['train'],
+                                in_size=X_train_shape[2],
+                                num_stocks=y_train_shape[2]
+                            )
+                            trainer.train(train_ds)
+                            trainer.evaluate(val_ds)
+
+                            loss_plot_name = model_name + f'-{loss_name}' + ' Loss Curves'
+                            # Plot loss curves
+                            train_val_losses_plot(
+                                trainer.train_losses,
+                                trainer.val_losses,
+                                loss_plot_name,
+                                self.results_dir / 'plots' / (loss_plot_name + '.png')
+                            )
+
+                            alloc_weights = trainer.get_val_alloc_weights()
+
+                            self.all_alloc_weights[loss_name][model_name] = alloc_weights
+
+                        except Exception as error:
+                            print(f'DEBUG: Error while training {model_name}. Skipping.', error)
+                            continue
+        
+        
         elif self.mode == 'one_model':
             pass
 
         elif self.mode == 'one_loss':
             pass
+            
+        return self.all_alloc_weights
