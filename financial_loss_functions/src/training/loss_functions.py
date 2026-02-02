@@ -4,9 +4,7 @@ from torch import Tensor
 from torch.nn.functional import softmax, softplus
 from typing import Tuple, Dict, List, Callable, Optional
 
-# TODO: 
-# 1. Add category names to regularizers
-# 2. Formulate combination loss functions
+# TODO: Formulate combination loss functions
 
 Registry = Dict[str, Dict[str, Dict[str, Callable]]]  # category -> subcategory -> name -> fn
 
@@ -75,7 +73,7 @@ class LossLibrary:
         return cls._registry.copy()
 
 #### All Functions MUST get a decorator with the category and/or sub-category.
-#### Objectives do not need a subcategory (as of now). Regularizer categories are optional.
+#### Objectives do not need a subcategory (as of now). Regularizer categories are required.
 
 # -------------------- Sharpe -------------------- #
 @LossLibrary.register(category='objectives')
@@ -257,7 +255,7 @@ def smooth_neglog_sortino_objective(
     return -torch.log(s_pos + eps).mean()
 
 # -------------------- Max Drawdown -------------------- #
-@LossLibrary.register(category='regularizers')
+@LossLibrary.register(category='regularizers', subcategory='tail_risk')
 def smooth_mdd_regularizer(
     weights: Tensor,
     returns: Tensor,
@@ -315,7 +313,7 @@ def smooth_mdd_regularizer(
     return mdd.mean()
 
 # -------------------- CVaR -------------------- #
-@LossLibrary.register(category='regularizers')
+@LossLibrary.register(category='regularizers', subcategory='tail_risk')
 def cvar_topk_regularizer(
     weights: Tensor,
     returns: Tensor,
@@ -345,7 +343,7 @@ def cvar_topk_regularizer(
     cvar_per_batch = topk_vals.mean(dim=1)  # (B,)
     return cvar_per_batch.mean()  # scalar
 
-@LossLibrary.register(category='regularizers')
+@LossLibrary.register(category='regularizers', subcategory='tail_risk')
 def smooth_cvar_regularizer(
     weights: Tensor,
     returns: Tensor,
@@ -418,7 +416,7 @@ def shrinkage_covariance_torch(cov: Tensor, shrink: float = 0.1):
     scale = scale.view(B, 1, 1)
     return (1.0 - shrink) * cov + shrink * scale * I
 
-@LossLibrary.register(category='regularizers')
+@LossLibrary.register(category='regularizers', subcategory='structural')
 def risk_parity_regularizer(
     weights: Tensor,
     returns: Tensor,
@@ -565,7 +563,7 @@ def smooth_omega_objective(
     return -loss_per_batch.mean()
 
 # -------------------- Herfindahl–Hirschman Index (HHI) -------------------- #
-@LossLibrary.register(category='regularizers')
+@LossLibrary.register(category='regularizers', subcategory='structural')
 def hhi_regularizer(
     weights: Tensor,
     scale_to_unit: bool = True,
@@ -598,7 +596,7 @@ def hhi_regularizer(
     else:
         return hhi.mean()
 
-@LossLibrary.register(category='regularizers')
+@LossLibrary.register(category='regularizers', subcategory='structural')
 def hhi_signed_regularizer(
     weights: Tensor,
     *,
@@ -627,7 +625,7 @@ def hhi_signed_regularizer(
         return hhi.mean()
 
 # -------------------- Portfolio entropy (Shannon entropy) -------------------- #
-@LossLibrary.register(category='regularizers')
+@LossLibrary.register(category='regularizers', subcategory='structural')
 def entropy_conc_regularizer(
     weights: Tensor,
     signed: bool = False,
