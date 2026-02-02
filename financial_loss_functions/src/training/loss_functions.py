@@ -716,3 +716,16 @@ def smooth_calmar_objective(
         loss_per_batch = -calmar
 
     return loss_per_batch.mean()
+
+# -------------------- Combined Loss Functions -------------------- #
+def combined_loss_1():
+    pass
+
+def combined_loss_2():
+    pass
+
+def combined_loss_3():
+    pass
+
+def combined_loss_4():
+    pass
