@@ -1,10 +1,84 @@
 import math
 import torch
 from torch import Tensor
-from typing import Tuple
 from torch.nn.functional import softmax, softplus
+from typing import Tuple, Dict, List, Callable, Optional
+
+# TODO: 
+# 1. Add category names to regularizers
+# 2. Formulate combination loss functions
+
+Registry = Dict[str, Dict[str, Dict[str, Callable]]]  # category -> subcategory -> name -> fn
+
+class LossLibrary:
+    """
+    Central registry class for loss functions.
+
+    Usage pattern:
+      1) Define this class first (in a module).
+      2) Define functions in the same module (or other modules), and decorate them:
+           @LossCollection.register("regularizers", "diversification", "herfindahl")
+           def herfindahl(weights): ...
+      3) Use LossCollection.get(...) or LossCollection.items() to retrieve.
+    """
+    _registry: Registry = {}
+
+    @classmethod
+    def register(
+        cls,
+        category: str = 'objectives',
+        subcategory: Optional[str] = None,
+        name: Optional[str] = None
+    ):
+        """
+        Decorator to register a standalone function into the class registry.
+
+        Example:
+            @LossCollection.register("regularizers", "diversification", "herfindahl_index")
+            def herfindahl_index(weights):
+                return (weights**2).sum(dim=-1).mean()
+        """
+        def decorator(fn: Callable):
+            cat = category
+            sub = subcategory or '__default__'
+            nm = name or fn.__name__
+            cls._registry.setdefault(cat, {}).setdefault(sub, {})[nm] = fn
+            return fn
+        return decorator
+
+    # --- query helpers ---
+    @classmethod
+    def items(cls) -> Registry:
+        """Return the nested registry (live view)."""
+        return cls._registry
+
+    @classmethod
+    def list_categories(cls) -> List[str]:
+        return list(cls._registry.keys())
+
+    @classmethod
+    def list_subcategories(cls, category: str) -> List[str]:
+        return list(cls._registry.get(category, {}).keys())
+
+    @classmethod
+    def list_functions(cls, category: str, subcategory: Optional[str] = None) -> List[str]:
+        sub = subcategory or '__default__'
+        return list(cls._registry.get(category, {}).get(sub, {}).keys())
+
+    @classmethod
+    def get(cls, category: str, subcategory: Optional[str], name: str) -> Callable:
+        sub = subcategory or '__default__'
+        return cls._registry[category][sub][name]
+    
+    @classmethod
+    def get_entire_library(cls):
+        return cls._registry.copy()
+
+#### All Functions MUST get a decorator with the category and/or sub-category.
+#### Objectives do not need a subcategory (as of now). Regularizer categories are optional.
 
 # -------------------- Sharpe -------------------- #
+@LossLibrary.register(category='objectives')
 def raw_sharpe_objective(
         weights: Tensor, returns: Tensor, eps: float = 1e-8
     ) -> Tensor:
@@ -26,6 +100,7 @@ def raw_sharpe_objective(
     # maximize Sharpe -> minimize negative Sharpe
     return -sharpe.mean()
 
+@LossLibrary.register(category='objectives')
 def differentiable_sharpe_loss(
         weights: Tensor, returns: Tensor, eps: float = 1e-6
     ):
@@ -45,6 +120,7 @@ def differentiable_sharpe_loss(
     # Avoiding the std entirely
     return -(mean_ret / (var.sqrt() + eps)).mean()
 
+@LossLibrary.register(category='objectives')
 def rms_sharpe_objective(weights: Tensor, returns: Tensor, eps: float = 1e-8) -> Tensor:
     """
     Sharpe ratio where we use RMS instead of standard deviation.
@@ -62,6 +138,7 @@ def rms_sharpe_objective(weights: Tensor, returns: Tensor, eps: float = 1e-8) ->
     sharpe = mean_ret.squeeze(1) / rms
     return -sharpe.mean()
 
+@LossLibrary.register(category='objectives')
 def smooth_neglog_sharpe_loss(
     weights: Tensor,
     returns: Tensor,
@@ -89,6 +166,7 @@ def smooth_neglog_sharpe_loss(
     return -loss.mean()
 
 # -------------------- Sortino -------------------- #
+@LossLibrary.register(category='objectives')
 def raw_sortino_loss(
         weights: Tensor, returns: Tensor, target: float = 0.0, eps: float = 1e-8
     ):
@@ -114,6 +192,7 @@ def raw_sortino_loss(
     # Maximize Sortino -> minimize negative Sortino
     return -sortino.mean()
 
+@LossLibrary.register(category='objectives')
 def rms_sortino_loss(
         weights: Tensor, returns: Tensor, target: float = 0.0, eps: float = 1e-8
     ):
@@ -141,6 +220,7 @@ def rms_sortino_loss(
     # Maximize Sortino -> minimize negative Sortino
     return -sortino.mean()
 
+@LossLibrary.register(category='objectives')
 def smooth_neglog_sortino_objective(
     weights: Tensor,
     returns: Tensor,
@@ -177,6 +257,7 @@ def smooth_neglog_sortino_objective(
     return -torch.log(s_pos + eps).mean()
 
 # -------------------- Max Drawdown -------------------- #
+@LossLibrary.register(category='regularizers')
 def smooth_mdd_regularizer(
     weights: Tensor,
     returns: Tensor,
@@ -234,6 +315,7 @@ def smooth_mdd_regularizer(
     return mdd.mean()
 
 # -------------------- CVaR -------------------- #
+@LossLibrary.register(category='regularizers')
 def cvar_topk_regularizer(
     weights: Tensor,
     returns: Tensor,
@@ -263,6 +345,7 @@ def cvar_topk_regularizer(
     cvar_per_batch = topk_vals.mean(dim=1)  # (B,)
     return cvar_per_batch.mean()  # scalar
 
+@LossLibrary.register(category='regularizers')
 def smooth_cvar_regularizer(
     weights: Tensor,
     returns: Tensor,
@@ -335,6 +418,7 @@ def shrinkage_covariance_torch(cov: Tensor, shrink: float = 0.1):
     scale = scale.view(B, 1, 1)
     return (1.0 - shrink) * cov + shrink * scale * I
 
+@LossLibrary.register(category='regularizers')
 def risk_parity_regularizer(
     weights: Tensor,
     returns: Tensor,
@@ -394,6 +478,7 @@ def risk_parity_regularizer(
     return scaled.mean()
 
 # -------------------- Omega Ratio -------------------- #
+@LossLibrary.register(category='objectives')
 def raw_omega_ratio(
     weights: Tensor,
     returns: Tensor,
@@ -424,6 +509,7 @@ def raw_omega_ratio(
 
     return -omega_per_batch.mean()
 
+@LossLibrary.register(category='objectives')
 def smooth_omega_objective(
     weights: Tensor,
     returns: Tensor,
@@ -479,6 +565,7 @@ def smooth_omega_objective(
     return -loss_per_batch.mean()
 
 # -------------------- Herfindahl–Hirschman Index (HHI) -------------------- #
+@LossLibrary.register(category='regularizers')
 def hhi_regularizer(
     weights: Tensor,
     scale_to_unit: bool = True,
@@ -511,6 +598,7 @@ def hhi_regularizer(
     else:
         return hhi.mean()
 
+@LossLibrary.register(category='regularizers')
 def hhi_signed_regularizer(
     weights: Tensor,
     *,
@@ -539,6 +627,7 @@ def hhi_signed_regularizer(
         return hhi.mean()
 
 # -------------------- Portfolio entropy (Shannon entropy) -------------------- #
+@LossLibrary.register(category='regularizers')
 def entropy_conc_regularizer(
     weights: Tensor,
     signed: bool = False,
@@ -589,6 +678,7 @@ def entropy_conc_regularizer(
     return penalty.mean()
 
 # -------------------- Calmar Ratio -------------------- #
+@LossLibrary.register(category='objectives')
 def raw_calmar_objective(
     weights: Tensor,
     returns: Tensor,
@@ -645,6 +735,7 @@ def raw_calmar_objective(
     # return batch-mean Calmar (no sign flip; higher is better)
     return calmar_per_sample.mean()
 
+@LossLibrary.register(category='objectives')
 def smooth_calmar_objective(
     weights: Tensor,
     returns: Tensor,

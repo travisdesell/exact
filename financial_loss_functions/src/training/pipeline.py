@@ -12,7 +12,7 @@ from src.training.train import (
     Evaluator
 )
 from src.training.loss_functions import (
-    raw_sharpe_loss,
+    raw_sharpe_objective,
     raw_sortino_loss,
     differentiable_sharpe_loss
 )

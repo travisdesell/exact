@@ -416,3 +416,9 @@ class Evaluator:
         
         if plot:
             plt.show()
+
+class CandidatesGrid:
+    # TODO: Implement Training Grid Here
+    def __init__(self, mode: str):
+        # Initialize models
+        pass
