@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader
-from typing import List, Dict, Callable
+from typing import List, Dict, Callable, Type, Any
 from src.data_processing.dataset import WindowDataset
 
 if torch.mps.is_available():
@@ -418,7 +418,54 @@ class Evaluator:
             plt.show()
 
 class CandidatesGrid:
-    # TODO: Implement Training Grid Here
-    def __init__(self, mode: str):
-        # Initialize models
-        pass
+    def __init__(
+            self,
+            mode: str, 
+            model_lib: Dict[str, Dict[str, Type]],
+            loss_lib: Dict[str, Dict[str, Dict[str, Callable]]],
+            hparams_config: Dict[str, Dict[str, Any]],
+            model_name: str | None = None,
+            loss_name: str | None = None
+        ):
+        """
+        This runs either all models and loss functions or 
+        one model with all loss functions or all models with on loss function.
+        It should not run one model for one loss function as this class is for a grid.
+        """
+        # Correct mode check
+        if mode not in ['all', 'one_model', 'one_loss']:
+            raise ValueError('Incorrect Mode! Must be `all`, `one_model` or `one_loss`')
+        else:
+            self.mode = mode
+        
+        self.model_lib = model_lib
+        self.loss_lib = loss_lib
+        self.hparams_config = hparams_config
+
+        if self.mode == 'one_model':
+            if model_name:
+                self.model_name = model_name
+            else:
+                raise ValueError('Enter model name, when running in `one_model` mode')
+            if loss_name:
+                raise UserWarning('Loss function is not needed in `one_model` mode. Will not use it.')
+        
+        elif self.mode == 'one_loss':
+            if loss_name:
+                self.loss_name = loss_name
+            else:
+               raise ValueError('Enter loss function name, when running in `one_loss` mode') 
+
+            if model_name:
+                raise UserWarning('Model name is not needed in `one_loss` mode. Will not use it.')
+    
+    def train_grid(self):
+        # TODO: Implement training grid here
+        if self.mode == 'all':
+            pass
+
+        elif self.mode == 'one_model':
+            pass
+
+        elif self.mode == 'one_loss':
+            pass
