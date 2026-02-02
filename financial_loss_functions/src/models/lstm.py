@@ -1,7 +1,12 @@
 import torch
 import numpy as np
 import torch.nn as nn
+from src.models.registry import ModelLibrary
 
+#### All models MUST get a registration decorator with a category.
+#### Here category will mostly be the file name.
+
+@ModelLibrary.register(category='lstm')
 class BaseLSTM(nn.Module):
     """
     Implementation BaseLSTM Model
@@ -63,6 +68,7 @@ class BaseLSTM(nn.Module):
         weights = torch.softmax(logits, dim=-1)
         return weights
 
+@ModelLibrary.register(category='lstm')
 class AttentionLSTM(nn.Module):
     """AttentionLSTM Model"""
     def __init__(

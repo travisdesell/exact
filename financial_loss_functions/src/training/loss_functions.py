@@ -64,13 +64,9 @@ class LossLibrary:
         return list(cls._registry.get(category, {}).get(sub, {}).keys())
 
     @classmethod
-    def get(cls, category: str, subcategory: Optional[str], name: str) -> Callable:
+    def get(cls, category: str,  name: str, subcategory: Optional[str] = None) -> Callable:
         sub = subcategory or '__default__'
         return cls._registry[category][sub][name]
-    
-    @classmethod
-    def get_entire_library(cls):
-        return cls._registry.copy()
 
 #### All Functions MUST get a decorator with the category and/or sub-category.
 #### Objectives do not need a subcategory (as of now). Regularizer categories are required.

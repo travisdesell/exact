@@ -5,17 +5,15 @@ from src.utils import create_directory
 from src.data_processing.dataset import Reshaper
 from src.data_processing.dataset import WindowDataset
 from src.data_processing.loading import load_csv_files
-from src.models.lstm import BaseLSTM, AttentionLSTM
 from src.training.train import (
     Trainer,
     train_val_losses_plot,
     Evaluator
 )
-from src.training.loss_functions import (
-    raw_sharpe_objective,
-    raw_sortino_loss,
-    differentiable_sharpe_loss
-)
+
+# Model and Loss Libraries
+from src.models.registry import ModelLibrary
+from src.training.loss_functions import LossLibrary
 
 def run_training_pipeline(paths_config: Dict, hparams_config: Dict):
     """
@@ -67,6 +65,10 @@ def run_training_pipeline(paths_config: Dict, hparams_config: Dict):
     print('y_val shape:', y_val.shape)
 
     # -------------------- Training Models -------------------- #
+    # Registering all models to the library
+    ModelLibrary.autodiscover('src.models') # MUST be executed for model registration
+    # No auto discovery needed for Loss library as all functions are in one file
+    
     # Converting to pytorch tensors
     train_ds = WindowDataset(X_train, y_train)
     val_ds   = WindowDataset(X_val, y_val)
@@ -76,12 +78,14 @@ def run_training_pipeline(paths_config: Dict, hparams_config: Dict):
 
     #### BaseLSTM ####
     model1_name = 'BaseLSTM'
+    model1 = ModelLibrary.get('lstm', model1_name)
+    loss = LossLibrary.get('objectives', name='differentiable_sharpe_loss')
     print('\n', '-'*10, f' Training {model1_name} ', '-'*10)
     try:
         trainer = Trainer(
-            model=BaseLSTM,
+            model=model1,
             optimizer=optim.AdamW,
-            loss=differentiable_sharpe_loss,
+            loss=loss,
             model_hparams=hparams_config[model1_name]['model'],
             optimizer_hparams=hparams_config[model1_name]['optimizer'],
             train_hparams=hparams_config[model1_name]['train'],
@@ -113,12 +117,13 @@ def run_training_pipeline(paths_config: Dict, hparams_config: Dict):
 
     #### Attention LSTM ####
     model2_name = 'AttentionLSTM'
+    model2 = ModelLibrary.get('lstm', model2_name)
     print('\n', '-'*10, f' Training {model2_name} ', '-'*10)
     try:
         trainer = Trainer(
-            model=AttentionLSTM,
+            model=model2,
             optimizer=optim.AdamW,
-            loss=differentiable_sharpe_loss,
+            loss=loss,
             model_hparams=hparams_config[model2_name]['model'],
             optimizer_hparams=hparams_config[model2_name]['optimizer'],
             train_hparams=hparams_config[model2_name]['train'],
