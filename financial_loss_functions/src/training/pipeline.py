@@ -88,14 +88,12 @@ def run_training_pipeline(paths_config: Dict, hparams_config: Dict):
     all_alloc_weights = candidates_grid.train_eval_grid(train_ds, val_ds)
     print(all_alloc_weights)
     
-    #### TODO 1: 
+    #### TODO: 
     # 1. Implement evaluation for all model predictions
     # 2. Compare all in plot
+    # 3. Implement a combination loss
     # See old code below
-
-    #### TODO 2:
-    # 1. Implement a combination loss
-    # 2. Implement one loss model for Candidates Grid
+    
 
     
 

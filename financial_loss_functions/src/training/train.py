@@ -1,9 +1,9 @@
 import time
 import torch
-from pathlib import Path
 import numpy as np
 import pandas as pd
 from torch import optim
+from pathlib import Path
 import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader
 # from src.data_processing.dataset import Reshaper
@@ -483,16 +483,10 @@ class CandidatesGrid:
 
         return trainer.get_val_alloc_weights()
 
-    def _search_model(self, model_name: str):
-        """Search for required model"""
-        for _, models_dict in self.model_lib.items():
-            if model_name in models_dict:
-                return models_dict[model_name]
-        return None
-
     def train_eval_grid(self, train_ds: WindowDataset, val_ds: WindowDataset):
         """Loops over Loss functions first with a nested loop for models"""
-
+        X_train_shape, y_train_shape = train_ds.get_X_y_shapes()
+        
         # Grid with custom loss functions
         if 'custom' in self.loss_lib:
             print('\nTraining all models with all custom loss functions...')
@@ -503,7 +497,6 @@ class CandidatesGrid:
                 self.all_alloc_weights.setdefault(loss_name, {})
 
                 for category, models_dict in self.model_lib.items():
-                    X_train_shape, y_train_shape = train_ds.get_X_y_shapes()
                     # Loop over models
                     for model_name, model_obj in models_dict.items():
                         print('\n', '-'*10, f' Training {model_name} with {loss_name} ', '-'*10)
@@ -539,7 +532,6 @@ class CandidatesGrid:
             self.all_alloc_weights.setdefault(loss_name, {})
             
             for category, models_dict in self.model_lib.items():
-                X_train_shape, y_train_shape = train_ds.get_X_y_shapes()
                 # Loop over models
                 for model_name, model_obj in models_dict.items():
                     print('\n', '-'*10, f' Training {model_name} with {loss_name} ', '-'*10)
@@ -566,6 +558,13 @@ class CandidatesGrid:
             
         return self.all_alloc_weights
     
+    def _search_model(self, model_name: str) -> Type | None:
+        """Search for required model"""
+        for _, models_dict in self.model_lib.items():
+            if model_name in models_dict:
+                return models_dict[model_name]
+        return None
+
     def train_eval_one_model(
             self, model_name: str, train_ds: WindowDataset, val_ds: WindowDataset
         ):
@@ -642,12 +641,58 @@ class CandidatesGrid:
         
         return self.all_alloc_weights
 
+    def _search_loss_func(self, loss_name: str) -> Callable | None:
+        """Search for required loss function"""
+        for _, cat_dict in self.loss_lib.items():
+            for _, sub_cat_dict in cat_dict.items():
+                if loss_name in sub_cat_dict:
+                    return sub_cat_dict[loss_name]
+        
+        # objectives = self.loss_lib['objectives']['__default__']
+        # if loss_name in objectives:
+        #     return objectives[loss_name]
+        
+        # custom_combos = self.loss_lib['custom']['__default__']
+        # if loss_name in custom_combos:
+        #     return custom_combos[loss_name]
+        
+        return None
+
     def train_eval_one_loss(
             self, loss_name: str, train_ds: WindowDataset, val_ds: WindowDataset
         ):
         if len(self.all_alloc_weights) != 0:
             raise RuntimeError('Allocation weights already predicted. Create new instance of this class.')
+    
+        loss_func = self._search_loss_func(loss_name)
+
+        self.all_alloc_weights.setdefault(loss_name, {})
+
+        X_train_shape, y_train_shape = train_ds.get_X_y_shapes() 
         
-        #### TODO: Implement loop for on loss functions and all models ####
+        for category, models_dict in self.model_lib.items():
+            # Loop over models
+            for model_name, model_obj in models_dict.items():
+                print('\n', '-'*10, f' Training {model_name} with {loss_name} ', '-'*10)
+                try: 
+                    
+                    alloc_weights = self._train_eval_helper(
+                        model_name,
+                        model_obj, 
+                        loss_name,
+                        loss_func,
+                        train_ds,
+                        val_ds,
+                        X_train_shape,
+                        y_train_shape
+                    )
+                    self.all_alloc_weights[loss_name][model_name] = alloc_weights
+
+                except Exception as error:
+                    print(
+                        f'DEBUG: Error while training {model_name} with {loss_name}. Skipping.',
+                        error
+                    )
+                    continue
 
         return self.all_alloc_weights
