@@ -423,46 +423,22 @@ class Evaluator:
 class CandidatesGrid:
     def __init__(
             self,
-            mode: str, 
             model_lib: Dict[str, Dict[str, Type]],
             loss_lib: Dict[str, Dict[str, Dict[str, Callable]]],
             hparams_config: Dict[str, Dict[str, Any]],
-            results_dir: str | Path,
-            model_name: str | None = None,
-            loss_name: str | None = None
+            results_dir: str | Path
         ):
         """
         This runs either all models and loss functions or 
         one model with all loss functions or all models with on loss function.
         It should not run one model for one loss function as this class is for a grid.
+
+        train_eval_* methods can be run only once with each instance
         """
-        # Correct mode check
-        if mode not in ['all', 'one_model', 'one_loss']:
-            raise ValueError('Incorrect Mode! Must be `all`, `one_model` or `one_loss`')
-        else:
-            self.mode = mode
-        
         self.model_lib = model_lib
         self.loss_lib = loss_lib
         self.hparams_config = hparams_config
         self.results_dir = results_dir
-
-        if self.mode == 'one_model':
-            if model_name:
-                self.model_name = model_name
-            else:
-                raise ValueError('Enter model name, when running in `one_model` mode')
-            if loss_name:
-                raise UserWarning('Loss function is not needed in `one_model` mode. Will not use it.')
-        
-        elif self.mode == 'one_loss':
-            if loss_name:
-                self.loss_name = loss_name
-            else:
-               raise ValueError('Enter loss function name, when running in `one_loss` mode') 
-
-            if model_name:
-                raise UserWarning('Model name is not needed in `one_loss` mode. Will not use it.')
         
         self.all_alloc_weights: Dict[str, Dict[str, np.ndarray]] = {}
     
@@ -471,60 +447,207 @@ class CandidatesGrid:
         # Move Reshaper instance from pipeline.py to here
         pass
 
+    def _train_eval_helper(
+            self,
+            model_name: str,
+            model_obj: Type,
+            loss_name: str,
+            loss_func: Callable,
+            train_ds: WindowDataset,
+            val_ds: WindowDataset,
+            X_train_shape: torch.Size,
+            y_train_shape: torch.Size
+        ) -> np.ndarray:
+        #### Hyperparamater searching can be done here ####
+        trainer = Trainer(
+            model=model_obj,
+            optimizer=optim.AdamW,
+            loss=loss_func,
+            model_hparams=self.hparams_config[model_name]['model'],
+            optimizer_hparams=self.hparams_config[model_name]['optimizer'],
+            train_hparams=self.hparams_config[model_name]['train'],
+            in_size=X_train_shape[2],
+            num_stocks=y_train_shape[2]
+        )
+        trainer.train(train_ds)
+        trainer.evaluate(val_ds)
+
+        loss_plot_name = model_name + f'-{loss_name}' + ' Loss Curves'
+        # Plot loss curves
+        train_val_losses_plot(
+            trainer.train_losses,
+            trainer.val_losses,
+            loss_plot_name,
+            self.results_dir / 'plots' / (loss_plot_name + '.png')
+        )
+
+        return trainer.get_val_alloc_weights()
+
+    def _search_model(self, model_name: str):
+        """Search for required model"""
+        for _, models_dict in self.model_lib.items():
+            if model_name in models_dict:
+                return models_dict[model_name]
+        return None
+
     def train_eval_grid(self, train_ds: WindowDataset, val_ds: WindowDataset):
-        # TODO: Implement training grid here
-        if self.mode == 'all':
-            X_train_shape, y_train_shape = train_ds.get_X_y_shapes()
+        """Loops over Loss functions first with a nested loop for models"""
 
-            # print('\nTraining all models with all custom loss functions...')
-            # TODO: Implement Training using custom combination losses here
+        # Grid with custom loss functions
+        if 'custom' in self.loss_lib:
+            print('\nTraining all models with all custom loss functions...')
+            custom_combos = self.loss_lib['custom']['__default__'] # Custom combos have no category
 
-            print('\nTraining all models with all objectives (only) as loss functions...')
-            objectives = self.loss_lib['objectives']['__default__']
-            
-            for loss_name, loss_func in objectives.items():
+            # Loop over loss functions
+            for loss_name, loss_func in custom_combos.items():
                 self.all_alloc_weights.setdefault(loss_name, {})
-                
-                for category, model_dict in self.model_lib.items():
-                    for model_name, model_obj in model_dict.items():
+
+                for category, models_dict in self.model_lib.items():
+                    X_train_shape, y_train_shape = train_ds.get_X_y_shapes()
+                    # Loop over models
+                    for model_name, model_obj in models_dict.items():
                         print('\n', '-'*10, f' Training {model_name} with {loss_name} ', '-'*10)
                         try: 
-                            #### Hyperparamater searching can be done here ####
-                            trainer = Trainer(
-                                model=model_obj,
-                                optimizer=optim.AdamW,
-                                loss=loss_func,
-                                model_hparams=self.hparams_config[model_name]['model'],
-                                optimizer_hparams=self.hparams_config[model_name]['optimizer'],
-                                train_hparams=self.hparams_config[model_name]['train'],
-                                in_size=X_train_shape[2],
-                                num_stocks=y_train_shape[2]
+                            
+                            alloc_weights = self._train_eval_helper(
+                                model_name,
+                                model_obj, 
+                                loss_name,
+                                loss_func,
+                                train_ds,
+                                val_ds,
+                                X_train_shape,
+                                y_train_shape
                             )
-                            trainer.train(train_ds)
-                            trainer.evaluate(val_ds)
-
-                            loss_plot_name = model_name + f'-{loss_name}' + ' Loss Curves'
-                            # Plot loss curves
-                            train_val_losses_plot(
-                                trainer.train_losses,
-                                trainer.val_losses,
-                                loss_plot_name,
-                                self.results_dir / 'plots' / (loss_plot_name + '.png')
-                            )
-
-                            alloc_weights = trainer.get_val_alloc_weights()
-
                             self.all_alloc_weights[loss_name][model_name] = alloc_weights
 
                         except Exception as error:
-                            print(f'DEBUG: Error while training {model_name}. Skipping.', error)
+                            print(
+                                f'DEBUG: Error while training {model_name} with {loss_name}. Skipping.', error
+                            )
                             continue
         
+        else:
+            print('\nNo custom loss functions provided. Moving to objectives.')
         
-        elif self.mode == 'one_model':
-            pass
-
-        elif self.mode == 'one_loss':
-            pass
+        # Grid with only objectives
+        print('\nTraining all models with all objectives (only) as loss functions...')
+        objectives = self.loss_lib['objectives']['__default__'] # objectives have no category
+        
+        # Loop over loss functions
+        for loss_name, loss_func in objectives.items():
+            self.all_alloc_weights.setdefault(loss_name, {})
             
+            for category, models_dict in self.model_lib.items():
+                X_train_shape, y_train_shape = train_ds.get_X_y_shapes()
+                # Loop over models
+                for model_name, model_obj in models_dict.items():
+                    print('\n', '-'*10, f' Training {model_name} with {loss_name} ', '-'*10)
+                    try: 
+                        
+                        alloc_weights = self._train_eval_helper(
+                            model_name,
+                            model_obj, 
+                            loss_name,
+                            loss_func,
+                            train_ds,
+                            val_ds,
+                            X_train_shape,
+                            y_train_shape
+                        )
+                        self.all_alloc_weights[loss_name][model_name] = alloc_weights
+
+                    except Exception as error:
+                        print(
+                            f'DEBUG: Error while training {model_name} with {loss_name}. Skipping.',
+                            error
+                        )
+                        continue
+            
+        return self.all_alloc_weights
+    
+    def train_eval_one_model(
+            self, model_name: str, train_ds: WindowDataset, val_ds: WindowDataset
+        ):
+
+        if len(self.all_alloc_weights) != 0:
+            print(self.all_alloc_weights)
+            raise RuntimeError('Allocation weights already predicted. Create new instance of this class.')
+        
+        # Search for model
+        model_obj = self._search_model(model_name)
+        
+        X_train_shape, y_train_shape = train_ds.get_X_y_shapes()
+        
+        # Grid with custom loss functions
+        if 'custom' in self.loss_lib:
+            print('\nTraining all models with all custom loss functions...')
+            custom_combos = self.loss_lib['custom']['__default__'] # Custom combos have no category
+
+            # Loop over loss functions
+            for loss_name, loss_func in custom_combos.items():
+                self.all_alloc_weights.setdefault(loss_name, {})
+
+                print('\n', '-'*10, f' Training {model_name} with {loss_name} ', '-'*10)
+                try:        
+                    alloc_weights = self._train_eval_helper(
+                        model_name,
+                        model_obj, 
+                        loss_name,
+                        loss_func,
+                        train_ds,
+                        val_ds,
+                        X_train_shape,
+                        y_train_shape
+                    )
+                    self.all_alloc_weights[loss_name][model_name] = alloc_weights
+
+                except Exception as error:
+                    print(
+                        f'DEBUG: Error while training {model_name} with {loss_name}. Skipping.',
+                        error
+                    )
+                    continue
+
+        else:
+            print('\nNo custom loss functions provided. Moving to objectives.')
+        
+        # Grid with only objectives
+        print('\nTraining all models with all objectives (only) as loss functions...')
+        objectives = self.loss_lib['objectives']['__default__'] # objectives have no category
+        
+        # Loop over loss functions
+        for loss_name, loss_func in objectives.items():
+            self.all_alloc_weights.setdefault(loss_name, {})
+
+            try:        
+                alloc_weights = self._train_eval_helper(
+                    model_name,
+                    model_obj, 
+                    loss_name,
+                    loss_func,
+                    train_ds,
+                    val_ds,
+                    X_train_shape,
+                    y_train_shape
+                )
+                self.all_alloc_weights[loss_name][model_name] = alloc_weights
+
+            except Exception as error:
+                print(
+                    f'DEBUG: Error while training {model_name} with {loss_name}. Skipping.',
+                    error
+                )
+                continue
+        
+        return self.all_alloc_weights
+
+    def train_eval_one_loss(
+            self, loss_name: str, train_ds: WindowDataset, val_ds: WindowDataset
+        ):
+        if len(self.all_alloc_weights) != 0:
+            raise RuntimeError('Allocation weights already predicted. Create new instance of this class.')
+        
+        #### TODO: Implement loop for on loss functions and all models ####
+
         return self.all_alloc_weights

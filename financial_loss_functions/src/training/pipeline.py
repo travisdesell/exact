@@ -80,7 +80,6 @@ def run_training_pipeline(paths_config: Dict, hparams_config: Dict):
 
     
     candidates_grid = CandidatesGrid(
-        'all',
         ModelLibrary.items(),
         LossLibrary.items(),
         hparams_config,
@@ -96,8 +95,7 @@ def run_training_pipeline(paths_config: Dict, hparams_config: Dict):
 
     #### TODO 2:
     # 1. Implement a combination loss
-    # 2. Implement one model mode for Candidates Grid
-    # 3. Implement one loss model for Candidates Grid
+    # 2. Implement one loss model for Candidates Grid
 
     
 
