@@ -649,6 +649,8 @@ class CandidatesGrid:
         
         # Search for model
         model_obj = self._search_model(model_name)
+        if not model_obj: # model not found
+            raise RuntimeError(f'{model_name} MODEL NOT FOUND IN LIBRARY!')
         
         X_train_shape, y_train_shape = train_ds.get_X_y_shapes()
         
@@ -744,6 +746,9 @@ class CandidatesGrid:
             )
     
         loss_func = self._search_loss_func(loss_name)
+        
+        if not loss_func: # loss function not found
+            raise RuntimeError(f'{loss_name} LOSS FUNCTION NOT FOUND IN LIBRARY!')
 
         self.all_alloc_weights.setdefault(loss_name, {})
 

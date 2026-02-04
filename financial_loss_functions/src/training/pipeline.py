@@ -13,12 +13,23 @@ from src.training.train import (
 from src.models.registry import ModelLibrary
 from src.training.loss_functions import LossLibrary
 
-def run_training_pipeline(paths_config: Dict, hparams_config: Dict):
+def run_training_pipeline(
+        paths_config: Dict,
+        hparams_config: Dict, 
+        grid_mode: str = 'all', 
+        loss_mode: str = 'all',
+        model: str | None = None,
+        loss: str | None = None
+    ):
     """
     All models training pipeline entry point
 
     @param paths_config Dict Dictionary containing paths
     @param features_config Dictionary containing hyperparameter information
+    @param grid_mode str `all`, `one_model` or `one_loss`
+    @param loss_mode str `all` or `custom`
+    @param model str Name of the model to be run
+    @param loss str Name of the loss function to be used
     """
     print('\n', '=' * 20, ' Training Pipeline ', '=' * 20)
     
@@ -77,12 +88,22 @@ def run_training_pipeline(paths_config: Dict, hparams_config: Dict):
     evaluator = Evaluator(y_val)
 
     candidates_grid = CandidatesGrid(
-        ModelLibrary.items(),
-        LossLibrary.items(),
-        hparams_config,
-        results_dir
+        model_lib = ModelLibrary.items(),
+        loss_lib = LossLibrary.items(),
+        hparams_config = hparams_config,
+        results_dir = results_dir,
+        loss_mode = loss_mode
     )
-    all_alloc_weights = candidates_grid.train_eval_grid(train_ds, val_ds)
+    if grid_mode == 'all':
+        all_alloc_weights = candidates_grid.train_eval_grid(train_ds, val_ds)
+    elif grid_mode == 'one_model' and model is not None:
+        all_alloc_weights = candidates_grid.train_eval_one_model(
+            model, train_ds, val_ds
+        )
+    elif grid_mode == 'one_loss' and loss is not None:
+        all_alloc_weights = candidates_grid.train_eval_one_loss(loss, train_ds, val_ds)
+    else:
+        raise RuntimeError('Incorrect mode arguments while running at entry point.')
 
     # Calculate returns of all predicted portfolio allocation weights
     for loss_name, models_dict in all_alloc_weights.items():
@@ -107,7 +128,6 @@ def run_training_pipeline(paths_config: Dict, hparams_config: Dict):
     print('\n', 'Basic sharpe ratios for each window:\n', total_sharpes)
 
     #### TODO: 
-    # 1. Implement cleanup on interrupt of program end
+    # 1. Implement a combination loss
     # 2. Add Unexpected error handling to all scripts
-    # 3. Implement a combination loss
-    # 4. Implement addition of tradional models
+    # 3. Implement addition of tradional models

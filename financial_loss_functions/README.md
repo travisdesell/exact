@@ -64,9 +64,39 @@ python -m scripts.run_macro_collection
 python -m scripts.run_processing
 ```
 
-### 3. Run prelimnary training
+### 3. Run candidates training grid
+Run the training pipeline using the following command structure:
+```bash
+python -m scripts.run_training [--grid_mode MODE] [--loss_mode MODE] [OPTIONS]
+```
+
+#### Arguments Reference
+| Flag | Long Flag | Choices / Type | Default | Notes |
+| :--- | :--- | :--- | :--- | :--- |
+| `-gm` | `--grid_mode` | `all`, `one_model`, `one_loss` | `all` | The scope of the grid search. |
+| `-lm` | `--loss_mode` | `all`, `custom` | `all` |  Use all available loss functions or only custom combinations |
+| `-model`| `--model` | *string* | None | **Required** if grid mode is `one_model`. Name of model.|
+| `-l` | `--loss` | *string* | None | **Required** if grid mode is `one_loss`. Name of loss function.|
+
+#### Examples:
+1. Run everything (Uses defaults: grid_mode='all', loss_mode='all')
 ```bash
 python -m scripts.run_training
+```
+
+2. Run specific model with all available loss functions
+```bash
+python -m scripts.run_training --grid_mode one_model --model 'BaseLSTM' --loss_mode all
+```
+
+3. Run specific loss function with all available models
+```bash
+python -m scripts.run_training --grid_mode one_loss --loss 'differentiable_sharpe_objective'
+```
+
+4. To get help
+```bash
+python -m scripts.run_training --help
 ```
 
 ### Run tests
