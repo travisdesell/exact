@@ -26,7 +26,8 @@ def run_training_pipeline(paths_config: Dict, hparams_config: Dict):
     print('\n', '=' * 20, ' Training Pipeline ', '=' * 20)
     
     # Create plots directory if it doesnt exist
-    create_directory(Path(paths_config['artifacts']['plots']))
+    plots_dir = (Path(paths_config['artifacts']['plots']))
+    create_directory(plots_dir)
     results_dir = Path(paths_config['artifacts']['results'])
     
     # -------------------- Loading Processed Data -------------------- #
@@ -78,7 +79,6 @@ def run_training_pipeline(paths_config: Dict, hparams_config: Dict):
     # Initializing once to compare all models together
     evaluator = Evaluator(y_val)
 
-    
     candidates_grid = CandidatesGrid(
         ModelLibrary.items(),
         LossLibrary.items(),
@@ -86,110 +86,29 @@ def run_training_pipeline(paths_config: Dict, hparams_config: Dict):
         results_dir
     )
     all_alloc_weights = candidates_grid.train_eval_grid(train_ds, val_ds)
-    print(all_alloc_weights)
+
+    # Calculate returns of all predicted portfolio allocation weights
+    for loss_name, models_dict in all_alloc_weights.items():
+        for model_name, alloc_weights in models_dict.items():
+            evaluator.calc_pf_daily_rets(alloc_weights, f'{model_name}-{loss_name}')
     
+    del candidates_grid
+    
+    # Overall Evaluation/Comparison starts here
+    evaluator.calc_eq_wt_daily_rets()
+    
+    evaluator.plot_windowed_comparison(
+        plots_dir /
+        (f'Daily Returns' + '.png')
+    )
+
+    total_returns = evaluator.calc_total_performance('returns')
+    total_sharpes = evaluator.calc_total_performance('sharpe')
+
+    print('\n', '-'*10, ' Portfolio Perfomance Metrics ', '-'*10)
+    print('\n', 'Compounded returns for each window:\n', total_returns)
+    print('\n', 'Basic sharpe ratios for each window:\n', total_sharpes)
+
     #### TODO: 
-    # 1. Implement evaluation for all model predictions
-    # 2. Compare all in plot
-    # 3. Implement a combination loss
-    # See old code below
-    
-
-    
-
-
-
-
-
-
-    ################################
-    
-    
-    # #### BaseLSTM ####
-    # model1_name = 'BaseLSTM'
-    # model1 = ModelLibrary.get('lstm', model1_name)
-    # loss = LossLibrary.get('objectives', name='differentiable_sharpe_loss')
-    # print('\n', '-'*10, f' Training {model1_name} ', '-'*10)
-    # try:
-    #     trainer = Trainer(
-    #         model=model1,
-    #         optimizer=optim.AdamW,
-    #         loss=loss,
-    #         model_hparams=hparams_config[model1_name]['model'],
-    #         optimizer_hparams=hparams_config[model1_name]['optimizer'],
-    #         train_hparams=hparams_config[model1_name]['train'],
-    #         in_size=X_train.shape[2],
-    #         num_stocks=y_train.shape[2]
-    #     )
-
-    #     trainer.train(train_ds)
-    #     trainer.evaluate(val_ds)
-
-    #     # Plot loss curves
-    #     train_val_losses_plot(
-    #         trainer.train_losses,
-    #         trainer.val_losses,
-    #         model1_name + ' Loss Curves',
-    #         Path(paths_config['artifacts']['plots']) /
-    #         (model1_name + ' Loss Curves' + '.png')
-    #     )
-
-    #     alloc_weights = trainer.get_val_alloc_weights()
-
-    #     # Call on every models output allocation weights to caluclated weighted returns
-    #     # Add daily returns for BaseLSTM generated weights
-    #     evaluator.calc_pf_daily_rets(alloc_weights, model1_name)
-    
-    # except Exception as error:
-    #     print(f'DEBUG: Error while training {model1_name}. Skipping.', error)
-    
-
-    # #### Attention LSTM ####
-    # model2_name = 'AttentionLSTM'
-    # model2 = ModelLibrary.get('lstm', model2_name)
-    # print('\n', '-'*10, f' Training {model2_name} ', '-'*10)
-    # try:
-    #     trainer = Trainer(
-    #         model=model2,
-    #         optimizer=optim.AdamW,
-    #         loss=loss,
-    #         model_hparams=hparams_config[model2_name]['model'],
-    #         optimizer_hparams=hparams_config[model2_name]['optimizer'],
-    #         train_hparams=hparams_config[model2_name]['train'],
-    #         in_size=X_train.shape[2],
-    #         num_stocks=y_train.shape[2]
-    #     )
-
-    #     trainer.train(train_ds)
-    #     trainer.evaluate(val_ds)
-
-    #     # Plot loss curves
-    #     train_val_losses_plot(
-    #         trainer.train_losses,
-    #         trainer.val_losses,
-    #         model2_name + ' Loss Curves',
-    #         Path(paths_config['artifacts']['plots']) /
-    #         (model2_name + ' Loss Curves' + '.png')
-    #     )
-
-    #     alloc_weights = trainer.get_val_alloc_weights()
-
-    #     # Add daily returns for AttentionLSTM generated weights
-    #     evaluator.calc_pf_daily_rets(alloc_weights, model2_name)
-    # except Exception as error:
-    #     print(f'DEBUG: Error while training {model2_name}. Skipping.', error)
-    
-    # # Evaluation/Comparison starts here
-    # evaluator.calc_eq_wt_daily_rets()
-    
-    # evaluator.plot_windowed_comparison(
-    #     Path(paths_config['artifacts']['plots']) /
-    #     (f'Daily Returns' + '.png')
-    # )
-
-    # total_returns = evaluator.calc_total_performance('returns')
-    # total_sharpes = evaluator.calc_total_performance('sharpe')
-
-    # print('\n', '-'*10, ' Portfolio Perfomance Metrics ', '-'*10)
-    # print('\n', 'Compounded returns for each window:\n', total_returns)
-    # print('\n', 'Basic sharpe ratios for each window:\n', total_sharpes)
+    # 1. Implement a combination loss
+    # 2. Implement addition of tradional models

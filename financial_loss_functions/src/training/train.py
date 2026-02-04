@@ -1,23 +1,30 @@
+import gc
+import os
 import time
 import torch
+import psutil
 import numpy as np
 import pandas as pd
 from torch import optim
 from pathlib import Path
 import matplotlib.pyplot as plt
+from contextlib import contextmanager
 from torch.utils.data import DataLoader
 # from src.data_processing.dataset import Reshaper
 from typing import List, Dict, Callable, Type, Any
 from src.data_processing.dataset import WindowDataset
 
 if torch.mps.is_available():
-    DEVICE = torch.device('mps')
+    DEVICE = 'mps'
+    # DEVICE = torch.device(device_name)
     print('Using mps for GPU acceleration.')
 elif torch.cuda.is_available():
-    DEVICE = torch.device('cuda')
+    DEVICE = 'cuda'
+    # DEVICE = torch.device(device_name)
     print('Using cuda for GPU acceleration.')
 else:
-    DEVICE = torch.device('cpu')
+    DEVICE = 'cpu'
+    # DEVICE = torch.device('cpu')
     print('No GPU acceleration. Using CPU.')
 
 
@@ -34,7 +41,8 @@ class Trainer:
         optimizer_hparams: Dict,  # Specific to optimizer
         train_hparams: Dict,      # Generic training params (epochs, batch_size, etc.)
         in_size: int,
-        num_stocks: int
+        num_stocks: int,
+        device_name: str = DEVICE
     ):
         """
         Initialize Trainer instance to train given model.
@@ -56,7 +64,8 @@ class Trainer:
         @param num_stocks int
             Number of stocks, i.e, number of output nodes 
         """
-        self.device = DEVICE
+        self.device_name = device_name
+        self.device = torch.device(device_name)
         print('Model hyperparameters:\n', model_hparams)
         print('Optimizer hyperparameters:\n', optimizer_hparams)
         print('Training hyperparameters:\n', train_hparams)
@@ -194,6 +203,22 @@ class Trainer:
         else:
             print('Model must be trained and validated.')
             return None
+    
+    def device_cleanup(self):
+        if self.device_name == 'mps':
+            try:
+                # Empty MPS cache (available in newer PyTorch versions)
+                torch.mps.empty_cache()
+                
+                # Run garbage collection on MPS tensors
+                # torch.mps.drain()
+            
+            except Exception as e:
+                print(f'MPS cleanup not available. Error: {e}')
+            
+        elif self.device_name == 'cuda':
+            torch.cuda.empty_cache()
+            torch.cuda.ipc_collect()
         
 def train_val_losses_plot(
     train_losses: List[float],
@@ -231,7 +256,9 @@ def train_val_losses_plot(
     if plot:
         plt.show()
 
-    plt.close()
+    plt.close('all')
+    plt.clf()
+    plt.cla()
 
 
 class Evaluator:
@@ -420,13 +447,16 @@ class Evaluator:
         if plot:
             plt.show()
 
+        plt.close('all')
+
 class CandidatesGrid:
     def __init__(
             self,
             model_lib: Dict[str, Dict[str, Type]],
             loss_lib: Dict[str, Dict[str, Dict[str, Callable]]],
             hparams_config: Dict[str, Dict[str, Any]],
-            results_dir: str | Path
+            results_dir: str | Path,
+            enable_diagnostics: bool = False
         ):
         """
         This runs either all models and loss functions or 
@@ -439,6 +469,7 @@ class CandidatesGrid:
         self.loss_lib = loss_lib
         self.hparams_config = hparams_config
         self.results_dir = results_dir
+        self.enable_diagnostics = enable_diagnostics
         
         self.all_alloc_weights: Dict[str, Dict[str, np.ndarray]] = {}
     
@@ -459,6 +490,11 @@ class CandidatesGrid:
             y_train_shape: torch.Size
         ) -> np.ndarray:
         #### Hyperparamater searching can be done here ####
+
+        if self.enable_diagnostics:
+            print(f'\n[Before training {model_name} with {loss_name}]')
+            self._memory_diagnostics()
+
         trainer = Trainer(
             model=model_obj,
             optimizer=optim.AdamW,
@@ -481,9 +517,39 @@ class CandidatesGrid:
             self.results_dir / 'plots' / (loss_plot_name + '.png')
         )
 
-        return trainer.get_val_alloc_weights()
+        alloc_weights = trainer.get_val_alloc_weights()
+        # trainer.device_cleanup()
+        del trainer
 
-    def train_eval_grid(self, train_ds: WindowDataset, val_ds: WindowDataset):
+        if self.enable_diagnostics:
+            print(f'\n[After training {model_name} with {loss_name}]')
+            self._memory_diagnostics()
+        
+        return alloc_weights
+    
+    def _memory_diagnostics(self):
+        """Print memory usage diagnostics"""
+        process = psutil.Process(os.getpid())
+        mem_gb = process.memory_info().rss / 1024 ** 3
+        
+        print(f"  Process memory: {mem_gb:.2f} GB")
+        
+        # if DEVICE == 'cuda':
+        #     print(f"  GPU allocated: {torch.cuda.memory_allocated() / 1024**3:.2f} GB")
+        #     print(f"  GPU cached: {torch.cuda.memory_reserved() / 1024**3:.2f} GB")
+        
+        # Count Trainer instances
+        trainer_count = 0
+        for obj in gc.get_objects():
+            if type(obj).__name__ == 'Trainer':
+                trainer_count += 1
+        
+        if trainer_count > 0:
+            print(f"  WARNING: {trainer_count} Trainer instances still in memory!")
+
+    def train_eval_grid(
+            self, train_ds: WindowDataset, val_ds: WindowDataset, mode: str = 'all'
+        ):
         """Loops over Loss functions first with a nested loop for models"""
         X_train_shape, y_train_shape = train_ds.get_X_y_shapes()
         
@@ -523,40 +589,49 @@ class CandidatesGrid:
         else:
             print('\nNo custom loss functions provided. Moving to objectives.')
         
-        # Grid with only objectives
-        print('\nTraining all models with all objectives (only) as loss functions...')
-        objectives = self.loss_lib['objectives']['__default__'] # objectives have no category
-        
-        # Loop over loss functions
-        for loss_name, loss_func in objectives.items():
-            self.all_alloc_weights.setdefault(loss_name, {})
-            
-            for category, models_dict in self.model_lib.items():
-                # Loop over models
-                for model_name, model_obj in models_dict.items():
-                    print('\n', '-'*10, f' Training {model_name} with {loss_name} ', '-'*10)
-                    try: 
-                        
-                        alloc_weights = self._train_eval_helper(
-                            model_name,
-                            model_obj, 
-                            loss_name,
-                            loss_func,
-                            train_ds,
-                            val_ds,
-                            X_train_shape,
-                            y_train_shape
-                        )
-                        self.all_alloc_weights[loss_name][model_name] = alloc_weights
+        if mode == 'custom':
+            return self.all_alloc_weights
 
-                    except Exception as error:
-                        print(
-                            f'DEBUG: Error while training {model_name} with {loss_name}. Skipping.',
-                            error
-                        )
-                        continue
+        elif mode == 'all':
+            # Grid with only objectives
+            print('\nTraining all models with all objectives (only) as loss functions...')
+            objectives = self.loss_lib['objectives']['__default__'] # objectives have no category
             
-        return self.all_alloc_weights
+            # Loop over loss functions
+            for loss_name, loss_func in objectives.items():
+                self.all_alloc_weights.setdefault(loss_name, {})
+                
+                for category, models_dict in self.model_lib.items():
+                    # Loop over models
+                    for model_name, model_obj in models_dict.items():
+                        print('\n', '-'*10, f' Training {model_name} with {loss_name} ', '-'*10)
+                        
+                        
+                        try: 
+                            
+                            alloc_weights = self._train_eval_helper(
+                                model_name,
+                                model_obj, 
+                                loss_name,
+                                loss_func,
+                                train_ds,
+                                val_ds,
+                                X_train_shape,
+                                y_train_shape
+                            )
+                            self.all_alloc_weights[loss_name][model_name] = alloc_weights
+
+                        except Exception as error:
+                            print(
+                                f'DEBUG: Error while training {model_name} with {loss_name}. Skipping.',
+                                error
+                            )
+                            continue
+                
+            return self.all_alloc_weights
+        
+        else:
+            raise ValueError('Incorrect mode. Must be `custom` or `all`.')
     
     def _search_model(self, model_name: str) -> Type | None:
         """Search for required model"""
@@ -566,7 +641,7 @@ class CandidatesGrid:
         return None
 
     def train_eval_one_model(
-            self, model_name: str, train_ds: WindowDataset, val_ds: WindowDataset
+            self, model_name: str, train_ds: WindowDataset, val_ds: WindowDataset, mode: str = 'all'
         ):
 
         if len(self.all_alloc_weights) != 0:
@@ -611,35 +686,41 @@ class CandidatesGrid:
         else:
             print('\nNo custom loss functions provided. Moving to objectives.')
         
-        # Grid with only objectives
-        print('\nTraining all models with all objectives (only) as loss functions...')
-        objectives = self.loss_lib['objectives']['__default__'] # objectives have no category
-        
-        # Loop over loss functions
-        for loss_name, loss_func in objectives.items():
-            self.all_alloc_weights.setdefault(loss_name, {})
+        if mode == 'custom':
+            return self.all_alloc_weights
 
-            try:        
-                alloc_weights = self._train_eval_helper(
-                    model_name,
-                    model_obj, 
-                    loss_name,
-                    loss_func,
-                    train_ds,
-                    val_ds,
-                    X_train_shape,
-                    y_train_shape
-                )
-                self.all_alloc_weights[loss_name][model_name] = alloc_weights
+        elif mode == 'all':
+            # Grid with only objectives
+            print('\nTraining all models with all objectives (only) as loss functions...')
+            objectives = self.loss_lib['objectives']['__default__'] # objectives have no category
+            
+            # Loop over loss functions
+            for loss_name, loss_func in objectives.items():
+                self.all_alloc_weights.setdefault(loss_name, {})
+                try:        
+                    alloc_weights = self._train_eval_helper(
+                        model_name,
+                        model_obj, 
+                        loss_name,
+                        loss_func,
+                        train_ds,
+                        val_ds,
+                        X_train_shape,
+                        y_train_shape
+                    )
+                    self.all_alloc_weights[loss_name][model_name] = alloc_weights
 
-            except Exception as error:
-                print(
-                    f'DEBUG: Error while training {model_name} with {loss_name}. Skipping.',
-                    error
-                )
-                continue
-        
-        return self.all_alloc_weights
+                except Exception as error:
+                    print(
+                        f'DEBUG: Error while training {model_name} with {loss_name}. Skipping.',
+                        error
+                    )
+                    continue
+            
+            return self.all_alloc_weights
+
+        else:
+            raise ValueError('Incorrect mode. Must be `custom` or `all`.')
 
     def _search_loss_func(self, loss_name: str) -> Callable | None:
         """Search for required loss function"""
@@ -662,7 +743,9 @@ class CandidatesGrid:
             self, loss_name: str, train_ds: WindowDataset, val_ds: WindowDataset
         ):
         if len(self.all_alloc_weights) != 0:
-            raise RuntimeError('Allocation weights already predicted. Create new instance of this class.')
+            raise RuntimeError(
+                'Allocation weights already predicted. Create new instance of this class.'
+            )
     
         loss_func = self._search_loss_func(loss_name)
 
