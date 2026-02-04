@@ -8,7 +8,6 @@ import pandas as pd
 from torch import optim
 from pathlib import Path
 import matplotlib.pyplot as plt
-from contextlib import contextmanager
 from torch.utils.data import DataLoader
 # from src.data_processing.dataset import Reshaper
 from typing import List, Dict, Callable, Type, Any
@@ -207,11 +206,8 @@ class Trainer:
     def device_cleanup(self):
         if self.device_name == 'mps':
             try:
-                # Empty MPS cache (available in newer PyTorch versions)
+                # Empty MPS cache
                 torch.mps.empty_cache()
-                
-                # Run garbage collection on MPS tensors
-                # torch.mps.drain()
             
             except Exception as e:
                 print(f'MPS cleanup not available. Error: {e}')
@@ -456,6 +452,7 @@ class CandidatesGrid:
             loss_lib: Dict[str, Dict[str, Dict[str, Callable]]],
             hparams_config: Dict[str, Dict[str, Any]],
             results_dir: str | Path,
+            loss_mode: str = 'all',
             enable_diagnostics: bool = False
         ):
         """
@@ -469,6 +466,11 @@ class CandidatesGrid:
         self.loss_lib = loss_lib
         self.hparams_config = hparams_config
         self.results_dir = results_dir
+
+        if loss_mode not in ['all', 'custom']:
+            raise ValueError('Incorrect Loss Mode. Mode must be `all` or `custom`')
+        else:
+            self.loss_mode = loss_mode
         self.enable_diagnostics = enable_diagnostics
         
         self.all_alloc_weights: Dict[str, Dict[str, np.ndarray]] = {}
@@ -548,7 +550,7 @@ class CandidatesGrid:
             print(f"  WARNING: {trainer_count} Trainer instances still in memory!")
 
     def train_eval_grid(
-            self, train_ds: WindowDataset, val_ds: WindowDataset, mode: str = 'all'
+            self, train_ds: WindowDataset, val_ds: WindowDataset
         ):
         """Loops over Loss functions first with a nested loop for models"""
         X_train_shape, y_train_shape = train_ds.get_X_y_shapes()
@@ -589,10 +591,10 @@ class CandidatesGrid:
         else:
             print('\nNo custom loss functions provided. Moving to objectives.')
         
-        if mode == 'custom':
+        if self.loss_mode == 'custom':
             return self.all_alloc_weights
 
-        elif mode == 'all':
+        else: # mode == 'all'
             # Grid with only objectives
             print('\nTraining all models with all objectives (only) as loss functions...')
             objectives = self.loss_lib['objectives']['__default__'] # objectives have no category
@@ -629,9 +631,6 @@ class CandidatesGrid:
                             continue
                 
             return self.all_alloc_weights
-        
-        else:
-            raise ValueError('Incorrect mode. Must be `custom` or `all`.')
     
     def _search_model(self, model_name: str) -> Type | None:
         """Search for required model"""
@@ -641,7 +640,7 @@ class CandidatesGrid:
         return None
 
     def train_eval_one_model(
-            self, model_name: str, train_ds: WindowDataset, val_ds: WindowDataset, mode: str = 'all'
+            self, model_name: str, train_ds: WindowDataset, val_ds: WindowDataset
         ):
 
         if len(self.all_alloc_weights) != 0:
@@ -686,10 +685,10 @@ class CandidatesGrid:
         else:
             print('\nNo custom loss functions provided. Moving to objectives.')
         
-        if mode == 'custom':
+        if self.loss_mode == 'custom':
             return self.all_alloc_weights
 
-        elif mode == 'all':
+        else: # mode == 'all'
             # Grid with only objectives
             print('\nTraining all models with all objectives (only) as loss functions...')
             objectives = self.loss_lib['objectives']['__default__'] # objectives have no category
@@ -718,9 +717,6 @@ class CandidatesGrid:
                     continue
             
             return self.all_alloc_weights
-
-        else:
-            raise ValueError('Incorrect mode. Must be `custom` or `all`.')
 
     def _search_loss_func(self, loss_name: str) -> Callable | None:
         """Search for required loss function"""

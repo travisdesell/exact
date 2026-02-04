@@ -1,4 +1,3 @@
-from torch import optim
 from typing import Dict
 from pathlib import Path
 from src.utils import create_directory
@@ -6,8 +5,6 @@ from src.data_processing.dataset import Reshaper
 from src.data_processing.dataset import WindowDataset
 from src.data_processing.loading import load_csv_files
 from src.training.train import (
-    Trainer,
-    train_val_losses_plot,
     Evaluator,
     CandidatesGrid
 )
@@ -110,5 +107,7 @@ def run_training_pipeline(paths_config: Dict, hparams_config: Dict):
     print('\n', 'Basic sharpe ratios for each window:\n', total_sharpes)
 
     #### TODO: 
-    # 1. Implement a combination loss
-    # 2. Implement addition of tradional models
+    # 1. Implement cleanup on interrupt of program end
+    # 2. Add Unexpected error handling to all scripts
+    # 3. Implement a combination loss
+    # 4. Implement addition of tradional models
