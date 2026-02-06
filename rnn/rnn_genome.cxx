@@ -100,6 +100,7 @@ RNN_Genome::RNN_Genome(
 
     best_validation_mse = EXAMM_MAX_DOUBLE;
     best_validation_mae = EXAMM_MAX_DOUBLE;
+    search_frequency = 1.0;
 
     nodes = _nodes;
     edges = _edges;
@@ -4743,6 +4744,7 @@ void RNN_Genome::write_manual_txt(const std::string& filename) {
 
     // Stats
     out_file << "  \"stats\": {" << std::endl;
+    out_file << "    \"harada_frequnecy\": " << search_frequency << "," << std::endl;
     out_file << "    \"total_node_count\": " << get_node_count() << "," << std::endl;
     out_file << "    \"enabled_node_count\": " << get_enabled_node_count() << "," << std::endl;
     out_file << "    \"enabled_hidden_layer_node_count\": " << get_enabled_node_count_hidden_layer() << "," << std::endl;

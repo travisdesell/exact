@@ -89,6 +89,9 @@ class RNN_Genome {
     map<string, double> normalize_std_devs;
 
    public:
+    // Harada frequency-based parent selection 
+    double search_frequency;
+
     void sort_nodes_by_depth();
     void sort_edges_by_depth();
     void sort_recurrent_edges_by_depth();

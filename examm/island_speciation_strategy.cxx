@@ -27,7 +27,7 @@ IslandSpeciationStrategy::IslandSpeciationStrategy(
     string _repopulation_method, int32_t _extinction_event_generation_number, int32_t _num_mutations,
     int32_t _islands_to_exterminate, int32_t _max_genomes, bool _repeat_extinction, bool _start_filled,
     bool _transfer_learning, string _transfer_learning_version, int32_t _seed_stirs, bool _tl_epigenetic_weights,
-    std::vector<std::string> possible_node_types
+    std::vector<std::string> possible_node_types, int32_t _is_harada_selection, double _harada_selection_ratio
 )
     : generation_island(0),
       number_of_islands(_number_of_islands),
@@ -84,6 +84,9 @@ IslandSpeciationStrategy::IslandSpeciationStrategy(
 
     // Get possible node types for NN size logs
     this->possible_node_types = possible_node_types;
+
+    is_harada_selection = _is_harada_selection;
+    harada_selection_ratio = _harada_selection_ratio;
 }
 
 void IslandSpeciationStrategy::initialize_population(function<void(int32_t, RNN_Genome*)>& mutate) {
@@ -451,30 +454,68 @@ RNN_Genome* IslandSpeciationStrategy::generate_for_filled_island(
         Log::debug("performing intra-island crossover\n");
         // select two distinct parent genomes in the same island
         RNN_Genome *parent1 = NULL, *parent2 = NULL;
-        island->copy_two_random_genomes(rng_0_1, generator, &parent1, &parent2);
-        genome = crossover(parent1, parent2);
-        delete parent1;
-        delete parent2;
-    } else {
-        // get a random genome from this island
-        RNN_Genome* parent1 = NULL;
-        island->copy_random_genome(rng_0_1, generator, &parent1);
+        if(is_harada_selection){
+            Log::info("Using Harada Selection: %f\n", harada_selection_ratio);
+            island->copy_two_harada_genomes(rng_0_1, generator, &parent1, &parent2, harada_selection_ratio);
+            genome = crossover(parent1, parent2);
+            double inherited_harada_frequency = (parent1->search_frequency + parent2->search_frequency)/2;
+            genome->search_frequency = inherited_harada_frequency;
 
-        int32_t other_island_index = get_other_full_island(rng_0_1, generator, generation_island);
-
-        // get the best genome from the other island
-        RNN_Genome* parent2 = islands[other_island_index]->get_best_genome()->copy();  // new RNN GENOME
-
-        // swap so the first parent is the more fit parent
-        if (parent1->get_fitness() > parent2->get_fitness()) {
-            RNN_Genome* tmp = parent1;
-            parent1 = parent2;
-            parent2 = tmp;
+            delete parent1;
+            delete parent2;
+        } else {
+            island->copy_two_random_genomes(rng_0_1, generator, &parent1, &parent2);
+            genome = crossover(parent1, parent2);
+            delete parent1;
+            delete parent2;
         }
-        genome = crossover(parent1, parent2);  // new RNN GENOME
+    } else {
+        if(is_harada_selection) {
+            Log::info("Using Harada Selection: %f\n", harada_selection_ratio);
+            // get a random genome from this island
+            RNN_Genome* parent1 = NULL;
+            island->copy_random_genome_harada_selection(rng_0_1, generator, &parent1, harada_selection_ratio);
 
-        delete parent1;
-        delete parent2;
+            int32_t other_island_index = get_other_full_island(rng_0_1, generator, generation_island);
+
+            // get the best genome from the other island
+            RNN_Genome* parent2 = NULL;
+            islands[other_island_index]->copy_random_genome_harada_selection(rng_0_1, generator, &parent2, harada_selection_ratio);
+
+            // swap so the first parent is the more fit parent
+            if (parent1->get_fitness() > parent2->get_fitness()) {
+                RNN_Genome* tmp = parent1;
+                parent1 = parent2;
+                parent2 = tmp;
+            }
+            genome = crossover(parent1, parent2);  // new RNN GENOME
+
+            double inherited_harada_frequency = (parent1->search_frequency + parent2->search_frequency)/2;
+            genome->search_frequency = inherited_harada_frequency;
+
+            delete parent1;
+            delete parent2;
+        } else {
+            // get a random genome from this island
+            RNN_Genome* parent1 = NULL;
+            island->copy_random_genome(rng_0_1, generator, &parent1);
+
+            int32_t other_island_index = get_other_full_island(rng_0_1, generator, generation_island);
+
+            // get the best genome from the other island
+            RNN_Genome* parent2 = islands[other_island_index]->get_best_genome()->copy();  // new RNN GENOME
+
+            // swap so the first parent is the more fit parent
+            if (parent1->get_fitness() > parent2->get_fitness()) {
+                RNN_Genome* tmp = parent1;
+                parent1 = parent2;
+                parent2 = tmp;
+            }
+            genome = crossover(parent1, parent2);  // new RNN GENOME
+
+            delete parent1;
+            delete parent2;
+        }
     }
 
     if (genome->outputs_unreachable()) {
@@ -545,6 +586,7 @@ static const vector<string> size_metric_keys = {
     "Total_Number_Enabled_Weight",
     "Get_Number_Inputs",
     "Total_Genomes",
+    "Harada_Frequency"
 };
 
 /**
@@ -681,6 +723,7 @@ string IslandSpeciationStrategy::get_size_information_values() {
 
         std::unordered_map<int32_t, int32_t> island_total_node_type_counts;
         std::unordered_map<int32_t, int32_t> island_enabled_node_type_counts;
+        std::vector<double> harada_search_frequencies;
 
         std::vector<RNN_Genome*> genomes = islands[i]->get_genomes();
         for (RNN_Genome* g : genomes) {
@@ -701,6 +744,7 @@ string IslandSpeciationStrategy::get_size_information_values() {
             total_number_enabled_weight += g->get_enabled_number_weights();
             total_number_inputs += g->get_number_inputs();
             total_genomes++;
+            harada_search_frequencies.push_back(g->search_frequency);
 
             for (std::string& node_type_str1 : possible_node_types) {
                 int32_t type_id = node_type_from_string(node_type_str1);
@@ -728,6 +772,19 @@ string IslandSpeciationStrategy::get_size_information_values() {
         info_value.append(std::to_string(total_number_inputs) + ",");
         info_value.append(std::to_string(total_genomes) + ",");
 
+        // Convert the array of harada_search_frequencies to a string representation
+        std::string harada_search_frequencies_string = "[";
+        for (size_t k = 0; k < harada_search_frequencies.size(); ++k) {
+            harada_search_frequencies_string += std::to_string(harada_search_frequencies[k]);
+            if (k < harada_search_frequencies.size() - 1) {
+                harada_search_frequencies_string += "; "; // Add comma between values
+            }
+        }
+        harada_search_frequencies_string += "]";
+
+        // Append this list to info_value string
+        info_value.append(harada_search_frequencies_string + ",");
+
         for (std::string& node_type_str : possible_node_types) {
             int32_t type_id = node_type_from_string(node_type_str);
             info_value.append(std::to_string(island_total_node_type_counts[type_id]) + ",");
@@ -754,6 +811,7 @@ string IslandSpeciationStrategy::get_size_information_values() {
         double best_best_mse = -1.0;
         double best_best_mae = -1.0;
         int32_t total_best_genomes = 1;
+        double island_global_best_genome_harada_search_frequencies = 1.0;
 
         std::unordered_map<int32_t, int32_t> best_total_node_type_counts;
         std::unordered_map<int32_t, int32_t> best_enabled_node_type_counts;
@@ -775,6 +833,7 @@ string IslandSpeciationStrategy::get_size_information_values() {
             best_number_inputs = best->get_number_inputs();
             best_best_mse = best->get_best_validation_mse();
             best_best_mae = best->get_best_validation_mae();
+            island_global_best_genome_harada_search_frequencies = best->search_frequency;
 
             for (std::string& node_type_str : possible_node_types) {
                 int32_t type_id = node_type_from_string(node_type_str);
@@ -801,6 +860,7 @@ string IslandSpeciationStrategy::get_size_information_values() {
         info_value.append(std::to_string(best_number_enabled_weights) + ",");
         info_value.append(std::to_string(best_number_inputs) + ",");
         info_value.append(std::to_string(total_best_genomes) + ",");
+        info_value.append(std::to_string(island_global_best_genome_harada_search_frequencies) + ",");
 
         for (std::string& node_type_str : possible_node_types) {
             int32_t type_id = node_type_from_string(node_type_str);
@@ -827,6 +887,7 @@ string IslandSpeciationStrategy::get_size_information_values() {
     int32_t global_total_enabled_weights = 0;
     int32_t global_total_inputs = 0;
     int32_t global_total_best_genomes = 1;
+    double global_best_genome_harada_search_frequencies = 1.0;
 
     std::unordered_map<int32_t, int32_t> global_total_node_type_counts;
     std::unordered_map<int32_t, int32_t> global_enabled_node_type_counts;
@@ -850,6 +911,7 @@ string IslandSpeciationStrategy::get_size_information_values() {
         global_total_weights = global_best->get_number_weights();
         global_total_enabled_weights = global_best->get_enabled_number_weights();
         global_total_inputs = global_best->get_number_inputs();
+        global_best_genome_harada_search_frequencies = global_best->search_frequency;
 
         for (std::string& node_type_str : possible_node_types) {
             int32_t type_id = node_type_from_string(node_type_str);
@@ -876,6 +938,7 @@ string IslandSpeciationStrategy::get_size_information_values() {
     info_value.append(std::to_string(global_total_enabled_weights) + ",");
     info_value.append(std::to_string(global_total_inputs) + ",");
     info_value.append(std::to_string(global_total_best_genomes) + ",");
+    info_value.append(std::to_string(global_best_genome_harada_search_frequencies) + ",");
 
     for (std::string& node_type_str : possible_node_types) {
         int32_t type_id = node_type_from_string(node_type_str);
@@ -910,6 +973,7 @@ string IslandSpeciationStrategy::get_best_genome_size_information_values() {
         double best_best_mse = -1.0;
         double best_best_mae = -1.0;
         int32_t total_best_genomes = 1;
+        double best_genome_harada_search_frequencies = 1.0;
 
         std::unordered_map<int32_t, int32_t> best_total_node_type_counts;
         std::unordered_map<int32_t, int32_t> best_enabled_node_type_counts;
@@ -932,6 +996,7 @@ string IslandSpeciationStrategy::get_best_genome_size_information_values() {
             best_number_inputs = best->get_number_inputs();
             best_best_mse = best->get_best_validation_mse();
             best_best_mae = best->get_best_validation_mae();
+            best_genome_harada_search_frequencies = best->search_frequency;
             for (std::string& node_type_str : possible_node_types) {
                 int32_t type_id = node_type_from_string(node_type_str);
                 best_total_node_type_counts[type_id] = best->get_node_count(type_id);
@@ -957,6 +1022,7 @@ string IslandSpeciationStrategy::get_best_genome_size_information_values() {
         info_value.append(std::to_string(best_number_enabled_weights) + ",");
         info_value.append(std::to_string(best_number_inputs) + ",");
         info_value.append(std::to_string(total_best_genomes) + ",");
+        info_value.append(std::to_string(best_genome_harada_search_frequencies) + ",");
         for (std::string& node_type_str : possible_node_types) {
             int32_t type_id = node_type_from_string(node_type_str);
             info_value.append(std::to_string(best_total_node_type_counts[type_id]) + ",");
@@ -986,6 +1052,7 @@ string IslandSpeciationStrategy::get_global_best_genome_size_information_values(
     int32_t number_of_enabled_weights = 0;
     int32_t number_of_inputs = 0;
     int32_t total_best_global_genomes = 1;
+    double best_genome_harada_search_frequencies = 1.0;
     double best_mse = -1;
     double best_mae = -1;
 
@@ -1011,6 +1078,7 @@ string IslandSpeciationStrategy::get_global_best_genome_size_information_values(
         number_of_inputs = best->get_number_inputs();
         best_mse = best->get_best_validation_mse();
         best_mae = best->get_best_validation_mae();
+        best_genome_harada_search_frequencies = best->search_frequency;
 
         for (std::string& node_type_str : possible_node_types) {
             int32_t type_id = node_type_from_string(node_type_str);
@@ -1037,6 +1105,7 @@ string IslandSpeciationStrategy::get_global_best_genome_size_information_values(
     info_value.append(std::to_string(number_of_enabled_weights) + ",");
     info_value.append(std::to_string(number_of_inputs) + ",");
     info_value.append(std::to_string(total_best_global_genomes) + ",");
+    info_value.append(std::to_string(best_genome_harada_search_frequencies) + ",");
 
     for (std::string& node_type_str : possible_node_types) {
         int32_t type_id = node_type_from_string(node_type_str);
@@ -1104,6 +1173,7 @@ string IslandSpeciationStrategy::generate_genome_size_values(RNN_Genome* g, int3
     int32_t total_number_enabled_weight = 0;
     int32_t total_number_inputs = 0;
     int32_t generation_id = -1;
+    double genome_harada_search_frequencies = 1.0;
     double best_mse = -1;
     double best_mae = -1;
     int32_t total_genomes = 0;
@@ -1126,6 +1196,7 @@ string IslandSpeciationStrategy::generate_genome_size_values(RNN_Genome* g, int3
     total_number_weight += g->get_number_weights();
     total_number_enabled_weight += g->get_enabled_number_weights();
     total_number_inputs += g->get_number_inputs();
+    genome_harada_search_frequencies = g->search_frequency;
     total_genomes++;
 
     for (std::string& node_type_str1 : possible_node_types) {
@@ -1152,6 +1223,7 @@ string IslandSpeciationStrategy::generate_genome_size_values(RNN_Genome* g, int3
     info_value.append(std::to_string(total_number_enabled_weight) + ",");
     info_value.append(std::to_string(total_number_inputs) + ",");
     info_value.append(std::to_string(total_genomes) + ",");
+    info_value.append(std::to_string(genome_harada_search_frequencies) + ",");
 
     for (std::string& node_type_str : possible_node_types) {
         int32_t type_id = node_type_from_string(node_type_str);
@@ -1179,6 +1251,7 @@ string IslandSpeciationStrategy::generate_genome_size_values(RNN_Genome* g, int3
     int32_t global_total_enabled_weights = 0;
     int32_t global_total_inputs = 0;
     int32_t global_total_best_genomes = 1;
+    double global_best_genome_harada_search_frequencies = 1.0;
 
     std::unordered_map<int32_t, int32_t> global_total_node_type_counts;
     std::unordered_map<int32_t, int32_t> global_enabled_node_type_counts;
@@ -1202,6 +1275,7 @@ string IslandSpeciationStrategy::generate_genome_size_values(RNN_Genome* g, int3
         global_total_weights = global_best->get_number_weights();
         global_total_enabled_weights = global_best->get_enabled_number_weights();
         global_total_inputs = global_best->get_number_inputs();
+        global_best_genome_harada_search_frequencies = global_best->search_frequency;
 
         for (std::string& node_type_str : possible_node_types) {
             int32_t type_id = node_type_from_string(node_type_str);
@@ -1228,6 +1302,7 @@ string IslandSpeciationStrategy::generate_genome_size_values(RNN_Genome* g, int3
     info_value.append(std::to_string(global_total_enabled_weights) + ",");
     info_value.append(std::to_string(global_total_inputs) + ",");
     info_value.append(std::to_string(global_total_best_genomes) + ",");
+    info_value.append(std::to_string(global_best_genome_harada_search_frequencies) + ",");
 
     for (std::string& node_type_str : possible_node_types) {
         int32_t type_id = node_type_from_string(node_type_str);

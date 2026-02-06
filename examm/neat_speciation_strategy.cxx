@@ -26,7 +26,7 @@ using std::string;
 NeatSpeciationStrategy::NeatSpeciationStrategy(
     double _mutation_rate, double _intra_island_crossover_rate, double _inter_island_crossover_rate,
     RNN_Genome* _seed_genome, double _species_threshold, double _fitness_threshold, double _neat_c1, double _neat_c2,
-    double _neat_c3, std::vector<std::string> possible_node_types
+    double _neat_c3, std::vector<std::string> possible_node_types, int32_t _is_harada_selection
 )
     : generation_species(0),
       species_count(0),
@@ -65,6 +65,8 @@ NeatSpeciationStrategy::NeatSpeciationStrategy(
 
     global_best_genome = NULL;
     this->possible_node_types = possible_node_types;
+
+    is_harada_selection = _is_harada_selection;
 }
 
 int32_t NeatSpeciationStrategy::get_generated_genomes() const {

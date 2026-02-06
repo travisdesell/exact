@@ -54,7 +54,7 @@ EXAMM::~EXAMM() {
 EXAMM::EXAMM(
     int32_t _island_size, int32_t _number_islands, int32_t _max_genomes, int32_t _max_wallclock_seconds, SpeciationStrategy* _speciation_strategy,
     WeightRules* _weight_rules, GenomeProperty* _genome_property, string _output_directory, string _save_genome_option, bool _generate_op_log, bool _generate_visualization_json,
-    int32_t _growth_phase_genomes, int32_t _reduction_phase_genomes, int32_t _genome_size_log
+    int32_t _growth_phase_genomes, int32_t _reduction_phase_genomes, int32_t _genome_size_log, int32_t _is_harada_selection, double _harada_selection_ratio
 )
     : island_size(_island_size),
       number_islands(_number_islands),
@@ -95,6 +95,9 @@ EXAMM::EXAMM(
     generate_log();
     generate_size_count();
     startClock = std::chrono::system_clock::now();
+
+    is_harada_selection = _is_harada_selection;
+    harada_selection_ratio = _harada_selection_ratio;
 }
 
 void EXAMM::print() {

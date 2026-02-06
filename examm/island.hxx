@@ -135,6 +135,9 @@ class Island {
      */
     void copy_random_genome(uniform_real_distribution<double>& rng_0_1, minstd_rand0& generator, RNN_Genome** genome);
 
+    void copy_random_genome_harada_selection(uniform_real_distribution<double>& rng_0_1, minstd_rand0& generator, RNN_Genome** genome,
+        double harada_selection_ratio);
+
     /**
      * Selects two different genomes from the island at random and returns copies of them.
      *
@@ -145,6 +148,10 @@ class Island {
      */
     void copy_two_random_genomes(
         uniform_real_distribution<double>& rng_0_1, minstd_rand0& generator, RNN_Genome** genome1, RNN_Genome** genome2
+    );
+
+    void copy_two_harada_genomes(
+    uniform_real_distribution<double>& rng_0_1, minstd_rand0& generator, RNN_Genome** genome1, RNN_Genome** genome2, double harada_selection_ratio
     );
 
     void do_population_check(int32_t line, int32_t initial_size);

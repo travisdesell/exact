@@ -345,6 +345,10 @@ log will be generated which will track enabled/disabled nodes, edges, rec edges,
 
 * `--reduction_phase_genomes` if this integer flag is > 0 and --growth_phase_genomes > 0, adds a reduction (shrink) phase each cycle. It sets how many consecutive genomes run with pruning favored (add_*/enable_* = 0, disable_*/merge_* = 1). Default 0 means no shrink phase.
 
+* `--is_harada_selection` If this integer flag is 1 (or > 0), the algorithm will use Harada's Frequency-based parent selection to reduce evaluation time bias.
+
+* `--harada_selection_ratio` This decimal (floating-point) value determines the percentage of the population used for the candidate pool. It should be between 0.0 and 1.0. The paper typically recommends values around 0.2 or 0.3 (20-30%).
+
 ## [Using Evolved Neural Networks for Inference](#using-evolved-neural-networks-for-inference)
 
 As discussed in the previous section, EXAMM will save the best found generated networks for its neuroevolution runs in binary `.bin` files. These are serialized so that their results are reproducible from the neuroevolution run.  Please note that, networks generated from JSONs may not provide the exact same results due to conversion from double precision weights to text and back. There is one file in particular that is useful for utilizing these evolved neural networks and genetic programs:

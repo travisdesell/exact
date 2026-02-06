@@ -22,6 +22,10 @@ mpirun -np 4 ./mpi/examm_mpi \
 --time_offset 1 \
 --input_parameter_names $INPUT_PARAMETERS \
 --output_parameter_names $OUTPUT_PARAMETERS \
+--generate_op_log 1 \
+--genome_size_log 1 \
+--is_harada_selection 1 \
+--harada_selection_ratio 0.5 \
 --number_islands 10 \
 --island_size 10 \
 --max_genomes 2000 \

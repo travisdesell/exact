@@ -47,11 +47,13 @@ class NeatSpeciationStrategy : public SpeciationStrategy {
     // possible node type values for NN size logs
     std::vector<std::string> possible_node_types;
 
+    int32_t is_harada_selection;
+
    public:
     NeatSpeciationStrategy(
         double _mutation_rate, double _intra_island_crossover_rate, double _inter_island_crossover_rate,
         RNN_Genome* _seed_genome, double _species_threshold, double _fitness_threshold, double _neat_c1,
-        double _neat_c2, double _neat_c3, std::vector<std::string> possible_node_types
+        double _neat_c2, double _neat_c3, std::vector<std::string> possible_node_types, int32_t is_harada_selection
     );
     /**
      * \return the number of generated genomes.
