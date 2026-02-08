@@ -24,13 +24,13 @@ from scipy.optimize import minimize
 @TradModelLibrary.register()
 class Naive_MVP:
     @staticmethod
-    def calculate_weights(cov: pd.DataFrame | np.ndarray) -> np.array:
+    def calculate_weights(cov: pd.DataFrame | np.ndarray) -> np.ndarray:
         """
         Naive Implmentation of Minimum Variance Portfolio
 
         @param cov (pd.DataFrame | np.array) Covariance matrix of the returns
         
-        @return np.array Weights of the portfolio
+        @return np.ndarray Weights of the portfolio
         """
         cov = np.array(cov)
         n = cov.shape[0]
