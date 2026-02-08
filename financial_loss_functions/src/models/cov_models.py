@@ -6,6 +6,7 @@ from scipy.optimize import minimize
 from typing import Optional, Tuple, List
 from scipy.cluster.hierarchy import linkage
 from scipy.spatial.distance import squareform
+from src.models.registry import TradModelLibrary
 
 # Try cvxopt; fallback to scipy
 try:
@@ -20,30 +21,33 @@ from scipy.optimize import minimize
 
 # ---------- Naive Minimum Variance Portfolio ---------- #
 # Uses vectors of zeros for q_vec (expected returns)
-def naive_mvp(cov: pd.DataFrame|np.ndarray) -> np.array:
-    """
-    Naive Implmentation of Minimum Variance Portfolio
+@TradModelLibrary.register()
+class Naive_MVP:
+    @staticmethod
+    def calculate_weights(cov: pd.DataFrame | np.ndarray) -> np.array:
+        """
+        Naive Implmentation of Minimum Variance Portfolio
 
-    @param cov (pd.DataFrame | np.array) Covariance matrix of the returns
-    
-    @return np.array Weights of the portfolio
-    """
-    cov = np.array(cov)
-    n = cov.shape[0]
+        @param cov (pd.DataFrame | np.array) Covariance matrix of the returns
+        
+        @return np.array Weights of the portfolio
+        """
+        cov = np.array(cov)
+        n = cov.shape[0]
 
-    S = opt.matrix(cov)
-    q = opt.matrix(np.zeros(n))  # no expected returns, pure variance minimization
+        S = opt.matrix(cov)
+        q = opt.matrix(np.zeros(n))  # no expected returns, pure variance minimization
 
-    # Constraints: weights >= 0 and sum(weights) = 1
-    G = -opt.matrix(np.eye(n))           # -I * x <= 0  ⟹ x >= 0
-    h = opt.matrix(0.0, (n,1))
-    A = opt.matrix(1.0, (1,n))           # sum weights = 1
-    b = opt.matrix(1.0)
+        # Constraints: weights >= 0 and sum(weights) = 1
+        G = -opt.matrix(np.eye(n))           # -I * x <= 0  ⟹ x >= 0
+        h = opt.matrix(0.0, (n,1))
+        A = opt.matrix(1.0, (1,n))           # sum weights = 1
+        b = opt.matrix(1.0)
 
-    solvers.options['show_progress'] = False
-    sol = solvers.qp(S, q, G, h, A, b)
+        solvers.options['show_progress'] = False
+        sol = solvers.qp(S, q, G, h, A, b)
 
-    return np.array(sol['x']).flatten()
+        return np.array(sol['x']).flatten()
 
 
 # ---------- Base Quadratic Optimizer ---------- #
@@ -535,6 +539,7 @@ class MeanVariancePortfolio(BaseQuadraticOptimizer):
 
 
 # ---------- Hierarchial Risk Parity Clustering ---------- #
+@TradModelLibrary.register()
 class HierarchialRiskParity:
     """
     Implementation of Hierarchial Risk Parity Clustering

@@ -4,16 +4,15 @@ from src.utils import create_directory
 from src.data_processing.dataset import Reshaper
 from src.data_processing.dataset import WindowDataset
 from src.data_processing.loading import load_csv_files
-from src.data_processing.dataset import DatasetSampler
-from src.data_processing.preprocess import build_dataset
 from src.training.train import (
     Evaluator,
-    CandidatesGrid
+    CandidatesGrid,
+    TradModelsTrainer
 )
 
 # Model and Loss Libraries
-from src.models.registry import ModelLibrary
 from src.training.loss_functions import LossLibrary
+from src.models.registry import NNModelLibrary, TradModelLibrary
 
 def run_training_pipeline(
         paths_config: Dict,
@@ -39,6 +38,7 @@ def run_training_pipeline(
     plots_dir = (Path(paths_config['artifacts']['plots']))
     create_directory(plots_dir)
     results_dir = Path(paths_config['artifacts']['results'])
+    models_module = paths_config['models_module']
     
     # -------------------- Loading Processed Data -------------------- #
     processed_files = {
@@ -57,21 +57,7 @@ def run_training_pipeline(
 
     print('Train shape:', train_data.shape)
     print('Val shape:', val_data.shape)
-
-    trad_sampler = DatasetSampler(
-        hparams_config['rolling_windows']['in_size'],
-        hparams_config['rolling_windows']['out_size'],
-        hparams_config['rolling_windows']['stride']
-    )
-    in_sample_indexes, out_sample_indexes = trad_sampler.calc_in_out_idx(returns_val)
-    returns_in, returns_oos = build_dataset(in_sample_indexes[0], out_sample_indexes[0], returns_train, returns_val)
     
-    
-    
-    
-    
-    
-    exit() #### ONLY FOR TESTING. REMOVE LATER
     # -------------------- Preprocessing (Reshaping) -------------------- #
     reshaper = Reshaper(
         hparams_config['rolling_windows']['in_size'],
@@ -91,9 +77,22 @@ def run_training_pipeline(
     print('X_val shape', X_val.shape)
     print('y_val shape:', y_val.shape)
 
-    # -------------------- Training Models -------------------- #
-    # Registering all models to the library
-    ModelLibrary.autodiscover('src.models') # MUST be executed for model registration
+    # -------------------- Training Tradional Models -------------------- #
+    # Registering all Traditional models to the library
+    TradModelLibrary.autodiscover(models_module)
+
+    trad_grid = TradModelsTrainer(
+        TradModelLibrary.items(),
+        hparams_config['rolling_windows']['in_size'],
+        hparams_config['rolling_windows']['out_size'],
+        hparams_config['rolling_windows']['stride']
+    )
+    trad_alloc_weights = trad_grid.train_all(returns_train, returns_val)
+    print(trad_alloc_weights)
+
+    # -------------------- Training Neural Network Models -------------------- #
+    # Registering all NN models to the library
+    NNModelLibrary.autodiscover(models_module) # MUST be executed for model registration
     # No auto discovery needed for Loss library as all functions are in one file
     
     # Converting to pytorch tensors
@@ -104,25 +103,25 @@ def run_training_pipeline(
     evaluator = Evaluator(y_val)
 
     candidates_grid = CandidatesGrid(
-        model_lib = ModelLibrary.items(),
+        model_lib = NNModelLibrary.items(),
         loss_lib = LossLibrary.items(),
         hparams_config = hparams_config,
         results_dir = results_dir,
         loss_mode = loss_mode
     )
     if grid_mode == 'all':
-        all_alloc_weights = candidates_grid.train_eval_grid(train_ds, val_ds)
+        nn_alloc_weights = candidates_grid.train_eval_grid(train_ds, val_ds)
     elif grid_mode == 'one_model' and model is not None:
-        all_alloc_weights = candidates_grid.train_eval_one_model(
+        nn_alloc_weights = candidates_grid.train_eval_one_model(
             model, train_ds, val_ds
         )
     elif grid_mode == 'one_loss' and loss is not None:
-        all_alloc_weights = candidates_grid.train_eval_one_loss(loss, train_ds, val_ds)
+        nn_alloc_weights = candidates_grid.train_eval_one_loss(loss, train_ds, val_ds)
     else:
         raise RuntimeError('Incorrect mode arguments while running at entry point.')
 
     # Calculate returns of all predicted portfolio allocation weights
-    for loss_name, models_dict in all_alloc_weights.items():
+    for loss_name, models_dict in nn_alloc_weights.items():
         for model_name, alloc_weights in models_dict.items():
             evaluator.calc_pf_daily_rets(alloc_weights, f'{model_name}-{loss_name}')
     
@@ -146,7 +145,6 @@ def run_training_pipeline(
     #### TODO: 
     # 1. Implement a combination loss
     # 2. Add Unexpected error handling to all scripts
-    # 3. Implement addition of tradional models
 
 
 # #### FOR TESTING & REFACTORING ####

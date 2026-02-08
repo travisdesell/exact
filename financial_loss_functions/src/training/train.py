@@ -3,6 +3,7 @@ import os
 import time
 import torch
 import psutil
+import inspect
 import numpy as np
 import pandas as pd
 from pathlib import Path
@@ -11,6 +12,8 @@ from torch.utils.data import DataLoader
 # from src.data_processing.dataset import Reshaper
 from typing import List, Dict, Callable, Type, Any
 from src.data_processing.dataset import WindowDataset
+from src.data_processing.dataset import DatasetSampler
+from src.data_processing.preprocess import preprocessor2
 
 if torch.mps.is_available():
     DEVICE = 'mps'
@@ -279,7 +282,7 @@ class Evaluator:
         self.all_daily_returns = {} # Add all returns for every window
 
     @staticmethod
-    def _equal_weight_pf(num_tickers: int) -> np.array:
+    def _equal_weight_pf(num_tickers: int) -> np.ndarray:
         """
         Calculates simple equal weights for a portfolio
         weight for each stock = 1/num_tickers
@@ -291,13 +294,13 @@ class Evaluator:
         return np.full((num_tickers), 1/num_tickers)
 
     @staticmethod
-    def _cumulative_return(returns_arr: np.array) -> np.float64:
+    def _cumulative_return(returns_arr: np.ndarray) -> np.float64:
         """Calculate cummulative returns for given window"""
         return np.prod(1 + returns_arr) - 1
     
     @staticmethod
     def _basic_sharpe(
-            returns_arr: np.array, risk_free_rate: float = 0.0
+            returns_arr: np.ndarray, risk_free_rate: float = 0.0
         ) -> np.float64:
         """
         Calculates non-annualized sharpe for given window.
@@ -482,7 +485,7 @@ class CandidatesGrid:
     def _train_eval_helper(
             self,
             model_name: str,
-            model_obj: Type,
+            model_class: Type,
             loss_name: str,
             loss_func: Callable,
             train_ds: WindowDataset,
@@ -497,7 +500,7 @@ class CandidatesGrid:
             self._memory_diagnostics()
 
         trainer = Trainer(
-            model=model_obj,
+            model=model_class,
             optimizer=torch.optim.AdamW,
             loss=loss_func,
             model_hparams=self.hparams_config[model_name]['model'],
@@ -548,10 +551,22 @@ class CandidatesGrid:
         if trainer_count > 0:
             print(f"  WARNING: {trainer_count} Trainer instances still in memory!")
 
+    def _trained_check(self):
+        """
+        Check if training has been run before. 
+        New instance of the class must be created for every training grid.
+        """
+        if len(self.all_alloc_weights) != 0:
+            raise RuntimeError(
+                'Allocation weights already predicted. Create new instance of this class.'
+            )
+
     def train_eval_grid(
             self, train_ds: WindowDataset, val_ds: WindowDataset
-        ):
+        ) -> Dict[str, Dict[str, np.ndarray]]:
         """Loops over Loss functions first with a nested loop for models"""
+        self._trained_check()
+
         X_train_shape, y_train_shape = train_ds.get_X_y_shapes()
         
         # Grid with custom loss functions
@@ -565,13 +580,13 @@ class CandidatesGrid:
 
                 for category, models_dict in self.model_lib.items():
                     # Loop over models
-                    for model_name, model_obj in models_dict.items():
+                    for model_name, model_class in models_dict.items():
                         print('\n', '-'*10, f' Training {model_name} with {loss_name} ', '-'*10)
                         try: 
                             
                             alloc_weights = self._train_eval_helper(
                                 model_name,
-                                model_obj, 
+                                model_class, 
                                 loss_name,
                                 loss_func,
                                 train_ds,
@@ -604,7 +619,7 @@ class CandidatesGrid:
                 
                 for category, models_dict in self.model_lib.items():
                     # Loop over models
-                    for model_name, model_obj in models_dict.items():
+                    for model_name, model_class in models_dict.items():
                         print('\n', '-'*10, f' Training {model_name} with {loss_name} ', '-'*10)
                         
                         
@@ -612,7 +627,7 @@ class CandidatesGrid:
                             
                             alloc_weights = self._train_eval_helper(
                                 model_name,
-                                model_obj, 
+                                model_class, 
                                 loss_name,
                                 loss_func,
                                 train_ds,
@@ -640,15 +655,13 @@ class CandidatesGrid:
 
     def train_eval_one_model(
             self, model_name: str, train_ds: WindowDataset, val_ds: WindowDataset
-        ):
+        ) -> Dict[str, Dict[str, np.ndarray]]:
 
-        if len(self.all_alloc_weights) != 0:
-            print(self.all_alloc_weights)
-            raise RuntimeError('Allocation weights already predicted. Create new instance of this class.')
+        self._trained_check()
         
         # Search for model
-        model_obj = self._search_model(model_name)
-        if not model_obj: # model not found
+        model_class = self._search_model(model_name)
+        if not model_class: # model not found
             raise RuntimeError(f'{model_name} MODEL NOT FOUND IN LIBRARY!')
         
         X_train_shape, y_train_shape = train_ds.get_X_y_shapes()
@@ -666,7 +679,7 @@ class CandidatesGrid:
                 try:        
                     alloc_weights = self._train_eval_helper(
                         model_name,
-                        model_obj, 
+                        model_class, 
                         loss_name,
                         loss_func,
                         train_ds,
@@ -700,7 +713,7 @@ class CandidatesGrid:
                 try:        
                     alloc_weights = self._train_eval_helper(
                         model_name,
-                        model_obj, 
+                        model_class, 
                         loss_name,
                         loss_func,
                         train_ds,
@@ -723,8 +736,7 @@ class CandidatesGrid:
         """Search for required loss function"""
         for _, cat_dict in self.loss_lib.items():
             for _, sub_cat_dict in cat_dict.items():
-                if loss_name in sub_cat_dict:
-                    return sub_cat_dict[loss_name]
+                return sub_cat_dict.get(loss_name)
         
         # objectives = self.loss_lib['objectives']['__default__']
         # if loss_name in objectives:
@@ -738,11 +750,9 @@ class CandidatesGrid:
 
     def train_eval_one_loss(
             self, loss_name: str, train_ds: WindowDataset, val_ds: WindowDataset
-        ):
-        if len(self.all_alloc_weights) != 0:
-            raise RuntimeError(
-                'Allocation weights already predicted. Create new instance of this class.'
-            )
+        ) -> Dict[str, Dict[str, np.ndarray]]:
+        
+        self._trained_check()
     
         loss_func = self._search_loss_func(loss_name)
         
@@ -755,13 +765,13 @@ class CandidatesGrid:
         
         for category, models_dict in self.model_lib.items():
             # Loop over models
-            for model_name, model_obj in models_dict.items():
+            for model_name, model_class in models_dict.items():
                 print('\n', '-'*10, f' Training {model_name} with {loss_name} ', '-'*10)
                 try: 
                     
                     alloc_weights = self._train_eval_helper(
                         model_name,
-                        model_obj, 
+                        model_class, 
                         loss_name,
                         loss_func,
                         train_ds,
@@ -778,4 +788,100 @@ class CandidatesGrid:
                     )
                     continue
 
+        return self.all_alloc_weights
+
+
+class TradModelsTrainer:
+    def __init__(
+            self, model_lib: Dict[str, Type], in_size: int, out_size: int, stride: int
+        ):
+        self.model_lib = model_lib
+        self._sampler = DatasetSampler(in_size, out_size, stride)
+
+        self.all_alloc_weights: Dict[str, List[pd.Series | np.ndarray]] = {}
+
+    def _train_one_model(self, model_class: Type, filtered_kwargs: Dict) -> pd.Series:
+        model_obj = model_class() # Any hparams can be passed here from config/hparams.json, later
+        alloc_weights = model_obj.calculate_weights(**filtered_kwargs)
+        return alloc_weights
+    
+    def _process_train_1_ds(self, returns_is: pd.DataFrame):
+        """
+        Preprocess one dataset slice, train all models on it and collect all allocation weights
+        """
+        returns_is_cov, returns_is_corr = preprocessor2(returns_is)
+        payload = {
+            'cov': returns_is_cov,
+            'corr': returns_is_corr,
+            'returns': returns_is
+        }
+
+        for model_name, model_class in self.model_lib.items():
+            
+            print('\n', '-'*10, f' Training {model_name} ', '-'*10)
+            
+            self.all_alloc_weights.setdefault(model_name, [])
+
+            sig = inspect.signature(model_class.calculate_weights)
+            # required_params = sig.parameters.keys()
+
+            filtered_kwargs = {
+                k: v for k, v in payload.items() 
+                if k in sig.parameters
+            }
+
+            if len(filtered_kwargs) == 0:
+                raise ValueError(f'Required parameters for {model_name} do not exist in payload.')
+            try:
+                alloc_weights = self._train_one_model(model_class, filtered_kwargs)
+
+                self.all_alloc_weights[model_name].append(alloc_weights)
+
+            except Exception as error:
+                print(
+                    f'DEBUG: Error while training {model_name}. Skipping.',
+                    error
+                )
+                continue
+
+    def train_all(
+            self,
+            returns_train: pd.DataFrame,
+            returns_val: pd.DataFrame,
+            returns_test: pd.DataFrame | None = None
+        ) -> Dict[str, List[pd.Series | np.ndarray]]:
+
+        if returns_test is None: # To use Validation Set (Combines Train + in-sample Val)
+            in_sample_indexes, out_sample_indexes = self._sampler.calc_in_out_idx(
+                returns_val
+            ) # Calculate indexes for in-sample and out-of-sample to match the neural networks
+
+            # Loop over dataset slices
+            for i in range(len(in_sample_indexes)): # len(in-sample) = len(out-of-sample)
+                returns_is, returns_oos = self._sampler.build_dataset(
+                    in_sample_indexes[i],
+                    out_sample_indexes[i],
+                    returns_train,
+                    returns_val
+                )
+                
+                print(f'\nTraining all models on {i+1} of data...')
+                
+                self._process_train_1_ds(returns_is)     
+        
+        else: # To use Test Set (Combines Train + Val + in-sample Test)
+            in_sample_indexes, out_sample_indexes = self._sampler.calc_in_out_idx(
+                returns_test
+            )
+            for i in range(len(in_sample_indexes)): 
+                returns_is, returns_oos = self._sampler.build_dataset(
+                    in_sample_indexes[i],
+                    out_sample_indexes[i],
+                    returns_train,
+                    returns_val,
+                    returns_test
+                )
+
+                self._process_train_1_ds(returns_is)
+        
         return self.all_alloc_weights

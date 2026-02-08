@@ -25,5 +25,6 @@
         "artifacts_dir": "artifacts/",
         "results": "artifacts/results/",
         "plots": "artifacts/results/plots/"
-    }
+    },
+    "models_module": "src.models"
 }
