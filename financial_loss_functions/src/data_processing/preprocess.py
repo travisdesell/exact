@@ -170,25 +170,6 @@ def get_only_returns(
     ret_test.columns = [col.replace(return_suffix, '') for col in return_cols]
 
     return ret_train, ret_val, ret_test
-        
-def cov_preprocessor(
-        train: pd.DataFrame, val: pd.DataFrame
-    ) -> Tuple[pd.DataFrame, pd.DataFrame]:
-    """
-    Combines train and Validation returns data, then calculates
-    covariance and correlation matrices
-
-    @param train pd.DataFrame Training split data, only returns
-    @param val pd.DataFrame Validation split data, only returns
-
-    @return Tuple[pd.DataFrame, pd.DataFrame] covariance and correlation matrices
-    """
-    train = pd.concat([train, val], axis=0)
-
-    cov_train = train.cov()
-    corr_train = train.corr()
-
-    return cov_train, corr_train
     
 class Preprocessor:
     def __init__(
@@ -412,3 +393,20 @@ class Preprocessor:
             split_data = self._broadcast_common(split_data, self.common_features)
 
         return split_data
+
+def preprocessor2(
+        returns_is: pd.DataFrame
+    ) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    """
+    Calculates covariance and correlation matrices for returns data
+
+    @param train pd.DataFrame Training split data, only returns
+    @param val pd.DataFrame Validation split data, only returns
+
+    @return Tuple[pd.DataFrame, pd.DataFrame] covariance and correlation matrices
+    """
+
+    returns_is_cov = returns_is.cov()
+    returns_is_corr = returns_is.corr()
+
+    return returns_is_cov, returns_is_corr

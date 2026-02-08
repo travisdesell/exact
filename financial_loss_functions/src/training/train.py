@@ -5,7 +5,6 @@ import torch
 import psutil
 import numpy as np
 import pandas as pd
-from torch import optim
 from pathlib import Path
 import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader
@@ -499,7 +498,7 @@ class CandidatesGrid:
 
         trainer = Trainer(
             model=model_obj,
-            optimizer=optim.AdamW,
+            optimizer=torch.optim.AdamW,
             loss=loss_func,
             model_hparams=self.hparams_config[model_name]['model'],
             optimizer_hparams=self.hparams_config[model_name]['optimizer'],

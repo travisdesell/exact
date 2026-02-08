@@ -4,6 +4,8 @@ from src.utils import create_directory
 from src.data_processing.dataset import Reshaper
 from src.data_processing.dataset import WindowDataset
 from src.data_processing.loading import load_csv_files
+from src.data_processing.dataset import DatasetSampler
+from src.data_processing.preprocess import build_dataset
 from src.training.train import (
     Evaluator,
     CandidatesGrid
@@ -56,6 +58,20 @@ def run_training_pipeline(
     print('Train shape:', train_data.shape)
     print('Val shape:', val_data.shape)
 
+    trad_sampler = DatasetSampler(
+        hparams_config['rolling_windows']['in_size'],
+        hparams_config['rolling_windows']['out_size'],
+        hparams_config['rolling_windows']['stride']
+    )
+    in_sample_indexes, out_sample_indexes = trad_sampler.calc_in_out_idx(returns_val)
+    returns_in, returns_oos = build_dataset(in_sample_indexes[0], out_sample_indexes[0], returns_train, returns_val)
+    
+    
+    
+    
+    
+    
+    exit() #### ONLY FOR TESTING. REMOVE LATER
     # -------------------- Preprocessing (Reshaping) -------------------- #
     reshaper = Reshaper(
         hparams_config['rolling_windows']['in_size'],
@@ -131,3 +147,46 @@ def run_training_pipeline(
     # 1. Implement a combination loss
     # 2. Add Unexpected error handling to all scripts
     # 3. Implement addition of tradional models
+
+
+# #### FOR TESTING & REFACTORING ####
+#     from src.training.train import Trainer
+#     from src.models.lstm import BaseLSTM
+#     from torch import optim
+#     from src.training.loss_functions import differentiable_sharpe_loss
+#     from src.training.train import train_val_losses_plot
+#     #### BaseLSTM ####
+#     model1_name = 'BaseLSTM'
+#     print('\n', '-'*10, f' Training {model1_name} ', '-'*10)
+#     try:
+#         trainer = Trainer(
+#             model=BaseLSTM,
+#             optimizer=optim.AdamW,
+#             loss=differentiable_sharpe_loss,
+#             model_hparams=hparams_config[model1_name]['model'],
+#             optimizer_hparams=hparams_config[model1_name]['optimizer'],
+#             train_hparams=hparams_config[model1_name]['train'],
+#             in_size=X_train.shape[2],
+#             num_stocks=y_train.shape[2]
+#         )
+
+#         trainer.train(train_ds)
+#         trainer.evaluate(val_ds)
+
+#         # Plot loss curves
+#         train_val_losses_plot(
+#             trainer.train_losses,
+#             trainer.val_losses,
+#             model1_name + ' Loss Curves',
+#             Path(paths_config['artifacts']['plots']) /
+#             (model1_name + ' Loss Curves' + '.png')
+#         )
+
+#         alloc_weights = trainer.get_val_alloc_weights()
+
+#         # Call on every models output allocation weights to caluclated weighted returns
+#         # Add daily returns for BaseLSTM generated weights
+#         # evaluator.calc_pf_daily_rets(alloc_weights, model1_name)
+    
+#     except Exception as error:
+#         print(f'DEBUG: Error while training {model1_name}. Skipping.', error)

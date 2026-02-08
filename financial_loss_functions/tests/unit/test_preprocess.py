@@ -6,7 +6,7 @@ from numpy.testing import assert_allclose
 from src.data_processing.preprocess import (
     MacroCombiner,
     clean_inplace,
-    cov_preprocessor,
+    preprocessor2,
     get_only_returns,
     Preprocessor
 )
@@ -152,18 +152,11 @@ def test_get_only_data_returns():
 # ---------- Cov Preprocessor tests ---------- #
 def test_cov_preprocessor():
     train = pd.DataFrame({
-        'RET1': [0.1, 0.2, 0.3],
-        'RET2': [0.2, 0.1, 0.0]
+        'RET1': [0.1, 0.2, 0.3, 0.4, 0.5, 0.3],
+        'RET2': [0.2, 0.1, 0.0, 0.2, 0.1, 0.0]
     })
 
-    val = pd.DataFrame({
-        'RET1': [0.4, 0.5, 0.3],
-        'RET2': [0.2, 0.1, 0.0]
-    })
-
-    data = pd.concat([train, val], axis=0)
-
-    cov, corr = cov_preprocessor(train, val)
+    cov, corr = preprocessor2(train)
 
     # Check that returned objects are DataFrames
     assert isinstance(cov, pd.DataFrame)
@@ -174,7 +167,7 @@ def test_cov_preprocessor():
     assert corr.shape == (2,2)
 
     # Check that covariance is correct
-    expected_cov = data.cov()
+    expected_cov = train.cov()
     pd.testing.assert_frame_equal(cov, expected_cov)
 
 # ---------- NN Preprocessor ---------- #
