@@ -96,6 +96,9 @@ def run_training_pipeline(
     )
 
     # -------------------- Training Tradional Models -------------------- #
+    # Initializing once to compare all models together
+    evaluator = Evaluator(y_val)
+
     # Registering all Traditional models to the library
     TradModelLibrary.autodiscover(models_module)
 
@@ -106,7 +109,11 @@ def run_training_pipeline(
         hparams_config['rolling_windows']['stride']
     )
     trad_alloc_weights = trad_grid.train_all(returns_train, returns_val)
-    print(trad_alloc_weights)
+
+    for model_name, alloc_weights in trad_alloc_weights.items():
+        evaluator.calc_pf_daily_rets(alloc_weights, model_name)
+    
+    del trad_grid
 
     # -------------------- Training Neural Network Models -------------------- #
     # Registering all NN models to the library
@@ -116,9 +123,6 @@ def run_training_pipeline(
     # Converting to pytorch tensors
     train_ds = WindowDataset(X_train, y_train)
     val_ds   = WindowDataset(X_val, y_val)
-
-    # Initializing once to compare all models together
-    evaluator = Evaluator(y_val)
 
     candidates_grid = CandidatesGrid(
         model_lib = NNModelLibrary.items(),

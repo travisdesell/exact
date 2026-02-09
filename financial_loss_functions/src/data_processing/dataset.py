@@ -301,4 +301,5 @@ class DatasetSampler:
         else:
             raise ValueError('Incorrect type for test returns.')
 
-        return returns_is, returns_oos
+        # Sorting in alphabetical order
+        return returns_is.sort_index(axis=1), returns_oos.sort_index(axis=1)

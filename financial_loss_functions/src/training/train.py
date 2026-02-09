@@ -275,7 +275,6 @@ class Evaluator:
         self.eval_returns = eval_returns
 
         # Different Weights
-        self.eval_weights = None
         self.eq_weights = None
         
         # Returns for each window
@@ -325,13 +324,12 @@ class Evaluator:
         @param model_name str
             Name of the model which generated the portfolio allocation weights
         """
-        self.eval_weights = eval_weights
         
         pf_daily_returns = []
         
         # Iterating over window samples
-        for i in range(self.eval_weights.shape[0]):
-            weights = self.eval_weights[i]  # Shape: (50,)
+        for i in range(eval_weights.shape[0]):
+            weights = eval_weights[i]  # Shape: (50,)
             returns = self.eval_returns[i]  # Shape: (50, 50) - time steps x assets
             
             # Calculate daily portfolio returns (dot product at each time step)
@@ -835,7 +833,10 @@ class TradModelsTrainer:
             try:
                 alloc_weights = self._train_one_model(model_class, filtered_kwargs)
 
-                self.all_alloc_weights[model_name].append(alloc_weights)
+                if isinstance(alloc_weights, pd.Series):
+                    self.all_alloc_weights[model_name].append(alloc_weights.to_numpy())
+                else:
+                    self.all_alloc_weights[model_name].append(alloc_weights)
 
             except Exception as error:
                 print(
@@ -843,7 +844,13 @@ class TradModelsTrainer:
                     error
                 )
                 continue
-
+    
+    def _stack_weights(self):
+        self.all_alloc_weights = {
+            name: np.vstack(weights) 
+            for name, weights in self.all_alloc_weights.items()
+        }
+    
     def train_all(
             self,
             returns_train: pd.DataFrame,
@@ -865,7 +872,7 @@ class TradModelsTrainer:
                     returns_val
                 )
                 
-                print(f'\nTraining all models on {i+1} of data...')
+                print(f'\nTraining all models on slice {i+1} of the data...')
                 
                 self._process_train_1_ds(returns_is)     
         
@@ -883,5 +890,5 @@ class TradModelsTrainer:
                 )
 
                 self._process_train_1_ds(returns_is)
-        
+        self._stack_weights()
         return self.all_alloc_weights
