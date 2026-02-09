@@ -69,6 +69,11 @@ python -m scripts.run_processing
 python -m scripts.run_training
 ```
 
+### 4. Run feature selection analysis
+```bash
+python -m scripts.run_feature_selection --crsp-dir 2023_sp_500_select_50
+```
+
 ### Run tests
 ```bash
 pytest tests
