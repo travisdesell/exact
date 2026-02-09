@@ -158,7 +158,9 @@ def run_training_pipeline(
     )
 
     total_returns = evaluator.calc_total_performance('returns')
+    total_returns.to_csv(results_dir / 'total_returns.csv', sep=',')
     total_sharpes = evaluator.calc_total_performance('sharpe')
+    total_sharpes.to_csv(results_dir / 'total_sharpes.csv', sep=',')
 
     print('\n', '-'*10, ' Portfolio Perfomance Metrics ', '-'*10)
     print('\n', 'Compounded returns for each window:\n', total_returns)
@@ -166,7 +168,6 @@ def run_training_pipeline(
 
     #### TODO: 
     # 1. Implement a combination loss
-    # 2. Add Unexpected error handling to all scripts
 
 
 # #### FOR TESTING & REFACTORING ####

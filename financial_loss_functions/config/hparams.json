@@ -18,7 +18,7 @@
             "train_batch_size": 256,
             "val_batch_size": 1,
             "clip_grad_norm": 0.5,
-            "epochs": 10
+            "epochs": 100
         }
     },
     "AttentionLSTM": {
@@ -35,7 +35,7 @@
             "train_batch_size": 256,
             "val_batch_size": 1,
             "clip_grad_norm": 0.5,
-            "epochs": 10
+            "epochs": 100
         }
     }
 }
