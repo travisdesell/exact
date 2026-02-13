@@ -1,6 +1,5 @@
 import time
 import pandas as pd
-from typing import Dict
 from fredapi import Fred
 
 
@@ -12,7 +11,7 @@ class FredAPI:
     def __init__(
             self, api_key: str,
             category_name: str,
-            required_series: Dict[str, str]
+            required_series: dict[str, str]
         ):
         """
         Initialize object to pull macro-economic data for a specific category from Fred API

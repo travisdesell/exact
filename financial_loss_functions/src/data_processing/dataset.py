@@ -2,7 +2,6 @@ import torch
 import numpy as np
 import pandas as pd
 from enum import StrEnum
-from typing import Tuple, List, Dict
 from torch.utils.data import Dataset
 
 class ReshapeStyle(StrEnum):
@@ -57,7 +56,7 @@ class Reshaper:
         self.features = [] # All features
         self.cols_per_ticker = [] # All features for all tickers
     
-    def _split_col(self, col: str) -> Tuple[str, str]:
+    def _split_col(self, col: str) -> tuple[str, str]:
         """Split column into (ticker, feature) using first underscore only."""
         parts = col.split(self.col_sep, 1)
         if len(parts) != 2:
@@ -143,14 +142,14 @@ class Reshaper:
 
     def reshape(
             self, features_data: pd.DataFrame, raw_returns: pd.DataFrame
-        ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+        ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         """
         Reshapes 2D DataFrame into set `layout` at initialization.
 
         @param features_data pd.DataFrame Dataframe containg all processed features
         @param raw_returns pd.DataFrame Dataframe containing only raw returns
         
-        @return Tuple[np.ndarray, np.ndarray, np.ndarray] 
+        @return tuple[np.ndarray, np.ndarray, np.ndarray] 
             Reshaped X and y, Array of good starting points of each window. Helpful for debugging
         """
         
@@ -187,14 +186,14 @@ class Reshaper:
         y = np.stack(y_list)
         return X, y, np.array(good_starts)
 
-    def get_tickers(self) -> List:
+    def get_tickers(self) -> list:
         if len(self.tickers) == 0:
             print('Run `extract_features` on training data first.')
             return None
         else:
             return self.tickers
     
-    def get_features(self) -> List:
+    def get_features(self) -> list:
         if len(self.features) == 0:
             print('Run `extract_features` on training data first.')
             return None
@@ -212,11 +211,11 @@ class WindowDataset(Dataset):
         self.X = torch.tensor(X, dtype=torch.float32)
         self.y = torch.tensor(y, dtype=torch.float32)
 
-    def get_X_y_shapes(self) -> Tuple[torch.Size, torch.Size]:
+    def get_X_y_shapes(self) -> tuple[torch.Size, torch.Size]:
         """
         returns X and y shapes
 
-        @return Tuple[torch.Size, torch.Size] Shape of X and shape of y
+        @return tuple[torch.Size, torch.Size] Shape of X and shape of y
         """
         return self.X.shape, self.y.shape
 
@@ -228,12 +227,12 @@ class WindowDataset(Dataset):
         """
         return self.X.shape[0]
 
-    def __getitem__(self, idx: int) -> Tuple[torch.tensor, torch.tensor]:
+    def __getitem__(self, idx: int) -> tuple[torch.tensor, torch.tensor]:
         """
         Get one window from the dataset.
 
         @param idx int Index of require window in the windowed dataset
-        @return Tuple[torch.tensor, torch.tensor] X & y for the given index
+        @return tuple[torch.tensor, torch.tensor] X & y for the given index
         """
         # Return one sample
         return self.X[idx], self.y[idx]
@@ -246,7 +245,7 @@ class DatasetSampler:
 
     def calc_in_out_idx(
             self, split_data: pd.DataFrame
-        ) -> Tuple[List[Tuple], List[Tuple]]:
+        ) -> tuple[list[tuple], list[tuple]]:
 
         #### Implment start index shifting of training data here, if needed ####
         #### Current design intended to use entire train data.
@@ -274,12 +273,12 @@ class DatasetSampler:
 
     @staticmethod
     def build_dataset(
-            in_sample_idx: Tuple[int, int], # (Start, End)
-            out_sample_idx: Tuple[int, int],
+            in_sample_idx: tuple[int, int], # (Start, End)
+            out_sample_idx: tuple[int, int],
             returns_train: pd.DataFrame, 
             returns_val: pd.DataFrame,
             returns_test: pd.DataFrame | None = None
-        ) -> Dict[str, pd.DataFrame]:
+        ) -> dict[str, pd.DataFrame]:
         """
         Dataset builder function for covariance based models (tradional).
         Combines and slices to create in-sample and out-of-sample datasets.

@@ -8,9 +8,9 @@ import numpy as np
 import pandas as pd
 from pathlib import Path
 import matplotlib.pyplot as plt
+from typing import Callable, Type, Any
 from torch.utils.data import DataLoader
 # from src.data_processing.dataset import Reshaper
-from typing import List, Dict, Callable, Type, Any
 from src.data_processing.dataset import WindowDataset
 from src.data_processing.dataset import DatasetSampler
 from src.data_processing.preprocess import preprocessor2
@@ -36,13 +36,14 @@ class Trainer:
     def __init__(
         self, 
         model,  # Model class, not instance
-        optimizer,
+        optimizer: torch.optim.Optimizer,
         loss: Callable,
-        model_hparams: Dict,      # Specific to model architecture
-        optimizer_hparams: Dict,  # Specific to optimizer
-        train_hparams: Dict,      # Generic training params (epochs, batch_size, etc.)
+        model_hparams: dict[str, Any],      # Specific to model architecture
+        optimizer_hparams: dict[str, Any],  # Specific to optimizer
+        train_hparams: dict[str, Any],      # Generic training params (epochs, batch_size, etc.)
         in_size: int,
         num_stocks: int,
+        loss_hparams: dict[str, Any] | None = None,
         device_name: str = DEVICE
     ):
         """
@@ -54,12 +55,14 @@ class Trainer:
             Pytorch optimization class to be used to loss optimization
         @param loss Callable
             Custom loss function
-        @param model_hparams Dict
+        @param model_hparams dict
             Dictionary containing hyperparameters required for model initialization
-        @param optimizer_hparams Dict
+        @param optimizer_hparams dict
             Dictionary containing hyperparameters required for optimizer initialization
         @param train_hparams Dict
             Dictionary containing hyperparameters required for training
+        @param loss_hparams dict | None
+            Dictionary containing hyperparameters for loss functions. Default = None
         @param in_size int
             Size of input window
         @param num_stocks int
@@ -86,6 +89,7 @@ class Trainer:
         self.loss = loss
 
         self.train_hparams = train_hparams
+        self.loss_hparams = loss_hparams or {}
         
         self.train_losses = []
         self.val_losses = []
@@ -119,7 +123,7 @@ class Trainer:
                 yb = yb.to(self.device)
 
                 weights = self.model(xb)  # (B, N)
-                loss = self.loss(weights, yb)
+                loss = self.loss(weights, yb, **self.loss_hparams)
 
                 self.optimizer.zero_grad()
                 loss.backward()
@@ -219,8 +223,8 @@ class Trainer:
             torch.cuda.ipc_collect()
         
 def train_val_losses_plot(
-    train_losses: List[float],
-    val_losses: List[float],
+    train_losses: list[float],
+    val_losses: list[float],
     title: str,
     output_path: str,
     plot: bool = False,
@@ -369,7 +373,7 @@ class Evaluator:
         @param metric str
             String name of the metric to be calculated. `returns` or `sharpe`
 
-        @return Dict[str, List]
+        @return Dict[str, list]
             Dictionary containing calculated performance metric for each validation window
         """
         self._daily_rets_calcd_check()
@@ -447,13 +451,13 @@ class Evaluator:
 
 class CandidatesGrid:
     models_hparams = 'models'
-    loss_hparams = 'losses'
+    losses_hparams = 'losses'
     
     def __init__(
             self,
-            model_lib: Dict[str, Dict[str, Type]],
-            loss_lib: Dict[str, Dict[str, Dict[str, Callable]]],
-            hparams_config: Dict[str, Dict[str, Any]],
+            model_lib: dict[str, dict[str, Type]],
+            loss_lib: dict[str, dict[str, dict[str, Callable]]],
+            hparams_config: dict[str, dict[str, Any]],
             results_dir: str | Path,
             loss_mode: str = 'all',
             enable_diagnostics: bool = False
@@ -476,7 +480,7 @@ class CandidatesGrid:
             self.loss_mode = loss_mode
         self.enable_diagnostics = enable_diagnostics
         
-        self.all_alloc_weights: Dict[str, Dict[str, np.ndarray]] = {}
+        self.all_alloc_weights: dict[str, dict[str, np.ndarray]] = {}
     
     def required_reshapes(self, train_data, returns_train, val_data, returns_val):
         # Implement different reshaping for different models if needed.
@@ -513,6 +517,7 @@ class CandidatesGrid:
             train_hparams=self.hparams_config[
                 self.models_hparams
             ][model_name]['train'],
+            loss_hparams=self.hparams_config[self.losses_hparams].get(loss_name),
             in_size=X_train_shape[2],
             num_stocks=y_train_shape[2]
         )
@@ -570,7 +575,7 @@ class CandidatesGrid:
 
     def train_eval_grid(
             self, train_ds: WindowDataset, val_ds: WindowDataset
-        ) -> Dict[str, Dict[str, np.ndarray]]:
+        ) -> dict[str, dict[str, np.ndarray]]:
         """Loops over Loss functions first with a nested loop for models"""
         self._trained_check()
 
@@ -662,7 +667,7 @@ class CandidatesGrid:
 
     def train_eval_one_model(
             self, model_name: str, train_ds: WindowDataset, val_ds: WindowDataset
-        ) -> Dict[str, Dict[str, np.ndarray]]:
+        ) -> dict[str, dict[str, np.ndarray]]:
 
         self._trained_check()
         
@@ -757,7 +762,7 @@ class CandidatesGrid:
 
     def train_eval_one_loss(
             self, loss_name: str, train_ds: WindowDataset, val_ds: WindowDataset
-        ) -> Dict[str, Dict[str, np.ndarray]]:
+        ) -> dict[str, dict[str, np.ndarray]]:
         
         self._trained_check()
     
@@ -800,14 +805,14 @@ class CandidatesGrid:
 
 class TradModelsTrainer:
     def __init__(
-            self, model_lib: Dict[str, Type], in_size: int, out_size: int, stride: int
+            self, model_lib: dict[str, Type], in_size: int, out_size: int, stride: int
         ):
         self.model_lib = model_lib
         self._sampler = DatasetSampler(in_size, out_size, stride)
 
-        self.all_alloc_weights: Dict[str, List[pd.Series | np.ndarray]] = {}
+        self.all_alloc_weights: dict[str, list[pd.Series | np.ndarray]] = {}
 
-    def _train_one_model(self, model_class: Type, filtered_kwargs: Dict) -> pd.Series:
+    def _train_one_model(self, model_class: Type, filtered_kwargs: dict) -> pd.Series:
         model_obj = model_class() # Any hparams can be passed here from config/hparams.json, later
         alloc_weights = model_obj.calculate_weights(**filtered_kwargs)
         return alloc_weights
@@ -865,7 +870,7 @@ class TradModelsTrainer:
             returns_train: pd.DataFrame,
             returns_val: pd.DataFrame,
             returns_test: pd.DataFrame | None = None
-        ) -> Dict[str, List[pd.Series | np.ndarray]]:
+        ) -> dict[str, list[pd.Series | np.ndarray]]:
 
         if returns_test is None: # To use Validation Set (Combines Train + in-sample Val)
             in_sample_indexes, out_sample_indexes = self._sampler.calc_in_out_idx(

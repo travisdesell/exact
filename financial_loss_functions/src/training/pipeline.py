@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import Dict, Tuple
 from src.utils import create_directory
 from src.data_processing.dataset import Reshaper
 from src.data_processing.dataset import WindowDataset
@@ -14,7 +13,7 @@ from src.training.train import (
 from src.training.loss_functions import LossLibrary
 from src.models.registry import NNModelLibrary, TradModelLibrary
 
-def load_processed_data(paths_config: Dict) -> Tuple:
+def load_processed_data(paths_config: dict) -> tuple:
     
     processed_files = {
         'processed_train': Path(paths_config['processed_paths']['processed_train']),
@@ -35,7 +34,9 @@ def load_processed_data(paths_config: Dict) -> Tuple:
 
     return train_data, returns_train, val_data, returns_val
     
-def preprocess(train_data, returns_train, val_data, returns_val, hparams_config: Dict) -> Tuple:
+def preprocess(
+        train_data, returns_train, val_data, returns_val, hparams_config: dict
+    ) -> tuple:
     reshaper = Reshaper(
         hparams_config['rolling_windows']['in_size'],
         hparams_config['rolling_windows']['out_size'],
@@ -58,8 +59,8 @@ def preprocess(train_data, returns_train, val_data, returns_val, hparams_config:
 
 
 def run_training_pipeline(
-        paths_config: Dict,
-        hparams_config: Dict, 
+        paths_config: dict,
+        hparams_config: dict, 
         grid_mode: str = 'all', 
         loss_mode: str = 'all',
         model: str | None = None,

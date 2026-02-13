@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-from typing import Tuple, List, Dict, Optional
+from typing import Optional
 from sklearn.preprocessing import PowerTransformer, RobustScaler
 
 
@@ -13,12 +13,12 @@ class MacroCombiner:
     def __init__(self, resample_freq: str = 'B'):
         self.resample_freq = resample_freq
 
-    def combine_macro_data(self, raw_macro: Dict[str, pd.DataFrame]) -> pd.DataFrame:
+    def combine_macro_data(self, raw_macro: dict[str, pd.DataFrame]) -> pd.DataFrame:
         """
         Concatenate all macro dataframes column-wise after enforcing datetime
         indices and sorting by date.
 
-        @param raw_macro Dict[str, pd.DataFrame] 
+        @param raw_macro dict[str, pd.DataFrame] 
             Dictionary containing all amcro-econimic dataframes
         
         @return pd.Dataframe Combined dataframe for all macro-economic data
@@ -67,7 +67,7 @@ class MacroCombiner:
             train_index: pd.Index,
             val_index: pd.Index,
             test_index: pd.Index
-        ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+        ) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         """
         Align the daily macro dataframe to the CRSP train/val/test date indices.
 
@@ -76,7 +76,7 @@ class MacroCombiner:
         @param val_index pd.Index Date index from CRSP validation data split
         @param train_index pd.DataFrame Date index from CRSP test data split
 
-        @return Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame] containing aligned split with CRSP data
+        @return tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame] containing aligned split with CRSP data
         """
 
         def _align(index: pd.Index) -> pd.DataFrame:
@@ -92,7 +92,7 @@ class MacroCombiner:
 
 def clean_inplace(
         train: pd.DataFrame, val: pd.DataFrame, test: pd.DataFrame
-    ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    ) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """
     Cleans dataset by removing dupilcate columns and duplicate rows. It makes date the index.
     This process is inplace, i.e., Refrence of dataset is used, not copy.
@@ -101,7 +101,7 @@ def clean_inplace(
     @param val pd.DataFrame validation data
     @param test pd.DataFrame test data
     
-    @return Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame] 
+    @return tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame] 
             Cleaned train data, validation data and test data
     """
 
@@ -143,7 +143,7 @@ def clean_inplace(
 
 def get_only_returns(
         train: pd.DataFrame, val: pd.DataFrame, test: pd.DataFrame
-    ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    ) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """
     Extract only return columns from each of the split datasets.
 
@@ -151,7 +151,7 @@ def get_only_returns(
     @param val pd.DataFrame Validation data.
     @param test pd.DataFrame Test data.
     
-    @return Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame] 
+    @return tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame] 
             ret_train, ret_val, and ret_test
 
     """
@@ -173,14 +173,14 @@ def get_only_returns(
     
 class Preprocessor:
     def __init__(
-            self, col_sep: str = '_', common_features: List[str] | None = None
+            self, col_sep: str = '_', common_features: list[str] | None = None
         ):
         """
         Initialize Preprocessor which transorforms and normalizes the given dataset
         
         @param col_sep str
             Special character that separates the ticker string from the feature string.
-        @param common_features List[str] List of common features in the dataset. Default = None
+        @param common_features list[str] List of common features in the dataset. Default = None
         """
         self.common_features = common_features
         self.col_sep = col_sep
@@ -191,11 +191,11 @@ class Preprocessor:
         self.all_col_names = None
         self.all_tickers = None
 
-    def _extract_req_cols(self, columns_list: List, suffix: str) -> List:
+    def _extract_req_cols(self, columns_list: list, suffix: str) -> list:
         """
         Extract required columns based on the suffix in the column names. e.g., NSDN_RETURN
 
-        @param columns_list List List of all column names.
+        @param columns_list list List of all column names.
         @param suffix str 
             Suffix str to extract its respective columns. e.g., VOL_CHANGE, RETURN
         
@@ -262,11 +262,11 @@ class Preprocessor:
         
         return data
 
-    def _extract_tickers(self) -> List[str]:
+    def _extract_tickers(self) -> list[str]:
         """
         Extract ticker symbols from column names of the dataset.
 
-        @return List[str] List of the ticker symbols sorted alphabetically
+        @return list[str] List of the ticker symbols sorted alphabetically
         """
         tickers = []
         for col in self.all_col_names :
@@ -281,13 +281,13 @@ class Preprocessor:
             return sorted(set(tickers))
 
     def _broadcast_common(
-            self, data: pd.DataFrame, features: List[str]
+            self, data: pd.DataFrame, features: list[str]
         ) -> pd.DataFrame:
         """
         Broadcast common features to all tickers with names <ticker>_<common_feature>.
         
         @param data pd.DataFrame dataset which needs broadcasting of common features
-        @param features List[str] List of features which need to be broadcasted to every stock
+        @param features list[str] List of features which need to be broadcasted to every stock
 
         @return pd.DataFrame dataframe with broadcasted common features
         """
@@ -307,11 +307,11 @@ class Preprocessor:
         # Copy to defragment the underlying blocks
         return combined.copy()
 
-    def _update_common_features(self, macro_cols: List[str]):
+    def _update_common_features(self, macro_cols: list[str]):
         """
         Merge macro columns with existing common features without duplicates.
         
-        @param macro_cols List[str] List of column names in macro-economic dataset
+        @param macro_cols list[str] List of column names in macro-economic dataset
         """
         # TODO: Use set instead of dict (more efficient)
         base_common = self.common_features or []
@@ -319,7 +319,7 @@ class Preprocessor:
         self.common_features = combined if combined else None
 
     def process_train_data(
-            self, train: pd.DataFrame, macro_data: Optional[pd.DataFrame] = None
+            self, train: pd.DataFrame, macro_data: pd.DataFrame | None = None
         )-> pd.DataFrame:
         """
         Preprocesses given training data
@@ -330,7 +330,7 @@ class Preprocessor:
         @return pd.DataFrame Preprocessed training data
         """
 
-        macro_cols: List[str] = []
+        macro_cols: list[str] = []
         if macro_data is not None:
             macro_cols = list(macro_data.columns)
             train = pd.concat([train, macro_data], axis=1)
@@ -352,7 +352,7 @@ class Preprocessor:
         return train
 
     def process_split_data(
-            self, split_data: pd.DataFrame, macro_data: Optional[pd.DataFrame] = None
+            self, split_data: pd.DataFrame, macro_data: pd.DataFrame | None = None
         ) -> pd.DataFrame:
         """
         Preprocesses given validation or test data based on statistics 
@@ -364,7 +364,7 @@ class Preprocessor:
         @return pd.DataFrame Preprocessed validation or test data
         """
 
-        macro_cols: List[str] = []
+        macro_cols: list[str] = []
         if macro_data is not None:
             macro_cols = list(macro_data.columns)
             split_data = pd.concat([split_data, macro_data], axis=1)
@@ -396,14 +396,14 @@ class Preprocessor:
 
 def preprocessor2(
         returns_is: pd.DataFrame
-    ) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    ) -> tuple[pd.DataFrame, pd.DataFrame]:
     """
     Calculates covariance and correlation matrices for returns data
 
     @param train pd.DataFrame Training split data, only returns
     @param val pd.DataFrame Validation split data, only returns
 
-    @return Tuple[pd.DataFrame, pd.DataFrame] covariance and correlation matrices
+    @return tuple[pd.DataFrame, pd.DataFrame] covariance and correlation matrices
     """
 
     returns_is_cov = returns_is.cov()

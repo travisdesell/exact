@@ -1,7 +1,7 @@
 # models/registry.py
 import pkgutil
 import importlib
-from typing import Dict, List, Type, Any, Set
+from typing import Dict, Type, Any, Set
 
 NN_Registry = Dict[str, Dict[str, Type]] # category -> name -> class
 Trad_Registry = Dict[str, Type]
@@ -43,11 +43,11 @@ class NNModelLibrary:
         return cls._registry
     
     @classmethod
-    def list_categories(cls) -> List[str]:
+    def list_categories(cls) -> list[str]:
         return list(cls._registry.keys())
 
     @classmethod
-    def list_models(cls, category: str) -> List[str]:
+    def list_models(cls, category: str) -> list[str]:
         return list(cls._registry.get(category, {}).keys())
 
     @classmethod
@@ -95,7 +95,7 @@ class TradModelLibrary:
         return cls._registry
 
     @classmethod
-    def list_models(cls) -> List[str]:
+    def list_models(cls) -> list[str]:
         return list(cls._registry.keys())
 
     @classmethod

@@ -1,4 +1,3 @@
-from typing import Dict
 from pathlib import Path
 from src.data_collection.macro_api import FredAPI
 from src.data_collection.const import FRED_SERIES
@@ -6,7 +5,7 @@ from src.utils import reset_data_stage, save_to_csv
 
 
 def run_macro_pipeline(
-        api_key: str, paths_config: Dict, fred_series: Dict = FRED_SERIES
+        api_key: str, paths_config: dict, fred_series: dict = FRED_SERIES
     ):
     """
     Macro-economic Data Collection Pipeline Entry point

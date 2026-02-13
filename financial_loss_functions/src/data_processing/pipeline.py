@@ -1,4 +1,3 @@
-from typing import Dict
 from pathlib import Path
 from src.utils import reset_data_stage, save_to_csv
 from src.data_processing.loading import load_raw_crsp_datasets, load_macro_data
@@ -10,7 +9,7 @@ from src.data_processing.preprocess import (
 )
 
 
-def run_processing_pipeline(paths_config: Dict, features_config: Dict):
+def run_processing_pipeline(paths_config: dict, features_config: dict):
     """
     Data Processing Pipeline entry point
 

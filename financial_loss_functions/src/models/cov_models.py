@@ -3,7 +3,6 @@
 import numpy as np
 import pandas as pd
 from scipy.optimize import minimize
-from typing import Optional, Tuple, List
 from scipy.cluster.hierarchy import linkage
 from scipy.spatial.distance import squareform
 from src.models.registry import TradModelLibrary
@@ -148,12 +147,12 @@ class BaseQuadraticOptimizer:
             self,
             P: np.ndarray,
             q: np.ndarray,
-            A: Optional[np.ndarray] = None,
-            b: Optional[np.ndarray] = None,
-            G: Optional[np.ndarray] = None,
-            h: Optional[np.ndarray] = None,
-            bounds: Optional[Tuple[Tuple[float, float], ...]] = None
-        ) -> Tuple[np.ndarray, bool]:
+            A: np.ndarray | None = None,
+            b: np.ndarray | None = None,
+            G: np.ndarray | None = None,
+            h: np.ndarray | None = None,
+            bounds: tuple[tuple[float, float], ...] | None = None
+        ) -> tuple[np.ndarray, bool]:
         """
         Solve Quadratic Problem using CVXOPT if available (and requested) else SciPy SLSQP.
 
@@ -573,13 +572,13 @@ class HierarchialRiskParity:
         np.fill_diagonal(dist.values, 0)  # ensure diagonal is 0
         return dist
 
-    def _getQuasiDiag(self, link: np.ndarray) -> List:
+    def _getQuasiDiag(self, link: np.ndarray) -> list:
         """
         Compute Quasi Diagonal from clustered items and sort them.
 
         @param link np.ndarray cCustered link from a hierarchial custering method
 
-        @return List Sorted index of the clustered items
+        @return list Sorted index of the clustered items
         """
         # Sort clustered items by distance
         link = link.astype(int)
@@ -608,13 +607,13 @@ class HierarchialRiskParity:
         ivp /= ivp.sum()
         return ivp
 
-    def _getClusterVar(self, cov: pd.DataFrame, cItems: List) -> np.ndarray:
+    def _getClusterVar(self, cov: pd.DataFrame, cItems: list) -> np.ndarray:
         """
         Compute intra cluster variance.
         Cluster is idenfied from the entire cov matrix using the procided indexes.
 
         @param cov pd.DataFrame Covariance matrix
-        @param cItems List Items belonging a particular cluster
+        @param cItems list Items belonging a particular cluster
 
         @return np.ndarray variance of a particular cluster
 
@@ -625,12 +624,12 @@ class HierarchialRiskParity:
         cVar=np.dot(np.dot(w_.T,cov_),w_)[0,0]
         return cVar
 
-    def _getRecBipart(self, cov: pd.DataFrame, sortIx: List) -> pd.Series:
+    def _getRecBipart(self, cov: pd.DataFrame, sortIx: list) -> pd.Series:
         """
         Compute HRP allocation using Risk Parity using intra cluster variance.
 
         @param cov pd.DataFrame Covariance matrix
-        @param sortIx List Sorted indexes of clustered items
+        @param sortIx list Sorted indexes of clustered items
 
         @return pd.Series Portfolio allocation weights based on Risk Parity
         """

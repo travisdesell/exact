@@ -1,12 +1,12 @@
 import math
 import torch
 from torch import Tensor
+from typing import Callable
 from torch.nn.functional import softmax, softplus
-from typing import Tuple, Dict, List, Callable, Optional
 
 # TODO: Formulate combination loss functions
 
-Registry = Dict[str, Dict[str, Dict[str, Callable]]]  # category -> subcategory -> name -> fn
+Registry = dict[str, dict[str, dict[str, Callable]]]  # category -> subcategory -> name -> fn
 
 class LossLibrary:
     """
@@ -25,8 +25,8 @@ class LossLibrary:
     def register(
         cls,
         category: str = 'objectives',
-        subcategory: Optional[str] = None,
-        name: Optional[str] = None
+        subcategory: str | None = None,
+        name: str | None = None
     ):
         """
         Decorator to register a standalone function into the class registry.
@@ -51,20 +51,20 @@ class LossLibrary:
         return cls._registry
 
     @classmethod
-    def list_categories(cls) -> List[str]:
+    def list_categories(cls) -> list[str]:
         return list(cls._registry.keys())
 
     @classmethod
-    def list_subcategories(cls, category: str) -> List[str]:
+    def list_subcategories(cls, category: str) -> list[str]:
         return list(cls._registry.get(category, {}).keys())
 
     @classmethod
-    def list_functions(cls, category: str, subcategory: Optional[str] = None) -> List[str]:
+    def list_functions(cls, category: str, subcategory: str|None = None) -> list[str]:
         sub = subcategory or '__default__'
         return list(cls._registry.get(category, {}).get(sub, {}).keys())
 
     @classmethod
-    def get(cls, category: str,  name: str, subcategory: Optional[str] = None) -> Callable:
+    def get(cls, category: str,  name: str, subcategory: str|None = None) -> Callable:
         sub = subcategory or '__default__'
         return cls._registry[category][sub][name]
 
@@ -418,7 +418,7 @@ def risk_parity_regularizer(
     returns: Tensor,
     shrink: float = 0.1,
     use_shrink: bool = True,
-    shrink_clip: Tuple = (0.0, 0.9),
+    shrink_clip: tuple = (0.0, 0.9),
     eps: float = 1e-8,
     scale_invariant: bool = True
 ) -> Tensor:
