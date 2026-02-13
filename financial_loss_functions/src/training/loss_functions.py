@@ -4,7 +4,9 @@ from torch import Tensor
 from typing import Callable
 from torch.nn.functional import softmax, softplus
 
-# TODO: Formulate combination loss functions
+#### All Functions MUST get a decorator with the category and/or sub-category.
+#### Objectives do not need a subcategory (as of now). Regularizer sub-categories are required.
+#### High level keys are [objectives, regularizers, custom]
 
 Registry = dict[str, dict[str, dict[str, Callable]]]  # category -> subcategory -> name -> fn
 
@@ -67,9 +69,6 @@ class LossLibrary:
     def get(cls, category: str,  name: str, subcategory: str|None = None) -> Callable:
         sub = subcategory or '__default__'
         return cls._registry[category][sub][name]
-
-#### All Functions MUST get a decorator with the category and/or sub-category.
-#### Objectives do not need a subcategory (as of now). Regularizer categories are required.
 
 # -------------------- Sharpe -------------------- #
 @LossLibrary.register(category='objectives')
@@ -802,9 +801,15 @@ def smooth_calmar_objective(
 
     return loss_per_batch.mean()
 
-# -------------------- Combined Loss Functions -------------------- #
-def combined_loss_1():
-    pass
+# -------------------- Combination Loss Functions -------------------- #
+@LossLibrary.register(category='custom')
+def combined_loss_1(weights: Tensor, returns: Tensor, lambda1: float):
+    """
+    loss = differentiable sharpe + lambda1 * smooth CVar
+    """
+    loss = differentiable_sharpe_loss(weights, returns) + \
+        lambda1 * smooth_cvar_regularizer(weights, returns)
+    return loss
 
 def combined_loss_2():
     pass

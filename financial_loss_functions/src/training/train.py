@@ -580,10 +580,18 @@ class CandidatesGrid:
         self._trained_check()
 
         X_train_shape, y_train_shape = train_ds.get_X_y_shapes()
+
+        total_train_count = (
+                len(self.loss_lib['objectives']['__default__']) + \
+                    len(self.loss_lib['custom']['__default__']) if 'custom' in self.loss_lib else 0
+            ) * sum(len(models_dict) for models_dict in self.model_lib.values())
+        progress_count = 1
+        print(f'\nTraining {total_train_count} models.')
         
         # Grid with custom loss functions
-        if 'custom' in self.loss_lib:
-            print('\nTraining all models with all custom loss functions...')
+        if 'custom' in self.loss_lib:            
+            print('Training all models with all custom loss functions...')
+
             custom_combos = self.loss_lib['custom']['__default__'] # Custom combos have no category
 
             # Loop over loss functions
@@ -593,7 +601,11 @@ class CandidatesGrid:
                 for category, models_dict in self.model_lib.items():
                     # Loop over models
                     for model_name, model_class in models_dict.items():
-                        print('\n', '-'*10, f' Training {model_name} with {loss_name} ', '-'*10)
+                        print(
+                            '\n', '-'*10,
+                            f' Training {model_name} - {loss_name}, {progress_count}/{total_train_count}',
+                            '-'*10
+                        )
                         try: 
                             
                             alloc_weights = self._train_eval_helper(
@@ -613,6 +625,8 @@ class CandidatesGrid:
                                 f'DEBUG: Error while training {model_name} with {loss_name}. Skipping.', error
                             )
                             continue
+                        finally:
+                            progress_count += 1
         
         else:
             print('\nNo custom loss functions provided. Moving to objectives.')
@@ -632,8 +646,11 @@ class CandidatesGrid:
                 for category, models_dict in self.model_lib.items():
                     # Loop over models
                     for model_name, model_class in models_dict.items():
-                        print('\n', '-'*10, f' Training {model_name} with {loss_name} ', '-'*10)
-                        
+                        print(
+                            '\n', '-'*10,
+                              f' Training {model_name} - {loss_name}, {progress_count}/{total_train_count}',
+                              '-'*10
+                        )
                         
                         try: 
                             
@@ -655,6 +672,8 @@ class CandidatesGrid:
                                 error
                             )
                             continue
+                        finally:
+                            progress_count += 1
                 
             return self.all_alloc_weights
     
@@ -677,6 +696,13 @@ class CandidatesGrid:
             raise RuntimeError(f'{model_name} MODEL NOT FOUND IN LIBRARY!')
         
         X_train_shape, y_train_shape = train_ds.get_X_y_shapes()
+
+        total_train_count = (
+            len(self.loss_lib['objectives']['__default__']) + \
+                len(self.loss_lib['custom']['__default__']) if 'custom' in self.loss_lib else 0
+        )
+        progress_count = 1
+        print(f'\nTraining {total_train_count} models.')
         
         # Grid with custom loss functions
         if 'custom' in self.loss_lib:
@@ -687,7 +713,11 @@ class CandidatesGrid:
             for loss_name, loss_func in custom_combos.items():
                 self.all_alloc_weights.setdefault(loss_name, {})
 
-                print('\n', '-'*10, f' Training {model_name} with {loss_name} ', '-'*10)
+                print(
+                    '\n', '-'*10,
+                    f' Training {model_name} - {loss_name}, {progress_count}/{total_train_count}',
+                    '-'*10
+                )
                 try:        
                     alloc_weights = self._train_eval_helper(
                         model_name,
@@ -707,6 +737,8 @@ class CandidatesGrid:
                         error
                     )
                     continue
+                finally:
+                    progress_count += 1
 
         else:
             print('\nNo custom loss functions provided. Moving to objectives.')
@@ -722,6 +754,11 @@ class CandidatesGrid:
             # Loop over loss functions
             for loss_name, loss_func in objectives.items():
                 self.all_alloc_weights.setdefault(loss_name, {})
+                print(
+                    '\n', '-'*10,
+                    f' Training {model_name} - {loss_name}, {progress_count}/{total_train_count}',
+                    '-'*10
+                )
                 try:        
                     alloc_weights = self._train_eval_helper(
                         model_name,
@@ -741,6 +778,8 @@ class CandidatesGrid:
                         error
                     )
                     continue
+                finally:
+                    progress_count += 1
             
             return self.all_alloc_weights
 
@@ -773,12 +812,22 @@ class CandidatesGrid:
 
         self.all_alloc_weights.setdefault(loss_name, {})
 
-        X_train_shape, y_train_shape = train_ds.get_X_y_shapes() 
+        X_train_shape, y_train_shape = train_ds.get_X_y_shapes()
+
+        total_train_count = sum(
+            len(models_dict) for models_dict in self.model_lib.values()
+        )
+        progress_count = 1
+        print(f'\nTraining {total_train_count} models.') 
         
         for category, models_dict in self.model_lib.items():
             # Loop over models
             for model_name, model_class in models_dict.items():
-                print('\n', '-'*10, f' Training {model_name} with {loss_name} ', '-'*10)
+                print(
+                    '\n', '-'*10,
+                    f' Training {model_name} - {loss_name}, {progress_count}/{total_train_count}',
+                    '-'*10
+                )
                 try: 
                     
                     alloc_weights = self._train_eval_helper(
@@ -799,6 +848,8 @@ class CandidatesGrid:
                         error
                     )
                     continue
+                finally:
+                    progress_count += 1
 
         return self.all_alloc_weights
 

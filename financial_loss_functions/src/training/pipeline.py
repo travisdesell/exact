@@ -167,9 +167,6 @@ def run_training_pipeline(
     print('\n', 'Compounded returns for each window:\n', total_returns)
     print('\n', 'Basic sharpe ratios for each window:\n', total_sharpes)
 
-    #### TODO: 
-    # 1. Implement a combination loss
-
 
 # #### FOR TESTING & REFACTORING ####
 #     from src.training.train import Trainer
