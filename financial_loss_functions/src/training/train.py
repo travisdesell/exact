@@ -175,7 +175,7 @@ class Trainer:
                 b = xb.size(0)
                 xb, yb = xb.to(self.device), yb.to(self.device)
                 weights = self.model(xb)
-                loss = self.loss(weights, yb)
+                loss = self.loss(weights, yb, **self.loss_hparams)
 
                 # detach & move to CPU BEFORE appending
                 self.val_alloc_weights.append(weights.detach().cpu()) 
