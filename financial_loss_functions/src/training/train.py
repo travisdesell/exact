@@ -446,6 +446,9 @@ class Evaluator:
         plt.close('all')
 
 class CandidatesGrid:
+    models_hparams = 'models'
+    loss_hparams = 'losses'
+    
     def __init__(
             self,
             model_lib: Dict[str, Dict[str, Type]],
@@ -501,9 +504,15 @@ class CandidatesGrid:
             model=model_class,
             optimizer=torch.optim.AdamW,
             loss=loss_func,
-            model_hparams=self.hparams_config[model_name]['model'],
-            optimizer_hparams=self.hparams_config[model_name]['optimizer'],
-            train_hparams=self.hparams_config[model_name]['train'],
+            model_hparams=self.hparams_config[
+                self.models_hparams
+            ][model_name]['model'],
+            optimizer_hparams=self.hparams_config[
+                self.models_hparams
+            ][model_name]['optimizer'],
+            train_hparams=self.hparams_config[
+                self.models_hparams
+            ][model_name]['train'],
             in_size=X_train_shape[2],
             num_stocks=y_train_shape[2]
         )

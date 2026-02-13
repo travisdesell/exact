@@ -4,38 +4,43 @@
         "out_size": 50,
         "stride": 1
     },
-    "BaseLSTM": {
-        "model": {
-            "hidden_size": 256,
-            "num_layers": 2,
-            "dropout": 0.2
+    "models": {
+        "BaseLSTM": {
+            "model": {
+                "hidden_size": 256,
+                "num_layers": 2,
+                "dropout": 0.2
+            },
+            "optimizer": {
+                "lr": 1e-4,
+                "weight_decay": 3e-4
+            },
+            "train" : {
+                "train_batch_size": 256,
+                "val_batch_size": 1,
+                "clip_grad_norm": 0.5,
+                "epochs": 10
+            }
         },
-        "optimizer": {
-            "lr": 1e-4,
-            "weight_decay": 3e-4
-        },
-        "train" : {
-            "train_batch_size": 256,
-            "val_batch_size": 1,
-            "clip_grad_norm": 0.5,
-            "epochs": 100
+        "AttentionLSTM": {
+            "model": {
+                "hidden_size": 128,
+                "num_layers": 3,
+                "dropout": 0.2
+            },
+            "optimizer": {
+                "lr": 1e-3,
+                "weight_decay": 3e-4
+            },
+            "train": {
+                "train_batch_size": 256,
+                "val_batch_size": 1,
+                "clip_grad_norm": 0.5,
+                "epochs": 10
+            }
         }
     },
-    "AttentionLSTM": {
-        "model": {
-            "hidden_size": 128,
-            "num_layers": 3,
-            "dropout": 0.2
-        },
-        "optimizer": {
-            "lr": 1e-3,
-            "weight_decay": 3e-4
-        },
-        "train": {
-            "train_batch_size": 256,
-            "val_batch_size": 1,
-            "clip_grad_norm": 0.5,
-            "epochs": 100
-        }
+    "losses": {
+
     }
 }
