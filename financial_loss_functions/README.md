@@ -53,6 +53,12 @@ cp .env.example .env
 ```
 2. Update the .env file in root directory with your Fred API key
 
+
+## Project Pipeline
+1. Data Collection (`scripts.run_data_collection`): Fetches raw macro-economic data from FRED API
+2. Data Processing (`scripts.run_processing`): Preprocesses raw data and places the files in data/processed/
+3. Training (`scripts.run_training`): Trains a grid of models along with different loss functions on the processed data, runs classicial approaches of portfolio optimization, then compares and evaluates all methods.
+
 ## Quick Start
 ### 1. Run macro-economic data collection
 ```bash
@@ -75,9 +81,9 @@ python -m scripts.run_training
 pytest tests
 ```
 
-## For Detailed Usage Instructions Go to the Links Below:
-- [Data Collection and Ingestion Instructions](/financial_loss_functions/src/data_collection/README.md)
-- [Training Grid Instructions](/financial_loss_functions/src/training/README.md)
+## For Detailed Usage Instructions
+- [Data Collection and Ingestion Guide](/financial_loss_functions/src/data_collection/README.md)
+- [Training Guide](/financial_loss_functions/src/training/README.md)
 
 ## Directory Structure
 ```text

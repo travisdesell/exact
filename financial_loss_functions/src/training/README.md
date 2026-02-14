@@ -1,4 +1,5 @@
 # Training and Loss Functions
+[<- Back to Main README](/financial_loss_functions/README.md)
 
 ## Training
 The training pipeline uses a grid of candidate model architectures to train and evaulate with different loss functions. The grid can be run in three mode `all`, `one_model` or `one_loss`. The `all` mode runs all models with specified losses, the `one_model` mode runs one model with speicified losses, and the `one_loss` mode runs all models with one specified loss function. The loss mode consists of two modes, `all` or `custom`. The `all` modes uses all available losses, including objectives as loss functions, and the `custom` mode uses only custom combination of loss functions (objectives and regularizers). 
