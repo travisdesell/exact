@@ -787,7 +787,8 @@ class CandidatesGrid:
         """Search for required loss function"""
         for _, cat_dict in self.loss_lib.items():
             for _, sub_cat_dict in cat_dict.items():
-                return sub_cat_dict.get(loss_name)
+                if loss_name in sub_cat_dict:
+                    return sub_cat_dict[loss_name]
         
         # objectives = self.loss_lib['objectives']['__default__']
         # if loss_name in objectives:

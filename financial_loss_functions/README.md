@@ -55,6 +55,7 @@ cp .env.example .env
 
 
 ## Project Pipeline
+The system is divided into three pipelines to ensure scalability and easier debugging. Each stage must be run sequentially:
 1. Data Collection (`scripts.run_data_collection`): Fetches raw macro-economic data from FRED API
 2. Data Processing (`scripts.run_processing`): Preprocesses raw data and places the files in data/processed/
 3. Training (`scripts.run_training`): Trains a grid of models along with different loss functions on the processed data, runs classicial approaches of portfolio optimization, then compares and evaluates all methods.
@@ -82,7 +83,7 @@ pytest tests
 ```
 
 ## For Detailed Usage Instructions
-- [Data Collection and Ingestion Guide](/financial_loss_functions/src/data_collection/README.md)
+- [Data Collection Guide](/financial_loss_functions/src/data_collection/README.md)
 - [Training Guide](/financial_loss_functions/src/training/README.md)
 
 ## Directory Structure

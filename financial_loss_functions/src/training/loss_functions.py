@@ -340,13 +340,14 @@ def cvar_topk_regularizer(
 
 @LossLibrary.register(category='regularizers', subcategory='tail_risk')
 def smooth_cvar_regularizer(
-    weights: Tensor,
-    returns: Tensor,
-    alpha: float = 0.05,
+    weights: torch.Tensor,
+    returns: torch.Tensor,
     temp: float = 1e-2,
     eps: float = 1e-8,
-    scale_by_std: bool = True
-) -> Tensor:
+    scale_by_std: bool = True,
+    normalize_by_port_std: bool = True,
+    port_std_floor: float = 1e-3
+) -> torch.Tensor:
     """
     Smooth differentiable approximation to CVaR using soft-selection (softmax) over losses.
 
@@ -362,23 +363,25 @@ def smooth_cvar_regularizer(
 
     @return Tensor smooth CVaR approx (minimize)
     """
-    port = (weights.unsqueeze(1) * returns).sum(dim=-1)  # (B, T)
+    # port: (B, T)
+    port = (weights.unsqueeze(1) * returns).sum(dim=-1)
     losses = -port  # (B, T)
 
     if scale_by_std:
-        std = losses.std(dim=1, keepdim=True) + eps
-        scores = losses / (std * (temp + eps))
+        scores_std = losses.std(dim=1, keepdim=True) + eps   # (B,1)
+        scores = losses / (scores_std * (temp + eps))
     else:
         scores = losses / (temp + eps)
 
-    # soft selection: weights over time (sum to 1)
-    sel = softmax(scores, dim=1)  # (B, T)
+    sel = softmax(scores, dim=1)           # (B, T) sums to 1
+    weighted_mean = (sel * losses).sum(dim=1)  # (B,) -- already an average-like quantity
 
-    # approximate CVaR: mean of worst-alpha fraction. If sel concentrates on worst alpha*T
-    # then weighted_mean ~ mean(worst). To expose the alpha scaling, we multiply by (1/alpha).
-    # This is an approximation - tune temp so selection mass ~ alpha.
-    weighted_mean = (sel * losses).sum(dim=1)  # (B,)
-    approx_cvar = weighted_mean / max(alpha, eps)  # scale up to match order-of-magnitude w/ CVaR
+    approx_cvar = weighted_mean  # NOT dividing by alpha here
+
+    if normalize_by_port_std:
+        port_std = port.std(dim=1)           # (B,)
+        port_std = torch.clamp(port_std, min=port_std_floor)
+        approx_cvar = approx_cvar / (port_std + eps)
 
     return approx_cvar.mean()
 
@@ -803,13 +806,13 @@ def smooth_calmar_objective(
 
 # -------------------- Combination Loss Functions -------------------- #
 @LossLibrary.register(category='custom')
-def combined_loss_1(weights: Tensor, returns: Tensor, lambda1: float):
+def custom_loss_1(weights: Tensor, returns: Tensor, lambda1: float):
     """
     loss = differentiable sharpe + lambda1 * smooth CVar
     """
-    loss = differentiable_sharpe_loss(weights, returns) + \
-        lambda1 * smooth_cvar_regularizer(weights, returns)
-    return loss
+    sharpe = differentiable_sharpe_loss(weights, returns)
+    cvar = smooth_cvar_regularizer(weights, returns)
+    return sharpe + lambda1 * cvar 
 
 def combined_loss_2():
     pass

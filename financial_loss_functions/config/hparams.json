@@ -41,7 +41,7 @@
         }
     },
     "losses": {
-        "combined_loss_1" : {
+        "custom_loss_1" : {
             "lambda1": 0.5
         }
     }

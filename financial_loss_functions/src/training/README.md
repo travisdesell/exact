@@ -68,4 +68,4 @@ python -m scripts.run_training --help
 - entropy_conc_regularizer
 
 #### Custom Combinations:
-- combined_loss_1: Differentiable loss objective with CVaR regularizer
+- custom_loss_1: Differentiable loss objective with CVaR regularizer
