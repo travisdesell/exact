@@ -2,7 +2,6 @@ import os
 import json
 import shutil
 import pandas as pd
-from typing import List
 from pathlib import Path
 
 def create_directory(path: str) -> None:
@@ -40,7 +39,7 @@ def delete_directory(dir_path: str) -> None:
     except Exception as e:
         print(f'An error occurred: {e}')
 
-def check_if_files_exist(paths_list: List[str]) -> None:
+def check_if_files_exist(paths_list: list[str]) -> None:
     """
     Check if all files exist
     
