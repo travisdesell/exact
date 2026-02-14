@@ -2,7 +2,7 @@ import os
 import sys
 import signal
 import argparse
-from scripts.utils import load_path_config, load_config
+from src.utils import load_path_config, load_config
 from src.training.pipeline import run_training_pipeline
 
 _interrupted = False

@@ -1,16 +1,15 @@
 # scripts/generate_synthetic_crsp_csv_splits_with_sprtrn.py
-from pathlib import Path
 import numpy as np
 import pandas as pd
-from typing import List, Tuple, Dict, Optional
+from pathlib import Path
 
 def generate_synthetic_crsp(
-    tickers: Optional[List[str]] = None,
+    tickers: list[str] | None = None,
     start: str = "2020-01-01",
     end: str = "2023-12-31",
     freq: str = "B",          # business days
     seed: int = 42,
-    market_rets: Optional[np.ndarray] = None,
+    market_rets: np.ndarray | None = None,
     market_noise_scale: float = 0.0005,
     market_weighted: bool = False,
 ) -> pd.DataFrame:
@@ -117,9 +116,9 @@ def time_split_df(
     train_frac: float = 0.7,
     val_frac: float = 0.15,
     *,
-    val_years: Optional[int] = None,
-    test_years: Optional[int] = None
-) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    val_years: int | None = None,
+    test_years: int | None = None
+) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """
     Split dataframe into train/val/test.
 
@@ -203,7 +202,7 @@ def save_csv_splits(
     test_df: pd.DataFrame,
     out_dir: str = "data/processed/synthetic_crsp_v1",
     base_name: str = "synthetic_crsp",
-) -> Dict[str, str]:
+) -> dict[str, str]:
     out_path = Path(out_dir)
     out_path.mkdir(parents=True, exist_ok=True)
 
