@@ -114,8 +114,8 @@ def run_training_pipeline(
     )
     trad_alloc_weights = trad_grid.train_all(returns_train, returns_val)
 
-    for model_name, alloc_weights in trad_alloc_weights.items():
-        evaluator.calc_pf_daily_rets(alloc_weights, model_name)
+    for trad_model_name, alloc_weights in trad_alloc_weights.items():
+        evaluator.calc_pf_daily_rets(alloc_weights, trad_model_name)
     
     del trad_grid
 
@@ -149,8 +149,8 @@ def run_training_pipeline(
     # Calculate returns of all predicted portfolio allocation weights
     # Calling on every models output allocation weights to calculate pf returns
     for loss_name, models_dict in nn_alloc_weights.items():
-        for model_name, alloc_weights in models_dict.items():
-            evaluator.calc_pf_daily_rets(alloc_weights, f'{model_name}-{loss_name}')
+        for nn_model_name, alloc_weights in models_dict.items():
+            evaluator.calc_pf_daily_rets(alloc_weights, f'{nn_model_name}-{loss_name}')
     
     del candidates_grid
     
@@ -228,21 +228,21 @@ def run_training_one_model(
         # Initializing once to compare all models together
         evaluator = Evaluator(y_val)
         
-        # # Registering all Traditional models to the library
-        # TradModelLibrary.autodiscover(models_module)
+        # Registering all Traditional models to the library
+        TradModelLibrary.autodiscover(models_module)
 
-        # trad_grid = TradModelsTrainer(
-        #     TradModelLibrary.items(),
-        #     hparams_config['rolling_windows']['in_size'],
-        #     hparams_config['rolling_windows']['out_size'],
-        #     hparams_config['rolling_windows']['stride']
-        # )
-        # trad_alloc_weights = trad_grid.train_all(returns_train, returns_val)
+        trad_grid = TradModelsTrainer(
+            TradModelLibrary.items(),
+            hparams_config['rolling_windows']['in_size'],
+            hparams_config['rolling_windows']['out_size'],
+            hparams_config['rolling_windows']['stride']
+        )
+        trad_alloc_weights = trad_grid.train_all(returns_train, returns_val)
 
-        # for model_name, alloc_weights in trad_alloc_weights.items():
-        #     evaluator.calc_pf_daily_rets(alloc_weights, model_name)
+        for trad_model_name, alloc_weights in trad_alloc_weights.items():
+            evaluator.calc_pf_daily_rets(alloc_weights, trad_model_name)
         
-        # del trad_grid
+        del trad_grid
 
         # -------------------- Training Neural Network -------------------- #
         print('\n', '-'*10, f' Training {model_name} ', '-'*10)
