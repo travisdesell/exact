@@ -812,6 +812,9 @@ def custom_loss_1(weights: Tensor, returns: Tensor, lambda1: float):
     """
     sharpe = differentiable_sharpe_loss(weights, returns)
     cvar = smooth_cvar_regularizer(weights, returns)
+
+    print(sharpe)
+    print(cvar)
     return sharpe + lambda1 * cvar 
 
 def combined_loss_2():

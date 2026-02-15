@@ -7,7 +7,7 @@ The training pipeline uses a grid of candidate model architectures to train and 
 ### Run Candidates Training Grid
 Run the training pipeline using the following command structure:
 ```bash
-python -m scripts.run_training [--grid_mode MODE] [--loss_mode MODE] [OPTIONS]
+python -m scripts.run_training_grid [--grid_mode MODE] [--loss_mode MODE] [OPTIONS]
 ```
 
 #### Arguments Reference
@@ -42,7 +42,7 @@ python -m scripts.run_training_grid --help
 ### Run Training of One Model with One Loss Function
 Run the training pipeline using the following command: structure:
 ```bash
-python -m scripts.run_training [--model MODEL] [--model_cat MODEL CATEGORY] [--loss LOSS] [--loss_cat LOSS CATEGORY]
+python -m scripts.run_training_one [--model MODEL] [--model_cat MODEL CATEGORY] [--loss LOSS] [--loss_cat LOSS CATEGORY]
 ```
 
 #### Arguments Reference
@@ -55,7 +55,7 @@ python -m scripts.run_training [--model MODEL] [--model_cat MODEL CATEGORY] [--l
 
 #### Example:
 ```bash
-python -m scripts.run_one_training --model '<Model Name>' --model_cat '<Model Category>' --loss '<Loss Name>' --loss_cat '<Loss Category>'
+python -m scripts.run_training_one --model '<Model Name>' --model_cat '<Model Category>' --loss '<Loss Name>' --loss_cat '<Loss Category>'
 ```
 
 ## Available Models and Loss Functions

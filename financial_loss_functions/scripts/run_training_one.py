@@ -73,7 +73,7 @@ signal.signal(signal.SIGTERM, signal_handler)  # Termination signal
 if __name__ == '__main__':
     # load_dotenv()
     try:
-        parser = argparse.ArgumentParser(description='Training Grid Configuration Script')
+        parser = argparse.ArgumentParser(description='Training 1 Model + 1 Loss Configuration Script')
 
         parser.add_argument(
             '-m',
@@ -82,7 +82,7 @@ if __name__ == '__main__':
         )
         parser.add_argument(
             '-mc',
-            'model_cat',
+            '--model_cat',
             help='Model category is required. See README in src/training.'
         )
         
@@ -94,9 +94,9 @@ if __name__ == '__main__':
 
         parser.add_argument(
             '-lc',
-            'loss_cat',
+            '--loss_cat',
             choices=['objective', 'custom'],
-            help="Loss category must be 'objective', 'custom'. See README in src/training."
+            help="Loss category must be 'objective' or 'custom'. See README in src/training."
         )
 
         args = parser.parse_args()

@@ -44,7 +44,7 @@
     },
     "losses": {
         "custom_loss_1" : {
-            "lambda1": 0.5
+            "lambda1": 0.1
         }
     }
 }
