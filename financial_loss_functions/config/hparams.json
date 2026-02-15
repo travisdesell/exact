@@ -27,6 +27,7 @@
             "model": {
                 "hidden_size": 128,
                 "num_layers": 3,
+                "attention_heads": 2,
                 "dropout": 0.2,
                 "equal_prior": false
             },

@@ -87,6 +87,7 @@ class AttentionLSTM(nn.Module):
         hidden_size: int,
         num_layers: int,
         num_stocks: int,
+        attention_heads: int,
         dropout: float = 0.2,
         equal_prior: bool = False
     ):
@@ -113,7 +114,11 @@ class AttentionLSTM(nn.Module):
         self.ln_lstm = nn.LayerNorm(hidden_size) # Normalizes LSTM output
         
         # Attention layer components
-        self.attn = nn.MultiheadAttention(hidden_size, num_heads=2, batch_first=True)
+        self.attn = nn.MultiheadAttention(
+            hidden_size,
+            num_heads=attention_heads,
+            batch_first=True
+        )
         
         self.ln_attn = nn.LayerNorm(hidden_size) # Normalizes Attention output
     
