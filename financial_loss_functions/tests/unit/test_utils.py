@@ -1,4 +1,5 @@
 import os
+import json
 import pytest
 import pandas as pd
 from pandas.testing import assert_frame_equal
@@ -9,9 +10,10 @@ from src.utils import (
     delete_directory,
     check_if_files_exist,
     save_to_csv,
-    reset_data_stage    
+    reset_data_stage,
+    load_path_config, 
+    load_config    
 )
-
 
 # ---------- Tests for create_directory ---------- #
 def test_create_directory_creates_and_prints(tmp_path, capsys):
@@ -193,3 +195,133 @@ def test_reset_data_stage_overwrites_existing(tmp_path, capsys):
 
     out = capsys.readouterr().out
     assert 'Directory exists. Overwriting.' in out
+
+# ---------- Tests for load_config ---------- #
+def write_json(path: str, obj: dict):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(obj))
+
+# ---------- Tests for load_paths_config ---------- #
+def make_basic_config(repo_root) -> dict:
+    """
+    Returns a minimal config dict with relative paths (as strings)
+    consistent with load_path_config expectations.
+    """
+    return {
+        "data": {
+            "raw_dir": "data/raw",                    # relative to repo_root
+            "processed_dir": "data/processed",        # relative to repo_root
+            "raw_macro_dir": "data/raw/macro"         # relative to repo_root
+        },
+        # processed_paths are relative to repo_root in typical setups
+        "processed_paths": {
+            "processed_train": "outputs/processed_train.csv",
+            "processed_val": "outputs/processed_val.csv"
+        }
+    }
+
+def test_load_config_reads_json(tmp_path):
+    cfg = {"hello": "world", "n": 123}
+    cfg_path = tmp_path / "some" / "config.json"
+    write_json(cfg_path, cfg)
+
+    loaded = load_config(str(cfg_path))
+    assert isinstance(loaded, dict)
+    assert loaded["hello"] == "world"
+    assert loaded["n"] == 123
+
+def test_load_path_config_resolves_relative_and_default_crsp(tmp_path):
+    # repo_root
+    repo_root = tmp_path / "repo"
+    config_dir = repo_root / "configs"
+    config_dir.mkdir(parents=True)
+
+    # construct basic config file (using relative paths)
+    config = make_basic_config(repo_root)
+    config_path = config_dir / "config.json"
+    write_json(config_path, config)
+
+    # create the raw directories and the default CRSP folder expected by function
+    raw_root = repo_root / "data" / "raw"
+    default_crsp_dir = raw_root / "2023_sp_500_select_50"
+    default_crsp_dir.mkdir(parents=True)
+
+    # create the macro dir referenced in config
+    (repo_root / "data" / "raw" / "macro").mkdir(parents=True)
+
+    # Now call without providing crsp_data_dir - should pick up default
+    out = load_path_config(str(config_path))
+
+    # data.processed_dir and raw_macro_dir should be converted to absolute strings under repo_root
+    assert out["data"]["processed_dir"] == str((repo_root / "data" / "processed").resolve())
+    assert out["data"]["raw_macro_dir"] == str((repo_root / "data" / "raw" / "macro").resolve())
+
+    # CRSP dir should be the default we created
+    assert out["data"]["crsp_dir"] == str(default_crsp_dir.resolve())
+
+    # processed_paths should all be absolute and under repo_root
+    for k, v in out["processed_paths"].items():
+        assert os.path.isabs(v), "processed_paths value must be absolute"
+        assert str(repo_root.resolve()) in v
+    
+def test_load_path_config_with_relative_crsp_arg(tmp_path):
+    # repo_root
+    repo_root = tmp_path / "repo2"
+    config_dir = repo_root / "configs"
+    config_dir.mkdir(parents=True)
+
+    config = make_basic_config(repo_root)
+    config_path = config_dir / "config.json"
+    write_json(config_path, config)
+
+    # create raw_root and a custom crsp folder inside it
+    raw_root = repo_root / "data" / "raw"
+    custom_crsp = raw_root / "my_crsp_dir"
+    custom_crsp.mkdir(parents=True)
+
+    # create the macro dir referenced in config
+    (repo_root / "data" / "raw" / "macro").mkdir(parents=True)
+
+    out = load_path_config(str(config_path), crsp_data_dir="my_crsp_dir")
+    assert out["data"]["crsp_dir"] == str(custom_crsp.resolve())
+
+
+def test_load_path_config_with_absolute_crsp_arg(tmp_path):
+    # repo_root
+    repo_root = tmp_path / "repo3"
+    config_dir = repo_root / "configs"
+    config_dir.mkdir(parents=True)
+
+    config = make_basic_config(repo_root)
+    config_path = config_dir / "config.json"
+    write_json(config_path, config)
+
+    # create raw_root but we will make an external absolute crsp dir
+    raw_root = repo_root / "data" / "raw"
+    raw_root.mkdir(parents=True)
+    (repo_root / "data" / "raw" / "macro").mkdir(parents=True)
+
+    external_crsp = tmp_path / "external_crsp_abs"
+    external_crsp.mkdir(parents=True)
+
+    out = load_path_config(str(config_path), crsp_data_dir=str(external_crsp))
+    assert out["data"]["crsp_dir"] == str(external_crsp.resolve())
+
+def test_load_path_config_raises_when_default_missing(tmp_path):
+    # repo_root
+    repo_root = tmp_path / "repo4"
+    config_dir = repo_root / "configs"
+    config_dir.mkdir(parents=True)
+
+    config = make_basic_config(repo_root)
+    config_path = config_dir / "config.json"
+    write_json(config_path, config)
+
+    # create raw_root but DO NOT create default crsp directory
+    raw_root = repo_root / "data" / "raw"
+    raw_root.mkdir(parents=True)
+    (repo_root / "data" / "raw" / "macro").mkdir(parents=True)
+
+    # calling without crsp_data_dir when default doesn't exist should raise FileNotFoundError
+    with pytest.raises(FileNotFoundError):
+        _ = load_path_config(str(config_path))

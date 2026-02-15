@@ -5,9 +5,9 @@ import shutil
 import pandas as pd
 from pathlib import Path
 from src.utils import load_config
-
 from src.data_processing.pipeline import run_processing_pipeline
 
+# ---------- Integration test for Data Processing Pipeline ---------- #
 def get_raw_files_names():
     raw_files_dict = load_config(
         os.path.join('config', 'paths.json')
@@ -54,11 +54,19 @@ def test_processing_with_committed_sample(tmp_path):
     # run pipeline (integration smoke test)
     run_processing_pipeline(paths_config, features_config)
 
-    # basic assertions: outputs exist
+    # Basic assertions: outputs exist
     processed_train = pd.read_csv(paths_config['processed_paths']['processed_train'])
     processed_val = pd.read_csv(paths_config['processed_paths']['processed_val'])
     processed_test = pd.read_csv(paths_config['processed_paths']['processed_test'])
+
+    returns_train = pd.read_csv(paths_config['processed_paths']['returns_train'])
+    returns_val = pd.read_csv(paths_config['processed_paths']['returns_val'])
+    returns_test = pd.read_csv(paths_config['processed_paths']['returns_test'])
     
     assert not processed_train.empty, 'Processed train csv is empty'
     assert not processed_val.empty, 'Processed validation csv is empty'
     assert not processed_test.empty, 'Processed test csv is empty'
+
+    assert not returns_train.empty, 'Returns only train csv is empty'
+    assert not returns_val.empty, 'Returns only val csv is empty'
+    assert not returns_test.empty, 'Returns only test csv is empty'
