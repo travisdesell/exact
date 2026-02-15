@@ -60,7 +60,7 @@ python -m scripts.run_one_training --model '<Model Name>' --model_cat '<Model Ca
 
 ## Available Models and Loss Functions
 ### Models
-- LSTM
+- lstm
     - BaseLSTM: Baseline LSTM architecture 
     - AttentionLSTM: LSTM with with attention heads
 
@@ -88,4 +88,4 @@ python -m scripts.run_one_training --model '<Model Name>' --model_cat '<Model Ca
 - entropy_conc_regularizer
 
 #### Custom Combinations:
-- custom_loss_1: Differentiable loss objective with CVaR regularizer
+- custom_loss_1: Differentiable Sharpe loss objective with CVaR regularizer
