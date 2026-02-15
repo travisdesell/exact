@@ -9,7 +9,8 @@
             "model": {
                 "hidden_size": 256,
                 "num_layers": 2,
-                "dropout": 0.2
+                "dropout": 0.2,
+                "equal_prior": false
             },
             "optimizer": {
                 "lr": 1e-4,
@@ -26,7 +27,8 @@
             "model": {
                 "hidden_size": 128,
                 "num_layers": 3,
-                "dropout": 0.2
+                "dropout": 0.2,
+                "equal_prior": false
             },
             "optimizer": {
                 "lr": 1e-3,
