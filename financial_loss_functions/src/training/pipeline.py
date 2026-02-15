@@ -206,6 +206,7 @@ def run_training_one_model(
     model_cls = NNModelLibrary.get(model_cat, model_name)
     loss_func = LossLibrary.get(loss_cat, loss_name)
 
+
     if model_cls and loss_func:
         # -------------------- Loading Processed Data -------------------- #
         train_data, returns_train, val_data, returns_val = load_processed_data(paths_config)
@@ -234,11 +235,12 @@ def run_training_one_model(
                 model=model_cls,
                 optimizer=optim.AdamW,
                 loss=loss_func,
-                model_hparams=hparams_config[model_name]['model'],
-                optimizer_hparams=hparams_config[model_name]['optimizer'],
-                train_hparams=hparams_config[model_name]['train'],
+                model_hparams=hparams_config['models'][model_name]['model'],
+                optimizer_hparams=hparams_config['models'][model_name]['optimizer'],
+                train_hparams=hparams_config['models'][model_name]['train'],
                 in_size=X_train.shape[2],
-                num_stocks=y_train.shape[2]
+                num_stocks=y_train.shape[2],
+                loss_hparams=hparams_config['losses'][loss_name]
             )
 
             trainer.train(train_ds)
@@ -256,12 +258,13 @@ def run_training_one_model(
 
             alloc_weights = trainer.get_val_alloc_weights()
 
-        
+            # Call on every models output allocation weights to calculate pf returns
+            evaluator.calc_pf_daily_rets(alloc_weights, f'{model_name}-{loss_name}')
+        except KeyError as ke:
+            print('KeyError: Key not found.', ke)
         except Exception as error:
             print(f'DEBUG: Error while training {model_name}. Skipping.', error)
         
-        # Call on every models output allocation weights to calculate pf returns
-        evaluator.calc_pf_daily_rets(alloc_weights, f'{model_name}-{loss_name}')
 
         # Overall Evaluation/Comparison
         evaluator.calc_eq_wt_daily_rets()
