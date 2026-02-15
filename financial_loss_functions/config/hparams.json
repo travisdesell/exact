@@ -14,7 +14,7 @@
             },
             "optimizer": {
                 "lr": 1e-4,
-                "weight_decay": 3e-4
+                "weight_decay": 1e-5
             },
             "train" : {
                 "train_batch_size": 256,
@@ -31,8 +31,8 @@
                 "equal_prior": false
             },
             "optimizer": {
-                "lr": 1e-3,
-                "weight_decay": 3e-4
+                "lr": 1e-4,
+                "weight_decay": 1e-5
             },
             "train": {
                 "train_batch_size": 256,
@@ -44,7 +44,7 @@
     },
     "losses": {
         "custom_loss_1" : {
-            "lambda1": 0.1
+            "lambda1": 0.001
         }
     }
 }

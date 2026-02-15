@@ -73,6 +73,7 @@ class Trainer:
         print('Model hyperparameters:\n', model_hparams)
         print('Optimizer hyperparameters:\n', optimizer_hparams)
         print('Training hyperparameters:\n', train_hparams)
+        print('Loss Function hyperparameters:\n', loss_hparams)
         
         # Initialize model with its specific hyperparameters
         self.model = model(
@@ -397,7 +398,7 @@ class Evaluator:
         # for pf_type, array in self.all_daily_returns.items():
         self._daily_rets_calcd_check()
         
-        cmap = plt.get_cmap('gist_rainbow') # or 'tab20'
+        cmap = plt.get_cmap('tab20') # or 'tab20', 'gist_rainbow'
         
         n_windows = next(iter(self.all_daily_returns.values())).shape[0]
         n_cols = min(3, n_windows)

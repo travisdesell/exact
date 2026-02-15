@@ -224,11 +224,27 @@ def run_training_one_model(
         train_ds = WindowDataset(X_train, y_train)
         val_ds   = WindowDataset(X_val, y_val)
 
-        # -------------------- Training Neural Network -------------------- #
-
+        # -------------------- Training Tradional Models -------------------- #
         # Initializing once to compare all models together
         evaluator = Evaluator(y_val)
         
+        # # Registering all Traditional models to the library
+        # TradModelLibrary.autodiscover(models_module)
+
+        # trad_grid = TradModelsTrainer(
+        #     TradModelLibrary.items(),
+        #     hparams_config['rolling_windows']['in_size'],
+        #     hparams_config['rolling_windows']['out_size'],
+        #     hparams_config['rolling_windows']['stride']
+        # )
+        # trad_alloc_weights = trad_grid.train_all(returns_train, returns_val)
+
+        # for model_name, alloc_weights in trad_alloc_weights.items():
+        #     evaluator.calc_pf_daily_rets(alloc_weights, model_name)
+        
+        # del trad_grid
+
+        # -------------------- Training Neural Network -------------------- #
         print('\n', '-'*10, f' Training {model_name} ', '-'*10)
         try:
             trainer = Trainer(
@@ -271,13 +287,21 @@ def run_training_one_model(
         
         evaluator.plot_windowed_comparison(
             plots_dir /
-            (f'Daily Returns' + '.png')
+            (f'Daily Returns_{model_name}-{loss_name}' + '.png')
         )
 
         total_returns = evaluator.calc_total_performance('returns')
-        total_returns.to_csv(results_dir / f'total_returns_{model_name}.csv', sep=',')
+        total_returns.to_csv(
+            results_dir / f'total_returns_{model_name}-{loss_name}.csv', sep=','
+        )
         total_sharpes = evaluator.calc_total_performance('sharpe')
-        total_sharpes.to_csv(results_dir / 'total_sharpes.csv', sep=',')
+        total_sharpes.to_csv(
+            results_dir / f'total_sharpes_{model_name}-{loss_name}.csv', sep=','
+        )
+
+        print('\n', '-'*10, ' Portfolio Perfomance Metrics ', '-'*10)
+        print('\n', 'Compounded returns for each window:\n', total_returns)
+        print('\n', 'Basic sharpe ratios for each window:\n', total_sharpes)
     
     elif model_cls is None:
         raise ValueError(f'Model {model_name} of {model_cat} not found.')

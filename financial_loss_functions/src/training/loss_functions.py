@@ -340,8 +340,8 @@ def cvar_topk_regularizer(
 
 @LossLibrary.register(category='regularizers', subcategory='tail_risk')
 def smooth_cvar_regularizer(
-    weights: torch.Tensor,
-    returns: torch.Tensor,
+    weights: Tensor,
+    returns: Tensor,
     temp: float = 1e-2,
     eps: float = 1e-8,
     scale_by_std: bool = True,
@@ -350,6 +350,10 @@ def smooth_cvar_regularizer(
 ) -> torch.Tensor:
     """
     Smooth differentiable approximation to CVaR using soft-selection (softmax) over losses.
+    It uses Soft-Max/Minimax (Soft Attention Mechanism) for a CVaR-like regularizer.
+    It tells the model: 
+    "I don't care about anything else, just make sure our absolute worst day isn't a catastrophe."
+    It minimizes the single worst-case scenario.
 
     The idea: create scores = losses / (temp * std) (or / temp), take softmax across time,
     and compute a weighted average. Tuning `temp` controls concentration on the tail.
@@ -381,6 +385,57 @@ def smooth_cvar_regularizer(
     if normalize_by_port_std:
         port_std = port.std(dim=1)           # (B,)
         port_std = torch.clamp(port_std, min=port_std_floor)
+        approx_cvar = approx_cvar / (port_std + eps)
+
+    return approx_cvar.mean()
+
+@LossLibrary.register(category='regularizers', subcategory='tail_risk')
+def smooth_rockafellar_cvar_regularizer(
+    weights: torch.Tensor,
+    returns: torch.Tensor,
+    alpha: float = 0.05,
+    temp: float = 1e-2, # In R&U, temp controls the Softplus "smoothness"
+    eps: float = 1e-8,
+    normalize_by_port_std: bool = True,
+    port_std_floor: float = 1e-3
+) -> torch.Tensor:
+    """
+    Differentiable CVaR using the Rockafellar & Uryasev formula. 
+    Uses alpha to get average of 5% worst case scenarios.
+    
+    @param weights: Tensor[B, N] - Portfolio weights
+    @param returns: Tensor[B, T, N] - Asset returns
+    @param alpha: float - The tail probability (e.g., 0.05 for 95% CVaR)
+    @param temp: float - Smoothness of the ReLU approximation (Softplus)
+
+    @return Tensor smooth CVaR approx (minimize)
+    """
+    # 1. Calculate Portfolio Returns and Losses
+    # port: (B, T), losses: (B, T)
+    port = (weights.unsqueeze(1) * returns).sum(dim=-1)
+    losses = -port 
+
+    # 2. Estimate VaR (zeta) for the batch
+    # We take the (1-alpha) quantile of the losses as our starting point for zeta
+    # This is the "threshold" where the tail begins.
+    with torch.no_grad():
+        zeta = torch.quantile(losses, 1 - alpha, dim=1, keepdim=True) # (B, 1)
+
+    # 3. Rockafellar & Uryasev Formula
+    # Instead of max(0, losses - zeta), we use Softplus for a smooth gradient.
+    # soft_excess = temp * log(1 + exp((losses - zeta) / temp))
+    excess_losses = (losses - zeta)
+    soft_excess = softplus(excess_losses, beta=1/temp)
+    
+    # CVaR = zeta + (1 / alpha) * Average(excess_losses)
+    # (B,)
+    approx_cvar = zeta.squeeze(1) + (1.0 / alpha) * soft_excess.mean(dim=1)
+
+    # 4. Normalization (The "Tail Ratio" approach)
+    if normalize_by_port_std:
+        port_std = port.std(dim=1)
+        port_std = torch.clamp(port_std, min=port_std_floor)
+        # Final value is dimensionless: how many STDs is the average tail loss?
         approx_cvar = approx_cvar / (port_std + eps)
 
     return approx_cvar.mean()
@@ -811,10 +866,10 @@ def custom_loss_1(weights: Tensor, returns: Tensor, lambda1: float):
     loss = differentiable sharpe + lambda1 * smooth CVar
     """
     sharpe = differentiable_sharpe_loss(weights, returns)
-    cvar = smooth_cvar_regularizer(weights, returns)
+    cvar = smooth_rockafellar_cvar_regularizer(weights, returns)
 
-    # print(sharpe)
-    # print(cvar)
+    # print('Sharpe:',sharpe)
+    # print('CVaR:', cvar * lambda1)
     return sharpe + lambda1 * cvar 
 
 def combined_loss_2():
