@@ -15,34 +15,54 @@ python -m scripts.run_training [--grid_mode MODE] [--loss_mode MODE] [OPTIONS]
 | :--- | :--- | :--- | :--- | :--- |
 | `-gm` | `--grid_mode` | `all`, `one_model`, `one_loss` | `all` | The scope of the grid search. |
 | `-lm` | `--loss_mode` | `all`, `custom` | `all` |  Use all available loss functions or only custom combinations |
-| `-model`| `--model` | *string* | None | **Required** if grid mode is `one_model`. Name of model.|
+| `-m`| `--model` | *string* | None | **Required** if grid mode is `one_model`. Name of model.|
 | `-l` | `--loss` | *string* | None | **Required** if grid mode is `one_loss`. Name of loss function.|
 
 #### Examples:
 1. Run everything (Uses defaults: grid_mode='all', loss_mode='all')
 ```bash
-python -m scripts.run_training
+python -m scripts.run_training_grid
 ```
 
 2. Run specific model with all available loss functions
 ```bash
-python -m scripts.run_training --grid_mode one_model --model '<Model Name>' --loss_mode all
+python -m scripts.run_training_grid --grid_mode one_model --model '<Model Name>' --loss_mode all
 ```
 
 3. Run specific loss function with all available models
 ```bash
-python -m scripts.run_training --grid_mode one_loss --loss '<Loss Name>'
+python -m scripts.run_training_grid --grid_mode one_loss --loss '<Loss Name>'
 ```
 
 4. To get help
 ```bash
-python -m scripts.run_training --help
+python -m scripts.run_training_grid --help
+```
+
+### Run Training of One Model with One Loss Function
+Run the training pipeline using the following command: structure:
+```bash
+python -m scripts.run_training [--model MODEL] [--model_cat MODEL CATEGORY] [--loss LOSS] [--loss_cat LOSS CATEGORY]
+```
+
+#### Arguments Reference
+| Flag | Long Flag | Choices / Type | Default | Notes |
+| :--- | :--- | :--- | :--- | :--- |
+| `-m` | `--model` | *string* | None | Name of model from the library. |
+| `-mc` | `--model_cat` | *string* | None | Category the model belongs to.|
+| `-l` | `--loss` | *string* | None | Name of the loss function from the library.|
+| `-lc` | `--loss_cat` | `objective`, `custom` | None | Category of loss function.|
+
+#### Example:
+```bash
+python -m scripts.run_one_training --model '<Model Name>' --model_cat '<Model Category>' --loss '<Loss Name>' --loss_cat '<Loss Category>'
 ```
 
 ## Available Models and Loss Functions
 ### Models
-- BaseLSTM: Baseline LSTM architecture 
-- AttentionLSTM: LSTM with with attention heads
+- LSTM
+    - BaseLSTM: Baseline LSTM architecture 
+    - AttentionLSTM: LSTM with with attention heads
 
 ### Loss Functions
 #### Objectives:

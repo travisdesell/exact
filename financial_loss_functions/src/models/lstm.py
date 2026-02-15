@@ -58,13 +58,13 @@ class BaseLSTM(nn.Module):
         last = self.dropout(last)
         
         logits = self.fc(last)     # (B, N)
-        # Strong equal-weight prior that never goes away
-        equal_prior = torch.full_like(
-            logits,
-            fill_value=np.log(1.0 / logits.shape[-1]),
-            device=logits.device
-        )
-        logits = logits + equal_prior
+        # # Strong equal-weight prior that never goes away
+        # equal_prior = torch.full_like(
+        #     logits,
+        #     fill_value=np.log(1.0 / logits.shape[-1]),
+        #     device=logits.device
+        # )
+        # logits = logits + equal_prior
         weights = torch.softmax(logits, dim=-1)
         return weights
 
@@ -131,12 +131,12 @@ class AttentionLSTM(nn.Module):
         context = self.dropout(context)
         
         logits = self.fc(context)  # (B, N)
-        # Strong equal-weight prior that never goes away
-        equal_prior = torch.full_like(
-            logits,
-            fill_value=np.log(1.0 / logits.shape[-1]),
-            device=logits.device
-        )
-        logits = logits + equal_prior
+        # # Strong equal-weight prior that never goes away
+        # equal_prior = torch.full_like(
+        #     logits,
+        #     fill_value=np.log(1.0 / logits.shape[-1]),
+        #     device=logits.device
+        # )
+        # logits = logits + equal_prior
         weights = torch.softmax(logits, dim=-1)
         return weights

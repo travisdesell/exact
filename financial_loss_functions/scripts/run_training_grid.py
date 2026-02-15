@@ -94,7 +94,7 @@ if __name__ == '__main__':
         )
 
         parser.add_argument(
-            '-model',
+            '-m',
             '--model',
             help="Model name required if grid_mode is 'one_model'"
         )
@@ -127,8 +127,8 @@ if __name__ == '__main__':
             hparams_config, 
             grid_mode = args.grid_mode, 
             loss_mode = args.loss_mode, 
-            model = args.model,
-            loss = args.loss
+            model_name = args.model,
+            loss_name = args.loss
         )
 
     except SystemExit:
