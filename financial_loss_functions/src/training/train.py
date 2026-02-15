@@ -394,60 +394,65 @@ class Evaluator:
         return pd.DataFrame(total_perfomances)
 
     def plot_windowed_comparison(self, output_path: str, plot: bool=False):
-        """
-        Plots and saves windowed comparisons of daily returns for every portfolio
-
-        @param output_path str
-            File path to save plot
-        @param plot bool
-            Toggle to show image while running code. Default = False
-        """
         # for pf_type, array in self.all_daily_returns.items():
         self._daily_rets_calcd_check()
-                
-        colors = ['blue', 'red', 'green', 'orange', 'purple']
+        
+        cmap = plt.get_cmap('gist_rainbow') # or 'tab20'
         
         n_windows = next(iter(self.all_daily_returns.values())).shape[0]
         n_cols = min(3, n_windows)
         n_rows = (n_windows + n_cols - 1) // n_cols
         
         fig, axes = plt.subplots(n_rows, n_cols, figsize=(5*n_cols, 4*n_rows))
-        
-        # Handle single subplot case
         if n_rows == 1 and n_cols == 1:
             axes = np.array([axes])
         axes = axes.flatten()
         
-        # Plot each window
+        # Plotting loop for each window
         for window_idx in range(n_windows):
             ax = axes[window_idx]
-            
             for i, (pf_type, daily_returns) in enumerate(self.all_daily_returns.items()):
                 ax.plot(
                     daily_returns[window_idx],
                     label=pf_type,
-                    color=colors[i % len(colors)],
-                    alpha=0.8
+                    color=cmap(i % 20), # Using a 20-color map
+                    alpha=0.7,
+                    linewidth=1
                 )
-            
             ax.set_title(f'Window {window_idx + 1}')
-            ax.set_xlabel('Time Steps')
-            ax.set_ylabel('Daily Returns')
-            ax.legend()
             ax.grid(True, alpha=0.3)
-        
-        # Hide empty subplots
+
+        # 1. CLEAN UP MAIN PLOT
         for i in range(n_windows, len(axes)):
             axes[i].set_visible(False)
         
         plt.tight_layout()
-        # Save and optionally show
         fig.savefig(output_path, dpi=300, bbox_inches='tight')
+
+        # 2. CREATE SEPARATE LEGEND FILE
+        # Extract handles and labels from the LAST used axis
+        handles, labels = ax.get_legend_handles_labels()
         
+        # Create a small figure just for the legend
+        # Adjust figsize based on how many portfolios you have
+        fig_leg = plt.figure(figsize=(3, len(labels) * 0.2)) 
+        legend = fig_leg.legend(handles, labels, loc='center', frameon=False, ncol=1)
+        
+        # Remove all axis info so it's just the legend
+        plt.axis('off')
+        
+        # Generate legend path (e.g., 'path/to/plot_legend.png')
+        base, ext = os.path.splitext(output_path)
+        legend_path = f'{base}_legend{ext}'
+        
+        # Save with bbox_inches='tight' to crop the white space
+        fig_leg.savefig(legend_path, dpi=300, bbox_inches='tight')
+
         if plot:
             plt.show()
-
+        
         plt.close('all')
+
 
 class CandidatesGrid:
     models_hparams = 'models'
